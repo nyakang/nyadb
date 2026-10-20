@@ -83,6 +83,13 @@ type State struct {
 	connectionPort   string
 	connectionSecret string
 	connectionError  string
+
+	profileMode       bool
+	profileService    *connections.Service
+	profileEntries    []connections.Profile
+	selectedProfileID int64
+	pendingDeleteID   int64
+	deleteConfirm     bool
 }
 
 func New() *State {
@@ -164,6 +171,9 @@ func (s *State) showObjects(kind string) {
 }
 
 func (s *State) visibleObjects() []object {
+	if s.profileMode {
+		return nil // real metadata is deferred until M2
+	}
 	if s.explorerName == "" || s.explorerName == "我的连接" {
 		return nil
 	}

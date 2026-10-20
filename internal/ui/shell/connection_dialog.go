@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -79,8 +80,24 @@ func (s *State) saveConnectionDraft() {
 		s.connectionError = err.Error()
 		return
 	}
-	_ = p
-	s.connectionError = "连接档案尚未接入本地存储，请在下一阶段完成保存"
+	if s.profileService == nil {
+		s.connectionError = "连接档案尚未接入本地存储"
+		return
+	}
+	var saved connections.Profile
+	if p.ID > 0 {
+		saved, err = s.profileService.Update(context.Background(), p)
+	} else {
+		saved, err = s.profileService.Create(context.Background(), p)
+	}
+	if err != nil {
+		s.connectionError = "保存失败（连接名称可能重复或配置无效）：" + err.Error()
+		return
+	}
+	s.selectedProfileID = saved.ID
+	s.loadProfiles()
+	s.closeConnectionDialog()
+	s.status = "已保存连接：" + saved.Name + "（未建立数据库会话）"
 }
 
 // connectionModal is a native MyGo modal, not a WebView or imported UI asset.
@@ -93,6 +110,9 @@ func (s *State) connectionModal(c *ui.Context) {
 			title := "新建连接 · 选择数据库"
 			if s.connectionStep == 1 {
 				title = "新建连接 · " + connectionKindName(s.connectionKind)
+				if s.connectionDraft.ID != 0 {
+					title = "编辑连接 · " + connectionKindName(s.connectionKind)
+				}
 			}
 			ui.Text(c, title).FontSize(19).Bold()
 			ui.Box(c).Height(1).Background(theme.Border)
@@ -105,7 +125,7 @@ func (s *State) connectionModal(c *ui.Context) {
 				ui.Text(c, s.connectionError).FontSize(12).TextColor(theme.Gold)
 			}
 			ui.Row(c).Justify(ui.End).Gap(8).Children(func() {
-				if s.connectionStep == 1 {
+				if s.connectionStep == 1 && s.connectionDraft.ID == 0 {
 					if ui.Button(c, "上一步").Clicked() {
 						s.connectionStep = 0
 						s.connectionError = ""
