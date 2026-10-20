@@ -25,6 +25,19 @@ func Run() error {
 	}
 	defer db.Close()
 	state := shell.NewWithProfiles(connections.NewService(connections.NewStore(db)))
+	// Research-only, opt-in runtime PNGs. The files remain outside resources/
+	// and are never embedded in the application or its distribution packages.
+	if os.Getenv("NYADB_RESEARCH_ICONS") == "1" {
+		dir := os.Getenv("NYADB_RESEARCH_ICON_DIR")
+		if dir == "" {
+			dir = filepath.Join("temp", "research", "navicat-png-inventory", "named")
+		}
+		count, loadErr := state.LoadLocalResearchIcons(dir)
+		fmt.Fprintf(os.Stderr, "NyaDB research icon mode: loaded %d icons\n", count)
+		if loadErr != nil {
+			fmt.Fprintf(os.Stderr, "NyaDB research icon warning: %v\n", loadErr)
+		}
+	}
 	mygo.App.WhenReady(func() {
 		mygo.Theme.SetSource(mygo.ThemeDark)
 		window := mygo.NewWindow(mygo.WindowOptions{

@@ -6,7 +6,8 @@ import (
 )
 
 // The chooser follows the observed large two-pane information architecture.
-// Its symbols are new NyaDB geometry, not Navicat-owned artwork.
+// It uses independent NyaDB symbols by default. In explicit local research
+// mode only, runtime-loaded PNGs may replace catalog symbols for comparison.
 func (s *State) connectionTypes(c *ui.Context) {
 	w, h := c.Size()
 	dialogWidth := min(float32(860), w-72)
@@ -154,9 +155,7 @@ func (s *State) catalogIconItem(c *ui.Context, item catalogEntry) {
 		Radius(3).Background(bg).Border(1, border)
 	control.Children(func() {
 		ui.Column(c).AlignItems(ui.Center).Justify(ui.Center).Gap(7).Children(func() {
-			ui.Box(c).Size(45, 45).Radius(6).Background(ui.Hex(item.color)).Center().Children(func() {
-				theme.Icon(c, item.symbol, 29, theme.Text)
-			})
+			s.catalogIcon(c, item, 45)
 			ui.Text(c, item.name).Width(104).TextAlign(ui.Center).FontSize(11)
 			if item.kind == "" {
 				ui.Text(c, "尚未支持").FontSize(10).TextColor(theme.Muted)
@@ -173,9 +172,7 @@ func (s *State) catalogListItem(c *ui.Context, item catalogEntry) {
 		Radius(3).Background(theme.Panel)
 	control.Children(func() {
 		ui.Row(c).Padding(5, 10).AlignItems(ui.Center).Gap(10).Children(func() {
-			ui.Box(c).Size(30, 30).Radius(4).Background(ui.Hex(item.color)).Center().Children(func() {
-				theme.Icon(c, item.symbol, 21, theme.Text)
-			})
+			s.catalogIcon(c, item, 30)
 			ui.Text(c, item.name).FontSize(12).Grow(1)
 			if item.kind == "" {
 				ui.Text(c, "尚未支持").FontSize(10).TextColor(theme.Muted)

@@ -88,6 +88,7 @@ type State struct {
 	connectionRecent        []string
 	connectionEngineFilters map[string]bool
 	connectionVendorFilters map[string]bool
+	researchIcons           map[string]*ui.Bitmap
 
 	profileMode       bool
 	profileService    *connections.Service
