@@ -38,6 +38,26 @@ name/tree/data structures and its PNG bytes passed validation.
 `On` variants render colorful logos; `Off` variants are greyscale in
 the inspected sample. Exact UI state-transition semantics remain Unknown.
 
+## Additional cloud catalog resource mappings (S)
+
+The following nine `On` resources have also been independently resolved
+through the same Qt resource name/tree/data and PNG CRC validation:
+
+| Catalog item | Exact resource filename | PNG offset |
+|---|---|---|
+| 阿里云 RDS MySQL 版 | `OV_64_Alibaba_Cloud_MySQL_On.png` | `0x1625b55` |
+| 阿里云 RDS PostgreSQL 版 | `OV_64_Alibaba_Cloud_PostgreSQL_On.png` | `0x198670b` |
+| 阿里云 RDS SQL Server 版 | `OV_64_Alibaba_Cloud_SQLsever_On.png` | `0x3b5bad7` |
+| 阿里云 MongoDB 版 | `OV_64_Alibaba_Cloud_MongoDB_On.png` | `0x2a47e22` |
+| 阿里云 Redis 版 | `OV_64_Alibaba_Cloud_Redis_On.png` | `0x12ee322` |
+| 腾讯云 MySQL | `OV_64_Tencent_Cloud_MySQL_On.png` | `0x1f79723` |
+| 华为云 PostgreSQL | `OV_64_Huawei_Cloud_PostgreSQL_On.png` | `0x1474179` |
+| AWS RDS MySQL | `OV_64_AmazonRDS_MySQL_On.png` | `0x1e6f4a5` |
+| Azure SQL | `OV_64_Microsoft_Azure_SQLserver_On.png` | `0x13c8d6e` |
+
+The spelling `SQLsever` is present in the original Qt resource filename;
+it has not been normalized or renamed. These are all validated 64×64 PNGs.
+
 ## Reproduce the study
 
 ```bash

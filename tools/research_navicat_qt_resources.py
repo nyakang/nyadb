@@ -31,6 +31,20 @@ DRIVERS = (
     ("OceanBase", "OceanBase"),
 )
 
+# Additional resource paths identified in the same Qt name/tree structures.
+# Original spelling (including SQLsever) is preserved for exact matching.
+CLOUD_RESOURCES = (
+    ("阿里云 RDS MySQL 版", "OV_64_Alibaba_Cloud_MySQL_On.png"),
+    ("阿里云 RDS PostgreSQL 版", "OV_64_Alibaba_Cloud_PostgreSQL_On.png"),
+    ("阿里云 RDS SQL Server 版", "OV_64_Alibaba_Cloud_SQLsever_On.png"),
+    ("阿里云 MongoDB 版", "OV_64_Alibaba_Cloud_MongoDB_On.png"),
+    ("阿里云 Redis 版", "OV_64_Alibaba_Cloud_Redis_On.png"),
+    ("腾讯云 MySQL", "OV_64_Tencent_Cloud_MySQL_On.png"),
+    ("华为云 PostgreSQL", "OV_64_Huawei_Cloud_PostgreSQL_On.png"),
+    ("AWS RDS MySQL", "OV_64_AmazonRDS_MySQL_On.png"),
+    ("Azure SQL", "OV_64_Microsoft_Azure_SQLserver_On.png"),
+)
+
 def decode_resource(binary: bytes, resource_name: str):
     needle = resource_name.encode("utf-16-be")
     pos = binary.find(needle)
@@ -96,6 +110,12 @@ def main():
             dst.write_bytes(info.pop("png_bytes"))
             output_rows.append({"type": display, "state": variant, **info})
             print(display, variant, info["png_offset"], info["dimensions"], resource)
+    for display, resource in CLOUD_RESOURCES:
+        info = decode_resource(data, resource)
+        dst = args.out / resource
+        dst.write_bytes(info.pop("png_bytes"))
+        output_rows.append({"type": display, "state": "On", **info})
+        print(display, "On", info["png_offset"], info["dimensions"], resource)
     with (args.out / "mapping.csv").open("w", newline="", encoding="utf-8") as f:
         w=csv.DictWriter(f, fieldnames=["type","state","resource","tree_offset","png_offset","png_length","dimensions"])
         w.writeheader()
