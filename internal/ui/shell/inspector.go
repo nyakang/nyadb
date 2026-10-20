@@ -6,6 +6,10 @@ import (
 )
 
 func (s *State) inspector(c *ui.Context) {
+	if s.profileMode {
+		s.profileInspector(c)
+		return
+	}
 	ui.Column(c).Fill().Background(theme.Panel).Children(func() {
 		ui.Row(c).Height(31).Padding(4, 10).AlignItems(ui.Center).
 			Background(theme.Header).Children(func() {

@@ -1,6 +1,8 @@
 package shell
 
 import (
+	"fmt"
+
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
@@ -26,6 +28,18 @@ func (s *State) View(c *ui.Context) {
 		s.statusBar(c)
 	})
 	s.connectionModal(c)
+	if s.profileMode && s.deleteConfirm {
+		name := "所选连接"
+		for _, p := range s.profileEntries {
+			if p.ID == s.pendingDeleteID {
+				name = p.Name
+				break
+			}
+		}
+		if ui.AlertDialog(c, &s.deleteConfirm, "删除连接档案？", "仅删除“"+name+"”的连接配置，不会删除数据库文件。", "取消", "删除") == 1 {
+			s.deleteProfile()
+		}
+	}
 }
 
 func (s *State) menuBar(c *ui.Context) {
@@ -106,6 +120,11 @@ func (s *State) statusBar(c *ui.Context) {
 	ui.Row(c).Height(25).Padding(2, 10).AlignItems(ui.Center).Gap(12).
 		Background(theme.Menu).BorderWidth(1, 0, 0, 0).BorderColor(theme.Border).Children(func() {
 		ui.Text(c, s.status).FontSize(11).TextColor(theme.Text).SingleLine().Grow(1)
+		if s.profileMode {
+			ui.Text(c, fmt.Sprintf("%d 个连接档案", len(s.profileEntries))).FontSize(11).TextColor(theme.Muted)
+			ui.Text(c, "●  未连接").FontSize(11).TextColor(theme.Blue)
+			return
+		}
 		ui.Text(c, "5 个模拟连接").FontSize(11).TextColor(theme.Muted)
 		ui.Text(c, "●  UI Preview").FontSize(11).TextColor(theme.Blue)
 	})

@@ -47,6 +47,10 @@ func (s *State) filteredRoots() []string {
 }
 
 func (s *State) sidebar(c *ui.Context) {
+	if s.profileMode {
+		s.profileSidebar(c)
+		return
+	}
 	ui.Column(c).Fill().Background(theme.Sidebar).Children(func() {
 		ui.Row(c).Height(30).Padding(4, 10).AlignItems(ui.Center).
 			Background(theme.Accent).Gap(8).Children(func() {
