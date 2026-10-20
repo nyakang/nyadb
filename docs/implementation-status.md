@@ -55,3 +55,8 @@ Status: **Implemented locally, headless UI interactions and compile checks compl
   by `NYADB_WRITE_PREVIEW=1 go test ./internal/ui/shell -run TestGenerateUIPreview`.
 - Detailed behavior and limitations in `docs/UI_LAYOUT.md`.
 - Remaining: physical GUI smoke test on native operating systems, backend M1/M2.
+
+See `docs/M1_PROFILE_STORAGE.md` for the initial M1 local-storage and profile CRUD slice.
+
+Navicat 18 and NyaDB were both launched under isolated Linux Xvfb desktops
+for first live GUI comparison. See `docs/NAVICAT_GUI_DIFFERENTIAL_2026-10-20.md`.
