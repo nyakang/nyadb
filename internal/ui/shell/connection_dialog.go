@@ -202,7 +202,12 @@ func (s *State) connectionFields(c *ui.Context) {
 		})
 		if p.Kind == connections.SQLite {
 			ui.Text(c, "已有 SQLite 数据库文件").FontSize(12)
-			ui.TextInput(c, &p.Database).Label("数据库文件").Placeholder("/path/to/database.sqlite").FillWidth()
+			ui.Row(c).Gap(8).Children(func() {
+				ui.TextInput(c, &p.Database).Label("数据库文件").Placeholder("/path/to/database.sqlite").Grow(1)
+				if ui.Button(c, "浏览文件").Disabled(s.sqliteFilePicker == nil).Clicked() {
+					s.sqliteFilePicker()
+				}
+			})
 			ui.Text(c, "数据库文件必须由用户自行指定。创建数据库文件将在后续版本实现。").
 				FontSize(11).TextColor(theme.Muted)
 		} else {

@@ -90,6 +90,7 @@ type State struct {
 	selectedProfileID int64
 	pendingDeleteID   int64
 	deleteConfirm     bool
+	sqliteFilePicker  func()
 }
 
 func New() *State {

@@ -27,7 +27,7 @@ func Run() error {
 	state := shell.NewWithProfiles(connections.NewService(connections.NewStore(db)))
 	mygo.App.WhenReady(func() {
 		mygo.Theme.SetSource(mygo.ThemeDark)
-		mygo.NewWindow(mygo.WindowOptions{
+		window := mygo.NewWindow(mygo.WindowOptions{
 			Title:     "NyaDB",
 			Width:     1280,
 			Height:    800,
@@ -35,6 +35,26 @@ func Run() error {
 			MinHeight: 560,
 			StateKey:  "main",
 			Content:   ui.View(state.View),
+		})
+		state.SetSQLiteFilePicker(func() {
+			go func() {
+				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
+					Parent: window,
+					Title:  "选择现有 SQLite 数据库文件",
+					Filters: []mygo.FileFilter{
+						{Name: "SQLite databases", Extensions: []string{"db", "sqlite", "sqlite3"}},
+					},
+				})
+				window.Update(func() {
+					if err != nil {
+						state.SQLiteFilePickerError()
+						return
+					}
+					if len(paths) > 0 {
+						state.SelectSQLiteFile(paths[0])
+					}
+				})
+			}()
 		})
 	})
 	return mygo.App.Run()
