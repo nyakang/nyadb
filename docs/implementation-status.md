@@ -60,3 +60,13 @@ See `docs/M1_PROFILE_STORAGE.md` for the initial M1 local-storage and profile CR
 
 Navicat 18 and NyaDB were both launched under isolated Linux Xvfb desktops
 for first live GUI comparison. See `docs/NAVICAT_GUI_DIFFERENTIAL_2026-10-20.md`.
+
+## M1-B — Native connection profile manager
+
+Status: **Implemented and locally verified (I)**. NyaDB's real application
+now opens a MyGo connection-type chooser and typed profile form, persists
+non-secret MySQL/PostgreSQL/SQLite profiles in local SQLite, and shows them
+in a searchable explorer with edit/copy/delete/refresh and inspector.
+Isolated Xvfb tested profile creation, selection and restart persistence.
+No database sessions or credentials are implemented (M2 pending).
+Evidence, checks and limitations: `docs/M1_B_VERIFICATION.md`.
