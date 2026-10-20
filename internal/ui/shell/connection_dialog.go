@@ -15,6 +15,9 @@ func (s *State) openConnectionDialog() {
 	s.connectionDialog = true
 	s.connectionStep = 0
 	s.connectionKind = ""
+	s.connectionSearch = ""
+	s.connectionEngineFilters = map[string]bool{}
+	s.connectionVendorFilters = map[string]bool{}
 	s.connectionDraft = connections.Profile{}
 	s.connectionPort = ""
 	s.connectionSecret = ""
@@ -106,6 +109,10 @@ func (s *State) connectionModal(c *ui.Context) {
 		return
 	}
 	ui.Modal(c, &s.connectionDialog, func() {
+		if s.connectionStep == 0 {
+			s.connectionTypes(c)
+			return
+		}
 		ui.Column(c).Width(720).Gap(12).Children(func() {
 			title := "新建连接 · 选择数据库"
 			if s.connectionStep == 1 {
@@ -158,33 +165,6 @@ func connectionKindName(kind connections.Kind) string {
 	default:
 		return "未知类型"
 	}
-}
-
-func (s *State) connectionTypes(c *ui.Context) {
-	ui.Text(c, "选择一个连接类型：").TextColor(theme.Muted)
-	ui.Row(c).Gap(10).Children(func() {
-		for _, kind := range []connections.Kind{connections.MySQL, connections.PostgreSQL, connections.SQLite} {
-			choice := kind
-			ui.Column(c).Width(205).Gap(8).Padding(14).Radius(5).
-				Border(1, theme.Border).Background(theme.Panel).Children(func() {
-				icon := "database"
-				if choice == connections.SQLite {
-					icon = "table"
-				}
-				theme.Icon(c, icon, 28, theme.Blue)
-				ui.Text(c, connectionKindName(choice)).Bold()
-				button := "选择 " + connectionKindName(choice)
-				if s.connectionKind == choice {
-					button = "已选择 " + connectionKindName(choice)
-				}
-				if ui.Button(c, button).Clicked() {
-					s.chooseConnectionKind(choice)
-				}
-			})
-		}
-	})
-	ui.Text(c, "仅提供 MySQL、PostgreSQL 与 SQLite 的连接档案；本阶段不会访问数据库。").
-		FontSize(12).TextColor(theme.Muted)
 }
 
 func (s *State) connectionFields(c *ui.Context) {
