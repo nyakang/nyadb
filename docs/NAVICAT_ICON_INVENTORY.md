@@ -11,6 +11,6 @@ The script `tools/research_navicat_png.py` validates PNG signatures, bounded chu
 | `usr/bin/navicat` | 3,960 | 96 |
 | `usr/lib/libcc.so` | 42 | 32 |
 
-Most common validated dimensions in the main executable: 32×32 (1,360), 16×16 (1,086), 64×64 (605), 128×128 (329). A prior simple signature count of 3,962 for the executable included two candidates failing complete validation. The extraction script uses original ELF offsets, not resource names. **No image-to-database-type attribution has been proved** yet; no icons are included in NyaDB.
+Most common validated dimensions in the main executable: 32×32 (1,360), 16×16 (1,086), 64×64 (605), 128×128 (329). A prior simple signature count of 3,962 for the executable included two candidates failing complete validation. The extraction script uses original ELF offsets, not resource names. The subsequent Qt resource tree study **proved 11 name-to-PNG associations** (On and Off variants): see `docs/NAVICAT_QT_ICON_MAPPING.md`. No proprietary icons are included in NyaDB.
 
 Original screenshot observation (O) of the database chooser: a roughly 900×720 window with sidebar filters, search, recent items, multiple icon sections, right-side scrolling and a bottom action bar. The separate MyGo design should recreate layout and behavior using original symbols or openly licensed brand marks, not reuse extracted pixel artwork. Unsupported connection types must not suggest a working driver.
