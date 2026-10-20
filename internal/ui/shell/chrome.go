@@ -25,6 +25,7 @@ func (s *State) View(c *ui.Context) {
 		).Grow(1)
 		s.statusBar(c)
 	})
+	s.connectionModal(c)
 }
 
 func (s *State) menuBar(c *ui.Context) {

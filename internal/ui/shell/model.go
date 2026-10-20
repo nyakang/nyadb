@@ -5,6 +5,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
+	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
 const (
@@ -74,6 +75,14 @@ type State struct {
 	demoRuns   int
 	status     string
 	lastAction string
+
+	connectionDialog bool
+	connectionStep   int
+	connectionKind   connections.Kind
+	connectionDraft  connections.Profile
+	connectionPort   string
+	connectionSecret string
+	connectionError  string
 }
 
 func New() *State {
@@ -170,6 +179,8 @@ func (s *State) visibleObjects() []object {
 func (s *State) clickToolbar(action string) {
 	s.lastAction = action
 	switch action {
+	case "连接":
+		s.openConnectionDialog()
 	case "新建查询":
 		s.openQuery()
 	case "表", "视图", "函数":
