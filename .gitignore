@@ -37,6 +37,8 @@ config.local.*
 
 # 日志与临时文件
 *.log
+__pycache__/
+*.pyc
 /tmp/
 /temp/
 *.tmp

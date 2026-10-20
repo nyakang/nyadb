@@ -76,13 +76,18 @@ type State struct {
 	status     string
 	lastAction string
 
-	connectionDialog bool
-	connectionStep   int
-	connectionKind   connections.Kind
-	connectionDraft  connections.Profile
-	connectionPort   string
-	connectionSecret string
-	connectionError  string
+	connectionDialog        bool
+	connectionStep          int
+	connectionKind          connections.Kind
+	connectionDraft         connections.Profile
+	connectionPort          string
+	connectionSecret        string
+	connectionError         string
+	connectionSearch        string
+	connectionGridMode      bool
+	connectionRecent        []string
+	connectionEngineFilters map[string]bool
+	connectionVendorFilters map[string]bool
 
 	profileMode       bool
 	profileService    *connections.Service
@@ -102,17 +107,20 @@ func New() *State {
 		columns[i] = ui.TableColumn{Title: fmt.Sprintf("field_%02d", i-2), Width: 150}
 	}
 	s := &State{
-		sidebarPercent: 22,
-		centerPercent:  75,
-		editorPercent:  48,
-		inspectorOn:    true,
-		objectKind:     "表",
-		explorerName:   "我的连接",
-		explorerRow:    -1,
-		status:         "就绪 · UI 布局预览（没有连接真实数据库）",
-		dataColumns:    columns,
-		nextTabID:      1,
-		tabs:           []*tab{{id: 1, title: "对象", kind: tabObjects}},
+		sidebarPercent:          22,
+		centerPercent:           75,
+		editorPercent:           48,
+		inspectorOn:             true,
+		connectionGridMode:      true,
+		connectionEngineFilters: map[string]bool{},
+		connectionVendorFilters: map[string]bool{},
+		objectKind:              "表",
+		explorerName:            "我的连接",
+		explorerRow:             -1,
+		status:                  "就绪 · UI 布局预览（没有连接真实数据库）",
+		dataColumns:             columns,
+		nextTabID:               1,
+		tabs:                    []*tab{{id: 1, title: "对象", kind: tabObjects}},
 	}
 	s.objectState.Selected = &s.objectRow
 	s.explorerTree.List.Selected = &s.explorerRow
