@@ -40,3 +40,18 @@ Real Windows/Linux/macOS GUI smoke tests and CI job executions remain pending.
 - The object tree is a mock schema. Database adapters start in M2.
 - 100,000-row × 50-column preview is generated lazily in memory, not a DB paging benchmark.
 - GUI input/rendering still needs real interactive Windows/Linux/macOS smoke tests.
+
+## UI-1 / UI-2 — Navicat-inspired native UI layout
+
+Status: **Implemented locally, headless UI interactions and compile checks completed**.
+
+- Replaced the simple M0 shell with compact dark in-window menu row, icon toolbar,
+  connection tree, object list, multi-tab SQL workspace, inspector and statusbar.
+- Explorer, center pane and inspector use adjustable proportional splitters.
+- Added a searchable mock connection tree, object filters, mock table browsing,
+  independent SQL editor tabs, demo execution status, tab close, and inspector toggle.
+- All UI graphics are new simple SVG icons; no third-party application icons.
+- Saved a real MyGo headless preview at `docs/ui-preview.png`, generated on demand
+  by `NYADB_WRITE_PREVIEW=1 go test ./internal/ui/shell -run TestGenerateUIPreview`.
+- Detailed behavior and limitations in `docs/UI_LAYOUT.md`.
+- Remaining: physical GUI smoke test on native operating systems, backend M1/M2.
