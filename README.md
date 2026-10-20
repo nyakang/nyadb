@@ -1,17 +1,21 @@
 # NyaDB
 
 NyaDB is a lightweight, cross-platform database workbench written in Go and
-[MyGo Native UI](https://github.com/egoist/mygo). The current `M0` milestone
-is an **interactive desktop prototype** with no live database connections.
+[MyGo Native UI](https://github.com/egoist/mygo). M0 is complete, and
+the UI-1/UI-2 workbench layout prototype is implemented with mock data.
+There are **no live database connections yet**.
 
-## M0 features
+![NyaDB native workbench preview](docs/ui-preview.png)
 
-- Native desktop window (no JavaScript, WebView, or cgo).
-- Resizable database explorer based on `ui.Outline` (mock schema).
-- SQL code editor based on `ui/editor` with SQL highlighting.
-- Virtualized `ui.Table` preview of **100,000 synthetic rows and 50 columns**,
-  generated on demand without storing the entire dataset.
-- Query/demo button, workspace tabs, testable native view state.
+## Implemented features (M0 + UI-1/UI-2)
+
+- Compact dark desktop workbench with a toolbar, menu row and status bar.
+- Proportional, draggable explorer/workspace/inspector panes and an inspector toggle.
+- Expandable connection tree with Chinese-label search and mock metadata.
+- Multiple SQL tabs, an SQL-highlighting editor and safe mock query button.
+- Filterable object list and virtualized `ui.Table` preview of **100,000
+  synthetic rows and 50 columns**, generated on demand.
+- Headless UI tests of connections, tabs, search, inspector and resize behavior.
 - Windows, Linux and macOS build and test CI.
 
 **Important:** Demo results are synthetic. No SQL is executed against a database
@@ -92,5 +96,6 @@ docs/                 design, MVP goal, and implementation status
 
 See [the technical design](docs/NYADB_TECHNICAL_DESIGN.md),
 [MVP implementation goal](docs/NYADB_MVP_GOAL.md), and
+[UI layout and interactions](docs/UI_LAYOUT.md) and
 [implementation status](docs/implementation-status.md). Database adapters,
 credentials, SQL execution and paged real results are explicitly outside M0.

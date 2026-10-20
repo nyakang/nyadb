@@ -11,6 +11,7 @@ import (
 func Run() error {
 	state := shell.New()
 	mygo.App.WhenReady(func() {
+		mygo.Theme.SetSource(mygo.ThemeDark)
 		mygo.NewWindow(mygo.WindowOptions{
 			Title:     "NyaDB",
 			Width:     1280,
