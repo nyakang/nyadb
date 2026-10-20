@@ -1,49 +1,48 @@
 # NyaDB
 
-NyaDB is a lightweight, cross-platform database workbench written in Go and
-[MyGo Native UI](https://github.com/egoist/mygo). M0 is complete, and
-the UI-1/UI-2 workbench layout prototype is implemented with mock data.
-There are **no live database connections yet**.
+NyaDB is a cross-platform, native desktop database workbench built with [Go](https://go.dev/) and [MyGo Native UI](https://github.com/egoist/mygo). It provides a desktop interface for organizing database connections and working with SQL.
 
-![NyaDB native workbench preview](docs/ui-preview.png)
+![NyaDB workbench preview](docs/ui-preview.png)
 
-## Implemented features (M0 + UI-1/UI-2)
+## Features
 
-- Compact dark desktop workbench with a toolbar, menu row and status bar.
-- Proportional, draggable explorer/workspace/inspector panes and an inspector toggle.
-- Expandable connection tree with Chinese-label search and mock metadata.
-- Multiple SQL tabs, an SQL-highlighting editor and safe mock query button.
-- Filterable object list and virtualized `ui.Table` preview of **100,000
-  synthetic rows and 50 columns**, generated on demand.
-- Headless UI tests of connections, tabs, search, inspector and resize behavior.
-- Windows, Linux and macOS build and test CI.
+- Native desktop interface for Windows, macOS, and Linux, with resizable explorer, workspace, and inspector panes.
+- Create, edit, duplicate, delete, and search connection profiles for MySQL, PostgreSQL, and SQLite.
+- Persist non-secret connection settings in a local SQLite configuration database.
+- Multi-tab SQL editor with syntax highlighting.
+- Object browser and virtualized table components, with on-demand synthetic data for UI previews.
+- Headless UI tests and cross-platform Go build verification.
 
-**Important:** Demo results are synthetic. No SQL is executed against a database
-until later milestones (M2–M5).
+**Current functionality:** Connection profiles are saved locally, but NyaDB does not yet establish database sessions, load live metadata, or execute SQL against user databases. Object and table previews use demo data; they are not query results.
 
 ## Requirements
 
-- Go **1.27+**; the repository pins MyGo **v0.5.5**.
-- Linux GUI runtime requires GTK 3; on Ubuntu/Debian install
-  `libgtk-3-0`. A graphical session is required to display the window.
-- Windows and macOS use their system-native libraries.
-- No Bun/Node toolchain is required.
+- Go 1.27.1 or later.
+- MyGo Native UI v0.5.5 (declared in `go.mod`).
+- On Linux, GTK 3 runtime libraries and a graphical desktop session. On Debian/Ubuntu, install `libgtk-3-0`.
+- On Windows and macOS, the operating system's native UI libraries.
 
-## Run
+No Node.js or web frontend toolchain is required.
+
+## Getting started
+
+Clone the repository and run the application:
 
 ```bash
+git clone https://github.com/nyakang/nyadb.git
+cd nyadb
 go mod download
+go run ./cmd/nyadb
+```
+
+For MyGo development tools:
+
+```bash
 go tool mygo doctor
 go tool mygo dev
 ```
 
-To run without the watcher:
-
-```bash
-go run ./cmd/nyadb
-```
-
-## Test and build
+## Build and test
 
 ```bash
 go test ./...
@@ -52,50 +51,37 @@ go tool mygo vet
 go build ./cmd/nyadb
 ```
 
-Build native application packages (see MyGo's platform-specific requirements):
+To build an application package with MyGo:
 
 ```bash
 go tool mygo build
 ```
 
-To cross-compile a Windows binary from Linux without cgo:
+Native packaging requirements vary by operating system. The GitHub Actions workflow runs Go tests, static checks, and builds on Linux, Windows, and macOS.
 
-```bash
-CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o build/nyadb.exe ./cmd/nyadb
-```
+## Configuration and privacy
 
-## Custom Go cache under /data
+NyaDB stores connection profiles in `NyaDB/config.sqlite` under the directory returned by Go's `os.UserConfigDir()`. Profiles contain connection names, database types, hosts, ports, database paths or names, usernames, and optional TLS settings.
 
-The repository does not hard-code personal paths. To keep the Go cache and
-downloaded modules outside the system disk, configure your shell or CI executor:
+Passwords, tokens, and credential-bearing connection strings are not stored in the profile database. Creating a profile does not open a network connection to the database. On Unix systems, newly created configuration directories and files use restrictive permissions; on Windows, access is governed by filesystem ACLs. Protect existing files, backups, and your user account accordingly.
 
-```bash
-export GOPATH=/data/.cache/golang/gopath
-export GOMODCACHE=/data/.cache/golang/mod
-export GOCACHE=/data/.cache/golang/build
-export GOTMPDIR=/data/.cache/golang/tmp
-export GOENV=/data/.cache/golang/go.env
-export PATH="/usr/local/go/bin:$GOPATH/bin:$PATH"
-```
-
-The Repo Code execution service may not inherit `~/.bashrc`; it must receive
-these environment variables separately. Ensure the service account has write
-access to the target directories.
-
-## Project organization
+## Repository structure
 
 ```text
-cmd/nyadb/            desktop entrypoint
-internal/ui/shell/    native desktop shell and headless UI tests
-resources/icon.png    generated placeholder application icon
-tools/generate_icon.py reproducible icon generator
-docs/                 design, MVP goal, and implementation status
+cmd/nyadb/                    Desktop application entry point
+internal/bootstrap/           Application initialization
+internal/services/connections/ Connection profile service and validation
+internal/storage/localdb/     SQLite configuration storage and migrations
+internal/ui/shell/            Native UI, workspace, dialogs, and tests
+internal/ui/theme/            Theme and UI icons
+resources/                    Application assets
+docs/                         Design and UI documentation
+.github/workflows/            Cross-platform CI
 ```
 
-## Project roadmap
+## Documentation
 
-See [the technical design](docs/NYADB_TECHNICAL_DESIGN.md),
-[MVP implementation goal](docs/NYADB_MVP_GOAL.md), and
-[UI layout and interactions](docs/UI_LAYOUT.md) and
-[implementation status](docs/implementation-status.md). Database adapters,
-credentials, SQL execution and paged real results are explicitly outside M0.
+- [Technical design](docs/NYADB_TECHNICAL_DESIGN.md)
+- [UI layout and interactions](docs/UI_LAYOUT.md)
+
+NyaDB is an independent implementation. It does not include Navicat source code, branding, or proprietary assets.

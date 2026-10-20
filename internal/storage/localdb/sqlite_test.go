@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -25,7 +26,9 @@ func TestOpenMigrationIdempotentAndPrivate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.Mode().Perm()&0077 != 0 {
+	// Windows uses ACLs; os.FileMode permission bits do not reflect access
+	// rights there. Keep the POSIX privacy assertion on Unix platforms.
+	if runtime.GOOS != "windows" && info.Mode().Perm()&0077 != 0 {
 		t.Fatalf("database permissions too broad: %v", info.Mode().Perm())
 	}
 	db, err := sql.Open("sqlite", path)
