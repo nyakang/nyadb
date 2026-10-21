@@ -15,6 +15,7 @@ func (s *State) openConnectionDialog() {
 	s.connectionDialog = true
 	s.connectionStep = 0
 	s.connectionKind = ""
+	s.connectionSelectedName = ""
 	s.connectionSearch = ""
 	s.connectionEngineFilters = map[string]bool{}
 	s.connectionVendorFilters = map[string]bool{}
@@ -43,7 +44,9 @@ func (s *State) chooseConnectionKind(kind connections.Kind) {
 
 func (s *State) nextConnectionStep() {
 	if s.connectionKind == "" {
-		s.connectionError = "请先选择数据库类型"
+		if !strings.Contains(s.connectionError, "尚未支持") {
+			s.connectionError = "请先选择数据库类型"
+		}
 		return
 	}
 	draft, err := connections.Defaults(s.connectionKind)

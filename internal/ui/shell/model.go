@@ -83,6 +83,7 @@ type State struct {
 	connectionPort          string
 	connectionSecret        string
 	connectionError         string
+	connectionSelectedName  string
 	connectionSearch        string
 	connectionGridMode      bool
 	connectionRecent        []string

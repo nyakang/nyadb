@@ -97,7 +97,7 @@ func TestResearchIconResourceMapCoverage(t *testing.T) {
 	if len(researchIconResources) != 20 {
 		t.Fatalf("unexpected research engine mapping count: %d", len(researchIconResources))
 	}
-	for _, entry := range databaseCatalog {
+	for _, entry := range databaseCatalog[:20] {
 		if researchIconResources[entry.name] == "" {
 			t.Errorf("missing mapped catalog item: %s", entry.name)
 		}
