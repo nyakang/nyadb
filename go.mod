@@ -3,7 +3,7 @@ module github.com/nyakang/nyadb
 go 1.27.1
 
 require (
-	github.com/egoist/mygo v0.5.5
+	github.com/egoist/mygo v0.6.0
 	modernc.org/sqlite v1.60.1
 )
 
