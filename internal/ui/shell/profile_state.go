@@ -63,6 +63,7 @@ func (s *State) startEditProfile() {
 	s.resetConnectionConfigurations()
 	s.connectionDialog = true
 	s.connectionStep = 1
+	s.connectionNameFocusPending = true
 	s.connectionEditorTab = 0
 	s.connectionKind = p.Kind
 	s.connectionDraft = p

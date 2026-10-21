@@ -108,6 +108,7 @@ type State struct {
 	connectionError           string
 	connectionProfilesVisible bool
 	connectionActiveConfig    int
+	connectionActiveTarget    int // Active for future sessions, independent of highlighted row.
 	connectionMainConfig      connectionEditorSnapshot
 	connectionOtherConfigs    []connectionEditorSnapshot
 	connectionSelectedName    string
@@ -123,6 +124,8 @@ type State struct {
 	bundledIcons              map[string]*ui.Bitmap
 	providerIcons             map[string]*ui.Bitmap
 	researchIcons             map[string]*ui.Bitmap
+
+	connectionNameFocusPending bool
 
 	profileMode         bool
 	profileService      *connections.Service

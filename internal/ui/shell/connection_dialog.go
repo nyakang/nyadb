@@ -13,6 +13,7 @@ import (
 func (s *State) openConnectionDialog() {
 	s.resetConnectionConfigurations()
 	s.connectionDialog = true
+	s.connectionNameFocusPending = false
 	s.connectionStep = 0
 	s.connectionEditorTab = 0
 	s.connectionKind = ""
@@ -79,6 +80,7 @@ func (s *State) nextConnectionStep() {
 	}
 	s.connectionError = ""
 	s.connectionStep = 1
+	s.connectionNameFocusPending = true
 	s.connectionEditorTab = 0
 	s.updateConnectionWindowTitle()
 }

@@ -203,9 +203,11 @@ func (s *State) editorInputRow(
 		ui.Text(c, caption).Width(labelWidth).FontSize(12)
 		input := connectionFormTextInput(c, target, label, fieldWidth,
 			s.connectionDraft.ID != 0 && s.connectionActiveConfig != 0 && label == "连接名称", false)
-		if label == "连接名称" && s.connectionActiveConfig == 0 {
-			// The observed original opens the General tab with this field focused.
+		if label == "连接名称" && s.connectionActiveConfig == 0 && s.connectionNameFocusPending {
+			// Focus just once when the editor opens. Continuous AutoFocus on
+			// rerender steals keyboard focus from the configuration sidebar.
 			input.AutoFocus()
+			s.connectionNameFocusPending = false
 		}
 	})
 }
@@ -283,8 +285,7 @@ func (s *State) connectionEditorOtherTab(c *ui.Context, width float32) {
 func (s *State) connectionEditorFooter(c *ui.Context) {
 	ui.Row(c).Height(42).Padding(5, 9).Gap(7).AlignItems(ui.Center).
 		Background(connectionEditorSurface).Children(func() {
-		// The original reserves the first slot for the profile-list toggle.
-		// The edit-profile sidebar is not implemented yet.
+		// Show/hide the native editing configuration sidebar.
 		if ui.Button(c, "▣").Width(26).Height(26).
 			Background(connectionEditorButton).Border(1, connectionEditorBorder).
 			Disabled(s.connectionDraft.ID == 0 || s.connectionDraft.Kind != connections.MySQL).
