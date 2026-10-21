@@ -60,6 +60,7 @@ func (s *State) startEditProfile() {
 		s.status = "请先选择连接"
 		return
 	}
+	s.resetConnectionConfigurations()
 	s.connectionDialog = true
 	s.connectionStep = 1
 	s.connectionEditorTab = 0
@@ -77,6 +78,7 @@ func (s *State) startEditProfile() {
 	s.connectionPort = strconv.Itoa(int(p.Port))
 	s.connectionSecret = ""
 	s.connectionError = ""
+	s.initializeConnectionConfigurations()
 	if s.showConnectionWindow != nil {
 		s.showConnectionWindow()
 	}

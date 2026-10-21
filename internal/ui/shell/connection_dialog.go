@@ -11,6 +11,7 @@ import (
 )
 
 func (s *State) openConnectionDialog() {
+	s.resetConnectionConfigurations()
 	s.connectionDialog = true
 	s.connectionStep = 0
 	s.connectionEditorTab = 0
@@ -33,6 +34,7 @@ func (s *State) openConnectionDialog() {
 }
 
 func (s *State) closeConnectionDialog() {
+	s.resetConnectionConfigurations()
 	s.connectionDialog = false
 	s.connectionSecret = ""
 	s.clearMySQLSSLPassphrase()
@@ -51,6 +53,7 @@ func (s *State) chooseConnectionKind(kind connections.Kind) {
 }
 
 func (s *State) nextConnectionStep() {
+	s.resetConnectionConfigurations()
 	if s.connectionKind == "" {
 		if !strings.Contains(s.connectionError, "尚未支持") {
 			s.connectionError = "请先选择数据库类型"
@@ -113,7 +116,13 @@ func (s *State) draftProfile() (connections.Profile, error) {
 }
 
 func (s *State) saveConnectionDraft() {
-	p, err := s.draftProfile()
+	var p connections.Profile
+	var err error
+	if s.connectionDraft.ID != 0 && s.connectionDraft.Kind == connections.MySQL {
+		p, err = s.prepareConnectionConfigurations()
+	} else {
+		p, err = s.draftProfile()
+	}
 	if err != nil {
 		s.connectionError = err.Error()
 		return

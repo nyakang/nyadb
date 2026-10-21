@@ -14,7 +14,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const schemaVersion = 3
+const schemaVersion = 4
 
 // Open initializes or migrates an on-disk configuration database.
 // This database must never store passwords, tokens, or connection strings
@@ -109,6 +109,18 @@ func migrate(ctx context.Context, db *sql.DB) error {
 			return fmt.Errorf("localdb: migrate connection notes: %w", err)
 		}
 		if _, err := tx.ExecContext(ctx, "PRAGMA user_version = 3"); err != nil {
+			return fmt.Errorf("localdb: set schema version: %w", err)
+		}
+		current = 3
+	}
+	if current == 3 {
+		// Additional MySQL configurations share a single parent connection.
+		// Store only validated non-secret settings in one atomic JSON field.
+		if _, err := tx.ExecContext(ctx,
+			"ALTER TABLE connection_profiles ADD COLUMN variants_json TEXT NOT NULL DEFAULT '[]'"); err != nil {
+			return fmt.Errorf("localdb: migrate connection variants: %w", err)
+		}
+		if _, err := tx.ExecContext(ctx, "PRAGMA user_version = 4"); err != nil {
 			return fmt.Errorf("localdb: set schema version: %w", err)
 		}
 	}
