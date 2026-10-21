@@ -64,6 +64,7 @@ func (s *State) startMySQLSession(services ui.Services) {
 	s.mysqlSessionStatus = "连接中"
 	s.mysqlSessionError = ""
 	s.mysqlSessionDatabases = nil
+	s.resetMySQLObjectBrowser()
 	s.status = "正在连接 MySQL：" + p.Name
 	password := s.mysqlSessionPassword
 	s.mysqlSessionPassword = ""
@@ -115,10 +116,12 @@ func (s *State) consumeMySQLSessionResult() {
 			return
 		}
 		s.mysqlSessionStatus = "已连接"
-		s.mysqlSessionDatabases = result.names
 		s.mysqlSessionError = ""
 		if result.metadataErr != nil {
 			s.mysqlSessionError = "数据库列表读取失败：" + result.metadataErr.Error()
+		} else {
+			s.mysqlSessionDatabases = result.names
+			s.reconcileMySQLDatabases(result.names)
 		}
 		s.status = fmt.Sprintf("已连接 MySQL（%d 个数据库）", len(result.names))
 	default:
@@ -136,6 +139,7 @@ func (s *State) disconnectMySQLSession() {
 	id := s.mysqlSessionProfileID
 	s.mysqlSessionProfileID = 0
 	s.mysqlSessionDatabases = nil
+	s.resetMySQLObjectBrowser()
 	s.mysqlSessionError = ""
 	s.mysqlSessionStatus = "未连接"
 	if s.mysqlSessionManager != nil && id > 0 {
