@@ -81,10 +81,31 @@ func (s *State) connectionEditorTabs(c *ui.Context) {
 }
 
 func (s *State) connectionEditorDiagram(c *ui.Context) {
+	// The tunnel endpoint appears across tabs, mirroring the original
+	// connection editor; all graphics are independently authored for NyaDB.
+	if s.connectionDraft.Kind == connections.MySQL &&
+		s.connectionDraft.MySQLAdvanced.HTTP.Enabled {
+		ui.Row(c).Height(96).Gap(7).AlignItems(ui.Center).Justify(ui.Center).Children(func() {
+			ui.Column(c).Width(75).Gap(3).AlignItems(ui.Center).Children(func() {
+				theme.Icon(c, "connection", 36, theme.Muted)
+				ui.Text(c, "NyaDB").FontSize(11)
+			})
+			ui.Box(c).Width(75).Height(2).Background(theme.Border)
+			ui.Column(c).Width(75).Gap(3).AlignItems(ui.Center).Children(func() {
+				theme.Icon(c, "ssh-server", 36, theme.Muted)
+				ui.Text(c, "HTTP 服务器").FontSize(11)
+			})
+			ui.Box(c).Width(75).Height(2).Background(theme.Border)
+			ui.Column(c).Width(75).Gap(3).AlignItems(ui.Center).Children(func() {
+				theme.Icon(c, "database", 36, theme.Muted)
+				ui.Text(c, "数据库").FontSize(11)
+			})
+		})
+		return
+	}
 	// The original inserts an SSH server node only when the tunnel is
 	// enabled. These icons are independently authored NyaDB assets.
 	if s.connectionDraft.Kind == connections.MySQL &&
-		s.connectionTabNames()[s.connectionEditorTab] == "SSH" &&
 		s.connectionDraft.MySQLAdvanced.SSH.Enabled {
 		ui.Row(c).Height(96).Gap(7).AlignItems(ui.Center).Justify(ui.Center).Children(func() {
 			ui.Column(c).Width(75).Gap(3).AlignItems(ui.Center).Children(func() {
@@ -215,6 +236,9 @@ func (s *State) connectionEditorOtherTab(c *ui.Context, width float32) {
 		case "SSH":
 			s.connectionMySQLSSH(c, width)
 			return
+		case "HTTP":
+			s.connectionMySQLHTTP(c, width)
+			return
 		}
 	}
 	ui.Column(c).Width(formWidth).Gap(12).Children(func() {
@@ -246,6 +270,7 @@ func (s *State) connectionEditorFooter(c *ui.Context) {
 			s.connectionSecret = ""
 			s.clearMySQLSSLPassphrase()
 			s.clearMySQLSSHSecrets()
+			s.clearMySQLHTTPSecrets()
 			s.clearMySQLInitialQuery()
 			s.connectionError = ""
 			s.updateConnectionWindowTitle()

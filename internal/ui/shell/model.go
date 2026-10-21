@@ -98,6 +98,12 @@ type State struct {
 	mysqlSSHPassword          string
 	mysqlSSHPassphrase        string
 	mysqlSSHSessionVersion    uint64
+	mysqlHTTPSubtab           int
+	mysqlHTTPProxyPort        string
+	mysqlHTTPPassword         string
+	mysqlHTTPProxyPassword    string
+	mysqlHTTPPassphrase       string
+	mysqlHTTPSessionVersion   uint64
 	connectionSecret          string
 	connectionError           string
 	connectionSelectedName    string
@@ -124,6 +130,7 @@ type State struct {
 	mysqlSettingsPicker func()
 	mysqlSSLFilePicker  func(MySQLSSLFile)
 	mysqlSSHKeyPicker   func()
+	mysqlHTTPFilePicker func(MySQLHTTPFile)
 }
 
 func New() *State {
