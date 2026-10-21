@@ -92,6 +92,8 @@ type State struct {
 	mysqlInitialQueryDraft    string
 	mysqlInitialQueryOpen     bool
 	mysqlInitialQueryError    string
+	mysqlSSLPassphrase        string
+	mysqlSSLSessionVersion    uint64
 	connectionSecret          string
 	connectionError           string
 	connectionSelectedName    string
@@ -116,6 +118,7 @@ type State struct {
 	deleteConfirm       bool
 	sqliteFilePicker    func()
 	mysqlSettingsPicker func()
+	mysqlSSLFilePicker  func(MySQLSSLFile)
 }
 
 func New() *State {

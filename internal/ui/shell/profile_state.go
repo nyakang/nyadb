@@ -65,6 +65,7 @@ func (s *State) startEditProfile() {
 	s.connectionEditorTab = 0
 	s.connectionKind = p.Kind
 	s.connectionDraft = p
+	s.clearMySQLSSLPassphrase()
 	s.clearMySQLInitialQuery()
 	if p.Kind == connections.MySQL {
 		s.initMySQLAdvancedInputs()
