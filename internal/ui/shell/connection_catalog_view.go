@@ -141,22 +141,29 @@ func (s *State) catalogSearchToolbar(c *ui.Context) {
 	ui.Row(c).Height(45).Padding(6, 13).Gap(8).AlignItems(ui.Center).Children(func() {
 		ui.Text(c, "选择一个连接类型：").FontSize(12)
 		ui.Box(c).Grow(1)
-		gridBackground := theme.Panel
-		listBackground := theme.Panel
-		if s.connectionGridMode {
-			gridBackground = theme.Accent
-		} else {
-			listBackground = theme.Accent
+		selected := 0 // Grid first, list second.
+		if !s.connectionGridMode {
+			selected = 1
 		}
-		gridButton := ui.ButtonBase(c).Label("网格视图").Width(28).Height(27).Background(gridBackground)
-		gridButton.Children(func() { theme.Icon(c, "catalog-grid", 18, theme.Text) })
-		if gridButton.Clicked() {
-			s.connectionGridMode = true
-		}
-		listButton := ui.ButtonBase(c).Label("列表视图").Width(28).Height(27).Background(listBackground)
-		listButton.Children(func() { theme.Icon(c, "catalog-list", 18, theme.Text) })
-		if listButton.Clicked() {
-			s.connectionGridMode = false
+		segments := ui.SegmentedBase(c, &selected, 2)
+		segments.Track.Label("连接类型视图").Height(31).Padding(2).Gap(2).
+			Radius(5).Background(theme.Panel).Border(1, theme.Border).Children(func() {
+			for i, symbol := range []string{"catalog-grid", "catalog-list"} {
+				label := "网格视图"
+				if i == 1 {
+					label = "列表视图"
+				}
+				segment := segments.Segment(i).Label(label).Width(28).Height(27).Radius(4)
+				if selected == i {
+					segment.Background(theme.Accent)
+				}
+				segment.Children(func() {
+					theme.Icon(c, symbol, 18, theme.Text)
+				})
+			}
+		})
+		if segments.Track.Changed() {
+			s.connectionGridMode = selected == 0
 		}
 		ui.SearchField(c, &s.connectionSearch).Label("搜索连接类型").Placeholder("搜索").Width(176)
 	})
