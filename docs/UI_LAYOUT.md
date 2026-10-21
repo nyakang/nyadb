@@ -1,6 +1,9 @@
 # NyaDB UI-1 / UI-2 — Native workbench layout
 
-Implementation date: 2026-10-20. Base: MyGo v0.5.5.
+Implementation date: 2026-10-20. Initial base: MyGo v0.5.5; current implementation uses v0.6.0.
+
+For the 2026-10-21 native-component follow-up and verification, see
+[MAIN_WORKBENCH_NATIVE_COMPONENTS_2026-10-21.md](MAIN_WORKBENCH_NATIVE_COMPONENTS_2026-10-21.md).
 
 Reference: a user-supplied Navicat Premium screenshot. The layout and
 interaction patterns are used as inspiration; NyaDB uses its own name, icons
@@ -22,7 +25,7 @@ NYADB_WRITE_PREVIEW=1 go test ./internal/ui/shell -run TestGenerateUIPreview -v
 
 ## UI-1: layout
 
-- Top: compact menu-style row and colored icon command toolbar.
+- Top: compact MyGo popup menu row and colored icon command toolbar with native overflow handling.
 - Main: a connection explorer with search, resizable central workspace, and
   optional right information panel, all backed by `ui.SplitPercent`.
 - Center: permanent Objects tab, context commands and object table; SQL editor
@@ -73,7 +76,8 @@ server-side pagination benchmark.
   and result paging are **not yet implemented**.
 - Object toolbar actions such as import/export and structure editing are
   intentionally status-only placeholders.
-- Menu-style row is an in-window mock command row, not a full native OS menu.
+- Menu row uses MyGo's native popup-menu interactions inside the content area,
+  rather than platform-dependent OS menubar placement; unavailable commands are disabled.
 - Layout sizes are retained only in memory for this run; persistence is M1.
 - Physical OS GUI testing is still required on Windows, Linux and macOS:
   check titlebar, IME, DPI scaling, pane drag, keyboard navigation, tooltip

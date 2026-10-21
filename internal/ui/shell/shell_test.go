@@ -38,7 +38,7 @@ func TestOpenQueryAndExecuteMock(t *testing.T) {
 	if s.demoRuns != 1 || !strings.Contains(s.status, "没有访问数据库") {
 		t.Fatalf("unexpected query status: %s", s.status)
 	}
-	if err := tt.Click("关闭页签"); err != nil {
+	if err := tt.Click("关闭 SQL 1"); err != nil {
 		t.Fatal(err)
 	}
 	if len(s.tabs) != 1 || s.activeTab != 0 || s.currentTab().kind != tabObjects {
@@ -150,5 +150,70 @@ func TestTabIDsAndClose(t *testing.T) {
 	s.closeActive()
 	if len(s.tabs) != 2 {
 		t.Fatal("Objects tab must not close")
+	}
+}
+
+func TestWorkbenchMenuCommands(t *testing.T) {
+	s := New()
+	tt := ui.NewTester(s.View, 1280, 800)
+	if err := tt.Click("文件"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("新建查询"); err != nil {
+		t.Fatal(err)
+	}
+	if len(s.tabs) != 2 || s.currentTab().kind != tabSQL {
+		t.Fatalf("native menu did not open an SQL tab: %+v", s.tabs)
+	}
+	if err := tt.Click("查看"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("信息面板"); err != nil {
+		t.Fatal(err)
+	}
+	if s.inspectorOn {
+		t.Fatal("View menu should hide inspector")
+	}
+}
+
+func TestWorkbenchTabCloseKeepsSelectionIdentity(t *testing.T) {
+	s := New()
+	s.openQuery() // id=2
+	s.openQuery() // id=3, active
+	tt := ui.NewTester(s.View, 1280, 800)
+	if err := tt.Click("关闭 SQL 1"); err != nil {
+		t.Fatal(err)
+	}
+	if len(s.tabs) != 2 || s.tabs[s.activeTab].id != 3 {
+		t.Fatalf("closing inactive tab changed active document: active=%d tabs=%+v", s.activeTab, s.tabs)
+	}
+	s.closeTab(0)
+	if len(s.tabs) != 2 {
+		t.Fatal("the permanent Objects tab should never close")
+	}
+	s.openQuery()
+	s.closeOtherTabs(1)
+	if len(s.tabs) != 2 || s.tabs[s.activeTab].id != 3 {
+		t.Fatalf("closeOtherTabs did not preserve requested document: %+v", s.tabs)
+	}
+}
+
+func TestWorkbenchToolbarNarrowWidth(t *testing.T) {
+	s := New()
+	tt := ui.NewTester(s.View, 840, 560)
+	if !tt.HasText("连接") || !tt.HasText("对象") {
+		t.Fatal("narrow workbench lost critical navigation")
+	}
+	if err := tt.Click("新建查询"); err != nil {
+		t.Fatal(err)
+	}
+	if s.currentTab().kind != tabSQL {
+		t.Fatal("narrow toolbar could not create SQL tab")
+	}
+	if err := tt.Click("信息"); err != nil {
+		t.Fatal(err)
+	}
+	if s.inspectorOn {
+		t.Fatal("info toggle must remain accessible at narrow width")
 	}
 }

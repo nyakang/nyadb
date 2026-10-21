@@ -54,10 +54,12 @@ var objectColumns = []ui.TableColumn{
 
 // State is UI state owned by the main thread. Never retain ui.Element values.
 type State struct {
-	sidebarPercent float32
-	centerPercent  float32
-	editorPercent  float32
-	inspectorOn    bool
+	sidebarPercent       float32
+	centerPercent        float32
+	editorPercent        float32
+	inspectorOn          bool
+	inspectorDetailsOpen bool
+	inspectorObjectsOpen bool
 
 	explorerTree ui.OutlineState[string]
 	explorerRow  int
@@ -118,6 +120,8 @@ func New() *State {
 		centerPercent:           75,
 		editorPercent:           48,
 		inspectorOn:             true,
+		inspectorDetailsOpen:    true,
+		inspectorObjectsOpen:    true,
 		connectionGridMode:      true,
 		connectionTreeOpen:      map[string]bool{},
 		connectionEngineFilters: map[string]bool{},
@@ -171,15 +175,38 @@ func (s *State) openData(name string) {
 }
 
 func (s *State) closeActive() {
-	if s.activeTab == 0 || len(s.tabs) == 1 {
+	s.closeTab(s.activeTab)
+}
+
+// closeTab uses an index from the current frame. Closing an inactive tab
+// must keep the active document selected by identity, not by stale position.
+func (s *State) closeTab(index int) {
+	if index <= 0 || index >= len(s.tabs) {
 		return // the Objects tab is permanent
 	}
-	name := s.tabs[s.activeTab].title
-	s.tabs = append(s.tabs[:s.activeTab], s.tabs[s.activeTab+1:]...)
-	if s.activeTab >= len(s.tabs) {
+	name := s.tabs[index].title
+	s.tabs = append(s.tabs[:index], s.tabs[index+1:]...)
+	if s.activeTab > index {
+		s.activeTab--
+	} else if s.activeTab == index && s.activeTab >= len(s.tabs) {
 		s.activeTab = len(s.tabs) - 1
 	}
 	s.status = "已关闭页签 " + name
+}
+
+// closeOtherTabs keeps the Objects tab and one selected document.
+func (s *State) closeOtherTabs(index int) {
+	if index < 0 || index >= len(s.tabs) {
+		return
+	}
+	if index == 0 {
+		s.tabs = s.tabs[:1]
+		s.activeTab = 0
+	} else {
+		s.tabs = []*tab{s.tabs[0], s.tabs[index]}
+		s.activeTab = 1
+	}
+	s.status = "已关闭其他页签"
 }
 
 func (s *State) showObjects(kind string) {
