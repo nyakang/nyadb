@@ -169,3 +169,13 @@ credentials. See `docs/MYSQL_NOTES_TAB_DIFFERENTIAL_2026-10-21.md`.
 All seven MySQL editor tabs now have a first independent UI implementation (I).
 Visual and behavior parity (V) remains incomplete. The next prioritized work
 is tracked in `docs/MYSQL_EDITOR_VISUAL_REFINEMENT_PLAN_2026-10-21.md`.
+
+### Shared MySQL connection-window chrome refinement (2026-10-21)
+
+The common 900×700 MyGo editor has a locally scoped blue-gray palette,
+updated main-tab border, normalized footer-button height/spacing, and
+re-centered independent connection/tunnel diagrams. All seven tabs were
+visited in a Linux Xvfb GUI session. A headless UI regression test checks
+shared controls and cross-tab tunnel state. Unimplemented profile-list
+navigation is visibly disabled rather than made functional without evidence.
+See `docs/MYSQL_CONNECTION_CHROME_DIFFERENTIAL_2026-10-21.md`.
