@@ -11,6 +11,7 @@ import (
 )
 
 func (s *State) openConnectionDialog() {
+	s.cancelMySQLConnectionTest()
 	s.resetConnectionConfigurations()
 	s.connectionDialog = true
 	s.connectionNameFocusPending = false
@@ -35,6 +36,7 @@ func (s *State) openConnectionDialog() {
 }
 
 func (s *State) closeConnectionDialog() {
+	s.cancelMySQLConnectionTest()
 	s.resetConnectionConfigurations()
 	s.connectionDialog = false
 	s.connectionSecret = ""
@@ -54,6 +56,7 @@ func (s *State) chooseConnectionKind(kind connections.Kind) {
 }
 
 func (s *State) nextConnectionStep() {
+	s.cancelMySQLConnectionTest()
 	s.resetConnectionConfigurations()
 	if s.connectionKind == "" {
 		if !strings.Contains(s.connectionError, "尚未支持") {

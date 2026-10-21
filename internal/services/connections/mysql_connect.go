@@ -1,0 +1,114 @@
+package connections
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"net"
+	"strings"
+	"time"
+
+	mysql "github.com/go-sql-driver/mysql"
+)
+
+var ErrMySQLUnsupported = errors.New("MySQL connection setting not supported yet")
+
+// DirectMySQLConfig builds a TCP-only MySQL driver configuration without ever
+// formatting a credential-bearing DSN or storing credentials in Profile.
+// Unsupported security/tunneling settings fail closed before any network I/O.
+func DirectMySQLConfig(s ActiveSettings, password string) (*mysql.Config, error) {
+	if strings.TrimSpace(s.Host) == "" || s.Port == 0 ||
+		strings.ContainsAny(s.Host, "@/?!#\r\n\x00") {
+		return nil, fmt.Errorf("%w: invalid MySQL host or port", ErrInvalid)
+	}
+	a, err := normalizeMySQLAdvanced(s.MySQLAdvanced)
+	if err != nil {
+		return nil, err
+	}
+	switch {
+	case a.SSL.Enabled || (s.TLSMode != "" && s.TLSMode != "disable"):
+		return nil, fmt.Errorf("%w: TLS/SSL; encrypted connections are not available in this phase", ErrMySQLUnsupported)
+	case a.SSH.Enabled:
+		return nil, fmt.Errorf("%w: SSH tunnel", ErrMySQLUnsupported)
+	case a.HTTP.Enabled:
+		return nil, fmt.Errorf("%w: HTTP tunnel", ErrMySQLUnsupported)
+	case a.NamedPipe:
+		return nil, fmt.Errorf("%w: named pipe", ErrMySQLUnsupported)
+	case a.ClientDriver != "默认":
+		return nil, fmt.Errorf("%w: legacy client driver", ErrMySQLUnsupported)
+	case a.Charset != "自动" && a.Charset != "None":
+		return nil, fmt.Errorf("%w: custom character set", ErrMySQLUnsupported)
+	case a.Compression || a.KeepAlive || a.AutoConnect || a.LimitSessions:
+		return nil, fmt.Errorf("%w: advanced connection behavior", ErrMySQLUnsupported)
+	case a.Compatibility.Enabled || a.Compatibility.ForceSQLMode ||
+		a.Compatibility.ForceLowerCase || a.Compatibility.ForceNDB ||
+		a.Compatibility.ForceDatabaseMethod || a.Compatibility.ForceViewMethod:
+		return nil, fmt.Errorf("%w: compatibility overrides", ErrMySQLUnsupported)
+	case a.SettingsLocation != "":
+		return nil, fmt.Errorf("%w: custom settings location", ErrMySQLUnsupported)
+	}
+	cfg := mysql.NewConfig()
+	cfg.Net = "tcp"
+	cfg.Addr = net.JoinHostPort(strings.Trim(s.Host, "[]"), fmt.Sprint(s.Port))
+	cfg.User, cfg.Passwd = s.Username, password
+	cfg.DBName = s.Database
+	// Never allow cleartext or insecure legacy authentication plugins.
+	cfg.AllowCleartextPasswords = false
+	cfg.AllowOldPasswords = false
+	cfg.AllowFallbackToPlaintext = false
+	cfg.MultiStatements = false
+	cfg.AllowAllFiles = false
+	// Even if "connect timeout" is unchecked, bound a one-shot test instead
+	// of accepting the OS's potentially unbounded TCP timeout.
+	cfg.Timeout = 10 * time.Second
+	if a.ConnectTimeout {
+		cfg.Timeout = time.Duration(a.ConnectTimeoutSeconds) * time.Second
+	}
+	if a.ReadTimeout {
+		cfg.ReadTimeout = time.Duration(a.ReadTimeoutSeconds) * time.Second
+	}
+	if a.WriteTimeout {
+		cfg.WriteTimeout = time.Duration(a.WriteTimeoutSeconds) * time.Second
+	}
+	return cfg, nil
+}
+
+// OpenDirectMySQL establishes a real, authenticated MySQL connection.
+// The caller owns the returned *sql.DB and MUST Close it. No SQL statements
+// are executed: PingContext performs the transport and authentication check.
+// Its context controls the test deadline and cancels the handshake.
+func OpenDirectMySQL(ctx context.Context, s ActiveSettings, password string) (*sql.DB, error) {
+	cfg, err := DirectMySQLConfig(s, password)
+	if err != nil {
+		return nil, err
+	}
+	connector, err := mysql.NewConnector(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("create MySQL connector: %w", err)
+	}
+	db := sql.OpenDB(connector)
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
+	db.SetConnMaxLifetime(3 * time.Minute)
+	testCtx, cancel := context.WithTimeout(ctx, cfg.Timeout)
+	defer cancel()
+	if err = db.PingContext(testCtx); err != nil {
+		_ = db.Close()
+		if testCtx.Err() != nil {
+			return nil, testCtx.Err()
+		}
+		return nil, err
+	}
+	return db, nil
+}
+
+// TestDirectMySQLConnection opens, authenticates and closes a single session.
+// Only call after an explicit user action, never when browsing or saving.
+func TestDirectMySQLConnection(ctx context.Context, s ActiveSettings, password string) error {
+	db, err := OpenDirectMySQL(ctx, s, password)
+	if err != nil {
+		return err
+	}
+	return db.Close()
+}

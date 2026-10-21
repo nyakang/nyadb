@@ -20,6 +20,7 @@ var (
 // The connection editor is a native MyGo view. Layout and tab order are based
 // on observed Navicat 18 UI behavior, not on the original application's code.
 func (s *State) connectionEditor(c *ui.Context) {
+	s.consumeMySQLConnectionTest()
 	applyConnectionEditorFormTheme(c)
 	w, h := c.Size()
 	if s.showConnectionWindow == nil {
@@ -54,6 +55,7 @@ func (s *State) connectionEditor(c *ui.Context) {
 					if s.connectionError != "" {
 						ui.Text(c, s.connectionError).FontSize(12).TextColor(theme.Gold).Padding(15, 0)
 					}
+					s.connectionTestStatus(c)
 				})
 			})
 		})
@@ -193,6 +195,13 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 			ui.Text(c, "密码仅在当前窗口内保留；安全保存将在密钥库接入后开放。").
 				FontSize(11).TextColor(theme.Muted)
 		})
+		if p.Kind == connections.MySQL {
+			ui.Row(c).Gap(0).Children(func() {
+				ui.Box(c).Width(labelWidth)
+				ui.Text(c, "当前仅支持普通 TCP 直连测试，未启用 TLS；请勿发送生产环境密码。").
+					FontSize(11).TextColor(theme.Gold)
+			})
+		}
 	})
 }
 
@@ -295,9 +304,16 @@ func (s *State) connectionEditorFooter(c *ui.Context) {
 		ui.Button(c, "URI").Width(76).Height(26).
 			Background(connectionEditorButton).Border(1, connectionEditorBorder).
 			Disabled(true).Label("URI 导入尚未支持")
-		ui.Button(c, "测试连接").Width(155).Height(26).
-			Background(connectionEditorButton).Border(1, connectionEditorBorder).Disabled(true).
-			Label("测试连接待数据库驱动接入")
+		if s.connectionTesting {
+			if ui.Button(c, "取消测试").Width(155).Height(26).Background(connectionEditorButton).Border(1, connectionEditorBorder).Clicked() {
+				s.cancelMySQLConnectionTest()
+				s.connectionTestMessage = "连接测试已取消"
+			}
+		} else if ui.Button(c, "测试连接").Width(155).Height(26).
+			Background(connectionEditorButton).Border(1, connectionEditorBorder).
+			Disabled(s.connectionDraft.Kind != connections.MySQL).Label("测试当前 MySQL 配置").Clicked() {
+			s.startMySQLConnectionTest(c.Services())
+		}
 		ui.Box(c).Grow(1)
 		if s.connectionDraft.ID == 0 {
 			if ui.Button(c, "上一步").Width(80).Height(26).

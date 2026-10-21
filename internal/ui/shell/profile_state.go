@@ -60,6 +60,7 @@ func (s *State) startEditProfile() {
 		s.status = "请先选择连接"
 		return
 	}
+	s.cancelMySQLConnectionTest()
 	s.resetConnectionConfigurations()
 	s.connectionDialog = true
 	s.connectionStep = 1
