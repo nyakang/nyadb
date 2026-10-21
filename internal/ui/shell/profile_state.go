@@ -62,6 +62,7 @@ func (s *State) startEditProfile() {
 	}
 	s.connectionDialog = true
 	s.connectionStep = 1
+	s.connectionEditorTab = 0
 	s.connectionKind = p.Kind
 	s.connectionDraft = p
 	s.connectionPort = strconv.Itoa(int(p.Port))
