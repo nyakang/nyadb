@@ -79,6 +79,15 @@ func (s *State) sidebar(c *ui.Context) {
 						theme.Icon(c, "database", 15, theme.Muted)
 					}
 					ui.Text(c, name).SingleLine().FontSize(12)
+				}).ContextMenu(func(m *ui.Menu) {
+					if m.Item("选择 " + name).Chosen() {
+						s.explorerName = name
+						s.status = "已选择：" + name + "（模拟连接）"
+					}
+					if m.Item("新建查询").Chosen() {
+						s.explorerName = name
+						s.openQuery()
+					}
 				})
 			}).Grow(1)
 			if s.explorerRow >= 0 && s.explorerRow < s.explorerTree.Rows() {

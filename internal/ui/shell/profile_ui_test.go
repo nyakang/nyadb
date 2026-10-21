@@ -149,3 +149,55 @@ func TestProfileDuplicateNameError(t *testing.T) {
 		t.Fatal("duplicate name should display error without closing dialog")
 	}
 }
+
+func TestProfileContextMenuTargetsRightClickedConnection(t *testing.T) {
+	s, tt, service, _ := profileTestState(t)
+	first, err := service.Create(context.Background(), connections.Profile{
+		Name: "First", Kind: connections.SQLite, Database: "/tmp/first.sqlite",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := service.Create(context.Background(), connections.Profile{
+		Name: "Second", Kind: connections.SQLite, Database: "/tmp/second.sqlite",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.loadProfiles()
+	s.selectedProfileID = first.ID
+	tt.Frame()
+	if err := tt.RightClick("Second"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("编辑连接"); err != nil {
+		t.Fatal(err)
+	}
+	if s.selectedProfileID != second.ID || !s.connectionDialog || s.connectionDraft.ID != second.ID {
+		t.Fatalf("context edit did not target second connection: selected=%d draft=%d", s.selectedProfileID, s.connectionDraft.ID)
+	}
+}
+
+func TestProfileInspectorDisclosure(t *testing.T) {
+	s, tt, service, _ := profileTestState(t)
+	_, err := service.Create(context.Background(), connections.Profile{
+		Name: "Local", Kind: connections.SQLite, Database: "/tmp/local.sqlite",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.loadProfiles()
+	tt.Frame()
+	if err := tt.Click("Local"); err != nil {
+		t.Fatal(err)
+	}
+	if !s.inspectorDetailsOpen {
+		t.Fatal("inspector details should start expanded")
+	}
+	if err := tt.Click("基本信息"); err != nil {
+		t.Fatal(err)
+	}
+	if s.inspectorDetailsOpen {
+		t.Fatal("clicking disclosure must collapse details")
+	}
+}

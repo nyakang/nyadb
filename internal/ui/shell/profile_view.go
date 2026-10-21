@@ -45,18 +45,27 @@ func (s *State) profileSidebar(c *ui.Context) {
 				ui.Row(c).AlignItems(ui.Center).Gap(6).Children(func() {
 					theme.Icon(c, "database", 15, theme.Blue)
 					ui.Text(c, name).SingleLine().FontSize(12)
+				}).ContextMenu(func(m *ui.Menu) {
+					if m.Item("编辑连接").Chosen() {
+						s.selectProfileByName(name)
+						s.startEditProfile()
+					}
+					if m.Item("复制连接").Chosen() {
+						s.selectProfileByName(name)
+						s.duplicateProfile()
+					}
+					if m.Item("删除连接").Chosen() {
+						s.selectProfileByName(name)
+						s.confirmDeleteProfile()
+					}
+					m.Separator()
+					if m.Item("刷新连接列表").Chosen() {
+						s.loadProfiles()
+					}
 				})
 			}).Grow(1)
 			if s.explorerRow >= 0 && s.explorerRow < s.explorerTree.Rows() {
-				name := s.explorerTree.Item(s.explorerRow)
-				for _, p := range s.profileEntries {
-					if p.Name == name && p.ID != s.selectedProfileID {
-						s.selectedProfileID = p.ID
-						s.explorerName = p.Name
-						s.status = "已选择连接：" + name + "（未连接）"
-						break
-					}
-				}
+				s.selectProfileByName(s.explorerTree.Item(s.explorerRow))
 			}
 		})
 		ui.Column(c).Padding(6).BorderWidth(1, 0, 0, 0).BorderColor(theme.Border).Gap(5).Children(func() {
@@ -81,6 +90,28 @@ func (s *State) profileSidebar(c *ui.Context) {
 			}
 		})
 	})
+}
+
+// selectProfileByName ensures context commands target the right-clicked row,
+// even when it is not the previously selected connection.
+func (s *State) selectProfileByName(name string) {
+	for _, p := range s.profileEntries {
+		if p.Name != name {
+			continue
+		}
+		if s.selectedProfileID != p.ID {
+			s.selectedProfileID = p.ID
+			s.explorerName = p.Name
+			s.status = "已选择连接：" + name + "（未连接）"
+		}
+		for i, visible := range s.profileRoots() {
+			if visible == name {
+				s.explorerRow = i
+				break
+			}
+		}
+		return
+	}
 }
 
 func (s *State) profileRoots() []string {
@@ -113,18 +144,19 @@ func (s *State) profileInspector(c *ui.Context) {
 			ui.Text(c, p.Name).Bold().FontSize(16)
 			ui.Text(c, "配置档案 / 未连接").FontSize(11).TextColor(theme.Muted)
 			ui.Box(c).Height(1).Background(theme.Border)
-			ui.Text(c, "基本信息").Bold().TextColor(theme.Blue)
-			s.property(c, "名称", p.Name)
-			s.property(c, "类型", connectionKindName(p.Kind))
-			s.property(c, "状态", "未连接")
-			if p.Kind == connections.SQLite {
-				s.property(c, "文件", p.Database)
-			} else {
-				s.property(c, "主机", p.Host)
-				s.property(c, "端口", fmt.Sprint(p.Port))
-				s.property(c, "用户", p.Username)
-				s.property(c, "数据库", p.Database)
-			}
+			ui.Collapsible(c, "基本信息", &s.inspectorDetailsOpen, func() {
+				s.property(c, "名称", p.Name)
+				s.property(c, "类型", connectionKindName(p.Kind))
+				s.property(c, "状态", "未连接")
+				if p.Kind == connections.SQLite {
+					s.property(c, "文件", p.Database)
+				} else {
+					s.property(c, "主机", p.Host)
+					s.property(c, "端口", fmt.Sprint(p.Port))
+					s.property(c, "用户", p.Username)
+					s.property(c, "数据库", p.Database)
+				}
+			})
 			ui.Box(c).Height(1).Background(theme.Border)
 			ui.Text(c, "连接档案已保存，但未建立数据库会话。").TextColor(theme.Muted).FontSize(11)
 		})
