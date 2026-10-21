@@ -30,6 +30,7 @@ func (s *State) updateConnectionWindowTitle() {
 func (s *State) ConnectionWindowClosed() {
 	s.connectionDialog = false
 	s.connectionSecret = ""
+	s.clearMySQLInitialQuery()
 	s.connectionError = ""
 }
 

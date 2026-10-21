@@ -10,23 +10,24 @@ import (
 // This data is saved as configuration only; the database driver has not
 // implemented these behaviors yet. No passwords, credentials or raw DSNs.
 type MySQLAdvanced struct {
-	SettingsLocation      string `json:"settingsLocation,omitempty"`
-	ClientDriver          string `json:"clientDriver"`
-	Charset               string `json:"charset"`
-	KeepAlive             bool   `json:"keepAlive,omitempty"`
-	KeepAliveSeconds      int    `json:"keepAliveSeconds"`
-	ConnectTimeout        bool   `json:"connectTimeout"`
-	ConnectTimeoutSeconds int    `json:"connectTimeoutSeconds"`
-	ReadTimeout           bool   `json:"readTimeout,omitempty"`
-	ReadTimeoutSeconds    int    `json:"readTimeoutSeconds"`
-	WriteTimeout          bool   `json:"writeTimeout"`
-	WriteTimeoutSeconds   int    `json:"writeTimeoutSeconds"`
-	Compression           bool   `json:"compression,omitempty"`
-	AutoConnect           bool   `json:"autoConnect,omitempty"`
-	NamedPipe             bool   `json:"namedPipe,omitempty"`
-	PipeName              string `json:"pipeName,omitempty"`
-	LimitSessions         bool   `json:"limitSessions,omitempty"`
-	MaxSessions           int    `json:"maxSessions"`
+	SettingsLocation      string             `json:"settingsLocation,omitempty"`
+	ClientDriver          string             `json:"clientDriver"`
+	Charset               string             `json:"charset"`
+	KeepAlive             bool               `json:"keepAlive,omitempty"`
+	KeepAliveSeconds      int                `json:"keepAliveSeconds"`
+	ConnectTimeout        bool               `json:"connectTimeout"`
+	ConnectTimeoutSeconds int                `json:"connectTimeoutSeconds"`
+	ReadTimeout           bool               `json:"readTimeout,omitempty"`
+	ReadTimeoutSeconds    int                `json:"readTimeoutSeconds"`
+	WriteTimeout          bool               `json:"writeTimeout"`
+	WriteTimeoutSeconds   int                `json:"writeTimeoutSeconds"`
+	Compression           bool               `json:"compression,omitempty"`
+	AutoConnect           bool               `json:"autoConnect,omitempty"`
+	NamedPipe             bool               `json:"namedPipe,omitempty"`
+	PipeName              string             `json:"pipeName,omitempty"`
+	LimitSessions         bool               `json:"limitSessions,omitempty"`
+	MaxSessions           int                `json:"maxSessions"`
+	Compatibility         MySQLCompatibility `json:"compatibility,omitempty"`
 }
 
 func DefaultMySQLAdvanced() MySQLAdvanced {
@@ -36,6 +37,7 @@ func DefaultMySQLAdvanced() MySQLAdvanced {
 		ConnectTimeout:   true, ConnectTimeoutSeconds: 30,
 		ReadTimeoutSeconds: 30, WriteTimeout: true,
 		WriteTimeoutSeconds: 30, MaxSessions: 10,
+		Compatibility: DefaultMySQLCompatibility(),
 	}
 }
 
@@ -56,6 +58,12 @@ var MySQLCharsets = []string{
 func normalizeMySQLAdvanced(a MySQLAdvanced) (MySQLAdvanced, error) {
 	if a == (MySQLAdvanced{}) {
 		a = DefaultMySQLAdvanced()
+	}
+	if a.Compatibility == (MySQLCompatibility{}) {
+		a.Compatibility = DefaultMySQLCompatibility()
+	}
+	if err := validateMySQLCompatibility(a.Compatibility); err != nil {
+		return a, err
 	}
 	if a.ClientDriver != "默认" && a.ClientDriver != "旧版" {
 		return a, fmt.Errorf("%w: unsupported MySQL client driver", ErrInvalid)
