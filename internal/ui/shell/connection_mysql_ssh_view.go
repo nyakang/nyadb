@@ -78,8 +78,7 @@ func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
 	active := ssh.Enabled
 	ui.Column(c).Width(formWidth).Gap(0).Children(func() {
 		connectionFormRow(c).Children(func() {
-			ui.Checkbox(c, &ssh.Enabled, "使用 SSH 隧道").Label("使用 SSH 隧道").
-				Disabled(s.connectionDraft.MySQLAdvanced.HTTP.Enabled)
+			connectionFormCheckbox(c, &ssh.Enabled, "使用 SSH 隧道", s.connectionDraft.MySQLAdvanced.HTTP.Enabled)
 		})
 		s.mysqlSSHInputRow(c, "主机：", &ssh.Host, labelWidth, fieldWidth, active)
 		connectionFormRow(c).Children(func() {
@@ -101,8 +100,7 @@ func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
 			connectionFormRow(c).Children(func() {
 				ui.Box(c).Width(labelWidth)
 				save := false
-				ui.Checkbox(c, &save, "保存密码").Label("保存密码（需要系统密钥库）").
-					Disabled(true)
+				connectionFormCheckbox(c, &save, "保存密码", true)
 			})
 		}
 		if keyMode {
@@ -119,8 +117,7 @@ func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
 			connectionFormRow(c).Children(func() {
 				ui.Box(c).Width(labelWidth)
 				save := false
-				ui.Checkbox(c, &save, "Save Passphrase").
-					Label("Save Passphrase（需要系统密钥库）").Disabled(true)
+				connectionFormCheckbox(c, &save, "Save Passphrase", true)
 			})
 		}
 		ui.Row(c).Height(25).Children(func() {

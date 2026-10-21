@@ -95,14 +95,11 @@ func (s *State) connectionMySQLHTTP(c *ui.Context, width float32) {
 	active := cfg.Enabled
 	ui.Column(c).Width(formWidth).Gap(1).Children(func() {
 		connectionFormRow(c).Children(func() {
-			ui.Checkbox(c, &cfg.Enabled, "使用 HTTP 隧道").
-				Label("使用 HTTP 隧道").
-				Disabled(s.connectionDraft.MySQLAdvanced.SSH.Enabled)
+			connectionFormCheckbox(c, &cfg.Enabled, "使用 HTTP 隧道", s.connectionDraft.MySQLAdvanced.SSH.Enabled)
 		})
 		s.mysqlHTTPInput(c, "隧道网址：", &cfg.URL, labelWidth, fieldWidth, active)
 		connectionFormRow(c).Children(func() {
-			ui.Checkbox(c, &cfg.Base64Queries, "使用 base64 编码传出查询").
-				Label("使用 base64 编码传出查询").Disabled(!active)
+			connectionFormCheckbox(c, &cfg.Base64Queries, "使用 base64 编码传出查询", !active)
 		})
 		ui.Row(c).Height(29).Gap(0).Children(func() {
 			tabs := ui.TabsBase(c, &s.mysqlHTTPSubtab, 2)
@@ -139,16 +136,14 @@ func (s *State) mysqlHTTPVerification(c *ui.Context, cfg *connections.MySQLHTTP,
 	labelWidth, fieldWidth float32, active bool,
 ) {
 	connectionFormRow(c).Children(func() {
-		ui.Checkbox(c, &cfg.PasswordAuth, "使用密码验证").
-			Label("使用密码验证").Disabled(!active)
+		connectionFormCheckbox(c, &cfg.PasswordAuth, "使用密码验证", !active)
 	})
 	passwordEnabled := active && cfg.PasswordAuth
 	s.mysqlHTTPInput(c, "用户名：", &cfg.Username, labelWidth, 200, passwordEnabled)
 	s.mysqlHTTPPasswordRow(c, "密码：", &s.mysqlHTTPPassword, labelWidth, 200, passwordEnabled)
 	s.mysqlHTTPSavePlaceholder(c, "保存密码", labelWidth)
 	connectionFormRow(c).Children(func() {
-		ui.Checkbox(c, &cfg.CertificateAuth, "使用证书验证").
-			Label("使用证书验证").Disabled(!active)
+		connectionFormCheckbox(c, &cfg.CertificateAuth, "使用证书验证", !active)
 	})
 	certEnabled := active && cfg.CertificateAuth
 	s.mysqlHTTPFileRow(c, "客户端密钥：", &cfg.ClientKey, MySQLHTTPClientKey,
@@ -164,7 +159,7 @@ func (s *State) mysqlHTTPProxy(c *ui.Context, cfg *connections.MySQLHTTP,
 	labelWidth, fieldWidth float32, active bool,
 ) {
 	connectionFormRow(c).Children(func() {
-		ui.Checkbox(c, &cfg.ProxyEnabled, "使用代理").Label("使用代理").Disabled(!active)
+		connectionFormCheckbox(c, &cfg.ProxyEnabled, "使用代理", !active)
 	})
 	proxyActive := active && cfg.ProxyEnabled
 	s.mysqlHTTPInput(c, "主机：", &cfg.ProxyHost, labelWidth, fieldWidth, proxyActive)
@@ -199,7 +194,7 @@ func (s *State) mysqlHTTPSavePlaceholder(c *ui.Context, name string, labelWidth 
 	ui.Row(c).Height(27).AlignItems(ui.Center).Children(func() {
 		ui.Box(c).Width(labelWidth)
 		save := false
-		ui.Checkbox(c, &save, name).Label(name + "（需要系统密钥库）").Disabled(true)
+		connectionFormCheckbox(c, &save, name, true)
 	})
 }
 

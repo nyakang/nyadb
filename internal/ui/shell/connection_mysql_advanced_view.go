@@ -92,8 +92,7 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 		s.mysqlAdvancedToggle(c, &a.Compression, "使用压缩")
 		s.mysqlAdvancedToggle(c, &a.AutoConnect, "自动连接")
 		connectionFormRow(c).Children(func() {
-			ui.Checkbox(c, &a.NamedPipe, "使用命名管道，套接字：").
-				Label("使用命名管道，套接字").Width(labelWidth).FontSize(11)
+			connectionFormCheckboxCompact(c, &a.NamedPipe, "使用命名管道，套接字：", false).Width(labelWidth)
 			connectionFormTextInput(c, &a.PipeName, "命名管道或套接字", 200, !a.NamedPipe, false)
 		})
 		s.mysqlAdvancedNumberRow(c, &a.LimitSessions, "限制连接会话：",
@@ -117,7 +116,7 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 
 func (s *State) mysqlAdvancedToggle(c *ui.Context, v *bool, label string) {
 	connectionFormRow(c).Children(func() {
-		ui.Checkbox(c, v, label).Label(label)
+		connectionFormCheckbox(c, v, label, false)
 	})
 }
 
@@ -125,7 +124,7 @@ func (s *State) mysqlAdvancedNumberRow(
 	c *ui.Context, enabled *bool, label string, value *string, labelWidth float32,
 ) {
 	connectionFormRow(c).Children(func() {
-		ui.Checkbox(c, enabled, label).Label(label).Width(labelWidth)
+		connectionFormCheckboxCompact(c, enabled, label, false).Width(labelWidth)
 		connectionFormTextInput(c, value, label+"数值", 80, !*enabled, false)
 	})
 }
@@ -138,7 +137,7 @@ func (s *State) connectionMySQLCompatibility(c *ui.Context, width float32) {
 	labelWidth := float32(216)
 	ui.Column(c).Width(formWidth).Gap(5).Children(func() {
 		ui.Row(c).Height(26).AlignItems(ui.Center).Children(func() {
-			ui.Checkbox(c, &compat.Enabled, "使用兼容模式").Label("使用兼容模式")
+			connectionFormCheckbox(c, &compat.Enabled, "使用兼容模式", false)
 		})
 		s.compatSelectRow(c, "强制 lower_case_table_names 为：",
 			&compat.ForceLowerCase, &compat.LowerCaseTableNames,
@@ -148,9 +147,7 @@ func (s *State) connectionMySQLCompatibility(c *ui.Context, width float32) {
 			ui.Text(c, "跳过 \"show variables like 'lower_case_%'\"").FontSize(11)
 		})
 		ui.Row(c).Height(26).Gap(0).AlignItems(ui.Center).Children(func() {
-			ui.Checkbox(c, &compat.ForceSQLMode, "强制 sql_mode 为：").
-				Label("强制 sql_mode 为：").Width(labelWidth).
-				Disabled(!compat.Enabled)
+			connectionFormCheckbox(c, &compat.ForceSQLMode, "强制 sql_mode 为：", !compat.Enabled).Width(labelWidth)
 			ui.TextInput(c, &compat.SQLMode).Label("sql_mode").
 				Width(258).Height(25).Padding(2, 8).
 				Disabled(!compat.Enabled || !compat.ForceSQLMode)
@@ -174,8 +171,7 @@ func (s *State) compatSelectRow(
 	options []string, parentEnabled bool, labelWidth float32,
 ) {
 	ui.Row(c).Height(26).Gap(0).AlignItems(ui.Center).Children(func() {
-		ui.Checkbox(c, checked, name).Label(name).Width(labelWidth).
-			FontSize(11).Disabled(!parentEnabled)
+		connectionFormCheckboxCompact(c, checked, name, !parentEnabled).Width(labelWidth)
 		ui.Select(c, value, options).Label(name + "选项").Width(258).Height(25).
 			Disabled(!parentEnabled || !*checked)
 	})

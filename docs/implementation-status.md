@@ -190,3 +190,12 @@ HTTP; existing MyGo checkboxes retain their native 16-DIP size. Headless
 rectangular-geometry tests and isolated Linux GUI screenshots confirm
 consistent positioning, without claiming pixel-perfect parity. See
 `docs/MYSQL_FORM_GEOMETRY_DIFFERENTIAL_2026-10-21.md`.
+
+### MySQL form fine-visual refinement (2026-10-21)
+
+The editor now uses a window-scoped MyGo theme for its input background,
+focused border and muted/disabled text. A shared 14-DIP native CheckboxBase
+renderer replaces blue-fill checkboxes with the observed dark-square/light-tick
+style on General, Advanced, Compatibility, SSL, SSH and HTTP. Native focus,
+keyboard and accessibility behavior remain intact. GUI and headless regression
+evidence is recorded in `docs/MYSQL_FORM_FINE_VISUAL_DIFFERENTIAL_2026-10-21.md`.
