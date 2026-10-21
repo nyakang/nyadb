@@ -60,32 +60,26 @@ func (s *State) advanceDraft(p *connections.Profile) error {
 }
 
 func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
-	formWidth := min(float32(604), width-44)
-	labelWidth := min(float32(166), formWidth*0.3)
+	formWidth := connectionFormWidth(width)
+	labelWidth := connectionFormLabelWidth
 	fieldWidth := formWidth - labelWidth
 	a := &s.connectionDraft.MySQLAdvanced
 	// Browse buttons and Select elements need a 32-DIP row to keep their
 	// content inside the row; 26 DIP clips/overlaps the following controls.
-	ui.Column(c).Width(formWidth).Gap(5).Children(func() {
-		ui.Row(c).Height(32).Gap(0).AlignItems(ui.Center).Children(func() {
+	ui.Column(c).Width(formWidth).Gap(0).Children(func() {
+		connectionFormRow(c).Children(func() {
 			ui.Text(c, "设置位置：").Width(labelWidth).FontSize(12)
-			ui.TextInput(c, &a.SettingsLocation).Label("设置位置").Width(fieldWidth-34).
-				Height(30).Padding(2, 8)
-			ui.Box(c).Width(4)
-			if ui.Button(c, "…").Label("选择设置位置").Width(30).Height(30).Padding(0, 0).
-				Disabled(s.mysqlSettingsPicker == nil).Clicked() {
-				s.mysqlSettingsPicker()
-			}
+			connectionFormTextInput(c, &a.SettingsLocation, "设置位置", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false)
+			ui.Box(c).Width(connectionFormBrowseGap)
+			connectionFormBrowse(c, "选择设置位置", s.mysqlSettingsPicker == nil, s.mysqlSettingsPicker)
 		})
-		ui.Row(c).Height(32).Gap(0).AlignItems(ui.Center).Children(func() {
+		connectionFormRow(c).Children(func() {
 			ui.Text(c, "客户端驱动程序：").Width(labelWidth).FontSize(12)
-			ui.Select(c, &a.ClientDriver, []string{"默认", "旧版"}).
-				Label("客户端驱动程序").Width(fieldWidth).Height(30)
+			connectionFormSelect(c, &a.ClientDriver, []string{"默认", "旧版"}, "客户端驱动程序", fieldWidth, false)
 		})
-		ui.Row(c).Height(32).Gap(0).AlignItems(ui.Center).Children(func() {
+		connectionFormRow(c).Children(func() {
 			ui.Text(c, "客户端字符集：").Width(labelWidth).FontSize(12)
-			ui.Select(c, &a.Charset, connections.MySQLCharsets).
-				Label("客户端字符集").Width(fieldWidth).Height(30)
+			connectionFormSelect(c, &a.Charset, connections.MySQLCharsets, "客户端字符集", fieldWidth, false)
 		})
 		s.mysqlAdvancedNumberRow(c, &a.KeepAlive, "保持连接间隔（秒）：",
 			&s.mysqlAdvancedNumbers[mysqlKeepAlive], labelWidth)
@@ -97,26 +91,22 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 			&s.mysqlAdvancedNumbers[mysqlWriteTimeout], labelWidth)
 		s.mysqlAdvancedToggle(c, &a.Compression, "使用压缩")
 		s.mysqlAdvancedToggle(c, &a.AutoConnect, "自动连接")
-		ui.Row(c).Height(26).Gap(0).AlignItems(ui.Center).Children(func() {
+		connectionFormRow(c).Children(func() {
 			ui.Checkbox(c, &a.NamedPipe, "使用命名管道，套接字：").
 				Label("使用命名管道，套接字").Width(labelWidth).FontSize(11)
-			ui.TextInput(c, &a.PipeName).Label("命名管道或套接字").
-				Width(200).Height(25).Padding(2, 8).Disabled(!a.NamedPipe)
+			connectionFormTextInput(c, &a.PipeName, "命名管道或套接字", 200, !a.NamedPipe, false)
 		})
 		s.mysqlAdvancedNumberRow(c, &a.LimitSessions, "限制连接会话：",
 			&s.mysqlAdvancedNumbers[mysqlSessionLimit], labelWidth)
-		ui.Row(c).Height(32).Gap(0).AlignItems(ui.Center).Children(func() {
+		connectionFormRow(c).Children(func() {
 			ui.Text(c, "初始查询：").Width(labelWidth).FontSize(12)
-			if ui.TextInput(c, &s.mysqlInitialQueryPreview).Label("初始查询").
-				Width(fieldWidth-34).Height(30).Padding(2, 8).Changed() {
+			if connectionFormTextInput(c, &s.mysqlInitialQueryPreview, "初始查询", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false).Changed() {
 				s.mysqlInitialQuery = s.mysqlInitialQueryPreview
 			}
-			ui.Box(c).Width(4)
-			if ui.Button(c, "…").Label("编辑初始查询").Width(30).Height(30).Padding(0, 0).Clicked() {
-				s.beginMySQLInitialQuery()
-			}
+			ui.Box(c).Width(connectionFormBrowseGap)
+			connectionFormBrowse(c, "编辑初始查询", false, s.beginMySQLInitialQuery)
 		})
-		if ui.Button(c, "兼容性").Width(160).Clicked() {
+		if ui.Button(c, "兼容性").Width(160).Height(connectionFormInputHeight).Clicked() {
 			s.mysqlCompatibilityVisible = true
 			s.connectionEditorTab = 6
 		}
@@ -126,7 +116,7 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 }
 
 func (s *State) mysqlAdvancedToggle(c *ui.Context, v *bool, label string) {
-	ui.Row(c).Height(26).AlignItems(ui.Center).Children(func() {
+	connectionFormRow(c).Children(func() {
 		ui.Checkbox(c, v, label).Label(label)
 	})
 }
@@ -134,10 +124,9 @@ func (s *State) mysqlAdvancedToggle(c *ui.Context, v *bool, label string) {
 func (s *State) mysqlAdvancedNumberRow(
 	c *ui.Context, enabled *bool, label string, value *string, labelWidth float32,
 ) {
-	ui.Row(c).Height(26).Gap(0).AlignItems(ui.Center).Children(func() {
+	connectionFormRow(c).Children(func() {
 		ui.Checkbox(c, enabled, label).Label(label).Width(labelWidth)
-		ui.TextInput(c, value).Label(label+"数值").Width(80).
-			Height(25).Padding(2, 8).Disabled(!*enabled)
+		connectionFormTextInput(c, value, label+"数值", 80, !*enabled, false)
 	})
 }
 
