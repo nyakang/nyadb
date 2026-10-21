@@ -80,6 +80,7 @@ type State struct {
 
 	connectionDialog        bool
 	connectionStep          int
+	connectionEditorTab     int
 	connectionKind          connections.Kind
 	connectionDraft         connections.Profile
 	connectionPort          string
@@ -92,6 +93,7 @@ type State struct {
 	connectionRecent        []string
 	connectionEngineFilters map[string]bool
 	connectionVendorFilters map[string]bool
+	setConnectionTitle      func(string)
 	showConnectionWindow    func()
 	hideConnectionWindow    func()
 	bundledIcons            map[string]*ui.Bitmap

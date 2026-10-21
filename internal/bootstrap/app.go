@@ -57,12 +57,13 @@ func Run() error {
 				chooser.Focus()
 				return
 			}
+			chooserWidth, chooserHeight := state.ConnectionWindowSize()
 			chooser = mygo.NewWindow(mygo.WindowOptions{
 				Title:          state.ConnectionWindowTitle(),
 				Parent:         window,
 				Modal:          true,
-				Width:          902,
-				Height:         732,
+				Width:          chooserWidth,
+				Height:         chooserHeight,
 				MinWidth:       720,
 				MinHeight:      520,
 				SkipTaskbar:    true,
@@ -77,6 +78,13 @@ func Run() error {
 		}, func() {
 			if chooser != nil {
 				chooser.Close()
+			}
+		})
+		state.SetConnectionWindowTitleUpdater(func(title string) {
+			if chooser != nil {
+				chooser.SetTitle(title)
+				width, height := state.ConnectionWindowSize()
+				chooser.SetContentSize(width, height)
 			}
 		})
 		state.SetSQLiteFilePicker(func() {

@@ -88,3 +88,11 @@ search filtering. See `docs/NAVICAT_LIST_TREE_DIFFERENTIAL_2026-10-21.md`.
 A subsequent sidebar iteration unified vendor filter ordering with the tree,
 added a separate source-attributed provider badge pack, adjusted spacing, and
 fixed the Dameng vendor checkbox. See `docs/PROVIDER_ICON_SIDEBAR_2026-10-21.md`.
+
+### MySQL native connection editor (2026-10-21)
+
+First UI reconstruction pass (I): original MySQL General tab observed in isolated
+Linux Xvfb; NyaDB now displays native tabs, General fields, password masking,
+and a fixed footer in a 900×700 editor window. Unimplemented tabs and connection
+testing remain explicitly pending. Build/test checks and live GUI comparison:
+`docs/MYSQL_CONNECTION_EDITOR_DIFFERENTIAL_2026-10-21.md`.

@@ -8,12 +8,12 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
-	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
 func (s *State) openConnectionDialog() {
 	s.connectionDialog = true
 	s.connectionStep = 0
+	s.connectionEditorTab = 0
 	s.connectionKind = ""
 	s.connectionSelectedName = ""
 	s.connectionSearch = ""
@@ -61,6 +61,8 @@ func (s *State) nextConnectionStep() {
 	}
 	s.connectionError = ""
 	s.connectionStep = 1
+	s.connectionEditorTab = 0
+	s.updateConnectionWindowTitle()
 }
 
 func (s *State) draftProfile() (connections.Profile, error) {
@@ -126,47 +128,6 @@ func (s *State) connectionModal(c *ui.Context) {
 	})
 }
 
-func (s *State) connectionEditor(c *ui.Context) {
-	ui.Column(c).Width(720).Gap(12).Children(func() {
-		title := "新建连接 · 选择数据库"
-		if s.connectionStep == 1 {
-			title = "新建连接 · " + connectionKindName(s.connectionKind)
-			if s.connectionDraft.ID != 0 {
-				title = "编辑连接 · " + connectionKindName(s.connectionKind)
-			}
-		}
-		ui.Text(c, title).FontSize(19).Bold()
-		ui.Box(c).Height(1).Background(theme.Border)
-		if s.connectionStep == 0 {
-			s.connectionTypes(c, false)
-		} else {
-			s.connectionFields(c)
-		}
-		if s.connectionError != "" {
-			ui.Text(c, s.connectionError).FontSize(12).TextColor(theme.Gold)
-		}
-		ui.Row(c).Justify(ui.End).Gap(8).Children(func() {
-			if s.connectionStep == 1 && s.connectionDraft.ID == 0 {
-				if ui.Button(c, "上一步").Clicked() {
-					s.connectionStep = 0
-					s.connectionError = ""
-					s.connectionSecret = ""
-				}
-			}
-			if ui.Button(c, "取消连接向导").Clicked() {
-				s.closeConnectionDialog()
-			}
-			if s.connectionStep == 0 {
-				if ui.PrimaryButton(c, "下一步").Clicked() {
-					s.nextConnectionStep()
-				}
-			} else if ui.PrimaryButton(c, "保存连接").Clicked() {
-				s.saveConnectionDraft()
-			}
-		})
-	})
-}
-
 func connectionKindName(kind connections.Kind) string {
 	switch kind {
 	case connections.MySQL:
@@ -178,48 +139,4 @@ func connectionKindName(kind connections.Kind) string {
 	default:
 		return "未知类型"
 	}
-}
-
-func (s *State) connectionFields(c *ui.Context) {
-	p := &s.connectionDraft
-	ui.Column(c).Gap(10).Children(func() {
-		ui.Row(c).Gap(14).Children(func() {
-			ui.Column(c).Width(235).Children(func() {
-				ui.Text(c, "连接名称").FontSize(12)
-				ui.TextInput(c, &p.Name).Label("连接名称").Placeholder("例如：本地开发库").FillWidth()
-			})
-			ui.Column(c).Width(235).Children(func() {
-				ui.Text(c, "数据库类型").FontSize(12)
-				ui.Text(c, connectionKindName(p.Kind)).Bold()
-			})
-		})
-		if p.Kind == connections.SQLite {
-			ui.Text(c, "已有 SQLite 数据库文件").FontSize(12)
-			ui.Row(c).Gap(8).Children(func() {
-				ui.TextInput(c, &p.Database).Label("数据库文件").Placeholder("/path/to/database.sqlite").Grow(1)
-				if ui.Button(c, "浏览文件").Disabled(s.sqliteFilePicker == nil).Clicked() {
-					s.sqliteFilePicker()
-				}
-			})
-			ui.Text(c, "数据库文件必须由用户自行指定。创建数据库文件将在后续版本实现。").
-				FontSize(11).TextColor(theme.Muted)
-		} else {
-			ui.Text(c, "主机").FontSize(12)
-			ui.TextInput(c, &p.Host).Label("主机").FillWidth()
-			ui.Row(c).Gap(12).Children(func() {
-				ui.Column(c).Width(160).Children(func() {
-					ui.Text(c, "端口").FontSize(12)
-					ui.TextInput(c, &s.connectionPort).Label("端口").FillWidth()
-				})
-				ui.Column(c).Width(300).Children(func() {
-					ui.Text(c, "用户名").FontSize(12)
-					ui.TextInput(c, &p.Username).Label("用户名").FillWidth()
-				})
-			})
-			ui.Text(c, "默认数据库（可选）").FontSize(12)
-			ui.TextInput(c, &p.Database).Label("默认数据库").FillWidth()
-			ui.Text(c, "连接凭据在本阶段不持久化；实际连接与安全凭据管理将在后续版本提供。").
-				FontSize(11).TextColor(theme.Muted)
-		}
-	})
 }

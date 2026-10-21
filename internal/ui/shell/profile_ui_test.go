@@ -78,7 +78,8 @@ func TestProfileUIEditDuplicateDelete(t *testing.T) {
 	if err := tt.Click("编辑连接"); err != nil {
 		t.Fatal(err)
 	}
-	if !s.connectionDialog || s.connectionDraft.ID != p.ID || !tt.HasText("编辑连接 · SQLite") {
+	if !s.connectionDialog || s.connectionDraft.ID != p.ID ||
+		s.ConnectionWindowTitle() != "编辑连接 (SQLite)" || !tt.HasText("数据库文件：") {
 		t.Fatalf("edit form not prefilled: modal=%v draft=%+v selected=%d status=%q", s.connectionDialog, s.connectionDraft, s.selectedProfileID, s.status)
 	}
 	s.connectionDraft.Name = "Renamed"

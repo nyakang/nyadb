@@ -26,7 +26,9 @@ func TestNativeConnectionWindowLifecycleAndFallback(t *testing.T) {
 	if err := tt.Click("下一步"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionStep != 1 || s.connectionDraft.Kind != connections.PostgreSQL {
+	w, h := s.ConnectionWindowSize()
+	if s.connectionStep != 1 || s.connectionDraft.Kind != connections.PostgreSQL ||
+		s.ConnectionWindowTitle() != "新建连接 (PostgreSQL)" || w != 900 || h != 700 {
 		t.Fatalf("native flow did not reach form: %+v", s.connectionDraft)
 	}
 	if err := tt.Click("取消连接向导"); err != nil {
