@@ -20,6 +20,7 @@ var (
 // The connection editor is a native MyGo view. Layout and tab order are based
 // on observed Navicat 18 UI behavior, not on the original application's code.
 func (s *State) connectionEditor(c *ui.Context) {
+	applyConnectionEditorFormTheme(c)
 	w, h := c.Size()
 	if s.showConnectionWindow == nil {
 		w = min(float32(760), w-96)
@@ -174,8 +175,7 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 		ui.Row(c).Height(28).Gap(0).AlignItems(ui.Center).Children(func() {
 			ui.Box(c).Width(labelWidth)
 			save := false
-			ui.Checkbox(c, &save, "保存密码").Disabled(true).
-				Label("保存密码（需要系统密钥库）")
+			connectionFormCheckbox(c, &save, "保存密码", true)
 		})
 		ui.Row(c).Gap(0).Children(func() {
 			ui.Box(c).Width(labelWidth)
@@ -202,7 +202,7 @@ func (s *State) editorSQLiteFields(c *ui.Context, labelWidth, fieldWidth float32
 	ui.Row(c).Height(27).Gap(0).AlignItems(ui.Center).Children(func() {
 		ui.Box(c).Width(labelWidth)
 		selected := true
-		ui.Checkbox(c, &selected, "现有数据库文件").Disabled(true)
+		connectionFormCheckbox(c, &selected, "现有数据库文件", true)
 	})
 	ui.Row(c).Height(32).Gap(0).AlignItems(ui.Center).Children(func() {
 		ui.Text(c, "数据库文件：").Width(labelWidth).FontSize(12)

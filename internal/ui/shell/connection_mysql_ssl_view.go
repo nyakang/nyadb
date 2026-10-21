@@ -67,11 +67,10 @@ func (s *State) connectionMySQLSSL(c *ui.Context, width float32) {
 	ssl := &s.connectionDraft.MySQLAdvanced.SSL
 	ui.Column(c).Width(formWidth).Gap(0).Children(func() {
 		connectionFormRow(c).Children(func() {
-			ui.Checkbox(c, &ssl.Enabled, "使用 SSL").Label("使用 SSL")
+			connectionFormCheckbox(c, &ssl.Enabled, "使用 SSL", false)
 		})
 		connectionFormRow(c).Children(func() {
-			ui.Checkbox(c, &ssl.UseVerification, "使用验证").
-				Label("使用验证").Disabled(!ssl.Enabled)
+			connectionFormCheckbox(c, &ssl.UseVerification, "使用验证", !ssl.Enabled)
 		})
 		active := ssl.Enabled && ssl.UseVerification
 		s.mysqlSSLPathRow(c, "客户端密钥：", &ssl.ClientKey, MySQLSSLClientKey,
@@ -82,8 +81,7 @@ func (s *State) connectionMySQLSSL(c *ui.Context, width float32) {
 			labelWidth, fieldWidth, active)
 		connectionFormRow(c).Children(func() {
 			ui.Box(c).Width(labelWidth)
-			ui.Checkbox(c, &ssl.VerifyServerCA, "验证针对 CA 的服务器证书").
-				Label("验证针对 CA 的服务器证书").Disabled(!active)
+			connectionFormCheckbox(c, &ssl.VerifyServerCA, "验证针对 CA 的服务器证书", !active)
 		})
 		connectionFormRow(c).Children(func() {
 			ui.Text(c, "指定密码：").FontSize(12).Width(labelWidth).
