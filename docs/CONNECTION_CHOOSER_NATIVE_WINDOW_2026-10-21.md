@@ -74,3 +74,18 @@ invented entries under **最近使用过的**.
 This stage is **I** evidence of a real native UI implementation and tested
 subset of behaviors. Original observation is **O**; no broad equivalence
 claim (V) is made.
+
+## Native segmented view switch (2026-10-21, I)
+
+Replaced two independent `ButtonBase` controls in the chooser toolbar with
+MyGo v0.5.5 `ui.SegmentedBase` (two radio-style segments). Both controls
+retain their Lucide grid/list glyphs and accessible Chinese labels; a
+single selected index drives the existing `connectionGridMode` state.
+This change does not affect the grid/tree rendering or catalog filters.
+
+- `go test ./...`, `go vet ./...`, `go tool mygo vet` and
+  `go tool mygo build` all passed.
+- Real Linux Xvfb/Openbox GUI confirmed both selected backgrounds and
+  grid ↔ list view switches. Research-only screenshots:
+  `temp/research/gui-segmented-chooser-20261021/segmented-list.png`
+  and `segmented-grid-verified.png` (ignored, not packaged).
