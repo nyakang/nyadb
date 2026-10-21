@@ -37,6 +37,7 @@ func (s *State) connectionEditor(c *ui.Context) {
 		ui.Box(c).Height(1).Background(theme.Border)
 		s.connectionEditorFooter(c)
 	})
+	s.mysqlInitialQueryModal(c)
 }
 
 func connectionEditorTabNames(kind connections.Kind) []string {
@@ -210,6 +211,7 @@ func (s *State) connectionEditorFooter(c *ui.Context) {
 			s.connectionStep = 0
 			s.connectionEditorTab = 0
 			s.connectionSecret = ""
+			s.clearMySQLInitialQuery()
 			s.connectionError = ""
 			s.updateConnectionWindowTitle()
 		}

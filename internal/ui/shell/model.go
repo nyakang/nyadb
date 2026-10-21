@@ -86,6 +86,11 @@ type State struct {
 	connectionPort            string
 	mysqlAdvancedNumbers      [5]string
 	mysqlCompatibilityVisible bool
+	mysqlInitialQuery         string
+	mysqlInitialQueryPreview  string
+	mysqlInitialQueryDraft    string
+	mysqlInitialQueryOpen     bool
+	mysqlInitialQueryError    string
 	connectionSecret          string
 	connectionError           string
 	connectionSelectedName    string

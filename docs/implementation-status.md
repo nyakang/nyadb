@@ -103,5 +103,15 @@ The Advanced tab has native MyGo controls for driver, charset, timing,
 compression, auto-connect, named pipe and session settings. Its non-secret
 settings are validated and persisted with a backward-compatible local SQLite
 schema migration (v1 to v2). Original behavior was observed in an isolated
-Navicat session; driver execution, initial SQL and compatibility overrides are
-not implemented. See `docs/MYSQL_ADVANCED_DIFFERENTIAL_2026-10-21.md`.
+Navicat session; driver execution is not implemented.
+See `docs/MYSQL_ADVANCED_DIFFERENTIAL_2026-10-21.md`.
+
+### MySQL compatibility and initial query (2026-10-21)
+
+The Compatibility subtab now has native MyGo switches, dropdowns, exact
+observed defaults and individually enabled overrides. Its validated settings
+are persisted in the existing advanced JSON. The Initial Query overlay uses a
+MyGo multiline editor with confirmation, cancellation and clipboard copying.
+Because initialization SQL can contain credentials, its text is session-only,
+not saved or executed. Details and original observation evidence:
+`docs/MYSQL_COMPATIBILITY_INITIAL_QUERY_2026-10-21.md`.

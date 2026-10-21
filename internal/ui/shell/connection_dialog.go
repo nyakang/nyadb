@@ -22,6 +22,7 @@ func (s *State) openConnectionDialog() {
 	s.connectionDraft = connections.Profile{}
 	s.connectionPort = ""
 	s.connectionSecret = ""
+	s.clearMySQLInitialQuery()
 	s.connectionError = ""
 	if s.showConnectionWindow != nil {
 		s.showConnectionWindow()
@@ -31,6 +32,7 @@ func (s *State) openConnectionDialog() {
 func (s *State) closeConnectionDialog() {
 	s.connectionDialog = false
 	s.connectionSecret = ""
+	s.clearMySQLInitialQuery()
 	s.connectionError = ""
 	if s.hideConnectionWindow != nil {
 		s.hideConnectionWindow()
@@ -55,6 +57,7 @@ func (s *State) nextConnectionStep() {
 		return
 	}
 	s.connectionDraft = draft
+	s.clearMySQLInitialQuery()
 	if draft.Kind == connections.MySQL {
 		s.initMySQLAdvancedInputs()
 	}

@@ -104,16 +104,19 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 			&s.mysqlAdvancedNumbers[mysqlSessionLimit], labelWidth)
 		ui.Row(c).Height(26).Gap(0).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, "初始查询：").Width(labelWidth).FontSize(12)
-			query := ""
-			ui.TextInput(c, &query).Label("初始查询尚未支持").Width(fieldWidth-30).
-				Height(25).Padding(2, 8).Disabled(true)
-			ui.Button(c, "…").Label("编辑初始查询（尚未支持）").Width(28).Disabled(true)
+			if ui.TextInput(c, &s.mysqlInitialQueryPreview).Label("初始查询").
+				Width(fieldWidth-30).Height(25).Padding(2, 8).Changed() {
+				s.mysqlInitialQuery = s.mysqlInitialQueryPreview
+			}
+			if ui.Button(c, "…").Label("编辑初始查询").Width(28).Clicked() {
+				s.beginMySQLInitialQuery()
+			}
 		})
 		if ui.Button(c, "兼容性").Width(160).Clicked() {
 			s.mysqlCompatibilityVisible = true
 			s.connectionEditorTab = 6
 		}
-		ui.Text(c, "高级选项可以保存为配置；真实连接与初始化 SQL 尚未接入。").
+		ui.Text(c, "高级及兼容性选项可保存；初始查询仅本次编辑有效，不保存或执行。").
 			TextColor(theme.Muted).FontSize(11)
 	})
 }
@@ -134,28 +137,53 @@ func (s *State) mysqlAdvancedNumberRow(
 	})
 }
 
-// The compatibility subtab exists in the original only after its button is
-// used. Its driver-specific overrides are intentionally non-editable until
-// their meaning and implementation have been independently specified.
+// The original inserts this tab only after pressing the Compatibility button.
+// Each override is enabled by both the parent switch and its own checkbox.
 func (s *State) connectionMySQLCompatibility(c *ui.Context, width float32) {
 	formWidth := min(float32(604), width-44)
-	ui.Column(c).Width(formWidth).Gap(14).Children(func() {
-		enabled := false
-		ui.Checkbox(c, &enabled, "使用兼容模式").Disabled(true)
-		for _, name := range []string{
-			"强制 lower_case_table_names 为：",
-			"强制 sql_mode 为：",
-			"强制 NDB 集群支持为：",
-			"强制数据库列出方法为：",
-			"强制视图列出方法为：",
-		} {
-			value := ""
-			ui.Row(c).AlignItems(ui.Center).Gap(10).Children(func() {
-				ui.Checkbox(c, &enabled, name).Width(250).Disabled(true)
-				ui.TextInput(c, &value).Width(220).Disabled(true)
-			})
-		}
-		ui.Text(c, "兼容性高级覆盖需要真实 MySQL 驱动支持，目前不可修改或保存。").
+	compat := &s.connectionDraft.MySQLAdvanced.Compatibility
+	labelWidth := float32(216)
+	ui.Column(c).Width(formWidth).Gap(5).Children(func() {
+		ui.Row(c).Height(26).AlignItems(ui.Center).Children(func() {
+			ui.Checkbox(c, &compat.Enabled, "使用兼容模式").Label("使用兼容模式")
+		})
+		s.compatSelectRow(c, "强制 lower_case_table_names 为：",
+			&compat.ForceLowerCase, &compat.LowerCaseTableNames,
+			connections.MySQLLowerCaseValues, compat.Enabled, labelWidth)
+		ui.Row(c).Height(15).Children(func() {
+			ui.Box(c).Width(17)
+			ui.Text(c, "跳过 \"show variables like 'lower_case_%'\"").FontSize(11)
+		})
+		ui.Row(c).Height(26).Gap(0).AlignItems(ui.Center).Children(func() {
+			ui.Checkbox(c, &compat.ForceSQLMode, "强制 sql_mode 为：").
+				Label("强制 sql_mode 为：").Width(labelWidth).
+				Disabled(!compat.Enabled)
+			ui.TextInput(c, &compat.SQLMode).Label("sql_mode").
+				Width(258).Height(25).Padding(2, 8).
+				Disabled(!compat.Enabled || !compat.ForceSQLMode)
+		})
+		s.compatSelectRow(c, "强制 NDB 集群支持为：",
+			&compat.ForceNDB, &compat.NDBSupport,
+			connections.MySQLNDBSupportValues, compat.Enabled, labelWidth)
+		s.compatSelectRow(c, "强制数据库列出方法为：",
+			&compat.ForceDatabaseMethod, &compat.DatabaseMethod,
+			connections.MySQLDatabaseMethods, compat.Enabled, labelWidth)
+		s.compatSelectRow(c, "强制视图列出方法为：",
+			&compat.ForceViewMethod, &compat.ViewMethod,
+			connections.MySQLViewMethods, compat.Enabled, labelWidth)
+		ui.Text(c, "兼容性设置仅保存为配置，数据库驱动接入后才会实际应用。").
 			TextColor(theme.Muted).FontSize(11)
+	})
+}
+
+func (s *State) compatSelectRow(
+	c *ui.Context, name string, checked *bool, value *string,
+	options []string, parentEnabled bool, labelWidth float32,
+) {
+	ui.Row(c).Height(26).Gap(0).AlignItems(ui.Center).Children(func() {
+		ui.Checkbox(c, checked, name).Label(name).Width(labelWidth).
+			FontSize(11).Disabled(!parentEnabled)
+		ui.Select(c, value, options).Label(name + "选项").Width(258).Height(25).
+			Disabled(!parentEnabled || !*checked)
 	})
 }
