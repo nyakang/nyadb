@@ -86,6 +86,7 @@ type State struct {
 	connectionSelectedName  string
 	connectionSearch        string
 	connectionGridMode      bool
+	connectionTreeOpen      map[string]bool
 	connectionRecent        []string
 	connectionEngineFilters map[string]bool
 	connectionVendorFilters map[string]bool
@@ -117,6 +118,7 @@ func New() *State {
 		editorPercent:           48,
 		inspectorOn:             true,
 		connectionGridMode:      true,
+		connectionTreeOpen:      map[string]bool{},
 		connectionEngineFilters: map[string]bool{},
 		connectionVendorFilters: map[string]bool{},
 		objectKind:              "表",

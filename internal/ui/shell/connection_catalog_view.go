@@ -41,6 +41,10 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 				ui.Box(c).Height(1).Background(theme.Border)
 				ui.Scroll(c).Height(bodyHeight - 46).Children(func() {
 					ui.Column(c).Padding(12, 14).Gap(15).Children(func() {
+						if !s.connectionGridMode {
+							s.catalogTree(c)
+							return
+						}
 						if len(s.connectionRecent) != 0 {
 							s.catalogSection(c, "最近使用过的", s.catalogRecents(), columns)
 						} else {
@@ -92,6 +96,9 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 		ui.Scroll(c).Height(height - 55).Children(func() {
 			ui.Column(c).Gap(5).Children(func() {
 				for _, name := range catalogEngines {
+					if !s.catalogSidebarFilterVisible(name, false) {
+						continue
+					}
 					label := name
 					checked := s.connectionEngineFilters[label]
 					ui.Row(c).Height(23).Gap(5).AlignItems(ui.Center).Children(func() {
@@ -112,6 +119,9 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 					ui.Text(c, "供应商筛选").FontSize(12).Bold()
 				})
 				for _, name := range catalogVendors {
+					if !s.catalogSidebarFilterVisible(name, true) {
+						continue
+					}
 					label := name
 					checked := s.connectionVendorFilters[label]
 					ui.Row(c).Height(23).Gap(5).AlignItems(ui.Center).Children(func() {

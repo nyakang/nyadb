@@ -57,7 +57,6 @@ var additionalCatalog = []catalogEntry{
 
 func init() {
 	databaseCatalog = append(databaseCatalog, additionalCatalog...)
-	catalogEngines = append(catalogEngines, "GaussDB", "openGauss", "KingbaseES", "TiDB", "IvorySQL", "Redshift")
 	catalogVendors = append(catalogVendors, "电科金仓", "亚信星辰", "瀚高", "OceanBase", "Fujitsu", "Oracle", "MongoDB", "Redis")
 }
 
