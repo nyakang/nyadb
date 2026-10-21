@@ -22,12 +22,18 @@ func (s *State) openConnectionDialog() {
 	s.connectionPort = ""
 	s.connectionSecret = ""
 	s.connectionError = ""
+	if s.showConnectionWindow != nil {
+		s.showConnectionWindow()
+	}
 }
 
 func (s *State) closeConnectionDialog() {
 	s.connectionDialog = false
 	s.connectionSecret = ""
 	s.connectionError = ""
+	if s.hideConnectionWindow != nil {
+		s.hideConnectionWindow()
+	}
 }
 
 func (s *State) chooseConnectionKind(kind connections.Kind) {
@@ -105,51 +111,55 @@ func (s *State) saveConnectionDraft() {
 
 // connectionModal is a native MyGo modal, not a WebView or imported UI asset.
 func (s *State) connectionModal(c *ui.Context) {
-	if !s.connectionDialog {
+	if !s.connectionDialog || s.showConnectionWindow != nil {
 		return
 	}
 	ui.Modal(c, &s.connectionDialog, func() {
 		if s.connectionStep == 0 {
-			s.connectionTypes(c)
+			s.connectionTypes(c, false)
 			return
 		}
-		ui.Column(c).Width(720).Gap(12).Children(func() {
-			title := "新建连接 · 选择数据库"
-			if s.connectionStep == 1 {
-				title = "新建连接 · " + connectionKindName(s.connectionKind)
-				if s.connectionDraft.ID != 0 {
-					title = "编辑连接 · " + connectionKindName(s.connectionKind)
+		s.connectionEditor(c)
+	})
+}
+
+func (s *State) connectionEditor(c *ui.Context) {
+	ui.Column(c).Width(720).Gap(12).Children(func() {
+		title := "新建连接 · 选择数据库"
+		if s.connectionStep == 1 {
+			title = "新建连接 · " + connectionKindName(s.connectionKind)
+			if s.connectionDraft.ID != 0 {
+				title = "编辑连接 · " + connectionKindName(s.connectionKind)
+			}
+		}
+		ui.Text(c, title).FontSize(19).Bold()
+		ui.Box(c).Height(1).Background(theme.Border)
+		if s.connectionStep == 0 {
+			s.connectionTypes(c, false)
+		} else {
+			s.connectionFields(c)
+		}
+		if s.connectionError != "" {
+			ui.Text(c, s.connectionError).FontSize(12).TextColor(theme.Gold)
+		}
+		ui.Row(c).Justify(ui.End).Gap(8).Children(func() {
+			if s.connectionStep == 1 && s.connectionDraft.ID == 0 {
+				if ui.Button(c, "上一步").Clicked() {
+					s.connectionStep = 0
+					s.connectionError = ""
+					s.connectionSecret = ""
 				}
 			}
-			ui.Text(c, title).FontSize(19).Bold()
-			ui.Box(c).Height(1).Background(theme.Border)
+			if ui.Button(c, "取消连接向导").Clicked() {
+				s.closeConnectionDialog()
+			}
 			if s.connectionStep == 0 {
-				s.connectionTypes(c)
-			} else {
-				s.connectionFields(c)
+				if ui.PrimaryButton(c, "下一步").Clicked() {
+					s.nextConnectionStep()
+				}
+			} else if ui.PrimaryButton(c, "保存连接").Clicked() {
+				s.saveConnectionDraft()
 			}
-			if s.connectionError != "" {
-				ui.Text(c, s.connectionError).FontSize(12).TextColor(theme.Gold)
-			}
-			ui.Row(c).Justify(ui.End).Gap(8).Children(func() {
-				if s.connectionStep == 1 && s.connectionDraft.ID == 0 {
-					if ui.Button(c, "上一步").Clicked() {
-						s.connectionStep = 0
-						s.connectionError = ""
-						s.connectionSecret = ""
-					}
-				}
-				if ui.Button(c, "取消连接向导").Clicked() {
-					s.closeConnectionDialog()
-				}
-				if s.connectionStep == 0 {
-					if ui.PrimaryButton(c, "下一步").Clicked() {
-						s.nextConnectionStep()
-					}
-				} else if ui.PrimaryButton(c, "保存连接").Clicked() {
-					s.saveConnectionDraft()
-				}
-			})
 		})
 	})
 }

@@ -49,6 +49,36 @@ func Run() error {
 			StateKey:  "main",
 			Content:   ui.View(state.View),
 		})
+		// Native parent-owned modal window, not an in-workspace overlay.
+		// The OS provides the title bar, window movement and close button.
+		var chooser *mygo.Window
+		state.SetConnectionWindowHost(func() {
+			if chooser != nil {
+				chooser.Focus()
+				return
+			}
+			chooser = mygo.NewWindow(mygo.WindowOptions{
+				Title:          state.ConnectionWindowTitle(),
+				Parent:         window,
+				Modal:          true,
+				Width:          902,
+				Height:         732,
+				MinWidth:       720,
+				MinHeight:      520,
+				SkipTaskbar:    true,
+				UseContentSize: true,
+				Content:        ui.View(state.ConnectionWindowView),
+			})
+			chooser.OnClosed(func() {
+				chooser = nil
+				state.ConnectionWindowClosed()
+				window.Update(func() {})
+			})
+		}, func() {
+			if chooser != nil {
+				chooser.Close()
+			}
+		})
 		state.SetSQLiteFilePicker(func() {
 			go func() {
 				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{

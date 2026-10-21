@@ -67,6 +67,9 @@ func (s *State) startEditProfile() {
 	s.connectionPort = strconv.Itoa(int(p.Port))
 	s.connectionSecret = ""
 	s.connectionError = ""
+	if s.showConnectionWindow != nil {
+		s.showConnectionWindow()
+	}
 }
 
 func (s *State) duplicateProfile() {
