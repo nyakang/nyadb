@@ -127,6 +127,17 @@ type State struct {
 	researchIcons             map[string]*ui.Bitmap
 
 	connectionNameFocusPending bool
+	mysqlSessionManager        *connections.MySQLSessionManager
+	mysqlSessionCancel         context.CancelFunc
+	mysqlSessionResults        <-chan mysqlSessionResult
+	mysqlSessionProfileID      int64
+	mysqlSessionGeneration     uint64
+	mysqlSessionStatus         string
+	mysqlSessionError          string
+	mysqlSessionPassword       string
+	mysqlSessionDatabases      []string
+	mysqlSessionOpener         mysqlSessionOpener
+	mysqlDatabaseLister        mysqlDatabaseLister
 
 	// MySQL connection checks run off-thread; only UI code reads/writes these.
 	connectionTesting        bool

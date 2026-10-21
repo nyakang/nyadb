@@ -239,3 +239,15 @@ Protocol tests use a disposable local mock MySQL peer rather than a real
 production database. Full database compatibility, TLS and encrypted credential
 transport remain unverified/unimplemented. See
 `docs/MYSQL_DIRECT_CONNECT_PHASE1_2026-10-22.md`.
+
+### MySQL verified TLS and managed workbench sessions (2026-10-22)
+
+The native MySQL driver now supports strict certificate/hostname-verified TLS,
+optional CA and paired client key material. Remote plaintext connections are
+rejected even in editor Test Connection. A session manager owns asynchronous
+connection setup, cancellation, disconnect and cleanup, with stale-result
+prevention and real SHOW DATABASES metadata queries. The workbench exposes
+explicit Connect, Cancel, Disconnect and credential reentry before Reconnect;
+its object view shows real database names rather than demo tables in profile
+mode. This does not yet implement schema/table browsing or SQL execution.
+See docs/MYSQL_TLS_MANAGED_SESSION_2026-10-22.md.

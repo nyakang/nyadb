@@ -46,10 +46,8 @@ func TestDirectMySQLConfigFailsClosedOnUnsupportedFeatures(t *testing.T) {
 		name   string
 		mutate func(*ActiveSettings)
 	}{
-		{"ssl", func(s *ActiveSettings) { s.MySQLAdvanced.SSL.Enabled = true }},
 		{"ssh", func(s *ActiveSettings) { s.MySQLAdvanced.SSH.Enabled = true }},
 		{"http", func(s *ActiveSettings) { s.MySQLAdvanced.HTTP.Enabled = true }},
-		{"tls", func(s *ActiveSettings) { s.TLSMode = "require" }},
 		{"pipe", func(s *ActiveSettings) { s.MySQLAdvanced.NamedPipe = true }},
 		{"compression", func(s *ActiveSettings) { s.MySQLAdvanced.Compression = true }},
 		{"charset", func(s *ActiveSettings) { s.MySQLAdvanced.Charset = "utf8mb4" }},
@@ -85,6 +83,7 @@ func TestDirectMySQLConnectRefusesWithoutDialOnInvalidConfig(t *testing.T) {
 		t.Fatalf("unsupported tunnel attempted network: %v", err)
 	}
 	s.MySQLAdvanced.SSH.Enabled = false
+	s.Host = "127.0.0.1"
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	err = TestDirectMySQLConnection(ctx, s, "")

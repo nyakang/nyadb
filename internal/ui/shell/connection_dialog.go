@@ -146,6 +146,9 @@ func (s *State) saveConnectionDraft() {
 		s.connectionError = "保存失败（连接名称可能重复或配置无效）：" + err.Error()
 		return
 	}
+	if s.mysqlSessionProfileID == saved.ID {
+		s.disconnectMySQLSession()
+	}
 	s.selectedProfileID = saved.ID
 	s.loadProfiles()
 	s.closeConnectionDialog()

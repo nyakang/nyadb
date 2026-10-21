@@ -14,7 +14,7 @@ import (
 
 var ErrMySQLUnsupported = errors.New("MySQL connection setting not supported yet")
 
-// DirectMySQLConfig builds a TCP-only MySQL driver configuration without ever
+// DirectMySQLConfig builds a MySQL TCP configuration with optional verified TLS without ever
 // formatting a credential-bearing DSN or storing credentials in Profile.
 // Unsupported security/tunneling settings fail closed before any network I/O.
 func DirectMySQLConfig(s ActiveSettings, password string) (*mysql.Config, error) {
@@ -27,8 +27,8 @@ func DirectMySQLConfig(s ActiveSettings, password string) (*mysql.Config, error)
 		return nil, err
 	}
 	switch {
-	case a.SSL.Enabled || (s.TLSMode != "" && s.TLSMode != "disable"):
-		return nil, fmt.Errorf("%w: TLS/SSL; encrypted connections are not available in this phase", ErrMySQLUnsupported)
+	case s.TLSMode == "prefer" || s.TLSMode == "verify-ca":
+		return nil, fmt.Errorf("%w: TLS mode without hostname verification", ErrMySQLUnsupported)
 	case a.SSH.Enabled:
 		return nil, fmt.Errorf("%w: SSH tunnel", ErrMySQLUnsupported)
 	case a.HTTP.Enabled:
@@ -53,6 +53,20 @@ func DirectMySQLConfig(s ActiveSettings, password string) (*mysql.Config, error)
 	cfg.Addr = net.JoinHostPort(strings.Trim(s.Host, "[]"), fmt.Sprint(s.Port))
 	cfg.User, cfg.Passwd = s.Username, password
 	cfg.DBName = s.Database
+	if a.SSL.Enabled || (s.TLSMode != "" && s.TLSMode != "disable") {
+		tlsConfig, err := verifiedMySQLTLS(s.Host, a.SSL)
+		if err != nil {
+			return nil, err
+		}
+		cfg.TLS = tlsConfig
+	}
+	if cfg.TLS == nil {
+		host := strings.Trim(s.Host, "[]")
+		ip := net.ParseIP(host)
+		if !strings.EqualFold(host, "localhost") && (ip == nil || !ip.IsLoopback()) {
+			return nil, fmt.Errorf("%w: remote MySQL requires verified TLS", ErrMySQLUnsupported)
+		}
+	}
 	// Never allow cleartext or insecure legacy authentication plugins.
 	cfg.AllowCleartextPasswords = false
 	cfg.AllowOldPasswords = false

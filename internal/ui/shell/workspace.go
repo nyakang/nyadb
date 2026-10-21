@@ -92,6 +92,10 @@ func (s *State) objectActions(c *ui.Context) {
 }
 
 func (s *State) objectsWorkspace(c *ui.Context) {
+	if s.profileMode {
+		s.mysqlDatabaseWorkspace(c)
+		return
+	}
 	ui.Column(c).Fill().Children(func() {
 		s.objectActions(c)
 		items := s.visibleObjects()

@@ -198,7 +198,7 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 		if p.Kind == connections.MySQL {
 			ui.Row(c).Gap(0).Children(func() {
 				ui.Box(c).Width(labelWidth)
-				ui.Text(c, "当前仅支持普通 TCP 直连测试，未启用 TLS；请勿发送生产环境密码。").
+				ui.Text(c, "支持严格证书验证的 TLS；未加密连接仅允许本机，请勿发送生产凭据。").
 					FontSize(11).TextColor(theme.Gold)
 			})
 		}

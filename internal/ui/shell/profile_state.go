@@ -9,7 +9,7 @@ import (
 )
 
 // NewWithProfiles replaces the demo connection roots with persisted,
-// non-secret profiles. Actual sessions and metadata remain unimplemented.
+// non-secret profiles. Sessions and database-name metadata are available after an explicit connect.
 func NewWithProfiles(service *connections.Service) *State {
 	s := New()
 	s.profileMode = true
@@ -17,6 +17,7 @@ func NewWithProfiles(service *connections.Service) *State {
 	s.explorerName = "我的连接"
 	s.explorerRow = -1
 	s.status = "就绪 · 连接档案已加载（尚未连接数据库）"
+	s.mysqlSessionManager = connections.NewMySQLSessionManager()
 	s.loadProfiles()
 	return s
 }
@@ -140,7 +141,11 @@ func (s *State) deleteProfile() {
 		s.status = "删除连接失败：" + err.Error()
 		return
 	}
+	if s.mysqlSessionProfileID == p.ID {
+		s.disconnectMySQLSession()
+	}
 	if s.selectedProfileID == p.ID {
+		s.disconnectMySQLSession()
 		s.selectedProfileID = 0
 	}
 	s.loadProfiles()
