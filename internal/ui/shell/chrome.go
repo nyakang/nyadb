@@ -165,13 +165,20 @@ func (s *State) toolBar(c *ui.Context) {
 	})
 }
 
+func (s *State) mysqlWorkbenchStatus() string {
+	if s.mysqlSessionStatus == "" {
+		return "未连接"
+	}
+	return s.mysqlSessionStatus
+}
+
 func (s *State) statusBar(c *ui.Context) {
 	ui.Row(c).Height(25).Padding(2, 10).AlignItems(ui.Center).Gap(12).
 		Background(theme.Menu).BorderWidth(1, 0, 0, 0).BorderColor(theme.Border).Children(func() {
 		ui.Text(c, s.status).FontSize(11).TextColor(theme.Text).SingleLine().Grow(1)
 		if s.profileMode {
 			ui.Text(c, fmt.Sprintf("%d 个连接档案", len(s.profileEntries))).FontSize(11).TextColor(theme.Muted)
-			ui.Text(c, "●  未连接").FontSize(11).TextColor(theme.Blue)
+			ui.Text(c, "●  "+s.mysqlWorkbenchStatus()).FontSize(11).TextColor(theme.Blue)
 			return
 		}
 		ui.Text(c, "5 个模拟连接").FontSize(11).TextColor(theme.Muted)
