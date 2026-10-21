@@ -84,33 +84,33 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 }
 
 func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
-	ui.Column(c).Width(214).Height(height).Background(theme.Sidebar).Gap(8).Padding(11, 9).Children(func() {
-		ui.Row(c).Height(25).AlignItems(ui.Center).Children(func() {
+	ui.Column(c).Width(230).Height(height).Background(theme.Sidebar).Gap(7).Padding(12, 10).Children(func() {
+		ui.Row(c).Height(29).Gap(7).AlignItems(ui.Center).Children(func() {
 			theme.Icon(c, "catalog-filter", 16, theme.Blue)
 			ui.Text(c, "连接筛选").FontSize(12).Bold()
 		})
-		ui.Scroll(c).Height(height - 55).Children(func() {
-			ui.Column(c).Gap(5).Children(func() {
+		ui.Scroll(c).Height(height - 58).Children(func() {
+			ui.Column(c).Gap(4).Children(func() {
 				for _, name := range catalogEngines {
 					if !s.catalogSidebarFilterVisible(name, false) {
 						continue
 					}
 					label := name
 					checked := s.connectionEngineFilters[label]
-					ui.Row(c).Height(23).Gap(5).AlignItems(ui.Center).Children(func() {
+					ui.Row(c).Height(27).Gap(7).AlignItems(ui.Center).Children(func() {
 						if ui.Checkbox(c, &checked, "").Label("筛选 " + label).Changed() {
 							setCatalogFilter(s.connectionEngineFilters, label, checked)
 						}
 						if item, ok := catalogFilterIcon(label, false); ok {
-							s.catalogIcon(c, item, 16)
+							s.catalogIcon(c, item, 18)
 						} else {
-							theme.Icon(c, "database", 16, theme.Muted)
+							theme.Icon(c, "database", 18, theme.Muted)
 						}
-						ui.Text(c, label).FontSize(11)
+						ui.Text(c, label).FontSize(12).SingleLine()
 					})
 				}
 				ui.Box(c).Height(1).Background(theme.Border).Margin(8, 0)
-				ui.Row(c).Height(25).Gap(6).AlignItems(ui.Center).Children(func() {
+				ui.Row(c).Height(30).Gap(7).AlignItems(ui.Center).Children(func() {
 					theme.Icon(c, "catalog-vendor", 16, theme.Blue)
 					ui.Text(c, "供应商筛选").FontSize(12).Bold()
 				})
@@ -119,17 +119,17 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 						continue
 					}
 					label := name
+					displayName := catalogTreeVendorLabels[name]
+					if displayName == "" {
+						displayName = name
+					}
 					checked := s.connectionVendorFilters[label]
-					ui.Row(c).Height(23).Gap(5).AlignItems(ui.Center).Children(func() {
+					ui.Row(c).Height(27).Gap(7).AlignItems(ui.Center).Children(func() {
 						if ui.Checkbox(c, &checked, "").Label("筛选供应商 " + label).Changed() {
 							setCatalogFilter(s.connectionVendorFilters, label, checked)
 						}
-						if item, ok := catalogFilterIcon(label, true); ok {
-							s.catalogIcon(c, item, 16)
-						} else {
-							theme.Icon(c, "catalog-vendor", 16, theme.Muted)
-						}
-						ui.Text(c, label).FontSize(11)
+						s.catalogProviderIcon(c, label, 18)
+						ui.Text(c, displayName).FontSize(12).SingleLine()
 					})
 				}
 			})

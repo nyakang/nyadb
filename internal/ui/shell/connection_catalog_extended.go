@@ -57,7 +57,6 @@ var additionalCatalog = []catalogEntry{
 
 func init() {
 	databaseCatalog = append(databaseCatalog, additionalCatalog...)
-	catalogVendors = append(catalogVendors, "电科金仓", "亚信星辰", "瀚高", "OceanBase", "Fujitsu", "Oracle", "MongoDB", "Redis")
 }
 
 // Prefer an embedded catalog icon already tracked in the project. Additional

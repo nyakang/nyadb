@@ -84,3 +84,7 @@ The connection chooser **list view** was subsequently rebuilt as a compact
 expandable vendor tree after live Navicat 18 runtime observation. It includes
 25-DIP rows (intentionally roomier than the observed 19px original), independent vendor expansion, full-row selection and two-pane
 search filtering. See `docs/NAVICAT_LIST_TREE_DIFFERENTIAL_2026-10-21.md`.
+
+A subsequent sidebar iteration unified vendor filter ordering with the tree,
+added a separate source-attributed provider badge pack, adjusted spacing, and
+fixed the Dameng vendor checkbox. See `docs/PROVIDER_ICON_SIDEBAR_2026-10-21.md`.

@@ -18,6 +18,8 @@ a network connection, an external icon pack, or a post-installation setup.
 - `tools/connection-icon-sources/*.svg`: source artwork used to render the
   PNG set, pinned to upstream revisions; upstream license copies are retained.
 - `tools/build_connection_icons.mjs`: optional deterministic asset generator.
+- `internal/assets/providericons/`: 15 separate, embedded provider filter badges,
+  including provenance and SHA-256 manifest (see `docs/PROVIDER_ICON_SIDEBAR_2026-10-21.md`).
 
 Normal builds embed all PNGs in the NyaDB executable. Changing the working
 directory cannot cause the connection icons to disappear. Missing or invalid

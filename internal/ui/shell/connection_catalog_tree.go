@@ -25,7 +25,6 @@ var catalogTreeVendorOrder = []string{
 }
 
 var catalogTreeVendorLabels = map[string]string{
-	"阿里云":     "阿里巴巴云",
 	"亚信星辰":    "平凯星辰",
 	"MongoDB": "MongoDB Atlas",
 	"Redis":   "Redis Enterprise Cloud",
@@ -34,7 +33,6 @@ var catalogTreeVendorLabels = map[string]string{
 type catalogTreeGroup struct {
 	vendor string
 	label  string
-	icon   catalogEntry
 	items  []catalogEntry
 }
 
@@ -48,7 +46,7 @@ func (s *State) catalogSidebarFilterVisible(label string, vendor bool) bool {
 		if !catalogMatch(item, s.connectionSearch, nil, nil) {
 			continue
 		}
-		if vendor && item.vendor == label {
+		if vendor && (item.vendor == label || (label == "达梦" && item.section == "全部" && item.engine == "达梦")) {
 			return true
 		}
 		if !vendor && item.section == "全部" && item.engine == label {
@@ -78,6 +76,12 @@ func (s *State) catalogTreeDirect() []catalogEntry {
 func (s *State) catalogTreeGroups() []catalogTreeGroup {
 	byVendor := make(map[string][]catalogEntry)
 	for _, item := range databaseCatalog {
+		if item.section == "全部" && item.engine == "达梦" {
+			if catalogMatch(item, s.connectionSearch, s.connectionEngineFilters, s.connectionVendorFilters) {
+				byVendor["达梦"] = append(byVendor["达梦"], item)
+			}
+			continue
+		}
 		if item.section != "云数据库" || !catalogMatch(item,
 			s.connectionSearch, s.connectionEngineFilters, s.connectionVendorFilters) {
 			continue
@@ -95,12 +99,8 @@ func (s *State) catalogTreeGroups() []catalogTreeGroup {
 		if label == "" {
 			label = vendor
 		}
-		icon, ok := catalogFilterIcon(vendor, true)
-		if !ok {
-			icon = byVendor[vendor][0]
-		}
 		groups = append(groups, catalogTreeGroup{
-			vendor: vendor, label: label, icon: icon, items: byVendor[vendor],
+			vendor: vendor, label: label, items: byVendor[vendor],
 		})
 	}
 	for _, vendor := range catalogTreeVendorOrder {
@@ -147,7 +147,7 @@ func (s *State) catalogTree(c *ui.Context) {
 						arrow = "▾"
 					}
 					ui.Text(c, arrow).Width(14).FontSize(12).TextColor(theme.Muted)
-					s.catalogTreeIcon(c, group.icon)
+					s.catalogProviderIcon(c, group.vendor, 18)
 					ui.Text(c, group.label).FontSize(12.5).SingleLine()
 				})
 			})

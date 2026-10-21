@@ -37,7 +37,7 @@ var databaseCatalog = []catalogEntry{
 }
 
 var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "MariaDB", "MongoDB", "Redis", "Snowflake"}
-var catalogVendors = []string{"阿里云", "华为", "腾讯云", "AWS", "Google Cloud", "Microsoft", "Oracle Cloud"}
+var catalogVendors = catalogTreeVendorOrder
 
 func catalogMatch(e catalogEntry, query string, engines, vendors map[string]bool) bool {
 	q := strings.ToLower(strings.TrimSpace(query))
@@ -47,7 +47,7 @@ func catalogMatch(e catalogEntry, query string, engines, vendors map[string]bool
 	if len(engines) != 0 && !engines[e.engine] {
 		return false
 	}
-	if len(vendors) != 0 && !vendors[e.vendor] {
+	if len(vendors) != 0 && !vendors[e.vendor] && !(e.section == "全部" && e.engine == "达梦" && vendors["达梦"]) {
 		return false
 	}
 	return true
