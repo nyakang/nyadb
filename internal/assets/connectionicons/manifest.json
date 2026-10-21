@@ -1,0 +1,148 @@
+{
+  "format": 1,
+  "sourceCollection": "https://github.com/simple-icons/simple-icons",
+  "sourceCommit": "c71c69e3a27e4436936b831c72643e6513b9f49b",
+  "generator": "tools/build_connection_icons.mjs",
+  "entries": [
+    {
+      "name": "MySQL",
+      "file": "mysql.png",
+      "source": "https://github.com/devicons/devicon/blob/6a37858047b0e8d9c9c0e68f4a071fc410652e89/icons/mysql/mysql-original.svg",
+      "artwork": "Devicon MIT artwork; brand trademark rights retained",
+      "sha256": "eb87cffe3dccf3c940b571de996bf9f2b3547a107b4de62a9a52369267b290b0"
+    },
+    {
+      "name": "PostgreSQL",
+      "file": "postgresql.png",
+      "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/postgresql.svg",
+      "artwork": "Simple Icons source, CC0 collection; trademark rights retained",
+      "sha256": "490982872730445a318d998139e398c2414a748db0124731303eb9ed74c1e6e3"
+    },
+    {
+      "name": "SQL Server",
+      "file": "sql-server.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "018716da2ea9a8e3899d706067e07fd5afdf60dbb02d32757ea18d4909ce9fa7"
+    },
+    {
+      "name": "Oracle",
+      "file": "oracle.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "ecec117514307148244196f33c43da5a2bbc66c645cdce06ab5d4fe55207975b"
+    },
+    {
+      "name": "SQLite",
+      "file": "sqlite.png",
+      "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/sqlite.svg",
+      "artwork": "Simple Icons source, CC0 collection; trademark rights retained",
+      "sha256": "5c6420bb06ba5f33f106eccacf6059947303ced2b27384722dbfdfbfb3ee0abf"
+    },
+    {
+      "name": "MariaDB",
+      "file": "mariadb.png",
+      "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/mariadb.svg",
+      "artwork": "Simple Icons source, CC0 collection; trademark rights retained",
+      "sha256": "c44573b05a6ce9df0d527c61be1a5bd156aecc57c741745de7a23e1551f56587"
+    },
+    {
+      "name": "MongoDB",
+      "file": "mongodb.png",
+      "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/mongodb.svg",
+      "artwork": "Simple Icons source, CC0 collection; trademark rights retained",
+      "sha256": "fe5599c1ae8d33d0baa4163176399b0004ca527e692ac0ee0854280af89fecea"
+    },
+    {
+      "name": "Redis",
+      "file": "redis.png",
+      "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/redis.svg",
+      "artwork": "Simple Icons source, CC0 collection; trademark rights retained",
+      "sha256": "1370b96ac51feb19741ee9907dca594d931567b03708d16948cdba341d30c87e"
+    },
+    {
+      "name": "Snowflake",
+      "file": "snowflake.png",
+      "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/snowflake.svg",
+      "artwork": "Simple Icons source, CC0 collection; trademark rights retained",
+      "sha256": "ca77389e7f5179a82676bc638320afc099ec0a2994727760e1401483112bc779"
+    },
+    {
+      "name": "达梦",
+      "file": "dameng.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "52b59c36fc3f553accf32f32abde2f9949490ff1b4452f30b6d08b22a6895e72"
+    },
+    {
+      "name": "OceanBase",
+      "file": "oceanbase.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "fcbb568bb1a8d5fec4fcf60f41f3bb340e00858c08279a450b9f597e0b3ebb72"
+    },
+    {
+      "name": "阿里云 RDS MySQL 版",
+      "file": "alibaba-rds-mysql.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "19a1b514a5c8a1d00a0cd11253b2d569497519d6309fe925c582e4a15976c23e"
+    },
+    {
+      "name": "阿里云 RDS PostgreSQL 版",
+      "file": "alibaba-rds-postgresql.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "0afe88e339bd140732f14dffdc7e98079c96f152e74747e1f786a29c46058eb9"
+    },
+    {
+      "name": "阿里云 RDS SQL Server 版",
+      "file": "alibaba-rds-sqlserver.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "8e8e585e6abe391c7671d5f5c77108b63b2fe0ef38f7d12f7a7f005a15f0bebb"
+    },
+    {
+      "name": "阿里云 MongoDB 版",
+      "file": "alibaba-mongodb.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "fca1c8b3006e913f8f2d0e8048cc5d41d4cc776f2c141629a10d1f022ab0a3ae"
+    },
+    {
+      "name": "阿里云 Redis 版",
+      "file": "alibaba-redis.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "1eefbb597fdb204b59dc38e6f1259429f18628352e0da160bd5d97245d7dbcb5"
+    },
+    {
+      "name": "腾讯云 MySQL",
+      "file": "tencent-mysql.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "19a1b514a5c8a1d00a0cd11253b2d569497519d6309fe925c582e4a15976c23e"
+    },
+    {
+      "name": "华为云 PostgreSQL",
+      "file": "huawei-postgresql.png",
+      "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/huawei.svg",
+      "artwork": "Simple Icons source, CC0 collection; trademark rights retained",
+      "sha256": "caa7bc7ab5cf2a510add202c1db29b6f067857e8190e920246ca0a7a7d939421"
+    },
+    {
+      "name": "AWS RDS MySQL",
+      "file": "aws-rds-mysql.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "76c8311f4353f332c7cf266b9258351d926e50f780eb361e0c3547ec486fcfb4"
+    },
+    {
+      "name": "Azure SQL",
+      "file": "azure-sql.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "7e25493781b4e3a1042da86829edc292051d396986a08c8b33103f8a21e2560a"
+    }
+  ]
+}

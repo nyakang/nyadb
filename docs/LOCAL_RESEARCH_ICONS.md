@@ -38,10 +38,10 @@ NYADB_RESEARCH_ICON_DIR=/absolute/path/to/nyadb/temp/research/navicat-png-invent
 ```
 
 The toggle is **explicitly opt-in**. Without `NYADB_RESEARCH_ICONS=1`,
-NyaDB renders the independently authored SVGs, even if research PNGs
-exist on the computer. No research files are embedded or copied to
-`resources/`. UI loads PNGs once during bootstrap and caches MyGo
-`ui.Bitmap` objects, avoiding disk access during frame rendering.
+NyaDB renders the **standard committed and embedded project PNGs**, with
+NyaDB-authored SVG fallbacks (see `docs/ICON_ASSETS.md`). Extracted
+Navicat images are not copied into `resources/` or compiled into releases.
+Opt-in research PNGs are decoded once into cached MyGo `ui.Bitmap` objects.
 
 Each approved file must be regular, at most 1 MiB, decodable as PNG,
 and exactly 64×64. Missing or invalid files are skipped individually
