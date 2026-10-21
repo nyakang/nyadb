@@ -77,6 +77,7 @@ func (s *State) catalogRecents() []catalogEntry {
 }
 
 func (s *State) chooseCatalogEntry(e catalogEntry) {
+	s.connectionSelectedName = e.name
 	if e.kind == "" {
 		s.connectionKind = ""
 		s.connectionError = e.name + " 的连接驱动尚未支持"

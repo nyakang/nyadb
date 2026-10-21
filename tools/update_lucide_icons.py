@@ -14,6 +14,7 @@ NAMES = (
     "plug-zap", "file-code-2", "table-2", "eye", "square-function",
     "user-round", "wrench", "database-backup", "calendar-clock",
     "workflow", "info", "folder", "database", "plus", "x", "refresh-cw",
+    "layout-grid", "list", "list-filter", "building-2",
 )
 BASE = f"https://raw.githubusercontent.com/lucide-icons/lucide/{VERSION}"
 

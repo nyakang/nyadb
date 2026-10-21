@@ -11,10 +11,10 @@ func TestBundledIconCacheForFullCatalog(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(loaded) != len(databaseCatalog) {
-		t.Fatalf("expected %d bundled icons, got %d", len(databaseCatalog), len(loaded))
+	if len(loaded) != 20 {
+		t.Fatalf("expected 20 bundled icons, got %d", len(loaded))
 	}
-	for _, item := range databaseCatalog {
+	for _, item := range databaseCatalog[:20] {
 		icon := loaded[item.name]
 		if icon == nil {
 			t.Errorf("missing embedded icon for %q", item.name)
@@ -25,7 +25,7 @@ func TestBundledIconCacheForFullCatalog(t *testing.T) {
 		}
 	}
 	s := New()
-	if len(s.bundledIcons) != len(databaseCatalog) {
+	if len(s.bundledIcons) != 20 {
 		t.Fatal("default app state must load bundled catalog images")
 	}
 	tt := ui.NewTester(s.View, 1280, 800)

@@ -23,7 +23,7 @@ func TestConnectionCatalogFiltering(t *testing.T) {
 		t.Fatalf("engine filter: %+v", items)
 	}
 	setCatalogFilter(s.connectionVendorFilters, "阿里云", true)
-	if items := s.catalogItems("云数据库"); len(items) != 1 || items[0].engine != "PostgreSQL" {
+	if items := s.catalogItems("云数据库"); len(items) < 2 || items[0].engine != "PostgreSQL" {
 		t.Fatalf("vendor and engine intersection: %+v", items)
 	}
 	s.clearCatalogFilters()
