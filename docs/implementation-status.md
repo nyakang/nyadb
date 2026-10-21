@@ -115,3 +115,11 @@ MyGo multiline editor with confirmation, cancellation and clipboard copying.
 Because initialization SQL can contain credentials, its text is session-only,
 not saved or executed. Details and original observation evidence:
 `docs/MYSQL_COMPATIBILITY_INITIAL_QUERY_2026-10-21.md`.
+
+### MySQL Database tab offline reconstruction (2026-10-21)
+
+The Database tab now matches the observed custom database list design using a
+native MyGo Table with Database and Auto Open columns. The custom-list toggle
+is persisted; add/remove stay disabled until real MySQL metadata retrieval is
+available. Original and NyaDB Linux GUI observations:
+`docs/MYSQL_DATABASE_TAB_DIFFERENTIAL_2026-10-21.md`.

@@ -38,8 +38,8 @@ func TestMySQLNativeEditorTabsAndBack(t *testing.T) {
 	if err := tt.Click("数据库"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionEditorTab != 2 || !tt.HasText("默认数据库：") {
-		t.Fatal("database tab should expose the existing profile database field")
+	if s.connectionEditorTab != 2 || !tt.HasText("使用自定义数据库列表") || !tt.HasText("自动打开") {
+		t.Fatal("database tab should show the original custom database list")
 	}
 	if err := tt.Click("常规"); err != nil {
 		t.Fatal(err)
