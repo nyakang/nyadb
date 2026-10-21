@@ -212,3 +212,16 @@ non-secret main and alternative settings atomically in one profile row.
 SQLite schema v4 adds a backward-compatible variants JSON column; real
 database-session activation of an alternative remains unimplemented.
 See `docs/MYSQL_EDITOR_PROFILE_LIFECYCLE_DIFFERENTIAL_2026-10-21.md`.
+
+### Active MySQL configuration and future session resolution (2026-10-22)
+
+Selecting an editor row no longer changes the Active target. A context-menu
+action marks the primary or an alternative as Active in the window draft;
+Confirm persists the selection with the alternatives. SQLite schema v5
+adds `active_variant` (empty for primary) and migrates older profiles
+without changing their default. The non-secret `ActiveSettings` resolver
+is available to a future MySQL session factory and fails closed on invalid
+references. The workbench inspector now shows the resolved Active
+configuration but does not claim to be connected. The sidebar has keyboard
+up/down navigation and one-time name focus. See
+`docs/MYSQL_ACTIVE_CONFIGURATION_DIFFERENTIAL_2026-10-22.md`.

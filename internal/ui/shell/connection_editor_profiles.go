@@ -32,6 +32,7 @@ func (s *State) currentConnectionSnapshot() connectionEditorSnapshot {
 func (s *State) resetConnectionConfigurations() {
 	s.connectionProfilesVisible = false
 	s.connectionActiveConfig = 0
+	s.connectionActiveTarget = 0
 	s.connectionMainConfig = connectionEditorSnapshot{}
 	s.connectionOtherConfigs = nil
 }
@@ -42,6 +43,7 @@ func (s *State) initializeConnectionConfigurations() {
 		return
 	}
 	s.connectionProfilesVisible = true
+	s.connectionActiveTarget = 0
 	s.connectionMainConfig = s.currentConnectionSnapshot()
 	parent := s.connectionDraft
 	for _, v := range parent.Variants {
@@ -67,6 +69,15 @@ func (s *State) initializeConnectionConfigurations() {
 			snap.numbers[i] = strconv.Itoa(n)
 		}
 		s.connectionOtherConfigs = append(s.connectionOtherConfigs, snap)
+		if v.Name == parent.ActiveVariant {
+			s.connectionActiveTarget = len(s.connectionOtherConfigs)
+		}
+	}
+	// On reopen Navicat highlights the saved Active configuration rather than
+	// always resetting the selected row to the primary configuration.
+	if s.connectionActiveTarget > 0 {
+		s.connectionActiveConfig = s.connectionActiveTarget
+		s.restoreConnectionConfiguration(s.connectionOtherConfigs[s.connectionActiveTarget-1])
 	}
 }
 
@@ -120,6 +131,16 @@ func (s *State) selectConnectionConfiguration(index int) {
 		snap.profile.Notes = s.connectionMainConfig.profile.Notes
 		s.restoreConnectionConfiguration(snap)
 	}
+}
+
+// The highlighted editor row and the Active connection target are independent.
+// Marking Active remains a draft until the parent dialog is confirmed.
+func (s *State) markConnectionConfigurationActive(index int) {
+	if s.connectionDraft.ID == 0 || index < 0 || index > len(s.connectionOtherConfigs) {
+		return
+	}
+	s.selectConnectionConfiguration(index)
+	s.connectionActiveTarget = index
 }
 
 func (s *State) addConnectionConfiguration() {
@@ -195,6 +216,11 @@ func (s *State) removeConnectionConfiguration(index int) {
 	} else if s.connectionActiveConfig > index {
 		s.connectionActiveConfig--
 	}
+	if s.connectionActiveTarget == index {
+		s.connectionActiveTarget = 0
+	} else if s.connectionActiveTarget > index {
+		s.connectionActiveTarget--
+	}
 }
 
 func (s *State) prepareConnectionConfigurations() (connections.Profile, error) {
@@ -220,6 +246,10 @@ func (s *State) prepareConnectionConfigurations() (connections.Profile, error) {
 		return main, fmt.Errorf("主要配置文件：%w", err)
 	}
 	main.Variants = nil
+	main.ActiveVariant = ""
+	if s.connectionActiveTarget > 0 && s.connectionActiveTarget <= len(s.connectionOtherConfigs) {
+		main.ActiveVariant = s.connectionOtherConfigs[s.connectionActiveTarget-1].name
+	}
 	for i, v := range s.connectionOtherConfigs {
 		if strings.TrimSpace(v.name) == "" {
 			return main, fmt.Errorf("配置文件 %d 的名称不能为空", i+1)
@@ -256,7 +286,7 @@ func (s *State) connectionConfigurationsSidebar(c *ui.Context, height float32) {
 			}
 		})
 		ui.Column(c).Grow(1).Gap(0).Children(func() {
-			s.connectionConfigRow(c, 0, "主要配置文件 (Active)")
+			s.connectionConfigRow(c, 0, "主要配置文件")
 			for i, snap := range s.connectionOtherConfigs {
 				s.connectionConfigRow(c, i+1, snap.name)
 			}
@@ -266,6 +296,9 @@ func (s *State) connectionConfigurationsSidebar(c *ui.Context, height float32) {
 
 func (s *State) connectionConfigRow(c *ui.Context, index int, name string) {
 	ui.Row(c).Height(25).Gap(0).Children(func() {
+		if index == s.connectionActiveTarget {
+			name += " (Active)"
+		}
 		selected := index == s.connectionActiveConfig
 		bg := ui.Hex("#232629")
 		if selected {
@@ -275,6 +308,11 @@ func (s *State) connectionConfigRow(c *ui.Context, index int, name string) {
 			Width(257).Height(25).Padding(4, 9).
 			Background(bg).Border(0, bg).Justify(ui.Start)
 		row.ContextMenu(func(m *ui.Menu) {
+			if index != s.connectionActiveTarget {
+				if m.Item("设置为活动配置文件").Chosen() {
+					s.markConnectionConfigurationActive(index)
+				}
+			}
 			if index == 0 {
 				return
 			}
@@ -288,6 +326,14 @@ func (s *State) connectionConfigRow(c *ui.Context, index int, name string) {
 				s.selectConnectionConfiguration(index)
 			}
 		})
+		// Native focused row: arrow keys move the editing selection, never
+		// the saved Active target. Enter/Space retain MyGo button behavior.
+		if row.Shortcut(0, ui.KeyDown) {
+			s.selectConnectionConfiguration(min(index+1, len(s.connectionOtherConfigs)))
+		}
+		if row.Shortcut(0, ui.KeyUp) {
+			s.selectConnectionConfiguration(max(index-1, 0))
+		}
 		if row.Clicked() {
 			s.selectConnectionConfiguration(index)
 		}

@@ -150,6 +150,21 @@ func (s *State) profileInspector(c *ui.Context) {
 				s.property(c, "状态", "未连接")
 				if p.Kind == connections.SQLite {
 					s.property(c, "文件", p.Database)
+				} else if p.Kind == connections.MySQL {
+					resolved, err := connections.ResolveActiveSettings(p)
+					if err != nil {
+						s.property(c, "活动配置", "无效，请编辑连接")
+					} else {
+						activeName := "主要配置文件"
+						if resolved.ConfigurationName != "" {
+							activeName = resolved.ConfigurationName
+						}
+						s.property(c, "活动配置", activeName)
+						s.property(c, "主机", resolved.Host)
+						s.property(c, "端口", fmt.Sprint(resolved.Port))
+						s.property(c, "用户", resolved.Username)
+						s.property(c, "数据库", resolved.Database)
+					}
 				} else {
 					s.property(c, "主机", p.Host)
 					s.property(c, "端口", fmt.Sprint(p.Port))
