@@ -92,6 +92,10 @@ func (s *State) catalogIcon(c *ui.Context, item catalogEntry, size float32) {
 		ui.Image(c, bitmap).Size(size*1.35, size*1.35).Fit(ui.Contain)
 		return
 	}
+	if bitmap := s.bundledIcons[item.name]; bitmap != nil {
+		ui.Image(c, bitmap).Size(size*1.16, size*1.16).Fit(ui.Contain)
+		return
+	}
 	ui.Box(c).Size(size, size).Radius(6).Background(ui.Hex(item.color)).Center().Children(func() {
 		symbolSize := size * 0.64
 		theme.Icon(c, item.symbol, symbolSize, theme.Text)
