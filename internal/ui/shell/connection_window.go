@@ -32,6 +32,7 @@ func (s *State) ConnectionWindowClosed() {
 	s.connectionSecret = ""
 	s.clearMySQLSSLPassphrase()
 	s.clearMySQLSSHSecrets()
+	s.clearMySQLHTTPSecrets()
 	s.clearMySQLInitialQuery()
 	s.connectionError = ""
 }

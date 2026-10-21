@@ -194,6 +194,37 @@ func Run() error {
 				})
 			}()
 		})
+		state.SetMySQLHTTPFilePicker(func(kind shell.MySQLHTTPFile) {
+			version := state.MySQLHTTPSessionVersion()
+			parent := chooser
+			if parent == nil {
+				return
+			}
+			title := "选择 HTTP 证书文件"
+			switch kind {
+			case shell.MySQLHTTPClientKey:
+				title = "选择 HTTP 客户端密钥"
+			case shell.MySQLHTTPClientCertificate:
+				title = "选择 HTTP 客户端证书"
+			case shell.MySQLHTTPCA:
+				title = "选择 HTTP CA 证书"
+			}
+			go func() {
+				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
+					Parent: parent,
+					Title:  title,
+				})
+				window.Update(func() {
+					if err != nil {
+						state.MySQLHTTPFilePickerError(version)
+						return
+					}
+					if len(paths) > 0 {
+						state.SelectMySQLHTTPFile(kind, version, paths[0])
+					}
+				})
+			}()
+		})
 	})
 	return mygo.App.Run()
 }

@@ -67,10 +67,12 @@ func (s *State) startEditProfile() {
 	s.connectionDraft = p
 	s.clearMySQLSSLPassphrase()
 	s.clearMySQLSSHSecrets()
+	s.clearMySQLHTTPSecrets()
 	s.clearMySQLInitialQuery()
 	if p.Kind == connections.MySQL {
 		s.initMySQLAdvancedInputs()
 		s.initMySQLSSHInputs()
+		s.initMySQLHTTPInputs()
 	}
 	s.connectionPort = strconv.Itoa(int(p.Port))
 	s.connectionSecret = ""

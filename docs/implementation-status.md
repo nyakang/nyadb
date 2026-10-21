@@ -144,3 +144,14 @@ remain session-only and are cleared on editor lifecycle boundaries. The key
 path browser uses a native file picker with stale-result protection. Real
 SSH tunneling and host-key verification are not yet implemented. See
 `docs/MYSQL_SSH_TAB_DIFFERENTIAL_2026-10-21.md`.
+
+### MySQL HTTP tunnel tab (2026-10-21)
+
+The MyGo-native HTTP tab now includes the original tunnel URL, Base64 query
+setting, Authentication / Proxy subtabs, password and certificate sub-controls,
+native certificate file browsing, and proxy defaults (port 8080). HTTP and SSH
+tunnels are mutually exclusive. Non-secret settings persist in the MySQL
+advanced JSON; authentication passwords and certificate passphrases remain
+session-only. Actual HTTP transport, secure credentials storage and tunnel
+script export are not implemented. Original and NyaDB evidence:
+`docs/MYSQL_HTTP_TAB_DIFFERENTIAL_2026-10-21.md`.

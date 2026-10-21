@@ -31,6 +31,7 @@ type MySQLAdvanced struct {
 	Compatibility         MySQLCompatibility `json:"compatibility,omitempty"`
 	SSL                   MySQLSSL           `json:"ssl,omitempty"`
 	SSH                   MySQLSSH           `json:"ssh,omitempty"`
+	HTTP                  MySQLHTTP          `json:"http,omitempty"`
 }
 
 func DefaultMySQLAdvanced() MySQLAdvanced {
@@ -42,6 +43,7 @@ func DefaultMySQLAdvanced() MySQLAdvanced {
 		WriteTimeoutSeconds: 30, MaxSessions: 10,
 		Compatibility: DefaultMySQLCompatibility(),
 		SSH:           DefaultMySQLSSH(),
+		HTTP:          DefaultMySQLHTTP(),
 	}
 }
 
@@ -75,6 +77,13 @@ func normalizeMySQLAdvanced(a MySQLAdvanced) (MySQLAdvanced, error) {
 	var sshErr error
 	if a.SSH, sshErr = normalizeMySQLSSH(a.SSH); sshErr != nil {
 		return a, sshErr
+	}
+	var httpErr error
+	if a.HTTP, httpErr = normalizeMySQLHTTP(a.HTTP); httpErr != nil {
+		return a, httpErr
+	}
+	if a.SSH.Enabled && a.HTTP.Enabled {
+		return a, fmt.Errorf("%w: SSH and HTTP tunnels are mutually exclusive", ErrInvalid)
 	}
 	if a.ClientDriver != "默认" && a.ClientDriver != "旧版" {
 		return a, fmt.Errorf("%w: unsupported MySQL client driver", ErrInvalid)

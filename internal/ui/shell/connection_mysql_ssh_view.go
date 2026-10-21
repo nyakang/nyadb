@@ -78,7 +78,8 @@ func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
 	active := ssh.Enabled
 	ui.Column(c).Width(formWidth).Gap(1).Children(func() {
 		ui.Row(c).Height(28).AlignItems(ui.Center).Children(func() {
-			ui.Checkbox(c, &ssh.Enabled, "使用 SSH 隧道").Label("使用 SSH 隧道")
+			ui.Checkbox(c, &ssh.Enabled, "使用 SSH 隧道").Label("使用 SSH 隧道").
+				Disabled(s.connectionDraft.MySQLAdvanced.HTTP.Enabled)
 		})
 		s.mysqlSSHInputRow(c, "主机：", &ssh.Host, labelWidth, fieldWidth, active)
 		ui.Row(c).Height(32).Gap(0).AlignItems(ui.Center).Children(func() {
