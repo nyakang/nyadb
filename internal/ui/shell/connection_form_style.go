@@ -1,20 +1,23 @@
 package shell
 
-import "github.com/egoist/mygo/ui"
+import (
+	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/ui/theme"
+)
 
-// Scoped to the connection editor. Applying these values to the workbench
-// would change unrelated native widgets and is deliberately avoided.
+// The editor derives input and checkbox colors from the workbench palette.
+// Shared by every connection tab and editable configuration profile.
 var (
-	connectionFieldBackground  = ui.Hex("#232629")
-	connectionFieldBorder      = ui.Hex("#363c42")
-	connectionFieldFocus       = ui.Hex("#457e9c")
-	connectionFieldText        = ui.Hex("#d0d2d4")
-	connectionFieldMuted       = ui.Hex("#858d93")
-	connectionCheckboxBorder   = ui.Hex("#262a2e")
-	connectionCheckboxHover    = ui.Hex("#707b83")
-	connectionCheckboxDisabled = ui.Hex("#2a2d30")
-	connectionCheckColor       = ui.Hex("#c7c9cb")
-	connectionCheckDisabled    = ui.Hex("#797f83")
+	connectionFieldBackground  = theme.Panel
+	connectionFieldBorder      = theme.Border
+	connectionFieldFocus       = theme.Blue
+	connectionFieldText        = theme.Text
+	connectionFieldMuted       = theme.Muted
+	connectionCheckboxBorder   = theme.Border
+	connectionCheckboxHover    = theme.Muted
+	connectionCheckboxDisabled = theme.App
+	connectionCheckColor       = theme.Text
+	connectionCheckDisabled    = theme.Muted
 )
 
 const connectionCheckboxSize float32 = 14
@@ -22,13 +25,14 @@ const connectionCheckboxSize float32 = 14
 // Keep MyGo's native text editing, selection, IME, popup keyboard handling,
 // disabled semantics and focus border. Only its window-local theme is changed.
 func applyConnectionEditorFormTheme(c *ui.Context) {
+	theme.Apply(c)
 	t := *c.Theme()
 	t.Surface = connectionFieldBackground
 	t.Border = connectionFieldBorder
 	t.Text = connectionFieldText
 	t.TextMuted = connectionFieldMuted
 	t.Focus = connectionFieldFocus
-	t.Accent = connectionFieldFocus // MyGo TextInput uses Accent for the focused border.
+	t.Accent = theme.Accent // MyGo TextInput uses Accent for the focused border.
 	c.SetTheme(&t)
 }
 

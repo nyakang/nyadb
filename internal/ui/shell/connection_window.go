@@ -4,6 +4,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/assets/connectionicons"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
 // SetConnectionWindowHost binds the native child-window lifecycle. When no
@@ -83,6 +84,8 @@ func (s *State) ConnectionWindowIcon() ([]byte, error) {
 // ConnectionWindowView is the full content of a parent-owned, native modal
 // window. It is not a WebView, ui.Modal overlay or fake window chrome.
 func (s *State) ConnectionWindowView(c *ui.Context) {
+	// Native child windows do not inherit the workbench's theme.
+	theme.Apply(c)
 	if !s.connectionDialog {
 		return
 	}

@@ -262,3 +262,13 @@ construction and late-query UI corruption; caches clear on disconnect.
 The service enforces a bounded 10,000-object response and MyGo renders the
 metadata list with its native Table. This does not execute arbitrary SQL or
 load table rows. See docs/MYSQL_OBJECT_BROWSER_PHASE1_2026-10-22.md.
+
+### Native connection editor shared palette (2026-10-22)
+
+The native child window and type chooser now initialize the common NyaDB
+dark theme. The editor's body, tabs, footer, form controls, checkboxes and
+edit-profile sidebar use the same workbench color tokens rather than a
+separate blue-grey palette. The shared layout, native MyGo focus and IME
+behavior and existing connection functionality remain unchanged. Headless
+all-tab raster checks and Xvfb desktop screenshots are recorded in
+`docs/CONNECTION_EDITOR_SHARED_THEME_2026-10-22.md`.
