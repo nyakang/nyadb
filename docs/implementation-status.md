@@ -96,3 +96,12 @@ Linux Xvfb; NyaDB now displays native tabs, General fields, password masking,
 and a fixed footer in a 900×700 editor window. Unimplemented tabs and connection
 testing remain explicitly pending. Build/test checks and live GUI comparison:
 `docs/MYSQL_CONNECTION_EDITOR_DIFFERENTIAL_2026-10-21.md`.
+
+### MySQL advanced settings (2026-10-21)
+
+The Advanced tab has native MyGo controls for driver, charset, timing,
+compression, auto-connect, named pipe and session settings. Its non-secret
+settings are validated and persisted with a backward-compatible local SQLite
+schema migration (v1 to v2). Original behavior was observed in an isolated
+Navicat session; driver execution, initial SQL and compatibility overrides are
+not implemented. See `docs/MYSQL_ADVANCED_DIFFERENTIAL_2026-10-21.md`.

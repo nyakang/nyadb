@@ -14,7 +14,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const schemaVersion = 1
+const schemaVersion = 2
 
 // Open initializes or migrates an on-disk configuration database.
 // This database must never store passwords, tokens, or connection strings
@@ -87,7 +87,16 @@ func migrate(ctx context.Context, db *sql.DB) error {
 		if _, err := tx.ExecContext(ctx, create); err != nil {
 			return fmt.Errorf("localdb: migrate connection profiles: %w", err)
 		}
-		if _, err := tx.ExecContext(ctx, "PRAGMA user_version = 1"); err != nil {
+		current = 1
+	}
+	if current == 1 {
+		// Backward-compatible, non-secret JSON settings for MySQL only.
+		// Empty values on existing profiles mean the default settings.
+		if _, err := tx.ExecContext(ctx,
+			"ALTER TABLE connection_profiles ADD COLUMN mysql_advanced_json TEXT NOT NULL DEFAULT ''"); err != nil {
+			return fmt.Errorf("localdb: migrate MySQL advanced settings: %w", err)
+		}
+		if _, err := tx.ExecContext(ctx, "PRAGMA user_version = 2"); err != nil {
 			return fmt.Errorf("localdb: set schema version: %w", err)
 		}
 	}

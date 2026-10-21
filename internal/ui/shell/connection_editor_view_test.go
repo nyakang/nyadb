@@ -30,8 +30,10 @@ func TestMySQLNativeEditorTabsAndBack(t *testing.T) {
 	if err := tt.Click("高级"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionEditorTab != 1 || !tt.HasText("高级 配置尚未实现") {
-		t.Fatal("Advanced tab should remain navigable but clearly pending")
+	if s.connectionEditorTab != 1 || !tt.HasText("客户端驱动程序：") ||
+		!tt.HasText("保持连接间隔（秒）：") || !tt.HasText("连接超时（秒）：") ||
+		!tt.HasText("初始查询：") || !tt.HasText("兼容性") {
+		t.Fatal("MySQL Advanced tab missing observed controls")
 	}
 	if err := tt.Click("数据库"); err != nil {
 		t.Fatal(err)

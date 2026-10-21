@@ -55,6 +55,9 @@ func (s *State) nextConnectionStep() {
 		return
 	}
 	s.connectionDraft = draft
+	if draft.Kind == connections.MySQL {
+		s.initMySQLAdvancedInputs()
+	}
 	s.connectionPort = strconv.Itoa(int(draft.Port))
 	if draft.Kind == connections.SQLite {
 		s.connectionPort = ""
@@ -67,6 +70,9 @@ func (s *State) nextConnectionStep() {
 
 func (s *State) draftProfile() (connections.Profile, error) {
 	p := s.connectionDraft
+	if err := s.advanceDraft(&p); err != nil {
+		return p, err
+	}
 	p.Name = strings.TrimSpace(p.Name)
 	if p.Name == "" {
 		return p, fmt.Errorf("请输入连接名称")
