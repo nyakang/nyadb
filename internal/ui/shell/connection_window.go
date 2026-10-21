@@ -29,6 +29,7 @@ func (s *State) updateConnectionWindowTitle() {
 // child via its OS title-bar X/Alt-F4 instead of the in-app Cancel button.
 func (s *State) ConnectionWindowClosed() {
 	s.connectionDialog = false
+	s.resetConnectionConfigurations()
 	s.connectionSecret = ""
 	s.clearMySQLSSLPassphrase()
 	s.clearMySQLSSHSecrets()
@@ -43,6 +44,9 @@ func (s *State) ConnectionWindowTitle() string {
 		prefix = "编辑连接"
 	}
 	if s.connectionStep == 1 && s.connectionDraft.Kind != "" {
+		if s.connectionDraft.ID != 0 && s.connectionDraft.Kind == connections.MySQL {
+			return s.connectionMainConfig.profile.Name + " - 编辑连接 (MySQL)"
+		}
 		return prefix + " (" + connectionKindName(s.connectionDraft.Kind) + ")"
 	}
 	return prefix

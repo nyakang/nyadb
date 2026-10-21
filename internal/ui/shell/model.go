@@ -106,6 +106,10 @@ type State struct {
 	mysqlHTTPSessionVersion   uint64
 	connectionSecret          string
 	connectionError           string
+	connectionProfilesVisible bool
+	connectionActiveConfig    int
+	connectionMainConfig      connectionEditorSnapshot
+	connectionOtherConfigs    []connectionEditorSnapshot
 	connectionSelectedName    string
 	connectionSearch          string
 	connectionGridMode        bool

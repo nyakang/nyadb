@@ -28,6 +28,18 @@ var (
 
 // Profile stores only public connection settings. Credentials are provided
 // separately at connect time, never persisted in this record.
+// ConnectionVariant is a named alternative settings set under one MySQL
+// connection, not another top-level connection. Only non-secret fields persist.
+type ConnectionVariant struct {
+	Name          string
+	Host          string
+	Port          uint16
+	Database      string
+	Username      string
+	TLSMode       string
+	MySQLAdvanced MySQLAdvanced
+}
+
 type Profile struct {
 	ID            int64
 	Name          string
@@ -39,6 +51,7 @@ type Profile struct {
 	TLSMode       string
 	MySQLAdvanced MySQLAdvanced
 	Notes         string
+	Variants      []ConnectionVariant
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -53,6 +66,39 @@ func NewStore(db *sql.DB) *Store {
 
 func normalize(p Profile) (Profile, error) {
 	p.Name = strings.TrimSpace(p.Name)
+	if len(p.Variants) > 16 {
+		return p, fmt.Errorf("%w: too many connection configurations", ErrInvalid)
+	}
+	for i, variant := range p.Variants {
+		variant.Name = strings.TrimSpace(variant.Name)
+		if variant.Name == "" || utf8.RuneCountInString(variant.Name) > 120 ||
+			strings.ContainsRune(variant.Name, 0) {
+			return p, fmt.Errorf("%w: invalid configuration name", ErrInvalid)
+		}
+		for j := 0; j < i; j++ {
+			if strings.EqualFold(p.Variants[j].Name, variant.Name) {
+				return p, fmt.Errorf("%w: duplicate configuration name", ErrInvalid)
+			}
+		}
+		if p.Kind != MySQL {
+			return p, fmt.Errorf("%w: alternative configurations require MySQL", ErrInvalid)
+		}
+		checked, err := normalize(Profile{Name: "configuration", Kind: MySQL,
+			Host: variant.Host, Port: variant.Port, Database: variant.Database,
+			Username: variant.Username, TLSMode: variant.TLSMode,
+			MySQLAdvanced: variant.MySQLAdvanced})
+		if err != nil {
+			return p, fmt.Errorf("%w: configuration %s: %v", ErrInvalid, variant.Name, err)
+		}
+		// The host is a hostname/IP, never a URL or userinfo-bearing DSN.
+		if strings.ContainsAny(checked.Host, "@/?!#") {
+			return p, fmt.Errorf("%w: invalid configuration host", ErrInvalid)
+		}
+		variant.Host, variant.Port, variant.Database = checked.Host, checked.Port, checked.Database
+		variant.Username, variant.TLSMode = checked.Username, checked.TLSMode
+		variant.MySQLAdvanced = checked.MySQLAdvanced
+		p.Variants[i] = variant
+	}
 	p.Host = strings.TrimSpace(p.Host)
 	p.Database = strings.TrimSpace(p.Database)
 	p.Username = strings.TrimSpace(p.Username)
@@ -101,15 +147,15 @@ func normalize(p Profile) (Profile, error) {
 	return p, nil
 }
 
-const profileColumns = "id, name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, notes, created_at_ms, updated_at_ms"
+const profileColumns = "id, name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, notes, variants_json, created_at_ms, updated_at_ms"
 
 func scanProfile(scan func(...any) error) (Profile, error) {
 	var p Profile
-	var advancedJSON string
+	var advancedJSON, variantsJSON string
 	var port int64
 	var created, updated int64
 	err := scan(&p.ID, &p.Name, &p.Kind, &p.Host, &port, &p.Database,
-		&p.Username, &p.TLSMode, &advancedJSON, &p.Notes, &created, &updated)
+		&p.Username, &p.TLSMode, &advancedJSON, &p.Notes, &variantsJSON, &created, &updated)
 	if err != nil {
 		return Profile{}, err
 	}
@@ -130,6 +176,14 @@ func scanProfile(scan func(...any) error) (Profile, error) {
 	} else if advancedJSON != "" {
 		return Profile{}, fmt.Errorf("unexpected MySQL advanced settings on %s", p.Kind)
 	}
+	if variantsJSON != "" {
+		if err := json.Unmarshal([]byte(variantsJSON), &p.Variants); err != nil {
+			return Profile{}, fmt.Errorf("decode connection configurations: %w", err)
+		}
+		if p.Kind != MySQL && len(p.Variants) > 0 {
+			return Profile{}, fmt.Errorf("unexpected variants on %s", p.Kind)
+		}
+	}
 	p.CreatedAt = time.UnixMilli(created).UTC()
 	p.UpdatedAt = time.UnixMilli(updated).UTC()
 	return p, nil
@@ -148,10 +202,14 @@ func (s *Store) Create(ctx context.Context, p Profile) (Profile, error) {
 		}
 		advancedJSON = string(encoded)
 	}
+	variantsJSON, err := json.Marshal(p.Variants)
+	if err != nil {
+		return Profile{}, fmt.Errorf("encode configurations: %w", err)
+	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	result, err := s.db.ExecContext(ctx,
-		"INSERT INTO connection_profiles (name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, notes, created_at_ms, updated_at_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, p.Notes, now.UnixMilli(), now.UnixMilli())
+		"INSERT INTO connection_profiles (name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, notes, variants_json, created_at_ms, updated_at_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, p.Notes, string(variantsJSON), now.UnixMilli(), now.UnixMilli())
 	if err != nil {
 		return Profile{}, fmt.Errorf("create connection profile: %w", err)
 	}
@@ -212,10 +270,14 @@ func (s *Store) Update(ctx context.Context, p Profile) (Profile, error) {
 		}
 		advancedJSON = string(encoded)
 	}
+	variantsJSON, err := json.Marshal(p.Variants)
+	if err != nil {
+		return Profile{}, fmt.Errorf("encode configurations: %w", err)
+	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	result, err := s.db.ExecContext(ctx,
-		"UPDATE connection_profiles SET name=?, kind=?, host=?, port=?, database_name=?, username=?, tls_mode=?, mysql_advanced_json=?, notes=?, updated_at_ms=? WHERE id=?",
-		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, p.Notes, now.UnixMilli(), p.ID)
+		"UPDATE connection_profiles SET name=?, kind=?, host=?, port=?, database_name=?, username=?, tls_mode=?, mysql_advanced_json=?, notes=?, variants_json=?, updated_at_ms=? WHERE id=?",
+		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, p.Notes, string(variantsJSON), now.UnixMilli(), p.ID)
 	if err != nil {
 		return Profile{}, fmt.Errorf("update connection profile: %w", err)
 	}

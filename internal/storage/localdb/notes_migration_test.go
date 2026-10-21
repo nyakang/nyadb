@@ -46,7 +46,7 @@ func TestMigrationV2ToV3AddsNotesWithoutChangingProfiles(t *testing.T) {
 		t.Fatal(err)
 	}
 	var version int
-	if err := db.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 3 {
+	if err := db.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 4 {
 		t.Fatalf("schema version %d (%v)", version, err)
 	}
 	var name, savedAdvanced, notes string

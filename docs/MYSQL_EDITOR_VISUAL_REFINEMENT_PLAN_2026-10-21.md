@@ -14,6 +14,8 @@
 
 **2026-10-21 精细表单进度：** 14 DIP 深灰原生 `CheckboxBase` 与浅色路径对勾已在常规/高级/兼容性/SSL/SSH/HTTP 复用；连接窗口局部 Theme 已统一输入背景、焦点边框和禁用配色，复核截图与交互测试已保存，见 `docs/MYSQL_FORM_FINE_VISUAL_DIFFERENTIAL_2026-10-21.md`。尚需收敛原生字体抗锯齿、Select 箭头和跨平台 DPI。
 
+**编辑配置文件生命周期（2026-10-21）：** 已完成 MySQL 编辑态的 258 DIP 可折叠侧栏、主要配置和次级配置的切换、新增、重命名、复制与删除，确认后把非敏感配置一起存储（SQLite v4）；取消和关闭不保存。见 `docs/MYSQL_EDITOR_PROFILE_LIFECYCLE_DIFFERENTIAL_2026-10-21.md`。活动次级配置与真实数据库连接的关联仍待完成。
+
 ## 视觉差分优先级
 
 | 优先级 | 收敛区域 | 当前差异 / 操作 | 验收标准 |

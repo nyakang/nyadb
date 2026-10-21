@@ -33,18 +33,29 @@ func (s *State) connectionEditor(c *ui.Context) {
 		h = 420
 	}
 	ui.Column(c).Width(w).Height(h).Gap(0).Background(connectionEditorSurface).Children(func() {
-		s.connectionEditorTabs(c)
-		ui.Box(c).Height(1).Background(connectionEditorBorder)
-		ui.Column(c).Grow(1).Gap(0).AlignItems(ui.Center).Children(func() {
-			s.connectionEditorDiagram(c)
-			if s.connectionEditorTab == 0 {
-				s.connectionEditorGeneral(c, w)
-			} else {
-				s.connectionEditorOtherTab(c, w)
+		ui.Row(c).Height(h - 43).Gap(0).Children(func() {
+			contentWidth := w
+			if s.connectionDraft.ID != 0 && s.connectionDraft.Kind == connections.MySQL &&
+				s.connectionProfilesVisible {
+				s.connectionConfigurationsSidebar(c, h-43)
+				contentWidth -= 258
 			}
-			if s.connectionError != "" {
-				ui.Text(c, s.connectionError).FontSize(12).TextColor(theme.Gold).Padding(15, 0)
-			}
+			ui.Column(c).Width(contentWidth).Height(h - 43).Gap(0).Children(func() {
+				s.connectionEditorTabs(c)
+				ui.Box(c).Height(1).Background(connectionEditorBorder)
+				ui.Column(c).Grow(1).Gap(0).AlignItems(ui.Center).Children(func() {
+					s.connectionConfigurationCaption(c)
+					s.connectionEditorDiagram(c)
+					if s.connectionEditorTab == 0 {
+						s.connectionEditorGeneral(c, contentWidth)
+					} else {
+						s.connectionEditorOtherTab(c, contentWidth)
+					}
+					if s.connectionError != "" {
+						ui.Text(c, s.connectionError).FontSize(12).TextColor(theme.Gold).Padding(15, 0)
+					}
+				})
+			})
 		})
 		ui.Box(c).Height(1).Background(connectionEditorBorder)
 		s.connectionEditorFooter(c)
@@ -190,8 +201,9 @@ func (s *State) editorInputRow(
 ) {
 	connectionFormRow(c).Children(func() {
 		ui.Text(c, caption).Width(labelWidth).FontSize(12)
-		input := connectionFormTextInput(c, target, label, fieldWidth, false, false)
-		if label == "连接名称" {
+		input := connectionFormTextInput(c, target, label, fieldWidth,
+			s.connectionDraft.ID != 0 && s.connectionActiveConfig != 0 && label == "连接名称", false)
+		if label == "连接名称" && s.connectionActiveConfig == 0 {
 			// The observed original opens the General tab with this field focused.
 			input.AutoFocus()
 		}
@@ -273,9 +285,12 @@ func (s *State) connectionEditorFooter(c *ui.Context) {
 		Background(connectionEditorSurface).Children(func() {
 		// The original reserves the first slot for the profile-list toggle.
 		// The edit-profile sidebar is not implemented yet.
-		ui.Button(c, "▣").Width(26).Height(26).
+		if ui.Button(c, "▣").Width(26).Height(26).
 			Background(connectionEditorButton).Border(1, connectionEditorBorder).
-			Disabled(true).Label("连接配置文件列表（尚未实现）")
+			Disabled(s.connectionDraft.ID == 0 || s.connectionDraft.Kind != connections.MySQL).
+			Label("切换连接配置文件侧栏").Clicked() {
+			s.connectionProfilesVisible = !s.connectionProfilesVisible
+		}
 		ui.Button(c, "URI").Width(76).Height(26).
 			Background(connectionEditorButton).Border(1, connectionEditorBorder).
 			Disabled(true).Label("URI 导入尚未支持")
@@ -283,18 +298,20 @@ func (s *State) connectionEditorFooter(c *ui.Context) {
 			Background(connectionEditorButton).Border(1, connectionEditorBorder).Disabled(true).
 			Label("测试连接待数据库驱动接入")
 		ui.Box(c).Grow(1)
-		if ui.Button(c, "上一步").Width(80).Height(26).
-			Background(connectionEditorButton).Border(1, connectionEditorBorder).
-			Disabled(s.connectionDraft.ID != 0).Clicked() {
-			s.connectionStep = 0
-			s.connectionEditorTab = 0
-			s.connectionSecret = ""
-			s.clearMySQLSSLPassphrase()
-			s.clearMySQLSSHSecrets()
-			s.clearMySQLHTTPSecrets()
-			s.clearMySQLInitialQuery()
-			s.connectionError = ""
-			s.updateConnectionWindowTitle()
+		if s.connectionDraft.ID == 0 {
+			if ui.Button(c, "上一步").Width(80).Height(26).
+				Background(connectionEditorButton).Border(1, connectionEditorBorder).
+				Disabled(s.connectionDraft.ID != 0).Clicked() {
+				s.connectionStep = 0
+				s.connectionEditorTab = 0
+				s.connectionSecret = ""
+				s.clearMySQLSSLPassphrase()
+				s.clearMySQLSSHSecrets()
+				s.clearMySQLHTTPSecrets()
+				s.clearMySQLInitialQuery()
+				s.connectionError = ""
+				s.updateConnectionWindowTitle()
+			}
 		}
 		if ui.PrimaryButton(c, "确定").Width(80).Height(26).
 			Label("保存连接").Clicked() {

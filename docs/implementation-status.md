@@ -199,3 +199,16 @@ renderer replaces blue-fill checkboxes with the observed dark-square/light-tick
 style on General, Advanced, Compatibility, SSL, SSH and HTTP. Native focus,
 keyboard and accessibility behavior remain intact. GUI and headless regression
 evidence is recorded in `docs/MYSQL_FORM_FINE_VISUAL_DIFFERENTIAL_2026-10-21.md`.
+
+### MySQL new/edit lifecycle and configuration sidebar (2026-10-21)
+
+MySQL editing now has a native, collapsible 258-DIP configuration sidebar,
+with a selected main configuration and up to 16 named alternative drafts.
+Alternatives can be added, switched, renamed, duplicated and removed.
+The editor separates new/create from edit/update, omits the Back action when
+editing, preserves unfinished settings across configuration changes, and
+discards changes on Cancel or OS window close. Confirm validates and saves
+non-secret main and alternative settings atomically in one profile row.
+SQLite schema v4 adds a backward-compatible variants JSON column; real
+database-session activation of an alternative remains unimplemented.
+See `docs/MYSQL_EDITOR_PROFILE_LIFECYCLE_DIFFERENTIAL_2026-10-21.md`.
