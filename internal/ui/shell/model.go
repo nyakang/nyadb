@@ -78,35 +78,38 @@ type State struct {
 	status     string
 	lastAction string
 
-	connectionDialog        bool
-	connectionStep          int
-	connectionEditorTab     int
-	connectionKind          connections.Kind
-	connectionDraft         connections.Profile
-	connectionPort          string
-	connectionSecret        string
-	connectionError         string
-	connectionSelectedName  string
-	connectionSearch        string
-	connectionGridMode      bool
-	connectionTreeOpen      map[string]bool
-	connectionRecent        []string
-	connectionEngineFilters map[string]bool
-	connectionVendorFilters map[string]bool
-	setConnectionTitle      func(string)
-	showConnectionWindow    func()
-	hideConnectionWindow    func()
-	bundledIcons            map[string]*ui.Bitmap
-	providerIcons           map[string]*ui.Bitmap
-	researchIcons           map[string]*ui.Bitmap
+	connectionDialog          bool
+	connectionStep            int
+	connectionEditorTab       int
+	connectionKind            connections.Kind
+	connectionDraft           connections.Profile
+	connectionPort            string
+	mysqlAdvancedNumbers      [5]string
+	mysqlCompatibilityVisible bool
+	connectionSecret          string
+	connectionError           string
+	connectionSelectedName    string
+	connectionSearch          string
+	connectionGridMode        bool
+	connectionTreeOpen        map[string]bool
+	connectionRecent          []string
+	connectionEngineFilters   map[string]bool
+	connectionVendorFilters   map[string]bool
+	setConnectionTitle        func(string)
+	showConnectionWindow      func()
+	hideConnectionWindow      func()
+	bundledIcons              map[string]*ui.Bitmap
+	providerIcons             map[string]*ui.Bitmap
+	researchIcons             map[string]*ui.Bitmap
 
-	profileMode       bool
-	profileService    *connections.Service
-	profileEntries    []connections.Profile
-	selectedProfileID int64
-	pendingDeleteID   int64
-	deleteConfirm     bool
-	sqliteFilePicker  func()
+	profileMode         bool
+	profileService      *connections.Service
+	profileEntries      []connections.Profile
+	selectedProfileID   int64
+	pendingDeleteID     int64
+	deleteConfirm       bool
+	sqliteFilePicker    func()
+	mysqlSettingsPicker func()
 }
 
 func New() *State {

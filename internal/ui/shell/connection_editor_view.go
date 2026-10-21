@@ -50,8 +50,15 @@ func connectionEditorTabNames(kind connections.Kind) []string {
 	}
 }
 
+func (s *State) connectionTabNames() []string {
+	if s.connectionDraft.Kind == connections.MySQL && s.mysqlCompatibilityVisible {
+		return []string{"常规", "高级", "数据库", "SSL", "SSH", "HTTP", "兼容性", "备注"}
+	}
+	return connectionEditorTabNames(s.connectionDraft.Kind)
+}
+
 func (s *State) connectionEditorTabs(c *ui.Context) {
-	names := connectionEditorTabNames(s.connectionDraft.Kind)
+	names := s.connectionTabNames()
 	if s.connectionEditorTab >= len(names) {
 		s.connectionEditorTab = 0
 	}
@@ -162,10 +169,20 @@ func (s *State) editorSQLiteFields(c *ui.Context, labelWidth, fieldWidth float32
 }
 
 func (s *State) connectionEditorOtherTab(c *ui.Context, width float32) {
-	names := connectionEditorTabNames(s.connectionDraft.Kind)
+	names := s.connectionTabNames()
 	tab := names[s.connectionEditorTab]
 	formWidth := min(float32(604), width-44)
 	labelWidth := min(float32(166), formWidth*0.3)
+	if s.connectionDraft.Kind == connections.MySQL {
+		switch tab {
+		case "高级":
+			s.connectionMySQLAdvanced(c, width)
+			return
+		case "兼容性":
+			s.connectionMySQLCompatibility(c, width)
+			return
+		}
+	}
 	ui.Column(c).Width(formWidth).Gap(12).Children(func() {
 		// The profile model already has a database field. Keeping it on MySQL's
 		// database tab avoids adding a field not present on its observed General tab.

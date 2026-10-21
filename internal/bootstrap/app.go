@@ -121,6 +121,24 @@ func Run() error {
 				})
 			}()
 		})
+		state.SetMySQLSettingsPicker(func() {
+			go func() {
+				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
+					Parent:    chooser,
+					Title:     "选择 MySQL 设置位置",
+					Directory: true,
+				})
+				window.Update(func() {
+					if err != nil {
+						state.MySQLSettingsPickerError()
+						return
+					}
+					if len(paths) != 0 {
+						state.SelectMySQLSettingsDirectory(paths[0])
+					}
+				})
+			}()
+		})
 	})
 	return mygo.App.Run()
 }
