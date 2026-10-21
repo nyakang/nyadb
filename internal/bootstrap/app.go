@@ -49,6 +49,7 @@ func Run() error {
 			StateKey:  "main",
 			Content:   ui.View(state.View),
 		})
+		window.OnClosed(func() { state.CloseMySQLSessions() })
 		// Native parent-owned modal window, not an in-workspace overlay.
 		// The OS provides the title bar, window movement and close button.
 		var chooser *mygo.Window

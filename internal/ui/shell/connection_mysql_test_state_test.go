@@ -129,10 +129,11 @@ func TestMySQLConnectionTestUnsupportedOptionsNoNetwork(t *testing.T) {
 		return nil
 	}
 	s.connectionDraft.MySQLAdvanced.SSL.Enabled = true
+	s.connectionDraft.MySQLAdvanced.SSL.ClientKey = "missing-client-key.pem"
 	if err := tt.Click("测试当前 MySQL 配置"); err != nil {
 		t.Fatal(err)
 	}
-	if called || s.connectionTesting || !strings.Contains(s.connectionError, "TLS/SSL") {
+	if called || s.connectionTesting || !strings.Contains(s.connectionError, "certificate") {
 		t.Fatalf("unsupported encryption was not rejected: %q", s.connectionError)
 	}
 	s.closeConnectionDialog()

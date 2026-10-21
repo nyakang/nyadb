@@ -8,7 +8,7 @@ import (
 
 // MySQLSSL is non-secret SSL configuration metadata. Certificate/key paths
 // are stored; key passphrases and file contents must never be part of Profile.
-// No TLS handshake is performed until the actual MySQL driver is implemented.
+// The Go MySQL driver now enforces certificate and hostname checks when TLS is enabled.
 type MySQLSSL struct {
 	Enabled           bool   `json:"enabled,omitempty"`
 	UseVerification   bool   `json:"useVerification,omitempty"`

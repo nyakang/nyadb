@@ -85,6 +85,7 @@ func (s *State) profileSidebar(c *ui.Context) {
 					s.status = "已刷新连接档案"
 				}
 			})
+			s.mysqlSessionToolbar(c)
 			if ui.SearchField(c, &s.search).Label("搜索连接").Placeholder("搜索连接").Changed() {
 				s.explorerRow = -1
 			}
@@ -142,12 +143,12 @@ func (s *State) profileInspector(c *ui.Context) {
 			}
 			theme.Icon(c, "connection", 38, theme.Blue)
 			ui.Text(c, p.Name).Bold().FontSize(16)
-			ui.Text(c, "配置档案 / 未连接").FontSize(11).TextColor(theme.Muted)
+			ui.Text(c, "配置档案 / "+s.mysqlSessionStateFor(p.ID)).FontSize(11).TextColor(theme.Muted)
 			ui.Box(c).Height(1).Background(theme.Border)
 			ui.Collapsible(c, "基本信息", &s.inspectorDetailsOpen, func() {
 				s.property(c, "名称", p.Name)
 				s.property(c, "类型", connectionKindName(p.Kind))
-				s.property(c, "状态", "未连接")
+				s.property(c, "状态", s.mysqlSessionStateFor(p.ID))
 				if p.Kind == connections.SQLite {
 					s.property(c, "文件", p.Database)
 				} else if p.Kind == connections.MySQL {
@@ -173,7 +174,7 @@ func (s *State) profileInspector(c *ui.Context) {
 				}
 			})
 			ui.Box(c).Height(1).Background(theme.Border)
-			ui.Text(c, "连接档案已保存，但未建立数据库会话。").TextColor(theme.Muted).FontSize(11)
+			ui.Text(c, "连接状态通过工作台显式操作管理；密码不会保存。").TextColor(theme.Muted).FontSize(11)
 		})
 	})
 }

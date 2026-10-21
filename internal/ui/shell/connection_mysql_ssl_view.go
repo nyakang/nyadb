@@ -93,6 +93,10 @@ func (s *State) connectionMySQLSSL(c *ui.Context, width float32) {
 			ui.Text(c, "密钥密码仅保留在当前编辑窗口，不会保存或用于连接。").
 				TextColor(theme.Muted).FontSize(11)
 		})
+		ui.Row(c).Height(22).Gap(0).Children(func() {
+			ui.Box(c).Width(labelWidth)
+			ui.Text(c, "TLS 连接始终校验证书链和主机名，不允许关闭验证。").TextColor(theme.Muted).FontSize(11)
+		})
 	})
 }
 

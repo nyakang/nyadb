@@ -7,8 +7,8 @@ import (
 )
 
 // MySQLAdvanced contains non-secret MySQL connection preferences.
-// This data is saved as configuration only; the database driver has not
-// implemented these behaviors yet. No passwords, credentials or raw DSNs.
+// This data is saved as configuration; the current database driver has not
+// implemented all these behaviors. Unsupported options fail before dialing. No credentials or DSNs.
 type MySQLAdvanced struct {
 	SettingsLocation      string             `json:"settingsLocation,omitempty"`
 	ClientDriver          string             `json:"clientDriver"`
