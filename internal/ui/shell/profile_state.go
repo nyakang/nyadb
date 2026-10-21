@@ -66,9 +66,11 @@ func (s *State) startEditProfile() {
 	s.connectionKind = p.Kind
 	s.connectionDraft = p
 	s.clearMySQLSSLPassphrase()
+	s.clearMySQLSSHSecrets()
 	s.clearMySQLInitialQuery()
 	if p.Kind == connections.MySQL {
 		s.initMySQLAdvancedInputs()
+		s.initMySQLSSHInputs()
 	}
 	s.connectionPort = strconv.Itoa(int(p.Port))
 	s.connectionSecret = ""

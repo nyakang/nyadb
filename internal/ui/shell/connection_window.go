@@ -31,6 +31,7 @@ func (s *State) ConnectionWindowClosed() {
 	s.connectionDialog = false
 	s.connectionSecret = ""
 	s.clearMySQLSSLPassphrase()
+	s.clearMySQLSSHSecrets()
 	s.clearMySQLInitialQuery()
 	s.connectionError = ""
 }
