@@ -36,7 +36,7 @@ var databaseCatalog = []catalogEntry{
 	{"Azure SQL", "SQL Server", "Microsoft", "云数据库", "table", "#378de0", ""},
 }
 
-var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "MariaDB", "MongoDB", "Redis", "Snowflake", "达梦", "OceanBase"}
+var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "MariaDB", "MongoDB", "Redis", "Snowflake"}
 var catalogVendors = []string{"阿里云", "华为", "腾讯云", "AWS", "Google Cloud", "Microsoft", "Oracle Cloud"}
 
 func catalogMatch(e catalogEntry, query string, engines, vendors map[string]bool) bool {
