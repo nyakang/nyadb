@@ -10,6 +10,7 @@ import (
 func (s *State) View(c *ui.Context) {
 	s.consumeMySQLSessionResult()
 	s.consumeMySQLObjects()
+	s.consumeMySQLStructures()
 	theme.Apply(c)
 	ui.Column(c).Fill().Background(theme.App).Children(func() {
 		s.menuBar(c)

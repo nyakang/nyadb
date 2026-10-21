@@ -59,6 +59,7 @@ func (s *State) reconcileMySQLDatabases(names []string) {
 			delete(s.mysqlDatabaseNodes, name)
 		}
 	}
+	s.pruneMySQLStructureTabs(known)
 	if !known[s.mysqlSelectedDatabase] {
 		s.cancelMySQLObjectQuery()
 		s.mysqlSelectedDatabase = ""
@@ -212,10 +213,19 @@ func (s *State) mysqlDatabaseTree(c *ui.Context) {
 										break
 									}
 									shown++
-									if ui.TreeItem(c, obj.Name, nil, nil).Clicked() {
+									leaf := ui.TreeItem(c, obj.Name, nil, nil)
+									if leaf.Clicked() {
 										s.mysqlSelectedDatabase = db
 										s.mysqlObjectKind = k
 									}
+									if leaf.DoubleClicked() {
+										s.openMySQLStructure(c.Services(), db, obj.Name)
+									}
+									leaf.ContextMenu(func(m *ui.Menu) {
+										if m.Item("打开只读结构：" + obj.Name).Chosen() {
+											s.openMySQLStructure(c.Services(), db, obj.Name)
+										}
+									})
 								}
 							})
 							if category.Clicked() {

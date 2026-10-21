@@ -20,6 +20,7 @@ const (
 	tabObjects tabKind = iota
 	tabSQL
 	tabData
+	tabStructure
 )
 
 type tab struct {
@@ -27,6 +28,19 @@ type tab struct {
 	title  string
 	kind   tabKind
 	editor *editor.State
+
+	structureDatabase, structureTable string
+	structureProfileID                int64
+	structure                         *connections.MySQLTableStructure
+	structurePage                     int
+	structureColumns                  ui.ListState
+	structureIndexes                  ui.ListState
+	structureForeignKeys              ui.ListState
+	structureLoading                  bool
+	structureErr                      string
+	structureCancel                   context.CancelFunc
+	structureResults                  <-chan mysqlStructureResult
+	structureRequest                  uint64
 }
 
 type object struct {
@@ -148,6 +162,7 @@ type State struct {
 	mysqlObjectResults         <-chan mysqlObjectResult
 	mysqlObjectLister          mysqlObjectLister
 	mysqlDatabaseNodes         map[string]*mysqlDatabaseNode
+	mysqlStructureLoader       mysqlStructureLoader
 
 	// MySQL connection checks run off-thread; only UI code reads/writes these.
 	connectionTesting        bool
@@ -247,6 +262,9 @@ func (s *State) closeTab(index int) {
 	if index <= 0 || index >= len(s.tabs) {
 		return // the Objects tab is permanent
 	}
+	if s.tabs[index].kind == tabStructure {
+		s.cancelMySQLStructure(s.tabs[index])
+	}
 	name := s.tabs[index].title
 	s.tabs = append(s.tabs[:index], s.tabs[index+1:]...)
 	if s.activeTab > index {
@@ -261,6 +279,11 @@ func (s *State) closeTab(index int) {
 func (s *State) closeOtherTabs(index int) {
 	if index < 0 || index >= len(s.tabs) {
 		return
+	}
+	for i, t := range s.tabs {
+		if i != index && t.kind == tabStructure {
+			s.cancelMySQLStructure(t)
+		}
 	}
 	if index == 0 {
 		s.tabs = s.tabs[:1]

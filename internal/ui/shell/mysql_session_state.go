@@ -140,6 +140,7 @@ func (s *State) disconnectMySQLSession() {
 	s.mysqlSessionProfileID = 0
 	s.mysqlSessionDatabases = nil
 	s.resetMySQLObjectBrowser()
+	s.clearMySQLStructureTabs()
 	s.mysqlSessionError = ""
 	s.mysqlSessionStatus = "未连接"
 	if s.mysqlSessionManager != nil && id > 0 {

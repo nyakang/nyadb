@@ -60,6 +60,11 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 			}
 		}
 		ui.Box(c).Grow(1)
+		items := s.mysqlSelectedObjects()
+		canOpen := s.objectRow >= 0 && s.objectRow < len(items)
+		if ui.Button(c, "打开结构").Label("打开选中表结构").Disabled(!canOpen).Clicked() {
+			s.openMySQLStructure(c.Services(), db, items[s.objectRow].Name)
+		}
 		if ui.Button(c, "刷新当前数据库").Label("刷新元数据：" + db).
 			Disabled(s.mysqlObjectPending != "").Clicked() {
 			s.loadMySQLObjects(c.Services(), db, true)
@@ -83,7 +88,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		return
 	}
 	s.objectState.Selected = &s.objectRow
-	ui.Table(c, &s.objectState, mysqlObjectColumns, len(items), func(row, col int) {
+	if ui.Table(c, &s.objectState, mysqlObjectColumns, len(items), func(row, col int) {
 		obj := items[row]
 		switch col {
 		case 0:
@@ -95,5 +100,9 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		case 3:
 			ui.Text(c, obj.Comment).SingleLine()
 		}
-	}).Grow(1)
+	}).Grow(1).Submitted() {
+		if s.objectRow >= 0 && s.objectRow < len(items) {
+			s.openMySQLStructure(c.Services(), db, items[s.objectRow].Name)
+		}
+	}
 }
