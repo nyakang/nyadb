@@ -96,7 +96,7 @@ func (s *State) connectionEditorDiagram(c *ui.Context) {
 	// connection editor; all graphics are independently authored for NyaDB.
 	if s.connectionDraft.Kind == connections.MySQL &&
 		s.connectionDraft.MySQLAdvanced.HTTP.Enabled {
-		ui.Row(c).Height(96).Gap(7).AlignItems(ui.Center).Justify(ui.Center).Children(func() {
+		ui.Row(c).Height(91).Gap(7).AlignItems(ui.Center).Justify(ui.Center).Children(func() {
 			ui.Column(c).Width(65).Gap(3).AlignItems(ui.Center).Children(func() {
 				theme.Icon(c, "connection", 36, theme.Muted)
 				ui.Text(c, "NyaDB").FontSize(11)
@@ -118,7 +118,7 @@ func (s *State) connectionEditorDiagram(c *ui.Context) {
 	// enabled. These icons are independently authored NyaDB assets.
 	if s.connectionDraft.Kind == connections.MySQL &&
 		s.connectionDraft.MySQLAdvanced.SSH.Enabled {
-		ui.Row(c).Height(96).Gap(7).AlignItems(ui.Center).Justify(ui.Center).Children(func() {
+		ui.Row(c).Height(91).Gap(7).AlignItems(ui.Center).Justify(ui.Center).Children(func() {
 			ui.Column(c).Width(65).Gap(3).AlignItems(ui.Center).Children(func() {
 				theme.Icon(c, "connection", 36, theme.Muted)
 				ui.Text(c, "NyaDB").FontSize(11)
@@ -136,7 +136,7 @@ func (s *State) connectionEditorDiagram(c *ui.Context) {
 		})
 		return
 	}
-	ui.Row(c).Height(96).Gap(8).AlignItems(ui.Center).Justify(ui.Center).Children(func() {
+	ui.Row(c).Height(91).Gap(8).AlignItems(ui.Center).Justify(ui.Center).Children(func() {
 		ui.Column(c).Width(42).Gap(3).AlignItems(ui.Center).Children(func() {
 			theme.Icon(c, "connection", 37, theme.Muted)
 			ui.Text(c, "NyaDB").FontSize(11)
@@ -150,13 +150,13 @@ func (s *State) connectionEditorDiagram(c *ui.Context) {
 }
 
 func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
-	formWidth := min(float32(604), width-44)
-	labelWidth := min(float32(166), formWidth*0.3)
+	formWidth := connectionFormWidth(width)
+	labelWidth := connectionFormLabelWidth
 	fieldWidth := formWidth - labelWidth
 	p := &s.connectionDraft
-	ui.Column(c).Width(formWidth).Gap(8).Children(func() {
+	ui.Column(c).Width(formWidth).Gap(0).Children(func() {
 		s.editorInputRow(c, "连接名称：", "连接名称", &p.Name, labelWidth, fieldWidth)
-		ui.Box(c).Height(15)
+		ui.Box(c).Height(31)
 		if p.Kind == connections.SQLite {
 			s.editorSQLiteFields(c, labelWidth, fieldWidth)
 			return
@@ -167,10 +167,9 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 			s.editorInputRow(c, "初始数据库：", "初始数据库", &p.Database, labelWidth, fieldWidth)
 		}
 		s.editorInputRow(c, "用户名：", "用户名", &p.Username, labelWidth, min(fieldWidth, float32(205)))
-		ui.Row(c).Height(32).Gap(0).AlignItems(ui.Center).Children(func() {
+		connectionFormRow(c).Children(func() {
 			ui.Text(c, "密码：").Width(labelWidth).FontSize(12)
-			ui.TextInput(c, &s.connectionSecret).Label("密码").Password().
-				Width(min(fieldWidth, float32(205))).Height(30).Padding(2, 10)
+			connectionFormTextInput(c, &s.connectionSecret, "密码", min(fieldWidth, float32(205)), false, true)
 		})
 		ui.Row(c).Height(28).Gap(0).AlignItems(ui.Center).Children(func() {
 			ui.Box(c).Width(labelWidth)
@@ -189,12 +188,9 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 func (s *State) editorInputRow(
 	c *ui.Context, caption, label string, target *string, labelWidth, fieldWidth float32,
 ) {
-	ui.Row(c).Height(32).Gap(0).AlignItems(ui.Center).Children(func() {
+	connectionFormRow(c).Children(func() {
 		ui.Text(c, caption).Width(labelWidth).FontSize(12)
-		// MyGo vertically centers single-line text in the content area; keep
-		// enough room for the font after padding and borders.
-		input := ui.TextInput(c, target).Label(label).Width(fieldWidth).
-			Height(30).Padding(2, 10)
+		input := connectionFormTextInput(c, target, label, fieldWidth, false, false)
 		if label == "连接名称" {
 			// The observed original opens the General tab with this field focused.
 			input.AutoFocus()
@@ -231,8 +227,8 @@ func (s *State) connectionEditorOtherTab(c *ui.Context, width float32) {
 		s.connectionNotesEditor(c, width)
 		return
 	}
-	formWidth := min(float32(604), width-44)
-	labelWidth := min(float32(166), formWidth*0.3)
+	formWidth := connectionFormWidth(width)
+	labelWidth := connectionFormLabelWidth
 	if s.connectionDraft.Kind == connections.MySQL {
 		switch tab {
 		case "高级":

@@ -179,3 +179,14 @@ visited in a Linux Xvfb GUI session. A headless UI regression test checks
 shared controls and cross-tab tunnel state. Unimplemented profile-list
 navigation is visibly disabled rather than made functional without evidence.
 See `docs/MYSQL_CONNECTION_CHROME_DIFFERENTIAL_2026-10-21.md`.
+
+### Shared MySQL form geometry (2026-10-21)
+
+Native MyGo connection forms now share a 604-DIP centered layout, 166-DIP
+label column, 31-DIP row rhythm and 26-DIP text/select controls. Browse
+buttons use 22 DIP with 7 DIP spacing. General and Advanced were compared
+against original screenshots before propagating these rules to SSL, SSH and
+HTTP; existing MyGo checkboxes retain their native 16-DIP size. Headless
+rectangular-geometry tests and isolated Linux GUI screenshots confirm
+consistent positioning, without claiming pixel-perfect parity. See
+`docs/MYSQL_FORM_GEOMETRY_DIFFERENTIAL_2026-10-21.md`.
