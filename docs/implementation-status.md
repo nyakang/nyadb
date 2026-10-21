@@ -251,3 +251,14 @@ explicit Connect, Cancel, Disconnect and credential reentry before Reconnect;
 its object view shows real database names rather than demo tables in profile
 mode. This does not yet implement schema/table browsing or SQL execution.
 See docs/MYSQL_TLS_MANAGED_SESSION_2026-10-22.md.
+
+### MySQL database tree and real table/view metadata (2026-10-22)
+
+Connected MySQL workspaces now offer a native MyGo database tree with lazy
+per-schema object loading, real INFORMATION_SCHEMA table/view metadata,
+engine/comment columns, database switching, type filters and explicit refresh.
+Bound schema-name parameters and session-scoped cancellation prevent unsafe SQL
+construction and late-query UI corruption; caches clear on disconnect.
+The service enforces a bounded 10,000-object response and MyGo renders the
+metadata list with its native Table. This does not execute arbitrary SQL or
+load table rows. See docs/MYSQL_OBJECT_BROWSER_PHASE1_2026-10-22.md.

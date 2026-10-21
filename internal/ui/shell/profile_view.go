@@ -63,7 +63,8 @@ func (s *State) profileSidebar(c *ui.Context) {
 						s.loadProfiles()
 					}
 				})
-			}).Grow(1)
+			})
+			ui.Scroll(c).Grow(1).Children(func() { s.mysqlDatabaseTree(c) })
 			if s.explorerRow >= 0 && s.explorerRow < s.explorerTree.Rows() {
 				s.selectProfileByName(s.explorerTree.Item(s.explorerRow))
 			}

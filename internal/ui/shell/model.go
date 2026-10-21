@@ -138,6 +138,16 @@ type State struct {
 	mysqlSessionDatabases      []string
 	mysqlSessionOpener         mysqlSessionOpener
 	mysqlDatabaseLister        mysqlDatabaseLister
+	mysqlSelectedDatabase      string
+	mysqlObjectKind            string
+	mysqlObjectCache           map[string][]connections.MySQLDBObject
+	mysqlObjectErrors          map[string]string
+	mysqlObjectPending         string
+	mysqlObjectRequest         uint64
+	mysqlObjectCancel          context.CancelFunc
+	mysqlObjectResults         <-chan mysqlObjectResult
+	mysqlObjectLister          mysqlObjectLister
+	mysqlDatabaseNodes         map[string]*mysqlDatabaseNode
 
 	// MySQL connection checks run off-thread; only UI code reads/writes these.
 	connectionTesting        bool
