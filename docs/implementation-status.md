@@ -155,3 +155,17 @@ advanced JSON; authentication passwords and certificate passphrases remain
 session-only. Actual HTTP transport, secure credentials storage and tunnel
 script export are not implemented. Original and NyaDB evidence:
 `docs/MYSQL_HTTP_TAB_DIFFERENTIAL_2026-10-21.md`.
+
+### MySQL Notes editor and full-window refinement baseline (2026-10-21)
+
+The MyGo-native Notes tab now provides the observed large multiline input,
+label and footnote. User-authored notes are saved on successful profile
+confirmation, reloaded on edit, preserved on duplication and discarded when
+editing is canceled. Notes live in a new general Profile.Notes field, backed
+by a backward-compatible SQLite v3 migration (v2 → v3); existing records
+start with empty notes. Notes are stored as plain text and must not contain
+credentials. See `docs/MYSQL_NOTES_TAB_DIFFERENTIAL_2026-10-21.md`.
+
+All seven MySQL editor tabs now have a first independent UI implementation (I).
+Visual and behavior parity (V) remains incomplete. The next prioritized work
+is tracked in `docs/MYSQL_EDITOR_VISUAL_REFINEMENT_PLAN_2026-10-21.md`.
