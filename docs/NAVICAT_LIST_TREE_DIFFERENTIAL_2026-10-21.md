@@ -36,7 +36,7 @@ not yet observed/compared.
 ## NyaDB behavior implemented (I)
 
 - `connection_catalog_tree.go`: dedicated tree builder for list mode,
-  separate from grid view; 19-DIP rows; nine core database leaves; ordered
+  separate from grid view; 25-DIP rows for NyaDB readability (original ~19px); nine core database leaves; ordered
   provider nodes; independently tracked expand/collapse flags; automatic
   temporary expansion for nonempty queries; nested icon/label indentation.
 - List rows highlight their full width on selection. The supported profile

@@ -88,10 +88,6 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 		ui.Row(c).Height(25).AlignItems(ui.Center).Children(func() {
 			theme.Icon(c, "catalog-filter", 16, theme.Blue)
 			ui.Text(c, "连接筛选").FontSize(12).Bold()
-			ui.Box(c).Grow(1)
-			if ui.Button(c, "重置").Label("重置连接筛选").Clicked() {
-				s.clearCatalogFilters()
-			}
 		})
 		ui.Scroll(c).Height(height - 55).Children(func() {
 			ui.Column(c).Gap(5).Children(func() {

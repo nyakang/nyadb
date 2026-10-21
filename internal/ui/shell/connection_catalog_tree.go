@@ -9,7 +9,7 @@ import (
 
 // The original chooser list is a tree of *database types and vendors*, not
 // a one-column grid. Observed live in Navicat 18 (O), 2026-10-21.
-const catalogTreeRowHeight float32 = 19
+const catalogTreeRowHeight float32 = 25
 
 var catalogTreeDirectEngines = []string{
 	"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite",
@@ -141,14 +141,14 @@ func (s *State) catalogTree(c *ui.Context) {
 			button := ui.ButtonBase(c).Label("展开 " + group.label).
 				FillWidth().Height(catalogTreeRowHeight).Radius(0).Background(ui.Transparent)
 			button.Children(func() {
-				ui.Row(c).FillWidth().Gap(4).Padding(0, 3).AlignItems(ui.Center).Children(func() {
+				ui.Row(c).FillWidth().Gap(6).Padding(0, 5).AlignItems(ui.Center).Children(func() {
 					arrow := "▸"
 					if open {
 						arrow = "▾"
 					}
-					ui.Text(c, arrow).Width(12).FontSize(11).TextColor(theme.Muted)
+					ui.Text(c, arrow).Width(14).FontSize(12).TextColor(theme.Muted)
 					s.catalogTreeIcon(c, group.icon)
-					ui.Text(c, group.label).FontSize(12).SingleLine()
+					ui.Text(c, group.label).FontSize(12.5).SingleLine()
 				})
 			})
 			if button.Clicked() {
@@ -164,8 +164,8 @@ func (s *State) catalogTree(c *ui.Context) {
 }
 
 func (s *State) catalogTreeHeading(c *ui.Context, title string) {
-	ui.Row(c).Height(35).Padding(0, 8).AlignItems(ui.Center).Children(func() {
-		ui.Text(c, title).FontSize(12).TextColor(theme.Muted)
+	ui.Row(c).Height(38).Padding(0, 8).AlignItems(ui.Center).Children(func() {
+		ui.Text(c, title).FontSize(12.5).TextColor(theme.Muted)
 	})
 }
 
@@ -178,14 +178,14 @@ func (s *State) catalogTreeLeaf(c *ui.Context, item catalogEntry, depth int) {
 	button := ui.ButtonBase(c).Label("选择 " + item.name).
 		FillWidth().Height(catalogTreeRowHeight).Radius(0).Background(bg)
 	button.Children(func() {
-		ui.Row(c).FillWidth().Gap(4).Padding(0, 3).AlignItems(ui.Center).Children(func() {
-			indent := float32(16)
+		ui.Row(c).FillWidth().Gap(6).Padding(0, 5).AlignItems(ui.Center).Children(func() {
+			indent := float32(20)
 			if depth > 0 {
-				indent = 36
+				indent = 43
 			}
 			ui.Box(c).Width(indent)
 			s.catalogTreeIcon(c, item)
-			ui.Text(c, item.name).FontSize(12).SingleLine()
+			ui.Text(c, item.name).FontSize(12.5).SingleLine()
 		})
 	})
 	if button.Clicked() {
@@ -195,13 +195,13 @@ func (s *State) catalogTreeLeaf(c *ui.Context, item catalogEntry, depth int) {
 
 func (s *State) catalogTreeIcon(c *ui.Context, item catalogEntry) {
 	if bitmap := s.researchIcons[item.name]; bitmap != nil {
-		ui.Image(c, bitmap).Size(16, 16).Fit(ui.Contain)
+		ui.Image(c, bitmap).Size(18, 18).Fit(ui.Contain)
 		return
 	}
 	if bitmap := s.bundledIcons[item.name]; bitmap != nil {
-		ui.Image(c, bitmap).Size(16, 16).Fit(ui.Contain)
+		ui.Image(c, bitmap).Size(18, 18).Fit(ui.Contain)
 		return
 	}
 	// Missing brand assets are replaced by NyaDB's independent symbols.
-	s.catalogIcon(c, item, 14)
+	s.catalogIcon(c, item, 18)
 }

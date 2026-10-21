@@ -82,5 +82,5 @@ screenshots, tests, security boundaries and remaining visual differences.
 
 The connection chooser **list view** was subsequently rebuilt as a compact
 expandable vendor tree after live Navicat 18 runtime observation. It includes
-19-DIP rows, independent vendor expansion, full-row selection and two-pane
+25-DIP rows (intentionally roomier than the observed 19px original), independent vendor expansion, full-row selection and two-pane
 search filtering. See `docs/NAVICAT_LIST_TREE_DIFFERENTIAL_2026-10-21.md`.
