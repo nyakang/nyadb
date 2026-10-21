@@ -225,3 +225,17 @@ references. The workbench inspector now shows the resolved Active
 configuration but does not claim to be connected. The sidebar has keyboard
 up/down navigation and one-time name focus. See
 `docs/MYSQL_ACTIVE_CONFIGURATION_DIFFERENTIAL_2026-10-22.md`.
+
+### MySQL direct TCP connection test (2026-10-22)
+
+The native Go MySQL driver can establish, authenticate, Ping and explicitly
+close a direct TCP session from the selected draft configuration. The editor's
+Test button starts asynchronous, context-cancellable work, shows completion
+and errors without storing credentials, and rejects unsupported SSL/SSH/HTTP
+or other advanced settings *before* dialing. Closing the editor cancels work
+and ignores stale results. The driver is also exposed as OpenDirectMySQL for
+a future managed session layer, which is not yet connected to the workbench.
+Protocol tests use a disposable local mock MySQL peer rather than a real
+production database. Full database compatibility, TLS and encrypted credential
+transport remain unverified/unimplemented. See
+`docs/MYSQL_DIRECT_CONNECT_PHASE1_2026-10-22.md`.

@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/egoist/mygo/ui"
@@ -126,6 +127,14 @@ type State struct {
 	researchIcons             map[string]*ui.Bitmap
 
 	connectionNameFocusPending bool
+
+	// MySQL connection checks run off-thread; only UI code reads/writes these.
+	connectionTesting        bool
+	connectionTestMessage    string
+	connectionTestGeneration uint64
+	connectionTestCancel     context.CancelFunc
+	connectionTestResults    <-chan mysqlTestResult
+	mysqlConnectionTester    mysqlConnectionTester
 
 	profileMode         bool
 	profileService      *connections.Service

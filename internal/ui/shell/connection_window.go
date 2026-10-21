@@ -28,6 +28,7 @@ func (s *State) updateConnectionWindowTitle() {
 // ConnectionWindowClosed synchronizes state when the user closes the native
 // child via its OS title-bar X/Alt-F4 instead of the in-app Cancel button.
 func (s *State) ConnectionWindowClosed() {
+	s.cancelMySQLConnectionTest()
 	s.connectionDialog = false
 	s.resetConnectionConfigurations()
 	s.connectionSecret = ""

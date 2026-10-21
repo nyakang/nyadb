@@ -4,10 +4,12 @@ go 1.27.1
 
 require (
 	github.com/egoist/mygo v0.6.0
+	github.com/go-sql-driver/mysql v1.10.1
 	modernc.org/sqlite v1.60.1
 )
 
 require (
+	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ebitengine/purego v0.11.1 // indirect
 	github.com/go-text/typesetting v0.3.5 // indirect
