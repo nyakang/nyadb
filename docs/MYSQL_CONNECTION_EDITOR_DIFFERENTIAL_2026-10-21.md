@@ -37,3 +37,11 @@
 4. URI 导入、测试连接和真实连接需在 M2 接入数据库驱动与异步会话管理后实施。
 5. Windows/macOS/实体 Linux 桌面未进行本轮实际 GUI 验证。
 6. 下轮优先逐项研究原版 MySQL 高级标签控件、默认值、禁用条件及字段语义，再扩展 Profile/AdvancedSettings 并实现。
+
+## 原生连接窗口图标与输入框对齐修正（I，2026-10-21）
+
+- 依据用户提供的 NyaDB 截图改进：新建/编辑连接窗口标题栏使用当前会话类型图标（MySQL、PostgreSQL、SQLite），类型选择阶段保留默认应用图标；调用 MyGo Window.SetIcon，读取现有内嵌、可分发 PNG，没有复制原版素材。示意图中的 NyaDB 标识保持不变。
+- Tabs 已使用 MyGo 原生 ui.TabsBase（带原生选中和键盘交互）；并非自制标签切换器，本轮不替换。
+- MyGo ui.TextInput 的默认上下 padding 与原先强制 Height(26) 使内容可用高度不足。各表单输入框改为 Height(30)、Padding(2,10)，所在行高为 32；密码及 SQLite 文件路径也同样调整。
+- 已增加类型图标 PNG 和返回选择器状态的单元测试，遵守 UI 凭据不持久化约束。
+- Linux Xvfb :123/Openbox GUI 复查：窗口标题栏出现 MySQL 类型图标，常规字段文字垂直居中视觉改善；截图：temp/research/gui-connection-icon-input-20261021/mysql-editor-after-fix.png。跨平台窗口图标显示效果仍待实体桌面验证。

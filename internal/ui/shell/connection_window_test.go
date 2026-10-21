@@ -1,6 +1,8 @@
 package shell
 
 import (
+	"bytes"
+	"image/png"
 	"testing"
 
 	"github.com/egoist/mygo/ui"
@@ -53,5 +55,35 @@ func TestNativeProfileEditingTitle(t *testing.T) {
 	s.connectionDraft.ID = 18
 	if s.ConnectionWindowTitle() != "编辑连接" {
 		t.Fatal("editing must use native edit title")
+	}
+}
+
+func TestConnectionWindowIconFollowsSessionType(t *testing.T) {
+	s := New()
+	s.openConnectionDialog()
+	if data, err := s.ConnectionWindowIcon(); err != nil || data != nil {
+		t.Fatalf("chooser should keep the NyaDB app icon: %d bytes, %v", len(data), err)
+	}
+	var icons [][]byte
+	for _, kind := range []connections.Kind{connections.MySQL, connections.PostgreSQL, connections.SQLite} {
+		s.chooseConnectionKind(kind)
+		s.nextConnectionStep()
+		data, err := s.ConnectionWindowIcon()
+		if err != nil {
+			t.Fatalf("%s: %v", kind, err)
+		}
+		if _, err := png.DecodeConfig(bytes.NewReader(data)); err != nil {
+			t.Fatalf("%s window icon is not a valid PNG: %v", kind, err)
+		}
+		for _, other := range icons {
+			if bytes.Equal(other, data) {
+				t.Fatalf("%s unexpectedly shares another session icon", kind)
+			}
+		}
+		icons = append(icons, data)
+		s.connectionStep = 0
+		if data, err := s.ConnectionWindowIcon(); err != nil || data != nil {
+			t.Fatalf("returning to chooser must restore default icon: %v", err)
+		}
 	}
 }
