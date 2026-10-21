@@ -7,6 +7,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
 // The main config and alternatives are edited as raw per-window drafts. No
@@ -273,10 +274,10 @@ func (s *State) prepareConnectionConfigurations() (connections.Profile, error) {
 
 func (s *State) connectionConfigurationsSidebar(c *ui.Context, height float32) {
 	ui.Column(c).Width(258).Height(height).Gap(0).
-		Background(ui.Hex("#232629")).BorderWidth(0, 1, 0, 0).
+		Background(theme.Sidebar).BorderWidth(0, 1, 0, 0).
 		BorderColor(connectionEditorBorder).Children(func() {
 		ui.Row(c).Height(38).Padding(7, 10).AlignItems(ui.Center).Gap(5).
-			Background(ui.Hex("#292f34")).Children(func() {
+			Background(theme.Header).Children(func() {
 			ui.Text(c, "连接配置文件").FontSize(12).TextColor(connectionFieldMuted)
 			ui.Box(c).Grow(1)
 			if ui.Button(c, "+").Width(22).Height(22).Padding(0, 0).
@@ -300,9 +301,9 @@ func (s *State) connectionConfigRow(c *ui.Context, index int, name string) {
 			name += " (Active)"
 		}
 		selected := index == s.connectionActiveConfig
-		bg := ui.Hex("#232629")
+		bg := theme.Sidebar
 		if selected {
-			bg = ui.Hex("#2da8df")
+			bg = theme.Accent
 		}
 		row := ui.Button(c, name).Label("切换配置文件："+name).
 			Width(257).Height(25).Padding(4, 9).

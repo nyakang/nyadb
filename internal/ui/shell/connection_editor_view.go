@@ -6,15 +6,14 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
-// Shared chrome colors, measured from Navicat 18 running under isolated Xvfb.
-// Keep them local to the connection editor rather than changing the NyaDB
-// workbench palette or per-tab business controls.
+// The editor shares the NyaDB workbench palette. Its native MyGo form layout
+// remains independent of window styling and works across all tabs.
 var (
-	connectionEditorSurface = ui.Hex("#31363b")
-	connectionEditorTabsBG  = ui.Hex("#30353a")
-	connectionEditorBorder  = ui.Hex("#23272a")
-	connectionEditorButton  = ui.Hex("#3f4448")
-	connectionDiagramLine   = ui.Hex("#76787a")
+	connectionEditorSurface = theme.App
+	connectionEditorTabsBG  = theme.Header
+	connectionEditorBorder  = theme.Border
+	connectionEditorButton  = theme.Header
+	connectionDiagramLine   = theme.Border
 )
 
 // The connection editor is a native MyGo view. Layout and tab order are based
@@ -88,7 +87,7 @@ func (s *State) connectionEditorTabs(c *ui.Context) {
 	if s.connectionEditorTab >= len(names) {
 		s.connectionEditorTab = 0
 	}
-	ui.Row(c).Height(29).Gap(0).Background(connectionEditorTabsBG).Children(func() {
+	ui.Row(c).Height(29).FillWidth().Gap(0).Background(connectionEditorTabsBG).Children(func() {
 		tabs := ui.TabsBase(c, &s.connectionEditorTab, len(names))
 		tabs.List.Gap(0).Children(func() {
 			for i, name := range names {
@@ -293,7 +292,7 @@ func (s *State) connectionEditorOtherTab(c *ui.Context, width float32) {
 
 func (s *State) connectionEditorFooter(c *ui.Context) {
 	ui.Row(c).Height(42).Padding(5, 9).Gap(7).AlignItems(ui.Center).
-		Background(connectionEditorSurface).Children(func() {
+		Background(theme.Panel).Children(func() {
 		// Show/hide the native editing configuration sidebar.
 		if ui.Button(c, "▣").Width(26).Height(26).
 			Background(connectionEditorButton).Border(1, connectionEditorBorder).
