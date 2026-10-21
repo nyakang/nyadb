@@ -28,6 +28,8 @@ func (s *State) workspace(c *ui.Context) {
 									icon = "query"
 								} else if current.kind == tabData {
 									icon = "table"
+								} else if current.kind == tabStructure {
+									icon = "table"
 								}
 								theme.Icon(c, icon, 14, theme.Blue)
 								ui.Text(c, current.title).FontSize(12).SingleLine()
@@ -59,6 +61,8 @@ func (s *State) workspace(c *ui.Context) {
 			s.queryWorkspace(c, tab)
 		case tabData:
 			s.dataPreview(c)
+		case tabStructure:
+			s.mysqlStructureWorkspace(c, tab)
 		default:
 			s.objectsWorkspace(c)
 		}
