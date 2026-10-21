@@ -1,0 +1,113 @@
+{
+  "format": 1,
+  "sourceCollection": "https://github.com/simple-icons/simple-icons",
+  "sourceCommit": "c71c69e3a27e4436936b831c72643e6513b9f49b",
+  "generator": "tools/build_provider_icons.mjs",
+  "entries": [
+    {
+      "name": "阿里云",
+      "file": "alibaba.png",
+      "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/alibabacloud.svg",
+      "artwork": "Simple Icons CC0 collection; trademarks subject to owner policies",
+      "sha256": "b0372ed12c81f9499332426d8f9ea0dc002cc575ed4f932ec52d5e560cc48b72"
+    },
+    {
+      "name": "华为",
+      "file": "huawei.png",
+      "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/huawei.svg",
+      "artwork": "Simple Icons CC0 collection; trademarks subject to owner policies",
+      "sha256": "460d519c5db67703387abf2554a47957b3a6aed8a6ba5f64d416a0acf6b9a8ee"
+    },
+    {
+      "name": "腾讯云",
+      "file": "tencent.png",
+      "source": "NyaDB independently drawn monogram",
+      "artwork": "NyaDB original fallback, not an official brand logo",
+      "sha256": "69b553bca4a03607b6e5575569e300b762905187254866c87f5c31555c96bb7c"
+    },
+    {
+      "name": "达梦",
+      "file": "dameng.png",
+      "source": "NyaDB independently drawn monogram",
+      "artwork": "NyaDB original fallback, not an official brand logo",
+      "sha256": "57cf20a61dcc35f6b149c83eb20a31e91ac7d58ec769c4aa4dbbfd6e37be33df"
+    },
+    {
+      "name": "电科金仓",
+      "file": "kingbase.png",
+      "source": "NyaDB independently drawn monogram",
+      "artwork": "NyaDB original fallback, not an official brand logo",
+      "sha256": "5f19cf0f3ef4f6c298e390a080a27aa00f7a8374c034a93b597979b292efee88"
+    },
+    {
+      "name": "亚信星辰",
+      "file": "pingkai.png",
+      "source": "NyaDB independently drawn monogram",
+      "artwork": "NyaDB original fallback, not an official brand logo",
+      "sha256": "762b4c9da0ea43750af7710d5297a939c9fd9867c241e31a7f1bd51b1d4998f1"
+    },
+    {
+      "name": "瀚高",
+      "file": "highgo.png",
+      "source": "NyaDB independently drawn monogram",
+      "artwork": "NyaDB original fallback, not an official brand logo",
+      "sha256": "7c6f588340a555a071d6f0e4036da062213b5c93e4279ca59ce714f3112bf3f3"
+    },
+    {
+      "name": "OceanBase",
+      "file": "oceanbase.png",
+      "source": "NyaDB independently drawn monogram",
+      "artwork": "NyaDB original fallback, not an official brand logo",
+      "sha256": "7bdf3fdf937f27e953d69d952446023867b8f7e569c47e5e1d4ebc4d06c66421"
+    },
+    {
+      "name": "AWS",
+      "file": "aws.png",
+      "source": "NyaDB independently drawn monogram",
+      "artwork": "NyaDB original fallback, not an official brand logo",
+      "sha256": "931a5e2bff7d941dc01bc1b6faac729f488dc7f3aa8b44ebd7ce0d90919f6065"
+    },
+    {
+      "name": "Fujitsu",
+      "file": "fujitsu.png",
+      "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/fujitsu.svg",
+      "artwork": "Simple Icons CC0 collection; trademarks subject to owner policies",
+      "sha256": "8e309b3cd24bde634fbb5d6013fc370a8a4205f6d33fba0a6cbe0f88637856e9"
+    },
+    {
+      "name": "Google Cloud",
+      "file": "googlecloud.png",
+      "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/googlecloud.svg",
+      "artwork": "Simple Icons CC0 collection; trademarks subject to owner policies",
+      "sha256": "1a43b8fffcf51df968401beef9eca846522159a3f5fbf9083a745c2847dddc18"
+    },
+    {
+      "name": "Microsoft",
+      "file": "microsoft.png",
+      "source": "NyaDB independently drawn monogram",
+      "artwork": "NyaDB original fallback, not an official brand logo",
+      "sha256": "309b8aa9d50f4a7eb4ea2b7a254bc3738d85b8da6989517bbe8d60e9b15972da"
+    },
+    {
+      "name": "MongoDB",
+      "file": "mongodb.png",
+      "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/mongodb.svg",
+      "artwork": "Simple Icons CC0 collection; trademarks subject to owner policies",
+      "sha256": "f581487525a9fc7e87a3e97b7a42197795a672cd7ea9e91389919afa99e92170"
+    },
+    {
+      "name": "Oracle",
+      "file": "oracle.png",
+      "source": "NyaDB independently drawn monogram",
+      "artwork": "NyaDB original fallback, not an official brand logo",
+      "sha256": "c48f7a580c7f09bd9c6b746987f98298e4e533c4d29c874cf2c26e0d3a3f9a66"
+    },
+    {
+      "name": "Redis",
+      "file": "redis.png",
+      "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/redis.svg",
+      "artwork": "Simple Icons CC0 collection; trademarks subject to owner policies",
+      "sha256": "b7e94cb06cf46874c1c91cd2822a47adfa9223f814128a083bfeb3be2e6df62c"
+    }
+  ]
+}

@@ -93,6 +93,7 @@ type State struct {
 	showConnectionWindow    func()
 	hideConnectionWindow    func()
 	bundledIcons            map[string]*ui.Bitmap
+	providerIcons           map[string]*ui.Bitmap
 	researchIcons           map[string]*ui.Bitmap
 
 	profileMode       bool
@@ -132,6 +133,7 @@ func New() *State {
 	s.objectState.Selected = &s.objectRow
 	s.explorerTree.List.Selected = &s.explorerRow
 	s.bundledIcons, _ = bundledCatalogIcons() // always use committed assets when valid
+	s.providerIcons, _ = bundledProviderIcons()
 	return s
 }
 

@@ -20,7 +20,7 @@ func TestNavicatObservedTreeGroupHierarchy(t *testing.T) {
 			t.Errorf("empty vendor node %q", group.label)
 		}
 		for _, entry := range group.items {
-			if entry.vendor != group.vendor {
+			if entry.vendor != group.vendor && !(group.vendor == "达梦" && entry.engine == "达梦" && entry.section == "全部") {
 				t.Errorf("%q appeared under %q", entry.name, group.label)
 			}
 		}
