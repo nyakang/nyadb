@@ -30,6 +30,7 @@ type MySQLAdvanced struct {
 	UseCustomDatabaseList bool               `json:"useCustomDatabaseList,omitempty"`
 	Compatibility         MySQLCompatibility `json:"compatibility,omitempty"`
 	SSL                   MySQLSSL           `json:"ssl,omitempty"`
+	SSH                   MySQLSSH           `json:"ssh,omitempty"`
 }
 
 func DefaultMySQLAdvanced() MySQLAdvanced {
@@ -40,6 +41,7 @@ func DefaultMySQLAdvanced() MySQLAdvanced {
 		ReadTimeoutSeconds: 30, WriteTimeout: true,
 		WriteTimeoutSeconds: 30, MaxSessions: 10,
 		Compatibility: DefaultMySQLCompatibility(),
+		SSH:           DefaultMySQLSSH(),
 	}
 }
 
@@ -69,6 +71,10 @@ func normalizeMySQLAdvanced(a MySQLAdvanced) (MySQLAdvanced, error) {
 	}
 	if err := validateMySQLSSL(a.SSL); err != nil {
 		return a, err
+	}
+	var sshErr error
+	if a.SSH, sshErr = normalizeMySQLSSH(a.SSH); sshErr != nil {
+		return a, sshErr
 	}
 	if a.ClientDriver != "默认" && a.ClientDriver != "旧版" {
 		return a, fmt.Errorf("%w: unsupported MySQL client driver", ErrInvalid)

@@ -23,6 +23,7 @@ func (s *State) openConnectionDialog() {
 	s.connectionPort = ""
 	s.connectionSecret = ""
 	s.clearMySQLSSLPassphrase()
+	s.clearMySQLSSHSecrets()
 	s.clearMySQLInitialQuery()
 	s.connectionError = ""
 	if s.showConnectionWindow != nil {
@@ -34,6 +35,7 @@ func (s *State) closeConnectionDialog() {
 	s.connectionDialog = false
 	s.connectionSecret = ""
 	s.clearMySQLSSLPassphrase()
+	s.clearMySQLSSHSecrets()
 	s.clearMySQLInitialQuery()
 	s.connectionError = ""
 	if s.hideConnectionWindow != nil {
@@ -63,6 +65,7 @@ func (s *State) nextConnectionStep() {
 	s.clearMySQLInitialQuery()
 	if draft.Kind == connections.MySQL {
 		s.initMySQLAdvancedInputs()
+		s.initMySQLSSHInputs()
 	}
 	s.connectionPort = strconv.Itoa(int(draft.Port))
 	if draft.Kind == connections.SQLite {
@@ -77,6 +80,9 @@ func (s *State) nextConnectionStep() {
 func (s *State) draftProfile() (connections.Profile, error) {
 	p := s.connectionDraft
 	if err := s.advanceDraft(&p); err != nil {
+		return p, err
+	}
+	if err := s.advanceMySQLSSH(&p); err != nil {
 		return p, err
 	}
 	p.Name = strings.TrimSpace(p.Name)

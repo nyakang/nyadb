@@ -133,3 +133,14 @@ The passphrase is session-only and is cleared on close, cancel, save or back.
 Real TLS handshakes remain unimplemented. Original UI screenshots, MyGo GUI
 evidence and the unresolved behavior boundary are documented in
 `docs/MYSQL_SSL_TAB_DIFFERENTIAL_2026-10-21.md`.
+
+### MySQL SSH connection tab (2026-10-21)
+
+The native MyGo SSH tab reproduces the observed tunnel toggle, SSH server
+diagram, host/port/username inputs and three authentication modes: password,
+public key, and password plus key. Non-secret metadata is validated and saved
+inside the existing MySQL advanced JSON. Passwords and private-key passphrases
+remain session-only and are cleared on editor lifecycle boundaries. The key
+path browser uses a native file picker with stale-result protection. Real
+SSH tunneling and host-key verification are not yet implemented. See
+`docs/MYSQL_SSH_TAB_DIFFERENTIAL_2026-10-21.md`.

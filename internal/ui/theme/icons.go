@@ -35,6 +35,7 @@ var Symbols = map[string]*ui.SVG{
 	"info":           lucideSymbol("info"),
 	"folder":         lucideSymbol("folder"),
 	"database":       lucideSymbol("database"),
+	"ssh-server":     symbol(`<rect x="5" y="2" width="14" height="6" rx="1"/><rect x="5" y="10" width="14" height="6" rx="1"/><rect x="5" y="18" width="14" height="4" rx="1"/><path d="M8 5h.5M8 13h.5M8 20h.5"/>`),
 	"catalog-grid":   lucideSymbol("layout-grid"),
 	"catalog-list":   lucideSymbol("list"),
 	"catalog-filter": lucideSymbol("list-filter"),

@@ -172,6 +172,28 @@ func Run() error {
 				})
 			}()
 		})
+		state.SetMySQLSSHKeyPicker(func() {
+			version := state.MySQLSSHSessionVersion()
+			parent := chooser
+			if parent == nil {
+				return
+			}
+			go func() {
+				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
+					Parent: parent,
+					Title:  "选择 SSH 私钥",
+				})
+				window.Update(func() {
+					if err != nil {
+						state.MySQLSSHKeyPickerError(version)
+						return
+					}
+					if len(paths) > 0 {
+						state.SelectMySQLSSHPrivateKey(version, paths[0])
+					}
+				})
+			}()
+		})
 	})
 	return mygo.App.Run()
 }
