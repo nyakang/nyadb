@@ -123,3 +123,13 @@ native MyGo Table with Database and Auto Open columns. The custom-list toggle
 is persisted; add/remove stay disabled until real MySQL metadata retrieval is
 available. Original and NyaDB Linux GUI observations:
 `docs/MYSQL_DATABASE_TAB_DIFFERENTIAL_2026-10-21.md`.
+
+### MySQL SSL editor (2026-10-21)
+
+The native MyGo SSL tab reproduces the original two-stage enablement for SSL,
+verification, certificate paths, CA checking and an obscured key passphrase.
+Only flags and certificate paths persist in the existing MySQL advanced JSON.
+The passphrase is session-only and is cleared on close, cancel, save or back.
+Real TLS handshakes remain unimplemented. Original UI screenshots, MyGo GUI
+evidence and the unresolved behavior boundary are documented in
+`docs/MYSQL_SSL_TAB_DIFFERENTIAL_2026-10-21.md`.

@@ -186,6 +186,9 @@ func (s *State) connectionEditorOtherTab(c *ui.Context, width float32) {
 			_, height := c.Size()
 			s.connectionMySQLDatabases(c, width, height)
 			return
+		case "SSL":
+			s.connectionMySQLSSL(c, width)
+			return
 		}
 	}
 	ui.Column(c).Width(formWidth).Gap(12).Children(func() {
@@ -215,6 +218,7 @@ func (s *State) connectionEditorFooter(c *ui.Context) {
 			s.connectionStep = 0
 			s.connectionEditorTab = 0
 			s.connectionSecret = ""
+			s.clearMySQLSSLPassphrase()
 			s.clearMySQLInitialQuery()
 			s.connectionError = ""
 			s.updateConnectionWindowTitle()

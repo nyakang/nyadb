@@ -139,6 +139,39 @@ func Run() error {
 				})
 			}()
 		})
+		state.SetMySQLSSLFilePicker(func(kind shell.MySQLSSLFile) {
+			// Capture the editing session. Discard a late selection if the
+			// modal was closed and a different profile has since opened.
+			version := state.MySQLSSLSessionVersion()
+			parent := chooser
+			if parent == nil {
+				return
+			}
+			title := "选择 SSL 文件"
+			switch kind {
+			case shell.MySQLSSLClientKey:
+				title = "选择客户端密钥"
+			case shell.MySQLSSLClientCertificate:
+				title = "选择客户端证书"
+			case shell.MySQLSSLCA:
+				title = "选择 CA 证书"
+			}
+			go func() {
+				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
+					Parent: parent,
+					Title:  title,
+				})
+				window.Update(func() {
+					if err != nil {
+						state.MySQLSSLFilePickerError(version)
+						return
+					}
+					if len(paths) > 0 {
+						state.SelectMySQLSSLFile(kind, version, paths[0])
+					}
+				})
+			}()
+		})
 	})
 	return mygo.App.Run()
 }

@@ -29,6 +29,7 @@ type MySQLAdvanced struct {
 	MaxSessions           int                `json:"maxSessions"`
 	UseCustomDatabaseList bool               `json:"useCustomDatabaseList,omitempty"`
 	Compatibility         MySQLCompatibility `json:"compatibility,omitempty"`
+	SSL                   MySQLSSL           `json:"ssl,omitempty"`
 }
 
 func DefaultMySQLAdvanced() MySQLAdvanced {
@@ -64,6 +65,9 @@ func normalizeMySQLAdvanced(a MySQLAdvanced) (MySQLAdvanced, error) {
 		a.Compatibility = DefaultMySQLCompatibility()
 	}
 	if err := validateMySQLCompatibility(a.Compatibility); err != nil {
+		return a, err
+	}
+	if err := validateMySQLSSL(a.SSL); err != nil {
 		return a, err
 	}
 	if a.ClientDriver != "默认" && a.ClientDriver != "旧版" {
