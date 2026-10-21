@@ -52,6 +52,18 @@ func Run() error {
 		// Native parent-owned modal window, not an in-workspace overlay.
 		// The OS provides the title bar, window movement and close button.
 		var chooser *mygo.Window
+		updateChooserIcon := func() {
+			if chooser == nil {
+				return
+			}
+			icon, err := state.ConnectionWindowIcon()
+			if err == nil {
+				err = chooser.SetIcon(icon)
+			}
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "NyaDB connection icon: %v\n", err)
+			}
+		}
 		state.SetConnectionWindowHost(func() {
 			if chooser != nil {
 				chooser.Focus()
@@ -70,6 +82,7 @@ func Run() error {
 				UseContentSize: true,
 				Content:        ui.View(state.ConnectionWindowView),
 			})
+			updateChooserIcon()
 			chooser.OnClosed(func() {
 				chooser = nil
 				state.ConnectionWindowClosed()
@@ -85,6 +98,7 @@ func Run() error {
 				chooser.SetTitle(title)
 				width, height := state.ConnectionWindowSize()
 				chooser.SetContentSize(width, height)
+				updateChooserIcon()
 			}
 		})
 		state.SetSQLiteFilePicker(func() {

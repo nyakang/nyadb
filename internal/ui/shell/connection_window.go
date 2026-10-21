@@ -1,6 +1,10 @@
 package shell
 
-import "github.com/egoist/mygo/ui"
+import (
+	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/assets/connectionicons"
+	"github.com/nyakang/nyadb/internal/services/connections"
+)
 
 // SetConnectionWindowHost binds the native child-window lifecycle. When no
 // host is installed (e.g. ui.NewTester), the legacy in-tree modal remains
@@ -45,6 +49,26 @@ func (s *State) ConnectionWindowSize() (int, int) {
 		return 900, 700
 	}
 	return 902, 732
+}
+
+// ConnectionWindowIcon uses the bundled, redistributable connection-type icon.
+// The type chooser retains the default NyaDB application icon.
+func (s *State) ConnectionWindowIcon() ([]byte, error) {
+	if s.connectionStep != 1 {
+		return nil, nil
+	}
+	var file string
+	switch s.connectionDraft.Kind {
+	case connections.MySQL:
+		file = "mysql.png"
+	case connections.PostgreSQL:
+		file = "postgresql.png"
+	case connections.SQLite:
+		file = "sqlite.png"
+	default:
+		return nil, nil
+	}
+	return connectionicons.Read(file)
 }
 
 // ConnectionWindowView is the full content of a parent-owned, native modal
