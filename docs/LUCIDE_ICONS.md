@@ -37,3 +37,24 @@ local-only comparison mode. Lucide does not replace brand identity icons.
 
 Do not copy Navicat's proprietary resource artwork into NyaDB's shipping
 icon bundle.
+
+## Verification — 2026-10-21 (I)
+
+The following checks passed on Linux amd64 using Go 1.27.3, MyGo 0.5.5:
+
+- `go test ./...` (including Lucide resource/semantic icon tests and
+  existing shell interaction tests)
+- `go vet ./...`
+- `go tool mygo vet`
+- `go tool mygo build`
+
+A real NyaDB window was launched under an isolated 1600×960 Xvfb/Openbox
+desktop, using separate test HOME and XDG_CONFIG_HOME paths. The toolbar,
+database explorer and connection chooser rendered with the new Lucide
+operation symbols; database brand icon tiles stayed unchanged.
+Screenshots are retained only as untracked research evidence in
+`temp/research/gui-lucide-20261021/lucide-main-window.png` and
+`lucide-connection-chooser.png`.
+
+This is **I** evidence of local implementation and GUI rendering, not a
+physical desktop smoke test or Navicat pixel-equivalence (**V**) claim.

@@ -1,5 +1,9 @@
 # Connection selector icon assets
 
+These icons are specifically for **database brand identities**; NyaDB's
+general toolbar, explorer, and action symbols use pinned **Lucide SVGs**
+in `internal/assets/lucide/` (see `docs/LUCIDE_ICONS.md`).
+
 NyaDB ships connection-type icons as **ordinary embedded project assets**.
 Normal use does not require a research directory, any environment variable,
 a network connection, an external icon pack, or a post-installation setup.
