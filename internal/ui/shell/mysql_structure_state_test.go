@@ -3,6 +3,8 @@ package shell
 import (
 	"context"
 	"errors"
+	"image/png"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -77,6 +79,19 @@ func TestMySQLStructureNativeTabsSwitchRefreshAndDisconnect(t *testing.T) {
 		!tt.HasText("id") || !tt.HasText("只读结构") {
 		t.Fatalf("did not show structure: %v", tt.Texts())
 	}
+	if capture := os.Getenv("NYADB_MYSQL_STRUCTURE_CAPTURE"); capture != "" {
+		file, err := os.Create(capture)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := png.Encode(file, tt.Image()); err != nil {
+			_ = file.Close()
+			t.Fatal(err)
+		}
+		if err := file.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}
 	if err := tt.Click("索引"); err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +154,7 @@ func TestMySQLStructureNativeTabsSwitchRefreshAndDisconnect(t *testing.T) {
 	if count != 2 {
 		t.Fatal("reopening loaded tab should use its cached structure")
 	}
-	if err := tt.Click("关闭 orders"); err != nil {
+	if err := tt.Click("关闭 app_db.orders"); err != nil {
 		t.Fatal(err)
 	}
 	if len(s.tabs) != 2 {
@@ -226,7 +241,7 @@ func TestMySQLStructureErrorRetryCloseAndCancel(t *testing.T) {
 	if s.currentTab().structure == nil || s.currentTab().structureErr != "" {
 		t.Fatal("retry failed to recover")
 	}
-	if err := tt.Click("关闭 orders"); err != nil {
+	if err := tt.Click("关闭 app_db.orders"); err != nil {
 		t.Fatal(err)
 	}
 	if len(s.tabs) != 1 || s.currentTab().kind != tabObjects {

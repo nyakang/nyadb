@@ -37,7 +37,7 @@ func (s *State) openMySQLStructure(services ui.Services, database, table string)
 	}
 	s.nextTabID++
 	t := &tab{
-		id: s.nextTabID, kind: tabStructure, title: table,
+		id: s.nextTabID, kind: tabStructure, title: database + "." + table,
 		structureDatabase: database, structureTable: table,
 		structureProfileID: s.mysqlSessionProfileID,
 	}
