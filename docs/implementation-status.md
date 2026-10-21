@@ -70,3 +70,12 @@ in a searchable explorer with edit/copy/delete/refresh and inspector.
 Isolated Xvfb tested profile creation, selection and restart persistence.
 No database sessions or credentials are implemented (M2 pending).
 Evidence, checks and limitations: `docs/M1_B_VERIFICATION.md`.
+
+### Connection chooser fidelity iteration (2026-10-21)
+
+Connection chooser now uses a native MyGo parent-owned modal child window
+instead of an in-workspace overlay. Sidebar type/vendor rows have icons;
+additional browsable database/cloud types and icon-only grid/list controls
+are implemented. Supported profile kinds are unchanged. See
+`docs/CONNECTION_CHOOSER_NATIVE_WINDOW_2026-10-21.md` for differential
+screenshots, tests, security boundaries and remaining visual differences.
