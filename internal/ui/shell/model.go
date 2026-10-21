@@ -86,6 +86,7 @@ type State struct {
 	connectionPort            string
 	mysqlAdvancedNumbers      [5]string
 	mysqlCompatibilityVisible bool
+	mysqlDatabaseTable        ui.ListState
 	mysqlInitialQuery         string
 	mysqlInitialQueryPreview  string
 	mysqlInitialQueryDraft    string

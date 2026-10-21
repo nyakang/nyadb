@@ -27,6 +27,7 @@ type MySQLAdvanced struct {
 	PipeName              string             `json:"pipeName,omitempty"`
 	LimitSessions         bool               `json:"limitSessions,omitempty"`
 	MaxSessions           int                `json:"maxSessions"`
+	UseCustomDatabaseList bool               `json:"useCustomDatabaseList,omitempty"`
 	Compatibility         MySQLCompatibility `json:"compatibility,omitempty"`
 }
 
