@@ -44,3 +44,9 @@
 - 点击「兼容性」按钮能出现动态子标签；返回「高级」正常。截图：`temp/research/mysql-advanced-20261021/nyadb-compatibility-final.png`。
 - 点击设置位置旁的省略号能实际打开 MyGo Linux 原生目录选择器（截图：`temp/research/mysql-advanced-20261021/nyadb-settings-directory-picker.png`），用户取消后没有写入配置。
 - Go 服务测试、SQLite v1→v2 迁移测试、MyGo Tester 的控件联动与保存后重新编辑测试通过。本阶段只确认 UI/配置行为，不宣称 DB 握手通过或像素级 V。
+
+## 输入框、下拉箭头和浏览按钮对齐修正（2026-10-21，I）
+
+- 用户截图指出两个省略号按钮与输入框不齐、客户端驱动程序的箭头掉入下一行。原因是把具有自身布局/最小高度的 MyGo Select 和 Button 放进 26 DIP 高的 Row 中。
+- 修正：浏览输入行和两个 Select 行使用 32 DIP 行高；输入框、Select、浏览按钮统一 30 DIP 控件高度；显式 4 DIP 间隔，保证两行输入区的按钮边界对齐，而不是靠负偏移修补。
+- 在隔离 Linux Xvfb :125 真实运行检查，截图 `temp/research/mysql-database-20261021/nyadb-advanced-ui-corrected.png`，下拉箭头回到框内，两个「…」按钮与输入框水平、垂直对齐。跨平台像素级 V 仍待验证。

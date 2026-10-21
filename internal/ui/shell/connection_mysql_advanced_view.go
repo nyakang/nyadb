@@ -64,25 +64,28 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 	labelWidth := min(float32(166), formWidth*0.3)
 	fieldWidth := formWidth - labelWidth
 	a := &s.connectionDraft.MySQLAdvanced
+	// Browse buttons and Select elements need a 32-DIP row to keep their
+	// content inside the row; 26 DIP clips/overlaps the following controls.
 	ui.Column(c).Width(formWidth).Gap(5).Children(func() {
-		ui.Row(c).Height(26).Gap(0).AlignItems(ui.Center).Children(func() {
+		ui.Row(c).Height(32).Gap(0).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, "设置位置：").Width(labelWidth).FontSize(12)
-			ui.TextInput(c, &a.SettingsLocation).Label("设置位置").Width(fieldWidth-30).
-				Height(25).Padding(2, 8)
-			if ui.Button(c, "…").Label("选择设置位置").Width(28).
+			ui.TextInput(c, &a.SettingsLocation).Label("设置位置").Width(fieldWidth-34).
+				Height(30).Padding(2, 8)
+			ui.Box(c).Width(4)
+			if ui.Button(c, "…").Label("选择设置位置").Width(30).Height(30).Padding(0, 0).
 				Disabled(s.mysqlSettingsPicker == nil).Clicked() {
 				s.mysqlSettingsPicker()
 			}
 		})
-		ui.Row(c).Height(26).Gap(0).AlignItems(ui.Center).Children(func() {
+		ui.Row(c).Height(32).Gap(0).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, "客户端驱动程序：").Width(labelWidth).FontSize(12)
 			ui.Select(c, &a.ClientDriver, []string{"默认", "旧版"}).
-				Label("客户端驱动程序").Width(fieldWidth).Height(26)
+				Label("客户端驱动程序").Width(fieldWidth).Height(30)
 		})
-		ui.Row(c).Height(26).Gap(0).AlignItems(ui.Center).Children(func() {
+		ui.Row(c).Height(32).Gap(0).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, "客户端字符集：").Width(labelWidth).FontSize(12)
 			ui.Select(c, &a.Charset, connections.MySQLCharsets).
-				Label("客户端字符集").Width(fieldWidth).Height(26)
+				Label("客户端字符集").Width(fieldWidth).Height(30)
 		})
 		s.mysqlAdvancedNumberRow(c, &a.KeepAlive, "保持连接间隔（秒）：",
 			&s.mysqlAdvancedNumbers[mysqlKeepAlive], labelWidth)
@@ -102,13 +105,14 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 		})
 		s.mysqlAdvancedNumberRow(c, &a.LimitSessions, "限制连接会话：",
 			&s.mysqlAdvancedNumbers[mysqlSessionLimit], labelWidth)
-		ui.Row(c).Height(26).Gap(0).AlignItems(ui.Center).Children(func() {
+		ui.Row(c).Height(32).Gap(0).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, "初始查询：").Width(labelWidth).FontSize(12)
 			if ui.TextInput(c, &s.mysqlInitialQueryPreview).Label("初始查询").
-				Width(fieldWidth-30).Height(25).Padding(2, 8).Changed() {
+				Width(fieldWidth-34).Height(30).Padding(2, 8).Changed() {
 				s.mysqlInitialQuery = s.mysqlInitialQueryPreview
 			}
-			if ui.Button(c, "…").Label("编辑初始查询").Width(28).Clicked() {
+			ui.Box(c).Width(4)
+			if ui.Button(c, "…").Label("编辑初始查询").Width(30).Height(30).Padding(0, 0).Clicked() {
 				s.beginMySQLInitialQuery()
 			}
 		})
