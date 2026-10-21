@@ -6,6 +6,17 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
+// Shared chrome colors, measured from Navicat 18 running under isolated Xvfb.
+// Keep them local to the connection editor rather than changing the NyaDB
+// workbench palette or per-tab business controls.
+var (
+	connectionEditorSurface = ui.Hex("#31363b")
+	connectionEditorTabsBG  = ui.Hex("#30353a")
+	connectionEditorBorder  = ui.Hex("#23272a")
+	connectionEditorButton  = ui.Hex("#3f4448")
+	connectionDiagramLine   = ui.Hex("#76787a")
+)
+
 // The connection editor is a native MyGo view. Layout and tab order are based
 // on observed Navicat 18 UI behavior, not on the original application's code.
 func (s *State) connectionEditor(c *ui.Context) {
@@ -20,9 +31,9 @@ func (s *State) connectionEditor(c *ui.Context) {
 	if h < 420 {
 		h = 420
 	}
-	ui.Column(c).Width(w).Height(h).Gap(0).Background(theme.Header).Children(func() {
+	ui.Column(c).Width(w).Height(h).Gap(0).Background(connectionEditorSurface).Children(func() {
 		s.connectionEditorTabs(c)
-		ui.Box(c).Height(1).Background(theme.Border)
+		ui.Box(c).Height(1).Background(connectionEditorBorder)
 		ui.Column(c).Grow(1).Gap(0).AlignItems(ui.Center).Children(func() {
 			s.connectionEditorDiagram(c)
 			if s.connectionEditorTab == 0 {
@@ -34,7 +45,7 @@ func (s *State) connectionEditor(c *ui.Context) {
 				ui.Text(c, s.connectionError).FontSize(12).TextColor(theme.Gold).Padding(15, 0)
 			}
 		})
-		ui.Box(c).Height(1).Background(theme.Border)
+		ui.Box(c).Height(1).Background(connectionEditorBorder)
 		s.connectionEditorFooter(c)
 	})
 	s.mysqlInitialQueryModal(c)
@@ -63,13 +74,13 @@ func (s *State) connectionEditorTabs(c *ui.Context) {
 	if s.connectionEditorTab >= len(names) {
 		s.connectionEditorTab = 0
 	}
-	ui.Row(c).Height(29).Gap(0).Background(theme.Sidebar).Children(func() {
+	ui.Row(c).Height(29).Gap(0).Background(connectionEditorTabsBG).Children(func() {
 		tabs := ui.TabsBase(c, &s.connectionEditorTab, len(names))
 		tabs.List.Gap(0).Children(func() {
 			for i, name := range names {
-				item := tabs.Tab(i).Height(28).Padding(4, 12).Border(1, theme.Border)
+				item := tabs.Tab(i).Height(28).Padding(4, 12).Border(1, connectionEditorBorder)
 				if i == s.connectionEditorTab {
-					item.Background(theme.Header)
+					item.Background(connectionEditorSurface)
 				}
 				item.Children(func() {
 					ui.Text(c, name).FontSize(12).SingleLine()
@@ -86,17 +97,17 @@ func (s *State) connectionEditorDiagram(c *ui.Context) {
 	if s.connectionDraft.Kind == connections.MySQL &&
 		s.connectionDraft.MySQLAdvanced.HTTP.Enabled {
 		ui.Row(c).Height(96).Gap(7).AlignItems(ui.Center).Justify(ui.Center).Children(func() {
-			ui.Column(c).Width(75).Gap(3).AlignItems(ui.Center).Children(func() {
+			ui.Column(c).Width(65).Gap(3).AlignItems(ui.Center).Children(func() {
 				theme.Icon(c, "connection", 36, theme.Muted)
 				ui.Text(c, "NyaDB").FontSize(11)
 			})
-			ui.Box(c).Width(75).Height(2).Background(theme.Border)
-			ui.Column(c).Width(75).Gap(3).AlignItems(ui.Center).Children(func() {
+			ui.Box(c).Width(75).Height(2).Background(connectionDiagramLine)
+			ui.Column(c).Width(65).Gap(3).AlignItems(ui.Center).Children(func() {
 				theme.Icon(c, "ssh-server", 36, theme.Muted)
 				ui.Text(c, "HTTP 服务器").FontSize(11)
 			})
-			ui.Box(c).Width(75).Height(2).Background(theme.Border)
-			ui.Column(c).Width(75).Gap(3).AlignItems(ui.Center).Children(func() {
+			ui.Box(c).Width(75).Height(2).Background(connectionDiagramLine)
+			ui.Column(c).Width(65).Gap(3).AlignItems(ui.Center).Children(func() {
 				theme.Icon(c, "database", 36, theme.Muted)
 				ui.Text(c, "数据库").FontSize(11)
 			})
@@ -108,17 +119,17 @@ func (s *State) connectionEditorDiagram(c *ui.Context) {
 	if s.connectionDraft.Kind == connections.MySQL &&
 		s.connectionDraft.MySQLAdvanced.SSH.Enabled {
 		ui.Row(c).Height(96).Gap(7).AlignItems(ui.Center).Justify(ui.Center).Children(func() {
-			ui.Column(c).Width(75).Gap(3).AlignItems(ui.Center).Children(func() {
+			ui.Column(c).Width(65).Gap(3).AlignItems(ui.Center).Children(func() {
 				theme.Icon(c, "connection", 36, theme.Muted)
 				ui.Text(c, "NyaDB").FontSize(11)
 			})
-			ui.Box(c).Width(75).Height(2).Background(theme.Border)
-			ui.Column(c).Width(75).Gap(3).AlignItems(ui.Center).Children(func() {
+			ui.Box(c).Width(75).Height(2).Background(connectionDiagramLine)
+			ui.Column(c).Width(65).Gap(3).AlignItems(ui.Center).Children(func() {
 				theme.Icon(c, "ssh-server", 36, theme.Muted)
 				ui.Text(c, "SSH 服务器").FontSize(11)
 			})
-			ui.Box(c).Width(75).Height(2).Background(theme.Border)
-			ui.Column(c).Width(75).Gap(3).AlignItems(ui.Center).Children(func() {
+			ui.Box(c).Width(75).Height(2).Background(connectionDiagramLine)
+			ui.Column(c).Width(65).Gap(3).AlignItems(ui.Center).Children(func() {
 				theme.Icon(c, "database", 36, theme.Muted)
 				ui.Text(c, "数据库").FontSize(11)
 			})
@@ -126,12 +137,12 @@ func (s *State) connectionEditorDiagram(c *ui.Context) {
 		return
 	}
 	ui.Row(c).Height(96).Gap(8).AlignItems(ui.Center).Justify(ui.Center).Children(func() {
-		ui.Column(c).Width(65).Gap(3).AlignItems(ui.Center).Children(func() {
+		ui.Column(c).Width(42).Gap(3).AlignItems(ui.Center).Children(func() {
 			theme.Icon(c, "connection", 37, theme.Muted)
 			ui.Text(c, "NyaDB").FontSize(11)
 		})
-		ui.Box(c).Width(108).Height(2).Background(theme.Border)
-		ui.Column(c).Width(65).Gap(3).AlignItems(ui.Center).Children(func() {
+		ui.Box(c).Width(112).Height(2).Background(connectionDiagramLine)
+		ui.Column(c).Width(42).Gap(3).AlignItems(ui.Center).Children(func() {
 			theme.Icon(c, "database", 37, theme.Muted)
 			ui.Text(c, "数据库").FontSize(11)
 		})
@@ -262,13 +273,23 @@ func (s *State) connectionEditorOtherTab(c *ui.Context, width float32) {
 }
 
 func (s *State) connectionEditorFooter(c *ui.Context) {
-	ui.Row(c).Height(42).Padding(5, 9).Gap(8).AlignItems(ui.Center).
-		Background(theme.Header).Children(func() {
-		ui.Button(c, "URI").Width(76).Disabled(true).Label("URI 导入尚未支持")
-		ui.Button(c, "测试连接").Width(130).Disabled(true).
+	ui.Row(c).Height(42).Padding(5, 9).Gap(7).AlignItems(ui.Center).
+		Background(connectionEditorSurface).Children(func() {
+		// The original reserves the first slot for the profile-list toggle.
+		// The edit-profile sidebar is not implemented yet.
+		ui.Button(c, "▣").Width(26).Height(26).
+			Background(connectionEditorButton).Border(1, connectionEditorBorder).
+			Disabled(true).Label("连接配置文件列表（尚未实现）")
+		ui.Button(c, "URI").Width(76).Height(26).
+			Background(connectionEditorButton).Border(1, connectionEditorBorder).
+			Disabled(true).Label("URI 导入尚未支持")
+		ui.Button(c, "测试连接").Width(155).Height(26).
+			Background(connectionEditorButton).Border(1, connectionEditorBorder).Disabled(true).
 			Label("测试连接待数据库驱动接入")
 		ui.Box(c).Grow(1)
-		if ui.Button(c, "上一步").Width(80).Disabled(s.connectionDraft.ID != 0).Clicked() {
+		if ui.Button(c, "上一步").Width(80).Height(26).
+			Background(connectionEditorButton).Border(1, connectionEditorBorder).
+			Disabled(s.connectionDraft.ID != 0).Clicked() {
 			s.connectionStep = 0
 			s.connectionEditorTab = 0
 			s.connectionSecret = ""
@@ -279,10 +300,13 @@ func (s *State) connectionEditorFooter(c *ui.Context) {
 			s.connectionError = ""
 			s.updateConnectionWindowTitle()
 		}
-		if ui.PrimaryButton(c, "确定").Width(80).Label("保存连接").Clicked() {
+		if ui.PrimaryButton(c, "确定").Width(80).Height(26).
+			Label("保存连接").Clicked() {
 			s.saveConnectionDraft()
 		}
-		if ui.Button(c, "取消").Width(80).Label("取消连接向导").Clicked() {
+		if ui.Button(c, "取消").Width(80).Height(26).
+			Background(connectionEditorButton).Border(1, connectionEditorBorder).
+			Label("取消连接向导").Clicked() {
 			s.closeConnectionDialog()
 		}
 	})
