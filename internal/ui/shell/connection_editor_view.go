@@ -216,6 +216,10 @@ func (s *State) editorSQLiteFields(c *ui.Context, labelWidth, fieldWidth float32
 func (s *State) connectionEditorOtherTab(c *ui.Context, width float32) {
 	names := s.connectionTabNames()
 	tab := names[s.connectionEditorTab]
+	if tab == "备注" {
+		s.connectionNotesEditor(c, width)
+		return
+	}
 	formWidth := min(float32(604), width-44)
 	labelWidth := min(float32(166), formWidth*0.3)
 	if s.connectionDraft.Kind == connections.MySQL {

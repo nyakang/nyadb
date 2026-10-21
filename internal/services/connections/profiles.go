@@ -38,6 +38,7 @@ type Profile struct {
 	Username      string
 	TLSMode       string
 	MySQLAdvanced MySQLAdvanced
+	Notes         string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -56,6 +57,10 @@ func normalize(p Profile) (Profile, error) {
 	p.Database = strings.TrimSpace(p.Database)
 	p.Username = strings.TrimSpace(p.Username)
 	p.TLSMode = strings.ToLower(strings.TrimSpace(p.TLSMode))
+	// Notes are user-authored multiline profile metadata, not credentials.
+	if !utf8.ValidString(p.Notes) || strings.ContainsRune(p.Notes, 0) || len(p.Notes) > 64*1024 {
+		return p, fmt.Errorf("%w: connection notes must be valid UTF-8, NUL-free, and at most 64 KiB", ErrInvalid)
+	}
 	if p.Name == "" || utf8.RuneCountInString(p.Name) > 120 || strings.ContainsRune(p.Name, 0) {
 		return p, fmt.Errorf("%w: name must contain 1 to 120 characters", ErrInvalid)
 	}
@@ -96,7 +101,7 @@ func normalize(p Profile) (Profile, error) {
 	return p, nil
 }
 
-const profileColumns = "id, name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, created_at_ms, updated_at_ms"
+const profileColumns = "id, name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, notes, created_at_ms, updated_at_ms"
 
 func scanProfile(scan func(...any) error) (Profile, error) {
 	var p Profile
@@ -104,7 +109,7 @@ func scanProfile(scan func(...any) error) (Profile, error) {
 	var port int64
 	var created, updated int64
 	err := scan(&p.ID, &p.Name, &p.Kind, &p.Host, &port, &p.Database,
-		&p.Username, &p.TLSMode, &advancedJSON, &created, &updated)
+		&p.Username, &p.TLSMode, &advancedJSON, &p.Notes, &created, &updated)
 	if err != nil {
 		return Profile{}, err
 	}
@@ -145,8 +150,8 @@ func (s *Store) Create(ctx context.Context, p Profile) (Profile, error) {
 	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	result, err := s.db.ExecContext(ctx,
-		"INSERT INTO connection_profiles (name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, created_at_ms, updated_at_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, now.UnixMilli(), now.UnixMilli())
+		"INSERT INTO connection_profiles (name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, notes, created_at_ms, updated_at_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, p.Notes, now.UnixMilli(), now.UnixMilli())
 	if err != nil {
 		return Profile{}, fmt.Errorf("create connection profile: %w", err)
 	}
@@ -209,8 +214,8 @@ func (s *Store) Update(ctx context.Context, p Profile) (Profile, error) {
 	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	result, err := s.db.ExecContext(ctx,
-		"UPDATE connection_profiles SET name=?, kind=?, host=?, port=?, database_name=?, username=?, tls_mode=?, mysql_advanced_json=?, updated_at_ms=? WHERE id=?",
-		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, now.UnixMilli(), p.ID)
+		"UPDATE connection_profiles SET name=?, kind=?, host=?, port=?, database_name=?, username=?, tls_mode=?, mysql_advanced_json=?, notes=?, updated_at_ms=? WHERE id=?",
+		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, p.Notes, now.UnixMilli(), p.ID)
 	if err != nil {
 		return Profile{}, fmt.Errorf("update connection profile: %w", err)
 	}
