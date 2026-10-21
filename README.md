@@ -7,6 +7,7 @@ NyaDB is a cross-platform, native desktop database workbench built with [Go](htt
 ## Features
 
 - Native desktop interface for Windows, macOS, and Linux, with resizable explorer, workspace, and inspector panes.
+- Consistent Lucide SVG operation icons with a separate set of embedded database brand icons.
 - Create, edit, duplicate, delete, and search connection profiles for MySQL, PostgreSQL, and SQLite.
 - Persist non-secret connection settings in a local SQLite configuration database.
 - Database chooser icons embedded in the application, with documented third-party artwork provenance.
@@ -71,6 +72,7 @@ Passwords, tokens, and credential-bearing connection strings are not stored in t
 ```text
 cmd/nyadb/                    Desktop application entry point
 internal/bootstrap/           Application initialization
+internal/assets/lucide/       Embedded Lucide UI icons (ISC license)
 internal/assets/connectionicons/ Embedded icon assets and provenance
 internal/services/connections/ Connection profile service and validation
 internal/storage/localdb/     SQLite configuration storage and migrations
@@ -85,6 +87,7 @@ docs/                         Design and UI documentation
 
 - [Technical design](docs/NYADB_TECHNICAL_DESIGN.md)
 - [UI layout and interactions](docs/UI_LAYOUT.md)
+- [Lucide general UI icons](docs/LUCIDE_ICONS.md)
 - [Connection icon assets and licenses](docs/ICON_ASSETS.md)
 
 NyaDB is an independent implementation. It does not include Navicat source code, branding, or proprietary assets.
