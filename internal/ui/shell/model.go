@@ -88,6 +88,8 @@ type State struct {
 	connectionRecent        []string
 	connectionEngineFilters map[string]bool
 	connectionVendorFilters map[string]bool
+	showConnectionWindow    func()
+	hideConnectionWindow    func()
 	bundledIcons            map[string]*ui.Bitmap
 	researchIcons           map[string]*ui.Bitmap
 

@@ -8,11 +8,16 @@ import (
 // The chooser follows the observed large two-pane information architecture.
 // It uses independent NyaDB symbols by default. In explicit local research
 // mode only, runtime-loaded PNGs may replace catalog symbols for comparison.
-func (s *State) connectionTypes(c *ui.Context) {
+func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 	w, h := c.Size()
 	dialogWidth := min(float32(860), w-72)
 	dialogHeight := min(float32(648), h-76)
 	bodyHeight := dialogHeight - 78
+	if nativeWindow {
+		dialogWidth = w
+		dialogHeight = h
+		bodyHeight = h - 40
+	}
 	columns := 5
 	if dialogWidth < 820 {
 		columns = 4
@@ -21,11 +26,13 @@ func (s *State) connectionTypes(c *ui.Context) {
 		columns = 3
 	}
 	ui.Column(c).Width(dialogWidth).Height(dialogHeight).Gap(0).Children(func() {
-		ui.Row(c).Height(38).Padding(0, 3).AlignItems(ui.Center).Children(func() {
-			theme.Icon(c, "connection", 20, theme.Blue)
-			ui.Text(c, "新建连接").FontSize(17).Bold()
-		})
-		ui.Box(c).Height(1).Background(theme.Border)
+		if !nativeWindow {
+			ui.Row(c).Height(38).Padding(0, 3).AlignItems(ui.Center).Children(func() {
+				theme.Icon(c, "connection", 20, theme.Blue)
+				ui.Text(c, "新建连接").FontSize(17).Bold()
+			})
+			ui.Box(c).Height(1).Background(theme.Border)
+		}
 		ui.Row(c).Height(bodyHeight).Gap(0).Children(func() {
 			s.catalogFilterSidebar(c, bodyHeight)
 			ui.Box(c).Width(1).Background(theme.Border)
