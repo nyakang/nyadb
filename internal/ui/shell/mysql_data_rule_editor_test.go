@@ -58,7 +58,7 @@ func TestMySQLRuleEditorMultipleConditionsPrioritySortAndMenu(t *testing.T) {
 		last.Sorts[1].Column != "id" || last.Offset != 0 {
 		t.Fatalf("rules not sent to real query loader: %+v", last)
 	}
-	if err := tt.RightClick("id · bigint"); err != nil {
+	if err := tt.RightClick("bigint"); err != nil {
 		t.Fatal(err)
 	}
 	if err := tt.ChooseMenuItem("隐藏此列"); err != nil {
@@ -69,7 +69,7 @@ func TestMySQLRuleEditorMultipleConditionsPrioritySortAndMenu(t *testing.T) {
 	if len(indices) != 2 || indices[0] != 1 || cols[0].ID != "note" || !tab.dataHiddenColumns["id"] {
 		t.Fatalf("column index mapping broke: %+v %+v", indices, cols)
 	}
-	if err := tt.RightClick("note · varchar"); err != nil {
+	if err := tt.RightClick("varchar"); err != nil {
 		t.Fatal(err)
 	}
 	if err := tt.ChooseMenuItem("显示/隐藏列", "id"); err != nil {
@@ -80,7 +80,7 @@ func TestMySQLRuleEditorMultipleConditionsPrioritySortAndMenu(t *testing.T) {
 	if len(indices) != 3 || tab.dataHiddenColumns["id"] {
 		t.Fatal("restore hidden column failed")
 	}
-	if err := tt.RightClick("id · bigint"); err != nil {
+	if err := tt.RightClick("bigint"); err != nil {
 		t.Fatal(err)
 	}
 	if err := tt.ChooseMenuItem("复制字段名称"); err != nil {
@@ -88,6 +88,23 @@ func TestMySQLRuleEditorMultipleConditionsPrioritySortAndMenu(t *testing.T) {
 	}
 	if tt.Clipboard() != "id" {
 		t.Fatalf("copy header: %q", tt.Clipboard())
+	}
+	if err := tt.RightClick("bigint"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("显示字段类型"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if tab.dataShowFieldTypes || tt.HasText("bigint") {
+		t.Fatal("subtitle visibility toggle did not affect native Table header")
+	}
+	// Rebuild the subtitle through the same native Table state,
+	// without resetting layout widths or sort state.
+	tab.dataShowFieldTypes = true
+	tt.Frame()
+	if !tab.dataShowFieldTypes || !tt.HasText("bigint") {
+		t.Fatal("subtitle was not restored")
 	}
 	if err := tt.Click("筛选 & 排序"); err != nil {
 		t.Fatal(err)
