@@ -3,7 +3,7 @@ module github.com/nyakang/nyadb
 go 1.27.1
 
 require (
-	github.com/egoist/mygo v0.6.0
+	github.com/egoist/mygo v0.6.2
 	github.com/go-sql-driver/mysql v1.10.1
 	modernc.org/sqlite v1.60.1
 )
@@ -27,4 +27,4 @@ require (
 
 tool github.com/egoist/mygo/cmd/mygo
 
-replace github.com/egoist/mygo => ./third_party/mygo
+replace github.com/egoist/mygo => github.com/nyakang/mygo v0.6.2-nyadb.1
