@@ -3,6 +3,7 @@ package connections
 import (
 	"context"
 	"errors"
+	"net"
 	"strings"
 	"testing"
 	"time"
@@ -37,6 +38,21 @@ func TestDirectMySQLConfigDefaultsAndTimeouts(t *testing.T) {
 	cfg, err = DirectMySQLConfig(s, "")
 	if err != nil || cfg.Addr != "[::1]:3306" {
 		t.Fatalf("IPv6 address: %v", err)
+	}
+}
+
+func TestDirectMySQLConfigAllowsRemoteWithoutTLS(t *testing.T) {
+	for _, host := range []string{"mysql.example.test", "198.51.100.8", "2001:db8::1"} {
+		t.Run(host, func(t *testing.T) {
+			s := ActiveSettings{Host: host, Port: 3306, MySQLAdvanced: DefaultMySQLAdvanced()}
+			cfg, err := DirectMySQLConfig(s, "temporary")
+			if err != nil {
+				t.Fatalf("remote plain TCP must be supported: %v", err)
+			}
+			if cfg.TLS != nil || cfg.Addr != net.JoinHostPort(host, "3306") {
+				t.Fatalf("unexpected remote TCP config: TLS=%v Addr=%q", cfg.TLS, cfg.Addr)
+			}
+		})
 	}
 }
 

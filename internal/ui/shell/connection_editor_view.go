@@ -189,18 +189,6 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 			save := false
 			connectionFormCheckbox(c, &save, "保存密码", true)
 		})
-		ui.Row(c).Gap(0).Children(func() {
-			ui.Box(c).Width(labelWidth)
-			ui.Text(c, "密码仅在当前窗口内保留；安全保存将在密钥库接入后开放。").
-				FontSize(11).TextColor(theme.Muted)
-		})
-		if p.Kind == connections.MySQL {
-			ui.Row(c).Gap(0).Children(func() {
-				ui.Box(c).Width(labelWidth)
-				ui.Text(c, "支持严格证书验证的 TLS；未加密连接仅允许本机，请勿发送生产凭据。").
-					FontSize(11).TextColor(theme.Gold)
-			})
-		}
 	})
 }
 

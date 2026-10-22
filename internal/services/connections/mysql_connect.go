@@ -16,7 +16,9 @@ var ErrMySQLUnsupported = errors.New("MySQL connection setting not supported yet
 
 // DirectMySQLConfig builds a MySQL TCP configuration with optional verified TLS without ever
 // formatting a credential-bearing DSN or storing credentials in Profile.
-// Unsupported security/tunneling settings fail closed before any network I/O.
+// Plain TCP is permitted when TLS is not configured; selected TLS settings
+// retain strict certificate and hostname verification. Unsupported tunneling
+// settings fail closed before any network I/O.
 func DirectMySQLConfig(s ActiveSettings, password string) (*mysql.Config, error) {
 	if strings.TrimSpace(s.Host) == "" || s.Port == 0 ||
 		strings.ContainsAny(s.Host, "@/?!#\r\n\x00") {
@@ -59,13 +61,6 @@ func DirectMySQLConfig(s ActiveSettings, password string) (*mysql.Config, error)
 			return nil, err
 		}
 		cfg.TLS = tlsConfig
-	}
-	if cfg.TLS == nil {
-		host := strings.Trim(s.Host, "[]")
-		ip := net.ParseIP(host)
-		if !strings.EqualFold(host, "localhost") && (ip == nil || !ip.IsLoopback()) {
-			return nil, fmt.Errorf("%w: remote MySQL requires verified TLS", ErrMySQLUnsupported)
-		}
 	}
 	// Never allow cleartext or insecure legacy authentication plugins.
 	cfg.AllowCleartextPasswords = false
