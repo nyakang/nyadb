@@ -61,10 +61,10 @@ func (c structureConn) QueryContext(ctx context.Context, query string, args []dr
 		return &structureRows{cols: []string{"kind", "engine", "comment", "collation", "rows"},
 			values: [][]driver.Value{{"BASE TABLE", "InnoDB", "sales", "utf8mb4_general_ci", int64(42)}}}, nil
 	case strings.Contains(query, "information_schema.COLUMNS"):
-		return &structureRows{cols: []string{"name", "type", "data_type", "ordinal", "nullable", "default", "key", "extra", "comment", "length", "precision", "scale"},
+		return &structureRows{cols: []string{"name", "type", "data_type", "ordinal", "nullable", "default", "key", "extra", "comment", "length", "precision", "scale", "datetime_precision", "charset", "collation"},
 			values: [][]driver.Value{
-				{"id", "bigint unsigned", "bigint", int64(1), "NO", nil, "PRI", "auto_increment", "identity", nil, int64(20), int64(0)},
-				{"sku", "varchar(64)", "varchar", int64(2), "YES", "", "", "", "product code", int64(64), nil, nil},
+				{"id", "bigint unsigned", "bigint", int64(1), "NO", nil, "PRI", "auto_increment", "identity", nil, int64(20), int64(0), nil, nil, nil},
+				{"sku", "varchar(64)", "varchar", int64(2), "YES", "", "", "", "product code", int64(64), nil, nil, nil, "utf8mb4", "utf8mb4_0900_ai_ci"},
 			}}, nil
 	case strings.Contains(query, "information_schema.STATISTICS"):
 		return &structureRows{cols: []string{"name", "unique", "kind", "seq", "column", "sub", "direction"},
@@ -127,7 +127,9 @@ func TestMySQLTableStructureReadsBoundOrderedMetadata(t *testing.T) {
 	if len(got.Columns) != 2 || got.Columns[0].Name != "id" || got.Columns[0].Nullable ||
 		got.Columns[0].Default != nil || got.Columns[0].Extra != "auto_increment" ||
 		got.Columns[1].Default == nil || *got.Columns[1].Default != "" ||
-		got.Columns[1].CharacterMaxLength == nil || *got.Columns[1].CharacterMaxLength != 64 {
+		got.Columns[1].CharacterMaxLength == nil || *got.Columns[1].CharacterMaxLength != 64 ||
+		got.Columns[1].CharacterSet == nil || *got.Columns[1].CharacterSet != "utf8mb4" ||
+		got.Columns[1].Collation == nil || *got.Columns[1].Collation != "utf8mb4_0900_ai_ci" {
 		t.Fatalf("column metadata: %+v", got.Columns)
 	}
 	if len(got.Indexes) != 2 || !got.Indexes[0].Unique || got.Indexes[0].Name != "PRIMARY" ||

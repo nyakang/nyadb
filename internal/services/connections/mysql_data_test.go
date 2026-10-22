@@ -39,9 +39,11 @@ func (c dataFixtureConn) QueryContext(ctx context.Context, query string, args []
 		case <-c.cfg.block:
 		}
 	}
-	if strings.HasPrefix(query, "SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE") {
-		return &structureRows{cols: []string{"name", "type", "nullable"}, values: [][]driver.Value{
-			{"id", "bigint", "NO"}, {"note", "varchar", "YES"}, {"blank", "varchar", "YES"},
+	if strings.Contains(query, "FROM information_schema.COLUMNS") {
+		return &structureRows{cols: []string{"name", "type", "kind", "pos", "nullable", "default", "key", "extra", "comment", "len", "precision", "scale", "datetime", "charset", "collation"}, values: [][]driver.Value{
+			{"id", "bigint", "bigint", int64(1), "NO", nil, "PRI", "auto_increment", "", nil, int64(20), int64(0), nil, nil, nil},
+			{"note", "varchar(255)", "varchar", int64(2), "YES", nil, "", "", "", int64(255), nil, nil, nil, "utf8mb4", "utf8mb4_0900_ai_ci"},
+			{"blank", "varchar(30)", "varchar", int64(3), "YES", "NULL", "", "", "", int64(30), nil, nil, nil, "utf8mb4", "utf8mb4_0900_ai_ci"},
 		}}, nil
 	}
 	if strings.Contains(query, "information_schema.STATISTICS") {
@@ -82,10 +84,21 @@ func TestMySQLTableDataUsesEscapedNamesBoundPageAndPreservesNULL(t *testing.T) {
 	if !got.Rows[0][1].Null || got.Rows[0][2].Null || got.Rows[0][2].Text != "" || got.Rows[1][2].Text != "NULL" {
 		t.Fatalf("NULL and empty-string handling lost: %+v", got.Rows)
 	}
+	if len(got.ColumnMetadata) != 3 || got.ColumnMetadata[0].Type != "bigint" ||
+		got.ColumnMetadata[0].Key != "PRI" || got.ColumnMetadata[0].Extra != "auto_increment" ||
+		got.ColumnMetadata[1].Type != "varchar(255)" || got.ColumnMetadata[1].CharacterSet == nil ||
+		*got.ColumnMetadata[1].CharacterSet != "utf8mb4" || got.ColumnMetadata[1].Default != nil ||
+		got.ColumnMetadata[2].Default == nil || *got.ColumnMetadata[2].Default != "NULL" ||
+		got.ColumnMetadata[2].Position != 3 {
+		t.Fatalf("column metadata lost NULL/default/type/key semantics: %+v", got.ColumnMetadata)
+	}
 	meta := <-seen
 	indexes := <-seen
 	row := <-seen
 	if !strings.Contains(meta.query, "information_schema.COLUMNS") ||
+		!strings.Contains(meta.query, "COLUMN_TYPE") ||
+		!strings.Contains(meta.query, "DATETIME_PRECISION") ||
+		!strings.Contains(meta.query, "COLLATION_NAME") ||
 		!strings.Contains(indexes.query, "information_schema.STATISTICS") ||
 		meta.args[0].Value != schema || indexes.args[1].Value != table {
 		t.Fatalf("metadata not bound: %+v %+v", meta, indexes)

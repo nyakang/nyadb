@@ -28,6 +28,8 @@ type MySQLStructureColumn struct {
 	Nullable                                           bool
 	Default                                            *string // nil distinguishes SQL NULL from empty string.
 	CharacterMaxLength, NumericPrecision, NumericScale *int64
+	DatetimePrecision                                  *int64
+	CharacterSet, Collation                            *string // nil for types without charset.
 }
 
 type MySQLStructureIndexColumn struct {
@@ -123,36 +125,58 @@ AND TABLE_TYPE IN ('BASE TABLE', 'VIEW')`
 }
 
 func readMySQLStructureColumns(ctx context.Context, db *sql.DB, database, table string, target *MySQLTableStructure) error {
+	cols, err := readMySQLColumnMetadata(ctx, db, database, table, maxMySQLMetadataObjects)
+	if err == nil {
+		target.Columns = cols
+	}
+	return err
+}
+
+// Shared by the structure and bounded data viewers. The data viewer retains
+// its tighter 128-column limit. Only DATA_TYPE drives safe row projections.
+func readMySQLColumnMetadata(ctx context.Context, db *sql.DB, database, table string, limit int) ([]MySQLStructureColumn, error) {
 	const query = `SELECT COLUMN_NAME, COLUMN_TYPE, DATA_TYPE, ORDINAL_POSITION, IS_NULLABLE,
 COLUMN_DEFAULT, COLUMN_KEY, EXTRA, COALESCE(COLUMN_COMMENT, ''),
-CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE
+CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE,
+DATETIME_PRECISION, CHARACTER_SET_NAME, COLLATION_NAME
 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
 ORDER BY ORDINAL_POSITION`
 	rows, err := db.QueryContext(ctx, query, database, table)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer rows.Close()
+	var columns []MySQLStructureColumn
 	for rows.Next() {
-		if len(target.Columns) >= maxMySQLMetadataObjects {
-			return ErrMySQLMetadataLimit
+		if len(columns) >= limit {
+			return nil, ErrMySQLMetadataLimit
 		}
 		var c MySQLStructureColumn
 		var nullable string
-		var def sql.NullString
-		var charLen, precision, scale sql.NullInt64
+		var def, charset, collation sql.NullString
+		var charLen, precision, scale, datetimePrecision sql.NullInt64
 		if err := rows.Scan(&c.Name, &c.Type, &c.DataType, &c.Position, &nullable,
-			&def, &c.Key, &c.Extra, &c.Comment, &charLen, &precision, &scale); err != nil {
-			return err
+			&def, &c.Key, &c.Extra, &c.Comment, &charLen, &precision, &scale,
+			&datetimePrecision, &charset, &collation); err != nil {
+			return nil, err
+		}
+		if _, err := quotedMySQLIdentifier(c.Name); err != nil {
+			return nil, err
 		}
 		c.Nullable = nullable == "YES"
 		c.Default = mysqlNullableString(def)
 		c.CharacterMaxLength = mysqlNullableInt(charLen)
 		c.NumericPrecision = mysqlNullableInt(precision)
 		c.NumericScale = mysqlNullableInt(scale)
-		target.Columns = append(target.Columns, c)
+		c.DatetimePrecision = mysqlNullableInt(datetimePrecision)
+		c.CharacterSet = mysqlNullableString(charset)
+		c.Collation = mysqlNullableString(collation)
+		columns = append(columns, c)
 	}
-	return rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return columns, nil
 }
 
 func readMySQLStructureIndexes(ctx context.Context, db *sql.DB, database, table string, target *MySQLTableStructure) error {
