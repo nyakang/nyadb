@@ -70,12 +70,14 @@ var objectColumns = []ui.TableColumn{
 
 // State is UI state owned by the main thread. Never retain ui.Element values.
 type State struct {
-	sidebarPercent       float32
-	centerPercent        float32
-	editorPercent        float32
-	inspectorOn          bool
-	inspectorDetailsOpen bool
-	inspectorObjectsOpen bool
+	sidebarPercent          float32
+	centerPercent           float32
+	structureSidebarPercent float32
+	structureCenterPercent  float32
+	editorPercent           float32
+	inspectorOn             bool
+	inspectorDetailsOpen    bool
+	inspectorObjectsOpen    bool
 
 	explorerTree ui.OutlineState[string]
 	explorerRow  int
@@ -197,6 +199,8 @@ func New() *State {
 	s := &State{
 		sidebarPercent:          22,
 		centerPercent:           75,
+		structureSidebarPercent: 19.6,
+		structureCenterPercent:  80.1,
 		editorPercent:           48,
 		inspectorOn:             true,
 		inspectorDetailsOpen:    true,

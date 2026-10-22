@@ -15,11 +15,16 @@ func (s *State) View(c *ui.Context) {
 	ui.Column(c).Fill().Background(theme.App).Children(func() {
 		s.menuBar(c)
 		s.toolBar(c)
-		ui.SplitPercent(c, &s.sidebarPercent,
+		sidebar, center := &s.sidebarPercent, &s.centerPercent
+		if s.currentTab().kind == tabStructure {
+			// Original 1280px design window: 251/824/205.
+			sidebar, center = &s.structureSidebarPercent, &s.structureCenterPercent
+		}
+		ui.SplitPercent(c, sidebar,
 			func() { s.sidebar(c) },
 			func() {
 				if s.inspectorOn {
-					ui.SplitPercent(c, &s.centerPercent,
+					ui.SplitPercent(c, center,
 						func() { s.workspace(c) },
 						func() { s.inspector(c) },
 					).Fill()

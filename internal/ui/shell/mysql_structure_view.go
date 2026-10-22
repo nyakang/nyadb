@@ -1,7 +1,6 @@
 package shell
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -39,11 +38,11 @@ var mysqlStructureForeignColumns = []ui.TableColumn{
 
 func (s *State) mysqlStructureWorkspace(c *ui.Context, t *tab) {
 	ui.Column(c).Fill().Background(theme.App).Children(func() {
-		ui.Row(c).Height(39).Padding(5, 10).AlignItems(ui.Center).Gap(10).
+		ui.Row(c).Height(35).Padding(4, 8).AlignItems(ui.Center).Gap(10).
 			Background(theme.Header).Children(func() {
 			theme.Icon(c, "table", 16, theme.Blue)
 			ui.Text(c, t.structureDatabase+" / "+t.structureTable).Bold().FontSize(13).SingleLine()
-			ui.Text(c, "只读结构").TextColor(theme.Muted).FontSize(11)
+			ui.Text(c, "设计表 · 只读结构").TextColor(theme.Muted).FontSize(11)
 			ui.Box(c).Grow(1)
 			if ui.Button(c, "返回对象列表").Clicked() {
 				s.activeTab = 0
@@ -78,13 +77,6 @@ func (s *State) mysqlStructureWorkspace(c *ui.Context, t *tab) {
 			ui.Box(c).Grow(1)
 			return
 		}
-		ui.Row(c).Height(29).AlignItems(ui.Center).Padding(4, 12).Gap(14).Children(func() {
-			ui.Text(c, "类型："+t.structure.Kind).FontSize(11).TextColor(theme.Muted)
-			ui.Text(c, "引擎："+t.structure.Engine).FontSize(11).TextColor(theme.Muted)
-			ui.Text(c, fmt.Sprintf("字段 %d · 索引 %d · 外键 %d",
-				len(t.structure.Columns), len(mysqlStructureDesignIndexes(t.structure.Indexes)), len(t.structure.ForeignKeys))).
-				FontSize(11).TextColor(theme.Muted)
-		})
 		ui.Tabs(c, &t.structurePage, "字段", "索引", "外键", "表信息").Padding(4, 9)
 		switch t.structurePage {
 		case 1:
