@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 	"unicode/utf8"
 )
 
@@ -31,6 +30,7 @@ type MySQLDataCell struct {
 type MySQLDataPage struct {
 	Database, Table string
 	Columns         []string
+	ColumnKinds     []string // original server DATA_TYPE per displayed column
 	Rows            [][]MySQLDataCell
 	Offset          int64
 	Limit           int
@@ -47,123 +47,10 @@ func quotedMySQLIdentifier(name string) (string, error) {
 	return "`" + strings.ReplaceAll(name, "`", "``") + "`", nil
 }
 
-// TableDataPage reads up to 200 rows and one lookahead row on the existing
-// managed session, subject to cancellation, disconnect and a 20s deadline.
-// No writes, transaction state changes, SELECT COUNT(*) or full-table load.
+// TableDataPage keeps the original API while using the bounded, metadata-validated
+// query implementation. No caller can accidentally fall back to SELECT *.
 func (m *MySQLSessionManager) TableDataPage(ctx context.Context, id int64, database, table string, offset int64, limit int) (*MySQLDataPage, error) {
-	dbName, err := quotedMySQLIdentifier(database)
-	if err != nil {
-		return nil, err
-	}
-	tableName, err := quotedMySQLIdentifier(table)
-	if err != nil {
-		return nil, err
-	}
-	if offset < 0 || limit < 1 || limit > MySQLDataMaxPageSize || offset > 1_000_000_000 {
-		return nil, ErrMySQLDataPage
-	}
-	m.mu.Lock()
-	session := m.sessions[id]
-	m.mu.Unlock()
-	if session == nil {
-		return nil, ErrMySQLNotConnected
-	}
-	queryCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
-	stop := context.AfterFunc(session.ctx, cancel)
-	defer func() { stop(); cancel() }()
-
-	// A primary key provides stable ordering for paging within a snapshot.
-	// Tables lacking one and views may paginate nondeterministically when other
-	// sessions modify rows; the UI explicitly reports this limitation.
-	const pkQuery = `SELECT COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE
-WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND CONSTRAINT_NAME = 'PRIMARY'
-ORDER BY ORDINAL_POSITION`
-	keys, err := session.db.QueryContext(queryCtx, pkQuery, database, table)
-	if err != nil {
-		return nil, err
-	}
-	var order []string
-	for keys.Next() {
-		var key string
-		if err = keys.Scan(&key); err != nil {
-			break
-		}
-		var escaped string
-		escaped, err = quotedMySQLIdentifier(key)
-		if err != nil {
-			break
-		}
-		order = append(order, escaped)
-	}
-	if err == nil {
-		err = keys.Err()
-	}
-	closeErr := keys.Close()
-	if err != nil {
-		return nil, err
-	}
-	if closeErr != nil {
-		return nil, closeErr
-	}
-
-	query := "SELECT * FROM " + dbName + "." + tableName
-	if len(order) > 0 {
-		query += " ORDER BY " + strings.Join(order, ", ")
-	}
-	query += " LIMIT ? OFFSET ?"
-	rows, err := session.db.QueryContext(queryCtx, query, limit+1, offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	names, err := rows.Columns()
-	if err != nil {
-		return nil, err
-	}
-	if len(names) > maxMySQLMetadataObjects {
-		return nil, ErrMySQLMetadataLimit
-	}
-	types, err := rows.ColumnTypes()
-	if err != nil {
-		return nil, err
-	}
-	result := &MySQLDataPage{
-		Database: database, Table: table, Columns: names, Offset: offset,
-		Limit: limit, StableOrder: len(order) > 0,
-	}
-	scans := make([]any, len(names))
-	values := make([]any, len(names))
-	for i := range scans {
-		scans[i] = &values[i]
-	}
-	for rows.Next() {
-		if len(result.Rows) == limit {
-			result.HasMore = true
-			break
-		}
-		if err := rows.Scan(scans...); err != nil {
-			return nil, err
-		}
-		cells := make([]MySQLDataCell, len(names))
-		for i, value := range values {
-			typeName := ""
-			if i < len(types) {
-				typeName = types[i].DatabaseTypeName()
-			}
-			cells[i] = mysqlDataPreviewCell(value, typeName)
-		}
-		result.Rows = append(result.Rows, cells)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	if err := queryCtx.Err(); err != nil {
-		return nil, err
-	}
-	if session.ctx.Err() != nil {
-		return nil, context.Canceled
-	}
-	return result, nil
+	return m.TableDataPageWithOptions(ctx, id, database, table, MySQLDataOptions{Offset: offset, Limit: limit})
 }
 
 func mysqlDataPreviewCell(v any, dbType string) MySQLDataCell {

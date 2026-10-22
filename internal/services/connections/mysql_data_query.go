@@ -91,10 +91,12 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 	allowed := make(map[string]columnMeta, len(columns))
 	fields := make([]string, 0, len(columns))
 	names := make([]string, 0, len(columns))
+	kinds := make([]string, 0, len(columns))
 	for _, col := range columns {
 		quoted, _ := quotedMySQLIdentifier(col.name)
 		allowed[col.name] = col
 		names = append(names, col.name)
+		kinds = append(kinds, col.kind)
 		switch {
 		case mysqlDataBinaryType(col.kind):
 			fields = append(fields, "SUBSTRING("+quoted+", 1, 1025) AS "+quoted)
@@ -220,7 +222,7 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 	defer rows.Close()
 	// Scan and render in verified INFORMATION_SCHEMA order, even with a
 	// server-side projection; do not depend on ambiguous ColumnTypes aliases.
-	page := &MySQLDataPage{Database: database, Table: table, Columns: names,
+	page := &MySQLDataPage{Database: database, Table: table, Columns: names, ColumnKinds: kinds,
 		Offset: o.Offset, Limit: o.Limit, StableOrder: len(identity) > 0}
 	dest := make([]any, len(columns))
 	raw := make([]any, len(columns))

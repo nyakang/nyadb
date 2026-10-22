@@ -128,6 +128,10 @@ func (s *State) profileRoots() []string {
 }
 
 func (s *State) profileInspector(c *ui.Context) {
+	if s.currentTab().kind == tabMySQLData {
+		s.mysqlDataInspector(c, s.currentTab())
+		return
+	}
 	p, ok := s.currentProfile()
 	ui.Column(c).Fill().Background(theme.Panel).Children(func() {
 		ui.Row(c).Height(31).Padding(4, 10).AlignItems(ui.Center).Background(theme.Header).Children(func() {

@@ -3,12 +3,14 @@ package shell
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
 type mysqlDataLoader func(context.Context, int64, string, string, int64, int) (*connections.MySQLDataPage, error)
+type mysqlDataAdvancedLoader func(context.Context, int64, string, string, connections.MySQLDataOptions) (*connections.MySQLDataPage, error)
 
 type mysqlDataResult struct {
 	generation uint64
@@ -41,7 +43,10 @@ func (s *State) openMySQLData(services ui.Services, database, table string) {
 		id: s.nextTabID, kind: tabMySQLData,
 		title:        database + "." + table + " · 数据",
 		dataDatabase: database, dataTable: table, dataProfileID: s.mysqlSessionProfileID,
-		dataLimit: connections.MySQLDataDefaultPageSize,
+		dataLimit:             connections.MySQLDataDefaultPageSize,
+		dataSelectedRow:       -1,
+		dataFilterColumnDraft: "选择字段",
+		dataFilterModeDraft:   "包含",
 	}
 	s.tabs = append(s.tabs, t)
 	s.activeTab = len(s.tabs) - 1
@@ -74,19 +79,32 @@ func (s *State) loadMySQLData(services ui.Services, t *tab, refresh bool) {
 	t.dataCancel = cancel
 	request, gen, profile := t.dataRequest, s.mysqlSessionGeneration, s.mysqlSessionProfileID
 	database, table, offset, limit := t.dataDatabase, t.dataTable, t.dataOffset, t.dataLimit
-	loader := s.mysqlDataLoader
-	if loader == nil {
+	options := connections.MySQLDataOptions{Offset: offset, Limit: limit,
+		FilterColumn: t.dataFilterColumn, FilterValue: t.dataFilterValue,
+		FilterMode: t.dataFilterMode, SortColumn: t.dataSortColumn,
+		SortDescending: t.dataSortDescending}
+	advanced := s.mysqlDataAdvancedLoader
+	legacy := s.mysqlDataLoader
+	if advanced == nil && legacy == nil {
 		if s.mysqlSessionManager == nil {
 			s.cancelMySQLData(t)
 			t.dataErr = "MySQL 会话不可用"
 			return
 		}
-		loader = s.mysqlSessionManager.TableDataPage
+		advanced = s.mysqlSessionManager.TableDataPageWithOptions
 	}
 	out := make(chan mysqlDataResult, 1)
 	t.dataResults = out
 	go func() {
-		page, err := loader(ctx, profile, database, table, offset, limit)
+		var page *connections.MySQLDataPage
+		var err error
+		if advanced != nil {
+			page, err = advanced(ctx, profile, database, table, options)
+		} else if options.FilterMode == "" && options.SortColumn == "" {
+			page, err = legacy(ctx, profile, database, table, offset, limit)
+		} else {
+			err = connections.ErrMySQLDataPage // mock-only legacy loader cannot silently ignore a filter.
+		}
 		out <- mysqlDataResult{generation: gen, profileID: profile, request: request, offset: offset, page: page, err: err}
 		services.Invalidate()
 	}()
@@ -98,7 +116,9 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *tab, offset int64) 
 	t.dataOffset = offset
 	t.dataPage = nil
 	t.dataColumns = nil
-	t.dataState = ui.ListState{}
+	t.dataSelectedRow = -1
+	t.dataSelection.Clear()
+	t.dataState.Cells = ui.ColumnRange{}
 	s.loadMySQLData(services, t, true)
 }
 func (s *State) consumeMySQLData() {
@@ -130,7 +150,12 @@ func (s *State) consumeMySQLData() {
 			t.dataErr = ""
 			t.dataColumns = make([]ui.TableColumn, len(result.page.Columns))
 			for i, name := range result.page.Columns {
-				t.dataColumns[i] = ui.TableColumn{Title: name, Width: 155}
+				kind := ""
+				if i < len(result.page.ColumnKinds) {
+					kind = result.page.ColumnKinds[i]
+				}
+				sortable := kind != "" && !strings.Contains(kind, "blob") && !strings.Contains(kind, "text") && kind != "json" && kind != "geometry" && kind != "binary" && kind != "varbinary"
+				t.dataColumns[i] = ui.TableColumn{Title: name, ID: name, Width: 155, MinWidth: 65, Sortable: sortable}
 			}
 		default:
 		}

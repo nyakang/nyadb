@@ -56,6 +56,17 @@ type tab struct {
 	dataCancel              context.CancelFunc
 	dataResults             <-chan mysqlDataResult
 	dataRequest             uint64
+	dataSelection           ui.Selection[int]
+	dataSelectedRow         int
+	dataSort                ui.SortOrder
+	dataSortColumn          string
+	dataSortDescending      bool
+	dataFilterColumnDraft   string
+	dataFilterModeDraft     string
+	dataFilterValueDraft    string
+	dataFilterColumn        string
+	dataFilterMode          string
+	dataFilterValue         string
 }
 
 type object struct {
@@ -181,6 +192,7 @@ type State struct {
 	mysqlDatabaseNodes         map[string]*mysqlDatabaseNode
 	mysqlStructureLoader       mysqlStructureLoader
 	mysqlDataLoader            mysqlDataLoader
+	mysqlDataAdvancedLoader    mysqlDataAdvancedLoader
 
 	// MySQL connection checks run off-thread; only UI code reads/writes these.
 	connectionTesting        bool

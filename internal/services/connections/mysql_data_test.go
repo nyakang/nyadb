@@ -39,13 +39,15 @@ func (c dataFixtureConn) QueryContext(ctx context.Context, query string, args []
 		case <-c.cfg.block:
 		}
 	}
-	if strings.Contains(query, "information_schema.KEY_COLUMN_USAGE") {
-		if len(args) != 2 {
-			return nil, fmt.Errorf("PK query must use bound names")
-		}
-		return &structureRows{cols: []string{"COLUMN_NAME"}, values: [][]driver.Value{{"id"}}}, nil
+	if strings.HasPrefix(query, "SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE") {
+		return &structureRows{cols: []string{"name", "type", "nullable"}, values: [][]driver.Value{
+			{"id", "bigint", "NO"}, {"note", "varchar", "YES"}, {"blank", "varchar", "YES"},
+		}}, nil
 	}
-	if !strings.HasPrefix(query, "SELECT * FROM ") || len(args) != 2 {
+	if strings.Contains(query, "information_schema.STATISTICS") {
+		return &structureRows{cols: []string{"index", "column", "seq", "sub", "nullable"}, values: [][]driver.Value{{"PRIMARY", "id", int64(1), nil, "NO"}}}, nil
+	}
+	if !strings.HasPrefix(query, "SELECT ") || len(args) != 2 {
 		return nil, fmt.Errorf("unexpected data query: %q", query)
 	}
 	if args[0].Value != int64(3) || args[1].Value != int64(0) {
@@ -80,14 +82,17 @@ func TestMySQLTableDataUsesEscapedNamesBoundPageAndPreservesNULL(t *testing.T) {
 	if !got.Rows[0][1].Null || got.Rows[0][2].Null || got.Rows[0][2].Text != "" || got.Rows[1][2].Text != "NULL" {
 		t.Fatalf("NULL and empty-string handling lost: %+v", got.Rows)
 	}
-	pk := <-seen
+	meta := <-seen
+	indexes := <-seen
 	row := <-seen
-	if !strings.Contains(pk.query, "information_schema.KEY_COLUMN_USAGE") || pk.args[0].Value != schema || pk.args[1].Value != table {
-		t.Fatalf("PK probe not bound: %+v", pk)
+	if !strings.Contains(meta.query, "information_schema.COLUMNS") ||
+		!strings.Contains(indexes.query, "information_schema.STATISTICS") ||
+		meta.args[0].Value != schema || indexes.args[1].Value != table {
+		t.Fatalf("metadata not bound: %+v %+v", meta, indexes)
 	}
 	if !strings.Contains(row.query, "FROM `strange``schema`.`the.table; DROP DATABASE demo`") ||
-		!strings.Contains(row.query, "ORDER BY `id` LIMIT ? OFFSET ?") ||
-		strings.Contains(row.query, "SELECT COUNT") {
+		!strings.Contains(row.query, "ORDER BY `id` ASC LIMIT ? OFFSET ?") ||
+		strings.Contains(row.query, "SELECT *") || strings.Contains(row.query, "SELECT COUNT") {
 		t.Fatalf("table data SQL not safely quoted or paged: %s", row.query)
 	}
 }
