@@ -85,6 +85,8 @@ func TestMySQLDataAdvancedRejectsInvalidOptions(t *testing.T) {
 		{Limit: 100, FilterColumn: "a", FilterMode: "regex"},
 		{Limit: 100, FilterColumn: "a", FilterMode: ""},
 		{Limit: 100, FilterMode: "contains"},
+		{Limit: 100, Offset: 5, UseKeyset: true},
+		{Limit: 100, After: &MySQLDataCursor{}},
 		{Limit: 100, FilterColumn: "a", FilterMode: "equal", FilterValue: strings.Repeat("x", 4097)},
 	} {
 		if _, err := m.TableDataPageWithOptions(context.Background(), 1, "db", "tab", o); err == nil {

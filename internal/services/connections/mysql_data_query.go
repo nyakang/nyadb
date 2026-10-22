@@ -18,6 +18,8 @@ type MySQLDataOptions struct {
 	FilterMode     string // "" | "equal" | "contains"
 	SortColumn     string
 	SortDescending bool
+	UseKeyset      bool
+	After          *MySQLDataCursor
 }
 
 // TableDataPageWithOptions reads bounded projections rather than SELECT *.
@@ -37,7 +39,8 @@ func (m *MySQLSessionManager) TableDataPageWithOptions(ctx context.Context, id i
 		(o.FilterMode != "" && o.FilterMode != "equal" && o.FilterMode != "contains") ||
 		(o.FilterMode != "" && o.FilterColumn == "") ||
 		(o.FilterMode == "" && o.FilterColumn != "") ||
-		(o.SortColumn == "" && o.SortDescending) {
+		(o.SortColumn == "" && o.SortDescending) || (o.After != nil && !o.UseKeyset) ||
+		(o.UseKeyset && o.Offset > 0 && o.After == nil) || (o.After != nil && o.Offset == 0) {
 		return nil, ErrMySQLDataPage
 	}
 	m.mu.Lock()
@@ -121,6 +124,7 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 	}
 	type uniqueCandidate struct {
 		parts []string
+		names []string
 		valid bool
 	}
 	candidates := make(map[string]*uniqueCandidate)
@@ -153,6 +157,7 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 			continue
 		}
 		c.parts = append(c.parts, quoted)
+		c.names = append(c.names, *name)
 	}
 	if err == nil {
 		err = indexRows.Err()
@@ -165,9 +170,11 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 		return nil, closeErr
 	}
 	var identity []string
+	var identityNames []string
 	for _, idx := range idxNames {
 		if c := candidates[idx]; c.valid && len(c.parts) > 0 {
 			identity = c.parts
+			identityNames = c.names
 			break
 		}
 	}
@@ -191,6 +198,8 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 		args = append(args, o.FilterValue)
 	}
 	var sortParts []string
+	var orderKeys []mysqlOrderKey
+	keysetSafe := len(identity) > 0
 	if o.SortColumn != "" {
 		col, ok := allowed[o.SortColumn]
 		if !ok || mysqlDataBinaryType(col.kind) || col.kind == "json" ||
@@ -198,6 +207,10 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 			return nil, ErrMySQLDataPage
 		}
 		quoted, _ := quotedMySQLIdentifier(col.name)
+		if col.nullable {
+			keysetSafe = false
+		}
+		orderKeys = append(orderKeys, mysqlOrderKey{name: col.name, desc: o.SortDescending})
 		if o.SortDescending {
 			sortParts = append(sortParts, quoted+" DESC")
 		} else {
@@ -205,16 +218,54 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 		}
 	}
 	for _, k := range identity {
-		if len(sortParts) == 1 && (sortParts[0] == k+" ASC" || sortParts[0] == k+" DESC") {
+		name := strings.Trim(k, "`")
+		name = strings.ReplaceAll(name, "``", "`")
+		if len(orderKeys) > 0 && orderKeys[0].name == name {
 			continue
 		}
+		orderKeys = append(orderKeys, mysqlOrderKey{name: name})
 		sortParts = append(sortParts, k+" ASC")
+	}
+	seek := o.UseKeyset && keysetSafe && len(orderKeys) > 0
+	if o.After != nil {
+		if !seek || o.After.Database != database || o.After.Table != table ||
+			o.After.FilterColumn != o.FilterColumn || o.After.FilterMode != o.FilterMode ||
+			o.After.FilterValue != o.FilterValue || o.After.SortColumn != o.SortColumn ||
+			o.After.SortDescending != o.SortDescending {
+			return nil, ErrMySQLDataPage
+		}
+		predicate, values, err := mysqlKeysetPredicate(orderKeys, o.After)
+		if err != nil {
+			return nil, err
+		}
+		if o.FilterMode != "" {
+			query += " AND " + predicate
+		} else {
+			query += " WHERE " + predicate
+		}
+		args = append(args, values...)
 	}
 	if len(sortParts) > 0 {
 		query += " ORDER BY " + strings.Join(sortParts, ", ")
 	}
+	if seek {
+		marker := " FROM " + dbName + "." + tableName
+		var rawCols []string
+		for i, k := range orderKeys {
+			q, err := quotedMySQLIdentifier(k.name)
+			if err != nil {
+				return nil, err
+			}
+			rawCols = append(rawCols, fmt.Sprintf("%s AS `__nyadb_seek_%d`", q, i))
+		}
+		query = strings.Replace(query, marker, ", "+strings.Join(rawCols, ", ")+marker, 1)
+	}
 	query += " LIMIT ? OFFSET ?"
-	args = append(args, o.Limit+1, o.Offset)
+	fetchOffset := o.Offset
+	if seek {
+		fetchOffset = 0
+	}
+	args = append(args, o.Limit+1, fetchOffset)
 	rows, err := session.db.QueryContext(queryCtx, query, args...)
 	if err != nil {
 		return nil, err
@@ -223,9 +274,13 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 	// Scan and render in verified INFORMATION_SCHEMA order, even with a
 	// server-side projection; do not depend on ambiguous ColumnTypes aliases.
 	page := &MySQLDataPage{Database: database, Table: table, Columns: names, ColumnKinds: kinds,
-		Offset: o.Offset, Limit: o.Limit, StableOrder: len(identity) > 0}
-	dest := make([]any, len(columns))
-	raw := make([]any, len(columns))
+		Offset: o.Offset, Limit: o.Limit, StableOrder: len(identity) > 0, KeysetAvailable: seek}
+	count := len(columns)
+	if seek {
+		count += len(orderKeys)
+	}
+	dest := make([]any, count)
+	raw := make([]any, count)
 	for i := range dest {
 		dest[i] = &raw[i]
 	}
@@ -242,6 +297,32 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 			line[i] = mysqlDataPreviewCell(raw[i], col.kind)
 		}
 		page.Rows = append(page.Rows, line)
+		if seek {
+			scope := MySQLDataCursor{Database: database, Table: table, FilterColumn: o.FilterColumn,
+				FilterMode: o.FilterMode, FilterValue: o.FilterValue, SortColumn: o.SortColumn, SortDescending: o.SortDescending}
+			next, err := mysqlNextDataCursor(orderKeys, raw[len(columns):], scope)
+			if err == nil {
+				page.NextCursor = next
+				ref := &MySQLRowRef{Database: database, Table: table, Columns: append([]string(nil), identityNames...)}
+				for _, keyName := range identityNames {
+					for j, k := range orderKeys {
+						if k.name == keyName {
+							ref.Values = append(ref.Values, append([]byte(nil), next.Values[j]...))
+							break
+						}
+					}
+				}
+				if len(ref.Values) == len(ref.Columns) {
+					page.RowRefs = append(page.RowRefs, ref)
+				} else {
+					page.RowRefs = append(page.RowRefs, nil)
+				}
+
+			} else {
+				page.KeysetAvailable = false
+				page.NextCursor = nil
+			}
+		}
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err

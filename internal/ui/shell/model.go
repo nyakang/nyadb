@@ -67,6 +67,20 @@ type tab struct {
 	dataFilterColumn        string
 	dataFilterMode          string
 	dataFilterValue         string
+	dataUseKeyset           bool
+	dataAfter               *connections.MySQLDataCursor
+	dataCursorHistory       map[int64]*connections.MySQLDataCursor
+	dataChunkField          string
+	dataChunkRow            int
+	dataChunkNext           int64
+	dataChunkText           string
+	dataChunkTotal          int64
+	dataChunkDone           bool
+	dataChunkLoading        bool
+	dataChunkErr            string
+	dataChunkCancel         context.CancelFunc
+	dataChunkResults        <-chan mysqlChunkResult
+	dataChunkRequest        uint64
 }
 
 type object struct {
@@ -99,6 +113,8 @@ type State struct {
 	centerPercent           float32
 	structureSidebarPercent float32
 	structureCenterPercent  float32
+	dataSidebarPercent      float32
+	dataCenterPercent       float32
 	editorPercent           float32
 	inspectorOn             bool
 	inspectorDetailsOpen    bool
@@ -228,6 +244,8 @@ func New() *State {
 		centerPercent:           75,
 		structureSidebarPercent: 19.6,
 		structureCenterPercent:  80.1,
+		dataSidebarPercent:      19.6,
+		dataCenterPercent:       80.1,
 		editorPercent:           48,
 		inspectorOn:             true,
 		inspectorDetailsOpen:    true,
