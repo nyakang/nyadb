@@ -24,6 +24,10 @@ func TestMySQLNativeEditorTabsAndBack(t *testing.T) {
 		!tt.HasText("密码：") || !tt.HasText("保存密码") {
 		t.Fatal("native MySQL General tab is incomplete")
 	}
+	if tt.HasText("密码仅在当前窗口内保留；安全保存将在密钥库接入后开放。") ||
+		tt.HasText("支持严格证书验证的 TLS；未加密连接仅允许本机，请勿发送生产凭据。") {
+		t.Fatal("native MySQL General tab must not show implementation notes")
+	}
 	if len(titles) != 1 || titles[0] != "新建连接 (MySQL)" {
 		t.Fatalf("native title not updated: %v", titles)
 	}

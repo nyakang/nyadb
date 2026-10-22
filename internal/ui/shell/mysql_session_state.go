@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
@@ -42,18 +41,6 @@ func (s *State) startMySQLSession(services ui.Services) {
 		s.mysqlSessionError = err.Error()
 		s.status = s.mysqlSessionError
 		return
-	}
-	// Never transmit credentials over unencrypted network interfaces. Loopback
-	// is the only explicit development exception, not a TLS downgrade.
-	if !settings.MySQLAdvanced.SSL.Enabled && (settings.TLSMode == "" || settings.TLSMode == "disable") {
-		host := strings.Trim(settings.Host, "[]")
-		ip := net.ParseIP(host)
-		if !strings.EqualFold(host, "localhost") && (ip == nil || !ip.IsLoopback()) {
-			s.mysqlSessionError = "远程 MySQL 连接必须启用经过验证的 TLS"
-			s.mysqlSessionStatus = "连接失败"
-			s.status = s.mysqlSessionError
-			return
-		}
 	}
 	s.disconnectMySQLSession()
 	ctx, cancel := context.WithCancel(context.Background())

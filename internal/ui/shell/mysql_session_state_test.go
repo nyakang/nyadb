@@ -80,7 +80,7 @@ func TestMySQLWorkbenchConnectBrowseDisconnectAndReconnectPrompt(t *testing.T) {
 	s.CloseMySQLSessions()
 }
 
-func TestMySQLWorkbenchRequiresTLSForRemoteHost(t *testing.T) {
+func TestMySQLWorkbenchAllowsRemoteWithoutTLS(t *testing.T) {
 	s, _, service, _ := profileTestState(t)
 	p, err := service.Create(context.Background(), connections.Profile{
 		Name: "External", Kind: connections.MySQL, Host: "remote.example.test", Port: 3306,
@@ -93,13 +93,22 @@ func TestMySQLWorkbenchRequiresTLSForRemoteHost(t *testing.T) {
 	s.loadProfiles()
 	called := false
 	s.mysqlSessionOpener = func(context.Context, connections.ActiveSettings, string) error { called = true; return nil }
+	s.mysqlDatabaseLister = func(context.Context, int64) ([]string, error) {
+		return []string{"inventory"}, nil
+	}
 	tt := ui.NewTester(s.View, 1280, 800)
 	if err := tt.Click("连接所选 MySQL"); err != nil {
 		t.Fatal(err)
 	}
-	if called || s.mysqlSessionStatus != "连接失败" ||
-		!strings.Contains(s.mysqlSessionError, "TLS") {
-		t.Fatalf("remote plaintext not blocked: status=%s err=%s", s.mysqlSessionStatus, s.mysqlSessionError)
+	deadline := time.Now().Add(2 * time.Second)
+	for s.mysqlSessionStatus == "连接中" && time.Now().Before(deadline) {
+		tt.Frame()
+		time.Sleep(5 * time.Millisecond)
+	}
+	if !called || s.mysqlSessionStatus != "已连接" || s.mysqlSessionError != "" ||
+		len(s.mysqlSessionDatabases) != 1 || s.mysqlSessionDatabases[0] != "inventory" {
+		t.Fatalf("remote plaintext session not started: status=%s err=%s databases=%v",
+			s.mysqlSessionStatus, s.mysqlSessionError, s.mysqlSessionDatabases)
 	}
 	s.CloseMySQLSessions()
 }

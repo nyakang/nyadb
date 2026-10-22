@@ -1,5 +1,10 @@
 # MySQL TLS 与工作台管理会话（2026-10-22）
 
+> 后续行为调整（2026-10-22，I）：根据产品需求，直接 TCP 连接不再强制
+> 远程主机启用 TLS，用户可以选择非 TLS 连接，编辑器常规页也不再显示
+> 密码保留和 TLS 限制的实现说明。下文记录的是原阶段的历史实现与验证；
+> 当前可选 TLS 若启用，仍强制校验证书链和主机名。
+
 ## 范围和证据
 
 - **I（独立实现）**：使用 Go `crypto/tls`、`crypto/x509`、`database/sql` 和 `go-sql-driver/mysql v1.10.1`，扩展 `internal/services/connections`，由 MyGo 工作台在用户明确操作后建立长期连接。
