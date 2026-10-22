@@ -7,6 +7,40 @@ import (
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
+// A field can be inspected before a row is selected. When no cell is active
+// the first visible field is shown, matching the reference's initial panel.
+// The full bit distinguishes live server metadata from legacy test-loader
+// pages that only provide DATA_TYPE.
+func mysqlSelectedDataField(t *tab) (connections.MySQLStructureColumn, bool, bool) {
+	if t == nil || t.dataPage == nil {
+		return connections.MySQLStructureColumn{}, false, false
+	}
+	page := t.dataPage
+	name := t.dataState.Cells.Cursor
+	if name == "" {
+		for _, candidate := range page.Columns {
+			if !t.dataHiddenColumns[candidate] {
+				name = candidate
+				break
+			}
+		}
+	}
+	for i, candidate := range page.Columns {
+		if candidate != name || t.dataHiddenColumns[candidate] {
+			continue
+		}
+		if i < len(page.ColumnMetadata) && page.ColumnMetadata[i].Name == name {
+			return page.ColumnMetadata[i], true, true
+		}
+		field := connections.MySQLStructureColumn{Name: name}
+		if i < len(page.ColumnKinds) {
+			field.Type, field.DataType = page.ColumnKinds[i], page.ColumnKinds[i]
+		}
+		return field, true, false
+	}
+	return connections.MySQLStructureColumn{}, false, false
+}
+
 func mysqlSelectedDataCell(t *tab) (string, connections.MySQLDataCell, bool) {
 	if t == nil || t.dataPage == nil || t.dataSelectedRow < 0 ||
 		t.dataSelectedRow >= len(t.dataPage.Rows) {
