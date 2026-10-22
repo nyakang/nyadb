@@ -60,57 +60,26 @@ func (m *MySQLSessionManager) TableDataPageWithOptions(ctx context.Context, id i
 	stop := context.AfterFunc(session.ctx, cancel)
 	defer func() { stop(); cancel() }()
 
-	const metadataSQL = `SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE FROM information_schema.COLUMNS
-WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
-	metaRows, err := session.db.QueryContext(queryCtx, metadataSQL, database, table)
+	columns, err := readMySQLColumnMetadata(queryCtx, session.db, database, table, 128)
 	if err != nil {
 		return nil, err
-	}
-	type columnMeta struct {
-		name, kind string
-		nullable   bool
-	}
-	var columns []columnMeta
-	for metaRows.Next() {
-		var name, kind, nullable string
-		if err = metaRows.Scan(&name, &kind, &nullable); err != nil {
-			break
-		}
-		if len(columns) >= 128 {
-			err = ErrMySQLMetadataLimit
-			break
-		}
-		if _, err = quotedMySQLIdentifier(name); err != nil {
-			break
-		}
-		columns = append(columns, columnMeta{name, strings.ToLower(kind), nullable == "YES"})
-	}
-	if err == nil {
-		err = metaRows.Err()
-	}
-	closeErr := metaRows.Close()
-	if err != nil {
-		return nil, err
-	}
-	if closeErr != nil {
-		return nil, closeErr
 	}
 	if len(columns) == 0 {
 		return nil, ErrMySQLTableNotFound
 	}
-	allowed := make(map[string]columnMeta, len(columns))
+	allowed := make(map[string]MySQLStructureColumn, len(columns))
 	fields := make([]string, 0, len(columns))
 	names := make([]string, 0, len(columns))
 	kinds := make([]string, 0, len(columns))
 	for _, col := range columns {
-		quoted, _ := quotedMySQLIdentifier(col.name)
-		allowed[col.name] = col
-		names = append(names, col.name)
-		kinds = append(kinds, col.kind)
+		quoted, _ := quotedMySQLIdentifier(col.Name)
+		allowed[col.Name] = col
+		names = append(names, col.Name)
+		kinds = append(kinds, strings.ToLower(col.DataType))
 		switch {
-		case mysqlDataBinaryType(col.kind):
+		case mysqlDataBinaryType(strings.ToLower(col.DataType)):
 			fields = append(fields, "SUBSTRING("+quoted+", 1, 1025) AS "+quoted)
-		case mysqlDataTextType(col.kind):
+		case mysqlDataTextType(strings.ToLower(col.DataType)):
 			fields = append(fields, "SUBSTRING("+quoted+", 1, 2049) AS "+quoted)
 		default:
 			fields = append(fields, quoted)
@@ -169,7 +138,7 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 	if err == nil {
 		err = indexRows.Err()
 	}
-	closeErr = indexRows.Close()
+	closeErr := indexRows.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -194,10 +163,10 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 		if !ok {
 			return nil, ErrMySQLDataPage
 		}
-		quoted, _ := quotedMySQLIdentifier(col.name)
+		quoted, _ := quotedMySQLIdentifier(col.Name)
 		switch filter.Mode {
 		case "contains":
-			if !mysqlDataTextType(col.kind) {
+			if !mysqlDataTextType(strings.ToLower(col.DataType)) {
 				return nil, ErrMySQLDataPage
 			}
 			conditions = append(conditions, "LOCATE(?, "+quoted+") > 0")
@@ -223,15 +192,16 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 	keysetSafe := len(identity) > 0
 	for _, rule := range sortRules {
 		col, ok := allowed[rule.Column]
-		if !ok || mysqlDataBinaryType(col.kind) || col.kind == "json" ||
-			strings.Contains(col.kind, "text") {
+		kind := strings.ToLower(col.DataType)
+		if !ok || mysqlDataBinaryType(kind) || kind == "json" ||
+			strings.Contains(kind, "text") {
 			return nil, ErrMySQLDataPage
 		}
-		quoted, _ := quotedMySQLIdentifier(col.name)
-		if col.nullable {
+		quoted, _ := quotedMySQLIdentifier(col.Name)
+		if col.Nullable {
 			keysetSafe = false
 		}
-		orderKeys = append(orderKeys, mysqlOrderKey{name: col.name, desc: rule.Descending})
+		orderKeys = append(orderKeys, mysqlOrderKey{name: col.Name, desc: rule.Descending})
 		if rule.Descending {
 			sortParts = append(sortParts, quoted+" DESC")
 		} else {
@@ -294,7 +264,7 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 	defer rows.Close()
 	// Scan and render in verified INFORMATION_SCHEMA order, even with a
 	// server-side projection; do not depend on ambiguous ColumnTypes aliases.
-	page := &MySQLDataPage{Database: database, Table: table, Columns: names, ColumnKinds: kinds,
+	page := &MySQLDataPage{Database: database, Table: table, Columns: names, ColumnKinds: kinds, ColumnMetadata: columns,
 		Offset: o.Offset, Limit: o.Limit, StableOrder: len(identity) > 0, KeysetAvailable: seek}
 	count := len(columns)
 	if seek {
@@ -315,7 +285,7 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 		}
 		line := make([]MySQLDataCell, len(columns))
 		for i, col := range columns {
-			line[i] = mysqlDataPreviewCell(raw[i], col.kind)
+			line[i] = mysqlDataPreviewCell(raw[i], col.DataType)
 		}
 		page.Rows = append(page.Rows, line)
 		if seek {

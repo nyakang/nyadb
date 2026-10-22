@@ -26,9 +26,11 @@ func (queryOptionsConn) Begin() (driver.Tx, error) { return nil, fmt.Errorf("une
 func (c queryOptionsConn) QueryContext(_ context.Context, q string, args []driver.NamedValue) (driver.Rows, error) {
 	c.c.calls <- structureCall{query: q, args: args}
 	switch {
-	case strings.HasPrefix(q, "SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE"):
-		return &structureRows{cols: []string{"name", "kind", "nullable"}, values: [][]driver.Value{
-			{"id", "bigint", "NO"}, {"payload", "longblob", "YES"}, {"note", "varchar", "YES"},
+	case strings.Contains(q, "FROM information_schema.COLUMNS"):
+		return &structureRows{cols: []string{"name", "type", "kind", "pos", "nullable", "default", "key", "extra", "comment", "len", "precision", "scale", "datetime", "charset", "collation"}, values: [][]driver.Value{
+			{"id", "bigint", "bigint", int64(1), "NO", nil, "PRI", "", "", nil, int64(20), int64(0), nil, nil, nil},
+			{"payload", "longblob", "longblob", int64(2), "YES", nil, "", "", "", int64(4294967295), nil, nil, nil, nil, nil},
+			{"note", "varchar(120)", "varchar", int64(3), "YES", nil, "", "", "", int64(120), nil, nil, nil, "utf8mb4", "utf8mb4_0900_ai_ci"},
 		}}, nil
 	case strings.Contains(q, "information_schema.STATISTICS"):
 		return &structureRows{cols: []string{"index", "column", "seq", "sub", "nullable"}, values: [][]driver.Value{
@@ -57,6 +59,10 @@ func TestMySQLDataAdvancedProjectionsSortingAndSafeFilters(t *testing.T) {
 	page, err := m.TableDataPageWithOptions(context.Background(), 19, "x` ; DROP DATABASE z", "t", options)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if len(page.ColumnMetadata) != 3 || page.ColumnMetadata[1].DataType != "longblob" ||
+		page.ColumnMetadata[2].Type != "varchar(120)" {
+		t.Fatalf("complete metadata was not attached to bounded page: %+v", page.ColumnMetadata)
 	}
 	if !page.StableOrder || len(page.Columns) != 3 || len(page.Rows) != 2 ||
 		page.Rows[0][1].Text != "0x000102" || !page.Rows[1][1].Null {

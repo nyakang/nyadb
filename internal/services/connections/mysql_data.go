@@ -31,6 +31,7 @@ type MySQLDataPage struct {
 	Database, Table string
 	Columns         []string
 	ColumnKinds     []string // original server DATA_TYPE per displayed column
+	ColumnMetadata  []MySQLStructureColumn // full server field attributes, in Columns order
 	Rows            [][]MySQLDataCell
 	Offset          int64
 	Limit           int
