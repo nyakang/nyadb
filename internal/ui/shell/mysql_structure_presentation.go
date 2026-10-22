@@ -69,6 +69,12 @@ func mysqlStructureColumnDecimals(c connections.MySQLStructureColumn) string {
 
 func mysqlStructureColumnDefault(c connections.MySQLStructureColumn) string {
 	if c.Default == nil {
+		// INFORMATION_SCHEMA represents both an absent default and DEFAULT NULL
+		// as SQL NULL. In the observed field designer, a NOT NULL identity with
+		// no default shows an empty property rather than the text "NULL".
+		if !c.Nullable {
+			return ""
+		}
 		return "NULL"
 	}
 	if *c.Default == "" {

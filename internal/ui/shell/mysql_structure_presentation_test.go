@@ -66,7 +66,10 @@ func TestMySQLStructureDesignPresentation(t *testing.T) {
 	if got := mysqlStructureColumnDecimals(decimal); got != "2" {
 		t.Fatal(got)
 	}
-	if got := mysqlStructureColumnDefault(decimal); got != "NULL" {
+	if got := mysqlStructureColumnDefault(decimal); got != "" {
+		t.Fatal(got)
+	}
+	if got := mysqlStructureColumnDefault(connections.MySQLStructureColumn{Nullable: true}); got != "NULL" {
 		t.Fatal(got)
 	}
 	if got := mysqlStructureColumnLength(connections.MySQLStructureColumn{DataType: "bigint", NumericPrecision: intptr(20)}); got != "" {
