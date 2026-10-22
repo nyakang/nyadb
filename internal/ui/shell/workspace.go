@@ -6,6 +6,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 func (s *State) workspace(c *ui.Context) {
@@ -32,7 +33,7 @@ func (s *State) workspace(c *ui.Context) {
 									icon = "table"
 								}
 								theme.Icon(c, icon, 14, theme.Blue)
-								ui.Text(c, current.title).FontSize(12).SingleLine()
+								ui.Text(c, locales.Text(current.title)).FontSize(12).SingleLine()
 								if current.kind != tabObjects {
 									if ui.Button(c, "×").Label("关闭 "+current.title).
 										Padding(0, 4).Clicked() {
@@ -42,17 +43,17 @@ func (s *State) workspace(c *ui.Context) {
 							})
 						})
 						item.ContextMenu(func(m *ui.Menu) {
-							if m.Item("关闭 " + current.title).Disabled(index == 0).Chosen() {
+							if m.Item(locales.Text("关闭 ") + current.title).Disabled(index == 0).Chosen() {
 								s.closeTab(index)
 							}
-							if m.Item("关闭其他页签").Disabled(len(s.tabs) <= 1 || (len(s.tabs) == 2 && index != 0)).Chosen() {
+							if m.Item(locales.Text("关闭其他页签")).Disabled(len(s.tabs) <= 1 || (len(s.tabs) == 2 && index != 0)).Chosen() {
 								s.closeOtherTabs(index)
 							}
 						})
 					}
 				})
 			})
-			if ui.Button(c, "＋").Label("新建 SQL 页签").Padding(3, 8).Clicked() {
+			if ui.Button(c, "＋").Label(locales.Text("新建 SQL 页签")).Padding(3, 8).Clicked() {
 				s.openQuery()
 			}
 		})
@@ -77,7 +78,7 @@ func (s *State) objectActions(c *ui.Context) {
 		ui.Toolbar(c, func() {
 			for _, name := range []string{"打开表", "设计表", "新建表", "删除表", "导入向导", "导出向导"} {
 				action := name
-				if ui.Button(c, action).Padding(4, 6).Border(1, theme.Border).Radius(3).FontSize(12).Clicked() {
+				if ui.Button(c, locales.Text(action)).Padding(4, 6).Border(1, theme.Border).Radius(3).FontSize(12).Clicked() {
 					if action == "打开表" {
 						items := s.visibleObjects()
 						if s.objectRow >= 0 && s.objectRow < len(items) && items[s.objectRow].kind == "表" {
@@ -90,8 +91,8 @@ func (s *State) objectActions(c *ui.Context) {
 					}
 				}
 			}
-		}).Label("对象操作").Grow(1).MinWidth(0).Padding(0).Gap(6).Background(theme.Header)
-		if ui.Button(c, "刷新").Padding(3, 6).Border(1, theme.Border).Radius(3).Clicked() {
+		}).Label(locales.Text("对象操作")).Grow(1).MinWidth(0).Padding(0).Gap(6).Background(theme.Header)
+		if ui.Button(c, locales.Text("刷新")).Padding(3, 6).Border(1, theme.Border).Radius(3).Clicked() {
 			s.status = "已刷新模拟对象列表"
 		}
 	})
@@ -108,13 +109,17 @@ func (s *State) objectsWorkspace(c *ui.Context) {
 		if len(items) == 0 {
 			ui.Column(c).Grow(1).Center().Gap(8).Children(func() {
 				theme.Icon(c, "database", 40, theme.Muted)
-				ui.Text(c, "选择左侧连接或数据库以浏览对象").FontSize(14).TextColor(theme.Muted)
-				ui.Text(c, "当前为 UI 预览，数据库连接将在 M2 接入").FontSize(12).TextColor(theme.Muted)
+				ui.Text(c, locales.Text("选择左侧连接或数据库以浏览对象")).FontSize(14).TextColor(theme.Muted)
+				ui.Text(c, locales.Text("当前为 UI 预览，数据库连接将在 M2 接入")).FontSize(12).TextColor(theme.Muted)
 			})
 			return
 		}
 		s.objectState.Selected = &s.objectRow
-		if ui.Table(c, &s.objectState, objectColumns, len(items), func(row, col int) {
+		columns := append([]ui.TableColumn(nil), objectColumns...)
+		for i := range columns {
+			columns[i].Title = locales.Text(columns[i].Title)
+		}
+		if ui.Table(c, &s.objectState, columns, len(items), func(row, col int) {
 			obj := items[row]
 			var value string
 			switch col {
@@ -166,7 +171,7 @@ func (s *State) queryWorkspace(c *ui.Context, tab *tab) {
 						s.demoRuns++
 						s.status = fmt.Sprintf("模拟查询已运行 %d 次（没有访问数据库）", s.demoRuns)
 					}
-					if ui.Button(c, "取消").Clicked() {
+					if ui.Button(c, locales.Text("取消")).Clicked() {
 						s.status = "没有运行中的真实查询"
 					}
 				})

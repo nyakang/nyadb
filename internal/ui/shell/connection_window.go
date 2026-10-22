@@ -5,6 +5,7 @@ import (
 	"github.com/nyakang/nyadb/internal/assets/connectionicons"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // SetConnectionWindowHost binds the native child-window lifecycle. When no
@@ -47,11 +48,11 @@ func (s *State) ConnectionWindowTitle() string {
 	}
 	if s.connectionStep == 1 && s.connectionDraft.Kind != "" {
 		if s.connectionDraft.ID != 0 && s.connectionDraft.Kind == connections.MySQL {
-			return s.connectionMainConfig.profile.Name + " - 编辑连接 (MySQL)"
+			return s.connectionMainConfig.profile.Name + " - " + locales.Text("编辑连接") + " (MySQL)"
 		}
-		return prefix + " (" + connectionKindName(s.connectionDraft.Kind) + ")"
+		return locales.Text(prefix) + " (" + connectionKindName(s.connectionDraft.Kind) + ")"
 	}
-	return prefix
+	return locales.Text(prefix)
 }
 
 func (s *State) ConnectionWindowSize() (int, int) {

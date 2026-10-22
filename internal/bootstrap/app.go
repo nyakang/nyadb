@@ -11,6 +11,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/storage/localdb"
 	"github.com/nyakang/nyadb/internal/ui/shell"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // Run starts the main OS-thread event loop; call it from main.
@@ -66,6 +67,11 @@ func Run() error {
 				fmt.Fprintf(os.Stderr, "NyaDB connection icon: %v\n", err)
 			}
 		}
+		mygo.App.OnLocaleChanged(func(string) {
+			if chooser != nil {
+				chooser.SetTitle(state.ConnectionWindowTitle())
+			}
+		})
 		state.SetConnectionWindowHost(func() {
 			if chooser != nil {
 				chooser.Focus()
@@ -107,7 +113,7 @@ func Run() error {
 			go func() {
 				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
 					Parent: window,
-					Title:  "选择现有 SQLite 数据库文件",
+					Title:  locales.Text("选择现有 SQLite 数据库文件"),
 					Filters: []mygo.FileFilter{
 						{Name: "SQLite databases", Extensions: []string{"db", "sqlite", "sqlite3"}},
 					},
@@ -127,7 +133,7 @@ func Run() error {
 			go func() {
 				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
 					Parent:    chooser,
-					Title:     "选择 MySQL 设置位置",
+					Title:     locales.Text("选择 MySQL 设置位置"),
 					Directory: true,
 				})
 				window.Update(func() {
@@ -149,14 +155,14 @@ func Run() error {
 			if parent == nil {
 				return
 			}
-			title := "选择 SSL 文件"
+			title := locales.Text("选择 SSL 文件")
 			switch kind {
 			case shell.MySQLSSLClientKey:
-				title = "选择客户端密钥"
+				title = locales.Text("选择客户端密钥")
 			case shell.MySQLSSLClientCertificate:
-				title = "选择客户端证书"
+				title = locales.Text("选择客户端证书")
 			case shell.MySQLSSLCA:
-				title = "选择 CA 证书"
+				title = locales.Text("选择 CA 证书")
 			}
 			go func() {
 				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
@@ -183,7 +189,7 @@ func Run() error {
 			go func() {
 				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
 					Parent: parent,
-					Title:  "选择 SSH 私钥",
+					Title:  locales.Text("选择 SSH 私钥"),
 				})
 				window.Update(func() {
 					if err != nil {
@@ -202,14 +208,14 @@ func Run() error {
 			if parent == nil {
 				return
 			}
-			title := "选择 HTTP 证书文件"
+			title := locales.Text("选择 HTTP 证书文件")
 			switch kind {
 			case shell.MySQLHTTPClientKey:
-				title = "选择 HTTP 客户端密钥"
+				title = locales.Text("选择 HTTP 客户端密钥")
 			case shell.MySQLHTTPClientCertificate:
-				title = "选择 HTTP 客户端证书"
+				title = locales.Text("选择 HTTP 客户端证书")
 			case shell.MySQLHTTPCA:
-				title = "选择 HTTP CA 证书"
+				title = locales.Text("选择 HTTP CA 证书")
 			}
 			go func() {
 				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{

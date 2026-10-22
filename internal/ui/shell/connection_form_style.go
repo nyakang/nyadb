@@ -3,6 +3,7 @@ package shell
 import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // The editor derives input and checkbox colors from the workbench palette.
@@ -48,7 +49,7 @@ func connectionFormCheckboxCompact(c *ui.Context, checked *bool, label string, d
 }
 
 func connectionFormCheckboxSized(c *ui.Context, checked *bool, label string, disabled bool, size float32) ui.Element {
-	row := ui.CheckboxBase(c, checked).Label(label).
+	row := ui.CheckboxBase(c, checked).Label(locales.Text(label)).
 		Height(connectionFormInputHeight).Gap(5).AlignItems(ui.Center).
 		FocusRing(false).Disabled(disabled)
 	row.Children(func() {
@@ -80,7 +81,7 @@ func connectionFormCheckboxSized(c *ui.Context, checked *bool, label string, dis
 						connectionFieldFocus, 3, 1)
 				}
 			})
-		ui.Text(c, label).FontSize(size).TextColor(ink)
+		ui.Text(c, locales.Text(label)).FontSize(size).TextColor(ink)
 	})
 	return row
 }

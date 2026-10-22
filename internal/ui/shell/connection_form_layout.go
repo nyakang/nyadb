@@ -1,6 +1,9 @@
 package shell
 
-import "github.com/egoist/mygo/ui"
+import (
+	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/locales"
+)
 
 // Shared metrics for the MySQL connection editor. The 604-DIP centered form,
 // 166-DIP label column and 31-DIP row rhythm come from the observed original
@@ -24,7 +27,7 @@ func connectionFormRow(c *ui.Context) ui.Element {
 }
 
 func connectionFormTextInput(c *ui.Context, target *string, name string, width float32, disabled, secret bool) ui.Element {
-	field := ui.TextInput(c, target).Label(name).Width(width).
+	field := ui.TextInput(c, target).Label(locales.Text(name)).Width(width).
 		Height(connectionFormInputHeight).Padding(2, 8).Disabled(disabled)
 	if secret {
 		field.Password()
@@ -33,12 +36,12 @@ func connectionFormTextInput(c *ui.Context, target *string, name string, width f
 }
 
 func connectionFormSelect(c *ui.Context, value *string, options []string, name string, width float32, disabled bool) ui.Element {
-	return ui.Select(c, value, options).Label(name).
+	return ui.Select(c, value, options).Label(locales.Text(name)).
 		Width(width).Height(connectionFormInputHeight).Disabled(disabled)
 }
 
 func connectionFormBrowse(c *ui.Context, label string, disabled bool, action func()) {
-	if ui.Button(c, "…").Label(label).
+	if ui.Button(c, "…").Label(locales.Text(label)).
 		Width(connectionFormBrowseSize).Height(connectionFormBrowseSize).Padding(0, 0).
 		Disabled(disabled || action == nil).Clicked() && action != nil {
 		action()

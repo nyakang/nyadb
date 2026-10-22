@@ -3,6 +3,7 @@ package shell
 import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // The chooser follows the observed large two-pane information architecture.
@@ -29,7 +30,7 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 		if !nativeWindow {
 			ui.Row(c).Height(38).Padding(0, 3).AlignItems(ui.Center).Children(func() {
 				theme.Icon(c, "connection", 20, theme.Blue)
-				ui.Text(c, "新建连接").FontSize(17).Bold()
+				ui.Text(c, locales.Text("新建连接")).FontSize(17).Bold()
 			})
 			ui.Box(c).Height(1).Background(theme.Border)
 		}
@@ -66,17 +67,17 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 		})
 		ui.Box(c).Height(1).Background(theme.Border)
 		ui.Row(c).Height(38).Gap(8).AlignItems(ui.Center).Children(func() {
-			if ui.Button(c, "通过 URI 新建连接…").Clicked() {
+			if ui.Button(c, locales.Text("通过 URI 新建连接…")).Clicked() {
 				s.connectionError = "URI 导入尚未支持"
 			}
 			ui.Box(c).Grow(1)
 			if s.connectionError != "" {
 				ui.Text(c, s.connectionError).FontSize(11).TextColor(theme.Gold).SingleLine()
 			}
-			if ui.PrimaryButton(c, "下一步").Clicked() {
+			if ui.PrimaryButton(c, locales.Text("下一步")).Clicked() {
 				s.nextConnectionStep()
 			}
-			if ui.Button(c, "取消连接向导").Clicked() {
+			if ui.Button(c, locales.Text("取消连接向导")).Clicked() {
 				s.closeConnectionDialog()
 			}
 		})
@@ -87,7 +88,7 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 	ui.Column(c).Width(230).Height(height).Background(theme.Sidebar).Gap(7).Padding(12, 10).Children(func() {
 		ui.Row(c).Height(29).Gap(7).AlignItems(ui.Center).Children(func() {
 			theme.Icon(c, "catalog-filter", 16, theme.Blue)
-			ui.Text(c, "连接筛选").FontSize(12).Bold()
+			ui.Text(c, locales.Text("连接筛选")).FontSize(12).Bold()
 		})
 		ui.Scroll(c).Height(height - 58).Children(func() {
 			ui.Column(c).Gap(4).Children(func() {
@@ -98,7 +99,7 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 					label := name
 					checked := s.connectionEngineFilters[label]
 					ui.Row(c).Height(27).Gap(7).AlignItems(ui.Center).Children(func() {
-						if ui.Checkbox(c, &checked, "").Label("筛选 " + label).Changed() {
+						if ui.Checkbox(c, &checked, "").Label(locales.Text("筛选 ") + label).Changed() {
 							setCatalogFilter(s.connectionEngineFilters, label, checked)
 						}
 						if item, ok := catalogFilterIcon(label, false); ok {
@@ -112,7 +113,7 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 				ui.Box(c).Height(1).Background(theme.Border).Margin(8, 0)
 				ui.Row(c).Height(30).Gap(7).AlignItems(ui.Center).Children(func() {
 					theme.Icon(c, "catalog-vendor", 16, theme.Blue)
-					ui.Text(c, "供应商筛选").FontSize(12).Bold()
+					ui.Text(c, locales.Text("供应商筛选")).FontSize(12).Bold()
 				})
 				for _, name := range catalogVendors {
 					if !s.catalogSidebarFilterVisible(name, true) {
@@ -125,7 +126,7 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 					}
 					checked := s.connectionVendorFilters[label]
 					ui.Row(c).Height(27).Gap(7).AlignItems(ui.Center).Children(func() {
-						if ui.Checkbox(c, &checked, "").Label("筛选供应商 " + label).Changed() {
+						if ui.Checkbox(c, &checked, "").Label(locales.Text("筛选供应商 ") + label).Changed() {
 							setCatalogFilter(s.connectionVendorFilters, label, checked)
 						}
 						s.catalogProviderIcon(c, label, 18)
@@ -139,21 +140,21 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 
 func (s *State) catalogSearchToolbar(c *ui.Context) {
 	ui.Row(c).Height(45).Padding(6, 13).Gap(8).AlignItems(ui.Center).Children(func() {
-		ui.Text(c, "选择一个连接类型：").FontSize(12)
+		ui.Text(c, locales.Text("选择一个连接类型：")).FontSize(12)
 		ui.Box(c).Grow(1)
 		selected := 0 // Grid first, list second.
 		if !s.connectionGridMode {
 			selected = 1
 		}
 		segments := ui.SegmentedBase(c, &selected, 2)
-		segments.Track.Label("连接类型视图").Height(31).Padding(2).Gap(2).
+		segments.Track.Label(locales.Text("连接类型视图")).Height(31).Padding(2).Gap(2).
 			Radius(5).Background(theme.Panel).Border(1, theme.Border).Children(func() {
 			for i, symbol := range []string{"catalog-grid", "catalog-list"} {
 				label := "网格视图"
 				if i == 1 {
 					label = "列表视图"
 				}
-				segment := segments.Segment(i).Label(label).Width(28).Height(27).Radius(4)
+				segment := segments.Segment(i).Label(locales.Text(label)).Width(28).Height(27).Radius(4)
 				if selected == i {
 					segment.Background(theme.Accent)
 				}
@@ -165,7 +166,7 @@ func (s *State) catalogSearchToolbar(c *ui.Context) {
 		if segments.Track.Changed() {
 			s.connectionGridMode = selected == 0
 		}
-		ui.SearchField(c, &s.connectionSearch).Label("搜索连接类型").Placeholder("搜索").Width(176)
+		ui.SearchField(c, &s.connectionSearch).Label(locales.Text("搜索连接类型")).Placeholder(locales.Text("搜索")).Width(176)
 	})
 }
 
@@ -174,7 +175,7 @@ func (s *State) catalogSection(c *ui.Context, title string, items []catalogEntry
 		return
 	}
 	ui.Column(c).Gap(10).Children(func() {
-		ui.Text(c, title).FontSize(13).Bold()
+		ui.Text(c, locales.Text(title)).FontSize(13).Bold()
 		if !s.connectionGridMode {
 			for _, e := range items {
 				item := e
@@ -202,9 +203,9 @@ func (s *State) catalogIconItem(c *ui.Context, item catalogEntry) {
 		bg = ui.Hex("#214564")
 		border = theme.Accent
 	}
-	label := "选择 " + item.name
+	label := locales.Text("选择 ") + item.name
 	if item.kind == "" {
-		label += "（尚未支持）"
+		label += locales.Text("（尚未支持）")
 	}
 	control := ui.ButtonBase(c).Label(label).Width(116).Height(94).
 		Radius(3).Background(bg).Border(1, border)
@@ -220,14 +221,14 @@ func (s *State) catalogIconItem(c *ui.Context, item catalogEntry) {
 }
 
 func (s *State) catalogListItem(c *ui.Context, item catalogEntry) {
-	control := ui.ButtonBase(c).Label("选择 " + item.name).FillWidth().Height(43).
+	control := ui.ButtonBase(c).Label(locales.Text("选择 ") + item.name).FillWidth().Height(43).
 		Radius(3).Background(theme.Panel)
 	control.Children(func() {
 		ui.Row(c).Padding(5, 10).AlignItems(ui.Center).Gap(10).Children(func() {
 			s.catalogIcon(c, item, 30)
 			ui.Text(c, item.name).FontSize(12).Grow(1)
 			if item.kind == "" {
-				ui.Text(c, "尚未支持").FontSize(10).TextColor(theme.Muted)
+				ui.Text(c, locales.Text("尚未支持")).FontSize(10).TextColor(theme.Muted)
 			}
 			if item.kind != "" && item.kind == s.connectionKind {
 				ui.Text(c, "✓").TextColor(theme.Blue)

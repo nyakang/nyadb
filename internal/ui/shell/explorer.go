@@ -5,6 +5,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 var demoRoots = []string{"测试库", "个人库", "公司库", "开发库", "生产库"}
@@ -55,7 +56,7 @@ func (s *State) sidebar(c *ui.Context) {
 		ui.Row(c).Height(30).Padding(4, 10).AlignItems(ui.Center).
 			Background(theme.Accent).Gap(8).Children(func() {
 			theme.Icon(c, "connection", 17, theme.Text)
-			ui.Text(c, "我的连接").FontSize(12).Bold()
+			ui.Text(c, locales.Text("我的连接")).FontSize(12).Bold()
 			ui.Box(c).Grow(1)
 			if ui.Button(c, "+").Label("添加连接").Padding(1, 6).Clicked() {
 				s.clickToolbar("连接")
@@ -80,11 +81,11 @@ func (s *State) sidebar(c *ui.Context) {
 					}
 					ui.Text(c, name).SingleLine().FontSize(12)
 				}).ContextMenu(func(m *ui.Menu) {
-					if m.Item("选择 " + name).Chosen() {
+					if m.Item(locales.Text("选择 ") + name).Chosen() {
 						s.explorerName = name
 						s.status = "已选择：" + name + "（模拟连接）"
 					}
-					if m.Item("新建查询").Chosen() {
+					if m.Item(locales.Text("新建查询")).Chosen() {
 						s.explorerName = name
 						s.openQuery()
 					}
@@ -100,7 +101,7 @@ func (s *State) sidebar(c *ui.Context) {
 			}
 		})
 		ui.Column(c).Padding(6).BorderWidth(1, 0, 0, 0).BorderColor(theme.Border).Children(func() {
-			ui.SearchField(c, &s.search).Label("搜索连接").Placeholder("搜索连接")
+			ui.SearchField(c, &s.search).Label(locales.Text("搜索连接")).Placeholder(locales.Text("搜索连接"))
 		})
 	})
 }

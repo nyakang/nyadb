@@ -8,6 +8,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // SSH credentials remain in the current editing session only.
@@ -82,19 +83,19 @@ func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
 		})
 		s.mysqlSSHInputRow(c, "主机：", &ssh.Host, labelWidth, fieldWidth, active)
 		connectionFormRow(c).Children(func() {
-			ui.Text(c, "端口：").Width(labelWidth).FontSize(12).TextColor(theme.Muted)
+			ui.Text(c, locales.Text("端口：")).Width(labelWidth).FontSize(12).TextColor(theme.Muted)
 			connectionFormTextInput(c, &s.mysqlSSHPort, "SSH 端口", 80, !active, false)
 		})
 		s.mysqlSSHInputRow(c, "用户名：", &ssh.Username, labelWidth, 200, active)
 		connectionFormRow(c).Children(func() {
-			ui.Text(c, "验证方法：").Width(labelWidth).FontSize(12).TextColor(theme.Muted)
+			ui.Text(c, locales.Text("验证方法：")).Width(labelWidth).FontSize(12).TextColor(theme.Muted)
 			connectionFormSelect(c, &ssh.AuthMethod, connections.MySQLSSHAuthMethods, "SSH 验证方法", 200, !active)
 		})
 		passwordMode := ssh.AuthMethod != connections.MySQLSSHPublicKey
 		keyMode := ssh.AuthMethod != connections.MySQLSSHPassword
 		if passwordMode {
 			connectionFormRow(c).Children(func() {
-				ui.Text(c, "密码：").Width(labelWidth).FontSize(12).TextColor(theme.Muted)
+				ui.Text(c, locales.Text("密码：")).Width(labelWidth).FontSize(12).TextColor(theme.Muted)
 				connectionFormTextInput(c, &s.mysqlSSHPassword, "SSH 密码", 200, !active, true)
 			})
 			connectionFormRow(c).Children(func() {

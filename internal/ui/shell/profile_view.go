@@ -7,6 +7,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 func (s *State) profileSidebar(c *ui.Context) {
@@ -14,10 +15,10 @@ func (s *State) profileSidebar(c *ui.Context) {
 		header := ui.Row(c).Height(27).Padding(2, 8).AlignItems(ui.Center).Background(theme.Sidebar).Gap(6)
 		header.Children(func() {
 			theme.Icon(c, "connection", 15, theme.Muted)
-			ui.Text(c, "我的连接").FontSize(12).Bold()
+			ui.Text(c, locales.Text("我的连接")).FontSize(12).Bold()
 			ui.Box(c).Grow(1)
 			if header.Hovered() {
-				settings := ui.ButtonBase(c).Label("连接面板设置").Tooltip("连接面板设置").Padding(3, 4).Radius(2)
+				settings := ui.ButtonBase(c).Label(locales.Text("连接面板设置")).Tooltip(locales.Text("连接面板设置")).Padding(3, 4).Radius(2)
 				settings.Children(func() { theme.Icon(c, "settings", 15, theme.Muted) })
 				settings.Menu(func(m *ui.Menu) { s.sidebarSettingsMenu(m) })
 			}
@@ -25,11 +26,11 @@ func (s *State) profileSidebar(c *ui.Context) {
 		header.ContextMenu(func(m *ui.Menu) { s.sidebarSettingsMenu(m) })
 		if s.groupEditing {
 			ui.Row(c).Padding(3, 6).Gap(4).AlignItems(ui.Center).Children(func() {
-				ui.TextInput(c, &s.groupDraft).Label("连接组名称").Placeholder("组名称").Grow(1)
-				if ui.Button(c, "保存").Label("保存组").Clicked() {
+				ui.TextInput(c, &s.groupDraft).Label(locales.Text("连接组名称")).Placeholder(locales.Text("组名称")).Grow(1)
+				if ui.Button(c, locales.Text("保存")).Label(locales.Text("保存组")).Clicked() {
 					s.saveGroup()
 				}
-				if ui.Button(c, "×").Label("取消编辑组").Clicked() {
+				if ui.Button(c, "×").Label(locales.Text("取消编辑组")).Clicked() {
 					s.groupEditing = false
 				}
 			})
@@ -134,9 +135,9 @@ func (s *State) profileInspector(c *ui.Context) {
 	p, ok := s.currentProfile()
 	ui.Column(c).Fill().Background(theme.Panel).Children(func() {
 		ui.Row(c).Height(25).Padding(2, 9).AlignItems(ui.Center).Background(theme.Panel).Children(func() {
-			ui.Text(c, "信息").Bold().FontSize(12)
+			ui.Text(c, locales.Text("信息")).Bold().FontSize(12)
 			ui.Box(c).Grow(1)
-			if ui.Button(c, "×").Label("隐藏信息面板").Padding(2, 6).Clicked() {
+			if ui.Button(c, "×").Label(locales.Text("隐藏信息面板")).Padding(2, 6).Clicked() {
 				s.inspectorOn = false
 			}
 		})
@@ -146,52 +147,52 @@ func (s *State) profileInspector(c *ui.Context) {
 					theme.Icon(c, "folder-filled", 45, theme.Gold)
 					ui.Column(c).Gap(4).Children(func() {
 						ui.Text(c, s.selectedGroup).FontSize(15).Bold()
-						ui.Text(c, fmt.Sprintf("虚拟组 (%d 对象)", s.groupCount(s.selectedGroup))).FontSize(11).TextColor(theme.Muted)
+						ui.Text(c, fmt.Sprintf("%s (%d %s)", locales.Text("虚拟组"), s.groupCount(s.selectedGroup), locales.Text("对象"))).FontSize(11).TextColor(theme.Muted)
 					})
 				})
 				return
 			}
 			if !ok {
-				ui.Text(c, "选择连接以查看档案信息").TextColor(theme.Muted)
+				ui.Text(c, locales.Text("选择连接以查看档案信息")).TextColor(theme.Muted)
 				return
 			}
 			s.profileBrandIcon(c, p.Kind, 38)
 			ui.Text(c, p.Name).Bold().FontSize(16)
-			ui.Text(c, "配置档案 / "+s.mysqlSessionStateFor(p.ID)).FontSize(11).TextColor(theme.Muted)
+			ui.Text(c, locales.Text("配置档案 / ")+locales.Text(s.mysqlSessionStateFor(p.ID))).FontSize(11).TextColor(theme.Muted)
 			ui.Box(c).Height(1).Background(theme.Border)
-			ui.Collapsible(c, "基本信息", &s.inspectorDetailsOpen, func() {
-				s.property(c, "名称", p.Name)
-				s.property(c, "类型", connectionKindName(p.Kind))
-				s.property(c, "状态", s.mysqlSessionStateFor(p.ID))
+			ui.Collapsible(c, locales.Text("基本信息"), &s.inspectorDetailsOpen, func() {
+				s.property(c, locales.Text("名称"), p.Name)
+				s.property(c, locales.Text("类型"), connectionKindName(p.Kind))
+				s.property(c, locales.Text("状态"), locales.Text(s.mysqlSessionStateFor(p.ID)))
 				if p.Kind == connections.SQLite {
-					s.property(c, "文件", p.Database)
+					s.property(c, locales.Text("文件"), p.Database)
 				} else if p.Kind == connections.MySQL {
 					resolved, err := connections.ResolveActiveSettings(p)
 					if err != nil {
-						s.property(c, "活动配置", "无效，请编辑连接")
+						s.property(c, locales.Text("活动配置"), locales.Text("无效，请编辑连接"))
 					} else {
 						activeName := "主要配置文件"
 						if resolved.ConfigurationName != "" {
 							activeName = resolved.ConfigurationName
 						}
-						s.property(c, "活动配置", activeName)
-						s.property(c, "主机", resolved.Host)
-						s.property(c, "端口", fmt.Sprint(resolved.Port))
-						s.property(c, "用户", resolved.Username)
-						s.property(c, "数据库", resolved.Database)
+						s.property(c, locales.Text("活动配置"), activeName)
+						s.property(c, locales.Text("主机"), resolved.Host)
+						s.property(c, locales.Text("端口"), fmt.Sprint(resolved.Port))
+						s.property(c, locales.Text("用户"), resolved.Username)
+						s.property(c, locales.Text("数据库"), resolved.Database)
 					}
 				} else {
-					s.property(c, "主机", p.Host)
-					s.property(c, "端口", fmt.Sprint(p.Port))
-					s.property(c, "用户", p.Username)
-					s.property(c, "数据库", p.Database)
+					s.property(c, locales.Text("主机"), p.Host)
+					s.property(c, locales.Text("端口"), fmt.Sprint(p.Port))
+					s.property(c, locales.Text("用户"), p.Username)
+					s.property(c, locales.Text("数据库"), p.Database)
 				}
 			})
 			ui.Box(c).Height(1).Background(theme.Border)
 			if p.Kind == connections.MySQL {
 				s.mysqlSessionToolbar(c)
 			}
-			ui.Text(c, "连接状态通过工作台显式操作管理；密码不会保存。").TextColor(theme.Muted).FontSize(11)
+			ui.Text(c, locales.Text("连接状态通过工作台显式操作管理；密码不会保存。")).TextColor(theme.Muted).FontSize(11)
 		})
 	})
 }
