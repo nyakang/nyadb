@@ -36,8 +36,12 @@ func mysqlFilterMode(mode string) string {
 func mysqlDataFilterModeNeedsValue(mode string) bool { return mode != "为空" && mode != "不为空" }
 
 func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *connections.MySQLDataPage) {
-	ui.Column(c).Background(theme.Header).Padding(5, 9).Gap(5).Children(func() {
-		ui.Row(c).Height(27).Gap(8).AlignItems(ui.Center).Children(func() {
+	viewportWidth, _ := c.Size()
+	narrow := viewportWidth < 1100
+	ui.Column(c).Background(theme.Header).Padding(2, 7).Gap(4).Children(func() {
+		ui.Row(c).Height(27).Gap(5).AlignItems(ui.Center).Children(func() {
+			theme.Icon(c, "table", 14, theme.Blue)
+			ui.Text(c, t.dataTable).Bold().FontSize(12).SingleLine()
 			label := "筛选 & 排序 ▸"
 			if t.dataRulesExpanded {
 				label = "筛选 & 排序 ▾"
@@ -54,10 +58,13 @@ func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *connections.MyS
 				ui.Text(c, t.dataRuleError).SingleLine().FontSize(11).TextColor(theme.Gold)
 			}
 			ui.Box(c).Grow(1)
-			if ui.Button(c, "清除筛选").Disabled(t.dataLoading || count == 0).Clicked() {
-				s.clearMySQLDataFilter(c.Services(), t)
+			if !narrow {
+				s.mysqlDataCompactActions(c, t)
 			}
 		})
+		if narrow {
+			ui.Row(c).Height(27).Gap(5).AlignItems(ui.Center).Children(func() { s.mysqlDataCompactActions(c, t) })
+		}
 		if !t.dataRulesExpanded {
 			return
 		}
@@ -121,6 +128,32 @@ func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *connections.MyS
 			}
 		})
 	})
+}
+
+// The same native actions occupy the compact row at 1280px, but move
+// below it on narrow windows so they cannot overlap the field inspector.
+func (s *State) mysqlDataCompactActions(c *ui.Context, t *tab) {
+	if ui.Button(c, "返回").Label("返回对象列表").Clicked() {
+		s.activeTab = 0
+	}
+	if ui.Button(c, "刷新").Label("刷新表数据：" + t.dataTable).
+		Disabled(s.mysqlSessionStatus != "已连接" || t.dataLoading).Clicked() {
+		s.resetAndReloadMySQLData(c.Services(), t)
+	}
+	if _, cell, ok := mysqlSelectedDataCell(t); ui.Button(c, "复制").Label("复制所选单元格预览").Disabled(!ok).Clicked() {
+		c.WriteClipboard(mysqlDataCopyPreview(cell))
+	}
+	if t.dataLoading && ui.Button(c, "取消读取数据").Clicked() {
+		s.cancelMySQLData(t)
+		t.dataErr = "查询已取消"
+	}
+	count := len(t.dataFilterRules)
+	if count == 0 && t.dataFilterMode != "" {
+		count = 1
+	}
+	if ui.Button(c, "清除").Label("清除筛选").Disabled(t.dataLoading || count == 0).Clicked() {
+		s.clearMySQLDataFilter(c.Services(), t)
+	}
 }
 
 func mysqlDataActiveSortCount(t *tab) int {

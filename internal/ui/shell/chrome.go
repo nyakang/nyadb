@@ -56,7 +56,7 @@ func (s *State) View(c *ui.Context) {
 }
 
 func (s *State) menuBar(c *ui.Context) {
-	ui.Row(c).Height(31).AlignItems(ui.Center).Padding(0, 10).Gap(2).
+	ui.Row(c).Height(26).AlignItems(ui.Center).Padding(0, 10).Gap(2).
 		Background(theme.Menu).Children(func() {
 		for _, label := range []string{"文件", "编辑", "查看", "收藏夹", "工具", "窗口", "帮助"} {
 			name := label
@@ -138,17 +138,17 @@ func (s *State) toolBar(c *ui.Context) {
 		{"自动运行", "automation", theme.Green},
 		{"模型", "model", theme.Gold},
 	}
-	ui.Row(c).Height(84).AlignItems(ui.Center).Padding(2, 10).Gap(3).
+	ui.Row(c).Height(72).AlignItems(ui.Center).Padding(2, 10).Gap(3).
 		Background(theme.Toolbar).Children(func() {
 		ui.Toolbar(c, func() {
 			for _, action := range actions {
 				item := action
 				active := s.objectKind == item.label && s.currentTab().kind == tabObjects
 				button := ui.Button(c, "").Label(item.label).Tooltip(item.label).
-					Width(78).Height(77).Padding(5, 2).Border(1, theme.Border).Radius(3).
+					Width(78).Height(65).Padding(4, 2).Border(1, theme.Border).Radius(3).
 					Children(func() {
-						ui.Column(c).Center().Gap(5).Children(func() {
-							theme.Icon(c, item.icon, 27, item.color)
+						ui.Column(c).Center().Gap(4).Children(func() {
+							theme.Icon(c, item.icon, 25, item.color)
 							ui.Text(c, item.label).FontSize(12).SingleLine()
 						})
 					})
@@ -164,9 +164,9 @@ func (s *State) toolBar(c *ui.Context) {
 		}).Label("主工具栏").Grow(1).MinWidth(0).Padding(0).Gap(3).Background(theme.Toolbar)
 		// Keep the inspector toggle available even when toolbar actions overflow.
 		if ui.Button(c, "").Label("信息").Tooltip("显示或隐藏信息面板").
-			Width(65).Height(77).Padding(5, 3).Border(1, theme.Border).Radius(3).Children(func() {
-			ui.Column(c).Center().Gap(5).Children(func() {
-				theme.Icon(c, "info", 26, theme.Blue)
+			Width(65).Height(65).Padding(4, 3).Border(1, theme.Border).Radius(3).Children(func() {
+			ui.Column(c).Center().Gap(4).Children(func() {
+				theme.Icon(c, "info", 25, theme.Blue)
 				ui.Text(c, "信息").FontSize(12)
 			})
 		}).Clicked() {
