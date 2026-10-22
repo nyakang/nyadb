@@ -5,6 +5,7 @@ import (
 	"image/png"
 	"os"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -19,10 +20,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 	if os.Getenv("NYADB_MYSQL_STRUCTURE_IT") != "1" {
 		t.Skip("requires named disposable MySQL 8.4 container, localhost port 34306")
 	}
-	password := os.Getenv("NYADB_MYSQL_IT_PASSWORD")
-	if password == "" {
-		t.Fatal("NYADB_MYSQL_IT_PASSWORD is required in environment")
-	}
+	password := mysqlIntegrationPassword(t)
 	s, _, service, _ := profileTestState(t)
 	defer s.CloseMySQLSessions()
 	p, err := service.Create(context.Background(), connections.Profile{
@@ -114,4 +112,28 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 	if len(s.tabs) != 1 || s.mysqlSessionStatus != "未连接" {
 		t.Fatal("disconnect did not discard real cached structure tab")
 	}
+}
+
+// mysqlIntegrationPassword accepts an explicitly supplied password or a private
+// file path. The file option keeps credentials out of commands and test logs.
+// Both callers require NYADB_MYSQL_STRUCTURE_IT=1 before reaching this helper.
+func mysqlIntegrationPassword(t *testing.T) string {
+	t.Helper()
+	value := os.Getenv("NYADB_MYSQL_IT_PASSWORD")
+	if value != "" {
+		return value
+	}
+	file := os.Getenv("NYADB_MYSQL_IT_PASSWORD_FILE")
+	if file == "" {
+		t.Fatal("explicit test credential is required via NYADB_MYSQL_IT_PASSWORD or NYADB_MYSQL_IT_PASSWORD_FILE")
+	}
+	data, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatalf("read isolated test credential: %v", err)
+	}
+	value = strings.TrimSpace(string(data))
+	if value == "" {
+		t.Fatal("isolated test credential is empty")
+	}
+	return value
 }
