@@ -89,6 +89,39 @@ func TestMySQLRealDataNativeViewer(t *testing.T) {
 	if tab.dataPage.HasMore || len(tab.dataPage.Rows) != 1 || tab.dataPage.Rows[0][0].Text != "3" {
 		t.Fatalf("true second page missing: %+v", tab.dataPage)
 	}
+	// Exercise the actual managed-session query with MyGo's native filters,
+	// server sort, row inspector and clipboard, not an injected test loader.
+	tab.dataFilterColumnDraft = "parent_code"
+	tab.dataFilterValueDraft = "P2"
+	tab.dataFilterModeDraft = "精确匹配"
+	tt.Frame()
+	if err := tt.Click("应用筛选"); err != nil {
+		t.Fatal(err)
+	}
+	waitMySQLData(t, s, tt)
+	if len(tab.dataPage.Rows) != 1 || tab.dataPage.Rows[0][0].Text != "2" || tab.dataOffset != 0 {
+		t.Fatalf("real server filter did not return P2: %+v", tab.dataPage)
+	}
+	tab.dataSort = ui.SortOrder{Column: "price", Descending: true}
+	tt.Frame()
+	waitMySQLData(t, s, tt)
+	if tab.dataSortColumn != "price" || !tab.dataSortDescending ||
+		len(tab.dataPage.Rows) != 1 || tab.dataPage.Rows[0][0].Text != "2" {
+		t.Fatalf("real server sort did not preserve filter: %+v", tab.dataPage)
+	}
+	tab.dataSelectedRow = 0
+	tab.dataState.Cells = ui.ColumnRange{Cursor: "parent_code", Anchor: "parent_code"}
+	tt.Frame()
+	if err := tt.Click("复制所选单元格预览"); err != nil || tt.Clipboard() != "P2" {
+		t.Fatalf("real selected value not copied: %v %q", err, tt.Clipboard())
+	}
+	if err := tt.Click("清除筛选"); err != nil {
+		t.Fatal(err)
+	}
+	waitMySQLData(t, s, tt)
+	if len(tab.dataPage.Rows) != 2 || tab.dataFilterMode != "" {
+		t.Fatal("real filter clearing failed")
+	}
 	if err := tt.Click("返回对象列表"); err != nil {
 		t.Fatal(err)
 	}

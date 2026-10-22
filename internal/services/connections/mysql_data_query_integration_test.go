@@ -46,6 +46,12 @@ func TestMySQLAdvancedRealPerformanceFixture(t *testing.T) {
 	if noKey.StableOrder || !noKey.HasMore {
 		t.Fatal("no-key rows must warn of unstable pagination")
 	}
+	farStart := time.Now()
+	far := fetch("no_key_entries", MySQLDataOptions{Offset: 9000, Limit: 100})
+	if far.StableOrder || len(far.Rows) != 100 || !far.HasMore {
+		t.Fatalf("large-table bounded page: %+v", far)
+	}
+	t.Logf("100-row offset=9000 no-PK page: %v (machine-dependent)", time.Since(farStart))
 	unique := fetch("unique_no_primary", MySQLDataOptions{Limit: 2})
 	if !unique.StableOrder || !unique.HasMore || unique.Rows[0][0].Text != "A" || unique.Rows[1][0].Text != "B" {
 		t.Fatalf("unique not-null index wasn't used: %+v", unique)
