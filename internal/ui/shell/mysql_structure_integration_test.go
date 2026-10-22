@@ -107,6 +107,57 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 	if s.currentTab().structure == nil || len(s.currentTab().structure.Columns) != 8 {
 		t.Fatal("refresh failed to reload real MySQL structure")
 	}
+	// Opening the identically named object in a second real database must not
+	// reuse or overwrite the first database's cached metadata.
+	first := s.currentTab()
+	if err := tt.Click("返回对象列表"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.Click("切换数据库：nyadb_struct_b"); err != nil {
+		t.Fatal(err)
+	}
+	waitMySQLObjects(t, s, tt)
+	if err := tt.Click("打开选中表结构"); err != nil {
+		t.Fatal(err)
+	}
+	waitMySQLStructure(t, s, tt)
+	second := s.currentTab()
+	if second == first || second.title != "nyadb_struct_b.child" ||
+		second.structure == nil || len(second.structure.Columns) != 2 ||
+		len(s.tabs) != 3 {
+		t.Fatalf("cross-database structure tabs were mixed: %+v", s.tabs)
+	}
+	if err := tt.Click("返回对象列表"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.Click("切换数据库：nyadb_struct_a"); err != nil {
+		t.Fatal(err)
+	}
+	waitMySQLObjects(t, s, tt)
+	s.objectRow = 0
+	tt.Frame()
+	if err := tt.Click("打开选中表结构"); err != nil {
+		t.Fatal(err)
+	}
+	if s.currentTab() != first || len(s.tabs) != 3 ||
+		s.currentTab().structure == nil || len(s.currentTab().structure.Columns) != 8 {
+		t.Fatal("reopening first schema should focus its cached tab")
+	}
+	// A view is a distinct read-only structure workspace, not static table rows.
+	if err := tt.Click("返回对象列表"); err != nil {
+		t.Fatal(err)
+	}
+	s.objectRow = 2 // child, parent, parent_view in the server-ordered object list
+	tt.Frame()
+	if err := tt.Click("打开选中表结构"); err != nil {
+		t.Fatal(err)
+	}
+	waitMySQLStructure(t, s, tt)
+	if s.currentTab().title != "nyadb_struct_a.parent_view" ||
+		s.currentTab().structure.Kind != "VIEW" ||
+		len(s.currentTab().structure.Columns) != 3 || len(s.tabs) != 4 {
+		t.Fatalf("view structure was not rendered: %+v", s.currentTab().structure)
+	}
 	s.disconnectMySQLSession()
 	tt.Frame()
 	if len(s.tabs) != 1 || s.mysqlSessionStatus != "未连接" {
