@@ -5,6 +5,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 func (s *State) refreshMySQLDatabases(services ui.Services) {
@@ -92,7 +93,7 @@ func (s *State) mysqlDatabaseWorkspace(c *ui.Context) {
 		})
 		if connected && len(s.mysqlSessionDatabases) > 0 {
 			ui.Row(c).Height(25).Background(theme.Panel).Padding(1, 6).Gap(4).AlignItems(ui.Center).Children(func() {
-				ui.Text(c, "数据库").FontSize(11).TextColor(theme.Muted)
+				ui.Text(c, locales.Text("数据库")).FontSize(11).TextColor(theme.Muted)
 				ui.ScrollHorizontal(c).Grow(1).Children(func() {
 					ui.Row(c).Gap(3).Children(func() {
 						for _, name := range s.mysqlSessionDatabases {

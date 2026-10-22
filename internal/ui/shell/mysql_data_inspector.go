@@ -8,6 +8,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // The inspector follows the active real data tab rather than the connection
@@ -17,7 +18,7 @@ func (s *State) mysqlDataInspector(c *ui.Context, t *tab) {
 		ui.Row(c).Height(31).Padding(4, 10).AlignItems(ui.Center).Background(theme.Header).Children(func() {
 			ui.Text(c, "字段信息").Bold().FontSize(12)
 			ui.Box(c).Grow(1)
-			if ui.Button(c, "×").Label("隐藏信息面板").Padding(2, 6).Clicked() {
+			if ui.Button(c, "×").Label(locales.Text("隐藏信息面板")).Padding(2, 6).Clicked() {
 				s.inspectorOn = false
 			}
 		})
@@ -68,7 +69,7 @@ func (s *State) mysqlDataInspector(c *ui.Context, t *tab) {
 					mysqlInspectorProperty(c, "值状态", "预览完整")
 				}
 				ui.Text(c, cell.Text).FontSize(12).SingleLine()
-				if ui.Button(c, "复制单元格预览").Clicked() {
+				if ui.Button(c, locales.Text("复制单元格预览")).Clicked() {
 					c.WriteClipboard(mysqlDataCopyPreview(cell))
 				}
 				row := t.dataSelectedRow

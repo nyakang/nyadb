@@ -4,6 +4,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // The editor shares the NyaDB workbench palette. Its native MyGo form layout
@@ -96,7 +97,7 @@ func (s *State) connectionEditorTabs(c *ui.Context) {
 					item.Background(connectionEditorSurface)
 				}
 				item.Children(func() {
-					ui.Text(c, name).FontSize(12).SingleLine()
+					ui.Text(c, locales.Text(name)).FontSize(12).SingleLine()
 				})
 			}
 		})
@@ -117,12 +118,12 @@ func (s *State) connectionEditorDiagram(c *ui.Context) {
 			ui.Box(c).Width(75).Height(2).Background(connectionDiagramLine)
 			ui.Column(c).Width(65).Gap(3).AlignItems(ui.Center).Children(func() {
 				theme.Icon(c, "ssh-server", 36, theme.Muted)
-				ui.Text(c, "HTTP 服务器").FontSize(11)
+				ui.Text(c, locales.Text("HTTP 服务器")).FontSize(11)
 			})
 			ui.Box(c).Width(75).Height(2).Background(connectionDiagramLine)
 			ui.Column(c).Width(65).Gap(3).AlignItems(ui.Center).Children(func() {
 				theme.Icon(c, "database", 36, theme.Muted)
-				ui.Text(c, "数据库").FontSize(11)
+				ui.Text(c, locales.Text("数据库")).FontSize(11)
 			})
 		})
 		return
@@ -139,12 +140,12 @@ func (s *State) connectionEditorDiagram(c *ui.Context) {
 			ui.Box(c).Width(75).Height(2).Background(connectionDiagramLine)
 			ui.Column(c).Width(65).Gap(3).AlignItems(ui.Center).Children(func() {
 				theme.Icon(c, "ssh-server", 36, theme.Muted)
-				ui.Text(c, "SSH 服务器").FontSize(11)
+				ui.Text(c, locales.Text("SSH 服务器")).FontSize(11)
 			})
 			ui.Box(c).Width(75).Height(2).Background(connectionDiagramLine)
 			ui.Column(c).Width(65).Gap(3).AlignItems(ui.Center).Children(func() {
 				theme.Icon(c, "database", 36, theme.Muted)
-				ui.Text(c, "数据库").FontSize(11)
+				ui.Text(c, locales.Text("数据库")).FontSize(11)
 			})
 		})
 		return
@@ -157,7 +158,7 @@ func (s *State) connectionEditorDiagram(c *ui.Context) {
 		ui.Box(c).Width(112).Height(2).Background(connectionDiagramLine)
 		ui.Column(c).Width(42).Gap(3).AlignItems(ui.Center).Children(func() {
 			theme.Icon(c, "database", 37, theme.Muted)
-			ui.Text(c, "数据库").FontSize(11)
+			ui.Text(c, locales.Text("数据库")).FontSize(11)
 		})
 	})
 }
@@ -181,7 +182,7 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 		}
 		s.editorInputRow(c, "用户名：", "用户名", &p.Username, labelWidth, min(fieldWidth, float32(205)))
 		connectionFormRow(c).Children(func() {
-			ui.Text(c, "密码：").Width(labelWidth).FontSize(12)
+			ui.Text(c, locales.Text("密码：")).Width(labelWidth).FontSize(12)
 			connectionFormTextInput(c, &s.connectionSecret, "密码", min(fieldWidth, float32(205)), false, true)
 		})
 		ui.Row(c).Height(28).Gap(0).AlignItems(ui.Center).Children(func() {
@@ -196,7 +197,7 @@ func (s *State) editorInputRow(
 	c *ui.Context, caption, label string, target *string, labelWidth, fieldWidth float32,
 ) {
 	connectionFormRow(c).Children(func() {
-		ui.Text(c, caption).Width(labelWidth).FontSize(12)
+		ui.Text(c, locales.Text(caption)).Width(labelWidth).FontSize(12)
 		input := connectionFormTextInput(c, target, label, fieldWidth,
 			s.connectionDraft.ID != 0 && s.connectionActiveConfig != 0 && label == "连接名称", false)
 		if label == "连接名称" && s.connectionActiveConfig == 0 && s.connectionNameFocusPending {
@@ -215,17 +216,17 @@ func (s *State) editorSQLiteFields(c *ui.Context, labelWidth, fieldWidth float32
 		connectionFormCheckbox(c, &selected, "现有数据库文件", true)
 	})
 	ui.Row(c).Height(32).Gap(0).AlignItems(ui.Center).Children(func() {
-		ui.Text(c, "数据库文件：").Width(labelWidth).FontSize(12)
-		ui.TextInput(c, &s.connectionDraft.Database).Label("数据库文件").
+		ui.Text(c, locales.Text("数据库文件：")).Width(labelWidth).FontSize(12)
+		ui.TextInput(c, &s.connectionDraft.Database).Label(locales.Text("数据库文件")).
 			Width(fieldWidth-36).Height(30).Padding(2, 10)
-		if ui.Button(c, "…").Label("浏览文件").Width(35).
+		if ui.Button(c, "…").Label(locales.Text("浏览文件")).Width(35).
 			Disabled(s.sqliteFilePicker == nil).Clicked() {
 			s.sqliteFilePicker()
 		}
 	})
 	ui.Row(c).Gap(0).Children(func() {
 		ui.Box(c).Width(labelWidth)
-		ui.Text(c, "仅支持选择现有数据库；不会擅自创建或修改数据库文件。").
+		ui.Text(c, locales.Text("仅支持选择现有数据库；不会擅自创建或修改数据库文件。")).
 			FontSize(11).TextColor(theme.Muted)
 	})
 }
@@ -268,12 +269,12 @@ func (s *State) connectionEditorOtherTab(c *ui.Context, width float32) {
 		if tab == "数据库" {
 			s.editorInputRow(c, "默认数据库：", "默认数据库", &s.connectionDraft.Database,
 				labelWidth, formWidth-labelWidth)
-			ui.Text(c, "数据库筛选与连接后数据库列表将在驱动接入后实现。").
+			ui.Text(c, locales.Text("数据库筛选与连接后数据库列表将在驱动接入后实现。")).
 				FontSize(11).TextColor(theme.Muted)
 			return
 		}
 		ui.Text(c, tab+" 配置尚未实现").FontSize(13).TextColor(theme.Muted)
-		ui.Text(c, "此页仅保留原版导航位置；相关设置不会被静默保存或应用。").
+		ui.Text(c, locales.Text("此页仅保留原版导航位置；相关设置不会被静默保存或应用。")).
 			FontSize(11).TextColor(theme.Muted)
 	})
 }
@@ -290,20 +291,20 @@ func (s *State) connectionEditorFooter(c *ui.Context) {
 		}
 		ui.Button(c, "URI").Width(76).Height(26).
 			Background(connectionEditorButton).Border(1, connectionEditorBorder).
-			Disabled(true).Label("URI 导入尚未支持")
+			Disabled(true).Label(locales.Text("URI 导入尚未支持"))
 		if s.connectionTesting {
-			if ui.Button(c, "取消测试").Width(155).Height(26).Background(connectionEditorButton).Border(1, connectionEditorBorder).Clicked() {
+			if ui.Button(c, locales.Text("取消测试")).Width(155).Height(26).Background(connectionEditorButton).Border(1, connectionEditorBorder).Clicked() {
 				s.cancelMySQLConnectionTest()
 				s.connectionTestMessage = "连接测试已取消"
 			}
-		} else if ui.Button(c, "测试连接").Width(155).Height(26).
+		} else if ui.Button(c, locales.Text("测试连接")).Width(155).Height(26).
 			Background(connectionEditorButton).Border(1, connectionEditorBorder).
-			Disabled(s.connectionDraft.Kind != connections.MySQL).Label("测试当前 MySQL 配置").Clicked() {
+			Disabled(s.connectionDraft.Kind != connections.MySQL).Label(locales.Text("测试当前 MySQL 配置")).Clicked() {
 			s.startMySQLConnectionTest(c.Services())
 		}
 		ui.Box(c).Grow(1)
 		if s.connectionDraft.ID == 0 {
-			if ui.Button(c, "上一步").Width(80).Height(26).
+			if ui.Button(c, locales.Text("上一步")).Width(80).Height(26).
 				Background(connectionEditorButton).Border(1, connectionEditorBorder).
 				Disabled(s.connectionDraft.ID != 0).Clicked() {
 				s.connectionStep = 0
@@ -317,11 +318,11 @@ func (s *State) connectionEditorFooter(c *ui.Context) {
 				s.updateConnectionWindowTitle()
 			}
 		}
-		if ui.PrimaryButton(c, "确定").Width(80).Height(26).
+		if ui.PrimaryButton(c, locales.Text("确定")).Width(80).Height(26).
 			Label("保存连接").Clicked() {
 			s.saveConnectionDraft()
 		}
-		if ui.Button(c, "取消").Width(80).Height(26).
+		if ui.Button(c, locales.Text("取消")).Width(80).Height(26).
 			Background(connectionEditorButton).Border(1, connectionEditorBorder).
 			Label("取消连接向导").Clicked() {
 			s.closeConnectionDialog()

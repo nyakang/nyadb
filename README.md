@@ -44,6 +44,19 @@ go tool mygo doctor
 go tool mygo dev
 ```
 
+## Language
+
+NyaDB includes Simplified Chinese (`zh-Hans`) and English (`en`). The app follows the system's preferred language on first launch. To change it, open **View → Language** and choose **简体中文**, **English**, or **Follow System Language**. MyGo saves an explicit selection between launches.
+
+Translations are maintained in `locales/zh-Hans.json` and `locales/en.json`. After editing the ARB catalogs, regenerate and validate the Go accessors:
+
+```bash
+go tool mygo generate
+go tool mygo i18n check
+```
+
+Some work-in-progress database screens and runtime diagnostic messages have not yet been translated and may display Chinese text.
+
 ## Build and test
 
 ```bash

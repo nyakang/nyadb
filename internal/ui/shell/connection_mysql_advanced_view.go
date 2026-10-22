@@ -8,6 +8,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // The four timeouts and session limit are bound as strings so users can edit
@@ -105,7 +106,7 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 			ui.Box(c).Width(connectionFormBrowseGap)
 			connectionFormBrowse(c, "编辑初始查询", false, s.beginMySQLInitialQuery)
 		})
-		if ui.Button(c, "兼容性").Width(160).Height(connectionFormInputHeight).Clicked() {
+		if ui.Button(c, locales.Text("兼容性")).Width(160).Height(connectionFormInputHeight).Clicked() {
 			s.mysqlCompatibilityVisible = true
 			s.connectionEditorTab = 6
 		}

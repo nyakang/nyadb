@@ -7,6 +7,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 var mysqlStructureColumns = []ui.TableColumn{
@@ -44,7 +45,7 @@ func (s *State) mysqlStructureWorkspace(c *ui.Context, t *tab) {
 			ui.Text(c, t.structureDatabase+" / "+t.structureTable).Bold().FontSize(13).SingleLine()
 			ui.Text(c, "设计表 · 只读结构").TextColor(theme.Muted).FontSize(11)
 			ui.Box(c).Grow(1)
-			if ui.Button(c, "返回对象列表").Clicked() {
+			if ui.Button(c, locales.Text("返回对象列表")).Clicked() {
 				s.activeTab = 0
 			}
 			if ui.Button(c, "刷新结构").Label("刷新表结构：" + t.structureTable).

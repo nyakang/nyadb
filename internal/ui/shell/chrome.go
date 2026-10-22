@@ -3,8 +3,12 @@ package shell
 import (
 	"fmt"
 
+	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/i18n"
+
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 func (s *State) View(c *ui.Context) {
@@ -42,7 +46,7 @@ func (s *State) View(c *ui.Context) {
 	})
 	s.connectionModal(c)
 	if s.profileMode && s.groupDeleteConfirm {
-		if ui.AlertDialog(c, &s.groupDeleteConfirm, "删除连接组？", "仅删除虚拟文件夹；组内连接将移至根目录，不会删除连接档案或数据库。", "取消", "删除组") == 1 {
+		if ui.AlertDialog(c, &s.groupDeleteConfirm, locales.Text("删除连接组？"), locales.Text("仅删除虚拟文件夹；组内连接将移至根目录，不会删除连接档案或数据库。"), locales.Text("取消"), locales.Text("删除组")) == 1 {
 			s.deleteGroup()
 		}
 	}
@@ -54,7 +58,7 @@ func (s *State) View(c *ui.Context) {
 				break
 			}
 		}
-		if ui.AlertDialog(c, &s.deleteConfirm, "删除连接档案？", "仅删除“"+name+"”的连接配置，不会删除数据库文件。", "取消", "删除") == 1 {
+		if ui.AlertDialog(c, &s.deleteConfirm, locales.Text("删除连接档案？"), "仅删除“"+name+"”的连接配置，不会删除数据库文件。", locales.Text("取消"), locales.Text("删除")) == 1 {
 			s.deleteProfile()
 		}
 	}
@@ -65,8 +69,8 @@ func (s *State) menuBar(c *ui.Context) {
 		Background(theme.Menu).Children(func() {
 		for _, label := range []string{"文件", "编辑", "查看", "收藏夹", "工具", "窗口", "帮助"} {
 			name := label
-			ui.ButtonBase(c).Label(name).Padding(4, 10).Radius(3).
-				Children(func() { ui.Text(c, name).FontSize(12) }).
+			ui.ButtonBase(c).Label(locales.Text(name)).Padding(4, 10).Radius(3).
+				Children(func() { ui.Text(c, locales.Text(name)).FontSize(12) }).
 				Menu(func(m *ui.Menu) { s.menuCommands(name, m) })
 		}
 		ui.Box(c).Grow(1)
@@ -78,49 +82,62 @@ func (s *State) menuBar(c *ui.Context) {
 func (s *State) menuCommands(section string, m *ui.Menu) {
 	switch section {
 	case "文件":
-		if m.Item("新建连接…").Chosen() {
+		if m.Item(locales.Text("新建连接…")).Chosen() {
 			s.openConnectionDialog()
 		}
-		if m.Item("新建查询").Chosen() {
+		if m.Item(locales.Text("新建查询")).Chosen() {
 			s.openQuery()
 		}
 		m.Separator()
-		if m.Item("关闭当前页签").Disabled(s.activeTab == 0).Chosen() {
+		if m.Item(locales.Text("关闭当前页签")).Disabled(s.activeTab == 0).Chosen() {
 			s.closeActive()
 		}
 	case "编辑":
-		if m.Item("编辑连接").Disabled(!s.profileMode || s.selectedProfileID == 0).Chosen() {
+		if m.Item(locales.Text("编辑连接")).Disabled(!s.profileMode || s.selectedProfileID == 0).Chosen() {
 			s.startEditProfile()
 		}
-		if m.Item("复制连接").Disabled(!s.profileMode || s.selectedProfileID == 0).Chosen() {
+		if m.Item(locales.Text("复制连接")).Disabled(!s.profileMode || s.selectedProfileID == 0).Chosen() {
 			s.duplicateProfile()
 		}
 	case "查看":
-		if m.Item("信息面板").Checked(s.inspectorOn).Chosen() {
+		if m.Item(locales.Text("信息面板")).Checked(s.inspectorOn).Chosen() {
 			s.inspectorOn = !s.inspectorOn
 			s.status = "已切换右侧信息面板"
 		}
 		m.Separator()
-		m.Submenu("数据库对象", func(sub *ui.Menu) {
+		m.Submenu(locales.Text("数据库对象"), func(sub *ui.Menu) {
 			for _, kind := range []string{"表", "视图", "函数"} {
-				if sub.Item(kind).Checked(s.objectKind == kind).Chosen() {
+				if sub.Item(locales.Text(kind)).Checked(s.objectKind == kind).Chosen() {
 					s.showObjects(kind)
 				}
 			}
 		})
+		m.Separator()
+		m.Submenu(locales.Text("语言"), func(sub *ui.Menu) {
+			if sub.Item(locales.Text("跟随系统语言")).Chosen() {
+				mygo.App.SetLocale("")
+			}
+			sub.Separator()
+			for _, language := range locales.Catalog.Languages() {
+				tag := language
+				if sub.Item(i18n.Autonym(tag)).Checked(i18n.Locale() == tag).Chosen() {
+					mygo.App.SetLocale(tag)
+				}
+			}
+		})
 	case "窗口":
-		if m.Item("新建 SQL 页签").Chosen() {
+		if m.Item(locales.Text("新建 SQL 页签")).Chosen() {
 			s.openQuery()
 		}
-		if m.Item("关闭当前页签").Disabled(s.activeTab == 0).Chosen() {
+		if m.Item(locales.Text("关闭当前页签")).Disabled(s.activeTab == 0).Chosen() {
 			s.closeActive()
 		}
 	case "帮助":
-		if m.Item("关于 NyaDB").Chosen() {
+		if m.Item(locales.Text("关于 NyaDB")).Chosen() {
 			s.status = "NyaDB · Go + MyGo Native UI"
 		}
 	default:
-		m.Item("功能开发中").Disabled(true)
+		m.Item(locales.Text("功能开发中")).Disabled(true)
 	}
 }
 
@@ -149,12 +166,12 @@ func (s *State) toolBar(c *ui.Context) {
 			for _, action := range actions {
 				item := action
 				active := s.objectKind == item.label && s.currentTab().kind == tabObjects
-				button := ui.Button(c, "").Label(item.label).Tooltip(item.label).
+				button := ui.Button(c, "").Label(locales.Text(item.label)).Tooltip(locales.Text(item.label)).
 					Width(74).Height(59).Padding(3, 2).Radius(2).
 					Children(func() {
 						ui.Column(c).Center().Gap(4).Children(func() {
 							theme.Icon(c, item.icon, 25, item.color)
-							ui.Text(c, item.label).FontSize(12).SingleLine()
+							ui.Text(c, locales.Text(item.label)).FontSize(12).SingleLine()
 						})
 					})
 				if active {
@@ -166,13 +183,13 @@ func (s *State) toolBar(c *ui.Context) {
 					s.clickToolbar(item.label)
 				}
 			}
-		}).Label("主工具栏").Grow(1).MinWidth(0).Padding(0).Gap(3).Background(theme.Toolbar)
+		}).Label(locales.Text("主工具栏")).Grow(1).MinWidth(0).Padding(0).Gap(3).Background(theme.Toolbar)
 		// Keep the inspector toggle available even when toolbar actions overflow.
-		if ui.Button(c, "").Label("信息").Tooltip("显示或隐藏信息面板").
+		if ui.Button(c, "").Label(locales.Text("信息")).Tooltip(locales.Text("显示或隐藏信息面板")).
 			Width(55).Height(59).Padding(3, 2).Radius(2).Children(func() {
 			ui.Column(c).Center().Gap(4).Children(func() {
 				theme.Icon(c, "info", 25, theme.Blue)
-				ui.Text(c, "信息").FontSize(12)
+				ui.Text(c, locales.Text("信息")).FontSize(12)
 			})
 		}).Clicked() {
 			s.clickToolbar("信息")
@@ -190,13 +207,13 @@ func (s *State) mysqlWorkbenchStatus() string {
 func (s *State) statusBar(c *ui.Context) {
 	ui.Row(c).Height(25).Padding(2, 10).AlignItems(ui.Center).Gap(12).
 		Background(theme.Menu).BorderWidth(1, 0, 0, 0).BorderColor(theme.Border).Children(func() {
-		ui.Text(c, s.status).FontSize(11).TextColor(theme.Text).SingleLine().Grow(1)
+		ui.Text(c, locales.Text(s.status)).FontSize(11).TextColor(theme.Text).SingleLine().Grow(1)
 		if s.profileMode {
-			ui.Text(c, fmt.Sprintf("%d 个连接档案", len(s.profileEntries))).FontSize(11).TextColor(theme.Muted)
-			ui.Text(c, "●  "+s.mysqlWorkbenchStatus()).FontSize(11).TextColor(theme.Blue)
+			ui.Text(c, fmt.Sprintf("%d %s", len(s.profileEntries), locales.Text("个连接档案"))).FontSize(11).TextColor(theme.Muted)
+			ui.Text(c, "●  "+locales.Text(s.mysqlWorkbenchStatus())).FontSize(11).TextColor(theme.Blue)
 			return
 		}
-		ui.Text(c, "5 个模拟连接").FontSize(11).TextColor(theme.Muted)
+		ui.Text(c, "5 "+locales.Text("个模拟连接")).FontSize(11).TextColor(theme.Muted)
 		ui.Text(c, "●  UI Preview").FontSize(11).TextColor(theme.Blue)
 	})
 }

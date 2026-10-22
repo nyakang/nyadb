@@ -8,6 +8,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // MySQLHTTPFile identifies non-secret certificate/key paths selected through
@@ -164,7 +165,7 @@ func (s *State) mysqlHTTPProxy(c *ui.Context, cfg *connections.MySQLHTTP,
 	proxyActive := active && cfg.ProxyEnabled
 	s.mysqlHTTPInput(c, "主机：", &cfg.ProxyHost, labelWidth, fieldWidth, proxyActive)
 	connectionFormRow(c).Children(func() {
-		ui.Text(c, "端口：").Width(labelWidth).FontSize(12).TextColor(theme.Muted)
+		ui.Text(c, locales.Text("端口：")).Width(labelWidth).FontSize(12).TextColor(theme.Muted)
 		connectionFormTextInput(c, &s.mysqlHTTPProxyPort, "HTTP 代理端口", 80, !proxyActive, false)
 	})
 	s.mysqlHTTPInput(c, "用户名：", &cfg.ProxyUsername, labelWidth, 200, proxyActive)
