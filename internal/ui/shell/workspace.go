@@ -9,15 +9,15 @@ import (
 )
 
 func (s *State) workspace(c *ui.Context) {
-	ui.Column(c).Fill().Background(theme.App).Children(func() {
-		ui.Row(c).Height(32).AlignItems(ui.Center).Padding(0, 6).
+	ui.Column(c).Fill().Background(theme.Sidebar).Children(func() {
+		ui.Row(c).Height(27).AlignItems(ui.Center).Padding(0, 6).
 			Background(theme.Header).Gap(6).Children(func() {
 			ui.ScrollHorizontal(c).Grow(1).Children(func() {
 				tabs := ui.TabsBase(c, &s.activeTab, len(s.tabs))
 				tabs.List.Gap(3).Children(func() {
 					for i, doc := range s.tabs {
 						index, current := i, doc
-						item := tabs.Tab(i).Height(28).Padding(3, 8).Radius(3)
+						item := tabs.Tab(i).Height(25).Padding(2, 8).Radius(2)
 						if i == s.activeTab {
 							item.Background(theme.Panel)
 						}

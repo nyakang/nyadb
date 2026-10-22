@@ -41,6 +41,11 @@ func (s *State) View(c *ui.Context) {
 		s.statusBar(c)
 	})
 	s.connectionModal(c)
+	if s.profileMode && s.groupDeleteConfirm {
+		if ui.AlertDialog(c, &s.groupDeleteConfirm, "删除连接组？", "仅删除虚拟文件夹；组内连接将移至根目录，不会删除连接档案或数据库。", "取消", "删除组") == 1 {
+			s.deleteGroup()
+		}
+	}
 	if s.profileMode && s.deleteConfirm {
 		name := "所选连接"
 		for _, p := range s.profileEntries {
@@ -127,25 +132,25 @@ type toolAction struct {
 func (s *State) toolBar(c *ui.Context) {
 	actions := []toolAction{
 		{"连接", "connection", theme.Blue},
-		{"新建查询", "query", theme.Blue},
+		{"新建查询", "new-query", theme.Blue},
 		{"表", "table", theme.Blue},
 		{"视图", "view", theme.Blue},
 		{"函数", "function", theme.Blue},
 		{"用户", "user", theme.Gold},
 		{"其它", "tools", theme.Blue},
 		{"查询", "query", theme.Blue},
-		{"备份", "backup", theme.Muted},
+		{"备份", "backup", theme.Blue},
 		{"自动运行", "automation", theme.Green},
 		{"模型", "model", theme.Gold},
 	}
-	ui.Row(c).Height(72).AlignItems(ui.Center).Padding(2, 10).Gap(3).
+	ui.Row(c).Height(64).AlignItems(ui.Center).Padding(1, 10).Gap(3).
 		Background(theme.Toolbar).Children(func() {
 		ui.Toolbar(c, func() {
 			for _, action := range actions {
 				item := action
 				active := s.objectKind == item.label && s.currentTab().kind == tabObjects
 				button := ui.Button(c, "").Label(item.label).Tooltip(item.label).
-					Width(78).Height(65).Padding(4, 2).Border(1, theme.Border).Radius(3).
+					Width(74).Height(59).Padding(3, 2).Radius(2).
 					Children(func() {
 						ui.Column(c).Center().Gap(4).Children(func() {
 							theme.Icon(c, item.icon, 25, item.color)
@@ -153,7 +158,7 @@ func (s *State) toolBar(c *ui.Context) {
 						})
 					})
 				if active {
-					button.Background(theme.Accent.Alpha(0.36))
+					button.Background(theme.Accent.Alpha(0.4))
 				} else {
 					button.Background(theme.Toolbar)
 				}
@@ -164,7 +169,7 @@ func (s *State) toolBar(c *ui.Context) {
 		}).Label("主工具栏").Grow(1).MinWidth(0).Padding(0).Gap(3).Background(theme.Toolbar)
 		// Keep the inspector toggle available even when toolbar actions overflow.
 		if ui.Button(c, "").Label("信息").Tooltip("显示或隐藏信息面板").
-			Width(65).Height(65).Padding(4, 3).Border(1, theme.Border).Radius(3).Children(func() {
+			Width(55).Height(59).Padding(3, 2).Radius(2).Children(func() {
 			ui.Column(c).Center().Gap(4).Children(func() {
 				theme.Icon(c, "info", 25, theme.Blue)
 				ui.Text(c, "信息").FontSize(12)

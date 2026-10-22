@@ -58,3 +58,18 @@ Screenshots are retained only as untracked research evidence in
 
 This is **I** evidence of local implementation and GUI rendering, not a
 physical desktop smoke test or Navicat pixel-equivalence (**V**) claim.
+
+## Workbench icon pass (2026-10-22)
+
+The pinned Lucide collection now embeds **31 icons** (20 previous assets plus
+11 new upstream SVGs from the same v0.468.0 release): `bot`, `binoculars`,
+`folder-plus`, `folder-open`, `pencil`, `copy`, `trash-2`, `file-plus-2`,
+`file-down`, `file-up` and `table-properties`. These are used in the
+main toolbar, native object command bar and compact explorer controls.
+
+The connection explorer directly reuses the existing bundled MySQL,
+PostgreSQL and SQLite PNGs instead of rasterizing new logos; offline SVG
+fallbacks remain available. A NyaDB-authored solid folder is deliberately
+separate from upstream icon files. See
+`MAIN_WORKBENCH_ICON_PASS_2026-10-22.md` for visual evidence, provenance
+and verification status.

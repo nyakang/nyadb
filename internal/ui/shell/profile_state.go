@@ -33,11 +33,33 @@ func (s *State) loadProfiles() {
 		return
 	}
 	s.profileEntries = list
+	groups, groupErr := s.profileService.ListGroups(context.Background())
+	if groupErr == nil {
+		s.profileGroups = groups
+	} else {
+		s.status = "读取连接分组失败：" + groupErr.Error()
+	}
 	s.explorerRow = -1
 	s.explorerName = "我的连接"
+	groupStillExists := false
+	for _, group := range s.profileGroups {
+		if group.Name == s.selectedGroup {
+			groupStillExists = true
+			break
+		}
+	}
+	if !groupStillExists {
+		s.selectedGroup = ""
+	}
+	if s.selectedGroup != "" {
+		s.explorerName = groupNode(s.selectedGroup)
+	}
 	for _, p := range list {
 		if p.ID == s.selectedProfileID {
 			s.explorerName = p.Name
+			if p.GroupName != "" {
+				s.explorerTree.Open.Add(groupNode(p.GroupName))
+			}
 			break
 		}
 	}

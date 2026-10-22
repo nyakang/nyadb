@@ -229,6 +229,14 @@ type State struct {
 	profileMode         bool
 	profileService      *connections.Service
 	profileEntries      []connections.Profile
+	profileGroups       []connections.Group
+	selectedGroup       string
+	groupEditing        bool
+	groupEditOriginal   string
+	groupDraft          string
+	groupError          string
+	groupDeleteConfirm  bool
+	groupPendingDelete  string
 	selectedProfileID   int64
 	pendingDeleteID     int64
 	deleteConfirm       bool

@@ -14,7 +14,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const schemaVersion = 5
+const schemaVersion = 6
 
 // Open initializes or migrates an on-disk configuration database.
 // This database must never store passwords, tokens, or connection strings
@@ -130,6 +130,19 @@ func migrate(ctx context.Context, db *sql.DB) error {
 			return fmt.Errorf("localdb: migrate active configuration: %w", err)
 		}
 		if _, err := tx.ExecContext(ctx, "PRAGMA user_version = 5"); err != nil {
+			return fmt.Errorf("localdb: set schema version: %w", err)
+		}
+		current = 5
+	}
+	if current == 5 {
+		// Virtual groups contain navigation metadata, never database credentials.
+		if _, err := tx.ExecContext(ctx, "CREATE TABLE connection_groups (name TEXT PRIMARY KEY COLLATE NOCASE)"); err != nil {
+			return fmt.Errorf("localdb: create groups: %w", err)
+		}
+		if _, err := tx.ExecContext(ctx, "ALTER TABLE connection_profiles ADD COLUMN group_name TEXT NOT NULL DEFAULT ''"); err != nil {
+			return fmt.Errorf("localdb: add profile group: %w", err)
+		}
+		if _, err := tx.ExecContext(ctx, "PRAGMA user_version = 6"); err != nil {
 			return fmt.Errorf("localdb: set schema version: %w", err)
 		}
 	}

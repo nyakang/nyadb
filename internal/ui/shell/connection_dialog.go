@@ -22,7 +22,13 @@ func (s *State) openConnectionDialog() {
 	s.connectionSearch = ""
 	s.connectionEngineFilters = map[string]bool{}
 	s.connectionVendorFilters = map[string]bool{}
-	s.connectionDraft = connections.Profile{}
+	group := s.selectedGroup
+	if group == "" {
+		if selected, ok := s.currentProfile(); ok {
+			group = selected.GroupName
+		}
+	}
+	s.connectionDraft = connections.Profile{GroupName: group}
 	s.connectionPort = ""
 	s.connectionSecret = ""
 	s.clearMySQLSSLPassphrase()
@@ -69,6 +75,7 @@ func (s *State) nextConnectionStep() {
 		s.connectionError = err.Error()
 		return
 	}
+	draft.GroupName = s.connectionDraft.GroupName
 	s.connectionDraft = draft
 	s.clearMySQLSSLPassphrase()
 	s.clearMySQLInitialQuery()
