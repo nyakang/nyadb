@@ -231,6 +231,11 @@ type State struct {
 	profileEntries      []connections.Profile
 	profileGroups       []connections.Group
 	selectedGroup       string
+	profileStarredOnly  bool
+	profileEngine       connections.Kind
+	navigateDatabase    string
+	navigateTable       string
+	navigateProfileID   int64
 	groupEditing        bool
 	groupEditOriginal   string
 	groupDraft          string

@@ -22,7 +22,7 @@ func (s *State) profileRoots() []string {
 		}
 	}
 	for _, p := range s.profileEntries {
-		if p.GroupName == "" && (query == "" || strings.Contains(strings.ToLower(p.Name), query)) {
+		if p.GroupName == "" && s.profileVisible(p) {
 			roots = append(roots, p.Name)
 		}
 	}
@@ -30,11 +30,11 @@ func (s *State) profileRoots() []string {
 }
 
 func (s *State) groupMatches(name, query string) bool {
-	if query == "" || strings.Contains(strings.ToLower(name), query) {
+	if !s.profileStarredOnly && s.profileEngine == "" && (query == "" || strings.Contains(strings.ToLower(name), query)) {
 		return true
 	}
 	for _, p := range s.profileEntries {
-		if strings.EqualFold(p.GroupName, name) && strings.Contains(strings.ToLower(p.Name), query) {
+		if strings.EqualFold(p.GroupName, name) && s.profileVisible(p) {
 			return true
 		}
 	}
@@ -46,11 +46,9 @@ func (s *State) profileChildren(node string) []string {
 		return nil
 	}
 	group := groupFromNode(node)
-	query := strings.ToLower(strings.TrimSpace(s.search))
 	names := []string{}
-	wholeGroup := strings.Contains(strings.ToLower(group), query)
 	for _, p := range s.profileEntries {
-		if strings.EqualFold(p.GroupName, group) && (query == "" || wholeGroup || strings.Contains(strings.ToLower(p.Name), query)) {
+		if strings.EqualFold(p.GroupName, group) && s.profileVisible(p) {
 			names = append(names, p.Name)
 		}
 	}

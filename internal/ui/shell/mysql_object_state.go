@@ -162,6 +162,7 @@ func (s *State) consumeMySQLObjects() {
 		}
 		s.mysqlObjectCache[result.database] = result.objects
 		delete(s.mysqlObjectErrors, result.database)
+		s.resolveNavigatorObject()
 	default:
 	}
 }

@@ -14,7 +14,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const schemaVersion = 6
+const schemaVersion = 7
 
 // Open initializes or migrates an on-disk configuration database.
 // This database must never store passwords, tokens, or connection strings
@@ -143,6 +143,16 @@ func migrate(ctx context.Context, db *sql.DB) error {
 			return fmt.Errorf("localdb: add profile group: %w", err)
 		}
 		if _, err := tx.ExecContext(ctx, "PRAGMA user_version = 6"); err != nil {
+			return fmt.Errorf("localdb: set schema version: %w", err)
+		}
+		current = 6
+	}
+	if current == 6 {
+		// Star state belongs to the local connection profile, never to MySQL.
+		if _, err := tx.ExecContext(ctx, "ALTER TABLE connection_profiles ADD COLUMN starred INTEGER NOT NULL DEFAULT 0"); err != nil {
+			return fmt.Errorf("localdb: add starred flag: %w", err)
+		}
+		if _, err := tx.ExecContext(ctx, "PRAGMA user_version = 7"); err != nil {
 			return fmt.Errorf("localdb: set schema version: %w", err)
 		}
 	}

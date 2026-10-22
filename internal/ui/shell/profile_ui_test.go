@@ -30,7 +30,10 @@ func TestProfileUICreateAndRefresh(t *testing.T) {
 	if len(s.profileEntries) != 0 || tt.HasText("测试库") {
 		t.Fatal("real UI should start without mock connections")
 	}
-	if err := tt.Click("添加连接"); err != nil {
+	if err := tt.RightClick("我的连接"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("新建连接…"); err != nil {
 		t.Fatal(err)
 	}
 	if err := tt.Click("选择 MySQL"); err != nil {
@@ -49,7 +52,10 @@ func TestProfileUICreateAndRefresh(t *testing.T) {
 	if !tt.HasText("Development") {
 		t.Fatal("new connection missing from explorer")
 	}
-	if err := tt.Click("刷新"); err != nil {
+	if err := tt.RightClick("我的连接"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("刷新连接列表"); err != nil {
 		t.Fatal(err)
 	}
 	if !tt.HasText("Development") {
@@ -75,7 +81,10 @@ func TestProfileUIEditDuplicateDelete(t *testing.T) {
 	if !tt.HasText("Local") {
 		t.Fatal("saved connection not displayed")
 	}
-	if err := tt.Click("编辑连接"); err != nil {
+	if err := tt.RightClick("Local"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("编辑连接"); err != nil {
 		t.Fatal(err)
 	}
 	if !s.connectionDialog || s.connectionDraft.ID != p.ID ||
@@ -90,13 +99,19 @@ func TestProfileUIEditDuplicateDelete(t *testing.T) {
 	if err != nil || p.Name != "Renamed" {
 		t.Fatalf("edit not saved: %+v %v", p, err)
 	}
-	if err := tt.Click("复制连接"); err != nil {
+	if err := tt.RightClick("Renamed"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("复制连接"); err != nil {
 		t.Fatal(err)
 	}
 	if len(s.profileEntries) != 2 || !tt.HasText("Renamed 副本") {
 		t.Fatalf("duplicate not reflected in explorer: %+v", s.profileEntries)
 	}
-	if err := tt.Click("删除连接"); err != nil {
+	if err := tt.RightClick("Renamed 副本"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("删除连接"); err != nil {
 		t.Fatal(err)
 	}
 	if !s.deleteConfirm || !tt.HasText("删除连接档案？") {
@@ -108,7 +123,10 @@ func TestProfileUIEditDuplicateDelete(t *testing.T) {
 	if len(s.profileEntries) != 2 {
 		t.Fatal("cancel deleted a connection")
 	}
-	if err := tt.Click("删除连接"); err != nil {
+	if err := tt.RightClick("Renamed 副本"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("删除连接"); err != nil {
 		t.Fatal(err)
 	}
 	if err := tt.Click("删除"); err != nil {
