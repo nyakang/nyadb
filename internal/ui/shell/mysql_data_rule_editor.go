@@ -38,14 +38,21 @@ func mysqlDataFilterModeNeedsValue(mode string) bool { return mode != "为空" &
 func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *connections.MySQLDataPage) {
 	ui.Column(c).Background(theme.Header).Padding(5, 9).Gap(5).Children(func() {
 		ui.Row(c).Height(27).Gap(8).AlignItems(ui.Center).Children(func() {
-			if ui.Button(c, "筛选 & 排序").Clicked() {
+			label := "筛选 & 排序 ▸"
+			if t.dataRulesExpanded {
+				label = "筛选 & 排序 ▾"
+			}
+			if ui.Button(c, label).Label("筛选 & 排序").Clicked() {
 				t.dataRulesExpanded = !t.dataRulesExpanded
 			}
 			count := len(t.dataFilterRules)
 			if count == 0 && t.dataFilterMode != "" {
 				count = 1
 			}
-			ui.Text(c, fmt.Sprintf("已应用 %d 条筛选规则", count)).FontSize(11).TextColor(theme.Muted)
+			ui.Text(c, fmt.Sprintf("筛选 %d · 排序 %d", count, mysqlDataActiveSortCount(t))).FontSize(11).TextColor(theme.Muted)
+			if !t.dataRulesExpanded && t.dataRuleError != "" {
+				ui.Text(c, t.dataRuleError).SingleLine().FontSize(11).TextColor(theme.Gold)
+			}
 			ui.Box(c).Grow(1)
 			if ui.Button(c, "清除筛选").Disabled(t.dataLoading || count == 0).Clicked() {
 				s.clearMySQLDataFilter(c.Services(), t)
@@ -114,6 +121,16 @@ func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *connections.MyS
 			}
 		})
 	})
+}
+
+func mysqlDataActiveSortCount(t *tab) int {
+	if len(t.dataSortRules) > 0 {
+		return len(t.dataSortRules)
+	}
+	if t.dataSortColumn != "" {
+		return 1
+	}
+	return 0
 }
 
 func (s *State) applyMySQLDataRules(services ui.Services, t *tab) {

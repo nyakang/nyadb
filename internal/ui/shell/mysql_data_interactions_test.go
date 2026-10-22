@@ -28,6 +28,9 @@ func TestMySQLNativeDataFilterSortCopyAndWidths(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLData(t, s, tt)
+	if err := tt.Click("筛选 & 排序"); err != nil {
+		t.Fatal(err)
+	}
 	current := s.currentTab()
 	current.dataFilterColumnDraft = "note"
 	current.dataFilterValueDraft = "hello"

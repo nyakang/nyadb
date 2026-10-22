@@ -103,6 +103,9 @@ func TestMySQLRealDataNativeViewer(t *testing.T) {
 	}
 	// Exercise the actual managed-session query with MyGo's native filters,
 	// server sort, row inspector and clipboard, not an injected test loader.
+	if err := tt.Click("筛选 & 排序"); err != nil {
+		t.Fatal(err)
+	}
 	tab.dataFilterColumnDraft = "parent_code"
 	tab.dataFilterValueDraft = "P2"
 	tab.dataFilterModeDraft = "精确匹配"
