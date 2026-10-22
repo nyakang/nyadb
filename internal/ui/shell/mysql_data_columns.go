@@ -17,11 +17,22 @@ func mysqlVisibleDataColumns(t *tab, page *connections.MySQLDataPage) ([]int, []
 		}
 		indices = append(indices, i)
 		col := t.dataColumns[i]
-		if t.dataShowFieldTypes && i < len(page.ColumnKinds) && page.ColumnKinds[i] != "" {
+		kind, declaration, key := "", "", ""
+		if i < len(page.ColumnKinds) {
+			kind = page.ColumnKinds[i]
+			declaration = kind // compatibility with pre-metadata test loaders
+		}
+		if i < len(page.ColumnMetadata) && page.ColumnMetadata[i].Name == name {
+			meta := page.ColumnMetadata[i]
+			kind, declaration, key = meta.DataType, meta.Type, meta.Key
+		}
+		if t.dataShowFieldTypes && declaration != "" {
 			// Patched native MyGo TableColumn.Subtitle lives inside the real
 			// keyed column header, sharing scroll, drag, resize and menu state.
 			col.Title = name
-			col.Subtitle = page.ColumnKinds[i]
+			col.Subtitle = declaration
+			col.SubtitleIcon = mysqlColumnTypeGlyph(kind)
+			col.HeaderBadge = mysqlColumnKeyBadge(key)
 		}
 		visible = append(visible, col)
 	}
@@ -30,6 +41,38 @@ func mysqlVisibleDataColumns(t *tab, page *connections.MySQLDataPage) ([]int, []
 		return mysqlVisibleDataColumns(t, page)
 	}
 	return indices, visible
+}
+
+// Glyphs are NyaDB-authored, deliberately small type hints rendered by the
+// native header. They do not depend on proprietary database-manager artwork.
+func mysqlColumnTypeGlyph(kind string) string {
+	switch strings.ToLower(kind) {
+	case "tinyint", "smallint", "mediumint", "int", "integer", "bigint", "decimal", "numeric", "float", "double", "real", "bit", "bool", "boolean":
+		return "#"
+	case "char", "varchar", "tinytext", "text", "mediumtext", "longtext", "enum", "set":
+		return "A"
+	case "date", "time", "datetime", "timestamp", "year":
+		return "◷"
+	case "json":
+		return "{}"
+	case "binary", "varbinary", "tinyblob", "blob", "mediumblob", "longblob":
+		return "◇"
+	case "geometry", "point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon", "geometrycollection":
+		return "✧"
+	}
+	return "·"
+}
+
+func mysqlColumnKeyBadge(key string) string {
+	switch key {
+	case "PRI":
+		return "PK"
+	case "UNI":
+		return "UQ"
+	case "MUL":
+		return "IDX" // MySQL does not guarantee this is a foreign key.
+	}
+	return ""
 }
 
 func mysqlDataCopyColumnPreview(page *connections.MySQLDataPage, col int) string {
@@ -70,6 +113,10 @@ func mysqlDataFitColumn(t *tab, page *connections.MySQLDataPage, col int) {
 	width := float32(90)
 	name := page.Columns[col]
 	width = max(width, float32(utf8.RuneCountInString(name))*8+28)
+	if col < len(page.ColumnMetadata) && page.ColumnMetadata[col].Name == name {
+		// Fit the full server declaration without assuming it matches DATA_TYPE.
+		width = max(width, float32(utf8.RuneCountInString(page.ColumnMetadata[col].Type))*7+50)
+	}
 	for _, r := range page.Rows {
 		if col >= len(r) {
 			continue

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
 func TestPatchedNativeMyGoTableSubtitleSharesColumnBehaviors(t *testing.T) {
@@ -141,5 +142,47 @@ func TestPatchedNativeMyGoTableSubtitleSharesColumnBehaviors(t *testing.T) {
 	single, ok := tt.Find("alpha_field")
 	if !ok || single.H >= title.H || tt.HasText("INTEGER") {
 		t.Fatalf("single-line backwards compatibility: old=%+v now=%+v", title, single)
+	}
+}
+
+func TestMySQLFullServerTypesAndKeyBadgesUseNativeTable(t *testing.T) {
+	page := &connections.MySQLDataPage{
+		Columns: []string{"id", "status", "price"},
+		ColumnKinds: []string{"bigint", "enum", "decimal"},
+		ColumnMetadata: []connections.MySQLStructureColumn{
+			{Name: "id", DataType: "bigint", Type: "bigint unsigned", Key: "PRI"},
+			{Name: "status", DataType: "enum", Type: "enum('active','disabled')", Key: "MUL"},
+			{Name: "price", DataType: "decimal", Type: "decimal(10,2)"},
+		},
+	}
+	tab := &tab{dataShowFieldTypes: true, dataColumns: []ui.TableColumn{
+		{Title: "id", ID: "id", Width: 155}, {Title: "status", ID: "status", Width: 220}, {Title: "price", ID: "price", Width: 155},
+	}}
+	ids, cols := mysqlVisibleDataColumns(tab, page)
+	if len(ids) != 3 || cols[0].Subtitle != "bigint unsigned" || cols[0].HeaderBadge != "PK" ||
+		cols[0].SubtitleIcon != "#" || cols[1].Subtitle != "enum('active','disabled')" ||
+		cols[1].HeaderBadge != "IDX" || cols[1].SubtitleIcon != "A" ||
+		cols[2].Subtitle != "decimal(10,2)" || cols[2].ID != "price" {
+		t.Fatalf("real declaration/key glyph mapping lost: %+v", cols)
+	}
+	state := ui.ListState{}
+	tt := ui.NewTester(func(c *ui.Context) {
+		ui.Table(c, &state, cols, 1, func(row, col int) {
+			ui.Text(c, "cell").SingleLine()
+		}).Width(480).Height(160)
+	}, 500, 200)
+	tt.Frame()
+	if !tt.HasText("enum('active','disabled')") || !tt.HasText("decimal(10,2)") || !tt.HasText("PK") {
+		t.Fatalf("native table did not render complete field declarations: %v", tt.Texts())
+	}
+	tab.dataShowFieldTypes = false
+	_, hidden := mysqlVisibleDataColumns(tab, page)
+	if hidden[0].Subtitle != "" || hidden[0].SubtitleIcon != "" || hidden[0].HeaderBadge != "" ||
+		hidden[1].ID != cols[1].ID {
+		t.Fatalf("hidden subtitles did not preserve stable identities: %+v", hidden)
+	}
+	if mysqlColumnKeyBadge("MUL") != "IDX" || mysqlColumnKeyBadge("") != "" ||
+		mysqlColumnTypeGlyph("json") != "{}" || mysqlColumnTypeGlyph("datetime") == "#" {
+		t.Fatal("type glyphs or index markers are misleading")
 	}
 }
