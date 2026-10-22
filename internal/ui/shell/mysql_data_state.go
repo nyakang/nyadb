@@ -47,6 +47,9 @@ func (s *State) openMySQLData(services ui.Services, database, table string) {
 		dataSelectedRow:       -1,
 		dataFilterColumnDraft: "选择字段",
 		dataFilterModeDraft:   "包含",
+		dataRulesExpanded:     true,
+		dataShowFieldTypes:    true,
+		dataHiddenColumns:     map[string]bool{},
 		dataUseKeyset:         true,
 		dataChunkRow:          -1,
 	}
@@ -85,7 +88,8 @@ func (s *State) loadMySQLData(services ui.Services, t *tab, refresh bool) {
 	options := connections.MySQLDataOptions{Offset: offset, Limit: limit,
 		FilterColumn: t.dataFilterColumn, FilterValue: t.dataFilterValue,
 		FilterMode: t.dataFilterMode, SortColumn: t.dataSortColumn,
-		SortDescending: t.dataSortDescending, UseKeyset: t.dataUseKeyset, After: t.dataAfter}
+		SortDescending: t.dataSortDescending, UseKeyset: t.dataUseKeyset, After: t.dataAfter,
+		Filters: append([]connections.MySQLDataFilterRule(nil), t.dataFilterRules...), Sorts: append([]connections.MySQLDataSortRule(nil), t.dataSortRules...)}
 	advanced := s.mysqlDataAdvancedLoader
 	legacy := s.mysqlDataLoader
 	if advanced == nil && legacy == nil {

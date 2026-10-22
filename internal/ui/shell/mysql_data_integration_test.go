@@ -122,6 +122,27 @@ func TestMySQLRealDataNativeViewer(t *testing.T) {
 	if len(tab.dataPage.Rows) != 2 || tab.dataFilterMode != "" {
 		t.Fatal("real filter clearing failed")
 	}
+	// Apply multiple AND conditions and ordered sort priorities against real MySQL.
+	tab.dataFilterColumnDraft = "parent_code"
+	tab.dataFilterModeDraft = "精确匹配"
+	tab.dataFilterValueDraft = "P2"
+	tab.dataFilterExtraDraft = []mysqlDataRuleDraft{
+		{Column: "id", Mode: "不等于", Value: "3"},
+		{Column: "price", Mode: "不为空"},
+	}
+	tab.dataSortDraft = []mysqlDataSortDraft{
+		{Column: "price", Direction: "降序"},
+		{Column: "id", Direction: "升序"},
+	}
+	tt.Frame()
+	if err := tt.Click("应用筛选"); err != nil {
+		t.Fatal(err)
+	}
+	waitMySQLData(t, s, tt)
+	if len(tab.dataPage.Rows) != 1 || tab.dataPage.Rows[0][0].Text != "2" ||
+		len(tab.dataFilterRules) != 3 || len(tab.dataSortRules) != 2 {
+		t.Fatalf("real multi-rule query failed: %+v / %s", tab.dataPage, tab.dataRuleError)
+	}
 	if err := tt.Click("返回对象列表"); err != nil {
 		t.Fatal(err)
 	}
