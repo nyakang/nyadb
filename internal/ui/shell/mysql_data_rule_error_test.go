@@ -24,6 +24,9 @@ func TestMySQLRuleEditorRemainsUsableAfterQueryError(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLData(t, s, tt)
+	if err := tt.Click("筛选 & 排序"); err != nil {
+		t.Fatal(err)
+	}
 	tab := s.currentTab()
 	tab.dataFilterColumnDraft = "id"
 	tab.dataFilterModeDraft = "包含"

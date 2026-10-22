@@ -26,8 +26,15 @@ func TestMySQLRuleEditorMultipleConditionsPrioritySortAndMenu(t *testing.T) {
 	}
 	waitMySQLData(t, s, tt)
 	tab := s.currentTab()
-	if !tt.HasText("筛选 & 排序") {
-		t.Fatalf("rule editor missing: %v", tt.Texts())
+	if tab.dataRulesExpanded || !tt.HasText("筛选 0 · 排序 0") ||
+		tt.HasText("筛选  ·  所有已启用条件均满足 (AND)") {
+		t.Fatalf("new tab should start compact: %v", tt.Texts())
+	}
+	if err := tt.Click("筛选 & 排序"); err != nil {
+		t.Fatal(err)
+	}
+	if !tab.dataRulesExpanded {
+		t.Fatal("failed to expand the complete rule editor")
 	}
 	tab.dataFilterColumnDraft = "note"
 	tab.dataFilterModeDraft = "包含"
@@ -106,16 +113,20 @@ func TestMySQLRuleEditorMultipleConditionsPrioritySortAndMenu(t *testing.T) {
 	if !tab.dataShowFieldTypes || !tt.HasText("bigint") {
 		t.Fatal("subtitle was not restored")
 	}
+	before := tab.dataFilterExtraDraft[0]
+	width := tab.dataState.Columns.Widths["note"]
 	if err := tt.Click("筛选 & 排序"); err != nil {
 		t.Fatal(err)
 	}
-	if tab.dataRulesExpanded {
-		t.Fatal("rules panel did not collapse")
+	if tab.dataRulesExpanded || tt.HasText("筛选  ·  所有已启用条件均满足 (AND)") ||
+		!tt.HasText("筛选 2 · 排序 2") {
+		t.Fatalf("collapsed applied-rule summary incorrect: %v", tt.Texts())
 	}
 	if err := tt.Click("筛选 & 排序"); err != nil {
 		t.Fatal(err)
 	}
-	if !tab.dataRulesExpanded {
-		t.Fatal("rules panel did not expand")
+	if !tab.dataRulesExpanded || tab.dataFilterExtraDraft[0] != before ||
+		tab.dataState.Columns.Widths["note"] != width || !tt.HasText("筛选  ·  所有已启用条件均满足 (AND)") {
+		t.Fatal("reopen discarded drafts or layout state")
 	}
 }

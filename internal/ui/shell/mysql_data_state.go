@@ -47,7 +47,7 @@ func (s *State) openMySQLData(services ui.Services, database, table string) {
 		dataSelectedRow:       -1,
 		dataFilterColumnDraft: "选择字段",
 		dataFilterModeDraft:   "包含",
-		dataRulesExpanded:     true,
+		dataRulesExpanded:     false, // Navicat-like compact bar by default; per-tab draft state remains intact.
 		dataShowFieldTypes:    true,
 		dataHiddenColumns:     map[string]bool{},
 		dataUseKeyset:         true,
