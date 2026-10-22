@@ -14,7 +14,10 @@ func TestPersistentGroupTreeInspectorAndConnectionPlacement(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.loadProfiles()
-	if err := tt.Click("新建组"); err != nil {
+	if err := tt.RightClick("我的连接"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("新建连接组…"); err != nil {
 		t.Fatal(err)
 	}
 	s.groupDraft = "开发库"

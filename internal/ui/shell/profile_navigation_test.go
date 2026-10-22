@@ -1,0 +1,33 @@
+package shell
+
+import (
+ "context"
+ "testing"
+
+ "github.com/nyakang/nyadb/internal/services/connections"
+)
+
+func TestNavigationResolvesActiveTabOnlyInMatchingSessionAndSnapshot(t *testing.T) {
+ s, _, service, _ := profileTestState(t)
+ p,err:=service.Create(context.Background(), connections.Profile{Name:"Local",Kind:connections.MySQL,Host:"localhost",Port:3306})
+ if err!=nil {t.Fatal(err)}
+ s.loadProfiles()
+ s.mysqlSessionProfileID=p.ID
+ s.mysqlSessionStatus="已连接"
+ s.mysqlSelectedDatabase="app"
+ s.mysqlObjectCache=map[string][]connections.MySQLDBObject{
+  "app": {{Name:"customers",Kind:"表"},{Name:"invoices",Kind:"表"}},
+ }
+ s.tabs=append(s.tabs,&tab{kind:tabMySQLData,dataProfileID:p.ID,dataDatabase:"app",dataTable:"invoices"})
+ s.activeTab=1
+ id,db,table,ok:=s.activeTabObject()
+ if !ok||id!=p.ID||db!="app"||table!="invoices"{t.Fatalf("bad active tab: %d %q %q %t",id,db,table,ok)}
+ s.navigateProfileID=id;s.navigateDatabase=db;s.navigateTable=table
+ s.objectRow=-1
+ s.resolveNavigatorObject()
+ if s.objectRow!=1 || s.navigateDatabase!="" {t.Fatalf("failed to resolve target table: row=%d nav=%q",s.objectRow,s.navigateDatabase)}
+ // A stale result from a different session must never select a row.
+ s.objectRow=-1;s.navigateProfileID=p.ID+1;s.navigateDatabase="app";s.navigateTable="customers"
+ s.resolveNavigatorObject()
+ if s.objectRow!=-1 {t.Fatal("stale target selected across sessions")}
+}

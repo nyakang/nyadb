@@ -39,7 +39,7 @@ func TestMigrationV5ToV6PreservesConnectionsAndAddsEmptyGroups(t *testing.T) {
 	}
 	defer db.Close()
 	var version int
-	if err := db.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 6 {
+	if err := db.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 7 {
 		t.Fatalf("version=%d err=%v", version, err)
 	}
 	var group, notes string

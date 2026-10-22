@@ -38,7 +38,7 @@ func TestMigrationV3ToV4AddsConfigurations(t *testing.T) {
 		t.Fatal(err)
 	}
 	var version int
-	if err := opened.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 6 {
+	if err := opened.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 7 {
 		t.Fatalf("unexpected version %d %v", version, err)
 	}
 	var name, host, notes, variants string

@@ -17,6 +17,7 @@ NAMES = (
     "layout-grid", "list", "list-filter", "building-2",
     "bot", "binoculars", "folder-plus", "folder-open", "pencil", "copy",
     "trash-2", "file-plus-2", "file-down", "file-up", "table-properties",
+    "settings-2", "star", "locate-fixed", "chevrons-up",
 )
 BASE = f"https://raw.githubusercontent.com/lucide-icons/lucide/{VERSION}"
 

@@ -11,8 +11,8 @@ func TestPinnedLucideIconsAreValidSVG(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(names) != 31 {
-		t.Fatalf("expected 31 Lucide icons, got %d", len(names))
+	if len(names) != 35 {
+		t.Fatalf("expected 35 Lucide icons, got %d", len(names))
 	}
 	for _, name := range names {
 		data, err := Read(name)
