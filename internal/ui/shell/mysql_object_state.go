@@ -90,6 +90,14 @@ func (s *State) selectMySQLDatabase(services ui.Services, database string) {
 }
 
 func (s *State) loadMySQLObjects(services ui.Services, database string, force bool) {
+	// The first metadata query may be scheduled before the database tree has
+	// rendered (for example, when restoring an already-opened session).
+	if s.mysqlObjectCache == nil {
+		s.mysqlObjectCache = make(map[string][]connections.MySQLDBObject)
+	}
+	if s.mysqlObjectErrors == nil {
+		s.mysqlObjectErrors = make(map[string]string)
+	}
 	if database == "" || s.mysqlSessionStatus != "已连接" || s.mysqlSessionProfileID <= 0 {
 		return
 	}

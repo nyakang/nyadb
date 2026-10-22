@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 )
@@ -16,10 +17,7 @@ func TestMySQLStructureIntegrationMySQL84(t *testing.T) {
 	if os.Getenv("NYADB_MYSQL_STRUCTURE_IT") != "1" {
 		t.Skip("requires explicitly provisioned disposable MySQL 8.4 fixture on 127.0.0.1:34306")
 	}
-	password := os.Getenv("NYADB_MYSQL_IT_PASSWORD")
-	if password == "" {
-		t.Fatal("NYADB_MYSQL_IT_PASSWORD is required; never commit credentials")
-	}
+	password := mysqlIntegrationPassword(t)
 
 	m := NewMySQLSessionManager()
 	t.Cleanup(func() { _ = m.Close() })
@@ -145,4 +143,28 @@ func TestMySQLStructureIntegrationMySQL84(t *testing.T) {
 	if _, err := m.TableStructure(ctx, settings.ProfileID, "nyadb_struct_a", "child"); !errors.Is(err, ErrMySQLNotConnected) {
 		t.Fatalf("disconnected session accessible: %v", err)
 	}
+}
+
+// mysqlIntegrationPassword accepts an explicitly supplied password or a private
+// file path. The file option keeps credentials out of commands and test logs.
+// Both callers require NYADB_MYSQL_STRUCTURE_IT=1 before reaching this helper.
+func mysqlIntegrationPassword(t *testing.T) string {
+	t.Helper()
+	value := os.Getenv("NYADB_MYSQL_IT_PASSWORD")
+	if value != "" {
+		return value
+	}
+	file := os.Getenv("NYADB_MYSQL_IT_PASSWORD_FILE")
+	if file == "" {
+		t.Fatal("explicit test credential is required via NYADB_MYSQL_IT_PASSWORD or NYADB_MYSQL_IT_PASSWORD_FILE")
+	}
+	data, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatalf("read isolated test credential: %v", err)
+	}
+	value = strings.TrimSpace(string(data))
+	if value == "" {
+		t.Fatal("isolated test credential is empty")
+	}
+	return value
 }
