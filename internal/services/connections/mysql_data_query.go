@@ -20,6 +20,8 @@ type MySQLDataOptions struct {
 	SortDescending bool
 	UseKeyset      bool
 	After          *MySQLDataCursor
+	Filters        []MySQLDataFilterRule
+	Sorts          []MySQLDataSortRule
 }
 
 // TableDataPageWithOptions reads bounded projections rather than SELECT *.
@@ -43,6 +45,11 @@ func (m *MySQLSessionManager) TableDataPageWithOptions(ctx context.Context, id i
 		(o.UseKeyset && o.Offset > 0 && o.After == nil) || (o.After != nil && o.Offset == 0) {
 		return nil, ErrMySQLDataPage
 	}
+	filters, sortRules, err := mysqlDataEffectiveRules(o)
+	if err != nil {
+		return nil, err
+	}
+	signature := mysqlDataRuleSignature(filters, sortRules)
 	m.mu.Lock()
 	session := m.sessions[id]
 	m.mu.Unlock()
@@ -181,27 +188,41 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 
 	query := "SELECT " + strings.Join(fields, ", ") + " FROM " + dbName + "." + tableName
 	var args []any
-	if o.FilterMode != "" {
-		col, ok := allowed[o.FilterColumn]
+	var conditions []string
+	for _, filter := range filters {
+		col, ok := allowed[filter.Column]
 		if !ok {
 			return nil, ErrMySQLDataPage
 		}
 		quoted, _ := quotedMySQLIdentifier(col.name)
-		if o.FilterMode == "contains" {
+		switch filter.Mode {
+		case "contains":
 			if !mysqlDataTextType(col.kind) {
 				return nil, ErrMySQLDataPage
 			}
-			query += " WHERE LOCATE(?, " + quoted + ") > 0"
-		} else {
-			query += " WHERE " + quoted + " = ?"
+			conditions = append(conditions, "LOCATE(?, "+quoted+") > 0")
+			args = append(args, filter.Value)
+		case "equal", "not_equal":
+			op := " = "
+			if filter.Mode == "not_equal" {
+				op = " <> "
+			}
+			conditions = append(conditions, quoted+op+"?")
+			args = append(args, filter.Value)
+		case "is_null":
+			conditions = append(conditions, quoted+" IS NULL")
+		case "is_not_null":
+			conditions = append(conditions, quoted+" IS NOT NULL")
 		}
-		args = append(args, o.FilterValue)
+	}
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
 	}
 	var sortParts []string
 	var orderKeys []mysqlOrderKey
 	keysetSafe := len(identity) > 0
-	if o.SortColumn != "" {
-		col, ok := allowed[o.SortColumn]
+	for _, rule := range sortRules {
+		col, ok := allowed[rule.Column]
 		if !ok || mysqlDataBinaryType(col.kind) || col.kind == "json" ||
 			strings.Contains(col.kind, "text") {
 			return nil, ErrMySQLDataPage
@@ -210,8 +231,8 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 		if col.nullable {
 			keysetSafe = false
 		}
-		orderKeys = append(orderKeys, mysqlOrderKey{name: col.name, desc: o.SortDescending})
-		if o.SortDescending {
+		orderKeys = append(orderKeys, mysqlOrderKey{name: col.name, desc: rule.Descending})
+		if rule.Descending {
 			sortParts = append(sortParts, quoted+" DESC")
 		} else {
 			sortParts = append(sortParts, quoted+" ASC")
@@ -220,7 +241,7 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 	for _, k := range identity {
 		name := strings.Trim(k, "`")
 		name = strings.ReplaceAll(name, "``", "`")
-		if len(orderKeys) > 0 && orderKeys[0].name == name {
+		if containsOrderColumn(orderKeys, name) {
 			continue
 		}
 		orderKeys = append(orderKeys, mysqlOrderKey{name: name})
@@ -231,14 +252,14 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 		if !seek || o.After.Database != database || o.After.Table != table ||
 			o.After.FilterColumn != o.FilterColumn || o.After.FilterMode != o.FilterMode ||
 			o.After.FilterValue != o.FilterValue || o.After.SortColumn != o.SortColumn ||
-			o.After.SortDescending != o.SortDescending {
+			o.After.SortDescending != o.SortDescending || o.After.RuleSignature != signature {
 			return nil, ErrMySQLDataPage
 		}
 		predicate, values, err := mysqlKeysetPredicate(orderKeys, o.After)
 		if err != nil {
 			return nil, err
 		}
-		if o.FilterMode != "" {
+		if len(conditions) > 0 {
 			query += " AND " + predicate
 		} else {
 			query += " WHERE " + predicate
@@ -299,7 +320,7 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`
 		page.Rows = append(page.Rows, line)
 		if seek {
 			scope := MySQLDataCursor{Database: database, Table: table, FilterColumn: o.FilterColumn,
-				FilterMode: o.FilterMode, FilterValue: o.FilterValue, SortColumn: o.SortColumn, SortDescending: o.SortDescending}
+				FilterMode: o.FilterMode, FilterValue: o.FilterValue, SortColumn: o.SortColumn, SortDescending: o.SortDescending, RuleSignature: signature}
 			next, err := mysqlNextDataCursor(orderKeys, raw[len(columns):], scope)
 			if err == nil {
 				page.NextCursor = next

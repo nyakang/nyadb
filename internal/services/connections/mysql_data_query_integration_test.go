@@ -61,6 +61,13 @@ func TestMySQLAdvancedRealPerformanceFixture(t *testing.T) {
 	if len(filtered.Rows) != 1 || filtered.Rows[0][0].Text != "b" {
 		t.Fatalf("server filter: %+v", filtered)
 	}
+	multi := fetch("no_key_entries", MySQLDataOptions{Limit: 10,
+		Filters: []MySQLDataFilterRule{{Column: "note", Mode: "contains", Value: "b"},
+			{Column: "score", Mode: "equal", Value: "2"}, {Column: "note", Mode: "is_not_null"}},
+		Sorts: []MySQLDataSortRule{{Column: "score", Descending: true}, {Column: "note"}}})
+	if len(multi.Rows) != 1 || multi.Rows[0][0].Text != "b" {
+		t.Fatalf("server multi-rule query: %+v", multi)
+	}
 	start := time.Now()
 	for i := 0; i < 15; i++ {
 		p := fetch("blob_entries", MySQLDataOptions{Limit: 1})
