@@ -33,6 +33,7 @@ type tab struct {
 	structureProfileID                int64
 	structure                         *connections.MySQLTableStructure
 	structurePage                     int
+	structureFieldRow                 int
 	structureColumns                  ui.ListState
 	structureIndexes                  ui.ListState
 	structureForeignKeys              ui.ListState

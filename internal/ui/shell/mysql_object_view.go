@@ -62,7 +62,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		ui.Box(c).Grow(1)
 		items := s.mysqlSelectedObjects()
 		canOpen := s.objectRow >= 0 && s.objectRow < len(items)
-		if ui.Button(c, "打开结构").Label("打开选中表结构").Disabled(!canOpen).Clicked() {
+		if ui.Button(c, "设计表（只读）").Label("打开选中表结构").Disabled(!canOpen).Clicked() {
 			s.openMySQLStructure(c.Services(), db, items[s.objectRow].Name)
 		}
 		if ui.Button(c, "刷新当前数据库").Label("刷新元数据：" + db).
@@ -88,6 +88,14 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		return
 	}
 	s.objectState.Selected = &s.objectRow
+	// The original table list exposes "设计表" on right click. Until the real
+	// data viewer exists, keep double-click's structure fallback explicit in
+	// the differential report; do not invent a fake table-data page.
+	s.objectState.CellMenu = func(m *ui.Menu, row, col int) {
+		if row >= 0 && row < len(items) && m.Item("设计表（只读）").Chosen() {
+			s.openMySQLStructure(c.Services(), db, items[row].Name)
+		}
+	}
 	if ui.Table(c, &s.objectState, mysqlObjectColumns, len(items), func(row, col int) {
 		obj := items[row]
 		switch col {

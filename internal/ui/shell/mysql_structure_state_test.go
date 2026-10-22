@@ -96,8 +96,8 @@ func TestMySQLStructureNativeTabsSwitchRefreshAndDisconnect(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if !tt.HasText("PRIMARY") {
-		t.Fatalf("indexes not visible: %v", tt.Texts())
+	if !tt.HasText("此表没有可见的次级索引") {
+		t.Fatalf("primary key should remain in field attributes, not the secondary index list: %v", tt.Texts())
 	}
 	if err := tt.Click("外键"); err != nil {
 		t.Fatal(err)
