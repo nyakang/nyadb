@@ -174,7 +174,7 @@ func mysqlDataPreviewCell(v any, dbType string) MySQLDataCell {
 	switch value := v.(type) {
 	case []byte:
 		upper := strings.ToUpper(dbType)
-		if strings.Contains(upper, "BLOB") || strings.Contains(upper, "BINARY") || strings.Contains(upper, "BIT") || !utf8.Valid(value) {
+		if mysqlDataBinaryType(strings.ToLower(dbType)) || strings.Contains(upper, "BLOB") || !utf8.Valid(value) {
 			// Raw binary must never be interpreted as terminal control sequences.
 			text = "0x" + hex.EncodeToString(value)
 		} else {
