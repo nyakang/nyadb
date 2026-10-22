@@ -138,8 +138,12 @@ func (s *State) clearMySQLStructureTabs() {
 	activeID := s.currentTab().id
 	kept := s.tabs[:0]
 	for _, t := range s.tabs {
-		if t.kind == tabStructure {
-			s.cancelMySQLStructure(t)
+		if t.kind == tabStructure || t.kind == tabMySQLData {
+			if t.kind == tabStructure {
+				s.cancelMySQLStructure(t)
+			} else {
+				s.cancelMySQLData(t)
+			}
 			continue
 		}
 		kept = append(kept, t)
@@ -158,8 +162,13 @@ func (s *State) pruneMySQLStructureTabs(known map[string]bool) {
 	activeID := s.currentTab().id
 	kept := s.tabs[:0]
 	for _, t := range s.tabs {
-		if t.kind == tabStructure && !known[t.structureDatabase] {
-			s.cancelMySQLStructure(t)
+		if (t.kind == tabStructure && !known[t.structureDatabase]) ||
+			(t.kind == tabMySQLData && !known[t.dataDatabase]) {
+			if t.kind == tabStructure {
+				s.cancelMySQLStructure(t)
+			} else {
+				s.cancelMySQLData(t)
+			}
 			continue
 		}
 		kept = append(kept, t)

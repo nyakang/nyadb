@@ -21,6 +21,7 @@ const (
 	tabSQL
 	tabData
 	tabStructure
+	tabMySQLData
 )
 
 type tab struct {
@@ -42,6 +43,19 @@ type tab struct {
 	structureCancel                   context.CancelFunc
 	structureResults                  <-chan mysqlStructureResult
 	structureRequest                  uint64
+
+	dataDatabase, dataTable string
+	dataProfileID           int64
+	dataOffset              int64
+	dataLimit               int
+	dataPage                *connections.MySQLDataPage
+	dataState               ui.ListState
+	dataColumns             []ui.TableColumn
+	dataLoading             bool
+	dataErr                 string
+	dataCancel              context.CancelFunc
+	dataResults             <-chan mysqlDataResult
+	dataRequest             uint64
 }
 
 type object struct {
@@ -166,6 +180,7 @@ type State struct {
 	mysqlObjectLister          mysqlObjectLister
 	mysqlDatabaseNodes         map[string]*mysqlDatabaseNode
 	mysqlStructureLoader       mysqlStructureLoader
+	mysqlDataLoader            mysqlDataLoader
 
 	// MySQL connection checks run off-thread; only UI code reads/writes these.
 	connectionTesting        bool
@@ -269,6 +284,8 @@ func (s *State) closeTab(index int) {
 	}
 	if s.tabs[index].kind == tabStructure {
 		s.cancelMySQLStructure(s.tabs[index])
+	} else if s.tabs[index].kind == tabMySQLData {
+		s.cancelMySQLData(s.tabs[index])
 	}
 	name := s.tabs[index].title
 	s.tabs = append(s.tabs[:index], s.tabs[index+1:]...)
@@ -288,6 +305,8 @@ func (s *State) closeOtherTabs(index int) {
 	for i, t := range s.tabs {
 		if i != index && t.kind == tabStructure {
 			s.cancelMySQLStructure(t)
+		} else if i != index && t.kind == tabMySQLData {
+			s.cancelMySQLData(t)
 		}
 	}
 	if index == 0 {

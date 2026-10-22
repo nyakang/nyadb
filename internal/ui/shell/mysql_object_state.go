@@ -227,10 +227,13 @@ func (s *State) mysqlDatabaseTree(c *ui.Context) {
 										s.mysqlObjectKind = k
 									}
 									if leaf.DoubleClicked() {
-										s.openMySQLStructure(c.Services(), db, obj.Name)
+										s.openMySQLData(c.Services(), db, obj.Name)
 									}
 									leaf.ContextMenu(func(m *ui.Menu) {
-										if m.Item("打开只读结构：" + obj.Name).Chosen() {
+										if m.Item("打开表（只读）：" + obj.Name).Chosen() {
+											s.openMySQLData(c.Services(), db, obj.Name)
+										}
+										if m.Item("设计表（只读）：" + obj.Name).Chosen() {
 											s.openMySQLStructure(c.Services(), db, obj.Name)
 										}
 									})

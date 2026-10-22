@@ -12,8 +12,8 @@ var mysqlObjectColumns = []ui.TableColumn{
 	{Title: "注释", Width: 290},
 }
 
-// mysqlObjectWorkspace only renders real INFORMATION_SCHEMA results. No
-// query execution or table-data preview can be triggered by these rows.
+// mysqlObjectWorkspace lists real INFORMATION_SCHEMA objects and explicitly opens
+// read-only data or structure pages on the managed session.
 func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 	if s.mysqlSelectedDatabase == "" {
 		ui.Column(c).Grow(1).Gap(5).Padding(12).Children(func() {
@@ -62,6 +62,9 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		ui.Box(c).Grow(1)
 		items := s.mysqlSelectedObjects()
 		canOpen := s.objectRow >= 0 && s.objectRow < len(items)
+		if ui.Button(c, "打开表（只读）").Label("打开选中表数据").Disabled(!canOpen).Clicked() {
+			s.openMySQLData(c.Services(), db, items[s.objectRow].Name)
+		}
 		if ui.Button(c, "设计表（只读）").Label("打开选中表结构").Disabled(!canOpen).Clicked() {
 			s.openMySQLStructure(c.Services(), db, items[s.objectRow].Name)
 		}
@@ -88,10 +91,12 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		return
 	}
 	s.objectState.Selected = &s.objectRow
-	// The original table list exposes "设计表" on right click. Until the real
-	// data viewer exists, keep double-click's structure fallback explicit in
-	// the differential report; do not invent a fake table-data page.
+	// Double-click opens real table/view data, as observed in the original.
+	// Design remains a separate explicit read-only action.
 	s.objectState.CellMenu = func(m *ui.Menu, row, col int) {
+		if row >= 0 && row < len(items) && m.Item("打开表（只读）").Chosen() {
+			s.openMySQLData(c.Services(), db, items[row].Name)
+		}
 		if row >= 0 && row < len(items) && m.Item("设计表（只读）").Chosen() {
 			s.openMySQLStructure(c.Services(), db, items[row].Name)
 		}
@@ -110,7 +115,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		}
 	}).Grow(1).Submitted() {
 		if s.objectRow >= 0 && s.objectRow < len(items) {
-			s.openMySQLStructure(c.Services(), db, items[s.objectRow].Name)
+			s.openMySQLData(c.Services(), db, items[s.objectRow].Name)
 		}
 	}
 }
