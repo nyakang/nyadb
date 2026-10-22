@@ -1,4 +1,5 @@
 -- NyaDB isolated disposable performance fixtures. NEVER apply to production.
+SET NAMES utf8mb4;
 CREATE DATABASE IF NOT EXISTS nyadb_perf CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 USE nyadb_perf;
 CREATE TABLE no_key_entries (
