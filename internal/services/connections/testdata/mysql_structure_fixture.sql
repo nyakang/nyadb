@@ -35,3 +35,13 @@ CREATE TABLE nyadb_struct_b.child (
     id INT NOT NULL PRIMARY KEY,
     message VARCHAR(120) DEFAULT 'other schema'
 ) ENGINE=InnoDB;
+
+-- Non-production rows for real read-only paging tests.
+INSERT INTO nyadb_struct_a.parent (tenant_id,code,label)
+VALUES (1,'P1','First'),(1,'P2','Second'),(2,'P3','第三项');
+INSERT INTO nyadb_struct_a.child (tenant_id,parent_code,price,nullable_note,blank_note,remark)
+VALUES (1,'P1',1.25,NULL,'','中文备注'),
+       (1,'P2',2.50,'hello','',''),
+       (2,'P3',3.75,'NULL','text','');
+INSERT INTO nyadb_struct_b.child (id,message)
+VALUES (1,'other schema');
