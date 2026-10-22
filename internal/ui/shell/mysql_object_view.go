@@ -6,10 +6,13 @@ import (
 )
 
 var mysqlObjectColumns = []ui.TableColumn{
-	{Title: "名称", Width: 250},
-	{Title: "类型", Width: 85},
-	{Title: "引擎", Width: 110},
-	{Title: "注释", Width: 290},
+	{Title: "名称", Width: 265},
+	{Title: "自动递增值", Width: 100},
+	{Title: "修改日期", Width: 130},
+	{Title: "数据长度", Width: 110},
+	{Title: "引擎", Width: 95},
+	{Title: "行", Width: 70},
+	{Title: "注释", Width: 180},
 }
 
 // mysqlObjectWorkspace lists real INFORMATION_SCHEMA objects and explicitly opens
@@ -39,40 +42,6 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		return
 	}
 	db := s.mysqlSelectedDatabase
-	ui.Row(c).Padding(5, 10).Gap(5).AlignItems(ui.Center).Children(func() {
-		for i, name := range s.mysqlSessionDatabases {
-			if i >= 12 {
-				break
-			} // The complete list remains available in the native sidebar tree.
-			selected := name
-			if ui.Button(c, selected).Label("切换数据库：" + selected).Clicked() {
-				s.selectMySQLDatabase(c.Services(), selected)
-			}
-		}
-	})
-	ui.Row(c).Padding(6, 10).Gap(10).AlignItems(ui.Center).Children(func() {
-		theme.Icon(c, "database", 16, theme.Blue)
-		ui.Text(c, db).Bold().FontSize(13)
-		for _, kind := range []string{"全部", "表", "视图"} {
-			k := kind
-			if ui.Button(c, k).Label("筛选对象：" + k).Clicked() {
-				s.mysqlObjectKind = k
-			}
-		}
-		ui.Box(c).Grow(1)
-		items := s.mysqlSelectedObjects()
-		canOpen := s.objectRow >= 0 && s.objectRow < len(items)
-		if ui.Button(c, "打开表（只读）").Label("打开选中表数据").Disabled(!canOpen).Clicked() {
-			s.openMySQLData(c.Services(), db, items[s.objectRow].Name)
-		}
-		if ui.Button(c, "设计表（只读）").Label("打开选中表结构").Disabled(!canOpen).Clicked() {
-			s.openMySQLStructure(c.Services(), db, items[s.objectRow].Name)
-		}
-		if ui.Button(c, "刷新当前数据库").Label("刷新元数据：" + db).
-			Disabled(s.mysqlObjectPending != "").Clicked() {
-			s.loadMySQLObjects(c.Services(), db, true)
-		}
-	})
 	if s.mysqlObjectPending == db {
 		ui.Text(c, "正在加载表和视图…").Padding(10).TextColor(theme.Muted)
 		return
@@ -105,12 +74,17 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		obj := items[row]
 		switch col {
 		case 0:
-			ui.Text(c, obj.Name).SingleLine()
-		case 1:
-			ui.Text(c, obj.Kind).SingleLine()
-		case 2:
+			iconName := "table"
+			if obj.Kind == "视图" {
+				iconName = "view"
+			}
+			ui.Row(c).AlignItems(ui.Center).Gap(6).Children(func() {
+				theme.Icon(c, iconName, 14, theme.Blue)
+				ui.Text(c, obj.Name).SingleLine()
+			})
+		case 4:
 			ui.Text(c, obj.Engine).SingleLine()
-		case 3:
+		case 6:
 			ui.Text(c, obj.Comment).SingleLine()
 		}
 	}).Grow(1).Submitted() {

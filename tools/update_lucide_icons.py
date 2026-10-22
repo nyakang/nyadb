@@ -15,6 +15,8 @@ NAMES = (
     "user-round", "wrench", "database-backup", "calendar-clock",
     "workflow", "info", "folder", "database", "plus", "x", "refresh-cw",
     "layout-grid", "list", "list-filter", "building-2",
+    "bot", "binoculars", "folder-plus", "folder-open", "pencil", "copy",
+    "trash-2", "file-plus-2", "file-down", "file-up", "table-properties",
 )
 BASE = f"https://raw.githubusercontent.com/lucide-icons/lucide/{VERSION}"
 

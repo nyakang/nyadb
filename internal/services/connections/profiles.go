@@ -43,6 +43,7 @@ type ConnectionVariant struct {
 type Profile struct {
 	ID            int64
 	Name          string
+	GroupName     string // Optional virtual navigation group; never a database name.
 	Kind          Kind
 	Host          string
 	Port          uint16
@@ -67,6 +68,12 @@ func NewStore(db *sql.DB) *Store {
 
 func normalize(p Profile) (Profile, error) {
 	p.Name = strings.TrimSpace(p.Name)
+	p.GroupName = strings.TrimSpace(p.GroupName)
+	if p.GroupName != "" {
+		if err := validateGroupName(p.GroupName); err != nil {
+			return p, err
+		}
+	}
 	p.ActiveVariant = strings.TrimSpace(p.ActiveVariant)
 	if len(p.Variants) > 16 {
 		return p, fmt.Errorf("%w: too many connection configurations", ErrInvalid)
@@ -164,7 +171,7 @@ func normalize(p Profile) (Profile, error) {
 	return p, nil
 }
 
-const profileColumns = "id, name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, notes, variants_json, active_variant, created_at_ms, updated_at_ms"
+const profileColumns = "id, name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, notes, variants_json, active_variant, created_at_ms, updated_at_ms, group_name"
 
 func scanProfile(scan func(...any) error) (Profile, error) {
 	var p Profile
@@ -172,7 +179,7 @@ func scanProfile(scan func(...any) error) (Profile, error) {
 	var port int64
 	var created, updated int64
 	err := scan(&p.ID, &p.Name, &p.Kind, &p.Host, &port, &p.Database,
-		&p.Username, &p.TLSMode, &advancedJSON, &p.Notes, &variantsJSON, &p.ActiveVariant, &created, &updated)
+		&p.Username, &p.TLSMode, &advancedJSON, &p.Notes, &variantsJSON, &p.ActiveVariant, &created, &updated, &p.GroupName)
 	if err != nil {
 		return Profile{}, err
 	}
@@ -211,6 +218,9 @@ func (s *Store) Create(ctx context.Context, p Profile) (Profile, error) {
 	if err != nil {
 		return Profile{}, err
 	}
+	if err := s.requireGroup(ctx, &p); err != nil {
+		return Profile{}, err
+	}
 	advancedJSON := ""
 	if p.Kind == MySQL {
 		encoded, err := json.Marshal(p.MySQLAdvanced)
@@ -225,8 +235,8 @@ func (s *Store) Create(ctx context.Context, p Profile) (Profile, error) {
 	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	result, err := s.db.ExecContext(ctx,
-		"INSERT INTO connection_profiles (name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, notes, variants_json, active_variant, created_at_ms, updated_at_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, p.Notes, string(variantsJSON), p.ActiveVariant, now.UnixMilli(), now.UnixMilli())
+		"INSERT INTO connection_profiles (name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, notes, variants_json, active_variant, created_at_ms, updated_at_ms, group_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, p.Notes, string(variantsJSON), p.ActiveVariant, now.UnixMilli(), now.UnixMilli(), p.GroupName)
 	if err != nil {
 		return Profile{}, fmt.Errorf("create connection profile: %w", err)
 	}
@@ -279,6 +289,9 @@ func (s *Store) Update(ctx context.Context, p Profile) (Profile, error) {
 	if err != nil {
 		return Profile{}, err
 	}
+	if err := s.requireGroup(ctx, &p); err != nil {
+		return Profile{}, err
+	}
 	advancedJSON := ""
 	if p.Kind == MySQL {
 		encoded, err := json.Marshal(p.MySQLAdvanced)
@@ -293,8 +306,8 @@ func (s *Store) Update(ctx context.Context, p Profile) (Profile, error) {
 	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	result, err := s.db.ExecContext(ctx,
-		"UPDATE connection_profiles SET name=?, kind=?, host=?, port=?, database_name=?, username=?, tls_mode=?, mysql_advanced_json=?, notes=?, variants_json=?, active_variant=?, updated_at_ms=? WHERE id=?",
-		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, p.Notes, string(variantsJSON), p.ActiveVariant, now.UnixMilli(), p.ID)
+		"UPDATE connection_profiles SET name=?, kind=?, host=?, port=?, database_name=?, username=?, tls_mode=?, mysql_advanced_json=?, notes=?, variants_json=?, active_variant=?, updated_at_ms=?, group_name=? WHERE id=?",
+		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, p.Notes, string(variantsJSON), p.ActiveVariant, now.UnixMilli(), p.GroupName, p.ID)
 	if err != nil {
 		return Profile{}, fmt.Errorf("update connection profile: %w", err)
 	}
