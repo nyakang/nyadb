@@ -27,11 +27,11 @@ var mysqlStructureIndexColumns = []ui.TableColumn{
 	{Title: "方法", Width: 115},
 }
 var mysqlStructureForeignColumns = []ui.TableColumn{
-	{Title: "名称", Width: 160},
-	{Title: "字段", Width: 175},
-	{Title: "被引用的数据库", Width: 140},
-	{Title: "被引用的表", Width: 145},
-	{Title: "被引用的字段", Width: 185},
+	{Title: "名称", Width: 115},
+	{Title: "字段", Width: 110},
+	{Title: "被引用的数据库", Width: 110},
+	{Title: "被引用的表", Width: 105},
+	{Title: "被引用的字段", Width: 115},
 	{Title: "删除时", Width: 95},
 	{Title: "更新时", Width: 95},
 }
@@ -140,7 +140,7 @@ func mysqlStructureFieldsView(c *ui.Context, t *tab) {
 		}
 		return "否"
 	}
-	ui.Column(c).Height(141).Background(theme.Header).Padding(8, 12).Gap(7).Children(func() {
+	ui.Column(c).Height(182).Background(theme.Header).Padding(8, 12).Gap(7).Children(func() {
 		ui.Row(c).Gap(16).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, "字段属性："+field.Name).FontSize(12).Bold()
 			ui.Box(c).Grow(1)

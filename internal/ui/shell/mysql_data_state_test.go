@@ -153,3 +153,41 @@ func TestMySQLDataLateResultAndErrorRetry(t *testing.T) {
 		t.Fatal("closing data Tab failed")
 	}
 }
+
+// A schema refresh must only evict data belonging to removed schemas.
+func TestMySQLDataTabsPruneOnlyMissingSchema(t *testing.T) {
+	s, tt := structureTestBrowser(t)
+	s.mysqlDataLoader = func(_ context.Context, id int64, db, table string, offset int64, limit int) (*connections.MySQLDataPage, error) {
+		return &connections.MySQLDataPage{
+			Database: db, Table: table, Columns: []string{"id"},
+			Rows:  [][]connections.MySQLDataCell{{{Text: db}}},
+			Limit: limit, StableOrder: true,
+		}, nil
+	}
+	if err := tt.Click("打开选中表数据"); err != nil {
+		t.Fatal(err)
+	}
+	waitMySQLData(t, s, tt)
+	if err := tt.Click("返回对象列表"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.Click("切换数据库：analytics"); err != nil {
+		t.Fatal(err)
+	}
+	waitMySQLObjects(t, s, tt)
+	s.objectRow = 0
+	tt.Frame()
+	if err := tt.Click("打开选中表数据"); err != nil {
+		t.Fatal(err)
+	}
+	waitMySQLData(t, s, tt)
+	if len(s.tabs) != 3 || s.currentTab().dataPage.Database != "analytics" {
+		t.Fatalf("cross schema data isolation failed: %+v", s.tabs)
+	}
+	s.reconcileMySQLDatabases([]string{"app_db"})
+	tt.Frame()
+	if len(s.tabs) != 2 || s.activeTab != 0 || s.tabs[1].kind != tabMySQLData ||
+		s.tabs[1].dataPage.Database != "app_db" {
+		t.Fatalf("schema refresh discarded valid data or retained stale page: %+v", s.tabs)
+	}
+}
