@@ -22,13 +22,15 @@
 
 `TestMySQLStructureIntegrationMySQL84`：实际建立会话、读取两个数据库及对象列表，识别真实表/视图；字段 `COLUMN_TYPE`、精度/标度、SQL NULL/空字符串默认值、中文备注；复合 UNIQUE、索引前缀 `SUB_PART`；外键列次序和 CASCADE/RESTRICT；同名表按 schema 隔离；VIEW 的结构字段；不存在的对象、已取消 Context、已断开会话的显式错误。**复测 PASS。**
 
-`go test ./...`、`go vet ./...`、`go tool mygo vet`、`go tool mygo build` 均通过，MyGo v0.6.0 Linux/amd64 构建成功。先前还运行 `go test -race`；**注意其集成标志未启用，因此 Race Detector 的通过不等于真实 MySQL 网络路径的竞争检测**。
+`go test ./...`、`go vet ./...`、`go tool mygo vet`、`go tool mygo build` 均通过，MyGo v0.6.0 Linux/amd64 构建成功。续轮启用 `NYADB_MYSQL_STRUCTURE_IT=1` 后，以真实 MySQL 服务端同时执行了 `go test -race` 的服务测试和 UI 测试，结果通过。
 
-### 新增待运行用例（I，尚未证实真实执行）
+### 真实数据库 → MyGo 查看器验证（I，已执行）
 
 `internal/ui/shell/mysql_structure_integration_test.go` 新增 `TestMySQLStructureRealDatabaseNativeViewer`，将真实会话中的数据库对象、字段、索引、外键送到 `ui.NewTester` 原生页面，测试加载、刷新、断开后的缓存清理；可选将截图写到研究目录。此用例有双重保护：必须显式设置 `NYADB_MYSQL_STRUCTURE_IT=1` 且提供测试账户口令，目标主机与端口写死为 `127.0.0.1:34306`，默认安全跳过。
 
-**本次该用例仅完成编译与 SKIP 验证，没有成功执行真实连接。** 工具安全检查阻止了自动化传递测试凭据的尝试；不通过其他方式绕过。既有 UI 测试使用驱动替身的通过记录也**不能**替代这个真实数据库 GUI 用例。
+**续轮在具名一次性 MySQL 8.4 容器内执行 PASS。** 采用 `NYADB_MYSQL_IT_PASSWORD_FILE` 从 Git 忽略的权限为 `0600` 的临时文件读取只读账户口令，测试命令与日志不包含密码；只在显式 opt-in 和固定回环目标下启用。MyGo `ui.NewTester` 真实读取并渲染了 8 个字段、复合索引、前缀索引及双列外键；测试还覆盖强制刷新、跨 schema 同名表打开/切换、缓存复用、VIEW 单独打开和断线清理。**这仍是无窗口 MyGo 原生渲染测试，不等于在实际 Linux 桌面与真实数据库交互的差分通过。**
+
+真实 MySQL 渲染截图：`temp/research/mysql-structure-diff-20261022/nyadb-live-mysql-viewer.png`（项目忽略目录，不作为生产 UI 资源）。首次真实页面测试暴露了数据库对象缓存未初始化的 panic，现已在加载路径补齐空 map 的防御性初始化并回归验证。
 
 ## Navicat 18 运行观察（O）
 
@@ -59,9 +61,9 @@
 | 主工作台 / 新建 MySQL 连接入口 | 运行观察已确认 O | 既有原生组件与之前测试 I | 未进行本期像素差分，非 V |
 | 不保存密码后测试连接 | 原版提示输入连接密码 O | NyaDB 提供一次性会话密码 I | 流程不同；未完成等价性验证 |
 | 真实 MySQL 表/视图元数据 | 本次未连接到测试库，Unknown | 真实 MySQL 8.4 查询 PASS，I | 无从比较，非 V |
-| 字段、索引、外键结构布局 | Unknown | 原生 Table + Tabs 测试器替身通过 I | **差分未完成** |
-| 多表页签、刷新、错误、断线 | Unknown | 单元测试/替身状态验证 I | **差分未完成** |
-| 真实 MySQL 数据在 MyGo 结构页显示 | Unknown | 新的可选集成用例编译通过但未执行 | 待验证 |
+| 字段、索引、外键结构布局 | Unknown | 真实 MySQL + 原生 MyGo 测试器通过 I | **差分未完成** |
+| 多表页签、刷新、错误、断线 | Unknown | 真实 MySQL 多表/视图/刷新/断线测试通过 I；错误状态由隔离替身验证 | **差分未完成** |
+| 真实 MySQL 元数据在 MyGo 结构页显示 | Unknown | **已执行并 PASS（真实 MySQL + ui.NewTester）** | I，**尚非桌面 GUI 或 V** |
 
 不因外观相似就声称 Navicat 的结构页内容、尺寸、工具栏、页面入口或关闭策略已复刻。
 
@@ -79,7 +81,8 @@ docker exec -i -e MYSQL_PWD="$NYADB_FIXTURE_ROOT_PASSWORD" nyadb-mysql-structure
   < internal/services/connections/testdata/mysql_structure_fixture.sql
 
 # 通过受信本地流程创建 nyadb_it_reader 并赋予两个测试库的 SELECT, SHOW VIEW。
-# 设置 NYADB_MYSQL_IT_PASSWORD 为测试账户一次性口令。
+# 在受保护的私有文件中提供一次性只读口令，不将密码写进命令行。
+export NYADB_MYSQL_IT_PASSWORD_FILE=/data/kang/nyadb/temp/research/mysql-structure-20261022/reader-password
 NYADB_MYSQL_STRUCTURE_IT=1 go test ./internal/services/connections \
   -run TestMySQLStructureIntegrationMySQL84 -count=1 -v
 NYADB_MYSQL_STRUCTURE_IT=1 go test ./internal/ui/shell \
@@ -91,6 +94,8 @@ NYADB_MYSQL_STRUCTURE_IT=1 go test ./internal/ui/shell \
 ## 提交与下一步
 
 - `0dbe253`：新增实际 MySQL 8.4 的只读元数据集成测试及安全隔离夹具，服务层真实验证通过。
-- `19fec5e`：增加显式 opt-in 的真实 MySQL + 原生 MyGo 查看器用例；**此用例尚未在真实数据库模式通过**。
+- `19fec5e`：增加显式 opt-in 的真实 MySQL + 原生 MyGo 查看器用例；续轮完成真实执行 PASS。
+- `cd405d9`：补齐首次对象异步加载的 nil 缓存防护，并允许测试从专用私有文件读取凭据，已独立提交并推送。
+- `4d5c73b`：同名跨库表、多工作区、VIEW、缓存复用和断线清理的真实 MySQL 测试已通过并推送。
 
-建议接下来先通过用户许可的受信测试流程完成新 UI 集成用例，然后在**同一个隔离测试库**上获得 Navicat 18 表结构窗口的合法原版实测截图与交互序列，最后按字段/索引/外键三个页面逐项差分并修复。不应为追求“V 通过”捏造原版结构行为。
+下一步应在**同一个隔离测试库**上取得 Navicat 18 实际表结构窗口的合法运行截图与交互步骤，再对字段/索引/外键三个页面逐项差分并修复。原版研究仍止于连接密码提示窗口：没有表结构页面的 O 证据，所以**无法宣称 V**。真实 Linux 图形桌面中运行 NyaDB 并连接隔离 MySQL 的手工操作仍待验证；本轮通过的是具真实服务端数据的 `ui.NewTester`。
