@@ -16,6 +16,11 @@ type TableColumn struct {
 	// It shares the Title's column ID, resize/drag area, sort and context menu.
 	// A blank Subtitle preserves the original single-line header height.
 	Subtitle string
+	// SubtitleIcon is an optional, text-drawn type glyph preceding the
+	// subtitle. HeaderBadge labels a field attribute beside the title.
+	// Both belong to the same native header cell and are display-only.
+	SubtitleIcon string
+	HeaderBadge  string
 	// Width is the column's width in DIPs, or 0 to share the room the
 	// others leave. The user resizes the column by dragging the right edge
 	// of its header, between MinWidth and MaxWidth (none for 0), and fits
@@ -168,7 +173,7 @@ func table(c *context, s *ListState, columns []TableColumn, n int, cell func(row
 	headerHeight := tableRow
 	for _, col := range columns {
 		if col.Subtitle != "" {
-			headerHeight = max(headerHeight, t.Space(12))
+			headerHeight = max(headerHeight, t.Space(14))
 			break
 		}
 	}
@@ -283,8 +288,18 @@ func table(c *context, s *ListState, columns []TableColumn, n int, cell func(row
 					// single element still owns drag/resize, horizontal scroll,
 					// sorting and HeaderMenu. Never float a second row above it.
 					coreColumn(c).Gap(t.Space(0.5)).MinWidth(0).Grow(1).Children(func() {
-						coreText(c, col.Title).SingleLine().FontWeight(600).TextColor(t.TextMuted)
-						coreText(c, col.Subtitle).SingleLine().FontSize(t.FontSize * 0.8).TextColor(t.TextMuted)
+						coreRow(c).MinWidth(0).Gap(t.Space(1)).AlignItems(Center).Children(func() {
+							coreText(c, col.Title).SingleLine().FontWeight(600).TextColor(t.TextMuted)
+							if col.HeaderBadge != "" {
+								coreText(c, col.HeaderBadge).SingleLine().FontSize(t.FontSize * 0.7).TextColor(t.Accent)
+							}
+						})
+						coreRow(c).MinWidth(0).Gap(t.Space(1)).AlignItems(Center).Children(func() {
+							if col.SubtitleIcon != "" {
+								coreText(c, col.SubtitleIcon).SingleLine().FontSize(t.FontSize * 0.8).FontWeight(600).TextColor(t.Accent)
+							}
+							coreText(c, col.Subtitle).SingleLine().FontSize(t.FontSize * 0.8).TextColor(t.TextMuted)
+						})
 					})
 				}
 				if at, descending := s.sortPlace(col); at >= 0 {
