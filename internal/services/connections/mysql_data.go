@@ -35,7 +35,10 @@ type MySQLDataPage struct {
 	Offset          int64
 	Limit           int
 	HasMore         bool
-	StableOrder     bool // true only when the table has a primary-key order.
+	StableOrder     bool // true when a complete non-null unique index orders rows.
+	KeysetAvailable bool
+	NextCursor      *MySQLDataCursor
+	RowRefs         []*MySQLRowRef
 }
 
 func quotedMySQLIdentifier(name string) (string, error) {

@@ -12,6 +12,7 @@ func (s *State) View(c *ui.Context) {
 	s.consumeMySQLObjects()
 	s.consumeMySQLStructures()
 	s.consumeMySQLData()
+	s.consumeMySQLChunks()
 	theme.Apply(c)
 	ui.Column(c).Fill().Background(theme.App).Children(func() {
 		s.menuBar(c)
@@ -20,6 +21,9 @@ func (s *State) View(c *ui.Context) {
 		if s.currentTab().kind == tabStructure {
 			// Original 1280px design window: 251/824/205.
 			sidebar, center = &s.structureSidebarPercent, &s.structureCenterPercent
+		} else if s.currentTab().kind == tabMySQLData {
+			// Compare original MySQL data grid at the same 1280px window size.
+			sidebar, center = &s.dataSidebarPercent, &s.dataCenterPercent
 		}
 		ui.SplitPercent(c, sidebar,
 			func() { s.sidebar(c) },

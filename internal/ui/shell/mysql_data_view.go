@@ -21,7 +21,7 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			}
 			if ui.Button(c, "刷新数据").Label("刷新表数据：" + t.dataTable).
 				Disabled(s.mysqlSessionStatus != "已连接" || t.dataLoading).Clicked() {
-				s.loadMySQLData(c.Services(), t, true)
+				s.resetAndReloadMySQLData(c.Services(), t)
 			}
 			if _, cell, ok := mysqlSelectedDataCell(t); ui.Button(c, "复制预览").Label("复制所选单元格预览").Disabled(!ok).Clicked() {
 				c.WriteClipboard(mysqlDataCopyPreview(cell))
@@ -70,7 +70,7 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			ui.Text(c, "当前筛选："+text+"（服务端当前查询）").FontSize(11).TextColor(theme.Muted).Padding(3, 9)
 		}
 		if !page.StableOrder {
-			ui.Text(c, "此对象没有主键排序，分页期间数据变化可能导致行重复或遗漏").
+			ui.Text(c, "此对象没有完整非空唯一键，OFFSET 分页期间数据变化可能导致行重复或遗漏").
 				Padding(5, 10).FontSize(11).TextColor(theme.Gold)
 		}
 		if len(page.Columns) == 0 {
@@ -81,6 +81,14 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			t.dataState.Selection = &t.dataSelection
 			t.dataState.CellSelect = true
 			t.dataState.Sort = &t.dataSort
+			t.dataState.HeaderMenu = func(m *ui.Menu, col int) {
+				if col >= 0 && col < len(page.Columns) && m.Item("复制字段名称").Chosen() {
+					c.WriteClipboard(page.Columns[col])
+				}
+				if m.Item("重置列宽").Chosen() {
+					t.dataState.Columns.Widths = nil
+				}
+			}
 			t.dataState.CellMenu = func(m *ui.Menu, row, col int) {
 				if m.Item("复制单元格预览").Chosen() && row >= 0 && row < len(page.Rows) && col >= 0 && col < len(page.Rows[row]) {
 					c.WriteClipboard(mysqlDataCopyPreview(page.Rows[row][col]))
@@ -108,7 +116,7 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 		}
 		ui.Row(c).Height(34).Padding(4, 10).Gap(8).AlignItems(ui.Center).
 			Background(theme.Header).Children(func() {
-			ui.Text(c, fmt.Sprintf("已读取 %d 行 · 第 %d 页", len(page.Rows), t.dataOffset/int64(t.dataLimit)+1)).
+			ui.Text(c, fmt.Sprintf("已读取 %d 行 · 第 %d 页 · %s", len(page.Rows), t.dataOffset/int64(t.dataLimit)+1, mysqlDataPageMethod(page))).
 				FontSize(12).TextColor(theme.Muted)
 			ui.Box(c).Grow(1)
 			if ui.Button(c, "上一页").Label("上一页数据").

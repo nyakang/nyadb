@@ -47,6 +47,8 @@ func (s *State) openMySQLData(services ui.Services, database, table string) {
 		dataSelectedRow:       -1,
 		dataFilterColumnDraft: "选择字段",
 		dataFilterModeDraft:   "包含",
+		dataUseKeyset:         true,
+		dataChunkRow:          -1,
 	}
 	s.tabs = append(s.tabs, t)
 	s.activeTab = len(s.tabs) - 1
@@ -54,6 +56,7 @@ func (s *State) openMySQLData(services ui.Services, database, table string) {
 }
 func (s *State) cancelMySQLData(t *tab) {
 	t.dataRequest++
+	s.cancelMySQLChunk(t)
 	if t.dataCancel != nil {
 		t.dataCancel()
 	}
@@ -82,7 +85,7 @@ func (s *State) loadMySQLData(services ui.Services, t *tab, refresh bool) {
 	options := connections.MySQLDataOptions{Offset: offset, Limit: limit,
 		FilterColumn: t.dataFilterColumn, FilterValue: t.dataFilterValue,
 		FilterMode: t.dataFilterMode, SortColumn: t.dataSortColumn,
-		SortDescending: t.dataSortDescending}
+		SortDescending: t.dataSortDescending, UseKeyset: t.dataUseKeyset, After: t.dataAfter}
 	advanced := s.mysqlDataAdvancedLoader
 	legacy := s.mysqlDataLoader
 	if advanced == nil && legacy == nil {
@@ -113,11 +116,32 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *tab, offset int64) 
 	if t == nil || t.kind != tabMySQLData || offset < 0 || t.dataLoading {
 		return
 	}
+	// Full unique-key results advance by a seek cursor; other tables retain
+	// the legacy OFFSET fallback and its explicit UI warning.
+	if offset == 0 {
+		t.dataUseKeyset = true
+		t.dataAfter = nil
+	} else if offset > t.dataOffset && t.dataPage != nil &&
+		t.dataPage.KeysetAvailable && t.dataPage.NextCursor != nil {
+		if t.dataCursorHistory == nil {
+			t.dataCursorHistory = map[int64]*connections.MySQLDataCursor{}
+		}
+		t.dataCursorHistory[offset] = t.dataPage.NextCursor
+		t.dataUseKeyset = true
+		t.dataAfter = t.dataPage.NextCursor
+	} else if previous, ok := t.dataCursorHistory[offset]; ok {
+		t.dataUseKeyset = true
+		t.dataAfter = previous
+	} else {
+		t.dataUseKeyset = false
+		t.dataAfter = nil
+	}
 	t.dataOffset = offset
 	t.dataPage = nil
 	t.dataColumns = nil
 	t.dataSelectedRow = -1
 	t.dataSelection.Clear()
+	s.cancelMySQLChunk(t)
 	t.dataState.Cells = ui.ColumnRange{}
 	s.loadMySQLData(services, t, true)
 }

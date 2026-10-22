@@ -78,8 +78,12 @@ func (s *State) resetAndReloadMySQLData(services ui.Services, t *tab) {
 		return
 	}
 	t.dataOffset = 0
+	t.dataAfter = nil
+	t.dataUseKeyset = true
+	t.dataCursorHistory = nil
 	t.dataPage = nil
 	t.dataSelectedRow = -1
+	s.cancelMySQLChunk(t)
 	t.dataSelection.Clear()
 	t.dataState.Cells = ui.ColumnRange{}
 	s.loadMySQLData(services, t, true)
