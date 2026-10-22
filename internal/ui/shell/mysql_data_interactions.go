@@ -32,42 +32,15 @@ func mysqlDataCopyPreview(cell connections.MySQLDataCell) string {
 }
 
 func (s *State) applyMySQLDataFilter(services ui.Services, t *tab) {
-	if t == nil || t.kind != tabMySQLData || t.dataPage == nil {
-		return
-	}
-	if t.dataFilterColumnDraft == "" || t.dataFilterColumnDraft == "选择字段" {
-		t.dataErr = "请先选择筛选字段"
-		return
-	}
-	found := false
-	for _, name := range t.dataPage.Columns {
-		if name == t.dataFilterColumnDraft {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.dataErr = "筛选字段不存在"
-		return
-	}
-	if len(t.dataFilterValueDraft) > 4096 {
-		t.dataErr = "筛选值过长"
-		return
-	}
-	mode := "equal"
-	if t.dataFilterModeDraft == "包含" {
-		mode = "contains"
-	}
-	t.dataFilterColumn = t.dataFilterColumnDraft
-	t.dataFilterMode = mode
-	t.dataFilterValue = t.dataFilterValueDraft
-	s.resetAndReloadMySQLData(services, t)
+	s.applyMySQLDataRules(services, t)
 }
-
 func (s *State) clearMySQLDataFilter(services ui.Services, t *tab) {
 	t.dataFilterColumn = ""
 	t.dataFilterMode = ""
 	t.dataFilterValue = ""
+	t.dataFilterRules = nil
+	t.dataFilterExtraDraft = nil
+	t.dataRuleError = ""
 	t.dataFilterColumnDraft = "选择字段"
 	t.dataFilterValueDraft = ""
 	s.resetAndReloadMySQLData(services, t)
@@ -95,6 +68,14 @@ func (s *State) syncMySQLDataSort(services ui.Services, t *tab) {
 	if t == nil || t.dataPage == nil {
 		return
 	}
+	if len(t.dataSortRules) > 0 {
+		first := t.dataSortRules[0]
+		if t.dataSort.Column == first.Column && t.dataSort.Descending == first.Descending {
+			return
+		}
+		t.dataSortRules = nil
+		t.dataSortDraft = nil
+	}
 	if t.dataSort.Column == t.dataSortColumn && t.dataSort.Descending == t.dataSortDescending {
 		return
 	}
@@ -117,7 +98,17 @@ func (s *State) syncMySQLDataSort(services ui.Services, t *tab) {
 }
 
 func mysqlDataFilterStatus(t *tab) string {
-	if t == nil || t.dataFilterMode == "" {
+	if t == nil {
+		return ""
+	}
+	if len(t.dataFilterRules) > 0 {
+		parts := make([]string, 0, len(t.dataFilterRules))
+		for _, rule := range t.dataFilterRules {
+			parts = append(parts, rule.Column+" "+rule.Mode)
+		}
+		return strings.Join(parts, " AND ")
+	}
+	if t.dataFilterMode == "" {
 		return ""
 	}
 	label := "等于"

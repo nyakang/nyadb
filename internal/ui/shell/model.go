@@ -67,6 +67,14 @@ type tab struct {
 	dataFilterColumn        string
 	dataFilterMode          string
 	dataFilterValue         string
+	dataRulesExpanded       bool
+	dataRuleError           string
+	dataFilterExtraDraft    []mysqlDataRuleDraft
+	dataFilterRules         []connections.MySQLDataFilterRule
+	dataSortDraft           []mysqlDataSortDraft
+	dataSortRules           []connections.MySQLDataSortRule
+	dataHiddenColumns       map[string]bool
+	dataShowFieldTypes      bool
 	dataUseKeyset           bool
 	dataAfter               *connections.MySQLDataCursor
 	dataCursorHistory       map[int64]*connections.MySQLDataCursor

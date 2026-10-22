@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -46,6 +47,14 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			})
 		}
 		if t.dataPage == nil {
+			// Retain the rule editor after an invalid server query.
+			if len(t.dataColumns) > 0 {
+				names := make([]string, len(t.dataColumns))
+				for i, col := range t.dataColumns {
+					names[i] = col.ID
+				}
+				s.mysqlDataRuleEditor(c, t, &connections.MySQLDataPage{Columns: names})
+			}
 			if !t.dataLoading && t.dataErr == "" {
 				ui.Text(c, "没有已加载的数据页").Padding(12).TextColor(theme.Muted)
 			}
@@ -53,22 +62,7 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			return
 		}
 		page := t.dataPage
-		choices := append([]string{"选择字段"}, page.Columns...)
-		ui.Row(c).Height(34).Padding(3, 9).AlignItems(ui.Center).Gap(6).Background(theme.Header).Children(func() {
-			ui.Text(c, "筛选").FontSize(11).TextColor(theme.Muted)
-			ui.Select(c, &t.dataFilterColumnDraft, choices).Width(135)
-			ui.Select(c, &t.dataFilterModeDraft, []string{"包含", "精确匹配"}).Width(95)
-			ui.TextInput(c, &t.dataFilterValueDraft).Label("数据筛选值").Placeholder("筛选值").Width(145)
-			if ui.Button(c, "应用筛选").Disabled(t.dataLoading).Clicked() {
-				s.applyMySQLDataFilter(c.Services(), t)
-			}
-			if ui.Button(c, "清除筛选").Disabled(t.dataLoading || t.dataFilterMode == "").Clicked() {
-				s.clearMySQLDataFilter(c.Services(), t)
-			}
-		})
-		if text := mysqlDataFilterStatus(t); text != "" {
-			ui.Text(c, "当前筛选："+text+"（服务端当前查询）").FontSize(11).TextColor(theme.Muted).Padding(3, 9)
-		}
+		s.mysqlDataRuleEditor(c, t, page)
 		if !page.StableOrder {
 			ui.Text(c, "此对象没有完整非空唯一键，OFFSET 分页期间数据变化可能导致行重复或遗漏").
 				Padding(5, 10).FontSize(11).TextColor(theme.Gold)
@@ -77,24 +71,27 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			ui.Text(c, "此对象没有可见字段").Padding(12).TextColor(theme.Muted)
 			ui.Box(c).Grow(1)
 		} else {
+			visibleIndices, visibleColumns := mysqlVisibleDataColumns(t, page)
 			t.dataState.Selected = &t.dataSelectedRow
 			t.dataState.Selection = &t.dataSelection
 			t.dataState.CellSelect = true
 			t.dataState.Sort = &t.dataSort
 			t.dataState.HeaderMenu = func(m *ui.Menu, col int) {
-				if col >= 0 && col < len(page.Columns) && m.Item("复制字段名称").Chosen() {
-					c.WriteClipboard(page.Columns[col])
-				}
-				if m.Item("重置列宽").Chosen() {
-					t.dataState.Columns.Widths = nil
-				}
+				s.mysqlDataHeaderMenu(c, t, page, visibleIndices, m, col)
 			}
 			t.dataState.CellMenu = func(m *ui.Menu, row, col int) {
-				if m.Item("复制单元格预览").Chosen() && row >= 0 && row < len(page.Rows) && col >= 0 && col < len(page.Rows[row]) {
-					c.WriteClipboard(mysqlDataCopyPreview(page.Rows[row][col]))
+				if row >= 0 && row < len(page.Rows) && col >= 0 && col < len(visibleIndices) {
+					source := visibleIndices[col]
+					if source < len(page.Rows[row]) && m.Item("复制单元格预览").Chosen() {
+						c.WriteClipboard(mysqlDataCopyPreview(page.Rows[row][source]))
+					}
 				}
 			}
-			ui.Table(c, &t.dataState, t.dataColumns, len(page.Rows), func(row, col int) {
+			ui.Table(c, &t.dataState, visibleColumns, len(page.Rows), func(row, col int) {
+				if col < 0 || col >= len(visibleIndices) {
+					return
+				}
+				col = visibleIndices[col]
 				if row >= len(page.Rows) || col >= len(page.Rows[row]) {
 					return
 				}
