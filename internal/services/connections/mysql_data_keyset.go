@@ -10,6 +10,7 @@ import (
 // returned by this read-only service should be reused. This is not a
 // cross-transaction snapshot: concurrent changes can still move rows.
 type MySQLDataCursor struct {
+	RuleSignature                         string
 	Database, Table                       string
 	FilterColumn, FilterMode, FilterValue string
 	SortColumn                            string
@@ -97,4 +98,13 @@ type MySQLRowRef struct {
 	Database, Table string
 	Columns         []string
 	Values          [][]byte
+}
+
+func containsOrderColumn(keys []mysqlOrderKey, name string) bool {
+	for _, key := range keys {
+		if key.name == name {
+			return true
+		}
+	}
+	return false
 }
