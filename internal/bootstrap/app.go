@@ -15,6 +15,7 @@ import (
 
 // Run starts the main OS-thread event loop; call it from main.
 func Run() error {
+	configureNativeGTKTheme()
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return fmt.Errorf("resolve NyaDB configuration directory: %w", err)
