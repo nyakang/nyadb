@@ -31,6 +31,25 @@ func TestMySQLTableDataIntegration84(t *testing.T) {
 	if !first.StableOrder || !first.HasMore || len(first.Rows) != 2 || len(first.Columns) != 8 {
 		t.Fatalf("first bounded page: %+v", first)
 	}
+	if len(first.ColumnMetadata) != len(first.Columns) ||
+		first.ColumnMetadata[0].Type != "bigint unsigned" ||
+		first.ColumnMetadata[0].Key != "PRI" ||
+		first.ColumnMetadata[0].Extra != "auto_increment" ||
+		first.ColumnMetadata[2].Type != "varchar(12)" ||
+		first.ColumnMetadata[3].Type != "decimal(10,2)" ||
+		first.ColumnMetadata[3].NumericPrecision == nil ||
+		*first.ColumnMetadata[3].NumericPrecision != 10 ||
+		first.ColumnMetadata[3].NumericScale == nil ||
+		*first.ColumnMetadata[3].NumericScale != 2 ||
+		first.ColumnMetadata[4].Default != nil ||
+		first.ColumnMetadata[5].Default == nil ||
+		*first.ColumnMetadata[5].Default != "" ||
+		first.ColumnMetadata[2].CharacterSet == nil ||
+		*first.ColumnMetadata[2].CharacterSet != "utf8mb4" ||
+		first.ColumnMetadata[6].DatetimePrecision == nil ||
+		first.ColumnMetadata[7].Comment != "仅供隔离测试" {
+		t.Fatalf("live MySQL 8.4 field declarations and attributes lost: %+v", first.ColumnMetadata)
+	}
 	if !first.Rows[0][4].Null || first.Rows[0][5].Null || first.Rows[0][5].Text != "" || first.Rows[0][7].Text != "中文备注" {
 		t.Fatalf("real row NULL/empty/unicode: %+v", first.Rows[0])
 	}

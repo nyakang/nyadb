@@ -60,6 +60,18 @@ func TestMySQLRealDataNativeViewer(t *testing.T) {
 		!tt.HasText("中文备注") || !tt.HasText("1.25") {
 		t.Fatalf("real rows were not rendered: %+v", s.currentTab().dataPage)
 	}
+	livePage := s.currentTab().dataPage
+	if len(livePage.ColumnMetadata) != 8 || livePage.ColumnMetadata[2].Type != "varchar(12)" {
+		t.Fatalf("real server field metadata not loaded: %+v", livePage.ColumnMetadata)
+	}
+	_, visible := mysqlVisibleDataColumns(s.currentTab(), livePage)
+	if visible[0].Subtitle != "bigint unsigned" || visible[0].HeaderBadge != "PK" ||
+		visible[2].Subtitle != "varchar(12)" || visible[3].Subtitle != "decimal(10,2)" {
+		t.Fatalf("complete live MySQL types not rendered by native headers: %+v", visible)
+	}
+	if !tt.HasText("bigint unsigned") || !tt.HasText("主键") {
+		t.Fatalf("real field inspector did not show server attributes: %v", tt.Texts())
+	}
 	if path := os.Getenv("NYADB_MYSQL_DATA_CAPTURE"); path != "" {
 		f, err := os.Create(path)
 		if err != nil {
