@@ -173,7 +173,7 @@ func table(c *context, s *ListState, columns []TableColumn, n int, cell func(row
 	headerHeight := tableRow
 	for _, col := range columns {
 		if col.Subtitle != "" {
-			headerHeight = max(headerHeight, t.Space(14))
+			headerHeight = max(headerHeight, t.Space(15))
 			break
 		}
 	}

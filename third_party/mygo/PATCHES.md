@@ -12,7 +12,7 @@ Only `ui/table.go` is intentionally modified from the selected v0.6.0 source:
 - If any column has a subtitle, the **same** Table header row grows to fit two lines.
 - The title and smaller secondary label live inside the *existing keyed header cell*. There is no overlay or secondary scroll container. The existing `ListState.Columns`, `Sort`, `HeaderMenu`, dragging and resizing continue to operate on that same header node.
 - The title remains the accessible label for sort and menu; the subtitle is a visual data type hint, not part of the column identity.
-- Third-stage refinement: optional `SubtitleIcon` type glyph and `HeaderBadge` attribute marker are independently drawn text in the same header cell. The header height is `t.Space(14)`; data row height and `TableLayout` are unchanged.
+- Third-stage refinement: optional `SubtitleIcon` type glyph and `HeaderBadge` attribute marker are independently drawn text in the same header cell. The header height is `t.Space(15)` after 1280×800 reference calibration; data row height and `TableLayout` are unchanged.
 - Both fields default to empty and preserve existing native sort, resize, scroll, menu and column reorder behavior. No proprietary icons are used.
 
 Do not change MyGo's generic table state machinery or duplicate NyaDB's data paging services here. When MyGo upstream supports a suitable public header-subtitle API, migrate to an official released module version and remove this snapshot. For upgrades, compare this file against the new upstream `ui/table.go`, port the minimal patch, and rerun native UI and full Go/MyGo gates.
