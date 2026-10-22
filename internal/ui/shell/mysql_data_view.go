@@ -11,27 +11,6 @@ import (
 // A real read-only MySQL page, never the legacy simulated dataPreview.
 func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 	ui.Column(c).Fill().Background(theme.App).Children(func() {
-		ui.Row(c).Height(35).Padding(4, 9).AlignItems(ui.Center).Gap(9).
-			Background(theme.Header).Children(func() {
-			theme.Icon(c, "table", 16, theme.Blue)
-			ui.Text(c, t.dataDatabase+" / "+t.dataTable).Bold().FontSize(13).SingleLine()
-			ui.Text(c, "只读数据").TextColor(theme.Muted).FontSize(11)
-			ui.Box(c).Grow(1)
-			if ui.Button(c, "返回对象列表").Clicked() {
-				s.activeTab = 0
-			}
-			if ui.Button(c, "刷新数据").Label("刷新表数据：" + t.dataTable).
-				Disabled(s.mysqlSessionStatus != "已连接" || t.dataLoading).Clicked() {
-				s.resetAndReloadMySQLData(c.Services(), t)
-			}
-			if _, cell, ok := mysqlSelectedDataCell(t); ui.Button(c, "复制预览").Label("复制所选单元格预览").Disabled(!ok).Clicked() {
-				c.WriteClipboard(mysqlDataCopyPreview(cell))
-			}
-			if t.dataLoading && ui.Button(c, "取消读取数据").Clicked() {
-				s.cancelMySQLData(t)
-				t.dataErr = "查询已取消"
-			}
-		})
 		if t.dataLoading {
 			ui.Row(c).Height(29).Padding(5, 10).Gap(8).AlignItems(ui.Center).Children(func() {
 				ui.Spinner(c).Width(16).Height(16)
@@ -47,14 +26,12 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			})
 		}
 		if t.dataPage == nil {
-			// Retain the rule editor after an invalid server query.
-			if len(t.dataColumns) > 0 {
-				names := make([]string, len(t.dataColumns))
-				for i, col := range t.dataColumns {
-					names[i] = col.ID
-				}
-				s.mysqlDataRuleEditor(c, t, &connections.MySQLDataPage{Columns: names})
+			// Keep navigation, refresh and draft rules available during load or failure.
+			names := make([]string, len(t.dataColumns))
+			for i, col := range t.dataColumns {
+				names[i] = col.ID
 			}
+			s.mysqlDataRuleEditor(c, t, &connections.MySQLDataPage{Columns: names})
 			if !t.dataLoading && t.dataErr == "" {
 				ui.Text(c, "没有已加载的数据页").Padding(12).TextColor(theme.Muted)
 			}

@@ -1,0 +1,68 @@
+package shell
+
+import (
+	"context"
+	"testing"
+
+	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/services/connections"
+)
+
+func TestMySQLCompactHeaderAt1280AndNarrowNavigation(t *testing.T) {
+	s, tt := structureTestBrowser(t)
+	s.mysqlDataAdvancedLoader = func(ctx context.Context, id int64, db, table string, o connections.MySQLDataOptions) (*connections.MySQLDataPage, error) {
+		return &connections.MySQLDataPage{
+			Database: db, Table: table, Limit: o.Limit, Offset: o.Offset, StableOrder: true,
+			Columns: []string{"id", "name"}, ColumnKinds: []string{"bigint", "varchar"},
+			ColumnMetadata: []connections.MySQLStructureColumn{
+				{Name: "id", DataType: "bigint", Type: "bigint unsigned", Key: "PRI"},
+				{Name: "name", DataType: "varchar", Type: "varchar(100)"},
+			},
+			Rows: [][]connections.MySQLDataCell{{{Text: "1"}, {Text: "sample"}}},
+		}, nil
+	}
+	if err := tt.Click("打开选中表数据"); err != nil {
+		t.Fatal(err)
+	}
+	waitMySQLData(t, s, tt)
+	header, ok := tt.Find("bigint unsigned")
+	if !ok {
+		t.Fatalf("double row title missing: %v", tt.Texts())
+	}
+	t.Logf("1280x800 native subtitle bounds: %+v", header)
+	if header.Y > 190 {
+		t.Fatalf("compact grid header too low at 1280: %+v", header)
+	}
+	if !tt.HasText("筛选 0 · 排序 0") || !tt.HasText("刷新表数据：orders") {
+		t.Fatalf("compact navigation or count missing: %v", tt.Texts())
+	}
+	if err := tt.Click("筛选 & 排序"); err != nil {
+		t.Fatal(err)
+	}
+	if !s.currentTab().dataRulesExpanded {
+		t.Fatal("full rule editor inaccessible")
+	}
+	if err := tt.Click("筛选 & 排序"); err != nil {
+		t.Fatal(err)
+	}
+	if s.currentTab().dataRulesExpanded {
+		t.Fatal("could not collapse")
+	}
+
+	small := ui.NewTester(s.View, 840, 560)
+	small.Frame()
+	inspector, ok := small.Find("字段信息")
+	if !ok {
+		t.Fatal("inspector missing in narrow window")
+	}
+	for _, name := range []string{"筛选 & 排序", "返回对象列表", "刷新表数据：orders", "清除筛选"} {
+		r, ok := small.Find(name)
+		t.Logf("840 control %s: %+v found=%v", name, r, ok)
+		if !ok || r.X+r.W > inspector.X {
+			t.Fatalf("%s overflows into inspector: %+v inspector=%+v", name, r, inspector)
+		}
+	}
+	if !small.HasText("返回对象列表") || !small.HasText("刷新表数据：orders") {
+		t.Fatal("narrow window lost navigation or refresh")
+	}
+}
