@@ -18,10 +18,10 @@ func mysqlVisibleDataColumns(t *tab, page *connections.MySQLDataPage) ([]int, []
 		indices = append(indices, i)
 		col := t.dataColumns[i]
 		if t.dataShowFieldTypes && i < len(page.ColumnKinds) && page.ColumnKinds[i] != "" {
-			// MyGo v0.6.0 TableColumn.Title is SingleLine; retain native dragging,
-			// sizing and horizontal scrolling rather than faking a disconnected
-			// second header row. Type metadata is visible in the compact header.
-			col.Title = name + " · " + page.ColumnKinds[i]
+			// Patched native MyGo TableColumn.Subtitle lives inside the real
+			// keyed column header, sharing scroll, drag, resize and menu state.
+			col.Title = name
+			col.Subtitle = page.ColumnKinds[i]
 		}
 		visible = append(visible, col)
 	}
