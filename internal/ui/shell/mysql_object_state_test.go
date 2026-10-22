@@ -99,12 +99,19 @@ func TestMySQLObjectTreeLazyLoadingFiltersAndRefresh(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	// Keep the 1280px screenshot above for visual comparison, but exercise
+	// toolbar actions in a wider viewport. At 1280px the workspace shares
+	// its width with the navigator and inspector; font metrics on Linux CI
+	// can push the toolbar's hit targets into its clipped trailing edge.
+	tt.SetSize(1600, 800)
 	if err := tt.Click("筛选对象：视图"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
 	if len(s.mysqlSelectedObjects()) != 1 || s.mysqlSelectedObjects()[0].Name != "sales" {
-		t.Fatal("view filtering did not apply")
+		rect, _ := tt.Find("筛选对象：视图")
+		t.Fatalf("view filtering did not apply: kind=%q selected=%q objects=%v filterBounds=%+v",
+			s.mysqlObjectKind, s.mysqlSelectedDatabase, s.mysqlSelectedObjects(), rect)
 	}
 	if err := tt.Click("切换数据库：analytics"); err != nil {
 		t.Fatal(err)
@@ -200,11 +207,16 @@ func TestMySQLObjectBrowserDisplaysErrorsAndRetry(t *testing.T) {
 		t.Fatal("metadata error missing")
 	}
 	fail = false
+	// The refresh button sits at the far right of the shared toolbar and
+	// must not depend on a particular runner's font metrics for hit testing.
+	tt.SetSize(1600, 800)
 	if err := tt.Click("刷新元数据：app_db"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
 	if s.mysqlObjectErrors["app_db"] != "" || len(s.mysqlSelectedObjects()) != 1 {
-		t.Fatal("successful retry did not clear metadata error")
+		rect, _ := tt.Find("刷新元数据：app_db")
+		t.Fatalf("successful retry did not clear metadata error: pending=%q error=%q objects=%v refreshBounds=%+v",
+			s.mysqlObjectPending, s.mysqlObjectErrors["app_db"], s.mysqlSelectedObjects(), rect)
 	}
 }
