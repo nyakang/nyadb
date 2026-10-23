@@ -17,7 +17,7 @@ func TestPersistentGroupTreeInspectorAndConnectionPlacement(t *testing.T) {
 	if err := tt.RightClick("我的连接"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.ChooseMenuItem("新建连接组…"); err != nil {
+	if err := tt.ChooseMenuItem("新建组"); err != nil {
 		t.Fatal(err)
 	}
 	s.groupDraft = "开发库"
@@ -51,7 +51,7 @@ func TestPersistentGroupTreeInspectorAndConnectionPlacement(t *testing.T) {
 	if err := tt.RightClick("开发库"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.ChooseMenuItem("重命名组"); err != nil {
+	if err := tt.ChooseMenuItem("重命名"); err != nil {
 		t.Fatal(err)
 	}
 	s.groupDraft = "研发组"
@@ -65,7 +65,7 @@ func TestPersistentGroupTreeInspectorAndConnectionPlacement(t *testing.T) {
 	if err := tt.RightClick("研发组"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.ChooseMenuItem("删除连接组"); err != nil {
+	if err := tt.ChooseMenuItem("删除组"); err != nil {
 		t.Fatal(err)
 	}
 	if err := tt.Click("删除组"); err != nil {

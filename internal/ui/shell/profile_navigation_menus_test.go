@@ -22,21 +22,27 @@ func TestNavigatorContextMenusAreScopedByHitTarget(t *testing.T) {
 	s.explorerTree.Open.Add(groupNode("开发库"))
 	tt.Frame()
 	tt.RightClickAt(160, 325) // empty navigator area; not an Outline row
-	if !slices.Contains(tt.Menu(), "新建连接…") || slices.Contains(tt.Menu(), "编辑连接") {
+	if len(tt.Menu()) != 0 {
 		t.Fatalf("blank menu contains connection-specific actions: %v", tt.Menu())
 	}
 	tt.CloseMenu()
 	if err := tt.RightClick("开发库"); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(tt.Menu(), "重命名组") || slices.Contains(tt.Menu(), "编辑连接") {
+	if s.selectedGroup != "开发库" {
+		t.Fatalf("group right-click should select the group: %q", s.selectedGroup)
+	}
+	if !slices.Contains(tt.Menu(), "重命名") || slices.Contains(tt.Menu(), "编辑连接") {
 		t.Fatalf("group menu wrong: %v", tt.Menu())
 	}
 	tt.CloseMenu()
 	if err := tt.RightClick("Local"); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(tt.Menu(), "编辑连接") || !slices.Contains(tt.Menu(), "添加星标") || slices.Contains(tt.Menu(), "重命名组") {
+	if s.selectedProfileID != p.ID {
+		t.Fatalf("connection right-click should select the profile: %d", s.selectedProfileID)
+	}
+	if !slices.Contains(tt.Menu(), "编辑连接") || !slices.Contains(tt.Menu(), "添加星标") || slices.Contains(tt.Menu(), "重命名") {
 		t.Fatalf("asset menu wrong: %v", tt.Menu())
 	}
 	if err := tt.ChooseMenuItem("添加星标"); err != nil {
@@ -67,11 +73,11 @@ func TestNavigatorContextMenusAreScopedByHitTarget(t *testing.T) {
 	if err := tt.RightClick("开发库"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.ChooseMenuItem("展开该组"); err != nil {
+	if err := tt.ChooseMenuItem("重命名"); err != nil {
 		t.Fatal(err)
 	}
-	if !s.explorerTree.Open.Has(groupNode("开发库")) {
-		t.Fatal("group didn't expand")
+	if !s.groupEditing || s.groupDraft != "开发库" {
+		t.Fatal("group rename did not target the selected group")
 	}
 }
 
@@ -88,7 +94,7 @@ func TestNavigatorHeaderRevealsOnlySettingsOnHover(t *testing.T) {
 	if err := tt.Click("连接面板设置"); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(tt.Menu(), "新建连接组…") {
+	if !slices.Contains(tt.Menu(), "新建组") {
 		t.Fatalf("missing settings commands: %v", tt.Menu())
 	}
 }

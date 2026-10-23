@@ -55,7 +55,7 @@ func TestProfileUICreateAndRefresh(t *testing.T) {
 	if err := tt.RightClick("我的连接"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.ChooseMenuItem("刷新连接列表"); err != nil {
+	if err := tt.ChooseMenuItem("刷新"); err != nil {
 		t.Fatal(err)
 	}
 	if !tt.HasText("Development") {
