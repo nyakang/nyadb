@@ -125,6 +125,21 @@ func (s *State) menuCommands(section string, m *ui.Menu) {
 				}
 			}
 		})
+	case "工具":
+		// Preserve the observed compact Navicat menu hierarchy without
+		// pretending that the unimplemented database tools can be executed.
+		for _, label := range []string{"数据传输…", "数据生成…", "数据脱敏…", "数据字典…", "数据同步…", "结构同步…"} {
+			m.Item(locales.Text(label)).Disabled(true)
+		}
+		m.Item(locales.Text("命令列界面…")).Shortcut(0, ui.KeyF6).Disabled(true)
+		m.Submenu(locales.Text("服务器监控"), func(sub *ui.Menu) {
+			sub.Item(locales.Text("管理服务器监控")).Disabled(true)
+		}).Disabled(true)
+		m.Item(locales.Text("在数据库或模式中查找…")).Shortcut(ui.Ctrl|ui.Shift, ui.KeyF).Disabled(true)
+		m.Separator()
+		m.Item(locales.Text("历史日志…")).Shortcut(ui.Ctrl, ui.KeyL).Disabled(true)
+		m.Separator()
+		m.Item(locales.Text("选项…")).Disabled(true)
 	case "窗口":
 		if m.Item(locales.Text("新建 SQL 页签")).Chosen() {
 			s.openQuery()

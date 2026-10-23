@@ -75,9 +75,7 @@ func (s *State) profileSidebar(c *ui.Context) {
 					}).ContextMenu(func(m *ui.Menu) {
 						s.profileConnectionMenu(m, name, c.Services())
 					})
-				}).Grow(1).ContextMenu(func(m *ui.Menu) {
-					s.profileBlankMenu(m)
-				})
+				}).Grow(1)
 				if s.explorerRow < 0 {
 					for i := 0; i < s.explorerTree.Rows(); i++ {
 						if s.explorerTree.Item(i) == s.explorerName {
@@ -99,7 +97,6 @@ func (s *State) profileSidebar(c *ui.Context) {
 			}
 			ui.Scroll(c).Children(func() { s.mysqlDatabaseTree(c) })
 		})
-		navigator.ContextMenu(func(m *ui.Menu) { s.profileBlankMenu(m) })
 		s.sidebarFooter(c)
 	})
 }
