@@ -125,6 +125,22 @@ func (s *State) menuCommands(section string, m *ui.Menu) {
 				}
 			}
 		})
+		m.Submenu(locales.Text("主题"), func(sub *ui.Menu) {
+			for _, choice := range []struct {
+				mode theme.Mode
+				name string
+			}{
+				{theme.ModeSystem, "跟随系统"}, {theme.ModeLight, "浅色"}, {theme.ModeDark, "深色"},
+			} {
+				if sub.Item(locales.Text(choice.name)).Checked(theme.CurrentMode() == choice.mode).Chosen() {
+					s.changeAppearance(choice.mode)
+				}
+			}
+			sub.Separator()
+			if sub.Item(locales.Text("主题设置…")).Chosen() {
+				s.openSettings()
+			}
+		})
 	case "工具":
 		// Preserve the observed compact Navicat menu hierarchy without
 		// pretending that the unimplemented database tools can be executed.
@@ -139,7 +155,9 @@ func (s *State) menuCommands(section string, m *ui.Menu) {
 		m.Separator()
 		m.Item(locales.Text("历史日志…")).Shortcut(ui.Ctrl, ui.KeyL).Disabled(true)
 		m.Separator()
-		m.Item(locales.Text("选项…")).Disabled(true)
+		if m.Item(locales.Text("选项…")).Chosen() {
+			s.openSettings()
+		}
 	case "窗口":
 		if m.Item(locales.Text("新建 SQL 页签")).Chosen() {
 			s.openQuery()
@@ -153,6 +171,17 @@ func (s *State) menuCommands(section string, m *ui.Menu) {
 		}
 	default:
 		m.Item(locales.Text("功能开发中")).Disabled(true)
+	}
+}
+
+// SetAppearanceHandler is installed by bootstrap to persist the preference,
+// change the OS-native theme and refresh all NyaDB windows.
+func (s *State) SetAppearanceHandler(fn func(theme.Mode)) { s.appearanceChanged = fn }
+
+func (s *State) changeAppearance(mode theme.Mode) {
+	theme.SetMode(mode)
+	if s.appearanceChanged != nil {
+		s.appearanceChanged(mode)
 	}
 }
 

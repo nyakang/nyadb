@@ -38,7 +38,7 @@ func TestMigrationV6ToV7PreservesConnectionGroupsAndAddsFavorites(t *testing.T) 
 	defer opened.Close()
 	var version, star int
 	var name, group string
-	if err = opened.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 7 {
+	if err = opened.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != schemaVersion {
 		t.Fatalf("version=%d err=%v", version, err)
 	}
 	if err = opened.QueryRow("SELECT name,group_name,starred FROM connection_profiles WHERE id=1").

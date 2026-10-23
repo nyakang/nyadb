@@ -22,6 +22,11 @@ var (
 func (s *State) connectionEditor(c *ui.Context) {
 	s.consumeMySQLConnectionTest()
 	applyConnectionEditorFormTheme(c)
+	connectionEditorSurface = theme.App
+	connectionEditorTabsBG = theme.Header
+	connectionEditorBorder = theme.Border
+	connectionEditorButton = theme.Header
+	connectionDiagramLine = theme.Border
 	w, h := c.Size()
 	if s.showConnectionWindow == nil {
 		w = min(float32(760), w-96)

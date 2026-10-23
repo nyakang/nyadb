@@ -2,7 +2,10 @@
 
 package bootstrap
 
-import "os"
+import (
+	"github.com/nyakang/nyadb/internal/ui/theme"
+	"os"
+)
 
 // NyaDB uses a dark workspace. GTK3's native GtkMenu may ignore
 // gtk-application-prefer-dark-theme when the desktop's current GTK theme
@@ -11,6 +14,9 @@ import "os"
 // explicit GTK_THEME choices untouched, including an intentionally empty one.
 // No MyGo table/menu controls or GTK widgets are replaced.
 func configureNativeGTKTheme() {
+	if theme.CurrentMode() != theme.ModeDark {
+		return // Light and system themes must retain the desktop's GTK settings.
+	}
 	if _, explicit := os.LookupEnv("GTK_THEME"); explicit {
 		return
 	}

@@ -134,6 +134,236 @@ func (msgs Messages) Language() string {
 	return Catalog.Format(msgs.locale, "language", nil)
 }
 
+// AppearanceTheme says "主题"
+// in the language the app shows.
+func AppearanceTheme() string { return In(i18n.Locale()).AppearanceTheme() }
+
+// AppearanceTheme says "主题"
+// in the language of msgs.
+func (msgs Messages) AppearanceTheme() string {
+	return Catalog.Format(msgs.locale, "appearanceTheme", nil)
+}
+
+// FollowSystemTheme says "跟随系统"
+// in the language the app shows.
+func FollowSystemTheme() string { return In(i18n.Locale()).FollowSystemTheme() }
+
+// FollowSystemTheme says "跟随系统"
+// in the language of msgs.
+func (msgs Messages) FollowSystemTheme() string {
+	return Catalog.Format(msgs.locale, "followSystemTheme", nil)
+}
+
+// LightTheme says "浅色"
+// in the language the app shows.
+func LightTheme() string { return In(i18n.Locale()).LightTheme() }
+
+// LightTheme says "浅色"
+// in the language of msgs.
+func (msgs Messages) LightTheme() string {
+	return Catalog.Format(msgs.locale, "lightTheme", nil)
+}
+
+// DarkTheme says "深色"
+// in the language the app shows.
+func DarkTheme() string { return In(i18n.Locale()).DarkTheme() }
+
+// DarkTheme says "深色"
+// in the language of msgs.
+func (msgs Messages) DarkTheme() string {
+	return Catalog.Format(msgs.locale, "darkTheme", nil)
+}
+
+// ThemeSettings says "主题设置…"
+// in the language the app shows.
+func ThemeSettings() string { return In(i18n.Locale()).ThemeSettings() }
+
+// ThemeSettings says "主题设置…"
+// in the language of msgs.
+func (msgs Messages) ThemeSettings() string {
+	return Catalog.Format(msgs.locale, "themeSettings", nil)
+}
+
+// AppearanceSettings says "外观设置"
+// in the language the app shows.
+func AppearanceSettings() string { return In(i18n.Locale()).AppearanceSettings() }
+
+// AppearanceSettings says "外观设置"
+// in the language of msgs.
+func (msgs Messages) AppearanceSettings() string {
+	return Catalog.Format(msgs.locale, "appearanceSettings", nil)
+}
+
+// AppearanceSaved says "修改后立即应用并自动保存"
+// in the language the app shows.
+func AppearanceSaved() string { return In(i18n.Locale()).AppearanceSaved() }
+
+// AppearanceSaved says "修改后立即应用并自动保存"
+// in the language of msgs.
+func (msgs Messages) AppearanceSaved() string {
+	return Catalog.Format(msgs.locale, "appearanceSaved", nil)
+}
+
+// SelectTheme says "选择主题"
+// in the language the app shows.
+func SelectTheme() string { return In(i18n.Locale()).SelectTheme() }
+
+// SelectTheme says "选择主题"
+// in the language of msgs.
+func (msgs Messages) SelectTheme() string {
+	return Catalog.Format(msgs.locale, "selectTheme", nil)
+}
+
+// CompareThemes says "预览深色和浅色配色，选择适合当前工作环境的外观。"
+// in the language the app shows.
+func CompareThemes() string { return In(i18n.Locale()).CompareThemes() }
+
+// CompareThemes says "预览深色和浅色配色，选择适合当前工作环境的外观。"
+// in the language of msgs.
+func (msgs Messages) CompareThemes() string {
+	return Catalog.Format(msgs.locale, "compareThemes", nil)
+}
+
+// CurrentTheme says "当前主题"
+// in the language the app shows.
+func CurrentTheme() string { return In(i18n.Locale()).CurrentTheme() }
+
+// CurrentTheme says "当前主题"
+// in the language of msgs.
+func (msgs Messages) CurrentTheme() string {
+	return Catalog.Format(msgs.locale, "currentTheme", nil)
+}
+
+// SystemThemeHint says "随操作系统的深浅色设置自动切换"
+// in the language the app shows.
+func SystemThemeHint() string { return In(i18n.Locale()).SystemThemeHint() }
+
+// SystemThemeHint says "随操作系统的深浅色设置自动切换"
+// in the language of msgs.
+func (msgs Messages) SystemThemeHint() string {
+	return Catalog.Format(msgs.locale, "systemThemeHint", nil)
+}
+
+// NativeControlsPreview says "原生控件预览"
+// in the language the app shows.
+func NativeControlsPreview() string { return In(i18n.Locale()).NativeControlsPreview() }
+
+// NativeControlsPreview says "原生控件预览"
+// in the language of msgs.
+func (msgs Messages) NativeControlsPreview() string {
+	return Catalog.Format(msgs.locale, "nativeControlsPreview", nil)
+}
+
+// PrimaryActionPreview says "主要操作"
+// in the language the app shows.
+func PrimaryActionPreview() string { return In(i18n.Locale()).PrimaryActionPreview() }
+
+// PrimaryActionPreview says "主要操作"
+// in the language of msgs.
+func (msgs Messages) PrimaryActionPreview() string {
+	return Catalog.Format(msgs.locale, "primaryActionPreview", nil)
+}
+
+// SecondaryActionPreview says "次要操作"
+// in the language the app shows.
+func SecondaryActionPreview() string { return In(i18n.Locale()).SecondaryActionPreview() }
+
+// SecondaryActionPreview says "次要操作"
+// in the language of msgs.
+func (msgs Messages) SecondaryActionPreview() string {
+	return Catalog.Format(msgs.locale, "secondaryActionPreview", nil)
+}
+
+// SampleInput says "示例输入"
+// in the language the app shows.
+func SampleInput() string { return In(i18n.Locale()).SampleInput() }
+
+// SampleInput says "示例输入"
+// in the language of msgs.
+func (msgs Messages) SampleInput() string {
+	return Catalog.Format(msgs.locale, "sampleInput", nil)
+}
+
+// SampleInputPlaceholder says "输入示例文本"
+// in the language the app shows.
+func SampleInputPlaceholder() string { return In(i18n.Locale()).SampleInputPlaceholder() }
+
+// SampleInputPlaceholder says "输入示例文本"
+// in the language of msgs.
+func (msgs Messages) SampleInputPlaceholder() string {
+	return Catalog.Format(msgs.locale, "sampleInputPlaceholder", nil)
+}
+
+// SampleCheckbox says "示例复选框"
+// in the language the app shows.
+func SampleCheckbox() string { return In(i18n.Locale()).SampleCheckbox() }
+
+// SampleCheckbox says "示例复选框"
+// in the language of msgs.
+func (msgs Messages) SampleCheckbox() string {
+	return Catalog.Format(msgs.locale, "sampleCheckbox", nil)
+}
+
+// DataGridPreview says "数据表格预览"
+// in the language the app shows.
+func DataGridPreview() string { return In(i18n.Locale()).DataGridPreview() }
+
+// DataGridPreview says "数据表格预览"
+// in the language of msgs.
+func (msgs Messages) DataGridPreview() string {
+	return Catalog.Format(msgs.locale, "dataGridPreview", nil)
+}
+
+// SqlSyntaxPreview says "SQL 语法高亮预览"
+// in the language the app shows.
+func SqlSyntaxPreview() string { return In(i18n.Locale()).SqlSyntaxPreview() }
+
+// SqlSyntaxPreview says "SQL 语法高亮预览"
+// in the language of msgs.
+func (msgs Messages) SqlSyntaxPreview() string {
+	return Catalog.Format(msgs.locale, "sqlSyntaxPreview", nil)
+}
+
+// SqlSyntaxHint says "关键字、函数、数字、字符串、注释与编辑器背景将随主题变化。"
+// in the language the app shows.
+func SqlSyntaxHint() string { return In(i18n.Locale()).SqlSyntaxHint() }
+
+// SqlSyntaxHint says "关键字、函数、数字、字符串、注释与编辑器背景将随主题变化。"
+// in the language of msgs.
+func (msgs Messages) SqlSyntaxHint() string {
+	return Catalog.Format(msgs.locale, "sqlSyntaxHint", nil)
+}
+
+// SwatchPreview says "文本和边框预览"
+// in the language the app shows.
+func SwatchPreview() string { return In(i18n.Locale()).SwatchPreview() }
+
+// SwatchPreview says "文本和边框预览"
+// in the language of msgs.
+func (msgs Messages) SwatchPreview() string {
+	return Catalog.Format(msgs.locale, "swatchPreview", nil)
+}
+
+// ThemePreview says "主题预览"
+// in the language the app shows.
+func ThemePreview() string { return In(i18n.Locale()).ThemePreview() }
+
+// ThemePreview says "主题预览"
+// in the language of msgs.
+func (msgs Messages) ThemePreview() string {
+	return Catalog.Format(msgs.locale, "themePreview", nil)
+}
+
+// NormalState says "正常"
+// in the language the app shows.
+func NormalState() string { return In(i18n.Locale()).NormalState() }
+
+// NormalState says "正常"
+// in the language of msgs.
+func (msgs Messages) NormalState() string {
+	return Catalog.Format(msgs.locale, "normalState", nil)
+}
+
 // NewConnectionEllipsis says "新建连接…"
 // in the language the app shows.
 func NewConnectionEllipsis() string { return In(i18n.Locale()).NewConnectionEllipsis() }
