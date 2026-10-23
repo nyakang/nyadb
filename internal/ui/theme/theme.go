@@ -23,21 +23,28 @@ var (
 // Apply keeps MyGo's native input behavior but gives every workbench widget
 // the compact dark style used by the surrounding chrome.
 func Apply(c *ui.Context) {
+	p, dark := effectivePalette(c.Theme().Dark)
+	setPalette(p)
 	t := *c.Theme()
-	t.Dark = true
+	t.Dark = dark
 	t.Background = App
 	t.Surface = Header
-	t.SurfaceHover = ui.Hex("#474747")
-	t.SurfacePressed = ui.Hex("#515151")
+	t.SurfaceHover = surfaceHover
+	t.SurfacePressed = surfacePressed
 	t.Border = Border
 	t.Text, t.TextMuted = Text, Muted
 	t.Accent = Accent
-	t.AccentHover = ui.Hex("#1688e3")
-	t.AccentPressed = ui.Hex("#086ab5")
-	t.AccentText = ui.Hex("#ffffff")
+	t.AccentHover = accentHover
+	t.AccentPressed = accentPressed
+	t.AccentText = accentText
 	t.Selection = Accent.Alpha(0.45)
-	t.Focus = Blue
-	t.Inverse, t.InverseText = Header, Text
+	t.Focus = focus
+	if dark {
+		t.Inverse, t.InverseText = Header, Text
+	} else {
+		// Keep tooltips and toasts distinct from the pale workspace chrome.
+		t.Inverse, t.InverseText = ui.Hex("#30353b"), ui.Hex("#ffffff")
+	}
 	t.Spacing = 3
 	t.FontSize = 13
 	t.Radius = 3

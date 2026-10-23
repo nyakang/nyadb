@@ -31,6 +31,8 @@ func (s *State) workspace(c *ui.Context) {
 									icon = "table"
 								} else if current.kind == tabStructure || current.kind == tabMySQLData {
 									icon = "table"
+								} else if current.kind == tabSettings {
+									icon = "settings"
 								}
 								theme.Icon(c, icon, 14, theme.Blue)
 								ui.Text(c, locales.Text(current.title)).FontSize(12).SingleLine()
@@ -60,6 +62,8 @@ func (s *State) workspace(c *ui.Context) {
 		switch tab := s.currentTab(); tab.kind {
 		case tabSQL:
 			s.queryWorkspace(c, tab)
+		case tabSettings:
+			s.settingsWorkspace(c)
 		case tabData:
 			s.dataPreview(c)
 		case tabStructure:
@@ -175,6 +179,7 @@ func (s *State) queryWorkspace(c *ui.Context, tab *tab) {
 						s.status = "没有运行中的真实查询"
 					}
 				})
+				tab.editor.Theme = theme.SQLTheme(c.Theme())
 				editor.View(c, tab.editor).Grow(1).FillWidth()
 			})
 		},

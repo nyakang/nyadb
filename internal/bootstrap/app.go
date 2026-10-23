@@ -11,12 +11,12 @@ import (
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/storage/localdb"
 	"github.com/nyakang/nyadb/internal/ui/shell"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
 
 // Run starts the main OS-thread event loop; call it from main.
 func Run() error {
-	configureNativeGTKTheme()
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return fmt.Errorf("resolve NyaDB configuration directory: %w", err)
@@ -26,6 +26,12 @@ func Run() error {
 		return fmt.Errorf("open NyaDB profile database: %w", err)
 	}
 	defer db.Close()
+	savedAppearance, err := localdb.Preference(db, "appearance")
+	if err != nil {
+		return fmt.Errorf("read appearance preference: %w", err)
+	}
+	theme.SetMode(theme.ParseMode(savedAppearance))
+	configureNativeGTKTheme()
 	state := shell.NewWithProfiles(connections.NewService(connections.NewStore(db)))
 	// Research-only, opt-in runtime PNGs. The files remain outside resources/
 	// and are never embedded in the application or its distribution packages.
@@ -41,7 +47,7 @@ func Run() error {
 		}
 	}
 	mygo.App.WhenReady(func() {
-		mygo.Theme.SetSource(mygo.ThemeDark)
+		setNativeAppearance(theme.CurrentMode())
 		window := mygo.NewWindow(mygo.WindowOptions{
 			Title:     "NyaDB",
 			Width:     1280,
@@ -55,6 +61,20 @@ func Run() error {
 		// Native parent-owned modal window, not an in-workspace overlay.
 		// The OS provides the title bar, window movement and close button.
 		var chooser *mygo.Window
+		refreshWindows := func() {
+			window.Update(func() {})
+			if chooser != nil {
+				chooser.Update(func() {})
+			}
+		}
+		state.SetAppearanceHandler(func(mode theme.Mode) {
+			if err := localdb.SetPreference(db, "appearance", string(mode)); err != nil {
+				fmt.Fprintf(os.Stderr, "NyaDB appearance preference: %v\n", err)
+			}
+			setNativeAppearance(mode)
+			refreshWindows()
+		})
+		mygo.Theme.OnUpdated(refreshWindows)
 		updateChooserIcon := func() {
 			if chooser == nil {
 				return
@@ -235,4 +255,15 @@ func Run() error {
 		})
 	})
 	return mygo.App.Run()
+}
+
+func setNativeAppearance(mode theme.Mode) {
+	switch mode {
+	case theme.ModeLight:
+		mygo.Theme.SetSource(mygo.ThemeLight)
+	case theme.ModeSystem:
+		mygo.Theme.SetSource(mygo.ThemeSystem)
+	default:
+		mygo.Theme.SetSource(mygo.ThemeDark)
+	}
 }

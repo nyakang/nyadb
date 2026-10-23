@@ -7,6 +7,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
 const (
@@ -22,6 +23,7 @@ const (
 	tabData
 	tabStructure
 	tabMySQLData
+	tabSettings
 )
 
 type tab struct {
@@ -245,6 +247,12 @@ type State struct {
 	selectedProfileID   int64
 	pendingDeleteID     int64
 	deleteConfirm       bool
+	settingsPreview     *editor.State
+	settingsSampleInput string
+	settingsSampleCheck bool
+	settingsSampleRow   int
+	settingsSampleTable ui.ListState
+	appearanceChanged   func(theme.Mode)
 	sqliteFilePicker    func()
 	mysqlSettingsPicker func()
 	mysqlSSLFilePicker  func(MySQLSSLFile)

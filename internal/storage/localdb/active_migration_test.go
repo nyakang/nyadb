@@ -38,7 +38,7 @@ func TestMigrationV4ToV5PreservesVariantsAndDefaultsPrimaryActive(t *testing.T) 
 		t.Fatal(err)
 	}
 	var version int
-	if err := db.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 7 {
+	if err := db.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != schemaVersion {
 		t.Fatalf("version: %d %v", version, err)
 	}
 	var variants, active string

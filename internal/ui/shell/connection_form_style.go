@@ -27,6 +27,17 @@ const connectionCheckboxSize float32 = 14
 // disabled semantics and focus border. Only its window-local theme is changed.
 func applyConnectionEditorFormTheme(c *ui.Context) {
 	theme.Apply(c)
+	// Rebind tokens on each frame: the standalone editor survives mode changes.
+	connectionFieldBackground = theme.Panel
+	connectionFieldBorder = theme.Border
+	connectionFieldFocus = theme.Blue
+	connectionFieldText = theme.Text
+	connectionFieldMuted = theme.Muted
+	connectionCheckboxBorder = theme.Border
+	connectionCheckboxHover = theme.Muted
+	connectionCheckboxDisabled = theme.App
+	connectionCheckColor = theme.Text
+	connectionCheckDisabled = theme.Muted
 	t := *c.Theme()
 	t.Surface = connectionFieldBackground
 	t.Border = connectionFieldBorder
