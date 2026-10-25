@@ -1,5 +1,7 @@
 """Non-production self-tests for evidence-gated screenshot comparison."""
+import hashlib
 import importlib.util
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -268,6 +270,51 @@ class SceneVisualDifferentialTests(unittest.TestCase):
         self.manifest["navicat"]["source_version"] = "known-build"
         self.manifest["navicat"]["observation_evidence"] = []
         self.check("BLOCKED")
+
+    def test_native_observation_json_binds_image_identity_and_state(self):
+        for side in ("navicat", "nyadb"):
+            item = self.manifest[side]
+            capture = {
+                "application": side,
+                "scene": item["scene"],
+                "source_version": item["source_version"],
+                "platform": item["platform"],
+                "locale": item["locale"],
+                "theme": item["theme"],
+                "viewport_width": item["viewport_width"],
+                "viewport_height": item["viewport_height"],
+                "client_crop": item["client_crop"],
+                "actual_scale": item["actual_scale"],
+                "font_family": item["font_family"],
+                "font_size_dip": item["font_size_dip"],
+                "dpi_x": item["dpi_x"],
+                "dpi_y": item["dpi_y"],
+                "ui_state": item["ui_state"],
+                "screenshot_sha256": hashlib.sha256(
+                    (self.base / item["screenshot"]).read_bytes()).hexdigest(),
+            }
+            (self.base / f"{side}-capture.json").write_text(json.dumps(capture))
+            item["observation_evidence"].append(f"{side}-capture.json")
+        self.check("PASS")
+        with Image.open(self.base / "nyadb.png") as pic:
+            pic.putpixel((50, 50), (40, 38, 41))
+            pic.save(self.base / "nyadb.png")
+        result = self.check("BLOCKED")
+        self.assertTrue(any("digest" in e for e in result["gate_errors"]))
+        self.write_client("nyadb", (35, 38, 41))
+        self.manifest["nyadb"]["ui_state"]["menu_state"] = "column-context"
+        result = self.check("BLOCKED")
+        self.assertTrue(any("ui_state differs from observation" in e for e in result["gate_errors"]))
+
+    def test_misattributed_native_capture_does_not_count_as_original(self):
+        item = self.manifest["navicat"]
+        name = "wrong-original-capture.json"
+        (self.base / name).write_text(json.dumps({
+            "application": "nyadb", "screenshot_sha256":
+                hashlib.sha256((self.base / "navicat.png").read_bytes()).hexdigest()}))
+        item["observation_evidence"].append(name)
+        result = self.check("BLOCKED")
+        self.assertTrue(any("application identity" in e for e in result["gate_errors"]))
 
 
 if __name__ == "__main__":

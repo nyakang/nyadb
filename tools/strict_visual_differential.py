@@ -116,6 +116,51 @@ def _evidence_files(item: dict, side: str, base: Path) -> list[str]:
             if not isinstance(name, str) or not _resolve(base, name).is_file()]
 
 
+def _capture_binding_errors(item: dict, side: str, base: Path) -> list[str]:
+    """Cross-check native capture JSON when it accompanies a V manifest.
+
+    This checks tampering/mix-ups only; a consistent JSON file is still not
+    independent evidence that either app connected to the declared database.
+    """
+    errors = []
+    evidence = item.get("observation_evidence")
+    if not isinstance(evidence, list):
+        return errors
+    for name in evidence:
+        if not isinstance(name, str) or not name.endswith(".json"):
+            continue
+        path = _resolve(base, name)
+        if not path.is_file():
+            continue
+        try:
+            captured = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, ValueError):
+            errors.append(f"{side}: invalid capture observation JSON: {name}")
+            continue
+        if not isinstance(captured, dict) or "screenshot_sha256" not in captured:
+            continue  # Geometry measurements/other evidence may be JSON too.
+        if not isinstance(item.get("screenshot"), str):
+            continue
+        actual = _resolve(base, item["screenshot"])
+        if not actual.is_file():
+            continue
+        digest = hashlib.sha256(actual.read_bytes()).hexdigest()
+        if captured["screenshot_sha256"] != digest:
+            errors.append(f"{side}: screenshot digest differs from observation {name}")
+        if not isinstance(captured.get("application"), str) or captured["application"].lower() != side:
+            errors.append(f"{side}: observation application identity differs: {name}")
+        for field in ("scene", "source_version", "platform", "locale", "theme",
+                      "viewport_width", "viewport_height", "client_crop"):
+            if field in captured and captured[field] != item.get(field):
+                errors.append(f"{side}: {field} differs from observation {name}")
+        for field in ("actual_scale", "font_family", "font_size_dip", "dpi_x", "dpi_y"):
+            if field in captured and captured[field] != item.get(field):
+                errors.append(f"{side}: {field} differs from observation {name}")
+        if "ui_state" in captured and captured["ui_state"] != item.get("ui_state"):
+            errors.append(f"{side}: ui_state differs from observation {name}")
+    return errors
+
+
 def _scene_readiness(manifest: dict, base: Path) -> list[str]:
     errors = []
     scene = manifest.get("scene")
@@ -185,6 +230,7 @@ def _scene_readiness(manifest: dict, base: Path) -> list[str]:
         errors.extend(_evidence_files(item, side, base))
         if not isinstance(item.get("screenshot"), str) or not _resolve(base, item["screenshot"]).is_file():
             errors.append(f"{side}: screenshot missing")
+        errors.extend(_capture_binding_errors(item, side, base))
     if len(captures) == 2:
         left, right = captures
         for key in _CAPTURE_SAME + tuple(db_fields):
