@@ -2,6 +2,7 @@ package connections
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -13,10 +14,14 @@ var ErrMySQLMetadataLimit = errors.New("MySQL metadata result exceeds the allowe
 // MySQLDBObject describes only server metadata: it never contains table data
 // or user-authored SQL. Kind is either "表" or "视图".
 type MySQLDBObject struct {
-	Name    string
-	Kind    string
-	Engine  string
-	Comment string
+	Name          string
+	Kind          string
+	Engine        string
+	Comment       string
+	AutoIncrement *int64 // nil if the server has no next AUTO_INCREMENT value
+	ModifiedAt    string // server UPDATE_TIME; empty if unknown
+	DataLength    *int64 // server DATA_LENGTH in bytes; nil if unavailable
+	RowsEstimate  *int64 // TABLE_ROWS is an estimate for engines such as InnoDB
 }
 
 const maxMySQLMetadataObjects = 10000
@@ -38,7 +43,8 @@ func (m *MySQLSessionManager) Objects(ctx context.Context, id int64, database st
 	stop := context.AfterFunc(session.ctx, cancel)
 	defer func() { stop(); cancel() }()
 
-	const query = `SELECT TABLE_NAME, TABLE_TYPE, COALESCE(ENGINE, ''), COALESCE(TABLE_COMMENT, '')
+	const query = `SELECT TABLE_NAME, TABLE_TYPE, COALESCE(ENGINE, ''), COALESCE(TABLE_COMMENT, ''),
+       AUTO_INCREMENT, CAST(UPDATE_TIME AS CHAR), DATA_LENGTH, TABLE_ROWS
 FROM information_schema.TABLES
 WHERE TABLE_SCHEMA = ? AND TABLE_TYPE IN ('BASE TABLE', 'VIEW')
 ORDER BY TABLE_NAME`
@@ -51,7 +57,10 @@ ORDER BY TABLE_NAME`
 	for rows.Next() {
 		var obj MySQLDBObject
 		var tableType string
-		if err := rows.Scan(&obj.Name, &tableType, &obj.Engine, &obj.Comment); err != nil {
+		var nextValue, dataLength, rowsEstimate sql.NullInt64
+		var modified sql.NullString
+		if err := rows.Scan(&obj.Name, &tableType, &obj.Engine, &obj.Comment,
+			&nextValue, &modified, &dataLength, &rowsEstimate); err != nil {
 			return nil, err
 		}
 		switch tableType {
@@ -61,6 +70,22 @@ ORDER BY TABLE_NAME`
 			obj.Kind = "视图"
 		default:
 			continue
+		}
+		if modified.Valid {
+			obj.ModifiedAt = modified.String
+		}
+		// Server rows for views are NULL. Do not synthesize table statistics
+		// for views even if a vendor happens to return numeric placeholders.
+		if obj.Kind == "表" {
+			if nextValue.Valid {
+				obj.AutoIncrement = &nextValue.Int64
+			}
+			if dataLength.Valid {
+				obj.DataLength = &dataLength.Int64
+			}
+			if rowsEstimate.Valid {
+				obj.RowsEstimate = &rowsEstimate.Int64
+			}
 		}
 		if len(objects) == maxMySQLMetadataObjects {
 			return nil, ErrMySQLMetadataLimit

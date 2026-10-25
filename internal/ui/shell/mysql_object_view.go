@@ -1,7 +1,10 @@
 package shell
 
 import (
+	"strconv"
+
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -14,6 +17,44 @@ var mysqlObjectColumns = []ui.TableColumn{
 	{Title: "引擎", Width: 95},
 	{Title: "行", Width: 70},
 	{Title: "注释", Width: 180},
+}
+
+// MySQL's information_schema.TABLE_ROWS is not a reliable exact count for
+// InnoDB. The visible approximation mark prevents confusing it with COUNT(*).
+// NULL from the server remains empty, but a measured zero remains "0".
+func mysqlObjectCellText(obj connections.MySQLDBObject, col int) string {
+	number := func(n *int64) string {
+		if n == nil {
+			return ""
+		}
+		return strconv.FormatInt(*n, 10)
+	}
+	switch col {
+	case 0:
+		return obj.Name
+	case 1:
+		return number(obj.AutoIncrement)
+	case 2:
+		return obj.ModifiedAt
+	case 3:
+		return number(obj.DataLength)
+	case 4:
+		return obj.Engine
+	case 5:
+		if obj.RowsEstimate != nil {
+			return "≈" + number(obj.RowsEstimate)
+		}
+	case 6:
+		return obj.Comment
+	}
+	return ""
+}
+
+func mysqlObjectActionLabels(kind string) (open, design string) {
+	if kind == "视图" {
+		return "打开视图（只读）", "查看视图结构（只读）"
+	}
+	return "打开表（只读）", "设计表（只读）"
 }
 
 // mysqlObjectWorkspace lists real INFORMATION_SCHEMA objects and explicitly opens
@@ -51,10 +92,11 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		}
 		s.objectRow = row
 		s.selectObjectInNavigator(db, items[row].Name, items[row].Kind)
-		if m.Item(locales.Text("打开表（只读）")).Shortcut(0, ui.KeyEnter).Chosen() {
+		openLabel, designLabel := mysqlObjectActionLabels(items[row].Kind)
+		if m.Item(locales.Text(openLabel)).Shortcut(0, ui.KeyEnter).Chosen() {
 			s.openMySQLData(c.Services(), db, items[row].Name)
 		}
-		if m.Item(locales.Text("设计表（只读）")).Shortcut(ui.Ctrl, ui.KeyD).Chosen() {
+		if m.Item(locales.Text(designLabel)).Shortcut(ui.Ctrl, ui.KeyD).Chosen() {
 			s.openMySQLStructure(c.Services(), db, items[row].Name)
 		}
 	}
@@ -87,10 +129,8 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 				theme.Icon(c, iconName, 14, theme.Blue)
 				ui.Text(c, obj.Name).SingleLine()
 			})
-		case 4:
-			ui.Text(c, obj.Engine).SingleLine()
-		case 6:
-			ui.Text(c, obj.Comment).SingleLine()
+		default:
+			ui.Text(c, mysqlObjectCellText(obj, col)).SingleLine()
 		}
 	}).Grow(1)
 	if table.Submitted() {

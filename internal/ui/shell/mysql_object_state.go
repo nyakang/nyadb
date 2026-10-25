@@ -97,6 +97,35 @@ func (s *State) selectMySQLDatabase(services ui.Services, database string) {
 	s.loadMySQLObjects(services, database, false)
 }
 
+// Keep the selected object's qualified identity when it survives a filter.
+// If it does not, select the visible category/database instead of leaving an
+// inspector on an object that the central list no longer contains.
+func (s *State) filterMySQLObjects(kind string) {
+	if kind == s.mysqlObjectKind {
+		return
+	}
+	selected := parseNavigationNode(s.explorerName)
+	s.mysqlObjectKind = kind
+	s.objectState = ui.ListState{Columns: s.objectState.Columns}
+	s.objectRow = -1
+	if selected.Kind == "object" && selected.Database == s.mysqlSelectedDatabase &&
+		(kind == "全部" || kind == selected.Category) {
+		for i, obj := range s.mysqlSelectedObjects() {
+			if obj.Name == selected.Object && obj.Kind == selected.Category {
+				s.objectRow = i
+				return
+			}
+		}
+	}
+	if s.mysqlSelectedDatabase != "" {
+		node := databaseNode(s.mysqlSessionProfileID, s.mysqlSelectedDatabase)
+		if kind != "全部" {
+			node.Kind, node.Category = "category", kind
+		}
+		s.revealNavigationNode(node)
+	}
+}
+
 func (s *State) loadMySQLObjects(services ui.Services, database string, force bool) {
 	// The first metadata query may be scheduled before the database tree has
 	// rendered (for example, when restoring an already-opened session).

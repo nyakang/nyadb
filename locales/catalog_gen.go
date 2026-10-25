@@ -2848,6 +2848,36 @@ func (msgs Messages) AlignmentOpenTableReadOnly() string {
 	return Catalog.Format(msgs.locale, "alignmentOpenTableReadOnly", nil)
 }
 
+// ObjectOpenViewReadOnly says "打开视图（只读）"
+// in the language the app shows.
+func ObjectOpenViewReadOnly() string { return In(i18n.Locale()).ObjectOpenViewReadOnly() }
+
+// ObjectOpenViewReadOnly says "打开视图（只读）"
+// in the language of msgs.
+func (msgs Messages) ObjectOpenViewReadOnly() string {
+	return Catalog.Format(msgs.locale, "objectOpenViewReadOnly", nil)
+}
+
+// ObjectViewStructureReadOnly says "查看视图结构（只读）"
+// in the language the app shows.
+func ObjectViewStructureReadOnly() string { return In(i18n.Locale()).ObjectViewStructureReadOnly() }
+
+// ObjectViewStructureReadOnly says "查看视图结构（只读）"
+// in the language of msgs.
+func (msgs Messages) ObjectViewStructureReadOnly() string {
+	return Catalog.Format(msgs.locale, "objectViewStructureReadOnly", nil)
+}
+
+// ObjectShowAll says "显示全部对象"
+// in the language the app shows.
+func ObjectShowAll() string { return In(i18n.Locale()).ObjectShowAll() }
+
+// ObjectShowAll says "显示全部对象"
+// in the language of msgs.
+func (msgs Messages) ObjectShowAll() string {
+	return Catalog.Format(msgs.locale, "objectShowAll", nil)
+}
+
 // AlignmentDataActions says "数据操作"
 // in the language the app shows.
 func AlignmentDataActions() string { return In(i18n.Locale()).AlignmentDataActions() }

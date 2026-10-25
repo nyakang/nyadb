@@ -56,7 +56,8 @@ type mysqlMetadataRows struct {
 }
 
 func (*mysqlMetadataRows) Columns() []string {
-	return []string{"TABLE_NAME", "TABLE_TYPE", "ENGINE", "TABLE_COMMENT"}
+	return []string{"TABLE_NAME", "TABLE_TYPE", "ENGINE", "TABLE_COMMENT",
+		"AUTO_INCREMENT", "UPDATE_TIME", "DATA_LENGTH", "TABLE_ROWS"}
 }
 func (*mysqlMetadataRows) Close() error { return nil }
 func (r *mysqlMetadataRows) Next(dest []driver.Value) error {
@@ -65,13 +66,15 @@ func (r *mysqlMetadataRows) Next(dest []driver.Value) error {
 			return io.EOF
 		}
 		dest[0], dest[1], dest[2], dest[3] = "table", "BASE TABLE", "InnoDB", ""
+		dest[4], dest[5], dest[6], dest[7] = nil, nil, int64(0), int64(0)
 		r.index++
 		return nil
 	}
-	entries := [][4]string{
-		{"orders", "BASE TABLE", "InnoDB", "Customer orders"},
-		{"report", "VIEW", "", "Derived sales report"},
-		{"temp", "SYSTEM VIEW", "", "ignore unrequested kinds"},
+	entries := [][8]driver.Value{
+		{"orders", "BASE TABLE", "InnoDB", "Customer orders",
+			int64(42), "2026-10-20 12:34:56", int64(16384), int64(120)},
+		{"report", "VIEW", "", "Derived sales report", nil, nil, nil, nil},
+		{"temp", "SYSTEM VIEW", "", "ignore unrequested kinds", nil, nil, nil, nil},
 	}
 	if r.index >= len(entries) {
 		return io.EOF
@@ -107,8 +110,16 @@ func TestMySQLObjectsRealMetadataBoundSchema(t *testing.T) {
 	}
 	if len(objects) != 2 || objects[0].Name != "orders" || objects[0].Kind != "表" ||
 		objects[0].Engine != "InnoDB" || objects[1].Name != "report" ||
-		objects[1].Kind != "视图" || objects[1].Comment != "Derived sales report" {
+		objects[1].Kind != "视图" || objects[1].Comment != "Derived sales report" ||
+		objects[0].AutoIncrement == nil || *objects[0].AutoIncrement != 42 ||
+		objects[0].ModifiedAt != "2026-10-20 12:34:56" ||
+		objects[0].DataLength == nil || *objects[0].DataLength != 16384 ||
+		objects[0].RowsEstimate == nil || *objects[0].RowsEstimate != 120 {
 		t.Fatalf("wrong types or object metadata: %+v", objects)
+	}
+	if objects[1].AutoIncrement != nil || objects[1].ModifiedAt != "" ||
+		objects[1].DataLength != nil || objects[1].RowsEstimate != nil {
+		t.Fatalf("view should have no invented table statistics: %+v", objects[1])
 	}
 }
 

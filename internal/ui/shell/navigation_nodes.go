@@ -95,6 +95,7 @@ func (s *State) selectNavigationNode(services ui.Services, key string) {
 	s.explorerName = key
 	s.explorerRow = s.outlineRowForSelection(s.profileRoots())
 	if n.Database == "" {
+		s.cancelMySQLObjectQuery()
 		s.mysqlSelectedDatabase = ""
 		s.mysqlObjectKind = "全部"
 		s.objectRow = -1
@@ -215,16 +216,26 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 		s.explorerMenuBuilt = true
 		s.selectNavigationNode(c.Services(), key)
 		s.explorerRow = -1
-		if n.Kind == "object" {
-			if m.Item(locales.Text("打开表（只读）")).Shortcut(0, ui.KeyEnter).Chosen() {
+		switch n.Kind {
+		case "object":
+			openLabel, structureLabel := mysqlObjectActionLabels(n.Category)
+			if m.Item(locales.Text(openLabel)).Shortcut(0, ui.KeyEnter).Chosen() {
 				s.openMySQLData(c.Services(), n.Database, n.Object)
 			}
-			if m.Item(locales.Text("设计表（只读）")).Shortcut(ui.Ctrl, ui.KeyD).Chosen() {
+			if m.Item(locales.Text(structureLabel)).Shortcut(ui.Ctrl, ui.KeyD).Chosen() {
 				s.openMySQLStructure(c.Services(), n.Database, n.Object)
 			}
 			m.Separator()
+		case "category":
+			// Categories are navigation scopes, not database objects. Only
+			// expose read-only navigation and metadata refresh here.
+			if m.Item(locales.Text("显示全部对象")).Chosen() {
+				s.filterMySQLObjects("全部")
+			}
+			m.Separator()
 		}
-		if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).Chosen() {
+		if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).
+			Disabled(s.mysqlObjectPending != "" || s.mysqlSessionStatus != "已连接").Chosen() {
 			s.loadMySQLObjects(c.Services(), n.Database, true)
 		}
 	})
