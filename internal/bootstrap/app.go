@@ -17,6 +17,10 @@ import (
 
 // Run starts the main OS-thread event loop; call it from main.
 func Run() error {
+	// Keep Windows 11's native HMENU interaction but use a denser layout,
+	// matching the compact menus already configured for Linux GTK.
+	// This must be configured before App.Run initializes the backend.
+	mygo.App.SetMenuDensity(mygo.MenuCompact)
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return fmt.Errorf("resolve NyaDB configuration directory: %w", err)
