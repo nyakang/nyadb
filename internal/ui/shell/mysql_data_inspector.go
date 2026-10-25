@@ -27,17 +27,17 @@ func (s *State) mysqlDataInspector(c *ui.Context, t *tab) {
 			// Actions stay outside the metadata scroll. A long type declaration,
 			// comment, or binary preview must not move the next-fragment control.
 			ui.Toolbar(c, func() {
-				if ui.Button(c, locales.Text("复制")).Label(locales.Text("复制单元格预览")).Height(theme.ControlHeight).FontSize(theme.SmallFontSize).Padding(2, 3).Clicked() {
+				if ui.Button(c, locales.Text("复制")).Label(locales.Text("复制单元格预览")).Width(50).Height(theme.ControlHeight).FontSize(theme.SmallFontSize).Padding(2, 3).Clicked() {
 					c.WriteClipboard(mysqlDataCopyPreview(cell))
 				}
 				// Toolbar moves buttons to overflow when the translated text
-				// exceeds the narrow inspector width. Keep the full labels for
-				// accessibility while using compact visible captions.
-				if canRead && ui.Button(c, locales.Text("下一段")).Label(locales.Text("读取所选字段下一段")).Height(theme.ControlHeight).FontSize(theme.SmallFontSize).Padding(2, 3).
+				// exceeds the narrow inspector width. Fixed button widths
+				// avoid font-dependent overflow while full labels remain.
+				if canRead && ui.Button(c, locales.Text("下段")).Label(locales.Text("读取所选字段下一段")).Width(50).Height(theme.ControlHeight).FontSize(theme.SmallFontSize).Padding(2, 3).
 					Disabled(t.dataChunkLoading || t.dataChunkDone).Clicked() {
 					s.loadMySQLChunk(c.Services(), t)
 				}
-				if chunkShown && ui.Button(c, locales.Text("复制片段")).Label(locales.Text("复制此片段")).Height(theme.ControlHeight).FontSize(theme.SmallFontSize).Padding(2, 3).Clicked() {
+				if chunkShown && ui.Button(c, locales.Text("片段")).Label(locales.Text("复制此片段")).Width(50).Height(theme.ControlHeight).FontSize(theme.SmallFontSize).Padding(2, 3).Clicked() {
 					c.WriteClipboard(t.dataChunkText)
 				}
 			}).Height(theme.CommandBarHeight).FillWidth().MinWidth(0).Padding(1, 4).Gap(2)

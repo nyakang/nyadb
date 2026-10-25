@@ -277,7 +277,7 @@
   "alignmentCommandLineDialog": "Command Line…",
   "alignmentFindInDatabase": "Find in Database or Schema…",
   "alignmentCopyChunk": "Copy This Chunk",
-  "alignmentCopyChunkCompact": "Copy Chunk",
+  "alignmentCopyChunkCompact": "Chunk",
   "alignmentFieldProperties": "Field properties: ",
   "alignmentEngine": "Engine",
   "alignmentOpenTableReadOnly": "Open Table (Read Only)",
