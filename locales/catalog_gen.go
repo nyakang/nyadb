@@ -2848,6 +2848,86 @@ func (msgs Messages) AlignmentOpenTableReadOnly() string {
 	return Catalog.Format(msgs.locale, "alignmentOpenTableReadOnly", nil)
 }
 
+// MysqlColumnCopyName says "复制字段名称"
+// in the language the app shows.
+func MysqlColumnCopyName() string { return In(i18n.Locale()).MysqlColumnCopyName() }
+
+// MysqlColumnCopyName says "复制字段名称"
+// in the language of msgs.
+func (msgs Messages) MysqlColumnCopyName() string {
+	return Catalog.Format(msgs.locale, "mysqlColumnCopyName", nil)
+}
+
+// MysqlColumnCopyPage says "复制此列（当前页）"
+// in the language the app shows.
+func MysqlColumnCopyPage() string { return In(i18n.Locale()).MysqlColumnCopyPage() }
+
+// MysqlColumnCopyPage says "复制此列（当前页）"
+// in the language of msgs.
+func (msgs Messages) MysqlColumnCopyPage() string {
+	return Catalog.Format(msgs.locale, "mysqlColumnCopyPage", nil)
+}
+
+// MysqlColumnHide says "隐藏此列"
+// in the language the app shows.
+func MysqlColumnHide() string { return In(i18n.Locale()).MysqlColumnHide() }
+
+// MysqlColumnHide says "隐藏此列"
+// in the language of msgs.
+func (msgs Messages) MysqlColumnHide() string {
+	return Catalog.Format(msgs.locale, "mysqlColumnHide", nil)
+}
+
+// MysqlColumnVisibility says "显示/隐藏列"
+// in the language the app shows.
+func MysqlColumnVisibility() string { return In(i18n.Locale()).MysqlColumnVisibility() }
+
+// MysqlColumnVisibility says "显示/隐藏列"
+// in the language of msgs.
+func (msgs Messages) MysqlColumnVisibility() string {
+	return Catalog.Format(msgs.locale, "mysqlColumnVisibility", nil)
+}
+
+// MysqlColumnShowAll says "显示全部列"
+// in the language the app shows.
+func MysqlColumnShowAll() string { return In(i18n.Locale()).MysqlColumnShowAll() }
+
+// MysqlColumnShowAll says "显示全部列"
+// in the language of msgs.
+func (msgs Messages) MysqlColumnShowAll() string {
+	return Catalog.Format(msgs.locale, "mysqlColumnShowAll", nil)
+}
+
+// MysqlColumnFitPage says "将此列宽度适配当前页"
+// in the language the app shows.
+func MysqlColumnFitPage() string { return In(i18n.Locale()).MysqlColumnFitPage() }
+
+// MysqlColumnFitPage says "将此列宽度适配当前页"
+// in the language of msgs.
+func (msgs Messages) MysqlColumnFitPage() string {
+	return Catalog.Format(msgs.locale, "mysqlColumnFitPage", nil)
+}
+
+// MysqlColumnResetWidths says "重置全部列宽"
+// in the language the app shows.
+func MysqlColumnResetWidths() string { return In(i18n.Locale()).MysqlColumnResetWidths() }
+
+// MysqlColumnResetWidths says "重置全部列宽"
+// in the language of msgs.
+func (msgs Messages) MysqlColumnResetWidths() string {
+	return Catalog.Format(msgs.locale, "mysqlColumnResetWidths", nil)
+}
+
+// MysqlColumnShowTypes says "显示字段类型"
+// in the language the app shows.
+func MysqlColumnShowTypes() string { return In(i18n.Locale()).MysqlColumnShowTypes() }
+
+// MysqlColumnShowTypes says "显示字段类型"
+// in the language of msgs.
+func (msgs Messages) MysqlColumnShowTypes() string {
+	return Catalog.Format(msgs.locale, "mysqlColumnShowTypes", nil)
+}
+
 // ObjectOpenViewReadOnly says "打开视图（只读）"
 // in the language the app shows.
 func ObjectOpenViewReadOnly() string { return In(i18n.Locale()).ObjectOpenViewReadOnly() }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/locales"
 )
 
 func mysqlVisibleDataColumns(t *tab, page *connections.MySQLDataPage) ([]int, []ui.TableColumn) {
@@ -142,18 +143,18 @@ func (s *State) mysqlDataHeaderMenu(c *ui.Context, t *tab, page *connections.MyS
 	}
 	if valid {
 		name := page.Columns[source]
-		if m.Item("复制字段名称").Chosen() {
+		if m.Item(locales.Text("复制字段名称")).Chosen() {
 			c.WriteClipboard(name)
 		}
-		if m.Item("复制此列（当前页）").Chosen() {
+		if m.Item(locales.Text("复制此列（当前页）")).Chosen() {
 			c.WriteClipboard(mysqlDataCopyColumnPreview(page, source))
 		}
 		m.Separator()
-		if m.Item("隐藏此列").Disabled(len(indices) <= 1).Chosen() {
+		if m.Item(locales.Text("隐藏此列")).Disabled(len(indices) <= 1).Chosen() {
 			mysqlDataHideColumn(t, page, name)
 		}
 	}
-	m.Submenu("显示/隐藏列", func(sub *ui.Menu) {
+	m.Submenu(locales.Text("显示/隐藏列"), func(sub *ui.Menu) {
 		for _, name := range page.Columns {
 			name := name
 			checked := !t.dataHiddenColumns[name]
@@ -166,17 +167,17 @@ func (s *State) mysqlDataHeaderMenu(c *ui.Context, t *tab, page *connections.MyS
 			}
 		}
 	})
-	if m.Item("显示全部列").Chosen() {
+	if m.Item(locales.Text("显示全部列")).Chosen() {
 		t.dataHiddenColumns = nil
 	}
 	m.Separator()
-	if valid && m.Item("将此列宽度适配当前页").Chosen() {
+	if valid && m.Item(locales.Text("将此列宽度适配当前页")).Chosen() {
 		mysqlDataFitColumn(t, page, source)
 	}
-	if m.Item("重置全部列宽").Chosen() {
+	if m.Item(locales.Text("重置全部列宽")).Chosen() {
 		t.dataState.Columns.Widths = nil
 	}
-	if m.Item("显示字段类型").Checked(t.dataShowFieldTypes).Chosen() {
+	if m.Item(locales.Text("显示字段类型")).Checked(t.dataShowFieldTypes).Chosen() {
 		t.dataShowFieldTypes = !t.dataShowFieldTypes
 	}
 }

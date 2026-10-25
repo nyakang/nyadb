@@ -61,9 +61,9 @@ func (s *State) mysqlDataInspector(c *ui.Context, t *tab) {
 				}
 				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 					ui.Text(c, mysqlColumnTypeGlyph(field.DataType)).Bold().FontSize(17).TextColor(theme.Blue)
-					ui.Text(c, field.Name).Bold().FontSize(14).Grow(1).MinWidth(0)
+					ui.Text(c, field.Name).Bold().FontSize(14).SingleLine().Grow(1).MinWidth(0).Tooltip(field.Name)
 				})
-				ui.Text(c, t.dataDatabase+"."+t.dataTable).FontSize(theme.SmallFontSize).TextColor(theme.Muted)
+				ui.Text(c, t.dataDatabase+"."+t.dataTable).FontSize(theme.SmallFontSize).TextColor(theme.Muted).SingleLine().Tooltip(t.dataDatabase + "." + t.dataTable)
 				ui.Divider(c)
 				mysqlInspectorProperty(c, "类型", field.Type)
 				if !complete {
