@@ -18,7 +18,7 @@ func (s *State) workspace(c *ui.Context) {
 				tabs.List.Gap(0).Children(func() {
 					for i, doc := range s.tabs {
 						index, current := i, doc
-						item := tabs.Tab(i).Height(theme.TabHeight).Padding(2, 8).Radius(0)
+						item := tabs.Tab(i).Height(theme.TabHeight).Padding(2, 8).Radius(0).Label(current.title)
 						if i == s.activeTab {
 							item.Background(theme.ToolbarSelected).BorderWidth(1, 1, 0, 1).BorderColor(theme.Border)
 						}
@@ -29,13 +29,15 @@ func (s *State) workspace(c *ui.Context) {
 									icon = "query"
 								} else if current.kind == tabData {
 									icon = "table"
-								} else if current.kind == tabStructure || current.kind == tabMySQLData {
+								} else if current.kind == tabStructure {
+									icon = "design-table"
+								} else if current.kind == tabMySQLData {
 									icon = "table"
 								} else if current.kind == tabSettings {
 									icon = "settings"
 								}
 								theme.Icon(c, icon, 14, theme.Blue)
-								ui.Text(c, locales.Text(current.title)).FontSize(theme.FontSize).SingleLine().MaxWidth(220).Tooltip(current.title)
+								ui.Text(c, s.workspaceTabCaption(current)).FontSize(theme.FontSize).SingleLine().MaxWidth(220).Tooltip(current.title)
 								if current.kind != tabObjects {
 									if ui.ButtonBase(c).Label("关闭 "+current.title).Tooltip("关闭 "+current.title).
 										Size(16, 18).Children(func() { theme.Icon(c, "close", 10, theme.Muted) }).Clicked() {
