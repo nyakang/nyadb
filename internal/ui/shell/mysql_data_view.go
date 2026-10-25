@@ -98,7 +98,7 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 		}
 		ui.Row(c).Height(theme.CommandBarHeight).Padding(2, 6).Gap(6).AlignItems(ui.Center).
 			Background(theme.Header).Children(func() {
-			ui.Text(c, fmt.Sprintf("已读取 %d 行 · 第 %d 页", len(page.Rows), t.dataOffset/int64(max(1, t.dataLimit))+1)).
+			ui.Text(c, mysqlDataPageStatus(t)).
 				FontSize(theme.SmallFontSize).TextColor(theme.Muted).SingleLine().Grow(1).MinWidth(0)
 			if ui.Button(c, locales.Text("上一页")).Label(locales.Text("上一页数据")).
 				Height(theme.ControlHeight).Disabled(t.dataLoading || t.dataPage == nil || t.dataOffset <= 0).Clicked() {

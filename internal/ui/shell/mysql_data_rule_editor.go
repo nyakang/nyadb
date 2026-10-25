@@ -41,8 +41,6 @@ func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *connections.MyS
 	narrow := viewportWidth < 1100
 	ui.Column(c).Background(theme.Header).Padding(1, 6).Gap(2).Children(func() {
 		ui.Row(c).Height(theme.TabHeight).Gap(5).AlignItems(ui.Center).Children(func() {
-			theme.Icon(c, "table", 14, theme.Blue)
-			ui.Text(c, t.dataTable).FontSize(theme.FontSize).SingleLine().MaxWidth(125).MinWidth(0).Tooltip(t.dataTable)
 			label := "筛选 & 排序 ▸"
 			if t.dataRulesExpanded {
 				label = "筛选 & 排序 ▾"
