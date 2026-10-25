@@ -2808,11 +2808,11 @@ func (msgs Messages) AlignmentCopyChunk() string {
 	return Catalog.Format(msgs.locale, "alignmentCopyChunk", nil)
 }
 
-// AlignmentCopyChunkCompact says "复制片段"
+// AlignmentCopyChunkCompact says "片段"
 // in the language the app shows.
 func AlignmentCopyChunkCompact() string { return In(i18n.Locale()).AlignmentCopyChunkCompact() }
 
-// AlignmentCopyChunkCompact says "复制片段"
+// AlignmentCopyChunkCompact says "片段"
 // in the language of msgs.
 func (msgs Messages) AlignmentCopyChunkCompact() string {
 	return Catalog.Format(msgs.locale, "alignmentCopyChunkCompact", nil)
@@ -3070,13 +3070,13 @@ func (msgs Messages) AlignmentReadNextFieldChunk() string {
 	return Catalog.Format(msgs.locale, "alignmentReadNextFieldChunk", nil)
 }
 
-// AlignmentReadNextFieldChunkCompact says "下一段"
+// AlignmentReadNextFieldChunkCompact says "下段"
 // in the language the app shows.
 func AlignmentReadNextFieldChunkCompact() string {
 	return In(i18n.Locale()).AlignmentReadNextFieldChunkCompact()
 }
 
-// AlignmentReadNextFieldChunkCompact says "下一段"
+// AlignmentReadNextFieldChunkCompact says "下段"
 // in the language of msgs.
 func (msgs Messages) AlignmentReadNextFieldChunkCompact() string {
 	return Catalog.Format(msgs.locale, "alignmentReadNextFieldChunkCompact", nil)
