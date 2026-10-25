@@ -2808,6 +2808,16 @@ func (msgs Messages) AlignmentCopyChunk() string {
 	return Catalog.Format(msgs.locale, "alignmentCopyChunk", nil)
 }
 
+// AlignmentCopyChunkCompact says "复制片段"
+// in the language the app shows.
+func AlignmentCopyChunkCompact() string { return In(i18n.Locale()).AlignmentCopyChunkCompact() }
+
+// AlignmentCopyChunkCompact says "复制片段"
+// in the language of msgs.
+func (msgs Messages) AlignmentCopyChunkCompact() string {
+	return Catalog.Format(msgs.locale, "alignmentCopyChunkCompact", nil)
+}
+
 // AlignmentFieldProperties says "字段属性："
 // in the language the app shows.
 func AlignmentFieldProperties() string { return In(i18n.Locale()).AlignmentFieldProperties() }
@@ -3058,6 +3068,18 @@ func AlignmentReadNextFieldChunk() string { return In(i18n.Locale()).AlignmentRe
 // in the language of msgs.
 func (msgs Messages) AlignmentReadNextFieldChunk() string {
 	return Catalog.Format(msgs.locale, "alignmentReadNextFieldChunk", nil)
+}
+
+// AlignmentReadNextFieldChunkCompact says "下一段"
+// in the language the app shows.
+func AlignmentReadNextFieldChunkCompact() string {
+	return In(i18n.Locale()).AlignmentReadNextFieldChunkCompact()
+}
+
+// AlignmentReadNextFieldChunkCompact says "下一段"
+// in the language of msgs.
+func (msgs Messages) AlignmentReadNextFieldChunkCompact() string {
+	return Catalog.Format(msgs.locale, "alignmentReadNextFieldChunkCompact", nil)
 }
 
 // AlignmentDataReadFailed says "读取数据失败："

@@ -30,11 +30,14 @@ func (s *State) mysqlDataInspector(c *ui.Context, t *tab) {
 				if ui.Button(c, locales.Text("复制")).Label(locales.Text("复制单元格预览")).Height(theme.ControlHeight).FontSize(theme.SmallFontSize).Padding(2, 3).Clicked() {
 					c.WriteClipboard(mysqlDataCopyPreview(cell))
 				}
-				if canRead && ui.Button(c, locales.Text("读取字段片段")).Label(locales.Text("读取所选字段下一段")).Height(theme.ControlHeight).FontSize(theme.SmallFontSize).Padding(2, 3).
+				// Toolbar moves buttons to overflow when the translated text
+				// exceeds the narrow inspector width. Keep the full labels for
+				// accessibility while using compact visible captions.
+				if canRead && ui.Button(c, locales.Text("下一段")).Label(locales.Text("读取所选字段下一段")).Height(theme.ControlHeight).FontSize(theme.SmallFontSize).Padding(2, 3).
 					Disabled(t.dataChunkLoading || t.dataChunkDone).Clicked() {
 					s.loadMySQLChunk(c.Services(), t)
 				}
-				if chunkShown && ui.Button(c, locales.Text("复制此片段")).Height(theme.ControlHeight).FontSize(theme.SmallFontSize).Padding(2, 3).Clicked() {
+				if chunkShown && ui.Button(c, locales.Text("复制片段")).Label(locales.Text("复制此片段")).Height(theme.ControlHeight).FontSize(theme.SmallFontSize).Padding(2, 3).Clicked() {
 					c.WriteClipboard(t.dataChunkText)
 				}
 			}).Height(theme.CommandBarHeight).FillWidth().MinWidth(0).Padding(1, 4).Gap(2)
