@@ -30,7 +30,12 @@ func applyConnectionEditorFormTheme(c *ui.Context) {
 	// Rebind tokens on each frame: the standalone editor survives mode changes.
 	connectionFieldBackground = theme.Panel
 	connectionFieldBorder = theme.Border
-	connectionFieldFocus = theme.Blue
+	if c.Theme().Dark {
+		// In the observed dark editor, idle inputs blend into their dark
+		// fill; the native input draws its accent border only when focused.
+		connectionFieldBorder = theme.Panel
+	}
+	connectionFieldFocus = c.Theme().Focus
 	connectionFieldText = theme.Text
 	connectionFieldMuted = theme.Muted
 	connectionCheckboxBorder = theme.Border
@@ -44,7 +49,7 @@ func applyConnectionEditorFormTheme(c *ui.Context) {
 	t.Text = connectionFieldText
 	t.TextMuted = connectionFieldMuted
 	t.Focus = connectionFieldFocus
-	t.Accent = theme.Accent // MyGo TextInput uses Accent for the focused border.
+	t.Accent = connectionFieldFocus // MyGo TextInput uses Accent for the focused border.
 	c.SetTheme(&t)
 }
 

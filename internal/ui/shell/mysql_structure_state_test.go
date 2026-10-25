@@ -42,7 +42,7 @@ func waitMySQLStructure(t *testing.T, s *State, tt *ui.Tester) {
 	}
 	tt.Frame()
 	if s.currentTab().kind != tabStructure || s.currentTab().structureLoading {
-		t.Fatal("structure request did not settle")
+		t.Fatalf("structure request did not settle: kind=%v loading=%v database=%q row=%d node=%+v", s.currentTab().kind, s.currentTab().structureLoading, s.mysqlSelectedDatabase, s.objectRow, parseNavigationNode(s.explorerName))
 	}
 }
 func structureTestBrowser(t *testing.T) (*State, *ui.Tester) {
@@ -54,7 +54,7 @@ func structureTestBrowser(t *testing.T) (*State, *ui.Tester) {
 			{Name: "sales", Kind: "视图"},
 		}, nil
 	}
-	if err := tt.Click("浏览数据库：app_db"); err != nil {
+	if err := tt.Click("数据库：app_db"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)

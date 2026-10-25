@@ -13,7 +13,9 @@ func (s *State) profileRootMenu(m *ui.Menu) {
 	if m.Item(locales.Text("新建连接…")).Chosen() {
 		s.openConnectionDialog()
 	}
-	m.Item(locales.Text("关闭所有连接")).Disabled(true)
+	if m.Item(locales.Text("关闭所有连接")).Disabled(s.mysqlSessionProfileID == 0).Chosen() {
+		s.disconnectMySQLSession()
+	}
 	m.Item(locales.Text("管理连接…")).Disabled(true)
 	m.Separator()
 	if m.Item(locales.Text("新建组")).Chosen() {
@@ -26,6 +28,10 @@ func (s *State) profileRootMenu(m *ui.Menu) {
 }
 
 func (s *State) sidebarSettingsMenu(m *ui.Menu) {
+	s.selectedGroup, s.explorerName = "", ""
+	s.selectedProfileID = 0
+	s.explorerRow, s.objectRow = -1, -1
+	s.mysqlSelectedDatabase = ""
 	s.profileRootMenu(m)
 }
 
@@ -64,14 +70,14 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 	if !found {
 		return
 	}
-	s.selectProfileByName(name)
+	s.selectNavigationNode(services, profileNode(profile.ID))
 	canMySQL := profile.Kind == connections.MySQL
 	connected := s.mysqlSessionStateFor(profile.ID) == "已连接"
 	connectLabel := "打开连接"
 	if connected {
 		connectLabel = "关闭连接"
 	}
-	if m.Item(locales.Text(connectLabel)).Disabled(!canMySQL).Chosen() {
+	if m.Item(locales.Text(connectLabel)).Shortcut(0, ui.KeyEnter).Disabled(!canMySQL).Chosen() {
 		s.selectProfileByName(name)
 		if connected {
 			s.disconnectMySQLSession()
@@ -142,8 +148,12 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 	})
 	m.Item(locales.Text("共享…")).Disabled(true)
 	m.Separator()
-	if m.Item(locales.Text("刷新")).Chosen() {
-		s.loadProfiles()
+	if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).Chosen() {
+		if connected {
+			s.refreshMySQLDatabases(services)
+		} else {
+			s.loadProfiles()
+		}
 	}
 }
 
@@ -167,9 +177,9 @@ func (s *State) sidebarFilterMenu(m *ui.Menu) {
 
 func (s *State) sidebarFooter(c *ui.Context) {
 	ui.Column(c).BorderWidth(1, 0, 0, 0).BorderColor(theme.Border).
-		Padding(2, 4).Gap(1).Children(func() {
-		ui.Row(c).Height(28).Gap(2).AlignItems(ui.Center).Children(func() {
-			if ui.SearchField(c, &s.search).Label(locales.Text("搜索连接")).Placeholder(locales.Text("搜索")).Grow(1).MinWidth(0).Changed() {
+		Padding(0, 4).Gap(0).Children(func() {
+		ui.Row(c).Height(24).Gap(2).AlignItems(ui.Center).Children(func() {
+			if ui.SearchField(c, &s.search).Label(locales.Text("搜索连接")).Placeholder(locales.Text("搜索")).Height(22).Grow(1).MinWidth(0).Changed() {
 				s.changeProfileFilter()
 			}
 			filter := ui.ButtonBase(c).Label(locales.Text("筛选连接")).Tooltip(locales.Text("筛选连接类型")).

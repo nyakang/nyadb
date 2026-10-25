@@ -27,13 +27,13 @@ func TestAppearanceIsSharedByWorkbenchAndConnectionWindow(t *testing.T) {
 	s.chooseConnectionKind(connections.MySQL)
 	s.nextConnectionStep()
 	tt := ui.NewTester(s.ConnectionWindowView, 900, 700)
-	if connectionEditorSurface != theme.App || connectionFieldBackground != theme.Panel {
+	if connectionEditorSurface != theme.Toolbar || connectionFieldBackground != theme.Panel {
 		t.Fatal("connection editor retained stale dark tokens")
 	}
-	assertThemePixel(t, tt, 880, 440, theme.App)
+	assertThemePixel(t, tt, 2, 440, theme.Toolbar)
 	s.changeAppearance(theme.ModeDark)
 	ui.NewTester(s.ConnectionWindowView, 900, 700)
-	if connectionEditorSurface != theme.App || theme.App.R >= 100 {
+	if connectionEditorSurface != theme.Toolbar || theme.App.R >= 100 {
 		t.Fatal("connection editor did not return to dark")
 	}
 }

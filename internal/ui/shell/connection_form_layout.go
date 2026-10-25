@@ -9,17 +9,24 @@ import (
 // 166-DIP label column and 31-DIP row rhythm come from the observed original
 // 900×700 client area. Keep the native widgets; don't move them with offsets.
 const (
-	connectionFormMaxWidth    float32 = 604
-	connectionFormSideInset   float32 = 44
-	connectionFormLabelWidth  float32 = 166
-	connectionFormRowHeight   float32 = 31
-	connectionFormInputHeight float32 = 26
-	connectionFormBrowseSize  float32 = 22
-	connectionFormBrowseGap   float32 = 7
+	connectionFormMaxWidth        float32 = 604
+	connectionFormSideInset       float32 = 44
+	connectionFormLabelWidth      float32 = 166
+	connectionFormRowHeight       float32 = 31
+	connectionFormInputHeight     float32 = 26
+	connectionFormBrowseSize      float32 = 22
+	connectionFormBrowseGap       float32 = 7
+	connectionFooterControlHeight float32 = 24
 )
 
 func connectionFormWidth(clientWidth float32) float32 {
 	return min(connectionFormMaxWidth, clientWidth-connectionFormSideInset)
+}
+
+// Runtime observation on 2026-10-25 confirms the security/tunnel pages use
+// the full window with 20-DIP insets, unlike the centered General/Advanced.
+func connectionWideFormWidth(clientWidth float32) float32 {
+	return clientWidth - 40
 }
 
 func connectionFormRow(c *ui.Context) ui.Element {

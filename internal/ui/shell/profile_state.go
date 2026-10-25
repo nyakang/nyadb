@@ -32,6 +32,7 @@ func (s *State) loadProfiles() {
 		s.status = "读取连接档案失败：" + err.Error()
 		return
 	}
+	selectedNode := parseNavigationNode(s.explorerName)
 	s.profileEntries = list
 	groups, groupErr := s.profileService.ListGroups(context.Background())
 	if groupErr == nil {
@@ -56,7 +57,10 @@ func (s *State) loadProfiles() {
 	}
 	for _, p := range list {
 		if p.ID == s.selectedProfileID {
-			s.explorerName = p.Name
+			s.explorerName = profileNode(p.ID)
+			if selectedNode.ProfileID == p.ID && selectedNode.Database != "" && s.mysqlSessionStateFor(p.ID) == "已连接" {
+				s.explorerName = selectedNode.key()
+			}
 			if p.GroupName != "" {
 				s.explorerTree.Open.Add(groupNode(p.GroupName))
 			}

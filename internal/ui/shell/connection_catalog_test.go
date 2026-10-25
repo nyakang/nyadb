@@ -39,6 +39,9 @@ func TestConnectionCatalogUnsupportedType(t *testing.T) {
 	if s.connectionKind != connections.MySQL {
 		t.Fatal("supported engine was not selected")
 	}
+	if len(s.connectionRecent) != 0 {
+		t.Fatal("selecting a card must not insert recents and move the catalog")
+	}
 	s.chooseCatalogEntry(databaseCatalog[2]) // SQL Server is discovery-only
 	if s.connectionKind != "" || !strings.Contains(s.connectionError, "尚未支持") {
 		t.Fatalf("unsupported driver would proceed: %s / %q", s.connectionKind, s.connectionError)
@@ -52,11 +55,11 @@ func TestConnectionCatalogUnsupportedType(t *testing.T) {
 	if s.connectionStep != 1 || s.connectionDraft.Kind != connections.SQLite {
 		t.Fatal("SQLite navigation broke")
 	}
-	if len(s.connectionRecent) != 2 || s.connectionRecent[0] != "SQLite" {
+	if len(s.connectionRecent) != 1 || s.connectionRecent[0] != "SQLite" {
 		t.Fatalf("recent order: %v", s.connectionRecent)
 	}
 	s.openConnectionDialog()
-	if s.connectionSearch != "" || len(s.connectionRecent) != 2 {
+	if s.connectionSearch != "" || len(s.connectionRecent) != 1 {
 		t.Fatal("reopening should clear filters but retain in-session recents")
 	}
 }
@@ -67,10 +70,13 @@ func TestConnectionCatalogNativeLayoutAndListMode(t *testing.T) {
 	if err := tt.Click("连接"); err != nil {
 		t.Fatal(err)
 	}
-	for _, label := range []string{"连接筛选", "供应商筛选", "常用类型", "全部", "云数据库", "搜索连接类型"} {
+	for _, label := range []string{"连接筛选", "供应商筛选", "全部", "云数据库", "搜索连接类型"} {
 		if !tt.HasText(label) && label != "搜索连接类型" {
 			t.Errorf("catalog section missing: %s", label)
 		}
+	}
+	if tt.HasText("常用类型") {
+		t.Fatal("the initial catalog must not duplicate types above the All section")
 	}
 	if err := tt.Click("列表视图"); err != nil {
 		t.Fatal(err)

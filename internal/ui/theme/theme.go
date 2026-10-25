@@ -4,20 +4,24 @@ package theme
 import "github.com/egoist/mygo/ui"
 
 var (
-	App     = ui.Hex("#242424")
-	Menu    = ui.Hex("#393939")
-	Toolbar = ui.Hex("#3d3d3d")
-	Sidebar = ui.Hex("#282828")
-	Panel   = ui.Hex("#292929")
-	Header  = ui.Hex("#333333")
-	Border  = ui.Hex("#464646")
-	Accent  = ui.Hex("#0879d1")
+	App     = ui.Hex("#232629")
+	Menu    = ui.Hex("#31363b")
+	Toolbar = ui.Hex("#31363b")
+	Sidebar = ui.Hex("#232629")
+	Panel   = ui.Hex("#232629")
+	Header  = ui.Hex("#31363b")
+	Border  = ui.Hex("#454b50")
+	Accent  = ui.Hex("#009dff")
 	Text    = ui.Hex("#eeeeee")
-	Muted   = ui.Hex("#a6a6a6")
-	Blue    = ui.Hex("#56b6ff")
+	Muted   = ui.Hex("#979b9f")
+	Blue    = ui.Hex("#009dff")
 	Gold    = ui.Hex("#f4c550")
 	Green   = ui.Hex("#4ac48a")
 	Purple  = ui.Hex("#c584ed")
+
+	// Selection belongs to lists and grids. ToolbarSelected intentionally has
+	// much less emphasis so a mode button cannot look like a selected row.
+	ToolbarSelected, Selection, Hover, Pressed ui.Color
 )
 
 // Apply keeps MyGo's native input behavior but gives every workbench widget
@@ -37,7 +41,7 @@ func Apply(c *ui.Context) {
 	t.AccentHover = accentHover
 	t.AccentPressed = accentPressed
 	t.AccentText = accentText
-	t.Selection = Accent.Alpha(0.45)
+	t.Selection = Selection
 	t.Focus = focus
 	if dark {
 		t.Inverse, t.InverseText = Header, Text
@@ -46,7 +50,7 @@ func Apply(c *ui.Context) {
 		t.Inverse, t.InverseText = ui.Hex("#30353b"), ui.Hex("#ffffff")
 	}
 	t.Spacing = 3
-	t.FontSize = 13
-	t.Radius = 3
+	t.FontSize = FontSize
+	t.Radius = ControlRadius
 	c.SetTheme(&t)
 }

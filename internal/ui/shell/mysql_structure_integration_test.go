@@ -52,8 +52,9 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 		t.Fatalf("fixture not visible: %v", s.mysqlSessionDatabases)
 	}
 
+	s.explorerTree.Open.Add(profileNode(p.ID))
 	tt := ui.NewTester(s.View, 1280, 800)
-	if err := tt.Click("浏览数据库：nyadb_struct_a"); err != nil {
+	if err := tt.Click("数据库：nyadb_struct_a"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
@@ -113,7 +114,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 	if err := tt.Click("返回对象列表"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.Click("切换数据库：nyadb_struct_b"); err != nil {
+	if err := tt.Click("数据库：nyadb_struct_b"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
@@ -130,7 +131,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 	if err := tt.Click("返回对象列表"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.Click("切换数据库：nyadb_struct_a"); err != nil {
+	if err := tt.Click("数据库：nyadb_struct_a"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)

@@ -23,7 +23,7 @@ func (s *State) profileRoots() []string {
 	}
 	for _, p := range s.profileEntries {
 		if p.GroupName == "" && s.profileVisible(p) {
-			roots = append(roots, p.Name)
+			roots = append(roots, profileNode(p.ID))
 		}
 	}
 	return roots
@@ -43,13 +43,13 @@ func (s *State) groupMatches(name, query string) bool {
 
 func (s *State) profileChildren(node string) []string {
 	if !isGroupNode(node) {
-		return nil
+		return s.navigationChildren(node)
 	}
 	group := groupFromNode(node)
 	names := []string{}
 	for _, p := range s.profileEntries {
 		if strings.EqualFold(p.GroupName, group) && s.profileVisible(p) {
-			names = append(names, p.Name)
+			names = append(names, profileNode(p.ID))
 		}
 	}
 	return names
@@ -69,6 +69,7 @@ func (s *State) selectGroup(name string) {
 	s.selectedGroup = name
 	s.selectedProfileID = 0
 	s.explorerName = groupNode(name)
+	s.explorerRow = -1
 	s.objectRow = -1
 	s.status = "已选择虚拟组：" + name
 }
@@ -142,20 +143,19 @@ var _ = connections.Group{}
 // List.Selected only after Outline has drawn produces a missing highlight until
 // the next interaction, which is visible in headless first-frame captures.
 func (s *State) outlineRowForSelection(roots []string) int {
-	row := 0
-	for _, root := range roots {
-		if root == s.explorerName {
-			return row
-		}
-		row++
-		if s.explorerTree.Open.Has(root) {
-			for _, child := range s.profileChildren(root) {
-				if child == s.explorerName {
-					return row
-				}
-				row++
+	row, selected := 0, -1
+	var visit func([]string)
+	visit = func(keys []string) {
+		for _, key := range keys {
+			if key == s.explorerName {
+				selected = row
+			}
+			row++
+			if s.explorerTree.Open.Has(key) {
+				visit(s.profileChildren(key))
 			}
 		}
 	}
-	return -1
+	visit(roots)
+	return selected
 }

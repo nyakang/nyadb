@@ -72,7 +72,7 @@ func (s *State) MySQLSSHKeyPickerError(version uint64) {
 // connectionMySQLSSH mirrors the original's conditional password/key fields.
 // Never suggest the SSH tunnel is active; the actual transport is not built.
 func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
-	formWidth := connectionFormWidth(width)
+	formWidth := connectionWideFormWidth(width)
 	labelWidth := connectionFormLabelWidth
 	fieldWidth := formWidth - labelWidth
 	ssh := &s.connectionDraft.MySQLAdvanced.SSH

@@ -6,11 +6,31 @@ import (
 	"github.com/egoist/mygo/ui"
 )
 
-func TestConnectionChooserListRowComfort(t *testing.T) {
-	// Maintain a generous hit target for each row. The original ~19px tree
-	// was accurate structurally but too dense for the NyaDB native chooser.
-	if catalogTreeRowHeight < 24 || catalogTreeRowHeight > 30 {
-		t.Fatalf("tree rows should have comfortable spacing, got %v", catalogTreeRowHeight)
+func TestConnectionChooserCompactRowsRemainIndividuallySelectable(t *testing.T) {
+	s := New()
+	s.SetConnectionWindowHost(func() {}, func() {})
+	s.openConnectionDialog()
+	s.connectionGridMode = false
+	tt := ui.NewTester(s.ConnectionWindowView, 900, 700)
+	previousY := float32(-1)
+	for _, name := range []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite"} {
+		r, ok := tt.Find("选择 " + name)
+		if !ok || r.H != 19 || (previousY >= 0 && r.Y-previousY != 19) {
+			t.Fatalf("%s does not occupy a compact non-overlapping row: %+v", name, r)
+		}
+		previousY = r.Y
+	}
+	for _, name := range []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite"} {
+		r, ok := tt.Find("选择 " + name)
+		if !ok {
+			t.Fatalf("missing %s after selecting another type", name)
+		}
+		// Hit the lower edge as well as the row center: neighboring rows
+		// must not overlap after reducing the icon and text line heights.
+		tt.ClickAt(r.X+r.W/2, r.Y+r.H-1)
+		if s.connectionSelectedName != name {
+			t.Fatalf("clicking %s selected %q", name, s.connectionSelectedName)
+		}
 	}
 }
 

@@ -106,7 +106,7 @@ func TestSearchConnections(t *testing.T) {
 
 func TestResponsivePaneDefaults(t *testing.T) {
 	s := New()
-	if s.sidebarPercent != 22 || s.centerPercent != 75 {
+	if s.sidebarPercent < 19 || s.sidebarPercent > 21 || s.centerPercent < 79 || s.centerPercent > 82 {
 		t.Fatalf("unexpected initial pane proportions: %v/%v", s.sidebarPercent, s.centerPercent)
 	}
 	tt := ui.NewTester(s.View, 900, 600)

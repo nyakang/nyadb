@@ -57,20 +57,23 @@ func TestSharedMySQLFormGeometry(t *testing.T) {
 	}
 	for _, name := range []string{"SSL 客户端密钥：", "SSL 客户端证书：", "SSL CA 证书："} {
 		rect := find(name)
-		if !near(rect.X, 314) || !near(rect.H, connectionFormInputHeight) {
+		if !near(rect.X, 186) || !near(rect.H, connectionFormInputHeight) {
 			t.Fatalf("SSL field %s does not share label column: %+v", name, rect)
+		}
+		if !near(rect.W, 665) {
+			t.Fatalf("SSL paths should extend to the right-side browse buttons: %+v", rect)
 		}
 	}
 	if err := tt.Click("SSH"); err != nil {
 		t.Fatal(err)
 	}
-	if r := find("SSH 端口"); !near(r.X, 314) || !near(r.H, connectionFormInputHeight) {
+	if r := find("SSH 端口"); !near(r.X, 186) || !near(r.H, connectionFormInputHeight) {
 		t.Fatalf("SSH port is off-grid: %+v", r)
 	}
 	if err := tt.Click("HTTP"); err != nil {
 		t.Fatal(err)
 	}
-	if r := find("HTTP 隧道网址："); !near(r.X, 314) || !near(r.H, connectionFormInputHeight) {
+	if r := find("HTTP 隧道网址："); !near(r.X, 186) || !near(r.W, 694) || !near(r.H, connectionFormInputHeight) {
 		t.Fatalf("HTTP URL is off-grid: %+v", r)
 	}
 }

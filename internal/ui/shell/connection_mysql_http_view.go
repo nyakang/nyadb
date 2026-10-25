@@ -89,12 +89,12 @@ func (s *State) MySQLHTTPFilePickerError(version uint64) {
 }
 
 func (s *State) connectionMySQLHTTP(c *ui.Context, width float32) {
-	formWidth := connectionFormWidth(width)
+	formWidth := connectionWideFormWidth(width)
 	labelWidth := connectionFormLabelWidth
 	fieldWidth := formWidth - labelWidth
 	cfg := &s.connectionDraft.MySQLAdvanced.HTTP
 	active := cfg.Enabled
-	ui.Column(c).Width(formWidth).Gap(1).Children(func() {
+	ui.Column(c).Width(formWidth).Gap(0).Children(func() {
 		connectionFormRow(c).Children(func() {
 			connectionFormCheckbox(c, &cfg.Enabled, "使用 HTTP 隧道", s.connectionDraft.MySQLAdvanced.SSH.Enabled)
 		})
@@ -102,11 +102,11 @@ func (s *State) connectionMySQLHTTP(c *ui.Context, width float32) {
 		connectionFormRow(c).Children(func() {
 			connectionFormCheckbox(c, &cfg.Base64Queries, "使用 base64 编码传出查询", !active)
 		})
-		ui.Row(c).Height(29).Gap(0).Children(func() {
+		ui.Row(c).Height(27).Gap(0).Children(func() {
 			tabs := ui.TabsBase(c, &s.mysqlHTTPSubtab, 2)
 			tabs.List.Gap(0).Children(func() {
 				for i, name := range []string{"验证", "代理"} {
-					item := tabs.Tab(i).Height(29).Padding(4, 12).Border(1, theme.Border)
+					item := tabs.Tab(i).Height(27).Padding(4, 12).Border(1, theme.Border)
 					if i == s.mysqlHTTPSubtab {
 						item.Background(theme.Header)
 					}
@@ -115,7 +115,7 @@ func (s *State) connectionMySQLHTTP(c *ui.Context, width float32) {
 			})
 			ui.Box(c).Grow(1)
 		})
-		ui.Column(c).Width(formWidth).Height(365).Border(1, theme.Border).
+		ui.Column(c).Width(formWidth).Height(373).Border(1, theme.Border).
 			Padding(8, 9).Gap(0).Children(func() {
 			inside := formWidth - 20
 			innerLabel := connectionFormLabelWidth
@@ -126,8 +126,8 @@ func (s *State) connectionMySQLHTTP(c *ui.Context, width float32) {
 				s.mysqlHTTPProxy(c, cfg, innerLabel, innerField, active)
 			}
 		})
-		ui.Row(c).Height(32).Justify(ui.End).AlignItems(ui.Center).Children(func() {
-			ui.Button(c, "导出隧道脚本…").Width(200).Height(30).
+		ui.Row(c).Height(32).Margin(4, 0, 0, 0).Justify(ui.End).AlignItems(ui.Center).Children(func() {
+			ui.Button(c, "导出隧道脚本…").Width(200).Height(connectionFooterControlHeight).
 				Label("导出隧道脚本（尚未实现）").Disabled(true)
 		})
 	})

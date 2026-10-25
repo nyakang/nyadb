@@ -44,8 +44,9 @@ func TestMySQLRealKeysetAndOnDemandFieldNativeViewer(t *testing.T) {
 	if !slices.Contains(s.mysqlSessionDatabases, "nyadb_perf") {
 		t.Fatal("performance fixture not visible")
 	}
+	s.explorerTree.Open.Add(profileNode(p.ID))
 	tt := ui.NewTester(s.View, 1280, 800)
-	if err = tt.Click("浏览数据库：nyadb_perf"); err != nil {
+	if err = tt.Click("数据库：nyadb_perf"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)

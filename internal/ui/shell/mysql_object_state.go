@@ -37,6 +37,10 @@ func (s *State) resetMySQLObjectBrowser() {
 	s.mysqlObjectCache = make(map[string][]connections.MySQLDBObject)
 	s.mysqlObjectErrors = make(map[string]string)
 	s.mysqlDatabaseNodes = make(map[string]*mysqlDatabaseNode)
+	if parseNavigationNode(s.explorerName).Database != "" {
+		s.explorerName = profileNode(s.selectedProfileID)
+		s.explorerRow = -1
+	}
 }
 
 func (s *State) reconcileMySQLDatabases(names []string) {
@@ -81,6 +85,10 @@ func (s *State) selectMySQLDatabase(services ui.Services, database string) {
 	if s.mysqlSelectedDatabase != database {
 		s.cancelMySQLObjectQuery()
 		s.mysqlSelectedDatabase = database
+		// A different database is a different list; keep column layout but do
+		// not let MyGo restore the previous database's row key or scroll anchor.
+		s.objectState = ui.ListState{Columns: s.objectState.Columns}
+		s.objectRow = -1
 		s.mysqlObjectKind = "全部"
 	}
 	if database == "" || s.mysqlSessionStatus != "已连接" {
@@ -161,6 +169,25 @@ func (s *State) consumeMySQLObjects() {
 			return
 		}
 		s.mysqlObjectCache[result.database] = result.objects
+		if result.database == s.mysqlSelectedDatabase {
+			selected := parseNavigationNode(s.explorerName)
+			items := s.mysqlSelectedObjects()
+			if selected.Kind == "object" && selected.Database == result.database {
+				s.objectRow = -1
+				for i, obj := range items {
+					if obj.Name == selected.Object && obj.Kind == selected.Category {
+						s.objectRow = i
+						break
+					}
+				}
+				if s.objectRow < 0 {
+					s.explorerName = databaseNode(s.mysqlSessionProfileID, result.database).key()
+					s.explorerRow = -1
+				}
+			} else if s.objectRow < 0 && len(items) > 0 {
+				s.objectRow = 0
+			}
+		}
 		delete(s.mysqlObjectErrors, result.database)
 		s.resolveNavigatorObject()
 	default:
@@ -179,81 +206,4 @@ func (s *State) mysqlSelectedObjects() []connections.MySQLDBObject {
 		}
 	}
 	return items
-}
-
-func (s *State) mysqlDatabaseTree(c *ui.Context) {
-	if s.mysqlSessionStateFor(s.selectedProfileID) != "已连接" {
-		return
-	}
-	if s.mysqlDatabaseNodes == nil {
-		s.mysqlDatabaseNodes = make(map[string]*mysqlDatabaseNode)
-	}
-	ui.Column(c).Padding(3, 0).Gap(0).Children(func() {
-		ui.Text(c, "数据库对象").FontSize(11).Padding(4, 8)
-		ui.Tree(c, func() {
-			for _, database := range s.mysqlSessionDatabases {
-				db := database
-				node := s.mysqlDatabaseNodes[db]
-				if node == nil {
-					node = &mysqlDatabaseNode{}
-					s.mysqlDatabaseNodes[db] = node
-				}
-				before := node.open
-				item := ui.TreeItem(c, db, &node.open, func() {
-					if s.mysqlObjectPending == db {
-						ui.TreeItem(c, "正在加载…", nil, nil)
-					} else if err := s.mysqlObjectErrors[db]; err != "" {
-						ui.TreeItem(c, "加载失败（点击右侧刷新）", nil, nil)
-					} else if objs, ok := s.mysqlObjectCache[db]; ok {
-						for _, kind := range []string{"表", "视图"} {
-							k := kind
-							open := &node.tablesOpen
-							if k == "视图" {
-								open = &node.viewsOpen
-							}
-							category := ui.TreeItem(c, k, open, func() {
-								shown := 0
-								for _, obj := range objs {
-									if obj.Kind != k {
-										continue
-									}
-									if shown >= 100 {
-										ui.TreeItem(c, "更多对象请在右侧列表查看…", nil, nil)
-										break
-									}
-									shown++
-									leaf := ui.TreeItem(c, obj.Name, nil, nil)
-									if leaf.Clicked() {
-										s.mysqlSelectedDatabase = db
-										s.mysqlObjectKind = k
-									}
-									if leaf.DoubleClicked() {
-										s.openMySQLData(c.Services(), db, obj.Name)
-									}
-									leaf.ContextMenu(func(m *ui.Menu) {
-										if m.Item("打开表（只读）：" + obj.Name).Chosen() {
-											s.openMySQLData(c.Services(), db, obj.Name)
-										}
-										if m.Item("设计表（只读）：" + obj.Name).Chosen() {
-											s.openMySQLStructure(c.Services(), db, obj.Name)
-										}
-									})
-								}
-							})
-							if category.Clicked() {
-								s.mysqlSelectedDatabase = db
-								s.mysqlObjectKind = k
-							}
-						}
-					}
-				})
-				if item.Clicked() {
-					node.open = true
-					s.selectMySQLDatabase(c.Services(), db)
-				} else if node.open && !before {
-					s.selectMySQLDatabase(c.Services(), db)
-				}
-			}
-		})
-	})
 }

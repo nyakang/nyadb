@@ -22,18 +22,18 @@ func assertThemePixel(t *testing.T, tt *ui.Tester, x, y int, want ui.Color) {
 }
 
 func TestConnectionWindowUsesWorkbenchPaletteOnEveryTab(t *testing.T) {
-	if connectionEditorSurface != theme.App || connectionEditorTabsBG != theme.Header ||
-		connectionEditorBorder != theme.Border || connectionEditorButton != theme.Header ||
-		connectionFieldText != theme.Text || connectionFieldMuted != theme.Muted ||
-		connectionFieldFocus != theme.Blue {
-		t.Fatal("connection editor has diverged from the shared workbench palette")
-	}
 	s := New()
 	s.SetConnectionWindowHost(func() {}, func() {})
 	s.openConnectionDialog()
 	s.chooseConnectionKind(connections.MySQL)
 	s.nextConnectionStep()
 	tt := ui.NewTester(s.ConnectionWindowView, 900, 700)
+	if connectionEditorSurface != theme.Toolbar || connectionEditorTabsBG != theme.Toolbar ||
+		connectionEditorBorder != theme.Border || connectionEditorButton != theme.Header ||
+		connectionFieldText != theme.Text || connectionFieldMuted != theme.Muted ||
+		connectionFieldFocus != ui.Hex("#5ab7e6") {
+		t.Fatal("connection editor has diverged from the shared workbench palette")
+	}
 
 	// Samples are deliberately in empty chrome, away from text and borders.
 	// These test real rendered colors, not just token identities.
@@ -44,8 +44,8 @@ func TestConnectionWindowUsesWorkbenchPaletteOnEveryTab(t *testing.T) {
 		if name == "常规" {
 			assertThemePixel(t, tt, 360, 14, theme.Header)
 		}
-		assertThemePixel(t, tt, 880, 440, theme.App)
-		assertThemePixel(t, tt, 440, 680, theme.Panel)
+		assertThemePixel(t, tt, 2, 440, theme.Toolbar)
+		assertThemePixel(t, tt, 440, 680, theme.Toolbar)
 		if !tt.HasText("取消") || !tt.HasText("确定") {
 			t.Fatalf("lost native footer actions on %s", name)
 		}
@@ -73,7 +73,7 @@ func TestConnectionChooserSharesWorkbenchTheme(t *testing.T) {
 	s := New()
 	s.SetConnectionWindowHost(func() {}, func() {})
 	s.openConnectionDialog()
-	tt := ui.NewTester(s.ConnectionWindowView, 902, 732)
+	tt := ui.NewTester(s.ConnectionWindowView, 900, 700)
 	assertThemePixel(t, tt, 888, 440, theme.App)
 	if !tt.HasText("下一步") {
 		t.Fatal("chooser lost its native navigation")
@@ -85,8 +85,8 @@ func TestConnectionEditorProfileSidebarUsesWorkbenchSelection(t *testing.T) {
 	if !s.connectionProfilesVisible || !tt.HasText("主要配置文件 (Active)") {
 		t.Fatal("editor's native configuration sidebar is missing")
 	}
-	// The selected profile is a NyaDB accent row, not the former bright cyan.
-	assertThemePixel(t, tt, 240, 49, theme.Accent)
+	// Profile rows use the same selection token as other navigation lists.
+	assertThemePixel(t, tt, 240, 49, theme.Selection)
 	if err := tt.Click("切换连接配置文件侧栏"); err != nil {
 		t.Fatal(err)
 	}

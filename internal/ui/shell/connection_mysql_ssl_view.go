@@ -62,7 +62,7 @@ func (s *State) clearMySQLSSLPassphrase() {
 // connectionMySQLSSL uses only MyGo native widgets and independent labels;
 // paths are non-secret metadata, the password stays in memory.
 func (s *State) connectionMySQLSSL(c *ui.Context, width float32) {
-	formWidth := connectionFormWidth(width)
+	formWidth := connectionWideFormWidth(width)
 	labelWidth := connectionFormLabelWidth
 	fieldWidth := formWidth - labelWidth
 	ssl := &s.connectionDraft.MySQLAdvanced.SSL
@@ -87,7 +87,7 @@ func (s *State) connectionMySQLSSL(c *ui.Context, width float32) {
 		connectionFormRow(c).Children(func() {
 			ui.Text(c, locales.Text("指定密码：")).FontSize(12).Width(labelWidth).
 				TextColor(theme.Muted)
-			connectionFormTextInput(c, &s.mysqlSSLPassphrase, "SSL 密钥密码", fieldWidth, !active, true)
+			connectionFormTextInput(c, &s.mysqlSSLPassphrase, "SSL 密钥密码", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, true)
 		})
 		ui.Row(c).Height(26).Gap(0).Children(func() {
 			ui.Box(c).Width(labelWidth)

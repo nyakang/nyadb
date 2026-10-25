@@ -11,16 +11,16 @@ import (
 
 func (s *State) workspace(c *ui.Context) {
 	ui.Column(c).Fill().Background(theme.Sidebar).Children(func() {
-		ui.Row(c).Height(27).AlignItems(ui.Center).Padding(0, 6).
-			Background(theme.Header).Gap(6).Children(func() {
+		ui.Row(c).Height(theme.TabHeight).AlignItems(ui.Center).Padding(0, 3).
+			Background(theme.Panel).Gap(3).Children(func() {
 			ui.ScrollHorizontal(c).Grow(1).Children(func() {
 				tabs := ui.TabsBase(c, &s.activeTab, len(s.tabs))
-				tabs.List.Gap(3).Children(func() {
+				tabs.List.Gap(0).Children(func() {
 					for i, doc := range s.tabs {
 						index, current := i, doc
-						item := tabs.Tab(i).Height(25).Padding(2, 8).Radius(2)
+						item := tabs.Tab(i).Height(theme.TabHeight).Padding(2, 8).Radius(0)
 						if i == s.activeTab {
-							item.Background(theme.Panel)
+							item.Background(theme.ToolbarSelected).BorderWidth(1, 1, 0, 1).BorderColor(theme.Border)
 						}
 						item.Children(func() {
 							ui.Row(c).AlignItems(ui.Center).Gap(5).Children(func() {
@@ -35,10 +35,10 @@ func (s *State) workspace(c *ui.Context) {
 									icon = "settings"
 								}
 								theme.Icon(c, icon, 14, theme.Blue)
-								ui.Text(c, locales.Text(current.title)).FontSize(12).SingleLine()
+								ui.Text(c, locales.Text(current.title)).FontSize(theme.FontSize).SingleLine().MaxWidth(220).Tooltip(current.title)
 								if current.kind != tabObjects {
-									if ui.Button(c, "×").Label("关闭 "+current.title).
-										Padding(0, 4).Clicked() {
+									if ui.ButtonBase(c).Label("关闭 "+current.title).Tooltip("关闭 "+current.title).
+										Size(16, 18).Children(func() { theme.Icon(c, "close", 10, theme.Muted) }).Clicked() {
 										s.closeTab(index)
 									}
 								}
@@ -55,7 +55,8 @@ func (s *State) workspace(c *ui.Context) {
 					}
 				})
 			})
-			if ui.Button(c, "＋").Label(locales.Text("新建 SQL 页签")).Padding(3, 8).Clicked() {
+			if ui.ButtonBase(c).Label(locales.Text("新建 SQL 页签")).Tooltip(locales.Text("新建 SQL 页签")).Size(24, 23).
+				Children(func() { theme.Icon(c, "plus", 12, theme.Muted) }).Clicked() {
 				s.openQuery()
 			}
 		})
@@ -167,17 +168,16 @@ func (s *State) queryWorkspace(c *ui.Context, tab *tab) {
 	ui.SplitVerticalPercent(c, &s.editorPercent,
 		func() {
 			ui.Column(c).Fill().Children(func() {
-				ui.Row(c).Height(36).Padding(4, 10).Gap(10).AlignItems(ui.Center).
+				ui.Row(c).Height(theme.CommandBarHeight).Padding(2, 6).Gap(6).AlignItems(ui.Center).
 					Background(theme.Header).Children(func() {
-					ui.Text(c, "query.sql").TextColor(theme.Muted).FontSize(12)
-					ui.Box(c).Grow(1)
-					if ui.PrimaryButton(c, "运行模拟查询").Clicked() {
-						s.demoRuns++
-						s.status = fmt.Sprintf("模拟查询已运行 %d 次（没有访问数据库）", s.demoRuns)
-					}
-					if ui.Button(c, locales.Text("取消")).Clicked() {
-						s.status = "没有运行中的真实查询"
-					}
+					ui.Toolbar(c, func() {
+						if ui.Button(c, locales.Text("运行模拟查询")).Height(theme.ControlHeight).Clicked() {
+							s.demoRuns++
+							s.status = fmt.Sprintf("模拟查询已运行 %d 次（没有访问数据库）", s.demoRuns)
+						}
+						ui.Button(c, locales.Text("取消")).Height(theme.ControlHeight).Disabled(true)
+					}).Label(locales.Text("查询操作")).Grow(1).MinWidth(0).Padding(0).Gap(4)
+					ui.Text(c, "query.sql").TextColor(theme.Muted).FontSize(theme.SmallFontSize).SingleLine()
 				})
 				tab.editor.Theme = theme.SQLTheme(c.Theme())
 				editor.View(c, tab.editor).Grow(1).FillWidth()
@@ -189,10 +189,10 @@ func (s *State) queryWorkspace(c *ui.Context, tab *tab) {
 
 func (s *State) dataPreview(c *ui.Context) {
 	ui.Column(c).Fill().Children(func() {
-		ui.Row(c).Height(34).AlignItems(ui.Center).Padding(4, 10).Gap(12).
+		ui.Row(c).Height(theme.CommandBarHeight).AlignItems(ui.Center).Padding(2, 6).Gap(8).
 			Background(theme.Header).Children(func() {
-			ui.Text(c, "数据预览").Bold().FontSize(12)
-			ui.Text(c, "模拟数据 · 100,000 行 / 50 列").TextColor(theme.Muted).FontSize(12)
+			ui.Text(c, locales.Text("数据预览")).FontSize(theme.FontSize)
+			ui.Text(c, locales.Text("模拟数据 · 100,000 行 / 50 列")).TextColor(theme.Muted).FontSize(theme.SmallFontSize).SingleLine().Grow(1).MinWidth(0)
 		})
 		ui.Table(c, &s.dataState, s.dataColumns, PreviewRows, func(row, col int) {
 			ui.Text(c, PreviewCell(row, col)).SingleLine().FontSize(12)

@@ -1,5 +1,69 @@
 # NyaDB Implementation Status
 
+## Current snapshot — 2026-10-25
+
+The current baseline is **Go 1.27.1+ and MyGo `v0.6.3-nyadb.2`**. `go.mod`
+requires upstream `github.com/egoist/mygo v0.6.3` and replaces it with the
+NyaDB fork. This UI alignment iteration does not change the driver interface,
+profile format, or SQLite schema.
+
+| Area | Current implementation |
+|---|---|
+| Profiles | Local MySQL, PostgreSQL, and SQLite profile CRUD, grouping, stars, search, and non-secret persistence. Selecting a profile does not connect. |
+| MySQL sessions | Explicit asynchronous connect/cancel/disconnect and connection testing; direct TCP and verified TLS; stale-result protection and credential reentry on reconnect. Unsupported connection settings fail before dialing. |
+| MySQL objects | Real database and table/view metadata, lazy loading, refresh/retry, and a unified native virtual tree using stable group/profile/database/category/object identities. |
+| MySQL structure | Real read-only fields, indexes, foreign keys, and field properties. “Design Table” opens this viewer; it does not edit schema. |
+| MySQL data | Real read-only table/view rows, virtualized cells, bounded paging, supported keyset traversal, server-side filtering/sorting, and large-field chunk previews. NULL, empty strings, and truncated values remain distinct. |
+| SQL editor | Multi-tab editing and syntax highlighting; execution and result previews are explicitly simulated and do not run user SQL against the database. |
+| PostgreSQL / SQLite | Local profiles and their existing forms only; no managed sessions or live database browser. The application's own SQLite configuration storage is separate. |
+| Unimplemented capabilities | Arbitrary SQL execution, data/schema writes, import/export, SSH/HTTP tunnels, and additional database drivers. Unimplemented commands are disabled. |
+
+The current Linux alignment target is Navicat 18, Simplified Chinese, dark
+theme, and compact density. Shared theme metrics now provide 19-DIP navigation
+and chooser list rows with 16-DIP icons, low-emphasis toolbar selection, and
+initial navigation/inspector content widths of 250/200 DIP shared across workspace
+pages. The calibrated dark workspace/panel fill is `#232629`, and toolbar,
+status bar, and connection-editor surfaces use `#31363b`.
+
+The chooser and MySQL editor use a 900×700 reference client area. General and
+Advanced use a centered 604-DIP form; SSL, SSH, and HTTP use the available
+client width minus 40 DIP (860 DIP at the reference size). These forms share
+a 166-DIP label column, 31-DIP row rhythm, and 26-DIP input height. The current
+19-DIP chooser rows and full-width tunnel forms supersede the roomier chooser
+and propagated 604-DIP form assumptions described in the historical milestones
+below. Fixed editor footers and scrolling keep actions reachable in smaller
+windows; cancel/back/close retain draft and credential-cleanup boundaries.
+
+### Evidence and current acceptance
+
+Implementation, headless UI tests, native GUI observations, and original/runtime
+comparisons are separate evidence levels. **O** means original runtime
+observation, **S** static original evidence, **I** independent implementation
+and tests, **V** a passed comparison for the stated scene and measurements,
+and **Unknown** insufficient evidence. Historical V results do not establish
+current whole-page or whole-application parity.
+
+Current differential tooling accepts workbench and connection-form UI-state
+evidence without inventing database results. Objects, structure, and data
+scenes still require matching real service, fixture, read-result, and selected
+state evidence. Without a valid original read, those scenes remain **BLOCKED**.
+The gate records client crops, actual scale, fonts, source identity, readiness,
+selection/expansion/menu state, and explicit geometry/color measurements;
+see [the current gate specification](UI_VISUAL_GATE_2026-10-25.md).
+
+The [iteration report](UI_ALIGNMENT_2026-10-25.md) records passing tests, race,
+static checks, packaging and cross-compilation, plus native screenshots and
+the remaining strict visual BLOCKED conditions. Windows/macOS runtime behavior
+and any unobserved minimum-window, scale, theme, or language combinations remain
+**Unknown**, even when compilation or headless tests pass.
+
+## Historical milestones
+
+The entries below describe the implementation and verification **at their
+recorded milestone**. Version pins, pending features, UI measurements, and
+limitations in those entries are historical; the current snapshot above takes
+precedence. Linked reports retain their original evidence scope.
+
 ## M0 — MyGo Native UI framework verification
 
 Status: **M0 source implementation and headless/cross compilation checks passed. Native GUI smoke tests pending.**
@@ -81,8 +145,9 @@ are implemented. Supported profile kinds are unchanged. See
 screenshots, tests, security boundaries and remaining visual differences.
 
 The connection chooser **list view** was subsequently rebuilt as a compact
-expandable vendor tree after live Navicat 18 runtime observation. It includes
-25-DIP rows (intentionally roomier than the observed 19px original), independent vendor expansion, full-row selection and two-pane
+expandable vendor tree after live Navicat 18 runtime observation. At this
+milestone it used 25-DIP rows (roomier than the observed 19px original;
+superseded by 19 DIP on 2026-10-25), independent vendor expansion, full-row selection and two-pane
 search filtering. See `docs/NAVICAT_LIST_TREE_DIFFERENTIAL_2026-10-21.md`.
 
 A subsequent sidebar iteration unified vendor filter ordering with the tree,
@@ -182,11 +247,13 @@ See `docs/MYSQL_CONNECTION_CHROME_DIFFERENTIAL_2026-10-21.md`.
 
 ### Shared MySQL form geometry (2026-10-21)
 
-Native MyGo connection forms now share a 604-DIP centered layout, 166-DIP
+At this milestone native MyGo connection forms shared a 604-DIP centered layout, 166-DIP
 label column, 31-DIP row rhythm and 26-DIP text/select controls. Browse
 buttons use 22 DIP with 7 DIP spacing. General and Advanced were compared
 against original screenshots before propagating these rules to SSL, SSH and
-HTTP; existing MyGo checkboxes retain their native 16-DIP size. Headless
+HTTP. Runtime observation on 2026-10-25 superseded that propagation: those
+three pages use the full client width minus 40 DIP. At the earlier milestone,
+existing MyGo checkboxes retained their native 16-DIP size. Headless
 rectangular-geometry tests and isolated Linux GUI screenshots confirm
 consistent positioning, without claiming pixel-perfect parity. See
 `docs/MYSQL_FORM_GEOMETRY_DIFFERENTIAL_2026-10-21.md`.
