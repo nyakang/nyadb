@@ -37,14 +37,13 @@ func (s *State) mysqlDatabaseWorkspace(c *ui.Context) {
 	ui.Column(c).Fill().Children(func() {
 		ui.Row(c).Height(30).Gap(3).Padding(1, 4).AlignItems(ui.Center).Background(theme.Header).Children(func() {
 			ui.Toolbar(c, func() {
+				// Keep the available read-only actions visible on narrow pages.
+				// Unsupported DDL/import/export actions must not crowd them out.
 				for _, action := range []struct{ label, icon, accessible string }{
 					{"打开表", "open-table", "打开选中表数据"}, {"设计表", "design-table", "打开选中表结构"},
-					{"新建表", "new-table", "新建表"}, {"删除表", "delete-table", "删除表"},
-					{"导入向导", "import", "导入向导"}, {"导出向导", "export", "导出向导"},
 				} {
 					item := action
-					supported := item.label == "打开表" || item.label == "设计表"
-					if ui.ButtonBase(c).Label(locales.Text(item.accessible)).Tooltip(locales.Text(item.label)).Disabled(!supported || !canOpen).Padding(2, 4).Height(25).Children(func() {
+					if ui.ButtonBase(c).Label(locales.Text(item.accessible)).Tooltip(locales.Text(item.label)).Disabled(!canOpen).Padding(2, 4).Height(25).Children(func() {
 						ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
 							theme.Icon(c, item.icon, 14, theme.Muted)
 							ui.Text(c, locales.Text(item.label)).FontSize(12).SingleLine()
@@ -65,8 +64,7 @@ func (s *State) mysqlDatabaseWorkspace(c *ui.Context) {
 						button.Background(theme.Border.Alpha(.35))
 					}
 					if button.Clicked() {
-						s.mysqlObjectKind = filter
-						s.objectRow = -1
+						s.filterMySQLObjects(filter)
 					}
 				}
 			}).Label(locales.Text("对象操作")).Grow(1).MinWidth(0).Padding(0).Gap(2).Background(theme.Header)
