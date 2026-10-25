@@ -168,6 +168,7 @@
   "passwordCaption": "Password:",
   "password": "Password",
   "savePassword": "Save Password",
+  "savedPasswordPlaceholder": "Password (leave blank to use saved password)",
   "existingFile": "Existing Database File",
   "dbFileCaption": "Database File:",
   "dbFile": "Database File",

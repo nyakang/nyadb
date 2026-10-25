@@ -168,6 +168,7 @@
   "passwordCaption": "密码：",
   "password": "密码",
   "savePassword": "保存密码",
+  "savedPasswordPlaceholder": "密码（留空使用已保存密码）",
   "existingFile": "现有数据库文件",
   "dbFileCaption": "数据库文件：",
   "dbFile": "数据库文件",

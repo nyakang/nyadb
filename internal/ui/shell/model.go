@@ -7,6 +7,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/services/credentials"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -145,52 +146,55 @@ type State struct {
 	status     string
 	lastAction string
 
-	connectionDialog          bool
-	connectionStep            int
-	connectionEditorTab       int
-	connectionKind            connections.Kind
-	connectionDraft           connections.Profile
-	connectionPort            string
-	mysqlAdvancedNumbers      [5]string
-	mysqlCompatibilityVisible bool
-	mysqlDatabaseTable        ui.ListState
-	mysqlInitialQuery         string
-	mysqlInitialQueryPreview  string
-	mysqlInitialQueryDraft    string
-	mysqlInitialQueryOpen     bool
-	mysqlInitialQueryError    string
-	mysqlSSLPassphrase        string
-	mysqlSSLSessionVersion    uint64
-	mysqlSSHPort              string
-	mysqlSSHPassword          string
-	mysqlSSHPassphrase        string
-	mysqlSSHSessionVersion    uint64
-	mysqlHTTPSubtab           int
-	mysqlHTTPProxyPort        string
-	mysqlHTTPPassword         string
-	mysqlHTTPProxyPassword    string
-	mysqlHTTPPassphrase       string
-	mysqlHTTPSessionVersion   uint64
-	connectionSecret          string
-	connectionError           string
-	connectionProfilesVisible bool
-	connectionActiveConfig    int
-	connectionActiveTarget    int // Active for future sessions, independent of highlighted row.
-	connectionMainConfig      connectionEditorSnapshot
-	connectionOtherConfigs    []connectionEditorSnapshot
-	connectionSelectedName    string
-	connectionSearch          string
-	connectionGridMode        bool
-	connectionTreeOpen        map[string]bool
-	connectionRecent          []string
-	connectionEngineFilters   map[string]bool
-	connectionVendorFilters   map[string]bool
-	setConnectionTitle        func(string)
-	showConnectionWindow      func()
-	hideConnectionWindow      func()
-	bundledIcons              map[string]*ui.Bitmap
-	providerIcons             map[string]*ui.Bitmap
-	researchIcons             map[string]*ui.Bitmap
+	connectionDialog             bool
+	connectionStep               int
+	connectionEditorTab          int
+	connectionKind               connections.Kind
+	connectionDraft              connections.Profile
+	connectionPort               string
+	mysqlAdvancedNumbers         [5]string
+	mysqlCompatibilityVisible    bool
+	mysqlDatabaseTable           ui.ListState
+	mysqlInitialQuery            string
+	mysqlInitialQueryPreview     string
+	mysqlInitialQueryDraft       string
+	mysqlInitialQueryOpen        bool
+	mysqlInitialQueryError       string
+	mysqlSSLPassphrase           string
+	mysqlSSLSessionVersion       uint64
+	mysqlSSHPort                 string
+	mysqlSSHPassword             string
+	mysqlSSHPassphrase           string
+	mysqlSSHSessionVersion       uint64
+	mysqlHTTPSubtab              int
+	mysqlHTTPProxyPort           string
+	mysqlHTTPPassword            string
+	mysqlHTTPProxyPassword       string
+	mysqlHTTPPassphrase          string
+	mysqlHTTPSessionVersion      uint64
+	connectionSecret             string
+	connectionSavePassword       bool
+	credentialVault              credentials.Vault
+	connectionPasswordLoadFailed bool
+	connectionError              string
+	connectionProfilesVisible    bool
+	connectionActiveConfig       int
+	connectionActiveTarget       int // Active for future sessions, independent of highlighted row.
+	connectionMainConfig         connectionEditorSnapshot
+	connectionOtherConfigs       []connectionEditorSnapshot
+	connectionSelectedName       string
+	connectionSearch             string
+	connectionGridMode           bool
+	connectionTreeOpen           map[string]bool
+	connectionRecent             []string
+	connectionEngineFilters      map[string]bool
+	connectionVendorFilters      map[string]bool
+	setConnectionTitle           func(string)
+	showConnectionWindow         func()
+	hideConnectionWindow         func()
+	bundledIcons                 map[string]*ui.Bitmap
+	providerIcons                map[string]*ui.Bitmap
+	researchIcons                map[string]*ui.Bitmap
 
 	connectionNameFocusPending bool
 	mysqlSessionManager        *connections.MySQLSessionManager

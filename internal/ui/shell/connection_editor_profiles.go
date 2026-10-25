@@ -14,23 +14,30 @@ import (
 // SQLite writes occur when changing the selected configuration or closing the
 // editor. Unsaved partial numbers survive selection changes.
 type connectionEditorSnapshot struct {
-	profile       connections.Profile
-	name          string // alternative name; empty on main
-	port          string
-	numbers       [5]string
-	sshPort       string
-	httpProxyPort string
+	profile          connections.Profile
+	secret           string
+	savePassword     bool
+	hadSavedPassword bool
+	name             string // alternative name; empty on main
+	port             string
+	numbers          [5]string
+	sshPort          string
+	httpProxyPort    string
 }
 
 func (s *State) currentConnectionSnapshot() connectionEditorSnapshot {
 	return connectionEditorSnapshot{
 		profile: s.connectionDraft, port: s.connectionPort,
-		numbers: s.mysqlAdvancedNumbers, sshPort: s.mysqlSSHPort,
+		secret: s.connectionSecret, savePassword: s.connectionSavePassword,
+		hadSavedPassword: s.currentCredentialWasSaved(),
+		numbers:          s.mysqlAdvancedNumbers, sshPort: s.mysqlSSHPort,
 		httpProxyPort: s.mysqlHTTPProxyPort,
 	}
 }
 
 func (s *State) resetConnectionConfigurations() {
+	s.connectionSavePassword = false
+	s.connectionPasswordLoadFailed = false
 	s.connectionProfilesVisible = false
 	s.connectionActiveConfig = 0
 	s.connectionActiveTarget = 0
@@ -109,7 +116,8 @@ func (s *State) restoreConnectionConfiguration(snap connectionEditorSnapshot) {
 	}
 	s.mysqlCompatibilityVisible = false
 	s.mysqlHTTPSubtab = 0
-	s.connectionSecret = ""
+	s.connectionSecret = snap.secret
+	s.connectionSavePassword = snap.savePassword
 	s.clearMySQLSSLPassphrase()
 	s.clearMySQLSSHSecrets()
 	s.clearMySQLHTTPSecrets()

@@ -31,6 +31,7 @@ func (s *State) openConnectionDialog() {
 	s.connectionDraft = connections.Profile{GroupName: group}
 	s.connectionPort = ""
 	s.connectionSecret = ""
+	s.connectionSavePassword = false
 	s.clearMySQLSSLPassphrase()
 	s.clearMySQLSSHSecrets()
 	s.clearMySQLHTTPSecrets()
@@ -46,6 +47,7 @@ func (s *State) closeConnectionDialog() {
 	s.resetConnectionConfigurations()
 	s.connectionDialog = false
 	s.connectionSecret = ""
+	s.connectionSavePassword = false
 	s.clearMySQLSSLPassphrase()
 	s.clearMySQLSSHSecrets()
 	s.clearMySQLHTTPSecrets()
@@ -150,6 +152,14 @@ func (s *State) saveConnectionDraft() {
 		s.connectionError = "连接档案尚未接入本地存储"
 		return
 	}
+	var before connections.Profile
+	if p.ID > 0 {
+		before, err = s.profileService.Get(context.Background(), p.ID)
+		if err != nil {
+			s.connectionError = "读取原连接失败：" + err.Error()
+			return
+		}
+	}
 	var saved connections.Profile
 	if p.ID > 0 {
 		saved, err = s.profileService.Update(context.Background(), p)
@@ -159,6 +169,19 @@ func (s *State) saveConnectionDraft() {
 	if err != nil {
 		s.connectionError = "保存失败（连接名称可能重复或配置无效）：" + err.Error()
 		return
+	}
+	if saved.Kind == connections.MySQL {
+		if err := s.persistConnectionPasswords(saved, before); err != nil {
+			if p.ID == 0 {
+				if rollbackErr := s.profileService.Delete(context.Background(), saved.ID); rollbackErr != nil {
+					err = fmt.Errorf("%w；回滚新连接失败：%v", err, rollbackErr)
+				}
+			} else if _, rollbackErr := s.profileService.Update(context.Background(), before); rollbackErr != nil {
+				err = fmt.Errorf("%w；回滚连接配置失败：%v", err, rollbackErr)
+			}
+			s.connectionError = "系统密钥库保存密码失败（连接配置已尝试回滚）：" + err.Error()
+			return
+		}
 	}
 	if s.mysqlSessionProfileID == saved.ID {
 		s.disconnectMySQLSession()

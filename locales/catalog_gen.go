@@ -1714,6 +1714,16 @@ func (msgs Messages) SavePassword() string {
 	return Catalog.Format(msgs.locale, "savePassword", nil)
 }
 
+// SavedPasswordPlaceholder says "密码（留空使用已保存密码）"
+// in the language the app shows.
+func SavedPasswordPlaceholder() string { return In(i18n.Locale()).SavedPasswordPlaceholder() }
+
+// SavedPasswordPlaceholder says "密码（留空使用已保存密码）"
+// in the language of msgs.
+func (msgs Messages) SavedPasswordPlaceholder() string {
+	return Catalog.Format(msgs.locale, "savedPasswordPlaceholder", nil)
+}
+
 // ExistingFile says "现有数据库文件"
 // in the language the app shows.
 func ExistingFile() string { return In(i18n.Locale()).ExistingFile() }
