@@ -90,6 +90,13 @@ func (s *State) nextConnectionStep() {
 	}
 	s.connectionError = ""
 	s.connectionStep = 1
+	// A selection must not insert a new section and move the card beneath
+	// the pointer. Record actual use only once Next opens its editor.
+	recent := s.connectionSelectedName
+	if recent == "" {
+		recent = connectionKindName(s.connectionKind)
+	}
+	s.recordRecentConnection(recent)
 	s.connectionNameFocusPending = true
 	s.connectionEditorTab = 0
 	s.updateConnectionWindowTitle()

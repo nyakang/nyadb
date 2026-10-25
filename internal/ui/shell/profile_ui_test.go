@@ -197,7 +197,7 @@ func TestProfileContextMenuTargetsRightClickedConnection(t *testing.T) {
 	}
 }
 
-func TestProfileInspectorDisclosure(t *testing.T) {
+func TestProfileInspectorStackedProperties(t *testing.T) {
 	s, tt, service, _ := profileTestState(t)
 	_, err := service.Create(context.Background(), connections.Profile{
 		Name: "Local", Kind: connections.SQLite, Database: "/tmp/local.sqlite",
@@ -210,13 +210,20 @@ func TestProfileInspectorDisclosure(t *testing.T) {
 	if err := tt.Click("Local"); err != nil {
 		t.Fatal(err)
 	}
-	if !s.inspectorDetailsOpen {
-		t.Fatal("inspector details should start expanded")
+	if !tt.HasText("/tmp/local.sqlite") || !tt.HasText("文件") {
+		t.Fatal("selected profile properties should be directly visible")
 	}
-	if err := tt.Click("基本信息"); err != nil {
+	if err := tt.Click("隐藏信息面板"); err != nil {
 		t.Fatal(err)
 	}
-	if s.inspectorDetailsOpen {
-		t.Fatal("clicking disclosure must collapse details")
+	if s.inspectorOn {
+		t.Fatal("inspector close did not hide the panel")
 	}
+	if err := tt.Click("信息"); err != nil {
+		t.Fatal(err)
+	}
+	if !tt.HasText("/tmp/local.sqlite") {
+		t.Fatal("restoring inspector lost the selected profile")
+	}
+
 }

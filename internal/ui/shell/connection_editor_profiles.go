@@ -286,11 +286,13 @@ func (s *State) connectionConfigurationsSidebar(c *ui.Context, height float32) {
 				s.addConnectionConfiguration()
 			}
 		})
-		ui.Column(c).Grow(1).Gap(0).Children(func() {
-			s.connectionConfigRow(c, 0, "主要配置文件")
-			for i, snap := range s.connectionOtherConfigs {
-				s.connectionConfigRow(c, i+1, snap.name)
-			}
+		ui.Scroll(c).Grow(1).FillWidth().Children(func() {
+			ui.Column(c).Gap(0).Children(func() {
+				s.connectionConfigRow(c, 0, "主要配置文件")
+				for i, snap := range s.connectionOtherConfigs {
+					s.connectionConfigRow(c, i+1, snap.name)
+				}
+			})
 		})
 	})
 }
@@ -303,7 +305,7 @@ func (s *State) connectionConfigRow(c *ui.Context, index int, name string) {
 		selected := index == s.connectionActiveConfig
 		bg := theme.Sidebar
 		if selected {
-			bg = theme.Accent
+			bg = theme.Selection
 		}
 		row := ui.Button(c, name).Label("切换配置文件："+name).
 			Width(257).Height(25).Padding(4, 9).

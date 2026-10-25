@@ -1,7 +1,6 @@
 package shell
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/egoist/mygo/ui"
@@ -20,8 +19,8 @@ func TestConnectionDialogChooseBackCancel(t *testing.T) {
 	if err := tt.Click("下一步"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionStep != 0 || !strings.Contains(s.connectionError, "选择数据库") {
-		t.Fatalf("missing selection was not rejected: step=%d error=%q open=%t", s.connectionStep, s.connectionError, s.connectionDialog)
+	if s.connectionStep != 0 || s.connectionError != "" {
+		t.Fatalf("disabled Next changed the chooser: step=%d error=%q open=%t", s.connectionStep, s.connectionError, s.connectionDialog)
 	}
 	if err := tt.Click("选择 PostgreSQL"); err != nil {
 		t.Fatal(err)

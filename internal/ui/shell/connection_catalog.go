@@ -84,7 +84,6 @@ func (s *State) chooseCatalogEntry(e catalogEntry) {
 		return
 	}
 	s.chooseConnectionKind(e.kind)
-	s.recordRecentConnection(e.name)
 }
 
 func (s *State) recordRecentConnection(name string) {

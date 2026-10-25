@@ -74,6 +74,7 @@ func (s *State) resolveNavigatorObject() {
 	for i, obj := range objects {
 		if obj.Name == s.navigateTable {
 			s.objectRow = i
+			s.revealNavigationNode(navigationNode{Kind: "object", ProfileID: s.navigateProfileID, Database: s.navigateDatabase, Category: obj.Kind, Object: obj.Name})
 			s.navigateDatabase, s.navigateTable = "", ""
 			s.navigateProfileID = 0
 			return
@@ -101,11 +102,13 @@ func (s *State) navigateToActiveTab(services ui.Services) {
 		s.search = ""
 		s.selectedGroup = ""
 		s.selectedProfileID = id
-		s.explorerName = p.Name
+		s.explorerName = profileNode(p.ID)
 		s.explorerRow = -1
 		if p.GroupName != "" {
 			s.explorerTree.Open.Add(groupNode(p.GroupName))
 		}
+		s.explorerTree.Open.Add(profileNode(id))
+		s.explorerTree.Open.Add(databaseNode(id, database).key())
 		s.navigateDatabase, s.navigateTable, s.navigateProfileID = database, table, id
 		s.selectMySQLDatabase(services, database)
 		s.resolveNavigatorObject()

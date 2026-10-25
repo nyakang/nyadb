@@ -103,6 +103,7 @@ func (s *State) consumeMySQLSessionResult() {
 			return
 		}
 		s.mysqlSessionStatus = "已连接"
+		s.explorerTree.Open.Add(profileNode(result.id))
 		s.mysqlSessionError = ""
 		if result.metadataErr != nil {
 			s.mysqlSessionError = "数据库列表读取失败：" + result.metadataErr.Error()

@@ -18,7 +18,11 @@ func TestNativeConnectionWindowLifecycleAndFallback(t *testing.T) {
 		t.Fatalf("native host not opened: %d %v", opens, s.connectionDialog)
 	}
 	// The real window paints chooser content, not the main app's ui.Modal.
-	tt := ui.NewTester(s.ConnectionWindowView, 902, 700)
+	w, h := s.ConnectionWindowSize()
+	if w != 900 || h != 700 {
+		t.Fatalf("chooser should use the observed 900×700 client size, got %d×%d", w, h)
+	}
+	tt := ui.NewTester(s.ConnectionWindowView, w, h)
 	if !tt.HasText("连接筛选") || !tt.HasText("全部") {
 		t.Fatal("native chooser view missing")
 	}
@@ -28,7 +32,7 @@ func TestNativeConnectionWindowLifecycleAndFallback(t *testing.T) {
 	if err := tt.Click("下一步"); err != nil {
 		t.Fatal(err)
 	}
-	w, h := s.ConnectionWindowSize()
+	w, h = s.ConnectionWindowSize()
 	if s.connectionStep != 1 || s.connectionDraft.Kind != connections.PostgreSQL ||
 		s.ConnectionWindowTitle() != "新建连接 (PostgreSQL)" || w != 900 || h != 700 {
 		t.Fatalf("native flow did not reach form: %+v", s.connectionDraft)

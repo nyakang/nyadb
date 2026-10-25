@@ -65,8 +65,7 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 	labelWidth := connectionFormLabelWidth
 	fieldWidth := formWidth - labelWidth
 	a := &s.connectionDraft.MySQLAdvanced
-	// Browse buttons and Select elements need a 32-DIP row to keep their
-	// content inside the row; 26 DIP clips/overlaps the following controls.
+	// The shared 31-DIP rhythm leaves room around 26-DIP native controls.
 	ui.Column(c).Width(formWidth).Gap(0).Children(func() {
 		connectionFormRow(c).Children(func() {
 			ui.Text(c, "设置位置：").Width(labelWidth).FontSize(12)
@@ -133,7 +132,7 @@ func (s *State) mysqlAdvancedNumberRow(
 // The original inserts this tab only after pressing the Compatibility button.
 // Each override is enabled by both the parent switch and its own checkbox.
 func (s *State) connectionMySQLCompatibility(c *ui.Context, width float32) {
-	formWidth := min(float32(604), width-44)
+	formWidth := connectionFormWidth(width)
 	compat := &s.connectionDraft.MySQLAdvanced.Compatibility
 	labelWidth := float32(216)
 	ui.Column(c).Width(formWidth).Gap(5).Children(func() {

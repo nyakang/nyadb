@@ -77,7 +77,7 @@ func TestMySQLObjectTreeLazyLoadingFiltersAndRefresh(t *testing.T) {
 	if _, ok := s.mysqlObjectCache["app_db"]; ok {
 		t.Fatal("metadata loaded before expansion")
 	}
-	if err := tt.Click("浏览数据库：app_db"); err != nil {
+	if err := tt.Click("数据库：app_db"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
@@ -113,7 +113,7 @@ func TestMySQLObjectTreeLazyLoadingFiltersAndRefresh(t *testing.T) {
 		t.Fatalf("view filtering did not apply: kind=%q selected=%q objects=%v filterBounds=%+v",
 			s.mysqlObjectKind, s.mysqlSelectedDatabase, s.mysqlSelectedObjects(), rect)
 	}
-	if err := tt.Click("切换数据库：analytics"); err != nil {
+	if err := tt.Click("数据库：analytics"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
@@ -121,7 +121,7 @@ func TestMySQLObjectTreeLazyLoadingFiltersAndRefresh(t *testing.T) {
 		s.mysqlSelectedObjects()[0].Name != "facts" {
 		t.Fatal("database switch displayed wrong objects")
 	}
-	if err := tt.Click("切换数据库：app_db"); err != nil {
+	if err := tt.Click("数据库：app_db"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -162,7 +162,7 @@ func TestMySQLObjectBrowserIgnoresCancelledLateResults(t *testing.T) {
 		}
 		return []connections.MySQLDBObject{{Name: "new_facts", Kind: "视图"}}, nil
 	}
-	if err := tt.Click("浏览数据库：app_db"); err != nil {
+	if err := tt.Click("数据库：app_db"); err != nil {
 		t.Fatal(err)
 	}
 	select {
@@ -170,7 +170,7 @@ func TestMySQLObjectBrowserIgnoresCancelledLateResults(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("first request did not start")
 	}
-	if err := tt.Click("切换数据库：analytics"); err != nil {
+	if err := tt.Click("数据库：analytics"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
@@ -199,7 +199,7 @@ func TestMySQLObjectBrowserDisplaysErrorsAndRetry(t *testing.T) {
 		}
 		return []connections.MySQLDBObject{{Name: "ok_table", Kind: "表"}}, nil
 	}
-	if err := tt.Click("浏览数据库：app_db"); err != nil {
+	if err := tt.Click("数据库：app_db"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)

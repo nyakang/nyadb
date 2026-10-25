@@ -59,7 +59,7 @@ func (s *State) ConnectionWindowSize() (int, int) {
 	if s.connectionStep == 1 {
 		return 900, 700
 	}
-	return 902, 732
+	return 900, 700
 }
 
 // ConnectionWindowIcon uses the bundled, redistributable connection-type icon.
@@ -88,6 +88,10 @@ func (s *State) ConnectionWindowView(c *ui.Context) {
 	// Native child windows do not inherit the workbench's theme.
 	theme.Apply(c)
 	if !s.connectionDialog {
+		return
+	}
+	if !s.mysqlInitialQueryOpen && c.Shortcut(0, ui.KeyEscape) {
+		s.closeConnectionDialog()
 		return
 	}
 	if s.connectionStep == 0 {

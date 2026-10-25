@@ -119,16 +119,12 @@ var objectColumns = []ui.TableColumn{
 
 // State is UI state owned by the main thread. Never retain ui.Element values.
 type State struct {
-	sidebarPercent          float32
-	centerPercent           float32
-	structureSidebarPercent float32
-	structureCenterPercent  float32
-	dataSidebarPercent      float32
-	dataCenterPercent       float32
-	editorPercent           float32
-	inspectorOn             bool
-	inspectorDetailsOpen    bool
-	inspectorObjectsOpen    bool
+	sidebarPercent       float32
+	centerPercent        float32
+	editorPercent        float32
+	inspectorOn          bool
+	inspectorDetailsOpen bool
+	inspectorObjectsOpen bool
 
 	explorerTree ui.OutlineState[string]
 	explorerRow  int
@@ -269,12 +265,8 @@ func New() *State {
 		columns[i] = ui.TableColumn{Title: fmt.Sprintf("field_%02d", i-2), Width: 150}
 	}
 	s := &State{
-		sidebarPercent:          22,
-		centerPercent:           75,
-		structureSidebarPercent: 19.6,
-		structureCenterPercent:  80.1,
-		dataSidebarPercent:      19.6,
-		dataCenterPercent:       80.1,
+		sidebarPercent:          100 * (theme.SidebarWidth + theme.SplitterBorder) / 1279,
+		centerPercent:           100 * (1278 - theme.SidebarWidth - theme.SplitterBorder - theme.InspectorWidth) / (1278 - theme.SidebarWidth - theme.SplitterBorder),
 		editorPercent:           48,
 		inspectorOn:             true,
 		inspectorDetailsOpen:    true,
@@ -382,6 +374,12 @@ func (s *State) showObjects(kind string) {
 	s.objectKind = kind
 	s.activeTab = 0
 	s.objectRow = 0
+	if s.profileMode {
+		s.mysqlObjectKind = kind
+		s.objectRow = -1
+		s.status = "已切换到" + kind + "对象列表"
+		return
+	}
 	s.status = "已切换到" + kind + "对象列表（模拟数据）"
 }
 

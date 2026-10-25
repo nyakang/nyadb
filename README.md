@@ -1,26 +1,30 @@
 # NyaDB
 
-NyaDB is a cross-platform, native desktop database workbench built with [Go](https://go.dev/) and [MyGo Native UI](https://github.com/egoist/mygo). It provides a desktop interface for organizing database connections and working with SQL.
+NyaDB is a cross-platform, native desktop database workbench built with [Go](https://go.dev/) and the [NyaDB fork of MyGo Native UI](https://github.com/nyakang/mygo). It provides connection management, live read-only MySQL browsing, and a SQL editor with explicitly simulated execution.
 
 ![NyaDB workbench preview](docs/ui-preview.png)
 
+This image is a historical headless UI preview; it does not show the current live MySQL workspace or establish visual parity with Navicat.
+
 ## Features
 
-- Native desktop interface for Windows, macOS, and Linux, with resizable explorer, workspace, and inspector panes.
+- Native desktop interface targeting Windows, macOS, and Linux, with shared resizable navigation and inspector panes.
 - Consistent Lucide SVG operation icons with a separate set of embedded database brand icons.
-- Create, edit, duplicate, delete, and search connection profiles for MySQL, PostgreSQL, and SQLite.
+- Create, edit, duplicate, delete, group, star, and search connection profiles for MySQL, PostgreSQL, and SQLite.
 - Persist non-secret connection settings in a local SQLite configuration database.
 - Database chooser icons embedded in the application, with documented third-party artwork provenance.
-- Multi-tab SQL editor with syntax highlighting.
-- Object browser and virtualized table components, with on-demand synthetic data for UI previews.
-- Headless UI tests and cross-platform Go build verification.
+- Managed MySQL sessions with explicit connect/disconnect, asynchronous cancellation, and verified TLS support.
+- A unified native navigation tree with lazy database and table/view metadata loading.
+- Read-only MySQL structure and data tabs, with virtualized tables, server-side filtering/sorting, bounded paging, and large-field previews.
+- Multi-tab SQL editor with syntax highlighting and clearly labeled simulated results.
+- Shared dark/light themes, compact native controls, headless UI tests, and cross-platform Go build checks.
 
-**Current functionality:** Connection profiles are saved locally, but NyaDB does not yet establish database sessions, load live metadata, or execute SQL against user databases. Object and table previews use demo data; they are not query results.
+**Current functionality:** MySQL sessions, database objects, table structure, and table/view data use real database reads. PostgreSQL and SQLite support local profile management only. The SQL editor runs a simulation; arbitrary SQL execution, data writes, import/export, and SSH/HTTP tunnels are not implemented. Unimplemented commands remain disabled, and unsupported connection options are rejected before dialing. See the [current implementation status](docs/implementation-status.md) for capability and evidence boundaries.
 
 ## Requirements
 
 - Go 1.27.1 or later.
-- MyGo Native UI v0.5.5 (declared in `go.mod`).
+- MyGo Native UI fork `v0.6.3-nyadb.2` (the `go.mod` replacement for upstream `v0.6.3`).
 - On Linux, GTK 3 runtime libraries and a graphical desktop session. On Debian/Ubuntu, install `libgtk-3-0`.
 - On Windows and macOS, the operating system's native UI libraries.
 
@@ -64,6 +68,7 @@ go test ./...
 go vet ./...
 go tool mygo vet
 go build ./cmd/nyadb
+python3 -m unittest discover -s tests -v
 ```
 
 To build an application package with MyGo:
@@ -72,13 +77,13 @@ To build an application package with MyGo:
 go tool mygo build
 ```
 
-Native packaging requirements vary by operating system. The GitHub Actions workflow runs Go tests, static checks, and builds on Linux, Windows, and macOS.
+The Python visual-tool tests require Pillow. Native packaging requirements vary by operating system. The GitHub Actions workflow runs Go tests, static checks, and builds on Linux, Windows, and macOS. Compilation and headless tests do not establish native GUI behavior or visual parity; see the verification reports for the platforms and states actually observed.
 
 ## Configuration and privacy
 
 NyaDB stores connection profiles in `NyaDB/config.sqlite` under the directory returned by Go's `os.UserConfigDir()`. Profiles contain connection names, database types, hosts, ports, database paths or names, usernames, and optional TLS settings.
 
-Passwords, tokens, and credential-bearing connection strings are not stored in the profile database. Creating a profile does not open a network connection to the database. On Unix systems, newly created configuration directories and files use restrictive permissions; on Windows, access is governed by filesystem ACLs. Protect existing files, backups, and your user account accordingly.
+Passwords, tokens, and credential-bearing connection strings are not stored in the profile database. Creating or selecting a profile does not open a network connection. Explicit MySQL connection testing or Connect starts network access; credentials are held only for the active operation/session and must be reentered for reconnect. On Unix systems, newly created configuration directories and files use restrictive permissions; on Windows, access is governed by filesystem ACLs. Protect existing files, backups, and your user account accordingly.
 
 ## Repository structure
 
@@ -87,7 +92,7 @@ cmd/nyadb/                    Desktop application entry point
 internal/bootstrap/           Application initialization
 internal/assets/lucide/       Embedded Lucide UI icons (ISC license)
 internal/assets/connectionicons/ Embedded icon assets and provenance
-internal/services/connections/ Connection profile service and validation
+internal/services/connections/ Profiles, MySQL sessions, and read-only queries
 internal/storage/localdb/     SQLite configuration storage and migrations
 internal/ui/shell/            Native UI, workspace, dialogs, and tests
 internal/ui/theme/            Theme and UI icons
@@ -98,6 +103,9 @@ docs/                         Design and UI documentation
 
 ## Documentation
 
+- [2026-10-25 UI alignment and verification](docs/UI_ALIGNMENT_2026-10-25.md)
+- [Current implementation status and historical milestones](docs/implementation-status.md)
+- [UI visual evidence and differential gate](docs/UI_VISUAL_GATE_2026-10-25.md)
 - [Technical design](docs/NYADB_TECHNICAL_DESIGN.md)
 - [UI layout and interactions](docs/UI_LAYOUT.md)
 - [Lucide general UI icons](docs/LUCIDE_ICONS.md)

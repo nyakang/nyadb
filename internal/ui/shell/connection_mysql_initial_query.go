@@ -57,8 +57,11 @@ func (s *State) mysqlInitialQueryModal(c *ui.Context) {
 		}
 		return
 	}
+	width, height := c.Size()
+	dialogWidth := min(float32(700), width-40)
+	dialogHeight := min(float32(500), height-40)
 	ui.Modal(c, &s.mysqlInitialQueryOpen, func() {
-		ui.Column(c).Width(700).Height(500).Padding(15, 24).
+		ui.Column(c).Width(dialogWidth).Height(dialogHeight).Padding(15, 24).
 			Background(theme.Header).Gap(14).Children(func() {
 			ui.Row(c).Justify(ui.Center).Children(func() {
 				ui.Text(c, "初始查询").Bold().FontSize(13)
@@ -67,7 +70,7 @@ func (s *State) mysqlInitialQueryModal(c *ui.Context) {
 			ui.TextArea(c, &s.mysqlInitialQueryDraft).
 				Label("初始查询 SQL 编辑器").
 				Placeholder("e.g.\nSET ROLE ALL;\nSET @var_name = 'value';").
-				Width(602).Height(294).FontSize(12)
+				Width(min(float32(602), dialogWidth-48)).Grow(1).MinHeight(120).FontSize(12)
 			ui.Row(c).Children(func() {
 				if ui.Button(c, "复制到剪贴板").Clicked() {
 					c.WriteClipboard(s.mysqlInitialQueryDraft)
@@ -77,7 +80,6 @@ func (s *State) mysqlInitialQueryModal(c *ui.Context) {
 				ui.Text(c, s.mysqlInitialQueryError).
 					FontSize(12).TextColor(theme.Gold)
 			}
-			ui.Box(c).Grow(1)
 			ui.Row(c).Justify(ui.End).Gap(8).Children(func() {
 				if ui.PrimaryButton(c, "确定").Label("确认初始查询").Width(80).Clicked() {
 					s.confirmMySQLInitialQuery()

@@ -86,7 +86,7 @@ func TestNavigatorHeaderRevealsOnlySettingsOnHover(t *testing.T) {
 	if tt.HasText("新建组") || tt.HasText("添加连接") {
 		t.Fatal("always-visible creation controls are not allowed in header")
 	}
-	tt.Move(260, 103)
+	tt.Move(220, 108)
 	tt.Frame()
 	if !tt.HasText("连接面板设置") {
 		t.Fatal("hover should reveal settings menu button")
@@ -133,10 +133,17 @@ func TestNavigatorFilterAndActiveObjectGuard(t *testing.T) {
 	if err := tt.RightClick("我的连接"); err != nil {
 		t.Fatal(err)
 	}
+	if s.selectedProfileID != 0 || s.selectedGroup != "" || s.explorerName != "" {
+		t.Fatal("header context menu must select the navigation root")
+	}
 	if !slices.Contains(tt.Menu(), "新建连接…") {
 		t.Fatal("header settings context menu unavailable")
 	}
 	tt.CloseMenu()
+	tt.Frame()
+	if s.selectedProfileID != 0 || s.explorerName != "" {
+		t.Fatal("root selection reverted after closing its menu")
+	}
 	if _, _, _, yes := s.activeTabObject(); yes {
 		t.Fatal("object tab must not be navigable")
 	}

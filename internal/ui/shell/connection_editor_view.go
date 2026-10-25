@@ -10,8 +10,8 @@ import (
 // The editor shares the NyaDB workbench palette. Its native MyGo form layout
 // remains independent of window styling and works across all tabs.
 var (
-	connectionEditorSurface = theme.App
-	connectionEditorTabsBG  = theme.Header
+	connectionEditorSurface = theme.Toolbar
+	connectionEditorTabsBG  = theme.Toolbar
 	connectionEditorBorder  = theme.Border
 	connectionEditorButton  = theme.Header
 	connectionDiagramLine   = theme.Border
@@ -22,8 +22,8 @@ var (
 func (s *State) connectionEditor(c *ui.Context) {
 	s.consumeMySQLConnectionTest()
 	applyConnectionEditorFormTheme(c)
-	connectionEditorSurface = theme.App
-	connectionEditorTabsBG = theme.Header
+	connectionEditorSurface = theme.Toolbar
+	connectionEditorTabsBG = theme.Toolbar
 	connectionEditorBorder = theme.Border
 	connectionEditorButton = theme.Header
 	connectionDiagramLine = theme.Border
@@ -49,18 +49,24 @@ func (s *State) connectionEditor(c *ui.Context) {
 			ui.Column(c).Width(contentWidth).Height(h - 43).Gap(0).Children(func() {
 				s.connectionEditorTabs(c)
 				ui.Box(c).Height(1).Background(connectionEditorBorder)
-				ui.Column(c).Grow(1).Gap(0).AlignItems(ui.Center).Children(func() {
-					s.connectionConfigurationCaption(c)
-					s.connectionEditorDiagram(c)
-					if s.connectionEditorTab == 0 {
-						s.connectionEditorGeneral(c, contentWidth)
-					} else {
-						s.connectionEditorOtherTab(c, contentWidth)
-					}
-					if s.connectionError != "" {
-						ui.Text(c, s.connectionError).FontSize(12).TextColor(theme.Gold).Padding(15, 0)
-					}
-					s.connectionTestStatus(c)
+				// Forms retain their normal metrics while small windows scroll the
+				// body independently of the tabs and confirmation controls.
+				formWidth := max(contentWidth, float32(520))
+				ui.ScrollBoth(c).Key(s.connectionTabNames()[s.connectionEditorTab]).
+					Label(locales.Text("连接设置内容")).Grow(1).FillWidth().Children(func() {
+					ui.Column(c).Width(formWidth).Gap(0).AlignItems(ui.Center).Children(func() {
+						s.connectionConfigurationCaption(c)
+						s.connectionEditorDiagram(c)
+						if s.connectionEditorTab == 0 {
+							s.connectionEditorGeneral(c, formWidth)
+						} else {
+							s.connectionEditorOtherTab(c, formWidth)
+						}
+						if s.connectionError != "" {
+							ui.Text(c, s.connectionError).Width(connectionFormWidth(formWidth)).FontSize(12).TextColor(theme.Gold).Padding(15, 0)
+						}
+						s.connectionTestStatus(c)
+					})
 				})
 			})
 		})
@@ -93,7 +99,7 @@ func (s *State) connectionEditorTabs(c *ui.Context) {
 	if s.connectionEditorTab >= len(names) {
 		s.connectionEditorTab = 0
 	}
-	ui.Row(c).Height(29).FillWidth().Gap(0).Background(connectionEditorTabsBG).Children(func() {
+	ui.ScrollHorizontal(c).Height(29).FillWidth().Gap(0).Background(connectionEditorTabsBG).Children(func() {
 		tabs := ui.TabsBase(c, &s.connectionEditorTab, len(names))
 		tabs.List.Gap(0).Children(func() {
 			for i, name := range names {
@@ -106,7 +112,6 @@ func (s *State) connectionEditorTabs(c *ui.Context) {
 				})
 			}
 		})
-		ui.Box(c).Grow(1)
 	})
 }
 
@@ -181,14 +186,14 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 			return
 		}
 		s.editorInputRow(c, "主机：", "主机", &p.Host, labelWidth, fieldWidth)
-		s.editorInputRow(c, "端口：", "端口", &s.connectionPort, labelWidth, min(fieldWidth, float32(90)))
+		s.editorInputRow(c, "端口：", "端口", &s.connectionPort, labelWidth, min(fieldWidth, float32(80)))
 		if p.Kind == connections.PostgreSQL {
 			s.editorInputRow(c, "初始数据库：", "初始数据库", &p.Database, labelWidth, fieldWidth)
 		}
-		s.editorInputRow(c, "用户名：", "用户名", &p.Username, labelWidth, min(fieldWidth, float32(205)))
+		s.editorInputRow(c, "用户名：", "用户名", &p.Username, labelWidth, min(fieldWidth, float32(200)))
 		connectionFormRow(c).Children(func() {
 			ui.Text(c, locales.Text("密码：")).Width(labelWidth).FontSize(12)
-			connectionFormTextInput(c, &s.connectionSecret, "密码", min(fieldWidth, float32(205)), false, true)
+			connectionFormTextInput(c, &s.connectionSecret, "密码", min(fieldWidth, float32(200)), false, true)
 		})
 		ui.Row(c).Height(28).Gap(0).AlignItems(ui.Center).Children(func() {
 			ui.Box(c).Width(labelWidth)
@@ -220,14 +225,11 @@ func (s *State) editorSQLiteFields(c *ui.Context, labelWidth, fieldWidth float32
 		selected := true
 		connectionFormCheckbox(c, &selected, "现有数据库文件", true)
 	})
-	ui.Row(c).Height(32).Gap(0).AlignItems(ui.Center).Children(func() {
+	connectionFormRow(c).Children(func() {
 		ui.Text(c, locales.Text("数据库文件：")).Width(labelWidth).FontSize(12)
-		ui.TextInput(c, &s.connectionDraft.Database).Label(locales.Text("数据库文件")).
-			Width(fieldWidth-36).Height(30).Padding(2, 10)
-		if ui.Button(c, "…").Label(locales.Text("浏览文件")).Width(35).
-			Disabled(s.sqliteFilePicker == nil).Clicked() {
-			s.sqliteFilePicker()
-		}
+		connectionFormTextInput(c, &s.connectionDraft.Database, "数据库文件", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false)
+		ui.Box(c).Width(connectionFormBrowseGap)
+		connectionFormBrowse(c, "浏览文件", s.sqliteFilePicker == nil, s.sqliteFilePicker)
 	})
 	ui.Row(c).Gap(0).Children(func() {
 		ui.Box(c).Width(labelWidth)
@@ -286,32 +288,33 @@ func (s *State) connectionEditorOtherTab(c *ui.Context, width float32) {
 
 func (s *State) connectionEditorFooter(c *ui.Context) {
 	ui.Row(c).Height(42).Padding(5, 9).Gap(7).AlignItems(ui.Center).
-		Background(theme.Panel).Children(func() {
+		Background(connectionEditorSurface).Children(func() {
 		// Show/hide the native editing configuration sidebar.
-		if ui.Button(c, "▣").Width(26).Height(26).
+		if ui.Button(c, "▣").Width(26).Height(connectionFooterControlHeight).
 			Background(connectionEditorButton).Border(1, connectionEditorBorder).
 			Disabled(s.connectionDraft.ID == 0 || s.connectionDraft.Kind != connections.MySQL).
 			Label("切换连接配置文件侧栏").Clicked() {
 			s.connectionProfilesVisible = !s.connectionProfilesVisible
 		}
-		ui.Button(c, "URI").Width(76).Height(26).
+		ui.Button(c, "URI").Width(76).Height(connectionFooterControlHeight).
 			Background(connectionEditorButton).Border(1, connectionEditorBorder).
 			Disabled(true).Label(locales.Text("URI 导入尚未支持"))
 		if s.connectionTesting {
-			if ui.Button(c, locales.Text("取消测试")).Width(155).Height(26).Background(connectionEditorButton).Border(1, connectionEditorBorder).Clicked() {
+			if ui.Button(c, locales.Text("取消测试")).Width(155).Height(connectionFooterControlHeight).Background(connectionEditorButton).Border(1, connectionEditorBorder).Clicked() {
 				s.cancelMySQLConnectionTest()
 				s.connectionTestMessage = "连接测试已取消"
 			}
-		} else if ui.Button(c, locales.Text("测试连接")).Width(155).Height(26).
+		} else if ui.Button(c, locales.Text("测试连接")).Width(155).Height(connectionFooterControlHeight).
 			Background(connectionEditorButton).Border(1, connectionEditorBorder).
 			Disabled(s.connectionDraft.Kind != connections.MySQL).Label(locales.Text("测试当前 MySQL 配置")).Clicked() {
 			s.startMySQLConnectionTest(c.Services())
 		}
 		ui.Box(c).Grow(1)
 		if s.connectionDraft.ID == 0 {
-			if ui.Button(c, locales.Text("上一步")).Width(80).Height(26).
+			if ui.Button(c, locales.Text("上一步")).Width(80).Height(connectionFooterControlHeight).
 				Background(connectionEditorButton).Border(1, connectionEditorBorder).
 				Disabled(s.connectionDraft.ID != 0).Clicked() {
+				s.cancelMySQLConnectionTest()
 				s.connectionStep = 0
 				s.connectionEditorTab = 0
 				s.connectionSecret = ""
@@ -323,11 +326,11 @@ func (s *State) connectionEditorFooter(c *ui.Context) {
 				s.updateConnectionWindowTitle()
 			}
 		}
-		if ui.PrimaryButton(c, locales.Text("确定")).Width(80).Height(26).
-			Label("保存连接").Clicked() {
+		if ui.Button(c, locales.Text("确定")).Width(80).Height(connectionFooterControlHeight).
+			Background(connectionEditorButton).Border(1, connectionEditorBorder).Label("保存连接").Clicked() {
 			s.saveConnectionDraft()
 		}
-		if ui.Button(c, locales.Text("取消")).Width(80).Height(26).
+		if ui.Button(c, locales.Text("取消")).Width(80).Height(connectionFooterControlHeight).
 			Background(connectionEditorButton).Border(1, connectionEditorBorder).
 			Label("取消连接向导").Clicked() {
 			s.closeConnectionDialog()

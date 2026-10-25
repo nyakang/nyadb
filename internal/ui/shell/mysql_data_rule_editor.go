@@ -37,114 +37,120 @@ func mysqlFilterMode(mode string) string {
 func mysqlDataFilterModeNeedsValue(mode string) bool { return mode != "为空" && mode != "不为空" }
 
 func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *connections.MySQLDataPage) {
-	viewportWidth, _ := c.Size()
+	viewportWidth, viewportHeight := c.Size()
 	narrow := viewportWidth < 1100
-	ui.Column(c).Background(theme.Header).Padding(2, 7).Gap(4).Children(func() {
-		ui.Row(c).Height(27).Gap(5).AlignItems(ui.Center).Children(func() {
+	ui.Column(c).Background(theme.Header).Padding(1, 6).Gap(2).Children(func() {
+		ui.Row(c).Height(theme.TabHeight).Gap(5).AlignItems(ui.Center).Children(func() {
 			theme.Icon(c, "table", 14, theme.Blue)
-			ui.Text(c, t.dataTable).Bold().FontSize(12).SingleLine()
+			ui.Text(c, t.dataTable).FontSize(theme.FontSize).SingleLine().MaxWidth(125).MinWidth(0).Tooltip(t.dataTable)
 			label := "筛选 & 排序 ▸"
 			if t.dataRulesExpanded {
 				label = "筛选 & 排序 ▾"
 			}
-			if ui.Button(c, label).Label(locales.Text("筛选 & 排序")).Clicked() {
+			if ui.Button(c, label).Label(locales.Text("筛选 & 排序")).Height(theme.ControlHeight).Padding(2, 4).Clicked() {
 				t.dataRulesExpanded = !t.dataRulesExpanded
 			}
 			count := len(t.dataFilterRules)
 			if count == 0 && t.dataFilterMode != "" {
 				count = 1
 			}
-			ui.Text(c, fmt.Sprintf("筛选 %d · 排序 %d", count, mysqlDataActiveSortCount(t))).FontSize(11).TextColor(theme.Muted)
-			if !t.dataRulesExpanded && t.dataRuleError != "" {
-				ui.Text(c, t.dataRuleError).SingleLine().FontSize(11).TextColor(theme.Gold)
-			}
-			ui.Box(c).Grow(1)
+			ui.Text(c, fmt.Sprintf("筛选 %d · 排序 %d", count, mysqlDataActiveSortCount(t))).FontSize(theme.SmallFontSize).TextColor(theme.Muted).SingleLine().MinWidth(0)
 			if !narrow {
-				s.mysqlDataCompactActions(c, t)
+				ui.Toolbar(c, func() { s.mysqlDataCompactActions(c, t) }).Label(locales.Text("数据操作")).Grow(1).MinWidth(0).Padding(0).Gap(2)
 			}
 		})
 		if narrow {
-			ui.Row(c).Height(27).Gap(5).AlignItems(ui.Center).Children(func() { s.mysqlDataCompactActions(c, t) })
+			ui.Toolbar(c, func() { s.mysqlDataCompactActions(c, t) }).Label(locales.Text("数据操作")).Height(theme.TabHeight).FillWidth().MinWidth(0).Padding(0).Gap(2)
 		}
 		if !t.dataRulesExpanded {
+			if t.dataRuleError != "" {
+				ui.Text(c, t.dataRuleError).SingleLine().FontSize(theme.SmallFontSize).TextColor(theme.Gold).Tooltip(t.dataRuleError)
+			}
 			return
 		}
-		choices := append([]string{"选择字段"}, page.Columns...)
-		ui.Text(c, locales.Text("筛选  ·  所有已启用条件均满足 (AND)")).FontSize(11).TextColor(theme.Muted)
-		ui.Row(c).Height(32).Gap(6).AlignItems(ui.Center).Children(func() {
-			ui.Select(c, &t.dataFilterColumnDraft, choices).Width(160)
-			ui.Select(c, &t.dataFilterModeDraft, mysqlFilterModeChoices).Width(110)
-			if mysqlDataFilterModeNeedsValue(t.dataFilterModeDraft) {
-				ui.TextInput(c, &t.dataFilterValueDraft).Label(locales.Text("数据筛选值")).Placeholder(locales.Text("筛选值")).Width(190)
-			}
-			ui.Box(c).Grow(1)
-			if ui.Button(c, locales.Text("添加条件")).Label(locales.Text("添加筛选规则")).Disabled(len(t.dataFilterExtraDraft)+1 >= connections.MySQLDataMaxFilterRules).Clicked() {
-				t.dataFilterExtraDraft = append(t.dataFilterExtraDraft, mysqlDataRuleDraft{Column: "选择字段", Mode: "包含"})
-			}
+		// Rules scroll independently of the grid. Applying edits and paging stay
+		// reachable even with every supported rule enabled at minimum size.
+		height := min(float32(116+32*(len(t.dataFilterExtraDraft)+len(t.dataSortDraft))), max(float32(112), min(float32(240), viewportHeight*0.3)))
+		ui.ScrollBoth(c).Label(locales.Text("筛选规则")).Height(height).FillWidth().Children(func() {
+			ui.Column(c).MinWidth(530).Gap(3).Children(func() { s.mysqlDataRuleFields(c, t, page) })
 		})
-		for i := range t.dataFilterExtraDraft {
-			i := i
-			rule := &t.dataFilterExtraDraft[i]
-			ui.Row(c).Height(32).Gap(6).AlignItems(ui.Center).Children(func() {
-				ui.Text(c, locales.Text("且")).TextColor(theme.Muted).FontSize(11)
-				ui.Select(c, &rule.Column, choices).Width(140)
-				ui.Select(c, &rule.Mode, mysqlFilterModeChoices).Width(110)
-				if mysqlDataFilterModeNeedsValue(rule.Mode) {
-					ui.TextInput(c, &rule.Value).Label(fmt.Sprintf("附加筛选值 %d", i+1)).Placeholder(locales.Text("筛选值")).Width(180)
-				}
-				if ui.Button(c, locales.Text("移除")).Label(fmt.Sprintf("删除筛选规则 %d", i+2)).Clicked() {
-					t.dataFilterExtraDraft = append(t.dataFilterExtraDraft[:i], t.dataFilterExtraDraft[i+1:]...)
-				}
-			})
-		}
-		ui.Divider(c)
-		ui.Row(c).Height(26).Gap(8).AlignItems(ui.Center).Children(func() {
-			ui.Text(c, locales.Text("排序方式 · 按规则优先级依次排序")).FontSize(11).TextColor(theme.Muted)
-			ui.Box(c).Grow(1)
-			if ui.Button(c, locales.Text("添加排序")).Disabled(len(t.dataSortDraft) >= connections.MySQLDataMaxSortRules).Clicked() {
-				t.dataSortDraft = append(t.dataSortDraft, mysqlDataSortDraft{Column: "选择字段", Direction: "升序"})
-			}
-		})
-		for i := range t.dataSortDraft {
-			i := i
-			rule := &t.dataSortDraft[i]
-			ui.Row(c).Height(32).Gap(6).AlignItems(ui.Center).Children(func() {
-				ui.Text(c, fmt.Sprintf("%d.", i+1)).FontSize(11).TextColor(theme.Muted)
-				ui.Select(c, &rule.Column, choices).Width(165)
-				ui.Select(c, &rule.Direction, []string{"升序", "降序"}).Width(100)
-				if ui.Button(c, locales.Text("移除")).Label(fmt.Sprintf("删除排序规则 %d", i+1)).Clicked() {
-					t.dataSortDraft = append(t.dataSortDraft[:i], t.dataSortDraft[i+1:]...)
-				}
-			})
-		}
-		ui.Row(c).Height(31).Gap(8).AlignItems(ui.Center).Children(func() {
-			if ui.Button(c, locales.Text("应用筛选 & 排序")).Label(locales.Text("应用筛选")).Disabled(t.dataLoading).Clicked() {
+		ui.Row(c).Height(theme.CommandBarHeight).Gap(6).AlignItems(ui.Center).Children(func() {
+			if ui.Button(c, locales.Text("应用筛选 & 排序")).Label(locales.Text("应用筛选")).Height(theme.ControlHeight).Disabled(t.dataLoading).Clicked() {
 				s.applyMySQLDataFilter(c.Services(), t)
 			}
+			message, color := mysqlDataFilterStatus(t), theme.Muted
 			if t.dataRuleError != "" {
-				ui.Text(c, t.dataRuleError).FontSize(11).TextColor(theme.Gold)
+				message, color = t.dataRuleError, theme.Gold
 			}
-			if summary := mysqlDataFilterStatus(t); summary != "" {
-				ui.Text(c, "当前: "+summary).SingleLine().FontSize(11).TextColor(theme.Muted)
-			}
+			ui.Text(c, message).SingleLine().FontSize(theme.SmallFontSize).TextColor(color).Grow(1).MinWidth(0).Tooltip(message)
 		})
 	})
 }
 
-// The same native actions occupy the compact row at 1280px, but move
-// below it on narrow windows so they cannot overlap the field inspector.
+func (s *State) mysqlDataRuleFields(c *ui.Context, t *tab, page *connections.MySQLDataPage) {
+	choices := append([]string{"选择字段"}, page.Columns...)
+	ui.Text(c, locales.Text("筛选  ·  所有已启用条件均满足 (AND)")).FontSize(11).TextColor(theme.Muted)
+	ui.Row(c).Height(theme.CommandBarHeight).Gap(6).AlignItems(ui.Center).Children(func() {
+		ui.Select(c, &t.dataFilterColumnDraft, choices).Height(theme.ControlHeight).Width(150)
+		ui.Select(c, &t.dataFilterModeDraft, mysqlFilterModeChoices).Width(110)
+		if mysqlDataFilterModeNeedsValue(t.dataFilterModeDraft) {
+			ui.TextInput(c, &t.dataFilterValueDraft).Label(locales.Text("数据筛选值")).Placeholder(locales.Text("筛选值")).Width(170)
+		}
+		ui.Box(c).Grow(1)
+		if ui.Button(c, locales.Text("添加条件")).Label(locales.Text("添加筛选规则")).Disabled(len(t.dataFilterExtraDraft)+1 >= connections.MySQLDataMaxFilterRules).Clicked() {
+			t.dataFilterExtraDraft = append(t.dataFilterExtraDraft, mysqlDataRuleDraft{Column: "选择字段", Mode: "包含"})
+		}
+	})
+	for i := range t.dataFilterExtraDraft {
+		i := i
+		rule := &t.dataFilterExtraDraft[i]
+		ui.Row(c).Height(theme.CommandBarHeight).Gap(6).AlignItems(ui.Center).Children(func() {
+			ui.Text(c, locales.Text("且")).TextColor(theme.Muted).FontSize(11)
+			ui.Select(c, &rule.Column, choices).Width(140)
+			ui.Select(c, &rule.Mode, mysqlFilterModeChoices).Width(110)
+			if mysqlDataFilterModeNeedsValue(rule.Mode) {
+				ui.TextInput(c, &rule.Value).Label(fmt.Sprintf("附加筛选值 %d", i+1)).Placeholder(locales.Text("筛选值")).Width(170)
+			}
+			if ui.Button(c, locales.Text("移除")).Label(fmt.Sprintf("删除筛选规则 %d", i+2)).Clicked() {
+				t.dataFilterExtraDraft = append(t.dataFilterExtraDraft[:i], t.dataFilterExtraDraft[i+1:]...)
+			}
+		})
+	}
+	ui.Divider(c)
+	ui.Row(c).Height(theme.ControlHeight).Gap(8).AlignItems(ui.Center).Children(func() {
+		ui.Text(c, locales.Text("排序方式 · 按规则优先级依次排序")).FontSize(11).TextColor(theme.Muted)
+		ui.Box(c).Grow(1)
+		if ui.Button(c, locales.Text("添加排序")).Disabled(len(t.dataSortDraft) >= connections.MySQLDataMaxSortRules).Clicked() {
+			t.dataSortDraft = append(t.dataSortDraft, mysqlDataSortDraft{Column: "选择字段", Direction: "升序"})
+		}
+	})
+	for i := range t.dataSortDraft {
+		i := i
+		rule := &t.dataSortDraft[i]
+		ui.Row(c).Height(theme.CommandBarHeight).Gap(6).AlignItems(ui.Center).Children(func() {
+			ui.Text(c, fmt.Sprintf("%d.", i+1)).FontSize(11).TextColor(theme.Muted)
+			ui.Select(c, &rule.Column, choices).Width(165)
+			ui.Select(c, &rule.Direction, []string{"升序", "降序"}).Width(100)
+			if ui.Button(c, locales.Text("移除")).Label(fmt.Sprintf("删除排序规则 %d", i+1)).Clicked() {
+				t.dataSortDraft = append(t.dataSortDraft[:i], t.dataSortDraft[i+1:]...)
+			}
+		})
+	}
+}
+
+// Native toolbar overflow keeps all actions reachable when the workspace narrows.
 func (s *State) mysqlDataCompactActions(c *ui.Context, t *tab) {
-	if ui.Button(c, locales.Text("返回")).Label(locales.Text("返回对象列表")).Clicked() {
+	if ui.Button(c, locales.Text("返回")).Label(locales.Text("返回对象列表")).Height(theme.ControlHeight).Padding(2, 4).Clicked() {
 		s.activeTab = 0
 	}
-	if ui.Button(c, locales.Text("刷新")).Label("刷新表数据：" + t.dataTable).
+	if ui.Button(c, locales.Text("刷新")).Label("刷新表数据："+t.dataTable).Height(theme.ControlHeight).Padding(2, 4).
 		Disabled(s.mysqlSessionStatus != "已连接" || t.dataLoading).Clicked() {
 		s.resetAndReloadMySQLData(c.Services(), t)
 	}
-	if _, cell, ok := mysqlSelectedDataCell(t); ui.Button(c, locales.Text("复制")).Label(locales.Text("复制所选单元格预览")).Disabled(!ok).Clicked() {
+	if _, cell, ok := mysqlSelectedDataCell(t); ui.Button(c, locales.Text("复制")).Label(locales.Text("复制所选单元格预览")).Height(theme.ControlHeight).Padding(2, 4).Disabled(!ok).Clicked() {
 		c.WriteClipboard(mysqlDataCopyPreview(cell))
 	}
-	if t.dataLoading && ui.Button(c, locales.Text("取消读取数据")).Clicked() {
+	if t.dataLoading && ui.Button(c, locales.Text("取消读取数据")).Height(theme.ControlHeight).Padding(2, 4).Clicked() {
 		s.cancelMySQLData(t)
 		t.dataErr = "查询已取消"
 	}
@@ -152,7 +158,7 @@ func (s *State) mysqlDataCompactActions(c *ui.Context, t *tab) {
 	if count == 0 && t.dataFilterMode != "" {
 		count = 1
 	}
-	if ui.Button(c, locales.Text("清除")).Label(locales.Text("清除筛选")).Disabled(t.dataLoading || count == 0).Clicked() {
+	if ui.Button(c, locales.Text("清除")).Label(locales.Text("清除筛选")).Height(theme.ControlHeight).Padding(2, 4).Disabled(t.dataLoading || count == 0).Clicked() {
 		s.clearMySQLDataFilter(c.Services(), t)
 	}
 }

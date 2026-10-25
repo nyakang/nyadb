@@ -6,6 +6,13 @@ import (
 	"github.com/nyakang/nyadb/locales"
 )
 
+const (
+	catalogSidebarWidth float32 = 225
+	catalogFilterHeight float32 = 23
+	catalogSearchHeight float32 = 54
+	catalogFooterHeight float32 = 42
+)
+
 // The chooser follows the observed large two-pane information architecture.
 // It uses independent NyaDB symbols by default. In explicit local research
 // mode only, runtime-loaded PNGs may replace catalog symbols for comparison.
@@ -13,19 +20,15 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 	w, h := c.Size()
 	dialogWidth := min(float32(860), w-72)
 	dialogHeight := min(float32(648), h-76)
-	bodyHeight := dialogHeight - 78
+	bodyHeight := dialogHeight - catalogFooterHeight - 40
 	if nativeWindow {
 		dialogWidth = w
 		dialogHeight = h
-		bodyHeight = h - 40
+		bodyHeight = h - catalogFooterHeight - 1
 	}
-	columns := 5
-	if dialogWidth < 820 {
-		columns = 4
-	}
-	if dialogWidth < 690 {
-		columns = 3
-	}
+	// Account for the sidebar, content padding and gaps rather than the
+	// outer window width: four fixed cards do not fit the smallest window.
+	columns := max(1, min(5, int((dialogWidth-catalogSidebarWidth-1-28+8)/(116+8))))
 	ui.Column(c).Width(dialogWidth).Height(dialogHeight).Gap(0).Children(func() {
 		if !nativeWindow {
 			ui.Row(c).Height(38).Padding(0, 3).AlignItems(ui.Center).Children(func() {
@@ -40,7 +43,7 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 			ui.Column(c).Grow(1).Height(bodyHeight).Gap(0).Children(func() {
 				s.catalogSearchToolbar(c)
 				ui.Box(c).Height(1).Background(theme.Border)
-				ui.Scroll(c).Height(bodyHeight - 46).Children(func() {
+				ui.Scroll(c).Height(bodyHeight - catalogSearchHeight - 1).Children(func() {
 					ui.Column(c).Padding(12, 14).Gap(15).Children(func() {
 						if !s.connectionGridMode {
 							s.catalogTree(c)
@@ -48,15 +51,6 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 						}
 						if len(s.connectionRecent) != 0 {
 							s.catalogSection(c, "最近使用过的", s.catalogRecents(), columns)
-						} else {
-							common := make([]catalogEntry, 0, 3)
-							for _, item := range databaseCatalog {
-								if item.section == "全部" && item.kind != "" &&
-									catalogMatch(item, s.connectionSearch, s.connectionEngineFilters, s.connectionVendorFilters) {
-									common = append(common, item)
-								}
-							}
-							s.catalogSection(c, "常用类型", common, columns)
 						}
 						s.catalogSection(c, "全部", s.catalogItems("全部"), columns)
 						ui.Box(c).Height(1).Background(theme.Border)
@@ -66,54 +60,51 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 			})
 		})
 		ui.Box(c).Height(1).Background(theme.Border)
-		ui.Row(c).Height(38).Gap(8).AlignItems(ui.Center).Children(func() {
-			if ui.Button(c, locales.Text("通过 URI 新建连接…")).Clicked() {
-				s.connectionError = "URI 导入尚未支持"
-			}
+		ui.Row(c).Height(catalogFooterHeight).Padding(5, 9).Gap(7).AlignItems(ui.Center).Background(theme.Toolbar).Children(func() {
+			ui.Button(c, locales.Text("通过 URI 新建连接…")).Height(connectionFooterControlHeight).
+				Label(locales.Text("URI 导入尚未支持")).Disabled(true)
 			ui.Box(c).Grow(1)
 			if s.connectionError != "" {
-				ui.Text(c, s.connectionError).FontSize(11).TextColor(theme.Gold).SingleLine()
+				ui.Text(c, s.connectionError).FontSize(11).TextColor(theme.Gold).SingleLine().MinWidth(0).Grow(1)
 			}
-			if ui.PrimaryButton(c, locales.Text("下一步")).Clicked() {
-				s.nextConnectionStep()
-			}
-			if ui.Button(c, locales.Text("取消连接向导")).Clicked() {
+			if ui.Button(c, locales.Text("取消")).Label(locales.Text("取消连接向导")).Width(80).Height(connectionFooterControlHeight).Clicked() {
 				s.closeConnectionDialog()
+			}
+			if ui.Button(c, locales.Text("下一步")).Width(80).Height(connectionFooterControlHeight).Disabled(s.connectionKind == "").Clicked() {
+				s.nextConnectionStep()
 			}
 		})
 	})
 }
 
 func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
-	ui.Column(c).Width(230).Height(height).Background(theme.Sidebar).Gap(7).Padding(12, 10).Children(func() {
+	ui.Column(c).Width(catalogSidebarWidth).Height(height).Background(theme.Sidebar).Gap(1).Padding(12, 10).Children(func() {
 		ui.Row(c).Height(29).Gap(7).AlignItems(ui.Center).Children(func() {
-			theme.Icon(c, "catalog-filter", 16, theme.Blue)
-			ui.Text(c, locales.Text("连接筛选")).FontSize(12).Bold()
+			ui.Text(c, locales.Text("连接筛选")).FontSize(12).TextColor(theme.Muted)
 		})
 		ui.Scroll(c).Height(height - 58).Children(func() {
-			ui.Column(c).Gap(4).Children(func() {
+			ui.Column(c).Gap(0).Children(func() {
 				for _, name := range catalogEngines {
 					if !s.catalogSidebarFilterVisible(name, false) {
 						continue
 					}
 					label := name
 					checked := s.connectionEngineFilters[label]
-					ui.Row(c).Height(27).Gap(7).AlignItems(ui.Center).Children(func() {
+					ui.Row(c).Height(catalogFilterHeight).Gap(4).AlignItems(ui.Center).Children(func() {
 						if ui.Checkbox(c, &checked, "").Label(locales.Text("筛选 ") + label).Changed() {
 							setCatalogFilter(s.connectionEngineFilters, label, checked)
 						}
 						if item, ok := catalogFilterIcon(label, false); ok {
-							s.catalogIcon(c, item, 18)
+							s.catalogIcon(c, item, catalogTreeIconSize)
 						} else {
-							theme.Icon(c, "database", 18, theme.Muted)
+							theme.Icon(c, "database", catalogTreeIconSize, theme.Muted)
 						}
 						ui.Text(c, label).FontSize(12).SingleLine()
 					})
 				}
 				ui.Box(c).Height(1).Background(theme.Border).Margin(8, 0)
 				ui.Row(c).Height(30).Gap(7).AlignItems(ui.Center).Children(func() {
-					theme.Icon(c, "catalog-vendor", 16, theme.Blue)
-					ui.Text(c, locales.Text("供应商筛选")).FontSize(12).Bold()
+					ui.Text(c, locales.Text("供应商筛选")).FontSize(12).TextColor(theme.Muted)
 				})
 				for _, name := range catalogVendors {
 					if !s.catalogSidebarFilterVisible(name, true) {
@@ -125,11 +116,11 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 						displayName = name
 					}
 					checked := s.connectionVendorFilters[label]
-					ui.Row(c).Height(27).Gap(7).AlignItems(ui.Center).Children(func() {
+					ui.Row(c).Height(catalogFilterHeight).Gap(4).AlignItems(ui.Center).Children(func() {
 						if ui.Checkbox(c, &checked, "").Label(locales.Text("筛选供应商 ") + label).Changed() {
 							setCatalogFilter(s.connectionVendorFilters, label, checked)
 						}
-						s.catalogProviderIcon(c, label, 18)
+						s.catalogProviderIcon(c, label, catalogTreeIconSize)
 						ui.Text(c, displayName).FontSize(12).SingleLine()
 					})
 				}
@@ -139,7 +130,7 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 }
 
 func (s *State) catalogSearchToolbar(c *ui.Context) {
-	ui.Row(c).Height(45).Padding(6, 13).Gap(8).AlignItems(ui.Center).Children(func() {
+	ui.Row(c).Height(catalogSearchHeight).Padding(6, 13).Gap(8).AlignItems(ui.Center).Children(func() {
 		ui.Text(c, locales.Text("选择一个连接类型：")).FontSize(12)
 		ui.Box(c).Grow(1)
 		selected := 0 // Grid first, list second.
@@ -147,26 +138,26 @@ func (s *State) catalogSearchToolbar(c *ui.Context) {
 			selected = 1
 		}
 		segments := ui.SegmentedBase(c, &selected, 2)
-		segments.Track.Label(locales.Text("连接类型视图")).Height(31).Padding(2).Gap(2).
-			Radius(5).Background(theme.Panel).Border(1, theme.Border).Children(func() {
+		segments.Track.Label(locales.Text("连接类型视图")).Height(26).Padding(1).Gap(2).
+			Radius(2).Background(theme.Panel).Border(1, theme.Border).Children(func() {
 			for i, symbol := range []string{"catalog-grid", "catalog-list"} {
 				label := "网格视图"
 				if i == 1 {
 					label = "列表视图"
 				}
-				segment := segments.Segment(i).Label(locales.Text(label)).Width(28).Height(27).Radius(4)
+				segment := segments.Segment(i).Label(locales.Text(label)).Width(26).Height(24).Radius(1)
 				if selected == i {
-					segment.Background(theme.Accent)
+					segment.Background(theme.Header)
 				}
 				segment.Children(func() {
-					theme.Icon(c, symbol, 18, theme.Text)
+					theme.Icon(c, symbol, 16, theme.Text)
 				})
 			}
 		})
 		if segments.Track.Changed() {
 			s.connectionGridMode = selected == 0
 		}
-		ui.SearchField(c, &s.connectionSearch).Label(locales.Text("搜索连接类型")).Placeholder(locales.Text("搜索")).Width(176)
+		ui.SearchField(c, &s.connectionSearch).Label(locales.Text("搜索连接类型")).Placeholder(locales.Text("搜索")).Width(236).Height(connectionFormInputHeight)
 	})
 }
 
@@ -200,7 +191,7 @@ func (s *State) catalogIconItem(c *ui.Context, item catalogEntry) {
 	bg := theme.Panel
 	border := theme.Panel
 	if item.name == s.connectionSelectedName {
-		bg = ui.Hex("#214564")
+		bg = theme.Accent.Alpha(0.25)
 		border = theme.Accent
 	}
 	label := locales.Text("选择 ") + item.name

@@ -14,9 +14,8 @@ func (s *State) connectionMySQLDatabases(c *ui.Context, width, height float32) {
 	pageHeight := max(float32(280), height-174)
 	enabled := &s.connectionDraft.MySQLAdvanced.UseCustomDatabaseList
 	ui.Column(c).Width(pageWidth).Height(pageHeight).Gap(6).Children(func() {
-		ui.Row(c).Height(25).AlignItems(ui.Center).Children(func() {
-			ui.Checkbox(c, enabled, "使用自定义数据库列表").
-				Label("使用自定义数据库列表")
+		ui.Row(c).Height(connectionFormInputHeight).AlignItems(ui.Center).Children(func() {
+			connectionFormCheckbox(c, enabled, "使用自定义数据库列表", false)
 		})
 		columns := []ui.TableColumn{
 			{Title: "数据库", Width: pageWidth - 92},
@@ -34,10 +33,10 @@ func (s *State) connectionMySQLDatabases(c *ui.Context, width, height float32) {
 			ui.Button(c, "从列表中移除数据库").
 				Width(198).Height(29).Disabled(true).
 				Label("从列表中移除数据库（列表为空）")
-			if *enabled {
-				ui.Text(c, "需要建立数据库连接后才能读取列表").
-					FontSize(11).TextColor(theme.Muted)
-			}
 		})
+		if *enabled {
+			ui.Text(c, "需要建立数据库连接后才能读取列表").
+				FontSize(11).TextColor(theme.Muted)
+		}
 	})
 }

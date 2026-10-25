@@ -14,16 +14,33 @@ import (
 // The inspector follows the active real data tab rather than the connection
 // profile, but never asks the server for an unbounded cell value.
 func (s *State) mysqlDataInspector(c *ui.Context, t *tab) {
+	name, cell, selected := mysqlSelectedDataCell(t)
+	row := t.dataSelectedRow
+	if t.dataChunkField != "" && (!selected || t.dataChunkField != name || t.dataChunkRow != row) {
+		s.cancelMySQLChunk(t)
+	}
+	canRead := selected && !cell.Null && row >= 0 && row < len(t.dataPage.RowRefs) && t.dataPage.RowRefs[row] != nil
+	chunkShown := selected && t.dataChunkField == name && t.dataChunkRow == row && t.dataChunkNext > 0
 	ui.Column(c).Fill().Background(theme.Panel).Children(func() {
-		ui.Row(c).Height(31).Padding(4, 10).AlignItems(ui.Center).Background(theme.Header).Children(func() {
-			ui.Text(c, "字段信息").Bold().FontSize(12)
-			ui.Box(c).Grow(1)
-			if ui.Button(c, "×").Label(locales.Text("隐藏信息面板")).Padding(2, 6).Clicked() {
-				s.inspectorOn = false
-			}
-		})
+		s.inspectorHeader(c, "字段信息")
+		if selected {
+			// Actions stay outside the metadata scroll. A long type declaration,
+			// comment, or binary preview must not move the next-fragment control.
+			ui.Toolbar(c, func() {
+				if ui.Button(c, locales.Text("复制")).Label(locales.Text("复制单元格预览")).Height(theme.ControlHeight).FontSize(theme.SmallFontSize).Padding(2, 3).Clicked() {
+					c.WriteClipboard(mysqlDataCopyPreview(cell))
+				}
+				if canRead && ui.Button(c, locales.Text("读取字段片段")).Label(locales.Text("读取所选字段下一段")).Height(theme.ControlHeight).FontSize(theme.SmallFontSize).Padding(2, 3).
+					Disabled(t.dataChunkLoading || t.dataChunkDone).Clicked() {
+					s.loadMySQLChunk(c.Services(), t)
+				}
+				if chunkShown && ui.Button(c, locales.Text("复制此片段")).Height(theme.ControlHeight).FontSize(theme.SmallFontSize).Padding(2, 3).Clicked() {
+					c.WriteClipboard(t.dataChunkText)
+				}
+			}).Height(theme.CommandBarHeight).FillWidth().MinWidth(0).Padding(1, 4).Gap(2)
+		}
 		ui.Scroll(c).Grow(1).Children(func() {
-			ui.Column(c).Padding(12).Gap(9).Children(func() {
+			ui.Column(c).Padding(12, 10).Gap(9).Children(func() {
 				if t.dataPage == nil {
 					message := "正在读取字段元数据…"
 					if t.dataErr != "" {
@@ -41,9 +58,9 @@ func (s *State) mysqlDataInspector(c *ui.Context, t *tab) {
 				}
 				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 					ui.Text(c, mysqlColumnTypeGlyph(field.DataType)).Bold().FontSize(17).TextColor(theme.Blue)
-					ui.Text(c, field.Name).Bold().FontSize(15).SingleLine()
+					ui.Text(c, field.Name).Bold().FontSize(14).Grow(1).MinWidth(0)
 				})
-				ui.Text(c, t.dataDatabase+"."+t.dataTable).FontSize(11).TextColor(theme.Muted).SingleLine()
+				ui.Text(c, t.dataDatabase+"."+t.dataTable).FontSize(theme.SmallFontSize).TextColor(theme.Muted)
 				ui.Divider(c)
 				mysqlInspectorProperty(c, "类型", field.Type)
 				if !complete {
@@ -52,13 +69,9 @@ func (s *State) mysqlDataInspector(c *ui.Context, t *tab) {
 					mysqlInspectorFieldAttributes(c, field)
 				}
 				ui.Divider(c)
-				name, cell, ok := mysqlSelectedDataCell(t)
-				if !ok {
+				if !selected {
 					ui.Text(c, "选择数据单元格以查看值的安全预览").FontSize(11).TextColor(theme.Muted)
 					return
-				}
-				if t.dataChunkField != "" && (t.dataChunkField != name || t.dataChunkRow != t.dataSelectedRow) {
-					s.cancelMySQLChunk(t)
 				}
 				mysqlInspectorProperty(c, "行号", fmt.Sprintf("%d", t.dataOffset+int64(t.dataSelectedRow)+1))
 				if cell.Null {
@@ -68,31 +81,28 @@ func (s *State) mysqlDataInspector(c *ui.Context, t *tab) {
 				} else {
 					mysqlInspectorProperty(c, "值状态", "预览完整")
 				}
-				ui.Text(c, cell.Text).FontSize(12).SingleLine()
-				if ui.Button(c, locales.Text("复制单元格预览")).Clicked() {
-					c.WriteClipboard(mysqlDataCopyPreview(cell))
+				value := cell.Text
+				if cell.Null {
+					value = "NULL"
+				} else if value == "" {
+					value = "\"\""
 				}
-				row := t.dataSelectedRow
-				canRead := !cell.Null && row >= 0 && row < len(t.dataPage.RowRefs) &&
-					t.dataPage.RowRefs[row] != nil
+				ui.Scroll(c).Height(86).FillWidth().Border(1, theme.Border).Children(func() {
+					ui.Text(c, value).FontSize(theme.FontSize).Padding(3)
+				})
 				if canRead {
 					ui.Text(c, "大字段按需读取 · 单次最多 1024 字符/字节").FontSize(11).TextColor(theme.Muted)
-					if ui.Button(c, "读取字段片段").Label("读取所选字段下一段").
-						Disabled(t.dataChunkLoading || t.dataChunkDone).Clicked() {
-						s.loadMySQLChunk(c.Services(), t)
-					}
 					if t.dataChunkLoading {
 						ui.Text(c, "正在读取字段片段…").FontSize(11)
 					}
 					if t.dataChunkErr != "" {
 						ui.Text(c, t.dataChunkErr).FontSize(11).TextColor(theme.Gold)
 					}
-					if t.dataChunkField == name && t.dataChunkRow == row && t.dataChunkNext > 0 {
+					if chunkShown {
 						s.property(c, "已读位置", fmt.Sprintf("%d / %d", t.dataChunkNext, t.dataChunkTotal))
-						ui.Text(c, t.dataChunkText).FontSize(11)
-						if ui.Button(c, "复制此片段").Clicked() {
-							c.WriteClipboard(t.dataChunkText)
-						}
+						ui.Scroll(c).Height(112).FillWidth().Border(1, theme.Border).Children(func() {
+							ui.Text(c, t.dataChunkText).FontSize(theme.SmallFontSize).Padding(3)
+						})
 					}
 				}
 			})

@@ -2663,3 +2663,511 @@ func MockNoDataAccess() string { return In(i18n.Locale()).MockNoDataAccess() }
 func (msgs Messages) MockNoDataAccess() string {
 	return Catalog.Format(msgs.locale, "mockNoDataAccess", nil)
 }
+
+// AlignmentEmptyConnectionsHint says "暂无连接，点击工具栏“连接”新建连接"
+// in the language the app shows.
+func AlignmentEmptyConnectionsHint() string { return In(i18n.Locale()).AlignmentEmptyConnectionsHint() }
+
+// AlignmentEmptyConnectionsHint says "暂无连接，点击工具栏“连接”新建连接"
+// in the language of msgs.
+func (msgs Messages) AlignmentEmptyConnectionsHint() string {
+	return Catalog.Format(msgs.locale, "alignmentEmptyConnectionsHint", nil)
+}
+
+// AlignmentRemoveFromGroup says "从组中排除"
+// in the language the app shows.
+func AlignmentRemoveFromGroup() string { return In(i18n.Locale()).AlignmentRemoveFromGroup() }
+
+// AlignmentRemoveFromGroup says "从组中排除"
+// in the language of msgs.
+func (msgs Messages) AlignmentRemoveFromGroup() string {
+	return Catalog.Format(msgs.locale, "alignmentRemoveFromGroup", nil)
+}
+
+// AlignmentShare says "共享…"
+// in the language the app shows.
+func AlignmentShare() string { return In(i18n.Locale()).AlignmentShare() }
+
+// AlignmentShare says "共享…"
+// in the language of msgs.
+func (msgs Messages) AlignmentShare() string {
+	return Catalog.Format(msgs.locale, "alignmentShare", nil)
+}
+
+// AlignmentCloseAllConnections says "关闭所有连接"
+// in the language the app shows.
+func AlignmentCloseAllConnections() string { return In(i18n.Locale()).AlignmentCloseAllConnections() }
+
+// AlignmentCloseAllConnections says "关闭所有连接"
+// in the language of msgs.
+func (msgs Messages) AlignmentCloseAllConnections() string {
+	return Catalog.Format(msgs.locale, "alignmentCloseAllConnections", nil)
+}
+
+// AlignmentSwitchConnectionConfiguration says "切换连接配置文件"
+// in the language the app shows.
+func AlignmentSwitchConnectionConfiguration() string {
+	return In(i18n.Locale()).AlignmentSwitchConnectionConfiguration()
+}
+
+// AlignmentSwitchConnectionConfiguration says "切换连接配置文件"
+// in the language of msgs.
+func (msgs Messages) AlignmentSwitchConnectionConfiguration() string {
+	return Catalog.Format(msgs.locale, "alignmentSwitchConnectionConfiguration", nil)
+}
+
+// AlignmentRefreshDatabaseObjects says "刷新数据库对象"
+// in the language the app shows.
+func AlignmentRefreshDatabaseObjects() string {
+	return In(i18n.Locale()).AlignmentRefreshDatabaseObjects()
+}
+
+// AlignmentRefreshDatabaseObjects says "刷新数据库对象"
+// in the language of msgs.
+func (msgs Messages) AlignmentRefreshDatabaseObjects() string {
+	return Catalog.Format(msgs.locale, "alignmentRefreshDatabaseObjects", nil)
+}
+
+// AlignmentStructureLoadFailed says "加载结构失败："
+// in the language the app shows.
+func AlignmentStructureLoadFailed() string { return In(i18n.Locale()).AlignmentStructureLoadFailed() }
+
+// AlignmentStructureLoadFailed says "加载结构失败："
+// in the language of msgs.
+func (msgs Messages) AlignmentStructureLoadFailed() string {
+	return Catalog.Format(msgs.locale, "alignmentStructureLoadFailed", nil)
+}
+
+// AlignmentHistoryLog says "历史日志…"
+// in the language the app shows.
+func AlignmentHistoryLog() string { return In(i18n.Locale()).AlignmentHistoryLog() }
+
+// AlignmentHistoryLog says "历史日志…"
+// in the language of msgs.
+func (msgs Messages) AlignmentHistoryLog() string {
+	return Catalog.Format(msgs.locale, "alignmentHistoryLog", nil)
+}
+
+// AlignmentCancelLoading says "取消加载"
+// in the language the app shows.
+func AlignmentCancelLoading() string { return In(i18n.Locale()).AlignmentCancelLoading() }
+
+// AlignmentCancelLoading says "取消加载"
+// in the language of msgs.
+func (msgs Messages) AlignmentCancelLoading() string {
+	return Catalog.Format(msgs.locale, "alignmentCancelLoading", nil)
+}
+
+// AlignmentCommandLine says "命令列界面"
+// in the language the app shows.
+func AlignmentCommandLine() string { return In(i18n.Locale()).AlignmentCommandLine() }
+
+// AlignmentCommandLine says "命令列界面"
+// in the language of msgs.
+func (msgs Messages) AlignmentCommandLine() string {
+	return Catalog.Format(msgs.locale, "alignmentCommandLine", nil)
+}
+
+// AlignmentCommandLineDialog says "命令列界面…"
+// in the language the app shows.
+func AlignmentCommandLineDialog() string { return In(i18n.Locale()).AlignmentCommandLineDialog() }
+
+// AlignmentCommandLineDialog says "命令列界面…"
+// in the language of msgs.
+func (msgs Messages) AlignmentCommandLineDialog() string {
+	return Catalog.Format(msgs.locale, "alignmentCommandLineDialog", nil)
+}
+
+// AlignmentFindInDatabase says "在数据库或模式中查找…"
+// in the language the app shows.
+func AlignmentFindInDatabase() string { return In(i18n.Locale()).AlignmentFindInDatabase() }
+
+// AlignmentFindInDatabase says "在数据库或模式中查找…"
+// in the language of msgs.
+func (msgs Messages) AlignmentFindInDatabase() string {
+	return Catalog.Format(msgs.locale, "alignmentFindInDatabase", nil)
+}
+
+// AlignmentCopyChunk says "复制此片段"
+// in the language the app shows.
+func AlignmentCopyChunk() string { return In(i18n.Locale()).AlignmentCopyChunk() }
+
+// AlignmentCopyChunk says "复制此片段"
+// in the language of msgs.
+func (msgs Messages) AlignmentCopyChunk() string {
+	return Catalog.Format(msgs.locale, "alignmentCopyChunk", nil)
+}
+
+// AlignmentFieldProperties says "字段属性："
+// in the language the app shows.
+func AlignmentFieldProperties() string { return In(i18n.Locale()).AlignmentFieldProperties() }
+
+// AlignmentFieldProperties says "字段属性："
+// in the language of msgs.
+func (msgs Messages) AlignmentFieldProperties() string {
+	return Catalog.Format(msgs.locale, "alignmentFieldProperties", nil)
+}
+
+// AlignmentEngine says "引擎"
+// in the language the app shows.
+func AlignmentEngine() string { return In(i18n.Locale()).AlignmentEngine() }
+
+// AlignmentEngine says "引擎"
+// in the language of msgs.
+func (msgs Messages) AlignmentEngine() string {
+	return Catalog.Format(msgs.locale, "alignmentEngine", nil)
+}
+
+// AlignmentOpenTableReadOnly says "打开表（只读）"
+// in the language the app shows.
+func AlignmentOpenTableReadOnly() string { return In(i18n.Locale()).AlignmentOpenTableReadOnly() }
+
+// AlignmentOpenTableReadOnly says "打开表（只读）"
+// in the language of msgs.
+func (msgs Messages) AlignmentOpenTableReadOnly() string {
+	return Catalog.Format(msgs.locale, "alignmentOpenTableReadOnly", nil)
+}
+
+// AlignmentDataActions says "数据操作"
+// in the language the app shows.
+func AlignmentDataActions() string { return In(i18n.Locale()).AlignmentDataActions() }
+
+// AlignmentDataActions says "数据操作"
+// in the language of msgs.
+func (msgs Messages) AlignmentDataActions() string {
+	return Catalog.Format(msgs.locale, "alignmentDataActions", nil)
+}
+
+// AlignmentDataPreview says "数据预览"
+// in the language the app shows.
+func AlignmentDataPreview() string { return In(i18n.Locale()).AlignmentDataPreview() }
+
+// AlignmentDataPreview says "数据预览"
+// in the language of msgs.
+func (msgs Messages) AlignmentDataPreview() string {
+	return Catalog.Format(msgs.locale, "alignmentDataPreview", nil)
+}
+
+// AlignmentNewDatabase says "新建数据库"
+// in the language the app shows.
+func AlignmentNewDatabase() string { return In(i18n.Locale()).AlignmentNewDatabase() }
+
+// AlignmentNewDatabase says "新建数据库"
+// in the language of msgs.
+func (msgs Messages) AlignmentNewDatabase() string {
+	return Catalog.Format(msgs.locale, "alignmentNewDatabase", nil)
+}
+
+// AlignmentNewGroup says "新建组"
+// in the language the app shows.
+func AlignmentNewGroup() string { return In(i18n.Locale()).AlignmentNewGroup() }
+
+// AlignmentNewGroup says "新建组"
+// in the language of msgs.
+func (msgs Messages) AlignmentNewGroup() string {
+	return Catalog.Format(msgs.locale, "alignmentNewGroup", nil)
+}
+
+// AlignmentServerMonitor says "服务器监控"
+// in the language the app shows.
+func AlignmentServerMonitor() string { return In(i18n.Locale()).AlignmentServerMonitor() }
+
+// AlignmentServerMonitor says "服务器监控"
+// in the language of msgs.
+func (msgs Messages) AlignmentServerMonitor() string {
+	return Catalog.Format(msgs.locale, "alignmentServerMonitor", nil)
+}
+
+// AlignmentQueryActions says "查询操作"
+// in the language the app shows.
+func AlignmentQueryActions() string { return In(i18n.Locale()).AlignmentQueryActions() }
+
+// AlignmentQueryActions says "查询操作"
+// in the language of msgs.
+func (msgs Messages) AlignmentQueryActions() string {
+	return Catalog.Format(msgs.locale, "alignmentQueryActions", nil)
+}
+
+// AlignmentMockDataSummary says "模拟数据 · 100,000 行 / 50 列"
+// in the language the app shows.
+func AlignmentMockDataSummary() string { return In(i18n.Locale()).AlignmentMockDataSummary() }
+
+// AlignmentMockDataSummary says "模拟数据 · 100,000 行 / 50 列"
+// in the language of msgs.
+func (msgs Messages) AlignmentMockDataSummary() string {
+	return Catalog.Format(msgs.locale, "alignmentMockDataSummary", nil)
+}
+
+// AlignmentReadingStructure says "正在读取真实 MySQL 表结构…"
+// in the language the app shows.
+func AlignmentReadingStructure() string { return In(i18n.Locale()).AlignmentReadingStructure() }
+
+// AlignmentReadingStructure says "正在读取真实 MySQL 表结构…"
+// in the language of msgs.
+func (msgs Messages) AlignmentReadingStructure() string {
+	return Catalog.Format(msgs.locale, "alignmentReadingStructure", nil)
+}
+
+// AlignmentNoSecondaryIndexes says "此表没有可见的次级索引"
+// in the language the app shows.
+func AlignmentNoSecondaryIndexes() string { return In(i18n.Locale()).AlignmentNoSecondaryIndexes() }
+
+// AlignmentNoSecondaryIndexes says "此表没有可见的次级索引"
+// in the language of msgs.
+func (msgs Messages) AlignmentNoSecondaryIndexes() string {
+	return Catalog.Format(msgs.locale, "alignmentNoSecondaryIndexes", nil)
+}
+
+// AlignmentNoLoadedStructure says "没有已加载的表结构"
+// in the language the app shows.
+func AlignmentNoLoadedStructure() string { return In(i18n.Locale()).AlignmentNoLoadedStructure() }
+
+// AlignmentNoLoadedStructure says "没有已加载的表结构"
+// in the language of msgs.
+func (msgs Messages) AlignmentNoLoadedStructure() string {
+	return Catalog.Format(msgs.locale, "alignmentNoLoadedStructure", nil)
+}
+
+// AlignmentComment says "注释"
+// in the language the app shows.
+func AlignmentComment() string { return In(i18n.Locale()).AlignmentComment() }
+
+// AlignmentComment says "注释"
+// in the language of msgs.
+func (msgs Messages) AlignmentComment() string {
+	return Catalog.Format(msgs.locale, "alignmentComment", nil)
+}
+
+// AlignmentMoveTo says "移动到"
+// in the language the app shows.
+func AlignmentMoveTo() string { return In(i18n.Locale()).AlignmentMoveTo() }
+
+// AlignmentMoveTo says "移动到"
+// in the language of msgs.
+func (msgs Messages) AlignmentMoveTo() string {
+	return Catalog.Format(msgs.locale, "alignmentMoveTo", nil)
+}
+
+// AlignmentFilterRules says "筛选规则"
+// in the language the app shows.
+func AlignmentFilterRules() string { return In(i18n.Locale()).AlignmentFilterRules() }
+
+// AlignmentFilterRules says "筛选规则"
+// in the language of msgs.
+func (msgs Messages) AlignmentFilterRules() string {
+	return Catalog.Format(msgs.locale, "alignmentFilterRules", nil)
+}
+
+// AlignmentManageServerMonitors says "管理服务器监控"
+// in the language the app shows.
+func AlignmentManageServerMonitors() string { return In(i18n.Locale()).AlignmentManageServerMonitors() }
+
+// AlignmentManageServerMonitors says "管理服务器监控"
+// in the language of msgs.
+func (msgs Messages) AlignmentManageServerMonitors() string {
+	return Catalog.Format(msgs.locale, "alignmentManageServerMonitors", nil)
+}
+
+// AlignmentManageGroups says "管理组"
+// in the language the app shows.
+func AlignmentManageGroups() string { return In(i18n.Locale()).AlignmentManageGroups() }
+
+// AlignmentManageGroups says "管理组"
+// in the language of msgs.
+func (msgs Messages) AlignmentManageGroups() string {
+	return Catalog.Format(msgs.locale, "alignmentManageGroups", nil)
+}
+
+// AlignmentManageConnections says "管理连接…"
+// in the language the app shows.
+func AlignmentManageConnections() string { return In(i18n.Locale()).AlignmentManageConnections() }
+
+// AlignmentManageConnections says "管理连接…"
+// in the language of msgs.
+func (msgs Messages) AlignmentManageConnections() string {
+	return Catalog.Format(msgs.locale, "alignmentManageConnections", nil)
+}
+
+// AlignmentStructureFieldProperties says "结构字段属性"
+// in the language the app shows.
+func AlignmentStructureFieldProperties() string {
+	return In(i18n.Locale()).AlignmentStructureFieldProperties()
+}
+
+// AlignmentStructureFieldProperties says "结构字段属性"
+// in the language of msgs.
+func (msgs Messages) AlignmentStructureFieldProperties() string {
+	return Catalog.Format(msgs.locale, "alignmentStructureFieldProperties", nil)
+}
+
+// AlignmentStructureActions says "表结构操作"
+// in the language the app shows.
+func AlignmentStructureActions() string { return In(i18n.Locale()).AlignmentStructureActions() }
+
+// AlignmentStructureActions says "表结构操作"
+// in the language of msgs.
+func (msgs Messages) AlignmentStructureActions() string {
+	return Catalog.Format(msgs.locale, "alignmentStructureActions", nil)
+}
+
+// AlignmentReadOnlyStructure says "设计表 · 只读结构"
+// in the language the app shows.
+func AlignmentReadOnlyStructure() string { return In(i18n.Locale()).AlignmentReadOnlyStructure() }
+
+// AlignmentReadOnlyStructure says "设计表 · 只读结构"
+// in the language of msgs.
+func (msgs Messages) AlignmentReadOnlyStructure() string {
+	return Catalog.Format(msgs.locale, "alignmentReadOnlyStructure", nil)
+}
+
+// AlignmentDesignTableReadOnly says "设计表（只读）"
+// in the language the app shows.
+func AlignmentDesignTableReadOnly() string { return In(i18n.Locale()).AlignmentDesignTableReadOnly() }
+
+// AlignmentDesignTableReadOnly says "设计表（只读）"
+// in the language of msgs.
+func (msgs Messages) AlignmentDesignTableReadOnly() string {
+	return Catalog.Format(msgs.locale, "alignmentDesignTableReadOnly", nil)
+}
+
+// AlignmentReadFieldChunk says "读取字段片段"
+// in the language the app shows.
+func AlignmentReadFieldChunk() string { return In(i18n.Locale()).AlignmentReadFieldChunk() }
+
+// AlignmentReadFieldChunk says "读取字段片段"
+// in the language of msgs.
+func (msgs Messages) AlignmentReadFieldChunk() string {
+	return Catalog.Format(msgs.locale, "alignmentReadFieldChunk", nil)
+}
+
+// AlignmentReadNextFieldChunk says "读取所选字段下一段"
+// in the language the app shows.
+func AlignmentReadNextFieldChunk() string { return In(i18n.Locale()).AlignmentReadNextFieldChunk() }
+
+// AlignmentReadNextFieldChunk says "读取所选字段下一段"
+// in the language of msgs.
+func (msgs Messages) AlignmentReadNextFieldChunk() string {
+	return Catalog.Format(msgs.locale, "alignmentReadNextFieldChunk", nil)
+}
+
+// AlignmentDataReadFailed says "读取数据失败："
+// in the language the app shows.
+func AlignmentDataReadFailed() string { return In(i18n.Locale()).AlignmentDataReadFailed() }
+
+// AlignmentDataReadFailed says "读取数据失败："
+// in the language of msgs.
+func (msgs Messages) AlignmentDataReadFailed() string {
+	return Catalog.Format(msgs.locale, "alignmentDataReadFailed", nil)
+}
+
+// AlignmentRunSQLFile says "运行 SQL 文件…"
+// in the language the app shows.
+func AlignmentRunSQLFile() string { return In(i18n.Locale()).AlignmentRunSQLFile() }
+
+// AlignmentRunSQLFile says "运行 SQL 文件…"
+// in the language of msgs.
+func (msgs Messages) AlignmentRunSQLFile() string {
+	return Catalog.Format(msgs.locale, "alignmentRunSQLFile", nil)
+}
+
+// AlignmentRunDemoQuery says "运行模拟查询"
+// in the language the app shows.
+func AlignmentRunDemoQuery() string { return In(i18n.Locale()).AlignmentRunDemoQuery() }
+
+// AlignmentRunDemoQuery says "运行模拟查询"
+// in the language of msgs.
+func (msgs Messages) AlignmentRunDemoQuery() string {
+	return Catalog.Format(msgs.locale, "alignmentRunDemoQuery", nil)
+}
+
+// AlignmentConnectionSettingsContent says "连接设置内容"
+// in the language the app shows.
+func AlignmentConnectionSettingsContent() string {
+	return In(i18n.Locale()).AlignmentConnectionSettingsContent()
+}
+
+// AlignmentConnectionSettingsContent says "连接设置内容"
+// in the language of msgs.
+func (msgs Messages) AlignmentConnectionSettingsContent() string {
+	return Catalog.Format(msgs.locale, "alignmentConnectionSettingsContent", nil)
+}
+
+// AlignmentOptions says "选项…"
+// in the language the app shows.
+func AlignmentOptions() string { return In(i18n.Locale()).AlignmentOptions() }
+
+// AlignmentOptions says "选项…"
+// in the language of msgs.
+func (msgs Messages) AlignmentOptions() string {
+	return Catalog.Format(msgs.locale, "alignmentOptions", nil)
+}
+
+// AlignmentRename says "重命名"
+// in the language the app shows.
+func AlignmentRename() string { return In(i18n.Locale()).AlignmentRename() }
+
+// AlignmentRename says "重命名"
+// in the language of msgs.
+func (msgs Messages) AlignmentRename() string {
+	return Catalog.Format(msgs.locale, "alignmentRename", nil)
+}
+
+// AlignmentRetry says "重试"
+// in the language the app shows.
+func AlignmentRetry() string { return In(i18n.Locale()).AlignmentRetry() }
+
+// AlignmentRetry says "重试"
+// in the language of msgs.
+func (msgs Messages) AlignmentRetry() string {
+	return Catalog.Format(msgs.locale, "alignmentRetry", nil)
+}
+
+// AlignmentRetryStructure says "重试读取结构"
+// in the language the app shows.
+func AlignmentRetryStructure() string { return In(i18n.Locale()).AlignmentRetryStructure() }
+
+// AlignmentRetryStructure says "重试读取结构"
+// in the language of msgs.
+func (msgs Messages) AlignmentRetryStructure() string {
+	return Catalog.Format(msgs.locale, "alignmentRetryStructure", nil)
+}
+
+// AlignmentReload says "重载"
+// in the language the app shows.
+func AlignmentReload() string { return In(i18n.Locale()).AlignmentReload() }
+
+// AlignmentReload says "重载"
+// in the language of msgs.
+func (msgs Messages) AlignmentReload() string {
+	return Catalog.Format(msgs.locale, "alignmentReload", nil)
+}
+
+// AlignmentColor says "颜色"
+// in the language the app shows.
+func AlignmentColor() string { return In(i18n.Locale()).AlignmentColor() }
+
+// AlignmentColor says "颜色"
+// in the language of msgs.
+func (msgs Messages) AlignmentColor() string {
+	return Catalog.Format(msgs.locale, "alignmentColor", nil)
+}
+
+// AlignmentDefault says "默认"
+// in the language the app shows.
+func AlignmentDefault() string { return In(i18n.Locale()).AlignmentDefault() }
+
+// AlignmentDefault says "默认"
+// in the language of msgs.
+func (msgs Messages) AlignmentDefault() string {
+	return Catalog.Format(msgs.locale, "alignmentDefault", nil)
+}
+
+// AlignmentDefaultColor says "默认颜色"
+// in the language the app shows.
+func AlignmentDefaultColor() string { return In(i18n.Locale()).AlignmentDefaultColor() }
+
+// AlignmentDefaultColor says "默认颜色"
+// in the language of msgs.
+func (msgs Messages) AlignmentDefaultColor() string {
+	return Catalog.Format(msgs.locale, "alignmentDefaultColor", nil)
+}
