@@ -82,6 +82,9 @@ func (s *State) nextConnectionStep() {
 	s.clearMySQLSSLPassphrase()
 	s.clearMySQLInitialQuery()
 	if draft.Kind == connections.MySQL {
+		// Observed Navicat default: Save Password is preselected for a
+		// new MySQL connection. Only offer it with a configured OS vault.
+		s.connectionSavePassword = s.credentialVault != nil
 		s.initMySQLAdvancedInputs()
 		s.initMySQLSSHInputs()
 		s.initMySQLHTTPInputs()

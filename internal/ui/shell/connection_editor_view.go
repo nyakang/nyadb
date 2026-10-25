@@ -318,6 +318,7 @@ func (s *State) connectionEditorFooter(c *ui.Context) {
 				s.connectionStep = 0
 				s.connectionEditorTab = 0
 				s.connectionSecret = ""
+				s.connectionSavePassword = false
 				s.clearMySQLSSLPassphrase()
 				s.clearMySQLSSHSecrets()
 				s.clearMySQLHTTPSecrets()
