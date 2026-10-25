@@ -318,6 +318,20 @@ def main():
             if action == "window":
                 window = session.wait_window(step["title"], pid)
                 session.run("xdotool", "windowactivate", "--sync", str(window))
+            elif action == "active_window":
+                expected_title = step.get("title")
+                deadline = time.monotonic() + 10
+                while time.monotonic() < deadline:
+                    selected = session.active_window()
+                    if session.window_pid(selected) == pid:
+                        observed_title = session.run("xdotool", "getwindowname", str(selected))
+                        if not expected_title or re.search(expected_title, observed_title):
+                            window = selected
+                            break
+                    time.sleep(0.2)
+                else:
+                    raise RuntimeError(f"No active application window matches: {expected_title!r}")
+                session.run("xdotool", "windowactivate", "--sync", str(window))
             elif action == "resize":
                 session.resize(window, step["width"], step["height"])
             elif action == "move":
