@@ -9,6 +9,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/services/credentials"
 	"github.com/nyakang/nyadb/internal/storage/localdb"
 	"github.com/nyakang/nyadb/internal/ui/shell"
 	"github.com/nyakang/nyadb/internal/ui/theme"
@@ -37,6 +38,7 @@ func Run() error {
 	theme.SetMode(theme.ParseMode(savedAppearance))
 	configureNativeGTKTheme()
 	state := shell.NewWithProfiles(connections.NewService(connections.NewStore(db)))
+	state.SetCredentialVault(credentials.NewOSVault())
 	// Research-only, opt-in runtime PNGs. The files remain outside resources/
 	// and are never embedded in the application or its distribution packages.
 	if os.Getenv("NYADB_RESEARCH_ICONS") == "1" {

@@ -197,8 +197,8 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 		})
 		ui.Row(c).Height(28).Gap(0).AlignItems(ui.Center).Children(func() {
 			ui.Box(c).Width(labelWidth)
-			save := false
-			connectionFormCheckbox(c, &save, "保存密码", true)
+			connectionFormCheckbox(c, &s.connectionSavePassword, "保存密码",
+				s.connectionDraft.Kind != connections.MySQL || s.credentialVault == nil)
 		})
 	})
 }

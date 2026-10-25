@@ -108,6 +108,9 @@ func (s *State) startEditProfile() {
 	s.connectionSecret = ""
 	s.connectionError = ""
 	s.initializeConnectionConfigurations()
+	if p.Kind == connections.MySQL {
+		s.loadSavedConnectionPasswords()
+	}
 	if s.showConnectionWindow != nil {
 		s.showConnectionWindow()
 	}
@@ -175,5 +178,17 @@ func (s *State) deleteProfile() {
 		s.selectedProfileID = 0
 	}
 	s.loadProfiles()
+	if p.Kind == connections.MySQL && s.credentialVault != nil {
+		if err := s.credentialVault.Delete(p.ID, ""); err != nil {
+			s.status = "连接已删除，但清理系统凭据失败：" + err.Error()
+			return
+		}
+		for _, variant := range p.Variants {
+			if err := s.credentialVault.Delete(p.ID, variant.Name); err != nil {
+				s.status = "连接已删除，但清理系统凭据失败：" + err.Error()
+				return
+			}
+		}
+	}
 	s.status = "已删除连接档案：" + p.Name + "（未删除数据库文件）"
 }

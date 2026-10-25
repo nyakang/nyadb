@@ -8,6 +8,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/locales"
 )
 
 type mysqlSessionResult struct {
@@ -16,6 +17,7 @@ type mysqlSessionResult struct {
 	names       []string
 	err         error
 	metadataErr error
+	vaultErr    error
 }
 
 type mysqlSessionOpener func(context.Context, connections.ActiveSettings, string) error
@@ -33,8 +35,19 @@ func (s *State) startMySQLSession(services ui.Services) {
 		s.mysqlSessionManager = connections.NewMySQLSessionManager()
 	}
 	settings, err := connections.ResolveActiveSettings(p)
+	password := s.mysqlSessionPassword
+	var vaultErr error
+	if err == nil && password == "" && s.credentialVault != nil {
+		var exists bool
+		password, exists, vaultErr = s.credentialVault.Get(p.ID, p.ActiveVariant)
+		if vaultErr != nil || !exists {
+			// A system without a desktop keyring must still support servers
+			// configured with an intentionally empty database password.
+			password = ""
+		}
+	}
 	if err == nil {
-		_, err = connections.DirectMySQLConfig(settings, s.mysqlSessionPassword)
+		_, err = connections.DirectMySQLConfig(settings, password)
 	}
 	if err != nil {
 		s.mysqlSessionStatus = "连接失败"
@@ -53,7 +66,6 @@ func (s *State) startMySQLSession(services ui.Services) {
 	s.mysqlSessionDatabases = nil
 	s.resetMySQLObjectBrowser()
 	s.status = "正在连接 MySQL：" + p.Name
-	password := s.mysqlSessionPassword
 	s.mysqlSessionPassword = ""
 	manager := s.mysqlSessionManager
 	opener := s.mysqlSessionOpener
@@ -81,7 +93,7 @@ func (s *State) startMySQLSession(services ui.Services) {
 		if metaErr != nil && password != "" {
 			metaErr = errors.New(strings.ReplaceAll(metaErr.Error(), password, "[已隐藏]"))
 		}
-		results <- mysqlSessionResult{generation: generation, id: p.ID, names: names, err: err, metadataErr: metaErr}
+		results <- mysqlSessionResult{generation: generation, id: p.ID, names: names, err: err, metadataErr: metaErr, vaultErr: vaultErr}
 		services.Invalidate()
 	}()
 }
@@ -99,6 +111,9 @@ func (s *State) consumeMySQLSessionResult() {
 		if result.err != nil {
 			s.mysqlSessionStatus = "连接失败"
 			s.mysqlSessionError = result.err.Error()
+			if result.vaultErr != nil {
+				s.mysqlSessionError = "无法读取已保存密码（可手动输入）：" + result.vaultErr.Error() + "；空密码连接失败：" + s.mysqlSessionError
+			}
 			s.status = "连接 MySQL 失败：" + s.mysqlSessionError
 			return
 		}
@@ -163,7 +178,7 @@ func (s *State) mysqlSessionToolbar(c *ui.Context) {
 	ui.Column(c).Gap(5).Children(func() {
 		if s.mysqlSessionStatus != "连接中" && s.mysqlSessionStateFor(p.ID) != "已连接" {
 			ui.TextInput(c, &s.mysqlSessionPassword).Password().
-				Label("本次 MySQL 会话密码").Placeholder("密码（仅本次连接）").Height(26)
+				Label("本次 MySQL 会话密码").Placeholder(locales.Text("密码（留空使用已保存密码）")).Height(26)
 		}
 		ui.Row(c).Gap(5).Children(func() {
 			if s.mysqlSessionStateFor(p.ID) == "连接中" {

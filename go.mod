@@ -6,13 +6,17 @@ require (
 	github.com/ebitengine/purego v0.11.1
 	github.com/egoist/mygo v0.6.3
 	github.com/go-sql-driver/mysql v1.10.1
+	github.com/zalando/go-keyring v0.2.6
 	modernc.org/sqlite v1.60.1
 )
 
 require (
+	al.essio.dev/pkg/shellescape v1.5.1 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
+	github.com/danieljoos/wincred v1.2.2 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-text/typesetting v0.3.5 // indirect
+	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
