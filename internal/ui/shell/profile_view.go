@@ -49,9 +49,20 @@ func (s *State) profileSidebar(c *ui.Context) {
 				ui.Text(c, locales.Text(msg)).Padding(8).TextColor(theme.Muted).FontSize(11)
 				return
 			}
+			selectedKey := s.explorerName
 			if s.explorerRow < 0 {
 				s.explorerRow = s.outlineRowForSelection(roots)
+			} else if s.explorerRow < s.explorerTree.Rows() {
+				selectedKey = s.explorerTree.Item(s.explorerRow)
 			}
+			// MyGo selects a right-clicked row before building its popup only
+			// with Selection. Keep this navigator's choice singular, using the
+			// native cursor for both pointer and keyboard navigation.
+			s.explorerSelection.Clear()
+			if selectedKey != "" {
+				s.explorerSelection.Add(selectedKey)
+			}
+			s.explorerTree.List.Selection = &s.explorerSelection
 			s.explorerTree.List.Selected = &s.explorerRow
 			s.explorerTree.Indent = 16
 			savedTheme := c.Theme()
@@ -62,7 +73,14 @@ func (s *State) profileSidebar(c *ui.Context) {
 			c.SetTheme(&denseTheme)
 			tree := ui.Outline(c, &s.explorerTree, roots, s.profileChildren, func(key string) { s.navigationRow(c, key) }).Grow(1).Padding(0).Gap(0)
 			c.SetTheme(savedTheme)
-			if s.explorerRow >= 0 && s.explorerRow < s.explorerTree.Rows() {
+			if s.explorerMenuBuilt {
+				// Outline can finish applying an earlier pointer selection after
+				// the row's menu callback. Keep the menu's identity authoritative
+				// and resolve its row on the next pass instead of restoring that
+				// earlier click as the menu target.
+				s.explorerRow = -1
+				s.explorerMenuBuilt = false
+			} else if s.explorerRow >= 0 && s.explorerRow < s.explorerTree.Rows() {
 				key := s.explorerTree.Item(s.explorerRow)
 				if key != s.explorerName {
 					s.selectNavigationNode(c.Services(), key)

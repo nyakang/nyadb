@@ -5,6 +5,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
@@ -78,6 +79,74 @@ func TestNavigatorContextMenusAreScopedByHitTarget(t *testing.T) {
 	}
 	if !s.groupEditing || s.groupDraft != "开发库" {
 		t.Fatal("group rename did not target the selected group")
+	}
+}
+
+func TestNavigatorRightClickUnselectedRowAcrossItsWidth(t *testing.T) {
+	s, tt, svc, _ := profileTestState(t)
+	if err := svc.CreateGroup(context.Background(), "Group"); err != nil {
+		t.Fatal(err)
+	}
+	p, err := svc.Create(context.Background(), connections.Profile{Name: "Local", Kind: connections.MySQL, Host: "localhost", Port: 3306})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.loadProfiles()
+	tt.Frame()
+	for _, name := range []string{"Group", "Local"} {
+		for _, x := range []float32{16, 40, 220} {
+			// Right-click a different row without first left-clicking it.
+			other := "Local"
+			if name == "Local" {
+				other = "Group"
+			}
+			if err := tt.Click(other); err != nil {
+				t.Fatal(err)
+			}
+			tt.Frame()
+			r, ok := tt.Find(name)
+			if !ok {
+				t.Fatalf("missing row %s", name)
+			}
+			tt.RightClickAt(x, r.Y+r.H/2)
+			command := "重命名"
+			if name == "Local" {
+				command = "编辑连接"
+			}
+			if !slices.Contains(tt.Menu(), command) {
+				t.Fatalf("right-click %s at x=%v did not open its menu: %v", name, x, tt.Menu())
+			}
+			if name == "Local" && s.selectedProfileID != p.ID || name == "Group" && s.selectedGroup != name {
+				t.Fatalf("right-click %s failed to select its target", name)
+			}
+			tt.CloseMenu()
+			tt.Frame()
+			if name == "Local" && s.selectedProfileID != p.ID || name == "Group" && s.selectedGroup != name {
+				t.Fatalf("right-click %s lost its target after menu dismissal", name)
+			}
+		}
+	}
+	if err := tt.Click("Group"); err != nil {
+		t.Fatal(err)
+	}
+	r, _ := tt.Find("Local")
+	tt.RightClickAt(220, r.Y+r.H/2)
+	if err := tt.ChooseMenuItem("添加星标"); err != nil {
+		t.Fatal(err)
+	}
+	saved, err := svc.Get(context.Background(), p.ID)
+	if err != nil || !saved.Starred || s.mysqlSessionProfileID != 0 {
+		t.Fatalf("context action must target the clicked connection without connecting: starred=%v err=%v", saved.Starred, err)
+	}
+	tt.Key(0, ui.KeyUp)
+	if s.selectedGroup != "Group" {
+		t.Fatal("keyboard navigation did not continue from the right-click target")
+	}
+	if err := tt.ClickWith(ui.Ctrl, "Local"); err != nil {
+		t.Fatal(err)
+	}
+	if s.explorerSelection.Len() != 1 || !s.explorerSelection.Has(profileNode(p.ID)) {
+		t.Fatal("navigator must retain one selected identity")
 	}
 }
 

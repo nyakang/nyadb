@@ -164,12 +164,17 @@ func (s *State) syncNavigationExpansion(services ui.Services) {
 }
 
 func (s *State) navigationRow(c *ui.Context, key string) {
+	// Outline supplies the indentation and disclosure arrow. Fill the remaining
+	// row so its context menu also receives clicks after a short name.
 	if isGroupNode(key) {
 		name := groupFromNode(key)
-		ui.Row(c).Height(theme.TreeRowHeight - 2).AlignItems(ui.Center).Gap(5).Children(func() {
+		ui.Row(c).Grow(1).MinWidth(0).Height(theme.TreeRowHeight - 2).AlignItems(ui.Center).Gap(5).Children(func() {
 			theme.Icon(c, "folder-filled", 16, theme.Gold)
 			ui.Text(c, name).FontSize(12).SingleLine()
-		}).ContextMenu(func(m *ui.Menu) { s.profileGroupMenu(m, name) })
+		}).ContextMenu(func(m *ui.Menu) {
+			s.profileGroupMenu(m, name)
+			s.explorerMenuBuilt = true
+		})
 		return
 	}
 	n := parseNavigationNode(key)
@@ -180,11 +185,14 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 			if p.ID != n.ProfileID {
 				continue
 			}
-			row := ui.Row(c).Height(theme.TreeRowHeight - 2).AlignItems(ui.Center).Gap(5).Children(func() {
+			row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.TreeRowHeight - 2).AlignItems(ui.Center).Gap(5).Children(func() {
 				s.profileBrandIcon(c, p.Kind, 16)
 				ui.Text(c, p.Name).FontSize(12).SingleLine()
 			})
-			row.ContextMenu(func(m *ui.Menu) { s.profileConnectionMenu(m, p.Name, c.Services()) })
+			row.ContextMenu(func(m *ui.Menu) {
+				s.profileConnectionMenu(m, p.Name, c.Services())
+				s.explorerMenuBuilt = true
+			})
 
 		}
 		return
@@ -196,7 +204,7 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 	if n.Category == "视图" {
 		icon = "view"
 	}
-	row := ui.Row(c).Height(theme.TreeRowHeight - 2).AlignItems(ui.Center).Gap(5).Children(func() {
+	row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.TreeRowHeight - 2).AlignItems(ui.Center).Gap(5).Children(func() {
 		theme.Icon(c, icon, 16, theme.Blue)
 		ui.Text(c, label).FontSize(12).SingleLine()
 	})
@@ -204,6 +212,7 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 		row.Label("数据库：" + n.Database)
 	}
 	row.ContextMenu(func(m *ui.Menu) {
+		s.explorerMenuBuilt = true
 		s.selectNavigationNode(c.Services(), key)
 		s.explorerRow = -1
 		if n.Kind == "object" {
