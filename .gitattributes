@@ -1,0 +1,4 @@
+# Keep MyGo-generated Go and locale files stable across Windows, Linux, and macOS.
+# MyGo writes LF; do not let Git check these files out with CRLF on Windows.
+*.go text eol=lf
+/locales/*.json text eol=lf

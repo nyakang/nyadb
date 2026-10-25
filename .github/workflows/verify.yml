@@ -21,6 +21,11 @@ jobs:
       - name: Install Linux native dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libgtk-3-0
+      - name: Verify generated locales
+        run: |
+          go tool mygo generate
+          go tool mygo i18n check
+          git diff --exit-code -- locales/catalog_gen.go
       - name: Test
         run: go test ./...
         env:

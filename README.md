@@ -59,6 +59,8 @@ go tool mygo generate
 go tool mygo i18n check
 ```
 
+The generated `locales/catalog_gen.go` is committed and checked for drift on all three CI platforms. `.gitattributes` enforces LF line endings for Go files and locale JSON catalogs, even with Windows Git `core.autocrlf=true`, so regeneration does not create line-ending-only changes. After updating translations, commit the JSON catalogs and regenerated Go accessors together. If an older Windows checkout already has CRLF in the generated file, inspect `git diff` first; when the file has no intentional local changes, use `git restore -- locales/catalog_gen.go` before pulling.
+
 Some work-in-progress database screens and runtime diagnostic messages have not yet been translated and may display Chinese text.
 
 ## Build and test
