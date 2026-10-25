@@ -126,15 +126,17 @@ type State struct {
 	inspectorDetailsOpen bool
 	inspectorObjectsOpen bool
 
-	explorerTree ui.OutlineState[string]
-	explorerRow  int
-	explorerName string
-	search       string
-	objectKind   string
-	objectRow    int
-	objectState  ui.ListState
-	dataState    ui.ListState
-	dataColumns  []ui.TableColumn
+	explorerTree      ui.OutlineState[string]
+	explorerSelection ui.Selection[string]
+	explorerMenuBuilt bool
+	explorerRow       int
+	explorerName      string
+	search            string
+	objectKind        string
+	objectRow         int
+	objectState       ui.ListState
+	dataState         ui.ListState
+	dataColumns       []ui.TableColumn
 
 	tabs       []*tab
 	activeTab  int
