@@ -94,3 +94,27 @@ func TestMySQLTableInspectorTranslatesLabelsAndPreservesServerError(t *testing.T
 		}
 	}
 }
+
+func TestMySQLRuleChoicesTranslateWithoutChangingQueryIDs(t *testing.T) {
+	useEnglishDataWorkspace(t)
+	doc := alignedDataTestTab()
+	doc.dataRulesExpanded = true
+	doc.dataFilterColumnDraft, doc.dataFilterModeDraft = "label", "包含"
+	s := New()
+	tt := ui.NewTester(func(c *ui.Context) {
+		theme.Apply(c)
+		s.mysqlDataWorkspace(c, doc)
+	}, 840, 560)
+	if !tt.HasText("Contains") || !tt.HasText("label") {
+		t.Fatal("rule labels not localized")
+	}
+	if err := tt.Click("Contains"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.Click("Is NULL"); err != nil {
+		t.Fatal(err)
+	}
+	if doc.dataFilterModeDraft != "为空" || mysqlFilterMode(doc.dataFilterModeDraft) != "is_null" || doc.dataFilterColumnDraft != "label" {
+		t.Fatal("localized choice changed the stored query identifiers")
+	}
+}
