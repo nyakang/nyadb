@@ -25,11 +25,7 @@ func (s *State) mysqlDataObjectInspector(c *ui.Context, t *tab) {
 }
 
 func (s *State) mysqlDataInspectorHeader(c *ui.Context, t *tab, fieldMode bool) {
-	title := "表信息"
-	if fieldMode {
-		title = "字段信息"
-	}
-	ui.Row(c).Label(locales.Text(title)).Height(42).Padding(1, 5).Gap(3).AlignItems(ui.Center).Children(func() {
+	ui.Row(c).Label(locales.Text("数据信息切换栏")).Height(42).Padding(1, 5).Gap(3).AlignItems(ui.Center).Children(func() {
 		ui.Toolbar(c, func() {
 			for _, item := range []struct {
 				label string
@@ -62,7 +58,7 @@ func (s *State) mysqlDataInspectorHeader(c *ui.Context, t *tab, fieldMode bool) 
 func (s *State) mysqlTableInfoInspector(c *ui.Context, t *tab) {
 	d := &t.dataInfo
 	connected := t.dataProfileID == s.mysqlSessionProfileID && s.mysqlSessionProfileID > 0 && s.mysqlSessionStatus == "已连接"
-	ui.Column(c).Fill().Background(theme.Panel).Children(func() {
+	ui.Column(c).Label(locales.Text("数据表信息面板")).Fill().Background(theme.Panel).Children(func() {
 		s.mysqlDataInspectorHeader(c, t, false)
 		ui.Toolbar(c, func() {
 			if ui.Button(c, locales.Text("刷新")).Label(locales.Text("刷新表信息")).Height(theme.ControlHeight).
@@ -72,7 +68,7 @@ func (s *State) mysqlTableInfoInspector(c *ui.Context, t *tab) {
 			if d.countLoading {
 				if ui.Button(c, locales.Text("取消计数")).Height(theme.ControlHeight).Clicked() {
 					s.cancelMySQLTableCount(t)
-					d.countErr = "行数统计已取消"
+					d.countErr = locales.Text("行数统计已取消")
 				}
 			} else if ui.Button(c, locales.Text("获取行数")).Label(locales.Text("获取整表行数")).
 				Height(theme.ControlHeight).Disabled(!connected).Clicked() {
@@ -105,7 +101,7 @@ func (s *State) mysqlTableInfoInspector(c *ui.Context, t *tab) {
 					ui.Text(c, locales.Text("正在读取表信息…")).FontSize(11).TextColor(theme.Muted)
 				}
 				if d.err != "" {
-					ui.Text(c, locales.Text("表信息读取失败：")+locales.Text(d.err)).FontSize(11).TextColor(theme.Gold)
+					ui.Text(c, locales.Text("表信息读取失败：")+d.err).FontSize(11).TextColor(theme.Gold)
 					if d.info != nil {
 						ui.Text(c, locales.Text("显示上次读取的表信息")).FontSize(11).TextColor(theme.Muted)
 					}
@@ -126,7 +122,7 @@ func (s *State) mysqlTableInfoInspector(c *ui.Context, t *tab) {
 					ui.Text(c, locales.Text("正在统计整表行数…")).FontSize(11).TextColor(theme.Muted)
 				}
 				if d.countErr != "" {
-					ui.Text(c, locales.Text("行数统计：")+locales.Text(d.countErr)).FontSize(11).TextColor(theme.Gold)
+					ui.Text(c, locales.Text("行数统计：")+d.countErr).FontSize(11).TextColor(theme.Gold)
 				}
 				ui.Text(c, locales.Text("行数统计不应用当前筛选条件")).FontSize(11).TextColor(theme.Muted)
 				if d.info == nil {

@@ -47,6 +47,11 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			t.dataState.Selected = &t.dataSelectedRow
 			t.dataState.Selection = &t.dataSelection
 			t.dataState.CellSelect = true
+			t.dataState.TableStyle = &ui.TableStyle{
+				AlternateRowColor: theme.App.Mix(theme.Header, 0.5),
+				GridColor:         theme.Border, RowLines: true, ColumnLines: true,
+				RowOffset: t.dataOffset,
+			}
 			t.dataState.Sort = &t.dataSort
 			t.dataState.HeaderMenu = func(m *ui.Menu, col int) {
 				if col > 0 {

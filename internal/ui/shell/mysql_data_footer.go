@@ -80,7 +80,7 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *tab, page *connections.MySQLDa
 				Size(26, theme.ControlHeight).Padding(0).Disabled(previousDisabled).Clicked() {
 				s.changeMySQLDataPage(c.Services(), t, max(0, t.dataOffset-int64(t.dataLimit)))
 			}
-			ui.Text(c, fmt.Sprintf("%s %d %s", locales.Text("第"), t.dataOffset/int64(max(1, t.dataLimit))+1, locales.Text("页"))).
+			ui.Text(c, fmt.Sprintf(locales.Text("第 %d 页"), t.dataOffset/int64(max(1, t.dataLimit))+1)).
 				Label(locales.Text("当前数据页")).FontSize(theme.SmallFontSize).SingleLine()
 			if ui.Button(c, "›").Label(locales.Text("下一页数据")).Tooltip(locales.Text("下一页")).
 				Size(26, theme.ControlHeight).Padding(0).Disabled(t.dataLoading || t.dataPage == nil || !page.HasMore).Clicked() {

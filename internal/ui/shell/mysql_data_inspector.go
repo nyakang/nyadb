@@ -21,7 +21,7 @@ func (s *State) mysqlDataInspector(c *ui.Context, t *tab) {
 	}
 	canRead := selected && !cell.Null && row >= 0 && row < len(t.dataPage.RowRefs) && t.dataPage.RowRefs[row] != nil
 	chunkShown := selected && t.dataChunkField == name && t.dataChunkRow == row && t.dataChunkNext > 0
-	ui.Column(c).Fill().Background(theme.Panel).Children(func() {
+	ui.Column(c).Label(locales.Text("数据字段信息面板")).Fill().Background(theme.Panel).Children(func() {
 		s.mysqlDataInspectorHeader(c, t, true)
 		if selected {
 			// Actions stay outside the metadata scroll. A long type declaration,
@@ -51,12 +51,12 @@ func (s *State) mysqlDataInspector(c *ui.Context, t *tab) {
 					} else if !t.dataLoading {
 						message = "尚未加载字段元数据"
 					}
-					ui.Text(c, message).TextColor(theme.Muted)
+					ui.Text(c, locales.Text(message)).TextColor(theme.Muted)
 					return
 				}
 				field, found, complete := mysqlSelectedDataField(t)
 				if !found {
-					ui.Text(c, "字段不存在或已被隐藏").FontSize(12).TextColor(theme.Muted)
+					ui.Text(c, locales.Text("字段不存在或已被隐藏")).FontSize(12).TextColor(theme.Muted)
 					return
 				}
 				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
@@ -67,22 +67,22 @@ func (s *State) mysqlDataInspector(c *ui.Context, t *tab) {
 				ui.Divider(c)
 				mysqlInspectorProperty(c, "类型", field.Type)
 				if !complete {
-					ui.Text(c, "仅有基础字段类型，完整元数据尚未加载").FontSize(11).TextColor(theme.Muted)
+					ui.Text(c, locales.Text("仅有基础字段类型，完整元数据尚未加载")).FontSize(11).TextColor(theme.Muted)
 				} else {
 					mysqlInspectorFieldAttributes(c, field)
 				}
 				ui.Divider(c)
 				if !selected {
-					ui.Text(c, "选择数据单元格以查看值的安全预览").FontSize(11).TextColor(theme.Muted)
+					ui.Text(c, locales.Text("选择数据单元格以查看值的安全预览")).FontSize(11).TextColor(theme.Muted)
 					return
 				}
 				mysqlInspectorProperty(c, "行号", fmt.Sprintf("%d", t.dataOffset+int64(t.dataSelectedRow)+1))
 				if cell.Null {
 					mysqlInspectorProperty(c, "值状态", "SQL NULL")
 				} else if cell.Truncated {
-					mysqlInspectorProperty(c, "值状态", "已截断的预览")
+					mysqlInspectorProperty(c, "值状态", locales.Text("已截断的预览"))
 				} else {
-					mysqlInspectorProperty(c, "值状态", "预览完整")
+					mysqlInspectorProperty(c, "值状态", locales.Text("预览完整"))
 				}
 				value := cell.Text
 				if cell.Null {
@@ -94,15 +94,15 @@ func (s *State) mysqlDataInspector(c *ui.Context, t *tab) {
 					ui.Text(c, value).FontSize(theme.FontSize).Padding(3)
 				})
 				if canRead {
-					ui.Text(c, "大字段按需读取 · 单次最多 1024 字符/字节").FontSize(11).TextColor(theme.Muted)
+					ui.Text(c, locales.Text("大字段按需读取 · 单次最多 1024 字符/字节")).FontSize(11).TextColor(theme.Muted)
 					if t.dataChunkLoading {
-						ui.Text(c, "正在读取字段片段…").FontSize(11)
+						ui.Text(c, locales.Text("正在读取字段片段…")).FontSize(11)
 					}
 					if t.dataChunkErr != "" {
 						ui.Text(c, t.dataChunkErr).FontSize(11).TextColor(theme.Gold)
 					}
 					if chunkShown {
-						s.property(c, "已读位置", fmt.Sprintf("%d / %d", t.dataChunkNext, t.dataChunkTotal))
+						s.property(c, locales.Text("已读位置"), fmt.Sprintf("%d / %d", t.dataChunkNext, t.dataChunkTotal))
 						ui.Scroll(c).Height(112).FillWidth().Border(1, theme.Border).Children(func() {
 							ui.Text(c, t.dataChunkText).FontSize(theme.SmallFontSize).Padding(3)
 						})
@@ -117,18 +117,18 @@ func (s *State) mysqlDataInspector(c *ui.Context, t *tab) {
 // declarations and comments can wrap without shrinking the data grid.
 func mysqlInspectorProperty(c *ui.Context, label, value string) {
 	ui.Column(c).Gap(2).Children(func() {
-		ui.Text(c, label).FontSize(11).TextColor(theme.Muted)
+		ui.Text(c, locales.Text(label)).FontSize(11).TextColor(theme.Muted)
 		ui.Text(c, value).FontSize(12)
 	})
 }
 
 func mysqlInspectorFieldAttributes(c *ui.Context, field connections.MySQLStructureColumn) {
-	notNull := "否"
+	notNull := locales.Text("否")
 	if !field.Nullable {
-		notNull = "是"
+		notNull = locales.Text("是")
 	}
 	mysqlInspectorProperty(c, "不是 NULL", notNull)
-	defaultValue := "SQL NULL / 未设置"
+	defaultValue := locales.Text("SQL NULL / 未设置")
 	if field.Default != nil {
 		defaultValue = *field.Default
 		// Make an actual string "NULL" or "" visibly distinct from SQL NULL.
@@ -140,16 +140,16 @@ func mysqlInspectorFieldAttributes(c *ui.Context, field connections.MySQLStructu
 	key := "—"
 	switch field.Key {
 	case "PRI":
-		key = "主键"
+		key = locales.Text("主键")
 	case "UNI":
-		key = "唯一索引"
+		key = locales.Text("唯一索引")
 	case "MUL":
-		key = "索引（MUL）"
+		key = locales.Text("索引（MUL）")
 	}
 	mysqlInspectorProperty(c, "键", key)
-	autoIncrement := "否"
+	autoIncrement := locales.Text("否")
 	if strings.Contains(strings.ToLower(field.Extra), "auto_increment") {
-		autoIncrement = "是"
+		autoIncrement = locales.Text("是")
 	}
 	mysqlInspectorProperty(c, "自增", autoIncrement)
 	if field.Extra != "" {
