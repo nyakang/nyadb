@@ -32,4 +32,4 @@ require (
 
 tool github.com/egoist/mygo/cmd/mygo
 
-replace github.com/egoist/mygo => github.com/nyakang/mygo v0.6.3-nyadb.2
+replace github.com/egoist/mygo => github.com/nyakang/mygo v0.6.3-nyadb.3

@@ -89,8 +89,8 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *tab, page *connections.MyS
 	choices := append([]string{"选择字段"}, page.Columns...)
 	ui.Text(c, locales.Text("筛选  ·  所有已启用条件均满足 (AND)")).FontSize(11).TextColor(theme.Muted)
 	ui.Row(c).Height(theme.CommandBarHeight).Gap(6).AlignItems(ui.Center).Children(func() {
-		ui.Select(c, &t.dataFilterColumnDraft, choices).Height(theme.ControlHeight).Width(150)
-		ui.Select(c, &t.dataFilterModeDraft, mysqlFilterModeChoices).Width(110)
+		mysqlDataRuleSelect(c, &t.dataFilterColumnDraft, choices, mysqlDataColumnChoiceLabel).Height(theme.ControlHeight).Width(150)
+		mysqlDataRuleSelect(c, &t.dataFilterModeDraft, mysqlFilterModeChoices, locales.Text).Width(110)
 		if mysqlDataFilterModeNeedsValue(t.dataFilterModeDraft) {
 			ui.TextInput(c, &t.dataFilterValueDraft).Label(locales.Text("数据筛选值")).Placeholder(locales.Text("筛选值")).Width(170)
 		}
@@ -104,8 +104,8 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *tab, page *connections.MyS
 		rule := &t.dataFilterExtraDraft[i]
 		ui.Row(c).Height(theme.CommandBarHeight).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, locales.Text("且")).TextColor(theme.Muted).FontSize(11)
-			ui.Select(c, &rule.Column, choices).Width(140)
-			ui.Select(c, &rule.Mode, mysqlFilterModeChoices).Width(110)
+			mysqlDataRuleSelect(c, &rule.Column, choices, mysqlDataColumnChoiceLabel).Width(140)
+			mysqlDataRuleSelect(c, &rule.Mode, mysqlFilterModeChoices, locales.Text).Width(110)
 			if mysqlDataFilterModeNeedsValue(rule.Mode) {
 				ui.TextInput(c, &rule.Value).Label(fmt.Sprintf(locales.Text("附加筛选值 %d"), i+1)).Placeholder(locales.Text("筛选值")).Width(170)
 			}
@@ -127,8 +127,8 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *tab, page *connections.MyS
 		rule := &t.dataSortDraft[i]
 		ui.Row(c).Height(theme.CommandBarHeight).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, fmt.Sprintf("%d.", i+1)).FontSize(11).TextColor(theme.Muted)
-			ui.Select(c, &rule.Column, choices).Width(165)
-			ui.Select(c, &rule.Direction, []string{"升序", "降序"}).Width(100)
+			mysqlDataRuleSelect(c, &rule.Column, choices, mysqlDataColumnChoiceLabel).Width(165)
+			mysqlDataRuleSelect(c, &rule.Direction, []string{"升序", "降序"}, locales.Text).Width(100)
 			if ui.Button(c, locales.Text("移除")).Label(fmt.Sprintf(locales.Text("删除排序规则 %d"), i+1)).Clicked() {
 				t.dataSortDraft = append(t.dataSortDraft[:i], t.dataSortDraft[i+1:]...)
 			}
@@ -166,18 +166,18 @@ func (s *State) applyMySQLDataRules(services ui.Services, t *tab) {
 			}
 		}
 		if !valid {
-			t.dataRuleError = "筛选字段不存在或未选择"
+			t.dataRuleError = locales.Text("筛选字段不存在或未选择")
 			return
 		}
 		mode := mysqlFilterMode(draft.Mode)
 		if mode == "" || len(draft.Value) > 4096 {
-			t.dataRuleError = "筛选条件无效或过长"
+			t.dataRuleError = locales.Text("筛选条件无效或过长")
 			return
 		}
 		filters = append(filters, connections.MySQLDataFilterRule{Column: draft.Column, Mode: mode, Value: draft.Value})
 	}
 	if len(drafts) == 0 && len(t.dataSortDraft) == 0 && (t.dataFilterColumnDraft == "" || t.dataFilterColumnDraft == "选择字段") {
-		t.dataRuleError = "请先选择筛选字段，或添加排序规则"
+		t.dataRuleError = locales.Text("请先选择筛选字段，或添加排序规则")
 		return
 	}
 	sortRules := make([]connections.MySQLDataSortRule, 0, len(t.dataSortDraft))
@@ -191,7 +191,7 @@ func (s *State) applyMySQLDataRules(services ui.Services, t *tab) {
 			}
 		}
 		if !found || used[draft.Column] {
-			t.dataRuleError = "排序字段不可用或重复"
+			t.dataRuleError = locales.Text("排序字段不可用或重复")
 			return
 		}
 		used[draft.Column] = true

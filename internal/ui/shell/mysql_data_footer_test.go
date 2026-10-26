@@ -14,6 +14,17 @@ import (
 )
 
 func TestMySQLDataFooterRemainsReachableInFullWorkspace(t *testing.T) {
+	previous := theme.CurrentMode()
+	t.Cleanup(func() { theme.SetMode(previous) })
+	for _, mode := range []theme.Mode{theme.ModeDark, theme.ModeLight} {
+		t.Run(string(mode), func(t *testing.T) {
+			theme.SetMode(mode)
+			testMySQLDataFooterInFullWorkspace(t)
+		})
+	}
+}
+
+func testMySQLDataFooterInFullWorkspace(t *testing.T) {
 	for _, size := range [][2]int{{1548, 912}, {840, 560}} {
 		for _, count := range []int{0, 1, 100, 200} {
 			for _, inspector := range []bool{false, true} {
