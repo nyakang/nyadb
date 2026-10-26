@@ -1,8 +1,6 @@
 package shell
 
 import (
-	"fmt"
-
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
@@ -11,7 +9,8 @@ import (
 
 // A real read-only MySQL page, never the legacy simulated dataPreview.
 func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
-	ui.Column(c).Fill().Background(theme.App).Children(func() {
+	s.restoreMySQLDataLayout(t)
+	ui.Column(c).FillWidth().Grow(1).MinHeight(0).Background(theme.App).Children(func() {
 		page := t.dataPage
 		if page == nil {
 			page = &connections.MySQLDataPage{}
@@ -44,7 +43,7 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 					Padding(2, 6).FontSize(theme.SmallFontSize).TextColor(theme.Gold).SingleLine().Tooltip(locales.Text("此对象没有完整非空唯一键，OFFSET 分页期间数据变化可能导致行重复或遗漏"))
 			}
 			visibleIndices, visibleColumns := mysqlVisibleDataColumns(t, page)
-			columns := append([]ui.TableColumn{{ID: "\x1fnyadb:row", Title: "#", Width: 42, MinWidth: 42, Fixed: true, RowHeader: true}}, visibleColumns...)
+			columns := append([]ui.TableColumn{mysqlDataRowHeaderColumn(t)}, visibleColumns...)
 			t.dataState.Selected = &t.dataSelectedRow
 			t.dataState.Selection = &t.dataSelection
 			t.dataState.CellSelect = true
@@ -68,7 +67,7 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			} else {
 				ui.Table(c, &t.dataState, columns, len(page.Rows), func(row, col int) {
 					if col == 0 {
-						ui.Text(c, fmt.Sprint(t.dataOffset+int64(row)+1)).FontSize(theme.SmallFontSize).TextColor(theme.Muted)
+						ui.Text(c, mysqlDataRowHeaderText(t, row)).FontSize(theme.SmallFontSize).TextColor(theme.Muted)
 						return
 					}
 					col--
@@ -84,34 +83,17 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 						ui.Text(c, "NULL").TextColor(theme.Muted).FontSize(12)
 						return
 					}
-					value := cell.Text
-					if value == "" {
-						value = "\"\""
-					}
+					text := ui.Text(c, cell.Text).SingleLine().FontSize(12)
 					if cell.Truncated {
-						value += " …"
+						text.Tooltip(locales.Text("已截断的预览；可在字段信息中按需读取"))
+					} else if cell.Text == "" {
+						text.Tooltip(locales.Text("空字符串"))
 					}
-					ui.Text(c, value).SingleLine().FontSize(12)
 				}).Grow(1)
 			}
 			s.syncMySQLDataSort(c.Services(), t)
 		}
-		ui.Row(c).Height(theme.CommandBarHeight).Padding(2, 6).Gap(6).AlignItems(ui.Center).
-			Background(theme.Header).Children(func() {
-			ui.Text(c, mysqlDataPageStatus(t)).
-				FontSize(theme.SmallFontSize).TextColor(theme.Muted).SingleLine().Grow(1).MinWidth(0)
-			if ui.Button(c, locales.Text("上一页")).Label(locales.Text("上一页数据")).
-				Height(theme.ControlHeight).Disabled(t.dataLoading || t.dataPage == nil || t.dataOffset <= 0).Clicked() {
-				offset := t.dataOffset - int64(t.dataLimit)
-				if offset < 0 {
-					offset = 0
-				}
-				s.changeMySQLDataPage(c.Services(), t, offset)
-			}
-			if ui.Button(c, locales.Text("下一页")).Label(locales.Text("下一页数据")).
-				Height(theme.ControlHeight).Disabled(t.dataLoading || t.dataPage == nil || !page.HasMore).Clicked() {
-				s.changeMySQLDataPage(c.Services(), t, t.dataOffset+int64(t.dataLimit))
-			}
-		})
+		s.mysqlDataFooter(c, t, page)
 	})
+	s.trackMySQLDataLayout(c, t)
 }

@@ -45,7 +45,7 @@ func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *connections.MyS
 			if t.dataRulesExpanded {
 				label = "筛选 & 排序 ▾"
 			}
-			if ui.Button(c, label).Label(locales.Text("筛选 & 排序")).Height(theme.ControlHeight).Padding(2, 4).Clicked() {
+			if mysqlDataToolbarButton(c, label, locales.Text("筛选 & 排序"), "catalog-filter", false).Clicked() {
 				t.dataRulesExpanded = !t.dataRulesExpanded
 			}
 			count := len(t.dataFilterRules)
@@ -133,31 +133,6 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *tab, page *connections.MyS
 				t.dataSortDraft = append(t.dataSortDraft[:i], t.dataSortDraft[i+1:]...)
 			}
 		})
-	}
-}
-
-// Native toolbar overflow keeps all actions reachable when the workspace narrows.
-func (s *State) mysqlDataCompactActions(c *ui.Context, t *tab) {
-	if ui.Button(c, locales.Text("返回")).Label(locales.Text("返回对象列表")).Height(theme.ControlHeight).Padding(2, 4).Clicked() {
-		s.activeTab = 0
-	}
-	if ui.Button(c, locales.Text("刷新")).Label("刷新表数据："+t.dataTable).Height(theme.ControlHeight).Padding(2, 4).
-		Disabled(s.mysqlSessionStatus != "已连接" || t.dataLoading).Clicked() {
-		s.resetAndReloadMySQLData(c.Services(), t)
-	}
-	if _, cell, ok := mysqlSelectedDataCell(t); ui.Button(c, locales.Text("复制")).Label(locales.Text("复制所选单元格预览")).Height(theme.ControlHeight).Padding(2, 4).Disabled(!ok).Clicked() {
-		c.WriteClipboard(mysqlDataCopyPreview(cell))
-	}
-	if t.dataLoading && ui.Button(c, locales.Text("取消读取数据")).Height(theme.ControlHeight).Padding(2, 4).Clicked() {
-		s.cancelMySQLData(t)
-		t.dataErr = "查询已取消"
-	}
-	count := len(t.dataFilterRules)
-	if count == 0 && t.dataFilterMode != "" {
-		count = 1
-	}
-	if ui.Button(c, locales.Text("清除")).Label(locales.Text("清除筛选")).Height(theme.ControlHeight).Padding(2, 4).Disabled(t.dataLoading || count == 0).Clicked() {
-		s.clearMySQLDataFilter(c.Services(), t)
 	}
 }
 

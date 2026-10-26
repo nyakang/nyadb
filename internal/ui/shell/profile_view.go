@@ -149,7 +149,7 @@ func (s *State) inspectorHeader(c *ui.Context, title string) {
 
 func (s *State) profileInspector(c *ui.Context) {
 	if s.currentTab().kind == tabMySQLData {
-		s.mysqlDataInspector(c, s.currentTab())
+		s.mysqlDataObjectInspector(c, s.currentTab())
 		return
 	}
 	p, ok := s.currentProfile()

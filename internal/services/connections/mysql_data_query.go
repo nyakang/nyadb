@@ -257,6 +257,7 @@ func (m *MySQLSessionManager) TableDataPageWithOptions(ctx context.Context, id i
 		fetchOffset = 0
 	}
 	args = append(args, o.Limit+1, fetchOffset)
+	started := time.Now()
 	rows, err := session.db.QueryContext(queryCtx, query, args...)
 	if err != nil {
 		return nil, err
@@ -324,6 +325,9 @@ func (m *MySQLSessionManager) TableDataPageWithOptions(ctx context.Context, id i
 	if session.ctx.Err() != nil {
 		return nil, context.Canceled
 	}
+	page.QuerySQL = query
+	page.CompletedAt = time.Now()
+	page.Duration = time.Since(started)
 	return page, nil
 }
 

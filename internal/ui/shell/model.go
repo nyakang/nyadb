@@ -52,6 +52,9 @@ type tab struct {
 	dataOffset              int64
 	dataLimit               int
 	dataPage                *connections.MySQLDataPage
+	dataInfo                mysqlTableInfoState
+	dataReadInfo            mysqlDataReadInfo
+	dataLayout              mysqlDataLayoutState
 	dataState               ui.ListState
 	dataColumns             []ui.TableColumn
 	dataLoading             bool
@@ -120,6 +123,9 @@ var objectColumns = []ui.TableColumn{
 
 // State is UI state owned by the main thread. Never retain ui.Element values.
 type State struct {
+	mysqlTableInfoLoader   mysqlTableInfoLoader
+	mysqlTableCountLoader  mysqlTableCountLoader
+	dataLayoutPreferences mysqlDataLayoutPreferences
 	sidebarPercent       float32
 	centerPercent        float32
 	editorPercent        float32
@@ -342,7 +348,7 @@ func (s *State) closeTab(index int) {
 	if s.tabs[index].kind == tabStructure {
 		s.cancelMySQLStructure(s.tabs[index])
 	} else if s.tabs[index].kind == tabMySQLData {
-		s.cancelMySQLData(s.tabs[index])
+		s.disposeMySQLDataTab(s.tabs[index])
 	}
 	name := s.tabs[index].title
 	s.tabs = append(s.tabs[:index], s.tabs[index+1:]...)
@@ -363,7 +369,7 @@ func (s *State) closeOtherTabs(index int) {
 		if i != index && t.kind == tabStructure {
 			s.cancelMySQLStructure(t)
 		} else if i != index && t.kind == tabMySQLData {
-			s.cancelMySQLData(t)
+			s.disposeMySQLDataTab(t)
 		}
 	}
 	if index == 0 {

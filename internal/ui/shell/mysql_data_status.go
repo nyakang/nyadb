@@ -13,6 +13,9 @@ func mysqlDataPageStatus(t *tab) string {
 	if t.dataLoading {
 		return fmt.Sprintf("正在读取第 %d 页…", page)
 	}
+	if t.dataReadInfo.Canceled {
+		return fmt.Sprintf("读取已取消 · 第 %d 页", page)
+	}
 	if t.dataErr != "" {
 		return fmt.Sprintf("读取失败 · 第 %d 页", page)
 	}

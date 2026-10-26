@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -30,7 +31,7 @@ type MySQLDataCell struct {
 type MySQLDataPage struct {
 	Database, Table string
 	Columns         []string
-	ColumnKinds     []string // original server DATA_TYPE per displayed column
+	ColumnKinds     []string               // original server DATA_TYPE per displayed column
 	ColumnMetadata  []MySQLStructureColumn // full server field attributes, in Columns order
 	Rows            [][]MySQLDataCell
 	Offset          int64
@@ -40,6 +41,10 @@ type MySQLDataPage struct {
 	KeysetAvailable bool
 	NextCursor      *MySQLDataCursor
 	RowRefs         []*MySQLRowRef
+	// QuerySQL is the executed parameterized statement, without bound values.
+	QuerySQL    string
+	CompletedAt time.Time
+	Duration    time.Duration
 }
 
 func quotedMySQLIdentifier(name string) (string, error) {

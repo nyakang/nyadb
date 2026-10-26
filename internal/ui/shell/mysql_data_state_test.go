@@ -73,7 +73,7 @@ func TestMySQLNativeReadOnlyDataPagingAndTabLifecycle(t *testing.T) {
 	if n != 4 {
 		t.Fatalf("refresh did not fetch: %d calls", n)
 	}
-	if err := tt.Click("返回对象列表"); err != nil {
+	if err := tt.Click("对象"); err != nil {
 		t.Fatal(err)
 	}
 	s.mysqlStructureLoader = func(_ context.Context, _ int64, db, table string) (*connections.MySQLTableStructure, error) {
@@ -168,7 +168,7 @@ func TestMySQLDataTabsPruneOnlyMissingSchema(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLData(t, s, tt)
-	if err := tt.Click("返回对象列表"); err != nil {
+	if err := tt.Click("对象"); err != nil {
 		t.Fatal(err)
 	}
 	if err := tt.Click("数据库：analytics"); err != nil {

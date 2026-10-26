@@ -39,6 +39,10 @@ func Run() error {
 	configureNativeGTKTheme()
 	state := shell.NewWithProfiles(connections.NewService(connections.NewStore(db)))
 	state.SetCredentialVault(credentials.NewOSVault())
+	state.SetDataLayoutPreferences(
+		func(key string) (string, error) { return localdb.Preference(db, key) },
+		func(key, value string) error { return localdb.SetPreference(db, key, value) },
+	)
 	// Research-only, opt-in runtime PNGs. The files remain outside resources/
 	// and are never embedded in the application or its distribution packages.
 	if os.Getenv("NYADB_RESEARCH_ICONS") == "1" {

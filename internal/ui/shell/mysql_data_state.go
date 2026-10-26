@@ -80,6 +80,7 @@ func (s *State) loadMySQLData(services ui.Services, t *tab, refresh bool) {
 	}
 	s.cancelMySQLData(t)
 	t.dataErr = ""
+	t.dataReadInfo.Canceled = false
 	t.dataLoading = true
 	ctx, cancel := context.WithCancel(context.Background())
 	t.dataCancel = cancel
@@ -175,6 +176,7 @@ func (s *State) consumeMySQLData() {
 				continue
 			}
 			t.dataPage = result.page
+			t.dataReadInfo.accept(result.page)
 			t.dataErr = ""
 			t.dataColumns = make([]ui.TableColumn, len(result.page.Columns))
 			for i, name := range result.page.Columns {
