@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 )
 
 type queryOptionsConnector struct{ calls chan structureCall }
@@ -69,6 +70,12 @@ func TestMySQLDataAdvancedProjectionsSortingAndSafeFilters(t *testing.T) {
 		t.Fatalf("preview result: %+v", page)
 	}
 	meta, index, data := <-calls, <-calls, <-calls
+	if page.QuerySQL != data.query || page.CompletedAt.IsZero() || page.CompletedAt.After(time.Now()) || page.Duration <= 0 {
+		t.Fatalf("execution details do not describe the completed query: %+v", page)
+	}
+	if strings.Contains(page.QuerySQL, options.FilterValue) {
+		t.Fatal("execution details interpolated the bound filter value")
+	}
 	if len(meta.args) != 2 || len(index.args) != 2 ||
 		meta.args[0].Value != "x` ; DROP DATABASE z" {
 		t.Fatalf("metadata binding: %+v", meta)

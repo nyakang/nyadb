@@ -27,6 +27,9 @@ func mysqlVisibleDataColumns(t *tab, page *connections.MySQLDataPage) ([]int, []
 			meta := page.ColumnMetadata[i]
 			kind, declaration, key = meta.DataType, meta.Type, meta.Key
 		}
+		if mysqlColumnIsNumeric(kind) {
+			col.Align = ui.End
+		}
 		if t.dataShowFieldTypes && declaration != "" {
 			// Patched native MyGo TableColumn.Subtitle lives inside the real
 			// keyed column header, sharing scroll, drag, resize and menu state.
@@ -42,6 +45,14 @@ func mysqlVisibleDataColumns(t *tab, page *connections.MySQLDataPage) ([]int, []
 		return mysqlVisibleDataColumns(t, page)
 	}
 	return indices, visible
+}
+
+func mysqlColumnIsNumeric(kind string) bool {
+	switch strings.ToLower(kind) {
+	case "tinyint", "smallint", "mediumint", "int", "integer", "bigint", "decimal", "numeric", "float", "double", "real", "bool", "boolean":
+		return true
+	}
+	return false
 }
 
 // Glyphs are NyaDB-authored, deliberately small type hints rendered by the
@@ -154,6 +165,18 @@ func (s *State) mysqlDataHeaderMenu(c *ui.Context, t *tab, page *connections.MyS
 			mysqlDataHideColumn(t, page, name)
 		}
 	}
+	if valid && m.Item(locales.Text("将此列宽度适配当前页")).Chosen() {
+		mysqlDataFitColumn(t, page, source)
+	}
+	s.mysqlDataColumnsMenu(c, t, page, m)
+}
+
+// The toolbar and each native header expose the same column preferences.
+func (s *State) mysqlDataColumnsMenu(c *ui.Context, t *tab, page *connections.MySQLDataPage, m *ui.Menu) {
+	if page == nil {
+		return
+	}
+	indices, _ := mysqlVisibleDataColumns(t, page)
 	m.Submenu(locales.Text("显示/隐藏列"), func(sub *ui.Menu) {
 		for _, name := range page.Columns {
 			name := name
@@ -171,13 +194,18 @@ func (s *State) mysqlDataHeaderMenu(c *ui.Context, t *tab, page *connections.MyS
 		t.dataHiddenColumns = nil
 	}
 	m.Separator()
-	if valid && m.Item(locales.Text("将此列宽度适配当前页")).Chosen() {
-		mysqlDataFitColumn(t, page, source)
+	if m.Item(locales.Text("适配全部列宽（当前页）")).Chosen() {
+		for _, source := range indices {
+			mysqlDataFitColumn(t, page, source)
+		}
 	}
 	if m.Item(locales.Text("重置全部列宽")).Chosen() {
 		t.dataState.Columns.Widths = nil
 	}
 	if m.Item(locales.Text("显示字段类型")).Checked(t.dataShowFieldTypes).Chosen() {
 		t.dataShowFieldTypes = !t.dataShowFieldTypes
+	}
+	if m.Item(locales.Text("显示行号")).Checked(t.dataLayout.showRowNumbers).Chosen() {
+		t.dataLayout.showRowNumbers = !t.dataLayout.showRowNumbers
 	}
 }

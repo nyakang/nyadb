@@ -22,7 +22,7 @@ func (s *State) mysqlDataInspector(c *ui.Context, t *tab) {
 	canRead := selected && !cell.Null && row >= 0 && row < len(t.dataPage.RowRefs) && t.dataPage.RowRefs[row] != nil
 	chunkShown := selected && t.dataChunkField == name && t.dataChunkRow == row && t.dataChunkNext > 0
 	ui.Column(c).Fill().Background(theme.Panel).Children(func() {
-		s.inspectorHeader(c, "字段信息")
+		s.mysqlDataInspectorHeader(c, t, true)
 		if selected {
 			// Actions stay outside the metadata scroll. A long type declaration,
 			// comment, or binary preview must not move the next-fragment control.

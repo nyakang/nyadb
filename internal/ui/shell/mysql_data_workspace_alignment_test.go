@@ -44,7 +44,7 @@ func TestMySQLNativeDataFooterAndGridRemainVisible(t *testing.T) {
 		s.mysqlDataWorkspace(c, doc)
 	}, 840, 560)
 	if !tt.HasText("已读取 1 行 · 4–4 · 第 4 页") ||
-		!tt.HasText("safe-value") || !tt.HasText("#") {
+		!tt.HasText("safe-value") || !tt.HasText("下一页数据") {
 		t.Fatalf("missing confirmed row range or grid: %v", tt.Texts())
 	}
 	doc.dataLoading = true

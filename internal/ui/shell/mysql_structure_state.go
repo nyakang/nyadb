@@ -142,7 +142,7 @@ func (s *State) clearMySQLStructureTabs() {
 			if t.kind == tabStructure {
 				s.cancelMySQLStructure(t)
 			} else {
-				s.cancelMySQLData(t)
+				s.disposeMySQLDataTab(t)
 			}
 			continue
 		}
@@ -167,7 +167,7 @@ func (s *State) pruneMySQLStructureTabs(known map[string]bool) {
 			if t.kind == tabStructure {
 				s.cancelMySQLStructure(t)
 			} else {
-				s.cancelMySQLData(t)
+				s.disposeMySQLDataTab(t)
 			}
 			continue
 		}

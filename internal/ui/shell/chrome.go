@@ -16,6 +16,7 @@ func (s *State) View(c *ui.Context) {
 	s.consumeMySQLObjects()
 	s.consumeMySQLStructures()
 	s.consumeMySQLData()
+	s.consumeMySQLTableInfo()
 	s.consumeMySQLChunks()
 	theme.Apply(c)
 	ui.Column(c).Fill().Background(theme.App).Children(func() {
