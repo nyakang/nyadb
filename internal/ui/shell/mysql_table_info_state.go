@@ -7,6 +7,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/locales"
 )
 
 type mysqlTableInfoLoader func(context.Context, int64, string, string) (*connections.MySQLTableInfo, error)
@@ -89,7 +90,7 @@ func (s *State) loadMySQLTableInfo(services ui.Services, t *tab, refresh bool) {
 	loader := s.mysqlTableInfoLoader
 	if loader == nil {
 		if s.mysqlSessionManager == nil {
-			d.err = "MySQL 会话不可用"
+			d.err = locales.Text("MySQL 会话不可用")
 			return
 		}
 		loader = s.mysqlSessionManager.TableInfo
@@ -118,7 +119,7 @@ func (s *State) loadMySQLTableCount(services ui.Services, t *tab) {
 	loader := s.mysqlTableCountLoader
 	if loader == nil {
 		if s.mysqlSessionManager == nil {
-			d.countErr = "MySQL 会话不可用"
+			d.countErr = locales.Text("MySQL 会话不可用")
 			return
 		}
 		loader = s.mysqlSessionManager.CountTableRows
@@ -158,7 +159,7 @@ func (s *State) consumeMySQLTableInfo() {
 					d.err = result.err.Error()
 				}
 			} else if result.info == nil || result.info.Database != t.dataDatabase || result.info.Name != t.dataTable {
-				d.err = "服务器未返回当前表的信息"
+				d.err = locales.Text("服务器未返回当前表的信息")
 			} else {
 				d.info, d.err = result.info, ""
 			}
@@ -180,7 +181,7 @@ func (s *State) consumeMySQLTableInfo() {
 					d.countErr = result.err.Error()
 				}
 			} else if result.count < 0 {
-				d.countErr = "服务器返回了无效行数"
+				d.countErr = locales.Text("服务器返回了无效行数")
 			} else {
 				count := result.count
 				d.count, d.countAt, d.countErr = &count, result.at, ""

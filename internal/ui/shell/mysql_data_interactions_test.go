@@ -67,7 +67,11 @@ func TestMySQLNativeDataFilterSortCopyAndWidths(t *testing.T) {
 	if tt.Clipboard() != "hello" {
 		t.Fatalf("clipboard: %q", tt.Clipboard())
 	}
-	if !tt.HasText("字段信息") {
+	if err := tt.Click("查看字段信息"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if !tt.HasText("数据字段信息面板") {
 		t.Fatalf("inspector missing: %v", tt.Texts())
 	}
 	current.dataState.Columns.Widths = map[string]float32{"note": 280}

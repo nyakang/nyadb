@@ -64,8 +64,16 @@ func TestDataRowHeaderKeepsFieldMenusAndCellCopyMapped(t *testing.T) {
 		theme.Apply(c)
 		s.mysqlDataWorkspace(c, doc)
 	}, 540, 320)
-	if !tt.HasText("#") {
-		t.Fatal("row-number header is missing")
+	if tt.HasText("#") {
+		t.Fatal("row numbers should be optional")
+	}
+	cell, ok := tt.Find("safe-value")
+	if !ok {
+		t.Fatal("data cell is missing")
+	}
+	tt.ClickAt(mysqlDataRowHeaderColumn(doc).Width/2, cell.Y+cell.H/2)
+	if !doc.dataState.Cells.All || doc.dataSelectedRow != 0 {
+		t.Fatal("narrow row selector did not choose the whole row")
 	}
 	if err := tt.Click("safe-value"); err != nil {
 		t.Fatal(err)
@@ -133,7 +141,7 @@ func TestInspectorLargeFieldsKeepCopyAndChunkActionsVisible(t *testing.T) {
 		theme.Apply(c)
 		s.mysqlDataInspector(c, doc)
 	}, 205, 400)
-	header, ok := tt.Find("字段信息")
+	header, ok := tt.Find("数据信息切换栏")
 	if !ok || header.Y != 0 || header.H != 42 {
 		t.Fatalf("inspector header no longer occupies the fixed top region: %+v", header)
 	}

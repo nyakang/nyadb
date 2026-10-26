@@ -159,7 +159,7 @@ func TestMySQLRealDataNativeViewer(t *testing.T) {
 		len(tab.dataFilterRules) != 3 || len(tab.dataSortRules) != 2 {
 		t.Fatalf("real multi-rule query failed: %+v / %s", tab.dataPage, tab.dataRuleError)
 	}
-	if err := tt.Click("返回对象列表"); err != nil {
+	if err := tt.Click("对象"); err != nil {
 		t.Fatal(err)
 	}
 	if err := tt.Click("打开选中表结构"); err != nil {

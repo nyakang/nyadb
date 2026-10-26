@@ -3313,3 +3313,1043 @@ func AlignmentDefaultColor() string { return In(i18n.Locale()).AlignmentDefaultC
 func (msgs Messages) AlignmentDefaultColor() string {
 	return Catalog.Format(msgs.locale, "alignmentDefaultColor", nil)
 }
+
+// MysqlSessionUnavailable says "MySQL 会话不可用"
+// in the language the app shows.
+func MysqlSessionUnavailable() string { return In(i18n.Locale()).MysqlSessionUnavailable() }
+
+// MysqlSessionUnavailable says "MySQL 会话不可用"
+// in the language of msgs.
+func (msgs Messages) MysqlSessionUnavailable() string {
+	return Catalog.Format(msgs.locale, "mysqlSessionUnavailable", nil)
+}
+
+// MysqlDefaultNullOrUnset says "SQL NULL / 未设置"
+// in the language the app shows.
+func MysqlDefaultNullOrUnset() string { return In(i18n.Locale()).MysqlDefaultNullOrUnset() }
+
+// MysqlDefaultNullOrUnset says "SQL NULL / 未设置"
+// in the language of msgs.
+func (msgs Messages) MysqlDefaultNullOrUnset() string {
+	return Catalog.Format(msgs.locale, "mysqlDefaultNullOrUnset", nil)
+}
+
+// DataLastParameterizedQuery says "上次成功查询（参数化）："
+// in the language the app shows.
+func DataLastParameterizedQuery() string { return In(i18n.Locale()).DataLastParameterizedQuery() }
+
+// DataLastParameterizedQuery says "上次成功查询（参数化）："
+// in the language of msgs.
+func (msgs Messages) DataLastParameterizedQuery() string {
+	return Catalog.Format(msgs.locale, "dataLastParameterizedQuery", nil)
+}
+
+// DataLastSuccessfulRead says "上次成功读取"
+// in the language the app shows.
+func DataLastSuccessfulRead() string { return In(i18n.Locale()).DataLastSuccessfulRead() }
+
+// DataLastSuccessfulRead says "上次成功读取"
+// in the language of msgs.
+func (msgs Messages) DataLastSuccessfulRead() string {
+	return Catalog.Format(msgs.locale, "dataLastSuccessfulRead", nil)
+}
+
+// MysqlFieldNotNull says "不是 NULL"
+// in the language the app shows.
+func MysqlFieldNotNull() string { return In(i18n.Locale()).MysqlFieldNotNull() }
+
+// MysqlFieldNotNull says "不是 NULL"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldNotNull() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldNotNull", nil)
+}
+
+// MysqlFieldPrimaryKey says "主键"
+// in the language the app shows.
+func MysqlFieldPrimaryKey() string { return In(i18n.Locale()).MysqlFieldPrimaryKey() }
+
+// MysqlFieldPrimaryKey says "主键"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldPrimaryKey() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldPrimaryKey", nil)
+}
+
+// MysqlBasicFieldMetadataOnly says "仅有基础字段类型，完整元数据尚未加载"
+// in the language the app shows.
+func MysqlBasicFieldMetadataOnly() string { return In(i18n.Locale()).MysqlBasicFieldMetadataOnly() }
+
+// MysqlBasicFieldMetadataOnly says "仅有基础字段类型，完整元数据尚未加载"
+// in the language of msgs.
+func (msgs Messages) MysqlBasicFieldMetadataOnly() string {
+	return Catalog.Format(msgs.locale, "mysqlBasicFieldMetadataOnly", nil)
+}
+
+// TableEstimatedRows says "估算行数"
+// in the language the app shows.
+func TableEstimatedRows() string { return In(i18n.Locale()).TableEstimatedRows() }
+
+// TableEstimatedRows says "估算行数"
+// in the language of msgs.
+func (msgs Messages) TableEstimatedRows() string {
+	return Catalog.Format(msgs.locale, "tableEstimatedRows", nil)
+}
+
+// DataLayoutSaveFailed says "保存表格布局失败；本次调整仍然有效"
+// in the language the app shows.
+func DataLayoutSaveFailed() string { return In(i18n.Locale()).DataLayoutSaveFailed() }
+
+// DataLayoutSaveFailed says "保存表格布局失败；本次调整仍然有效"
+// in the language of msgs.
+func (msgs Messages) DataLayoutSaveFailed() string {
+	return Catalog.Format(msgs.locale, "dataLayoutSaveFailed", nil)
+}
+
+// TableModifiedAt says "修改日期"
+// in the language the app shows.
+func TableModifiedAt() string { return In(i18n.Locale()).TableModifiedAt() }
+
+// TableModifiedAt says "修改日期"
+// in the language of msgs.
+func (msgs Messages) TableModifiedAt() string {
+	return Catalog.Format(msgs.locale, "tableModifiedAt", nil)
+}
+
+// MysqlFieldValueState says "值状态"
+// in the language the app shows.
+func MysqlFieldValueState() string { return In(i18n.Locale()).MysqlFieldValueState() }
+
+// MysqlFieldValueState says "值状态"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldValueState() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldValueState", nil)
+}
+
+// MysqlFieldExtra says "其他属性"
+// in the language the app shows.
+func MysqlFieldExtra() string { return In(i18n.Locale()).MysqlFieldExtra() }
+
+// MysqlFieldExtra says "其他属性"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldExtra() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldExtra", nil)
+}
+
+// DataColumns says "列"
+// in the language the app shows.
+func DataColumns() string { return In(i18n.Locale()).DataColumns() }
+
+// DataColumns says "列"
+// in the language of msgs.
+func (msgs Messages) DataColumns() string {
+	return Catalog.Format(msgs.locale, "dataColumns", nil)
+}
+
+// DataColumnSettings says "列设置"
+// in the language the app shows.
+func DataColumnSettings() string { return In(i18n.Locale()).DataColumnSettings() }
+
+// DataColumnSettings says "列设置"
+// in the language of msgs.
+func (msgs Messages) DataColumnSettings() string {
+	return Catalog.Format(msgs.locale, "dataColumnSettings", nil)
+}
+
+// TableCreatedAt says "创建日期"
+// in the language the app shows.
+func TableCreatedAt() string { return In(i18n.Locale()).TableCreatedAt() }
+
+// TableCreatedAt says "创建日期"
+// in the language of msgs.
+func (msgs Messages) TableCreatedAt() string {
+	return Catalog.Format(msgs.locale, "tableCreatedAt", nil)
+}
+
+// TableCreateOptions says "创建选项"
+// in the language the app shows.
+func TableCreateOptions() string { return In(i18n.Locale()).TableCreateOptions() }
+
+// TableCreateOptions says "创建选项"
+// in the language of msgs.
+func (msgs Messages) TableCreateOptions() string {
+	return Catalog.Format(msgs.locale, "tableCreateOptions", nil)
+}
+
+// DataRemoveSortRule says "删除排序规则 %d"
+// in the language the app shows.
+func DataRemoveSortRule() string { return In(i18n.Locale()).DataRemoveSortRule() }
+
+// DataRemoveSortRule says "删除排序规则 %d"
+// in the language of msgs.
+func (msgs Messages) DataRemoveSortRule() string {
+	return Catalog.Format(msgs.locale, "dataRemoveSortRule", nil)
+}
+
+// DataRemoveFilterRule says "删除筛选规则 %d"
+// in the language the app shows.
+func DataRemoveFilterRule() string { return In(i18n.Locale()).DataRemoveFilterRule() }
+
+// DataRemoveFilterRule says "删除筛选规则 %d"
+// in the language of msgs.
+func (msgs Messages) DataRemoveFilterRule() string {
+	return Catalog.Format(msgs.locale, "dataRemoveFilterRule", nil)
+}
+
+// DataRefreshAndFirstPage says "刷新数据并返回首页"
+// in the language the app shows.
+func DataRefreshAndFirstPage() string { return In(i18n.Locale()).DataRefreshAndFirstPage() }
+
+// DataRefreshAndFirstPage says "刷新数据并返回首页"
+// in the language of msgs.
+func (msgs Messages) DataRefreshAndFirstPage() string {
+	return Catalog.Format(msgs.locale, "dataRefreshAndFirstPage", nil)
+}
+
+// TableRefreshInfo says "刷新表信息"
+// in the language the app shows.
+func TableRefreshInfo() string { return In(i18n.Locale()).TableRefreshInfo() }
+
+// TableRefreshInfo says "刷新表信息"
+// in the language of msgs.
+func (msgs Messages) TableRefreshInfo() string {
+	return Catalog.Format(msgs.locale, "tableRefreshInfo", nil)
+}
+
+// DataRefreshTablePrefix says "刷新表数据："
+// in the language the app shows.
+func DataRefreshTablePrefix() string { return In(i18n.Locale()).DataRefreshTablePrefix() }
+
+// DataRefreshTablePrefix says "刷新表数据："
+// in the language of msgs.
+func (msgs Messages) DataRefreshTablePrefix() string {
+	return Catalog.Format(msgs.locale, "dataRefreshTablePrefix", nil)
+}
+
+// DataParameterizedSQL says "参数化 SQL："
+// in the language the app shows.
+func DataParameterizedSQL() string { return In(i18n.Locale()).DataParameterizedSQL() }
+
+// DataParameterizedSQL says "参数化 SQL："
+// in the language of msgs.
+func (msgs Messages) DataParameterizedSQL() string {
+	return Catalog.Format(msgs.locale, "dataParameterizedSQL", nil)
+}
+
+// DataCancelPageRead says "取消数据页读取"
+// in the language the app shows.
+func DataCancelPageRead() string { return In(i18n.Locale()).DataCancelPageRead() }
+
+// DataCancelPageRead says "取消数据页读取"
+// in the language of msgs.
+func (msgs Messages) DataCancelPageRead() string {
+	return Catalog.Format(msgs.locale, "dataCancelPageRead", nil)
+}
+
+// TableCancelCount says "取消计数"
+// in the language the app shows.
+func TableCancelCount() string { return In(i18n.Locale()).TableCancelCount() }
+
+// TableCancelCount says "取消计数"
+// in the language of msgs.
+func (msgs Messages) TableCancelCount() string {
+	return Catalog.Format(msgs.locale, "tableCancelCount", nil)
+}
+
+// ValueNo says "否"
+// in the language the app shows.
+func ValueNo() string { return In(i18n.Locale()).ValueNo() }
+
+// ValueNo says "否"
+// in the language of msgs.
+func (msgs Messages) ValueNo() string {
+	return Catalog.Format(msgs.locale, "valueNo", nil)
+}
+
+// MysqlFieldUniqueKey says "唯一索引"
+// in the language the app shows.
+func MysqlFieldUniqueKey() string { return In(i18n.Locale()).MysqlFieldUniqueKey() }
+
+// MysqlFieldUniqueKey says "唯一索引"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldUniqueKey() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldUniqueKey", nil)
+}
+
+// DataCopyParameterizedSQL says "复制参数化 SQL"
+// in the language the app shows.
+func DataCopyParameterizedSQL() string { return In(i18n.Locale()).DataCopyParameterizedSQL() }
+
+// DataCopyParameterizedSQL says "复制参数化 SQL"
+// in the language of msgs.
+func (msgs Messages) DataCopyParameterizedSQL() string {
+	return Catalog.Format(msgs.locale, "dataCopyParameterizedSQL", nil)
+}
+
+// MysqlFieldChunkHint says "大字段按需读取 · 单次最多 1024 字符/字节"
+// in the language the app shows.
+func MysqlFieldChunkHint() string { return In(i18n.Locale()).MysqlFieldChunkHint() }
+
+// MysqlFieldChunkHint says "大字段按需读取 · 单次最多 1024 字符/字节"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldChunkHint() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldChunkHint", nil)
+}
+
+// MysqlFieldMissingOrHidden says "字段不存在或已被隐藏"
+// in the language the app shows.
+func MysqlFieldMissingOrHidden() string { return In(i18n.Locale()).MysqlFieldMissingOrHidden() }
+
+// MysqlFieldMissingOrHidden says "字段不存在或已被隐藏"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldMissingOrHidden() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldMissingOrHidden", nil)
+}
+
+// MysqlFieldInfo says "字段信息"
+// in the language the app shows.
+func MysqlFieldInfo() string { return In(i18n.Locale()).MysqlFieldInfo() }
+
+// MysqlFieldInfo says "字段信息"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldInfo() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldInfo", nil)
+}
+
+// MysqlFieldMetadataRetry says "字段元数据不可用，请重试读取数据"
+// in the language the app shows.
+func MysqlFieldMetadataRetry() string { return In(i18n.Locale()).MysqlFieldMetadataRetry() }
+
+// MysqlFieldMetadataRetry says "字段元数据不可用，请重试读取数据"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldMetadataRetry() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldMetadataRetry", nil)
+}
+
+// MysqlFieldCharacterLength says "字符长度"
+// in the language the app shows.
+func MysqlFieldCharacterLength() string { return In(i18n.Locale()).MysqlFieldCharacterLength() }
+
+// MysqlFieldCharacterLength says "字符长度"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldCharacterLength() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldCharacterLength", nil)
+}
+
+// MysqlFieldCharacterSet says "字符集"
+// in the language the app shows.
+func MysqlFieldCharacterSet() string { return In(i18n.Locale()).MysqlFieldCharacterSet() }
+
+// MysqlFieldCharacterSet says "字符集"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldCharacterSet() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldCharacterSet", nil)
+}
+
+// MysqlFieldNumericScale says "小数位"
+// in the language the app shows.
+func MysqlFieldNumericScale() string { return In(i18n.Locale()).MysqlFieldNumericScale() }
+
+// MysqlFieldNumericScale says "小数位"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldNumericScale() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldNumericScale", nil)
+}
+
+// DataNoSuccessfulReadTime says "尚无成功读取时间"
+// in the language the app shows.
+func DataNoSuccessfulReadTime() string { return In(i18n.Locale()).DataNoSuccessfulReadTime() }
+
+// DataNoSuccessfulReadTime says "尚无成功读取时间"
+// in the language of msgs.
+func (msgs Messages) DataNoSuccessfulReadTime() string {
+	return Catalog.Format(msgs.locale, "dataNoSuccessfulReadTime", nil)
+}
+
+// MysqlFieldMetadataNotLoaded says "尚未加载字段元数据"
+// in the language the app shows.
+func MysqlFieldMetadataNotLoaded() string { return In(i18n.Locale()).MysqlFieldMetadataNotLoaded() }
+
+// MysqlFieldMetadataNotLoaded says "尚未加载字段元数据"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldMetadataNotLoaded() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldMetadataNotLoaded", nil)
+}
+
+// DataNotLoaded says "尚未读取数据"
+// in the language the app shows.
+func DataNotLoaded() string { return In(i18n.Locale()).DataNotLoaded() }
+
+// DataNotLoaded says "尚未读取数据"
+// in the language of msgs.
+func (msgs Messages) DataNotLoaded() string {
+	return Catalog.Format(msgs.locale, "dataNotLoaded", nil)
+}
+
+// TableInfoNotLoaded says "尚未读取表信息"
+// in the language the app shows.
+func TableInfoNotLoaded() string { return In(i18n.Locale()).TableInfoNotLoaded() }
+
+// TableInfoNotLoaded says "尚未读取表信息"
+// in the language of msgs.
+func (msgs Messages) TableInfoNotLoaded() string {
+	return Catalog.Format(msgs.locale, "tableInfoNotLoaded", nil)
+}
+
+// MysqlFieldPreviewTruncated says "已截断的预览"
+// in the language the app shows.
+func MysqlFieldPreviewTruncated() string { return In(i18n.Locale()).MysqlFieldPreviewTruncated() }
+
+// MysqlFieldPreviewTruncated says "已截断的预览"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldPreviewTruncated() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldPreviewTruncated", nil)
+}
+
+// MysqlFieldReadPosition says "已读位置"
+// in the language the app shows.
+func MysqlFieldReadPosition() string { return In(i18n.Locale()).MysqlFieldReadPosition() }
+
+// MysqlFieldReadPosition says "已读位置"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldReadPosition() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldReadPosition", nil)
+}
+
+// DataLoadedPageRange says "已读取 %d 行 · %d–%d · 第 %d 页"
+// in the language the app shows.
+func DataLoadedPageRange() string { return In(i18n.Locale()).DataLoadedPageRange() }
+
+// DataLoadedPageRange says "已读取 %d 行 · %d–%d · 第 %d 页"
+// in the language of msgs.
+func (msgs Messages) DataLoadedPageRange() string {
+	return Catalog.Format(msgs.locale, "dataLoadedPageRange", nil)
+}
+
+// DataLoadedEmptyPage says "已读取 0 行 · 第 %d 页"
+// in the language the app shows.
+func DataLoadedEmptyPage() string { return In(i18n.Locale()).DataLoadedEmptyPage() }
+
+// DataLoadedEmptyPage says "已读取 0 行 · 第 %d 页"
+// in the language of msgs.
+func (msgs Messages) DataLoadedEmptyPage() string {
+	return Catalog.Format(msgs.locale, "dataLoadedEmptyPage", nil)
+}
+
+// DataCurrentPage says "当前数据页"
+// in the language the app shows.
+func DataCurrentPage() string { return In(i18n.Locale()).DataCurrentPage() }
+
+// DataCurrentPage says "当前数据页"
+// in the language of msgs.
+func (msgs Messages) DataCurrentPage() string {
+	return Catalog.Format(msgs.locale, "dataCurrentPage", nil)
+}
+
+// DataCurrentRecord says "当前记录"
+// in the language the app shows.
+func DataCurrentRecord() string { return In(i18n.Locale()).DataCurrentRecord() }
+
+// DataCurrentRecord says "当前记录"
+// in the language of msgs.
+func (msgs Messages) DataCurrentRecord() string {
+	return Catalog.Format(msgs.locale, "dataCurrentRecord", nil)
+}
+
+// DataSortFieldInvalid says "排序字段不可用或重复"
+// in the language the app shows.
+func DataSortFieldInvalid() string { return In(i18n.Locale()).DataSortFieldInvalid() }
+
+// DataSortFieldInvalid says "排序字段不可用或重复"
+// in the language of msgs.
+func (msgs Messages) DataSortFieldInvalid() string {
+	return Catalog.Format(msgs.locale, "dataSortFieldInvalid", nil)
+}
+
+// MysqlCollation says "排序规则"
+// in the language the app shows.
+func MysqlCollation() string { return In(i18n.Locale()).MysqlCollation() }
+
+// MysqlCollation says "排序规则"
+// in the language of msgs.
+func (msgs Messages) MysqlCollation() string {
+	return Catalog.Format(msgs.locale, "mysqlCollation", nil)
+}
+
+// MysqlFieldNumericPrecision says "数值精度"
+// in the language the app shows.
+func MysqlFieldNumericPrecision() string { return In(i18n.Locale()).MysqlFieldNumericPrecision() }
+
+// MysqlFieldNumericPrecision says "数值精度"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldNumericPrecision() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldNumericPrecision", nil)
+}
+
+// DataInspectorModeBar says "数据信息切换栏"
+// in the language the app shows.
+func DataInspectorModeBar() string { return In(i18n.Locale()).DataInspectorModeBar() }
+
+// DataInspectorModeBar says "数据信息切换栏"
+// in the language of msgs.
+func (msgs Messages) DataInspectorModeBar() string {
+	return Catalog.Format(msgs.locale, "dataInspectorModeBar", nil)
+}
+
+// TableDataFree says "数据可用空间"
+// in the language the app shows.
+func TableDataFree() string { return In(i18n.Locale()).TableDataFree() }
+
+// TableDataFree says "数据可用空间"
+// in the language of msgs.
+func (msgs Messages) TableDataFree() string {
+	return Catalog.Format(msgs.locale, "tableDataFree", nil)
+}
+
+// DataFieldInspectorPanel says "数据字段信息面板"
+// in the language the app shows.
+func DataFieldInspectorPanel() string { return In(i18n.Locale()).DataFieldInspectorPanel() }
+
+// DataFieldInspectorPanel says "数据字段信息面板"
+// in the language of msgs.
+func (msgs Messages) DataFieldInspectorPanel() string {
+	return Catalog.Format(msgs.locale, "dataFieldInspectorPanel", nil)
+}
+
+// DataQuerySQL says "数据查询 SQL"
+// in the language the app shows.
+func DataQuerySQL() string { return In(i18n.Locale()).DataQuerySQL() }
+
+// DataQuerySQL says "数据查询 SQL"
+// in the language of msgs.
+func (msgs Messages) DataQuerySQL() string {
+	return Catalog.Format(msgs.locale, "dataQuerySQL", nil)
+}
+
+// DataTableInspectorPanel says "数据表信息面板"
+// in the language the app shows.
+func DataTableInspectorPanel() string { return In(i18n.Locale()).DataTableInspectorPanel() }
+
+// DataTableInspectorPanel says "数据表信息面板"
+// in the language of msgs.
+func (msgs Messages) DataTableInspectorPanel() string {
+	return Catalog.Format(msgs.locale, "dataTableInspectorPanel", nil)
+}
+
+// DataReadTime says "数据读取时间"
+// in the language the app shows.
+func DataReadTime() string { return In(i18n.Locale()).DataReadTime() }
+
+// DataReadTime says "数据读取时间"
+// in the language of msgs.
+func (msgs Messages) DataReadTime() string {
+	return Catalog.Format(msgs.locale, "dataReadTime", nil)
+}
+
+// TableDataLength says "数据长度"
+// in the language the app shows.
+func TableDataLength() string { return In(i18n.Locale()).TableDataLength() }
+
+// TableDataLength says "数据长度"
+// in the language of msgs.
+func (msgs Messages) TableDataLength() string {
+	return Catalog.Format(msgs.locale, "tableDataLength", nil)
+}
+
+// TableExactRows says "整表行数"
+// in the language the app shows.
+func TableExactRows() string { return In(i18n.Locale()).TableExactRows() }
+
+// TableExactRows says "整表行数"
+// in the language of msgs.
+func (msgs Messages) TableExactRows() string {
+	return Catalog.Format(msgs.locale, "tableExactRows", nil)
+}
+
+// MysqlFieldDatetimePrecision says "时间精度"
+// in the language the app shows.
+func MysqlFieldDatetimePrecision() string { return In(i18n.Locale()).MysqlFieldDatetimePrecision() }
+
+// MysqlFieldDatetimePrecision says "时间精度"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldDatetimePrecision() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldDatetimePrecision", nil)
+}
+
+// ValueYes says "是"
+// in the language the app shows.
+func ValueYes() string { return In(i18n.Locale()).ValueYes() }
+
+// ValueYes says "是"
+// in the language of msgs.
+func (msgs Messages) ValueYes() string {
+	return Catalog.Format(msgs.locale, "valueYes", nil)
+}
+
+// TableShowingPreviousInfo says "显示上次读取的表信息"
+// in the language the app shows.
+func TableShowingPreviousInfo() string { return In(i18n.Locale()).TableShowingPreviousInfo() }
+
+// TableShowingPreviousInfo says "显示上次读取的表信息"
+// in the language of msgs.
+func (msgs Messages) TableShowingPreviousInfo() string {
+	return Catalog.Format(msgs.locale, "tableShowingPreviousInfo", nil)
+}
+
+// DataShowRowNumbers says "显示行号"
+// in the language the app shows.
+func DataShowRowNumbers() string { return In(i18n.Locale()).DataShowRowNumbers() }
+
+// DataShowRowNumbers says "显示行号"
+// in the language of msgs.
+func (msgs Messages) DataShowRowNumbers() string {
+	return Catalog.Format(msgs.locale, "dataShowRowNumbers", nil)
+}
+
+// TableMaxDataLength says "最大数据长度"
+// in the language the app shows.
+func TableMaxDataLength() string { return In(i18n.Locale()).TableMaxDataLength() }
+
+// TableMaxDataLength says "最大数据长度"
+// in the language of msgs.
+func (msgs Messages) TableMaxDataLength() string {
+	return Catalog.Format(msgs.locale, "tableMaxDataLength", nil)
+}
+
+// TableInfoResponseInvalid says "服务器未返回当前表的信息"
+// in the language the app shows.
+func TableInfoResponseInvalid() string { return In(i18n.Locale()).TableInfoResponseInvalid() }
+
+// TableInfoResponseInvalid says "服务器未返回当前表的信息"
+// in the language of msgs.
+func (msgs Messages) TableInfoResponseInvalid() string {
+	return Catalog.Format(msgs.locale, "tableInfoResponseInvalid", nil)
+}
+
+// TableCountResponseInvalid says "服务器返回了无效行数"
+// in the language the app shows.
+func TableCountResponseInvalid() string { return In(i18n.Locale()).TableCountResponseInvalid() }
+
+// TableCountResponseInvalid says "服务器返回了无效行数"
+// in the language of msgs.
+func (msgs Messages) TableCountResponseInvalid() string {
+	return Catalog.Format(msgs.locale, "tableCountResponseInvalid", nil)
+}
+
+// DataShowFieldInfo says "查看字段信息"
+// in the language the app shows.
+func DataShowFieldInfo() string { return In(i18n.Locale()).DataShowFieldInfo() }
+
+// DataShowFieldInfo says "查看字段信息"
+// in the language of msgs.
+func (msgs Messages) DataShowFieldInfo() string {
+	return Catalog.Format(msgs.locale, "dataShowFieldInfo", nil)
+}
+
+// DataQuerySQLActions says "查询 SQL 操作"
+// in the language the app shows.
+func DataQuerySQLActions() string { return In(i18n.Locale()).DataQuerySQLActions() }
+
+// DataQuerySQLActions says "查询 SQL 操作"
+// in the language of msgs.
+func (msgs Messages) DataQuerySQLActions() string {
+	return Catalog.Format(msgs.locale, "dataQuerySQLActions", nil)
+}
+
+// DataQueryInfoUnavailable says "查询信息不可用"
+// in the language the app shows.
+func DataQueryInfoUnavailable() string { return In(i18n.Locale()).DataQueryInfoUnavailable() }
+
+// DataQueryInfoUnavailable says "查询信息不可用"
+// in the language of msgs.
+func (msgs Messages) DataQueryInfoUnavailable() string {
+	return Catalog.Format(msgs.locale, "dataQueryInfoUnavailable", nil)
+}
+
+// TableCheckedAt says "检查时间"
+// in the language the app shows.
+func TableCheckedAt() string { return In(i18n.Locale()).TableCheckedAt() }
+
+// TableCheckedAt says "检查时间"
+// in the language of msgs.
+func (msgs Messages) TableCheckedAt() string {
+	return Catalog.Format(msgs.locale, "tableCheckedAt", nil)
+}
+
+// TableCountingRows says "正在统计整表行数…"
+// in the language the app shows.
+func TableCountingRows() string { return In(i18n.Locale()).TableCountingRows() }
+
+// TableCountingRows says "正在统计整表行数…"
+// in the language of msgs.
+func (msgs Messages) TableCountingRows() string {
+	return Catalog.Format(msgs.locale, "tableCountingRows", nil)
+}
+
+// MysqlFieldMetadataLoading says "正在读取字段元数据…"
+// in the language the app shows.
+func MysqlFieldMetadataLoading() string { return In(i18n.Locale()).MysqlFieldMetadataLoading() }
+
+// MysqlFieldMetadataLoading says "正在读取字段元数据…"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldMetadataLoading() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldMetadataLoading", nil)
+}
+
+// MysqlFieldChunkLoading says "正在读取字段片段…"
+// in the language the app shows.
+func MysqlFieldChunkLoading() string { return In(i18n.Locale()).MysqlFieldChunkLoading() }
+
+// MysqlFieldChunkLoading says "正在读取字段片段…"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldChunkLoading() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldChunkLoading", nil)
+}
+
+// DataPageLoading says "正在读取第 %d 页…"
+// in the language the app shows.
+func DataPageLoading() string { return In(i18n.Locale()).DataPageLoading() }
+
+// DataPageLoading says "正在读取第 %d 页…"
+// in the language of msgs.
+func (msgs Messages) DataPageLoading() string {
+	return Catalog.Format(msgs.locale, "dataPageLoading", nil)
+}
+
+// TableInfoLoading says "正在读取表信息…"
+// in the language the app shows.
+func TableInfoLoading() string { return In(i18n.Locale()).TableInfoLoading() }
+
+// TableInfoLoading says "正在读取表信息…"
+// in the language of msgs.
+func (msgs Messages) TableInfoLoading() string {
+	return Catalog.Format(msgs.locale, "tableInfoLoading", nil)
+}
+
+// DataPageSize says "每页行数"
+// in the language the app shows.
+func DataPageSize() string { return In(i18n.Locale()).DataPageSize() }
+
+// DataPageSize says "每页行数"
+// in the language of msgs.
+func (msgs Messages) DataPageSize() string {
+	return Catalog.Format(msgs.locale, "dataPageSize", nil)
+}
+
+// DataPageNumber says "第 %d 页"
+// in the language the app shows.
+func DataPageNumber() string { return In(i18n.Locale()).DataPageNumber() }
+
+// DataPageNumber says "第 %d 页"
+// in the language of msgs.
+func (msgs Messages) DataPageNumber() string {
+	return Catalog.Format(msgs.locale, "dataPageNumber", nil)
+}
+
+// DataFilterSortCounts says "筛选 %d · 排序 %d"
+// in the language the app shows.
+func DataFilterSortCounts() string { return In(i18n.Locale()).DataFilterSortCounts() }
+
+// DataFilterSortCounts says "筛选 %d · 排序 %d"
+// in the language of msgs.
+func (msgs Messages) DataFilterSortCounts() string {
+	return Catalog.Format(msgs.locale, "dataFilterSortCounts", nil)
+}
+
+// DataFilterFieldMissing says "筛选字段不存在或未选择"
+// in the language the app shows.
+func DataFilterFieldMissing() string { return In(i18n.Locale()).DataFilterFieldMissing() }
+
+// DataFilterFieldMissing says "筛选字段不存在或未选择"
+// in the language of msgs.
+func (msgs Messages) DataFilterFieldMissing() string {
+	return Catalog.Format(msgs.locale, "dataFilterFieldMissing", nil)
+}
+
+// DataFilterInvalid says "筛选条件无效或过长"
+// in the language the app shows.
+func DataFilterInvalid() string { return In(i18n.Locale()).DataFilterInvalid() }
+
+// DataFilterInvalid says "筛选条件无效或过长"
+// in the language of msgs.
+func (msgs Messages) DataFilterInvalid() string {
+	return Catalog.Format(msgs.locale, "dataFilterInvalid", nil)
+}
+
+// TableIndexLength says "索引长度"
+// in the language the app shows.
+func TableIndexLength() string { return In(i18n.Locale()).TableIndexLength() }
+
+// TableIndexLength says "索引长度"
+// in the language of msgs.
+func (msgs Messages) TableIndexLength() string {
+	return Catalog.Format(msgs.locale, "tableIndexLength", nil)
+}
+
+// MysqlFieldIndexMul says "索引（MUL）"
+// in the language the app shows.
+func MysqlFieldIndexMul() string { return In(i18n.Locale()).MysqlFieldIndexMul() }
+
+// MysqlFieldIndexMul says "索引（MUL）"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldIndexMul() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldIndexMul", nil)
+}
+
+// TableAutoIncrementValue says "自动递增值"
+// in the language the app shows.
+func TableAutoIncrementValue() string { return In(i18n.Locale()).TableAutoIncrementValue() }
+
+// TableAutoIncrementValue says "自动递增值"
+// in the language of msgs.
+func (msgs Messages) TableAutoIncrementValue() string {
+	return Catalog.Format(msgs.locale, "tableAutoIncrementValue", nil)
+}
+
+// MysqlFieldAutoIncrement says "自增"
+// in the language the app shows.
+func MysqlFieldAutoIncrement() string { return In(i18n.Locale()).MysqlFieldAutoIncrement() }
+
+// MysqlFieldAutoIncrement says "自增"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldAutoIncrement() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldAutoIncrement", nil)
+}
+
+// TableCountAllRows says "获取整表行数"
+// in the language the app shows.
+func TableCountAllRows() string { return In(i18n.Locale()).TableCountAllRows() }
+
+// TableCountAllRows says "获取整表行数"
+// in the language of msgs.
+func (msgs Messages) TableCountAllRows() string {
+	return Catalog.Format(msgs.locale, "tableCountAllRows", nil)
+}
+
+// TableGetRowCount says "获取行数"
+// in the language the app shows.
+func TableGetRowCount() string { return In(i18n.Locale()).TableGetRowCount() }
+
+// TableGetRowCount says "获取行数"
+// in the language of msgs.
+func (msgs Messages) TableGetRowCount() string {
+	return Catalog.Format(msgs.locale, "tableGetRowCount", nil)
+}
+
+// DataRowsPerPage says "行 / 页"
+// in the language the app shows.
+func DataRowsPerPage() string { return In(i18n.Locale()).DataRowsPerPage() }
+
+// DataRowsPerPage says "行 / 页"
+// in the language of msgs.
+func (msgs Messages) DataRowsPerPage() string {
+	return Catalog.Format(msgs.locale, "dataRowsPerPage", nil)
+}
+
+// MysqlFieldRowNumber says "行号"
+// in the language the app shows.
+func MysqlFieldRowNumber() string { return In(i18n.Locale()).MysqlFieldRowNumber() }
+
+// MysqlFieldRowNumber says "行号"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldRowNumber() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldRowNumber", nil)
+}
+
+// TableCountIgnoresFilters says "行数统计不应用当前筛选条件"
+// in the language the app shows.
+func TableCountIgnoresFilters() string { return In(i18n.Locale()).TableCountIgnoresFilters() }
+
+// TableCountIgnoresFilters says "行数统计不应用当前筛选条件"
+// in the language of msgs.
+func (msgs Messages) TableCountIgnoresFilters() string {
+	return Catalog.Format(msgs.locale, "tableCountIgnoresFilters", nil)
+}
+
+// TableRowCountCanceled says "行数统计已取消"
+// in the language the app shows.
+func TableRowCountCanceled() string { return In(i18n.Locale()).TableRowCountCanceled() }
+
+// TableRowCountCanceled says "行数统计已取消"
+// in the language of msgs.
+func (msgs Messages) TableRowCountCanceled() string {
+	return Catalog.Format(msgs.locale, "tableRowCountCanceled", nil)
+}
+
+// TableRowCountTime says "行数统计时间"
+// in the language the app shows.
+func TableRowCountTime() string { return In(i18n.Locale()).TableRowCountTime() }
+
+// TableRowCountTime says "行数统计时间"
+// in the language of msgs.
+func (msgs Messages) TableRowCountTime() string {
+	return Catalog.Format(msgs.locale, "tableRowCountTime", nil)
+}
+
+// TableRowCountStatus says "行数统计："
+// in the language the app shows.
+func TableRowCountStatus() string { return In(i18n.Locale()).TableRowCountStatus() }
+
+// TableRowCountStatus says "行数统计："
+// in the language of msgs.
+func (msgs Messages) TableRowCountStatus() string {
+	return Catalog.Format(msgs.locale, "tableRowCountStatus", nil)
+}
+
+// TableRowFormat says "行格式"
+// in the language the app shows.
+func TableRowFormat() string { return In(i18n.Locale()).TableRowFormat() }
+
+// TableRowFormat says "行格式"
+// in the language of msgs.
+func (msgs Messages) TableRowFormat() string {
+	return Catalog.Format(msgs.locale, "tableRowFormat", nil)
+}
+
+// MysqlTableInfo says "表信息"
+// in the language the app shows.
+func MysqlTableInfo() string { return In(i18n.Locale()).MysqlTableInfo() }
+
+// MysqlTableInfo says "表信息"
+// in the language of msgs.
+func (msgs Messages) MysqlTableInfo() string {
+	return Catalog.Format(msgs.locale, "mysqlTableInfo", nil)
+}
+
+// TableInfoLoadFailed says "表信息读取失败："
+// in the language the app shows.
+func TableInfoLoadFailed() string { return In(i18n.Locale()).TableInfoLoadFailed() }
+
+// TableInfoLoadFailed says "表信息读取失败："
+// in the language of msgs.
+func (msgs Messages) TableInfoLoadFailed() string {
+	return Catalog.Format(msgs.locale, "tableInfoLoadFailed", nil)
+}
+
+// DataChooseFilterOrSort says "请先选择筛选字段，或添加排序规则"
+// in the language the app shows.
+func DataChooseFilterOrSort() string { return In(i18n.Locale()).DataChooseFilterOrSort() }
+
+// DataChooseFilterOrSort says "请先选择筛选字段，或添加排序规则"
+// in the language of msgs.
+func (msgs Messages) DataChooseFilterOrSort() string {
+	return Catalog.Format(msgs.locale, "dataChooseFilterOrSort", nil)
+}
+
+// DataPageFailed says "读取失败 · 第 %d 页"
+// in the language the app shows.
+func DataPageFailed() string { return In(i18n.Locale()).DataPageFailed() }
+
+// DataPageFailed says "读取失败 · 第 %d 页"
+// in the language of msgs.
+func (msgs Messages) DataPageFailed() string {
+	return Catalog.Format(msgs.locale, "dataPageFailed", nil)
+}
+
+// DataPageCanceled says "读取已取消 · 第 %d 页"
+// in the language the app shows.
+func DataPageCanceled() string { return In(i18n.Locale()).DataPageCanceled() }
+
+// DataPageCanceled says "读取已取消 · 第 %d 页"
+// in the language of msgs.
+func (msgs Messages) DataPageCanceled() string {
+	return Catalog.Format(msgs.locale, "dataPageCanceled", nil)
+}
+
+// DataLayoutLoadFailed says "读取表格布局失败，使用默认布局"
+// in the language the app shows.
+func DataLayoutLoadFailed() string { return In(i18n.Locale()).DataLayoutLoadFailed() }
+
+// DataLayoutLoadFailed says "读取表格布局失败，使用默认布局"
+// in the language of msgs.
+func (msgs Messages) DataLayoutLoadFailed() string {
+	return Catalog.Format(msgs.locale, "dataLayoutLoadFailed", nil)
+}
+
+// DataFitAllColumns says "适配全部列宽（当前页）"
+// in the language the app shows.
+func DataFitAllColumns() string { return In(i18n.Locale()).DataFitAllColumns() }
+
+// DataFitAllColumns says "适配全部列宽（当前页）"
+// in the language of msgs.
+func (msgs Messages) DataFitAllColumns() string {
+	return Catalog.Format(msgs.locale, "dataFitAllColumns", nil)
+}
+
+// MysqlChooseCellPreview says "选择数据单元格以查看值的安全预览"
+// in the language the app shows.
+func MysqlChooseCellPreview() string { return In(i18n.Locale()).MysqlChooseCellPreview() }
+
+// MysqlChooseCellPreview says "选择数据单元格以查看值的安全预览"
+// in the language of msgs.
+func (msgs Messages) MysqlChooseCellPreview() string {
+	return Catalog.Format(msgs.locale, "mysqlChooseCellPreview", nil)
+}
+
+// MysqlFieldKey says "键"
+// in the language the app shows.
+func MysqlFieldKey() string { return In(i18n.Locale()).MysqlFieldKey() }
+
+// MysqlFieldKey says "键"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldKey() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldKey", nil)
+}
+
+// DataAdditionalFilterValue says "附加筛选值 %d"
+// in the language the app shows.
+func DataAdditionalFilterValue() string { return In(i18n.Locale()).DataAdditionalFilterValue() }
+
+// DataAdditionalFilterValue says "附加筛选值 %d"
+// in the language of msgs.
+func (msgs Messages) DataAdditionalFilterValue() string {
+	return Catalog.Format(msgs.locale, "dataAdditionalFilterValue", nil)
+}
+
+// DataPageUnit says "页"
+// in the language the app shows.
+func DataPageUnit() string { return In(i18n.Locale()).DataPageUnit() }
+
+// DataPageUnit says "页"
+// in the language of msgs.
+func (msgs Messages) DataPageUnit() string {
+	return Catalog.Format(msgs.locale, "dataPageUnit", nil)
+}
+
+// MysqlFieldPreviewComplete says "预览完整"
+// in the language the app shows.
+func MysqlFieldPreviewComplete() string { return In(i18n.Locale()).MysqlFieldPreviewComplete() }
+
+// MysqlFieldPreviewComplete says "预览完整"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldPreviewComplete() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldPreviewComplete", nil)
+}
+
+// DataFirstPage says "首页"
+// in the language the app shows.
+func DataFirstPage() string { return In(i18n.Locale()).DataFirstPage() }
+
+// DataFirstPage says "首页"
+// in the language of msgs.
+func (msgs Messages) DataFirstPage() string {
+	return Catalog.Format(msgs.locale, "dataFirstPage", nil)
+}
+
+// DataFirstPageAction says "首页数据"
+// in the language the app shows.
+func DataFirstPageAction() string { return In(i18n.Locale()).DataFirstPageAction() }
+
+// DataFirstPageAction says "首页数据"
+// in the language of msgs.
+func (msgs Messages) DataFirstPageAction() string {
+	return Catalog.Format(msgs.locale, "dataFirstPageAction", nil)
+}
+
+// MysqlFieldDefaultValue says "默认值"
+// in the language the app shows.
+func MysqlFieldDefaultValue() string { return In(i18n.Locale()).MysqlFieldDefaultValue() }
+
+// MysqlFieldDefaultValue says "默认值"
+// in the language of msgs.
+func (msgs Messages) MysqlFieldDefaultValue() string {
+	return Catalog.Format(msgs.locale, "mysqlFieldDefaultValue", nil)
+}

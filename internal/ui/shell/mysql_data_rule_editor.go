@@ -52,7 +52,7 @@ func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *connections.MyS
 			if count == 0 && t.dataFilterMode != "" {
 				count = 1
 			}
-			ui.Text(c, fmt.Sprintf("筛选 %d · 排序 %d", count, mysqlDataActiveSortCount(t))).FontSize(theme.SmallFontSize).TextColor(theme.Muted).SingleLine().MinWidth(0)
+			ui.Text(c, fmt.Sprintf(locales.Text("筛选 %d · 排序 %d"), count, mysqlDataActiveSortCount(t))).FontSize(theme.SmallFontSize).TextColor(theme.Muted).SingleLine().MinWidth(0)
 			if !narrow {
 				ui.Toolbar(c, func() { s.mysqlDataCompactActions(c, t) }).Label(locales.Text("数据操作")).Grow(1).MinWidth(0).Padding(0).Gap(2)
 			}
@@ -107,9 +107,9 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *tab, page *connections.MyS
 			ui.Select(c, &rule.Column, choices).Width(140)
 			ui.Select(c, &rule.Mode, mysqlFilterModeChoices).Width(110)
 			if mysqlDataFilterModeNeedsValue(rule.Mode) {
-				ui.TextInput(c, &rule.Value).Label(fmt.Sprintf("附加筛选值 %d", i+1)).Placeholder(locales.Text("筛选值")).Width(170)
+				ui.TextInput(c, &rule.Value).Label(fmt.Sprintf(locales.Text("附加筛选值 %d"), i+1)).Placeholder(locales.Text("筛选值")).Width(170)
 			}
-			if ui.Button(c, locales.Text("移除")).Label(fmt.Sprintf("删除筛选规则 %d", i+2)).Clicked() {
+			if ui.Button(c, locales.Text("移除")).Label(fmt.Sprintf(locales.Text("删除筛选规则 %d"), i+2)).Clicked() {
 				t.dataFilterExtraDraft = append(t.dataFilterExtraDraft[:i], t.dataFilterExtraDraft[i+1:]...)
 			}
 		})
@@ -129,7 +129,7 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *tab, page *connections.MyS
 			ui.Text(c, fmt.Sprintf("%d.", i+1)).FontSize(11).TextColor(theme.Muted)
 			ui.Select(c, &rule.Column, choices).Width(165)
 			ui.Select(c, &rule.Direction, []string{"升序", "降序"}).Width(100)
-			if ui.Button(c, locales.Text("移除")).Label(fmt.Sprintf("删除排序规则 %d", i+1)).Clicked() {
+			if ui.Button(c, locales.Text("移除")).Label(fmt.Sprintf(locales.Text("删除排序规则 %d"), i+1)).Clicked() {
 				t.dataSortDraft = append(t.dataSortDraft[:i], t.dataSortDraft[i+1:]...)
 			}
 		})
