@@ -36,6 +36,8 @@ func (s *State) mysqlDatabaseWorkspace(c *ui.Context) {
 	database := s.mysqlSelectedDatabase
 	items := s.mysqlSelectedObjects()
 	canOpen := connected && database != "" && s.objectRow >= 0 && s.objectRow < len(items)
+	canProgram := canOpen && isMySQLProgram(items[s.objectRow].Kind)
+	canOpen = canOpen && !canProgram
 	ui.Column(c).Fill().Children(func() {
 		ui.Row(c).Height(theme.RowHeight(c, 30)).Gap(3).Padding(1, 4).AlignItems(ui.Center).Background(palette.Header).Children(func() {
 			ui.Toolbar(c, func() {
@@ -58,6 +60,13 @@ func (s *State) mysqlDatabaseWorkspace(c *ui.Context) {
 							s.openMySQLStructure(c.Services(), database, obj.Name)
 						}
 					}
+				}
+				if ui.ButtonBase(c).Label("查看程序定义").Tooltip("查看函数、存储过程或事件定义").
+					Disabled(!canProgram).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
+					theme.Icon(c, "function", 14, palette.Muted)
+				}).Clicked() {
+					obj := items[s.objectRow]
+					s.openMySQLProgram(database, obj.Name, obj.Kind)
 				}
 				for _, kind := range []string{"全部", "表", "视图"} {
 					filter := kind

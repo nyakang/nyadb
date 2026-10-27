@@ -141,10 +141,11 @@ func (s *State) clearMySQLTabsFor(profileID int64) {
 	kept := s.tabs[:0]
 	for _, t := range s.tabs {
 		if (t.kind == tabStructure && (profileID == 0 || t.structureProfileID == profileID)) ||
-			(t.kind == tabMySQLData && (profileID == 0 || t.dataProfileID == profileID)) {
+			(t.kind == tabMySQLData && (profileID == 0 || t.dataProfileID == profileID)) ||
+			(t.kind == tabProgram && (profileID == 0 || t.programProfileID == profileID)) {
 			if t.kind == tabStructure {
 				s.cancelMySQLStructure(t)
-			} else {
+			} else if t.kind == tabMySQLData {
 				s.disposeMySQLDataTab(t)
 			}
 			continue
@@ -166,10 +167,11 @@ func (s *State) pruneMySQLStructureTabs(known map[string]bool) {
 	kept := s.tabs[:0]
 	for _, t := range s.tabs {
 		if (t.kind == tabStructure && t.structureProfileID == s.mysqlSessionProfileID && !known[t.structureDatabase]) ||
-			(t.kind == tabMySQLData && t.dataProfileID == s.mysqlSessionProfileID && !known[t.dataDatabase]) {
+			(t.kind == tabMySQLData && t.dataProfileID == s.mysqlSessionProfileID && !known[t.dataDatabase]) ||
+			(t.kind == tabProgram && t.programProfileID == s.mysqlSessionProfileID && !known[t.programDatabase]) {
 			if t.kind == tabStructure {
 				s.cancelMySQLStructure(t)
-			} else {
+			} else if t.kind == tabMySQLData {
 				s.disposeMySQLDataTab(t)
 			}
 			continue

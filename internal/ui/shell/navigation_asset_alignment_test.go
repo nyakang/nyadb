@@ -36,6 +36,9 @@ func TestNavigatorCategoriesAndMetadataProgress(t *testing.T) {
 	s.mysqlObjectCache["app_db"] = []connections.MySQLDBObject{
 		{Name: "customers", Kind: "表"},
 		{Name: "customers", Kind: "视图"},
+		{Name: "get_customer", Kind: "函数"},
+		{Name: "refresh_customer", Kind: "存储过程"},
+		{Name: "nightly_cleanup", Kind: "事件"},
 	}
 	children := s.navigationChildren(db.key())
 	if len(children) != len(mysqlNavigationCategories) {
@@ -48,16 +51,17 @@ func TestNavigatorCategoriesAndMetadataProgress(t *testing.T) {
 		}
 		items := s.navigationChildren(key)
 		if supportedMySQLCategory(n.Category) {
-			if len(items) != 1 || parseNavigationNode(items[0]).Object != "customers" {
+			if len(items) != 1 || parseNavigationNode(items[0]).Category != n.Category ||
+				parseNavigationNode(items[0]).Kind != "object" {
 				t.Fatalf("supported category %q lost real objects: %v", n.Category, items)
 			}
 		} else if len(items) != 0 {
 			t.Fatalf("unsupported category %q fabricated objects: %v", n.Category, items)
 		}
 	}
-	unsupported := parseNavigationNode(children[2])
+	unsupported := parseNavigationNode(children[5])
 	s.selectNavigationNode(ui.Services{}, unsupported.key())
-	if s.mysqlObjectKind != "函数" || s.objectRow != -1 || len(s.mysqlSelectedObjects()) != 0 || !strings.Contains(s.status, "尚未") {
+	if s.mysqlObjectKind != "查询" || s.objectRow != -1 || len(s.mysqlSelectedObjects()) != 0 || !strings.Contains(s.status, "尚未") {
 		t.Fatalf("unsupported folder must not pretend to filter objects: kind=%q row=%d status=%q",
 			s.mysqlObjectKind, s.objectRow, s.status)
 	}

@@ -40,12 +40,16 @@ func parseNavigationNode(key string) navigationNode {
 	return n
 }
 
-// Observed MySQL navigator categories. Only tables and views have working
-// metadata readers; other folders remain explicitly unsupported.
-var mysqlNavigationCategories = []string{"表", "视图", "函数", "事件", "查询", "备份"}
+// Database programs are real server metadata; queries and backups remain
+// workspace features until they have their own persistence implementations.
+var mysqlNavigationCategories = []string{"表", "视图", "函数", "存储过程", "事件", "查询", "备份"}
 
 func supportedMySQLCategory(category string) bool {
-	return category == "表" || category == "视图"
+	switch category {
+	case "表", "视图", "函数", "存储过程", "事件":
+		return true
+	}
+	return false
 }
 
 func (s *State) navigationChildren(key string) []string {
@@ -221,7 +225,7 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 		}
 		ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).Padding(0, 13).AlignItems(ui.Center).Gap(5).Children(func() {
 			theme.Icon(c, "folder-filled", 16, palette.Gold)
-			ui.Text(c, name).FontSize(theme.Font(c, 12)).SingleLine()
+			ui.Text(c, name).FontSize(theme.Font(c, 11.5)).TextColor(palette.Text.Mix(palette.Blue, .13)).SingleLine()
 		}).ContextMenu(func(m *ui.Menu) {
 			s.profileGroupMenu(m, name)
 			s.explorerMenuBuilt = true
@@ -238,7 +242,7 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 			}
 			row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).AlignItems(ui.Center).Gap(5).Children(func() {
 				s.profileBrandIcon(c, p.Kind, 16)
-				ui.Text(c, p.Name).FontSize(theme.Font(c, 12)).SingleLine()
+				ui.Text(c, p.Name).FontSize(theme.Font(c, 11.5)).TextColor(palette.Text).SingleLine()
 				status := s.mysqlSessionStateFor(p.ID)
 				color := palette.Muted
 				switch status {
@@ -266,6 +270,8 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 		switch n.Category {
 		case "函数":
 			icon = "function"
+		case "存储过程":
+			icon = "function"
 		case "事件":
 			icon = "refresh"
 		case "查询":
@@ -285,15 +291,15 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 		icon = "view"
 	}
 	row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).AlignItems(ui.Center).Gap(5).Children(func() {
-		ink := palette.Blue
+		ink := palette.Text.Mix(palette.Blue, .22)
 		if n.Kind == "status" || n.Kind == "category" && !supportedMySQLCategory(n.Category) {
 			ink = palette.Muted
 		}
 		if n.Kind == "status" && n.Object == "error" {
 			ink = palette.Error
 		}
-		theme.Icon(c, icon, 16, ink)
-		ui.Text(c, label).FontSize(theme.Font(c, 12)).TextColor(ink).SingleLine()
+		theme.Icon(c, icon, 14, ink)
+		ui.Text(c, label).FontSize(theme.Font(c, 11.5)).TextColor(ink).SingleLine()
 	})
 	if n.Kind == "category" && !supportedMySQLCategory(n.Category) {
 		row.Label(label + " · " + locales.Text("尚未支持元数据浏览"))
@@ -319,9 +325,9 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 		case "object":
 			openLabel, structureLabel := mysqlObjectActionLabels(n.Category)
 			if m.Item(locales.Text(openLabel)).Shortcut(0, ui.KeyEnter).Chosen() {
-				s.openMySQLData(c.Services(), n.Database, n.Object)
+				s.openMySQLObject(c.Services(), n.Database, n.Object, n.Category)
 			}
-			if m.Item(locales.Text(structureLabel)).Shortcut(ui.Ctrl, ui.KeyD).Chosen() {
+			if m.Item(locales.Text(structureLabel)).Shortcut(ui.Ctrl, ui.KeyD).Disabled(isMySQLProgram(n.Category)).Chosen() {
 				s.openMySQLStructure(c.Services(), n.Database, n.Object)
 			}
 			m.Separator()
@@ -347,7 +353,7 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 func (s *State) submitNavigation(c *ui.Context) {
 	n := parseNavigationNode(s.explorerName)
 	if n.Kind == "object" {
-		s.openMySQLData(c.Services(), n.Database, n.Object)
+		s.openMySQLObject(c.Services(), n.Database, n.Object, n.Category)
 	}
 	if n.Kind == "connection" {
 		if s.mysqlSessionStateFor(n.ProfileID) != "已连接" {

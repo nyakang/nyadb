@@ -25,6 +25,7 @@ const (
 	tabStructure
 	tabMySQLData
 	tabSettings
+	tabProgram
 )
 
 type tab struct {
@@ -32,6 +33,10 @@ type tab struct {
 	title  string
 	kind   tabKind
 	editor *editor.State
+
+	programProfileID int64
+	programDatabase  string
+	program          connections.MySQLDBObject
 
 	structureDatabase, structureTable string
 	structureProfileID                int64
