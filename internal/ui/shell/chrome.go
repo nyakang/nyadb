@@ -22,6 +22,7 @@ func (s *State) View(c *ui.Context) {
 	s.consumeMySQLData()
 	s.consumeMySQLTableInfo()
 	s.consumeMySQLChunks()
+	s.consumeMySQLSQLResults()
 	theme.Apply(c)
 
 	palette := theme.Colors(c)

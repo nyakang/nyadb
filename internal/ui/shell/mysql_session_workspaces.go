@@ -129,6 +129,8 @@ func (s *State) activateMySQLForCurrentTab() {
 		id = t.dataProfileID
 	case tabProgram:
 		id = t.programProfileID
+	case tabSQL:
+		id = t.sqlProfileID
 	}
 	if id == 0 || id == s.mysqlSessionProfileID {
 		return
@@ -230,6 +232,7 @@ func (s *State) disconnectMySQLProfile(id int64) {
 		}
 		delete(s.mysqlWorkspaces, id)
 	}
+	s.cancelMySQLSQLForProfile(id)
 	if s.mysqlSessionManager != nil {
 		_ = s.mysqlSessionManager.Disconnect(id)
 	}

@@ -35,6 +35,17 @@ type tab struct {
 	kind   tabKind
 	editor *editor.State
 
+	sqlProfileID       int64
+	sqlDatabase        string
+	sqlLoading         bool
+	sqlCancelRequested bool
+	sqlError           string
+	sqlResult          *connections.MySQLSQLResult
+	sqlGrid            ui.ListState
+	sqlCancel          context.CancelFunc
+	sqlResults         <-chan mysqlSQLResult
+	sqlRequest         uint64
+
 	programProfileID int64
 	programDatabase  string
 	program          connections.MySQLDBObject
@@ -223,6 +234,7 @@ type State struct {
 	mysqlSessionDatabases      []string
 	mysqlSessionOpener         mysqlSessionOpener
 	mysqlDatabaseLister        mysqlDatabaseLister
+	mysqlSQLExecutor           mysqlSQLExecutor
 	mysqlSelectedDatabase      string
 	mysqlObjectKind            string
 	mysqlObjectCache           map[string][]connections.MySQLDBObject
@@ -321,15 +333,31 @@ func (s *State) currentTab() *tab {
 
 func (s *State) openQuery() {
 	s.nextTabID++
-	buf := editor.NewBuffer("-- NyaDB UI 预览：SQL 尚不会发送到数据库\nSELECT * FROM customers LIMIT 100;\n")
+	initial := "-- NyaDB UI 预览：SQL 尚不会发送到数据库\nSELECT * FROM customers LIMIT 100;\n"
+	profileID := int64(0)
+	database := ""
+	if s.profileMode {
+		initial = "-- 输入 SQL；点击运行后发送至当前连接\n"
+		if p, ok := s.currentProfile(); ok && p.Kind == connections.MySQL {
+			profileID = p.ID
+			if s.mysqlSessionStateFor(profileID) == "已连接" {
+				database = s.mysqlSelectedDatabase
+			}
+		}
+	}
+	buf := editor.NewBuffer(initial)
 	buf.SetLanguage(editor.LanguageNamed("SQL"))
 	t := &tab{
 		id: s.nextTabID, title: fmt.Sprintf("SQL %d", s.nextTabID-1),
 		kind: tabSQL, editor: &editor.State{Buffer: buf, WrapGuides: []int{100}},
+		sqlProfileID: profileID, sqlDatabase: database,
 	}
 	s.tabs = append(s.tabs, t)
 	s.activeTab = len(s.tabs) - 1
-	s.status = "已打开 " + t.title + "（模拟工作区）"
+	s.status = "已打开 " + t.title
+	if !s.profileMode {
+		s.status += "（模拟工作区）"
+	}
 }
 
 func (s *State) openData(name string) {
@@ -359,6 +387,8 @@ func (s *State) closeTab(index int) {
 		s.cancelMySQLStructure(s.tabs[index])
 	} else if s.tabs[index].kind == tabMySQLData {
 		s.disposeMySQLDataTab(s.tabs[index])
+	} else if s.tabs[index].kind == tabSQL {
+		s.cancelMySQLSQL(s.tabs[index])
 	}
 	name := s.tabs[index].title
 	s.tabs = append(s.tabs[:index], s.tabs[index+1:]...)
@@ -380,6 +410,8 @@ func (s *State) closeOtherTabs(index int) {
 			s.cancelMySQLStructure(t)
 		} else if i != index && t.kind == tabMySQLData {
 			s.disposeMySQLDataTab(t)
+		} else if i != index && t.kind == tabSQL {
+			s.cancelMySQLSQL(t)
 		}
 	}
 	if index == 0 {
