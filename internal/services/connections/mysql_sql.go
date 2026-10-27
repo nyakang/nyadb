@@ -55,6 +55,11 @@ func (m *MySQLSessionManager) ExecuteSQL(ctx context.Context, profileID int64, d
 	}
 	defer conn.Close()
 
+	return executeSQLOnConn(queryCtx, conn, database, statement)
+}
+
+// executeSQLOnConn is shared by request-scoped queries and tab-owned leases.
+func executeSQLOnConn(queryCtx context.Context, conn *sql.Conn, database, statement string) (result MySQLSQLResult, execErr error) {
 	if database != "" {
 		if _, err := conn.ExecContext(queryCtx, "USE "+quoteSQLSchema(database)); err != nil {
 			return result, fmt.Errorf("select database %q: %w", database, err)

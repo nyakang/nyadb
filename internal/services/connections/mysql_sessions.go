@@ -23,10 +23,13 @@ type MySQLSessionManager struct {
 	opener   func(context.Context, ActiveSettings, string) (*sql.DB, error)
 }
 type mysqlManagedSession struct {
-	db       *sql.DB
-	ctx      context.Context
-	cancel   context.CancelFunc
-	settings ActiveSettings
+	db        *sql.DB
+	sqlDB     *sql.DB
+	ctx       context.Context
+	cancel    context.CancelFunc
+	settings  ActiveSettings
+	sqlTabsMu sync.Mutex
+	sqlTabs   map[uint64]*mysqlSQLTabLease
 }
 
 func NewMySQLSessionManager() *MySQLSessionManager {
@@ -34,7 +37,6 @@ func NewMySQLSessionManager() *MySQLSessionManager {
 		sessions: make(map[int64]*mysqlManagedSession),
 		versions: make(map[int64]uint64),
 		pending:  make(map[int64]context.CancelFunc),
-		opener:   OpenDirectMySQL,
 	}
 }
 
@@ -62,9 +64,16 @@ func (m *MySQLSessionManager) Connect(ctx context.Context, s ActiveSettings, pas
 	}
 	if previous != nil {
 		previous.cancel()
-		_ = previous.db.Close()
+		_ = previous.close()
 	}
-	db, err := m.opener(connectCtx, s, password)
+	var db, sqlDB *sql.DB
+	var err error
+	if m.opener != nil {
+		db, err = m.opener(connectCtx, s, password)
+		sqlDB = db // injected mock pool in unit tests
+	} else {
+		db, sqlDB, err = OpenDirectMySQLPools(connectCtx, s, password)
+	}
 	if err != nil {
 		cancel()
 		m.mu.Lock()
@@ -78,12 +87,18 @@ func (m *MySQLSessionManager) Connect(ctx context.Context, s ActiveSettings, pas
 	stale := m.closed || m.versions[s.ProfileID] != token || connectCtx.Err() != nil
 	if !stale {
 		delete(m.pending, s.ProfileID)
-		m.sessions[s.ProfileID] = &mysqlManagedSession{db: db, ctx: connectCtx, cancel: cancel, settings: s}
+		m.sessions[s.ProfileID] = &mysqlManagedSession{
+			db: db, sqlDB: sqlDB, ctx: connectCtx, cancel: cancel, settings: s,
+			sqlTabs: make(map[uint64]*mysqlSQLTabLease),
+		}
 	}
 	m.mu.Unlock()
 	if stale {
 		cancel()
 		_ = db.Close()
+		if sqlDB != db {
+			_ = sqlDB.Close()
+		}
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
@@ -114,7 +129,7 @@ func (m *MySQLSessionManager) Disconnect(id int64) error {
 		return nil
 	}
 	old.cancel()
-	return old.db.Close()
+	return old.close()
 }
 
 func (m *MySQLSessionManager) Close() error {
@@ -137,9 +152,27 @@ func (m *MySQLSessionManager) Close() error {
 	var err error
 	for _, s := range sessions {
 		s.cancel()
-		err = errors.Join(err, s.db.Close())
+		err = errors.Join(err, s.close())
 	}
 	return err
+}
+
+// close revokes tab leases before shutting down both pools. Drivers may still
+// be acknowledging canceled operations, so lease cleanup runs asynchronously.
+func (s *mysqlManagedSession) close() error {
+	s.sqlTabsMu.Lock()
+	tabs := s.sqlTabs
+	s.sqlTabs = nil
+	s.sqlTabsMu.Unlock()
+	for _, lease := range tabs {
+		lease.cancel()
+		go lease.close()
+	}
+	var err error
+	if s.sqlDB != nil && s.sqlDB != s.db {
+		err = s.sqlDB.Close()
+	}
+	return errors.Join(err, s.db.Close())
 }
 
 // Databases is a real metadata query on the authenticated session, scoped to

@@ -97,8 +97,10 @@ func OpenDirectMySQL(ctx context.Context, s ActiveSettings, password string) (*s
 		return nil, fmt.Errorf("create MySQL connector: %w", err)
 	}
 	db := sql.OpenDB(connector)
-	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(1)
+	// Metadata and data browsing may overlap. SQL editor sessions use their
+	// own pool through OpenDirectMySQLPools and cannot starve this pool.
+	db.SetMaxOpenConns(4)
+	db.SetMaxIdleConns(2)
 	db.SetConnMaxLifetime(3 * time.Minute)
 	testCtx, cancel := context.WithTimeout(ctx, cfg.Timeout)
 	defer cancel()
@@ -110,6 +112,33 @@ func OpenDirectMySQL(ctx context.Context, s ActiveSettings, password string) (*s
 		return nil, err
 	}
 	return db, nil
+}
+
+// OpenDirectMySQLPools isolates short-lived metadata/data operations from
+// long-lived interactive SQL tabs. Each tab reserves one connection from the
+// SQL pool until the tab is closed; idle SQL connections are never recycled
+// into another tab with session variables or an open transaction.
+func OpenDirectMySQLPools(ctx context.Context, s ActiveSettings, password string) (*sql.DB, *sql.DB, error) {
+	metadata, err := OpenDirectMySQL(ctx, s, password)
+	if err != nil {
+		return nil, nil, err
+	}
+	cfg, err := DirectMySQLConfig(s, password)
+	if err != nil {
+		_ = metadata.Close()
+		return nil, nil, err
+	}
+	connector, err := mysql.NewConnector(cfg)
+	if err != nil {
+		_ = metadata.Close()
+		return nil, nil, err
+	}
+	sqlPool := sql.OpenDB(connector)
+	sqlPool.SetMaxOpenConns(8)
+	sqlPool.SetMaxIdleConns(0)
+	// A transaction/temporary table must not be evicted by a wall-clock TTL.
+	// Disconnection and tab disposal explicitly own session cleanup.
+	return metadata, sqlPool, nil
 }
 
 // TestDirectMySQLConnection opens, authenticates and closes a single session.
