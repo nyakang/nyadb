@@ -14,10 +14,10 @@ func (s *State) profileSidebar(c *ui.Context) {
 	palette := theme.Colors(c)
 
 	ui.Column(c).Fill().Background(palette.Sidebar).Children(func() {
-		header := ui.Row(c).Height(theme.RowHeight(c, 20)).Padding(0, 17).AlignItems(ui.Center).Background(palette.Sidebar).Gap(6)
+		header := ui.Row(c).Height(theme.RowHeight(c, 22)).Padding(0, 17).AlignItems(ui.Center).Background(palette.Sidebar).Gap(6)
 		header.Children(func() {
 			theme.Icon(c, "connection", 15, palette.Muted)
-			ui.Text(c, locales.Text("我的连接")).FontSize(theme.Font(c, 12))
+			ui.Text(c, locales.Text("我的连接")).FontSize(theme.Font(c, assetFontSize))
 			ui.Box(c).Grow(1)
 			if header.Hovered() {
 				header.Background(palette.Selection)

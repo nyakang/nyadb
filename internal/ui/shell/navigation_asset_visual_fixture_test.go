@@ -66,7 +66,7 @@ func TestNavigationAssetVisualFixture(t *testing.T) {
 	if connection.X-group.X < 10 || database.X-connection.X < 10 {
 		t.Fatalf("hierarchy lacks visible nesting: group %.1f, connection %.1f, database %.1f", group.X, connection.X, database.X)
 	}
-	if pitch := database.Y - connection.Y; pitch < 18 || pitch > 20 {
+	if pitch := database.Y - connection.Y; pitch < 20 || pitch > 22 {
 		t.Fatalf("database tree row pitch %.1f out of compact range", pitch)
 	}
 	if output := os.Getenv("NYADB_NAV_ASSET_CAPTURE"); output != "" {

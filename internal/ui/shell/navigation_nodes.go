@@ -10,6 +10,14 @@ import (
 	"github.com/nyakang/nyadb/locales"
 )
 
+// Asset navigator geometry is intentionally independent of the rest of the
+// workbench. A 19-DIP content row plus Outline's vertical padding gives a
+// 21-DIP pitch, and 12.5-DIP text stays readable without a global font bump.
+const (
+	assetRowHeight float32 = theme.TreeRowHeight
+	assetFontSize  float32 = 12.5
+)
+
 // Keys are independent of display labels: the same table name in two databases
 // must never share selection, expansion, or a context-menu target.
 type navigationNode struct {
@@ -223,9 +231,9 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 			})
 			return
 		}
-		ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).Padding(0, 8).AlignItems(ui.Center).Gap(4).Children(func() {
+		ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, assetRowHeight)).Padding(0, 8).AlignItems(ui.Center).Gap(4).Children(func() {
 			theme.Icon(c, "folder-filled", 16, palette.Gold)
-			ui.Text(c, name).FontSize(theme.Font(c, 12)).TextColor(palette.Text).SingleLine()
+			ui.Text(c, name).FontSize(theme.Font(c, assetFontSize)).TextColor(palette.Text).SingleLine()
 		}).ContextMenu(func(m *ui.Menu) {
 			s.navigationContextMenu(c.Services(), key, m)
 		})
@@ -239,10 +247,10 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 			if p.ID != n.ProfileID {
 				continue
 			}
-			row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).Padding(0, 6).AlignItems(ui.Center).Gap(4).Children(func() {
+			row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, assetRowHeight)).Padding(0, 6).AlignItems(ui.Center).Gap(4).Children(func() {
 				status := s.mysqlSessionStateFor(p.ID)
 				s.profileNavigationIcon(c, p.Kind, status, 16)
-				ui.Text(c, p.Name).FontSize(theme.Font(c, 12)).TextColor(palette.Text).SingleLine()
+				ui.Text(c, p.Name).FontSize(theme.Font(c, assetFontSize)).TextColor(palette.Text).SingleLine()
 			})
 			row.Label(p.Name + " · " + locales.Text(s.mysqlSessionStateFor(p.ID)))
 			row.ContextMenu(func(m *ui.Menu) {
@@ -279,7 +287,7 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 		icon = "view"
 	}
 	inset := float32(5)
-	row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).Padding(0, inset).AlignItems(ui.Center).Gap(4).Children(func() {
+	row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, assetRowHeight)).Padding(0, inset).AlignItems(ui.Center).Gap(4).Children(func() {
 		ink := palette.Text
 		iconInk := palette.Text.Mix(palette.Blue, .22)
 		if n.Kind == "category" && supportedMySQLCategory(n.Category) || n.Kind == "object" {
@@ -303,7 +311,7 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 			iconInk = palette.Error
 		}
 		theme.Icon(c, icon, 15, iconInk)
-		ui.Text(c, label).FontSize(theme.Font(c, 12)).TextColor(ink).SingleLine()
+		ui.Text(c, label).FontSize(theme.Font(c, assetFontSize)).TextColor(ink).SingleLine()
 	})
 	if n.Kind == "category" && !supportedMySQLCategory(n.Category) {
 		row.Label(label + " · " + locales.Text("尚未支持元数据浏览"))
