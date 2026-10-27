@@ -12,6 +12,10 @@ import (
 )
 
 func (s *State) View(c *ui.Context) {
+	if s.profileMode {
+		s.activateMySQLForCurrentTab()
+		s.consumeParkedMySQLSessionResults()
+	}
 	s.consumeMySQLSessionResult()
 	s.consumeMySQLObjects()
 	s.consumeMySQLStructures()

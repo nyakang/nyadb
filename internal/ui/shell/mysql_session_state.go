@@ -35,6 +35,9 @@ func (s *State) startMySQLSession(services ui.Services) {
 	if s.mysqlSessionManager == nil {
 		s.mysqlSessionManager = connections.NewMySQLSessionManager()
 	}
+	// A malformed profile must never place its connection error on a
+	// different profile's active or parked session.
+	s.activateMySQLProfile(p.ID)
 	settings, err := connections.ResolveActiveSettings(p)
 	password := s.mysqlSessionPassword
 	var vaultErr error
@@ -56,7 +59,12 @@ func (s *State) startMySQLSession(services ui.Services) {
 		s.status = s.mysqlSessionError
 		return
 	}
-	s.disconnectMySQLSession()
+	// Do not disconnect an unrelated profile. Reconnecting the same profile
+	// only invalidates that profile's old session and in-flight work.
+	s.activateMySQLProfile(p.ID)
+	if s.mysqlSessionProfileID == p.ID {
+		s.disconnectMySQLSession()
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	s.mysqlSessionCancel = cancel
 	s.mysqlSessionGeneration++
@@ -144,7 +152,9 @@ func (s *State) disconnectMySQLSession() {
 	s.mysqlSessionProfileID = 0
 	s.mysqlSessionDatabases = nil
 	s.resetMySQLObjectBrowser()
-	s.clearMySQLStructureTabs()
+	if id > 0 {
+		s.clearMySQLTabsFor(id)
+	}
 	s.mysqlSessionError = ""
 	s.mysqlSessionStatus = "未连接"
 	if s.mysqlSessionManager != nil && id > 0 {
@@ -156,7 +166,7 @@ func (s *State) disconnectMySQLSession() {
 func (s *State) CloseMySQLSessions() { s.closeMySQLSessions() }
 
 func (s *State) closeMySQLSessions() {
-	s.disconnectMySQLSession()
+	s.closeAllMySQLConnections()
 	s.mysqlSessionPassword = ""
 	if s.mysqlSessionManager != nil {
 		_ = s.mysqlSessionManager.Close()
@@ -165,10 +175,7 @@ func (s *State) closeMySQLSessions() {
 }
 
 func (s *State) mysqlSessionStateFor(id int64) string {
-	if id == s.mysqlSessionProfileID && s.mysqlSessionStatus != "" {
-		return s.mysqlSessionStatus
-	}
-	return "未连接"
+	return s.mysqlSessionStateForProfile(id)
 }
 
 func (s *State) mysqlSessionToolbar(c *ui.Context) {

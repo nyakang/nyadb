@@ -152,7 +152,7 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *tab, offset int64) 
 }
 func (s *State) consumeMySQLData() {
 	for _, t := range s.tabs {
-		if t.kind != tabMySQLData || t.dataResults == nil {
+		if t.kind != tabMySQLData || t.dataResults == nil || t.dataProfileID != s.mysqlSessionProfileID {
 			continue
 		}
 		select {

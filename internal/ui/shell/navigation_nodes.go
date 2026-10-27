@@ -55,18 +55,20 @@ func (s *State) navigationChildren(key string) []string {
 	}
 	switch n.Kind {
 	case "connection":
-		children := make([]string, 0, len(s.mysqlSessionDatabases))
-		for _, db := range s.mysqlSessionDatabases {
+		databases := s.mysqlSessionDatabasesFor(n.ProfileID)
+		children := make([]string, 0, len(databases))
+		for _, db := range databases {
 			children = append(children, databaseNode(n.ProfileID, db).key())
 		}
 		return children
 	case "database":
-		if _, loaded := s.mysqlObjectCache[n.Database]; !loaded {
+		if _, loaded := s.mysqlObjectCacheFor(n.ProfileID)[n.Database]; !loaded {
 			status := n
 			status.Kind, status.Object = "status", "waiting"
-			if s.mysqlObjectPending == n.Database {
+			pending, err := s.mysqlObjectLoadStateFor(n.ProfileID, n.Database)
+			if pending {
 				status.Object = "loading"
-			} else if s.mysqlObjectErrors[n.Database] != "" {
+			} else if err != "" {
 				status.Object = "error"
 			}
 			return []string{status.key()}
@@ -83,7 +85,7 @@ func (s *State) navigationChildren(key string) []string {
 			return nil
 		}
 		children := []string{}
-		for _, obj := range s.mysqlObjectCache[n.Database] {
+		for _, obj := range s.mysqlObjectCacheFor(n.ProfileID)[n.Database] {
 			if obj.Kind == n.Category {
 				child := n
 				child.Kind, child.Object = "object", obj.Name
@@ -298,7 +300,8 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 	}
 	if n.Kind == "status" {
 		if n.Object == "error" {
-			row.Label(label + "：" + s.mysqlObjectErrors[n.Database])
+			_, err := s.mysqlObjectLoadStateFor(n.ProfileID, n.Database)
+			row.Label(label + "：" + err)
 		}
 		if row.Clicked() && n.Object == "error" {
 			s.loadMySQLObjects(c.Services(), n.Database, true)

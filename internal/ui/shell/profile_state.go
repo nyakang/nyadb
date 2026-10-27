@@ -170,11 +170,9 @@ func (s *State) deleteProfile() {
 		s.status = "删除连接失败：" + err.Error()
 		return
 	}
-	if s.mysqlSessionProfileID == p.ID {
-		s.disconnectMySQLSession()
-	}
+	// Deleting a parked connection must not disconnect the selected/active one.
+	s.disconnectMySQLProfile(p.ID)
 	if s.selectedProfileID == p.ID {
-		s.disconnectMySQLSession()
 		s.selectedProfileID = 0
 	}
 	s.loadProfiles()

@@ -204,6 +204,7 @@ type State struct {
 
 	connectionNameFocusPending bool
 	mysqlSessionManager        *connections.MySQLSessionManager
+	mysqlWorkspaces            map[int64]*mysqlSessionWorkspace
 	mysqlSessionCancel         context.CancelFunc
 	mysqlSessionResults        <-chan mysqlSessionResult
 	mysqlSessionProfileID      int64

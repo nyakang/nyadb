@@ -13,8 +13,8 @@ func (s *State) profileRootMenu(m *ui.Menu) {
 	if m.Item(locales.Text("新建连接…")).Chosen() {
 		s.openConnectionDialog()
 	}
-	if m.Item(locales.Text("关闭所有连接")).Disabled(s.mysqlSessionProfileID == 0).Chosen() {
-		s.disconnectMySQLSession()
+	if m.Item(locales.Text("关闭所有连接")).Disabled(s.mysqlSessionProfileID == 0 && len(s.mysqlWorkspaces) == 0).Chosen() {
+		s.closeAllMySQLConnections()
 	}
 	m.Item(locales.Text("管理连接…")).Disabled(true)
 	m.Separator()
