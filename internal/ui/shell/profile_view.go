@@ -14,7 +14,7 @@ func (s *State) profileSidebar(c *ui.Context) {
 	palette := theme.Colors(c)
 
 	ui.Column(c).Fill().Background(palette.Sidebar).Children(func() {
-		header := ui.Row(c).Height(theme.RowHeight(c, 20)).Padding(0, 3).AlignItems(ui.Center).Background(palette.Sidebar).Gap(6)
+		header := ui.Row(c).Height(theme.RowHeight(c, 20)).Padding(0, 17).AlignItems(ui.Center).Background(palette.Sidebar).Gap(6)
 		header.Children(func() {
 			theme.Icon(c, "connection", 15, palette.Muted)
 			ui.Text(c, locales.Text("我的连接")).FontSize(theme.Font(c, 12))
@@ -72,15 +72,23 @@ func (s *State) profileSidebar(c *ui.Context) {
 			}
 			s.explorerTree.List.Selection = &s.explorerSelection
 			s.explorerTree.List.Selected = &s.explorerRow
-			s.explorerTree.Indent = 17 // consistent steps between groups, connections and databases
+			s.explorerTree.Indent = 14       // native disclosure steps: group -> connection -> database
+			s.explorerTree.LeadingInset = 14 // reserve the same left tree gutter at every depth
+			s.explorerTree.RowContextMenu = func(key string, menu *ui.Menu) {
+				s.navigationContextMenu(c.Services(), key, menu)
+			}
 			savedTheme := c.Theme()
 			denseTheme := *savedTheme
 			// The native triangle has its own 10-DIP hit target; no need to
 			// inflate spacing for its legibility.
 			denseTheme.Spacing = 1
+			// Collapsed nodes carry muted, secondary disclosure marks. Keep
+			// the branch click target, but avoid competing with the database
+			// cylinder or the selection highlight.
+			denseTheme.TextMuted = palette.Muted.Mix(palette.Sidebar, .42)
 			configureNavigatorDisclosure(&s.explorerTree)
 			c.SetTheme(&denseTheme)
-			tree := theme.Outline(c, &s.explorerTree, roots, s.profileChildren, func(key string) { s.navigationRow(c, key) }).Grow(1).Padding(0).Gap(0)
+			tree := theme.NavigationOutline(c, &s.explorerTree, roots, s.profileChildren, func(key string) { s.navigationRow(c, key) }).Grow(1).Padding(0).Gap(0)
 			c.SetTheme(savedTheme)
 			if s.explorerMenuBuilt {
 				// Outline can finish applying an earlier pointer selection after

@@ -37,16 +37,21 @@ func (s *State) profileBrandIcon(c *ui.Context, kind connections.Kind, size floa
 func (s *State) profileNavigationIcon(c *ui.Context, kind connections.Kind, status string, size float32) {
 	if kind == connections.MySQL {
 		palette := theme.Colors(c)
+		bg := palette.Muted.Mix(palette.Sidebar, .48)
 		switch status {
 		case "已连接":
-			theme.Icon(c, "connection-active", size, palette.Success)
+			bg = palette.Success.Mix(palette.Sidebar, .12)
 		case "连接中":
-			theme.Icon(c, "connection-idle", size, palette.Warning)
+			bg = palette.Warning.Mix(palette.Sidebar, .12)
 		case "连接失败":
-			theme.Icon(c, "connection-idle", size, palette.Error)
-		default:
-			theme.Icon(c, "connection-idle", size, palette.Muted)
+			bg = palette.Error.Mix(palette.Sidebar, .12)
 		}
+		// Render the white plug as a separate native vector child. Multi-color
+		// SVG paths can be flattened into one tint by a platform backend,
+		// which previously made this connected glyph a blank green square.
+		ui.Box(c).Size(size, size).Radius(2).Background(bg).Center().Children(func() {
+			theme.Icon(c, "connection", size*.78, ui.Hex("#ffffff"))
+		})
 		return
 	}
 	s.profileBrandIcon(c, kind, size)
