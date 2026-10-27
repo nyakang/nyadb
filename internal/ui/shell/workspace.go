@@ -39,6 +39,8 @@ func (s *State) workspace(c *ui.Context) {
 									icon = "settings"
 								} else if current.kind == tabProgram {
 									icon = "function"
+								} else if current.kind == tabConnections {
+									icon = "connection"
 								}
 								theme.Icon(c, icon, 14, palette.Blue)
 								ui.Text(c, s.workspaceTabCaption(current)).FontSize(theme.Font(c, theme.FontSize)).SingleLine().MaxWidth(220).Tooltip(current.title)
@@ -79,6 +81,8 @@ func (s *State) workspace(c *ui.Context) {
 			s.mysqlDataWorkspace(c, tab)
 		case tabProgram:
 			s.mysqlProgramWorkspace(c, tab)
+		case tabConnections:
+			s.connectionManagementWorkspace(c)
 		default:
 			s.objectsWorkspace(c)
 		}

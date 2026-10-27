@@ -26,6 +26,7 @@ const (
 	tabMySQLData
 	tabSettings
 	tabProgram
+	tabConnections
 )
 
 type tab struct {
@@ -150,12 +151,14 @@ type State struct {
 	dataState         ui.ListState
 	dataColumns       []ui.TableColumn
 
-	tabs       []*tab
-	activeTab  int
-	nextTabID  uint64
-	demoRuns   int
-	status     string
-	lastAction string
+	connectionManagerRow  int
+	connectionManagerList ui.ListState
+	tabs                  []*tab
+	activeTab             int
+	nextTabID             uint64
+	demoRuns              int
+	status                string
+	lastAction            string
 
 	connectionDialog             bool
 	connectionStep               int
