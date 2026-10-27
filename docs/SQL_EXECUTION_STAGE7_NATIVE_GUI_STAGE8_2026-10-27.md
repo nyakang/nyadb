@@ -27,6 +27,7 @@ SQL Tester 截图（非真实窗口）：`temp/research/sql-stage7-workspace-202
 | 目标 | 执行方法 | 结论 |
 | --- | --- | --- |
 | Linux 原生窗口启动、截图 | `python3 tools/capture_alignment_gui_linux.py --binary build/linux-amd64/nyadb --output temp/research/stage8-linux-20261027 --dpi 96` | **I PASS**：已读取稳定非黑帧；客户区 1280×800，虚拟屏约 96 DPI |
+| Linux 原生右键菜单 | `tools/capture_alignment_gui_linux.py` 复用历史 `root-menu-steps.json`，在空连接根节点右键 | **I PASS**：菜单真实弹出，`新建连接`、`管理连接`、`新建组`、`刷新` 可见；无数据库连接 |
 | Windows/amd64 构建 | `go tool mygo build -platform windows/amd64 -o temp/research/stage8-windows-20261027` | **编译 PASS**：生成 `NyaDB.exe`；当前 Linux 无 NSIS，未生成安装程序 |
 | Windows 原生 GUI、菜单 | 需要 Windows 上运行本轮构建并抓取窗口 | **Unknown**：Windows Agent 在线，但采集时未运行 NyaDB；交叉编译不构成运行验收 |
 | 资产树字距/行距 | `TestNavigationAssetVisualFixture`（MyGo UI Tester） | **I PASS**：最新字体 12.5 DIP、21 DIP 行距、层级缩进和右键菜单回归 |
@@ -39,6 +40,9 @@ Linux 原生图片与元数据：
 - binary SHA256：`f58af4b3c502d572cc0d601d78d740e8275c96a041c667fd9eed3e2736b37ea5`
 - capture SHA256：`7587a83c747df3bf9b049937052f9cc4fd99e207e73e940260e1b784d1111f25`
 - 实际字体/文字缩放在该截图元数据中为 **Unknown**，不能据此计算可跨设备复现的像素误差。
+
+
+菜单客户区截图：`temp/research/stage8-linux-root-menu-20261027/root-menu-client.png`；元数据：`temp/research/stage8-linux-root-menu-20261027/root-menu.json`。该图属于本轮 NyaDB Linux 原生窗口证据，不是 Navicat 原版证据。
 
 Windows 可运行文件：
 - `temp/research/stage8-windows-20261027/windows-amd64/NyaDB.exe`
