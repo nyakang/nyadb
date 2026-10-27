@@ -72,6 +72,8 @@ func (s *State) MySQLSSHKeyPickerError(version uint64) {
 // connectionMySQLSSH mirrors the original's conditional password/key fields.
 // Never suggest the SSH tunnel is active; the actual transport is not built.
 func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
+	palette := theme.Colors(c)
+
 	formWidth := connectionWideFormWidth(width)
 	labelWidth := connectionFormLabelWidth
 	fieldWidth := formWidth - labelWidth
@@ -83,19 +85,19 @@ func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
 		})
 		s.mysqlSSHInputRow(c, "主机：", &ssh.Host, labelWidth, fieldWidth, active)
 		connectionFormRow(c).Children(func() {
-			ui.Text(c, locales.Text("端口：")).Width(labelWidth).FontSize(12).TextColor(theme.Muted)
+			ui.Text(c, locales.Text("端口：")).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 			connectionFormTextInput(c, &s.mysqlSSHPort, "SSH 端口", 80, !active, false)
 		})
 		s.mysqlSSHInputRow(c, "用户名：", &ssh.Username, labelWidth, 200, active)
 		connectionFormRow(c).Children(func() {
-			ui.Text(c, locales.Text("验证方法：")).Width(labelWidth).FontSize(12).TextColor(theme.Muted)
+			ui.Text(c, locales.Text("验证方法：")).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 			connectionFormSelect(c, &ssh.AuthMethod, connections.MySQLSSHAuthMethods, "SSH 验证方法", 200, !active)
 		})
 		passwordMode := ssh.AuthMethod != connections.MySQLSSHPublicKey
 		keyMode := ssh.AuthMethod != connections.MySQLSSHPassword
 		if passwordMode {
 			connectionFormRow(c).Children(func() {
-				ui.Text(c, locales.Text("密码：")).Width(labelWidth).FontSize(12).TextColor(theme.Muted)
+				ui.Text(c, locales.Text("密码：")).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 				connectionFormTextInput(c, &s.mysqlSSHPassword, "SSH 密码", 200, !active, true)
 			})
 			connectionFormRow(c).Children(func() {
@@ -106,13 +108,13 @@ func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
 		}
 		if keyMode {
 			connectionFormRow(c).Children(func() {
-				ui.Text(c, "Private Key:").Width(labelWidth).FontSize(12)
+				ui.Text(c, "Private Key:").Width(labelWidth).FontSize(theme.Font(c, 12))
 				connectionFormTextInput(c, &ssh.PrivateKey, "SSH 私钥文件", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, false)
 				ui.Box(c).Width(connectionFormBrowseGap)
 				connectionFormBrowse(c, "选择 SSH 私钥", !active || s.mysqlSSHKeyPicker == nil, s.mysqlSSHKeyPicker)
 			})
 			connectionFormRow(c).Children(func() {
-				ui.Text(c, "Passphrase:").Width(labelWidth).FontSize(12)
+				ui.Text(c, "Passphrase:").Width(labelWidth).FontSize(theme.Font(c, 12))
 				connectionFormTextInput(c, &s.mysqlSSHPassphrase, "SSH 私钥口令", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, true)
 			})
 			connectionFormRow(c).Children(func() {
@@ -121,10 +123,10 @@ func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
 				connectionFormCheckbox(c, &save, "Save Passphrase", true)
 			})
 		}
-		ui.Row(c).Height(25).Children(func() {
+		ui.Row(c).Height(theme.RowHeight(c, 25)).Children(func() {
 			ui.Box(c).Width(labelWidth)
 			ui.Text(c, "密码与密钥口令仅在当前窗口内保留；SSH 隧道尚未连接。").
-				TextColor(theme.Muted).FontSize(11)
+				TextColor(palette.Muted).FontSize(theme.Font(c, 11))
 		})
 	})
 }
@@ -133,8 +135,10 @@ func (s *State) mysqlSSHInputRow(
 	c *ui.Context, title string, value *string,
 	labelWidth, fieldWidth float32, active bool,
 ) {
+	palette := theme.Colors(c)
+
 	connectionFormRow(c).Children(func() {
-		ui.Text(c, title).Width(labelWidth).FontSize(12).TextColor(theme.Muted)
+		ui.Text(c, title).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 		connectionFormTextInput(c, value, "SSH "+title, fieldWidth, !active, false)
 	})
 }

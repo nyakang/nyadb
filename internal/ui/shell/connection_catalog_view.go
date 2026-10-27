@@ -17,6 +17,8 @@ const (
 // It uses independent NyaDB symbols by default. In explicit local research
 // mode only, runtime-loaded PNGs may replace catalog symbols for comparison.
 func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
+	palette := theme.Colors(c)
+
 	w, h := c.Size()
 	dialogWidth := min(float32(860), w-72)
 	dialogHeight := min(float32(648), h-76)
@@ -32,17 +34,17 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 	ui.Column(c).Width(dialogWidth).Height(dialogHeight).Gap(0).Children(func() {
 		if !nativeWindow {
 			ui.Row(c).Height(38).Padding(0, 3).AlignItems(ui.Center).Children(func() {
-				theme.Icon(c, "connection", 20, theme.Blue)
-				ui.Text(c, locales.Text("新建连接")).FontSize(17).Bold()
+				theme.Icon(c, "connection", 20, palette.Blue)
+				ui.Text(c, locales.Text("新建连接")).FontSize(theme.Font(c, 17)).Bold()
 			})
-			ui.Box(c).Height(1).Background(theme.Border)
+			ui.Box(c).Height(1).Background(palette.Border)
 		}
 		ui.Row(c).Height(bodyHeight).Gap(0).Children(func() {
 			s.catalogFilterSidebar(c, bodyHeight)
-			ui.Box(c).Width(1).Background(theme.Border)
+			ui.Box(c).Width(1).Background(palette.Border)
 			ui.Column(c).Grow(1).Height(bodyHeight).Gap(0).Children(func() {
 				s.catalogSearchToolbar(c)
-				ui.Box(c).Height(1).Background(theme.Border)
+				ui.Box(c).Height(1).Background(palette.Border)
 				ui.Scroll(c).Height(bodyHeight - catalogSearchHeight - 1).Children(func() {
 					ui.Column(c).Padding(12, 14).Gap(15).Children(func() {
 						if !s.connectionGridMode {
@@ -53,24 +55,24 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 							s.catalogSection(c, "最近使用过的", s.catalogRecents(), columns)
 						}
 						s.catalogSection(c, "全部", s.catalogItems("全部"), columns)
-						ui.Box(c).Height(1).Background(theme.Border)
+						ui.Box(c).Height(1).Background(palette.Border)
 						s.catalogSection(c, "云数据库", s.catalogItems("云数据库"), columns)
 					})
 				})
 			})
 		})
-		ui.Box(c).Height(1).Background(theme.Border)
-		ui.Row(c).Height(catalogFooterHeight).Padding(5, 9).Gap(7).AlignItems(ui.Center).Background(theme.Toolbar).Children(func() {
-			ui.Button(c, locales.Text("通过 URI 新建连接…")).Height(connectionFooterControlHeight).
+		ui.Box(c).Height(1).Background(palette.Border)
+		ui.Row(c).Height(catalogFooterHeight).Padding(5, 9).Gap(7).AlignItems(ui.Center).Background(palette.Toolbar).Children(func() {
+			ui.Button(c, locales.Text("通过 URI 新建连接…")).Height(theme.RowHeight(c, connectionFooterControlHeight)).
 				Label(locales.Text("URI 导入尚未支持")).Disabled(true)
 			ui.Box(c).Grow(1)
 			if s.connectionError != "" {
-				ui.Text(c, s.connectionError).FontSize(11).TextColor(theme.Gold).SingleLine().MinWidth(0).Grow(1)
+				ui.Text(c, s.connectionError).FontSize(theme.Font(c, 11)).TextColor(palette.Error).SingleLine().MinWidth(0).Grow(1)
 			}
-			if ui.Button(c, locales.Text("取消")).Label(locales.Text("取消连接向导")).Width(80).Height(connectionFooterControlHeight).Clicked() {
+			if ui.Button(c, locales.Text("取消")).Label(locales.Text("取消连接向导")).Width(80).Height(theme.RowHeight(c, connectionFooterControlHeight)).Clicked() {
 				s.closeConnectionDialog()
 			}
-			if ui.Button(c, locales.Text("下一步")).Width(80).Height(connectionFooterControlHeight).Disabled(s.connectionKind == "").Clicked() {
+			if ui.Button(c, locales.Text("下一步")).Width(80).Height(theme.RowHeight(c, connectionFooterControlHeight)).Disabled(s.connectionKind == "").Clicked() {
 				s.nextConnectionStep()
 			}
 		})
@@ -78,9 +80,11 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 }
 
 func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
-	ui.Column(c).Width(catalogSidebarWidth).Height(height).Background(theme.Sidebar).Gap(1).Padding(12, 10).Children(func() {
-		ui.Row(c).Height(29).Gap(7).AlignItems(ui.Center).Children(func() {
-			ui.Text(c, locales.Text("连接筛选")).FontSize(12).TextColor(theme.Muted)
+	palette := theme.Colors(c)
+
+	ui.Column(c).Width(catalogSidebarWidth).Height(height).Background(palette.Sidebar).Gap(1).Padding(12, 10).Children(func() {
+		ui.Row(c).Height(theme.RowHeight(c, 29)).Gap(7).AlignItems(ui.Center).Children(func() {
+			ui.Text(c, locales.Text("连接筛选")).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 		})
 		ui.Scroll(c).Height(height - 58).Children(func() {
 			ui.Column(c).Gap(0).Children(func() {
@@ -97,14 +101,14 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 						if item, ok := catalogFilterIcon(label, false); ok {
 							s.catalogIcon(c, item, catalogTreeIconSize)
 						} else {
-							theme.Icon(c, "database", catalogTreeIconSize, theme.Muted)
+							theme.Icon(c, "database", catalogTreeIconSize, palette.Muted)
 						}
-						ui.Text(c, label).FontSize(12).SingleLine()
+						ui.Text(c, label).FontSize(theme.Font(c, 12)).SingleLine()
 					})
 				}
-				ui.Box(c).Height(1).Background(theme.Border).Margin(8, 0)
-				ui.Row(c).Height(30).Gap(7).AlignItems(ui.Center).Children(func() {
-					ui.Text(c, locales.Text("供应商筛选")).FontSize(12).TextColor(theme.Muted)
+				ui.Box(c).Height(1).Background(palette.Border).Margin(8, 0)
+				ui.Row(c).Height(theme.RowHeight(c, 30)).Gap(7).AlignItems(ui.Center).Children(func() {
+					ui.Text(c, locales.Text("供应商筛选")).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 				})
 				for _, name := range catalogVendors {
 					if !s.catalogSidebarFilterVisible(name, true) {
@@ -121,7 +125,7 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 							setCatalogFilter(s.connectionVendorFilters, label, checked)
 						}
 						s.catalogProviderIcon(c, label, catalogTreeIconSize)
-						ui.Text(c, displayName).FontSize(12).SingleLine()
+						ui.Text(c, displayName).FontSize(theme.Font(c, 12)).SingleLine()
 					})
 				}
 			})
@@ -130,34 +134,36 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 }
 
 func (s *State) catalogSearchToolbar(c *ui.Context) {
+	palette := theme.Colors(c)
+
 	ui.Row(c).Height(catalogSearchHeight).Padding(6, 13).Gap(8).AlignItems(ui.Center).Children(func() {
-		ui.Text(c, locales.Text("选择一个连接类型：")).FontSize(12)
+		ui.Text(c, locales.Text("选择一个连接类型：")).FontSize(theme.Font(c, 12))
 		ui.Box(c).Grow(1)
 		selected := 0 // Grid first, list second.
 		if !s.connectionGridMode {
 			selected = 1
 		}
 		segments := ui.SegmentedBase(c, &selected, 2)
-		segments.Track.Label(locales.Text("连接类型视图")).Height(26).Padding(1).Gap(2).
-			Radius(2).Background(theme.Panel).Border(1, theme.Border).Children(func() {
+		segments.Track.Label(locales.Text("连接类型视图")).Height(theme.RowHeight(c, 26)).Padding(1).Gap(2).
+			Radius(2).Background(palette.Panel).Border(1, palette.Border).Children(func() {
 			for i, symbol := range []string{"catalog-grid", "catalog-list"} {
 				label := "网格视图"
 				if i == 1 {
 					label = "列表视图"
 				}
-				segment := segments.Segment(i).Label(locales.Text(label)).Width(26).Height(24).Radius(1)
+				segment := segments.Segment(i).Label(locales.Text(label)).Width(26).Height(theme.RowHeight(c, 24)).Radius(1)
 				if selected == i {
-					segment.Background(theme.Header)
+					segment.Background(palette.Header)
 				}
 				segment.Children(func() {
-					theme.Icon(c, symbol, 16, theme.Text)
+					theme.Icon(c, symbol, 16, palette.Text)
 				})
 			}
 		})
 		if segments.Track.Changed() {
 			s.connectionGridMode = selected == 0
 		}
-		ui.SearchField(c, &s.connectionSearch).Label(locales.Text("搜索连接类型")).Placeholder(locales.Text("搜索")).Width(236).Height(connectionFormInputHeight)
+		ui.SearchField(c, &s.connectionSearch).Label(locales.Text("搜索连接类型")).Placeholder(locales.Text("搜索")).Width(236).Height(theme.RowHeight(c, connectionFormInputHeight))
 	})
 }
 
@@ -166,7 +172,7 @@ func (s *State) catalogSection(c *ui.Context, title string, items []catalogEntry
 		return
 	}
 	ui.Column(c).Gap(10).Children(func() {
-		ui.Text(c, locales.Text(title)).FontSize(13).Bold()
+		ui.Text(c, locales.Text(title)).FontSize(theme.Font(c, 13)).Bold()
 		if !s.connectionGridMode {
 			for _, e := range items {
 				item := e
@@ -188,11 +194,13 @@ func (s *State) catalogSection(c *ui.Context, title string, items []catalogEntry
 }
 
 func (s *State) catalogIconItem(c *ui.Context, item catalogEntry) {
-	bg := theme.Panel
-	border := theme.Panel
+	palette := theme.Colors(c)
+
+	bg := palette.Panel
+	border := palette.Panel
 	if item.name == s.connectionSelectedName {
-		bg = theme.Accent.Alpha(0.25)
-		border = theme.Accent
+		bg = palette.Accent.Alpha(0.25)
+		border = palette.Accent
 	}
 	label := locales.Text("选择 ") + item.name
 	if item.kind == "" {
@@ -203,7 +211,7 @@ func (s *State) catalogIconItem(c *ui.Context, item catalogEntry) {
 	control.Children(func() {
 		ui.Column(c).AlignItems(ui.Center).Justify(ui.Center).Gap(4).Children(func() {
 			s.catalogIcon(c, item, 45)
-			ui.Text(c, item.name).Width(109).TextAlign(ui.Center).FontSize(11)
+			ui.Text(c, item.name).Width(109).TextAlign(ui.Center).FontSize(theme.Font(c, 11))
 		})
 	})
 	if control.Clicked() {
@@ -212,17 +220,19 @@ func (s *State) catalogIconItem(c *ui.Context, item catalogEntry) {
 }
 
 func (s *State) catalogListItem(c *ui.Context, item catalogEntry) {
+	palette := theme.Colors(c)
+
 	control := ui.ButtonBase(c).Label(locales.Text("选择 ") + item.name).FillWidth().Height(43).
-		Radius(3).Background(theme.Panel)
+		Radius(3).Background(palette.Panel)
 	control.Children(func() {
 		ui.Row(c).Padding(5, 10).AlignItems(ui.Center).Gap(10).Children(func() {
 			s.catalogIcon(c, item, 30)
-			ui.Text(c, item.name).FontSize(12).Grow(1)
+			ui.Text(c, item.name).FontSize(theme.Font(c, 12)).Grow(1)
 			if item.kind == "" {
-				ui.Text(c, locales.Text("尚未支持")).FontSize(10).TextColor(theme.Muted)
+				ui.Text(c, locales.Text("尚未支持")).FontSize(theme.Font(c, 10)).TextColor(palette.Muted)
 			}
 			if item.kind != "" && item.kind == s.connectionKind {
-				ui.Text(c, "✓").TextColor(theme.Blue)
+				ui.Text(c, "✓").TextColor(palette.Blue)
 			}
 		})
 	})

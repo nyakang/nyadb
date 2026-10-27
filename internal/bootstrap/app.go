@@ -36,7 +36,6 @@ func Run() error {
 		return fmt.Errorf("read appearance preference: %w", err)
 	}
 	theme.SetMode(theme.ParseMode(savedAppearance))
-	configureNativeGTKTheme()
 	state := shell.NewWithProfiles(connections.NewService(connections.NewStore(db)))
 	state.SetCredentialVault(credentials.NewOSVault())
 	state.SetDataLayoutPreferences(
@@ -84,7 +83,10 @@ func Run() error {
 			setNativeAppearance(mode)
 			refreshWindows()
 		})
-		mygo.Theme.OnUpdated(refreshWindows)
+		mygo.Theme.OnUpdated(func() {
+			applyNativeGTKTheme(theme.CurrentMode())
+			refreshWindows()
+		})
 		updateChooserIcon := func() {
 			if chooser == nil {
 				return
@@ -268,6 +270,7 @@ func Run() error {
 }
 
 func setNativeAppearance(mode theme.Mode) {
+	applyNativeGTKTheme(mode)
 	switch mode {
 	case theme.ModeLight:
 		mygo.Theme.SetSource(mygo.ThemeLight)

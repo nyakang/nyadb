@@ -64,17 +64,18 @@ func SQLTheme(window *ui.Theme) *editor.Theme {
 	return base
 }
 
-// PaletteFor provides immutable read-only swatches for the settings preview.
-// System mode is resolved through the current native appearance.
-func PaletteFor(mode Mode, systemDark bool) Palette {
-	if mode == ModeSystem {
-		mode = ModeLight
-		if systemDark {
-			mode = ModeDark
-		}
+// SQLThemeFor retains syntax colors while respecting system contrast and focus.
+func SQLThemeFor(c *ui.Context) *editor.Theme {
+	t := SQLTheme(c.Theme())
+	p := Colors(c)
+	t.Error, t.Warning = p.Error, p.Warning
+	if c.Preferences().Accent.A != 0 {
+		t.Cursor, t.MatchingBracket = p.Focus, p.Focus
 	}
-	if mode == ModeLight {
-		return lightPalette
+	if c.Preferences().HighContrast {
+		t.LineNumber = p.Muted
+		t.Tokens[editor.TokenComment] = editor.TokenStyle{Color: p.Muted, Italic: true}
+		t.IndentGuide, t.WrapGuide = p.Border, p.Border
 	}
-	return darkPalette
+	return t
 }

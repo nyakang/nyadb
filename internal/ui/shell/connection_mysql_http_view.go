@@ -89,6 +89,8 @@ func (s *State) MySQLHTTPFilePickerError(version uint64) {
 }
 
 func (s *State) connectionMySQLHTTP(c *ui.Context, width float32) {
+	palette := theme.Colors(c)
+
 	formWidth := connectionWideFormWidth(width)
 	labelWidth := connectionFormLabelWidth
 	fieldWidth := formWidth - labelWidth
@@ -102,20 +104,20 @@ func (s *State) connectionMySQLHTTP(c *ui.Context, width float32) {
 		connectionFormRow(c).Children(func() {
 			connectionFormCheckbox(c, &cfg.Base64Queries, "使用 base64 编码传出查询", !active)
 		})
-		ui.Row(c).Height(27).Gap(0).Children(func() {
+		ui.Row(c).Height(theme.RowHeight(c, 27)).Gap(0).Children(func() {
 			tabs := ui.TabsBase(c, &s.mysqlHTTPSubtab, 2)
 			tabs.List.Gap(0).Children(func() {
 				for i, name := range []string{"验证", "代理"} {
-					item := tabs.Tab(i).Height(27).Padding(4, 12).Border(1, theme.Border)
+					item := tabs.Tab(i).Height(theme.RowHeight(c, 27)).Padding(4, 12).Border(1, palette.Border)
 					if i == s.mysqlHTTPSubtab {
-						item.Background(theme.Header)
+						item.Background(palette.Header)
 					}
-					item.Children(func() { ui.Text(c, name).FontSize(12) })
+					item.Children(func() { ui.Text(c, name).FontSize(theme.Font(c, 12)) })
 				}
 			})
 			ui.Box(c).Grow(1)
 		})
-		ui.Column(c).Width(formWidth).Height(373).Border(1, theme.Border).
+		ui.Column(c).Width(formWidth).Height(373).Border(1, palette.Border).
 			Padding(8, 9).Gap(0).Children(func() {
 			inside := formWidth - 20
 			innerLabel := connectionFormLabelWidth
@@ -127,7 +129,7 @@ func (s *State) connectionMySQLHTTP(c *ui.Context, width float32) {
 			}
 		})
 		ui.Row(c).Height(32).Margin(4, 0, 0, 0).Justify(ui.End).AlignItems(ui.Center).Children(func() {
-			ui.Button(c, "导出隧道脚本…").Width(200).Height(connectionFooterControlHeight).
+			ui.Button(c, "导出隧道脚本…").Width(200).Height(theme.RowHeight(c, connectionFooterControlHeight)).
 				Label("导出隧道脚本（尚未实现）").Disabled(true)
 		})
 	})
@@ -159,13 +161,15 @@ func (s *State) mysqlHTTPVerification(c *ui.Context, cfg *connections.MySQLHTTP,
 func (s *State) mysqlHTTPProxy(c *ui.Context, cfg *connections.MySQLHTTP,
 	labelWidth, fieldWidth float32, active bool,
 ) {
+	palette := theme.Colors(c)
+
 	connectionFormRow(c).Children(func() {
 		connectionFormCheckbox(c, &cfg.ProxyEnabled, "使用代理", !active)
 	})
 	proxyActive := active && cfg.ProxyEnabled
 	s.mysqlHTTPInput(c, "主机：", &cfg.ProxyHost, labelWidth, fieldWidth, proxyActive)
 	connectionFormRow(c).Children(func() {
-		ui.Text(c, locales.Text("端口：")).Width(labelWidth).FontSize(12).TextColor(theme.Muted)
+		ui.Text(c, locales.Text("端口：")).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 		connectionFormTextInput(c, &s.mysqlHTTPProxyPort, "HTTP 代理端口", 80, !proxyActive, false)
 	})
 	s.mysqlHTTPInput(c, "用户名：", &cfg.ProxyUsername, labelWidth, 200, proxyActive)
@@ -176,8 +180,10 @@ func (s *State) mysqlHTTPProxy(c *ui.Context, cfg *connections.MySQLHTTP,
 func (s *State) mysqlHTTPInput(c *ui.Context, name string, value *string,
 	labelWidth, fieldWidth float32, active bool,
 ) {
+	palette := theme.Colors(c)
+
 	connectionFormRow(c).Children(func() {
-		ui.Text(c, name).Width(labelWidth).FontSize(12).TextColor(theme.Muted)
+		ui.Text(c, name).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 		connectionFormTextInput(c, value, "HTTP "+name, fieldWidth, !active, false)
 	})
 }
@@ -185,14 +191,16 @@ func (s *State) mysqlHTTPInput(c *ui.Context, name string, value *string,
 func (s *State) mysqlHTTPPasswordRow(c *ui.Context, name string, value *string,
 	labelWidth, fieldWidth float32, active bool,
 ) {
+	palette := theme.Colors(c)
+
 	connectionFormRow(c).Children(func() {
-		ui.Text(c, name).Width(labelWidth).FontSize(12).TextColor(theme.Muted)
+		ui.Text(c, name).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 		connectionFormTextInput(c, value, "HTTP "+name, fieldWidth, !active, true)
 	})
 }
 
 func (s *State) mysqlHTTPSavePlaceholder(c *ui.Context, name string, labelWidth float32) {
-	ui.Row(c).Height(27).AlignItems(ui.Center).Children(func() {
+	ui.Row(c).Height(theme.RowHeight(c, 27)).AlignItems(ui.Center).Children(func() {
 		ui.Box(c).Width(labelWidth)
 		save := false
 		connectionFormCheckbox(c, &save, name, true)
@@ -202,8 +210,10 @@ func (s *State) mysqlHTTPSavePlaceholder(c *ui.Context, name string, labelWidth 
 func (s *State) mysqlHTTPFileRow(c *ui.Context, name string, value *string,
 	kind MySQLHTTPFile, labelWidth, fieldWidth float32, active bool,
 ) {
+	palette := theme.Colors(c)
+
 	connectionFormRow(c).Children(func() {
-		ui.Text(c, name).Width(labelWidth).FontSize(12).TextColor(theme.Muted)
+		ui.Text(c, name).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 		connectionFormTextInput(c, value, "HTTP "+name, fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, false)
 		ui.Box(c).Width(connectionFormBrowseGap)
 		connectionFormBrowse(c, "选择 HTTP "+name+"文件", !active || s.mysqlHTTPFilePicker == nil, func() { s.mysqlHTTPFilePicker(kind) })

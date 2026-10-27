@@ -8,6 +8,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
 type mysqlTestResult struct {
@@ -105,8 +106,8 @@ func (s *State) cancelMySQLConnectionTest() {
 
 func (s *State) connectionTestStatus(c *ui.Context) {
 	if s.connectionTesting {
-		ui.Text(c, "正在测试 MySQL 连接…").FontSize(12)
+		ui.Text(c, "正在测试 MySQL 连接…").FontSize(theme.Font(c, 12))
 	} else if s.connectionTestMessage != "" {
-		ui.Text(c, s.connectionTestMessage).FontSize(12)
+		ui.Text(c, s.connectionTestMessage).FontSize(theme.Font(c, 12))
 	}
 }

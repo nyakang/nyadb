@@ -1,56 +1,122 @@
-// Package theme defines the NyaDB desktop palette and original vector symbols.
+// Package theme defines NyaDB's desktop colors, metrics and vector symbols.
 package theme
 
 import "github.com/egoist/mygo/ui"
 
-var (
-	App     = ui.Hex("#232629")
-	Menu    = ui.Hex("#31363b")
-	Toolbar = ui.Hex("#31363b")
-	Sidebar = ui.Hex("#232629")
-	Panel   = ui.Hex("#232629")
-	Header  = ui.Hex("#31363b")
-	Border  = ui.Hex("#454b50")
-	Accent  = ui.Hex("#009dff")
-	Text    = ui.Hex("#eeeeee")
-	Muted   = ui.Hex("#979b9f")
-	Blue    = ui.Hex("#009dff")
-	Gold    = ui.Hex("#f4c550")
-	Green   = ui.Hex("#4ac48a")
-	Purple  = ui.Hex("#c584ed")
+// Snapshot is a value owned by a frame. Resolving another window or changing
+// the saved mode never mutates an existing snapshot.
+type Snapshot struct {
+	Dark      bool
+	Palette   Palette
+	TextScale float32
+}
 
-	// Selection belongs to lists and grids. ToolbarSelected intentionally has
-	// much less emphasis so a mode button cannot look like a selected row.
-	ToolbarSelected, Selection, Hover, Pressed ui.Color
-)
+func Resolve(mode Mode, systemDark bool, prefs ui.Preferences) Snapshot {
+	mode = ParseMode(string(mode))
+	return snapshot(mode == ModeDark || (mode == ModeSystem && systemDark), prefs)
+}
 
-// Apply keeps MyGo's native input behavior but gives every workbench widget
-// the compact dark style used by the surrounding chrome.
-func Apply(c *ui.Context) {
-	p, dark := effectivePalette(c.Theme().Dark)
-	setPalette(p)
-	t := *c.Theme()
-	t.Dark = dark
-	t.Background = App
-	t.Surface = Header
-	t.SurfaceHover = surfaceHover
-	t.SurfacePressed = surfacePressed
-	t.Border = Border
-	t.Text, t.TextMuted = Text, Muted
-	t.Accent = Accent
-	t.AccentHover = accentHover
-	t.AccentPressed = accentPressed
-	t.AccentText = accentText
-	t.Selection = Selection
-	t.Focus = focus
+func snapshot(dark bool, prefs ui.Preferences) Snapshot {
+	p := lightPalette
 	if dark {
-		t.Inverse, t.InverseText = Header, Text
-	} else {
-		// Keep tooltips and toasts distinct from the pale workspace chrome.
+		p = darkPalette
+	}
+	if prefs.Accent.A != 0 {
+		p.Accent = prefs.Accent
+		p.Accent.A = 255
+		p.AccentText = onColor(p.Accent)
+		p.AccentHover = readableBackground(p.Accent.Mix(ui.Hex("#000000"), 0.12), p.AccentText)
+		p.AccentPressed = readableBackground(p.Accent.Mix(ui.Hex("#000000"), 0.25), p.AccentText)
+		p.Focus = p.Accent
+		p.Selection = p.Accent.Mix(p.App, 0.25)
+	}
+	p.SelectionText = onColor(p.Selection)
+	if prefs.HighContrast {
+		p.Border = p.Border.Mix(p.Text, 0.65)
+		p.Muted = p.Muted.Mix(p.Text, 0.65)
+		p.Focus = p.Text
+	}
+	p.InputBorder = p.Border
+	if dark && !prefs.HighContrast {
+		p.InputBorder = p.Panel
+	}
+	p.GridAlternate = p.App.Mix(p.Header, 0.5)
+	p.GridNull = p.Muted
+	scale := prefs.TextScale
+	if scale <= 0 {
+		scale = 1
+	}
+	return Snapshot{Dark: dark, Palette: p, TextScale: scale}
+}
+
+// Colors uses the frame's resolved appearance, independent of the process's
+// saved mode. Local widget theme overrides do not change workbench tokens.
+func Colors(c *ui.Context) Palette { return snapshot(c.Theme().Dark, c.Preferences()).Palette }
+
+// Apply maps the frame's snapshot to native MyGo widgets. System preferences
+// are applied once to NyaDB's baseline, so repeated calls do not compound them.
+func Apply(c *ui.Context) Snapshot {
+	s := Resolve(CurrentMode(), c.Theme().Dark, c.Preferences())
+	p := s.Palette
+	t := *c.Theme()
+	t.Dark = s.Dark
+	t.Background, t.Surface = p.App, p.Header
+	t.SurfaceHover, t.SurfacePressed = p.SurfaceHover, p.SurfacePressed
+	t.Border, t.Text, t.TextMuted = p.Border, p.Text, p.Muted
+	t.Accent, t.AccentHover, t.AccentPressed, t.AccentText = p.Accent, p.AccentHover, p.AccentPressed, p.AccentText
+	t.Selection, t.Focus = p.Selection, p.Focus
+	t.Danger, t.Warning, t.Success = p.Error, p.Warning, p.Success
+	t.Inverse, t.InverseText = p.Header, p.Text
+	if !s.Dark {
 		t.Inverse, t.InverseText = ui.Hex("#30353b"), ui.Hex("#ffffff")
 	}
-	t.Spacing = 3
-	t.FontSize = FontSize
-	t.Radius = ControlRadius
+	t.Spacing, t.FontSize, t.Radius = 3, FontSize*s.TextScale, ControlRadius
 	c.SetTheme(&t)
+	return s
+}
+
+// SelectionTheme gives native lists/grids the same foreground/background pair
+// as custom navigation rows, without changing primary-button colors.
+func SelectionTheme(c *ui.Context) *ui.Theme {
+	t := *c.Theme()
+	p := Colors(c)
+	t.Accent, t.AccentText = p.Selection, p.SelectionText
+	return &t
+}
+
+// InputTheme keeps the connection form's focused border while pairing its
+// accent ink correctly even when high contrast replaces Focus with Text.
+func InputTheme(c *ui.Context) *ui.Theme {
+	t := *c.Theme()
+	p := Colors(c)
+	t.Surface, t.Border = p.Panel, p.InputBorder
+	t.Accent, t.AccentText = p.Focus, onColor(p.Focus)
+	t.AccentHover = readableBackground(p.AccentHover, t.AccentText)
+	t.AccentPressed = readableBackground(p.AccentPressed, t.AccentText)
+	return &t
+}
+
+// Table keeps MyGo's selection, virtualization and interaction behavior.
+func Table(c *ui.Context, state *ui.ListState, columns []ui.TableColumn, rows int, cell func(row, col int)) ui.Element {
+	base := c.Theme()
+	c.SetTheme(SelectionTheme(c))
+	defer c.SetTheme(base)
+	return ui.Table(c, state, columns, rows, cell)
+}
+
+// Outline applies the same selected-row colors to native navigation trees.
+func Outline[K comparable](c *ui.Context, state *ui.OutlineState[K], roots []K, children func(K) []K, row func(K)) ui.Element {
+	base := c.Theme()
+	c.SetTheme(SelectionTheme(c))
+	defer c.SetTheme(base)
+	return ui.Outline(c, state, roots, children, row)
+}
+
+// CellText preserves readable ink on selected cells, including semantic
+// secondary text. MyGo resolves selection after column reordering/hiding.
+func CellText(c *ui.Context, state *ui.ListState, row, col int, normal ui.Color) ui.Color {
+	if state.CellSelected(row, col) {
+		return Colors(c).SelectionText
+	}
+	return normal
 }

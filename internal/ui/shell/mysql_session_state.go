@@ -8,6 +8,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -178,7 +179,7 @@ func (s *State) mysqlSessionToolbar(c *ui.Context) {
 	ui.Column(c).Gap(5).Children(func() {
 		if s.mysqlSessionStatus != "连接中" && s.mysqlSessionStateFor(p.ID) != "已连接" {
 			ui.TextInput(c, &s.mysqlSessionPassword).Password().
-				Label("本次 MySQL 会话密码").Placeholder(locales.Text("密码（留空使用已保存密码）")).Height(26)
+				Label("本次 MySQL 会话密码").Placeholder(locales.Text("密码（留空使用已保存密码）")).Height(theme.RowHeight(c, 26))
 		}
 		ui.Row(c).Gap(5).Children(func() {
 			if s.mysqlSessionStateFor(p.ID) == "连接中" {
@@ -200,7 +201,7 @@ func (s *State) mysqlSessionToolbar(c *ui.Context) {
 			}
 		})
 		if s.mysqlSessionStateFor(p.ID) == "连接失败" && s.mysqlSessionError != "" {
-			ui.Text(c, s.mysqlSessionError).FontSize(11).SingleLine()
+			ui.Text(c, s.mysqlSessionError).FontSize(theme.Font(c, 11)).SingleLine()
 		}
 	})
 }

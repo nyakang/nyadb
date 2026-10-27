@@ -1,5 +1,7 @@
 # NyaDB 原生主题系统（2026-10-23）
 
+本文件记录当时的实现。2026-10-27 已移除全局颜色缓存，并改用可恢复的 GTK 运行时设置；当前架构与验收见 [主题系统收敛计划与实施](THEME_REFACTOR_2026-10-27.md)。
+
 ## MyGo 与 NyaDB 的边界
 
 MyGo Native UI 原生支持外观来源（`ThemeSystem`、`ThemeLight`、`ThemeDark`），

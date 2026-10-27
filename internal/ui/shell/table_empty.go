@@ -10,6 +10,8 @@ import (
 // Preserve the real column widths/order without registering a second list or
 // inventing a data row. Once rows arrive the native Table resumes ownership.
 func emptyTableView(c *ui.Context, state *ui.ListState, columns []ui.TableColumn, message string) {
+	palette := theme.Colors(c)
+
 	ordered := make([]ui.TableColumn, 0, len(columns))
 	seen := map[string]bool{}
 	id := func(col ui.TableColumn) string {
@@ -46,7 +48,7 @@ func emptyTableView(c *ui.Context, state *ui.ListState, columns []ui.TableColumn
 	}
 	ui.Column(c).Grow(1).MinHeight(0).Children(func() {
 		ui.ScrollHorizontal(c).Height(height + 1).Children(func() {
-			ui.Row(c).Height(height).Gap(0).BorderWidth(0, 0, 1, 0).BorderColor(theme.Border).Children(func() {
+			ui.Row(c).Height(height).Gap(0).BorderWidth(0, 0, 1, 0).BorderColor(palette.Border).Children(func() {
 				for _, col := range ordered {
 					width := col.Width
 					if saved, ok := state.Columns.Widths[id(col)]; ok {
@@ -55,17 +57,17 @@ func emptyTableView(c *ui.Context, state *ui.ListState, columns []ui.TableColumn
 					if width <= 0 {
 						width = 120
 					}
-					ui.Column(c).Width(width).Height(height).Padding(3, 6).Gap(2).BorderWidth(0, 1, 0, 0).BorderColor(theme.Border).Children(func() {
-						ui.Text(c, locales.Text(col.Title)).SingleLine().FontSize(theme.FontSize).TextColor(theme.Muted).Bold()
+					ui.Column(c).Width(width).Height(height).Padding(3, 6).Gap(2).BorderWidth(0, 1, 0, 0).BorderColor(palette.Border).Children(func() {
+						ui.Text(c, locales.Text(col.Title)).SingleLine().FontSize(theme.Font(c, theme.FontSize)).TextColor(palette.Muted).Bold()
 						if col.Subtitle != "" {
-							ui.Text(c, col.Subtitle).SingleLine().FontSize(theme.SmallFontSize).TextColor(theme.Muted)
+							ui.Text(c, col.Subtitle).SingleLine().FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Muted)
 						}
 					})
 				}
 			})
 		})
 		if message != "" {
-			ui.Text(c, locales.Text(message)).Padding(8).FontSize(theme.SmallFontSize).TextColor(theme.Muted)
+			ui.Text(c, locales.Text(message)).Padding(8).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Muted)
 		}
 		ui.Box(c).Grow(1)
 	})

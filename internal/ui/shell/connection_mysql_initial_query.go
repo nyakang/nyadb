@@ -48,6 +48,8 @@ func (s *State) clearMySQLInitialQuery() {
 }
 
 func (s *State) mysqlInitialQueryModal(c *ui.Context) {
+	palette := theme.Colors(c)
+
 	if !s.mysqlInitialQueryOpen {
 		// Escape and backdrop dismissal can close a native MyGo modal
 		// without passing through the Cancel button. Discard its temporary
@@ -62,15 +64,15 @@ func (s *State) mysqlInitialQueryModal(c *ui.Context) {
 	dialogHeight := min(float32(500), height-40)
 	ui.Modal(c, &s.mysqlInitialQueryOpen, func() {
 		ui.Column(c).Width(dialogWidth).Height(dialogHeight).Padding(15, 24).
-			Background(theme.Header).Gap(14).Children(func() {
+			Background(palette.Header).Gap(14).Children(func() {
 			ui.Row(c).Justify(ui.Center).Children(func() {
-				ui.Text(c, "初始查询").Bold().FontSize(13)
+				ui.Text(c, "初始查询").Bold().FontSize(theme.Font(c, 13))
 			})
-			ui.Text(c, "初始查询：").FontSize(12)
+			ui.Text(c, "初始查询：").FontSize(theme.Font(c, 12))
 			ui.TextArea(c, &s.mysqlInitialQueryDraft).
 				Label("初始查询 SQL 编辑器").
 				Placeholder("e.g.\nSET ROLE ALL;\nSET @var_name = 'value';").
-				Width(min(float32(602), dialogWidth-48)).Grow(1).MinHeight(120).FontSize(12)
+				Width(min(float32(602), dialogWidth-48)).Grow(1).MinHeight(120).FontSize(theme.Font(c, 12))
 			ui.Row(c).Children(func() {
 				if ui.Button(c, "复制到剪贴板").Clicked() {
 					c.WriteClipboard(s.mysqlInitialQueryDraft)
@@ -78,7 +80,7 @@ func (s *State) mysqlInitialQueryModal(c *ui.Context) {
 			})
 			if s.mysqlInitialQueryError != "" {
 				ui.Text(c, s.mysqlInitialQueryError).
-					FontSize(12).TextColor(theme.Gold)
+					FontSize(theme.Font(c, 12)).TextColor(palette.Error)
 			}
 			ui.Row(c).Justify(ui.End).Gap(8).Children(func() {
 				if ui.PrimaryButton(c, "确定").Label("确认初始查询").Width(80).Clicked() {

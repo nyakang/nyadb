@@ -11,15 +11,17 @@ import (
 )
 
 func (s *State) profileSidebar(c *ui.Context) {
-	ui.Column(c).Fill().Background(theme.Sidebar).Children(func() {
-		header := ui.Row(c).Height(20).Padding(0, 3).AlignItems(ui.Center).Background(theme.Sidebar).Gap(6)
+	palette := theme.Colors(c)
+
+	ui.Column(c).Fill().Background(palette.Sidebar).Children(func() {
+		header := ui.Row(c).Height(theme.RowHeight(c, 20)).Padding(0, 3).AlignItems(ui.Center).Background(palette.Sidebar).Gap(6)
 		header.Children(func() {
-			theme.Icon(c, "connection", 15, theme.Muted)
-			ui.Text(c, locales.Text("我的连接")).FontSize(12)
+			theme.Icon(c, "connection", 15, palette.Muted)
+			ui.Text(c, locales.Text("我的连接")).FontSize(theme.Font(c, 12))
 			ui.Box(c).Grow(1)
 			if header.Hovered() {
 				settings := ui.ButtonBase(c).Label(locales.Text("连接面板设置")).Tooltip(locales.Text("连接面板设置")).Padding(3, 4).Radius(2)
-				settings.Children(func() { theme.Icon(c, "settings", 15, theme.Muted) })
+				settings.Children(func() { theme.Icon(c, "settings", 15, palette.Muted) })
 				settings.Menu(func(m *ui.Menu) { s.sidebarSettingsMenu(m) })
 			}
 		})
@@ -35,7 +37,7 @@ func (s *State) profileSidebar(c *ui.Context) {
 				}
 			})
 			if s.groupError != "" {
-				ui.Text(c, s.groupError).Padding(2, 8).TextColor(theme.Gold).FontSize(11)
+				ui.Text(c, s.groupError).Padding(2, 8).TextColor(palette.Error).FontSize(theme.Font(c, 11))
 			}
 		}
 		navigator := ui.Column(c).Grow(1).MinHeight(0).Gap(0)
@@ -46,7 +48,7 @@ func (s *State) profileSidebar(c *ui.Context) {
 				if strings.TrimSpace(s.search) != "" || s.profileStarredOnly || s.profileEngine != "" {
 					msg = "没有匹配的连接或组"
 				}
-				ui.Text(c, locales.Text(msg)).Padding(8).TextColor(theme.Muted).FontSize(11)
+				ui.Text(c, locales.Text(msg)).Padding(8).TextColor(palette.Muted).FontSize(theme.Font(c, 11))
 				return
 			}
 			selectedKey := s.explorerName
@@ -68,10 +70,8 @@ func (s *State) profileSidebar(c *ui.Context) {
 			savedTheme := c.Theme()
 			denseTheme := *savedTheme
 			denseTheme.Spacing = 1
-			// Native Outline uses Accent for its selected row.
-			denseTheme.Accent = theme.Selection
 			c.SetTheme(&denseTheme)
-			tree := ui.Outline(c, &s.explorerTree, roots, s.profileChildren, func(key string) { s.navigationRow(c, key) }).Grow(1).Padding(0).Gap(0)
+			tree := theme.Outline(c, &s.explorerTree, roots, s.profileChildren, func(key string) { s.navigationRow(c, key) }).Grow(1).Padding(0).Gap(0)
 			c.SetTheme(savedTheme)
 			if s.explorerMenuBuilt {
 				// Outline can finish applying an earlier pointer selection after
@@ -136,40 +136,44 @@ func (s *State) selectProfileByName(name string) {
 }
 
 func (s *State) inspectorHeader(c *ui.Context, title string) {
+	palette := theme.Colors(c)
+
 	ui.Row(c).Label(locales.Text(title)).Height(42).Padding(1, 8).AlignItems(ui.Center).Children(func() {
 		ui.Box(c).Width(20)
 		ui.Box(c).Grow(1)
-		theme.Icon(c, "info", 16, theme.Blue)
+		theme.Icon(c, "info", 16, palette.Blue)
 		ui.Box(c).Grow(1)
-		if ui.ButtonBase(c).Label(locales.Text("隐藏信息面板")).Tooltip(locales.Text("隐藏信息面板")).Size(20, 20).Children(func() { theme.Icon(c, "close", 12, theme.Muted) }).Clicked() {
+		if ui.ButtonBase(c).Label(locales.Text("隐藏信息面板")).Tooltip(locales.Text("隐藏信息面板")).Size(20, 20).Children(func() { theme.Icon(c, "close", 12, palette.Muted) }).Clicked() {
 			s.inspectorOn = false
 		}
 	})
 }
 
 func (s *State) profileInspector(c *ui.Context) {
+	palette := theme.Colors(c)
+
 	if s.currentTab().kind == tabMySQLData {
 		s.mysqlDataObjectInspector(c, s.currentTab())
 		return
 	}
 	p, ok := s.currentProfile()
-	ui.Column(c).Fill().Background(theme.Panel).Children(func() {
+	ui.Column(c).Fill().Background(palette.Panel).Children(func() {
 		s.inspectorHeader(c, "信息")
 		ui.Scroll(c).Grow(1).MinHeight(0).Children(func() {
 			ui.Column(c).Padding(28, 14).Gap(16).Children(func() {
 				if s.selectedGroup != "" {
 					ui.Row(c).AlignItems(ui.Center).Gap(16).Children(func() {
-						theme.Icon(c, "folder-filled", 50, theme.Gold)
+						theme.Icon(c, "folder-filled", 50, palette.Gold)
 						ui.Column(c).Grow(1).MinWidth(0).Gap(5).Children(func() {
-							ui.Text(c, s.selectedGroup).FontSize(14).Bold()
-							ui.Text(c, fmt.Sprintf("%s (%d %s)", locales.Text("虚拟组"), s.groupCount(s.selectedGroup), locales.Text("对象"))).FontSize(11).TextColor(theme.Muted)
+							ui.Text(c, s.selectedGroup).FontSize(theme.Font(c, 14)).Bold()
+							ui.Text(c, fmt.Sprintf("%s (%d %s)", locales.Text("虚拟组"), s.groupCount(s.selectedGroup), locales.Text("对象"))).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 						})
 					})
 					return
 				}
 				t := s.currentTab()
 				if t.kind == tabStructure && t.structure != nil {
-					ui.Text(c, t.structureTable).FontSize(14).Bold()
+					ui.Text(c, t.structureTable).FontSize(theme.Font(c, 14)).Bold()
 					mysqlInspectorProperty(c, locales.Text("数据库"), t.structureDatabase)
 					if t.structureFieldRow >= 0 && t.structureFieldRow < len(t.structure.Columns) {
 						field := t.structure.Columns[t.structureFieldRow]
@@ -180,7 +184,7 @@ func (s *State) profileInspector(c *ui.Context) {
 					return
 				}
 				if !ok {
-					ui.Text(c, locales.Text("选择连接以查看档案信息")).FontSize(12).TextColor(theme.Muted)
+					ui.Text(c, locales.Text("选择连接以查看档案信息")).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 					return
 				}
 				n := parseNavigationNode(s.explorerName)
@@ -190,8 +194,8 @@ func (s *State) profileInspector(c *ui.Context) {
 						name, icon = n.Object, "table"
 					}
 					ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
-						theme.Icon(c, icon, 32, theme.Blue)
-						ui.Text(c, name).FontSize(14).Bold()
+						theme.Icon(c, icon, 32, palette.Blue)
+						ui.Text(c, name).FontSize(theme.Font(c, 14)).Bold()
 					})
 					mysqlInspectorProperty(c, locales.Text("类型"), s.navigationDescription(n))
 					mysqlInspectorProperty(c, locales.Text("连接"), p.Name)
@@ -208,8 +212,8 @@ func (s *State) profileInspector(c *ui.Context) {
 				ui.Row(c).AlignItems(ui.Center).Gap(16).Children(func() {
 					s.profileBrandIcon(c, p.Kind, 50)
 					ui.Column(c).Grow(1).MinWidth(0).Gap(5).Children(func() {
-						ui.Text(c, p.Name).FontSize(14).Bold()
-						ui.Text(c, connectionKindName(p.Kind)).FontSize(12).TextColor(theme.Muted)
+						ui.Text(c, p.Name).FontSize(theme.Font(c, 14)).Bold()
+						ui.Text(c, connectionKindName(p.Kind)).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 					})
 				})
 				if p.Kind == connections.MySQL {

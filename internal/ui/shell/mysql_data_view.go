@@ -9,8 +9,10 @@ import (
 
 // A real read-only MySQL page, never the legacy simulated dataPreview.
 func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
+	palette := theme.Colors(c)
+
 	s.restoreMySQLDataLayout(t)
-	ui.Column(c).FillWidth().Grow(1).MinHeight(0).Background(theme.App).Children(func() {
+	ui.Column(c).FillWidth().Grow(1).MinHeight(0).Background(palette.App).Children(func() {
 		page := t.dataPage
 		if page == nil {
 			page = &connections.MySQLDataPage{}
@@ -20,15 +22,15 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 		}
 		s.mysqlDataRuleEditor(c, t, page)
 		if t.dataLoading {
-			ui.Row(c).Height(theme.ControlHeight).Padding(2, 6).Gap(6).AlignItems(ui.Center).Children(func() {
+			ui.Row(c).Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 6).Gap(6).AlignItems(ui.Center).Children(func() {
 				ui.Spinner(c).Width(16).Height(16)
-				ui.Text(c, locales.Text("正在读取真实 MySQL 数据…")).TextColor(theme.Muted).FontSize(theme.FontSize).SingleLine().Grow(1).MinWidth(0)
+				ui.Text(c, locales.Text("正在读取真实 MySQL 数据…")).TextColor(palette.Muted).FontSize(theme.Font(c, theme.FontSize)).SingleLine().Grow(1).MinWidth(0)
 			})
 		}
 		if t.dataErr != "" {
-			ui.Row(c).Height(theme.CommandBarHeight).Padding(2, 6).Gap(6).AlignItems(ui.Center).Children(func() {
-				ui.Text(c, locales.Text("读取数据失败：")+t.dataErr).TextColor(theme.Gold).FontSize(theme.FontSize).SingleLine().Grow(1).MinWidth(0).Tooltip(t.dataErr)
-				if ui.Button(c, locales.Text("重试读取数据")).Height(theme.ControlHeight).Disabled(t.dataLoading || s.mysqlSessionStatus != "已连接").Clicked() {
+			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).Gap(6).AlignItems(ui.Center).Children(func() {
+				ui.Text(c, locales.Text("读取数据失败：")+t.dataErr).TextColor(palette.Error).FontSize(theme.Font(c, theme.FontSize)).SingleLine().Grow(1).MinWidth(0).Tooltip(t.dataErr)
+				if ui.Button(c, locales.Text("重试读取数据")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(t.dataLoading || s.mysqlSessionStatus != "已连接").Clicked() {
 					s.loadMySQLData(c.Services(), t, true)
 				}
 			})
@@ -40,7 +42,7 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 		} else {
 			if !page.StableOrder {
 				ui.Text(c, locales.Text("此对象没有完整非空唯一键，OFFSET 分页期间数据变化可能导致行重复或遗漏")).
-					Padding(2, 6).FontSize(theme.SmallFontSize).TextColor(theme.Gold).SingleLine().Tooltip(locales.Text("此对象没有完整非空唯一键，OFFSET 分页期间数据变化可能导致行重复或遗漏"))
+					Padding(2, 6).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Warning).SingleLine().Tooltip(locales.Text("此对象没有完整非空唯一键，OFFSET 分页期间数据变化可能导致行重复或遗漏"))
 			}
 			visibleIndices, visibleColumns := mysqlVisibleDataColumns(t, page)
 			columns := append([]ui.TableColumn{mysqlDataRowHeaderColumn(t)}, visibleColumns...)
@@ -48,8 +50,8 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			t.dataState.Selection = &t.dataSelection
 			t.dataState.CellSelect = true
 			t.dataState.TableStyle = &ui.TableStyle{
-				AlternateRowColor: theme.App.Mix(theme.Header, 0.5),
-				GridColor:         theme.Border, RowLines: true, ColumnLines: true,
+				AlternateRowColor: palette.GridAlternate,
+				GridColor:         palette.Border, RowLines: true, ColumnLines: true,
 				RowOffset: t.dataOffset,
 			}
 			t.dataState.Sort = &t.dataSort
@@ -70,9 +72,10 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			if len(page.Rows) == 0 {
 				emptyTableView(c, &t.dataState, columns, "")
 			} else {
-				ui.Table(c, &t.dataState, columns, len(page.Rows), func(row, col int) {
+				theme.Table(c, &t.dataState, columns, len(page.Rows), func(row, col int) {
+					tableCol := col
 					if col == 0 {
-						ui.Text(c, mysqlDataRowHeaderText(t, row)).FontSize(theme.SmallFontSize).TextColor(theme.Muted)
+						ui.Text(c, mysqlDataRowHeaderText(t, row)).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(theme.CellText(c, &t.dataState, row, tableCol, palette.Muted))
 						return
 					}
 					col--
@@ -85,10 +88,10 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 					}
 					cell := page.Rows[row][col]
 					if cell.Null {
-						ui.Text(c, "NULL").TextColor(theme.Muted).FontSize(12)
+						ui.Text(c, "NULL").TextColor(theme.CellText(c, &t.dataState, row, tableCol, palette.GridNull)).FontSize(theme.Font(c, 12))
 						return
 					}
-					text := ui.Text(c, cell.Text).SingleLine().FontSize(12)
+					text := ui.Text(c, cell.Text).SingleLine().FontSize(theme.Font(c, 12))
 					if cell.Truncated {
 						text.Tooltip(locales.Text("已截断的预览；可在字段信息中按需读取"))
 					} else if cell.Text == "" {

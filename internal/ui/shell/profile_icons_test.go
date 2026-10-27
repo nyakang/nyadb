@@ -17,7 +17,7 @@ func TestWorkbenchProfileBrandsReuseEmbeddedCatalogAssets(t *testing.T) {
 		{connections.PostgreSQL, "PostgreSQL", "postgres-type"},
 		{connections.SQLite, "SQLite", "sqlite-type"},
 	} {
-		asset, fallback, _ := profileBrand(tc.kind)
+		asset, fallback, _ := profileBrand(tc.kind, theme.PaletteFor(theme.ModeDark, true))
 		if asset != tc.asset || fallback != tc.fallback {
 			t.Fatalf("%s icon mapping: %s, %s", tc.kind, asset, fallback)
 		}
@@ -28,7 +28,7 @@ func TestWorkbenchProfileBrandsReuseEmbeddedCatalogAssets(t *testing.T) {
 			t.Errorf("%s has no offline fallback glyph", asset)
 		}
 	}
-	asset, fallback, _ := profileBrand(connections.Kind("unrecognized"))
+	asset, fallback, _ := profileBrand(connections.Kind("unrecognized"), theme.PaletteFor(theme.ModeDark, true))
 	if asset != "" || fallback != "database" {
 		t.Errorf("unknown vendor must use generic fallback: %q %q", asset, fallback)
 	}

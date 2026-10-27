@@ -19,18 +19,20 @@ func (s *State) View(c *ui.Context) {
 	s.consumeMySQLTableInfo()
 	s.consumeMySQLChunks()
 	theme.Apply(c)
-	ui.Column(c).Fill().Background(theme.App).Children(func() {
+
+	palette := theme.Colors(c)
+	ui.Column(c).Fill().Background(palette.App).Children(func() {
 		s.menuBar(c)
 		s.toolBar(c)
 		workbenchSplit(c, &s.sidebarPercent,
 			func() {
-				ui.Column(c).Fill().BorderWidth(0, theme.SplitterBorder, 0, 0).BorderColor(theme.Toolbar).Children(func() { s.sidebar(c) })
+				ui.Column(c).Fill().BorderWidth(0, theme.SplitterBorder, 0, 0).BorderColor(palette.Toolbar).Children(func() { s.sidebar(c) })
 			},
 			func() {
 				if s.inspectorOn {
 					workbenchSplit(c, &s.centerPercent,
 						func() {
-							ui.Column(c).Fill().BorderWidth(0, theme.SplitterBorder, 0, 0).BorderColor(theme.Toolbar).Children(func() { s.workspace(c) })
+							ui.Column(c).Fill().BorderWidth(0, theme.SplitterBorder, 0, 0).BorderColor(palette.Toolbar).Children(func() { s.workspace(c) })
 						},
 						func() { s.inspector(c) },
 					).Fill()
@@ -63,9 +65,11 @@ func (s *State) View(c *ui.Context) {
 
 // Keep the native drag/focus behavior while matching the pane separator fill.
 func workbenchSplit(c *ui.Context, percent *float32, first, second func()) ui.Element {
+	palette := theme.Colors(c)
+
 	base := c.Theme()
 	split := *base
-	split.Border = theme.Toolbar
+	split.Border = palette.Toolbar
 	c.SetTheme(&split)
 	pane := func(draw func()) func() {
 		return func() { c.SetTheme(base); draw(); c.SetTheme(&split) }
@@ -76,16 +80,18 @@ func workbenchSplit(c *ui.Context, percent *float32, first, second func()) ui.El
 }
 
 func (s *State) menuBar(c *ui.Context) {
-	ui.Row(c).Height(theme.MenuHeight).AlignItems(ui.Center).Padding(0, 4).Gap(0).
-		Background(theme.Menu).Children(func() {
+	palette := theme.Colors(c)
+
+	ui.Row(c).Height(theme.RowHeight(c, theme.MenuHeight)).AlignItems(ui.Center).Padding(0, 4).Gap(0).
+		Background(palette.Menu).Children(func() {
 		for _, label := range []string{"文件", "编辑", "查看", "收藏夹", "工具", "窗口", "帮助"} {
 			name := label
 			ui.ButtonBase(c).Label(locales.Text(name)).Padding(4, 8).Radius(theme.ControlRadius).
-				Children(func() { ui.Text(c, locales.Text(name)).FontSize(theme.FontSize) }).
+				Children(func() { ui.Text(c, locales.Text(name)).FontSize(theme.Font(c, theme.FontSize)) }).
 				Menu(func(m *ui.Menu) { s.menuCommands(name, m) })
 		}
 		ui.Box(c).Grow(1)
-		ui.Text(c, "NyaDB").TextColor(theme.Muted).FontSize(theme.SmallFontSize).Padding(0, 6)
+		ui.Text(c, "NyaDB").TextColor(palette.Muted).FontSize(theme.Font(c, theme.SmallFontSize)).Padding(0, 6)
 	})
 }
 
@@ -202,21 +208,23 @@ type toolAction struct {
 }
 
 func (s *State) toolBar(c *ui.Context) {
+	palette := theme.Colors(c)
+
 	actions := []toolAction{
-		{"连接", "connection", theme.Blue},
-		{"新建查询", "new-query", theme.Blue},
-		{"表", "table", theme.Blue},
-		{"视图", "view", theme.Blue},
-		{"函数", "function", theme.Blue},
-		{"用户", "user", theme.Gold},
-		{"其它", "tools", theme.Blue},
-		{"查询", "query", theme.Blue},
-		{"备份", "backup", theme.Blue},
-		{"自动运行", "automation", theme.Green},
-		{"模型", "model", theme.Gold},
+		{"连接", "connection", palette.Blue},
+		{"新建查询", "new-query", palette.Blue},
+		{"表", "table", palette.Blue},
+		{"视图", "view", palette.Blue},
+		{"函数", "function", palette.Blue},
+		{"用户", "user", palette.Gold},
+		{"其它", "tools", palette.Blue},
+		{"查询", "query", palette.Blue},
+		{"备份", "backup", palette.Blue},
+		{"自动运行", "automation", palette.Green},
+		{"模型", "model", palette.Gold},
 	}
 	ui.Row(c).Height(theme.ToolbarHeight).AlignItems(ui.Center).Padding(1, 4).Gap(1).
-		Background(theme.Toolbar).Children(func() {
+		Background(palette.Toolbar).Children(func() {
 		ui.Toolbar(c, func() {
 			for _, action := range actions {
 				item := action
@@ -227,24 +235,24 @@ func (s *State) toolBar(c *ui.Context) {
 					Children(func() {
 						ui.Column(c).Center().Gap(4).Children(func() {
 							theme.Icon(c, item.icon, theme.ToolbarIconSize, item.color)
-							ui.Text(c, locales.Text(item.label)).FontSize(theme.FontSize).SingleLine()
+							ui.Text(c, locales.Text(item.label)).FontSize(theme.Font(c, theme.FontSize)).SingleLine()
 						})
 					})
-				styleToolbarButton(button, active)
+				styleToolbarButton(c, button, active)
 				if button.Clicked() {
 					s.clickToolbar(item.label)
 				}
 			}
-		}).Label(locales.Text("主工具栏")).Grow(1).MinWidth(0).Padding(0).Gap(1).Background(theme.Toolbar)
+		}).Label(locales.Text("主工具栏")).Grow(1).MinWidth(0).Padding(0).Gap(1).Background(palette.Toolbar)
 		// Keep the inspector toggle available even when toolbar actions overflow.
 		info := ui.Button(c, "").Label(locales.Text("信息")).Tooltip(locales.Text("显示或隐藏信息面板")).
 			Width(48).Height(theme.ToolbarItemHeight).Padding(3, 2).Radius(theme.ControlRadius).Border(0, ui.Transparent).Children(func() {
 			ui.Column(c).Center().Gap(4).Children(func() {
-				theme.Icon(c, "info", theme.ToolbarIconSize, theme.Blue)
-				ui.Text(c, locales.Text("信息")).FontSize(theme.FontSize)
+				theme.Icon(c, "info", theme.ToolbarIconSize, palette.Blue)
+				ui.Text(c, locales.Text("信息")).FontSize(theme.Font(c, theme.FontSize))
 			})
 		})
-		styleToolbarButton(info, false)
+		styleToolbarButton(c, info, false)
 		if info.Clicked() {
 			s.clickToolbar("信息")
 		}
@@ -264,17 +272,19 @@ func (s *State) toolbarActionAvailable(action string) bool {
 	}
 }
 
-func styleToolbarButton(button ui.Element, selected bool) {
-	background := theme.Toolbar
+func styleToolbarButton(c *ui.Context, button ui.Element, selected bool) {
+	palette := theme.Colors(c)
+
+	background := palette.Toolbar
 	if selected {
-		background = theme.ToolbarSelected
-		button.Border(theme.BorderWidth, theme.Border)
+		background = palette.ToolbarSelected
+		button.Border(theme.BorderWidth, palette.Border)
 	}
 	if button.Hovered() {
-		background = theme.Hover
+		background = palette.SurfaceHover
 	}
 	if button.Pressed() {
-		background = theme.Pressed
+		background = palette.SurfacePressed
 	}
 	button.Background(background)
 }
@@ -287,15 +297,17 @@ func (s *State) mysqlWorkbenchStatus() string {
 }
 
 func (s *State) statusBar(c *ui.Context) {
-	ui.Row(c).Height(theme.StatusBarHeight).Padding(1, 6).AlignItems(ui.Center).Gap(10).
-		Background(theme.Menu).BorderWidth(1, 0, 0, 0).BorderColor(theme.Border).Children(func() {
-		ui.Text(c, locales.Text(s.status)).FontSize(theme.SmallFontSize).TextColor(theme.Text).SingleLine().Grow(1).MinWidth(0)
+	palette := theme.Colors(c)
+
+	ui.Row(c).Height(theme.RowHeight(c, theme.StatusBarHeight)).Padding(1, 6).AlignItems(ui.Center).Gap(10).
+		Background(palette.Menu).BorderWidth(1, 0, 0, 0).BorderColor(palette.Border).Children(func() {
+		ui.Text(c, locales.Text(s.status)).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Text).SingleLine().Grow(1).MinWidth(0)
 		if s.profileMode {
-			ui.Text(c, fmt.Sprintf("%d %s", len(s.profileEntries), locales.Text("个连接档案"))).FontSize(11).TextColor(theme.Muted)
-			ui.Text(c, "●  "+locales.Text(s.mysqlWorkbenchStatus())).FontSize(11).TextColor(theme.Blue)
+			ui.Text(c, fmt.Sprintf("%d %s", len(s.profileEntries), locales.Text("个连接档案"))).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+			ui.Text(c, "●  "+locales.Text(s.mysqlWorkbenchStatus())).FontSize(theme.Font(c, 11)).TextColor(palette.Blue)
 			return
 		}
-		ui.Text(c, "5 "+locales.Text("个模拟连接")).FontSize(11).TextColor(theme.Muted)
-		ui.Text(c, "●  UI Preview").FontSize(11).TextColor(theme.Blue)
+		ui.Text(c, "5 "+locales.Text("个模拟连接")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+		ui.Text(c, "●  UI Preview").FontSize(theme.Font(c, 11)).TextColor(palette.Blue)
 	})
 }

@@ -7,12 +7,14 @@ import (
 )
 
 func mysqlDataToolbarButton(c *ui.Context, caption, label, icon string, disabled bool) ui.Element {
+	palette := theme.Colors(c)
+
 	return ui.ButtonBase(c).Label(label).Tooltip(label).Disabled(disabled).
-		Height(theme.ControlHeight).Padding(2, 5).Radius(theme.ControlRadius).
+		Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 5).Radius(theme.ControlRadius).
 		Children(func() {
 			ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
-				theme.Icon(c, icon, theme.SmallIconSize, theme.Blue)
-				ui.Text(c, locales.Text(caption)).SingleLine().FontSize(theme.FontSize)
+				theme.Icon(c, icon, theme.SmallIconSize, palette.Blue)
+				ui.Text(c, locales.Text(caption)).SingleLine().FontSize(theme.Font(c, theme.FontSize))
 			})
 		})
 }

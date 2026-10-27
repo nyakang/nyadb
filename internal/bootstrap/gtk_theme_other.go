@@ -1,5 +1,7 @@
-//go:build !linux
+//go:build !linux || (!amd64 && !arm64)
 
 package bootstrap
 
-func configureNativeGTKTheme() {}
+import "github.com/nyakang/nyadb/internal/ui/theme"
+
+func applyNativeGTKTheme(theme.Mode) {}

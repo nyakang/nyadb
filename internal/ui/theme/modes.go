@@ -1,6 +1,9 @@
 package theme
 
-import "github.com/egoist/mygo/ui"
+import (
+	"github.com/egoist/mygo/ui"
+	"sync/atomic"
+)
 
 // Mode is the user's preference. The original dark workbench stays the default.
 type Mode string
@@ -22,10 +25,11 @@ func ParseMode(value string) Mode {
 
 // Palette names are semantic, not tied to a particular operating system.
 type Palette struct {
-	App, Menu, Toolbar, Sidebar, Panel, Header, Border                          ui.Color
-	Accent, Text, Muted, Blue, Gold, Green, Purple                              ui.Color
-	ToolbarSelected, Selection                                                  ui.Color
-	SurfaceHover, SurfacePressed, AccentHover, AccentPressed, AccentText, Focus ui.Color
+	App, Menu, Toolbar, Sidebar, Panel, Header, Border                           ui.Color
+	Accent, Text, Muted, Blue, Gold, Green, Purple                               ui.Color
+	SelectionText, GridAlternate, GridNull, InputBorder, Error, Warning, Success ui.Color
+	ToolbarSelected, Selection                                                   ui.Color
+	SurfaceHover, SurfacePressed, AccentHover, AccentPressed, AccentText, Focus  ui.Color
 }
 
 var darkPalette = Palette{
@@ -36,8 +40,9 @@ var darkPalette = Palette{
 	Green: ui.Hex("#4ac48a"), Purple: ui.Hex("#c584ed"),
 	ToolbarSelected: ui.Hex("#3a3e42"), Selection: ui.Hex("#48b3eb"),
 	SurfaceHover: ui.Hex("#3a4046"), SurfacePressed: ui.Hex("#424a51"),
-	AccentHover: ui.Hex("#1688e3"), AccentPressed: ui.Hex("#086ab5"),
-	AccentText: ui.Hex("#ffffff"), Focus: ui.Hex("#5ab7e6"),
+	AccentHover: ui.Hex("#1688e3"), AccentPressed: ui.Hex("#0879d1"),
+	AccentText: ui.Hex("#000000"), Focus: ui.Hex("#5ab7e6"),
+	Error: ui.Hex("#ff8d8d"), Warning: ui.Hex("#f4c550"), Success: ui.Hex("#4ac48a"),
 }
 
 var lightPalette = Palette{
@@ -50,43 +55,38 @@ var lightPalette = Palette{
 	SurfaceHover: ui.Hex("#e5e8ed"), SurfacePressed: ui.Hex("#d9dee5"),
 	AccentHover: ui.Hex("#006bbb"), AccentPressed: ui.Hex("#005a9f"),
 	AccentText: ui.Hex("#ffffff"), Focus: ui.Hex("#0879d1"),
+	Error: ui.Hex("#cf222e"), Warning: ui.Hex("#9a6300"), Success: ui.Hex("#137a4b"),
 }
 
-// MyGo renders on the UI thread. These legacy package-level tokens are kept
-// until all workbench views have migrated to per-context palette access.
-var selectedMode = ModeDark
-var surfaceHover, surfacePressed, accentHover, accentPressed, accentText, focus ui.Color
+// Only the user's preference is process-wide; rendering colors are frame-local.
+var selectedMode atomic.Uint32
 
-func init() { setPalette(darkPalette) }
-
-func setPalette(p Palette) {
-	App, Menu, Toolbar, Sidebar, Panel, Header, Border =
-		p.App, p.Menu, p.Toolbar, p.Sidebar, p.Panel, p.Header, p.Border
-	Accent, Text, Muted, Blue, Gold, Green, Purple =
-		p.Accent, p.Text, p.Muted, p.Blue, p.Gold, p.Green, p.Purple
-	ToolbarSelected, Selection = p.ToolbarSelected, p.Selection
-	Hover, Pressed = p.SurfaceHover, p.SurfacePressed
-	surfaceHover, surfacePressed = p.SurfaceHover, p.SurfacePressed
-	accentHover, accentPressed, accentText, focus = p.AccentHover, p.AccentPressed, p.AccentText, p.Focus
+func CurrentMode() Mode {
+	switch selectedMode.Load() {
+	case 1:
+		return ModeLight
+	case 2:
+		return ModeSystem
+	default:
+		return ModeDark
+	}
 }
 
-func CurrentMode() Mode { return selectedMode }
-
-// SetMode changes the selected mode; the host also updates MyGo's native
-// appearance and requests redraws for both the workbench and modal.
+// SetMode updates the preference. The host sets the native appearance and
+// redraws windows; existing frames keep their resolved colors until rebuilt.
 func SetMode(mode Mode) {
-	selectedMode = ParseMode(string(mode))
-	if selectedMode == ModeLight {
-		setPalette(lightPalette)
-	} else if selectedMode == ModeDark {
-		setPalette(darkPalette)
+	switch ParseMode(string(mode)) {
+	case ModeLight:
+		selectedMode.Store(1)
+	case ModeSystem:
+		selectedMode.Store(2)
+	default:
+		selectedMode.Store(0)
 	}
 }
 
-func effectivePalette(systemDark bool) (Palette, bool) {
-	dark := selectedMode == ModeDark || (selectedMode == ModeSystem && systemDark)
-	if dark {
-		return darkPalette, true
-	}
-	return lightPalette, false
+// PaletteFor provides immutable read-only swatches for the settings preview.
+// System mode is resolved through the current native appearance.
+func PaletteFor(mode Mode, systemDark bool) Palette {
+	return Resolve(mode, systemDark, ui.Preferences{}).Palette
 }

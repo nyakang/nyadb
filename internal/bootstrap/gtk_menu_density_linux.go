@@ -3,8 +3,11 @@
 package bootstrap
 
 import (
+	"fmt"
+
 	"github.com/ebitengine/purego"
 	"github.com/egoist/mygo"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
 // GTK's stock Adwaita menu spacing is looser than the compact navigation
@@ -13,17 +16,27 @@ import (
 const compactMenuCSS = `
 menu { padding: 1px 0; }
 menu menuitem { min-height: 0; padding: 3px 11px; }
-menu menuitem label { font-size: 12px; }
+menu menuitem label { font-size: %gpx; }
 menu separator { min-height: 1px; margin: 2px 1px; }
 `
 
 func init() {
 	// Register before bootstrap.Run creates a window. WhenReady runs on the
 	// native UI thread after GTK has been initialized.
-	mygo.App.WhenReady(installCompactGTKMenus)
+	mygo.App.WhenReady(func() {
+		installCompactGTKMenus()
+		mygo.Theme.OnUpdated(installCompactGTKMenus)
+	})
 }
 
+// Reuse one provider across preference updates; the screen owns its reference.
+var updateCompactGTKMenus func() bool
+
 func installCompactGTKMenus() {
+	if updateCompactGTKMenus != nil {
+		updateCompactGTKMenus()
+		return
+	}
 	gtk, err := purego.Dlopen("libgtk-3.so.0", purego.RTLD_NOW)
 	if err != nil {
 		return
@@ -56,8 +69,17 @@ func installCompactGTKMenus() {
 		return
 	}
 	defer unref(provider)
-	data := append([]byte(compactMenuCSS), 0)
-	if loadCSS(provider, &data[0], len(compactMenuCSS), 0) {
+	update := func() bool {
+		scale := mygo.Theme.Preferences().TextScale
+		if scale <= 0 {
+			scale = 1
+		}
+		css := fmt.Sprintf(compactMenuCSS, float64(theme.FontSize)*scale)
+		data := append([]byte(css), 0)
+		return loadCSS(provider, &data[0], len(css), 0)
+	}
+	if update() {
 		addForScreen(screen, provider, 600) // GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+		updateCompactGTKMenus = update
 	}
 }
