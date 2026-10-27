@@ -12,7 +12,7 @@ import (
 var ErrMySQLMetadataLimit = errors.New("MySQL metadata result exceeds the allowed item count")
 
 // MySQLDBObject describes only server metadata: it never contains table data
-// or user-authored SQL. Kind is either "表" or "视图".
+// or user-authored SQL. Kind can be 表, 视图, 函数, 存储过程 or 事件.
 type MySQLDBObject struct {
 	Name          string
 	Kind          string
@@ -22,6 +22,17 @@ type MySQLDBObject struct {
 	ModifiedAt    string // server UPDATE_TIME; empty if unknown
 	DataLength    *int64 // server DATA_LENGTH in bytes; nil if unavailable
 	RowsEstimate  *int64 // TABLE_ROWS is an estimate for engines such as InnoDB
+	Definer       string
+	Parameters    string
+	ReturnType    string
+	SQLSecurity   string
+	CreatedAt     string
+	Status        string
+	Schedule      string
+	Starts        string
+	Ends          string
+	OnCompletion  string
+	Definition    string // only populated when server privileges permit
 }
 
 const maxMySQLMetadataObjects = 10000

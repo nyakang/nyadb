@@ -72,7 +72,7 @@ func (s *State) profileSidebar(c *ui.Context) {
 			}
 			s.explorerTree.List.Selection = &s.explorerSelection
 			s.explorerTree.List.Selected = &s.explorerRow
-			s.explorerTree.Indent = 19
+			s.explorerTree.Indent = 17 // fixed disclosure gutter; content has its own icon gap
 			savedTheme := c.Theme()
 			denseTheme := *savedTheme
 			denseTheme.Spacing = 1
@@ -103,7 +103,7 @@ func (s *State) profileSidebar(c *ui.Context) {
 			}
 			if tree.Shortcut(ui.Ctrl, ui.KeyD) {
 				n := parseNavigationNode(s.explorerName)
-				if n.Kind == "object" {
+				if n.Kind == "object" && !isMySQLProgram(n.Category) {
 					s.openMySQLStructure(c.Services(), n.Database, n.Object)
 				}
 			}
@@ -138,7 +138,8 @@ func (s *State) selectProfileByName(name string) {
 			}
 			t := s.currentTab()
 			if (t.kind == tabStructure && t.structureProfileID != p.ID) ||
-				(t.kind == tabMySQLData && t.dataProfileID != p.ID) {
+				(t.kind == tabMySQLData && t.dataProfileID != p.ID) ||
+				(t.kind == tabProgram && t.programProfileID != p.ID) {
 				s.activeTab = 0
 			}
 		}
@@ -233,9 +234,23 @@ func (s *State) profileInspector(c *ui.Context) {
 					mysqlInspectorProperty(c, locales.Text("连接"), p.Name)
 					mysqlInspectorProperty(c, locales.Text("数据库"), n.Database)
 					for _, obj := range s.mysqlObjectCache[n.Database] {
-						if obj.Name == n.Object {
+						if obj.Name == n.Object && obj.Kind == n.Category {
 							mysqlInspectorProperty(c, locales.Text("引擎"), obj.Engine)
 							mysqlInspectorProperty(c, locales.Text("注释"), obj.Comment)
+							if isMySQLProgram(obj.Kind) {
+								for _, field := range []struct{ label, value string }{
+									{"定义者", obj.Definer}, {"参数", obj.Parameters},
+									{"返回类型", obj.ReturnType}, {"SQL SECURITY", obj.SQLSecurity},
+									{"状态", obj.Status}, {"调度", obj.Schedule},
+									{"开始时间", obj.Starts}, {"结束时间", obj.Ends},
+									{"ON COMPLETION", obj.OnCompletion}, {"创建时间", obj.CreatedAt},
+									{"修改时间", obj.ModifiedAt},
+								} {
+									if field.value != "" {
+										mysqlInspectorProperty(c, field.label, field.value)
+									}
+								}
+							}
 							break
 						}
 					}

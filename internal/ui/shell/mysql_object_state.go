@@ -164,7 +164,7 @@ func (s *State) loadMySQLObjects(services ui.Services, database string, force bo
 			s.cancelMySQLObjectQuery()
 			return
 		}
-		lister = s.mysqlSessionManager.Objects
+		lister = s.mysqlSessionManager.ObjectsWithPrograms
 	}
 	go func() {
 		objects, err := lister(ctx, id, database)

@@ -127,6 +127,8 @@ func (s *State) activateMySQLForCurrentTab() {
 		id = t.structureProfileID
 	case tabMySQLData:
 		id = t.dataProfileID
+	case tabProgram:
+		id = t.programProfileID
 	}
 	if id == 0 || id == s.mysqlSessionProfileID {
 		return

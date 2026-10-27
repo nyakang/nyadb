@@ -51,6 +51,9 @@ func mysqlObjectCellText(obj connections.MySQLDBObject, col int) string {
 }
 
 func mysqlObjectActionLabels(kind string) (open, design string) {
+	if isMySQLProgram(kind) {
+		return "查看定义（只读）", "查看结构（不适用）"
+	}
 	if kind == "视图" {
 		return "打开视图（只读）", "查看视图结构（只读）"
 	}
@@ -71,11 +74,11 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 	message := ""
 	if connected && db != "" {
 		if s.mysqlObjectPending == db {
-			message = "正在加载表和视图…"
+			message = "正在读取数据库对象…"
 		} else if err := s.mysqlObjectErrors[db]; err != "" {
 			message = "读取对象失败：" + err
 		} else if len(items) == 0 {
-			message = "当前筛选下没有可见的表或视图"
+			message = "当前筛选下没有可见的数据库对象"
 		}
 	}
 	s.objectState.Selected = &s.objectRow
@@ -96,9 +99,9 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		s.selectObjectInNavigator(db, items[row].Name, items[row].Kind)
 		openLabel, designLabel := mysqlObjectActionLabels(items[row].Kind)
 		if m.Item(locales.Text(openLabel)).Shortcut(0, ui.KeyEnter).Chosen() {
-			s.openMySQLData(c.Services(), db, items[row].Name)
+			s.openMySQLObject(c.Services(), db, items[row].Name, items[row].Kind)
 		}
-		if m.Item(locales.Text(designLabel)).Shortcut(ui.Ctrl, ui.KeyD).Chosen() {
+		if m.Item(locales.Text(designLabel)).Shortcut(ui.Ctrl, ui.KeyD).Disabled(isMySQLProgram(items[row].Kind)).Chosen() {
 			s.openMySQLStructure(c.Services(), db, items[row].Name)
 		}
 	}
@@ -126,6 +129,10 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 			iconName := "table"
 			if obj.Kind == "视图" {
 				iconName = "view"
+			} else if obj.Kind == "函数" || obj.Kind == "存储过程" {
+				iconName = "function"
+			} else if obj.Kind == "事件" {
+				iconName = "refresh"
 			}
 			ui.Row(c).AlignItems(ui.Center).Gap(6).Children(func() {
 				theme.Icon(c, iconName, 14, palette.Blue)
@@ -137,14 +144,14 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 	}).Grow(1)
 	if table.Submitted() {
 		if s.objectRow >= 0 && s.objectRow < len(items) {
-			s.openMySQLData(c.Services(), db, items[s.objectRow].Name)
+			s.openMySQLObject(c.Services(), db, items[s.objectRow].Name, items[s.objectRow].Kind)
 		}
 	}
 	if s.objectRow >= 0 && s.objectRow < len(items) {
 		if previousRow != s.objectRow || table.Changed() || (table.Focused() && parseNavigationNode(s.explorerName).Kind != "object") {
 			s.selectObjectInNavigator(db, items[s.objectRow].Name, items[s.objectRow].Kind)
 		}
-		if table.Shortcut(ui.Ctrl, ui.KeyD) {
+		if table.Shortcut(ui.Ctrl, ui.KeyD) && !isMySQLProgram(items[s.objectRow].Kind) {
 			s.openMySQLStructure(c.Services(), db, items[s.objectRow].Name)
 		}
 	}

@@ -37,6 +37,8 @@ func (s *State) workspace(c *ui.Context) {
 									icon = "table"
 								} else if current.kind == tabSettings {
 									icon = "settings"
+								} else if current.kind == tabProgram {
+									icon = "function"
 								}
 								theme.Icon(c, icon, 14, palette.Blue)
 								ui.Text(c, s.workspaceTabCaption(current)).FontSize(theme.Font(c, theme.FontSize)).SingleLine().MaxWidth(220).Tooltip(current.title)
@@ -75,6 +77,8 @@ func (s *State) workspace(c *ui.Context) {
 			s.mysqlStructureWorkspace(c, tab)
 		case tabMySQLData:
 			s.mysqlDataWorkspace(c, tab)
+		case tabProgram:
+			s.mysqlProgramWorkspace(c, tab)
 		default:
 			s.objectsWorkspace(c)
 		}
