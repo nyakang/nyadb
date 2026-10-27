@@ -69,7 +69,9 @@ func TestMySQLExecuteSQLBoundedResultsAndAffectedRows(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(result.Columns) != 2 || len(result.Rows) != 2 || result.Rows[1][1] != "NULL" || result.Duration <= 0 {
+	// Very fast mock queries may complete within one Windows clock tick;
+	// zero elapsed duration is valid and should not fail cross-platform CI.
+	if len(result.Columns) != 2 || len(result.Rows) != 2 || result.Rows[1][1] != "NULL" || result.Duration < 0 {
 		t.Fatalf("result missing columns, null, or timing: %+v", result)
 	}
 	for _, want := range []string{"exec USE `app``tenant`", "query SELECT id,name FROM products"} {

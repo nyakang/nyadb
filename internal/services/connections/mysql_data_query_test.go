@@ -70,7 +70,9 @@ func TestMySQLDataAdvancedProjectionsSortingAndSafeFilters(t *testing.T) {
 		t.Fatalf("preview result: %+v", page)
 	}
 	meta, index, data := <-calls, <-calls, <-calls
-	if page.QuerySQL != data.query || page.CompletedAt.IsZero() || page.CompletedAt.After(time.Now()) || page.Duration <= 0 {
+	// A sub-tick mock query can legitimately measure as 0s on Windows.
+	// Ensure timing is nonnegative, not artificially strictly positive.
+	if page.QuerySQL != data.query || page.CompletedAt.IsZero() || page.CompletedAt.After(time.Now()) || page.Duration < 0 {
 		t.Fatalf("execution details do not describe the completed query: %+v", page)
 	}
 	if strings.Contains(page.QuerySQL, options.FilterValue) {
