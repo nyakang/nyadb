@@ -40,6 +40,14 @@ func parseNavigationNode(key string) navigationNode {
 	return n
 }
 
+// Observed MySQL navigator categories. Only tables and views have working
+// metadata readers; other folders remain explicitly unsupported.
+var mysqlNavigationCategories = []string{"表", "视图", "函数", "事件", "查询", "备份"}
+
+func supportedMySQLCategory(category string) bool {
+	return category == "表" || category == "视图"
+}
+
 func (s *State) navigationChildren(key string) []string {
 	n := parseNavigationNode(key)
 	if s.mysqlSessionStateFor(n.ProfileID) != "已连接" {
@@ -53,17 +61,27 @@ func (s *State) navigationChildren(key string) []string {
 		}
 		return children
 	case "database":
-		children := []string{}
 		if _, loaded := s.mysqlObjectCache[n.Database]; !loaded {
-			return children
+			status := n
+			status.Kind, status.Object = "status", "waiting"
+			if s.mysqlObjectPending == n.Database {
+				status.Object = "loading"
+			} else if s.mysqlObjectErrors[n.Database] != "" {
+				status.Object = "error"
+			}
+			return []string{status.key()}
 		}
-		for _, kind := range []string{"表", "视图"} {
+		children := make([]string, 0, len(mysqlNavigationCategories))
+		for _, kind := range mysqlNavigationCategories {
 			child := n
 			child.Kind, child.Category = "category", kind
 			children = append(children, child.key())
 		}
 		return children
 	case "category":
+		if !supportedMySQLCategory(n.Category) {
+			return nil
+		}
 		children := []string{}
 		for _, obj := range s.mysqlObjectCache[n.Database] {
 			if obj.Kind == n.Category {
@@ -83,7 +101,7 @@ func (s *State) selectNavigationNode(services ui.Services, key string) {
 		return
 	}
 	n := parseNavigationNode(key)
-	if n.ProfileID == 0 {
+	if n.ProfileID == 0 || n.Kind == "status" {
 		return
 	}
 	for _, p := range s.profileEntries {
@@ -110,6 +128,10 @@ func (s *State) selectNavigationNode(services ui.Services, key string) {
 		s.mysqlObjectKind = n.Category
 	}
 	s.objectRow = -1
+	if n.Kind == "category" && !supportedMySQLCategory(n.Category) {
+		s.status = n.Category + "：此类对象尚未提供元数据浏览"
+		return
+	}
 	if len(s.mysqlSelectedObjects()) > 0 {
 		s.objectRow = 0
 	}
@@ -171,7 +193,7 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 	// row so its context menu also receives clicks after a short name.
 	if isGroupNode(key) {
 		name := groupFromNode(key)
-		ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).AlignItems(ui.Center).Gap(5).Children(func() {
+		ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).Padding(0, 13).AlignItems(ui.Center).Gap(5).Children(func() {
 			theme.Icon(c, "folder-filled", 16, palette.Gold)
 			ui.Text(c, name).FontSize(theme.Font(c, 12)).SingleLine()
 		}).ContextMenu(func(m *ui.Menu) {
@@ -191,7 +213,19 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 			row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).AlignItems(ui.Center).Gap(5).Children(func() {
 				s.profileBrandIcon(c, p.Kind, 16)
 				ui.Text(c, p.Name).FontSize(theme.Font(c, 12)).SingleLine()
+				status := s.mysqlSessionStateFor(p.ID)
+				color := palette.Muted
+				switch status {
+				case "已连接":
+					color = palette.Success
+				case "连接中":
+					color = palette.Warning
+				case "连接失败":
+					color = palette.Error
+				}
+				ui.Box(c).Size(5, 5).Radius(3).Background(color)
 			})
+			row.Label(p.Name + " · " + locales.Text(s.mysqlSessionStateFor(p.ID)))
 			row.ContextMenu(func(m *ui.Menu) {
 				s.profileConnectionMenu(m, p.Name, c.Services())
 				s.explorerMenuBuilt = true
@@ -203,14 +237,50 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 		label, icon = n.Database, "database"
 	case "category":
 		label = locales.Text(n.Category)
+		switch n.Category {
+		case "函数":
+			icon = "function"
+		case "事件":
+			icon = "refresh"
+		case "查询":
+			icon = "query"
+		case "备份":
+			icon = "backup"
+		}
+	case "status":
+		icon, label = "refresh", locales.Text("等待加载")
+		if n.Object == "loading" {
+			label = locales.Text("正在读取对象…")
+		} else if n.Object == "error" {
+			label = locales.Text("读取失败，点击重试")
+		}
 	}
 	if n.Category == "视图" {
 		icon = "view"
 	}
 	row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).AlignItems(ui.Center).Gap(5).Children(func() {
-		theme.Icon(c, icon, 16, palette.Blue)
-		ui.Text(c, label).FontSize(theme.Font(c, 12)).SingleLine()
+		ink := palette.Blue
+		if n.Kind == "status" || n.Kind == "category" && !supportedMySQLCategory(n.Category) {
+			ink = palette.Muted
+		}
+		if n.Kind == "status" && n.Object == "error" {
+			ink = palette.Error
+		}
+		theme.Icon(c, icon, 16, ink)
+		ui.Text(c, label).FontSize(theme.Font(c, 12)).TextColor(ink).SingleLine()
 	})
+	if n.Kind == "category" && !supportedMySQLCategory(n.Category) {
+		row.Label(label + " · " + locales.Text("尚未支持元数据浏览"))
+	}
+	if n.Kind == "status" {
+		if n.Object == "error" {
+			row.Label(label + "：" + s.mysqlObjectErrors[n.Database])
+		}
+		if row.Clicked() && n.Object == "error" {
+			s.loadMySQLObjects(c.Services(), n.Database, true)
+		}
+		return
+	}
 	if n.Kind == "database" {
 		row.Label("数据库：" + n.Database)
 	}
@@ -231,7 +301,7 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 		case "category":
 			// Categories are navigation scopes, not database objects. Only
 			// expose read-only navigation and metadata refresh here.
-			if m.Item(locales.Text("显示全部对象")).Chosen() {
+			if m.Item(locales.Text("显示全部对象")).Disabled(!supportedMySQLCategory(n.Category)).Chosen() {
 				s.filterMySQLObjects("全部")
 			}
 			m.Separator()
@@ -266,6 +336,9 @@ func (s *State) navigationDescription(n navigationNode) string {
 		return locales.Text("数据库")
 	}
 	if n.Kind == "category" {
+		if !supportedMySQLCategory(n.Category) {
+			return locales.Text(n.Category) + "（尚未支持）"
+		}
 		return fmt.Sprintf("%s (%d)", locales.Text(n.Category), len(s.mysqlSelectedObjects()))
 	}
 	return locales.Text(n.Category)

@@ -44,6 +44,66 @@ func (msgs Messages) DisabledActionPreview() string {
 	return Catalog.Format(msgs.locale, "disabledActionPreview", nil)
 }
 
+// NavigatorWaiting says "等待加载"
+// in the language the app shows.
+func NavigatorWaiting() string { return In(i18n.Locale()).NavigatorWaiting() }
+
+// NavigatorWaiting says "等待加载"
+// in the language of msgs.
+func (msgs Messages) NavigatorWaiting() string {
+	return Catalog.Format(msgs.locale, "navigatorWaiting", nil)
+}
+
+// NavigatorLoading says "正在读取对象…"
+// in the language the app shows.
+func NavigatorLoading() string { return In(i18n.Locale()).NavigatorLoading() }
+
+// NavigatorLoading says "正在读取对象…"
+// in the language of msgs.
+func (msgs Messages) NavigatorLoading() string {
+	return Catalog.Format(msgs.locale, "navigatorLoading", nil)
+}
+
+// NavigatorRetry says "读取失败，点击重试"
+// in the language the app shows.
+func NavigatorRetry() string { return In(i18n.Locale()).NavigatorRetry() }
+
+// NavigatorRetry says "读取失败，点击重试"
+// in the language of msgs.
+func (msgs Messages) NavigatorRetry() string {
+	return Catalog.Format(msgs.locale, "navigatorRetry", nil)
+}
+
+// NavigatorUnsupported says "尚未支持元数据浏览"
+// in the language the app shows.
+func NavigatorUnsupported() string { return In(i18n.Locale()).NavigatorUnsupported() }
+
+// NavigatorUnsupported says "尚未支持元数据浏览"
+// in the language of msgs.
+func (msgs Messages) NavigatorUnsupported() string {
+	return Catalog.Format(msgs.locale, "navigatorUnsupported", nil)
+}
+
+// NavigatorEvents says "事件"
+// in the language the app shows.
+func NavigatorEvents() string { return In(i18n.Locale()).NavigatorEvents() }
+
+// NavigatorEvents says "事件"
+// in the language of msgs.
+func (msgs Messages) NavigatorEvents() string {
+	return Catalog.Format(msgs.locale, "navigatorEvents", nil)
+}
+
+// NavigatorSwitchDisconnect says "请先断开连接，再切换连接配置文件"
+// in the language the app shows.
+func NavigatorSwitchDisconnect() string { return In(i18n.Locale()).NavigatorSwitchDisconnect() }
+
+// NavigatorSwitchDisconnect says "请先断开连接，再切换连接配置文件"
+// in the language of msgs.
+func (msgs Messages) NavigatorSwitchDisconnect() string {
+	return Catalog.Format(msgs.locale, "navigatorSwitchDisconnect", nil)
+}
+
 // MyConnections says "我的连接"
 // in the language the app shows.
 func MyConnections() string { return In(i18n.Locale()).MyConnections() }

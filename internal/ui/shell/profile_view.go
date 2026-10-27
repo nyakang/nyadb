@@ -20,6 +20,8 @@ func (s *State) profileSidebar(c *ui.Context) {
 			ui.Text(c, locales.Text("我的连接")).FontSize(theme.Font(c, 12))
 			ui.Box(c).Grow(1)
 			if header.Hovered() {
+				header.Background(palette.Selection)
+				header.TextColor(palette.SelectionText)
 				settings := ui.ButtonBase(c).Label(locales.Text("连接面板设置")).Tooltip(locales.Text("连接面板设置")).Padding(3, 4).Radius(2)
 				settings.Children(func() { theme.Icon(c, "settings", 15, palette.Muted) })
 				settings.Menu(func(m *ui.Menu) { s.sidebarSettingsMenu(m) })
@@ -66,7 +68,7 @@ func (s *State) profileSidebar(c *ui.Context) {
 			}
 			s.explorerTree.List.Selection = &s.explorerSelection
 			s.explorerTree.List.Selected = &s.explorerRow
-			s.explorerTree.Indent = 16
+			s.explorerTree.Indent = 19
 			savedTheme := c.Theme()
 			denseTheme := *savedTheme
 			denseTheme.Spacing = 1
@@ -88,6 +90,12 @@ func (s *State) profileSidebar(c *ui.Context) {
 			}
 			if tree.Submitted() {
 				s.submitNavigation(c)
+			}
+			if tree.Shortcut(0, ui.KeyF2) && s.selectedGroup != "" {
+				s.beginGroupEdit(s.selectedGroup)
+			}
+			if tree.Shortcut(0, ui.KeyDelete) && s.selectedProfileID != 0 {
+				s.confirmDeleteProfile()
 			}
 			if tree.Shortcut(ui.Ctrl, ui.KeyD) {
 				n := parseNavigationNode(s.explorerName)
@@ -184,6 +192,13 @@ func (s *State) profileInspector(c *ui.Context) {
 					return
 				}
 				if !ok {
+					if s.selectedProfileID == 0 && s.selectedGroup == "" {
+						ui.Row(c).AlignItems(ui.Center).Gap(12).Children(func() {
+							theme.Icon(c, "connection", 48, palette.Muted)
+							ui.Text(c, locales.Text("我的连接")).FontSize(theme.Font(c, 14)).Bold()
+						})
+						return
+					}
 					ui.Text(c, locales.Text("选择连接以查看档案信息")).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 					return
 				}

@@ -24,6 +24,55 @@ func (s *State) profileVisible(p connections.Profile) bool {
 
 func (s *State) changeProfileFilter() { s.explorerRow = -1 }
 
+// Switch the saved default for future sessions only. Updating a connected
+// profile in-place would make the visible configuration disagree with the
+// running MySQL connection, so an explicit disconnect is required first.
+func (s *State) setProfileActiveVariant(id int64, name string) {
+	if s.profileService == nil || id == 0 {
+		return
+	}
+	if state := s.mysqlSessionStateFor(id); state == "已连接" || state == "连接中" {
+		s.status = "请先断开连接，再切换连接配置文件"
+		return
+	}
+	ctx := context.Background()
+	p, err := s.profileService.Get(ctx, id)
+	if err != nil {
+		s.status = "读取连接配置失败：" + err.Error()
+		return
+	}
+	if p.Kind != connections.MySQL {
+		return
+	}
+	if name != "" {
+		valid := false
+		for _, variant := range p.Variants {
+			if variant.Name == name {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			s.status = "连接配置已不存在，请刷新"
+			return
+		}
+	}
+	if p.ActiveVariant == name {
+		return
+	}
+	p.ActiveVariant = name
+	if _, err := s.profileService.Update(ctx, p); err != nil {
+		s.status = "切换连接配置失败：" + err.Error()
+		return
+	}
+	s.loadProfiles()
+	label := name
+	if label == "" {
+		label = "默认"
+	}
+	s.status = "已切换活动连接配置：" + label
+}
+
 func (s *State) setProfileStarred(id int64, starred bool) {
 	if s.profileService == nil || id == 0 {
 		return

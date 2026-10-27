@@ -22,7 +22,7 @@ func (s *State) profileRootMenu(m *ui.Menu) {
 		s.beginGroupEdit("")
 	}
 	m.Separator()
-	if m.Item(locales.Text("刷新")).Chosen() {
+	if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).Chosen() {
 		s.loadProfiles()
 	}
 }
@@ -48,11 +48,11 @@ func (s *State) profileGroupMenu(m *ui.Menu, group string) {
 		s.groupPendingDelete = group
 		s.groupDeleteConfirm = true
 	}
-	if m.Item(locales.Text("重命名")).Chosen() {
+	if m.Item(locales.Text("重命名")).Shortcut(0, ui.KeyF2).Chosen() {
 		s.beginGroupEdit(group)
 	}
 	m.Separator()
-	if m.Item(locales.Text("刷新")).Chosen() {
+	if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).Chosen() {
 		s.loadProfiles()
 	}
 }
@@ -85,12 +85,17 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 			s.startMySQLSession(services)
 		}
 	}
+	canSwitch := canMySQL && !connected && s.mysqlSessionStateFor(profile.ID) != "连接中"
 	m.Submenu(locales.Text("切换连接配置文件"), func(sub *ui.Menu) {
-		sub.Item(locales.Text("默认")).Checked(profile.ActiveVariant == "").Disabled(true)
-		for _, variant := range profile.Variants {
-			sub.Item(variant.Name).Checked(profile.ActiveVariant == variant.Name).Disabled(true)
+		if sub.Item(locales.Text("默认")).Checked(profile.ActiveVariant == "").Chosen() {
+			s.setProfileActiveVariant(profile.ID, "")
 		}
-	}).Disabled(true)
+		for _, variant := range profile.Variants {
+			if sub.Item(variant.Name).Checked(profile.ActiveVariant == variant.Name).Chosen() {
+				s.setProfileActiveVariant(profile.ID, variant.Name)
+			}
+		}
+	}).Disabled(!canSwitch || len(profile.Variants) == 0)
 	m.Separator()
 	if m.Item(locales.Text("编辑连接")).Chosen() {
 		s.selectProfileByName(name)
@@ -99,7 +104,7 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 	if m.Item(locales.Text("新建连接")).Chosen() {
 		s.openConnectionDialog()
 	}
-	if m.Item(locales.Text("删除连接")).Chosen() {
+	if m.Item(locales.Text("删除连接")).Shortcut(0, ui.KeyDelete).Chosen() {
 		s.selectProfileByName(name)
 		s.confirmDeleteProfile()
 	}
