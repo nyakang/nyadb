@@ -28,19 +28,23 @@ func (s *State) profileSidebar(c *ui.Context) {
 			}
 		})
 		header.ContextMenu(func(m *ui.Menu) { s.sidebarSettingsMenu(m) })
-		if s.groupEditing {
+		// New groups have no tree row yet; existing groups edit in place.
+		if s.groupEditing && s.groupEditOriginal == "" {
 			ui.Row(c).Padding(3, 6).Gap(4).AlignItems(ui.Center).Children(func() {
-				ui.TextInput(c, &s.groupDraft).Label(locales.Text("连接组名称")).Placeholder(locales.Text("组名称")).Grow(1)
+				entry := ui.TextInput(c, &s.groupDraft).Label(locales.Text("连接组名称")).Placeholder(locales.Text("组名称")).Grow(1).AutoFocus()
+				if entry.Submitted() {
+					s.saveGroup()
+				}
 				if ui.Button(c, locales.Text("保存")).Label(locales.Text("保存组")).Clicked() {
 					s.saveGroup()
 				}
 				if ui.Button(c, "×").Label(locales.Text("取消编辑组")).Clicked() {
-					s.groupEditing = false
+					s.cancelGroupEdit()
 				}
 			})
-			if s.groupError != "" {
-				ui.Text(c, s.groupError).Padding(2, 8).TextColor(palette.Error).FontSize(theme.Font(c, 11))
-			}
+		}
+		if s.groupEditing && s.groupError != "" {
+			ui.Text(c, s.groupError).Padding(2, 8).TextColor(palette.Error).FontSize(theme.Font(c, 11))
 		}
 		navigator := ui.Column(c).Grow(1).MinHeight(0).Gap(0)
 		navigator.Children(func() {

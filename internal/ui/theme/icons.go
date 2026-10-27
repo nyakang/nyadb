@@ -67,6 +67,7 @@ var Symbols = map[string]*ui.SVG{
 	"cloud-type":      symbol(`<path d="M7 19h11a4 4 0 0 0 1-8 7 7 0 0 0-13-1 4.5 4.5 0 0 0 1 9Z"/><path d="M8 15h8"/>`),
 	"plus":            lucideSymbol("plus"),
 	"close":           lucideSymbol("x"),
+	"check":           symbol(`<path d="m5 12 4 4L19 6"/>`),
 	"refresh":         lucideSymbol("refresh-cw"),
 	"settings":        lucideSymbol("settings-2"),
 	"star":            lucideSymbol("star"),

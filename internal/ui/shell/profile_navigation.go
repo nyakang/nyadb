@@ -22,7 +22,28 @@ func (s *State) profileVisible(p connections.Profile) bool {
 	return p.GroupName != "" && strings.Contains(strings.ToLower(p.GroupName), query)
 }
 
-func (s *State) changeProfileFilter() { s.explorerRow = -1 }
+// Manual search/filter changes supersede a temporary active-tab reveal.
+func (s *State) changeProfileFilter() {
+	s.explorerRow = -1
+	s.navigationFilterRestore = nil
+}
+
+type profileFilterSnapshot struct {
+	search  string
+	engine  connections.Kind
+	starred bool
+}
+
+func (s *State) restoreNavigationFilter() {
+	saved := s.navigationFilterRestore
+	if saved == nil {
+		return
+	}
+	s.navigationFilterRestore = nil
+	s.search, s.profileEngine, s.profileStarredOnly = saved.search, saved.engine, saved.starred
+	s.explorerRow = -1
+	s.status = "已恢复连接搜索与筛选条件"
+}
 
 // Switch the saved default for future sessions only. Updating a connected
 // profile in-place would make the visible configuration disagree with the
@@ -146,6 +167,12 @@ func (s *State) navigateToActiveTab(services ui.Services) {
 			continue
 		}
 		// Temporarily reveal the target if the sidebar is filtered.
+		if s.navigationFilterRestore == nil &&
+			(s.profileStarredOnly || s.profileEngine != "" || s.search != "") {
+			s.navigationFilterRestore = &profileFilterSnapshot{
+				search: s.search, engine: s.profileEngine, starred: s.profileStarredOnly,
+			}
+		}
 		s.profileStarredOnly = false
 		s.profileEngine = ""
 		s.search = ""
