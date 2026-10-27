@@ -223,9 +223,9 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 			})
 			return
 		}
-		ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).Padding(0, 13).AlignItems(ui.Center).Gap(5).Children(func() {
+		ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).Padding(0, 13).AlignItems(ui.Center).Gap(4).Children(func() {
 			theme.Icon(c, "folder-filled", 16, palette.Gold)
-			ui.Text(c, name).FontSize(theme.Font(c, 11.5)).TextColor(palette.Text.Mix(palette.Blue, .13)).SingleLine()
+			ui.Text(c, name).FontSize(theme.Font(c, 12)).TextColor(palette.Text).SingleLine()
 		}).ContextMenu(func(m *ui.Menu) {
 			s.profileGroupMenu(m, name)
 			s.explorerMenuBuilt = true
@@ -240,20 +240,10 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 			if p.ID != n.ProfileID {
 				continue
 			}
-			row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).AlignItems(ui.Center).Gap(5).Children(func() {
-				s.profileBrandIcon(c, p.Kind, 16)
-				ui.Text(c, p.Name).FontSize(theme.Font(c, 11.5)).TextColor(palette.Text).SingleLine()
+			row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).AlignItems(ui.Center).Gap(4).Children(func() {
 				status := s.mysqlSessionStateFor(p.ID)
-				color := palette.Muted
-				switch status {
-				case "已连接":
-					color = palette.Success
-				case "连接中":
-					color = palette.Warning
-				case "连接失败":
-					color = palette.Error
-				}
-				ui.Box(c).Size(5, 5).Radius(3).Background(color)
+				s.profileNavigationIcon(c, p.Kind, status, 16)
+				ui.Text(c, p.Name).FontSize(theme.Font(c, 12)).TextColor(palette.Text).SingleLine()
 			})
 			row.Label(p.Name + " · " + locales.Text(s.mysqlSessionStateFor(p.ID)))
 			row.ContextMenu(func(m *ui.Menu) {
@@ -264,7 +254,7 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 		}
 		return
 	case "database":
-		label, icon = n.Database, "database"
+		label, icon = n.Database, "database-solid"
 	case "category":
 		label = locales.Text(n.Category)
 		switch n.Category {
@@ -290,16 +280,26 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 	if n.Category == "视图" {
 		icon = "view"
 	}
-	row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).AlignItems(ui.Center).Gap(5).Children(func() {
-		ink := palette.Text.Mix(palette.Blue, .22)
+	row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).AlignItems(ui.Center).Gap(4).Children(func() {
+		ink := palette.Text
+		iconInk := palette.Text.Mix(palette.Blue, .22)
+		if n.Kind == "database" {
+			// Neutral cylinders and a colored current-database indicator.
+			iconInk = palette.Muted
+			if s.explorerName == key {
+				iconInk = palette.Success
+			}
+		}
 		if n.Kind == "status" || n.Kind == "category" && !supportedMySQLCategory(n.Category) {
 			ink = palette.Muted
+			iconInk = palette.Muted
 		}
 		if n.Kind == "status" && n.Object == "error" {
 			ink = palette.Error
+			iconInk = palette.Error
 		}
-		theme.Icon(c, icon, 14, ink)
-		ui.Text(c, label).FontSize(theme.Font(c, 11.5)).TextColor(ink).SingleLine()
+		theme.Icon(c, icon, 15, iconInk)
+		ui.Text(c, label).FontSize(theme.Font(c, 12)).TextColor(ink).SingleLine()
 	})
 	if n.Kind == "category" && !supportedMySQLCategory(n.Category) {
 		row.Label(label + " · " + locales.Text("尚未支持元数据浏览"))
