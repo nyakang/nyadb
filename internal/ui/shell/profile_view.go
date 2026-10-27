@@ -150,7 +150,8 @@ func (s *State) selectProfileByName(name string) {
 			t := s.currentTab()
 			if (t.kind == tabStructure && t.structureProfileID != p.ID) ||
 				(t.kind == tabMySQLData && t.dataProfileID != p.ID) ||
-				(t.kind == tabProgram && t.programProfileID != p.ID) {
+				(t.kind == tabProgram && t.programProfileID != p.ID) ||
+				(t.kind == tabSQL && t.sqlProfileID != p.ID) {
 				s.activeTab = 0
 			}
 		}

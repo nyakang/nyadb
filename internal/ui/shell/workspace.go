@@ -181,6 +181,10 @@ func (s *State) objectsWorkspace(c *ui.Context) {
 }
 
 func (s *State) queryWorkspace(c *ui.Context, tab *tab) {
+	if s.profileMode {
+		s.mysqlQueryWorkspace(c,tab)
+		return
+	}
 	palette := theme.Colors(c)
 
 	ui.SplitVerticalPercent(c, &s.editorPercent,

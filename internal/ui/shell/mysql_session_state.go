@@ -149,6 +149,9 @@ func (s *State) disconnectMySQLSession() {
 	s.mysqlSessionCancel = nil
 	s.mysqlSessionResults = nil
 	id := s.mysqlSessionProfileID
+	if id > 0 {
+		s.cancelMySQLSQLForProfile(id)
+	}
 	s.mysqlSessionProfileID = 0
 	s.mysqlSessionDatabases = nil
 	s.resetMySQLObjectBrowser()
