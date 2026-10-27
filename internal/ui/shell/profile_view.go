@@ -130,6 +130,19 @@ func (s *State) selectProfileByName(name string) {
 		if p.Name != name {
 			continue
 		}
+		// Keep background sessions alive, but show the selected connection's
+		// own database browser instead of another profile's open data tab.
+		if p.ID != s.selectedProfileID {
+			if s.mysqlSessionProfileID == 0 && s.parkedMySQLWorkspace(p.ID) == nil {
+				s.restoreMySQLWorkspace(0, nil)
+			}
+			t := s.currentTab()
+			if (t.kind == tabStructure && t.structureProfileID != p.ID) ||
+				(t.kind == tabMySQLData && t.dataProfileID != p.ID) {
+				s.activeTab = 0
+			}
+		}
+		s.activateMySQLProfile(p.ID)
 		if s.selectedProfileID != p.ID || s.selectedGroup != "" {
 			s.selectedProfileID = p.ID
 			s.selectedGroup = ""

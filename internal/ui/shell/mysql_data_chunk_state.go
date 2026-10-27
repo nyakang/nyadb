@@ -80,7 +80,7 @@ func (s *State) loadMySQLChunk(services ui.Services, t *tab) {
 }
 func (s *State) consumeMySQLChunks() {
 	for _, t := range s.tabs {
-		if t.kind != tabMySQLData || t.dataChunkResults == nil {
+		if t.kind != tabMySQLData || t.dataChunkResults == nil || t.dataProfileID != s.mysqlSessionProfileID {
 			continue
 		}
 		select {

@@ -166,6 +166,7 @@ func (s *State) navigateToActiveTab(services ui.Services) {
 		if p.ID != id {
 			continue
 		}
+		s.activateMySQLProfile(id)
 		// Temporarily reveal the target if the sidebar is filtered.
 		if s.navigationFilterRestore == nil &&
 			(s.profileStarredOnly || s.profileEngine != "" || s.search != "") {

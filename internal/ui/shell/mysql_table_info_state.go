@@ -139,7 +139,7 @@ func (s *State) loadMySQLTableCount(services ui.Services, t *tab) {
 
 func (s *State) consumeMySQLTableInfo() {
 	for _, t := range s.tabs {
-		if t.kind != tabMySQLData {
+		if t.kind != tabMySQLData || t.dataProfileID != s.mysqlSessionProfileID {
 			continue
 		}
 		d := &t.dataInfo

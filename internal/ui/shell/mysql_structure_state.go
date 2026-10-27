@@ -103,7 +103,7 @@ func (s *State) loadMySQLStructure(services ui.Services, t *tab, refresh bool) {
 
 func (s *State) consumeMySQLStructures() {
 	for _, t := range s.tabs {
-		if t.kind != tabStructure || t.structureResults == nil {
+		if t.kind != tabStructure || t.structureResults == nil || t.structureProfileID != s.mysqlSessionProfileID {
 			continue
 		}
 		select {
@@ -134,11 +134,14 @@ func (s *State) consumeMySQLStructures() {
 
 // Removing tabs also revokes their in-flight work. Inactive SQL/mock tabs are
 // intentionally preserved so unrelated workspace documents are not lost.
-func (s *State) clearMySQLStructureTabs() {
+func (s *State) clearMySQLStructureTabs() { s.clearMySQLTabsFor(0) }
+
+func (s *State) clearMySQLTabsFor(profileID int64) {
 	activeID := s.currentTab().id
 	kept := s.tabs[:0]
 	for _, t := range s.tabs {
-		if t.kind == tabStructure || t.kind == tabMySQLData {
+		if (t.kind == tabStructure && (profileID == 0 || t.structureProfileID == profileID)) ||
+			(t.kind == tabMySQLData && (profileID == 0 || t.dataProfileID == profileID)) {
 			if t.kind == tabStructure {
 				s.cancelMySQLStructure(t)
 			} else {
@@ -162,8 +165,8 @@ func (s *State) pruneMySQLStructureTabs(known map[string]bool) {
 	activeID := s.currentTab().id
 	kept := s.tabs[:0]
 	for _, t := range s.tabs {
-		if (t.kind == tabStructure && !known[t.structureDatabase]) ||
-			(t.kind == tabMySQLData && !known[t.dataDatabase]) {
+		if (t.kind == tabStructure && t.structureProfileID == s.mysqlSessionProfileID && !known[t.structureDatabase]) ||
+			(t.kind == tabMySQLData && t.dataProfileID == s.mysqlSessionProfileID && !known[t.dataDatabase]) {
 			if t.kind == tabStructure {
 				s.cancelMySQLStructure(t)
 			} else {
