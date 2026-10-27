@@ -1,6 +1,12 @@
 {
   "disabledActionPreview": "禁用操作",
   "@@locale": "zh-Hans",
+  "navigatorWaiting": "等待加载",
+  "navigatorLoading": "正在读取对象…",
+  "navigatorRetry": "读取失败，点击重试",
+  "navigatorUnsupported": "尚未支持元数据浏览",
+  "navigatorEvents": "事件",
+  "navigatorSwitchDisconnect": "请先断开连接，再切换连接配置文件",
   "myConnections": "我的连接",
   "info": "信息",
   "fileMenu": "文件",

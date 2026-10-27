@@ -1,6 +1,12 @@
 {
   "disabledActionPreview": "Disabled action",
   "@@locale": "en",
+  "navigatorWaiting": "Waiting to load",
+  "navigatorLoading": "Loading objects…",
+  "navigatorRetry": "Load failed. Click to retry",
+  "navigatorUnsupported": "Metadata browsing is not supported yet",
+  "navigatorEvents": "Events",
+  "navigatorSwitchDisconnect": "Disconnect before switching configurations",
   "myConnections": "My Connections",
   "info": "Info",
   "fileMenu": "File",
