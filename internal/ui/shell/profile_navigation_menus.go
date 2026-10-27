@@ -16,7 +16,9 @@ func (s *State) profileRootMenu(m *ui.Menu) {
 	if m.Item(locales.Text("关闭所有连接")).Disabled(s.mysqlSessionProfileID == 0 && len(s.mysqlWorkspaces) == 0).Chosen() {
 		s.closeAllMySQLConnections()
 	}
-	m.Item(locales.Text("管理连接…")).Disabled(true)
+	if m.Item(locales.Text("管理连接…")).Chosen() {
+		s.openConnectionManagement()
+	}
 	m.Separator()
 	if m.Item(locales.Text("新建组")).Chosen() {
 		s.beginGroupEdit("")
@@ -72,12 +74,14 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 	}
 	s.selectNavigationNode(services, profileNode(profile.ID))
 	canMySQL := profile.Kind == connections.MySQL
-	connected := s.mysqlSessionStateFor(profile.ID) == "已连接"
+	status := s.mysqlSessionStateFor(profile.ID)
+	connected := status == "已连接"
+	connecting := status == "连接中"
 	connectLabel := "打开连接"
 	if connected {
 		connectLabel = "关闭连接"
 	}
-	if m.Item(locales.Text(connectLabel)).Shortcut(0, ui.KeyEnter).Disabled(!canMySQL).Chosen() {
+	if m.Item(locales.Text(connectLabel)).Shortcut(0, ui.KeyEnter).Disabled(!canMySQL || connecting).Chosen() {
 		s.selectProfileByName(name)
 		if connected {
 			s.disconnectMySQLSession()
@@ -85,7 +89,7 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 			s.startMySQLSession(services)
 		}
 	}
-	canSwitch := canMySQL && !connected && s.mysqlSessionStateFor(profile.ID) != "连接中"
+	canSwitch := canMySQL && !connected && !connecting
 	m.Submenu(locales.Text("切换连接配置文件"), func(sub *ui.Menu) {
 		if sub.Item(locales.Text("默认")).Checked(profile.ActiveVariant == "").Chosen() {
 			s.setProfileActiveVariant(profile.ID, "")
@@ -97,14 +101,14 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 		}
 	}).Disabled(!canSwitch || len(profile.Variants) == 0)
 	m.Separator()
-	if m.Item(locales.Text("编辑连接")).Chosen() {
+	if m.Item(locales.Text("编辑连接")).Disabled(connecting).Chosen() {
 		s.selectProfileByName(name)
 		s.startEditProfile()
 	}
 	if m.Item(locales.Text("新建连接")).Chosen() {
 		s.openConnectionDialog()
 	}
-	if m.Item(locales.Text("删除连接")).Shortcut(0, ui.KeyDelete).Chosen() {
+	if m.Item(locales.Text("删除连接")).Shortcut(0, ui.KeyDelete).Disabled(connecting).Chosen() {
 		s.selectProfileByName(name)
 		s.confirmDeleteProfile()
 	}
@@ -114,13 +118,18 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 	}
 	m.Separator()
 	m.Item(locales.Text("新建数据库")).Disabled(true)
-	m.Item(locales.Text("新建查询")).Disabled(true)
+	if m.Item(locales.Text("新建查询")).Disabled(!connected).Chosen() {
+		s.selectProfileByName(name)
+		s.openQuery()
+	}
 	m.Separator()
 	m.Item(locales.Text("命令列界面")).Disabled(true)
 	m.Item(locales.Text("运行 SQL 文件…")).Disabled(true)
 	m.Submenu(locales.Text("重载"), func(sub *ui.Menu) {
-		sub.Item(locales.Text("刷新数据库对象")).Disabled(true)
-	}).Disabled(true)
+		if sub.Item(locales.Text("刷新数据库对象")).Chosen() {
+			s.refreshConnectionObjects(services, profile.ID)
+		}
+	}).Disabled(!connected)
 	m.Separator()
 	starLabel := "添加星标"
 	if profile.Starred {
