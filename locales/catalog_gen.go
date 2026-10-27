@@ -44,6 +44,16 @@ func (msgs Messages) DisabledActionPreview() string {
 	return Catalog.Format(msgs.locale, "disabledActionPreview", nil)
 }
 
+// NavigatorRestoreFilters says "恢复之前的筛选"
+// in the language the app shows.
+func NavigatorRestoreFilters() string { return In(i18n.Locale()).NavigatorRestoreFilters() }
+
+// NavigatorRestoreFilters says "恢复之前的筛选"
+// in the language of msgs.
+func (msgs Messages) NavigatorRestoreFilters() string {
+	return Catalog.Format(msgs.locale, "navigatorRestoreFilters", nil)
+}
+
 // NavigatorWaiting says "等待加载"
 // in the language the app shows.
 func NavigatorWaiting() string { return In(i18n.Locale()).NavigatorWaiting() }

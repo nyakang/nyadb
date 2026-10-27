@@ -123,15 +123,15 @@ var objectColumns = []ui.TableColumn{
 
 // State is UI state owned by the main thread. Never retain ui.Element values.
 type State struct {
-	mysqlTableInfoLoader   mysqlTableInfoLoader
-	mysqlTableCountLoader  mysqlTableCountLoader
+	mysqlTableInfoLoader  mysqlTableInfoLoader
+	mysqlTableCountLoader mysqlTableCountLoader
 	dataLayoutPreferences mysqlDataLayoutPreferences
-	sidebarPercent       float32
-	centerPercent        float32
-	editorPercent        float32
-	inspectorOn          bool
-	inspectorDetailsOpen bool
-	inspectorObjectsOpen bool
+	sidebarPercent        float32
+	centerPercent         float32
+	editorPercent         float32
+	inspectorOn           bool
+	inspectorDetailsOpen  bool
+	inspectorObjectsOpen  bool
 
 	explorerTree      ui.OutlineState[string]
 	explorerSelection ui.Selection[string]
@@ -236,36 +236,37 @@ type State struct {
 	connectionTestResults    <-chan mysqlTestResult
 	mysqlConnectionTester    mysqlConnectionTester
 
-	profileMode         bool
-	profileService      *connections.Service
-	profileEntries      []connections.Profile
-	profileGroups       []connections.Group
-	selectedGroup       string
-	profileStarredOnly  bool
-	profileEngine       connections.Kind
-	navigateDatabase    string
-	navigateTable       string
-	navigateProfileID   int64
-	groupEditing        bool
-	groupEditOriginal   string
-	groupDraft          string
-	groupError          string
-	groupDeleteConfirm  bool
-	groupPendingDelete  string
-	selectedProfileID   int64
-	pendingDeleteID     int64
-	deleteConfirm       bool
-	settingsPreview     *editor.State
-	settingsSampleInput string
-	settingsSampleCheck bool
-	settingsSampleRow   int
-	settingsSampleTable ui.ListState
-	appearanceChanged   func(theme.Mode)
-	sqliteFilePicker    func()
-	mysqlSettingsPicker func()
-	mysqlSSLFilePicker  func(MySQLSSLFile)
-	mysqlSSHKeyPicker   func()
-	mysqlHTTPFilePicker func(MySQLHTTPFile)
+	profileMode             bool
+	profileService          *connections.Service
+	profileEntries          []connections.Profile
+	profileGroups           []connections.Group
+	selectedGroup           string
+	profileStarredOnly      bool
+	profileEngine           connections.Kind
+	navigationFilterRestore *profileFilterSnapshot
+	navigateDatabase        string
+	navigateTable           string
+	navigateProfileID       int64
+	groupEditing            bool
+	groupEditOriginal       string
+	groupDraft              string
+	groupError              string
+	groupDeleteConfirm      bool
+	groupPendingDelete      string
+	selectedProfileID       int64
+	pendingDeleteID         int64
+	deleteConfirm           bool
+	settingsPreview         *editor.State
+	settingsSampleInput     string
+	settingsSampleCheck     bool
+	settingsSampleRow       int
+	settingsSampleTable     ui.ListState
+	appearanceChanged       func(theme.Mode)
+	sqliteFilePicker        func()
+	mysqlSettingsPicker     func()
+	mysqlSSLFilePicker      func(MySQLSSLFile)
+	mysqlSSHKeyPicker       func()
+	mysqlHTTPFilePicker     func(MySQLHTTPFile)
 }
 
 func New() *State {

@@ -1,6 +1,7 @@
 {
   "disabledActionPreview": "Disabled action",
   "@@locale": "en",
+  "navigatorRestoreFilters": "Restore previous filters",
   "navigatorWaiting": "Waiting to load",
   "navigatorLoading": "Loading objects…",
   "navigatorRetry": "Load failed. Click to retry",

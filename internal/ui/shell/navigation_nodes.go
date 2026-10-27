@@ -193,6 +193,30 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 	// row so its context menu also receives clicks after a short name.
 	if isGroupNode(key) {
 		name := groupFromNode(key)
+		if s.groupEditing && s.groupEditOriginal == name {
+			ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight+3)).
+				Padding(0, 13).AlignItems(ui.Center).Gap(2).Children(func() {
+				theme.Icon(c, "folder-filled", 16, palette.Gold)
+				entry := ui.TextInput(c, &s.groupDraft).Label(locales.Text("连接组名称")).
+					Height(theme.RowHeight(c, 20)).Grow(1).MinWidth(35).AutoFocus()
+				if entry.Submitted() {
+					s.saveGroup()
+				}
+				if ui.ButtonBase(c).Label(locales.Text("保存组")).Tooltip(locales.Text("保存组")).
+					Size(20, 20).Padding(2).Children(func() {
+					theme.Icon(c, "check", 14, palette.Success)
+				}).Clicked() {
+					s.saveGroup()
+				}
+				if ui.ButtonBase(c).Label(locales.Text("取消编辑组")).Tooltip(locales.Text("取消编辑组")).
+					Size(20, 20).Padding(2).Children(func() {
+					theme.Icon(c, "close", 14, palette.Muted)
+				}).Clicked() {
+					s.cancelGroupEdit()
+				}
+			})
+			return
+		}
 		ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).Padding(0, 13).AlignItems(ui.Center).Gap(5).Children(func() {
 			theme.Icon(c, "folder-filled", 16, palette.Gold)
 			ui.Text(c, name).FontSize(theme.Font(c, 12)).SingleLine()

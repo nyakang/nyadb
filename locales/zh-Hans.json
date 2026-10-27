@@ -1,6 +1,7 @@
 {
   "disabledActionPreview": "禁用操作",
   "@@locale": "zh-Hans",
+  "navigatorRestoreFilters": "恢复之前的筛选",
   "navigatorWaiting": "等待加载",
   "navigatorLoading": "正在读取对象…",
   "navigatorRetry": "读取失败，点击重试",

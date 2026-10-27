@@ -81,6 +81,13 @@ func (s *State) beginGroupEdit(name string) {
 	s.groupEditing = true
 }
 
+func (s *State) cancelGroupEdit() {
+	s.groupEditing = false
+	s.groupEditOriginal = ""
+	s.groupDraft = ""
+	s.groupError = ""
+}
+
 func (s *State) saveGroup() {
 	if s.profileService == nil {
 		return

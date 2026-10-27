@@ -186,8 +186,18 @@ func (s *State) sidebarFooter(c *ui.Context) {
 	ui.Column(c).BorderWidth(1, 0, 0, 0).BorderColor(palette.Border).
 		Padding(0, 4).Gap(0).Children(func() {
 		ui.Row(c).Height(theme.RowHeight(c, 24)).Gap(2).AlignItems(ui.Center).Children(func() {
-			if ui.SearchField(c, &s.search).Label(locales.Text("搜索连接")).Placeholder(locales.Text("搜索")).Height(theme.RowHeight(c, 22)).Grow(1).MinWidth(0).Changed() {
+			if ui.SearchField(c, &s.search).Label(locales.Text("搜索连接")).Placeholder(locales.Text("搜索")).
+				Height(theme.RowHeight(c, 22)).Grow(1).MinWidth(0).BorderWidth(0).Radius(0).
+				Background(palette.Sidebar).Changed() {
 				s.changeProfileFilter()
+			}
+			if s.navigationFilterRestore != nil {
+				restore := ui.ButtonBase(c).Label(locales.Text("恢复之前的筛选")).
+					Tooltip(locales.Text("恢复之前的筛选")).Size(24, theme.RowHeight(c, 24)).Padding(3).Radius(1)
+				restore.Children(func() { theme.Icon(c, "refresh", 15, palette.Gold) })
+				if restore.Clicked() {
+					s.restoreNavigationFilter()
+				}
 			}
 			filter := ui.ButtonBase(c).Label(locales.Text("筛选连接")).Tooltip(locales.Text("筛选连接类型")).
 				Width(24).Height(theme.RowHeight(c, 24)).Padding(3).Radius(1)
