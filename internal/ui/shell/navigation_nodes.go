@@ -223,12 +223,11 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 			})
 			return
 		}
-		ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).Padding(0, 13).AlignItems(ui.Center).Gap(4).Children(func() {
+		ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).Padding(0, 8).AlignItems(ui.Center).Gap(4).Children(func() {
 			theme.Icon(c, "folder-filled", 16, palette.Gold)
 			ui.Text(c, name).FontSize(theme.Font(c, 12)).TextColor(palette.Text).SingleLine()
 		}).ContextMenu(func(m *ui.Menu) {
-			s.profileGroupMenu(m, name)
-			s.explorerMenuBuilt = true
+			s.navigationContextMenu(c.Services(), key, m)
 		})
 		return
 	}
@@ -240,15 +239,14 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 			if p.ID != n.ProfileID {
 				continue
 			}
-			row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).AlignItems(ui.Center).Gap(4).Children(func() {
+			row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).Padding(0, 6).AlignItems(ui.Center).Gap(4).Children(func() {
 				status := s.mysqlSessionStateFor(p.ID)
 				s.profileNavigationIcon(c, p.Kind, status, 16)
 				ui.Text(c, p.Name).FontSize(theme.Font(c, 12)).TextColor(palette.Text).SingleLine()
 			})
 			row.Label(p.Name + " · " + locales.Text(s.mysqlSessionStateFor(p.ID)))
 			row.ContextMenu(func(m *ui.Menu) {
-				s.profileConnectionMenu(m, p.Name, c.Services())
-				s.explorerMenuBuilt = true
+				s.navigationContextMenu(c.Services(), key, m)
 			})
 
 		}
@@ -280,14 +278,20 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 	if n.Category == "视图" {
 		icon = "view"
 	}
-	row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).AlignItems(ui.Center).Gap(4).Children(func() {
+	inset := float32(5)
+	row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, theme.TreeRowHeight-2)).Padding(0, inset).AlignItems(ui.Center).Gap(4).Children(func() {
 		ink := palette.Text
 		iconInk := palette.Text.Mix(palette.Blue, .22)
+		if n.Kind == "category" && supportedMySQLCategory(n.Category) || n.Kind == "object" {
+			// Database object categories use a soft functional blue, rather
+			// than the gray used for the unimplemented query/backup nodes.
+			iconInk = palette.Blue.Mix(palette.Muted, .17)
+		}
 		if n.Kind == "database" {
 			// Neutral cylinders and a colored current-database indicator.
-			iconInk = palette.Muted
+			iconInk = palette.Muted.Mix(palette.Text, .11)
 			if s.explorerName == key {
-				iconInk = palette.Success
+				iconInk = palette.Success.Mix(palette.Sidebar, .23)
 			}
 		}
 		if n.Kind == "status" || n.Kind == "category" && !supportedMySQLCategory(n.Category) {
@@ -318,31 +322,7 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 		row.Label("数据库：" + n.Database)
 	}
 	row.ContextMenu(func(m *ui.Menu) {
-		s.explorerMenuBuilt = true
-		s.selectNavigationNode(c.Services(), key)
-		s.explorerRow = -1
-		switch n.Kind {
-		case "object":
-			openLabel, structureLabel := mysqlObjectActionLabels(n.Category)
-			if m.Item(locales.Text(openLabel)).Shortcut(0, ui.KeyEnter).Chosen() {
-				s.openMySQLObject(c.Services(), n.Database, n.Object, n.Category)
-			}
-			if m.Item(locales.Text(structureLabel)).Shortcut(ui.Ctrl, ui.KeyD).Disabled(isMySQLProgram(n.Category)).Chosen() {
-				s.openMySQLStructure(c.Services(), n.Database, n.Object)
-			}
-			m.Separator()
-		case "category":
-			// Categories are navigation scopes, not database objects. Only
-			// expose read-only navigation and metadata refresh here.
-			if m.Item(locales.Text("显示全部对象")).Disabled(!supportedMySQLCategory(n.Category)).Chosen() {
-				s.filterMySQLObjects("全部")
-			}
-			m.Separator()
-		}
-		if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).
-			Disabled(s.mysqlObjectPending != "" || s.mysqlSessionStatus != "已连接").Chosen() {
-			s.loadMySQLObjects(c.Services(), n.Database, true)
-		}
+		s.navigationContextMenu(c.Services(), key, m)
 	})
 	if row.Clicked() {
 		s.selectNavigationNode(c.Services(), key)

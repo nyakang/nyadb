@@ -112,6 +112,21 @@ func Outline[K comparable](c *ui.Context, state *ui.OutlineState[K], roots []K, 
 	return ui.Outline(c, state, roots, children, row)
 }
 
+// NavigationOutline keeps the database explorer's selection distinct from
+// data grids. Navicat-like deep blue is used for focused selection in the
+// dark tree only; high-contrast and light modes retain semantic defaults.
+func NavigationOutline[K comparable](c *ui.Context, state *ui.OutlineState[K], roots []K, children func(K) []K, row func(K)) ui.Element {
+	base := c.Theme()
+	selected := SelectionTheme(c)
+	if base.Dark && !c.Preferences().HighContrast {
+		selected.Accent = ui.Hex("#0878ce")
+		selected.AccentText = ui.Hex("#ffffff")
+	}
+	c.SetTheme(selected)
+	defer c.SetTheme(base)
+	return ui.Outline(c, state, roots, children, row)
+}
+
 // CellText preserves readable ink on selected cells, including semantic
 // secondary text. MyGo resolves selection after column reordering/hiding.
 func CellText(c *ui.Context, state *ui.ListState, row, col int, normal ui.Color) ui.Color {
