@@ -61,6 +61,8 @@ func (s *State) advanceDraft(p *connections.Profile) error {
 }
 
 func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
+	palette := theme.Colors(c)
+
 	formWidth := connectionFormWidth(width)
 	labelWidth := connectionFormLabelWidth
 	fieldWidth := formWidth - labelWidth
@@ -68,17 +70,17 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 	// The shared 31-DIP rhythm leaves room around 26-DIP native controls.
 	ui.Column(c).Width(formWidth).Gap(0).Children(func() {
 		connectionFormRow(c).Children(func() {
-			ui.Text(c, "设置位置：").Width(labelWidth).FontSize(12)
+			ui.Text(c, "设置位置：").Width(labelWidth).FontSize(theme.Font(c, 12))
 			connectionFormTextInput(c, &a.SettingsLocation, "设置位置", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false)
 			ui.Box(c).Width(connectionFormBrowseGap)
 			connectionFormBrowse(c, "选择设置位置", s.mysqlSettingsPicker == nil, s.mysqlSettingsPicker)
 		})
 		connectionFormRow(c).Children(func() {
-			ui.Text(c, "客户端驱动程序：").Width(labelWidth).FontSize(12)
+			ui.Text(c, "客户端驱动程序：").Width(labelWidth).FontSize(theme.Font(c, 12))
 			connectionFormSelect(c, &a.ClientDriver, []string{"默认", "旧版"}, "客户端驱动程序", fieldWidth, false)
 		})
 		connectionFormRow(c).Children(func() {
-			ui.Text(c, "客户端字符集：").Width(labelWidth).FontSize(12)
+			ui.Text(c, "客户端字符集：").Width(labelWidth).FontSize(theme.Font(c, 12))
 			connectionFormSelect(c, &a.Charset, connections.MySQLCharsets, "客户端字符集", fieldWidth, false)
 		})
 		s.mysqlAdvancedNumberRow(c, &a.KeepAlive, "保持连接间隔（秒）：",
@@ -98,19 +100,19 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 		s.mysqlAdvancedNumberRow(c, &a.LimitSessions, "限制连接会话：",
 			&s.mysqlAdvancedNumbers[mysqlSessionLimit], labelWidth)
 		connectionFormRow(c).Children(func() {
-			ui.Text(c, "初始查询：").Width(labelWidth).FontSize(12)
+			ui.Text(c, "初始查询：").Width(labelWidth).FontSize(theme.Font(c, 12))
 			if connectionFormTextInput(c, &s.mysqlInitialQueryPreview, "初始查询", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false).Changed() {
 				s.mysqlInitialQuery = s.mysqlInitialQueryPreview
 			}
 			ui.Box(c).Width(connectionFormBrowseGap)
 			connectionFormBrowse(c, "编辑初始查询", false, s.beginMySQLInitialQuery)
 		})
-		if ui.Button(c, locales.Text("兼容性")).Width(160).Height(connectionFormInputHeight).Clicked() {
+		if ui.Button(c, locales.Text("兼容性")).Width(160).Height(theme.RowHeight(c, connectionFormInputHeight)).Clicked() {
 			s.mysqlCompatibilityVisible = true
 			s.connectionEditorTab = 6
 		}
 		ui.Text(c, "高级及兼容性选项可保存；初始查询仅本次编辑有效，不保存或执行。").
-			TextColor(theme.Muted).FontSize(11)
+			TextColor(palette.Muted).FontSize(theme.Font(c, 11))
 	})
 }
 
@@ -132,11 +134,13 @@ func (s *State) mysqlAdvancedNumberRow(
 // The original inserts this tab only after pressing the Compatibility button.
 // Each override is enabled by both the parent switch and its own checkbox.
 func (s *State) connectionMySQLCompatibility(c *ui.Context, width float32) {
+	palette := theme.Colors(c)
+
 	formWidth := connectionFormWidth(width)
 	compat := &s.connectionDraft.MySQLAdvanced.Compatibility
 	labelWidth := float32(216)
 	ui.Column(c).Width(formWidth).Gap(5).Children(func() {
-		ui.Row(c).Height(26).AlignItems(ui.Center).Children(func() {
+		ui.Row(c).Height(theme.RowHeight(c, 26)).AlignItems(ui.Center).Children(func() {
 			connectionFormCheckbox(c, &compat.Enabled, "使用兼容模式", false)
 		})
 		s.compatSelectRow(c, "强制 lower_case_table_names 为：",
@@ -144,12 +148,12 @@ func (s *State) connectionMySQLCompatibility(c *ui.Context, width float32) {
 			connections.MySQLLowerCaseValues, compat.Enabled, labelWidth)
 		ui.Row(c).Height(15).Children(func() {
 			ui.Box(c).Width(17)
-			ui.Text(c, "跳过 \"show variables like 'lower_case_%'\"").FontSize(11)
+			ui.Text(c, "跳过 \"show variables like 'lower_case_%'\"").FontSize(theme.Font(c, 11))
 		})
-		ui.Row(c).Height(26).Gap(0).AlignItems(ui.Center).Children(func() {
+		ui.Row(c).Height(theme.RowHeight(c, 26)).Gap(0).AlignItems(ui.Center).Children(func() {
 			connectionFormCheckbox(c, &compat.ForceSQLMode, "强制 sql_mode 为：", !compat.Enabled).Width(labelWidth)
 			ui.TextInput(c, &compat.SQLMode).Label("sql_mode").
-				Width(258).Height(25).Padding(2, 8).
+				Width(258).Height(theme.RowHeight(c, 25)).Padding(2, 8).
 				Disabled(!compat.Enabled || !compat.ForceSQLMode)
 		})
 		s.compatSelectRow(c, "强制 NDB 集群支持为：",
@@ -162,7 +166,7 @@ func (s *State) connectionMySQLCompatibility(c *ui.Context, width float32) {
 			&compat.ForceViewMethod, &compat.ViewMethod,
 			connections.MySQLViewMethods, compat.Enabled, labelWidth)
 		ui.Text(c, "兼容性设置仅保存为配置，数据库驱动接入后才会实际应用。").
-			TextColor(theme.Muted).FontSize(11)
+			TextColor(palette.Muted).FontSize(theme.Font(c, 11))
 	})
 }
 
@@ -170,9 +174,9 @@ func (s *State) compatSelectRow(
 	c *ui.Context, name string, checked *bool, value *string,
 	options []string, parentEnabled bool, labelWidth float32,
 ) {
-	ui.Row(c).Height(26).Gap(0).AlignItems(ui.Center).Children(func() {
+	ui.Row(c).Height(theme.RowHeight(c, 26)).Gap(0).AlignItems(ui.Center).Children(func() {
 		connectionFormCheckboxCompact(c, checked, name, !parentEnabled).Width(labelWidth)
-		ui.Select(c, value, options).Label(name + "选项").Width(258).Height(25).
+		ui.Select(c, value, options).Label(name + "选项").Width(258).Height(theme.RowHeight(c, 25)).
 			Disabled(!parentEnabled || !*checked)
 	})
 }

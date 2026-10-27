@@ -119,6 +119,8 @@ func (s *State) catalogTreeGroups() []catalogTreeGroup {
 }
 
 func (s *State) catalogTree(c *ui.Context) {
+	palette := theme.Colors(c)
+
 	ui.Column(c).Gap(0).Children(func() {
 		recent := s.catalogRecents()
 		if len(recent) > 0 {
@@ -130,7 +132,7 @@ func (s *State) catalogTree(c *ui.Context) {
 		direct := s.catalogTreeDirect()
 		groups := s.catalogTreeGroups()
 		if len(direct)+len(groups) == 0 {
-			ui.Text(c, "没有匹配的连接类型").FontSize(12).TextColor(theme.Muted)
+			ui.Text(c, "没有匹配的连接类型").FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 			return
 		}
 		s.catalogTreeHeading(c, "全部")
@@ -149,9 +151,9 @@ func (s *State) catalogTree(c *ui.Context) {
 					if open {
 						arrow = "▾"
 					}
-					ui.Text(c, arrow).Width(14).FontSize(12).TextColor(theme.Muted)
+					ui.Text(c, arrow).Width(14).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 					s.catalogProviderIcon(c, group.vendor, catalogTreeIconSize)
-					ui.Text(c, group.label).FontSize(12).SingleLine()
+					ui.Text(c, group.label).FontSize(theme.Font(c, 12)).SingleLine()
 				})
 			})
 			if button.Clicked() {
@@ -167,16 +169,20 @@ func (s *State) catalogTree(c *ui.Context) {
 }
 
 func (s *State) catalogTreeHeading(c *ui.Context, title string) {
-	ui.Row(c).Height(28).Padding(0, 8).AlignItems(ui.Center).Children(func() {
-		ui.Text(c, title).FontSize(12).TextColor(theme.Muted)
+	palette := theme.Colors(c)
+
+	ui.Row(c).Height(theme.RowHeight(c, 28)).Padding(0, 8).AlignItems(ui.Center).Children(func() {
+		ui.Text(c, title).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 	})
 }
 
 func (s *State) catalogTreeLeaf(c *ui.Context, item catalogEntry, depth int) {
+	palette := theme.Colors(c)
+
 	selected := s.connectionSelectedName == item.name
 	bg := ui.Transparent
 	if selected {
-		bg = theme.Selection
+		bg = palette.Selection
 	}
 	button := ui.ButtonBase(c).Label("选择 " + item.name).
 		FillWidth().Height(catalogTreeRowHeight).Radius(0).Background(bg)
@@ -188,7 +194,7 @@ func (s *State) catalogTreeLeaf(c *ui.Context, item catalogEntry, depth int) {
 			}
 			ui.Box(c).Width(indent)
 			s.catalogTreeIcon(c, item)
-			ui.Text(c, item.name).FontSize(12).SingleLine()
+			ui.Text(c, item.name).FontSize(theme.Font(c, 12)).SingleLine()
 		})
 	})
 	if button.Clicked() {

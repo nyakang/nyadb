@@ -34,6 +34,16 @@ type Messages struct{ locale string }
 // source language.
 func In(locale string) Messages { return Messages{locale} }
 
+// DisabledActionPreview says "禁用操作"
+// in the language the app shows.
+func DisabledActionPreview() string { return In(i18n.Locale()).DisabledActionPreview() }
+
+// DisabledActionPreview says "禁用操作"
+// in the language of msgs.
+func (msgs Messages) DisabledActionPreview() string {
+	return Catalog.Format(msgs.locale, "disabledActionPreview", nil)
+}
+
 // MyConnections says "我的连接"
 // in the language the app shows.
 func MyConnections() string { return In(i18n.Locale()).MyConnections() }

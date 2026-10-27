@@ -48,15 +48,17 @@ func (s *State) filteredRoots() []string {
 }
 
 func (s *State) sidebar(c *ui.Context) {
+	palette := theme.Colors(c)
+
 	if s.profileMode {
 		s.profileSidebar(c)
 		return
 	}
-	ui.Column(c).Fill().Background(theme.Sidebar).Children(func() {
-		ui.Row(c).Height(30).Padding(4, 10).AlignItems(ui.Center).
-			Background(theme.Accent).Gap(8).Children(func() {
-			theme.Icon(c, "connection", 17, theme.Text)
-			ui.Text(c, locales.Text("我的连接")).FontSize(12).Bold()
+	ui.Column(c).Fill().Background(palette.Sidebar).Children(func() {
+		ui.Row(c).Height(theme.RowHeight(c, 30)).Padding(4, 10).AlignItems(ui.Center).
+			Background(palette.Accent).TextColor(palette.AccentText).Gap(8).Children(func() {
+			theme.Icon(c, "connection", 17, palette.AccentText)
+			ui.Text(c, locales.Text("我的连接")).FontSize(theme.Font(c, 12)).Bold()
 			ui.Box(c).Grow(1)
 			if ui.Button(c, "+").Label("添加连接").Padding(1, 6).Clicked() {
 				s.clickToolbar("连接")
@@ -65,21 +67,21 @@ func (s *State) sidebar(c *ui.Context) {
 		ui.Column(c).Grow(1).Padding(4, 5).Children(func() {
 			roots := s.filteredRoots()
 			if len(roots) == 0 {
-				ui.Text(c, "没有匹配的连接").Padding(12).TextColor(theme.Muted)
+				ui.Text(c, "没有匹配的连接").Padding(12).TextColor(palette.Muted)
 				return
 			}
 			s.explorerTree.List.Selected = &s.explorerRow
-			ui.Outline(c, &s.explorerTree, roots, demoChildren, func(name string) {
+			theme.Outline(c, &s.explorerTree, roots, demoChildren, func(name string) {
 				ui.Row(c).AlignItems(ui.Center).Gap(6).Children(func() {
 					switch name {
 					case "测试库", "个人库", "公司库", "开发库", "生产库", "app_db", "personal", "office", "dev", "production":
-						theme.Icon(c, "folder", 15, theme.Gold)
+						theme.Icon(c, "folder", 15, palette.Gold)
 					case "customers", "orders", "products", "audit_logs":
-						theme.Icon(c, "table", 15, theme.Blue)
+						theme.Icon(c, "table", 15, palette.Blue)
 					default:
-						theme.Icon(c, "database", 15, theme.Muted)
+						theme.Icon(c, "database", 15, palette.Muted)
 					}
-					ui.Text(c, name).SingleLine().FontSize(12)
+					ui.Text(c, name).SingleLine().FontSize(theme.Font(c, 12))
 				}).ContextMenu(func(m *ui.Menu) {
 					if m.Item(locales.Text("选择 ") + name).Chosen() {
 						s.explorerName = name
@@ -100,7 +102,7 @@ func (s *State) sidebar(c *ui.Context) {
 				}
 			}
 		})
-		ui.Column(c).Padding(6).BorderWidth(1, 0, 0, 0).BorderColor(theme.Border).Children(func() {
+		ui.Column(c).Padding(6).BorderWidth(1, 0, 0, 0).BorderColor(palette.Border).Children(func() {
 			ui.SearchField(c, &s.search).Label(locales.Text("搜索连接")).Placeholder(locales.Text("搜索连接"))
 		})
 	})

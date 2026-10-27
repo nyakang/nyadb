@@ -25,15 +25,17 @@ func (s *State) mysqlDataObjectInspector(c *ui.Context, t *tab) {
 }
 
 func (s *State) mysqlDataInspectorHeader(c *ui.Context, t *tab, fieldMode bool) {
+	palette := theme.Colors(c)
+
 	ui.Row(c).Label(locales.Text("数据信息切换栏")).Height(42).Padding(1, 5).Gap(3).AlignItems(ui.Center).Children(func() {
 		ui.Toolbar(c, func() {
 			for _, item := range []struct {
 				label string
 				field bool
 			}{{"表信息", false}, {"字段信息", true}} {
-				button := ui.Button(c, locales.Text(item.label)).Height(theme.ControlHeight).FontSize(theme.SmallFontSize).Padding(2, 4)
+				button := ui.Button(c, locales.Text(item.label)).Height(theme.RowHeight(c, theme.ControlHeight)).FontSize(theme.Font(c, theme.SmallFontSize)).Padding(2, 4)
 				if item.field == fieldMode {
-					button.Background(theme.ToolbarSelected)
+					button.Background(palette.ToolbarSelected)
 				}
 				if button.Clicked() {
 					if item.field {
@@ -49,32 +51,34 @@ func (s *State) mysqlDataInspectorHeader(c *ui.Context, t *tab, fieldMode bool) 
 			}
 		}).Grow(1).MinWidth(0).Padding(0).Gap(3)
 		if ui.ButtonBase(c).Label(locales.Text("隐藏信息面板")).Tooltip(locales.Text("隐藏信息面板")).Size(20, 20).
-			Children(func() { theme.Icon(c, "close", 12, theme.Muted) }).Clicked() {
+			Children(func() { theme.Icon(c, "close", 12, palette.Muted) }).Clicked() {
 			s.inspectorOn = false
 		}
 	})
 }
 
 func (s *State) mysqlTableInfoInspector(c *ui.Context, t *tab) {
+	palette := theme.Colors(c)
+
 	d := &t.dataInfo
 	connected := t.dataProfileID == s.mysqlSessionProfileID && s.mysqlSessionProfileID > 0 && s.mysqlSessionStatus == "已连接"
-	ui.Column(c).Label(locales.Text("数据表信息面板")).Fill().Background(theme.Panel).Children(func() {
+	ui.Column(c).Label(locales.Text("数据表信息面板")).Fill().Background(palette.Panel).Children(func() {
 		s.mysqlDataInspectorHeader(c, t, false)
 		ui.Toolbar(c, func() {
-			if ui.Button(c, locales.Text("刷新")).Label(locales.Text("刷新表信息")).Height(theme.ControlHeight).
+			if ui.Button(c, locales.Text("刷新")).Label(locales.Text("刷新表信息")).Height(theme.RowHeight(c, theme.ControlHeight)).
 				Disabled(!connected || d.loading).Clicked() {
 				s.loadMySQLTableInfo(c.Services(), t, true)
 			}
 			if d.countLoading {
-				if ui.Button(c, locales.Text("取消计数")).Height(theme.ControlHeight).Clicked() {
+				if ui.Button(c, locales.Text("取消计数")).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
 					s.cancelMySQLTableCount(t)
 					d.countErr = locales.Text("行数统计已取消")
 				}
 			} else if ui.Button(c, locales.Text("获取行数")).Label(locales.Text("获取整表行数")).
-				Height(theme.ControlHeight).Disabled(!connected).Clicked() {
+				Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(!connected).Clicked() {
 				s.loadMySQLTableCount(c.Services(), t)
 			}
-		}).Height(theme.CommandBarHeight).FillWidth().Padding(1, 4).Gap(3)
+		}).Height(theme.RowHeight(c, theme.CommandBarHeight)).FillWidth().Padding(1, 4).Gap(3)
 		ui.Scroll(c).Grow(1).MinHeight(0).Children(func() {
 			ui.Column(c).Padding(12, 10).Gap(9).Children(func() {
 				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
@@ -82,8 +86,8 @@ func (s *State) mysqlTableInfoInspector(c *ui.Context, t *tab) {
 					if d.info != nil && d.info.Kind == "VIEW" {
 						icon = "view"
 					}
-					theme.Icon(c, icon, 26, theme.Blue)
-					ui.Text(c, t.dataTable).Bold().FontSize(14).SingleLine().Grow(1).MinWidth(0).Tooltip(t.dataTable)
+					theme.Icon(c, icon, 26, palette.Blue)
+					ui.Text(c, t.dataTable).Bold().FontSize(theme.Font(c, 14)).SingleLine().Grow(1).MinWidth(0).Tooltip(t.dataTable)
 				})
 				for _, p := range s.profileEntries {
 					if p.ID != t.dataProfileID {
@@ -98,16 +102,16 @@ func (s *State) mysqlTableInfoInspector(c *ui.Context, t *tab) {
 				mysqlTableInfoProperty(c, "数据库", t.dataDatabase)
 				ui.Divider(c)
 				if d.loading {
-					ui.Text(c, locales.Text("正在读取表信息…")).FontSize(11).TextColor(theme.Muted)
+					ui.Text(c, locales.Text("正在读取表信息…")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 				}
 				if d.err != "" {
-					ui.Text(c, locales.Text("表信息读取失败：")+d.err).FontSize(11).TextColor(theme.Gold)
+					ui.Text(c, locales.Text("表信息读取失败：")+d.err).FontSize(theme.Font(c, 11)).TextColor(palette.Error)
 					if d.info != nil {
-						ui.Text(c, locales.Text("显示上次读取的表信息")).FontSize(11).TextColor(theme.Muted)
+						ui.Text(c, locales.Text("显示上次读取的表信息")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 					}
 				}
 				if d.info == nil && !d.loading && d.err == "" {
-					ui.Text(c, locales.Text("尚未读取表信息")).FontSize(11).TextColor(theme.Muted)
+					ui.Text(c, locales.Text("尚未读取表信息")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 				}
 				estimate := "—"
 				if d.info != nil && d.info.EstimatedRows != nil {
@@ -119,12 +123,12 @@ func (s *State) mysqlTableInfoInspector(c *ui.Context, t *tab) {
 					mysqlTableInfoProperty(c, "行数统计时间", d.countAt.Local().Format("2006-01-02 15:04:05"))
 				}
 				if d.countLoading {
-					ui.Text(c, locales.Text("正在统计整表行数…")).FontSize(11).TextColor(theme.Muted)
+					ui.Text(c, locales.Text("正在统计整表行数…")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 				}
 				if d.countErr != "" {
-					ui.Text(c, locales.Text("行数统计：")+d.countErr).FontSize(11).TextColor(theme.Gold)
+					ui.Text(c, locales.Text("行数统计：")+d.countErr).FontSize(theme.Font(c, 11)).TextColor(palette.Error)
 				}
-				ui.Text(c, locales.Text("行数统计不应用当前筛选条件")).FontSize(11).TextColor(theme.Muted)
+				ui.Text(c, locales.Text("行数统计不应用当前筛选条件")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 				if d.info == nil {
 					return
 				}

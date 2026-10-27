@@ -60,6 +60,8 @@ func mysqlObjectActionLabels(kind string) (open, design string) {
 // mysqlObjectWorkspace lists real INFORMATION_SCHEMA objects and explicitly opens
 // read-only data or structure pages on the managed session.
 func (s *State) mysqlObjectWorkspace(c *ui.Context) {
+	palette := theme.Colors(c)
+
 	db := s.mysqlSelectedDatabase
 	items := s.mysqlSelectedObjects()
 	connected := s.mysqlSessionStateFor(s.selectedProfileID) == "已连接"
@@ -117,7 +119,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		return
 	}
 	previousRow := s.objectRow
-	table := ui.Table(c, &s.objectState, columns, len(items), func(row, col int) {
+	table := theme.Table(c, &s.objectState, columns, len(items), func(row, col int) {
 		obj := items[row]
 		switch col {
 		case 0:
@@ -126,7 +128,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 				iconName = "view"
 			}
 			ui.Row(c).AlignItems(ui.Center).Gap(6).Children(func() {
-				theme.Icon(c, iconName, 14, theme.Blue)
+				theme.Icon(c, iconName, 14, palette.Blue)
 				ui.Text(c, obj.Name).SingleLine()
 			})
 		default:

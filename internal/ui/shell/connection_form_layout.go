@@ -2,6 +2,7 @@ package shell
 
 import (
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -30,12 +31,12 @@ func connectionWideFormWidth(clientWidth float32) float32 {
 }
 
 func connectionFormRow(c *ui.Context) ui.Element {
-	return ui.Row(c).Height(connectionFormRowHeight).Gap(0).AlignItems(ui.Center)
+	return ui.Row(c).Height(theme.RowHeight(c, connectionFormRowHeight)).Gap(0).AlignItems(ui.Center)
 }
 
 func connectionFormTextInput(c *ui.Context, target *string, name string, width float32, disabled, secret bool) ui.Element {
 	field := ui.TextInput(c, target).Label(locales.Text(name)).Width(width).
-		Height(connectionFormInputHeight).Padding(2, 8).Disabled(disabled)
+		Height(theme.RowHeight(c, connectionFormInputHeight)).Padding(2, 8).Disabled(disabled)
 	if secret {
 		field.Password()
 	}
@@ -44,7 +45,7 @@ func connectionFormTextInput(c *ui.Context, target *string, name string, width f
 
 func connectionFormSelect(c *ui.Context, value *string, options []string, name string, width float32, disabled bool) ui.Element {
 	return ui.Select(c, value, options).Label(locales.Text(name)).
-		Width(width).Height(connectionFormInputHeight).Disabled(disabled)
+		Width(width).Height(theme.RowHeight(c, connectionFormInputHeight)).Disabled(disabled)
 }
 
 func connectionFormBrowse(c *ui.Context, label string, disabled bool, action func()) {

@@ -88,6 +88,8 @@ func (s *State) LoadLocalResearchIcons(dir string) (int, error) {
 }
 
 func (s *State) catalogIcon(c *ui.Context, item catalogEntry, size float32) {
+	palette := theme.Colors(c)
+
 	if bitmap := s.researchIcons[item.name]; bitmap != nil {
 		ui.Image(c, bitmap).Size(size*1.35, size*1.35).Fit(ui.Contain)
 		return
@@ -98,6 +100,6 @@ func (s *State) catalogIcon(c *ui.Context, item catalogEntry, size float32) {
 	}
 	ui.Box(c).Size(size, size).Radius(6).Background(ui.Hex(item.color)).Center().Children(func() {
 		symbolSize := size * 0.64
-		theme.Icon(c, item.symbol, symbolSize, theme.Text)
+		theme.Icon(c, item.symbol, symbolSize, palette.Text)
 	})
 }

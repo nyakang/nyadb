@@ -1,40 +1,49 @@
-//go:build linux
+//go:build linux && (amd64 || arm64)
 
 package bootstrap
 
 import (
-	"os"
+	"github.com/nyakang/nyadb/internal/ui/theme"
+	"reflect"
 	"testing"
 )
 
-func TestConfigureNativeGTKTheme(t *testing.T) {
-	t.Run("default", func(t *testing.T) {
-		before, set := os.LookupEnv("GTK_THEME")
-		_ = os.Unsetenv("GTK_THEME")
-		t.Cleanup(func() {
-			if set {
-				_ = os.Setenv("GTK_THEME", before)
-			} else {
-				_ = os.Unsetenv("GTK_THEME")
+type recordingGTKSettings struct{ changes []string }
+
+func (s *recordingGTKSettings) setName(name string) { s.changes = append(s.changes, name) }
+func (s *recordingGTKSettings) resetName()          { s.changes = append(s.changes, "desktop") }
+
+func TestNativeGTKThemeRestoresDesktopAcrossModeChanges(t *testing.T) {
+	var controller gtkThemeController
+	settings := &recordingGTKSettings{}
+	for _, mode := range []theme.Mode{theme.ModeDark, theme.ModeDark, theme.ModeLight, theme.ModeDark, theme.ModeSystem, theme.ModeLight} {
+		controller.apply(mode, false, false, settings)
+	}
+	if want := []string{"Adwaita", "desktop", "Adwaita", "desktop"}; !reflect.DeepEqual(settings.changes, want) {
+		t.Fatalf("GTK changes = %v, want %v", settings.changes, want)
+	}
+}
+
+func TestNativeGTKThemeRespectsExplicitAndContrastThemes(t *testing.T) {
+	for _, tc := range []struct {
+		name                   string
+		explicit, highContrast bool
+	}{
+		{"explicit GTK_THEME including empty", true, false},
+		{"desktop contrast theme", false, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var controller gtkThemeController
+			settings := &recordingGTKSettings{}
+			controller.apply(theme.ModeDark, tc.explicit, tc.highContrast, settings)
+			if len(settings.changes) != 0 {
+				t.Fatalf("overrode desktop/user theme: %v", settings.changes)
+			}
+			controller.apply(theme.ModeDark, false, false, settings)
+			controller.apply(theme.ModeDark, tc.explicit, tc.highContrast, settings)
+			if want := []string{"Adwaita", "desktop"}; !reflect.DeepEqual(settings.changes, want) {
+				t.Fatalf("failed to release override: %v", settings.changes)
 			}
 		})
-		configureNativeGTKTheme()
-		if v := os.Getenv("GTK_THEME"); v != "Adwaita:dark" {
-			t.Fatalf("GTK dark fallback: %q", v)
-		}
-	})
-	t.Run("user selected theme", func(t *testing.T) {
-		t.Setenv("GTK_THEME", "Breeze:light")
-		configureNativeGTKTheme()
-		if v := os.Getenv("GTK_THEME"); v != "Breeze:light" {
-			t.Fatalf("overwrote explicit GTK theme: %q", v)
-		}
-	})
-	t.Run("explicit empty disables fallback", func(t *testing.T) {
-		t.Setenv("GTK_THEME", "")
-		configureNativeGTKTheme()
-		if _, ok := os.LookupEnv("GTK_THEME"); !ok || os.Getenv("GTK_THEME") != "" {
-			t.Fatal("ignored explicit empty GTK_THEME")
-		}
-	})
+	}
 }

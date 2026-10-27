@@ -6,51 +6,13 @@ import (
 	"github.com/nyakang/nyadb/locales"
 )
 
-// The editor derives input and checkbox colors from the workbench palette.
-// Shared by every connection tab and editable configuration profile.
-var (
-	connectionFieldBackground  = theme.Panel
-	connectionFieldBorder      = theme.Border
-	connectionFieldFocus       = theme.Blue
-	connectionFieldText        = theme.Text
-	connectionFieldMuted       = theme.Muted
-	connectionCheckboxBorder   = theme.Border
-	connectionCheckboxHover    = theme.Muted
-	connectionCheckboxDisabled = theme.App
-	connectionCheckColor       = theme.Text
-	connectionCheckDisabled    = theme.Muted
-)
-
 const connectionCheckboxSize float32 = 14
 
 // Keep MyGo's native text editing, selection, IME, popup keyboard handling,
 // disabled semantics and focus border. Only its window-local theme is changed.
 func applyConnectionEditorFormTheme(c *ui.Context) {
 	theme.Apply(c)
-	// Rebind tokens on each frame: the standalone editor survives mode changes.
-	connectionFieldBackground = theme.Panel
-	connectionFieldBorder = theme.Border
-	if c.Theme().Dark {
-		// In the observed dark editor, idle inputs blend into their dark
-		// fill; the native input draws its accent border only when focused.
-		connectionFieldBorder = theme.Panel
-	}
-	connectionFieldFocus = c.Theme().Focus
-	connectionFieldText = theme.Text
-	connectionFieldMuted = theme.Muted
-	connectionCheckboxBorder = theme.Border
-	connectionCheckboxHover = theme.Muted
-	connectionCheckboxDisabled = theme.App
-	connectionCheckColor = theme.Text
-	connectionCheckDisabled = theme.Muted
-	t := *c.Theme()
-	t.Surface = connectionFieldBackground
-	t.Border = connectionFieldBorder
-	t.Text = connectionFieldText
-	t.TextMuted = connectionFieldMuted
-	t.Focus = connectionFieldFocus
-	t.Accent = connectionFieldFocus // MyGo TextInput uses Accent for the focused border.
-	c.SetTheme(&t)
+	c.SetTheme(theme.InputTheme(c))
 }
 
 // connectionFormCheckbox uses MyGo CheckboxBase: pointer/keyboard interaction,
@@ -65,22 +27,24 @@ func connectionFormCheckboxCompact(c *ui.Context, checked *bool, label string, d
 }
 
 func connectionFormCheckboxSized(c *ui.Context, checked *bool, label string, disabled bool, size float32) ui.Element {
+	palette := theme.Colors(c)
+
 	row := ui.CheckboxBase(c, checked).Label(locales.Text(label)).
-		Height(connectionFormInputHeight).Gap(5).AlignItems(ui.Center).
+		Height(theme.RowHeight(c, connectionFormInputHeight)).Gap(5).AlignItems(ui.Center).
 		FocusRing(false).Disabled(disabled)
 	row.Children(func() {
-		fill := connectionFieldBackground
-		border := connectionCheckboxBorder
-		tick := connectionCheckColor
-		ink := connectionFieldText
+		fill := palette.Panel
+		border := palette.Border
+		tick := palette.Text
+		ink := palette.Text
 		if disabled {
-			fill = connectionCheckboxDisabled
-			border = connectionFieldBorder
-			tick = connectionCheckDisabled
+			fill = palette.App
+			border = palette.InputBorder
+			tick = palette.Muted
 			// MyGo dims disabled subtrees; avoid double-dimming the label.
-			ink = connectionFieldText
+			ink = palette.Text
 		} else if row.Hovered() {
-			border = connectionCheckboxHover
+			border = palette.Muted
 		}
 		ui.Box(c).Size(connectionCheckboxSize, connectionCheckboxSize).
 			Radius(1).Background(fill).Border(1, border).
@@ -94,10 +58,10 @@ func connectionFormCheckboxSized(c *ui.Context, checked *bool, label string, dis
 				}
 				if row.FocusVisible() {
 					p.Stroke(ui.Rect{X: r.X - 2, Y: r.Y - 2, W: r.W + 4, H: r.H + 4},
-						connectionFieldFocus, 3, 1)
+						palette.Focus, 3, 1)
 				}
 			})
-		ui.Text(c, locales.Text(label)).FontSize(size).TextColor(ink)
+		ui.Text(c, locales.Text(label)).FontSize(theme.Font(c, size)).TextColor(ink)
 	})
 	return row
 }

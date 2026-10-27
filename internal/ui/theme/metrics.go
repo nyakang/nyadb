@@ -1,5 +1,22 @@
 package theme
 
+import "github.com/egoist/mygo/ui"
+
+// Font scales explicit typography with the desktop's text-size preference.
+// Display/DPI scaling is separately applied by MyGo.
+func Font(c *ui.Context, size float32) float32 {
+	scale := c.Preferences().TextScale
+	if scale <= 0 {
+		scale = 1
+	}
+	return size * scale
+}
+
+// RowHeight preserves normal compact geometry and makes room for larger text.
+func RowHeight(c *ui.Context, height float32) float32 {
+	return height + max(float32(0), Font(c, FontSize)-FontSize)*1.5
+}
+
 // Shared desktop measurements in device-independent pixels. These describe
 // the compact Linux reference; MyGo applies the actual display scale.
 const (

@@ -176,28 +176,30 @@ func (s *State) sidebarFilterMenu(m *ui.Menu) {
 }
 
 func (s *State) sidebarFooter(c *ui.Context) {
-	ui.Column(c).BorderWidth(1, 0, 0, 0).BorderColor(theme.Border).
+	palette := theme.Colors(c)
+
+	ui.Column(c).BorderWidth(1, 0, 0, 0).BorderColor(palette.Border).
 		Padding(0, 4).Gap(0).Children(func() {
-		ui.Row(c).Height(24).Gap(2).AlignItems(ui.Center).Children(func() {
-			if ui.SearchField(c, &s.search).Label(locales.Text("搜索连接")).Placeholder(locales.Text("搜索")).Height(22).Grow(1).MinWidth(0).Changed() {
+		ui.Row(c).Height(theme.RowHeight(c, 24)).Gap(2).AlignItems(ui.Center).Children(func() {
+			if ui.SearchField(c, &s.search).Label(locales.Text("搜索连接")).Placeholder(locales.Text("搜索")).Height(theme.RowHeight(c, 22)).Grow(1).MinWidth(0).Changed() {
 				s.changeProfileFilter()
 			}
 			filter := ui.ButtonBase(c).Label(locales.Text("筛选连接")).Tooltip(locales.Text("筛选连接类型")).
-				Width(24).Height(24).Padding(3).Radius(1)
-			filter.Children(func() { theme.Icon(c, "catalog-filter", 15, theme.Muted) })
+				Width(24).Height(theme.RowHeight(c, 24)).Padding(3).Radius(1)
+			filter.Children(func() { theme.Icon(c, "catalog-filter", 15, palette.Muted) })
 			if s.profileEngine != "" {
-				filter.Background(theme.Accent.Alpha(.28))
+				filter.Background(palette.Accent.Alpha(.28))
 			}
 			filter.Menu(func(m *ui.Menu) { s.sidebarFilterMenu(m) })
 			starred := ui.ButtonBase(c).Label(locales.Text("显示已星标")).Tooltip(locales.Text("只显示已星标的连接")).
-				Width(24).Height(24).Padding(3).Radius(1)
+				Width(24).Height(theme.RowHeight(c, 24)).Padding(3).Radius(1)
 			if s.profileStarredOnly {
-				starred.Background(theme.Accent.Alpha(.28))
+				starred.Background(palette.Accent.Alpha(.28))
 			}
 			starred.Children(func() {
-				color := theme.Muted
+				color := palette.Muted
 				if s.profileStarredOnly {
-					color = theme.Gold
+					color = palette.Gold
 				}
 				theme.Icon(c, "star", 15, color)
 			})
@@ -207,17 +209,17 @@ func (s *State) sidebarFooter(c *ui.Context) {
 			}
 			active := ui.ButtonBase(c).Label(locales.Text("导航至活动标签的对象")).
 				Tooltip("在连接树中定位当前活动数据库对象").
-				Width(24).Height(24).Padding(3).Radius(1)
+				Width(24).Height(theme.RowHeight(c, 24)).Padding(3).Radius(1)
 			_, _, _, canNavigate := s.activeTabObject()
 			active.Disabled(!canNavigate)
-			active.Children(func() { theme.Icon(c, "navigate-active", 15, theme.Muted) })
+			active.Children(func() { theme.Icon(c, "navigate-active", 15, palette.Muted) })
 			if active.Clicked() {
 				s.navigateToActiveTab(c.Services())
 			}
 			collapse := ui.ButtonBase(c).Label(locales.Text("全部折叠")).
 				Tooltip("折叠所有连接组与数据库树").
-				Width(24).Height(24).Padding(3).Radius(1)
-			collapse.Children(func() { theme.Icon(c, "collapse-all", 15, theme.Muted) })
+				Width(24).Height(theme.RowHeight(c, 24)).Padding(3).Radius(1)
+			collapse.Children(func() { theme.Icon(c, "collapse-all", 15, palette.Muted) })
 			if collapse.Clicked() {
 				s.collapseProfileNavigation()
 			}

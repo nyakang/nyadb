@@ -281,14 +281,16 @@ func (s *State) prepareConnectionConfigurations() (connections.Profile, error) {
 }
 
 func (s *State) connectionConfigurationsSidebar(c *ui.Context, height float32) {
+	palette := theme.Colors(c)
+
 	ui.Column(c).Width(258).Height(height).Gap(0).
-		Background(theme.Sidebar).BorderWidth(0, 1, 0, 0).
-		BorderColor(connectionEditorBorder).Children(func() {
+		Background(palette.Sidebar).BorderWidth(0, 1, 0, 0).
+		BorderColor(palette.Border).Children(func() {
 		ui.Row(c).Height(38).Padding(7, 10).AlignItems(ui.Center).Gap(5).
-			Background(theme.Header).Children(func() {
-			ui.Text(c, "连接配置文件").FontSize(12).TextColor(connectionFieldMuted)
+			Background(palette.Header).Children(func() {
+			ui.Text(c, "连接配置文件").FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 			ui.Box(c).Grow(1)
-			if ui.Button(c, "+").Width(22).Height(22).Padding(0, 0).
+			if ui.Button(c, "+").Width(22).Height(theme.RowHeight(c, 22)).Padding(0, 0).
 				Label("添加连接配置文件").
 				Disabled(len(s.connectionOtherConfigs) >= 16).Clicked() {
 				s.addConnectionConfiguration()
@@ -306,18 +308,23 @@ func (s *State) connectionConfigurationsSidebar(c *ui.Context, height float32) {
 }
 
 func (s *State) connectionConfigRow(c *ui.Context, index int, name string) {
-	ui.Row(c).Height(25).Gap(0).Children(func() {
+	palette := theme.Colors(c)
+
+	ui.Row(c).Height(theme.RowHeight(c, 25)).Gap(0).Children(func() {
 		if index == s.connectionActiveTarget {
 			name += " (Active)"
 		}
 		selected := index == s.connectionActiveConfig
-		bg := theme.Sidebar
+		bg := palette.Sidebar
 		if selected {
-			bg = theme.Selection
+			bg = palette.Selection
 		}
 		row := ui.Button(c, name).Label("切换配置文件："+name).
-			Width(257).Height(25).Padding(4, 9).
+			Width(257).Height(theme.RowHeight(c, 25)).Padding(4, 9).
 			Background(bg).Border(0, bg).Justify(ui.Start)
+		if selected {
+			row.TextColor(palette.SelectionText)
+		}
 		row.ContextMenu(func(m *ui.Menu) {
 			if index != s.connectionActiveTarget {
 				if m.Item("设置为活动配置文件").Chosen() {
@@ -352,6 +359,8 @@ func (s *State) connectionConfigRow(c *ui.Context, index int, name string) {
 }
 
 func (s *State) connectionConfigurationCaption(c *ui.Context) {
+	palette := theme.Colors(c)
+
 	if s.connectionDraft.ID == 0 || s.connectionDraft.Kind != connections.MySQL ||
 		!s.connectionProfilesVisible || s.connectionActiveConfig == 0 {
 		return
@@ -360,8 +369,8 @@ func (s *State) connectionConfigurationCaption(c *ui.Context) {
 	if index < 0 || index >= len(s.connectionOtherConfigs) {
 		return
 	}
-	ui.Row(c).Height(24).Padding(2, 15).AlignItems(ui.Center).Gap(9).Children(func() {
-		ui.Text(c, "配置文件名称：").FontSize(11).TextColor(connectionFieldMuted)
+	ui.Row(c).Height(theme.RowHeight(c, 24)).Padding(2, 15).AlignItems(ui.Center).Gap(9).Children(func() {
+		ui.Text(c, "配置文件名称：").FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 		ui.TextInput(c, &s.connectionOtherConfigs[index].name).Label("配置文件名称").
 			Width(210).Height(21).Padding(2, 6)
 	})

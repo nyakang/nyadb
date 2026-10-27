@@ -37,10 +37,12 @@ func mysqlFilterMode(mode string) string {
 func mysqlDataFilterModeNeedsValue(mode string) bool { return mode != "为空" && mode != "不为空" }
 
 func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *connections.MySQLDataPage) {
+	palette := theme.Colors(c)
+
 	viewportWidth, viewportHeight := c.Size()
 	narrow := viewportWidth < 1100
-	ui.Column(c).Background(theme.Header).Padding(1, 6).Gap(2).Children(func() {
-		ui.Row(c).Height(theme.TabHeight).Gap(5).AlignItems(ui.Center).Children(func() {
+	ui.Column(c).Background(palette.Header).Padding(1, 6).Gap(2).Children(func() {
+		ui.Row(c).Height(theme.RowHeight(c, theme.TabHeight)).Gap(5).AlignItems(ui.Center).Children(func() {
 			label := "筛选 & 排序 ▸"
 			if t.dataRulesExpanded {
 				label = "筛选 & 排序 ▾"
@@ -52,17 +54,17 @@ func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *connections.MyS
 			if count == 0 && t.dataFilterMode != "" {
 				count = 1
 			}
-			ui.Text(c, fmt.Sprintf(locales.Text("筛选 %d · 排序 %d"), count, mysqlDataActiveSortCount(t))).FontSize(theme.SmallFontSize).TextColor(theme.Muted).SingleLine().MinWidth(0)
+			ui.Text(c, fmt.Sprintf(locales.Text("筛选 %d · 排序 %d"), count, mysqlDataActiveSortCount(t))).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Muted).SingleLine().MinWidth(0)
 			if !narrow {
 				ui.Toolbar(c, func() { s.mysqlDataCompactActions(c, t) }).Label(locales.Text("数据操作")).Grow(1).MinWidth(0).Padding(0).Gap(2)
 			}
 		})
 		if narrow {
-			ui.Toolbar(c, func() { s.mysqlDataCompactActions(c, t) }).Label(locales.Text("数据操作")).Height(theme.TabHeight).FillWidth().MinWidth(0).Padding(0).Gap(2)
+			ui.Toolbar(c, func() { s.mysqlDataCompactActions(c, t) }).Label(locales.Text("数据操作")).Height(theme.RowHeight(c, theme.TabHeight)).FillWidth().MinWidth(0).Padding(0).Gap(2)
 		}
 		if !t.dataRulesExpanded {
 			if t.dataRuleError != "" {
-				ui.Text(c, t.dataRuleError).SingleLine().FontSize(theme.SmallFontSize).TextColor(theme.Gold).Tooltip(t.dataRuleError)
+				ui.Text(c, t.dataRuleError).SingleLine().FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Error).Tooltip(t.dataRuleError)
 			}
 			return
 		}
@@ -72,24 +74,26 @@ func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *connections.MyS
 		ui.ScrollBoth(c).Label(locales.Text("筛选规则")).Height(height).FillWidth().Children(func() {
 			ui.Column(c).MinWidth(530).Gap(3).Children(func() { s.mysqlDataRuleFields(c, t, page) })
 		})
-		ui.Row(c).Height(theme.CommandBarHeight).Gap(6).AlignItems(ui.Center).Children(func() {
-			if ui.Button(c, locales.Text("应用筛选 & 排序")).Label(locales.Text("应用筛选")).Height(theme.ControlHeight).Disabled(t.dataLoading).Clicked() {
+		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(6).AlignItems(ui.Center).Children(func() {
+			if ui.Button(c, locales.Text("应用筛选 & 排序")).Label(locales.Text("应用筛选")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(t.dataLoading).Clicked() {
 				s.applyMySQLDataFilter(c.Services(), t)
 			}
-			message, color := mysqlDataFilterStatus(t), theme.Muted
+			message, color := mysqlDataFilterStatus(t), palette.Muted
 			if t.dataRuleError != "" {
-				message, color = t.dataRuleError, theme.Gold
+				message, color = t.dataRuleError, palette.Gold
 			}
-			ui.Text(c, message).SingleLine().FontSize(theme.SmallFontSize).TextColor(color).Grow(1).MinWidth(0).Tooltip(message)
+			ui.Text(c, message).SingleLine().FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(color).Grow(1).MinWidth(0).Tooltip(message)
 		})
 	})
 }
 
 func (s *State) mysqlDataRuleFields(c *ui.Context, t *tab, page *connections.MySQLDataPage) {
+	palette := theme.Colors(c)
+
 	choices := append([]string{"选择字段"}, page.Columns...)
-	ui.Text(c, locales.Text("筛选  ·  所有已启用条件均满足 (AND)")).FontSize(11).TextColor(theme.Muted)
-	ui.Row(c).Height(theme.CommandBarHeight).Gap(6).AlignItems(ui.Center).Children(func() {
-		mysqlDataRuleSelect(c, &t.dataFilterColumnDraft, choices, mysqlDataColumnChoiceLabel).Height(theme.ControlHeight).Width(150)
+	ui.Text(c, locales.Text("筛选  ·  所有已启用条件均满足 (AND)")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+	ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(6).AlignItems(ui.Center).Children(func() {
+		mysqlDataRuleSelect(c, &t.dataFilterColumnDraft, choices, mysqlDataColumnChoiceLabel).Height(theme.RowHeight(c, theme.ControlHeight)).Width(150)
 		mysqlDataRuleSelect(c, &t.dataFilterModeDraft, mysqlFilterModeChoices, locales.Text).Width(110)
 		if mysqlDataFilterModeNeedsValue(t.dataFilterModeDraft) {
 			ui.TextInput(c, &t.dataFilterValueDraft).Label(locales.Text("数据筛选值")).Placeholder(locales.Text("筛选值")).Width(170)
@@ -102,8 +106,8 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *tab, page *connections.MyS
 	for i := range t.dataFilterExtraDraft {
 		i := i
 		rule := &t.dataFilterExtraDraft[i]
-		ui.Row(c).Height(theme.CommandBarHeight).Gap(6).AlignItems(ui.Center).Children(func() {
-			ui.Text(c, locales.Text("且")).TextColor(theme.Muted).FontSize(11)
+		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(6).AlignItems(ui.Center).Children(func() {
+			ui.Text(c, locales.Text("且")).TextColor(palette.Muted).FontSize(theme.Font(c, 11))
 			mysqlDataRuleSelect(c, &rule.Column, choices, mysqlDataColumnChoiceLabel).Width(140)
 			mysqlDataRuleSelect(c, &rule.Mode, mysqlFilterModeChoices, locales.Text).Width(110)
 			if mysqlDataFilterModeNeedsValue(rule.Mode) {
@@ -115,8 +119,8 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *tab, page *connections.MyS
 		})
 	}
 	ui.Divider(c)
-	ui.Row(c).Height(theme.ControlHeight).Gap(8).AlignItems(ui.Center).Children(func() {
-		ui.Text(c, locales.Text("排序方式 · 按规则优先级依次排序")).FontSize(11).TextColor(theme.Muted)
+	ui.Row(c).Height(theme.RowHeight(c, theme.ControlHeight)).Gap(8).AlignItems(ui.Center).Children(func() {
+		ui.Text(c, locales.Text("排序方式 · 按规则优先级依次排序")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 		ui.Box(c).Grow(1)
 		if ui.Button(c, locales.Text("添加排序")).Disabled(len(t.dataSortDraft) >= connections.MySQLDataMaxSortRules).Clicked() {
 			t.dataSortDraft = append(t.dataSortDraft, mysqlDataSortDraft{Column: "选择字段", Direction: "升序"})
@@ -125,8 +129,8 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *tab, page *connections.MyS
 	for i := range t.dataSortDraft {
 		i := i
 		rule := &t.dataSortDraft[i]
-		ui.Row(c).Height(theme.CommandBarHeight).Gap(6).AlignItems(ui.Center).Children(func() {
-			ui.Text(c, fmt.Sprintf("%d.", i+1)).FontSize(11).TextColor(theme.Muted)
+		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(6).AlignItems(ui.Center).Children(func() {
+			ui.Text(c, fmt.Sprintf("%d.", i+1)).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 			mysqlDataRuleSelect(c, &rule.Column, choices, mysqlDataColumnChoiceLabel).Width(165)
 			mysqlDataRuleSelect(c, &rule.Direction, []string{"升序", "降序"}, locales.Text).Width(100)
 			if ui.Button(c, locales.Text("移除")).Label(fmt.Sprintf(locales.Text("删除排序规则 %d"), i+1)).Clicked() {

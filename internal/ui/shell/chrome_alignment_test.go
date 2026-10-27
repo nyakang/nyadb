@@ -45,7 +45,7 @@ func TestToolbarModeHasNeutralSelectionAndPinnedInspector(t *testing.T) {
 		t.Fatal("selected mode is missing")
 	}
 	pixel := tt.Image().RGBAAt(int(r.X+5), int(r.Y+5))
-	if pixel.R != theme.ToolbarSelected.R || pixel.G != theme.ToolbarSelected.G || pixel.B != theme.ToolbarSelected.B {
+	if pixel.R != theme.PaletteFor(theme.CurrentMode(), true).ToolbarSelected.R || pixel.G != theme.PaletteFor(theme.CurrentMode(), true).ToolbarSelected.G || pixel.B != theme.PaletteFor(theme.CurrentMode(), true).ToolbarSelected.B {
 		t.Fatalf("toolbar selection should use a neutral mode surface: %v", pixel)
 	}
 	// A narrow toolbar puts trailing actions in MyGo's native overflow, but
