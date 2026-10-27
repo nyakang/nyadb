@@ -31,3 +31,23 @@ func (s *State) profileBrandIcon(c *ui.Context, kind connections.Kind, size floa
 	}
 	theme.Icon(c, fallback, size, color)
 }
+
+// The navigator displays a connection's lifecycle on its icon rather than
+// adding a tiny trailing dot. The connection chooser keeps its brand icon.
+func (s *State) profileNavigationIcon(c *ui.Context, kind connections.Kind, status string, size float32) {
+	if kind == connections.MySQL {
+		palette := theme.Colors(c)
+		switch status {
+		case "已连接":
+			theme.Icon(c, "connection-active", size, palette.Success)
+		case "连接中":
+			theme.Icon(c, "connection-idle", size, palette.Warning)
+		case "连接失败":
+			theme.Icon(c, "connection-idle", size, palette.Error)
+		default:
+			theme.Icon(c, "connection-idle", size, palette.Muted)
+		}
+		return
+	}
+	s.profileBrandIcon(c, kind, size)
+}

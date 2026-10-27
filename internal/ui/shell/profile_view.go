@@ -72,10 +72,13 @@ func (s *State) profileSidebar(c *ui.Context) {
 			}
 			s.explorerTree.List.Selection = &s.explorerSelection
 			s.explorerTree.List.Selected = &s.explorerRow
-			s.explorerTree.Indent = 17 // fixed disclosure gutter; content has its own icon gap
+			s.explorerTree.Indent = 17 // consistent steps between groups, connections and databases
 			savedTheme := c.Theme()
 			denseTheme := *savedTheme
+			// The native triangle has its own 10-DIP hit target; no need to
+			// inflate spacing for its legibility.
 			denseTheme.Spacing = 1
+			configureNavigatorDisclosure(&s.explorerTree)
 			c.SetTheme(&denseTheme)
 			tree := theme.Outline(c, &s.explorerTree, roots, s.profileChildren, func(key string) { s.navigationRow(c, key) }).Grow(1).Padding(0).Gap(0)
 			c.SetTheme(savedTheme)
