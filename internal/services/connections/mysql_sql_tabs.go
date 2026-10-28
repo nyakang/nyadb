@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"sync"
+
+	mysql "github.com/go-sql-driver/mysql"
 )
 
 // ErrMySQLSQLSessionLost means that a tab's physical SQL session may no longer
@@ -188,15 +190,40 @@ func (m *MySQLSessionManager) ExecuteSQLTab(ctx context.Context, profileID int64
 		lease.conn = conn
 	}
 	result, err = executeSQLOnConn(queryCtx, lease.conn, database, statement)
-	if queryCtx.Err() != nil || errors.Is(err, driver.ErrBadConn) || errors.Is(err, io.EOF) {
+	if queryCtx.Err() != nil || mysqlSQLSessionBroken(err) {
 		// MySQL cancellation may close the TCP connection while server-side
 		// writes have already committed. Do not silently swap sessions.
 		lease.lost = true
 		lease.cancel()
 		_ = lease.conn.Close()
 		lease.conn = nil
+		if queryCtx.Err() == nil && err != nil {
+			// Surface the lost-state warning on the first failed query, not
+			// only on the next attempt. Retain the original error for logs.
+			err = fmt.Errorf("%w: %w", ErrMySQLSQLSessionLost, err)
+		}
 	}
 	return result, err
+}
+
+// MySQL 8.4 returns server error 4031 after wait_timeout expiry rather than
+// driver.ErrBadConn. Both mean the stateful SQL tab's original transaction,
+// variables and temporary tables are gone. Ordinary syntax/permission
+// errors must NOT force a new session.
+func mysqlSQLSessionBroken(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, driver.ErrBadConn) || errors.Is(err, io.EOF) ||
+		errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, mysql.ErrInvalidConn) {
+		return true
+	}
+	var serverErr *mysql.MySQLError
+	if errors.As(err, &serverErr) {
+		return serverErr.Number == 4031 || serverErr.Number == 2006 ||
+			serverErr.Number == 2013 || serverErr.Number == 2055
+	}
+	return false
 }
 
 func hasSQLStatement(statement string) bool {
