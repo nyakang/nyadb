@@ -169,6 +169,8 @@ func (s *State) consumeMySQLSQLResults() {
 					t.sqlError = "SQL 执行已停止；服务器端更改可能已生效"
 				} else if errors.Is(r.err, connections.ErrMySQLSQLSessionLost) {
 					t.sqlError = "查询会话已失效，请关闭并新建 SQL 标签；未提交事务可能已回滚"
+				} else if errors.Is(r.err, connections.ErrMySQLSQLSessionLimit) {
+					t.sqlError = "SQL 标签会话数已达到上限，请关闭其他查询标签后重试"
 				} else {
 					t.sqlError = r.err.Error()
 				}

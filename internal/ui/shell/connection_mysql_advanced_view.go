@@ -111,8 +111,11 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 			s.mysqlCompatibilityVisible = true
 			s.connectionEditorTab = 6
 		}
-		ui.Text(c, "高级及兼容性选项可保存；初始查询仅本次编辑有效，不保存或执行。").
-			TextColor(palette.Muted).FontSize(theme.Font(c, 11))
+		note := "高级及兼容性选项可保存；初始查询仅本次编辑有效，不保存或执行。"
+		if a.LimitSessions {
+			note = "会话限制仅作用于本连接的 SQL 标签（安全上限 8）；元数据连接独立。"
+		}
+		ui.Text(c, note).TextColor(palette.Muted).FontSize(theme.Font(c, 11))
 	})
 }
 

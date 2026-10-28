@@ -70,7 +70,6 @@ func TestDirectMySQLConfigFailsClosedOnUnsupportedFeatures(t *testing.T) {
 		{"compatibility", func(s *ActiveSettings) { s.MySQLAdvanced.Compatibility.ForceSQLMode = true }},
 		{"keepalive", func(s *ActiveSettings) { s.MySQLAdvanced.KeepAlive = true }},
 		{"auto", func(s *ActiveSettings) { s.MySQLAdvanced.AutoConnect = true }},
-		{"session-limit", func(s *ActiveSettings) { s.MySQLAdvanced.LimitSessions = true }},
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {

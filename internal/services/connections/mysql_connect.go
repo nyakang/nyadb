@@ -41,7 +41,7 @@ func DirectMySQLConfig(s ActiveSettings, password string) (*mysql.Config, error)
 		return nil, fmt.Errorf("%w: legacy client driver", ErrMySQLUnsupported)
 	case a.Charset != "自动" && a.Charset != "None":
 		return nil, fmt.Errorf("%w: custom character set", ErrMySQLUnsupported)
-	case a.Compression || a.KeepAlive || a.AutoConnect || a.LimitSessions:
+	case a.Compression || a.KeepAlive || a.AutoConnect:
 		return nil, fmt.Errorf("%w: advanced connection behavior", ErrMySQLUnsupported)
 	case a.Compatibility.Enabled || a.Compatibility.ForceSQLMode ||
 		a.Compatibility.ForceLowerCase || a.Compatibility.ForceNDB ||
@@ -114,6 +114,22 @@ func OpenDirectMySQL(ctx context.Context, s ActiveSettings, password string) (*s
 	return db, nil
 }
 
+// NyaDB's SQL-tab lease budget is intentionally separate from the metadata
+// pool. Navicat's Conn.SessionLimit scope has not yet been runtime-verified.
+// Even if the optional setting exceeds the built-in safety cap, we never
+// silently create unbounded stateful database sessions.
+const maxSQLTabSessions = 8
+
+func mysqlSQLTabLimit(a MySQLAdvanced) int {
+	if !a.LimitSessions {
+		return maxSQLTabSessions
+	}
+	if a.MaxSessions < 1 {
+		return 1 // invalid persisted settings must not disable protection
+	}
+	return min(a.MaxSessions, maxSQLTabSessions)
+}
+
 // OpenDirectMySQLPools isolates short-lived metadata/data operations from
 // long-lived interactive SQL tabs. Each tab reserves one connection from the
 // SQL pool until the tab is closed; idle SQL connections are never recycled
@@ -134,7 +150,7 @@ func OpenDirectMySQLPools(ctx context.Context, s ActiveSettings, password string
 		return nil, nil, err
 	}
 	sqlPool := sql.OpenDB(connector)
-	sqlPool.SetMaxOpenConns(8)
+	sqlPool.SetMaxOpenConns(mysqlSQLTabLimit(s.MySQLAdvanced))
 	sqlPool.SetMaxIdleConns(0)
 	// A transaction/temporary table must not be evicted by a wall-clock TTL.
 	// Disconnection and tab disposal explicitly own session cleanup.
