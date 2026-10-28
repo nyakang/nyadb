@@ -56,6 +56,11 @@ func mysqlTableActionDangerous(action connections.MySQLTableAction) bool {
 		action == connections.MySQLTableTruncate
 }
 
+func (s *State) canChangeMySQLTable(profileID int64) bool {
+	return (s.mysqlSessionManager != nil || s.mysqlTableRunner != nil) &&
+		!s.mysqlTablePending && s.mysqlSessionStatus == "已连接" && s.mysqlSessionProfileID == profileID
+}
+
 // Shared by the native navigator and central object grid. Unsupported entries
 // remain visibly disabled; they never dispatch placeholder callbacks.
 func (s *State) mysqlObjectContextMenu(services ui.Services, m *ui.Menu, profileID int64, database, name, kind string) {
@@ -64,7 +69,12 @@ func (s *State) mysqlObjectContextMenu(services ui.Services, m *ui.Menu, profile
 		s.openMySQLObject(services, database, name, kind)
 	}
 	if kind == "表" {
-		m.Item(locales.Text("通过配置文件打开表")).Disabled(true)
+		m.Submenu(locales.Text("通过配置文件打开表"), func(sub *ui.Menu) {
+			sub.Item(locales.Text("无配置文件")).Disabled(true)
+			sub.Submenu(locales.Text("默认配置文件"), func(defaults *ui.Menu) {
+				defaults.Item(locales.Text("快速模式")).Disabled(true)
+			}).Disabled(true)
+		}).Disabled(true)
 	}
 	if m.Item(locales.Text(design)).Shortcut(ui.Ctrl, ui.KeyD).Disabled(isMySQLProgram(kind)).Chosen() {
 		s.openMySQLStructure(services, database, name)
@@ -77,19 +87,17 @@ func (s *State) mysqlObjectContextMenu(services ui.Services, m *ui.Menu, profile
 		return
 	}
 
-	ready := s.mysqlSessionManager != nil || s.mysqlTableRunner != nil
-	ready = ready && !s.mysqlTablePending && s.mysqlSessionStatus == "已连接" &&
-		s.mysqlSessionProfileID == profileID
+	ready := s.canChangeMySQLTable(profileID)
 	begin := func(action connections.MySQLTableAction) {
 		s.beginMySQLTableChange(profileID, database, name, action)
 	}
 	// The additional advanced Navicat functions are intentionally disabled
 	// until real services and workflows exist.
-	if m.Item(locales.Text("新建表")).Disabled(!ready).Chosen() {
+	if m.Item(locales.Text("新建表")).Shortcut(ui.Ctrl, ui.KeyN).Disabled(!ready).Chosen() {
 		begin(connections.MySQLTableCreate)
 	}
 	m.Item(locales.Text("通过 AI 新建表")).Disabled(true)
-	if m.Item(locales.Text("删除表")).Disabled(!ready).Chosen() {
+	if m.Item(locales.Text("删除表")).Shortcut(0, ui.KeyDelete).Disabled(!ready).Chosen() {
 		begin(connections.MySQLTableDrop)
 	}
 	if m.Item(locales.Text("清空表")).Disabled(!ready).Chosen() {
@@ -99,11 +107,11 @@ func (s *State) mysqlObjectContextMenu(services ui.Services, m *ui.Menu, profile
 		begin(connections.MySQLTableTruncate)
 	}
 	m.Submenu(locales.Text("复制表"), func(sub *ui.Menu) {
-		if sub.Item(locales.Text("仅复制表结构")).Chosen() {
-			begin(connections.MySQLTableCopyStructure)
-		}
-		if sub.Item(locales.Text("复制表结构和数据")).Chosen() {
+		if sub.Item(locales.Text("结构和数据")).Chosen() {
 			begin(connections.MySQLTableCopyData)
+		}
+		if sub.Item(locales.Text("仅结构")).Chosen() {
+			begin(connections.MySQLTableCopyStructure)
 		}
 	}).Disabled(!ready)
 	m.Item(locales.Text("设置权限")).Disabled(true)
@@ -112,17 +120,39 @@ func (s *State) mysqlObjectContextMenu(services ui.Services, m *ui.Menu, profile
 		m.Item(locales.Text(label)).Disabled(true)
 	}
 	m.Separator()
-	for _, label := range []string{"转储 SQL 文件", "维护", "逆向表到模型…", "创建 BI 工作区…"} {
+	m.Submenu(locales.Text("转储 SQL 文件"), func(sub *ui.Menu) {
+		sub.Item(locales.Text("结构和数据…")).Disabled(true)
+		sub.Item(locales.Text("仅结构…")).Disabled(true)
+	}).Disabled(true)
+	m.Submenu(locales.Text("维护"), func(sub *ui.Menu) {
+		sub.Item(locales.Text("分析表")).Disabled(true)
+		sub.Submenu(locales.Text("检查表"), func(check *ui.Menu) {
+			for _, label := range []string{"常规", "快速（Quick）", "快（Fast）", "已更改", "扩展"} {
+				check.Item(locales.Text(label)).Disabled(true)
+			}
+		}).Disabled(true)
+		sub.Item(locales.Text("优化表")).Disabled(true)
+		sub.Submenu(locales.Text("修复表"), func(repair *ui.Menu) {
+			repair.Item(locales.Text("快速（Quick）")).Disabled(true)
+			repair.Item(locales.Text("扩展")).Disabled(true)
+		}).Disabled(true)
+		sub.Item(locales.Text("获取行的总数")).Disabled(true)
+	}).Disabled(true)
+	for _, label := range []string{"逆向表到模型…", "创建 BI 工作区…"} {
 		m.Item(locales.Text(label)).Disabled(true)
 	}
 	m.Separator()
-	for _, label := range []string{"管理组", "复制", "共享…"} {
-		m.Item(locales.Text(label)).Disabled(true)
-	}
+	m.Submenu(locales.Text("管理组"), func(sub *ui.Menu) {
+		sub.Item(locales.Text("新建组")).Disabled(true)
+		sub.Item(locales.Text("移动到")).Disabled(true)
+		sub.Item(locales.Text("从组中排除")).Disabled(true)
+	}).Disabled(true)
+	m.Item(locales.Text("复制")).Shortcut(ui.Ctrl, ui.KeyC).Disabled(true)
+	m.Item(locales.Text("粘贴")).Shortcut(ui.Ctrl, ui.KeyV).Disabled(true)
+	m.Item(locales.Text("共享…")).Disabled(true)
 	if m.Item(locales.Text("重命名")).Shortcut(0, ui.KeyF2).Disabled(!ready).Chosen() {
 		begin(connections.MySQLTableRename)
 	}
-	m.Item(locales.Text("创建打开表快捷方式…")).Disabled(true)
 	m.Separator()
 	if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).
 		Disabled(s.mysqlObjectPending != "" || s.mysqlSessionStatus != "已连接").Chosen() {
@@ -131,8 +161,7 @@ func (s *State) mysqlObjectContextMenu(services ui.Services, m *ui.Menu, profile
 }
 
 func (s *State) beginMySQLTableChange(profileID int64, database, name string, action connections.MySQLTableAction) {
-	if s.mysqlTablePending || s.mysqlSessionProfileID != profileID ||
-		s.mysqlSessionStatus != "已连接" {
+	if !s.canChangeMySQLTable(profileID) {
 		return
 	}
 	s.mysqlTableDialog = true
@@ -161,7 +190,11 @@ func (s *State) mysqlTableChangeModal(c *ui.Context) {
 		ui.Column(c).Width(min(float32(510), width-40)).Padding(18, 23).
 			Background(colors.Header).Gap(12).Children(func() {
 			ui.Text(c, locales.Text(label)).Bold().FontSize(theme.Font(c, 15))
-			ui.Text(c, "数据库："+db+"    表："+name).
+			target := "数据库：" + db
+			if s.mysqlTableAction != connections.MySQLTableCreate {
+				target += "    表：" + name
+			}
+			ui.Text(c, target).
 				FontSize(theme.Font(c, 12)).TextColor(colors.Muted)
 			if mysqlTableActionNeedsName(s.mysqlTableAction) {
 				ui.Text(c, "目标表名称").FontSize(theme.Font(c, 12))
@@ -229,6 +262,12 @@ func (s *State) startMySQLTableChange(services ui.Services) {
 	request := connections.MySQLTableChange{
 		Action: action, Database: s.mysqlTableDatabase,
 		Table: s.mysqlTableName, NewName: s.mysqlTableNewName,
+	}
+	if action == connections.MySQLTableCreate {
+		// Creation has no source table. The service creates Table, while NewName
+		// is the destination only for rename and copy operations.
+		request.Table = s.mysqlTableNewName
+		request.NewName = ""
 	}
 	run := s.mysqlTableRunner
 	if run == nil {

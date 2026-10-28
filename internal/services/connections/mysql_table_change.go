@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -31,54 +32,101 @@ type MySQLTableChange struct {
 
 // tableChangeSQL contains no unquoted database identifiers. Values used to
 // identify existing objects are additionally checked against INFORMATION_SCHEMA.
-func tableChangeSQL(change MySQLTableChange) (string, string, error) {
+func tableChangeSQL(change MySQLTableChange) (string, error) {
 	schema, err := quotedMySQLIdentifier(change.Database)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 	table, err := quotedMySQLIdentifier(change.Table)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 	source := schema + "." + table
 	var target string
 	switch change.Action {
 	case MySQLTableCreate:
 		// This is an explicitly described starter table, not a full designer.
-		return "CREATE TABLE " + source + " (`id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY) ENGINE=InnoDB", "", nil
+		return "CREATE TABLE " + source + " (`id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY) ENGINE=InnoDB", nil
 	case MySQLTableDeleteRows:
-		return "DELETE FROM " + source, "", nil
+		return "DELETE FROM " + source, nil
 	case MySQLTableTruncate:
-		return "TRUNCATE TABLE " + source, "", nil
+		return "TRUNCATE TABLE " + source, nil
 	case MySQLTableDrop:
-		return "DROP TABLE " + source, "", nil
+		return "DROP TABLE " + source, nil
 	case MySQLTableRename, MySQLTableCopyStructure, MySQLTableCopyData:
 		name, err := quotedMySQLIdentifier(change.NewName)
 		if err != nil {
-			return "", "", err
+			return "", err
 		}
 		if change.NewName == change.Table {
-			return "", "", fmt.Errorf("%w: destination must differ", ErrInvalid)
+			return "", fmt.Errorf("%w: destination must differ", ErrInvalid)
 		}
 		target = schema + "." + name
 		switch change.Action {
 		case MySQLTableRename:
-			return "RENAME TABLE " + source + " TO " + target, "", nil
-		case MySQLTableCopyStructure:
-			return "CREATE TABLE " + target + " LIKE " + source, "", nil
+			return "RENAME TABLE " + source + " TO " + target, nil
 		default:
-			return "CREATE TABLE " + target + " LIKE " + source, "INSERT INTO " + target + " SELECT * FROM " + source, nil
+			return "CREATE TABLE " + target + " LIKE " + source, nil
 		}
 	default:
-		return "", "", fmt.Errorf("%w: unsupported table action", ErrInvalid)
+		return "", fmt.Errorf("%w: unsupported table action", ErrInvalid)
 	}
+}
+
+// tableCopyDataSQL explicitly includes invisible columns and excludes generated
+// columns. EXTRA may contain DEFAULT_GENERATED for an ordinary writable column,
+// so only GENERATION_EXPRESSION determines whether a column is generated.
+func tableCopyDataSQL(ctx context.Context, db *sql.DB, change MySQLTableChange) (string, error) {
+	rows, err := db.QueryContext(ctx, `SELECT COLUMN_NAME, GENERATION_EXPRESSION
+FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
+ORDER BY ORDINAL_POSITION`, change.Database, change.Table)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+	var columns []string
+	for rows.Next() {
+		var name string
+		var expression sql.NullString
+		if err := rows.Scan(&name, &expression); err != nil {
+			return "", err
+		}
+		if expression.Valid && expression.String != "" {
+			continue
+		}
+		quoted, err := quotedMySQLIdentifier(name)
+		if err != nil {
+			return "", err
+		}
+		columns = append(columns, quoted)
+	}
+	if err := rows.Err(); err != nil {
+		return "", err
+	}
+	if len(columns) == 0 {
+		return "", fmt.Errorf("%w: no writable columns found for copying rows", ErrInvalid)
+	}
+	schema, err := quotedMySQLIdentifier(change.Database)
+	if err != nil {
+		return "", err
+	}
+	source, err := quotedMySQLIdentifier(change.Table)
+	if err != nil {
+		return "", err
+	}
+	target, err := quotedMySQLIdentifier(change.NewName)
+	if err != nil {
+		return "", err
+	}
+	list := strings.Join(columns, ", ")
+	return "INSERT INTO " + schema + "." + target + " (" + list + ") SELECT " + list + " FROM " + schema + "." + source, nil
 }
 
 // ChangeTable runs only on an already authenticated connection's metadata
 // pool, not on a SQL tab's pinned transactional session. This operation never
 // silently retries or replays DDL after a connection failure.
 func (m *MySQLSessionManager) ChangeTable(ctx context.Context, id int64, change MySQLTableChange) error {
-	first, second, err := tableChangeSQL(change)
+	first, err := tableChangeSQL(change)
 	if err != nil {
 		return err
 	}
@@ -108,6 +156,14 @@ WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`, change.Database, change.Table).Scan(
 		}
 		if kind != "BASE TABLE" {
 			return fmt.Errorf("%w: table action requires a base table", ErrInvalid)
+		}
+	}
+	var second string
+	if change.Action == MySQLTableCopyData {
+		// Resolve columns before CREATE so a metadata failure leaves no new table.
+		second, err = tableCopyDataSQL(opCtx, session.db, change)
+		if err != nil {
+			return err
 		}
 	}
 	if _, err := session.db.ExecContext(opCtx, first); err != nil {

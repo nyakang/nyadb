@@ -438,5 +438,21 @@
   "mysqlFieldPreviewComplete": "预览完整",
   "dataFirstPage": "首页",
   "dataFirstPageAction": "首页数据",
-  "mysqlFieldDefaultValue": "默认值"
+  "mysqlFieldDefaultValue": "默认值",
+  "tableCopyStructureAndData": "结构和数据",
+  "tableCopyStructureOnly": "仅结构",
+  "tableDumpStructureAndData": "结构和数据…",
+  "tableDumpStructureOnly": "仅结构…",
+  "tableNoProfile": "无配置文件",
+  "tableDefaultProfile": "默认配置文件",
+  "tableQuickMode": "快速模式",
+  "tableAnalyze": "分析表",
+  "tableCheck": "检查表",
+  "tableOptimize": "优化表",
+  "tableRepair": "修复表",
+  "tableCheckQuick": "快速（Quick）",
+  "tableCheckFast": "快（Fast）",
+  "tableCheckChanged": "已更改",
+  "tableCheckExtended": "扩展",
+  "tableCountRows": "获取行的总数"
 }
