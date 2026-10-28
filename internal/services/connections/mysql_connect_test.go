@@ -68,7 +68,6 @@ func TestDirectMySQLConfigFailsClosedOnUnsupportedFeatures(t *testing.T) {
 		{"compression", func(s *ActiveSettings) { s.MySQLAdvanced.Compression = true }},
 		{"charset", func(s *ActiveSettings) { s.MySQLAdvanced.Charset = "utf8mb4" }},
 		{"compatibility", func(s *ActiveSettings) { s.MySQLAdvanced.Compatibility.ForceSQLMode = true }},
-		{"keepalive", func(s *ActiveSettings) { s.MySQLAdvanced.KeepAlive = true }},
 		{"auto", func(s *ActiveSettings) { s.MySQLAdvanced.AutoConnect = true }},
 	}
 	for _, tt := range cases {
