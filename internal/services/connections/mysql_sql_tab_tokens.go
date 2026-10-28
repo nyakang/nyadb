@@ -94,6 +94,45 @@ func (m *MySQLSessionManager) ExecuteSQLTabToken(ctx context.Context, token MySQ
 	return executeSQLTabLease(ctx, s, lease, database, statement)
 }
 
+// ReplaceSQLTabToken is an explicit, no-network recovery operation after a
+// user acknowledges that the old tab's transaction, variables and temporary
+// tables are irrecoverable. It atomically replaces only the matching lease,
+// retaining the tab's quota slot. It NEVER runs or replays SQL.
+//
+// A stale token (including one from a disconnected profile generation) cannot
+// replace the lease of a newly connected session. In that case callers may
+// explicitly reserve a new token after verifying the original profile.
+func (m *MySQLSessionManager) ReplaceSQLTabToken(old MySQLSQLTabToken) (MySQLSQLTabToken, error) {
+	if old.IsZero() {
+		return MySQLSQLTabToken{}, ErrMySQLSQLSessionLost
+	}
+	m.mu.Lock()
+	s := m.sessions[old.profileID]
+	if s == nil || m.versions[old.profileID] != old.generation || s.ctx.Err() != nil {
+		m.mu.Unlock()
+		return MySQLSQLTabToken{}, ErrMySQLSQLSessionLost
+	}
+	s.sqlTabsMu.Lock()
+	lease := s.sqlTabs[old.tabID]
+	if lease != old.lease || s.sqlTabs == nil {
+		s.sqlTabsMu.Unlock()
+		m.mu.Unlock()
+		return MySQLSQLTabToken{}, ErrMySQLSQLSessionLost
+	}
+	leaseCtx, cancel := context.WithCancel(s.ctx)
+	replacement := &mysqlSQLTabLease{ctx: leaseCtx, cancel: cancel}
+	s.sqlTabs[old.tabID] = replacement
+	s.sqlTabsMu.Unlock()
+	m.mu.Unlock()
+	// Revocation is immediate, while driver cleanup remains asynchronous.
+	lease.cancel()
+	go lease.close()
+	return MySQLSQLTabToken{
+		profileID: old.profileID, tabID: old.tabID,
+		generation: old.generation, lease: replacement,
+	}, nil
+}
+
 // ReleaseSQLTabToken affects only its matching lease. A stale close event
 // never revokes a newly-created tab with the same numeric ID.
 func (m *MySQLSessionManager) ReleaseSQLTabToken(token MySQLSQLTabToken) {
