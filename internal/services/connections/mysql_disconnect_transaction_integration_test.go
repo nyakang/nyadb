@@ -2,6 +2,7 @@ package connections
 
 import (
 	"context"
+	"errors"
 	"os"
 	"strconv"
 	"testing"
@@ -31,9 +32,19 @@ func TestMySQLDisconnectDropsTransactionStateIntegration(t *testing.T) {
 	if err := m.Connect(ctx, settings, ""); err != nil {
 		t.Fatal(err)
 	}
+	tokens := make(map[uint64]MySQLSQLTabToken)
 	run := func(tab uint64, statement string) MySQLSQLResult {
 		t.Helper()
-		result, err := m.ExecuteSQLTab(ctx, profile, tab, "nyadb_tab_it", statement)
+		token, ok := tokens[tab]
+		if !ok {
+			var err error
+			token, err = m.ReserveSQLTabToken(profile, tab)
+			if err != nil {
+				t.Fatal(err)
+			}
+			tokens[tab] = token
+		}
+		result, err := m.ExecuteSQLTabToken(ctx, token, "nyadb_tab_it", statement)
 		if err != nil {
 			t.Fatalf("tab %d %q: %v", tab, statement, err)
 		}
@@ -53,6 +64,9 @@ func TestMySQLDisconnectDropsTransactionStateIntegration(t *testing.T) {
 	}
 	if err := m.Connect(ctx, settings, ""); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := m.ExecuteSQLTabToken(ctx, tokens[1], "nyadb_tab_it", "SELECT 1"); !errors.Is(err, ErrMySQLSQLSessionLost) {
+		t.Fatalf("old token revived after profile reconnect: %v", err)
 	}
 	fresh := run(3, "SELECT CONNECTION_ID(), @nyadb_tx_marker")
 	row := run(3, "SELECT note FROM nyadb_tab_it.tx_probe WHERE id=1")
