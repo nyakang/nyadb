@@ -97,13 +97,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		}
 		s.objectRow = row
 		s.selectObjectInNavigator(db, items[row].Name, items[row].Kind)
-		openLabel, designLabel := mysqlObjectActionLabels(items[row].Kind)
-		if m.Item(locales.Text(openLabel)).Shortcut(0, ui.KeyEnter).Chosen() {
-			s.openMySQLObject(c.Services(), db, items[row].Name, items[row].Kind)
-		}
-		if m.Item(locales.Text(designLabel)).Shortcut(ui.Ctrl, ui.KeyD).Disabled(isMySQLProgram(items[row].Kind)).Chosen() {
-			s.openMySQLStructure(c.Services(), db, items[row].Name)
-		}
+		s.mysqlObjectContextMenu(c.Services(), m, s.mysqlSessionProfileID, db, items[row].Name, items[row].Kind)
 	}
 	columns := append([]ui.TableColumn(nil), mysqlObjectColumns...)
 	for i := range columns {
