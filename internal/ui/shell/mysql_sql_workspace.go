@@ -49,10 +49,15 @@ func (s *State) runMySQLSQL(services ui.Services, t *tab) {
 			s.status = t.sqlError
 			return
 		}
-		manager, tabID := s.mysqlSessionManager, t.id
+		if t.sqlLease.IsZero() {
+			t.sqlError = "查询会话已失效，请新建 SQL 标签后重试"
+			s.status = t.sqlError
+			return
+		}
+		manager, lease := s.mysqlSessionManager, t.sqlLease
 		// The SQL tab retains its physical MySQL session across executions.
 		execute = func(ctx context.Context, profileID int64, database, statement string) (connections.MySQLSQLResult, error) {
-			return manager.ExecuteSQLTab(ctx, profileID, tabID, database, statement)
+			return manager.ExecuteSQLTabToken(ctx, lease, database, statement)
 		}
 	}
 
@@ -114,9 +119,10 @@ func (s *State) cancelMySQLSQL(t *tab) {
 	t.sqlResults = nil
 	t.sqlLoading = false
 	t.sqlCancelRequested = false
-	if t.kind == tabSQL && t.sqlProfileID > 0 && s.mysqlSessionManager != nil {
-		s.mysqlSessionManager.ReleaseSQLTab(t.sqlProfileID, t.id)
+	if t.kind == tabSQL && s.mysqlSessionManager != nil {
+		s.mysqlSessionManager.ReleaseSQLTabToken(t.sqlLease)
 	}
+	t.sqlLease = connections.MySQLSQLTabToken{}
 }
 func (s *State) cancelMySQLSQLForProfile(profileID int64) {
 	for _, t := range s.tabs {

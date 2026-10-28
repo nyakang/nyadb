@@ -46,8 +46,10 @@ func (lease *mysqlSQLTabLease) close() {
 func (m *MySQLSessionManager) ReleaseSQLTab(profileID int64, tabID uint64) {
 	m.mu.Lock()
 	s := m.sessions[profileID]
+	generation := m.versions[profileID]
 	m.mu.Unlock()
-	if s == nil {
+	// Unversioned legacy calls must not revoke a new session's lease.
+	if s == nil || generation != 1 {
 		return
 	}
 	s.sqlTabsMu.Lock()
@@ -68,7 +70,11 @@ func (m *MySQLSessionManager) ReserveSQLTab(profileID int64, tabID uint64) error
 	}
 	m.mu.Lock()
 	s := m.sessions[profileID]
+	generation := m.versions[profileID]
 	m.mu.Unlock()
+	if generation != 1 && s != nil {
+		return ErrMySQLSQLSessionLost
+	}
 	if s == nil || s.ctx.Err() != nil {
 		return ErrMySQLNotConnected
 	}
@@ -96,7 +102,11 @@ func (m *MySQLSessionManager) PreconnectSQLTab(ctx context.Context, profileID in
 	}
 	m.mu.Lock()
 	s := m.sessions[profileID]
+	generation := m.versions[profileID]
 	m.mu.Unlock()
+	if generation != 1 && s != nil {
+		return ErrMySQLSQLSessionLost
+	}
 	if s == nil || s.ctx.Err() != nil {
 		return ErrMySQLNotConnected
 	}
@@ -106,6 +116,10 @@ func (m *MySQLSessionManager) PreconnectSQLTab(ctx context.Context, profileID in
 	if lease == nil {
 		return ErrMySQLSQLSessionLost
 	}
+	return preconnectSQLTabLease(ctx, s, lease)
+}
+
+func preconnectSQLTabLease(ctx context.Context, s *mysqlManagedSession, lease *mysqlSQLTabLease) error {
 	lease.mu.Lock()
 	defer lease.mu.Unlock()
 	if lease.closed || lease.lost || lease.ctx.Err() != nil {
@@ -149,7 +163,11 @@ func (m *MySQLSessionManager) ExecuteSQLTab(ctx context.Context, profileID int64
 	}
 	m.mu.Lock()
 	s := m.sessions[profileID]
+	generation := m.versions[profileID]
 	m.mu.Unlock()
+	if generation != 1 && s != nil {
+		return result, ErrMySQLSQLSessionLost
+	}
 	if s == nil || s.ctx.Err() != nil {
 		return result, ErrMySQLNotConnected
 	}
@@ -170,6 +188,10 @@ func (m *MySQLSessionManager) ExecuteSQLTab(ctx context.Context, profileID int64
 	}
 	s.sqlTabsMu.Unlock()
 
+	return executeSQLTabLease(ctx, s, lease, database, statement)
+}
+
+func executeSQLTabLease(ctx context.Context, s *mysqlManagedSession, lease *mysqlSQLTabLease, database, statement string) (result MySQLSQLResult, err error) {
 	lease.mu.Lock()
 	defer lease.mu.Unlock()
 	if lease.closed || lease.lost || lease.ctx.Err() != nil {

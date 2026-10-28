@@ -36,6 +36,7 @@ type tab struct {
 	editor *editor.State
 
 	sqlProfileID       int64
+	sqlLease           connections.MySQLSQLTabToken
 	sqlDatabase        string
 	sqlLoading         bool
 	sqlCancelRequested bool
@@ -362,18 +363,18 @@ func (s *State) openQuery() {
 	s.status = "已打开 " + t.title
 	if profileID > 0 && s.mysqlSessionManager != nil && s.mysqlSessionManager.IsConnected(profileID) {
 		manager := s.mysqlSessionManager
-		if err := manager.ReserveSQLTab(profileID, t.id); err != nil {
+		if lease, err := manager.ReserveSQLTabToken(profileID, t.id); err != nil {
 			t.sqlError = "SQL 会话预留失败：" + err.Error()
 			s.status = t.sqlError
 		} else {
+			t.sqlLease = lease
 			ctx, cancel := context.WithCancel(context.Background())
 			done := make(chan error, 1)
 			t.sqlPrepareCancel = cancel
 			t.sqlPrepareResults = done
-			tabID := t.id
 			invalidate := s.mysqlSQLPreconnectInvalidate
 			go func() {
-				done <- manager.PreconnectSQLTab(ctx, profileID, tabID)
+				done <- manager.PreconnectSQLTabToken(ctx, lease)
 				if invalidate != nil {
 					invalidate()
 				}
