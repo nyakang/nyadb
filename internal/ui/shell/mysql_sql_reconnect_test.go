@@ -33,7 +33,7 @@ func TestDisconnectedSQLTabNeverRebindsAfterProfileReconnect(t *testing.T) {
 		return connections.MySQLSQLResult{}, nil
 	}
 	s.runMySQLSQL(ui.Services{}, old)
-	if calls != 0 || old.sqlLoading || !strings.Contains(old.sqlError, "新建查询") {
+	if calls != 0 || old.sqlLoading || !strings.Contains(old.sqlError, "以新会话继续") {
 		t.Fatalf("old tab ran after reconnect: calls=%d err=%q", calls, old.sqlError)
 	}
 	s.openQuery()

@@ -28,6 +28,11 @@ func (s *State) runMySQLSQL(services ui.Services, t *tab) {
 	if !s.profileMode || t == nil || t.kind != tabSQL || t.editor == nil || t.sqlLoading {
 		return
 	}
+	if t.sqlRecoveryNeeded {
+		t.sqlError = "原 SQL 会话已失效；请确认状态可能丢失后点击「以新会话继续」，不会自动重跑 SQL"
+		s.status = t.sqlError
+		return
+	}
 	if t.sqlProfileID == 0 || s.mysqlSessionStateFor(t.sqlProfileID) != "已连接" {
 		t.sqlError = "没有可用的 MySQL 连接；请先连接并新建查询"
 		s.status = t.sqlError
@@ -128,6 +133,9 @@ func (s *State) cancelMySQLSQLForProfile(profileID int64) {
 	for _, t := range s.tabs {
 		if t.kind == tabSQL && t.sqlProfileID == profileID {
 			s.cancelMySQLSQL(t)
+			t.sqlRecoveryNeeded = true
+			t.sqlRecoveryProfile = t.sqlProfileID
+			t.sqlRecoverySchema = t.sqlDatabase
 			// Retain the unsaved editor, but sever the old session identity.
 			// A later Connect for the same profile must not let this tab
 			// silently obtain a new physical connection and lose the old
@@ -135,7 +143,7 @@ func (s *State) cancelMySQLSQLForProfile(profileID int64) {
 			t.sqlProfileID = 0
 			t.sqlDatabase = ""
 			t.sqlResult = nil
-			t.sqlError = "连接已断开；SQL 文本已保留，请新建查询标签。原会话的事务及临时状态不可恢复"
+			t.sqlError = "连接已断开；SQL 文本已保留。请先连接原配置，再以新会话继续；事务、临时表与变量不能恢复"
 		}
 	}
 }
@@ -156,6 +164,11 @@ func (s *State) consumeMySQLSQLResults() {
 					!errors.Is(err, connections.ErrMySQLNotConnected) &&
 					!t.sqlLoading && t.sqlResult == nil && t.sqlError == "" {
 					t.sqlError = "SQL 预连接失败：" + err.Error()
+					if errors.Is(err, connections.ErrMySQLSQLSessionLost) {
+						t.sqlRecoveryNeeded = true
+						t.sqlRecoveryProfile = t.sqlProfileID
+						t.sqlRecoverySchema = t.sqlDatabase
+					}
 				}
 			default:
 			}
@@ -180,7 +193,10 @@ func (s *State) consumeMySQLSQLResults() {
 				if canceled || errors.Is(r.err, context.Canceled) {
 					t.sqlError = "SQL 执行已停止；服务器端更改可能已生效"
 				} else if errors.Is(r.err, connections.ErrMySQLSQLSessionLost) {
-					t.sqlError = "查询会话已失效，请关闭并新建 SQL 标签；未提交事务可能已回滚"
+					t.sqlRecoveryNeeded = true
+					t.sqlRecoveryProfile = t.sqlProfileID
+					t.sqlRecoverySchema = t.sqlDatabase
+					t.sqlError = "原查询会话已失效；事务、临时表、会话变量无法恢复，DML 结果请先核对。可选择以新会话继续"
 				} else if errors.Is(r.err, connections.ErrMySQLSQLSessionLimit) {
 					t.sqlError = "SQL 标签会话数已达到上限，请关闭其他查询标签后重试"
 				} else {
@@ -223,7 +239,7 @@ func (s *State) mysqlQueryWorkspace(c *ui.Context, t *tab) {
 				AlignItems(ui.Center).Background(p.Header).Children(func() {
 				ui.Toolbar(c, func() {
 					if ui.Button(c, locales.Text("运行")).Label("运行当前或选中 SQL").
-						Disabled(!connected || t.sqlLoading).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
+						Disabled(!connected || t.sqlLoading || t.sqlRecoveryNeeded).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
 						s.runMySQLSQL(c.Services(), t)
 					}
 					if ui.Button(c, locales.Text("取消")).Disabled(!t.sqlLoading || t.sqlCancelRequested).
@@ -244,6 +260,20 @@ func (s *State) mysqlQueryWorkspace(c *ui.Context, t *tab) {
 			} else if !connected {
 				ui.Text(c, locales.Text("请连接 MySQL 后新建查询")).Padding(3, 8).
 					TextColor(p.Muted).FontSize(theme.Font(c, 11))
+			}
+			if t.sqlRecoveryNeeded {
+				id := t.sqlRecoveryProfile
+				canRecover := !t.sqlLoading && t.sqlPrepareResults == nil &&
+					id > 0 && s.mysqlSessionManager != nil &&
+					s.mysqlSessionStateFor(id) == "已连接" && s.mysqlSessionManager.IsConnected(id)
+				ui.Row(c).Padding(3, 8).Gap(9).AlignItems(ui.Center).Children(func() {
+					ui.Text(c, "新会话无法恢复事务或临时状态；不会自动执行 SQL").
+						FontSize(theme.Font(c, 11)).TextColor(p.Muted)
+					if ui.Button(c, "以新会话继续").Label("建立新物理会话（不执行现有 SQL）").
+						Disabled(!canRecover).Clicked() {
+						s.recoverMySQLSQLTab(t)
+					}
+				})
 			}
 			t.editor.Theme = theme.SQLThemeFor(c)
 			editor.View(c, t.editor).Grow(1).FillWidth()
