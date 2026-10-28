@@ -54,6 +54,76 @@ func (m *MySQLSessionManager) ReleaseSQLTab(profileID int64, tabID uint64) {
 	}
 }
 
+// ReserveSQLTab registers a tab before any network I/O. A tab closed before
+// its worker starts can therefore revoke the reserved lease.
+func (m *MySQLSessionManager) ReserveSQLTab(profileID int64, tabID uint64) error {
+	if tabID == 0 {
+		return fmt.Errorf("%w: missing SQL tab ID", ErrInvalid)
+	}
+	m.mu.Lock()
+	s := m.sessions[profileID]
+	m.mu.Unlock()
+	if s == nil || s.ctx.Err() != nil {
+		return ErrMySQLNotConnected
+	}
+	s.sqlTabsMu.Lock()
+	defer s.sqlTabsMu.Unlock()
+	if s.sqlTabs == nil || s.ctx.Err() != nil {
+		return ErrMySQLNotConnected
+	}
+	if s.sqlTabs[tabID] == nil {
+		leaseCtx, cancel := context.WithCancel(s.ctx)
+		s.sqlTabs[tabID] = &mysqlSQLTabLease{ctx: leaseCtx, cancel: cancel}
+	}
+	return nil
+}
+
+// PreconnectSQLTab reserves the tab's physical connection without executing
+// SQL. Run it on a worker: Conn can block on dial or pool capacity. Unlike
+// ExecuteSQLTab, it never recreates a released lease.
+func (m *MySQLSessionManager) PreconnectSQLTab(ctx context.Context, profileID int64, tabID uint64) error {
+	if tabID == 0 {
+		return fmt.Errorf("%w: missing SQL tab ID", ErrInvalid)
+	}
+	m.mu.Lock()
+	s := m.sessions[profileID]
+	m.mu.Unlock()
+	if s == nil || s.ctx.Err() != nil {
+		return ErrMySQLNotConnected
+	}
+	s.sqlTabsMu.Lock()
+	lease := s.sqlTabs[tabID]
+	s.sqlTabsMu.Unlock()
+	if lease == nil {
+		return ErrMySQLSQLSessionLost
+	}
+	lease.mu.Lock()
+	defer lease.mu.Unlock()
+	if lease.closed || lease.lost || lease.ctx.Err() != nil {
+		return ErrMySQLSQLSessionLost
+	}
+	if lease.conn != nil {
+		return nil
+	}
+	connectCtx, cancel := context.WithCancel(ctx)
+	stop := context.AfterFunc(lease.ctx, cancel)
+	defer func() { stop(); cancel() }()
+	conn, err := s.sqlDB.Conn(connectCtx)
+	if err != nil {
+		if connectCtx.Err() != nil {
+			lease.lost = true
+		}
+		return err
+	}
+	if connectCtx.Err() != nil || lease.ctx.Err() != nil {
+		_ = conn.Close()
+		lease.lost = true
+		return context.Canceled
+	}
+	lease.conn = conn
+	return nil
+}
+
 // ExecuteSQLTab holds the same physical MySQL connection across executions
 // for a single SQL editor. Different tab IDs have separate leases; metadata
 // uses s.db while this function uses s.sqlDB. A canceled or broken lease is

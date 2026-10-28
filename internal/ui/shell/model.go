@@ -45,6 +45,8 @@ type tab struct {
 	sqlCancel          context.CancelFunc
 	sqlResults         <-chan mysqlSQLResult
 	sqlRequest         uint64
+	sqlPrepareCancel   context.CancelFunc
+	sqlPrepareResults  <-chan error
 
 	programProfileID int64
 	programDatabase  string
@@ -249,6 +251,9 @@ type State struct {
 	mysqlDataLoader            mysqlDataLoader
 	mysqlDataAdvancedLoader    mysqlDataAdvancedLoader
 
+	// A background preconnect requests the next native UI frame through this hook.
+	mysqlSQLPreconnectInvalidate func()
+
 	// MySQL connection checks run off-thread; only UI code reads/writes these.
 	connectionTesting        bool
 	connectionTestMessage    string
@@ -355,6 +360,23 @@ func (s *State) openQuery() {
 	s.tabs = append(s.tabs, t)
 	s.activeTab = len(s.tabs) - 1
 	s.status = "已打开 " + t.title
+	if profileID > 0 && s.mysqlSessionManager != nil && s.mysqlSessionManager.IsConnected(profileID) {
+		manager := s.mysqlSessionManager
+		if err := manager.ReserveSQLTab(profileID, t.id); err == nil {
+			ctx, cancel := context.WithCancel(context.Background())
+			done := make(chan error, 1)
+			t.sqlPrepareCancel = cancel
+			t.sqlPrepareResults = done
+			tabID := t.id
+			invalidate := s.mysqlSQLPreconnectInvalidate
+			go func() {
+				done <- manager.PreconnectSQLTab(ctx, profileID, tabID)
+				if invalidate != nil {
+					invalidate()
+				}
+			}()
+		}
+	}
 	if !s.profileMode {
 		s.status += "（模拟工作区）"
 	}
