@@ -12,6 +12,7 @@ import (
 )
 
 func (s *State) View(c *ui.Context) {
+	s.mysqlSQLPreconnectInvalidate = c.Services().Invalidate
 	if s.profileMode {
 		s.activateMySQLForCurrentTab()
 		s.consumeParkedMySQLSessionResults()

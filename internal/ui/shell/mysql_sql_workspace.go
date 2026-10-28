@@ -106,6 +106,11 @@ func (s *State) cancelMySQLSQL(t *tab) {
 		t.sqlCancel()
 		t.sqlCancel = nil
 	}
+	if t.sqlPrepareCancel != nil {
+		t.sqlPrepareCancel()
+		t.sqlPrepareCancel = nil
+	}
+	t.sqlPrepareResults = nil
 	t.sqlResults = nil
 	t.sqlLoading = false
 	t.sqlCancelRequested = false
@@ -124,7 +129,26 @@ func (s *State) cancelMySQLSQLForProfile(profileID int64) {
 }
 func (s *State) consumeMySQLSQLResults() {
 	for _, t := range s.tabs {
-		if t.kind != tabSQL || t.sqlResults == nil {
+		if t.kind != tabSQL {
+			continue
+		}
+		if t.sqlPrepareResults != nil {
+			select {
+			case err := <-t.sqlPrepareResults:
+				t.sqlPrepareResults = nil
+				if t.sqlPrepareCancel != nil {
+					t.sqlPrepareCancel()
+					t.sqlPrepareCancel = nil
+				}
+				if err != nil && !errors.Is(err, context.Canceled) &&
+					!errors.Is(err, connections.ErrMySQLNotConnected) &&
+					!t.sqlLoading && t.sqlResult == nil && t.sqlError == "" {
+					t.sqlError = "SQL 预连接失败：" + err.Error()
+				}
+			default:
+			}
+		}
+		if t.sqlResults == nil {
 			continue
 		}
 		select {
