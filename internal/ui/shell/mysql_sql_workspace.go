@@ -122,8 +122,14 @@ func (s *State) cancelMySQLSQLForProfile(profileID int64) {
 	for _, t := range s.tabs {
 		if t.kind == tabSQL && t.sqlProfileID == profileID {
 			s.cancelMySQLSQL(t)
+			// Retain the unsaved editor, but sever the old session identity.
+			// A later Connect for the same profile must not let this tab
+			// silently obtain a new physical connection and lose the old
+			// transaction or user-variable state without warning.
+			t.sqlProfileID = 0
+			t.sqlDatabase = ""
 			t.sqlResult = nil
-			t.sqlError = "连接已断开；查询编辑内容已保留"
+			t.sqlError = "连接已断开；SQL 文本已保留，请新建查询标签。原会话的事务及临时状态不可恢复"
 		}
 	}
 }
