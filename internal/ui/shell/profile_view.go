@@ -106,11 +106,27 @@ func (s *State) profileSidebar(c *ui.Context) {
 			if tree.Submitted() {
 				s.submitNavigation(c)
 			}
-			if tree.Shortcut(0, ui.KeyF2) && s.selectedGroup != "" {
-				s.beginGroupEdit(s.selectedGroup)
+			if tree.Shortcut(0, ui.KeyF2) {
+				n := parseNavigationNode(s.explorerName)
+				if n.Kind == "object" && n.Category == "表" {
+					s.beginMySQLTableChange(n.ProfileID, n.Database, n.Object, connections.MySQLTableRename)
+				} else if s.selectedGroup != "" {
+					s.beginGroupEdit(s.selectedGroup)
+				}
 			}
-			if tree.Shortcut(0, ui.KeyDelete) && s.selectedProfileID != 0 {
-				s.confirmDeleteProfile()
+			if tree.Shortcut(0, ui.KeyDelete) {
+				n := parseNavigationNode(s.explorerName)
+				if n.Kind == "object" && n.Category == "表" {
+					s.beginMySQLTableChange(n.ProfileID, n.Database, n.Object, connections.MySQLTableDrop)
+				} else if n.Kind == "connection" && s.selectedProfileID != 0 {
+					s.confirmDeleteProfile()
+				}
+			}
+			if tree.Shortcut(ui.Ctrl, ui.KeyN) {
+				n := parseNavigationNode(s.explorerName)
+				if n.Kind == "database" || (n.Kind == "category" || n.Kind == "object") && n.Category == "表" {
+					s.beginMySQLTableChange(n.ProfileID, n.Database, "", connections.MySQLTableCreate)
+				}
 			}
 			if tree.Shortcut(ui.Ctrl, ui.KeyD) {
 				n := parseNavigationNode(s.explorerName)

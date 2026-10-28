@@ -4433,3 +4433,163 @@ func MysqlFieldDefaultValue() string { return In(i18n.Locale()).MysqlFieldDefaul
 func (msgs Messages) MysqlFieldDefaultValue() string {
 	return Catalog.Format(msgs.locale, "mysqlFieldDefaultValue", nil)
 }
+
+// TableCopyStructureAndData says "结构和数据"
+// in the language the app shows.
+func TableCopyStructureAndData() string { return In(i18n.Locale()).TableCopyStructureAndData() }
+
+// TableCopyStructureAndData says "结构和数据"
+// in the language of msgs.
+func (msgs Messages) TableCopyStructureAndData() string {
+	return Catalog.Format(msgs.locale, "tableCopyStructureAndData", nil)
+}
+
+// TableCopyStructureOnly says "仅结构"
+// in the language the app shows.
+func TableCopyStructureOnly() string { return In(i18n.Locale()).TableCopyStructureOnly() }
+
+// TableCopyStructureOnly says "仅结构"
+// in the language of msgs.
+func (msgs Messages) TableCopyStructureOnly() string {
+	return Catalog.Format(msgs.locale, "tableCopyStructureOnly", nil)
+}
+
+// TableDumpStructureAndData says "结构和数据…"
+// in the language the app shows.
+func TableDumpStructureAndData() string { return In(i18n.Locale()).TableDumpStructureAndData() }
+
+// TableDumpStructureAndData says "结构和数据…"
+// in the language of msgs.
+func (msgs Messages) TableDumpStructureAndData() string {
+	return Catalog.Format(msgs.locale, "tableDumpStructureAndData", nil)
+}
+
+// TableDumpStructureOnly says "仅结构…"
+// in the language the app shows.
+func TableDumpStructureOnly() string { return In(i18n.Locale()).TableDumpStructureOnly() }
+
+// TableDumpStructureOnly says "仅结构…"
+// in the language of msgs.
+func (msgs Messages) TableDumpStructureOnly() string {
+	return Catalog.Format(msgs.locale, "tableDumpStructureOnly", nil)
+}
+
+// TableNoProfile says "无配置文件"
+// in the language the app shows.
+func TableNoProfile() string { return In(i18n.Locale()).TableNoProfile() }
+
+// TableNoProfile says "无配置文件"
+// in the language of msgs.
+func (msgs Messages) TableNoProfile() string {
+	return Catalog.Format(msgs.locale, "tableNoProfile", nil)
+}
+
+// TableDefaultProfile says "默认配置文件"
+// in the language the app shows.
+func TableDefaultProfile() string { return In(i18n.Locale()).TableDefaultProfile() }
+
+// TableDefaultProfile says "默认配置文件"
+// in the language of msgs.
+func (msgs Messages) TableDefaultProfile() string {
+	return Catalog.Format(msgs.locale, "tableDefaultProfile", nil)
+}
+
+// TableQuickMode says "快速模式"
+// in the language the app shows.
+func TableQuickMode() string { return In(i18n.Locale()).TableQuickMode() }
+
+// TableQuickMode says "快速模式"
+// in the language of msgs.
+func (msgs Messages) TableQuickMode() string {
+	return Catalog.Format(msgs.locale, "tableQuickMode", nil)
+}
+
+// TableAnalyze says "分析表"
+// in the language the app shows.
+func TableAnalyze() string { return In(i18n.Locale()).TableAnalyze() }
+
+// TableAnalyze says "分析表"
+// in the language of msgs.
+func (msgs Messages) TableAnalyze() string {
+	return Catalog.Format(msgs.locale, "tableAnalyze", nil)
+}
+
+// TableCheck says "检查表"
+// in the language the app shows.
+func TableCheck() string { return In(i18n.Locale()).TableCheck() }
+
+// TableCheck says "检查表"
+// in the language of msgs.
+func (msgs Messages) TableCheck() string {
+	return Catalog.Format(msgs.locale, "tableCheck", nil)
+}
+
+// TableOptimize says "优化表"
+// in the language the app shows.
+func TableOptimize() string { return In(i18n.Locale()).TableOptimize() }
+
+// TableOptimize says "优化表"
+// in the language of msgs.
+func (msgs Messages) TableOptimize() string {
+	return Catalog.Format(msgs.locale, "tableOptimize", nil)
+}
+
+// TableRepair says "修复表"
+// in the language the app shows.
+func TableRepair() string { return In(i18n.Locale()).TableRepair() }
+
+// TableRepair says "修复表"
+// in the language of msgs.
+func (msgs Messages) TableRepair() string {
+	return Catalog.Format(msgs.locale, "tableRepair", nil)
+}
+
+// TableCheckQuick says "快速（Quick）"
+// in the language the app shows.
+func TableCheckQuick() string { return In(i18n.Locale()).TableCheckQuick() }
+
+// TableCheckQuick says "快速（Quick）"
+// in the language of msgs.
+func (msgs Messages) TableCheckQuick() string {
+	return Catalog.Format(msgs.locale, "tableCheckQuick", nil)
+}
+
+// TableCheckFast says "快（Fast）"
+// in the language the app shows.
+func TableCheckFast() string { return In(i18n.Locale()).TableCheckFast() }
+
+// TableCheckFast says "快（Fast）"
+// in the language of msgs.
+func (msgs Messages) TableCheckFast() string {
+	return Catalog.Format(msgs.locale, "tableCheckFast", nil)
+}
+
+// TableCheckChanged says "已更改"
+// in the language the app shows.
+func TableCheckChanged() string { return In(i18n.Locale()).TableCheckChanged() }
+
+// TableCheckChanged says "已更改"
+// in the language of msgs.
+func (msgs Messages) TableCheckChanged() string {
+	return Catalog.Format(msgs.locale, "tableCheckChanged", nil)
+}
+
+// TableCheckExtended says "扩展"
+// in the language the app shows.
+func TableCheckExtended() string { return In(i18n.Locale()).TableCheckExtended() }
+
+// TableCheckExtended says "扩展"
+// in the language of msgs.
+func (msgs Messages) TableCheckExtended() string {
+	return Catalog.Format(msgs.locale, "tableCheckExtended", nil)
+}
+
+// TableCountRows says "获取行的总数"
+// in the language the app shows.
+func TableCountRows() string { return In(i18n.Locale()).TableCountRows() }
+
+// TableCountRows says "获取行的总数"
+// in the language of msgs.
+func (msgs Messages) TableCountRows() string {
+	return Catalog.Format(msgs.locale, "tableCountRows", nil)
+}

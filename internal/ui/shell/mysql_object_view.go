@@ -148,6 +148,20 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		if table.Shortcut(ui.Ctrl, ui.KeyD) && !isMySQLProgram(items[s.objectRow].Kind) {
 			s.openMySQLStructure(c.Services(), db, items[s.objectRow].Name)
 		}
+		if items[s.objectRow].Kind == "表" {
+			if table.Shortcut(0, ui.KeyF2) {
+				s.beginMySQLTableChange(s.mysqlSessionProfileID, db, items[s.objectRow].Name, connections.MySQLTableRename)
+			}
+			if table.Shortcut(0, ui.KeyDelete) {
+				s.beginMySQLTableChange(s.mysqlSessionProfileID, db, items[s.objectRow].Name, connections.MySQLTableDrop)
+			}
+		}
+	}
+	if table.Shortcut(ui.Ctrl, ui.KeyN) && (s.mysqlObjectKind == "全部" || s.mysqlObjectKind == "表") {
+		s.beginMySQLTableChange(s.mysqlSessionProfileID, db, "", connections.MySQLTableCreate)
+	}
+	if table.Shortcut(0, ui.KeyF5) && s.mysqlObjectPending == "" && connected {
+		s.loadMySQLObjects(c.Services(), db, true)
 	}
 
 }

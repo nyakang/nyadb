@@ -17,6 +17,8 @@ type tableChangeRecorder struct {
 	args       [][]driver.NamedValue
 	kind       string
 	failInsert bool
+	columns    [][]driver.Value
+	columnErr  error
 }
 type tableChangeConnector struct{ rec *tableChangeRecorder }
 
@@ -36,14 +38,27 @@ func (c tableChangeConn) QueryContext(ctx context.Context, sqlText string, args 
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	if !strings.Contains(sqlText, "information_schema.TABLES") {
+	c.rec.Lock()
+	defer c.rec.Unlock()
+	c.rec.args = append(c.rec.args, append([]driver.NamedValue(nil), args...))
+	switch {
+	case strings.Contains(sqlText, "information_schema.TABLES"):
+		return &structureRows{cols: []string{"type"}, values: [][]driver.Value{{c.rec.kind}}}, nil
+	case strings.Contains(sqlText, "information_schema.COLUMNS"):
+		if !strings.Contains(sqlText, "ORDER BY ORDINAL_POSITION") {
+			return nil, errors.New("copy columns must retain ordinal order")
+		}
+		if c.rec.columnErr != nil {
+			return nil, c.rec.columnErr
+		}
+		columns := c.rec.columns
+		if columns == nil {
+			columns = [][]driver.Value{{"id", ""}, {"note", ""}}
+		}
+		return &structureRows{cols: []string{"name", "expression"}, values: columns}, nil
+	default:
 		return nil, errors.New("unexpected query")
 	}
-	c.rec.Lock()
-	c.rec.args = append(c.rec.args, append([]driver.NamedValue(nil), args...))
-	kind := c.rec.kind
-	c.rec.Unlock()
-	return &structureRows{cols: []string{"type"}, values: [][]driver.Value{{kind}}}, nil
 }
 func (c tableChangeConn) ExecContext(ctx context.Context, sqlText string, _ []driver.NamedValue) (driver.Result, error) {
 	if err := ctx.Err(); err != nil {
@@ -72,26 +87,26 @@ func connectedTableManager(t *testing.T, rec *tableChangeRecorder) *MySQLSession
 }
 func TestMySQLTableActionSQLQuotesIdentifiersAndRejectsInvalidActions(t *testing.T) {
 	cases := []struct {
-		change        MySQLTableChange
-		first, second string
+		change MySQLTableChange
+		first  string
 	}{
 		{MySQLTableChange{Action: MySQLTableCreate, Database: "db", Table: "new"},
-			"CREATE TABLE `db`.`new` (`id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY) ENGINE=InnoDB", ""},
+			"CREATE TABLE `db`.`new` (`id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY) ENGINE=InnoDB"},
 		{MySQLTableChange{Action: MySQLTableDrop, Database: "db", Table: "t`x"},
-			"DROP TABLE `db`.`t``x`", ""},
-		{MySQLTableChange{Action: MySQLTableDeleteRows, Database: "db", Table: "t"}, "DELETE FROM `db`.`t`", ""},
-		{MySQLTableChange{Action: MySQLTableTruncate, Database: "db", Table: "t"}, "TRUNCATE TABLE `db`.`t`", ""},
-		{MySQLTableChange{Action: MySQLTableRename, Database: "db", Table: "t", NewName: "new"}, "RENAME TABLE `db`.`t` TO `db`.`new`", ""},
+			"DROP TABLE `db`.`t``x`"},
+		{MySQLTableChange{Action: MySQLTableDeleteRows, Database: "db", Table: "t"}, "DELETE FROM `db`.`t`"},
+		{MySQLTableChange{Action: MySQLTableTruncate, Database: "db", Table: "t"}, "TRUNCATE TABLE `db`.`t`"},
+		{MySQLTableChange{Action: MySQLTableRename, Database: "db", Table: "t", NewName: "new"}, "RENAME TABLE `db`.`t` TO `db`.`new`"},
 		{MySQLTableChange{Action: MySQLTableCopyStructure, Database: "db", Table: "t", NewName: "copy"},
-			"CREATE TABLE `db`.`copy` LIKE `db`.`t`", ""},
+			"CREATE TABLE `db`.`copy` LIKE `db`.`t`"},
 		{MySQLTableChange{Action: MySQLTableCopyData, Database: "db", Table: "t", NewName: "copy"},
-			"CREATE TABLE `db`.`copy` LIKE `db`.`t`", "INSERT INTO `db`.`copy` SELECT * FROM `db`.`t`"},
+			"CREATE TABLE `db`.`copy` LIKE `db`.`t`"},
 	}
 	for _, test := range cases {
 		t.Run(string(test.change.Action), func(t *testing.T) {
-			first, second, err := tableChangeSQL(test.change)
-			if err != nil || first != test.first || second != test.second {
-				t.Fatalf("SQL = %q %q, err=%v", first, second, err)
+			first, err := tableChangeSQL(test.change)
+			if err != nil || first != test.first {
+				t.Fatalf("SQL = %q, err=%v", first, err)
 			}
 		})
 	}
@@ -102,7 +117,7 @@ func TestMySQLTableActionSQLQuotesIdentifiersAndRejectsInvalidActions(t *testing
 		{Action: MySQLTableRename, Database: "db", Table: "t"},
 		{Action: "EXEC", Database: "db", Table: "t"},
 	} {
-		if _, _, err := tableChangeSQL(change); err == nil {
+		if _, err := tableChangeSQL(change); err == nil {
 			t.Fatalf("invalid SQL accepted: %+v", change)
 		}
 	}
@@ -116,8 +131,13 @@ func TestMySQLTableActionsUseBoundTypeGuardAndHandlePartialCopy(t *testing.T) {
 		t.Fatal(err)
 	}
 	rec.Lock()
-	if len(rec.args) != 1 || len(rec.args[0]) != 2 || rec.args[0][0].Value != change.Database || rec.args[0][1].Value != change.Table {
-		t.Errorf("table type query must bind names: %+v", rec.args)
+	if len(rec.args) != 2 {
+		t.Errorf("expected bound type and columns queries: %+v", rec.args)
+	}
+	for _, args := range rec.args {
+		if len(args) != 2 || args[0].Value != change.Database || args[1].Value != change.Table {
+			t.Errorf("metadata query must bind names: %+v", args)
+		}
 	}
 	if len(rec.statements) != 2 || !strings.Contains(rec.statements[0], "`t``x`") {
 		t.Errorf("unexpected executed SQL: %v", rec.statements)
@@ -143,5 +163,55 @@ func TestMySQLTableActionsUseBoundTypeGuardAndHandlePartialCopy(t *testing.T) {
 	}
 	if err := m.ChangeTable(context.Background(), 83, change); !errors.Is(err, ErrMySQLNotConnected) {
 		t.Fatalf("operation after disconnect: %v", err)
+	}
+}
+
+func TestMySQLTableCopyUsesExplicitWritableColumns(t *testing.T) {
+	rec := &tableChangeRecorder{kind: "BASE TABLE", columns: [][]driver.Value{
+		{"id", ""},
+		{"doubled", "(`amount` * 2)"},
+		{"odd`name", ""},
+		{"created_at", ""}, // DEFAULT_GENERATED has no generation expression.
+		{"nullable_metadata", nil},
+	}}
+	m := connectedTableManager(t, rec)
+	if err := m.ChangeTable(context.Background(), 83, MySQLTableChange{
+		Action: MySQLTableCopyData, Database: "d`b", Table: "source", NewName: "target",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	rec.Lock()
+	defer rec.Unlock()
+	want := "INSERT INTO `d``b`.`target` (`id`, `odd``name`, `created_at`, `nullable_metadata`) SELECT `id`, `odd``name`, `created_at`, `nullable_metadata` FROM `d``b`.`source`"
+	if len(rec.statements) != 2 || rec.statements[1] != want {
+		t.Fatalf("copy SQL must preserve writable values and quote column names: %v", rec.statements)
+	}
+}
+
+func TestMySQLTableCopyMetadataFailureDoesNotCreateDestination(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		columns [][]driver.Value
+		err     error
+	}{
+		{name: "query error", err: errors.New("columns unavailable")},
+		{name: "empty metadata", columns: [][]driver.Value{}},
+		{name: "no writable columns", columns: [][]driver.Value{{"generated", "(1)"}}},
+		{name: "invalid column", columns: [][]driver.Value{{"bad\nname", ""}}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			rec := &tableChangeRecorder{kind: "BASE TABLE", columns: test.columns, columnErr: test.err}
+			m := connectedTableManager(t, rec)
+			if err := m.ChangeTable(context.Background(), 83, MySQLTableChange{
+				Action: MySQLTableCopyData, Database: "db", Table: "source", NewName: "target",
+			}); err == nil {
+				t.Fatal("invalid metadata must reject the copy")
+			}
+			rec.Lock()
+			defer rec.Unlock()
+			if len(rec.statements) != 0 {
+				t.Fatalf("metadata failure created a destination: %v", rec.statements)
+			}
+		})
 	}
 }

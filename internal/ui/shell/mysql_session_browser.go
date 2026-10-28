@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -41,8 +42,7 @@ func (s *State) mysqlDatabaseWorkspace(c *ui.Context) {
 	ui.Column(c).Fill().Children(func() {
 		ui.Row(c).Height(theme.RowHeight(c, 30)).Gap(3).Padding(1, 4).AlignItems(ui.Center).Background(palette.Header).Children(func() {
 			ui.Toolbar(c, func() {
-				// Keep the available read-only actions visible on narrow pages.
-				// Unsupported DDL/import/export actions must not crowd them out.
+				// Keep available object actions visible on narrow pages.
 				for _, action := range []struct{ label, icon, accessible string }{
 					{"打开表", "open-table", "打开选中表数据"}, {"设计表", "design-table", "打开选中表结构"},
 				} {
@@ -60,6 +60,17 @@ func (s *State) mysqlDatabaseWorkspace(c *ui.Context) {
 							s.openMySQLStructure(c.Services(), database, obj.Name)
 						}
 					}
+				}
+				canCreate := database != "" && s.canChangeMySQLTable(s.mysqlSessionProfileID) &&
+					(s.mysqlObjectKind == "全部" || s.mysqlObjectKind == "表")
+				if ui.ButtonBase(c).Label(locales.Text("新建表")).Tooltip(locales.Text("新建表")).
+					Disabled(!canCreate).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
+					ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
+						theme.Icon(c, "table", 14, palette.Muted)
+						ui.Text(c, locales.Text("新建表")).FontSize(theme.Font(c, 12)).SingleLine()
+					})
+				}).Clicked() {
+					s.beginMySQLTableChange(s.mysqlSessionProfileID, database, "", connections.MySQLTableCreate)
 				}
 				if ui.ButtonBase(c).Label("查看程序定义").Tooltip("查看函数、存储过程或事件定义").
 					Disabled(!canProgram).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {

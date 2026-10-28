@@ -438,5 +438,21 @@
   "mysqlFieldPreviewComplete": "Complete preview",
   "dataFirstPage": "First page",
   "dataFirstPageAction": "First data page",
-  "mysqlFieldDefaultValue": "Default value"
+  "mysqlFieldDefaultValue": "Default value",
+  "tableCopyStructureAndData": "Structure and Data",
+  "tableCopyStructureOnly": "Structure Only",
+  "tableDumpStructureAndData": "Structure and Data…",
+  "tableDumpStructureOnly": "Structure Only…",
+  "tableNoProfile": "No Profile",
+  "tableDefaultProfile": "Default Profile",
+  "tableQuickMode": "Quick Mode",
+  "tableAnalyze": "Analyze Table",
+  "tableCheck": "Check Table",
+  "tableOptimize": "Optimize Table",
+  "tableRepair": "Repair Table",
+  "tableCheckQuick": "Quick",
+  "tableCheckFast": "Fast",
+  "tableCheckChanged": "Changed",
+  "tableCheckExtended": "Extended",
+  "tableCountRows": "Count Rows"
 }

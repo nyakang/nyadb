@@ -2,6 +2,7 @@ package shell
 
 import (
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -31,6 +32,13 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 	s.explorerMenuBuilt = true
 	s.selectNavigationNode(services, key)
 	s.explorerRow = -1
+	if n.Kind == "database" || n.Kind == "category" && n.Category == "表" {
+		if m.Item(locales.Text("新建表")).Shortcut(ui.Ctrl, ui.KeyN).
+			Disabled(!s.canChangeMySQLTable(n.ProfileID)).Chosen() {
+			s.beginMySQLTableChange(n.ProfileID, n.Database, "", connections.MySQLTableCreate)
+		}
+		m.Separator()
+	}
 	switch n.Kind {
 	case "object":
 		s.mysqlObjectContextMenu(services, m, n.ProfileID, n.Database, n.Object, n.Category)
