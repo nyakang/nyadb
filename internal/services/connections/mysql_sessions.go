@@ -88,13 +88,15 @@ func (m *MySQLSessionManager) Connect(ctx context.Context, s ActiveSettings, pas
 	}
 	m.mu.Lock()
 	stale := m.closed || m.versions[s.ProfileID] != token || connectCtx.Err() != nil
+	var managed *mysqlManagedSession
 	if !stale {
 		delete(m.pending, s.ProfileID)
-		m.sessions[s.ProfileID] = &mysqlManagedSession{
+		managed = &mysqlManagedSession{
 			db: db, sqlDB: sqlDB, ctx: connectCtx, cancel: cancel,
 			settings: s, sqlTabLimit: mysqlSQLTabLimit(s.MySQLAdvanced),
 			sqlTabs:  make(map[uint64]*mysqlSQLTabLease),
 		}
+		m.sessions[s.ProfileID] = managed
 	}
 	m.mu.Unlock()
 	if stale {
@@ -107,6 +109,9 @@ func (m *MySQLSessionManager) Connect(ctx context.Context, s ActiveSettings, pas
 			return ctx.Err()
 		}
 		return context.Canceled
+	}
+	if s.MySQLAdvanced.KeepAlive {
+		go managed.runKeepAlive()
 	}
 	return nil
 }

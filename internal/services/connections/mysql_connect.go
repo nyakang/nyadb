@@ -41,7 +41,7 @@ func DirectMySQLConfig(s ActiveSettings, password string) (*mysql.Config, error)
 		return nil, fmt.Errorf("%w: legacy client driver", ErrMySQLUnsupported)
 	case a.Charset != "自动" && a.Charset != "None":
 		return nil, fmt.Errorf("%w: custom character set", ErrMySQLUnsupported)
-	case a.Compression || a.KeepAlive || a.AutoConnect:
+	case a.Compression || a.AutoConnect:
 		return nil, fmt.Errorf("%w: advanced connection behavior", ErrMySQLUnsupported)
 	case a.Compatibility.Enabled || a.Compatibility.ForceSQLMode ||
 		a.Compatibility.ForceLowerCase || a.Compatibility.ForceNDB ||
@@ -101,7 +101,11 @@ func OpenDirectMySQL(ctx context.Context, s ActiveSettings, password string) (*s
 	// own pool through OpenDirectMySQLPools and cannot starve this pool.
 	db.SetMaxOpenConns(4)
 	db.SetMaxIdleConns(2)
-	db.SetConnMaxLifetime(3 * time.Minute)
+	// A fixed TTL would evict metadata sessions before the default
+	// 240-second heartbeat, even if they are still healthy.
+	if !s.MySQLAdvanced.KeepAlive {
+		db.SetConnMaxLifetime(3 * time.Minute)
+	}
 	testCtx, cancel := context.WithTimeout(ctx, cfg.Timeout)
 	defer cancel()
 	if err = db.PingContext(testCtx); err != nil {
