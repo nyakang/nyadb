@@ -15,6 +15,10 @@ import (
 // Never silently recreate such a session and pretend the state is preserved.
 var ErrMySQLSQLSessionLost = errors.New("MySQL SQL tab session lost; open a new query tab")
 
+// ErrMySQLSQLSessionLimit indicates that the per-profile SQL-tab budget is
+// exhausted. It does not mean the metadata pool or whole profile is full.
+var ErrMySQLSQLSessionLimit = errors.New("MySQL SQL tab session limit reached")
+
 type mysqlSQLTabLease struct {
 	mu     sync.Mutex
 	ctx    context.Context
@@ -72,6 +76,9 @@ func (m *MySQLSessionManager) ReserveSQLTab(profileID int64, tabID uint64) error
 		return ErrMySQLNotConnected
 	}
 	if s.sqlTabs[tabID] == nil {
+		if len(s.sqlTabs) >= s.sqlTabLimit {
+			return fmt.Errorf("%w: at most %d SQL tab sessions per connection", ErrMySQLSQLSessionLimit, s.sqlTabLimit)
+		}
 		leaseCtx, cancel := context.WithCancel(s.ctx)
 		s.sqlTabs[tabID] = &mysqlSQLTabLease{ctx: leaseCtx, cancel: cancel}
 	}
@@ -151,6 +158,10 @@ func (m *MySQLSessionManager) ExecuteSQLTab(ctx context.Context, profileID int64
 	}
 	lease := s.sqlTabs[tabID]
 	if lease == nil {
+		if len(s.sqlTabs) >= s.sqlTabLimit {
+			s.sqlTabsMu.Unlock()
+			return result, fmt.Errorf("%w: at most %d SQL tab sessions per connection", ErrMySQLSQLSessionLimit, s.sqlTabLimit)
+		}
 		leaseCtx, cancel := context.WithCancel(s.ctx)
 		lease = &mysqlSQLTabLease{ctx: leaseCtx, cancel: cancel}
 		s.sqlTabs[tabID] = lease

@@ -28,6 +28,9 @@ type mysqlManagedSession struct {
 	ctx       context.Context
 	cancel    context.CancelFunc
 	settings  ActiveSettings
+
+	sqlTabLimit int
+
 	sqlTabsMu sync.Mutex
 	sqlTabs   map[uint64]*mysqlSQLTabLease
 }
@@ -88,8 +91,9 @@ func (m *MySQLSessionManager) Connect(ctx context.Context, s ActiveSettings, pas
 	if !stale {
 		delete(m.pending, s.ProfileID)
 		m.sessions[s.ProfileID] = &mysqlManagedSession{
-			db: db, sqlDB: sqlDB, ctx: connectCtx, cancel: cancel, settings: s,
-			sqlTabs: make(map[uint64]*mysqlSQLTabLease),
+			db: db, sqlDB: sqlDB, ctx: connectCtx, cancel: cancel,
+			settings: s, sqlTabLimit: mysqlSQLTabLimit(s.MySQLAdvanced),
+			sqlTabs:  make(map[uint64]*mysqlSQLTabLease),
 		}
 	}
 	m.mu.Unlock()
