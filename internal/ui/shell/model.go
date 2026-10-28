@@ -250,6 +250,17 @@ type State struct {
 	mysqlObjectCancel          context.CancelFunc
 	mysqlObjectResults         <-chan mysqlObjectResult
 	mysqlObjectLister          mysqlObjectLister
+	mysqlTableDialog           bool
+	mysqlTableAction           connections.MySQLTableAction
+	mysqlTableProfileID        int64
+	mysqlTableDatabase         string
+	mysqlTableName             string
+	mysqlTableNewName          string
+	mysqlTableConfirmation     string
+	mysqlTableError            string
+	mysqlTablePending          bool
+	mysqlTableResults          <-chan mysqlTableChangeResult
+	mysqlTableRunner           func(context.Context, int64, connections.MySQLTableChange) error
 	mysqlDatabaseNodes         map[string]*mysqlDatabaseNode
 	mysqlStructureLoader       mysqlStructureLoader
 	mysqlDataLoader            mysqlDataLoader

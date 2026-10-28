@@ -33,14 +33,8 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 	s.explorerRow = -1
 	switch n.Kind {
 	case "object":
-		openLabel, structureLabel := mysqlObjectActionLabels(n.Category)
-		if m.Item(locales.Text(openLabel)).Shortcut(0, ui.KeyEnter).Chosen() {
-			s.openMySQLObject(services, n.Database, n.Object, n.Category)
-		}
-		if m.Item(locales.Text(structureLabel)).Shortcut(ui.Ctrl, ui.KeyD).Disabled(isMySQLProgram(n.Category)).Chosen() {
-			s.openMySQLStructure(services, n.Database, n.Object)
-		}
-		m.Separator()
+		s.mysqlObjectContextMenu(services, m, n.ProfileID, n.Database, n.Object, n.Category)
+		return
 	case "category":
 		if m.Item(locales.Text("显示全部对象")).Disabled(!supportedMySQLCategory(n.Category)).Chosen() {
 			s.filterMySQLObjects("全部")
