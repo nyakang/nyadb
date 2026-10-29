@@ -166,7 +166,7 @@ func (s *State) selectNavigationNode(services ui.Services, key string) {
 	s.navigation.Row = s.navigation.SelectionRow(s.navigation.Roots())
 	if n.Database == "" {
 		s.sessions.CancelObjects()
-		s.sessions.Current().Database = ""
+		s.sessions.SelectDatabase("")
 		s.objectWorkspace.SetFilter(s.sessions.Current().ProfileID, "全部")
 		s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, -1)
 		return

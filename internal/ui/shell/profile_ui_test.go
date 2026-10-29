@@ -153,7 +153,7 @@ func TestProfileDuplicateNameError(t *testing.T) {
 	s.loadProfiles()
 	s.startEditProfile()
 	s.connectionEditor.Draft().Name = "one"
-	s.saveConnectionDraft()
+	s.connectionEditor.Save()
 	if s.connectionDialog {
 		t.Fatal("updating same profile name should succeed")
 	}
@@ -163,7 +163,7 @@ func TestProfileDuplicateNameError(t *testing.T) {
 	}
 	s.startEditProfile()
 	s.connectionEditor.Draft().Name = "taken"
-	s.saveConnectionDraft()
+	s.connectionEditor.Save()
 	if !s.connectionDialog || s.connectionEditor.Error() == "" {
 		t.Fatal("duplicate name should display error without closing dialog")
 	}

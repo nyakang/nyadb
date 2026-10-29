@@ -97,12 +97,8 @@ func (s *State) refreshConnectionObjects(services ui.Services, id int64) {
 		return
 	}
 	database := s.sessions.Current().Database
-	s.sessions.CancelObjects()
-	for key := range s.sessions.Current().Cache {
-		delete(s.sessions.Current().Cache, key)
-	}
-	for key := range s.sessions.Current().Errors {
-		delete(s.sessions.Current().Errors, key)
+	if !s.sessions.InvalidateProfileObjects(id, s.sessions.Current().Generation) {
+		return
 	}
 	if database != "" {
 		s.loadMySQLObjects(services, database, true)

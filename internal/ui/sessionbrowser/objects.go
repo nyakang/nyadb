@@ -62,7 +62,10 @@ func (s *State) ReconcileDatabases(names []string) {
 	}
 }
 func (s *State) CancelObjects() {
-	w := s.current
+	s.cancelObjects(s.current)
+}
+
+func (s *State) cancelObjects(w *Workspace) {
 	if w.Pending != "" {
 		if w.Errors == nil {
 			w.Errors = make(map[string]string)
@@ -74,6 +77,35 @@ func (s *State) CancelObjects() {
 		w.objectCancel()
 	}
 	w.objectCancel, w.objectResults, w.Pending = nil, nil, ""
+}
+
+// InvalidateDatabaseObjects revokes metadata for the original session after a
+// table change. A parked profile's sibling read and database selection survive.
+// Invalidation never starts a read; the host decides when to refresh.
+func (s *State) InvalidateDatabaseObjects(profileID int64, generation uint64, database string) bool {
+	w := s.Workspace(profileID)
+	if w == nil || w.Status != "已连接" || w.Generation != generation || database == "" {
+		return false
+	}
+	if w.Pending == database {
+		s.cancelObjects(w)
+	}
+	delete(w.Cache, database)
+	delete(w.Errors, database)
+	return true
+}
+
+// InvalidateProfileObjects clears a connection's object caches while retaining
+// its selected/opened databases. Only this session's pending read is revoked.
+func (s *State) InvalidateProfileObjects(profileID int64, generation uint64) bool {
+	w := s.Workspace(profileID)
+	if w == nil || w.Status != "已连接" || w.Generation != generation {
+		return false
+	}
+	s.cancelObjects(w)
+	clear(w.Cache)
+	clear(w.Errors)
+	return true
 }
 
 // SelectDatabase changes context without canceling an explicitly opened sibling's read.

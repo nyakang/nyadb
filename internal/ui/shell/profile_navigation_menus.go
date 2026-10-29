@@ -36,7 +36,7 @@ func (s *State) sidebarSettingsMenu(m *ui.Menu) {
 	s.selectedProfileID = 0
 	s.navigation.Row = -1
 	s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, -1)
-	s.sessions.Current().Database = ""
+	s.sessions.SelectDatabase("")
 	s.profileRootMenu(m)
 }
 

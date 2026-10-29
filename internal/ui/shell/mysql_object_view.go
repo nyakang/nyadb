@@ -138,11 +138,10 @@ func (s *State) mysqlTableChanged(services ui.Services, r objectworkspace.TableE
 	if r.Error != nil && r.Action != mysqlsvc.MySQLTableCopyData {
 		return
 	}
-	w := s.sessions.Workspace(r.ProfileID)
-	if w == nil || w.Generation != r.Generation || w.Status != "已连接" {
+	if !s.sessions.InvalidateDatabaseObjects(r.ProfileID, r.Generation, r.Database) {
 		return
 	}
-	delete(w.Cache, r.Database)
+	w := s.sessions.Workspace(r.ProfileID)
 	if w == s.sessions.Current() && w.Database == r.Database {
 		s.loadMySQLObjects(services, r.Database, true)
 	}

@@ -13,6 +13,46 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
+func TestMySQLGeneralAdvancedAndDatabaseControls(t *testing.T) {
+	s := New(Dependencies{})
+	if err := s.OpenNew(connections.MySQL, ""); err != nil {
+		t.Fatal(err)
+	}
+	tt := ui.NewTester(func(c *ui.Context) {
+		theme.Apply(c)
+		s.View(c, 900, 700)
+	}, 900, 700)
+	for _, label := range []string{"连接名称：", "主机：", "端口：", "用户名：", "密码：", "保存密码"} {
+		if !tt.HasText(label) {
+			t.Fatalf("General tab missing %q", label)
+		}
+	}
+	for _, note := range []string{
+		"密码仅在当前窗口内保留；安全保存将在密钥库接入后开放。",
+		"支持严格证书验证的 TLS；未加密连接仅允许本机，请勿发送生产凭据。",
+	} {
+		if tt.HasText(note) {
+			t.Fatalf("General tab shows implementation note %q", note)
+		}
+	}
+	for _, page := range []struct {
+		name     string
+		controls []string
+	}{
+		{"高级", []string{"客户端驱动程序：", "保持连接间隔（秒）：", "连接超时（秒）：", "初始查询：", "兼容性"}},
+		{"数据库", []string{"使用自定义数据库列表", "自动打开"}},
+	} {
+		if err := tt.Click(page.name); err != nil {
+			t.Fatal(err)
+		}
+		for _, label := range page.controls {
+			if !tt.HasText(label) {
+				t.Fatalf("%s tab missing %q", page.name, label)
+			}
+		}
+	}
+}
+
 func assertThemePixel(t *testing.T, tt *ui.Tester, x, y int, want ui.Color) {
 	t.Helper()
 	got := tt.Image().RGBAAt(x, y)
