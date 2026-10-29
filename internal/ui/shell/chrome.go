@@ -15,10 +15,8 @@ func (s *State) View(c *ui.Context) {
 	s.mysqlSQLPreconnectInvalidate = c.Services().Invalidate
 	if s.profileMode {
 		s.activateMySQLForCurrentTab()
-		s.consumeParkedMySQLSessionResults()
 	}
-	s.consumeMySQLSessionResult()
-	s.consumeMySQLObjects()
+	s.sessions.Consume()
 	s.consumeMySQLTableChange(c.Services())
 	s.consumeMySQLStructures()
 	s.consumeMySQLData()
@@ -304,10 +302,10 @@ func styleToolbarButton(c *ui.Context, button ui.Element, selected bool) {
 }
 
 func (s *State) mysqlWorkbenchStatus() string {
-	if s.mysqlSessionStatus == "" {
+	if s.sessions.Current().Status == "" {
 		return "未连接"
 	}
-	return s.mysqlSessionStatus
+	return s.sessions.Current().Status
 }
 
 func (s *State) statusBar(c *ui.Context) {

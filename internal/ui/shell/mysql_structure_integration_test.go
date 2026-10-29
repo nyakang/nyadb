@@ -40,17 +40,17 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	if err := s.mysqlSessionManager.Connect(ctx, settings, password); err != nil {
+	if err := s.sessions.Manager.Connect(ctx, settings, password); err != nil {
 		t.Fatalf("isolated session: %v", err)
 	}
-	s.mysqlSessionProfileID = p.ID
-	s.mysqlSessionStatus = "已连接"
-	s.mysqlSessionDatabases, err = s.mysqlSessionManager.Databases(ctx, p.ID)
+	s.sessions.Current().ProfileID = p.ID
+	s.sessions.Current().Status = "已连接"
+	s.sessions.Current().Databases, err = s.sessions.Manager.Databases(ctx, p.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(s.mysqlSessionDatabases, "nyadb_struct_a") {
-		t.Fatalf("fixture not visible: %v", s.mysqlSessionDatabases)
+	if !slices.Contains(s.sessions.Current().Databases, "nyadb_struct_a") {
+		t.Fatalf("fixture not visible: %v", s.sessions.Current().Databases)
 	}
 
 	s.navigation.Tree.Open.Add(navigation.ConnectionKey(p.ID))
@@ -59,7 +59,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
-	objects := s.mysqlSelectedObjects()
+	objects := s.sessions.SelectedObjects()
 	if len(objects) != 3 || objects[0].Name != "child" {
 		t.Fatalf("real metadata object list not rendered: %+v", objects)
 	}
@@ -136,7 +136,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
-	s.objectRow = 0
+	s.sessions.Current().Row = 0
 	tt.Frame()
 	if err := tt.Click("打开选中表结构"); err != nil {
 		t.Fatal(err)
@@ -149,7 +149,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 	if err := tt.Click("返回对象列表"); err != nil {
 		t.Fatal(err)
 	}
-	s.objectRow = 2 // child, parent, parent_view in the server-ordered object list
+	s.sessions.Current().Row = 2 // child, parent, parent_view in the server-ordered object list
 	tt.Frame()
 	if err := tt.Click("打开选中表结构"); err != nil {
 		t.Fatal(err)
@@ -162,7 +162,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 	}
 	s.disconnectMySQLSession()
 	tt.Frame()
-	if len(s.tabs) != 1 || s.mysqlSessionStatus != "未连接" {
+	if len(s.tabs) != 1 || s.sessions.Current().Status != "未连接" {
 		t.Fatal("disconnect did not discard real cached structure tab")
 	}
 }

@@ -97,7 +97,7 @@ func (s *State) sidebar(c *ui.Context) {
 				name := s.navigation.Tree.Item(s.navigation.Row)
 				if name != s.navigation.Key {
 					s.navigation.Key = name
-					s.objectRow = 0
+					s.sessions.Current().Row = 0
 					s.status = "已选择：" + name + "（模拟连接）"
 				}
 			}

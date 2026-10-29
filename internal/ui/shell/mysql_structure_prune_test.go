@@ -29,7 +29,7 @@ func TestMySQLStructureQualifiedTabsAndPrunedSchema(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
-	s.objectRow = 0
+	s.sessions.Current().Row = 0
 	tt.Frame()
 	if err := tt.Click("打开选中表结构"); err != nil {
 		t.Fatal(err)
@@ -39,7 +39,7 @@ func TestMySQLStructureQualifiedTabsAndPrunedSchema(t *testing.T) {
 		t.Fatalf("did not separate identically-named objects: %+v", s.tabs)
 	}
 
-	s.reconcileMySQLDatabases([]string{"app_db"})
+	s.sessions.ReconcileDatabases([]string{"app_db"})
 	tt.Frame()
 	if len(s.tabs) != 2 || s.tabs[1].title != "app_db.orders" || s.activeTab != 0 {
 		t.Fatalf("stale schema tab survived refresh: %+v active=%d", s.tabs, s.activeTab)
@@ -61,7 +61,7 @@ func TestMySQLWorkbenchStatusReflectsConnectionLifecycle(t *testing.T) {
 		t.Fatal(got)
 	}
 	for _, status := range []string{"连接中", "已连接", "连接失败"} {
-		s.mysqlSessionStatus = status
+		s.sessions.Current().Status = status
 		if got := s.mysqlWorkbenchStatus(); got != status {
 			t.Fatalf("displaying wrong session state: %q != %q", got, status)
 		}

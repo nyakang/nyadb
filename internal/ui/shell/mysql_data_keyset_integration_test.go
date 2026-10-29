@@ -33,16 +33,16 @@ func TestMySQLRealKeysetAndOnDemandFieldNativeViewer(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	if err = s.mysqlSessionManager.Connect(ctx, settings, mysqlIntegrationPassword(t)); err != nil {
+	if err = s.sessions.Manager.Connect(ctx, settings, mysqlIntegrationPassword(t)); err != nil {
 		t.Fatal(err)
 	}
-	s.mysqlSessionProfileID = p.ID
-	s.mysqlSessionStatus = "已连接"
-	s.mysqlSessionDatabases, err = s.mysqlSessionManager.Databases(ctx, p.ID)
+	s.sessions.Current().ProfileID = p.ID
+	s.sessions.Current().Status = "已连接"
+	s.sessions.Current().Databases, err = s.sessions.Manager.Databases(ctx, p.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(s.mysqlSessionDatabases, "nyadb_perf") {
+	if !slices.Contains(s.sessions.Current().Databases, "nyadb_perf") {
 		t.Fatal("performance fixture not visible")
 	}
 	s.navigation.Tree.Open.Add(navigation.ConnectionKey(p.ID))

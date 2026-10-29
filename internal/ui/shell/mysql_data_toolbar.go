@@ -31,7 +31,7 @@ func (s *State) mysqlDataCompactActions(c *ui.Context, t *tab) {
 		s.showMySQLFieldInspector(t)
 	}
 	ui.Divider(c).Width(1).Height(18)
-	if mysqlDataToolbarButton(c, "刷新", locales.Text("刷新表数据：")+t.dataTable, "refresh", s.mysqlSessionStatus != "已连接" || t.dataLoading).Clicked() {
+	if mysqlDataToolbarButton(c, "刷新", locales.Text("刷新表数据：")+t.dataTable, "refresh", s.sessions.Current().Status != "已连接" || t.dataLoading).Clicked() {
 		s.resetAndReloadMySQLData(c.Services(), t)
 	}
 	if t.dataLoading && mysqlDataToolbarButton(c, "取消", locales.Text("取消读取数据"), "close", false).Clicked() {

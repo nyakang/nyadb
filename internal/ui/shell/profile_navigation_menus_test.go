@@ -136,7 +136,7 @@ func TestNavigatorRightClickUnselectedRowAcrossItsWidth(t *testing.T) {
 		t.Fatal(err)
 	}
 	saved, err := svc.Get(context.Background(), p.ID)
-	if err != nil || !saved.Starred || s.mysqlSessionProfileID != 0 {
+	if err != nil || !saved.Starred || s.sessions.Current().ProfileID != 0 {
 		t.Fatalf("context action must target the clicked connection without connecting: starred=%v err=%v", saved.Starred, err)
 	}
 	tt.Key(0, ui.KeyUp)

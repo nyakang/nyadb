@@ -12,6 +12,7 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/connectioncatalog"
 	"github.com/nyakang/nyadb/internal/ui/connectioneditor"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
+	"github.com/nyakang/nyadb/internal/ui/sessionbrowser"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -163,8 +164,6 @@ type State struct {
 	inspectorObjectsOpen  bool
 
 	objectKind  string
-	objectRow   int
-	objectState ui.ListState
 	dataState   ui.ListState
 	dataColumns []ui.TableColumn
 
@@ -189,28 +188,7 @@ type State struct {
 	showConnectionWindow func()
 	hideConnectionWindow func()
 
-	mysqlSessionManager     *mysqlsvc.MySQLSessionManager
-	mysqlWorkspaces         map[int64]*mysqlSessionWorkspace
-	mysqlSessionCancel      context.CancelFunc
-	mysqlSessionResults     <-chan mysqlSessionResult
-	mysqlSessionProfileID   int64
-	mysqlSessionGeneration  uint64
-	mysqlSessionStatus      string
-	mysqlSessionError       string
-	mysqlSessionPassword    string
-	mysqlSessionDatabases   []string
-	mysqlSessionOpener      mysqlSessionOpener
-	mysqlDatabaseLister     mysqlDatabaseLister
 	mysqlSQLExecutor        mysqlSQLExecutor
-	mysqlSelectedDatabase   string
-	mysqlObjectKind         string
-	mysqlObjectCache        map[string][]mysqlsvc.MySQLDBObject
-	mysqlObjectErrors       map[string]string
-	mysqlObjectPending      string
-	mysqlObjectRequest      uint64
-	mysqlObjectCancel       context.CancelFunc
-	mysqlObjectResults      <-chan mysqlObjectResult
-	mysqlObjectLister       mysqlObjectLister
 	mysqlTableDialog        bool
 	mysqlTableAction        mysqlsvc.MySQLTableAction
 	mysqlTableProfileID     int64
@@ -222,7 +200,6 @@ type State struct {
 	mysqlTablePending       bool
 	mysqlTableResults       <-chan mysqlTableChangeResult
 	mysqlTableRunner        func(context.Context, int64, mysqlsvc.MySQLTableChange) error
-	mysqlDatabaseNodes      map[string]*mysqlDatabaseNode
 	mysqlStructureLoader    mysqlStructureLoader
 	mysqlDataLoader         mysqlDataLoader
 	mysqlDataAdvancedLoader mysqlDataAdvancedLoader
@@ -233,13 +210,11 @@ type State struct {
 	// A background preconnect requests the next native UI frame through this hook.
 	mysqlSQLPreconnectInvalidate func()
 
+	sessions   *sessionbrowser.State
 	navigation *navigation.State
 
 	profileMode         bool
 	profileService      *connections.Service
-	navigateDatabase    string
-	navigateTable       string
-	navigateProfileID   int64
 	selectedProfileID   int64
 	pendingDeleteID     int64
 	deleteConfirm       bool
@@ -273,6 +248,7 @@ func New() *State {
 		nextTabID:            1,
 		tabs:                 []*tab{{id: 1, title: "对象", kind: tabObjects}},
 	}
+	s.sessions = sessionbrowser.New(s.sessionBrowserDependencies())
 	s.navigation = navigation.New(s.navigationDependencies())
 	s.connectionEditor = connectioneditor.New(connectioneditor.Dependencies{
 		ValidateMySQL: func(settings connections.ActiveSettings, secret string) error {
@@ -282,7 +258,7 @@ func New() *State {
 		TestMySQL: mysqlsvc.TestDirectMySQLConnection,
 		Saved:     s.connectionSaved, Back: s.backToConnectionCatalog, Cancel: s.closeConnectionDialog,
 	})
-	s.objectState.Selected = &s.objectRow
+	s.sessions.Current().List.Selected = &s.sessions.Current().Row
 	return s
 }
 
@@ -302,8 +278,8 @@ func (s *State) openQuery() {
 		initial = "-- 输入 SQL；点击运行后发送至当前连接\n"
 		if p, ok := s.currentProfile(); ok && p.Kind == connections.MySQL {
 			profileID = p.ID
-			if s.mysqlSessionStateFor(profileID) == "已连接" {
-				database = s.mysqlSelectedDatabase
+			if s.sessions.StatusFor(profileID) == "已连接" {
+				database = s.sessions.Current().Database
 			}
 		}
 	}
@@ -317,8 +293,8 @@ func (s *State) openQuery() {
 	s.tabs = append(s.tabs, t)
 	s.activeTab = len(s.tabs) - 1
 	s.status = "已打开 " + t.title
-	if profileID > 0 && s.mysqlSessionManager != nil && s.mysqlSessionManager.IsConnected(profileID) {
-		if lease, err := s.mysqlSessionManager.ReserveSQLTabToken(profileID, t.id); err != nil {
+	if profileID > 0 && s.sessions.Manager != nil && s.sessions.Manager.IsConnected(profileID) {
+		if lease, err := s.sessions.Manager.ReserveSQLTabToken(profileID, t.id); err != nil {
 			t.sqlError = "SQL 会话预留失败：" + err.Error()
 			s.status = t.sqlError
 		} else {
@@ -426,10 +402,10 @@ func (s *State) closeOtherTabs(index int) {
 func (s *State) showObjects(kind string) {
 	s.objectKind = kind
 	s.activeTab = 0
-	s.objectRow = 0
+	s.sessions.Current().Row = 0
 	if s.profileMode {
-		s.mysqlObjectKind = kind
-		s.objectRow = -1
+		s.sessions.Current().Kind = kind
+		s.sessions.Current().Row = -1
 		s.status = "已切换到" + kind + "对象列表"
 		return
 	}

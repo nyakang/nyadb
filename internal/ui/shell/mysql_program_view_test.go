@@ -8,9 +8,9 @@ import (
 
 func TestProgramDefinitionTabIsReadOnlyAndScopedToProfile(t *testing.T) {
 	s := New()
-	s.mysqlSessionProfileID = 41
-	s.mysqlSessionStatus = "已连接"
-	s.mysqlObjectCache = map[string][]mysqlsvc.MySQLDBObject{
+	s.sessions.Current().ProfileID = 41
+	s.sessions.Current().Status = "已连接"
+	s.sessions.Current().Cache = map[string][]mysqlsvc.MySQLDBObject{
 		"app": {{Name: "run_cleanup", Kind: "存储过程", Definition: "DELETE FROM logs"}},
 	}
 	s.openMySQLProgram("app", "run_cleanup", "存储过程")

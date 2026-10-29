@@ -68,7 +68,7 @@ func testMySQLDataFooterInFullWorkspace(t *testing.T) {
 func TestMySQLDataReadStatusSurvivesFailureAndCancellation(t *testing.T) {
 	s := New()
 	doc := &tab{kind: tabMySQLData, dataProfileID: 12, dataLimit: 100, dataLoading: true, dataRequest: 3}
-	s.tabs, s.mysqlSessionProfileID, s.mysqlSessionGeneration = []*tab{doc}, 12, 2
+	s.tabs, s.sessions.Current().ProfileID, s.sessions.Current().Generation = []*tab{doc}, 12, 2
 	completed := time.Date(2026, 10, 26, 8, 30, 0, 0, time.Local)
 	page := &mysqlsvc.MySQLDataPage{QuerySQL: "SELECT `id` FROM `db`.`t` LIMIT ? OFFSET ?", CompletedAt: completed, Duration: 12 * time.Millisecond}
 	result := make(chan mysqlDataResult, 1)
@@ -95,7 +95,7 @@ func TestMySQLDataReadStatusSurvivesFailureAndCancellation(t *testing.T) {
 
 func TestMySQLDataPageSizeResetsCursorAndUsesBoundedLimit(t *testing.T) {
 	s := New()
-	s.mysqlSessionProfileID, s.mysqlSessionStatus = 12, "已连接"
+	s.sessions.Current().ProfileID, s.sessions.Current().Status = 12, "已连接"
 	doc := &tab{kind: tabMySQLData, dataProfileID: 12, dataDatabase: "db", dataTable: "t", dataLimit: 100,
 		dataOffset: 200, dataAfter: &mysqlsvc.MySQLDataCursor{}, dataCursorHistory: map[int64]*mysqlsvc.MySQLDataCursor{100: {}}, dataSelectedRow: 4}
 	s.tabs = []*tab{doc}

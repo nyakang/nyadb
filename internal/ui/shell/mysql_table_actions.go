@@ -57,8 +57,8 @@ func mysqlTableActionDangerous(action mysqlsvc.MySQLTableAction) bool {
 }
 
 func (s *State) canChangeMySQLTable(profileID int64) bool {
-	return (s.mysqlSessionManager != nil || s.mysqlTableRunner != nil) &&
-		!s.mysqlTablePending && s.mysqlSessionStatus == "已连接" && s.mysqlSessionProfileID == profileID
+	return (s.sessions.Manager != nil || s.mysqlTableRunner != nil) &&
+		!s.mysqlTablePending && s.sessions.Current().Status == "已连接" && s.sessions.Current().ProfileID == profileID
 }
 
 // Shared by the native navigator and central object grid. Unsupported entries
@@ -155,7 +155,7 @@ func (s *State) mysqlObjectContextMenu(services ui.Services, m *ui.Menu, profile
 	}
 	m.Separator()
 	if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).
-		Disabled(s.mysqlObjectPending != "" || s.mysqlSessionStatus != "已连接").Chosen() {
+		Disabled(s.sessions.Current().Pending != "" || s.sessions.Current().Status != "已连接").Chosen() {
 		s.loadMySQLObjects(services, database, true)
 	}
 }
@@ -224,8 +224,8 @@ func (s *State) mysqlTableChangeModal(c *ui.Context) {
 			if s.mysqlTablePending {
 				ui.Text(c, "正在执行数据库操作…").FontSize(theme.Font(c, 12))
 			}
-			valid := !s.mysqlTablePending && s.mysqlTableProfileID == s.mysqlSessionProfileID &&
-				s.mysqlSessionStatus == "已连接"
+			valid := !s.mysqlTablePending && s.mysqlTableProfileID == s.sessions.Current().ProfileID &&
+				s.sessions.Current().Status == "已连接"
 			if mysqlTableActionNeedsName(s.mysqlTableAction) {
 				valid = valid && strings.TrimSpace(s.mysqlTableNewName) != "" &&
 					(s.mysqlTableAction == mysqlsvc.MySQLTableCreate ||
@@ -247,8 +247,8 @@ func (s *State) mysqlTableChangeModal(c *ui.Context) {
 }
 
 func (s *State) startMySQLTableChange(services ui.Services) {
-	if s.mysqlTablePending || !s.mysqlTableDialog || s.mysqlTableProfileID != s.mysqlSessionProfileID ||
-		s.mysqlSessionStatus != "已连接" {
+	if s.mysqlTablePending || !s.mysqlTableDialog || s.mysqlTableProfileID != s.sessions.Current().ProfileID ||
+		s.sessions.Current().Status != "已连接" {
 		return
 	}
 	action := s.mysqlTableAction
@@ -271,14 +271,14 @@ func (s *State) startMySQLTableChange(services ui.Services) {
 	}
 	run := s.mysqlTableRunner
 	if run == nil {
-		if s.mysqlSessionManager == nil {
+		if s.sessions.Manager == nil {
 			s.mysqlTableError = "MySQL 会话不可用"
 			return
 		}
-		run = s.mysqlSessionManager.ChangeTable
+		run = s.sessions.Manager.ChangeTable
 	}
 	id := s.mysqlTableProfileID
-	generation := s.mysqlSessionGeneration
+	generation := s.sessions.Current().Generation
 	ch := make(chan mysqlTableChangeResult, 1)
 	s.mysqlTableResults = ch
 	s.mysqlTablePending = true
@@ -299,11 +299,11 @@ func (s *State) consumeMySQLTableChange(services ui.Services) {
 	case r := <-s.mysqlTableResults:
 		s.mysqlTableResults = nil
 		s.mysqlTablePending = false
-		current := r.profileID == s.mysqlSessionProfileID && r.generation == s.mysqlSessionGeneration &&
-			s.mysqlSessionStatus == "已连接"
-		parked := s.parkedMySQLWorkspace(r.profileID)
-		parkedValid := parked != nil && parked.sessionGeneration == r.generation &&
-			parked.sessionStatus == "已连接"
+		current := r.profileID == s.sessions.Current().ProfileID && r.generation == s.sessions.Current().Generation &&
+			s.sessions.Current().Status == "已连接"
+		parked := s.sessions.Parked(r.profileID)
+		parkedValid := parked != nil && parked.Generation == r.generation &&
+			parked.Status == "已连接"
 		if !current && !parkedValid {
 			s.mysqlTableDialog = false
 			s.mysqlTableError = ""
@@ -318,12 +318,12 @@ func (s *State) consumeMySQLTableChange(services ui.Services) {
 			// Refresh metadata to show any partially created destination table.
 			if r.action == mysqlsvc.MySQLTableCopyData {
 				if current {
-					delete(s.mysqlObjectCache, r.database)
-					if s.mysqlSelectedDatabase == r.database {
+					delete(s.sessions.Current().Cache, r.database)
+					if s.sessions.Current().Database == r.database {
 						s.loadMySQLObjects(services, r.database, true)
 					}
 				} else {
-					delete(parked.objectCache, r.database)
+					delete(parked.Cache, r.database)
 				}
 			}
 			return
@@ -332,12 +332,12 @@ func (s *State) consumeMySQLTableChange(services ui.Services) {
 		s.mysqlTableError = ""
 		// Never let an old profile's completion update another profile's UI.
 		if current {
-			delete(s.mysqlObjectCache, r.database)
-			if s.mysqlSelectedDatabase == r.database {
+			delete(s.sessions.Current().Cache, r.database)
+			if s.sessions.Current().Database == r.database {
 				s.loadMySQLObjects(services, r.database, true)
 			}
 		} else {
-			delete(parked.objectCache, r.database)
+			delete(parked.Cache, r.database)
 		}
 		for i := len(s.tabs) - 1; i > 0; i-- {
 			t := s.tabs[i]

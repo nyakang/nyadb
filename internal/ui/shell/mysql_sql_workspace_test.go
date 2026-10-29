@@ -26,10 +26,10 @@ func sqlUITestState(t *testing.T) (*State, *ui.Tester, int64) {
 	}
 	s.loadProfiles()
 	s.selectedProfileID = profile.ID
-	s.mysqlSessionProfileID = profile.ID
-	s.mysqlSessionStatus = "已连接"
-	s.mysqlSessionDatabases = []string{"db_test"}
-	s.mysqlSelectedDatabase = "db_test"
+	s.sessions.Current().ProfileID = profile.ID
+	s.sessions.Current().Status = "已连接"
+	s.sessions.Current().Databases = []string{"db_test"}
+	s.sessions.Current().Database = "db_test"
 	s.openQuery()
 	tt.Frame()
 	if s.currentTab().sqlProfileID != profile.ID || s.currentTab().sqlDatabase != "db_test" {
@@ -177,10 +177,10 @@ func TestSQLTabsProfileIsolationAndCloseCancel(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.loadProfiles()
-	s.activateMySQLProfile(bProfile.ID)
-	s.mysqlSessionProfileID = bProfile.ID
-	s.mysqlSessionStatus = "已连接"
-	s.mysqlSelectedDatabase = "db_other"
+	s.sessions.Activate(bProfile.ID)
+	s.sessions.Current().ProfileID = bProfile.ID
+	s.sessions.Current().Status = "已连接"
+	s.sessions.Current().Database = "db_other"
 	s.selectedProfileID = bProfile.ID
 	s.openQuery()
 	b := s.currentTab()
@@ -211,8 +211,8 @@ func TestSQLTabsProfileIsolationAndCloseCancel(t *testing.T) {
 	// Returning to A restores its parked profile before executing.
 	s.activeTab = 1
 	tt.Frame()
-	if s.mysqlSessionProfileID != idA {
-		t.Fatalf("returning to A SQL tab did not restore session: %d", s.mysqlSessionProfileID)
+	if s.sessions.Current().ProfileID != idA {
+		t.Fatalf("returning to A SQL tab did not restore session: %d", s.sessions.Current().ProfileID)
 	}
 	if err := tt.Click("运行当前或选中 SQL"); err != nil {
 		t.Fatal(err)
@@ -271,7 +271,7 @@ func TestSQLQueryUIErrorsAffectedRowsAndDisconnect(t *testing.T) {
 	}
 	s.disconnectMySQLProfile(id)
 	tt.Frame()
-	if s.mysqlSessionStateFor(id) != "未连接" || q.sqlResult != nil ||
+	if s.sessions.StatusFor(id) != "未连接" || q.sqlResult != nil ||
 		!strings.Contains(q.sqlError, "连接已断开") ||
 		q.editor.Buffer.String() != "UPDATE fixture SET x=1" {
 		t.Fatalf("disconnect lost editor state or kept result: error=%q result=%+v", q.sqlError, q.sqlResult)

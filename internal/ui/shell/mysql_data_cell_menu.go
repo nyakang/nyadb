@@ -16,7 +16,7 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *tab, m *ui.Menu, row, source
 	if page == nil || row < 0 || row >= len(page.Rows) {
 		return
 	}
-	ready := !t.dataLoading && !t.dataEdit.Busy && t.dataEdit.Uncertain == nil && t.dataProfileID == s.mysqlSessionProfileID && s.mysqlSessionStatus == "已连接"
+	ready := !t.dataLoading && !t.dataEdit.Busy && t.dataEdit.Uncertain == nil && t.dataProfileID == s.sessions.Current().ProfileID && s.sessions.Current().Status == "已连接"
 	editable := ready && mysqlDataCanEdit(t, row, source)
 	var column mysqlsvc.MySQLStructureColumn
 	if source >= 0 && source < len(page.ColumnMetadata) {
@@ -148,7 +148,7 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *tab, m *ui.Menu, row, source
 		}
 	})
 	if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).
-		Disabled(t.dataLoading || t.dataEdit.Busy || t.dataEdit.Uncertain != nil || t.dataProfileID != s.mysqlSessionProfileID || s.mysqlSessionStatus != "已连接").Chosen() {
+		Disabled(t.dataLoading || t.dataEdit.Busy || t.dataEdit.Uncertain != nil || t.dataProfileID != s.sessions.Current().ProfileID || s.sessions.Current().Status != "已连接").Chosen() {
 		s.resetAndReloadMySQLData(c.Services(), t)
 	}
 }

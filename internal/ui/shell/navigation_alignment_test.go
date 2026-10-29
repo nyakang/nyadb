@@ -13,11 +13,11 @@ import (
 
 func TestUnifiedNavigatorQualifiesObjectsAndLoadsOnlyOnDemand(t *testing.T) {
 	s, tt := mysqlObjectTestState(t)
-	id := s.mysqlSessionProfileID
+	id := s.sessions.Current().ProfileID
 	calls := 0
-	s.mysqlObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) { calls++; return nil, nil }
+	s.sessions.ObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) { calls++; return nil, nil }
 	for _, db := range []string{"app_db", "analytics"} {
-		s.mysqlObjectCache[db] = []mysqlsvc.MySQLDBObject{{Name: "same_table", Kind: "表", Engine: "InnoDB"}}
+		s.sessions.Current().Cache[db] = []mysqlsvc.MySQLDBObject{{Name: "same_table", Kind: "表", Engine: "InnoDB"}}
 	}
 	n := navigation.Node{Kind: "object", ProfileID: id, Database: "app_db", Category: "表", Object: "same_table"}
 	other := n
@@ -32,8 +32,8 @@ func TestUnifiedNavigatorQualifiesObjectsAndLoadsOnlyOnDemand(t *testing.T) {
 	s.selectNavigationNode(ui.Services{}, other.Key())
 	s.revealNavigationNode(other)
 	tt.Frame()
-	if s.mysqlSelectedDatabase != "analytics" || s.objectRow != 0 || s.navigation.Key != other.Key() {
-		t.Fatalf("selection lost its database: %s row=%d node=%+v", s.mysqlSelectedDatabase, s.objectRow, navigation.Parse(s.navigation.Key))
+	if s.sessions.Current().Database != "analytics" || s.sessions.Current().Row != 0 || s.navigation.Key != other.Key() {
+		t.Fatalf("selection lost its database: %s row=%d node=%+v", s.sessions.Current().Database, s.sessions.Current().Row, navigation.Parse(s.navigation.Key))
 	}
 	if calls != 0 {
 		t.Fatal("cached tree traversal performed a query")
@@ -58,7 +58,7 @@ func TestNavigatorUsesProfileIdentityAcrossRenameWithoutConnecting(t *testing.T)
 		t.Fatal(err)
 	}
 	key := s.navigation.Key
-	if key != navigation.ConnectionKey(p.ID) || s.mysqlSessionProfileID != 0 {
+	if key != navigation.ConnectionKey(p.ID) || s.sessions.Current().ProfileID != 0 {
 		t.Fatal("selecting a profile connected or used its display name as identity")
 	}
 	p.Name = "After"
@@ -116,16 +116,16 @@ func TestExpandedDatabasesLoadSequentiallyWithoutChangingSelection(t *testing.T)
 	s, tt := mysqlObjectTestState(t)
 	var mu sync.Mutex
 	reads := map[string]int{}
-	s.mysqlObjectLister = func(_ context.Context, _ int64, db string) ([]mysqlsvc.MySQLDBObject, error) {
+	s.sessions.ObjectLister = func(_ context.Context, _ int64, db string) ([]mysqlsvc.MySQLDBObject, error) {
 		mu.Lock()
 		reads[db]++
 		mu.Unlock()
 		return []mysqlsvc.MySQLDBObject{{Name: "table", Kind: "表"}}, nil
 	}
 	selected := s.navigation.Key
-	for _, db := range s.mysqlSessionDatabases {
-		s.markMySQLDatabaseOpened(s.mysqlSessionProfileID, db)
-		s.navigation.Tree.Open.Add(navigation.DatabaseNode(s.mysqlSessionProfileID, db).Key())
+	for _, db := range s.sessions.Current().Databases {
+		s.sessions.MarkOpened(s.sessions.Current().ProfileID, db)
+		s.navigation.Tree.Open.Add(navigation.DatabaseNode(s.sessions.Current().ProfileID, db).Key())
 	}
 	tt.Frame()
 	waitMySQLObjects(t, s, tt)
@@ -134,7 +134,7 @@ func TestExpandedDatabasesLoadSequentiallyWithoutChangingSelection(t *testing.T)
 	if len(reads) != 2 || reads["app_db"] != 1 || reads["analytics"] != 1 {
 		t.Fatalf("expansion cancelled a sibling request: %+v", reads)
 	}
-	if s.navigation.Key != selected || s.mysqlSelectedDatabase != "" {
+	if s.navigation.Key != selected || s.sessions.Current().Database != "" {
 		t.Fatal("expansion changed the selected object")
 	}
 }
@@ -167,23 +167,23 @@ func TestGroupContextTargetSurvivesNextFrame(t *testing.T) {
 func TestMetadataRefreshRetainsObjectIdentityWhenRowsMove(t *testing.T) {
 	s, tt := structureTestBrowser(t)
 	s.selectObjectInNavigator("app_db", "sales", "视图")
-	s.objectRow = 1
+	s.sessions.Current().Row = 1
 	tt.Frame()
-	s.mysqlObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
+	s.sessions.ObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
 		return []mysqlsvc.MySQLDBObject{{Name: "new_first", Kind: "表"}, {Name: "orders", Kind: "表"}, {Name: "sales", Kind: "视图"}}, nil
 	}
 	if err := tt.Click("刷新元数据：app_db"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
-	if s.objectRow != 2 || navigation.Parse(s.navigation.Key).Object != "sales" {
-		t.Fatalf("refresh retargeted selection: row=%d key=%+v", s.objectRow, navigation.Parse(s.navigation.Key))
+	if s.sessions.Current().Row != 2 || navigation.Parse(s.navigation.Key).Object != "sales" {
+		t.Fatalf("refresh retargeted selection: row=%d key=%+v", s.sessions.Current().Row, navigation.Parse(s.navigation.Key))
 	}
 }
 
 func TestClickingInitiallySelectedObjectUpdatesInspector(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	if s.objectRow != 0 {
+	if s.sessions.Current().Row != 0 {
 		t.Fatal("expected initial object selection")
 	}
 	if err := tt.Click("orders"); err != nil {

@@ -14,7 +14,7 @@ func (s *State) startMySQLSQLPreconnect(t *tab, lease mysqlsvc.MySQLSQLTabToken)
 	done := make(chan error, 1)
 	t.sqlPrepareCancel = cancel
 	t.sqlPrepareResults = done
-	manager := s.mysqlSessionManager
+	manager := s.sessions.Manager
 	invalidate := s.mysqlSQLPreconnectInvalidate
 	go func() {
 		done <- manager.PreconnectSQLTabToken(ctx, lease)
@@ -34,9 +34,9 @@ func (s *State) recoverMySQLSQLTab(t *tab) {
 		return
 	}
 	id := t.sqlRecoveryProfile
-	manager := s.mysqlSessionManager
+	manager := s.sessions.Manager
 	if id <= 0 || manager == nil || !manager.IsConnected(id) ||
-		s.mysqlSessionStateFor(id) != "已连接" {
+		s.sessions.StatusFor(id) != "已连接" {
 		t.sqlError = "请先连接原 MySQL 配置，再选择以新会话继续"
 		s.status = t.sqlError
 		return
@@ -70,7 +70,7 @@ func (s *State) recoverMySQLSQLTab(t *tab) {
 	t.sqlResult = nil
 	t.sqlGrid = ui.ListState{}
 	t.sqlError = ""
-	s.activateMySQLProfile(id)
+	s.sessions.Activate(id)
 	s.selectedProfileID = id
 	s.status = "已创建新 SQL 会话；未执行任何 SQL，请自行核对事务结果后再运行"
 	s.startMySQLSQLPreconnect(t, lease)

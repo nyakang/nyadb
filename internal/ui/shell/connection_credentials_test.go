@@ -84,24 +84,24 @@ func TestMySQLSavedPasswordNewConnectionAndSession(t *testing.T) {
 	if err != nil || p.Name != "Saved new" {
 		t.Fatalf("new connection profile missing: %v", err)
 	}
-	s.mysqlSessionOpener = func(_ context.Context, st connections.ActiveSettings, password string) error {
+	s.sessions.Opener = func(_ context.Context, st connections.ActiveSettings, password string) error {
 		if st.ProfileID != id || password != "from-new-connection" {
 			return errors.New("wrong stored password")
 		}
 		return nil
 	}
-	s.mysqlDatabaseLister = func(context.Context, int64) ([]string, error) { return []string{"app"}, nil }
+	s.sessions.DatabaseLister = func(context.Context, int64) ([]string, error) { return []string{"app"}, nil }
 	tt := ui.NewTester(s.View, 1280, 800)
 	if err := tt.Click("连接所选 MySQL"); err != nil {
 		t.Fatal(err)
 	}
 	deadline := time.Now().Add(2 * time.Second)
-	for s.mysqlSessionStatus == "连接中" && time.Now().Before(deadline) {
+	for s.sessions.Current().Status == "连接中" && time.Now().Before(deadline) {
 		tt.Frame()
 		time.Sleep(time.Millisecond)
 	}
-	if s.mysqlSessionStatus != "已连接" {
-		t.Fatalf("stored password not used for session: %s", s.mysqlSessionError)
+	if s.sessions.Current().Status != "已连接" {
+		t.Fatalf("stored password not used for session: %s", s.sessions.Current().Error)
 	}
 }
 

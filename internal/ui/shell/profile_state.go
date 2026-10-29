@@ -20,7 +20,7 @@ func NewWithProfiles(service *connections.Service) *State {
 	s.navigation.Key = "我的连接"
 	s.navigation.Row = -1
 	s.status = "就绪 · 连接档案已加载（尚未连接数据库）"
-	s.mysqlSessionManager = mysqlsvc.NewMySQLSessionManager()
+	s.sessions.Manager = mysqlsvc.NewMySQLSessionManager()
 	s.loadProfiles()
 	return s
 }
@@ -149,7 +149,7 @@ func (s *State) selectGroup(name string) {
 	s.selectedProfileID = 0
 	s.navigation.Key = navigation.GroupKey(name)
 	s.navigation.Row = -1
-	s.objectRow = -1
+	s.sessions.Current().Row = -1
 	s.status = "已选择虚拟组：" + name
 }
 

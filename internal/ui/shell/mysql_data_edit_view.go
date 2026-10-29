@@ -250,7 +250,7 @@ func (s *State) mysqlDataEditModals(c *ui.Context) {
 			if choice == 0 {
 				t.dataEdit.LeaveNext = nil
 				t.dataEdit.AfterSave = next
-				s.activateMySQLProfile(t.dataProfileID)
+				s.sessions.Activate(t.dataProfileID)
 				for i, candidate := range s.tabs {
 					if candidate == t {
 						s.activeTab = i

@@ -39,15 +39,15 @@ func TestNavigatorSwitchActiveProfileConfiguration(t *testing.T) {
 	if err != nil || stored.ActiveVariant != "Staging" {
 		t.Fatalf("variant was not persisted: %+v %v", stored, err)
 	}
-	s.mysqlSessionProfileID = profile.ID
-	s.mysqlSessionStatus = "已连接"
+	s.sessions.Current().ProfileID = profile.ID
+	s.sessions.Current().Status = "已连接"
 	s.setProfileActiveVariant(profile.ID, "Lab")
 	stored, err = svc.Get(ctx, profile.ID)
 	if err != nil || stored.ActiveVariant != "Staging" {
 		t.Fatalf("active session configuration changed: %+v %v", stored, err)
 	}
-	s.mysqlSessionProfileID = 0
-	s.mysqlSessionStatus = "未连接"
+	s.sessions.Current().ProfileID = 0
+	s.sessions.Current().Status = "未连接"
 	s.setProfileActiveVariant(profile.ID, "Nonexistent")
 	stored, err = svc.Get(ctx, profile.ID)
 	if err != nil || stored.ActiveVariant != "Staging" {
@@ -71,7 +71,7 @@ func TestNavigatorConnectionStatusIdentityAndRootInspector(t *testing.T) {
 	}
 	s.loadProfiles()
 	for _, state := range []string{"未连接", "连接中", "已连接", "连接失败"} {
-		s.mysqlSessionProfileID, s.mysqlSessionStatus = p.ID, state
+		s.sessions.Current().ProfileID, s.sessions.Current().Status = p.ID, state
 		tt.Frame()
 		if _, ok := tt.Find("Connection · " + state); !ok {
 			t.Fatalf("connection status %q missing accessible row label", state)
@@ -81,13 +81,13 @@ func TestNavigatorConnectionStatusIdentityAndRootInspector(t *testing.T) {
 
 func TestNavigatorFailedMetadataRowCanRetry(t *testing.T) {
 	s, tt := mysqlObjectTestState(t)
-	db := navigation.DatabaseNode(s.mysqlSessionProfileID, "app_db")
-	s.navigation.Tree.Open.Add(navigation.ConnectionKey(s.mysqlSessionProfileID))
+	db := navigation.DatabaseNode(s.sessions.Current().ProfileID, "app_db")
+	s.navigation.Tree.Open.Add(navigation.ConnectionKey(s.sessions.Current().ProfileID))
 	s.navigation.Tree.Open.Add(db.Key())
-	s.markMySQLDatabaseOpened(db.ProfileID, db.Database)
-	s.mysqlObjectErrors["app_db"] = "read denied"
+	s.sessions.MarkOpened(db.ProfileID, db.Database)
+	s.sessions.Current().Errors["app_db"] = "read denied"
 	called := make(chan struct{}, 1)
-	s.mysqlObjectLister = func(_ context.Context, _ int64, name string) ([]mysqlsvc.MySQLDBObject, error) {
+	s.sessions.ObjectLister = func(_ context.Context, _ int64, name string) ([]mysqlsvc.MySQLDBObject, error) {
 		if name == "app_db" {
 			called <- struct{}{}
 		}
@@ -106,16 +106,16 @@ func TestNavigatorFailedMetadataRowCanRetry(t *testing.T) {
 	default:
 		t.Fatal("clicking the error node did not issue a metadata retry")
 	}
-	if s.mysqlObjectErrors["app_db"] != "" || len(s.mysqlObjectCache["app_db"]) != 1 {
-		t.Fatalf("retry did not clear error and load objects: %v %v", s.mysqlObjectErrors, s.mysqlObjectCache)
+	if s.sessions.Current().Errors["app_db"] != "" || len(s.sessions.Current().Cache["app_db"]) != 1 {
+		t.Fatalf("retry did not clear error and load objects: %v %v", s.sessions.Current().Errors, s.sessions.Current().Cache)
 	}
 }
 
 func TestNavigatorUnsupportedCategoryKeepsWorkbenchContext(t *testing.T) {
 	s, _ := mysqlObjectTestState(t)
-	node := navigation.Node{Kind: "category", ProfileID: s.mysqlSessionProfileID, Database: "app_db", Category: "查询"}
+	node := navigation.Node{Kind: "category", ProfileID: s.sessions.Current().ProfileID, Database: "app_db", Category: "查询"}
 	s.selectNavigationNode(ui.Services{}, node.Key())
-	if s.mysqlObjectKind != "查询" || s.objectRow != -1 || len(s.mysqlSelectedObjects()) != 0 || !strings.Contains(s.status, "尚未") {
-		t.Fatalf("unsupported folder must not pretend to filter objects: kind=%q row=%d status=%q", s.mysqlObjectKind, s.objectRow, s.status)
+	if s.sessions.Current().Kind != "查询" || s.sessions.Current().Row != -1 || len(s.sessions.SelectedObjects()) != 0 || !strings.Contains(s.status, "尚未") {
+		t.Fatalf("unsupported folder must not pretend to filter objects: kind=%q row=%d status=%q", s.sessions.Current().Kind, s.sessions.Current().Row, s.status)
 	}
 }

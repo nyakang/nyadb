@@ -100,8 +100,8 @@ func (s *State) objectActions(c *ui.Context) {
 				if ui.Button(c, locales.Text(action)).Padding(4, 6).Border(1, palette.Border).Radius(3).FontSize(theme.Font(c, 12)).Clicked() {
 					if action == "打开表" {
 						items := s.visibleObjects()
-						if s.objectRow >= 0 && s.objectRow < len(items) && items[s.objectRow].kind == "表" {
-							s.openData(items[s.objectRow].name)
+						if s.sessions.Current().Row >= 0 && s.sessions.Current().Row < len(items) && items[s.sessions.Current().Row].kind == "表" {
+							s.openData(items[s.sessions.Current().Row].name)
 						} else {
 							s.status = "请先选择一个模拟数据表"
 						}
@@ -135,12 +135,12 @@ func (s *State) objectsWorkspace(c *ui.Context) {
 			})
 			return
 		}
-		s.objectState.Selected = &s.objectRow
+		s.sessions.Current().List.Selected = &s.sessions.Current().Row
 		columns := append([]ui.TableColumn(nil), objectColumns...)
 		for i := range columns {
 			columns[i].Title = locales.Text(columns[i].Title)
 		}
-		if theme.Table(c, &s.objectState, columns, len(items), func(row, col int) {
+		if theme.Table(c, &s.sessions.Current().List, columns, len(items), func(row, col int) {
 			obj := items[row]
 			var value string
 			switch col {
@@ -173,8 +173,8 @@ func (s *State) objectsWorkspace(c *ui.Context) {
 				ui.Text(c, value).SingleLine()
 			}
 		}).Grow(1).Submitted() {
-			if s.objectRow >= 0 && s.objectRow < len(items) && items[s.objectRow].kind == "表" {
-				s.openData(items[s.objectRow].name)
+			if s.sessions.Current().Row >= 0 && s.sessions.Current().Row < len(items) && items[s.sessions.Current().Row].kind == "表" {
+				s.openData(items[s.sessions.Current().Row].name)
 			}
 		}
 	})

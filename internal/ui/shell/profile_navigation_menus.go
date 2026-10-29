@@ -14,7 +14,7 @@ func (s *State) profileRootMenu(m *ui.Menu) {
 	if m.Item(locales.Text("新建连接…")).Chosen() {
 		s.openConnectionDialog()
 	}
-	if m.Item(locales.Text("关闭所有连接")).Disabled(s.mysqlSessionProfileID == 0 && len(s.mysqlWorkspaces) == 0).Chosen() {
+	if m.Item(locales.Text("关闭所有连接")).Disabled(!s.sessions.HasSessions()).Chosen() {
 		s.closeAllMySQLConnections()
 	}
 	if m.Item(locales.Text("管理连接…")).Chosen() {
@@ -33,8 +33,8 @@ func (s *State) profileRootMenu(m *ui.Menu) {
 func (s *State) sidebarSettingsMenu(m *ui.Menu) {
 	s.navigation.Group, s.navigation.Key = "", ""
 	s.selectedProfileID = 0
-	s.navigation.Row, s.objectRow = -1, -1
-	s.mysqlSelectedDatabase = ""
+	s.navigation.Row, s.sessions.Current().Row = -1, -1
+	s.sessions.Current().Database = ""
 	s.profileRootMenu(m)
 }
 
@@ -75,7 +75,7 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 	}
 	s.selectNavigationNode(services, navigation.ConnectionKey(profile.ID))
 	canMySQL := profile.Kind == connections.MySQL
-	status := s.mysqlSessionStateFor(profile.ID)
+	status := s.sessions.StatusFor(profile.ID)
 	connected := status == "已连接"
 	connecting := status == "连接中"
 	connectLabel := "打开连接"
@@ -165,7 +165,7 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 	m.Separator()
 	if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).Chosen() {
 		if connected {
-			s.refreshMySQLDatabases(services)
+			s.sessions.RefreshDatabases(services.Invalidate)
 		} else {
 			s.loadProfiles()
 		}
@@ -194,7 +194,7 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 	s.navigation.Row = -1
 	if n.Kind == "database" {
 		if m.Item(locales.Text("打开数据库")).Shortcut(0, ui.KeyEnter).
-			Disabled(s.mysqlSessionStateFor(n.ProfileID) != "已连接").Chosen() {
+			Disabled(s.sessions.StatusFor(n.ProfileID) != "已连接").Chosen() {
 			s.openMySQLDatabase(services, n.Database, false)
 		}
 		m.Separator()
@@ -217,7 +217,7 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 		m.Separator()
 	}
 	if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).
-		Disabled(s.mysqlObjectPending != "" || s.mysqlSessionStatus != "已连接").Chosen() {
+		Disabled(s.sessions.Current().Pending != "" || s.sessions.Current().Status != "已连接").Chosen() {
 		s.openMySQLDatabase(services, n.Database, true)
 	}
 }

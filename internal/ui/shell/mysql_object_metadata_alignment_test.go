@@ -34,26 +34,26 @@ func TestMySQLObjectMetadataColumnsRespectServerNullsAndEstimates(t *testing.T) 
 
 func TestMySQLObjectFilterRetainsIdentityAndClearsHiddenSelection(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	id := s.mysqlSessionProfileID
+	id := s.sessions.Current().ProfileID
 	s.selectObjectInNavigator("app_db", "sales", "视图")
-	s.objectRow = 1
+	s.sessions.Current().Row = 1
 	s.filterMySQLObjects("视图")
 	tt.Frame()
-	if s.objectRow != 0 || navigation.Parse(s.navigation.Key).Object != "sales" {
-		t.Fatalf("view lost qualified identity on filter: row=%d node=%+v", s.objectRow, navigation.Parse(s.navigation.Key))
+	if s.sessions.Current().Row != 0 || navigation.Parse(s.navigation.Key).Object != "sales" {
+		t.Fatalf("view lost qualified identity on filter: row=%d node=%+v", s.sessions.Current().Row, navigation.Parse(s.navigation.Key))
 	}
 	s.filterMySQLObjects("表")
 	tt.Frame()
 	node := navigation.Parse(s.navigation.Key)
-	if s.objectRow != -1 || node.Kind != "category" || node.Category != "表" ||
+	if s.sessions.Current().Row != -1 || node.Kind != "category" || node.Category != "表" ||
 		node.Database != "app_db" || node.ProfileID != id {
-		t.Fatalf("hidden view remained selected: row=%d node=%+v", s.objectRow, node)
+		t.Fatalf("hidden view remained selected: row=%d node=%+v", s.sessions.Current().Row, node)
 	}
 	s.filterMySQLObjects("全部")
 	tt.Frame()
 	node = navigation.Parse(s.navigation.Key)
-	if node.Kind != "database" || node.Database != "app_db" || s.objectRow != -1 {
-		t.Fatalf("all filter retained stale selection: %+v, row=%d", node, s.objectRow)
+	if node.Kind != "database" || node.Database != "app_db" || s.sessions.Current().Row != -1 {
+		t.Fatalf("all filter retained stale selection: %+v, row=%d", node, s.sessions.Current().Row)
 	}
 }
 
@@ -78,15 +78,15 @@ func TestMySQLObjectFilterAvailableAtCompactViewportSizes(t *testing.T) {
 			t.Fatalf("view filter clipped at %dx%d: %v", size[0], size[1], err)
 		}
 		tt.Frame()
-		if s.mysqlObjectKind != "视图" || len(s.mysqlSelectedObjects()) != 1 {
-			t.Fatalf("view filter did not apply at %dx%d: %q", size[0], size[1], s.mysqlObjectKind)
+		if s.sessions.Current().Kind != "视图" || len(s.sessions.SelectedObjects()) != 1 {
+			t.Fatalf("view filter did not apply at %dx%d: %q", size[0], size[1], s.sessions.Current().Kind)
 		}
 		if err := tt.Click("筛选对象：全部"); err != nil {
 			t.Fatalf("reset filter clipped at %dx%d: %v", size[0], size[1], err)
 		}
 		tt.Frame()
-		if s.mysqlObjectKind != "全部" {
-			t.Fatalf("all filter did not apply at %dx%d: %q", size[0], size[1], s.mysqlObjectKind)
+		if s.sessions.Current().Kind != "全部" {
+			t.Fatalf("all filter did not apply at %dx%d: %q", size[0], size[1], s.sessions.Current().Kind)
 		}
 	}
 }

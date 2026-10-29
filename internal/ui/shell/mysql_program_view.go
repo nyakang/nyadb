@@ -23,14 +23,14 @@ func (s *State) openMySQLObject(services ui.Services, database, name, kind strin
 // Programs expose the server's read-only definition and metadata. Do not
 // execute a stored routine on double-click; such calls could mutate data.
 func (s *State) openMySQLProgram(database, name, kind string) {
-	id := s.mysqlSessionProfileID
-	if id == 0 || s.mysqlSessionStateFor(id) != "已连接" {
+	id := s.sessions.Current().ProfileID
+	if id == 0 || s.sessions.StatusFor(id) != "已连接" {
 		s.status = "请先连接 MySQL"
 		return
 	}
 	var item *mysqlsvc.MySQLDBObject
-	for i := range s.mysqlObjectCache[database] {
-		obj := &s.mysqlObjectCache[database][i]
+	for i := range s.sessions.Current().Cache[database] {
+		obj := &s.sessions.Current().Cache[database][i]
 		if obj.Name == name && obj.Kind == kind {
 			item = obj
 			break

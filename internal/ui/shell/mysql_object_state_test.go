@@ -27,8 +27,8 @@ func mysqlObjectTestState(t *testing.T) (*State, *ui.Tester) {
 	}
 	s.selectedProfileID = profile.ID
 	s.loadProfiles()
-	s.mysqlSessionOpener = func(context.Context, connections.ActiveSettings, string) error { return nil }
-	s.mysqlDatabaseLister = func(context.Context, int64) ([]string, error) {
+	s.sessions.Opener = func(context.Context, connections.ActiveSettings, string) error { return nil }
+	s.sessions.DatabaseLister = func(context.Context, int64) ([]string, error) {
 		return []string{"app_db", "analytics"}, nil
 	}
 	tt := ui.NewTester(s.View, 1280, 800)
@@ -36,12 +36,12 @@ func mysqlObjectTestState(t *testing.T) (*State, *ui.Tester) {
 		t.Fatal(err)
 	}
 	deadline := time.Now().Add(3 * time.Second)
-	for s.mysqlSessionStatus == "连接中" && time.Now().Before(deadline) {
+	for s.sessions.Current().Status == "连接中" && time.Now().Before(deadline) {
 		tt.Frame()
 		time.Sleep(5 * time.Millisecond)
 	}
-	if s.mysqlSessionStatus != "已连接" {
-		t.Fatalf("could not start test session: %v", s.mysqlSessionError)
+	if s.sessions.Current().Status != "已连接" {
+		t.Fatalf("could not start test session: %v", s.sessions.Current().Error)
 	}
 	return s, tt
 }
@@ -49,12 +49,12 @@ func mysqlObjectTestState(t *testing.T) (*State, *ui.Tester) {
 func waitMySQLObjects(t *testing.T, s *State, tt *ui.Tester) {
 	t.Helper()
 	deadline := time.Now().Add(3 * time.Second)
-	for s.mysqlObjectPending != "" && time.Now().Before(deadline) {
+	for s.sessions.Current().Pending != "" && time.Now().Before(deadline) {
 		tt.Frame()
 		time.Sleep(5 * time.Millisecond)
 	}
 	tt.Frame()
-	if s.mysqlObjectPending != "" {
+	if s.sessions.Current().Pending != "" {
 		t.Fatal("metadata request did not finish")
 	}
 }
@@ -70,7 +70,7 @@ func TestMySQLObjectTreeLazyLoadingFiltersAndRefresh(t *testing.T) {
 	s, tt := mysqlObjectTestState(t)
 	var mu sync.Mutex
 	requests := map[string]int{}
-	s.mysqlObjectLister = func(ctx context.Context, id int64, database string) ([]mysqlsvc.MySQLDBObject, error) {
+	s.sessions.ObjectLister = func(ctx context.Context, id int64, database string) ([]mysqlsvc.MySQLDBObject, error) {
 		mu.Lock()
 		requests[database]++
 		mu.Unlock()
@@ -82,14 +82,14 @@ func TestMySQLObjectTreeLazyLoadingFiltersAndRefresh(t *testing.T) {
 		}
 		return []mysqlsvc.MySQLDBObject{{Name: "facts", Kind: "表", Engine: "InnoDB"}}, nil
 	}
-	if _, ok := s.mysqlObjectCache["app_db"]; ok {
+	if _, ok := s.sessions.Current().Cache["app_db"]; ok {
 		t.Fatal("metadata loaded before expansion")
 	}
 	if err := doubleClickDatabase(tt, "数据库：app_db"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
-	if s.mysqlSelectedDatabase != "app_db" || len(s.mysqlObjectCache["app_db"]) != 2 ||
+	if s.sessions.Current().Database != "app_db" || len(s.sessions.Current().Cache["app_db"]) != 2 ||
 		!strings.Contains(strings.Join(tt.Texts(), "|"), "orders") {
 		t.Fatalf("object browser did not show real metadata: %v", tt.Texts())
 	}
@@ -116,17 +116,17 @@ func TestMySQLObjectTreeLazyLoadingFiltersAndRefresh(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if len(s.mysqlSelectedObjects()) != 1 || s.mysqlSelectedObjects()[0].Name != "sales" {
+	if len(s.sessions.SelectedObjects()) != 1 || s.sessions.SelectedObjects()[0].Name != "sales" {
 		rect, _ := tt.Find("筛选对象：视图")
 		t.Fatalf("view filtering did not apply: kind=%q selected=%q objects=%v filterBounds=%+v",
-			s.mysqlObjectKind, s.mysqlSelectedDatabase, s.mysqlSelectedObjects(), rect)
+			s.sessions.Current().Kind, s.sessions.Current().Database, s.sessions.SelectedObjects(), rect)
 	}
 	if err := doubleClickDatabase(tt, "数据库：analytics"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
-	if s.mysqlSelectedDatabase != "analytics" || len(s.mysqlSelectedObjects()) != 1 ||
-		s.mysqlSelectedObjects()[0].Name != "facts" {
+	if s.sessions.Current().Database != "analytics" || len(s.sessions.SelectedObjects()) != 1 ||
+		s.sessions.SelectedObjects()[0].Name != "facts" {
 		t.Fatal("database switch displayed wrong objects")
 	}
 	if err := doubleClickDatabase(tt, "数据库：app_db"); err != nil {
@@ -151,7 +151,7 @@ func TestMySQLObjectTreeLazyLoadingFiltersAndRefresh(t *testing.T) {
 	}
 	s.disconnectMySQLSession()
 	tt.Frame()
-	if s.mysqlSelectedDatabase != "" || len(s.mysqlObjectCache) != 0 ||
+	if s.sessions.Current().Database != "" || len(s.sessions.Current().Cache) != 0 ||
 		strings.Contains(strings.Join(tt.Texts(), "|"), "orders") {
 		t.Fatal("disconnect left stale database objects on screen")
 	}
@@ -162,7 +162,7 @@ func TestMySQLObjectBrowserIgnoresCancelledLateResults(t *testing.T) {
 	started := make(chan struct{})
 	release := make(chan struct{})
 	var once sync.Once
-	s.mysqlObjectLister = func(ctx context.Context, id int64, database string) ([]mysqlsvc.MySQLDBObject, error) {
+	s.sessions.ObjectLister = func(ctx context.Context, id int64, database string) ([]mysqlsvc.MySQLDBObject, error) {
 		if database == "app_db" {
 			once.Do(func() { close(started) })
 			<-release // deliberately ignores context to simulate a late driver
@@ -187,13 +187,13 @@ func TestMySQLObjectBrowserIgnoresCancelledLateResults(t *testing.T) {
 		tt.Frame()
 		time.Sleep(5 * time.Millisecond)
 	}
-	if s.mysqlSelectedDatabase != "analytics" || len(s.mysqlSelectedObjects()) != 1 ||
-		s.mysqlSelectedObjects()[0].Name != "new_facts" {
-		t.Fatalf("stale response replaced current database: %v", s.mysqlSelectedObjects())
+	if s.sessions.Current().Database != "analytics" || len(s.sessions.SelectedObjects()) != 1 ||
+		s.sessions.SelectedObjects()[0].Name != "new_facts" {
+		t.Fatalf("stale response replaced current database: %v", s.sessions.SelectedObjects())
 	}
 	s.disconnectMySQLSession()
 	tt.Frame()
-	if len(s.mysqlObjectCache) != 0 {
+	if len(s.sessions.Current().Cache) != 0 {
 		t.Fatal("canceled metadata request escaped disconnect")
 	}
 }
@@ -201,7 +201,7 @@ func TestMySQLObjectBrowserIgnoresCancelledLateResults(t *testing.T) {
 func TestMySQLObjectBrowserDisplaysErrorsAndRetry(t *testing.T) {
 	s, tt := mysqlObjectTestState(t)
 	fail := true
-	s.mysqlObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
+	s.sessions.ObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
 		if fail {
 			return nil, errors.New("read metadata denied")
 		}
@@ -211,7 +211,7 @@ func TestMySQLObjectBrowserDisplaysErrorsAndRetry(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
-	if !strings.Contains(s.mysqlObjectErrors["app_db"], "denied") {
+	if !strings.Contains(s.sessions.Current().Errors["app_db"], "denied") {
 		t.Fatal("metadata error missing")
 	}
 	fail = false
@@ -222,9 +222,9 @@ func TestMySQLObjectBrowserDisplaysErrorsAndRetry(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
-	if s.mysqlObjectErrors["app_db"] != "" || len(s.mysqlSelectedObjects()) != 1 {
+	if s.sessions.Current().Errors["app_db"] != "" || len(s.sessions.SelectedObjects()) != 1 {
 		rect, _ := tt.Find("刷新元数据：app_db")
 		t.Fatalf("successful retry did not clear metadata error: pending=%q error=%q objects=%v refreshBounds=%+v",
-			s.mysqlObjectPending, s.mysqlObjectErrors["app_db"], s.mysqlSelectedObjects(), rect)
+			s.sessions.Current().Pending, s.sessions.Current().Errors["app_db"], s.sessions.SelectedObjects(), rect)
 	}
 }

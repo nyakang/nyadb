@@ -24,13 +24,13 @@ type mysqlDataResult struct {
 // Real data is never mixed with the legacy mock tabData preview. Separate
 // profile, schema and table names isolate caches across workspaces.
 func (s *State) openMySQLData(services ui.Services, database, table string) {
-	if s.mysqlSessionStatus != "已连接" || s.mysqlSessionProfileID <= 0 ||
+	if s.sessions.Current().Status != "已连接" || s.sessions.Current().ProfileID <= 0 ||
 		!validStructureSelection(database, table) {
 		return
 	}
 	for i, t := range s.tabs {
 		if t.kind == tabMySQLData && t.dataDatabase == database && t.dataTable == table &&
-			t.dataProfileID == s.mysqlSessionProfileID {
+			t.dataProfileID == s.sessions.Current().ProfileID {
 			s.activeTab = i
 			if t.dataPage == nil && !t.dataLoading && t.dataErr == "" {
 				s.loadMySQLData(services, t, false)
@@ -42,7 +42,7 @@ func (s *State) openMySQLData(services ui.Services, database, table string) {
 	t := &tab{
 		id: s.nextTabID, kind: tabMySQLData,
 		title:        database + "." + table + " · 数据",
-		dataDatabase: database, dataTable: table, dataProfileID: s.mysqlSessionProfileID,
+		dataDatabase: database, dataTable: table, dataProfileID: s.sessions.Current().ProfileID,
 		dataLimit:             mysqlsvc.MySQLDataDefaultPageSize,
 		dataSelectedRow:       -1,
 		dataFilterColumnDraft: "选择字段",
@@ -68,8 +68,8 @@ func (s *State) cancelMySQLData(t *tab) {
 	t.dataLoading = false
 }
 func (s *State) loadMySQLData(services ui.Services, t *tab, refresh bool) {
-	if t == nil || t.kind != tabMySQLData || t.dataProfileID != s.mysqlSessionProfileID ||
-		s.mysqlSessionStatus != "已连接" || s.mysqlSessionProfileID <= 0 {
+	if t == nil || t.kind != tabMySQLData || t.dataProfileID != s.sessions.Current().ProfileID ||
+		s.sessions.Current().Status != "已连接" || s.sessions.Current().ProfileID <= 0 {
 		return
 	}
 	if t.dataLoading && !refresh {
@@ -84,7 +84,7 @@ func (s *State) loadMySQLData(services ui.Services, t *tab, refresh bool) {
 	t.dataLoading = true
 	ctx, cancel := context.WithCancel(context.Background())
 	t.dataCancel = cancel
-	request, gen, profile := t.dataRequest, s.mysqlSessionGeneration, s.mysqlSessionProfileID
+	request, gen, profile := t.dataRequest, s.sessions.Current().Generation, s.sessions.Current().ProfileID
 	database, table, offset, limit := t.dataDatabase, t.dataTable, t.dataOffset, t.dataLimit
 	options := mysqlsvc.MySQLDataOptions{Offset: offset, Limit: limit,
 		FilterColumn: t.dataFilterColumn, FilterValue: t.dataFilterValue,
@@ -94,12 +94,12 @@ func (s *State) loadMySQLData(services ui.Services, t *tab, refresh bool) {
 	advanced := s.mysqlDataAdvancedLoader
 	legacy := s.mysqlDataLoader
 	if advanced == nil && legacy == nil {
-		if s.mysqlSessionManager == nil {
+		if s.sessions.Manager == nil {
 			s.cancelMySQLData(t)
 			t.dataErr = "MySQL 会话不可用"
 			return
 		}
-		advanced = s.mysqlSessionManager.TableDataPageWithOptions
+		advanced = s.sessions.Manager.TableDataPageWithOptions
 	}
 	out := make(chan mysqlDataResult, 1)
 	t.dataResults = out
@@ -155,13 +155,13 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *tab, offset int64) 
 }
 func (s *State) consumeMySQLData() {
 	for _, t := range s.tabs {
-		if t.kind != tabMySQLData || t.dataResults == nil || t.dataProfileID != s.mysqlSessionProfileID {
+		if t.kind != tabMySQLData || t.dataResults == nil || t.dataProfileID != s.sessions.Current().ProfileID {
 			continue
 		}
 		select {
 		case result := <-t.dataResults:
-			if result.generation != s.mysqlSessionGeneration ||
-				result.profileID != s.mysqlSessionProfileID ||
+			if result.generation != s.sessions.Current().Generation ||
+				result.profileID != s.sessions.Current().ProfileID ||
 				result.profileID != t.dataProfileID ||
 				result.request != t.dataRequest ||
 				result.offset != t.dataOffset {

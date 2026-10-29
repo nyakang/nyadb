@@ -22,7 +22,7 @@ func tableInfoSampleState(doc *tab) *State {
 	s := New()
 	s.tabs = append(s.tabs, doc)
 	s.activeTab = 1
-	s.mysqlSessionProfileID, s.mysqlSessionStatus = 8, "已连接"
+	s.sessions.Current().ProfileID, s.sessions.Current().Status = 8, "已连接"
 	return s
 }
 
@@ -169,7 +169,7 @@ func TestMySQLTableInfoDiscardStaleScopeAndDisposeBothRequests(t *testing.T) {
 	doc.dataInfo.cancel = func() { infoCanceled = true }
 	doc.dataInfo.countCancel = func() { countCanceled = true }
 	out := make(chan mysqlTableInfoResult, 1)
-	out <- mysqlTableInfoResult{generation: s.mysqlSessionGeneration + 1, profileID: 8, database: doc.dataDatabase, table: doc.dataTable,
+	out <- mysqlTableInfoResult{generation: s.sessions.Current().Generation + 1, profileID: 8, database: doc.dataDatabase, table: doc.dataTable,
 		info: &mysqlsvc.MySQLTableInfo{Database: doc.dataDatabase, Name: doc.dataTable, Engine: "obsolete"}}
 	doc.dataInfo.results = out
 	s.consumeMySQLTableInfo()
