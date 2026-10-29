@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
@@ -59,7 +60,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
-	objects := s.sessions.SelectedObjects()
+	objects := s.objectWorkspace.SelectedObjects()
 	if len(objects) != 3 || objects[0].Name != "child" {
 		t.Fatalf("real metadata object list not rendered: %+v", objects)
 	}
@@ -67,7 +68,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLStructure(t, s, tt)
-	str := s.currentTab().design.Data()
+	str := s.currentTab().object.Data()
 	if str == nil || str.Name != "child" || str.Database != "nyadb_struct_a" {
 		t.Fatalf("viewer did not use real database metadata: %+v", str)
 	}
@@ -106,7 +107,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLStructure(t, s, tt)
-	if s.currentTab().design.Data() == nil || len(s.currentTab().design.Data().Columns) != 8 {
+	if s.currentTab().object.Data() == nil || len(s.currentTab().object.Data().Columns) != 8 {
 		t.Fatal("refresh failed to reload real MySQL structure")
 	}
 	// Opening the identically named object in a second real database must not
@@ -125,7 +126,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 	waitMySQLStructure(t, s, tt)
 	second := s.currentTab()
 	if second == first || second.title != "nyadb_struct_b.child" ||
-		second.design.Data() == nil || len(second.design.Data().Columns) != 2 ||
+		second.object.Data() == nil || len(second.object.Data().Columns) != 2 ||
 		len(s.tabs) != 3 {
 		t.Fatalf("cross-database structure tabs were mixed: %+v", s.tabs)
 	}
@@ -136,29 +137,29 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
-	s.sessions.Current().Row = 0
+	s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, 0)
 	tt.Frame()
 	if err := tt.Click("打开选中表结构"); err != nil {
 		t.Fatal(err)
 	}
 	if s.currentTab() != first || len(s.tabs) != 3 ||
-		s.currentTab().design.Data() == nil || len(s.currentTab().design.Data().Columns) != 8 {
+		s.currentTab().object.Data() == nil || len(s.currentTab().object.Data().Columns) != 8 {
 		t.Fatal("reopening first schema should focus its cached tab")
 	}
 	// A view is a distinct read-only structure workspace, not static table rows.
 	if err := tt.Click("返回对象列表"); err != nil {
 		t.Fatal(err)
 	}
-	s.sessions.Current().Row = 2 // child, parent, parent_view in the server-ordered object list
+	s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, 2) // child, parent, parent_view in the server-ordered object list
 	tt.Frame()
 	if err := tt.Click("打开选中表结构"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLStructure(t, s, tt)
 	if s.currentTab().title != "nyadb_struct_a.parent_view" ||
-		s.currentTab().design.Data().Kind != "VIEW" ||
-		len(s.currentTab().design.Data().Columns) != 3 || len(s.tabs) != 4 {
-		t.Fatalf("view structure was not rendered: %+v", s.currentTab().design.Data())
+		s.currentTab().object.Data().Kind != "VIEW" ||
+		len(s.currentTab().object.Data().Columns) != 3 || len(s.tabs) != 4 {
+		t.Fatalf("view structure was not rendered: %+v", s.currentTab().object.Data())
 	}
 	s.disconnectMySQLSession()
 	tt.Frame()

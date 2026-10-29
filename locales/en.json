@@ -543,5 +543,7 @@
   "mysqlFilterGreater": "Greater Than",
   "mysqlPendingRecordCount": "%d pending records",
   "mysqlApplyPendingRecordsAction": "Apply Pending Records",
-  "mysqlDiscardPendingRecordsAction": "Discard Pending Records"
+  "mysqlDiscardPendingRecordsAction": "Discard Pending Records",
+  "dataSessionExpired": "The original MySQL session has expired. Refresh table data explicitly.",
+  "structureSessionExpired": "The original MySQL session has expired. Refresh table structure explicitly."
 }

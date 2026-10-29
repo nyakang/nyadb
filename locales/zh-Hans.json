@@ -543,5 +543,7 @@
   "mysqlFilterGreater": "大于",
   "mysqlPendingRecordCount": "%d 条待处理记录",
   "mysqlApplyPendingRecordsAction": "应用待处理记录",
-  "mysqlDiscardPendingRecordsAction": "放弃待处理记录"
+  "mysqlDiscardPendingRecordsAction": "放弃待处理记录",
+  "dataSessionExpired": "原 MySQL 会话已失效，请刷新表数据",
+  "structureSessionExpired": "原 MySQL 会话已失效，请刷新表结构"
 }

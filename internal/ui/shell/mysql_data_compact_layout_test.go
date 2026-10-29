@@ -4,13 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func TestMySQLCompactHeaderAt1280AndNarrowNavigation(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	s.mysqlDataAdvancedLoader = func(ctx context.Context, id int64, db, table string, o mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {
+	s.dataWorkspace.AdvancedLoader = func(ctx context.Context, id int64, db, table string, o mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {
 		return &mysqlsvc.MySQLDataPage{
 			Database: db, Table: table, Limit: o.Limit, Offset: o.Offset, StableOrder: true,
 			Columns: []string{"id", "name"}, ColumnKinds: []string{"bigint", "varchar"},
@@ -39,17 +38,18 @@ func TestMySQLCompactHeaderAt1280AndNarrowNavigation(t *testing.T) {
 	if err := tt.Click("筛选 & 排序"); err != nil {
 		t.Fatal(err)
 	}
-	if !s.currentTab().dataRulesExpanded {
+	if _, found := tt.Find("筛选规则"); !found {
 		t.Fatal("full rule editor inaccessible")
 	}
 	if err := tt.Click("筛选 & 排序"); err != nil {
 		t.Fatal(err)
 	}
-	if s.currentTab().dataRulesExpanded {
+	if _, found := tt.Find("筛选规则"); found {
 		t.Fatal("could not collapse")
 	}
 
-	small := ui.NewTester(s.View, 840, 560)
+	tt.SetSize(840, 560)
+	small := tt
 	small.Frame()
 	inspector, ok := small.Find("数据表信息面板")
 	if !ok {

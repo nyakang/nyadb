@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/locales"
@@ -74,9 +75,15 @@ func (s *State) activeTabObject() (int64, string, string, bool) {
 	t := s.currentTab()
 	switch t.kind {
 	case tabMySQLData:
-		return t.dataProfileID, t.dataDatabase, t.dataTable, t.dataProfileID != 0 && t.dataDatabase != ""
+		if t.data == nil {
+			return 0, "", "", false
+		}
+		return t.data.ProfileID(), t.data.Database(), t.data.Table(), t.data.ProfileID() != 0 && t.data.Database() != ""
 	case tabStructure:
-		return t.design.ProfileID(), t.design.Database(), t.design.Table(), t.design.ProfileID() != 0 && t.design.Database() != ""
+		if t.object == nil {
+			return 0, "", "", false
+		}
+		return t.object.ProfileID(), t.object.Database(), t.object.Table(), t.object.ProfileID() != 0 && t.object.Database() != ""
 	default:
 		return 0, "", "", false
 	}
@@ -85,27 +92,27 @@ func (s *State) activeTabObject() (int64, string, string, bool) {
 // resolveNavigatorObject selects the real metadata row after an optional
 // asynchronous fetch, without inventing a table in a stale database snapshot.
 func (s *State) resolveNavigatorObject() {
-	if s.sessions.Current().NavigateDatabase == "" || s.sessions.Current().NavigateDatabase != s.sessions.Current().Database ||
-		s.sessions.Current().NavigateProfileID != s.sessions.Current().ProfileID || s.sessions.Current().Status != "已连接" {
+	if s.navigateDatabase == "" || s.navigateDatabase != s.sessions.Current().Database ||
+		s.navigateProfileID != s.sessions.Current().ProfileID || s.sessions.Current().Status != "已连接" {
 		return
 	}
-	objects, ok := s.sessions.Current().Cache[s.sessions.Current().NavigateDatabase]
+	objects, ok := s.sessions.Current().Cache[s.navigateDatabase]
 	if !ok {
 		return
 	}
-	s.sessions.Current().Kind = "全部"
+	s.objectWorkspace.SetFilter(s.sessions.Current().ProfileID, "全部")
 	for i, obj := range objects {
-		if obj.Name == s.sessions.Current().NavigateTable {
-			s.sessions.Current().Row = i
-			s.revealNavigationNode(navigation.Node{Kind: "object", ProfileID: s.sessions.Current().NavigateProfileID, Database: s.sessions.Current().NavigateDatabase, Category: obj.Kind, Object: obj.Name})
-			s.sessions.Current().NavigateDatabase, s.sessions.Current().NavigateTable = "", ""
-			s.sessions.Current().NavigateProfileID = 0
+		if obj.Name == s.navigateTable {
+			s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, i)
+			s.revealNavigationNode(navigation.Node{Kind: "object", ProfileID: s.navigateProfileID, Database: s.navigateDatabase, Category: obj.Kind, Object: obj.Name})
+			s.navigateDatabase, s.navigateTable = "", ""
+			s.navigateProfileID = 0
 			return
 		}
 	}
-	s.sessions.Current().Row = -1
-	s.sessions.Current().NavigateDatabase, s.sessions.Current().NavigateTable = "", ""
-	s.sessions.Current().NavigateProfileID = 0
+	s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, -1)
+	s.navigateDatabase, s.navigateTable = "", ""
+	s.navigateProfileID = 0
 	s.status = "已找到数据库，但活动标签对象不在当前元数据中"
 }
 
@@ -131,7 +138,7 @@ func (s *State) navigateToActiveTab(services ui.Services) {
 		}
 		s.navigation.Tree.Open.Add(navigation.ConnectionKey(id))
 		s.navigation.Tree.Open.Add(navigation.DatabaseNode(id, database).Key())
-		s.sessions.Current().NavigateDatabase, s.sessions.Current().NavigateTable, s.sessions.Current().NavigateProfileID = database, table, id
+		s.navigateDatabase, s.navigateTable, s.navigateProfileID = database, table, id
 		s.selectMySQLDatabase(services, database)
 		s.resolveNavigatorObject()
 		s.status = "已定位活动标签对象：" + database + "." + table
@@ -160,8 +167,8 @@ func (s *State) selectNavigationNode(services ui.Services, key string) {
 	if n.Database == "" {
 		s.sessions.CancelObjects()
 		s.sessions.Current().Database = ""
-		s.sessions.Current().Kind = "全部"
-		s.sessions.Current().Row = -1
+		s.objectWorkspace.SetFilter(s.sessions.Current().ProfileID, "全部")
+		s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, -1)
 		return
 	}
 	if s.sessions.StatusFor(n.ProfileID) != "已连接" {
@@ -172,11 +179,11 @@ func (s *State) selectNavigationNode(services ui.Services, key string) {
 	} else {
 		s.selectMySQLDatabase(services, n.Database)
 	}
-	s.sessions.Current().Kind = "全部"
+	s.objectWorkspace.SetFilter(s.sessions.Current().ProfileID, "全部")
 	if n.Category != "" {
-		s.sessions.Current().Kind = n.Category
+		s.objectWorkspace.SetFilter(s.sessions.Current().ProfileID, n.Category)
 	}
-	s.sessions.Current().Row = -1
+	s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, -1)
 	if n.Kind == "database" && !s.sessions.DatabaseOpened(n.ProfileID, n.Database) {
 		return
 	}
@@ -184,13 +191,13 @@ func (s *State) selectNavigationNode(services ui.Services, key string) {
 		s.status = n.Category + "：此类对象尚未提供元数据浏览"
 		return
 	}
-	if len(s.sessions.SelectedObjects()) > 0 {
-		s.sessions.Current().Row = 0
+	if len(s.objectWorkspace.SelectedObjects()) > 0 {
+		s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, 0)
 	}
 	if n.Kind == "object" {
-		for i, obj := range s.sessions.SelectedObjects() {
+		for i, obj := range s.objectWorkspace.SelectedObjects() {
 			if obj.Name == n.Object {
-				s.sessions.Current().Row = i
+				s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, i)
 				break
 			}
 		}
@@ -244,7 +251,7 @@ func (s *State) navigationDescription(n navigation.Node) string {
 		if !navigation.SupportedCategory(n.Category) {
 			return locales.Text(n.Category) + "（尚未支持）"
 		}
-		return fmt.Sprintf("%s (%d)", locales.Text(n.Category), len(s.sessions.SelectedObjects()))
+		return fmt.Sprintf("%s (%d)", locales.Text(n.Category), len(s.objectWorkspace.SelectedObjects()))
 	}
 	return locales.Text(n.Category)
 }

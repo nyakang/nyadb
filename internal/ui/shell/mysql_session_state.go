@@ -2,6 +2,7 @@ package shell
 
 import (
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/sessionbrowser"
@@ -46,12 +47,10 @@ func (s *State) closeMySQLSessions() {
 	s.mysqlForceClose = true
 	defer func() { s.mysqlForceClose = false }()
 	for _, t := range s.tabs {
-		if t.kind == tabProgram {
-			t.program.Close()
-		}
+		s.disposeTab(t)
 	}
-	s.dataInspector.CloseAll()
-	s.structureViewer.CloseAll()
+	s.dataWorkspace.CloseAll()
+	s.objectWorkspace.CloseAll()
 	s.sqlWorkspace.CloseAll()
 	s.sessions.Close()
 }
@@ -91,18 +90,7 @@ func (s *State) mysqlSessionToolbar(c *ui.Context) {
 }
 
 func (s *State) activateMySQLForCurrentTab() {
-	t := s.currentTab()
-	var id int64
-	switch t.kind {
-	case tabStructure:
-		id = t.design.ProfileID()
-	case tabMySQLData:
-		id = t.dataProfileID
-	case tabProgram:
-		id = t.program.ProfileID()
-	case tabSQL:
-		id = t.query.ProfileID()
-	}
+	id := s.currentTab().profileID()
 	if id == 0 || id == s.sessions.Current().ProfileID {
 		return
 	}
@@ -133,6 +121,7 @@ func (s *State) sessionBrowserDependencies() sessionbrowser.Dependencies {
 		Status:    func(message string) { s.status = message },
 		Connected: func(id int64) { s.navigation.Tree.Open.Add(navigation.ConnectionKey(id)) },
 		BrowserReset: func(id int64) {
+			s.objectWorkspace.ResetBrowser(id)
 			s.clearMySQLDatabaseNavigation(id)
 			if navigation.Parse(s.navigation.Key).Database != "" {
 				s.navigation.Key = navigation.ConnectionKey(s.selectedProfileID)
@@ -146,10 +135,11 @@ func (s *State) sessionBrowserDependencies() sessionbrowser.Dependencies {
 					s.navigation.Tree.Open.Remove(key)
 				}
 			}
-			s.pruneMySQLStructureTabs(known)
+			s.pruneMySQLTabsFor(id, known)
 		},
 		ObjectsChanged: s.mysqlObjectsChanged,
 		Disconnected: func(id int64) {
+			s.objectWorkspace.CancelTableFor(id)
 			s.sqlWorkspace.DisconnectProfile(id)
 			s.clearMySQLDatabaseNavigation(id)
 			s.clearMySQLTabsFor(id)

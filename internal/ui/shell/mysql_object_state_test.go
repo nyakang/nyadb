@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
@@ -116,17 +117,17 @@ func TestMySQLObjectTreeLazyLoadingFiltersAndRefresh(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if len(s.sessions.SelectedObjects()) != 1 || s.sessions.SelectedObjects()[0].Name != "sales" {
+	if len(s.objectWorkspace.SelectedObjects()) != 1 || s.objectWorkspace.SelectedObjects()[0].Name != "sales" {
 		rect, _ := tt.Find("筛选对象：视图")
 		t.Fatalf("view filtering did not apply: kind=%q selected=%q objects=%v filterBounds=%+v",
-			s.sessions.Current().Kind, s.sessions.Current().Database, s.sessions.SelectedObjects(), rect)
+			s.objectWorkspace.FilterKind(s.sessions.Current().ProfileID), s.sessions.Current().Database, s.objectWorkspace.SelectedObjects(), rect)
 	}
 	if err := doubleClickDatabase(tt, "数据库：analytics"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
-	if s.sessions.Current().Database != "analytics" || len(s.sessions.SelectedObjects()) != 1 ||
-		s.sessions.SelectedObjects()[0].Name != "facts" {
+	if s.sessions.Current().Database != "analytics" || len(s.objectWorkspace.SelectedObjects()) != 1 ||
+		s.objectWorkspace.SelectedObjects()[0].Name != "facts" {
 		t.Fatal("database switch displayed wrong objects")
 	}
 	if err := doubleClickDatabase(tt, "数据库：app_db"); err != nil {
@@ -187,9 +188,9 @@ func TestMySQLObjectBrowserIgnoresCancelledLateResults(t *testing.T) {
 		tt.Frame()
 		time.Sleep(5 * time.Millisecond)
 	}
-	if s.sessions.Current().Database != "analytics" || len(s.sessions.SelectedObjects()) != 1 ||
-		s.sessions.SelectedObjects()[0].Name != "new_facts" {
-		t.Fatalf("stale response replaced current database: %v", s.sessions.SelectedObjects())
+	if s.sessions.Current().Database != "analytics" || len(s.objectWorkspace.SelectedObjects()) != 1 ||
+		s.objectWorkspace.SelectedObjects()[0].Name != "new_facts" {
+		t.Fatalf("stale response replaced current database: %v", s.objectWorkspace.SelectedObjects())
 	}
 	s.disconnectMySQLSession()
 	tt.Frame()
@@ -222,9 +223,9 @@ func TestMySQLObjectBrowserDisplaysErrorsAndRetry(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
-	if s.sessions.Current().Errors["app_db"] != "" || len(s.sessions.SelectedObjects()) != 1 {
+	if s.sessions.Current().Errors["app_db"] != "" || len(s.objectWorkspace.SelectedObjects()) != 1 {
 		rect, _ := tt.Find("刷新元数据：app_db")
 		t.Fatalf("successful retry did not clear metadata error: pending=%q error=%q objects=%v refreshBounds=%+v",
-			s.sessions.Current().Pending, s.sessions.Current().Errors["app_db"], s.sessions.SelectedObjects(), rect)
+			s.sessions.Current().Pending, s.sessions.Current().Errors["app_db"], s.objectWorkspace.SelectedObjects(), rect)
 	}
 }

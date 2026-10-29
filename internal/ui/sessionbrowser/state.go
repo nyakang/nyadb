@@ -5,7 +5,6 @@ package sessionbrowser
 import (
 	"context"
 
-	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
@@ -24,35 +23,30 @@ type Dependencies struct {
 	Disconnected     func(int64)
 }
 
-// Workspace contains one profile's browser and presentation state. It is owned
+// Workspace contains one profile's session and metadata state. It is owned
 // by the UI thread. Background jobs return immutable results through private
 // buffered channels; they never retain a Workspace or write its fields.
 type Workspace struct {
-	ProfileID                       int64
-	Generation                      uint64
-	Status, Error, Password         string
-	Databases                       []string
-	Database, Kind                  string
-	Cache                           map[string][]mysqlsvc.MySQLDBObject
-	Errors                          map[string]string
-	Pending                         string
-	Row                             int
-	List                            ui.ListState
-	NavigateDatabase, NavigateTable string
-	NavigateProfileID               int64
-	opened                          map[string]bool
-	sessionCancel                   context.CancelFunc
-	refreshCancel                   context.CancelFunc
-	sessionResults                  <-chan sessionResult
-	objectRequest                   uint64
-	objectCancel                    context.CancelFunc
-	objectResults                   <-chan objectResult
+	ProfileID               int64
+	Generation              uint64
+	Status, Error, Password string
+	Databases               []string
+	Database                string
+	Cache                   map[string][]mysqlsvc.MySQLDBObject
+	Errors                  map[string]string
+	Pending                 string
+	opened                  map[string]bool
+	sessionCancel           context.CancelFunc
+	refreshCancel           context.CancelFunc
+	sessionResults          <-chan sessionResult
+	objectRequest           uint64
+	objectCancel            context.CancelFunc
+	objectResults           <-chan objectResult
 }
 
 func newWorkspace() *Workspace {
-	w := &Workspace{Status: "未连接", Kind: "全部", Row: -1,
+	w := &Workspace{Status: "未连接",
 		Cache: make(map[string][]mysqlsvc.MySQLDBObject), Errors: make(map[string]string), opened: make(map[string]bool)}
-	w.List.Selected = &w.Row
 	return w
 }
 

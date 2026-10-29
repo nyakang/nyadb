@@ -2,6 +2,7 @@ package shell
 
 import (
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
@@ -33,7 +34,8 @@ func (s *State) profileRootMenu(m *ui.Menu) {
 func (s *State) sidebarSettingsMenu(m *ui.Menu) {
 	s.navigation.Group, s.navigation.Key = "", ""
 	s.selectedProfileID = 0
-	s.navigation.Row, s.sessions.Current().Row = -1, -1
+	s.navigation.Row = -1
+	s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, -1)
 	s.sessions.Current().Database = ""
 	s.profileRootMenu(m)
 }
@@ -201,14 +203,14 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 	}
 	if n.Kind == "database" || n.Kind == "category" && n.Category == "表" {
 		if m.Item(locales.Text("新建表")).Shortcut(ui.Ctrl, ui.KeyN).
-			Disabled(!s.canChangeMySQLTable(n.ProfileID)).Chosen() {
-			s.beginMySQLTableChange(n.ProfileID, n.Database, "", mysqlsvc.MySQLTableCreate)
+			Disabled(!s.objectWorkspace.CanChangeTable(n.ProfileID)).Chosen() {
+			s.objectWorkspace.BeginTableChange(n.ProfileID, n.Database, "", mysqlsvc.MySQLTableCreate)
 		}
 		m.Separator()
 	}
 	switch n.Kind {
 	case "object":
-		s.mysqlObjectContextMenu(services, m, n.ProfileID, n.Database, n.Object, n.Category)
+		s.objectWorkspace.ContextMenu(services, m, n.ProfileID, n.Database, n.Object, n.Category)
 		return
 	case "category":
 		if m.Item(locales.Text("显示全部对象")).Disabled(!navigation.SupportedCategory(n.Category)).Chosen() {

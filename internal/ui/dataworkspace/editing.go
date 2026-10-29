@@ -6,15 +6,17 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/ui/theme"
-	"github.com/nyakang/nyadb/locales"
 	"math"
 	"reflect"
 	"slices"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/egoist/mygo/ui"
+
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 type mysqlDataSaver func(context.Context, int64, string, string, []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error)
@@ -284,7 +286,7 @@ func (s *State) startMySQLDataEditRead(services ui.Services, t *Document, row, s
 	t.edit.Err = ""
 	t.edit.Request++
 	request, gen, profile := t.edit.Request, s.session().Generation, t.profileID
-	ref := *t.page.RowRefs[row]
+	ref := cloneRowRef(*t.page.RowRefs[row])
 	key, field := mysqlDataRowKey(t, row), t.page.Columns[source]
 	db, table := t.database, t.table
 	out := make(chan mysqlEditResult, 1)
@@ -380,7 +382,7 @@ func (s *State) deleteMySQLDataRecords(services ui.Services, t *Document, row in
 	}
 }
 func (s *State) saveMySQLData(services ui.Services, t *Document) {
-	if t == nil || t.edit.Busy || t.edit.Uncertain != nil || t.profileID != s.session().ProfileID || !s.session().Connected {
+	if t == nil || t.closed || t.edit.Busy || t.edit.Uncertain != nil || t.profileID != s.session().ProfileID || !s.session().Connected {
 		return
 	}
 	s.finishMySQLCellEdit(t, true)
@@ -395,7 +397,7 @@ func (s *State) saveMySQLData(services ui.Services, t *Document) {
 	edits := []mysqlsvc.MySQLDataEdit{}
 	for _, key := range keys {
 		d := t.edit.Drafts[key]
-		edits = append(edits, mysqlsvc.MySQLDataEdit{Kind: d.Kind, Original: d.Original, Values: d.Values})
+		edits = append(edits, mysqlsvc.MySQLDataEdit{Kind: d.Kind, Original: cloneSnapshot(d.Original), Values: cloneValues(d.Values)})
 	}
 	if len(edits) == 0 {
 		return
@@ -526,7 +528,7 @@ func (s *State) consumeEdits(services ui.Services) {
 		}
 		select {
 		case r := <-t.edit.Results:
-			if r.Generation != s.session().Generation || r.Profile != s.session().ProfileID || r.Profile != t.profileID || r.Request != t.edit.Request {
+			if r.Profile != s.session().ProfileID || r.Profile != t.profileID || r.Request != t.edit.Request {
 				continue
 			}
 			if t.edit.Cancel != nil {
@@ -535,6 +537,22 @@ func (s *State) consumeEdits(services ui.Services) {
 			t.edit.Cancel = nil
 			t.edit.Results = nil
 			t.edit.Busy = false
+			if r.Generation != s.session().Generation || !s.session().Connected {
+				t.edit.AfterSave = nil
+				t.edit.Err = locales.Text("原 MySQL 会话已失效，请刷新表数据")
+				// A write acknowledged by another generation must never replace
+				// this grid or become an automatic retry of the retained draft.
+				if len(r.Keys) > 0 {
+					t.edit.Uncertain = cloneEditResult(r.Saved)
+					if t.edit.Uncertain == nil {
+						t.edit.Uncertain = &mysqlsvc.MySQLDataEditResult{}
+					}
+					t.edit.Uncertain.CommitUncertain = true
+					t.edit.UncertainKeys = append([]string(nil), r.Keys...)
+					t.edit.Err = locales.Text("提交结果仍不确定，禁止重放；请检查数据库")
+				}
+				continue
+			}
 			if r.Err != nil {
 				t.edit.Err = r.Err.Error()
 				t.edit.AfterSave = nil
@@ -547,6 +565,10 @@ func (s *State) consumeEdits(services ui.Services) {
 			}
 			if r.Verification != nil {
 				if r.Verification.Status == "applied" {
+					if t.edit.Uncertain == nil || len(t.edit.Uncertain.Outcomes) != len(t.edit.UncertainKeys) {
+						t.edit.Err = locales.Text("提交结果不完整，请核验数据库")
+						continue
+					}
 					s.acceptMySQLDataSaved(t, t.edit.UncertainKeys, t.edit.Uncertain)
 					t.edit.Uncertain = nil
 					t.edit.UncertainKeys = nil
@@ -584,6 +606,17 @@ func (s *State) consumeEdits(services ui.Services) {
 				s.openMySQLCellEditor(services, t, row, source, v, r.Dedicated)
 				continue
 			}
+			if r.Saved == nil || len(r.Saved.Outcomes) != len(r.Keys) {
+				t.edit.Uncertain = cloneEditResult(r.Saved)
+				if t.edit.Uncertain == nil {
+					t.edit.Uncertain = &mysqlsvc.MySQLDataEditResult{}
+				}
+				t.edit.Uncertain.CommitUncertain = true
+				t.edit.UncertainKeys = append([]string(nil), r.Keys...)
+				t.edit.Err = locales.Text("提交结果不完整，请核验数据库")
+				t.edit.AfterSave = nil
+				continue
+			}
 			s.acceptMySQLDataSaved(t, r.Keys, r.Saved)
 			for _, outcome := range r.Saved.Outcomes {
 				if outcome.Kind == "insert" && outcome.Saved == nil {
@@ -612,7 +645,7 @@ func (s *State) verifyMySQLDataSave(services ui.Services, t *Document) {
 	out := make(chan mysqlEditResult, 1)
 	t.edit.Results = out
 	verify := s.verifier()
-	db, table, result := t.database, t.table, t.edit.Uncertain
+	db, table, result := t.database, t.table, cloneEditResult(t.edit.Uncertain)
 	go func() {
 		v, e := verify(ctx, profile, db, table, result)
 		out <- mysqlEditResult{Generation: gen, Request: request, Profile: profile, Verification: v, Err: e}
@@ -620,7 +653,7 @@ func (s *State) verifyMySQLDataSave(services ui.Services, t *Document) {
 	}()
 }
 func (s *State) GuardLeave(t *Document, next func(ui.Services)) bool {
-	if t == nil {
+	if t == nil || t.closed {
 		return false
 	}
 	if t.edit.Busy || t.edit.Uncertain != nil {
@@ -878,6 +911,9 @@ func (s *State) Modals(c *ui.Context) {
 		if t.edit.LeaveOpen {
 			choice := ui.AlertDialog(c, &t.edit.LeaveOpen, locales.Text("待处理记录"), locales.Text("是否将待保存的数据更改应用到数据库？"), locales.Text("应用更改"), locales.Text("放弃"), locales.Text("取消"))
 			next := t.edit.LeaveNext
+			if choice == 2 {
+				t.edit.LeaveNext = nil
+			}
 			if choice == 1 {
 				t.edit.LeaveNext = nil
 				s.discardMySQLData(t)

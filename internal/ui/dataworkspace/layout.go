@@ -4,14 +4,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/ui/datainspector"
-	"github.com/nyakang/nyadb/locales"
 	"math"
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"github.com/egoist/mygo/ui"
+
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/locales"
 )
 
 const mysqlDataLayoutVersion = 1
@@ -225,7 +226,7 @@ func mysqlVisibleDataColumns(t *Document, page *mysqlsvc.MySQLDataPage) ([]int, 
 			// keyed column header, sharing scroll, drag, resize and menu state.
 			col.Title = name
 			col.Subtitle = declaration
-			col.SubtitleIcon = datainspector.ColumnTypeGlyph(kind)
+			col.SubtitleIcon = ColumnTypeGlyph(kind)
 			col.HeaderBadge = mysqlColumnKeyBadge(key)
 		}
 		visible = append(visible, col)
@@ -267,7 +268,7 @@ func mysqlDataCopyColumnPreview(page *mysqlsvc.MySQLDataPage, col int) string {
 		if col >= len(row) {
 			continue
 		}
-		values = append(values, datainspector.CopyPreview(row[col]))
+		values = append(values, CopyPreview(row[col]))
 	}
 	return strings.Join(values, "\n")
 }

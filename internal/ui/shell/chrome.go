@@ -5,8 +5,8 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/i18n"
-
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -17,11 +17,8 @@ func (s *State) View(c *ui.Context) {
 		s.activateMySQLForCurrentTab()
 	}
 	s.sessions.Consume()
-	s.consumeMySQLTableChange(c.Services())
-	s.structureViewer.Consume()
-	s.consumeMySQLData()
-	s.consumeMySQLDataEdits(c.Services())
-	s.dataInspector.Consume()
+	s.objectWorkspace.Consume(c.Services())
+	s.dataWorkspace.Consume(c.Services())
 	s.sqlWorkspace.Consume()
 	theme.Apply(c)
 
@@ -49,8 +46,8 @@ func (s *State) View(c *ui.Context) {
 		s.statusBar(c)
 	})
 	s.connectionModal(c)
-	s.mysqlTableChangeModal(c)
-	s.mysqlDataEditModals(c)
+	s.objectWorkspace.Modals(c)
+	s.dataWorkspace.Modals(c)
 	if s.profileMode && s.navigation.GroupDeleteConfirm {
 		if ui.AlertDialog(c, &s.navigation.GroupDeleteConfirm, locales.Text("删除连接组？"), locales.Text("仅删除虚拟文件夹；组内连接将移至根目录，不会删除连接档案或数据库。"), locales.Text("取消"), locales.Text("删除组")) == 1 {
 			s.navigation.DeleteGroup()
@@ -131,7 +128,7 @@ func (s *State) menuCommands(section string, m *ui.Menu) {
 		m.Separator()
 		m.Submenu(locales.Text("数据库对象"), func(sub *ui.Menu) {
 			for _, kind := range []string{"表", "视图", "函数"} {
-				if sub.Item(locales.Text(kind)).Checked(s.objectKind == kind).Disabled(!s.toolbarActionAvailable(kind)).Chosen() {
+				if sub.Item(locales.Text(kind)).Checked(s.currentObjectKind() == kind).Disabled(!s.toolbarActionAvailable(kind)).Chosen() {
 					s.showObjects(kind)
 				}
 			}
@@ -235,7 +232,7 @@ func (s *State) toolBar(c *ui.Context) {
 		ui.Toolbar(c, func() {
 			for _, action := range actions {
 				item := action
-				active := s.objectKind == item.label && s.currentTab().kind == tabObjects
+				active := s.currentObjectKind() == item.label && s.currentTab().kind == tabObjects
 				button := ui.Button(c, "").Label(locales.Text(item.label)).Tooltip(locales.Text(item.label)).
 					Width(theme.ToolbarItemWidth).Height(theme.ToolbarItemHeight).Padding(3, 2).Radius(theme.ControlRadius).
 					Disabled(!s.toolbarActionAvailable(item.label)).Border(0, ui.Transparent).

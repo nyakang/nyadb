@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
@@ -22,7 +21,7 @@ func (s *State) ResetBrowser() {
 		w.objectCancel()
 	}
 	w.objectCancel, w.objectResults, w.Pending = nil, nil, ""
-	w.Database, w.Kind = "", "全部"
+	w.Database = ""
 	w.Cache = make(map[string][]mysqlsvc.MySQLDBObject)
 	w.Errors = make(map[string]string)
 	w.opened = make(map[string]bool)
@@ -59,7 +58,7 @@ func (s *State) ReconcileDatabases(names []string) {
 	}
 	if !known[w.Database] {
 		// A selected/removed row is independent of a known sibling's read.
-		w.Database, w.Kind = "", "全部"
+		w.Database = ""
 	}
 }
 func (s *State) CancelObjects() {
@@ -83,22 +82,7 @@ func (s *State) SelectDatabase(database string) {
 	if w.Database == database {
 		return
 	}
-	w.Database, w.Kind, w.Row = database, "全部", -1
-	w.List = ui.ListState{Columns: w.List.Columns}
-}
-func (s *State) SelectedObjects() []mysqlsvc.MySQLDBObject {
-	w := s.current
-	all := w.Cache[w.Database]
-	if w.Kind == "" || w.Kind == "全部" {
-		return all
-	}
-	items := make([]mysqlsvc.MySQLDBObject, 0, len(all))
-	for _, object := range all {
-		if object.Kind == w.Kind {
-			items = append(items, object)
-		}
-	}
-	return items
+	w.Database = database
 }
 
 // LoadObjects opens a database once, honors cache/error state and permits an

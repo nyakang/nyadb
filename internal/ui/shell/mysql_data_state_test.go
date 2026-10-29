@@ -9,18 +9,20 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
+
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/dataworkspace"
 )
 
 func waitMySQLData(t *testing.T, s *State, tt *ui.Tester) {
 	t.Helper()
 	deadline := time.Now().Add(3 * time.Second)
-	for s.currentTab().kind == tabMySQLData && s.currentTab().dataLoading && time.Now().Before(deadline) {
+	for s.currentTab().kind == tabMySQLData && s.currentTab().data.Loading() && time.Now().Before(deadline) {
 		tt.Frame()
 		time.Sleep(5 * time.Millisecond)
 	}
 	tt.Frame()
-	if s.currentTab().kind != tabMySQLData || s.currentTab().dataLoading {
+	if s.currentTab().kind != tabMySQLData || s.currentTab().data.Loading() {
 		t.Fatal("data page load did not settle")
 	}
 }
@@ -28,7 +30,7 @@ func TestMySQLNativeReadOnlyDataPagingAndTabLifecycle(t *testing.T) {
 	s, tt := structureTestBrowser(t)
 	var mu sync.Mutex
 	calls := []int64{}
-	s.mysqlDataLoader = func(ctx context.Context, id int64, db, table string, offset int64, limit int) (*mysqlsvc.MySQLDataPage, error) {
+	s.dataWorkspace.Loader = func(ctx context.Context, id int64, db, table string, offset int64, limit int) (*mysqlsvc.MySQLDataPage, error) {
 		mu.Lock()
 		calls = append(calls, offset)
 		mu.Unlock()
@@ -53,7 +55,7 @@ func TestMySQLNativeReadOnlyDataPagingAndTabLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLData(t, s, tt)
-	if !tt.HasText("last-page") || s.currentTab().dataOffset != 100 {
+	if !tt.HasText("last-page") || s.currentTab().data.Offset() != 100 {
 		t.Fatal("next page didn't load")
 	}
 	if err := tt.Click("上一页数据"); err != nil {
@@ -76,7 +78,7 @@ func TestMySQLNativeReadOnlyDataPagingAndTabLifecycle(t *testing.T) {
 	if err := tt.Click("对象"); err != nil {
 		t.Fatal(err)
 	}
-	s.structureViewer.Loader = func(_ context.Context, _ int64, db, table string) (*mysqlsvc.MySQLTableStructure, error) {
+	s.objectWorkspace.Loader = func(_ context.Context, _ int64, db, table string) (*mysqlsvc.MySQLTableStructure, error) {
 		return fakeStructure(db, table), nil
 	}
 	if err := tt.Click("打开选中表结构"); err != nil {
@@ -100,7 +102,7 @@ func TestMySQLDataLateResultAndErrorRetry(t *testing.T) {
 	release := make(chan struct{})
 	var mu sync.Mutex
 	calls := 0
-	s.mysqlDataLoader = func(ctx context.Context, id int64, db, table string, offset int64, limit int) (*mysqlsvc.MySQLDataPage, error) {
+	s.dataWorkspace.Loader = func(ctx context.Context, id int64, db, table string, offset int64, limit int) (*mysqlsvc.MySQLDataPage, error) {
 		mu.Lock()
 		calls++
 		n := calls
@@ -124,15 +126,11 @@ func TestMySQLDataLateResultAndErrorRetry(t *testing.T) {
 		t.Fatal("request did not start")
 	}
 	p := s.currentTab()
-	s.cancelMySQLData(p)
-	p.dataErr = "已取消"
-	tt.Frame()
-	if err := tt.Click("重试读取数据"); err != nil {
-		t.Fatal(err)
-	}
+	s.dataWorkspace.Cancel(p.data)
+	s.dataWorkspace.Load(ui.Services{}, p.data, true)
 	waitMySQLData(t, s, tt)
-	if !strings.Contains(p.dataErr, "simulated failure") {
-		t.Fatalf("error missing: %v", p.dataErr)
+	if !strings.Contains(p.data.Error(), "simulated failure") {
+		t.Fatalf("error missing: %v", p.data.Error())
 	}
 	if err := tt.Click("重试读取数据"); err != nil {
 		t.Fatal(err)
@@ -143,7 +141,7 @@ func TestMySQLDataLateResultAndErrorRetry(t *testing.T) {
 		tt.Frame()
 		time.Sleep(time.Millisecond)
 	}
-	if p.dataPage == nil || p.dataPage.Table == "obsolete" || !tt.HasText("new") {
+	if p.data.Page() == nil || p.data.Page().Table == "obsolete" || !tt.HasText("new") {
 		t.Fatal("late stale result replaced newer page")
 	}
 	if err := tt.Click("关闭 app_db.orders · 数据"); err != nil {
@@ -157,7 +155,7 @@ func TestMySQLDataLateResultAndErrorRetry(t *testing.T) {
 // A schema refresh must only evict data belonging to removed schemas.
 func TestMySQLDataTabsPruneOnlyMissingSchema(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	s.mysqlDataLoader = func(_ context.Context, id int64, db, table string, offset int64, limit int) (*mysqlsvc.MySQLDataPage, error) {
+	s.dataWorkspace.Loader = func(_ context.Context, id int64, db, table string, offset int64, limit int) (*mysqlsvc.MySQLDataPage, error) {
 		return &mysqlsvc.MySQLDataPage{
 			Database: db, Table: table, Columns: []string{"id"},
 			Rows:  [][]mysqlsvc.MySQLDataCell{{{Text: db}}},
@@ -175,19 +173,19 @@ func TestMySQLDataTabsPruneOnlyMissingSchema(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
-	s.sessions.Current().Row = 0
+	s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, 0)
 	tt.Frame()
 	if err := tt.Click("打开选中表数据"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLData(t, s, tt)
-	if len(s.tabs) != 3 || s.currentTab().dataPage.Database != "analytics" {
+	if len(s.tabs) != 3 || s.currentTab().data.Page().Database != "analytics" {
 		t.Fatalf("cross schema data isolation failed: %+v", s.tabs)
 	}
 	s.sessions.ReconcileDatabases([]string{"app_db"})
 	tt.Frame()
 	if len(s.tabs) != 2 || s.activeTab != 0 || s.tabs[1].kind != tabMySQLData ||
-		s.tabs[1].dataPage.Database != "app_db" {
+		s.tabs[1].data.Page().Database != "app_db" {
 		t.Fatalf("schema refresh discarded valid data or retained stale page: %+v", s.tabs)
 	}
 }
@@ -196,11 +194,33 @@ func TestDataInspectorPageCancelAndTabCloseRespectIndependentReaders(t *testing.
 	for _, closeWorkbench := range []bool{false, true} {
 		t.Run(map[bool]string{false: "tab", true: "workbench"}[closeWorkbench], func(t *testing.T) {
 			s, tt := structureTestBrowser(t)
-			s.mysqlDataLoader = func(_ context.Context, _ int64, db, table string, offset int64, limit int) (*mysqlsvc.MySQLDataPage, error) {
-				return &mysqlsvc.MySQLDataPage{Database: db, Table: table, Offset: offset, Limit: limit, Columns: []string{"id", "label"}, ColumnKinds: []string{"bigint", "varchar"}, ColumnMetadata: []mysqlsvc.MySQLStructureColumn{{Name: "id", Type: "bigint", DataType: "bigint"}, {Name: "label", Type: "varchar(80)", DataType: "varchar", Nullable: true}}, Rows: [][]mysqlsvc.MySQLDataCell{{{Text: "1"}, {Text: "preserved preview"}}}, RowRefs: []*mysqlsvc.MySQLRowRef{{Database: db, Table: table}}}, nil
+			countStarted, countCanceled := make(chan struct{}), make(chan struct{})
+			chunkStarted, chunkCanceled := make(chan struct{}), make(chan struct{})
+			deps := s.dataWorkspaceDependencies()
+			deps.Inspector.InfoLoader = func() dataworkspace.InfoLoader {
+				return func(_ context.Context, _ int64, db, table string) (*mysqlsvc.MySQLTableInfo, error) {
+					return &mysqlsvc.MySQLTableInfo{Database: db, Name: table, Engine: "InnoDB"}, nil
+				}
 			}
-			s.dataInspector.InfoLoader = func(_ context.Context, _ int64, db, table string) (*mysqlsvc.MySQLTableInfo, error) {
-				return &mysqlsvc.MySQLTableInfo{Database: db, Name: table, Engine: "InnoDB"}, nil
+			deps.Inspector.CountLoader = func() dataworkspace.CountLoader {
+				return func(ctx context.Context, _ int64, _, _ string) (int64, error) {
+					close(countStarted)
+					<-ctx.Done()
+					close(countCanceled)
+					return 0, ctx.Err()
+				}
+			}
+			deps.Inspector.ChunkLoader = func() dataworkspace.ChunkLoader {
+				return func(ctx context.Context, _ int64, _, _, _ string, _ mysqlsvc.MySQLRowRef, _ int64, _ int) (*mysqlsvc.MySQLFieldChunk, error) {
+					close(chunkStarted)
+					<-ctx.Done()
+					close(chunkCanceled)
+					return nil, ctx.Err()
+				}
+			}
+			s.dataWorkspace = dataworkspace.New(deps)
+			s.dataWorkspace.Loader = func(_ context.Context, _ int64, db, table string, offset int64, limit int) (*mysqlsvc.MySQLDataPage, error) {
+				return &mysqlsvc.MySQLDataPage{Database: db, Table: table, Offset: offset, Limit: limit, StableOrder: true, Columns: []string{"id", "label"}, ColumnKinds: []string{"bigint", "varchar"}, ColumnMetadata: []mysqlsvc.MySQLStructureColumn{{Name: "id", Type: "bigint", DataType: "bigint"}, {Name: "label", Type: "varchar(80)", DataType: "varchar", Nullable: true}}, Rows: [][]mysqlsvc.MySQLDataCell{{{Text: "1"}, {Text: "preserved preview"}}}, RowRefs: []*mysqlsvc.MySQLRowRef{{Database: db, Table: table}}}, nil
 			}
 			s.openQuery()
 			query := s.currentTab()
@@ -208,53 +228,44 @@ func TestDataInspectorPageCancelAndTabCloseRespectIndependentReaders(t *testing.
 			s.openMySQLData(ui.Services{}, "app_db", "orders")
 			waitMySQLData(t, s, tt)
 			doc := s.currentTab()
-			p := s.dataInspectorPanel(doc)
+			p := doc.data.Inspector()
 			deadline := time.Now().Add(3 * time.Second)
 			for p.InfoLoading() && time.Now().Before(deadline) {
 				tt.Frame()
 				time.Sleep(time.Millisecond)
 			}
 			if p.Info() == nil || p.Info().Engine != "InnoDB" {
-				t.Fatal("table-info callback did not bind to the data tab")
+				t.Fatal("table info not bound to data tab")
 			}
-			doc.dataSelectedRow = 0
-			doc.dataState.Cells = ui.ColumnRange{Cursor: "label", Anchor: "label"}
-			s.showMySQLFieldInspector(doc)
+			if err := tt.Click("获取整表行数"); err != nil {
+				t.Fatal(err)
+			}
+			if err := tt.Click("preserved preview"); err != nil {
+				t.Fatal(err)
+			}
+			s.dataWorkspace.ShowField(doc.data)
 			tt.Frame()
-			if !p.FieldMode() || !tt.HasText("varchar(80)") || !tt.HasText("preserved preview") {
-				t.Fatal("explicit field action did not use current grid selection")
+			if !p.FieldMode() || !tt.HasText("varchar(80)") {
+				t.Fatal("field action lost current selection")
 			}
-			countStarted, countCanceled := make(chan struct{}), make(chan struct{})
-			chunkStarted, chunkCanceled := make(chan struct{}), make(chan struct{})
-			s.dataInspector.CountLoader = func(ctx context.Context, _ int64, _, _ string) (int64, error) {
-				close(countStarted)
-				<-ctx.Done()
-				close(countCanceled)
-				return 0, ctx.Err()
+			if err := tt.Click("读取所选字段下一段"); err != nil {
+				t.Fatal(err)
 			}
-			s.dataInspector.ChunkLoader = func(ctx context.Context, _ int64, _, _, _ string, _ mysqlsvc.MySQLRowRef, _ int64, _ int) (*mysqlsvc.MySQLFieldChunk, error) {
-				close(chunkStarted)
-				<-ctx.Done()
-				close(chunkCanceled)
-				return nil, ctx.Err()
-			}
-			s.dataInspector.LoadCount(p, nil)
-			s.dataInspector.LoadChunk(p, nil)
 			for _, started := range []<-chan struct{}{countStarted, chunkStarted} {
 				select {
 				case <-started:
 				case <-time.After(3 * time.Second):
-					t.Fatal("independent inspector read did not start")
+					t.Fatal("reader did not start")
 				}
 			}
-			s.cancelMySQLData(doc)
+			s.dataWorkspace.Cancel(doc.data)
 			select {
 			case <-chunkCanceled:
 			case <-time.After(3 * time.Second):
-				t.Fatal("data cancellation did not revoke field chunk")
+				t.Fatal("field reader was not canceled")
 			}
-			if !p.CountLoading() || p.Info() == nil || doc.dataPage == nil {
-				t.Fatal("data cancellation cleared independent count, metadata or page")
+			if !p.CountLoading() || p.Info() == nil || doc.data.Page() == nil {
+				t.Fatal("page cancellation disturbed independent count/cache")
 			}
 			if closeWorkbench {
 				s.CloseMySQLSessions()
@@ -264,18 +275,23 @@ func TestDataInspectorPageCancelAndTabCloseRespectIndependentReaders(t *testing.
 			select {
 			case <-countCanceled:
 			case <-time.After(3 * time.Second):
-				t.Fatal("close did not revoke independent count")
+				t.Fatal("close did not cancel count")
 			}
 			tt.Frame()
-			if p.InfoLoading() || p.CountLoading() || p.ChunkLoading() || query.query.Editor.Buffer.String() != "SELECT preserved SQL" {
-				t.Fatal("close retained inspector readers or changed sibling SQL")
+			if p.InfoLoading() || p.CountLoading() || p.ChunkLoading() {
+				t.Fatal("close retained readers")
+			}
+			if closeWorkbench {
+				if query.query.Editor != nil {
+					t.Fatal("terminal close retained SQL text cache")
+				}
+			} else if query.query.Editor == nil || query.query.Editor.Buffer.String() != "SELECT preserved SQL" {
+				t.Fatal("closing data tab changed sibling SQL")
 			}
 			if !closeWorkbench && (s.currentTab() != query || len(s.tabs) != 2) {
-				t.Fatal("closing data tab lost sibling selection")
+				t.Fatal("close lost sibling selection")
 			}
-			if !closeWorkbench {
-				s.CloseMySQLSessions()
-			}
+			s.CloseMySQLSessions()
 		})
 	}
 }

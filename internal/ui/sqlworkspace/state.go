@@ -7,6 +7,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
+
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
@@ -169,6 +170,8 @@ func (s *State) Close(d *Document) {
 		return
 	}
 	s.dispose(d)
+	d.Editor, d.result = nil, nil
+	d.grid = ui.ListState{}
 	d.closed = true
 	if s.documents[d.id] == d {
 		delete(s.documents, d.id)

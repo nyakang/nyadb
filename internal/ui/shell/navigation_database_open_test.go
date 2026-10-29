@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
+
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
@@ -36,7 +37,7 @@ func TestNavigatorUnopenedDatabaseSelectionDoesNotLoad(t *testing.T) {
 		t.Fatal("single click did not select the database and show the opening hint")
 	}
 	tt.Key(0, ui.KeyDown)
-	if s.sessions.Current().Database != "analytics" || s.sessions.Current().Row != -1 || tt.HasText("cached_table") {
+	if s.sessions.Current().Database != "analytics" || s.objectWorkspace.SelectedRow(s.sessions.Current().ProfileID) != -1 || tt.HasText("cached_table") {
 		t.Fatal("keyboard selection displayed an unopened database's cached objects")
 	}
 	if err := tt.RightClick("数据库：app_db"); err != nil {
