@@ -138,7 +138,7 @@ func (s *State) profileSidebar(c *ui.Context) {
 			if tree.Shortcut(0, ui.KeyF5) {
 				n := parseNavigationNode(s.explorerName)
 				if n.Database != "" {
-					s.loadMySQLObjects(c.Services(), n.Database, true)
+					s.openMySQLDatabase(c.Services(), n.Database, true)
 				} else if s.mysqlSessionStateFor(n.ProfileID) == "已连接" {
 					s.refreshMySQLDatabases(c.Services())
 				} else {

@@ -27,6 +27,10 @@ func TestNavigatorCategoriesAndMetadataProgress(t *testing.T) {
 			t.Fatalf("unexpected loading node: %+v", n)
 		}
 	}
+	if children := s.navigationChildren(db.key()); children != nil {
+		t.Fatalf("unopened database has disclosure children: %v", children)
+	}
+	s.markMySQLDatabaseOpened(db.ProfileID, db.Database)
 	checkStatus("waiting")
 	s.mysqlObjectPending = "app_db"
 	checkStatus("loading")
@@ -141,6 +145,7 @@ func TestNavigatorFailedMetadataRowCanRetry(t *testing.T) {
 	db := databaseNode(s.mysqlSessionProfileID, "app_db")
 	s.explorerTree.Open.Add(profileNode(s.mysqlSessionProfileID))
 	s.explorerTree.Open.Add(db.key())
+	s.markMySQLDatabaseOpened(db.ProfileID, db.Database)
 	s.mysqlObjectErrors["app_db"] = "read denied"
 	called := make(chan struct{}, 1)
 	s.mysqlObjectLister = func(_ context.Context, _ int64, name string) ([]mysqlsvc.MySQLDBObject, error) {

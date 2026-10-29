@@ -160,6 +160,7 @@ func (s *State) disconnectMySQLSession() {
 	if id > 0 {
 		s.cancelMySQLSQLForProfile(id)
 	}
+	s.clearMySQLDatabaseNavigation(id)
 	s.mysqlSessionProfileID = 0
 	s.mysqlSessionDatabases = nil
 	s.resetMySQLObjectBrowser()

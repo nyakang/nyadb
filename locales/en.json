@@ -3,6 +3,8 @@
   "@@locale": "en",
   "navigatorRestoreFilters": "Restore previous filters",
   "navigatorWaiting": "Waiting to load",
+  "navigatorOpenDatabase": "Open Database",
+  "navigatorDoubleClickDatabase": "Double-click to open the database",
   "navigatorLoading": "Loading objects…",
   "navigatorRetry": "Load failed. Click to retry",
   "navigatorUnsupported": "Metadata browsing is not supported yet",

@@ -74,6 +74,9 @@ func (s *State) navigationChildren(key string) []string {
 		}
 		return children
 	case "database":
+		if !s.mysqlDatabaseOpenedFor(n.ProfileID, n.Database) {
+			return nil
+		}
 		if _, loaded := s.mysqlObjectCacheFor(n.ProfileID)[n.Database]; !loaded {
 			status := n
 			status.Kind, status.Object = "status", "waiting"
@@ -136,12 +139,19 @@ func (s *State) selectNavigationNode(services ui.Services, key string) {
 	if s.mysqlSessionStateFor(n.ProfileID) != "已连接" {
 		return
 	}
-	s.selectMySQLDatabase(services, n.Database)
+	if n.Kind == "database" {
+		s.selectMySQLDatabaseContext(n.Database)
+	} else {
+		s.selectMySQLDatabase(services, n.Database)
+	}
 	s.mysqlObjectKind = "全部"
 	if n.Category != "" {
 		s.mysqlObjectKind = n.Category
 	}
 	s.objectRow = -1
+	if n.Kind == "database" && !s.mysqlDatabaseOpenedFor(n.ProfileID, n.Database) {
+		return
+	}
 	if n.Kind == "category" && !supportedMySQLCategory(n.Category) {
 		s.status = n.Category + "：此类对象尚未提供元数据浏览"
 		return
@@ -162,6 +172,7 @@ func (s *State) selectNavigationNode(services ui.Services, key string) {
 func (s *State) revealNavigationNode(n navigationNode) {
 	s.explorerTree.Open.Add(profileNode(n.ProfileID))
 	if n.Database != "" {
+		s.markMySQLDatabaseOpened(n.ProfileID, n.Database)
 		s.explorerTree.Open.Add(databaseNode(n.ProfileID, n.Database).key())
 	}
 	if n.Category != "" {
@@ -189,7 +200,7 @@ func (s *State) syncNavigationExpansion(services ui.Services) {
 		}
 		open := s.explorerTree.Open.Has(profileNode(s.mysqlSessionProfileID)) && s.explorerTree.Open.Has(databaseNode(s.mysqlSessionProfileID, db).key())
 		node.open = open
-		if !open || s.mysqlObjectPending != "" || s.mysqlObjectErrors[db] != "" {
+		if !node.opened || !open || s.mysqlObjectPending != "" || s.mysqlObjectErrors[db] != "" {
 			continue
 		}
 		if _, loaded := s.mysqlObjectCache[db]; !loaded {
@@ -322,7 +333,8 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 			row.Label(label + "：" + err)
 		}
 		if row.Clicked() && n.Object == "error" {
-			s.loadMySQLObjects(c.Services(), n.Database, true)
+			s.selectNavigationNode(c.Services(), databaseNode(n.ProfileID, n.Database).key())
+			s.openMySQLDatabase(c.Services(), n.Database, true)
 		}
 		return
 	}
@@ -332,7 +344,12 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 	row.ContextMenu(func(m *ui.Menu) {
 		s.navigationContextMenu(c.Services(), key, m)
 	})
-	if row.Clicked() {
+	// The content row owns pointer clicks; handle its double click directly.
+	// Outline's Submitted still handles Enter and clicks in its native gutter.
+	if n.Kind == "database" && row.DoubleClicked() {
+		s.selectNavigationNode(c.Services(), key)
+		s.openMySQLDatabase(c.Services(), n.Database, false)
+	} else if row.Clicked() {
 		s.selectNavigationNode(c.Services(), key)
 	}
 
@@ -340,6 +357,9 @@ func (s *State) navigationRow(c *ui.Context, key string) {
 
 func (s *State) submitNavigation(c *ui.Context) {
 	n := parseNavigationNode(s.explorerName)
+	if n.Kind == "database" {
+		s.openMySQLDatabase(c.Services(), n.Database, false)
+	}
 	if n.Kind == "object" {
 		s.openMySQLObject(c.Services(), n.Database, n.Object, n.Category)
 	}

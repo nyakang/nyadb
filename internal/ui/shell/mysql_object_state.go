@@ -9,6 +9,7 @@ import (
 )
 
 type mysqlDatabaseNode struct {
+	opened     bool
 	open       bool
 	tablesOpen bool
 	viewsOpen  bool
@@ -25,6 +26,7 @@ type mysqlObjectLister func(context.Context, int64, string) ([]mysqlsvc.MySQLDBO
 // The UI thread owns this complete state. All jobs return immutable values
 // through one-shot buffered channels and only invalidate the MyGo frame.
 func (s *State) resetMySQLObjectBrowser() {
+	s.clearMySQLDatabaseNavigation(s.mysqlSessionProfileID)
 	s.mysqlObjectRequest++
 	if s.mysqlObjectCancel != nil {
 		s.mysqlObjectCancel()
@@ -48,6 +50,9 @@ func (s *State) reconcileMySQLDatabases(names []string) {
 	for _, name := range names {
 		known[name] = true
 	}
+	if s.mysqlObjectPending != "" && !known[s.mysqlObjectPending] {
+		s.cancelMySQLObjectQuery()
+	}
 	for name := range s.mysqlObjectCache {
 		if !known[name] {
 			delete(s.mysqlObjectCache, name)
@@ -63,6 +68,12 @@ func (s *State) reconcileMySQLDatabases(names []string) {
 			delete(s.mysqlDatabaseNodes, name)
 		}
 	}
+	for key := range s.explorerTree.Open.All() {
+		n := parseNavigationNode(key)
+		if n.ProfileID == s.mysqlSessionProfileID && n.Database != "" && !known[n.Database] {
+			s.explorerTree.Open.Remove(key)
+		}
+	}
 	s.pruneMySQLStructureTabs(known)
 	if !known[s.mysqlSelectedDatabase] {
 		s.cancelMySQLObjectQuery()
@@ -72,6 +83,14 @@ func (s *State) reconcileMySQLDatabases(names []string) {
 }
 
 func (s *State) cancelMySQLObjectQuery() {
+	// An explicitly cancelled or superseded read must not be rescheduled just
+	// because its database remains expanded. Its retry/refresh action resumes it.
+	if database := s.mysqlObjectPending; database != "" {
+		if s.mysqlObjectErrors == nil {
+			s.mysqlObjectErrors = make(map[string]string)
+		}
+		s.mysqlObjectErrors[database] = "加载已取消"
+	}
 	s.mysqlObjectRequest++
 	if s.mysqlObjectCancel != nil {
 		s.mysqlObjectCancel()
@@ -81,9 +100,10 @@ func (s *State) cancelMySQLObjectQuery() {
 	s.mysqlObjectResults = nil
 }
 
-func (s *State) selectMySQLDatabase(services ui.Services, database string) {
+// Choosing a row changes its context without cancelling an explicitly opened
+// sibling's read. That read can still populate its cache without selecting it.
+func (s *State) selectMySQLDatabaseContext(database string) {
 	if s.mysqlSelectedDatabase != database {
-		s.cancelMySQLObjectQuery()
 		s.mysqlSelectedDatabase = database
 		// A different database is a different list; keep column layout but do
 		// not let MyGo restore the previous database's row key or scroll anchor.
@@ -91,10 +111,21 @@ func (s *State) selectMySQLDatabase(services ui.Services, database string) {
 		s.objectRow = -1
 		s.mysqlObjectKind = "全部"
 	}
+}
+
+func (s *State) selectMySQLDatabase(services ui.Services, database string) {
+	s.openMySQLDatabase(services, database, false)
+}
+
+func (s *State) openMySQLDatabase(services ui.Services, database string, force bool) {
+	s.selectMySQLDatabaseContext(database)
 	if database == "" || s.mysqlSessionStatus != "已连接" {
 		return
 	}
-	s.loadMySQLObjects(services, database, false)
+	s.markMySQLDatabaseOpened(s.mysqlSessionProfileID, database)
+	s.explorerTree.Open.Add(profileNode(s.mysqlSessionProfileID))
+	s.explorerTree.Open.Add(databaseNode(s.mysqlSessionProfileID, database).key())
+	s.loadMySQLObjects(services, database, force)
 }
 
 // Keep the selected object's qualified identity when it survives a filter.
@@ -138,10 +169,20 @@ func (s *State) loadMySQLObjects(services ui.Services, database string, force bo
 	if database == "" || s.mysqlSessionStatus != "已连接" || s.mysqlSessionProfileID <= 0 {
 		return
 	}
+	// Explicit metadata refreshes can also open a previously unopened database.
+	// Preserve a previously opened database's collapsed state on refresh.
+	if !s.mysqlDatabaseOpenedFor(s.mysqlSessionProfileID, database) {
+		s.markMySQLDatabaseOpened(s.mysqlSessionProfileID, database)
+		s.explorerTree.Open.Add(profileNode(s.mysqlSessionProfileID))
+		s.explorerTree.Open.Add(databaseNode(s.mysqlSessionProfileID, database).key())
+	}
 	if _, ok := s.mysqlObjectCache[database]; ok && !force {
 		return
 	}
 	if s.mysqlObjectPending == database && !force {
+		return
+	}
+	if s.mysqlObjectErrors[database] != "" && !force {
 		return
 	}
 	s.cancelMySQLObjectQuery()

@@ -73,7 +73,10 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 	}
 	message := ""
 	if connected && db != "" {
-		if s.mysqlObjectPending == db {
+		if !s.mysqlDatabaseOpenedFor(s.mysqlSessionProfileID, db) {
+			items = nil
+			message = locales.Text("双击打开数据库")
+		} else if s.mysqlObjectPending == db {
 			message = "正在读取数据库对象…"
 		} else if err := s.mysqlObjectErrors[db]; err != "" {
 			message = "读取对象失败：" + err

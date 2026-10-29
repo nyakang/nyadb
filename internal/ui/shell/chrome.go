@@ -244,7 +244,11 @@ func (s *State) toolBar(c *ui.Context) {
 					Disabled(!s.toolbarActionAvailable(item.label)).Border(0, ui.Transparent).
 					Children(func() {
 						ui.Column(c).Center().Gap(4).Children(func() {
-							theme.Icon(c, item.icon, theme.ToolbarIconSize, item.color)
+							if item.label == "连接" {
+								theme.ConnectionActionIcon(c, theme.ToolbarIconSize)
+							} else {
+								theme.Icon(c, item.icon, theme.ToolbarIconSize, item.color)
+							}
 							ui.Text(c, locales.Text(item.label)).FontSize(theme.Font(c, theme.FontSize)).SingleLine()
 						})
 					})
