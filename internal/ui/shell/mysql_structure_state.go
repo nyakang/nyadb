@@ -1,136 +1,45 @@
 package shell
 
 import (
-	"context"
-	"errors"
-
 	"github.com/egoist/mygo/ui"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/structureviewer"
 )
 
-// The UI owns tabs and their cache. Queries only publish immutable results
-// through a one-shot channel; no goroutine may mutate State or tab directly.
-type mysqlStructureLoader func(context.Context, int64, string, string) (*mysqlsvc.MySQLTableStructure, error)
-
-type mysqlStructureResult struct {
-	sessionGeneration uint64
-	profileID         int64
-	request           uint64
-	data              *mysqlsvc.MySQLTableStructure
-	err               error
+func (s *State) structureViewerDependencies() structureviewer.Dependencies {
+	return structureviewer.Dependencies{
+		Session: func() structureviewer.Session {
+			w := s.sessions.Current()
+			return structureviewer.Session{ProfileID: w.ProfileID, Generation: w.Generation, Connected: w.Status == "已连接"}
+		},
+		Loader: func() structureviewer.Loader {
+			if s.sessions.Manager == nil {
+				return nil
+			}
+			return s.sessions.Manager.TableStructure
+		},
+		Back: func() { s.activeTab = 0 },
+	}
 }
-
 func (s *State) openMySQLStructure(services ui.Services, database, table string) {
-	if s.sessions.Current().Status != "已连接" || s.sessions.Current().ProfileID <= 0 ||
-		!validStructureSelection(database, table) {
+	profileID := s.sessions.Current().ProfileID
+	if s.sessions.Current().Status != "已连接" || profileID <= 0 || !validStructureSelection(database, table) {
 		return
 	}
 	for i, t := range s.tabs {
-		if t.kind == tabStructure && t.structureDatabase == database &&
-			t.structureTable == table && t.structureProfileID == s.sessions.Current().ProfileID {
+		if t.kind == tabStructure && t.design.ProfileID() == profileID && t.design.Database() == database && t.design.Table() == table {
 			s.activeTab = i
-			if t.structure == nil && !t.structureLoading && t.structureErr == "" {
-				s.loadMySQLStructure(services, t, false)
-			}
+			s.structureViewer.Load(t.design, services.Invalidate, false)
 			return
 		}
 	}
 	s.nextTabID++
-	t := &tab{
-		id: s.nextTabID, kind: tabStructure, title: database + "." + table,
-		structureDatabase: database, structureTable: table,
-		structureProfileID: s.sessions.Current().ProfileID,
-	}
+	t := &tab{id: s.nextTabID, kind: tabStructure, title: database + "." + table,
+		design: s.structureViewer.Open(s.nextTabID, profileID, database, table)}
 	s.tabs = append(s.tabs, t)
 	s.activeTab = len(s.tabs) - 1
-	s.loadMySQLStructure(services, t, false)
+	s.structureViewer.Load(t.design, services.Invalidate, false)
 }
-
-func validStructureSelection(database, table string) bool {
-	return database != "" && table != ""
-}
-
-func (s *State) cancelMySQLStructure(t *tab) {
-	t.structureRequest++
-	if t.structureCancel != nil {
-		t.structureCancel()
-	}
-	t.structureCancel = nil
-	t.structureResults = nil
-	t.structureLoading = false
-}
-
-func (s *State) loadMySQLStructure(services ui.Services, t *tab, refresh bool) {
-	if t == nil || t.kind != tabStructure || t.structureProfileID != s.sessions.Current().ProfileID ||
-		s.sessions.Current().Status != "已连接" || s.sessions.Current().ProfileID <= 0 {
-		return
-	}
-	if t.structureLoading && !refresh {
-		return
-	}
-	if t.structure != nil && !refresh {
-		return
-	}
-	s.cancelMySQLStructure(t)
-	t.structureErr = ""
-	t.structureLoading = true
-	ctx, cancel := context.WithCancel(context.Background())
-	t.structureCancel = cancel
-	request := t.structureRequest
-	generation := s.sessions.Current().Generation
-	profile := s.sessions.Current().ProfileID
-	database, table := t.structureDatabase, t.structureTable
-	loader := s.mysqlStructureLoader
-	if loader == nil {
-		if s.sessions.Manager == nil {
-			s.cancelMySQLStructure(t)
-			t.structureErr = "MySQL 会话不可用"
-			return
-		}
-		loader = s.sessions.Manager.TableStructure
-	}
-	out := make(chan mysqlStructureResult, 1)
-	t.structureResults = out
-	go func() {
-		data, err := loader(ctx, profile, database, table)
-		out <- mysqlStructureResult{
-			sessionGeneration: generation, profileID: profile,
-			request: request, data: data, err: err,
-		}
-		services.Invalidate()
-	}()
-}
-
-func (s *State) consumeMySQLStructures() {
-	for _, t := range s.tabs {
-		if t.kind != tabStructure || t.structureResults == nil || t.structureProfileID != s.sessions.Current().ProfileID {
-			continue
-		}
-		select {
-		case result := <-t.structureResults:
-			if result.sessionGeneration != s.sessions.Current().Generation ||
-				result.profileID != s.sessions.Current().ProfileID ||
-				result.profileID != t.structureProfileID ||
-				result.request != t.structureRequest {
-				continue
-			}
-			s.cancelMySQLStructure(t)
-			if result.err != nil {
-				if !errors.Is(result.err, context.Canceled) {
-					t.structureErr = result.err.Error()
-				}
-				continue
-			}
-			if result.data == nil {
-				t.structureErr = "服务器未返回表结构"
-				continue
-			}
-			t.structure = result.data
-			t.structureErr = ""
-		default:
-		}
-	}
-}
+func validStructureSelection(database, table string) bool { return database != "" && table != "" }
 
 // Removing tabs also revokes their in-flight work. Inactive SQL/mock tabs are
 // intentionally preserved so unrelated workspace documents are not lost.
@@ -140,11 +49,11 @@ func (s *State) clearMySQLTabsFor(profileID int64) {
 	activeID := s.currentTab().id
 	kept := s.tabs[:0]
 	for _, t := range s.tabs {
-		if (t.kind == tabStructure && (profileID == 0 || t.structureProfileID == profileID)) ||
+		if (t.kind == tabStructure && (profileID == 0 || t.design.ProfileID() == profileID)) ||
 			(t.kind == tabMySQLData && (profileID == 0 || t.dataProfileID == profileID)) ||
 			(t.kind == tabProgram && (profileID == 0 || t.programProfileID == profileID)) {
 			if t.kind == tabStructure {
-				s.cancelMySQLStructure(t)
+				s.structureViewer.Close(t.design)
 			} else if t.kind == tabMySQLData {
 				s.disposeMySQLDataTab(t)
 			}
@@ -166,11 +75,11 @@ func (s *State) pruneMySQLStructureTabs(known map[string]bool) {
 	activeID := s.currentTab().id
 	kept := s.tabs[:0]
 	for _, t := range s.tabs {
-		if (t.kind == tabStructure && t.structureProfileID == s.sessions.Current().ProfileID && !known[t.structureDatabase]) ||
+		if (t.kind == tabStructure && t.design.ProfileID() == s.sessions.Current().ProfileID && !known[t.design.Database()]) ||
 			(t.kind == tabMySQLData && t.dataProfileID == s.sessions.Current().ProfileID && !known[t.dataDatabase]) ||
 			(t.kind == tabProgram && t.programProfileID == s.sessions.Current().ProfileID && !known[t.programDatabase]) {
 			if t.kind == tabStructure {
-				s.cancelMySQLStructure(t)
+				s.structureViewer.Close(t.design)
 			} else if t.kind == tabMySQLData {
 				s.disposeMySQLDataTab(t)
 			}

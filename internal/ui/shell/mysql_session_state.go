@@ -45,6 +45,7 @@ func (s *State) CloseMySQLSessions() { s.closeMySQLSessions() }
 func (s *State) closeMySQLSessions() {
 	s.mysqlForceClose = true
 	defer func() { s.mysqlForceClose = false }()
+	s.structureViewer.CloseAll()
 	s.sqlWorkspace.CloseAll()
 	s.sessions.Close()
 }
@@ -88,7 +89,7 @@ func (s *State) activateMySQLForCurrentTab() {
 	var id int64
 	switch t.kind {
 	case tabStructure:
-		id = t.structureProfileID
+		id = t.design.ProfileID()
 	case tabMySQLData:
 		id = t.dataProfileID
 	case tabProgram:

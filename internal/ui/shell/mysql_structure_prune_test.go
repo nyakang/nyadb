@@ -3,7 +3,9 @@ package shell
 import (
 	"context"
 	"testing"
+	"time"
 
+	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
@@ -11,7 +13,7 @@ import (
 // schema invalidates only its tabs while retaining the surviving tab cache.
 func TestMySQLStructureQualifiedTabsAndPrunedSchema(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	s.mysqlStructureLoader = func(_ context.Context, _ int64, database, table string) (*mysqlsvc.MySQLTableStructure, error) {
+	s.structureViewer.Loader = func(_ context.Context, _ int64, database, table string) (*mysqlsvc.MySQLTableStructure, error) {
 		return fakeStructure(database, table), nil
 	}
 	if err := tt.Click("打开选中表结构"); err != nil {
@@ -44,13 +46,13 @@ func TestMySQLStructureQualifiedTabsAndPrunedSchema(t *testing.T) {
 	if len(s.tabs) != 2 || s.tabs[1].title != "app_db.orders" || s.activeTab != 0 {
 		t.Fatalf("stale schema tab survived refresh: %+v active=%d", s.tabs, s.activeTab)
 	}
-	if s.tabs[1].structure == nil {
+	if s.tabs[1].design.Data() == nil {
 		t.Fatal("pruning one schema incorrectly discarded valid structure")
 	}
 	if err := tt.Click("app_db.orders"); err != nil {
 		t.Fatal(err)
 	}
-	if s.currentTab().structure == nil || s.currentTab().structure.Database != "app_db" {
+	if s.currentTab().design.Data() == nil || s.currentTab().design.Data().Database != "app_db" {
 		t.Fatal("surviving tab could not be selected")
 	}
 }
@@ -66,4 +68,54 @@ func TestMySQLWorkbenchStatusReflectsConnectionLifecycle(t *testing.T) {
 			t.Fatalf("displaying wrong session state: %q != %q", got, status)
 		}
 	}
+}
+
+func TestStructureSchemaPruneRevokesPendingReadAndPreservesSQLTab(t *testing.T) {
+	s, tt := structureTestBrowser(t)
+	s.structureViewer.Loader = func(_ context.Context, _ int64, db, table string) (*mysqlsvc.MySQLTableStructure, error) {
+		return fakeStructure(db, table), nil
+	}
+	s.openMySQLStructure(ui.Services{}, "app_db", "orders")
+	waitMySQLStructure(t, s, tt)
+	surviving := s.currentTab()
+	s.openQuery()
+	query := s.currentTab()
+	query.query.Editor.Buffer.Set("SELECT preserved")
+	started, canceled, release, finished := make(chan struct{}), make(chan struct{}), make(chan struct{}), make(chan struct{})
+	s.structureViewer.Loader = func(ctx context.Context, _ int64, db, table string) (*mysqlsvc.MySQLTableStructure, error) {
+		close(started)
+		<-ctx.Done()
+		close(canceled)
+		<-release
+		defer close(finished)
+		return fakeStructure(db, "obsolete"), nil
+	}
+	s.openMySQLStructure(ui.Services{}, "analytics", "orders")
+	removed := s.currentTab()
+	select {
+	case <-started:
+	case <-time.After(3 * time.Second):
+		t.Fatal("pending schema read did not start")
+	}
+	s.activeTab = 2 // keep the SQL document selected during schema reconciliation
+	s.sessions.ReconcileDatabases([]string{"app_db"})
+	select {
+	case <-canceled:
+	case <-time.After(3 * time.Second):
+		t.Fatal("schema pruning did not cancel its read")
+	}
+	close(release)
+	select {
+	case <-finished:
+	case <-time.After(3 * time.Second):
+		t.Fatal("pruned worker did not return")
+	}
+	tt.Frame()
+	if len(s.tabs) != 3 || s.currentTab() != query || query.query.Editor.Buffer.String() != "SELECT preserved" {
+		t.Fatal("schema pruning changed active SQL document")
+	}
+	if removed.design.Loading() || removed.design.Data() != nil || surviving.design.Data() == nil || surviving.design.Data().Name != "orders" {
+		t.Fatal("pruned read remained active or affected surviving metadata")
+	}
+	s.CloseMySQLSessions()
 }

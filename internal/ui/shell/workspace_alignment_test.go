@@ -95,37 +95,6 @@ func TestDataRowHeaderKeepsFieldMenusAndCellCopyMapped(t *testing.T) {
 	}
 }
 
-func TestStructureTabsAndEmptyHeadersSurviveLoadFailure(t *testing.T) {
-	s := New()
-	doc := &tab{kind: tabStructure, structureDatabase: "example", structureTable: "records"}
-	tt := ui.NewTester(func(c *ui.Context) {
-		theme.Apply(c)
-		s.mysqlStructureWorkspace(c, doc)
-	}, 384, 400)
-	before, ok := tt.Find("索引")
-	if !ok || !tt.HasText("不是 null") {
-		t.Fatal("unloaded structure lost tabs or column headers")
-	}
-	doc.structureErr = strings.Repeat("metadata unavailable ", 40)
-	tt.Frame()
-	after, ok := tt.Find("索引")
-	if !ok || before.Y != after.Y {
-		t.Fatalf("status message moved structure tabs: before=%+v after=%+v", before, after)
-	}
-	r, ok := tt.Find("重试读取结构")
-	if !ok || r.X+r.W > 384 {
-		t.Fatalf("long error pushed retry offscreen: %+v", r)
-	}
-	doc.structure = &mysqlsvc.MySQLTableStructure{}
-	doc.structureErr = ""
-	if err := tt.Click("外键"); err != nil {
-		t.Fatal(err)
-	}
-	if !tt.HasText("被引用的数据库") || !tt.HasText("此表没有外键") {
-		t.Fatal("empty foreign-key page lost its schema or empty state")
-	}
-}
-
 func TestInspectorLargeFieldsKeepCopyAndChunkActionsVisible(t *testing.T) {
 	s := New()
 	doc := mysqlInspectorSampleTab()

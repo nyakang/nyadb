@@ -61,7 +61,8 @@ server-side pagination benchmark.
 ## Code ownership
 
 - `internal/ui/theme/`: compact dark palette, original SVG symbols and shared
-  connection/provider bitmap caches decoded once per process.
+  connection/provider bitmap caches decoded once per process, themed native tables
+  and shared empty headers preserving column order and saved widths.
 - `internal/ui/connectioncatalog/`: connection type catalog, chooser state,
   search, filters, grid/tree views, in-session recents and opt-in research icons.
   The chooser reports a `Choice` through a callback; shell owns window chrome,
@@ -87,6 +88,19 @@ server-side pagination benchmark.
   processes buffered results on the UI thread. Parked handshakes update their
   own status; parked object reads remain buffered until their profile returns.
   Selection, column layout and pending active-tab reveals stay with each workspace.
+- `internal/ui/sqlworkspace/`: independent SQL documents, selection/caret dispatch,
+  editor/result split position, demo editor controls, asynchronous execution,
+  cancellation, result grids and physical session leases. Runtime and host callbacks
+  are injected; the package imports no shell, navigation, sessionbrowser, storage
+  or database driver. Disconnect preserves SQL text; explicit recovery restores the
+  original profile/database without replaying SQL. Cancel waits for driver completion.
+- `internal/ui/structureviewer/`: read-only fields, grouped secondary indexes,
+  foreign keys, table information, selected-field properties and per-document
+  presentation state. Session snapshots, metadata loaders and the back action are
+  injected; the package imports no shell, navigation, sessionbrowser, storage or
+  database driver. `Open` registers a document; `Load` uses its cache unless refresh
+  is explicit. `Cancel` and `Close` revoke pending jobs; `Consume` validates request,
+  profile and session generation. Parked results remain buffered until activation.
 - `internal/ui/shell/profile_view.go`: navigator callbacks, document shortcuts
   and contextual profile inspector. The existing profile navigation files
   coordinate session/browser requests and build menus. `internal/ui/shell/mysql_session_state.go` keeps unsaved-document guards,
@@ -98,7 +112,9 @@ server-side pagination benchmark.
   synthetic result cell generator.
 - `internal/ui/shell/chrome.go`: top chrome, command toolbar and statusbar.
 - `internal/ui/shell/explorer.go`: mock connection explorer and search.
-- `internal/ui/shell/workspace.go`: object table, SQL editor, virtual result.
+- `internal/ui/shell/workspace.go`: host tab strip, SQL/structure module views,
+  object table and virtual data preview. The existing structure-state file keeps
+  document creation, schema pruning and cross-document cleanup.
 - `internal/ui/shell/inspector.go`: contextual right panel.
 - `internal/ui/shell/shell_test.go`: headless interaction regression tests.
 - `internal/ui/shell/preview_test.go`: opt-in screenshot generator.
@@ -112,7 +128,11 @@ beside `navigation`; shell retains database-open, right-click target, active-tab
 reveal, multi-profile session and late-result regressions, including 1280×800 and
 840×560 layouts. Workspace identity, metadata refresh/retry/cancellation, secret
 fallback/redaction and session-generation tests live beside `sessionbrowser`.
-Shared bitmap cache tests live beside theme. Resetting the chooser clears selection, search and
+SQL statement, execution, cancellation, preconnect and recovery tests live beside
+`sqlworkspace`; structure presentation, read-only page and metadata lifecycle tests
+live beside `structureviewer`. Shell retains qualified-tab, navigator/inspector,
+schema-pruning, table-action and real-session integration checks. Shared bitmap
+cache tests live beside theme. Resetting the chooser clears selection, search and
 filters while preserving the current view mode, expansion state and recents.
 
 After the navigator extraction, shell contains 120 Go files (48 implementation
@@ -127,7 +147,19 @@ one module instance, and the workspace snapshot/restore copies are removed.
 Sessionbrowser has three implementation and three test files. A restored
 workspace now retains a read of a known database even when its selected database
 is empty or removed; only removal of the pending database cancels that job.
-SQL, structure and data pages remain available for subsequent extraction stages.
+
+After the SQL extraction, shell contains 109 Go files (42 implementation and
+67 test files). Its SQL editor and 16 execution/session fields per tab are replaced
+by one module document; split position, demo runs, executor and preconnect state
+belong to `sqlworkspace` (four implementation and seven test files).
+
+After the structure viewer extraction, shell contains 105 Go files (39
+implementation and 66 test files). Its 14 structure fields per tab are replaced
+by one module document; metadata jobs and presentation move into `structureviewer`
+(three implementation and three test files). Mixed tests keep workbench assertions
+in shell. Generation mismatch now ends loading with an explicit-refresh error
+instead of leaving the rejected request busy. Data pages and program views remain
+available for subsequent extraction stages.
 
 ## Limitations / next steps
 

@@ -109,7 +109,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		columns[i].Title = locales.Text(columns[i].Title)
 	}
 	if len(items) == 0 {
-		emptyTableView(c, &s.sessions.Current().List, columns, message)
+		theme.EmptyTable(c, &s.sessions.Current().List, columns, message)
 		if connected && db != "" && s.sessions.Current().Errors[db] != "" && ui.Button(c, locales.Text("重试")).Clicked() {
 			s.loadMySQLObjects(c.Services(), db, true)
 		}

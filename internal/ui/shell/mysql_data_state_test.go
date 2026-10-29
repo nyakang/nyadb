@@ -76,7 +76,7 @@ func TestMySQLNativeReadOnlyDataPagingAndTabLifecycle(t *testing.T) {
 	if err := tt.Click("对象"); err != nil {
 		t.Fatal(err)
 	}
-	s.mysqlStructureLoader = func(_ context.Context, _ int64, db, table string) (*mysqlsvc.MySQLTableStructure, error) {
+	s.structureViewer.Loader = func(_ context.Context, _ int64, db, table string) (*mysqlsvc.MySQLTableStructure, error) {
 		return fakeStructure(db, table), nil
 	}
 	if err := tt.Click("打开选中表结构"); err != nil {

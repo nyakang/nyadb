@@ -81,7 +81,13 @@ func TestWorkbenchSplittersAreSharedAcrossDocumentKinds(t *testing.T) {
 		} else if kind == tabObjects {
 			s.activeTab = 0
 		} else {
-			s.tabs = append(s.tabs, &tab{kind: kind, title: "test"})
+			doc := &tab{kind: kind, title: "test"}
+			if kind == tabStructure {
+				s.nextTabID++
+				doc.id = s.nextTabID
+				doc.design = s.structureViewer.Open(doc.id, 0, "", "")
+			}
+			s.tabs = append(s.tabs, doc)
 			s.activeTab = len(s.tabs) - 1
 		}
 		tt.Frame()

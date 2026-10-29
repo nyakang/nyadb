@@ -67,7 +67,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLStructure(t, s, tt)
-	str := s.currentTab().structure
+	str := s.currentTab().design.Data()
 	if str == nil || str.Name != "child" || str.Database != "nyadb_struct_a" {
 		t.Fatalf("viewer did not use real database metadata: %+v", str)
 	}
@@ -106,7 +106,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLStructure(t, s, tt)
-	if s.currentTab().structure == nil || len(s.currentTab().structure.Columns) != 8 {
+	if s.currentTab().design.Data() == nil || len(s.currentTab().design.Data().Columns) != 8 {
 		t.Fatal("refresh failed to reload real MySQL structure")
 	}
 	// Opening the identically named object in a second real database must not
@@ -125,7 +125,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 	waitMySQLStructure(t, s, tt)
 	second := s.currentTab()
 	if second == first || second.title != "nyadb_struct_b.child" ||
-		second.structure == nil || len(second.structure.Columns) != 2 ||
+		second.design.Data() == nil || len(second.design.Data().Columns) != 2 ||
 		len(s.tabs) != 3 {
 		t.Fatalf("cross-database structure tabs were mixed: %+v", s.tabs)
 	}
@@ -142,7 +142,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 		t.Fatal(err)
 	}
 	if s.currentTab() != first || len(s.tabs) != 3 ||
-		s.currentTab().structure == nil || len(s.currentTab().structure.Columns) != 8 {
+		s.currentTab().design.Data() == nil || len(s.currentTab().design.Data().Columns) != 8 {
 		t.Fatal("reopening first schema should focus its cached tab")
 	}
 	// A view is a distinct read-only structure workspace, not static table rows.
@@ -156,9 +156,9 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 	}
 	waitMySQLStructure(t, s, tt)
 	if s.currentTab().title != "nyadb_struct_a.parent_view" ||
-		s.currentTab().structure.Kind != "VIEW" ||
-		len(s.currentTab().structure.Columns) != 3 || len(s.tabs) != 4 {
-		t.Fatalf("view structure was not rendered: %+v", s.currentTab().structure)
+		s.currentTab().design.Data().Kind != "VIEW" ||
+		len(s.currentTab().design.Data().Columns) != 3 || len(s.tabs) != 4 {
+		t.Fatalf("view structure was not rendered: %+v", s.currentTab().design.Data())
 	}
 	s.disconnectMySQLSession()
 	tt.Frame()

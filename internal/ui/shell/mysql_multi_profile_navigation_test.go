@@ -138,7 +138,7 @@ func TestMySQLMultiProfileTabsAndMetadataRefreshAreScoped(t *testing.T) {
 	s.sessions.Current().Databases = []string{"shared", "only_a"}
 	s.sessions.Current().Cache = map[string][]mysqlsvc.MySQLDBObject{"shared": {{Name: "one", Kind: "表"}}}
 	s.tabs = append(s.tabs, &tab{kind: tabMySQLData, title: "A data", dataProfileID: a.ID, dataDatabase: "shared", dataTable: "one"})
-	s.tabs = append(s.tabs, &tab{kind: tabStructure, title: "B structure", structureProfileID: b.ID, structureDatabase: "shared", structureTable: "two"})
+	s.tabs = append(s.tabs, &tab{kind: tabStructure, title: "B structure", design: s.structureViewer.Open(2, b.ID, "shared", "two")})
 	s.sessions.Activate(b.ID)
 	s.sessions.Current().ProfileID, s.sessions.Current().Status, s.selectedProfileID = b.ID, "已连接", b.ID
 	s.sessions.Current().Databases = []string{"shared", "only_b"}
@@ -230,7 +230,7 @@ func TestMySQLMultiProfileOpeningOldTabReactivatesItsSession(t *testing.T) {
 	s.selectProfileByName(a.Name)
 	s.sessions.Current().ProfileID, s.sessions.Current().Status = a.ID, "已连接"
 	s.sessions.Current().Databases = []string{"app_a"}
-	s.tabs = append(s.tabs, &tab{kind: tabStructure, title: "app_a.orders", structureProfileID: a.ID, structureDatabase: "app_a", structureTable: "orders"})
+	s.tabs = append(s.tabs, &tab{kind: tabStructure, title: "app_a.orders", design: s.structureViewer.Open(2, a.ID, "app_a", "orders")})
 	s.selectProfileByName(b.Name)
 	if s.sessions.StatusFor(a.ID) != "已连接" || s.activeTab != 0 {
 		t.Fatal("selecting B failed to park A and return to Objects tab")
