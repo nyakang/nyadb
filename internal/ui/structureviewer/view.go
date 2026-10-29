@@ -1,4 +1,4 @@
-package shell
+package structureviewer
 
 import (
 	"strconv"
@@ -37,85 +37,90 @@ var mysqlStructureForeignColumns = []ui.TableColumn{
 	{Title: "更新时", Width: 95},
 }
 
-func (s *State) mysqlStructureWorkspace(c *ui.Context, t *tab) {
+func (s *State) View(c *ui.Context, t *Document) {
+	if t == nil || t.closed {
+		return
+	}
+	session := s.session()
 	palette := theme.Colors(c)
 
 	ui.Column(c).Fill().Background(palette.App).Children(func() {
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).AlignItems(ui.Center).Gap(6).
 			Background(palette.Header).Children(func() {
 			theme.Icon(c, "table", theme.SmallIconSize, palette.Blue)
-			ui.Text(c, t.structureDatabase+" / "+t.structureTable).FontSize(theme.Font(c, theme.SmallFontSize)).SingleLine().Grow(1).MinWidth(0).MaxWidth(220).Tooltip(t.structureDatabase + " / " + t.structureTable)
-			ui.Text(c, locales.Text("设计表 · 只读结构")).TextColor(palette.Muted).FontSize(theme.Font(c, theme.SmallFontSize)).SingleLine().Tooltip(t.structureDatabase + " / " + t.structureTable)
+			ui.Text(c, t.database+" / "+t.table).FontSize(theme.Font(c, theme.SmallFontSize)).SingleLine().Grow(1).MinWidth(0).MaxWidth(220).Tooltip(t.database + " / " + t.table)
+			ui.Text(c, locales.Text("设计表 · 只读结构")).TextColor(palette.Muted).FontSize(theme.Font(c, theme.SmallFontSize)).SingleLine().Tooltip(t.database + " / " + t.table)
 			ui.Toolbar(c, func() {
 				if ui.Button(c, locales.Text("返回")).Label(locales.Text("返回对象列表")).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
-					s.activeTab = 0
+					if s.deps.Back != nil {
+						s.deps.Back()
+					}
 				}
-				if ui.Button(c, locales.Text("刷新")).Label("刷新表结构：" + t.structureTable).Height(theme.RowHeight(c, theme.ControlHeight)).
-					Disabled(s.sessions.Current().Status != "已连接" || t.structureLoading).Clicked() {
-					s.loadMySQLStructure(c.Services(), t, true)
+				if ui.Button(c, locales.Text("刷新")).Label("刷新表结构：" + t.table).Height(theme.RowHeight(c, theme.ControlHeight)).
+					Disabled(!session.Connected || session.ProfileID != t.profileID || t.loading).Clicked() {
+					s.Load(t, c.Services().Invalidate, true)
 				}
-				if t.structureLoading && ui.Button(c, locales.Text("取消加载")).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
-					s.cancelMySQLStructure(t)
-					t.structureErr = "加载已取消"
+				if t.loading && ui.Button(c, locales.Text("取消加载")).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
+					s.Cancel(t)
 				}
 			}).Label(locales.Text("表结构操作")).Grow(1).MinWidth(0).Padding(0).Gap(2)
 		})
 		ui.Row(c).Height(theme.RowHeight(c, theme.TabHeight)).Background(palette.Panel).Children(func() {
 			names := []string{"字段", "索引", "外键", "表信息"}
-			tabs := ui.TabsBase(c, &t.structurePage, len(names))
+			tabs := ui.TabsBase(c, &t.page, len(names))
 			tabs.List.Gap(0).Children(func() {
 				for i, name := range names {
 					item := tabs.Tab(i).Height(theme.RowHeight(c, theme.TabHeight)).Padding(2, 9)
-					if i == t.structurePage {
+					if i == t.page {
 						item.Background(palette.ToolbarSelected)
 					}
 					item.Children(func() { ui.Text(c, locales.Text(name)).FontSize(theme.Font(c, theme.FontSize)) })
 				}
 			})
 		})
-		if t.structureLoading {
+		if t.loading {
 			ui.Row(c).Height(theme.RowHeight(c, theme.ControlHeight)).Gap(6).AlignItems(ui.Center).Padding(2, 6).Children(func() {
 				ui.Spinner(c).Width(16).Height(16)
 				ui.Text(c, locales.Text("正在读取真实 MySQL 表结构…")).TextColor(palette.Muted).FontSize(theme.Font(c, theme.FontSize)).SingleLine().Grow(1).MinWidth(0)
 			})
 		}
-		if t.structureErr != "" {
+		if t.err != "" {
 			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).AlignItems(ui.Center).Gap(6).Children(func() {
-				ui.Text(c, locales.Text("加载结构失败：")+t.structureErr).FontSize(theme.Font(c, theme.FontSize)).TextColor(palette.Error).SingleLine().Grow(1).MinWidth(0).Tooltip(t.structureErr)
-				if ui.Button(c, locales.Text("重试读取结构")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(s.sessions.Current().Status != "已连接" || t.structureLoading).Clicked() {
-					s.loadMySQLStructure(c.Services(), t, true)
+				ui.Text(c, locales.Text("加载结构失败：")+t.err).FontSize(theme.Font(c, theme.FontSize)).TextColor(palette.Error).SingleLine().Grow(1).MinWidth(0).Tooltip(t.err)
+				if ui.Button(c, locales.Text("重试读取结构")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(!session.Connected || session.ProfileID != t.profileID || t.loading).Clicked() {
+					s.Load(t, c.Services().Invalidate, true)
 				}
 			})
 		}
-		switch t.structurePage {
+		switch t.page {
 		case 1:
 			mysqlStructureIndexesView(c, t)
 		case 2:
 			mysqlStructureForeignKeysView(c, t)
 		case 3:
-			mysqlStructureInfoView(c, t.structure)
+			mysqlStructureInfoView(c, t.data)
 		default:
 			mysqlStructureFieldsView(c, t)
 		}
 	})
 }
 
-func mysqlStructureFieldsView(c *ui.Context, t *tab) {
+func mysqlStructureFieldsView(c *ui.Context, t *Document) {
 	palette := theme.Colors(c)
 
-	if t.structure == nil || len(t.structure.Columns) == 0 {
+	if t.data == nil || len(t.data.Columns) == 0 {
 		message := "此表没有可见字段"
-		if t.structure == nil {
+		if t.data == nil {
 			message = "没有已加载的表结构"
 		}
-		emptyTableView(c, &t.structureColumns, mysqlStructureColumns, locales.Text(message))
+		theme.EmptyTable(c, &t.columns, mysqlStructureColumns, locales.Text(message))
 		return
 	}
 	// Match the observed design grid: choosing a field shows its properties in
 	// a lower pane. These are read-only values, never editing controls.
-	t.structureColumns.Selected = &t.structureFieldRow
-	theme.Table(c, &t.structureColumns, mysqlStructureColumns, len(t.structure.Columns), func(row, col int) {
-		f := t.structure.Columns[row]
+	t.columns.Selected = &t.fieldRow
+	theme.Table(c, &t.columns, mysqlStructureColumns, len(t.data.Columns), func(row, col int) {
+		f := t.data.Columns[row]
 		var value string
 		switch col {
 		case 0:
@@ -144,11 +149,11 @@ func mysqlStructureFieldsView(c *ui.Context, t *tab) {
 		ui.Text(c, value).FontSize(theme.Font(c, 12)).SingleLine()
 	}).Grow(1)
 
-	row := t.structureFieldRow
-	if row < 0 || row >= len(t.structure.Columns) {
+	row := t.fieldRow
+	if row < 0 || row >= len(t.data.Columns) {
 		row = 0
 	}
-	field := t.structure.Columns[row]
+	field := t.data.Columns[row]
 	yesNo := func(ok bool) string {
 		if ok {
 			return "是"
@@ -180,17 +185,17 @@ func mysqlStructureFieldsView(c *ui.Context, t *tab) {
 	})
 }
 
-func mysqlStructureIndexesView(c *ui.Context, t *tab) {
-	if t.structure == nil {
-		emptyTableView(c, &t.structureIndexes, mysqlStructureIndexColumns, locales.Text("没有已加载的表结构"))
+func mysqlStructureIndexesView(c *ui.Context, t *Document) {
+	if t.data == nil {
+		theme.EmptyTable(c, &t.indexes, mysqlStructureIndexColumns, locales.Text("没有已加载的表结构"))
 		return
 	}
-	indexes := mysqlStructureDesignIndexes(t.structure.Indexes)
+	indexes := mysqlStructureDesignIndexes(t.data.Indexes)
 	if len(indexes) == 0 {
-		emptyTableView(c, &t.structureIndexes, mysqlStructureIndexColumns, locales.Text("此表没有可见的次级索引"))
+		theme.EmptyTable(c, &t.indexes, mysqlStructureIndexColumns, locales.Text("此表没有可见的次级索引"))
 		return
 	}
-	theme.Table(c, &t.structureIndexes, mysqlStructureIndexColumns, len(indexes), func(row, col int) {
+	theme.Table(c, &t.indexes, mysqlStructureIndexColumns, len(indexes), func(row, col int) {
 		index := indexes[row]
 		var value string
 		switch col {
@@ -211,18 +216,18 @@ func mysqlStructureIndexesView(c *ui.Context, t *tab) {
 	}).Grow(1)
 }
 
-func mysqlStructureForeignKeysView(c *ui.Context, t *tab) {
-	if t.structure == nil || len(t.structure.ForeignKeys) == 0 {
+func mysqlStructureForeignKeysView(c *ui.Context, t *Document) {
+	if t.data == nil || len(t.data.ForeignKeys) == 0 {
 		message := "此表没有外键"
-		if t.structure == nil {
+		if t.data == nil {
 			message = "没有已加载的表结构"
 		}
-		emptyTableView(c, &t.structureForeignKeys, mysqlStructureForeignColumns, locales.Text(message))
+		theme.EmptyTable(c, &t.foreignKeys, mysqlStructureForeignColumns, locales.Text(message))
 		return
 	}
-	theme.Table(c, &t.structureForeignKeys, mysqlStructureForeignColumns,
-		len(t.structure.ForeignKeys), func(row, col int) {
-			fk := t.structure.ForeignKeys[row]
+	theme.Table(c, &t.foreignKeys, mysqlStructureForeignColumns,
+		len(t.data.ForeignKeys), func(row, col int) {
+			fk := t.data.ForeignKeys[row]
 			var value string
 			switch col {
 			case 0:

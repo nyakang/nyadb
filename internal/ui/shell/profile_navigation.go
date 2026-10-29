@@ -76,7 +76,7 @@ func (s *State) activeTabObject() (int64, string, string, bool) {
 	case tabMySQLData:
 		return t.dataProfileID, t.dataDatabase, t.dataTable, t.dataProfileID != 0 && t.dataDatabase != ""
 	case tabStructure:
-		return t.structureProfileID, t.structureDatabase, t.structureTable, t.structureProfileID != 0 && t.structureDatabase != ""
+		return t.design.ProfileID(), t.design.Database(), t.design.Table(), t.design.ProfileID() != 0 && t.design.Database() != ""
 	default:
 		return 0, "", "", false
 	}

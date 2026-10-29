@@ -26,7 +26,7 @@ func (s *State) selectProfileByName(name string) {
 				s.sessions.ResetInactive()
 			}
 			t := s.currentTab()
-			if (t.kind == tabStructure && t.structureProfileID != p.ID) ||
+			if (t.kind == tabStructure && t.design.ProfileID() != p.ID) ||
 				(t.kind == tabMySQLData && t.dataProfileID != p.ID) ||
 				(t.kind == tabProgram && t.programProfileID != p.ID) ||
 				(t.kind == tabSQL && t.query.ProfileID() != p.ID) {
@@ -88,11 +88,10 @@ func (s *State) profileInspector(c *ui.Context) {
 					return
 				}
 				t := s.currentTab()
-				if t.kind == tabStructure && t.structure != nil {
-					ui.Text(c, t.structureTable).FontSize(theme.Font(c, 14)).Bold()
-					mysqlInspectorProperty(c, locales.Text("数据库"), t.structureDatabase)
-					if t.structureFieldRow >= 0 && t.structureFieldRow < len(t.structure.Columns) {
-						field := t.structure.Columns[t.structureFieldRow]
+				if t.kind == tabStructure && t.design.Data() != nil {
+					ui.Text(c, t.design.Table()).FontSize(theme.Font(c, 14)).Bold()
+					mysqlInspectorProperty(c, locales.Text("数据库"), t.design.Database())
+					if field, selected := t.design.SelectedField(); selected {
 						mysqlInspectorProperty(c, locales.Text("名称"), field.Name)
 						mysqlInspectorProperty(c, locales.Text("类型"), field.Type)
 						mysqlInspectorFieldAttributes(c, field)

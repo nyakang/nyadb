@@ -14,6 +14,7 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/sessionbrowser"
 	"github.com/nyakang/nyadb/internal/ui/sqlworkspace"
+	"github.com/nyakang/nyadb/internal/ui/structureviewer"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -45,19 +46,7 @@ type tab struct {
 	programDatabase  string
 	program          mysqlsvc.MySQLDBObject
 
-	structureDatabase, structureTable string
-	structureProfileID                int64
-	structure                         *mysqlsvc.MySQLTableStructure
-	structurePage                     int
-	structureFieldRow                 int
-	structureColumns                  ui.ListState
-	structureIndexes                  ui.ListState
-	structureForeignKeys              ui.ListState
-	structureLoading                  bool
-	structureErr                      string
-	structureCancel                   context.CancelFunc
-	structureResults                  <-chan mysqlStructureResult
-	structureRequest                  uint64
+	design *structureviewer.Document
 
 	dataDatabase, dataTable string
 	dataProfileID           int64
@@ -181,16 +170,16 @@ type State struct {
 	mysqlTablePending       bool
 	mysqlTableResults       <-chan mysqlTableChangeResult
 	mysqlTableRunner        func(context.Context, int64, mysqlsvc.MySQLTableChange) error
-	mysqlStructureLoader    mysqlStructureLoader
 	mysqlDataLoader         mysqlDataLoader
 	mysqlDataAdvancedLoader mysqlDataAdvancedLoader
 	mysqlDataSaver          mysqlDataSaver
 	mysqlDataRowReader      mysqlDataRowReader
 	mysqlForceClose         bool
 
-	sqlWorkspace *sqlworkspace.State
-	sessions     *sessionbrowser.State
-	navigation   *navigation.State
+	structureViewer *structureviewer.State
+	sqlWorkspace    *sqlworkspace.State
+	sessions        *sessionbrowser.State
+	navigation      *navigation.State
 
 	profileMode         bool
 	profileService      *connections.Service
@@ -226,6 +215,7 @@ func New() *State {
 		nextTabID:            1,
 		tabs:                 []*tab{{id: 1, title: "对象", kind: tabObjects}},
 	}
+	s.structureViewer = structureviewer.New(s.structureViewerDependencies())
 	s.sqlWorkspace = sqlworkspace.New(s.sqlWorkspaceDependencies())
 	s.sessions = sessionbrowser.New(s.sessionBrowserDependencies())
 	s.navigation = navigation.New(s.navigationDependencies())
@@ -310,7 +300,7 @@ func (s *State) closeTab(index int) {
 		}
 	}
 	if s.tabs[index].kind == tabStructure {
-		s.cancelMySQLStructure(s.tabs[index])
+		s.structureViewer.Close(s.tabs[index].design)
 	} else if s.tabs[index].kind == tabMySQLData {
 		s.disposeMySQLDataTab(s.tabs[index])
 	} else if s.tabs[index].kind == tabSQL {
@@ -348,7 +338,7 @@ func (s *State) closeOtherTabs(index int) {
 	}
 	for i, t := range s.tabs {
 		if i != index && t.kind == tabStructure {
-			s.cancelMySQLStructure(t)
+			s.structureViewer.Close(t.design)
 		} else if i != index && t.kind == tabMySQLData {
 			s.disposeMySQLDataTab(t)
 		} else if i != index && t.kind == tabSQL {

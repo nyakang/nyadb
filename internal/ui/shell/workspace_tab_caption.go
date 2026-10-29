@@ -14,7 +14,7 @@ func (s *State) workspaceTabCaption(t *tab) string {
 	case tabMySQLData:
 		database, table = t.dataDatabase, t.dataTable
 	case tabStructure:
-		database, table, suffix = t.structureDatabase, t.structureTable, " · 设计"
+		database, table, suffix = t.design.Database(), t.design.Table(), " · 设计"
 	default:
 		return locales.Text(t.title)
 	}
@@ -30,7 +30,7 @@ func (s *State) workspaceTabCaption(t *tab) string {
 		case tabMySQLData:
 			otherDatabase, otherTable = other.dataDatabase, other.dataTable
 		case tabStructure:
-			otherDatabase, otherTable = other.structureDatabase, other.structureTable
+			otherDatabase, otherTable = other.design.Database(), other.design.Table()
 		}
 		if otherTable == table && otherDatabase != database {
 			return database + "." + table + suffix

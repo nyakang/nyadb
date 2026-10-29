@@ -37,9 +37,9 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			})
 		}
 		if t.dataPage == nil {
-			emptyTableView(c, &t.dataState, t.dataColumns, locales.Text("没有已加载的数据页"))
+			theme.EmptyTable(c, &t.dataState, t.dataColumns, locales.Text("没有已加载的数据页"))
 		} else if len(page.Columns) == 0 {
-			emptyTableView(c, &t.dataState, nil, locales.Text("此对象没有可见字段"))
+			theme.EmptyTable(c, &t.dataState, nil, locales.Text("此对象没有可见字段"))
 		} else {
 			if !page.StableOrder {
 				ui.Text(c, locales.Text("此对象没有完整非空唯一键，OFFSET 分页期间数据变化可能导致行重复或遗漏")).
@@ -73,7 +73,7 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 				s.mysqlDataCellMenu(c, t, m, row, source)
 			}
 			if len(page.Rows) == 0 {
-				emptyTableView(c, &t.dataState, columns, "")
+				theme.EmptyTable(c, &t.dataState, columns, "")
 			} else {
 				// Loading/error status rows before the grid must not change
 				// its identity or reset the native scroll container.

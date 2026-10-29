@@ -18,7 +18,7 @@ func (s *State) View(c *ui.Context) {
 	}
 	s.sessions.Consume()
 	s.consumeMySQLTableChange(c.Services())
-	s.consumeMySQLStructures()
+	s.structureViewer.Consume()
 	s.consumeMySQLData()
 	s.consumeMySQLDataEdits(c.Services())
 	s.consumeMySQLTableInfo()

@@ -60,7 +60,7 @@ func TestMySQLWorkspaceCaptionsKeepQualifiedTabIdentity(t *testing.T) {
 	data := &tab{kind: tabMySQLData, title: "first.orders · 数据",
 		dataDatabase: "first", dataTable: "orders"}
 	design := &tab{kind: tabStructure, title: "first.orders",
-		structureDatabase: "first", structureTable: "orders"}
+		design: s.structureViewer.Open(1, 1, "first", "orders")}
 	s.tabs = []*tab{data, design}
 	if s.workspaceTabCaption(data) != "orders" || s.workspaceTabCaption(design) != "orders · 设计" {
 		t.Fatalf("compact tab captions lost data/design distinction")

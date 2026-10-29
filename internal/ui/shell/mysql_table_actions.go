@@ -341,8 +341,8 @@ func (s *State) consumeMySQLTableChange(services ui.Services) {
 		}
 		for i := len(s.tabs) - 1; i > 0; i-- {
 			t := s.tabs[i]
-			objectMatches := t.kind == tabStructure && t.structureProfileID == r.profileID &&
-				t.structureDatabase == r.database && t.structureTable == r.table ||
+			objectMatches := t.kind == tabStructure && t.design.ProfileID() == r.profileID &&
+				t.design.Database() == r.database && t.design.Table() == r.table ||
 				t.kind == tabMySQLData && t.dataProfileID == r.profileID &&
 					t.dataDatabase == r.database && t.dataTable == r.table
 			if !objectMatches {

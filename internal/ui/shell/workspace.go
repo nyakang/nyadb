@@ -74,7 +74,7 @@ func (s *State) workspace(c *ui.Context) {
 		case tabData:
 			s.dataPreview(c)
 		case tabStructure:
-			s.mysqlStructureWorkspace(c, tab)
+			s.structureViewer.View(c, tab.design)
 		case tabMySQLData:
 			s.mysqlDataWorkspace(c, tab)
 		case tabProgram:
