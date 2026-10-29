@@ -12,7 +12,7 @@ import (
 )
 
 func (s *State) View(c *ui.Context) {
-	s.mysqlSQLPreconnectInvalidate = c.Services().Invalidate
+	s.sqlWorkspace.Invalidate = c.Services().Invalidate
 	if s.profileMode {
 		s.activateMySQLForCurrentTab()
 	}
@@ -23,7 +23,7 @@ func (s *State) View(c *ui.Context) {
 	s.consumeMySQLDataEdits(c.Services())
 	s.consumeMySQLTableInfo()
 	s.consumeMySQLChunks()
-	s.consumeMySQLSQLResults()
+	s.sqlWorkspace.Consume()
 	theme.Apply(c)
 
 	palette := theme.Colors(c)

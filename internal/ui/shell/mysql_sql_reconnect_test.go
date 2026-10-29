@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
@@ -14,13 +13,13 @@ import (
 func TestDisconnectedSQLTabNeverRebindsAfterProfileReconnect(t *testing.T) {
 	s, tt, profileID := sqlUITestState(t)
 	old := s.currentTab()
-	old.editor.Buffer.Set("START TRANSACTION;\nUPDATE tx_probe SET note='pending';")
-	s.cancelMySQLSQLForProfile(profileID)
-	if old.sqlProfileID != 0 || old.sqlDatabase != "" || old.sqlResult != nil {
-		t.Fatalf("disconnected tab retained its old SQL session: profile=%d database=%q", old.sqlProfileID, old.sqlDatabase)
+	old.query.Editor.Buffer.Set("START TRANSACTION;\nUPDATE tx_probe SET note='pending';")
+	s.sqlWorkspace.DisconnectProfile(profileID)
+	if old.query.ProfileID() != 0 || old.query.Database() != "" || old.query.Result() != nil {
+		t.Fatalf("disconnected tab retained its old SQL session: profile=%d database=%q", old.query.ProfileID(), old.query.Database())
 	}
-	if !strings.Contains(old.sqlError, "事务") || old.editor.Buffer.String() != "START TRANSACTION;\nUPDATE tx_probe SET note='pending';" {
-		t.Fatalf("disconnected tab lost its text or did not warn: %q", old.sqlError)
+	if !strings.Contains(old.query.Error(), "事务") || old.query.Editor.Buffer.String() != "START TRANSACTION;\nUPDATE tx_probe SET note='pending';" {
+		t.Fatalf("disconnected tab lost its text or did not warn: %q", old.query.Error())
 	}
 
 	// The profile becomes connected again; the old tab must not run against
@@ -28,18 +27,18 @@ func TestDisconnectedSQLTabNeverRebindsAfterProfileReconnect(t *testing.T) {
 	s.sessions.Current().ProfileID = profileID
 	s.sessions.Current().Status = "已连接"
 	calls := 0
-	s.mysqlSQLExecutor = func(context.Context, int64, string, string) (mysqlsvc.MySQLSQLResult, error) {
+	s.sqlWorkspace.Executor = func(context.Context, int64, string, string) (mysqlsvc.MySQLSQLResult, error) {
 		calls++
 		return mysqlsvc.MySQLSQLResult{}, nil
 	}
-	s.runMySQLSQL(ui.Services{}, old)
-	if calls != 0 || old.sqlLoading || !strings.Contains(old.sqlError, "以新会话继续") {
-		t.Fatalf("old tab ran after reconnect: calls=%d err=%q", calls, old.sqlError)
+	s.sqlWorkspace.Run(nil, old.query)
+	if calls != 0 || old.query.Loading() || !strings.Contains(old.query.Error(), "以新会话继续") {
+		t.Fatalf("old tab ran after reconnect: calls=%d err=%q", calls, old.query.Error())
 	}
 	s.openQuery()
 	tt.Frame()
 	newTab := s.currentTab()
-	if newTab == old || newTab.sqlProfileID != profileID {
-		t.Fatalf("new tab did not bind to reconnected profile: %d", newTab.sqlProfileID)
+	if newTab == old || newTab.query.ProfileID() != profileID {
+		t.Fatalf("new tab did not bind to reconnected profile: %d", newTab.query.ProfileID())
 	}
 }

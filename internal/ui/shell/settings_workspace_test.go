@@ -13,7 +13,7 @@ func TestAppearanceSettingsAndLiveSQLPreview(t *testing.T) {
 	theme.SetMode(theme.ModeDark)
 	s := New()
 	s.openQuery()
-	query := s.currentTab().editor
+	query := s.currentTab().query.Editor
 	tt := ui.NewTester(s.View, 1280, 800)
 	if query.Theme == nil || query.Theme.Background != theme.SQLTheme(&ui.Theme{Dark: true}).Background {
 		t.Fatal("SQL query editor not using dark syntax palette")

@@ -45,6 +45,7 @@ func (s *State) CloseMySQLSessions() { s.closeMySQLSessions() }
 func (s *State) closeMySQLSessions() {
 	s.mysqlForceClose = true
 	defer func() { s.mysqlForceClose = false }()
+	s.sqlWorkspace.CloseAll()
 	s.sessions.Close()
 }
 func (s *State) mysqlSessionToolbar(c *ui.Context) {
@@ -93,7 +94,7 @@ func (s *State) activateMySQLForCurrentTab() {
 	case tabProgram:
 		id = t.programProfileID
 	case tabSQL:
-		id = t.sqlProfileID
+		id = t.query.ProfileID()
 	}
 	if id == 0 || id == s.sessions.Current().ProfileID {
 		return
@@ -142,7 +143,7 @@ func (s *State) sessionBrowserDependencies() sessionbrowser.Dependencies {
 		},
 		ObjectsChanged: s.mysqlObjectsChanged,
 		Disconnected: func(id int64) {
-			s.cancelMySQLSQLForProfile(id)
+			s.sqlWorkspace.DisconnectProfile(id)
 			s.clearMySQLDatabaseNavigation(id)
 			s.clearMySQLTabsFor(id)
 		},
