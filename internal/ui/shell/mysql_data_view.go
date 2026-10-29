@@ -76,7 +76,9 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			if len(page.Rows) == 0 {
 				emptyTableView(c, &t.dataState, columns, "")
 			} else {
-				grid := theme.Table(c, &t.dataState, columns, len(page.Rows), func(row, col int) {
+				// Loading/error status rows before the grid must not change
+				// its identity or reset the native scroll container.
+				grid := theme.Table(c.Key("mysql-data-grid"), &t.dataState, columns, len(page.Rows), func(row, col int) {
 					tableCol := col
 					if col == 0 {
 						marker := ""
@@ -160,6 +162,7 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 				if t.dataEdit.Editor == nil && grid.Shortcut(0, ui.KeyF2) {
 					for source, name := range page.Columns {
 						if name == t.dataState.Cells.Cursor {
+							mysqlDataRevealEditRow(t, t.dataSelectedRow)
 							s.beginMySQLCellEdit(c.Services(), t, t.dataSelectedRow, source, false)
 							break
 						}

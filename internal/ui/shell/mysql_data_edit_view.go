@@ -192,7 +192,20 @@ func (s *State) navigateMySQLCellEdit(services ui.Services, t *tab, row int, fie
 	if row < 0 || row >= len(t.dataPage.Rows) {
 		return
 	}
+	// Keyboard navigation may leave the viewport. A pointer edit already
+	// has a visible target and must not re-anchor the list when it opens.
+	mysqlDataRevealEditRow(t, row)
 	s.beginMySQLCellEdit(services, t, row, slices.Index(t.dataPage.Columns, visible[at]), false)
+}
+
+func mysqlDataRevealEditRow(t *tab, row int) {
+	if row < 0 {
+		return
+	}
+	first, last := t.dataState.Visible()
+	if row < first || row > last {
+		t.dataState.ScrollIntoView(row)
+	}
 }
 func (s *State) mysqlDataEditModals(c *ui.Context) {
 	for _, t := range s.tabs {
