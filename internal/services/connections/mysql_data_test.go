@@ -55,9 +55,9 @@ func (c dataFixtureConn) QueryContext(ctx context.Context, query string, args []
 	if args[0].Value != int64(3) || args[1].Value != int64(0) {
 		return nil, fmt.Errorf("unexpected bound paging: %+v", args)
 	}
-	return &structureRows{cols: []string{"id", "note", "blank"}, values: [][]driver.Value{
+	return dataEditFixtureProjections(query, &structureRows{cols: []string{"id", "note", "blank"}, values: [][]driver.Value{
 		{int64(1), nil, ""}, {int64(2), "hello", "NULL"}, {int64(3), "中文", "ok"},
-	}}, nil
+	}}), nil
 }
 
 func connectedDataFixture(t *testing.T, c dataFixtureConnector) *MySQLSessionManager {

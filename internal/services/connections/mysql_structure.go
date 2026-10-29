@@ -134,7 +134,7 @@ func readMySQLStructureColumns(ctx context.Context, db *sql.DB, database, table 
 
 // Shared by the structure and bounded data viewers. The data viewer retains
 // its tighter 128-column limit. Only DATA_TYPE drives safe row projections.
-func readMySQLColumnMetadata(ctx context.Context, db *sql.DB, database, table string, limit int) ([]MySQLStructureColumn, error) {
+func readMySQLColumnMetadata(ctx context.Context, db mysqlEditQueryer, database, table string, limit int) ([]MySQLStructureColumn, error) {
 	const query = `SELECT COLUMN_NAME, COLUMN_TYPE, DATA_TYPE, ORDINAL_POSITION, IS_NULLABLE,
 COLUMN_DEFAULT, COLUMN_KEY, EXTRA, COALESCE(COLUMN_COMMENT, ''),
 CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE,

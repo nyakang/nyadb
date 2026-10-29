@@ -57,11 +57,11 @@ func mysqlObjectActionLabels(kind string) (open, design string) {
 	if kind == "视图" {
 		return "打开视图（只读）", "查看视图结构（只读）"
 	}
-	return "打开表（只读）", "设计表（只读）"
+	return "打开表", "设计表（只读）"
 }
 
-// mysqlObjectWorkspace lists real INFORMATION_SCHEMA objects and explicitly opens
-// read-only data or structure pages on the managed session.
+// mysqlObjectWorkspace lists real INFORMATION_SCHEMA objects and opens table
+// data with editing support; view data and structure pages remain read-only.
 func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 	palette := theme.Colors(c)
 

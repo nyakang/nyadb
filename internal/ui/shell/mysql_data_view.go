@@ -7,11 +7,12 @@ import (
 	"github.com/nyakang/nyadb/locales"
 )
 
-// A real read-only MySQL page, never the legacy simulated dataPreview.
+// A real bounded MySQL page with independently managed record drafts.
 func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 	palette := theme.Colors(c)
 
 	s.restoreMySQLDataLayout(t)
+	t.dataEdit.Hits = nil
 	ui.Column(c).FillWidth().Grow(1).MinHeight(0).Background(palette.App).Children(func() {
 		page := t.dataPage
 		if page == nil {
@@ -21,6 +22,7 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			}
 		}
 		s.mysqlDataRuleEditor(c, t, page)
+		s.mysqlDataEditStatus(c, t)
 		if t.dataLoading {
 			ui.Row(c).Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 6).Gap(6).AlignItems(ui.Center).Children(func() {
 				ui.Spinner(c).Width(16).Height(16)
@@ -66,6 +68,9 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 				if col > 0 && col <= len(visibleIndices) {
 					source = visibleIndices[col-1]
 				}
+				if t.dataSelection.Len() == 1 {
+					t.dataEdit.SelectionAnchor = row
+				}
 				s.mysqlDataCellMenu(c, t, m, row, source)
 			}
 			if len(page.Rows) == 0 {
@@ -74,7 +79,17 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 				grid := theme.Table(c, &t.dataState, columns, len(page.Rows), func(row, col int) {
 					tableCol := col
 					if col == 0 {
-						ui.Text(c, mysqlDataRowHeaderText(t, row)).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(theme.CellText(c, &t.dataState, row, tableCol, palette.Muted))
+						marker := ""
+						if d := mysqlDataDraftForRow(t, row); d != nil {
+							if d.Kind == "delete" {
+								marker = "− "
+							} else if d.Kind == "insert" {
+								marker = "+ "
+							} else {
+								marker = "* "
+							}
+						}
+						ui.Text(c, marker+mysqlDataRowHeaderText(t, row)).SingleLine().FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(theme.CellText(c, &t.dataState, row, tableCol, palette.Muted))
 						return
 					}
 					col--
@@ -85,23 +100,63 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 					if row >= len(page.Rows) || col >= len(page.Rows[row]) {
 						return
 					}
-					cell := page.Rows[row][col]
-					if cell.Null {
-						ui.Text(c, "NULL").TextColor(theme.CellText(c, &t.dataState, row, tableCol, palette.GridNull)).FontSize(theme.Font(c, 12))
+					if s.mysqlDataInlineEditor(c, t, row, col) {
 						return
 					}
-					text := ui.Text(c, cell.Text).SingleLine().FontSize(theme.Font(c, 12))
-					if cell.Truncated {
-						text.Tooltip(locales.Text("已截断的预览；可在字段信息中按需读取"))
-					} else if cell.Text == "" {
-						text.Tooltip(locales.Text("空字符串"))
-					}
+					cell := page.Rows[row][col]
+					box := ui.Box(c).FillWidth().MinWidth(0).Children(func() {
+						if cell.Null {
+							ui.Text(c, "NULL").TextColor(theme.CellText(c, &t.dataState, row, tableCol, palette.GridNull)).FontSize(theme.Font(c, mysqlDataEditFont(t)))
+						} else {
+							text := ui.Text(c, cell.Text).SingleLine().FontSize(theme.Font(c, mysqlDataEditFont(t)))
+							if cell.Truncated {
+								text.Tooltip(locales.Text("已截断的预览；可在字段信息中按需读取"))
+							}
+						}
+					})
+					bounds := box.Bounds()
+					t.dataEdit.Hits = append(t.dataEdit.Hits, mysqlCellHit{Row: row, Source: col, Bounds: bounds})
+					source := col
+					services := c.Services()
+					box.HandleInput(func(ev ui.InputEvent) bool { return s.mysqlDataCellPointer(services, t, row, source, bounds, ev) })
+
 				}).Grow(1)
-				if grid.Shortcut(ui.Ctrl, ui.KeyC) {
+				if t.dataEdit.FocusGrid && t.dataEdit.Editor == nil {
+					grid.Focus()
+					t.dataEdit.FocusGrid = false
+				}
+				gridBounds := grid.Bounds()
+				gridServices := c.Services()
+				grid.HandleInput(func(ev ui.InputEvent) bool { return s.mysqlDataGridPointer(gridServices, t, gridBounds, ev) })
+				if t.dataEdit.Editor == nil && grid.Shortcut(ui.Ctrl, ui.KeyC) {
 					s.copyMySQLDataSelection(c, t)
 				}
-				if grid.Shortcut(0, ui.KeyF5) && !t.dataLoading {
+				if t.dataEdit.Editor == nil && grid.Shortcut(ui.Ctrl, ui.KeyV) {
+					for source, name := range page.Columns {
+						if name == t.dataState.Cells.Cursor {
+							s.pasteMySQLDataSelection(c, t, t.dataSelectedRow, source)
+							break
+						}
+					}
+				}
+				if t.dataEdit.Editor == nil && grid.Shortcut(0, ui.KeyF5) && !t.dataLoading {
 					s.resetAndReloadMySQLData(c.Services(), t)
+				}
+				if t.dataEdit.Editor == nil && grid.Shortcut(0, ui.KeyF2) {
+					for source, name := range page.Columns {
+						if name == t.dataState.Cells.Cursor {
+							s.beginMySQLCellEdit(c.Services(), t, t.dataSelectedRow, source, false)
+							break
+						}
+					}
+				}
+				if !t.dataEdit.Batch && !t.dataEdit.Busy && t.dataEdit.Editor == nil {
+					for _, d := range t.dataEdit.Drafts {
+						if d.Row != t.dataSelectedRow {
+							s.saveMySQLData(c.Services(), t)
+							break
+						}
+					}
 				}
 			}
 			s.syncMySQLDataSort(c.Services(), t)

@@ -38,9 +38,9 @@ func (c queryOptionsConn) QueryContext(_ context.Context, q string, args []drive
 			{"uk_id", "id", int64(1), nil, "NO"},
 		}}, nil
 	case strings.HasPrefix(q, "SELECT "):
-		return &structureRows{cols: []string{"id", "payload", "note"}, values: [][]driver.Value{
+		return dataEditFixtureProjections(q, &structureRows{cols: []string{"id", "payload", "note"}, values: [][]driver.Value{
 			{int64(1), []byte{0, 1, 2}, "hello"}, {int64(2), nil, ""},
-		}}, nil
+		}}), nil
 	default:
 		return nil, fmt.Errorf("unexpected query: %s", q)
 	}

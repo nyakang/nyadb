@@ -118,6 +118,9 @@ func (s *State) loadMySQLData(services ui.Services, t *tab, refresh bool) {
 	}()
 }
 func (s *State) changeMySQLDataPage(services ui.Services, t *tab, offset int64) {
+	if s.guardMySQLDataLeave(t, func(next ui.Services) { s.changeMySQLDataPage(next, t, offset) }) {
+		return
+	}
 	if t == nil || t.kind != tabMySQLData || offset < 0 || t.dataLoading {
 		return
 	}

@@ -66,3 +66,67 @@ func connectedQueryOptionsFixture(t *testing.T, calls chan structureCall) *MySQL
 	t.Cleanup(func() { _ = m.Close() })
 	return m
 }
+
+func TestMySQLComparisonsAndLiteralNotContainsAreParameterized(t *testing.T) {
+	calls := make(chan structureCall, 10)
+	m := connectedQueryOptionsFixture(t, calls)
+	value := "%_中' OR 1=1 --"
+	rules := []MySQLDataFilterRule{{Column: "note", Mode: "not_contains", Value: value}, {Column: "id", Mode: "less", Value: "9007199254740993"}, {Column: "id", Mode: "greater", Value: "-5"}}
+	if _, e := m.TableDataPageWithOptions(context.Background(), 19, "db", "records", MySQLDataOptions{Limit: 2, Filters: rules}); e != nil {
+		t.Fatal(e)
+	}
+	<-calls
+	<-calls
+	query := <-calls
+	for _, fragment := range []string{"LOCATE(?, `note`) = 0", "`id` < ?", "`id` > ?"} {
+		if !strings.Contains(query.query, fragment) {
+			t.Fatalf("missing %q in %s", fragment, query.query)
+		}
+	}
+	if strings.Contains(query.query, value) || len(query.args) != 5 || query.args[0].Value != value || query.args[1].Value != "9007199254740993" || query.args[2].Value != "-5" {
+		t.Fatalf("filter values were interpolated or converted: %+v", query)
+	}
+	if strings.Contains(query.query, "LIKE") {
+		t.Fatal("literal substring filter silently changed to wildcard matching")
+	}
+}
+
+func TestMySQLNotContainsRejectsNonTextAndChangesCursorSignature(t *testing.T) {
+	m := connectedQueryOptionsFixture(t, make(chan structureCall, 32))
+	for _, mode := range []string{"not_contains", "like", "not_like"} {
+		for _, column := range []string{"payload", "id"} {
+			if _, e := m.TableDataPageWithOptions(context.Background(), 19, "db", "records", MySQLDataOptions{Limit: 2, Filters: []MySQLDataFilterRule{{Column: column, Mode: mode, Value: "x"}}}); e == nil {
+				t.Fatalf("%s accepted nontext %s", mode, column)
+			}
+		}
+	}
+	contains := []MySQLDataFilterRule{{Column: "note", Mode: "contains", Value: "x"}}
+	notContains := []MySQLDataFilterRule{{Column: "note", Mode: "not_contains", Value: "x"}}
+	if mysqlDataRuleSignature(contains, nil) == mysqlDataRuleSignature(notContains, nil) {
+		t.Fatal("inverse filter reused original keyset signature")
+	}
+}
+
+func TestMySQLLikePatternsRemainBoundAndSeparateFromLiteralContains(t *testing.T) {
+	for _, mode := range []string{"like", "not_like"} {
+		calls := make(chan structureCall, 10)
+		m := connectedQueryOptionsFixture(t, calls)
+		value := "中' OR 1=1 --%_"
+		if _, e := m.TableDataPageWithOptions(context.Background(), 19, "db", "records", MySQLDataOptions{Limit: 2, Filters: []MySQLDataFilterRule{{Column: "note", Mode: mode, Value: value}}}); e != nil {
+			t.Fatal(e)
+		}
+		<-calls
+		<-calls
+		query := <-calls
+		op := " LIKE "
+		if mode == "not_like" {
+			op = " NOT LIKE "
+		}
+		if !strings.Contains(query.query, "`note`"+op+"?") || strings.Contains(query.query, value) || query.args[0].Value != "%"+value+"%" {
+			t.Fatalf("unsafe LIKE query/binding: %+v", query)
+		}
+		if strings.Contains(query.query, "LOCATE") {
+			t.Fatal("LIKE was replaced by literal substring predicate")
+		}
+	}
+}

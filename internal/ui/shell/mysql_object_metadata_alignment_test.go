@@ -62,7 +62,7 @@ func TestMySQLDatabaseMenuDoesNotOfferObjectActions(t *testing.T) {
 		t.Fatal(err)
 	}
 	menu := tt.Menu()
-	if !slices.Contains(menu, "刷新") || slices.Contains(menu, "打开表（只读）") ||
+	if !slices.Contains(menu, "刷新") || slices.Contains(menu, "打开表") ||
 		slices.Contains(menu, "设计表（只读）") || slices.Contains(menu, "显示全部对象") {
 		t.Fatalf("database menu has wrong scope: %v", menu)
 	}
@@ -106,7 +106,7 @@ func TestMySQLTableAndViewContextMenusUseCorrectObjectLabels(t *testing.T) {
 		t.Fatal(err)
 	}
 	menu = tt.Menu()
-	if !slices.Contains(menu, "打开表（只读）") ||
+	if !slices.Contains(menu, "打开表") || slices.Contains(menu, "打开表（只读）") ||
 		!slices.Contains(menu, "设计表（只读）") ||
 		slices.Contains(menu, "查看视图结构（只读）") {
 		t.Fatalf("table context menu offered view actions: %v", menu)

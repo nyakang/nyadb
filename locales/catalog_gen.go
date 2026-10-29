@@ -4793,3 +4793,679 @@ func MysqlDataFilterLimit() string { return In(i18n.Locale()).MysqlDataFilterLim
 func (msgs Messages) MysqlDataFilterLimit() string {
 	return Catalog.Format(msgs.locale, "mysqlDataFilterLimit", nil)
 }
+
+// MysqlSetEmptyString says "设置为空字符串"
+// in the language the app shows.
+func MysqlSetEmptyString() string { return In(i18n.Locale()).MysqlSetEmptyString() }
+
+// MysqlSetEmptyString says "设置为空字符串"
+// in the language of msgs.
+func (msgs Messages) MysqlSetEmptyString() string {
+	return Catalog.Format(msgs.locale, "mysqlSetEmptyString", nil)
+}
+
+// MysqlSetNull says "设置为 NULL"
+// in the language the app shows.
+func MysqlSetNull() string { return In(i18n.Locale()).MysqlSetNull() }
+
+// MysqlSetNull says "设置为 NULL"
+// in the language of msgs.
+func (msgs Messages) MysqlSetNull() string {
+	return Catalog.Format(msgs.locale, "mysqlSetNull", nil)
+}
+
+// MysqlGenerateUUID says "生成 UUID"
+// in the language the app shows.
+func MysqlGenerateUUID() string { return In(i18n.Locale()).MysqlGenerateUUID() }
+
+// MysqlGenerateUUID says "生成 UUID"
+// in the language of msgs.
+func (msgs Messages) MysqlGenerateUUID() string {
+	return Catalog.Format(msgs.locale, "mysqlGenerateUUID", nil)
+}
+
+// MysqlEditInCellEditor says "在单元格编辑器中编辑"
+// in the language the app shows.
+func MysqlEditInCellEditor() string { return In(i18n.Locale()).MysqlEditInCellEditor() }
+
+// MysqlEditInCellEditor says "在单元格编辑器中编辑"
+// in the language of msgs.
+func (msgs Messages) MysqlEditInCellEditor() string {
+	return Catalog.Format(msgs.locale, "mysqlEditInCellEditor", nil)
+}
+
+// MysqlAddRecord says "添加记录"
+// in the language the app shows.
+func MysqlAddRecord() string { return In(i18n.Locale()).MysqlAddRecord() }
+
+// MysqlAddRecord says "添加记录"
+// in the language of msgs.
+func (msgs Messages) MysqlAddRecord() string {
+	return Catalog.Format(msgs.locale, "mysqlAddRecord", nil)
+}
+
+// MysqlDeleteRecord says "删除记录"
+// in the language the app shows.
+func MysqlDeleteRecord() string { return In(i18n.Locale()).MysqlDeleteRecord() }
+
+// MysqlDeleteRecord says "删除记录"
+// in the language of msgs.
+func (msgs Messages) MysqlDeleteRecord() string {
+	return Catalog.Format(msgs.locale, "mysqlDeleteRecord", nil)
+}
+
+// MysqlPaste says "粘贴"
+// in the language the app shows.
+func MysqlPaste() string { return In(i18n.Locale()).MysqlPaste() }
+
+// MysqlPaste says "粘贴"
+// in the language of msgs.
+func (msgs Messages) MysqlPaste() string {
+	return Catalog.Format(msgs.locale, "mysqlPaste", nil)
+}
+
+// MysqlSaveDataAs says "保存数据为"
+// in the language the app shows.
+func MysqlSaveDataAs() string { return In(i18n.Locale()).MysqlSaveDataAs() }
+
+// MysqlSaveDataAs says "保存数据为"
+// in the language of msgs.
+func (msgs Messages) MysqlSaveDataAs() string {
+	return Catalog.Format(msgs.locale, "mysqlSaveDataAs", nil)
+}
+
+// MysqlFilterMenu says "筛选"
+// in the language the app shows.
+func MysqlFilterMenu() string { return In(i18n.Locale()).MysqlFilterMenu() }
+
+// MysqlFilterMenu says "筛选"
+// in the language of msgs.
+func (msgs Messages) MysqlFilterMenu() string {
+	return Catalog.Format(msgs.locale, "mysqlFilterMenu", nil)
+}
+
+// MysqlSortMenu says "排序"
+// in the language the app shows.
+func MysqlSortMenu() string { return In(i18n.Locale()).MysqlSortMenu() }
+
+// MysqlSortMenu says "排序"
+// in the language of msgs.
+func (msgs Messages) MysqlSortMenu() string {
+	return Catalog.Format(msgs.locale, "mysqlSortMenu", nil)
+}
+
+// MysqlRemoveDataRules says "移除所有筛选 & 排序"
+// in the language the app shows.
+func MysqlRemoveDataRules() string { return In(i18n.Locale()).MysqlRemoveDataRules() }
+
+// MysqlRemoveDataRules says "移除所有筛选 & 排序"
+// in the language of msgs.
+func (msgs Messages) MysqlRemoveDataRules() string {
+	return Catalog.Format(msgs.locale, "mysqlRemoveDataRules", nil)
+}
+
+// MysqlDataZoom says "缩放"
+// in the language the app shows.
+func MysqlDataZoom() string { return In(i18n.Locale()).MysqlDataZoom() }
+
+// MysqlDataZoom says "缩放"
+// in the language of msgs.
+func (msgs Messages) MysqlDataZoom() string {
+	return Catalog.Format(msgs.locale, "mysqlDataZoom", nil)
+}
+
+// MysqlUUIDDefault says "默认（xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx）"
+// in the language the app shows.
+func MysqlUUIDDefault() string { return In(i18n.Locale()).MysqlUUIDDefault() }
+
+// MysqlUUIDDefault says "默认（xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx）"
+// in the language of msgs.
+func (msgs Messages) MysqlUUIDDefault() string {
+	return Catalog.Format(msgs.locale, "mysqlUUIDDefault", nil)
+}
+
+// MysqlUUIDHyphenUpper says "有连字符，大写"
+// in the language the app shows.
+func MysqlUUIDHyphenUpper() string { return In(i18n.Locale()).MysqlUUIDHyphenUpper() }
+
+// MysqlUUIDHyphenUpper says "有连字符，大写"
+// in the language of msgs.
+func (msgs Messages) MysqlUUIDHyphenUpper() string {
+	return Catalog.Format(msgs.locale, "mysqlUUIDHyphenUpper", nil)
+}
+
+// MysqlUUIDCompactLower says "无连字符，小写"
+// in the language the app shows.
+func MysqlUUIDCompactLower() string { return In(i18n.Locale()).MysqlUUIDCompactLower() }
+
+// MysqlUUIDCompactLower says "无连字符，小写"
+// in the language of msgs.
+func (msgs Messages) MysqlUUIDCompactLower() string {
+	return Catalog.Format(msgs.locale, "mysqlUUIDCompactLower", nil)
+}
+
+// MysqlUUIDCompactUpper says "无连字符，大写"
+// in the language the app shows.
+func MysqlUUIDCompactUpper() string { return In(i18n.Locale()).MysqlUUIDCompactUpper() }
+
+// MysqlUUIDCompactUpper says "无连字符，大写"
+// in the language of msgs.
+func (msgs Messages) MysqlUUIDCompactUpper() string {
+	return Catalog.Format(msgs.locale, "mysqlUUIDCompactUpper", nil)
+}
+
+// MysqlPasteSizeLimit says "粘贴数据超过编辑大小限制"
+// in the language the app shows.
+func MysqlPasteSizeLimit() string { return In(i18n.Locale()).MysqlPasteSizeLimit() }
+
+// MysqlPasteSizeLimit says "粘贴数据超过编辑大小限制"
+// in the language of msgs.
+func (msgs Messages) MysqlPasteSizeLimit() string {
+	return Catalog.Format(msgs.locale, "mysqlPasteSizeLimit", nil)
+}
+
+// MysqlPasteInvalid says "粘贴数据格式无效"
+// in the language the app shows.
+func MysqlPasteInvalid() string { return In(i18n.Locale()).MysqlPasteInvalid() }
+
+// MysqlPasteInvalid says "粘贴数据格式无效"
+// in the language of msgs.
+func (msgs Messages) MysqlPasteInvalid() string {
+	return Catalog.Format(msgs.locale, "mysqlPasteInvalid", nil)
+}
+
+// MysqlPasteReadOnly says "粘贴选区包含不可编辑字段或超出当前页"
+// in the language the app shows.
+func MysqlPasteReadOnly() string { return In(i18n.Locale()).MysqlPasteReadOnly() }
+
+// MysqlPasteReadOnly says "粘贴选区包含不可编辑字段或超出当前页"
+// in the language of msgs.
+func (msgs Messages) MysqlPasteReadOnly() string {
+	return Catalog.Format(msgs.locale, "mysqlPasteReadOnly", nil)
+}
+
+// MysqlCopyInsertSQL says "Insert 语句"
+// in the language the app shows.
+func MysqlCopyInsertSQL() string { return In(i18n.Locale()).MysqlCopyInsertSQL() }
+
+// MysqlCopyInsertSQL says "Insert 语句"
+// in the language of msgs.
+func (msgs Messages) MysqlCopyInsertSQL() string {
+	return Catalog.Format(msgs.locale, "mysqlCopyInsertSQL", nil)
+}
+
+// MysqlCopyUpdateSQL says "Update 语句"
+// in the language the app shows.
+func MysqlCopyUpdateSQL() string { return In(i18n.Locale()).MysqlCopyUpdateSQL() }
+
+// MysqlCopyUpdateSQL says "Update 语句"
+// in the language of msgs.
+func (msgs Messages) MysqlCopyUpdateSQL() string {
+	return Catalog.Format(msgs.locale, "mysqlCopyUpdateSQL", nil)
+}
+
+// MysqlBinaryRequiresHex says "二进制值必须是十六进制字节"
+// in the language the app shows.
+func MysqlBinaryRequiresHex() string { return In(i18n.Locale()).MysqlBinaryRequiresHex() }
+
+// MysqlBinaryRequiresHex says "二进制值必须是十六进制字节"
+// in the language of msgs.
+func (msgs Messages) MysqlBinaryRequiresHex() string {
+	return Catalog.Format(msgs.locale, "mysqlBinaryRequiresHex", nil)
+}
+
+// MysqlEditSizeLimit says "编辑内容超过 1 MiB 限制"
+// in the language the app shows.
+func MysqlEditSizeLimit() string { return In(i18n.Locale()).MysqlEditSizeLimit() }
+
+// MysqlEditSizeLimit says "编辑内容超过 1 MiB 限制"
+// in the language of msgs.
+func (msgs Messages) MysqlEditSizeLimit() string {
+	return Catalog.Format(msgs.locale, "mysqlEditSizeLimit", nil)
+}
+
+// MysqlEditUnsupportedField says "此字段类型暂不支持编辑"
+// in the language the app shows.
+func MysqlEditUnsupportedField() string { return In(i18n.Locale()).MysqlEditUnsupportedField() }
+
+// MysqlEditUnsupportedField says "此字段类型暂不支持编辑"
+// in the language of msgs.
+func (msgs Messages) MysqlEditUnsupportedField() string {
+	return Catalog.Format(msgs.locale, "mysqlEditUnsupportedField", nil)
+}
+
+// MysqlFullFieldUnavailable says "完整字段读取不可用"
+// in the language the app shows.
+func MysqlFullFieldUnavailable() string { return In(i18n.Locale()).MysqlFullFieldUnavailable() }
+
+// MysqlFullFieldUnavailable says "完整字段读取不可用"
+// in the language of msgs.
+func (msgs Messages) MysqlFullFieldUnavailable() string {
+	return Catalog.Format(msgs.locale, "mysqlFullFieldUnavailable", nil)
+}
+
+// MysqlEditNoUniqueIdentity says "不能唯一定位此记录，已禁止修改和删除"
+// in the language the app shows.
+func MysqlEditNoUniqueIdentity() string { return In(i18n.Locale()).MysqlEditNoUniqueIdentity() }
+
+// MysqlEditNoUniqueIdentity says "不能唯一定位此记录，已禁止修改和删除"
+// in the language of msgs.
+func (msgs Messages) MysqlEditNoUniqueIdentity() string {
+	return Catalog.Format(msgs.locale, "mysqlEditNoUniqueIdentity", nil)
+}
+
+// MysqlEditServiceUnavailable says "数据编辑服务不可用"
+// in the language the app shows.
+func MysqlEditServiceUnavailable() string { return In(i18n.Locale()).MysqlEditServiceUnavailable() }
+
+// MysqlEditServiceUnavailable says "数据编辑服务不可用"
+// in the language of msgs.
+func (msgs Messages) MysqlEditServiceUnavailable() string {
+	return Catalog.Format(msgs.locale, "mysqlEditServiceUnavailable", nil)
+}
+
+// MysqlEditIncompleteResult says "提交结果不完整，请核验数据库"
+// in the language the app shows.
+func MysqlEditIncompleteResult() string { return In(i18n.Locale()).MysqlEditIncompleteResult() }
+
+// MysqlEditIncompleteResult says "提交结果不完整，请核验数据库"
+// in the language of msgs.
+func (msgs Messages) MysqlEditIncompleteResult() string {
+	return Catalog.Format(msgs.locale, "mysqlEditIncompleteResult", nil)
+}
+
+// MysqlEditVerifiedApplied says "已核验：数据更改已提交"
+// in the language the app shows.
+func MysqlEditVerifiedApplied() string { return In(i18n.Locale()).MysqlEditVerifiedApplied() }
+
+// MysqlEditVerifiedApplied says "已核验：数据更改已提交"
+// in the language of msgs.
+func (msgs Messages) MysqlEditVerifiedApplied() string {
+	return Catalog.Format(msgs.locale, "mysqlEditVerifiedApplied", nil)
+}
+
+// MysqlEditVerifiedNotApplied says "已核验：更改未提交，草稿已保留"
+// in the language the app shows.
+func MysqlEditVerifiedNotApplied() string { return In(i18n.Locale()).MysqlEditVerifiedNotApplied() }
+
+// MysqlEditVerifiedNotApplied says "已核验：更改未提交，草稿已保留"
+// in the language of msgs.
+func (msgs Messages) MysqlEditVerifiedNotApplied() string {
+	return Catalog.Format(msgs.locale, "mysqlEditVerifiedNotApplied", nil)
+}
+
+// MysqlEditStillUncertain says "提交结果仍不确定，禁止重放；请检查数据库"
+// in the language the app shows.
+func MysqlEditStillUncertain() string { return In(i18n.Locale()).MysqlEditStillUncertain() }
+
+// MysqlEditStillUncertain says "提交结果仍不确定，禁止重放；请检查数据库"
+// in the language of msgs.
+func (msgs Messages) MysqlEditStillUncertain() string {
+	return Catalog.Format(msgs.locale, "mysqlEditStillUncertain", nil)
+}
+
+// MysqlCellEditing says "单元格编辑"
+// in the language the app shows.
+func MysqlCellEditing() string { return In(i18n.Locale()).MysqlCellEditing() }
+
+// MysqlCellEditing says "单元格编辑"
+// in the language of msgs.
+func (msgs Messages) MysqlCellEditing() string {
+	return Catalog.Format(msgs.locale, "mysqlCellEditing", nil)
+}
+
+// MysqlCellEditor says "单元格编辑器"
+// in the language the app shows.
+func MysqlCellEditor() string { return In(i18n.Locale()).MysqlCellEditor() }
+
+// MysqlCellEditor says "单元格编辑器"
+// in the language of msgs.
+func (msgs Messages) MysqlCellEditor() string {
+	return Catalog.Format(msgs.locale, "mysqlCellEditor", nil)
+}
+
+// MysqlBinaryEditorHint says "二进制值以十六进制编辑"
+// in the language the app shows.
+func MysqlBinaryEditorHint() string { return In(i18n.Locale()).MysqlBinaryEditorHint() }
+
+// MysqlBinaryEditorHint says "二进制值以十六进制编辑"
+// in the language of msgs.
+func (msgs Messages) MysqlBinaryEditorHint() string {
+	return Catalog.Format(msgs.locale, "mysqlBinaryEditorHint", nil)
+}
+
+// MysqlDedicatedCellEditor says "专用单元格编辑"
+// in the language the app shows.
+func MysqlDedicatedCellEditor() string { return In(i18n.Locale()).MysqlDedicatedCellEditor() }
+
+// MysqlDedicatedCellEditor says "专用单元格编辑"
+// in the language of msgs.
+func (msgs Messages) MysqlDedicatedCellEditor() string {
+	return Catalog.Format(msgs.locale, "mysqlDedicatedCellEditor", nil)
+}
+
+// MysqlCancelCellEdit says "取消单元格编辑"
+// in the language the app shows.
+func MysqlCancelCellEdit() string { return In(i18n.Locale()).MysqlCancelCellEdit() }
+
+// MysqlCancelCellEdit says "取消单元格编辑"
+// in the language of msgs.
+func (msgs Messages) MysqlCancelCellEdit() string {
+	return Catalog.Format(msgs.locale, "mysqlCancelCellEdit", nil)
+}
+
+// MysqlApplyCellEdit says "应用单元格编辑"
+// in the language the app shows.
+func MysqlApplyCellEdit() string { return In(i18n.Locale()).MysqlApplyCellEdit() }
+
+// MysqlApplyCellEdit says "应用单元格编辑"
+// in the language of msgs.
+func (msgs Messages) MysqlApplyCellEdit() string {
+	return Catalog.Format(msgs.locale, "mysqlApplyCellEdit", nil)
+}
+
+// MysqlPendingRecords says "待处理记录"
+// in the language the app shows.
+func MysqlPendingRecords() string { return In(i18n.Locale()).MysqlPendingRecords() }
+
+// MysqlPendingRecords says "待处理记录"
+// in the language of msgs.
+func (msgs Messages) MysqlPendingRecords() string {
+	return Catalog.Format(msgs.locale, "mysqlPendingRecords", nil)
+}
+
+// MysqlApplyPendingRecordsPrompt says "是否将待保存的数据更改应用到数据库？"
+// in the language the app shows.
+func MysqlApplyPendingRecordsPrompt() string {
+	return In(i18n.Locale()).MysqlApplyPendingRecordsPrompt()
+}
+
+// MysqlApplyPendingRecordsPrompt says "是否将待保存的数据更改应用到数据库？"
+// in the language of msgs.
+func (msgs Messages) MysqlApplyPendingRecordsPrompt() string {
+	return Catalog.Format(msgs.locale, "mysqlApplyPendingRecordsPrompt", nil)
+}
+
+// MysqlDiscardPendingRecords says "放弃"
+// in the language the app shows.
+func MysqlDiscardPendingRecords() string { return In(i18n.Locale()).MysqlDiscardPendingRecords() }
+
+// MysqlDiscardPendingRecords says "放弃"
+// in the language of msgs.
+func (msgs Messages) MysqlDiscardPendingRecords() string {
+	return Catalog.Format(msgs.locale, "mysqlDiscardPendingRecords", nil)
+}
+
+// MysqlApplyPendingRecords says "应用更改"
+// in the language the app shows.
+func MysqlApplyPendingRecords() string { return In(i18n.Locale()).MysqlApplyPendingRecords() }
+
+// MysqlApplyPendingRecords says "应用更改"
+// in the language of msgs.
+func (msgs Messages) MysqlApplyPendingRecords() string {
+	return Catalog.Format(msgs.locale, "mysqlApplyPendingRecords", nil)
+}
+
+// MysqlVerifyCommit says "核验提交结果"
+// in the language the app shows.
+func MysqlVerifyCommit() string { return In(i18n.Locale()).MysqlVerifyCommit() }
+
+// MysqlVerifyCommit says "核验提交结果"
+// in the language of msgs.
+func (msgs Messages) MysqlVerifyCommit() string {
+	return Catalog.Format(msgs.locale, "mysqlVerifyCommit", nil)
+}
+
+// MysqlProcessingData says "正在处理表数据…"
+// in the language the app shows.
+func MysqlProcessingData() string { return In(i18n.Locale()).MysqlProcessingData() }
+
+// MysqlProcessingData says "正在处理表数据…"
+// in the language of msgs.
+func (msgs Messages) MysqlProcessingData() string {
+	return Catalog.Format(msgs.locale, "mysqlProcessingData", nil)
+}
+
+// MysqlSaveSelectionPreview says "保存选区数据预览"
+// in the language the app shows.
+func MysqlSaveSelectionPreview() string { return In(i18n.Locale()).MysqlSaveSelectionPreview() }
+
+// MysqlSaveSelectionPreview says "保存选区数据预览"
+// in the language of msgs.
+func (msgs Messages) MysqlSaveSelectionPreview() string {
+	return Catalog.Format(msgs.locale, "mysqlSaveSelectionPreview", nil)
+}
+
+// MysqlSaveSelectionScope says "仅保存当前页选区；截断字段包含预览标记"
+// in the language the app shows.
+func MysqlSaveSelectionScope() string { return In(i18n.Locale()).MysqlSaveSelectionScope() }
+
+// MysqlSaveSelectionScope says "仅保存当前页选区；截断字段包含预览标记"
+// in the language of msgs.
+func (msgs Messages) MysqlSaveSelectionScope() string {
+	return Catalog.Format(msgs.locale, "mysqlSaveSelectionScope", nil)
+}
+
+// MysqlSaveDataFileFailed says "保存数据文件失败："
+// in the language the app shows.
+func MysqlSaveDataFileFailed() string { return In(i18n.Locale()).MysqlSaveDataFileFailed() }
+
+// MysqlSaveDataFileFailed says "保存数据文件失败："
+// in the language of msgs.
+func (msgs Messages) MysqlSaveDataFileFailed() string {
+	return Catalog.Format(msgs.locale, "mysqlSaveDataFileFailed", nil)
+}
+
+// MysqlSavedSelectionFile says "已保存选区预览至 %s"
+// in the language the app shows.
+func MysqlSavedSelectionFile() string { return In(i18n.Locale()).MysqlSavedSelectionFile() }
+
+// MysqlSavedSelectionFile says "已保存选区预览至 %s"
+// in the language of msgs.
+func (msgs Messages) MysqlSavedSelectionFile() string {
+	return Catalog.Format(msgs.locale, "mysqlSavedSelectionFile", nil)
+}
+
+// MysqlSaveDataChanges says "保存数据更改"
+// in the language the app shows.
+func MysqlSaveDataChanges() string { return In(i18n.Locale()).MysqlSaveDataChanges() }
+
+// MysqlSaveDataChanges says "保存数据更改"
+// in the language of msgs.
+func (msgs Messages) MysqlSaveDataChanges() string {
+	return Catalog.Format(msgs.locale, "mysqlSaveDataChanges", nil)
+}
+
+// MysqlCancelDataChanges says "取消数据更改"
+// in the language the app shows.
+func MysqlCancelDataChanges() string { return In(i18n.Locale()).MysqlCancelDataChanges() }
+
+// MysqlCancelDataChanges says "取消数据更改"
+// in the language of msgs.
+func (msgs Messages) MysqlCancelDataChanges() string {
+	return Catalog.Format(msgs.locale, "mysqlCancelDataChanges", nil)
+}
+
+// MysqlStopDataOperation says "停止数据操作"
+// in the language the app shows.
+func MysqlStopDataOperation() string { return In(i18n.Locale()).MysqlStopDataOperation() }
+
+// MysqlStopDataOperation says "停止数据操作"
+// in the language of msgs.
+func (msgs Messages) MysqlStopDataOperation() string {
+	return Catalog.Format(msgs.locale, "mysqlStopDataOperation", nil)
+}
+
+// MysqlBatchEditing says "批量编辑"
+// in the language the app shows.
+func MysqlBatchEditing() string { return In(i18n.Locale()).MysqlBatchEditing() }
+
+// MysqlBatchEditing says "批量编辑"
+// in the language of msgs.
+func (msgs Messages) MysqlBatchEditing() string {
+	return Catalog.Format(msgs.locale, "mysqlBatchEditing", nil)
+}
+
+// MysqlPendingDataChanges says "有待保存的数据更改"
+// in the language the app shows.
+func MysqlPendingDataChanges() string { return In(i18n.Locale()).MysqlPendingDataChanges() }
+
+// MysqlPendingDataChanges says "有待保存的数据更改"
+// in the language of msgs.
+func (msgs Messages) MysqlPendingDataChanges() string {
+	return Catalog.Format(msgs.locale, "mysqlPendingDataChanges", nil)
+}
+
+// MysqlTruncatedPreviewHint says "已截断的预览；可在字段信息中按需读取"
+// in the language the app shows.
+func MysqlTruncatedPreviewHint() string { return In(i18n.Locale()).MysqlTruncatedPreviewHint() }
+
+// MysqlTruncatedPreviewHint says "已截断的预览；可在字段信息中按需读取"
+// in the language of msgs.
+func (msgs Messages) MysqlTruncatedPreviewHint() string {
+	return Catalog.Format(msgs.locale, "mysqlTruncatedPreviewHint", nil)
+}
+
+// MysqlRemoveFieldFilter says "移除筛选"
+// in the language the app shows.
+func MysqlRemoveFieldFilter() string { return In(i18n.Locale()).MysqlRemoveFieldFilter() }
+
+// MysqlRemoveFieldFilter says "移除筛选"
+// in the language of msgs.
+func (msgs Messages) MysqlRemoveFieldFilter() string {
+	return Catalog.Format(msgs.locale, "mysqlRemoveFieldFilter", nil)
+}
+
+// MysqlCellLike says "字段类似值"
+// in the language the app shows.
+func MysqlCellLike() string { return In(i18n.Locale()).MysqlCellLike() }
+
+// MysqlCellLike says "字段类似值"
+// in the language of msgs.
+func (msgs Messages) MysqlCellLike() string {
+	return Catalog.Format(msgs.locale, "mysqlCellLike", nil)
+}
+
+// MysqlCellNotLike says "字段不类似值"
+// in the language the app shows.
+func MysqlCellNotLike() string { return In(i18n.Locale()).MysqlCellNotLike() }
+
+// MysqlCellNotLike says "字段不类似值"
+// in the language of msgs.
+func (msgs Messages) MysqlCellNotLike() string {
+	return Catalog.Format(msgs.locale, "mysqlCellNotLike", nil)
+}
+
+// MysqlCellLess says "字段 < 值"
+// in the language the app shows.
+func MysqlCellLess() string { return In(i18n.Locale()).MysqlCellLess() }
+
+// MysqlCellLess says "字段 < 值"
+// in the language of msgs.
+func (msgs Messages) MysqlCellLess() string {
+	return Catalog.Format(msgs.locale, "mysqlCellLess", nil)
+}
+
+// MysqlCellGreater says "字段 > 值"
+// in the language the app shows.
+func MysqlCellGreater() string { return In(i18n.Locale()).MysqlCellGreater() }
+
+// MysqlCellGreater says "字段 > 值"
+// in the language of msgs.
+func (msgs Messages) MysqlCellGreater() string {
+	return Catalog.Format(msgs.locale, "mysqlCellGreater", nil)
+}
+
+// MysqlCellNotContains says "字段不包含值"
+// in the language the app shows.
+func MysqlCellNotContains() string { return In(i18n.Locale()).MysqlCellNotContains() }
+
+// MysqlCellNotContains says "字段不包含值"
+// in the language of msgs.
+func (msgs Messages) MysqlCellNotContains() string {
+	return Catalog.Format(msgs.locale, "mysqlCellNotContains", nil)
+}
+
+// MysqlFilterLike says "类似"
+// in the language the app shows.
+func MysqlFilterLike() string { return In(i18n.Locale()).MysqlFilterLike() }
+
+// MysqlFilterLike says "类似"
+// in the language of msgs.
+func (msgs Messages) MysqlFilterLike() string {
+	return Catalog.Format(msgs.locale, "mysqlFilterLike", nil)
+}
+
+// MysqlFilterNotLike says "不类似"
+// in the language the app shows.
+func MysqlFilterNotLike() string { return In(i18n.Locale()).MysqlFilterNotLike() }
+
+// MysqlFilterNotLike says "不类似"
+// in the language of msgs.
+func (msgs Messages) MysqlFilterNotLike() string {
+	return Catalog.Format(msgs.locale, "mysqlFilterNotLike", nil)
+}
+
+// MysqlFilterNotContains says "不包含"
+// in the language the app shows.
+func MysqlFilterNotContains() string { return In(i18n.Locale()).MysqlFilterNotContains() }
+
+// MysqlFilterNotContains says "不包含"
+// in the language of msgs.
+func (msgs Messages) MysqlFilterNotContains() string {
+	return Catalog.Format(msgs.locale, "mysqlFilterNotContains", nil)
+}
+
+// MysqlFilterLess says "小于"
+// in the language the app shows.
+func MysqlFilterLess() string { return In(i18n.Locale()).MysqlFilterLess() }
+
+// MysqlFilterLess says "小于"
+// in the language of msgs.
+func (msgs Messages) MysqlFilterLess() string {
+	return Catalog.Format(msgs.locale, "mysqlFilterLess", nil)
+}
+
+// MysqlFilterGreater says "大于"
+// in the language the app shows.
+func MysqlFilterGreater() string { return In(i18n.Locale()).MysqlFilterGreater() }
+
+// MysqlFilterGreater says "大于"
+// in the language of msgs.
+func (msgs Messages) MysqlFilterGreater() string {
+	return Catalog.Format(msgs.locale, "mysqlFilterGreater", nil)
+}
+
+// MysqlPendingRecordCount says "%d 条待处理记录"
+// in the language the app shows.
+func MysqlPendingRecordCount() string { return In(i18n.Locale()).MysqlPendingRecordCount() }
+
+// MysqlPendingRecordCount says "%d 条待处理记录"
+// in the language of msgs.
+func (msgs Messages) MysqlPendingRecordCount() string {
+	return Catalog.Format(msgs.locale, "mysqlPendingRecordCount", nil)
+}
+
+// MysqlApplyPendingRecordsAction says "应用待处理记录"
+// in the language the app shows.
+func MysqlApplyPendingRecordsAction() string {
+	return In(i18n.Locale()).MysqlApplyPendingRecordsAction()
+}
+
+// MysqlApplyPendingRecordsAction says "应用待处理记录"
+// in the language of msgs.
+func (msgs Messages) MysqlApplyPendingRecordsAction() string {
+	return Catalog.Format(msgs.locale, "mysqlApplyPendingRecordsAction", nil)
+}
+
+// MysqlDiscardPendingRecordsAction says "放弃待处理记录"
+// in the language the app shows.
+func MysqlDiscardPendingRecordsAction() string {
+	return In(i18n.Locale()).MysqlDiscardPendingRecordsAction()
+}
+
+// MysqlDiscardPendingRecordsAction says "放弃待处理记录"
+// in the language of msgs.
+func (msgs Messages) MysqlDiscardPendingRecordsAction() string {
+	return Catalog.Format(msgs.locale, "mysqlDiscardPendingRecordsAction", nil)
+}

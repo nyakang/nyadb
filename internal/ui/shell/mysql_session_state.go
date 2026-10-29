@@ -32,6 +32,9 @@ func (s *State) startMySQLSession(services ui.Services) {
 		s.status = "请选择 MySQL 连接"
 		return
 	}
+	if s.guardMySQLProfileLeave(p.ID, func(next ui.Services) { s.startMySQLSession(next) }) {
+		return
+	}
 	if s.mysqlSessionManager == nil {
 		s.mysqlSessionManager = connections.NewMySQLSessionManager()
 	}
@@ -142,6 +145,10 @@ func (s *State) consumeMySQLSessionResult() {
 
 // disconnectMySQLSession also invalidates outstanding asynchronous results.
 func (s *State) disconnectMySQLSession() {
+	idToClose := s.mysqlSessionProfileID
+	if s.guardMySQLProfileLeave(idToClose, func(_ ui.Services) { s.disconnectMySQLProfile(idToClose) }) {
+		return
+	}
 	s.mysqlSessionGeneration++
 	if s.mysqlSessionCancel != nil {
 		s.mysqlSessionCancel()
@@ -169,6 +176,8 @@ func (s *State) disconnectMySQLSession() {
 func (s *State) CloseMySQLSessions() { s.closeMySQLSessions() }
 
 func (s *State) closeMySQLSessions() {
+	s.mysqlForceClose = true
+	defer func() { s.mysqlForceClose = false }()
 	s.closeAllMySQLConnections()
 	s.mysqlSessionPassword = ""
 	if s.mysqlSessionManager != nil {
