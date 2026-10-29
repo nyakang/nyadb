@@ -7,7 +7,7 @@ import (
 
 	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -23,15 +23,15 @@ func TestMySQLDataStatusEnglishKeepsPageAndQueryMeaning(t *testing.T) {
 	for _, test := range []struct {
 		loading, canceled bool
 		err               string
-		page              *connections.MySQLDataPage
+		page              *mysqlsvc.MySQLDataPage
 		want              string
 	}{
 		{want: "No data loaded"},
 		{loading: true, want: "Loading page 2…"},
 		{canceled: true, want: "Read canceled · Page 2"},
 		{err: "permission denied", want: "Read failed · Page 2"},
-		{page: &connections.MySQLDataPage{}, want: "Loaded 0 rows · Page 2"},
-		{page: &connections.MySQLDataPage{Rows: [][]connections.MySQLDataCell{{{Text: "value"}}}}, want: "Loaded 1 rows · 101–101 · Page 2"},
+		{page: &mysqlsvc.MySQLDataPage{}, want: "Loaded 0 rows · Page 2"},
+		{page: &mysqlsvc.MySQLDataPage{Rows: [][]mysqlsvc.MySQLDataCell{{{Text: "value"}}}}, want: "Loaded 1 rows · 101–101 · Page 2"},
 	} {
 		doc.dataLoading, doc.dataReadInfo.Canceled, doc.dataErr, doc.dataPage = test.loading, test.canceled, test.err, test.page
 		if got := mysqlDataPageStatus(doc); got != test.want {
@@ -85,7 +85,7 @@ func TestMySQLTableInspectorTranslatesLabelsAndPreservesServerError(t *testing.T
 	doc := tableInfoSampleTab()
 	doc.dataInfo.attempted = true
 	doc.dataInfo.err = "表信息"
-	doc.dataInfo.info = &connections.MySQLTableInfo{Database: doc.dataDatabase, Name: doc.dataTable, Kind: "BASE TABLE", Engine: "InnoDB", Comment: "刷新"}
+	doc.dataInfo.info = &mysqlsvc.MySQLTableInfo{Database: doc.dataDatabase, Name: doc.dataTable, Kind: "BASE TABLE", Engine: "InnoDB", Comment: "刷新"}
 	s := tableInfoSampleState(doc)
 	tt := tableInfoTester(s, doc)
 	for _, label := range []string{"Data table information panel", "Table info", "Estimated rows", "Get row count", "Row counts ignore the current filters.", "Unable to load table information: 表信息"} {

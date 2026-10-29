@@ -5,20 +5,20 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func TestMySQLRuleEditorMultipleConditionsPrioritySortAndMenu(t *testing.T) {
 	s, tt := structureTestBrowser(t)
 	var mu sync.Mutex
-	var observed []connections.MySQLDataOptions
-	s.mysqlDataAdvancedLoader = func(ctx context.Context, id int64, db, table string, o connections.MySQLDataOptions) (*connections.MySQLDataPage, error) {
+	var observed []mysqlsvc.MySQLDataOptions
+	s.mysqlDataAdvancedLoader = func(ctx context.Context, id int64, db, table string, o mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {
 		mu.Lock()
 		observed = append(observed, o)
 		mu.Unlock()
-		return &connections.MySQLDataPage{Database: db, Table: table, Offset: o.Offset, Limit: o.Limit,
+		return &mysqlsvc.MySQLDataPage{Database: db, Table: table, Offset: o.Offset, Limit: o.Limit,
 			Columns: []string{"id", "note", "score"}, ColumnKinds: []string{"bigint", "varchar", "int"},
-			Rows:        [][]connections.MySQLDataCell{{{Text: "1"}, {Text: "hello"}, {Text: "2"}}},
+			Rows:        [][]mysqlsvc.MySQLDataCell{{{Text: "1"}, {Text: "hello"}, {Text: "2"}}},
 			StableOrder: true}, nil
 	}
 	if err := tt.Click("打开选中表数据"); err != nil {

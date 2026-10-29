@@ -6,7 +6,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -155,7 +155,7 @@ func (s *State) navigateMySQLCellEdit(services ui.Services, t *tab, row int, fie
 	}
 	for _, name := range order {
 		source := slices.Index(t.dataPage.Columns, name)
-		if source >= 0 && !t.dataHiddenColumns[name] && !connections.MySQLDataColumnGenerated(t.dataPage.ColumnMetadata[source]) {
+		if source >= 0 && !t.dataHiddenColumns[name] && !mysqlsvc.MySQLDataColumnGenerated(t.dataPage.ColumnMetadata[source]) {
 			visible = append(visible, name)
 		}
 	}

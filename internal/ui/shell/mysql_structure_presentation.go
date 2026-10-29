@@ -4,14 +4,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // Navicat 18's observed MySQL design Index page lists secondary indexes as
 // one row per index; PRIMARY is represented by the key field attributes.
 // Keep PRIMARY in the service metadata, filtering only the presentation.
-func mysqlStructureDesignIndexes(all []connections.MySQLStructureIndex) []connections.MySQLStructureIndex {
-	indexes := make([]connections.MySQLStructureIndex, 0, len(all))
+func mysqlStructureDesignIndexes(all []mysqlsvc.MySQLStructureIndex) []mysqlsvc.MySQLStructureIndex {
+	indexes := make([]mysqlsvc.MySQLStructureIndex, 0, len(all))
 	for _, index := range all {
 		if !strings.EqualFold(index.Name, "PRIMARY") {
 			indexes = append(indexes, index)
@@ -20,7 +20,7 @@ func mysqlStructureDesignIndexes(all []connections.MySQLStructureIndex) []connec
 	return indexes
 }
 
-func mysqlStructureIndexColumnNames(cols []connections.MySQLStructureIndexColumn) string {
+func mysqlStructureIndexColumnNames(cols []mysqlsvc.MySQLStructureIndexColumn) string {
 	names := make([]string, 0, len(cols))
 	for _, col := range cols {
 		name := col.Name
@@ -32,7 +32,7 @@ func mysqlStructureIndexColumnNames(cols []connections.MySQLStructureIndexColumn
 	return strings.Join(names, ", ")
 }
 
-func mysqlStructureFKColumnNames(cols []connections.MySQLStructureForeignKeyColumn, referenced bool) string {
+func mysqlStructureFKColumnNames(cols []mysqlsvc.MySQLStructureForeignKeyColumn, referenced bool) string {
 	names := make([]string, 0, len(cols))
 	for _, col := range cols {
 		if referenced {
@@ -44,7 +44,7 @@ func mysqlStructureFKColumnNames(cols []connections.MySQLStructureForeignKeyColu
 	return strings.Join(names, ", ")
 }
 
-func mysqlStructureColumnLength(c connections.MySQLStructureColumn) string {
+func mysqlStructureColumnLength(c mysqlsvc.MySQLStructureColumn) string {
 	if c.CharacterMaxLength != nil {
 		return strconv.FormatInt(*c.CharacterMaxLength, 10)
 	}
@@ -57,7 +57,7 @@ func mysqlStructureColumnLength(c connections.MySQLStructureColumn) string {
 	return ""
 }
 
-func mysqlStructureColumnDecimals(c connections.MySQLStructureColumn) string {
+func mysqlStructureColumnDecimals(c mysqlsvc.MySQLStructureColumn) string {
 	switch c.DataType {
 	case "decimal", "numeric", "float", "double":
 		if c.NumericScale != nil {
@@ -67,7 +67,7 @@ func mysqlStructureColumnDecimals(c connections.MySQLStructureColumn) string {
 	return ""
 }
 
-func mysqlStructureColumnDefault(c connections.MySQLStructureColumn) string {
+func mysqlStructureColumnDefault(c mysqlsvc.MySQLStructureColumn) string {
 	if c.Default == nil {
 		// INFORMATION_SCHEMA represents both an absent default and DEFAULT NULL
 		// as SQL NULL. In the observed field designer, a NOT NULL identity with

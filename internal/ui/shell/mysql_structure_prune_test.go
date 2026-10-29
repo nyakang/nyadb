@@ -4,14 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // Same-named tables across databases are distinct workspaces, and losing one
 // schema invalidates only its tabs while retaining the surviving tab cache.
 func TestMySQLStructureQualifiedTabsAndPrunedSchema(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	s.mysqlStructureLoader = func(_ context.Context, _ int64, database, table string) (*connections.MySQLTableStructure, error) {
+	s.mysqlStructureLoader = func(_ context.Context, _ int64, database, table string) (*mysqlsvc.MySQLTableStructure, error) {
 		return fakeStructure(database, table), nil
 	}
 	if err := tt.Click("打开选中表结构"); err != nil {

@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqldriver "github.com/go-sql-driver/mysql"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // SQL clipboard output is executable SQL, so verify its identity and value
@@ -25,7 +25,7 @@ func TestMySQLDataSQLCopyIntegration(t *testing.T) {
 	if err != nil || port < 1024 || port > 65535 {
 		t.Fatal("NYADB_MYSQL_DATA_EDIT_PORT must be an explicit loopback fixture port")
 	}
-	config := mysql.NewConfig()
+	config := mysqldriver.NewConfig()
 	config.User = "data_probe"
 	config.Passwd = os.Getenv("NYADB_MYSQL_DATA_EDIT_PASSWORD")
 	config.Net, config.Addr = "tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
@@ -54,17 +54,17 @@ func TestMySQLDataSQLCopyIntegration(t *testing.T) {
 	if _, err = db.ExecContext(ctx, "INSERT INTO "+target+" (id,note,amount) VALUES (9007199254740992,'neighbor',1),(9007199254740993,'target',2)"); err != nil {
 		t.Fatal(err)
 	}
-	page := &connections.MySQLDataPage{Database: config.DBName, Table: name,
+	page := &mysqlsvc.MySQLDataPage{Database: config.DBName, Table: name,
 		Columns:        []string{"id", "note", "amount", "payload", "derived"},
 		ColumnKinds:    []string{"bigint", "longtext", "decimal", "varbinary", "bigint"},
-		ColumnMetadata: []connections.MySQLStructureColumn{{Name: "id", Key: "PRI"}, {Name: "note"}, {Name: "amount"}, {Name: "payload"}, {Name: "derived", Extra: "STORED GENERATED"}},
-		Rows:           [][]connections.MySQLDataCell{{{Text: "9007199254740993"}, {Text: "target"}, {Text: "2.000000"}, {Null: true}, {Text: "generated-preview", Truncated: true}}},
-		RowRefs:        []*connections.MySQLRowRef{{Database: config.DBName, Table: name, Columns: []string{"id"}, Values: [][]byte{[]byte("9007199254740993")}}},
+		ColumnMetadata: []mysqlsvc.MySQLStructureColumn{{Name: "id", Key: "PRI"}, {Name: "note"}, {Name: "amount"}, {Name: "payload"}, {Name: "derived", Extra: "STORED GENERATED"}},
+		Rows:           [][]mysqlsvc.MySQLDataCell{{{Text: "9007199254740993"}, {Text: "target"}, {Text: "2.000000"}, {Null: true}, {Text: "generated-preview", Truncated: true}}},
+		RowRefs:        []*mysqlsvc.MySQLRowRef{{Database: config.DBName, Table: name, Columns: []string{"id"}, Values: [][]byte{[]byte("9007199254740993")}}},
 	}
 	doc := &tab{dataPage: page, dataSelectedRow: 0}
 	doc.dataState.Cells.Anchor, doc.dataState.Cells.Cursor = "note", "note"
 	long := strings.Repeat("中文🙂'\t\n", 600)
-	draft := &mysqlRowDraft{Key: mysqlDataRowKey(doc, 0), Row: 0, Kind: "update", Values: map[string]connections.MySQLDataValue{
+	draft := &mysqlRowDraft{Key: mysqlDataRowKey(doc, 0), Row: 0, Kind: "update", Values: map[string]mysqlsvc.MySQLDataValue{
 		"note": {Text: long}, "amount": {Text: "9007199254740993.123456"},
 	}}
 	doc.dataEdit.Drafts = map[string]*mysqlRowDraft{draft.Key: draft}
@@ -98,7 +98,7 @@ func TestMySQLDataSQLCopyIntegration(t *testing.T) {
 	t.Log("UPDATE matched only the exact >2^53 key; complete Unicode text, DECIMAL scale and binary NULL survived")
 
 	draft.Kind = "insert"
-	draft.Values = map[string]connections.MySQLDataValue{"note": {Text: ""}, "payload": {Binary: true, Bytes: []byte{0, 0xff, '\'', '\n'}}}
+	draft.Values = map[string]mysqlsvc.MySQLDataValue{"note": {Text: ""}, "payload": {Binary: true, Bytes: []byte{0, 0xff, '\'', '\n'}}}
 	statement, err = mysqlDataSQLSelection(doc, false)
 	if err != nil {
 		t.Fatal(err)

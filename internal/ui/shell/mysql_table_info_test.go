@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -51,9 +51,9 @@ func TestMySQLTableInspectorDefaultsToTableAndExplicitlySelectsField(t *testing.
 	doc := tableInfoSampleTab()
 	s := tableInfoSampleState(doc)
 	var counts atomic.Int32
-	s.mysqlTableInfoLoader = func(context.Context, int64, string, string) (*connections.MySQLTableInfo, error) {
+	s.mysqlTableInfoLoader = func(context.Context, int64, string, string) (*mysqlsvc.MySQLTableInfo, error) {
 		rows := int64(21)
-		return &connections.MySQLTableInfo{Database: doc.dataDatabase, Name: doc.dataTable, Kind: "BASE TABLE", Engine: "InnoDB", EstimatedRows: &rows}, nil
+		return &mysqlsvc.MySQLTableInfo{Database: doc.dataDatabase, Name: doc.dataTable, Kind: "BASE TABLE", Engine: "InnoDB", EstimatedRows: &rows}, nil
 	}
 	s.mysqlTableCountLoader = func(context.Context, int64, string, string) (int64, error) { counts.Add(1); return 37, nil }
 	tt := tableInfoTester(s, doc)
@@ -92,7 +92,7 @@ func TestMySQLTableInfoFailureDoesNotChangeDataOrCancelCount(t *testing.T) {
 	s := tableInfoSampleState(doc)
 	page := doc.dataPage
 	started, release := make(chan struct{}), make(chan struct{})
-	s.mysqlTableInfoLoader = func(context.Context, int64, string, string) (*connections.MySQLTableInfo, error) {
+	s.mysqlTableInfoLoader = func(context.Context, int64, string, string) (*mysqlsvc.MySQLTableInfo, error) {
 		return nil, errors.New("metadata denied")
 	}
 	s.mysqlTableCountLoader = func(ctx context.Context, _ int64, _, _ string) (int64, error) {
@@ -170,7 +170,7 @@ func TestMySQLTableInfoDiscardStaleScopeAndDisposeBothRequests(t *testing.T) {
 	doc.dataInfo.countCancel = func() { countCanceled = true }
 	out := make(chan mysqlTableInfoResult, 1)
 	out <- mysqlTableInfoResult{generation: s.mysqlSessionGeneration + 1, profileID: 8, database: doc.dataDatabase, table: doc.dataTable,
-		info: &connections.MySQLTableInfo{Database: doc.dataDatabase, Name: doc.dataTable, Engine: "obsolete"}}
+		info: &mysqlsvc.MySQLTableInfo{Database: doc.dataDatabase, Name: doc.dataTable, Engine: "obsolete"}}
 	doc.dataInfo.results = out
 	s.consumeMySQLTableInfo()
 	if doc.dataInfo.info != nil {

@@ -12,35 +12,35 @@ import (
 	"unicode/utf8"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/locales"
 )
 
-type mysqlDataSaver func(context.Context, int64, string, string, []connections.MySQLDataEdit) (*connections.MySQLDataEditResult, error)
-type mysqlDataRowReader func(context.Context, int64, string, string, connections.MySQLRowRef) (*connections.MySQLDataRow, error)
+type mysqlDataSaver func(context.Context, int64, string, string, []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error)
+type mysqlDataRowReader func(context.Context, int64, string, string, mysqlsvc.MySQLRowRef) (*mysqlsvc.MySQLDataRow, error)
 type mysqlRowDraft struct {
 	Key      string
 	Row      int
 	Kind     string
-	Original *connections.MySQLRowSnapshot
-	Before   []connections.MySQLDataCell
-	Values   map[string]connections.MySQLDataValue
+	Original *mysqlsvc.MySQLRowSnapshot
+	Before   []mysqlsvc.MySQLDataCell
+	Values   map[string]mysqlsvc.MySQLDataValue
 }
 type mysqlCellEditor struct {
 	Key, Field, Text, Initial                     string
 	Row                                           int
-	Original                                      connections.MySQLDataValue
+	Original                                      mysqlsvc.MySQLDataValue
 	Dedicated, Open, Focused, Selected, Composing bool
 }
 type mysqlEditResult struct {
 	Generation, Request uint64
 	Profile             int64
 	Keys                []string
-	Saved               *connections.MySQLDataEditResult
-	Row                 *connections.MySQLDataRow
+	Saved               *mysqlsvc.MySQLDataEditResult
+	Row                 *mysqlsvc.MySQLDataRow
 	TargetRow, Source   int
 	Err                 error
-	Verification        *connections.MySQLDataVerification
+	Verification        *mysqlsvc.MySQLDataVerification
 }
 type mysqlCellHit struct {
 	Row, Source int
@@ -55,7 +55,7 @@ type mysqlDataEditState struct {
 	Request                   uint64
 	Cancel                    context.CancelFunc
 	Results                   <-chan mysqlEditResult
-	Uncertain                 *connections.MySQLDataEditResult
+	Uncertain                 *mysqlsvc.MySQLDataEditResult
 	UncertainKeys             []string
 	LeaveOpen                 bool
 	LeaveNext                 func(ui.Services)
@@ -92,7 +92,7 @@ func mysqlDataCanEdit(t *tab, row, source int) bool {
 	if t == nil || t.dataPage == nil || t.dataLoading || t.dataEdit.Busy || t.dataEdit.Uncertain != nil || row < 0 || row >= len(t.dataPage.Rows) || source < 0 || source >= len(t.dataPage.ColumnMetadata) {
 		return false
 	}
-	if connections.MySQLDataColumnGenerated(t.dataPage.ColumnMetadata[source]) {
+	if mysqlsvc.MySQLDataColumnGenerated(t.dataPage.ColumnMetadata[source]) {
 		return false
 	}
 	if d := mysqlDataDraftForRow(t, row); d != nil {
@@ -124,12 +124,12 @@ func (s *State) mysqlRowDraft(t *tab, row int) *mysqlRowDraft {
 	if row >= len(t.dataPage.RowSnapshots) || t.dataPage.RowSnapshots[row] == nil {
 		return nil
 	}
-	d := &mysqlRowDraft{Key: key, Row: row, Kind: "update", Original: t.dataPage.RowSnapshots[row], Before: slices.Clone(t.dataPage.Rows[row]), Values: map[string]connections.MySQLDataValue{}}
+	d := &mysqlRowDraft{Key: key, Row: row, Kind: "update", Original: t.dataPage.RowSnapshots[row], Before: slices.Clone(t.dataPage.Rows[row]), Values: map[string]mysqlsvc.MySQLDataValue{}}
 	t.dataEdit.Drafts[key] = d
 	return d
 }
-func mysqlDataValuePreview(v connections.MySQLDataValue) connections.MySQLDataCell {
-	c := connections.MySQLDataCell{Null: v.Null, Text: v.Text}
+func mysqlDataValuePreview(v mysqlsvc.MySQLDataValue) mysqlsvc.MySQLDataCell {
+	c := mysqlsvc.MySQLDataCell{Null: v.Null, Text: v.Text}
 	if v.Default {
 		c.Text = "(Default)"
 	}
@@ -145,7 +145,7 @@ func mysqlDataValuePreview(v connections.MySQLDataValue) connections.MySQLDataCe
 	}
 	return c
 }
-func (s *State) setMySQLDataCell(services ui.Services, t *tab, row, source int, v connections.MySQLDataValue) {
+func (s *State) setMySQLDataCell(services ui.Services, t *tab, row, source int, v mysqlsvc.MySQLDataValue) {
 	if !mysqlDataCanEdit(t, row, source) {
 		return
 	}
@@ -173,7 +173,7 @@ func (s *State) finishMySQLCellEdit(t *tab, accept bool) {
 	if source < 0 || mysqlDataRowKey(t, e.Row) != e.Key {
 		return
 	}
-	v := connections.MySQLDataValue{Text: e.Text}
+	v := mysqlsvc.MySQLDataValue{Text: e.Text}
 	if e.Original.Binary {
 		raw, err := hex.DecodeString(strings.TrimPrefix(strings.TrimSpace(e.Text), "0x"))
 		if err != nil {
@@ -181,9 +181,9 @@ func (s *State) finishMySQLCellEdit(t *tab, accept bool) {
 			t.dataEdit.Err = locales.Text("二进制值必须是十六进制字节")
 			return
 		}
-		v = connections.MySQLDataValue{Binary: true, Bytes: raw}
+		v = mysqlsvc.MySQLDataValue{Binary: true, Bytes: raw}
 	}
-	if len(v.Text)+len(v.Bytes) > connections.MySQLDataEditMaxBytes {
+	if len(v.Text)+len(v.Bytes) > mysqlsvc.MySQLDataEditMaxBytes {
 		t.dataEdit.Editor = e
 		t.dataEdit.Err = locales.Text("编辑内容超过 1 MiB 限制")
 		return
@@ -224,12 +224,12 @@ func (s *State) beginMySQLCellEdit(services ui.Services, t *tab, row, source int
 	}
 	key, field := mysqlDataRowKey(t, row), t.dataPage.Columns[source]
 	cell := t.dataPage.Rows[row][source]
-	v := connections.MySQLDataValue{Text: cell.Text, Null: cell.Null}
+	v := mysqlsvc.MySQLDataValue{Text: cell.Text, Null: cell.Null}
 	if d := mysqlDataDraftForRow(t, row); d != nil {
 		if draft, ok := d.Values[field]; ok {
 			v = draft
 		} else if d.Kind == "insert" {
-			v = connections.MySQLDataValue{Default: true}
+			v = mysqlsvc.MySQLDataValue{Default: true}
 		}
 	}
 	kind := strings.ToLower(t.dataPage.ColumnMetadata[source].DataType)
@@ -296,12 +296,12 @@ func (s *State) addMySQLDataRecord(services ui.Services, t *tab) {
 		s.saveMySQLData(services, t)
 		return
 	}
-	if len(t.dataEdit.Drafts) >= connections.MySQLDataMaxPageSize {
+	if len(t.dataEdit.Drafts) >= mysqlsvc.MySQLDataMaxPageSize {
 		return
 	}
 	s.finishMySQLCellEdit(t, true)
 	row := len(t.dataPage.Rows)
-	values := make([]connections.MySQLDataCell, len(t.dataPage.Columns))
+	values := make([]mysqlsvc.MySQLDataCell, len(t.dataPage.Columns))
 	for i := range values {
 		values[i].Text = "(Default)"
 	}
@@ -312,13 +312,13 @@ func (s *State) addMySQLDataRecord(services ui.Services, t *tab) {
 		t.dataEdit.Drafts = map[string]*mysqlRowDraft{}
 	}
 	key := fmt.Sprintf("new:%d:%d", t.id, row)
-	t.dataEdit.Drafts[key] = &mysqlRowDraft{Key: key, Row: row, Kind: "insert", Values: map[string]connections.MySQLDataValue{}}
+	t.dataEdit.Drafts[key] = &mysqlRowDraft{Key: key, Row: row, Kind: "insert", Values: map[string]mysqlsvc.MySQLDataValue{}}
 	t.dataSelectedRow = row
 	t.dataSelection.Clear()
 	t.dataSelection.Add(row)
 	t.dataState.ScrollIntoView(row)
 	for i, col := range t.dataPage.ColumnMetadata {
-		if !connections.MySQLDataColumnGenerated(col) && !strings.Contains(col.Extra, "auto_increment") && !t.dataHiddenColumns[col.Name] {
+		if !mysqlsvc.MySQLDataColumnGenerated(col) && !strings.Contains(col.Extra, "auto_increment") && !t.dataHiddenColumns[col.Name] {
 			s.beginMySQLCellEdit(services, t, row, i, false)
 			break
 		}
@@ -357,7 +357,7 @@ func (s *State) deleteMySQLDataRecords(services ui.Services, t *tab, row int) {
 		} else {
 			d.Kind = "delete"
 		}
-		d.Values = map[string]connections.MySQLDataValue{}
+		d.Values = map[string]mysqlsvc.MySQLDataValue{}
 	}
 	s.removeMySQLDataDraftRows(t, func(d *mysqlRowDraft) bool { return d.Kind == "discard_insert" })
 	for key, d := range t.dataEdit.Drafts {
@@ -383,10 +383,10 @@ func (s *State) saveMySQLData(services ui.Services, t *tab) {
 		keys = append(keys, key)
 	}
 	slices.SortFunc(keys, func(a, b string) int { return t.dataEdit.Drafts[a].Row - t.dataEdit.Drafts[b].Row })
-	edits := []connections.MySQLDataEdit{}
+	edits := []mysqlsvc.MySQLDataEdit{}
 	for _, key := range keys {
 		d := t.dataEdit.Drafts[key]
-		edits = append(edits, connections.MySQLDataEdit{Kind: d.Kind, Original: d.Original, Values: d.Values})
+		edits = append(edits, mysqlsvc.MySQLDataEdit{Kind: d.Kind, Original: d.Original, Values: d.Values})
 	}
 	if len(edits) == 0 {
 		return
@@ -469,7 +469,7 @@ func (s *State) removeMySQLDataDraftRows(t *tab, remove func(*mysqlRowDraft) boo
 	t.dataSelectedRow = min(t.dataSelectedRow, len(t.dataPage.Rows)-1)
 	t.dataSelection.Clear()
 }
-func (s *State) acceptMySQLDataSaved(t *tab, keys []string, saved *connections.MySQLDataEditResult) {
+func (s *State) acceptMySQLDataSaved(t *tab, keys []string, saved *mysqlsvc.MySQLDataEditResult) {
 	if saved == nil || len(saved.Outcomes) != len(keys) {
 		t.dataEdit.Err = locales.Text("提交结果不完整，请核验数据库")
 		return
@@ -497,9 +497,9 @@ func (s *State) acceptMySQLDataSaved(t *tab, keys []string, saved *connections.M
 						continue
 					}
 					idx := slices.Index(outcome.Saved.Ref.Columns, name)
-					value := connections.MySQLDataValue{Text: string(outcome.Saved.Ref.Values[idx])}
+					value := mysqlsvc.MySQLDataValue{Text: string(outcome.Saved.Ref.Values[idx])}
 					if j < len(t.dataPage.ColumnMetadata) && mysqlDataBinaryField(t.dataPage.ColumnMetadata[j]) {
-						value = connections.MySQLDataValue{Binary: true, Bytes: outcome.Saved.Ref.Values[idx]}
+						value = mysqlsvc.MySQLDataValue{Binary: true, Bytes: outcome.Saved.Ref.Values[idx]}
 					}
 					t.dataPage.Rows[row][j] = mysqlDataValuePreview(value)
 				}
@@ -557,7 +557,7 @@ func (s *State) consumeMySQLDataEdits(services ui.Services) {
 			if r.Row != nil {
 				row, source := r.TargetRow, r.Source
 				if row >= len(t.dataPage.RowSnapshots) || !reflect.DeepEqual(t.dataPage.RowSnapshots[row], r.Row.Snapshot) {
-					t.dataEdit.Err = connections.ErrMySQLDataConflict.Error()
+					t.dataEdit.Err = mysqlsvc.ErrMySQLDataConflict.Error()
 					continue
 				}
 				field := t.dataPage.Columns[source]
@@ -648,7 +648,7 @@ func (s *State) guardMySQLProfileLeave(id int64, next func(ui.Services)) bool {
 	return false
 }
 
-func stageMySQLDataValue(t *tab, d *mysqlRowDraft, source int, v connections.MySQLDataValue) {
+func stageMySQLDataValue(t *tab, d *mysqlRowDraft, source int, v mysqlsvc.MySQLDataValue) {
 	field := t.dataPage.Columns[source]
 	preview := mysqlDataValuePreview(v)
 	if d.Kind == "update" && source < len(d.Before) && !d.Before[source].Truncated && !v.Default && preview == d.Before[source] {

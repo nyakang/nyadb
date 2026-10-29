@@ -4,14 +4,14 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func TestMySQLDatabaseRefreshRetainsCacheOnErrorAndPrunesRemovedSchemas(t *testing.T) {
 	s, tt := mysqlObjectTestState(t)
 	s.mysqlSelectedDatabase = "analytics"
 	s.mysqlObjectKind = "表"
-	s.mysqlObjectCache = map[string][]connections.MySQLDBObject{
+	s.mysqlObjectCache = map[string][]mysqlsvc.MySQLDBObject{
 		"analytics": {{Name: "fact", Kind: "表"}},
 		"app_db":    {{Name: "orders", Kind: "表"}},
 	}

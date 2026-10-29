@@ -4,13 +4,13 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func objectInt64(n int64) *int64 { return &n }
 
 func TestMySQLObjectMetadataColumnsRespectServerNullsAndEstimates(t *testing.T) {
-	table := connections.MySQLDBObject{
+	table := mysqlsvc.MySQLDBObject{
 		Name: "orders", Kind: "表", Engine: "InnoDB", Comment: "sales",
 		AutoIncrement: objectInt64(71),
 		ModifiedAt:    "2026-10-20 12:34:56",
@@ -23,7 +23,7 @@ func TestMySQLObjectMetadataColumnsRespectServerNullsAndEstimates(t *testing.T) 
 			t.Fatalf("metadata column %d: want %q got %q", col, want, got)
 		}
 	}
-	view := connections.MySQLDBObject{Name: "report_view", Kind: "视图", Comment: "report"}
+	view := mysqlsvc.MySQLDBObject{Name: "report_view", Kind: "视图", Comment: "report"}
 	for _, col := range []int{1, 2, 3, 4, 5} {
 		if got := mysqlObjectCellText(view, col); got != "" {
 			t.Fatalf("unknown view metadata was invented: column %d %q", col, got)

@@ -6,15 +6,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func TestSQLTabLimitErrorVisibleAndRetryableInWorkspace(t *testing.T) {
 	s, tt, _ := sqlUITestState(t)
 	q := s.currentTab()
 	q.editor.Buffer.Set("SELECT 1")
-	s.mysqlSQLExecutor = func(context.Context, int64, string, string) (connections.MySQLSQLResult, error) {
-		return connections.MySQLSQLResult{}, connections.ErrMySQLSQLSessionLimit
+	s.mysqlSQLExecutor = func(context.Context, int64, string, string) (mysqlsvc.MySQLSQLResult, error) {
+		return mysqlsvc.MySQLSQLResult{}, mysqlsvc.ErrMySQLSQLSessionLimit
 	}
 	if err := tt.Click("运行当前或选中 SQL"); err != nil {
 		t.Fatal(err)
@@ -27,8 +27,8 @@ func TestSQLTabLimitErrorVisibleAndRetryableInWorkspace(t *testing.T) {
 	if q.editor.Buffer.String() != "SELECT 1" {
 		t.Fatal("quota rejection discarded SQL editor text")
 	}
-	s.mysqlSQLExecutor = func(context.Context, int64, string, string) (connections.MySQLSQLResult, error) {
-		return connections.MySQLSQLResult{Columns: []string{"id"}, Rows: [][]string{{"1"}}}, nil
+	s.mysqlSQLExecutor = func(context.Context, int64, string, string) (mysqlsvc.MySQLSQLResult, error) {
+		return mysqlsvc.MySQLSQLResult{Columns: []string{"id"}, Rows: [][]string{{"1"}}}, nil
 	}
 	if err := tt.Click("运行当前或选中 SQL"); err != nil {
 		t.Fatal(err)

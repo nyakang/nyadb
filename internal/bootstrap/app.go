@@ -36,7 +36,7 @@ func Run() error {
 		return fmt.Errorf("read appearance preference: %w", err)
 	}
 	theme.SetMode(theme.ParseMode(savedAppearance))
-	state := shell.NewWithProfiles(connections.NewService(connections.NewStore(db)))
+	state := shell.NewWithProfiles(connections.NewService(localdb.NewProfileStore(db)))
 	state.SetCredentialVault(credentials.NewOSVault())
 	state.SetDataLayoutPreferences(
 		func(key string) (string, error) { return localdb.Preference(db, key) },

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -17,7 +17,7 @@ func TestMySQLGridUsesThemeAndResultOffset(t *testing.T) {
 			theme.SetMode(mode)
 			doc := alignedDataTestTab()
 			doc.dataSelectedRow = -1
-			doc.dataPage.Rows = append(doc.dataPage.Rows, []connections.MySQLDataCell{{Text: "2"}, {Text: ""}}, []connections.MySQLDataCell{{Text: "3"}, {Null: true}})
+			doc.dataPage.Rows = append(doc.dataPage.Rows, []mysqlsvc.MySQLDataCell{{Text: "2"}, {Text: ""}}, []mysqlsvc.MySQLDataCell{{Text: "3"}, {Null: true}})
 			s := New()
 			tt := ui.NewTester(func(c *ui.Context) { theme.Apply(c); s.mysqlDataWorkspace(c, doc) }, 540, 320)
 			style := doc.dataState.TableStyle
@@ -63,7 +63,7 @@ func TestSelectedNullCellKeepsReadableInkAfterColumnReorder(t *testing.T) {
 			theme.SetMode(mode)
 			doc := alignedDataTestTab()
 			doc.dataSelectedRow = -1
-			doc.dataPage.Rows = [][]connections.MySQLDataCell{{{Text: "1"}, {Null: true}}}
+			doc.dataPage.Rows = [][]mysqlsvc.MySQLDataCell{{{Text: "1"}, {Null: true}}}
 			s := New()
 			var p theme.Palette
 			tt := ui.NewTester(func(c *ui.Context) {

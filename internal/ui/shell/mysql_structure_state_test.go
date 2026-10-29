@@ -11,24 +11,24 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
-func fakeStructure(database, table string) *connections.MySQLTableStructure {
+func fakeStructure(database, table string) *mysqlsvc.MySQLTableStructure {
 	def := "1"
-	return &connections.MySQLTableStructure{
+	return &mysqlsvc.MySQLTableStructure{
 		Database: database, Name: table, Kind: "BASE TABLE", Engine: "InnoDB",
-		Columns: []connections.MySQLStructureColumn{
+		Columns: []mysqlsvc.MySQLStructureColumn{
 			{Name: "id", Type: "bigint", Position: 1, Key: "PRI", Default: &def},
 		},
-		Indexes: []connections.MySQLStructureIndex{{
+		Indexes: []mysqlsvc.MySQLStructureIndex{{
 			Name: "PRIMARY", Unique: true, Type: "BTREE",
-			Columns: []connections.MySQLStructureIndexColumn{{Name: "id", Position: 1}},
+			Columns: []mysqlsvc.MySQLStructureIndexColumn{{Name: "id", Position: 1}},
 		}},
-		ForeignKeys: []connections.MySQLStructureForeignKey{{
+		ForeignKeys: []mysqlsvc.MySQLStructureForeignKey{{
 			Name: "fk_order", ReferencedDatabase: database, ReferencedTable: "accounts",
 			OnUpdate: "CASCADE", OnDelete: "RESTRICT",
-			Columns: []connections.MySQLStructureForeignKeyColumn{{Name: "account_id", ReferencedName: "id", Position: 1}},
+			Columns: []mysqlsvc.MySQLStructureForeignKeyColumn{{Name: "account_id", ReferencedName: "id", Position: 1}},
 		}},
 	}
 }
@@ -48,8 +48,8 @@ func waitMySQLStructure(t *testing.T, s *State, tt *ui.Tester) {
 func structureTestBrowser(t *testing.T) (*State, *ui.Tester) {
 	t.Helper()
 	s, tt := mysqlObjectTestState(t)
-	s.mysqlObjectLister = func(context.Context, int64, string) ([]connections.MySQLDBObject, error) {
-		return []connections.MySQLDBObject{
+	s.mysqlObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
+		return []mysqlsvc.MySQLDBObject{
 			{Name: "orders", Kind: "表", Engine: "InnoDB"},
 			{Name: "sales", Kind: "视图"},
 		}, nil
@@ -65,7 +65,7 @@ func TestMySQLStructureNativeTabsSwitchRefreshAndDisconnect(t *testing.T) {
 	s, tt := structureTestBrowser(t)
 	var mu sync.Mutex
 	calls := map[string]int{}
-	s.mysqlStructureLoader = func(_ context.Context, _ int64, database, table string) (*connections.MySQLTableStructure, error) {
+	s.mysqlStructureLoader = func(_ context.Context, _ int64, database, table string) (*mysqlsvc.MySQLTableStructure, error) {
 		mu.Lock()
 		calls[table]++
 		mu.Unlock()
@@ -175,7 +175,7 @@ func TestMySQLStructureLateResultCannotReplaceRefreshOrDisconnectedSession(t *te
 	release := make(chan struct{})
 	var mu sync.Mutex
 	calls := 0
-	s.mysqlStructureLoader = func(ctx context.Context, id int64, database, table string) (*connections.MySQLTableStructure, error) {
+	s.mysqlStructureLoader = func(ctx context.Context, id int64, database, table string) (*mysqlsvc.MySQLTableStructure, error) {
 		mu.Lock()
 		calls++
 		n := calls
@@ -220,7 +220,7 @@ func TestMySQLStructureLateResultCannotReplaceRefreshOrDisconnectedSession(t *te
 func TestMySQLStructureErrorRetryCloseAndCancel(t *testing.T) {
 	s, tt := structureTestBrowser(t)
 	fail := true
-	s.mysqlStructureLoader = func(context.Context, int64, string, string) (*connections.MySQLTableStructure, error) {
+	s.mysqlStructureLoader = func(context.Context, int64, string, string) (*mysqlsvc.MySQLTableStructure, error) {
 		if fail {
 			return nil, errors.New("metadata access denied")
 		}

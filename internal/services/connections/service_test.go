@@ -1,35 +1,37 @@
-package connections
+package connections_test
 
 import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
 func TestServiceDefaultsAndDuplicate(t *testing.T) {
-	serviceStore, _ := openStore(t)
-	s := NewService(serviceStore)
+	serviceStore, _, _ := openStore(t)
+	s := connections.NewService(serviceStore)
 	ctx := context.Background()
-	for _, kind := range []Kind{MySQL, PostgreSQL, SQLite} {
-		def, err := Defaults(kind)
+	for _, kind := range []connections.Kind{connections.MySQL, connections.PostgreSQL, connections.SQLite} {
+		def, err := connections.Defaults(kind)
 		if err != nil || def.Kind != kind {
 			t.Fatalf("defaults(%s): %+v %v", kind, def, err)
 		}
 		switch kind {
-		case MySQL:
+		case connections.MySQL:
 			if def.Port != 3306 || def.Host != "localhost" {
 				t.Fatalf("mysql default: %+v", def)
 			}
-		case PostgreSQL:
+		case connections.PostgreSQL:
 			if def.Port != 5432 || def.Database != "postgres" {
 				t.Fatalf("postgres default: %+v", def)
 			}
 		}
 	}
-	if _, err := Defaults("unknown"); !errors.Is(err, ErrInvalid) {
+	if _, err := connections.Defaults("unknown"); !errors.Is(err, connections.ErrInvalid) {
 		t.Fatalf("unknown kind: %v", err)
 	}
-	first, err := s.Create(ctx, Profile{Name: "Original", Kind: MySQL, Host: "localhost", Port: 3306})
+	first, err := s.Create(ctx, connections.Profile{Name: "Original", Kind: connections.MySQL, Host: "localhost", Port: 3306})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,10 +42,10 @@ func TestServiceDefaultsAndDuplicate(t *testing.T) {
 	if first.ID == second.ID || second.Name != "Original copy" || second.Host != first.Host {
 		t.Fatalf("duplicate: %+v", second)
 	}
-	if _, err = s.Duplicate(ctx, first.ID, " "); !errors.Is(err, ErrInvalid) {
+	if _, err = s.Duplicate(ctx, first.ID, " "); !errors.Is(err, connections.ErrInvalid) {
 		t.Fatalf("empty duplicate: %v", err)
 	}
-	if _, err = s.Duplicate(ctx, 999, "Missing"); !errors.Is(err, ErrNotFound) {
+	if _, err = s.Duplicate(ctx, 999, "Missing"); !errors.Is(err, connections.ErrNotFound) {
 		t.Fatalf("missing: %v", err)
 	}
 	if err = s.Delete(ctx, first.ID); err != nil {

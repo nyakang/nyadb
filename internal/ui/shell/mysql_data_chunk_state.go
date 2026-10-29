@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 type mysqlChunkResult struct {
@@ -13,11 +13,11 @@ type mysqlChunkResult struct {
 	profileID           int64
 	row                 int
 	field               string
-	chunk               *connections.MySQLFieldChunk
+	chunk               *mysqlsvc.MySQLFieldChunk
 	err                 error
 }
 
-func mysqlDataPageMethod(page *connections.MySQLDataPage) string {
+func mysqlDataPageMethod(page *mysqlsvc.MySQLDataPage) string {
 	if page.KeysetAvailable {
 		return "Keyset"
 	}

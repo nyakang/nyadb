@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -28,7 +28,7 @@ func (s *State) openMySQLProgram(database, name, kind string) {
 		s.status = "请先连接 MySQL"
 		return
 	}
-	var item *connections.MySQLDBObject
+	var item *mysqlsvc.MySQLDBObject
 	for i := range s.mysqlObjectCache[database] {
 		obj := &s.mysqlObjectCache[database][i]
 		if obj.Name == name && obj.Kind == kind {

@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -12,9 +12,9 @@ import (
 // the first visible field is shown, matching the reference's initial panel.
 // The full bit distinguishes live server metadata from legacy test-loader
 // pages that only provide DATA_TYPE.
-func mysqlSelectedDataField(t *tab) (connections.MySQLStructureColumn, bool, bool) {
+func mysqlSelectedDataField(t *tab) (mysqlsvc.MySQLStructureColumn, bool, bool) {
 	if t == nil || t.dataPage == nil {
-		return connections.MySQLStructureColumn{}, false, false
+		return mysqlsvc.MySQLStructureColumn{}, false, false
 	}
 	page := t.dataPage
 	name := t.dataState.Cells.Cursor
@@ -33,19 +33,19 @@ func mysqlSelectedDataField(t *tab) (connections.MySQLStructureColumn, bool, boo
 		if i < len(page.ColumnMetadata) && page.ColumnMetadata[i].Name == name {
 			return page.ColumnMetadata[i], true, true
 		}
-		field := connections.MySQLStructureColumn{Name: name}
+		field := mysqlsvc.MySQLStructureColumn{Name: name}
 		if i < len(page.ColumnKinds) {
 			field.Type, field.DataType = page.ColumnKinds[i], page.ColumnKinds[i]
 		}
 		return field, true, false
 	}
-	return connections.MySQLStructureColumn{}, false, false
+	return mysqlsvc.MySQLStructureColumn{}, false, false
 }
 
-func mysqlSelectedDataCell(t *tab) (string, connections.MySQLDataCell, bool) {
+func mysqlSelectedDataCell(t *tab) (string, mysqlsvc.MySQLDataCell, bool) {
 	if t == nil || t.dataPage == nil || t.dataSelectedRow < 0 ||
 		t.dataSelectedRow >= len(t.dataPage.Rows) {
-		return "", connections.MySQLDataCell{}, false
+		return "", mysqlsvc.MySQLDataCell{}, false
 	}
 	name := t.dataState.Cells.Cursor
 	for col, candidate := range t.dataPage.Columns {
@@ -53,10 +53,10 @@ func mysqlSelectedDataCell(t *tab) (string, connections.MySQLDataCell, bool) {
 			return name, t.dataPage.Rows[t.dataSelectedRow][col], true
 		}
 	}
-	return "", connections.MySQLDataCell{}, false
+	return "", mysqlsvc.MySQLDataCell{}, false
 }
 
-func mysqlDataCopyPreview(cell connections.MySQLDataCell) string {
+func mysqlDataCopyPreview(cell mysqlsvc.MySQLDataCell) string {
 	if cell.Null {
 		return "NULL"
 	}

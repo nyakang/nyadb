@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -19,7 +19,7 @@ type mysqlDataReadInfo struct {
 	Canceled    bool
 }
 
-func (info *mysqlDataReadInfo) accept(page *connections.MySQLDataPage) {
+func (info *mysqlDataReadInfo) accept(page *mysqlsvc.MySQLDataPage) {
 	info.QuerySQL, info.CompletedAt, info.Duration = page.QuerySQL, page.CompletedAt, page.Duration
 	info.Canceled = false
 }
@@ -38,7 +38,7 @@ func (s *State) changeMySQLDataPageSize(services ui.Services, t *tab, limit int)
 		return
 	}
 	if t == nil || t.dataLoading || t.dataLimit == limit ||
-		(limit != 50 && limit != 100 && limit != connections.MySQLDataMaxPageSize) {
+		(limit != 50 && limit != 100 && limit != mysqlsvc.MySQLDataMaxPageSize) {
 		return
 	}
 	t.dataLimit = limit
@@ -64,7 +64,7 @@ func mysqlDataReadStatus(t *tab) string {
 		info.CompletedAt.Local().Format("15:04:05"), max(0, info.Duration.Milliseconds()))
 }
 
-func (s *State) mysqlDataFooter(c *ui.Context, t *tab, page *connections.MySQLDataPage) {
+func (s *State) mysqlDataFooter(c *ui.Context, t *tab, page *mysqlsvc.MySQLDataPage) {
 	palette := theme.Colors(c)
 	s.consumeMySQLDataExport(t)
 
@@ -137,7 +137,7 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *tab, page *connections.MySQLDa
 			}
 			ui.Button(c, fmt.Sprintf("%d / %s", t.dataLimit, locales.Text("页"))).Label(locales.Text("每页行数")).
 				Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 4).Disabled(t.dataLoading || t.dataEdit.Busy || t.dataEdit.Uncertain != nil).Menu(func(m *ui.Menu) {
-				for _, limit := range []int{50, 100, connections.MySQLDataMaxPageSize} {
+				for _, limit := range []int{50, 100, mysqlsvc.MySQLDataMaxPageSize} {
 					if m.Item(fmt.Sprintf("%d %s", limit, locales.Text("行 / 页"))).Checked(t.dataLimit == limit).Chosen() {
 						s.changeMySQLDataPageSize(c.Services(), t, limit)
 					}

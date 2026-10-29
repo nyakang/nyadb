@@ -8,6 +8,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -38,7 +39,7 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 	p.ActiveVariant = ""
 	settings, err := connections.ResolveActiveSettings(p)
 	if err == nil {
-		_, err = connections.DirectMySQLConfig(settings, s.connectionSecret)
+		_, err = mysqlsvc.DirectMySQLConfig(settings, s.connectionSecret)
 	}
 	if err != nil {
 		s.connectionError = err.Error()
@@ -52,7 +53,7 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 	secret := s.connectionSecret // never log or persist this value
 	tester := s.mysqlConnectionTester
 	if tester == nil {
-		tester = connections.TestDirectMySQLConnection
+		tester = mysqlsvc.TestDirectMySQLConnection
 	}
 	results := make(chan mysqlTestResult, 1)
 	s.connectionTestResults = results

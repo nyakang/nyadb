@@ -5,19 +5,19 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func TestMySQLRuleEditorRemainsUsableAfterQueryError(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	s.mysqlDataAdvancedLoader = func(_ context.Context, _ int64, db, table string, o connections.MySQLDataOptions) (*connections.MySQLDataPage, error) {
+	s.mysqlDataAdvancedLoader = func(_ context.Context, _ int64, db, table string, o mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {
 		if o.FilterMode == "contains" {
 			return nil, errors.New("unsupported filter type")
 		}
-		return &connections.MySQLDataPage{
+		return &mysqlsvc.MySQLDataPage{
 			Database: db, Table: table, Limit: o.Limit, Offset: o.Offset, StableOrder: true,
 			Columns: []string{"id", "note"}, ColumnKinds: []string{"int", "varchar"},
-			Rows: [][]connections.MySQLDataCell{{{Text: "1"}, {Text: "good"}}},
+			Rows: [][]mysqlsvc.MySQLDataCell{{{Text: "1"}, {Text: "good"}}},
 		}, nil
 	}
 	if err := tt.Click("打开选中表数据"); err != nil {

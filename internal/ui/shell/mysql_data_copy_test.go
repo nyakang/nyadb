@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -18,7 +18,7 @@ func TestMySQLDataBlockCopyUsesNativeSelectionAndKeepsMenuBlock(t *testing.T) {
 	s := New()
 	doc := alignedDataTestTab()
 	doc.dataSelectedRow = -1
-	doc.dataPage.Rows = [][]connections.MySQLDataCell{
+	doc.dataPage.Rows = [][]mysqlsvc.MySQLDataCell{
 		{{Text: "41"}, {Text: "alpha"}}, {{Text: "42"}, {Text: "beta"}}, {{Text: "43"}, {Text: "gamma"}},
 	}
 	tt := ui.NewTester(func(c *ui.Context) { theme.Apply(c); s.mysqlDataWorkspace(c, doc) }, 900, 500)
@@ -57,7 +57,7 @@ func TestMySQLCopyFormatsPreserveHiddenReorderedNullAndQuotedValues(t *testing.T
 	doc := alignedDataTestTab()
 	doc.dataPage.Columns = []string{"id", "label", "hidden"}
 	doc.dataColumns = append(doc.dataColumns, ui.TableColumn{ID: "hidden", Title: "hidden", Width: 100})
-	doc.dataPage.Rows = [][]connections.MySQLDataCell{
+	doc.dataPage.Rows = [][]mysqlsvc.MySQLDataCell{
 		{{Text: "9007199254740993"}, {Text: "a,\"b\"\tline\nnext"}, {Text: "private"}},
 		{{Text: "2"}, {Null: true}, {Text: "private"}},
 		{{Text: "3"}, {Text: ""}, {Text: "private"}},
@@ -116,10 +116,10 @@ func TestMySQLDataCopyShortcutStaysInGridAndRefreshUsesService(t *testing.T) {
 	doc.dataProfileID, doc.dataDatabase = 7, "fixture"
 	s.mysqlSessionProfileID, s.mysqlSessionStatus = doc.dataProfileID, "已连接"
 	doc.dataRulesExpanded = true
-	calls := make(chan connections.MySQLDataOptions, 2)
-	s.mysqlDataAdvancedLoader = func(_ context.Context, _ int64, _, _ string, o connections.MySQLDataOptions) (*connections.MySQLDataPage, error) {
+	calls := make(chan mysqlsvc.MySQLDataOptions, 2)
+	s.mysqlDataAdvancedLoader = func(_ context.Context, _ int64, _, _ string, o mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {
 		calls <- o
-		return &connections.MySQLDataPage{Columns: []string{"id", "label"}}, nil
+		return &mysqlsvc.MySQLDataPage{Columns: []string{"id", "label"}}, nil
 	}
 	tt := ui.NewTester(func(c *ui.Context) { theme.Apply(c); s.mysqlDataWorkspace(c, doc) }, 900, 600)
 	if err := tt.Click("数据筛选值"); err != nil {

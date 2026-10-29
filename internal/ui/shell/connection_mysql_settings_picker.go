@@ -1,6 +1,8 @@
 package shell
 
-import "github.com/nyakang/nyadb/internal/services/connections"
+import (
+	"github.com/nyakang/nyadb/internal/services/connections"
+)
 
 // SetMySQLSettingsPicker is invoked by the native browse button.
 // The app host is responsible for showing a directory chooser.

@@ -5,20 +5,20 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func TestMySQLCompactHeaderAt1280AndNarrowNavigation(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	s.mysqlDataAdvancedLoader = func(ctx context.Context, id int64, db, table string, o connections.MySQLDataOptions) (*connections.MySQLDataPage, error) {
-		return &connections.MySQLDataPage{
+	s.mysqlDataAdvancedLoader = func(ctx context.Context, id int64, db, table string, o mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {
+		return &mysqlsvc.MySQLDataPage{
 			Database: db, Table: table, Limit: o.Limit, Offset: o.Offset, StableOrder: true,
 			Columns: []string{"id", "name"}, ColumnKinds: []string{"bigint", "varchar"},
-			ColumnMetadata: []connections.MySQLStructureColumn{
+			ColumnMetadata: []mysqlsvc.MySQLStructureColumn{
 				{Name: "id", DataType: "bigint", Type: "bigint unsigned", Key: "PRI"},
 				{Name: "name", DataType: "varchar", Type: "varchar(100)"},
 			},
-			Rows: [][]connections.MySQLDataCell{{{Text: "1"}, {Text: "sample"}}},
+			Rows: [][]mysqlsvc.MySQLDataCell{{{Text: "1"}, {Text: "sample"}}},
 		}, nil
 	}
 	if err := tt.Click("打开选中表数据"); err != nil {

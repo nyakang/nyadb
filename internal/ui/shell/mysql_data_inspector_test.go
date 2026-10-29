@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func mysqlInspectorSampleTab() *tab {
@@ -14,10 +14,10 @@ func mysqlInspectorSampleTab() *tab {
 	charset, collation := "utf8mb4", "utf8mb4_0900_ai_ci"
 	return &tab{
 		dataDatabase: "test_schema", dataTable: "entries", dataSelectedRow: -1,
-		dataPage: &connections.MySQLDataPage{
-			Columns: []string{"id", "label", "price"},
+		dataPage: &mysqlsvc.MySQLDataPage{
+			Columns:     []string{"id", "label", "price"},
 			ColumnKinds: []string{"bigint", "varchar", "decimal"},
-			ColumnMetadata: []connections.MySQLStructureColumn{
+			ColumnMetadata: []mysqlsvc.MySQLStructureColumn{
 				{Name: "id", DataType: "bigint", Type: "bigint unsigned", Key: "PRI", Extra: "auto_increment"},
 				{Name: "label", DataType: "varchar", Type: "varchar(80)", Nullable: true,
 					Default: &literalNull, CharacterMaxLength: &length, CharacterSet: &charset,
@@ -25,7 +25,7 @@ func mysqlInspectorSampleTab() *tab {
 				{Name: "price", DataType: "decimal", Type: "decimal(10,2)", NumericPrecision: &precision,
 					NumericScale: &scale, Nullable: true},
 			},
-			Rows: [][]connections.MySQLDataCell{{{Text: "1"}, {Text: "sample"}, {Text: "12.50"}}},
+			Rows: [][]mysqlsvc.MySQLDataCell{{{Text: "1"}, {Text: "sample"}, {Text: "12.50"}}},
 		},
 	}
 }
@@ -75,7 +75,7 @@ func TestMySQLInspectorUsesExactFieldMetadataAndLifecycle(t *testing.T) {
 }
 
 func TestMySQLInspectorFallbackHasNoFabricatedAttributes(t *testing.T) {
-	tab := &tab{dataPage: &connections.MySQLDataPage{
+	tab := &tab{dataPage: &mysqlsvc.MySQLDataPage{
 		Columns: []string{"id"}, ColumnKinds: []string{"bigint"},
 	}}
 	field, found, complete := mysqlSelectedDataField(tab)

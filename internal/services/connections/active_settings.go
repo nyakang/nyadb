@@ -30,7 +30,7 @@ func ResolveActiveSettings(profile Profile) (ActiveSettings, error) {
 	// normalize edits variant slices, so do not alias the repository's copy.
 	profile.Variants = append([]ConnectionVariant(nil), profile.Variants...)
 	var err error
-	profile, err = normalize(profile)
+	profile, err = NormalizeProfile(profile)
 	if err != nil {
 		return ActiveSettings{}, err
 	}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func TestNavigatorGroupRenameEditsInsideOriginalTreeRow(t *testing.T) {
@@ -66,7 +67,7 @@ func TestNavigatorGroupRenameEditsInsideOriginalTreeRow(t *testing.T) {
 func TestActiveTabNavigationRestoresPriorFiltersOnRequest(t *testing.T) {
 	s, tt := mysqlObjectTestState(t)
 	id := s.mysqlSessionProfileID
-	s.mysqlObjectCache["app_db"] = []connections.MySQLDBObject{{Name: "orders", Kind: "表"}}
+	s.mysqlObjectCache["app_db"] = []mysqlsvc.MySQLDBObject{{Name: "orders", Kind: "表"}}
 	s.tabs = append(s.tabs, &tab{kind: tabMySQLData, title: "orders", dataProfileID: id, dataDatabase: "app_db", dataTable: "orders"})
 	s.activeTab = len(s.tabs) - 1
 	s.search = "hidden"

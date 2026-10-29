@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -70,7 +70,7 @@ func (s *State) mysqlDatabaseWorkspace(c *ui.Context) {
 						ui.Text(c, locales.Text("新建表")).FontSize(theme.Font(c, 12)).SingleLine()
 					})
 				}).Clicked() {
-					s.beginMySQLTableChange(s.mysqlSessionProfileID, database, "", connections.MySQLTableCreate)
+					s.beginMySQLTableChange(s.mysqlSessionProfileID, database, "", mysqlsvc.MySQLTableCreate)
 				}
 				if ui.ButtonBase(c).Label("查看程序定义").Tooltip("查看函数、存储过程或事件定义").
 					Disabled(!canProgram).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {

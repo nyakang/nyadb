@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func TestTableChangeOldGenerationCannotTouchCurrentBrowser(t *testing.T) {
@@ -17,7 +17,7 @@ func TestTableChangeOldGenerationCannotTouchCurrentBrowser(t *testing.T) {
 	s.mysqlTableResults = results
 	results <- mysqlTableChangeResult{
 		profileID: s.mysqlSessionProfileID, generation: s.mysqlSessionGeneration + 1,
-		database: "app_db", table: "orders", action: connections.MySQLTableDrop,
+		database: "app_db", table: "orders", action: mysqlsvc.MySQLTableDrop,
 	}
 	tt.Frame()
 	if len(s.mysqlObjectCache["app_db"]) != original || s.mysqlTableDialog ||
@@ -28,14 +28,14 @@ func TestTableChangeOldGenerationCannotTouchCurrentBrowser(t *testing.T) {
 
 func TestTableChangeFailedTwoStageCopyInvalidatesCorrectDatabase(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	s.mysqlObjectCache["analytics"] = []connections.MySQLDBObject{{Name: "report", Kind: "表"}}
+	s.mysqlObjectCache["analytics"] = []mysqlsvc.MySQLDBObject{{Name: "report", Kind: "表"}}
 	ch := make(chan mysqlTableChangeResult, 1)
 	s.mysqlTableResults = ch
 	s.mysqlTablePending = true
 	ch <- mysqlTableChangeResult{
 		profileID: s.mysqlSessionProfileID, generation: s.mysqlSessionGeneration,
 		database: "analytics", table: "report", newName: "copy",
-		action: connections.MySQLTableCopyData, err: errors.New("new table was created; INSERT failed"),
+		action: mysqlsvc.MySQLTableCopyData, err: errors.New("new table was created; INSERT failed"),
 	}
 	tt.Frame()
 	if _, exists := s.mysqlObjectCache["analytics"]; exists {

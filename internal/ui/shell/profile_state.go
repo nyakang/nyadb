@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // NewWithProfiles replaces the demo connection roots with persisted,
@@ -17,7 +18,7 @@ func NewWithProfiles(service *connections.Service) *State {
 	s.explorerName = "我的连接"
 	s.explorerRow = -1
 	s.status = "就绪 · 连接档案已加载（尚未连接数据库）"
-	s.mysqlSessionManager = connections.NewMySQLSessionManager()
+	s.mysqlSessionManager = mysqlsvc.NewMySQLSessionManager()
 	s.loadProfiles()
 	return s
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func TestSQLSessionLostOffersOptInRecoveryAndDoesNotExecute(t *testing.T) {
@@ -18,9 +19,9 @@ func TestSQLSessionLostOffersOptInRecoveryAndDoesNotExecute(t *testing.T) {
 	const sqlText = "UPDATE tx_probe SET note='do_not_replay'"
 	q.editor.Buffer.Set(sqlText)
 	calls := 0
-	s.mysqlSQLExecutor = func(context.Context, int64, string, string) (connections.MySQLSQLResult, error) {
+	s.mysqlSQLExecutor = func(context.Context, int64, string, string) (mysqlsvc.MySQLSQLResult, error) {
 		calls++
-		return connections.MySQLSQLResult{}, connections.ErrMySQLSQLSessionLost
+		return mysqlsvc.MySQLSQLResult{}, mysqlsvc.ErrMySQLSQLSessionLost
 	}
 	if err := tt.Click("运行当前或选中 SQL"); err != nil {
 		t.Fatal(err)
@@ -53,7 +54,7 @@ func TestSQLRecoverSameTabRealMySQLIntegration(t *testing.T) {
 		t.Fatal("missing valid loopback fixture port")
 	}
 	s, tt, id := sqlUITestState(t)
-	m := connections.NewMySQLSessionManager()
+	m := mysqlsvc.NewMySQLSessionManager()
 	t.Cleanup(func() { _ = m.Close() })
 	s.mysqlSessionManager = m
 	cfg := connections.ActiveSettings{
@@ -85,7 +86,7 @@ func TestSQLRecoverSameTabRealMySQLIntegration(t *testing.T) {
 		q.sqlResult != nil || q.sqlLoading {
 		t.Fatalf("recovery lost editor or executed SQL: lost=%v sql=%q", q.sqlRecoveryNeeded, q.editor.Buffer.String())
 	}
-	if _, err := m.ExecuteSQLTabToken(ctx, old, "", "SELECT 1"); !errors.Is(err, connections.ErrMySQLSQLSessionLost) {
+	if _, err := m.ExecuteSQLTabToken(ctx, old, "", "SELECT 1"); !errors.Is(err, mysqlsvc.ErrMySQLSQLSessionLost) {
 		t.Fatalf("old token still accepted after recovery: %v", err)
 	}
 	read, err := m.ExecuteSQLTabToken(ctx, q.sqlLease, "nyadb_tab_it",

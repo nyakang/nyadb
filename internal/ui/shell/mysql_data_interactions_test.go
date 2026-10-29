@@ -6,22 +6,22 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func TestMySQLNativeDataFilterSortCopyAndWidths(t *testing.T) {
 	s, tt := structureTestBrowser(t)
 	var mu sync.Mutex
-	var seen []connections.MySQLDataOptions
-	s.mysqlDataAdvancedLoader = func(_ context.Context, _ int64, db, table string, o connections.MySQLDataOptions) (*connections.MySQLDataPage, error) {
+	var seen []mysqlsvc.MySQLDataOptions
+	s.mysqlDataAdvancedLoader = func(_ context.Context, _ int64, db, table string, o mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {
 		mu.Lock()
 		seen = append(seen, o)
 		mu.Unlock()
-		return &connections.MySQLDataPage{
+		return &mysqlsvc.MySQLDataPage{
 			Database: db, Table: table, Offset: o.Offset, Limit: o.Limit,
 			Columns:     []string{"id", "note"},
 			ColumnKinds: []string{"bigint", "varchar"}, StableOrder: true, HasMore: true,
-			Rows: [][]connections.MySQLDataCell{{{Text: "3"}, {Text: "hello"}}},
+			Rows: [][]mysqlsvc.MySQLDataCell{{{Text: "3"}, {Text: "hello"}}},
 		}, nil
 	}
 	if err := tt.Click("打开选中表数据"); err != nil {

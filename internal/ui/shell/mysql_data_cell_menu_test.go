@@ -5,17 +5,17 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func TestMySQLCellMenuQueriesServerAndSynchronizesRuleDrafts(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	requests := make(chan connections.MySQLDataOptions, 10)
-	s.mysqlDataAdvancedLoader = func(_ context.Context, _ int64, db, table string, o connections.MySQLDataOptions) (*connections.MySQLDataPage, error) {
+	requests := make(chan mysqlsvc.MySQLDataOptions, 10)
+	s.mysqlDataAdvancedLoader = func(_ context.Context, _ int64, db, table string, o mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {
 		requests <- o
-		return &connections.MySQLDataPage{Database: db, Table: table, Limit: o.Limit, Offset: o.Offset, StableOrder: true,
+		return &mysqlsvc.MySQLDataPage{Database: db, Table: table, Limit: o.Limit, Offset: o.Offset, StableOrder: true,
 			Columns: []string{"id", "note", "score"}, ColumnKinds: []string{"bigint", "varchar", "int"},
-			Rows: [][]connections.MySQLDataCell{{{Text: "1"}, {Text: "alpha"}, {Text: "7"}}, {{Text: "2"}, {Null: true}, {Text: "8"}}}}, nil
+			Rows: [][]mysqlsvc.MySQLDataCell{{{Text: "1"}, {Text: "alpha"}, {Text: "7"}}, {{Text: "2"}, {Null: true}, {Text: "8"}}}}, nil
 	}
 	if err := tt.Click("打开选中表数据"); err != nil {
 		t.Fatal(err)
@@ -89,16 +89,16 @@ func TestMySQLCellMenuQueriesServerAndSynchronizesRuleDrafts(t *testing.T) {
 
 func TestMySQLCellFilterLimitAndBinaryPreviewBoundaries(t *testing.T) {
 	for _, kind := range []string{"blob", "binary", "bit", "point", "linestring", "multipolygon"} {
-		if mysqlDataCellFilterValueAvailable(kind, connections.MySQLDataCell{Text: "0x1234"}) {
+		if mysqlDataCellFilterValueAvailable(kind, mysqlsvc.MySQLDataCell{Text: "0x1234"}) {
 			t.Fatalf("%s hex preview accepted as a field value", kind)
 		}
 	}
 	s := New()
 	doc := alignedDataTestTab()
 	for _, name := range []string{"a", "b", "c", "d", "e", "f"} {
-		doc.dataFilterRules = append(doc.dataFilterRules, connections.MySQLDataFilterRule{Column: name, Mode: "is_null"})
+		doc.dataFilterRules = append(doc.dataFilterRules, mysqlsvc.MySQLDataFilterRule{Column: name, Mode: "is_null"})
 	}
-	s.applyMySQLDataCellFilter(ui.Services{}, doc, "label", "equal", connections.MySQLDataCell{Text: "alpha"})
+	s.applyMySQLDataCellFilter(ui.Services{}, doc, "label", "equal", mysqlsvc.MySQLDataCell{Text: "alpha"})
 	if len(doc.dataFilterRules) != 6 || doc.dataRuleError == "" || doc.dataLoading || doc.dataPage == nil {
 		t.Fatal("over-limit filter mutated the applied query or launched a load")
 	}

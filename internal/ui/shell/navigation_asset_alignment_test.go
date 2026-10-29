@@ -7,6 +7,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func TestNavigatorCategoriesAndMetadataProgress(t *testing.T) {
@@ -33,7 +34,7 @@ func TestNavigatorCategoriesAndMetadataProgress(t *testing.T) {
 	s.mysqlObjectErrors["app_db"] = "permission denied"
 	checkStatus("error")
 
-	s.mysqlObjectCache["app_db"] = []connections.MySQLDBObject{
+	s.mysqlObjectCache["app_db"] = []mysqlsvc.MySQLDBObject{
 		{Name: "customers", Kind: "表"},
 		{Name: "customers", Kind: "视图"},
 		{Name: "get_customer", Kind: "函数"},
@@ -142,11 +143,11 @@ func TestNavigatorFailedMetadataRowCanRetry(t *testing.T) {
 	s.explorerTree.Open.Add(db.key())
 	s.mysqlObjectErrors["app_db"] = "read denied"
 	called := make(chan struct{}, 1)
-	s.mysqlObjectLister = func(_ context.Context, _ int64, name string) ([]connections.MySQLDBObject, error) {
+	s.mysqlObjectLister = func(_ context.Context, _ int64, name string) ([]mysqlsvc.MySQLDBObject, error) {
 		if name == "app_db" {
 			called <- struct{}{}
 		}
-		return []connections.MySQLDBObject{{Name: "orders", Kind: "表"}}, nil
+		return []mysqlsvc.MySQLDBObject{{Name: "orders", Kind: "表"}}, nil
 	}
 	tt.Frame()
 	if !tt.HasText("读取失败，点击重试") {

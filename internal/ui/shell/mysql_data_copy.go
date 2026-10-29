@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/nyakang/nyadb/internal/services/connections"
 	"io"
 	"slices"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -219,14 +219,14 @@ func mysqlDataSQLSelection(t *tab, update bool) (string, error) {
 			if col < 0 || col >= len(cells) {
 				return "", errors.New("incomplete preview")
 			}
-			if col < len(page.ColumnMetadata) && connections.MySQLDataColumnGenerated(page.ColumnMetadata[col]) {
+			if col < len(page.ColumnMetadata) && mysqlsvc.MySQLDataColumnGenerated(page.ColumnMetadata[col]) {
 				continue
 			}
 			if update && col < len(page.ColumnMetadata) && strings.EqualFold(page.ColumnMetadata[col].Key, "PRI") {
 				continue
 			}
 			literal := ""
-			value, explicit := connections.MySQLDataValue{}, false
+			value, explicit := mysqlsvc.MySQLDataValue{}, false
 			if draft != nil {
 				value, explicit = draft.Values[name]
 			}
@@ -291,7 +291,7 @@ func mysqlDataSQLSelection(t *tab, update bool) (string, error) {
 // before staging any cells so a rejected paste never leaves a partial draft.
 func (s *State) pasteMySQLDataSelection(c *ui.Context, t *tab, row, source int) {
 	text := c.Services().ReadClipboard()
-	if len(text) > connections.MySQLDataEditMaxBytes {
+	if len(text) > mysqlsvc.MySQLDataEditMaxBytes {
 		t.dataEdit.Err = locales.Text("粘贴数据超过编辑大小限制")
 		return
 	}
@@ -321,7 +321,7 @@ func (s *State) pasteMySQLDataSelection(c *ui.Context, t *tab, row, source int) 
 	}
 	for i, line := range values {
 		for j, value := range line {
-			s.setMySQLDataCell(c.Services(), t, row+i, indices[start+j], connections.MySQLDataValue{Text: value})
+			s.setMySQLDataCell(c.Services(), t, row+i, indices[start+j], mysqlsvc.MySQLDataValue{Text: value})
 		}
 	}
 }

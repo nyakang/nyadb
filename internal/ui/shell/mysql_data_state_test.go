@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func waitMySQLData(t *testing.T, s *State, tt *ui.Tester) {
@@ -28,17 +28,17 @@ func TestMySQLNativeReadOnlyDataPagingAndTabLifecycle(t *testing.T) {
 	s, tt := structureTestBrowser(t)
 	var mu sync.Mutex
 	calls := []int64{}
-	s.mysqlDataLoader = func(ctx context.Context, id int64, db, table string, offset int64, limit int) (*connections.MySQLDataPage, error) {
+	s.mysqlDataLoader = func(ctx context.Context, id int64, db, table string, offset int64, limit int) (*mysqlsvc.MySQLDataPage, error) {
 		mu.Lock()
 		calls = append(calls, offset)
 		mu.Unlock()
-		page := &connections.MySQLDataPage{Database: db, Table: table, Offset: offset, Limit: limit,
+		page := &mysqlsvc.MySQLDataPage{Database: db, Table: table, Offset: offset, Limit: limit,
 			Columns: []string{"id", "note"}, StableOrder: true}
 		if offset == 0 {
 			page.HasMore = true
-			page.Rows = [][]connections.MySQLDataCell{{{Text: "1"}, {Text: "real-value"}}, {{Text: "2"}, {Null: true}}}
+			page.Rows = [][]mysqlsvc.MySQLDataCell{{{Text: "1"}, {Text: "real-value"}}, {{Text: "2"}, {Null: true}}}
 		} else {
-			page.Rows = [][]connections.MySQLDataCell{{{Text: "3"}, {Text: "last-page"}}}
+			page.Rows = [][]mysqlsvc.MySQLDataCell{{{Text: "3"}, {Text: "last-page"}}}
 		}
 		return page, nil
 	}
@@ -76,7 +76,7 @@ func TestMySQLNativeReadOnlyDataPagingAndTabLifecycle(t *testing.T) {
 	if err := tt.Click("对象"); err != nil {
 		t.Fatal(err)
 	}
-	s.mysqlStructureLoader = func(_ context.Context, _ int64, db, table string) (*connections.MySQLTableStructure, error) {
+	s.mysqlStructureLoader = func(_ context.Context, _ int64, db, table string) (*mysqlsvc.MySQLTableStructure, error) {
 		return fakeStructure(db, table), nil
 	}
 	if err := tt.Click("打开选中表结构"); err != nil {
@@ -100,7 +100,7 @@ func TestMySQLDataLateResultAndErrorRetry(t *testing.T) {
 	release := make(chan struct{})
 	var mu sync.Mutex
 	calls := 0
-	s.mysqlDataLoader = func(ctx context.Context, id int64, db, table string, offset int64, limit int) (*connections.MySQLDataPage, error) {
+	s.mysqlDataLoader = func(ctx context.Context, id int64, db, table string, offset int64, limit int) (*mysqlsvc.MySQLDataPage, error) {
 		mu.Lock()
 		calls++
 		n := calls
@@ -108,12 +108,12 @@ func TestMySQLDataLateResultAndErrorRetry(t *testing.T) {
 		if n == 1 {
 			close(started)
 			<-release // deliberately non-cooperative loader.
-			return &connections.MySQLDataPage{Database: db, Table: "obsolete", Columns: []string{"stale"}}, nil
+			return &mysqlsvc.MySQLDataPage{Database: db, Table: "obsolete", Columns: []string{"stale"}}, nil
 		}
 		if n == 2 {
 			return nil, errors.New("simulated failure")
 		}
-		return &connections.MySQLDataPage{Database: db, Table: table, Columns: []string{"id"}, Rows: [][]connections.MySQLDataCell{{{Text: "new"}}}, Limit: limit}, nil
+		return &mysqlsvc.MySQLDataPage{Database: db, Table: table, Columns: []string{"id"}, Rows: [][]mysqlsvc.MySQLDataCell{{{Text: "new"}}}, Limit: limit}, nil
 	}
 	if err := tt.Click("打开选中表数据"); err != nil {
 		t.Fatal(err)
@@ -157,10 +157,10 @@ func TestMySQLDataLateResultAndErrorRetry(t *testing.T) {
 // A schema refresh must only evict data belonging to removed schemas.
 func TestMySQLDataTabsPruneOnlyMissingSchema(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	s.mysqlDataLoader = func(_ context.Context, id int64, db, table string, offset int64, limit int) (*connections.MySQLDataPage, error) {
-		return &connections.MySQLDataPage{
+	s.mysqlDataLoader = func(_ context.Context, id int64, db, table string, offset int64, limit int) (*mysqlsvc.MySQLDataPage, error) {
+		return &mysqlsvc.MySQLDataPage{
 			Database: db, Table: table, Columns: []string{"id"},
-			Rows:  [][]connections.MySQLDataCell{{{Text: db}}},
+			Rows:  [][]mysqlsvc.MySQLDataCell{{{Text: db}}},
 			Limit: limit, StableOrder: true,
 		}, nil
 	}

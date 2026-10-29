@@ -6,18 +6,18 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
-type mysqlDataLoader func(context.Context, int64, string, string, int64, int) (*connections.MySQLDataPage, error)
-type mysqlDataAdvancedLoader func(context.Context, int64, string, string, connections.MySQLDataOptions) (*connections.MySQLDataPage, error)
+type mysqlDataLoader func(context.Context, int64, string, string, int64, int) (*mysqlsvc.MySQLDataPage, error)
+type mysqlDataAdvancedLoader func(context.Context, int64, string, string, mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error)
 
 type mysqlDataResult struct {
 	generation uint64
 	profileID  int64
 	request    uint64
 	offset     int64
-	page       *connections.MySQLDataPage
+	page       *mysqlsvc.MySQLDataPage
 	err        error
 }
 
@@ -43,7 +43,7 @@ func (s *State) openMySQLData(services ui.Services, database, table string) {
 		id: s.nextTabID, kind: tabMySQLData,
 		title:        database + "." + table + " · 数据",
 		dataDatabase: database, dataTable: table, dataProfileID: s.mysqlSessionProfileID,
-		dataLimit:             connections.MySQLDataDefaultPageSize,
+		dataLimit:             mysqlsvc.MySQLDataDefaultPageSize,
 		dataSelectedRow:       -1,
 		dataFilterColumnDraft: "选择字段",
 		dataFilterModeDraft:   "包含",
@@ -86,11 +86,11 @@ func (s *State) loadMySQLData(services ui.Services, t *tab, refresh bool) {
 	t.dataCancel = cancel
 	request, gen, profile := t.dataRequest, s.mysqlSessionGeneration, s.mysqlSessionProfileID
 	database, table, offset, limit := t.dataDatabase, t.dataTable, t.dataOffset, t.dataLimit
-	options := connections.MySQLDataOptions{Offset: offset, Limit: limit,
+	options := mysqlsvc.MySQLDataOptions{Offset: offset, Limit: limit,
 		FilterColumn: t.dataFilterColumn, FilterValue: t.dataFilterValue,
 		FilterMode: t.dataFilterMode, SortColumn: t.dataSortColumn,
 		SortDescending: t.dataSortDescending, UseKeyset: t.dataUseKeyset, After: t.dataAfter,
-		Filters: append([]connections.MySQLDataFilterRule(nil), t.dataFilterRules...), Sorts: append([]connections.MySQLDataSortRule(nil), t.dataSortRules...)}
+		Filters: append([]mysqlsvc.MySQLDataFilterRule(nil), t.dataFilterRules...), Sorts: append([]mysqlsvc.MySQLDataSortRule(nil), t.dataSortRules...)}
 	advanced := s.mysqlDataAdvancedLoader
 	legacy := s.mysqlDataLoader
 	if advanced == nil && legacy == nil {
@@ -104,14 +104,14 @@ func (s *State) loadMySQLData(services ui.Services, t *tab, refresh bool) {
 	out := make(chan mysqlDataResult, 1)
 	t.dataResults = out
 	go func() {
-		var page *connections.MySQLDataPage
+		var page *mysqlsvc.MySQLDataPage
 		var err error
 		if advanced != nil {
 			page, err = advanced(ctx, profile, database, table, options)
 		} else if options.FilterMode == "" && options.SortColumn == "" {
 			page, err = legacy(ctx, profile, database, table, offset, limit)
 		} else {
-			err = connections.ErrMySQLDataPage // mock-only legacy loader cannot silently ignore a filter.
+			err = mysqlsvc.ErrMySQLDataPage // mock-only legacy loader cannot silently ignore a filter.
 		}
 		out <- mysqlDataResult{generation: gen, profileID: profile, request: request, offset: offset, page: page, err: err}
 		services.Invalidate()
@@ -132,7 +132,7 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *tab, offset int64) 
 	} else if offset > t.dataOffset && t.dataPage != nil &&
 		t.dataPage.KeysetAvailable && t.dataPage.NextCursor != nil {
 		if t.dataCursorHistory == nil {
-			t.dataCursorHistory = map[int64]*connections.MySQLDataCursor{}
+			t.dataCursorHistory = map[int64]*mysqlsvc.MySQLDataCursor{}
 		}
 		t.dataCursorHistory[offset] = t.dataPage.NextCursor
 		t.dataUseKeyset = true
