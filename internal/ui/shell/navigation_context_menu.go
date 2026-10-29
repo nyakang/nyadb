@@ -32,6 +32,13 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 	s.explorerMenuBuilt = true
 	s.selectNavigationNode(services, key)
 	s.explorerRow = -1
+	if n.Kind == "database" {
+		if m.Item(locales.Text("打开数据库")).Shortcut(0, ui.KeyEnter).
+			Disabled(s.mysqlSessionStateFor(n.ProfileID) != "已连接").Chosen() {
+			s.openMySQLDatabase(services, n.Database, false)
+		}
+		m.Separator()
+	}
 	if n.Kind == "database" || n.Kind == "category" && n.Category == "表" {
 		if m.Item(locales.Text("新建表")).Shortcut(ui.Ctrl, ui.KeyN).
 			Disabled(!s.canChangeMySQLTable(n.ProfileID)).Chosen() {
@@ -51,6 +58,6 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 	}
 	if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).
 		Disabled(s.mysqlObjectPending != "" || s.mysqlSessionStatus != "已连接").Chosen() {
-		s.loadMySQLObjects(services, n.Database, true)
+		s.openMySQLDatabase(services, n.Database, true)
 	}
 }

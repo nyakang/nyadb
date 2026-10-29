@@ -64,6 +64,26 @@ func (msgs Messages) NavigatorWaiting() string {
 	return Catalog.Format(msgs.locale, "navigatorWaiting", nil)
 }
 
+// NavigatorOpenDatabase says "打开数据库"
+// in the language the app shows.
+func NavigatorOpenDatabase() string { return In(i18n.Locale()).NavigatorOpenDatabase() }
+
+// NavigatorOpenDatabase says "打开数据库"
+// in the language of msgs.
+func (msgs Messages) NavigatorOpenDatabase() string {
+	return Catalog.Format(msgs.locale, "navigatorOpenDatabase", nil)
+}
+
+// NavigatorDoubleClickDatabase says "双击打开数据库"
+// in the language the app shows.
+func NavigatorDoubleClickDatabase() string { return In(i18n.Locale()).NavigatorDoubleClickDatabase() }
+
+// NavigatorDoubleClickDatabase says "双击打开数据库"
+// in the language of msgs.
+func (msgs Messages) NavigatorDoubleClickDatabase() string {
+	return Catalog.Format(msgs.locale, "navigatorDoubleClickDatabase", nil)
+}
+
 // NavigatorLoading says "正在读取对象…"
 // in the language the app shows.
 func NavigatorLoading() string { return In(i18n.Locale()).NavigatorLoading() }

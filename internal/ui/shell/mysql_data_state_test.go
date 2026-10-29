@@ -171,7 +171,7 @@ func TestMySQLDataTabsPruneOnlyMissingSchema(t *testing.T) {
 	if err := tt.Click("对象"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.Click("数据库：analytics"); err != nil {
+	if err := doubleClickDatabase(tt, "数据库：analytics"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)

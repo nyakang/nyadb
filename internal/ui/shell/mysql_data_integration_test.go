@@ -48,7 +48,7 @@ func TestMySQLRealDataNativeViewer(t *testing.T) {
 	}
 	s.explorerTree.Open.Add(profileNode(p.ID))
 	tt := ui.NewTester(s.View, 1280, 800)
-	if err := tt.Click("数据库：nyadb_struct_a"); err != nil {
+	if err := doubleClickDatabase(tt, "数据库：nyadb_struct_a"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)

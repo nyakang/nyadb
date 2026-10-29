@@ -48,6 +48,7 @@ func TestMySQLMultiProfileBrowserSessionsDoNotDisconnectOrMixCaches(t *testing.T
 	}
 	waitMultiProfileSession(t, s, tt)
 	s.mysqlObjectCache["shared"] = []mysqlsvc.MySQLDBObject{{Name: "a_orders", Kind: "表"}}
+	s.markMySQLDatabaseOpened(a.ID, "shared")
 	s.mysqlSelectedDatabase = "shared"
 	s.objectRow = 0
 
@@ -62,6 +63,10 @@ func TestMySQLMultiProfileBrowserSessionsDoNotDisconnectOrMixCaches(t *testing.T
 	}
 	waitMultiProfileSession(t, s, tt)
 	s.mysqlObjectCache["shared"] = []mysqlsvc.MySQLDBObject{{Name: "b_orders", Kind: "表"}}
+	if s.mysqlDatabaseOpenedFor(b.ID, "shared") || !s.mysqlDatabaseOpenedFor(a.ID, "shared") ||
+		s.navigationChildren(databaseNode(b.ID, "shared").key()) != nil {
+		t.Fatal("same-named database opening state leaked across profiles")
+	}
 	s.mysqlSelectedDatabase = "shared"
 	s.objectRow = 0
 
@@ -69,6 +74,9 @@ func TestMySQLMultiProfileBrowserSessionsDoNotDisconnectOrMixCaches(t *testing.T
 		t.Fatal("connecting B lost A or vice versa")
 	}
 	s.selectProfileByName(a.Name)
+	if !s.mysqlDatabaseOpenedFor(a.ID, "shared") || s.mysqlDatabaseOpenedFor(b.ID, "shared") {
+		t.Fatal("restoring a workspace lost its independent database opening state")
+	}
 	if s.mysqlSessionProfileID != a.ID || s.mysqlSelectedDatabase != "shared" ||
 		len(s.mysqlObjectCache["shared"]) != 1 || s.mysqlObjectCache["shared"][0].Name != "a_orders" {
 		t.Fatalf("A browser state was replaced by B: active=%d cache=%+v", s.mysqlSessionProfileID, s.mysqlObjectCache)
@@ -80,6 +88,28 @@ func TestMySQLMultiProfileBrowserSessionsDoNotDisconnectOrMixCaches(t *testing.T
 	if s.mysqlSessionProfileID != b.ID || s.mysqlObjectCache["shared"][0].Name != "b_orders" {
 		t.Fatalf("B browser state was replaced by A: active=%d cache=%+v", s.mysqlSessionProfileID, s.mysqlObjectCache)
 	}
+	// Clicking an error in an expanded parked connection must retry that
+	// connection, even when its database has the same name as the active one.
+	parked := s.parkedMySQLWorkspace(a.ID)
+	delete(parked.objectCache, "shared")
+	parked.objectErrors["shared"] = "permission denied"
+	s.explorerTree.Open.Add(profileNode(a.ID))
+	s.explorerTree.Open.Add(databaseNode(a.ID, "shared").key())
+	requests := make(chan int64, 1)
+	s.mysqlObjectLister = func(_ context.Context, id int64, _ string) ([]mysqlsvc.MySQLDBObject, error) {
+		requests <- id
+		return []mysqlsvc.MySQLDBObject{{Name: "a_retry", Kind: "表"}}, nil
+	}
+	tt.Frame()
+	if err := tt.Click("读取失败，点击重试"); err != nil {
+		t.Fatal(err)
+	}
+	waitMySQLObjects(t, s, tt)
+	if requested := <-requests; requested != a.ID || s.mysqlSessionProfileID != a.ID ||
+		s.mysqlObjectCacheFor(b.ID)["shared"][0].Name != "b_orders" {
+		t.Fatal("parked retry used or modified the wrong profile")
+	}
+	s.selectProfileByName(b.Name)
 	// Explicitly closing parked A must not close B.
 	s.disconnectMySQLProfile(a.ID)
 	if s.mysqlSessionStateFor(a.ID) != "未连接" || s.mysqlSessionStateFor(b.ID) != "已连接" {

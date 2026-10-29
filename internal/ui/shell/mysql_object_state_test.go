@@ -59,6 +59,13 @@ func waitMySQLObjects(t *testing.T, s *State, tt *ui.Tester) {
 	}
 }
 
+func doubleClickDatabase(tt *ui.Tester, label string) error {
+	if err := tt.Click(label); err != nil {
+		return err
+	}
+	return tt.Click(label)
+}
+
 func TestMySQLObjectTreeLazyLoadingFiltersAndRefresh(t *testing.T) {
 	s, tt := mysqlObjectTestState(t)
 	var mu sync.Mutex
@@ -78,7 +85,7 @@ func TestMySQLObjectTreeLazyLoadingFiltersAndRefresh(t *testing.T) {
 	if _, ok := s.mysqlObjectCache["app_db"]; ok {
 		t.Fatal("metadata loaded before expansion")
 	}
-	if err := tt.Click("数据库：app_db"); err != nil {
+	if err := doubleClickDatabase(tt, "数据库：app_db"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
@@ -114,7 +121,7 @@ func TestMySQLObjectTreeLazyLoadingFiltersAndRefresh(t *testing.T) {
 		t.Fatalf("view filtering did not apply: kind=%q selected=%q objects=%v filterBounds=%+v",
 			s.mysqlObjectKind, s.mysqlSelectedDatabase, s.mysqlSelectedObjects(), rect)
 	}
-	if err := tt.Click("数据库：analytics"); err != nil {
+	if err := doubleClickDatabase(tt, "数据库：analytics"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
@@ -122,7 +129,7 @@ func TestMySQLObjectTreeLazyLoadingFiltersAndRefresh(t *testing.T) {
 		s.mysqlSelectedObjects()[0].Name != "facts" {
 		t.Fatal("database switch displayed wrong objects")
 	}
-	if err := tt.Click("数据库：app_db"); err != nil {
+	if err := doubleClickDatabase(tt, "数据库：app_db"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -163,7 +170,7 @@ func TestMySQLObjectBrowserIgnoresCancelledLateResults(t *testing.T) {
 		}
 		return []mysqlsvc.MySQLDBObject{{Name: "new_facts", Kind: "视图"}}, nil
 	}
-	if err := tt.Click("数据库：app_db"); err != nil {
+	if err := doubleClickDatabase(tt, "数据库：app_db"); err != nil {
 		t.Fatal(err)
 	}
 	select {
@@ -171,7 +178,7 @@ func TestMySQLObjectBrowserIgnoresCancelledLateResults(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("first request did not start")
 	}
-	if err := tt.Click("数据库：analytics"); err != nil {
+	if err := doubleClickDatabase(tt, "数据库：analytics"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
@@ -200,7 +207,7 @@ func TestMySQLObjectBrowserDisplaysErrorsAndRetry(t *testing.T) {
 		}
 		return []mysqlsvc.MySQLDBObject{{Name: "ok_table", Kind: "表"}}, nil
 	}
-	if err := tt.Click("数据库：app_db"); err != nil {
+	if err := doubleClickDatabase(tt, "数据库：app_db"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)

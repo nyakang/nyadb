@@ -204,6 +204,52 @@ func (s *State) mysqlObjectCacheFor(id int64) map[string][]mysqlsvc.MySQLDBObjec
 	return nil
 }
 
+func (s *State) mysqlDatabaseOpenedFor(id int64, database string) bool {
+	nodes := s.mysqlDatabaseNodes
+	if id == 0 {
+		return false
+	}
+	if id != s.mysqlSessionProfileID {
+		slot := s.parkedMySQLWorkspace(id)
+		if slot == nil {
+			return false
+		}
+		nodes = slot.databaseNodes
+	}
+	node := nodes[database]
+	return node != nil && node.opened
+}
+
+func (s *State) markMySQLDatabaseOpened(id int64, database string) {
+	if database == "" || s.mysqlSessionStateFor(id) != "已连接" {
+		return
+	}
+	nodes := &s.mysqlDatabaseNodes
+	if id != s.mysqlSessionProfileID {
+		slot := s.parkedMySQLWorkspace(id)
+		if slot == nil {
+			return
+		}
+		nodes = &slot.databaseNodes
+	}
+	if *nodes == nil {
+		*nodes = make(map[string]*mysqlDatabaseNode)
+	}
+	if (*nodes)[database] == nil {
+		(*nodes)[database] = &mysqlDatabaseNode{}
+	}
+	(*nodes)[database].opened = true
+}
+
+func (s *State) clearMySQLDatabaseNavigation(id int64) {
+	for key := range s.explorerTree.Open.All() {
+		n := parseNavigationNode(key)
+		if n.ProfileID == id && n.Database != "" {
+			s.explorerTree.Open.Remove(key)
+		}
+	}
+}
+
 func (s *State) mysqlObjectLoadStateFor(id int64, database string) (bool, string) {
 	if id != 0 && id == s.mysqlSessionProfileID {
 		return s.mysqlObjectPending == database, s.mysqlObjectErrors[database]
@@ -235,6 +281,7 @@ func (s *State) disconnectMySQLProfile(id int64) {
 		}
 		delete(s.mysqlWorkspaces, id)
 	}
+	s.clearMySQLDatabaseNavigation(id)
 	s.cancelMySQLSQLForProfile(id)
 	if s.mysqlSessionManager != nil {
 		_ = s.mysqlSessionManager.Disconnect(id)

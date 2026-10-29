@@ -81,7 +81,7 @@ func (s *State) mysqlDatabaseWorkspace(c *ui.Context) {
 				}
 				for _, kind := range []string{"全部", "表", "视图"} {
 					filter := kind
-					button := ui.ButtonBase(c).Label("筛选对象："+filter).Disabled(!connected || database == "").Height(theme.RowHeight(c, 25)).Padding(2, 5).Children(func() { ui.Text(c, locales.Text(filter)).FontSize(theme.Font(c, 11)) })
+					button := ui.ButtonBase(c).Label("筛选对象："+filter).Disabled(!connected || !s.mysqlDatabaseOpenedFor(s.mysqlSessionProfileID, database)).Height(theme.RowHeight(c, 25)).Padding(2, 5).Children(func() { ui.Text(c, locales.Text(filter)).FontSize(theme.Font(c, 11)) })
 					if connected && s.mysqlObjectKind == filter {
 						button.Background(palette.Border.Alpha(.35))
 					}
@@ -99,7 +99,7 @@ func (s *State) mysqlDatabaseWorkspace(c *ui.Context) {
 				if database == "" {
 					s.refreshMySQLDatabases(c.Services())
 				} else {
-					s.loadMySQLObjects(c.Services(), database, true)
+					s.openMySQLDatabase(c.Services(), database, true)
 				}
 			}
 		})

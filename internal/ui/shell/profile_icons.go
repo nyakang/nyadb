@@ -32,25 +32,27 @@ func (s *State) profileBrandIcon(c *ui.Context, kind connections.Kind, size floa
 	theme.Icon(c, fallback, size, color)
 }
 
-// The navigator displays a connection's lifecycle on its icon rather than
-// adding a tiny trailing dot. The connection chooser keeps its brand icon.
+// Keep the engine's recognizable artwork in every lifecycle state. A native
+// corner badge conveys status without replacing or tinting the brand bitmap.
 func (s *State) profileNavigationIcon(c *ui.Context, kind connections.Kind, status string, size float32) {
 	if kind == connections.MySQL {
 		palette := theme.Colors(c)
-		bg := palette.Muted.Mix(palette.Sidebar, .48)
+		ink := palette.Muted
 		switch status {
 		case "已连接":
-			bg = palette.Success.Mix(palette.Sidebar, .12)
+			ink = palette.Success
 		case "连接中":
-			bg = palette.Warning.Mix(palette.Sidebar, .12)
+			ink = palette.Warning
 		case "连接失败":
-			bg = palette.Error.Mix(palette.Sidebar, .12)
+			ink = palette.Error
 		}
-		// Render the white plug as a separate native vector child. Multi-color
-		// SVG paths can be flattened into one tint by a platform backend,
-		// which previously made this connected glyph a blank green square.
-		ui.Box(c).Size(size, size).Radius(2).Background(bg).Center().Children(func() {
-			theme.Icon(c, "connection", size*.78, ui.Hex("#ffffff"))
+		ui.Box(c).Size(size, size).Children(func() {
+			s.profileBrandIcon(c, kind, size)
+		}).DrawOver(func(p *ui.Painter, r ui.Rect) {
+			diameter := size * .34
+			badge := ui.Rect{X: r.X + r.W - diameter, Y: r.Y + r.H - diameter, W: diameter, H: diameter}
+			p.Fill(badge, ink, diameter/2)
+			p.Stroke(badge, palette.Sidebar, diameter/2, 1)
 		})
 		return
 	}

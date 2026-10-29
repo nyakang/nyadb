@@ -54,7 +54,7 @@ func structureTestBrowser(t *testing.T) (*State, *ui.Tester) {
 			{Name: "sales", Kind: "视图"},
 		}, nil
 	}
-	if err := tt.Click("数据库：app_db"); err != nil {
+	if err := doubleClickDatabase(tt, "数据库：app_db"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)

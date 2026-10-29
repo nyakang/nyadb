@@ -46,7 +46,7 @@ func TestMySQLRealKeysetAndOnDemandFieldNativeViewer(t *testing.T) {
 	}
 	s.explorerTree.Open.Add(profileNode(p.ID))
 	tt := ui.NewTester(s.View, 1280, 800)
-	if err = tt.Click("数据库：nyadb_perf"); err != nil {
+	if err = doubleClickDatabase(tt, "数据库：nyadb_perf"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)

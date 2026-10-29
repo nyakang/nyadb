@@ -150,6 +150,7 @@ func TestExpandedDatabasesLoadSequentiallyWithoutChangingSelection(t *testing.T)
 	}
 	selected := s.explorerName
 	for _, db := range s.mysqlSessionDatabases {
+		s.markMySQLDatabaseOpened(s.mysqlSessionProfileID, db)
 		s.explorerTree.Open.Add(databaseNode(s.mysqlSessionProfileID, db).key())
 	}
 	tt.Frame()
