@@ -45,6 +45,11 @@ func (s *State) CloseMySQLSessions() { s.closeMySQLSessions() }
 func (s *State) closeMySQLSessions() {
 	s.mysqlForceClose = true
 	defer func() { s.mysqlForceClose = false }()
+	for _, t := range s.tabs {
+		if t.kind == tabProgram {
+			t.program.Close()
+		}
+	}
 	s.dataInspector.CloseAll()
 	s.structureViewer.CloseAll()
 	s.sqlWorkspace.CloseAll()
@@ -94,7 +99,7 @@ func (s *State) activateMySQLForCurrentTab() {
 	case tabMySQLData:
 		id = t.dataProfileID
 	case tabProgram:
-		id = t.programProfileID
+		id = t.program.ProfileID()
 	case tabSQL:
 		id = t.query.ProfileID()
 	}
