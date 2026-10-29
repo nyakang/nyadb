@@ -43,7 +43,7 @@ func TestMySQLNotesSaveCancelEditAndCopy(t *testing.T) {
 	}
 	s.startEditProfile()
 	s.connectionEditor.Draft().Notes = initial + "\n更新"
-	s.saveConnectionDraft()
+	s.connectionEditor.Save()
 	got, err = service.Get(context.Background(), all[0].ID)
 	if err != nil || !strings.HasSuffix(got.Notes, "更新") {
 		t.Fatalf("edited notes not persisted: %+v %v", got, err)

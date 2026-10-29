@@ -43,7 +43,7 @@ func TestPersistentGroupTreeInspectorAndConnectionPlacement(t *testing.T) {
 	s.chooseConnectionKind(connections.MySQL)
 	s.nextConnectionStep()
 	s.connectionEditor.Draft().Name = "Grouped new"
-	s.saveConnectionDraft()
+	s.connectionEditor.Save()
 	p, ok := s.currentProfile()
 	if !ok || p.GroupName != "开发库" {
 		t.Fatalf("new profile not placed in selected group: %+v", p)

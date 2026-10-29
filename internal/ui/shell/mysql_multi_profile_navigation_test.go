@@ -144,7 +144,7 @@ func TestMySQLMultiProfileTabsAndMetadataRefreshAreScoped(t *testing.T) {
 	s.sessions.Current().ProfileID, s.sessions.Current().Status, s.selectedProfileID = b.ID, "已连接", b.ID
 	s.sessions.Current().Databases = []string{"shared", "only_b"}
 	s.sessions.Current().Cache["shared"] = []mysqlsvc.MySQLDBObject{{Name: "two", Kind: "表"}}
-	s.pruneMySQLStructureTabs(map[string]bool{"only_b": true})
+	s.pruneMySQLTabsFor(b.ID, map[string]bool{"only_b": true})
 	if len(s.tabs) != 2 || s.tabs[1].data.ProfileID() != a.ID {
 		t.Fatalf("B refresh incorrectly deleted A tabs: %+v", s.tabs)
 	}

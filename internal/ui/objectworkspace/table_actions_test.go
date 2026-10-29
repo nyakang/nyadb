@@ -5,11 +5,90 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/egoist/mygo/ui"
 
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 )
+
+func tableModalTester(s *State) *ui.Tester {
+	return ui.NewTester(func(c *ui.Context) {
+		theme.Apply(c)
+		s.Consume(c.Services())
+		s.Modals(c)
+	}, 900, 700)
+}
+
+func waitTableChange(t *testing.T, s *State, tt *ui.Tester) {
+	t.Helper()
+	deadline := time.Now().Add(3 * time.Second)
+	for s.TablePending() && time.Now().Before(deadline) {
+		tt.Frame()
+		time.Sleep(time.Millisecond)
+	}
+	tt.Frame()
+	if s.TablePending() {
+		t.Fatal("table operation did not settle")
+	}
+}
+
+func TestTableActionErrorRemainsVisibleInDialog(t *testing.T) {
+	s, session := testViewer()
+	s.Runner = func(context.Context, int64, mysqlsvc.MySQLTableChange) error {
+		return errors.New("permission denied by server")
+	}
+	s.BeginTableChange(session.ProfileID, "app_db", "orders", mysqlsvc.MySQLTableRename)
+	tt := tableModalTester(s)
+	if err := tt.Click("新表名称"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Command("selectAll")
+	tt.Type("orders_new")
+	if err := tt.Click("确认重命名"); err != nil {
+		t.Fatal(err)
+	}
+	waitTableChange(t, s, tt)
+	if !s.TableDialogOpen() || s.TableError() != "permission denied by server" || !tt.HasText(s.TableError()) {
+		t.Fatalf("error feedback missing: %q", s.TableError())
+	}
+}
+
+func TestCreateTableUsesEnteredNameAndReportsDestination(t *testing.T) {
+	s, session := testViewer()
+	requests := make(chan mysqlsvc.MySQLTableChange, 1)
+	s.Runner = func(_ context.Context, id int64, request mysqlsvc.MySQLTableChange) error {
+		if id != session.ProfileID {
+			t.Error("creation lost the original connection")
+		}
+		requests <- request
+		return nil
+	}
+	var status string
+	s.deps.Status = func(message string) { status = message }
+	s.BeginTableChange(session.ProfileID, "app_db", "orders", mysqlsvc.MySQLTableCreate)
+	tt := tableModalTester(s)
+	if err := tt.Click("新表名称"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Type("new_orders")
+	if err := tt.Click("确认新建表"); err != nil {
+		t.Fatal(err)
+	}
+	waitTableChange(t, s, tt)
+	select {
+	case request := <-requests:
+		if request.Action != mysqlsvc.MySQLTableCreate || request.Database != "app_db" || request.Table != "new_orders" || request.NewName != "" {
+			t.Fatalf("creation targeted the source instead of the entered name: %+v", request)
+		}
+	default:
+		t.Fatal("confirmed creation did not reach the injected service")
+	}
+	if s.TableDialogOpen() || status != "新建表成功：app_db.new_orders" {
+		t.Fatalf("creation reported the wrong destination: %q", status)
+	}
+}
 
 func TestTableChangeOldGenerationCannotTouchCurrentBrowser(t *testing.T) {
 	s, session := testViewer()

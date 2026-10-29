@@ -22,11 +22,7 @@ func (s *State) startMySQLSession(services ui.Services) {
 	s.sessions.Connect(p, services.Invalidate)
 }
 func (s *State) disconnectMySQLSession() {
-	id := s.sessions.Current().ProfileID
-	if s.guardMySQLProfileLeave(id, func(_ ui.Services) { s.disconnectMySQLProfile(id) }) {
-		return
-	}
-	s.sessions.Disconnect(id)
+	s.disconnectMySQLProfile(s.sessions.Current().ProfileID)
 }
 func (s *State) disconnectMySQLProfile(id int64) {
 	if s.guardMySQLProfileLeave(id, func(_ ui.Services) { s.disconnectMySQLProfile(id) }) {

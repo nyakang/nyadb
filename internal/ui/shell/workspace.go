@@ -1,6 +1,8 @@
 package shell
 
 import (
+	"slices"
+
 	"github.com/egoist/mygo/ui"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -161,19 +163,22 @@ func (s *State) dataWorkspaceDependencies() dataworkspace.Dependencies {
 func (s *State) SetDataLayoutPreferences(read func(string) (string, error), write func(string, string) error) {
 	s.dataWorkspace.SetDataLayoutPreferences(read, write)
 }
-func (s *State) guardMySQLDataLeave(t *tab, next func(ui.Services)) bool {
-	return t != nil && s.dataWorkspace.GuardLeave(t.data, next)
-}
-func (s *State) guardMySQLProfileLeave(id int64, next func(ui.Services)) bool {
+
+// All document leave checks pass through this gate. Continuations retain the
+// original operation's identities while saves wait for server acknowledgement.
+func (s *State) guardTabsLeave(matches func(*tab) bool, next func(ui.Services)) bool {
 	if s.mysqlForceClose {
 		return false
 	}
 	for _, t := range s.tabs {
-		if t.data != nil && (id == 0 || t.data.ProfileID() == id) && s.dataWorkspace.GuardLeave(t.data, next) {
+		if matches(t) && s.dataWorkspace.GuardLeave(t.data, next) {
 			return true
 		}
 	}
 	return false
+}
+func (s *State) guardMySQLProfileLeave(id int64, next func(ui.Services)) bool {
+	return s.guardTabsLeave(func(t *tab) bool { return id == 0 || t.profileID() == id }, next)
 }
 func (s *State) RequestWorkbenchClose(next func()) bool {
 	return s.guardMySQLProfileLeave(0, func(_ ui.Services) {
@@ -204,15 +209,10 @@ func validStructureSelection(database, table string) bool { return database != "
 
 // Removing tabs also revokes their in-flight work. Inactive SQL/mock tabs are
 // intentionally preserved so unrelated workspace documents are not lost.
-func (s *State) clearMySQLStructureTabs() { s.clearMySQLTabsFor(0) }
-
 func (s *State) clearMySQLTabsFor(profileID int64) {
 	s.removeTabs(func(t *tab) bool {
 		return (t.data != nil || t.object != nil) && (profileID == 0 || t.profileID() == profileID)
 	})
-}
-func (s *State) pruneMySQLStructureTabs(known map[string]bool) {
-	s.pruneMySQLTabsFor(s.sessions.Current().ProfileID, known)
 }
 func (s *State) pruneMySQLTabsFor(id int64, known map[string]bool) {
 	s.removeTabs(func(t *tab) bool {
@@ -309,32 +309,78 @@ func (t *tab) database() string {
 	}
 	return ""
 }
-func (s *State) removeTabs(remove func(*tab) bool) {
-	if !s.mysqlForceClose {
+func (s *State) closeActive() { s.closeTab(s.activeTab) }
+
+// The index belongs to the current frame. Once requested, closing retains the
+// document ID and applies its selection/status changes only after all guards.
+func (s *State) closeTab(index int) {
+	if index <= 0 || index >= len(s.tabs) {
+		return
+	}
+	closing := s.tabs[index]
+	wasActive := s.currentTab() == closing
+	fallbackID := s.tabs[index-1].id
+	if index+1 < len(s.tabs) {
+		fallbackID = s.tabs[index+1].id
+	}
+	s.removeTabs(func(t *tab) bool { return t.id == closing.id }, func() {
+		if wasActive {
+			s.selectTab(fallbackID)
+		}
+		s.status = "已关闭页签 " + closing.title
+	})
+}
+
+// Close other tabs only while the requested survivor still exists. A parked
+// save must not turn a removed target into an instruction to close everything.
+func (s *State) closeOtherTabs(index int) {
+	if index < 0 || index >= len(s.tabs) {
+		return
+	}
+	keep := s.tabs[index]
+	s.removeTabs(func(t *tab) bool { return slices.Contains(s.tabs, keep) && t != keep }, func() {
+		if s.selectTab(keep.id) {
+			s.status = "已关闭其他页签"
+		}
+	})
+}
+
+func (s *State) selectTab(id uint64) bool {
+	for i, t := range s.tabs {
+		if t.id == id {
+			s.activeTab = i
+			return true
+		}
+	}
+	return false
+}
+
+func (s *State) removeTabs(remove func(*tab) bool, after ...func()) {
+	activeID := s.currentTab().id
+	// A single continuation checks every matching draft again after each save or
+	// discard. Failure/cancellation never runs disposal or completion callbacks.
+	var finish func(ui.Services)
+	finish = func(_ ui.Services) {
+		if s.guardTabsLeave(func(t *tab) bool { return t.kind != tabObjects && remove(t) }, finish) {
+			return
+		}
+		kept := s.tabs[:0]
 		for _, t := range s.tabs {
-			if t.kind != tabObjects && remove(t) && s.guardMySQLDataLeave(t, func(_ ui.Services) { s.removeTabs(remove) }) {
-				return
+			if t.kind != tabObjects && remove(t) {
+				s.disposeTab(t)
+			} else {
+				kept = append(kept, t)
 			}
 		}
-	}
-	activeID := s.currentTab().id
-	kept := s.tabs[:0]
-	for _, t := range s.tabs {
-		if t.kind != tabObjects && remove(t) {
-			s.disposeTab(t)
-		} else {
-			kept = append(kept, t)
+		clear(s.tabs[len(kept):])
+		s.tabs = kept
+		s.activeTab = 0
+		s.selectTab(activeID)
+		for _, next := range after {
+			next()
 		}
 	}
-	clear(s.tabs[len(kept):])
-	s.tabs = kept
-	s.activeTab = 0
-	for i, t := range kept {
-		if t.id == activeID {
-			s.activeTab = i
-			break
-		}
-	}
+	finish(ui.Services{})
 }
 
 // documentIdentity includes both presentation purpose and qualified object type.

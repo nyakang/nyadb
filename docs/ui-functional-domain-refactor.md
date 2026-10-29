@@ -37,7 +37,7 @@ MyGo 仍为 `v0.6.4-nyadb.4`。配置格式、`mysql_data_layout:` 偏好键、�
 
 ## 测试归属和替代覆盖
 
-没有为减少文件数删除应用行为测试。迁移保留原测试名称和断言，混合测试按实际职责拆分：
+没有为减少文件数删除应用行为测试。迁移保留原行为断言，部分测试按实际职责更名，混合测试按实际职责拆分：
 
 | 原测试职责 | 当前位置 |
 | --- | --- |
@@ -74,3 +74,22 @@ NYADB_UI_DOMAIN_CAPTURE="$PWD/build/ui-refactor/current" go test ./internal/ui/s
 实际 GTK 连接子窗口自动操作未完成：基线和当前版本都没有响应捕获工具的工具栏点击，窗口定位超时；没有将 headless 子窗口测试冒充 OS 子窗口验证。Xvfb 使用无 GPU 的软件路径，系统也报告未安装所请求的 C locale。Windows/macOS、物理桌面、IME、多显示器 DPI 和 GPU 路径未执行。
 
 真实 MySQL 集成继续保留显式 `NYADB_MYSQL_*_IT` 开关，本次未启用，不访问用户数据库。合成协议/服务接线测试仍在普通测试集中执行。
+
+## 后续 shell 边界收尾
+
+会话数据库选择统一调用 `sessionbrowser.SelectDatabase`。连接级刷新调用 `InvalidateProfileObjects`，表操作完成调用 `InvalidateDatabaseObjects`；两者检查原连接与代次，由会话模块清理缓存、错误和对应请求。数据库级失效只取消同数据库的读取，保留兄弟读取；停放连接也按原身份处理，不激活其他连接、不隐式发起加载。宿主只决定何时刷新视图。
+
+页签关闭、关闭其他和批量移除的草稿检查统一经过 `workspace.go` 的 `guardTabsLeave`，移除操作保留原活动文档 ID 及成功后的回调。保存/放弃后逐一重新检查剩余草稿；取消或保存失败不会释放文档或报告关闭成功。非活动数据页为保存临时激活后，关闭成功恢复原活动页签。当前连接断连直接进入按连接断连入口，去掉重复的草稿检查。
+
+删除没有生产调用的 `clearMySQLStructureTabs`、`pruneMySQLStructureTabs`、`saveConnectionDraft`；相关夹具直接使用现有完整身份裁剪和编辑器保存接口，不新增测试专用生产接口。
+
+进一步拆分两组混合测试，保留原行为覆盖：
+
+- 原生编辑器的常规/高级/数据库控件断言移入 `connectioneditor/view_test.go`，直接渲染模块；shell 保留原生标题更新、返回选择器和编辑器关闭接线。
+- 表操作错误展示、新建表输入到执行请求及状态回调断言移入 `objectworkspace/table_actions_test.go`；原错误测试名称声称验证其他连接，但原断言并未覆盖此行为，现按实际行为命名。shell 保留导航菜单派发表对话框及空数据库入口测试，跨连接失效由会话测试和既有表完成协调测试覆盖。
+
+新增回归覆盖停放连接失效与迟到成功、兄弟读取保留、代次/连接拒绝、连接级缓存隔离、非活动草稿页关闭的取消/保存失败/保存成功，以及关闭其他页签逐一检查多个草稿。没有删去独有行为断言，没有新增零散适配文件。
+
+本次收尾验证：`go test ./... -timeout 10m`、`go vet ./...`、`go tool mygo vet`、`CGO_ENABLED=0 go build -o build/nyadb ./cmd/nyadb` 和 `git diff --check` 均通过。`go test -race` 覆盖 `sessionbrowser`、`shell`、`connectioneditor`、`objectworkspace` 全包，通过；补强后的会话失效夹具另跑会话全包 race，多 SQL 页签身份及多个草稿关闭场景另跑 shell 定向 race，均通过。
+
+本次没有改动布局、翻译和资源；既有 headless 布局与原生窗口内容入口测试随全量测试运行，未重新执行截图矩阵或操作系统原生窗口手动验证，未启用真实 MySQL 集成开关。变更未自动提交。

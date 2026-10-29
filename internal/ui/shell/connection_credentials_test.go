@@ -72,7 +72,7 @@ func TestMySQLSavedPasswordNewConnectionAndSession(t *testing.T) {
 		t.Fatal(err)
 	}
 	passwordEditor.Type("from-new-connection")
-	s.saveConnectionDraft()
+	s.connectionEditor.Save()
 	if s.connectionDialog {
 		t.Fatalf("new password was not saved: %s", s.connectionEditor.Error())
 	}

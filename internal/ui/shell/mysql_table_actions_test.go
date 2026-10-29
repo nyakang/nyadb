@@ -71,56 +71,16 @@ func TestMySQLTableMenuSharesActionsAndRequiresExplicitConfirmation(t *testing.T
 	}
 }
 
-func TestMySQLTableActionErrorIsVisibleAndDoesNotInvalidateOtherConnection(t *testing.T) {
+func TestMySQLCreateTableMenuDispatchesDialog(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	s.objectWorkspace.Runner = func(context.Context, int64, mysqlsvc.MySQLTableChange) error {
-		return errors.New("permission denied by server")
-	}
-	s.objectWorkspace.BeginTableChange(s.sessions.Current().ProfileID, "app_db", "orders", mysqlsvc.MySQLTableRename)
-	tt.Frame()
-	setTestInput(t, tt, "新表名称", "orders_new")
-	tt.Frame()
-	if err := tt.Click("确认重命名"); err != nil {
-		t.Fatal(err)
-	}
-	waitTableChange(t, s, tt)
-	if !s.objectWorkspace.TableDialogOpen() || s.objectWorkspace.TableError() == "" ||
-		!tt.HasText("permission denied by server") {
-		t.Fatalf("error feedback missing: %q", s.objectWorkspace.TableError())
-	}
-}
-
-func TestMySQLCreateTableUsesNameEnteredInDialog(t *testing.T) {
-	s, tt := structureTestBrowser(t)
-	requests := make(chan mysqlsvc.MySQLTableChange, 1)
-	s.objectWorkspace.Runner = func(_ context.Context, _ int64, request mysqlsvc.MySQLTableChange) error {
-		requests <- request
-		return nil
-	}
 	if err := tt.RightClick("orders"); err != nil {
 		t.Fatal(err)
 	}
 	if err := tt.ChooseMenuItem("新建表"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.Click("新表名称"); err != nil {
-		t.Fatal(err)
-	}
-	tt.Type("new_orders")
-	if err := tt.Click("确认新建表"); err != nil {
-		t.Fatal(err)
-	}
-	waitTableChange(t, s, tt)
-	select {
-	case request := <-requests:
-		if request.Action != mysqlsvc.MySQLTableCreate || request.Database != "app_db" || request.Table != "new_orders" {
-			t.Fatalf("create must target the entered name, not the selected source table: %+v", request)
-		}
-	default:
-		t.Fatal("confirmed creation did not reach the table service")
-	}
-	if s.status != "新建表成功：app_db.new_orders" {
-		t.Fatalf("creation reported the wrong target: %q", s.status)
+	if !s.objectWorkspace.TableDialogOpen() || s.objectWorkspace.TableAction() != mysqlsvc.MySQLTableCreate {
+		t.Fatal("navigator creation menu did not open the object workspace dialog")
 	}
 }
 
