@@ -51,7 +51,6 @@ func (s *State) openMySQLData(services ui.Services, database, table string) {
 		dataShowFieldTypes:    true,
 		dataHiddenColumns:     map[string]bool{},
 		dataUseKeyset:         true,
-		dataChunkRow:          -1,
 	}
 	s.tabs = append(s.tabs, t)
 	s.activeTab = len(s.tabs) - 1

@@ -6,6 +6,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/datainspector"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -35,7 +36,7 @@ func mysqlVisibleDataColumns(t *tab, page *mysqlsvc.MySQLDataPage) ([]int, []ui.
 			// keyed column header, sharing scroll, drag, resize and menu state.
 			col.Title = name
 			col.Subtitle = declaration
-			col.SubtitleIcon = mysqlColumnTypeGlyph(kind)
+			col.SubtitleIcon = datainspector.ColumnTypeGlyph(kind)
 			col.HeaderBadge = mysqlColumnKeyBadge(key)
 		}
 		visible = append(visible, col)
@@ -53,26 +54,6 @@ func mysqlColumnIsNumeric(kind string) bool {
 		return true
 	}
 	return false
-}
-
-// Glyphs are NyaDB-authored, deliberately small type hints rendered by the
-// native header. They do not depend on proprietary database-manager artwork.
-func mysqlColumnTypeGlyph(kind string) string {
-	switch strings.ToLower(kind) {
-	case "tinyint", "smallint", "mediumint", "int", "integer", "bigint", "decimal", "numeric", "float", "double", "real", "bit", "bool", "boolean":
-		return "#"
-	case "char", "varchar", "tinytext", "text", "mediumtext", "longtext", "enum", "set":
-		return "A"
-	case "date", "time", "datetime", "timestamp", "year":
-		return "◷"
-	case "json":
-		return "{}"
-	case "binary", "varbinary", "tinyblob", "blob", "mediumblob", "longblob":
-		return "◇"
-	case "geometry", "point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon", "geometrycollection":
-		return "✧"
-	}
-	return "·"
 }
 
 func mysqlColumnKeyBadge(key string) string {
@@ -97,7 +78,7 @@ func mysqlDataCopyColumnPreview(page *mysqlsvc.MySQLDataPage, col int) string {
 		if col >= len(row) {
 			continue
 		}
-		values = append(values, mysqlDataCopyPreview(row[col]))
+		values = append(values, datainspector.CopyPreview(row[col]))
 	}
 	return strings.Join(values, "\n")
 }

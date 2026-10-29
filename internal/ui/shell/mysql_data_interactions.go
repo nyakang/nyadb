@@ -5,42 +5,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
-	"github.com/nyakang/nyadb/locales"
 )
-
-// A field can be inspected before a row is selected. When no cell is active
-// the first visible field is shown, matching the reference's initial panel.
-// The full bit distinguishes live server metadata from legacy test-loader
-// pages that only provide DATA_TYPE.
-func mysqlSelectedDataField(t *tab) (mysqlsvc.MySQLStructureColumn, bool, bool) {
-	if t == nil || t.dataPage == nil {
-		return mysqlsvc.MySQLStructureColumn{}, false, false
-	}
-	page := t.dataPage
-	name := t.dataState.Cells.Cursor
-	if name == "" {
-		for _, candidate := range page.Columns {
-			if !t.dataHiddenColumns[candidate] {
-				name = candidate
-				break
-			}
-		}
-	}
-	for i, candidate := range page.Columns {
-		if candidate != name || t.dataHiddenColumns[candidate] {
-			continue
-		}
-		if i < len(page.ColumnMetadata) && page.ColumnMetadata[i].Name == name {
-			return page.ColumnMetadata[i], true, true
-		}
-		field := mysqlsvc.MySQLStructureColumn{Name: name}
-		if i < len(page.ColumnKinds) {
-			field.Type, field.DataType = page.ColumnKinds[i], page.ColumnKinds[i]
-		}
-		return field, true, false
-	}
-	return mysqlsvc.MySQLStructureColumn{}, false, false
-}
 
 func mysqlSelectedDataCell(t *tab) (string, mysqlsvc.MySQLDataCell, bool) {
 	if t == nil || t.dataPage == nil || t.dataSelectedRow < 0 ||
@@ -54,16 +19,6 @@ func mysqlSelectedDataCell(t *tab) (string, mysqlsvc.MySQLDataCell, bool) {
 		}
 	}
 	return "", mysqlsvc.MySQLDataCell{}, false
-}
-
-func mysqlDataCopyPreview(cell mysqlsvc.MySQLDataCell) string {
-	if cell.Null {
-		return "NULL"
-	}
-	if cell.Truncated {
-		return cell.Text + "\n" + locales.Text("[预览已截断；不是完整字段内容]")
-	}
-	return cell.Text
 }
 
 func (s *State) applyMySQLDataFilter(services ui.Services, t *tab) {

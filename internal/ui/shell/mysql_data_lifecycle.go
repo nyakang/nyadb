@@ -6,5 +6,5 @@ func (s *State) disposeMySQLDataTab(t *tab) {
 	s.flushMySQLDataLayout(t)
 	s.cancelMySQLDataEdit(t)
 	s.cancelMySQLData(t)
-	s.cancelMySQLTableInfo(t)
+	s.dataInspector.Close(t.dataPanel)
 }

@@ -54,7 +54,7 @@ func TestMySQLEnumJSONNativeViewer84(t *testing.T) {
 					ui.Text(c, cell.Text).SingleLine()
 				}
 			}).Grow(1)
-			ui.Box(c).Width(210).Children(func() { s.mysqlDataInspector(c, tab) })
+			ui.Box(c).Width(210).Children(func() { s.dataInspector.FieldView(c, s.dataInspectorPanel(tab)) })
 		})
 	}, 1280, 800)
 	tt.Frame()

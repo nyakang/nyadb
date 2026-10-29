@@ -45,6 +45,7 @@ func (s *State) CloseMySQLSessions() { s.closeMySQLSessions() }
 func (s *State) closeMySQLSessions() {
 	s.mysqlForceClose = true
 	defer func() { s.mysqlForceClose = false }()
+	s.dataInspector.CloseAll()
 	s.structureViewer.CloseAll()
 	s.sqlWorkspace.CloseAll()
 	s.sessions.Close()

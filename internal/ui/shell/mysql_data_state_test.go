@@ -191,3 +191,91 @@ func TestMySQLDataTabsPruneOnlyMissingSchema(t *testing.T) {
 		t.Fatalf("schema refresh discarded valid data or retained stale page: %+v", s.tabs)
 	}
 }
+
+func TestDataInspectorPageCancelAndTabCloseRespectIndependentReaders(t *testing.T) {
+	for _, closeWorkbench := range []bool{false, true} {
+		t.Run(map[bool]string{false: "tab", true: "workbench"}[closeWorkbench], func(t *testing.T) {
+			s, tt := structureTestBrowser(t)
+			s.mysqlDataLoader = func(_ context.Context, _ int64, db, table string, offset int64, limit int) (*mysqlsvc.MySQLDataPage, error) {
+				return &mysqlsvc.MySQLDataPage{Database: db, Table: table, Offset: offset, Limit: limit, Columns: []string{"id", "label"}, ColumnKinds: []string{"bigint", "varchar"}, ColumnMetadata: []mysqlsvc.MySQLStructureColumn{{Name: "id", Type: "bigint", DataType: "bigint"}, {Name: "label", Type: "varchar(80)", DataType: "varchar", Nullable: true}}, Rows: [][]mysqlsvc.MySQLDataCell{{{Text: "1"}, {Text: "preserved preview"}}}, RowRefs: []*mysqlsvc.MySQLRowRef{{Database: db, Table: table}}}, nil
+			}
+			s.dataInspector.InfoLoader = func(_ context.Context, _ int64, db, table string) (*mysqlsvc.MySQLTableInfo, error) {
+				return &mysqlsvc.MySQLTableInfo{Database: db, Name: table, Engine: "InnoDB"}, nil
+			}
+			s.openQuery()
+			query := s.currentTab()
+			query.query.Editor.Buffer.Set("SELECT preserved SQL")
+			s.openMySQLData(ui.Services{}, "app_db", "orders")
+			waitMySQLData(t, s, tt)
+			doc := s.currentTab()
+			p := s.dataInspectorPanel(doc)
+			deadline := time.Now().Add(3 * time.Second)
+			for p.InfoLoading() && time.Now().Before(deadline) {
+				tt.Frame()
+				time.Sleep(time.Millisecond)
+			}
+			if p.Info() == nil || p.Info().Engine != "InnoDB" {
+				t.Fatal("table-info callback did not bind to the data tab")
+			}
+			doc.dataSelectedRow = 0
+			doc.dataState.Cells = ui.ColumnRange{Cursor: "label", Anchor: "label"}
+			s.showMySQLFieldInspector(doc)
+			tt.Frame()
+			if !p.FieldMode() || !tt.HasText("varchar(80)") || !tt.HasText("preserved preview") {
+				t.Fatal("explicit field action did not use current grid selection")
+			}
+			countStarted, countCanceled := make(chan struct{}), make(chan struct{})
+			chunkStarted, chunkCanceled := make(chan struct{}), make(chan struct{})
+			s.dataInspector.CountLoader = func(ctx context.Context, _ int64, _, _ string) (int64, error) {
+				close(countStarted)
+				<-ctx.Done()
+				close(countCanceled)
+				return 0, ctx.Err()
+			}
+			s.dataInspector.ChunkLoader = func(ctx context.Context, _ int64, _, _, _ string, _ mysqlsvc.MySQLRowRef, _ int64, _ int) (*mysqlsvc.MySQLFieldChunk, error) {
+				close(chunkStarted)
+				<-ctx.Done()
+				close(chunkCanceled)
+				return nil, ctx.Err()
+			}
+			s.dataInspector.LoadCount(p, nil)
+			s.dataInspector.LoadChunk(p, nil)
+			for _, started := range []<-chan struct{}{countStarted, chunkStarted} {
+				select {
+				case <-started:
+				case <-time.After(3 * time.Second):
+					t.Fatal("independent inspector read did not start")
+				}
+			}
+			s.cancelMySQLData(doc)
+			select {
+			case <-chunkCanceled:
+			case <-time.After(3 * time.Second):
+				t.Fatal("data cancellation did not revoke field chunk")
+			}
+			if !p.CountLoading() || p.Info() == nil || doc.dataPage == nil {
+				t.Fatal("data cancellation cleared independent count, metadata or page")
+			}
+			if closeWorkbench {
+				s.CloseMySQLSessions()
+			} else {
+				s.closeActive()
+			}
+			select {
+			case <-countCanceled:
+			case <-time.After(3 * time.Second):
+				t.Fatal("close did not revoke independent count")
+			}
+			tt.Frame()
+			if p.InfoLoading() || p.CountLoading() || p.ChunkLoading() || query.query.Editor.Buffer.String() != "SELECT preserved SQL" {
+				t.Fatal("close retained inspector readers or changed sibling SQL")
+			}
+			if !closeWorkbench && (s.currentTab() != query || len(s.tabs) != 2) {
+				t.Fatal("closing data tab lost sibling selection")
+			}
+			if !closeWorkbench {
+				s.CloseMySQLSessions()
+			}
+		})
+	}
+}

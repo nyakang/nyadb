@@ -1,4 +1,4 @@
-package shell
+package datainspector
 
 import (
 	"fmt"
@@ -13,18 +13,21 @@ import (
 
 // The object inspector keeps its mode per data tab. Selecting a grid cell does
 // not replace table statistics; field preview is an explicit action.
-func (s *State) mysqlDataObjectInspector(c *ui.Context, t *tab) {
-	if !t.dataInfo.attempted {
-		s.loadMySQLTableInfo(c.Services(), t, false)
-	}
-	if t.dataInfo.fieldMode {
-		s.mysqlDataInspector(c, t)
+func (s *State) View(c *ui.Context, t *Panel) {
+	if t == nil || t.closed {
 		return
 	}
-	s.mysqlTableInfoInspector(c, t)
+	if !t.info.attempted {
+		s.LoadInfo(t, c.Services().Invalidate, false)
+	}
+	if t.info.fieldMode {
+		s.FieldView(c, t)
+		return
+	}
+	s.TableView(c, t)
 }
 
-func (s *State) mysqlDataInspectorHeader(c *ui.Context, t *tab, fieldMode bool) {
+func (s *State) header(c *ui.Context, t *Panel, fieldMode bool) {
 	palette := theme.Colors(c)
 
 	ui.Row(c).Label(locales.Text("数据信息切换栏")).Height(42).Padding(1, 5).Gap(3).AlignItems(ui.Center).Children(func() {
@@ -39,12 +42,12 @@ func (s *State) mysqlDataInspectorHeader(c *ui.Context, t *tab, fieldMode bool) 
 				}
 				if button.Clicked() {
 					if item.field {
-						s.showMySQLFieldInspector(t)
+						s.ShowField(t)
 					} else {
-						t.dataInfo.fieldMode = false
-						s.cancelMySQLChunk(t)
-						if !t.dataInfo.attempted {
-							s.loadMySQLTableInfo(c.Services(), t, false)
+						t.info.fieldMode = false
+						s.CancelChunk(t)
+						if !t.info.attempted {
+							s.LoadInfo(t, c.Services().Invalidate, false)
 						}
 					}
 				}
@@ -52,31 +55,33 @@ func (s *State) mysqlDataInspectorHeader(c *ui.Context, t *tab, fieldMode bool) 
 		}).Grow(1).MinWidth(0).Padding(0).Gap(3)
 		if ui.ButtonBase(c).Label(locales.Text("隐藏信息面板")).Tooltip(locales.Text("隐藏信息面板")).Size(20, 20).
 			Children(func() { theme.Icon(c, "close", 12, palette.Muted) }).Clicked() {
-			s.inspectorOn = false
+			if s.deps.Hide != nil {
+				s.deps.Hide()
+			}
 		}
 	})
 }
 
-func (s *State) mysqlTableInfoInspector(c *ui.Context, t *tab) {
+func (s *State) TableView(c *ui.Context, t *Panel) {
 	palette := theme.Colors(c)
 
-	d := &t.dataInfo
-	connected := t.dataProfileID == s.sessions.Current().ProfileID && s.sessions.Current().ProfileID > 0 && s.sessions.Current().Status == "已连接"
+	d := &t.info
+	connected := s.connected(t)
 	ui.Column(c).Label(locales.Text("数据表信息面板")).Fill().Background(palette.Panel).Children(func() {
-		s.mysqlDataInspectorHeader(c, t, false)
+		s.header(c, t, false)
 		ui.Toolbar(c, func() {
 			if ui.Button(c, locales.Text("刷新")).Label(locales.Text("刷新表信息")).Height(theme.RowHeight(c, theme.ControlHeight)).
 				Disabled(!connected || d.loading).Clicked() {
-				s.loadMySQLTableInfo(c.Services(), t, true)
+				s.LoadInfo(t, c.Services().Invalidate, true)
 			}
 			if d.countLoading {
 				if ui.Button(c, locales.Text("取消计数")).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
-					s.cancelMySQLTableCount(t)
+					s.CancelCount(t)
 					d.countErr = locales.Text("行数统计已取消")
 				}
 			} else if ui.Button(c, locales.Text("获取行数")).Label(locales.Text("获取整表行数")).
 				Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(!connected).Clicked() {
-				s.loadMySQLTableCount(c.Services(), t)
+				s.LoadCount(t, c.Services().Invalidate)
 			}
 		}).Height(theme.RowHeight(c, theme.CommandBarHeight)).FillWidth().Padding(1, 4).Gap(3)
 		ui.Scroll(c).Grow(1).MinHeight(0).Children(func() {
@@ -87,19 +92,17 @@ func (s *State) mysqlTableInfoInspector(c *ui.Context, t *tab) {
 						icon = "view"
 					}
 					theme.Icon(c, icon, 26, palette.Blue)
-					ui.Text(c, t.dataTable).Bold().FontSize(theme.Font(c, 14)).SingleLine().Grow(1).MinWidth(0).Tooltip(t.dataTable)
+					ui.Text(c, t.table).Bold().FontSize(theme.Font(c, 14)).SingleLine().Grow(1).MinWidth(0).Tooltip(t.table)
 				})
-				for _, p := range s.navigation.Profiles() {
-					if p.ID != t.dataProfileID {
-						continue
+				if s.deps.Profile != nil {
+					if p, ok := s.deps.Profile(t.profileID); ok {
+						tableProperty(c, "连接", p.Name)
+						if active, err := connections.ResolveActiveSettings(p); err == nil {
+							tableProperty(c, "主机", net.JoinHostPort(active.Host, strconv.Itoa(int(active.Port))))
+						}
 					}
-					mysqlTableInfoProperty(c, "连接", p.Name)
-					if active, err := connections.ResolveActiveSettings(p); err == nil {
-						mysqlTableInfoProperty(c, "主机", net.JoinHostPort(active.Host, strconv.Itoa(int(active.Port))))
-					}
-					break
 				}
-				mysqlTableInfoProperty(c, "数据库", t.dataDatabase)
+				tableProperty(c, "数据库", t.database)
 				ui.Divider(c)
 				if d.loading {
 					ui.Text(c, locales.Text("正在读取表信息…")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
@@ -117,10 +120,10 @@ func (s *State) mysqlTableInfoInspector(c *ui.Context, t *tab) {
 				if d.info != nil && d.info.EstimatedRows != nil {
 					estimate = strconv.FormatInt(*d.info.EstimatedRows, 10)
 				}
-				mysqlTableInfoProperty(c, "估算行数", estimate)
+				tableProperty(c, "估算行数", estimate)
 				if d.count != nil {
-					mysqlTableInfoProperty(c, "整表行数", strconv.FormatInt(*d.count, 10))
-					mysqlTableInfoProperty(c, "行数统计时间", d.countAt.Local().Format("2006-01-02 15:04:05"))
+					tableProperty(c, "整表行数", strconv.FormatInt(*d.count, 10))
+					tableProperty(c, "行数统计时间", d.countAt.Local().Format("2006-01-02 15:04:05"))
 				}
 				if d.countLoading {
 					ui.Text(c, locales.Text("正在统计整表行数…")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
@@ -137,40 +140,40 @@ func (s *State) mysqlTableInfoInspector(c *ui.Context, t *tab) {
 				if info.Kind == "VIEW" {
 					kind = "视图"
 				}
-				mysqlTableInfoProperty(c, "类型", locales.Text(kind))
-				mysqlTableInfoProperty(c, "引擎", info.Engine)
-				mysqlTableInfoProperty(c, "自动递增值", mysqlTableInfoNumber(info.AutoIncrement))
-				mysqlTableInfoProperty(c, "行格式", info.RowFormat)
-				mysqlTableInfoProperty(c, "修改日期", info.ModifiedAt)
-				mysqlTableInfoProperty(c, "创建日期", info.CreatedAt)
-				mysqlTableInfoProperty(c, "检查时间", info.CheckedAt)
-				mysqlTableInfoProperty(c, "索引长度", mysqlTableInfoBytes(info.IndexLength))
-				mysqlTableInfoProperty(c, "数据长度", mysqlTableInfoBytes(info.DataLength))
-				mysqlTableInfoProperty(c, "最大数据长度", mysqlTableInfoBytes(info.MaxDataLength))
-				mysqlTableInfoProperty(c, "数据可用空间", mysqlTableInfoBytes(info.DataFree))
-				mysqlTableInfoProperty(c, "排序规则", info.Collation)
-				mysqlTableInfoProperty(c, "创建选项", info.CreateOptions)
-				mysqlTableInfoProperty(c, "注释", info.Comment)
+				tableProperty(c, "类型", locales.Text(kind))
+				tableProperty(c, "引擎", info.Engine)
+				tableProperty(c, "自动递增值", tableNumber(info.AutoIncrement))
+				tableProperty(c, "行格式", info.RowFormat)
+				tableProperty(c, "修改日期", info.ModifiedAt)
+				tableProperty(c, "创建日期", info.CreatedAt)
+				tableProperty(c, "检查时间", info.CheckedAt)
+				tableProperty(c, "索引长度", tableBytes(info.IndexLength))
+				tableProperty(c, "数据长度", tableBytes(info.DataLength))
+				tableProperty(c, "最大数据长度", tableBytes(info.MaxDataLength))
+				tableProperty(c, "数据可用空间", tableBytes(info.DataFree))
+				tableProperty(c, "排序规则", info.Collation)
+				tableProperty(c, "创建选项", info.CreateOptions)
+				tableProperty(c, "注释", info.Comment)
 			})
 		})
 	})
 }
 
-func mysqlTableInfoProperty(c *ui.Context, label, value string) {
+func tableProperty(c *ui.Context, label, value string) {
 	if value == "" {
 		value = "—"
 	}
-	mysqlInspectorProperty(c, locales.Text(label), value)
+	Property(c, locales.Text(label), value)
 }
 
-func mysqlTableInfoNumber(value *int64) string {
+func tableNumber(value *int64) string {
 	if value == nil {
 		return "—"
 	}
 	return strconv.FormatInt(*value, 10)
 }
 
-func mysqlTableInfoBytes(value *int64) string {
+func tableBytes(value *int64) string {
 	if value == nil {
 		return "—"
 	}

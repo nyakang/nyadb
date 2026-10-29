@@ -7,6 +7,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/datainspector"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -90,11 +91,11 @@ func (s *State) profileInspector(c *ui.Context) {
 				t := s.currentTab()
 				if t.kind == tabStructure && t.design.Data() != nil {
 					ui.Text(c, t.design.Table()).FontSize(theme.Font(c, 14)).Bold()
-					mysqlInspectorProperty(c, locales.Text("数据库"), t.design.Database())
+					datainspector.Property(c, locales.Text("数据库"), t.design.Database())
 					if field, selected := t.design.SelectedField(); selected {
-						mysqlInspectorProperty(c, locales.Text("名称"), field.Name)
-						mysqlInspectorProperty(c, locales.Text("类型"), field.Type)
-						mysqlInspectorFieldAttributes(c, field)
+						datainspector.Property(c, locales.Text("名称"), field.Name)
+						datainspector.Property(c, locales.Text("类型"), field.Type)
+						datainspector.FieldAttributes(c, field)
 					}
 					return
 				}
@@ -119,13 +120,13 @@ func (s *State) profileInspector(c *ui.Context) {
 						theme.Icon(c, icon, 32, palette.Blue)
 						ui.Text(c, name).FontSize(theme.Font(c, 14)).Bold()
 					})
-					mysqlInspectorProperty(c, locales.Text("类型"), s.navigationDescription(n))
-					mysqlInspectorProperty(c, locales.Text("连接"), p.Name)
-					mysqlInspectorProperty(c, locales.Text("数据库"), n.Database)
+					datainspector.Property(c, locales.Text("类型"), s.navigationDescription(n))
+					datainspector.Property(c, locales.Text("连接"), p.Name)
+					datainspector.Property(c, locales.Text("数据库"), n.Database)
 					for _, obj := range s.sessions.Current().Cache[n.Database] {
 						if obj.Name == n.Object && obj.Kind == n.Category {
-							mysqlInspectorProperty(c, locales.Text("引擎"), obj.Engine)
-							mysqlInspectorProperty(c, locales.Text("注释"), obj.Comment)
+							datainspector.Property(c, locales.Text("引擎"), obj.Engine)
+							datainspector.Property(c, locales.Text("注释"), obj.Comment)
 							if isMySQLProgram(obj.Kind) {
 								for _, field := range []struct{ label, value string }{
 									{"定义者", obj.Definer}, {"参数", obj.Parameters},
@@ -136,7 +137,7 @@ func (s *State) profileInspector(c *ui.Context) {
 									{"修改时间", obj.ModifiedAt},
 								} {
 									if field.value != "" {
-										mysqlInspectorProperty(c, field.label, field.value)
+										datainspector.Property(c, field.label, field.value)
 									}
 								}
 							}
@@ -155,31 +156,31 @@ func (s *State) profileInspector(c *ui.Context) {
 				if p.Kind == connections.MySQL {
 					s.mysqlSessionToolbar(c)
 				}
-				mysqlInspectorProperty(c, locales.Text("状态"), locales.Text(s.sessions.StatusFor(p.ID)))
+				datainspector.Property(c, locales.Text("状态"), locales.Text(s.sessions.StatusFor(p.ID)))
 				if p.Kind == connections.SQLite {
-					mysqlInspectorProperty(c, locales.Text("文件"), p.Database)
+					datainspector.Property(c, locales.Text("文件"), p.Database)
 					return
 				}
 				if p.Kind == connections.MySQL {
 					resolved, err := connections.ResolveActiveSettings(p)
 					if err != nil {
-						mysqlInspectorProperty(c, locales.Text("活动配置"), locales.Text("无效，请编辑连接"))
+						datainspector.Property(c, locales.Text("活动配置"), locales.Text("无效，请编辑连接"))
 						return
 					}
 					activeName := resolved.ConfigurationName
 					if activeName == "" {
 						activeName = locales.Text("主要配置文件")
 					}
-					mysqlInspectorProperty(c, locales.Text("活动配置"), activeName)
-					mysqlInspectorProperty(c, locales.Text("主机"), resolved.Host)
-					mysqlInspectorProperty(c, locales.Text("端口"), fmt.Sprint(resolved.Port))
-					mysqlInspectorProperty(c, locales.Text("用户"), resolved.Username)
-					mysqlInspectorProperty(c, locales.Text("数据库"), resolved.Database)
+					datainspector.Property(c, locales.Text("活动配置"), activeName)
+					datainspector.Property(c, locales.Text("主机"), resolved.Host)
+					datainspector.Property(c, locales.Text("端口"), fmt.Sprint(resolved.Port))
+					datainspector.Property(c, locales.Text("用户"), resolved.Username)
+					datainspector.Property(c, locales.Text("数据库"), resolved.Database)
 				} else {
-					mysqlInspectorProperty(c, locales.Text("主机"), p.Host)
-					mysqlInspectorProperty(c, locales.Text("端口"), fmt.Sprint(p.Port))
-					mysqlInspectorProperty(c, locales.Text("用户"), p.Username)
-					mysqlInspectorProperty(c, locales.Text("数据库"), p.Database)
+					datainspector.Property(c, locales.Text("主机"), p.Host)
+					datainspector.Property(c, locales.Text("端口"), fmt.Sprint(p.Port))
+					datainspector.Property(c, locales.Text("用户"), p.Username)
+					datainspector.Property(c, locales.Text("数据库"), p.Database)
 				}
 			})
 		})

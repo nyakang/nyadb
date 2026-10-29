@@ -168,3 +168,10 @@ func mysqlDataPendingRecordCount(t *tab) int {
 	}
 	return count
 }
+
+func mysqlDataPageMethod(page *mysqlsvc.MySQLDataPage) string {
+	if page.KeysetAvailable {
+		return "Keyset"
+	}
+	return "OFFSET"
+}

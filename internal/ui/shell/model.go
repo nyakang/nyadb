@@ -11,6 +11,7 @@ import (
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/connectioncatalog"
 	"github.com/nyakang/nyadb/internal/ui/connectioneditor"
+	"github.com/nyakang/nyadb/internal/ui/datainspector"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/sessionbrowser"
 	"github.com/nyakang/nyadb/internal/ui/sqlworkspace"
@@ -53,7 +54,7 @@ type tab struct {
 	dataOffset              int64
 	dataLimit               int
 	dataPage                *mysqlsvc.MySQLDataPage
-	dataInfo                mysqlTableInfoState
+	dataPanel               *datainspector.Panel
 	dataReadInfo            mysqlDataReadInfo
 	dataLayout              mysqlDataLayoutState
 	dataState               ui.ListState
@@ -87,17 +88,6 @@ type tab struct {
 	dataUseKeyset           bool
 	dataAfter               *mysqlsvc.MySQLDataCursor
 	dataCursorHistory       map[int64]*mysqlsvc.MySQLDataCursor
-	dataChunkField          string
-	dataChunkRow            int
-	dataChunkNext           int64
-	dataChunkText           string
-	dataChunkTotal          int64
-	dataChunkDone           bool
-	dataChunkLoading        bool
-	dataChunkErr            string
-	dataChunkCancel         context.CancelFunc
-	dataChunkResults        <-chan mysqlChunkResult
-	dataChunkRequest        uint64
 }
 
 type object struct {
@@ -126,8 +116,6 @@ var objectColumns = []ui.TableColumn{
 
 // State is UI state owned by the main thread. Never retain ui.Element values.
 type State struct {
-	mysqlTableInfoLoader  mysqlTableInfoLoader
-	mysqlTableCountLoader mysqlTableCountLoader
 	dataLayoutPreferences mysqlDataLayoutPreferences
 	sidebarPercent        float32
 	centerPercent         float32
@@ -176,6 +164,7 @@ type State struct {
 	mysqlDataRowReader      mysqlDataRowReader
 	mysqlForceClose         bool
 
+	dataInspector   *datainspector.State
 	structureViewer *structureviewer.State
 	sqlWorkspace    *sqlworkspace.State
 	sessions        *sessionbrowser.State
@@ -215,6 +204,7 @@ func New() *State {
 		nextTabID:            1,
 		tabs:                 []*tab{{id: 1, title: "对象", kind: tabObjects}},
 	}
+	s.dataInspector = datainspector.New(s.dataInspectorDependencies())
 	s.structureViewer = structureviewer.New(s.structureViewerDependencies())
 	s.sqlWorkspace = sqlworkspace.New(s.sqlWorkspaceDependencies())
 	s.sessions = sessionbrowser.New(s.sessionBrowserDependencies())

@@ -21,8 +21,7 @@ func (s *State) View(c *ui.Context) {
 	s.structureViewer.Consume()
 	s.consumeMySQLData()
 	s.consumeMySQLDataEdits(c.Services())
-	s.consumeMySQLTableInfo()
-	s.consumeMySQLChunks()
+	s.dataInspector.Consume()
 	s.sqlWorkspace.Consume()
 	theme.Apply(c)
 

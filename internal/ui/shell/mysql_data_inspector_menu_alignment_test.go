@@ -9,22 +9,6 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
-func TestMySQLInspectorQualifiedFieldHeaderFitsNarrowWidth(t *testing.T) {
-	doc := mysqlInspectorSampleTab()
-	for _, width := range []int{180, 205} {
-		tt := ui.NewTester(func(c *ui.Context) {
-			theme.Apply(c)
-			(&State{}).mysqlDataInspector(c, doc)
-		}, width, 480)
-		for _, label := range []string{"id", "test_schema.entries", "bigint unsigned", "auto_increment"} {
-			r, ok := tt.Find(label)
-			if !ok || r.X < 0 || r.X+r.W > float32(width) {
-				t.Fatalf("metadata %q clipped beyond %dpx inspector: %+v found=%v", label, width, r, ok)
-			}
-		}
-	}
-}
-
 func TestMySQLNativeColumnContextActionsTranslatedInEnglish(t *testing.T) {
 	defer i18n.SetLocaleFunc(nil)
 	i18n.SetLocaleFunc(func() string { return "en" })

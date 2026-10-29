@@ -12,6 +12,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/datainspector"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -69,7 +70,7 @@ func mysqlDataSelectedPreview(t *tab) (names []string, rows [][]string, nulls []
 				// Incomplete loader rows are not silently exported as empty values.
 				return nil, nil, nil
 			}
-			values[col], flags[col] = mysqlDataCopyPreview(cells[source]), cells[source].Null
+			values[col], flags[col] = datainspector.CopyPreview(cells[source]), cells[source].Null
 		}
 		rows, nulls = append(rows, values), append(nulls, flags)
 	}
