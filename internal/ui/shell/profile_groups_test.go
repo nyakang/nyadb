@@ -42,7 +42,7 @@ func TestPersistentGroupTreeInspectorAndConnectionPlacement(t *testing.T) {
 	s.openConnectionDialog()
 	s.chooseConnectionKind(connections.MySQL)
 	s.nextConnectionStep()
-	s.connectionDraft.Name = "Grouped new"
+	s.connectionEditor.Draft().Name = "Grouped new"
 	s.saveConnectionDraft()
 	p, ok := s.currentProfile()
 	if !ok || p.GroupName != "开发库" {

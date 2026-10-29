@@ -35,7 +35,7 @@ func TestConnectionCatalogLocalizedNativeWorkflow(t *testing.T) {
 			if err := tt.Click(locales.Text("下一步")); err != nil {
 				t.Fatal(err)
 			}
-			if s.connectionStep != 1 || s.connectionDraft.Kind != connections.MySQL {
+			if s.connectionStep != 1 || s.connectionEditor.Draft().Kind != connections.MySQL {
 				t.Fatal("localized chooser did not enter the MySQL editor")
 			}
 			if err := tt.Click(locales.Text("上一步")); err != nil {
@@ -74,7 +74,7 @@ func TestConnectionCatalogResearchEntryPointPreservesWorkflow(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if s.connectionStep != 1 || s.connectionDraft.Kind != connections.MySQL {
+	if s.connectionStep != 1 || s.connectionEditor.Draft().Kind != connections.MySQL {
 		t.Fatal("research asset changed the connection workflow")
 	}
 	if err := os.WriteFile(path, []byte("invalid"), 0600); err != nil {
@@ -119,7 +119,7 @@ func TestConnectionCatalogUnsupportedType(t *testing.T) {
 	if err := tt.Click("下一步"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionStep != 1 || s.connectionDraft.Kind != connections.SQLite {
+	if s.connectionStep != 1 || s.connectionEditor.Draft().Kind != connections.SQLite {
 		t.Fatal("SQLite navigation broke")
 	}
 	s.openConnectionDialog()
@@ -161,7 +161,7 @@ func TestConnectionCatalogNativeLayoutAndListMode(t *testing.T) {
 	if err := tt.Click("下一步"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionDraft.Kind != connections.MySQL {
+	if s.connectionEditor.Draft().Kind != connections.MySQL {
 		t.Fatal("existing MySQL workflow regressed")
 	}
 }
@@ -181,7 +181,7 @@ func TestConnectionCatalogMinimumWindow(t *testing.T) {
 	if err := tt.Click("下一步"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionStep != 1 || s.connectionDraft.Kind != connections.SQLite {
+	if s.connectionStep != 1 || s.connectionEditor.Draft().Kind != connections.SQLite {
 		t.Fatal("minimum window failed to enter native connection editor")
 	}
 }

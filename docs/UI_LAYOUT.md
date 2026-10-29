@@ -65,7 +65,14 @@ server-side pagination benchmark.
 - `internal/ui/connectioncatalog/`: connection type catalog, chooser state,
   search, filters, grid/tree views, in-session recents and opt-in research icons.
   The chooser reports a `Choice` through a callback; shell owns window chrome,
-  footer actions, errors and the transition to connection editing.
+  chooser footer actions, chooser errors and the transition to connection editing.
+- `internal/ui/connectioneditor/`: raw editing drafts, native connection forms,
+  alternate configurations, transient secrets, credential rollback and async
+  connection tests. Services and host callbacks are injected; the editor owns
+  no SQLite driver, MySQL transport or workbench session. `OpenNew`/`OpenProfile`
+  initialize a session; `Close` invalidates pending checks and native picker
+  versions and clears temporary secrets. `Saved`, `Back` and `Cancel` callbacks
+  coordinate the editor with shell after secret cleanup.
 - `internal/ui/shell/model.go`: workbench state, tabs, mock objects and
   synthetic result cell generator.
 - `internal/ui/shell/chrome.go`: top chrome, command toolbar and statusbar.
@@ -76,7 +83,9 @@ server-side pagination benchmark.
 - `internal/ui/shell/preview_test.go`: opt-in screenshot generator.
 
 Chooser state and rendering tests live beside `connectioncatalog`; window and
-connection workflow integration tests remain in shell. Shared bitmap cache
+connection workflow integration tests remain in shell. Editor form, configuration,
+credential rollback and async-check tests live beside `connectioneditor`; shell
+retains saved-password session and native picker forwarding regressions. Shared bitmap cache
 tests live beside theme. Resetting the chooser clears selection, search and
 filters while preserving the current view mode, expansion state and recents.
 

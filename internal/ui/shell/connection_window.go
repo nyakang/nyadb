@@ -4,6 +4,8 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/assets/connectionicons"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/services/credentials"
+	"github.com/nyakang/nyadb/internal/ui/connectioneditor"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -30,30 +32,16 @@ func (s *State) updateConnectionWindowTitle() {
 // ConnectionWindowClosed synchronizes state when the user closes the native
 // child via its OS title-bar X/Alt-F4 instead of the in-app Cancel button.
 func (s *State) ConnectionWindowClosed() {
-	s.cancelMySQLConnectionTest()
+	s.connectionEditor.Close()
 	s.connectionDialog = false
-	s.resetConnectionConfigurations()
-	s.connectionSecret = ""
-	s.connectionSavePassword = false
-	s.clearMySQLSSLPassphrase()
-	s.clearMySQLSSHSecrets()
-	s.clearMySQLHTTPSecrets()
-	s.clearMySQLInitialQuery()
 	s.connectionError = ""
 }
 
 func (s *State) ConnectionWindowTitle() string {
-	prefix := "新建连接"
-	if s.connectionDraft.ID != 0 {
-		prefix = "编辑连接"
+	if s.connectionStep == 1 {
+		return s.connectionEditor.Title()
 	}
-	if s.connectionStep == 1 && s.connectionDraft.Kind != "" {
-		if s.connectionDraft.ID != 0 && s.connectionDraft.Kind == connections.MySQL {
-			return s.connectionMainConfig.profile.Name + " - " + locales.Text("编辑连接") + " (MySQL)"
-		}
-		return locales.Text(prefix) + " (" + connectionKindName(s.connectionDraft.Kind) + ")"
-	}
-	return locales.Text(prefix)
+	return locales.Text("新建连接")
 }
 
 func (s *State) ConnectionWindowSize() (int, int) {
@@ -70,7 +58,7 @@ func (s *State) ConnectionWindowIcon() ([]byte, error) {
 		return nil, nil
 	}
 	var file string
-	switch s.connectionDraft.Kind {
+	switch s.connectionEditor.Draft().Kind {
 	case connections.MySQL:
 		file = "mysql.png"
 	case connections.PostgreSQL:
@@ -91,7 +79,7 @@ func (s *State) ConnectionWindowView(c *ui.Context) {
 	if !s.connectionDialog {
 		return
 	}
-	if !s.mysqlInitialQueryOpen && c.Shortcut(0, ui.KeyEscape) {
+	if !s.connectionEditor.InitialQueryOpen() && c.Shortcut(0, ui.KeyEscape) {
 		s.closeConnectionDialog()
 		return
 	}
@@ -99,5 +87,78 @@ func (s *State) ConnectionWindowView(c *ui.Context) {
 		s.connectionTypes(c, true)
 		return
 	}
-	s.connectionEditor(c)
+	s.connectionEditorView(c)
 }
+
+// SetCredentialVault shares the native vault with the editor and sessions.
+func (s *State) SetCredentialVault(vault credentials.Vault) {
+	s.credentialVault = vault
+	s.connectionEditor.SetCredentialVault(vault)
+}
+
+// Aliases preserve bootstrap's native picker interface.
+type MySQLSSLFile = connectioneditor.MySQLSSLFile
+type MySQLHTTPFile = connectioneditor.MySQLHTTPFile
+
+const (
+	MySQLSSLClientKey          = connectioneditor.MySQLSSLClientKey
+	MySQLSSLClientCertificate  = connectioneditor.MySQLSSLClientCertificate
+	MySQLSSLCA                 = connectioneditor.MySQLSSLCA
+	MySQLHTTPClientKey         = connectioneditor.MySQLHTTPClientKey
+	MySQLHTTPClientCertificate = connectioneditor.MySQLHTTPClientCertificate
+	MySQLHTTPCA                = connectioneditor.MySQLHTTPCA
+)
+
+func (s *State) SetMySQLSSLFilePicker(pick func(MySQLSSLFile)) {
+	s.connectionEditor.SetMySQLSSLFilePicker(pick)
+}
+
+func (s *State) MySQLSSLSessionVersion() uint64 { return s.connectionEditor.MySQLSSLSessionVersion() }
+
+func (s *State) SelectMySQLSSLFile(kind MySQLSSLFile, version uint64, path string) {
+	s.connectionEditor.SelectMySQLSSLFile(kind, version, path)
+}
+
+func (s *State) MySQLSSLFilePickerError(version uint64) {
+	s.connectionEditor.MySQLSSLFilePickerError(version)
+}
+
+func (s *State) SetMySQLSSHKeyPicker(pick func()) { s.connectionEditor.SetMySQLSSHKeyPicker(pick) }
+
+func (s *State) MySQLSSHSessionVersion() uint64 { return s.connectionEditor.MySQLSSHSessionVersion() }
+
+func (s *State) SelectMySQLSSHPrivateKey(version uint64, path string) {
+	s.connectionEditor.SelectMySQLSSHPrivateKey(version, path)
+}
+
+func (s *State) MySQLSSHKeyPickerError(version uint64) {
+	s.connectionEditor.MySQLSSHKeyPickerError(version)
+}
+
+func (s *State) SetMySQLHTTPFilePicker(fn func(MySQLHTTPFile)) {
+	s.connectionEditor.SetMySQLHTTPFilePicker(fn)
+}
+
+func (s *State) MySQLHTTPSessionVersion() uint64 { return s.connectionEditor.MySQLHTTPSessionVersion() }
+
+func (s *State) SelectMySQLHTTPFile(kind MySQLHTTPFile, version uint64, path string) {
+	s.connectionEditor.SelectMySQLHTTPFile(kind, version, path)
+}
+
+func (s *State) MySQLHTTPFilePickerError(version uint64) {
+	s.connectionEditor.MySQLHTTPFilePickerError(version)
+}
+
+func (s *State) SetMySQLSettingsPicker(pick func()) { s.connectionEditor.SetMySQLSettingsPicker(pick) }
+
+func (s *State) SelectMySQLSettingsDirectory(path string) {
+	s.connectionEditor.SelectMySQLSettingsDirectory(path)
+}
+
+func (s *State) MySQLSettingsPickerError() { s.connectionEditor.MySQLSettingsPickerError() }
+
+func (s *State) SetSQLiteFilePicker(pick func()) { s.connectionEditor.SetSQLiteFilePicker(pick) }
+
+func (s *State) SelectSQLiteFile(path string) { s.connectionEditor.SelectSQLiteFile(path) }
+
+func (s *State) SQLiteFilePickerError() { s.connectionEditor.SQLiteFilePickerError() }

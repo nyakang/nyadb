@@ -1,7 +1,6 @@
 package shell
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/egoist/mygo/ui"
@@ -34,7 +33,7 @@ func TestMySQLNativeEditorTabsAndBack(t *testing.T) {
 	if err := tt.Click("高级"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionEditorTab != 1 || !tt.HasText("客户端驱动程序：") ||
+	if !tt.HasText("客户端驱动程序：") ||
 		!tt.HasText("保持连接间隔（秒）：") || !tt.HasText("连接超时（秒）：") ||
 		!tt.HasText("初始查询：") || !tt.HasText("兼容性") {
 		t.Fatal("MySQL Advanced tab missing observed controls")
@@ -42,44 +41,22 @@ func TestMySQLNativeEditorTabsAndBack(t *testing.T) {
 	if err := tt.Click("数据库"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionEditorTab != 2 || !tt.HasText("使用自定义数据库列表") || !tt.HasText("自动打开") {
+	if !tt.HasText("使用自定义数据库列表") || !tt.HasText("自动打开") {
 		t.Fatal("database tab should show the original custom database list")
 	}
 	if err := tt.Click("常规"); err != nil {
 		t.Fatal(err)
 	}
-	s.connectionSecret = "session-only"
+	if err := tt.Click("密码"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Type("session-only")
 	if err := tt.Click("上一步"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionStep != 0 || s.connectionSecret != "" ||
+	if s.connectionStep != 0 || s.connectionEditor.Active() ||
 		s.ConnectionWindowTitle() != "新建连接" ||
 		!tt.HasText("连接筛选") || titles[len(titles)-1] != "新建连接" {
 		t.Fatal("Back did not restore the chooser, title and secret lifecycle")
-	}
-}
-
-func TestMySQLEditorValidationAndSecretNotInProfile(t *testing.T) {
-	s := New()
-	s.openConnectionDialog()
-	s.chooseConnectionKind(connections.MySQL)
-	s.nextConnectionStep()
-	tt := ui.NewTester(s.ConnectionWindowView, 900, 700)
-	if err := tt.Click("保存连接"); err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(s.connectionError, "连接名称") {
-		t.Fatalf("blank name must be rejected: %q", s.connectionError)
-	}
-	s.connectionDraft.Name = "localhost development"
-	s.connectionSecret = "not persisted"
-	if p, err := s.draftProfile(); err != nil || p.Name == "" {
-		t.Fatalf("valid draft not accepted: %+v %v", p, err)
-	}
-	if err := tt.Click("取消连接向导"); err != nil {
-		t.Fatal(err)
-	}
-	if s.connectionSecret != "" || s.connectionDialog {
-		t.Fatal("Cancel should clear password and close")
 	}
 }

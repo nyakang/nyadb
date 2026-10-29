@@ -1,4 +1,4 @@
-package shell
+package connectioneditor
 
 import (
 	"context"
@@ -54,7 +54,7 @@ func TestMySQLNewConnectionSavePasswordDefaultAndBack(t *testing.T) {
 }
 
 func TestSavePasswordDefaultRequiresMySQLAndVault(t *testing.T) {
-	s := New()
+	s := newTestEditor()
 	s.openConnectionDialog()
 	s.chooseConnectionKind(connections.MySQL)
 	s.nextConnectionStep()

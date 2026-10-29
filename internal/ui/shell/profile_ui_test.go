@@ -42,12 +42,12 @@ func TestProfileUICreateAndRefresh(t *testing.T) {
 	if err := tt.Click("下一步"); err != nil {
 		t.Fatal(err)
 	}
-	s.connectionDraft.Name = "Development"
+	s.connectionEditor.Draft().Name = "Development"
 	if err := tt.Click("保存连接"); err != nil {
 		t.Fatal(err)
 	}
 	if s.connectionDialog || len(s.profileEntries) != 1 || s.profileEntries[0].Name != "Development" {
-		t.Fatalf("profile not created: open=%t entries=%+v error=%q", s.connectionDialog, s.profileEntries, s.connectionError)
+		t.Fatalf("profile not created: open=%t entries=%+v error=%q", s.connectionDialog, s.profileEntries, s.connectionEditor.Error())
 	}
 	if !tt.HasText("Development") {
 		t.Fatal("new connection missing from explorer")
@@ -87,11 +87,11 @@ func TestProfileUIEditDuplicateDelete(t *testing.T) {
 	if err := tt.ChooseMenuItem("编辑连接"); err != nil {
 		t.Fatal(err)
 	}
-	if !s.connectionDialog || s.connectionDraft.ID != p.ID ||
+	if !s.connectionDialog || s.connectionEditor.Draft().ID != p.ID ||
 		s.ConnectionWindowTitle() != "编辑连接 (SQLite)" || !tt.HasText("数据库文件：") {
-		t.Fatalf("edit form not prefilled: modal=%v draft=%+v selected=%d status=%q", s.connectionDialog, s.connectionDraft, s.selectedProfileID, s.status)
+		t.Fatalf("edit form not prefilled: modal=%v draft=%+v selected=%d status=%q", s.connectionDialog, s.connectionEditor.Draft(), s.selectedProfileID, s.status)
 	}
-	s.connectionDraft.Name = "Renamed"
+	s.connectionEditor.Draft().Name = "Renamed"
 	if err := tt.Click("保存连接"); err != nil {
 		t.Fatal(err)
 	}
@@ -152,7 +152,7 @@ func TestProfileDuplicateNameError(t *testing.T) {
 	s.selectedProfileID = p.ID
 	s.loadProfiles()
 	s.startEditProfile()
-	s.connectionDraft.Name = "one"
+	s.connectionEditor.Draft().Name = "one"
 	s.saveConnectionDraft()
 	if s.connectionDialog {
 		t.Fatal("updating same profile name should succeed")
@@ -162,9 +162,9 @@ func TestProfileDuplicateNameError(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.startEditProfile()
-	s.connectionDraft.Name = "taken"
+	s.connectionEditor.Draft().Name = "taken"
 	s.saveConnectionDraft()
-	if !s.connectionDialog || s.connectionError == "" {
+	if !s.connectionDialog || s.connectionEditor.Error() == "" {
 		t.Fatal("duplicate name should display error without closing dialog")
 	}
 }
@@ -192,8 +192,8 @@ func TestProfileContextMenuTargetsRightClickedConnection(t *testing.T) {
 	if err := tt.ChooseMenuItem("编辑连接"); err != nil {
 		t.Fatal(err)
 	}
-	if s.selectedProfileID != second.ID || !s.connectionDialog || s.connectionDraft.ID != second.ID {
-		t.Fatalf("context edit did not target second connection: selected=%d draft=%d", s.selectedProfileID, s.connectionDraft.ID)
+	if s.selectedProfileID != second.ID || !s.connectionDialog || s.connectionEditor.Draft().ID != second.ID {
+		t.Fatalf("context edit did not target second connection: selected=%d draft=%d", s.selectedProfileID, s.connectionEditor.Draft().ID)
 	}
 }
 
