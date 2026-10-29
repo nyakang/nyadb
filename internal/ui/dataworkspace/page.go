@@ -3,8 +3,10 @@ package dataworkspace
 import (
 	"context"
 	"errors"
-	"github.com/egoist/mygo/ui"
 	"strings"
+
+	"github.com/egoist/mygo/ui"
+
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
@@ -21,6 +23,9 @@ type mysqlDataResult struct {
 }
 
 func (s *State) Cancel(t *Document) {
+	if t == nil || t.closed {
+		return
+	}
 	t.request++
 	s.cancelMySQLChunk(t)
 	if t.cancel != nil {
@@ -52,7 +57,7 @@ func (s *State) Load(services ui.Services, t *Document, refresh bool) {
 	options := mysqlsvc.MySQLDataOptions{Offset: offset, Limit: limit,
 		FilterColumn: t.filterColumn, FilterValue: t.filterValue,
 		FilterMode: t.filterMode, SortColumn: t.sortColumn,
-		SortDescending: t.sortDescending, UseKeyset: t.useKeyset, After: t.after,
+		SortDescending: t.sortDescending, UseKeyset: t.useKeyset, After: cloneCursor(t.after),
 		Filters: append([]mysqlsvc.MySQLDataFilterRule(nil), t.filterRules...), Sorts: append([]mysqlsvc.MySQLDataSortRule(nil), t.sortRules...)}
 	advanced := s.advancedLoader()
 	legacy := s.pageLoader()
@@ -120,14 +125,17 @@ func (s *State) consumePages() {
 		}
 		select {
 		case result := <-t.results:
-			if result.generation != s.session().Generation ||
-				result.profileID != s.session().ProfileID ||
+			if result.profileID != s.session().ProfileID ||
 				result.profileID != t.profileID ||
 				result.request != t.request ||
 				result.offset != t.offset {
 				continue
 			}
 			s.Cancel(t)
+			if result.generation != s.session().Generation || !s.session().Connected {
+				t.err = "原 MySQL 会话已失效，请刷新表数据"
+				continue
+			}
 			if result.err != nil {
 				if !errors.Is(result.err, context.Canceled) {
 					t.err = result.err.Error()
@@ -158,8 +166,26 @@ func (s *State) consumePages() {
 // Closing a document cancels all of its independent readers. A normal data
 // refresh only cancels the page reader, leaving table statistics undisturbed.
 func (s *State) Close(t *Document) {
+	if t == nil || t.closed {
+		return
+	}
 	s.flushMySQLDataLayout(t)
 	s.cancelMySQLDataEdit(t)
 	s.Cancel(t)
 	s.inspector.Close(t.panel)
+	t.closed = true
+	t.page, t.panel, t.columns = nil, nil, nil
+	t.edit = mysqlDataEditState{}
+	if t.export.Cancel != nil {
+		t.export.Cancel()
+	}
+	t.export = mysqlDataExportState{}
+	t.cursorHistory, t.after = nil, nil
+	t.hiddenColumns = nil
+	t.filterExtraDraft, t.filterRules, t.sortDraft, t.sortRules = nil, nil, nil, nil
+	t.selection.Clear()
+	t.grid = ui.ListState{}
+	if s.documents[t.id] == t {
+		delete(s.documents, t.id)
+	}
 }

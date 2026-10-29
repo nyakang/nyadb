@@ -12,7 +12,7 @@ import (
 // NewWithProfiles replaces the demo connection roots with persisted,
 // non-secret profiles. Sessions and database-name metadata are available after an explicit connect.
 func NewWithProfiles(service *connections.Service) *State {
-	s := New()
+	s := newState(false)
 	s.profileMode = true
 	s.profileService = service
 	s.connectionEditor.SetProfileService(service)
@@ -149,7 +149,7 @@ func (s *State) selectGroup(name string) {
 	s.selectedProfileID = 0
 	s.navigation.Key = navigation.GroupKey(name)
 	s.navigation.Row = -1
-	s.sessions.Current().Row = -1
+	s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, -1)
 	s.status = "已选择虚拟组：" + name
 }
 

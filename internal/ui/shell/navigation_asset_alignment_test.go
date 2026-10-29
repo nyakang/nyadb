@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
@@ -115,7 +116,7 @@ func TestNavigatorUnsupportedCategoryKeepsWorkbenchContext(t *testing.T) {
 	s, _ := mysqlObjectTestState(t)
 	node := navigation.Node{Kind: "category", ProfileID: s.sessions.Current().ProfileID, Database: "app_db", Category: "查询"}
 	s.selectNavigationNode(ui.Services{}, node.Key())
-	if s.sessions.Current().Kind != "查询" || s.sessions.Current().Row != -1 || len(s.sessions.SelectedObjects()) != 0 || !strings.Contains(s.status, "尚未") {
-		t.Fatalf("unsupported folder must not pretend to filter objects: kind=%q row=%d status=%q", s.sessions.Current().Kind, s.sessions.Current().Row, s.status)
+	if s.objectWorkspace.FilterKind(s.sessions.Current().ProfileID) != "查询" || s.objectWorkspace.SelectedRow(s.sessions.Current().ProfileID) != -1 || len(s.objectWorkspace.SelectedObjects()) != 0 || !strings.Contains(s.status, "尚未") {
+		t.Fatalf("unsupported folder must not pretend to filter objects: kind=%q row=%d status=%q", s.objectWorkspace.FilterKind(s.sessions.Current().ProfileID), s.objectWorkspace.SelectedRow(s.sessions.Current().ProfileID), s.status)
 	}
 }

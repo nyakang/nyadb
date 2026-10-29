@@ -4,11 +4,13 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"strings"
+
 	"github.com/egoist/mygo/ui"
+
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
-	"strings"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func mysqlSelectedDataCell(t *Document) (string, mysqlsvc.MySQLDataCell, bool) {

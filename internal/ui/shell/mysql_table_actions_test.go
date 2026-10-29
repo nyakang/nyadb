@@ -8,18 +8,19 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
+
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func waitTableChange(t *testing.T, s *State, tt interface{ Frame() }) {
 	t.Helper()
 	until := time.Now().Add(3 * time.Second)
-	for s.mysqlTablePending && time.Now().Before(until) {
+	for s.objectWorkspace.TablePending() && time.Now().Before(until) {
 		tt.Frame()
 		time.Sleep(5 * time.Millisecond)
 	}
 	tt.Frame()
-	if s.mysqlTablePending {
+	if s.objectWorkspace.TablePending() {
 		t.Fatal("table operation did not settle")
 	}
 }
@@ -27,7 +28,7 @@ func waitTableChange(t *testing.T, s *State, tt interface{ Frame() }) {
 func TestMySQLTableMenuSharesActionsAndRequiresExplicitConfirmation(t *testing.T) {
 	s, tt := structureTestBrowser(t)
 	var calls []mysqlsvc.MySQLTableChange
-	s.mysqlTableRunner = func(_ context.Context, id int64, r mysqlsvc.MySQLTableChange) error {
+	s.objectWorkspace.Runner = func(_ context.Context, id int64, r mysqlsvc.MySQLTableChange) error {
 		if id != s.sessions.Current().ProfileID {
 			return errors.New("wrong connection")
 		}
@@ -46,19 +47,19 @@ func TestMySQLTableMenuSharesActionsAndRequiresExplicitConfirmation(t *testing.T
 	if err := tt.ChooseMenuItem("删除表"); err != nil {
 		t.Fatal(err)
 	}
-	if !s.mysqlTableDialog || s.mysqlTableAction != mysqlsvc.MySQLTableDrop {
+	if !s.objectWorkspace.TableDialogOpen() || s.objectWorkspace.TableAction() != mysqlsvc.MySQLTableDrop {
 		t.Fatal("drop must open a confirmation, not execute DDL")
 	}
 	tt.Frame()
 	if len(calls) != 0 {
 		t.Fatal("DDL ran without confirmation")
 	}
-	s.mysqlTableConfirmation = "not_orders"
+	setTestInput(t, tt, "确认原表名称", "not_orders")
 	tt.Frame()
 	if err := tt.Click("确认删除表"); err == nil && len(calls) != 0 {
 		t.Fatal("incorrect confirmation executed a drop")
 	}
-	s.mysqlTableConfirmation = "orders"
+	setTestInput(t, tt, "确认原表名称", "orders")
 	tt.Frame()
 	if err := tt.Click("确认删除表"); err != nil {
 		t.Fatal(err)
@@ -72,26 +73,27 @@ func TestMySQLTableMenuSharesActionsAndRequiresExplicitConfirmation(t *testing.T
 
 func TestMySQLTableActionErrorIsVisibleAndDoesNotInvalidateOtherConnection(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	s.mysqlTableRunner = func(context.Context, int64, mysqlsvc.MySQLTableChange) error {
+	s.objectWorkspace.Runner = func(context.Context, int64, mysqlsvc.MySQLTableChange) error {
 		return errors.New("permission denied by server")
 	}
-	s.beginMySQLTableChange(s.sessions.Current().ProfileID, "app_db", "orders", mysqlsvc.MySQLTableRename)
-	s.mysqlTableNewName = "orders_new"
+	s.objectWorkspace.BeginTableChange(s.sessions.Current().ProfileID, "app_db", "orders", mysqlsvc.MySQLTableRename)
+	tt.Frame()
+	setTestInput(t, tt, "新表名称", "orders_new")
 	tt.Frame()
 	if err := tt.Click("确认重命名"); err != nil {
 		t.Fatal(err)
 	}
 	waitTableChange(t, s, tt)
-	if !s.mysqlTableDialog || s.mysqlTableError == "" ||
+	if !s.objectWorkspace.TableDialogOpen() || s.objectWorkspace.TableError() == "" ||
 		!tt.HasText("permission denied by server") {
-		t.Fatalf("error feedback missing: %q", s.mysqlTableError)
+		t.Fatalf("error feedback missing: %q", s.objectWorkspace.TableError())
 	}
 }
 
 func TestMySQLCreateTableUsesNameEnteredInDialog(t *testing.T) {
 	s, tt := structureTestBrowser(t)
 	requests := make(chan mysqlsvc.MySQLTableChange, 1)
-	s.mysqlTableRunner = func(_ context.Context, _ int64, request mysqlsvc.MySQLTableChange) error {
+	s.objectWorkspace.Runner = func(_ context.Context, _ int64, request mysqlsvc.MySQLTableChange) error {
 		requests <- request
 		return nil
 	}
@@ -130,7 +132,7 @@ func TestMySQLCreateTableIsReachableInEmptyDatabase(t *testing.T) {
 				return nil, nil
 			}
 			requests := make(chan mysqlsvc.MySQLTableChange, 1)
-			s.mysqlTableRunner = func(_ context.Context, _ int64, r mysqlsvc.MySQLTableChange) error {
+			s.objectWorkspace.Runner = func(_ context.Context, _ int64, r mysqlsvc.MySQLTableChange) error {
 				requests <- r
 				return nil
 			}
@@ -148,7 +150,7 @@ func TestMySQLCreateTableIsReachableInEmptyDatabase(t *testing.T) {
 			} else if err := tt.Click("新建表"); err != nil {
 				t.Fatal(err)
 			}
-			if !s.mysqlTableDialog || s.mysqlTableAction != mysqlsvc.MySQLTableCreate {
+			if !s.objectWorkspace.TableDialogOpen() || s.objectWorkspace.TableAction() != mysqlsvc.MySQLTableCreate {
 				t.Fatal("empty database did not offer a creation dialog")
 			}
 			if err := tt.Click("新表名称"); err != nil {
@@ -173,7 +175,7 @@ func TestMySQLCreateTableIsReachableInEmptyDatabase(t *testing.T) {
 
 func TestMySQLCopySubmenuDispatchesObservedActions(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	s.mysqlTableRunner = func(context.Context, int64, mysqlsvc.MySQLTableChange) error { return nil }
+	s.objectWorkspace.Runner = func(context.Context, int64, mysqlsvc.MySQLTableChange) error { return nil }
 	for _, entry := range []struct {
 		label  string
 		action mysqlsvc.MySQLTableAction
@@ -184,8 +186,8 @@ func TestMySQLCopySubmenuDispatchesObservedActions(t *testing.T) {
 		if err := tt.ChooseMenuItem("复制表", entry.label); err != nil {
 			t.Fatal(err)
 		}
-		if !s.mysqlTableDialog || s.mysqlTableAction != entry.action {
-			t.Fatalf("%s dispatched %s", entry.label, s.mysqlTableAction)
+		if !s.objectWorkspace.TableDialogOpen() || s.objectWorkspace.TableAction() != entry.action {
+			t.Fatalf("%s dispatched %s", entry.label, s.objectWorkspace.TableAction())
 		}
 		if err := tt.Click("取消"); err != nil {
 			t.Fatal(err)
@@ -198,7 +200,7 @@ func TestMySQLTableShortcutsStayScopedAndRequireConfirmation(t *testing.T) {
 		t.Run(target, func(t *testing.T) {
 			s, tt := structureTestBrowser(t)
 			calls := make(chan mysqlsvc.MySQLTableChange, 1)
-			s.mysqlTableRunner = func(_ context.Context, _ int64, r mysqlsvc.MySQLTableChange) error {
+			s.objectWorkspace.Runner = func(_ context.Context, _ int64, r mysqlsvc.MySQLTableChange) error {
 				calls <- r
 				return nil
 			}
@@ -211,8 +213,8 @@ func TestMySQLTableShortcutsStayScopedAndRequireConfirmation(t *testing.T) {
 					t.Fatal(err)
 				}
 				tt.Key(shortcut.mods, shortcut.key)
-				if !s.mysqlTableDialog || s.mysqlTableAction != shortcut.action || s.deleteConfirm {
-					t.Fatalf("shortcut %v did not target the table action: dialog=%v action=%s profileDelete=%v", shortcut.key, s.mysqlTableDialog, s.mysqlTableAction, s.deleteConfirm)
+				if !s.objectWorkspace.TableDialogOpen() || s.objectWorkspace.TableAction() != shortcut.action || s.deleteConfirm {
+					t.Fatalf("shortcut %v did not target the table action: dialog=%v action=%s profileDelete=%v", shortcut.key, s.objectWorkspace.TableDialogOpen(), s.objectWorkspace.TableAction(), s.deleteConfirm)
 				}
 				input := "新表名称"
 				if shortcut.action == mysqlsvc.MySQLTableDrop {
@@ -224,7 +226,7 @@ func TestMySQLTableShortcutsStayScopedAndRequireConfirmation(t *testing.T) {
 				tt.Key(0, ui.KeyDelete)
 				tt.Key(ui.Ctrl, ui.KeyN)
 				tt.Key(0, ui.KeyF2)
-				if s.mysqlTableAction != shortcut.action || s.deleteConfirm {
+				if s.objectWorkspace.TableAction() != shortcut.action || s.deleteConfirm {
 					t.Fatal("typing in dialog dispatched an object shortcut")
 				}
 				if err := tt.Click("取消"); err != nil {
@@ -244,7 +246,7 @@ func TestMySQLTableShortcutsStayScopedAndRequireConfirmation(t *testing.T) {
 			}
 			tt.Key(0, ui.KeyDelete)
 			tt.Key(0, ui.KeyF2)
-			if s.mysqlTableDialog || s.deleteConfirm {
+			if s.objectWorkspace.TableDialogOpen() || s.deleteConfirm {
 				t.Fatal("view shortcut dispatched a table or connection deletion")
 			}
 		})

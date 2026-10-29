@@ -1,20 +1,22 @@
 package dataworkspace
 
 import (
+	"context"
 	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/egoist/mygo"
-	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/ui/datainspector"
-	"github.com/nyakang/nyadb/locales"
 	"io"
 	"os"
 	"slices"
 	"strings"
+
+	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/ui"
+
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // The selection is bounded by the loaded page. Hidden fields and the row
@@ -71,7 +73,7 @@ func mysqlDataSelectedPreview(t *Document) (names []string, rows [][]string, nul
 				// Incomplete loader rows are not silently exported as empty values.
 				return nil, nil, nil
 			}
-			values[col], flags[col] = datainspector.CopyPreview(cells[source]), cells[source].Null
+			values[col], flags[col] = CopyPreview(cells[source]), cells[source].Null
 		}
 		rows, nulls = append(rows, values), append(nulls, flags)
 	}
@@ -350,6 +352,7 @@ type mysqlDataExportResult struct {
 	err  error
 }
 type mysqlDataExportState struct {
+	Cancel  context.CancelFunc
 	Busy    bool
 	Results <-chan mysqlDataExportResult
 }
@@ -376,7 +379,8 @@ func (s *State) exportMySQLDataSelection(c *ui.Context, t *Document, format stri
 		return
 	}
 	results := make(chan mysqlDataExportResult, 1)
-	t.export = mysqlDataExportState{Busy: true, Results: results}
+	ctx, cancel := context.WithCancel(context.Background())
+	t.export = mysqlDataExportState{Busy: true, Results: results, Cancel: cancel}
 	services := c.Services()
 	title := locales.Text("保存选区数据预览")
 	message := locales.Text("仅保存当前页选区；截断字段包含预览标记")
@@ -384,7 +388,7 @@ func (s *State) exportMySQLDataSelection(c *ui.Context, t *Document, format stri
 	defaultPath := t.table + "." + extension
 	go func() {
 		path, err := mygo.Dialog.Save(mygo.SaveDialogOptions{Title: title, Message: message, DefaultPath: defaultPath, Filters: []mygo.FileFilter{{Name: format, Extensions: []string{extension}}}})
-		if err == nil && path != "" {
+		if err == nil && path != "" && ctx.Err() == nil {
 			err = os.WriteFile(path, []byte(data+"\n"), 0600)
 		}
 		results <- mysqlDataExportResult{path: path, err: err}
@@ -397,6 +401,9 @@ func (s *State) consumeMySQLDataExport(t *Document) {
 	}
 	select {
 	case result := <-t.export.Results:
+		if t.export.Cancel != nil {
+			t.export.Cancel()
+		}
 		t.export = mysqlDataExportState{}
 		if result.err != nil {
 			t.edit.Err = locales.Text("保存数据文件失败：") + result.err.Error()

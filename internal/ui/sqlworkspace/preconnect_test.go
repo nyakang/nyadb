@@ -57,3 +57,21 @@ func TestSQLPreconnectFailureDoesNotOverwriteExecutingQuery(t *testing.T) {
 		t.Fatalf("preconnect failure overwrote running query: %q", tab.Error())
 	}
 }
+
+func TestSQLTerminalCloseReleasesTextAndResultsWhileDisconnectKeepsText(t *testing.T) {
+	s := New(Dependencies{})
+	d := s.Open(1, "SELECT original", 12, "db", false)
+	s.DisconnectProfile(12)
+	if d.Editor.Buffer.String() != "SELECT original" || !d.NeedsRecovery() {
+		t.Fatal("disconnect lost SQL text or recovery")
+	}
+	s.Close(d)
+	s.Close(d)
+	if d.Editor != nil || d.result != nil || len(s.documents) != 0 {
+		t.Fatal("terminal close retained SQL document caches")
+	}
+	s.Prepare(d)
+	if d.lease != nil || d.prepareResults != nil {
+		t.Fatal("closed SQL document was reused")
+	}
+}

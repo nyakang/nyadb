@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
@@ -112,36 +111,29 @@ func TestSessionBrowserCancellationPreservesOpenedStateWithoutAutomaticRetry(t *
 	}
 }
 
-func TestSessionBrowserWorkspacePresentationAndOpeningAreIsolated(t *testing.T) {
+func TestSessionBrowserWorkspaceOpeningIsIsolated(t *testing.T) {
 	s, _, _ := connectedState(t)
 	first := s.Current()
-	first.Database, first.Row = "app", 4
-	first.List.Columns = ui.TableLayout{Widths: map[string]float32{"名称": 280}}
-	first.NavigateDatabase, first.NavigateTable, first.NavigateProfileID = "app", "orders", 1
-	first.Cache["app"] = []mysqlsvc.MySQLDBObject{{Name: "orders", Kind: "表"}, {Name: "sales", Kind: "视图"}}
+	first.Database = "app"
 	s.MarkOpened(1, "app")
-	first.Kind = "视图"
-	if objects := s.SelectedObjects(); len(objects) != 1 || objects[0].Name != "sales" {
-		t.Fatal("object filter was lost")
-	}
 	s.Activate(2)
 	second := s.Current()
 	second.ProfileID, second.Status = 2, "已连接"
-	second.Database, second.Row, second.Databases = "app", 8, []string{"app"}
+	second.Database, second.Databases = "app", []string{"app"}
 	if s.DatabaseOpened(2, "app") || !s.DatabaseOpened(1, "app") {
-		t.Fatal("same-name schema shared opened state")
+		t.Fatal("same-name schemas shared opened state")
 	}
 	s.Activate(1)
-	if s.Current() != first || first.Row != 4 || first.List.Columns.Widths["名称"] != 280 || first.List.Selected != &first.Row || first.NavigateTable != "orders" || first.Kind != "视图" {
-		t.Fatal("workspace selection, layout or pending navigation changed on activation")
+	if s.Current() != first {
+		t.Fatal("workspace identity changed")
 	}
 	s.SelectDatabase("other")
-	if first.Row != -1 || first.Kind != "全部" || first.List.Columns.Widths["名称"] != 280 {
-		t.Fatal("database selection kept stale row or discarded column layout")
+	if first.Database != "other" {
+		t.Fatal("database context did not change")
 	}
 	s.DisconnectAll()
 	if s.HasSessions() || second.Password != "" {
-		t.Fatal("close-all left a workspace or credential draft")
+		t.Fatal("close-all retained workspace or password")
 	}
 }
 

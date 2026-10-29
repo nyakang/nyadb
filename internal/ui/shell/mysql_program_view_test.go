@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
@@ -20,8 +21,8 @@ func TestProgramDefinitionTabIsReadOnlyAndScopedToProfile(t *testing.T) {
 		"app": {{Name: "run_cleanup", Kind: "存储过程", Definition: "DELETE FROM logs"}},
 	}
 	s.openMySQLProgram("app", "run_cleanup", "存储过程")
-	if len(s.tabs) != 2 || s.currentTab().kind != tabProgram || s.currentTab().program.ProfileID() != 41 ||
-		s.currentTab().program.Data().Definition != "DELETE FROM logs" {
+	if len(s.tabs) != 2 || s.currentTab().kind != tabProgram || s.currentTab().object.ProfileID() != 41 ||
+		s.currentTab().object.ProgramData().Definition != "DELETE FROM logs" {
 		t.Fatalf("program tab did not retain metadata and session identity: %+v", s.currentTab())
 	}
 	s.openMySQLProgram("app", "run_cleanup", "存储过程")
@@ -41,23 +42,24 @@ func TestProgramObjectEntrypointsDoNotExecuteDefinitionsOrOpenData(t *testing.T)
 				s, tt := structureTestBrowser(t)
 				object := mysqlsvc.MySQLDBObject{Name: "mutating_body", Kind: kind, Definition: "DELETE FROM logs", Definer: "metadata@server"}
 				s.sessions.Current().Cache["app_db"] = []mysqlsvc.MySQLDBObject{object}
-				s.sessions.Current().Kind, s.sessions.Current().Row = "全部", 0
+				s.objectWorkspace.SetFilter(s.sessions.Current().ProfileID, "全部")
+				s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, 0)
 				var executions, dataReads, structureReads atomic.Int32
 				s.sqlWorkspace.Executor = func(context.Context, int64, string, string) (mysqlsvc.MySQLSQLResult, error) {
 					executions.Add(1)
 					return mysqlsvc.MySQLSQLResult{}, nil
 				}
-				s.mysqlDataLoader = func(context.Context, int64, string, string, int64, int) (*mysqlsvc.MySQLDataPage, error) {
+				s.dataWorkspace.Loader = func(context.Context, int64, string, string, int64, int) (*mysqlsvc.MySQLDataPage, error) {
 					dataReads.Add(1)
 					return nil, nil
 				}
-				s.structureViewer.Loader = func(context.Context, int64, string, string) (*mysqlsvc.MySQLTableStructure, error) {
+				s.objectWorkspace.Loader = func(context.Context, int64, string, string) (*mysqlsvc.MySQLTableStructure, error) {
 					structureReads.Add(1)
 					return nil, nil
 				}
 				tt.Frame()
 				// Replacing fixture metadata invalidates the old keyed table row.
-				s.sessions.Current().Row = 0
+				s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, 0)
 				tt.Frame()
 				switch entry {
 				case "double-click":
@@ -100,14 +102,14 @@ func TestProgramObjectEntrypointsDoNotExecuteDefinitionsOrOpenData(t *testing.T)
 					}
 				}
 				tt.Frame()
-				if len(s.tabs) != 2 || s.currentTab().kind != tabProgram || s.currentTab().program.Data().Definition != object.Definition || !tt.HasText("DELETE FROM logs") {
-					t.Fatalf("%s did not open a read-only program document: kind=%v tabs=%d row=%d status=%s", entry, s.currentTab().kind, len(s.tabs), s.sessions.Current().Row, s.status)
+				if len(s.tabs) != 2 || s.currentTab().kind != tabProgram || s.currentTab().object.ProgramData().Definition != object.Definition || !tt.HasText("DELETE FROM logs") {
+					t.Fatalf("%s did not open a read-only program document: kind=%v tabs=%d row=%d status=%s", entry, s.currentTab().kind, len(s.tabs), s.objectWorkspace.SelectedRow(s.sessions.Current().ProfileID), s.status)
 				}
 				tt.Key(ui.Ctrl, ui.KeyEnter)
 				tt.Key(ui.Ctrl, ui.KeyD)
 				tt.Key(0, ui.KeyDelete)
 				tt.Frame()
-				if executions.Load() != 0 || dataReads.Load() != 0 || structureReads.Load() != 0 || s.mysqlTableDialog || len(s.tabs) != 2 {
+				if executions.Load() != 0 || dataReads.Load() != 0 || structureReads.Load() != 0 || s.objectWorkspace.TableDialogOpen() || len(s.tabs) != 2 {
 					t.Fatal("program entry or shortcut dispatched SQL, data paging or table editing")
 				}
 				s.CloseMySQLSessions()
@@ -140,7 +142,7 @@ func TestProgramDocumentsStayScopedAcrossProfilesAndSchemaPruning(t *testing.T) 
 			documents = append(documents, s.currentTab())
 		}
 	}
-	if len(s.tabs) != 5 || documents[0].program == documents[2].program || documents[0].program == documents[1].program {
+	if len(s.tabs) != 5 || documents[0].object == documents[2].object || documents[0].object == documents[1].object {
 		t.Fatal("same-named objects shared a document across profile or database")
 	}
 	s.selectProfileByName(profiles[0].Name)
@@ -149,12 +151,12 @@ func TestProgramDocumentsStayScopedAcrossProfilesAndSchemaPruning(t *testing.T) 
 	}
 	s.sessions.Current().Cache["app"][0].Definition = "SELECT refreshed_A"
 	s.openMySQLProgram("app", "same_name", "函数")
-	if s.currentTab() != documents[0] || len(s.tabs) != 5 || documents[0].program.Data().Definition != "SELECT refreshed_A" || documents[2].program.Data().Definition != "SELECT 'Program server B/app'" {
+	if s.currentTab() != documents[0] || len(s.tabs) != 5 || documents[0].object.ProgramData().Definition != "SELECT refreshed_A" || documents[2].object.ProgramData().Definition != "SELECT 'Program server B/app'" {
 		t.Fatal("reopening failed to reuse/update only the matching program")
 	}
 	s.openMySQLProgram("app", "same_name", "存储过程")
 	procedure := s.currentTab()
-	if len(s.tabs) != 6 || procedure.program == documents[0].program {
+	if len(s.tabs) != 6 || procedure.object == documents[0].object {
 		t.Fatal("same-named function and procedure shared a document")
 	}
 	s.activeTab = 3
@@ -167,16 +169,16 @@ func TestProgramDocumentsStayScopedAcrossProfilesAndSchemaPruning(t *testing.T) 
 	query := s.currentTab()
 	query.query.Editor.Buffer.Set("SELECT preserved SQL")
 	s.sessions.ReconcileDatabases([]string{"app"})
-	if s.currentTab() != query || query.query.Editor.Buffer.String() != "SELECT preserved SQL" || documents[1].program.Data().Definition != "" || documents[3].program.Data().Definition == "" || documents[0].program.Data().Definition != "SELECT refreshed_A" {
+	if s.currentTab() != query || query.query.Editor.Buffer.String() != "SELECT preserved SQL" || documents[1].object.ProgramData().Definition != "" || documents[3].object.ProgramData().Definition == "" || documents[0].object.ProgramData().Definition != "SELECT refreshed_A" {
 		t.Fatal("schema pruning affected another profile, active SQL or surviving metadata")
 	}
 	s.disconnectMySQLProfile(profiles[1].ID)
-	if s.currentTab() != query || documents[2].program.Data().Definition != "" || documents[3].program.Data().Definition != "" || documents[0].program.Data().Definition == "" || procedure.program.Data().Definition == "" {
+	if s.currentTab() != query || documents[2].object.ProgramData().Definition != "" || documents[3].object.ProgramData().Definition != "" || documents[0].object.ProgramData().Definition == "" || procedure.object.ProgramData().Definition == "" {
 		t.Fatal("disconnect closed the wrong program documents")
 	}
 	s.CloseMySQLSessions()
-	if documents[0].program.Data().Definition != "" || procedure.program.Data().Definition != "" || query.query.Editor.Buffer.String() != "SELECT preserved SQL" {
-		t.Fatal("terminal cleanup retained definitions or discarded SQL text")
+	if documents[0].object.ProgramData().Definition != "" || procedure.object.ProgramData().Definition != "" || query.query.Editor != nil {
+		t.Fatal("terminal cleanup retained definitions or SQL text cache")
 	}
 }
 
@@ -195,11 +197,11 @@ func TestProgramTabCloseAndCloseOthersReleaseOnlyRemovedDefinitions(t *testing.T
 			} else {
 				s.closeTab(1)
 			}
-			if s.currentTab() != second || len(s.tabs) != 2 || first.program.Data().Definition != "" || second.program.Data().Definition != "DELETE FROM logs" {
+			if s.currentTab() != second || len(s.tabs) != 2 || first.object.ProgramData().Definition != "" || second.object.ProgramData().Definition != "DELETE FROM logs" {
 				t.Fatal("closing an inactive definition changed its surviving sibling")
 			}
 			s.closeActive()
-			if len(s.tabs) != 1 || second.program.Data().Definition != "" {
+			if len(s.tabs) != 1 || second.object.ProgramData().Definition != "" {
 				t.Fatal("active program close retained metadata")
 			}
 		})

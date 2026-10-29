@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
@@ -32,8 +33,8 @@ func TestUnifiedNavigatorQualifiesObjectsAndLoadsOnlyOnDemand(t *testing.T) {
 	s.selectNavigationNode(ui.Services{}, other.Key())
 	s.revealNavigationNode(other)
 	tt.Frame()
-	if s.sessions.Current().Database != "analytics" || s.sessions.Current().Row != 0 || s.navigation.Key != other.Key() {
-		t.Fatalf("selection lost its database: %s row=%d node=%+v", s.sessions.Current().Database, s.sessions.Current().Row, navigation.Parse(s.navigation.Key))
+	if s.sessions.Current().Database != "analytics" || s.objectWorkspace.SelectedRow(s.sessions.Current().ProfileID) != 0 || s.navigation.Key != other.Key() {
+		t.Fatalf("selection lost its database: %s row=%d node=%+v", s.sessions.Current().Database, s.objectWorkspace.SelectedRow(s.sessions.Current().ProfileID), navigation.Parse(s.navigation.Key))
 	}
 	if calls != 0 {
 		t.Fatal("cached tree traversal performed a query")
@@ -85,7 +86,9 @@ func TestWorkbenchSplittersAreSharedAcrossDocumentKinds(t *testing.T) {
 			if kind == tabStructure {
 				s.nextTabID++
 				doc.id = s.nextTabID
-				doc.design = s.structureViewer.Open(doc.id, 0, "", "")
+				doc.object = s.objectWorkspace.OpenStructure(doc.id, 12, "app_db", "orders")
+			} else if kind == tabMySQLData {
+				doc.data = newDataDocument(s, 1, "test", "records")
 			}
 			s.tabs = append(s.tabs, doc)
 			s.activeTab = len(s.tabs) - 1
@@ -173,7 +176,7 @@ func TestGroupContextTargetSurvivesNextFrame(t *testing.T) {
 func TestMetadataRefreshRetainsObjectIdentityWhenRowsMove(t *testing.T) {
 	s, tt := structureTestBrowser(t)
 	s.selectObjectInNavigator("app_db", "sales", "视图")
-	s.sessions.Current().Row = 1
+	s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, 1)
 	tt.Frame()
 	s.sessions.ObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
 		return []mysqlsvc.MySQLDBObject{{Name: "new_first", Kind: "表"}, {Name: "orders", Kind: "表"}, {Name: "sales", Kind: "视图"}}, nil
@@ -182,14 +185,14 @@ func TestMetadataRefreshRetainsObjectIdentityWhenRowsMove(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
-	if s.sessions.Current().Row != 2 || navigation.Parse(s.navigation.Key).Object != "sales" {
-		t.Fatalf("refresh retargeted selection: row=%d key=%+v", s.sessions.Current().Row, navigation.Parse(s.navigation.Key))
+	if s.objectWorkspace.SelectedRow(s.sessions.Current().ProfileID) != 2 || navigation.Parse(s.navigation.Key).Object != "sales" {
+		t.Fatalf("refresh retargeted selection: row=%d key=%+v", s.objectWorkspace.SelectedRow(s.sessions.Current().ProfileID), navigation.Parse(s.navigation.Key))
 	}
 }
 
 func TestClickingInitiallySelectedObjectUpdatesInspector(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	if s.sessions.Current().Row != 0 {
+	if s.objectWorkspace.SelectedRow(s.sessions.Current().ProfileID) != 0 {
 		t.Fatal("expected initial object selection")
 	}
 	if err := tt.Click("orders"); err != nil {

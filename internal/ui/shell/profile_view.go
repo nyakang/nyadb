@@ -5,11 +5,11 @@ import (
 	"iter"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
-	"github.com/nyakang/nyadb/internal/ui/datainspector"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
-	"github.com/nyakang/nyadb/internal/ui/programviewer"
+	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -28,10 +28,7 @@ func (s *State) selectProfileByName(name string) {
 				s.sessions.ResetInactive()
 			}
 			t := s.currentTab()
-			if (t.kind == tabStructure && t.design.ProfileID() != p.ID) ||
-				(t.kind == tabMySQLData && t.dataProfileID != p.ID) ||
-				(t.kind == tabProgram && t.program.ProfileID() != p.ID) ||
-				(t.kind == tabSQL && t.query.ProfileID() != p.ID) {
+			if t.profileID() != 0 && t.profileID() != p.ID {
 				s.activeTab = 0
 			}
 		}
@@ -71,7 +68,7 @@ func (s *State) profileInspector(c *ui.Context) {
 	palette := theme.Colors(c)
 
 	if s.currentTab().kind == tabMySQLData {
-		s.mysqlDataObjectInspector(c, s.currentTab())
+		s.dataWorkspace.InspectorView(c, s.currentTab().data)
 		return
 	}
 	p, ok := s.currentProfile()
@@ -90,14 +87,8 @@ func (s *State) profileInspector(c *ui.Context) {
 					return
 				}
 				t := s.currentTab()
-				if t.kind == tabStructure && t.design.Data() != nil {
-					ui.Text(c, t.design.Table()).FontSize(theme.Font(c, 14)).Bold()
-					datainspector.Property(c, locales.Text("数据库"), t.design.Database())
-					if field, selected := t.design.SelectedField(); selected {
-						datainspector.Property(c, locales.Text("名称"), field.Name)
-						datainspector.Property(c, locales.Text("类型"), field.Type)
-						datainspector.FieldAttributes(c, field)
-					}
+				if t.kind == tabStructure && t.object.Data() != nil {
+					s.objectWorkspace.InspectorView(c, t.object)
 					return
 				}
 				if !ok {
@@ -121,27 +112,12 @@ func (s *State) profileInspector(c *ui.Context) {
 						theme.Icon(c, icon, 32, palette.Blue)
 						ui.Text(c, name).FontSize(theme.Font(c, 14)).Bold()
 					})
-					datainspector.Property(c, locales.Text("类型"), s.navigationDescription(n))
-					datainspector.Property(c, locales.Text("连接"), p.Name)
-					datainspector.Property(c, locales.Text("数据库"), n.Database)
+					theme.Property(c, locales.Text("类型"), s.navigationDescription(n))
+					theme.Property(c, locales.Text("连接"), p.Name)
+					theme.Property(c, locales.Text("数据库"), n.Database)
 					for _, obj := range s.sessions.Current().Cache[n.Database] {
 						if obj.Name == n.Object && obj.Kind == n.Category {
-							datainspector.Property(c, locales.Text("引擎"), obj.Engine)
-							datainspector.Property(c, locales.Text("注释"), obj.Comment)
-							if programviewer.Supports(obj.Kind) {
-								for _, field := range []struct{ label, value string }{
-									{"定义者", obj.Definer}, {"参数", obj.Parameters},
-									{"返回类型", obj.ReturnType}, {"SQL SECURITY", obj.SQLSecurity},
-									{"状态", obj.Status}, {"调度", obj.Schedule},
-									{"开始时间", obj.Starts}, {"结束时间", obj.Ends},
-									{"ON COMPLETION", obj.OnCompletion}, {"创建时间", obj.CreatedAt},
-									{"修改时间", obj.ModifiedAt},
-								} {
-									if field.value != "" {
-										datainspector.Property(c, field.label, field.value)
-									}
-								}
-							}
+							objectworkspace.ObjectProperties(c, obj)
 							break
 						}
 					}
@@ -157,31 +133,31 @@ func (s *State) profileInspector(c *ui.Context) {
 				if p.Kind == connections.MySQL {
 					s.mysqlSessionToolbar(c)
 				}
-				datainspector.Property(c, locales.Text("状态"), locales.Text(s.sessions.StatusFor(p.ID)))
+				theme.Property(c, locales.Text("状态"), locales.Text(s.sessions.StatusFor(p.ID)))
 				if p.Kind == connections.SQLite {
-					datainspector.Property(c, locales.Text("文件"), p.Database)
+					theme.Property(c, locales.Text("文件"), p.Database)
 					return
 				}
 				if p.Kind == connections.MySQL {
 					resolved, err := connections.ResolveActiveSettings(p)
 					if err != nil {
-						datainspector.Property(c, locales.Text("活动配置"), locales.Text("无效，请编辑连接"))
+						theme.Property(c, locales.Text("活动配置"), locales.Text("无效，请编辑连接"))
 						return
 					}
 					activeName := resolved.ConfigurationName
 					if activeName == "" {
 						activeName = locales.Text("主要配置文件")
 					}
-					datainspector.Property(c, locales.Text("活动配置"), activeName)
-					datainspector.Property(c, locales.Text("主机"), resolved.Host)
-					datainspector.Property(c, locales.Text("端口"), fmt.Sprint(resolved.Port))
-					datainspector.Property(c, locales.Text("用户"), resolved.Username)
-					datainspector.Property(c, locales.Text("数据库"), resolved.Database)
+					theme.Property(c, locales.Text("活动配置"), activeName)
+					theme.Property(c, locales.Text("主机"), resolved.Host)
+					theme.Property(c, locales.Text("端口"), fmt.Sprint(resolved.Port))
+					theme.Property(c, locales.Text("用户"), resolved.Username)
+					theme.Property(c, locales.Text("数据库"), resolved.Database)
 				} else {
-					datainspector.Property(c, locales.Text("主机"), p.Host)
-					datainspector.Property(c, locales.Text("端口"), fmt.Sprint(p.Port))
-					datainspector.Property(c, locales.Text("用户"), p.Username)
-					datainspector.Property(c, locales.Text("数据库"), p.Database)
+					theme.Property(c, locales.Text("主机"), p.Host)
+					theme.Property(c, locales.Text("端口"), fmt.Sprint(p.Port))
+					theme.Property(c, locales.Text("用户"), p.Username)
+					theme.Property(c, locales.Text("数据库"), p.Database)
 				}
 			})
 		})
@@ -229,22 +205,22 @@ func (s *State) navigationShortcut(services ui.Services, n navigation.Node, shor
 	switch shortcut.Key {
 	case ui.KeyF2:
 		if n.Kind == "object" && n.Category == "表" {
-			s.beginMySQLTableChange(n.ProfileID, n.Database, n.Object, mysqlsvc.MySQLTableRename)
+			s.objectWorkspace.BeginTableChange(n.ProfileID, n.Database, n.Object, mysqlsvc.MySQLTableRename)
 		} else if s.navigation.Group != "" {
 			s.navigation.BeginGroupEdit(s.navigation.Group)
 		}
 	case ui.KeyDelete:
 		if n.Kind == "object" && n.Category == "表" {
-			s.beginMySQLTableChange(n.ProfileID, n.Database, n.Object, mysqlsvc.MySQLTableDrop)
+			s.objectWorkspace.BeginTableChange(n.ProfileID, n.Database, n.Object, mysqlsvc.MySQLTableDrop)
 		} else if n.Kind == "connection" && s.selectedProfileID != 0 {
 			s.confirmDeleteProfile()
 		}
 	case ui.KeyN:
 		if n.Kind == "database" || (n.Kind == "category" || n.Kind == "object") && n.Category == "表" {
-			s.beginMySQLTableChange(n.ProfileID, n.Database, "", mysqlsvc.MySQLTableCreate)
+			s.objectWorkspace.BeginTableChange(n.ProfileID, n.Database, "", mysqlsvc.MySQLTableCreate)
 		}
 	case ui.KeyD:
-		if n.Kind == "object" && !programviewer.Supports(n.Category) {
+		if n.Kind == "object" && !objectworkspace.Supports(n.Category) {
 			s.openMySQLStructure(services, n.Database, n.Object)
 		}
 	case ui.KeyF5:

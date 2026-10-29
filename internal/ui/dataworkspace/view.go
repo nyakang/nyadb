@@ -2,15 +2,20 @@ package dataworkspace
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/egoist/mygo/ui"
+
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
-	"time"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // A real bounded MySQL page with independently managed record drafts.
 func (s *State) View(c *ui.Context, t *Document) {
+	if t == nil || t.closed {
+		return
+	}
 	palette := theme.Colors(c)
 
 	s.restoreMySQLDataLayout(t)
@@ -32,7 +37,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 		}
 		if t.err != "" {
 			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).Gap(6).AlignItems(ui.Center).Children(func() {
-				ui.Text(c, locales.Text("读取数据失败：")+t.err).TextColor(palette.Error).FontSize(theme.Font(c, theme.FontSize)).SingleLine().Grow(1).MinWidth(0).Tooltip(t.err)
+				ui.Text(c, locales.Text("读取数据失败：")+locales.Text(t.err)).TextColor(palette.Error).FontSize(theme.Font(c, theme.FontSize)).SingleLine().Grow(1).MinWidth(0).Tooltip(locales.Text(t.err))
 				if ui.Button(c, locales.Text("重试读取数据")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(t.loading || !s.session().Connected).Clicked() {
 					s.Load(c.Services(), t, true)
 				}

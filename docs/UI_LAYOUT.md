@@ -87,61 +87,36 @@ server-side pagination benchmark.
   `Connect`/`Activate`/`Disconnect`/`Close` own workspace lifetimes; `Consume`
   processes buffered results on the UI thread. Parked handshakes update their
   own status; parked object reads remain buffered until their profile returns.
-  Selection, column layout and pending active-tab reveals stay with each workspace.
+  Object-list presentation belongs to objectworkspace; pending active-tab reveals belong to shell.
 - `internal/ui/sqlworkspace/`: independent SQL documents, selection/caret dispatch,
   editor/result split position, demo editor controls, asynchronous execution,
   cancellation, result grids and physical session leases. Runtime and host callbacks
   are injected; the package imports no shell, navigation, sessionbrowser, storage
   or database driver. Disconnect preserves SQL text; explicit recovery restores the
   original profile/database without replaying SQL. Cancel waits for driver completion.
-- `internal/ui/structureviewer/`: read-only fields, grouped secondary indexes,
-  foreign keys, table information, selected-field properties and per-document
-  presentation state. Session snapshots, metadata loaders and the back action are
-  injected; the package imports no shell, navigation, sessionbrowser, storage or
-  database driver. `Open` registers a document; `Load` uses its cache unless refresh
-  is explicit. `Cancel` and `Close` revoke pending jobs; `Consume` validates request,
-  profile and session generation. Parked results remain buffered until activation.
-- `internal/ui/datainspector/`: per-data-tab table/field mode, table metadata,
-  exact whole-table row counts, field attributes, safe previews and bounded field
-  reads. Grid/session snapshots, loaders, profile lookup and visibility callbacks
-  are injected; the package imports no shell, navigation, sessionbrowser, storage
-  or database driver. `Open` registers a panel; `View` follows a read-only selection
-  snapshot. `LoadInfo` refreshes metadata independently of count/field readers.
-  `LoadCount` ignores grid filters and `LoadChunk` copies row identity before each
-  explicit request of at most 1024 characters/bytes. `Consume` processes private
-  buffered channels on the UI thread, retaining parked results until activation
-  and rejecting obsolete pages, selections or session generations. `Close` and
-  `CloseAll` cancel all readers. `Property`, `FieldAttributes`, `ColumnTypeGlyph`
-  and `CopyPreview` are shared with the existing workbench views and copy actions.
-- `internal/ui/programviewer/`: per-tab qualified function, procedure and event
-  documents with copied metadata and read-only definition presentation. It imports
-  only MySQL object models, MyGo and theme; it does not request metadata, execute SQL
-  or depend on shell, navigation, sessionbrowser, storage or database drivers.
-  `New` creates a document from cached metadata, and `Update` supplies fresh metadata
-  when the same qualified object is reopened. `View` preserves property order,
-  omitted empty attributes, existing UI text and the 500-line display bound while
-  retaining the complete definition. `Close` releases the snapshot and prevents
-  further update/rendering. Existing object-view code in shell hosts opening and
-  qualified tab reuse; navigation, context actions, profile activation, schema
-  pruning and disposal remain workbench responsibilities.
-- `internal/ui/shell/profile_view.go`: navigator callbacks, document shortcuts
-  and contextual profile inspector. The existing profile navigation files
-  coordinate session/browser requests and build menus. `internal/ui/shell/mysql_session_state.go` keeps unsaved-document guards,
-  session controls, navigation and tab cleanup callbacks; object views/actions
-  remain in shell. Database opened state belongs to each session,
-  independently of disclosure: single click selects, while double click, Enter
-  or an explicit action opens and loads it. Failed reads require explicit retry.
-- `internal/ui/shell/model.go`: workbench state, tabs, mock objects and
-  synthetic result cell generator.
-- `internal/ui/shell/chrome.go`: top chrome, command toolbar and statusbar.
-- `internal/ui/shell/explorer.go`: mock connection explorer and search.
-- `internal/ui/shell/workspace.go`: host tab strip, SQL/structure module views,
-  object table and virtual data preview. The existing structure-state file keeps
-  document creation, schema pruning and cross-document cleanup.
-- `internal/ui/shell/mysql_table_info_state.go`: data-inspector dependencies,
-  lazy per-tab panels, current grid snapshots and view/field-action forwarding.
-  Data paging, filtering, editing, layout, export and unsaved-document guards
-  remain in the existing shell data files; tab disposal closes its module panel.
+- `internal/ui/dataworkspace/`: qualified data documents, paging/cursors, rules,
+  grid selection and column layout, draft/edit/save/verify workflows, copy/export,
+  and table/field inspection. All asynchronous result channels and cancellation
+  functions are private. The host injects runtime/session/profile/preferences and
+  visibility/status/activation callbacks. Page reads, whole-table counts and field
+  reads keep independent cancellation scopes. Layout preference keys are unchanged.
+- `internal/ui/objectworkspace/`: per-profile object lists and toolbar categories,
+  filters, selection, scrolling/columns, menus and table-action dialogs; structure
+  metadata requests and read-only program snapshots remain distinct document variants.
+  Table completion includes the original profile/generation/object identity. The
+  package depends on neither dataworkspace nor navigation; shell handles coordination.
+- `internal/ui/shell/profile_view.go`: live navigator callbacks, profile properties
+  and inspector container. Data and object modules render their own property content.
+- `internal/ui/shell/model.go`: workbench state, simple tab handles and commands.
+- `internal/ui/shell/chrome.go`: chrome, command toolbar, splitters and statusbar.
+- `internal/ui/shell/preview.go`: isolated synthetic tree, objects, grid and selections.
+- `internal/ui/shell/settings_workspace.go`: settings page and its sample editor state.
+- `internal/ui/shell/workspace.go`: tab strip, dependency injection, qualified document
+  reuse/activation, leave guards, scoped pruning and centralized disposal/batch removal.
+- `internal/ui/shell/mysql_object_view.go`: navigator/object synchronization and
+  table completion coordination. Object views, menus and action dialogs live in their module.
+- `internal/ui/shell/mysql_session_state.go`: session controls, scoped disconnect
+  coordination and final task/lease cleanup; SQL text survives ordinary disconnect.
 - `internal/ui/shell/inspector.go`: contextual right panel.
 - `internal/ui/shell/shell_test.go`: headless interaction regression tests.
 - `internal/ui/shell/preview_test.go`: opt-in screenshot generator.
@@ -156,75 +131,30 @@ reveal, multi-profile session and late-result regressions, including 1280×800 a
 840×560 layouts. Workspace identity, metadata refresh/retry/cancellation, secret
 fallback/redaction and session-generation tests live beside `sessionbrowser`.
 SQL statement, execution, cancellation, preconnect and recovery tests live beside
-`sqlworkspace`; structure presentation, read-only page and metadata lifecycle tests
-live beside `structureviewer`; table/field presentation, localization, exact counts
-and bounded-read lifecycle tests live beside `datainspector`. Program snapshot,
-identity, read-only presentation, empty-definition and display-bound tests live
-beside `programviewer`; shell retains program entry-point, qualified-tab, profile
-activation, schema-pruning and disposal checks. Mixed tests keep
-data rules, column-menu and workspace assertions in shell. Shell retains
-qualified-tab, navigator/inspector, schema-pruning, table-action and real-session
-integration checks. Shared bitmap
-cache tests live beside theme. Resetting the chooser clears selection, search and
+`sqlworkspace`. Data paging, cursor/rules, grid/layout, edit safety, clipboard/export,
+inspection/localization and reader lifecycles live beside `dataworkspace`. Object
+filters/menus, table completion, structure metadata and program snapshots live beside
+`objectworkspace`. Shell retains native-window/workbench wiring, qualified identity,
+profile activation, schema pruning, disposal and explicitly gated real-service tests.
+Shared bitmap cache tests live beside theme. Resetting the chooser clears selection, search and
 filters while preserving the current view mode, expansion state and recents.
 
-After the navigator extraction, shell contains 120 Go files (48 implementation
-and 72 test files), down from 127 (53 implementation and 74 test files) after the
-connection editor extraction. Its 18 navigator fields are replaced by one module
-instance. Navigation has six implementation and five test files; mixed tests
-retain their workbench assertions in shell.
-
-After the session/browser extraction, shell contains 116 Go files (45
-implementation and 71 test files). Its 27 session/browser fields are replaced by
-one module instance, and the workspace snapshot/restore copies are removed.
-Sessionbrowser has three implementation and three test files. A restored
-workspace now retains a read of a known database even when its selected database
-is empty or removed; only removal of the pending database cancels that job.
-
-After the SQL extraction, shell contains 109 Go files (42 implementation and
-67 test files). Its SQL editor and 16 execution/session fields per tab are replaced
-by one module document; split position, demo runs, executor and preconnect state
-belong to `sqlworkspace` (four implementation and seven test files).
-
-After the structure viewer extraction, shell contains 105 Go files (39
-implementation and 66 test files). Its 14 structure fields per tab are replaced
-by one module document; metadata jobs and presentation move into `structureviewer`
-(three implementation and three test files). Mixed tests keep workbench assertions
-in shell. Generation mismatch now ends loading with an explicit-refresh error
-instead of leaving the rejected request busy. Data pages and program views remain
-available for subsequent extraction stages.
-
-After the data inspector extraction, shell contains 99 Go files (36 implementation
-and 63 test files), down from 105. Its table-info state and 11 field-read fields
-per data tab are replaced by one module panel. `datainspector` has six
-implementation and four test files. Regression checks cover independent metadata,
-count and field cancellation, same-cell page replacement, copied row keys, parked
-profile results, generation rejection, narrow panels in both locales and real
-workbench tab/terminal cleanup. Data paging/editing/filtering/layout and program
-views remain available for subsequent extraction stages.
-
-After the program viewer extraction, shell contains 98 Go files (35 implementation
-and 63 test files), down from 99. Its three program fields per tab are replaced by
-one module document. `programviewer` has two implementation and two test files;
-the existing mixed program test remains in shell with additional workbench checks.
-Opening a definition through the table, toolbar or navigator continues to avoid
-SQL execution and data paging. Same-named programs remain separate by profile,
-database and kind, and closing/pruning one document preserves sibling program
-metadata and SQL text. Data paging, filtering, editing, layout and export remain
-available for subsequent extraction stages.
+The full functional-domain refactor replaces the intermediate viewer/inspector
+packages with complete dataworkspace and objectworkspace modules. See
+[refactor verification](ui-functional-domain-refactor.md) for the baseline,
+state boundaries, test migration, screenshots and current validation limits.
 
 ## Limitations / next steps
 
-- Connection profiles, database credentials, SQL execution, metadata requests,
-  and result paging are **not yet implemented**.
-- Object toolbar actions such as import/export and structure editing are
-  intentionally status-only placeholders.
-- Menu row uses MyGo's native popup-menu interactions inside the content area,
-  rather than platform-dependent OS menubar placement; unavailable commands are disabled.
-- Layout sizes are retained only in memory for this run; persistence is M1.
-- Physical OS GUI testing is still required on Windows, Linux and macOS:
-  check titlebar, IME, DPI scaling, pane drag, keyboard navigation, tooltip
-  overlay and horizontal grid scrolling.
+- MySQL connections, SQL execution, metadata, data paging/editing and layout
+  persistence are implemented. Real MySQL fixtures require explicit integration flags.
+- Structure and program documents remain read-only. Unavailable import/export
+  wizards and advanced object actions remain disabled as before.
+- Linux Xvfb captures exercise real GTK main/native child windows; physical desktop
+  checks for Windows/macOS, IME, GPU paths and multiple display scales remain separate.
+- Data export dialogs are native host operations; they cannot be forcibly dismissed
+  by cancelling a Go context. Closed documents revoke their result channel and skip
+  file writes if the dialog returns after cancellation.
 
 For test and build commands see [README](../README.md) and
 [implementation status](implementation-status.md).

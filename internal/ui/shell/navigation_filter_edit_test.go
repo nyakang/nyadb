@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
@@ -12,7 +13,7 @@ func TestActiveTabNavigationRestoresPriorFiltersOnRequest(t *testing.T) {
 	s, tt := mysqlObjectTestState(t)
 	id := s.sessions.Current().ProfileID
 	s.sessions.Current().Cache["app_db"] = []mysqlsvc.MySQLDBObject{{Name: "orders", Kind: "表"}}
-	s.tabs = append(s.tabs, &tab{kind: tabMySQLData, title: "orders", dataProfileID: id, dataDatabase: "app_db", dataTable: "orders"})
+	s.tabs = append(s.tabs, &tab{kind: tabMySQLData, title: "orders", data: newDataDocument(s, id, "app_db", "orders")})
 	s.activeTab = len(s.tabs) - 1
 	s.navigation.Filter.Search = "hidden"
 	s.navigation.Filter.Engine = connections.SQLite

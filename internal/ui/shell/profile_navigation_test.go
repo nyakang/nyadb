@@ -21,27 +21,27 @@ func TestNavigationResolvesActiveTabOnlyInMatchingSessionAndSnapshot(t *testing.
 	s.sessions.Current().Cache = map[string][]mysqlsvc.MySQLDBObject{
 		"app": {{Name: "customers", Kind: "表"}, {Name: "invoices", Kind: "表"}},
 	}
-	s.tabs = append(s.tabs, &tab{kind: tabMySQLData, dataProfileID: p.ID, dataDatabase: "app", dataTable: "invoices"})
+	s.tabs = append(s.tabs, &tab{kind: tabMySQLData, data: newDataDocument(s, p.ID, "app", "invoices")})
 	s.activeTab = 1
 	id, db, table, ok := s.activeTabObject()
 	if !ok || id != p.ID || db != "app" || table != "invoices" {
 		t.Fatalf("bad active tab: %d %q %q %t", id, db, table, ok)
 	}
-	s.sessions.Current().NavigateProfileID = id
-	s.sessions.Current().NavigateDatabase = db
-	s.sessions.Current().NavigateTable = table
-	s.sessions.Current().Row = -1
+	s.navigateProfileID = id
+	s.navigateDatabase = db
+	s.navigateTable = table
+	s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, -1)
 	s.resolveNavigatorObject()
-	if s.sessions.Current().Row != 1 || s.sessions.Current().NavigateDatabase != "" {
-		t.Fatalf("failed to resolve target table: row=%d nav=%q", s.sessions.Current().Row, s.sessions.Current().NavigateDatabase)
+	if s.objectWorkspace.SelectedRow(s.sessions.Current().ProfileID) != 1 || s.navigateDatabase != "" {
+		t.Fatalf("failed to resolve target table: row=%d nav=%q", s.objectWorkspace.SelectedRow(s.sessions.Current().ProfileID), s.navigateDatabase)
 	}
 	// A stale result from a different session must never select a row.
-	s.sessions.Current().Row = -1
-	s.sessions.Current().NavigateProfileID = p.ID + 1
-	s.sessions.Current().NavigateDatabase = "app"
-	s.sessions.Current().NavigateTable = "customers"
+	s.objectWorkspace.SelectRow(s.sessions.Current().ProfileID, -1)
+	s.navigateProfileID = p.ID + 1
+	s.navigateDatabase = "app"
+	s.navigateTable = "customers"
 	s.resolveNavigatorObject()
-	if s.sessions.Current().Row != -1 {
+	if s.objectWorkspace.SelectedRow(s.sessions.Current().ProfileID) != -1 {
 		t.Fatal("stale target selected across sessions")
 	}
 }

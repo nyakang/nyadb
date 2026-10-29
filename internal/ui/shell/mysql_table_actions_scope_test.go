@@ -2,49 +2,25 @@ package shell
 
 import (
 	"errors"
-	"strings"
 	"testing"
 
+	"github.com/egoist/mygo/ui"
+
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 )
 
-func TestTableChangeOldGenerationCannotTouchCurrentBrowser(t *testing.T) {
-	s, tt := structureTestBrowser(t)
-	original := len(s.sessions.Current().Cache["app_db"])
-	results := make(chan mysqlTableChangeResult, 1)
-	s.mysqlTablePending = true
-	s.mysqlTableDialog = true
-	s.mysqlTableResults = results
-	results <- mysqlTableChangeResult{
-		profileID: s.sessions.Current().ProfileID, generation: s.sessions.Current().Generation + 1,
-		database: "app_db", table: "orders", action: mysqlsvc.MySQLTableDrop,
-	}
-	tt.Frame()
-	if len(s.sessions.Current().Cache["app_db"]) != original || s.mysqlTableDialog ||
-		!strings.Contains(s.status, "原会话已失效") {
-		t.Fatalf("stale result changed browser: status=%q cache=%+v", s.status, s.sessions.Current().Cache)
-	}
-}
-
 func TestTableChangeFailedTwoStageCopyInvalidatesCorrectDatabase(t *testing.T) {
-	s, tt := structureTestBrowser(t)
+	s, _ := structureTestBrowser(t)
 	s.sessions.Current().Cache["analytics"] = []mysqlsvc.MySQLDBObject{{Name: "report", Kind: "表"}}
-	ch := make(chan mysqlTableChangeResult, 1)
-	s.mysqlTableResults = ch
-	s.mysqlTablePending = true
-	ch <- mysqlTableChangeResult{
-		profileID: s.sessions.Current().ProfileID, generation: s.sessions.Current().Generation,
-		database: "analytics", table: "report", newName: "copy",
-		action: mysqlsvc.MySQLTableCopyData, err: errors.New("new table was created; INSERT failed"),
-	}
-	tt.Frame()
+	s.mysqlTableChanged(ui.Services{}, objectworkspace.TableEvent{ProfileID: s.sessions.Current().ProfileID, Generation: s.sessions.Current().Generation, Database: "analytics", Table: "report", NewName: "copy", Action: mysqlsvc.MySQLTableCopyData, Error: errors.New("new table was created; INSERT failed")})
 	if _, exists := s.sessions.Current().Cache["analytics"]; exists {
-		t.Fatal("partial copy left the database cache stale")
+		t.Fatal("partial copy left stale destination cache")
 	}
-	if s.sessions.Current().Pending != "" || !strings.Contains(s.mysqlTableError, "INSERT failed") {
-		t.Fatalf("unexpected cross-schema refresh/error: pending=%q err=%q", s.sessions.Current().Pending, s.mysqlTableError)
+	if s.sessions.Current().Pending != "" {
+		t.Fatal("partial copy refreshed unrelated database")
 	}
 	if _, exists := s.sessions.Current().Cache["app_db"]; !exists {
-		t.Fatal("partial copy invalidated the active unrelated schema")
+		t.Fatal("partial copy invalidated unrelated database")
 	}
 }

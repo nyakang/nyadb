@@ -12,7 +12,6 @@ func TestMySQLDatabaseRefreshRetainsCacheOnErrorAndPrunesRemovedSchemas(t *testi
 	s.Current().ProfileID, s.Current().Status = 1, "已连接"
 	s.Current().Databases = []string{"app_db", "analytics"}
 	s.Current().Database = "analytics"
-	s.Current().Kind = "表"
 	s.Current().Cache = map[string][]mysqlsvc.MySQLDBObject{
 		"analytics": {{Name: "fact", Kind: "表"}},
 		"app_db":    {{Name: "orders", Kind: "表"}},

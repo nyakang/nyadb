@@ -5489,3 +5489,23 @@ func MysqlDiscardPendingRecordsAction() string {
 func (msgs Messages) MysqlDiscardPendingRecordsAction() string {
 	return Catalog.Format(msgs.locale, "mysqlDiscardPendingRecordsAction", nil)
 }
+
+// DataSessionExpired says "原 MySQL 会话已失效，请刷新表数据"
+// in the language the app shows.
+func DataSessionExpired() string { return In(i18n.Locale()).DataSessionExpired() }
+
+// DataSessionExpired says "原 MySQL 会话已失效，请刷新表数据"
+// in the language of msgs.
+func (msgs Messages) DataSessionExpired() string {
+	return Catalog.Format(msgs.locale, "dataSessionExpired", nil)
+}
+
+// StructureSessionExpired says "原 MySQL 会话已失效，请刷新表结构"
+// in the language the app shows.
+func StructureSessionExpired() string { return In(i18n.Locale()).StructureSessionExpired() }
+
+// StructureSessionExpired says "原 MySQL 会话已失效，请刷新表结构"
+// in the language of msgs.
+func (msgs Messages) StructureSessionExpired() string {
+	return Catalog.Format(msgs.locale, "structureSessionExpired", nil)
+}

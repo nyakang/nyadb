@@ -64,7 +64,7 @@ func TestInspectorToggleAndObjectKinds(t *testing.T) {
 	if err := tt.Click("视图"); err != nil {
 		t.Fatal(err)
 	}
-	if s.objectKind != "视图" || s.activeTab != 0 {
+	if s.currentObjectKind() != "视图" || s.activeTab != 0 {
 		t.Fatal("view action should activate filtered Objects tab")
 	}
 }
@@ -75,8 +75,8 @@ func TestSearchAndOpenMockTable(t *testing.T) {
 	if err := tt.Click("测试库"); err != nil {
 		t.Fatal(err)
 	}
-	if s.navigation.Key != "测试库" {
-		t.Fatalf("selected connection: %q", s.navigation.Key)
+	if s.preview.key != "测试库" {
+		t.Fatalf("selected connection: %q", s.preview.key)
 	}
 	if !tt.HasText("customers") {
 		t.Fatalf("mock table should be visible after selecting a connection")
@@ -96,8 +96,8 @@ func TestSearchConnections(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Type("生产")
-	if s.navigation.Filter.Search != "生产" {
-		t.Fatalf("expected Chinese input, got %q", s.navigation.Filter.Search)
+	if s.preview.search != "生产" {
+		t.Fatalf("expected Chinese input, got %q", s.preview.search)
 	}
 	if !tt.HasText("生产库") || tt.HasText("测试库") {
 		t.Fatalf("search did not filter the connection tree")

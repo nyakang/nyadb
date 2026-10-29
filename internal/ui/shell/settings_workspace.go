@@ -3,6 +3,7 @@ package shell
 import (
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
+
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -60,17 +61,17 @@ func (s *State) settingsWorkspace(c *ui.Context) {
 					ui.PrimaryButton(c, locales.Text("主要操作"))
 					ui.Button(c, locales.Text("次要操作")).Border(1, palette.Border)
 					ui.Button(c, locales.Text("禁用操作")).Disabled(true)
-					ui.TextInput(c, &s.settingsSampleInput).Label(locales.Text("示例输入")).
+					ui.TextInput(c, &s.settings.sampleInput).Label(locales.Text("示例输入")).
 						Placeholder(locales.Text("输入示例文本")).Width(170)
-					ui.Checkbox(c, &s.settingsSampleCheck, locales.Text("示例复选框"))
+					ui.Checkbox(c, &s.settings.sampleCheck, locales.Text("示例复选框"))
 				})
 				ui.Text(c, locales.Text("数据表格预览")).FontSize(theme.Font(c, 12)).Bold()
-				s.settingsSampleTable.Selected = &s.settingsSampleRow
-				s.settingsSampleTable.TableStyle = &ui.TableStyle{
+				s.settings.sampleTable.Selected = &s.settings.sampleRow
+				s.settings.sampleTable.TableStyle = &ui.TableStyle{
 					AlternateRowColor: palette.GridAlternate, GridColor: palette.Border,
 					RowLines: true, ColumnLines: true,
 				}
-				theme.Table(c, &s.settingsSampleTable,
+				theme.Table(c, &s.settings.sampleTable,
 					[]ui.TableColumn{
 						{Title: "ID", Width: 70},
 						{Title: locales.Text("名称"), Width: 150},
@@ -84,10 +85,10 @@ func (s *State) settingsWorkspace(c *ui.Context) {
 							ui.Text(c, names[row]).FontSize(theme.Font(c, 12))
 						default:
 							if row == 1 {
-								ui.Text(c, "NULL").FontSize(theme.Font(c, 12)).TextColor(theme.CellText(c, &s.settingsSampleTable, row, col, palette.GridNull))
+								ui.Text(c, "NULL").FontSize(theme.Font(c, 12)).TextColor(theme.CellText(c, &s.settings.sampleTable, row, col, palette.GridNull))
 								return
 							}
-							ui.Text(c, locales.Text("正常")).FontSize(theme.Font(c, 12)).TextColor(theme.CellText(c, &s.settingsSampleTable, row, col, palette.Success))
+							ui.Text(c, locales.Text("正常")).FontSize(theme.Font(c, 12)).TextColor(theme.CellText(c, &s.settings.sampleTable, row, col, palette.Success))
 						}
 					}).Height(105).FillWidth()
 			})
@@ -101,17 +102,17 @@ func (s *State) settingsSQLPreview(c *ui.Context) {
 	ui.Text(c, locales.Text("SQL 语法高亮预览")).FontSize(theme.Font(c, 14)).Bold()
 	ui.Text(c, locales.Text("关键字、函数、数字、字符串、注释与编辑器背景将随主题变化。")).
 		TextColor(palette.Muted).FontSize(theme.Font(c, 11))
-	if s.settingsPreview == nil {
+	if s.settings.preview == nil {
 		buf := editor.NewBuffer(sqlThemePreview)
 		buf.SetLanguage(editor.LanguageNamed("SQL"))
-		s.settingsPreview = &editor.State{
+		s.settings.preview = &editor.State{
 			Buffer: buf, ReadOnly: true, Label: locales.Text("SQL 语法高亮预览"),
 			WrapGuides: []int{80}, NoScrollPastEnd: true,
 		}
 	}
-	s.settingsPreview.Theme = theme.SQLThemeFor(c)
+	s.settings.preview.Theme = theme.SQLThemeFor(c)
 	ui.Box(c).Height(212).FillWidth().Border(1, palette.Border).Children(func() {
-		editor.View(c, s.settingsPreview).Fill()
+		editor.View(c, s.settings.preview).Fill()
 	})
 }
 
@@ -172,4 +173,12 @@ func (s *State) themePreviewCard(c *ui.Context, mode theme.Mode, label string, d
 		s.changeAppearance(mode)
 		c.Invalidate() // redraw the current native context after its color tokens change
 	}
+}
+
+type settingsState struct {
+	preview     *editor.State
+	sampleInput string
+	sampleCheck bool
+	sampleRow   int
+	sampleTable ui.ListState
 }
