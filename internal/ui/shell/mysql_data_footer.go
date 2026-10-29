@@ -108,9 +108,7 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *tab, page *mysqlsvc.MySQLDataP
 				}
 			}
 			ui.Checkbox(c, &t.dataEdit.Batch, locales.Text("批量编辑")).Disabled(dirty || t.dataLoading || t.dataEdit.Busy || t.dataEdit.Uncertain != nil).FontSize(theme.Font(c, theme.SmallFontSize))
-			if dirty {
-				ui.Text(c, locales.Text("有待保存的数据更改")).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Warning).SingleLine().Grow(1).MinWidth(0)
-			}
+			s.mysqlDataEditStatus(c, t)
 		})
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Shrink(0).Padding(2, 6).Gap(4).AlignItems(ui.Center).Children(func() {
 			status := mysqlDataPageStatus(t)

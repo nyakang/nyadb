@@ -8,6 +8,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/locales"
 )
 
 func editingScrolledWorkspace(t *testing.T) (*State, *tab, *ui.Tester) {
@@ -24,6 +25,89 @@ func editingScrolledWorkspace(t *testing.T) (*State, *tab, *ui.Tester) {
 	tt.Frame()
 	tt.Frame()
 	return s, doc, tt
+}
+
+func TestMySQLDataPendingCompleteReadKeepsCellPosition(t *testing.T) {
+	for _, fail := range []bool{false, true} {
+		t.Run(fmt.Sprintf("failure=%t", fail), func(t *testing.T) {
+			s, doc, tt := editingScrolledWorkspace(t)
+			const row = 60
+			doc.dataPage.Rows[row][1].Truncated = true
+			snapshot := doc.dataPage.RowSnapshots[row]
+			release := make(chan struct{})
+			s.mysqlDataRowReader = func(ctx context.Context, _ int64, _, _ string, _ mysqlsvc.MySQLRowRef) (*mysqlsvc.MySQLDataRow, error) {
+				select {
+				case <-release:
+					if fail {
+						return nil, mysqlsvc.ErrMySQLDataEditLimit
+					}
+					return &mysqlsvc.MySQLDataRow{Snapshot: snapshot, Values: map[string]mysqlsvc.MySQLDataValue{"note": {Text: "complete text"}}}, nil
+				case <-ctx.Done():
+					return nil, ctx.Err()
+				}
+			}
+			t.Cleanup(func() { s.stopMySQLDataEdit(doc) })
+			tt.Frame()
+			tt.Frame()
+			cell := editingCellBounds(t, doc, row, 1)
+			first, last := doc.dataState.Visible()
+			tt.ClickAt(cell.X+20, cell.Y+10)
+			for frame := 0; frame < 3; frame++ {
+				tt.Frame()
+				if !doc.dataEdit.Busy || !tt.HasText(locales.Text("正在处理表数据…")) {
+					t.Fatal("fixture did not hold the complete read pending")
+				}
+				if pending := editingCellBounds(t, doc, row, 1); pending != cell {
+					t.Fatalf("pending read moved the cell in frame %d: before=%+v pending=%+v", frame, cell, pending)
+				}
+				if nextFirst, nextLast := doc.dataState.Visible(); nextFirst != first || nextLast != last {
+					t.Fatalf("pending read changed viewport: %d..%d -> %d..%d", first, last, nextFirst, nextLast)
+				}
+			}
+			close(release)
+			waitEditing(t, s, doc, tt)
+			for frame := 0; frame < 3; frame++ {
+				tt.Frame()
+				if fail {
+					if doc.dataEdit.Err == "" || !tt.HasText(doc.dataEdit.Err) {
+						t.Fatal("failed read did not show its error")
+					}
+					if after := editingCellBounds(t, doc, row, 1); after != cell {
+						t.Fatalf("failed read moved the cell: before=%+v after=%+v", cell, after)
+					}
+				} else if input, ok := tt.Find("单元格编辑 note"); !ok || input != cell {
+					t.Fatalf("completed read moved the cell: before=%+v input=%+v", cell, input)
+				}
+				if nextFirst, nextLast := doc.dataState.Visible(); nextFirst != first || nextLast != last {
+					t.Fatalf("completed read changed viewport: %d..%d -> %d..%d", first, last, nextFirst, nextLast)
+				}
+			}
+		})
+	}
+}
+
+func TestMySQLDataUnsupportedFieldErrorKeepsCellPosition(t *testing.T) {
+	_, doc, tt := editingScrolledWorkspace(t)
+	const row = 60
+	doc.dataPage.ColumnMetadata[1].DataType = "geometry"
+	tt.Frame()
+	tt.Frame()
+	cell := editingCellBounds(t, doc, row, 1)
+	tt.ClickAt(cell.X+20, cell.Y+10)
+	for frame := 0; frame < 3; frame++ {
+		tt.Frame()
+		if doc.dataEdit.Err == "" || !tt.HasText(doc.dataEdit.Err) {
+			t.Fatal("unsupported field did not show its error")
+		}
+		if after := editingCellBounds(t, doc, row, 1); after != cell {
+			t.Fatalf("edit error moved the cell in frame %d: before=%+v after=%+v", frame, cell, after)
+		}
+	}
+	other := editingCellBounds(t, doc, row, 2)
+	tt.ClickAt(other.X+20, other.Y+10)
+	if input, ok := tt.Find("单元格编辑 extra"); !ok || input != other {
+		t.Fatalf("clearing the edit error moved the next cell: before=%+v input=%+v", other, input)
+	}
 }
 
 func TestMySQLDataClickEditingKeepsScrolledRowPosition(t *testing.T) {
