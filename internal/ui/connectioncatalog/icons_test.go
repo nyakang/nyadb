@@ -1,4 +1,4 @@
-package shell
+package connectioncatalog
 
 import (
 	"bytes"
@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
 func testResearchPNG(t *testing.T, dir, name string, width, height int) {
@@ -52,19 +53,14 @@ func TestResearchCatalogIconLoadingAndFallback(t *testing.T) {
 	if s.researchIcons["Azure SQL"] == nil {
 		t.Fatal("cloud catalog resource was not loaded by its exact name")
 	}
-	tt := ui.NewTester(s.View, 1280, 800)
-	if err := tt.Click("连接"); err != nil {
-		t.Fatal(err)
-	}
+	tt := ui.NewTester(catalogTestView(s), 860, 566)
 	if err := tt.Click("选择 MySQL"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.Click("下一步"); err != nil {
-		t.Fatal(err)
+	if s.Selected().Kind != "mysql" {
+		t.Fatal("research icons must not affect type selection")
 	}
-	if s.connectionDraft.Kind != "mysql" {
-		t.Fatal("local research images must not affect the connection workflow")
-	}
+
 	loaded, err = s.LoadLocalResearchIcons("")
 	if err != nil || loaded != 0 || s.researchIcons != nil {
 		t.Fatal("disabling local research icons must clear the previous images")
@@ -101,5 +97,49 @@ func TestResearchIconResourceMapCoverage(t *testing.T) {
 		if researchIconResources[entry.name] == "" {
 			t.Errorf("missing mapped catalog item: %s", entry.name)
 		}
+	}
+}
+
+func TestBundledIconCacheForFullCatalog(t *testing.T) {
+	loaded, err := theme.BundledConnectionIcons()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(loaded) != 20 {
+		t.Fatalf("expected 20 bundled icons, got %d", len(loaded))
+	}
+	for _, item := range databaseCatalog[:20] {
+		icon := loaded[item.name]
+		if icon == nil {
+			t.Errorf("missing embedded icon for %q", item.name)
+			continue
+		}
+		if w, h := icon.Size(); w != 64 || h != 64 {
+			t.Errorf("wrong dimensions for %q: %d x %d", item.name, w, h)
+		}
+	}
+	s := New()
+	if len(s.bundledIcons) != 20 {
+		t.Fatal("default app state must load bundled catalog images")
+	}
+}
+
+func TestAllVendorFiltersHaveDistinctProviderBadges(t *testing.T) {
+	icons, err := theme.BundledProviderIcons()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, vendor := range catalogTreeVendorOrder {
+		icon := icons[vendor]
+		if icon == nil {
+			t.Errorf("no provider badge for %q", vendor)
+			continue
+		}
+		if w, h := icon.Size(); w != 64 || h != 64 {
+			t.Errorf("bad provider badge size %s: %d×%d", vendor, w, h)
+		}
+	}
+	if len(icons) != len(catalogTreeVendorOrder) {
+		t.Fatalf("provider count %d, vendor nodes %d", len(icons), len(catalogTreeVendorOrder))
 	}
 }

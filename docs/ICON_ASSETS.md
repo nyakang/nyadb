@@ -14,7 +14,7 @@ a network connection, an external icon pack, or a post-installation setup.
 - `internal/assets/connectionicons/manifest.json`: exact catalog names,
   filenames, provenance, colors and SHA-256 checksums.
 - `internal/assets/connectionicons/assets.go`: Go `//go:embed` filesystem.
-- `internal/ui/shell/catalog_embedded_icons.go`: single-decode MyGo bitmap cache.
+- `internal/ui/theme/brand_icons.go`: shared single-decode MyGo bitmap caches.
 - `tools/connection-icon-sources/*.svg`: source artwork used to render the
   PNG set, pinned to upstream revisions; upstream license copies are retained.
 - `tools/build_connection_icons.mjs`: optional deterministic asset generator.
@@ -58,7 +58,7 @@ needed to build or run NyaDB:
 ```sh
 npm install --prefix /tmp/nyadb-icon-build --no-audit --no-fund @resvg/resvg-js@2.6.2
 node tools/build_connection_icons.mjs
-go test ./internal/assets/connectionicons ./internal/ui/shell
+go test ./internal/assets/connectionicons ./internal/ui/theme ./internal/ui/connectioncatalog ./internal/ui/shell
 ```
 
 To deliberately refresh the pinned Simple Icons SVG sources, execute

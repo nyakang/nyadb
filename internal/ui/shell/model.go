@@ -9,6 +9,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/connectioncatalog"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -180,6 +181,7 @@ type State struct {
 	status                string
 	lastAction            string
 
+	connectionCatalog            *connectioncatalog.State
 	connectionDialog             bool
 	connectionStep               int
 	connectionEditorTab          int
@@ -216,19 +218,9 @@ type State struct {
 	connectionActiveTarget       int // Active for future sessions, independent of highlighted row.
 	connectionMainConfig         connectionEditorSnapshot
 	connectionOtherConfigs       []connectionEditorSnapshot
-	connectionSelectedName       string
-	connectionSearch             string
-	connectionGridMode           bool
-	connectionTreeOpen           map[string]bool
-	connectionRecent             []string
-	connectionEngineFilters      map[string]bool
-	connectionVendorFilters      map[string]bool
 	setConnectionTitle           func(string)
 	showConnectionWindow         func()
 	hideConnectionWindow         func()
-	bundledIcons                 map[string]*ui.Bitmap
-	providerIcons                map[string]*ui.Bitmap
-	researchIcons                map[string]*ui.Bitmap
 
 	connectionNameFocusPending bool
 	mysqlSessionManager        *mysqlsvc.MySQLSessionManager
@@ -325,28 +317,23 @@ func New() *State {
 		columns[i] = ui.TableColumn{Title: fmt.Sprintf("field_%02d", i-2), Width: 150}
 	}
 	s := &State{
-		sidebarPercent:          100 * (theme.SidebarWidth + theme.SplitterBorder) / 1279,
-		centerPercent:           100 * (1278 - theme.SidebarWidth - theme.SplitterBorder - theme.InspectorWidth) / (1278 - theme.SidebarWidth - theme.SplitterBorder),
-		editorPercent:           48,
-		inspectorOn:             true,
-		inspectorDetailsOpen:    true,
-		inspectorObjectsOpen:    true,
-		connectionGridMode:      true,
-		connectionTreeOpen:      map[string]bool{},
-		connectionEngineFilters: map[string]bool{},
-		connectionVendorFilters: map[string]bool{},
-		objectKind:              "表",
-		explorerName:            "我的连接",
-		explorerRow:             -1,
-		status:                  "就绪 · UI 布局预览（没有连接真实数据库）",
-		dataColumns:             columns,
-		nextTabID:               1,
-		tabs:                    []*tab{{id: 1, title: "对象", kind: tabObjects}},
+		connectionCatalog:    connectioncatalog.New(),
+		sidebarPercent:       100 * (theme.SidebarWidth + theme.SplitterBorder) / 1279,
+		centerPercent:        100 * (1278 - theme.SidebarWidth - theme.SplitterBorder - theme.InspectorWidth) / (1278 - theme.SidebarWidth - theme.SplitterBorder),
+		editorPercent:        48,
+		inspectorOn:          true,
+		inspectorDetailsOpen: true,
+		inspectorObjectsOpen: true,
+		objectKind:           "表",
+		explorerName:         "我的连接",
+		explorerRow:          -1,
+		status:               "就绪 · UI 布局预览（没有连接真实数据库）",
+		dataColumns:          columns,
+		nextTabID:            1,
+		tabs:                 []*tab{{id: 1, title: "对象", kind: tabObjects}},
 	}
 	s.objectState.Selected = &s.objectRow
 	s.explorerTree.List.Selected = &s.explorerRow
-	s.bundledIcons, _ = bundledCatalogIcons() // always use committed assets when valid
-	s.providerIcons, _ = bundledProviderIcons()
 	return s
 }
 

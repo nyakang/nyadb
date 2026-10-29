@@ -1,4 +1,4 @@
-package shell
+package connectioncatalog
 
 import (
 	"bytes"
@@ -102,4 +102,16 @@ func (s *State) catalogIcon(c *ui.Context, item catalogEntry, size float32) {
 		symbolSize := size * 0.64
 		theme.Icon(c, item.symbol, symbolSize, palette.Text)
 	})
+}
+
+// catalogProviderIcon keeps vendor and engine imagery distinct: a database
+// product badge is never misrepresented as the vendor's corporate logo.
+func (s *State) catalogProviderIcon(c *ui.Context, vendor string, size float32) {
+	palette := theme.Colors(c)
+
+	if bitmap := s.providerIcons[vendor]; bitmap != nil {
+		ui.Image(c, bitmap).Size(size, size).Fit(ui.Contain)
+		return
+	}
+	theme.Icon(c, "catalog-vendor", size, palette.Muted)
 }

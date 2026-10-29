@@ -60,7 +60,12 @@ server-side pagination benchmark.
 
 ## Code ownership
 
-- `internal/ui/theme/`: compact dark palette and original SVG symbols.
+- `internal/ui/theme/`: compact dark palette, original SVG symbols and shared
+  connection/provider bitmap caches decoded once per process.
+- `internal/ui/connectioncatalog/`: connection type catalog, chooser state,
+  search, filters, grid/tree views, in-session recents and opt-in research icons.
+  The chooser reports a `Choice` through a callback; shell owns window chrome,
+  footer actions, errors and the transition to connection editing.
 - `internal/ui/shell/model.go`: workbench state, tabs, mock objects and
   synthetic result cell generator.
 - `internal/ui/shell/chrome.go`: top chrome, command toolbar and statusbar.
@@ -69,6 +74,11 @@ server-side pagination benchmark.
 - `internal/ui/shell/inspector.go`: contextual right panel.
 - `internal/ui/shell/shell_test.go`: headless interaction regression tests.
 - `internal/ui/shell/preview_test.go`: opt-in screenshot generator.
+
+Chooser state and rendering tests live beside `connectioncatalog`; window and
+connection workflow integration tests remain in shell. Shared bitmap cache
+tests live beside theme. Resetting the chooser clears selection, search and
+filters while preserving the current view mode, expansion state and recents.
 
 ## Limitations / next steps
 
