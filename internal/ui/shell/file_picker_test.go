@@ -27,19 +27,19 @@ func TestSQLitePickerUsesInjectedNativeCommand(t *testing.T) {
 	if err := tt.Click("浏览文件"); err != nil {
 		t.Fatal(err)
 	}
-	if calls != 1 || s.connectionDraft.Database != "/tmp/picked.sqlite" {
-		t.Fatalf("file picker did not update the draft: calls=%d draft=%+v", calls, s.connectionDraft)
+	if calls != 1 || s.connectionEditor.Draft().Database != "/tmp/picked.sqlite" {
+		t.Fatalf("file picker did not update the draft: calls=%d draft=%+v", calls, s.connectionEditor.Draft())
 	}
 	s.closeConnectionDialog()
 	s.SelectSQLiteFile("/tmp/late.sqlite")
-	if s.connectionDraft.Database != "/tmp/picked.sqlite" {
+	if s.connectionEditor.Draft().Database != "/tmp/picked.sqlite" {
 		t.Fatal("late native callback changed closed dialog")
 	}
 	s.openConnectionDialog()
 	s.chooseConnectionKind(connections.SQLite)
 	s.nextConnectionStep()
 	s.SQLiteFilePickerError()
-	if s.connectionError == "" {
+	if s.connectionEditor.Error() == "" {
 		t.Fatal("native picker errors must be visible")
 	}
 }

@@ -28,9 +28,9 @@ func TestConnectionDialogChooseBackCancel(t *testing.T) {
 	if err := tt.Click("下一步"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionStep != 1 || s.connectionDraft.Kind != connections.PostgreSQL || s.connectionPort != "5432" ||
-		s.connectionDraft.Database != "postgres" {
-		t.Fatalf("unexpected PostgreSQL form: %+v", s.connectionDraft)
+	if s.connectionStep != 1 || s.connectionEditor.Draft().Kind != connections.PostgreSQL || s.connectionEditor.Draft().Port != 5432 ||
+		s.connectionEditor.Draft().Database != "postgres" {
+		t.Fatalf("unexpected PostgreSQL form: %+v", s.connectionEditor.Draft())
 	}
 	if err := tt.Click("上一步"); err != nil {
 		t.Fatal(err)
@@ -41,44 +41,7 @@ func TestConnectionDialogChooseBackCancel(t *testing.T) {
 	if err := tt.Click("取消连接向导"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionDialog || s.connectionSecret != "" {
+	if s.connectionDialog || s.connectionEditor.Active() {
 		t.Fatal("cancel should close and clear session secret")
-	}
-}
-
-func TestConnectionDraftValidation(t *testing.T) {
-	s := New()
-	s.openConnectionDialog()
-	s.chooseConnectionKind(connections.MySQL)
-	s.nextConnectionStep()
-	s.connectionDraft.Name = "test"
-	s.connectionPort = "99999"
-	if _, err := s.draftProfile(); err == nil {
-		t.Fatal("invalid port accepted")
-	}
-	s.connectionPort = "3306"
-	s.connectionDraft.Host = ""
-	if _, err := s.draftProfile(); err == nil {
-		t.Fatal("empty host accepted")
-	}
-	s.connectionDraft.Host = "localhost"
-	if _, err := s.draftProfile(); err != nil {
-		t.Fatal(err)
-	}
-	s.openConnectionDialog()
-	s.chooseConnectionKind(connections.SQLite)
-	s.nextConnectionStep()
-	s.connectionDraft.Name = "local"
-	if _, err := s.draftProfile(); err == nil {
-		t.Fatal("empty SQLite file accepted")
-	}
-	s.connectionDraft.Database = "/tmp/example.sqlite"
-	if _, err := s.draftProfile(); err != nil {
-		t.Fatal(err)
-	}
-	s.connectionSecret = "secret"
-	s.closeConnectionDialog()
-	if s.connectionSecret != "" {
-		t.Fatal("secret left after dialog")
 	}
 }

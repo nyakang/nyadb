@@ -1,4 +1,4 @@
-package shell
+package connectioneditor
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
-func mysqlHTTPTester(t *testing.T) (*State, *ui.Tester) {
+func mysqlHTTPTester(t *testing.T) (*testEditor, *ui.Tester) {
 	t.Helper()
-	s := New()
+	s := newTestEditor()
 	s.openConnectionDialog()
 	s.chooseConnectionKind(connections.MySQL)
 	s.nextConnectionStep()

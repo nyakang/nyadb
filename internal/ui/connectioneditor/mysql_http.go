@@ -1,4 +1,4 @@
-package shell
+package connectioneditor
 
 import (
 	"fmt"
@@ -61,8 +61,7 @@ func (s *State) MySQLHTTPSessionVersion() uint64 {
 
 func (s *State) SelectMySQLHTTPFile(kind MySQLHTTPFile, version uint64, path string) {
 	if version != s.mysqlHTTPSessionVersion || path == "" ||
-		!s.connectionDialog || s.connectionStep != 1 ||
-		s.connectionDraft.Kind != connections.MySQL ||
+		!s.active || s.connectionDraft.Kind != connections.MySQL ||
 		!s.connectionDraft.MySQLAdvanced.HTTP.Enabled ||
 		!s.connectionDraft.MySQLAdvanced.HTTP.CertificateAuth {
 		return
@@ -82,8 +81,8 @@ func (s *State) SelectMySQLHTTPFile(kind MySQLHTTPFile, version uint64, path str
 }
 
 func (s *State) MySQLHTTPFilePickerError(version uint64) {
-	if version == s.mysqlHTTPSessionVersion && s.connectionDialog &&
-		s.connectionStep == 1 && s.connectionDraft.Kind == connections.MySQL {
+	if version == s.mysqlHTTPSessionVersion && s.active &&
+		s.connectionDraft.Kind == connections.MySQL {
 		s.connectionError = "选择 HTTP 隧道证书文件失败"
 	}
 }

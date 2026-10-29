@@ -33,9 +33,9 @@ func TestNativeConnectionWindowLifecycleAndFallback(t *testing.T) {
 		t.Fatal(err)
 	}
 	w, h = s.ConnectionWindowSize()
-	if s.connectionStep != 1 || s.connectionDraft.Kind != connections.PostgreSQL ||
+	if s.connectionStep != 1 || s.connectionEditor.Draft().Kind != connections.PostgreSQL ||
 		s.ConnectionWindowTitle() != "新建连接 (PostgreSQL)" || w != 900 || h != 700 {
-		t.Fatalf("native flow did not reach form: %+v", s.connectionDraft)
+		t.Fatalf("native flow did not reach form: %+v", s.connectionEditor.Draft())
 	}
 	if err := tt.Click("取消连接向导"); err != nil {
 		t.Fatal(err)
@@ -47,18 +47,68 @@ func TestNativeConnectionWindowLifecycleAndFallback(t *testing.T) {
 	if opens != 2 {
 		t.Fatal("second native launch missing")
 	}
-	s.connectionSecret = "temporary-secret"
 	s.ConnectionWindowClosed() // OS titlebar X
-	if s.connectionDialog || s.connectionSecret != "" {
+	if s.connectionDialog || s.connectionEditor.Active() {
 		t.Fatal("OS close left modal/credential state behind")
 	}
 }
 
 func TestNativeProfileEditingTitle(t *testing.T) {
 	s := New()
-	s.connectionDraft.ID = 18
-	if s.ConnectionWindowTitle() != "编辑连接" {
+	s.connectionStep = 1
+	s.connectionEditor.OpenProfile(connections.Profile{ID: 18, Kind: connections.SQLite, Database: "/tmp/editing.sqlite"})
+	if s.ConnectionWindowTitle() != "编辑连接 (SQLite)" {
 		t.Fatal("editing must use native edit title")
+	}
+}
+
+func TestConnectionEditorNativePickerCallbacksStayWithTheirSession(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		prepare    func(*connections.Profile)
+		version    func(*State) uint64
+		selectPath func(*State, uint64, string)
+		path       func(*connections.Profile) string
+	}{
+		{"SSL", func(p *connections.Profile) {
+			p.MySQLAdvanced.SSL.Enabled = true
+			p.MySQLAdvanced.SSL.UseVerification = true
+		}, (*State).MySQLSSLSessionVersion, func(s *State, version uint64, path string) {
+			s.SelectMySQLSSLFile(MySQLSSLClientKey, version, path)
+		}, func(p *connections.Profile) string { return p.MySQLAdvanced.SSL.ClientKey }},
+		{"SSH", func(p *connections.Profile) {
+			p.MySQLAdvanced.SSH.Enabled = true
+			p.MySQLAdvanced.SSH.AuthMethod = connections.MySQLSSHPublicKey
+		}, (*State).MySQLSSHSessionVersion, (*State).SelectMySQLSSHPrivateKey,
+			func(p *connections.Profile) string { return p.MySQLAdvanced.SSH.PrivateKey }},
+		{"HTTP", func(p *connections.Profile) {
+			p.MySQLAdvanced.HTTP.Enabled = true
+			p.MySQLAdvanced.HTTP.CertificateAuth = true
+		}, (*State).MySQLHTTPSessionVersion, func(s *State, version uint64, path string) {
+			s.SelectMySQLHTTPFile(MySQLHTTPClientKey, version, path)
+		}, func(p *connections.Profile) string { return p.MySQLAdvanced.HTTP.ClientKey }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s := New()
+			s.openConnectionDialog()
+			s.chooseConnectionKind(connections.MySQL)
+			s.nextConnectionStep()
+			tc.prepare(s.connectionEditor.Draft())
+			version := tc.version(s)
+			tc.selectPath(s, version, "/tmp/current.key")
+			if tc.path(s.connectionEditor.Draft()) != "/tmp/current.key" {
+				t.Fatal("native picker did not reach the current editor")
+			}
+			s.ConnectionWindowClosed()
+			s.openConnectionDialog()
+			s.chooseConnectionKind(connections.MySQL)
+			s.nextConnectionStep()
+			tc.prepare(s.connectionEditor.Draft())
+			tc.selectPath(s, version, "/tmp/stale.key")
+			if tc.version(s) == version || tc.path(s.connectionEditor.Draft()) != "" {
+				t.Fatal("native completion from a closed editor reached the new session")
+			}
+		})
 	}
 }
 

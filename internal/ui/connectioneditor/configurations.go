@@ -1,4 +1,4 @@
-package shell
+package connectioneditor
 
 import (
 	"fmt"

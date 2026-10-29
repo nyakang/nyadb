@@ -3,7 +3,6 @@ package shell
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
@@ -15,6 +14,7 @@ func NewWithProfiles(service *connections.Service) *State {
 	s := New()
 	s.profileMode = true
 	s.profileService = service
+	s.connectionEditor.SetProfileService(service)
 	s.explorerName = "我的连接"
 	s.explorerRow = -1
 	s.status = "就绪 · 连接档案已加载（尚未连接数据库）"
@@ -88,30 +88,10 @@ func (s *State) startEditProfile() {
 		s.status = "请先选择连接"
 		return
 	}
-	s.cancelMySQLConnectionTest()
-	s.resetConnectionConfigurations()
 	s.connectionDialog = true
 	s.connectionStep = 1
-	s.connectionNameFocusPending = true
-	s.connectionEditorTab = 0
 	s.connectionKind = p.Kind
-	s.connectionDraft = p
-	s.clearMySQLSSLPassphrase()
-	s.clearMySQLSSHSecrets()
-	s.clearMySQLHTTPSecrets()
-	s.clearMySQLInitialQuery()
-	if p.Kind == connections.MySQL {
-		s.initMySQLAdvancedInputs()
-		s.initMySQLSSHInputs()
-		s.initMySQLHTTPInputs()
-	}
-	s.connectionPort = strconv.Itoa(int(p.Port))
-	s.connectionSecret = ""
-	s.connectionError = ""
-	s.initializeConnectionConfigurations()
-	if p.Kind == connections.MySQL {
-		s.loadSavedConnectionPasswords()
-	}
+	s.connectionEditor.OpenProfile(p)
 	if s.showConnectionWindow != nil {
 		s.showConnectionWindow()
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/credentials"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/connectioncatalog"
+	"github.com/nyakang/nyadb/internal/ui/connectioneditor"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -181,99 +182,61 @@ type State struct {
 	status                string
 	lastAction            string
 
-	connectionCatalog            *connectioncatalog.State
-	connectionDialog             bool
-	connectionStep               int
-	connectionEditorTab          int
-	connectionKind               connections.Kind
-	connectionDraft              connections.Profile
-	connectionPort               string
-	mysqlAdvancedNumbers         [5]string
-	mysqlCompatibilityVisible    bool
-	mysqlDatabaseTable           ui.ListState
-	mysqlInitialQuery            string
-	mysqlInitialQueryPreview     string
-	mysqlInitialQueryDraft       string
-	mysqlInitialQueryOpen        bool
-	mysqlInitialQueryError       string
-	mysqlSSLPassphrase           string
-	mysqlSSLSessionVersion       uint64
-	mysqlSSHPort                 string
-	mysqlSSHPassword             string
-	mysqlSSHPassphrase           string
-	mysqlSSHSessionVersion       uint64
-	mysqlHTTPSubtab              int
-	mysqlHTTPProxyPort           string
-	mysqlHTTPPassword            string
-	mysqlHTTPProxyPassword       string
-	mysqlHTTPPassphrase          string
-	mysqlHTTPSessionVersion      uint64
-	connectionSecret             string
-	connectionSavePassword       bool
-	credentialVault              credentials.Vault
-	connectionPasswordLoadFailed bool
-	connectionError              string
-	connectionProfilesVisible    bool
-	connectionActiveConfig       int
-	connectionActiveTarget       int // Active for future sessions, independent of highlighted row.
-	connectionMainConfig         connectionEditorSnapshot
-	connectionOtherConfigs       []connectionEditorSnapshot
-	setConnectionTitle           func(string)
-	showConnectionWindow         func()
-	hideConnectionWindow         func()
+	connectionEditor     *connectioneditor.State
+	connectionCatalog    *connectioncatalog.State
+	connectionDialog     bool
+	connectionStep       int
+	connectionGroup      string
+	connectionError      string
+	credentialVault      credentials.Vault
+	connectionKind       connections.Kind
+	setConnectionTitle   func(string)
+	showConnectionWindow func()
+	hideConnectionWindow func()
 
-	connectionNameFocusPending bool
-	mysqlSessionManager        *mysqlsvc.MySQLSessionManager
-	mysqlWorkspaces            map[int64]*mysqlSessionWorkspace
-	mysqlSessionCancel         context.CancelFunc
-	mysqlSessionResults        <-chan mysqlSessionResult
-	mysqlSessionProfileID      int64
-	mysqlSessionGeneration     uint64
-	mysqlSessionStatus         string
-	mysqlSessionError          string
-	mysqlSessionPassword       string
-	mysqlSessionDatabases      []string
-	mysqlSessionOpener         mysqlSessionOpener
-	mysqlDatabaseLister        mysqlDatabaseLister
-	mysqlSQLExecutor           mysqlSQLExecutor
-	mysqlSelectedDatabase      string
-	mysqlObjectKind            string
-	mysqlObjectCache           map[string][]mysqlsvc.MySQLDBObject
-	mysqlObjectErrors          map[string]string
-	mysqlObjectPending         string
-	mysqlObjectRequest         uint64
-	mysqlObjectCancel          context.CancelFunc
-	mysqlObjectResults         <-chan mysqlObjectResult
-	mysqlObjectLister          mysqlObjectLister
-	mysqlTableDialog           bool
-	mysqlTableAction           mysqlsvc.MySQLTableAction
-	mysqlTableProfileID        int64
-	mysqlTableDatabase         string
-	mysqlTableName             string
-	mysqlTableNewName          string
-	mysqlTableConfirmation     string
-	mysqlTableError            string
-	mysqlTablePending          bool
-	mysqlTableResults          <-chan mysqlTableChangeResult
-	mysqlTableRunner           func(context.Context, int64, mysqlsvc.MySQLTableChange) error
-	mysqlDatabaseNodes         map[string]*mysqlDatabaseNode
-	mysqlStructureLoader       mysqlStructureLoader
-	mysqlDataLoader            mysqlDataLoader
-	mysqlDataAdvancedLoader    mysqlDataAdvancedLoader
-	mysqlDataSaver             mysqlDataSaver
-	mysqlDataRowReader         mysqlDataRowReader
-	mysqlForceClose            bool
+	mysqlSessionManager     *mysqlsvc.MySQLSessionManager
+	mysqlWorkspaces         map[int64]*mysqlSessionWorkspace
+	mysqlSessionCancel      context.CancelFunc
+	mysqlSessionResults     <-chan mysqlSessionResult
+	mysqlSessionProfileID   int64
+	mysqlSessionGeneration  uint64
+	mysqlSessionStatus      string
+	mysqlSessionError       string
+	mysqlSessionPassword    string
+	mysqlSessionDatabases   []string
+	mysqlSessionOpener      mysqlSessionOpener
+	mysqlDatabaseLister     mysqlDatabaseLister
+	mysqlSQLExecutor        mysqlSQLExecutor
+	mysqlSelectedDatabase   string
+	mysqlObjectKind         string
+	mysqlObjectCache        map[string][]mysqlsvc.MySQLDBObject
+	mysqlObjectErrors       map[string]string
+	mysqlObjectPending      string
+	mysqlObjectRequest      uint64
+	mysqlObjectCancel       context.CancelFunc
+	mysqlObjectResults      <-chan mysqlObjectResult
+	mysqlObjectLister       mysqlObjectLister
+	mysqlTableDialog        bool
+	mysqlTableAction        mysqlsvc.MySQLTableAction
+	mysqlTableProfileID     int64
+	mysqlTableDatabase      string
+	mysqlTableName          string
+	mysqlTableNewName       string
+	mysqlTableConfirmation  string
+	mysqlTableError         string
+	mysqlTablePending       bool
+	mysqlTableResults       <-chan mysqlTableChangeResult
+	mysqlTableRunner        func(context.Context, int64, mysqlsvc.MySQLTableChange) error
+	mysqlDatabaseNodes      map[string]*mysqlDatabaseNode
+	mysqlStructureLoader    mysqlStructureLoader
+	mysqlDataLoader         mysqlDataLoader
+	mysqlDataAdvancedLoader mysqlDataAdvancedLoader
+	mysqlDataSaver          mysqlDataSaver
+	mysqlDataRowReader      mysqlDataRowReader
+	mysqlForceClose         bool
 
 	// A background preconnect requests the next native UI frame through this hook.
 	mysqlSQLPreconnectInvalidate func()
-
-	// MySQL connection checks run off-thread; only UI code reads/writes these.
-	connectionTesting        bool
-	connectionTestMessage    string
-	connectionTestGeneration uint64
-	connectionTestCancel     context.CancelFunc
-	connectionTestResults    <-chan mysqlTestResult
-	mysqlConnectionTester    mysqlConnectionTester
 
 	profileMode             bool
 	profileService          *connections.Service
@@ -301,11 +264,6 @@ type State struct {
 	settingsSampleRow       int
 	settingsSampleTable     ui.ListState
 	appearanceChanged       func(theme.Mode)
-	sqliteFilePicker        func()
-	mysqlSettingsPicker     func()
-	mysqlSSLFilePicker      func(MySQLSSLFile)
-	mysqlSSHKeyPicker       func()
-	mysqlHTTPFilePicker     func(MySQLHTTPFile)
 }
 
 func New() *State {
@@ -332,6 +290,14 @@ func New() *State {
 		nextTabID:            1,
 		tabs:                 []*tab{{id: 1, title: "对象", kind: tabObjects}},
 	}
+	s.connectionEditor = connectioneditor.New(connectioneditor.Dependencies{
+		ValidateMySQL: func(settings connections.ActiveSettings, secret string) error {
+			_, err := mysqlsvc.DirectMySQLConfig(settings, secret)
+			return err
+		},
+		TestMySQL: mysqlsvc.TestDirectMySQLConnection,
+		Saved:     s.connectionSaved, Back: s.backToConnectionCatalog, Cancel: s.closeConnectionDialog,
+	})
 	s.objectState.Selected = &s.objectRow
 	s.explorerTree.List.Selected = &s.explorerRow
 	return s

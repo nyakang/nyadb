@@ -1,4 +1,4 @@
-package shell
+package connectioneditor
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -22,8 +21,7 @@ type mysqlConnectionTester func(context.Context, connections.ActiveSettings, str
 // The UI thread is the only owner of State. Background work sends immutable
 // results to a buffered channel and asks MyGo to schedule the next frame.
 func (s *State) startMySQLConnectionTest(services ui.Services) {
-	if !s.connectionDialog || s.connectionStep != 1 ||
-		s.connectionDraft.Kind != connections.MySQL || s.connectionTesting {
+	if !s.active || s.connectionDraft.Kind != connections.MySQL || s.connectionTesting {
 		return
 	}
 	s.connectionTestMessage = ""
@@ -39,7 +37,11 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 	p.ActiveVariant = ""
 	settings, err := connections.ResolveActiveSettings(p)
 	if err == nil {
-		_, err = mysqlsvc.DirectMySQLConfig(settings, s.connectionSecret)
+		if s.validateMySQL == nil {
+			err = fmt.Errorf("MySQL 连接测试服务不可用")
+		} else {
+			err = s.validateMySQL(settings, s.connectionSecret)
+		}
 	}
 	if err != nil {
 		s.connectionError = err.Error()
@@ -53,7 +55,9 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 	secret := s.connectionSecret // never log or persist this value
 	tester := s.mysqlConnectionTester
 	if tester == nil {
-		tester = mysqlsvc.TestDirectMySQLConnection
+		tester = func(context.Context, connections.ActiveSettings, string) error {
+			return fmt.Errorf("MySQL 连接测试服务不可用")
+		}
 	}
 	results := make(chan mysqlTestResult, 1)
 	s.connectionTestResults = results

@@ -1,4 +1,4 @@
-package shell
+package connectioneditor
 
 import (
 	"github.com/egoist/mygo/ui"
@@ -9,22 +9,15 @@ import (
 
 // The connection editor is a native MyGo view. Layout and tab order are based
 // on observed Navicat 18 UI behavior, not on the original application's code.
-func (s *State) connectionEditor(c *ui.Context) {
+func (s *State) View(c *ui.Context, width, height float32) {
+	if !s.active {
+		return
+	}
 	s.consumeMySQLConnectionTest()
 	applyConnectionEditorFormTheme(c)
 
 	palette := theme.Colors(c)
-	w, h := c.Size()
-	if s.showConnectionWindow == nil {
-		w = min(float32(760), w-96)
-		h = min(float32(630), h-96)
-	}
-	if w < 520 {
-		w = 520
-	}
-	if h < 420 {
-		h = 420
-	}
+	w, h := max(width, float32(520)), max(height, float32(420))
 	ui.Column(c).Width(w).Height(h).Gap(0).Background(palette.Toolbar).Children(func() {
 		ui.Row(c).Height(h - 43).Gap(0).Children(func() {
 			contentWidth := w
@@ -311,27 +304,42 @@ func (s *State) connectionEditorFooter(c *ui.Context) {
 			if ui.Button(c, locales.Text("上一步")).Width(80).Height(theme.RowHeight(c, connectionFooterControlHeight)).
 				Background(palette.Header).Border(1, palette.Border).
 				Disabled(s.connectionDraft.ID != 0).Clicked() {
-				s.cancelMySQLConnectionTest()
-				s.connectionStep = 0
-				s.connectionEditorTab = 0
-				s.connectionSecret = ""
-				s.connectionSavePassword = false
-				s.clearMySQLSSLPassphrase()
-				s.clearMySQLSSHSecrets()
-				s.clearMySQLHTTPSecrets()
-				s.clearMySQLInitialQuery()
-				s.connectionError = ""
-				s.updateConnectionWindowTitle()
+				s.Back()
 			}
 		}
 		if ui.Button(c, locales.Text("确定")).Width(80).Height(theme.RowHeight(c, connectionFooterControlHeight)).
 			Background(palette.Header).Border(1, palette.Border).Label("保存连接").Clicked() {
-			s.saveConnectionDraft()
+			s.Save()
 		}
 		if ui.Button(c, locales.Text("取消")).Width(80).Height(theme.RowHeight(c, connectionFooterControlHeight)).
 			Background(palette.Header).Border(1, palette.Border).
 			Label("取消连接向导").Clicked() {
-			s.closeConnectionDialog()
+			s.Cancel()
 		}
+	})
+}
+
+// connectionNotesEditor reproduces the full-width multiline Notes page.
+// The draft is persisted only when the connection editor's Confirm action
+// succeeds; Cancel discards it along with the other draft changes.
+func (s *State) connectionNotesEditor(c *ui.Context, width float32) {
+	palette := theme.Colors(c)
+
+	_, height := c.Size()
+	formWidth := max(float32(480), width-40)
+	editorHeight := max(float32(180), min(float32(475), height-226))
+	ui.Column(c).Width(formWidth).Gap(4).Children(func() {
+		ui.Row(c).Height(theme.RowHeight(c, 22)).AlignItems(ui.Center).Children(func() {
+			ui.Text(c, "备注：*").FontSize(theme.Font(c, 12))
+		})
+		ui.TextArea(c, &s.connectionDraft.Notes).
+			Label("连接备注").
+			Width(formWidth).Height(editorHeight).
+			Padding(7, 6).FontSize(theme.Font(c, 12)).
+			Background(palette.App).Border(1, palette.App)
+		ui.Row(c).Height(18).AlignItems(ui.Center).Children(func() {
+			ui.Text(c, "* 更改将应用于所有连接配置文件。").
+				FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+		})
 	})
 }

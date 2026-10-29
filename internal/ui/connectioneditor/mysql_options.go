@@ -1,4 +1,4 @@
-package shell
+package connectioneditor
 
 import (
 	"fmt"
@@ -181,5 +181,129 @@ func (s *State) compatSelectRow(
 		connectionFormCheckboxCompact(c, checked, name, !parentEnabled).Width(labelWidth)
 		ui.Select(c, value, options).Label(name + "选项").Width(258).Height(theme.RowHeight(c, 25)).
 			Disabled(!parentEnabled || !*checked)
+	})
+}
+
+// connectionMySQLDatabases reproduces the offline Database tab: a custom-list
+// toggle, a native two-column table and add/remove actions. The original reads
+// server metadata when custom lists are enabled. NyaDB deliberately does not
+// invent metadata or attempt a connection before a database driver exists.
+func (s *State) connectionMySQLDatabases(c *ui.Context, width, height float32) {
+	palette := theme.Colors(c)
+
+	pageWidth := max(float32(520), width-40)
+	pageHeight := max(float32(280), height-174)
+	enabled := &s.connectionDraft.MySQLAdvanced.UseCustomDatabaseList
+	ui.Column(c).Width(pageWidth).Height(pageHeight).Gap(6).Children(func() {
+		ui.Row(c).Height(theme.RowHeight(c, connectionFormInputHeight)).AlignItems(ui.Center).Children(func() {
+			connectionFormCheckbox(c, enabled, "使用自定义数据库列表", false)
+		})
+		columns := []ui.TableColumn{
+			{Title: "数据库", Width: pageWidth - 92},
+			{Title: "自动打开", Width: 88},
+		}
+		// No connection session exists yet. A zero-row native table preserves
+		// the exact empty state without fake databases or checked entries.
+		theme.Table(c, &s.mysqlDatabaseTable, columns, 0, func(_, _ int) {}).
+			Width(pageWidth).Grow(1).Border(1, palette.Border).
+			Disabled(!*enabled)
+		ui.Row(c).Height(theme.RowHeight(c, 30)).Gap(8).Children(func() {
+			ui.Button(c, "添加数据库到列表").
+				Width(198).Height(theme.RowHeight(c, 29)).Disabled(true).
+				Label("添加数据库到列表（需要连接 MySQL）")
+			ui.Button(c, "从列表中移除数据库").
+				Width(198).Height(theme.RowHeight(c, 29)).Disabled(true).
+				Label("从列表中移除数据库（列表为空）")
+		})
+		if *enabled {
+			ui.Text(c, "需要建立数据库连接后才能读取列表").
+				FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+		}
+	})
+}
+
+// SQL can contain literal credentials. It is never stored in Profile,
+// sqlite configuration, logs or error reports. This editor is UI-only until
+// encrypted storage and actual connection execution are independently built.
+func (s *State) beginMySQLInitialQuery() {
+	if !s.active || s.connectionDraft.Kind != connections.MySQL {
+		return
+	}
+	s.mysqlInitialQueryDraft = s.mysqlInitialQuery
+	s.mysqlInitialQueryError = ""
+	s.mysqlInitialQueryOpen = true
+}
+
+func (s *State) confirmMySQLInitialQuery() {
+	if !s.mysqlInitialQueryOpen {
+		return
+	}
+	if len(s.mysqlInitialQueryDraft) > 64*1024 || strings.ContainsRune(s.mysqlInitialQueryDraft, 0) {
+		s.mysqlInitialQueryError = "初始查询不能超过 64 KiB，也不能包含 NUL 字符"
+		return
+	}
+	s.mysqlInitialQuery = s.mysqlInitialQueryDraft
+	s.mysqlInitialQueryPreview = strings.Join(strings.Fields(s.mysqlInitialQuery), " ")
+	s.mysqlInitialQueryDraft = ""
+	s.mysqlInitialQueryError = ""
+	s.mysqlInitialQueryOpen = false
+}
+
+func (s *State) cancelMySQLInitialQuery() {
+	s.mysqlInitialQueryDraft = ""
+	s.mysqlInitialQueryError = ""
+	s.mysqlInitialQueryOpen = false
+}
+
+func (s *State) clearMySQLInitialQuery() {
+	s.mysqlInitialQuery = ""
+	s.mysqlInitialQueryPreview = ""
+	s.cancelMySQLInitialQuery()
+}
+
+func (s *State) mysqlInitialQueryModal(c *ui.Context) {
+	palette := theme.Colors(c)
+
+	if !s.mysqlInitialQueryOpen {
+		// Escape and backdrop dismissal can close a native MyGo modal
+		// without passing through the Cancel button. Discard its temporary
+		// text on the next frame as well.
+		if s.mysqlInitialQueryDraft != "" || s.mysqlInitialQueryError != "" {
+			s.cancelMySQLInitialQuery()
+		}
+		return
+	}
+	width, height := c.Size()
+	dialogWidth := min(float32(700), width-40)
+	dialogHeight := min(float32(500), height-40)
+	ui.Modal(c, &s.mysqlInitialQueryOpen, func() {
+		ui.Column(c).Width(dialogWidth).Height(dialogHeight).Padding(15, 24).
+			Background(palette.Header).Gap(14).Children(func() {
+			ui.Row(c).Justify(ui.Center).Children(func() {
+				ui.Text(c, "初始查询").Bold().FontSize(theme.Font(c, 13))
+			})
+			ui.Text(c, "初始查询：").FontSize(theme.Font(c, 12))
+			ui.TextArea(c, &s.mysqlInitialQueryDraft).
+				Label("初始查询 SQL 编辑器").
+				Placeholder("e.g.\nSET ROLE ALL;\nSET @var_name = 'value';").
+				Width(min(float32(602), dialogWidth-48)).Grow(1).MinHeight(120).FontSize(theme.Font(c, 12))
+			ui.Row(c).Children(func() {
+				if ui.Button(c, "复制到剪贴板").Clicked() {
+					c.WriteClipboard(s.mysqlInitialQueryDraft)
+				}
+			})
+			if s.mysqlInitialQueryError != "" {
+				ui.Text(c, s.mysqlInitialQueryError).
+					FontSize(theme.Font(c, 12)).TextColor(palette.Error)
+			}
+			ui.Row(c).Justify(ui.End).Gap(8).Children(func() {
+				if ui.PrimaryButton(c, "确定").Label("确认初始查询").Width(80).Clicked() {
+					s.confirmMySQLInitialQuery()
+				}
+				if ui.Button(c, "取消").Label("取消初始查询").Width(80).Clicked() {
+					s.cancelMySQLInitialQuery()
+				}
+			})
+		})
 	})
 }
