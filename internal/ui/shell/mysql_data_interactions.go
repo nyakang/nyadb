@@ -70,6 +70,9 @@ func (s *State) applyMySQLDataFilter(services ui.Services, t *tab) {
 	s.applyMySQLDataRules(services, t)
 }
 func (s *State) clearMySQLDataFilter(services ui.Services, t *tab) {
+	if s.guardMySQLDataLeave(t, func(next ui.Services) { s.clearMySQLDataFilter(next, t) }) {
+		return
+	}
 	t.dataFilterColumn = ""
 	t.dataFilterMode = ""
 	t.dataFilterValue = ""
@@ -82,6 +85,9 @@ func (s *State) clearMySQLDataFilter(services ui.Services, t *tab) {
 }
 
 func (s *State) resetAndReloadMySQLData(services ui.Services, t *tab) {
+	if s.guardMySQLDataLeave(t, func(next ui.Services) { s.resetAndReloadMySQLData(next, t) }) {
+		return
+	}
 	if t == nil || t.kind != tabMySQLData {
 		return
 	}
@@ -102,6 +108,16 @@ func (s *State) resetAndReloadMySQLData(services ui.Services, t *tab) {
 func (s *State) syncMySQLDataSort(services ui.Services, t *tab) {
 	if t == nil || t.dataPage == nil {
 		return
+	}
+	if t.dataEdit.Busy || t.dataEdit.LeaveOpen {
+		return
+	}
+	requested := t.dataSort
+	if (requested.Column != t.dataSortColumn || requested.Descending != t.dataSortDescending) && mysqlDataHasDraft(t) {
+		if s.guardMySQLDataLeave(t, func(next ui.Services) { s.applyMySQLDataCellSort(next, t, requested.Column, requested.Descending) }) {
+			t.dataSort = ui.SortOrder{Column: t.dataSortColumn, Descending: t.dataSortDescending}
+			return
+		}
 	}
 	if len(t.dataSortRules) > 0 {
 		first := t.dataSortRules[0]

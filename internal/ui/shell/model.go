@@ -85,6 +85,8 @@ type tab struct {
 	dataCancel              context.CancelFunc
 	dataResults             <-chan mysqlDataResult
 	dataRequest             uint64
+	dataEdit                mysqlDataEditState
+	dataExport              mysqlDataExportState
 	dataSelection           ui.Selection[int]
 	dataSelectedRow         int
 	dataSort                ui.SortOrder
@@ -265,6 +267,9 @@ type State struct {
 	mysqlStructureLoader       mysqlStructureLoader
 	mysqlDataLoader            mysqlDataLoader
 	mysqlDataAdvancedLoader    mysqlDataAdvancedLoader
+	mysqlDataSaver             mysqlDataSaver
+	mysqlDataRowReader         mysqlDataRowReader
+	mysqlForceClose            bool
 
 	// A background preconnect requests the next native UI frame through this hook.
 	mysqlSQLPreconnectInvalidate func()
@@ -412,6 +417,19 @@ func (s *State) closeTab(index int) {
 	if index <= 0 || index >= len(s.tabs) {
 		return // the Objects tab is permanent
 	}
+	if s.tabs[index].kind == tabMySQLData {
+		t := s.tabs[index]
+		if s.guardMySQLDataLeave(t, func(_ ui.Services) {
+			for i, candidate := range s.tabs {
+				if candidate == t {
+					s.closeTab(i)
+					break
+				}
+			}
+		}) {
+			return
+		}
+	}
 	if s.tabs[index].kind == tabStructure {
 		s.cancelMySQLStructure(s.tabs[index])
 	} else if s.tabs[index].kind == tabMySQLData {
@@ -433,6 +451,21 @@ func (s *State) closeTab(index int) {
 func (s *State) closeOtherTabs(index int) {
 	if index < 0 || index >= len(s.tabs) {
 		return
+	}
+	keepTab := s.tabs[index]
+	for i, t := range s.tabs {
+		if i != index && t.kind == tabMySQLData {
+			if s.guardMySQLDataLeave(t, func(_ ui.Services) {
+				for n, candidate := range s.tabs {
+					if candidate == keepTab {
+						s.closeOtherTabs(n)
+						break
+					}
+				}
+			}) {
+				return
+			}
+		}
 	}
 	for i, t := range s.tabs {
 		if i != index && t.kind == tabStructure {

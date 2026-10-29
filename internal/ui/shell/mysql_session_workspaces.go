@@ -216,6 +216,9 @@ func (s *State) mysqlObjectLoadStateFor(id int64, database string) (bool, string
 
 // Explicitly close one profile without destroying unrelated workbench slots.
 func (s *State) disconnectMySQLProfile(id int64) {
+	if s.guardMySQLProfileLeave(id, func(_ ui.Services) { s.disconnectMySQLProfile(id) }) {
+		return
+	}
 	if id <= 0 {
 		return
 	}
@@ -240,6 +243,9 @@ func (s *State) disconnectMySQLProfile(id int64) {
 }
 
 func (s *State) closeAllMySQLConnections() {
+	if s.guardMySQLProfileLeave(0, func(_ ui.Services) { s.closeAllMySQLConnections() }) {
+		return
+	}
 	ids := make([]int64, 0, len(s.mysqlWorkspaces))
 	for id := range s.mysqlWorkspaces {
 		ids = append(ids, id)

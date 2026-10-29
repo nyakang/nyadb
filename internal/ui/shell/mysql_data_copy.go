@@ -2,8 +2,12 @@ package shell
 
 import (
 	"encoding/csv"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/services/connections"
+	"io"
 	"slices"
 	"strings"
 
@@ -126,7 +130,10 @@ func mysqlDataJSONPreview(names []string, rows [][]string, nulls [][]bool) strin
 		out.WriteByte('}')
 	}
 	out.WriteByte(']')
-	return out.String()
+	// RawMessage preserves the displayed field order while applying the
+	// observed two-space JSON layout without numeric type coercion.
+	pretty, _ := json.MarshalIndent(json.RawMessage(out.String()), "", "  ")
+	return string(pretty)
 }
 
 func (s *State) copyMySQLDataSelection(c *ui.Context, t *tab) {
@@ -145,6 +152,16 @@ func (s *State) copyMySQLDataSelection(c *ui.Context, t *tab) {
 func (s *State) mysqlDataCopyAsMenu(c *ui.Context, t *tab, m *ui.Menu) {
 	names, rows, nulls := mysqlDataSelectedPreview(t)
 	empty := len(rows) == 0 || len(names) == 0
+	for _, item := range []struct {
+		label  string
+		update bool
+	}{{"Insert 语句", false}, {"Update 语句", true}} {
+		text, err := mysqlDataSQLSelection(t, item.update)
+		if m.Item(locales.Text(item.label)).Disabled(empty || err != nil).Chosen() {
+			c.WriteClipboard(text)
+		}
+	}
+	m.Separator()
 	for _, format := range []struct {
 		labels []string
 		comma  rune
@@ -162,4 +179,166 @@ func (s *State) mysqlDataCopyAsMenu(c *ui.Context, t *tab, m *ui.Menu) {
 	if m.Item("JSON").Disabled(empty).Chosen() {
 		c.WriteClipboard(mysqlDataJSONPreview(names, rows, nulls))
 	}
+}
+
+// SQL copies are explicit text exports. Hex literals avoid dependence on a
+// server's NO_BACKSLASH_ESCAPES mode and keep values out of SQL syntax.
+func mysqlDataSQLLiteral(text string, null, binary bool) string {
+	if null {
+		return "NULL"
+	}
+	if binary {
+		return "X'" + hex.EncodeToString([]byte(text)) + "'"
+	}
+	if text == "" {
+		return "''"
+	}
+	return "_utf8mb4 X'" + hex.EncodeToString([]byte(text)) + "'"
+}
+func mysqlDataSQLIdentifier(name string) string {
+	return "`" + strings.ReplaceAll(name, "`", "``") + "`"
+}
+func mysqlDataSQLSelection(t *tab, update bool) (string, error) {
+	selectedFields, _, _ := mysqlDataSelectedPreview(t)
+	if len(selectedFields) == 0 || t.dataPage == nil {
+		return "", errors.New("no selection")
+	}
+	page := t.dataPage
+	// Unlike TSV/CSV/JSON cell selections, the observed SQL actions copy
+	// complete records. Hidden fields remain part of a record's SQL output.
+	names := page.Columns
+	var out []string
+	for row, cells := range page.Rows {
+		if !t.dataSelection.Has(row) && (t.dataSelection.Len() != 0 || row != t.dataSelectedRow) {
+			continue
+		}
+		var fields, values, assignments []string
+		draft := mysqlDataDraftForRow(t, row)
+		for _, name := range names {
+			col := slices.Index(page.Columns, name)
+			if col < 0 || col >= len(cells) {
+				return "", errors.New("incomplete preview")
+			}
+			if col < len(page.ColumnMetadata) && connections.MySQLDataColumnGenerated(page.ColumnMetadata[col]) {
+				continue
+			}
+			if update && col < len(page.ColumnMetadata) && strings.EqualFold(page.ColumnMetadata[col].Key, "PRI") {
+				continue
+			}
+			literal := ""
+			value, explicit := connections.MySQLDataValue{}, false
+			if draft != nil {
+				value, explicit = draft.Values[name]
+			}
+			switch {
+			case explicit && value.Default || !explicit && draft != nil && draft.Kind == "insert":
+				literal = "DEFAULT"
+			case explicit:
+				if value.Binary {
+					literal = mysqlDataSQLLiteral(string(value.Bytes), value.Null, true)
+				} else {
+					literal = mysqlDataSQLLiteral(value.Text, value.Null, false)
+				}
+			default:
+				if cells[col].Truncated {
+					return "", errors.New("incomplete preview")
+				}
+				// Binary preview spelling can be formatted or shortened; it is not a full value.
+				if !cells[col].Null && col < len(page.ColumnKinds) && !mysqlDataCellFilterValueAvailable(page.ColumnKinds[col], cells[col]) {
+					return "", errors.New("binary preview")
+				}
+				literal = mysqlDataSQLLiteral(cells[col].Text, cells[col].Null, false)
+			}
+			fields = append(fields, mysqlDataSQLIdentifier(name))
+			values = append(values, literal)
+			assignments = append(assignments, mysqlDataSQLIdentifier(name)+" = "+literal)
+		}
+		if len(fields) == 0 {
+			return "", errors.New("no writable fields")
+		}
+		target := mysqlDataSQLIdentifier(page.Database) + "." + mysqlDataSQLIdentifier(page.Table)
+		if update {
+			if row >= len(page.RowRefs) || page.RowRefs[row] == nil {
+				return "", errors.New("no unique identity")
+			}
+			ref := page.RowRefs[row]
+			if ref.Database != page.Database || ref.Table != page.Table || len(ref.Columns) == 0 || len(ref.Columns) != len(ref.Values) {
+				return "", errors.New("invalid identity")
+			}
+			var predicates []string
+			for i, key := range ref.Columns {
+				if i >= len(ref.Values) {
+					return "", errors.New("incomplete identity")
+				}
+				// Comparing a numeric key directly with a hex literal treats the
+				// literal as a number; comparing with a string can round BIGINT
+				// identities through DOUBLE. Compare the original bytes instead.
+				predicates = append(predicates, "CAST("+mysqlDataSQLIdentifier(key)+" AS BINARY) = X'"+hex.EncodeToString(ref.Values[i])+"'")
+			}
+			out = append(out, "UPDATE "+target+" SET "+strings.Join(assignments, ", ")+" WHERE "+strings.Join(predicates, " AND ")+";")
+		} else {
+			out = append(out, "INSERT INTO "+target+" ("+strings.Join(fields, ", ")+") VALUES ("+strings.Join(values, ", ")+");")
+		}
+	}
+	if len(out) == 0 {
+		return "", errors.New("no selection")
+	}
+	return strings.Join(out, "\n"), nil
+}
+
+// Clipboard text is literal text: the string NULL stays a string. SQL NULL
+// is only selected by the explicit NULL action. Validate the full rectangle
+// before staging any cells so a rejected paste never leaves a partial draft.
+func (s *State) pasteMySQLDataSelection(c *ui.Context, t *tab, row, source int) {
+	text := c.Services().ReadClipboard()
+	if len(text) > connections.MySQLDataEditMaxBytes {
+		t.dataEdit.Err = locales.Text("粘贴数据超过编辑大小限制")
+		return
+	}
+	r := csv.NewReader(strings.NewReader(text))
+	r.Comma = '\t'
+	r.FieldsPerRecord = -1
+	values, err := r.ReadAll()
+	if err != nil && err != io.EOF {
+		t.dataEdit.Err = locales.Text("粘贴数据格式无效")
+		return
+	}
+	if len(values) == 0 {
+		values = [][]string{{""}}
+	}
+	indices := mysqlDataPasteColumns(t)
+	start := slices.Index(indices, source)
+	if start < 0 {
+		return
+	}
+	for i, line := range values {
+		for j := range line {
+			if row+i >= len(t.dataPage.Rows) || start+j >= len(indices) || !mysqlDataCanEdit(t, row+i, indices[start+j]) || mysqlDataBinaryField(t.dataPage.ColumnMetadata[indices[start+j]]) || mysqlDataSpatialField(t.dataPage.ColumnMetadata[indices[start+j]]) {
+				t.dataEdit.Err = locales.Text("粘贴选区包含不可编辑字段或超出当前页")
+				return
+			}
+		}
+	}
+	for i, line := range values {
+		for j, value := range line {
+			s.setMySQLDataCell(c.Services(), t, row+i, indices[start+j], connections.MySQLDataValue{Text: value})
+		}
+	}
+}
+
+func mysqlDataPasteColumns(t *tab) []int {
+	order := append([]string(nil), t.dataState.Columns.Order...)
+	for _, name := range t.dataPage.Columns {
+		if !slices.Contains(order, name) {
+			order = append(order, name)
+		}
+	}
+	var indices []int
+	for _, name := range order {
+		source := slices.Index(t.dataPage.Columns, name)
+		if source >= 0 && !t.dataHiddenColumns[name] && !slices.Contains(indices, source) {
+			indices = append(indices, source)
+		}
+	}
+	return indices
 }

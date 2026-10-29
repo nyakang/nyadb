@@ -22,6 +22,7 @@ func (s *State) View(c *ui.Context) {
 	s.consumeMySQLTableChange(c.Services())
 	s.consumeMySQLStructures()
 	s.consumeMySQLData()
+	s.consumeMySQLDataEdits(c.Services())
 	s.consumeMySQLTableInfo()
 	s.consumeMySQLChunks()
 	s.consumeMySQLSQLResults()
@@ -52,6 +53,7 @@ func (s *State) View(c *ui.Context) {
 	})
 	s.connectionModal(c)
 	s.mysqlTableChangeModal(c)
+	s.mysqlDataEditModals(c)
 	if s.profileMode && s.groupDeleteConfirm {
 		if ui.AlertDialog(c, &s.groupDeleteConfirm, locales.Text("删除连接组？"), locales.Text("仅删除虚拟文件夹；组内连接将移至根目录，不会删除连接档案或数据库。"), locales.Text("取消"), locales.Text("删除组")) == 1 {
 			s.deleteGroup()

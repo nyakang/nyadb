@@ -9,7 +9,7 @@ import (
 // MySQLDataFilterRule is a bounded, AND-connected server-side condition.
 type MySQLDataFilterRule struct {
 	Column string
-	Mode   string // equal, not_equal, contains, is_null, is_not_null
+	Mode   string // equal, not_equal, contains, not_contains, like, not_like, less, greater, is_null, is_not_null
 	Value  string
 }
 
@@ -42,7 +42,7 @@ func mysqlDataEffectiveRules(o MySQLDataOptions) ([]MySQLDataFilterRule, []MySQL
 			return nil, nil, ErrMySQLDataPage
 		}
 		switch rule.Mode {
-		case "equal", "not_equal", "contains", "is_null", "is_not_null":
+		case "equal", "not_equal", "contains", "not_contains", "like", "not_like", "less", "greater", "is_null", "is_not_null":
 		default:
 			return nil, nil, ErrMySQLDataPage
 		}

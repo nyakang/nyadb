@@ -41,6 +41,7 @@ type MySQLDataPage struct {
 	KeysetAvailable bool
 	NextCursor      *MySQLDataCursor
 	RowRefs         []*MySQLRowRef
+	RowSnapshots    []*MySQLRowSnapshot
 	// QuerySQL is the executed parameterized statement, without bound values.
 	QuerySQL    string
 	CompletedAt time.Time

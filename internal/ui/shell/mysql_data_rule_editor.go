@@ -17,12 +17,22 @@ type mysqlDataSortDraft struct {
 	Column, Direction string
 }
 
-var mysqlFilterModeChoices = []string{"包含", "精确匹配", "不等于", "为空", "不为空"}
+var mysqlFilterModeChoices = []string{"包含", "不包含", "类似", "不类似", "精确匹配", "不等于", "小于", "大于", "为空", "不为空"}
 
 func mysqlFilterMode(mode string) string {
 	switch mode {
 	case "包含":
 		return "contains"
+	case "不包含":
+		return "not_contains"
+	case "类似":
+		return "like"
+	case "不类似":
+		return "not_like"
+	case "小于":
+		return "less"
+	case "大于":
+		return "greater"
 	case "精确匹配":
 		return "equal"
 	case "不等于":
@@ -151,6 +161,9 @@ func mysqlDataActiveSortCount(t *tab) int {
 }
 
 func (s *State) applyMySQLDataRules(services ui.Services, t *tab) {
+	if s.guardMySQLDataLeave(t, func(next ui.Services) { s.applyMySQLDataRules(next, t) }) {
+		return
+	}
 	if t == nil || (t.dataPage == nil && len(t.dataColumns) == 0) {
 		return
 	}

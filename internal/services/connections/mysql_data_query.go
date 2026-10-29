@@ -155,6 +155,17 @@ func (m *MySQLSessionManager) TableDataPageWithOptions(ctx context.Context, id i
 		}
 	}
 
+	// Identity and conflict snapshots are independent of pagination strategy.
+	// Hashes bound transfer even for very large text/blob values.
+	if len(identity) > 0 {
+		for i, key := range identity {
+			fields = append(fields, fmt.Sprintf("%s AS `__nyadb_identity_%d`", key, i))
+		}
+		for i, col := range columns {
+			q, _ := quotedMySQLIdentifier(col.Name)
+			fields = append(fields, fmt.Sprintf("SHA2(CAST(%s AS BINARY),256) AS `__nyadb_hash_%d`", q, i))
+		}
+	}
 	query := "SELECT " + strings.Join(fields, ", ") + " FROM " + dbName + "." + tableName
 	var args []any
 	var conditions []string
@@ -165,16 +176,35 @@ func (m *MySQLSessionManager) TableDataPageWithOptions(ctx context.Context, id i
 		}
 		quoted, _ := quotedMySQLIdentifier(col.Name)
 		switch filter.Mode {
-		case "contains":
+		case "contains", "not_contains":
 			if !mysqlDataTextType(strings.ToLower(col.DataType)) {
 				return nil, ErrMySQLDataPage
 			}
-			conditions = append(conditions, "LOCATE(?, "+quoted+") > 0")
+			predicate := "LOCATE(?, " + quoted + ") > 0"
+			if filter.Mode == "not_contains" {
+				predicate = "LOCATE(?, " + quoted + ") = 0"
+			}
+			conditions = append(conditions, predicate)
 			args = append(args, filter.Value)
-		case "equal", "not_equal":
+		case "like", "not_like":
+			if !mysqlDataTextType(strings.ToLower(col.DataType)) {
+				return nil, ErrMySQLDataPage
+			}
+			op := " LIKE "
+			if filter.Mode == "not_like" {
+				op = " NOT LIKE "
+			}
+			conditions = append(conditions, quoted+op+"?")
+			args = append(args, "%"+filter.Value+"%")
+		case "equal", "not_equal", "less", "greater":
 			op := " = "
-			if filter.Mode == "not_equal" {
+			switch filter.Mode {
+			case "not_equal":
 				op = " <> "
+			case "less":
+				op = " < "
+			case "greater":
+				op = " > "
 			}
 			conditions = append(conditions, quoted+op+"?")
 			args = append(args, filter.Value)
@@ -268,6 +298,9 @@ func (m *MySQLSessionManager) TableDataPageWithOptions(ctx context.Context, id i
 	page := &MySQLDataPage{Database: database, Table: table, Columns: names, ColumnKinds: kinds, ColumnMetadata: columns,
 		Offset: o.Offset, Limit: o.Limit, StableOrder: len(identity) > 0, KeysetAvailable: seek}
 	count := len(columns)
+	if len(identity) > 0 {
+		count += len(identity) + len(columns)
+	}
 	if seek {
 		count += len(orderKeys)
 	}
@@ -289,26 +322,29 @@ func (m *MySQLSessionManager) TableDataPageWithOptions(ctx context.Context, id i
 			line[i] = mysqlDataPreviewCell(raw[i], col.DataType)
 		}
 		page.Rows = append(page.Rows, line)
+		var ref *MySQLRowRef
+		var snapshot *MySQLRowSnapshot
+		seekStart := len(columns)
+		if len(identity) > 0 {
+			keys := make([]mysqlOrderKey, len(identityNames))
+			for i, name := range identityNames {
+				keys[i] = mysqlOrderKey{name: name}
+			}
+			cursor, e := mysqlNextDataCursor(keys, raw[seekStart:seekStart+len(identity)], MySQLDataCursor{})
+			if e == nil {
+				ref = &MySQLRowRef{Database: database, Table: table, Columns: cursor.Columns, Values: cursor.Values}
+				snapshot = mysqlSnapshotFromRaw(*ref, columns, raw[seekStart+len(identity):seekStart+len(identity)+len(columns)])
+			}
+			seekStart += len(identity) + len(columns)
+		}
+		page.RowRefs = append(page.RowRefs, ref)
+		page.RowSnapshots = append(page.RowSnapshots, snapshot)
 		if seek {
 			scope := MySQLDataCursor{Database: database, Table: table, FilterColumn: o.FilterColumn,
 				FilterMode: o.FilterMode, FilterValue: o.FilterValue, SortColumn: o.SortColumn, SortDescending: o.SortDescending, RuleSignature: signature}
-			next, err := mysqlNextDataCursor(orderKeys, raw[len(columns):], scope)
+			next, err := mysqlNextDataCursor(orderKeys, raw[seekStart:], scope)
 			if err == nil {
 				page.NextCursor = next
-				ref := &MySQLRowRef{Database: database, Table: table, Columns: append([]string(nil), identityNames...)}
-				for _, keyName := range identityNames {
-					for j, k := range orderKeys {
-						if k.name == keyName {
-							ref.Values = append(ref.Values, append([]byte(nil), next.Values[j]...))
-							break
-						}
-					}
-				}
-				if len(ref.Values) == len(ref.Columns) {
-					page.RowRefs = append(page.RowRefs, ref)
-				} else {
-					page.RowRefs = append(page.RowRefs, nil)
-				}
 
 			} else {
 				page.KeysetAvailable = false
