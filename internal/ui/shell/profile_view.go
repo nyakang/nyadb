@@ -9,6 +9,7 @@ import (
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/datainspector"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
+	"github.com/nyakang/nyadb/internal/ui/programviewer"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -29,7 +30,7 @@ func (s *State) selectProfileByName(name string) {
 			t := s.currentTab()
 			if (t.kind == tabStructure && t.design.ProfileID() != p.ID) ||
 				(t.kind == tabMySQLData && t.dataProfileID != p.ID) ||
-				(t.kind == tabProgram && t.programProfileID != p.ID) ||
+				(t.kind == tabProgram && t.program.ProfileID() != p.ID) ||
 				(t.kind == tabSQL && t.query.ProfileID() != p.ID) {
 				s.activeTab = 0
 			}
@@ -127,7 +128,7 @@ func (s *State) profileInspector(c *ui.Context) {
 						if obj.Name == n.Object && obj.Kind == n.Category {
 							datainspector.Property(c, locales.Text("引擎"), obj.Engine)
 							datainspector.Property(c, locales.Text("注释"), obj.Comment)
-							if isMySQLProgram(obj.Kind) {
+							if programviewer.Supports(obj.Kind) {
 								for _, field := range []struct{ label, value string }{
 									{"定义者", obj.Definer}, {"参数", obj.Parameters},
 									{"返回类型", obj.ReturnType}, {"SQL SECURITY", obj.SQLSecurity},
@@ -243,7 +244,7 @@ func (s *State) navigationShortcut(services ui.Services, n navigation.Node, shor
 			s.beginMySQLTableChange(n.ProfileID, n.Database, "", mysqlsvc.MySQLTableCreate)
 		}
 	case ui.KeyD:
-		if n.Kind == "object" && !isMySQLProgram(n.Category) {
+		if n.Kind == "object" && !programviewer.Supports(n.Category) {
 			s.openMySQLStructure(services, n.Database, n.Object)
 		}
 	case ui.KeyF5:

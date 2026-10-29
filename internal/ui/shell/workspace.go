@@ -78,7 +78,7 @@ func (s *State) workspace(c *ui.Context) {
 		case tabMySQLData:
 			s.mysqlDataWorkspace(c, tab)
 		case tabProgram:
-			s.mysqlProgramWorkspace(c, tab)
+			tab.program.View(c)
 		case tabConnections:
 			s.connectionManagementWorkspace(c)
 		default:

@@ -13,6 +13,7 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/connectioneditor"
 	"github.com/nyakang/nyadb/internal/ui/datainspector"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
+	"github.com/nyakang/nyadb/internal/ui/programviewer"
 	"github.com/nyakang/nyadb/internal/ui/sessionbrowser"
 	"github.com/nyakang/nyadb/internal/ui/sqlworkspace"
 	"github.com/nyakang/nyadb/internal/ui/structureviewer"
@@ -43,9 +44,7 @@ type tab struct {
 	kind  tabKind
 	query *sqlworkspace.Document
 
-	programProfileID int64
-	programDatabase  string
-	program          mysqlsvc.MySQLDBObject
+	program *programviewer.Document
 
 	design *structureviewer.Document
 
@@ -295,6 +294,8 @@ func (s *State) closeTab(index int) {
 		s.disposeMySQLDataTab(s.tabs[index])
 	} else if s.tabs[index].kind == tabSQL {
 		s.sqlWorkspace.Close(s.tabs[index].query)
+	} else if s.tabs[index].kind == tabProgram {
+		s.tabs[index].program.Close()
 	}
 	name := s.tabs[index].title
 	s.tabs = append(s.tabs[:index], s.tabs[index+1:]...)
@@ -333,6 +334,8 @@ func (s *State) closeOtherTabs(index int) {
 			s.disposeMySQLDataTab(t)
 		} else if i != index && t.kind == tabSQL {
 			s.sqlWorkspace.Close(t.query)
+		} else if i != index && t.kind == tabProgram {
+			t.program.Close()
 		}
 	}
 	if index == 0 {

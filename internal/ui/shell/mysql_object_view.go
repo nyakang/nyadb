@@ -6,6 +6,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
+	"github.com/nyakang/nyadb/internal/ui/programviewer"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -52,7 +53,7 @@ func mysqlObjectCellText(obj mysqlsvc.MySQLDBObject, col int) string {
 }
 
 func mysqlObjectActionLabels(kind string) (open, design string) {
-	if isMySQLProgram(kind) {
+	if programviewer.Supports(kind) {
 		return "查看定义（只读）", "查看结构（不适用）"
 	}
 	if kind == "视图" {
@@ -149,7 +150,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		if previousRow != s.sessions.Current().Row || table.Changed() || (table.Focused() && navigation.Parse(s.navigation.Key).Kind != "object") {
 			s.selectObjectInNavigator(db, items[s.sessions.Current().Row].Name, items[s.sessions.Current().Row].Kind)
 		}
-		if table.Shortcut(ui.Ctrl, ui.KeyD) && !isMySQLProgram(items[s.sessions.Current().Row].Kind) {
+		if table.Shortcut(ui.Ctrl, ui.KeyD) && !programviewer.Supports(items[s.sessions.Current().Row].Kind) {
 			s.openMySQLStructure(c.Services(), db, items[s.sessions.Current().Row].Name)
 		}
 		if items[s.sessions.Current().Row].Kind == "表" {
@@ -178,7 +179,7 @@ func (s *State) mysqlDatabaseWorkspace(c *ui.Context) {
 	database := s.sessions.Current().Database
 	items := s.sessions.SelectedObjects()
 	canOpen := connected && database != "" && s.sessions.Current().Row >= 0 && s.sessions.Current().Row < len(items)
-	canProgram := canOpen && isMySQLProgram(items[s.sessions.Current().Row].Kind)
+	canProgram := canOpen && programviewer.Supports(items[s.sessions.Current().Row].Kind)
 	canOpen = canOpen && !canProgram
 	ui.Column(c).Fill().Children(func() {
 		ui.Row(c).Height(theme.RowHeight(c, 30)).Gap(3).Padding(1, 4).AlignItems(ui.Center).Background(palette.Header).Children(func() {
@@ -327,4 +328,51 @@ func (s *State) loadMySQLObjects(services ui.Services, database string, force bo
 		s.navigation.Tree.Open.Add(navigation.DatabaseNode(s.sessions.Current().ProfileID, database).Key())
 	}
 	s.sessions.LoadObjects(database, force, services.Invalidate)
+}
+
+func (s *State) openMySQLObject(services ui.Services, database, name, kind string) {
+	if programviewer.Supports(kind) {
+		s.openMySQLProgram(database, name, kind)
+		return
+	}
+	s.openMySQLData(services, database, name)
+}
+
+// Programs expose the server's read-only definition and metadata. Do not
+// execute a stored routine on double-click; such calls could mutate data.
+func (s *State) openMySQLProgram(database, name, kind string) {
+	id := s.sessions.Current().ProfileID
+	if id == 0 || s.sessions.StatusFor(id) != "已连接" {
+		s.status = "请先连接 MySQL"
+		return
+	}
+	var item *mysqlsvc.MySQLDBObject
+	for i := range s.sessions.Current().Cache[database] {
+		obj := &s.sessions.Current().Cache[database][i]
+		if obj.Name == name && obj.Kind == kind {
+			item = obj
+			break
+		}
+	}
+	if item == nil {
+		s.status = "对象元数据不可用，请先刷新：" + name
+		return
+	}
+	for index, t := range s.tabs {
+		if t.kind == tabProgram && t.program.ProfileID() == id &&
+			t.program.Database() == database && t.program.Name() == name && t.program.Kind() == kind {
+			t.program.Update(*item)
+			s.activeTab = index
+			return
+		}
+	}
+	doc := programviewer.New(id, database, *item)
+	if doc == nil {
+		return
+	}
+	s.nextTabID++
+	s.tabs = append(s.tabs, &tab{id: s.nextTabID, kind: tabProgram, title: name,
+		program: doc})
+	s.activeTab = len(s.tabs) - 1
+	s.status = "已打开" + kind + "定义：" + database + "." + name
 }

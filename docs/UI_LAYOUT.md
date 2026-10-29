@@ -113,6 +113,17 @@ server-side pagination benchmark.
   and rejecting obsolete pages, selections or session generations. `Close` and
   `CloseAll` cancel all readers. `Property`, `FieldAttributes`, `ColumnTypeGlyph`
   and `CopyPreview` are shared with the existing workbench views and copy actions.
+- `internal/ui/programviewer/`: per-tab qualified function, procedure and event
+  documents with copied metadata and read-only definition presentation. It imports
+  only MySQL object models, MyGo and theme; it does not request metadata, execute SQL
+  or depend on shell, navigation, sessionbrowser, storage or database drivers.
+  `New` creates a document from cached metadata, and `Update` supplies fresh metadata
+  when the same qualified object is reopened. `View` preserves property order,
+  omitted empty attributes, existing UI text and the 500-line display bound while
+  retaining the complete definition. `Close` releases the snapshot and prevents
+  further update/rendering. Existing object-view code in shell hosts opening and
+  qualified tab reuse; navigation, context actions, profile activation, schema
+  pruning and disposal remain workbench responsibilities.
 - `internal/ui/shell/profile_view.go`: navigator callbacks, document shortcuts
   and contextual profile inspector. The existing profile navigation files
   coordinate session/browser requests and build menus. `internal/ui/shell/mysql_session_state.go` keeps unsaved-document guards,
@@ -147,7 +158,10 @@ fallback/redaction and session-generation tests live beside `sessionbrowser`.
 SQL statement, execution, cancellation, preconnect and recovery tests live beside
 `sqlworkspace`; structure presentation, read-only page and metadata lifecycle tests
 live beside `structureviewer`; table/field presentation, localization, exact counts
-and bounded-read lifecycle tests live beside `datainspector`. Mixed tests keep
+and bounded-read lifecycle tests live beside `datainspector`. Program snapshot,
+identity, read-only presentation, empty-definition and display-bound tests live
+beside `programviewer`; shell retains program entry-point, qualified-tab, profile
+activation, schema-pruning and disposal checks. Mixed tests keep
 data rules, column-menu and workspace assertions in shell. Shell retains
 qualified-tab, navigator/inspector, schema-pruning, table-action and real-session
 integration checks. Shared bitmap
@@ -188,6 +202,16 @@ count and field cancellation, same-cell page replacement, copied row keys, parke
 profile results, generation rejection, narrow panels in both locales and real
 workbench tab/terminal cleanup. Data paging/editing/filtering/layout and program
 views remain available for subsequent extraction stages.
+
+After the program viewer extraction, shell contains 98 Go files (35 implementation
+and 63 test files), down from 99. Its three program fields per tab are replaced by
+one module document. `programviewer` has two implementation and two test files;
+the existing mixed program test remains in shell with additional workbench checks.
+Opening a definition through the table, toolbar or navigator continues to avoid
+SQL execution and data paging. Same-named programs remain separate by profile,
+database and kind, and closing/pruning one document preserves sibling program
+metadata and SQL text. Data paging, filtering, editing, layout and export remain
+available for subsequent extraction stages.
 
 ## Limitations / next steps
 

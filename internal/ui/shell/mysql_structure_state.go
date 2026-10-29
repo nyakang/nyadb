@@ -51,11 +51,13 @@ func (s *State) clearMySQLTabsFor(profileID int64) {
 	for _, t := range s.tabs {
 		if (t.kind == tabStructure && (profileID == 0 || t.design.ProfileID() == profileID)) ||
 			(t.kind == tabMySQLData && (profileID == 0 || t.dataProfileID == profileID)) ||
-			(t.kind == tabProgram && (profileID == 0 || t.programProfileID == profileID)) {
+			(t.kind == tabProgram && (profileID == 0 || t.program.ProfileID() == profileID)) {
 			if t.kind == tabStructure {
 				s.structureViewer.Close(t.design)
 			} else if t.kind == tabMySQLData {
 				s.disposeMySQLDataTab(t)
+			} else if t.kind == tabProgram {
+				t.program.Close()
 			}
 			continue
 		}
@@ -77,11 +79,13 @@ func (s *State) pruneMySQLStructureTabs(known map[string]bool) {
 	for _, t := range s.tabs {
 		if (t.kind == tabStructure && t.design.ProfileID() == s.sessions.Current().ProfileID && !known[t.design.Database()]) ||
 			(t.kind == tabMySQLData && t.dataProfileID == s.sessions.Current().ProfileID && !known[t.dataDatabase]) ||
-			(t.kind == tabProgram && t.programProfileID == s.sessions.Current().ProfileID && !known[t.programDatabase]) {
+			(t.kind == tabProgram && t.program.ProfileID() == s.sessions.Current().ProfileID && !known[t.program.Database()]) {
 			if t.kind == tabStructure {
 				s.structureViewer.Close(t.design)
 			} else if t.kind == tabMySQLData {
 				s.disposeMySQLDataTab(t)
+			} else if t.kind == tabProgram {
+				t.program.Close()
 			}
 			continue
 		}

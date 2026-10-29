@@ -7,6 +7,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/programviewer"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -76,7 +77,7 @@ func (s *State) mysqlObjectContextMenu(services ui.Services, m *ui.Menu, profile
 			}).Disabled(true)
 		}).Disabled(true)
 	}
-	if m.Item(locales.Text(design)).Shortcut(ui.Ctrl, ui.KeyD).Disabled(isMySQLProgram(kind)).Chosen() {
+	if m.Item(locales.Text(design)).Shortcut(ui.Ctrl, ui.KeyD).Disabled(programviewer.Supports(kind)).Chosen() {
 		s.openMySQLStructure(services, database, name)
 	}
 	if kind != "表" {

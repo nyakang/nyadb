@@ -105,6 +105,7 @@ internal/ui/sessionbrowser/   Session workspaces and metadata jobs
 internal/ui/sqlworkspace/     SQL documents and execution
 internal/ui/structureviewer/  Read-only table structure documents
 internal/ui/datainspector/    Table/field information and bounded field previews
+internal/ui/programviewer/    Read-only function, procedure, and event definitions
 internal/ui/theme/            Theme, UI icons, and shared bitmap caches
 resources/                    Application assets
 docs/                         Design and UI documentation
