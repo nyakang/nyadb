@@ -29,13 +29,13 @@ func TestOpenQueryAndExecuteMock(t *testing.T) {
 	if s.currentTab().kind != tabSQL || s.activeTab != 1 {
 		t.Fatalf("new query not activated: %+v", s.tabs)
 	}
-	if s.currentTab().editor.Buffer.Language().Name != "SQL" {
+	if s.currentTab().query.Editor.Buffer.Language().Name != "SQL" {
 		t.Fatal("SQL editor did not activate SQL syntax")
 	}
 	if err := tt.Click("运行模拟查询"); err != nil {
 		t.Fatal(err)
 	}
-	if s.demoRuns != 1 || !strings.Contains(s.status, "没有访问数据库") {
+	if s.sqlWorkspace.DemoRuns() != 1 || !strings.Contains(s.status, "没有访问数据库") {
 		t.Fatalf("unexpected query status: %s", s.status)
 	}
 	if err := tt.Click("关闭 SQL 1"); err != nil {

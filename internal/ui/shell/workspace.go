@@ -1,10 +1,8 @@
 package shell
 
 import (
-	"fmt"
-
 	"github.com/egoist/mygo/ui"
-	"github.com/egoist/mygo/ui/editor"
+	"github.com/nyakang/nyadb/internal/ui/sqlworkspace"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -70,7 +68,7 @@ func (s *State) workspace(c *ui.Context) {
 		})
 		switch tab := s.currentTab(); tab.kind {
 		case tabSQL:
-			s.queryWorkspace(c, tab)
+			s.sqlWorkspace.View(c, tab.query)
 		case tabSettings:
 			s.settingsWorkspace(c)
 		case tabData:
@@ -87,6 +85,17 @@ func (s *State) workspace(c *ui.Context) {
 			s.objectsWorkspace(c)
 		}
 	})
+}
+
+func (s *State) sqlWorkspaceDependencies() sqlworkspace.Dependencies {
+	return sqlworkspace.Dependencies{
+		Runtime:   func() sqlworkspace.Runtime { return sqlworkspace.MySQLRuntime(s.sessions.Manager) },
+		Connected: func(id int64) bool { return s.sessions.StatusFor(id) == "已连接" },
+		Active:    func(doc *sqlworkspace.Document) bool { return s.currentTab().query == doc },
+		Status:    func(message string) { s.status = message },
+		Recovered: func(id int64) { s.sessions.Activate(id); s.selectedProfileID = id },
+		Preview:   s.dataPreview,
+	}
 }
 
 func (s *State) objectActions(c *ui.Context) {
@@ -178,35 +187,6 @@ func (s *State) objectsWorkspace(c *ui.Context) {
 			}
 		}
 	})
-}
-
-func (s *State) queryWorkspace(c *ui.Context, tab *tab) {
-	if s.profileMode {
-		s.mysqlQueryWorkspace(c, tab)
-		return
-	}
-	palette := theme.Colors(c)
-
-	ui.SplitVerticalPercent(c, &s.editorPercent,
-		func() {
-			ui.Column(c).Fill().Children(func() {
-				ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).Gap(6).AlignItems(ui.Center).
-					Background(palette.Header).Children(func() {
-					ui.Toolbar(c, func() {
-						if ui.Button(c, locales.Text("运行模拟查询")).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
-							s.demoRuns++
-							s.status = fmt.Sprintf("模拟查询已运行 %d 次（没有访问数据库）", s.demoRuns)
-						}
-						ui.Button(c, locales.Text("取消")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(true)
-					}).Label(locales.Text("查询操作")).Grow(1).MinWidth(0).Padding(0).Gap(4)
-					ui.Text(c, "query.sql").TextColor(palette.Muted).FontSize(theme.Font(c, theme.SmallFontSize)).SingleLine()
-				})
-				tab.editor.Theme = theme.SQLThemeFor(c)
-				editor.View(c, tab.editor).Grow(1).FillWidth()
-			})
-		},
-		func() { s.dataPreview(c) },
-	).Grow(1)
 }
 
 func (s *State) dataPreview(c *ui.Context) {

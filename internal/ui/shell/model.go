@@ -13,6 +13,7 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/connectioneditor"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/sessionbrowser"
+	"github.com/nyakang/nyadb/internal/ui/sqlworkspace"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -35,27 +36,10 @@ const (
 )
 
 type tab struct {
-	id     uint64
-	title  string
-	kind   tabKind
-	editor *editor.State
-
-	sqlProfileID       int64
-	sqlLease           mysqlsvc.MySQLSQLTabToken
-	sqlDatabase        string
-	sqlRecoveryNeeded  bool
-	sqlRecoveryProfile int64
-	sqlRecoverySchema  string
-	sqlLoading         bool
-	sqlCancelRequested bool
-	sqlError           string
-	sqlResult          *mysqlsvc.MySQLSQLResult
-	sqlGrid            ui.ListState
-	sqlCancel          context.CancelFunc
-	sqlResults         <-chan mysqlSQLResult
-	sqlRequest         uint64
-	sqlPrepareCancel   context.CancelFunc
-	sqlPrepareResults  <-chan error
+	id    uint64
+	title string
+	kind  tabKind
+	query *sqlworkspace.Document
 
 	programProfileID int64
 	programDatabase  string
@@ -158,7 +142,6 @@ type State struct {
 	dataLayoutPreferences mysqlDataLayoutPreferences
 	sidebarPercent        float32
 	centerPercent         float32
-	editorPercent         float32
 	inspectorOn           bool
 	inspectorDetailsOpen  bool
 	inspectorObjectsOpen  bool
@@ -172,7 +155,6 @@ type State struct {
 	tabs                  []*tab
 	activeTab             int
 	nextTabID             uint64
-	demoRuns              int
 	status                string
 	lastAction            string
 
@@ -188,7 +170,6 @@ type State struct {
 	showConnectionWindow func()
 	hideConnectionWindow func()
 
-	mysqlSQLExecutor        mysqlSQLExecutor
 	mysqlTableDialog        bool
 	mysqlTableAction        mysqlsvc.MySQLTableAction
 	mysqlTableProfileID     int64
@@ -207,11 +188,9 @@ type State struct {
 	mysqlDataRowReader      mysqlDataRowReader
 	mysqlForceClose         bool
 
-	// A background preconnect requests the next native UI frame through this hook.
-	mysqlSQLPreconnectInvalidate func()
-
-	sessions   *sessionbrowser.State
-	navigation *navigation.State
+	sqlWorkspace *sqlworkspace.State
+	sessions     *sessionbrowser.State
+	navigation   *navigation.State
 
 	profileMode         bool
 	profileService      *connections.Service
@@ -238,7 +217,6 @@ func New() *State {
 		connectionCatalog:    connectioncatalog.New(),
 		sidebarPercent:       100 * (theme.SidebarWidth + theme.SplitterBorder) / 1279,
 		centerPercent:        100 * (1278 - theme.SidebarWidth - theme.SplitterBorder - theme.InspectorWidth) / (1278 - theme.SidebarWidth - theme.SplitterBorder),
-		editorPercent:        48,
 		inspectorOn:          true,
 		inspectorDetailsOpen: true,
 		inspectorObjectsOpen: true,
@@ -248,6 +226,7 @@ func New() *State {
 		nextTabID:            1,
 		tabs:                 []*tab{{id: 1, title: "对象", kind: tabObjects}},
 	}
+	s.sqlWorkspace = sqlworkspace.New(s.sqlWorkspaceDependencies())
 	s.sessions = sessionbrowser.New(s.sessionBrowserDependencies())
 	s.navigation = navigation.New(s.navigationDependencies())
 	s.connectionEditor = connectioneditor.New(connectioneditor.Dependencies{
@@ -283,25 +262,12 @@ func (s *State) openQuery() {
 			}
 		}
 	}
-	buf := editor.NewBuffer(initial)
-	buf.SetLanguage(editor.LanguageNamed("SQL"))
-	t := &tab{
-		id: s.nextTabID, title: fmt.Sprintf("SQL %d", s.nextTabID-1),
-		kind: tabSQL, editor: &editor.State{Buffer: buf, WrapGuides: []int{100}},
-		sqlProfileID: profileID, sqlDatabase: database,
-	}
+	t := &tab{id: s.nextTabID, title: fmt.Sprintf("SQL %d", s.nextTabID-1), kind: tabSQL}
+	t.query = s.sqlWorkspace.Open(t.id, initial, profileID, database, !s.profileMode)
 	s.tabs = append(s.tabs, t)
 	s.activeTab = len(s.tabs) - 1
 	s.status = "已打开 " + t.title
-	if profileID > 0 && s.sessions.Manager != nil && s.sessions.Manager.IsConnected(profileID) {
-		if lease, err := s.sessions.Manager.ReserveSQLTabToken(profileID, t.id); err != nil {
-			t.sqlError = "SQL 会话预留失败：" + err.Error()
-			s.status = t.sqlError
-		} else {
-			t.sqlLease = lease
-			s.startMySQLSQLPreconnect(t, lease)
-		}
-	}
+	s.sqlWorkspace.Prepare(t.query)
 	if !s.profileMode {
 		s.status += "（模拟工作区）"
 	}
@@ -348,7 +314,7 @@ func (s *State) closeTab(index int) {
 	} else if s.tabs[index].kind == tabMySQLData {
 		s.disposeMySQLDataTab(s.tabs[index])
 	} else if s.tabs[index].kind == tabSQL {
-		s.cancelMySQLSQL(s.tabs[index])
+		s.sqlWorkspace.Close(s.tabs[index].query)
 	}
 	name := s.tabs[index].title
 	s.tabs = append(s.tabs[:index], s.tabs[index+1:]...)
@@ -386,7 +352,7 @@ func (s *State) closeOtherTabs(index int) {
 		} else if i != index && t.kind == tabMySQLData {
 			s.disposeMySQLDataTab(t)
 		} else if i != index && t.kind == tabSQL {
-			s.cancelMySQLSQL(t)
+			s.sqlWorkspace.Close(t.query)
 		}
 	}
 	if index == 0 {

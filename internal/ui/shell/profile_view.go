@@ -29,7 +29,7 @@ func (s *State) selectProfileByName(name string) {
 			if (t.kind == tabStructure && t.structureProfileID != p.ID) ||
 				(t.kind == tabMySQLData && t.dataProfileID != p.ID) ||
 				(t.kind == tabProgram && t.programProfileID != p.ID) ||
-				(t.kind == tabSQL && t.sqlProfileID != p.ID) {
+				(t.kind == tabSQL && t.query.ProfileID() != p.ID) {
 				s.activeTab = 0
 			}
 		}
