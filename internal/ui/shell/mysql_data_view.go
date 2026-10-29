@@ -22,7 +22,6 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			}
 		}
 		s.mysqlDataRuleEditor(c, t, page)
-		s.mysqlDataEditStatus(c, t)
 		if t.dataLoading {
 			ui.Row(c).Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 6).Gap(6).AlignItems(ui.Center).Children(func() {
 				ui.Spinner(c).Width(16).Height(16)

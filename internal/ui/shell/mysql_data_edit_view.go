@@ -263,16 +263,25 @@ func (s *State) mysqlDataEditModals(c *ui.Context) {
 	}
 }
 func (s *State) mysqlDataEditStatus(c *ui.Context, t *tab) {
-	if t.dataEdit.Err != "" {
-		ui.Row(c).Padding(2, 6).Gap(6).FillWidth().Children(func() {
-			ui.Text(c, t.dataEdit.Err).FontSize(theme.Font(c, 12)).TextColor(theme.Colors(c).Error).SingleLine().Grow(1).MinWidth(0).Tooltip(t.dataEdit.Err)
-			if t.dataEdit.Uncertain != nil && ui.Button(c, locales.Text("核验提交结果")).Disabled(t.dataEdit.Busy).Clicked() {
-				s.verifyMySQLDataSave(c.Services(), t)
-			}
-		})
-	}
+	// Use the footer's existing fixed-height command row. Inserting a status
+	// row above the grid moves every cell while a read is pending or fails.
+	palette := theme.Colors(c)
 	if t.dataEdit.Busy {
-		ui.Row(c).Padding(2, 6).Gap(6).Children(func() { ui.Spinner(c).Size(14, 14); ui.Text(c, locales.Text("正在处理表数据…")) })
+		ui.Spinner(c).Size(14, 14)
+	}
+	message, color := "", palette.Muted
+	if t.dataEdit.Err != "" {
+		message, color = t.dataEdit.Err, palette.Error
+	} else if t.dataEdit.Busy {
+		message = locales.Text("正在处理表数据…")
+	} else if mysqlDataHasDraft(t) {
+		message, color = locales.Text("有待保存的数据更改"), palette.Warning
+	}
+	if message != "" {
+		ui.Text(c, message).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(color).SingleLine().Grow(1).MinWidth(0).Tooltip(message)
+	}
+	if t.dataEdit.Err != "" && t.dataEdit.Uncertain != nil && ui.Button(c, locales.Text("核验提交结果")).Height(theme.ControlHeight).Disabled(t.dataEdit.Busy).Clicked() {
+		s.verifyMySQLDataSave(c.Services(), t)
 	}
 }
 
