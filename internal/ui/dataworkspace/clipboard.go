@@ -1,4 +1,4 @@
-package shell
+package dataworkspace
 
 import (
 	"encoding/csv"
@@ -6,28 +6,29 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"slices"
-	"strings"
-
+	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/datainspector"
 	"github.com/nyakang/nyadb/locales"
+	"io"
+	"os"
+	"slices"
+	"strings"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // The selection is bounded by the loaded page. Hidden fields and the row
 // selector never reach the clipboard; reordered fields follow the grid.
-func mysqlDataSelectedPreview(t *tab) (names []string, rows [][]string, nulls [][]bool) {
-	if t == nil || t.dataPage == nil {
+func mysqlDataSelectedPreview(t *Document) (names []string, rows [][]string, nulls [][]bool) {
+	if t == nil || t.page == nil {
 		return
 	}
-	page := t.dataPage
+	page := t.page
 	sources := make(map[string]int, len(page.Columns))
 	for col, name := range page.Columns {
 		sources[name] = col
 	}
-	order := append([]string(nil), t.dataState.Columns.Order...)
+	order := append([]string(nil), t.grid.Columns.Order...)
 	for _, name := range page.Columns {
 		if !slices.Contains(order, name) {
 			order = append(order, name)
@@ -35,14 +36,14 @@ func mysqlDataSelectedPreview(t *tab) (names []string, rows [][]string, nulls []
 	}
 	visible := order[:0]
 	for _, name := range order {
-		if slices.Contains(page.Columns, name) && !t.dataHiddenColumns[name] && !slices.Contains(visible, name) {
+		if slices.Contains(page.Columns, name) && !t.hiddenColumns[name] && !slices.Contains(visible, name) {
 			visible = append(visible, name)
 		}
 	}
 	lo, hi := 0, len(visible)-1
-	if !t.dataState.Cells.All {
-		a := slices.Index(visible, t.dataState.Cells.Anchor)
-		b := slices.Index(visible, t.dataState.Cells.Cursor)
+	if !t.grid.Cells.All {
+		a := slices.Index(visible, t.grid.Cells.Anchor)
+		b := slices.Index(visible, t.grid.Cells.Cursor)
 		if b < 0 {
 			return
 		}
@@ -56,9 +57,9 @@ func mysqlDataSelectedPreview(t *tab) (names []string, rows [][]string, nulls []
 	}
 	names = append(names, visible[lo:hi+1]...)
 	for row, cells := range page.Rows {
-		selected := t.dataSelection.Has(row)
-		if t.dataSelection.Len() == 0 {
-			selected = row == t.dataSelectedRow
+		selected := t.selection.Has(row)
+		if t.selection.Len() == 0 {
+			selected = row == t.selectedRow
 		}
 		if !selected {
 			continue
@@ -77,13 +78,13 @@ func mysqlDataSelectedPreview(t *tab) (names []string, rows [][]string, nulls []
 	return
 }
 
-func mysqlDataHasSelectedPreview(t *tab) bool {
-	if t == nil || t.dataPage == nil || (!t.dataState.Cells.All &&
-		(t.dataState.Cells.Cursor == "" || t.dataHiddenColumns[t.dataState.Cells.Cursor])) {
+func mysqlDataHasSelectedPreview(t *Document) bool {
+	if t == nil || t.page == nil || (!t.grid.Cells.All &&
+		(t.grid.Cells.Cursor == "" || t.hiddenColumns[t.grid.Cells.Cursor])) {
 		return false
 	}
-	for row := range t.dataPage.Rows {
-		if t.dataSelection.Has(row) || (t.dataSelection.Len() == 0 && row == t.dataSelectedRow) {
+	for row := range t.page.Rows {
+		if t.selection.Has(row) || (t.selection.Len() == 0 && row == t.selectedRow) {
 			return true
 		}
 	}
@@ -137,7 +138,7 @@ func mysqlDataJSONPreview(names []string, rows [][]string, nulls [][]bool) strin
 	return string(pretty)
 }
 
-func (s *State) copyMySQLDataSelection(c *ui.Context, t *tab) {
+func (s *State) copyMySQLDataSelection(c *ui.Context, t *Document) {
 	names, rows, _ := mysqlDataSelectedPreview(t)
 	if len(rows) == 0 || len(names) == 0 {
 		return
@@ -147,10 +148,10 @@ func (s *State) copyMySQLDataSelection(c *ui.Context, t *tab) {
 		text = mysqlDataDelimitedPreview(names, rows, '\t', false, true)
 	}
 	c.WriteClipboard(text)
-	s.status = fmt.Sprintf(locales.Text("已复制 %d 行 × %d 列（当前页预览）"), len(rows), len(names))
+	s.setStatus(fmt.Sprintf(locales.Text("已复制 %d 行 × %d 列（当前页预览）"), len(rows), len(names)))
 }
 
-func (s *State) mysqlDataCopyAsMenu(c *ui.Context, t *tab, m *ui.Menu) {
+func (s *State) mysqlDataCopyAsMenu(c *ui.Context, t *Document, m *ui.Menu) {
 	names, rows, nulls := mysqlDataSelectedPreview(t)
 	empty := len(rows) == 0 || len(names) == 0
 	for _, item := range []struct {
@@ -199,18 +200,18 @@ func mysqlDataSQLLiteral(text string, null, binary bool) string {
 func mysqlDataSQLIdentifier(name string) string {
 	return "`" + strings.ReplaceAll(name, "`", "``") + "`"
 }
-func mysqlDataSQLSelection(t *tab, update bool) (string, error) {
+func mysqlDataSQLSelection(t *Document, update bool) (string, error) {
 	selectedFields, _, _ := mysqlDataSelectedPreview(t)
-	if len(selectedFields) == 0 || t.dataPage == nil {
+	if len(selectedFields) == 0 || t.page == nil {
 		return "", errors.New("no selection")
 	}
-	page := t.dataPage
+	page := t.page
 	// Unlike TSV/CSV/JSON cell selections, the observed SQL actions copy
 	// complete records. Hidden fields remain part of a record's SQL output.
 	names := page.Columns
 	var out []string
 	for row, cells := range page.Rows {
-		if !t.dataSelection.Has(row) && (t.dataSelection.Len() != 0 || row != t.dataSelectedRow) {
+		if !t.selection.Has(row) && (t.selection.Len() != 0 || row != t.selectedRow) {
 			continue
 		}
 		var fields, values, assignments []string
@@ -290,10 +291,10 @@ func mysqlDataSQLSelection(t *tab, update bool) (string, error) {
 // Clipboard text is literal text: the string NULL stays a string. SQL NULL
 // is only selected by the explicit NULL action. Validate the full rectangle
 // before staging any cells so a rejected paste never leaves a partial draft.
-func (s *State) pasteMySQLDataSelection(c *ui.Context, t *tab, row, source int) {
+func (s *State) pasteMySQLDataSelection(c *ui.Context, t *Document, row, source int) {
 	text := c.Services().ReadClipboard()
 	if len(text) > mysqlsvc.MySQLDataEditMaxBytes {
-		t.dataEdit.Err = locales.Text("粘贴数据超过编辑大小限制")
+		t.edit.Err = locales.Text("粘贴数据超过编辑大小限制")
 		return
 	}
 	r := csv.NewReader(strings.NewReader(text))
@@ -301,7 +302,7 @@ func (s *State) pasteMySQLDataSelection(c *ui.Context, t *tab, row, source int) 
 	r.FieldsPerRecord = -1
 	values, err := r.ReadAll()
 	if err != nil && err != io.EOF {
-		t.dataEdit.Err = locales.Text("粘贴数据格式无效")
+		t.edit.Err = locales.Text("粘贴数据格式无效")
 		return
 	}
 	if len(values) == 0 {
@@ -314,8 +315,8 @@ func (s *State) pasteMySQLDataSelection(c *ui.Context, t *tab, row, source int) 
 	}
 	for i, line := range values {
 		for j := range line {
-			if row+i >= len(t.dataPage.Rows) || start+j >= len(indices) || !mysqlDataCanEdit(t, row+i, indices[start+j]) || mysqlDataBinaryField(t.dataPage.ColumnMetadata[indices[start+j]]) || mysqlDataSpatialField(t.dataPage.ColumnMetadata[indices[start+j]]) {
-				t.dataEdit.Err = locales.Text("粘贴选区包含不可编辑字段或超出当前页")
+			if row+i >= len(t.page.Rows) || start+j >= len(indices) || !mysqlDataCanEdit(t, row+i, indices[start+j]) || mysqlDataBinaryField(t.page.ColumnMetadata[indices[start+j]]) || mysqlDataSpatialField(t.page.ColumnMetadata[indices[start+j]]) {
+				t.edit.Err = locales.Text("粘贴选区包含不可编辑字段或超出当前页")
 				return
 			}
 		}
@@ -327,19 +328,81 @@ func (s *State) pasteMySQLDataSelection(c *ui.Context, t *tab, row, source int) 
 	}
 }
 
-func mysqlDataPasteColumns(t *tab) []int {
-	order := append([]string(nil), t.dataState.Columns.Order...)
-	for _, name := range t.dataPage.Columns {
+func mysqlDataPasteColumns(t *Document) []int {
+	order := append([]string(nil), t.grid.Columns.Order...)
+	for _, name := range t.page.Columns {
 		if !slices.Contains(order, name) {
 			order = append(order, name)
 		}
 	}
 	var indices []int
 	for _, name := range order {
-		source := slices.Index(t.dataPage.Columns, name)
-		if source >= 0 && !t.dataHiddenColumns[name] && !slices.Contains(indices, source) {
+		source := slices.Index(t.page.Columns, name)
+		if source >= 0 && !t.hiddenColumns[name] && !slices.Contains(indices, source) {
 			indices = append(indices, source)
 		}
 	}
 	return indices
+}
+
+type mysqlDataExportResult struct {
+	path string
+	err  error
+}
+type mysqlDataExportState struct {
+	Busy    bool
+	Results <-chan mysqlDataExportResult
+}
+
+// Snapshot the bounded selection on the UI thread. The dialog and disk write
+// run in a worker, and only the UI thread consumes the resulting status.
+func (s *State) exportMySQLDataSelection(c *ui.Context, t *Document, format string) {
+	if t.export.Busy {
+		return
+	}
+	names, rows, nulls := mysqlDataSelectedPreview(t)
+	if len(names) == 0 || len(rows) == 0 {
+		return
+	}
+	var data string
+	switch format {
+	case "CSV":
+		data = mysqlDataDelimitedPreview(names, rows, ',', true, true)
+	case "TSV":
+		data = mysqlDataDelimitedPreview(names, rows, '\t', true, true)
+	case "JSON":
+		data = mysqlDataJSONPreview(names, rows, nulls)
+	default:
+		return
+	}
+	results := make(chan mysqlDataExportResult, 1)
+	t.export = mysqlDataExportState{Busy: true, Results: results}
+	services := c.Services()
+	title := locales.Text("保存选区数据预览")
+	message := locales.Text("仅保存当前页选区；截断字段包含预览标记")
+	extension := strings.ToLower(format)
+	defaultPath := t.table + "." + extension
+	go func() {
+		path, err := mygo.Dialog.Save(mygo.SaveDialogOptions{Title: title, Message: message, DefaultPath: defaultPath, Filters: []mygo.FileFilter{{Name: format, Extensions: []string{extension}}}})
+		if err == nil && path != "" {
+			err = os.WriteFile(path, []byte(data+"\n"), 0600)
+		}
+		results <- mysqlDataExportResult{path: path, err: err}
+		services.Invalidate()
+	}()
+}
+func (s *State) consumeMySQLDataExport(t *Document) {
+	if t.export.Results == nil {
+		return
+	}
+	select {
+	case result := <-t.export.Results:
+		t.export = mysqlDataExportState{}
+		if result.err != nil {
+			t.edit.Err = locales.Text("保存数据文件失败：") + result.err.Error()
+		} else if result.path != "" {
+			s.setStatus(fmt.Sprintf(locales.Text("已保存选区预览至 %s"), result.path))
+		}
+	default:
+	}
 }
