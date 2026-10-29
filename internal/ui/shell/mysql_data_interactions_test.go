@@ -61,7 +61,7 @@ func TestMySQLNativeDataFilterSortCopyAndWidths(t *testing.T) {
 	current.dataSelectedRow = 0
 	current.dataState.Cells = ui.ColumnRange{Cursor: "note", Anchor: "note"}
 	tt.Frame()
-	if err := tt.Click("复制所选单元格预览"); err != nil {
+	if err := tt.Click("复制所选数据预览"); err != nil {
 		t.Fatal(err)
 	}
 	if tt.Clipboard() != "hello" {

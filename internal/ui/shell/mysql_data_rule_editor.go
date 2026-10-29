@@ -40,7 +40,7 @@ func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *connections.MyS
 	palette := theme.Colors(c)
 
 	viewportWidth, viewportHeight := c.Size()
-	narrow := viewportWidth < 1100
+	narrow := viewportWidth < 1000
 	ui.Column(c).Background(palette.Header).Padding(1, 6).Gap(2).Children(func() {
 		ui.Row(c).Height(theme.RowHeight(c, theme.TabHeight)).Gap(5).AlignItems(ui.Center).Children(func() {
 			label := "筛选 & 排序 ▸"

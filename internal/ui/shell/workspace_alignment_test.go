@@ -78,7 +78,7 @@ func TestDataRowHeaderKeepsFieldMenusAndCellCopyMapped(t *testing.T) {
 	if err := tt.Click("safe-value"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.Click("复制所选单元格预览"); err != nil {
+	if err := tt.Click("复制所选数据预览"); err != nil {
 		t.Fatal(err)
 	}
 	if tt.Clipboard() != "safe-value" {

@@ -1,5 +1,14 @@
 # NyaDB Implementation Status
 
+## Table data interaction update — 2026-10-29
+
+The read-only MySQL grid now copies its actual cell/row selection in display
+order, offers TSV/CSV/JSON formats, and provides cell context filtering,
+sorting and grid-scoped copy/refresh shortcuts. Tests, Linux native GUI and
+two bounded Navicat behavior comparisons passed; whole-page pixel parity and
+data editing remain unfinished. See the [iteration report](MYSQL_DATA_SELECTION_CONTEXT_DIFFERENTIAL_2026-10-29.md)
+for the current Go/MyGo pins, evidence and validation boundaries.
+
 ## Current snapshot — 2026-10-25
 
 The current baseline is **Go 1.27.1+ and MyGo `v0.6.3-nyadb.2`**. `go.mod`

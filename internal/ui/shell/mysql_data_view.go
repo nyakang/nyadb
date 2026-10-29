@@ -49,6 +49,7 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 			t.dataState.Selected = &t.dataSelectedRow
 			t.dataState.Selection = &t.dataSelection
 			t.dataState.CellSelect = true
+			t.dataState.DragSelect = true
 			t.dataState.TableStyle = &ui.TableStyle{
 				AlternateRowColor: palette.GridAlternate,
 				GridColor:         palette.Border, RowLines: true, ColumnLines: true,
@@ -61,18 +62,16 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 				}
 			}
 			t.dataState.CellMenu = func(m *ui.Menu, row, col int) {
-				col--
-				if row >= 0 && row < len(page.Rows) && col >= 0 && col < len(visibleIndices) {
-					source := visibleIndices[col]
-					if source < len(page.Rows[row]) && m.Item(locales.Text("复制单元格预览")).Chosen() {
-						c.WriteClipboard(mysqlDataCopyPreview(page.Rows[row][source]))
-					}
+				source := -1
+				if col > 0 && col <= len(visibleIndices) {
+					source = visibleIndices[col-1]
 				}
+				s.mysqlDataCellMenu(c, t, m, row, source)
 			}
 			if len(page.Rows) == 0 {
 				emptyTableView(c, &t.dataState, columns, "")
 			} else {
-				theme.Table(c, &t.dataState, columns, len(page.Rows), func(row, col int) {
+				grid := theme.Table(c, &t.dataState, columns, len(page.Rows), func(row, col int) {
 					tableCol := col
 					if col == 0 {
 						ui.Text(c, mysqlDataRowHeaderText(t, row)).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(theme.CellText(c, &t.dataState, row, tableCol, palette.Muted))
@@ -98,6 +97,12 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 						text.Tooltip(locales.Text("空字符串"))
 					}
 				}).Grow(1)
+				if grid.Shortcut(ui.Ctrl, ui.KeyC) {
+					s.copyMySQLDataSelection(c, t)
+				}
+				if grid.Shortcut(0, ui.KeyF5) && !t.dataLoading {
+					s.resetAndReloadMySQLData(c.Services(), t)
+				}
 			}
 			s.syncMySQLDataSort(c.Services(), t)
 		}

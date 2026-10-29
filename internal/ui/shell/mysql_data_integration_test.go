@@ -128,7 +128,7 @@ func TestMySQLRealDataNativeViewer(t *testing.T) {
 	tab.dataSelectedRow = 0
 	tab.dataState.Cells = ui.ColumnRange{Cursor: "parent_code", Anchor: "parent_code"}
 	tt.Frame()
-	if err := tt.Click("复制所选单元格预览"); err != nil || tt.Clipboard() != "P2" {
+	if err := tt.Click("复制所选数据预览"); err != nil || tt.Clipboard() != "P2" {
 		t.Fatalf("real selected value not copied: %v %q", err, tt.Clipboard())
 	}
 	if err := tt.Click("清除筛选"); err != nil {

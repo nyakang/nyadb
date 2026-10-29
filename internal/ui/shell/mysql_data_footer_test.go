@@ -136,7 +136,7 @@ func TestMySQLGridEmptyAndTruncatedPreviewsKeepTheirValues(t *testing.T) {
 	if err := tt.Click("short preview"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.Click("复制所选单元格预览"); err != nil {
+	if err := tt.Click("复制所选数据预览"); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(tt.Clipboard(), "预览已截断") {

@@ -4593,3 +4593,203 @@ func TableCountRows() string { return In(i18n.Locale()).TableCountRows() }
 func (msgs Messages) TableCountRows() string {
 	return Catalog.Format(msgs.locale, "tableCountRows", nil)
 }
+
+// MysqlCopySelectionPreview says "复制所选数据预览"
+// in the language the app shows.
+func MysqlCopySelectionPreview() string { return In(i18n.Locale()).MysqlCopySelectionPreview() }
+
+// MysqlCopySelectionPreview says "复制所选数据预览"
+// in the language of msgs.
+func (msgs Messages) MysqlCopySelectionPreview() string {
+	return Catalog.Format(msgs.locale, "mysqlCopySelectionPreview", nil)
+}
+
+// MysqlCopyAs says "复制为"
+// in the language the app shows.
+func MysqlCopyAs() string { return In(i18n.Locale()).MysqlCopyAs() }
+
+// MysqlCopyAs says "复制为"
+// in the language of msgs.
+func (msgs Messages) MysqlCopyAs() string {
+	return Catalog.Format(msgs.locale, "mysqlCopyAs", nil)
+}
+
+// MysqlCopyTSVData says "制表符分隔值（数据）"
+// in the language the app shows.
+func MysqlCopyTSVData() string { return In(i18n.Locale()).MysqlCopyTSVData() }
+
+// MysqlCopyTSVData says "制表符分隔值（数据）"
+// in the language of msgs.
+func (msgs Messages) MysqlCopyTSVData() string {
+	return Catalog.Format(msgs.locale, "mysqlCopyTSVData", nil)
+}
+
+// MysqlCopyTSVNames says "制表符分隔值（字段名称）"
+// in the language the app shows.
+func MysqlCopyTSVNames() string { return In(i18n.Locale()).MysqlCopyTSVNames() }
+
+// MysqlCopyTSVNames says "制表符分隔值（字段名称）"
+// in the language of msgs.
+func (msgs Messages) MysqlCopyTSVNames() string {
+	return Catalog.Format(msgs.locale, "mysqlCopyTSVNames", nil)
+}
+
+// MysqlCopyTSVAll says "制表符分隔值（字段名称和数据）"
+// in the language the app shows.
+func MysqlCopyTSVAll() string { return In(i18n.Locale()).MysqlCopyTSVAll() }
+
+// MysqlCopyTSVAll says "制表符分隔值（字段名称和数据）"
+// in the language of msgs.
+func (msgs Messages) MysqlCopyTSVAll() string {
+	return Catalog.Format(msgs.locale, "mysqlCopyTSVAll", nil)
+}
+
+// MysqlCopyCSVData says "逗号分隔值（数据）"
+// in the language the app shows.
+func MysqlCopyCSVData() string { return In(i18n.Locale()).MysqlCopyCSVData() }
+
+// MysqlCopyCSVData says "逗号分隔值（数据）"
+// in the language of msgs.
+func (msgs Messages) MysqlCopyCSVData() string {
+	return Catalog.Format(msgs.locale, "mysqlCopyCSVData", nil)
+}
+
+// MysqlCopyCSVNames says "逗号分隔值（字段名称）"
+// in the language the app shows.
+func MysqlCopyCSVNames() string { return In(i18n.Locale()).MysqlCopyCSVNames() }
+
+// MysqlCopyCSVNames says "逗号分隔值（字段名称）"
+// in the language of msgs.
+func (msgs Messages) MysqlCopyCSVNames() string {
+	return Catalog.Format(msgs.locale, "mysqlCopyCSVNames", nil)
+}
+
+// MysqlCopyCSVAll says "逗号分隔值（字段名称和数据）"
+// in the language the app shows.
+func MysqlCopyCSVAll() string { return In(i18n.Locale()).MysqlCopyCSVAll() }
+
+// MysqlCopyCSVAll says "逗号分隔值（字段名称和数据）"
+// in the language of msgs.
+func (msgs Messages) MysqlCopyCSVAll() string {
+	return Catalog.Format(msgs.locale, "mysqlCopyCSVAll", nil)
+}
+
+// MysqlCopiedSelectionPreview says "已复制 %d 行 × %d 列（当前页预览）"
+// in the language the app shows.
+func MysqlCopiedSelectionPreview() string { return In(i18n.Locale()).MysqlCopiedSelectionPreview() }
+
+// MysqlCopiedSelectionPreview says "已复制 %d 行 × %d 列（当前页预览）"
+// in the language of msgs.
+func (msgs Messages) MysqlCopiedSelectionPreview() string {
+	return Catalog.Format(msgs.locale, "mysqlCopiedSelectionPreview", nil)
+}
+
+// MysqlCopyTruncationNotice says "[预览已截断；不是完整字段内容]"
+// in the language the app shows.
+func MysqlCopyTruncationNotice() string { return In(i18n.Locale()).MysqlCopyTruncationNotice() }
+
+// MysqlCopyTruncationNotice says "[预览已截断；不是完整字段内容]"
+// in the language of msgs.
+func (msgs Messages) MysqlCopyTruncationNotice() string {
+	return Catalog.Format(msgs.locale, "mysqlCopyTruncationNotice", nil)
+}
+
+// MysqlToggleDataRules says "显示/隐藏筛选 & 排序"
+// in the language the app shows.
+func MysqlToggleDataRules() string { return In(i18n.Locale()).MysqlToggleDataRules() }
+
+// MysqlToggleDataRules says "显示/隐藏筛选 & 排序"
+// in the language of msgs.
+func (msgs Messages) MysqlToggleDataRules() string {
+	return Catalog.Format(msgs.locale, "mysqlToggleDataRules", nil)
+}
+
+// MysqlCellEqual says "字段 = 值"
+// in the language the app shows.
+func MysqlCellEqual() string { return In(i18n.Locale()).MysqlCellEqual() }
+
+// MysqlCellEqual says "字段 = 值"
+// in the language of msgs.
+func (msgs Messages) MysqlCellEqual() string {
+	return Catalog.Format(msgs.locale, "mysqlCellEqual", nil)
+}
+
+// MysqlCellNotEqual says "字段 != 值"
+// in the language the app shows.
+func MysqlCellNotEqual() string { return In(i18n.Locale()).MysqlCellNotEqual() }
+
+// MysqlCellNotEqual says "字段 != 值"
+// in the language of msgs.
+func (msgs Messages) MysqlCellNotEqual() string {
+	return Catalog.Format(msgs.locale, "mysqlCellNotEqual", nil)
+}
+
+// MysqlCellContains says "字段包含值"
+// in the language the app shows.
+func MysqlCellContains() string { return In(i18n.Locale()).MysqlCellContains() }
+
+// MysqlCellContains says "字段包含值"
+// in the language of msgs.
+func (msgs Messages) MysqlCellContains() string {
+	return Catalog.Format(msgs.locale, "mysqlCellContains", nil)
+}
+
+// MysqlCustomDataFilter says "自定义筛选"
+// in the language the app shows.
+func MysqlCustomDataFilter() string { return In(i18n.Locale()).MysqlCustomDataFilter() }
+
+// MysqlCustomDataFilter says "自定义筛选"
+// in the language of msgs.
+func (msgs Messages) MysqlCustomDataFilter() string {
+	return Catalog.Format(msgs.locale, "mysqlCustomDataFilter", nil)
+}
+
+// MysqlRemoveDataFilters says "移除所有筛选"
+// in the language the app shows.
+func MysqlRemoveDataFilters() string { return In(i18n.Locale()).MysqlRemoveDataFilters() }
+
+// MysqlRemoveDataFilters says "移除所有筛选"
+// in the language of msgs.
+func (msgs Messages) MysqlRemoveDataFilters() string {
+	return Catalog.Format(msgs.locale, "mysqlRemoveDataFilters", nil)
+}
+
+// MysqlSortAscending says "升序排序"
+// in the language the app shows.
+func MysqlSortAscending() string { return In(i18n.Locale()).MysqlSortAscending() }
+
+// MysqlSortAscending says "升序排序"
+// in the language of msgs.
+func (msgs Messages) MysqlSortAscending() string {
+	return Catalog.Format(msgs.locale, "mysqlSortAscending", nil)
+}
+
+// MysqlSortDescending says "降序排序"
+// in the language the app shows.
+func MysqlSortDescending() string { return In(i18n.Locale()).MysqlSortDescending() }
+
+// MysqlSortDescending says "降序排序"
+// in the language of msgs.
+func (msgs Messages) MysqlSortDescending() string {
+	return Catalog.Format(msgs.locale, "mysqlSortDescending", nil)
+}
+
+// MysqlRemoveDataSorts says "移除所有排序"
+// in the language the app shows.
+func MysqlRemoveDataSorts() string { return In(i18n.Locale()).MysqlRemoveDataSorts() }
+
+// MysqlRemoveDataSorts says "移除所有排序"
+// in the language of msgs.
+func (msgs Messages) MysqlRemoveDataSorts() string {
+	return Catalog.Format(msgs.locale, "mysqlRemoveDataSorts", nil)
+}
+
+// MysqlDataFilterLimit says "筛选条件已达到上限"
+// in the language the app shows.
+func MysqlDataFilterLimit() string { return In(i18n.Locale()).MysqlDataFilterLimit() }
+
+// MysqlDataFilterLimit says "筛选条件已达到上限"
+// in the language of msgs.
+func (msgs Messages) MysqlDataFilterLimit() string {
+	return Catalog.Format(msgs.locale, "mysqlDataFilterLimit", nil)
+}
