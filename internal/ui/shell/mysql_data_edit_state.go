@@ -277,7 +277,6 @@ func (s *State) openMySQLCellEditor(services ui.Services, t *tab, row, source in
 	t.dataSelection.Clear()
 	t.dataSelection.Add(row)
 	t.dataState.Cells = ui.ColumnRange{Anchor: field, Cursor: field}
-	t.dataState.ScrollIntoView(row)
 	services.Invalidate()
 }
 func (s *State) startMySQLDataEditRead(services ui.Services, t *tab, row, source int, dedicated bool, reader mysqlDataRowReader) {
