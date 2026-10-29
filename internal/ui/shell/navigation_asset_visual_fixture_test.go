@@ -12,6 +12,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -45,13 +46,13 @@ func TestNavigationAssetVisualFixture(t *testing.T) {
 		{Name: "orders", Kind: "表"}, {Name: "daily", Kind: "视图"},
 	}
 	s.selectedProfileID = active.ID
-	s.explorerName = databaseNode(active.ID, "dev_audit_platform").key()
-	s.explorerRow = -1
+	s.navigation.Key = navigation.DatabaseNode(active.ID, "dev_audit_platform").Key()
+	s.navigation.Row = -1
 	s.mysqlSelectedDatabase = "dev_audit_platform"
 	s.markMySQLDatabaseOpened(active.ID, "dev_audit_platform")
-	s.explorerTree.Open.Add(groupNode("开发库"))
-	s.explorerTree.Open.Add(profileNode(active.ID))
-	s.explorerTree.Open.Add(databaseNode(active.ID, "dev_audit_platform").key())
+	s.navigation.Tree.Open.Add(navigation.GroupKey("开发库"))
+	s.navigation.Tree.Open.Add(navigation.ConnectionKey(active.ID))
+	s.navigation.Tree.Open.Add(navigation.DatabaseNode(active.ID, "dev_audit_platform").Key())
 	previousMode := theme.CurrentMode()
 	defer theme.SetMode(previousMode)
 	for _, mode := range []theme.Mode{theme.ModeDark, theme.ModeLight} {
@@ -108,13 +109,13 @@ func verifyNavigationAssetFixture(t *testing.T, s *State, tt *ui.Tester) {
 	if pitch := database.Y - connection.Y; pitch < 20 || pitch > 22 {
 		t.Fatalf("database tree row pitch %.1f out of compact range", pitch)
 	}
-	if s.navigationChildren(databaseNode(s.selectedProfileID, "0_mysql_monitor").key()) != nil {
+	if s.navigation.Children(navigation.DatabaseNode(s.selectedProfileID, "0_mysql_monitor").Key()) != nil {
 		t.Fatal("unopened database shows an expansion indicator")
 	}
 	// Only assert its tree identity and hierarchy, not unverifiable
 	// cross-application pixel equivalence.
-	if !s.explorerTree.Open.Has(profileNode(s.selectedProfileID)) ||
-		!s.explorerTree.Open.Has(databaseNode(s.selectedProfileID, "dev_audit_platform").key()) {
+	if !s.navigation.Tree.Open.Has(navigation.ConnectionKey(s.selectedProfileID)) ||
+		!s.navigation.Tree.Open.Has(navigation.DatabaseNode(s.selectedProfileID, "dev_audit_platform").Key()) {
 		t.Fatal("fixture lost tree expansion")
 	}
 }

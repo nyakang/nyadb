@@ -16,7 +16,7 @@ func (s *State) openConnectionDialog() {
 	s.connectionStep = 0
 	s.connectionKind = ""
 	s.connectionCatalog.Reset()
-	s.connectionGroup = s.selectedGroup
+	s.connectionGroup = s.navigation.Group
 	if s.connectionGroup == "" {
 		if selected, ok := s.currentProfile(); ok {
 			s.connectionGroup = selected.GroupName

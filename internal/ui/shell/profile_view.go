@@ -1,160 +1,22 @@
 package shell
 
 import (
+	"iter"
+
 	"fmt"
-	"strings"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
 
-func (s *State) profileSidebar(c *ui.Context) {
-	palette := theme.Colors(c)
-
-	ui.Column(c).Fill().Background(palette.Sidebar).Children(func() {
-		header := ui.Row(c).Height(theme.RowHeight(c, 22)).Padding(0, 17).AlignItems(ui.Center).Background(palette.Sidebar).Gap(6)
-		header.Children(func() {
-			theme.Icon(c, "connection", 15, palette.Muted)
-			ui.Text(c, locales.Text("我的连接")).FontSize(theme.Font(c, assetFontSize))
-			ui.Box(c).Grow(1)
-			if header.Hovered() {
-				header.Background(palette.Selection)
-				header.TextColor(palette.SelectionText)
-				settings := ui.ButtonBase(c).Label(locales.Text("连接面板设置")).Tooltip(locales.Text("连接面板设置")).Padding(3, 4).Radius(2)
-				settings.Children(func() { theme.Icon(c, "settings", 15, palette.Muted) })
-				settings.Menu(func(m *ui.Menu) { s.sidebarSettingsMenu(m) })
-			}
-		})
-		header.ContextMenu(func(m *ui.Menu) { s.sidebarSettingsMenu(m) })
-		// New groups have no tree row yet; existing groups edit in place.
-		if s.groupEditing && s.groupEditOriginal == "" {
-			ui.Row(c).Padding(3, 6).Gap(4).AlignItems(ui.Center).Children(func() {
-				entry := ui.TextInput(c, &s.groupDraft).Label(locales.Text("连接组名称")).Placeholder(locales.Text("组名称")).Grow(1).AutoFocus()
-				if entry.Submitted() {
-					s.saveGroup()
-				}
-				if ui.Button(c, locales.Text("保存")).Label(locales.Text("保存组")).Clicked() {
-					s.saveGroup()
-				}
-				if ui.Button(c, "×").Label(locales.Text("取消编辑组")).Clicked() {
-					s.cancelGroupEdit()
-				}
-			})
-		}
-		if s.groupEditing && s.groupError != "" {
-			ui.Text(c, s.groupError).Padding(2, 8).TextColor(palette.Error).FontSize(theme.Font(c, 11))
-		}
-		navigator := ui.Column(c).Grow(1).MinHeight(0).Gap(0)
-		navigator.Children(func() {
-			roots := s.profileRoots()
-			if len(roots) == 0 {
-				msg := "暂无连接，点击工具栏“连接”新建连接"
-				if strings.TrimSpace(s.search) != "" || s.profileStarredOnly || s.profileEngine != "" {
-					msg = "没有匹配的连接或组"
-				}
-				ui.Text(c, locales.Text(msg)).Padding(8).TextColor(palette.Muted).FontSize(theme.Font(c, 11))
-				return
-			}
-			selectedKey := s.explorerName
-			if s.explorerRow < 0 {
-				s.explorerRow = s.outlineRowForSelection(roots)
-			} else if s.explorerRow < s.explorerTree.Rows() {
-				selectedKey = s.explorerTree.Item(s.explorerRow)
-			}
-			// MyGo selects a right-clicked row before building its popup only
-			// with Selection. Keep this navigator's choice singular, using the
-			// native cursor for both pointer and keyboard navigation.
-			s.explorerSelection.Clear()
-			if selectedKey != "" {
-				s.explorerSelection.Add(selectedKey)
-			}
-			s.explorerTree.List.Selection = &s.explorerSelection
-			s.explorerTree.List.Selected = &s.explorerRow
-			s.explorerTree.Indent = 14       // native disclosure steps: group -> connection -> database
-			s.explorerTree.LeadingInset = 14 // reserve the same left tree gutter at every depth
-			s.explorerTree.RowContextMenu = func(key string, menu *ui.Menu) {
-				s.navigationContextMenu(c.Services(), key, menu)
-			}
-			savedTheme := c.Theme()
-			denseTheme := *savedTheme
-			// The native triangle has its own 10-DIP hit target; no need to
-			// inflate spacing for its legibility.
-			denseTheme.Spacing = 1
-			// Collapsed nodes carry muted, secondary disclosure marks. Keep
-			// the branch click target, but avoid competing with the database
-			// cylinder or the selection highlight.
-			denseTheme.TextMuted = palette.Muted.Mix(palette.Sidebar, .42)
-			configureNavigatorDisclosure(&s.explorerTree)
-			c.SetTheme(&denseTheme)
-			tree := theme.NavigationOutline(c, &s.explorerTree, roots, s.profileChildren, func(key string) { s.navigationRow(c, key) }).Grow(1).Padding(0).Gap(0)
-			c.SetTheme(savedTheme)
-			if s.explorerMenuBuilt {
-				// Outline can finish applying an earlier pointer selection after
-				// the row's menu callback. Keep the menu's identity authoritative
-				// and resolve its row on the next pass instead of restoring that
-				// earlier click as the menu target.
-				s.explorerRow = -1
-				s.explorerMenuBuilt = false
-			} else if s.explorerRow >= 0 && s.explorerRow < s.explorerTree.Rows() {
-				key := s.explorerTree.Item(s.explorerRow)
-				if key != s.explorerName {
-					s.selectNavigationNode(c.Services(), key)
-				}
-			}
-			if tree.Submitted() {
-				s.submitNavigation(c)
-			}
-			if tree.Shortcut(0, ui.KeyF2) {
-				n := parseNavigationNode(s.explorerName)
-				if n.Kind == "object" && n.Category == "表" {
-					s.beginMySQLTableChange(n.ProfileID, n.Database, n.Object, mysqlsvc.MySQLTableRename)
-				} else if s.selectedGroup != "" {
-					s.beginGroupEdit(s.selectedGroup)
-				}
-			}
-			if tree.Shortcut(0, ui.KeyDelete) {
-				n := parseNavigationNode(s.explorerName)
-				if n.Kind == "object" && n.Category == "表" {
-					s.beginMySQLTableChange(n.ProfileID, n.Database, n.Object, mysqlsvc.MySQLTableDrop)
-				} else if n.Kind == "connection" && s.selectedProfileID != 0 {
-					s.confirmDeleteProfile()
-				}
-			}
-			if tree.Shortcut(ui.Ctrl, ui.KeyN) {
-				n := parseNavigationNode(s.explorerName)
-				if n.Kind == "database" || (n.Kind == "category" || n.Kind == "object") && n.Category == "表" {
-					s.beginMySQLTableChange(n.ProfileID, n.Database, "", mysqlsvc.MySQLTableCreate)
-				}
-			}
-			if tree.Shortcut(ui.Ctrl, ui.KeyD) {
-				n := parseNavigationNode(s.explorerName)
-				if n.Kind == "object" && !isMySQLProgram(n.Category) {
-					s.openMySQLStructure(c.Services(), n.Database, n.Object)
-				}
-			}
-			if tree.Shortcut(0, ui.KeyF5) {
-				n := parseNavigationNode(s.explorerName)
-				if n.Database != "" {
-					s.openMySQLDatabase(c.Services(), n.Database, true)
-				} else if s.mysqlSessionStateFor(n.ProfileID) == "已连接" {
-					s.refreshMySQLDatabases(c.Services())
-				} else {
-					s.loadProfiles()
-				}
-			}
-			s.syncNavigationExpansion(c.Services())
-		})
-		s.sidebarFooter(c)
-	})
-}
-
-// selectProfileByName ensures context commands target the right-clicked row,
-// even when it is not the previously selected connection.
+// selectProfileByName activates the target profile without opening a session,
+// including when a context menu targets a previously unselected row.
 func (s *State) selectProfileByName(name string) {
-	for _, p := range s.profileEntries {
+	for _, p := range s.navigation.Profiles() {
 		if p.Name != name {
 			continue
 		}
@@ -173,16 +35,16 @@ func (s *State) selectProfileByName(name string) {
 			}
 		}
 		s.activateMySQLProfile(p.ID)
-		if s.selectedProfileID != p.ID || s.selectedGroup != "" {
+		if s.selectedProfileID != p.ID || s.navigation.Group != "" {
 			s.selectedProfileID = p.ID
-			s.selectedGroup = ""
-			s.explorerName = profileNode(p.ID)
+			s.navigation.Group = ""
+			s.navigation.Key = navigation.ConnectionKey(p.ID)
 			s.status = "已选择连接：" + name + "（" + s.mysqlSessionStateFor(p.ID) + "）"
 		}
-		s.explorerName = profileNode(p.ID)
-		for i := 0; i < s.explorerTree.Rows(); i++ {
-			if s.explorerTree.Item(i) == profileNode(p.ID) {
-				s.explorerRow = i
+		s.navigation.Key = navigation.ConnectionKey(p.ID)
+		for i := 0; i < s.navigation.Tree.Rows(); i++ {
+			if s.navigation.Tree.Item(i) == navigation.ConnectionKey(p.ID) {
+				s.navigation.Row = i
 				break
 			}
 		}
@@ -216,12 +78,12 @@ func (s *State) profileInspector(c *ui.Context) {
 		s.inspectorHeader(c, "信息")
 		ui.Scroll(c).Grow(1).MinHeight(0).Children(func() {
 			ui.Column(c).Padding(28, 14).Gap(16).Children(func() {
-				if s.selectedGroup != "" {
+				if s.navigation.Group != "" {
 					ui.Row(c).AlignItems(ui.Center).Gap(16).Children(func() {
 						theme.Icon(c, "folder-filled", 50, palette.Gold)
 						ui.Column(c).Grow(1).MinWidth(0).Gap(5).Children(func() {
-							ui.Text(c, s.selectedGroup).FontSize(theme.Font(c, 14)).Bold()
-							ui.Text(c, fmt.Sprintf("%s (%d %s)", locales.Text("虚拟组"), s.groupCount(s.selectedGroup), locales.Text("对象"))).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+							ui.Text(c, s.navigation.Group).FontSize(theme.Font(c, 14)).Bold()
+							ui.Text(c, fmt.Sprintf("%s (%d %s)", locales.Text("虚拟组"), s.navigation.GroupCount(s.navigation.Group), locales.Text("对象"))).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 						})
 					})
 					return
@@ -239,7 +101,7 @@ func (s *State) profileInspector(c *ui.Context) {
 					return
 				}
 				if !ok {
-					if s.selectedProfileID == 0 && s.selectedGroup == "" {
+					if s.selectedProfileID == 0 && s.navigation.Group == "" {
 						ui.Row(c).AlignItems(ui.Center).Gap(12).Children(func() {
 							theme.Icon(c, "connection", 48, palette.Muted)
 							ui.Text(c, locales.Text("我的连接")).FontSize(theme.Font(c, 14)).Bold()
@@ -249,7 +111,7 @@ func (s *State) profileInspector(c *ui.Context) {
 					ui.Text(c, locales.Text("选择连接以查看档案信息")).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 					return
 				}
-				n := parseNavigationNode(s.explorerName)
+				n := navigation.Parse(s.navigation.Key)
 				if n.Database != "" && s.mysqlSessionStateFor(p.ID) == "已连接" {
 					name, icon := n.Database, "database"
 					if n.Kind == "object" {
@@ -286,7 +148,7 @@ func (s *State) profileInspector(c *ui.Context) {
 					return
 				}
 				ui.Row(c).AlignItems(ui.Center).Gap(16).Children(func() {
-					s.profileBrandIcon(c, p.Kind, 50)
+					navigation.BrandIcon(c, p.Kind, 50)
 					ui.Column(c).Grow(1).MinWidth(0).Gap(5).Children(func() {
 						ui.Text(c, p.Name).FontSize(theme.Font(c, 14)).Bold()
 						ui.Text(c, connectionKindName(p.Kind)).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
@@ -324,4 +186,74 @@ func (s *State) profileInspector(c *ui.Context) {
 			})
 		})
 	})
+}
+
+// navigationDependencies keeps session and document actions in the workbench;
+// the navigator owns presentation, filtering, tree selection and group drafts.
+func (s *State) navigationDependencies() navigation.Dependencies {
+	return navigation.Dependencies{
+		SessionStatus:  s.mysqlSessionStateFor,
+		Databases:      s.mysqlSessionDatabasesFor,
+		DatabaseOpened: s.mysqlDatabaseOpenedFor,
+		Objects: func(id int64, database string) (iter.Seq[navigation.Object], bool) {
+			objects, loaded := s.mysqlObjectCacheFor(id)[database]
+			// Project names lazily so large catalogs do not get copied on each frame.
+			return func(yield func(navigation.Object) bool) {
+				for _, object := range objects {
+					if !yield(navigation.Object{Name: object.Name, Kind: object.Kind}) {
+						return
+					}
+				}
+			}, loaded
+		},
+		LoadState: s.mysqlObjectLoadStateFor,
+		Select:    s.selectNavigationNode,
+		Submit:    s.submitNavigation,
+		OpenDatabase: func(services ui.Services, node navigation.Node, force bool) {
+			s.openMySQLDatabase(services, node.Database, force)
+		},
+		ContextMenu:    s.navigationContextMenu,
+		SettingsMenu:   s.sidebarSettingsMenu,
+		Shortcut:       s.navigationShortcut,
+		SyncExpansion:  s.syncNavigationExpansion,
+		CanNavigate:    func() bool { _, _, _, ok := s.activeTabObject(); return ok },
+		NavigateActive: s.navigateToActiveTab,
+		Collapsed:      s.navigationCollapsed,
+		GroupSelected:  s.selectGroup,
+		Changed:        s.loadProfiles,
+		Status:         func(message string) { s.status = message },
+	}
+}
+
+func (s *State) navigationShortcut(services ui.Services, n navigation.Node, shortcut navigation.Shortcut) {
+	switch shortcut.Key {
+	case ui.KeyF2:
+		if n.Kind == "object" && n.Category == "表" {
+			s.beginMySQLTableChange(n.ProfileID, n.Database, n.Object, mysqlsvc.MySQLTableRename)
+		} else if s.navigation.Group != "" {
+			s.navigation.BeginGroupEdit(s.navigation.Group)
+		}
+	case ui.KeyDelete:
+		if n.Kind == "object" && n.Category == "表" {
+			s.beginMySQLTableChange(n.ProfileID, n.Database, n.Object, mysqlsvc.MySQLTableDrop)
+		} else if n.Kind == "connection" && s.selectedProfileID != 0 {
+			s.confirmDeleteProfile()
+		}
+	case ui.KeyN:
+		if n.Kind == "database" || (n.Kind == "category" || n.Kind == "object") && n.Category == "表" {
+			s.beginMySQLTableChange(n.ProfileID, n.Database, "", mysqlsvc.MySQLTableCreate)
+		}
+	case ui.KeyD:
+		if n.Kind == "object" && !isMySQLProgram(n.Category) {
+			s.openMySQLStructure(services, n.Database, n.Object)
+		}
+	case ui.KeyF5:
+		if n.Database != "" {
+			s.openMySQLDatabase(services, n.Database, true)
+		} else if s.mysqlSessionStateFor(n.ProfileID) == "已连接" {
+			s.refreshMySQLDatabases(services)
+		} else {
+			s.loadProfiles()
+		}
+	}
 }

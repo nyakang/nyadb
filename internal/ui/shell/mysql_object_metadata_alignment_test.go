@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
 
 func objectInt64(n int64) *int64 { return &n }
@@ -38,19 +39,19 @@ func TestMySQLObjectFilterRetainsIdentityAndClearsHiddenSelection(t *testing.T) 
 	s.objectRow = 1
 	s.filterMySQLObjects("视图")
 	tt.Frame()
-	if s.objectRow != 0 || parseNavigationNode(s.explorerName).Object != "sales" {
-		t.Fatalf("view lost qualified identity on filter: row=%d node=%+v", s.objectRow, parseNavigationNode(s.explorerName))
+	if s.objectRow != 0 || navigation.Parse(s.navigation.Key).Object != "sales" {
+		t.Fatalf("view lost qualified identity on filter: row=%d node=%+v", s.objectRow, navigation.Parse(s.navigation.Key))
 	}
 	s.filterMySQLObjects("表")
 	tt.Frame()
-	node := parseNavigationNode(s.explorerName)
+	node := navigation.Parse(s.navigation.Key)
 	if s.objectRow != -1 || node.Kind != "category" || node.Category != "表" ||
 		node.Database != "app_db" || node.ProfileID != id {
 		t.Fatalf("hidden view remained selected: row=%d node=%+v", s.objectRow, node)
 	}
 	s.filterMySQLObjects("全部")
 	tt.Frame()
-	node = parseNavigationNode(s.explorerName)
+	node = navigation.Parse(s.navigation.Key)
 	if node.Kind != "database" || node.Database != "app_db" || s.objectRow != -1 {
 		t.Fatalf("all filter retained stale selection: %+v, row=%d", node, s.objectRow)
 	}

@@ -89,7 +89,7 @@ func (s *State) mysqlTableInfoInspector(c *ui.Context, t *tab) {
 					theme.Icon(c, icon, 26, palette.Blue)
 					ui.Text(c, t.dataTable).Bold().FontSize(theme.Font(c, 14)).SingleLine().Grow(1).MinWidth(0).Tooltip(t.dataTable)
 				})
-				for _, p := range s.profileEntries {
+				for _, p := range s.navigation.Profiles() {
 					if p.ID != t.dataProfileID {
 						continue
 					}

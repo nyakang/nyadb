@@ -6,6 +6,7 @@ import (
 
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
 
 // NewWithProfiles replaces the demo connection roots with persisted,
@@ -15,8 +16,9 @@ func NewWithProfiles(service *connections.Service) *State {
 	s.profileMode = true
 	s.profileService = service
 	s.connectionEditor.SetProfileService(service)
-	s.explorerName = "我的连接"
-	s.explorerRow = -1
+	s.navigation.SetProfileService(service)
+	s.navigation.Key = "我的连接"
+	s.navigation.Row = -1
 	s.status = "就绪 · 连接档案已加载（尚未连接数据库）"
 	s.mysqlSessionManager = mysqlsvc.NewMySQLSessionManager()
 	s.loadProfiles()
@@ -33,48 +35,18 @@ func (s *State) loadProfiles() {
 		s.status = "读取连接档案失败：" + err.Error()
 		return
 	}
-	selectedNode := parseNavigationNode(s.explorerName)
-	s.profileEntries = list
 	groups, groupErr := s.profileService.ListGroups(context.Background())
-	if groupErr == nil {
-		s.profileGroups = groups
-	} else {
+	if groupErr != nil {
+		groups = s.navigation.Groups()
 		s.status = "读取连接分组失败：" + groupErr.Error()
 	}
-	s.explorerRow = -1
-	s.explorerName = "我的连接"
-	groupStillExists := false
-	for _, group := range s.profileGroups {
-		if group.Name == s.selectedGroup {
-			groupStillExists = true
-			break
-		}
-	}
-	if !groupStillExists {
-		s.selectedGroup = ""
-	}
-	if s.selectedGroup != "" {
-		s.explorerName = groupNode(s.selectedGroup)
-	}
-	for _, p := range list {
-		if p.ID == s.selectedProfileID {
-			s.explorerName = profileNode(p.ID)
-			if selectedNode.ProfileID == p.ID && selectedNode.Database != "" && s.mysqlSessionStateFor(p.ID) == "已连接" {
-				s.explorerName = selectedNode.key()
-			}
-			if p.GroupName != "" {
-				s.explorerTree.Open.Add(groupNode(p.GroupName))
-			}
-			break
-		}
-	}
-	if s.explorerName == "我的连接" {
+	if !s.navigation.SetProfiles(list, groups, s.selectedProfileID) {
 		s.selectedProfileID = 0
 	}
 }
 
 func (s *State) currentProfile() (connections.Profile, bool) {
-	for _, p := range s.profileEntries {
+	for _, p := range s.navigation.Profiles() {
 		if p.ID == s.selectedProfileID {
 			return p, true
 		}
@@ -119,7 +91,7 @@ func (s *State) duplicateProfile() {
 }
 
 func (s *State) hasProfileName(name string) bool {
-	for _, p := range s.profileEntries {
+	for _, p := range s.navigation.Profiles() {
 		if p.Name == name {
 			return true
 		}
@@ -170,4 +142,27 @@ func (s *State) deleteProfile() {
 		}
 	}
 	s.status = "已删除连接档案：" + p.Name + "（未删除数据库文件）"
+}
+
+func (s *State) selectGroup(name string) {
+	s.navigation.Group = name
+	s.selectedProfileID = 0
+	s.navigation.Key = navigation.GroupKey(name)
+	s.navigation.Row = -1
+	s.objectRow = -1
+	s.status = "已选择虚拟组：" + name
+}
+
+func (s *State) moveProfileToGroup(id int64, name string) {
+	if s.profileService == nil {
+		return
+	}
+	if err := s.profileService.MoveToGroup(context.Background(), id, name); err != nil {
+		s.status = "移动连接失败：" + err.Error()
+		return
+	}
+	s.navigation.Group = ""
+	s.selectedProfileID = id
+	s.loadProfiles()
+	s.status = "已移动连接到指定位置"
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
 
 // mysqlSessionWorkspace parks one profile's workbench-only state. The service
@@ -137,9 +138,9 @@ func (s *State) activateMySQLForCurrentTab() {
 	}
 	s.activateMySQLProfile(id)
 	s.selectedProfileID = id
-	s.selectedGroup = ""
-	s.explorerName = profileNode(id)
-	s.explorerRow = -1
+	s.navigation.Group = ""
+	s.navigation.Key = navigation.ConnectionKey(id)
+	s.navigation.Row = -1
 }
 
 // Connected handshakes finish even when the user has selected another
@@ -167,7 +168,7 @@ func (s *State) consumeParkedMySQLSessionResults() {
 				continue
 			}
 			slot.databases = result.names
-			s.explorerTree.Open.Add(profileNode(id))
+			s.navigation.Tree.Open.Add(navigation.ConnectionKey(id))
 		default:
 		}
 	}
@@ -242,10 +243,10 @@ func (s *State) markMySQLDatabaseOpened(id int64, database string) {
 }
 
 func (s *State) clearMySQLDatabaseNavigation(id int64) {
-	for key := range s.explorerTree.Open.All() {
-		n := parseNavigationNode(key)
+	for key := range s.navigation.Tree.Open.All() {
+		n := navigation.Parse(key)
 		if n.ProfileID == id && n.Database != "" {
-			s.explorerTree.Open.Remove(key)
+			s.navigation.Tree.Open.Remove(key)
 		}
 	}
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
 
 func fakeStructure(database, table string) *mysqlsvc.MySQLTableStructure {
@@ -42,7 +43,7 @@ func waitMySQLStructure(t *testing.T, s *State, tt *ui.Tester) {
 	}
 	tt.Frame()
 	if s.currentTab().kind != tabStructure || s.currentTab().structureLoading {
-		t.Fatalf("structure request did not settle: kind=%v loading=%v database=%q row=%d node=%+v", s.currentTab().kind, s.currentTab().structureLoading, s.mysqlSelectedDatabase, s.objectRow, parseNavigationNode(s.explorerName))
+		t.Fatalf("structure request did not settle: kind=%v loading=%v database=%q row=%d node=%+v", s.currentTab().kind, s.currentTab().structureLoading, s.mysqlSelectedDatabase, s.objectRow, navigation.Parse(s.navigation.Key))
 	}
 }
 func structureTestBrowser(t *testing.T) (*State, *ui.Tester) {

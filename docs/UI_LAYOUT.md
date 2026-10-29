@@ -73,6 +73,18 @@ server-side pagination benchmark.
   initialize a session; `Close` invalidates pending checks and native picker
   versions and clears temporary secrets. `Saved`, `Back` and `Cancel` callbacks
   coordinate the editor with shell after secret cleanup.
+- `internal/ui/navigation/`: qualified tree identities, profile/group snapshots,
+  selection, disclosure, search/engine/star filters, prior-filter restoration,
+  inline group editing and branded navigation icons. Read-only session metadata
+  and explicit workbench actions are injected. The package imports no shell,
+  storage or MySQL runtime service. `SetProfiles` reconciles selection after
+  refresh and rename; `SuspendFilter`/`RestoreFilter` support active-tab reveals.
+- `internal/ui/shell/profile_view.go`: navigator callbacks, document shortcuts
+  and contextual profile inspector. Session activation, metadata jobs and object
+  actions remain in shell; the existing profile navigation files coordinate
+  those actions and build menus. Database opened state belongs to each session,
+  independently of disclosure: single click selects, while double click, Enter
+  or an explicit action opens and loads it. Failed reads require explicit retry.
 - `internal/ui/shell/model.go`: workbench state, tabs, mock objects and
   synthetic result cell generator.
 - `internal/ui/shell/chrome.go`: top chrome, command toolbar and statusbar.
@@ -85,9 +97,19 @@ server-side pagination benchmark.
 Chooser state and rendering tests live beside `connectioncatalog`; window and
 connection workflow integration tests remain in shell. Editor form, configuration,
 credential rollback and async-check tests live beside `connectioneditor`; shell
-retains saved-password session and native picker forwarding regressions. Shared bitmap cache
-tests live beside theme. Resetting the chooser clears selection, search and
+retains saved-password session and native picker forwarding regressions.
+Navigator node, category, filter, inline-edit, virtualization and icon tests live
+beside `navigation`; shell retains database-open, right-click target, active-tab
+reveal, multi-profile session and late-result regressions, including 1280×800 and
+840×560 layouts. Shared bitmap cache tests live beside theme. Resetting the chooser clears selection, search and
 filters while preserving the current view mode, expansion state and recents.
+
+After the navigator extraction, shell contains 120 Go files (48 implementation
+and 72 test files), down from 127 (53 implementation and 74 test files) after the
+connection editor extraction. Its 18 navigator fields are replaced by one module
+instance. Navigation has six implementation and five test files; mixed tests
+retain their workbench assertions in shell. Session workspaces and SQL, structure
+and data pages remain available for subsequent extraction stages.
 
 ## Limitations / next steps
 

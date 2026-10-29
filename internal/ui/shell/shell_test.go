@@ -75,8 +75,8 @@ func TestSearchAndOpenMockTable(t *testing.T) {
 	if err := tt.Click("测试库"); err != nil {
 		t.Fatal(err)
 	}
-	if s.explorerName != "测试库" {
-		t.Fatalf("selected connection: %q", s.explorerName)
+	if s.navigation.Key != "测试库" {
+		t.Fatalf("selected connection: %q", s.navigation.Key)
 	}
 	if !tt.HasText("customers") {
 		t.Fatalf("mock table should be visible after selecting a connection")
@@ -96,8 +96,8 @@ func TestSearchConnections(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Type("生产")
-	if s.search != "生产" {
-		t.Fatalf("expected Chinese input, got %q", s.search)
+	if s.navigation.Filter.Search != "生产" {
+		t.Fatalf("expected Chinese input, got %q", s.navigation.Filter.Search)
 	}
 	if !tt.HasText("生产库") || tt.HasText("测试库") {
 		t.Fatalf("search did not filter the connection tree")

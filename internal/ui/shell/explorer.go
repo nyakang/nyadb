@@ -34,7 +34,7 @@ func demoChildren(node string) []string {
 }
 
 func (s *State) filteredRoots() []string {
-	query := strings.TrimSpace(strings.ToLower(s.search))
+	query := strings.TrimSpace(strings.ToLower(s.navigation.Filter.Search))
 	if query == "" {
 		return demoRoots
 	}
@@ -51,7 +51,7 @@ func (s *State) sidebar(c *ui.Context) {
 	palette := theme.Colors(c)
 
 	if s.profileMode {
-		s.profileSidebar(c)
+		s.navigation.View(c)
 		return
 	}
 	ui.Column(c).Fill().Background(palette.Sidebar).Children(func() {
@@ -70,8 +70,8 @@ func (s *State) sidebar(c *ui.Context) {
 				ui.Text(c, "没有匹配的连接").Padding(12).TextColor(palette.Muted)
 				return
 			}
-			s.explorerTree.List.Selected = &s.explorerRow
-			theme.Outline(c, &s.explorerTree, roots, demoChildren, func(name string) {
+			s.navigation.Tree.List.Selected = &s.navigation.Row
+			theme.Outline(c, &s.navigation.Tree, roots, demoChildren, func(name string) {
 				ui.Row(c).AlignItems(ui.Center).Gap(6).Children(func() {
 					switch name {
 					case "测试库", "个人库", "公司库", "开发库", "生产库", "app_db", "personal", "office", "dev", "production":
@@ -84,26 +84,26 @@ func (s *State) sidebar(c *ui.Context) {
 					ui.Text(c, name).SingleLine().FontSize(theme.Font(c, 12))
 				}).ContextMenu(func(m *ui.Menu) {
 					if m.Item(locales.Text("选择 ") + name).Chosen() {
-						s.explorerName = name
+						s.navigation.Key = name
 						s.status = "已选择：" + name + "（模拟连接）"
 					}
 					if m.Item(locales.Text("新建查询")).Chosen() {
-						s.explorerName = name
+						s.navigation.Key = name
 						s.openQuery()
 					}
 				})
 			}).Grow(1)
-			if s.explorerRow >= 0 && s.explorerRow < s.explorerTree.Rows() {
-				name := s.explorerTree.Item(s.explorerRow)
-				if name != s.explorerName {
-					s.explorerName = name
+			if s.navigation.Row >= 0 && s.navigation.Row < s.navigation.Tree.Rows() {
+				name := s.navigation.Tree.Item(s.navigation.Row)
+				if name != s.navigation.Key {
+					s.navigation.Key = name
 					s.objectRow = 0
 					s.status = "已选择：" + name + "（模拟连接）"
 				}
 			}
 		})
 		ui.Column(c).Padding(6).BorderWidth(1, 0, 0, 0).BorderColor(palette.Border).Children(func() {
-			ui.SearchField(c, &s.search).Label(locales.Text("搜索连接")).Placeholder(locales.Text("搜索连接"))
+			ui.SearchField(c, &s.navigation.Filter.Search).Label(locales.Text("搜索连接")).Placeholder(locales.Text("搜索连接"))
 		})
 	})
 }

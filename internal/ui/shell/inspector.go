@@ -26,13 +26,13 @@ func (s *State) inspector(c *ui.Context) {
 			ui.Row(c).AlignItems(ui.Center).Gap(10).Children(func() {
 				theme.Icon(c, "connection", 40, palette.Muted)
 				ui.Column(c).Gap(5).Children(func() {
-					ui.Text(c, locales.Text(s.explorerName)).FontSize(theme.Font(c, 16)).Bold()
+					ui.Text(c, locales.Text(s.navigation.Key)).FontSize(theme.Font(c, 16)).Bold()
 					ui.Text(c, locales.Text("模拟资源 / 未连接")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 				})
 			})
 			ui.Box(c).Height(1).Background(palette.Border)
 			ui.Collapsible(c, locales.Text("基本信息"), &s.inspectorDetailsOpen, func() {
-				s.property(c, locales.Text("名称"), s.explorerName)
+				s.property(c, locales.Text("名称"), s.navigation.Key)
 				s.property(c, locales.Text("类型"), locales.Text("模拟连接或对象"))
 				s.property(c, locales.Text("状态"), locales.Text("仅界面预览"))
 				s.property(c, locales.Text("工作区"), locales.Text(s.currentTab().title))

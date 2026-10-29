@@ -54,14 +54,14 @@ func (s *State) View(c *ui.Context) {
 	s.connectionModal(c)
 	s.mysqlTableChangeModal(c)
 	s.mysqlDataEditModals(c)
-	if s.profileMode && s.groupDeleteConfirm {
-		if ui.AlertDialog(c, &s.groupDeleteConfirm, locales.Text("删除连接组？"), locales.Text("仅删除虚拟文件夹；组内连接将移至根目录，不会删除连接档案或数据库。"), locales.Text("取消"), locales.Text("删除组")) == 1 {
-			s.deleteGroup()
+	if s.profileMode && s.navigation.GroupDeleteConfirm {
+		if ui.AlertDialog(c, &s.navigation.GroupDeleteConfirm, locales.Text("删除连接组？"), locales.Text("仅删除虚拟文件夹；组内连接将移至根目录，不会删除连接档案或数据库。"), locales.Text("取消"), locales.Text("删除组")) == 1 {
+			s.navigation.DeleteGroup()
 		}
 	}
 	if s.profileMode && s.deleteConfirm {
 		name := "所选连接"
-		for _, p := range s.profileEntries {
+		for _, p := range s.navigation.Profiles() {
 			if p.ID == s.pendingDeleteID {
 				name = p.Name
 				break
@@ -317,7 +317,7 @@ func (s *State) statusBar(c *ui.Context) {
 		Background(palette.Menu).BorderWidth(1, 0, 0, 0).BorderColor(palette.Border).Children(func() {
 		ui.Text(c, locales.Text(s.status)).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Text).SingleLine().Grow(1).MinWidth(0)
 		if s.profileMode {
-			ui.Text(c, fmt.Sprintf("%d %s", len(s.profileEntries), locales.Text("个连接档案"))).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+			ui.Text(c, fmt.Sprintf("%d %s", len(s.navigation.Profiles()), locales.Text("个连接档案"))).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 			ui.Text(c, "●  "+locales.Text(s.mysqlWorkbenchStatus())).FontSize(theme.Font(c, 11)).TextColor(palette.Blue)
 			return
 		}

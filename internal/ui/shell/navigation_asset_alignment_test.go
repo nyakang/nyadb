@@ -8,69 +8,8 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
-
-func TestNavigatorCategoriesAndMetadataProgress(t *testing.T) {
-	s, _ := mysqlObjectTestState(t)
-	db := databaseNode(s.mysqlSessionProfileID, "app_db")
-	delete(s.mysqlObjectCache, "app_db")
-	delete(s.mysqlObjectErrors, "app_db")
-
-	checkStatus := func(want string) {
-		t.Helper()
-		children := s.navigationChildren(db.key())
-		if len(children) != 1 {
-			t.Fatalf("expected one status row, got %v", children)
-		}
-		n := parseNavigationNode(children[0])
-		if n.Kind != "status" || n.Object != want || n.Database != "app_db" {
-			t.Fatalf("unexpected loading node: %+v", n)
-		}
-	}
-	if children := s.navigationChildren(db.key()); children != nil {
-		t.Fatalf("unopened database has disclosure children: %v", children)
-	}
-	s.markMySQLDatabaseOpened(db.ProfileID, db.Database)
-	checkStatus("waiting")
-	s.mysqlObjectPending = "app_db"
-	checkStatus("loading")
-	s.mysqlObjectPending = ""
-	s.mysqlObjectErrors["app_db"] = "permission denied"
-	checkStatus("error")
-
-	s.mysqlObjectCache["app_db"] = []mysqlsvc.MySQLDBObject{
-		{Name: "customers", Kind: "表"},
-		{Name: "customers", Kind: "视图"},
-		{Name: "get_customer", Kind: "函数"},
-		{Name: "refresh_customer", Kind: "存储过程"},
-		{Name: "nightly_cleanup", Kind: "事件"},
-	}
-	children := s.navigationChildren(db.key())
-	if len(children) != len(mysqlNavigationCategories) {
-		t.Fatalf("incomplete database categories: got %d", len(children))
-	}
-	for i, key := range children {
-		n := parseNavigationNode(key)
-		if n.Kind != "category" || n.Category != mysqlNavigationCategories[i] {
-			t.Fatalf("incorrect category order: %+v", n)
-		}
-		items := s.navigationChildren(key)
-		if supportedMySQLCategory(n.Category) {
-			if len(items) != 1 || parseNavigationNode(items[0]).Category != n.Category ||
-				parseNavigationNode(items[0]).Kind != "object" {
-				t.Fatalf("supported category %q lost real objects: %v", n.Category, items)
-			}
-		} else if len(items) != 0 {
-			t.Fatalf("unsupported category %q fabricated objects: %v", n.Category, items)
-		}
-	}
-	unsupported := parseNavigationNode(children[5])
-	s.selectNavigationNode(ui.Services{}, unsupported.key())
-	if s.mysqlObjectKind != "查询" || s.objectRow != -1 || len(s.mysqlSelectedObjects()) != 0 || !strings.Contains(s.status, "尚未") {
-		t.Fatalf("unsupported folder must not pretend to filter objects: kind=%q row=%d status=%q",
-			s.mysqlObjectKind, s.objectRow, s.status)
-	}
-}
 
 func TestNavigatorSwitchActiveProfileConfiguration(t *testing.T) {
 	s, tt, svc, _ := profileTestState(t)
@@ -142,9 +81,9 @@ func TestNavigatorConnectionStatusIdentityAndRootInspector(t *testing.T) {
 
 func TestNavigatorFailedMetadataRowCanRetry(t *testing.T) {
 	s, tt := mysqlObjectTestState(t)
-	db := databaseNode(s.mysqlSessionProfileID, "app_db")
-	s.explorerTree.Open.Add(profileNode(s.mysqlSessionProfileID))
-	s.explorerTree.Open.Add(db.key())
+	db := navigation.DatabaseNode(s.mysqlSessionProfileID, "app_db")
+	s.navigation.Tree.Open.Add(navigation.ConnectionKey(s.mysqlSessionProfileID))
+	s.navigation.Tree.Open.Add(db.Key())
 	s.markMySQLDatabaseOpened(db.ProfileID, db.Database)
 	s.mysqlObjectErrors["app_db"] = "read denied"
 	called := make(chan struct{}, 1)
@@ -169,5 +108,14 @@ func TestNavigatorFailedMetadataRowCanRetry(t *testing.T) {
 	}
 	if s.mysqlObjectErrors["app_db"] != "" || len(s.mysqlObjectCache["app_db"]) != 1 {
 		t.Fatalf("retry did not clear error and load objects: %v %v", s.mysqlObjectErrors, s.mysqlObjectCache)
+	}
+}
+
+func TestNavigatorUnsupportedCategoryKeepsWorkbenchContext(t *testing.T) {
+	s, _ := mysqlObjectTestState(t)
+	node := navigation.Node{Kind: "category", ProfileID: s.mysqlSessionProfileID, Database: "app_db", Category: "查询"}
+	s.selectNavigationNode(ui.Services{}, node.Key())
+	if s.mysqlObjectKind != "查询" || s.objectRow != -1 || len(s.mysqlSelectedObjects()) != 0 || !strings.Contains(s.status, "尚未") {
+		t.Fatalf("unsupported folder must not pretend to filter objects: kind=%q row=%d status=%q", s.mysqlObjectKind, s.objectRow, s.status)
 	}
 }

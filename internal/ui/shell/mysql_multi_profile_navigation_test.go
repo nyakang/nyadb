@@ -8,6 +8,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
 
 func waitMultiProfileSession(t *testing.T, s *State, tt *ui.Tester) {
@@ -64,7 +65,7 @@ func TestMySQLMultiProfileBrowserSessionsDoNotDisconnectOrMixCaches(t *testing.T
 	waitMultiProfileSession(t, s, tt)
 	s.mysqlObjectCache["shared"] = []mysqlsvc.MySQLDBObject{{Name: "b_orders", Kind: "表"}}
 	if s.mysqlDatabaseOpenedFor(b.ID, "shared") || !s.mysqlDatabaseOpenedFor(a.ID, "shared") ||
-		s.navigationChildren(databaseNode(b.ID, "shared").key()) != nil {
+		s.navigation.Children(navigation.DatabaseNode(b.ID, "shared").Key()) != nil {
 		t.Fatal("same-named database opening state leaked across profiles")
 	}
 	s.mysqlSelectedDatabase = "shared"
@@ -81,7 +82,7 @@ func TestMySQLMultiProfileBrowserSessionsDoNotDisconnectOrMixCaches(t *testing.T
 		len(s.mysqlObjectCache["shared"]) != 1 || s.mysqlObjectCache["shared"][0].Name != "a_orders" {
 		t.Fatalf("A browser state was replaced by B: active=%d cache=%+v", s.mysqlSessionProfileID, s.mysqlObjectCache)
 	}
-	if got := s.navigationChildren(profileNode(b.ID)); len(got) != 2 {
+	if got := s.navigation.Children(navigation.ConnectionKey(b.ID)); len(got) != 2 {
 		t.Fatalf("parked B lost its database tree: %v", got)
 	}
 	s.selectProfileByName(b.Name)
@@ -93,8 +94,8 @@ func TestMySQLMultiProfileBrowserSessionsDoNotDisconnectOrMixCaches(t *testing.T
 	parked := s.parkedMySQLWorkspace(a.ID)
 	delete(parked.objectCache, "shared")
 	parked.objectErrors["shared"] = "permission denied"
-	s.explorerTree.Open.Add(profileNode(a.ID))
-	s.explorerTree.Open.Add(databaseNode(a.ID, "shared").key())
+	s.navigation.Tree.Open.Add(navigation.ConnectionKey(a.ID))
+	s.navigation.Tree.Open.Add(navigation.DatabaseNode(a.ID, "shared").Key())
 	requests := make(chan int64, 1)
 	s.mysqlObjectLister = func(_ context.Context, id int64, _ string) ([]mysqlsvc.MySQLDBObject, error) {
 		requests <- id

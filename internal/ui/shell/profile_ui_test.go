@@ -27,7 +27,7 @@ func profileTestState(t *testing.T) (*State, *ui.Tester, *connections.Service, s
 
 func TestProfileUICreateAndRefresh(t *testing.T) {
 	s, tt, service, _ := profileTestState(t)
-	if len(s.profileEntries) != 0 || tt.HasText("测试库") {
+	if len(s.navigation.Profiles()) != 0 || tt.HasText("测试库") {
 		t.Fatal("real UI should start without mock connections")
 	}
 	if err := tt.RightClick("我的连接"); err != nil {
@@ -46,8 +46,8 @@ func TestProfileUICreateAndRefresh(t *testing.T) {
 	if err := tt.Click("保存连接"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionDialog || len(s.profileEntries) != 1 || s.profileEntries[0].Name != "Development" {
-		t.Fatalf("profile not created: open=%t entries=%+v error=%q", s.connectionDialog, s.profileEntries, s.connectionEditor.Error())
+	if s.connectionDialog || len(s.navigation.Profiles()) != 1 || s.navigation.Profiles()[0].Name != "Development" {
+		t.Fatalf("profile not created: open=%t entries=%+v error=%q", s.connectionDialog, s.navigation.Profiles(), s.connectionEditor.Error())
 	}
 	if !tt.HasText("Development") {
 		t.Fatal("new connection missing from explorer")
@@ -105,8 +105,8 @@ func TestProfileUIEditDuplicateDelete(t *testing.T) {
 	if err := tt.ChooseMenuItem("复制连接"); err != nil {
 		t.Fatal(err)
 	}
-	if len(s.profileEntries) != 2 || !tt.HasText("Renamed 副本") {
-		t.Fatalf("duplicate not reflected in explorer: %+v", s.profileEntries)
+	if len(s.navigation.Profiles()) != 2 || !tt.HasText("Renamed 副本") {
+		t.Fatalf("duplicate not reflected in explorer: %+v", s.navigation.Profiles())
 	}
 	if err := tt.RightClick("Renamed 副本"); err != nil {
 		t.Fatal(err)
@@ -120,7 +120,7 @@ func TestProfileUIEditDuplicateDelete(t *testing.T) {
 	if err := tt.Click("取消"); err != nil {
 		t.Fatal(err)
 	}
-	if len(s.profileEntries) != 2 {
+	if len(s.navigation.Profiles()) != 2 {
 		t.Fatal("cancel deleted a connection")
 	}
 	if err := tt.RightClick("Renamed 副本"); err != nil {
@@ -132,8 +132,8 @@ func TestProfileUIEditDuplicateDelete(t *testing.T) {
 	if err := tt.Click("删除"); err != nil {
 		t.Fatal(err)
 	}
-	if len(s.profileEntries) != 1 {
-		t.Fatalf("delete failed: %+v", s.profileEntries)
+	if len(s.navigation.Profiles()) != 1 {
+		t.Fatalf("delete failed: %+v", s.navigation.Profiles())
 	}
 	if _, err := service.Get(context.Background(), s.selectedProfileID); s.selectedProfileID != 0 && errors.Is(err, connections.ErrNotFound) {
 		t.Fatal("selected profile ID points at deleted entry")

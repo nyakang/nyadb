@@ -10,6 +10,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
 
 // Optional visual evidence: this is an isolated, synthetic local profile list,
@@ -40,7 +41,7 @@ func TestCaptureGroupedWorkbenchPreview(t *testing.T) {
 	}
 	s.loadProfiles()
 	s.selectGroup("开发库")
-	s.explorerTree.Open.Add(groupNode("开发库"))
+	s.navigation.Tree.Open.Add(navigation.GroupKey("开发库"))
 	tt := ui.NewTester(s.View, 1280, 800)
 	path := filepath.Join("..", "..", "..", "temp", "research", "main-workbench-grouped-20261022", "nyadb-headless-groups.png")
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {

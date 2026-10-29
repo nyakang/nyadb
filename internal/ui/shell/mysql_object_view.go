@@ -5,6 +5,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -90,7 +91,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 			return nil
 		}
 		obj := items[row]
-		return (navigationNode{Kind: "object", ProfileID: s.mysqlSessionProfileID, Database: db, Category: obj.Kind, Object: obj.Name}).key()
+		return (navigation.Node{Kind: "object", ProfileID: s.mysqlSessionProfileID, Database: db, Category: obj.Kind, Object: obj.Name}).Key()
 	}
 	// Double-click opens real table/view data, as observed in the original.
 	// Design remains a separate explicit read-only action.
@@ -145,7 +146,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		}
 	}
 	if s.objectRow >= 0 && s.objectRow < len(items) {
-		if previousRow != s.objectRow || table.Changed() || (table.Focused() && parseNavigationNode(s.explorerName).Kind != "object") {
+		if previousRow != s.objectRow || table.Changed() || (table.Focused() && navigation.Parse(s.navigation.Key).Kind != "object") {
 			s.selectObjectInNavigator(db, items[s.objectRow].Name, items[s.objectRow].Kind)
 		}
 		if table.Shortcut(ui.Ctrl, ui.KeyD) && !isMySQLProgram(items[s.objectRow].Kind) {

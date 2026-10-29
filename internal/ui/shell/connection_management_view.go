@@ -22,7 +22,7 @@ func (s *State) openConnectionManagement() {
 
 func (s *State) connectionManagementWorkspace(c *ui.Context) {
 	p := theme.Colors(c)
-	entries := s.profileEntries
+	entries := s.navigation.Profiles()
 	s.connectionManagerList.Selected = &s.connectionManagerRow
 	selected := s.connectionManagerRow >= 0 && s.connectionManagerRow < len(entries)
 	connecting := false
