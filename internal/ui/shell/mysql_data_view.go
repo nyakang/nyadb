@@ -104,7 +104,7 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 						return
 					}
 					cell := page.Rows[row][col]
-					box := ui.Box(c).FillWidth().MinWidth(0).Children(func() {
+					ui.Box(c).FillWidth().MinWidth(0).Children(func() {
 						if cell.Null {
 							ui.Text(c, "NULL").TextColor(theme.CellText(c, &t.dataState, row, tableCol, palette.GridNull)).FontSize(theme.Font(c, mysqlDataEditFont(t)))
 						} else {
@@ -114,20 +114,35 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 							}
 						}
 					})
+					// Absolute children span the native cell's padding box, so
+					// clicks in its whitespace have the same target as its text.
+					box := ui.Box(c).Key("cell-pointer").Absolute().Top(0).Right(0).Bottom(0).Left(0)
+					if cell.Truncated {
+						box.Tooltip(locales.Text("已截断的预览；可在字段信息中按需读取"))
+					}
+					control := ui.Local(box, "cell-bounds", func() ui.Handle { return ui.Handle{} })
+					box.Bind(control)
 					bounds := box.Bounds()
-					t.dataEdit.Hits = append(t.dataEdit.Hits, mysqlCellHit{Row: row, Source: col, Bounds: bounds})
+					t.dataEdit.Hits = append(t.dataEdit.Hits, mysqlCellHit{Row: row, Source: col, Bounds: bounds, Control: *control})
 					source := col
 					services := c.Services()
-					box.HandleInput(func(ev ui.InputEvent) bool { return s.mysqlDataCellPointer(services, t, row, source, bounds, ev) })
+					box.HandleInput(func(ev ui.InputEvent) bool {
+						refreshMySQLDataCellHits(c, t)
+						return s.mysqlDataCellPointer(services, t, row, source, control.Bounds(c), ev)
+					})
 
 				}).Grow(1)
 				if t.dataEdit.FocusGrid && t.dataEdit.Editor == nil {
 					grid.Focus()
 					t.dataEdit.FocusGrid = false
 				}
-				gridBounds := grid.Bounds()
+				gridControl := ui.Local(grid, "grid-bounds", func() ui.Handle { return ui.Handle{} })
+				grid.Bind(gridControl)
 				gridServices := c.Services()
-				grid.HandleInput(func(ev ui.InputEvent) bool { return s.mysqlDataGridPointer(gridServices, t, gridBounds, ev) })
+				grid.HandleInput(func(ev ui.InputEvent) bool {
+					refreshMySQLDataCellHits(c, t)
+					return s.mysqlDataGridPointer(gridServices, t, gridControl.Bounds(c), ev)
+				})
 				if t.dataEdit.Editor == nil && grid.Shortcut(ui.Ctrl, ui.KeyC) {
 					s.copyMySQLDataSelection(c, t)
 				}

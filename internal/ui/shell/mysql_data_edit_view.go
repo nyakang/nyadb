@@ -84,8 +84,13 @@ func (s *State) mysqlDataCellPointer(services ui.Services, t *tab, row, source i
 		}
 		return true
 	case ui.InputPointerUp:
+		if !t.dataEdit.PointerActive || row != t.dataEdit.PointerRow || source != t.dataEdit.PointerSource {
+			return false
+		}
 		t.dataEdit.PointerActive = false
-		if !t.dataEdit.Drag && t.dataEdit.PointerMods == 0 {
+		x, y := bounds.X+ev.X, bounds.Y+ev.Y
+		moved := math.Abs(float64(x-t.dataEdit.PointerX))+math.Abs(float64(y-t.dataEdit.PointerY)) > 4
+		if !t.dataEdit.Drag && !moved && t.dataEdit.PointerMods == 0 && ev.Mods == 0 && mysqlDataCellContains(bounds, x, y) {
 			s.beginMySQLCellEdit(services, t, row, source, false)
 		}
 		return true
@@ -105,8 +110,16 @@ func (s *State) mysqlDataInlineEditor(c *ui.Context, t *tab, row, source int) bo
 		return false
 	}
 	services := c.Services()
-	input := ui.TextInputBase(c, &e.Text).Label(locales.Text("单元格编辑")+" "+e.Field).FillWidth().MinWidth(0).
-		FontSize(theme.Font(c, mysqlDataEditFont(t))).Padding(0, 2).Background(theme.Colors(c).App).Border(1, theme.Colors(c).Blue).AutoFocus().ReadOnly(t.dataEdit.Busy)
+	// Keep the preview's line measurement in flow. The input covers its
+	// native parent cell, including padding, without changing the row size.
+	font := theme.Font(c, mysqlDataEditFont(t))
+	ui.Text(c, " ").SingleLine().FontSize(font).Opacity(0).Role(ui.RoleNone)
+	// The native grid paints its final bottom/right pixel above children;
+	// reserve one extra border pixel there so all four blue edges survive.
+	input := ui.TextInputBase(c.Key("cell-editor"), &e.Text).Label(locales.Text("单元格编辑")+" "+e.Field).
+		Absolute().Top(0).Right(0).Bottom(0).Left(0).MinWidth(0).
+		FontSize(font).Padding(0, c.Theme().Space(2.5)-1).Radius(0).
+		Background(theme.Colors(c).App).Border(1, theme.Colors(c).Blue).BorderWidth(1, 2, 2, 1).AutoFocus().ReadOnly(t.dataEdit.Busy)
 	input.OnTextKey(func(k ui.TextKey) bool {
 		if e.Composing && (k.Key == ui.KeyEnter || k.Key == ui.KeyTab || k.Key == ui.KeyEscape) {
 			return true
@@ -250,13 +263,26 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *tab) {
 	}
 }
 
-// The native table padding also belongs to its cell. This fallback observes
-// those gaps while header, row-number and modified selection remain available.
+func mysqlDataCellContains(bounds ui.Rect, x, y float32) bool {
+	return x >= bounds.X && x < bounds.X+bounds.W && y >= bounds.Y && y < bounds.Y+bounds.H
+}
+
+// Element.Bounds describes the previous build, which may predate the first
+// paint or a resize. Input must use the frame currently visible to the user.
+func refreshMySQLDataCellHits(c *ui.Context, t *tab) {
+	for i := range t.dataEdit.Hits {
+		hit := &t.dataEdit.Hits[i]
+		hit.Bounds = hit.Control.Bounds(c)
+	}
+}
+
+// Route captured pointer gestures by exact cell bounds. Header and row-number
+// areas remain native, and an edited cell delegates to its text input.
 func (s *State) mysqlDataGridPointer(services ui.Services, t *tab, bounds ui.Rect, ev ui.InputEvent) bool {
 	x, y := bounds.X+ev.X, bounds.Y+ev.Y
 	for _, hit := range t.dataEdit.Hits {
 		b := hit.Bounds
-		in := x >= b.X-5 && x < b.X+b.W+5 && y >= b.Y-5 && y < b.Y+b.H+5
+		in := mysqlDataCellContains(b, x, y)
 		if ev.Kind == ui.InputPointerDown && in || t.dataEdit.PointerActive && hit.Row == t.dataEdit.PointerRow && hit.Source == t.dataEdit.PointerSource {
 			ev.X, ev.Y = x-b.X, y-b.Y
 			return s.mysqlDataCellPointer(services, t, hit.Row, hit.Source, b, ev)

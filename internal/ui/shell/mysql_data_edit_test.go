@@ -492,12 +492,6 @@ func TestMySQLDataExplicitCompleteReadRejectsChangedSnapshot(t *testing.T) {
 				return &mysqlsvc.MySQLDataRow{Columns: doc.dataPage.ColumnMetadata, Snapshot: &snapshot, Values: map[string]mysqlsvc.MySQLDataValue{"extra": {Text: "complete original value"}}}, nil
 			}
 			tt.Frame()
-			if err := tt.Click("preview"); err != nil {
-				t.Fatal(err)
-			}
-			if doc.dataEdit.Editor != nil {
-				t.Fatal("truncated preview entered ordinary editor")
-			}
 			s.beginMySQLCellEdit(ui.Services{}, doc, 0, 2, true)
 			waitEditing(t, s, doc, tt)
 			if conflict {

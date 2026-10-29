@@ -38,13 +38,16 @@ type mysqlEditResult struct {
 	Keys                []string
 	Saved               *mysqlsvc.MySQLDataEditResult
 	Row                 *mysqlsvc.MySQLDataRow
-	TargetRow, Source   int
+	TargetRow           int
+	TargetKey, Field    string
+	Dedicated           bool
 	Err                 error
 	Verification        *mysqlsvc.MySQLDataVerification
 }
 type mysqlCellHit struct {
 	Row, Source int
 	Bounds      ui.Rect
+	Control     ui.Handle
 }
 type mysqlDataEditState struct {
 	Drafts                    map[string]*mysqlRowDraft
@@ -222,12 +225,15 @@ func (s *State) beginMySQLCellEdit(services ui.Services, t *tab, row, source int
 			return
 		}
 	}
-	key, field := mysqlDataRowKey(t, row), t.dataPage.Columns[source]
+	field := t.dataPage.Columns[source]
 	cell := t.dataPage.Rows[row][source]
 	v := mysqlsvc.MySQLDataValue{Text: cell.Text, Null: cell.Null}
-	if d := mysqlDataDraftForRow(t, row); d != nil {
+	d := mysqlDataDraftForRow(t, row)
+	hasFullDraft := false
+	if d != nil {
 		if draft, ok := d.Values[field]; ok {
 			v = draft
+			hasFullDraft = true
 		} else if d.Kind == "insert" {
 			v = mysqlsvc.MySQLDataValue{Default: true}
 		}
@@ -239,10 +245,8 @@ func (s *State) beginMySQLCellEdit(services ui.Services, t *tab, row, source int
 		t.dataEdit.Err = locales.Text("此字段类型暂不支持编辑")
 		return
 	}
-	if (cell.Truncated || binary) && !dedicated {
-		return
-	}
-	if dedicated && (mysqlDataDraftForRow(t, row) == nil || mysqlDataDraftForRow(t, row).Kind != "insert") {
+	dedicated = dedicated || binary
+	if !hasFullDraft && (dedicated || cell.Truncated) && (d == nil || d.Kind != "insert") {
 		reader := s.mysqlDataRowReader
 		if reader == nil && s.mysqlSessionManager != nil {
 			reader = s.mysqlSessionManager.ReadMySQLDataRow
@@ -251,9 +255,14 @@ func (s *State) beginMySQLCellEdit(services ui.Services, t *tab, row, source int
 			t.dataEdit.Err = locales.Text("完整字段读取不可用")
 			return
 		}
-		s.startMySQLDataEditRead(services, t, row, source, reader)
+		s.startMySQLDataEditRead(services, t, row, source, dedicated, reader)
 		return
 	}
+	v.Binary = binary
+	s.openMySQLCellEditor(services, t, row, source, v, dedicated)
+}
+
+func (s *State) openMySQLCellEditor(services ui.Services, t *tab, row, source int, v mysqlsvc.MySQLDataValue, dedicated bool) {
 	text := v.Text
 	if v.Null || v.Default {
 		text = ""
@@ -261,7 +270,9 @@ func (s *State) beginMySQLCellEdit(services ui.Services, t *tab, row, source int
 	if v.Binary {
 		text = hex.EncodeToString(v.Bytes)
 	}
-	t.dataEdit.Editor = &mysqlCellEditor{Key: key, Field: field, Row: row, Text: text, Initial: text, Original: v, Dedicated: dedicated, Open: dedicated}
+	field := t.dataPage.Columns[source]
+	t.dataEdit.Err = ""
+	t.dataEdit.Editor = &mysqlCellEditor{Key: mysqlDataRowKey(t, row), Field: field, Row: row, Text: text, Initial: text, Original: v, Dedicated: dedicated, Open: dedicated}
 	t.dataSelectedRow = row
 	t.dataSelection.Clear()
 	t.dataSelection.Add(row)
@@ -269,7 +280,7 @@ func (s *State) beginMySQLCellEdit(services ui.Services, t *tab, row, source int
 	t.dataState.ScrollIntoView(row)
 	services.Invalidate()
 }
-func (s *State) startMySQLDataEditRead(services ui.Services, t *tab, row, source int, reader mysqlDataRowReader) {
+func (s *State) startMySQLDataEditRead(services ui.Services, t *tab, row, source int, dedicated bool, reader mysqlDataRowReader) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.dataEdit.Cancel = cancel
 	t.dataEdit.Busy = true
@@ -277,12 +288,13 @@ func (s *State) startMySQLDataEditRead(services ui.Services, t *tab, row, source
 	t.dataEdit.Request++
 	request, gen, profile := t.dataEdit.Request, s.mysqlSessionGeneration, t.dataProfileID
 	ref := *t.dataPage.RowRefs[row]
+	key, field := mysqlDataRowKey(t, row), t.dataPage.Columns[source]
 	db, table := t.dataDatabase, t.dataTable
 	out := make(chan mysqlEditResult, 1)
 	t.dataEdit.Results = out
 	go func() {
 		value, err := reader(ctx, profile, db, table, ref)
-		out <- mysqlEditResult{Generation: gen, Request: request, Profile: profile, Row: value, TargetRow: row, Source: source, Err: err}
+		out <- mysqlEditResult{Generation: gen, Request: request, Profile: profile, Row: value, TargetRow: row, TargetKey: key, Field: field, Dedicated: dedicated, Err: err}
 		services.Invalidate()
 	}()
 }
@@ -554,24 +566,28 @@ func (s *State) consumeMySQLDataEdits(services ui.Services) {
 				}
 				continue
 			}
-			if r.Row != nil {
-				row, source := r.TargetRow, r.Source
-				if row >= len(t.dataPage.RowSnapshots) || !reflect.DeepEqual(t.dataPage.RowSnapshots[row], r.Row.Snapshot) {
+			if r.Field != "" {
+				row := r.TargetRow
+				source := -1
+				if t.dataPage != nil {
+					source = slices.Index(t.dataPage.Columns, r.Field)
+				}
+				if r.Row == nil || source < 0 || !mysqlDataCanEdit(t, row, source) || mysqlDataRowKey(t, row) != r.TargetKey || row >= len(t.dataPage.RowSnapshots) || !reflect.DeepEqual(t.dataPage.RowSnapshots[row], r.Row.Snapshot) {
 					t.dataEdit.Err = mysqlsvc.ErrMySQLDataConflict.Error()
 					continue
 				}
-				field := t.dataPage.Columns[source]
-				v := r.Row.Values[field]
+				field := r.Field
+				v, ok := r.Row.Values[field]
+				if !ok {
+					t.dataEdit.Err = mysqlsvc.ErrMySQLDataPage.Error()
+					continue
+				}
 				if d := mysqlDataDraftForRow(t, row); d != nil {
 					if value, ok := d.Values[field]; ok {
 						v = value
 					}
 				}
-				text := v.Text
-				if v.Binary {
-					text = hex.EncodeToString(v.Bytes)
-				}
-				t.dataEdit.Editor = &mysqlCellEditor{Key: mysqlDataRowKey(t, row), Row: row, Field: field, Text: text, Initial: text, Original: v, Dedicated: true, Open: true}
+				s.openMySQLCellEditor(services, t, row, source, v, r.Dedicated)
 				continue
 			}
 			s.acceptMySQLDataSaved(t, r.Keys, r.Saved)
