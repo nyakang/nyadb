@@ -20,7 +20,7 @@ func profileTestState(t *testing.T) (*State, *ui.Tester, *connections.Service, s
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	service := connections.NewService(connections.NewStore(db))
+	service := connections.NewService(localdb.NewProfileStore(db))
 	s := NewWithProfiles(service)
 	return s, ui.NewTester(s.View, 1280, 800), service, path
 }

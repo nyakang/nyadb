@@ -8,6 +8,7 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -36,7 +37,7 @@ type tab struct {
 	editor *editor.State
 
 	sqlProfileID       int64
-	sqlLease           connections.MySQLSQLTabToken
+	sqlLease           mysqlsvc.MySQLSQLTabToken
 	sqlDatabase        string
 	sqlRecoveryNeeded  bool
 	sqlRecoveryProfile int64
@@ -44,7 +45,7 @@ type tab struct {
 	sqlLoading         bool
 	sqlCancelRequested bool
 	sqlError           string
-	sqlResult          *connections.MySQLSQLResult
+	sqlResult          *mysqlsvc.MySQLSQLResult
 	sqlGrid            ui.ListState
 	sqlCancel          context.CancelFunc
 	sqlResults         <-chan mysqlSQLResult
@@ -54,11 +55,11 @@ type tab struct {
 
 	programProfileID int64
 	programDatabase  string
-	program          connections.MySQLDBObject
+	program          mysqlsvc.MySQLDBObject
 
 	structureDatabase, structureTable string
 	structureProfileID                int64
-	structure                         *connections.MySQLTableStructure
+	structure                         *mysqlsvc.MySQLTableStructure
 	structurePage                     int
 	structureFieldRow                 int
 	structureColumns                  ui.ListState
@@ -74,7 +75,7 @@ type tab struct {
 	dataProfileID           int64
 	dataOffset              int64
 	dataLimit               int
-	dataPage                *connections.MySQLDataPage
+	dataPage                *mysqlsvc.MySQLDataPage
 	dataInfo                mysqlTableInfoState
 	dataReadInfo            mysqlDataReadInfo
 	dataLayout              mysqlDataLayoutState
@@ -101,14 +102,14 @@ type tab struct {
 	dataRulesExpanded       bool
 	dataRuleError           string
 	dataFilterExtraDraft    []mysqlDataRuleDraft
-	dataFilterRules         []connections.MySQLDataFilterRule
+	dataFilterRules         []mysqlsvc.MySQLDataFilterRule
 	dataSortDraft           []mysqlDataSortDraft
-	dataSortRules           []connections.MySQLDataSortRule
+	dataSortRules           []mysqlsvc.MySQLDataSortRule
 	dataHiddenColumns       map[string]bool
 	dataShowFieldTypes      bool
 	dataUseKeyset           bool
-	dataAfter               *connections.MySQLDataCursor
-	dataCursorHistory       map[int64]*connections.MySQLDataCursor
+	dataAfter               *mysqlsvc.MySQLDataCursor
+	dataCursorHistory       map[int64]*mysqlsvc.MySQLDataCursor
 	dataChunkField          string
 	dataChunkRow            int
 	dataChunkNext           int64
@@ -230,7 +231,7 @@ type State struct {
 	researchIcons                map[string]*ui.Bitmap
 
 	connectionNameFocusPending bool
-	mysqlSessionManager        *connections.MySQLSessionManager
+	mysqlSessionManager        *mysqlsvc.MySQLSessionManager
 	mysqlWorkspaces            map[int64]*mysqlSessionWorkspace
 	mysqlSessionCancel         context.CancelFunc
 	mysqlSessionResults        <-chan mysqlSessionResult
@@ -245,7 +246,7 @@ type State struct {
 	mysqlSQLExecutor           mysqlSQLExecutor
 	mysqlSelectedDatabase      string
 	mysqlObjectKind            string
-	mysqlObjectCache           map[string][]connections.MySQLDBObject
+	mysqlObjectCache           map[string][]mysqlsvc.MySQLDBObject
 	mysqlObjectErrors          map[string]string
 	mysqlObjectPending         string
 	mysqlObjectRequest         uint64
@@ -253,7 +254,7 @@ type State struct {
 	mysqlObjectResults         <-chan mysqlObjectResult
 	mysqlObjectLister          mysqlObjectLister
 	mysqlTableDialog           bool
-	mysqlTableAction           connections.MySQLTableAction
+	mysqlTableAction           mysqlsvc.MySQLTableAction
 	mysqlTableProfileID        int64
 	mysqlTableDatabase         string
 	mysqlTableName             string
@@ -262,7 +263,7 @@ type State struct {
 	mysqlTableError            string
 	mysqlTablePending          bool
 	mysqlTableResults          <-chan mysqlTableChangeResult
-	mysqlTableRunner           func(context.Context, int64, connections.MySQLTableChange) error
+	mysqlTableRunner           func(context.Context, int64, mysqlsvc.MySQLTableChange) error
 	mysqlDatabaseNodes         map[string]*mysqlDatabaseNode
 	mysqlStructureLoader       mysqlStructureLoader
 	mysqlDataLoader            mysqlDataLoader

@@ -5,11 +5,11 @@ import (
 	"errors"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // startMySQLSQLPreconnect never blocks the native UI and never executes SQL.
-func (s *State) startMySQLSQLPreconnect(t *tab, lease connections.MySQLSQLTabToken) {
+func (s *State) startMySQLSQLPreconnect(t *tab, lease mysqlsvc.MySQLSQLTabToken) {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	t.sqlPrepareCancel = cancel
@@ -42,14 +42,14 @@ func (s *State) recoverMySQLSQLTab(t *tab) {
 		return
 	}
 	var (
-		lease connections.MySQLSQLTabToken
+		lease mysqlsvc.MySQLSQLTabToken
 		err   error
 	)
 	if t.sqlLease.IsZero() {
 		lease, err = manager.ReserveSQLTabToken(id, t.id)
 	} else {
 		lease, err = manager.ReplaceSQLTabToken(t.sqlLease)
-		if errors.Is(err, connections.ErrMySQLSQLSessionLost) {
+		if errors.Is(err, mysqlsvc.ErrMySQLSQLSessionLost) {
 			// The profile was explicitly reconnected since this tab was
 			// created; a stale generation may not be used to replace the
 			// new profile's leases. The tab ID is unique to this workspace.

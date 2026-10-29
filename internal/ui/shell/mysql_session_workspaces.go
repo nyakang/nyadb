@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // mysqlSessionWorkspace parks one profile's workbench-only state. The service
@@ -22,7 +22,7 @@ type mysqlSessionWorkspace struct {
 
 	selectedDatabase  string
 	objectKind        string
-	objectCache       map[string][]connections.MySQLDBObject
+	objectCache       map[string][]mysqlsvc.MySQLDBObject
 	objectErrors      map[string]string
 	objectPending     string
 	objectRequest     uint64
@@ -58,7 +58,7 @@ func (s *State) restoreMySQLWorkspace(id int64, slot *mysqlSessionWorkspace) {
 	if slot == nil {
 		slot = &mysqlSessionWorkspace{
 			sessionStatus: "未连接", objectKind: "全部", objectRow: -1,
-			objectCache:   make(map[string][]connections.MySQLDBObject),
+			objectCache:   make(map[string][]mysqlsvc.MySQLDBObject),
 			objectErrors:  make(map[string]string),
 			databaseNodes: make(map[string]*mysqlDatabaseNode),
 		}
@@ -194,7 +194,7 @@ func (s *State) mysqlSessionDatabasesFor(id int64) []string {
 	return nil
 }
 
-func (s *State) mysqlObjectCacheFor(id int64) map[string][]connections.MySQLDBObject {
+func (s *State) mysqlObjectCacheFor(id int64) map[string][]mysqlsvc.MySQLDBObject {
 	if id != 0 && id == s.mysqlSessionProfileID {
 		return s.mysqlObjectCache
 	}

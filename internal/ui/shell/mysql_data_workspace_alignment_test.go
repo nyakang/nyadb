@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -23,12 +23,12 @@ func TestMySQLDataFooterNeverInventsQueryResults(t *testing.T) {
 		t.Fatalf("failure displayed success: %q", got)
 	}
 	doc.dataErr = ""
-	doc.dataPage = &connections.MySQLDataPage{}
+	doc.dataPage = &mysqlsvc.MySQLDataPage{}
 	if got := mysqlDataPageStatus(doc); got != "已读取 0 行 · 第 1 页" {
 		t.Fatalf("confirmed empty result wrong: %q", got)
 	}
 	doc.dataOffset = 2
-	doc.dataPage.Rows = [][]connections.MySQLDataCell{{{Text: "3"}}}
+	doc.dataPage.Rows = [][]mysqlsvc.MySQLDataCell{{{Text: "3"}}}
 	if got := mysqlDataPageStatus(doc); got != "已读取 1 行 · 3–3 · 第 2 页" {
 		t.Fatalf("real page range wrong: %q", got)
 	}

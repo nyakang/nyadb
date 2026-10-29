@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -18,7 +18,7 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *tab, m *ui.Menu, row, source
 	}
 	ready := !t.dataLoading && !t.dataEdit.Busy && t.dataEdit.Uncertain == nil && t.dataProfileID == s.mysqlSessionProfileID && s.mysqlSessionStatus == "已连接"
 	editable := ready && mysqlDataCanEdit(t, row, source)
-	var column connections.MySQLStructureColumn
+	var column mysqlsvc.MySQLStructureColumn
 	if source >= 0 && source < len(page.ColumnMetadata) {
 		column = page.ColumnMetadata[source]
 	}
@@ -27,7 +27,7 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *tab, m *ui.Menu, row, source
 	}
 	nullable := source >= 0 && source < len(page.ColumnMetadata) && page.ColumnMetadata[source].Nullable
 	if m.Item(locales.Text("设置为 NULL")).Disabled(!editable || !nullable).Chosen() {
-		s.setMySQLDataCell(c.Services(), t, row, source, connections.MySQLDataValue{Null: true})
+		s.setMySQLDataCell(c.Services(), t, row, source, mysqlsvc.MySQLDataValue{Null: true})
 	}
 	m.Submenu(locales.Text("生成 UUID"), func(sub *ui.Menu) {
 		for _, variant := range []struct {
@@ -43,7 +43,7 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *tab, m *ui.Menu, row, source
 					t.dataEdit.Err = err.Error()
 					continue
 				}
-				s.setMySQLDataCell(c.Services(), t, row, source, connections.MySQLDataValue{Text: value})
+				s.setMySQLDataCell(c.Services(), t, row, source, mysqlsvc.MySQLDataValue{Text: value})
 			}
 		}
 	})
@@ -153,7 +153,7 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *tab, m *ui.Menu, row, source
 	}
 }
 
-func mysqlDataCellFilterValueAvailable(kind string, cell connections.MySQLDataCell) bool {
+func mysqlDataCellFilterValueAvailable(kind string, cell mysqlsvc.MySQLDataCell) bool {
 	if cell.Truncated {
 		return false
 	}
@@ -164,7 +164,7 @@ func mysqlDataCellFilterValueAvailable(kind string, cell connections.MySQLDataCe
 	return true
 }
 
-func (s *State) applyMySQLDataCellFilter(services ui.Services, t *tab, name, mode string, cell connections.MySQLDataCell) {
+func (s *State) applyMySQLDataCellFilter(services ui.Services, t *tab, name, mode string, cell mysqlsvc.MySQLDataCell) {
 	if s.guardMySQLDataLeave(t, func(next ui.Services) { s.applyMySQLDataCellFilter(next, t, name, mode, cell) }) {
 		return
 	}
@@ -179,9 +179,9 @@ func (s *State) applyMySQLDataCellFilter(services ui.Services, t *tab, name, mod
 			mode = "is_not_null"
 		}
 	}
-	filters := append([]connections.MySQLDataFilterRule(nil), t.dataFilterRules...)
+	filters := append([]mysqlsvc.MySQLDataFilterRule(nil), t.dataFilterRules...)
 	if len(filters) == 0 && t.dataFilterMode != "" {
-		filters = append(filters, connections.MySQLDataFilterRule{Column: t.dataFilterColumn, Mode: t.dataFilterMode, Value: t.dataFilterValue})
+		filters = append(filters, mysqlsvc.MySQLDataFilterRule{Column: t.dataFilterColumn, Mode: t.dataFilterMode, Value: t.dataFilterValue})
 	}
 	// Replace conditions on the clicked field and preserve other fields.
 	kept := filters[:0]
@@ -190,7 +190,7 @@ func (s *State) applyMySQLDataCellFilter(services ui.Services, t *tab, name, mod
 			kept = append(kept, rule)
 		}
 	}
-	if len(kept) >= connections.MySQLDataMaxFilterRules {
+	if len(kept) >= mysqlsvc.MySQLDataMaxFilterRules {
 		t.dataRuleError = locales.Text("筛选条件已达到上限")
 		return
 	}
@@ -198,7 +198,7 @@ func (s *State) applyMySQLDataCellFilter(services ui.Services, t *tab, name, mod
 	if mode == "is_null" || mode == "is_not_null" {
 		value = ""
 	}
-	t.dataFilterRules = append(kept, connections.MySQLDataFilterRule{Column: name, Mode: mode, Value: value})
+	t.dataFilterRules = append(kept, mysqlsvc.MySQLDataFilterRule{Column: name, Mode: mode, Value: value})
 	t.dataFilterColumn, t.dataFilterMode, t.dataFilterValue = "", "", ""
 	t.dataFilterExtraDraft = nil
 	for i, rule := range t.dataFilterRules {
@@ -301,28 +301,28 @@ func (s *State) clearMySQLDataCellRules(services ui.Services, t *tab) {
 	s.clearMySQLDataFilter(services, t)
 }
 
-func mysqlDataBinaryField(col connections.MySQLStructureColumn) bool {
+func mysqlDataBinaryField(col mysqlsvc.MySQLStructureColumn) bool {
 	switch strings.ToLower(col.DataType) {
 	case "binary", "varbinary", "tinyblob", "blob", "mediumblob", "longblob", "bit":
 		return true
 	}
 	return false
 }
-func mysqlDataSpatialField(col connections.MySQLStructureColumn) bool {
+func mysqlDataSpatialField(col mysqlsvc.MySQLStructureColumn) bool {
 	switch strings.ToLower(col.DataType) {
 	case "geometry", "point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon", "geometrycollection":
 		return true
 	}
 	return false
 }
-func mysqlDataEmptyValueAvailable(col connections.MySQLStructureColumn) bool {
+func mysqlDataEmptyValueAvailable(col mysqlsvc.MySQLStructureColumn) bool {
 	switch strings.ToLower(col.DataType) {
 	case "char", "varchar", "tinytext", "text", "mediumtext", "longtext":
 		return true
 	}
 	return mysqlDataBinaryField(col) && !strings.EqualFold(col.DataType, "bit")
 }
-func mysqlDataUUIDAvailable(col connections.MySQLStructureColumn, compact bool) bool {
+func mysqlDataUUIDAvailable(col mysqlsvc.MySQLStructureColumn, compact bool) bool {
 	// JSON, enum, numeric, temporal and binary fields cannot accept a textual
 	// UUID directly. Fixed/variable strings must have room for the chosen form.
 	switch strings.ToLower(col.DataType) {
@@ -337,11 +337,11 @@ func mysqlDataUUIDAvailable(col connections.MySQLStructureColumn, compact bool) 
 	return col.CharacterMaxLength == nil || *col.CharacterMaxLength >= length
 }
 
-func mysqlDataEmptyValue(col connections.MySQLStructureColumn) connections.MySQLDataValue {
+func mysqlDataEmptyValue(col mysqlsvc.MySQLStructureColumn) mysqlsvc.MySQLDataValue {
 	if mysqlDataBinaryField(col) {
-		return connections.MySQLDataValue{Binary: true, Bytes: []byte{}}
+		return mysqlsvc.MySQLDataValue{Binary: true, Bytes: []byte{}}
 	}
-	return connections.MySQLDataValue{Text: ""}
+	return mysqlsvc.MySQLDataValue{Text: ""}
 }
 
 func mysqlDataContainsType(kind string) bool {
@@ -366,9 +366,9 @@ func (s *State) removeMySQLDataFieldFilter(services ui.Services, t *tab, name st
 	if s.guardMySQLDataLeave(t, func(next ui.Services) { s.removeMySQLDataFieldFilter(next, t, name) }) {
 		return
 	}
-	filters := append([]connections.MySQLDataFilterRule(nil), t.dataFilterRules...)
+	filters := append([]mysqlsvc.MySQLDataFilterRule(nil), t.dataFilterRules...)
 	if len(filters) == 0 && t.dataFilterMode != "" {
-		filters = append(filters, connections.MySQLDataFilterRule{Column: t.dataFilterColumn, Mode: t.dataFilterMode, Value: t.dataFilterValue})
+		filters = append(filters, mysqlsvc.MySQLDataFilterRule{Column: t.dataFilterColumn, Mode: t.dataFilterMode, Value: t.dataFilterValue})
 	}
 	kept := filters[:0]
 	for _, rule := range filters {

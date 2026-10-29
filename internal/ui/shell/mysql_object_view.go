@@ -4,7 +4,7 @@ import (
 	"strconv"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -22,7 +22,7 @@ var mysqlObjectColumns = []ui.TableColumn{
 // MySQL's information_schema.TABLE_ROWS is not a reliable exact count for
 // InnoDB. The visible approximation mark prevents confusing it with COUNT(*).
 // NULL from the server remains empty, but a measured zero remains "0".
-func mysqlObjectCellText(obj connections.MySQLDBObject, col int) string {
+func mysqlObjectCellText(obj mysqlsvc.MySQLDBObject, col int) string {
 	number := func(n *int64) string {
 		if n == nil {
 			return ""
@@ -150,15 +150,15 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		}
 		if items[s.objectRow].Kind == "表" {
 			if table.Shortcut(0, ui.KeyF2) {
-				s.beginMySQLTableChange(s.mysqlSessionProfileID, db, items[s.objectRow].Name, connections.MySQLTableRename)
+				s.beginMySQLTableChange(s.mysqlSessionProfileID, db, items[s.objectRow].Name, mysqlsvc.MySQLTableRename)
 			}
 			if table.Shortcut(0, ui.KeyDelete) {
-				s.beginMySQLTableChange(s.mysqlSessionProfileID, db, items[s.objectRow].Name, connections.MySQLTableDrop)
+				s.beginMySQLTableChange(s.mysqlSessionProfileID, db, items[s.objectRow].Name, mysqlsvc.MySQLTableDrop)
 			}
 		}
 	}
 	if table.Shortcut(ui.Ctrl, ui.KeyN) && (s.mysqlObjectKind == "全部" || s.mysqlObjectKind == "表") {
-		s.beginMySQLTableChange(s.mysqlSessionProfileID, db, "", connections.MySQLTableCreate)
+		s.beginMySQLTableChange(s.mysqlSessionProfileID, db, "", mysqlsvc.MySQLTableCreate)
 	}
 	if table.Shortcut(0, ui.KeyF5) && s.mysqlObjectPending == "" && connected {
 		s.loadMySQLObjects(c.Services(), db, true)

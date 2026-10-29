@@ -12,6 +12,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func mysqlObjectTestState(t *testing.T) (*State, *ui.Tester) {
@@ -62,17 +63,17 @@ func TestMySQLObjectTreeLazyLoadingFiltersAndRefresh(t *testing.T) {
 	s, tt := mysqlObjectTestState(t)
 	var mu sync.Mutex
 	requests := map[string]int{}
-	s.mysqlObjectLister = func(ctx context.Context, id int64, database string) ([]connections.MySQLDBObject, error) {
+	s.mysqlObjectLister = func(ctx context.Context, id int64, database string) ([]mysqlsvc.MySQLDBObject, error) {
 		mu.Lock()
 		requests[database]++
 		mu.Unlock()
 		if database == "app_db" {
-			return []connections.MySQLDBObject{
+			return []mysqlsvc.MySQLDBObject{
 				{Name: "orders", Kind: "表", Engine: "InnoDB", Comment: "customer data"},
 				{Name: "sales", Kind: "视图", Comment: "sales aggregation"},
 			}, nil
 		}
-		return []connections.MySQLDBObject{{Name: "facts", Kind: "表", Engine: "InnoDB"}}, nil
+		return []mysqlsvc.MySQLDBObject{{Name: "facts", Kind: "表", Engine: "InnoDB"}}, nil
 	}
 	if _, ok := s.mysqlObjectCache["app_db"]; ok {
 		t.Fatal("metadata loaded before expansion")
@@ -154,13 +155,13 @@ func TestMySQLObjectBrowserIgnoresCancelledLateResults(t *testing.T) {
 	started := make(chan struct{})
 	release := make(chan struct{})
 	var once sync.Once
-	s.mysqlObjectLister = func(ctx context.Context, id int64, database string) ([]connections.MySQLDBObject, error) {
+	s.mysqlObjectLister = func(ctx context.Context, id int64, database string) ([]mysqlsvc.MySQLDBObject, error) {
 		if database == "app_db" {
 			once.Do(func() { close(started) })
 			<-release // deliberately ignores context to simulate a late driver
-			return []connections.MySQLDBObject{{Name: "stale_orders", Kind: "表"}}, nil
+			return []mysqlsvc.MySQLDBObject{{Name: "stale_orders", Kind: "表"}}, nil
 		}
-		return []connections.MySQLDBObject{{Name: "new_facts", Kind: "视图"}}, nil
+		return []mysqlsvc.MySQLDBObject{{Name: "new_facts", Kind: "视图"}}, nil
 	}
 	if err := tt.Click("数据库：app_db"); err != nil {
 		t.Fatal(err)
@@ -193,11 +194,11 @@ func TestMySQLObjectBrowserIgnoresCancelledLateResults(t *testing.T) {
 func TestMySQLObjectBrowserDisplaysErrorsAndRetry(t *testing.T) {
 	s, tt := mysqlObjectTestState(t)
 	fail := true
-	s.mysqlObjectLister = func(context.Context, int64, string) ([]connections.MySQLDBObject, error) {
+	s.mysqlObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
 		if fail {
 			return nil, errors.New("read metadata denied")
 		}
-		return []connections.MySQLDBObject{{Name: "ok_table", Kind: "表"}}, nil
+		return []mysqlsvc.MySQLDBObject{{Name: "ok_table", Kind: "表"}}, nil
 	}
 	if err := tt.Click("数据库：app_db"); err != nil {
 		t.Fatal(err)

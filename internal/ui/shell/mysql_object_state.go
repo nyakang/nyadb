@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 type mysqlDatabaseNode struct {
@@ -17,10 +17,10 @@ type mysqlObjectResult struct {
 	sessionGeneration uint64
 	request           uint64
 	database          string
-	objects           []connections.MySQLDBObject
+	objects           []mysqlsvc.MySQLDBObject
 	err               error
 }
-type mysqlObjectLister func(context.Context, int64, string) ([]connections.MySQLDBObject, error)
+type mysqlObjectLister func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error)
 
 // The UI thread owns this complete state. All jobs return immutable values
 // through one-shot buffered channels and only invalidate the MyGo frame.
@@ -34,7 +34,7 @@ func (s *State) resetMySQLObjectBrowser() {
 	s.mysqlObjectPending = ""
 	s.mysqlSelectedDatabase = ""
 	s.mysqlObjectKind = "全部"
-	s.mysqlObjectCache = make(map[string][]connections.MySQLDBObject)
+	s.mysqlObjectCache = make(map[string][]mysqlsvc.MySQLDBObject)
 	s.mysqlObjectErrors = make(map[string]string)
 	s.mysqlDatabaseNodes = make(map[string]*mysqlDatabaseNode)
 	if parseNavigationNode(s.explorerName).Database != "" {
@@ -130,7 +130,7 @@ func (s *State) loadMySQLObjects(services ui.Services, database string, force bo
 	// The first metadata query may be scheduled before the database tree has
 	// rendered (for example, when restoring an already-opened session).
 	if s.mysqlObjectCache == nil {
-		s.mysqlObjectCache = make(map[string][]connections.MySQLDBObject)
+		s.mysqlObjectCache = make(map[string][]mysqlsvc.MySQLDBObject)
 	}
 	if s.mysqlObjectErrors == nil {
 		s.mysqlObjectErrors = make(map[string]string)
@@ -223,12 +223,12 @@ func (s *State) consumeMySQLObjects() {
 	}
 }
 
-func (s *State) mysqlSelectedObjects() []connections.MySQLDBObject {
+func (s *State) mysqlSelectedObjects() []mysqlsvc.MySQLDBObject {
 	all := s.mysqlObjectCache[s.mysqlSelectedDatabase]
 	if s.mysqlObjectKind == "" || s.mysqlObjectKind == "全部" {
 		return all
 	}
-	items := make([]connections.MySQLDBObject, 0, len(all))
+	items := make([]mysqlsvc.MySQLDBObject, 0, len(all))
 	for _, object := range all {
 		if object.Kind == s.mysqlObjectKind {
 			items = append(items, object)

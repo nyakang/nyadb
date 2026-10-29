@@ -9,6 +9,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // Real MySQL data are read from the disposable fixture, not synthesized.
@@ -17,7 +18,7 @@ func TestMySQLEnumJSONNativeViewer84(t *testing.T) {
 	if os.Getenv("NYADB_MYSQL_TYPES_IT") != "1" {
 		t.Skip("requires disposable field-types fixture on 127.0.0.1:34306")
 	}
-	m := connections.NewMySQLSessionManager()
+	m := mysqlsvc.NewMySQLSessionManager()
 	defer m.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -27,7 +28,7 @@ func TestMySQLEnumJSONNativeViewer84(t *testing.T) {
 		t.Fatal(err)
 	}
 	page, err := m.TableDataPageWithOptions(ctx, settings.ProfileID, "nyadb_types", "field_types",
-		connections.MySQLDataOptions{UseKeyset: true, Limit: 3})
+		mysqlsvc.MySQLDataOptions{UseKeyset: true, Limit: 3})
 	if err != nil {
 		t.Fatal(err)
 	}

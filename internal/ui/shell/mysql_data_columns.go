@@ -5,11 +5,11 @@ import (
 	"unicode/utf8"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/locales"
 )
 
-func mysqlVisibleDataColumns(t *tab, page *connections.MySQLDataPage) ([]int, []ui.TableColumn) {
+func mysqlVisibleDataColumns(t *tab, page *mysqlsvc.MySQLDataPage) ([]int, []ui.TableColumn) {
 	indices := make([]int, 0, len(page.Columns))
 	visible := make([]ui.TableColumn, 0, len(page.Columns))
 	for i, name := range page.Columns {
@@ -87,7 +87,7 @@ func mysqlColumnKeyBadge(key string) string {
 	return ""
 }
 
-func mysqlDataCopyColumnPreview(page *connections.MySQLDataPage, col int) string {
+func mysqlDataCopyColumnPreview(page *mysqlsvc.MySQLDataPage, col int) string {
 	if col < 0 || col >= len(page.Columns) {
 		return ""
 	}
@@ -102,7 +102,7 @@ func mysqlDataCopyColumnPreview(page *connections.MySQLDataPage, col int) string
 	return strings.Join(values, "\n")
 }
 
-func mysqlDataHideColumn(t *tab, page *connections.MySQLDataPage, column string) {
+func mysqlDataHideColumn(t *tab, page *mysqlsvc.MySQLDataPage, column string) {
 	visible, _ := mysqlVisibleDataColumns(t, page)
 	if len(visible) <= 1 {
 		return
@@ -118,7 +118,7 @@ func mysqlDataHideColumn(t *tab, page *connections.MySQLDataPage, column string)
 	}
 }
 
-func mysqlDataFitColumn(t *tab, page *connections.MySQLDataPage, col int) {
+func mysqlDataFitColumn(t *tab, page *mysqlsvc.MySQLDataPage, col int) {
 	if col < 0 || col >= len(page.Columns) {
 		return
 	}
@@ -146,7 +146,7 @@ func mysqlDataFitColumn(t *tab, page *connections.MySQLDataPage, col int) {
 	t.dataState.Columns.Widths[name] = min(width, 420)
 }
 
-func (s *State) mysqlDataHeaderMenu(c *ui.Context, t *tab, page *connections.MySQLDataPage, indices []int, m *ui.Menu, col int) {
+func (s *State) mysqlDataHeaderMenu(c *ui.Context, t *tab, page *mysqlsvc.MySQLDataPage, indices []int, m *ui.Menu, col int) {
 	valid := col >= 0 && col < len(indices)
 	source := 0
 	if valid {
@@ -172,7 +172,7 @@ func (s *State) mysqlDataHeaderMenu(c *ui.Context, t *tab, page *connections.MyS
 }
 
 // The toolbar and each native header expose the same column preferences.
-func (s *State) mysqlDataColumnsMenu(c *ui.Context, t *tab, page *connections.MySQLDataPage, m *ui.Menu) {
+func (s *State) mysqlDataColumnsMenu(c *ui.Context, t *tab, page *mysqlsvc.MySQLDataPage, m *ui.Menu) {
 	if page == nil {
 		return
 	}

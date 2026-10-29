@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -126,7 +126,7 @@ func mysqlInspectorProperty(c *ui.Context, label, value string) {
 	})
 }
 
-func mysqlInspectorFieldAttributes(c *ui.Context, field connections.MySQLStructureColumn) {
+func mysqlInspectorFieldAttributes(c *ui.Context, field mysqlsvc.MySQLStructureColumn) {
 	notNull := locales.Text("否")
 	if !field.Nullable {
 		notNull = locales.Text("是")

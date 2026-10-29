@@ -8,6 +8,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // A local-only fixture with the same hierarchy as the navigation reference.
@@ -35,8 +36,8 @@ func TestNavigationAssetVisualFixture(t *testing.T) {
 	s.mysqlSessionProfileID = active.ID
 	s.mysqlSessionStatus = "已连接"
 	s.mysqlSessionDatabases = []string{"0_mysql_monitor", "aigc", "alg_mark_platform", "alg_train", "angular", "audit_platform", "audit_platform_tenant", "audit_platform_test", "audit_platform_web", "c2c", "dev_audit_platform"}
-	s.mysqlObjectCache = make(map[string][]connections.MySQLDBObject)
-	s.mysqlObjectCache["dev_audit_platform"] = []connections.MySQLDBObject{
+	s.mysqlObjectCache = make(map[string][]mysqlsvc.MySQLDBObject)
+	s.mysqlObjectCache["dev_audit_platform"] = []mysqlsvc.MySQLDBObject{
 		{Name: "orders", Kind: "表"}, {Name: "daily", Kind: "视图"},
 	}
 	s.selectedProfileID = active.ID

@@ -8,6 +8,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -36,7 +37,7 @@ func (s *State) startMySQLSession(services ui.Services) {
 		return
 	}
 	if s.mysqlSessionManager == nil {
-		s.mysqlSessionManager = connections.NewMySQLSessionManager()
+		s.mysqlSessionManager = mysqlsvc.NewMySQLSessionManager()
 	}
 	// A malformed profile must never place its connection error on a
 	// different profile's active or parked session.
@@ -54,7 +55,7 @@ func (s *State) startMySQLSession(services ui.Services) {
 		}
 	}
 	if err == nil {
-		_, err = connections.DirectMySQLConfig(settings, password)
+		_, err = mysqlsvc.DirectMySQLConfig(settings, password)
 	}
 	if err != nil {
 		s.mysqlSessionStatus = "连接失败"

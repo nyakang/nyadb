@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -46,7 +46,7 @@ func mysqlFilterMode(mode string) string {
 }
 func mysqlDataFilterModeNeedsValue(mode string) bool { return mode != "为空" && mode != "不为空" }
 
-func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *connections.MySQLDataPage) {
+func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *mysqlsvc.MySQLDataPage) {
 	palette := theme.Colors(c)
 
 	viewportWidth, viewportHeight := c.Size()
@@ -97,7 +97,7 @@ func (s *State) mysqlDataRuleEditor(c *ui.Context, t *tab, page *connections.MyS
 	})
 }
 
-func (s *State) mysqlDataRuleFields(c *ui.Context, t *tab, page *connections.MySQLDataPage) {
+func (s *State) mysqlDataRuleFields(c *ui.Context, t *tab, page *mysqlsvc.MySQLDataPage) {
 	palette := theme.Colors(c)
 
 	choices := append([]string{"选择字段"}, page.Columns...)
@@ -109,7 +109,7 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *tab, page *connections.MyS
 			ui.TextInput(c, &t.dataFilterValueDraft).Label(locales.Text("数据筛选值")).Placeholder(locales.Text("筛选值")).Width(170)
 		}
 		ui.Box(c).Grow(1)
-		if ui.Button(c, locales.Text("添加条件")).Label(locales.Text("添加筛选规则")).Disabled(len(t.dataFilterExtraDraft)+1 >= connections.MySQLDataMaxFilterRules).Clicked() {
+		if ui.Button(c, locales.Text("添加条件")).Label(locales.Text("添加筛选规则")).Disabled(len(t.dataFilterExtraDraft)+1 >= mysqlsvc.MySQLDataMaxFilterRules).Clicked() {
 			t.dataFilterExtraDraft = append(t.dataFilterExtraDraft, mysqlDataRuleDraft{Column: "选择字段", Mode: "包含"})
 		}
 	})
@@ -132,7 +132,7 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *tab, page *connections.MyS
 	ui.Row(c).Height(theme.RowHeight(c, theme.ControlHeight)).Gap(8).AlignItems(ui.Center).Children(func() {
 		ui.Text(c, locales.Text("排序方式 · 按规则优先级依次排序")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 		ui.Box(c).Grow(1)
-		if ui.Button(c, locales.Text("添加排序")).Disabled(len(t.dataSortDraft) >= connections.MySQLDataMaxSortRules).Clicked() {
+		if ui.Button(c, locales.Text("添加排序")).Disabled(len(t.dataSortDraft) >= mysqlsvc.MySQLDataMaxSortRules).Clicked() {
 			t.dataSortDraft = append(t.dataSortDraft, mysqlDataSortDraft{Column: "选择字段", Direction: "升序"})
 		}
 	})
@@ -173,7 +173,7 @@ func (s *State) applyMySQLDataRules(services ui.Services, t *tab) {
 		drafts = append(drafts, mysqlDataRuleDraft{Column: t.dataFilterColumnDraft, Mode: t.dataFilterModeDraft, Value: t.dataFilterValueDraft})
 	}
 	drafts = append(drafts, t.dataFilterExtraDraft...)
-	filters := make([]connections.MySQLDataFilterRule, 0, len(drafts))
+	filters := make([]mysqlsvc.MySQLDataFilterRule, 0, len(drafts))
 	for _, draft := range drafts {
 		valid := false
 		for _, col := range t.dataColumns {
@@ -191,13 +191,13 @@ func (s *State) applyMySQLDataRules(services ui.Services, t *tab) {
 			t.dataRuleError = locales.Text("筛选条件无效或过长")
 			return
 		}
-		filters = append(filters, connections.MySQLDataFilterRule{Column: draft.Column, Mode: mode, Value: draft.Value})
+		filters = append(filters, mysqlsvc.MySQLDataFilterRule{Column: draft.Column, Mode: mode, Value: draft.Value})
 	}
 	if len(drafts) == 0 && len(t.dataSortDraft) == 0 && (t.dataFilterColumnDraft == "" || t.dataFilterColumnDraft == "选择字段") {
 		t.dataRuleError = locales.Text("请先选择筛选字段，或添加排序规则")
 		return
 	}
-	sortRules := make([]connections.MySQLDataSortRule, 0, len(t.dataSortDraft))
+	sortRules := make([]mysqlsvc.MySQLDataSortRule, 0, len(t.dataSortDraft))
 	used := map[string]bool{}
 	for _, draft := range t.dataSortDraft {
 		found := false
@@ -212,7 +212,7 @@ func (s *State) applyMySQLDataRules(services ui.Services, t *tab) {
 			return
 		}
 		used[draft.Column] = true
-		sortRules = append(sortRules, connections.MySQLDataSortRule{Column: draft.Column, Descending: draft.Direction == "降序"})
+		sortRules = append(sortRules, mysqlsvc.MySQLDataSortRule{Column: draft.Column, Descending: draft.Direction == "降序"})
 	}
 	if len(filters) > 1 {
 		t.dataFilterRules = filters

@@ -5,18 +5,18 @@ import (
 	"errors"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // The UI owns tabs and their cache. Queries only publish immutable results
 // through a one-shot channel; no goroutine may mutate State or tab directly.
-type mysqlStructureLoader func(context.Context, int64, string, string) (*connections.MySQLTableStructure, error)
+type mysqlStructureLoader func(context.Context, int64, string, string) (*mysqlsvc.MySQLTableStructure, error)
 
 type mysqlStructureResult struct {
 	sessionGeneration uint64
 	profileID         int64
 	request           uint64
-	data              *connections.MySQLTableStructure
+	data              *mysqlsvc.MySQLTableStructure
 	err               error
 }
 

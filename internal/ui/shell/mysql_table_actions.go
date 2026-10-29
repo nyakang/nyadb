@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -16,44 +16,44 @@ type mysqlTableChangeResult struct {
 	generation uint64
 	database   string
 	table      string
-	action     connections.MySQLTableAction
+	action     mysqlsvc.MySQLTableAction
 	newName    string
 	err        error
 }
 
-func mysqlTableActionLabel(action connections.MySQLTableAction) string {
+func mysqlTableActionLabel(action mysqlsvc.MySQLTableAction) string {
 	switch action {
-	case connections.MySQLTableCreate:
+	case mysqlsvc.MySQLTableCreate:
 		return "新建表"
-	case connections.MySQLTableRename:
+	case mysqlsvc.MySQLTableRename:
 		return "重命名"
-	case connections.MySQLTableDrop:
+	case mysqlsvc.MySQLTableDrop:
 		return "删除表"
-	case connections.MySQLTableDeleteRows:
+	case mysqlsvc.MySQLTableDeleteRows:
 		return "清空表"
-	case connections.MySQLTableTruncate:
+	case mysqlsvc.MySQLTableTruncate:
 		return "截断表"
-	case connections.MySQLTableCopyStructure:
+	case mysqlsvc.MySQLTableCopyStructure:
 		return "仅复制表结构"
-	case connections.MySQLTableCopyData:
+	case mysqlsvc.MySQLTableCopyData:
 		return "复制表结构和数据"
 	}
 	return "表操作"
 }
 
-func mysqlTableActionNeedsName(action connections.MySQLTableAction) bool {
+func mysqlTableActionNeedsName(action mysqlsvc.MySQLTableAction) bool {
 	switch action {
-	case connections.MySQLTableCreate, connections.MySQLTableRename,
-		connections.MySQLTableCopyStructure, connections.MySQLTableCopyData:
+	case mysqlsvc.MySQLTableCreate, mysqlsvc.MySQLTableRename,
+		mysqlsvc.MySQLTableCopyStructure, mysqlsvc.MySQLTableCopyData:
 		return true
 	}
 	return false
 }
 
-func mysqlTableActionDangerous(action connections.MySQLTableAction) bool {
-	return action == connections.MySQLTableDrop ||
-		action == connections.MySQLTableDeleteRows ||
-		action == connections.MySQLTableTruncate
+func mysqlTableActionDangerous(action mysqlsvc.MySQLTableAction) bool {
+	return action == mysqlsvc.MySQLTableDrop ||
+		action == mysqlsvc.MySQLTableDeleteRows ||
+		action == mysqlsvc.MySQLTableTruncate
 }
 
 func (s *State) canChangeMySQLTable(profileID int64) bool {
@@ -88,30 +88,30 @@ func (s *State) mysqlObjectContextMenu(services ui.Services, m *ui.Menu, profile
 	}
 
 	ready := s.canChangeMySQLTable(profileID)
-	begin := func(action connections.MySQLTableAction) {
+	begin := func(action mysqlsvc.MySQLTableAction) {
 		s.beginMySQLTableChange(profileID, database, name, action)
 	}
 	// The additional advanced Navicat functions are intentionally disabled
 	// until real services and workflows exist.
 	if m.Item(locales.Text("新建表")).Shortcut(ui.Ctrl, ui.KeyN).Disabled(!ready).Chosen() {
-		begin(connections.MySQLTableCreate)
+		begin(mysqlsvc.MySQLTableCreate)
 	}
 	m.Item(locales.Text("通过 AI 新建表")).Disabled(true)
 	if m.Item(locales.Text("删除表")).Shortcut(0, ui.KeyDelete).Disabled(!ready).Chosen() {
-		begin(connections.MySQLTableDrop)
+		begin(mysqlsvc.MySQLTableDrop)
 	}
 	if m.Item(locales.Text("清空表")).Disabled(!ready).Chosen() {
-		begin(connections.MySQLTableDeleteRows)
+		begin(mysqlsvc.MySQLTableDeleteRows)
 	}
 	if m.Item(locales.Text("截断表")).Disabled(!ready).Chosen() {
-		begin(connections.MySQLTableTruncate)
+		begin(mysqlsvc.MySQLTableTruncate)
 	}
 	m.Submenu(locales.Text("复制表"), func(sub *ui.Menu) {
 		if sub.Item(locales.Text("结构和数据")).Chosen() {
-			begin(connections.MySQLTableCopyData)
+			begin(mysqlsvc.MySQLTableCopyData)
 		}
 		if sub.Item(locales.Text("仅结构")).Chosen() {
-			begin(connections.MySQLTableCopyStructure)
+			begin(mysqlsvc.MySQLTableCopyStructure)
 		}
 	}).Disabled(!ready)
 	m.Item(locales.Text("设置权限")).Disabled(true)
@@ -151,7 +151,7 @@ func (s *State) mysqlObjectContextMenu(services ui.Services, m *ui.Menu, profile
 	m.Item(locales.Text("粘贴")).Shortcut(ui.Ctrl, ui.KeyV).Disabled(true)
 	m.Item(locales.Text("共享…")).Disabled(true)
 	if m.Item(locales.Text("重命名")).Shortcut(0, ui.KeyF2).Disabled(!ready).Chosen() {
-		begin(connections.MySQLTableRename)
+		begin(mysqlsvc.MySQLTableRename)
 	}
 	m.Separator()
 	if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).
@@ -160,7 +160,7 @@ func (s *State) mysqlObjectContextMenu(services ui.Services, m *ui.Menu, profile
 	}
 }
 
-func (s *State) beginMySQLTableChange(profileID int64, database, name string, action connections.MySQLTableAction) {
+func (s *State) beginMySQLTableChange(profileID int64, database, name string, action mysqlsvc.MySQLTableAction) {
 	if !s.canChangeMySQLTable(profileID) {
 		return
 	}
@@ -170,7 +170,7 @@ func (s *State) beginMySQLTableChange(profileID int64, database, name string, ac
 	s.mysqlTableDatabase = database
 	s.mysqlTableName = name
 	s.mysqlTableNewName = ""
-	if action == connections.MySQLTableRename {
+	if action == mysqlsvc.MySQLTableRename {
 		s.mysqlTableNewName = name
 	}
 	s.mysqlTableConfirmation = ""
@@ -191,7 +191,7 @@ func (s *State) mysqlTableChangeModal(c *ui.Context) {
 			Background(colors.Header).Gap(12).Children(func() {
 			ui.Text(c, locales.Text(label)).Bold().FontSize(theme.Font(c, 15))
 			target := "数据库：" + db
-			if s.mysqlTableAction != connections.MySQLTableCreate {
+			if s.mysqlTableAction != mysqlsvc.MySQLTableCreate {
 				target += "    表：" + name
 			}
 			ui.Text(c, target).
@@ -201,17 +201,17 @@ func (s *State) mysqlTableChangeModal(c *ui.Context) {
 				ui.TextInput(c, &s.mysqlTableNewName).Label("新表名称").Grow(1)
 			}
 			switch s.mysqlTableAction {
-			case connections.MySQLTableCreate:
+			case mysqlsvc.MySQLTableCreate:
 				ui.Text(c, "创建 InnoDB 基础表，初始字段为 id BIGINT AUTO_INCREMENT PRIMARY KEY；完整结构设计尚未接入。").FontSize(theme.Font(c, 12))
-			case connections.MySQLTableDeleteRows:
+			case mysqlsvc.MySQLTableDeleteRows:
 				ui.Text(c, "将执行 DELETE FROM，移除全部行；InnoDB 允许在事务中回滚，但本操作不会自动开启事务。").FontSize(theme.Font(c, 12))
-			case connections.MySQLTableTruncate:
+			case mysqlsvc.MySQLTableTruncate:
 				ui.Text(c, "将执行 TRUNCATE TABLE，通常重置自增值，并发生隐式提交；不能按普通删除回滚。").FontSize(theme.Font(c, 12)).TextColor(colors.Error)
-			case connections.MySQLTableDrop:
+			case mysqlsvc.MySQLTableDrop:
 				ui.Text(c, "将执行 DROP TABLE，永久删除表结构和数据。可能发生隐式提交。").FontSize(theme.Font(c, 12)).TextColor(colors.Error)
-			case connections.MySQLTableCopyData:
+			case mysqlsvc.MySQLTableCopyData:
 				ui.Text(c, "先 CREATE TABLE LIKE，再 INSERT SELECT；两步不是原子操作。复制失败时新表可能保留。").FontSize(theme.Font(c, 12))
-			case connections.MySQLTableRename:
+			case mysqlsvc.MySQLTableRename:
 				ui.Text(c, "将执行 RENAME TABLE，并使原有名称下的已打开数据/结构标签失效。").FontSize(theme.Font(c, 12))
 			}
 			if danger {
@@ -228,7 +228,7 @@ func (s *State) mysqlTableChangeModal(c *ui.Context) {
 				s.mysqlSessionStatus == "已连接"
 			if mysqlTableActionNeedsName(s.mysqlTableAction) {
 				valid = valid && strings.TrimSpace(s.mysqlTableNewName) != "" &&
-					(s.mysqlTableAction == connections.MySQLTableCreate ||
+					(s.mysqlTableAction == mysqlsvc.MySQLTableCreate ||
 						s.mysqlTableNewName != name)
 			}
 			if danger {
@@ -256,14 +256,14 @@ func (s *State) startMySQLTableChange(services ui.Services) {
 		return
 	}
 	if mysqlTableActionNeedsName(action) && (strings.TrimSpace(s.mysqlTableNewName) == "" ||
-		(action != connections.MySQLTableCreate && s.mysqlTableNewName == s.mysqlTableName)) {
+		(action != mysqlsvc.MySQLTableCreate && s.mysqlTableNewName == s.mysqlTableName)) {
 		return
 	}
-	request := connections.MySQLTableChange{
+	request := mysqlsvc.MySQLTableChange{
 		Action: action, Database: s.mysqlTableDatabase,
 		Table: s.mysqlTableName, NewName: s.mysqlTableNewName,
 	}
-	if action == connections.MySQLTableCreate {
+	if action == mysqlsvc.MySQLTableCreate {
 		// Creation has no source table. The service creates Table, while NewName
 		// is the destination only for rename and copy operations.
 		request.Table = s.mysqlTableNewName
@@ -316,7 +316,7 @@ func (s *State) consumeMySQLTableChange(services ui.Services) {
 			s.status = fmt.Sprintf("%s失败：%v", mysqlTableActionLabel(r.action), r.err)
 			// CREATE LIKE may succeed even if the subsequent INSERT fails.
 			// Refresh metadata to show any partially created destination table.
-			if r.action == connections.MySQLTableCopyData {
+			if r.action == mysqlsvc.MySQLTableCopyData {
 				if current {
 					delete(s.mysqlObjectCache, r.database)
 					if s.mysqlSelectedDatabase == r.database {
@@ -349,9 +349,9 @@ func (s *State) consumeMySQLTableChange(services ui.Services) {
 				continue
 			}
 			switch r.action {
-			case connections.MySQLTableRename, connections.MySQLTableDrop:
+			case mysqlsvc.MySQLTableRename, mysqlsvc.MySQLTableDrop:
 				s.closeTab(i)
-			case connections.MySQLTableDeleteRows, connections.MySQLTableTruncate:
+			case mysqlsvc.MySQLTableDeleteRows, mysqlsvc.MySQLTableTruncate:
 				if t.kind == tabMySQLData {
 					t.dataOffset = 0
 					t.dataAfter = nil

@@ -9,15 +9,16 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func TestUnifiedNavigatorQualifiesObjectsAndLoadsOnlyOnDemand(t *testing.T) {
 	s, tt := mysqlObjectTestState(t)
 	id := s.mysqlSessionProfileID
 	calls := 0
-	s.mysqlObjectLister = func(context.Context, int64, string) ([]connections.MySQLDBObject, error) { calls++; return nil, nil }
+	s.mysqlObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) { calls++; return nil, nil }
 	for _, db := range []string{"app_db", "analytics"} {
-		s.mysqlObjectCache[db] = []connections.MySQLDBObject{{Name: "same_table", Kind: "表", Engine: "InnoDB"}}
+		s.mysqlObjectCache[db] = []mysqlsvc.MySQLDBObject{{Name: "same_table", Kind: "表", Engine: "InnoDB"}}
 	}
 	n := navigationNode{Kind: "object", ProfileID: id, Database: "app_db", Category: "表", Object: "same_table"}
 	other := n
@@ -74,9 +75,9 @@ func TestNavigatorUsesProfileIdentityAcrossRenameWithoutConnecting(t *testing.T)
 
 func TestUnifiedNavigatorVirtualizesMoreThanOneHundredObjects(t *testing.T) {
 	s, tt := mysqlObjectTestState(t)
-	items := make([]connections.MySQLDBObject, 1500)
+	items := make([]mysqlsvc.MySQLDBObject, 1500)
 	for i := range items {
-		items[i] = connections.MySQLDBObject{Name: fmt.Sprintf("table_%04d", i), Kind: "表"}
+		items[i] = mysqlsvc.MySQLDBObject{Name: fmt.Sprintf("table_%04d", i), Kind: "表"}
 	}
 	s.mysqlObjectCache["app_db"] = items
 	n := navigationNode{Kind: "category", ProfileID: s.mysqlSessionProfileID, Database: "app_db", Category: "表"}
@@ -141,11 +142,11 @@ func TestExpandedDatabasesLoadSequentiallyWithoutChangingSelection(t *testing.T)
 	s, tt := mysqlObjectTestState(t)
 	var mu sync.Mutex
 	reads := map[string]int{}
-	s.mysqlObjectLister = func(_ context.Context, _ int64, db string) ([]connections.MySQLDBObject, error) {
+	s.mysqlObjectLister = func(_ context.Context, _ int64, db string) ([]mysqlsvc.MySQLDBObject, error) {
 		mu.Lock()
 		reads[db]++
 		mu.Unlock()
-		return []connections.MySQLDBObject{{Name: "table", Kind: "表"}}, nil
+		return []mysqlsvc.MySQLDBObject{{Name: "table", Kind: "表"}}, nil
 	}
 	selected := s.explorerName
 	for _, db := range s.mysqlSessionDatabases {
@@ -193,8 +194,8 @@ func TestMetadataRefreshRetainsObjectIdentityWhenRowsMove(t *testing.T) {
 	s.selectObjectInNavigator("app_db", "sales", "视图")
 	s.objectRow = 1
 	tt.Frame()
-	s.mysqlObjectLister = func(context.Context, int64, string) ([]connections.MySQLDBObject, error) {
-		return []connections.MySQLDBObject{{Name: "new_first", Kind: "表"}, {Name: "orders", Kind: "表"}, {Name: "sales", Kind: "视图"}}, nil
+	s.mysqlObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
+		return []mysqlsvc.MySQLDBObject{{Name: "new_first", Kind: "表"}, {Name: "orders", Kind: "表"}, {Name: "sales", Kind: "视图"}}, nil
 	}
 	if err := tt.Click("刷新元数据：app_db"); err != nil {
 		t.Fatal(err)

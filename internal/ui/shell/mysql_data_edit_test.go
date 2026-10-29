@@ -11,41 +11,41 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // The fake server keeps persisted bytes separate from the page and the UI
 // draft. Tests can therefore distinguish typing, staging, and a write request.
 type mysqlEditingFixture struct {
 	mu      sync.Mutex
-	page    *connections.MySQLDataPage
-	writes  []connections.MySQLDataEdit
+	page    *mysqlsvc.MySQLDataPage
+	writes  []mysqlsvc.MySQLDataEdit
 	failure error
 }
 
-func cloneEditingPage(p *connections.MySQLDataPage) *connections.MySQLDataPage {
+func cloneEditingPage(p *mysqlsvc.MySQLDataPage) *mysqlsvc.MySQLDataPage {
 	copy := *p
-	copy.Rows = make([][]connections.MySQLDataCell, len(p.Rows))
+	copy.Rows = make([][]mysqlsvc.MySQLDataCell, len(p.Rows))
 	for i := range p.Rows {
-		copy.Rows[i] = append([]connections.MySQLDataCell(nil), p.Rows[i]...)
+		copy.Rows[i] = append([]mysqlsvc.MySQLDataCell(nil), p.Rows[i]...)
 	}
-	copy.RowRefs = append([]*connections.MySQLRowRef(nil), p.RowRefs...)
-	copy.RowSnapshots = append([]*connections.MySQLRowSnapshot(nil), p.RowSnapshots...)
+	copy.RowRefs = append([]*mysqlsvc.MySQLRowRef(nil), p.RowRefs...)
+	copy.RowSnapshots = append([]*mysqlsvc.MySQLRowSnapshot(nil), p.RowSnapshots...)
 	return &copy
 }
 
 func editingTestWorkspace(t *testing.T) (*State, *tab, *ui.Tester, *mysqlEditingFixture) {
 	t.Helper()
-	p := &connections.MySQLDataPage{Database: "edit_test", Table: "records", Limit: 100, StableOrder: true,
+	p := &mysqlsvc.MySQLDataPage{Database: "edit_test", Table: "records", Limit: 100, StableOrder: true,
 		Columns: []string{"id", "note", "extra"}, ColumnKinds: []string{"bigint", "varchar", "varchar"},
-		ColumnMetadata: []connections.MySQLStructureColumn{{Name: "id", DataType: "bigint", Type: "bigint", Key: "PRI", Extra: "auto_increment"}, {Name: "note", DataType: "varchar", Type: "varchar(80)", Nullable: true}, {Name: "extra", DataType: "varchar", Type: "varchar(80)", Nullable: true}},
-		Rows:           [][]connections.MySQLDataCell{{{Text: "41"}, {Text: "alpha"}, {Text: "same-row"}}, {{Text: "42"}, {Text: "beta"}, {Null: true}}, {{Text: "43"}, {Text: "gamma"}, {Text: ""}}},
+		ColumnMetadata: []mysqlsvc.MySQLStructureColumn{{Name: "id", DataType: "bigint", Type: "bigint", Key: "PRI", Extra: "auto_increment"}, {Name: "note", DataType: "varchar", Type: "varchar(80)", Nullable: true}, {Name: "extra", DataType: "varchar", Type: "varchar(80)", Nullable: true}},
+		Rows:           [][]mysqlsvc.MySQLDataCell{{{Text: "41"}, {Text: "alpha"}, {Text: "same-row"}}, {{Text: "42"}, {Text: "beta"}, {Null: true}}, {{Text: "43"}, {Text: "gamma"}, {Text: ""}}},
 	}
 	for i := range p.Rows {
-		ref := &connections.MySQLRowRef{Database: p.Database, Table: p.Table, Columns: []string{"id"}, Values: [][]byte{[]byte(p.Rows[i][0].Text)}}
+		ref := &mysqlsvc.MySQLRowRef{Database: p.Database, Table: p.Table, Columns: []string{"id"}, Values: [][]byte{[]byte(p.Rows[i][0].Text)}}
 		p.RowRefs = append(p.RowRefs, ref)
 		hash := fmt.Sprintf("snapshot-%d", i)
-		p.RowSnapshots = append(p.RowSnapshots, &connections.MySQLRowSnapshot{Ref: *ref, Columns: p.Columns, Fingerprints: []*string{&hash, &hash, &hash}, Metadata: "fixture"})
+		p.RowSnapshots = append(p.RowSnapshots, &mysqlsvc.MySQLRowSnapshot{Ref: *ref, Columns: p.Columns, Fingerprints: []*string{&hash, &hash, &hash}, Metadata: "fixture"})
 	}
 	fixture := &mysqlEditingFixture{page: cloneEditingPage(p)}
 	s := New()
@@ -59,7 +59,7 @@ func editingTestWorkspace(t *testing.T) (*State, *tab, *ui.Tester, *mysqlEditing
 	}
 	s.tabs = append(s.tabs, doc)
 	s.activeTab = 1
-	s.mysqlDataAdvancedLoader = func(_ context.Context, _ int64, _, _ string, o connections.MySQLDataOptions) (*connections.MySQLDataPage, error) {
+	s.mysqlDataAdvancedLoader = func(_ context.Context, _ int64, _, _ string, o mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {
 		fixture.mu.Lock()
 		defer fixture.mu.Unlock()
 		page := cloneEditingPage(fixture.page)
@@ -67,16 +67,16 @@ func editingTestWorkspace(t *testing.T) (*State, *tab, *ui.Tester, *mysqlEditing
 		page.Limit = o.Limit
 		return page, nil
 	}
-	s.mysqlDataSaver = func(_ context.Context, _ int64, _, _ string, edits []connections.MySQLDataEdit) (*connections.MySQLDataEditResult, error) {
+	s.mysqlDataSaver = func(_ context.Context, _ int64, _, _ string, edits []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
 		fixture.mu.Lock()
 		defer fixture.mu.Unlock()
 		fixture.writes = append(fixture.writes, edits...)
 		if fixture.failure != nil {
 			return nil, fixture.failure
 		}
-		result := &connections.MySQLDataEditResult{}
+		result := &mysqlsvc.MySQLDataEditResult{}
 		for _, edit := range edits {
-			outcome := connections.MySQLDataEditOutcome{Kind: edit.Kind, Original: edit.Original}
+			outcome := mysqlsvc.MySQLDataEditOutcome{Kind: edit.Kind, Original: edit.Original}
 			if edit.Kind == "update" {
 				for row, ref := range fixture.page.RowRefs {
 					if string(ref.Values[0]) != string(edit.Original.Ref.Values[0]) {
@@ -84,31 +84,31 @@ func editingTestWorkspace(t *testing.T) (*State, *tab, *ui.Tester, *mysqlEditing
 					}
 					for name, value := range edit.Values {
 						col := slices.Index(fixture.page.Columns, name)
-						fixture.page.Rows[row][col] = connections.MySQLDataCell{Text: value.Text, Null: value.Null}
+						fixture.page.Rows[row][col] = mysqlsvc.MySQLDataCell{Text: value.Text, Null: value.Null}
 					}
 					outcome.Saved = fixture.page.RowSnapshots[row]
-					outcome.Previews = append([]connections.MySQLDataCell(nil), fixture.page.Rows[row]...)
+					outcome.Previews = append([]mysqlsvc.MySQLDataCell(nil), fixture.page.Rows[row]...)
 				}
 			}
 			if edit.Kind == "insert" {
 				id := fmt.Sprint(44 + len(fixture.page.Rows) - 3)
-				ref := &connections.MySQLRowRef{Database: fixture.page.Database, Table: fixture.page.Table, Columns: []string{"id"}, Values: [][]byte{[]byte(id)}}
-				line := make([]connections.MySQLDataCell, len(fixture.page.Columns))
+				ref := &mysqlsvc.MySQLRowRef{Database: fixture.page.Database, Table: fixture.page.Table, Columns: []string{"id"}, Values: [][]byte{[]byte(id)}}
+				line := make([]mysqlsvc.MySQLDataCell, len(fixture.page.Columns))
 				line[0].Text = id
 				for col, name := range fixture.page.Columns[1:] {
 					if v, ok := edit.Values[name]; ok {
-						line[col+1] = connections.MySQLDataCell{Text: v.Text, Null: v.Null}
+						line[col+1] = mysqlsvc.MySQLDataCell{Text: v.Text, Null: v.Null}
 					} else {
 						line[col+1].Null = true
 					}
 				}
-				snapshot := &connections.MySQLRowSnapshot{Ref: *ref, Columns: fixture.page.Columns, Metadata: "fixture"}
+				snapshot := &mysqlsvc.MySQLRowSnapshot{Ref: *ref, Columns: fixture.page.Columns, Metadata: "fixture"}
 				fixture.page.Rows = append(fixture.page.Rows, line)
 				fixture.page.RowRefs = append(fixture.page.RowRefs, ref)
 				fixture.page.RowSnapshots = append(fixture.page.RowSnapshots, snapshot)
 				outcome.GeneratedID = 44
 				outcome.Saved = snapshot
-				outcome.Previews = append([]connections.MySQLDataCell(nil), line...)
+				outcome.Previews = append([]mysqlsvc.MySQLDataCell(nil), line...)
 			}
 			if edit.Kind == "delete" {
 				for row, ref := range fixture.page.RowRefs {
@@ -134,7 +134,7 @@ func (f *mysqlEditingFixture) writeCount() int {
 	defer f.mu.Unlock()
 	return len(f.writes)
 }
-func (f *mysqlEditingFixture) cell(row, col int) connections.MySQLDataCell {
+func (f *mysqlEditingFixture) cell(row, col int) mysqlsvc.MySQLDataCell {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.page.Rows[row][col]
@@ -261,8 +261,8 @@ func TestMySQLDataBatchPreservesDraftAcrossRowsAndCancel(t *testing.T) {
 func TestMySQLDataNullAndEmptyStringStayDistinct(t *testing.T) {
 	for _, tc := range []struct {
 		name  string
-		value connections.MySQLDataValue
-	}{{"NULL", connections.MySQLDataValue{Null: true}}, {"empty", connections.MySQLDataValue{Text: ""}}} {
+		value mysqlsvc.MySQLDataValue
+	}{{"NULL", mysqlsvc.MySQLDataValue{Null: true}}, {"empty", mysqlsvc.MySQLDataValue{Text: ""}}} {
 		t.Run(tc.name, func(t *testing.T) {
 			s, doc, tt, f := editingTestWorkspace(t)
 			doc.dataEdit.Batch = true
@@ -374,10 +374,10 @@ func TestMySQLDataEditorKeepsIdentityAcrossReorderHiddenFieldsAndScroll(t *testi
 	doc.dataEdit.Batch = true
 	for row := 3; row < 93; row++ {
 		id := fmt.Sprint(41 + row)
-		ref := &connections.MySQLRowRef{Database: doc.dataDatabase, Table: doc.dataTable, Columns: []string{"id"}, Values: [][]byte{[]byte(id)}}
-		doc.dataPage.Rows = append(doc.dataPage.Rows, []connections.MySQLDataCell{{Text: id}, {Text: "offscreen-" + id}, {Text: ""}})
+		ref := &mysqlsvc.MySQLRowRef{Database: doc.dataDatabase, Table: doc.dataTable, Columns: []string{"id"}, Values: [][]byte{[]byte(id)}}
+		doc.dataPage.Rows = append(doc.dataPage.Rows, []mysqlsvc.MySQLDataCell{{Text: id}, {Text: "offscreen-" + id}, {Text: ""}})
 		doc.dataPage.RowRefs = append(doc.dataPage.RowRefs, ref)
-		doc.dataPage.RowSnapshots = append(doc.dataPage.RowSnapshots, &connections.MySQLRowSnapshot{Ref: *ref, Columns: doc.dataPage.Columns, Metadata: "fixture"})
+		doc.dataPage.RowSnapshots = append(doc.dataPage.RowSnapshots, &mysqlsvc.MySQLRowSnapshot{Ref: *ref, Columns: doc.dataPage.Columns, Metadata: "fixture"})
 	}
 	tt.Frame()
 	if err := tt.Click("alpha"); err != nil {
@@ -483,13 +483,13 @@ func TestMySQLDataExplicitCompleteReadRejectsChangedSnapshot(t *testing.T) {
 	for _, conflict := range []bool{false, true} {
 		t.Run(fmt.Sprint(conflict), func(t *testing.T) {
 			s, doc, tt, _ := editingTestWorkspace(t)
-			doc.dataPage.Rows[0][2] = connections.MySQLDataCell{Text: "preview", Truncated: true}
-			s.mysqlDataRowReader = func(_ context.Context, _ int64, _, _ string, _ connections.MySQLRowRef) (*connections.MySQLDataRow, error) {
+			doc.dataPage.Rows[0][2] = mysqlsvc.MySQLDataCell{Text: "preview", Truncated: true}
+			s.mysqlDataRowReader = func(_ context.Context, _ int64, _, _ string, _ mysqlsvc.MySQLRowRef) (*mysqlsvc.MySQLDataRow, error) {
 				snapshot := *doc.dataPage.RowSnapshots[0]
 				if conflict {
 					snapshot.Metadata = "changed metadata"
 				}
-				return &connections.MySQLDataRow{Columns: doc.dataPage.ColumnMetadata, Snapshot: &snapshot, Values: map[string]connections.MySQLDataValue{"extra": {Text: "complete original value"}}}, nil
+				return &mysqlsvc.MySQLDataRow{Columns: doc.dataPage.ColumnMetadata, Snapshot: &snapshot, Values: map[string]mysqlsvc.MySQLDataValue{"extra": {Text: "complete original value"}}}, nil
 			}
 			tt.Frame()
 			if err := tt.Click("preview"); err != nil {
@@ -591,10 +591,10 @@ func TestMySQLDataCanceledReaderIgnoresLateFullValueResult(t *testing.T) {
 	s, doc, tt, _ := editingTestWorkspace(t)
 	started := make(chan struct{})
 	release := make(chan struct{})
-	s.mysqlDataRowReader = func(_ context.Context, _ int64, _, _ string, _ connections.MySQLRowRef) (*connections.MySQLDataRow, error) {
+	s.mysqlDataRowReader = func(_ context.Context, _ int64, _, _ string, _ mysqlsvc.MySQLRowRef) (*mysqlsvc.MySQLDataRow, error) {
 		close(started)
 		<-release
-		return &connections.MySQLDataRow{Snapshot: doc.dataPage.RowSnapshots[0], Values: map[string]connections.MySQLDataValue{"extra": {Text: "late secret"}}}, nil
+		return &mysqlsvc.MySQLDataRow{Snapshot: doc.dataPage.RowSnapshots[0], Values: map[string]mysqlsvc.MySQLDataValue{"extra": {Text: "late secret"}}}, nil
 	}
 	s.beginMySQLCellEdit(ui.Services{}, doc, 0, 2, true)
 	select {
@@ -618,7 +618,7 @@ func TestMySQLDataBusySaveStopsWithoutDuplicateAndKeepsDraft(t *testing.T) {
 	started := make(chan struct{})
 	calls := 0
 	var mu sync.Mutex
-	s.mysqlDataSaver = func(ctx context.Context, _ int64, _, _ string, _ []connections.MySQLDataEdit) (*connections.MySQLDataEditResult, error) {
+	s.mysqlDataSaver = func(ctx context.Context, _ int64, _, _ string, _ []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
 		mu.Lock()
 		calls++
 		mu.Unlock()
@@ -694,11 +694,11 @@ func TestMySQLDataUnknownCommitCannotReplayOrDiscardUnverifiedDraft(t *testing.T
 	s, doc, tt, _ := editingTestWorkspace(t)
 	calls := 0
 	var mu sync.Mutex
-	s.mysqlDataSaver = func(_ context.Context, _ int64, _, _ string, edits []connections.MySQLDataEdit) (*connections.MySQLDataEditResult, error) {
+	s.mysqlDataSaver = func(_ context.Context, _ int64, _, _ string, edits []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
 		mu.Lock()
 		calls++
 		mu.Unlock()
-		return &connections.MySQLDataEditResult{CommitUncertain: true, Outcomes: []connections.MySQLDataEditOutcome{{Kind: "update", Original: edits[0].Original}}}, connections.ErrMySQLDataCommitUncertain
+		return &mysqlsvc.MySQLDataEditResult{CommitUncertain: true, Outcomes: []mysqlsvc.MySQLDataEditOutcome{{Kind: "update", Original: edits[0].Original}}}, mysqlsvc.ErrMySQLDataCommitUncertain
 	}
 	doc.dataEdit.Batch = true
 	if err := tt.Click("alpha"); err != nil {
@@ -767,7 +767,7 @@ func TestMySQLDataParkedWriteResultIsKeptUntilItsProfileReturns(t *testing.T) {
 	doc.dataEdit.Request = 8
 	doc.dataEdit.Busy = true
 	s.mysqlSessionProfileID = 20
-	result <- mysqlEditResult{Generation: 7, Request: 8, Profile: 19, Keys: keys, Saved: &connections.MySQLDataEditResult{Outcomes: []connections.MySQLDataEditOutcome{{Kind: "update", Saved: doc.dataPage.RowSnapshots[0], Previews: append([]connections.MySQLDataCell(nil), doc.dataPage.Rows[0]...)}}}}
+	result <- mysqlEditResult{Generation: 7, Request: 8, Profile: 19, Keys: keys, Saved: &mysqlsvc.MySQLDataEditResult{Outcomes: []mysqlsvc.MySQLDataEditOutcome{{Kind: "update", Saved: doc.dataPage.RowSnapshots[0], Previews: append([]mysqlsvc.MySQLDataCell(nil), doc.dataPage.Rows[0]...)}}}}
 	tt.Frame()
 	if !doc.dataEdit.Busy || len(result) != 1 || !mysqlDataHasDraft(doc) {
 		t.Fatal("other profile consumed or lost pending write result")
@@ -783,26 +783,26 @@ func TestMySQLDataSavedIdentityKeepsBoundedTypedPreview(t *testing.T) {
 	for _, tc := range []struct {
 		name, kind string
 		raw        []byte
-		preview    connections.MySQLDataCell
+		preview    mysqlsvc.MySQLDataCell
 	}{
-		{"binary", "varbinary", []byte{0, 0xff, 1}, connections.MySQLDataCell{Text: "0x00ff01"}},
-		{"long text", "varchar", []byte(strings.Repeat("长", 1000)), mysqlDataValuePreview(connections.MySQLDataValue{Text: strings.Repeat("长", 1000)})},
+		{"binary", "varbinary", []byte{0, 0xff, 1}, mysqlsvc.MySQLDataCell{Text: "0x00ff01"}},
+		{"long text", "varchar", []byte(strings.Repeat("长", 1000)), mysqlDataValuePreview(mysqlsvc.MySQLDataValue{Text: strings.Repeat("长", 1000)})},
 	} {
 		for _, serverPreview := range []bool{false, true} {
 			t.Run(fmt.Sprintf("%s/server_preview=%t", tc.name, serverPreview), func(t *testing.T) {
 				s, doc, tt, _ := editingTestWorkspace(t)
 				doc.dataPage.ColumnMetadata[0].DataType = tc.kind
 				doc.dataPage.ColumnKinds[0] = tc.kind
-				ref := &connections.MySQLRowRef{Database: doc.dataDatabase, Table: doc.dataTable, Columns: []string{"id"}, Values: [][]byte{tc.raw}}
-				saved := &connections.MySQLRowSnapshot{Ref: *ref, Columns: doc.dataPage.Columns}
+				ref := &mysqlsvc.MySQLRowRef{Database: doc.dataDatabase, Table: doc.dataTable, Columns: []string{"id"}, Values: [][]byte{tc.raw}}
+				saved := &mysqlsvc.MySQLRowSnapshot{Ref: *ref, Columns: doc.dataPage.Columns}
 				key := mysqlDataRowKey(doc, 0)
-				doc.dataEdit.Drafts = map[string]*mysqlRowDraft{key: {Key: key, Row: 0, Kind: "update", Values: map[string]connections.MySQLDataValue{"note": {Text: "saved"}}}}
-				outcome := connections.MySQLDataEditOutcome{Kind: "update", Saved: saved}
+				doc.dataEdit.Drafts = map[string]*mysqlRowDraft{key: {Key: key, Row: 0, Kind: "update", Values: map[string]mysqlsvc.MySQLDataValue{"note": {Text: "saved"}}}}
+				outcome := mysqlsvc.MySQLDataEditOutcome{Kind: "update", Saved: saved}
 				if serverPreview {
 					outcome.PreviewColumns = []string{"id", "note"}
-					outcome.Previews = []connections.MySQLDataCell{tc.preview, {Text: "saved"}}
+					outcome.Previews = []mysqlsvc.MySQLDataCell{tc.preview, {Text: "saved"}}
 				}
-				s.acceptMySQLDataSaved(doc, []string{key}, &connections.MySQLDataEditResult{Outcomes: []connections.MySQLDataEditOutcome{outcome}})
+				s.acceptMySQLDataSaved(doc, []string{key}, &mysqlsvc.MySQLDataEditResult{Outcomes: []mysqlsvc.MySQLDataEditOutcome{outcome}})
 				tt.Frame()
 				if doc.dataPage.Rows[0][0] != tc.preview {
 					t.Fatalf("identity bytes replaced typed/bounded preview: %+v", doc.dataPage.Rows[0][0])
@@ -856,8 +856,8 @@ func TestMySQLDataCellPaddingClickAndNoOpValuesDoNotCreateDrafts(t *testing.T) {
 	tt.Key(0, ui.KeyEscape)
 	for _, tc := range []struct {
 		row, col int
-		v        connections.MySQLDataValue
-	}{{0, 1, connections.MySQLDataValue{Text: "alpha"}}, {1, 2, connections.MySQLDataValue{Null: true}}, {2, 2, connections.MySQLDataValue{Text: ""}}} {
+		v        mysqlsvc.MySQLDataValue
+	}{{0, 1, mysqlsvc.MySQLDataValue{Text: "alpha"}}, {1, 2, mysqlsvc.MySQLDataValue{Null: true}}, {2, 2, mysqlsvc.MySQLDataValue{Text: ""}}} {
 		s.setMySQLDataCell(ui.Services{}, doc, tc.row, tc.col, tc.v)
 		tt.Frame()
 		if mysqlDataHasDraft(doc) || f.writeCount() != 0 {

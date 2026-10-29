@@ -7,6 +7,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func waitMultiProfileSession(t *testing.T, s *State, tt *ui.Tester) {
@@ -46,7 +47,7 @@ func TestMySQLMultiProfileBrowserSessionsDoNotDisconnectOrMixCaches(t *testing.T
 		t.Fatal(err)
 	}
 	waitMultiProfileSession(t, s, tt)
-	s.mysqlObjectCache["shared"] = []connections.MySQLDBObject{{Name: "a_orders", Kind: "表"}}
+	s.mysqlObjectCache["shared"] = []mysqlsvc.MySQLDBObject{{Name: "a_orders", Kind: "表"}}
 	s.mysqlSelectedDatabase = "shared"
 	s.objectRow = 0
 
@@ -60,7 +61,7 @@ func TestMySQLMultiProfileBrowserSessionsDoNotDisconnectOrMixCaches(t *testing.T
 		t.Fatal(err)
 	}
 	waitMultiProfileSession(t, s, tt)
-	s.mysqlObjectCache["shared"] = []connections.MySQLDBObject{{Name: "b_orders", Kind: "表"}}
+	s.mysqlObjectCache["shared"] = []mysqlsvc.MySQLDBObject{{Name: "b_orders", Kind: "表"}}
 	s.mysqlSelectedDatabase = "shared"
 	s.objectRow = 0
 
@@ -104,13 +105,13 @@ func TestMySQLMultiProfileTabsAndMetadataRefreshAreScoped(t *testing.T) {
 	s.loadProfiles()
 	s.mysqlSessionProfileID, s.mysqlSessionStatus, s.selectedProfileID = a.ID, "已连接", a.ID
 	s.mysqlSessionDatabases = []string{"shared", "only_a"}
-	s.mysqlObjectCache = map[string][]connections.MySQLDBObject{"shared": {{Name: "one", Kind: "表"}}}
+	s.mysqlObjectCache = map[string][]mysqlsvc.MySQLDBObject{"shared": {{Name: "one", Kind: "表"}}}
 	s.tabs = append(s.tabs, &tab{kind: tabMySQLData, title: "A data", dataProfileID: a.ID, dataDatabase: "shared", dataTable: "one"})
 	s.tabs = append(s.tabs, &tab{kind: tabStructure, title: "B structure", structureProfileID: b.ID, structureDatabase: "shared", structureTable: "two"})
 	s.activateMySQLProfile(b.ID)
 	s.mysqlSessionProfileID, s.mysqlSessionStatus, s.selectedProfileID = b.ID, "已连接", b.ID
 	s.mysqlSessionDatabases = []string{"shared", "only_b"}
-	s.mysqlObjectCache["shared"] = []connections.MySQLDBObject{{Name: "two", Kind: "表"}}
+	s.mysqlObjectCache["shared"] = []mysqlsvc.MySQLDBObject{{Name: "two", Kind: "表"}}
 	s.pruneMySQLStructureTabs(map[string]bool{"only_b": true})
 	if len(s.tabs) != 2 || s.tabs[1].dataProfileID != a.ID {
 		t.Fatalf("B refresh incorrectly deleted A tabs: %+v", s.tabs)

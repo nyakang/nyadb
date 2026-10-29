@@ -2,7 +2,7 @@ package shell
 
 import (
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -35,7 +35,7 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 	if n.Kind == "database" || n.Kind == "category" && n.Category == "表" {
 		if m.Item(locales.Text("新建表")).Shortcut(ui.Ctrl, ui.KeyN).
 			Disabled(!s.canChangeMySQLTable(n.ProfileID)).Chosen() {
-			s.beginMySQLTableChange(n.ProfileID, n.Database, "", connections.MySQLTableCreate)
+			s.beginMySQLTableChange(n.ProfileID, n.Database, "", mysqlsvc.MySQLTableCreate)
 		}
 		m.Separator()
 	}

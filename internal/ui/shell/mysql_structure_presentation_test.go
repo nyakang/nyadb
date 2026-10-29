@@ -3,7 +3,7 @@ package shell
 import (
 	"testing"
 
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func intptr(n int64) *int64   { return &n }
@@ -13,13 +13,13 @@ func strptr(s string) *string { return &s }
 // index and one row per foreign key, rather than one row per member column.
 // Service metadata remains complete and retains PRIMARY.
 func TestMySQLStructureDesignPresentation(t *testing.T) {
-	indexes := []connections.MySQLStructureIndex{
-		{Name: "PRIMARY", Unique: true, Type: "BTREE", Columns: []connections.MySQLStructureIndexColumn{{Name: "id", Position: 1}}},
-		{Name: "uk_tenant_code", Unique: true, Type: "BTREE", Columns: []connections.MySQLStructureIndexColumn{
+	indexes := []mysqlsvc.MySQLStructureIndex{
+		{Name: "PRIMARY", Unique: true, Type: "BTREE", Columns: []mysqlsvc.MySQLStructureIndexColumn{{Name: "id", Position: 1}}},
+		{Name: "uk_tenant_code", Unique: true, Type: "BTREE", Columns: []mysqlsvc.MySQLStructureIndexColumn{
 			{Name: "tenant_id", Position: 1},
 			{Name: "parent_code", Position: 2},
 		}},
-		{Name: "ix_note_prefix", Type: "BTREE", Columns: []connections.MySQLStructureIndexColumn{
+		{Name: "ix_note_prefix", Type: "BTREE", Columns: []mysqlsvc.MySQLStructureIndexColumn{
 			{Name: "nullable_note", Position: 1, SubPart: intptr(12)},
 		}},
 	}
@@ -35,7 +35,7 @@ func TestMySQLStructureDesignPresentation(t *testing.T) {
 		t.Fatal(got)
 	}
 
-	fk := []connections.MySQLStructureForeignKeyColumn{
+	fk := []mysqlsvc.MySQLStructureForeignKeyColumn{
 		{Name: "tenant_id", ReferencedName: "tenant_id", Position: 1},
 		{Name: "parent_code", ReferencedName: "code", Position: 2},
 	}
@@ -46,7 +46,7 @@ func TestMySQLStructureDesignPresentation(t *testing.T) {
 		t.Fatal(got)
 	}
 
-	chars := connections.MySQLStructureColumn{
+	chars := mysqlsvc.MySQLStructureColumn{
 		Name: "sku", Type: "varchar(64)", DataType: "varchar",
 		CharacterMaxLength: intptr(64), Default: strptr(""),
 	}
@@ -56,7 +56,7 @@ func TestMySQLStructureDesignPresentation(t *testing.T) {
 	if got := mysqlStructureColumnDefault(chars); got != "\"\"" {
 		t.Fatal(got)
 	}
-	decimal := connections.MySQLStructureColumn{
+	decimal := mysqlsvc.MySQLStructureColumn{
 		Name: "price", Type: "decimal(10,2)", DataType: "decimal",
 		NumericPrecision: intptr(10), NumericScale: intptr(2),
 	}
@@ -69,10 +69,10 @@ func TestMySQLStructureDesignPresentation(t *testing.T) {
 	if got := mysqlStructureColumnDefault(decimal); got != "" {
 		t.Fatal(got)
 	}
-	if got := mysqlStructureColumnDefault(connections.MySQLStructureColumn{Nullable: true}); got != "NULL" {
+	if got := mysqlStructureColumnDefault(mysqlsvc.MySQLStructureColumn{Nullable: true}); got != "NULL" {
 		t.Fatal(got)
 	}
-	if got := mysqlStructureColumnLength(connections.MySQLStructureColumn{DataType: "bigint", NumericPrecision: intptr(20)}); got != "" {
+	if got := mysqlStructureColumnLength(mysqlsvc.MySQLStructureColumn{DataType: "bigint", NumericPrecision: intptr(20)}); got != "" {
 		t.Fatalf("integer display length is not shown in observed design grid: %q", got)
 	}
 }

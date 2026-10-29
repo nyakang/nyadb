@@ -1,6 +1,8 @@
 package shell
 
-import "github.com/nyakang/nyadb/internal/services/connections"
+import (
+	"github.com/nyakang/nyadb/internal/services/connections"
+)
 
 // SetSQLiteFilePicker registers a native file-picker command owned by bootstrap.
 // The UI does not import the application's native-window backend.

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func TestPatchedNativeMyGoTableSubtitleSharesColumnBehaviors(t *testing.T) {
@@ -146,10 +146,10 @@ func TestPatchedNativeMyGoTableSubtitleSharesColumnBehaviors(t *testing.T) {
 }
 
 func TestMySQLFullServerTypesAndKeyBadgesUseNativeTable(t *testing.T) {
-	page := &connections.MySQLDataPage{
-		Columns: []string{"id", "status", "price"},
+	page := &mysqlsvc.MySQLDataPage{
+		Columns:     []string{"id", "status", "price"},
 		ColumnKinds: []string{"bigint", "enum", "decimal"},
-		ColumnMetadata: []connections.MySQLStructureColumn{
+		ColumnMetadata: []mysqlsvc.MySQLStructureColumn{
 			{Name: "id", DataType: "bigint", Type: "bigint unsigned", Key: "PRI"},
 			{Name: "status", DataType: "enum", Type: "enum('active','disabled')", Key: "MUL"},
 			{Name: "price", DataType: "decimal", Type: "decimal(10,2)"},

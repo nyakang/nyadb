@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -36,7 +36,7 @@ func testMySQLDataFooterInFullWorkspace(t *testing.T) {
 					doc.dataPage.ColumnKinds = []string{"bigint", "longtext"}
 					doc.dataPage.Rows = nil
 					for row := range count {
-						doc.dataPage.Rows = append(doc.dataPage.Rows, []connections.MySQLDataCell{{Text: fmt.Sprint(row)}, {Text: fmt.Sprintf("value-%d", row)}})
+						doc.dataPage.Rows = append(doc.dataPage.Rows, []mysqlsvc.MySQLDataCell{{Text: fmt.Sprint(row)}, {Text: fmt.Sprintf("value-%d", row)}})
 					}
 					doc.dataPage.HasMore = true
 					s.tabs = append(s.tabs[:1], doc)
@@ -70,7 +70,7 @@ func TestMySQLDataReadStatusSurvivesFailureAndCancellation(t *testing.T) {
 	doc := &tab{kind: tabMySQLData, dataProfileID: 12, dataLimit: 100, dataLoading: true, dataRequest: 3}
 	s.tabs, s.mysqlSessionProfileID, s.mysqlSessionGeneration = []*tab{doc}, 12, 2
 	completed := time.Date(2026, 10, 26, 8, 30, 0, 0, time.Local)
-	page := &connections.MySQLDataPage{QuerySQL: "SELECT `id` FROM `db`.`t` LIMIT ? OFFSET ?", CompletedAt: completed, Duration: 12 * time.Millisecond}
+	page := &mysqlsvc.MySQLDataPage{QuerySQL: "SELECT `id` FROM `db`.`t` LIMIT ? OFFSET ?", CompletedAt: completed, Duration: 12 * time.Millisecond}
 	result := make(chan mysqlDataResult, 1)
 	doc.dataResults = result
 	result <- mysqlDataResult{generation: 2, profileID: 12, request: 3, page: page}
@@ -97,12 +97,12 @@ func TestMySQLDataPageSizeResetsCursorAndUsesBoundedLimit(t *testing.T) {
 	s := New()
 	s.mysqlSessionProfileID, s.mysqlSessionStatus = 12, "已连接"
 	doc := &tab{kind: tabMySQLData, dataProfileID: 12, dataDatabase: "db", dataTable: "t", dataLimit: 100,
-		dataOffset: 200, dataAfter: &connections.MySQLDataCursor{}, dataCursorHistory: map[int64]*connections.MySQLDataCursor{100: {}}, dataSelectedRow: 4}
+		dataOffset: 200, dataAfter: &mysqlsvc.MySQLDataCursor{}, dataCursorHistory: map[int64]*mysqlsvc.MySQLDataCursor{100: {}}, dataSelectedRow: 4}
 	s.tabs = []*tab{doc}
-	requested := make(chan connections.MySQLDataOptions, 1)
-	s.mysqlDataAdvancedLoader = func(_ context.Context, _ int64, _, _ string, options connections.MySQLDataOptions) (*connections.MySQLDataPage, error) {
+	requested := make(chan mysqlsvc.MySQLDataOptions, 1)
+	s.mysqlDataAdvancedLoader = func(_ context.Context, _ int64, _, _ string, options mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {
 		requested <- options
-		return &connections.MySQLDataPage{}, nil
+		return &mysqlsvc.MySQLDataPage{}, nil
 	}
 	tt := ui.NewTester(func(c *ui.Context) {
 		if !doc.dataLoading {
@@ -128,7 +128,7 @@ func TestMySQLDataPageSizeResetsCursorAndUsesBoundedLimit(t *testing.T) {
 func TestMySQLGridEmptyAndTruncatedPreviewsKeepTheirValues(t *testing.T) {
 	s := New()
 	doc := alignedDataTestTab()
-	doc.dataPage.Rows = [][]connections.MySQLDataCell{{{Null: true}, {Text: ""}}, {{Text: "2"}, {Text: "short preview", Truncated: true}}}
+	doc.dataPage.Rows = [][]mysqlsvc.MySQLDataCell{{{Null: true}, {Text: ""}}, {{Text: "2"}, {Text: "short preview", Truncated: true}}}
 	tt := ui.NewTester(func(c *ui.Context) { theme.Apply(c); s.mysqlDataWorkspace(c, doc) }, 650, 400)
 	if !tt.HasText("NULL") || !tt.HasText("short preview") || tt.HasText("short preview …") || tt.HasText("\"\"") {
 		t.Fatalf("grid changed empty or preview content: %v", tt.Texts())

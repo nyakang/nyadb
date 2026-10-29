@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -194,7 +194,7 @@ func TestMySQLDataNumericColumnsAlignWithoutChangingColumnIdentity(t *testing.T)
 	if !reflect.DeepEqual(indices, []int{0, 1}) || columns[0].ID != "id" || columns[0].Align != ui.End || columns[1].Align == ui.End {
 		t.Fatalf("numeric alignment changed field identity: %+v", columns)
 	}
-	doc.dataPage.ColumnMetadata = []connections.MySQLStructureColumn{{Name: "id", DataType: "varchar", Type: "varchar(12)"}}
+	doc.dataPage.ColumnMetadata = []mysqlsvc.MySQLStructureColumn{{Name: "id", DataType: "varchar", Type: "varchar(12)"}}
 	_, columns = mysqlVisibleDataColumns(doc, doc.dataPage)
 	if columns[0].Align == ui.End {
 		t.Fatal("alignment ignored authoritative server metadata")

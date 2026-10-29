@@ -12,6 +12,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func sqlUITestState(t *testing.T) (*State, *ui.Tester, int64) {
@@ -56,12 +57,12 @@ func TestSQLQueryUIRunsSelectedTextAndRendersResults(t *testing.T) {
 	q.editor.Buffer.Set("SELECT 1;\nSELECT 2;")
 	q.editor.Select(0, len("SELECT 1;"))
 	var received string
-	s.mysqlSQLExecutor = func(ctx context.Context, profile int64, database, statement string) (connections.MySQLSQLResult, error) {
+	s.mysqlSQLExecutor = func(ctx context.Context, profile int64, database, statement string) (mysqlsvc.MySQLSQLResult, error) {
 		if profile != id || database != "db_test" {
-			return connections.MySQLSQLResult{}, errors.New("wrong schema/profile")
+			return mysqlsvc.MySQLSQLResult{}, errors.New("wrong schema/profile")
 		}
 		received = statement
-		return connections.MySQLSQLResult{
+		return mysqlsvc.MySQLSQLResult{
 			Columns: []string{"result"}, Rows: [][]string{{"1"}}, Duration: 12 * time.Millisecond,
 		}, nil
 	}
@@ -118,9 +119,9 @@ func TestSQLQueryUICancelWaitsForWorkerAndRetainsEditor(t *testing.T) {
 	release := make(chan struct{})
 	calls := 0
 	var mu sync.Mutex
-	s.mysqlSQLExecutor = func(ctx context.Context, profile int64, database, statement string) (connections.MySQLSQLResult, error) {
+	s.mysqlSQLExecutor = func(ctx context.Context, profile int64, database, statement string) (mysqlsvc.MySQLSQLResult, error) {
 		if profile != id || database != "db_test" || statement != "SELECT SLEEP(30)" {
-			return connections.MySQLSQLResult{}, errors.New("wrong SQL identity")
+			return mysqlsvc.MySQLSQLResult{}, errors.New("wrong SQL identity")
 		}
 		mu.Lock()
 		calls++
@@ -129,7 +130,7 @@ func TestSQLQueryUICancelWaitsForWorkerAndRetainsEditor(t *testing.T) {
 		<-ctx.Done()
 		canceled <- struct{}{}
 		<-release
-		return connections.MySQLSQLResult{}, ctx.Err()
+		return mysqlsvc.MySQLSQLResult{}, ctx.Err()
 	}
 	if err := tt.Click("运行当前或选中 SQL"); err != nil {
 		t.Fatal(err)
@@ -188,16 +189,16 @@ func TestSQLTabsProfileIsolationAndCloseCancel(t *testing.T) {
 		t.Fatalf("SQL tabs lost their connection identity: A=%+v B=%+v", a, b)
 	}
 	startedA := make(chan struct{}, 1)
-	s.mysqlSQLExecutor = func(ctx context.Context, profile int64, database, statement string) (connections.MySQLSQLResult, error) {
+	s.mysqlSQLExecutor = func(ctx context.Context, profile int64, database, statement string) (mysqlsvc.MySQLSQLResult, error) {
 		if profile == idA && database == "db_test" && statement == "SELECT A" {
 			startedA <- struct{}{}
 			<-ctx.Done()
-			return connections.MySQLSQLResult{}, ctx.Err()
+			return mysqlsvc.MySQLSQLResult{}, ctx.Err()
 		}
 		if profile == bProfile.ID && database == "db_other" && statement == "SELECT B" {
-			return connections.MySQLSQLResult{Columns: []string{"b"}, Rows: [][]string{{"B"}}}, nil
+			return mysqlsvc.MySQLSQLResult{Columns: []string{"b"}, Rows: [][]string{{"B"}}}, nil
 		}
-		return connections.MySQLSQLResult{}, errors.New("profile/schema contamination")
+		return mysqlsvc.MySQLSQLResult{}, errors.New("profile/schema contamination")
 	}
 	tt.Frame()
 	if err := tt.Click("运行当前或选中 SQL"); err != nil {
@@ -243,8 +244,8 @@ func TestSQLQueryUIErrorsAffectedRowsAndDisconnect(t *testing.T) {
 	s, tt, id := sqlUITestState(t)
 	q := s.currentTab()
 	q.editor.Buffer.Set("BAD SQL")
-	s.mysqlSQLExecutor = func(context.Context, int64, string, string) (connections.MySQLSQLResult, error) {
-		return connections.MySQLSQLResult{}, errors.New("SQL syntax error near BAD")
+	s.mysqlSQLExecutor = func(context.Context, int64, string, string) (mysqlsvc.MySQLSQLResult, error) {
+		return mysqlsvc.MySQLSQLResult{}, errors.New("SQL syntax error near BAD")
 	}
 	if err := tt.Click("运行当前或选中 SQL"); err != nil {
 		t.Fatal(err)
@@ -255,11 +256,11 @@ func TestSQLQueryUIErrorsAffectedRowsAndDisconnect(t *testing.T) {
 	}
 	q.editor.Buffer.Set("UPDATE fixture SET x=1")
 	q.editor.Select(0, 0)
-	s.mysqlSQLExecutor = func(_ context.Context, profile int64, database, sql string) (connections.MySQLSQLResult, error) {
+	s.mysqlSQLExecutor = func(_ context.Context, profile int64, database, sql string) (mysqlsvc.MySQLSQLResult, error) {
 		if profile != id || database != "db_test" || sql != "UPDATE fixture SET x=1" {
-			return connections.MySQLSQLResult{}, errors.New("wrong update target")
+			return mysqlsvc.MySQLSQLResult{}, errors.New("wrong update target")
 		}
-		return connections.MySQLSQLResult{AffectedRows: 4, Duration: 6 * time.Millisecond}, nil
+		return mysqlsvc.MySQLSQLResult{AffectedRows: 4, Duration: 6 * time.Millisecond}, nil
 	}
 	if err := tt.Click("运行当前或选中 SQL"); err != nil {
 		t.Fatal(err)

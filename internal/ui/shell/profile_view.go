@@ -6,6 +6,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -109,7 +110,7 @@ func (s *State) profileSidebar(c *ui.Context) {
 			if tree.Shortcut(0, ui.KeyF2) {
 				n := parseNavigationNode(s.explorerName)
 				if n.Kind == "object" && n.Category == "表" {
-					s.beginMySQLTableChange(n.ProfileID, n.Database, n.Object, connections.MySQLTableRename)
+					s.beginMySQLTableChange(n.ProfileID, n.Database, n.Object, mysqlsvc.MySQLTableRename)
 				} else if s.selectedGroup != "" {
 					s.beginGroupEdit(s.selectedGroup)
 				}
@@ -117,7 +118,7 @@ func (s *State) profileSidebar(c *ui.Context) {
 			if tree.Shortcut(0, ui.KeyDelete) {
 				n := parseNavigationNode(s.explorerName)
 				if n.Kind == "object" && n.Category == "表" {
-					s.beginMySQLTableChange(n.ProfileID, n.Database, n.Object, connections.MySQLTableDrop)
+					s.beginMySQLTableChange(n.ProfileID, n.Database, n.Object, mysqlsvc.MySQLTableDrop)
 				} else if n.Kind == "connection" && s.selectedProfileID != 0 {
 					s.confirmDeleteProfile()
 				}
@@ -125,7 +126,7 @@ func (s *State) profileSidebar(c *ui.Context) {
 			if tree.Shortcut(ui.Ctrl, ui.KeyN) {
 				n := parseNavigationNode(s.explorerName)
 				if n.Kind == "database" || (n.Kind == "category" || n.Kind == "object") && n.Category == "表" {
-					s.beginMySQLTableChange(n.ProfileID, n.Database, "", connections.MySQLTableCreate)
+					s.beginMySQLTableChange(n.ProfileID, n.Database, "", mysqlsvc.MySQLTableCreate)
 				}
 			}
 			if tree.Shortcut(ui.Ctrl, ui.KeyD) {

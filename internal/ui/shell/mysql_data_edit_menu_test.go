@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -18,7 +18,7 @@ func TestMySQLDataSQLCopyPreservesIdentityAndRejectsIncompleteValues(t *testing.
 	doc.dataSelectedRow = 0
 	doc.dataPage.ColumnKinds = []string{"bigint", "varchar"}
 	doc.dataPage.Rows[0][1].Text = "O'Reilly\\n中文"
-	doc.dataPage.RowRefs = []*connections.MySQLRowRef{{Database: "d`b", Table: "records", Columns: []string{"id"}, Values: [][]byte{[]byte("1")}}}
+	doc.dataPage.RowRefs = []*mysqlsvc.MySQLRowRef{{Database: "d`b", Table: "records", Columns: []string{"id"}, Values: [][]byte{[]byte("1")}}}
 	text, err := mysqlDataSQLSelection(doc, true)
 	if err != nil || !strings.Contains(text, "UPDATE `d``b`.`records`") || !strings.Contains(text, " WHERE CAST(`id` AS BINARY) = X'31';") || !strings.Contains(text, hex.EncodeToString([]byte("O'Reilly\\n中文"))) || strings.Contains(text, "O'Reilly") {
 		t.Fatalf("unsafe or wrong identity SQL copy: %s %v", text, err)
@@ -43,7 +43,7 @@ func TestMySQLDataSQLCopySkipsGeneratedFields(t *testing.T) {
 	doc := alignedDataTestTab()
 	doc.dataSelectedRow = 0
 	doc.dataState.Cells.All = true
-	doc.dataPage.ColumnMetadata = []connections.MySQLStructureColumn{{Name: "id", Extra: "auto_increment"}, {Name: "label", Extra: "STORED GENERATED"}}
+	doc.dataPage.ColumnMetadata = []mysqlsvc.MySQLStructureColumn{{Name: "id", Extra: "auto_increment"}, {Name: "label", Extra: "STORED GENERATED"}}
 	doc.dataPage.Rows[0][1].Truncated = true
 	text, err := mysqlDataSQLSelection(doc, false)
 	if err != nil || strings.Contains(text, "`label`") || !strings.Contains(text, "`id`") {
@@ -56,10 +56,10 @@ func TestMySQLDataSQLCopyUsesCompleteDraftInsteadOfTruncatedPreview(t *testing.T
 	doc.dataSelectedRow = 0
 	doc.dataState.Cells.All = true
 	full := strings.Repeat("中文🙂\n", 600)
-	value := connections.MySQLDataValue{Text: full}
+	value := mysqlsvc.MySQLDataValue{Text: full}
 	doc.dataPage.Rows[0][1] = mysqlDataValuePreview(value)
 	key := mysqlDataRowKey(doc, 0)
-	doc.dataEdit.Drafts = map[string]*mysqlRowDraft{key: {Key: key, Row: 0, Kind: "update", Values: map[string]connections.MySQLDataValue{"label": value}}}
+	doc.dataEdit.Drafts = map[string]*mysqlRowDraft{key: {Key: key, Row: 0, Kind: "update", Values: map[string]mysqlsvc.MySQLDataValue{"label": value}}}
 	text, err := mysqlDataSQLSelection(doc, false)
 	if err != nil || !strings.Contains(text, hex.EncodeToString([]byte(full))) {
 		t.Fatalf("complete edited value was rejected or copied as a preview: %v", err)
@@ -153,7 +153,7 @@ func TestMySQLDataPendingRowMarkersDoNotChangeGridRowHeight(t *testing.T) {
 				t.Fatal("second fixture row missing")
 			}
 			before := second.Y - first.Y
-			s.setMySQLDataCell(ui.Services{}, doc, 0, 1, connections.MySQLDataValue{Text: "changed-with-marker"})
+			s.setMySQLDataCell(ui.Services{}, doc, 0, 1, mysqlsvc.MySQLDataValue{Text: "changed-with-marker"})
 			tt.Frame()
 			first, ok = tt.Find("changed-with-marker")
 			if !ok {
@@ -252,21 +252,21 @@ func TestMySQLRecordMenuKeepsTextActionsScopedAndZoomFunctional(t *testing.T) {
 
 func TestMySQLDataUUIDAndEmptyActionsRespectFieldTypes(t *testing.T) {
 	size := int64(32)
-	col := connections.MySQLStructureColumn{DataType: "varchar", CharacterMaxLength: &size}
+	col := mysqlsvc.MySQLStructureColumn{DataType: "varchar", CharacterMaxLength: &size}
 	if mysqlDataUUIDAvailable(col, false) || !mysqlDataUUIDAvailable(col, true) {
 		t.Fatal("UUID length did not respect field capacity")
 	}
 	for _, kind := range []string{"enum", "set", "json", "bigint", "decimal", "date", "binary", "blob", "geometry"} {
-		if mysqlDataUUIDAvailable(connections.MySQLStructureColumn{DataType: kind}, false) {
+		if mysqlDataUUIDAvailable(mysqlsvc.MySQLStructureColumn{DataType: kind}, false) {
 			t.Fatalf("text UUID accepted for %s", kind)
 		}
 	}
 	for _, kind := range []string{"bigint", "decimal", "json", "enum", "bit", "date", "geometry"} {
-		if mysqlDataEmptyValueAvailable(connections.MySQLStructureColumn{DataType: kind}) {
+		if mysqlDataEmptyValueAvailable(mysqlsvc.MySQLStructureColumn{DataType: kind}) {
 			t.Fatalf("empty string accepted for %s", kind)
 		}
 	}
-	empty := mysqlDataEmptyValue(connections.MySQLStructureColumn{DataType: "blob"})
+	empty := mysqlDataEmptyValue(mysqlsvc.MySQLStructureColumn{DataType: "blob"})
 	if !empty.Binary || empty.Bytes == nil || len(empty.Bytes) != 0 || empty.Null {
 		t.Fatal("empty binary became NULL or text")
 	}
@@ -280,12 +280,12 @@ func TestMySQLDataSQLCopyPreservesDraftDefaults(t *testing.T) {
 	doc.dataState.Cells.All = true
 	doc.dataPage.Rows[0][0].Text = "(Default)"
 	doc.dataPage.Rows[0][1].Text = "(Default)"
-	doc.dataEdit.Drafts = map[string]*mysqlRowDraft{"new": {Key: "new", Row: 0, Kind: "insert", Values: map[string]connections.MySQLDataValue{"label": {Text: "(Default)"}}}}
+	doc.dataEdit.Drafts = map[string]*mysqlRowDraft{"new": {Key: "new", Row: 0, Kind: "insert", Values: map[string]mysqlsvc.MySQLDataValue{"label": {Text: "(Default)"}}}}
 	text, err := mysqlDataSQLSelection(doc, false)
 	if err != nil || !strings.Contains(text, "VALUES (DEFAULT, _utf8mb4 X'") || strings.Count(text, "DEFAULT") != 1 {
 		t.Fatalf("default and literal spelling confused: %q %v", text, err)
 	}
-	doc.dataEdit.Drafts["new"].Values["label"] = connections.MySQLDataValue{Default: true}
+	doc.dataEdit.Drafts["new"].Values["label"] = mysqlsvc.MySQLDataValue{Default: true}
 	text, err = mysqlDataSQLSelection(doc, false)
 	if err != nil || !strings.Contains(text, "VALUES (DEFAULT, DEFAULT)") {
 		t.Fatalf("explicit defaults lost: %q %v", text, err)
@@ -297,7 +297,7 @@ func TestMySQLBatchPendingBarDiscardsTheSameDrafts(t *testing.T) {
 	doc := alignedDataTestTab()
 	doc.dataEdit.Batch = true
 	doc.dataPage.Rows[0][1].Text = "modified"
-	doc.dataEdit.Drafts = map[string]*mysqlRowDraft{"row": {Key: "row", Row: 0, Kind: "update", Before: []connections.MySQLDataCell{{Text: "1"}, {Text: "before"}}, Values: map[string]connections.MySQLDataValue{"label": {Text: "modified"}}}}
+	doc.dataEdit.Drafts = map[string]*mysqlRowDraft{"row": {Key: "row", Row: 0, Kind: "update", Before: []mysqlsvc.MySQLDataCell{{Text: "1"}, {Text: "before"}}, Values: map[string]mysqlsvc.MySQLDataValue{"label": {Text: "modified"}}}}
 	tt := ui.NewTester(func(c *ui.Context) { theme.Apply(c); s.mysqlDataFooter(c, doc, doc.dataPage) }, 400, 200)
 	if !tt.HasText("1 条待处理记录") {
 		t.Fatalf("pending record count missing: %v", tt.Texts())
@@ -314,7 +314,7 @@ func TestMySQLBatchPendingBarDiscardsTheSameDrafts(t *testing.T) {
 func TestMySQLDataInvalidBinaryEditorCancelLeavesNoEmptyDraft(t *testing.T) {
 	_, doc, tt, f := editingTestWorkspace(t)
 	doc.dataEdit.Editor = &mysqlCellEditor{Key: mysqlDataRowKey(doc, 0), Field: "note", Row: 0,
-		Text: "61", Initial: "61", Original: connections.MySQLDataValue{Binary: true, Bytes: []byte{'a'}},
+		Text: "61", Initial: "61", Original: mysqlsvc.MySQLDataValue{Binary: true, Bytes: []byte{'a'}},
 		Dedicated: true, Open: true}
 	tt.Frame()
 	if err := tt.Click("专用单元格编辑 note"); err != nil {

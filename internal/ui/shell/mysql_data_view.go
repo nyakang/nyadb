@@ -2,7 +2,7 @@ package shell
 
 import (
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -16,7 +16,7 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 	ui.Column(c).FillWidth().Grow(1).MinHeight(0).Background(palette.App).Children(func() {
 		page := t.dataPage
 		if page == nil {
-			page = &connections.MySQLDataPage{}
+			page = &mysqlsvc.MySQLDataPage{}
 			for _, col := range t.dataColumns {
 				page.Columns = append(page.Columns, col.ID)
 			}

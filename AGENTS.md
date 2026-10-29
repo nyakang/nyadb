@@ -2,7 +2,9 @@
 
 ## Project Structure & Module Organization
 
-NyaDB is a Go desktop database workbench using MyGo UI. `cmd/nyadb/` is the development entry point; root `main.go` supports MyGo tooling. `internal/bootstrap/` wires startup, `internal/ui/shell/` contains views and interaction state, and `internal/ui/theme/` defines appearance and icons. Profiles and MySQL sessions live in `internal/services/connections/`; SQLite storage and migrations live in `internal/storage/localdb/`.
+NyaDB is a Go desktop database workbench using MyGo UI. `cmd/nyadb/` is the development entry point; root `main.go` supports MyGo tooling. `internal/bootstrap/` wires startup, `internal/ui/shell/` contains views and interaction state, and `internal/ui/theme/` defines appearance and icons. Connection models, validation, and configuration services live in `internal/services/connections/`; authenticated MySQL sessions, SQL execution, metadata, and data operations live in `internal/services/mysql/`. SQLite profile storage, application preferences, and migrations live in `internal/storage/localdb/`.
+
+Both `localdb` and the MySQL service depend on connection models; `connections` must not depend on storage, database drivers, or UI. Bootstrap and shell compose these packages. Import the MySQL service as `mysqlsvc` and the MySQL driver as `mysqldriver`.
 
 Go tests sit beside source files. `internal/assets/` contains embedded icons, `resources/` contains artwork, and `locales/` contains translations. `docs/` records design and verification; `tools/` and `tests/` contain utilities and Python visual-comparison tests. Builds and research belong in ignored `build/` and `temp/` directories.
 
@@ -26,6 +28,8 @@ Format Go with `gofmt` (tabs). Use lowercase packages, exported `PascalCase` ide
 ## Testing Guidelines
 
 Use Go's `testing` package, `*_test.go` files, and `TestBehavior` names; UI tests use MyGo's `ui.NewTester`. No numeric coverage threshold is configured. Cover changed behavior and migration compatibility. Python visual-tool tests require Pillow: `python3 -m unittest discover -s tests -v`. MySQL integration tests require disposable fixtures and explicit `NYADB_MYSQL_*_IT` flags; consult the relevant tests and docs before enabling them.
+
+Configuration and service tests use `connections_test`; SQLite persistence and legacy profile decoding tests live beside `localdb`, and MySQL runtime tests live beside the MySQL service. Disposable MySQL SQL fixtures live in `internal/services/mysql/testdata/`. Legacy-data fixtures hold their database handles explicitly rather than exposing them through production storage APIs. For focused regression checks, run `go test ./internal/services/connections ./internal/storage/localdb ./internal/services/mysql ./internal/ui/shell`; run the same package list with `go test -race` for lifecycle and concurrency changes.
 
 ## Commit & Pull Request Guidelines
 

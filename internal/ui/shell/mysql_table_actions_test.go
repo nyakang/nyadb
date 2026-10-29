@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func waitTableChange(t *testing.T, s *State, tt interface{ Frame() }) {
@@ -26,8 +26,8 @@ func waitTableChange(t *testing.T, s *State, tt interface{ Frame() }) {
 
 func TestMySQLTableMenuSharesActionsAndRequiresExplicitConfirmation(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	var calls []connections.MySQLTableChange
-	s.mysqlTableRunner = func(_ context.Context, id int64, r connections.MySQLTableChange) error {
+	var calls []mysqlsvc.MySQLTableChange
+	s.mysqlTableRunner = func(_ context.Context, id int64, r mysqlsvc.MySQLTableChange) error {
 		if id != s.mysqlSessionProfileID {
 			return errors.New("wrong connection")
 		}
@@ -46,7 +46,7 @@ func TestMySQLTableMenuSharesActionsAndRequiresExplicitConfirmation(t *testing.T
 	if err := tt.ChooseMenuItem("删除表"); err != nil {
 		t.Fatal(err)
 	}
-	if !s.mysqlTableDialog || s.mysqlTableAction != connections.MySQLTableDrop {
+	if !s.mysqlTableDialog || s.mysqlTableAction != mysqlsvc.MySQLTableDrop {
 		t.Fatal("drop must open a confirmation, not execute DDL")
 	}
 	tt.Frame()
@@ -64,7 +64,7 @@ func TestMySQLTableMenuSharesActionsAndRequiresExplicitConfirmation(t *testing.T
 		t.Fatal(err)
 	}
 	waitTableChange(t, s, tt)
-	if len(calls) != 1 || calls[0].Action != connections.MySQLTableDrop ||
+	if len(calls) != 1 || calls[0].Action != mysqlsvc.MySQLTableDrop ||
 		calls[0].Table != "orders" || calls[0].Database != "app_db" {
 		t.Fatalf("unexpected DDL: %+v", calls)
 	}
@@ -72,10 +72,10 @@ func TestMySQLTableMenuSharesActionsAndRequiresExplicitConfirmation(t *testing.T
 
 func TestMySQLTableActionErrorIsVisibleAndDoesNotInvalidateOtherConnection(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	s.mysqlTableRunner = func(context.Context, int64, connections.MySQLTableChange) error {
+	s.mysqlTableRunner = func(context.Context, int64, mysqlsvc.MySQLTableChange) error {
 		return errors.New("permission denied by server")
 	}
-	s.beginMySQLTableChange(s.mysqlSessionProfileID, "app_db", "orders", connections.MySQLTableRename)
+	s.beginMySQLTableChange(s.mysqlSessionProfileID, "app_db", "orders", mysqlsvc.MySQLTableRename)
 	s.mysqlTableNewName = "orders_new"
 	tt.Frame()
 	if err := tt.Click("确认重命名"); err != nil {
@@ -90,8 +90,8 @@ func TestMySQLTableActionErrorIsVisibleAndDoesNotInvalidateOtherConnection(t *te
 
 func TestMySQLCreateTableUsesNameEnteredInDialog(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	requests := make(chan connections.MySQLTableChange, 1)
-	s.mysqlTableRunner = func(_ context.Context, _ int64, request connections.MySQLTableChange) error {
+	requests := make(chan mysqlsvc.MySQLTableChange, 1)
+	s.mysqlTableRunner = func(_ context.Context, _ int64, request mysqlsvc.MySQLTableChange) error {
 		requests <- request
 		return nil
 	}
@@ -111,7 +111,7 @@ func TestMySQLCreateTableUsesNameEnteredInDialog(t *testing.T) {
 	waitTableChange(t, s, tt)
 	select {
 	case request := <-requests:
-		if request.Action != connections.MySQLTableCreate || request.Database != "app_db" || request.Table != "new_orders" {
+		if request.Action != mysqlsvc.MySQLTableCreate || request.Database != "app_db" || request.Table != "new_orders" {
 			t.Fatalf("create must target the entered name, not the selected source table: %+v", request)
 		}
 	default:
@@ -126,11 +126,11 @@ func TestMySQLCreateTableIsReachableInEmptyDatabase(t *testing.T) {
 	for _, entry := range []string{"database menu", "toolbar"} {
 		t.Run(entry, func(t *testing.T) {
 			s, tt := mysqlObjectTestState(t)
-			s.mysqlObjectLister = func(context.Context, int64, string) ([]connections.MySQLDBObject, error) {
+			s.mysqlObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
 				return nil, nil
 			}
-			requests := make(chan connections.MySQLTableChange, 1)
-			s.mysqlTableRunner = func(_ context.Context, _ int64, r connections.MySQLTableChange) error {
+			requests := make(chan mysqlsvc.MySQLTableChange, 1)
+			s.mysqlTableRunner = func(_ context.Context, _ int64, r mysqlsvc.MySQLTableChange) error {
 				requests <- r
 				return nil
 			}
@@ -148,7 +148,7 @@ func TestMySQLCreateTableIsReachableInEmptyDatabase(t *testing.T) {
 			} else if err := tt.Click("新建表"); err != nil {
 				t.Fatal(err)
 			}
-			if !s.mysqlTableDialog || s.mysqlTableAction != connections.MySQLTableCreate {
+			if !s.mysqlTableDialog || s.mysqlTableAction != mysqlsvc.MySQLTableCreate {
 				t.Fatal("empty database did not offer a creation dialog")
 			}
 			if err := tt.Click("新表名称"); err != nil {
@@ -161,7 +161,7 @@ func TestMySQLCreateTableIsReachableInEmptyDatabase(t *testing.T) {
 			waitTableChange(t, s, tt)
 			select {
 			case r := <-requests:
-				if r.Action != connections.MySQLTableCreate || r.Database != "app_db" || r.Table != "first_table" {
+				if r.Action != mysqlsvc.MySQLTableCreate || r.Database != "app_db" || r.Table != "first_table" {
 					t.Fatalf("wrong empty-database creation request: %+v", r)
 				}
 			default:
@@ -173,11 +173,11 @@ func TestMySQLCreateTableIsReachableInEmptyDatabase(t *testing.T) {
 
 func TestMySQLCopySubmenuDispatchesObservedActions(t *testing.T) {
 	s, tt := structureTestBrowser(t)
-	s.mysqlTableRunner = func(context.Context, int64, connections.MySQLTableChange) error { return nil }
+	s.mysqlTableRunner = func(context.Context, int64, mysqlsvc.MySQLTableChange) error { return nil }
 	for _, entry := range []struct {
 		label  string
-		action connections.MySQLTableAction
-	}{{"结构和数据", connections.MySQLTableCopyData}, {"仅结构", connections.MySQLTableCopyStructure}} {
+		action mysqlsvc.MySQLTableAction
+	}{{"结构和数据", mysqlsvc.MySQLTableCopyData}, {"仅结构", mysqlsvc.MySQLTableCopyStructure}} {
 		if err := tt.RightClick("orders"); err != nil {
 			t.Fatal(err)
 		}
@@ -197,16 +197,16 @@ func TestMySQLTableShortcutsStayScopedAndRequireConfirmation(t *testing.T) {
 	for _, target := range []string{"orders", "InnoDB"} { // navigator row and object-grid cell
 		t.Run(target, func(t *testing.T) {
 			s, tt := structureTestBrowser(t)
-			calls := make(chan connections.MySQLTableChange, 1)
-			s.mysqlTableRunner = func(_ context.Context, _ int64, r connections.MySQLTableChange) error {
+			calls := make(chan mysqlsvc.MySQLTableChange, 1)
+			s.mysqlTableRunner = func(_ context.Context, _ int64, r mysqlsvc.MySQLTableChange) error {
 				calls <- r
 				return nil
 			}
 			for _, shortcut := range []struct {
 				mods   ui.Modifiers
 				key    ui.Key
-				action connections.MySQLTableAction
-			}{{0, ui.KeyF2, connections.MySQLTableRename}, {0, ui.KeyDelete, connections.MySQLTableDrop}, {ui.Ctrl, ui.KeyN, connections.MySQLTableCreate}} {
+				action mysqlsvc.MySQLTableAction
+			}{{0, ui.KeyF2, mysqlsvc.MySQLTableRename}, {0, ui.KeyDelete, mysqlsvc.MySQLTableDrop}, {ui.Ctrl, ui.KeyN, mysqlsvc.MySQLTableCreate}} {
 				if err := tt.Click(target); err != nil {
 					t.Fatal(err)
 				}
@@ -215,7 +215,7 @@ func TestMySQLTableShortcutsStayScopedAndRequireConfirmation(t *testing.T) {
 					t.Fatalf("shortcut %v did not target the table action: dialog=%v action=%s profileDelete=%v", shortcut.key, s.mysqlTableDialog, s.mysqlTableAction, s.deleteConfirm)
 				}
 				input := "新表名称"
-				if shortcut.action == connections.MySQLTableDrop {
+				if shortcut.action == mysqlsvc.MySQLTableDrop {
 					input = "确认原表名称"
 				}
 				if err := tt.Click(input); err != nil {
@@ -255,8 +255,8 @@ func TestMySQLObjectRefreshShortcutReloadsTreeAndGrid(t *testing.T) {
 	for _, target := range []string{"orders", "InnoDB"} {
 		t.Run(target, func(t *testing.T) {
 			s, tt := structureTestBrowser(t)
-			s.mysqlObjectLister = func(context.Context, int64, string) ([]connections.MySQLDBObject, error) {
-				return []connections.MySQLDBObject{{Name: "orders", Kind: "表", Comment: "refreshed"}}, nil
+			s.mysqlObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
+				return []mysqlsvc.MySQLDBObject{{Name: "orders", Kind: "表", Comment: "refreshed"}}, nil
 			}
 			if err := tt.Click(target); err != nil {
 				t.Fatal(err)

@@ -61,7 +61,8 @@ var MySQLCharsets = []string{
 	"utf8mb3", "utf8mb4",
 }
 
-func normalizeMySQLAdvanced(a MySQLAdvanced) (MySQLAdvanced, error) {
+// NormalizeMySQLAdvanced validates preferences and supplies legacy defaults.
+func NormalizeMySQLAdvanced(a MySQLAdvanced) (MySQLAdvanced, error) {
 	if a == (MySQLAdvanced{}) {
 		a = DefaultMySQLAdvanced()
 	}

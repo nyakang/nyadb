@@ -6,16 +6,16 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/locales"
 )
 
-type mysqlTableInfoLoader func(context.Context, int64, string, string) (*connections.MySQLTableInfo, error)
+type mysqlTableInfoLoader func(context.Context, int64, string, string) (*mysqlsvc.MySQLTableInfo, error)
 type mysqlTableCountLoader func(context.Context, int64, string, string) (int64, error)
 
 type mysqlTableInfoState struct {
 	fieldMode          bool
-	info               *connections.MySQLTableInfo
+	info               *mysqlsvc.MySQLTableInfo
 	attempted, loading bool
 	err                string
 	request            uint64
@@ -35,7 +35,7 @@ type mysqlTableInfoResult struct {
 	profileID       int64
 	request         uint64
 	database, table string
-	info            *connections.MySQLTableInfo
+	info            *mysqlsvc.MySQLTableInfo
 	err             error
 }
 

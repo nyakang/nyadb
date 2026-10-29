@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -13,9 +13,9 @@ func alignedDataTestTab() *tab {
 	return &tab{
 		kind: tabMySQLData, dataTable: "records", dataLimit: 100,
 		dataColumns: []ui.TableColumn{{ID: "id", Title: "id", Width: 100}, {ID: "label", Title: "label", Width: 160}},
-		dataPage: &connections.MySQLDataPage{
+		dataPage: &mysqlsvc.MySQLDataPage{
 			Columns: []string{"id", "label"}, StableOrder: true,
-			Rows: [][]connections.MySQLDataCell{{{Text: "1"}, {Text: "safe-value"}}},
+			Rows: [][]mysqlsvc.MySQLDataCell{{{Text: "1"}, {Text: "safe-value"}}},
 		},
 	}
 }
@@ -24,10 +24,10 @@ func TestExpandedDataRulesKeepGridAndPagingReachable(t *testing.T) {
 	s := New()
 	doc := alignedDataTestTab()
 	doc.dataRulesExpanded = true
-	for range connections.MySQLDataMaxFilterRules - 1 {
+	for range mysqlsvc.MySQLDataMaxFilterRules - 1 {
 		doc.dataFilterExtraDraft = append(doc.dataFilterExtraDraft, mysqlDataRuleDraft{Column: "label", Mode: "包含"})
 	}
-	for range connections.MySQLDataMaxSortRules {
+	for range mysqlsvc.MySQLDataMaxSortRules {
 		doc.dataSortDraft = append(doc.dataSortDraft, mysqlDataSortDraft{Column: "label", Direction: "升序"})
 	}
 	tt := ui.NewTester(func(c *ui.Context) {
@@ -116,7 +116,7 @@ func TestStructureTabsAndEmptyHeadersSurviveLoadFailure(t *testing.T) {
 	if !ok || r.X+r.W > 384 {
 		t.Fatalf("long error pushed retry offscreen: %+v", r)
 	}
-	doc.structure = &connections.MySQLTableStructure{}
+	doc.structure = &mysqlsvc.MySQLTableStructure{}
 	doc.structureErr = ""
 	if err := tt.Click("外键"); err != nil {
 		t.Fatal(err)
@@ -131,7 +131,7 @@ func TestInspectorLargeFieldsKeepCopyAndChunkActionsVisible(t *testing.T) {
 	doc := mysqlInspectorSampleTab()
 	doc.dataSelectedRow = 0
 	doc.dataState.Cells = ui.ColumnRange{Cursor: "label", Anchor: "label"}
-	doc.dataPage.RowRefs = []*connections.MySQLRowRef{{Database: "test_schema", Table: "entries"}}
+	doc.dataPage.RowRefs = []*mysqlsvc.MySQLRowRef{{Database: "test_schema", Table: "entries"}}
 	doc.dataPage.Rows[0][1].Text = strings.Repeat("large preview ", 300)
 	doc.dataPage.ColumnMetadata[1].Comment = strings.Repeat("long metadata ", 200)
 	doc.dataChunkField, doc.dataChunkRow = "label", 0

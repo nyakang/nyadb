@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // A profile reconnect may create a new authenticated MySQL session, but it
@@ -28,9 +28,9 @@ func TestDisconnectedSQLTabNeverRebindsAfterProfileReconnect(t *testing.T) {
 	s.mysqlSessionProfileID = profileID
 	s.mysqlSessionStatus = "已连接"
 	calls := 0
-	s.mysqlSQLExecutor = func(context.Context, int64, string, string) (connections.MySQLSQLResult, error) {
+	s.mysqlSQLExecutor = func(context.Context, int64, string, string) (mysqlsvc.MySQLSQLResult, error) {
 		calls++
-		return connections.MySQLSQLResult{}, nil
+		return mysqlsvc.MySQLSQLResult{}, nil
 	}
 	s.runMySQLSQL(ui.Services{}, old)
 	if calls != 0 || old.sqlLoading || !strings.Contains(old.sqlError, "以新会话继续") {

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -244,7 +244,7 @@ func mysqlStructureForeignKeysView(c *ui.Context, t *tab) {
 		}).Grow(1)
 }
 
-func mysqlStructureInfoView(c *ui.Context, structure *connections.MySQLTableStructure) {
+func mysqlStructureInfoView(c *ui.Context, structure *mysqlsvc.MySQLTableStructure) {
 	palette := theme.Colors(c)
 
 	if structure == nil {

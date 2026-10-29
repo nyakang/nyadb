@@ -8,17 +8,17 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
-	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
 
-type mysqlSQLExecutor func(context.Context, int64, string, string) (connections.MySQLSQLResult, error)
+type mysqlSQLExecutor func(context.Context, int64, string, string) (mysqlsvc.MySQLSQLResult, error)
 
 type mysqlSQLResult struct {
 	request   uint64
 	profileID int64
-	data      connections.MySQLSQLResult
+	data      mysqlsvc.MySQLSQLResult
 	err       error
 }
 
@@ -61,7 +61,7 @@ func (s *State) runMySQLSQL(services ui.Services, t *tab) {
 		}
 		manager, lease := s.mysqlSessionManager, t.sqlLease
 		// The SQL tab retains its physical MySQL session across executions.
-		execute = func(ctx context.Context, profileID int64, database, statement string) (connections.MySQLSQLResult, error) {
+		execute = func(ctx context.Context, profileID int64, database, statement string) (mysqlsvc.MySQLSQLResult, error) {
 			return manager.ExecuteSQLTabToken(ctx, lease, database, statement)
 		}
 	}
@@ -127,7 +127,7 @@ func (s *State) cancelMySQLSQL(t *tab) {
 	if t.kind == tabSQL && s.mysqlSessionManager != nil {
 		s.mysqlSessionManager.ReleaseSQLTabToken(t.sqlLease)
 	}
-	t.sqlLease = connections.MySQLSQLTabToken{}
+	t.sqlLease = mysqlsvc.MySQLSQLTabToken{}
 }
 func (s *State) cancelMySQLSQLForProfile(profileID int64) {
 	for _, t := range s.tabs {
@@ -161,10 +161,10 @@ func (s *State) consumeMySQLSQLResults() {
 					t.sqlPrepareCancel = nil
 				}
 				if err != nil && !errors.Is(err, context.Canceled) &&
-					!errors.Is(err, connections.ErrMySQLNotConnected) &&
+					!errors.Is(err, mysqlsvc.ErrMySQLNotConnected) &&
 					!t.sqlLoading && t.sqlResult == nil && t.sqlError == "" {
 					t.sqlError = "SQL 预连接失败：" + err.Error()
-					if errors.Is(err, connections.ErrMySQLSQLSessionLost) {
+					if errors.Is(err, mysqlsvc.ErrMySQLSQLSessionLost) {
 						t.sqlRecoveryNeeded = true
 						t.sqlRecoveryProfile = t.sqlProfileID
 						t.sqlRecoverySchema = t.sqlDatabase
@@ -192,12 +192,12 @@ func (s *State) consumeMySQLSQLResults() {
 			if r.err != nil {
 				if canceled || errors.Is(r.err, context.Canceled) {
 					t.sqlError = "SQL 执行已停止；服务器端更改可能已生效"
-				} else if errors.Is(r.err, connections.ErrMySQLSQLSessionLost) {
+				} else if errors.Is(r.err, mysqlsvc.ErrMySQLSQLSessionLost) {
 					t.sqlRecoveryNeeded = true
 					t.sqlRecoveryProfile = t.sqlProfileID
 					t.sqlRecoverySchema = t.sqlDatabase
 					t.sqlError = "原查询会话已失效；事务、临时表、会话变量无法恢复，DML 结果请先核对。可选择以新会话继续"
-				} else if errors.Is(r.err, connections.ErrMySQLSQLSessionLimit) {
+				} else if errors.Is(r.err, mysqlsvc.ErrMySQLSQLSessionLimit) {
 					t.sqlError = "SQL 标签会话数已达到上限，请关闭其他查询标签后重试"
 				} else {
 					t.sqlError = r.err.Error()
