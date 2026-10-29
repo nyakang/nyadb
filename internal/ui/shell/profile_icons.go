@@ -25,7 +25,8 @@ func (s *State) profileBrandIcon(c *ui.Context, kind connections.Kind, size floa
 	palette := theme.Colors(c)
 
 	asset, fallback, color := profileBrand(kind, palette)
-	if bitmap := s.bundledIcons[asset]; bitmap != nil {
+	icons, _ := theme.BundledConnectionIcons()
+	if bitmap := icons[asset]; bitmap != nil {
 		ui.Image(c, bitmap).Size(size, size).Fit(ui.Contain)
 		return
 	}

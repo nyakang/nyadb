@@ -1,4 +1,4 @@
-package shell
+package connectioncatalog
 
 import (
 	"testing"
@@ -29,39 +29,36 @@ func TestNavicatObservedTreeGroupHierarchy(t *testing.T) {
 
 func TestNavicatObservedTreeExpansionAndSelection(t *testing.T) {
 	s := New()
-	tt := ui.NewTester(s.View, 1280, 800)
-	if err := tt.Click("连接"); err != nil {
-		t.Fatal(err)
-	}
+	tt := ui.NewTester(catalogTestView(s), 860, 566)
 	if err := tt.Click("列表视图"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionTreeOpen["华为"] {
+	if s.treeOpen["华为"] {
 		t.Fatal("vendors should start collapsed")
 	}
 	if err := tt.Click("展开 华为"); err != nil {
 		t.Fatal(err)
 	}
-	if !s.connectionTreeOpen["华为"] || s.connectionTreeOpen["阿里云"] {
+	if !s.treeOpen["华为"] || s.treeOpen["阿里云"] {
 		t.Fatal("expand toggled wrong vendor")
 	}
 	if err := tt.Click("选择 华为云 GaussDB 主备版"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionSelectedName != "华为云 GaussDB 主备版" || s.connectionStep != 0 {
-		t.Fatalf("tree leaf selection failed: selected %q step %d", s.connectionSelectedName, s.connectionStep)
+	if s.selected.Name != "华为云 GaussDB 主备版" {
+		t.Fatalf("tree leaf selection failed: selected %q", s.selected.Name)
 	}
 	if err := tt.Click("展开 华为"); err != nil {
 		t.Fatal(err)
 	}
-	if s.connectionTreeOpen["华为"] {
+	if s.treeOpen["华为"] {
 		t.Fatal("second click did not collapse the vendor")
 	}
 }
 
 func TestNavicatObservedTreeSearchExpandsWithoutOverwritingState(t *testing.T) {
 	s := New()
-	s.connectionSearch = "Gauss"
+	s.search = "Gauss"
 	direct := s.catalogTreeDirect()
 	if !s.catalogSidebarFilterVisible("华为", true) {
 		t.Fatal("Gauss search should retain Huawei in sidebar")
@@ -77,11 +74,11 @@ func TestNavicatObservedTreeSearchExpandsWithoutOverwritingState(t *testing.T) {
 	if len(groups) != 1 || groups[0].vendor != "华为" || len(groups[0].items) < 3 {
 		t.Fatalf("expected filtered Huawei GaussDB leaves: %+v", groups)
 	}
-	if s.connectionTreeOpen["华为"] {
+	if s.treeOpen["华为"] {
 		t.Fatal("search should not persist the auto-expanded state")
 	}
-	s.connectionSearch = ""
-	if len(s.catalogTreeGroups()) < 12 || s.connectionTreeOpen["华为"] {
+	s.search = ""
+	if len(s.catalogTreeGroups()) < 12 || s.treeOpen["华为"] {
 		t.Fatal("clearing search must restore collapsed state and full catalog")
 	}
 }

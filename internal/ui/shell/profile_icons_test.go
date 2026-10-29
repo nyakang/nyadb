@@ -8,7 +8,10 @@ import (
 )
 
 func TestWorkbenchProfileBrandsReuseEmbeddedCatalogAssets(t *testing.T) {
-	state := New()
+	icons, err := theme.BundledConnectionIcons()
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, tc := range []struct {
 		kind            connections.Kind
 		asset, fallback string
@@ -21,7 +24,7 @@ func TestWorkbenchProfileBrandsReuseEmbeddedCatalogAssets(t *testing.T) {
 		if asset != tc.asset || fallback != tc.fallback {
 			t.Fatalf("%s icon mapping: %s, %s", tc.kind, asset, fallback)
 		}
-		if state.bundledIcons[asset] == nil {
+		if icons[asset] == nil {
 			t.Errorf("%s has no embedded brand bitmap", asset)
 		}
 		if theme.Symbols[fallback] == nil {

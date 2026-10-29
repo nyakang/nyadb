@@ -8,6 +8,9 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/ui/connectioncatalog"
+	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 func (s *State) openConnectionDialog() {
@@ -18,10 +21,7 @@ func (s *State) openConnectionDialog() {
 	s.connectionStep = 0
 	s.connectionEditorTab = 0
 	s.connectionKind = ""
-	s.connectionSelectedName = ""
-	s.connectionSearch = ""
-	s.connectionEngineFilters = map[string]bool{}
-	s.connectionVendorFilters = map[string]bool{}
+	s.connectionCatalog.Reset()
 	group := s.selectedGroup
 	if group == "" {
 		if selected, ok := s.currentProfile(); ok {
@@ -97,11 +97,11 @@ func (s *State) nextConnectionStep() {
 	s.connectionStep = 1
 	// A selection must not insert a new section and move the card beneath
 	// the pointer. Record actual use only once Next opens its editor.
-	recent := s.connectionSelectedName
+	recent := s.connectionCatalog.Selected().Name
 	if recent == "" {
 		recent = connectionKindName(s.connectionKind)
 	}
-	s.recordRecentConnection(recent)
+	s.connectionCatalog.RecordRecent(recent)
 	s.connectionNameFocusPending = true
 	s.connectionEditorTab = 0
 	s.updateConnectionWindowTitle()
@@ -220,4 +220,62 @@ func connectionKindName(kind connections.Kind) string {
 	default:
 		return "未知类型"
 	}
+}
+
+// LoadLocalResearchIcons preserves bootstrap's opt-in research entry point.
+func (s *State) LoadLocalResearchIcons(dir string) (int, error) {
+	return s.connectionCatalog.LoadLocalResearchIcons(dir)
+}
+
+func (s *State) chooseCatalogChoice(choice connectioncatalog.Choice) {
+	if choice.Kind == "" {
+		s.connectionKind = ""
+		s.connectionError = choice.Name + " 的连接驱动尚未支持"
+		return
+	}
+	s.chooseConnectionKind(choice.Kind)
+}
+
+const catalogFooterHeight float32 = 42
+
+// The chooser follows the observed large two-pane information architecture.
+// It uses independent NyaDB symbols by default. In explicit local research
+// mode only, runtime-loaded PNGs may replace catalog symbols for comparison.
+func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
+	palette := theme.Colors(c)
+
+	w, h := c.Size()
+	dialogWidth := min(float32(860), w-72)
+	dialogHeight := min(float32(648), h-76)
+	bodyHeight := dialogHeight - catalogFooterHeight - 40
+	if nativeWindow {
+		dialogWidth = w
+		dialogHeight = h
+		bodyHeight = h - catalogFooterHeight - 1
+	}
+	ui.Column(c).Width(dialogWidth).Height(dialogHeight).Gap(0).Children(func() {
+		if !nativeWindow {
+			ui.Row(c).Height(38).Padding(0, 3).AlignItems(ui.Center).Children(func() {
+				theme.Icon(c, "connection", 20, palette.Blue)
+				ui.Text(c, locales.Text("新建连接")).FontSize(theme.Font(c, 17)).Bold()
+			})
+			ui.Box(c).Height(1).Background(palette.Border)
+		}
+		s.connectionCatalog.View(c, dialogWidth, bodyHeight, s.chooseCatalogChoice)
+		ui.Box(c).Height(1).Background(palette.Border)
+		ui.Row(c).Height(catalogFooterHeight).Padding(5, 9).Gap(7).AlignItems(ui.Center).Background(palette.Toolbar).Children(func() {
+			ui.Button(c, locales.Text("通过 URI 新建连接…")).Height(theme.RowHeight(c, connectionFooterControlHeight)).
+				Label(locales.Text("URI 导入尚未支持")).Disabled(true)
+			ui.Box(c).Grow(1)
+			if s.connectionError != "" {
+				ui.Text(c, s.connectionError).FontSize(theme.Font(c, 11)).TextColor(palette.Error).SingleLine().MinWidth(0).Grow(1)
+			}
+			if ui.Button(c, locales.Text("取消")).Label(locales.Text("取消连接向导")).Width(80).Height(theme.RowHeight(c, connectionFooterControlHeight)).Clicked() {
+				s.closeConnectionDialog()
+			}
+			if ui.Button(c, locales.Text("下一步")).Width(80).Height(theme.RowHeight(c, connectionFooterControlHeight)).Disabled(s.connectionKind == "").Clicked() {
+				s.nextConnectionStep()
+			}
+		})
+	})
 }

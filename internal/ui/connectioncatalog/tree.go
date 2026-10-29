@@ -1,4 +1,4 @@
-package shell
+package connectioncatalog
 
 import (
 	"strings"
@@ -42,11 +42,11 @@ type catalogTreeGroup struct {
 // Navicat narrows the left filter sidebar as well as the right tree when
 // searching. Only filters for matching items remain visible.
 func (s *State) catalogSidebarFilterVisible(label string, vendor bool) bool {
-	if strings.TrimSpace(s.connectionSearch) == "" {
+	if strings.TrimSpace(s.search) == "" {
 		return true
 	}
 	for _, item := range databaseCatalog {
-		if !catalogMatch(item, s.connectionSearch, nil, nil) {
+		if !catalogMatch(item, s.search, nil, nil) {
 			continue
 		}
 		if vendor && (item.vendor == label || (label == "达梦" && item.section == "全部" && item.engine == "达梦")) {
@@ -64,7 +64,7 @@ func (s *State) catalogTreeDirect() []catalogEntry {
 	for _, name := range catalogTreeDirectEngines {
 		for _, item := range databaseCatalog {
 			if item.name == name && item.section == "全部" &&
-				catalogMatch(item, s.connectionSearch, s.connectionEngineFilters, s.connectionVendorFilters) {
+				catalogMatch(item, s.search, s.engineFilters, s.vendorFilters) {
 				items = append(items, item)
 				break
 			}
@@ -80,13 +80,13 @@ func (s *State) catalogTreeGroups() []catalogTreeGroup {
 	byVendor := make(map[string][]catalogEntry)
 	for _, item := range databaseCatalog {
 		if item.section == "全部" && item.engine == "达梦" {
-			if catalogMatch(item, s.connectionSearch, s.connectionEngineFilters, s.connectionVendorFilters) {
+			if catalogMatch(item, s.search, s.engineFilters, s.vendorFilters) {
 				byVendor["达梦"] = append(byVendor["达梦"], item)
 			}
 			continue
 		}
 		if item.section != "云数据库" || !catalogMatch(item,
-			s.connectionSearch, s.connectionEngineFilters, s.connectionVendorFilters) {
+			s.search, s.engineFilters, s.vendorFilters) {
 			continue
 		}
 		byVendor[item.vendor] = append(byVendor[item.vendor], item)
@@ -118,7 +118,7 @@ func (s *State) catalogTreeGroups() []catalogTreeGroup {
 	return groups
 }
 
-func (s *State) catalogTree(c *ui.Context) {
+func (s *State) catalogTree(c *ui.Context, onSelect func(Choice)) {
 	palette := theme.Colors(c)
 
 	ui.Column(c).Gap(0).Children(func() {
@@ -126,7 +126,7 @@ func (s *State) catalogTree(c *ui.Context) {
 		if len(recent) > 0 {
 			s.catalogTreeHeading(c, "最近使用过的")
 			for _, item := range recent {
-				s.catalogTreeLeaf(c, item, 0)
+				s.catalogTreeLeaf(c, item, 0, onSelect)
 			}
 		}
 		direct := s.catalogTreeDirect()
@@ -137,12 +137,12 @@ func (s *State) catalogTree(c *ui.Context) {
 		}
 		s.catalogTreeHeading(c, "全部")
 		for _, item := range direct {
-			s.catalogTreeLeaf(c, item, 0)
+			s.catalogTreeLeaf(c, item, 0, onSelect)
 		}
 		for _, group := range groups {
 			group := group
-			open := s.connectionTreeOpen[group.vendor] ||
-				strings.TrimSpace(s.connectionSearch) != ""
+			open := s.treeOpen[group.vendor] ||
+				strings.TrimSpace(s.search) != ""
 			button := ui.ButtonBase(c).Label("展开 " + group.label).
 				FillWidth().Height(catalogTreeRowHeight).Radius(0).Background(ui.Transparent)
 			button.Children(func() {
@@ -157,11 +157,11 @@ func (s *State) catalogTree(c *ui.Context) {
 				})
 			})
 			if button.Clicked() {
-				s.connectionTreeOpen[group.vendor] = !s.connectionTreeOpen[group.vendor]
+				s.treeOpen[group.vendor] = !s.treeOpen[group.vendor]
 			}
 			if open {
 				for _, item := range group.items {
-					s.catalogTreeLeaf(c, item, 1)
+					s.catalogTreeLeaf(c, item, 1, onSelect)
 				}
 			}
 		}
@@ -176,10 +176,10 @@ func (s *State) catalogTreeHeading(c *ui.Context, title string) {
 	})
 }
 
-func (s *State) catalogTreeLeaf(c *ui.Context, item catalogEntry, depth int) {
+func (s *State) catalogTreeLeaf(c *ui.Context, item catalogEntry, depth int, onSelect func(Choice)) {
 	palette := theme.Colors(c)
 
-	selected := s.connectionSelectedName == item.name
+	selected := s.selected.Name == item.name
 	bg := ui.Transparent
 	if selected {
 		bg = palette.Selection
@@ -198,7 +198,7 @@ func (s *State) catalogTreeLeaf(c *ui.Context, item catalogEntry, depth int) {
 		})
 	})
 	if button.Clicked() {
-		s.chooseCatalogEntry(item)
+		s.chooseCatalogEntry(item, onSelect)
 	}
 }
 
