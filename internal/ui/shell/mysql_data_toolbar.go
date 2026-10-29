@@ -37,10 +37,13 @@ func (s *State) mysqlDataCompactActions(c *ui.Context, t *tab) {
 	if t.dataLoading && mysqlDataToolbarButton(c, "取消", locales.Text("取消读取数据"), "close", false).Clicked() {
 		s.cancelMySQLDataRead(t)
 	}
-	_, cell, selected := mysqlSelectedDataCell(t)
-	if mysqlDataToolbarButton(c, "复制", locales.Text("复制所选单元格预览"), "copy", !selected).Clicked() {
-		c.WriteClipboard(mysqlDataCopyPreview(cell))
+	selected := mysqlDataHasSelectedPreview(t)
+	if mysqlDataToolbarButton(c, "复制", locales.Text("复制所选数据预览"), "copy", !selected).Clicked() {
+		s.copyMySQLDataSelection(c, t)
 	}
+	ui.Button(c, "▾").Label(locales.Text("复制为")).Tooltip(locales.Text("复制为")).
+		Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 4).Disabled(!selected).
+		Menu(func(m *ui.Menu) { s.mysqlDataCopyAsMenu(c, t, m) })
 	count := len(t.dataFilterRules)
 	if count == 0 && t.dataFilterMode != "" {
 		count = 1

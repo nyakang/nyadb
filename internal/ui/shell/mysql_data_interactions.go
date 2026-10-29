@@ -5,6 +5,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // A field can be inspected before a row is selected. When no cell is active
@@ -60,7 +61,7 @@ func mysqlDataCopyPreview(cell connections.MySQLDataCell) string {
 		return "NULL"
 	}
 	if cell.Truncated {
-		return cell.Text + "\n[预览已截断；不是完整字段内容]"
+		return cell.Text + "\n" + locales.Text("[预览已截断；不是完整字段内容]")
 	}
 	return cell.Text
 }
