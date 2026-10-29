@@ -67,25 +67,25 @@ func TestMySQLRealKeysetAndOnDemandFieldNativeViewer(t *testing.T) {
 		t.Fatal(err)
 	}
 	deadline := time.Now().Add(3 * time.Second)
-	for tab.dataChunkLoading && time.Now().Before(deadline) {
+	for tab.dataPanel.ChunkLoading() && time.Now().Before(deadline) {
 		tt.Frame()
 		time.Sleep(5 * time.Millisecond)
 	}
 	tt.Frame()
-	if tab.dataChunkErr != "" || tab.dataChunkNext != 1024 || tab.dataChunkTotal != 1048576 ||
-		len(tab.dataChunkText) != 2050 {
-		t.Fatalf("chunk retrieval: next=%d total=%d len=%d err=%q", tab.dataChunkNext, tab.dataChunkTotal, len(tab.dataChunkText), tab.dataChunkErr)
+	if tab.dataPanel.ChunkError() != "" || tab.dataPanel.ChunkNext() != 1024 || tab.dataPanel.ChunkTotal() != 1048576 ||
+		len(tab.dataPanel.ChunkText()) != 2050 {
+		t.Fatalf("chunk retrieval: next=%d total=%d len=%d err=%q", tab.dataPanel.ChunkNext(), tab.dataPanel.ChunkTotal(), len(tab.dataPanel.ChunkText()), tab.dataPanel.ChunkError())
 	}
 	if err = tt.Click("读取所选字段下一段"); err != nil {
 		t.Fatal(err)
 	}
-	for tab.dataChunkLoading && time.Now().Before(deadline) {
+	for tab.dataPanel.ChunkLoading() && time.Now().Before(deadline) {
 		tt.Frame()
 		time.Sleep(5 * time.Millisecond)
 	}
 	tt.Frame()
-	if tab.dataChunkNext != 2048 {
-		t.Fatalf("chunk wasn't advanced: %d", tab.dataChunkNext)
+	if tab.dataPanel.ChunkNext() != 2048 {
+		t.Fatalf("chunk wasn't advanced: %d", tab.dataPanel.ChunkNext())
 	}
 	if path := os.Getenv("NYADB_MYSQL_KEYSET_CAPTURE"); path != "" {
 		f, err := os.Create(path)

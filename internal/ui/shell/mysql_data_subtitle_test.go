@@ -8,6 +8,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/datainspector"
 )
 
 func TestPatchedNativeMyGoTableSubtitleSharesColumnBehaviors(t *testing.T) {
@@ -182,7 +183,7 @@ func TestMySQLFullServerTypesAndKeyBadgesUseNativeTable(t *testing.T) {
 		t.Fatalf("hidden subtitles did not preserve stable identities: %+v", hidden)
 	}
 	if mysqlColumnKeyBadge("MUL") != "IDX" || mysqlColumnKeyBadge("") != "" ||
-		mysqlColumnTypeGlyph("json") != "{}" || mysqlColumnTypeGlyph("datetime") == "#" {
+		datainspector.ColumnTypeGlyph("json") != "{}" || datainspector.ColumnTypeGlyph("datetime") == "#" {
 		t.Fatal("type glyphs or index markers are misleading")
 	}
 }

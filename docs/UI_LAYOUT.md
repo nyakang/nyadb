@@ -101,6 +101,18 @@ server-side pagination benchmark.
   database driver. `Open` registers a document; `Load` uses its cache unless refresh
   is explicit. `Cancel` and `Close` revoke pending jobs; `Consume` validates request,
   profile and session generation. Parked results remain buffered until activation.
+- `internal/ui/datainspector/`: per-data-tab table/field mode, table metadata,
+  exact whole-table row counts, field attributes, safe previews and bounded field
+  reads. Grid/session snapshots, loaders, profile lookup and visibility callbacks
+  are injected; the package imports no shell, navigation, sessionbrowser, storage
+  or database driver. `Open` registers a panel; `View` follows a read-only selection
+  snapshot. `LoadInfo` refreshes metadata independently of count/field readers.
+  `LoadCount` ignores grid filters and `LoadChunk` copies row identity before each
+  explicit request of at most 1024 characters/bytes. `Consume` processes private
+  buffered channels on the UI thread, retaining parked results until activation
+  and rejecting obsolete pages, selections or session generations. `Close` and
+  `CloseAll` cancel all readers. `Property`, `FieldAttributes`, `ColumnTypeGlyph`
+  and `CopyPreview` are shared with the existing workbench views and copy actions.
 - `internal/ui/shell/profile_view.go`: navigator callbacks, document shortcuts
   and contextual profile inspector. The existing profile navigation files
   coordinate session/browser requests and build menus. `internal/ui/shell/mysql_session_state.go` keeps unsaved-document guards,
@@ -115,6 +127,10 @@ server-side pagination benchmark.
 - `internal/ui/shell/workspace.go`: host tab strip, SQL/structure module views,
   object table and virtual data preview. The existing structure-state file keeps
   document creation, schema pruning and cross-document cleanup.
+- `internal/ui/shell/mysql_table_info_state.go`: data-inspector dependencies,
+  lazy per-tab panels, current grid snapshots and view/field-action forwarding.
+  Data paging, filtering, editing, layout, export and unsaved-document guards
+  remain in the existing shell data files; tab disposal closes its module panel.
 - `internal/ui/shell/inspector.go`: contextual right panel.
 - `internal/ui/shell/shell_test.go`: headless interaction regression tests.
 - `internal/ui/shell/preview_test.go`: opt-in screenshot generator.
@@ -130,8 +146,11 @@ reveal, multi-profile session and late-result regressions, including 1280×800 a
 fallback/redaction and session-generation tests live beside `sessionbrowser`.
 SQL statement, execution, cancellation, preconnect and recovery tests live beside
 `sqlworkspace`; structure presentation, read-only page and metadata lifecycle tests
-live beside `structureviewer`. Shell retains qualified-tab, navigator/inspector,
-schema-pruning, table-action and real-session integration checks. Shared bitmap
+live beside `structureviewer`; table/field presentation, localization, exact counts
+and bounded-read lifecycle tests live beside `datainspector`. Mixed tests keep
+data rules, column-menu and workspace assertions in shell. Shell retains
+qualified-tab, navigator/inspector, schema-pruning, table-action and real-session
+integration checks. Shared bitmap
 cache tests live beside theme. Resetting the chooser clears selection, search and
 filters while preserving the current view mode, expansion state and recents.
 
@@ -160,6 +179,15 @@ by one module document; metadata jobs and presentation move into `structureviewe
 in shell. Generation mismatch now ends loading with an explicit-refresh error
 instead of leaving the rejected request busy. Data pages and program views remain
 available for subsequent extraction stages.
+
+After the data inspector extraction, shell contains 99 Go files (36 implementation
+and 63 test files), down from 105. Its table-info state and 11 field-read fields
+per data tab are replaced by one module panel. `datainspector` has six
+implementation and four test files. Regression checks cover independent metadata,
+count and field cancellation, same-cell page replacement, copied row keys, parked
+profile results, generation rejection, narrow panels in both locales and real
+workbench tab/terminal cleanup. Data paging/editing/filtering/layout and program
+views remain available for subsequent extraction stages.
 
 ## Limitations / next steps
 

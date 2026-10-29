@@ -94,10 +94,18 @@ cmd/nyadb/                    Desktop application entry point
 internal/bootstrap/           Application initialization
 internal/assets/lucide/       Embedded Lucide UI icons (ISC license)
 internal/assets/connectionicons/ Embedded icon assets and provenance
-internal/services/connections/ Profiles, MySQL sessions, and read-only queries
+internal/services/connections/ Connection models, validation, and configuration
+internal/services/mysql/       MySQL sessions, queries, metadata, and data operations
 internal/storage/localdb/     SQLite configuration storage and migrations
-internal/ui/shell/            Native UI, workspace, dialogs, and tests
-internal/ui/theme/            Theme and UI icons
+internal/ui/shell/            Native windows, workbench coordination, and data pages
+internal/ui/connectioncatalog/ Connection type chooser
+internal/ui/connectioneditor/ Connection forms, credentials, and async checks
+internal/ui/navigation/       Connection navigator and filtering
+internal/ui/sessionbrowser/   Session workspaces and metadata jobs
+internal/ui/sqlworkspace/     SQL documents and execution
+internal/ui/structureviewer/  Read-only table structure documents
+internal/ui/datainspector/    Table/field information and bounded field previews
+internal/ui/theme/            Theme, UI icons, and shared bitmap caches
 resources/                    Application assets
 docs/                         Design and UI documentation
 .github/workflows/            Cross-platform CI

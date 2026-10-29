@@ -49,52 +49,6 @@ func TestMySQLDataStatusEnglishKeepsPageAndQueryMeaning(t *testing.T) {
 	}
 }
 
-func TestMySQLFieldInspectorTranslatesLabelsAndPreservesValues(t *testing.T) {
-	useEnglishDataWorkspace(t)
-	doc := mysqlInspectorSampleTab()
-	doc.dataSelectedRow = 0
-	doc.dataState.Cells = ui.ColumnRange{Cursor: "label", Anchor: "label"}
-	doc.dataPage.Rows[0][1].Text = "复制"
-	doc.dataPage.ColumnMetadata[1].Comment = "主键"
-	literalDefault := "否"
-	doc.dataPage.ColumnMetadata[1].Default = &literalDefault
-	tt := ui.NewTester(func(c *ui.Context) {
-		theme.Apply(c)
-		(&State{}).mysqlDataInspector(c, doc)
-	}, 330, 800)
-	for _, label := range []string{"Data field information panel", "Field info", "Not NULL", "Default value", "Character set", "Complete preview"} {
-		if !tt.HasText(label) {
-			t.Fatalf("missing English field label %q: %v", label, tt.Texts())
-		}
-	}
-	for _, value := range []string{"复制", "主键", "\"否\"", "test_schema.entries"} {
-		if !tt.HasText(value) {
-			t.Fatalf("server value was translated: %q", value)
-		}
-	}
-	if err := tt.Click("Copy Cell Preview"); err != nil {
-		t.Fatal(err)
-	}
-	if tt.Clipboard() != "复制" {
-		t.Fatalf("copied translated cell content: %q", tt.Clipboard())
-	}
-}
-
-func TestMySQLTableInspectorTranslatesLabelsAndPreservesServerError(t *testing.T) {
-	useEnglishDataWorkspace(t)
-	doc := tableInfoSampleTab()
-	doc.dataInfo.attempted = true
-	doc.dataInfo.err = "表信息"
-	doc.dataInfo.info = &mysqlsvc.MySQLTableInfo{Database: doc.dataDatabase, Name: doc.dataTable, Kind: "BASE TABLE", Engine: "InnoDB", Comment: "刷新"}
-	s := tableInfoSampleState(doc)
-	tt := tableInfoTester(s, doc)
-	for _, label := range []string{"Data table information panel", "Table info", "Estimated rows", "Get row count", "Row counts ignore the current filters.", "Unable to load table information: 表信息"} {
-		if !tt.HasText(label) {
-			t.Fatalf("missing English table label or changed error %q: %v", label, tt.Texts())
-		}
-	}
-}
-
 func TestMySQLRuleChoicesTranslateWithoutChangingQueryIDs(t *testing.T) {
 	useEnglishDataWorkspace(t)
 	doc := alignedDataTestTab()

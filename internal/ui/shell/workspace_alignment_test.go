@@ -95,37 +95,25 @@ func TestDataRowHeaderKeepsFieldMenusAndCellCopyMapped(t *testing.T) {
 	}
 }
 
-func TestInspectorLargeFieldsKeepCopyAndChunkActionsVisible(t *testing.T) {
-	s := New()
-	doc := mysqlInspectorSampleTab()
-	doc.dataSelectedRow = 0
-	doc.dataState.Cells = ui.ColumnRange{Cursor: "label", Anchor: "label"}
-	doc.dataPage.RowRefs = []*mysqlsvc.MySQLRowRef{{Database: "test_schema", Table: "entries"}}
-	doc.dataPage.Rows[0][1].Text = strings.Repeat("large preview ", 300)
-	doc.dataPage.ColumnMetadata[1].Comment = strings.Repeat("long metadata ", 200)
-	doc.dataChunkField, doc.dataChunkRow = "label", 0
-	doc.dataChunkNext, doc.dataChunkTotal = 1024, 8192
-	doc.dataChunkText = "0x" + strings.Repeat("ab", 1024)
-	tt := ui.NewTester(func(c *ui.Context) {
-		theme.Apply(c)
-		s.mysqlDataInspector(c, doc)
-	}, 205, 400)
-	header, ok := tt.Find("数据信息切换栏")
-	if !ok || header.Y != 0 || header.H != 42 {
-		t.Fatalf("inspector header no longer occupies the fixed top region: %+v", header)
-	}
-	actionsTop := header.Y + header.H
-	actionsBottom := actionsTop + theme.CommandBarHeight
-	for _, label := range []string{"复制单元格预览", "读取所选字段下一段", "复制此片段"} {
-		r, ok := tt.Find(label)
-		if !ok || r.X < 0 || r.X+r.W > 205 || r.Y < actionsTop || r.Y+r.H > actionsBottom {
-			t.Fatalf("large values displaced inspector action %s: %+v", label, r)
-		}
-	}
-	if err := tt.Click("复制此片段"); err != nil {
-		t.Fatal(err)
-	}
-	if tt.Clipboard() != doc.dataChunkText {
-		t.Fatal("bounded display altered the copied fragment")
+func mysqlInspectorSampleTab() *tab {
+	literalNull := "NULL"
+	length := int64(80)
+	precision, scale := int64(10), int64(2)
+	charset, collation := "utf8mb4", "utf8mb4_0900_ai_ci"
+	return &tab{
+		dataDatabase: "test_schema", dataTable: "entries", dataSelectedRow: -1,
+		dataPage: &mysqlsvc.MySQLDataPage{
+			Columns:     []string{"id", "label", "price"},
+			ColumnKinds: []string{"bigint", "varchar", "decimal"},
+			ColumnMetadata: []mysqlsvc.MySQLStructureColumn{
+				{Name: "id", DataType: "bigint", Type: "bigint unsigned", Key: "PRI", Extra: "auto_increment"},
+				{Name: "label", DataType: "varchar", Type: "varchar(80)", Nullable: true,
+					Default: &literalNull, CharacterMaxLength: &length, CharacterSet: &charset,
+					Collation: &collation, Comment: "reviewed"},
+				{Name: "price", DataType: "decimal", Type: "decimal(10,2)", NumericPrecision: &precision,
+					NumericScale: &scale, Nullable: true},
+			},
+			Rows: [][]mysqlsvc.MySQLDataCell{{{Text: "1"}, {Text: "sample"}, {Text: "12.50"}}},
+		},
 	}
 }
