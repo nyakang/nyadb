@@ -28,7 +28,7 @@ func TestMySQLTableMenuSharesActionsAndRequiresExplicitConfirmation(t *testing.T
 	s, tt := structureTestBrowser(t)
 	var calls []mysqlsvc.MySQLTableChange
 	s.mysqlTableRunner = func(_ context.Context, id int64, r mysqlsvc.MySQLTableChange) error {
-		if id != s.mysqlSessionProfileID {
+		if id != s.sessions.Current().ProfileID {
 			return errors.New("wrong connection")
 		}
 		calls = append(calls, r)
@@ -75,7 +75,7 @@ func TestMySQLTableActionErrorIsVisibleAndDoesNotInvalidateOtherConnection(t *te
 	s.mysqlTableRunner = func(context.Context, int64, mysqlsvc.MySQLTableChange) error {
 		return errors.New("permission denied by server")
 	}
-	s.beginMySQLTableChange(s.mysqlSessionProfileID, "app_db", "orders", mysqlsvc.MySQLTableRename)
+	s.beginMySQLTableChange(s.sessions.Current().ProfileID, "app_db", "orders", mysqlsvc.MySQLTableRename)
 	s.mysqlTableNewName = "orders_new"
 	tt.Frame()
 	if err := tt.Click("确认重命名"); err != nil {
@@ -126,7 +126,7 @@ func TestMySQLCreateTableIsReachableInEmptyDatabase(t *testing.T) {
 	for _, entry := range []string{"database menu", "toolbar"} {
 		t.Run(entry, func(t *testing.T) {
 			s, tt := mysqlObjectTestState(t)
-			s.mysqlObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
+			s.sessions.ObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
 				return nil, nil
 			}
 			requests := make(chan mysqlsvc.MySQLTableChange, 1)
@@ -255,7 +255,7 @@ func TestMySQLObjectRefreshShortcutReloadsTreeAndGrid(t *testing.T) {
 	for _, target := range []string{"orders", "InnoDB"} {
 		t.Run(target, func(t *testing.T) {
 			s, tt := structureTestBrowser(t)
-			s.mysqlObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
+			s.sessions.ObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
 				return []mysqlsvc.MySQLDBObject{{Name: "orders", Kind: "表", Comment: "refreshed"}}, nil
 			}
 			if err := tt.Click(target); err != nil {
@@ -263,7 +263,7 @@ func TestMySQLObjectRefreshShortcutReloadsTreeAndGrid(t *testing.T) {
 			}
 			tt.Key(0, ui.KeyF5)
 			waitMySQLObjects(t, s, tt)
-			if objects := s.mysqlObjectCache["app_db"]; len(objects) != 1 || objects[0].Comment != "refreshed" {
+			if objects := s.sessions.Current().Cache["app_db"]; len(objects) != 1 || objects[0].Comment != "refreshed" {
 				t.Fatalf("F5 did not refresh the current schema: %+v", objects)
 			}
 		})

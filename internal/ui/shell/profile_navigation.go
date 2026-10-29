@@ -16,7 +16,7 @@ func (s *State) setProfileActiveVariant(id int64, name string) {
 	if s.profileService == nil || id == 0 {
 		return
 	}
-	if state := s.mysqlSessionStateFor(id); state == "已连接" || state == "连接中" {
+	if state := s.sessions.StatusFor(id); state == "已连接" || state == "连接中" {
 		s.status = "请先断开连接，再切换连接配置文件"
 		return
 	}
@@ -70,15 +70,6 @@ func (s *State) setProfileStarred(id int64, starred bool) {
 	s.status = "已更新连接星标"
 }
 
-func (s *State) navigationCollapsed() {
-	for _, node := range s.mysqlDatabaseNodes {
-		node.open = false
-		node.tablesOpen = false
-		node.viewsOpen = false
-	}
-	s.navigation.Row = -1
-}
-
 func (s *State) activeTabObject() (int64, string, string, bool) {
 	t := s.currentTab()
 	switch t.kind {
@@ -94,33 +85,33 @@ func (s *State) activeTabObject() (int64, string, string, bool) {
 // resolveNavigatorObject selects the real metadata row after an optional
 // asynchronous fetch, without inventing a table in a stale database snapshot.
 func (s *State) resolveNavigatorObject() {
-	if s.navigateDatabase == "" || s.navigateDatabase != s.mysqlSelectedDatabase ||
-		s.navigateProfileID != s.mysqlSessionProfileID || s.mysqlSessionStatus != "已连接" {
+	if s.sessions.Current().NavigateDatabase == "" || s.sessions.Current().NavigateDatabase != s.sessions.Current().Database ||
+		s.sessions.Current().NavigateProfileID != s.sessions.Current().ProfileID || s.sessions.Current().Status != "已连接" {
 		return
 	}
-	objects, ok := s.mysqlObjectCache[s.navigateDatabase]
+	objects, ok := s.sessions.Current().Cache[s.sessions.Current().NavigateDatabase]
 	if !ok {
 		return
 	}
-	s.mysqlObjectKind = "全部"
+	s.sessions.Current().Kind = "全部"
 	for i, obj := range objects {
-		if obj.Name == s.navigateTable {
-			s.objectRow = i
-			s.revealNavigationNode(navigation.Node{Kind: "object", ProfileID: s.navigateProfileID, Database: s.navigateDatabase, Category: obj.Kind, Object: obj.Name})
-			s.navigateDatabase, s.navigateTable = "", ""
-			s.navigateProfileID = 0
+		if obj.Name == s.sessions.Current().NavigateTable {
+			s.sessions.Current().Row = i
+			s.revealNavigationNode(navigation.Node{Kind: "object", ProfileID: s.sessions.Current().NavigateProfileID, Database: s.sessions.Current().NavigateDatabase, Category: obj.Kind, Object: obj.Name})
+			s.sessions.Current().NavigateDatabase, s.sessions.Current().NavigateTable = "", ""
+			s.sessions.Current().NavigateProfileID = 0
 			return
 		}
 	}
-	s.objectRow = -1
-	s.navigateDatabase, s.navigateTable = "", ""
-	s.navigateProfileID = 0
+	s.sessions.Current().Row = -1
+	s.sessions.Current().NavigateDatabase, s.sessions.Current().NavigateTable = "", ""
+	s.sessions.Current().NavigateProfileID = 0
 	s.status = "已找到数据库，但活动标签对象不在当前元数据中"
 }
 
 func (s *State) navigateToActiveTab(services ui.Services) {
 	id, database, table, ok := s.activeTabObject()
-	if !ok || s.mysqlSessionStateFor(id) != "已连接" {
+	if !ok || s.sessions.StatusFor(id) != "已连接" {
 		s.status = "当前标签没有可定位的活动 MySQL 对象"
 		return
 	}
@@ -128,7 +119,7 @@ func (s *State) navigateToActiveTab(services ui.Services) {
 		if p.ID != id {
 			continue
 		}
-		s.activateMySQLProfile(id)
+		s.sessions.Activate(id)
 		// Temporarily reveal the target if the sidebar is filtered.
 		s.navigation.SuspendFilter()
 		s.navigation.Group = ""
@@ -140,14 +131,9 @@ func (s *State) navigateToActiveTab(services ui.Services) {
 		}
 		s.navigation.Tree.Open.Add(navigation.ConnectionKey(id))
 		s.navigation.Tree.Open.Add(navigation.DatabaseNode(id, database).Key())
-		s.navigateDatabase, s.navigateTable, s.navigateProfileID = database, table, id
+		s.sessions.Current().NavigateDatabase, s.sessions.Current().NavigateTable, s.sessions.Current().NavigateProfileID = database, table, id
 		s.selectMySQLDatabase(services, database)
 		s.resolveNavigatorObject()
-		if node := s.mysqlDatabaseNodes[database]; node != nil {
-			node.open = true
-			node.tablesOpen = true
-			node.viewsOpen = true
-		}
 		s.status = "已定位活动标签对象：" + database + "." + table
 		return
 	}
@@ -172,39 +158,39 @@ func (s *State) selectNavigationNode(services ui.Services, key string) {
 	s.navigation.Key = key
 	s.navigation.Row = s.navigation.SelectionRow(s.navigation.Roots())
 	if n.Database == "" {
-		s.cancelMySQLObjectQuery()
-		s.mysqlSelectedDatabase = ""
-		s.mysqlObjectKind = "全部"
-		s.objectRow = -1
+		s.sessions.CancelObjects()
+		s.sessions.Current().Database = ""
+		s.sessions.Current().Kind = "全部"
+		s.sessions.Current().Row = -1
 		return
 	}
-	if s.mysqlSessionStateFor(n.ProfileID) != "已连接" {
+	if s.sessions.StatusFor(n.ProfileID) != "已连接" {
 		return
 	}
 	if n.Kind == "database" {
-		s.selectMySQLDatabaseContext(n.Database)
+		s.sessions.SelectDatabase(n.Database)
 	} else {
 		s.selectMySQLDatabase(services, n.Database)
 	}
-	s.mysqlObjectKind = "全部"
+	s.sessions.Current().Kind = "全部"
 	if n.Category != "" {
-		s.mysqlObjectKind = n.Category
+		s.sessions.Current().Kind = n.Category
 	}
-	s.objectRow = -1
-	if n.Kind == "database" && !s.mysqlDatabaseOpenedFor(n.ProfileID, n.Database) {
+	s.sessions.Current().Row = -1
+	if n.Kind == "database" && !s.sessions.DatabaseOpened(n.ProfileID, n.Database) {
 		return
 	}
 	if n.Kind == "category" && !navigation.SupportedCategory(n.Category) {
 		s.status = n.Category + "：此类对象尚未提供元数据浏览"
 		return
 	}
-	if len(s.mysqlSelectedObjects()) > 0 {
-		s.objectRow = 0
+	if len(s.sessions.SelectedObjects()) > 0 {
+		s.sessions.Current().Row = 0
 	}
 	if n.Kind == "object" {
-		for i, obj := range s.mysqlSelectedObjects() {
+		for i, obj := range s.sessions.SelectedObjects() {
 			if obj.Name == n.Object {
-				s.objectRow = i
+				s.sessions.Current().Row = i
 				break
 			}
 		}
@@ -214,7 +200,7 @@ func (s *State) selectNavigationNode(services ui.Services, key string) {
 func (s *State) revealNavigationNode(n navigation.Node) {
 	s.navigation.Tree.Open.Add(navigation.ConnectionKey(n.ProfileID))
 	if n.Database != "" {
-		s.markMySQLDatabaseOpened(n.ProfileID, n.Database)
+		s.sessions.MarkOpened(n.ProfileID, n.Database)
 		s.navigation.Tree.Open.Add(navigation.DatabaseNode(n.ProfileID, n.Database).Key())
 	}
 	if n.Category != "" {
@@ -228,29 +214,10 @@ func (s *State) revealNavigationNode(n navigation.Node) {
 // Opening a database is the only tree expansion that schedules metadata. A
 // failed read stays failed until an explicit retry, avoiding frame-driven loops.
 func (s *State) syncNavigationExpansion(services ui.Services) {
-	if s.mysqlSessionStatus != "已连接" {
-		return
-	}
-	if s.mysqlDatabaseNodes == nil {
-		s.mysqlDatabaseNodes = make(map[string]*mysqlDatabaseNode)
-	}
-	for _, db := range s.mysqlSessionDatabases {
-		node := s.mysqlDatabaseNodes[db]
-		if node == nil {
-			node = &mysqlDatabaseNode{}
-			s.mysqlDatabaseNodes[db] = node
-		}
-		open := s.navigation.Tree.Open.Has(navigation.ConnectionKey(s.mysqlSessionProfileID)) && s.navigation.Tree.Open.Has(navigation.DatabaseNode(s.mysqlSessionProfileID, db).Key())
-		node.open = open
-		if !node.opened || !open || s.mysqlObjectPending != "" || s.mysqlObjectErrors[db] != "" {
-			continue
-		}
-		if _, loaded := s.mysqlObjectCache[db]; !loaded {
-			// The service has one outstanding metadata request. Drain open nodes in
-			// order without changing selection or cancelling a sibling's read.
-			s.loadMySQLObjects(services, db, false)
-		}
-	}
+	s.sessions.LoadExpanded(func(database string) bool {
+		id := s.sessions.Current().ProfileID
+		return s.navigation.Tree.Open.Has(navigation.ConnectionKey(id)) && s.navigation.Tree.Open.Has(navigation.DatabaseNode(id, database).Key())
+	}, services.Invalidate)
 }
 
 func (s *State) submitNavigation(services ui.Services, n navigation.Node) {
@@ -261,7 +228,7 @@ func (s *State) submitNavigation(services ui.Services, n navigation.Node) {
 		s.openMySQLObject(services, n.Database, n.Object, n.Category)
 	}
 	if n.Kind == "connection" {
-		if s.mysqlSessionStateFor(n.ProfileID) != "已连接" {
+		if s.sessions.StatusFor(n.ProfileID) != "已连接" {
 			s.startMySQLSession(services)
 		} else {
 			s.navigation.Tree.Open.Add(n.Key())
@@ -277,12 +244,12 @@ func (s *State) navigationDescription(n navigation.Node) string {
 		if !navigation.SupportedCategory(n.Category) {
 			return locales.Text(n.Category) + "（尚未支持）"
 		}
-		return fmt.Sprintf("%s (%d)", locales.Text(n.Category), len(s.mysqlSelectedObjects()))
+		return fmt.Sprintf("%s (%d)", locales.Text(n.Category), len(s.sessions.SelectedObjects()))
 	}
 	return locales.Text(n.Category)
 }
 
 func (s *State) selectObjectInNavigator(database, name, kind string) {
-	n := navigation.Node{Kind: "object", ProfileID: s.mysqlSessionProfileID, Database: database, Category: kind, Object: name}
+	n := navigation.Node{Kind: "object", ProfileID: s.sessions.Current().ProfileID, Database: database, Category: kind, Object: name}
 	s.revealNavigationNode(n)
 }

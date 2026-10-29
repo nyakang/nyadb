@@ -56,7 +56,7 @@ func TestSQLRecoverSameTabRealMySQLIntegration(t *testing.T) {
 	s, tt, id := sqlUITestState(t)
 	m := mysqlsvc.NewMySQLSessionManager()
 	t.Cleanup(func() { _ = m.Close() })
-	s.mysqlSessionManager = m
+	s.sessions.Manager = m
 	cfg := connections.ActiveSettings{
 		ProfileID: id, Host: "127.0.0.1", Port: uint16(port),
 		Username: "nyadb_tab", MySQLAdvanced: connections.DefaultMySQLAdvanced(),
@@ -114,7 +114,7 @@ func TestSQLRecoverSameTabRealMySQLIntegration(t *testing.T) {
 	if err := m.Disconnect(id); err != nil {
 		t.Fatal(err)
 	}
-	s.mysqlSessionStatus = "未连接"
+	s.sessions.Current().Status = "未连接"
 	tt.Frame()
 	if !q.sqlRecoveryNeeded || q.sqlProfileID != 0 || q.sqlRecoveryProfile != id ||
 		q.editor.Buffer.String() != sqlText {
@@ -127,7 +127,7 @@ func TestSQLRecoverSameTabRealMySQLIntegration(t *testing.T) {
 	if err := m.Connect(ctx, cfg, ""); err != nil {
 		t.Fatal(err)
 	}
-	s.mysqlSessionStatus = "已连接"
+	s.sessions.Current().Status = "已连接"
 	tt.Frame()
 	if err := tt.Click("建立新物理会话（不执行现有 SQL）"); err != nil {
 		t.Fatal(err)

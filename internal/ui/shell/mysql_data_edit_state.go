@@ -248,8 +248,8 @@ func (s *State) beginMySQLCellEdit(services ui.Services, t *tab, row, source int
 	dedicated = dedicated || binary
 	if !hasFullDraft && (dedicated || cell.Truncated) && (d == nil || d.Kind != "insert") {
 		reader := s.mysqlDataRowReader
-		if reader == nil && s.mysqlSessionManager != nil {
-			reader = s.mysqlSessionManager.ReadMySQLDataRow
+		if reader == nil && s.sessions.Manager != nil {
+			reader = s.sessions.Manager.ReadMySQLDataRow
 		}
 		if reader == nil {
 			t.dataEdit.Err = locales.Text("完整字段读取不可用")
@@ -285,7 +285,7 @@ func (s *State) startMySQLDataEditRead(services ui.Services, t *tab, row, source
 	t.dataEdit.Busy = true
 	t.dataEdit.Err = ""
 	t.dataEdit.Request++
-	request, gen, profile := t.dataEdit.Request, s.mysqlSessionGeneration, t.dataProfileID
+	request, gen, profile := t.dataEdit.Request, s.sessions.Current().Generation, t.dataProfileID
 	ref := *t.dataPage.RowRefs[row]
 	key, field := mysqlDataRowKey(t, row), t.dataPage.Columns[source]
 	db, table := t.dataDatabase, t.dataTable
@@ -382,7 +382,7 @@ func (s *State) deleteMySQLDataRecords(services ui.Services, t *tab, row int) {
 	}
 }
 func (s *State) saveMySQLData(services ui.Services, t *tab) {
-	if t == nil || t.dataEdit.Busy || t.dataEdit.Uncertain != nil || t.dataProfileID != s.mysqlSessionProfileID || s.mysqlSessionStatus != "已连接" {
+	if t == nil || t.dataEdit.Busy || t.dataEdit.Uncertain != nil || t.dataProfileID != s.sessions.Current().ProfileID || s.sessions.Current().Status != "已连接" {
 		return
 	}
 	s.finishMySQLCellEdit(t, true)
@@ -403,8 +403,8 @@ func (s *State) saveMySQLData(services ui.Services, t *tab) {
 		return
 	}
 	saver := s.mysqlDataSaver
-	if saver == nil && s.mysqlSessionManager != nil {
-		saver = s.mysqlSessionManager.ApplyMySQLDataEdits
+	if saver == nil && s.sessions.Manager != nil {
+		saver = s.sessions.Manager.ApplyMySQLDataEdits
 	}
 	if saver == nil {
 		t.dataEdit.Err = locales.Text("数据编辑服务不可用")
@@ -412,7 +412,7 @@ func (s *State) saveMySQLData(services ui.Services, t *tab) {
 		return
 	}
 	t.dataEdit.Request++
-	request, gen, profile := t.dataEdit.Request, s.mysqlSessionGeneration, t.dataProfileID
+	request, gen, profile := t.dataEdit.Request, s.sessions.Current().Generation, t.dataProfileID
 	ctx, cancel := context.WithCancel(context.Background())
 	t.dataEdit.Cancel = cancel
 	t.dataEdit.Busy = true
@@ -526,12 +526,12 @@ func (s *State) acceptMySQLDataSaved(t *tab, keys []string, saved *mysqlsvc.MySQ
 }
 func (s *State) consumeMySQLDataEdits(services ui.Services) {
 	for _, t := range s.tabs {
-		if t.kind != tabMySQLData || t.dataEdit.Results == nil || t.dataProfileID != s.mysqlSessionProfileID {
+		if t.kind != tabMySQLData || t.dataEdit.Results == nil || t.dataProfileID != s.sessions.Current().ProfileID {
 			continue
 		}
 		select {
 		case r := <-t.dataEdit.Results:
-			if r.Generation != s.mysqlSessionGeneration || r.Profile != s.mysqlSessionProfileID || r.Profile != t.dataProfileID || r.Request != t.dataEdit.Request {
+			if r.Generation != s.sessions.Current().Generation || r.Profile != s.sessions.Current().ProfileID || r.Profile != t.dataProfileID || r.Request != t.dataEdit.Request {
 				continue
 			}
 			if t.dataEdit.Cancel != nil {
@@ -606,17 +606,17 @@ func (s *State) consumeMySQLDataEdits(services ui.Services) {
 	}
 }
 func (s *State) verifyMySQLDataSave(services ui.Services, t *tab) {
-	if t.dataEdit.Uncertain == nil || t.dataEdit.Busy || s.mysqlSessionManager == nil {
+	if t.dataEdit.Uncertain == nil || t.dataEdit.Busy || s.sessions.Manager == nil {
 		return
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	t.dataEdit.Cancel = cancel
 	t.dataEdit.Busy = true
 	t.dataEdit.Request++
-	request, gen, profile := t.dataEdit.Request, s.mysqlSessionGeneration, t.dataProfileID
+	request, gen, profile := t.dataEdit.Request, s.sessions.Current().Generation, t.dataProfileID
 	out := make(chan mysqlEditResult, 1)
 	t.dataEdit.Results = out
-	manager := s.mysqlSessionManager
+	manager := s.sessions.Manager
 	db, table, result := t.dataDatabase, t.dataTable, t.dataEdit.Uncertain
 	go func() {
 		v, e := manager.VerifyMySQLDataEdits(ctx, profile, db, table, result)

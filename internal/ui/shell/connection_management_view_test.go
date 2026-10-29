@@ -28,8 +28,8 @@ func TestConnectionManagementEntryAndDynamicSessionMenu(t *testing.T) {
 		t.Fatal("management menu did not open real connection list")
 	}
 	s.activeTab = 0
-	s.mysqlSessionProfileID = p.ID
-	s.mysqlSessionStatus = "连接中"
+	s.sessions.Current().ProfileID = p.ID
+	s.sessions.Current().Status = "连接中"
 	tt.Frame()
 	if err := tt.RightClick("MenuTarget"); err != nil {
 		t.Fatal(err)
@@ -38,7 +38,7 @@ func TestConnectionManagementEntryAndDynamicSessionMenu(t *testing.T) {
 		t.Fatal("delete must be disabled while connecting")
 	}
 	tt.CloseMenu()
-	s.mysqlSessionStatus = "已连接"
+	s.sessions.Current().Status = "已连接"
 	tt.Frame()
 	if err := tt.RightClick("MenuTarget"); err != nil {
 		t.Fatal(err)

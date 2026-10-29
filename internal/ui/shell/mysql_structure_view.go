@@ -51,7 +51,7 @@ func (s *State) mysqlStructureWorkspace(c *ui.Context, t *tab) {
 					s.activeTab = 0
 				}
 				if ui.Button(c, locales.Text("刷新")).Label("刷新表结构：" + t.structureTable).Height(theme.RowHeight(c, theme.ControlHeight)).
-					Disabled(s.mysqlSessionStatus != "已连接" || t.structureLoading).Clicked() {
+					Disabled(s.sessions.Current().Status != "已连接" || t.structureLoading).Clicked() {
 					s.loadMySQLStructure(c.Services(), t, true)
 				}
 				if t.structureLoading && ui.Button(c, locales.Text("取消加载")).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
@@ -82,7 +82,7 @@ func (s *State) mysqlStructureWorkspace(c *ui.Context, t *tab) {
 		if t.structureErr != "" {
 			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).AlignItems(ui.Center).Gap(6).Children(func() {
 				ui.Text(c, locales.Text("加载结构失败：")+t.structureErr).FontSize(theme.Font(c, theme.FontSize)).TextColor(palette.Error).SingleLine().Grow(1).MinWidth(0).Tooltip(t.structureErr)
-				if ui.Button(c, locales.Text("重试读取结构")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(s.mysqlSessionStatus != "已连接" || t.structureLoading).Clicked() {
+				if ui.Button(c, locales.Text("重试读取结构")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(s.sessions.Current().Status != "已连接" || t.structureLoading).Clicked() {
 					s.loadMySQLStructure(c.Services(), t, true)
 				}
 			})

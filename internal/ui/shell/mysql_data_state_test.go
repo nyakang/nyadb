@@ -175,7 +175,7 @@ func TestMySQLDataTabsPruneOnlyMissingSchema(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMySQLObjects(t, s, tt)
-	s.objectRow = 0
+	s.sessions.Current().Row = 0
 	tt.Frame()
 	if err := tt.Click("打开选中表数据"); err != nil {
 		t.Fatal(err)
@@ -184,7 +184,7 @@ func TestMySQLDataTabsPruneOnlyMissingSchema(t *testing.T) {
 	if len(s.tabs) != 3 || s.currentTab().dataPage.Database != "analytics" {
 		t.Fatalf("cross schema data isolation failed: %+v", s.tabs)
 	}
-	s.reconcileMySQLDatabases([]string{"app_db"})
+	s.sessions.ReconcileDatabases([]string{"app_db"})
 	tt.Frame()
 	if len(s.tabs) != 2 || s.activeTab != 0 || s.tabs[1].kind != tabMySQLData ||
 		s.tabs[1].dataPage.Database != "app_db" {

@@ -73,7 +73,7 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *tab, page *mysqlsvc.MySQLDataP
 			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Shrink(0).Padding(2, 6).Gap(6).AlignItems(ui.Center).Background(ui.Hex("#ffa940")).Children(func() {
 				ui.Text(c, fmt.Sprintf(locales.Text("%d 条待处理记录"), mysqlDataPendingRecordCount(t))).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(ui.Hex("#2b1900")).SingleLine().Grow(1).MinWidth(0)
 				ready := !t.dataLoading && !t.dataEdit.Busy && t.dataEdit.Uncertain == nil
-				if ui.Button(c, locales.Text("应用更改")).Label(locales.Text("应用待处理记录")).Height(theme.ControlHeight).Disabled(!ready || t.dataProfileID != s.mysqlSessionProfileID || s.mysqlSessionStatus != "已连接").Clicked() {
+				if ui.Button(c, locales.Text("应用更改")).Label(locales.Text("应用待处理记录")).Height(theme.ControlHeight).Disabled(!ready || t.dataProfileID != s.sessions.Current().ProfileID || s.sessions.Current().Status != "已连接").Clicked() {
 					s.saveMySQLData(c.Services(), t)
 				}
 				if ui.Button(c, locales.Text("放弃")).Label(locales.Text("放弃待处理记录")).Height(theme.ControlHeight).Disabled(!ready).Clicked() {
@@ -82,7 +82,7 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *tab, page *mysqlsvc.MySQLDataP
 			})
 		}
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Shrink(0).Padding(2, 6).Gap(4).AlignItems(ui.Center).Children(func() {
-			ready := t.dataPage != nil && !t.dataLoading && !t.dataEdit.Busy && t.dataEdit.Uncertain == nil && t.dataProfileID == s.mysqlSessionProfileID && s.mysqlSessionStatus == "已连接"
+			ready := t.dataPage != nil && !t.dataLoading && !t.dataEdit.Busy && t.dataEdit.Uncertain == nil && t.dataProfileID == s.sessions.Current().ProfileID && s.sessions.Current().Status == "已连接"
 			dirty := mysqlDataHasDraft(t)
 			insertReady := ready && len(page.ColumnMetadata) > 0 && len(page.ColumnMetadata) == len(page.Columns)
 			if ui.Button(c, "+").Label(locales.Text("添加记录")).Tooltip(locales.Text("添加记录")).Size(26, theme.ControlHeight).Padding(0).Disabled(!insertReady).Clicked() {

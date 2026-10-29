@@ -61,7 +61,7 @@ func (s *State) mysqlTableInfoInspector(c *ui.Context, t *tab) {
 	palette := theme.Colors(c)
 
 	d := &t.dataInfo
-	connected := t.dataProfileID == s.mysqlSessionProfileID && s.mysqlSessionProfileID > 0 && s.mysqlSessionStatus == "已连接"
+	connected := t.dataProfileID == s.sessions.Current().ProfileID && s.sessions.Current().ProfileID > 0 && s.sessions.Current().Status == "已连接"
 	ui.Column(c).Label(locales.Text("数据表信息面板")).Fill().Background(palette.Panel).Children(func() {
 		s.mysqlDataInspectorHeader(c, t, false)
 		ui.Toolbar(c, func() {

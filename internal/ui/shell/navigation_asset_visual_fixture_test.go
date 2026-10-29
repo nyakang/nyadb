@@ -38,18 +38,18 @@ func TestNavigationAssetVisualFixture(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.loadProfiles()
-	s.mysqlSessionProfileID = active.ID
-	s.mysqlSessionStatus = "已连接"
-	s.mysqlSessionDatabases = []string{"0_mysql_monitor", "aigc", "alg_mark_platform", "alg_train", "angular", "audit_platform", "audit_platform_tenant", "audit_platform_test", "audit_platform_web", "c2c", "dev_audit_platform"}
-	s.mysqlObjectCache = make(map[string][]mysqlsvc.MySQLDBObject)
-	s.mysqlObjectCache["dev_audit_platform"] = []mysqlsvc.MySQLDBObject{
+	s.sessions.Current().ProfileID = active.ID
+	s.sessions.Current().Status = "已连接"
+	s.sessions.Current().Databases = []string{"0_mysql_monitor", "aigc", "alg_mark_platform", "alg_train", "angular", "audit_platform", "audit_platform_tenant", "audit_platform_test", "audit_platform_web", "c2c", "dev_audit_platform"}
+	s.sessions.Current().Cache = make(map[string][]mysqlsvc.MySQLDBObject)
+	s.sessions.Current().Cache["dev_audit_platform"] = []mysqlsvc.MySQLDBObject{
 		{Name: "orders", Kind: "表"}, {Name: "daily", Kind: "视图"},
 	}
 	s.selectedProfileID = active.ID
 	s.navigation.Key = navigation.DatabaseNode(active.ID, "dev_audit_platform").Key()
 	s.navigation.Row = -1
-	s.mysqlSelectedDatabase = "dev_audit_platform"
-	s.markMySQLDatabaseOpened(active.ID, "dev_audit_platform")
+	s.sessions.Current().Database = "dev_audit_platform"
+	s.sessions.MarkOpened(active.ID, "dev_audit_platform")
 	s.navigation.Tree.Open.Add(navigation.GroupKey("开发库"))
 	s.navigation.Tree.Open.Add(navigation.ConnectionKey(active.ID))
 	s.navigation.Tree.Open.Add(navigation.DatabaseNode(active.ID, "dev_audit_platform").Key())

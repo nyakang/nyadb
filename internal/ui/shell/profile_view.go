@@ -1,9 +1,8 @@
 package shell
 
 import (
-	"iter"
-
 	"fmt"
+	"iter"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -23,8 +22,8 @@ func (s *State) selectProfileByName(name string) {
 		// Keep background sessions alive, but show the selected connection's
 		// own database browser instead of another profile's open data tab.
 		if p.ID != s.selectedProfileID {
-			if s.mysqlSessionProfileID == 0 && s.parkedMySQLWorkspace(p.ID) == nil {
-				s.restoreMySQLWorkspace(0, nil)
+			if s.sessions.Current().ProfileID == 0 && s.sessions.Parked(p.ID) == nil {
+				s.sessions.ResetInactive()
 			}
 			t := s.currentTab()
 			if (t.kind == tabStructure && t.structureProfileID != p.ID) ||
@@ -34,12 +33,12 @@ func (s *State) selectProfileByName(name string) {
 				s.activeTab = 0
 			}
 		}
-		s.activateMySQLProfile(p.ID)
+		s.sessions.Activate(p.ID)
 		if s.selectedProfileID != p.ID || s.navigation.Group != "" {
 			s.selectedProfileID = p.ID
 			s.navigation.Group = ""
 			s.navigation.Key = navigation.ConnectionKey(p.ID)
-			s.status = "已选择连接：" + name + "（" + s.mysqlSessionStateFor(p.ID) + "）"
+			s.status = "已选择连接：" + name + "（" + s.sessions.StatusFor(p.ID) + "）"
 		}
 		s.navigation.Key = navigation.ConnectionKey(p.ID)
 		for i := 0; i < s.navigation.Tree.Rows(); i++ {
@@ -112,7 +111,7 @@ func (s *State) profileInspector(c *ui.Context) {
 					return
 				}
 				n := navigation.Parse(s.navigation.Key)
-				if n.Database != "" && s.mysqlSessionStateFor(p.ID) == "已连接" {
+				if n.Database != "" && s.sessions.StatusFor(p.ID) == "已连接" {
 					name, icon := n.Database, "database"
 					if n.Kind == "object" {
 						name, icon = n.Object, "table"
@@ -124,7 +123,7 @@ func (s *State) profileInspector(c *ui.Context) {
 					mysqlInspectorProperty(c, locales.Text("类型"), s.navigationDescription(n))
 					mysqlInspectorProperty(c, locales.Text("连接"), p.Name)
 					mysqlInspectorProperty(c, locales.Text("数据库"), n.Database)
-					for _, obj := range s.mysqlObjectCache[n.Database] {
+					for _, obj := range s.sessions.Current().Cache[n.Database] {
 						if obj.Name == n.Object && obj.Kind == n.Category {
 							mysqlInspectorProperty(c, locales.Text("引擎"), obj.Engine)
 							mysqlInspectorProperty(c, locales.Text("注释"), obj.Comment)
@@ -157,7 +156,7 @@ func (s *State) profileInspector(c *ui.Context) {
 				if p.Kind == connections.MySQL {
 					s.mysqlSessionToolbar(c)
 				}
-				mysqlInspectorProperty(c, locales.Text("状态"), locales.Text(s.mysqlSessionStateFor(p.ID)))
+				mysqlInspectorProperty(c, locales.Text("状态"), locales.Text(s.sessions.StatusFor(p.ID)))
 				if p.Kind == connections.SQLite {
 					mysqlInspectorProperty(c, locales.Text("文件"), p.Database)
 					return
@@ -192,11 +191,11 @@ func (s *State) profileInspector(c *ui.Context) {
 // the navigator owns presentation, filtering, tree selection and group drafts.
 func (s *State) navigationDependencies() navigation.Dependencies {
 	return navigation.Dependencies{
-		SessionStatus:  s.mysqlSessionStateFor,
-		Databases:      s.mysqlSessionDatabasesFor,
-		DatabaseOpened: s.mysqlDatabaseOpenedFor,
+		SessionStatus:  s.sessions.StatusFor,
+		Databases:      s.sessions.DatabasesFor,
+		DatabaseOpened: s.sessions.DatabaseOpened,
 		Objects: func(id int64, database string) (iter.Seq[navigation.Object], bool) {
-			objects, loaded := s.mysqlObjectCacheFor(id)[database]
+			objects, loaded := s.sessions.CacheFor(id)[database]
 			// Project names lazily so large catalogs do not get copied on each frame.
 			return func(yield func(navigation.Object) bool) {
 				for _, object := range objects {
@@ -206,7 +205,7 @@ func (s *State) navigationDependencies() navigation.Dependencies {
 				}
 			}, loaded
 		},
-		LoadState: s.mysqlObjectLoadStateFor,
+		LoadState: s.sessions.LoadStateFor,
 		Select:    s.selectNavigationNode,
 		Submit:    s.submitNavigation,
 		OpenDatabase: func(services ui.Services, node navigation.Node, force bool) {
@@ -218,10 +217,10 @@ func (s *State) navigationDependencies() navigation.Dependencies {
 		SyncExpansion:  s.syncNavigationExpansion,
 		CanNavigate:    func() bool { _, _, _, ok := s.activeTabObject(); return ok },
 		NavigateActive: s.navigateToActiveTab,
-		Collapsed:      s.navigationCollapsed,
-		GroupSelected:  s.selectGroup,
-		Changed:        s.loadProfiles,
-		Status:         func(message string) { s.status = message },
+
+		GroupSelected: s.selectGroup,
+		Changed:       s.loadProfiles,
+		Status:        func(message string) { s.status = message },
 	}
 }
 
@@ -250,8 +249,8 @@ func (s *State) navigationShortcut(services ui.Services, n navigation.Node, shor
 	case ui.KeyF5:
 		if n.Database != "" {
 			s.openMySQLDatabase(services, n.Database, true)
-		} else if s.mysqlSessionStateFor(n.ProfileID) == "已连接" {
-			s.refreshMySQLDatabases(services)
+		} else if s.sessions.StatusFor(n.ProfileID) == "已连接" {
+			s.sessions.RefreshDatabases(services.Invalidate)
 		} else {
 			s.loadProfiles()
 		}

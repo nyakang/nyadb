@@ -50,9 +50,9 @@ func editingTestWorkspace(t *testing.T) (*State, *tab, *ui.Tester, *mysqlEditing
 	fixture := &mysqlEditingFixture{page: cloneEditingPage(p)}
 	s := New()
 	s.inspectorOn = false
-	s.mysqlSessionProfileID = 19
-	s.mysqlSessionStatus = "已连接"
-	s.mysqlSessionGeneration = 7
+	s.sessions.Current().ProfileID = 19
+	s.sessions.Current().Status = "已连接"
+	s.sessions.Current().Generation = 7
 	doc := &tab{id: 2, kind: tabMySQLData, title: "records · 数据", dataProfileID: 19, dataDatabase: p.Database, dataTable: p.Table, dataPage: p, dataLimit: 100, dataSelectedRow: -1, dataHiddenColumns: map[string]bool{}}
 	for _, name := range p.Columns {
 		doc.dataColumns = append(doc.dataColumns, ui.TableColumn{ID: name, Title: name, Width: 150, MinWidth: 65})
@@ -734,13 +734,13 @@ func TestMySQLDataDisconnectAndWorkbenchCloseWaitForDraftDecision(t *testing.T) 
 				t.Fatal("workbench close was not vetoed")
 			}
 			tt.Frame()
-			if !doc.dataEdit.LeaveOpen || s.mysqlSessionStatus != "已连接" || len(s.tabs) != 2 || closed || f.writeCount() != 0 {
+			if !doc.dataEdit.LeaveOpen || s.sessions.Current().Status != "已连接" || len(s.tabs) != 2 || closed || f.writeCount() != 0 {
 				t.Fatal("close disconnected or destroyed draft before decision")
 			}
 			if err := tt.Click("取消"); err != nil {
 				t.Fatal(err)
 			}
-			if !mysqlDataHasDraft(doc) || closed || s.mysqlSessionStatus != "已连接" {
+			if !mysqlDataHasDraft(doc) || closed || s.sessions.Current().Status != "已连接" {
 				t.Fatal("cancel close lost draft/session")
 			}
 		})
@@ -760,13 +760,13 @@ func TestMySQLDataParkedWriteResultIsKeptUntilItsProfileReturns(t *testing.T) {
 	doc.dataEdit.Results = result
 	doc.dataEdit.Request = 8
 	doc.dataEdit.Busy = true
-	s.mysqlSessionProfileID = 20
+	s.sessions.Current().ProfileID = 20
 	result <- mysqlEditResult{Generation: 7, Request: 8, Profile: 19, Keys: keys, Saved: &mysqlsvc.MySQLDataEditResult{Outcomes: []mysqlsvc.MySQLDataEditOutcome{{Kind: "update", Saved: doc.dataPage.RowSnapshots[0], Previews: append([]mysqlsvc.MySQLDataCell(nil), doc.dataPage.Rows[0]...)}}}}
 	tt.Frame()
 	if !doc.dataEdit.Busy || len(result) != 1 || !mysqlDataHasDraft(doc) {
 		t.Fatal("other profile consumed or lost pending write result")
 	}
-	s.mysqlSessionProfileID = 19
+	s.sessions.Current().ProfileID = 19
 	tt.Frame()
 	if doc.dataEdit.Busy || doc.dataEdit.Results != nil || mysqlDataHasDraft(doc) {
 		t.Fatal("profile return did not consume its own successful result")

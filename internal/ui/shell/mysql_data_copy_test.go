@@ -114,7 +114,7 @@ func TestMySQLDataCopyShortcutStaysInGridAndRefreshUsesService(t *testing.T) {
 	s := New()
 	doc := alignedDataTestTab()
 	doc.dataProfileID, doc.dataDatabase = 7, "fixture"
-	s.mysqlSessionProfileID, s.mysqlSessionStatus = doc.dataProfileID, "已连接"
+	s.sessions.Current().ProfileID, s.sessions.Current().Status = doc.dataProfileID, "已连接"
 	doc.dataRulesExpanded = true
 	calls := make(chan mysqlsvc.MySQLDataOptions, 2)
 	s.mysqlDataAdvancedLoader = func(_ context.Context, _ int64, _, _ string, o mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {

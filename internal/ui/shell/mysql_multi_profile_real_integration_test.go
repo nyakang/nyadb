@@ -53,14 +53,14 @@ func TestMySQLTwoRealProfilesIsolateSameSchemaMetadata(t *testing.T) {
 			t.Fatal(err)
 		}
 		deadline := time.Now().Add(12 * time.Second)
-		for s.mysqlSessionStatus == "连接中" && time.Now().Before(deadline) {
+		for s.sessions.Current().Status == "连接中" && time.Now().Before(deadline) {
 			tt.Frame()
 			time.Sleep(20 * time.Millisecond)
 		}
-		if s.mysqlSessionStatus != "已连接" {
-			t.Fatalf("real profile %q connection failed: %s %s", p.Name, s.mysqlSessionStatus, s.mysqlSessionError)
+		if s.sessions.Current().Status != "已连接" {
+			t.Fatalf("real profile %q connection failed: %s %s", p.Name, s.sessions.Current().Status, s.sessions.Current().Error)
 		}
-		if !s.mysqlSessionManager.IsConnected(p.ID) {
+		if !s.sessions.Manager.IsConnected(p.ID) {
 			t.Fatalf("session manager lost authenticated profile %q", p.Name)
 		}
 		s.navigation.Tree.Open.Add(navigation.ConnectionKey(p.ID))
@@ -69,26 +69,26 @@ func TestMySQLTwoRealProfilesIsolateSameSchemaMetadata(t *testing.T) {
 		s.selectNavigationNode(ui.Services{}, navigation.DatabaseNode(p.ID, "nyadb_multi_shared").Key())
 		tt.Frame()
 		waitMySQLObjects(t, s, tt)
-		items := s.mysqlObjectCache["nyadb_multi_shared"]
+		items := s.sessions.Current().Cache["nyadb_multi_shared"]
 		if len(items) != 1 || items[0].Name != want || items[0].Kind != "表" {
 			t.Fatalf("profile %q metadata mismatch: %+v, want %q", p.Name, items, want)
 		}
 	}
 	connectAndRead(a, "a_orders")
 	connectAndRead(b, "b_orders")
-	if !s.mysqlSessionManager.IsConnected(a.ID) || !s.mysqlSessionManager.IsConnected(b.ID) {
+	if !s.sessions.Manager.IsConnected(a.ID) || !s.sessions.Manager.IsConnected(b.ID) {
 		t.Fatal("starting B disconnected A on the real MySQL session manager")
 	}
 	s.selectProfileByName(a.Name)
-	if objects := s.mysqlObjectCache["nyadb_multi_shared"]; len(objects) != 1 || objects[0].Name != "a_orders" {
+	if objects := s.sessions.Current().Cache["nyadb_multi_shared"]; len(objects) != 1 || objects[0].Name != "a_orders" {
 		t.Fatalf("same schema metadata leaked from B into A: %+v", objects)
 	}
 	s.disconnectMySQLProfile(a.ID)
-	if s.mysqlSessionManager.IsConnected(a.ID) || !s.mysqlSessionManager.IsConnected(b.ID) {
+	if s.sessions.Manager.IsConnected(a.ID) || !s.sessions.Manager.IsConnected(b.ID) {
 		t.Fatal("disconnecting A closed B or left A connected")
 	}
 	s.selectProfileByName(b.Name)
-	if objects := s.mysqlObjectCache["nyadb_multi_shared"]; len(objects) != 1 || objects[0].Name != "b_orders" {
+	if objects := s.sessions.Current().Cache["nyadb_multi_shared"]; len(objects) != 1 || objects[0].Name != "b_orders" {
 		t.Fatalf("B metadata was lost after A disconnect: %+v", objects)
 	}
 }

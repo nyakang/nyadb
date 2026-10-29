@@ -21,13 +21,13 @@ type mysqlStructureResult struct {
 }
 
 func (s *State) openMySQLStructure(services ui.Services, database, table string) {
-	if s.mysqlSessionStatus != "已连接" || s.mysqlSessionProfileID <= 0 ||
+	if s.sessions.Current().Status != "已连接" || s.sessions.Current().ProfileID <= 0 ||
 		!validStructureSelection(database, table) {
 		return
 	}
 	for i, t := range s.tabs {
 		if t.kind == tabStructure && t.structureDatabase == database &&
-			t.structureTable == table && t.structureProfileID == s.mysqlSessionProfileID {
+			t.structureTable == table && t.structureProfileID == s.sessions.Current().ProfileID {
 			s.activeTab = i
 			if t.structure == nil && !t.structureLoading && t.structureErr == "" {
 				s.loadMySQLStructure(services, t, false)
@@ -39,7 +39,7 @@ func (s *State) openMySQLStructure(services ui.Services, database, table string)
 	t := &tab{
 		id: s.nextTabID, kind: tabStructure, title: database + "." + table,
 		structureDatabase: database, structureTable: table,
-		structureProfileID: s.mysqlSessionProfileID,
+		structureProfileID: s.sessions.Current().ProfileID,
 	}
 	s.tabs = append(s.tabs, t)
 	s.activeTab = len(s.tabs) - 1
@@ -61,8 +61,8 @@ func (s *State) cancelMySQLStructure(t *tab) {
 }
 
 func (s *State) loadMySQLStructure(services ui.Services, t *tab, refresh bool) {
-	if t == nil || t.kind != tabStructure || t.structureProfileID != s.mysqlSessionProfileID ||
-		s.mysqlSessionStatus != "已连接" || s.mysqlSessionProfileID <= 0 {
+	if t == nil || t.kind != tabStructure || t.structureProfileID != s.sessions.Current().ProfileID ||
+		s.sessions.Current().Status != "已连接" || s.sessions.Current().ProfileID <= 0 {
 		return
 	}
 	if t.structureLoading && !refresh {
@@ -77,17 +77,17 @@ func (s *State) loadMySQLStructure(services ui.Services, t *tab, refresh bool) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.structureCancel = cancel
 	request := t.structureRequest
-	generation := s.mysqlSessionGeneration
-	profile := s.mysqlSessionProfileID
+	generation := s.sessions.Current().Generation
+	profile := s.sessions.Current().ProfileID
 	database, table := t.structureDatabase, t.structureTable
 	loader := s.mysqlStructureLoader
 	if loader == nil {
-		if s.mysqlSessionManager == nil {
+		if s.sessions.Manager == nil {
 			s.cancelMySQLStructure(t)
 			t.structureErr = "MySQL 会话不可用"
 			return
 		}
-		loader = s.mysqlSessionManager.TableStructure
+		loader = s.sessions.Manager.TableStructure
 	}
 	out := make(chan mysqlStructureResult, 1)
 	t.structureResults = out
@@ -103,13 +103,13 @@ func (s *State) loadMySQLStructure(services ui.Services, t *tab, refresh bool) {
 
 func (s *State) consumeMySQLStructures() {
 	for _, t := range s.tabs {
-		if t.kind != tabStructure || t.structureResults == nil || t.structureProfileID != s.mysqlSessionProfileID {
+		if t.kind != tabStructure || t.structureResults == nil || t.structureProfileID != s.sessions.Current().ProfileID {
 			continue
 		}
 		select {
 		case result := <-t.structureResults:
-			if result.sessionGeneration != s.mysqlSessionGeneration ||
-				result.profileID != s.mysqlSessionProfileID ||
+			if result.sessionGeneration != s.sessions.Current().Generation ||
+				result.profileID != s.sessions.Current().ProfileID ||
 				result.profileID != t.structureProfileID ||
 				result.request != t.structureRequest {
 				continue
@@ -166,9 +166,9 @@ func (s *State) pruneMySQLStructureTabs(known map[string]bool) {
 	activeID := s.currentTab().id
 	kept := s.tabs[:0]
 	for _, t := range s.tabs {
-		if (t.kind == tabStructure && t.structureProfileID == s.mysqlSessionProfileID && !known[t.structureDatabase]) ||
-			(t.kind == tabMySQLData && t.dataProfileID == s.mysqlSessionProfileID && !known[t.dataDatabase]) ||
-			(t.kind == tabProgram && t.programProfileID == s.mysqlSessionProfileID && !known[t.programDatabase]) {
+		if (t.kind == tabStructure && t.structureProfileID == s.sessions.Current().ProfileID && !known[t.structureDatabase]) ||
+			(t.kind == tabMySQLData && t.dataProfileID == s.sessions.Current().ProfileID && !known[t.dataDatabase]) ||
+			(t.kind == tabProgram && t.programProfileID == s.sessions.Current().ProfileID && !known[t.programDatabase]) {
 			if t.kind == tabStructure {
 				s.cancelMySQLStructure(t)
 			} else if t.kind == tabMySQLData {

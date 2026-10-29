@@ -10,8 +10,8 @@ import (
 
 func TestActiveTabNavigationRestoresPriorFiltersOnRequest(t *testing.T) {
 	s, tt := mysqlObjectTestState(t)
-	id := s.mysqlSessionProfileID
-	s.mysqlObjectCache["app_db"] = []mysqlsvc.MySQLDBObject{{Name: "orders", Kind: "表"}}
+	id := s.sessions.Current().ProfileID
+	s.sessions.Current().Cache["app_db"] = []mysqlsvc.MySQLDBObject{{Name: "orders", Kind: "表"}}
 	s.tabs = append(s.tabs, &tab{kind: tabMySQLData, title: "orders", dataProfileID: id, dataDatabase: "app_db", dataTable: "orders"})
 	s.activeTab = len(s.tabs) - 1
 	s.navigation.Filter.Search = "hidden"

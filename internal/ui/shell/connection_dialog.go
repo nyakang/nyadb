@@ -67,7 +67,7 @@ func (s *State) nextConnectionStep() {
 func (s *State) saveConnectionDraft() { s.connectionEditor.Save() }
 
 func (s *State) connectionSaved(saved connections.Profile) {
-	if s.mysqlSessionProfileID == saved.ID {
+	if s.sessions.Current().ProfileID == saved.ID {
 		s.disconnectMySQLSession()
 	}
 	s.selectedProfileID = saved.ID

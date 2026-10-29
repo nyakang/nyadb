@@ -25,8 +25,8 @@ func TestDisconnectedSQLTabNeverRebindsAfterProfileReconnect(t *testing.T) {
 
 	// The profile becomes connected again; the old tab must not run against
 	// the new session even though its text is still editable.
-	s.mysqlSessionProfileID = profileID
-	s.mysqlSessionStatus = "已连接"
+	s.sessions.Current().ProfileID = profileID
+	s.sessions.Current().Status = "已连接"
 	calls := 0
 	s.mysqlSQLExecutor = func(context.Context, int64, string, string) (mysqlsvc.MySQLSQLResult, error) {
 		calls++

@@ -22,13 +22,13 @@ func TestNoKeyringStillConnectsWithEmptyMySQLPassword(t *testing.T) {
 	s.selectedProfileID = p.ID
 	s.loadProfiles()
 	s.SetCredentialVault(&memoryCredentialVault{getErr: errors.New("secret service not running")})
-	s.mysqlSessionOpener = func(_ context.Context, _ connections.ActiveSettings, password string) error {
+	s.sessions.Opener = func(_ context.Context, _ connections.ActiveSettings, password string) error {
 		if password != "" {
 			return errors.New("password must remain empty")
 		}
 		return nil
 	}
-	s.mysqlDatabaseLister = func(context.Context, int64) ([]string, error) {
+	s.sessions.DatabaseLister = func(context.Context, int64) ([]string, error) {
 		return []string{"app"}, nil
 	}
 	tt := ui.NewTester(s.View, 1280, 800)
@@ -36,12 +36,12 @@ func TestNoKeyringStillConnectsWithEmptyMySQLPassword(t *testing.T) {
 		t.Fatal(err)
 	}
 	end := time.Now().Add(2 * time.Second)
-	for s.mysqlSessionStatus == "连接中" && time.Now().Before(end) {
+	for s.sessions.Current().Status == "连接中" && time.Now().Before(end) {
 		tt.Frame()
 		time.Sleep(time.Millisecond)
 	}
-	if s.mysqlSessionStatus != "已连接" {
-		t.Fatalf("unavailable keyring prevented a passwordless connection: %s", s.mysqlSessionError)
+	if s.sessions.Current().Status != "已连接" {
+		t.Fatalf("unavailable keyring prevented a passwordless connection: %s", s.sessions.Current().Error)
 	}
 	s.CloseMySQLSessions()
 }

@@ -33,7 +33,7 @@ func (s *State) runMySQLSQL(services ui.Services, t *tab) {
 		s.status = t.sqlError
 		return
 	}
-	if t.sqlProfileID == 0 || s.mysqlSessionStateFor(t.sqlProfileID) != "已连接" {
+	if t.sqlProfileID == 0 || s.sessions.StatusFor(t.sqlProfileID) != "已连接" {
 		t.sqlError = "没有可用的 MySQL 连接；请先连接并新建查询"
 		s.status = t.sqlError
 		return
@@ -49,7 +49,7 @@ func (s *State) runMySQLSQL(services ui.Services, t *tab) {
 	}
 	execute := s.mysqlSQLExecutor
 	if execute == nil {
-		if s.mysqlSessionManager == nil {
+		if s.sessions.Manager == nil {
 			t.sqlError = "MySQL 会话管理器不可用"
 			s.status = t.sqlError
 			return
@@ -59,7 +59,7 @@ func (s *State) runMySQLSQL(services ui.Services, t *tab) {
 			s.status = t.sqlError
 			return
 		}
-		manager, lease := s.mysqlSessionManager, t.sqlLease
+		manager, lease := s.sessions.Manager, t.sqlLease
 		// The SQL tab retains its physical MySQL session across executions.
 		execute = func(ctx context.Context, profileID int64, database, statement string) (mysqlsvc.MySQLSQLResult, error) {
 			return manager.ExecuteSQLTabToken(ctx, lease, database, statement)
@@ -124,8 +124,8 @@ func (s *State) cancelMySQLSQL(t *tab) {
 	t.sqlResults = nil
 	t.sqlLoading = false
 	t.sqlCancelRequested = false
-	if t.kind == tabSQL && s.mysqlSessionManager != nil {
-		s.mysqlSessionManager.ReleaseSQLTabToken(t.sqlLease)
+	if t.kind == tabSQL && s.sessions.Manager != nil {
+		s.sessions.Manager.ReleaseSQLTabToken(t.sqlLease)
 	}
 	t.sqlLease = mysqlsvc.MySQLSQLTabToken{}
 }
@@ -232,7 +232,7 @@ func (s *State) consumeMySQLSQLResults() {
 
 func (s *State) mysqlQueryWorkspace(c *ui.Context, t *tab) {
 	p := theme.Colors(c)
-	connected := t.sqlProfileID != 0 && s.mysqlSessionStateFor(t.sqlProfileID) == "已连接"
+	connected := t.sqlProfileID != 0 && s.sessions.StatusFor(t.sqlProfileID) == "已连接"
 	ui.SplitVerticalPercent(c, &s.editorPercent, func() {
 		ui.Column(c).Fill().Children(func() {
 			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).Gap(7).
@@ -264,8 +264,8 @@ func (s *State) mysqlQueryWorkspace(c *ui.Context, t *tab) {
 			if t.sqlRecoveryNeeded {
 				id := t.sqlRecoveryProfile
 				canRecover := !t.sqlLoading && t.sqlPrepareResults == nil &&
-					id > 0 && s.mysqlSessionManager != nil &&
-					s.mysqlSessionStateFor(id) == "已连接" && s.mysqlSessionManager.IsConnected(id)
+					id > 0 && s.sessions.Manager != nil &&
+					s.sessions.StatusFor(id) == "已连接" && s.sessions.Manager.IsConnected(id)
 				ui.Row(c).Padding(3, 8).Gap(9).AlignItems(ui.Center).Children(func() {
 					ui.Text(c, "新会话无法恢复事务或临时状态；不会自动执行 SQL").
 						FontSize(theme.Font(c, 11)).TextColor(p.Muted)

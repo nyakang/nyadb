@@ -43,13 +43,13 @@ func waitMySQLStructure(t *testing.T, s *State, tt *ui.Tester) {
 	}
 	tt.Frame()
 	if s.currentTab().kind != tabStructure || s.currentTab().structureLoading {
-		t.Fatalf("structure request did not settle: kind=%v loading=%v database=%q row=%d node=%+v", s.currentTab().kind, s.currentTab().structureLoading, s.mysqlSelectedDatabase, s.objectRow, navigation.Parse(s.navigation.Key))
+		t.Fatalf("structure request did not settle: kind=%v loading=%v database=%q row=%d node=%+v", s.currentTab().kind, s.currentTab().structureLoading, s.sessions.Current().Database, s.sessions.Current().Row, navigation.Parse(s.navigation.Key))
 	}
 }
 func structureTestBrowser(t *testing.T) (*State, *ui.Tester) {
 	t.Helper()
 	s, tt := mysqlObjectTestState(t)
-	s.mysqlObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
+	s.sessions.ObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) {
 		return []mysqlsvc.MySQLDBObject{
 			{Name: "orders", Kind: "表", Engine: "InnoDB"},
 			{Name: "sales", Kind: "视图"},
@@ -128,7 +128,7 @@ func TestMySQLStructureNativeTabsSwitchRefreshAndDisconnect(t *testing.T) {
 	if err := tt.Click("返回对象列表"); err != nil {
 		t.Fatal(err)
 	}
-	s.objectRow = 1
+	s.sessions.Current().Row = 1
 	tt.Frame()
 	if err := tt.Click("打开选中表结构"); err != nil {
 		t.Fatal(err)
@@ -140,7 +140,7 @@ func TestMySQLStructureNativeTabsSwitchRefreshAndDisconnect(t *testing.T) {
 	if err := tt.Click("返回对象列表"); err != nil {
 		t.Fatal(err)
 	}
-	s.objectRow = 0
+	s.sessions.Current().Row = 0
 	tt.Frame()
 	if err := tt.Click("打开选中表结构"); err != nil {
 		t.Fatal(err)

@@ -27,7 +27,7 @@ func (s *State) connectionManagementWorkspace(c *ui.Context) {
 	selected := s.connectionManagerRow >= 0 && s.connectionManagerRow < len(entries)
 	connecting := false
 	if selected {
-		connecting = s.mysqlSessionStateFor(entries[s.connectionManagerRow].ID) == "连接中"
+		connecting = s.sessions.StatusFor(entries[s.connectionManagerRow].ID) == "连接中"
 	}
 	ui.Column(c).Fill().Children(func() {
 		ui.Row(c).Padding(3, 7).Height(theme.RowHeight(c, 31)).AlignItems(ui.Center).Gap(6).
@@ -75,7 +75,7 @@ func (s *State) connectionManagementWorkspace(c *ui.Context) {
 			case 2:
 				value = item.GroupName
 			case 3:
-				value = locales.Text(s.mysqlSessionStateFor(item.ID))
+				value = locales.Text(s.sessions.StatusFor(item.ID))
 			case 4:
 				value = item.Host
 			}
@@ -88,26 +88,26 @@ func (s *State) connectionManagementWorkspace(c *ui.Context) {
 // cached metadata. It schedules a fresh query for the currently selected
 // database, while other expanded databases reload lazily.
 func (s *State) refreshConnectionObjects(services ui.Services, id int64) {
-	if id <= 0 || s.mysqlSessionStateFor(id) != "已连接" {
+	if id <= 0 || s.sessions.StatusFor(id) != "已连接" {
 		return
 	}
-	s.activateMySQLProfile(id)
+	s.sessions.Activate(id)
 	s.selectedProfileID = id
-	if s.mysqlSessionProfileID != id {
+	if s.sessions.Current().ProfileID != id {
 		return
 	}
-	database := s.mysqlSelectedDatabase
-	s.cancelMySQLObjectQuery()
-	for key := range s.mysqlObjectCache {
-		delete(s.mysqlObjectCache, key)
+	database := s.sessions.Current().Database
+	s.sessions.CancelObjects()
+	for key := range s.sessions.Current().Cache {
+		delete(s.sessions.Current().Cache, key)
 	}
-	for key := range s.mysqlObjectErrors {
-		delete(s.mysqlObjectErrors, key)
+	for key := range s.sessions.Current().Errors {
+		delete(s.sessions.Current().Errors, key)
 	}
 	if database != "" {
 		s.loadMySQLObjects(services, database, true)
 	} else {
-		s.refreshMySQLDatabases(services)
+		s.sessions.RefreshDatabases(services.Invalidate)
 	}
 	s.status = "正在刷新连接数据库对象"
 }

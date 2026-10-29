@@ -72,8 +72,8 @@ func (s *State) cancelMySQLTableCount(t *tab) {
 }
 
 func (s *State) loadMySQLTableInfo(services ui.Services, t *tab, refresh bool) {
-	if t == nil || t.kind != tabMySQLData || t.dataProfileID != s.mysqlSessionProfileID ||
-		s.mysqlSessionProfileID <= 0 || s.mysqlSessionStatus != "已连接" {
+	if t == nil || t.kind != tabMySQLData || t.dataProfileID != s.sessions.Current().ProfileID ||
+		s.sessions.Current().ProfileID <= 0 || s.sessions.Current().Status != "已连接" {
 		return
 	}
 	d := &t.dataInfo
@@ -89,15 +89,15 @@ func (s *State) loadMySQLTableInfo(services ui.Services, t *tab, refresh bool) {
 	d.attempted, d.err = true, ""
 	loader := s.mysqlTableInfoLoader
 	if loader == nil {
-		if s.mysqlSessionManager == nil {
+		if s.sessions.Manager == nil {
 			d.err = locales.Text("MySQL 会话不可用")
 			return
 		}
-		loader = s.mysqlSessionManager.TableInfo
+		loader = s.sessions.Manager.TableInfo
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	d.cancel, d.loading = cancel, true
-	request, generation, profile := d.request, s.mysqlSessionGeneration, t.dataProfileID
+	request, generation, profile := d.request, s.sessions.Current().Generation, t.dataProfileID
 	database, table := t.dataDatabase, t.dataTable
 	out := make(chan mysqlTableInfoResult, 1)
 	d.results = out
@@ -109,8 +109,8 @@ func (s *State) loadMySQLTableInfo(services ui.Services, t *tab, refresh bool) {
 }
 
 func (s *State) loadMySQLTableCount(services ui.Services, t *tab) {
-	if t == nil || t.kind != tabMySQLData || t.dataProfileID != s.mysqlSessionProfileID ||
-		s.mysqlSessionProfileID <= 0 || s.mysqlSessionStatus != "已连接" || t.dataInfo.countLoading {
+	if t == nil || t.kind != tabMySQLData || t.dataProfileID != s.sessions.Current().ProfileID ||
+		s.sessions.Current().ProfileID <= 0 || s.sessions.Current().Status != "已连接" || t.dataInfo.countLoading {
 		return
 	}
 	d := &t.dataInfo
@@ -118,15 +118,15 @@ func (s *State) loadMySQLTableCount(services ui.Services, t *tab) {
 	d.countErr = ""
 	loader := s.mysqlTableCountLoader
 	if loader == nil {
-		if s.mysqlSessionManager == nil {
+		if s.sessions.Manager == nil {
 			d.countErr = locales.Text("MySQL 会话不可用")
 			return
 		}
-		loader = s.mysqlSessionManager.CountTableRows
+		loader = s.sessions.Manager.CountTableRows
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	d.countCancel, d.countLoading = cancel, true
-	request, generation, profile := d.countRequest, s.mysqlSessionGeneration, t.dataProfileID
+	request, generation, profile := d.countRequest, s.sessions.Current().Generation, t.dataProfileID
 	database, table := t.dataDatabase, t.dataTable
 	out := make(chan mysqlTableCountResult, 1)
 	d.countResults = out
@@ -139,13 +139,13 @@ func (s *State) loadMySQLTableCount(services ui.Services, t *tab) {
 
 func (s *State) consumeMySQLTableInfo() {
 	for _, t := range s.tabs {
-		if t.kind != tabMySQLData || t.dataProfileID != s.mysqlSessionProfileID {
+		if t.kind != tabMySQLData || t.dataProfileID != s.sessions.Current().ProfileID {
 			continue
 		}
 		d := &t.dataInfo
 		select {
 		case result := <-d.results:
-			if result.generation != s.mysqlSessionGeneration || result.profileID != s.mysqlSessionProfileID ||
+			if result.generation != s.sessions.Current().Generation || result.profileID != s.sessions.Current().ProfileID ||
 				result.profileID != t.dataProfileID || result.request != d.request ||
 				result.database != t.dataDatabase || result.table != t.dataTable {
 				continue
@@ -167,7 +167,7 @@ func (s *State) consumeMySQLTableInfo() {
 		}
 		select {
 		case result := <-d.countResults:
-			if result.generation != s.mysqlSessionGeneration || result.profileID != s.mysqlSessionProfileID ||
+			if result.generation != s.sessions.Current().Generation || result.profileID != s.sessions.Current().ProfileID ||
 				result.profileID != t.dataProfileID || result.request != d.countRequest ||
 				result.database != t.dataDatabase || result.table != t.dataTable {
 				continue

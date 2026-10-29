@@ -41,8 +41,8 @@ func (s *State) cancelMySQLChunk(t *tab) {
 }
 func (s *State) loadMySQLChunk(services ui.Services, t *tab) {
 	if t == nil || t.dataChunkLoading || t.dataPage == nil ||
-		t.dataProfileID != s.mysqlSessionProfileID || s.mysqlSessionStatus != "已连接" ||
-		s.mysqlSessionManager == nil {
+		t.dataProfileID != s.sessions.Current().ProfileID || s.sessions.Current().Status != "已连接" ||
+		s.sessions.Manager == nil {
 		return
 	}
 	field, _, ok := mysqlSelectedDataCell(t)
@@ -60,7 +60,7 @@ func (s *State) loadMySQLChunk(services ui.Services, t *tab) {
 	}
 	ref := *t.dataPage.RowRefs[t.dataSelectedRow]
 	offset := t.dataChunkNext
-	gen, profile := s.mysqlSessionGeneration, s.mysqlSessionProfileID
+	gen, profile := s.sessions.Current().Generation, s.sessions.Current().ProfileID
 	row := t.dataSelectedRow
 	request := t.dataChunkRequest + 1
 	t.dataChunkRequest = request
@@ -71,7 +71,7 @@ func (s *State) loadMySQLChunk(services ui.Services, t *tab) {
 	out := make(chan mysqlChunkResult, 1)
 	t.dataChunkResults = out
 	database, table := t.dataDatabase, t.dataTable
-	manager := s.mysqlSessionManager // capture before goroutine; session may disconnect.
+	manager := s.sessions.Manager // capture before goroutine; session may disconnect.
 	go func() {
 		chunk, err := manager.ReadMySQLFieldChunk(ctx, profile, database, table, field, ref, offset, 1024)
 		out <- mysqlChunkResult{generation: gen, profileID: profile, request: request, row: row, field: field, chunk: chunk, err: err}
@@ -80,13 +80,13 @@ func (s *State) loadMySQLChunk(services ui.Services, t *tab) {
 }
 func (s *State) consumeMySQLChunks() {
 	for _, t := range s.tabs {
-		if t.kind != tabMySQLData || t.dataChunkResults == nil || t.dataProfileID != s.mysqlSessionProfileID {
+		if t.kind != tabMySQLData || t.dataChunkResults == nil || t.dataProfileID != s.sessions.Current().ProfileID {
 			continue
 		}
 		select {
 		case result := <-t.dataChunkResults:
-			if result.generation != s.mysqlSessionGeneration ||
-				result.profileID != s.mysqlSessionProfileID ||
+			if result.generation != s.sessions.Current().Generation ||
+				result.profileID != s.sessions.Current().ProfileID ||
 				result.profileID != t.dataProfileID ||
 				result.request != t.dataChunkRequest ||
 				result.row != t.dataSelectedRow ||

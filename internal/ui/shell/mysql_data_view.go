@@ -31,7 +31,7 @@ func (s *State) mysqlDataWorkspace(c *ui.Context, t *tab) {
 		if t.dataErr != "" {
 			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).Gap(6).AlignItems(ui.Center).Children(func() {
 				ui.Text(c, locales.Text("读取数据失败：")+t.dataErr).TextColor(palette.Error).FontSize(theme.Font(c, theme.FontSize)).SingleLine().Grow(1).MinWidth(0).Tooltip(t.dataErr)
-				if ui.Button(c, locales.Text("重试读取数据")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(t.dataLoading || s.mysqlSessionStatus != "已连接").Clicked() {
+				if ui.Button(c, locales.Text("重试读取数据")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(t.dataLoading || s.sessions.Current().Status != "已连接").Clicked() {
 					s.loadMySQLData(c.Services(), t, true)
 				}
 			})

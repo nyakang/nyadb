@@ -79,10 +79,19 @@ server-side pagination benchmark.
   and explicit workbench actions are injected. The package imports no shell,
   storage or MySQL runtime service. `SetProfiles` reconciles selection after
   refresh and rename; `SuspendFilter`/`RestoreFilter` support active-tab reveals.
+- `internal/ui/sessionbrowser/`: stable per-profile session/browser workspaces,
+  temporary password drafts, database lists, object caches, opened database state,
+  async jobs, cancellation and monotonic generations. Host callbacks and loaders
+  are injected; it imports no shell, navigation, storage or database driver.
+  `Connect`/`Activate`/`Disconnect`/`Close` own workspace lifetimes; `Consume`
+  processes buffered results on the UI thread. Parked handshakes update their
+  own status; parked object reads remain buffered until their profile returns.
+  Selection, column layout and pending active-tab reveals stay with each workspace.
 - `internal/ui/shell/profile_view.go`: navigator callbacks, document shortcuts
-  and contextual profile inspector. Session activation, metadata jobs and object
-  actions remain in shell; the existing profile navigation files coordinate
-  those actions and build menus. Database opened state belongs to each session,
+  and contextual profile inspector. The existing profile navigation files
+  coordinate session/browser requests and build menus. `internal/ui/shell/mysql_session_state.go` keeps unsaved-document guards,
+  session controls, navigation and tab cleanup callbacks; object views/actions
+  remain in shell. Database opened state belongs to each session,
   independently of disclosure: single click selects, while double click, Enter
   or an explicit action opens and loads it. Failed reads require explicit retry.
 - `internal/ui/shell/model.go`: workbench state, tabs, mock objects and
@@ -101,15 +110,24 @@ retains saved-password session and native picker forwarding regressions.
 Navigator node, category, filter, inline-edit, virtualization and icon tests live
 beside `navigation`; shell retains database-open, right-click target, active-tab
 reveal, multi-profile session and late-result regressions, including 1280×800 and
-840×560 layouts. Shared bitmap cache tests live beside theme. Resetting the chooser clears selection, search and
+840×560 layouts. Workspace identity, metadata refresh/retry/cancellation, secret
+fallback/redaction and session-generation tests live beside `sessionbrowser`.
+Shared bitmap cache tests live beside theme. Resetting the chooser clears selection, search and
 filters while preserving the current view mode, expansion state and recents.
 
 After the navigator extraction, shell contains 120 Go files (48 implementation
 and 72 test files), down from 127 (53 implementation and 74 test files) after the
 connection editor extraction. Its 18 navigator fields are replaced by one module
 instance. Navigation has six implementation and five test files; mixed tests
-retain their workbench assertions in shell. Session workspaces and SQL, structure
-and data pages remain available for subsequent extraction stages.
+retain their workbench assertions in shell.
+
+After the session/browser extraction, shell contains 116 Go files (45
+implementation and 71 test files). Its 27 session/browser fields are replaced by
+one module instance, and the workspace snapshot/restore copies are removed.
+Sessionbrowser has three implementation and three test files. A restored
+workspace now retains a read of a known database even when its selected database
+is empty or removed; only removal of the pending database cancels that job.
+SQL, structure and data pages remain available for subsequent extraction stages.
 
 ## Limitations / next steps
 

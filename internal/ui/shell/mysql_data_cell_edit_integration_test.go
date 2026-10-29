@@ -70,8 +70,8 @@ func TestMySQLDataWholeCellEditingIntegration(t *testing.T) {
 	}
 	s := New()
 	s.inspectorOn = false
-	s.mysqlSessionManager = manager
-	s.mysqlSessionProfileID, s.mysqlSessionStatus = profile, "已连接"
+	s.sessions.Manager = manager
+	s.sessions.Current().ProfileID, s.sessions.Current().Status = profile, "已连接"
 	s.tabs = append(s.tabs, doc)
 	s.activeTab = len(s.tabs) - 1
 	before := theme.CurrentMode()
