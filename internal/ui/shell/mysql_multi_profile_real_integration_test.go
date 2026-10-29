@@ -9,6 +9,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
 
 // Opt-in only: requires a disposable, localhost-only MySQL fixture with two
@@ -62,10 +63,10 @@ func TestMySQLTwoRealProfilesIsolateSameSchemaMetadata(t *testing.T) {
 		if !s.mysqlSessionManager.IsConnected(p.ID) {
 			t.Fatalf("session manager lost authenticated profile %q", p.Name)
 		}
-		s.explorerTree.Open.Add(profileNode(p.ID))
+		s.navigation.Tree.Open.Add(navigation.ConnectionKey(p.ID))
 		// Both connection trees show the same schema name. Target its
 		// qualified identity rather than Tester's first matching label.
-		s.selectNavigationNode(ui.Services{}, databaseNode(p.ID, "nyadb_multi_shared").key())
+		s.selectNavigationNode(ui.Services{}, navigation.DatabaseNode(p.ID, "nyadb_multi_shared").Key())
 		tt.Frame()
 		waitMySQLObjects(t, s, tt)
 		items := s.mysqlObjectCache["nyadb_multi_shared"]

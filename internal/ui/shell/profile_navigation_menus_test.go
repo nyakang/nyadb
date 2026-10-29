@@ -7,6 +7,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
 
 func TestNavigatorContextMenusAreScopedByHitTarget(t *testing.T) {
@@ -20,7 +21,7 @@ func TestNavigatorContextMenusAreScopedByHitTarget(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.loadProfiles()
-	s.explorerTree.Open.Add(groupNode("开发库"))
+	s.navigation.Tree.Open.Add(navigation.GroupKey("开发库"))
 	tt.Frame()
 	tt.RightClickAt(160, 325) // empty navigator area; not an Outline row
 	if len(tt.Menu()) != 0 {
@@ -30,8 +31,8 @@ func TestNavigatorContextMenusAreScopedByHitTarget(t *testing.T) {
 	if err := tt.RightClick("开发库"); err != nil {
 		t.Fatal(err)
 	}
-	if s.selectedGroup != "开发库" {
-		t.Fatalf("group right-click should select the group: %q", s.selectedGroup)
+	if s.navigation.Group != "开发库" {
+		t.Fatalf("group right-click should select the group: %q", s.navigation.Group)
 	}
 	if !slices.Contains(tt.Menu(), "重命名") || slices.Contains(tt.Menu(), "编辑连接") {
 		t.Fatalf("group menu wrong: %v", tt.Menu())
@@ -56,19 +57,19 @@ func TestNavigatorContextMenusAreScopedByHitTarget(t *testing.T) {
 	if err := tt.Click("显示已星标"); err != nil {
 		t.Fatal(err)
 	}
-	if !s.profileStarredOnly || !tt.HasText("Local") {
+	if !s.navigation.Filter.StarredOnly || !tt.HasText("Local") {
 		t.Fatal("star-only filter failed")
 	}
 	if err := tt.Click("全部折叠"); err != nil {
 		t.Fatal(err)
 	}
-	if s.explorerTree.Open.Len() != 0 {
+	if s.navigation.Tree.Open.Len() != 0 {
 		t.Fatal("tree wasn't collapsed")
 	}
 	if err := tt.Click("显示已星标"); err != nil {
 		t.Fatal(err)
 	}
-	if s.profileStarredOnly {
+	if s.navigation.Filter.StarredOnly {
 		t.Fatal("star filter was not cleared")
 	}
 	if err := tt.RightClick("开发库"); err != nil {
@@ -77,7 +78,7 @@ func TestNavigatorContextMenusAreScopedByHitTarget(t *testing.T) {
 	if err := tt.ChooseMenuItem("重命名"); err != nil {
 		t.Fatal(err)
 	}
-	if !s.groupEditing || s.groupDraft != "开发库" {
+	if !s.navigation.GroupEdit.Active || s.navigation.GroupEdit.Draft != "开发库" {
 		t.Fatal("group rename did not target the selected group")
 	}
 }
@@ -116,12 +117,12 @@ func TestNavigatorRightClickUnselectedRowAcrossItsWidth(t *testing.T) {
 			if !slices.Contains(tt.Menu(), command) {
 				t.Fatalf("right-click %s at x=%v did not open its menu: %v", name, x, tt.Menu())
 			}
-			if name == "Local" && s.selectedProfileID != p.ID || name == "Group" && s.selectedGroup != name {
+			if name == "Local" && s.selectedProfileID != p.ID || name == "Group" && s.navigation.Group != name {
 				t.Fatalf("right-click %s failed to select its target", name)
 			}
 			tt.CloseMenu()
 			tt.Frame()
-			if name == "Local" && s.selectedProfileID != p.ID || name == "Group" && s.selectedGroup != name {
+			if name == "Local" && s.selectedProfileID != p.ID || name == "Group" && s.navigation.Group != name {
 				t.Fatalf("right-click %s lost its target after menu dismissal", name)
 			}
 		}
@@ -139,13 +140,14 @@ func TestNavigatorRightClickUnselectedRowAcrossItsWidth(t *testing.T) {
 		t.Fatalf("context action must target the clicked connection without connecting: starred=%v err=%v", saved.Starred, err)
 	}
 	tt.Key(0, ui.KeyUp)
-	if s.selectedGroup != "Group" {
+	if s.navigation.Group != "Group" {
 		t.Fatal("keyboard navigation did not continue from the right-click target")
 	}
 	if err := tt.ClickWith(ui.Ctrl, "Local"); err != nil {
 		t.Fatal(err)
 	}
-	if s.explorerSelection.Len() != 1 || !s.explorerSelection.Has(profileNode(p.ID)) {
+	selected := s.navigation.Tree.List.Selection.(*ui.Selection[string])
+	if selected.Len() != 1 || !selected.Has(navigation.ConnectionKey(p.ID)) {
 		t.Fatal("navigator must retain one selected identity")
 	}
 }
@@ -202,7 +204,7 @@ func TestNavigatorFilterAndActiveObjectGuard(t *testing.T) {
 	if err := tt.RightClick("我的连接"); err != nil {
 		t.Fatal(err)
 	}
-	if s.selectedProfileID != 0 || s.selectedGroup != "" || s.explorerName != "" {
+	if s.selectedProfileID != 0 || s.navigation.Group != "" || s.navigation.Key != "" {
 		t.Fatal("header context menu must select the navigation root")
 	}
 	if !slices.Contains(tt.Menu(), "新建连接…") {
@@ -210,7 +212,7 @@ func TestNavigatorFilterAndActiveObjectGuard(t *testing.T) {
 	}
 	tt.CloseMenu()
 	tt.Frame()
-	if s.selectedProfileID != 0 || s.explorerName != "" {
+	if s.selectedProfileID != 0 || s.navigation.Key != "" {
 		t.Fatal("root selection reverted after closing its menu")
 	}
 	if _, _, _, yes := s.activeTabObject(); yes {

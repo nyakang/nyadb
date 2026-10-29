@@ -1,4 +1,4 @@
-package shell
+package navigation
 
 import (
 	"github.com/egoist/mygo/ui"
@@ -21,7 +21,7 @@ func profileBrand(kind connections.Kind, p theme.Palette) (asset, fallback strin
 	}
 }
 
-func (s *State) profileBrandIcon(c *ui.Context, kind connections.Kind, size float32) {
+func BrandIcon(c *ui.Context, kind connections.Kind, size float32) {
 	palette := theme.Colors(c)
 
 	asset, fallback, color := profileBrand(kind, palette)
@@ -35,7 +35,7 @@ func (s *State) profileBrandIcon(c *ui.Context, kind connections.Kind, size floa
 
 // Keep the engine's recognizable artwork in every lifecycle state. A native
 // corner badge conveys status without replacing or tinting the brand bitmap.
-func (s *State) profileNavigationIcon(c *ui.Context, kind connections.Kind, status string, size float32) {
+func NavigationIcon(c *ui.Context, kind connections.Kind, status string, size float32) {
 	if kind == connections.MySQL {
 		palette := theme.Colors(c)
 		ink := palette.Muted
@@ -48,7 +48,7 @@ func (s *State) profileNavigationIcon(c *ui.Context, kind connections.Kind, stat
 			ink = palette.Error
 		}
 		ui.Box(c).Size(size, size).Children(func() {
-			s.profileBrandIcon(c, kind, size)
+			BrandIcon(c, kind, size)
 		}).DrawOver(func(p *ui.Painter, r ui.Rect) {
 			diameter := size * .34
 			badge := ui.Rect{X: r.X + r.W - diameter, Y: r.Y + r.H - diameter, W: diameter, H: diameter}
@@ -57,5 +57,14 @@ func (s *State) profileNavigationIcon(c *ui.Context, kind connections.Kind, stat
 		})
 		return
 	}
-	s.profileBrandIcon(c, kind, size)
+	BrandIcon(c, kind, size)
+}
+
+// ConfigureDisclosure uses the MyGo fork's solid triangle with its own hit target.
+func ConfigureDisclosure(state *ui.OutlineState[string]) {
+	if state == nil {
+		return
+	}
+	state.Disclosure = ui.OutlineTriangle
+	state.DisclosureSize = 10 // independent hit target; visible triangle ~6 DIPs
 }

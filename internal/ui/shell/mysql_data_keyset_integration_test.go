@@ -10,6 +10,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
 
 func TestMySQLRealKeysetAndOnDemandFieldNativeViewer(t *testing.T) {
@@ -44,7 +45,7 @@ func TestMySQLRealKeysetAndOnDemandFieldNativeViewer(t *testing.T) {
 	if !slices.Contains(s.mysqlSessionDatabases, "nyadb_perf") {
 		t.Fatal("performance fixture not visible")
 	}
-	s.explorerTree.Open.Add(profileNode(p.ID))
+	s.navigation.Tree.Open.Add(navigation.ConnectionKey(p.ID))
 	tt := ui.NewTester(s.View, 1280, 800)
 	if err = doubleClickDatabase(tt, "数据库：nyadb_perf"); err != nil {
 		t.Fatal(err)

@@ -11,6 +11,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
 
 // Opt-in integration: a real managed session and real MySQL 8.4 metadata are
@@ -52,7 +53,7 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 		t.Fatalf("fixture not visible: %v", s.mysqlSessionDatabases)
 	}
 
-	s.explorerTree.Open.Add(profileNode(p.ID))
+	s.navigation.Tree.Open.Add(navigation.ConnectionKey(p.ID))
 	tt := ui.NewTester(s.View, 1280, 800)
 	if err := doubleClickDatabase(tt, "数据库：nyadb_struct_a"); err != nil {
 		t.Fatal(err)

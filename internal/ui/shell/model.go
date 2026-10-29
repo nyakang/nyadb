@@ -11,6 +11,7 @@ import (
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/connectioncatalog"
 	"github.com/nyakang/nyadb/internal/ui/connectioneditor"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -161,17 +162,11 @@ type State struct {
 	inspectorDetailsOpen  bool
 	inspectorObjectsOpen  bool
 
-	explorerTree      ui.OutlineState[string]
-	explorerSelection ui.Selection[string]
-	explorerMenuBuilt bool
-	explorerRow       int
-	explorerName      string
-	search            string
-	objectKind        string
-	objectRow         int
-	objectState       ui.ListState
-	dataState         ui.ListState
-	dataColumns       []ui.TableColumn
+	objectKind  string
+	objectRow   int
+	objectState ui.ListState
+	dataState   ui.ListState
+	dataColumns []ui.TableColumn
 
 	connectionManagerRow  int
 	connectionManagerList ui.ListState
@@ -238,32 +233,22 @@ type State struct {
 	// A background preconnect requests the next native UI frame through this hook.
 	mysqlSQLPreconnectInvalidate func()
 
-	profileMode             bool
-	profileService          *connections.Service
-	profileEntries          []connections.Profile
-	profileGroups           []connections.Group
-	selectedGroup           string
-	profileStarredOnly      bool
-	profileEngine           connections.Kind
-	navigationFilterRestore *profileFilterSnapshot
-	navigateDatabase        string
-	navigateTable           string
-	navigateProfileID       int64
-	groupEditing            bool
-	groupEditOriginal       string
-	groupDraft              string
-	groupError              string
-	groupDeleteConfirm      bool
-	groupPendingDelete      string
-	selectedProfileID       int64
-	pendingDeleteID         int64
-	deleteConfirm           bool
-	settingsPreview         *editor.State
-	settingsSampleInput     string
-	settingsSampleCheck     bool
-	settingsSampleRow       int
-	settingsSampleTable     ui.ListState
-	appearanceChanged       func(theme.Mode)
+	navigation *navigation.State
+
+	profileMode         bool
+	profileService      *connections.Service
+	navigateDatabase    string
+	navigateTable       string
+	navigateProfileID   int64
+	selectedProfileID   int64
+	pendingDeleteID     int64
+	deleteConfirm       bool
+	settingsPreview     *editor.State
+	settingsSampleInput string
+	settingsSampleCheck bool
+	settingsSampleRow   int
+	settingsSampleTable ui.ListState
+	appearanceChanged   func(theme.Mode)
 }
 
 func New() *State {
@@ -283,13 +268,12 @@ func New() *State {
 		inspectorDetailsOpen: true,
 		inspectorObjectsOpen: true,
 		objectKind:           "表",
-		explorerName:         "我的连接",
-		explorerRow:          -1,
 		status:               "就绪 · UI 布局预览（没有连接真实数据库）",
 		dataColumns:          columns,
 		nextTabID:            1,
 		tabs:                 []*tab{{id: 1, title: "对象", kind: tabObjects}},
 	}
+	s.navigation = navigation.New(s.navigationDependencies())
 	s.connectionEditor = connectioneditor.New(connectioneditor.Dependencies{
 		ValidateMySQL: func(settings connections.ActiveSettings, secret string) error {
 			_, err := mysqlsvc.DirectMySQLConfig(settings, secret)
@@ -299,7 +283,6 @@ func New() *State {
 		Saved:     s.connectionSaved, Back: s.backToConnectionCatalog, Cancel: s.closeConnectionDialog,
 	})
 	s.objectState.Selected = &s.objectRow
-	s.explorerTree.List.Selected = &s.explorerRow
 	return s
 }
 
@@ -457,7 +440,7 @@ func (s *State) visibleObjects() []object {
 	if s.profileMode {
 		return nil // real metadata is deferred until M2
 	}
-	if s.explorerName == "" || s.explorerName == "我的连接" {
+	if s.navigation.Key == "" || s.navigation.Key == "我的连接" {
 		return nil
 	}
 	items := make([]object, 0, len(mockObjects))

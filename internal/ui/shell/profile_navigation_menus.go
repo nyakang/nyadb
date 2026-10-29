@@ -3,7 +3,8 @@ package shell
 import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
-	"github.com/nyakang/nyadb/internal/ui/theme"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -21,7 +22,7 @@ func (s *State) profileRootMenu(m *ui.Menu) {
 	}
 	m.Separator()
 	if m.Item(locales.Text("新建组")).Chosen() {
-		s.beginGroupEdit("")
+		s.navigation.BeginGroupEdit("")
 	}
 	m.Separator()
 	if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).Chosen() {
@@ -30,9 +31,9 @@ func (s *State) profileRootMenu(m *ui.Menu) {
 }
 
 func (s *State) sidebarSettingsMenu(m *ui.Menu) {
-	s.selectedGroup, s.explorerName = "", ""
+	s.navigation.Group, s.navigation.Key = "", ""
 	s.selectedProfileID = 0
-	s.explorerRow, s.objectRow = -1, -1
+	s.navigation.Row, s.objectRow = -1, -1
 	s.mysqlSelectedDatabase = ""
 	s.profileRootMenu(m)
 }
@@ -44,14 +45,14 @@ func (s *State) profileGroupMenu(m *ui.Menu, group string) {
 		s.openConnectionDialog()
 	}
 	if m.Item(locales.Text("新建组")).Chosen() {
-		s.beginGroupEdit("")
+		s.navigation.BeginGroupEdit("")
 	}
 	if m.Item(locales.Text("删除组")).Chosen() {
-		s.groupPendingDelete = group
-		s.groupDeleteConfirm = true
+		s.navigation.GroupPendingDelete = group
+		s.navigation.GroupDeleteConfirm = true
 	}
 	if m.Item(locales.Text("重命名")).Shortcut(0, ui.KeyF2).Chosen() {
-		s.beginGroupEdit(group)
+		s.navigation.BeginGroupEdit(group)
 	}
 	m.Separator()
 	if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).Chosen() {
@@ -62,7 +63,7 @@ func (s *State) profileGroupMenu(m *ui.Menu, group string) {
 func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Services) {
 	var profile connections.Profile
 	found := false
-	for _, p := range s.profileEntries {
+	for _, p := range s.navigation.Profiles() {
 		if p.Name == name {
 			profile = p
 			found = true
@@ -72,7 +73,7 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 	if !found {
 		return
 	}
-	s.selectNavigationNode(services, profileNode(profile.ID))
+	s.selectNavigationNode(services, navigation.ConnectionKey(profile.ID))
 	canMySQL := profile.Kind == connections.MySQL
 	status := s.mysqlSessionStateFor(profile.ID)
 	connected := status == "已连接"
@@ -144,18 +145,18 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 	m.Separator()
 	m.Submenu(locales.Text("管理组"), func(sub *ui.Menu) {
 		if sub.Item(locales.Text("新建组")).Chosen() {
-			s.beginGroupEdit("")
+			s.navigation.BeginGroupEdit("")
 		}
 		sub.Submenu(locales.Text("移动到"), func(dest *ui.Menu) {
 			if dest.Item(locales.Text("未分组")).Checked(profile.GroupName == "").Chosen() {
 				s.moveProfileToGroup(profile.ID, "")
 			}
-			for _, g := range s.profileGroups {
+			for _, g := range s.navigation.Groups() {
 				if dest.Item(g.Name).Checked(profile.GroupName == g.Name).Chosen() {
 					s.moveProfileToGroup(profile.ID, g.Name)
 				}
 			}
-		}).Disabled(len(s.profileGroups) == 0)
+		}).Disabled(len(s.navigation.Groups()) == 0)
 		if sub.Item(locales.Text("从组中排除")).Disabled(profile.GroupName == "").Chosen() {
 			s.moveProfileToGroup(profile.ID, "")
 		}
@@ -171,82 +172,52 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 	}
 }
 
-func (s *State) sidebarFilterMenu(m *ui.Menu) {
-	if m.Item(locales.Text("所有连接类型")).Checked(s.profileEngine == "").Chosen() {
-		s.profileEngine = ""
-		s.changeProfileFilter()
+func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Menu) {
+	if navigation.IsGroup(key) {
+		s.profileGroupMenu(m, navigation.GroupName(key))
+		return
 	}
-	for _, item := range []struct {
-		label string
-		kind  connections.Kind
-	}{
-		{"MySQL", connections.MySQL}, {"PostgreSQL", connections.PostgreSQL}, {"SQLite", connections.SQLite},
-	} {
-		if m.Item(item.label).Checked(s.profileEngine == item.kind).Chosen() {
-			s.profileEngine = item.kind
-			s.changeProfileFilter()
+	n := navigation.Parse(key)
+	if n.Kind == "connection" {
+		for _, p := range s.navigation.Profiles() {
+			if p.ID == n.ProfileID {
+				s.profileConnectionMenu(m, p.Name, services)
+				return
+			}
 		}
+		return
 	}
-}
-
-func (s *State) sidebarFooter(c *ui.Context) {
-	palette := theme.Colors(c)
-
-	ui.Column(c).BorderWidth(1, 0, 0, 0).BorderColor(palette.Border).
-		Padding(0, 4).Gap(0).Children(func() {
-		ui.Row(c).Height(theme.RowHeight(c, 24)).Gap(2).AlignItems(ui.Center).Children(func() {
-			if ui.SearchField(c, &s.search).Label(locales.Text("搜索连接")).Placeholder(locales.Text("搜索")).
-				Height(theme.RowHeight(c, 22)).Grow(1).MinWidth(0).BorderWidth(0).Radius(0).
-				Background(palette.Sidebar).Changed() {
-				s.changeProfileFilter()
-			}
-			if s.navigationFilterRestore != nil {
-				restore := ui.ButtonBase(c).Label(locales.Text("恢复之前的筛选")).
-					Tooltip(locales.Text("恢复之前的筛选")).Size(24, theme.RowHeight(c, 24)).Padding(3).Radius(1)
-				restore.Children(func() { theme.Icon(c, "refresh", 15, palette.Gold) })
-				if restore.Clicked() {
-					s.restoreNavigationFilter()
-				}
-			}
-			filter := ui.ButtonBase(c).Label(locales.Text("筛选连接")).Tooltip(locales.Text("筛选连接类型")).
-				Width(24).Height(theme.RowHeight(c, 24)).Padding(3).Radius(1)
-			filter.Children(func() { theme.Icon(c, "catalog-filter", 15, palette.Muted) })
-			if s.profileEngine != "" {
-				filter.Background(palette.Accent.Alpha(.28))
-			}
-			filter.Menu(func(m *ui.Menu) { s.sidebarFilterMenu(m) })
-			starred := ui.ButtonBase(c).Label(locales.Text("显示已星标")).Tooltip(locales.Text("只显示已星标的连接")).
-				Width(24).Height(theme.RowHeight(c, 24)).Padding(3).Radius(1)
-			if s.profileStarredOnly {
-				starred.Background(palette.Accent.Alpha(.28))
-			}
-			starred.Children(func() {
-				color := palette.Muted
-				if s.profileStarredOnly {
-					color = palette.Gold
-				}
-				theme.Icon(c, "star", 15, color)
-			})
-			if starred.Clicked() {
-				s.profileStarredOnly = !s.profileStarredOnly
-				s.changeProfileFilter()
-			}
-			active := ui.ButtonBase(c).Label(locales.Text("导航至活动标签的对象")).
-				Tooltip("在连接树中定位当前活动数据库对象").
-				Width(24).Height(theme.RowHeight(c, 24)).Padding(3).Radius(1)
-			_, _, _, canNavigate := s.activeTabObject()
-			active.Disabled(!canNavigate)
-			active.Children(func() { theme.Icon(c, "navigate-active", 15, palette.Muted) })
-			if active.Clicked() {
-				s.navigateToActiveTab(c.Services())
-			}
-			collapse := ui.ButtonBase(c).Label(locales.Text("全部折叠")).
-				Tooltip("折叠所有连接组与数据库树").
-				Width(24).Height(theme.RowHeight(c, 24)).Padding(3).Radius(1)
-			collapse.Children(func() { theme.Icon(c, "collapse-all", 15, palette.Muted) })
-			if collapse.Clicked() {
-				s.collapseProfileNavigation()
-			}
-		})
-	})
+	if n.Kind != "database" && n.Kind != "category" && n.Kind != "object" {
+		return
+	}
+	s.selectNavigationNode(services, key)
+	s.navigation.Row = -1
+	if n.Kind == "database" {
+		if m.Item(locales.Text("打开数据库")).Shortcut(0, ui.KeyEnter).
+			Disabled(s.mysqlSessionStateFor(n.ProfileID) != "已连接").Chosen() {
+			s.openMySQLDatabase(services, n.Database, false)
+		}
+		m.Separator()
+	}
+	if n.Kind == "database" || n.Kind == "category" && n.Category == "表" {
+		if m.Item(locales.Text("新建表")).Shortcut(ui.Ctrl, ui.KeyN).
+			Disabled(!s.canChangeMySQLTable(n.ProfileID)).Chosen() {
+			s.beginMySQLTableChange(n.ProfileID, n.Database, "", mysqlsvc.MySQLTableCreate)
+		}
+		m.Separator()
+	}
+	switch n.Kind {
+	case "object":
+		s.mysqlObjectContextMenu(services, m, n.ProfileID, n.Database, n.Object, n.Category)
+		return
+	case "category":
+		if m.Item(locales.Text("显示全部对象")).Disabled(!navigation.SupportedCategory(n.Category)).Chosen() {
+			s.filterMySQLObjects("全部")
+		}
+		m.Separator()
+	}
+	if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).
+		Disabled(s.mysqlObjectPending != "" || s.mysqlSessionStatus != "已连接").Chosen() {
+		s.openMySQLDatabase(services, n.Database, true)
+	}
 }

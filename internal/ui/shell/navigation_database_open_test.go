@@ -11,6 +11,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
 
 func TestNavigatorUnopenedDatabaseSelectionDoesNotLoad(t *testing.T) {
@@ -24,7 +25,7 @@ func TestNavigatorUnopenedDatabaseSelectionDoesNotLoad(t *testing.T) {
 	// A cache populated elsewhere is not permission to open its navigator node.
 	s.mysqlObjectCache["analytics"] = []mysqlsvc.MySQLDBObject{{Name: "cached_table", Kind: "表"}}
 	for _, db := range s.mysqlSessionDatabases {
-		if s.navigationChildren(databaseNode(id, db).key()) != nil {
+		if s.navigation.Children(navigation.DatabaseNode(id, db).Key()) != nil {
 			t.Fatalf("unopened %s has an expansion arrow", db)
 		}
 	}
@@ -68,8 +69,8 @@ func TestNavigatorDoubleClickAndEnterOpenOnceAndRetainDisclosure(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	key := databaseNode(id, "app_db").key()
-	if !s.mysqlDatabaseOpenedFor(id, "app_db") || !s.explorerTree.Open.Has(key) ||
+	key := navigation.DatabaseNode(id, "app_db").Key()
+	if !s.mysqlDatabaseOpenedFor(id, "app_db") || !s.navigation.Tree.Open.Has(key) ||
 		!tt.HasText("正在读取对象…") {
 		t.Fatal("double-click did not open and show metadata progress")
 	}
@@ -81,17 +82,17 @@ func TestNavigatorDoubleClickAndEnterOpenOnceAndRetainDisclosure(t *testing.T) {
 	}
 	finish()
 	waitMySQLObjects(t, s, tt)
-	if reads.Load() != 1 || len(s.navigationChildren(key)) != len(mysqlNavigationCategories) {
+	if reads.Load() != 1 || len(s.navigation.Children(key)) != 7 {
 		t.Fatal("empty database lost categories or was read more than once")
 	}
 	tt.Key(0, ui.KeyLeft)
 	tt.Frame()
-	if s.explorerTree.Open.Has(key) || s.navigationChildren(key) == nil {
+	if s.navigation.Tree.Open.Has(key) || s.navigation.Children(key) == nil {
 		t.Fatal("folding forgot that the database had been opened")
 	}
 	tt.Key(0, ui.KeyEnter)
 	tt.Frame()
-	if !s.explorerTree.Open.Has(key) || reads.Load() != 1 {
+	if !s.navigation.Tree.Open.Has(key) || reads.Load() != 1 {
 		t.Fatal("Enter did not reopen using the cached empty database")
 	}
 }
@@ -196,11 +197,11 @@ func TestNavigatorOpenedDatabaseStatePrunedAndResetOnReconnect(t *testing.T) {
 	for _, db := range s.mysqlSessionDatabases {
 		s.markMySQLDatabaseOpened(id, db)
 		s.mysqlObjectCache[db] = nil
-		s.explorerTree.Open.Add(databaseNode(id, db).key())
+		s.navigation.Tree.Open.Add(navigation.DatabaseNode(id, db).Key())
 	}
 	s.reconcileMySQLDatabases([]string{"app_db"})
 	if !s.mysqlDatabaseOpenedFor(id, "app_db") || s.mysqlDatabaseOpenedFor(id, "analytics") ||
-		s.explorerTree.Open.Has(databaseNode(id, "analytics").key()) {
+		s.navigation.Tree.Open.Has(navigation.DatabaseNode(id, "analytics").Key()) {
 		t.Fatal("schema refresh did not preserve only the surviving opened database")
 	}
 	s.disconnectMySQLSession()
@@ -209,8 +210,8 @@ func TestNavigatorOpenedDatabaseStatePrunedAndResetOnReconnect(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitMultiProfileSession(t, s, tt)
-	if s.mysqlDatabaseOpenedFor(id, "app_db") || s.navigationChildren(databaseNode(id, "app_db").key()) != nil ||
-		s.explorerTree.Open.Has(databaseNode(id, "app_db").key()) {
+	if s.mysqlDatabaseOpenedFor(id, "app_db") || s.navigation.Children(navigation.DatabaseNode(id, "app_db").Key()) != nil ||
+		s.navigation.Tree.Open.Has(navigation.DatabaseNode(id, "app_db").Key()) {
 		t.Fatal("reconnect restored stale database opening state")
 	}
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
 
 type mysqlDatabaseNode struct {
@@ -39,9 +40,9 @@ func (s *State) resetMySQLObjectBrowser() {
 	s.mysqlObjectCache = make(map[string][]mysqlsvc.MySQLDBObject)
 	s.mysqlObjectErrors = make(map[string]string)
 	s.mysqlDatabaseNodes = make(map[string]*mysqlDatabaseNode)
-	if parseNavigationNode(s.explorerName).Database != "" {
-		s.explorerName = profileNode(s.selectedProfileID)
-		s.explorerRow = -1
+	if navigation.Parse(s.navigation.Key).Database != "" {
+		s.navigation.Key = navigation.ConnectionKey(s.selectedProfileID)
+		s.navigation.Row = -1
 	}
 }
 
@@ -68,10 +69,10 @@ func (s *State) reconcileMySQLDatabases(names []string) {
 			delete(s.mysqlDatabaseNodes, name)
 		}
 	}
-	for key := range s.explorerTree.Open.All() {
-		n := parseNavigationNode(key)
+	for key := range s.navigation.Tree.Open.All() {
+		n := navigation.Parse(key)
 		if n.ProfileID == s.mysqlSessionProfileID && n.Database != "" && !known[n.Database] {
-			s.explorerTree.Open.Remove(key)
+			s.navigation.Tree.Open.Remove(key)
 		}
 	}
 	s.pruneMySQLStructureTabs(known)
@@ -123,8 +124,8 @@ func (s *State) openMySQLDatabase(services ui.Services, database string, force b
 		return
 	}
 	s.markMySQLDatabaseOpened(s.mysqlSessionProfileID, database)
-	s.explorerTree.Open.Add(profileNode(s.mysqlSessionProfileID))
-	s.explorerTree.Open.Add(databaseNode(s.mysqlSessionProfileID, database).key())
+	s.navigation.Tree.Open.Add(navigation.ConnectionKey(s.mysqlSessionProfileID))
+	s.navigation.Tree.Open.Add(navigation.DatabaseNode(s.mysqlSessionProfileID, database).Key())
 	s.loadMySQLObjects(services, database, force)
 }
 
@@ -135,7 +136,7 @@ func (s *State) filterMySQLObjects(kind string) {
 	if kind == s.mysqlObjectKind {
 		return
 	}
-	selected := parseNavigationNode(s.explorerName)
+	selected := navigation.Parse(s.navigation.Key)
 	s.mysqlObjectKind = kind
 	s.objectState = ui.ListState{Columns: s.objectState.Columns}
 	s.objectRow = -1
@@ -149,7 +150,7 @@ func (s *State) filterMySQLObjects(kind string) {
 		}
 	}
 	if s.mysqlSelectedDatabase != "" {
-		node := databaseNode(s.mysqlSessionProfileID, s.mysqlSelectedDatabase)
+		node := navigation.DatabaseNode(s.mysqlSessionProfileID, s.mysqlSelectedDatabase)
 		if kind != "全部" {
 			node.Kind, node.Category = "category", kind
 		}
@@ -173,8 +174,8 @@ func (s *State) loadMySQLObjects(services ui.Services, database string, force bo
 	// Preserve a previously opened database's collapsed state on refresh.
 	if !s.mysqlDatabaseOpenedFor(s.mysqlSessionProfileID, database) {
 		s.markMySQLDatabaseOpened(s.mysqlSessionProfileID, database)
-		s.explorerTree.Open.Add(profileNode(s.mysqlSessionProfileID))
-		s.explorerTree.Open.Add(databaseNode(s.mysqlSessionProfileID, database).key())
+		s.navigation.Tree.Open.Add(navigation.ConnectionKey(s.mysqlSessionProfileID))
+		s.navigation.Tree.Open.Add(navigation.DatabaseNode(s.mysqlSessionProfileID, database).Key())
 	}
 	if _, ok := s.mysqlObjectCache[database]; ok && !force {
 		return
@@ -240,7 +241,7 @@ func (s *State) consumeMySQLObjects() {
 		}
 		s.mysqlObjectCache[result.database] = result.objects
 		if result.database == s.mysqlSelectedDatabase {
-			selected := parseNavigationNode(s.explorerName)
+			selected := navigation.Parse(s.navigation.Key)
 			items := s.mysqlSelectedObjects()
 			if selected.Kind == "object" && selected.Database == result.database {
 				s.objectRow = -1
@@ -251,8 +252,8 @@ func (s *State) consumeMySQLObjects() {
 					}
 				}
 				if s.objectRow < 0 {
-					s.explorerName = databaseNode(s.mysqlSessionProfileID, result.database).key()
-					s.explorerRow = -1
+					s.navigation.Key = navigation.DatabaseNode(s.mysqlSessionProfileID, result.database).Key()
+					s.navigation.Row = -1
 				}
 			} else if s.objectRow < 0 && len(items) > 0 {
 				s.objectRow = 0

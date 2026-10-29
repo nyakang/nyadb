@@ -10,6 +10,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
 
 // Opt-in real MySQL 8.4 -> native MyGo Table rendering, isolated localhost only.
@@ -46,7 +47,7 @@ func TestMySQLRealDataNativeViewer(t *testing.T) {
 	if !slices.Contains(s.mysqlSessionDatabases, "nyadb_struct_a") {
 		t.Fatal("fixture schema not visible")
 	}
-	s.explorerTree.Open.Add(profileNode(p.ID))
+	s.navigation.Tree.Open.Add(navigation.ConnectionKey(p.ID))
 	tt := ui.NewTester(s.View, 1280, 800)
 	if err := doubleClickDatabase(tt, "数据库：nyadb_struct_a"); err != nil {
 		t.Fatal(err)

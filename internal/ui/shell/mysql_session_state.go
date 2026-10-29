@@ -9,6 +9,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -131,7 +132,7 @@ func (s *State) consumeMySQLSessionResult() {
 			return
 		}
 		s.mysqlSessionStatus = "已连接"
-		s.explorerTree.Open.Add(profileNode(result.id))
+		s.navigation.Tree.Open.Add(navigation.ConnectionKey(result.id))
 		s.mysqlSessionError = ""
 		if result.metadataErr != nil {
 			s.mysqlSessionError = "数据库列表读取失败：" + result.metadataErr.Error()
