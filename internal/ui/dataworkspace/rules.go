@@ -169,29 +169,9 @@ func mysqlDataFilterModeNeedsValue(mode string) bool { return mode != "为空" &
 func (s *State) mysqlDataRuleEditor(c *ui.Context, t *Document, page *mysqlsvc.MySQLDataPage) {
 	palette := theme.Colors(c)
 
-	viewportWidth, viewportHeight := c.Size()
-	narrow := viewportWidth < 1000
+	_, viewportHeight := c.Size()
 	ui.Column(c).Background(palette.Header).Padding(1, 6).Gap(2).Children(func() {
-		ui.Row(c).Height(theme.RowHeight(c, theme.TabHeight)).Gap(5).AlignItems(ui.Center).Children(func() {
-			label := "筛选 & 排序 ▸"
-			if t.rulesExpanded {
-				label = "筛选 & 排序 ▾"
-			}
-			if mysqlDataToolbarButton(c, label, locales.Text("筛选 & 排序"), "catalog-filter", false).Clicked() {
-				t.rulesExpanded = !t.rulesExpanded
-			}
-			count := len(t.filterRules)
-			if count == 0 && t.filterMode != "" {
-				count = 1
-			}
-			ui.Text(c, fmt.Sprintf(locales.Text("筛选 %d · 排序 %d"), count, mysqlDataActiveSortCount(t))).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Muted).SingleLine().MinWidth(0)
-			if !narrow {
-				ui.Toolbar(c, func() { s.mysqlDataCompactActions(c, t) }).Label(locales.Text("数据操作")).Grow(1).MinWidth(0).Padding(0).Gap(2)
-			}
-		})
-		if narrow {
-			ui.Toolbar(c, func() { s.mysqlDataCompactActions(c, t) }).Label(locales.Text("数据操作")).Height(theme.RowHeight(c, theme.TabHeight)).FillWidth().MinWidth(0).Padding(0).Gap(2)
-		}
+		s.mysqlDataToolbar(c, t)
 		if !t.rulesExpanded {
 			if t.ruleError != "" {
 				ui.Text(c, t.ruleError).SingleLine().FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Error).Tooltip(t.ruleError)
@@ -313,7 +293,7 @@ func (s *State) applyMySQLDataRules(services ui.Services, t *Document) {
 		}
 		filters = append(filters, mysqlsvc.MySQLDataFilterRule{Column: draft.Column, Mode: mode, Value: draft.Value})
 	}
-	if len(drafts) == 0 && len(t.sortDraft) == 0 && (t.filterColumnDraft == "" || t.filterColumnDraft == "选择字段") {
+	if len(drafts) == 0 && len(t.sortDraft) == 0 && len(t.filterRules) == 0 && t.filterMode == "" && len(t.sortRules) == 0 && t.sortColumn == "" && (t.filterColumnDraft == "" || t.filterColumnDraft == "选择字段") {
 		t.ruleError = locales.Text("请先选择筛选字段，或添加排序规则")
 		return
 	}

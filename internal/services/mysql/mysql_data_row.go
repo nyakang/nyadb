@@ -41,6 +41,17 @@ func (m *MySQLSessionManager) ReadMySQLDataRow(ctx context.Context, id int64, da
 		return nil, e
 	}
 	defer tx.Rollback()
+	result, e := readMySQLDataRowInTransaction(qctx, tx, database, table, target, ref, columns)
+	if e != nil {
+		return nil, e
+	}
+	if e = tx.Commit(); e != nil {
+		return nil, e
+	}
+	return result, nil
+}
+
+func readMySQLDataRowInTransaction(qctx context.Context, tx *sql.Tx, database, table, target string, ref MySQLRowRef, columns []MySQLStructureColumn) (*MySQLDataRow, error) {
 	where, args, e := mysqlEditWhere(ref, database, table)
 	if e != nil {
 		return nil, e
@@ -104,9 +115,6 @@ func (m *MySQLSessionManager) ReadMySQLDataRow(ctx context.Context, id int64, da
 	}
 	result.Snapshot, e = mysqlEditSnapshot(qctx, tx, database, table, ref, columns, false)
 	if e != nil {
-		return nil, e
-	}
-	if e = tx.Commit(); e != nil {
 		return nil, e
 	}
 	return result, nil

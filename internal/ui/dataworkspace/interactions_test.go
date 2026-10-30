@@ -61,13 +61,13 @@ func TestMySQLNativeDataFilterSortCopyAndWidths(t *testing.T) {
 	current.selectedRow = 0
 	current.grid.Cells = ui.ColumnRange{Cursor: "note", Anchor: "note"}
 	tt.Frame()
-	if err := tt.Click("复制所选数据预览"); err != nil {
+	if err := clickDataToolbar(tt, "复制所选数据预览"); err != nil {
 		t.Fatal(err)
 	}
 	if tt.Clipboard() != "hello" {
 		t.Fatalf("clipboard: %q", tt.Clipboard())
 	}
-	if err := tt.Click("查看字段信息"); err != nil {
+	if err := clickDataToolbar(tt, "查看字段信息"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -82,7 +82,7 @@ func TestMySQLNativeDataFilterSortCopyAndWidths(t *testing.T) {
 	if current.grid.Columns.Widths["note"] != 280 {
 		t.Fatal("column width lost on paging")
 	}
-	if err := tt.Click("清除筛选"); err != nil {
+	if err := clickDataToolbar(tt, "清除筛选"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLData(t, s, doc, tt)

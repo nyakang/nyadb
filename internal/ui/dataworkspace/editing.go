@@ -5,11 +5,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"reflect"
 	"slices"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/egoist/mygo/ui"
@@ -36,6 +38,7 @@ type mysqlCellEditor struct {
 	Dedicated, Open, Focused, Selected, Composing bool
 }
 type mysqlEditResult struct {
+	History             []mysqlDataHistoryEntry
 	Generation, Request uint64
 	Profile             int64
 	Keys                []string
@@ -95,7 +98,7 @@ func mysqlDataDraftForRow(t *Document, row int) *mysqlRowDraft {
 	return t.edit.Drafts[mysqlDataRowKey(t, row)]
 }
 func mysqlDataCanEdit(t *Document, row, source int) bool {
-	if t == nil || t.page == nil || t.loading || t.edit.Busy || t.edit.Uncertain != nil || row < 0 || row >= len(t.page.Rows) || source < 0 || source >= len(t.page.ColumnMetadata) {
+	if t == nil || t.page == nil || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil || row < 0 || row >= len(t.page.Rows) || source < 0 || source >= len(t.page.ColumnMetadata) {
 		return false
 	}
 	if mysqlsvc.MySQLDataColumnGenerated(t.page.ColumnMetadata[source]) {
@@ -250,7 +253,7 @@ func (s *State) beginMySQLCellEdit(services ui.Services, t *Document, row, sourc
 	}
 	dedicated = dedicated || binary
 	if !hasFullDraft && (dedicated || cell.Truncated) && (d == nil || d.Kind != "insert") {
-		reader := s.rowReader()
+		reader := s.rowReaderFor(t)
 		if reader == nil {
 			t.edit.Err = locales.Text("完整字段读取不可用")
 			return
@@ -271,6 +274,7 @@ func (s *State) openMySQLCellEditor(services ui.Services, t *Document, row, sour
 		text = hex.EncodeToString(v.Bytes)
 	}
 	field := t.page.Columns[source]
+	dedicated = dedicated || mysqlDataEditorDockOpen(t)
 	t.edit.Err = ""
 	t.edit.Editor = &mysqlCellEditor{Key: mysqlDataRowKey(t, row), Field: field, Row: row, Text: text, Initial: text, Original: v, Dedicated: dedicated, Open: dedicated}
 	t.selectedRow = row
@@ -298,7 +302,7 @@ func (s *State) startMySQLDataEditRead(services ui.Services, t *Document, row, s
 	}()
 }
 func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
-	if t == nil || t.page == nil || t.loading || t.edit.Busy || t.edit.Uncertain != nil {
+	if t == nil || t.page == nil || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil {
 		return
 	}
 	if !t.edit.Batch && mysqlDataHasDraft(t) {
@@ -327,7 +331,7 @@ func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
 	t.selectedRow = row
 	t.selection.Clear()
 	t.selection.Add(row)
-	t.grid.ScrollIntoView(row)
+	mysqlDataScrollRecordIntoView(t, row)
 	for i, col := range t.page.ColumnMetadata {
 		if !mysqlsvc.MySQLDataColumnGenerated(col) && !strings.Contains(col.Extra, "auto_increment") && !t.hiddenColumns[col.Name] {
 			s.beginMySQLCellEdit(services, t, row, i, false)
@@ -336,7 +340,7 @@ func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
 	}
 }
 func (s *State) deleteMySQLDataRecords(services ui.Services, t *Document, row int) {
-	if t == nil || t.page == nil || t.loading || t.edit.Busy || t.edit.Uncertain != nil {
+	if t == nil || t.page == nil || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil {
 		return
 	}
 	s.finishMySQLCellEdit(t, true)
@@ -382,7 +386,7 @@ func (s *State) deleteMySQLDataRecords(services ui.Services, t *Document, row in
 	}
 }
 func (s *State) saveMySQLData(services ui.Services, t *Document) {
-	if t == nil || t.closed || t.edit.Busy || t.edit.Uncertain != nil || t.profileID != s.session().ProfileID || !s.session().Connected {
+	if t == nil || t.closed || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil || t.profileID != s.session().ProfileID || !s.session().Connected {
 		return
 	}
 	s.finishMySQLCellEdit(t, true)
@@ -402,7 +406,7 @@ func (s *State) saveMySQLData(services ui.Services, t *Document) {
 	if len(edits) == 0 {
 		return
 	}
-	saver := s.saver()
+	saver := s.saverFor(t)
 	if saver == nil {
 		t.edit.Err = locales.Text("数据编辑服务不可用")
 		t.edit.AfterSave = nil
@@ -417,9 +421,14 @@ func (s *State) saveMySQLData(services ui.Services, t *Document) {
 	out := make(chan mysqlEditResult, 1)
 	t.edit.Results = out
 	db, table := t.database, t.table
+	history := mysqlDataWriteHistoryRequest(db, table, edits, t.transaction.token != nil)
 	go func() {
+		started := time.Now()
 		result, err := saver(ctx, profile, db, table, edits)
-		out <- mysqlEditResult{Generation: gen, Request: request, Profile: profile, Keys: keys, Saved: result, Err: err}
+		for i := range history {
+			history[i].At, history[i].Duration = time.Now(), time.Since(started)
+		}
+		out <- mysqlEditResult{History: history, Generation: gen, Request: request, Profile: profile, Keys: keys, Saved: result, Err: err}
 		services.Invalidate()
 	}()
 }
@@ -531,6 +540,7 @@ func (s *State) consumeEdits(services ui.Services) {
 			if r.Profile != s.session().ProfileID || r.Profile != t.profileID || r.Request != t.edit.Request {
 				continue
 			}
+			s.recordDataWriteHistory(t, r.History, r.Saved, r.Err, r.Generation != s.session().Generation || !s.session().Connected)
 			if t.edit.Cancel != nil {
 				t.edit.Cancel()
 			}
@@ -554,6 +564,10 @@ func (s *State) consumeEdits(services ui.Services) {
 				continue
 			}
 			if r.Err != nil {
+				if errors.Is(r.Err, mysqlsvc.ErrMySQLDataTransactionLost) {
+					t.transaction.lost = true
+					t.transaction.err = r.Err.Error()
+				}
 				t.edit.Err = r.Err.Error()
 				t.edit.AfterSave = nil
 				if r.Saved != nil && r.Saved.CommitUncertain {
@@ -617,6 +631,7 @@ func (s *State) consumeEdits(services ui.Services) {
 				t.edit.AfterSave = nil
 				continue
 			}
+			s.rememberDataTransactionSave(t, r.Keys, r.Saved)
 			s.acceptMySQLDataSaved(t, r.Keys, r.Saved)
 			for _, outcome := range r.Saved.Outcomes {
 				if outcome.Kind == "insert" && outcome.Saved == nil {
@@ -634,7 +649,7 @@ func (s *State) consumeEdits(services ui.Services) {
 	}
 }
 func (s *State) verifyMySQLDataSave(services ui.Services, t *Document) {
-	if t.edit.Uncertain == nil || t.edit.Busy || s.verifier() == nil {
+	if dataTransactionActive(t) || t.edit.Uncertain == nil || t.edit.Busy || s.verifier() == nil {
 		return
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -656,7 +671,7 @@ func (s *State) GuardLeave(t *Document, next func(ui.Services)) bool {
 	if t == nil || t.closed {
 		return false
 	}
-	if t.edit.Busy || t.edit.Uncertain != nil {
+	if t.edit.Busy || t.edit.Uncertain != nil || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain {
 		return true
 	}
 	s.finishMySQLCellEdit(t, true)
@@ -874,16 +889,22 @@ func mysqlDataRevealEditRow(t *Document, row int) {
 		return
 	}
 	first, last := t.grid.Visible()
+	first -= t.toolbar.gridOffset
+	last -= t.toolbar.gridOffset
 	if row < first || row > last {
-		t.grid.ScrollIntoView(row)
+		mysqlDataScrollRecordIntoView(t, row)
 	}
 }
 func (s *State) Modals(c *ui.Context) {
+	s.dataTransactionModals(c)
 	for _, t := range s.documents {
 		if t.closed {
 			continue
 		}
-		if e := t.edit.Editor; e != nil && e.Dedicated {
+		s.toolsModals(c, t)
+		s.transferModals(c, t)
+		s.dataFillModal(c, t)
+		if e := t.edit.Editor; e != nil && e.Dedicated && !mysqlDataEditorDockOpen(t) {
 			ui.Modal(c, &e.Open, func() {
 				ui.Column(c).Width(640).MaxWidthPercent(95).Padding(12).Gap(8).Children(func() {
 					ui.Text(c, locales.Text("单元格编辑器")+" · "+e.Field).FontSize(theme.Font(c, theme.FontSize))
@@ -934,16 +955,22 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 	// Use the footer's existing fixed-height command row. Inserting a status
 	// row above the grid moves every cell while a read is pending or fails.
 	palette := theme.Colors(c)
-	if t.edit.Busy {
+	if t.edit.Busy || dataTransactionBusy(t) {
 		ui.Spinner(c).Size(14, 14)
 	}
 	message, color := "", palette.Muted
 	if t.edit.Err != "" {
 		message, color = t.edit.Err, palette.Error
+	} else if t.transaction.err != "" {
+		message, color = t.transaction.err, palette.Error
+	} else if dataTransactionBusy(t) {
+		message = locales.Text("正在处理事务…")
 	} else if t.edit.Busy {
 		message = locales.Text("正在处理表数据…")
 	} else if mysqlDataHasDraft(t) {
 		message, color = locales.Text("有待保存的数据更改"), palette.Warning
+	} else if dataTransactionActive(t) {
+		message, color = locales.Text("事务进行中，更改尚未提交"), palette.Warning
 	}
 	if message != "" {
 		ui.Text(c, message).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(color).SingleLine().Grow(1).MinWidth(0).Tooltip(message)

@@ -47,6 +47,9 @@ func (s *inspectorState) LoadChunk(p *Panel, invalidate func()) {
 	if loader == nil && s.deps.ChunkLoader != nil {
 		loader = s.deps.ChunkLoader()
 	}
+	if p.chunkLoader != nil {
+		loader = p.chunkLoader()
+	}
 	if loader == nil {
 		return
 	}
@@ -115,7 +118,10 @@ func (s *inspectorState) consumeChunks() {
 				continue
 			}
 			if r.err != nil {
-				if !errors.Is(r.err, context.Canceled) {
+				if p.chunkError != nil {
+					p.chunkError(r.err)
+				}
+				if errors.Is(r.err, mysqlsvc.ErrMySQLDataTransactionLost) || !errors.Is(r.err, context.Canceled) {
 					p.chunkErr = r.err.Error()
 				}
 				continue

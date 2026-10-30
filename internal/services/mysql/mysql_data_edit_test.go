@@ -79,6 +79,32 @@ func TestMySQLDataEditRejectsInvalidValuesAndGeneratedColumns(t *testing.T) {
 		}
 	}
 }
+
+func TestMySQLDataEditBinaryParametersKeepEmptyDistinctFromNull(t *testing.T) {
+	columns := []MySQLStructureColumn{{Name: "payload", DataType: "blob", Nullable: true}}
+	for _, value := range []MySQLDataValue{{Binary: true}, {Binary: true, Bytes: []byte{}}, {Null: true}} {
+		_, _, args, err := mysqlEditAssignments(columns, map[string]MySQLDataValue{"payload": value}, true)
+		if err != nil || len(args) != 1 {
+			t.Fatal(args, err)
+		}
+		bound, err := driver.DefaultParameterConverter.ConvertValue(args[0])
+		if err != nil {
+			t.Fatal(err)
+		}
+		if value.Null {
+			if bound != nil {
+				t.Fatal("explicit NULL became binary", bound)
+			}
+		} else if data, ok := bound.([]byte); !ok || data == nil || len(data) != 0 {
+			t.Fatal("empty binary became SQL NULL", bound)
+		}
+	}
+	ref := MySQLRowRef{Database: "db", Table: "t", Columns: []string{"id"}, Values: [][]byte{[]byte("before")}}
+	next, err := mysqlEditChangedRef(ref, map[string]MySQLDataValue{"id": {Binary: true}})
+	if err != nil || next.Values[0] == nil || len(next.Values[0]) != 0 || string(ref.Values[0]) != "before" {
+		t.Fatal("empty binary key lost identity", next, err)
+	}
+}
 func TestMySQLDataSnapshotDetectsChangeIncludingHiddenField(t *testing.T) {
 	cols := []MySQLStructureColumn{{Name: "id"}, {Name: "long"}}
 	a := mysqlSnapshotFromRaw(MySQLRowRef{}, cols, []any{"id-hash", "full-long-hash"})

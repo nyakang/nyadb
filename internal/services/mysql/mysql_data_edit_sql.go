@@ -157,6 +157,11 @@ func mysqlEditAssignments(columns []MySQLStructureColumn, values map[string]MySQ
 			args = append(args, nil)
 		case v.Binary:
 			expressions = append(expressions, "?")
+			// A nil []byte is SQL NULL to the driver. Binary without Null
+			// means an empty binary value, including hex/base64 import cells.
+			if v.Bytes == nil {
+				v.Bytes = []byte{}
+			}
 			args = append(args, v.Bytes)
 		default:
 			expressions = append(expressions, "?")
@@ -177,7 +182,7 @@ func mysqlEditChangedRef(ref MySQLRowRef, values map[string]MySQLDataValue) (MyS
 				return next, ErrMySQLDataPage
 			}
 			if v.Binary {
-				next.Values[i] = bytes.Clone(v.Bytes)
+				next.Values[i] = append([]byte{}, v.Bytes...)
 			} else {
 				next.Values[i] = []byte(v.Text)
 			}
