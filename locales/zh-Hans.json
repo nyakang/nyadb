@@ -866,5 +866,9 @@
   "wizardPerSourceTransaction": "每个目标分别提交；后续失败不会回滚已完成的目标。",
   "wizardFileFormat": "文件格式",
   "wizardRemoveSource": "移除来源",
-  "wizardDetectEncoding": "自动检测编码"
+  "wizardDetectEncoding": "自动检测编码",
+  "wizardTextEncoding": "文本编码",
+  "wizardNewline": "换行符",
+  "wizardDateOrder": "日期顺序",
+  "wizardBinaryEncoding": "二进制编码"
 }

@@ -866,5 +866,9 @@
   "wizardExistingTable": "Existing table",
   "wizardPerSourceTransaction": "Each target commits separately. A later failure does not roll back completed targets.",
   "wizardRemoveSource": "Remove source",
-  "wizardDetectEncoding": "Detect encoding automatically"
+  "wizardDetectEncoding": "Detect encoding automatically",
+  "wizardTextEncoding": "Text encoding",
+  "wizardNewline": "Line ending",
+  "wizardDateOrder": "Date order",
+  "wizardBinaryEncoding": "Binary encoding"
 }
