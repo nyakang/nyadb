@@ -4,7 +4,7 @@ go 1.27.3
 
 require (
 	github.com/ebitengine/purego v0.11.1
-	github.com/egoist/mygo v0.6.4
+	github.com/egoist/mygo v0.7.3
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/zalando/go-keyring v0.2.6
 	modernc.org/sqlite v1.60.1
@@ -32,4 +32,4 @@ require (
 
 tool github.com/egoist/mygo/cmd/mygo
 
-replace github.com/egoist/mygo => github.com/nyakang/mygo v0.6.4-nyadb.4
+replace github.com/egoist/mygo => github.com/nyakang/mygo v0.7.3-nyadb.1
