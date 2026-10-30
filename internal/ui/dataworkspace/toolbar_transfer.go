@@ -21,6 +21,7 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/services/datasources"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -30,14 +31,49 @@ var mysqlDataImportNumber = regexp.MustCompile(`^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[
 
 type mysqlDataExporter func(context.Context, int64, string, string, mysqlsvc.MySQLDataOptions, []string, func([]mysqlsvc.MySQLDataValue) error) error
 type mysqlDataNewTableImporter func(context.Context, int64, string, string, []mysqlsvc.MySQLDataImportColumn, []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataNewTableImportResult, error)
+type mysqlDataImporter func(context.Context, int64, string, string, mysqlsvc.MySQLDataImportRequest) (*mysqlsvc.MySQLDataImportResult, error)
 
 type mysqlDataTransferState struct {
+	Batch                                        []mysqlDataBatchReceipt
+	Sources                                      []mysqlDataWizardSource
+	ActiveSource                                 int
+	SourceConfig                                 datasources.Config
+	SourceTables                                 []datasources.Table
+	SourceTable                                  int
+	Capabilities                                 []datasources.Capability
+	TargetTable                                  string
+	TargetColumns                                []mysqlsvc.MySQLStructureColumn
+	Journal                                      *mysqlDataImportJournal
+	JournalCommitted, JournalUncertain           bool
+	Wizard                                       bool
+	Step                                         int
+	Options                                      mysqlDataSourceOptions
+	PresetName, PresetChoice                     string
+	ExtendedInsert, IgnoreForeignKeys            bool
+	StatementKB                                  int
+	ExportPath                                   string
+	RawSpool, MappedSpool                        *mysqlDataImportSpool
+	TotalRows, ChangedValues                     int64
+	PreparationKey                               string
+	ParsedSourceKey                              string
+	Assets                                       *mysqlDataSpoolOwner
+	Progress                                     <-chan mysqlsvc.MySQLDataImportProgress
+	Processed                                    int64
 	LeaveOpen                                    bool
 	LeaveNext                                    func(ui.Services)
 	SaveDialog                                   func(mygo.SaveDialogOptions) (string, error)
 	OpenDialog                                   func(mygo.OpenDialogOptions) ([]string, error)
 	Open, Busy, Canceling, Submitted, Uncertain  bool
 	EmptyAsNull                                  bool
+	ContinueOnError                              bool
+	Mode, DestructiveConfirmation                string
+	MatchColumns                                 []string
+	RowResults                                   []mysqlsvc.MySQLDataImportRowResult
+	ResultGrid                                   ui.ListState
+	ReviewInput                                  *mysqlDataImportInput
+	ReviewKey                                    string
+	ReviewRows                                   int
+	ReviewErr                                    error
 	Target, NewName, ResultTable                 string
 	NewColumns                                   []mysqlsvc.MySQLDataImportColumn
 	Created, Completed                           bool
@@ -51,6 +87,18 @@ type mysqlDataTransferState struct {
 	Request, Generation                          uint64
 }
 type mysqlDataTransferResult struct {
+	Batch                                []mysqlDataBatchReceipt
+	SourceTables                         []datasources.Table
+	Capabilities                         []datasources.Capability
+	TargetColumns                        []mysqlsvc.MySQLStructureColumn
+	Journal                              *mysqlDataImportJournal
+	RawSpool, MappedSpool                *mysqlDataImportSpool
+	Streamed                             *mysqlsvc.MySQLDataImportStreamResult
+	Inferred                             []mysqlsvc.MySQLDataImportColumn
+	PreparationKey                       string
+	ParsedSourceKey                      string
+	TotalRows, ChangedValues             int64
+	PickedPath                           bool
 	History                              []mysqlDataHistoryEntry
 	Request, Generation                  uint64
 	Profile                              int64
@@ -58,6 +106,7 @@ type mysqlDataTransferResult struct {
 	Rows                                 int
 	Input                                *mysqlDataImportInput
 	Saved                                *mysqlsvc.MySQLDataEditResult
+	Imported                             *mysqlsvc.MySQLDataImportResult
 	Err                                  error
 	Write                                bool
 	NewTable, Created, CreationUncertain bool
@@ -79,10 +128,14 @@ func (s *State) openDataTransfer(t *Document, kind string) {
 		t.edit.Err = locales.Text("请先保存或取消更改，再导入或导出")
 		return
 	}
+	s.closeDataTransfer(t)
 	request := t.transfer.Request + 1
-	tr := mysqlDataTransferState{Open: true, Kind: kind, Format: "CSV", Scope: "page", Target: "existing", NewName: t.table + "_import", Fields: append([]string(nil), t.page.Columns...), Included: map[string]bool{}, Request: request, Generation: s.session().Generation}
+	tr := mysqlDataTransferState{Wizard: true, Assets: &mysqlDataSpoolOwner{}, Options: defaultMySQLDataSourceOptions(), ContinueOnError: true, ExtendedInsert: true, StatementKB: 1024, Open: true, Kind: kind, Format: "CSV", Scope: "page", Target: "existing", NewName: t.table + "_import", Fields: append([]string(nil), t.page.Columns...), Included: map[string]bool{}, Request: request, Generation: s.session().Generation}
 	for _, field := range tr.Fields {
 		tr.Included[field] = !t.hiddenColumns[field]
+	}
+	if kind == "import" {
+		tr.Sources = []mysqlDataWizardSource{{Name: "来源 1"}}
 	}
 	t.transfer = tr
 }
@@ -92,6 +145,18 @@ func (s *State) closeDataTransfer(t *Document) {
 	}
 	if t.transfer.Cancel != nil {
 		t.transfer.Cancel()
+	}
+	if t.transfer.RawSpool != nil {
+		t.transfer.RawSpool.Close()
+	}
+	if t.transfer.MappedSpool != nil {
+		t.transfer.MappedSpool.Close()
+	}
+	if t.transfer.Journal != nil {
+		t.transfer.Journal.Close()
+	}
+	if t.transfer.Assets != nil {
+		t.transfer.Assets.Close()
 	}
 	request := t.transfer.Request + 1
 	t.transfer = mysqlDataTransferState{Request: request}
@@ -103,7 +168,7 @@ func (s *State) stopDataTransfer(t *Document) {
 		}
 		t.transfer.Canceling = true
 	} else {
-		t.transfer.Open = false
+		s.closeDataTransfer(t)
 	}
 }
 
@@ -134,6 +199,10 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 	if tr.Kind == "import" {
 		title = locales.Text("导入向导")
 	}
+	if tr.Wizard {
+		s.dataTransferWizard(c, t, available, title)
+		return
+	}
 	ui.Modal(c, &tr.Open, func() {
 		width, height := c.Size()
 		ui.Scroll(c).Width(min(float32(620), width-40)).MaxHeight(height - 40).Children(func() {
@@ -145,14 +214,14 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 				}
 				ui.Row(c).Gap(8).Children(func() {
 					ui.Text(c, locales.Text("文件格式"))
-					choices := []string{"CSV", "TSV", "JSON", "XML"}
-					if tr.Kind == "export" {
-						choices = append(choices, "SQL")
-					}
+					choices := mysqlDataTransferFormatChoices(tr.Kind)
 					mysqlDataRuleSelect(c, &tr.Format, choices, func(x string) string { return x }).Disabled(tr.Busy || tr.Input != nil).Width(130)
 				})
 				if tr.Format == "XML" {
 					ui.Text(c, locales.Text("XML 使用 RECORDS/RECORD；空元素作为空字符串，xsi:nil 表示 NULL，仅显式 encoding=base64/hex 解码二进制。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
+				}
+				if tr.Format == "XLSX" {
+					ui.Text(c, locales.Text("XLSX 使用首个工作表，首行为字段名；数字文本保留精度，公式单元格不支持导入。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
 				}
 				if tr.Kind == "export" {
 					ui.Row(c).Gap(8).Children(func() {
@@ -180,8 +249,9 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 					})
 					ui.Text(c, locales.Text("完整值导出：每字段最多 1 MiB、每行最多 16 MiB，超限将失败并保留原文件。CSV/TSV 使用 \\N 表示 NULL，二进制使用 0x 十六进制。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
 				} else {
-					ui.Text(c, locales.Text("仅插入新行；最多 200 行、文件最多 1 MiB，一次事务提交。CSV/TSV 首行为字段名，\\N 表示 NULL，二进制使用 0x 十六进制。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
+					ui.Text(c, locales.Text("最多 10000 行、文件最多 16 MiB。CSV/TSV 首行为字段名，\\N 表示 NULL，二进制使用 0x 十六进制。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
 					s.dataImportTargetControls(c, t)
+					s.dataImportModeControls(c, t)
 					ui.Checkbox(c, &tr.EmptyAsNull, locales.Text("使用 NULL 取代空字符串")).Disabled(tr.Busy || tr.Submitted)
 					if tr.EmptyAsNull {
 						ui.Text(c, locales.Text("只转换长度为零的文本值；空二进制和空格保留原值。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
@@ -195,6 +265,7 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 					if tr.Input != nil {
 						s.dataImportReview(c, t)
 					}
+					s.dataImportResultRows(c, t)
 				}
 				if tr.Err != "" {
 					color := colors.Error
@@ -223,10 +294,10 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 							s.startDataExport(c.Services(), t)
 						}
 					} else {
-						valid := available && tr.Input != nil && tr.Confirmation == mysqlDataImportDestination(t) && !tr.Busy && !tr.Submitted
+						valid := available && tr.Input != nil && mysqlDataImportConfirmed(t) && !tr.Busy && !tr.Submitted
 						if valid {
-							_, _, err := mysqlDataImportRequest(t)
-							valid = err == nil && (tr.Target != "new" || s.newTableImporter() != nil)
+							_, err := mysqlDataImportReviewValidation(t)
+							valid = err == nil && (s.importer() != nil || (!tr.ContinueOnError && mysqlDataImportMode(t) == "append" && (tr.Target != "new" || s.newTableImporter() != nil)))
 						}
 						if tr.Created && !tr.Uncertain && !tr.Busy && s.deps.OpenImportedTable != nil && ui.Button(c, locales.Text("打开目标表")).Clicked() {
 							tr.Open = false
@@ -252,26 +323,33 @@ func (s *State) chooseDataImportFile(services ui.Services, t *Document) {
 	ctx, out, request, gen := s.beginDataTransfer(t)
 	format, profile := t.transfer.Format, t.profileID
 	openDialog := t.transfer.OpenDialog
+	options, wizard, assets := t.transfer.Options, t.transfer.Wizard, t.transfer.Assets
 	if openDialog == nil {
 		openDialog = mygo.Dialog.Open
 	}
 	go func() {
 		paths, err := openDialog(mygo.OpenDialogOptions{Title: locales.Text("选择导入数据文件"), Filters: []mygo.FileFilter{{Name: format, Extensions: []string{strings.ToLower(format)}}}})
 		var input *mysqlDataImportInput
+		var spool *mysqlDataImportSpool
+		var inferred []mysqlsvc.MySQLDataImportColumn
 		path := ""
 		if err == nil && len(paths) > 0 && ctx.Err() == nil {
 			path = paths[0]
 			var f *os.File
 			f, err = os.Open(path)
 			if err == nil {
-				input, err = mysqlDataParseImport(f, format)
+				if wizard {
+					spool, input, inferred, err = mysqlDataReadSpool(ctx, f, format, options, assets)
+				} else {
+					input, err = mysqlDataParseImport(f, format)
+				}
 				f.Close()
 			}
 		}
 		if ctx.Err() != nil {
 			err = ctx.Err()
 		}
-		out <- mysqlDataTransferResult{Request: request, Generation: gen, Profile: profile, Path: path, Input: input, Err: err}
+		out <- mysqlDataTransferResult{RawSpool: spool, ParsedSourceKey: mysqlDataSourceKey(format, options), Inferred: inferred, Request: request, Generation: gen, Profile: profile, Path: path, Input: input, Err: err}
 		services.Invalidate()
 	}()
 }
@@ -288,7 +366,7 @@ func (s *State) beginDataTransfer(t *Document) (context.Context, chan mysqlDataT
 }
 func (s *State) startDataImport(services ui.Services, t *Document) {
 	tr := &t.transfer
-	if t.closed || dataTransactionActive(t) || dataTransactionBusy(t) || tr.Busy || tr.Submitted || tr.Input == nil || tr.Confirmation != mysqlDataImportDestination(t) || t.edit.Busy || t.edit.Uncertain != nil || mysqlDataHasDraft(t) || !s.session().Connected || s.session().ProfileID != t.profileID || s.session().Generation != tr.Generation {
+	if t.closed || dataTransactionActive(t) || dataTransactionBusy(t) || tr.Busy || tr.Submitted || tr.Input == nil || !mysqlDataImportConfirmed(t) || t.edit.Busy || t.edit.Uncertain != nil || mysqlDataHasDraft(t) || !s.session().Connected || s.session().ProfileID != t.profileID || s.session().Generation != tr.Generation {
 		return
 	}
 	columns, edits, err := mysqlDataImportRequest(t)
@@ -298,15 +376,20 @@ func (s *State) startDataImport(services ui.Services, t *Document) {
 	}
 	saver := s.saverFor(t)
 	newImporter := s.newTableImporter()
+	importer := s.importer()
 	newTable := tr.Target == "new"
-	if (!newTable && saver == nil) || (newTable && newImporter == nil) {
+	if importer == nil && (tr.ContinueOnError || mysqlDataImportMode(t) != "append" || !newTable && saver == nil || newTable && newImporter == nil || len(edits) > mysqlsvc.MySQLDataMaxPageSize) {
 		tr.Err = locales.Text("数据编辑服务不可用")
 		return
 	}
 	tr.Submitted = true
 	ctx, out, request, gen := s.beginDataTransfer(t)
 	profile, db, table := t.profileID, t.database, mysqlDataImportDestination(t)
-	history := mysqlDataWriteHistoryRequest(db, table, edits, false)
+	importRequest := mysqlDataImportServiceRequest(t, columns, edits)
+	var history []mysqlDataHistoryEntry
+	if importer == nil {
+		history = mysqlDataWriteHistoryRequest(db, table, edits, false)
+	}
 	creation := mysqlDataHistoryEntry{}
 	if newTable {
 		creation = mysqlDataImportCreationHistory(db, table, columns)
@@ -316,7 +399,13 @@ func (s *State) startDataImport(services ui.Services, t *Document) {
 		var result *mysqlsvc.MySQLDataEditResult
 		var created, creationUncertain bool
 		var err error
-		if newTable {
+		var importedResult *mysqlsvc.MySQLDataImportResult
+		if importer != nil {
+			importedResult, err = importer(ctx, profile, db, table, importRequest)
+			if importedResult != nil {
+				result, created, creationUncertain = importedResult.Saved, importedResult.Created, importedResult.CreationUncertain
+			}
+		} else if newTable {
 			imported, importErr := newImporter(ctx, profile, db, table, columns, edits)
 			err = importErr
 			if imported != nil {
@@ -329,7 +418,7 @@ func (s *State) startDataImport(services ui.Services, t *Document) {
 			history[i].At, history[i].Duration = time.Now(), time.Since(started)
 		}
 		creation.At, creation.Duration = time.Now(), time.Since(started)
-		out <- mysqlDataTransferResult{CreationHistory: creation, NewTable: newTable, Created: created, CreationUncertain: creationUncertain, Destination: table, History: history, Request: request, Generation: gen, Profile: profile, Rows: len(edits), Saved: result, Err: err, Write: true}
+		out <- mysqlDataTransferResult{Imported: importedResult, CreationHistory: creation, NewTable: newTable, Created: created, CreationUncertain: creationUncertain, Destination: table, History: history, Request: request, Generation: gen, Profile: profile, Rows: len(edits), Saved: result, Err: err, Write: true}
 		services.Invalidate()
 	}()
 }
@@ -388,21 +477,28 @@ func (s *State) startDataExport(services ui.Services, t *Document) {
 		}
 	}
 	options := mysqlsvc.MySQLDataOptions{FilterColumn: t.filterColumn, FilterValue: t.filterValue, FilterMode: t.filterMode, SortColumn: t.sortColumn, SortDescending: t.sortDescending, Filters: append([]mysqlsvc.MySQLDataFilterRule(nil), t.filterRules...), Sorts: append([]mysqlsvc.MySQLDataSortRule(nil), t.sortRules...)}
+	formatOptions := tr.Options
+	metadata := slices.Clone(t.page.ColumnMetadata)
 	ctx, out, request, gen := s.beginDataTransfer(t)
 	format, profile, db, table := tr.Format, t.profileID, t.database, t.table
 	saveDialog := tr.SaveDialog
 	if saveDialog == nil {
 		saveDialog = mygo.Dialog.Save
 	}
+	if tr.ExportPath != "" {
+		destination := tr.ExportPath
+		saveDialog = func(mygo.SaveDialogOptions) (string, error) { return destination, nil }
+	}
 	go func() {
 		path, err := saveDialog(mygo.SaveDialogOptions{Title: locales.Text("导出数据文件"), DefaultPath: table + "." + strings.ToLower(format), Filters: []mygo.FileFilter{{Name: format, Extensions: []string{strings.ToLower(format)}}}})
 		count := 0
 		if err == nil && path != "" {
 			err = mysqlDataAtomicFile(ctx, path, func(w io.Writer) error {
-				encoder, e := newMySQLDataTransferEncoder(w, format, db, table, fields)
+				encoder, e := newMySQLDataConfiguredEncoder(ctx, w, format, db, table, fields, metadata, formatOptions)
 				if e != nil {
 					return e
 				}
+				defer encoder.Abort()
 				emit := func(values []mysqlsvc.MySQLDataValue) error {
 					if ctx.Err() != nil {
 						return ctx.Err()
@@ -459,6 +555,13 @@ func (s *State) startDataExport(services ui.Services, t *Document) {
 func (s *State) consumeDataTransfers(services ui.Services) {
 	for _, t := range s.documents {
 		tr := &t.transfer
+		if t.profileID == s.session().ProfileID && tr.Progress != nil {
+			select {
+			case p := <-tr.Progress:
+				tr.Processed = p.Processed
+			default:
+			}
+		}
 		if t.closed || tr.Results == nil || t.profileID != s.session().ProfileID {
 			continue
 		}
@@ -475,7 +578,18 @@ func (s *State) consumeDataTransfers(services ui.Services) {
 			tr.Busy = false
 			tr.Canceling = false
 			stale := result.Generation != s.session().Generation || !s.session().Connected
+			if result.Capabilities != nil {
+				tr.Capabilities = result.Capabilities
+			}
 			if result.Write {
+				if result.Streamed != nil {
+					s.consumeStreamedDataImport(services, t, result, stale)
+					continue
+				}
+				if result.Imported != nil {
+					s.consumeDataImportResult(services, t, result, stale)
+					continue
+				}
 				if result.NewTable {
 					t.transfer.Created, t.transfer.ResultTable = result.Created, result.Destination
 					entry := result.CreationHistory
@@ -520,22 +634,62 @@ func (s *State) consumeDataTransfers(services ui.Services) {
 				if result.NewTable && (result.Created || result.CreationUncertain) && s.deps.TableImported != nil {
 					s.deps.TableImported(services, TableImportEvent{ProfileID: result.Profile, Generation: result.Generation, Database: t.database, Table: result.Destination, Created: result.Created, Uncertain: tr.Uncertain, Completed: tr.Completed})
 				}
+			} else if stale {
+				if result.RawSpool != nil {
+					result.RawSpool.Close()
+				}
+				if result.MappedSpool != nil {
+					result.MappedSpool.Close()
+				}
+				tr.Err = locales.Text("原 MySQL 会话已失效，请关闭向导后重新打开")
 			} else if result.Err != nil {
 				if !errors.Is(result.Err, context.Canceled) {
 					tr.Err = result.Err.Error()
 				}
+			} else if result.SourceTables != nil {
+				tr.SourceTables = result.SourceTables
+				tr.Capabilities = result.Capabilities
+			} else if result.TargetColumns != nil {
+				tr.TargetColumns = result.TargetColumns
+				mysqlDataResetTargetMapping(t)
+			} else if result.MappedSpool != nil {
+				if tr.MappedSpool != nil {
+					tr.MappedSpool.Close()
+				}
+				tr.MappedSpool = result.MappedSpool
+				tr.PreparationKey = result.PreparationKey
+				tr.ChangedValues = result.ChangedValues
+				tr.TotalRows = result.TotalRows
+			} else if result.PickedPath {
+				tr.ExportPath = result.Path
 			} else if result.Input != nil {
+				if tr.RawSpool != nil {
+					tr.RawSpool.Close()
+				}
+				if tr.MappedSpool != nil {
+					tr.MappedSpool.Close()
+					tr.MappedSpool = nil
+				}
+				tr.RawSpool = result.RawSpool
+				tr.ParsedSourceKey = result.ParsedSourceKey
+				tr.PreparationKey = ""
+				if result.RawSpool != nil {
+					tr.TotalRows = result.RawSpool.rows
+				}
 				tr.Input = result.Input
 				tr.NewColumns = mysqlDataInferImportColumns(result.Input)
-				tr.Path = result.Path
-				tr.Mapping = make([]string, len(result.Input.Fields))
-				for i, field := range result.Input.Fields {
-					if slices.Contains(tr.Fields, field) {
-						tr.Mapping[i] = field
-					}
+				if result.Inferred != nil {
+					tr.NewColumns = result.Inferred
 				}
+				tr.Path = result.Path
+				mysqlDataResetTargetMapping(t)
 			} else if result.Path != "" {
-				tr.Open = false
+				if tr.Wizard {
+					tr.Completed = true
+					tr.Step = len(mysqlDataWizardSteps(tr.Kind)) - 1
+				} else {
+					tr.Open = false
+				}
 				s.setStatus(fmt.Sprintf(locales.Text("已导出 %d 行至 %s"), result.Rows, result.Path))
 			}
 		default:
@@ -592,19 +746,30 @@ func mysqlDataExportSnapshot(t *Document, fields []string, selected bool) ([][]m
 // Parse the entire bounded input before any write. Headers are mandatory and
 // JSON numbers retain their exact spelling, including large integer values.
 func mysqlDataParseImport(r io.Reader, format string) (*mysqlDataImportInput, error) {
-	data, err := io.ReadAll(io.LimitReader(r, mysqlsvc.MySQLDataEditMaxBytes+1))
+	data, err := io.ReadAll(io.LimitReader(r, mysqlsvc.MaxMySQLDataImportBytes+1))
 	if err != nil {
 		return nil, err
 	}
-	if len(data) > mysqlsvc.MySQLDataEditMaxBytes {
-		return nil, errors.New(locales.Text("导入文件超过 1 MiB 限制"))
+	if len(data) > mysqlsvc.MaxMySQLDataImportBytes {
+		return nil, mysqlsvc.ErrMySQLDataEditLimit
 	}
-	if !utf8.Valid(data) {
+	binaryFormat := format == "XLSX" || format == "XLS" || format == "DBF" || format == "Parquet"
+	if !binaryFormat && !utf8.Valid(data) {
 		return nil, errors.New(locales.Text("导入文件必须使用 UTF-8 编码"))
 	}
-	data = []byte(strings.TrimPrefix(string(data), "\ufeff"))
+	if !binaryFormat {
+		data = []byte(strings.TrimPrefix(string(data), "\ufeff"))
+	}
 	input := &mysqlDataImportInput{}
 	switch format {
+	case "TXT":
+		input, err = mysqlDataParseTXTImport(data)
+	case "XLS":
+		input, err = mysqlDataParseXLSImport(data)
+	case "DBF":
+		input, err = mysqlDataParseDBFImport(data)
+	case "Parquet":
+		input, err = mysqlDataParseParquetImport(data)
 	case "CSV", "TSV":
 		reader := csv.NewReader(strings.NewReader(string(data)))
 		if format == "TSV" {
@@ -628,12 +793,22 @@ func mysqlDataParseImport(r io.Reader, format string) (*mysqlDataImportInput, er
 				values[i] = mysqlDataDecodeDelimited(value)
 			}
 			input.Rows = append(input.Rows, values)
-			if len(input.Rows) > mysqlsvc.MySQLDataMaxPageSize {
-				return nil, errors.New(locales.Text("导入文件超过 200 行限制"))
+			if len(input.Rows) > mysqlsvc.MaxMySQLDataImportRows {
+				return nil, mysqlsvc.ErrMySQLDataEditLimit
 			}
 		}
 	case "XML":
 		input, err = mysqlDataParseXMLImport(data)
+		if err != nil {
+			return nil, err
+		}
+	case "XLSX":
+		input, err = mysqlDataParseXLSXImport(data)
+		if err != nil {
+			return nil, err
+		}
+	case "HTML":
+		input, err = mysqlDataParseHTMLImport(data)
 		if err != nil {
 			return nil, err
 		}
@@ -651,8 +826,8 @@ func mysqlDataParseImport(r io.Reader, format string) (*mysqlDataImportInput, er
 		if dec.Decode(&extra) != io.EOF {
 			return nil, errors.New(locales.Text("JSON 文件必须只包含一个对象数组"))
 		}
-		if len(records) > mysqlsvc.MySQLDataMaxPageSize {
-			return nil, errors.New(locales.Text("导入文件超过 200 行限制"))
+		if len(records) > mysqlsvc.MaxMySQLDataImportRows {
+			return nil, mysqlsvc.ErrMySQLDataEditLimit
 		}
 		if len(records) > 0 {
 			for field := range records[0] {
@@ -692,6 +867,9 @@ func mysqlDataParseImport(r io.Reader, format string) (*mysqlDataImportInput, er
 	default:
 		return nil, errors.New("unsupported import format")
 	}
+	if err != nil {
+		return nil, err
+	}
 	if len(input.Fields) == 0 || len(input.Fields) > 128 || len(input.Rows) == 0 {
 		return nil, errors.New(locales.Text("导入文件没有字段或数据行"))
 	}
@@ -701,6 +879,21 @@ func mysqlDataParseImport(r io.Reader, format string) (*mysqlDataImportInput, er
 			return nil, errors.New(locales.Text("导入字段名不能为空或重复"))
 		}
 		seen[field] = true
+	}
+	total := 0
+	for _, row := range input.Rows {
+		if len(row) != len(input.Fields) {
+			return nil, mysqlsvc.ErrMySQLDataPage
+		}
+		for _, value := range row {
+			if len(value.Text)+len(value.Bytes) > mysqlsvc.MySQLDataEditMaxBytes {
+				return nil, mysqlsvc.ErrMySQLDataEditLimit
+			}
+			total += len(value.Text) + len(value.Bytes)
+			if total > mysqlsvc.MaxMySQLDataImportBytes {
+				return nil, mysqlsvc.ErrMySQLDataEditLimit
+			}
+		}
 	}
 	return input, nil
 }
@@ -856,6 +1049,7 @@ type mysqlDataTransferEncoder struct {
 	w                 io.Writer
 	csv               *csv.Writer
 	xml               *mysqlDataXMLEncoder
+	additional        mysqlDataAdditionalEncoder
 	format, db, table string
 	fields            []string
 	rows              int
@@ -883,6 +1077,24 @@ func newMySQLDataTransferEncoder(w io.Writer, format, db, table string, fields [
 			return nil, err
 		}
 	case "SQL":
+	case "XLSX", "HTML", "XLS", "DBF", "Parquet", "TXT":
+		var err error
+		if format == "XLSX" {
+			e.additional, err = newMySQLDataXLSXEncoder(w, fields)
+		} else if format == "HTML" {
+			e.additional, err = newMySQLDataHTMLEncoder(w, fields)
+		} else if format == "XLS" {
+			e.additional, err = newMySQLDataXLSEncoder(w, fields)
+		} else if format == "DBF" {
+			e.additional, err = newMySQLDataDBFEncoder(w, fields)
+		} else if format == "Parquet" {
+			e.additional, err = newMySQLDataParquetEncoder(w, fields)
+		} else {
+			e.additional, err = newMySQLDataTXTEncoder(w, fields)
+		}
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, errors.New("unsupported export format")
 	}
@@ -910,6 +1122,10 @@ func (e *mysqlDataTransferEncoder) Row(values []mysqlsvc.MySQLDataValue) error {
 		}
 	}
 	switch e.format {
+	case "XLSX", "HTML", "XLS", "DBF", "Parquet", "TXT":
+		if err := e.additional.Row(values); err != nil {
+			return err
+		}
 	case "XML":
 		if err := e.xml.Row(values); err != nil {
 			return err
@@ -960,6 +1176,9 @@ func (e *mysqlDataTransferEncoder) Row(values []mysqlsvc.MySQLDataValue) error {
 	return nil
 }
 func (e *mysqlDataTransferEncoder) Close() error {
+	if e.additional != nil {
+		return e.additional.Close()
+	}
 	if e.xml != nil {
 		return e.xml.Close()
 	}

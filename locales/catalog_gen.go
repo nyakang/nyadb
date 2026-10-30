@@ -8095,3 +8095,853 @@ func MysqlToolbarImportNullable() string { return In(i18n.Locale()).MysqlToolbar
 func (msgs Messages) MysqlToolbarImportNullable() string {
 	return Catalog.Format(msgs.locale, "mysqlToolbarImportNullable", nil)
 }
+
+// MysqlImportBoundedHint says "最多 10000 行、文件最多 16 MiB。CSV/TSV 首行为字段名，\\N 表示 NULL，二进制使用 0x …"
+// in the language the app shows.
+func MysqlImportBoundedHint() string { return In(i18n.Locale()).MysqlImportBoundedHint() }
+
+// MysqlImportBoundedHint says "最多 10000 行、文件最多 16 MiB。CSV/TSV 首行为字段名，\\N 表示 NULL，二进制使用 0x …"
+// in the language of msgs.
+func (msgs Messages) MysqlImportBoundedHint() string {
+	return Catalog.Format(msgs.locale, "mysqlImportBoundedHint", nil)
+}
+
+// MysqlImportMode says "导入模式"
+// in the language the app shows.
+func MysqlImportMode() string { return In(i18n.Locale()).MysqlImportMode() }
+
+// MysqlImportMode says "导入模式"
+// in the language of msgs.
+func (msgs Messages) MysqlImportMode() string {
+	return Catalog.Format(msgs.locale, "mysqlImportMode", nil)
+}
+
+// MysqlImportAppendMode says "追加新记录"
+// in the language the app shows.
+func MysqlImportAppendMode() string { return In(i18n.Locale()).MysqlImportAppendMode() }
+
+// MysqlImportAppendMode says "追加新记录"
+// in the language of msgs.
+func (msgs Messages) MysqlImportAppendMode() string {
+	return Catalog.Format(msgs.locale, "mysqlImportAppendMode", nil)
+}
+
+// MysqlImportUpdateMode says "更新匹配记录"
+// in the language the app shows.
+func MysqlImportUpdateMode() string { return In(i18n.Locale()).MysqlImportUpdateMode() }
+
+// MysqlImportUpdateMode says "更新匹配记录"
+// in the language of msgs.
+func (msgs Messages) MysqlImportUpdateMode() string {
+	return Catalog.Format(msgs.locale, "mysqlImportUpdateMode", nil)
+}
+
+// MysqlImportUpsertMode says "追加或更新"
+// in the language the app shows.
+func MysqlImportUpsertMode() string { return In(i18n.Locale()).MysqlImportUpsertMode() }
+
+// MysqlImportUpsertMode says "追加或更新"
+// in the language of msgs.
+func (msgs Messages) MysqlImportUpsertMode() string {
+	return Catalog.Format(msgs.locale, "mysqlImportUpsertMode", nil)
+}
+
+// MysqlImportInsertMissingMode says "仅追加未匹配记录"
+// in the language the app shows.
+func MysqlImportInsertMissingMode() string { return In(i18n.Locale()).MysqlImportInsertMissingMode() }
+
+// MysqlImportInsertMissingMode says "仅追加未匹配记录"
+// in the language of msgs.
+func (msgs Messages) MysqlImportInsertMissingMode() string {
+	return Catalog.Format(msgs.locale, "mysqlImportInsertMissingMode", nil)
+}
+
+// MysqlImportDeleteMode says "删除匹配记录"
+// in the language the app shows.
+func MysqlImportDeleteMode() string { return In(i18n.Locale()).MysqlImportDeleteMode() }
+
+// MysqlImportDeleteMode says "删除匹配记录"
+// in the language of msgs.
+func (msgs Messages) MysqlImportDeleteMode() string {
+	return Catalog.Format(msgs.locale, "mysqlImportDeleteMode", nil)
+}
+
+// MysqlImportReplaceMode says "清空目标后复制"
+// in the language the app shows.
+func MysqlImportReplaceMode() string { return In(i18n.Locale()).MysqlImportReplaceMode() }
+
+// MysqlImportReplaceMode says "清空目标后复制"
+// in the language of msgs.
+func (msgs Messages) MysqlImportReplaceMode() string {
+	return Catalog.Format(msgs.locale, "mysqlImportReplaceMode", nil)
+}
+
+// MysqlImportContinue says "遇到行错误时继续"
+// in the language the app shows.
+func MysqlImportContinue() string { return In(i18n.Locale()).MysqlImportContinue() }
+
+// MysqlImportContinue says "遇到行错误时继续"
+// in the language of msgs.
+func (msgs Messages) MysqlImportContinue() string {
+	return Catalog.Format(msgs.locale, "mysqlImportContinue", nil)
+}
+
+// MysqlImportContinueHint says "失败行会跳过，成功行一起提交；完成后逐行显示结果。"
+// in the language the app shows.
+func MysqlImportContinueHint() string { return In(i18n.Locale()).MysqlImportContinueHint() }
+
+// MysqlImportContinueHint says "失败行会跳过，成功行一起提交；完成后逐行显示结果。"
+// in the language of msgs.
+func (msgs Messages) MysqlImportContinueHint() string {
+	return Catalog.Format(msgs.locale, "mysqlImportContinueHint", nil)
+}
+
+// MysqlImportReplaceHint says "此模式会删除目标表全部记录，再导入文件；提交前可取消回滚。"
+// in the language the app shows.
+func MysqlImportReplaceHint() string { return In(i18n.Locale()).MysqlImportReplaceHint() }
+
+// MysqlImportReplaceHint says "此模式会删除目标表全部记录，再导入文件；提交前可取消回滚。"
+// in the language of msgs.
+func (msgs Messages) MysqlImportReplaceHint() string {
+	return Catalog.Format(msgs.locale, "mysqlImportReplaceHint", nil)
+}
+
+// MysqlImportReplaceConfirm says "再次输入表名称以确认清空"
+// in the language the app shows.
+func MysqlImportReplaceConfirm() string { return In(i18n.Locale()).MysqlImportReplaceConfirm() }
+
+// MysqlImportReplaceConfirm says "再次输入表名称以确认清空"
+// in the language of msgs.
+func (msgs Messages) MysqlImportReplaceConfirm() string {
+	return Catalog.Format(msgs.locale, "mysqlImportReplaceConfirm", nil)
+}
+
+// MysqlImportMatchingFields says "匹配字段（须为完整主键或唯一键）"
+// in the language the app shows.
+func MysqlImportMatchingFields() string { return In(i18n.Locale()).MysqlImportMatchingFields() }
+
+// MysqlImportMatchingFields says "匹配字段（须为完整主键或唯一键）"
+// in the language of msgs.
+func (msgs Messages) MysqlImportMatchingFields() string {
+	return Catalog.Format(msgs.locale, "mysqlImportMatchingFields", nil)
+}
+
+// MysqlImportRowResults says "逐行导入结果"
+// in the language the app shows.
+func MysqlImportRowResults() string { return In(i18n.Locale()).MysqlImportRowResults() }
+
+// MysqlImportRowResults says "逐行导入结果"
+// in the language of msgs.
+func (msgs Messages) MysqlImportRowResults() string {
+	return Catalog.Format(msgs.locale, "mysqlImportRowResults", nil)
+}
+
+// MysqlImportRowResult says "第 %d 行 · %s · %s"
+// in the language the app shows.
+func MysqlImportRowResult() string { return In(i18n.Locale()).MysqlImportRowResult() }
+
+// MysqlImportRowResult says "第 %d 行 · %s · %s"
+// in the language of msgs.
+func (msgs Messages) MysqlImportRowResult() string {
+	return Catalog.Format(msgs.locale, "mysqlImportRowResult", nil)
+}
+
+// MysqlImportRowAction says "处理"
+// in the language the app shows.
+func MysqlImportRowAction() string { return In(i18n.Locale()).MysqlImportRowAction() }
+
+// MysqlImportRowAction says "处理"
+// in the language of msgs.
+func (msgs Messages) MysqlImportRowAction() string {
+	return Catalog.Format(msgs.locale, "mysqlImportRowAction", nil)
+}
+
+// MysqlImportRowCommitted says "已提交"
+// in the language the app shows.
+func MysqlImportRowCommitted() string { return In(i18n.Locale()).MysqlImportRowCommitted() }
+
+// MysqlImportRowCommitted says "已提交"
+// in the language of msgs.
+func (msgs Messages) MysqlImportRowCommitted() string {
+	return Catalog.Format(msgs.locale, "mysqlImportRowCommitted", nil)
+}
+
+// MysqlImportRowSkipped says "已跳过"
+// in the language the app shows.
+func MysqlImportRowSkipped() string { return In(i18n.Locale()).MysqlImportRowSkipped() }
+
+// MysqlImportRowSkipped says "已跳过"
+// in the language of msgs.
+func (msgs Messages) MysqlImportRowSkipped() string {
+	return Catalog.Format(msgs.locale, "mysqlImportRowSkipped", nil)
+}
+
+// MysqlImportRowRolledBack says "已回滚"
+// in the language the app shows.
+func MysqlImportRowRolledBack() string { return In(i18n.Locale()).MysqlImportRowRolledBack() }
+
+// MysqlImportRowRolledBack says "已回滚"
+// in the language of msgs.
+func (msgs Messages) MysqlImportRowRolledBack() string {
+	return Catalog.Format(msgs.locale, "mysqlImportRowRolledBack", nil)
+}
+
+// MysqlImportRowUncertain says "待核验"
+// in the language the app shows.
+func MysqlImportRowUncertain() string { return In(i18n.Locale()).MysqlImportRowUncertain() }
+
+// MysqlImportRowUncertain says "待核验"
+// in the language of msgs.
+func (msgs Messages) MysqlImportRowUncertain() string {
+	return Catalog.Format(msgs.locale, "mysqlImportRowUncertain", nil)
+}
+
+// MysqlImportRowNotProcessed says "未处理"
+// in the language the app shows.
+func MysqlImportRowNotProcessed() string { return In(i18n.Locale()).MysqlImportRowNotProcessed() }
+
+// MysqlImportRowNotProcessed says "未处理"
+// in the language of msgs.
+func (msgs Messages) MysqlImportRowNotProcessed() string {
+	return Catalog.Format(msgs.locale, "mysqlImportRowNotProcessed", nil)
+}
+
+// MysqlImportSummary says "已提交 %d 行 · 跳过 %d 行 · 失败 %d 行"
+// in the language the app shows.
+func MysqlImportSummary() string { return In(i18n.Locale()).MysqlImportSummary() }
+
+// MysqlImportSummary says "已提交 %d 行 · 跳过 %d 行 · 失败 %d 行"
+// in the language of msgs.
+func (msgs Messages) MysqlImportSummary() string {
+	return Catalog.Format(msgs.locale, "mysqlImportSummary", nil)
+}
+
+// WizardSourceTarget says "源与目标"
+// in the language the app shows.
+func WizardSourceTarget() string { return In(i18n.Locale()).WizardSourceTarget() }
+
+// WizardSourceTarget says "源与目标"
+// in the language of msgs.
+func (msgs Messages) WizardSourceTarget() string {
+	return Catalog.Format(msgs.locale, "wizardSourceTarget", nil)
+}
+
+// WizardSourceSettings says "源设置"
+// in the language the app shows.
+func WizardSourceSettings() string { return In(i18n.Locale()).WizardSourceSettings() }
+
+// WizardSourceSettings says "源设置"
+// in the language of msgs.
+func (msgs Messages) WizardSourceSettings() string {
+	return Catalog.Format(msgs.locale, "wizardSourceSettings", nil)
+}
+
+// WizardFieldMapping says "字段映射"
+// in the language the app shows.
+func WizardFieldMapping() string { return In(i18n.Locale()).WizardFieldMapping() }
+
+// WizardFieldMapping says "字段映射"
+// in the language of msgs.
+func (msgs Messages) WizardFieldMapping() string {
+	return Catalog.Format(msgs.locale, "wizardFieldMapping", nil)
+}
+
+// WizardModeAdvanced says "模式与高级选项"
+// in the language the app shows.
+func WizardModeAdvanced() string { return In(i18n.Locale()).WizardModeAdvanced() }
+
+// WizardModeAdvanced says "模式与高级选项"
+// in the language of msgs.
+func (msgs Messages) WizardModeAdvanced() string {
+	return Catalog.Format(msgs.locale, "wizardModeAdvanced", nil)
+}
+
+// WizardVerifyConfirm says "校验确认"
+// in the language the app shows.
+func WizardVerifyConfirm() string { return In(i18n.Locale()).WizardVerifyConfirm() }
+
+// WizardVerifyConfirm says "校验确认"
+// in the language of msgs.
+func (msgs Messages) WizardVerifyConfirm() string {
+	return Catalog.Format(msgs.locale, "wizardVerifyConfirm", nil)
+}
+
+// WizardExecutionResults says "执行结果"
+// in the language the app shows.
+func WizardExecutionResults() string { return In(i18n.Locale()).WizardExecutionResults() }
+
+// WizardExecutionResults says "执行结果"
+// in the language of msgs.
+func (msgs Messages) WizardExecutionResults() string {
+	return Catalog.Format(msgs.locale, "wizardExecutionResults", nil)
+}
+
+// WizardRangeFields says "范围与字段"
+// in the language the app shows.
+func WizardRangeFields() string { return In(i18n.Locale()).WizardRangeFields() }
+
+// WizardRangeFields says "范围与字段"
+// in the language of msgs.
+func (msgs Messages) WizardRangeFields() string {
+	return Catalog.Format(msgs.locale, "wizardRangeFields", nil)
+}
+
+// WizardFormatSettings says "格式设置"
+// in the language the app shows.
+func WizardFormatSettings() string { return In(i18n.Locale()).WizardFormatSettings() }
+
+// WizardFormatSettings says "格式设置"
+// in the language of msgs.
+func (msgs Messages) WizardFormatSettings() string {
+	return Catalog.Format(msgs.locale, "wizardFormatSettings", nil)
+}
+
+// WizardDestinationFile says "目标文件"
+// in the language the app shows.
+func WizardDestinationFile() string { return In(i18n.Locale()).WizardDestinationFile() }
+
+// WizardDestinationFile says "目标文件"
+// in the language of msgs.
+func (msgs Messages) WizardDestinationFile() string {
+	return Catalog.Format(msgs.locale, "wizardDestinationFile", nil)
+}
+
+// WizardProcessing says "正在处理数据…"
+// in the language the app shows.
+func WizardProcessing() string { return In(i18n.Locale()).WizardProcessing() }
+
+// WizardProcessing says "正在处理数据…"
+// in the language of msgs.
+func (msgs Messages) WizardProcessing() string {
+	return Catalog.Format(msgs.locale, "wizardProcessing", nil)
+}
+
+// WizardHeaderRow says "字段名行"
+// in the language the app shows.
+func WizardHeaderRow() string { return In(i18n.Locale()).WizardHeaderRow() }
+
+// WizardHeaderRow says "字段名行"
+// in the language of msgs.
+func (msgs Messages) WizardHeaderRow() string {
+	return Catalog.Format(msgs.locale, "wizardHeaderRow", nil)
+}
+
+// WizardFirstDataRow says "首个数据行"
+// in the language the app shows.
+func WizardFirstDataRow() string { return In(i18n.Locale()).WizardFirstDataRow() }
+
+// WizardFirstDataRow says "首个数据行"
+// in the language of msgs.
+func (msgs Messages) WizardFirstDataRow() string {
+	return Catalog.Format(msgs.locale, "wizardFirstDataRow", nil)
+}
+
+// WizardLastDataRow says "最后数据行（0 为全部）"
+// in the language the app shows.
+func WizardLastDataRow() string { return In(i18n.Locale()).WizardLastDataRow() }
+
+// WizardLastDataRow says "最后数据行（0 为全部）"
+// in the language of msgs.
+func (msgs Messages) WizardLastDataRow() string {
+	return Catalog.Format(msgs.locale, "wizardLastDataRow", nil)
+}
+
+// WizardMDBToolsDirectory says "MDBTools 程序目录（可选）"
+// in the language the app shows.
+func WizardMDBToolsDirectory() string { return In(i18n.Locale()).WizardMDBToolsDirectory() }
+
+// WizardMDBToolsDirectory says "MDBTools 程序目录（可选）"
+// in the language of msgs.
+func (msgs Messages) WizardMDBToolsDirectory() string {
+	return Catalog.Format(msgs.locale, "wizardMDBToolsDirectory", nil)
+}
+
+// WizardXLSXFirstSheet says "XLSX 使用首个工作表，首行为字段名；数字文本保留精度，公式单元格不支持导入。"
+// in the language the app shows.
+func WizardXLSXFirstSheet() string { return In(i18n.Locale()).WizardXLSXFirstSheet() }
+
+// WizardXLSXFirstSheet says "XLSX 使用首个工作表，首行为字段名；数字文本保留精度，公式单元格不支持导入。"
+// in the language of msgs.
+func (msgs Messages) WizardXLSXFirstSheet() string {
+	return Catalog.Format(msgs.locale, "wizardXLSXFirstSheet", nil)
+}
+
+// WizardXLSXCellLimit says "XLSX 单元格最大 32767 字符；超限会失败并保留原文件。"
+// in the language the app shows.
+func WizardXLSXCellLimit() string { return In(i18n.Locale()).WizardXLSXCellLimit() }
+
+// WizardXLSXCellLimit says "XLSX 单元格最大 32767 字符；超限会失败并保留原文件。"
+// in the language of msgs.
+func (msgs Messages) WizardXLSXCellLimit() string {
+	return Catalog.Format(msgs.locale, "wizardXLSXCellLimit", nil)
+}
+
+// WizardXMLRoot says "XML 根标签"
+// in the language the app shows.
+func WizardXMLRoot() string { return In(i18n.Locale()).WizardXMLRoot() }
+
+// WizardXMLRoot says "XML 根标签"
+// in the language of msgs.
+func (msgs Messages) WizardXMLRoot() string {
+	return Catalog.Format(msgs.locale, "wizardXMLRoot", nil)
+}
+
+// WizardXMLRow says "XML 行标签"
+// in the language the app shows.
+func WizardXMLRow() string { return In(i18n.Locale()).WizardXMLRow() }
+
+// WizardXMLRow says "XML 行标签"
+// in the language of msgs.
+func (msgs Messages) WizardXMLRow() string {
+	return Catalog.Format(msgs.locale, "wizardXMLRow", nil)
+}
+
+// WizardODBCConnection says "临时 ODBC 连接字符串"
+// in the language the app shows.
+func WizardODBCConnection() string { return In(i18n.Locale()).WizardODBCConnection() }
+
+// WizardODBCConnection says "临时 ODBC 连接字符串"
+// in the language of msgs.
+func (msgs Messages) WizardODBCConnection() string {
+	return Catalog.Format(msgs.locale, "wizardODBCConnection", nil)
+}
+
+// WizardExtendedInsert says "使用扩展插入语句"
+// in the language the app shows.
+func WizardExtendedInsert() string { return In(i18n.Locale()).WizardExtendedInsert() }
+
+// WizardExtendedInsert says "使用扩展插入语句"
+// in the language of msgs.
+func (msgs Messages) WizardExtendedInsert() string {
+	return Catalog.Format(msgs.locale, "wizardExtendedInsert", nil)
+}
+
+// WizardSavePreset says "保存向导配置"
+// in the language the app shows.
+func WizardSavePreset() string { return In(i18n.Locale()).WizardSavePreset() }
+
+// WizardSavePreset says "保存向导配置"
+// in the language of msgs.
+func (msgs Messages) WizardSavePreset() string {
+	return Catalog.Format(msgs.locale, "wizardSavePreset", nil)
+}
+
+// WizardPreserveValues says "保留源值"
+// in the language the app shows.
+func WizardPreserveValues() string { return In(i18n.Locale()).WizardPreserveValues() }
+
+// WizardPreserveValues says "保留源值"
+// in the language of msgs.
+func (msgs Messages) WizardPreserveValues() string {
+	return Catalog.Format(msgs.locale, "wizardPreserveValues", nil)
+}
+
+// WizardDeletePreset says "删除向导配置"
+// in the language the app shows.
+func WizardDeletePreset() string { return In(i18n.Locale()).WizardDeletePreset() }
+
+// WizardDeletePreset says "删除向导配置"
+// in the language of msgs.
+func (msgs Messages) WizardDeletePreset() string {
+	return Catalog.Format(msgs.locale, "wizardDeletePreset", nil)
+}
+
+// WizardLoadPreset says "加载向导配置"
+// in the language the app shows.
+func WizardLoadPreset() string { return In(i18n.Locale()).WizardLoadPreset() }
+
+// WizardLoadPreset says "加载向导配置"
+// in the language of msgs.
+func (msgs Messages) WizardLoadPreset() string {
+	return Catalog.Format(msgs.locale, "wizardLoadPreset", nil)
+}
+
+// WizardIncludeHeader says "包含字段名行"
+// in the language the app shows.
+func WizardIncludeHeader() string { return In(i18n.Locale()).WizardIncludeHeader() }
+
+// WizardIncludeHeader says "包含字段名行"
+// in the language of msgs.
+func (msgs Messages) WizardIncludeHeader() string {
+	return Catalog.Format(msgs.locale, "wizardIncludeHeader", nil)
+}
+
+// WizardXMLCompatibility says "原版 XML 空值兼容转换"
+// in the language the app shows.
+func WizardXMLCompatibility() string { return In(i18n.Locale()).WizardXMLCompatibility() }
+
+// WizardXMLCompatibility says "原版 XML 空值兼容转换"
+// in the language of msgs.
+func (msgs Messages) WizardXMLCompatibility() string {
+	return Catalog.Format(msgs.locale, "wizardXMLCompatibility", nil)
+}
+
+// WizardPresetName says "向导配置名称"
+// in the language the app shows.
+func WizardPresetName() string { return In(i18n.Locale()).WizardPresetName() }
+
+// WizardPresetName says "向导配置名称"
+// in the language of msgs.
+func (msgs Messages) WizardPresetName() string {
+	return Catalog.Format(msgs.locale, "wizardPresetName", nil)
+}
+
+// WizardDelimiter says "字段分隔符（使用 \\t 表示制表符）"
+// in the language the app shows.
+func WizardDelimiter() string { return In(i18n.Locale()).WizardDelimiter() }
+
+// WizardDelimiter says "字段分隔符（使用 \\t 表示制表符）"
+// in the language of msgs.
+func (msgs Messages) WizardDelimiter() string {
+	return Catalog.Format(msgs.locale, "wizardDelimiter", nil)
+}
+
+// WizardValidateAll says "完整校验全部源记录"
+// in the language the app shows.
+func WizardValidateAll() string { return In(i18n.Locale()).WizardValidateAll() }
+
+// WizardValidateAll says "完整校验全部源记录"
+// in the language of msgs.
+func (msgs Messages) WizardValidateAll() string {
+	return Catalog.Format(msgs.locale, "wizardValidateAll", nil)
+}
+
+// WizardExportComplete says "导出完成"
+// in the language the app shows.
+func WizardExportComplete() string { return In(i18n.Locale()).WizardExportComplete() }
+
+// WizardExportComplete says "导出完成"
+// in the language of msgs.
+func (msgs Messages) WizardExportComplete() string {
+	return Catalog.Format(msgs.locale, "wizardExportComplete", nil)
+}
+
+// WizardXMLAttributes says "将 XML 属性作为字段"
+// in the language the app shows.
+func WizardXMLAttributes() string { return In(i18n.Locale()).WizardXMLAttributes() }
+
+// WizardXMLAttributes says "将 XML 属性作为字段"
+// in the language of msgs.
+func (msgs Messages) WizardXMLAttributes() string {
+	return Catalog.Format(msgs.locale, "wizardXMLAttributes", nil)
+}
+
+// WizardDecimalSeparator says "小数点符号"
+// in the language the app shows.
+func WizardDecimalSeparator() string { return In(i18n.Locale()).WizardDecimalSeparator() }
+
+// WizardDecimalSeparator says "小数点符号"
+// in the language of msgs.
+func (msgs Messages) WizardDecimalSeparator() string {
+	return Catalog.Format(msgs.locale, "wizardDecimalSeparator", nil)
+}
+
+// WizardSheetNumber says "工作表序号（从 1 开始）"
+// in the language the app shows.
+func WizardSheetNumber() string { return In(i18n.Locale()).WizardSheetNumber() }
+
+// WizardSheetNumber says "工作表序号（从 1 开始）"
+// in the language of msgs.
+func (msgs Messages) WizardSheetNumber() string {
+	return Catalog.Format(msgs.locale, "wizardSheetNumber", nil)
+}
+
+// WizardValidationCount says "已完整校验 %d 行 · 转换 %d 个值"
+// in the language the app shows.
+func WizardValidationCount() string { return In(i18n.Locale()).WizardValidationCount() }
+
+// WizardValidationCount says "已完整校验 %d 行 · 转换 %d 个值"
+// in the language of msgs.
+func (msgs Messages) WizardValidationCount() string {
+	return Catalog.Format(msgs.locale, "wizardValidationCount", nil)
+}
+
+// WizardPartialCommit says "已提交 %d 行；后续导入失败，本次向导不会重放："
+// in the language the app shows.
+func WizardPartialCommit() string { return In(i18n.Locale()).WizardPartialCommit() }
+
+// WizardPartialCommit says "已提交 %d 行；后续导入失败，本次向导不会重放："
+// in the language of msgs.
+func (msgs Messages) WizardPartialCommit() string {
+	return Catalog.Format(msgs.locale, "wizardPartialCommit", nil)
+}
+
+// WizardReadCount says "已读取 %d 行，预览最多 100 行"
+// in the language the app shows.
+func WizardReadCount() string { return In(i18n.Locale()).WizardReadCount() }
+
+// WizardReadCount says "已读取 %d 行，预览最多 100 行"
+// in the language of msgs.
+func (msgs Messages) WizardReadCount() string {
+	return Catalog.Format(msgs.locale, "wizardReadCount", nil)
+}
+
+// WizardReread says "应用源设置并重新读取"
+// in the language the app shows.
+func WizardReread() string { return In(i18n.Locale()).WizardReread() }
+
+// WizardReread says "应用源设置并重新读取"
+// in the language of msgs.
+func (msgs Messages) WizardReread() string {
+	return Catalog.Format(msgs.locale, "wizardReread", nil)
+}
+
+// WizardIgnoreForeignKeys says "忽略外键约束"
+// in the language the app shows.
+func WizardIgnoreForeignKeys() string { return In(i18n.Locale()).WizardIgnoreForeignKeys() }
+
+// WizardIgnoreForeignKeys says "忽略外键约束"
+// in the language of msgs.
+func (msgs Messages) WizardIgnoreForeignKeys() string {
+	return Catalog.Format(msgs.locale, "wizardIgnoreForeignKeys", nil)
+}
+
+// WizardQualifier says "文本识别符"
+// in the language the app shows.
+func WizardQualifier() string { return In(i18n.Locale()).WizardQualifier() }
+
+// WizardQualifier says "文本识别符"
+// in the language of msgs.
+func (msgs Messages) WizardQualifier() string {
+	return Catalog.Format(msgs.locale, "wizardQualifier", nil)
+}
+
+// WizardDateSeparator says "日期分隔符"
+// in the language the app shows.
+func WizardDateSeparator() string { return In(i18n.Locale()).WizardDateSeparator() }
+
+// WizardDateSeparator says "日期分隔符"
+// in the language of msgs.
+func (msgs Messages) WizardDateSeparator() string {
+	return Catalog.Format(msgs.locale, "wizardDateSeparator", nil)
+}
+
+// WizardTimeSeparator says "时间分隔符"
+// in the language the app shows.
+func WizardTimeSeparator() string { return In(i18n.Locale()).WizardTimeSeparator() }
+
+// WizardTimeSeparator says "时间分隔符"
+// in the language of msgs.
+func (msgs Messages) WizardTimeSeparator() string {
+	return Catalog.Format(msgs.locale, "wizardTimeSeparator", nil)
+}
+
+// WizardPresetLimit says "最多保存 20 个向导配置"
+// in the language the app shows.
+func WizardPresetLimit() string { return In(i18n.Locale()).WizardPresetLimit() }
+
+// WizardPresetLimit says "最多保存 20 个向导配置"
+// in the language of msgs.
+func (msgs Messages) WizardPresetLimit() string {
+	return Catalog.Format(msgs.locale, "wizardPresetLimit", nil)
+}
+
+// WizardStatementKB says "最大语句大小（KB）"
+// in the language the app shows.
+func WizardStatementKB() string { return In(i18n.Locale()).WizardStatementKB() }
+
+// WizardStatementKB says "最大语句大小（KB）"
+// in the language of msgs.
+func (msgs Messages) WizardStatementKB() string {
+	return Catalog.Format(msgs.locale, "wizardStatementKB", nil)
+}
+
+// WizardODBCDriver says "本机 ODBC 驱动名称"
+// in the language the app shows.
+func WizardODBCDriver() string { return In(i18n.Locale()).WizardODBCDriver() }
+
+// WizardODBCDriver says "本机 ODBC 驱动名称"
+// in the language of msgs.
+func (msgs Messages) WizardODBCDriver() string {
+	return Catalog.Format(msgs.locale, "wizardODBCDriver", nil)
+}
+
+// WizardLibraryPath says "本机组件库路径（可选）"
+// in the language the app shows.
+func WizardLibraryPath() string { return In(i18n.Locale()).WizardLibraryPath() }
+
+// WizardLibraryPath says "本机组件库路径（可选）"
+// in the language of msgs.
+func (msgs Messages) WizardLibraryPath() string {
+	return Catalog.Format(msgs.locale, "wizardLibraryPath", nil)
+}
+
+// WizardInspectSource says "检测组件并读取源表"
+// in the language the app shows.
+func WizardInspectSource() string { return In(i18n.Locale()).WizardInspectSource() }
+
+// WizardInspectSource says "检测组件并读取源表"
+// in the language of msgs.
+func (msgs Messages) WizardInspectSource() string {
+	return Catalog.Format(msgs.locale, "wizardInspectSource", nil)
+}
+
+// WizardAddSource says "添加来源"
+// in the language the app shows.
+func WizardAddSource() string { return In(i18n.Locale()).WizardAddSource() }
+
+// WizardAddSource says "添加来源"
+// in the language of msgs.
+func (msgs Messages) WizardAddSource() string {
+	return Catalog.Format(msgs.locale, "wizardAddSource", nil)
+}
+
+// WizardSourcePath says "源数据库文件路径"
+// in the language the app shows.
+func WizardSourcePath() string { return In(i18n.Locale()).WizardSourcePath() }
+
+// WizardSourcePath says "源数据库文件路径"
+// in the language of msgs.
+func (msgs Messages) WizardSourcePath() string {
+	return Catalog.Format(msgs.locale, "wizardSourcePath", nil)
+}
+
+// WizardSourceChanged says "源设置已改变，请重新读取来源后校验"
+// in the language the app shows.
+func WizardSourceChanged() string { return In(i18n.Locale()).WizardSourceChanged() }
+
+// WizardSourceChanged says "源设置已改变，请重新读取来源后校验"
+// in the language of msgs.
+func (msgs Messages) WizardSourceChanged() string {
+	return Catalog.Format(msgs.locale, "wizardSourceChanged", nil)
+}
+
+// WizardTargetSummary says "目标 %s · %s · %d 行"
+// in the language the app shows.
+func WizardTargetSummary() string { return In(i18n.Locale()).WizardTargetSummary() }
+
+// WizardTargetSummary says "目标 %s · %s · %d 行"
+// in the language of msgs.
+func (msgs Messages) WizardTargetSummary() string {
+	return Catalog.Format(msgs.locale, "wizardTargetSummary", nil)
+}
+
+// WizardTargetResult says "目标 %s · 已提交 %d 行 · 跳过 %d 行 · 失败 %d 行"
+// in the language the app shows.
+func WizardTargetResult() string { return In(i18n.Locale()).WizardTargetResult() }
+
+// WizardTargetResult says "目标 %s · 已提交 %d 行 · 跳过 %d 行 · 失败 %d 行"
+// in the language of msgs.
+func (msgs Messages) WizardTargetResult() string {
+	return Catalog.Format(msgs.locale, "wizardTargetResult", nil)
+}
+
+// WizardDestinationPath says "目标文件路径"
+// in the language the app shows.
+func WizardDestinationPath() string { return In(i18n.Locale()).WizardDestinationPath() }
+
+// WizardDestinationPath says "目标文件路径"
+// in the language of msgs.
+func (msgs Messages) WizardDestinationPath() string {
+	return Catalog.Format(msgs.locale, "wizardDestinationPath", nil)
+}
+
+// WizardConversionPreview says "第 %d 行 · 原值 %s → 转换值 %s"
+// in the language the app shows.
+func WizardConversionPreview() string { return In(i18n.Locale()).WizardConversionPreview() }
+
+// WizardConversionPreview says "第 %d 行 · 原值 %s → 转换值 %s"
+// in the language of msgs.
+func (msgs Messages) WizardConversionPreview() string {
+	return Catalog.Format(msgs.locale, "wizardConversionPreview", nil)
+}
+
+// WizardCompleteSources says "请完成每个来源的映射、校验和表名确认"
+// in the language the app shows.
+func WizardCompleteSources() string { return In(i18n.Locale()).WizardCompleteSources() }
+
+// WizardCompleteSources says "请完成每个来源的映射、校验和表名确认"
+// in the language of msgs.
+func (msgs Messages) WizardCompleteSources() string {
+	return Catalog.Format(msgs.locale, "wizardCompleteSources", nil)
+}
+
+// WizardReadSource says "读取并校验源记录"
+// in the language the app shows.
+func WizardReadSource() string { return In(i18n.Locale()).WizardReadSource() }
+
+// WizardReadSource says "读取并校验源记录"
+// in the language of msgs.
+func (msgs Messages) WizardReadSource() string {
+	return Catalog.Format(msgs.locale, "wizardReadSource", nil)
+}
+
+// WizardLoadTargetFields says "读取目标表字段"
+// in the language the app shows.
+func WizardLoadTargetFields() string { return In(i18n.Locale()).WizardLoadTargetFields() }
+
+// WizardLoadTargetFields says "读取目标表字段"
+// in the language of msgs.
+func (msgs Messages) WizardLoadTargetFields() string {
+	return Catalog.Format(msgs.locale, "wizardLoadTargetFields", nil)
+}
+
+// WizardChooseDestination says "选择目标文件"
+// in the language the app shows.
+func WizardChooseDestination() string { return In(i18n.Locale()).WizardChooseDestination() }
+
+// WizardChooseDestination says "选择目标文件"
+// in the language of msgs.
+func (msgs Messages) WizardChooseDestination() string {
+	return Catalog.Format(msgs.locale, "wizardChooseDestination", nil)
+}
+
+// WizardNeedTargetFields says "请先读取目标表字段"
+// in the language the app shows.
+func WizardNeedTargetFields() string { return In(i18n.Locale()).WizardNeedTargetFields() }
+
+// WizardNeedTargetFields says "请先读取目标表字段"
+// in the language of msgs.
+func (msgs Messages) WizardNeedTargetFields() string {
+	return Catalog.Format(msgs.locale, "wizardNeedTargetFields", nil)
+}
+
+// WizardExistingTable says "已有表"
+// in the language the app shows.
+func WizardExistingTable() string { return In(i18n.Locale()).WizardExistingTable() }
+
+// WizardExistingTable says "已有表"
+// in the language of msgs.
+func (msgs Messages) WizardExistingTable() string {
+	return Catalog.Format(msgs.locale, "wizardExistingTable", nil)
+}
+
+// WizardPerSourceTransaction says "每个目标分别提交；后续失败不会回滚已完成的目标。"
+// in the language the app shows.
+func WizardPerSourceTransaction() string { return In(i18n.Locale()).WizardPerSourceTransaction() }
+
+// WizardPerSourceTransaction says "每个目标分别提交；后续失败不会回滚已完成的目标。"
+// in the language of msgs.
+func (msgs Messages) WizardPerSourceTransaction() string {
+	return Catalog.Format(msgs.locale, "wizardPerSourceTransaction", nil)
+}
+
+// WizardFileFormat says "文件格式"
+// in the language the app shows.
+func WizardFileFormat() string { return In(i18n.Locale()).WizardFileFormat() }
+
+// WizardFileFormat says "文件格式"
+// in the language of msgs.
+func (msgs Messages) WizardFileFormat() string {
+	return Catalog.Format(msgs.locale, "wizardFileFormat", nil)
+}
+
+// WizardRemoveSource says "移除来源"
+// in the language the app shows.
+func WizardRemoveSource() string { return In(i18n.Locale()).WizardRemoveSource() }
+
+// WizardRemoveSource says "移除来源"
+// in the language of msgs.
+func (msgs Messages) WizardRemoveSource() string {
+	return Catalog.Format(msgs.locale, "wizardRemoveSource", nil)
+}
+
+// WizardDetectEncoding says "自动检测编码"
+// in the language the app shows.
+func WizardDetectEncoding() string { return In(i18n.Locale()).WizardDetectEncoding() }
+
+// WizardDetectEncoding says "自动检测编码"
+// in the language of msgs.
+func (msgs Messages) WizardDetectEncoding() string {
+	return Catalog.Format(msgs.locale, "wizardDetectEncoding", nil)
+}

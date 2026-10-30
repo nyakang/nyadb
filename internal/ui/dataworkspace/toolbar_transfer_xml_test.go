@@ -101,11 +101,11 @@ func TestDataTransferXMLRejectsEntitiesNestedTreesInconsistentAndInvalidValues(t
 			t.Fatalf("accepted unsupported XML %.120q", source)
 		}
 	}
-	tooMany := `<RECORDS>` + strings.Repeat(`<RECORD><id>1</id></RECORD>`, 201) + `</RECORDS>`
+	tooMany := `<RECORDS>` + strings.Repeat(`<RECORD><id>1</id></RECORD>`, mysqlsvc.MaxMySQLDataImportRows+1) + `</RECORDS>`
 	if _, err := mysqlDataParseImport(strings.NewReader(tooMany), "XML"); err == nil {
-		t.Fatal("silently truncated XML after 200 rows")
+		t.Fatal("XML import row limit was ignored")
 	}
-	oversized := `<RECORDS><RECORD><note>` + strings.Repeat("a", mysqlsvc.MySQLDataEditMaxBytes) + `</note></RECORD></RECORDS>`
+	oversized := `<RECORDS><RECORD><note>` + strings.Repeat("a", mysqlsvc.MySQLDataEditMaxBytes+1) + `</note></RECORD></RECORDS>`
 	if _, err := mysqlDataParseImport(strings.NewReader(oversized), "XML"); err == nil {
 		t.Fatal("XML file limit was ignored")
 	}

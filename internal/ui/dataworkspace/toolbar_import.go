@@ -1,8 +1,11 @@
 package dataworkspace
 
 import (
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/big"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -30,9 +33,240 @@ func (s *State) newTableImporter() mysqlDataNewTableImporter {
 	return s.runtime().NewTableImporter
 }
 
+func (s *State) importer() mysqlDataImporter {
+	if s.Importer != nil {
+		return s.Importer
+	}
+	return s.runtime().Importer
+}
+
+func mysqlDataImportMode(t *Document) string {
+	if t.transfer.Target == "new" || t.transfer.Mode == "" {
+		return "append"
+	}
+	return t.transfer.Mode
+}
+
+func mysqlDataImportNeedsMatch(mode string) bool {
+	return mode == "update" || mode == "upsert" || mode == "insert_missing" || mode == "delete"
+}
+
+func mysqlDataImportConfirmed(t *Document) bool {
+	return t.transfer.Confirmation == mysqlDataImportDestination(t) &&
+		(mysqlDataImportMode(t) != "replace" || t.transfer.DestructiveConfirmation == mysqlDataImportDestination(t))
+}
+
+func mysqlDataImportModeLabel(mode string) string {
+	switch mode {
+	case "update":
+		return locales.Text("更新匹配记录")
+	case "upsert":
+		return locales.Text("追加或更新")
+	case "insert_missing":
+		return locales.Text("仅追加未匹配记录")
+	case "delete":
+		return locales.Text("删除匹配记录")
+	case "replace":
+		return locales.Text("清空目标后复制")
+	default:
+		return locales.Text("追加新记录")
+	}
+}
+
+func (s *State) dataImportModeControls(c *ui.Context, t *Document) {
+	tr := &t.transfer
+	if tr.Target != "new" {
+		ui.Row(c).Gap(8).Children(func() {
+			ui.Text(c, locales.Text("导入模式"))
+			mysqlDataRuleSelect(c, &tr.Mode, []string{"append", "update", "upsert", "insert_missing", "delete", "replace"}, mysqlDataImportModeLabel).Width(220).Disabled(tr.Busy || tr.Submitted)
+		})
+	}
+	ui.Checkbox(c, &tr.ContinueOnError, locales.Text("遇到行错误时继续")).Disabled(tr.Busy || tr.Submitted)
+	if tr.ContinueOnError {
+		ui.Text(c, locales.Text("失败行会跳过，成功行一起提交；完成后逐行显示结果。")).TextColor(theme.Colors(c).Muted).FontSize(theme.Font(c, 11))
+	}
+	mode := mysqlDataImportMode(t)
+	if mode == "replace" {
+		ui.Text(c, locales.Text("此模式会删除目标表全部记录，再导入文件；提交前可取消回滚。")).TextColor(theme.Colors(c).Error)
+		ui.TextInput(c, &tr.DestructiveConfirmation).Label(locales.Text("再次输入表名称以确认清空")).Placeholder(mysqlDataImportDestination(t)).Disabled(tr.Busy || tr.Submitted).Grow(1)
+	}
+	if mysqlDataImportNeedsMatch(mode) && tr.Input != nil {
+		ui.Text(c, locales.Text("匹配字段（须为完整主键或唯一键）")).Bold()
+		ui.Column(c).Gap(3).Children(func() {
+			for _, field := range tr.Mapping {
+				if field == "" {
+					continue
+				}
+				checked := slices.Contains(tr.MatchColumns, field)
+				ui.Checkbox(c, &checked, field).Disabled(tr.Busy || tr.Submitted)
+				if checked && !slices.Contains(tr.MatchColumns, field) {
+					tr.MatchColumns = append(tr.MatchColumns, field)
+				} else if !checked {
+					tr.MatchColumns = slices.DeleteFunc(tr.MatchColumns, func(x string) bool { return x == field })
+				}
+			}
+		})
+	}
+}
+
+func (s *State) dataImportResultRows(c *ui.Context, t *Document) {
+	if len(t.transfer.RowResults) == 0 && t.transfer.Journal == nil {
+		return
+	}
+	ui.Text(c, locales.Text("逐行导入结果")).Bold()
+	columns := []ui.TableColumn{{ID: "row", Title: locales.Text("逐行导入结果"), Width: 570, MinWidth: 120}}
+	count := len(t.transfer.RowResults)
+	if t.transfer.Journal != nil {
+		count = int(t.transfer.Journal.total)
+	}
+	ui.Table(c, &t.transfer.ResultGrid, columns, count, func(index, _ int) {
+		var row mysqlsvc.MySQLDataImportRowResult
+		if t.transfer.Journal != nil {
+			var err error
+			committed, uncertain := t.transfer.JournalCommitted, t.transfer.JournalUncertain
+			if len(t.transfer.Batch) > 0 {
+				committed, uncertain = mysqlDataBatchRowSettlement(t.transfer.Batch, int64(index), t.transfer.JournalUncertain)
+			}
+			row, err = t.transfer.Journal.Row(int64(index), committed, uncertain)
+			if err != nil {
+				row = mysqlsvc.MySQLDataImportRowResult{Row: index + 1, Status: "uncertain", Error: "result journal unavailable"}
+			}
+		} else {
+			row = t.transfer.RowResults[index]
+		}
+		status := mysqlDataImportRowStatus(row.Status)
+		label := fmt.Sprintf(locales.Text("第 %d 行 · %s · %s"), row.Row, mysqlDataImportActionLabel(row.Kind), status)
+		if row.Table != "" {
+			label = row.Database + "." + row.Table + " · " + label
+		}
+		if row.Error != "" {
+			label += " · " + row.Error
+		}
+		ui.Text(c, label).FontSize(theme.Font(c, 11)).SingleLine().Tooltip(label)
+	}).Height(150).FillWidth()
+}
+
+func mysqlDataImportActionLabel(kind string) string {
+	switch kind {
+	case "insert":
+		return locales.Text("追加")
+	case "update":
+		return locales.Text("更新")
+	case "delete":
+		return locales.Text("删除")
+	default:
+		return locales.Text("处理")
+	}
+}
+
+func mysqlDataImportRowStatus(status string) string {
+	switch status {
+	case "committed":
+		return locales.Text("已提交")
+	case "skipped":
+		return locales.Text("已跳过")
+	case "failed":
+		return locales.Text("失败")
+	case "rolled_back":
+		return locales.Text("已回滚")
+	case "uncertain":
+		return locales.Text("待核验")
+	default:
+		return locales.Text("未处理")
+	}
+}
+
+func (s *State) consumeDataImportResult(services ui.Services, t *Document, result mysqlDataTransferResult, stale bool) {
+	tr, imported := &t.transfer, result.Imported
+	tr.Created, tr.ResultTable = imported.Created, result.Destination
+	tr.RowResults = append([]mysqlsvc.MySQLDataImportRowResult(nil), imported.Rows...)
+	if result.NewTable {
+		entry := result.CreationHistory
+		entry.Failed = !imported.Created || imported.CreationUncertain || stale
+		entry.Message = locales.Text("目标表已创建")
+		if entry.Failed {
+			entry.Message = mysqlDataHistoryError(result.Err, stale, false, imported.CreationUncertain)
+		}
+		s.appendDataHistory(t, entry)
+	}
+	committed, skipped, failed := 0, 0, 0
+	settled := len(imported.Rows) == result.Rows
+	for i, row := range imported.Rows {
+		settled = settled && row.Row == i+1
+		switch row.Status {
+		case "committed":
+			settled = settled && (row.Kind == "insert" || row.Kind == "update" || row.Kind == "delete")
+			committed++
+		case "skipped":
+			settled = settled && row.Kind == "skip"
+			skipped++
+		case "failed":
+			settled = settled && row.Kind == "error"
+			failed++
+		default:
+			settled = false
+		}
+	}
+	uncertain := stale || imported.CreationUncertain || imported.CommitUncertain || imported.Saved != nil && imported.Saved.CommitUncertain || imported.Committed && (!settled || result.Err != nil) || result.Err == nil && (!imported.Committed || !settled || result.NewTable && !imported.Created)
+	if uncertain {
+		tr.Uncertain = true
+		tr.Err = locales.Text("导入结果不确定，禁止重放；请核验数据库")
+		for i := range tr.RowResults {
+			if tr.RowResults[i].Status == "committed" {
+				tr.RowResults[i].Status = "uncertain"
+			}
+		}
+		if !result.NewTable {
+			t.edit.Uncertain = cloneEditResult(imported.Saved)
+			if t.edit.Uncertain == nil {
+				t.edit.Uncertain = &mysqlsvc.MySQLDataEditResult{}
+			}
+			t.edit.Uncertain.CommitUncertain = true
+		}
+	} else if result.Err != nil {
+		tr.Err = locales.Text("导入失败；本次向导不会重放：") + result.Err.Error()
+		if result.NewTable && imported.Created {
+			tr.Err = fmt.Sprintf(locales.Text("目标表 %s 已创建，数据导入失败；表保留。本次向导不会重放："), result.Destination) + result.Err.Error()
+		}
+	} else {
+		tr.Completed = true
+		tr.Err = fmt.Sprintf(locales.Text("已提交 %d 行 · 跳过 %d 行 · 失败 %d 行"), committed, skipped, failed)
+		s.setStatus(tr.Err)
+		if !result.NewTable {
+			s.Load(services, t, true)
+		}
+	}
+	// History contains qualified operation summaries and actual committed counts,
+	// never imported values or server diagnostics that can echo private data.
+	counts := map[string]int{}
+	for _, row := range tr.RowResults {
+		kind := strings.ToUpper(row.Kind)
+		if kind == "INSERT" || kind == "UPDATE" || kind == "DELETE" {
+			if row.Status == "committed" {
+				counts[kind]++
+			}
+		}
+	}
+	for _, kind := range []string{"INSERT", "UPDATE", "DELETE"} {
+		if counts[kind] == 0 {
+			continue
+		}
+		s.appendDataHistory(t, mysqlDataHistoryEntry{Kind: kind, At: time.Now(), Rows: counts[kind], Summary: true, SQL: kind + " " + mysqlDataHistoryTable(t.database, result.Destination), Message: tr.Err})
+	}
+	if failed > 0 || result.Err != nil || uncertain {
+		s.appendDataHistory(t, mysqlDataHistoryEntry{Kind: "INSERT", At: time.Now(), Failed: true, Summary: true, SQL: "IMPORT " + mysqlDataHistoryTable(t.database, result.Destination), Message: mysqlDataHistoryError(result.Err, stale, false, uncertain)})
+	}
+	if result.NewTable && (imported.Created || imported.CreationUncertain) && s.deps.TableImported != nil {
+		s.deps.TableImported(services, TableImportEvent{ProfileID: result.Profile, Generation: result.Generation, Database: t.database, Table: result.Destination, Created: imported.Created, Uncertain: tr.Uncertain, Completed: tr.Completed})
+	}
+}
+
 func mysqlDataImportDestination(t *Document) string {
 	if t.transfer.Target == "new" {
 		return t.transfer.NewName
+	}
+	if t.transfer.TargetTable != "" {
+		return t.transfer.TargetTable
 	}
 	return t.table
 }
@@ -45,13 +279,13 @@ func (s *State) dataImportTargetControls(c *ui.Context, t *Document) {
 			if x == "new" {
 				return locales.Text("新建目标表")
 			}
-			return locales.Text("当前表")
+			return locales.Text("已有表")
 		}).Width(180).Disabled(tr.Busy || tr.Submitted)
 	})
 	if tr.Target == "new" {
 		ui.TextInput(c, &tr.NewName).Label(locales.Text("新目标表名称")).Disabled(tr.Busy || tr.Submitted).Grow(1)
 		ui.Text(c, locales.Text("新表将在当前数据库创建；可修改字段名、类型、可空和主键。建表成功后若数据失败，目标表保留。")).FontSize(theme.Font(c, 11)).TextColor(theme.Colors(c).Muted)
-		if s.newTableImporter() == nil {
+		if s.newTableImporter() == nil && s.importer() == nil {
 			ui.Text(c, locales.Text("新表导入服务不可用")).TextColor(theme.Colors(c).Error)
 		}
 	}
@@ -60,7 +294,10 @@ func (s *State) dataImportTargetControls(c *ui.Context, t *Document) {
 func mysqlDataImportMapping(t *Document) ([]string, []mysqlsvc.MySQLDataImportColumn, []mysqlsvc.MySQLStructureColumn, error) {
 	tr := &t.transfer
 	if tr.Target != "new" {
-		return tr.Mapping, nil, t.page.ColumnMetadata, nil
+		if tr.TargetTable != "" && tr.TargetColumns == nil {
+			return nil, nil, nil, fmt.Errorf("%s", locales.Text("请先读取目标表字段"))
+		}
+		return tr.Mapping, nil, mysqlDataImportTargetMetadata(t), nil
 	}
 	if tr.Input == nil || len(tr.NewColumns) != len(tr.Input.Fields) {
 		return nil, nil, nil, mysqlsvc.ErrMySQLDataPage
@@ -77,6 +314,36 @@ func mysqlDataImportMapping(t *Document) ([]string, []mysqlsvc.MySQLDataImportCo
 	return mapping, columns, metadata, err
 }
 
+func mysqlDataImportTargetMetadata(t *Document) []mysqlsvc.MySQLStructureColumn {
+	if t.transfer.TargetTable != "" {
+		return t.transfer.TargetColumns
+	}
+	if t.page != nil {
+		return t.page.ColumnMetadata
+	}
+	return nil
+}
+
+func mysqlDataResetTargetMapping(t *Document) {
+	tr := &t.transfer
+	tr.PreparationKey, tr.Confirmation, tr.DestructiveConfirmation = "", "", ""
+	tr.MatchColumns = nil
+	if tr.Input == nil {
+		return
+	}
+	tr.Mapping = make([]string, len(tr.Input.Fields))
+	for i, field := range tr.Input.Fields {
+		for _, col := range mysqlDataImportTargetMetadata(t) {
+			if field == col.Name && !mysqlsvc.MySQLDataColumnGenerated(col) {
+				tr.Mapping[i] = field
+				if col.Key == "PRI" {
+					tr.MatchColumns = append(tr.MatchColumns, field)
+				}
+			}
+		}
+	}
+}
+
 func mysqlDataImportRequest(t *Document) ([]mysqlsvc.MySQLDataImportColumn, []mysqlsvc.MySQLDataEdit, error) {
 	if t.page == nil {
 		return nil, nil, mysqlsvc.ErrMySQLDataPage
@@ -91,11 +358,88 @@ func mysqlDataImportRequest(t *Document) ([]mysqlsvc.MySQLDataImportColumn, []my
 	if err != nil {
 		return nil, nil, err
 	}
-	edits, err := mysqlDataImportEditsWithOptions(t.transfer.Input, mapping, metadata, t.transfer.EmptyAsNull)
-	if err == nil && t.transfer.Target == "new" {
-		err = mysqlsvc.ValidateMySQLDataNewTableImport(columns, edits)
+	edits, err := mysqlDataImportMappedEdits(t, mapping, metadata)
+	if err == nil {
+		err = mysqlsvc.ValidateMySQLDataImportRequest(metadata, mysqlDataImportServiceRequest(t, columns, edits))
 	}
 	return columns, edits, err
+}
+
+func mysqlDataImportServiceRequest(t *Document, columns []mysqlsvc.MySQLDataImportColumn, edits []mysqlsvc.MySQLDataEdit) mysqlsvc.MySQLDataImportRequest {
+	request := mysqlsvc.MySQLDataImportRequest{Mode: mysqlDataImportMode(t), ContinueOnError: t.transfer.ContinueOnError, NewTable: t.transfer.Target == "new", Columns: append([]mysqlsvc.MySQLDataImportColumn(nil), columns...), Edits: edits}
+	if mysqlDataImportNeedsMatch(request.Mode) {
+		request.MatchColumns = append([]string(nil), t.transfer.MatchColumns...)
+	}
+	return request
+}
+
+// Mapped source values remain immutable; the service shares bounded validation
+// with the review and determines each row's actual action inside its transaction.
+func mysqlDataImportMappedEdits(t *Document, mapping []string, metadata []mysqlsvc.MySQLStructureColumn) ([]mysqlsvc.MySQLDataEdit, error) {
+	input := t.transfer.Input
+	if input == nil || len(mapping) != len(input.Fields) || len(input.Rows) == 0 || len(input.Rows) > mysqlsvc.MaxMySQLDataImportRows {
+		return nil, mysqlsvc.ErrMySQLDataPage
+	}
+	allowed := map[string]mysqlsvc.MySQLStructureColumn{}
+	for _, col := range metadata {
+		allowed[col.Name] = col
+	}
+	seen := map[string]bool{}
+	for _, field := range mapping {
+		if field == "" {
+			continue
+		}
+		col, ok := allowed[field]
+		if !ok || seen[field] || mysqlsvc.MySQLDataColumnGenerated(col) || mysqlDataSpatialField(col) {
+			return nil, fmt.Errorf("%s", locales.Text("字段映射包含重复、未知或生成字段"))
+		}
+		seen[field] = true
+	}
+	if len(seen) == 0 {
+		return nil, fmt.Errorf("%s", locales.Text("请映射至少一个字段"))
+	}
+	edits := make([]mysqlsvc.MySQLDataEdit, len(input.Rows))
+	for i, row := range input.Rows {
+		if len(row) != len(mapping) {
+			return nil, mysqlsvc.ErrMySQLDataPage
+		}
+		values := make(map[string]mysqlsvc.MySQLDataValue, len(seen))
+		for j, field := range mapping {
+			if field == "" {
+				continue
+			}
+			value := mysqlDataImportValue(row[j], t.transfer.EmptyAsNull)
+			if !value.Null && !value.Binary && mysqlDataBinaryField(allowed[field]) && strings.HasPrefix(value.Text, "0x") {
+				if b, err := hex.DecodeString(value.Text[2:]); err == nil {
+					value = mysqlsvc.MySQLDataValue{Binary: true, Bytes: b}
+				}
+			}
+			value.Bytes = slices.Clone(value.Bytes)
+			values[field] = value
+		}
+		edits[i] = mysqlsvc.MySQLDataEdit{Kind: "insert", Values: values}
+	}
+	return edits, nil
+}
+
+// Parsed input is immutable in the UI. Revalidate only changes to mapping or
+// options while rendering; submission always builds and validates a new owned
+// request. A large input therefore does not allocate its entire batch per frame.
+func mysqlDataImportReviewValidation(t *Document) (int, error) {
+	tr := &t.transfer
+	metadata := mysqlDataImportTargetMetadata(t)
+	key, _ := json.Marshal(struct {
+		Target, NewName, Mode, Destination string
+		Empty, Continue                    bool
+		Mapping, Match                     []string
+		Columns                            []mysqlsvc.MySQLDataImportColumn
+		Metadata                           []mysqlsvc.MySQLStructureColumn
+	}{tr.Target, tr.NewName, tr.Mode, mysqlDataImportDestination(t), tr.EmptyAsNull, tr.ContinueOnError, tr.Mapping, tr.MatchColumns, tr.NewColumns, metadata})
+	if tr.ReviewInput != tr.Input || tr.ReviewKey != string(key) {
+		_, edits, err := mysqlDataImportRequest(t)
+		tr.ReviewInput, tr.ReviewKey, tr.ReviewRows, tr.ReviewErr = tr.Input, string(key), len(edits), err
+	}
+	return tr.ReviewRows, tr.ReviewErr
 }
 
 func (s *State) dataImportReview(c *ui.Context, t *Document) {
@@ -131,7 +475,7 @@ func (s *State) dataImportReview(c *ui.Context, t *Document) {
 				}
 			} else {
 				choices := []string{""}
-				for _, col := range t.page.ColumnMetadata {
+				for _, col := range mysqlDataImportTargetMetadata(t) {
 					if !mysqlsvc.MySQLDataColumnGenerated(col) {
 						choices = append(choices, col.Name)
 					}
@@ -151,11 +495,11 @@ func (s *State) dataImportReview(c *ui.Context, t *Document) {
 		})
 	})
 	mapping, _, _, mappingErr := mysqlDataImportMapping(t)
-	_, edits, err := mysqlDataImportRequest(t)
+	count, err := mysqlDataImportReviewValidation(t)
 	if err != nil {
 		ui.Text(c, err.Error()).TextColor(colors.Error)
 	} else {
-		ui.Text(c, fmt.Sprintf(locales.Text("已校验 %d 行，预览前 %d 行"), len(edits), min(5, len(edits))))
+		ui.Text(c, fmt.Sprintf(locales.Text("已校验 %d 行，预览前 %d 行"), count, min(5, count)))
 	}
 	if mappingErr == nil {
 		ui.Scroll(c).MaxHeight(90).Children(func() {
