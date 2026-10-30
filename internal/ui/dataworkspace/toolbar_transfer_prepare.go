@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"slices"
 	"strings"
@@ -251,7 +252,8 @@ func (s *State) chooseDataExportPath(services ui.Services, t *Document) {
 	if t.transfer.Busy {
 		return
 	}
-	_, out, request, gen := s.beginDataTransfer(t)
+	ctx, out, request, gen := s.beginDataTransfer(t)
+	pickerDone := s.beginDataPicker(t)
 	profile, format, table := t.profileID, t.transfer.Format, t.table
 	dialog := t.transfer.SaveDialog
 	if dialog == nil {
@@ -259,6 +261,10 @@ func (s *State) chooseDataExportPath(services ui.Services, t *Document) {
 	}
 	go func() {
 		path, err := dialog(mygo.SaveDialogOptions{Title: locales.Text("导出数据文件"), DefaultPath: table + "." + strings.ToLower(format)})
+		close(pickerDone)
+		if ctx.Err() != nil {
+			err = ctx.Err()
+		}
 		out <- mysqlDataTransferResult{PickedPath: true, Path: path, Err: err, Request: request, Generation: gen, Profile: profile}
 		services.Invalidate()
 	}()
@@ -303,6 +309,7 @@ type mysqlDataTransferPreset struct {
 	StatementKB                                  int
 	Mode                                         string
 	Mapping, Match, Fields                       []string
+	Included                                     map[string]bool `json:",omitempty"`
 	Columns                                      []mysqlsvc.MySQLDataImportColumn
 }
 
@@ -315,7 +322,7 @@ func mysqlDataValidPreset(p mysqlDataTransferPreset, kind string) bool {
 	if strings.TrimSpace(p.Name) != p.Name || p.Name == "" || len([]rune(p.Name)) > 64 || strings.ContainsAny(p.Name, "\x00\r\n") || !slices.Contains(mysqlDataTransferFormatChoices(kind), p.Format) || !slices.Contains([]string{"page", "selection", "all"}, p.Scope) {
 		return false
 	}
-	if !slices.Contains([]string{"", "append", "update", "upsert", "insert_missing", "delete", "replace"}, p.Mode) || len(p.Mapping) > 128 || len(p.Match) > 128 || len(p.Columns) > 128 || len(p.Fields) > 128 || p.StatementKB < 0 || p.StatementKB > 16384 {
+	if !slices.Contains([]string{"", "append", "update", "upsert", "insert_missing", "delete", "replace"}, p.Mode) || len(p.Mapping) > 128 || len(p.Match) > 128 || len(p.Columns) > 128 || len(p.Fields) > 128 || len(p.Included) > 128 || p.StatementKB < 0 || p.StatementKB > 16384 {
 		return false
 	}
 	o := p.Options
@@ -355,9 +362,9 @@ func (s *State) readTransferPresets(key, kind string) mysqlDataTransferPresets {
 
 func (s *State) dataTransferPresetControls(c *ui.Context, t *Document) {
 	tr := &t.transfer
-	ui.TextInput(c, &tr.PresetName).Label(locales.Text("向导配置名称"))
+	mysqlDataWizardInput(c, &tr.PresetName, locales.Text("向导配置名称"))
 	key := strings.Replace(mysqlDataProfilesKey(t), "mysql_data_profiles:", "mysql_data_transfer:", 1) + ":" + tr.Kind
-	p := mysqlDataTransferPreset{Name: strings.TrimSpace(tr.PresetName), Format: tr.Format, Scope: tr.Scope, Options: tr.Options, Empty: tr.EmptyAsNull, Continue: tr.ContinueOnError, Mode: tr.Mode, Mapping: slices.Clone(tr.Mapping), Match: slices.Clone(tr.MatchColumns), Columns: slices.Clone(tr.NewColumns), Fields: slices.Clone(tr.Fields), Extended: tr.ExtendedInsert, IgnoreForeignKeys: tr.IgnoreForeignKeys, StatementKB: tr.StatementKB}
+	p := mysqlDataTransferPreset{Name: strings.TrimSpace(tr.PresetName), Format: tr.Format, Scope: tr.Scope, Options: tr.Options, Empty: tr.EmptyAsNull, Continue: tr.ContinueOnError, Mode: tr.Mode, Mapping: slices.Clone(tr.Mapping), Match: slices.Clone(tr.MatchColumns), Columns: slices.Clone(tr.NewColumns), Fields: slices.Clone(tr.Fields), Included: maps.Clone(tr.Included), Extended: tr.ExtendedInsert, IgnoreForeignKeys: tr.IgnoreForeignKeys, StatementKB: tr.StatementKB}
 	if ui.Button(c, locales.Text("保存向导配置")).Disabled(s.dataLayoutPreferences.write == nil || tr.Busy || !mysqlDataValidPreset(p, tr.Kind)).Clicked() {
 		saved := s.readTransferPresets(key, tr.Kind)
 		saved.Items = slices.DeleteFunc(saved.Items, func(x mysqlDataTransferPreset) bool { return x.Name == p.Name })
@@ -389,6 +396,14 @@ func (s *State) dataTransferPresetControls(c *ui.Context, t *Document) {
 			}
 			if len(p.Columns) == len(tr.NewColumns) {
 				tr.NewColumns = slices.Clone(p.Columns)
+			}
+			// Older version-1 presets have no Included field. Preserve their
+			// current selection; newer presets apply only to known columns.
+			if p.Included != nil {
+				tr.Included = make(map[string]bool, len(tr.Fields))
+				for _, field := range tr.Fields {
+					tr.Included[field] = p.Included[field]
+				}
 			}
 			tr.PreparationKey, tr.Confirmation, tr.DestructiveConfirmation = "", "", ""
 			break

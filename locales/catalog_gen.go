@@ -8945,3 +8945,43 @@ func WizardDetectEncoding() string { return In(i18n.Locale()).WizardDetectEncodi
 func (msgs Messages) WizardDetectEncoding() string {
 	return Catalog.Format(msgs.locale, "wizardDetectEncoding", nil)
 }
+
+// WizardTextEncoding says "文本编码"
+// in the language the app shows.
+func WizardTextEncoding() string { return In(i18n.Locale()).WizardTextEncoding() }
+
+// WizardTextEncoding says "文本编码"
+// in the language of msgs.
+func (msgs Messages) WizardTextEncoding() string {
+	return Catalog.Format(msgs.locale, "wizardTextEncoding", nil)
+}
+
+// WizardNewline says "换行符"
+// in the language the app shows.
+func WizardNewline() string { return In(i18n.Locale()).WizardNewline() }
+
+// WizardNewline says "换行符"
+// in the language of msgs.
+func (msgs Messages) WizardNewline() string {
+	return Catalog.Format(msgs.locale, "wizardNewline", nil)
+}
+
+// WizardDateOrder says "日期顺序"
+// in the language the app shows.
+func WizardDateOrder() string { return In(i18n.Locale()).WizardDateOrder() }
+
+// WizardDateOrder says "日期顺序"
+// in the language of msgs.
+func (msgs Messages) WizardDateOrder() string {
+	return Catalog.Format(msgs.locale, "wizardDateOrder", nil)
+}
+
+// WizardBinaryEncoding says "二进制编码"
+// in the language the app shows.
+func WizardBinaryEncoding() string { return In(i18n.Locale()).WizardBinaryEncoding() }
+
+// WizardBinaryEncoding says "二进制编码"
+// in the language of msgs.
+func (msgs Messages) WizardBinaryEncoding() string {
+	return Catalog.Format(msgs.locale, "wizardBinaryEncoding", nil)
+}

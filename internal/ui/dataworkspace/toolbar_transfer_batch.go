@@ -180,7 +180,7 @@ func (s *State) publishImportBatch(services ui.Services, t *Document, result mys
 	t.transfer.Batch = slices.Clone(result.Batch)
 	for _, receipt := range result.Batch {
 		r := receipt.Result
-		if (r.Created || r.CreationUncertain || r.Committed) && s.deps.TableImported != nil {
+		if (r.Created || r.CreationUncertain || r.Committed || r.CommitUncertain) && s.deps.TableImported != nil {
 			s.deps.TableImported(services, TableImportEvent{ProfileID: result.Profile, Generation: result.Generation, Database: receipt.Database, Table: receipt.Table, Created: r.Created, Completed: r.Committed, Uncertain: stale || r.CreationUncertain || r.CommitUncertain})
 		}
 		if r.Committed && receipt.Database == t.database && receipt.Table == t.table && !stale {

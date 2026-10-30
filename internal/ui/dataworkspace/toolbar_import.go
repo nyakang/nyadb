@@ -88,7 +88,7 @@ func (s *State) dataImportModeControls(c *ui.Context, t *Document) {
 	mode := mysqlDataImportMode(t)
 	if mode == "replace" {
 		ui.Text(c, locales.Text("此模式会删除目标表全部记录，再导入文件；提交前可取消回滚。")).TextColor(theme.Colors(c).Error)
-		ui.TextInput(c, &tr.DestructiveConfirmation).Label(locales.Text("再次输入表名称以确认清空")).Placeholder(mysqlDataImportDestination(t)).Disabled(tr.Busy || tr.Submitted).Grow(1)
+		mysqlDataWizardInput(c, &tr.DestructiveConfirmation, locales.Text("再次输入表名称以确认清空")).Placeholder(mysqlDataImportDestination(t)).Disabled(tr.Busy || tr.Submitted).Grow(1)
 	}
 	if mysqlDataImportNeedsMatch(mode) && tr.Input != nil {
 		ui.Text(c, locales.Text("匹配字段（须为完整主键或唯一键）")).Bold()
@@ -283,7 +283,7 @@ func (s *State) dataImportTargetControls(c *ui.Context, t *Document) {
 		}).Width(180).Disabled(tr.Busy || tr.Submitted)
 	})
 	if tr.Target == "new" {
-		ui.TextInput(c, &tr.NewName).Label(locales.Text("新目标表名称")).Disabled(tr.Busy || tr.Submitted).Grow(1)
+		mysqlDataWizardInput(c, &tr.NewName, locales.Text("新目标表名称")).Disabled(tr.Busy || tr.Submitted).Grow(1)
 		ui.Text(c, locales.Text("新表将在当前数据库创建；可修改字段名、类型、可空和主键。建表成功后若数据失败，目标表保留。")).FontSize(theme.Font(c, 11)).TextColor(theme.Colors(c).Muted)
 		if s.newTableImporter() == nil && s.importer() == nil {
 			ui.Text(c, locales.Text("新表导入服务不可用")).TextColor(theme.Colors(c).Error)
@@ -530,7 +530,7 @@ func (s *State) dataImportReview(c *ui.Context, t *Document) {
 			})
 		})
 	}
-	ui.TextInput(c, &tr.Confirmation).Label(locales.Text("输入表名称以确认导入")).Placeholder(mysqlDataImportDestination(t)).Disabled(tr.Busy || tr.Submitted).Grow(1)
+	mysqlDataWizardInput(c, &tr.Confirmation, locales.Text("输入表名称以确认导入")).Placeholder(mysqlDataImportDestination(t)).Disabled(tr.Busy || tr.Submitted).Grow(1)
 }
 
 // Infer from every parsed value rather than just the preview. The suggestion is

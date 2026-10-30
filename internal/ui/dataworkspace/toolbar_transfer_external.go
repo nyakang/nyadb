@@ -21,14 +21,14 @@ func (s *State) dataExternalSourceControls(c *ui.Context, t *Document) {
 	tr := &t.transfer
 	tr.SourceConfig.Kind = datasources.Kind(tr.Format)
 	if tr.Format != "ODBC" {
-		ui.TextInput(c, &tr.SourceConfig.Path).Label(locales.Text("源数据库文件路径")).FillWidth()
+		mysqlDataWizardInput(c, &tr.SourceConfig.Path, locales.Text("源数据库文件路径")).FillWidth()
 	}
 	if tr.Format == "ODBC" || tr.Format == "Access" {
-		ui.TextInput(c, &tr.SourceConfig.ConnectionString).Label(locales.Text("临时 ODBC 连接字符串")).Password().FillWidth()
-		ui.TextInput(c, &tr.SourceConfig.Driver).Label(locales.Text("本机 ODBC 驱动名称"))
+		mysqlDataWizardInput(c, &tr.SourceConfig.ConnectionString, locales.Text("临时 ODBC 连接字符串")).Password().FillWidth()
+		mysqlDataWizardInput(c, &tr.SourceConfig.Driver, locales.Text("本机 ODBC 驱动名称"))
 	}
-	ui.TextInput(c, &tr.SourceConfig.ToolPath).Label(locales.Text("MDBTools 程序目录（可选）"))
-	ui.TextInput(c, &tr.SourceConfig.LibraryPath).Label(locales.Text("本机组件库路径（可选）"))
+	mysqlDataWizardInput(c, &tr.SourceConfig.ToolPath, locales.Text("MDBTools 程序目录（可选）"))
+	mysqlDataWizardInput(c, &tr.SourceConfig.LibraryPath, locales.Text("本机组件库路径（可选）"))
 	if ui.Button(c, locales.Text("检测组件并读取源表")).Disabled(tr.Busy || s.SourceOpen == nil).Clicked() {
 		s.inspectExternalSource(c.Services(), t)
 	}

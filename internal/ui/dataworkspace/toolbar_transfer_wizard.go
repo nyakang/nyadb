@@ -21,7 +21,7 @@ func (s *State) dataTransferWizard(c *ui.Context, t *Document, available bool, t
 	tr := &t.transfer
 	steps := mysqlDataWizardSteps(tr.Kind)
 	tr.Step = max(0, min(tr.Step, len(steps)-1))
-	ui.Modal(c, &tr.Open, func() {
+	modal := ui.Modal(c, &tr.Open, func() {
 		cw, ch := c.Size()
 		width, height := min(float32(800), cw-40), min(float32(620), ch-40)
 		ui.Column(c).Width(width).Height(height).Padding(18).Gap(10).Background(theme.Colors(c).Header).Children(func() {
@@ -52,7 +52,11 @@ func (s *State) dataTransferWizard(c *ui.Context, t *Document, available bool, t
 						s.dataImportWizardPage(c, t)
 					}
 					if tr.Err != "" {
-						ui.Text(c, tr.Err).TextColor(theme.Colors(c).Error)
+						color := theme.Colors(c).Error
+						if tr.Completed && !tr.Uncertain {
+							color = theme.Colors(c).Muted
+						}
+						ui.Text(c, tr.Err).TextColor(color)
 					}
 					if tr.Busy {
 						label := "正在处理数据…"
@@ -98,11 +102,8 @@ func (s *State) dataTransferWizard(c *ui.Context, t *Document, available bool, t
 				}
 			})
 		})
-	})
-	if !tr.Open && tr.Busy {
-		tr.Open = true
-		s.stopDataTransfer(t)
-	}
+	}).Padding(0)
+	s.finishDataTransferModal(t, modal.PressedOutside())
 }
 
 func (s *State) dataImportWizardPage(c *ui.Context, t *Document) {
@@ -178,7 +179,7 @@ func (s *State) dataImportWizardPage(c *ui.Context, t *Document) {
 		ui.Checkbox(c, &tr.ExtendedInsert, locales.Text("使用扩展插入语句"))
 		ui.Checkbox(c, &tr.IgnoreForeignKeys, locales.Text("忽略外键约束"))
 		kb := strconv.Itoa(tr.StatementKB)
-		ui.TextInput(c, &kb).Label(locales.Text("最大语句大小（KB）")).Width(180)
+		mysqlDataWizardInput(c, &kb, locales.Text("最大语句大小（KB）")).Width(180)
 		if n, err := strconv.Atoi(kb); err == nil && n > 0 && n <= 16384 {
 			tr.StatementKB = n
 		}
@@ -194,9 +195,9 @@ func (s *State) dataImportWizardPage(c *ui.Context, t *Document) {
 		} else {
 			ui.Text(c, fmt.Sprintf(locales.Text("已完整校验 %d 行 · 转换 %d 个值"), tr.TotalRows, tr.ChangedValues))
 		}
-		ui.TextInput(c, &tr.Confirmation).Label(locales.Text("输入表名称以确认导入")).Placeholder(mysqlDataImportDestination(t))
+		mysqlDataWizardInput(c, &tr.Confirmation, locales.Text("输入表名称以确认导入")).Placeholder(mysqlDataImportDestination(t))
 		if mysqlDataImportMode(t) == "replace" {
-			ui.TextInput(c, &tr.DestructiveConfirmation).Label(locales.Text("再次输入表名称以确认清空"))
+			mysqlDataWizardInput(c, &tr.DestructiveConfirmation, locales.Text("再次输入表名称以确认清空"))
 		}
 		if tr.Input != nil {
 			s.dataImportConversionPreview(c, t)
@@ -245,7 +246,7 @@ func (s *State) dataExportWizardPage(c *ui.Context, t *Document) {
 		s.dataSourceOptionControls(c, t)
 		s.dataTransferPresetControls(c, t)
 	case 3:
-		ui.TextInput(c, &tr.ExportPath).Label(locales.Text("目标文件路径")).FillWidth()
+		mysqlDataWizardInput(c, &tr.ExportPath, locales.Text("目标文件路径")).FillWidth()
 		if ui.Button(c, locales.Text("选择目标文件")).Disabled(tr.Busy).Clicked() {
 			s.chooseDataExportPath(c.Services(), t)
 		}
@@ -256,6 +257,30 @@ func (s *State) dataExportWizardPage(c *ui.Context, t *Document) {
 	}
 }
 
+// Label is accessible metadata in MyGo; render the field name separately.
+func mysqlDataWizardField(c *ui.Context, label string, build func()) {
+	ui.Row(c).Gap(12).AlignItems(ui.Center).FillWidth().Children(func() {
+		ui.Text(c, label+":").Width(300).FontSize(theme.Font(c, 12))
+		build()
+	})
+}
+
+func mysqlDataWizardInput(c *ui.Context, value *string, label string) ui.Element {
+	var input ui.Element
+	mysqlDataWizardField(c, label, func() {
+		input = ui.TextInput(c, value).Label(label).FillWidth()
+	})
+	return input
+}
+
+func mysqlDataWizardSelect(c *ui.Context, label string, value *string, choices []string, labels func(string) string) ui.Element {
+	var input ui.Element
+	mysqlDataWizardField(c, label, func() {
+		input = mysqlDataRuleSelect(c, value, choices, labels).Label(label)
+	})
+	return input
+}
+
 func (s *State) dataSourceOptionControls(c *ui.Context, t *Document) {
 	o := &t.transfer.Options
 	if mysqlDataTextFormat(t.transfer.Format) || t.transfer.Kind == "import" && t.transfer.Format == "DBF" {
@@ -263,7 +288,7 @@ func (s *State) dataSourceOptionControls(c *ui.Context, t *Document) {
 		if t.transfer.Format == "DBF" {
 			encodings = append([]string{""}, encodings...)
 		}
-		mysqlDataRuleSelect(c, &o.Encoding, encodings, func(x string) string {
+		mysqlDataWizardSelect(c, locales.Text("文本编码"), &o.Encoding, encodings, func(x string) string {
 			if x == "" {
 				return locales.Text("自动检测编码")
 			}
@@ -271,9 +296,9 @@ func (s *State) dataSourceOptionControls(c *ui.Context, t *Document) {
 		}).Width(180)
 	}
 	if t.transfer.Format == "CSV" || t.transfer.Format == "TSV" || t.transfer.Format == "TXT" {
-		ui.TextInput(c, &o.Delimiter).Label(locales.Text("字段分隔符（使用 \\t 表示制表符）")).Width(250)
-		ui.TextInput(c, &o.Quote).Label(locales.Text("文本识别符")).Width(180)
-		mysqlDataRuleSelect(c, &o.Newline, []string{"LF", "CRLF"}, func(x string) string { return x }).Width(180)
+		mysqlDataWizardInput(c, &o.Delimiter, locales.Text("字段分隔符（使用 \\t 表示制表符）")).Width(250)
+		mysqlDataWizardInput(c, &o.Quote, locales.Text("文本识别符")).Width(180)
+		mysqlDataWizardSelect(c, locales.Text("换行符"), &o.Newline, []string{"LF", "CRLF"}, func(x string) string { return x }).Width(180)
 	}
 	if t.transfer.Kind == "import" {
 		for _, item := range []struct {
@@ -284,7 +309,7 @@ func (s *State) dataSourceOptionControls(c *ui.Context, t *Document) {
 				continue
 			}
 			value := strconv.FormatInt(*item.value, 10)
-			ui.TextInput(c, &value).Label(locales.Text(item.name)).Width(230)
+			mysqlDataWizardInput(c, &value, locales.Text(item.name)).Width(230)
 			if n, err := strconv.ParseInt(value, 10, 64); err == nil && n >= 0 {
 				*item.value = n
 			}
@@ -298,13 +323,13 @@ func (s *State) dataSourceOptionControls(c *ui.Context, t *Document) {
 		}
 	}
 	if t.transfer.Format == "XML" {
-		ui.TextInput(c, &o.XMLRoot).Label(locales.Text("XML 根标签"))
-		ui.TextInput(c, &o.XMLRow).Label(locales.Text("XML 行标签"))
+		mysqlDataWizardInput(c, &o.XMLRoot, locales.Text("XML 根标签"))
+		mysqlDataWizardInput(c, &o.XMLRow, locales.Text("XML 行标签"))
 		ui.Checkbox(c, &o.XMLAttributes, locales.Text("将 XML 属性作为字段"))
 	}
 	if t.transfer.Kind == "import" && (t.transfer.Format == "XLSX" || t.transfer.Format == "XLS") {
 		value := strconv.Itoa(o.Sheet + 1)
-		ui.TextInput(c, &value).Label(locales.Text("工作表序号（从 1 开始）"))
+		mysqlDataWizardInput(c, &value, locales.Text("工作表序号（从 1 开始）"))
 		if n, err := strconv.Atoi(value); err == nil && n > 0 {
 			o.Sheet = n - 1
 		}
@@ -312,12 +337,12 @@ func (s *State) dataSourceOptionControls(c *ui.Context, t *Document) {
 	if t.transfer.Kind == "export" && t.transfer.Format == "SQL" {
 		return
 	}
-	mysqlDataRuleSelect(c, &o.DateOrder, []string{"YMD", "DMY", "MDY"}, func(x string) string { return x }).Width(180)
-	ui.TextInput(c, &o.DateSeparator).Label(locales.Text("日期分隔符"))
-	ui.TextInput(c, &o.TimeSeparator).Label(locales.Text("时间分隔符"))
-	ui.TextInput(c, &o.DecimalSeparator).Label(locales.Text("小数点符号"))
+	mysqlDataWizardSelect(c, locales.Text("日期顺序"), &o.DateOrder, []string{"YMD", "DMY", "MDY"}, func(x string) string { return x }).Width(180)
+	mysqlDataWizardInput(c, &o.DateSeparator, locales.Text("日期分隔符"))
+	mysqlDataWizardInput(c, &o.TimeSeparator, locales.Text("时间分隔符"))
+	mysqlDataWizardInput(c, &o.DecimalSeparator, locales.Text("小数点符号"))
 	if t.transfer.Kind == "import" || mysqlDataTextFormat(t.transfer.Format) {
-		mysqlDataRuleSelect(c, &o.BinaryEncoding, []string{"hex", "base64"}, func(x string) string { return x }).Width(180)
+		mysqlDataWizardSelect(c, locales.Text("二进制编码"), &o.BinaryEncoding, []string{"hex", "base64"}, func(x string) string { return x }).Width(180)
 	}
 }
 

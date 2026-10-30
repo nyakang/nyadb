@@ -1,6 +1,7 @@
 package datasources_test
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/hex"
@@ -13,6 +14,106 @@ import (
 	"testing"
 	"time"
 )
+
+// The supplied self-created fixture contains inline and sidecar-backed memo
+// and binary fields. Its zero-length blob records use libpx's NULL encoding.
+func TestNativeParadoxMemoIntegration(t *testing.T) {
+	path := os.Getenv("NYADB_DATASOURCES_PARADOX_MEMO_FILE")
+	if path == "" {
+		t.Skip("requires an explicitly supplied self-created memo/blob Paradox fixture")
+	}
+	ctx := context.Background()
+	sidecar := strings.TrimSuffix(path, filepath.Ext(path)) + ".mb"
+	beforeDB, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	beforeMB, err := os.ReadFile(sidecar)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := datasources.Open(ctx, datasources.Config{Kind: datasources.Paradox, Path: path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer source.Close()
+	tables, err := source.Tables(ctx)
+	if err != nil || len(tables) != 1 {
+		t.Fatal(tables, err)
+	}
+	reader, err := source.Rows(ctx, tables[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reader.Close()
+	for i, size := range []int{5, 2000, 65536, 0, 0} {
+		row, err := reader.Next(ctx)
+		if err != nil || len(row) != 3 {
+			t.Fatal(i, row, err)
+		}
+		if size == 0 {
+			if !row[1].Null || !row[2].Null {
+				t.Fatal("libpx NULL blob was changed", row)
+			}
+			continue
+		}
+		wantText, wantBytes := make([]byte, size), make([]byte, size)
+		for j := range wantText {
+			wantText[j], wantBytes[j] = byte('A'+j%26), byte(j%256)
+		}
+		if row[1].Text != string(wantText) || row[1].Null || row[1].Binary || !row[2].Binary || !bytes.Equal(row[2].Bytes, wantBytes) {
+			t.Fatalf("inline/sidecar field of %d bytes changed", size)
+		}
+	}
+	if _, err = reader.Next(ctx); err != io.EOF {
+		t.Fatal(err)
+	}
+	if err = source.Close(); err != nil {
+		t.Fatal(err)
+	}
+	afterDB, errDB := os.ReadFile(path)
+	afterMB, errMB := os.ReadFile(sidecar)
+	if errDB != nil || errMB != nil || !bytes.Equal(beforeDB, afterDB) || !bytes.Equal(beforeMB, afterMB) {
+		t.Fatal("memo source or sidecar changed", errDB, errMB)
+	}
+	for _, test := range []struct {
+		name string
+		memo []byte
+	}{{"missing", nil}, {"truncated", beforeMB[:min(512, len(beforeMB))]}} {
+		t.Run(test.name, func(t *testing.T) {
+			directory := t.TempDir()
+			broken := filepath.Join(directory, "memo.db")
+			if err := os.WriteFile(broken, beforeDB, 0600); err != nil {
+				t.Fatal(err)
+			}
+			if test.memo != nil {
+				if err := os.WriteFile(filepath.Join(directory, "memo.mb"), test.memo, 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			opened, err := datasources.Open(ctx, datasources.Config{Kind: datasources.Paradox, Path: broken})
+			if err != nil {
+				return
+			}
+			defer opened.Close()
+			tables, err := opened.Tables(ctx)
+			if err != nil {
+				return
+			}
+			rows, err := opened.Rows(ctx, tables[0])
+			if err != nil {
+				return
+			}
+			defer rows.Close()
+			for i := 0; i < 2; i++ {
+				if _, err := rows.Next(ctx); err != nil {
+					return
+				}
+			}
+			t.Fatal("missing or truncated sidecar produced a complete external blob")
+		})
+	}
+}
 
 func TestNativeODBCIntegration(t *testing.T) {
 	if os.Getenv("NYADB_DATASOURCES_ODBC_IT") != "1" {

@@ -63,6 +63,9 @@ type mysqlDataTransferState struct {
 	LeaveNext                                    func(ui.Services)
 	SaveDialog                                   func(mygo.SaveDialogOptions) (string, error)
 	OpenDialog                                   func(mygo.OpenDialogOptions) ([]string, error)
+	PickerActive                                 bool
+	PickerOutsidePress                           bool
+	PickerDone                                   <-chan struct{}
 	Open, Busy, Canceling, Submitted, Uncertain  bool
 	EmptyAsNull                                  bool
 	ContinueOnError                              bool
@@ -187,6 +190,9 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 		}
 		return
 	}
+	if !tr.Open && tr.PickerActive {
+		tr.Open = true
+	}
 	if !tr.Open {
 		if tr.Busy {
 			s.stopDataTransfer(t)
@@ -203,7 +209,7 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 		s.dataTransferWizard(c, t, available, title)
 		return
 	}
-	ui.Modal(c, &tr.Open, func() {
+	modal := ui.Modal(c, &tr.Open, func() {
 		width, height := c.Size()
 		ui.Scroll(c).Width(min(float32(620), width-40)).MaxHeight(height - 40).Children(func() {
 			ui.Column(c).Width(min(float32(620), width-40)).Padding(18).Gap(10).Background(colors.Header).Children(func() {
@@ -311,7 +317,48 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 			})
 		})
 	})
+	s.finishDataTransferModal(t, modal.PressedOutside())
+}
+
+func (s *State) beginDataPicker(t *Document) chan struct{} {
+	done := make(chan struct{})
+	t.transfer.PickerActive, t.transfer.PickerDone = true, done
+	t.transfer.PickerOutsidePress = false
+	return done
+}
+
+// Native picker events may be delivered to the owning window at coordinates
+// outside its modal. Consume the picker acknowledgement after that frame's
+// dismissal guard, rather than clearing it before the modal handles events.
+// All mutable presentation state stays on the UI thread.
+func (s *State) finishDataTransferModal(t *Document, pressedOutside bool) {
+	tr := &t.transfer
+	if tr.PickerActive && tr.PickerDone != nil {
+		tr.PickerOutsidePress = tr.PickerOutsidePress || pressedOutside
+		returned := false
+		select {
+		case <-tr.PickerDone:
+			returned = true
+		default:
+		}
+		if !tr.Open {
+			// With no pending external press, Escape after the picker
+			// returned cancels the real reader/writer which is now busy.
+			if returned && tr.Busy && !tr.PickerOutsidePress {
+				tr.PickerActive = false
+			} else {
+				tr.Open = true
+			}
+			tr.PickerOutsidePress = false
+		}
+		// Keep the guard across the external press/release pair, including
+		// extra MyGo build passes between those two events.
+		if returned && !tr.PickerOutsidePress {
+			tr.PickerActive, tr.PickerDone = false, nil
+		}
+	}
 	if !tr.Open && tr.Busy {
+		tr.Open = true
 		s.stopDataTransfer(t)
 	}
 }
@@ -321,6 +368,7 @@ func (s *State) chooseDataImportFile(services ui.Services, t *Document) {
 		return
 	}
 	ctx, out, request, gen := s.beginDataTransfer(t)
+	pickerDone := s.beginDataPicker(t)
 	format, profile := t.transfer.Format, t.profileID
 	openDialog := t.transfer.OpenDialog
 	options, wizard, assets := t.transfer.Options, t.transfer.Wizard, t.transfer.Assets
@@ -329,6 +377,8 @@ func (s *State) chooseDataImportFile(services ui.Services, t *Document) {
 	}
 	go func() {
 		paths, err := openDialog(mygo.OpenDialogOptions{Title: locales.Text("选择导入数据文件"), Filters: []mygo.FileFilter{{Name: format, Extensions: []string{strings.ToLower(format)}}}})
+		close(pickerDone)
+		services.Invalidate()
 		var input *mysqlDataImportInput
 		var spool *mysqlDataImportSpool
 		var inferred []mysqlsvc.MySQLDataImportColumn
@@ -357,6 +407,8 @@ func (s *State) beginDataTransfer(t *Document) (context.Context, chan mysqlDataT
 	t.transfer.Request++
 	t.transfer.Busy = true
 	t.transfer.Canceling = false
+	t.transfer.PickerActive, t.transfer.PickerDone = false, nil
+	t.transfer.PickerOutsidePress = false
 	t.transfer.Err = ""
 	ctx, cancel := context.WithCancel(context.Background())
 	t.transfer.Cancel = cancel
@@ -481,16 +533,26 @@ func (s *State) startDataExport(services ui.Services, t *Document) {
 	metadata := slices.Clone(t.page.ColumnMetadata)
 	ctx, out, request, gen := s.beginDataTransfer(t)
 	format, profile, db, table := tr.Format, t.profileID, t.database, t.table
+	if tr.Wizard {
+		tr.Submitted = true
+	}
 	saveDialog := tr.SaveDialog
 	if saveDialog == nil {
 		saveDialog = mygo.Dialog.Save
 	}
+	var pickerDone chan struct{}
 	if tr.ExportPath != "" {
 		destination := tr.ExportPath
 		saveDialog = func(mygo.SaveDialogOptions) (string, error) { return destination, nil }
+	} else {
+		pickerDone = s.beginDataPicker(t)
 	}
 	go func() {
 		path, err := saveDialog(mygo.SaveDialogOptions{Title: locales.Text("导出数据文件"), DefaultPath: table + "." + strings.ToLower(format), Filters: []mygo.FileFilter{{Name: format, Extensions: []string{strings.ToLower(format)}}}})
+		if pickerDone != nil {
+			close(pickerDone)
+			services.Invalidate()
+		}
 		count := 0
 		if err == nil && path != "" {
 			err = mysqlDataAtomicFile(ctx, path, func(w io.Writer) error {
