@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"slices"
 	"strings"
 
@@ -388,8 +387,11 @@ func (s *State) exportMySQLDataSelection(c *ui.Context, t *Document, format stri
 	defaultPath := t.table + "." + extension
 	go func() {
 		path, err := mygo.Dialog.Save(mygo.SaveDialogOptions{Title: title, Message: message, DefaultPath: defaultPath, Filters: []mygo.FileFilter{{Name: format, Extensions: []string{extension}}}})
-		if err == nil && path != "" && ctx.Err() == nil {
-			err = os.WriteFile(path, []byte(data+"\n"), 0600)
+		if err == nil && path != "" {
+			err = mysqlDataAtomicFile(ctx, path, func(w io.Writer) error {
+				_, writeErr := io.WriteString(w, data+"\n")
+				return writeErr
+			})
 		}
 		results <- mysqlDataExportResult{path: path, err: err}
 		services.Invalidate()
@@ -406,6 +408,9 @@ func (s *State) consumeMySQLDataExport(t *Document) {
 		}
 		t.export = mysqlDataExportState{}
 		if result.err != nil {
+			if errors.Is(result.err, context.Canceled) {
+				return
+			}
 			t.edit.Err = locales.Text("保存数据文件失败：") + result.err.Error()
 		} else if result.path != "" {
 			s.setStatus(fmt.Sprintf(locales.Text("已保存选区预览至 %s"), result.path))

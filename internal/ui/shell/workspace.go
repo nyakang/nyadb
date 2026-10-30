@@ -149,6 +149,21 @@ func (s *State) dataWorkspaceDependencies() dataworkspace.Dependencies {
 		},
 		Runtime:   func() dataworkspace.Runtime { return dataworkspace.MySQLRuntime(s.sessions.Manager) },
 		Inspector: s.dataInspectorDependencies(), Status: func(message string) { s.status = message },
+		TableImported: func(services ui.Services, event dataworkspace.TableImportEvent) {
+			if !s.sessions.InvalidateDatabaseObjects(event.ProfileID, event.Generation, event.Database) {
+				return
+			}
+			w := s.sessions.Workspace(event.ProfileID)
+			if w == s.sessions.Current() && w.Database == event.Database {
+				s.loadMySQLObjects(services, event.Database, true)
+			}
+		},
+		OpenImportedTable: func(services ui.Services, event dataworkspace.TableImportEvent) {
+			w := s.sessions.Current()
+			if event.Created && !event.Uncertain && w.Status == "已连接" && w.ProfileID == event.ProfileID && w.Generation == event.Generation {
+				s.openMySQLData(services, event.Database, event.Table)
+			}
+		},
 		Activate: func(d *dataworkspace.Document) {
 			for i, t := range s.tabs {
 				if t.data == d {
@@ -171,7 +186,7 @@ func (s *State) guardTabsLeave(matches func(*tab) bool, next func(ui.Services)) 
 		return false
 	}
 	for _, t := range s.tabs {
-		if matches(t) && s.dataWorkspace.GuardLeave(t.data, next) {
+		if matches(t) && (s.dataWorkspace.GuardTransactionLeave(t.data, next) || s.dataWorkspace.GuardLeave(t.data, next)) {
 			return true
 		}
 	}

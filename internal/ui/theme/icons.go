@@ -77,6 +77,8 @@ var Symbols = map[string]*ui.SVG{
 	"close":             lucideSymbol("x"),
 	"check":             symbol(`<path d="m5 12 4 4L19 6"/>`),
 	"refresh":           lucideSymbol("refresh-cw"),
+	"history":           symbol(`<path d="M3 11a9 9 0 1 1 3 7M3 4v7h7M12 7v5l3 2"/>`),
+	"chart":             symbol(`<path d="M4 20V4m0 16h17M8 16V9m5 7V5m5 11v-4"/>`),
 	"settings":          lucideSymbol("settings-2"),
 	"star":              lucideSymbol("star"),
 	"navigate-active":   lucideSymbol("locate-fixed"),

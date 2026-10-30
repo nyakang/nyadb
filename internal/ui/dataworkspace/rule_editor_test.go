@@ -27,7 +27,7 @@ func TestMySQLRuleEditorMultipleConditionsPrioritySortAndMenu(t *testing.T) {
 	tt.Frame()
 	waitMySQLData(t, s, doc, tt)
 	Document := doc
-	if Document.rulesExpanded || !tt.HasText("筛选 0 · 排序 0") ||
+	if Document.rulesExpanded || len(Document.filterRules) != 0 || len(Document.sortRules) != 0 ||
 		tt.HasText("筛选  ·  所有已启用条件均满足 (AND)") {
 		t.Fatalf("new Document should start compact: %v", tt.Texts())
 	}
@@ -120,7 +120,7 @@ func TestMySQLRuleEditorMultipleConditionsPrioritySortAndMenu(t *testing.T) {
 		t.Fatal(err)
 	}
 	if Document.rulesExpanded || tt.HasText("筛选  ·  所有已启用条件均满足 (AND)") ||
-		!tt.HasText("筛选 2 · 排序 2") {
+		len(Document.filterRules) != 2 || len(Document.sortRules) != 2 {
 		t.Fatalf("collapsed applied-rule summary incorrect: %v", tt.Texts())
 	}
 	if err := tt.Click("筛选 & 排序"); err != nil {

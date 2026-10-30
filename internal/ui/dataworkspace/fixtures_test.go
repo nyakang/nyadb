@@ -1,6 +1,7 @@
 package dataworkspace
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -39,4 +40,19 @@ func waitMySQLData(t *testing.T, s *State, d *Document, tt *ui.Tester) {
 	if d.loading {
 		t.Fatal("data load did not finish")
 	}
+}
+
+// Native Toolbar overflow opens each moved command just like its button.
+func clickDataToolbar(tt *ui.Tester, label string) error {
+	if _, ok := tt.Find(label); ok {
+		return tt.Click(label)
+	}
+	_, ok := tt.Find("数据操作")
+	if !ok {
+		return fmt.Errorf("missing data toolbar")
+	}
+	if err := tt.Click("更多"); err != nil {
+		return err
+	}
+	return tt.ChooseMenuItem(label)
 }

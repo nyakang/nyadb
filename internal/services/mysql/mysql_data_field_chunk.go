@@ -26,6 +26,16 @@ type MySQLFieldChunk struct {
 // one small segment without transferring the remainder of the field.
 func (m *MySQLSessionManager) ReadMySQLFieldChunk(ctx context.Context, id int64,
 	database, table, column string, ref MySQLRowRef, offset int64, units int) (*MySQLFieldChunk, error) {
+	session, qctx, cancel, err := m.requestContext(ctx, id, 20*time.Second)
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
+
+	return readMySQLFieldChunk(qctx, session.db, database, table, column, ref, offset, units)
+}
+
+func readMySQLFieldChunk(qctx context.Context, queryer mysqlEditQueryer, database, table, column string, ref MySQLRowRef, offset int64, units int) (*MySQLFieldChunk, error) {
 	dbName, err := quotedMySQLIdentifier(database)
 	if err != nil {
 		return nil, err
@@ -51,14 +61,8 @@ func (m *MySQLSessionManager) ReadMySQLFieldChunk(ctx context.Context, id int64,
 			return nil, ErrMySQLDataPage
 		}
 	}
-	session, qctx, cancel, err := m.requestContext(ctx, id, 20*time.Second)
-	if err != nil {
-		return nil, err
-	}
-	defer cancel()
-
 	var kind string
-	err = session.db.QueryRowContext(qctx,
+	err = queryer.QueryRowContext(qctx,
 		`SELECT DATA_TYPE FROM information_schema.COLUMNS
  WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?`, database, table, column).Scan(&kind)
 	if err != nil {
@@ -77,7 +81,7 @@ func (m *MySQLSessionManager) ReadMySQLFieldChunk(ctx context.Context, id int64,
  AND c.TABLE_NAME=s.TABLE_NAME AND c.COLUMN_NAME=s.COLUMN_NAME
  WHERE s.TABLE_SCHEMA=? AND s.TABLE_NAME=? AND s.NON_UNIQUE=0
  ORDER BY s.INDEX_NAME,s.SEQ_IN_INDEX`
-	rows, err := session.db.QueryContext(qctx, indexesSQL, database, table)
+	rows, err := queryer.QueryContext(qctx, indexesSQL, database, table)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +155,7 @@ func (m *MySQLSessionManager) ReadMySQLFieldChunk(ctx context.Context, id int64,
 	}
 	sqlText := "SELECT SUBSTRING(" + colName + ", ?, ?), " + lengthFn + "(" + colName + ") FROM " +
 		dbName + "." + tableName + " WHERE " + strings.Join(where, " AND ") + " LIMIT 2"
-	data, err := session.db.QueryContext(qctx, sqlText, args...)
+	data, err := queryer.QueryContext(qctx, sqlText, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -175,9 +179,6 @@ func (m *MySQLSessionManager) ReadMySQLFieldChunk(ctx context.Context, id int64,
 	}
 	if err = qctx.Err(); err != nil {
 		return nil, err
-	}
-	if session.ctx.Err() != nil {
-		return nil, context.Canceled
 	}
 	if !total.Valid {
 		return &MySQLFieldChunk{Null: true, Offset: offset, Binary: binary}, nil

@@ -85,7 +85,7 @@ func TestMySQLRealKeysetAndOnDemandFieldNativeViewer(t *testing.T) {
 		}
 	}
 	tab.limit = 1
-	if err := tt.Click("刷新表数据：blob_entries"); err != nil {
+	if err := clickDataToolbar(tt, "刷新表数据：blob_entries"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLData(t, s, doc, tt)

@@ -1,7 +1,6 @@
 package mysql
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"database/sql/driver"
@@ -55,6 +54,21 @@ func (m *MySQLSessionManager) ApplyMySQLDataEdits(ctx context.Context, id int64,
 		return nil, e
 	}
 	defer tx.Rollback()
+	result, e := applyMySQLDataEditsInTransaction(qctx, tx, database, table, target, edits)
+	if e != nil {
+		return nil, e
+	}
+	if e = tx.Commit(); e != nil {
+		result.CommitUncertain = true
+		return result, fmt.Errorf("%w: %v", ErrMySQLDataCommitUncertain, e)
+	}
+	return result, nil
+}
+
+// applyMySQLDataEditsInTransaction shares exact-value, identity and conflict
+// checks between atomic saves and explicit data-document transactions.
+func applyMySQLDataEditsInTransaction(qctx context.Context, tx *sql.Tx, database, table, target string, edits []MySQLDataEdit) (*MySQLDataEditResult, error) {
+	var e error
 	// Open the target first to hold its metadata lock until COMMIT/ROLLBACK.
 	// Revalidate the engine and fields under that lock so a concurrent ALTER
 	// cannot swap in a nontransactional engine after our safety check.
@@ -189,7 +203,7 @@ func (m *MySQLSessionManager) ApplyMySQLDataEdits(ctx context.Context, id int64,
 					v, ok := edit.Values[name]
 					if ok && !v.Default && !v.Null {
 						if v.Binary {
-							ref.Values = append(ref.Values, bytes.Clone(v.Bytes))
+							ref.Values = append(ref.Values, append([]byte{}, v.Bytes...))
 						} else {
 							ref.Values = append(ref.Values, []byte(v.Text))
 						}
@@ -228,10 +242,6 @@ func (m *MySQLSessionManager) ApplyMySQLDataEdits(ctx context.Context, id int64,
 			}
 		}
 		result.Outcomes = append(result.Outcomes, outcome)
-	}
-	if e = tx.Commit(); e != nil {
-		result.CommitUncertain = true
-		return result, fmt.Errorf("%w: %v", ErrMySQLDataCommitUncertain, e)
 	}
 	return result, nil
 }

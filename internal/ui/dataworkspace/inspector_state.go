@@ -23,6 +23,8 @@ type InspectorDependencies struct {
 // Panel belongs to one data tab. Identity is immutable; private channels and
 // cancellation functions are consumed only on the UI thread.
 type Panel struct {
+	chunkError              func(error)
+	chunkLoader             func() ChunkLoader
 	profileID               int64
 	database, table         string
 	selection               func() Selection
@@ -102,6 +104,8 @@ func (s *inspectorState) Close(p *Panel) {
 	s.CancelChunk(p)
 	p.closed = true
 	p.selection = nil
+	p.chunkLoader = nil
+	p.chunkError = nil
 	p.info = infoState{}
 	p.chunkPage = nil
 	p.chunkText, p.chunkErr, p.chunkField = "", "", ""

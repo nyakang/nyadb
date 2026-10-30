@@ -73,7 +73,7 @@ func TestMySQLRealDataNativeViewer(t *testing.T) {
 	}
 	tab := doc
 	tab.limit = 2
-	if err := tt.Click("刷新表数据：child"); err != nil {
+	if err := clickDataToolbar(tt, "刷新表数据：child"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLData(t, s, doc, tt)
@@ -113,10 +113,10 @@ func TestMySQLRealDataNativeViewer(t *testing.T) {
 	tab.selectedRow = 0
 	tab.grid.Cells = ui.ColumnRange{Cursor: "parent_code", Anchor: "parent_code"}
 	tt.Frame()
-	if err := tt.Click("复制所选数据预览"); err != nil || tt.Clipboard() != "P2" {
+	if err := clickDataToolbar(tt, "复制所选数据预览"); err != nil || tt.Clipboard() != "P2" {
 		t.Fatalf("real selected value not copied: %v %q", err, tt.Clipboard())
 	}
-	if err := tt.Click("清除筛选"); err != nil {
+	if err := clickDataToolbar(tt, "清除筛选"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLData(t, s, doc, tt)

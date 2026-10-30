@@ -65,7 +65,7 @@ func TestMySQLNativeReadOnlyDataPagingAndTabLifecycle(t *testing.T) {
 	if !tt.HasText("real-value") {
 		t.Fatal("previous page didn't load")
 	}
-	if err := tt.Click("刷新表数据：orders"); err != nil {
+	if err := clickMySQLDataToolbar(tt, "刷新表数据：orders"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLData(t, s, tt)

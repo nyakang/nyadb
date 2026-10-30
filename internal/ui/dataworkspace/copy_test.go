@@ -74,7 +74,7 @@ func TestMySQLCopyFormatsPreserveHiddenReorderedNullAndQuotedValues(t *testing.T
 		label string
 		comma rune
 	}{{"逗号分隔值（字段名称和数据）", ','}, {"制表符分隔值（字段名称和数据）", '\t'}} {
-		if err := tt.Click("复制为"); err != nil {
+		if err := clickDataToolbar(tt, "复制为"); err != nil {
 			t.Fatal(err)
 		}
 		if err := tt.ChooseMenuItem(format.label); err != nil {
@@ -88,7 +88,7 @@ func TestMySQLCopyFormatsPreserveHiddenReorderedNullAndQuotedValues(t *testing.T
 			t.Fatalf("%s: %v %v", format.label, got, err)
 		}
 	}
-	if err := tt.Click("复制为"); err != nil {
+	if err := clickDataToolbar(tt, "复制为"); err != nil {
 		t.Fatal(err)
 	}
 	if err := tt.ChooseMenuItem("JSON"); err != nil {
@@ -103,7 +103,7 @@ func TestMySQLCopyFormatsPreserveHiddenReorderedNullAndQuotedValues(t *testing.T
 	}
 	doc.page.Rows[0][1].Truncated = true
 	tt.Frame()
-	if err := tt.Click("复制所选数据预览"); err != nil {
+	if err := clickDataToolbar(tt, "复制所选数据预览"); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(tt.Clipboard(), "预览已截断") || strings.Contains(tt.Clipboard(), "private") {

@@ -2,6 +2,8 @@ package shell
 
 import (
 	"context"
+	"fmt"
+	"github.com/egoist/mygo/ui"
 	"testing"
 
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
@@ -32,7 +34,7 @@ func TestMySQLCompactHeaderAt1280AndNarrowNavigation(t *testing.T) {
 	if header.Y > 190 {
 		t.Fatalf("compact grid header too low at 1280: %+v", header)
 	}
-	if !tt.HasText("筛选 0 · 排序 0") || !tt.HasText("刷新表数据：orders") {
+	if !tt.HasText("筛选 & 排序") || !tt.HasText("更多") {
 		t.Fatalf("compact navigation or count missing: %v", tt.Texts())
 	}
 	if err := tt.Click("筛选 & 排序"); err != nil {
@@ -55,14 +57,14 @@ func TestMySQLCompactHeaderAt1280AndNarrowNavigation(t *testing.T) {
 	if !ok {
 		t.Fatal("inspector missing in narrow window")
 	}
-	for _, name := range []string{"筛选 & 排序", "对象", "刷新表数据：orders", "清除筛选"} {
+	for _, name := range []string{"筛选 & 排序", "对象", "数据操作"} {
 		r, ok := small.Find(name)
 		t.Logf("840 control %s: %+v found=%v", name, r, ok)
 		if !ok || r.X+r.W > inspector.X {
 			t.Fatalf("%s overflows into inspector: %+v inspector=%+v", name, r, inspector)
 		}
 	}
-	if !small.HasText("对象") || !small.HasText("刷新表数据：orders") {
+	if !small.HasText("对象") || !small.HasText("更多") {
 		t.Fatal("narrow window lost navigation or refresh")
 	}
 	if err := small.Click("对象"); err != nil {
@@ -71,4 +73,18 @@ func TestMySQLCompactHeaderAt1280AndNarrowNavigation(t *testing.T) {
 	if s.currentTab().kind != tabObjects {
 		t.Fatal("Objects tab did not return to the object browser")
 	}
+}
+
+func clickMySQLDataToolbar(tt *ui.Tester, label string) error {
+	if _, ok := tt.Find(label); ok {
+		return tt.Click(label)
+	}
+	_, ok := tt.Find("数据操作")
+	if !ok {
+		return fmt.Errorf("missing data toolbar")
+	}
+	if err := tt.Click("更多"); err != nil {
+		return err
+	}
+	return tt.ChooseMenuItem(label)
 }

@@ -18,31 +18,43 @@ type Verifier func(context.Context, int64, string, string, *mysqlsvc.MySQLDataEd
 
 // Runtime captures the service methods available for the current UI request.
 type Runtime struct {
-	Loader         mysqlDataLoader
-	AdvancedLoader mysqlDataAdvancedLoader
-	Saver          mysqlDataSaver
-	RowReader      mysqlDataRowReader
-	Verify         Verifier
+	Loader           mysqlDataLoader
+	AdvancedLoader   mysqlDataAdvancedLoader
+	Saver            mysqlDataSaver
+	RowReader        mysqlDataRowReader
+	Verify           Verifier
+	Exporter         mysqlDataExporter
+	Analyzer         mysqlDataAnalyzer
+	Transactions     DataTransactions
+	NewTableImporter mysqlDataNewTableImporter
 }
 
 func MySQLRuntime(manager *mysqlsvc.MySQLSessionManager) Runtime {
 	if manager == nil {
 		return Runtime{}
 	}
-	return Runtime{AdvancedLoader: manager.TableDataPageWithOptions, Saver: manager.ApplyMySQLDataEdits, RowReader: manager.ReadMySQLDataRow, Verify: manager.VerifyMySQLDataEdits}
+	return Runtime{NewTableImporter: manager.ImportMySQLDataIntoNewTable, Analyzer: manager.AnalyzeMySQLData, Exporter: manager.ExportMySQLData, AdvancedLoader: manager.TableDataPageWithOptions, Saver: manager.ApplyMySQLDataEdits, RowReader: manager.ReadMySQLDataRow, Verify: manager.VerifyMySQLDataEdits, Transactions: DataTransactions{
+		Begin: manager.BeginMySQLDataTransaction, Commit: manager.CommitMySQLDataTransaction,
+		Rollback: manager.RollbackMySQLDataTransaction, Close: func(t *mysqlsvc.MySQLDataTransaction) { t.Close() },
+		Chunk: manager.ReadMySQLFieldChunkInTransaction, Page: manager.TableDataPageInTransaction, Save: manager.ApplyMySQLDataEditsInTransaction, Row: manager.ReadMySQLDataRowInTransaction,
+	}}
 }
 
 type Dependencies struct {
-	Session   func() Session
-	Runtime   func() Runtime
-	Inspector InspectorDependencies
-	Status    func(string)
-	Activate  func(*Document)
+	Session           func() Session
+	Runtime           func() Runtime
+	Inspector         InspectorDependencies
+	Status            func(string)
+	Activate          func(*Document)
+	TableImported     func(ui.Services, TableImportEvent)
+	OpenImportedTable func(ui.Services, TableImportEvent)
 }
 
 // Document has stable qualified identity. All mutable grid, draft and request
 // state belongs to this module and is accessed only on the UI thread.
 type Document struct {
+	toolbar           mysqlDataToolbarState
+	fill              mysqlDataFillState
 	id                uint64
 	closed            bool
 	database, table   string
@@ -62,7 +74,9 @@ type Document struct {
 	results           <-chan mysqlDataResult
 	request           uint64
 	edit              mysqlDataEditState
+	transaction       dataTransactionState
 	export            mysqlDataExportState
+	transfer          mysqlDataTransferState
 	selection         ui.Selection[int]
 	selectedRow       int
 	sort              ui.SortOrder
@@ -85,6 +99,7 @@ type Document struct {
 	useKeyset         bool
 	after             *mysqlsvc.MySQLDataCursor
 	cursorHistory     map[int64]*mysqlsvc.MySQLDataCursor
+	tools             mysqlDataToolsState
 }
 type State struct {
 	deps                  Dependencies
@@ -96,6 +111,10 @@ type State struct {
 	Saver                 mysqlDataSaver
 	RowReader             mysqlDataRowReader
 	Verify                Verifier
+	Exporter              mysqlDataExporter
+	Analyzer              mysqlDataAnalyzer
+	Transactions          DataTransactions
+	NewTableImporter      mysqlDataNewTableImporter
 }
 
 func New(deps Dependencies) *State {
@@ -180,8 +199,11 @@ func (d *Document) Error() string                 { return d.err }
 func (d *Document) Offset() int64                 { return d.offset }
 func (d *Document) HasDraft() bool                { return mysqlDataHasDraft(d) }
 func (s *State) Consume(services ui.Services) {
+	s.consumeDataTransactions(services)
 	s.consumePages()
 	s.consumeEdits(services)
+	s.consumeDataTransfers(services)
+	s.consumeDataAnalysis()
 	s.inspector.Consume()
 }
 func (s *State) inspectorPanel(t *Document) *Panel {
@@ -192,6 +214,27 @@ func (s *State) inspectorPanel(t *Document) *Panel {
 		t.panel = s.inspector.Open(t.profileID, t.database, t.table, func() Selection {
 			return Selection{Page: t.page, Column: t.grid.Cells.Cursor, Row: t.selectedRow, Hidden: t.hiddenColumns, Offset: t.offset, Loading: t.loading, Error: t.err}
 		})
+	}
+	t.panel.chunkError = func(err error) { s.dataTransactionReadFailed(t, err) }
+	t.panel.chunkLoader = func() ChunkLoader {
+		if dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain {
+			return nil
+		}
+		if token, read := t.transaction.token, t.transaction.runtime.Chunk; token != nil {
+			if read == nil {
+				return nil
+			}
+			return func(ctx context.Context, profile int64, database, table, column string, ref mysqlsvc.MySQLRowRef, offset int64, units int) (*mysqlsvc.MySQLFieldChunk, error) {
+				return read(ctx, token, profile, database, table, column, ref, offset, units)
+			}
+		}
+		if s.inspector.ChunkLoader != nil {
+			return s.inspector.ChunkLoader
+		}
+		if s.inspector.deps.ChunkLoader != nil {
+			return s.inspector.deps.ChunkLoader()
+		}
+		return nil
 	}
 	return t.panel
 }

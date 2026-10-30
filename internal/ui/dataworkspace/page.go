@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/egoist/mygo/ui"
 
@@ -14,6 +15,7 @@ type mysqlDataLoader func(context.Context, int64, string, string, int64, int) (*
 type mysqlDataAdvancedLoader func(context.Context, int64, string, string, mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error)
 
 type mysqlDataResult struct {
+	History    mysqlDataHistoryEntry
 	generation uint64
 	profileID  int64
 	request    uint64
@@ -26,6 +28,13 @@ func (s *State) Cancel(t *Document) {
 	if t == nil || t.closed {
 		return
 	}
+	if entry := t.tools.historyActiveRead; t.loading && entry != nil {
+		canceled := *entry
+		canceled.At, canceled.Duration = time.Now(), time.Since(entry.At)
+		canceled.Failed, canceled.Message = true, mysqlDataHistoryError(context.Canceled, false, false, false)
+		s.appendDataHistory(t, canceled)
+	}
+	t.tools.historyActiveRead = nil
 	t.request++
 	s.cancelMySQLChunk(t)
 	if t.cancel != nil {
@@ -36,7 +45,7 @@ func (s *State) Cancel(t *Document) {
 	t.loading = false
 }
 func (s *State) Load(services ui.Services, t *Document, refresh bool) {
-	if t == nil || t.closed || t.profileID != s.session().ProfileID ||
+	if t == nil || t.closed || t.transfer.Busy || t.transfer.Uncertain || dataTransactionUnavailable(t) || t.profileID != s.session().ProfileID ||
 		!s.session().Connected || s.session().ProfileID <= 0 {
 		return
 	}
@@ -59,7 +68,7 @@ func (s *State) Load(services ui.Services, t *Document, refresh bool) {
 		FilterMode: t.filterMode, SortColumn: t.sortColumn,
 		SortDescending: t.sortDescending, UseKeyset: t.useKeyset, After: cloneCursor(t.after),
 		Filters: append([]mysqlsvc.MySQLDataFilterRule(nil), t.filterRules...), Sorts: append([]mysqlsvc.MySQLDataSortRule(nil), t.sortRules...)}
-	advanced := s.advancedLoader()
+	advanced := s.advancedLoaderFor(t)
 	legacy := s.pageLoader()
 	if advanced == nil && legacy == nil {
 		s.Cancel(t)
@@ -68,7 +77,11 @@ func (s *State) Load(services ui.Services, t *Document, refresh bool) {
 	}
 	out := make(chan mysqlDataResult, 1)
 	t.results = out
+	history := mysqlDataReadHistoryRequest(database, table, options)
+	activeHistory := history
+	t.tools.historyActiveRead = &activeHistory
 	go func() {
+		started := time.Now()
 		var page *mysqlsvc.MySQLDataPage
 		var err error
 		if advanced != nil {
@@ -78,7 +91,8 @@ func (s *State) Load(services ui.Services, t *Document, refresh bool) {
 		} else {
 			err = mysqlsvc.ErrMySQLDataPage // mock-only legacy loader cannot silently ignore a filter.
 		}
-		out <- mysqlDataResult{generation: gen, profileID: profile, request: request, offset: offset, page: page, err: err}
+		history.At, history.Duration = time.Now(), time.Since(started)
+		out <- mysqlDataResult{History: history, generation: gen, profileID: profile, request: request, offset: offset, page: page, err: err}
 		services.Invalidate()
 	}()
 }
@@ -131,12 +145,20 @@ func (s *State) consumePages() {
 				result.offset != t.offset {
 				continue
 			}
+			s.recordDataPageHistory(t, result, result.generation != s.session().Generation || !s.session().Connected)
 			s.Cancel(t)
+			if !result.History.At.IsZero() {
+				t.tools.historyRequest, t.tools.historyRecorded = t.request, true
+			}
 			if result.generation != s.session().Generation || !s.session().Connected {
 				t.err = "原 MySQL 会话已失效，请刷新表数据"
 				continue
 			}
 			if result.err != nil {
+				if errors.Is(result.err, mysqlsvc.ErrMySQLDataTransactionLost) {
+					t.transaction.lost = true
+					t.transaction.err = result.err.Error()
+				}
 				if !errors.Is(result.err, context.Canceled) {
 					t.err = result.err.Error()
 				}
@@ -172,7 +194,13 @@ func (s *State) Close(t *Document) {
 	s.flushMySQLDataLayout(t)
 	s.cancelMySQLDataEdit(t)
 	s.Cancel(t)
+	s.closeDataTransaction(t)
 	s.inspector.Close(t.panel)
+	s.closeDataTransfer(t)
+	s.closeDataAnalysis(t)
+	t.tools = mysqlDataToolsState{}
+	t.toolbar = mysqlDataToolbarState{}
+	t.fill = mysqlDataFillState{}
 	t.closed = true
 	t.page, t.panel, t.columns = nil, nil, nil
 	t.edit = mysqlDataEditState{}

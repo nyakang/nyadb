@@ -5509,3 +5509,2589 @@ func StructureSessionExpired() string { return In(i18n.Locale()).StructureSessio
 func (msgs Messages) StructureSessionExpired() string {
 	return Catalog.Format(msgs.locale, "structureSessionExpired", nil)
 }
+
+// MysqlToolbarRowsFiltersSorts says "%d. %s · 第 %d–%d 行 · 筛选 %d · 排序 %d"
+// in the language the app shows.
+func MysqlToolbarRowsFiltersSorts() string { return In(i18n.Locale()).MysqlToolbarRowsFiltersSorts() }
+
+// MysqlToolbarRowsFiltersSorts says "%d. %s · 第 %d–%d 行 · 筛选 %d · 排序 %d"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarRowsFiltersSorts() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarRowsFiltersSorts", nil)
+}
+
+// MysqlToolbarAIServiceIsNotConfigured says "AI 服务尚未配置"
+// in the language the app shows.
+func MysqlToolbarAIServiceIsNotConfigured() string {
+	return In(i18n.Locale()).MysqlToolbarAIServiceIsNotConfigured()
+}
+
+// MysqlToolbarAIServiceIsNotConfigured says "AI 服务尚未配置"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAIServiceIsNotConfigured() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAIServiceIsNotConfigured", nil)
+}
+
+// MysqlToolbarAIAutofill says "AI 自动填充"
+// in the language the app shows.
+func MysqlToolbarAIAutofill() string { return In(i18n.Locale()).MysqlToolbarAIAutofill() }
+
+// MysqlToolbarAIAutofill says "AI 自动填充"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAIAutofill() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAIAutofill", nil)
+}
+
+// MysqlToolbarAIAutofillDropdown says "AI 自动填充 ▾"
+// in the language the app shows.
+func MysqlToolbarAIAutofillDropdown() string {
+	return In(i18n.Locale()).MysqlToolbarAIAutofillDropdown()
+}
+
+// MysqlToolbarAIAutofillDropdown says "AI 自动填充 ▾"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAIAutofillDropdown() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAIAutofillDropdown", nil)
+}
+
+// MysqlToolbarJSONImportValuesMustBeStringsNumbers says "JSON 导入值必须为字符串、数字、布尔值或 null"
+// in the language the app shows.
+func MysqlToolbarJSONImportValuesMustBeStringsNumbers() string {
+	return In(i18n.Locale()).MysqlToolbarJSONImportValuesMustBeStringsNumbers()
+}
+
+// MysqlToolbarJSONImportValuesMustBeStringsNumbers says "JSON 导入值必须为字符串、数字、布尔值或 null"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarJSONImportValuesMustBeStringsNumbers() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarJSONImportValuesMustBeStringsNumbers", nil)
+}
+
+// MysqlToolbarTheJSONFileMustContainASingle says "JSON 文件必须只包含一个对象数组"
+// in the language the app shows.
+func MysqlToolbarTheJSONFileMustContainASingle() string {
+	return In(i18n.Locale()).MysqlToolbarTheJSONFileMustContainASingle()
+}
+
+// MysqlToolbarTheJSONFileMustContainASingle says "JSON 文件必须只包含一个对象数组"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheJSONFileMustContainASingle() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheJSONFileMustContainASingle", nil)
+}
+
+// MysqlToolbarInvalidJSONFormat says "JSON 格式无效"
+// in the language the app shows.
+func MysqlToolbarInvalidJSONFormat() string { return In(i18n.Locale()).MysqlToolbarInvalidJSONFormat() }
+
+// MysqlToolbarInvalidJSONFormat says "JSON 格式无效"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarInvalidJSONFormat() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarInvalidJSONFormat", nil)
+}
+
+// MysqlToolbarEveryJSONRowMustContainTheSame says "JSON 每行必须包含相同字段"
+// in the language the app shows.
+func MysqlToolbarEveryJSONRowMustContainTheSame() string {
+	return In(i18n.Locale()).MysqlToolbarEveryJSONRowMustContainTheSame()
+}
+
+// MysqlToolbarEveryJSONRowMustContainTheSame says "JSON 每行必须包含相同字段"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarEveryJSONRowMustContainTheSame() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarEveryJSONRowMustContainTheSame", nil)
+}
+
+// MysqlToolbarSelectStatementsTotalQueries says "SELECT 语句：%d · 查询总数：%d"
+// in the language the app shows.
+func MysqlToolbarSelectStatementsTotalQueries() string {
+	return In(i18n.Locale()).MysqlToolbarSelectStatementsTotalQueries()
+}
+
+// MysqlToolbarSelectStatementsTotalQueries says "SELECT 语句：%d · 查询总数：%d"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSelectStatementsTotalQueries() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSelectStatementsTotalQueries", nil)
+}
+
+// MysqlToolbarSQLExportCannotIncludeGeneratedFieldsDeselect says "SQL 导出不能包含生成字段，请取消勾选该字段"
+// in the language the app shows.
+func MysqlToolbarSQLExportCannotIncludeGeneratedFieldsDeselect() string {
+	return In(i18n.Locale()).MysqlToolbarSQLExportCannotIncludeGeneratedFieldsDeselect()
+}
+
+// MysqlToolbarSQLExportCannotIncludeGeneratedFieldsDeselect says "SQL 导出不能包含生成字段，请取消勾选该字段"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSQLExportCannotIncludeGeneratedFieldsDeselect() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSQLExportCannotIncludeGeneratedFieldsDeselect", nil)
+}
+
+// MysqlToolbarTransactionStateIsUncertain says "事务状态不确定"
+// in the language the app shows.
+func MysqlToolbarTransactionStateIsUncertain() string {
+	return In(i18n.Locale()).MysqlToolbarTransactionStateIsUncertain()
+}
+
+// MysqlToolbarTransactionStateIsUncertain says "事务状态不确定"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTransactionStateIsUncertain() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTransactionStateIsUncertain", nil)
+}
+
+// MysqlToolbarTransactionActiveChangesAreNotCommitted says "事务进行中，更改尚未提交"
+// in the language the app shows.
+func MysqlToolbarTransactionActiveChangesAreNotCommitted() string {
+	return In(i18n.Locale()).MysqlToolbarTransactionActiveChangesAreNotCommitted()
+}
+
+// MysqlToolbarTransactionActiveChangesAreNotCommitted says "事务进行中，更改尚未提交"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTransactionActiveChangesAreNotCommitted() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTransactionActiveChangesAreNotCommitted", nil)
+}
+
+// MysqlToolbarOnlyTheLast50SuccessfulQueriesIn says "仅保留此文档会话最近 50 …"
+// in the language the app shows.
+func MysqlToolbarOnlyTheLast50SuccessfulQueriesIn() string {
+	return In(i18n.Locale()).MysqlToolbarOnlyTheLast50SuccessfulQueriesIn()
+}
+
+// MysqlToolbarOnlyTheLast50SuccessfulQueriesIn says "仅保留此文档会话最近 50 …"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarOnlyTheLast50SuccessfulQueriesIn() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarOnlyTheLast50SuccessfulQueriesIn", nil)
+}
+
+// MysqlToolbarAnalyzingTheLoadedPageOnlyRowsRows says "仅分析当前已加载页：第 %d–%d 行，共 %d 行；统计不代表整张表。"
+// in the language the app shows.
+func MysqlToolbarAnalyzingTheLoadedPageOnlyRowsRows() string {
+	return In(i18n.Locale()).MysqlToolbarAnalyzingTheLoadedPageOnlyRowsRows()
+}
+
+// MysqlToolbarAnalyzingTheLoadedPageOnlyRowsRows says "仅分析当前已加载页：第 %d–%d 行，共 %d 行；统计不代表整张表。"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalyzingTheLoadedPageOnlyRowsRows() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalyzingTheLoadedPageOnlyRowsRows", nil)
+}
+
+// MysqlToolbarInsertNewRowsOnlyUpTo200 says "仅插入新行；最多 200 行、文件最多 1 MiB，一次事务提交。CSV/TSV 首行为字段名，\\N 表示 N…"
+// in the language the app shows.
+func MysqlToolbarInsertNewRowsOnlyUpTo200() string {
+	return In(i18n.Locale()).MysqlToolbarInsertNewRowsOnlyUpTo200()
+}
+
+// MysqlToolbarInsertNewRowsOnlyUpTo200 says "仅插入新行；最多 200 行、文件最多 1 MiB，一次事务提交。CSV/TSV 首行为字段名，\\N 表示 N…"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarInsertNewRowsOnlyUpTo200() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarInsertNewRowsOnlyUpTo200", nil)
+}
+
+// MysqlToolbarSaveAppliedRulesAndRowsPerPage says "保存已应用规则及每页行数；不会保存行数据或待保存更改。"
+// in the language the app shows.
+func MysqlToolbarSaveAppliedRulesAndRowsPerPage() string {
+	return In(i18n.Locale()).MysqlToolbarSaveAppliedRulesAndRowsPerPage()
+}
+
+// MysqlToolbarSaveAppliedRulesAndRowsPerPage says "保存已应用规则及每页行数；不会保存行数据或待保存更改。"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSaveAppliedRulesAndRowsPerPage() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSaveAppliedRulesAndRowsPerPage", nil)
+}
+
+// MysqlToolbarFailedToSaveTheTableProfile says "保存表配置文件失败"
+// in the language the app shows.
+func MysqlToolbarFailedToSaveTheTableProfile() string {
+	return In(i18n.Locale()).MysqlToolbarFailedToSaveTheTableProfile()
+}
+
+// MysqlToolbarFailedToSaveTheTableProfile says "保存表配置文件失败"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFailedToSaveTheTableProfile() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFailedToSaveTheTableProfile", nil)
+}
+
+// MysqlToolbarSaveProfile says "保存配置"
+// in the language the app shows.
+func MysqlToolbarSaveProfile() string { return In(i18n.Locale()).MysqlToolbarSaveProfile() }
+
+// MysqlToolbarSaveProfile says "保存配置"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSaveProfile() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSaveProfile", nil)
+}
+
+// MysqlToolbarSaveProfile488def says "保存配置文件"
+// in the language the app shows.
+func MysqlToolbarSaveProfile488def() string { return In(i18n.Locale()).MysqlToolbarSaveProfile488def() }
+
+// MysqlToolbarSaveProfile488def says "保存配置文件"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSaveProfile488def() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSaveProfile488def", nil)
+}
+
+// MysqlToolbarValue says "值"
+// in the language the app shows.
+func MysqlToolbarValue() string { return In(i18n.Locale()).MysqlToolbarValue() }
+
+// MysqlToolbarValue says "值"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarValue() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarValue", nil)
+}
+
+// MysqlToolbarValueDistributionUpTo10Items says "值分布（最多 10 项）"
+// in the language the app shows.
+func MysqlToolbarValueDistributionUpTo10Items() string {
+	return In(i18n.Locale()).MysqlToolbarValueDistributionUpTo10Items()
+}
+
+// MysqlToolbarValueDistributionUpTo10Items says "值分布（最多 10 项）"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarValueDistributionUpTo10Items() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarValueDistributionUpTo10Items", nil)
+}
+
+// MysqlToolbarAllRecords says "全部记录"
+// in the language the app shows.
+func MysqlToolbarAllRecords() string { return In(i18n.Locale()).MysqlToolbarAllRecords() }
+
+// MysqlToolbarAllRecords says "全部记录"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAllRecords() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAllRecords", nil)
+}
+
+// MysqlToolbarAllRecordsRowsTotalStatisticsAreCalculated says "全部记录：共 %d 行；统计由数据库计算。"
+// in the language the app shows.
+func MysqlToolbarAllRecordsRowsTotalStatisticsAreCalculated() string {
+	return In(i18n.Locale()).MysqlToolbarAllRecordsRowsTotalStatisticsAreCalculated()
+}
+
+// MysqlToolbarAllRecordsRowsTotalStatisticsAreCalculated says "全部记录：共 %d 行；统计由数据库计算。"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAllRecordsRowsTotalStatisticsAreCalculated() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAllRecordsRowsTotalStatisticsAreCalculated", nil)
+}
+
+// MysqlToolbarClose says "关闭"
+// in the language the app shows.
+func MysqlToolbarClose() string { return In(i18n.Locale()).MysqlToolbarClose() }
+
+// MysqlToolbarClose says "关闭"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarClose() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarClose", nil)
+}
+
+// MysqlToolbarCloseEditor says "关闭编辑器"
+// in the language the app shows.
+func MysqlToolbarCloseEditor() string { return In(i18n.Locale()).MysqlToolbarCloseEditor() }
+
+// MysqlToolbarCloseEditor says "关闭编辑器"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCloseEditor() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCloseEditor", nil)
+}
+
+// MysqlToolbarCloseTable says "关闭表"
+// in the language the app shows.
+func MysqlToolbarCloseTable() string { return In(i18n.Locale()).MysqlToolbarCloseTable() }
+
+// MysqlToolbarCloseTable says "关闭表"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCloseTable() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCloseTable", nil)
+}
+
+// MysqlToolbarCloseProfile says "关闭配置文件"
+// in the language the app shows.
+func MysqlToolbarCloseProfile() string { return In(i18n.Locale()).MysqlToolbarCloseProfile() }
+
+// MysqlToolbarCloseProfile says "关闭配置文件"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCloseProfile() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCloseProfile", nil)
+}
+
+// MysqlToolbarAnalysisField says "分析字段"
+// in the language the app shows.
+func MysqlToolbarAnalysisField() string { return In(i18n.Locale()).MysqlToolbarAnalysisField() }
+
+// MysqlToolbarAnalysisField says "分析字段"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalysisField() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalysisField", nil)
+}
+
+// MysqlToolbarAnalysisScope says "分析范围"
+// in the language the app shows.
+func MysqlToolbarAnalysisScope() string { return In(i18n.Locale()).MysqlToolbarAnalysisScope() }
+
+// MysqlToolbarAnalysisScope says "分析范围"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalysisScope() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalysisScope", nil)
+}
+
+// MysqlToolbarDeleteProfile says "删除配置"
+// in the language the app shows.
+func MysqlToolbarDeleteProfile() string { return In(i18n.Locale()).MysqlToolbarDeleteProfile() }
+
+// MysqlToolbarDeleteProfile says "删除配置"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarDeleteProfile() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarDeleteProfile", nil)
+}
+
+// MysqlToolbarLoadProfile says "加载配置"
+// in the language the app shows.
+func MysqlToolbarLoadProfile() string { return In(i18n.Locale()).MysqlToolbarLoadProfile() }
+
+// MysqlToolbarLoadProfile says "加载配置"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarLoadProfile() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarLoadProfile", nil)
+}
+
+// MysqlToolbarLoadProfilee7e8b8 says "加载配置文件"
+// in the language the app shows.
+func MysqlToolbarLoadProfilee7e8b8() string { return In(i18n.Locale()).MysqlToolbarLoadProfilee7e8b8() }
+
+// MysqlToolbarLoadProfilee7e8b8 says "加载配置文件"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarLoadProfilee7e8b8() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarLoadProfilee7e8b8", nil)
+}
+
+// MysqlToolbarHexadecimal says "十六进制"
+// in the language the app shows.
+func MysqlToolbarHexadecimal() string { return In(i18n.Locale()).MysqlToolbarHexadecimal() }
+
+// MysqlToolbarHexadecimal says "十六进制"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarHexadecimal() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarHexadecimal", nil)
+}
+
+// MysqlToolbarCellEditorContent says "单元格编辑器内容"
+// in the language the app shows.
+func MysqlToolbarCellEditorContent() string { return In(i18n.Locale()).MysqlToolbarCellEditorContent() }
+
+// MysqlToolbarCellEditorContent says "单元格编辑器内容"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCellEditorContent() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCellEditorContent", nil)
+}
+
+// MysqlToolbarCellPreview says "单元格预览"
+// in the language the app shows.
+func MysqlToolbarCellPreview() string { return In(i18n.Locale()).MysqlToolbarCellPreview() }
+
+// MysqlToolbarCellPreview says "单元格预览"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCellPreview() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCellPreview", nil)
+}
+
+// MysqlToolbarHistory says "历史"
+// in the language the app shows.
+func MysqlToolbarHistory() string { return In(i18n.Locale()).MysqlToolbarHistory() }
+
+// MysqlToolbarHistory says "历史"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarHistory() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarHistory", nil)
+}
+
+// MysqlToolbarAFilterOrSortFieldInThe says "历史中的筛选或排序字段已不可用"
+// in the language the app shows.
+func MysqlToolbarAFilterOrSortFieldInThe() string {
+	return In(i18n.Locale()).MysqlToolbarAFilterOrSortFieldInThe()
+}
+
+// MysqlToolbarAFilterOrSortFieldInThe says "历史中的筛选或排序字段已不可用"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAFilterOrSortFieldInThe() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAFilterOrSortFieldInThe", nil)
+}
+
+// MysqlToolbarHistoricalParameterizedSQL says "历史参数化 SQL"
+// in the language the app shows.
+func MysqlToolbarHistoricalParameterizedSQL() string {
+	return In(i18n.Locale()).MysqlToolbarHistoricalParameterizedSQL()
+}
+
+// MysqlToolbarHistoricalParameterizedSQL says "历史参数化 SQL"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarHistoricalParameterizedSQL() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarHistoricalParameterizedSQL", nil)
+}
+
+// MysqlToolbarHistoryActions says "历史操作"
+// in the language the app shows.
+func MysqlToolbarHistoryActions() string { return In(i18n.Locale()).MysqlToolbarHistoryActions() }
+
+// MysqlToolbarHistoryActions says "历史操作"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarHistoryActions() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarHistoryActions", nil)
+}
+
+// MysqlToolbarHistoricalQuery says "历史查询"
+// in the language the app shows.
+func MysqlToolbarHistoricalQuery() string { return In(i18n.Locale()).MysqlToolbarHistoricalQuery() }
+
+// MysqlToolbarHistoricalQuery says "历史查询"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarHistoricalQuery() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarHistoricalQuery", nil)
+}
+
+// MysqlToolbarHistoricalFilterAndSortRules says "历史筛选与排序规则"
+// in the language the app shows.
+func MysqlToolbarHistoricalFilterAndSortRules() string {
+	return In(i18n.Locale()).MysqlToolbarHistoricalFilterAndSortRules()
+}
+
+// MysqlToolbarHistoricalFilterAndSortRules says "历史筛选与排序规则"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarHistoricalFilterAndSortRules() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarHistoricalFilterAndSortRules", nil)
+}
+
+// MysqlToolbarHistoryRulesRestoredClickApplyFilterSort says "历史规则已恢复；请点击应用筛选 & 排序执行查询"
+// in the language the app shows.
+func MysqlToolbarHistoryRulesRestoredClickApplyFilterSort() string {
+	return In(i18n.Locale()).MysqlToolbarHistoryRulesRestoredClickApplyFilterSort()
+}
+
+// MysqlToolbarHistoryRulesRestoredClickApplyFilterSort says "历史规则已恢复；请点击应用筛选 & 排序执行查询"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarHistoryRulesRestoredClickApplyFilterSort() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarHistoryRulesRestoredClickApplyFilterSort", nil)
+}
+
+// MysqlToolbarTheOriginalMysqlSessionHasExpiredAnalysis says "原 MySQL 会话已失效，分析结果已丢弃"
+// in the language the app shows.
+func MysqlToolbarTheOriginalMysqlSessionHasExpiredAnalysis() string {
+	return In(i18n.Locale()).MysqlToolbarTheOriginalMysqlSessionHasExpiredAnalysis()
+}
+
+// MysqlToolbarTheOriginalMysqlSessionHasExpiredAnalysis says "原 MySQL 会话已失效，分析结果已丢弃"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheOriginalMysqlSessionHasExpiredAnalysis() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheOriginalMysqlSessionHasExpiredAnalysis", nil)
+}
+
+// MysqlToolbarTheOriginalMysqlSessionHasExpiredClose says "原 MySQL 会话已失效，请关闭向导后重新打开"
+// in the language the app shows.
+func MysqlToolbarTheOriginalMysqlSessionHasExpiredClose() string {
+	return In(i18n.Locale()).MysqlToolbarTheOriginalMysqlSessionHasExpiredClose()
+}
+
+// MysqlToolbarTheOriginalMysqlSessionHasExpiredClose says "原 MySQL 会话已失效，请关闭向导后重新打开"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheOriginalMysqlSessionHasExpiredClose() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheOriginalMysqlSessionHasExpiredClose", nil)
+}
+
+// MysqlToolbarTheOriginalMysqlSessionHasExpiredReconnect says "原 MySQL 会话已失效，请重新连接后分析"
+// in the language the app shows.
+func MysqlToolbarTheOriginalMysqlSessionHasExpiredReconnect() string {
+	return In(i18n.Locale()).MysqlToolbarTheOriginalMysqlSessionHasExpiredReconnect()
+}
+
+// MysqlToolbarTheOriginalMysqlSessionHasExpiredReconnect says "原 MySQL 会话已失效，请重新连接后分析"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheOriginalMysqlSessionHasExpiredReconnect() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheOriginalMysqlSessionHasExpiredReconnect", nil)
+}
+
+// MysqlToolbarCancelAnalysis says "取消分析"
+// in the language the app shows.
+func MysqlToolbarCancelAnalysis() string { return In(i18n.Locale()).MysqlToolbarCancelAnalysis() }
+
+// MysqlToolbarCancelAnalysis says "取消分析"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCancelAnalysis() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCancelAnalysis", nil)
+}
+
+// MysqlToolbarSaveProfileAs says "另存配置文件为…"
+// in the language the app shows.
+func MysqlToolbarSaveProfileAs() string { return In(i18n.Locale()).MysqlToolbarSaveProfileAs() }
+
+// MysqlToolbarSaveProfileAs says "另存配置文件为…"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSaveProfileAs() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSaveProfileAs", nil)
+}
+
+// MysqlToolbarAnExistingProfileWithThisNameWill says "同名配置将被替换。"
+// in the language the app shows.
+func MysqlToolbarAnExistingProfileWithThisNameWill() string {
+	return In(i18n.Locale()).MysqlToolbarAnExistingProfileWithThisNameWill()
+}
+
+// MysqlToolbarAnExistingProfileWithThisNameWill says "同名配置将被替换。"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnExistingProfileWithThisNameWill() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnExistingProfileWithThisNameWill", nil)
+}
+
+// MysqlToolbarSingletons says "唯一一次"
+// in the language the app shows.
+func MysqlToolbarSingletons() string { return In(i18n.Locale()).MysqlToolbarSingletons() }
+
+// MysqlToolbarSingletons says "唯一一次"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSingletons() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSingletons", nil)
+}
+
+// MysqlToolbarDistinctValues says "唯一值"
+// in the language the app shows.
+func MysqlToolbarDistinctValues() string { return In(i18n.Locale()).MysqlToolbarDistinctValues() }
+
+// MysqlToolbarDistinctValues says "唯一值"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarDistinctValues() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarDistinctValues", nil)
+}
+
+// MysqlToolbarRollback says "回滚"
+// in the language the app shows.
+func MysqlToolbarRollback() string { return In(i18n.Locale()).MysqlToolbarRollback() }
+
+// MysqlToolbarRollback says "回滚"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarRollback() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarRollback", nil)
+}
+
+// MysqlToolbarRollbackTransaction says "回滚事务"
+// in the language the app shows.
+func MysqlToolbarRollbackTransaction() string {
+	return In(i18n.Locale()).MysqlToolbarRollbackTransaction()
+}
+
+// MysqlToolbarRollbackTransaction says "回滚事务"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarRollbackTransaction() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarRollbackTransaction", nil)
+}
+
+// MysqlToolbarImage says "图像"
+// in the language the app shows.
+func MysqlToolbarImage() string { return In(i18n.Locale()).MysqlToolbarImage() }
+
+// MysqlToolbarImage says "图像"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImage() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImage", nil)
+}
+
+// MysqlToolbarFillValue says "填充值"
+// in the language the app shows.
+func MysqlToolbarFillValue() string { return In(i18n.Locale()).MysqlToolbarFillValue() }
+
+// MysqlToolbarFillValue says "填充值"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFillValue() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFillValue", nil)
+}
+
+// MysqlToolbarFillStagedApplyChangesToSaveThem says "填充已暂存，请应用更改保存到数据库"
+// in the language the app shows.
+func MysqlToolbarFillStagedApplyChangesToSaveThem() string {
+	return In(i18n.Locale()).MysqlToolbarFillStagedApplyChangesToSaveThem()
+}
+
+// MysqlToolbarFillStagedApplyChangesToSaveThem says "填充已暂存，请应用更改保存到数据库"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFillStagedApplyChangesToSaveThem() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFillStagedApplyChangesToSaveThem", nil)
+}
+
+// MysqlToolbarFillSelectedCells says "填充所选单元格"
+// in the language the app shows.
+func MysqlToolbarFillSelectedCells() string { return In(i18n.Locale()).MysqlToolbarFillSelectedCells() }
+
+// MysqlToolbarFillSelectedCells says "填充所选单元格"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFillSelectedCells() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFillSelectedCells", nil)
+}
+
+// MysqlToolbarFillSelectedCellsb9a11b says "填充所选单元格…"
+// in the language the app shows.
+func MysqlToolbarFillSelectedCellsb9a11b() string {
+	return In(i18n.Locale()).MysqlToolbarFillSelectedCellsb9a11b()
+}
+
+// MysqlToolbarFillSelectedCellsb9a11b says "填充所选单元格…"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFillSelectedCellsb9a11b() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFillSelectedCellsb9a11b", nil)
+}
+
+// MysqlToolbarFillMode says "填充方式"
+// in the language the app shows.
+func MysqlToolbarFillMode() string { return In(i18n.Locale()).MysqlToolbarFillMode() }
+
+// MysqlToolbarFillMode says "填充方式"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFillMode() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFillMode", nil)
+}
+
+// MysqlToolbarFillSelection says "填充选区"
+// in the language the app shows.
+func MysqlToolbarFillSelection() string { return In(i18n.Locale()).MysqlToolbarFillSelection() }
+
+// MysqlToolbarFillSelection says "填充选区"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFillSelection() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFillSelection", nil)
+}
+
+// MysqlToolbarField says "字段"
+// in the language the app shows.
+func MysqlToolbarField() string { return In(i18n.Locale()).MysqlToolbarField() }
+
+// MysqlToolbarField says "字段"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarField() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarField", nil)
+}
+
+// MysqlToolbarFieldDistribution says "字段分布"
+// in the language the app shows.
+func MysqlToolbarFieldDistribution() string { return In(i18n.Locale()).MysqlToolbarFieldDistribution() }
+
+// MysqlToolbarFieldDistribution says "字段分布"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFieldDistribution() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFieldDistribution", nil)
+}
+
+// MysqlToolbarFieldMappingRows says "字段映射 · %d 行"
+// in the language the app shows.
+func MysqlToolbarFieldMappingRows() string { return In(i18n.Locale()).MysqlToolbarFieldMappingRows() }
+
+// MysqlToolbarFieldMappingRows says "字段映射 · %d 行"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFieldMappingRows() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFieldMappingRows", nil)
+}
+
+// MysqlToolbarFieldMappingContainsDuplicateUnknownOrGenerated says "字段映射包含重复、未知或生成字段"
+// in the language the app shows.
+func MysqlToolbarFieldMappingContainsDuplicateUnknownOrGenerated() string {
+	return In(i18n.Locale()).MysqlToolbarFieldMappingContainsDuplicateUnknownOrGenerated()
+}
+
+// MysqlToolbarFieldMappingContainsDuplicateUnknownOrGenerated says "字段映射包含重复、未知或生成字段"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFieldMappingContainsDuplicateUnknownOrGenerated() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFieldMappingContainsDuplicateUnknownOrGenerated", nil)
+}
+
+// MysqlToolbarExportCompleteValuesUpTo1Mib says "完整值导出：每字段最多 1 MiB、每行最多 16 MiB，超限将失败并保留原文件。CSV/TSV 使用 \\N…"
+// in the language the app shows.
+func MysqlToolbarExportCompleteValuesUpTo1Mib() string {
+	return In(i18n.Locale()).MysqlToolbarExportCompleteValuesUpTo1Mib()
+}
+
+// MysqlToolbarExportCompleteValuesUpTo1Mib says "完整值导出：每字段最多 1 MiB、每行最多 16 MiB，超限将失败并保留原文件。CSV/TSV 使用 \\N…"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarExportCompleteValuesUpTo1Mib() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarExportCompleteValuesUpTo1Mib", nil)
+}
+
+// MysqlToolbarFullAnalysisReadsCommittedDataDistinctValues says "完整分析读取已提交数据；去重与分组遵循字段 collation，二进制按字节，JSON 按 utf8mb4_bin…"
+// in the language the app shows.
+func MysqlToolbarFullAnalysisReadsCommittedDataDistinctValues() string {
+	return In(i18n.Locale()).MysqlToolbarFullAnalysisReadsCommittedDataDistinctValues()
+}
+
+// MysqlToolbarFullAnalysisReadsCommittedDataDistinctValues says "完整分析读取已提交数据；去重与分组遵循字段 collation，二进制按字节，JSON 按 utf8mb4_bin…"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFullAnalysisReadsCommittedDataDistinctValues() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFullAnalysisReadsCommittedDataDistinctValues", nil)
+}
+
+// MysqlToolbarCompleteAppliedFilterResultsConditionsRowsTotal says "完整已应用筛选结果：%d 个条件，共 %d 行；统计由数据库计算。"
+// in the language the app shows.
+func MysqlToolbarCompleteAppliedFilterResultsConditionsRowsTotal() string {
+	return In(i18n.Locale()).MysqlToolbarCompleteAppliedFilterResultsConditionsRowsTotal()
+}
+
+// MysqlToolbarCompleteAppliedFilterResultsConditionsRowsTotal says "完整已应用筛选结果：%d 个条件，共 %d 行；统计由数据库计算。"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCompleteAppliedFilterResultsConditionsRowsTotal() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCompleteAppliedFilterResultsConditionsRowsTotal", nil)
+}
+
+// MysqlToolbarFullDataAnalysisServiceIsUnavailable says "完整数据分析服务不可用"
+// in the language the app shows.
+func MysqlToolbarFullDataAnalysisServiceIsUnavailable() string {
+	return In(i18n.Locale()).MysqlToolbarFullDataAnalysisServiceIsUnavailable()
+}
+
+// MysqlToolbarFullDataAnalysisServiceIsUnavailable says "完整数据分析服务不可用"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFullDataAnalysisServiceIsUnavailable() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFullDataAnalysisServiceIsUnavailable", nil)
+}
+
+// MysqlToolbarFullDataExportServiceIsUnavailable says "完整数据导出服务不可用"
+// in the language the app shows.
+func MysqlToolbarFullDataExportServiceIsUnavailable() string {
+	return In(i18n.Locale()).MysqlToolbarFullDataExportServiceIsUnavailable()
+}
+
+// MysqlToolbarFullDataExportServiceIsUnavailable says "完整数据导出服务不可用"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFullDataExportServiceIsUnavailable() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFullDataExportServiceIsUnavailable", nil)
+}
+
+// MysqlToolbarCompleteFilterResults says "完整筛选结果"
+// in the language the app shows.
+func MysqlToolbarCompleteFilterResults() string {
+	return In(i18n.Locale()).MysqlToolbarCompleteFilterResults()
+}
+
+// MysqlToolbarCompleteFilterResults says "完整筛选结果"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCompleteFilterResults() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCompleteFilterResults", nil)
+}
+
+// MysqlToolbarImport says "导入"
+// in the language the app shows.
+func MysqlToolbarImport() string { return In(i18n.Locale()).MysqlToolbarImport() }
+
+// MysqlToolbarImport says "导入"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImport() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImport", nil)
+}
+
+// MysqlToolbarImportFailedThisWizardWillNotReplay says "导入失败；本次向导不会重放："
+// in the language the app shows.
+func MysqlToolbarImportFailedThisWizardWillNotReplay() string {
+	return In(i18n.Locale()).MysqlToolbarImportFailedThisWizardWillNotReplay()
+}
+
+// MysqlToolbarImportFailedThisWizardWillNotReplay says "导入失败；本次向导不会重放："
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportFailedThisWizardWillNotReplay() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportFailedThisWizardWillNotReplay", nil)
+}
+
+// MysqlToolbarImportFieldNamesMustBeNonemptyAnd says "导入字段名不能为空或重复"
+// in the language the app shows.
+func MysqlToolbarImportFieldNamesMustBeNonemptyAnd() string {
+	return In(i18n.Locale()).MysqlToolbarImportFieldNamesMustBeNonemptyAnd()
+}
+
+// MysqlToolbarImportFieldNamesMustBeNonemptyAnd says "导入字段名不能为空或重复"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportFieldNamesMustBeNonemptyAnd() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportFieldNamesMustBeNonemptyAnd", nil)
+}
+
+// MysqlToolbarImportFilesMustUseUTF8Encoding says "导入文件必须使用 UTF-8 编码"
+// in the language the app shows.
+func MysqlToolbarImportFilesMustUseUTF8Encoding() string {
+	return In(i18n.Locale()).MysqlToolbarImportFilesMustUseUTF8Encoding()
+}
+
+// MysqlToolbarImportFilesMustUseUTF8Encoding says "导入文件必须使用 UTF-8 编码"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportFilesMustUseUTF8Encoding() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportFilesMustUseUTF8Encoding", nil)
+}
+
+// MysqlToolbarTheImportFileHasNoFieldsOr says "导入文件没有字段或数据行"
+// in the language the app shows.
+func MysqlToolbarTheImportFileHasNoFieldsOr() string {
+	return In(i18n.Locale()).MysqlToolbarTheImportFileHasNoFieldsOr()
+}
+
+// MysqlToolbarTheImportFileHasNoFieldsOr says "导入文件没有字段或数据行"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheImportFileHasNoFieldsOr() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheImportFileHasNoFieldsOr", nil)
+}
+
+// MysqlToolbarTheImportFileExceedsThe1Mib says "导入文件超过 1 MiB 限制"
+// in the language the app shows.
+func MysqlToolbarTheImportFileExceedsThe1Mib() string {
+	return In(i18n.Locale()).MysqlToolbarTheImportFileExceedsThe1Mib()
+}
+
+// MysqlToolbarTheImportFileExceedsThe1Mib says "导入文件超过 1 MiB 限制"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheImportFileExceedsThe1Mib() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheImportFileExceedsThe1Mib", nil)
+}
+
+// MysqlToolbarTheImportFileExceedsThe200Row says "导入文件超过 200 行限制"
+// in the language the app shows.
+func MysqlToolbarTheImportFileExceedsThe200Row() string {
+	return In(i18n.Locale()).MysqlToolbarTheImportFileExceedsThe200Row()
+}
+
+// MysqlToolbarTheImportFileExceedsThe200Row says "导入文件超过 200 行限制"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheImportFileExceedsThe200Row() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheImportFileExceedsThe200Row", nil)
+}
+
+// MysqlToolbarTheImportResultIsUncertainReplayIs says "导入结果不确定，禁止重放；请核验数据库"
+// in the language the app shows.
+func MysqlToolbarTheImportResultIsUncertainReplayIs() string {
+	return In(i18n.Locale()).MysqlToolbarTheImportResultIsUncertainReplayIs()
+}
+
+// MysqlToolbarTheImportResultIsUncertainReplayIs says "导入结果不确定，禁止重放；请核验数据库"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheImportResultIsUncertainReplayIs() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheImportResultIsUncertainReplayIs", nil)
+}
+
+// MysqlToolbarExport says "导出"
+// in the language the app shows.
+func MysqlToolbarExport() string { return In(i18n.Locale()).MysqlToolbarExport() }
+
+// MysqlToolbarExport says "导出"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarExport() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarExport", nil)
+}
+
+// MysqlToolbarExportDataFile says "导出数据文件"
+// in the language the app shows.
+func MysqlToolbarExportDataFile() string { return In(i18n.Locale()).MysqlToolbarExportDataFile() }
+
+// MysqlToolbarExportDataFile says "导出数据文件"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarExportDataFile() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarExportDataFile", nil)
+}
+
+// MysqlToolbarExportScope says "导出范围"
+// in the language the app shows.
+func MysqlToolbarExportScope() string { return In(i18n.Locale()).MysqlToolbarExportScope() }
+
+// MysqlToolbarExportScope says "导出范围"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarExportScope() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarExportScope", nil)
+}
+
+// MysqlToolbarExpandEditor says "展开编辑器"
+// in the language the app shows.
+func MysqlToolbarExpandEditor() string { return In(i18n.Locale()).MysqlToolbarExpandEditor() }
+
+// MysqlToolbarExpandEditor says "展开编辑器"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarExpandEditor() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarExpandEditor", nil)
+}
+
+// MysqlToolbar20ProfilesSaved says "已保存 %d / 20 个配置"
+// in the language the app shows.
+func MysqlToolbar20ProfilesSaved() string { return In(i18n.Locale()).MysqlToolbar20ProfilesSaved() }
+
+// MysqlToolbar20ProfilesSaved says "已保存 %d / 20 个配置"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbar20ProfilesSaved() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbar20ProfilesSaved", nil)
+}
+
+// MysqlToolbarSavedTableProfiles says "已保存的表配置"
+// in the language the app shows.
+func MysqlToolbarSavedTableProfiles() string {
+	return In(i18n.Locale()).MysqlToolbarSavedTableProfiles()
+}
+
+// MysqlToolbarSavedTableProfiles says "已保存的表配置"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSavedTableProfiles() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSavedTableProfiles", nil)
+}
+
+// MysqlToolbarDataAnalysisCanceled says "已取消数据分析"
+// in the language the app shows.
+func MysqlToolbarDataAnalysisCanceled() string {
+	return In(i18n.Locale()).MysqlToolbarDataAnalysisCanceled()
+}
+
+// MysqlToolbarDataAnalysisCanceled says "已取消数据分析"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarDataAnalysisCanceled() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarDataAnalysisCanceled", nil)
+}
+
+// MysqlToolbarImportedRows says "已导入 %d 行"
+// in the language the app shows.
+func MysqlToolbarImportedRows() string { return In(i18n.Locale()).MysqlToolbarImportedRows() }
+
+// MysqlToolbarImportedRows says "已导入 %d 行"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportedRows() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportedRows", nil)
+}
+
+// MysqlToolbarExportedRowsTo says "已导出 %d 行至 %s"
+// in the language the app shows.
+func MysqlToolbarExportedRowsTo() string { return In(i18n.Locale()).MysqlToolbarExportedRowsTo() }
+
+// MysqlToolbarExportedRowsTo says "已导出 %d 行至 %s"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarExportedRowsTo() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarExportedRowsTo", nil)
+}
+
+// MysqlToolbarAppliedFilters says "已应用筛选"
+// in the language the app shows.
+func MysqlToolbarAppliedFilters() string { return In(i18n.Locale()).MysqlToolbarAppliedFilters() }
+
+// MysqlToolbarAppliedFilters says "已应用筛选"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAppliedFilters() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAppliedFilters", nil)
+}
+
+// MysqlToolbarValidatedRowsPreviewingTheFirstRows says "已校验 %d 行，预览前 %d 行"
+// in the language the app shows.
+func MysqlToolbarValidatedRowsPreviewingTheFirstRows() string {
+	return In(i18n.Locale()).MysqlToolbarValidatedRowsPreviewingTheFirstRows()
+}
+
+// MysqlToolbarValidatedRowsPreviewingTheFirstRows says "已校验 %d 行，预览前 %d 行"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarValidatedRowsPreviewingTheFirstRows() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarValidatedRowsPreviewingTheFirstRows", nil)
+}
+
+// MysqlToolbarMeanApprox says "平均值（约）"
+// in the language the app shows.
+func MysqlToolbarMeanApprox() string { return In(i18n.Locale()).MysqlToolbarMeanApprox() }
+
+// MysqlToolbarMeanApprox says "平均值（约）"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarMeanApprox() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarMeanApprox", nil)
+}
+
+// MysqlToolbarSequence says "序列"
+// in the language the app shows.
+func MysqlToolbarSequence() string { return In(i18n.Locale()).MysqlToolbarSequence() }
+
+// MysqlToolbarSequence says "序列"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSequence() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSequence", nil)
+}
+
+// MysqlToolbarSequenceStep says "序列步长"
+// in the language the app shows.
+func MysqlToolbarSequenceStep() string { return In(i18n.Locale()).MysqlToolbarSequenceStep() }
+
+// MysqlToolbarSequenceStep says "序列步长"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSequenceStep() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSequenceStep", nil)
+}
+
+// MysqlToolbarSequenceStart says "序列起点"
+// in the language the app shows.
+func MysqlToolbarSequenceStart() string { return In(i18n.Locale()).MysqlToolbarSequenceStart() }
+
+// MysqlToolbarSequenceStart says "序列起点"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSequenceStart() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSequenceStart", nil)
+}
+
+// MysqlToolbarInvalidSequenceStartOrStep says "序列起点或步长无效"
+// in the language the app shows.
+func MysqlToolbarInvalidSequenceStartOrStep() string {
+	return In(i18n.Locale()).MysqlToolbarInvalidSequenceStartOrStep()
+}
+
+// MysqlToolbarInvalidSequenceStartOrStep says "序列起点或步长无效"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarInvalidSequenceStartOrStep() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarInvalidSequenceStartOrStep", nil)
+}
+
+// MysqlToolbarTheSequenceExceedsTheIntegerRange says "序列超出整数范围"
+// in the language the app shows.
+func MysqlToolbarTheSequenceExceedsTheIntegerRange() string {
+	return In(i18n.Locale()).MysqlToolbarTheSequenceExceedsTheIntegerRange()
+}
+
+// MysqlToolbarTheSequenceExceedsTheIntegerRange says "序列超出整数范围"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheSequenceExceedsTheIntegerRange() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheSequenceExceedsTheIntegerRange", nil)
+}
+
+// MysqlToolbarBeginTransaction says "开始事务"
+// in the language the app shows.
+func MysqlToolbarBeginTransaction() string { return In(i18n.Locale()).MysqlToolbarBeginTransaction() }
+
+// MysqlToolbarBeginTransaction says "开始事务"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarBeginTransaction() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarBeginTransaction", nil)
+}
+
+// MysqlToolbarApplyOrDiscardPendingRecordsBeforeStarting says "开始事务前请应用或放弃待处理记录"
+// in the language the app shows.
+func MysqlToolbarApplyOrDiscardPendingRecordsBeforeStarting() string {
+	return In(i18n.Locale()).MysqlToolbarApplyOrDiscardPendingRecordsBeforeStarting()
+}
+
+// MysqlToolbarApplyOrDiscardPendingRecordsBeforeStarting says "开始事务前请应用或放弃待处理记录"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarApplyOrDiscardPendingRecordsBeforeStarting() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarApplyOrDiscardPendingRecordsBeforeStarting", nil)
+}
+
+// MysqlToolbarStartAnalysis says "开始分析"
+// in the language the app shows.
+func MysqlToolbarStartAnalysis() string { return In(i18n.Locale()).MysqlToolbarStartAnalysis() }
+
+// MysqlToolbarStartAnalysis says "开始分析"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarStartAnalysis() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarStartAnalysis", nil)
+}
+
+// MysqlToolbarTheLoadedPageIsEmptyTheseStatistics says "当前已加载页为空；统计不代表整张表。"
+// in the language the app shows.
+func MysqlToolbarTheLoadedPageIsEmptyTheseStatistics() string {
+	return In(i18n.Locale()).MysqlToolbarTheLoadedPageIsEmptyTheseStatistics()
+}
+
+// MysqlToolbarTheLoadedPageIsEmptyTheseStatistics says "当前已加载页为空；统计不代表整张表。"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheLoadedPageIsEmptyTheseStatistics() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheLoadedPageIsEmptyTheseStatistics", nil)
+}
+
+// MysqlToolbarCellsCannotBeFilledRightNow says "当前无法填充单元格"
+// in the language the app shows.
+func MysqlToolbarCellsCannotBeFilledRightNow() string {
+	return In(i18n.Locale()).MysqlToolbarCellsCannotBeFilledRightNow()
+}
+
+// MysqlToolbarCellsCannotBeFilledRightNow says "当前无法填充单元格"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCellsCannotBeFilledRightNow() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCellsCannotBeFilledRightNow", nil)
+}
+
+// MysqlToolbarCurrentSelection says "当前选区"
+// in the language the app shows.
+func MysqlToolbarCurrentSelection() string { return In(i18n.Locale()).MysqlToolbarCurrentSelection() }
+
+// MysqlToolbarCurrentSelection says "当前选区"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCurrentSelection() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCurrentSelection", nil)
+}
+
+// MysqlToolbarCurrentPage says "当前页"
+// in the language the app shows.
+func MysqlToolbarCurrentPage() string { return In(i18n.Locale()).MysqlToolbarCurrentPage() }
+
+// MysqlToolbarCurrentPage says "当前页"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCurrentPage() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCurrentPage", nil)
+}
+
+// MysqlToolbarTheCurrentPageCountsDistinctValuesUsing says "当前页按完整预览文本精确去重；截断或缺失值不参与数值和唯一值统计。均值保留 8 …"
+// in the language the app shows.
+func MysqlToolbarTheCurrentPageCountsDistinctValuesUsing() string {
+	return In(i18n.Locale()).MysqlToolbarTheCurrentPageCountsDistinctValuesUsing()
+}
+
+// MysqlToolbarTheCurrentPageCountsDistinctValuesUsing says "当前页按完整预览文本精确去重；截断或缺失值不参与数值和唯一值统计。均值保留 8 …"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheCurrentPageCountsDistinctValuesUsing() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheCurrentPageCountsDistinctValuesUsing", nil)
+}
+
+// MysqlToolbarTheCurrentPagePreviewIncludesUnsavedChanges says "当前页预览包含未保存更改；这些统计尚未反映数据库中的最终值。"
+// in the language the app shows.
+func MysqlToolbarTheCurrentPagePreviewIncludesUnsavedChanges() string {
+	return In(i18n.Locale()).MysqlToolbarTheCurrentPagePreviewIncludesUnsavedChanges()
+}
+
+// MysqlToolbarTheCurrentPagePreviewIncludesUnsavedChanges says "当前页预览包含未保存更改；这些统计尚未反映数据库中的最终值。"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheCurrentPagePreviewIncludesUnsavedChanges() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheCurrentPagePreviewIncludesUnsavedChanges", nil)
+}
+
+// MysqlToolbarRequiredFieldIsNotMapped says "必填字段未映射：%s"
+// in the language the app shows.
+func MysqlToolbarRequiredFieldIsNotMapped() string {
+	return In(i18n.Locale()).MysqlToolbarRequiredFieldIsNotMapped()
+}
+
+// MysqlToolbarRequiredFieldIsNotMapped says "必填字段未映射：%s"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarRequiredFieldIsNotMapped() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarRequiredFieldIsNotMapped", nil)
+}
+
+// MysqlToolbarIgnoreThisField says "忽略此字段"
+// in the language the app shows.
+func MysqlToolbarIgnoreThisField() string { return In(i18n.Locale()).MysqlToolbarIgnoreThisField() }
+
+// MysqlToolbarIgnoreThisField says "忽略此字段"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarIgnoreThisField() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarIgnoreThisField", nil)
+}
+
+// MysqlToolbarRestoreHistoryRules says "恢复历史规则"
+// in the language the app shows.
+func MysqlToolbarRestoreHistoryRules() string {
+	return In(i18n.Locale()).MysqlToolbarRestoreHistoryRules()
+}
+
+// MysqlToolbarRestoreHistoryRules says "恢复历史规则"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarRestoreHistoryRules() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarRestoreHistoryRules", nil)
+}
+
+// MysqlToolbarRestoreRules says "恢复规则"
+// in the language the app shows.
+func MysqlToolbarRestoreRules() string { return In(i18n.Locale()).MysqlToolbarRestoreRules() }
+
+// MysqlToolbarRestoreRules says "恢复规则"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarRestoreRules() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarRestoreRules", nil)
+}
+
+// MysqlToolbarTruncatedMissing says "截断/缺失"
+// in the language the app shows.
+func MysqlToolbarTruncatedMissing() string { return In(i18n.Locale()).MysqlToolbarTruncatedMissing() }
+
+// MysqlToolbarTruncatedMissing says "截断/缺失"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTruncatedMissing() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTruncatedMissing", nil)
+}
+
+// MysqlToolbarATruncatedFieldHasNoUniqueRow says "截断字段缺少唯一行标识，无法完整导出"
+// in the language the app shows.
+func MysqlToolbarATruncatedFieldHasNoUniqueRow() string {
+	return In(i18n.Locale()).MysqlToolbarATruncatedFieldHasNoUniqueRow()
+}
+
+// MysqlToolbarATruncatedFieldHasNoUniqueRow says "截断字段缺少唯一行标识，无法完整导出"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarATruncatedFieldHasNoUniqueRow() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarATruncatedFieldHasNoUniqueRow", nil)
+}
+
+// MysqlToolbarCommit says "提交"
+// in the language the app shows.
+func MysqlToolbarCommit() string { return In(i18n.Locale()).MysqlToolbarCommit() }
+
+// MysqlToolbarCommit says "提交"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCommit() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCommit", nil)
+}
+
+// MysqlToolbarCommitTransaction says "提交事务"
+// in the language the app shows.
+func MysqlToolbarCommitTransaction() string { return In(i18n.Locale()).MysqlToolbarCommitTransaction() }
+
+// MysqlToolbarCommitTransaction says "提交事务"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCommitTransaction() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCommitTransaction", nil)
+}
+
+// MysqlToolbarCommitOrRollBackThisTableS says "提交或回滚此表的事务后再继续？"
+// in the language the app shows.
+func MysqlToolbarCommitOrRollBackThisTableS() string {
+	return In(i18n.Locale()).MysqlToolbarCommitOrRollBackThisTableS()
+}
+
+// MysqlToolbarCommitOrRollBackThisTableS says "提交或回滚此表的事务后再继续？"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCommitOrRollBackThisTableS() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCommitOrRollBackThisTableS", nil)
+}
+
+// MysqlToolbarSearchColumns says "搜索列"
+// in the language the app shows.
+func MysqlToolbarSearchColumns() string { return In(i18n.Locale()).MysqlToolbarSearchColumns() }
+
+// MysqlToolbarSearchColumns says "搜索列"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSearchColumns() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSearchColumns", nil)
+}
+
+// MysqlToolbarSearchProfiles says "搜索配置文件"
+// in the language the app shows.
+func MysqlToolbarSearchProfiles() string { return In(i18n.Locale()).MysqlToolbarSearchProfiles() }
+
+// MysqlToolbarSearchProfiles says "搜索配置文件"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSearchProfiles() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSearchProfiles", nil)
+}
+
+// MysqlToolbarDataTransactionServiceIsUnavailable says "数据事务服务不可用"
+// in the language the app shows.
+func MysqlToolbarDataTransactionServiceIsUnavailable() string {
+	return In(i18n.Locale()).MysqlToolbarDataTransactionServiceIsUnavailable()
+}
+
+// MysqlToolbarDataTransactionServiceIsUnavailable says "数据事务服务不可用"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarDataTransactionServiceIsUnavailable() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarDataTransactionServiceIsUnavailable", nil)
+}
+
+// MysqlToolbarTheDataTransactionServiceDidNotReturn says "数据事务服务没有返回事务"
+// in the language the app shows.
+func MysqlToolbarTheDataTransactionServiceDidNotReturn() string {
+	return In(i18n.Locale()).MysqlToolbarTheDataTransactionServiceDidNotReturn()
+}
+
+// MysqlToolbarTheDataTransactionServiceDidNotReturn says "数据事务服务没有返回事务"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheDataTransactionServiceDidNotReturn() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheDataTransactionServiceDidNotReturn", nil)
+}
+
+// MysqlToolbarDataAnalysis says "数据分析"
+// in the language the app shows.
+func MysqlToolbarDataAnalysis() string { return In(i18n.Locale()).MysqlToolbarDataAnalysis() }
+
+// MysqlToolbarDataAnalysis says "数据分析"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarDataAnalysis() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarDataAnalysis", nil)
+}
+
+// MysqlToolbarTheDatabaseDidNotReturnAnalysisResults says "数据库没有返回分析结果"
+// in the language the app shows.
+func MysqlToolbarTheDatabaseDidNotReturnAnalysisResults() string {
+	return In(i18n.Locale()).MysqlToolbarTheDatabaseDidNotReturnAnalysisResults()
+}
+
+// MysqlToolbarTheDatabaseDidNotReturnAnalysisResults says "数据库没有返回分析结果"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheDatabaseDidNotReturnAnalysisResults() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheDatabaseDidNotReturnAnalysisResults", nil)
+}
+
+// MysqlToolbarFileFormat says "文件格式"
+// in the language the app shows.
+func MysqlToolbarFileFormat() string { return In(i18n.Locale()).MysqlToolbarFileFormat() }
+
+// MysqlToolbarFileFormat says "文件格式"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFileFormat() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFileFormat", nil)
+}
+
+// MysqlToolbarText says "文本"
+// in the language the app shows.
+func MysqlToolbarText() string { return In(i18n.Locale()).MysqlToolbarText() }
+
+// MysqlToolbarText says "文本"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarText() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarText", nil)
+}
+
+// MysqlToolbarInvalidNumericValues says "无效数值"
+// in the language the app shows.
+func MysqlToolbarInvalidNumericValues() string {
+	return In(i18n.Locale()).MysqlToolbarInvalidNumericValues()
+}
+
+// MysqlToolbarInvalidNumericValues says "无效数值"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarInvalidNumericValues() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarInvalidNumericValues", nil)
+}
+
+// MysqlToolbarTimestamp says "时间戳"
+// in the language the app shows.
+func MysqlToolbarTimestamp() string { return In(i18n.Locale()).MysqlToolbarTimestamp() }
+
+// MysqlToolbarTimestamp says "时间戳"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTimestamp() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTimestamp", nil)
+}
+
+// MysqlToolbarShowOrHideColumns says "显示或隐藏列"
+// in the language the app shows.
+func MysqlToolbarShowOrHideColumns() string { return In(i18n.Locale()).MysqlToolbarShowOrHideColumns() }
+
+// MysqlToolbarShowOrHideColumns says "显示或隐藏列"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarShowOrHideColumns() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarShowOrHideColumns", nil)
+}
+
+// MysqlToolbarUpTo20TableProfilesCanBe says "最多保存 20 个表配置文件"
+// in the language the app shows.
+func MysqlToolbarUpTo20TableProfilesCanBe() string {
+	return In(i18n.Locale()).MysqlToolbarUpTo20TableProfilesCanBe()
+}
+
+// MysqlToolbarUpTo20TableProfilesCanBe says "最多保存 20 个表配置文件"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarUpTo20TableProfilesCanBe() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarUpTo20TableProfilesCanBe", nil)
+}
+
+// MysqlToolbarMaximum says "最大值"
+// in the language the app shows.
+func MysqlToolbarMaximum() string { return In(i18n.Locale()).MysqlToolbarMaximum() }
+
+// MysqlToolbarMaximum says "最大值"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarMaximum() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarMaximum", nil)
+}
+
+// MysqlToolbarMinimum says "最小值"
+// in the language the app shows.
+func MysqlToolbarMinimum() string { return In(i18n.Locale()).MysqlToolbarMinimum() }
+
+// MysqlToolbarMinimum says "最小值"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarMinimum() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarMinimum", nil)
+}
+
+// MysqlToolbarValidNumericValues says "有效数值"
+// in the language the app shows.
+func MysqlToolbarValidNumericValues() string {
+	return In(i18n.Locale()).MysqlToolbarValidNumericValues()
+}
+
+// MysqlToolbarValidNumericValues says "有效数值"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarValidNumericValues() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarValidNumericValues", nil)
+}
+
+// MysqlToolbarUncommittedTransaction says "未提交的事务"
+// in the language the app shows.
+func MysqlToolbarUncommittedTransaction() string {
+	return In(i18n.Locale()).MysqlToolbarUncommittedTransaction()
+}
+
+// MysqlToolbarUncommittedTransaction says "未提交的事务"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarUncommittedTransaction() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarUncommittedTransaction", nil)
+}
+
+// MysqlToolbarNoSuccessfulQueriesInThisSessionYet says "本会话尚无成功查询"
+// in the language the app shows.
+func MysqlToolbarNoSuccessfulQueriesInThisSessionYet() string {
+	return In(i18n.Locale()).MysqlToolbarNoSuccessfulQueriesInThisSessionYet()
+}
+
+// MysqlToolbarNoSuccessfulQueriesInThisSessionYet says "本会话尚无成功查询"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarNoSuccessfulQueriesInThisSessionYet() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarNoSuccessfulQueriesInThisSessionYet", nil)
+}
+
+// MysqlToolbarViewQueryHistory says "查看查询历史…"
+// in the language the app shows.
+func MysqlToolbarViewQueryHistory() string { return In(i18n.Locale()).MysqlToolbarViewQueryHistory() }
+
+// MysqlToolbarViewQueryHistory says "查看查询历史…"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarViewQueryHistory() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarViewQueryHistory", nil)
+}
+
+// MysqlToolbarQueryHistory says "查询历史"
+// in the language the app shows.
+func MysqlToolbarQueryHistory() string { return In(i18n.Locale()).MysqlToolbarQueryHistory() }
+
+// MysqlToolbarQueryHistory says "查询历史"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarQueryHistory() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarQueryHistory", nil)
+}
+
+// MysqlToolbarFormatJSON says "格式化 JSON"
+// in the language the app shows.
+func MysqlToolbarFormatJSON() string { return In(i18n.Locale()).MysqlToolbarFormatJSON() }
+
+// MysqlToolbarFormatJSON says "格式化 JSON"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFormatJSON() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFormatJSON", nil)
+}
+
+// MysqlToolbarProcessingTransaction says "正在处理事务…"
+// in the language the app shows.
+func MysqlToolbarProcessingTransaction() string {
+	return In(i18n.Locale()).MysqlToolbarProcessingTransaction()
+}
+
+// MysqlToolbarProcessingTransaction says "正在处理事务…"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarProcessingTransaction() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarProcessingTransaction", nil)
+}
+
+// MysqlToolbarProcessingDataFile says "正在处理数据文件…"
+// in the language the app shows.
+func MysqlToolbarProcessingDataFile() string {
+	return In(i18n.Locale()).MysqlToolbarProcessingDataFile()
+}
+
+// MysqlToolbarProcessingDataFile says "正在处理数据文件…"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarProcessingDataFile() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarProcessingDataFile", nil)
+}
+
+// MysqlToolbarWaitingForCancellationAcknowledgement says "正在等待取消确认…"
+// in the language the app shows.
+func MysqlToolbarWaitingForCancellationAcknowledgement() string {
+	return In(i18n.Locale()).MysqlToolbarWaitingForCancellationAcknowledgement()
+}
+
+// MysqlToolbarWaitingForCancellationAcknowledgement says "正在等待取消确认…"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarWaitingForCancellationAcknowledgement() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarWaitingForCancellationAcknowledgement", nil)
+}
+
+// MysqlToolbarWaitingForTheDatabaseToAcknowledgeAnalysis says "正在等待数据库确认取消分析…"
+// in the language the app shows.
+func MysqlToolbarWaitingForTheDatabaseToAcknowledgeAnalysis() string {
+	return In(i18n.Locale()).MysqlToolbarWaitingForTheDatabaseToAcknowledgeAnalysis()
+}
+
+// MysqlToolbarWaitingForTheDatabaseToAcknowledgeAnalysis says "正在等待数据库确认取消分析…"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarWaitingForTheDatabaseToAcknowledgeAnalysis() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarWaitingForTheDatabaseToAcknowledgeAnalysis", nil)
+}
+
+// MysqlToolbarCalculatingFullAnalysisThePreviousResultsRemain says "正在计算完整分析；下方保留上次结果。"
+// in the language the app shows.
+func MysqlToolbarCalculatingFullAnalysisThePreviousResultsRemain() string {
+	return In(i18n.Locale()).MysqlToolbarCalculatingFullAnalysisThePreviousResultsRemain()
+}
+
+// MysqlToolbarCalculatingFullAnalysisThePreviousResultsRemain says "正在计算完整分析；下方保留上次结果。"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCalculatingFullAnalysisThePreviousResultsRemain() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCalculatingFullAnalysisThePreviousResultsRemain", nil)
+}
+
+// MysqlToolbarThisCellHasNoPNGOrJPEG says "此单元格没有可预览的 PNG 或 JPEG 图像"
+// in the language the app shows.
+func MysqlToolbarThisCellHasNoPNGOrJPEG() string {
+	return In(i18n.Locale()).MysqlToolbarThisCellHasNoPNGOrJPEG()
+}
+
+// MysqlToolbarThisCellHasNoPNGOrJPEG says "此单元格没有可预览的 PNG 或 JPEG 图像"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarThisCellHasNoPNGOrJPEG() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarThisCellHasNoPNGOrJPEG", nil)
+}
+
+// MysqlToolbarUpTo200CellsCanBeFilled says "每次最多填充 200 个单元格"
+// in the language the app shows.
+func MysqlToolbarUpTo200CellsCanBeFilled() string {
+	return In(i18n.Locale()).MysqlToolbarUpTo200CellsCanBeFilled()
+}
+
+// MysqlToolbarUpTo200CellsCanBeFilled says "每次最多填充 200 个单元格"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarUpTo200CellsCanBeFilled() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarUpTo200CellsCanBeFilled", nil)
+}
+
+// MysqlToolbarRowsPerPageRowsReturnedDuration says "每页 %d 行 · 返回 %d 行 · 用时 %s"
+// in the language the app shows.
+func MysqlToolbarRowsPerPageRowsReturnedDuration() string {
+	return In(i18n.Locale()).MysqlToolbarRowsPerPageRowsReturnedDuration()
+}
+
+// MysqlToolbarRowsPerPageRowsReturnedDuration says "每页 %d 行 · 返回 %d 行 · 用时 %s"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarRowsPerPageRowsReturnedDuration() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarRowsPerPageRowsReturnedDuration", nil)
+}
+
+// MysqlToolbarNoRowsToExport says "没有可导出的行"
+// in the language the app shows.
+func MysqlToolbarNoRowsToExport() string { return In(i18n.Locale()).MysqlToolbarNoRowsToExport() }
+
+// MysqlToolbarNoRowsToExport says "没有可导出的行"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarNoRowsToExport() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarNoRowsToExport", nil)
+}
+
+// MysqlToolbarNoSavedTableProfiles says "没有已保存的表配置"
+// in the language the app shows.
+func MysqlToolbarNoSavedTableProfiles() string {
+	return In(i18n.Locale()).MysqlToolbarNoSavedTableProfiles()
+}
+
+// MysqlToolbarNoSavedTableProfiles says "没有已保存的表配置"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarNoSavedTableProfiles() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarNoSavedTableProfiles", nil)
+}
+
+// MysqlToolbarMessage says "消息"
+// in the language the app shows.
+func MysqlToolbarMessage() string { return In(i18n.Locale()).MysqlToolbarMessage() }
+
+// MysqlToolbarMessage says "消息"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarMessage() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarMessage", nil)
+}
+
+// MysqlToolbarClearQueryHistory says "清除查询历史"
+// in the language the app shows.
+func MysqlToolbarClearQueryHistory() string { return In(i18n.Locale()).MysqlToolbarClearQueryHistory() }
+
+// MysqlToolbarClearQueryHistory says "清除查询历史"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarClearQueryHistory() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarClearQueryHistory", nil)
+}
+
+// MysqlToolbarConfirmImport says "确认导入"
+// in the language the app shows.
+func MysqlToolbarConfirmImport() string { return In(i18n.Locale()).MysqlToolbarConfirmImport() }
+
+// MysqlToolbarConfirmImport says "确认导入"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarConfirmImport() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarConfirmImport", nil)
+}
+
+// MysqlToolbarEmptyString says "空字符串"
+// in the language the app shows.
+func MysqlToolbarEmptyString() string { return In(i18n.Locale()).MysqlToolbarEmptyString() }
+
+// MysqlToolbarEmptyString says "空字符串"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarEmptyString() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarEmptyString", nil)
+}
+
+// MysqlToolbarSpatialFieldsDoNotSupportFileImport says "空间字段不支持文件导入"
+// in the language the app shows.
+func MysqlToolbarSpatialFieldsDoNotSupportFileImport() string {
+	return In(i18n.Locale()).MysqlToolbarSpatialFieldsDoNotSupportFileImport()
+}
+
+// MysqlToolbarSpatialFieldsDoNotSupportFileImport says "空间字段不支持文件导入"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSpatialFieldsDoNotSupportFileImport() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSpatialFieldsDoNotSupportFileImport", nil)
+}
+
+// MysqlToolbarRowFieldInvalidJSON says "第 %d 行字段 %s JSON 无效"
+// in the language the app shows.
+func MysqlToolbarRowFieldInvalidJSON() string {
+	return In(i18n.Locale()).MysqlToolbarRowFieldInvalidJSON()
+}
+
+// MysqlToolbarRowFieldInvalidJSON says "第 %d 行字段 %s JSON 无效"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarRowFieldInvalidJSON() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarRowFieldInvalidJSON", nil)
+}
+
+// MysqlToolbarRowFieldNULLIsNotAllowed says "第 %d 行字段 %s 不允许 NULL"
+// in the language the app shows.
+func MysqlToolbarRowFieldNULLIsNotAllowed() string {
+	return In(i18n.Locale()).MysqlToolbarRowFieldNULLIsNotAllowed()
+}
+
+// MysqlToolbarRowFieldNULLIsNotAllowed says "第 %d 行字段 %s 不允许 NULL"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarRowFieldNULLIsNotAllowed() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarRowFieldNULLIsNotAllowed", nil)
+}
+
+// MysqlToolbarRowFieldUse0xHexadecimal says "第 %d 行字段 %s 必须为 0x 十六进制"
+// in the language the app shows.
+func MysqlToolbarRowFieldUse0xHexadecimal() string {
+	return In(i18n.Locale()).MysqlToolbarRowFieldUse0xHexadecimal()
+}
+
+// MysqlToolbarRowFieldUse0xHexadecimal says "第 %d 行字段 %s 必须为 0x 十六进制"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarRowFieldUse0xHexadecimal() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarRowFieldUse0xHexadecimal", nil)
+}
+
+// MysqlToolbarRowFieldInvalidNumericValue says "第 %d 行字段 %s 数值无效"
+// in the language the app shows.
+func MysqlToolbarRowFieldInvalidNumericValue() string {
+	return In(i18n.Locale()).MysqlToolbarRowFieldInvalidNumericValue()
+}
+
+// MysqlToolbarRowFieldInvalidNumericValue says "第 %d 行字段 %s 数值无效"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarRowFieldInvalidNumericValue() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarRowFieldInvalidNumericValue", nil)
+}
+
+// MysqlToolbarRowFieldExceedsTheFieldLength says "第 %d 行字段 %s 超过字段长度"
+// in the language the app shows.
+func MysqlToolbarRowFieldExceedsTheFieldLength() string {
+	return In(i18n.Locale()).MysqlToolbarRowFieldExceedsTheFieldLength()
+}
+
+// MysqlToolbarRowFieldExceedsTheFieldLength says "第 %d 行字段 %s 超过字段长度"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarRowFieldExceedsTheFieldLength() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarRowFieldExceedsTheFieldLength", nil)
+}
+
+// MysqlToolbarManageProfiles says "管理配置文件…"
+// in the language the app shows.
+func MysqlToolbarManageProfiles() string { return In(i18n.Locale()).MysqlToolbarManageProfiles() }
+
+// MysqlToolbarManageProfiles says "管理配置文件…"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarManageProfiles() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarManageProfiles", nil)
+}
+
+// MysqlToolbarTableProfilesSaveFiltersSortingAndColumn says "表的配置文件存储筛选、排序和列设置以供将来使用。"
+// in the language the app shows.
+func MysqlToolbarTableProfilesSaveFiltersSortingAndColumn() string {
+	return In(i18n.Locale()).MysqlToolbarTableProfilesSaveFiltersSortingAndColumn()
+}
+
+// MysqlToolbarTableProfilesSaveFiltersSortingAndColumn says "表的配置文件存储筛选、排序和列设置以供将来使用。"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTableProfilesSaveFiltersSortingAndColumn() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTableProfilesSaveFiltersSortingAndColumn", nil)
+}
+
+// MysqlToolbarTableProfileName says "表配置名称"
+// in the language the app shows.
+func MysqlToolbarTableProfileName() string { return In(i18n.Locale()).MysqlToolbarTableProfileName() }
+
+// MysqlToolbarTableProfileName says "表配置名称"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTableProfileName() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTableProfileName", nil)
+}
+
+// MysqlToolbarTableProfile says "表配置文件"
+// in the language the app shows.
+func MysqlToolbarTableProfile() string { return In(i18n.Locale()).MysqlToolbarTableProfile() }
+
+// MysqlToolbarTableProfile says "表配置文件"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTableProfile() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTableProfile", nil)
+}
+
+// MysqlToolbarTableProfileDropdown says "表配置文件 ▾"
+// in the language the app shows.
+func MysqlToolbarTableProfileDropdown() string {
+	return In(i18n.Locale()).MysqlToolbarTableProfileDropdown()
+}
+
+// MysqlToolbarTableProfileDropdown says "表配置文件 ▾"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTableProfileDropdown() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTableProfileDropdown", nil)
+}
+
+// MysqlToolbarTableProfileStorageIsUnavailable says "表配置文件存储不可用"
+// in the language the app shows.
+func MysqlToolbarTableProfileStorageIsUnavailable() string {
+	return In(i18n.Locale()).MysqlToolbarTableProfileStorageIsUnavailable()
+}
+
+// MysqlToolbarTableProfileStorageIsUnavailable says "表配置文件存储不可用"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTableProfileStorageIsUnavailable() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTableProfileStorageIsUnavailable", nil)
+}
+
+// MysqlToolbarInvalidTableProfileFormat says "表配置文件格式无效"
+// in the language the app shows.
+func MysqlToolbarInvalidTableProfileFormat() string {
+	return In(i18n.Locale()).MysqlToolbarInvalidTableProfileFormat()
+}
+
+// MysqlToolbarInvalidTableProfileFormat says "表配置文件格式无效"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarInvalidTableProfileFormat() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarInvalidTableProfileFormat", nil)
+}
+
+// MysqlToolbarSaveOrDiscardChangesBeforeImportingOr says "请先保存或取消更改，再导入或导出"
+// in the language the app shows.
+func MysqlToolbarSaveOrDiscardChangesBeforeImportingOr() string {
+	return In(i18n.Locale()).MysqlToolbarSaveOrDiscardChangesBeforeImportingOr()
+}
+
+// MysqlToolbarSaveOrDiscardChangesBeforeImportingOr says "请先保存或取消更改，再导入或导出"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSaveOrDiscardChangesBeforeImportingOr() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSaveOrDiscardChangesBeforeImportingOr", nil)
+}
+
+// MysqlToolbarCheckTheDatabaseFirstClosingTheTable says "请先检查数据库。关闭表不会重放更改，也无法撤回可能已经提交的事务。"
+// in the language the app shows.
+func MysqlToolbarCheckTheDatabaseFirstClosingTheTable() string {
+	return In(i18n.Locale()).MysqlToolbarCheckTheDatabaseFirstClosingTheTable()
+}
+
+// MysqlToolbarCheckTheDatabaseFirstClosingTheTable says "请先检查数据库。关闭表不会重放更改，也无法撤回可能已经提交的事务。"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarCheckTheDatabaseFirstClosingTheTable() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarCheckTheDatabaseFirstClosingTheTable", nil)
+}
+
+// MysqlToolbarMapAtLeastOneField says "请映射至少一个字段"
+// in the language the app shows.
+func MysqlToolbarMapAtLeastOneField() string {
+	return In(i18n.Locale()).MysqlToolbarMapAtLeastOneField()
+}
+
+// MysqlToolbarMapAtLeastOneField says "请映射至少一个字段"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarMapAtLeastOneField() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarMapAtLeastOneField", nil)
+}
+
+// MysqlToolbarWaitForTableDataToFinishLoading says "请等待表数据加载完成"
+// in the language the app shows.
+func MysqlToolbarWaitForTableDataToFinishLoading() string {
+	return In(i18n.Locale()).MysqlToolbarWaitForTableDataToFinishLoading()
+}
+
+// MysqlToolbarWaitForTableDataToFinishLoading says "请等待表数据加载完成"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarWaitForTableDataToFinishLoading() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarWaitForTableDataToFinishLoading", nil)
+}
+
+// MysqlToolbarSelectAtLeastOneField says "请选择至少一个字段"
+// in the language the app shows.
+func MysqlToolbarSelectAtLeastOneField() string {
+	return In(i18n.Locale()).MysqlToolbarSelectAtLeastOneField()
+}
+
+// MysqlToolbarSelectAtLeastOneField says "请选择至少一个字段"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSelectAtLeastOneField() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSelectAtLeastOneField", nil)
+}
+
+// MysqlToolbarSelectATableProfile says "请选择表配置文件"
+// in the language the app shows.
+func MysqlToolbarSelectATableProfile() string {
+	return In(i18n.Locale()).MysqlToolbarSelectATableProfile()
+}
+
+// MysqlToolbarSelectATableProfile says "请选择表配置文件"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSelectATableProfile() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSelectATableProfile", nil)
+}
+
+// MysqlToolbarFailedToReadTheTableProfile says "读取表配置文件失败"
+// in the language the app shows.
+func MysqlToolbarFailedToReadTheTableProfile() string {
+	return In(i18n.Locale()).MysqlToolbarFailedToReadTheTableProfile()
+}
+
+// MysqlToolbarFailedToReadTheTableProfile says "读取表配置文件失败"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarFailedToReadTheTableProfile() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarFailedToReadTheTableProfile", nil)
+}
+
+// MysqlToolbarEnterTheTableNameToConfirmImport says "输入表名称以确认导入"
+// in the language the app shows.
+func MysqlToolbarEnterTheTableNameToConfirmImport() string {
+	return In(i18n.Locale()).MysqlToolbarEnterTheTableNameToConfirmImport()
+}
+
+// MysqlToolbarEnterTheTableNameToConfirmImport says "输入表名称以确认导入"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarEnterTheTableNameToConfirmImport() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarEnterTheTableNameToConfirmImport", nil)
+}
+
+// MysqlToolbarTheSelectionContainsAFieldThatDoes says "选区包含不允许 NULL 的字段"
+// in the language the app shows.
+func MysqlToolbarTheSelectionContainsAFieldThatDoes() string {
+	return In(i18n.Locale()).MysqlToolbarTheSelectionContainsAFieldThatDoes()
+}
+
+// MysqlToolbarTheSelectionContainsAFieldThatDoes says "选区包含不允许 NULL 的字段"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheSelectionContainsAFieldThatDoes() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheSelectionContainsAFieldThatDoes", nil)
+}
+
+// MysqlToolbarTheSelectionContainsCellsThatCannotBe says "选区包含不可编辑单元格"
+// in the language the app shows.
+func MysqlToolbarTheSelectionContainsCellsThatCannotBe() string {
+	return In(i18n.Locale()).MysqlToolbarTheSelectionContainsCellsThatCannotBe()
+}
+
+// MysqlToolbarTheSelectionContainsCellsThatCannotBe says "选区包含不可编辑单元格"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTheSelectionContainsCellsThatCannotBe() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTheSelectionContainsCellsThatCannotBe", nil)
+}
+
+// MysqlToolbarSelectACell says "选择一个单元格"
+// in the language the app shows.
+func MysqlToolbarSelectACell() string { return In(i18n.Locale()).MysqlToolbarSelectACell() }
+
+// MysqlToolbarSelectACell says "选择一个单元格"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSelectACell() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSelectACell", nil)
+}
+
+// MysqlToolbarChooseImportDataFile says "选择导入数据文件"
+// in the language the app shows.
+func MysqlToolbarChooseImportDataFile() string {
+	return In(i18n.Locale()).MysqlToolbarChooseImportDataFile()
+}
+
+// MysqlToolbarChooseImportDataFile says "选择导入数据文件"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarChooseImportDataFile() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarChooseImportDataFile", nil)
+}
+
+// MysqlToolbarSelectExportFields says "选择导出字段"
+// in the language the app shows.
+func MysqlToolbarSelectExportFields() string {
+	return In(i18n.Locale()).MysqlToolbarSelectExportFields()
+}
+
+// MysqlToolbarSelectExportFields says "选择导出字段"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSelectExportFields() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSelectExportFields", nil)
+}
+
+// MysqlToolbarChooseFile says "选择文件"
+// in the language the app shows.
+func MysqlToolbarChooseFile() string { return In(i18n.Locale()).MysqlToolbarChooseFile() }
+
+// MysqlToolbarChooseFile says "选择文件"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarChooseFile() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarChooseFile", nil)
+}
+
+// MysqlToolbarAFilterOrSortFieldInThe0dfbd1 says "配置中的筛选或排序字段已不可用"
+// in the language the app shows.
+func MysqlToolbarAFilterOrSortFieldInThe0dfbd1() string {
+	return In(i18n.Locale()).MysqlToolbarAFilterOrSortFieldInThe0dfbd1()
+}
+
+// MysqlToolbarAFilterOrSortFieldInThe0dfbd1 says "配置中的筛选或排序字段已不可用"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAFilterOrSortFieldInThe0dfbd1() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAFilterOrSortFieldInThe0dfbd1", nil)
+}
+
+// MysqlToolbarProfileNamesMustBeNonemptyAndContain says "配置名称不能为空且最多 80 个字符"
+// in the language the app shows.
+func MysqlToolbarProfileNamesMustBeNonemptyAndContain() string {
+	return In(i18n.Locale()).MysqlToolbarProfileNamesMustBeNonemptyAndContain()
+}
+
+// MysqlToolbarProfileNamesMustBeNonemptyAndContain says "配置名称不能为空且最多 80 个字符"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarProfileNamesMustBeNonemptyAndContain() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarProfileNamesMustBeNonemptyAndContain", nil)
+}
+
+// MysqlToolbarAProfileWithThisNameAlreadyExists says "配置名称已存在"
+// in the language the app shows.
+func MysqlToolbarAProfileWithThisNameAlreadyExists() string {
+	return In(i18n.Locale()).MysqlToolbarAProfileWithThisNameAlreadyExists()
+}
+
+// MysqlToolbarAProfileWithThisNameAlreadyExists says "配置名称已存在"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAProfileWithThisNameAlreadyExists() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAProfileWithThisNameAlreadyExists", nil)
+}
+
+// MysqlToolbarRenameProfile says "重命名配置"
+// in the language the app shows.
+func MysqlToolbarRenameProfile() string { return In(i18n.Locale()).MysqlToolbarRenameProfile() }
+
+// MysqlToolbarRenameProfile says "重命名配置"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarRenameProfile() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarRenameProfile", nil)
+}
+
+// MysqlToolbarReanalyzeCurrentPage says "重新分析当前页"
+// in the language the app shows.
+func MysqlToolbarReanalyzeCurrentPage() string {
+	return In(i18n.Locale()).MysqlToolbarReanalyzeCurrentPage()
+}
+
+// MysqlToolbarReanalyzeCurrentPage says "重新分析当前页"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarReanalyzeCurrentPage() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarReanalyzeCurrentPage", nil)
+}
+
+// MysqlToolbarQuerySuccess says "查询成功"
+// in the language the app shows.
+func MysqlToolbarQuerySuccess() string { return In(i18n.Locale()).MysqlToolbarQuerySuccess() }
+
+// MysqlToolbarQuerySuccess says "查询成功"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarQuerySuccess() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarQuerySuccess", nil)
+}
+
+// MysqlToolbarChangesCommitted says "更改已提交"
+// in the language the app shows.
+func MysqlToolbarChangesCommitted() string { return In(i18n.Locale()).MysqlToolbarChangesCommitted() }
+
+// MysqlToolbarChangesCommitted says "更改已提交"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarChangesCommitted() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarChangesCommitted", nil)
+}
+
+// MysqlToolbarChangesPendingTransaction says "更改已应用，事务未提交"
+// in the language the app shows.
+func MysqlToolbarChangesPendingTransaction() string {
+	return In(i18n.Locale()).MysqlToolbarChangesPendingTransaction()
+}
+
+// MysqlToolbarChangesPendingTransaction says "更改已应用，事务未提交"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarChangesPendingTransaction() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarChangesPendingTransaction", nil)
+}
+
+// MysqlToolbarSessionInvalid says "会话已失效"
+// in the language the app shows.
+func MysqlToolbarSessionInvalid() string { return In(i18n.Locale()).MysqlToolbarSessionInvalid() }
+
+// MysqlToolbarSessionInvalid says "会话已失效"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarSessionInvalid() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarSessionInvalid", nil)
+}
+
+// MysqlToolbarIncompleteResult says "返回结果不完整"
+// in the language the app shows.
+func MysqlToolbarIncompleteResult() string { return In(i18n.Locale()).MysqlToolbarIncompleteResult() }
+
+// MysqlToolbarIncompleteResult says "返回结果不完整"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarIncompleteResult() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarIncompleteResult", nil)
+}
+
+// MysqlToolbarOperationCanceled says "操作已取消或超时"
+// in the language the app shows.
+func MysqlToolbarOperationCanceled() string { return In(i18n.Locale()).MysqlToolbarOperationCanceled() }
+
+// MysqlToolbarOperationCanceled says "操作已取消或超时"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarOperationCanceled() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarOperationCanceled", nil)
+}
+
+// MysqlToolbarRecordConflict says "记录冲突"
+// in the language the app shows.
+func MysqlToolbarRecordConflict() string { return In(i18n.Locale()).MysqlToolbarRecordConflict() }
+
+// MysqlToolbarRecordConflict says "记录冲突"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarRecordConflict() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarRecordConflict", nil)
+}
+
+// MysqlToolbarNotEditable says "表或记录不可编辑"
+// in the language the app shows.
+func MysqlToolbarNotEditable() string { return In(i18n.Locale()).MysqlToolbarNotEditable() }
+
+// MysqlToolbarNotEditable says "表或记录不可编辑"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarNotEditable() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarNotEditable", nil)
+}
+
+// MysqlToolbarConnectionInvalid says "连接已失效"
+// in the language the app shows.
+func MysqlToolbarConnectionInvalid() string { return In(i18n.Locale()).MysqlToolbarConnectionInvalid() }
+
+// MysqlToolbarConnectionInvalid says "连接已失效"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarConnectionInvalid() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarConnectionInvalid", nil)
+}
+
+// MysqlToolbarOperationFailed says "数据库操作失败"
+// in the language the app shows.
+func MysqlToolbarOperationFailed() string { return In(i18n.Locale()).MysqlToolbarOperationFailed() }
+
+// MysqlToolbarOperationFailed says "数据库操作失败"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarOperationFailed() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarOperationFailed", nil)
+}
+
+// MysqlToolbarBatchFailed says "批次失败"
+// in the language the app shows.
+func MysqlToolbarBatchFailed() string { return In(i18n.Locale()).MysqlToolbarBatchFailed() }
+
+// MysqlToolbarBatchFailed says "批次失败"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarBatchFailed() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarBatchFailed", nil)
+}
+
+// MysqlToolbarRequestSummary says "请求概要"
+// in the language the app shows.
+func MysqlToolbarRequestSummary() string { return In(i18n.Locale()).MysqlToolbarRequestSummary() }
+
+// MysqlToolbarRequestSummary says "请求概要"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarRequestSummary() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarRequestSummary", nil)
+}
+
+// MysqlToolbarError says "错误"
+// in the language the app shows.
+func MysqlToolbarError() string { return In(i18n.Locale()).MysqlToolbarError() }
+
+// MysqlToolbarError says "错误"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarError() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarError", nil)
+}
+
+// MysqlToolbarHistoryType says "历史类型"
+// in the language the app shows.
+func MysqlToolbarHistoryType() string { return In(i18n.Locale()).MysqlToolbarHistoryType() }
+
+// MysqlToolbarHistoryType says "历史类型"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarHistoryType() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarHistoryType", nil)
+}
+
+// MysqlToolbarHistoryScope says "仅保留此文档会话最近 50 次操作。仅成功查询可恢复规则，写操作不会重放。"
+// in the language the app shows.
+func MysqlToolbarHistoryScope() string { return In(i18n.Locale()).MysqlToolbarHistoryScope() }
+
+// MysqlToolbarHistoryScope says "仅保留此文档会话最近 50 次操作。仅成功查询可恢复规则，写操作不会重放。"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarHistoryScope() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarHistoryScope", nil)
+}
+
+// MysqlToolbarHistoryCounts says "SELECT：%d · INSERT：%d · UPDATE：%d · DELETE：%d · 错误：%d · 总数：%d"
+// in the language the app shows.
+func MysqlToolbarHistoryCounts() string { return In(i18n.Locale()).MysqlToolbarHistoryCounts() }
+
+// MysqlToolbarHistoryCounts says "SELECT：%d · INSERT：%d · UPDATE：%d · DELETE：%d · 错误：%d · 总数：%d"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarHistoryCounts() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarHistoryCounts", nil)
+}
+
+// MysqlToolbarImportUncertain says "导入结果不确定"
+// in the language the app shows.
+func MysqlToolbarImportUncertain() string { return In(i18n.Locale()).MysqlToolbarImportUncertain() }
+
+// MysqlToolbarImportUncertain says "导入结果不确定"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportUncertain() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportUncertain", nil)
+}
+
+// MysqlToolbarImportVerifyBeforeClose says "…"
+// in the language the app shows.
+func MysqlToolbarImportVerifyBeforeClose() string {
+	return In(i18n.Locale()).MysqlToolbarImportVerifyBeforeClose()
+}
+
+// MysqlToolbarImportVerifyBeforeClose says "…"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportVerifyBeforeClose() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportVerifyBeforeClose", nil)
+}
+
+// MysqlToolbarImportVerifiedClose says "已核验，关闭表"
+// in the language the app shows.
+func MysqlToolbarImportVerifiedClose() string {
+	return In(i18n.Locale()).MysqlToolbarImportVerifiedClose()
+}
+
+// MysqlToolbarImportVerifiedClose says "已核验，关闭表"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportVerifiedClose() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportVerifiedClose", nil)
+}
+
+// MysqlToolbarDistinctGroupsIncludingNull says "非重复"
+// in the language the app shows.
+func MysqlToolbarDistinctGroupsIncludingNull() string {
+	return In(i18n.Locale()).MysqlToolbarDistinctGroupsIncludingNull()
+}
+
+// MysqlToolbarDistinctGroupsIncludingNull says "非重复"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarDistinctGroupsIncludingNull() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarDistinctGroupsIncludingNull", nil)
+}
+
+// MysqlToolbarUniqueGroupsIncludingNull says "唯一"
+// in the language the app shows.
+func MysqlToolbarUniqueGroupsIncludingNull() string {
+	return In(i18n.Locale()).MysqlToolbarUniqueGroupsIncludingNull()
+}
+
+// MysqlToolbarUniqueGroupsIncludingNull says "唯一"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarUniqueGroupsIncludingNull() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarUniqueGroupsIncludingNull", nil)
+}
+
+// MysqlToolbarNullGroupsCounted says "非重复统计包括 NULL 值组；唯一统计包括仅出现一次的 NULL。数值统计排除 NULL…"
+// in the language the app shows.
+func MysqlToolbarNullGroupsCounted() string { return In(i18n.Locale()).MysqlToolbarNullGroupsCounted() }
+
+// MysqlToolbarNullGroupsCounted says "非重复统计包括 NULL 值组；唯一统计包括仅出现一次的 NULL。数值统计排除 NULL…"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarNullGroupsCounted() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarNullGroupsCounted", nil)
+}
+
+// MysqlToolbarAnalysisColumnStats says "列统计"
+// in the language the app shows.
+func MysqlToolbarAnalysisColumnStats() string {
+	return In(i18n.Locale()).MysqlToolbarAnalysisColumnStats()
+}
+
+// MysqlToolbarAnalysisColumnStats says "列统计"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalysisColumnStats() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalysisColumnStats", nil)
+}
+
+// MysqlToolbarAnalysisHeaderStats says "表头统计"
+// in the language the app shows.
+func MysqlToolbarAnalysisHeaderStats() string {
+	return In(i18n.Locale()).MysqlToolbarAnalysisHeaderStats()
+}
+
+// MysqlToolbarAnalysisHeaderStats says "表头统计"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalysisHeaderStats() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalysisHeaderStats", nil)
+}
+
+// MysqlToolbarAnalysisSettings says "设置"
+// in the language the app shows.
+func MysqlToolbarAnalysisSettings() string { return In(i18n.Locale()).MysqlToolbarAnalysisSettings() }
+
+// MysqlToolbarAnalysisSettings says "设置"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalysisSettings() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalysisSettings", nil)
+}
+
+// MysqlToolbarAnalysisExit says "退出分析"
+// in the language the app shows.
+func MysqlToolbarAnalysisExit() string { return In(i18n.Locale()).MysqlToolbarAnalysisExit() }
+
+// MysqlToolbarAnalysisExit says "退出分析"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalysisExit() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalysisExit", nil)
+}
+
+// MysqlToolbarAnalyzing says "正在分析…"
+// in the language the app shows.
+func MysqlToolbarAnalyzing() string { return In(i18n.Locale()).MysqlToolbarAnalyzing() }
+
+// MysqlToolbarAnalyzing says "正在分析…"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalyzing() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalyzing", nil)
+}
+
+// MysqlToolbarAnalysisNotNull says "不是 Null"
+// in the language the app shows.
+func MysqlToolbarAnalysisNotNull() string { return In(i18n.Locale()).MysqlToolbarAnalysisNotNull() }
+
+// MysqlToolbarAnalysisNotNull says "不是 Null"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalysisNotNull() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalysisNotNull", nil)
+}
+
+// MysqlToolbarAnalysisCount says "计数"
+// in the language the app shows.
+func MysqlToolbarAnalysisCount() string { return In(i18n.Locale()).MysqlToolbarAnalysisCount() }
+
+// MysqlToolbarAnalysisCount says "计数"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalysisCount() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalysisCount", nil)
+}
+
+// MysqlToolbarAnalysisDistinctSummary says "%d 非重复, %d 唯一"
+// in the language the app shows.
+func MysqlToolbarAnalysisDistinctSummary() string {
+	return In(i18n.Locale()).MysqlToolbarAnalysisDistinctSummary()
+}
+
+// MysqlToolbarAnalysisDistinctSummary says "%d 非重复, %d 唯一"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalysisDistinctSummary() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalysisDistinctSummary", nil)
+}
+
+// MysqlToolbarAnalysisMedian says "中值"
+// in the language the app shows.
+func MysqlToolbarAnalysisMedian() string { return In(i18n.Locale()).MysqlToolbarAnalysisMedian() }
+
+// MysqlToolbarAnalysisMedian says "中值"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalysisMedian() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalysisMedian", nil)
+}
+
+// MysqlToolbarAnalysisStdDeviation says "标准差"
+// in the language the app shows.
+func MysqlToolbarAnalysisStdDeviation() string {
+	return In(i18n.Locale()).MysqlToolbarAnalysisStdDeviation()
+}
+
+// MysqlToolbarAnalysisStdDeviation says "标准差"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalysisStdDeviation() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalysisStdDeviation", nil)
+}
+
+// MysqlToolbarAnalysisZero says "零"
+// in the language the app shows.
+func MysqlToolbarAnalysisZero() string { return In(i18n.Locale()).MysqlToolbarAnalysisZero() }
+
+// MysqlToolbarAnalysisZero says "零"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalysisZero() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalysisZero", nil)
+}
+
+// MysqlToolbarAnalysisModes says "最高出现次数"
+// in the language the app shows.
+func MysqlToolbarAnalysisModes() string { return In(i18n.Locale()).MysqlToolbarAnalysisModes() }
+
+// MysqlToolbarAnalysisModes says "最高出现次数"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalysisModes() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalysisModes", nil)
+}
+
+// MysqlToolbarAnalysisMoreModes says "另有 %d 项"
+// in the language the app shows.
+func MysqlToolbarAnalysisMoreModes() string { return In(i18n.Locale()).MysqlToolbarAnalysisMoreModes() }
+
+// MysqlToolbarAnalysisMoreModes says "另有 %d 项"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarAnalysisMoreModes() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarAnalysisMoreModes", nil)
+}
+
+// MysqlToolbarTransferXMLHint says "XML 使用 RECORDS/RECORD；空元素作为空字符串，xsi:nil 表示 NULL，仅显式 encoding=base64/hex …"
+// in the language the app shows.
+func MysqlToolbarTransferXMLHint() string { return In(i18n.Locale()).MysqlToolbarTransferXMLHint() }
+
+// MysqlToolbarTransferXMLHint says "XML 使用 RECORDS/RECORD；空元素作为空字符串，xsi:nil 表示 NULL，仅显式 encoding=base64/hex …"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTransferXMLHint() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTransferXMLHint", nil)
+}
+
+// MysqlToolbarTransferXMLBinaryTarget says "XML 二进制值只能映射到二进制字段"
+// in the language the app shows.
+func MysqlToolbarTransferXMLBinaryTarget() string {
+	return In(i18n.Locale()).MysqlToolbarTransferXMLBinaryTarget()
+}
+
+// MysqlToolbarTransferXMLBinaryTarget says "XML 二进制值只能映射到二进制字段"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTransferXMLBinaryTarget() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTransferXMLBinaryTarget", nil)
+}
+
+// MysqlToolbarTransferXMLInvalid says "XML 格式无效或包含不支持的内容"
+// in the language the app shows.
+func MysqlToolbarTransferXMLInvalid() string {
+	return In(i18n.Locale()).MysqlToolbarTransferXMLInvalid()
+}
+
+// MysqlToolbarTransferXMLInvalid says "XML 格式无效或包含不支持的内容"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTransferXMLInvalid() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTransferXMLInvalid", nil)
+}
+
+// MysqlToolbarTransferXMLFields says "XML 每行必须包含相同字段"
+// in the language the app shows.
+func MysqlToolbarTransferXMLFields() string { return In(i18n.Locale()).MysqlToolbarTransferXMLFields() }
+
+// MysqlToolbarTransferXMLFields says "XML 每行必须包含相同字段"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTransferXMLFields() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTransferXMLFields", nil)
+}
+
+// MysqlToolbarTransferEmptyNull says "使用 NULL 取代空字符串"
+// in the language the app shows.
+func MysqlToolbarTransferEmptyNull() string { return In(i18n.Locale()).MysqlToolbarTransferEmptyNull() }
+
+// MysqlToolbarTransferEmptyNull says "使用 NULL 取代空字符串"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTransferEmptyNull() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTransferEmptyNull", nil)
+}
+
+// MysqlToolbarTransferEmptyNullHint says "只转换长度为零的文本值；空二进制和空格保留原值。"
+// in the language the app shows.
+func MysqlToolbarTransferEmptyNullHint() string {
+	return In(i18n.Locale()).MysqlToolbarTransferEmptyNullHint()
+}
+
+// MysqlToolbarTransferEmptyNullHint says "只转换长度为零的文本值；空二进制和空格保留原值。"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarTransferEmptyNullHint() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarTransferEmptyNullHint", nil)
+}
+
+// MysqlToolbarImportNewTarget says "新建目标表"
+// in the language the app shows.
+func MysqlToolbarImportNewTarget() string { return In(i18n.Locale()).MysqlToolbarImportNewTarget() }
+
+// MysqlToolbarImportNewTarget says "新建目标表"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportNewTarget() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportNewTarget", nil)
+}
+
+// MysqlToolbarImportCurrentTarget says "当前表"
+// in the language the app shows.
+func MysqlToolbarImportCurrentTarget() string {
+	return In(i18n.Locale()).MysqlToolbarImportCurrentTarget()
+}
+
+// MysqlToolbarImportCurrentTarget says "当前表"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportCurrentTarget() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportCurrentTarget", nil)
+}
+
+// MysqlToolbarImportNewName says "新目标表名称"
+// in the language the app shows.
+func MysqlToolbarImportNewName() string { return In(i18n.Locale()).MysqlToolbarImportNewName() }
+
+// MysqlToolbarImportNewName says "新目标表名称"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportNewName() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportNewName", nil)
+}
+
+// MysqlToolbarImportNewInfo says "…"
+// in the language the app shows.
+func MysqlToolbarImportNewInfo() string { return In(i18n.Locale()).MysqlToolbarImportNewInfo() }
+
+// MysqlToolbarImportNewInfo says "…"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportNewInfo() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportNewInfo", nil)
+}
+
+// MysqlToolbarImportServiceUnavailable says "新表导入服务不可用"
+// in the language the app shows.
+func MysqlToolbarImportServiceUnavailable() string {
+	return In(i18n.Locale()).MysqlToolbarImportServiceUnavailable()
+}
+
+// MysqlToolbarImportServiceUnavailable says "新表导入服务不可用"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportServiceUnavailable() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportServiceUnavailable", nil)
+}
+
+// MysqlToolbarImportFieldTarget says "%s 的目标字段"
+// in the language the app shows.
+func MysqlToolbarImportFieldTarget() string { return In(i18n.Locale()).MysqlToolbarImportFieldTarget() }
+
+// MysqlToolbarImportFieldTarget says "%s 的目标字段"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportFieldTarget() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportFieldTarget", nil)
+}
+
+// MysqlToolbarImportFieldType says "%s 的数据类型"
+// in the language the app shows.
+func MysqlToolbarImportFieldType() string { return In(i18n.Locale()).MysqlToolbarImportFieldType() }
+
+// MysqlToolbarImportFieldType says "%s 的数据类型"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportFieldType() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportFieldType", nil)
+}
+
+// MysqlToolbarImportIgnoreEmpty says "留空以忽略"
+// in the language the app shows.
+func MysqlToolbarImportIgnoreEmpty() string { return In(i18n.Locale()).MysqlToolbarImportIgnoreEmpty() }
+
+// MysqlToolbarImportIgnoreEmpty says "留空以忽略"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportIgnoreEmpty() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportIgnoreEmpty", nil)
+}
+
+// MysqlToolbarImportTargetInvalid says "目标表名称无效，最多 64 个字符"
+// in the language the app shows.
+func MysqlToolbarImportTargetInvalid() string {
+	return In(i18n.Locale()).MysqlToolbarImportTargetInvalid()
+}
+
+// MysqlToolbarImportTargetInvalid says "目标表名称无效，最多 64 个字符"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportTargetInvalid() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportTargetInvalid", nil)
+}
+
+// MysqlToolbarImportCreated says "目标表已创建"
+// in the language the app shows.
+func MysqlToolbarImportCreated() string { return In(i18n.Locale()).MysqlToolbarImportCreated() }
+
+// MysqlToolbarImportCreated says "目标表已创建"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportCreated() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportCreated", nil)
+}
+
+// MysqlToolbarImportRowsFailed says "目标表 %s 已创建，数据导入失败；表保留。本次向导不会重放："
+// in the language the app shows.
+func MysqlToolbarImportRowsFailed() string { return In(i18n.Locale()).MysqlToolbarImportRowsFailed() }
+
+// MysqlToolbarImportRowsFailed says "目标表 %s 已创建，数据导入失败；表保留。本次向导不会重放："
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportRowsFailed() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportRowsFailed", nil)
+}
+
+// MysqlToolbarImportCompleted says "已创建 %s 并导入 %d 行"
+// in the language the app shows.
+func MysqlToolbarImportCompleted() string { return In(i18n.Locale()).MysqlToolbarImportCompleted() }
+
+// MysqlToolbarImportCompleted says "已创建 %s 并导入 %d 行"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportCompleted() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportCompleted", nil)
+}
+
+// MysqlToolbarImportOpen says "打开目标表"
+// in the language the app shows.
+func MysqlToolbarImportOpen() string { return In(i18n.Locale()).MysqlToolbarImportOpen() }
+
+// MysqlToolbarImportOpen says "打开目标表"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportOpen() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportOpen", nil)
+}
+
+// MysqlToolbarImportSourceField says "源字段"
+// in the language the app shows.
+func MysqlToolbarImportSourceField() string { return In(i18n.Locale()).MysqlToolbarImportSourceField() }
+
+// MysqlToolbarImportSourceField says "源字段"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportSourceField() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportSourceField", nil)
+}
+
+// MysqlToolbarImportTargetField says "目标字段"
+// in the language the app shows.
+func MysqlToolbarImportTargetField() string { return In(i18n.Locale()).MysqlToolbarImportTargetField() }
+
+// MysqlToolbarImportTargetField says "目标字段"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportTargetField() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportTargetField", nil)
+}
+
+// MysqlToolbarImportDataType says "数据类型"
+// in the language the app shows.
+func MysqlToolbarImportDataType() string { return In(i18n.Locale()).MysqlToolbarImportDataType() }
+
+// MysqlToolbarImportDataType says "数据类型"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportDataType() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportDataType", nil)
+}
+
+// MysqlToolbarImportNullable says "可空"
+// in the language the app shows.
+func MysqlToolbarImportNullable() string { return In(i18n.Locale()).MysqlToolbarImportNullable() }
+
+// MysqlToolbarImportNullable says "可空"
+// in the language of msgs.
+func (msgs Messages) MysqlToolbarImportNullable() string {
+	return Catalog.Format(msgs.locale, "mysqlToolbarImportNullable", nil)
+}

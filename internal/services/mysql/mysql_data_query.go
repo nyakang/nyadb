@@ -28,6 +28,16 @@ type MySQLDataOptions struct {
 // Every text and binary column is truncated ON THE SERVER, before transfer.
 // The legacy TableDataPage signature remains for callers without options.
 func (m *MySQLSessionManager) TableDataPageWithOptions(ctx context.Context, id int64, database, table string, o MySQLDataOptions) (*MySQLDataPage, error) {
+	session, queryCtx, cancel, err := m.requestContext(ctx, id, 20*time.Second)
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
+
+	return mysqlDataPageWithOptions(queryCtx, session.db, database, table, o)
+}
+
+func mysqlDataPageWithOptions(queryCtx context.Context, queryer mysqlEditQueryer, database, table string, o MySQLDataOptions) (*MySQLDataPage, error) {
 	dbName, err := quotedMySQLIdentifier(database)
 	if err != nil {
 		return nil, err
@@ -50,13 +60,7 @@ func (m *MySQLSessionManager) TableDataPageWithOptions(ctx context.Context, id i
 		return nil, err
 	}
 	signature := mysqlDataRuleSignature(filters, sortRules)
-	session, queryCtx, cancel, err := m.requestContext(ctx, id, 20*time.Second)
-	if err != nil {
-		return nil, err
-	}
-	defer cancel()
-
-	columns, err := readMySQLColumnMetadata(queryCtx, session.db, database, table, 128)
+	columns, err := readMySQLColumnMetadata(queryCtx, queryer, database, table, 128)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +94,7 @@ func (m *MySQLSessionManager) TableDataPageWithOptions(ctx context.Context, id i
  AND c.TABLE_NAME=s.TABLE_NAME AND c.COLUMN_NAME=s.COLUMN_NAME
  WHERE s.TABLE_SCHEMA=? AND s.TABLE_NAME=? AND s.NON_UNIQUE=0
  ORDER BY (s.INDEX_NAME <> 'PRIMARY'), s.INDEX_NAME, s.SEQ_IN_INDEX`
-	indexRows, err := session.db.QueryContext(queryCtx, uniqueSQL, database, table)
+	indexRows, err := queryer.QueryContext(queryCtx, uniqueSQL, database, table)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +288,7 @@ func (m *MySQLSessionManager) TableDataPageWithOptions(ctx context.Context, id i
 	}
 	args = append(args, o.Limit+1, fetchOffset)
 	started := time.Now()
-	rows, err := session.db.QueryContext(queryCtx, query, args...)
+	rows, err := queryer.QueryContext(queryCtx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -353,9 +357,6 @@ func (m *MySQLSessionManager) TableDataPageWithOptions(ctx context.Context, id i
 	}
 	if err = queryCtx.Err(); err != nil {
 		return nil, err
-	}
-	if session.ctx.Err() != nil {
-		return nil, context.Canceled
 	}
 	page.QuerySQL = query
 	page.CompletedAt = time.Now()

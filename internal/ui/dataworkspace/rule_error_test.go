@@ -43,7 +43,7 @@ func TestMySQLRuleEditorRemainsUsableAfterQueryError(t *testing.T) {
 	if !tt.HasText("筛选 & 排序") {
 		t.Fatal("lost editor on server error")
 	}
-	if err := tt.Click("清除筛选"); err != nil {
+	if err := clickDataToolbar(tt, "清除筛选"); err != nil {
 		t.Fatal(err)
 	}
 	waitMySQLData(t, s, doc, tt)

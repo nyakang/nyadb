@@ -18,6 +18,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 	}
 	palette := theme.Colors(c)
 
+	mysqlDataSyncAnalysisGrid(t)
 	s.restoreMySQLDataLayout(t)
 	t.edit.Hits = nil
 	ui.Column(c).FillWidth().Grow(1).MinHeight(0).Background(palette.App).Children(func() {
@@ -29,6 +30,34 @@ func (s *State) View(c *ui.Context, t *Document) {
 			}
 		}
 		s.mysqlDataRuleEditor(c, t, page)
+		s.analysisView(c, t)
+		ui.Row(c).Grow(1).MinHeight(0).FillWidth().AlignItems(ui.Stretch).Gap(0).Children(func() {
+			if t.toolbar.columnsOpen && t.page != nil {
+				s.dataColumnsPanel(c, t)
+			}
+			ui.Column(c).Grow(1).MinWidth(0).MinHeight(0).Children(func() {
+				if t.toolbar.dock == "" {
+					s.mysqlDataBody(c, t, page)
+				} else {
+					if t.toolbar.dockHeight == 0 {
+						t.toolbar.dockHeight = 62
+					}
+					if t.toolbar.dockExpanded {
+						s.dataDock(c, t)
+					} else {
+						ui.SplitVerticalPercent(c, &t.toolbar.dockHeight, func() { s.mysqlDataBody(c, t, page) }, func() { s.dataDock(c, t) }).Grow(1).MinHeight(0).FillWidth()
+					}
+				}
+			})
+		})
+		s.mysqlDataFooter(c, t, page)
+	})
+	s.trackMySQLDataLayout(c, t)
+}
+
+func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *mysqlsvc.MySQLDataPage) {
+	palette := theme.Colors(c)
+	ui.Column(c).FillWidth().Grow(1).MinHeight(0).Children(func() {
 		if t.loading {
 			ui.Row(c).Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 6).Gap(6).AlignItems(ui.Center).Children(func() {
 				ui.Spinner(c).Width(16).Height(16)
@@ -54,14 +83,14 @@ func (s *State) View(c *ui.Context, t *Document) {
 			}
 			visibleIndices, visibleColumns := mysqlVisibleDataColumns(t, page)
 			columns := append([]ui.TableColumn{mysqlDataRowHeaderColumn(t)}, visibleColumns...)
-			t.grid.Selected = &t.selectedRow
+			rowOffset := mysqlDataPrepareAnalysisGrid(t)
 			t.grid.Selection = &t.selection
 			t.grid.CellSelect = true
 			t.grid.DragSelect = true
 			t.grid.TableStyle = &ui.TableStyle{
 				AlternateRowColor: palette.GridAlternate,
 				GridColor:         palette.Border, RowLines: true, ColumnLines: true,
-				RowOffset: t.offset,
+				RowOffset: t.offset + int64(rowOffset),
 			}
 			t.grid.Sort = &t.sort
 			t.grid.HeaderMenu = func(m *ui.Menu, col int) {
@@ -70,6 +99,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 				}
 			}
 			t.grid.CellMenu = func(m *ui.Menu, row, col int) {
+				row -= rowOffset
 				source := -1
 				if col > 0 && col <= len(visibleIndices) {
 					source = visibleIndices[col-1]
@@ -79,12 +109,17 @@ func (s *State) View(c *ui.Context, t *Document) {
 				}
 				s.mysqlDataCellMenu(c, t, m, row, source)
 			}
-			if len(page.Rows) == 0 {
+			if len(page.Rows) == 0 && rowOffset == 0 {
 				theme.EmptyTable(c, &t.grid, columns, "")
 			} else {
 				// Loading/error status rows before the grid must not change
 				// its identity or reset the native scroll container.
-				grid := theme.Table(c.Key("mysql-data-grid"), &t.grid, columns, len(page.Rows), func(row, col int) {
+				grid := theme.Table(c.Key("mysql-data-grid"), &t.grid, columns, len(page.Rows)+rowOffset, func(gridRow, col int) {
+					if gridRow < rowOffset {
+						s.analysisHeaders(c, t, columns)
+						return
+					}
+					row := gridRow - rowOffset
 					tableCol := col
 					if col == 0 {
 						marker := ""
@@ -97,7 +132,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 								marker = "* "
 							}
 						}
-						ui.Text(c, marker+mysqlDataRowHeaderText(t, row)).SingleLine().FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(theme.CellText(c, &t.grid, row, tableCol, palette.Muted))
+						ui.Text(c, marker+mysqlDataRowHeaderText(t, row)).SingleLine().FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(theme.CellText(c, &t.grid, gridRow, tableCol, palette.Muted))
 						return
 					}
 					col--
@@ -114,7 +149,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 					cell := page.Rows[row][col]
 					ui.Box(c).FillWidth().MinWidth(0).Children(func() {
 						if cell.Null {
-							ui.Text(c, "NULL").TextColor(theme.CellText(c, &t.grid, row, tableCol, palette.GridNull)).FontSize(theme.Font(c, mysqlDataEditFont(t)))
+							ui.Text(c, "NULL").TextColor(theme.CellText(c, &t.grid, gridRow, tableCol, palette.GridNull)).FontSize(theme.Font(c, mysqlDataEditFont(t)))
 						} else {
 							text := ui.Text(c, cell.Text).SingleLine().FontSize(theme.Font(c, mysqlDataEditFont(t)))
 							if cell.Truncated {
@@ -140,6 +175,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 					})
 
 				}).Grow(1)
+				mysqlDataSyncAnalysisGrid(t)
 				if t.edit.FocusGrid && t.edit.Editor == nil {
 					grid.Focus()
 					t.edit.FocusGrid = false
@@ -185,9 +221,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 			}
 			s.syncMySQLDataSort(c.Services(), t)
 		}
-		s.mysqlDataFooter(c, t, page)
 	})
-	s.trackMySQLDataLayout(c, t)
 }
 
 // Last successful execution survives a pending page, cancellation, and errors.
@@ -252,7 +286,7 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *mysqlsvc.MySQL
 		if t.edit.Batch && mysqlDataHasDraft(t) {
 			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Shrink(0).Padding(2, 6).Gap(6).AlignItems(ui.Center).Background(ui.Hex("#ffa940")).Children(func() {
 				ui.Text(c, fmt.Sprintf(locales.Text("%d 条待处理记录"), mysqlDataPendingRecordCount(t))).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(ui.Hex("#2b1900")).SingleLine().Grow(1).MinWidth(0)
-				ready := !t.loading && !t.edit.Busy && t.edit.Uncertain == nil
+				ready := !t.loading && !t.edit.Busy && t.edit.Uncertain == nil && !dataTransactionUnavailable(t) && !t.transfer.Busy && !t.transfer.Uncertain
 				if ui.Button(c, locales.Text("应用更改")).Label(locales.Text("应用待处理记录")).Height(theme.ControlHeight).Disabled(!ready || t.profileID != s.session().ProfileID || !s.session().Connected).Clicked() {
 					s.saveMySQLData(c.Services(), t)
 				}
@@ -262,7 +296,7 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *mysqlsvc.MySQL
 			})
 		}
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Shrink(0).Padding(2, 6).Gap(4).AlignItems(ui.Center).Children(func() {
-			ready := t.page != nil && !t.loading && !t.edit.Busy && t.edit.Uncertain == nil && t.profileID == s.session().ProfileID && s.session().Connected
+			ready := t.page != nil && !t.loading && !t.edit.Busy && t.edit.Uncertain == nil && !dataTransactionUnavailable(t) && !t.transfer.Busy && !t.transfer.Uncertain && t.profileID == s.session().ProfileID && s.session().Connected
 			dirty := mysqlDataHasDraft(t)
 			insertReady := ready && len(page.ColumnMetadata) > 0 && len(page.ColumnMetadata) == len(page.Columns)
 			if ui.Button(c, "+").Label(locales.Text("添加记录")).Tooltip(locales.Text("添加记录")).Size(26, theme.ControlHeight).Padding(0).Disabled(!insertReady).Clicked() {
@@ -280,8 +314,12 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *mysqlsvc.MySQL
 			if ui.Button(c, "↻").Label(locales.Text("刷新数据并返回首页")).Tooltip(locales.Text("刷新数据并返回首页")).Size(26, theme.ControlHeight).Padding(0).Disabled(!ready).Clicked() {
 				s.Refresh(c.Services(), t)
 			}
-			if ui.Button(c, "■").Label(locales.Text("停止数据操作")).Tooltip(locales.Text("停止数据操作")).Size(26, theme.ControlHeight).Padding(0).Disabled(!t.loading && !t.edit.Busy).Clicked() {
-				if t.edit.Busy {
+			if ui.Button(c, "■").Label(locales.Text("停止数据操作")).Tooltip(locales.Text("停止数据操作")).Size(26, theme.ControlHeight).Padding(0).Disabled(!t.loading && !t.edit.Busy && !dataTransactionBusy(t) && !t.transfer.Busy).Clicked() {
+				if t.transfer.Busy {
+					s.stopDataTransfer(t)
+				} else if dataTransactionBusy(t) {
+					s.stopDataTransaction(t)
+				} else if t.edit.Busy {
 					s.stopMySQLDataEdit(t)
 				} else {
 					s.cancelMySQLDataRead(t)
