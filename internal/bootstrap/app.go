@@ -10,6 +10,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
+	"github.com/nyakang/nyadb/internal/services/datasources"
 	"github.com/nyakang/nyadb/internal/storage/localdb"
 	"github.com/nyakang/nyadb/internal/ui/shell"
 	"github.com/nyakang/nyadb/internal/ui/theme"
@@ -38,6 +39,7 @@ func Run() error {
 	theme.SetMode(theme.ParseMode(savedAppearance))
 	state := shell.NewWithProfiles(connections.NewService(localdb.NewProfileStore(db)))
 	state.SetCredentialVault(credentials.NewOSVault())
+	state.SetDataSources(datasources.Open, datasources.Capabilities)
 	state.SetDataLayoutPreferences(
 		func(key string) (string, error) { return localdb.Preference(db, key) },
 		func(key, value string) error { return localdb.SetPreference(db, key, value) },

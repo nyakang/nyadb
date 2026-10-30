@@ -26,18 +26,35 @@ type mysqlDataXMLEncoder struct {
 	root    xml.StartElement
 	closed  bool
 	fields  []string
+	options mysqlDataSourceOptions
 }
 
 func newMySQLDataXMLEncoder(w io.Writer, fields []string) (*mysqlDataXMLEncoder, error) {
+	o := defaultMySQLDataSourceOptions()
+	o.BinaryEncoding = "base64"
+	return newMySQLDataXMLEncoderOptions(w, fields, o)
+}
+
+func newMySQLDataXMLEncoderOptions(w io.Writer, fields []string, options mysqlDataSourceOptions) (*mysqlDataXMLEncoder, error) {
+	if !mysqlDataXMLNameValid(options.XMLRoot) || !mysqlDataXMLNameValid(options.XMLRow) || options.XMLRoot == "" || options.XMLRow == "" {
+		return nil, mysqlDataXMLError()
+	}
 	for _, field := range fields {
 		if field == "" || !mysqlDataXMLTextValid(field) {
 			return nil, mysqlDataXMLError()
 		}
 	}
-	if _, err := io.WriteString(w, xml.Header); err != nil {
+	name := options.Encoding
+	if name == "" {
+		name = "UTF-8"
+	}
+	if strings.HasPrefix(name, "UTF-16") {
+		name = "UTF-16"
+	}
+	if _, err := io.WriteString(w, "<?xml version=\"1.0\" encoding=\""+name+"\"?>\n"); err != nil {
 		return nil, err
 	}
-	e := &mysqlDataXMLEncoder{encoder: xml.NewEncoder(w), fields: append([]string(nil), fields...), root: xml.StartElement{Name: xml.Name{Local: "RECORDS"}, Attr: []xml.Attr{{Name: xml.Name{Local: "xmlns:xsi"}, Value: mysqlDataXMLSchemaInstance}}}}
+	e := &mysqlDataXMLEncoder{options: options, encoder: xml.NewEncoder(w), fields: append([]string(nil), fields...), root: xml.StartElement{Name: xml.Name{Local: options.XMLRoot}, Attr: []xml.Attr{{Name: xml.Name{Local: "xmlns:xsi"}, Value: mysqlDataXMLSchemaInstance}}}}
 	e.encoder.Indent("", "  ")
 	if err := e.encoder.EncodeToken(e.root); err != nil {
 		return nil, err
@@ -55,7 +72,20 @@ func (e *mysqlDataXMLEncoder) Row(values []mysqlsvc.MySQLDataValue) error {
 			return mysqlDataXMLError()
 		}
 	}
-	row := xml.StartElement{Name: xml.Name{Local: "RECORD"}}
+	row := xml.StartElement{Name: xml.Name{Local: e.options.XMLRow}}
+	if e.options.XMLAttributes {
+		for i, field := range e.fields {
+			value := values[i]
+			if !mysqlDataXMLNameValid(field) || value.Null || value.Binary {
+				return errors.New("XML attributes cannot express NULL/binary or invalid names; choose element fields")
+			}
+			row.Attr = append(row.Attr, xml.Attr{Name: xml.Name{Local: field}, Value: value.Text})
+		}
+		if err := e.encoder.EncodeToken(row); err != nil {
+			return err
+		}
+		return e.encoder.EncodeToken(row.End())
+	}
 	if err := e.encoder.EncodeToken(row); err != nil {
 		return err
 	}
@@ -71,8 +101,13 @@ func (e *mysqlDataXMLEncoder) Row(values []mysqlsvc.MySQLDataValue) error {
 			element.Attr = append(element.Attr, xml.Attr{Name: xml.Name{Local: "xsi:nil"}, Value: "true"})
 			text = ""
 		} else if value.Binary {
-			element.Attr = append(element.Attr, xml.Attr{Name: xml.Name{Local: "encoding"}, Value: "base64"})
-			text = base64.StdEncoding.EncodeToString(value.Bytes)
+			if e.options.BinaryEncoding == "hex" {
+				element.Attr = append(element.Attr, xml.Attr{Name: xml.Name{Local: "encoding"}, Value: "hex"})
+				text = hex.EncodeToString(value.Bytes)
+			} else {
+				element.Attr = append(element.Attr, xml.Attr{Name: xml.Name{Local: "encoding"}, Value: "base64"})
+				text = base64.StdEncoding.EncodeToString(value.Bytes)
+			}
 		}
 		if err := e.encoder.EncodeToken(element); err != nil {
 			return err
@@ -128,7 +163,7 @@ func mysqlDataXMLNameValid(name string) bool {
 	return name != ""
 }
 
-// The outer importer already limits the complete UTF-8 file to 1 MiB. This
+// The outer importer already limits the complete UTF-8 file to 16 MiB. This
 // token parser accepts only a flat record envelope, never SQL or a recursive
 // tree. DTDs, processing instructions, external entities and nested fields are
 // rejected; encoding/xml performs no external entity lookup.
@@ -199,8 +234,8 @@ func mysqlDataParseXMLImport(data []byte) (*mysqlDataImportInput, error) {
 				ordered[i] = value
 			}
 			input.Rows = append(input.Rows, ordered)
-			if len(input.Rows) > mysqlsvc.MySQLDataMaxPageSize {
-				return nil, errors.New(locales.Text("导入文件超过 200 行限制"))
+			if len(input.Rows) > mysqlsvc.MaxMySQLDataImportRows {
+				return nil, mysqlsvc.ErrMySQLDataEditLimit
 			}
 		case xml.EndElement:
 			if !opened || ended || t.Name.Space != "" || t.Name.Local != "RECORDS" {

@@ -61,7 +61,7 @@ func TestDataTransferDelimitedRoundTripPreservesNullBinaryAndQuotedValues(t *tes
 	}
 }
 func TestDataTransferParserRejectsWholeFileInsteadOfTruncating(t *testing.T) {
-	tests := []struct{ data, format string }{{"id,id\n1,2\n", "CSV"}, {"id,note\n1\n", "CSV"}, {"id\n" + strings.Repeat("1\n", 201), "CSV"}, {"id\n" + strings.Repeat("x", mysqlsvc.MySQLDataEditMaxBytes), "CSV"}, {`[{"id":"1"},{"note":"2"}]`, "JSON"}, {`[{"id":{}}]`, "JSON"}, {`[{"id":"1","id":"2"}]`, "JSON"}, {`[{"id":"1"}] {}`, "JSON"}, {"id\n\xff\n", "CSV"}}
+	tests := []struct{ data, format string }{{"id,id\n1,2\n", "CSV"}, {"id,note\n1\n", "CSV"}, {"id\n" + strings.Repeat("1\n", mysqlsvc.MaxMySQLDataImportRows+1), "CSV"}, {"id\n" + strings.Repeat("x", mysqlsvc.MySQLDataEditMaxBytes+1), "CSV"}, {`[{"id":"1"},{"note":"2"}]`, "JSON"}, {`[{"id":{}}]`, "JSON"}, {`[{"id":"1","id":"2"}]`, "JSON"}, {`[{"id":"1"}] {}`, "JSON"}, {"id\n\xff\n", "CSV"}}
 	for _, test := range tests {
 		if _, err := mysqlDataParseImport(strings.NewReader(test.data), test.format); err == nil {
 			t.Fatalf("accepted %s %.80q", test.format, test.data)
@@ -143,6 +143,10 @@ func transferTestDocument() (*State, *Document, *Session) {
 	d := s.Open(1, 12, "db", "t")
 	d.page = &mysqlsvc.MySQLDataPage{Columns: []string{"id"}, ColumnMetadata: transferColumns()[:1]}
 	s.openDataImport(d)
+	// These adapter tests construct already-reviewed legacy inputs directly.
+	// The production stepped/spooled workflow has separate lifecycle tests.
+	d.transfer.Wizard = false
+	d.transfer.ContinueOnError = false
 	d.transfer.Input = &mysqlDataImportInput{Fields: []string{"id"}, Rows: [][]mysqlsvc.MySQLDataValue{{{Text: "1"}}}}
 	d.transfer.Mapping = []string{"id"}
 	d.transfer.Confirmation = "t"
@@ -296,6 +300,9 @@ func TestDataTransferFullExportWorkerOwnsRulesAndStreamsEveryRow(t *testing.T) {
 func TestDataTransferFileReadPreviewAndExplicitConfirmationPrecedeSingleSave(t *testing.T) {
 	s, d, _ := transferTestDocument()
 	s.openDataImport(d)
+	// Exercise the compatible bounded-file/saver adapter. Production defaults
+	// to continue-on-error and uses the independently tested streaming wizard.
+	d.transfer.Wizard, d.transfer.ContinueOnError = false, false
 	path := filepath.Join(t.TempDir(), "fixture.csv")
 	if err := os.WriteFile(path, []byte("id\n9007199254740993\n"), 0600); err != nil {
 		t.Fatal(err)
@@ -319,7 +326,12 @@ func TestDataTransferFileReadPreviewAndExplicitConfirmationPrecedeSingleSave(t *
 	}
 	d.transfer.Confirmation = "t"
 	s.startDataImport(ui.Services{}, d)
-	edits := <-saved
+	var edits []mysqlsvc.MySQLDataEdit
+	select {
+	case edits = <-saved:
+	case <-time.After(time.Second):
+		t.Fatal("reviewed adapter did not start", d.transfer.Err)
+	}
 	if edits[0].Values["id"].Text != "9007199254740993" {
 		t.Fatal("save values changed")
 	}

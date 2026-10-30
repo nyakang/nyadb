@@ -1,6 +1,8 @@
 package shell
 
 import (
+	"context"
+	"github.com/nyakang/nyadb/internal/services/datasources"
 	"slices"
 
 	"github.com/egoist/mygo/ui"
@@ -143,6 +145,15 @@ func (s *State) dataInspectorDependencies() dataworkspace.InspectorDependencies 
 
 func (s *State) dataWorkspaceDependencies() dataworkspace.Dependencies {
 	return dataworkspace.Dependencies{
+		ImportTargets: func(id int64, db string) []string {
+			var tables []string
+			for _, obj := range s.sessions.CacheFor(id)[db] {
+				if obj.Kind == "表" {
+					tables = append(tables, obj.Name)
+				}
+			}
+			return tables
+		},
 		Session: func() dataworkspace.Session {
 			w := s.sessions.Current()
 			return dataworkspace.Session{ProfileID: w.ProfileID, Generation: w.Generation, Connected: w.Status == "已连接"}
@@ -442,4 +453,8 @@ func (s *State) activateObjectProfile(id int64) bool {
 	s.sessions.Activate(id)
 	s.selectedProfileID = id
 	return true
+}
+
+func (s *State) SetDataSources(open func(context.Context, datasources.Config) (datasources.Source, error), capabilities func(context.Context, datasources.Config) []datasources.Capability) {
+	s.dataWorkspace.SetDataSources(open, capabilities)
 }

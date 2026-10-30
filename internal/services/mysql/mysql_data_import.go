@@ -252,7 +252,7 @@ func mysqlDataImportValueValid(col MySQLStructureColumn, value MySQLDataValue) b
 	if value.Null {
 		return true
 	}
-	binary := strings.Contains(col.DataType, "binary") || strings.Contains(col.DataType, "blob")
+	binary := mysqlDataBinaryType(strings.ToLower(col.DataType))
 	if binary != value.Binary {
 		return false
 	}
@@ -260,7 +260,13 @@ func mysqlDataImportValueValid(col MySQLStructureColumn, value MySQLDataValue) b
 		if col.CharacterMaxLength != nil && int64(len(value.Bytes)) > *col.CharacterMaxLength {
 			return false
 		}
-		return col.DataType != "blob" || len(value.Bytes) <= 65535
+		switch col.DataType {
+		case "tinyblob":
+			return len(value.Bytes) <= 255
+		case "blob":
+			return len(value.Bytes) <= 65535
+		}
+		return true
 	}
 	if col.CharacterMaxLength != nil && int64(utf8.RuneCountInString(value.Text)) > *col.CharacterMaxLength {
 		return false
@@ -268,10 +274,21 @@ func mysqlDataImportValueValid(col MySQLStructureColumn, value MySQLDataValue) b
 	switch col.DataType {
 	case "tinyint", "smallint", "mediumint", "int", "bigint":
 		bits := map[string]int{"tinyint": 8, "smallint": 16, "mediumint": 24, "int": 32, "bigint": 64}[col.DataType]
+		if strings.Contains(strings.ToLower(col.Type), "unsigned") {
+			_, err := strconv.ParseUint(value.Text, 10, bits)
+			return err == nil
+		}
 		_, err := strconv.ParseInt(value.Text, 10, bits)
 		return err == nil
 	case "decimal":
-		return mysqlDataImportDecimalFits(value.Text, *col.NumericPrecision, *col.NumericScale)
+		if col.NumericPrecision == nil || col.NumericScale == nil || !mysqlDataImportDecimalFits(value.Text, *col.NumericPrecision, *col.NumericScale) {
+			return false
+		}
+		if strings.Contains(strings.ToLower(col.Type), "unsigned") {
+			number, ok := new(big.Rat).SetString(value.Text)
+			return ok && number.Sign() >= 0
+		}
+		return true
 	case "double", "float":
 		if len(value.Text) > 256 || !mysqlDataImportNumberPattern.MatchString(value.Text) {
 			return false
@@ -286,6 +303,8 @@ func mysqlDataImportValueValid(col MySQLStructureColumn, value MySQLDataValue) b
 		return json.Valid([]byte(value.Text))
 	case "text":
 		return len(value.Text) <= 65535
+	case "tinytext":
+		return len(value.Text) <= 255
 	case "date":
 		parsed, err := time.Parse("2006-01-02", value.Text)
 		return err == nil && parsed.Year() >= 1000
@@ -295,7 +314,11 @@ func mysqlDataImportValueValid(col MySQLStructureColumn, value MySQLDataValue) b
 			fraction = len(value.Text) - dot - 1
 		}
 		parsed, err := time.Parse("2006-01-02 15:04:05.999999999", value.Text)
-		return err == nil && parsed.Year() >= 1000 && int64(fraction) <= *col.DatetimePrecision
+		precision := int64(0)
+		if col.DatetimePrecision != nil {
+			precision = *col.DatetimePrecision
+		}
+		return err == nil && parsed.Year() >= 1000 && int64(fraction) <= precision
 	case "time":
 		parts := mysqlDataImportTimePattern.FindStringSubmatch(value.Text)
 		if parts == nil {
@@ -304,7 +327,11 @@ func mysqlDataImportValueValid(col MySQLStructureColumn, value MySQLDataValue) b
 		h, _ := strconv.Atoi(parts[1])
 		m, _ := strconv.Atoi(parts[2])
 		s, _ := strconv.Atoi(parts[3])
-		return h <= 838 && m < 60 && s < 60 && int64(len(parts[4])) <= *col.DatetimePrecision
+		precision := int64(0)
+		if col.DatetimePrecision != nil {
+			precision = *col.DatetimePrecision
+		}
+		return h <= 838 && m < 60 && s < 60 && int64(len(parts[4])) <= precision
 	}
 	return true
 }

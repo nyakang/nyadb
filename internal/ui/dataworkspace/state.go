@@ -6,6 +6,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
+	"github.com/nyakang/nyadb/internal/services/datasources"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
@@ -27,13 +28,16 @@ type Runtime struct {
 	Analyzer         mysqlDataAnalyzer
 	Transactions     DataTransactions
 	NewTableImporter mysqlDataNewTableImporter
+	Importer         mysqlDataImporter
+	StreamImporter   mysqlDataStreamImporter
+	TableMetadata    func(context.Context, int64, string, string) (*mysqlsvc.MySQLTableStructure, error)
 }
 
 func MySQLRuntime(manager *mysqlsvc.MySQLSessionManager) Runtime {
 	if manager == nil {
 		return Runtime{}
 	}
-	return Runtime{NewTableImporter: manager.ImportMySQLDataIntoNewTable, Analyzer: manager.AnalyzeMySQLData, Exporter: manager.ExportMySQLData, AdvancedLoader: manager.TableDataPageWithOptions, Saver: manager.ApplyMySQLDataEdits, RowReader: manager.ReadMySQLDataRow, Verify: manager.VerifyMySQLDataEdits, Transactions: DataTransactions{
+	return Runtime{TableMetadata: manager.TableStructure, StreamImporter: manager.ImportMySQLDataStream, Importer: manager.ImportMySQLData, NewTableImporter: manager.ImportMySQLDataIntoNewTable, Analyzer: manager.AnalyzeMySQLData, Exporter: manager.ExportMySQLData, AdvancedLoader: manager.TableDataPageWithOptions, Saver: manager.ApplyMySQLDataEdits, RowReader: manager.ReadMySQLDataRow, Verify: manager.VerifyMySQLDataEdits, Transactions: DataTransactions{
 		Begin: manager.BeginMySQLDataTransaction, Commit: manager.CommitMySQLDataTransaction,
 		Rollback: manager.RollbackMySQLDataTransaction, Close: func(t *mysqlsvc.MySQLDataTransaction) { t.Close() },
 		Chunk: manager.ReadMySQLFieldChunkInTransaction, Page: manager.TableDataPageInTransaction, Save: manager.ApplyMySQLDataEditsInTransaction, Row: manager.ReadMySQLDataRowInTransaction,
@@ -41,6 +45,7 @@ func MySQLRuntime(manager *mysqlsvc.MySQLSessionManager) Runtime {
 }
 
 type Dependencies struct {
+	ImportTargets     func(int64, string) []string
 	Session           func() Session
 	Runtime           func() Runtime
 	Inspector         InspectorDependencies
@@ -102,6 +107,8 @@ type Document struct {
 	tools             mysqlDataToolsState
 }
 type State struct {
+	SourceOpen            func(context.Context, datasources.Config) (datasources.Source, error)
+	SourceCapabilities    func(context.Context, datasources.Config) []datasources.Capability
 	deps                  Dependencies
 	documents             map[uint64]*Document
 	inspector             *inspectorState
@@ -115,6 +122,8 @@ type State struct {
 	Analyzer              mysqlDataAnalyzer
 	Transactions          DataTransactions
 	NewTableImporter      mysqlDataNewTableImporter
+	Importer              mysqlDataImporter
+	StreamImporter        mysqlDataStreamImporter
 }
 
 func New(deps Dependencies) *State {

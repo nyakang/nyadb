@@ -68,6 +68,14 @@ func (m *MySQLSessionManager) ApplyMySQLDataEdits(ctx context.Context, id int64,
 // applyMySQLDataEditsInTransaction shares exact-value, identity and conflict
 // checks between atomic saves and explicit data-document transactions.
 func applyMySQLDataEditsInTransaction(qctx context.Context, tx *sql.Tx, database, table, target string, edits []MySQLDataEdit) (*MySQLDataEditResult, error) {
+	columns, e := mysqlEditTransactionColumns(qctx, tx, database, table, target)
+	if e != nil {
+		return nil, e
+	}
+	return applyMySQLDataEditsWithColumns(qctx, tx, database, table, target, edits, columns, true)
+}
+
+func mysqlEditTransactionColumns(qctx context.Context, tx *sql.Tx, database, table, target string) ([]MySQLStructureColumn, error) {
 	var e error
 	// Open the target first to hold its metadata lock until COMMIT/ROLLBACK.
 	// Revalidate the engine and fields under that lock so a concurrent ALTER
@@ -94,6 +102,11 @@ func applyMySQLDataEditsInTransaction(qctx context.Context, tx *sql.Tx, database
 		return nil, ErrMySQLTableNotFound
 	}
 
+	return columns, nil
+}
+
+func applyMySQLDataEditsWithColumns(qctx context.Context, tx *sql.Tx, database, table, target string, edits []MySQLDataEdit, columns []MySQLStructureColumn, readPreviews bool) (*MySQLDataEditResult, error) {
+	var e error
 	result := &MySQLDataEditResult{}
 	for _, edit := range edits {
 		outcome := MySQLDataEditOutcome{Kind: edit.Kind, Original: edit.Original}
@@ -232,13 +245,15 @@ func applyMySQLDataEditsInTransaction(qctx context.Context, tx *sql.Tx, database
 			if e != nil {
 				return nil, e
 			}
-			outcome.PreviewColumns = make([]string, len(columns))
-			for i, col := range columns {
-				outcome.PreviewColumns[i] = col.Name
-			}
-			outcome.Previews, e = mysqlEditPreviews(qctx, tx, database, table, *nextRef, columns)
-			if e != nil {
-				return nil, e
+			if readPreviews {
+				outcome.PreviewColumns = make([]string, len(columns))
+				for i, col := range columns {
+					outcome.PreviewColumns[i] = col.Name
+				}
+				outcome.Previews, e = mysqlEditPreviews(qctx, tx, database, table, *nextRef, columns)
+				if e != nil {
+					return nil, e
+				}
 			}
 		}
 		result.Outcomes = append(result.Outcomes, outcome)
