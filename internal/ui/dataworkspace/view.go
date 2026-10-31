@@ -284,8 +284,8 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *mysqlsvc.MySQL
 
 	ui.Column(c).FillWidth().Shrink(0).Background(palette.Header).Children(func() {
 		if t.edit.Batch && mysqlDataHasDraft(t) {
-			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Shrink(0).Padding(2, 6).Gap(6).AlignItems(ui.Center).Background(ui.Hex("#ffa940")).Children(func() {
-				ui.Text(c, fmt.Sprintf(locales.Text("%d 条待处理记录"), mysqlDataPendingRecordCount(t))).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(ui.Hex("#2b1900")).SingleLine().Grow(1).MinWidth(0)
+			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Shrink(0).Padding(2, 6).Gap(6).AlignItems(ui.Center).Background(palette.Notice).Children(func() {
+				ui.Text(c, fmt.Sprintf(locales.Text("%d 条待处理记录"), mysqlDataPendingRecordCount(t))).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.NoticeText).SingleLine().Grow(1).MinWidth(0)
 				ready := !t.loading && !t.edit.Busy && t.edit.Uncertain == nil && !dataTransactionUnavailable(t) && !t.transfer.Busy && !t.transfer.Uncertain
 				if ui.Button(c, locales.Text("应用更改")).Label(locales.Text("应用待处理记录")).Height(theme.ControlHeight).Disabled(!ready || t.profileID != s.session().ProfileID || !s.session().Connected).Clicked() {
 					s.saveMySQLData(c.Services(), t)

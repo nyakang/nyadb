@@ -870,5 +870,22 @@
   "wizardTextEncoding": "文本编码",
   "wizardNewline": "换行符",
   "wizardDateOrder": "日期顺序",
-  "wizardBinaryEncoding": "二进制编码"
+  "wizardBinaryEncoding": "二进制编码",
+  "colorScheme": "配色方案",
+  "appearanceMode": "明暗模式",
+  "colorSchemeHint": "选择配色方案，再搭配喜欢的明暗模式。所有窗口将同步更新。",
+  "themeClassic": "经典",
+  "themeOcean": "海洋",
+  "themeForest": "森林",
+  "themeRose": "玫瑰",
+  "themeSand": "暖沙",
+  "themeClassicHint": "中性灰阶 · 经典蓝",
+  "themeOceanHint": "冷调蓝灰 · 海水蓝",
+  "themeForestHint": "雾白与松绿 · 翡翠绿",
+  "themeRoseHint": "柔和灰紫 · 玫瑰粉",
+  "themeSandHint": "暖白与褐灰 · 琥珀金",
+  "themeEffectiveLight": "当前使用浅色配色",
+  "themeEffectiveDark": "当前使用深色配色",
+  "themeSaveFailed": "无法保存主题设置，请重试。",
+  "themeSaveSuccess": "主题设置已保存"
 }

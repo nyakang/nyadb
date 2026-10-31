@@ -158,6 +158,14 @@ func (s *State) menuCommands(section string, m *ui.Menu) {
 				}
 			}
 			sub.Separator()
+			sub.Submenu(locales.Text("配色方案"), func(colors *ui.Menu) {
+				for _, scheme := range theme.Schemes() {
+					if colors.Item(locales.Text(scheme.Name)).Checked(theme.CurrentScheme() == scheme.ID).Chosen() {
+						s.changeColorScheme(scheme.ID)
+					}
+				}
+			})
+			sub.Separator()
 			if sub.Item(locales.Text("主题设置…")).Chosen() {
 				s.openSettings()
 			}
@@ -200,6 +208,10 @@ func (s *State) menuCommands(section string, m *ui.Menu) {
 func (s *State) SetAppearanceHandler(fn func(theme.Mode)) { s.appearanceChanged = fn }
 
 func (s *State) changeAppearance(mode theme.Mode) {
+	mode = theme.ParseMode(string(mode))
+	if !s.saveThemePreference(theme.ModePreferenceKey, string(mode)) {
+		return
+	}
 	theme.SetMode(mode)
 	if s.appearanceChanged != nil {
 		s.appearanceChanged(mode)

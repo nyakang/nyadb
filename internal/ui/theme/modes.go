@@ -30,6 +30,8 @@ type Palette struct {
 	SelectionText, GridAlternate, GridNull, InputBorder, Error, Warning, Success ui.Color
 	ToolbarSelected, Selection                                                   ui.Color
 	SurfaceHover, SurfacePressed, AccentHover, AccentPressed, AccentText, Focus  ui.Color
+	NavigationSelection, NavigationSelectionText                                 ui.Color
+	Notice, NoticeText, Chart                                                    ui.Color
 }
 
 var darkPalette = Palette{

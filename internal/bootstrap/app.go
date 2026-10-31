@@ -32,11 +32,9 @@ func Run() error {
 		return fmt.Errorf("open NyaDB profile database: %w", err)
 	}
 	defer db.Close()
-	savedAppearance, err := localdb.Preference(db, "appearance")
-	if err != nil {
-		return fmt.Errorf("read appearance preference: %w", err)
+	if err := loadAppearance(db); err != nil {
+		return err
 	}
-	theme.SetMode(theme.ParseMode(savedAppearance))
 	state := shell.NewWithProfiles(connections.NewService(localdb.NewProfileStore(db)))
 	state.SetCredentialVault(credentials.NewOSVault())
 	state.SetDataSources(datasources.Open, datasources.Capabilities)
@@ -84,13 +82,18 @@ func Run() error {
 				chooser.Update(func() {})
 			}
 		}
-		state.SetAppearanceHandler(func(mode theme.Mode) {
-			if err := localdb.SetPreference(db, "appearance", string(mode)); err != nil {
+		state.SetThemePreferenceSaver(func(key, value string) error {
+			err := localdb.SetPreference(db, key, value)
+			if err != nil {
 				fmt.Fprintf(os.Stderr, "NyaDB appearance preference: %v\n", err)
 			}
+			return err
+		})
+		state.SetAppearanceHandler(func(mode theme.Mode) {
 			setNativeAppearance(mode)
 			refreshWindows()
 		})
+		state.SetColorSchemeHandler(func(theme.Scheme) { refreshWindows() })
 		mygo.Theme.OnUpdated(func() {
 			applyNativeGTKTheme(theme.CurrentMode())
 			refreshWindows()

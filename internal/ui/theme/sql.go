@@ -9,6 +9,15 @@ import (
 // native MyGo editor's selection, caret, folding and virtualized rendering.
 // Colors depend on the effective window appearance, not only the saved mode.
 func SQLTheme(window *ui.Theme) *editor.Theme {
+	mode := ModeLight
+	if window.Dark {
+		mode = ModeDark
+	}
+	s := Resolve(mode, window.Dark, ui.Preferences{})
+	return &s.SQL
+}
+
+func classicSQLTheme(window *ui.Theme) *editor.Theme {
 	base := editor.DefaultTheme(window)
 	dark := window.Dark
 	base.Background = ui.Hex("#ffffff")
@@ -64,18 +73,58 @@ func SQLTheme(window *ui.Theme) *editor.Theme {
 	return base
 }
 
-// SQLThemeFor retains syntax colors while respecting system contrast and focus.
-func SQLThemeFor(c *ui.Context) *editor.Theme {
-	t := SQLTheme(c.Theme())
-	p := Colors(c)
+func sqlTheme(scheme Scheme, dark bool, p Palette, prefs ui.Preferences) *editor.Theme {
+	t := classicSQLTheme(&ui.Theme{Dark: dark, Background: p.App, Text: p.Text, TextMuted: p.Muted, Border: p.Border})
+	if scheme != SchemeClassic {
+		v := variantFor(scheme, dark)
+		t.Background, t.Text = p.App, p.Text
+		t.LineNumber, t.ActiveLineNumber = p.Muted, p.Text
+		t.ActiveLine = p.App.Mix(p.Header, 0.65)
+		// Editor selection keeps syntax ink, unlike tables which switch to
+		// SelectionText. Use a subtle tint so all token colors remain legible.
+		t.Selection = p.App.Mix(p.Accent, 0.16)
+		t.InactiveSelection = p.App.Mix(p.Accent, 0.08)
+		t.Cursor, t.MatchingBracket = p.Focus, p.Focus
+		t.IndentGuide, t.WrapGuide, t.ActiveIndentGuide = p.Border, p.Border, p.Muted
+		t.Whitespace = p.Muted
+		for _, token := range []struct {
+			kind  editor.TokenKind
+			color ui.Color
+		}{
+			{editor.TokenKeyword, ui.Hex(v.keyword)}, {editor.TokenProperty, ui.Hex(v.keyword)},
+			{editor.TokenConstant, ui.Hex(v.keyword)}, {editor.TokenFunction, ui.Hex(v.function)},
+			{editor.TokenType, ui.Hex(v.function)}, {editor.TokenString, ui.Hex(v.str)},
+			{editor.TokenEscape, ui.Hex(v.number)}, {editor.TokenNumber, ui.Hex(v.number)},
+			{editor.TokenVariable, p.Text}, {editor.TokenOperator, p.Text},
+			{editor.TokenPunctuation, p.Muted}, {editor.TokenComment, p.Muted}, {editor.TokenInvalid, p.Error},
+		} {
+			t.Tokens[token.kind] = editor.TokenStyle{Color: token.color}
+		}
+		t.Tokens[editor.TokenComment].Italic = true
+	}
 	t.Error, t.Warning = p.Error, p.Warning
-	if c.Preferences().Accent.A != 0 {
+	t.Info, t.Hint = p.Blue, p.Muted
+	t.Added, t.Deleted, t.Modified = p.Success, p.Error, p.Blue
+	if scheme == SchemeClassic && prefs.Accent.A != 0 {
 		t.Cursor, t.MatchingBracket = p.Focus, p.Focus
 	}
-	if c.Preferences().HighContrast {
+	if prefs.HighContrast {
 		t.LineNumber = p.Muted
 		t.Tokens[editor.TokenComment] = editor.TokenStyle{Color: p.Muted, Italic: true}
 		t.IndentGuide, t.WrapGuide = p.Border, p.Border
 	}
+	if scheme != SchemeClassic {
+		for i := range t.Tokens {
+			if t.Tokens[i].Color.A != 0 {
+				t.Tokens[i].Color = readableInk(t.Tokens[i].Color, t.Background, t.ActiveLine, t.Selection)
+			}
+		}
+	}
 	return t
+}
+
+// SQLThemeFor uses exactly the same frame snapshot as the workbench widgets.
+func SQLThemeFor(c *ui.Context) *editor.Theme {
+	s := Frame(c)
+	return &s.SQL
 }

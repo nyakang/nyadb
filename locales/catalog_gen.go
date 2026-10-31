@@ -8985,3 +8985,173 @@ func WizardBinaryEncoding() string { return In(i18n.Locale()).WizardBinaryEncodi
 func (msgs Messages) WizardBinaryEncoding() string {
 	return Catalog.Format(msgs.locale, "wizardBinaryEncoding", nil)
 }
+
+// ColorScheme says "配色方案"
+// in the language the app shows.
+func ColorScheme() string { return In(i18n.Locale()).ColorScheme() }
+
+// ColorScheme says "配色方案"
+// in the language of msgs.
+func (msgs Messages) ColorScheme() string {
+	return Catalog.Format(msgs.locale, "colorScheme", nil)
+}
+
+// AppearanceMode says "明暗模式"
+// in the language the app shows.
+func AppearanceMode() string { return In(i18n.Locale()).AppearanceMode() }
+
+// AppearanceMode says "明暗模式"
+// in the language of msgs.
+func (msgs Messages) AppearanceMode() string {
+	return Catalog.Format(msgs.locale, "appearanceMode", nil)
+}
+
+// ColorSchemeHint says "选择配色方案，再搭配喜欢的明暗模式。所有窗口将同步更新。"
+// in the language the app shows.
+func ColorSchemeHint() string { return In(i18n.Locale()).ColorSchemeHint() }
+
+// ColorSchemeHint says "选择配色方案，再搭配喜欢的明暗模式。所有窗口将同步更新。"
+// in the language of msgs.
+func (msgs Messages) ColorSchemeHint() string {
+	return Catalog.Format(msgs.locale, "colorSchemeHint", nil)
+}
+
+// ThemeClassic says "经典"
+// in the language the app shows.
+func ThemeClassic() string { return In(i18n.Locale()).ThemeClassic() }
+
+// ThemeClassic says "经典"
+// in the language of msgs.
+func (msgs Messages) ThemeClassic() string {
+	return Catalog.Format(msgs.locale, "themeClassic", nil)
+}
+
+// ThemeOcean says "海洋"
+// in the language the app shows.
+func ThemeOcean() string { return In(i18n.Locale()).ThemeOcean() }
+
+// ThemeOcean says "海洋"
+// in the language of msgs.
+func (msgs Messages) ThemeOcean() string {
+	return Catalog.Format(msgs.locale, "themeOcean", nil)
+}
+
+// ThemeForest says "森林"
+// in the language the app shows.
+func ThemeForest() string { return In(i18n.Locale()).ThemeForest() }
+
+// ThemeForest says "森林"
+// in the language of msgs.
+func (msgs Messages) ThemeForest() string {
+	return Catalog.Format(msgs.locale, "themeForest", nil)
+}
+
+// ThemeRose says "玫瑰"
+// in the language the app shows.
+func ThemeRose() string { return In(i18n.Locale()).ThemeRose() }
+
+// ThemeRose says "玫瑰"
+// in the language of msgs.
+func (msgs Messages) ThemeRose() string {
+	return Catalog.Format(msgs.locale, "themeRose", nil)
+}
+
+// ThemeSand says "暖沙"
+// in the language the app shows.
+func ThemeSand() string { return In(i18n.Locale()).ThemeSand() }
+
+// ThemeSand says "暖沙"
+// in the language of msgs.
+func (msgs Messages) ThemeSand() string {
+	return Catalog.Format(msgs.locale, "themeSand", nil)
+}
+
+// ThemeClassicHint says "中性灰阶 · 经典蓝"
+// in the language the app shows.
+func ThemeClassicHint() string { return In(i18n.Locale()).ThemeClassicHint() }
+
+// ThemeClassicHint says "中性灰阶 · 经典蓝"
+// in the language of msgs.
+func (msgs Messages) ThemeClassicHint() string {
+	return Catalog.Format(msgs.locale, "themeClassicHint", nil)
+}
+
+// ThemeOceanHint says "冷调蓝灰 · 海水蓝"
+// in the language the app shows.
+func ThemeOceanHint() string { return In(i18n.Locale()).ThemeOceanHint() }
+
+// ThemeOceanHint says "冷调蓝灰 · 海水蓝"
+// in the language of msgs.
+func (msgs Messages) ThemeOceanHint() string {
+	return Catalog.Format(msgs.locale, "themeOceanHint", nil)
+}
+
+// ThemeForestHint says "雾白与松绿 · 翡翠绿"
+// in the language the app shows.
+func ThemeForestHint() string { return In(i18n.Locale()).ThemeForestHint() }
+
+// ThemeForestHint says "雾白与松绿 · 翡翠绿"
+// in the language of msgs.
+func (msgs Messages) ThemeForestHint() string {
+	return Catalog.Format(msgs.locale, "themeForestHint", nil)
+}
+
+// ThemeRoseHint says "柔和灰紫 · 玫瑰粉"
+// in the language the app shows.
+func ThemeRoseHint() string { return In(i18n.Locale()).ThemeRoseHint() }
+
+// ThemeRoseHint says "柔和灰紫 · 玫瑰粉"
+// in the language of msgs.
+func (msgs Messages) ThemeRoseHint() string {
+	return Catalog.Format(msgs.locale, "themeRoseHint", nil)
+}
+
+// ThemeSandHint says "暖白与褐灰 · 琥珀金"
+// in the language the app shows.
+func ThemeSandHint() string { return In(i18n.Locale()).ThemeSandHint() }
+
+// ThemeSandHint says "暖白与褐灰 · 琥珀金"
+// in the language of msgs.
+func (msgs Messages) ThemeSandHint() string {
+	return Catalog.Format(msgs.locale, "themeSandHint", nil)
+}
+
+// ThemeEffectiveLight says "当前使用浅色配色"
+// in the language the app shows.
+func ThemeEffectiveLight() string { return In(i18n.Locale()).ThemeEffectiveLight() }
+
+// ThemeEffectiveLight says "当前使用浅色配色"
+// in the language of msgs.
+func (msgs Messages) ThemeEffectiveLight() string {
+	return Catalog.Format(msgs.locale, "themeEffectiveLight", nil)
+}
+
+// ThemeEffectiveDark says "当前使用深色配色"
+// in the language the app shows.
+func ThemeEffectiveDark() string { return In(i18n.Locale()).ThemeEffectiveDark() }
+
+// ThemeEffectiveDark says "当前使用深色配色"
+// in the language of msgs.
+func (msgs Messages) ThemeEffectiveDark() string {
+	return Catalog.Format(msgs.locale, "themeEffectiveDark", nil)
+}
+
+// ThemeSaveFailed says "无法保存主题设置，请重试。"
+// in the language the app shows.
+func ThemeSaveFailed() string { return In(i18n.Locale()).ThemeSaveFailed() }
+
+// ThemeSaveFailed says "无法保存主题设置，请重试。"
+// in the language of msgs.
+func (msgs Messages) ThemeSaveFailed() string {
+	return Catalog.Format(msgs.locale, "themeSaveFailed", nil)
+}
+
+// ThemeSaveSuccess says "主题设置已保存"
+// in the language the app shows.
+func ThemeSaveSuccess() string { return In(i18n.Locale()).ThemeSaveSuccess() }
+
+// ThemeSaveSuccess says "主题设置已保存"
+// in the language of msgs.
+func (msgs Messages) ThemeSaveSuccess() string {
+	return Catalog.Format(msgs.locale, "themeSaveSuccess", nil)
+}

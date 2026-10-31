@@ -17,7 +17,7 @@ This image is a historical headless UI preview; it does not show the current liv
 - A unified native navigation tree with lazy database and table/view metadata loading.
 - Read-only MySQL structure and data tabs, with virtualized tables, server-side filtering/sorting, bounded paging, and large-field previews.
 - Multi-tab SQL editor with syntax highlighting and clearly labeled simulated results.
-- Shared dark/light themes, compact native controls, headless UI tests, and cross-platform Go build checks.
+- Five [color schemes](docs/THEME_SYSTEM.md)—Classic, Ocean, Forest, Rose and Sand—with light, dark and system appearance, live previews and saved preferences. Compact native controls, headless UI tests, and cross-platform Go build checks.
 
 **Current functionality:** MySQL sessions, database objects, table structure, and table/view data use real database reads. PostgreSQL and SQLite support local profile management only. The SQL editor runs a simulation; arbitrary SQL execution, data writes, import/export, and SSH/HTTP tunnels are not implemented. Unimplemented commands remain disabled, and unsupported connection options are rejected before dialing. See the [current implementation status](docs/implementation-status.md) for capability and evidence boundaries.
 
