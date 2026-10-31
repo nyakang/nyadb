@@ -1,14 +1,19 @@
-# MyGo 原生数据网格与 `.2` 发布候选（2026-10-31）
+# MyGo 原生数据网格与 `.2` 发布（2026-10-31）
 
 ## 当前交付状态
 
 NyaDB 与 MyGo 的原生表头、选区、编辑及布局改动已在本地实现。
 `go.mod` 固定目标为 `github.com/nyakang/mygo v0.7.3-nyadb.2`，保持
 `require github.com/egoist/mygo v0.7.3` 和原 module/import 路径。
-`.2` 尚未提交、打标签或推送；本轮按方案准备发布材料，未发布远端版本。
-因此本轮检查使用真实源码工作区，不能视为远端 `.2` 下载验证。
-`go.sum` 未伪造新版本的校验和；远端发布后须从 Go 模块下载结果生成。
-发布之前，禁用工作区的普通模块构建将无法解析尚不存在的标签。
+`.2` 已发布到 [nyakang/mygo](https://github.com/nyakang/mygo/tree/v0.7.3-nyadb.2)，
+对应提交 `aa7998b3eda6f4a21c14fd23a7f9b13a1a5b7d3f`，保留 `.1` 不变。
+此前只准备了本地候选却提前更新 `go.mod`，导致没有研究工作区的检出无法
+运行 `go tool mygo dev`。本次已补齐真实标签、从模块代理下载 `.2`，并通过
+`GOWORK=off go mod tidy` 生成真实 `go.sum`。下载的1499个Go／模块文件
+逐字节等于发布提交。普通开发现在直接运行 `go tool mygo dev`，无需本地Fork。
+
+`.2` 模块校验和为 `h1:KWqYvBjITvavGGIp/HIievlEzKwxZKeGfyDq/FoN/os=`；
+go.mod校验和为 `h1:dVav53PwF2xEotjf4oA5lTY2Jp2exgzyjLhbSXhbMwE=`。
 
 可移植补丁：[mygo-v0.7.3-nyadb.2.patch](patches/mygo-v0.7.3-nyadb.2.patch)。
 它基于 `.1` 的不可变提交 `922da57bd8b2ec6cf1576441afbe7f6565a536ca`，
@@ -16,7 +21,7 @@ NyaDB 与 MyGo 的原生表头、选区、编辑及布局改动已在本地实�
 标签的发布工作流排除规则；不含研究
 截图、数据库数据或任何专有素材。补丁保留原 MyGo MIT 许可证。
 
-在新检出中可创建独立、忽略的本地候选工作区：
+下面的本地工作区只用于重建补丁及进一步开发，正常运行无需执行：
 
 ```sh
 python3 tools/prepare_mygo_grid_workspace.py
@@ -49,29 +54,43 @@ GOWORK="$PWD/temp/mygo-grid-workspace/go.work" go run ./cmd/nyadb
 - 原布局键与 version 1 不变，只增加可选 `show_comments`／`zoom`。
   旧配置默认关闭注释、100%；偏好不包含选区、COMMENT 内容或数据值。
 
-## 发布步骤（未执行）
+## 发布与依赖修复
 
-1. 审阅两仓库改动与本记录，将 Fork 补丁提交到 `nyadb/v0.7.3`，
-   使用 `feat(ui): add native grid header selection and actions` 等历史格式。
-2. 发布新的不可变 `v0.7.3-nyadb.2` 标签，绝不移动 `.1`。
-   本补丁已让继承的上游 `release.yml` 排除 `v*-nyadb.*`，避免 Go-only
-   定制标签触发上游 npm 发布。发布时只推送本定制分支与新 Go 标签，
-   不能套用上游 npm 全包发布命令。
-3. 标签在远端可读后，在独立检出运行 `GOWORK=off go mod tidy`、
-   `GOWORK=off go mod verify`，核对下载模块与审核后的 Fork 源码完全一致。
-   保留这里准备的 `.2` replace，提交由真实下载生成的 `go.sum`。
-4. 从远端固定模块重新跑 NyaDB 全量测试、vet、MyGo vet、翻译校验与打包，
-   用 `go version -m` 确认发行程序记录的 `.2` 版本和校验和。
+Fork 发布提交为 `feat(ui): add native grid header selection and actions`。
+定制分支与新不可变标签已原子推送；继承的npm工作流排除NyaDB标签，未发布
+上游npm包。`go mod tidy` 同时整理现有直接/间接依赖声明与过期校验和，
+不升级其他依赖版本。发布后的检查均显式使用 `GOWORK=off`，以远端模块
+验证工具解析和构建；额外空缓存下载确认无需已有本地Fork或模块缓存。
 
 本轮独立实现、Linux 双边运行观察及剩余桌面限制分别记录在
 [数据网格验收报告](MYSQL_DATA_GRID_ALIGNMENT_2026-10-31.md)。
 Windows/macOS 编译结果不代表其桌面 GUI 已验证。
 
-## 本地检查记录
+## 发布后远端模块验证
+
+本次修复日志位于忽略的 `temp/research/mygo-release-fix-20261031/`。
+以下检查均使用 `GOWORK=off`，不读取研究Fork。CI也固定 `GOWORK=off`、
+`GOFLAGS=-mod=readonly`，使缺失校验和或依赖声明不完整直接失败。
+
+| 检查 | 结果 |
+| --- | --- |
+| 默认模块代理下载 `.2` | PASS，真实module/go.mod校验和已写入go.sum |
+| 空GOMODCACHE重新下载 `.2` | PASS，两个校验和与默认缓存下载一致 |
+| 下载源码核对 | PASS，1499个Go／模块文件与发布提交逐字节相等 |
+| `go mod tidy`／`go mod verify` | PASS，其他依赖版本不变，声明与校验和规范化 |
+| CLI解析 | `go tool mygo version`成功；`go tool mygo dev -help`输出正常帮助，按CLI的帮助请求语义返回1，已越过此前缺失go.sum错误 |
+| `CGO_ENABLED=0 go test ./...` | PASS，dataworkspace 53.881秒、shell 37.267秒 |
+| Go vet／MyGo vet | PASS |
+| 翻译生成与校验 | PASS，914条消息，catalog无新增改动 |
+| Windows amd64／Darwin arm64编译 | PASS，仅编译证据 |
+| MyGo Linux打包 | PASS，程序、deb和tar.gz；`go version -m`显示远端 `.2` 与真实校验和 |
+| 可移植补丁 | PASS，新克隆重建10个变更文件，全部等于已发布Fork |
+
+## 发布前本地检查记录
 
 Go 版本为1.27.3。普通测试、编译与静态检查均 `CGO_ENABLED=0`；
-race 检查按 Go 工具链要求启用 cgo。所有 PASS 都针对审核后的本地补丁，
-不是尚未发布的远端 `.2`。日志保存于忽略的
+race 检查按 Go 工具链要求启用 cgo。下面的 PASS 针对发布前审核的本地补丁，
+与发布后远端模块检查分别记录。日志保存于忽略的
 `temp/research/grid-alignment-20261031/`。
 
 | 检查 | 结果与证据 |

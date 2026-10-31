@@ -13,18 +13,18 @@ index 60d93f48..8f131c32 100644
  permissions:
    contents: read
 diff --git a/NYADB_PATCHES.md b/NYADB_PATCHES.md
-index 14f276b4..dfe5ad2f 100644
+index 14f276b4..1c0f401e 100644
 --- a/NYADB_PATCHES.md
 +++ b/NYADB_PATCHES.md
 @@ -2,6 +2,59 @@
  
  This repository is a fork of [egoist/mygo](https://github.com/egoist/mygo). The upstream `main` branch is kept suitable for GitHub **Sync fork**. NyaDB-specific changes belong on version-specific `nyadb/vX.Y.Z` branches based on their corresponding upstream release tags.
  
-+## Native grid headers: v0.7.3-nyadb.2 candidate
++## Native grid headers: v0.7.3-nyadb.2
 +
 +Based on `nyadb/v0.7.3` at the immutable `.1` commit
-+`922da57bd8b2ec6cf1576441afbe7f6565a536ca`. The `.2` release is prepared
-+locally and has not been tagged or pushed. The module path and upstream
++`922da57bd8b2ec6cf1576441afbe7f6565a536ca`. The new immutable Go module tag
++is `v0.7.3-nyadb.2` on `nyadb/v0.7.3`. The module path and upstream
 +version remain unchanged; this is a Go-only fork patch, not an npm release.
 +The inherited npm release workflow excludes `v*-nyadb.*` tags; publishing
 +a new immutable Go tag does not publish upstream npm packages.
@@ -1232,13 +1232,13 @@ index 00000000..6d66489a
 +}
 diff --git a/docs/nyadb-grid-headers.md b/docs/nyadb-grid-headers.md
 new file mode 100644
-index 00000000..b9cd96f8
+index 00000000..62479bc8
 --- /dev/null
 +++ b/docs/nyadb-grid-headers.md
 @@ -0,0 +1,75 @@
 +# Opt-in native data-grid headers
 +
-+The `v0.7.3-nyadb.2` candidate extends the existing keyed `ui.Table` header.
++The `v0.7.3-nyadb.2` release extends the existing keyed `ui.Table` header.
 +It does not change the zero-value behavior of Tables or OutlineTables.
 +No platform backend or browser bridge changes are required.
 +
