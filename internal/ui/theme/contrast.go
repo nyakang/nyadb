@@ -42,3 +42,15 @@ func readableBackground(background, text ui.Color) ui.Color {
 	}
 	return background
 }
+
+// readableInk retains the hue where possible while keeping syntax legible on
+// the editor's normal, active-line and selected backgrounds.
+func readableInk(ink ui.Color, backgrounds ...ui.Color) ui.Color {
+	for _, background := range backgrounds {
+		target := onColor(background)
+		for i := 0; i < 40 && contrast(ink, background) < 4.5; i++ {
+			ink = ink.Mix(target, 0.06)
+		}
+	}
+	return ink
+}

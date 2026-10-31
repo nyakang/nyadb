@@ -546,6 +546,7 @@ func (s *State) analysisHeaders(c *ui.Context, t *Document, columns []ui.TableCo
 }
 
 func (s *State) analysisBars(c *ui.Context, stats mysqlDataColumnAnalysis, height float32, labels bool) {
+	palette := theme.Colors(c)
 	frequencies := append([]mysqlDataFrequency(nil), stats.Frequencies...)
 	if stats.Null > 0 {
 		frequencies = append(frequencies, mysqlDataFrequency{Value: "(NULL)", Count: stats.Null, Null: true})
@@ -569,7 +570,7 @@ func (s *State) analysisBars(c *ui.Context, stats mysqlDataColumnAnalysis, heigh
 					barHeight *= float32(float64(frequency.Count) / float64(largest))
 				}
 				label := mysqlDataAnalysisDistribution(mysqlDataColumnAnalysis{Frequencies: []mysqlDataFrequency{frequency}})
-				ui.Box(c).FillWidth().Height(max(1, barHeight)).Background(ui.Hex("#28b0c8")).Tooltip(label)
+				ui.Box(c).FillWidth().Height(max(1, barHeight)).Background(palette.Chart).Tooltip(label)
 				if labels {
 					ui.Text(c, frequency.Value).SingleLine().Tooltip(label).FontSize(theme.Font(c, 10)).FillWidth()
 				}

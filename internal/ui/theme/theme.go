@@ -3,28 +3,36 @@ package theme
 
 import (
 	"github.com/egoist/mygo/ui"
+	"github.com/egoist/mygo/ui/editor"
 	"github.com/nyakang/nyadb/locales"
 )
 
 // Snapshot is a value owned by a frame. Resolving another window or changing
 // the saved mode never mutates an existing snapshot.
 type Snapshot struct {
+	Scheme    Scheme
 	Dark      bool
 	Palette   Palette
+	SQL       editor.Theme
 	TextScale float32
 }
 
+// Resolve preserves the classic palette API for existing callers and previews.
 func Resolve(mode Mode, systemDark bool, prefs ui.Preferences) Snapshot {
-	mode = ParseMode(string(mode))
-	return snapshot(mode == ModeDark || (mode == ModeSystem && systemDark), prefs)
+	return ResolveScheme(SchemeClassic, mode, systemDark, prefs)
 }
 
-func snapshot(dark bool, prefs ui.Preferences) Snapshot {
-	p := lightPalette
-	if dark {
-		p = darkPalette
-	}
-	if prefs.Accent.A != 0 {
+// ResolveScheme is pure: previewing a scheme never changes the current choice.
+func ResolveScheme(scheme Scheme, mode Mode, systemDark bool, prefs ui.Preferences) Snapshot {
+	mode = ParseMode(string(mode))
+	return snapshot(ParseScheme(string(scheme)), mode == ModeDark || (mode == ModeSystem && systemDark), prefs)
+}
+
+func snapshot(scheme Scheme, dark bool, prefs ui.Preferences) Snapshot {
+	p := schemePalette(scheme, dark)
+	// Classic integrates with the desktop accent. Named color families keep
+	// their designed accents; contrast and text scaling apply to every scheme.
+	if scheme == SchemeClassic && prefs.Accent.A != 0 {
 		p.Accent = prefs.Accent
 		p.Accent.A = 255
 		p.AccentText = onColor(p.Accent)
@@ -34,6 +42,10 @@ func snapshot(dark bool, prefs ui.Preferences) Snapshot {
 		p.Selection = p.Accent.Mix(p.App, 0.25)
 	}
 	p.SelectionText = onColor(p.Selection)
+	p.NavigationSelection, p.NavigationSelectionText = p.Selection, p.SelectionText
+	if scheme == SchemeClassic && dark && prefs.Accent.A == 0 && !prefs.HighContrast {
+		p.NavigationSelection, p.NavigationSelectionText = ui.Hex("#0878ce"), ui.Hex("#ffffff")
+	}
 	if prefs.HighContrast {
 		p.Border = p.Border.Mix(p.Text, 0.65)
 		p.Muted = p.Muted.Mix(p.Text, 0.65)
@@ -45,21 +57,56 @@ func snapshot(dark bool, prefs ui.Preferences) Snapshot {
 	}
 	p.GridAlternate = p.App.Mix(p.Header, 0.5)
 	p.GridNull = p.Muted
+	p.Notice = p.App.Mix(p.Warning, 0.16)
+	p.NoticeText = p.Text
+	p.Chart = p.Accent
+	if scheme == SchemeClassic {
+		p.Chart = ui.Hex("#168397")
+		if dark {
+			p.Chart = ui.Hex("#28b0c8")
+		}
+	}
 	scale := prefs.TextScale
 	if scale <= 0 {
 		scale = 1
 	}
-	return Snapshot{Dark: dark, Palette: p, TextScale: scale}
+	return Snapshot{Scheme: scheme, Dark: dark, Palette: p, SQL: *sqlTheme(scheme, dark, p, prefs), TextScale: scale}
+}
+
+type snapshotKey struct{}
+type windowSnapshot struct {
+	applied bool
+	value   Snapshot
+}
+
+// Frame returns the root's immutable value. Apply refreshes it at the start of
+// each build. Local widget overrides and clicks during a build cannot recolor
+// half of a window, and no context/window pointers are kept in global caches.
+// Isolated feature views without Apply resolve the current choice directly.
+func Frame(c *ui.Context) Snapshot {
+	state := ui.Local(c.Root(), snapshotKey{}, func() windowSnapshot { return windowSnapshot{} })
+	if state.applied {
+		return state.value
+	}
+	return snapshot(CurrentScheme(), c.Theme().Dark, c.Preferences())
 }
 
 // Colors uses the frame's resolved appearance, independent of the process's
 // saved mode. Local widget theme overrides do not change workbench tokens.
-func Colors(c *ui.Context) Palette { return snapshot(c.Theme().Dark, c.Preferences()).Palette }
+func Colors(c *ui.Context) Palette {
+	state := ui.Local(c.Root(), snapshotKey{}, func() windowSnapshot { return windowSnapshot{} })
+	if state.applied {
+		return state.value.Palette
+	}
+	return snapshot(CurrentScheme(), c.Theme().Dark, c.Preferences()).Palette
+}
 
 // Apply maps the frame's snapshot to native MyGo widgets. System preferences
 // are applied once to NyaDB's baseline, so repeated calls do not compound them.
 func Apply(c *ui.Context) Snapshot {
-	s := Resolve(CurrentMode(), c.Theme().Dark, c.Preferences())
+	s := ResolveScheme(CurrentScheme(), CurrentMode(), c.Theme().Dark, c.Preferences())
+	state := ui.Local(c.Root(), snapshotKey{}, func() windowSnapshot { return windowSnapshot{} })
+	*state = windowSnapshot{applied: true, value: s}
 	p := s.Palette
 	t := *c.Theme()
 	t.Dark = s.Dark
@@ -121,10 +168,8 @@ func Outline[K comparable](c *ui.Context, state *ui.OutlineState[K], roots []K, 
 func NavigationOutline[K comparable](c *ui.Context, state *ui.OutlineState[K], roots []K, children func(K) []K, row func(K)) ui.Element {
 	base := c.Theme()
 	selected := SelectionTheme(c)
-	if base.Dark && !c.Preferences().HighContrast {
-		selected.Accent = ui.Hex("#0878ce")
-		selected.AccentText = ui.Hex("#ffffff")
-	}
+	p := Colors(c)
+	selected.Accent, selected.AccentText = p.NavigationSelection, p.NavigationSelectionText
 	c.SetTheme(selected)
 	defer c.SetTheme(base)
 	return ui.Outline(c, state, roots, children, row)

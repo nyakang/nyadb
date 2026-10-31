@@ -27,7 +27,7 @@ func TestAppearanceSettingsAndLiveSQLPreview(t *testing.T) {
 	if !s.settings.preview.ReadOnly || !tt.HasText("选择主题") {
 		t.Fatal("settings preview must be accessible and read-only")
 	}
-	if err := tt.Click("浅色 主题预览"); err != nil {
+	if err := tt.Click("浅色"); err != nil {
 		t.Fatal(err)
 	}
 	if theme.CurrentMode() != theme.ModeLight {

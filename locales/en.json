@@ -870,5 +870,22 @@
   "wizardTextEncoding": "Text encoding",
   "wizardNewline": "Line ending",
   "wizardDateOrder": "Date order",
-  "wizardBinaryEncoding": "Binary encoding"
+  "wizardBinaryEncoding": "Binary encoding",
+  "colorScheme": "Color scheme",
+  "appearanceMode": "Appearance mode",
+  "colorSchemeHint": "Choose a color scheme and a light or dark appearance. All windows update together.",
+  "themeClassic": "Classic",
+  "themeOcean": "Ocean",
+  "themeForest": "Forest",
+  "themeRose": "Rose",
+  "themeSand": "Sand",
+  "themeClassicHint": "Neutral gray · Classic blue",
+  "themeOceanHint": "Cool slate · Ocean blue",
+  "themeForestHint": "Mist and pine · Jade green",
+  "themeRoseHint": "Soft plum · Rose pink",
+  "themeSandHint": "Warm ivory · Amber gold",
+  "themeEffectiveLight": "Currently using light colors",
+  "themeEffectiveDark": "Currently using dark colors",
+  "themeSaveFailed": "Could not save theme settings. Please try again.",
+  "themeSaveSuccess": "Theme settings saved"
 }
