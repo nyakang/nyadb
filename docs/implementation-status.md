@@ -1,31 +1,20 @@
 # NyaDB Implementation Status
 
-## Table data interaction update — 2026-10-29
+## 核心工作流 — 2026-10-31
 
-The read-only MySQL grid now copies its actual cell/row selection in display
-order, offers TSV/CSV/JSON formats, and provides cell context filtering,
-sorting and grid-scoped copy/refresh shortcuts. Tests, Linux native GUI and
-two bounded Navicat behavior comparisons passed; whole-page pixel parity and
-data editing remain unfinished. See the [iteration report](MYSQL_DATA_SELECTION_CONTEXT_DIFFERENTIAL_2026-10-29.md)
-for the current Go/MyGo pins, evidence and validation boundaries.
+当前基线为 Go 1.27.3 / MyGo v0.7.3-nyadb.2。以下是当前实现；本文件后部保留历史记录，不代表现状。
 
-## Current snapshot — 2026-10-25
-
-The current baseline is **Go 1.27.1+ and MyGo `v0.6.3-nyadb.2`**. `go.mod`
-requires upstream `github.com/egoist/mygo v0.6.3` and replaces it with the
-NyaDB fork. This UI alignment iteration does not change the driver interface,
-profile format, or SQLite schema.
-
-| Area | Current implementation |
+| 能力 | 当前交付 |
 |---|---|
-| Profiles | Local MySQL, PostgreSQL, and SQLite profile CRUD, grouping, stars, search, and non-secret persistence. Selecting a profile does not connect. |
-| MySQL sessions | Explicit asynchronous connect/cancel/disconnect and connection testing; direct TCP and verified TLS; stale-result protection and credential reentry on reconnect. Unsupported connection settings fail before dialing. |
-| MySQL objects | Real database and table/view metadata, lazy loading, refresh/retry, and a unified native virtual tree using stable group/profile/database/category/object identities. |
-| MySQL structure | Real read-only fields, indexes, foreign keys, and field properties. “Design Table” opens this viewer; it does not edit schema. |
-| MySQL data | Real read-only table/view rows, virtualized cells, bounded paging, supported keyset traversal, server-side filtering/sorting, and large-field chunk previews. NULL, empty strings, and truncated values remain distinct. |
-| SQL editor | Multi-tab editing and syntax highlighting; execution and result previews are explicitly simulated and do not run user SQL against the database. |
-| PostgreSQL / SQLite | Local profiles and their existing forms only; no managed sessions or live database browser. The application's own SQLite configuration storage is separate. |
-| Unimplemented capabilities | Arbitrary SQL execution, data/schema writes, import/export, SSH/HTTP tunnels, and additional database drivers. Unimplemented commands are disabled. |
+| SQL | 真实原物理会话执行、类型化多结果预览/导出、命名查询/文件保存、修改标记、加密草稿恢复、补全/可撤销格式化/EXPLAIN |
+| MySQL 结构 | 完整公开 DDL 基线的可编辑表设计器，新建/修改字段和约束/触发器/选项；预览确认、冲突预检及后验 |
+| MySQL 对象 | 数据库/视图/函数/过程/事件 CRUD、完整表复制、F2/多选/分组/自有剪贴板、维护和账户/角色/权限；数据入口与高级配置运行接线 |
+| 隧道 | 统一 DialContext、SSH 指纹信任、HTTPS/WebSocket 自有网关、认证/TLS/代理及断线撤销 |
+| PostgreSQL / SQLite | 真实会话、schema 导航、SQL/多结果、元数据/结构、类型化图形数据编辑、事务/核验及复制/流式导出 |
+| 备份恢复 | 类型化校验包、一致性读取、完整 SQL 转储、冲突策略/预览/依赖恢复、SQL DELIMITER 文件执行；失败/部分/不确定状态不重放 |
+| 后置 | 高级同步、模型、自动运行、BI、AI、其他数据库引擎、PG/SQLite 图形表设计与导入扩展 |
+
+详见 [核心工作流技术设计、限制与验收](core-workflows-2026-10-31.md)。实现和测试属于 **I**；新功能原版采证 **O** 与差分 **V** 为 **Unknown**，不能由编译、Tester 或历史局部对照代替。原生窗口和跨平台编译的具体环境边界另见验收报告。验收快照生成于提交之前，后续提交状态见 Git 历史及远端。
 
 The current Linux alignment target is Navicat 18, Simplified Chinese, dark
 theme, and compact density. Shared theme metrics now provide 19-DIP navigation

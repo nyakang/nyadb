@@ -27,6 +27,8 @@ type MySQLAdvanced struct {
 	PipeName              string             `json:"pipeName,omitempty"`
 	LimitSessions         bool               `json:"limitSessions,omitempty"`
 	MaxSessions           int                `json:"maxSessions"`
+	InitialSQLID          string             `json:"initialSQLID,omitempty"`
+	CustomDatabases       string             `json:"customDatabases,omitempty"` // newline separated names; no SQL or secrets
 	UseCustomDatabaseList bool               `json:"useCustomDatabaseList,omitempty"`
 	Compatibility         MySQLCompatibility `json:"compatibility,omitempty"`
 	SSL                   MySQLSSL           `json:"ssl,omitempty"`
@@ -107,7 +109,7 @@ func NormalizeMySQLAdvanced(a MySQLAdvanced) (MySQLAdvanced, error) {
 	if a.MaxSessions < 1 || a.MaxSessions > 10000 {
 		return a, fmt.Errorf("%w: MySQL session limit must be between 1 and 10000", ErrInvalid)
 	}
-	for _, val := range []string{a.SettingsLocation, a.PipeName} {
+	for _, val := range []string{a.SettingsLocation, a.PipeName, a.CustomDatabases, a.InitialSQLID} {
 		if strings.ContainsRune(val, 0) || utf8.RuneCountInString(val) > 4096 {
 			return a, fmt.Errorf("%w: invalid MySQL path or pipe name", ErrInvalid)
 		}

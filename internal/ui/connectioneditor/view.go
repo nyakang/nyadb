@@ -5,6 +5,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
+	"time"
 )
 
 // The connection editor is a native MyGo view. Layout and tab order are based
@@ -14,6 +15,10 @@ func (s *State) View(c *ui.Context, width, height float32) {
 		return
 	}
 	s.consumeMySQLConnectionTest()
+	s.consumeInitialSQL()
+	if s.initialSQLResults != nil {
+		c.After(25 * time.Millisecond)
+	}
 	applyConnectionEditorFormTheme(c)
 
 	palette := theme.Colors(c)
@@ -183,7 +188,7 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 		ui.Row(c).Height(theme.RowHeight(c, 28)).Gap(0).AlignItems(ui.Center).Children(func() {
 			ui.Box(c).Width(labelWidth)
 			connectionFormCheckbox(c, &s.connectionSavePassword, "保存密码",
-				s.connectionDraft.Kind != connections.MySQL || s.credentialVault == nil)
+				s.connectionDraft.Kind == connections.SQLite || s.credentialVault == nil)
 		})
 	})
 }

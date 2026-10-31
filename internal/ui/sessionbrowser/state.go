@@ -28,6 +28,8 @@ type Dependencies struct {
 // buffered channels; they never retain a Workspace or write its fields.
 type Workspace struct {
 	ProfileID               int64
+	Kind                    connections.Kind
+	Catalog                 string
 	Generation              uint64
 	Status, Error, Password string
 	Databases               []string
@@ -58,6 +60,7 @@ func (w *Workspace) ObjectRequest() uint64 { return w.objectRequest }
 // SQL/data/structure documents may use the same manager without owning its lifetime.
 type State struct {
 	Manager        *mysqlsvc.MySQLSessionManager
+	engines        EngineRuntime
 	Opener         SessionOpener
 	DatabaseLister DatabaseLister
 	ObjectLister   ObjectLister

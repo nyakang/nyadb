@@ -30,12 +30,12 @@ type MySQLDataImportRequest struct {
 }
 
 type MySQLDataImportRowResult struct {
-	Database,Table string `json:",omitempty"`
-	Row     int
-	Kind    string // insert | update | delete | skip | error
-	Status  string // committed | skipped | failed | rolled_back | not_processed | uncertain
-	Error   string // safe diagnostic; never includes input values or server SQL
-	Outcome *MySQLDataEditOutcome
+	Database, Table string `json:",omitempty"`
+	Row             int
+	Kind            string // insert | update | delete | skip | error
+	Status          string // committed | skipped | failed | rolled_back | not_processed | uncertain
+	Error           string // safe diagnostic; never includes input values or server SQL
+	Outcome         *MySQLDataEditOutcome
 }
 
 type MySQLDataImportResult struct {
@@ -177,7 +177,7 @@ func mysqlDataImportValidateRow(columns []MySQLStructureColumn, edit MySQLDataEd
 			return ErrMySQLDataPage
 		}
 	}
-	_, _, _, err := mysqlEditAssignments(columns, edit.Values, insert)
+	_, _, _, err := mysqlAssignmentsBounded(columns, edit.Values, insert, MaxMySQLDataImportBytes)
 	return err
 }
 

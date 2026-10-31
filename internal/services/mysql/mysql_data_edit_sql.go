@@ -3,6 +3,7 @@ package mysql
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"reflect"
 	"sort"
 	"strings"
@@ -112,6 +113,9 @@ func mysqlEditValidateRef(ctx context.Context, q mysqlEditQueryer, database, tab
 }
 
 func mysqlEditAssignments(columns []MySQLStructureColumn, values map[string]MySQLDataValue, insert bool) ([]string, []string, []any, error) {
+	return mysqlAssignmentsBounded(columns, values, insert, MySQLDataEditMaxBytes)
+}
+func mysqlAssignmentsBounded(columns []MySQLStructureColumn, values map[string]MySQLDataValue, insert bool, limit int) ([]string, []string, []any, error) {
 	allowed := map[string]MySQLStructureColumn{}
 	for _, col := range columns {
 		allowed[col.Name] = col
@@ -141,7 +145,7 @@ func mysqlEditAssignments(columns []MySQLStructureColumn, values map[string]MySQ
 			return nil, nil, nil, ErrMySQLDataPage
 		}
 		total += len(v.Text) + len(v.Bytes)
-		if total > MySQLDataEditMaxBytes {
+		if total > limit {
 			return nil, nil, nil, ErrMySQLDataEditLimit
 		}
 		if !v.Binary && !utf8.ValidString(v.Text) {
@@ -156,6 +160,14 @@ func mysqlEditAssignments(columns []MySQLStructureColumn, values map[string]MySQ
 			expressions = append(expressions, "?")
 			args = append(args, nil)
 		case v.Binary:
+			if mysqlGeometryType(col.DataType) {
+				if len(v.Bytes) < 9 {
+					return nil, nil, nil, ErrMySQLDataPage
+				}
+				expressions = append(expressions, "ST_GeomFromWKB(?, ?, 'axis-order=long-lat')")
+				args = append(args, v.Bytes[4:], binary.LittleEndian.Uint32(v.Bytes[:4]))
+				continue
+			}
 			expressions = append(expressions, "?")
 			// A nil []byte is SQL NULL to the driver. Binary without Null
 			// means an empty binary value, including hex/base64 import cells.
@@ -192,4 +204,12 @@ func mysqlEditChangedRef(ref MySQLRowRef, values map[string]MySQLDataValue) (MyS
 		}
 	}
 	return next, nil
+}
+
+func mysqlGeometryType(kind string) bool {
+	switch strings.ToLower(kind) {
+	case "geometry", "point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon", "geometrycollection":
+		return true
+	}
+	return false
 }

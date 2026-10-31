@@ -7,6 +7,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/transport"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -14,24 +15,31 @@ import (
 // SQLite writes occur when changing the selected configuration or closing the
 // editor. Unsaved partial numbers survive selection changes.
 type connectionEditorSnapshot struct {
-	profile          connections.Profile
-	secret           string
-	savePassword     bool
-	hadSavedPassword bool
-	name             string // alternative name; empty on main
-	port             string
-	numbers          [5]string
-	sshPort          string
-	httpProxyPort    string
+	initialSQL, initialSaved string
+	initialLoadFailed        bool
+
+	profile                    connections.Profile
+	secret                     string
+	savePassword               bool
+	hadSavedPassword           bool
+	name                       string // alternative name; empty on main
+	port                       string
+	numbers                    [5]string
+	sshPort                    string
+	httpProxyPort              string
+	tunnel                     transport.Secrets
+	saveTunnel, hadSavedTunnel bool
 }
 
 func (s *State) currentConnectionSnapshot() connectionEditorSnapshot {
 	return connectionEditorSnapshot{
+		initialSQL: s.mysqlInitialQuery, initialSaved: s.initialSQLSavedText, initialLoadFailed: s.initialSQLLoadFailed,
 		profile: s.connectionDraft, port: s.connectionPort,
 		secret: s.connectionSecret, savePassword: s.connectionSavePassword,
 		hadSavedPassword: s.currentCredentialWasSaved(),
 		numbers:          s.mysqlAdvancedNumbers, sshPort: s.mysqlSSHPort,
 		httpProxyPort: s.mysqlHTTPProxyPort,
+		tunnel:        s.tunnelSnapshot(), saveTunnel: s.mysqlSaveTunnelSecrets, hadSavedTunnel: s.currentTunnelWasSaved(),
 	}
 }
 
@@ -47,12 +55,15 @@ func (s *State) resetConnectionConfigurations() {
 
 func (s *State) initializeConnectionConfigurations() {
 	s.resetConnectionConfigurations()
-	if s.connectionDraft.ID == 0 || s.connectionDraft.Kind != connections.MySQL {
+	if s.connectionDraft.ID == 0 {
+		return
+	}
+	s.connectionMainConfig = s.currentConnectionSnapshot()
+	if s.connectionDraft.Kind != connections.MySQL {
 		return
 	}
 	s.connectionProfilesVisible = true
 	s.connectionActiveTarget = 0
-	s.connectionMainConfig = s.currentConnectionSnapshot()
 	parent := s.connectionDraft
 	for _, v := range parent.Variants {
 		snap := connectionEditorSnapshot{
@@ -76,6 +87,7 @@ func (s *State) initializeConnectionConfigurations() {
 		} {
 			snap.numbers[i] = strconv.Itoa(n)
 		}
+
 		s.connectionOtherConfigs = append(s.connectionOtherConfigs, snap)
 		if v.Name == parent.ActiveVariant {
 			s.connectionActiveTarget = len(s.connectionOtherConfigs)
@@ -121,7 +133,14 @@ func (s *State) restoreConnectionConfiguration(snap connectionEditorSnapshot) {
 	s.clearMySQLSSLPassphrase()
 	s.clearMySQLSSHSecrets()
 	s.clearMySQLHTTPSecrets()
+	s.restoreTunnelSnapshot(snap.tunnel)
+	s.mysqlSaveTunnelSecrets = snap.saveTunnel
 	s.clearMySQLInitialQuery()
+	s.mysqlInitialQuery, s.initialSQLSavedText, s.initialSQLLoadFailed = snap.initialSQL, snap.initialSaved, snap.initialLoadFailed
+	s.mysqlInitialQueryPreview = strings.Join(strings.Fields(s.mysqlInitialQuery), " ")
+	if s.connectionDraft.MySQLAdvanced.InitialSQLID != "" && s.mysqlInitialQuery == "" {
+		s.loadInitialSQL()
+	}
 	s.connectionError = ""
 }
 
@@ -178,6 +197,7 @@ func (s *State) addConnectionConfiguration() {
 	snap.name = name
 	snap.profile.Name = s.connectionMainConfig.profile.Name
 	snap.profile.Notes = s.connectionMainConfig.profile.Notes
+
 	s.connectionOtherConfigs = append(s.connectionOtherConfigs, snap)
 	s.connectionActiveConfig = len(s.connectionOtherConfigs)
 	s.restoreConnectionConfiguration(snap)

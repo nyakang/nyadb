@@ -34,6 +34,16 @@ type Messages struct{ locale string }
 // source language.
 func In(locale string) Messages { return Messages{locale} }
 
+// SqlConnectDatabasePrompt says "请连接数据库后新建查询"
+// in the language the app shows.
+func SqlConnectDatabasePrompt() string { return In(i18n.Locale()).SqlConnectDatabasePrompt() }
+
+// SqlConnectDatabasePrompt says "请连接数据库后新建查询"
+// in the language of msgs.
+func (msgs Messages) SqlConnectDatabasePrompt() string {
+	return Catalog.Format(msgs.locale, "sqlConnectDatabasePrompt", nil)
+}
+
 // DisabledActionPreview says "禁用操作"
 // in the language the app shows.
 func DisabledActionPreview() string { return In(i18n.Locale()).DisabledActionPreview() }
@@ -9414,4 +9424,1514 @@ func MysqlHeaderShowComments() string { return In(i18n.Locale()).MysqlHeaderShow
 // in the language of msgs.
 func (msgs Messages) MysqlHeaderShowComments() string {
 	return Catalog.Format(msgs.locale, "mysqlHeaderShowComments", nil)
+}
+
+// SqlWorkflow3e5d6050dd says "格式化 SQL"
+// in the language the app shows.
+func SqlWorkflow3e5d6050dd() string { return In(i18n.Locale()).SqlWorkflow3e5d6050dd() }
+
+// SqlWorkflow3e5d6050dd says "格式化 SQL"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow3e5d6050dd() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow3e5d6050dd", nil)
+}
+
+// SqlWorkflow5b996ca06f says "运行并导出"
+// in the language the app shows.
+func SqlWorkflow5b996ca06f() string { return In(i18n.Locale()).SqlWorkflow5b996ca06f() }
+
+// SqlWorkflow5b996ca06f says "运行并导出"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow5b996ca06f() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow5b996ca06f", nil)
+}
+
+// SqlWorkflow867d97c595 says "打开 SQL"
+// in the language the app shows.
+func SqlWorkflow867d97c595() string { return In(i18n.Locale()).SqlWorkflow867d97c595() }
+
+// SqlWorkflow867d97c595 says "打开 SQL"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow867d97c595() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow867d97c595", nil)
+}
+
+// SqlWorkflow71466ab223 says "保存查询"
+// in the language the app shows.
+func SqlWorkflow71466ab223() string { return In(i18n.Locale()).SqlWorkflow71466ab223() }
+
+// SqlWorkflow71466ab223 says "保存查询"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow71466ab223() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow71466ab223", nil)
+}
+
+// SqlWorkflow1232eb4429 says "另存为"
+// in the language the app shows.
+func SqlWorkflow1232eb4429() string { return In(i18n.Locale()).SqlWorkflow1232eb4429() }
+
+// SqlWorkflow1232eb4429 says "另存为"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow1232eb4429() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow1232eb4429", nil)
+}
+
+// SqlWorkflowf28a82b618 says "命名查询"
+// in the language the app shows.
+func SqlWorkflowf28a82b618() string { return In(i18n.Locale()).SqlWorkflowf28a82b618() }
+
+// SqlWorkflowf28a82b618 says "命名查询"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflowf28a82b618() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflowf28a82b618", nil)
+}
+
+// SqlWorkflowe76878b7c0 says "复制结果选区"
+// in the language the app shows.
+func SqlWorkflowe76878b7c0() string { return In(i18n.Locale()).SqlWorkflowe76878b7c0() }
+
+// SqlWorkflowe76878b7c0 says "复制结果选区"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflowe76878b7c0() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflowe76878b7c0", nil)
+}
+
+// SqlWorkflow4c85c480f3 says "导出当前结果"
+// in the language the app shows.
+func SqlWorkflow4c85c480f3() string { return In(i18n.Locale()).SqlWorkflow4c85c480f3() }
+
+// SqlWorkflow4c85c480f3 says "导出当前结果"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow4c85c480f3() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow4c85c480f3", nil)
+}
+
+// SqlWorkflow5eda8844c8 says "单元格预览已截断"
+// in the language the app shows.
+func SqlWorkflow5eda8844c8() string { return In(i18n.Locale()).SqlWorkflow5eda8844c8() }
+
+// SqlWorkflow5eda8844c8 says "单元格预览已截断"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow5eda8844c8() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow5eda8844c8", nil)
+}
+
+// SqlWorkflow99c2920f8b says "保存查询更改？"
+// in the language the app shows.
+func SqlWorkflow99c2920f8b() string { return In(i18n.Locale()).SqlWorkflow99c2920f8b() }
+
+// SqlWorkflow99c2920f8b says "保存查询更改？"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow99c2920f8b() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow99c2920f8b", nil)
+}
+
+// SqlWorkflow2bdfbff8cf says "保存命名查询"
+// in the language the app shows.
+func SqlWorkflow2bdfbff8cf() string { return In(i18n.Locale()).SqlWorkflow2bdfbff8cf() }
+
+// SqlWorkflow2bdfbff8cf says "保存命名查询"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow2bdfbff8cf() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow2bdfbff8cf", nil)
+}
+
+// SqlWorkflow4f4017307c says "查询名称"
+// in the language the app shows.
+func SqlWorkflow4f4017307c() string { return In(i18n.Locale()).SqlWorkflow4f4017307c() }
+
+// SqlWorkflow4f4017307c says "查询名称"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow4f4017307c() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow4f4017307c", nil)
+}
+
+// SqlWorkflow014dd7b9e2 says "退出前保存查询"
+// in the language the app shows.
+func SqlWorkflow014dd7b9e2() string { return In(i18n.Locale()).SqlWorkflow014dd7b9e2() }
+
+// SqlWorkflow014dd7b9e2 says "退出前保存查询"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow014dd7b9e2() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow014dd7b9e2", nil)
+}
+
+// SqlWorkflow77703aa704 says "未保存文本可加密保留，重新打开后不会执行 SQL。"
+// in the language the app shows.
+func SqlWorkflow77703aa704() string { return In(i18n.Locale()).SqlWorkflow77703aa704() }
+
+// SqlWorkflow77703aa704 says "未保存文本可加密保留，重新打开后不会执行 SQL。"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow77703aa704() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow77703aa704", nil)
+}
+
+// SqlWorkflow056c5e8a69 says "保留草稿并退出"
+// in the language the app shows.
+func SqlWorkflow056c5e8a69() string { return In(i18n.Locale()).SqlWorkflow056c5e8a69() }
+
+// SqlWorkflow056c5e8a69 says "保留草稿并退出"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow056c5e8a69() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow056c5e8a69", nil)
+}
+
+// SqlWorkflowd330510a87 says "逐页保存"
+// in the language the app shows.
+func SqlWorkflowd330510a87() string { return In(i18n.Locale()).SqlWorkflowd330510a87() }
+
+// SqlWorkflowd330510a87 says "逐页保存"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflowd330510a87() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflowd330510a87", nil)
+}
+
+// SqlWorkflow323d352941 says "执行计划 SQL"
+// in the language the app shows.
+func SqlWorkflow323d352941() string { return In(i18n.Locale()).SqlWorkflow323d352941() }
+
+// SqlWorkflow323d352941 says "执行计划 SQL"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow323d352941() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow323d352941", nil)
+}
+
+// SqlWorkflowcea45cc599 says "执行 EXPLAIN"
+// in the language the app shows.
+func SqlWorkflowcea45cc599() string { return In(i18n.Locale()).SqlWorkflowcea45cc599() }
+
+// SqlWorkflowcea45cc599 says "执行 EXPLAIN"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflowcea45cc599() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflowcea45cc599", nil)
+}
+
+// SqlWorkflow775047ea6d says "尚无已保存的查询"
+// in the language the app shows.
+func SqlWorkflow775047ea6d() string { return In(i18n.Locale()).SqlWorkflow775047ea6d() }
+
+// SqlWorkflow775047ea6d says "尚无已保存的查询"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow775047ea6d() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow775047ea6d", nil)
+}
+
+// SqlWorkflowfa8c496e0e says "打开 SQL 文件"
+// in the language the app shows.
+func SqlWorkflowfa8c496e0e() string { return In(i18n.Locale()).SqlWorkflowfa8c496e0e() }
+
+// SqlWorkflowfa8c496e0e says "打开 SQL 文件"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflowfa8c496e0e() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflowfa8c496e0e", nil)
+}
+
+// SqlWorkflow318e6dd378 says "保存 SQL 文件"
+// in the language the app shows.
+func SqlWorkflow318e6dd378() string { return In(i18n.Locale()).SqlWorkflow318e6dd378() }
+
+// SqlWorkflow318e6dd378 says "保存 SQL 文件"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow318e6dd378() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow318e6dd378", nil)
+}
+
+// SqlWorkflowcadd8daadf says "结果截断："
+// in the language the app shows.
+func SqlWorkflowcadd8daadf() string { return In(i18n.Locale()).SqlWorkflowcadd8daadf() }
+
+// SqlWorkflowcadd8daadf says "结果截断："
+// in the language of msgs.
+func (msgs Messages) SqlWorkflowcadd8daadf() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflowcadd8daadf", nil)
+}
+
+// SqlWorkflowa1c9ba2170 says "行数上限"
+// in the language the app shows.
+func SqlWorkflowa1c9ba2170() string { return In(i18n.Locale()).SqlWorkflowa1c9ba2170() }
+
+// SqlWorkflowa1c9ba2170 says "行数上限"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflowa1c9ba2170() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflowa1c9ba2170", nil)
+}
+
+// SqlWorkflowe7e13599bd says "内存上限"
+// in the language the app shows.
+func SqlWorkflowe7e13599bd() string { return In(i18n.Locale()).SqlWorkflowe7e13599bd() }
+
+// SqlWorkflowe7e13599bd says "内存上限"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflowe7e13599bd() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflowe7e13599bd", nil)
+}
+
+// SqlWorkflow6f90ad68fe says "单元格上限"
+// in the language the app shows.
+func SqlWorkflow6f90ad68fe() string { return In(i18n.Locale()).SqlWorkflow6f90ad68fe() }
+
+// SqlWorkflow6f90ad68fe says "单元格上限"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow6f90ad68fe() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow6f90ad68fe", nil)
+}
+
+// SqlWorkflowf4285d7dab says "运行当前或选中 SQL"
+// in the language the app shows.
+func SqlWorkflowf4285d7dab() string { return In(i18n.Locale()).SqlWorkflowf4285d7dab() }
+
+// SqlWorkflowf4285d7dab says "运行当前或选中 SQL"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflowf4285d7dab() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflowf4285d7dab", nil)
+}
+
+// SqlWorkflowcb50956d47 says "SQL 执行操作"
+// in the language the app shows.
+func SqlWorkflowcb50956d47() string { return In(i18n.Locale()).SqlWorkflowcb50956d47() }
+
+// SqlWorkflowcb50956d47 says "SQL 执行操作"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflowcb50956d47() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflowcb50956d47", nil)
+}
+
+// SqlWorkflow9370189f55 says "新会话无法恢复事务或临时状态；不会自动执行 SQL"
+// in the language the app shows.
+func SqlWorkflow9370189f55() string { return In(i18n.Locale()).SqlWorkflow9370189f55() }
+
+// SqlWorkflow9370189f55 says "新会话无法恢复事务或临时状态；不会自动执行 SQL"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow9370189f55() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow9370189f55", nil)
+}
+
+// SqlWorkflowc2926769c8 says "以新会话继续"
+// in the language the app shows.
+func SqlWorkflowc2926769c8() string { return In(i18n.Locale()).SqlWorkflowc2926769c8() }
+
+// SqlWorkflowc2926769c8 says "以新会话继续"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflowc2926769c8() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflowc2926769c8", nil)
+}
+
+// SqlWorkflow9a0f4fd563 says "建立新物理会话（不执行现有 SQL）"
+// in the language the app shows.
+func SqlWorkflow9a0f4fd563() string { return In(i18n.Locale()).SqlWorkflow9a0f4fd563() }
+
+// SqlWorkflow9a0f4fd563 says "建立新物理会话（不执行现有 SQL）"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow9a0f4fd563() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow9a0f4fd563", nil)
+}
+
+// SqlWorkflowb697fe7de3 says "尚未执行"
+// in the language the app shows.
+func SqlWorkflowb697fe7de3() string { return In(i18n.Locale()).SqlWorkflowb697fe7de3() }
+
+// SqlWorkflowb697fe7de3 says "尚未执行"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflowb697fe7de3() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflowb697fe7de3", nil)
+}
+
+// SqlWorkflow85a6abca5d says "正在执行…"
+// in the language the app shows.
+func SqlWorkflow85a6abca5d() string { return In(i18n.Locale()).SqlWorkflow85a6abca5d() }
+
+// SqlWorkflow85a6abca5d says "正在执行…"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflow85a6abca5d() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflow85a6abca5d", nil)
+}
+
+// SqlWorkflowaa9c4640fe says "未指定数据库"
+// in the language the app shows.
+func SqlWorkflowaa9c4640fe() string { return In(i18n.Locale()).SqlWorkflowaa9c4640fe() }
+
+// SqlWorkflowaa9c4640fe says "未指定数据库"
+// in the language of msgs.
+func (msgs Messages) SqlWorkflowaa9c4640fe() string {
+	return Catalog.Format(msgs.locale, "sqlWorkflowaa9c4640fe", nil)
+}
+
+// TableDesign7b39af1e02 says "编辑表结构"
+// in the language the app shows.
+func TableDesign7b39af1e02() string { return In(i18n.Locale()).TableDesign7b39af1e02() }
+
+// TableDesign7b39af1e02 says "编辑表结构"
+// in the language of msgs.
+func (msgs Messages) TableDesign7b39af1e02() string {
+	return Catalog.Format(msgs.locale, "tableDesign7b39af1e02", nil)
+}
+
+// TableDesign5b294b6e8e says "SQL 预览"
+// in the language the app shows.
+func TableDesign5b294b6e8e() string { return In(i18n.Locale()).TableDesign5b294b6e8e() }
+
+// TableDesign5b294b6e8e says "SQL 预览"
+// in the language of msgs.
+func (msgs Messages) TableDesign5b294b6e8e() string {
+	return Catalog.Format(msgs.locale, "tableDesign5b294b6e8e", nil)
+}
+
+// TableDesignbecac47805 says "重新读取结构"
+// in the language the app shows.
+func TableDesignbecac47805() string { return In(i18n.Locale()).TableDesignbecac47805() }
+
+// TableDesignbecac47805 says "重新读取结构"
+// in the language of msgs.
+func (msgs Messages) TableDesignbecac47805() string {
+	return Catalog.Format(msgs.locale, "tableDesignbecac47805", nil)
+}
+
+// TableDesignd8fc04524b says "正在等待结构操作回执…"
+// in the language the app shows.
+func TableDesignd8fc04524b() string { return In(i18n.Locale()).TableDesignd8fc04524b() }
+
+// TableDesignd8fc04524b says "正在等待结构操作回执…"
+// in the language of msgs.
+func (msgs Messages) TableDesignd8fc04524b() string {
+	return Catalog.Format(msgs.locale, "tableDesignd8fc04524b", nil)
+}
+
+// TableDesign7c1e79d061 says "结构操作已有执行步骤；请核对并重新读取，禁止自动重试。"
+// in the language the app shows.
+func TableDesign7c1e79d061() string { return In(i18n.Locale()).TableDesign7c1e79d061() }
+
+// TableDesign7c1e79d061 says "结构操作已有执行步骤；请核对并重新读取，禁止自动重试。"
+// in the language of msgs.
+func (msgs Messages) TableDesign7c1e79d061() string {
+	return Catalog.Format(msgs.locale, "tableDesign7c1e79d061", nil)
+}
+
+// TableDesign8b0372aec3 says "字段和约束"
+// in the language the app shows.
+func TableDesign8b0372aec3() string { return In(i18n.Locale()).TableDesign8b0372aec3() }
+
+// TableDesign8b0372aec3 says "字段和约束"
+// in the language of msgs.
+func (msgs Messages) TableDesign8b0372aec3() string {
+	return Catalog.Format(msgs.locale, "tableDesign8b0372aec3", nil)
+}
+
+// TableDesign92ad37d298 says "表选项"
+// in the language the app shows.
+func TableDesign92ad37d298() string { return In(i18n.Locale()).TableDesign92ad37d298() }
+
+// TableDesign92ad37d298 says "表选项"
+// in the language of msgs.
+func (msgs Messages) TableDesign92ad37d298() string {
+	return Catalog.Format(msgs.locale, "tableDesign92ad37d298", nil)
+}
+
+// TableDesign35a4e49d34 says "触发器"
+// in the language the app shows.
+func TableDesign35a4e49d34() string { return In(i18n.Locale()).TableDesign35a4e49d34() }
+
+// TableDesign35a4e49d34 says "触发器"
+// in the language of msgs.
+func (msgs Messages) TableDesign35a4e49d34() string {
+	return Catalog.Format(msgs.locale, "tableDesign35a4e49d34", nil)
+}
+
+// TableDesignd05477eef2 says "原始 DDL"
+// in the language the app shows.
+func TableDesignd05477eef2() string { return In(i18n.Locale()).TableDesignd05477eef2() }
+
+// TableDesignd05477eef2 says "原始 DDL"
+// in the language of msgs.
+func (msgs Messages) TableDesignd05477eef2() string {
+	return Catalog.Format(msgs.locale, "tableDesignd05477eef2", nil)
+}
+
+// TableDesign09dc8cd2d6 says "添加字段"
+// in the language the app shows.
+func TableDesign09dc8cd2d6() string { return In(i18n.Locale()).TableDesign09dc8cd2d6() }
+
+// TableDesign09dc8cd2d6 says "添加字段"
+// in the language of msgs.
+func (msgs Messages) TableDesign09dc8cd2d6() string {
+	return Catalog.Format(msgs.locale, "tableDesign09dc8cd2d6", nil)
+}
+
+// TableDesignd97fda8c79 says "添加主键"
+// in the language the app shows.
+func TableDesignd97fda8c79() string { return In(i18n.Locale()).TableDesignd97fda8c79() }
+
+// TableDesignd97fda8c79 says "添加主键"
+// in the language of msgs.
+func (msgs Messages) TableDesignd97fda8c79() string {
+	return Catalog.Format(msgs.locale, "tableDesignd97fda8c79", nil)
+}
+
+// TableDesign64c028dac4 says "添加索引"
+// in the language the app shows.
+func TableDesign64c028dac4() string { return In(i18n.Locale()).TableDesign64c028dac4() }
+
+// TableDesign64c028dac4 says "添加索引"
+// in the language of msgs.
+func (msgs Messages) TableDesign64c028dac4() string {
+	return Catalog.Format(msgs.locale, "tableDesign64c028dac4", nil)
+}
+
+// TableDesign5e18543d8e says "添加外键"
+// in the language the app shows.
+func TableDesign5e18543d8e() string { return In(i18n.Locale()).TableDesign5e18543d8e() }
+
+// TableDesign5e18543d8e says "添加外键"
+// in the language of msgs.
+func (msgs Messages) TableDesign5e18543d8e() string {
+	return Catalog.Format(msgs.locale, "tableDesign5e18543d8e", nil)
+}
+
+// TableDesign5ce1925c3e says "添加检查约束"
+// in the language the app shows.
+func TableDesign5ce1925c3e() string { return In(i18n.Locale()).TableDesign5ce1925c3e() }
+
+// TableDesign5ce1925c3e says "添加检查约束"
+// in the language of msgs.
+func (msgs Messages) TableDesign5ce1925c3e() string {
+	return Catalog.Format(msgs.locale, "tableDesign5ce1925c3e", nil)
+}
+
+// TableDesigne6b17584a7 says "删除定义"
+// in the language the app shows.
+func TableDesigne6b17584a7() string { return In(i18n.Locale()).TableDesigne6b17584a7() }
+
+// TableDesigne6b17584a7 says "删除定义"
+// in the language of msgs.
+func (msgs Messages) TableDesigne6b17584a7() string {
+	return Catalog.Format(msgs.locale, "tableDesigne6b17584a7", nil)
+}
+
+// TableDesigna38f353eda says "上移字段"
+// in the language the app shows.
+func TableDesigna38f353eda() string { return In(i18n.Locale()).TableDesigna38f353eda() }
+
+// TableDesigna38f353eda says "上移字段"
+// in the language of msgs.
+func (msgs Messages) TableDesigna38f353eda() string {
+	return Catalog.Format(msgs.locale, "tableDesigna38f353eda", nil)
+}
+
+// TableDesignbed9334be9 says "下移字段"
+// in the language the app shows.
+func TableDesignbed9334be9() string { return In(i18n.Locale()).TableDesignbed9334be9() }
+
+// TableDesignbed9334be9 says "下移字段"
+// in the language of msgs.
+func (msgs Messages) TableDesignbed9334be9() string {
+	return Catalog.Format(msgs.locale, "tableDesignbed9334be9", nil)
+}
+
+// TableDesign393332f0b8 says "完整定义"
+// in the language the app shows.
+func TableDesign393332f0b8() string { return In(i18n.Locale()).TableDesign393332f0b8() }
+
+// TableDesign393332f0b8 says "完整定义"
+// in the language of msgs.
+func (msgs Messages) TableDesign393332f0b8() string {
+	return Catalog.Format(msgs.locale, "tableDesign393332f0b8", nil)
+}
+
+// TableDesignc1e304198c says "完整约束定义"
+// in the language the app shows.
+func TableDesignc1e304198c() string { return In(i18n.Locale()).TableDesignc1e304198c() }
+
+// TableDesignc1e304198c says "完整约束定义"
+// in the language of msgs.
+func (msgs Messages) TableDesignc1e304198c() string {
+	return Catalog.Format(msgs.locale, "tableDesignc1e304198c", nil)
+}
+
+// TableDesignbbfbba1c02 says "此字段含未支持的属性，保留完整原文并禁止修改。"
+// in the language the app shows.
+func TableDesignbbfbba1c02() string { return In(i18n.Locale()).TableDesignbbfbba1c02() }
+
+// TableDesignbbfbba1c02 says "此字段含未支持的属性，保留完整原文并禁止修改。"
+// in the language of msgs.
+func (msgs Messages) TableDesignbbfbba1c02() string {
+	return Catalog.Format(msgs.locale, "tableDesignbbfbba1c02", nil)
+}
+
+// TableDesign89da4affb5 says "字段名称"
+// in the language the app shows.
+func TableDesign89da4affb5() string { return In(i18n.Locale()).TableDesign89da4affb5() }
+
+// TableDesign89da4affb5 says "字段名称"
+// in the language of msgs.
+func (msgs Messages) TableDesign89da4affb5() string {
+	return Catalog.Format(msgs.locale, "tableDesign89da4affb5", nil)
+}
+
+// TableDesign9eb4ed7763 says "字段类型"
+// in the language the app shows.
+func TableDesign9eb4ed7763() string { return In(i18n.Locale()).TableDesign9eb4ed7763() }
+
+// TableDesign9eb4ed7763 says "字段类型"
+// in the language of msgs.
+func (msgs Messages) TableDesign9eb4ed7763() string {
+	return Catalog.Format(msgs.locale, "tableDesign9eb4ed7763", nil)
+}
+
+// TableDesign0693812e33 says "允许 NULL"
+// in the language the app shows.
+func TableDesign0693812e33() string { return In(i18n.Locale()).TableDesign0693812e33() }
+
+// TableDesign0693812e33 says "允许 NULL"
+// in the language of msgs.
+func (msgs Messages) TableDesign0693812e33() string {
+	return Catalog.Format(msgs.locale, "tableDesign0693812e33", nil)
+}
+
+// TableDesign68139a89d6 says "默认值或表达式"
+// in the language the app shows.
+func TableDesign68139a89d6() string { return In(i18n.Locale()).TableDesign68139a89d6() }
+
+// TableDesign68139a89d6 says "默认值或表达式"
+// in the language of msgs.
+func (msgs Messages) TableDesign68139a89d6() string {
+	return Catalog.Format(msgs.locale, "tableDesign68139a89d6", nil)
+}
+
+// TableDesign98b86ea436 says "字段注释"
+// in the language the app shows.
+func TableDesign98b86ea436() string { return In(i18n.Locale()).TableDesign98b86ea436() }
+
+// TableDesign98b86ea436 says "字段注释"
+// in the language of msgs.
+func (msgs Messages) TableDesign98b86ea436() string {
+	return Catalog.Format(msgs.locale, "tableDesign98b86ea436", nil)
+}
+
+// TableDesign0660e713b2 says "生成列表达式"
+// in the language the app shows.
+func TableDesign0660e713b2() string { return In(i18n.Locale()).TableDesign0660e713b2() }
+
+// TableDesign0660e713b2 says "生成列表达式"
+// in the language of msgs.
+func (msgs Messages) TableDesign0660e713b2() string {
+	return Catalog.Format(msgs.locale, "tableDesign0660e713b2", nil)
+}
+
+// TableDesignc10cb974be says "应用字段修改"
+// in the language the app shows.
+func TableDesignc10cb974be() string { return In(i18n.Locale()).TableDesignc10cb974be() }
+
+// TableDesignc10cb974be says "应用字段修改"
+// in the language of msgs.
+func (msgs Messages) TableDesignc10cb974be() string {
+	return Catalog.Format(msgs.locale, "tableDesignc10cb974be", nil)
+}
+
+// TableDesigndeb39369e3 says "表选项值"
+// in the language the app shows.
+func TableDesigndeb39369e3() string { return In(i18n.Locale()).TableDesigndeb39369e3() }
+
+// TableDesigndeb39369e3 says "表选项值"
+// in the language of msgs.
+func (msgs Messages) TableDesigndeb39369e3() string {
+	return Catalog.Format(msgs.locale, "tableDesigndeb39369e3", nil)
+}
+
+// TableDesignb4fae75260 says "应用表选项"
+// in the language the app shows.
+func TableDesignb4fae75260() string { return In(i18n.Locale()).TableDesignb4fae75260() }
+
+// TableDesignb4fae75260 says "应用表选项"
+// in the language of msgs.
+func (msgs Messages) TableDesignb4fae75260() string {
+	return Catalog.Format(msgs.locale, "tableDesignb4fae75260", nil)
+}
+
+// TableDesign70f49caaf9 says "添加触发器"
+// in the language the app shows.
+func TableDesign70f49caaf9() string { return In(i18n.Locale()).TableDesign70f49caaf9() }
+
+// TableDesign70f49caaf9 says "添加触发器"
+// in the language of msgs.
+func (msgs Messages) TableDesign70f49caaf9() string {
+	return Catalog.Format(msgs.locale, "tableDesign70f49caaf9", nil)
+}
+
+// TableDesign43986c74ba says "删除触发器"
+// in the language the app shows.
+func TableDesign43986c74ba() string { return In(i18n.Locale()).TableDesign43986c74ba() }
+
+// TableDesign43986c74ba says "删除触发器"
+// in the language of msgs.
+func (msgs Messages) TableDesign43986c74ba() string {
+	return Catalog.Format(msgs.locale, "tableDesign43986c74ba", nil)
+}
+
+// TableDesignf54572fcd7 says "触发器名称"
+// in the language the app shows.
+func TableDesignf54572fcd7() string { return In(i18n.Locale()).TableDesignf54572fcd7() }
+
+// TableDesignf54572fcd7 says "触发器名称"
+// in the language of msgs.
+func (msgs Messages) TableDesignf54572fcd7() string {
+	return Catalog.Format(msgs.locale, "tableDesignf54572fcd7", nil)
+}
+
+// TableDesign7a51720d18 says "完整触发器定义"
+// in the language the app shows.
+func TableDesign7a51720d18() string { return In(i18n.Locale()).TableDesign7a51720d18() }
+
+// TableDesign7a51720d18 says "完整触发器定义"
+// in the language of msgs.
+func (msgs Messages) TableDesign7a51720d18() string {
+	return Catalog.Format(msgs.locale, "tableDesign7a51720d18", nil)
+}
+
+// TableDesign17fbc0d712 says "保存表设计更改？"
+// in the language the app shows.
+func TableDesign17fbc0d712() string { return In(i18n.Locale()).TableDesign17fbc0d712() }
+
+// TableDesign17fbc0d712 says "保存表设计更改？"
+// in the language of msgs.
+func (msgs Messages) TableDesign17fbc0d712() string {
+	return Catalog.Format(msgs.locale, "tableDesign17fbc0d712", nil)
+}
+
+// TableDesigne030eb9134 says "保存并预览"
+// in the language the app shows.
+func TableDesigne030eb9134() string { return In(i18n.Locale()).TableDesigne030eb9134() }
+
+// TableDesigne030eb9134 says "保存并预览"
+// in the language of msgs.
+func (msgs Messages) TableDesigne030eb9134() string {
+	return Catalog.Format(msgs.locale, "tableDesigne030eb9134", nil)
+}
+
+// TableDesignaf87335e71 says "确认结构 SQL"
+// in the language the app shows.
+func TableDesignaf87335e71() string { return In(i18n.Locale()).TableDesignaf87335e71() }
+
+// TableDesignaf87335e71 says "确认结构 SQL"
+// in the language of msgs.
+func (msgs Messages) TableDesignaf87335e71() string {
+	return Catalog.Format(msgs.locale, "tableDesignaf87335e71", nil)
+}
+
+// TableDesignbcb1b6cf0e says "DDL 可能隐式提交；部分失败不会回滚已经完成的步骤。"
+// in the language the app shows.
+func TableDesignbcb1b6cf0e() string { return In(i18n.Locale()).TableDesignbcb1b6cf0e() }
+
+// TableDesignbcb1b6cf0e says "DDL 可能隐式提交；部分失败不会回滚已经完成的步骤。"
+// in the language of msgs.
+func (msgs Messages) TableDesignbcb1b6cf0e() string {
+	return Catalog.Format(msgs.locale, "tableDesignbcb1b6cf0e", nil)
+}
+
+// TableDesign1bb200216d says "确认执行结构 SQL"
+// in the language the app shows.
+func TableDesign1bb200216d() string { return In(i18n.Locale()).TableDesign1bb200216d() }
+
+// TableDesign1bb200216d says "确认执行结构 SQL"
+// in the language of msgs.
+func (msgs Messages) TableDesign1bb200216d() string {
+	return Catalog.Format(msgs.locale, "tableDesign1bb200216d", nil)
+}
+
+// TableDesign0c20b4813f says "输入名称后打开表设计器，预览并确认 SQL 后才会创建表。"
+// in the language the app shows.
+func TableDesign0c20b4813f() string { return In(i18n.Locale()).TableDesign0c20b4813f() }
+
+// TableDesign0c20b4813f says "输入名称后打开表设计器，预览并确认 SQL 后才会创建表。"
+// in the language of msgs.
+func (msgs Messages) TableDesign0c20b4813f() string {
+	return Catalog.Format(msgs.locale, "tableDesign0c20b4813f", nil)
+}
+
+// TableDesigna05565ed31 says "无法确认完整触发器权限；触发器修改已禁用。"
+// in the language the app shows.
+func TableDesigna05565ed31() string { return In(i18n.Locale()).TableDesigna05565ed31() }
+
+// TableDesigna05565ed31 says "无法确认完整触发器权限；触发器修改已禁用。"
+// in the language of msgs.
+func (msgs Messages) TableDesigna05565ed31() string {
+	return Catalog.Format(msgs.locale, "tableDesigna05565ed31", nil)
+}
+
+// EngineWorkflow0 says "NULL 与文本 NULL 分别保存；二进制请输入十六进制"
+// in the language the app shows.
+func EngineWorkflow0() string { return In(i18n.Locale()).EngineWorkflow0() }
+
+// EngineWorkflow0 says "NULL 与文本 NULL 分别保存；二进制请输入十六进制"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow0() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow0", nil)
+}
+
+// EngineWorkflow1 says "PostgreSQL 会话密码"
+// in the language the app shows.
+func EngineWorkflow1() string { return In(i18n.Locale()).EngineWorkflow1() }
+
+// EngineWorkflow1 says "PostgreSQL 会话密码"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow1() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow1", nil)
+}
+
+// EngineWorkflow2 says "上一页"
+// in the language the app shows.
+func EngineWorkflow2() string { return In(i18n.Locale()).EngineWorkflow2() }
+
+// EngineWorkflow2 says "上一页"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow2() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow2", nil)
+}
+
+// EngineWorkflow3 says "下一页"
+// in the language the app shows.
+func EngineWorkflow3() string { return In(i18n.Locale()).EngineWorkflow3() }
+
+// EngineWorkflow3 says "下一页"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow3() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow3", nil)
+}
+
+// EngineWorkflow4 says "二进制"
+// in the language the app shows.
+func EngineWorkflow4() string { return In(i18n.Locale()).EngineWorkflow4() }
+
+// EngineWorkflow4 says "二进制"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow4() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow4", nil)
+}
+
+// EngineWorkflow5 says "保存修改"
+// in the language the app shows.
+func EngineWorkflow5() string { return In(i18n.Locale()).EngineWorkflow5() }
+
+// EngineWorkflow5 says "保存修改"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow5() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow5", nil)
+}
+
+// EngineWorkflow6 says "保存后关闭"
+// in the language the app shows.
+func EngineWorkflow6() string { return In(i18n.Locale()).EngineWorkflow6() }
+
+// EngineWorkflow6 says "保存后关闭"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow6() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow6", nil)
+}
+
+// EngineWorkflow7 says "保存并提交后关闭"
+// in the language the app shows.
+func EngineWorkflow7() string { return In(i18n.Locale()).EngineWorkflow7() }
+
+// EngineWorkflow7 says "保存并提交后关闭"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow7() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow7", nil)
+}
+
+// EngineWorkflow8 says "修改单元格"
+// in the language the app shows.
+func EngineWorkflow8() string { return In(i18n.Locale()).EngineWorkflow8() }
+
+// EngineWorkflow8 says "修改单元格"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow8() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow8", nil)
+}
+
+// EngineWorkflow9 says "公开结构元数据（只读）"
+// in the language the app shows.
+func EngineWorkflow9() string { return In(i18n.Locale()).EngineWorkflow9() }
+
+// EngineWorkflow9 says "公开结构元数据（只读）"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow9() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow9", nil)
+}
+
+// EngineWorkflow10 says "关闭数据页"
+// in the language the app shows.
+func EngineWorkflow10() string { return In(i18n.Locale()).EngineWorkflow10() }
+
+// EngineWorkflow10 says "关闭数据页"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow10() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow10", nil)
+}
+
+// EngineWorkflow11 says "删除行"
+// in the language the app shows.
+func EngineWorkflow11() string { return In(i18n.Locale()).EngineWorkflow11() }
+
+// EngineWorkflow11 says "删除行"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow11() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow11", nil)
+}
+
+// EngineWorkflow12 says "刷新"
+// in the language the app shows.
+func EngineWorkflow12() string { return In(i18n.Locale()).EngineWorkflow12() }
+
+// EngineWorkflow12 says "刷新"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow12() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow12", nil)
+}
+
+// EngineWorkflow13 says "取消"
+// in the language the app shows.
+func EngineWorkflow13() string { return In(i18n.Locale()).EngineWorkflow13() }
+
+// EngineWorkflow13 says "取消"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow13() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow13", nil)
+}
+
+// EngineWorkflow14 says "取消关闭"
+// in the language the app shows.
+func EngineWorkflow14() string { return In(i18n.Locale()).EngineWorkflow14() }
+
+// EngineWorkflow14 says "取消关闭"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow14() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow14", nil)
+}
+
+// EngineWorkflow15 says "取消请求"
+// in the language the app shows.
+func EngineWorkflow15() string { return In(i18n.Locale()).EngineWorkflow15() }
+
+// EngineWorkflow15 says "取消请求"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow15() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow15", nil)
+}
+
+// EngineWorkflow16 says "只读：视图或没有完整非空唯一键"
+// in the language the app shows.
+func EngineWorkflow16() string { return In(i18n.Locale()).EngineWorkflow16() }
+
+// EngineWorkflow16 says "只读：视图或没有完整非空唯一键"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow16() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow16", nil)
+}
+
+// EngineWorkflow17 says "可靠唯一键："
+// in the language the app shows.
+func EngineWorkflow17() string { return In(i18n.Locale()).EngineWorkflow17() }
+
+// EngineWorkflow17 says "可靠唯一键："
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow17() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow17", nil)
+}
+
+// EngineWorkflow18 says "回滚"
+// in the language the app shows.
+func EngineWorkflow18() string { return In(i18n.Locale()).EngineWorkflow18() }
+
+// EngineWorkflow18 says "回滚"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow18() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow18", nil)
+}
+
+// EngineWorkflow19 says "回滚并关闭"
+// in the language the app shows.
+func EngineWorkflow19() string { return In(i18n.Locale()).EngineWorkflow19() }
+
+// EngineWorkflow19 says "回滚并关闭"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow19() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow19", nil)
+}
+
+// EngineWorkflow20 says "复制选区"
+// in the language the app shows.
+func EngineWorkflow20() string { return In(i18n.Locale()).EngineWorkflow20() }
+
+// EngineWorkflow20 says "复制选区"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow20() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow20", nil)
+}
+
+// EngineWorkflow21 says "字段"
+// in the language the app shows.
+func EngineWorkflow21() string { return In(i18n.Locale()).EngineWorkflow21() }
+
+// EngineWorkflow21 says "字段"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow21() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow21", nil)
+}
+
+// EngineWorkflow22 says "导出完整数据"
+// in the language the app shows.
+func EngineWorkflow22() string { return In(i18n.Locale()).EngineWorkflow22() }
+
+// EngineWorkflow22 says "导出完整数据"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow22() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow22", nil)
+}
+
+// EngineWorkflow23 says "布尔"
+// in the language the app shows.
+func EngineWorkflow23() string { return In(i18n.Locale()).EngineWorkflow23() }
+
+// EngineWorkflow23 says "布尔"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow23() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow23", nil)
+}
+
+// EngineWorkflow24 says "应用筛选"
+// in the language the app shows.
+func EngineWorkflow24() string { return In(i18n.Locale()).EngineWorkflow24() }
+
+// EngineWorkflow24 says "应用筛选"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow24() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow24", nil)
+}
+
+// EngineWorkflow25 says "开始事务"
+// in the language the app shows.
+func EngineWorkflow25() string { return In(i18n.Locale()).EngineWorkflow25() }
+
+// EngineWorkflow25 says "开始事务"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow25() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow25", nil)
+}
+
+// EngineWorkflow26 says "待新增："
+// in the language the app shows.
+func EngineWorkflow26() string { return In(i18n.Locale()).EngineWorkflow26() }
+
+// EngineWorkflow26 says "待新增："
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow26() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow26", nil)
+}
+
+// EngineWorkflow27 says "提交"
+// in the language the app shows.
+func EngineWorkflow27() string { return In(i18n.Locale()).EngineWorkflow27() }
+
+// EngineWorkflow27 says "提交"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow27() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow27", nil)
+}
+
+// EngineWorkflow28 says "提交结果不确定：保留修改，请在重新连接后核验，禁止重放"
+// in the language the app shows.
+func EngineWorkflow28() string { return In(i18n.Locale()).EngineWorkflow28() }
+
+// EngineWorkflow28 says "提交结果不确定：保留修改，请在重新连接后核验，禁止重放"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow28() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow28", nil)
+}
+
+// EngineWorkflow29 says "提交结果不确定；关闭会放弃此页保留的修改。不会重放SQL。"
+// in the language the app shows.
+func EngineWorkflow29() string { return In(i18n.Locale()).EngineWorkflow29() }
+
+// EngineWorkflow29 says "提交结果不确定；关闭会放弃此页保留的修改。不会重放SQL。"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow29() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow29", nil)
+}
+
+// EngineWorkflow30 says "放弃修改"
+// in the language the app shows.
+func EngineWorkflow30() string { return In(i18n.Locale()).EngineWorkflow30() }
+
+// EngineWorkflow30 says "放弃修改"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow30() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow30", nil)
+}
+
+// EngineWorkflow31 says "放弃修改并关闭"
+// in the language the app shows.
+func EngineWorkflow31() string { return In(i18n.Locale()).EngineWorkflow31() }
+
+// EngineWorkflow31 says "放弃修改并关闭"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow31() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow31", nil)
+}
+
+// EngineWorkflow32 says "数据 / 结构"
+// in the language the app shows.
+func EngineWorkflow32() string { return In(i18n.Locale()).EngineWorkflow32() }
+
+// EngineWorkflow32 says "数据 / 结构"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow32() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow32", nil)
+}
+
+// EngineWorkflow33 says "数据库请求尚未回执；取消后仍需等待执行器确认"
+// in the language the app shows.
+func EngineWorkflow33() string { return In(i18n.Locale()).EngineWorkflow33() }
+
+// EngineWorkflow33 says "数据库请求尚未回执；取消后仍需等待执行器确认"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow33() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow33", nil)
+}
+
+// EngineWorkflow34 says "数据页截断："
+// in the language the app shows.
+func EngineWorkflow34() string { return In(i18n.Locale()).EngineWorkflow34() }
+
+// EngineWorkflow34 says "数据页截断："
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow34() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow34", nil)
+}
+
+// EngineWorkflow35 says "整数"
+// in the language the app shows.
+func EngineWorkflow35() string { return In(i18n.Locale()).EngineWorkflow35() }
+
+// EngineWorkflow35 says "整数"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow35() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow35", nil)
+}
+
+// EngineWorkflow36 says "文本"
+// in the language the app shows.
+func EngineWorkflow36() string { return In(i18n.Locale()).EngineWorkflow36() }
+
+// EngineWorkflow36 says "文本"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow36() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow36", nil)
+}
+
+// EngineWorkflow37 says "断开连接"
+// in the language the app shows.
+func EngineWorkflow37() string { return In(i18n.Locale()).EngineWorkflow37() }
+
+// EngineWorkflow37 says "断开连接"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow37() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow37", nil)
+}
+
+// EngineWorkflow38 says "新增行字段"
+// in the language the app shows.
+func EngineWorkflow38() string { return In(i18n.Locale()).EngineWorkflow38() }
+
+// EngineWorkflow38 says "新增行字段"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow38() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow38", nil)
+}
+
+// EngineWorkflow39 says "日期时间"
+// in the language the app shows.
+func EngineWorkflow39() string { return In(i18n.Locale()).EngineWorkflow39() }
+
+// EngineWorkflow39 says "日期时间"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow39() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow39", nil)
+}
+
+// EngineWorkflow40 says "显式连接后核验提交"
+// in the language the app shows.
+func EngineWorkflow40() string { return In(i18n.Locale()).EngineWorkflow40() }
+
+// EngineWorkflow40 says "显式连接后核验提交"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow40() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow40", nil)
+}
+
+// EngineWorkflow41 says "正在等待数据库执行器回执…"
+// in the language the app shows.
+func EngineWorkflow41() string { return In(i18n.Locale()).EngineWorkflow41() }
+
+// EngineWorkflow41 says "正在等待数据库执行器回执…"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow41() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow41", nil)
+}
+
+// EngineWorkflow42 says "此页有未结束事务"
+// in the language the app shows.
+func EngineWorkflow42() string { return In(i18n.Locale()).EngineWorkflow42() }
+
+// EngineWorkflow42 says "此页有未结束事务"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow42() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow42", nil)
+}
+
+// EngineWorkflow43 says "浮点"
+// in the language the app shows.
+func EngineWorkflow43() string { return In(i18n.Locale()).EngineWorkflow43() }
+
+// EngineWorkflow43 says "浮点"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow43() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow43", nil)
+}
+
+// EngineWorkflow44 says "清除筛选"
+// in the language the app shows.
+func EngineWorkflow44() string { return In(i18n.Locale()).EngineWorkflow44() }
+
+// EngineWorkflow44 says "清除筛选"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow44() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow44", nil)
+}
+
+// EngineWorkflow45 says "筛选字段"
+// in the language the app shows.
+func EngineWorkflow45() string { return In(i18n.Locale()).EngineWorkflow45() }
+
+// EngineWorkflow45 says "筛选字段"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow45() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow45", nil)
+}
+
+// EngineWorkflow46 says "类型"
+// in the language the app shows.
+func EngineWorkflow46() string { return In(i18n.Locale()).EngineWorkflow46() }
+
+// EngineWorkflow46 says "类型"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow46() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow46", nil)
+}
+
+// EngineWorkflow47 says "精确小数"
+// in the language the app shows.
+func EngineWorkflow47() string { return In(i18n.Locale()).EngineWorkflow47() }
+
+// EngineWorkflow47 says "精确小数"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow47() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow47", nil)
+}
+
+// EngineWorkflow48 says "请输入此连接绑定的 PostgreSQL 数据库"
+// in the language the app shows.
+func EngineWorkflow48() string { return In(i18n.Locale()).EngineWorkflow48() }
+
+// EngineWorkflow48 says "请输入此连接绑定的 PostgreSQL 数据库"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow48() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow48", nil)
+}
+
+// EngineWorkflow49 says "运算符"
+// in the language the app shows.
+func EngineWorkflow49() string { return In(i18n.Locale()).EngineWorkflow49() }
+
+// EngineWorkflow49 says "运算符"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow49() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow49", nil)
+}
+
+// EngineWorkflow50 says "连接"
+// in the language the app shows.
+func EngineWorkflow50() string { return In(i18n.Locale()).EngineWorkflow50() }
+
+// EngineWorkflow50 says "连接"
+// in the language of msgs.
+func (msgs Messages) EngineWorkflow50() string {
+	return Catalog.Format(msgs.locale, "engineWorkflow50", nil)
+}
+
+// CorePlanAction1 says "执行 SQL 文件"
+// in the language the app shows.
+func CorePlanAction1() string { return In(i18n.Locale()).CorePlanAction1() }
+
+// CorePlanAction1 says "执行 SQL 文件"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction1() string {
+	return Catalog.Format(msgs.locale, "corePlanAction1", nil)
+}
+
+// CorePlanAction2 says "结果集预览上限"
+// in the language the app shows.
+func CorePlanAction2() string { return In(i18n.Locale()).CorePlanAction2() }
+
+// CorePlanAction2 says "结果集预览上限"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction2() string {
+	return Catalog.Format(msgs.locale, "corePlanAction2", nil)
+}
+
+// CorePlanAction3 says "备份与 SQL 转储"
+// in the language the app shows.
+func CorePlanAction3() string { return In(i18n.Locale()).CorePlanAction3() }
+
+// CorePlanAction3 says "备份与 SQL 转储"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction3() string {
+	return Catalog.Format(msgs.locale, "corePlanAction3", nil)
+}
+
+// CorePlanAction4 says "恢复 NyaDB 备份"
+// in the language the app shows.
+func CorePlanAction4() string { return In(i18n.Locale()).CorePlanAction4() }
+
+// CorePlanAction4 says "恢复 NyaDB 备份"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction4() string {
+	return Catalog.Format(msgs.locale, "corePlanAction4", nil)
+}
+
+// CorePlanAction5 says "目标数据库"
+// in the language the app shows.
+func CorePlanAction5() string { return In(i18n.Locale()).CorePlanAction5() }
+
+// CorePlanAction5 says "目标数据库"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction5() string {
+	return Catalog.Format(msgs.locale, "corePlanAction5", nil)
+}
+
+// CorePlanAction6 says "遇到已有对象停止"
+// in the language the app shows.
+func CorePlanAction6() string { return In(i18n.Locale()).CorePlanAction6() }
+
+// CorePlanAction6 says "遇到已有对象停止"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction6() string {
+	return Catalog.Format(msgs.locale, "corePlanAction6", nil)
+}
+
+// CorePlanAction7 says "替换已有对象"
+// in the language the app shows.
+func CorePlanAction7() string { return In(i18n.Locale()).CorePlanAction7() }
+
+// CorePlanAction7 says "替换已有对象"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction7() string {
+	return Catalog.Format(msgs.locale, "corePlanAction7", nil)
+}
+
+// CorePlanAction8 says "读取备份并生成恢复预览"
+// in the language the app shows.
+func CorePlanAction8() string { return In(i18n.Locale()).CorePlanAction8() }
+
+// CorePlanAction8 says "读取备份并生成恢复预览"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction8() string {
+	return Catalog.Format(msgs.locale, "corePlanAction8", nil)
+}
+
+// CorePlanAction9 says "DDL 不保证回滚；已完成或结果不确定的步骤不会自动重放。"
+// in the language the app shows.
+func CorePlanAction9() string { return In(i18n.Locale()).CorePlanAction9() }
+
+// CorePlanAction9 says "DDL 不保证回滚；已完成或结果不确定的步骤不会自动重放。"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction9() string {
+	return Catalog.Format(msgs.locale, "corePlanAction9", nil)
+}
+
+// CorePlanAction10 says "确认按预览恢复"
+// in the language the app shows.
+func CorePlanAction10() string { return In(i18n.Locale()).CorePlanAction10() }
+
+// CorePlanAction10 says "确认按预览恢复"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction10() string {
+	return Catalog.Format(msgs.locale, "corePlanAction10", nil)
+}
+
+// CorePlanAction11 says "包含表数据"
+// in the language the app shows.
+func CorePlanAction11() string { return In(i18n.Locale()).CorePlanAction11() }
+
+// CorePlanAction11 says "包含表数据"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction11() string {
+	return Catalog.Format(msgs.locale, "corePlanAction11", nil)
+}
+
+// CorePlanAction12 says "选择文件并开始备份"
+// in the language the app shows.
+func CorePlanAction12() string { return In(i18n.Locale()).CorePlanAction12() }
+
+// CorePlanAction12 says "选择文件并开始备份"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction12() string {
+	return Catalog.Format(msgs.locale, "corePlanAction12", nil)
+}
+
+// CorePlanAction13 says "取消并等待回执"
+// in the language the app shows.
+func CorePlanAction13() string { return In(i18n.Locale()).CorePlanAction13() }
+
+// CorePlanAction13 says "取消并等待回执"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction13() string {
+	return Catalog.Format(msgs.locale, "corePlanAction13", nil)
+}
+
+// CorePlanAction14 says "修改数据库…"
+// in the language the app shows.
+func CorePlanAction14() string { return In(i18n.Locale()).CorePlanAction14() }
+
+// CorePlanAction14 says "修改数据库…"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction14() string {
+	return Catalog.Format(msgs.locale, "corePlanAction14", nil)
+}
+
+// CorePlanAction15 says "删除数据库…"
+// in the language the app shows.
+func CorePlanAction15() string { return In(i18n.Locale()).CorePlanAction15() }
+
+// CorePlanAction15 says "删除数据库…"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction15() string {
+	return Catalog.Format(msgs.locale, "corePlanAction15", nil)
+}
+
+// CorePlanAction16 says "备份数据库…"
+// in the language the app shows.
+func CorePlanAction16() string { return In(i18n.Locale()).CorePlanAction16() }
+
+// CorePlanAction16 says "备份数据库…"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction16() string {
+	return Catalog.Format(msgs.locale, "corePlanAction16", nil)
+}
+
+// CorePlanAction17 says "恢复备份…"
+// in the language the app shows.
+func CorePlanAction17() string { return In(i18n.Locale()).CorePlanAction17() }
+
+// CorePlanAction17 says "恢复备份…"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction17() string {
+	return Catalog.Format(msgs.locale, "corePlanAction17", nil)
+}
+
+// CorePlanAction18 says "导入新表"
+// in the language the app shows.
+func CorePlanAction18() string { return In(i18n.Locale()).CorePlanAction18() }
+
+// CorePlanAction18 says "导入新表"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction18() string {
+	return Catalog.Format(msgs.locale, "corePlanAction18", nil)
+}
+
+// CorePlanAction19 says "保存备份"
+// in the language the app shows.
+func CorePlanAction19() string { return In(i18n.Locale()).CorePlanAction19() }
+
+// CorePlanAction19 says "保存备份"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction19() string {
+	return Catalog.Format(msgs.locale, "corePlanAction19", nil)
+}
+
+// CorePlanAction20 says "在系统密钥库保存隧道凭据"
+// in the language the app shows.
+func CorePlanAction20() string { return In(i18n.Locale()).CorePlanAction20() }
+
+// CorePlanAction20 says "在系统密钥库保存隧道凭据"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction20() string {
+	return Catalog.Format(msgs.locale, "corePlanAction20", nil)
+}
+
+// CorePlanAction21 says "目标 ID："
+// in the language the app shows.
+func CorePlanAction21() string { return In(i18n.Locale()).CorePlanAction21() }
+
+// CorePlanAction21 says "目标 ID："
+// in the language of msgs.
+func (msgs Messages) CorePlanAction21() string {
+	return Catalog.Format(msgs.locale, "corePlanAction21", nil)
+}
+
+// CorePlanAction22 says "访问令牌："
+// in the language the app shows.
+func CorePlanAction22() string { return In(i18n.Locale()).CorePlanAction22() }
+
+// CorePlanAction22 says "访问令牌："
+// in the language of msgs.
+func (msgs Messages) CorePlanAction22() string {
+	return Catalog.Format(msgs.locale, "corePlanAction22", nil)
+}
+
+// CorePlanAction23 says "确认 SSH 主机身份"
+// in the language the app shows.
+func CorePlanAction23() string { return In(i18n.Locale()).CorePlanAction23() }
+
+// CorePlanAction23 says "确认 SSH 主机身份"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction23() string {
+	return Catalog.Format(msgs.locale, "corePlanAction23", nil)
+}
+
+// CorePlanAction24 says "信任此主机"
+// in the language the app shows.
+func CorePlanAction24() string { return In(i18n.Locale()).CorePlanAction24() }
+
+// CorePlanAction24 says "信任此主机"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction24() string {
+	return Catalog.Format(msgs.locale, "corePlanAction24", nil)
+}
+
+// CorePlanAction25 says "首次连接需确认 SHA-256 主机指纹；后续指纹变化将拒绝连接。"
+// in the language the app shows.
+func CorePlanAction25() string { return In(i18n.Locale()).CorePlanAction25() }
+
+// CorePlanAction25 says "首次连接需确认 SHA-256 主机指纹；后续指纹变化将拒绝连接。"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction25() string {
+	return Catalog.Format(msgs.locale, "corePlanAction25", nil)
+}
+
+// CorePlanAction26 says "数据库隧道已断开；请显式重新连接，不会重放 SQL 或事务"
+// in the language the app shows.
+func CorePlanAction26() string { return In(i18n.Locale()).CorePlanAction26() }
+
+// CorePlanAction26 says "数据库隧道已断开；请显式重新连接，不会重放 SQL 或事务"
+// in the language of msgs.
+func (msgs Messages) CorePlanAction26() string {
+	return Catalog.Format(msgs.locale, "corePlanAction26", nil)
+}
+
+// HttpClearLegacyBase64 says "清除旧版 base64 设置"
+// in the language the app shows.
+func HttpClearLegacyBase64() string { return In(i18n.Locale()).HttpClearLegacyBase64() }
+
+// HttpClearLegacyBase64 says "清除旧版 base64 设置"
+// in the language of msgs.
+func (msgs Messages) HttpClearLegacyBase64() string {
+	return Catalog.Format(msgs.locale, "httpClearLegacyBase64", nil)
 }

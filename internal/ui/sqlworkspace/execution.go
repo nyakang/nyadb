@@ -27,23 +27,29 @@ func (s *State) Run(invalidate func(), t *Document) {
 		return
 	}
 	if t.profileID == 0 || !s.connected(t.profileID) {
-		t.err = "没有可用的 MySQL 连接；请先连接并新建查询"
+		t.err = "没有可用的数据库连接；请先连接并新建查询"
 		s.report(t.err)
 		return
 	}
 	statement := strings.TrimSpace(t.Editor.SelectedText())
 	if statement == "" {
-		statement = sqlAtCaret(t.Editor.Buffer.String(), t.Editor.Cursor())
+		statement = s.statementAtCaret(t)
 	}
 	if statement == "" {
 		t.err = "请输入 SQL"
 		s.report(t.err)
 		return
 	}
+	s.runStatement(invalidate, t, statement)
+}
+func (s *State) runStatement(invalidate func(), t *Document, statement string) {
+	if t == nil || t.closed || t.loading || t.recoveryNeeded || !s.connected(t.profileID) {
+		return
+	}
 	execute := s.Executor
 	if execute == nil {
 		if s.runtime() == nil {
-			t.err = "MySQL 会话管理器不可用"
+			t.err = "数据库会话管理器不可用"
 			s.report(t.err)
 			return
 		}
@@ -183,6 +189,10 @@ func (s *State) Consume() {
 			canceled := t.cancelRequested
 			t.cancelRequested = false
 			if r.err != nil {
+				if len(r.data.Steps) > 0 {
+					result := r.data
+					t.result = &result
+				}
 				if canceled || errors.Is(r.err, context.Canceled) {
 					t.err = "SQL 执行已停止；服务器端更改可能已生效"
 				} else if errors.Is(r.err, mysqlsvc.ErrMySQLSQLSessionLost) {

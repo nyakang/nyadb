@@ -44,6 +44,20 @@ func (c tableChangeConn) QueryContext(ctx context.Context, sqlText string, args 
 	defer c.rec.Unlock()
 	c.rec.args = append(c.rec.args, append([]driver.NamedValue(nil), args...))
 	switch {
+	case strings.HasPrefix(sqlText, "SHOW CREATE TABLE"):
+		ddl := "CREATE TABLE `" + strings.Split(sqlText, ".")[1][1:len(strings.Split(sqlText, ".")[1])-1] + "` (`id` BIGINT NOT NULL, `note` TEXT) ENGINE=InnoDB"
+		if len(c.rec.statements) > 0 && strings.HasSuffix(sqlText, "`copy`") || len(c.rec.statements) > 0 && strings.HasSuffix(sqlText, "`target`") {
+			ddl = c.rec.statements[0]
+		}
+		return &structureRows{cols: []string{"Table", "Create Table"}, values: [][]driver.Value{{"t", ddl}}}, nil
+	case strings.HasPrefix(sqlText, "SHOW GRANTS"):
+		return &structureRows{cols: []string{"Grants"}, values: [][]driver.Value{{"GRANT ALL PRIVILEGES ON *.* TO 'test'@'%'"}}}, nil
+	case sqlText == "SELECT @@SESSION.sql_mode":
+		return &structureRows{cols: []string{"sql_mode"}, values: [][]driver.Value{{""}}}, nil
+	case strings.Contains(sqlText, "information_schema.TRIGGERS"):
+		return &structureRows{cols: []string{"TRIGGER_NAME"}}, nil
+	case strings.Contains(sqlText, "COUNT(*)"):
+		return &structureRows{cols: []string{"count"}, values: [][]driver.Value{{int64(0)}}}, nil
 	case strings.Contains(sqlText, "information_schema.TABLES"):
 		return &structureRows{cols: []string{"type"}, values: [][]driver.Value{{c.rec.kind}}}, nil
 	case strings.Contains(sqlText, "information_schema.COLUMNS"):
@@ -99,10 +113,6 @@ func TestMySQLTableActionSQLQuotesIdentifiersAndRejectsInvalidActions(t *testing
 		{MySQLTableChange{Action: MySQLTableDeleteRows, Database: "db", Table: "t"}, "DELETE FROM `db`.`t`"},
 		{MySQLTableChange{Action: MySQLTableTruncate, Database: "db", Table: "t"}, "TRUNCATE TABLE `db`.`t`"},
 		{MySQLTableChange{Action: MySQLTableRename, Database: "db", Table: "t", NewName: "new"}, "RENAME TABLE `db`.`t` TO `db`.`new`"},
-		{MySQLTableChange{Action: MySQLTableCopyStructure, Database: "db", Table: "t", NewName: "copy"},
-			"CREATE TABLE `db`.`copy` LIKE `db`.`t`"},
-		{MySQLTableChange{Action: MySQLTableCopyData, Database: "db", Table: "t", NewName: "copy"},
-			"CREATE TABLE `db`.`copy` LIKE `db`.`t`"},
 	}
 	for _, test := range cases {
 		t.Run(string(test.change.Action), func(t *testing.T) {
@@ -118,6 +128,8 @@ func TestMySQLTableActionSQLQuotesIdentifiersAndRejectsInvalidActions(t *testing
 		{Action: MySQLTableRename, Database: "db", Table: "t", NewName: "t"},
 		{Action: MySQLTableRename, Database: "db", Table: "t"},
 		{Action: "EXEC", Database: "db", Table: "t"},
+		{Action: MySQLTableCopyStructure, Database: "db", Table: "t", NewName: "copy"},
+		{Action: MySQLTableCopyData, Database: "db", Table: "t", NewName: "copy"},
 	} {
 		if _, err := tableChangeSQL(change); err == nil {
 			t.Fatalf("invalid SQL accepted: %+v", change)
@@ -133,15 +145,15 @@ func TestMySQLTableActionsUseBoundTypeGuardAndHandlePartialCopy(t *testing.T) {
 		t.Fatal(err)
 	}
 	rec.Lock()
-	if len(rec.args) != 2 {
+	if len(rec.args) < 2 {
 		t.Errorf("expected bound type and columns queries: %+v", rec.args)
 	}
 	for _, args := range rec.args {
-		if len(args) != 2 || args[0].Value != change.Database || args[1].Value != change.Table {
+		if len(args) == 2 && (args[0].Value != change.Database || (args[1].Value != change.Table && args[1].Value != change.NewName)) {
 			t.Errorf("metadata query must bind names: %+v", args)
 		}
 	}
-	if len(rec.statements) != 2 || !strings.Contains(rec.statements[0], "`t``x`") {
+	if len(rec.statements) != 2 || !strings.Contains(rec.statements[1], "`t``x`") {
 		t.Errorf("unexpected executed SQL: %v", rec.statements)
 	}
 	rec.kind = "VIEW"
@@ -157,7 +169,7 @@ func TestMySQLTableActionsUseBoundTypeGuardAndHandlePartialCopy(t *testing.T) {
 	rec.failInsert = true
 	rec.Unlock()
 	err := m.ChangeTable(context.Background(), 83, change)
-	if err == nil || !strings.Contains(err.Error(), "new table") {
+	if err == nil || !strings.Contains(err.Error(), "earlier steps") {
 		t.Fatal(fmt.Sprintf("partial copy not reported: %v", err))
 	}
 	if err := m.Disconnect(83); err != nil {

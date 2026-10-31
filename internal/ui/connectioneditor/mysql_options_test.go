@@ -2,6 +2,7 @@ package connectioneditor
 
 import (
 	"context"
+	"github.com/nyakang/nyadb/internal/services/queries"
 	"os"
 	"strings"
 	"testing"
@@ -141,7 +142,7 @@ func TestMySQLDatabaseTabNativeEmptyState(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !s.connectionDraft.MySQLAdvanced.UseCustomDatabaseList ||
-		!tt.HasText("需要建立数据库连接后才能读取列表") {
+		!tt.HasText("列表只控制显示范围；不会创建数据库或提升访问权限。自动打开需要显式连接。") {
 		t.Fatal("custom list toggle or offline explanation missing")
 	}
 	// The tester may return nil for a click on a disabled control; verify that
@@ -189,7 +190,7 @@ func TestMySQLDatabaseTabCustomFlagPersists(t *testing.T) {
 	if err := edited.Click("数据库"); err != nil {
 		t.Fatal(err)
 	}
-	if !edited.HasText("需要建立数据库连接后才能读取列表") {
+	if !edited.HasText("列表只控制显示范围；不会创建数据库或提升访问权限。自动打开需要显式连接。") {
 		t.Fatal("custom list UI not restored on edit")
 	}
 }
@@ -204,62 +205,34 @@ func mysqlEditorState(t *testing.T) (*testEditor, *ui.Tester) {
 	return s, ui.NewTester(s.ConnectionWindowView, 900, 700)
 }
 
-func TestCompatibilityUIEnableAndOverrides(t *testing.T) {
+func TestCompatibilityUIKeepsUnsupportedOverridesDisabled(t *testing.T) {
 	s, tt := mysqlEditorState(t)
-	if err := tt.Click("高级"); err != nil {
-		t.Fatal(err)
+	if e := tt.Click("高级"); e != nil {
+		t.Fatal(e)
 	}
-	if err := tt.Click("兼容性"); err != nil {
-		t.Fatal(err)
+	if e := tt.Click("兼容性"); e != nil {
+		t.Fatal(e)
 	}
 	compat := &s.connectionDraft.MySQLAdvanced.Compatibility
-	if compat.Enabled || compat.ForceLowerCase || compat.ForceSQLMode ||
-		compat.LowerCaseTableNames != "0" || compat.NDBSupport != "Not Support" ||
-		compat.DatabaseMethod != "SHOW DATABASES Statement" ||
-		compat.ViewMethod != "SHOW FULL TABLES Statement" {
-		t.Fatalf("unexpected defaults: %+v", compat)
+	before := *compat
+	_ = tt.Click("使用兼容模式")
+	_ = tt.Click("强制 sql_mode 为：")
+	if *compat != before {
+		t.Fatal("unsupported controls changed the draft")
 	}
-	// A disabled child checkbox must not change even when clicked.
-	if err := tt.Click("强制 lower_case_table_names 为："); err != nil {
-		t.Fatal(err)
+	compat.Enabled = true
+	compat.ForceSQLMode = true
+	compat.SQLMode = "NO_BACKSLASH_ESCAPES"
+	tt.Frame()
+	_ = tt.Click("使用兼容模式")
+	if !compat.Enabled || !compat.ForceSQLMode {
+		t.Fatal("opening legacy settings silently changed them")
 	}
-	if compat.ForceLowerCase {
-		t.Fatal("override changed while compatibility mode was disabled")
+	if e := tt.Click("清除旧兼容性覆盖"); e != nil {
+		t.Fatal(e)
 	}
-	if err := tt.Click("使用兼容模式"); err != nil {
-		t.Fatal(err)
-	}
-	if !compat.Enabled {
-		t.Fatal("compatibility mode checkbox did not toggle")
-	}
-	for _, name := range []string{
-		"强制 lower_case_table_names 为：",
-		"强制 sql_mode 为：",
-		"强制 NDB 集群支持为：",
-		"强制数据库列出方法为：",
-		"强制视图列出方法为：",
-	} {
-		if err := tt.Click(name); err != nil {
-			t.Fatalf("checkbox %q: %v", name, err)
-		}
-	}
-	if !compat.ForceLowerCase || !compat.ForceSQLMode || !compat.ForceNDB ||
-		!compat.ForceDatabaseMethod || !compat.ForceViewMethod {
-		t.Fatalf("override toggles not wired: %+v", compat)
-	}
-	compat.LowerCaseTableNames = "2"
-	compat.NDBSupport = "Support"
-	compat.DatabaseMethod = "INFORMATION_SCHEMA"
-	compat.ViewMethod = "INFORMATION_SCHEMA"
-	compat.SQLMode = "STRICT_TRANS_TABLES"
-	if err := tt.Click("使用兼容模式"); err != nil {
-		t.Fatal(err)
-	}
-	if compat.Enabled || !compat.ForceLowerCase || !compat.ForceSQLMode {
-		t.Fatalf("disabling compatibility must retain per-row choices: %+v", compat)
-	}
-	if _, err := s.draftProfile(); err != nil {
-		t.Fatal(err)
+	if compat.Enabled || compat.ForceSQLMode || compat.SQLMode != "NO_BACKSLASH_ESCAPES" {
+		t.Fatal("explicit clearing must remove flags and retain parameter choices")
 	}
 }
 
@@ -335,7 +308,8 @@ func TestInitialQueryNeverWrittenToProfiles(t *testing.T) {
 	s.openConnectionDialog()
 	s.chooseConnectionKind(connections.MySQL)
 	s.nextConnectionStep()
-	s.connectionDraft.Name = "SQL transient"
+	s.connectionDraft.Name = "SQL encrypted"
+	s.SetInitialSQLStore(&initialSQLMemoryStore{records: map[string]queries.InitialSQL{}})
 	s.beginMySQLInitialQuery()
 	const sql = "SET @private_token = 'sensitive-literal-do-not-store';"
 	s.mysqlInitialQueryDraft = sql

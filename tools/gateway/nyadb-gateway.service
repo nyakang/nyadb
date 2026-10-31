@@ -1,0 +1,20 @@
+[Unit]
+Description=NyaDB authenticated TCP gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nyadb-gateway
+Group=nyadb-gateway
+EnvironmentFile=/etc/nyadb-gateway/token.env
+ExecStart=/usr/local/bin/nyadb-gateway -config /etc/nyadb-gateway/gateway.json
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

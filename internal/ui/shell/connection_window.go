@@ -88,6 +88,7 @@ func (s *State) ConnectionWindowView(c *ui.Context) {
 		return
 	}
 	s.connectionEditorView(c)
+	s.tunnelConfirmation(c)
 }
 
 // SetCredentialVault shares the native vault with the editor and sessions.

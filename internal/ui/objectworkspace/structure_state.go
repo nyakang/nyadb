@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
@@ -20,6 +21,31 @@ type Session struct {
 }
 
 type Dependencies struct {
+	LoadObjectGroups func(int64, string) map[string]string
+	SaveObjectGroups func(int64, string, map[string]string)
+
+	Capabilities  func(int64) contract.Capabilities
+	BatchExecutor func(context.Context, int64, uint64, []mysqlsvc.ObjectBatchItem) []mysqlsvc.ObjectBatchResult
+
+	AccountLoader   func(context.Context, int64) ([]mysqlsvc.MySQLAccount, error)
+	AccountGrants   func(context.Context, int64, mysqlsvc.MySQLAccount) ([]string, error)
+	AccountExecutor func(context.Context, int64, uint64, []mysqlsvc.AccountChange) mysqlsvc.DDLOutcome
+
+	ObjectLoader      func(context.Context, int64, mysqlsvc.ObjectIdentity) (mysqlsvc.ObjectDefinition, error)
+	ObjectExecutor    func(context.Context, int64, mysqlsvc.ObjectPlan) mysqlsvc.ObjectOutcome
+	ObjectChanged     func(ui.Services, ObjectEvent)
+	RuntimeGeneration func(int64) uint64
+	Backup            func(ui.Services, int64, string, string, string)
+	Maintenance       func(context.Context, int64, string, string, string) ([]mysqlsvc.MaintenanceMessage, error)
+
+	DataAction       func(ui.Services, int64, string, string, string)
+	ActivateDesign   func(*Document)
+	DesignLoader     func() DesignLoader
+	DesignExecutor   func() DesignExecutor
+	DesignGeneration func(int64) uint64
+	BeforeDDL        func(ui.Services, int64, string, string, func(ui.Services)) bool
+	Designed         func(ui.Services, DesignEvent)
+	NewTable         func(ui.Services, int64, string, string)
 	Browser          func() BrowserSnapshot
 	SessionFor       func(int64) Session
 	Runner           func() TableRunner
@@ -55,6 +81,7 @@ type Document struct {
 	request                       uint64
 	closed                        bool
 	program                       *programDocument
+	design                        *designDocument
 }
 
 func (d *Document) ProfileID() int64 { return d.profileID }
@@ -81,6 +108,19 @@ type loadResult struct {
 }
 
 type State struct {
+	tableGeneration, tableRuntimeGeneration uint64
+
+	backup        *backupOperation
+	backupRuntime func() BackupRuntime
+	backupFiles   BackupFiles
+
+	batch *objectBatch
+
+	accounts    *accountPanel
+	maintenance *maintenanceOperation
+
+	objectOp, parkedObjectOp *objectOperation
+
 	Loader                                                                Loader
 	deps                                                                  Dependencies
 	documents                                                             map[uint64]*Document
@@ -178,6 +218,7 @@ func (s *State) Close(d *Document) {
 		return
 	}
 	s.cancel(d)
+	s.closeDesign(d)
 	d.closed = true
 	if d.program != nil {
 		d.program.Close()
@@ -189,6 +230,25 @@ func (s *State) Close(d *Document) {
 	}
 }
 func (s *State) CloseAll() {
+	s.closeBackup()
+	if s.batch != nil && s.batch.cancel != nil {
+		s.batch.cancel()
+	}
+	s.batch = nil
+
+	if s.accounts != nil && s.accounts.cancel != nil {
+		s.accounts.cancel()
+	}
+	if s.maintenance != nil && s.maintenance.cancel != nil {
+		s.maintenance.cancel()
+	}
+	s.accounts, s.maintenance = nil, nil
+
+	if s.objectOp != nil && s.objectOp.cancel != nil {
+		s.objectOp.cancel()
+	}
+	s.objectOp, s.parkedObjectOp = nil, nil
+
 	if s.tableCancel != nil {
 		s.tableCancel()
 	}
@@ -204,7 +264,12 @@ func (s *State) CloseAll() {
 // Consume runs on the UI thread. Generation changes invalidate completed work
 // without leaving a document stuck loading or automatically retrying it.
 func (s *State) Consume(services ui.Services) {
+	s.consumeBackup(services)
 	s.consumeMySQLTableChange(services)
+	s.consumeDesign(services)
+	s.consumeObjectOperations(services)
+	s.consumeAdmin(services)
+	s.consumeBatch(services)
 	session := s.session()
 	for _, d := range s.documents {
 		if d.closed || d.results == nil || d.profileID != session.ProfileID {

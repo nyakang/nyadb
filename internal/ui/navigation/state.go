@@ -31,6 +31,9 @@ type Shortcut struct {
 // Dependencies supplies read-only session metadata and explicit UI actions.
 // Callbacks run on the UI thread; the navigator never starts background jobs.
 type Dependencies struct {
+	Queries        func(int64, string) []Object
+	Catalog        func(int64) string
+	Engine         func(int64) connections.Kind
 	SessionStatus  func(int64) string
 	Databases      func(int64) []string
 	DatabaseOpened func(int64, string) bool

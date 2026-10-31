@@ -109,7 +109,7 @@ func (e *mysqlDataStreamExecutor) row(input MySQLDataEdit, index int) error {
 			}
 		}
 		if rowErr == nil {
-			saved, writeErr := applyMySQLDataEditsWithColumns(e.ctx, e.tx, e.database, e.table, e.target, []MySQLDataEdit{edit}, e.columns, false)
+			saved, writeErr := applyMySQLDataEditsWithColumns(e.ctx, e.tx, e.database, e.table, e.target, []MySQLDataEdit{edit}, e.columns, false, MaxMySQLDataImportBytes)
 			rowErr = writeErr
 			if rowErr == nil {
 				row.Kind, row.Status = edit.Kind, "prepared"
@@ -196,7 +196,7 @@ func mysqlDataImportStatementBound(target string, columns []MySQLStructureColumn
 	if edit.Kind == "delete" {
 		return len("DELETE FROM "+target+" WHERE "+where) + mysqlDataImportArgumentBound(keyArgs)
 	}
-	names, expr, args, err := mysqlEditAssignments(columns, edit.Values, edit.Kind == "insert")
+	names, expr, args, err := mysqlAssignmentsBounded(columns, edit.Values, edit.Kind == "insert", MaxMySQLDataImportBytes)
 	if err != nil {
 		return MaxMySQLDataImportBytes + 1
 	}
@@ -227,7 +227,7 @@ func (e *mysqlDataStreamExecutor) insertRow(input MySQLDataEdit, index int) (mys
 	if err = mysqlDataImportValidateRow(e.columns, edit, true); err != nil {
 		return mysqlDataImportInsertRow{}, err
 	}
-	names, expressions, args, err := mysqlEditAssignments(e.columns, edit.Values, true)
+	names, expressions, args, err := mysqlAssignmentsBounded(e.columns, edit.Values, true, MaxMySQLDataImportBytes)
 	if err != nil {
 		return mysqlDataImportInsertRow{}, err
 	}

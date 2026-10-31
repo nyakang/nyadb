@@ -275,7 +275,7 @@ func (s *State) dataImportTargetControls(c *ui.Context, t *Document) {
 	tr := &t.transfer
 	ui.Row(c).Gap(8).Children(func() {
 		ui.Text(c, locales.Text("目标表"))
-		mysqlDataRuleSelect(c, &tr.Target, []string{"existing", "new"}, func(x string) string {
+		mysqlDataRuleSelect(c, &tr.Target, mysqlDataImportTargetChoices(t), func(x string) string {
 			if x == "new" {
 				return locales.Text("新建目标表")
 			}
@@ -345,7 +345,7 @@ func mysqlDataResetTargetMapping(t *Document) {
 }
 
 func mysqlDataImportRequest(t *Document) ([]mysqlsvc.MySQLDataImportColumn, []mysqlsvc.MySQLDataEdit, error) {
-	if t.page == nil {
+	if t.page == nil && (!t.importOnly || t.transfer.Target != "new") {
 		return nil, nil, mysqlsvc.ErrMySQLDataPage
 	}
 	if t.transfer.Target == "new" {
@@ -643,4 +643,11 @@ func mysqlDataInferDecimal(text string) (int, int, bool) {
 	decimalScale := max(0, fraction-exponent)
 	integerDigits := max(0, len(strings.TrimLeft(text, "0"))-fraction+exponent)
 	return integerDigits, decimalScale, true
+}
+
+func mysqlDataImportTargetChoices(t *Document) []string {
+	if t.importOnly {
+		return []string{"new"}
+	}
+	return []string{"existing", "new"}
 }

@@ -59,7 +59,7 @@ func TestNavigatorCategoriesAndMetadataProgress(t *testing.T) {
 			t.Fatalf("incorrect category order: %+v", n)
 		}
 		items := s.Children(key)
-		if SupportedCategory(n.Category) {
+		if SupportedCategory(n.Category) && n.Category != "查询" {
 			if len(items) != 1 || Parse(items[0]).Category != n.Category ||
 				Parse(items[0]).Kind != "object" {
 				t.Fatalf("supported category %q lost real objects: %v", n.Category, items)

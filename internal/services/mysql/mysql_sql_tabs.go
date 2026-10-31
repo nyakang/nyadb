@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/sqlresult"
 	"io"
 	"sync"
 
@@ -192,7 +193,17 @@ func (m *MySQLSessionManager) ExecuteSQLTab(ctx context.Context, profileID int64
 	return executeSQLTabLease(ctx, s, lease, database, statement)
 }
 
-func executeSQLTabLease(ctx context.Context, s *mysqlManagedSession, lease *mysqlSQLTabLease, database, statement string) (result MySQLSQLResult, err error) {
+func executeSQLTabLease(ctx context.Context, s *mysqlManagedSession, lease *mysqlSQLTabLease, database, statement string, sinks ...sqlresult.Sink) (MySQLSQLResult, error) {
+	var sink sqlresult.Sink
+	if len(sinks) > 0 {
+		sink = sinks[0]
+	}
+	return executeSQLTabWork(ctx, s, lease, func(qctx context.Context, conn *sql.Conn) (MySQLSQLResult, error) {
+		return executeSQLOnConnWithSink(qctx, conn, database, statement, sink)
+	})
+}
+
+func executeSQLTabWork(ctx context.Context, s *mysqlManagedSession, lease *mysqlSQLTabLease, work func(context.Context, *sql.Conn) (MySQLSQLResult, error)) (result MySQLSQLResult, err error) {
 	lease.mu.Lock()
 	defer lease.mu.Unlock()
 	if lease.closed || lease.lost || lease.ctx.Err() != nil {
@@ -212,7 +223,7 @@ func executeSQLTabLease(ctx context.Context, s *mysqlManagedSession, lease *mysq
 		}
 		lease.conn = conn
 	}
-	result, err = executeSQLOnConn(queryCtx, lease.conn, database, statement)
+	result, err = work(queryCtx, lease.conn)
 	if queryCtx.Err() != nil || mysqlSQLSessionBroken(err) {
 		// MySQL cancellation may close the TCP connection while server-side
 		// writes have already committed. Do not silently swap sessions.

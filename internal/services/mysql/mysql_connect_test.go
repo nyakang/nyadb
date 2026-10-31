@@ -67,10 +67,7 @@ func TestDirectMySQLConfigFailsClosedOnUnsupportedFeatures(t *testing.T) {
 		{"ssh", func(s *connections.ActiveSettings) { s.MySQLAdvanced.SSH.Enabled = true }},
 		{"http", func(s *connections.ActiveSettings) { s.MySQLAdvanced.HTTP.Enabled = true }},
 		{"pipe", func(s *connections.ActiveSettings) { s.MySQLAdvanced.NamedPipe = true }},
-		{"compression", func(s *connections.ActiveSettings) { s.MySQLAdvanced.Compression = true }},
-		{"charset", func(s *connections.ActiveSettings) { s.MySQLAdvanced.Charset = "utf8mb4" }},
 		{"compatibility", func(s *connections.ActiveSettings) { s.MySQLAdvanced.Compatibility.ForceSQLMode = true }},
-		{"auto", func(s *connections.ActiveSettings) { s.MySQLAdvanced.AutoConnect = true }},
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
@@ -105,5 +102,22 @@ func TestDirectMySQLConnectRefusesWithoutDialOnInvalidConfig(t *testing.T) {
 	err = TestDirectMySQLConnection(ctx, s, "")
 	if !errors.Is(err, context.Canceled) && !strings.Contains(err.Error(), "canceled") {
 		t.Fatalf("cancelled context not propagated: %v", err)
+	}
+}
+
+func TestMySQLAdvancedRuntimeConfiguration(t *testing.T) {
+	s := connections.ActiveSettings{Host: "localhost", Port: 3306, MySQLAdvanced: connections.DefaultMySQLAdvanced()}
+	s.MySQLAdvanced.Charset = "utf8mb4"
+	s.MySQLAdvanced.Compression = true
+	s.MySQLAdvanced.AutoConnect = true
+	cfg, err := DirectMySQLConfig(s, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(cfg.FormatDSN(), "charset=utf8mb4") {
+		t.Fatal("charset not supplied to physical connection")
+	}
+	if !strings.Contains(cfg.FormatDSN(), "compress=true") {
+		t.Fatal("compression not passed to driver")
 	}
 }

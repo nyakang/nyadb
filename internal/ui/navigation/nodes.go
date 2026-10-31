@@ -23,6 +23,7 @@ type Node struct {
 	Database  string
 	Category  string
 	Object    string
+	Catalog   string `json:",omitempty"`
 }
 
 const navigationPrefix = "\x1fnavigation:"
@@ -51,7 +52,7 @@ var mysqlNavigationCategories = []string{"表", "视图", "函数", "存储过�
 
 func SupportedCategory(category string) bool {
 	switch category {
-	case "表", "视图", "函数", "存储过程", "事件":
+	case "表", "视图", "函数", "存储过程", "事件", "查询":
 		return true
 	}
 	return false
@@ -64,6 +65,13 @@ func (s *State) databaseChildren(key string) []string {
 	}
 	switch n.Kind {
 	case "connection":
+		if s.deps.Catalog != nil {
+			if catalog := s.deps.Catalog(n.ProfileID); catalog != "" {
+				return []string{(Node{Kind: "catalog", ProfileID: n.ProfileID, Catalog: catalog}).Key()}
+			}
+		}
+		fallthrough
+	case "catalog":
 		databases := s.databases(n.ProfileID)
 		children := make([]string, 0, len(databases))
 		for _, db := range databases {
@@ -86,13 +94,26 @@ func (s *State) databaseChildren(key string) []string {
 			return []string{status.Key()}
 		}
 		children := make([]string, 0, len(mysqlNavigationCategories))
-		for _, kind := range mysqlNavigationCategories {
+		categories := mysqlNavigationCategories
+		if s.deps.Engine != nil && s.deps.Engine(n.ProfileID) != "mysql" {
+			categories = []string{"表", "视图", "查询"}
+		}
+		for _, kind := range categories {
 			child := n
 			child.Kind, child.Category = "category", kind
 			children = append(children, child.Key())
 		}
 		return children
 	case "category":
+		if n.Category == "查询" && s.deps.Queries != nil {
+			var children []string
+			for _, q := range s.deps.Queries(n.ProfileID, n.Database) {
+				child := n
+				child.Kind, child.Object = "object", q.Kind
+				children = append(children, child.Key())
+			}
+			return children
+		}
 		if !SupportedCategory(n.Category) {
 			return nil
 		}

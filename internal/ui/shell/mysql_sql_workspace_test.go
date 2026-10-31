@@ -114,6 +114,13 @@ func TestSQLTabsProfileIsolationAndCloseCancel(t *testing.T) {
 	s.activeTab = 1
 	s.closeTab(1)
 	tt.Frame()
+	if !a.query.Loading() {
+		t.Fatal("dirty SQL was closed before a decision")
+	}
+	if err := tt.Click("放弃"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
 	if a.query.Loading() {
 		t.Fatal("closing A tab left running UI state")
 	}

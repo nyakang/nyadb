@@ -178,7 +178,7 @@ func (s *State) MySQLSSHKeyPickerError(version uint64) {
 }
 
 // connectionMySQLSSH mirrors the original's conditional password/key fields.
-// Never suggest the SSH tunnel is active; the actual transport is not built.
+// Authentication stays separate from non-secret profile metadata.
 func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
 	palette := theme.Colors(c)
 
@@ -208,11 +208,6 @@ func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
 				ui.Text(c, locales.Text("密码：")).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 				connectionFormTextInput(c, &s.mysqlSSHPassword, "SSH 密码", 200, !active, true)
 			})
-			connectionFormRow(c).Children(func() {
-				ui.Box(c).Width(labelWidth)
-				save := false
-				connectionFormCheckbox(c, &save, "保存密码", true)
-			})
 		}
 		if keyMode {
 			connectionFormRow(c).Children(func() {
@@ -225,15 +220,14 @@ func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
 				ui.Text(c, "Passphrase:").Width(labelWidth).FontSize(theme.Font(c, 12))
 				connectionFormTextInput(c, &s.mysqlSSHPassphrase, "SSH 私钥口令", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, true)
 			})
-			connectionFormRow(c).Children(func() {
-				ui.Box(c).Width(labelWidth)
-				save := false
-				connectionFormCheckbox(c, &save, "Save Passphrase", true)
-			})
 		}
+		connectionFormRow(c).Children(func() {
+			ui.Box(c).Width(labelWidth)
+			connectionFormCheckbox(c, &s.mysqlSaveTunnelSecrets, "在系统密钥库保存隧道凭据", s.tunnelSecrets == nil || !active)
+		})
 		ui.Row(c).Height(theme.RowHeight(c, 25)).Children(func() {
 			ui.Box(c).Width(labelWidth)
-			ui.Text(c, "密码与密钥口令仅在当前窗口内保留；SSH 隧道尚未连接。").
+			ui.Text(c, "首次连接需确认 SHA-256 主机指纹；后续指纹变化将拒绝连接。").
 				TextColor(palette.Muted).FontSize(theme.Font(c, 11))
 		})
 	})

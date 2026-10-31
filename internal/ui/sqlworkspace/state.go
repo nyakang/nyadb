@@ -66,18 +66,28 @@ func (l *mySQLLease) Replace() (Lease, error) {
 func (l *mySQLLease) Release() { l.manager.ReleaseSQLTabToken(l.token) }
 
 type Dependencies struct {
-	Runtime   func() Runtime
-	Connected func(int64) bool
-	Active    func(*Document) bool
-	Status    func(string)
-	Recovered func(int64)
-	Preview   func(*ui.Context)
+	Completions      func(int64, string) []string
+	StatementAtCaret func(int64, string, int) string
+	FormatSQL        func(int64, string) (string, error)
+	ValidateExplain  func(int64, string) error
+	Runtime          func() Runtime
+	Connected        func(int64) bool
+	Active           func(*Document) bool
+	Status           func(string)
+	Recovered        func(int64)
+	Preview          func(*ui.Context)
 }
 
 // Document is owned by the UI thread. Workers capture a lease/executor and
 // immutable request values; only Consume reads their private buffered channels.
 type Document struct {
+	name, path, queryID, savedText, text   string
+	revision, bufferVersion, namedRevision uint64
+	resultSet, selectedRow                 int
+	selection                              ui.Selection[int]
+
 	Editor                   *editor.State
+	saving                   bool
 	id                       uint64
 	profileID                int64
 	database                 string
@@ -116,6 +126,7 @@ type State struct {
 	documents    map[uint64]*Document
 	demoRuns     int
 	deps         Dependencies
+	persistence  persistence
 }
 
 func New(deps Dependencies) *State {
@@ -128,6 +139,8 @@ func (s *State) Open(id uint64, text string, profileID int64, database string, p
 	buffer := editor.NewBuffer(text)
 	buffer.SetLanguage(editor.LanguageNamed("SQL"))
 	d := &Document{id: id, profileID: profileID, database: database, preview: preview, Editor: &editor.State{Buffer: buffer, WrapGuides: []int{100}}}
+	d.Editor.OnCompletion = func(r editor.CompletionRequest) { s.completions(d, r) }
+	d.savedText, d.text, d.bufferVersion = text, text, buffer.Version()
 	s.documents[id] = d
 	return d
 }
@@ -170,6 +183,21 @@ func (s *State) Close(d *Document) {
 		return
 	}
 	s.dispose(d)
+	p := &s.persistence
+	if p.guardDoc == d {
+		p.guardDoc, p.guardNext = nil, nil
+	}
+	if p.nameDoc == d {
+		p.nameDoc, p.nameOpen = nil, false
+	}
+	if p.explainDoc == d {
+		p.explainDoc, p.explainOpen = nil, false
+	}
+	for _, job := range p.jobs {
+		if job.doc == d {
+			job.next = nil
+		}
+	}
 	d.Editor, d.result = nil, nil
 	d.grid = ui.ListState{}
 	d.closed = true
@@ -178,6 +206,15 @@ func (s *State) Close(d *Document) {
 	}
 }
 func (s *State) CloseAll() {
+	s.persistence.closed = true
+	if s.persistence.timer != nil {
+		s.persistence.timer.Stop()
+	}
+	s.persistence.jobs = nil
+	s.persistence.pending = nil
+	s.persistence.restored = nil
+	s.persistence.flushNext, s.persistence.awaitClose, s.persistence.guardNext, s.persistence.exitNext = nil, nil, nil, nil
+	s.persistence.nameDoc, s.persistence.guardDoc, s.persistence.explainDoc = nil, nil, nil
 	for _, d := range s.documents {
 		s.Close(d)
 	}

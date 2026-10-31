@@ -30,11 +30,11 @@ func TestMySQLHTTPNativeControlsAndProxy(t *testing.T) {
 	if cfg.Enabled || cfg.ProxyPort != 8080 || cfg.PasswordAuth ||
 		!tt.HasText("使用 HTTP 隧道") ||
 		!tt.HasText("隧道网址：") || !tt.HasText("使用 base64 编码传出查询") ||
-		!tt.HasText("使用密码验证") || !tt.HasText("使用证书验证") {
+		!tt.HasText("访问令牌：") || !tt.HasText("目标 ID：") || !tt.HasText("使用证书验证") {
 		t.Fatalf("HTTP defaults and labels differ: %+v", cfg)
 	}
-	_ = tt.Click("使用密码验证")
-	if cfg.PasswordAuth {
+	_ = tt.Click("使用证书验证")
+	if cfg.CertificateAuth {
 		t.Fatal("password auth should stay disabled before tunnel is enabled")
 	}
 	if err := tt.Click("使用 HTTP 隧道"); err != nil {
@@ -43,20 +43,18 @@ func TestMySQLHTTPNativeControlsAndProxy(t *testing.T) {
 	if !cfg.Enabled || !tt.HasText("HTTP 服务器") {
 		t.Fatal("HTTP diagram or switch missing")
 	}
-	cfg.URL = "https://example.test/tunnel.php"
+	cfg.URL = "https://example.test/tunnel"
+	cfg.TargetID = "fixture"
 	if err := tt.Click("使用 base64 编码传出查询"); err != nil {
 		t.Fatal(err)
 	}
-	if !cfg.Base64Queries {
-		t.Fatal("base64 switch did not update")
-	}
-	if err := tt.Click("使用密码验证"); err != nil {
-		t.Fatal(err)
+	if cfg.Base64Queries {
+		t.Fatal("unsupported base64 switch enabled")
 	}
 	if err := tt.Click("使用证书验证"); err != nil {
 		t.Fatal(err)
 	}
-	if !cfg.PasswordAuth || !cfg.CertificateAuth {
+	if !cfg.CertificateAuth {
 		t.Fatal("authentication sub-switches did not update")
 	}
 	called := MySQLHTTPFile(-1)
@@ -190,5 +188,24 @@ func TestMySQLHTTPSaveWithoutCredentials(t *testing.T) {
 	s.ConnectionWindowClosed()
 	if s.mysqlHTTPPassword != "" {
 		t.Fatal("OS close did not clear HTTP password")
+	}
+}
+
+func TestMySQLHTTPLegacyBase64CanOnlyBeCleared(t *testing.T) {
+	s, tt := mysqlHTTPTester(t)
+	if e := tt.Click("使用 HTTP 隧道"); e != nil {
+		t.Fatal(e)
+	}
+	s.connectionDraft.MySQLAdvanced.HTTP.Base64Queries = true
+	tt.Frame()
+	if e := tt.Click("清除旧版 base64 设置"); e != nil {
+		t.Fatal(e)
+	}
+	if s.connectionDraft.MySQLAdvanced.HTTP.Base64Queries {
+		t.Fatal("legacy base64 setting cannot be cleared")
+	}
+	tt.Click("使用 base64 编码传出查询")
+	if s.connectionDraft.MySQLAdvanced.HTTP.Base64Queries {
+		t.Fatal("unsupported base64 behavior enabled")
 	}
 }

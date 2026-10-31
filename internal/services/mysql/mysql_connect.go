@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"net"
@@ -11,6 +12,7 @@ import (
 
 	mysqldriver "github.com/go-sql-driver/mysql"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/transport"
 )
 
 var ErrMySQLUnsupported = errors.New("MySQL connection setting not supported yet")
@@ -21,6 +23,15 @@ var ErrMySQLUnsupported = errors.New("MySQL connection setting not supported yet
 // retain strict certificate and hostname verification. Unsupported tunneling
 // settings fail closed before any network I/O.
 func DirectMySQLConfig(s connections.ActiveSettings, password string) (*mysqldriver.Config, error) {
+	return mysqlConfig(s, password, false)
+}
+
+func ValidateMySQLTransportSettings(s connections.ActiveSettings, password string) error {
+	_, err := mysqlConfig(s, password, true)
+	return err
+}
+
+func mysqlConfig(s connections.ActiveSettings, password string, allowTunnel bool) (*mysqldriver.Config, error) {
 	if strings.TrimSpace(s.Host) == "" || s.Port == 0 ||
 		strings.ContainsAny(s.Host, "@/?!#\r\n\x00") {
 		return nil, fmt.Errorf("%w: invalid MySQL host or port", connections.ErrInvalid)
@@ -30,20 +41,14 @@ func DirectMySQLConfig(s connections.ActiveSettings, password string) (*mysqldri
 		return nil, err
 	}
 	switch {
+	case (a.SSH.Enabled || a.HTTP.Enabled) && !allowTunnel:
+		return nil, fmt.Errorf("%w: tunnel provider required", ErrMySQLUnsupported)
 	case s.TLSMode == "prefer" || s.TLSMode == "verify-ca":
 		return nil, fmt.Errorf("%w: TLS mode without hostname verification", ErrMySQLUnsupported)
-	case a.SSH.Enabled:
-		return nil, fmt.Errorf("%w: SSH tunnel", ErrMySQLUnsupported)
-	case a.HTTP.Enabled:
-		return nil, fmt.Errorf("%w: HTTP tunnel", ErrMySQLUnsupported)
 	case a.NamedPipe:
 		return nil, fmt.Errorf("%w: named pipe", ErrMySQLUnsupported)
 	case a.ClientDriver != "默认":
 		return nil, fmt.Errorf("%w: legacy client driver", ErrMySQLUnsupported)
-	case a.Charset != "自动" && a.Charset != "None":
-		return nil, fmt.Errorf("%w: custom character set", ErrMySQLUnsupported)
-	case a.Compression || a.AutoConnect:
-		return nil, fmt.Errorf("%w: advanced connection behavior", ErrMySQLUnsupported)
 	case a.Compatibility.Enabled || a.Compatibility.ForceSQLMode ||
 		a.Compatibility.ForceLowerCase || a.Compatibility.ForceNDB ||
 		a.Compatibility.ForceDatabaseMethod || a.Compatibility.ForceViewMethod:
@@ -56,6 +61,14 @@ func DirectMySQLConfig(s connections.ActiveSettings, password string) (*mysqldri
 	cfg.Addr = net.JoinHostPort(strings.Trim(s.Host, "[]"), fmt.Sprint(s.Port))
 	cfg.User, cfg.Passwd = s.Username, password
 	cfg.DBName = s.Database
+	if a.Charset != "自动" && a.Charset != "None" {
+		if err := cfg.Apply(mysqldriver.Charset(a.Charset, "")); err != nil {
+			return nil, err
+		}
+	}
+	if err := cfg.Apply(mysqldriver.EnableCompression(a.Compression)); err != nil {
+		return nil, err
+	}
 	if a.SSL.Enabled || (s.TLSMode != "" && s.TLSMode != "disable") {
 		tlsConfig, err := verifiedMySQLTLS(s.Host, a.SSL)
 		if err != nil {
@@ -85,13 +98,16 @@ func DirectMySQLConfig(s connections.ActiveSettings, password string) (*mysqldri
 }
 
 // OpenDirectMySQL establishes a real, authenticated MySQL connection.
-// The caller owns the returned *sql.DB and MUST Close it. No SQL statements
-// are executed: PingContext performs the transport and authentication check.
+// The caller owns the returned *sql.DB and MUST Close it. No user SQL or profile initialization SQL is executed; the driver may apply
+// explicitly configured character-set options before the PingContext check.
 // Its context controls the test deadline and cancels the handshake.
 func OpenDirectMySQL(ctx context.Context, s connections.ActiveSettings, password string) (*sql.DB, error) {
 	cfg, err := DirectMySQLConfig(s, password)
 	if err != nil {
 		return nil, err
+	}
+	if s.MySQLAdvanced.SSH.Enabled || s.MySQLAdvanced.HTTP.Enabled {
+		return nil, fmt.Errorf("%w: tunnel credentials and host confirmation provider required", ErrMySQLUnsupported)
 	}
 	connector, err := mysqldriver.NewConnector(cfg)
 	if err != nil {
@@ -140,26 +156,63 @@ func mysqlSQLTabLimit(a connections.MySQLAdvanced) int {
 // SQL pool until the tab is closed; idle SQL connections are never recycled
 // into another tab with session variables or an open transaction.
 func OpenDirectMySQLPools(ctx context.Context, s connections.ActiveSettings, password string) (*sql.DB, *sql.DB, error) {
-	metadata, err := OpenDirectMySQL(ctx, s, password)
-	if err != nil {
-		return nil, nil, err
+	if s.MySQLAdvanced.SSH.Enabled || s.MySQLAdvanced.HTTP.Enabled {
+		return nil, nil, fmt.Errorf("%w: tunnel provider required", ErrMySQLUnsupported)
 	}
-	cfg, err := DirectMySQLConfig(s, password)
+	db, sqlDB, _, err := openMySQLPools(ctx, s, password, nil, "")
+	return db, sqlDB, err
+}
+
+// openMySQLPools injects one scope into both pools, so every SQL lease and data
+// transaction uses the same tunnel lifetime. Pools never reconstruct a revoked
+// scope, and only an explicit session Connect creates a replacement.
+func openMySQLPools(ctx context.Context, s connections.ActiveSettings, password string, dialer transport.Dialer, initialSQL string) (*sql.DB, *sql.DB, transport.Dialer, error) {
+	if dialer == nil && (s.MySQLAdvanced.SSH.Enabled || s.MySQLAdvanced.HTTP.Enabled) {
+		return nil, nil, nil, fmt.Errorf("%w: tunnel provider required", ErrMySQLUnsupported)
+	}
+	cfg, err := mysqlConfig(s, password, true)
 	if err != nil {
-		_ = metadata.Close()
-		return nil, nil, err
+		if dialer != nil {
+			_ = dialer.Close()
+		}
+		return nil, nil, nil, err
+	}
+	if dialer != nil {
+		cfg.DialFunc = dialer.DialContext
 	}
 	connector, err := mysqldriver.NewConnector(cfg)
 	if err != nil {
-		_ = metadata.Close()
-		return nil, nil, err
+		if dialer != nil {
+			_ = dialer.Close()
+		}
+		return nil, nil, nil, err
 	}
-	sqlPool := sql.OpenDB(connector)
+	var initialized driver.Connector = connector
+	if initialSQL != "" {
+		initialized = WrapMySQLInitialSQL(connector, initialSQL)
+	}
+	metadata := sql.OpenDB(initialized)
+	metadata.SetMaxOpenConns(4)
+	metadata.SetMaxIdleConns(2)
+	if !s.MySQLAdvanced.KeepAlive {
+		metadata.SetConnMaxLifetime(3 * time.Minute)
+	}
+	testCtx, cancel := context.WithTimeout(ctx, cfg.Timeout)
+	defer cancel()
+	if err = metadata.PingContext(testCtx); err != nil {
+		_ = metadata.Close()
+		if dialer != nil {
+			_ = dialer.Close()
+		}
+		if testCtx.Err() != nil {
+			err = testCtx.Err()
+		}
+		return nil, nil, nil, err
+	}
+	sqlPool := sql.OpenDB(initialized)
 	sqlPool.SetMaxOpenConns(mysqlSQLTabLimit(s.MySQLAdvanced))
 	sqlPool.SetMaxIdleConns(0)
-	// A transaction/temporary table must not be evicted by a wall-clock TTL.
-	// Disconnection and tab disposal explicitly own session cleanup.
-	return metadata, sqlPool, nil
+	return metadata, sqlPool, dialer, nil
 }
 
 // TestDirectMySQLConnection opens, authenticates and closes a single session.
@@ -170,4 +223,17 @@ func TestDirectMySQLConnection(ctx context.Context, s connections.ActiveSettings
 		return err
 	}
 	return db.Close()
+}
+
+// TestMySQLTransportConnection authenticates one session over the caller-owned
+// scope and closes it without executing profile initialization SQL.
+func TestMySQLTransportConnection(ctx context.Context, s connections.ActiveSettings, password string, dialer transport.Dialer) error {
+	db, sqlDB, scope, err := openMySQLPools(ctx, s, password, dialer, "")
+	if err != nil {
+		return err
+	}
+	if scope != nil {
+		defer scope.Close()
+	}
+	return errors.Join(sqlDB.Close(), db.Close())
 }

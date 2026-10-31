@@ -105,7 +105,11 @@ func mysqlEditTransactionColumns(qctx context.Context, tx *sql.Tx, database, tab
 	return columns, nil
 }
 
-func applyMySQLDataEditsWithColumns(qctx context.Context, tx *sql.Tx, database, table, target string, edits []MySQLDataEdit, columns []MySQLStructureColumn, readPreviews bool) (*MySQLDataEditResult, error) {
+func applyMySQLDataEditsWithColumns(qctx context.Context, tx *sql.Tx, database, table, target string, edits []MySQLDataEdit, columns []MySQLStructureColumn, readPreviews bool, limits ...int) (*MySQLDataEditResult, error) {
+	limit := MySQLDataEditMaxBytes
+	if len(limits) > 0 {
+		limit = limits[0]
+	}
 	var e error
 	result := &MySQLDataEditResult{}
 	for _, edit := range edits {
@@ -139,7 +143,7 @@ func applyMySQLDataEditsWithColumns(qctx context.Context, tx *sql.Tx, database, 
 		var nextRef *MySQLRowRef
 		switch edit.Kind {
 		case "insert", "update":
-			names, expressions, bound, e := mysqlEditAssignments(columns, edit.Values, edit.Kind == "insert")
+			names, expressions, bound, e := mysqlAssignmentsBounded(columns, edit.Values, edit.Kind == "insert", limit)
 			if e != nil {
 				return nil, e
 			}

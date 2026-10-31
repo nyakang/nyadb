@@ -1,0 +1,11 @@
+{
+  "listen": "0.0.0.0:9443",
+  "certificate": "/etc/nyadb-gateway/gateway.crt",
+  "key": "/etc/nyadb-gateway/gateway.key",
+  "clientCA": "",
+  "tokenEnvironment": "NYADB_GATEWAY_TOKEN",
+  "targets": {
+    "mysql-primary": "127.0.0.1:3306",
+    "postgres-primary": "127.0.0.1:5432"
+  }
+}

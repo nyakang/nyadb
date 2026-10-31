@@ -188,10 +188,10 @@ func TestMySQLSSHNativeModeSwitchingAndSecretLifecycle(t *testing.T) {
 	cfg.AuthMethod = connections.MySQLSSHPublicKey
 	tt = ui.NewTester(s.ConnectionWindowView, 900, 700)
 	if !tt.HasText("Private Key:") || !tt.HasText("Passphrase:") ||
-		tt.HasText("密码：") || !tt.HasText("Save Passphrase") {
+		tt.HasText("密码：") || !tt.HasText("在系统密钥库保存隧道凭据") {
 		t.Fatalf("public-key mode incorrect: key=%v passphrase=%v password=%v save=%v",
 			tt.HasText("Private Key:"), tt.HasText("Passphrase:"),
-			tt.HasText("密码："), tt.HasText("Save Passphrase"))
+			tt.HasText("密码："), tt.HasText("在系统密钥库保存隧道凭据"))
 	}
 	called := 0
 	s.SetMySQLSSHKeyPicker(func() { called++ })
@@ -207,7 +207,7 @@ func TestMySQLSSHNativeModeSwitchingAndSecretLifecycle(t *testing.T) {
 	cfg.AuthMethod = connections.MySQLSSHPasswordAndKey
 	tt = ui.NewTester(s.ConnectionWindowView, 900, 700)
 	if !tt.HasText("密码：") || !tt.HasText("Private Key:") ||
-		!tt.HasText("Save Passphrase") {
+		!tt.HasText("在系统密钥库保存隧道凭据") {
 		t.Fatal("combined authentication should show password and key controls")
 	}
 	cfg.Host = "ssh.example.test"

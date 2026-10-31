@@ -58,7 +58,7 @@ func mysqlTableActionDangerous(action mysqlsvc.MySQLTableAction) bool {
 }
 
 func (s *State) CanChangeTable(profileID int64) bool {
-	return s.runner() != nil &&
+	return s.capabilities(profileID).DesignTables && s.runner() != nil &&
 		!s.tablePending && s.session().Connected && s.session().ProfileID == profileID
 }
 
@@ -83,6 +83,15 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 		}
 	}
 	if kind != "表" {
+		if s.deps.ObjectExecutor != nil && s.capabilities(profileID).DesignTables {
+			m.Separator()
+			if m.Item("编辑完整定义…").Chosen() {
+				s.BeginObject(services, profileID, mysqlsvc.ObjectIdentity{Database: database, Name: name, Kind: kind}, "alter")
+			}
+			if m.Item("删除对象…").Chosen() {
+				s.BeginObject(services, profileID, mysqlsvc.ObjectIdentity{Database: database, Name: name, Kind: kind}, "drop")
+			}
+		}
 		m.Separator()
 		if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).Chosen() {
 			s.loadObjects(services, database, true)
@@ -117,41 +126,64 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 			begin(mysqlsvc.MySQLTableCopyStructure)
 		}
 	}).Disabled(!ready)
-	m.Item(locales.Text("设置权限")).Disabled(true)
+	if m.Item(locales.Text("设置权限")).Disabled(s.deps.AccountExecutor == nil || !s.capabilities(profileID).DesignTables).Chosen() {
+		s.OpenAccounts(services, profileID, database, name)
+	}
 	m.Separator()
-	for _, label := range []string{"导入向导…", "导出向导…", "数据字典…", "数据生成…", "数据脱敏…"} {
+	for _, item := range []struct{ label, action string }{{"导入向导…", "import"}, {"导出向导…", "export"}, {"表配置文件", "profile"}} {
+		if m.Item(locales.Text(item.label)).Disabled(s.deps.DataAction == nil || !s.capabilities(profileID).Import).Chosen() {
+			s.deps.DataAction(services, profileID, database, name, item.action)
+		}
+	}
+	for _, label := range []string{"数据字典…", "数据生成…", "数据脱敏…"} {
 		m.Item(locales.Text(label)).Disabled(true)
 	}
 	m.Separator()
 	m.Submenu(locales.Text("转储 SQL 文件"), func(sub *ui.Menu) {
-		sub.Item(locales.Text("结构和数据…")).Disabled(true)
-		sub.Item(locales.Text("仅结构…")).Disabled(true)
-	}).Disabled(true)
-	m.Submenu(locales.Text("维护"), func(sub *ui.Menu) {
-		sub.Item(locales.Text("分析表")).Disabled(true)
-		sub.Submenu(locales.Text("检查表"), func(check *ui.Menu) {
-			for _, label := range []string{"常规", "快速（Quick）", "快（Fast）", "已更改", "扩展"} {
-				check.Item(locales.Text(label)).Disabled(true)
+		for _, item := range []struct{ label, action string }{{"结构和数据…", "sql_data"}, {"仅结构…", "sql_structure"}} {
+			it := item
+			if sub.Item(locales.Text(it.label)).Chosen() {
+				s.deps.Backup(services, profileID, database, name, it.action)
 			}
-		}).Disabled(true)
-		sub.Item(locales.Text("优化表")).Disabled(true)
-		sub.Submenu(locales.Text("修复表"), func(repair *ui.Menu) {
-			repair.Item(locales.Text("快速（Quick）")).Disabled(true)
-			repair.Item(locales.Text("扩展")).Disabled(true)
-		}).Disabled(true)
-		sub.Item(locales.Text("获取行的总数")).Disabled(true)
-	}).Disabled(true)
+		}
+	}).Disabled(s.deps.Backup == nil || !s.capabilities(profileID).Backup)
+	m.Submenu(locales.Text("维护"), func(sub *ui.Menu) {
+		for _, item := range []struct{ label, action string }{{"分析表", "ANALYZE"}, {"检查表", "CHECK"}, {"优化表", "OPTIMIZE"}, {"修复表", "REPAIR"}} {
+			it := item
+			if sub.Item(locales.Text(it.label)).Chosen() {
+				s.BeginMaintenance(services, profileID, database, name, it.action)
+			}
+		}
+	}).Disabled(s.deps.Maintenance == nil || s.maintenance != nil || !s.capabilities(profileID).DesignTables)
+
 	for _, label := range []string{"逆向表到模型…", "创建 BI 工作区…"} {
 		m.Item(locales.Text(label)).Disabled(true)
 	}
 	m.Separator()
 	m.Submenu(locales.Text("管理组"), func(sub *ui.Menu) {
-		sub.Item(locales.Text("新建组")).Disabled(true)
-		sub.Item(locales.Text("移动到")).Disabled(true)
-		sub.Item(locales.Text("从组中排除")).Disabled(true)
-	}).Disabled(true)
-	m.Item(locales.Text("复制")).Shortcut(ui.Ctrl, ui.KeyC).Disabled(true)
-	m.Item(locales.Text("粘贴")).Shortcut(ui.Ctrl, ui.KeyV).Disabled(true)
+		if sub.Item(locales.Text("从组中排除")).Chosen() {
+			s.AssignObjectGroup("")
+		}
+	})
+	if m.Item(locales.Text("复制")).Shortcut(ui.Ctrl, ui.KeyC).Chosen() {
+		raw, e := EncodeObjectClipboardFor(profileID, []mysqlsvc.ObjectIdentity{{Database: database, Name: name, Kind: kind}})
+		if e == nil {
+			services.WriteClipboard(raw)
+		}
+	}
+	if m.Item(locales.Text("粘贴")).Shortcut(ui.Ctrl, ui.KeyV).Disabled(!ready).Chosen() {
+		clip, e := DecodeObjectClipboard(services.ReadClipboard())
+		if e != nil {
+			s.report(e.Error())
+		} else if clip.ProfileID != profileID {
+			s.report("对象剪贴板属于另一连接，请显式切换到原连接")
+		} else if s.deps.BatchExecutor != nil {
+			s.BeginObjectBatch(profileID, clip.Objects, "copy")
+		} else {
+			s.report("请选择同一数据库的一张表进行复制；对象身份保留在剪贴板中")
+		}
+	}
+
 	m.Item(locales.Text("共享…")).Disabled(true)
 	if m.Item(locales.Text("重命名")).Shortcut(0, ui.KeyF2).Disabled(!ready).Chosen() {
 		begin(mysqlsvc.MySQLTableRename)
@@ -170,9 +202,19 @@ func (s *State) BeginTableChange(profileID int64, database, name string, action 
 	s.tableDialog = true
 	s.tableAction = action
 	s.tableProfileID = profileID
+	s.tableGeneration = s.sessionFor(profileID).Generation
+	if s.deps.RuntimeGeneration != nil {
+		s.tableRuntimeGeneration = s.deps.RuntimeGeneration(profileID)
+	} else {
+		s.tableRuntimeGeneration = 0
+	}
 	s.tableDatabase = database
 	s.tableName = name
 	s.tableNewName = ""
+	if action == mysqlsvc.MySQLTableCopyStructure || action == mysqlsvc.MySQLTableCopyData {
+		s.tableNewName = s.NextObjectName(profileID, name+"_copy")
+	}
+
 	if action == mysqlsvc.MySQLTableRename {
 		s.tableNewName = name
 	}
@@ -181,6 +223,11 @@ func (s *State) BeginTableChange(profileID int64, database, name string, action 
 }
 
 func (s *State) Modals(c *ui.Context) {
+	s.backupModal(c)
+	s.objectManagementModal(c)
+	s.accountModal(c)
+	s.batchModal(c)
+
 	if !s.tableDialog {
 		return
 	}
@@ -205,7 +252,11 @@ func (s *State) Modals(c *ui.Context) {
 			}
 			switch s.tableAction {
 			case mysqlsvc.MySQLTableCreate:
-				ui.Text(c, "创建 InnoDB 基础表，初始字段为 id BIGINT AUTO_INCREMENT PRIMARY KEY；完整结构设计尚未接入。").FontSize(theme.Font(c, 12))
+				if s.deps.NewTable != nil {
+					ui.Text(c, locales.Text("输入名称后打开表设计器，预览并确认 SQL 后才会创建表。"))
+				} else {
+					ui.Text(c, "创建 InnoDB 基础表，初始字段为 id BIGINT AUTO_INCREMENT PRIMARY KEY；完整结构设计尚未接入。").FontSize(theme.Font(c, 12))
+				}
 			case mysqlsvc.MySQLTableDeleteRows:
 				ui.Text(c, "将执行 DELETE FROM，移除全部行；InnoDB 允许在事务中回滚，但本操作不会自动开启事务。").FontSize(theme.Font(c, 12))
 			case mysqlsvc.MySQLTableTruncate:
@@ -213,7 +264,7 @@ func (s *State) Modals(c *ui.Context) {
 			case mysqlsvc.MySQLTableDrop:
 				ui.Text(c, "将执行 DROP TABLE，永久删除表结构和数据。可能发生隐式提交。").FontSize(theme.Font(c, 12)).TextColor(colors.Error)
 			case mysqlsvc.MySQLTableCopyData:
-				ui.Text(c, "先 CREATE TABLE LIKE，再 INSERT SELECT；两步不是原子操作。复制失败时新表可能保留。").FontSize(theme.Font(c, 12))
+				ui.Text(c, "完整公开 DDL 重建字段、约束和触发器；数据复制先于创建触发器。各步骤不是原子操作，失败后保留已完成对象。").FontSize(theme.Font(c, 12))
 			case mysqlsvc.MySQLTableRename:
 				ui.Text(c, "将执行 RENAME TABLE，并使原有名称下的已打开数据/结构标签失效。").FontSize(theme.Font(c, 12))
 			}
@@ -228,7 +279,7 @@ func (s *State) Modals(c *ui.Context) {
 				ui.Text(c, "正在执行数据库操作…").FontSize(theme.Font(c, 12))
 			}
 			valid := !s.tablePending && s.tableProfileID == s.session().ProfileID &&
-				s.session().Connected
+				s.tableGeneration == s.session().Generation && s.session().Connected
 			if mysqlTableActionNeedsName(s.tableAction) {
 				valid = valid && strings.TrimSpace(s.tableNewName) != "" &&
 					(s.tableAction == mysqlsvc.MySQLTableCreate ||
@@ -266,7 +317,13 @@ func (s *State) startMySQLTableChange(services ui.Services) {
 		Action: action, Database: s.tableDatabase,
 		Table: s.tableName, NewName: s.tableNewName,
 	}
+	request.RuntimeGeneration = s.tableRuntimeGeneration
 	if action == mysqlsvc.MySQLTableCreate {
+		if s.deps.NewTable != nil {
+			s.tableDialog = false
+			s.deps.NewTable(services, s.tableProfileID, s.tableDatabase, s.tableNewName)
+			return
+		}
 		// Creation has no source table. The service creates Table, while NewName
 		// is the destination only for rename and copy operations.
 		request.Table = s.tableNewName

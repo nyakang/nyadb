@@ -163,6 +163,15 @@ func (s *State) renderRow(c *ui.Context, key string) {
 	}
 	n := Parse(key)
 	label, icon := n.Object, "table"
+	if n.Category == "查询" && n.Kind == "object" && s.deps.Queries != nil {
+		icon = "query"
+		for _, q := range s.deps.Queries(n.ProfileID, n.Database) {
+			if q.Kind == n.Object {
+				label = q.Name
+				break
+			}
+		}
+	}
 	switch n.Kind {
 	case "connection":
 		for _, p := range s.profiles {
@@ -181,6 +190,8 @@ func (s *State) renderRow(c *ui.Context, key string) {
 
 		}
 		return
+	case "catalog":
+		label, icon = n.Catalog, "database-solid"
 	case "database":
 		label, icon = n.Database, "database-solid"
 	case "category":

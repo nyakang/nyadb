@@ -11,10 +11,19 @@ func (s *State) workspaceTabCaption(t *tab) string {
 	}
 	database, table, suffix := "", "", ""
 	switch t.kind {
+	case tabSQL:
+		name := t.query.Name()
+		if t.query.Dirty() {
+			name += " *"
+		}
+		return name
 	case tabMySQLData:
 		database, table = t.data.Database(), t.data.Table()
 	case tabStructure:
 		database, table, suffix = t.object.Database(), t.object.Table(), " · 设计"
+		if t.object.DesignDirty() {
+			suffix += " *"
+		}
 	default:
 		return locales.Text(t.title)
 	}
