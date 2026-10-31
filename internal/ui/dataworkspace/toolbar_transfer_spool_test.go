@@ -87,14 +87,25 @@ func TestDataImportSpoolRejectsMutationBeforeAndDuringRead(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			file, err := os.OpenFile(spool.path, os.O_WRONLY, 0600)
+			// The prepared spool is read-only. Deliberately bypass that protection
+			// to test fingerprint validation, including when run without root.
+			if err = os.Chmod(spool.path, 0600); err != nil {
+				t.Fatal(err)
+			}
+			file, err := os.OpenFile(spool.path, os.O_WRONLY, 0)
 			if err != nil {
 				t.Fatal(err)
 			}
+			defer file.Close()
 			if _, err = file.WriteAt([]byte("y"), 1<<20); err != nil {
 				t.Fatal(err)
 			}
-			file.Close()
+			if err = file.Close(); err != nil {
+				t.Fatal(err)
+			}
+			if err = os.Chmod(spool.path, 0400); err != nil {
+				t.Fatal(err)
+			}
 			if !during {
 				if r, e := spool.open(context.Background()); e == nil {
 					r.Close()

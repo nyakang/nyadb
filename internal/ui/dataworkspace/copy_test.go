@@ -29,7 +29,7 @@ func TestMySQLDataBlockCopyUsesNativeSelectionAndKeepsMenuBlock(t *testing.T) {
 	if err := tt.ClickWith(ui.Shift, "beta"); err != nil {
 		t.Fatal(err)
 	}
-	tt.Key(ui.Ctrl, ui.KeyC)
+	tt.Key(ui.Cmd, ui.KeyC)
 	if got := tt.Clipboard(); got != "41\talpha\n42\tbeta" {
 		t.Fatalf("native block copy: %q", got)
 	}
@@ -129,8 +129,8 @@ func TestMySQLDataCopyShortcutStaysInGridAndRefreshUsesService(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Type("draft value")
-	tt.Key(ui.Ctrl, ui.KeyA)
-	tt.Key(ui.Ctrl, ui.KeyC)
+	tt.Key(ui.Cmd, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyC)
 	tt.Key(0, ui.KeyF5)
 	if tt.Clipboard() != "draft value" || len(calls) != 0 || doc.loading {
 		t.Fatal("grid shortcuts intercepted the filter input")
@@ -138,8 +138,8 @@ func TestMySQLDataCopyShortcutStaysInGridAndRefreshUsesService(t *testing.T) {
 	if err := tt.Click("safe-value"); err != nil {
 		t.Fatal(err)
 	}
-	tt.Key(ui.Ctrl, ui.KeyA)
-	tt.Key(ui.Ctrl, ui.KeyC)
+	tt.Key(ui.Cmd, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyC)
 	if tt.Clipboard() != "1\tsafe-value" {
 		t.Fatalf("select all copied something other than loaded visible data: %q", tt.Clipboard())
 	}

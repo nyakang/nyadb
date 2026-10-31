@@ -449,14 +449,14 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *Document, m *ui.Menu, row, s
 	m.Separator()
 	names, rows, _ := mysqlDataSelectedPreview(t)
 	empty := len(names) == 0 || len(rows) == 0
-	if m.Item(locales.Text("复制")).Shortcut(ui.Ctrl, ui.KeyC).Disabled(empty).Chosen() {
+	if m.Item(locales.Text("复制")).Shortcut(ui.Cmd, ui.KeyC).Disabled(empty).Chosen() {
 		s.copyMySQLDataSelection(c, t)
 	}
 	if m.Item(locales.Text("复制字段名称")).Disabled(empty).Chosen() {
 		c.WriteClipboard(mysqlDataDelimitedPreview(names, nil, '\t', true, false))
 	}
 	m.Submenu(locales.Text("复制为"), func(sub *ui.Menu) { s.mysqlDataCopyAsMenu(c, t, sub) })
-	if m.Item(locales.Text("粘贴")).Shortcut(ui.Ctrl, ui.KeyV).Disabled(!editable || mysqlDataBinaryField(column) || mysqlDataSpatialField(column)).Chosen() {
+	if m.Item(locales.Text("粘贴")).Shortcut(ui.Cmd, ui.KeyV).Disabled(!editable || mysqlDataBinaryField(column) || mysqlDataSpatialField(column)).Chosen() {
 		s.pasteMySQLDataSelection(c, t, row, source)
 	}
 	m.Submenu(locales.Text("保存数据为"), func(sub *ui.Menu) {

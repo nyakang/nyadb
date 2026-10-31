@@ -230,7 +230,7 @@ func TestDataAnalysisHeaderKeepsRecordSelectionCopyAndEditing(t *testing.T) {
 	if d.selectedRow != 2 || !d.selection.Has(2) {
 		t.Fatalf("native keyboard cursor no longer maps to a record: %d %v", d.selectedRow, d.selection)
 	}
-	tt.Key(ui.Ctrl, ui.KeyC)
+	tt.Key(ui.Cmd, ui.KeyC)
 	if tt.Clipboard() != "gamma" {
 		t.Fatalf("copy used a display row: %q", tt.Clipboard())
 	}

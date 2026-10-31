@@ -119,7 +119,7 @@ func TestMySQLDataPasteShortcutReturnsToGridAndStaysInsideEditor(t *testing.T) {
 	}
 	tt.Key(0, ui.KeyEnter)
 	tt.SetClipboard("中文🙂\t右侧")
-	tt.Key(ui.Ctrl, ui.KeyV)
+	tt.Key(ui.Cmd, ui.KeyV)
 	tt.Frame()
 	if doc.edit.Editor != nil || doc.page.Rows[0][1].Text != "中文🙂" || doc.page.Rows[0][2].Text != "右侧" || doc.page.Rows[1][1].Text != "beta" || f.writeCount() != 0 {
 		t.Fatal("paste shortcut after Enter did not stage the focused grid rectangle")
@@ -128,7 +128,7 @@ func TestMySQLDataPasteShortcutReturnsToGridAndStaysInsideEditor(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.SetClipboard("编辑内粘贴")
-	tt.Key(ui.Ctrl, ui.KeyV)
+	tt.Key(ui.Cmd, ui.KeyV)
 	tt.Frame()
 	if doc.edit.Editor == nil || doc.edit.Editor.Text != "编辑内粘贴" || mysqlDataDraftForRow(doc, 1) != nil || doc.page.Rows[1][1].Text != "beta" || doc.page.Rows[0][2].Text != "右侧" || f.writeCount() != 0 {
 		t.Fatal("text-editor paste leaked into grid record actions")
