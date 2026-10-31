@@ -132,6 +132,9 @@ func schemePalette(scheme Scheme, dark bool) Palette {
 		p.App, p.Panel = ui.Hex(v.app), ui.Hex(v.app)
 		p.Menu, p.Toolbar = ui.Hex(v.chrome), ui.Hex(v.chrome)
 		p.Sidebar, p.Header, p.Border = ui.Hex(v.sidebar), ui.Hex(v.header), ui.Hex(v.border)
+		p.App, p.Panel = neutralSurface(p.App, 0.45), neutralSurface(p.Panel, 0.45)
+		p.Menu, p.Toolbar = neutralSurface(p.Menu, 0.25), neutralSurface(p.Toolbar, 0.25)
+		p.Sidebar, p.Header = neutralSurface(p.Sidebar, 0.25), neutralSurface(p.Header, 0.25)
 		p.Text, p.Muted, p.Accent = ui.Hex(v.text), ui.Hex(v.muted), ui.Hex(v.accent)
 		p.Blue, p.Focus = p.Accent, p.Accent
 		p.SurfaceHover = p.Header.Mix(p.Text, 0.08)

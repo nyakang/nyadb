@@ -25,13 +25,14 @@ func ParseMode(value string) Mode {
 
 // Palette names are semantic, not tied to a particular operating system.
 type Palette struct {
-	App, Menu, Toolbar, Sidebar, Panel, Header, Border                           ui.Color
-	Accent, Text, Muted, Blue, Gold, Green, Purple                               ui.Color
-	SelectionText, GridAlternate, GridNull, InputBorder, Error, Warning, Success ui.Color
-	ToolbarSelected, Selection                                                   ui.Color
-	SurfaceHover, SurfacePressed, AccentHover, AccentPressed, AccentText, Focus  ui.Color
-	NavigationSelection, NavigationSelectionText                                 ui.Color
-	Notice, NoticeText, Chart                                                    ui.Color
+	App, Menu, Toolbar, Sidebar, Panel, Header, Border                                  ui.Color
+	Accent, Text, Muted, Blue, Gold, Green, Purple                                      ui.Color
+	SelectionText, GridAlternate, GridNull, InputBorder, Error, Warning, Success        ui.Color
+	ToolbarSelected, Selection                                                          ui.Color
+	SurfaceHover, SurfacePressed, AccentHover, AccentPressed, AccentText, Focus         ui.Color
+	NavigationSelection, NavigationSelectionText                                        ui.Color
+	Notice, NoticeText, Chart                                                           ui.Color
+	GridModified, GridModifiedText, GridModifiedMark, GridInsertedMark, GridDeletedMark ui.Color
 }
 
 var darkPalette = Palette{

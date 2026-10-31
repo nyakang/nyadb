@@ -2,19 +2,23 @@ package theme
 
 import "github.com/egoist/mygo/ui"
 
-// Font scales explicit typography with the desktop's text-size preference.
+// Font reads the frame's UI and desktop text scaling without compounding.
 // Display/DPI scaling is separately applied by MyGo.
 func Font(c *ui.Context, size float32) float32 {
+	state := ui.Local(c.Root(), snapshotKey{}, func() windowSnapshot { return windowSnapshot{} })
+	if state.applied {
+		return size * state.value.UIZoom
+	}
 	scale := c.Preferences().TextScale
 	if scale <= 0 {
 		scale = 1
 	}
-	return size * scale
+	return size * scale * float32(CurrentMetrics().UIFontSize) / 12
 }
 
 // RowHeight preserves normal compact geometry and makes room for larger text.
 func RowHeight(c *ui.Context, height float32) float32 {
-	return height + max(float32(0), Font(c, FontSize)-FontSize)*1.5
+	return height * max(float32(1), Font(c, FontSize)/FontSize)
 }
 
 // Shared desktop measurements in device-independent pixels. These describe
@@ -39,3 +43,16 @@ const (
 	BorderWidth       float32 = 1
 	ControlRadius     float32 = 2
 )
+
+// TableRowExtra is added to natural text height, never to analysis/header rows.
+func TableRowExtra(c *ui.Context) float32 {
+	s := Frame(c)
+	switch s.Metrics.TableDensity {
+	case DensityStandard:
+		return 4 * s.UIZoom
+	case DensityRelaxed:
+		return 8 * s.UIZoom
+	default:
+		return 0
+	}
+}

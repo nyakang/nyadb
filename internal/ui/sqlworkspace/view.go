@@ -60,7 +60,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 					}
 				})
 			}
-			t.Editor.Theme = theme.SQLThemeFor(c)
+			theme.ApplySQLAppearance(c, t.Editor)
 			editor.View(c, t.Editor).Grow(1).FillWidth()
 		})
 	}, func() { s.resultGrid(c, t) }).Grow(1)
@@ -130,7 +130,7 @@ func (s *State) previewView(c *ui.Context, tab *Document) {
 					}).Label(locales.Text("查询操作")).Grow(1).MinWidth(0).Padding(0).Gap(4)
 					ui.Text(c, "query.sql").TextColor(palette.Muted).FontSize(theme.Font(c, theme.SmallFontSize)).SingleLine()
 				})
-				tab.Editor.Theme = theme.SQLThemeFor(c)
+				theme.ApplySQLAppearance(c, tab.Editor)
 				editor.View(c, tab.Editor).Grow(1).FillWidth()
 			})
 		},

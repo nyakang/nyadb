@@ -46,11 +46,50 @@ func readableBackground(background, text ui.Color) ui.Color {
 // readableInk retains the hue where possible while keeping syntax legible on
 // the editor's normal, active-line and selected backgrounds.
 func readableInk(ink ui.Color, backgrounds ...ui.Color) ui.Color {
-	for _, background := range backgrounds {
-		target := onColor(background)
-		for i := 0; i < 40 && contrast(ink, background) < 4.5; i++ {
-			ink = ink.Mix(target, 0.06)
+	return readableInkMinimum(ink, 4.5, backgrounds...)
+}
+
+func readableInkMinimum(ink ui.Color, minimum float64, backgrounds ...ui.Color) ui.Color {
+	readable := func(c ui.Color) bool {
+		for _, bg := range backgrounds {
+			if contrast(c, bg) < minimum {
+				return false
+			}
+		}
+		return true
+	}
+	if readable(ink) {
+		return ink
+	}
+	for i := 1; i <= 100; i++ {
+		for _, target := range []ui.Color{ui.Hex("#000000"), ui.Hex("#ffffff")} {
+			candidate := ink.Mix(target, float32(i)/100)
+			if readable(candidate) {
+				return candidate
+			}
 		}
 	}
-	return ink
+	return ink // Callers test all supported background combinations.
+}
+
+// Desaturate in linear RGB toward an equal-luminance neutral. This reduces
+// chroma without making dark workspaces darker or light workspaces brighter.
+func neutralSurface(c ui.Color, amount float64) ui.Color {
+	y := luminance(c)
+	channel := func(v uint8) uint8 {
+		x := float64(v) / 255
+		if x <= 0.04045 {
+			x /= 12.92
+		} else {
+			x = math.Pow((x+0.055)/1.055, 2.4)
+		}
+		x = x*(1-amount) + y*amount
+		if x <= 0.0031308 {
+			x *= 12.92
+		} else {
+			x = 1.055*math.Pow(x, 1/2.4) - 0.055
+		}
+		return uint8(math.Round(x * 255))
+	}
+	return ui.Color{R: channel(c.R), G: channel(c.G), B: channel(c.B), A: c.A}
 }

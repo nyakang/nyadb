@@ -94,6 +94,7 @@ func Run() error {
 			refreshWindows()
 		})
 		state.SetColorSchemeHandler(func(theme.Scheme) { refreshWindows() })
+		state.SetMetricsHandler(func(theme.MetricsPreferences) { refreshWindows() })
 		mygo.Theme.OnUpdated(func() {
 			applyNativeGTKTheme(theme.CurrentMode())
 			refreshWindows()

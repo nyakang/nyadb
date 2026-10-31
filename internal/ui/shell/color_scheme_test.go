@@ -2,8 +2,10 @@ package shell
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
@@ -13,8 +15,9 @@ import (
 
 func preserveAppearance(t *testing.T) {
 	t.Helper()
-	mode, scheme := theme.CurrentMode(), theme.CurrentScheme()
-	t.Cleanup(func() { theme.SetMode(mode); theme.SetScheme(scheme) })
+	mode, scheme, metrics := theme.CurrentMode(), theme.CurrentScheme(), theme.CurrentMetrics()
+	t.Cleanup(func() { theme.SetMode(mode); theme.SetScheme(scheme); theme.SetMetrics(metrics) })
+	theme.SetMetrics(theme.DefaultMetrics())
 	theme.SetMode(theme.ModeDark)
 	theme.SetScheme(theme.SchemeClassic)
 }
@@ -168,5 +171,47 @@ func TestThemeGalleryVisualMatrix(t *testing.T) {
 		tt.SetDark(true)
 		tt.SetPreferences(ui.Preferences{HighContrast: true, TextScale: 1.5})
 		writeDomainCapture(t, output, language+"-contrast-scaled-preview", tt)
+	}
+	for _, language := range []string{"zh-Hans", "en"} {
+		i18n.SetLocaleFunc(func() string { return language })
+		for _, width := range []int{840, 1280} {
+			theme.SetMetrics(theme.MetricsPreferences{UIFontSize: 16, SQLFontSize: 24, TableDensity: theme.DensityRelaxed})
+			s := New()
+			s.openSettings()
+			height := 800
+			if width == 840 {
+				height = 560
+			}
+			tt := ui.NewTester(s.View, width, height)
+			tt.SetPreferences(ui.Preferences{TextScale: 1.5, HighContrast: true})
+			prefix := fmt.Sprintf("%s-%d-max", language, width)
+			writeDomainCapture(t, output, prefix+"-settings", tt)
+			label := "设置界面字号"
+			if language == "en" {
+				label = "Set interface font size"
+			}
+			for i := 0; i < 80; i++ {
+				if rect, ok := tt.Find(label); ok && rect.Y > 310 && rect.Y+rect.H < float32(height-85) {
+					break
+				}
+				tt.Scroll(float32(width)*0.6, float32(height-70), 0, 50)
+				tt.Advance(200 * time.Millisecond)
+			}
+			if rect, ok := tt.Find(label); !ok || rect.Y < 300 || rect.Y+rect.H > float32(height-70) {
+				t.Fatalf("reading control unreachable at %s: %+v", prefix, rect)
+			}
+			writeDomainCapture(t, output, prefix+"-reading", tt)
+			s.openQuery()
+			s.currentTab().query.Editor.Buffer.Set(sqlThemePreview)
+			tt.Frame()
+			writeDomainCapture(t, output, prefix+"-sql", tt)
+			s.SetConnectionWindowHost(func() {}, func() {})
+			s.openConnectionDialog()
+			s.chooseConnectionKind(connections.MySQL)
+			s.nextConnectionStep()
+			child := ui.NewTester(s.ConnectionWindowView, 720, 520)
+			child.SetPreferences(ui.Preferences{TextScale: 1.5, HighContrast: true})
+			writeDomainCapture(t, output, prefix+"-connection", child)
+		}
 	}
 }

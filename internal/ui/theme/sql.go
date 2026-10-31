@@ -113,11 +113,23 @@ func sqlTheme(scheme Scheme, dark bool, p Palette, prefs ui.Preferences) *editor
 		t.Tokens[editor.TokenComment] = editor.TokenStyle{Color: p.Muted, Italic: true}
 		t.IndentGuide, t.WrapGuide = p.Border, p.Border
 	}
-	if scheme != SchemeClassic {
-		for i := range t.Tokens {
-			if t.Tokens[i].Color.A != 0 {
-				t.Tokens[i].Color = readableInk(t.Tokens[i].Color, t.Background, t.ActiveLine, t.Selection)
-			}
+	// Opaque fills give every overlap (line, match, occurrence, selection) a
+	// deterministic final background. Tokens remain readable in all of them.
+	t.ActiveLine = t.Background.Mix(p.Header, 0.45)
+	t.Selection = t.Background.Mix(p.Accent, 0.16)
+	t.InactiveSelection = t.Background.Mix(p.Accent, 0.08)
+	t.Match = t.Background.Mix(p.Warning, 0.12)
+	t.CurrentMatch = t.Background.Mix(p.Warning, 0.24)
+	t.Occurrence = t.Background.Mix(p.Accent, 0.07)
+	backgrounds := sqlBackgrounds(t)
+	t.Text = readableInk(t.Text, backgrounds...)
+	t.LineNumber = readableInk(t.LineNumber, t.Background)
+	t.ActiveLineNumber = readableInk(t.ActiveLineNumber, backgrounds...)
+	t.Cursor = readableInkMinimum(p.Focus, 3, backgrounds...)
+	t.MatchingBracket = t.Cursor
+	for i := range t.Tokens {
+		if t.Tokens[i].Color.A != 0 {
+			t.Tokens[i].Color = readableInk(t.Tokens[i].Color, backgrounds...)
 		}
 	}
 	return t
@@ -127,4 +139,16 @@ func sqlTheme(scheme Scheme, dark bool, p Palette, prefs ui.Preferences) *editor
 func SQLThemeFor(c *ui.Context) *editor.Theme {
 	s := Frame(c)
 	return &s.SQL
+}
+
+func sqlBackgrounds(t *editor.Theme) []ui.Color {
+	return []ui.Color{t.Background, t.ActiveLine, t.Selection, t.InactiveSelection, t.Match, t.CurrentMatch, t.Occurrence}
+}
+
+// ApplySQLAppearance updates presentation without replacing editor state, its
+// buffer, selections, search, or undo history. The font family stays native.
+func ApplySQLAppearance(c *ui.Context, state *editor.State) {
+	s := Frame(c)
+	state.Theme = &s.SQL
+	state.Font.Size = s.SQLFontSize
 }
