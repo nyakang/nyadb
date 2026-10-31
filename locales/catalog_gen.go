@@ -9345,3 +9345,73 @@ func SetSQLFont() string { return In(i18n.Locale()).SetSQLFont() }
 func (msgs Messages) SetSQLFont() string {
 	return Catalog.Format(msgs.locale, "setSQLFont", nil)
 }
+
+// MysqlHeaderAddFilter says "添加筛选"
+// in the language the app shows.
+func MysqlHeaderAddFilter() string { return In(i18n.Locale()).MysqlHeaderAddFilter() }
+
+// MysqlHeaderAddFilter says "添加筛选"
+// in the language of msgs.
+func (msgs Messages) MysqlHeaderAddFilter() string {
+	return Catalog.Format(msgs.locale, "mysqlHeaderAddFilter", nil)
+}
+
+// MysqlHeaderColumnWidthMenu says "列宽…"
+// in the language the app shows.
+func MysqlHeaderColumnWidthMenu() string { return In(i18n.Locale()).MysqlHeaderColumnWidthMenu() }
+
+// MysqlHeaderColumnWidthMenu says "列宽…"
+// in the language of msgs.
+func (msgs Messages) MysqlHeaderColumnWidthMenu() string {
+	return Catalog.Format(msgs.locale, "mysqlHeaderColumnWidthMenu", nil)
+}
+
+// MysqlHeaderColumnWidth says "列宽"
+// in the language the app shows.
+func MysqlHeaderColumnWidth() string { return In(i18n.Locale()).MysqlHeaderColumnWidth() }
+
+// MysqlHeaderColumnWidth says "列宽"
+// in the language of msgs.
+func (msgs Messages) MysqlHeaderColumnWidth() string {
+	return Catalog.Format(msgs.locale, "mysqlHeaderColumnWidth", nil)
+}
+
+// MysqlHeaderColumnWidthDIP says "列宽（DIP）"
+// in the language the app shows.
+func MysqlHeaderColumnWidthDIP() string { return In(i18n.Locale()).MysqlHeaderColumnWidthDIP() }
+
+// MysqlHeaderColumnWidthDIP says "列宽（DIP）"
+// in the language of msgs.
+func (msgs Messages) MysqlHeaderColumnWidthDIP() string {
+	return Catalog.Format(msgs.locale, "mysqlHeaderColumnWidthDIP", nil)
+}
+
+// MysqlHeaderColumnGone says "字段已不存在"
+// in the language the app shows.
+func MysqlHeaderColumnGone() string { return In(i18n.Locale()).MysqlHeaderColumnGone() }
+
+// MysqlHeaderColumnGone says "字段已不存在"
+// in the language of msgs.
+func (msgs Messages) MysqlHeaderColumnGone() string {
+	return Catalog.Format(msgs.locale, "mysqlHeaderColumnGone", nil)
+}
+
+// MysqlHeaderInvalidColumnWidth says "请输入符合字段宽度限制的正整数"
+// in the language the app shows.
+func MysqlHeaderInvalidColumnWidth() string { return In(i18n.Locale()).MysqlHeaderInvalidColumnWidth() }
+
+// MysqlHeaderInvalidColumnWidth says "请输入符合字段宽度限制的正整数"
+// in the language of msgs.
+func (msgs Messages) MysqlHeaderInvalidColumnWidth() string {
+	return Catalog.Format(msgs.locale, "mysqlHeaderInvalidColumnWidth", nil)
+}
+
+// MysqlHeaderShowComments says "显示注释"
+// in the language the app shows.
+func MysqlHeaderShowComments() string { return In(i18n.Locale()).MysqlHeaderShowComments() }
+
+// MysqlHeaderShowComments says "显示注释"
+// in the language of msgs.
+func (msgs Messages) MysqlHeaderShowComments() string {
+	return Catalog.Format(msgs.locale, "mysqlHeaderShowComments", nil)
+}

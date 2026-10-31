@@ -906,5 +906,12 @@
   "decreaseSQLFont": "减小 SQL 字号",
   "increaseSQLFont": "增大 SQL 字号",
   "setUIFont": "设置界面字号",
-  "setSQLFont": "设置 SQL 字号"
+  "setSQLFont": "设置 SQL 字号",
+  "mysqlHeaderAddFilter": "添加筛选",
+  "mysqlHeaderColumnWidthMenu": "列宽…",
+  "mysqlHeaderColumnWidth": "列宽",
+  "mysqlHeaderColumnWidthDIP": "列宽（DIP）",
+  "mysqlHeaderColumnGone": "字段已不存在",
+  "mysqlHeaderInvalidColumnWidth": "请输入符合字段宽度限制的正整数",
+  "mysqlHeaderShowComments": "显示注释"
 }

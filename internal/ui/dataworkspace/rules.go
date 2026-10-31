@@ -60,6 +60,7 @@ func (s *State) Refresh(services ui.Services, t *Document) {
 	t.selectedRow = -1
 	s.cancelMySQLChunk(t)
 	t.selection.Clear()
+	mysqlDataClearColumnSelection(t)
 	t.grid.Cells = ui.ColumnRange{}
 	s.Load(services, t, true)
 }
@@ -203,10 +204,17 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *Document, page *mysqlsvc.M
 	choices := append([]string{"选择字段"}, page.Columns...)
 	ui.Text(c, locales.Text("筛选  ·  所有已启用条件均满足 (AND)")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 	ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(6).AlignItems(ui.Center).Children(func() {
-		mysqlDataRuleSelect(c, &t.filterColumnDraft, choices, mysqlDataColumnChoiceLabel).Height(theme.RowHeight(c, theme.ControlHeight)).Width(150)
+		field := mysqlDataRuleSelect(c, &t.filterColumnDraft, choices, mysqlDataColumnChoiceLabel).Height(theme.RowHeight(c, theme.ControlHeight)).Width(150)
 		mysqlDataRuleSelect(c, &t.filterModeDraft, mysqlFilterModeChoices, locales.Text).Width(110)
 		if mysqlDataFilterModeNeedsValue(t.filterModeDraft) {
-			ui.TextInput(c, &t.filterValueDraft).Label(locales.Text("数据筛选值")).Placeholder(locales.Text("筛选值")).Width(170)
+			input := ui.TextInput(c, &t.filterValueDraft).Label(locales.Text("数据筛选值")).Placeholder(locales.Text("筛选值")).Width(170)
+			if t.layout.filterFocus != "" && t.layout.filterFocus == t.filterColumnDraft {
+				input.Focus()
+				t.layout.filterFocus = ""
+			}
+		} else if t.layout.filterFocus != "" && t.layout.filterFocus == t.filterColumnDraft {
+			field.Focus()
+			t.layout.filterFocus = ""
 		}
 		ui.Box(c).Grow(1)
 		if ui.Button(c, locales.Text("添加条件")).Label(locales.Text("添加筛选规则")).Disabled(len(t.filterExtraDraft)+1 >= mysqlsvc.MySQLDataMaxFilterRules).Clicked() {
@@ -218,10 +226,17 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *Document, page *mysqlsvc.M
 		rule := &t.filterExtraDraft[i]
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, locales.Text("且")).TextColor(palette.Muted).FontSize(theme.Font(c, 11))
-			mysqlDataRuleSelect(c, &rule.Column, choices, mysqlDataColumnChoiceLabel).Width(140)
+			field := mysqlDataRuleSelect(c, &rule.Column, choices, mysqlDataColumnChoiceLabel).Width(140)
 			mysqlDataRuleSelect(c, &rule.Mode, mysqlFilterModeChoices, locales.Text).Width(110)
 			if mysqlDataFilterModeNeedsValue(rule.Mode) {
-				ui.TextInput(c, &rule.Value).Label(fmt.Sprintf(locales.Text("附加筛选值 %d"), i+1)).Placeholder(locales.Text("筛选值")).Width(170)
+				input := ui.TextInput(c, &rule.Value).Label(fmt.Sprintf(locales.Text("附加筛选值 %d"), i+1)).Placeholder(locales.Text("筛选值")).Width(170)
+				if t.layout.filterFocus != "" && t.layout.filterFocus == rule.Column {
+					input.Focus()
+					t.layout.filterFocus = ""
+				}
+			} else if t.layout.filterFocus != "" && t.layout.filterFocus == rule.Column {
+				field.Focus()
+				t.layout.filterFocus = ""
 			}
 			if ui.Button(c, locales.Text("移除")).Label(fmt.Sprintf(locales.Text("删除筛选规则 %d"), i+2)).Clicked() {
 				t.filterExtraDraft = append(t.filterExtraDraft[:i], t.filterExtraDraft[i+1:]...)
@@ -525,17 +540,7 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *Document, m *ui.Menu, row, s
 		s.clearMySQLDataCellRules(c.Services(), t)
 	}
 	m.Separator()
-	m.Submenu(locales.Text("缩放"), func(sub *ui.Menu) {
-		zoom := t.edit.Zoom
-		if zoom == 0 {
-			zoom = 100
-		}
-		for _, percent := range []int{50, 75, 90, 100, 110, 125, 150, 200} {
-			if sub.Item(fmt.Sprintf("%d%%", percent)).Checked(zoom == percent).Chosen() {
-				t.edit.Zoom = percent
-			}
-		}
-	})
+	s.mysqlDataZoomMenu(t, m)
 	if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).
 		Disabled(t.loading || t.edit.Busy || t.edit.Uncertain != nil || t.profileID != s.session().ProfileID || !s.session().Connected).Chosen() {
 		s.Refresh(c.Services(), t)

@@ -52,6 +52,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 		})
 		s.mysqlDataFooter(c, t, page)
 	})
+	s.mysqlDataColumnWidthModal(c, t)
 	s.trackMySQLDataLayout(c, t)
 }
 
@@ -73,8 +74,10 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *mysqlsvc.MySQLDa
 			})
 		}
 		if t.page == nil {
+			mysqlDataSuspendGridActions(t)
 			theme.EmptyTable(c, &t.grid, t.columns, locales.Text("没有已加载的数据页"))
 		} else if len(page.Columns) == 0 {
+			mysqlDataSuspendGridActions(t)
 			theme.EmptyTable(c, &t.grid, nil, locales.Text("此对象没有可见字段"))
 		} else {
 			if !page.StableOrder {
@@ -87,6 +90,7 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *mysqlsvc.MySQLDa
 			t.grid.Selection = &t.selection
 			t.grid.CellSelect = true
 			t.grid.DragSelect = true
+			t.grid.HeaderSelect = true
 			t.grid.TableStyle = &ui.TableStyle{
 				AlternateRowColor: palette.GridAlternate,
 				GridColor:         palette.Border, RowLines: true, ColumnLines: true,
@@ -98,126 +102,131 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *mysqlsvc.MySQLDa
 					s.mysqlDataHeaderMenu(c, t, page, visibleIndices, m, col-1)
 				}
 			}
+			t.grid.HeaderActionMenu = func(m *ui.Menu, col int) {
+				if col > 0 && col <= len(visibleIndices) {
+					s.mysqlDataHeaderActionMenu(c, t, page, visibleIndices[col-1], m)
+				}
+			}
+			t.grid.OnCellClick = func(row, col int, mods ui.Modifiers) {
+				row -= rowOffset
+				if mods == 0 && row >= 0 && row < len(page.Rows) && col > 0 && col <= len(visibleIndices) {
+					mysqlDataSyncAnalysisGrid(t)
+					s.beginMySQLCellEdit(c.Services(), t, row, visibleIndices[col-1], false)
+				}
+			}
 			t.grid.CellMenu = func(m *ui.Menu, row, col int) {
 				row -= rowOffset
 				source := -1
 				if col > 0 && col <= len(visibleIndices) {
 					source = visibleIndices[col-1]
 				}
-				if t.selection.Len() == 1 {
-					t.edit.SelectionAnchor = row
-				}
 				s.mysqlDataCellMenu(c, t, m, row, source)
 			}
-			if len(page.Rows) == 0 && rowOffset == 0 {
-				theme.EmptyTable(c, &t.grid, columns, "")
-			} else {
-				// Loading/error status rows before the grid must not change
-				// its identity or reset the native scroll container.
-				grid := theme.TableWithFont(c.Key("mysql-data-grid"), &t.grid, columns, len(page.Rows)+rowOffset, theme.Font(c, mysqlDataEditFont(t)), func(gridRow, col int) {
-					if gridRow < rowOffset {
-						s.analysisHeaders(c, t, columns)
-						return
-					}
-					row := gridRow - rowOffset
-					tableCol := col
-					if col == 0 {
-						marker, ink := mysqlDataDraftMarker(c, t, row)
-						ui.Text(c, marker+mysqlDataRowHeaderText(t, row)).SingleLine().FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(theme.CellText(c, &t.grid, gridRow, tableCol, ink))
-						return
-					}
-					col--
-					if col < 0 || col >= len(visibleIndices) {
-						return
-					}
-					col = visibleIndices[col]
-					if row >= len(page.Rows) || col >= len(page.Rows[row]) {
-						return
-					}
-					if s.mysqlDataInlineEditor(c, t, row, col) {
-						return
-					}
-					cell := page.Rows[row][col]
-					modified := mysqlDataCellModified(t, row, col)
-					content := ui.Box(c).FillWidth().MinWidth(0)
-					if modified {
-						mysqlDataModifiedBackground(c, t, gridRow, tableCol, content)
-					}
-					content.Children(func() {
-						if cell.Null {
-							ui.Text(c, "NULL").Italic().TextColor(theme.CellText(c, &t.grid, gridRow, tableCol, palette.GridNull)).FontSize(theme.Font(c, mysqlDataEditFont(t)))
-						} else {
-							text := ui.Text(c, cell.Text).SingleLine().FontSize(theme.Font(c, mysqlDataEditFont(t)))
-							if cell.Truncated {
-								text.Tooltip(locales.Text("已截断的预览；可在字段信息中按需读取"))
-							}
-						}
-					})
-					if modified {
-						mysqlDataModifiedMark(c, t, gridRow, tableCol)
-					}
-					// Absolute children span the native cell's padding box, so
-					// clicks in its whitespace have the same target as its text.
-					box := ui.Box(c).Key("cell-pointer").Absolute().Top(0).Right(0).Bottom(0).Left(0)
-					if modified {
-						box.Tooltip(locales.Text("此单元格有待保存的更改"))
-					}
-					if cell.Truncated {
-						box.Tooltip(locales.Text("已截断的预览；可在字段信息中按需读取"))
-					}
-					control := ui.Local(box, "cell-bounds", func() ui.Handle { return ui.Handle{} })
-					box.Bind(control)
-					bounds := box.Bounds()
-					t.edit.Hits = append(t.edit.Hits, mysqlCellHit{Row: row, Source: col, Bounds: bounds, Control: *control})
-					source := col
-					services := c.Services()
-					box.HandleInput(func(ev ui.InputEvent) bool {
-						refreshMySQLDataCellHits(c, t)
-						return s.mysqlDataCellPointer(services, t, row, source, control.Bounds(c), ev)
-					})
-
-				}).Grow(1)
-				mysqlDataSyncAnalysisGrid(t)
-				if t.edit.FocusGrid && t.edit.Editor == nil {
-					grid.Focus()
-					t.edit.FocusGrid = false
+			// Loading/error status rows before the grid must not change
+			// its identity or reset the native scroll container.
+			grid := theme.TableWithFont(c.Key("mysql-data-grid"), &t.grid, columns, len(page.Rows)+rowOffset, theme.Font(c, mysqlDataEditFont(t)), func(gridRow, col int) {
+				if gridRow < rowOffset {
+					s.analysisHeaders(c, t, columns)
+					return
 				}
-				gridControl := ui.Local(grid, "grid-bounds", func() ui.Handle { return ui.Handle{} })
-				grid.Bind(gridControl)
-				gridServices := c.Services()
-				grid.HandleInput(func(ev ui.InputEvent) bool {
-					refreshMySQLDataCellHits(c, t)
-					return s.mysqlDataGridPointer(gridServices, t, gridControl.Bounds(c), ev)
+				row := gridRow - rowOffset
+				tableCol := col
+				if col == 0 {
+					marker, ink := mysqlDataDraftMarker(c, t, row)
+					ui.Text(c, marker+mysqlDataRowHeaderText(t, row)).SingleLine().FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(theme.CellText(c, &t.grid, gridRow, tableCol, ink))
+					return
+				}
+				col--
+				if col < 0 || col >= len(visibleIndices) {
+					return
+				}
+				col = visibleIndices[col]
+				if row >= len(page.Rows) || col >= len(page.Rows[row]) {
+					return
+				}
+				if s.mysqlDataInlineEditor(c, t, row, col) {
+					return
+				}
+				cell := page.Rows[row][col]
+				modified := mysqlDataCellModified(t, row, col)
+				content := ui.Box(c).FillWidth().MinWidth(0)
+				if modified {
+					mysqlDataModifiedBackground(c, t, gridRow, tableCol, content)
+				}
+				content.Children(func() {
+					if cell.Null {
+						ui.Text(c, "NULL").Italic().TextColor(theme.CellText(c, &t.grid, gridRow, tableCol, palette.GridNull)).FontSize(theme.Font(c, mysqlDataEditFont(t)))
+					} else {
+						text := ui.Text(c, cell.Text).SingleLine().FontSize(theme.Font(c, mysqlDataEditFont(t)))
+						if cell.Truncated {
+							text.Tooltip(locales.Text("已截断的预览；可在字段信息中按需读取"))
+						}
+					}
 				})
-				if t.edit.Editor == nil && grid.Shortcut(ui.Cmd, ui.KeyC) {
-					s.copyMySQLDataSelection(c, t)
+				if modified {
+					mysqlDataModifiedMark(c, t, gridRow, tableCol)
 				}
-				if t.edit.Editor == nil && grid.Shortcut(ui.Cmd, ui.KeyV) {
-					for source, name := range page.Columns {
-						if name == t.grid.Cells.Cursor {
-							s.pasteMySQLDataSelection(c, t, t.selectedRow, source)
-							break
-						}
+				// Absolute children span the native cell's padding box, so
+				// clicks in its whitespace have the same target as its text.
+				box := ui.Box(c).Key("cell-pointer").Absolute().Top(0).Right(0).Bottom(0).Left(0)
+				if modified {
+					box.Tooltip(locales.Text("此单元格有待保存的更改"))
+				}
+				if cell.Truncated {
+					box.Tooltip(locales.Text("已截断的预览；可在字段信息中按需读取"))
+				}
+				control := ui.Local(box, "cell-bounds", func() ui.Handle { return ui.Handle{} })
+				box.Bind(control)
+				bounds := box.Bounds()
+				t.edit.Hits = append(t.edit.Hits, mysqlCellHit{Row: row, Source: col, Bounds: bounds, Control: *control})
+				source := col
+				services := c.Services()
+				box.HandleInput(func(ev ui.InputEvent) bool {
+					refreshMySQLDataCellHits(c, t)
+					return s.mysqlDataCellPointer(services, t, row, source, control.Bounds(c), ev)
+				})
+
+			}).Grow(1)
+			mysqlDataSyncAnalysisGrid(t)
+			if t.edit.FocusGrid && t.edit.Editor == nil {
+				grid.Focus()
+				t.edit.FocusGrid = false
+			}
+			gridControl := ui.Local(grid, "grid-bounds", func() ui.Handle { return ui.Handle{} })
+			grid.Bind(gridControl)
+			gridServices := c.Services()
+			grid.HandleInput(func(ev ui.InputEvent) bool {
+				refreshMySQLDataCellHits(c, t)
+				return s.mysqlDataGridPointer(gridServices, t, gridControl.Bounds(c), ev)
+			})
+			if t.edit.Editor == nil && grid.Shortcut(ui.Cmd, ui.KeyC) {
+				s.copyMySQLDataSelection(c, t)
+			}
+			if t.edit.Editor == nil && grid.Shortcut(ui.Cmd, ui.KeyV) {
+				for source, name := range page.Columns {
+					if name == t.grid.Cells.Cursor {
+						s.pasteMySQLDataSelection(c, t, t.selectedRow, source)
+						break
 					}
 				}
-				if t.edit.Editor == nil && grid.Shortcut(0, ui.KeyF5) && !t.loading {
-					s.Refresh(c.Services(), t)
-				}
-				if t.edit.Editor == nil && grid.Shortcut(0, ui.KeyF2) {
-					for source, name := range page.Columns {
-						if name == t.grid.Cells.Cursor {
-							mysqlDataRevealEditRow(t, t.selectedRow)
-							s.beginMySQLCellEdit(c.Services(), t, t.selectedRow, source, false)
-							break
-						}
+			}
+			if t.edit.Editor == nil && grid.Shortcut(0, ui.KeyF5) && !t.loading {
+				s.Refresh(c.Services(), t)
+			}
+			if t.edit.Editor == nil && grid.Shortcut(0, ui.KeyF2) {
+				for source, name := range page.Columns {
+					if name == t.grid.Cells.Cursor {
+						mysqlDataRevealEditRow(t, t.selectedRow)
+						s.beginMySQLCellEdit(c.Services(), t, t.selectedRow, source, false)
+						break
 					}
 				}
-				if !t.edit.Batch && !t.edit.Busy && t.edit.Editor == nil {
-					for _, d := range t.edit.Drafts {
-						if d.Row != t.selectedRow {
-							s.saveMySQLData(c.Services(), t)
-							break
-						}
+			}
+			if !t.edit.Batch && !t.edit.Busy && t.edit.Editor == nil {
+				for _, d := range t.edit.Drafts {
+					if d.Row != t.selectedRow {
+						s.saveMySQLData(c.Services(), t)
+						break
 					}
 				}
 			}

@@ -126,31 +126,28 @@ func TestMySQLDataFirstPaintAndResizeClicksUseVisibleBounds(t *testing.T) {
 	}
 }
 
-func TestMySQLDataPointerRequiresMatchingPrimaryPressAndRelease(t *testing.T) {
+func TestMySQLDataPointerObserverLeavesGesturesAndSelectionToNativeGrid(t *testing.T) {
 	s, doc, tt, _ := editingTestWorkspace(t)
 	cell := editingCellBounds(t, doc, 0, 1)
-	up := ui.InputEvent{Kind: ui.InputPointerUp, X: cell.W / 2, Y: cell.H / 2}
-	if s.mysqlDataCellPointer(ui.Services{}, doc, 0, 1, cell, up) || doc.edit.Editor != nil {
-		t.Fatal("release without press opened editor")
-	}
-	for _, change := range []string{"wrong-cell", "outside", "modifier", "motion"} {
-		s.mysqlDataCellPointer(ui.Services{}, doc, 0, 1, cell, ui.InputEvent{Kind: ui.InputPointerDown, X: up.X, Y: up.Y})
-		release, source := up, 1
-		switch change {
-		case "wrong-cell":
-			source = 2
-		case "outside":
-			release.X = cell.W
-		case "modifier":
-			release.Mods = ui.Shift
-		case "motion":
-			release.X += 6
+	doc.selection.Add(0)
+	doc.selection.Add(1)
+	doc.grid.ColumnSelection = []string{"id", "extra"}
+	doc.grid.Cells = ui.ColumnRange{Anchor: "id", Cursor: "extra"}
+	for _, event := range []ui.InputEvent{
+		{Kind: ui.InputPointerUp},
+		{Kind: ui.InputPointerDown},
+		{Kind: ui.InputPointerMove, X: cell.W + 20},
+		{Kind: ui.InputPointerUp, X: cell.W + 20},
+		{Kind: ui.InputPointerDown, Mods: ui.Shift},
+		{Kind: ui.InputPointerUp, Mods: ui.Shift},
+		{Kind: ui.InputPointerDown, Button: 2},
+	} {
+		if s.mysqlDataCellPointer(ui.Services{}, doc, 0, 1, cell, event) {
+			t.Fatal("passive editor observation consumed a native gesture")
 		}
-		s.mysqlDataCellPointer(ui.Services{}, doc, 0, source, cell, release)
-		if doc.edit.Editor != nil {
-			t.Fatalf("%s release opened editor", change)
+		if doc.edit.Editor != nil || doc.selection.Len() != 2 || doc.grid.Cells.Anchor != "id" || doc.grid.Cells.Cursor != "extra" || len(doc.grid.ColumnSelection) != 2 {
+			t.Fatal("pointer observation changed selection or opened an editor")
 		}
-		doc.edit.PointerActive = false
 	}
 	tt.Frame()
 }

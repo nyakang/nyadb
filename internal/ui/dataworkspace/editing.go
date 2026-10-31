@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"reflect"
 	"slices"
 	"strings"
@@ -71,11 +70,7 @@ type mysqlDataEditState struct {
 	AfterSave                 func(ui.Services)
 	Hits                      []mysqlCellHit
 	PointerRow, PointerSource int
-	SelectionAnchor           int
-	PointerMods               ui.Modifiers
-	PointerX, PointerY        float32
 	PointerActive             bool
-	Drag                      bool
 }
 
 func mysqlDataRowKey(t *Document, row int) string {
@@ -280,6 +275,7 @@ func (s *State) openMySQLCellEditor(services ui.Services, t *Document, row, sour
 	t.selectedRow = row
 	t.selection.Clear()
 	t.selection.Add(row)
+	mysqlDataClearColumnSelection(t)
 	t.grid.Cells = ui.ColumnRange{Anchor: field, Cursor: field}
 	services.Invalidate()
 }
@@ -331,6 +327,7 @@ func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
 	t.selectedRow = row
 	t.selection.Clear()
 	t.selection.Add(row)
+	mysqlDataClearColumnSelection(t)
 	mysqlDataScrollRecordIntoView(t, row)
 	for i, col := range t.page.ColumnMetadata {
 		if !mysqlsvc.MySQLDataColumnGenerated(col) && !strings.Contains(col.Extra, "auto_increment") && !t.hiddenColumns[col.Name] {
@@ -485,6 +482,7 @@ func (s *State) removeMySQLDataDraftRows(t *Document, remove func(*mysqlRowDraft
 	}
 	t.selectedRow = min(t.selectedRow, len(t.page.Rows)-1)
 	t.selection.Clear()
+	mysqlDataClearColumnSelection(t)
 }
 func (s *State) acceptMySQLDataSaved(t *Document, keys []string, saved *mysqlsvc.MySQLDataEditResult) {
 	if saved == nil || len(saved.Outcomes) != len(keys) {
@@ -697,98 +695,21 @@ func stageMySQLDataValue(t *Document, d *mysqlRowDraft, source int, v mysqlsvc.M
 	}
 }
 
-// Pointer observers leave modified clicks and right-clicks to the native grid.
-// A primary click is held until release so a drag remains a rectangular choice.
-func (s *State) mysqlDataCellPointer(services ui.Services, t *Document, row, source int, bounds ui.Rect, ev ui.InputEvent) bool {
-	if ev.Button != 0 && (ev.Kind == ui.InputPointerDown || ev.Kind == ui.InputPointerUp) {
-		return false
-	}
-	switch ev.Kind {
-	case ui.InputPointerDown:
-		if t.edit.Busy {
-			return false
-		}
-		t.edit.PointerActive = true
-		oldRow := t.edit.SelectionAnchor
-		if t.selectedRow < 0 {
-			oldRow = -1
-		}
-		oldField := t.grid.Cells.Anchor
+// Pointer observation only finishes the previous editor. Selection, drag
+// thresholds and edge scrolling remain owned by the native Table.
+func (s *State) mysqlDataCellPointer(_ ui.Services, t *Document, row, source int, _ ui.Rect, ev ui.InputEvent) bool {
+	if ev.Kind == ui.InputPointerDown && ev.Button == 0 && !t.edit.Busy {
 		t.edit.PointerRow, t.edit.PointerSource = row, source
-		t.edit.PointerMods = ev.Mods
-		t.edit.PointerX, t.edit.PointerY = bounds.X+ev.X, bounds.Y+ev.Y
-		t.edit.Drag = false
+		t.edit.PointerActive = true
 		s.finishMySQLCellEdit(t, true)
-		field := t.page.Columns[source]
-		switch {
-		case ev.Mods&ui.Shift != 0 && oldRow >= 0:
-			t.selection.Clear()
-			for i := min(oldRow, row); i <= max(oldRow, row); i++ {
-				t.selection.Add(i)
-			}
-			t.grid.Cells = ui.ColumnRange{Anchor: oldField, Cursor: field}
-		case ev.Mods&ui.Cmd != 0:
-			if t.selection.Has(row) {
-				t.selection.Remove(row)
-			} else {
-				t.selection.Add(row)
-			}
-			if t.grid.Cells.Anchor == "" {
-				t.grid.Cells = ui.ColumnRange{Anchor: field, Cursor: field}
-			}
-		default:
-			t.edit.SelectionAnchor = row
-			t.selection.Clear()
-			t.selection.Add(row)
-			t.grid.Cells = ui.ColumnRange{Anchor: field, Cursor: field}
-		}
-		t.selectedRow = row
-
-		return true
-	case ui.InputPointerMove:
-		if !t.edit.PointerActive {
-			return false
-		}
-		x, y := bounds.X+ev.X, bounds.Y+ev.Y
-		if math.Abs(float64(x-t.edit.PointerX))+math.Abs(float64(y-t.edit.PointerY)) > 4 {
-			t.edit.Drag = true
-		}
-		if !t.edit.Drag {
-			return true
-		}
-		for _, hit := range t.edit.Hits {
-			b := hit.Bounds
-			if x >= b.X && x < b.X+b.W && y >= b.Y && y < b.Y+b.H {
-				t.selection.Clear()
-				for i := min(t.edit.PointerRow, hit.Row); i <= max(t.edit.PointerRow, hit.Row); i++ {
-					t.selection.Add(i)
-				}
-				t.selectedRow = hit.Row
-				t.grid.Cells.Cursor = t.page.Columns[hit.Source]
-				break
-			}
-		}
-		return true
-	case ui.InputPointerUp:
-		if !t.edit.PointerActive || row != t.edit.PointerRow || source != t.edit.PointerSource {
-			return false
-		}
+	} else if ev.Kind == ui.InputPointerUp {
 		t.edit.PointerActive = false
-		x, y := bounds.X+ev.X, bounds.Y+ev.Y
-		moved := math.Abs(float64(x-t.edit.PointerX))+math.Abs(float64(y-t.edit.PointerY)) > 4
-		if !t.edit.Drag && !moved && t.edit.PointerMods == 0 && ev.Mods == 0 && mysqlDataCellContains(bounds, x, y) {
-			s.beginMySQLCellEdit(services, t, row, source, false)
-		}
-		return true
 	}
 	return false
 }
+
 func mysqlDataEditFont(t *Document) float32 {
-	zoom := t.edit.Zoom
-	if zoom == 0 {
-		zoom = 100
-	}
-	return 12 * float32(zoom) / 100
+	return 12 * float32(mysqlDataZoom(t)) / 100
 }
 func (s *State) mysqlDataInlineEditor(c *ui.Context, t *Document, row, source int) bool {
 	e := t.edit.Editor

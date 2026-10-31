@@ -129,6 +129,7 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *Document, offset in
 	t.selectedRow = -1
 	t.selection.Clear()
 	s.cancelMySQLChunk(t)
+	mysqlDataClearColumnSelection(t)
 	t.grid.Cells = ui.ColumnRange{}
 	s.Load(services, t, true)
 }
@@ -201,6 +202,8 @@ func (s *State) Close(t *Document) {
 	t.tools = mysqlDataToolsState{}
 	t.toolbar = mysqlDataToolbarState{}
 	t.fill = mysqlDataFillState{}
+	t.layout.columnWidth = mysqlDataColumnWidthState{}
+	t.layout.filterFocus = ""
 	t.closed = true
 	t.page, t.panel, t.columns = nil, nil, nil
 	t.edit = mysqlDataEditState{}

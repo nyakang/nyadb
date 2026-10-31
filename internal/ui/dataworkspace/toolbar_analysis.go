@@ -539,6 +539,7 @@ func (s *State) analysisHeaders(c *ui.Context, t *Document, columns []ui.TableCo
 			})
 			if stats != nil && panel.Label(locales.Text("列统计")+": "+col.ID).Clicked() {
 				s.finishMySQLCellEdit(t, true)
+				mysqlDataClearColumnSelection(t)
 				t.grid.Cells = ui.ColumnRange{Anchor: col.ID, Cursor: col.ID}
 			}
 		}
