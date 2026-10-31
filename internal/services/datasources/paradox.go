@@ -5,7 +5,6 @@ package datasources
 import (
 	"context"
 	"encoding/binary"
-	"github.com/ebitengine/purego"
 	"io"
 	"math"
 	"os"
@@ -17,6 +16,8 @@ import (
 	"time"
 	"unicode/utf8"
 	"unsafe"
+
+	"github.com/ebitengine/purego"
 )
 
 func paradoxLibraryNames() []string {
@@ -50,7 +51,12 @@ type paradoxAPI struct {
 	free                  func(unsafe.Pointer)
 }
 
-var paradoxErrorHandler = purego.NewCallback(func(uintptr, int32, uintptr, uintptr) {})
+var paradoxErrorHandler = sync.OnceValue(func() uintptr {
+	// libpx uses a C callback returning void. Windows requires a uintptr-sized
+	// result in the Go adapter; libpx ignores it. Register only on first use,
+	// and reuse the callback because native callback slots are never released.
+	return purego.NewCallback(func(purego.CDecl, uintptr, int32, uintptr, uintptr) uintptr { return 0 })
+})
 
 func loadParadox(c Config) (*paradoxAPI, error) {
 	names := paradoxLibraryNames()
@@ -177,7 +183,7 @@ func openParadox(ctx context.Context, c Config) (Source, error) {
 	if e = copyParadoxFile(ctx, c.Path, private); e != nil {
 		return fail(e)
 	}
-	s.doc = a.new(paradoxErrorHandler, 0, 0, 0, 0)
+	s.doc = a.new(paradoxErrorHandler(), 0, 0, 0, 0)
 	if s.doc == 0 {
 		return fail(safeError("libpx", "cannot allocate reader", nil))
 	}

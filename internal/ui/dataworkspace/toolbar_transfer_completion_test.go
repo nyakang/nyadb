@@ -527,6 +527,8 @@ func TestDataTransferCompletionJournalCreationFailureNeverStartsWrite(t *testing
 		t.Fatal(err)
 	}
 	t.Setenv("TMPDIR", path)
+	t.Setenv("TMP", path)
+	t.Setenv("TEMP", path)
 	called := false
 	s.StreamImporter = func(context.Context, int64, string, string, mysqlsvc.MySQLDataImportStreamRequest) (*mysqlsvc.MySQLDataImportStreamResult, error) {
 		called = true
@@ -562,7 +564,7 @@ func TestDataTransferCompletionBackChangedSourceSettingsRequireReread(t *testing
 	if err := tt.Click("字段分隔符（使用 \\t 表示制表符）"); err != nil {
 		t.Fatal(err)
 	}
-	tt.Key(ui.Ctrl, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyA)
 	tt.Type(";")
 	if d.transfer.Options.Delimiter != ";" {
 		t.Fatal("source setting was not edited")

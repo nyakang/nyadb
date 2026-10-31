@@ -113,7 +113,7 @@ func TestTableToolbarDockStagesTextAndPreservesCloseDraft(t *testing.T) {
 	if err := tt.Click("单元格编辑器内容"); err != nil {
 		t.Fatal(err)
 	}
-	tt.Key(ui.Ctrl, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyA)
 	tt.Type("docked draft")
 	if err := tt.Click("关闭编辑器"); err != nil {
 		t.Fatal(err)

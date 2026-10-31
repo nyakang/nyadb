@@ -652,6 +652,8 @@ func (w mysqlDataCodecFailWriter) Write([]byte) (int, error) { return 0, w.err }
 func TestDataTransferParquetLargeValuesUseBoundedRowGroupsAndCleanCanceledPages(t *testing.T) {
 	staging := t.TempDir()
 	t.Setenv("TMPDIR", staging)
+	t.Setenv("TMP", staging)
+	t.Setenv("TEMP", staging)
 	f, err := os.Create(filepath.Join(t.TempDir(), "wide.parquet"))
 	if err != nil {
 		t.Fatal(err)

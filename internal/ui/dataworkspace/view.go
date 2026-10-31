@@ -187,10 +187,10 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *mysqlsvc.MySQLDa
 					refreshMySQLDataCellHits(c, t)
 					return s.mysqlDataGridPointer(gridServices, t, gridControl.Bounds(c), ev)
 				})
-				if t.edit.Editor == nil && grid.Shortcut(ui.Ctrl, ui.KeyC) {
+				if t.edit.Editor == nil && grid.Shortcut(ui.Cmd, ui.KeyC) {
 					s.copyMySQLDataSelection(c, t)
 				}
-				if t.edit.Editor == nil && grid.Shortcut(ui.Ctrl, ui.KeyV) {
+				if t.edit.Editor == nil && grid.Shortcut(ui.Cmd, ui.KeyV) {
 					for source, name := range page.Columns {
 						if name == t.grid.Cells.Cursor {
 							s.pasteMySQLDataSelection(c, t, t.selectedRow, source)
