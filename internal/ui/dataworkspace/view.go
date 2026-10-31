@@ -114,7 +114,7 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *mysqlsvc.MySQLDa
 			} else {
 				// Loading/error status rows before the grid must not change
 				// its identity or reset the native scroll container.
-				grid := theme.Table(c.Key("mysql-data-grid"), &t.grid, columns, len(page.Rows)+rowOffset, func(gridRow, col int) {
+				grid := theme.TableWithFont(c.Key("mysql-data-grid"), &t.grid, columns, len(page.Rows)+rowOffset, theme.Font(c, mysqlDataEditFont(t)), func(gridRow, col int) {
 					if gridRow < rowOffset {
 						s.analysisHeaders(c, t, columns)
 						return
@@ -122,17 +122,8 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *mysqlsvc.MySQLDa
 					row := gridRow - rowOffset
 					tableCol := col
 					if col == 0 {
-						marker := ""
-						if d := mysqlDataDraftForRow(t, row); d != nil {
-							if d.Kind == "delete" {
-								marker = "− "
-							} else if d.Kind == "insert" {
-								marker = "+ "
-							} else {
-								marker = "* "
-							}
-						}
-						ui.Text(c, marker+mysqlDataRowHeaderText(t, row)).SingleLine().FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(theme.CellText(c, &t.grid, gridRow, tableCol, palette.Muted))
+						marker, ink := mysqlDataDraftMarker(c, t, row)
+						ui.Text(c, marker+mysqlDataRowHeaderText(t, row)).SingleLine().FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(theme.CellText(c, &t.grid, gridRow, tableCol, ink))
 						return
 					}
 					col--
@@ -147,9 +138,14 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *mysqlsvc.MySQLDa
 						return
 					}
 					cell := page.Rows[row][col]
-					ui.Box(c).FillWidth().MinWidth(0).Children(func() {
+					modified := mysqlDataCellModified(t, row, col)
+					content := ui.Box(c).FillWidth().MinWidth(0)
+					if modified {
+						mysqlDataModifiedBackground(c, t, gridRow, tableCol, content)
+					}
+					content.Children(func() {
 						if cell.Null {
-							ui.Text(c, "NULL").TextColor(theme.CellText(c, &t.grid, gridRow, tableCol, palette.GridNull)).FontSize(theme.Font(c, mysqlDataEditFont(t)))
+							ui.Text(c, "NULL").Italic().TextColor(theme.CellText(c, &t.grid, gridRow, tableCol, palette.GridNull)).FontSize(theme.Font(c, mysqlDataEditFont(t)))
 						} else {
 							text := ui.Text(c, cell.Text).SingleLine().FontSize(theme.Font(c, mysqlDataEditFont(t)))
 							if cell.Truncated {
@@ -157,9 +153,15 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *mysqlsvc.MySQLDa
 							}
 						}
 					})
+					if modified {
+						mysqlDataModifiedMark(c, t, gridRow, tableCol)
+					}
 					// Absolute children span the native cell's padding box, so
 					// clicks in its whitespace have the same target as its text.
 					box := ui.Box(c).Key("cell-pointer").Absolute().Top(0).Right(0).Bottom(0).Left(0)
+					if modified {
+						box.Tooltip(locales.Text("此单元格有待保存的更改"))
+					}
 					if cell.Truncated {
 						box.Tooltip(locales.Text("已截断的预览；可在字段信息中按需读取"))
 					}
@@ -287,10 +289,10 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *mysqlsvc.MySQL
 			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Shrink(0).Padding(2, 6).Gap(6).AlignItems(ui.Center).Background(palette.Notice).Children(func() {
 				ui.Text(c, fmt.Sprintf(locales.Text("%d 条待处理记录"), mysqlDataPendingRecordCount(t))).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.NoticeText).SingleLine().Grow(1).MinWidth(0)
 				ready := !t.loading && !t.edit.Busy && t.edit.Uncertain == nil && !dataTransactionUnavailable(t) && !t.transfer.Busy && !t.transfer.Uncertain
-				if ui.Button(c, locales.Text("应用更改")).Label(locales.Text("应用待处理记录")).Height(theme.ControlHeight).Disabled(!ready || t.profileID != s.session().ProfileID || !s.session().Connected).Clicked() {
+				if ui.Button(c, locales.Text("应用更改")).Label(locales.Text("应用待处理记录")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(!ready || t.profileID != s.session().ProfileID || !s.session().Connected).Clicked() {
 					s.saveMySQLData(c.Services(), t)
 				}
-				if ui.Button(c, locales.Text("放弃")).Label(locales.Text("放弃待处理记录")).Height(theme.ControlHeight).Disabled(!ready).Clicked() {
+				if ui.Button(c, locales.Text("放弃")).Label(locales.Text("放弃待处理记录")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(!ready).Clicked() {
 					s.discardMySQLData(t)
 				}
 			})
@@ -299,22 +301,22 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *mysqlsvc.MySQL
 			ready := t.page != nil && !t.loading && !t.edit.Busy && t.edit.Uncertain == nil && !dataTransactionUnavailable(t) && !t.transfer.Busy && !t.transfer.Uncertain && t.profileID == s.session().ProfileID && s.session().Connected
 			dirty := mysqlDataHasDraft(t)
 			insertReady := ready && len(page.ColumnMetadata) > 0 && len(page.ColumnMetadata) == len(page.Columns)
-			if ui.Button(c, "+").Label(locales.Text("添加记录")).Tooltip(locales.Text("添加记录")).Size(26, theme.ControlHeight).Padding(0).Disabled(!insertReady).Clicked() {
+			if ui.Button(c, "+").Label(locales.Text("添加记录")).Tooltip(locales.Text("添加记录")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!insertReady).Clicked() {
 				s.addMySQLDataRecord(c.Services(), t)
 			}
-			if ui.Button(c, "−").Label(locales.Text("删除记录")).Tooltip(locales.Text("删除记录")).Size(26, theme.ControlHeight).Padding(0).Disabled(!ready || !mysqlDataCanDeleteSelection(t, t.selectedRow)).Clicked() {
+			if ui.Button(c, "−").Label(locales.Text("删除记录")).Tooltip(locales.Text("删除记录")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!ready || !mysqlDataCanDeleteSelection(t, t.selectedRow)).Clicked() {
 				s.deleteMySQLDataRecords(c.Services(), t, t.selectedRow)
 			}
-			if ui.Button(c, "✓").Label(locales.Text("保存数据更改")).Tooltip(locales.Text("保存数据更改")).Size(26, theme.ControlHeight).Padding(0).Disabled(!ready || !dirty || t.edit.Uncertain != nil).Clicked() {
+			if ui.Button(c, "✓").Label(locales.Text("保存数据更改")).Tooltip(locales.Text("保存数据更改")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!ready || !dirty || t.edit.Uncertain != nil).Clicked() {
 				s.saveMySQLData(c.Services(), t)
 			}
-			if ui.Button(c, "×").Label(locales.Text("取消数据更改")).Tooltip(locales.Text("取消数据更改")).Size(26, theme.ControlHeight).Padding(0).Disabled(t.loading || t.edit.Busy || !dirty || t.edit.Uncertain != nil).Clicked() {
+			if ui.Button(c, "×").Label(locales.Text("取消数据更改")).Tooltip(locales.Text("取消数据更改")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(t.loading || t.edit.Busy || !dirty || t.edit.Uncertain != nil).Clicked() {
 				s.discardMySQLData(t)
 			}
-			if ui.Button(c, "↻").Label(locales.Text("刷新数据并返回首页")).Tooltip(locales.Text("刷新数据并返回首页")).Size(26, theme.ControlHeight).Padding(0).Disabled(!ready).Clicked() {
+			if ui.Button(c, "↻").Label(locales.Text("刷新数据并返回首页")).Tooltip(locales.Text("刷新数据并返回首页")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!ready).Clicked() {
 				s.Refresh(c.Services(), t)
 			}
-			if ui.Button(c, "■").Label(locales.Text("停止数据操作")).Tooltip(locales.Text("停止数据操作")).Size(26, theme.ControlHeight).Padding(0).Disabled(!t.loading && !t.edit.Busy && !dataTransactionBusy(t) && !t.transfer.Busy).Clicked() {
+			if ui.Button(c, "■").Label(locales.Text("停止数据操作")).Tooltip(locales.Text("停止数据操作")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!t.loading && !t.edit.Busy && !dataTransactionBusy(t) && !t.transfer.Busy).Clicked() {
 				if t.transfer.Busy {
 					s.stopDataTransfer(t)
 				} else if dataTransactionBusy(t) {

@@ -9155,3 +9155,193 @@ func ThemeSaveSuccess() string { return In(i18n.Locale()).ThemeSaveSuccess() }
 func (msgs Messages) ThemeSaveSuccess() string {
 	return Catalog.Format(msgs.locale, "themeSaveSuccess", nil)
 }
+
+// ReadingSettings says "阅读设置"
+// in the language the app shows.
+func ReadingSettings() string { return In(i18n.Locale()).ReadingSettings() }
+
+// ReadingSettings says "阅读设置"
+// in the language of msgs.
+func (msgs Messages) ReadingSettings() string {
+	return Catalog.Format(msgs.locale, "readingSettings", nil)
+}
+
+// ReadingSettingsHint says "字号在按 Enter 或离开输入框后应用。SQL 字号独立，系统文字缩放仍然生效。"
+// in the language the app shows.
+func ReadingSettingsHint() string { return In(i18n.Locale()).ReadingSettingsHint() }
+
+// ReadingSettingsHint says "字号在按 Enter 或离开输入框后应用。SQL 字号独立，系统文字缩放仍然生效。"
+// in the language of msgs.
+func (msgs Messages) ReadingSettingsHint() string {
+	return Catalog.Format(msgs.locale, "readingSettingsHint", nil)
+}
+
+// InterfaceFontSize says "界面基准字号"
+// in the language the app shows.
+func InterfaceFontSize() string { return In(i18n.Locale()).InterfaceFontSize() }
+
+// InterfaceFontSize says "界面基准字号"
+// in the language of msgs.
+func (msgs Messages) InterfaceFontSize() string {
+	return Catalog.Format(msgs.locale, "interfaceFontSize", nil)
+}
+
+// SqlFontSize says "SQL 字号"
+// in the language the app shows.
+func SqlFontSize() string { return In(i18n.Locale()).SqlFontSize() }
+
+// SqlFontSize says "SQL 字号"
+// in the language of msgs.
+func (msgs Messages) SqlFontSize() string {
+	return Catalog.Format(msgs.locale, "sqlFontSize", nil)
+}
+
+// TableRowDensity says "表格行高"
+// in the language the app shows.
+func TableRowDensity() string { return In(i18n.Locale()).TableRowDensity() }
+
+// TableRowDensity says "表格行高"
+// in the language of msgs.
+func (msgs Messages) TableRowDensity() string {
+	return Catalog.Format(msgs.locale, "tableRowDensity", nil)
+}
+
+// DensityCompact says "紧凑"
+// in the language the app shows.
+func DensityCompact() string { return In(i18n.Locale()).DensityCompact() }
+
+// DensityCompact says "紧凑"
+// in the language of msgs.
+func (msgs Messages) DensityCompact() string {
+	return Catalog.Format(msgs.locale, "densityCompact", nil)
+}
+
+// DensityStandard says "标准"
+// in the language the app shows.
+func DensityStandard() string { return In(i18n.Locale()).DensityStandard() }
+
+// DensityStandard says "标准"
+// in the language of msgs.
+func (msgs Messages) DensityStandard() string {
+	return Catalog.Format(msgs.locale, "densityStandard", nil)
+}
+
+// DensityRelaxed says "宽松"
+// in the language the app shows.
+func DensityRelaxed() string { return In(i18n.Locale()).DensityRelaxed() }
+
+// DensityRelaxed says "宽松"
+// in the language of msgs.
+func (msgs Messages) DensityRelaxed() string {
+	return Catalog.Format(msgs.locale, "densityRelaxed", nil)
+}
+
+// ResetReadingDefault says "恢复默认"
+// in the language the app shows.
+func ResetReadingDefault() string { return In(i18n.Locale()).ResetReadingDefault() }
+
+// ResetReadingDefault says "恢复默认"
+// in the language of msgs.
+func (msgs Messages) ResetReadingDefault() string {
+	return Catalog.Format(msgs.locale, "resetReadingDefault", nil)
+}
+
+// ResetInterfaceFont says "恢复默认界面字号"
+// in the language the app shows.
+func ResetInterfaceFont() string { return In(i18n.Locale()).ResetInterfaceFont() }
+
+// ResetInterfaceFont says "恢复默认界面字号"
+// in the language of msgs.
+func (msgs Messages) ResetInterfaceFont() string {
+	return Catalog.Format(msgs.locale, "resetInterfaceFont", nil)
+}
+
+// ResetSQLFont says "恢复默认 SQL 字号"
+// in the language the app shows.
+func ResetSQLFont() string { return In(i18n.Locale()).ResetSQLFont() }
+
+// ResetSQLFont says "恢复默认 SQL 字号"
+// in the language of msgs.
+func (msgs Messages) ResetSQLFont() string {
+	return Catalog.Format(msgs.locale, "resetSQLFont", nil)
+}
+
+// ResetTableDensity says "恢复默认行高"
+// in the language the app shows.
+func ResetTableDensity() string { return In(i18n.Locale()).ResetTableDensity() }
+
+// ResetTableDensity says "恢复默认行高"
+// in the language of msgs.
+func (msgs Messages) ResetTableDensity() string {
+	return Catalog.Format(msgs.locale, "resetTableDensity", nil)
+}
+
+// PendingCellChange says "此单元格有待保存的更改"
+// in the language the app shows.
+func PendingCellChange() string { return In(i18n.Locale()).PendingCellChange() }
+
+// PendingCellChange says "此单元格有待保存的更改"
+// in the language of msgs.
+func (msgs Messages) PendingCellChange() string {
+	return Catalog.Format(msgs.locale, "pendingCellChange", nil)
+}
+
+// DecreaseUIFont says "减小界面字号"
+// in the language the app shows.
+func DecreaseUIFont() string { return In(i18n.Locale()).DecreaseUIFont() }
+
+// DecreaseUIFont says "减小界面字号"
+// in the language of msgs.
+func (msgs Messages) DecreaseUIFont() string {
+	return Catalog.Format(msgs.locale, "decreaseUIFont", nil)
+}
+
+// IncreaseUIFont says "增大界面字号"
+// in the language the app shows.
+func IncreaseUIFont() string { return In(i18n.Locale()).IncreaseUIFont() }
+
+// IncreaseUIFont says "增大界面字号"
+// in the language of msgs.
+func (msgs Messages) IncreaseUIFont() string {
+	return Catalog.Format(msgs.locale, "increaseUIFont", nil)
+}
+
+// DecreaseSQLFont says "减小 SQL 字号"
+// in the language the app shows.
+func DecreaseSQLFont() string { return In(i18n.Locale()).DecreaseSQLFont() }
+
+// DecreaseSQLFont says "减小 SQL 字号"
+// in the language of msgs.
+func (msgs Messages) DecreaseSQLFont() string {
+	return Catalog.Format(msgs.locale, "decreaseSQLFont", nil)
+}
+
+// IncreaseSQLFont says "增大 SQL 字号"
+// in the language the app shows.
+func IncreaseSQLFont() string { return In(i18n.Locale()).IncreaseSQLFont() }
+
+// IncreaseSQLFont says "增大 SQL 字号"
+// in the language of msgs.
+func (msgs Messages) IncreaseSQLFont() string {
+	return Catalog.Format(msgs.locale, "increaseSQLFont", nil)
+}
+
+// SetUIFont says "设置界面字号"
+// in the language the app shows.
+func SetUIFont() string { return In(i18n.Locale()).SetUIFont() }
+
+// SetUIFont says "设置界面字号"
+// in the language of msgs.
+func (msgs Messages) SetUIFont() string {
+	return Catalog.Format(msgs.locale, "setUIFont", nil)
+}
+
+// SetSQLFont says "设置 SQL 字号"
+// in the language the app shows.
+func SetSQLFont() string { return In(i18n.Locale()).SetSQLFont() }
+
+// SetSQLFont says "设置 SQL 字号"
+// in the language of msgs.
+func (msgs Messages) SetSQLFont() string {
+	return Catalog.Format(msgs.locale, "setSQLFont", nil)
+}

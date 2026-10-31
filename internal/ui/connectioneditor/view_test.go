@@ -180,6 +180,25 @@ func TestNativeConnectionEditorSmallWindowScrollsBodyKeepsFooter(t *testing.T) {
 	}
 }
 
+func TestConnectionFooterRemainsReachableWithMaximumReadingSize(t *testing.T) {
+	previous := theme.CurrentMetrics()
+	t.Cleanup(func() { theme.SetMetrics(previous) })
+	theme.SetMetrics(theme.MetricsPreferences{UIFontSize: 16, SQLFontSize: 24, TableDensity: theme.DensityRelaxed})
+	s := newTestEditor()
+	s.SetConnectionWindowHost(func() {}, func() {})
+	s.openConnectionDialog()
+	s.chooseConnectionKind(connections.MySQL)
+	s.nextConnectionStep()
+	tt := ui.NewTester(s.ConnectionWindowView, 720, 520)
+	tt.SetPreferences(ui.Preferences{TextScale: 1.5})
+	for _, label := range []string{"保存连接", "取消连接向导", "上一步", "测试当前 MySQL 配置"} {
+		r, ok := tt.Find(label)
+		if !ok || r.X < 0 || r.Y < 0 || r.X+r.W > 720 || r.Y+r.H > 520 {
+			t.Fatalf("large-text action clipped: %s %+v", label, r)
+		}
+	}
+}
+
 func TestNativeConnectionEditorNarrowProfileSidebarRemainsReachable(t *testing.T) {
 	s, _, _, _ := editMySQLProfileTester(t)
 	s.mysqlCompatibilityVisible = true

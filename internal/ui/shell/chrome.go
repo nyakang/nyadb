@@ -239,14 +239,14 @@ func (s *State) toolBar(c *ui.Context) {
 		{"自动运行", "automation", palette.Green},
 		{"模型", "model", palette.Gold},
 	}
-	ui.Row(c).Height(theme.ToolbarHeight).AlignItems(ui.Center).Padding(1, 4).Gap(1).
+	ui.Row(c).Height(theme.RowHeight(c, theme.ToolbarHeight)).AlignItems(ui.Center).Padding(1, 4).Gap(1).
 		Background(palette.Toolbar).Children(func() {
 		ui.Toolbar(c, func() {
 			for _, action := range actions {
 				item := action
 				active := s.currentObjectKind() == item.label && s.currentTab().kind == tabObjects
 				button := ui.Button(c, "").Label(locales.Text(item.label)).Tooltip(locales.Text(item.label)).
-					Width(theme.ToolbarItemWidth).Height(theme.ToolbarItemHeight).Padding(3, 2).Radius(theme.ControlRadius).
+					Width(theme.ToolbarItemWidth).Height(theme.RowHeight(c, theme.ToolbarItemHeight)).Padding(3, 2).Radius(theme.ControlRadius).
 					Disabled(!s.toolbarActionAvailable(item.label)).Border(0, ui.Transparent).
 					Children(func() {
 						ui.Column(c).Center().Gap(4).Children(func() {
@@ -266,7 +266,7 @@ func (s *State) toolBar(c *ui.Context) {
 		}).Label(locales.Text("主工具栏")).Grow(1).MinWidth(0).Padding(0).Gap(1).Background(palette.Toolbar)
 		// Keep the inspector toggle available even when toolbar actions overflow.
 		info := ui.Button(c, "").Label(locales.Text("信息")).Tooltip(locales.Text("显示或隐藏信息面板")).
-			Width(48).Height(theme.ToolbarItemHeight).Padding(3, 2).Radius(theme.ControlRadius).Border(0, ui.Transparent).Children(func() {
+			Width(48).Height(theme.RowHeight(c, theme.ToolbarItemHeight)).Padding(3, 2).Radius(theme.ControlRadius).Border(0, ui.Transparent).Children(func() {
 			ui.Column(c).Center().Gap(4).Children(func() {
 				theme.Icon(c, "info", theme.ToolbarIconSize, palette.Blue)
 				ui.Text(c, locales.Text("信息")).FontSize(theme.Font(c, theme.FontSize))

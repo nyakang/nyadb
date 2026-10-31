@@ -21,10 +21,10 @@ from PIL import ImageGrab
 ROOT = Path(__file__).resolve().parents[1]
 SIDEBARS = {
     "classic": {"light": "f8f9fb", "dark": "232629"},
-    "ocean": {"light": "edf3fc", "dark": "1a2c40"},
-    "forest": {"light": "ebf3ed", "dark": "203128"},
-    "rose": {"light": "f6edf3", "dark": "35283a"},
-    "sand": {"light": "f4edde", "dark": "342e24"},
+    "ocean": {"light": "eef3fa", "dark": "1f2c3b"},
+    "forest": {"light": "ecf2ee", "dark": "243029"},
+    "rose": {"light": "f4eef2", "dark": "332937"},
+    "sand": {"light": "f2ede2", "dark": "332e27"},
 }
 
 
@@ -106,7 +106,7 @@ def main() -> int:
 
         def preferences() -> dict[str, str]:
             with sqlite3.connect(db) as connection:
-                return dict(connection.execute("SELECT key, value FROM app_preferences WHERE key IN ('appearance', 'color_scheme')"))
+                return dict(connection.execute("SELECT key, value FROM app_preferences WHERE key IN ('appearance', 'color_scheme', 'appearance_metrics')"))
 
         def wait_for(scheme: str, mode: str, saved_mode: str | None = None):
             expected = tuple(bytes.fromhex(SIDEBARS[scheme][mode]))
@@ -176,9 +176,40 @@ def main() -> int:
                 raise RuntimeError(f"GTK menus did not switch: {dark_pixel}, {light_pixel}")
             evidence["native_menu_pixels"] = {"dark": dark_pixel, "light": light_pixel}
 
+            # A card is followed in keyboard order by the remaining cards,
+            # interface size, its enabled step/reset buttons, SQL size, then density.
+            # At a maximum size, the disabled increase button is skipped.
+            click(850, 420)
+            keys("Tab", "Tab", "Tab", "Tab")
+            keys("ctrl+a")
+            run("xdotool", "type", "--clearmodifiers", "16")
+            keys("Return")
+
+            def wait_metrics(ui_size: int, sql_size: int, density: str) -> dict:
+                deadline = time.monotonic() + 8
+                while time.monotonic() < deadline:
+                    metrics = json.loads(preferences().get("appearance_metrics", "{}"))
+                    if (metrics.get("ui_font_size"), metrics.get("sql_font_size"), metrics.get("table_density")) == (ui_size, sql_size, density):
+                        return metrics
+                    time.sleep(0.2)
+                screenshot("failure-reading")
+                raise RuntimeError(f"reading preferences did not update: {metrics}")
+
+            wait_metrics(16, 13, "compact")
+            screenshot("reading-interface-16")
+            keys("Tab", "Tab", "Tab", "ctrl+a")
+            run("xdotool", "type", "--clearmodifiers", "24")
+            keys("Return")
+            wait_metrics(16, 24, "compact")
+            keys("Tab", "Tab", "Tab", "Tab", "Tab", "space")
+            evidence["reading_preferences"] = wait_metrics(16, 24, "relaxed")
+            screenshot("reading-large-relaxed")
+            print("PASS interface size, SQL size and row spacing through native keyboard input", flush=True)
+
             stop(app)
             app = launch()
             wait_for("ocean", "light")
+            wait_metrics(16, 24, "relaxed")
             screenshot("restart-ocean-light")
             evidence["restored_preferences"] = preferences()
             evidence["binary_sha256"] = hashlib.sha256(binary.read_bytes()).hexdigest()
@@ -189,7 +220,7 @@ def main() -> int:
                 source.update(path.read_bytes())
             evidence["source_sha256"] = source.hexdigest()
             (output / "verification.json").write_text(json.dumps(evidence, indent=2) + "\n")
-            print("PASS all 10 variants, native menus, system mode, card selection and restart persistence", flush=True)
+            print("PASS all 10 variants, native menus, system mode, reading controls and restart persistence", flush=True)
         finally:
             stop(app)
             stop(wm)

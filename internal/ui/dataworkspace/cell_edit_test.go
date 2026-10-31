@@ -49,7 +49,7 @@ func TestMySQLDataEditorFillsCellWithoutResizingRows(t *testing.T) {
 				}
 				// Native grid lines own the final right/bottom pixel. The blue
 				// frame must remain visible immediately inside each of four edges.
-				blue := theme.PaletteFor(mode, true).Blue
+				blue := theme.PaletteFor(mode, true).Focus
 				points := [][2]float32{{cell.X + 0.5, cell.Y + cell.H/2}, {cell.X + cell.W - 1.5, cell.Y + cell.H/2}, {cell.X + cell.W/2, cell.Y + 0.5}, {cell.X + cell.W/2, cell.Y + cell.H - 1.5}}
 				for _, point := range points {
 					got := tt.Image().RGBAAt(int(point[0]), int(point[1]))

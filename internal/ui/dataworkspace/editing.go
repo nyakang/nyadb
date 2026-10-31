@@ -805,7 +805,7 @@ func (s *State) mysqlDataInlineEditor(c *ui.Context, t *Document, row, source in
 	input := ui.TextInputBase(c.Key("cell-editor"), &e.Text).Label(locales.Text("单元格编辑")+" "+e.Field).
 		Absolute().Top(0).Right(0).Bottom(0).Left(0).MinWidth(0).
 		FontSize(font).Padding(0, c.Theme().Space(2.5)-1).Radius(0).
-		Background(theme.Colors(c).App).Border(1, theme.Colors(c).Blue).BorderWidth(1, 2, 2, 1).AutoFocus().ReadOnly(t.edit.Busy)
+		Background(theme.Colors(c).App).Border(1, theme.Colors(c).Focus).BorderWidth(1, 2, 2, 1).AutoFocus().ReadOnly(t.edit.Busy)
 	input.OnTextKey(func(k ui.TextKey) bool {
 		if e.Composing && (k.Key == ui.KeyEnter || k.Key == ui.KeyTab || k.Key == ui.KeyEscape) {
 			return true
@@ -975,7 +975,7 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 	if message != "" {
 		ui.Text(c, message).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(color).SingleLine().Grow(1).MinWidth(0).Tooltip(message)
 	}
-	if t.edit.Err != "" && t.edit.Uncertain != nil && ui.Button(c, locales.Text("核验提交结果")).Height(theme.ControlHeight).Disabled(t.edit.Busy).Clicked() {
+	if t.edit.Err != "" && t.edit.Uncertain != nil && ui.Button(c, locales.Text("核验提交结果")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(t.edit.Busy).Clicked() {
 		s.verifyMySQLDataSave(c.Services(), t)
 	}
 }

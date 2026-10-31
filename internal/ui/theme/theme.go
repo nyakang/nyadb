@@ -10,11 +10,14 @@ import (
 // Snapshot is a value owned by a frame. Resolving another window or changing
 // the saved mode never mutates an existing snapshot.
 type Snapshot struct {
-	Scheme    Scheme
-	Dark      bool
-	Palette   Palette
-	SQL       editor.Theme
-	TextScale float32
+	Scheme      Scheme
+	Dark        bool
+	Palette     Palette
+	SQL         editor.Theme
+	TextScale   float32 // Desktop scaling, retained for compatibility.
+	Metrics     MetricsPreferences
+	UIZoom      float32
+	SQLFontSize float32
 }
 
 // Resolve preserves the classic palette API for existing callers and previews.
@@ -24,11 +27,16 @@ func Resolve(mode Mode, systemDark bool, prefs ui.Preferences) Snapshot {
 
 // ResolveScheme is pure: previewing a scheme never changes the current choice.
 func ResolveScheme(scheme Scheme, mode Mode, systemDark bool, prefs ui.Preferences) Snapshot {
-	mode = ParseMode(string(mode))
-	return snapshot(ParseScheme(string(scheme)), mode == ModeDark || (mode == ModeSystem && systemDark), prefs)
+	return ResolveAppearance(scheme, mode, systemDark, prefs, DefaultMetrics())
 }
 
-func snapshot(scheme Scheme, dark bool, prefs ui.Preferences) Snapshot {
+// ResolveAppearance resolves colors and reading preferences without global state.
+func ResolveAppearance(scheme Scheme, mode Mode, systemDark bool, prefs ui.Preferences, metrics MetricsPreferences) Snapshot {
+	mode = ParseMode(string(mode))
+	return snapshot(ParseScheme(string(scheme)), mode == ModeDark || (mode == ModeSystem && systemDark), prefs, metrics)
+}
+
+func snapshot(scheme Scheme, dark bool, prefs ui.Preferences, metrics MetricsPreferences) Snapshot {
 	p := schemePalette(scheme, dark)
 	// Classic integrates with the desktop accent. Named color families keep
 	// their designed accents; contrast and text scaling apply to every scheme.
@@ -39,7 +47,10 @@ func snapshot(scheme Scheme, dark bool, prefs ui.Preferences) Snapshot {
 		p.AccentHover = readableBackground(p.Accent.Mix(ui.Hex("#000000"), 0.12), p.AccentText)
 		p.AccentPressed = readableBackground(p.Accent.Mix(ui.Hex("#000000"), 0.25), p.AccentText)
 		p.Focus = p.Accent
-		p.Selection = p.Accent.Mix(p.App, 0.25)
+		p.Selection = p.App.Mix(p.Accent, 0.22)
+	}
+	if scheme == SchemeClassic {
+		p.Selection = p.App.Mix(p.Accent, 0.22)
 	}
 	p.SelectionText = onColor(p.Selection)
 	p.NavigationSelection, p.NavigationSelectionText = p.Selection, p.SelectionText
@@ -56,9 +67,18 @@ func snapshot(scheme Scheme, dark bool, prefs ui.Preferences) Snapshot {
 		p.InputBorder = p.Panel
 	}
 	p.GridAlternate = p.App.Mix(p.Header, 0.5)
-	p.GridNull = p.Muted
 	p.Notice = p.App.Mix(p.Warning, 0.16)
-	p.NoticeText = p.Text
+	p.GridModified = p.App.Mix(p.Warning, 0.12)
+	backgrounds := []ui.Color{p.App, p.Panel, p.Header, p.Sidebar, p.Toolbar, p.GridAlternate, p.Notice, p.GridModified}
+	p.Text = readableInk(p.Text, backgrounds...)
+	p.Muted = readableInk(p.Muted, backgrounds...)
+	p.GridNull = p.Muted
+	p.NoticeText, p.GridModifiedText = p.Text, p.Text
+	p.Error, p.Warning, p.Success = readableInk(p.Error, backgrounds...), readableInk(p.Warning, backgrounds...), readableInk(p.Success, backgrounds...)
+	p.Focus = readableInkMinimum(p.Focus, 3, p.App, p.GridAlternate, p.Selection, p.Header)
+	p.GridModifiedMark = readableInkMinimum(p.Warning, 3, p.App, p.GridAlternate, p.GridModified)
+	p.GridInsertedMark = readableInkMinimum(p.Success, 3, p.App, p.GridAlternate)
+	p.GridDeletedMark = readableInkMinimum(p.Error, 3, p.App, p.GridAlternate)
 	p.Chart = p.Accent
 	if scheme == SchemeClassic {
 		p.Chart = ui.Hex("#168397")
@@ -70,7 +90,9 @@ func snapshot(scheme Scheme, dark bool, prefs ui.Preferences) Snapshot {
 	if scale <= 0 {
 		scale = 1
 	}
-	return Snapshot{Scheme: scheme, Dark: dark, Palette: p, SQL: *sqlTheme(scheme, dark, p, prefs), TextScale: scale}
+	metrics = NormalizeMetrics(metrics)
+	return Snapshot{Scheme: scheme, Dark: dark, Palette: p, SQL: *sqlTheme(scheme, dark, p, prefs), TextScale: scale,
+		Metrics: metrics, UIZoom: scale * float32(metrics.UIFontSize) / 12, SQLFontSize: scale * float32(metrics.SQLFontSize)}
 }
 
 type snapshotKey struct{}
@@ -88,7 +110,7 @@ func Frame(c *ui.Context) Snapshot {
 	if state.applied {
 		return state.value
 	}
-	return snapshot(CurrentScheme(), c.Theme().Dark, c.Preferences())
+	return snapshot(CurrentScheme(), c.Theme().Dark, c.Preferences(), CurrentMetrics())
 }
 
 // Colors uses the frame's resolved appearance, independent of the process's
@@ -98,13 +120,13 @@ func Colors(c *ui.Context) Palette {
 	if state.applied {
 		return state.value.Palette
 	}
-	return snapshot(CurrentScheme(), c.Theme().Dark, c.Preferences()).Palette
+	return snapshot(CurrentScheme(), c.Theme().Dark, c.Preferences(), CurrentMetrics()).Palette
 }
 
 // Apply maps the frame's snapshot to native MyGo widgets. System preferences
 // are applied once to NyaDB's baseline, so repeated calls do not compound them.
 func Apply(c *ui.Context) Snapshot {
-	s := ResolveScheme(CurrentScheme(), CurrentMode(), c.Theme().Dark, c.Preferences())
+	s := ResolveAppearance(CurrentScheme(), CurrentMode(), c.Theme().Dark, c.Preferences(), CurrentMetrics())
 	state := ui.Local(c.Root(), snapshotKey{}, func() windowSnapshot { return windowSnapshot{} })
 	*state = windowSnapshot{applied: true, value: s}
 	p := s.Palette
@@ -120,7 +142,7 @@ func Apply(c *ui.Context) Snapshot {
 	if !s.Dark {
 		t.Inverse, t.InverseText = ui.Hex("#30353b"), ui.Hex("#ffffff")
 	}
-	t.Spacing, t.FontSize, t.Radius = 3, FontSize*s.TextScale, ControlRadius
+	t.Spacing, t.FontSize, t.Radius = 3*max(float32(1), s.UIZoom), FontSize*s.UIZoom, ControlRadius
 	c.SetTheme(&t)
 	return s
 }
@@ -151,7 +173,35 @@ func Table(c *ui.Context, state *ui.ListState, columns []ui.TableColumn, rows in
 	base := c.Theme()
 	c.SetTheme(SelectionTheme(c))
 	defer c.SetTheme(base)
-	return ui.Table(c, state, columns, rows, cell)
+	return tableWithFont(c, state, columns, rows, Font(c, FontSize), cell)
+}
+
+// TableWithFont also accounts for a document's local data zoom when adding
+// row space. Its zero-width sizing element leaves native cell parents intact.
+func TableWithFont(c *ui.Context, state *ui.ListState, columns []ui.TableColumn, rows int, font float32, cell func(int, int)) ui.Element {
+	base := c.Theme()
+	c.SetTheme(SelectionTheme(c))
+	defer c.SetTheme(base)
+	return tableWithFont(c, state, columns, rows, font, cell)
+}
+
+func tableWithFont(c *ui.Context, state *ui.ListState, columns []ui.TableColumn, rows int, font float32, cell func(int, int)) ui.Element {
+	style := ui.TableStyle{}
+	if state.TableStyle != nil {
+		style = *state.TableStyle
+	}
+	style.AlternateRowColor, style.GridColor = Colors(c).GridAlternate, Colors(c).Border
+	state.TableStyle = &style
+	extra := TableRowExtra(c)
+	var height float32
+	if extra > 0 {
+		m := (ui.Font{Size: font}).Metrics()
+		height = m.Ascent + m.Descent + m.LineGap + extra
+	}
+	return ui.Table(c, state, columns, rows, func(row, col int) {
+		ui.Box(c).Key("theme-row-height").Width(0).MinHeight(height).Shrink(0).Role(ui.RoleNone)
+		cell(row, col)
+	})
 }
 
 // Outline applies the same selected-row colors to native navigation trees.
