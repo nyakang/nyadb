@@ -8,6 +8,9 @@ jobs:
   go:
     name: Go / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    env:
+      GOWORK: "off"
+      GOFLAGS: "-mod=readonly"
     strategy:
       fail-fast: false
       matrix:
