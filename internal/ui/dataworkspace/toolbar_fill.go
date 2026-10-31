@@ -39,17 +39,9 @@ func (s *State) fillSelectedData(t *Document) error {
 	}
 	// The selection boundaries describe the visual column order, including
 	// user rearrangement and hidden columns, just as clipboard paste does.
-	columns := mysqlDataPasteColumns(t)
-	if !t.grid.Cells.All {
-		a := slices.Index(columns, slices.Index(t.page.Columns, t.grid.Cells.Anchor))
-		b := slices.Index(columns, slices.Index(t.page.Columns, t.grid.Cells.Cursor))
-		if a < 0 || b < 0 {
-			return fmt.Errorf("%s", locales.Text("选择一个单元格"))
-		}
-		if a > b {
-			a, b = b, a
-		}
-		columns = columns[a : b+1]
+	var columns []int
+	for _, name := range mysqlDataSelectedColumns(t) {
+		columns = append(columns, slices.Index(t.page.Columns, name))
 	}
 	if len(columns) == 0 {
 		return fmt.Errorf("%s", locales.Text("选择一个单元格"))

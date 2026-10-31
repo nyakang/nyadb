@@ -906,5 +906,12 @@
   "decreaseSQLFont": "Decrease SQL font size",
   "increaseSQLFont": "Increase SQL font size",
   "setUIFont": "Set interface font size",
-  "setSQLFont": "Set SQL font size"
+  "setSQLFont": "Set SQL font size",
+  "mysqlHeaderAddFilter": "Add Filter",
+  "mysqlHeaderColumnWidthMenu": "Column Width…",
+  "mysqlHeaderColumnWidth": "Column Width",
+  "mysqlHeaderColumnWidthDIP": "Column width (DIP)",
+  "mysqlHeaderColumnGone": "The field no longer exists",
+  "mysqlHeaderInvalidColumnWidth": "Enter a positive integer within the column width limits",
+  "mysqlHeaderShowComments": "Show Comments"
 }

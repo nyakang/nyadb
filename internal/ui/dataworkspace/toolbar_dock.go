@@ -99,7 +99,7 @@ func (s *State) dataDock(c *ui.Context, t *Document) {
 		}
 		// Opening an editor selects its owning cell. Do that only for a single
 		// cell so showing the dock never collapses a row or rectangle selection.
-		singleCell := !t.grid.Cells.All && t.grid.Cells.Anchor == t.grid.Cells.Cursor &&
+		singleCell := t.grid.ColumnSelection == nil && !t.grid.Cells.All && len(mysqlDataSelectedColumns(t)) == 1 &&
 			(t.selection.Len() == 0 || t.selection.Len() == 1 && t.selection.Has(t.selectedRow))
 		if singleCell && !t.edit.Busy && mysqlDataCanEdit(t, t.selectedRow, source) {
 			e := t.edit.Editor

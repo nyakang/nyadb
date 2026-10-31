@@ -1,0 +1,1313 @@
+diff --git a/.github/workflows/release.yml b/.github/workflows/release.yml
+index 60d93f48..8f131c32 100644
+--- a/.github/workflows/release.yml
++++ b/.github/workflows/release.yml
+@@ -2,7 +2,8 @@ name: Release
+ 
+ on:
+   push:
+-    tags: ["v*"]
++    # NyaDB tags publish a Go-only fork; never run upstream npm publishing.
++    tags: ["v*", "!v*-nyadb.*"]
+ 
+ permissions:
+   contents: read
+diff --git a/NYADB_PATCHES.md b/NYADB_PATCHES.md
+index 14f276b4..dfe5ad2f 100644
+--- a/NYADB_PATCHES.md
++++ b/NYADB_PATCHES.md
+@@ -2,6 +2,59 @@
+ 
+ This repository is a fork of [egoist/mygo](https://github.com/egoist/mygo). The upstream `main` branch is kept suitable for GitHub **Sync fork**. NyaDB-specific changes belong on version-specific `nyadb/vX.Y.Z` branches based on their corresponding upstream release tags.
+ 
++## Native grid headers: v0.7.3-nyadb.2 candidate
++
++Based on `nyadb/v0.7.3` at the immutable `.1` commit
++`922da57bd8b2ec6cf1576441afbe7f6565a536ca`. The `.2` release is prepared
++locally and has not been tagged or pushed. The module path and upstream
++version remain unchanged; this is a Go-only fork patch, not an npm release.
++The inherited npm release workflow excludes `v*-nyadb.*` tags; publishing
++a new immutable Go tag does not publish upstream npm packages.
++
++Adds opt-in whole/discrete column selection, native COMMENT tooltips and a
++third header line, an independent hover action menu, and an undragged cell
++click callback. Header interactions retain keyed identity, native resize,
++reorder and scrolling. Empty tables use the same native headers with no
++synthetic record. Column IDs are reconciled after removal and private Shift
++state is revoked on direct selection reset. A ListState can be reused by a
++new window/Tester, while two lists in the same context are still rejected.
++See [native header API and lifecycle](docs/nyadb-grid-headers.md).
++
++The implementation is independently developed from runtime behavior and
++the existing MyGo sources. No proprietary code, icons or screenshots enter
++the patch. NyaDB retains its own theme and icon set.
++
++Verification with cgo disabled: full Go tests, Linux/Windows amd64 and
++Darwin arm64 builds/vet, production-tag vet, and js/wasm vet excluding the
++CLI pass. Native header tests advance Tester time rather than sleeping.
++Linux runtime checks cover header selection, menus, COMMENTs, empty tables,
++width, zoom and both axes of native selection autoscroll. NyaDB's 180-row
++nonadjacent-column clipboard output matches the original byte for byte.
++
++Release-size comparison against `.1`, using identical `-buildvcs=false`,
++`-trimpath`, `mygo_noinspector`, stripped symbols and `production=1`:
++
++| App and platform | `.1` bytes | Candidate bytes | Difference |
++| --- | ---: | ---: | ---: |
++| linux/amd64/counter-native | 9,564,423 | 9,564,423 | +0 |
++| linux/amd64/hello | 9,613,575 | 9,613,575 | +0 |
++| windows/amd64/counter-native | 9,881,088 | 9,882,112 | +1,024 |
++| windows/amd64/hello | 9,974,272 | 9,974,272 | +0 |
++| darwin/arm64/counter-native | 9,372,866 | 9,372,978 | +112 |
++| darwin/arm64/hello | 9,561,634 | 9,561,634 | +0 |
++
++The new pointer-click dispatcher is registered by an opt-in Table; `nm`
++and `-dumpdep` confirm that column hit-testing machine code is not linked
++into counter-native. Its remaining Windows/Darwin growth is the small
++guarded row-input dispatch and callback/type metadata. Windows `.text`
++grows 160 virtual bytes and `.rdata` 696, rounded to two 512-byte sections;
++Darwin text grows 144 bytes, with metadata/alignment accounting for the
++112-byte file difference. Unused webview examples remain unchanged.
++An initial measurement included differing VCS build info; the controlled
++comparison removes it and verifies identical `go version -m` output.
++Logs, source hashes and symbol/section deltas are retained in NyaDB's
++ignored `temp/research/grid-alignment-20261031/mygo-validation/`.
++
+ ## NyaDB v0.7.3 compatibility release
+ 
+ Based on upstream `v0.7.3` (commit
+diff --git a/ui/cellselect.go b/ui/cellselect.go
+index 7e37214d..c5d1e51c 100644
+--- a/ui/cellselect.go
++++ b/ui/cellselect.go
+@@ -1,5 +1,7 @@
+ package ui
+ 
++import "slices"
++
+ // ColumnRange is the columns of the block of cells a Table chooses
+ // (ListState.CellSelect), by column ID (TableColumn.ID, or Title).
+ type ColumnRange struct {
+@@ -60,7 +62,30 @@ func (s *ListState) colIndex(id string) int {
+ // RowHeader column when it names none, and Cells.Anchor to the Cursor when
+ // it names none.
+ func (s *ListState) fixCells() {
++	if s.ColumnSelection != nil {
++		ids := s.ColumnSelection[:0]
++		for _, id := range s.ColumnSelection {
++			if k := s.colIndex(id); k >= 0 && !s.tableCols[k].rowHeader && !slices.Contains(ids, id) {
++				ids = append(ids, id)
++			}
++		}
++		s.ColumnSelection = ids
++		s.headerBase = slices.DeleteFunc(s.headerBase, func(id string) bool {
++			k := s.colIndex(id)
++			return k < 0 || s.tableCols[k].rowHeader
++		})
++		if s.colIndex(s.headerPivot) < 0 {
++			s.headerPivot, s.headerBase = "", nil
++		}
++	} else {
++		// Applications clear whole-column mode when replacing a page or
++		// assigning Cells directly. Its previous Shift base must go too.
++		s.headerPivot, s.headerBase = "", nil
++	}
+ 	c := &s.Cells
++	if s.ColumnSelection != nil && !slices.Contains(s.ColumnSelection, c.Cursor) && len(s.ColumnSelection) > 0 {
++		c.Cursor = s.ColumnSelection[len(s.ColumnSelection)-1]
++	}
+ 	if k := s.colIndex(c.Cursor); k < 0 || s.tableCols[k].rowHeader {
+ 		c.Cursor = ""
+ 		if k := s.nextCol(-1, 1); k >= 0 {
+@@ -98,6 +123,12 @@ func (s *ListState) block() (lo, hi int) {
+ 
+ // inBlock reports whether the column at place k is one of the block's.
+ func (s *ListState) inBlock(k int) bool {
++	if k < 0 || k >= len(s.tableCols) || s.tableCols[k].rowHeader {
++		return false
++	}
++	if s.ColumnSelection != nil {
++		return slices.Contains(s.ColumnSelection, s.tableCols[k].id)
++	}
+ 	lo, hi := s.block()
+ 	return k >= lo && k <= hi && !s.tableCols[k].rowHeader
+ }
+@@ -138,10 +169,9 @@ func (s *ListState) CellSelected(row, col int) bool {
+ // Table chooses (CellSelect), in the order shown in the last frame,
+ // without RowHeader columns.
+ func (s *ListState) SelectedColumns() []string {
+-	lo, hi := s.block()
+ 	var ids []string
+-	for k := lo; k <= hi; k++ {
+-		if col := s.tableCols[k]; !col.rowHeader {
++	for k, col := range s.tableCols {
++		if s.inBlock(k) {
+ 			ids = append(ids, col.id)
+ 		}
+ 	}
+@@ -163,8 +193,11 @@ func (s *ListState) SelectColumns(from, to string) {
+ 
+ // setCells makes c the columns of the block, reporting a new choice.
+ func (f *listFrame) setCells(c ColumnRange) {
+-	if f.s.Cells != c {
++	if f.s.Cells != c || f.s.ColumnSelection != nil {
+ 		f.s.Cells = c
++		f.s.ColumnSelection = nil
++		f.s.headerBase = nil
++		f.s.headerPivot = ""
+ 		f.changed()
+ 	}
+ }
+@@ -180,6 +213,9 @@ func (f *listFrame) columnAt(x, y float32) int {
+ 			continue
+ 		}
+ 		lx, _ := st.local(x, y)
++		if lx >= 0 && lx < st.w {
++			return k // A shared edge belongs to the following column.
++		}
+ 		d := max(-lx, lx-st.w, 0)
+ 		if at < 0 || d < best {
+ 			at, best = k, d
+@@ -190,6 +226,16 @@ func (f *listFrame) columnAt(x, y float32) int {
+ 
+ // clickCell sets the columns of the block for a click with mods on a row
+ // at the window's point (x, y): those of a RowHeader cell are all.
++// pointerCellClick reports a pointer-origin, undragged activation after the
++// native row selection has settled. Registered only by a Table using it.
++func (f *listFrame) pointerCellClick(row int, x, y float32, mods Modifiers) {
++	if click := f.s.OnCellClick; click != nil && f.choosesCells() && !f.isHeader(row) {
++		if k := f.columnAt(x, y); k >= 0 && !f.s.tableCols[k].rowHeader {
++			click(row, f.s.tableCols[k].col, mods)
++		}
++	}
++}
++
+ func (f *listFrame) clickCell(x, y float32, mods Modifiers) {
+ 	s := f.s
+ 	k := f.columnAt(x, y)
+@@ -203,6 +249,9 @@ func (f *listFrame) clickCell(x, y float32, mods Modifiers) {
+ 	case mods&Shift != 0:
+ 		c.Cursor, c.All = id, false
+ 	case mods&Cmd != 0:
++		if s.ColumnSelection != nil {
++			f.setCells(ColumnRange{Cursor: id, Anchor: id})
++		}
+ 		return
+ 	default:
+ 		c = ColumnRange{Cursor: id, Anchor: id}
+@@ -259,7 +308,9 @@ func (f *listFrame) cellKeys(collapse, all bool) {
+ 	if all {
+ 		c.All = true
+ 	}
+-	f.setCells(c)
++	if d != 0 || collapse || all {
++		f.setCells(c)
++	}
+ }
+ 
+ // revealColumn scrolls the table sideways as little as shows the column at
+diff --git a/ui/list.go b/ui/list.go
+index 7586d8dc..ae87d00d 100644
+--- a/ui/list.go
++++ b/ui/list.go
+@@ -135,6 +135,19 @@ type ListState struct {
+ 	CellSelect bool
+ 	// Cells are the columns of the block CellSelect chooses.
+ 	Cells ColumnRange
++	// HeaderSelect makes ordinary Table headers choose whole columns instead
++	// of sorting on click. It requires CellSelect and Selection. Sorting still
++	// displays its arrows, and can be changed explicitly by the application.
++	HeaderSelect bool
++	// ColumnSelection holds whole columns chosen by their IDs. Nil uses Cells'
++	// ordinary range; a non-nil slice is a whole-column selection, including
++	// on a zero-row table. The table reconciles it with visible columns.
++	// Clear it when assigning Cells directly to return to a cell range.
++	ColumnSelection []string
++	// OnCellClick runs after a primary, undragged pointer click has chosen its
++	// cell. row and col are the cell builder's indices; mods are the click's
++	// modifiers. It does not run for row headers, section headers or keys.
++	OnCellClick func(row, col int, mods Modifiers)
+ 	// Sort, when set, is the column a Table's rows are sorted by: a click
+ 	// on the header of a Sortable column sorts by it, ascending, and
+ 	// another reverses the order, which the header shows. Sort the rows as
+@@ -166,6 +179,10 @@ type ListState struct {
+ 	// or -1 for the part of the header past the columns, as AppKit's
+ 	// clickedColumn. A menu built without items does not open.
+ 	HeaderMenu func(m *Menu, col int)
++	// HeaderActionMenu adds a separate, hover-revealed menu button inside an
++	// ordinary column header. Its col is the original Table column index.
++	// Opening it preserves the selection and never sorts or drags a column.
++	HeaderActionMenu func(m *Menu, col int)
+ 	// CellMenu, when set, gives a Table's cells a context menu, built as
+ 	// ContextMenu's is, over the whole cell with its padding: row and col
+ 	// are as the cell builder receives them. A menu built without items
+@@ -259,6 +276,10 @@ type ListState struct {
+ 	// tableCols are the columns of the Table choosing cells (CellSelect)
+ 	// in the order shown, in this frame.
+ 	tableCols []tableCol
++	// headerPivot and headerBase retain the last explicit header click and
++	// the selection before a sequence of Shift header extensions.
++	headerPivot string
++	headerBase  []string
+ }
+ 
+ // listRequest is where the app or the user asked the list to go: to row
+@@ -474,7 +495,7 @@ func buildList(c *context, e, owner *node, s *ListState, n int, row func(i int),
+ 	flat, tree := kind == tableList || kind == treeTableList, kind == treeList || kind == treeTableList
+ 	rt := c.rt
+ 	f := &s.frame
+-	if f.e != nil && f.frame == rt.frame && f.pass == rt.pass {
++	if f.c == c && f.e != nil && f.frame == rt.frame && f.pass == rt.pass {
+ 		panic("ui: a ListState shown by two Lists")
+ 	}
+ 	if rt.listMenu == nil {
+@@ -1157,6 +1178,9 @@ func (f *listFrame) page(d int) int {
+ // navigate moves the choice with the keys, past headers.
+ func (f *listFrame) navigate() {
+ 	o, n, sel, s := f.owner, f.n, f.s.cursor(), f.s
++	if focus := f.c.rt.states[f.c.rt.focused]; s.HeaderSelect && focus != nil && focus.flags&flagMenuButton != 0 {
++		return // A header menu button owns Enter, Space and Down itself.
++	}
+ 	multi, mac := s.Selection != nil, runtime.GOOS == "darwin"
+ 	if s.Label != nil {
+ 		o.flags |= flagTypeSelect
+diff --git a/ui/runtime.go b/ui/runtime.go
+index 5019c80d..9d65a428 100644
+--- a/ui/runtime.go
++++ b/ui/runtime.go
+@@ -274,6 +274,9 @@ type engine struct {
+ 	listDrag    func(rt *engine)
+ 	cellClick   func(f *listFrame, x, y float32, mods Modifiers)
+ 	cellInBlock func(f *listFrame, x, y float32) bool
++	// cellPointerClick is the optional post-selection Table callback. Keep
++	// column hit testing out of the shared List row-input link graph.
++	cellPointerClick func(f *listFrame, row int, x, y float32, mods Modifiers)
+ 	// pressDragger is the element around the one pressed that drags a
+ 	// value, which takes the press as it moves (dragMove), or 0.
+ 	pressDragger uint64
+diff --git a/ui/table.go b/ui/table.go
+index 43da417e..d2590fe3 100644
+--- a/ui/table.go
++++ b/ui/table.go
+@@ -4,6 +4,7 @@ import (
+ 	"maps"
+ 	"slices"
+ 	"strconv"
++	"strings"
+ )
+ 
+ // TableColumn describes a column of a Table.
+@@ -21,6 +22,11 @@ type TableColumn struct {
+ 	// Both belong to the same native header cell and are display-only.
+ 	SubtitleIcon string
+ 	HeaderBadge  string
++	// HeaderTooltip is shown after the pointer rests over the header. Empty
++	// strings have no tip. HeaderDetail is an optional final header line,
++	// independent of Subtitle; both stay inside the same native header cell.
++	HeaderTooltip string
++	HeaderDetail  string
+ 	// Width is the column's width in DIPs, or 0 to share the room the
+ 	// others leave. The user resizes the column by dragging the right edge
+ 	// of its header, between MinWidth and MaxWidth (none for 0), and fits
+@@ -177,6 +183,25 @@ func table(c *context, s *ListState, columns []TableColumn, n int, cell func(row
+ 			break
+ 		}
+ 	}
++	for _, col := range columns {
++		if col.HeaderDetail != "" {
++			if col.Subtitle != "" {
++				headerHeight = max(headerHeight, t.Space(21))
++			} else {
++				headerHeight = max(headerHeight, t.Space(15))
++			}
++			// Font scaling is independent of spacing. Reserve the actual line
++			// metrics too, so large text cannot clip the final description.
++			metrics := (Font{Family: t.Font, Size: t.FontSize, Weight: 600}).Metrics()
++			small := (Font{Family: t.Font, Size: t.FontSize * 0.8}).Metrics()
++			lines := float32(1)
++			if col.Subtitle != "" {
++				lines++
++			}
++			headerHeight = max(headerHeight, metrics.Ascent+metrics.Descent+metrics.LineGap+
++				lines*(small.Ascent+small.Descent+small.LineGap)+t.Space(3)+lines*t.Space(0.5))
++		}
++	}
+ 	table := coreColumn(c).Role(RoleTable).Focusable().Clip()
+ 	table.widget = "Table"
+ 	if kind == treeTableList {
+@@ -193,17 +218,19 @@ func table(c *context, s *ListState, columns []TableColumn, n int, cell func(row
+ 	// The block of cells chosen (CellSelect): its columns' places, from lo
+ 	// to hi, and the Cursor's.
+ 	cellSel := s.choosesCells()
+-	lo, hi, cur := 0, -1, -1
++	cur := -1
+ 	s.tableCols = s.tableCols[:0]
+ 	if cellSel {
+ 		if c.rt.cellClick == nil {
+ 			c.rt.cellClick, c.rt.cellInBlock = (*listFrame).clickCell, (*listFrame).cellInBlockAt
+ 		}
++		if s.OnCellClick != nil && c.rt.cellPointerClick == nil {
++			c.rt.cellPointerClick = (*listFrame).pointerCellClick
++		}
+ 		for _, j := range order {
+ 			s.tableCols = append(s.tableCols, tableCol{id: columns[j].id(), col: j, rowHeader: columns[j].RowHeader})
+ 		}
+ 		s.fixCells()
+-		lo, hi = s.block()
+ 		cur = s.colIndex(s.Cells.Cursor)
+ 	}
+ 	// The least width of the rows: the columns', those sharing the room
+@@ -249,7 +276,7 @@ func table(c *context, s *ListState, columns []TableColumn, n int, cell func(row
+ 				// keys move from, has a border while the table has the
+ 				// focus. A cell holding the focus, as an editor in it, shows
+ 				// what it holds.
+-				on := c.row.chosen && k >= lo && k <= hi && (!col.RowHeader || s.Cells.All)
++				on := c.row.chosen && (s.inBlock(k) || col.RowHeader && s.Cells.All)
+ 				at := k == cur && *s.cursor() == c.row.i
+ 				box.checked = 1 + int8(b2f(on))
+ 				switch {
+@@ -282,25 +309,34 @@ func table(c *context, s *ListState, columns []TableColumn, n int, cell func(row
+ 		head.Children(func() {
+ 			heads := cells(RoleColumnHeader, func(j int) {
+ 				col := &columns[j]
+-				if col.Subtitle == "" {
+-					coreText(c, col.Title).SingleLine().FontWeight(600).TextColor(t.TextMuted)
++				ink, typeInk := t.TextMuted, t.Accent
++				if s.HeaderSelect && slices.Contains(s.ColumnSelection, col.id()) {
++					ink, typeInk = t.AccentText, t.AccentText
++				}
++				if col.Subtitle == "" && col.HeaderDetail == "" {
++					coreText(c, col.Title).SingleLine().FontWeight(600).TextColor(ink)
+ 				} else {
+ 					// Draw both labels inside the original keyed header cell: a
+ 					// single element still owns drag/resize, horizontal scroll,
+ 					// sorting and HeaderMenu. Never float a second row above it.
+ 					coreColumn(c).Gap(t.Space(0.5)).MinWidth(0).Grow(1).Children(func() {
+ 						coreRow(c).MinWidth(0).Gap(t.Space(1)).AlignItems(Center).Children(func() {
+-							coreText(c, col.Title).SingleLine().FontWeight(600).TextColor(t.TextMuted)
++							coreText(c, col.Title).SingleLine().FontWeight(600).TextColor(ink)
+ 							if col.HeaderBadge != "" {
+-								coreText(c, col.HeaderBadge).SingleLine().FontSize(t.FontSize * 0.7).TextColor(t.Accent)
++								coreText(c, col.HeaderBadge).SingleLine().FontSize(t.FontSize * 0.7).TextColor(typeInk)
+ 							}
+ 						})
+-						coreRow(c).MinWidth(0).Gap(t.Space(1)).AlignItems(Center).Children(func() {
+-							if col.SubtitleIcon != "" {
+-								coreText(c, col.SubtitleIcon).SingleLine().FontSize(t.FontSize * 0.8).FontWeight(600).TextColor(t.Accent)
+-							}
+-							coreText(c, col.Subtitle).SingleLine().FontSize(t.FontSize * 0.8).TextColor(t.TextMuted)
+-						})
++						if col.Subtitle != "" {
++							coreRow(c).MinWidth(0).Gap(t.Space(1)).AlignItems(Center).Children(func() {
++								if col.SubtitleIcon != "" {
++									coreText(c, col.SubtitleIcon).SingleLine().FontSize(t.FontSize * 0.8).FontWeight(600).TextColor(typeInk)
++								}
++								coreText(c, col.Subtitle).SingleLine().FontSize(t.FontSize * 0.8).TextColor(ink)
++							})
++						}
++						if col.HeaderDetail != "" {
++							coreText(c, strings.NewReplacer("\r", " ", "\n", " ").Replace(col.HeaderDetail)).SingleLine().FontSize(t.FontSize * 0.8).TextColor(ink)
++						}
+ 					})
+ 				}
+ 				if at, descending := s.sortPlace(col); at >= 0 {
+@@ -315,7 +351,7 @@ func table(c *context, s *ListState, columns []TableColumn, n int, cell func(row
+ 				if cellSel {
+ 					s.tableCols[k].head = heads[k].id
+ 				}
+-				tableHeader(c, table, heads[k], j, s, drag, heads, order, columns)
++				tableHeader(c, table, heads[k], j, s, drag, heads, order, columns, n)
+ 			}
+ 		})
+ 		coreDivider(c)
+@@ -373,22 +409,47 @@ func table(c *context, s *ListState, columns []TableColumn, n int, cell func(row
+ // tableHeader makes the header of columns[j] sort the rows when clicked,
+ // move the column when dragged, resize it from its end edge (the right,
+ // or the left right to left), and open s.HeaderMenu.
+-func tableHeader(c *context, table, h *node, j int, s *ListState, drag *tableDrag, heads []*node, order []int, columns []TableColumn) {
++func tableHeader(c *context, table, h *node, j int, s *ListState, drag *tableDrag, heads []*node, order []int, columns []TableColumn, n int) {
+ 	t := c.theme
+ 	col := &columns[j]
+ 	id := col.id()
+ 	if menu := s.HeaderMenu; menu != nil {
+-		h.ContextMenu(func(m *Menu) { menu(m, j) })
++		h.ContextMenu(func(m *Menu) {
++			if m.run.collect && s.HeaderSelect && !col.RowHeader && !slices.Contains(s.ColumnSelection, id) {
++				s.selectHeaderColumn(table, id, 0, n)
++			}
++			menu(m, j)
++		})
+ 	}
+ 	sorts, choosesAll := s.sorts() && col.sortable(), col.RowHeader && s.choosesCells()
+-	if sorts || choosesAll {
++	choosesColumn := s.HeaderSelect && s.choosesCells() && !col.RowHeader
++	if sorts || choosesAll || choosesColumn || col.HeaderTooltip != "" || s.HeaderActionMenu != nil {
+ 		h.flags |= flagClickable | flagHover
+ 		h.styleFn = func(h *node) {
+-			if h.Hovered() {
++			if choosesColumn && slices.Contains(s.ColumnSelection, id) {
++				h.bg = t.Accent
++				h.TextColor(t.AccentText)
++			} else if h.Hovered() {
+ 				h.bg = t.SurfaceHover
+ 			}
+ 		}
+ 	}
++	if col.HeaderTooltip != "" {
++		h.Tooltip(col.HeaderTooltip)
++	}
++	if menu := s.HeaderActionMenu; menu != nil && !col.RowHeader {
++		// Reserve the same room while hidden so hover never changes widths.
++		h.PaddingEnd(t.Space(9))
++		h.Children(func() {
++			button := coreButtonBase(c).Key("header-actions").Label(col.Title+" actions").
++				Absolute().Top(t.Space(1)).End(t.Space(2.5)).Size(t.Space(6), t.Space(6)).Padding(0)
++			button.Children(func() { coreText(c, "…").SingleLine() })
++			button.Menu(func(m *Menu) { menu(m, j) })
++			if !h.Hovered() && !button.FocusWithin() {
++				button.Opacity(0).PassThrough()
++			}
++		})
++	}
+ 	if choosesAll {
+ 		h.afterInput(func() {
+ 			if f := &s.frame; h.Clicked() {
+@@ -430,7 +491,10 @@ func tableHeader(c *context, table, h *node, j int, s *ListState, drag *tableDra
+ 		}
+ 	}
+ 	h.afterInput(func() {
+-		if sorts && h.Clicked() {
++		if choosesColumn && h.Clicked() {
++			s.selectHeaderColumn(table, id, h.ClickModifiers(), n)
++			table.Focus()
++		} else if sorts && h.Clicked() {
+ 			if s.SortBy != nil {
+ 				// Cmd-click as Finder, Shift-click as web grids (TanStack
+ 				// Table, AG Grid, MUI).
+diff --git a/ui/value_input.go b/ui/value_input.go
+index 9e784a40..ff634bff 100644
+--- a/ui/value_input.go
++++ b/ui/value_input.go
+@@ -350,6 +350,9 @@ func listRowValueInput(n *node) {
+ 			// a double click opened.
+ 			f.owner.Focus()
+ 		}
++		if click := rt.cellPointerClick; click != nil && f.s.OnCellClick != nil && st.rowPressed && !st.drag.far {
++			click(f, b.i, st.drag.ox, st.drag.oy, n.ClickModifiers())
++		}
+ 	}
+ 	if n.DoubleClicked() {
+ 		f.owner.st.markSubmitted()
+diff --git a/ui/header_selection.go b/ui/header_selection.go
+new file mode 100644
+index 00000000..3697c689
+--- /dev/null
++++ b/ui/header_selection.go
+@@ -0,0 +1,86 @@
++package ui
++
++import "slices"
++
++// selectHeaderColumn runs while the native header is built, before its menu
++// collects items. Use the current row count and node, rather than a previous
++// frame's listFrame: the rows can have changed while the menu was requested.
++func (s *ListState) selectHeaderColumn(table *node, id string, mods Modifiers, n int) {
++	if !s.HeaderSelect || !s.choosesCells() {
++		return
++	}
++	at := s.colIndex(id)
++	if at < 0 || s.tableCols[at].rowHeader {
++		return
++	}
++	before := s.ColumnSelection
++	ids := slices.Clone(before)
++	switch {
++	case mods&Shift != 0 && s.colIndex(s.headerPivot) >= 0:
++		if s.headerBase == nil {
++			s.headerBase = slices.Clone(ids)
++		}
++		ids = slices.Clone(s.headerBase)
++		pivot := s.colIndex(s.headerPivot)
++		for k := min(pivot, at); k <= max(pivot, at); k++ {
++			if col := s.tableCols[k]; !col.rowHeader && !slices.Contains(ids, col.id) {
++				ids = append(ids, col.id)
++			}
++		}
++	case mods&Cmd != 0 && len(ids) > 0:
++		s.headerBase, s.headerPivot = nil, id
++		if k := slices.Index(ids, id); k >= 0 {
++			if len(ids) > 1 {
++				ids = slices.Delete(ids, k, k+1)
++			}
++		} else {
++			ids = append(ids, id)
++		}
++	default:
++		ids = []string{id}
++		s.headerBase, s.headerPivot = nil, id
++	}
++	// Drop base entries that a hide/removal made stale during Shift selection.
++	ids = slices.DeleteFunc(ids, func(id string) bool {
++		k := s.colIndex(id)
++		return k < 0 || s.tableCols[k].rowHeader
++	})
++	cursor := id
++	if !slices.Contains(ids, cursor) && len(ids) > 0 {
++		cursor = ids[len(ids)-1]
++	}
++	cells := ColumnRange{Cursor: cursor, Anchor: s.headerPivot}
++	changed := !slices.Equal(before, ids) || s.Cells != cells
++	s.ColumnSelection, s.Cells = ids, cells
++	selected := s.cursor()
++	if *selected < 0 || *selected >= n || s.Header != nil && s.Header(*selected) {
++		*selected = -1
++		for row := range n {
++			if s.Header == nil || !s.Header(row) {
++				*selected = row
++				break
++			}
++		}
++		changed = true
++	}
++	if *selected >= 0 {
++		s.pivot, s.span = *selected, 0
++	}
++	// Only real, currently loaded row keys are selected. No placeholder row
++	// is introduced for an empty table or a statistical section.
++	changed = s.Selection.clear() || changed
++	for row := range n {
++		if s.Header != nil && s.Header(row) {
++			continue
++		}
++		var key any = row
++		if s.Key != nil {
++			key = s.Key(row)
++		}
++		changed = s.Selection.set(key, true) || changed
++	}
++	if changed {
++		table.st.markChanged()
++		table.c.rt.consumed = true
++	}
++}
+diff --git a/ui/grid_header_test.go b/ui/grid_header_test.go
+new file mode 100644
+index 00000000..6d66489a
+--- /dev/null
++++ b/ui/grid_header_test.go
+@@ -0,0 +1,634 @@
++package ui
++
++import (
++	"fmt"
++	"slices"
++	"testing"
++	"time"
++
++	"github.com/egoist/mygo/internal/platform"
++)
++
++// Titles deliberately differ from IDs: changing display order must not turn
++// the header choice into a choice of a different source field.
++type headerGridFixture struct {
++	state     ListState
++	selection Selection[int]
++	selected  int
++	rows      int
++	columns   []TableColumn
++	sort      SortOrder
++}
++
++func newHeaderGridFixture(rows int) *headerGridFixture {
++	f := &headerGridFixture{rows: rows, selected: -1, sort: SortOrder{Column: "gamma", Descending: true}}
++	f.columns = []TableColumn{
++		{Title: "#", ID: "row", RowHeader: true, Fixed: true, Width: 35},
++		{Title: "Alpha", ID: "alpha", Width: 100, MinWidth: 60, Sortable: true},
++		{Title: "Beta", ID: "beta", Width: 100, MinWidth: 60, Sortable: true},
++		{Title: "Gamma", ID: "gamma", Width: 100, MinWidth: 60, Sortable: true},
++		{Title: "Delta", ID: "delta", Width: 100, MinWidth: 60, Sortable: true},
++	}
++	f.state = ListState{HeaderSelect: true, CellSelect: true, DragSelect: true, Selection: &f.selection, Selected: &f.selected, Sort: &f.sort}
++	return f
++}
++
++func (f *headerGridFixture) view(c *Context) {
++	Column(c).Fill().Padding(10).Children(func() {
++		Table(c, &f.state, f.columns, f.rows, func(row, col int) {
++			Text(c, fmt.Sprintf("cell %d %s", row, f.columns[col].ID)).SingleLine()
++		}).Grow(1)
++	})
++}
++
++func headerGridClick(t *testing.T, tt *Tester, mods Modifiers, title string) {
++	t.Helper()
++	if err := tt.ClickWith(mods, title); err != nil {
++		t.Fatal(err)
++	}
++}
++
++func headerGridColumns(t *testing.T, f *headerGridFixture, want ...string) {
++	t.Helper()
++	if got := f.state.SelectedColumns(); !slices.Equal(got, want) {
++		t.Fatalf("selected columns %q, want %q (cells %+v, header columns %q)", got, want, f.state.Cells, f.state.ColumnSelection)
++	}
++}
++
++func headerGridActionNode(t *testing.T, tt *Tester, title string) *node {
++	t.Helper()
++	var find func(*node) *node
++	find = func(n *node) *node {
++		if n.label == title+" actions" {
++			return n
++		}
++		for child := n.first; child != nil; child = child.next {
++			if got := find(child); got != nil {
++				return got
++			}
++		}
++		return nil
++	}
++	if got := find(tt.rt.c.root); got != nil {
++		return got
++	}
++	t.Fatalf("no actions button for %s", title)
++	return nil
++}
++
++func TestGridHeaderChoosesAllLoadedRowsWithoutSorting(t *testing.T) {
++	f := newHeaderGridFixture(6)
++	tt := NewTester(f.view, 480, 330)
++	tt.Frame()
++	before := f.sort
++	headerGridClick(t, tt, 0, "Beta")
++	headerGridColumns(t, f, "beta")
++	if got := chosenRows(&f.selection); !slices.Equal(got, []int{0, 1, 2, 3, 4, 5}) || f.selected != 0 {
++		t.Fatalf("header chose rows %v and cursor %d; want every loaded row with cursor 0", got, f.selected)
++	}
++	if f.sort != before || f.state.Cells.Cursor != "beta" || f.state.ColumnSelection == nil {
++		t.Fatalf("header choice changed sort or lost field identity: sort %+v, cells %+v, header choice %q", f.sort, f.state.Cells, f.state.ColumnSelection)
++	}
++	for row := range f.rows {
++		for col := range f.columns {
++			if got := f.state.CellSelected(row, col); got != (col == 2) {
++				t.Fatalf("row %d source column %d selected %v; want only beta", row, col, got)
++			}
++		}
++	}
++	headerGridClick(t, tt, 0, "cell 3 alpha")
++	headerGridClick(t, tt, 0, "Gamma")
++	if f.selected != 3 {
++		t.Fatalf("header replaced valid active row with %d", f.selected)
++	}
++}
++
++func TestGridHeaderCmdAddsAndRemovesNonadjacentColumns(t *testing.T) {
++	f := newHeaderGridFixture(5)
++	tt := NewTester(f.view, 480, 300)
++	tt.Frame()
++	headerGridClick(t, tt, 0, "Alpha")
++	headerGridClick(t, tt, Cmd, "Gamma")
++	headerGridColumns(t, f, "alpha", "gamma")
++	if f.state.CellSelected(2, 2) || !f.state.CellSelected(2, 1) || !f.state.CellSelected(2, 3) {
++		t.Fatal("nonadjacent header choice included the intervening column or omitted a selected field")
++	}
++	headerGridClick(t, tt, Cmd, "Gamma")
++	headerGridColumns(t, f, "alpha")
++	headerGridClick(t, tt, Cmd, "Alpha")
++	headerGridColumns(t, f, "alpha")
++	if f.selection.Len() != f.rows {
++		t.Fatal("toggling a header altered the selected loaded rows")
++	}
++}
++
++func TestGridHeaderDiscreteChoiceDrawingMatchesSelectedCells(t *testing.T) {
++	f := newHeaderGridFixture(4)
++	cells := make(map[[2]int]*node)
++	var accent Color
++	tt := NewTester(func(c *Context) {
++		accent = c.Theme().Accent
++		clear(cells)
++		Table(c, &f.state, f.columns, f.rows, func(row, col int) {
++			cells[[2]int{row, col}] = Text(c, fmt.Sprintf("cell %d %s", row, f.columns[col].ID)).node().parent
++		}).Grow(1)
++	}, 480, 300)
++	tt.Frame()
++	headerGridClick(t, tt, 0, "Alpha")
++	headerGridClick(t, tt, Cmd, "Gamma")
++	for rc, n := range cells {
++		if got, drawn := f.state.CellSelected(rc[0], rc[1]), n.bg == accent; got != drawn {
++			t.Fatalf("selected-cell query %v differs from its native background %v at row/source %v", got, drawn, rc)
++		}
++	}
++}
++
++func TestGridHeaderShiftKeepsIndependentColumnsAndShrinksItsRange(t *testing.T) {
++	f := newHeaderGridFixture(5)
++	tt := NewTester(f.view, 480, 300)
++	tt.Frame()
++	headerGridClick(t, tt, 0, "Alpha")
++	headerGridClick(t, tt, Cmd, "Delta")
++	headerGridClick(t, tt, Shift, "Beta")
++	headerGridColumns(t, f, "alpha", "beta", "gamma", "delta")
++	headerGridClick(t, tt, Shift, "Gamma")
++	headerGridColumns(t, f, "alpha", "gamma", "delta")
++	headerGridClick(t, tt, 0, "Beta")
++	headerGridClick(t, tt, Shift, "Gamma")
++	headerGridColumns(t, f, "beta", "gamma")
++}
++
++func TestGridHeaderShiftDoesNotReviveChoiceAfterApplicationReset(t *testing.T) {
++	f := newHeaderGridFixture(5)
++	tt := NewTester(f.view, 480, 300)
++	tt.Frame()
++	headerGridClick(t, tt, 0, "Alpha")
++	headerGridClick(t, tt, Cmd, "Delta")
++	headerGridClick(t, tt, Shift, "Beta")
++	headerGridColumns(t, f, "alpha", "beta", "gamma", "delta")
++	// Page replacement and explicit editor activation assign Cells directly.
++	// Clearing whole-column mode must revoke its previous Shift history too.
++	f.state.ColumnSelection = nil
++	f.state.Cells = ColumnRange{Cursor: "beta", Anchor: "beta"}
++	f.selection.Clear()
++	f.selection.Add(1)
++	f.selected = 1
++	tt.Frame()
++	headerGridClick(t, tt, Shift, "Gamma")
++	headerGridColumns(t, f, "gamma")
++}
++
++func TestGridHeaderShiftDoesNotReviveHiddenBaseOrPivot(t *testing.T) {
++	for _, removed := range []string{"alpha", "delta"} {
++		t.Run(removed, func(t *testing.T) {
++			f := newHeaderGridFixture(5)
++			original := slices.Clone(f.columns)
++			tt := NewTester(f.view, 480, 300)
++			tt.Frame()
++			headerGridClick(t, tt, 0, "Alpha")
++			headerGridClick(t, tt, Cmd, "Delta")
++			headerGridClick(t, tt, Shift, "Beta")
++			index := slices.IndexFunc(f.columns, func(col TableColumn) bool { return col.ID == removed })
++			f.columns = slices.Delete(f.columns, index, index+1)
++			tt.Frame()
++			// Showing the field again does not restore selection history which
++			// belonged to a field absent from the intervening frame.
++			f.columns = original
++			tt.Frame()
++			headerGridClick(t, tt, Shift, "Gamma")
++			if removed == "alpha" {
++				headerGridColumns(t, f, "gamma", "delta")
++			} else {
++				headerGridColumns(t, f, "gamma")
++			}
++		})
++	}
++}
++
++func TestGridHeaderContextMenuKeepsInsideChoiceAndSelectsOutside(t *testing.T) {
++	f := newHeaderGridFixture(5)
++	built, chosen := -1, -1
++	f.state.HeaderMenu = func(m *Menu, col int) {
++		built = col
++		if m.Item("Header copy").Chosen() {
++			chosen = col
++		}
++	}
++	tt := NewTester(f.view, 480, 300)
++	tt.Frame()
++	headerGridClick(t, tt, 0, "Alpha")
++	headerGridClick(t, tt, Cmd, "Gamma")
++	if err := tt.RightClick("Gamma"); err != nil {
++		t.Fatal(err)
++	}
++	headerGridColumns(t, f, "alpha", "gamma")
++	if built != 3 || !slices.Equal(tt.Menu(), []string{"Header copy"}) {
++		t.Fatalf("context menu %q built for %d, want original gamma index 3", tt.Menu(), built)
++	}
++	tt.CloseMenu()
++	if err := tt.RightClick("Beta"); err != nil {
++		t.Fatal(err)
++	}
++	headerGridColumns(t, f, "beta")
++	if err := tt.ChooseMenuItem("Header copy"); err != nil {
++		t.Fatal(err)
++	}
++	if chosen != 2 {
++		t.Fatalf("context item acted on source column %d, want 2", chosen)
++	}
++}
++
++func TestGridHeaderActionMenuDoesNotSelectItsColumn(t *testing.T) {
++	f := newHeaderGridFixture(5)
++	built, chosen := -1, -1
++	f.state.HeaderMenu = func(m *Menu, col int) { m.Item("Context copy") }
++	f.state.HeaderActionMenu = func(m *Menu, col int) {
++		built = col
++		if m.Item("Sort ascending").Chosen() {
++			chosen = col
++		}
++	}
++	tt := NewTester(f.view, 480, 300)
++	tt.Frame()
++	headerGridClick(t, tt, 0, "Alpha")
++	headerGridClick(t, tt, Cmd, "Gamma")
++	beta := header(t, tt, "Beta")
++	if button := headerGridActionNode(t, tt, "Beta"); !button.opacitySet || button.opacity != 0 {
++		t.Fatal("unhovered header's action button was visible")
++	}
++	tt.Move(float32(beta.X+beta.W/2), float32(beta.Y+beta.H/2))
++	if button := headerGridActionNode(t, tt, "Beta"); button.opacitySet && button.opacity == 0 {
++		t.Fatal("header actions did not appear in the hover frame")
++	}
++	if after := header(t, tt, "Beta"); beta.W != after.W {
++		t.Fatalf("revealing header actions changed column width: before %v after %v", beta, after)
++	}
++	headerGridClick(t, tt, 0, "Beta actions")
++	if !slices.Equal(tt.Menu(), []string{"Sort ascending"}) || built != 2 {
++		t.Fatalf("action menu %q built for %d; want independent menu for original beta index", tt.Menu(), built)
++	}
++	headerGridColumns(t, f, "alpha", "gamma")
++	if err := tt.ChooseMenuItem("Sort ascending"); err != nil {
++		t.Fatal(err)
++	}
++	if chosen != 2 {
++		t.Fatalf("action item acted on %d, want original beta index", chosen)
++	}
++	headerGridColumns(t, f, "alpha", "gamma")
++}
++
++func TestGridHeaderActionMenuKeyboardReachesHiddenButton(t *testing.T) {
++	f := newHeaderGridFixture(5)
++	built := -1
++	f.state.HeaderActionMenu = func(m *Menu, col int) {
++		built = col
++		m.Item("Keyboard action")
++	}
++	tt := NewTester(f.view, 480, 300)
++	tt.Frame()
++	headerGridClick(t, tt, 0, "Alpha")
++	tt.Move(470, 290)
++	for count := 0; count < 12 && !headerGridActionNode(t, tt, "Beta").Focused(); count++ {
++		tt.Key(0, KeyTab)
++	}
++	if !headerGridActionNode(t, tt, "Beta").Focused() {
++		t.Fatal("keyboard navigation could not reach the hover-hidden header action")
++	}
++	// Tab applies focus after construction; render the view with that focus
++	// before checking the button's presentation.
++	tt.Frame()
++	if button := headerGridActionNode(t, tt, "Beta"); button.opacitySet && button.opacity == 0 {
++		t.Fatal("keyboard-focused header actions stayed hidden")
++	}
++	tt.Key(0, KeyEnter)
++	if built != 2 || !slices.Equal(tt.Menu(), []string{"Keyboard action"}) {
++		t.Fatalf("keyboard action menu %q for column %d, want beta's independent menu", tt.Menu(), built)
++	}
++	headerGridColumns(t, f, "alpha")
++}
++
++func TestGridHeaderChoiceFollowsFieldIDsAfterReorderAndRemoval(t *testing.T) {
++	f := newHeaderGridFixture(5)
++	tt := NewTester(f.view, 480, 300)
++	tt.Frame()
++	headerGridClick(t, tt, 0, "Alpha")
++	headerGridClick(t, tt, Cmd, "Gamma")
++	f.state.Columns.Order = []string{"delta", "gamma", "beta", "alpha"}
++	tt.Frame()
++	headerGridColumns(t, f, "gamma", "alpha")
++	if !f.state.CellSelected(2, 1) || !f.state.CellSelected(2, 3) || f.state.CellSelected(2, 2) {
++		t.Fatal("reordering changed the source fields of the selected cells")
++	}
++	f.columns = slices.Delete(f.columns, 3, 4)
++	tt.Frame()
++	headerGridColumns(t, f, "alpha")
++	if f.state.Cells.Cursor != "alpha" {
++		t.Fatalf("removed cursor field was not reconciled to a remaining selected field: %+v", f.state.Cells)
++	}
++}
++
++func TestGridHeaderEmptyToLoadedAndBackKeepsNativeInteraction(t *testing.T) {
++	f := newHeaderGridFixture(0)
++	tt := NewTester(f.view, 480, 300)
++	tt.Frame()
++	headerGridClick(t, tt, 0, "Beta")
++	headerGridColumns(t, f, "beta")
++	if f.selected != -1 || f.selection.Len() != 0 || f.state.CellSelected(0, 2) {
++		t.Fatal("choosing an empty-table header invented a loaded row")
++	}
++	f.rows = 4
++	tt.Frame()
++	headerGridClick(t, tt, 0, "Gamma")
++	headerGridColumns(t, f, "gamma")
++	if f.selection.Len() != 4 {
++		t.Fatal("loaded rows did not use the same native header choice")
++	}
++	f.rows = 0
++	tt.Frame()
++	f.state.HeaderMenu = func(m *Menu, col int) { m.Item("Empty header") }
++	tt.Frame()
++	if err := tt.RightClick("Alpha"); err != nil {
++		t.Fatal(err)
++	}
++	if !slices.Equal(tt.Menu(), []string{"Empty header"}) || f.selected != -1 {
++		t.Fatalf("empty header interaction lost after loaded rows: menu %q, cursor %d", tt.Menu(), f.selected)
++	}
++}
++
++func TestGridHeaderEmptyStateCanMoveToAnotherTester(t *testing.T) {
++	f := newHeaderGridFixture(0)
++	first := NewTester(f.view, 480, 300)
++	first.Frame()
++	headerGridClick(t, first, 0, "Alpha")
++	// Each new window begins with the same frame/pass counters. Moving an
++	// empty table's state to its new context must not look like two lists
++	// registered during one pass in the old window.
++	second := NewTester(f.view, 480, 300)
++	second.Frame()
++	headerGridClick(t, second, 0, "Beta")
++	headerGridColumns(t, f, "beta")
++	if f.selection.Len() != 0 || f.selected != -1 {
++		t.Fatal("moving an empty native table created a data row")
++	}
++}
++
++func TestGridHeaderStateStillRejectsTwoTablesInOneContext(t *testing.T) {
++	f := newHeaderGridFixture(0)
++	defer func() {
++		if recover() == nil {
++			t.Fatal("one ListState accepted two native tables in one context pass")
++		}
++	}()
++	tt := NewTester(func(c *Context) {
++		Table(c.Key("first"), &f.state, f.columns, 0, func(int, int) {}).Grow(1)
++		Table(c.Key("second"), &f.state, f.columns, 0, func(int, int) {}).Grow(1)
++	}, 480, 300)
++	tt.Frame()
++}
++
++func TestGridHeaderChoiceExcludesStatisticalSection(t *testing.T) {
++	f := newHeaderGridFixture(6)
++	f.state.Header = func(row int) bool { return row == 0 }
++	tt := NewTester(f.view, 480, 330)
++	tt.Frame()
++	headerGridClick(t, tt, 0, "Gamma")
++	if got := chosenRows(&f.selection); !slices.Equal(got, []int{1, 2, 3, 4, 5}) || f.selected != 1 {
++		t.Fatalf("whole-column choice included a section or selected no real row: rows %v cursor %d", got, f.selected)
++	}
++	if f.state.CellSelected(0, 3) || !f.state.CellSelected(1, 3) {
++		t.Fatal("section-header selection was not excluded from cells")
++	}
++}
++
++func TestGridHeaderArrowReturnsToOneCell(t *testing.T) {
++	f := newHeaderGridFixture(5)
++	tt := NewTester(f.view, 480, 300)
++	tt.Frame()
++	headerGridClick(t, tt, 0, "Alpha")
++	headerGridClick(t, tt, Cmd, "Gamma")
++	tt.Key(0, KeyRight)
++	if f.state.ColumnSelection != nil || f.selection.Len() != 1 || f.state.Cells.All {
++		t.Fatalf("arrow did not leave one cell: rows %v, cells %+v, header choice %q", chosenRows(&f.selection), f.state.Cells, f.state.ColumnSelection)
++	}
++	headerGridColumns(t, f, "delta")
++}
++
++func TestGridHeaderTooltipUsesDelayAndCancelsOnLeaveAndPress(t *testing.T) {
++	f := newHeaderGridFixture(4)
++	f.columns[2].HeaderTooltip = "Chinese comment 中文\nSecond line"
++	tt := NewTester(f.view, 480, 300)
++	tt.Frame()
++	beta := header(t, tt, "Beta")
++	x, y := float32(beta.X+20), float32(beta.Y+beta.H/2)
++	tt.Move(x, y)
++	tt.Advance(590 * time.Millisecond)
++	if tt.HasText(f.columns[2].HeaderTooltip) {
++		t.Fatal("header tooltip appeared before 600ms")
++	}
++	tt.Advance(20 * time.Millisecond)
++	if !tt.HasText(f.columns[2].HeaderTooltip) {
++		t.Fatalf("nonempty header comment did not appear after the delay: %q", tt.Texts())
++	}
++	tt.Move(470, 290)
++	tt.Frame()
++	if tt.HasText(f.columns[2].HeaderTooltip) {
++		t.Fatal("header tooltip remained after the pointer left")
++	}
++	tt.Advance(time.Second)
++	tt.Move(x, y)
++	tt.Advance(610 * time.Millisecond)
++	tt.Press(x, y)
++	if tt.HasText(f.columns[2].HeaderTooltip) {
++		t.Fatal("pressing the header kept its tooltip open")
++	}
++	tt.Release(x, y)
++	tt.Advance(time.Second)
++	if tt.HasText(f.columns[2].HeaderTooltip) {
++		t.Fatal("pressed tooltip reappeared before leaving the header")
++	}
++	tt.Move(470, 290)
++	tt.Advance(time.Second)
++	alpha := header(t, tt, "Alpha")
++	tt.Move(float32(alpha.X+20), float32(alpha.Y+alpha.H/2))
++	tt.Advance(time.Second)
++	if tt.HasText(f.columns[2].HeaderTooltip) {
++		t.Fatal("empty header comment displayed another field's tooltip")
++	}
++}
++
++func TestGridHeaderTooltipBubbleContainsSingleAndMultilineComments(t *testing.T) {
++	for _, comment := range []string{"单行字段注释", "中文字段注释\nSecond line"} {
++		t.Run(comment, func(t *testing.T) {
++			f := newHeaderGridFixture(4)
++			f.columns[2].HeaderTooltip = comment
++			tt := NewTester(func(c *Context) {
++				theme := *c.Theme()
++				theme.FontSize, theme.Spacing = 12, 3.4
++				c.SetTheme(&theme)
++				Column(c).Fill().Padding(10).Children(func() {
++					Text(c, "Grid toolbar").SingleLine()
++					Table(c, &f.state, f.columns, f.rows, func(row, col int) {
++						Text(c, fmt.Sprintf("cell %d %s", row, f.columns[col].ID)).SingleLine()
++					}).Grow(1)
++				})
++			}, 480, 300)
++			tt.Frame()
++			beta := header(t, tt, "Beta")
++			tt.Move(float32(beta.X+20), float32(beta.Y+beta.H/2))
++			tt.Advance(610 * time.Millisecond)
++			tt.Frame()
++			var tip *node
++			var find func(*node)
++			find = func(n *node) {
++				if n.role == RoleTooltip {
++					tip = n
++				}
++				for child := n.first; child != nil; child = child.next {
++					find(child)
++				}
++			}
++			find(tt.rt.c.root)
++			if tip == nil {
++				t.Fatal("header comment has no native tooltip bubble")
++			}
++			bubble := tip.Bounds()
++			text, ok := tt.Find(comment)
++			if !ok || bubble.W <= 0 || bubble.H <= 0 {
++				t.Fatalf("comment tooltip has no measured bubble or text: bubble %+v text %+v found %v", bubble, text, ok)
++			}
++			if text.X < bubble.X-0.5 || text.Y < bubble.Y-0.5 || text.X+text.W > bubble.X+bubble.W+0.5 || text.Y+text.H > bubble.Y+bubble.H+0.5 {
++				t.Fatalf("header comment paints outside its native tooltip background: bubble %+v text %+v", bubble, text)
++			}
++		})
++	}
++}
++
++func TestGridHeaderDetailAndWidthRemainNative(t *testing.T) {
++	f := newHeaderGridFixture(3)
++	f.columns[2].Subtitle = "varchar(255)"
++	f.columns[2].HeaderDetail = "Comment detail"
++	tt := NewTester(f.view, 480, 300)
++	tt.Frame()
++	if !tt.HasText("Comment detail") || !tt.HasText("varchar(255)") {
++		t.Fatalf("native header lost detail or subtitle: %q", tt.Texts())
++	}
++	beta := header(t, tt, "Beta")
++	x, y := float32(beta.X+beta.W-2), float32(beta.Y+beta.H/2)
++	tt.Press(x, y)
++	tt.Move(x+35, y)
++	tt.Release(x+35, y)
++	if got := f.state.Columns.Widths["beta"]; got != 135 {
++		t.Fatalf("three-line header did not resize its original field: width %v", got)
++	}
++	if f.state.ColumnSelection != nil {
++		t.Fatal("resizing selected a column")
++	}
++}
++
++func TestGridHeaderDetailScalesWithoutChangingFieldChoice(t *testing.T) {
++	f := newHeaderGridFixture(3)
++	f.columns[2].Subtitle = "varchar(255)"
++	f.columns[2].HeaderDetail = "Comment detail"
++	zoom := float32(1)
++	tt := NewTester(func(c *Context) {
++		theme := *c.Theme()
++		theme.Spacing, theme.FontSize = theme.Space(1)*zoom, theme.FontSize*zoom
++		c.SetTheme(&theme)
++		f.view(c)
++	}, 500, 400)
++	tt.Frame()
++	headerGridClick(t, tt, 0, "Beta")
++	before := header(t, tt, "Beta")
++	zoom = 2
++	tt.Frame()
++	after := header(t, tt, "Beta")
++	headerGridColumns(t, f, "beta")
++	if after.H < before.H*1.5 {
++		t.Fatalf("native multi-line header did not scale with its theme: before %v after %v", before, after)
++	}
++	if detail, ok := tt.Find("Comment detail"); !ok || detail.Y+detail.H > float32(after.Y+after.H)+0.5 {
++		t.Fatalf("zoom clipped the third header line: detail %+v inside %+v", detail, after)
++	}
++}
++
++func TestGridHeaderDisabledOptInKeepsSorting(t *testing.T) {
++	f := newHeaderGridFixture(4)
++	f.state.HeaderSelect = false
++	tt := NewTester(f.view, 480, 300)
++	tt.Frame()
++	headerGridClick(t, tt, 0, "Beta")
++	if f.sort != (SortOrder{Column: "beta"}) || f.state.ColumnSelection != nil || f.selection.Len() != 0 {
++		t.Fatalf("default table behavior changed: sort %+v, header choice %q, rows %v", f.sort, f.state.ColumnSelection, chosenRows(&f.selection))
++	}
++}
++
++func TestGridCellClickCallbackDoesNotRunForDragOrRowHeader(t *testing.T) {
++	f := newHeaderGridFixture(100)
++	type click struct {
++		row, col int
++		mods     Modifiers
++	}
++	var clicks []click
++	f.state.OnCellClick = func(row, col int, mods Modifiers) { clicks = append(clicks, click{row, col, mods}) }
++	tt := NewTester(f.view, 480, 300)
++	tt.Frame()
++	headerGridClick(t, tt, 0, "cell 1 beta")
++	if !slices.Equal(clicks, []click{{1, 2, 0}}) {
++		t.Fatalf("plain cell click callbacks %+v; want original source row and column", clicks)
++	}
++	clicks = nil
++	x, y := rowCenter(t, tt, "cell 1 beta")
++	x2, y2 := rowCenter(t, tt, "cell 3 gamma")
++	tt.Press(x, y)
++	tt.Move(x2, y2)
++	tt.Release(x2, y2)
++	if len(clicks) != 0 {
++		t.Fatalf("drag activated a cell editor: %+v", clicks)
++	}
++	headerGridClick(t, tt, 0, "cell 2 row")
++	if len(clicks) != 0 {
++		t.Fatalf("row-header click activated a cell editor: %+v", clicks)
++	}
++	x, y = rowCenter(t, tt, "cell 1 beta")
++	tt.Press(x, y)
++	tt.Move(x, y+4)
++	tt.Move(x, 299)
++	tt.Advance(2 * time.Second)
++	if f.state.frame.e.st.scrollY <= 0 || len(chosenRows(&f.selection)) <= 10 {
++		t.Fatalf("held drag did not scroll beyond initially visible rows: scroll=%v, rows=%v", f.state.frame.e.st.scrollY, chosenRows(&f.selection))
++	}
++	tt.Release(x, 299)
++	if len(clicks) != 0 {
++		t.Fatalf("edge drag activated a cell editor: %+v", clicks)
++	}
++}
++
++func TestGridCellClickCallbackUsesClickedSourceAfterPointerMoves(t *testing.T) {
++	f := newHeaderGridFixture(4)
++	var got [][3]int
++	f.state.OnCellClick = func(row, col int, mods Modifiers) {
++		got = append(got, [3]int{row, col, int(mods)})
++	}
++	tt := NewTester(f.view, 480, 300)
++	tt.Frame()
++	x, y := rowCenter(t, tt, "cell 1 alpha")
++	x2, _ := rowCenter(t, tt, "cell 1 gamma")
++	tt.rt.event(platform.SurfaceEvent{Kind: platform.PointerDown, X: float64(x), Y: float64(y)})
++	tt.rt.event(platform.SurfaceEvent{Kind: platform.PointerUp, X: float64(x), Y: float64(y)})
++	tt.rt.event(platform.SurfaceEvent{Kind: platform.PointerMove, X: float64(x2), Y: float64(y)})
++	tt.Frame()
++	if !slices.Equal(got, [][3]int{{1, 1, 0}}) {
++		t.Fatalf("cell activation followed the later pointer instead of the clicked source: %v", got)
++	}
++	got = nil
++	if err := tt.RightClick("cell 2 beta"); err != nil {
++		t.Fatal(err)
++	}
++	if len(got) != 0 {
++		t.Fatalf("secondary click activated a cell editor: %v", got)
++	}
++	headerGridClick(t, tt, Cmd, "cell 3 gamma")
++	if !slices.Equal(got, [][3]int{{3, 3, int(Cmd)}}) {
++		t.Fatalf("modified primary click lost its source or modifiers: %v", got)
++	}
++}
+diff --git a/docs/nyadb-grid-headers.md b/docs/nyadb-grid-headers.md
+new file mode 100644
+index 00000000..b9cd96f8
+--- /dev/null
++++ b/docs/nyadb-grid-headers.md
+@@ -0,0 +1,75 @@
++# Opt-in native data-grid headers
++
++The `v0.7.3-nyadb.2` candidate extends the existing keyed `ui.Table` header.
++It does not change the zero-value behavior of Tables or OutlineTables.
++No platform backend or browser bridge changes are required.
++
++```go
++var selected int = -1
++var selection ui.Selection
++grid := ui.ListState{
++    Selected: &selected,
++    Selection: &selection,
++    CellSelect: true,
++    DragSelect: true,
++    HeaderSelect: true,
++}
++columns := []ui.TableColumn{
++    {ID: "id", Title: "id", Width: 100, Sortable: true},
++    {ID: "name", Title: "name", Width: 180,
++        Subtitle: "varchar(200)", HeaderTooltip: "Customer name",
++        HeaderDetail: "Customer name"},
++}
++grid.HeaderActionMenu = func(m *ui.Menu, col int) {
++    // col is the original index into columns, even after a reorder.
++    m.Item("Sort ascending")
++}
++ui.Table(c, &grid, columns, len(rows), func(row, col int) {
++    ui.Text(c, rows[row][col])
++})
++```
++
++`HeaderSelect` requires `CellSelect` and a `Selection`. A plain click chooses
++one entire column, without changing `Sort` or `SortBy`. Ctrl (Cmd on macOS)
++toggles columns, retaining the final chosen column. Shift extends from the
++last plain or Ctrl/Cmd header click. Independent columns outside that range
++remain chosen; a subsequent Shift click replaces the previous extension.
++`ColumnRange` remains comparable. The independent ID set lives in
++`ColumnSelection`; `SelectedColumns()` returns its members in visible order.
++`CellSelected()` and native selection painting use the same membership.
++
++Only current real row keys enter `Selection`; section headers are excluded.
++A zero-row table can choose fields while its row selection stays empty and
++its row cursor stays -1. Clicking cells or using navigation keys returns to
++the ordinary cell range. When an application assigns `Cells` directly or
++replaces a page, it must also set `ColumnSelection = nil`; the next table
++build clears the associated private Shift state. Hiding/removing fields
++reconciles the chosen IDs and the cursor; reordering preserves IDs.
++
++`HeaderTooltip` uses native tooltip behavior: initial 600 ms hover delay,
++empty text has no tip, and leaving/pressing/menu opening dismisses it.
++Native tooltips also retain their existing short warm transition between
++adjacent tipped elements. `HeaderDetail` is a separate final line, independent
++of `Subtitle`. CR/LF is flattened only for that line; tooltip text is intact.
++Applications own placeholder text and persistence, never the framework.
++
++`HeaderActionMenu` creates a separate hover-revealed `…` button inside the
++same keyed header. It shares width, clipping and horizontal scrolling with
++the header, reserves its space even while hidden, remains keyboard reachable,
++and does not select, sort, resize or drag a column when opened. The existing
++`HeaderMenu` is still the right-click menu. With `HeaderSelect`, right-click
++inside the selected set preserves it; outside selects the clicked column
++before the application builds that menu.
++
++`OnCellClick(row, col, mods)` receives original cell-builder indices after
++an undragged primary pointer click selects its cell. It excludes row headers,
++section headers, key activation and drag completion. Editors can use it to
++activate after selection while leaving native `DragSelect` responsible for
++the selection rectangle and viewport-edge autoscroll. Application callbacks
++continue to run on the UI thread.
++
++`ui/grid_header_test.go` covers selection, menus, tooltip clock advancement,
++reorder/resize, zero-row transitions, cross-Tester reuse, state cleanup,
++cell callbacks, keyboard access and horizontal/vertical edge scrolling.
++Runtime rendering has been checked on Linux; Windows/macOS builds are
++compilation evidence, not desktop GUI validation.

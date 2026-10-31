@@ -7,7 +7,6 @@ import (
 	"math"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/egoist/mygo/ui"
 
@@ -27,11 +26,16 @@ type mysqlDataSavedLayout struct {
 	HiddenColumns  map[string]bool    `json:"hiddenColumns,omitempty"`
 	ShowFieldTypes bool               `json:"showFieldTypes"`
 	ShowRowNumbers bool               `json:"showRowNumbers"`
+	ShowComments   bool               `json:"show_comments,omitempty"`
+	Zoom           int                `json:"zoom,omitempty"`
 }
 
 type mysqlDataLayoutState struct {
 	restored       bool
 	showRowNumbers bool
+	showComments   bool
+	filterFocus    string
+	columnWidth    mysqlDataColumnWidthState
 	observed       string
 	saved          string
 	dirty          bool
@@ -60,6 +64,7 @@ func mysqlDataLayoutSnapshot(t *Document) string {
 		Version: mysqlDataLayoutVersion, Order: t.grid.Columns.Order,
 		Widths: t.grid.Columns.Widths, HiddenColumns: t.hiddenColumns,
 		ShowFieldTypes: t.showFieldTypes, ShowRowNumbers: t.layout.showRowNumbers,
+		ShowComments: t.layout.showComments, Zoom: mysqlDataZoom(t),
 	})
 	if err != nil {
 		return "" // Invalid native widths must never overwrite a valid preference.
@@ -125,6 +130,8 @@ func (s *State) restoreMySQLDataLayout(t *Document) {
 					t.hiddenColumns = layout.HiddenColumns
 					t.showFieldTypes = layout.ShowFieldTypes
 					t.layout.showRowNumbers = layout.ShowRowNumbers
+					t.layout.showComments = layout.ShowComments
+					t.edit.Zoom = mysqlDataValidZoom(layout.Zoom)
 				}
 			}
 		}
@@ -209,14 +216,21 @@ func mysqlVisibleDataColumns(t *Document, page *mysqlsvc.MySQLDataPage) ([]int, 
 		}
 		indices = append(indices, i)
 		col := t.columns[i]
-		kind, declaration, key := "", "", ""
+		kind, declaration, key, comment := "", "", "", ""
 		if i < len(page.ColumnKinds) {
 			kind = page.ColumnKinds[i]
 			declaration = kind // compatibility with pre-metadata test loaders
 		}
 		if i < len(page.ColumnMetadata) && page.ColumnMetadata[i].Name == name {
 			meta := page.ColumnMetadata[i]
-			kind, declaration, key = meta.DataType, meta.Type, meta.Key
+			kind, declaration, key, comment = meta.DataType, meta.Type, meta.Key, meta.Comment
+		}
+		col.HeaderTooltip = comment
+		if t.layout.showComments {
+			col.HeaderDetail = comment
+			if comment == "" {
+				col.HeaderDetail = "--"
+			}
 		}
 		if mysqlColumnIsNumeric(kind) {
 			col.Align = ui.End
@@ -282,64 +296,24 @@ func mysqlDataHideColumn(t *Document, page *mysqlsvc.MySQLDataPage, column strin
 		t.hiddenColumns = make(map[string]bool)
 	}
 	t.hiddenColumns[column] = true
-	if t.grid.Cells.Cursor == column {
+	if t.grid.ColumnSelection != nil {
+		selected := mysqlDataSelectedColumns(t)
+		t.grid.ColumnSelection = append([]string{}, selected...)
+		if t.grid.Cells.Cursor == column {
+			t.grid.Cells.Cursor = ""
+			if len(selected) > 0 {
+				t.grid.Cells.Cursor = selected[0]
+			}
+		}
+		if t.grid.Cells.Anchor == column {
+			t.grid.Cells.Anchor = t.grid.Cells.Cursor
+		}
+	} else if t.grid.Cells.Cursor == column {
 		t.selection.Clear()
+		mysqlDataClearColumnSelection(t)
 		t.grid.Cells = ui.ColumnRange{}
 		t.selectedRow = -1
 	}
-}
-
-func mysqlDataFitColumn(t *Document, page *mysqlsvc.MySQLDataPage, col int) {
-	if col < 0 || col >= len(page.Columns) {
-		return
-	}
-	width := float32(90)
-	name := page.Columns[col]
-	width = max(width, float32(utf8.RuneCountInString(name))*8+28)
-	if col < len(page.ColumnMetadata) && page.ColumnMetadata[col].Name == name {
-		// Fit the full server declaration without assuming it matches DATA_TYPE.
-		width = max(width, float32(utf8.RuneCountInString(page.ColumnMetadata[col].Type))*7+50)
-	}
-	for _, r := range page.Rows {
-		if col >= len(r) {
-			continue
-		}
-		display := r[col].Text
-		if r[col].Null {
-			display = "NULL"
-		}
-		n := utf8.RuneCountInString(display)
-		width = max(width, float32(min(n, 48)*8+28))
-	}
-	if t.grid.Columns.Widths == nil {
-		t.grid.Columns.Widths = map[string]float32{}
-	}
-	t.grid.Columns.Widths[name] = min(width, 420)
-}
-
-func (s *State) mysqlDataHeaderMenu(c *ui.Context, t *Document, page *mysqlsvc.MySQLDataPage, indices []int, m *ui.Menu, col int) {
-	valid := col >= 0 && col < len(indices)
-	source := 0
-	if valid {
-		source = indices[col]
-	}
-	if valid {
-		name := page.Columns[source]
-		if m.Item(locales.Text("复制字段名称")).Chosen() {
-			c.WriteClipboard(name)
-		}
-		if m.Item(locales.Text("复制此列（当前页）")).Chosen() {
-			c.WriteClipboard(mysqlDataCopyColumnPreview(page, source))
-		}
-		m.Separator()
-		if m.Item(locales.Text("隐藏此列")).Disabled(len(indices) <= 1).Chosen() {
-			mysqlDataHideColumn(t, page, name)
-		}
-	}
-	if valid && m.Item(locales.Text("将此列宽度适配当前页")).Chosen() {
-		mysqlDataFitColumn(t, page, source)
-	}
-	s.mysqlDataColumnsMenu(c, t, page, m)
 }
 
 // The toolbar and each native header expose the same column preferences.
@@ -367,7 +341,7 @@ func (s *State) mysqlDataColumnsMenu(c *ui.Context, t *Document, page *mysqlsvc.
 	m.Separator()
 	if m.Item(locales.Text("适配全部列宽（当前页）")).Chosen() {
 		for _, source := range indices {
-			mysqlDataFitColumn(t, page, source)
+			mysqlDataFitColumn(c, t, page, source)
 		}
 	}
 	if m.Item(locales.Text("重置全部列宽")).Chosen() {
@@ -376,6 +350,10 @@ func (s *State) mysqlDataColumnsMenu(c *ui.Context, t *Document, page *mysqlsvc.
 	if m.Item(locales.Text("显示字段类型")).Checked(t.showFieldTypes).Chosen() {
 		t.showFieldTypes = !t.showFieldTypes
 	}
+	if m.Item(locales.Text("显示注释")).Checked(t.layout.showComments).Chosen() {
+		t.layout.showComments = !t.layout.showComments
+	}
+	s.mysqlDataZoomMenu(t, m)
 	if m.Item(locales.Text("显示行号")).Checked(t.layout.showRowNumbers).Chosen() {
 		t.layout.showRowNumbers = !t.layout.showRowNumbers
 	}

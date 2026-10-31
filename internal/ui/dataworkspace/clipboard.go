@@ -29,34 +29,10 @@ func mysqlDataSelectedPreview(t *Document) (names []string, rows [][]string, nul
 	for col, name := range page.Columns {
 		sources[name] = col
 	}
-	order := append([]string(nil), t.grid.Columns.Order...)
-	for _, name := range page.Columns {
-		if !slices.Contains(order, name) {
-			order = append(order, name)
-		}
-	}
-	visible := order[:0]
-	for _, name := range order {
-		if slices.Contains(page.Columns, name) && !t.hiddenColumns[name] && !slices.Contains(visible, name) {
-			visible = append(visible, name)
-		}
-	}
-	lo, hi := 0, len(visible)-1
-	if !t.grid.Cells.All {
-		a := slices.Index(visible, t.grid.Cells.Anchor)
-		b := slices.Index(visible, t.grid.Cells.Cursor)
-		if b < 0 {
-			return
-		}
-		if a < 0 {
-			a = b
-		}
-		lo, hi = min(a, b), max(a, b)
-	}
-	if hi < lo {
+	names = mysqlDataSelectedColumns(t)
+	if len(names) == 0 {
 		return
 	}
-	names = append(names, visible[lo:hi+1]...)
 	for row, cells := range page.Rows {
 		selected := t.selection.Has(row)
 		if t.selection.Len() == 0 {
@@ -80,8 +56,7 @@ func mysqlDataSelectedPreview(t *Document) (names []string, rows [][]string, nul
 }
 
 func mysqlDataHasSelectedPreview(t *Document) bool {
-	if t == nil || t.page == nil || (!t.grid.Cells.All &&
-		(t.grid.Cells.Cursor == "" || t.hiddenColumns[t.grid.Cells.Cursor])) {
+	if t == nil || t.page == nil || len(mysqlDataSelectedColumns(t)) == 0 {
 		return false
 	}
 	for row := range t.page.Rows {
@@ -173,7 +148,7 @@ func (s *State) mysqlDataCopyAsMenu(c *ui.Context, t *Document, m *ui.Menu) {
 		{[]string{"逗号分隔值（数据）", "逗号分隔值（字段名称）", "逗号分隔值（字段名称和数据）"}, ','},
 	} {
 		for i, label := range format.labels {
-			if m.Item(locales.Text(label)).Disabled(empty).Chosen() {
+			if m.Item(locales.Text(label)).Disabled(len(names) == 0 || i != 1 && len(rows) == 0).Chosen() {
 				c.WriteClipboard(mysqlDataDelimitedPreview(names, rows, format.comma, i != 0, i != 1))
 			}
 		}

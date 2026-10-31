@@ -23,7 +23,7 @@ func TestMySQLNativeColumnContextActionsTranslatedInEnglish(t *testing.T) {
 		t.Fatal(err)
 	}
 	menu := tt.Menu()
-	for _, label := range []string{"Copy Field Name", "Copy Column (Current Page)",
+	for _, label := range []string{"Copy", "Copy Field Name", "Copy as", "Paste", "Show or Hide Columns", "Column Width…", "Show Comments", "Zoom",
 		"Hide Column", "Show/Hide Columns", "Show All Columns",
 		"Fit Column Width to Current Page", "Reset All Column Widths", "Show Field Types"} {
 		if !slices.Contains(menu, label) {
