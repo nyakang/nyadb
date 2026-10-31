@@ -63,7 +63,7 @@ func (s *State) SelectMySQLHTTPFile(kind MySQLHTTPFile, version uint64, path str
 	if version != s.mysqlHTTPSessionVersion || path == "" ||
 		!s.active || s.connectionDraft.Kind != connections.MySQL ||
 		!s.connectionDraft.MySQLAdvanced.HTTP.Enabled ||
-		!s.connectionDraft.MySQLAdvanced.HTTP.CertificateAuth {
+		(!s.connectionDraft.MySQLAdvanced.HTTP.CertificateAuth && kind != MySQLHTTPCA) {
 		return
 	}
 	cfg := &s.connectionDraft.MySQLAdvanced.HTTP
@@ -100,8 +100,14 @@ func (s *State) connectionMySQLHTTP(c *ui.Context, width float32) {
 			connectionFormCheckbox(c, &cfg.Enabled, "使用 HTTP 隧道", s.connectionDraft.MySQLAdvanced.SSH.Enabled)
 		})
 		s.mysqlHTTPInput(c, "隧道网址：", &cfg.URL, labelWidth, fieldWidth, active)
+		s.mysqlHTTPInput(c, locales.Text("目标 ID："), &cfg.TargetID, labelWidth, fieldWidth, active)
 		connectionFormRow(c).Children(func() {
-			connectionFormCheckbox(c, &cfg.Base64Queries, "使用 base64 编码传出查询", !active)
+			connectionFormCheckbox(c, &cfg.Base64Queries, "使用 base64 编码传出查询", true)
+			if cfg.Base64Queries {
+				if ui.Button(c, "清除旧版 base64 设置").Disabled(!active).Clicked() {
+					cfg.Base64Queries = false
+				}
+			}
 		})
 		ui.Row(c).Height(theme.RowHeight(c, 27)).Gap(0).Children(func() {
 			tabs := ui.TabsBase(c, &s.mysqlHTTPSubtab, 2)
@@ -128,8 +134,7 @@ func (s *State) connectionMySQLHTTP(c *ui.Context, width float32) {
 			}
 		})
 		ui.Row(c).Height(32).Margin(4, 0, 0, 0).Justify(ui.End).AlignItems(ui.Center).Children(func() {
-			ui.Button(c, "导出隧道脚本…").Width(200).Height(theme.RowHeight(c, connectionFooterControlHeight)).
-				Label("导出隧道脚本（尚未实现）").Disabled(true)
+			ui.Text(c, "nyadb-tcp-v1 网关：HTTPS 身份验证与数据库 TLS 独立。 ").FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 		})
 	})
 }
@@ -137,13 +142,10 @@ func (s *State) connectionMySQLHTTP(c *ui.Context, width float32) {
 func (s *State) mysqlHTTPVerification(c *ui.Context, cfg *connections.MySQLHTTP,
 	labelWidth, fieldWidth float32, active bool,
 ) {
-	connectionFormRow(c).Children(func() {
-		connectionFormCheckbox(c, &cfg.PasswordAuth, "使用密码验证", !active)
-	})
-	passwordEnabled := active && cfg.PasswordAuth
-	s.mysqlHTTPInput(c, "用户名：", &cfg.Username, labelWidth, 200, passwordEnabled)
-	s.mysqlHTTPPasswordRow(c, "密码：", &s.mysqlHTTPPassword, labelWidth, 200, passwordEnabled)
-	s.mysqlHTTPSavePlaceholder(c, "保存密码", labelWidth)
+	s.mysqlHTTPPasswordRow(c, locales.Text("访问令牌："), &s.mysqlHTTPPassword, labelWidth, fieldWidth, active)
+	s.mysqlHTTPSavePlaceholder(c, locales.Text("在系统密钥库保存隧道凭据"), labelWidth)
+	s.mysqlHTTPFileRow(c, "CA 证书：", &cfg.CACertificate, MySQLHTTPCA, labelWidth, fieldWidth, active)
+
 	connectionFormRow(c).Children(func() {
 		connectionFormCheckbox(c, &cfg.CertificateAuth, "使用证书验证", !active)
 	})
@@ -151,8 +153,6 @@ func (s *State) mysqlHTTPVerification(c *ui.Context, cfg *connections.MySQLHTTP,
 	s.mysqlHTTPFileRow(c, "客户端密钥：", &cfg.ClientKey, MySQLHTTPClientKey,
 		labelWidth, fieldWidth, certEnabled)
 	s.mysqlHTTPFileRow(c, "客户端证书：", &cfg.ClientCertificate, MySQLHTTPClientCertificate,
-		labelWidth, fieldWidth, certEnabled)
-	s.mysqlHTTPFileRow(c, "CA 证书：", &cfg.CACertificate, MySQLHTTPCA,
 		labelWidth, fieldWidth, certEnabled)
 	s.mysqlHTTPPasswordRow(c, "通行短语：", &s.mysqlHTTPPassphrase, labelWidth, fieldWidth-34, certEnabled)
 }
@@ -201,8 +201,7 @@ func (s *State) mysqlHTTPPasswordRow(c *ui.Context, name string, value *string,
 func (s *State) mysqlHTTPSavePlaceholder(c *ui.Context, name string, labelWidth float32) {
 	ui.Row(c).Height(theme.RowHeight(c, 27)).AlignItems(ui.Center).Children(func() {
 		ui.Box(c).Width(labelWidth)
-		save := false
-		connectionFormCheckbox(c, &save, name, true)
+		connectionFormCheckbox(c, &s.mysqlSaveTunnelSecrets, name, s.tunnelSecrets == nil || !s.connectionDraft.MySQLAdvanced.HTTP.Enabled)
 	})
 }
 

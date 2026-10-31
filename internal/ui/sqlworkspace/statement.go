@@ -79,3 +79,13 @@ func sqlAtCaret(source string, cursor int) string {
 	}
 	return ""
 }
+
+func (s *State) statementAtCaret(d *Document) string {
+	src, cursor := d.Editor.Buffer.String(), d.Editor.Cursor()
+	if s.deps.StatementAtCaret != nil {
+		if q := s.deps.StatementAtCaret(d.profileID, src, cursor); q != "" {
+			return q
+		}
+	}
+	return sqlAtCaret(src, cursor)
+}

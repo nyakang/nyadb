@@ -120,6 +120,9 @@ func TestSQLStatementClassification(t *testing.T) {
 	}{
 		{"-- comment\nSELECT 1", true}, {" /*note*/ SHOW DATABASES", true},
 		{"WITH cte AS (SELECT 1) SELECT * FROM cte", true},
+		{"WITH cte(id) AS (SELECT 1), other AS (SELECT 'UPDATE') UPDATE x JOIN cte USING(id) SET v=2", false},
+		{"WITH RECURSIVE cte AS (SELECT 1 UNION SELECT 2) DELETE FROM x WHERE id IN (SELECT * FROM cte)", false},
+		{"SELECT(1)", true},
 		{"CALL proc()", true}, {"UPDATE x SET v=1", false}, {"CREATE TABLE x (id int)", false},
 	} {
 		if got := sqlReturnsRows(tc.sql); got != tc.rows {

@@ -3,6 +3,7 @@ package bootstrap
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -11,8 +12,11 @@ import (
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
 	"github.com/nyakang/nyadb/internal/services/datasources"
+	"github.com/nyakang/nyadb/internal/services/queries"
 	"github.com/nyakang/nyadb/internal/storage/localdb"
+	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 	"github.com/nyakang/nyadb/internal/ui/shell"
+	"github.com/nyakang/nyadb/internal/ui/sqlworkspace"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -37,6 +41,11 @@ func Run() error {
 	}
 	state := shell.NewWithProfiles(connections.NewService(localdb.NewProfileStore(db)))
 	state.SetCredentialVault(credentials.NewOSVault())
+	hosts, err := credentials.DefaultHostStore()
+	if err != nil {
+		return fmt.Errorf("resolve SSH host trust storage: %w", err)
+	}
+	state.EnableTunnelServices(credentials.NewTunnelStore(true), hosts)
 	state.SetDataSources(datasources.Open, datasources.Capabilities)
 	state.SetDataLayoutPreferences(
 		func(key string) (string, error) { return localdb.Preference(db, key) },
@@ -55,6 +64,9 @@ func Run() error {
 			fmt.Fprintf(os.Stderr, "NyaDB research icon warning: %v\n", loadErr)
 		}
 	}
+	queryStore := queries.NewStore(localdb.NewSQLRepository(db), credentials.WorkspaceKey{})
+	state.SetInitialSQLStore(queryStore)
+	state.EnableAutoConnect()
 	mygo.App.WhenReady(func() {
 		setNativeAppearance(theme.CurrentMode())
 		window := mygo.NewWindow(mygo.WindowOptions{
@@ -66,6 +78,36 @@ func Run() error {
 			StateKey:  "main",
 			Content:   ui.View(state.View),
 		})
+		state.SetSQLPersistence(queryStore, sqlworkspace.Files{
+			OpenPath: func() (string, error) {
+				paths, e := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: window, Title: locales.Text("打开 SQL 文件"), Filters: []mygo.FileFilter{{Name: "SQL", Extensions: []string{"sql"}}}})
+				if e != nil || len(paths) == 0 {
+					return "", e
+				}
+				return paths[0], nil
+			},
+			SavePath: func(name string) (string, error) {
+				return mygo.Dialog.Save(mygo.SaveDialogOptions{Parent: window, Title: locales.Text("保存 SQL 文件"), DefaultPath: name})
+			},
+			OpenReader: func(path string) (io.ReadCloser, error) { return os.Open(path) },
+			Read:       queries.ReadFile, Write: queries.WriteFile, WriteStream: queries.WriteStream,
+		}, func() { window.Update(func() {}) })
+
+		state.SetBackupFiles(objectworkspace.BackupFiles{
+			Open: func() (string, error) {
+				paths, e := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: window, Title: locales.Text("恢复 NyaDB 备份"), Filters: []mygo.FileFilter{{Name: "NyaDB Backup", Extensions: []string{"nyabackup"}}}})
+				if e != nil || len(paths) == 0 {
+					return "", e
+				}
+				return paths[0], nil
+			},
+			Save: func(name string) (string, error) {
+				return mygo.Dialog.Save(mygo.SaveDialogOptions{Parent: window, Title: locales.Text("保存备份"), DefaultPath: name})
+			}, Write: queries.WriteStream,
+		})
+		state.SetEngineFiles(func(name string) (string, error) {
+			return mygo.Dialog.Save(mygo.SaveDialogOptions{Parent: window, DefaultPath: name})
+		}, queries.WriteStream)
 		window.OnClose(func(e *mygo.CloseEvent) {
 			if state.RequestWorkbenchClose(func() { window.Close() }) {
 				e.PreventDefault()

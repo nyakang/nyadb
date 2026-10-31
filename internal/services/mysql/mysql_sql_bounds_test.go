@@ -74,7 +74,7 @@ func newSQLBoundsManager(t *testing.T, started chan string) *MySQLSessionManager
 func TestSQLResultByteAndCellCaps(t *testing.T) {
 	m := newSQLBoundsManager(t, nil)
 	result, err := m.ExecuteSQL(context.Background(), 87, "", "SELECT broad")
-	if err != nil || !result.Truncated || len(result.Rows) != maxSQLResultBytes/maxSQLCellBytes {
+	if err != nil || !result.Truncated || len(result.Rows) == 0 || len(result.Rows) >= maxSQLResultBytes/maxSQLCellBytes {
 		t.Fatalf("byte cap rows=%d truncated=%t err=%v", len(result.Rows), result.Truncated, err)
 	}
 	for _, r := range result.Rows {

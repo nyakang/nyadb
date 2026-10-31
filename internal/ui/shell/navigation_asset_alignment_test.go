@@ -114,9 +114,9 @@ func TestNavigatorFailedMetadataRowCanRetry(t *testing.T) {
 
 func TestNavigatorUnsupportedCategoryKeepsWorkbenchContext(t *testing.T) {
 	s, _ := mysqlObjectTestState(t)
-	node := navigation.Node{Kind: "category", ProfileID: s.sessions.Current().ProfileID, Database: "app_db", Category: "查询"}
+	node := navigation.Node{Kind: "category", ProfileID: s.sessions.Current().ProfileID, Database: "app_db", Category: "备份"}
 	s.selectNavigationNode(ui.Services{}, node.Key())
-	if s.objectWorkspace.FilterKind(s.sessions.Current().ProfileID) != "查询" || s.objectWorkspace.SelectedRow(s.sessions.Current().ProfileID) != -1 || len(s.objectWorkspace.SelectedObjects()) != 0 || !strings.Contains(s.status, "尚未") {
+	if s.objectWorkspace.FilterKind(s.sessions.Current().ProfileID) != "备份" || s.objectWorkspace.SelectedRow(s.sessions.Current().ProfileID) != -1 || len(s.objectWorkspace.SelectedObjects()) != 0 || !strings.Contains(s.status, "尚未") {
 		t.Fatalf("unsupported folder must not pretend to filter objects: kind=%q row=%d status=%q", s.objectWorkspace.FilterKind(s.sessions.Current().ProfileID), s.objectWorkspace.SelectedRow(s.sessions.Current().ProfileID), s.status)
 	}
 }

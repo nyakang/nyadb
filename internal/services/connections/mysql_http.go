@@ -13,6 +13,7 @@ import (
 type MySQLHTTP struct {
 	Enabled           bool   `json:"enabled,omitempty"`
 	URL               string `json:"url,omitempty"`
+	TargetID          string `json:"targetId,omitempty"`
 	Base64Queries     bool   `json:"base64Queries,omitempty"`
 	PasswordAuth      bool   `json:"passwordAuth,omitempty"`
 	Username          string `json:"username,omitempty"`
@@ -37,7 +38,7 @@ func normalizeMySQLHTTP(v MySQLHTTP) (MySQLHTTP, error) {
 	if v.ProxyPort < 1 || v.ProxyPort > 65535 {
 		return v, fmt.Errorf("%w: MySQL HTTP proxy port out of range", ErrInvalid)
 	}
-	for _, value := range []string{v.URL, v.Username, v.ClientKey, v.ClientCertificate,
+	for _, value := range []string{v.URL, v.TargetID, v.Username, v.ClientKey, v.ClientCertificate,
 		v.CACertificate, v.ProxyHost, v.ProxyUsername} {
 		if strings.ContainsRune(value, 0) || strings.ContainsAny(value, "\r\n") ||
 			utf8.RuneCountInString(value) > 4096 {

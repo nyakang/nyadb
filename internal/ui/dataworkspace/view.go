@@ -16,6 +16,16 @@ func (s *State) View(c *ui.Context, t *Document) {
 	if t == nil || t.closed {
 		return
 	}
+	if t.importOnly {
+		ui.Column(c).Fill().Padding(16).Gap(10).Children(func() {
+			ui.Text(c, locales.Text("导入新表")).Bold()
+			ui.Text(c, t.database)
+			if ui.Button(c, locales.Text("导入向导…")).Clicked() {
+				s.openDataImport(t)
+			}
+		})
+		return
+	}
 	palette := theme.Colors(c)
 
 	mysqlDataSyncAnalysisGrid(t)

@@ -118,6 +118,9 @@ func (s *State) openMySQLProgram(database, name, kind string) {
 }
 
 func (s *State) openMySQLData(services ui.Services, database, table string) {
+	if s.openEngineData(services, database, table) {
+		return
+	}
 	w := s.sessions.Current()
 	if w.Status != "已连接" || w.ProfileID <= 0 || !validStructureSelection(database, table) {
 		return

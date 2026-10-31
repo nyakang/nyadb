@@ -3,7 +3,6 @@ package sessionbrowser
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -21,7 +20,7 @@ type sessionResult struct {
 // host must resolve any unsaved-document guard before calling lifecycle methods.
 func (s *State) Connect(profile connections.Profile, invalidate func()) {
 	if profile.Kind != connections.MySQL {
-		s.report("请选择 MySQL 连接")
+		s.connectEngine(profile, invalidate)
 		return
 	}
 	s.EnsureManager()
@@ -38,7 +37,11 @@ func (s *State) Connect(profile connections.Profile, invalidate func()) {
 		}
 	}
 	if err == nil {
-		_, err = mysqlsvc.DirectMySQLConfig(settings, password)
+		if s.Manager.TransportProvider != nil {
+			err = mysqlsvc.ValidateMySQLTransportSettings(settings, password)
+		} else {
+			_, err = mysqlsvc.DirectMySQLConfig(settings, password)
+		}
 	}
 	if err != nil {
 		w.Status, w.Error = "连接失败", err.Error()
@@ -54,6 +57,7 @@ func (s *State) Connect(profile connections.Profile, invalidate func()) {
 	s.bumpGeneration(w)
 	generation := w.Generation
 	w.ProfileID, w.Status, w.Error = profile.ID, "连接中", ""
+	w.Kind, w.Catalog = profile.Kind, profile.Database
 	w.Databases = nil
 	s.ResetBrowser()
 	s.report("正在连接 MySQL：" + profile.Name)
@@ -90,6 +94,21 @@ func (s *State) Connect(profile connections.Profile, invalidate func()) {
 // Consume processes parked handshakes, the active handshake/refresh, then active
 // object metadata. Parked object reads remain buffered until their profile returns.
 func (s *State) Consume() {
+	if s.Manager != nil {
+		var lost []int64
+		if s.current.Status == "已连接" && s.Manager.TunnelRevoked(s.current.ProfileID) {
+			lost = append(lost, s.current.ProfileID)
+		}
+		for id, w := range s.parked {
+			if w.Status == "已连接" && s.Manager.TunnelRevoked(id) {
+				lost = append(lost, id)
+			}
+		}
+		for _, id := range lost {
+			s.Disconnect(id)
+			s.report("数据库隧道已断开；请显式重新连接，不会重放 SQL 或事务")
+		}
+	}
 	for id, w := range s.parked {
 		s.consumeSession(id, w, false)
 	}
@@ -135,21 +154,25 @@ func (s *State) consumeSession(id int64, w *Workspace, active bool) {
 			}
 		}
 		if active {
-			s.report(fmt.Sprintf("已连接 MySQL（%d 个数据库）", len(result.names)))
+			s.report(s.engineStatus(w, len(result.names)))
 		}
 	default:
 	}
 }
 func (s *State) RefreshDatabases(invalidate func()) {
 	w := s.current
-	if w.ProfileID == 0 || w.Status != "已连接" || s.Manager == nil || w.Refreshing() {
+	if w.ProfileID == 0 || w.Status != "已连接" || (s.Manager == nil && s.engines.Session == nil) || w.Refreshing() {
 		return
 	}
 	s.CancelObjects()
 	id, generation := w.ProfileID, w.Generation
 	lister := s.DatabaseLister
 	if lister == nil {
-		lister = s.Manager.Databases
+		if w.Kind != connections.MySQL && s.engines.Session != nil {
+			lister = s.engineSchemas
+		} else {
+			lister = s.Manager.Databases
+		}
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	// List refresh cancellation must also follow this workspace's lifetime.
@@ -201,6 +224,9 @@ func (s *State) Disconnect(id int64) {
 	if s.Manager != nil {
 		_ = s.Manager.Disconnect(id)
 	}
+	if s.engines.Disconnect != nil {
+		_ = s.engines.Disconnect(id)
+	}
 }
 func (s *State) DisconnectAll() {
 	for id := range s.parked {
@@ -217,4 +243,7 @@ func (s *State) Close() {
 		_ = s.Manager.Close()
 	}
 	s.Manager = nil
+	if s.engines.Close != nil {
+		_ = s.engines.Close()
+	}
 }

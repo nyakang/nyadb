@@ -21,6 +21,9 @@ type MySQLDataImportRowSource interface {
 }
 
 type MySQLDataImportStreamRequest struct {
+	Generation            uint64
+	CanonicalBackupValues bool
+
 	Request           MySQLDataImportRequest
 	Rows              int64
 	Open              func(context.Context) (MySQLDataImportRowSource, error)
@@ -67,11 +70,23 @@ func (m *MySQLSessionManager) ImportMySQLDataStream(ctx context.Context, id int6
 		return result, err
 	}
 	defer cancel()
+	if stream.Generation != 0 && m.SessionGeneration(id) != stream.Generation {
+		return result, ErrMySQLNotConnected
+	}
 	conn, err := session.db.Conn(qctx)
 	if err != nil {
 		return result, err
 	}
 	defer conn.Close()
+	if stream.CanonicalBackupValues {
+		defer conn.Raw(func(any) error { return driver.ErrBadConn })
+		if _, err = conn.ExecContext(qctx, "SET NAMES utf8mb4"); err != nil {
+			return result, err
+		}
+		if _, err = conn.ExecContext(qctx, "SET SESSION time_zone='+00:00'"); err != nil {
+			return result, err
+		}
+	}
 	var columns []MySQLStructureColumn
 	var createSQL string
 	if r.NewTable {

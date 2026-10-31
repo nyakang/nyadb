@@ -58,53 +58,56 @@ type Dependencies struct {
 // Document has stable qualified identity. All mutable grid, draft and request
 // state belongs to this module and is accessed only on the UI thread.
 type Document struct {
-	toolbar           mysqlDataToolbarState
-	fill              mysqlDataFillState
-	id                uint64
-	closed            bool
-	database, table   string
-	objectKind        string
-	profileID         int64
-	offset            int64
-	limit             int
-	page              *mysqlsvc.MySQLDataPage
-	panel             *Panel
-	readInfo          mysqlDataReadInfo
-	layout            mysqlDataLayoutState
-	grid              ui.ListState
-	columns           []ui.TableColumn
-	loading           bool
-	err               string
-	cancel            context.CancelFunc
-	results           <-chan mysqlDataResult
-	request           uint64
-	edit              mysqlDataEditState
-	transaction       dataTransactionState
-	export            mysqlDataExportState
-	transfer          mysqlDataTransferState
-	selection         ui.Selection[int]
-	selectedRow       int
-	sort              ui.SortOrder
-	sortColumn        string
-	sortDescending    bool
-	filterColumnDraft string
-	filterModeDraft   string
-	filterValueDraft  string
-	filterColumn      string
-	filterMode        string
-	filterValue       string
-	rulesExpanded     bool
-	ruleError         string
-	filterExtraDraft  []mysqlDataRuleDraft
-	filterRules       []mysqlsvc.MySQLDataFilterRule
-	sortDraft         []mysqlDataSortDraft
-	sortRules         []mysqlsvc.MySQLDataSortRule
-	hiddenColumns     map[string]bool
-	showFieldTypes    bool
-	useKeyset         bool
-	after             *mysqlsvc.MySQLDataCursor
-	cursorHistory     map[int64]*mysqlsvc.MySQLDataCursor
-	tools             mysqlDataToolsState
+	importOnly           bool
+	hostAction           string
+	hostActionGeneration uint64
+	toolbar              mysqlDataToolbarState
+	fill                 mysqlDataFillState
+	id                   uint64
+	closed               bool
+	database, table      string
+	objectKind           string
+	profileID            int64
+	offset               int64
+	limit                int
+	page                 *mysqlsvc.MySQLDataPage
+	panel                *Panel
+	readInfo             mysqlDataReadInfo
+	layout               mysqlDataLayoutState
+	grid                 ui.ListState
+	columns              []ui.TableColumn
+	loading              bool
+	err                  string
+	cancel               context.CancelFunc
+	results              <-chan mysqlDataResult
+	request              uint64
+	edit                 mysqlDataEditState
+	transaction          dataTransactionState
+	export               mysqlDataExportState
+	transfer             mysqlDataTransferState
+	selection            ui.Selection[int]
+	selectedRow          int
+	sort                 ui.SortOrder
+	sortColumn           string
+	sortDescending       bool
+	filterColumnDraft    string
+	filterModeDraft      string
+	filterValueDraft     string
+	filterColumn         string
+	filterMode           string
+	filterValue          string
+	rulesExpanded        bool
+	ruleError            string
+	filterExtraDraft     []mysqlDataRuleDraft
+	filterRules          []mysqlsvc.MySQLDataFilterRule
+	sortDraft            []mysqlDataSortDraft
+	sortRules            []mysqlsvc.MySQLDataSortRule
+	hiddenColumns        map[string]bool
+	showFieldTypes       bool
+	useKeyset            bool
+	after                *mysqlsvc.MySQLDataCursor
+	cursorHistory        map[int64]*mysqlsvc.MySQLDataCursor
+	tools                mysqlDataToolsState
 }
 type State struct {
 	SourceOpen            func(context.Context, datasources.Config) (datasources.Source, error)
@@ -214,6 +217,7 @@ func (s *State) Consume(services ui.Services) {
 	s.consumeDataTransfers(services)
 	s.consumeDataAnalysis()
 	s.inspector.Consume()
+	s.consumeHostActions()
 }
 func (s *State) inspectorPanel(t *Document) *Panel {
 	if t == nil || t.closed {

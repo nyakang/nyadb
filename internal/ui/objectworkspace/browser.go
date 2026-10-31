@@ -16,6 +16,14 @@ type BrowserSnapshot struct {
 	Objects                       []mysqlsvc.MySQLDBObject
 }
 type browserState struct {
+	groupFilter string
+
+	selection                           ui.Selection[objectKey]
+	groups                              map[objectKey]string
+	renameName, renameKind, renameDraft string
+	renameEditing                       bool
+	groupDraft                          string
+
 	List        ui.ListState
 	Row         int
 	Kind        string
@@ -51,7 +59,11 @@ func (s *State) currentBrowser() *browserFrame {
 	b := s.presentation(snapshot.ProfileID)
 	if b.database != snapshot.Database {
 		b.database = snapshot.Database
+		b.groupFilter = ""
+		s.loadObjectGroups(snapshot.ProfileID, snapshot.Database)
 		b.Kind = "全部"
+		b.selection.Clear()
+		b.renameEditing = false
 		b.Row = -1
 		b.List = ui.ListState{Columns: b.List.Columns}
 	}
@@ -59,12 +71,9 @@ func (s *State) currentBrowser() *browserFrame {
 }
 func (s *State) SelectedObjects() []mysqlsvc.MySQLDBObject {
 	w := s.currentBrowser()
-	if w.Kind == "" || w.Kind == "全部" {
-		return w.Objects
-	}
 	items := []mysqlsvc.MySQLDBObject{}
 	for _, o := range w.Objects {
-		if o.Kind == w.Kind {
+		if (w.Kind == "" || w.Kind == "全部" || o.Kind == w.Kind) && (w.groupFilter == "" || w.groups[objectKey{w.ProfileID, w.Database, o.Kind, o.Name}] == w.groupFilter) {
 			items = append(items, o)
 		}
 	}
@@ -82,6 +91,8 @@ func (s *State) Filter(kind string) {
 		selected = &o
 	}
 	w.Kind = kind
+	w.selection.Clear()
+	w.renameEditing = false
 	w.List = ui.ListState{Columns: w.List.Columns}
 	w.Row = -1
 	if selected != nil {

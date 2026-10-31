@@ -101,11 +101,11 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 			&s.mysqlAdvancedNumbers[mysqlSessionLimit], labelWidth)
 		connectionFormRow(c).Children(func() {
 			ui.Text(c, "初始查询：").Width(labelWidth).FontSize(theme.Font(c, 12))
-			if connectionFormTextInput(c, &s.mysqlInitialQueryPreview, "初始查询", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false).Changed() {
+			if connectionFormTextInput(c, &s.mysqlInitialQueryPreview, "初始查询", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, s.initialSQLLoadFailed).Changed() {
 				s.mysqlInitialQuery = s.mysqlInitialQueryPreview
 			}
 			ui.Box(c).Width(connectionFormBrowseGap)
-			connectionFormBrowse(c, "编辑初始查询", false, s.beginMySQLInitialQuery)
+			connectionFormBrowse(c, "编辑初始查询", s.initialSQLLoadFailed, s.beginMySQLInitialQuery)
 		})
 		if ui.Button(c, locales.Text("兼容性")).Width(160).Height(theme.RowHeight(c, connectionFormInputHeight)).Clicked() {
 			s.mysqlCompatibilityVisible = true
@@ -144,32 +144,40 @@ func (s *State) connectionMySQLCompatibility(c *ui.Context, width float32) {
 	labelWidth := float32(216)
 	ui.Column(c).Width(formWidth).Gap(5).Children(func() {
 		ui.Row(c).Height(theme.RowHeight(c, 26)).AlignItems(ui.Center).Children(func() {
-			connectionFormCheckbox(c, &compat.Enabled, "使用兼容模式", false)
+			connectionFormCheckbox(c, &compat.Enabled, "使用兼容模式", true)
 		})
 		s.compatSelectRow(c, "强制 lower_case_table_names 为：",
 			&compat.ForceLowerCase, &compat.LowerCaseTableNames,
-			connections.MySQLLowerCaseValues, compat.Enabled, labelWidth)
+			connections.MySQLLowerCaseValues, false, labelWidth)
 		ui.Row(c).Height(15).Children(func() {
 			ui.Box(c).Width(17)
 			ui.Text(c, "跳过 \"show variables like 'lower_case_%'\"").FontSize(theme.Font(c, 11))
 		})
 		ui.Row(c).Height(theme.RowHeight(c, 26)).Gap(0).AlignItems(ui.Center).Children(func() {
-			connectionFormCheckbox(c, &compat.ForceSQLMode, "强制 sql_mode 为：", !compat.Enabled).Width(labelWidth)
+			connectionFormCheckbox(c, &compat.ForceSQLMode, "强制 sql_mode 为：", true).Width(labelWidth)
 			ui.TextInput(c, &compat.SQLMode).Label("sql_mode").
 				Width(258).Height(theme.RowHeight(c, 25)).Padding(2, 8).
-				Disabled(!compat.Enabled || !compat.ForceSQLMode)
+				Disabled(true)
 		})
 		s.compatSelectRow(c, "强制 NDB 集群支持为：",
 			&compat.ForceNDB, &compat.NDBSupport,
-			connections.MySQLNDBSupportValues, compat.Enabled, labelWidth)
+			connections.MySQLNDBSupportValues, false, labelWidth)
 		s.compatSelectRow(c, "强制数据库列出方法为：",
 			&compat.ForceDatabaseMethod, &compat.DatabaseMethod,
-			connections.MySQLDatabaseMethods, compat.Enabled, labelWidth)
+			connections.MySQLDatabaseMethods, false, labelWidth)
 		s.compatSelectRow(c, "强制视图列出方法为：",
 			&compat.ForceViewMethod, &compat.ViewMethod,
-			connections.MySQLViewMethods, compat.Enabled, labelWidth)
-		ui.Text(c, "兼容性设置仅保存为配置，数据库驱动接入后才会实际应用。").
+			connections.MySQLViewMethods, false, labelWidth)
+		ui.Text(c, "当前版本不支持兼容性覆盖；这些选项保持禁用，旧配置保留。").
 			TextColor(palette.Muted).FontSize(theme.Font(c, 11))
+		if ui.Button(c, "清除旧兼容性覆盖").Disabled(!compat.Enabled && !compat.ForceLowerCase && !compat.ForceSQLMode && !compat.ForceNDB && !compat.ForceDatabaseMethod && !compat.ForceViewMethod).Clicked() {
+			compat.Enabled = false
+			compat.ForceLowerCase = false
+			compat.ForceSQLMode = false
+			compat.ForceNDB = false
+			compat.ForceDatabaseMethod = false
+			compat.ForceViewMethod = false
+		}
 	})
 }
 
@@ -202,23 +210,36 @@ func (s *State) connectionMySQLDatabases(c *ui.Context, width, height float32) {
 			{Title: "数据库", Width: pageWidth - 92},
 			{Title: "自动打开", Width: 88},
 		}
-		// No connection session exists yet. A zero-row native table preserves
-		// the exact empty state without fake databases or checked entries.
-		theme.Table(c, &s.mysqlDatabaseTable, columns, 0, func(_, _ int) {}).
-			Width(pageWidth).Grow(1).Border(1, palette.Border).
-			Disabled(!*enabled)
-		ui.Row(c).Height(theme.RowHeight(c, 30)).Gap(8).Children(func() {
-			ui.Button(c, "添加数据库到列表").
-				Width(198).Height(theme.RowHeight(c, 29)).Disabled(true).
-				Label("添加数据库到列表（需要连接 MySQL）")
-			ui.Button(c, "从列表中移除数据库").
-				Width(198).Height(theme.RowHeight(c, 29)).Disabled(true).
-				Label("从列表中移除数据库（列表为空）")
+		names := strings.FieldsFunc(s.connectionDraft.MySQLAdvanced.CustomDatabases, func(r rune) bool { return r == '\n' })
+		theme.Table(c, &s.mysqlDatabaseTable, columns, len(names), func(row, col int) {
+			if col == 0 {
+				ui.Text(c, names[row])
+			} else {
+				ui.Text(c, "显式打开")
+			}
+		}).Width(pageWidth).Grow(1).Disabled(!*enabled)
+		ui.Row(c).Gap(8).Children(func() {
+			ui.TextInput(c, &s.customDatabaseName).Label("自定义数据库名称").Disabled(!*enabled).Grow(1)
+			if ui.Button(c, "添加数据库到列表").Disabled(!*enabled || strings.TrimSpace(s.customDatabaseName) == "").Clicked() {
+				name := strings.TrimSpace(s.customDatabaseName)
+				found := false
+				for _, n := range names {
+					if n == name {
+						found = true
+					}
+				}
+				if !found && !strings.ContainsAny(name, "\n\r\x00") {
+					names = append(names, name)
+					s.connectionDraft.MySQLAdvanced.CustomDatabases = strings.Join(names, "\n")
+				}
+				s.customDatabaseName = ""
+			}
+			if ui.Button(c, "从列表中移除数据库").Disabled(!*enabled || len(names) == 0).Clicked() {
+				names = names[:len(names)-1]
+				s.connectionDraft.MySQLAdvanced.CustomDatabases = strings.Join(names, "\n")
+			}
 		})
-		if *enabled {
-			ui.Text(c, "需要建立数据库连接后才能读取列表").
-				FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
-		}
+		ui.Text(c, "列表只控制显示范围；不会创建数据库或提升访问权限。自动打开需要显式连接。").FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 	})
 }
 
@@ -226,7 +247,7 @@ func (s *State) connectionMySQLDatabases(c *ui.Context, width, height float32) {
 // sqlite configuration, logs or error reports. This editor is UI-only until
 // encrypted storage and actual connection execution are independently built.
 func (s *State) beginMySQLInitialQuery() {
-	if !s.active || s.connectionDraft.Kind != connections.MySQL {
+	if !s.active || s.connectionDraft.Kind != connections.MySQL || s.initialSQLLoadFailed {
 		return
 	}
 	s.mysqlInitialQueryDraft = s.mysqlInitialQuery

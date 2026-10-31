@@ -53,6 +53,8 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 	s.connectionTestCancel = cancel
 	s.connectionTesting = true
 	secret := s.connectionSecret // never log or persist this value
+	tunnelSecrets := s.tunnelSnapshot()
+	tunnelTester := s.mysqlTunnelTester
 	tester := s.mysqlConnectionTester
 	if tester == nil {
 		tester = func(context.Context, connections.ActiveSettings, string) error {
@@ -62,7 +64,19 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 	results := make(chan mysqlTestResult, 1)
 	s.connectionTestResults = results
 	go func() {
-		err := tester(ctx, settings, secret)
+		var err error
+		if (settings.MySQLAdvanced.SSH.Enabled || settings.MySQLAdvanced.HTTP.Enabled) && tunnelTester != nil {
+			err = tunnelTester(ctx, settings, secret, tunnelSecrets)
+		} else {
+			err = tester(ctx, settings, secret)
+		}
+		if err != nil {
+			for _, sensitive := range []string{secret, tunnelSecrets.SSHPassword, tunnelSecrets.SSHPassphrase, tunnelSecrets.HTTPToken, tunnelSecrets.ProxyPassword, tunnelSecrets.HTTPKeyPassphrase} {
+				if sensitive != "" {
+					err = errors.New(strings.ReplaceAll(err.Error(), sensitive, "[已隐藏]"))
+				}
+			}
+		}
 		if err != nil && secret != "" {
 			// Never show a returned driver error with the exact password.
 			err = errors.New(strings.ReplaceAll(err.Error(), secret, "[已隐藏]"))

@@ -153,6 +153,9 @@ func (s *State) LoadObjects(database string, force bool, invalidate func()) {
 	results := make(chan objectResult, 1)
 	w.objectResults = results
 	lister := s.ObjectLister
+	if lister == nil && w.Kind != "mysql" && s.engines.Session != nil {
+		lister = s.engineObjects
+	}
 	if lister == nil {
 		if s.Manager == nil {
 			s.CancelObjects()

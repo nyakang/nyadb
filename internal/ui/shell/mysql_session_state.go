@@ -12,7 +12,7 @@ import (
 
 func (s *State) startMySQLSession(services ui.Services) {
 	p, ok := s.currentProfile()
-	if !ok || p.Kind != connections.MySQL || s.profileService == nil {
+	if !ok || (p.Kind != connections.MySQL && p.Kind != connections.PostgreSQL && p.Kind != connections.SQLite) || s.profileService == nil {
 		s.status = "请选择 MySQL 连接"
 		return
 	}
@@ -48,9 +48,14 @@ func (s *State) closeMySQLSessions() {
 	s.dataWorkspace.CloseAll()
 	s.objectWorkspace.CloseAll()
 	s.sqlWorkspace.CloseAll()
+	s.engineData.CloseAll()
 	s.sessions.Close()
+	s.closeTunnelServices()
 }
 func (s *State) mysqlSessionToolbar(c *ui.Context) {
+	if s.engineSessionToolbar(c) {
+		return
+	}
 	p, ok := s.currentProfile()
 	if !ok || p.Kind != connections.MySQL {
 		return

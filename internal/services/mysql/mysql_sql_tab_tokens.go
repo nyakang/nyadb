@@ -2,7 +2,10 @@ package mysql
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/sqlresult"
+	"io"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
@@ -158,4 +161,41 @@ func (m *MySQLSessionManager) ReleaseSQLTabToken(token MySQLSQLTabToken) {
 		lease.cancel()
 		go lease.close()
 	}
+}
+
+func (m *MySQLSessionManager) ExecuteSQLTabTokenStream(ctx context.Context, token MySQLSQLTabToken, database, statement string, sink sqlresult.Sink) (MySQLSQLResult, error) {
+	if !hasSQLStatement(statement) {
+		return MySQLSQLResult{}, ErrEmptySQL
+	}
+	if e := validSQLSchema(database); e != nil {
+		return MySQLSQLResult{}, e
+	}
+	s, lease, e := m.checkedSQLTabToken(token)
+	if e != nil {
+		return MySQLSQLResult{}, e
+	}
+	return executeSQLTabLease(ctx, s, lease, database, statement, sink)
+}
+
+// ExecuteSQLTabTokenFile scans the stream on the tab's original connection.
+// Earlier completed statements remain visible when a later statement fails.
+func (m *MySQLSessionManager) ExecuteSQLTabTokenFile(ctx context.Context, token MySQLSQLTabToken, database string, reader io.Reader) (MySQLSQLResult, error) {
+	if reader == nil {
+		return MySQLSQLResult{}, ErrEmptySQL
+	}
+	if err := validSQLSchema(database); err != nil {
+		return MySQLSQLResult{}, err
+	}
+	s, lease, err := m.checkedSQLTabToken(token)
+	if err != nil {
+		return MySQLSQLResult{}, err
+	}
+	return executeSQLTabWork(ctx, s, lease, func(qctx context.Context, c *sql.Conn) (MySQLSQLResult, error) {
+		if database != "" {
+			if _, e := c.ExecContext(qctx, "USE "+quoteSQLSchema(database)); e != nil {
+				return MySQLSQLResult{}, e
+			}
+		}
+		return executeSQLScriptOnConn(qctx, c, reader, nil)
+	})
 }

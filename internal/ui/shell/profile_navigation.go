@@ -74,6 +74,11 @@ func (s *State) setProfileStarred(id int64, starred bool) {
 func (s *State) activeTabObject() (int64, string, string, bool) {
 	t := s.currentTab()
 	switch t.kind {
+	case tabEngineData:
+		if t.engine == nil {
+			return 0, "", "", false
+		}
+		return t.engine.Object.ProfileID, t.engine.Object.Schema, t.engine.Object.Name, true
 	case tabMySQLData:
 		if t.data == nil {
 			return 0, "", "", false
@@ -119,7 +124,7 @@ func (s *State) resolveNavigatorObject() {
 func (s *State) navigateToActiveTab(services ui.Services) {
 	id, database, table, ok := s.activeTabObject()
 	if !ok || s.sessions.StatusFor(id) != "已连接" {
-		s.status = "当前标签没有可定位的活动 MySQL 对象"
+		s.status = "当前标签没有可定位的活动数据库对象"
 		return
 	}
 	for _, p := range s.navigation.Profiles() {
@@ -206,6 +211,9 @@ func (s *State) selectNavigationNode(services ui.Services, key string) {
 
 func (s *State) revealNavigationNode(n navigation.Node) {
 	s.navigation.Tree.Open.Add(navigation.ConnectionKey(n.ProfileID))
+	if catalog := s.sessions.EngineCatalog(n.ProfileID); catalog != "" {
+		s.navigation.Tree.Open.Add((navigation.Node{Kind: "catalog", ProfileID: n.ProfileID, Catalog: catalog}).Key())
+	}
 	if n.Database != "" {
 		s.sessions.MarkOpened(n.ProfileID, n.Database)
 		s.navigation.Tree.Open.Add(navigation.DatabaseNode(n.ProfileID, n.Database).Key())
@@ -228,10 +236,24 @@ func (s *State) syncNavigationExpansion(services ui.Services) {
 }
 
 func (s *State) submitNavigation(services ui.Services, n navigation.Node) {
+	if n.Kind == "catalog" {
+		s.navigation.Tree.Open.Add(n.Key())
+		return
+	}
 	if n.Kind == "database" {
 		s.openMySQLDatabase(services, n.Database, false)
 	}
 	if n.Kind == "object" {
+		if n.Category == "查询" {
+			for _, q := range s.sqlWorkspace.Named(n.ProfileID) {
+				if q.ID == n.Object {
+					s.openQuery()
+					s.sqlWorkspace.OpenNamed(s.currentTab().query, q)
+					return
+				}
+			}
+			return
+		}
 		s.openMySQLObject(services, n.Database, n.Object, n.Category)
 	}
 	if n.Kind == "connection" {

@@ -125,11 +125,12 @@ func (s *State) deleteProfile() {
 	}
 	// Deleting a parked connection must not disconnect the selected/active one.
 	s.disconnectMySQLProfile(p.ID)
+	tunnelErr := s.forgetTunnelProfile(p)
 	if s.selectedProfileID == p.ID {
 		s.selectedProfileID = 0
 	}
 	s.loadProfiles()
-	if p.Kind == connections.MySQL && s.credentialVault != nil {
+	if (p.Kind == connections.MySQL || p.Kind == connections.PostgreSQL) && s.credentialVault != nil {
 		if err := s.credentialVault.Delete(p.ID, ""); err != nil {
 			s.status = "连接已删除，但清理系统凭据失败：" + err.Error()
 			return
@@ -142,6 +143,9 @@ func (s *State) deleteProfile() {
 		}
 	}
 	s.status = "已删除连接档案：" + p.Name + "（未删除数据库文件）"
+	if tunnelErr != nil {
+		s.status = "连接已删除，但清理隧道凭据失败：" + tunnelErr.Error()
+	}
 }
 
 func (s *State) selectGroup(name string) {

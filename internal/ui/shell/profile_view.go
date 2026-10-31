@@ -130,7 +130,7 @@ func (s *State) profileInspector(c *ui.Context) {
 						ui.Text(c, connectionKindName(p.Kind)).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 					})
 				})
-				if p.Kind == connections.MySQL {
+				if p.Kind == connections.MySQL || p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite {
 					s.mysqlSessionToolbar(c)
 				}
 				theme.Property(c, locales.Text("状态"), locales.Text(s.sessions.StatusFor(p.ID)))
@@ -168,6 +168,16 @@ func (s *State) profileInspector(c *ui.Context) {
 // the navigator owns presentation, filtering, tree selection and group drafts.
 func (s *State) navigationDependencies() navigation.Dependencies {
 	return navigation.Dependencies{
+		Catalog: s.sessions.EngineCatalog, Engine: s.sessions.EngineKind,
+		Queries: func(id int64, database string) []navigation.Object {
+			var out []navigation.Object
+			for _, q := range s.sqlWorkspace.Named(id) {
+				if q.Database == database || q.Database == "" {
+					out = append(out, navigation.Object{Name: q.Name, Kind: q.ID})
+				}
+			}
+			return out
+		},
 		SessionStatus:  s.sessions.StatusFor,
 		Databases:      s.sessions.DatabasesFor,
 		DatabaseOpened: s.sessions.DatabaseOpened,

@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/transport"
 )
 
 var ErrMySQLNotConnected = errors.New("MySQL session not connected")
@@ -17,19 +19,24 @@ var ErrMySQLManagerClosed = errors.New("MySQL session manager closed")
 // MySQLSessionManager owns authenticated connections and cancels in-flight
 // requests on Disconnect. Only explicit Connect methods initiate network I/O.
 type MySQLSessionManager struct {
-	mu       sync.Mutex
-	sessions map[int64]*mysqlManagedSession
-	versions map[int64]uint64
-	pending  map[int64]context.CancelFunc
-	closed   bool
-	opener   func(context.Context, connections.ActiveSettings, string) (*sql.DB, error)
+	tunnelRevoked        map[int64]bool
+	TransportInvalidated func()
+	mu                   sync.Mutex
+	sessions             map[int64]*mysqlManagedSession
+	versions             map[int64]uint64
+	pending              map[int64]context.CancelFunc
+	closed               bool
+	TransportProvider    func(context.Context, connections.ActiveSettings) (transport.Dialer, error)
+	InitialSQLLoader     func(context.Context, string) (string, error)
+	opener               func(context.Context, connections.ActiveSettings, string) (*sql.DB, error)
 }
 type mysqlManagedSession struct {
-	db       *sql.DB
-	sqlDB    *sql.DB
-	ctx      context.Context
-	cancel   context.CancelFunc
-	settings connections.ActiveSettings
+	db        *sql.DB
+	sqlDB     *sql.DB
+	ctx       context.Context
+	cancel    context.CancelFunc
+	settings  connections.ActiveSettings
+	transport transport.Dialer
 
 	sqlTabLimit int
 
@@ -39,9 +46,10 @@ type mysqlManagedSession struct {
 
 func NewMySQLSessionManager() *MySQLSessionManager {
 	return &MySQLSessionManager{
-		sessions: make(map[int64]*mysqlManagedSession),
-		versions: make(map[int64]uint64),
-		pending:  make(map[int64]context.CancelFunc),
+		sessions:      make(map[int64]*mysqlManagedSession),
+		versions:      make(map[int64]uint64),
+		pending:       make(map[int64]context.CancelFunc),
+		tunnelRevoked: make(map[int64]bool),
 	}
 }
 
@@ -56,6 +64,7 @@ func (m *MySQLSessionManager) Connect(ctx context.Context, s connections.ActiveS
 		m.mu.Unlock()
 		return ErrMySQLManagerClosed
 	}
+	delete(m.tunnelRevoked, s.ProfileID)
 	m.versions[s.ProfileID]++
 	token := m.versions[s.ProfileID]
 	previous := m.sessions[s.ProfileID]
@@ -72,12 +81,22 @@ func (m *MySQLSessionManager) Connect(ctx context.Context, s connections.ActiveS
 		_ = previous.close()
 	}
 	var db, sqlDB *sql.DB
+	var dialer transport.Dialer
 	var err error
 	if m.opener != nil {
 		db, err = m.opener(connectCtx, s, password)
 		sqlDB = db // injected mock pool in unit tests
 	} else {
-		db, sqlDB, err = OpenDirectMySQLPools(connectCtx, s, password)
+		var initial string
+		if s.MySQLAdvanced.InitialSQLID != "" && m.InitialSQLLoader != nil {
+			initial, err = m.InitialSQLLoader(connectCtx, s.MySQLAdvanced.InitialSQLID)
+		}
+		if err == nil && m.TransportProvider != nil {
+			dialer, err = m.TransportProvider(connectCtx, s)
+		}
+		if err == nil {
+			db, sqlDB, dialer, err = openMySQLPools(connectCtx, s, password, dialer, initial)
+		}
 	}
 	if err != nil {
 		cancel()
@@ -95,7 +114,7 @@ func (m *MySQLSessionManager) Connect(ctx context.Context, s connections.ActiveS
 		delete(m.pending, s.ProfileID)
 		managed = &mysqlManagedSession{
 			db: db, sqlDB: sqlDB, ctx: connectCtx, cancel: cancel,
-			settings: s, sqlTabLimit: mysqlSQLTabLimit(s.MySQLAdvanced),
+			settings: s, transport: dialer, sqlTabLimit: mysqlSQLTabLimit(s.MySQLAdvanced),
 			sqlTabs: make(map[uint64]*mysqlSQLTabLease),
 		}
 		m.sessions[s.ProfileID] = managed
@@ -103,6 +122,9 @@ func (m *MySQLSessionManager) Connect(ctx context.Context, s connections.ActiveS
 	m.mu.Unlock()
 	if stale {
 		cancel()
+		if dialer != nil {
+			_ = dialer.Close()
+		}
 		_ = db.Close()
 		if sqlDB != db {
 			_ = sqlDB.Close()
@@ -111,6 +133,9 @@ func (m *MySQLSessionManager) Connect(ctx context.Context, s connections.ActiveS
 			return ctx.Err()
 		}
 		return context.Canceled
+	}
+	if notice, ok := dialer.(interface{ Done() <-chan struct{} }); ok && (s.MySQLAdvanced.SSH.Enabled || s.MySQLAdvanced.HTTP.Enabled) {
+		go m.watchTunnel(s.ProfileID, token, managed, notice.Done())
 	}
 	if s.MySQLAdvanced.KeepAlive {
 		go managed.runKeepAlive()
@@ -171,6 +196,9 @@ func (m *MySQLSessionManager) Close() error {
 // close revokes tab leases before shutting down both pools. Drivers may still
 // be acknowledging canceled operations, so lease cleanup runs asynchronously.
 func (s *mysqlManagedSession) close() error {
+	if s.transport != nil {
+		_ = s.transport.Close()
+	}
 	s.sqlTabsMu.Lock()
 	tabs := s.sqlTabs
 	s.sqlTabs = nil
@@ -213,5 +241,49 @@ func (m *MySQLSessionManager) Databases(ctx context.Context, id int64) ([]string
 	if s.ctx.Err() != nil {
 		return nil, context.Canceled
 	}
+	if s.settings.MySQLAdvanced.UseCustomDatabaseList {
+		wanted := map[string]bool{}
+		for _, name := range strings.Split(s.settings.MySQLAdvanced.CustomDatabases, "\n") {
+			wanted[strings.TrimSpace(name)] = true
+		}
+		filtered := names[:0]
+		for _, name := range names {
+			if wanted[name] {
+				filtered = append(filtered, name)
+			}
+		}
+		names = filtered
+	}
 	return names, nil
+}
+
+func (m *MySQLSessionManager) watchTunnel(id int64, generation uint64, session *mysqlManagedSession, done <-chan struct{}) {
+	select {
+	case <-session.ctx.Done():
+		return
+	case <-done:
+	}
+	m.mu.Lock()
+	if m.sessions[id] != session || m.versions[id] != generation {
+		m.mu.Unlock()
+		return
+	}
+	delete(m.sessions, id)
+	m.versions[id]++
+	if m.tunnelRevoked == nil {
+		m.tunnelRevoked = make(map[int64]bool)
+	}
+	m.tunnelRevoked[id] = true
+	invalidate := m.TransportInvalidated
+	m.mu.Unlock()
+	session.cancel()
+	_ = session.close()
+	if invalidate != nil {
+		invalidate()
+	}
+}
+func (m *MySQLSessionManager) TunnelRevoked(id int64) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.tunnelRevoked[id]
 }

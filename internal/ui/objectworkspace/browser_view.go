@@ -86,12 +86,13 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		}
 	}
 	s.currentBrowser().List.Selected = &s.currentBrowser().Row
+	s.currentBrowser().List.Selection = &s.currentBrowser().selection
 	s.currentBrowser().List.Key = func(row int) any {
 		if row < 0 || row >= len(items) {
 			return nil
 		}
 		obj := items[row]
-		return [4]any{s.currentBrowser().ProfileID, db, obj.Kind, obj.Name}
+		return objectKey{s.currentBrowser().ProfileID, db, obj.Kind, obj.Name}
 	}
 	// Double-click opens real table/view data, as observed in the original.
 	// Design remains a separate explicit read-only action.
@@ -134,7 +135,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 			}
 			ui.Row(c).AlignItems(ui.Center).Gap(6).Children(func() {
 				theme.Icon(c, iconName, 14, palette.Blue)
-				ui.Text(c, obj.Name).SingleLine()
+				s.objectNameCell(c, obj)
 			})
 		default:
 			ui.Text(c, mysqlObjectCellText(obj, col)).SingleLine()
@@ -154,7 +155,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		}
 		if items[s.currentBrowser().Row].Kind == "表" {
 			if table.Shortcut(0, ui.KeyF2) {
-				s.BeginTableChange(s.currentBrowser().ProfileID, db, items[s.currentBrowser().Row].Name, mysqlsvc.MySQLTableRename)
+				s.BeginInlineRename(items[s.currentBrowser().Row].Name, items[s.currentBrowser().Row].Kind)
 			}
 			if table.Shortcut(0, ui.KeyDelete) {
 				s.BeginTableChange(s.currentBrowser().ProfileID, db, items[s.currentBrowser().Row].Name, mysqlsvc.MySQLTableDrop)
@@ -246,6 +247,53 @@ func (s *State) BrowserView(c *ui.Context) {
 		if connected && s.currentBrowser().Error != "" {
 			ui.Text(c, s.currentBrowser().Error).Padding(5, 8).FontSize(theme.Font(c, 11)).TextColor(palette.Error)
 		}
+		ui.Row(c).Gap(6).Padding(3, 6).Children(func() {
+			if ui.Button(c, "删除所选对象…").Disabled(!connected || s.deps.BatchExecutor == nil || !s.capabilities(s.currentBrowser().ProfileID).DesignTables || len(s.SelectedObjectIdentities()) == 0).Clicked() {
+				s.BeginObjectBatch(s.currentBrowser().ProfileID, s.SelectedObjectIdentities(), "drop")
+			}
+			if ui.Button(c, "粘贴对象…").Disabled(!connected || s.deps.BatchExecutor == nil || !s.capabilities(s.currentBrowser().ProfileID).DesignTables).Clicked() {
+				clip, e := DecodeObjectClipboard(c.Services().ReadClipboard())
+				if e != nil {
+					s.report(e.Error())
+				} else if clip.ProfileID != s.currentBrowser().ProfileID {
+					s.report("对象剪贴板属于另一连接，请显式切换到原连接")
+				} else {
+					s.BeginObjectBatch(s.currentBrowser().ProfileID, clip.Objects, "copy")
+				}
+			}
+			if ui.Button(c, "复制所选对象").Disabled(len(s.SelectedObjectIdentities()) == 0).Clicked() {
+				raw, e := EncodeObjectClipboardFor(s.currentBrowser().ProfileID, s.SelectedObjectIdentities())
+				if e == nil {
+					c.WriteClipboard(raw)
+				}
+			}
+
+			if ui.Button(c, "用户与权限").Disabled(!connected || s.deps.AccountExecutor == nil || !s.capabilities(s.currentBrowser().ProfileID).DesignTables).Clicked() {
+				s.OpenAccounts(c.Services(), s.currentBrowser().ProfileID, database, "")
+			}
+			if ui.Button(c, "继续对象草稿").Disabled(s.parkedObjectOp == nil).Clicked() {
+				s.ResumeObjectDraft()
+			}
+
+		})
+		ui.Row(c).Gap(6).Padding(3, 6).Children(func() {
+			ui.TextInput(c, &s.currentBrowser().groupDraft).Label("对象分组名称").Width(150)
+			if ui.Button(c, "分组所选对象").Disabled(len(s.SelectedObjectIdentities()) == 0).Clicked() {
+				s.AssignObjectGroup(s.currentBrowser().groupDraft)
+			}
+			s.objectGroupsView(c)
+		})
+		ui.Row(c).Gap(6).Padding(3, 6).Children(func() {
+			if s.deps.ObjectExecutor != nil && s.capabilities(s.currentBrowser().ProfileID).DesignTables {
+				for _, kind := range []string{"视图", "函数", "存储过程", "事件"} {
+					k := kind
+					if ui.Button(c, "新建"+k).Disabled(!connected || database == "").Clicked() {
+						name := s.NextObjectName(s.currentBrowser().ProfileID, "new_object")
+						s.BeginObject(c.Services(), s.currentBrowser().ProfileID, mysqlsvc.ObjectIdentity{Database: database, Name: name, Kind: k}, "create")
+					}
+				}
+			}
+		})
 		s.mysqlObjectWorkspace(c)
 	})
 }

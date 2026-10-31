@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/sqlresult"
+	"github.com/nyakang/nyadb/internal/db/sqltext"
 	"strings"
 	"time"
 
@@ -21,13 +24,7 @@ const (
 var ErrEmptySQL = errors.New("SQL statement is empty")
 
 // MySQLSQLResult is bounded and detached from driver-owned *sql.Rows.
-type MySQLSQLResult struct {
-	Columns      []string
-	Rows         [][]string
-	AffectedRows int64
-	Duration     time.Duration
-	Truncated    bool
-}
+type MySQLSQLResult = contract.SQLResult
 
 // ExecuteSQL runs user-authored SQL on the session identified by profileID.
 // Each execution uses its own reserved connection and optional schema.
@@ -57,6 +54,9 @@ func (m *MySQLSessionManager) ExecuteSQL(ctx context.Context, profileID int64, d
 
 // executeSQLOnConn is shared by request-scoped queries and tab-owned leases.
 func executeSQLOnConn(queryCtx context.Context, conn *sql.Conn, database, statement string) (result MySQLSQLResult, execErr error) {
+	return executeSQLOnConnWithSink(queryCtx, conn, database, statement, nil)
+}
+func executeSQLOnConnWithSink(queryCtx context.Context, conn *sql.Conn, database, statement string, sink sqlresult.Sink) (result MySQLSQLResult, execErr error) {
 	if database != "" {
 		if _, err := conn.ExecContext(queryCtx, "USE "+quoteSQLSchema(database)); err != nil {
 			return result, fmt.Errorf("select database %q: %w", database, err)
@@ -65,6 +65,13 @@ func executeSQLOnConn(queryCtx context.Context, conn *sql.Conn, database, statem
 
 	start := time.Now()
 	defer func() { result.Duration = time.Since(start) }()
+	if strings.Contains(statement, ";") || strings.Contains(strings.ToUpper(statement), "DELIMITER") {
+		return executeSQLScriptOnConn(queryCtx, conn, strings.NewReader(statement), sink)
+	}
+	return executeSQLStatementOnConn(queryCtx, conn, statement, sqlresult.Preview, sink)
+}
+
+func executeSQLStatementOnConn(queryCtx context.Context, conn *sql.Conn, statement string, limits sqlresult.Limits, sink sqlresult.Sink) (result MySQLSQLResult, execErr error) {
 
 	if !sqlReturnsRows(statement) {
 		execResult, err := conn.ExecContext(queryCtx, statement)
@@ -75,6 +82,12 @@ func executeSQLOnConn(queryCtx context.Context, conn *sql.Conn, database, statem
 			return result, err
 		}
 		result.AffectedRows, _ = execResult.RowsAffected()
+		result.Sets = []contract.ResultSet{{AffectedRows: result.AffectedRows}}
+		if sink != nil {
+			if err := sink(0, []contract.Column{}, nil); err != nil {
+				return result, err
+			}
+		}
 		return result, nil
 	}
 
@@ -83,63 +96,7 @@ func executeSQLOnConn(queryCtx context.Context, conn *sql.Conn, database, statem
 		return result, err
 	}
 	defer rows.Close()
-	columns, err := rows.Columns()
-	if err != nil {
-		return result, err
-	}
-	if len(columns) > maxSQLResultColumns {
-		return result, errors.New("SQL result has too many columns")
-	}
-	result.Columns = columns
-
-	values := make([]sql.RawBytes, len(columns))
-	dests := make([]any, len(columns))
-	for i := range values {
-		dests[i] = &values[i]
-	}
-
-	totalBytes := 0
-	for rows.Next() {
-		if len(result.Rows) >= MaxSQLResultRows || totalBytes >= maxSQLResultBytes {
-			result.Truncated = true
-			break
-		}
-		if err := rows.Scan(dests...); err != nil {
-			return result, err
-		}
-		record := make([]string, len(columns))
-		rowBytes := 0
-		overBudget := false
-		for i, v := range values {
-			if v == nil {
-				record[i] = "NULL"
-				continue
-			}
-			if len(v) > maxSQLCellBytes {
-				v = v[:maxSQLCellBytes]
-				result.Truncated = true
-			}
-			if rowBytes+len(v)+totalBytes > maxSQLResultBytes {
-				overBudget = true
-				break
-			}
-			record[i] = string(v)
-			rowBytes += len(v)
-		}
-		if overBudget {
-			result.Truncated = true
-			break // never append half a record or exceed the global byte cap
-		}
-		totalBytes += rowBytes
-		result.Rows = append(result.Rows, record)
-	}
-	if err := rows.Err(); err != nil {
-		return result, err
-	}
-	if err := queryCtx.Err(); err != nil {
-		return result, err
-	}
-	return result, nil
+	return sqlresult.Scan(queryCtx, rows, limits, sink)
 }
 
 func validSQLSchema(database string) error {
@@ -157,37 +114,44 @@ func quoteSQLSchema(database string) string {
 // uses ExecContext to expose the affected-row count. Leading comments are
 // accepted without stripping or rewriting the submitted statement.
 func sqlReturnsRows(statement string) bool {
-	s := strings.TrimSpace(statement)
-	for {
-		switch {
-		case strings.HasPrefix(s, "--") && (len(s) == 2 || s[2] == ' ' || s[2] == '\n'):
-			index := strings.IndexByte(s, '\n')
-			if index < 0 {
+	tokens, err := sqltext.Tokens(statement)
+	if err != nil {
+		return false
+	}
+	with, leading, depth := false, true, 0
+	for _, token := range tokens {
+		if token.Comment || token.Quoted {
+			continue
+		}
+		word := strings.ToUpper(token.Text)
+		if leading {
+			leading = false
+			with = word == "WITH"
+			if !with {
+				switch word {
+				case "SELECT", "SHOW", "DESCRIBE", "DESC", "EXPLAIN", "TABLE", "VALUES", "CALL":
+					return true
+				}
 				return false
 			}
-			s = strings.TrimSpace(s[index+1:])
-		case strings.HasPrefix(s, "#"):
-			index := strings.IndexByte(s, '\n')
-			if index < 0 {
-				return false
-			}
-			s = strings.TrimSpace(s[index+1:])
-		case strings.HasPrefix(s, "/*"):
-			index := strings.Index(s, "*/")
-			if index < 0 {
-				return false
-			}
-			s = strings.TrimSpace(s[index+2:])
-		default:
-			fields := strings.Fields(s)
-			if len(fields) == 0 {
-				return false
-			}
-			switch strings.ToUpper(fields[0]) {
-			case "SELECT", "SHOW", "DESCRIBE", "DESC", "EXPLAIN", "WITH", "TABLE", "VALUES", "CALL":
+			continue
+		}
+		if token.Text == "(" {
+			depth++
+			continue
+		}
+		if token.Text == ")" {
+			depth--
+			continue
+		}
+		if with && depth == 0 {
+			switch word {
+			case "SELECT", "TABLE", "VALUES":
 				return true
+			case "UPDATE", "DELETE", "INSERT", "REPLACE":
+				return false
 			}
-			return false
 		}
 	}
+	return false
 }

@@ -77,6 +77,7 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 	}
 	s.selectNavigationNode(services, navigation.ConnectionKey(profile.ID))
 	canMySQL := profile.Kind == connections.MySQL
+	canConnect := canMySQL || profile.Kind == connections.PostgreSQL || profile.Kind == connections.SQLite
 	status := s.sessions.StatusFor(profile.ID)
 	connected := status == "已连接"
 	connecting := status == "连接中"
@@ -84,7 +85,7 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 	if connected {
 		connectLabel = "关闭连接"
 	}
-	if m.Item(locales.Text(connectLabel)).Shortcut(0, ui.KeyEnter).Disabled(!canMySQL || connecting).Chosen() {
+	if m.Item(locales.Text(connectLabel)).Shortcut(0, ui.KeyEnter).Disabled(!canConnect || connecting).Chosen() {
 		s.selectProfileByName(name)
 		if connected {
 			s.disconnectMySQLSession()
@@ -120,14 +121,19 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 		s.duplicateProfile()
 	}
 	m.Separator()
-	m.Item(locales.Text("新建数据库")).Disabled(true)
+	if m.Item(locales.Text("新建数据库")).Disabled(!canMySQL || !connected).Chosen() {
+		s.objectWorkspace.BeginObject(services, profile.ID, mysqlsvc.ObjectIdentity{Database: "new_database", Kind: "database"}, "create")
+	}
 	if m.Item(locales.Text("新建查询")).Disabled(!connected).Chosen() {
 		s.selectProfileByName(name)
 		s.openQuery()
 	}
 	m.Separator()
 	m.Item(locales.Text("命令列界面")).Disabled(true)
-	m.Item(locales.Text("运行 SQL 文件…")).Disabled(true)
+	if m.Item(locales.Text("运行 SQL 文件…")).Disabled(!canMySQL || !connected).Chosen() {
+		s.openQuery()
+		s.sqlWorkspace.RunFile(s.currentTab().query)
+	}
 	m.Submenu(locales.Text("重载"), func(sub *ui.Menu) {
 		if sub.Item(locales.Text("刷新数据库对象")).Chosen() {
 			s.refreshConnectionObjects(services, profile.ID)
@@ -195,6 +201,19 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 	s.selectNavigationNode(services, key)
 	s.navigation.Row = -1
 	if n.Kind == "database" {
+		canManage := s.objectCapabilitiesFor(n.ProfileID).DesignTables && s.sessions.StatusFor(n.ProfileID) == "已连接"
+		if m.Item(locales.Text("修改数据库…")).Disabled(!canManage).Chosen() {
+			s.objectWorkspace.BeginObject(services, n.ProfileID, mysqlsvc.ObjectIdentity{Database: n.Database, Kind: "database"}, "alter")
+		}
+		if m.Item(locales.Text("删除数据库…")).Disabled(!canManage).Chosen() {
+			s.objectWorkspace.BeginObject(services, n.ProfileID, mysqlsvc.ObjectIdentity{Database: n.Database, Kind: "database"}, "drop")
+		}
+		if m.Item(locales.Text("备份数据库…")).Disabled(!canManage).Chosen() {
+			s.objectWorkspace.BeginBackup(services, n.ProfileID, n.Database, "", "backup")
+		}
+		if m.Item(locales.Text("恢复备份…")).Disabled(!canManage).Chosen() {
+			s.objectWorkspace.BeginBackup(services, n.ProfileID, n.Database, "", "restore")
+		}
 		if m.Item(locales.Text("打开数据库")).Shortcut(0, ui.KeyEnter).
 			Disabled(s.sessions.StatusFor(n.ProfileID) != "已连接").Chosen() {
 			s.openMySQLDatabase(services, n.Database, false)
@@ -202,6 +221,9 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 		m.Separator()
 	}
 	if n.Kind == "database" || n.Kind == "category" && n.Category == "表" {
+		if m.Item(locales.Text("导入向导…")).Disabled(s.sessions.StatusFor(n.ProfileID) != "已连接" || !s.objectCapabilitiesFor(n.ProfileID).Import).Chosen() {
+			s.openDatabaseImport(n.ProfileID, n.Database)
+		}
 		if m.Item(locales.Text("新建表")).Shortcut(ui.Ctrl, ui.KeyN).
 			Disabled(!s.objectWorkspace.CanChangeTable(n.ProfileID)).Chosen() {
 			s.objectWorkspace.BeginTableChange(n.ProfileID, n.Database, "", mysqlsvc.MySQLTableCreate)

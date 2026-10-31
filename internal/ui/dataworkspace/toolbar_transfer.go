@@ -124,7 +124,7 @@ type mysqlDataImportInput struct {
 func (s *State) openDataImport(t *Document) { s.openDataTransfer(t, "import") }
 func (s *State) openDataExport(t *Document) { s.openDataTransfer(t, "export") }
 func (s *State) openDataTransfer(t *Document, kind string) {
-	if t == nil || t.closed || t.page == nil || t.loading || t.edit.Busy || t.edit.Uncertain != nil || t.transfer.Busy || t.transfer.Uncertain || dataTransactionActive(t) || dataTransactionBusy(t) {
+	if t == nil || t.closed || t.page == nil && !t.importOnly || t.importOnly && kind != "import" || t.loading || t.edit.Busy || t.edit.Uncertain != nil || t.transfer.Busy || t.transfer.Uncertain || dataTransactionActive(t) || dataTransactionBusy(t) {
 		return
 	}
 	if mysqlDataHasDraft(t) {
@@ -133,7 +133,16 @@ func (s *State) openDataTransfer(t *Document, kind string) {
 	}
 	s.closeDataTransfer(t)
 	request := t.transfer.Request + 1
-	tr := mysqlDataTransferState{Wizard: true, Assets: &mysqlDataSpoolOwner{}, Options: defaultMySQLDataSourceOptions(), ContinueOnError: true, ExtendedInsert: true, StatementKB: 1024, Open: true, Kind: kind, Format: "CSV", Scope: "page", Target: "existing", NewName: t.table + "_import", Fields: append([]string(nil), t.page.Columns...), Included: map[string]bool{}, Request: request, Generation: s.session().Generation}
+	var fields []string
+	if t.page != nil {
+		fields = append([]string(nil), t.page.Columns...)
+	}
+	tr := mysqlDataTransferState{Wizard: true, Assets: &mysqlDataSpoolOwner{}, Options: defaultMySQLDataSourceOptions(), ContinueOnError: true, ExtendedInsert: true, StatementKB: 1024, Open: true, Kind: kind, Format: "CSV", Scope: "page", Target: "existing", NewName: t.table + "_import", Fields: fields, Included: map[string]bool{}, Request: request, Generation: s.session().Generation}
+	if t.importOnly {
+		tr.Target = "new"
+		tr.NewName = "imported_table"
+		tr.Scope = "all"
+	}
 	for _, field := range tr.Fields {
 		tr.Included[field] = !t.hiddenColumns[field]
 	}

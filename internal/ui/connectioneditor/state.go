@@ -10,6 +10,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
+	"github.com/nyakang/nyadb/internal/transport"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -17,18 +18,34 @@ import (
 // editor. Host callbacks run on the UI thread after transient secrets and
 // pending work have been cleared.
 type Dependencies struct {
-	Profiles      *connections.Service
-	Vault         credentials.Vault
-	ValidateMySQL func(connections.ActiveSettings, string) error
-	TestMySQL     func(context.Context, connections.ActiveSettings, string) error
-	Saved         func(connections.Profile)
-	Back          func()
-	Cancel        func()
+	InitialSQLStore InitialSQLStore
+
+	Profiles        *connections.Service
+	Vault           credentials.Vault
+	ValidateMySQL   func(connections.ActiveSettings, string) error
+	TunnelSecrets   *credentials.TunnelStore
+	TestMySQLTunnel func(context.Context, connections.ActiveSettings, string, transport.Secrets) error
+	TestMySQL       func(context.Context, connections.ActiveSettings, string) error
+	Saved           func(connections.Profile)
+	Back            func()
+	Cancel          func()
 }
 
 // State is owned by the UI thread. Background tests return immutable results;
 // native picker completions are guarded by the editing session's version.
 type State struct {
+	initialSQLRequest uint64
+	initialSQLResults <-chan initialSQLResult
+
+	initialSQLStore      InitialSQLStore
+	initialSQLSavedText  string
+	initialSQLLoadFailed bool
+	customDatabaseName   string
+
+	tunnelSecrets                *credentials.TunnelStore
+	mysqlTunnelTester            func(context.Context, connections.ActiveSettings, string, transport.Secrets) error
+	mysqlSaveTunnelSecrets       bool
+	tunnelSecretsLoadFailed      bool
 	connectionEditorTab          int
 	connectionDraft              connections.Profile
 	connectionPort               string
@@ -86,7 +103,7 @@ type State struct {
 }
 
 func New(deps Dependencies) *State {
-	return &State{profileService: deps.Profiles, credentialVault: deps.Vault,
+	return &State{tunnelSecrets: deps.TunnelSecrets, mysqlTunnelTester: deps.TestMySQLTunnel, profileService: deps.Profiles, credentialVault: deps.Vault,
 		validateMySQL: deps.ValidateMySQL, mysqlConnectionTester: deps.TestMySQL,
 		saved: deps.Saved, back: deps.Back, canceled: deps.Cancel}
 }
@@ -126,7 +143,11 @@ func (s *State) OpenProfile(profile connections.Profile) {
 	s.connectionEditorTab = 0
 	s.active = true
 	s.initializeConnectionConfigurations()
+	s.loadInitialSQL()
 	if profile.Kind == connections.MySQL {
+		s.loadSavedConnectionPasswords()
+		s.loadTunnelSecrets()
+	} else if profile.Kind == connections.PostgreSQL {
 		s.loadSavedConnectionPasswords()
 	}
 }
@@ -146,6 +167,9 @@ func (s *State) initializeInputs() {
 // Close discards configuration drafts and secrets and invalidates async work.
 // The non-secret profile remains readable until the next Open call.
 func (s *State) Close() {
+	s.initialSQLRequest++
+	s.initialSQLResults = nil
+
 	s.cancelMySQLConnectionTest()
 	s.resetConnectionConfigurations()
 	s.active = false
@@ -153,6 +177,8 @@ func (s *State) Close() {
 	s.clearMySQLSSLPassphrase()
 	s.clearMySQLSSHSecrets()
 	s.clearMySQLHTTPSecrets()
+	s.mysqlSaveTunnelSecrets = false
+	s.tunnelSecretsLoadFailed = false
 	s.clearMySQLInitialQuery()
 	s.connectionError = ""
 }
@@ -173,6 +199,8 @@ func (s *State) Back() {
 	s.clearMySQLSSLPassphrase()
 	s.clearMySQLSSHSecrets()
 	s.clearMySQLHTTPSecrets()
+	s.mysqlSaveTunnelSecrets = false
+	s.tunnelSecretsLoadFailed = false
 	s.clearMySQLInitialQuery()
 	s.connectionError = ""
 	if s.back != nil {

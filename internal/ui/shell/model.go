@@ -7,6 +7,7 @@ import (
 
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
+	"github.com/nyakang/nyadb/internal/services/engines"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/connectioncatalog"
 	"github.com/nyakang/nyadb/internal/ui/connectioneditor"
@@ -16,6 +17,7 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/sessionbrowser"
 	"github.com/nyakang/nyadb/internal/ui/sqlworkspace"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 type tabKind uint8
@@ -29,6 +31,7 @@ const (
 	tabSettings
 	tabProgram
 	tabConnections
+	tabEngineData
 )
 
 type tab struct {
@@ -39,11 +42,17 @@ type tab struct {
 
 	object *objectworkspace.Document
 
-	data *dataworkspace.Document
+	data   *dataworkspace.Document
+	engine *dataworkspace.EngineDocument
 }
 
 // State is UI state owned by the main thread. Never retain ui.Element values.
 type State struct {
+	autoConnectPending bool
+	tunnelRuntime      *tunnelRuntime
+	engines            *engines.Manager
+	engineData         *dataworkspace.EngineState
+
 	navigateDatabase, navigateTable string
 	navigateProfileID               int64
 	sidebarPercent                  float32
@@ -110,6 +119,7 @@ func newState(preview bool) *State {
 	s.sqlWorkspace = sqlworkspace.New(s.sqlWorkspaceDependencies())
 	s.sessions = sessionbrowser.New(s.sessionBrowserDependencies())
 	s.navigation = navigation.New(s.navigationDependencies())
+	s.initEngines()
 	s.connectionEditor = connectioneditor.New(connectioneditor.Dependencies{
 		ValidateMySQL: func(settings connections.ActiveSettings, secret string) error {
 			_, err := mysqlsvc.DirectMySQLConfig(settings, secret)
@@ -129,13 +139,17 @@ func (s *State) currentTab() *tab {
 }
 
 func (s *State) openQuery() {
+	if s.sqlWorkspace.PersistenceLoading() {
+		s.status = locales.Text("等待加载")
+		return
+	}
 	s.nextTabID++
 	initial := "-- NyaDB UI 预览：SQL 尚不会发送到数据库\nSELECT * FROM customers LIMIT 100;\n"
 	profileID := int64(0)
 	database := ""
 	if s.profileMode {
 		initial = "-- 输入 SQL；点击运行后发送至当前连接\n"
-		if p, ok := s.currentProfile(); ok && p.Kind == connections.MySQL {
+		if p, ok := s.currentProfile(); ok && (p.Kind == connections.MySQL || p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite) {
 			profileID = p.ID
 			if s.sessions.StatusFor(profileID) == "已连接" {
 				database = s.sessions.Current().Database

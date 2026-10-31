@@ -122,12 +122,22 @@ func TestMySQLCreateTableIsReachableInEmptyDatabase(t *testing.T) {
 			}
 			waitTableChange(t, s, tt)
 			select {
-			case r := <-requests:
-				if r.Action != mysqlsvc.MySQLTableCreate || r.Database != "app_db" || r.Table != "first_table" {
-					t.Fatalf("wrong empty-database creation request: %+v", r)
-				}
+			case <-requests:
+				t.Fatal("new table bypassed designer and preview confirmation")
 			default:
-				t.Fatal("creation was not submitted")
+			}
+			current := s.currentTab()
+			if current.object == nil || current.object.Database() != "app_db" || current.object.Table() != "first_table" || !current.object.DesignDirty() {
+				t.Fatal("new table did not enter the editable designer")
+			}
+			tt.Frame()
+			if e := tt.Click("SQL 预览"); e != nil {
+				t.Fatal(e)
+			}
+			select {
+			case <-requests:
+				t.Fatal("preview executed DDL")
+			default:
 			}
 		})
 	}
@@ -168,11 +178,12 @@ func TestMySQLTableShortcutsStayScopedAndRequireConfirmation(t *testing.T) {
 				mods   ui.Modifiers
 				key    ui.Key
 				action mysqlsvc.MySQLTableAction
-			}{{0, ui.KeyF2, mysqlsvc.MySQLTableRename}, {0, ui.KeyDelete, mysqlsvc.MySQLTableDrop}, {ui.Ctrl, ui.KeyN, mysqlsvc.MySQLTableCreate}} {
+			}{{0, ui.KeyDelete, mysqlsvc.MySQLTableDrop}, {ui.Ctrl, ui.KeyN, mysqlsvc.MySQLTableCreate}} {
 				if err := tt.Click(target); err != nil {
 					t.Fatal(err)
 				}
 				tt.Key(shortcut.mods, shortcut.key)
+
 				if !s.objectWorkspace.TableDialogOpen() || s.objectWorkspace.TableAction() != shortcut.action || s.deleteConfirm {
 					t.Fatalf("shortcut %v did not target the table action: dialog=%v action=%s profileDelete=%v", shortcut.key, s.objectWorkspace.TableDialogOpen(), s.objectWorkspace.TableAction(), s.deleteConfirm)
 				}
@@ -230,4 +241,36 @@ func TestMySQLObjectRefreshShortcutReloadsTreeAndGrid(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMySQLObjectListF2RenamesInlineWithOriginalTarget(t *testing.T) {
+	s, tt := structureTestBrowser(t)
+	calls := make(chan mysqlsvc.MySQLTableChange, 1)
+	s.objectWorkspace.Runner = func(_ context.Context, _ int64, r mysqlsvc.MySQLTableChange) error { calls <- r; return nil }
+	if e := tt.Click("InnoDB"); e != nil {
+		t.Fatal(e)
+	}
+	tt.Key(0, ui.KeyF2)
+	if s.objectWorkspace.TableDialogOpen() || s.deleteConfirm {
+		t.Fatal("list F2 must edit the selected row in place")
+	}
+	tt.Type("orders_cancelled")
+	tt.Key(0, ui.KeyEscape)
+	select {
+	case r := <-calls:
+		t.Fatalf("cancelled inline rename executed: %+v", r)
+	default:
+	}
+	tt.Key(0, ui.KeyF2)
+	tt.Type("orders_renamed")
+	tt.Key(0, ui.KeyEnter)
+	select {
+	case r := <-calls:
+		if r.Action != mysqlsvc.MySQLTableRename || r.Table != "orders" || r.NewName != "orders_renamed" || r.Database != "app_db" {
+			t.Fatalf("inline rename lost original target: %+v", r)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("inline Enter did not execute rename")
+	}
+	waitTableChange(t, s, tt)
 }
