@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -95,7 +96,9 @@ func TestDataTransferCompletionWizardFooterRemainsVisibleWhileBodyScrolls(t *tes
 					}
 					if step == 0 {
 						footerY = r.Y
-					} else if r.Y != footerY {
+					} else if math.Abs(float64(r.Y-footerY)) > 0.5 {
+						// The result step changes the label from 取消 to 关闭.
+						// Native font metrics can shift its bounds by a fraction of a DIP.
 						t.Fatalf("step %d body moved fixed footer: %g != %g", step, r.Y, footerY)
 					}
 					tt.Scroll(float32(size[0])/2, float32(size[1])/2, 0, 900)
