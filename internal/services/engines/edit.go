@@ -3,14 +3,17 @@ package engines
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Tx struct {
@@ -61,9 +64,55 @@ func (t *Tx) Page(ctx context.Context, r contract.PageRequest) (contract.Page, e
 	}
 	return t.s.page(ctx, t.tx, r)
 }
-func (t *Tx) Apply(ctx context.Context, o contract.ObjectRef, edits []contract.Edit) (contract.CommitResult, error) {
+func (t *Tx) Apply(ctx context.Context, o contract.ObjectRef, edits []contract.Edit) (result contract.CommitResult, err error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
+	if t.closed {
+		return contract.CommitResult{Uncertain: t.uncertain}, ErrRevoked
+	}
+	for _, edit := range edits {
+		for _, v := range edit.Values {
+			if err := validateTypedValue(v, t.s.kind); err != nil {
+				return result, err
+			}
+		}
+	}
+	if _, err = t.tx.ExecContext(ctx, "SAVEPOINT nyadb_data_batch"); err != nil {
+		return result, err
+	}
+	applied := t.applied
+	staged := make(map[contract.ObjectRef][]contract.Edit, len(t.staged))
+	for object, values := range t.staged {
+		for _, v := range values {
+			staged[object] = append(staged[object], copyEdit(v))
+		}
+	}
+	defer func() {
+		if err == nil {
+			_, err = t.tx.ExecContext(ctx, "RELEASE SAVEPOINT nyadb_data_batch")
+		}
+		if err != nil {
+			cleanup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_, rollbackErr := t.tx.ExecContext(cleanup, "ROLLBACK TO SAVEPOINT nyadb_data_batch")
+			if rollbackErr == nil {
+				_, rollbackErr = t.tx.ExecContext(cleanup, "RELEASE SAVEPOINT nyadb_data_batch")
+			}
+			if rollbackErr != nil {
+				result.Incomplete = true
+				result.Uncertain = true
+				result.Saved = t.saved()
+				t.uncertain = true
+				err = errors.Join(err, rollbackErr)
+			} else {
+				t.applied, t.staged = applied, staged
+				result = contract.CommitResult{}
+			}
+		}
+	}()
+	return t.apply(ctx, o, edits)
+}
+func (t *Tx) apply(ctx context.Context, o contract.ObjectRef, edits []contract.Edit) (contract.CommitResult, error) {
 	if t.closed {
 		return contract.CommitResult{Applied: t.applied, Uncertain: t.uncertain}, ErrRevoked
 	}
@@ -131,16 +180,7 @@ func (t *Tx) Apply(ctx context.Context, o contract.ObjectRef, edits []contract.E
 					return contract.CommitResult{Applied: t.applied}, errors.New("truncated original row is read-only")
 				}
 				args = append(args, parameter(v))
-				op := " IS "
-				if t.s.kind == connections.PostgreSQL {
-					op = " IS NOT DISTINCT FROM "
-				}
-				left, right := quote(f.Name), t.s.arg(len(args))
-				if t.s.kind == connections.PostgreSQL && strings.EqualFold(f.DatabaseType, "json") {
-					left += "::text"
-					right += "::text"
-				}
-				where = append(where, left+op+right)
+				where = append(where, t.s.strategy.comparison(f, quote(f.Name), t.s.arg(len(args))))
 			}
 			if edit.Kind == "delete" {
 				sqlText = "DELETE FROM " + qualified(o)
@@ -228,7 +268,7 @@ func (t *Tx) Commit(ctx context.Context) (contract.CommitResult, error) {
 		saved := t.saved()
 		return contract.CommitResult{Applied: t.applied, Uncertain: true, Saved: saved}, fmt.Errorf("%w: %v", ErrUncertain, e)
 	}
-	result := contract.CommitResult{Applied: t.applied, Verified: true}
+	result := contract.CommitResult{Applied: t.applied, Verified: true, CommitConfirmed: true}
 	for o, edits := range t.staged {
 		result.Saved = append(result.Saved, edits...)
 		v, err := t.s.Verify(ctx, o, edits)
@@ -263,7 +303,9 @@ func parameter(c contract.Cell) any {
 	case contract.Null:
 		return nil
 	case contract.Binary:
-		return append([]byte(nil), c.Bytes...)
+		raw := make([]byte, len(c.Bytes))
+		copy(raw, c.Bytes)
+		return raw
 	case contract.Integer:
 		n, e := strconv.ParseInt(c.Text, 10, 64)
 		if e == nil {
@@ -343,3 +385,41 @@ func (t *Tx) stage(o contract.ObjectRef, before contract.RowIdentity, edit contr
 	}
 	t.staged[o] = append(t.staged[o], copyEdit(edit))
 }
+
+func validateTypedValue(c contract.Cell, kind connections.Kind) error {
+	switch c.Kind {
+	case contract.Integer:
+		if kind == connections.SQLite {
+			if _, err := strconv.ParseInt(c.Text, 10, 64); err != nil {
+				return fmt.Errorf("invalid SQLite integer: %w", err)
+			}
+		} else {
+			if !integerText.MatchString(c.Text) {
+				return errors.New("invalid integer")
+			}
+		}
+	case contract.Floating:
+		if _, err := strconv.ParseFloat(c.Text, 64); err != nil {
+			return fmt.Errorf("invalid floating value: %w", err)
+		}
+	case contract.Boolean:
+		if _, err := strconv.ParseBool(c.Text); err != nil {
+			return fmt.Errorf("invalid boolean: %w", err)
+		}
+	case contract.Decimal:
+		if !decimalText.MatchString(c.Text) {
+			return errors.New("invalid decimal")
+		}
+	case contract.JSON:
+		if !json.Valid([]byte(c.Text)) {
+			return errors.New("invalid JSON")
+		}
+	case contract.Null, contract.Binary, contract.Text, contract.DateTime:
+	default:
+		return contract.ErrUnsupported
+	}
+	return nil
+}
+
+var integerText = regexp.MustCompile(`^[+-]?[0-9]+$`)
+var decimalText = regexp.MustCompile(`^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$`)

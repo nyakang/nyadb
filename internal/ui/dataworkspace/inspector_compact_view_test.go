@@ -1,6 +1,8 @@
 package dataworkspace
 
 import (
+	"context"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
 	"testing"
 
@@ -21,6 +23,9 @@ func TestInspectorChunkActionsFitNarrowPanelInBothLocales(t *testing.T) {
 			i18n.SetLocaleFunc(func() string { return lang })
 			doc := sampleSelection()
 			s, p := testInspector(doc)
+			s.ChunkLoader = func(context.Context, int64, string, string, string, contract.RowRef, int64, int) (*contract.FieldChunk, error) {
+				return nil, contract.ErrUnsupported
+			}
 			doc.Row = 0
 			doc.Column = "label"
 			doc.Page.RowRefs = []*mysqlsvc.MySQLRowRef{{Database: "test_schema", Table: "entries"}}
@@ -58,6 +63,9 @@ func TestInspectorChunkActionsFitNarrowPanelInBothLocales(t *testing.T) {
 func TestMySQLInspectorQualifiedFieldHeaderFitsNarrowWidth(t *testing.T) {
 	doc := sampleSelection()
 	s, p := testInspector(doc)
+	s.ChunkLoader = func(context.Context, int64, string, string, string, contract.RowRef, int64, int) (*contract.FieldChunk, error) {
+		return nil, contract.ErrUnsupported
+	}
 	for _, width := range []int{180, 205} {
 		tt := ui.NewTester(func(c *ui.Context) {
 			theme.Apply(c)
@@ -75,6 +83,9 @@ func TestMySQLInspectorQualifiedFieldHeaderFitsNarrowWidth(t *testing.T) {
 func TestInspectorLargeFieldsKeepCopyAndChunkActionsVisible(t *testing.T) {
 	doc := sampleSelection()
 	s, p := testInspector(doc)
+	s.ChunkLoader = func(context.Context, int64, string, string, string, contract.RowRef, int64, int) (*contract.FieldChunk, error) {
+		return nil, contract.ErrUnsupported
+	}
 	doc.Row = 0
 	doc.Column = "label"
 	doc.Page.RowRefs = []*mysqlsvc.MySQLRowRef{{Database: "test_schema", Table: "entries"}}

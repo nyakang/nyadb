@@ -4,20 +4,14 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/nyakang/nyadb/internal/db/contract"
 )
 
 // MySQLDataFilterRule is a bounded, AND-connected server-side condition.
-type MySQLDataFilterRule struct {
-	Column string
-	Mode   string // equal, not_equal, contains, not_contains, like, not_like, less, greater, is_null, is_not_null
-	Value  string
-}
+type MySQLDataFilterRule = contract.DataFilterRule
 
 // MySQLDataSortRule is a server-side priority sort rule.
-type MySQLDataSortRule struct {
-	Column     string
-	Descending bool
-}
+type MySQLDataSortRule = contract.DataSortRule
 
 const (
 	MySQLDataMaxFilterRules = 6

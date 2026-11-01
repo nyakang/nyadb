@@ -67,6 +67,17 @@ func (s *State) readAccounts(services ui.Services) {
 	ch := make(chan accountRead, 1)
 	a.load = ch
 	profile, account, loader, grants := a.profile, mysqlsvc.MySQLAccount{User: a.user, Host: a.host}, s.deps.AccountLoader, s.deps.AccountGrants
+	if s.deps.AdministrationFor != nil {
+		admin := s.deps.AdministrationFor(profile)
+		if admin == nil {
+			a.busy = false
+			a.err = "原账户会话已失效"
+			cancel()
+			a.load = nil
+			return
+		}
+		loader, grants = admin.Accounts, admin.AccountGrants
+	}
 	go func() {
 		list, e := loader(ctx, profile)
 		var gs []string
@@ -155,6 +166,15 @@ func (s *State) BeginMaintenance(services ui.Services, profile int64, database, 
 	ch := make(chan maintenanceRead, 1)
 	s.maintenance = &maintenanceOperation{profile: profile, generation: session.Generation, database: database, table: table, operation: operation, result: ch, cancel: cancel}
 	executor := s.deps.Maintenance
+	if s.deps.AdministrationFor != nil {
+		admin := s.deps.AdministrationFor(profile)
+		if admin == nil {
+			cancel()
+			s.maintenance = nil
+			return
+		}
+		executor = admin.MaintainTable
+	}
 	go func() {
 		v, e := executor(ctx, profile, database, table, operation)
 		ch <- maintenanceRead{v, e}
@@ -246,6 +266,16 @@ func (s *State) accountModal(c *ui.Context) {
 					a.result = ch
 					change := mysqlsvc.AccountChange{Action: a.action, Account: mysqlsvc.MySQLAccount{User: a.user, Host: a.host}, Password: a.password, Privileges: strings.Split(a.privileges, ","), Database: a.database, Table: a.table, Role: mysqlsvc.MySQLAccount{User: a.roleUser, Host: a.roleHost}}
 					profile, generation, executor, services := a.profile, a.generation, s.deps.AccountExecutor, c.Services()
+					if s.deps.AdministrationFor != nil {
+						admin := s.deps.AdministrationFor(profile)
+						if admin == nil {
+							cancel()
+							a.busy = false
+							a.result = nil
+							return
+						}
+						executor = admin.ChangeAccounts
+					}
 					go func() {
 						ch <- executor(ctx, profile, generation, []mysqlsvc.AccountChange{change})
 						services.Invalidate()

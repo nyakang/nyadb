@@ -10935,3 +10935,33 @@ func HttpClearLegacyBase64() string { return In(i18n.Locale()).HttpClearLegacyBa
 func (msgs Messages) HttpClearLegacyBase64() string {
 	return Catalog.Format(msgs.locale, "httpClearLegacyBase64", nil)
 }
+
+// UnifiedData0 says "原数据库会话已失效，请刷新表数据"
+// in the language the app shows.
+func UnifiedData0() string { return In(i18n.Locale()).UnifiedData0() }
+
+// UnifiedData0 says "原数据库会话已失效，请刷新表数据"
+// in the language of msgs.
+func (msgs Messages) UnifiedData0() string {
+	return Catalog.Format(msgs.locale, "unifiedData0", nil)
+}
+
+// UnifiedData1 says "数据库会话不可用"
+// in the language the app shows.
+func UnifiedData1() string { return In(i18n.Locale()).UnifiedData1() }
+
+// UnifiedData1 says "数据库会话不可用"
+// in the language of msgs.
+func (msgs Messages) UnifiedData1() string {
+	return Catalog.Format(msgs.locale, "unifiedData1", nil)
+}
+
+// UnifiedData2 says "正在读取数据库数据…"
+// in the language the app shows.
+func UnifiedData2() string { return In(i18n.Locale()).UnifiedData2() }
+
+// UnifiedData2 says "正在读取数据库数据…"
+// in the language of msgs.
+func (msgs Messages) UnifiedData2() string {
+	return Catalog.Format(msgs.locale, "unifiedData2", nil)
+}

@@ -3,11 +3,12 @@ package dataworkspace
 
 import (
 	"context"
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"io"
 
 	"github.com/egoist/mygo/ui"
 
 	"github.com/nyakang/nyadb/internal/services/datasources"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 type Session struct {
@@ -15,37 +16,15 @@ type Session struct {
 	Generation uint64
 	Connected  bool
 }
-type Verifier func(context.Context, int64, string, string, *mysqlsvc.MySQLDataEditResult) (*mysqlsvc.MySQLDataVerification, error)
+type Verifier func(context.Context, int64, string, string, *contract.DataEditResult) (*contract.DataVerification, error)
 
 // Runtime captures the service methods available for the current UI request.
-type Runtime struct {
-	Loader           mysqlDataLoader
-	AdvancedLoader   mysqlDataAdvancedLoader
-	Saver            mysqlDataSaver
-	RowReader        mysqlDataRowReader
-	Verify           Verifier
-	Exporter         mysqlDataExporter
-	Analyzer         mysqlDataAnalyzer
-	Transactions     DataTransactions
-	NewTableImporter mysqlDataNewTableImporter
-	Importer         mysqlDataImporter
-	StreamImporter   mysqlDataStreamImporter
-	TableMetadata    func(context.Context, int64, string, string) (*mysqlsvc.MySQLTableStructure, error)
-}
-
-func MySQLRuntime(manager *mysqlsvc.MySQLSessionManager) Runtime {
-	if manager == nil {
-		return Runtime{}
-	}
-	return Runtime{TableMetadata: manager.TableStructure, StreamImporter: manager.ImportMySQLDataStream, Importer: manager.ImportMySQLData, NewTableImporter: manager.ImportMySQLDataIntoNewTable, Analyzer: manager.AnalyzeMySQLData, Exporter: manager.ExportMySQLData, AdvancedLoader: manager.TableDataPageWithOptions, Saver: manager.ApplyMySQLDataEdits, RowReader: manager.ReadMySQLDataRow, Verify: manager.VerifyMySQLDataEdits, Transactions: DataTransactions{
-		Begin: manager.BeginMySQLDataTransaction, Commit: manager.CommitMySQLDataTransaction,
-		Rollback: manager.RollbackMySQLDataTransaction, Close: func(t *mysqlsvc.MySQLDataTransaction) { t.Close() },
-		Chunk: manager.ReadMySQLFieldChunkInTransaction, Page: manager.TableDataPageInTransaction, Save: manager.ApplyMySQLDataEditsInTransaction, Row: manager.ReadMySQLDataRowInTransaction,
-	}}
-}
+type Runtime = contract.DataRuntime
 
 type Dependencies struct {
 	ImportTargets     func(int64, string) []string
+	SessionFor        func(int64) Session
+	RuntimeFor        func(int64) Runtime
 	Session           func() Session
 	Runtime           func() Runtime
 	Inspector         InspectorDependencies
@@ -58,6 +37,11 @@ type Dependencies struct {
 // Document has stable qualified identity. All mutable grid, draft and request
 // state belongs to this module and is accessed only on the UI thread.
 type Document struct {
+	generation   uint64
+	object       contract.ObjectRef
+	capabilities contract.Capabilities
+	filterModes  []string
+
 	importOnly           bool
 	hostAction           string
 	hostActionGeneration uint64
@@ -70,7 +54,7 @@ type Document struct {
 	profileID            int64
 	offset               int64
 	limit                int
-	page                 *mysqlsvc.MySQLDataPage
+	page                 *contract.DataPage
 	panel                *Panel
 	readInfo             mysqlDataReadInfo
 	layout               mysqlDataLayoutState
@@ -99,17 +83,21 @@ type Document struct {
 	rulesExpanded        bool
 	ruleError            string
 	filterExtraDraft     []mysqlDataRuleDraft
-	filterRules          []mysqlsvc.MySQLDataFilterRule
+	filterRules          []contract.DataFilterRule
 	sortDraft            []mysqlDataSortDraft
-	sortRules            []mysqlsvc.MySQLDataSortRule
+	sortRules            []contract.DataSortRule
 	hiddenColumns        map[string]bool
 	showFieldTypes       bool
 	useKeyset            bool
-	after                *mysqlsvc.MySQLDataCursor
-	cursorHistory        map[int64]*mysqlsvc.MySQLDataCursor
+	after                *contract.DataCursor
+	cursorHistory        map[int64]*contract.DataCursor
 	tools                mysqlDataToolsState
 }
 type State struct {
+	savePath    func(string) (string, error)
+	writeStream func(string, func(io.Writer) error) error
+	guardDoc    *Document
+
 	SourceOpen            func(context.Context, datasources.Config) (datasources.Source, error)
 	SourceCapabilities    func(context.Context, datasources.Config) []datasources.Capability
 	deps                  Dependencies
@@ -195,23 +183,28 @@ func (s *State) Open(id uint64, profileID int64, database, table string, kind ..
 	if len(kind) > 0 && kind[0] != "" {
 		objectKind = kind[0]
 	}
-	d := &Document{objectKind: objectKind, id: id, profileID: profileID, database: database, table: table, limit: mysqlsvc.MySQLDataDefaultPageSize, selectedRow: -1, filterColumnDraft: "选择字段", filterModeDraft: "包含", showFieldTypes: true, hiddenColumns: map[string]bool{}, useKeyset: true}
+	d := &Document{objectKind: objectKind, id: id, profileID: profileID, database: database, table: table, limit: contract.DataDefaultPageSize, selectedRow: -1, filterColumnDraft: "选择字段", filterModeDraft: "包含", showFieldTypes: true, hiddenColumns: map[string]bool{}, useKeyset: true}
 	if old := s.documents[id]; old != nil {
 		s.Close(old)
 	}
 	s.documents[id] = d
 	return d
 }
-func (d *Document) ProfileID() int64              { return d.profileID }
-func (d *Document) Database() string              { return d.database }
-func (d *Document) Table() string                 { return d.table }
-func (d *Document) Page() *mysqlsvc.MySQLDataPage { return d.page }
-func (d *Document) Loading() bool                 { return d.loading }
-func (d *Document) Error() string                 { return d.err }
-func (d *Document) Offset() int64                 { return d.offset }
-func (d *Document) HasDraft() bool                { return mysqlDataHasDraft(d) }
+func (d *Document) ProfileID() int64         { return d.profileID }
+func (d *Document) Database() string         { return d.database }
+func (d *Document) Table() string            { return d.table }
+func (d *Document) Page() *contract.DataPage { return d.page }
+func (d *Document) Loading() bool            { return d.loading }
+func (d *Document) Error() string            { return d.err }
+func (d *Document) Offset() int64            { return d.offset }
+func (d *Document) HasDraft() bool           { return mysqlDataHasDraft(d) }
 func (s *State) Consume(services ui.Services) {
 	s.consumeDataTransactions(services)
+	for _, d := range s.documents {
+		if !d.closed && d.profileID == s.session().ProfileID {
+			s.consumeMySQLDataExport(d)
+		}
+	}
 	s.consumePages()
 	s.consumeEdits(services)
 	s.consumeDataTransfers(services)
@@ -237,7 +230,7 @@ func (s *State) inspectorPanel(t *Document) *Panel {
 			if read == nil {
 				return nil
 			}
-			return func(ctx context.Context, profile int64, database, table, column string, ref mysqlsvc.MySQLRowRef, offset int64, units int) (*mysqlsvc.MySQLFieldChunk, error) {
+			return func(ctx context.Context, profile int64, database, table, column string, ref contract.RowRef, offset int64, units int) (*contract.FieldChunk, error) {
 				return read(ctx, token, profile, database, table, column, ref, offset, units)
 			}
 		}

@@ -7,14 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"io"
 	"slices"
 	"strings"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -130,16 +129,18 @@ func (s *State) copyMySQLDataSelection(c *ui.Context, t *Document) {
 func (s *State) mysqlDataCopyAsMenu(c *ui.Context, t *Document, m *ui.Menu) {
 	names, rows, nulls := mysqlDataSelectedPreview(t)
 	empty := len(rows) == 0 || len(names) == 0
-	for _, item := range []struct {
-		label  string
-		update bool
-	}{{"Insert 语句", false}, {"Update 语句", true}} {
-		text, err := mysqlDataSQLSelection(t, item.update)
-		if m.Item(locales.Text(item.label)).Disabled(empty || err != nil).Chosen() {
-			c.WriteClipboard(text)
+	if !t.portable() {
+		for _, item := range []struct {
+			label  string
+			update bool
+		}{{"Insert 语句", false}, {"Update 语句", true}} {
+			text, err := mysqlDataSQLSelection(t, item.update)
+			if m.Item(locales.Text(item.label)).Disabled(empty || err != nil).Chosen() {
+				c.WriteClipboard(text)
+			}
 		}
+		m.Separator()
 	}
-	m.Separator()
 	for _, format := range []struct {
 		labels []string
 		comma  rune
@@ -197,14 +198,14 @@ func mysqlDataSQLSelection(t *Document, update bool) (string, error) {
 			if col < 0 || col >= len(cells) {
 				return "", errors.New("incomplete preview")
 			}
-			if col < len(page.ColumnMetadata) && mysqlsvc.MySQLDataColumnGenerated(page.ColumnMetadata[col]) {
+			if col < len(page.ColumnMetadata) && contract.DataColumnGenerated(page.ColumnMetadata[col]) {
 				continue
 			}
 			if update && col < len(page.ColumnMetadata) && strings.EqualFold(page.ColumnMetadata[col].Key, "PRI") {
 				continue
 			}
 			literal := ""
-			value, explicit := mysqlsvc.MySQLDataValue{}, false
+			value, explicit := contract.DataValue{}, false
 			if draft != nil {
 				value, explicit = draft.Values[name]
 			}
@@ -269,7 +270,7 @@ func mysqlDataSQLSelection(t *Document, update bool) (string, error) {
 // before staging any cells so a rejected paste never leaves a partial draft.
 func (s *State) pasteMySQLDataSelection(c *ui.Context, t *Document, row, source int) {
 	text := c.Services().ReadClipboard()
-	if len(text) > mysqlsvc.MySQLDataEditMaxBytes {
+	if len(text) > contract.DataEditMaxBytes {
 		t.edit.Err = locales.Text("粘贴数据超过编辑大小限制")
 		return
 	}
@@ -299,7 +300,7 @@ func (s *State) pasteMySQLDataSelection(c *ui.Context, t *Document, row, source 
 	}
 	for i, line := range values {
 		for j, value := range line {
-			s.setMySQLDataCell(c.Services(), t, row+i, indices[start+j], mysqlsvc.MySQLDataValue{Text: value})
+			s.setMySQLDataCell(c.Services(), t, row+i, indices[start+j], contract.DataValue{Text: value})
 		}
 	}
 }

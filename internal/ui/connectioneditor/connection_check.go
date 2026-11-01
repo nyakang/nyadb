@@ -21,7 +21,7 @@ type mysqlConnectionTester func(context.Context, connections.ActiveSettings, str
 // The UI thread is the only owner of State. Background work sends immutable
 // results to a buffered channel and asks MyGo to schedule the next frame.
 func (s *State) startMySQLConnectionTest(services ui.Services) {
-	if !s.active || s.connectionDraft.Kind != connections.MySQL || s.connectionTesting {
+	if !s.active || s.connectionTesting {
 		return
 	}
 	s.connectionTestMessage = ""
@@ -35,8 +35,13 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 	}
 	p.Variants = nil
 	p.ActiveVariant = ""
-	settings, err := connections.ResolveActiveSettings(p)
-	if err == nil {
+	var settings connections.ActiveSettings
+	if p.Kind == connections.MySQL {
+		settings, err = connections.ResolveActiveSettings(p)
+	} else {
+		p, err = connections.NormalizeProfile(p)
+	}
+	if err == nil && p.Kind == connections.MySQL {
 		if s.validateMySQL == nil {
 			err = fmt.Errorf("MySQL 连接测试服务不可用")
 		} else {
@@ -56,6 +61,7 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 	tunnelSecrets := s.tunnelSnapshot()
 	tunnelTester := s.mysqlTunnelTester
 	tester := s.mysqlConnectionTester
+	providerTest := s.connectionTester
 	if tester == nil {
 		tester = func(context.Context, connections.ActiveSettings, string) error {
 			return fmt.Errorf("MySQL 连接测试服务不可用")
@@ -67,6 +73,10 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 		var err error
 		if (settings.MySQLAdvanced.SSH.Enabled || settings.MySQLAdvanced.HTTP.Enabled) && tunnelTester != nil {
 			err = tunnelTester(ctx, settings, secret, tunnelSecrets)
+		} else if providerTest != nil {
+			err = providerTest(ctx, p, secret)
+		} else if p.Kind != connections.MySQL {
+			err = fmt.Errorf("连接测试服务不可用")
 		} else {
 			err = tester(ctx, settings, secret)
 		}

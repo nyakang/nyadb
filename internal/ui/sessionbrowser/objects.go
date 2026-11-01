@@ -3,14 +3,13 @@ package sessionbrowser
 import (
 	"context"
 	"errors"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/db/contract"
 )
 
 type objectResult struct {
 	sessionGeneration, request uint64
 	database                   string
-	objects                    []mysqlsvc.MySQLDBObject
+	objects                    []contract.DBObject
 	err                        error
 }
 
@@ -22,7 +21,8 @@ func (s *State) ResetBrowser() {
 	}
 	w.objectCancel, w.objectResults, w.Pending = nil, nil, ""
 	w.Database = ""
-	w.Cache = make(map[string][]mysqlsvc.MySQLDBObject)
+	w.Cache = make(map[string][]contract.DBObject)
+	w.QualifiedCache = make(map[contract.NamespaceRef][]contract.DBObject)
 	w.Errors = make(map[string]string)
 	w.opened = make(map[string]bool)
 	if s.deps.BrowserReset != nil {
@@ -37,6 +37,12 @@ func (s *State) ReconcileDatabases(names []string) {
 	}
 	if w.Pending != "" && !known[w.Pending] {
 		s.CancelObjects()
+	}
+	for name, namespace := range w.Namespaces {
+		if !known[name] {
+			delete(w.Namespaces, name)
+			delete(w.QualifiedCache, namespace)
+		}
 	}
 	for name := range w.Cache {
 		if !known[name] {
@@ -91,6 +97,7 @@ func (s *State) InvalidateDatabaseObjects(profileID int64, generation uint64, da
 		s.cancelObjects(w)
 	}
 	delete(w.Cache, database)
+	delete(w.QualifiedCache, w.Namespaces[database])
 	delete(w.Errors, database)
 	return true
 }
@@ -104,6 +111,7 @@ func (s *State) InvalidateProfileObjects(profileID int64, generation uint64) boo
 	}
 	s.cancelObjects(w)
 	clear(w.Cache)
+	clear(w.QualifiedCache)
 	clear(w.Errors)
 	return true
 }
@@ -122,7 +130,7 @@ func (s *State) SelectDatabase(database string) {
 func (s *State) LoadObjects(database string, force bool, invalidate func()) {
 	w := s.current
 	if w.Cache == nil {
-		w.Cache = make(map[string][]mysqlsvc.MySQLDBObject)
+		w.Cache = make(map[string][]contract.DBObject)
 	}
 	if w.Errors == nil {
 		w.Errors = make(map[string]string)
@@ -153,15 +161,21 @@ func (s *State) LoadObjects(database string, force bool, invalidate func()) {
 	results := make(chan objectResult, 1)
 	w.objectResults = results
 	lister := s.ObjectLister
-	if lister == nil && w.Kind != "mysql" && s.engines.Session != nil {
-		lister = s.engineObjects
-	}
-	if lister == nil {
-		if s.Manager == nil {
+	if lister == nil && s.engines.Session != nil {
+		session, err := s.engines.Session(id)
+		if err != nil {
 			s.CancelObjects()
+			w.Errors[database] = err.Error()
 			return
 		}
-		lister = s.Manager.ObjectsWithPrograms
+		lister = func(ctx context.Context, id int64, name string) ([]contract.DBObject, error) {
+			return sessionObjects(ctx, session, name)
+		}
+	}
+	if lister == nil {
+		s.CancelObjects()
+		w.Errors[database] = contract.ErrUnsupported.Error()
+		return
 	}
 	go func() {
 		objects, err := lister(ctx, id, database)
@@ -193,6 +207,12 @@ func (s *State) consumeObjects() {
 			return
 		}
 		w.Cache[result.database] = result.objects
+		if namespace, ok := w.Namespaces[result.database]; ok {
+			if w.QualifiedCache == nil {
+				w.QualifiedCache = make(map[contract.NamespaceRef][]contract.DBObject)
+			}
+			w.QualifiedCache[namespace] = result.objects
+		}
 		delete(w.Errors, result.database)
 		if s.deps.ObjectsChanged != nil {
 			s.deps.ObjectsChanged(w.ProfileID, result.database)

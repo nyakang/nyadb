@@ -3,43 +3,37 @@ package dataworkspace
 import (
 	"context"
 	"errors"
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"reflect"
+	"slices"
 
 	"github.com/egoist/mygo/ui"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/locales"
 )
 
 // DataTransactions is injected so documents own transaction lifetime without
 // depending on the session browser or the database driver's connection pool.
-type DataTransactions struct {
-	Chunk    func(context.Context, *mysqlsvc.MySQLDataTransaction, int64, string, string, string, mysqlsvc.MySQLRowRef, int64, int) (*mysqlsvc.MySQLFieldChunk, error)
-	Begin    func(context.Context, int64, string, string) (*mysqlsvc.MySQLDataTransaction, error)
-	Commit   func(context.Context, *mysqlsvc.MySQLDataTransaction) error
-	Rollback func(context.Context, *mysqlsvc.MySQLDataTransaction) error
-	Close    func(*mysqlsvc.MySQLDataTransaction)
-	Page     func(context.Context, *mysqlsvc.MySQLDataTransaction, int64, string, string, mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error)
-	Save     func(context.Context, *mysqlsvc.MySQLDataTransaction, int64, string, string, []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error)
-	Row      func(context.Context, *mysqlsvc.MySQLDataTransaction, int64, string, string, mysqlsvc.MySQLRowRef) (*mysqlsvc.MySQLDataRow, error)
-}
+type DataTransactions = contract.DataTransactions
 
 type dataTransactionResult struct {
 	generation, request uint64
 	profile             int64
 	operation           string
-	token               *mysqlsvc.MySQLDataTransaction
+	token               contract.DataTransaction
 	release             func() bool
 	err                 error
 }
 
 type dataTransactionState struct {
-	token                 *mysqlsvc.MySQLDataTransaction
+	token                 contract.DataTransaction
 	runtime               DataTransactions
 	generation, request   uint64
 	busy, uncertain, lost bool
 	commitAfterRead       bool
 	cancel                context.CancelFunc
 	results               <-chan dataTransactionResult
-	pending               *mysqlsvc.MySQLDataEditResult
+	pending               *contract.DataEditResult
+	keys                  []string
 	drafts                map[string]*mysqlRowDraft
 	leaveOpen             bool
 	leaveNext             func(ui.Services)
@@ -62,7 +56,7 @@ func (s *State) dataTransactions() DataTransactions {
 }
 
 func (s *State) beginDataTransaction(services ui.Services, t *Document) {
-	if t == nil || t.closed || t.transfer.Busy || t.transfer.Uncertain || dataTransactionActive(t) || dataTransactionBusy(t) || t.edit.Busy || t.loading || t.edit.Uncertain != nil || t.profileID != s.session().ProfileID || !s.session().Connected {
+	if t == nil || t.closed || t.transfer.Busy || t.transfer.Uncertain || dataTransactionActive(t) || dataTransactionBusy(t) || t.edit.Busy || t.loading || t.edit.Uncertain != nil || !s.canUseSession(t) {
 		return
 	}
 	s.finishMySQLCellEdit(t, true)
@@ -71,6 +65,9 @@ func (s *State) beginDataTransaction(services ui.Services, t *Document) {
 		return
 	}
 	runtime := s.dataTransactions()
+	if s.Transactions.Begin == nil {
+		runtime = s.runtimeFor(t).Transactions
+	}
 	if runtime.Begin == nil || runtime.Commit == nil || runtime.Rollback == nil || runtime.Close == nil || runtime.Save == nil || runtime.Page == nil || runtime.Row == nil {
 		t.transaction.err = locales.Text("数据事务服务不可用")
 		return
@@ -80,7 +77,7 @@ func (s *State) beginDataTransaction(services ui.Services, t *Document) {
 }
 
 func (s *State) commitDataTransaction(services ui.Services, t *Document) {
-	if t == nil || t.closed || t.transfer.Busy || t.transfer.Uncertain || t.transaction.token == nil || dataTransactionUnavailable(t) || t.edit.Busy || t.edit.Uncertain != nil || t.profileID != s.session().ProfileID || !s.session().Connected {
+	if t == nil || t.closed || t.transfer.Busy || t.transfer.Uncertain || t.transaction.token == nil || dataTransactionUnavailable(t) || t.edit.Busy || t.edit.Uncertain != nil || !s.canUseSession(t) {
 		return
 	}
 	if t.loading {
@@ -101,7 +98,7 @@ func (s *State) commitDataTransaction(services ui.Services, t *Document) {
 }
 
 func (s *State) rollbackDataTransaction(services ui.Services, t *Document) {
-	if t == nil || t.closed || t.transfer.Busy || t.transfer.Uncertain || t.transaction.token == nil || dataTransactionUnavailable(t) || t.edit.Busy || t.loading || t.profileID != s.session().ProfileID || !s.session().Connected {
+	if t == nil || t.closed || t.transfer.Busy || t.transfer.Uncertain || t.transaction.token == nil || dataTransactionUnavailable(t) || t.edit.Busy || t.loading || !s.canUseSession(t) {
 		return
 	}
 	s.startDataTransactionRequest(services, t, "rollback")
@@ -115,7 +112,7 @@ func (s *State) startDataTransactionRequest(services ui.Services, t *Document, o
 	tx.cancel = cancel
 	out := make(chan dataTransactionResult, 1)
 	tx.results = out
-	request, generation, profile, database, table := tx.request, s.session().Generation, t.profileID, t.database, t.table
+	request, generation, profile, database, table := tx.request, s.sessionFor(t).Generation, t.profileID, t.database, t.table
 	runtime, token := tx.runtime, tx.token
 	go func() {
 		r := dataTransactionResult{generation: generation, request: request, profile: profile, operation: operation}
@@ -147,13 +144,13 @@ func (s *State) stopDataTransaction(t *Document) {
 func (s *State) consumeDataTransactions(services ui.Services) {
 	for _, t := range s.documents {
 		tx := &t.transaction
-		if !t.closed && tx.commitAfterRead && !t.loading && t.profileID == s.session().ProfileID {
+		if !t.closed && tx.commitAfterRead && !t.loading && t.profileID == s.sessionFor(t).ProfileID {
 			tx.commitAfterRead = false
 			if t.err == "" {
 				s.commitDataTransaction(services, t)
 			}
 		}
-		if t.closed || tx.results == nil || t.profileID != s.session().ProfileID {
+		if t.closed || tx.results == nil || !s.consumeFor(t) {
 			continue
 		}
 		select {
@@ -165,7 +162,7 @@ func (s *State) consumeDataTransactions(services ui.Services) {
 				tx.cancel()
 			}
 			tx.cancel, tx.results, tx.busy = nil, nil, false
-			if r.request != tx.request || r.profile != t.profileID || r.generation != s.session().Generation || !s.session().Connected {
+			if r.request != tx.request || r.profile != t.profileID || r.generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected {
 				if r.token != nil {
 					go tx.runtime.Close(r.token)
 				}
@@ -176,17 +173,24 @@ func (s *State) consumeDataTransactions(services ui.Services) {
 					tx.lost = true
 				}
 				tx.after = nil
-				tx.err = locales.Text("原 MySQL 会话已失效，请刷新表数据")
+				tx.err = locales.Text("原数据库会话已失效，请刷新表数据")
 				continue
 			}
 			if r.err != nil {
 				tx.err = r.err.Error()
 				tx.after = nil
-				if errors.Is(r.err, mysqlsvc.ErrMySQLDataCommitUncertain) {
+				var receipt *contract.CommitError
+				if errors.As(r.err, &receipt) {
+					tx.uncertain = true
+					s.retainDataTransactionDrafts(t)
+					t.edit.Uncertain.Saved = cloneEdits(receipt.Result.Saved)
+					t.edit.Uncertain.Incomplete = receipt.Result.Incomplete
+				}
+				if errors.Is(r.err, contract.ErrDataCommitUncertain) {
 					tx.uncertain = true
 					s.retainDataTransactionDrafts(t)
 				}
-				if errors.Is(r.err, mysqlsvc.ErrMySQLDataTransactionLost) {
+				if errors.Is(r.err, contract.ErrDataTransactionLost) {
 					tx.lost = true
 				}
 				continue
@@ -207,7 +211,7 @@ func (s *State) consumeDataTransactions(services ui.Services) {
 			}
 			t.transaction = dataTransactionState{}
 			t.after, t.cursorHistory = nil, nil
-			t.useKeyset, t.offset = true, 0
+			t.useKeyset, t.offset = t.keysetEnabled(), 0
 			s.Load(services, t, true)
 			if after != nil {
 				after(services)
@@ -221,46 +225,95 @@ func (s *State) retainDataTransactionDrafts(t *Document) {
 	if t.edit.Drafts == nil {
 		t.edit.Drafts = map[string]*mysqlRowDraft{}
 	}
-	for key, draft := range t.transaction.drafts {
+	for i, key := range t.transaction.keys {
+		draft := t.transaction.drafts[key]
+		if draft == nil {
+			continue
+		}
+		row := -1
+		outcome := t.transaction.pending.Outcomes[i]
+		for j, ref := range t.page.RowRefs {
+			if ref != nil && ((outcome.Saved != nil && reflect.DeepEqual(*ref, outcome.Saved.Ref)) || (draft.Original != nil && reflect.DeepEqual(*ref, draft.Original.Ref))) {
+				row = j
+				break
+			}
+		}
+		if row < 0 {
+			row = len(t.page.Rows)
+			preview := clonePreviews(draft.Before)
+			if len(preview) != len(t.page.Columns) {
+				preview = make([]contract.DataCell, len(t.page.Columns))
+			}
+			t.page.Rows = append(t.page.Rows, preview)
+			var ref *contract.RowRef
+			if draft.Original != nil {
+				copy := cloneRowRef(draft.Original.Ref)
+				ref = &copy
+			}
+			t.page.RowRefs = append(t.page.RowRefs, ref)
+			t.page.RowSnapshots = append(t.page.RowSnapshots, cloneSnapshot(draft.Original))
+		}
+		draft.Row = row
 		if t.edit.Drafts[key] == nil {
 			t.edit.Drafts[key] = draft
 		}
 	}
 	t.edit.Uncertain = cloneEditResult(t.transaction.pending)
 	if t.edit.Uncertain == nil {
-		t.edit.Uncertain = &mysqlsvc.MySQLDataEditResult{}
+		t.edit.Uncertain = &contract.DataEditResult{}
 	}
 	t.edit.Uncertain.CommitUncertain = true
+	t.edit.UncertainKeys = append([]string(nil), t.transaction.keys...)
 	t.edit.Err = locales.Text("提交结果仍不确定，禁止重放；请检查数据库")
 }
 
-func (s *State) rememberDataTransactionSave(t *Document, keys []string, result *mysqlsvc.MySQLDataEditResult) {
+func (s *State) rememberDataTransactionSave(t *Document, keys []string, result *contract.DataEditResult) {
 	if t.transaction.token == nil {
 		return
 	}
-	if t.transaction.pending == nil {
-		t.transaction.pending = &mysqlsvc.MySQLDataEditResult{}
+	tx := &t.transaction
+	if tx.pending == nil {
+		tx.pending = &contract.DataEditResult{}
 	}
-	t.transaction.pending.Outcomes = append(t.transaction.pending.Outcomes, cloneEditResult(result).Outcomes...)
-	if t.transaction.drafts == nil {
-		t.transaction.drafts = map[string]*mysqlRowDraft{}
+	if tx.drafts == nil {
+		tx.drafts = map[string]*mysqlRowDraft{}
 	}
-	for _, key := range keys {
+	copied := cloneEditResult(result)
+	for i, key := range keys {
 		d := t.edit.Drafts[key]
 		if d == nil {
 			continue
 		}
-		copy := *d
-		copy.Original, copy.Values = cloneSnapshot(d.Original), cloneValues(d.Values)
-		copy.Before = append([]mysqlsvc.MySQLDataCell(nil), d.Before...)
-		if t.transaction.drafts[key] == nil {
-			t.transaction.drafts[key] = &copy
+		index := slices.Index(tx.keys, key)
+		if index < 0 && copied.Outcomes[i].Original != nil {
+			for j, old := range tx.pending.Outcomes {
+				if old.Saved != nil && reflect.DeepEqual(old.Saved.Ref, copied.Outcomes[i].Original.Ref) {
+					index = j
+					break
+				}
+			}
+		}
+		retainedKey := key
+		draft := *d
+		draft.Original, draft.Values, draft.Before = cloneSnapshot(d.Original), cloneValues(d.Values), clonePreviews(d.Before)
+		if index < 0 {
+			tx.keys = append(tx.keys, key)
+			tx.pending.Outcomes = append(tx.pending.Outcomes, copied.Outcomes[i])
+			tx.drafts[key] = &draft
 		} else {
-			for name, value := range copy.Values {
-				t.transaction.drafts[key].Values[name] = value
+			retainedKey = tx.keys[index]
+			copied.Outcomes[i].Original = tx.pending.Outcomes[index].Original
+			tx.pending.Outcomes[index] = copied.Outcomes[i]
+			old := tx.drafts[retainedKey]
+			for name, value := range draft.Values {
+				old.Values[name] = value
+			}
+			if draft.Kind == "delete" {
+				old.Kind = "delete"
 			}
 		}
 	}
+	tx.pending.Saved = copied.Saved
 }
 
 func (s *State) closeDataTransaction(t *Document) {
@@ -287,11 +340,14 @@ func (s *State) saverFor(t *Document) mysqlDataSaver {
 		if save == nil {
 			return nil
 		}
-		return func(ctx context.Context, profile int64, database, table string, edits []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
+		return func(ctx context.Context, profile int64, database, table string, edits []contract.DataEdit) (*contract.DataEditResult, error) {
 			return save(ctx, token, profile, database, table, edits)
 		}
 	}
-	return s.saver()
+	if s.Saver != nil {
+		return s.Saver
+	}
+	return s.runtimeFor(t).Saver
 }
 func (s *State) advancedLoaderFor(t *Document) mysqlDataAdvancedLoader {
 	if t != nil && (t.transfer.Busy || t.transfer.Uncertain || dataTransactionUnavailable(t)) {
@@ -302,11 +358,17 @@ func (s *State) advancedLoaderFor(t *Document) mysqlDataAdvancedLoader {
 		if load == nil {
 			return nil
 		}
-		return func(ctx context.Context, profile int64, database, table string, o mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {
+		return func(ctx context.Context, profile int64, database, table string, o contract.DataOptions) (*contract.DataPage, error) {
 			return load(ctx, token, profile, database, table, o)
 		}
 	}
-	return s.advancedLoader()
+	if s.AdvancedLoader != nil {
+		return s.AdvancedLoader
+	}
+	if s.Loader != nil {
+		return nil
+	}
+	return s.runtimeFor(t).AdvancedLoader
 }
 func (s *State) rowReaderFor(t *Document) mysqlDataRowReader {
 	if t != nil && (t.transfer.Busy || t.transfer.Uncertain || dataTransactionUnavailable(t)) {
@@ -317,11 +379,14 @@ func (s *State) rowReaderFor(t *Document) mysqlDataRowReader {
 		if read == nil {
 			return nil
 		}
-		return func(ctx context.Context, profile int64, database, table string, ref mysqlsvc.MySQLRowRef) (*mysqlsvc.MySQLDataRow, error) {
+		return func(ctx context.Context, profile int64, database, table string, ref contract.RowRef) (*contract.DataRow, error) {
 			return read(ctx, token, profile, database, table, ref)
 		}
 	}
-	return s.rowReader()
+	if s.RowReader != nil {
+		return s.RowReader
+	}
+	return s.runtimeFor(t).RowReader
 }
 
 // GuardTransactionLeave is for closing/disconnecting documents. Page, filter
@@ -383,7 +448,7 @@ func (s *State) dataTransactionModals(c *ui.Context) {
 }
 
 func (s *State) dataTransactionReadFailed(t *Document, err error) {
-	if t != nil && !t.closed && errors.Is(err, mysqlsvc.ErrMySQLDataTransactionLost) {
+	if t != nil && !t.closed && errors.Is(err, contract.ErrDataTransactionLost) {
 		t.transaction.lost = true
 		t.transaction.err = err.Error()
 	}

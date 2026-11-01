@@ -47,6 +47,7 @@ func TestUIFunctionalDomainVisualMatrix(t *testing.T) {
 						s.selectedProfileID = profile.ID
 						w := s.sessions.Current()
 						w.ProfileID, w.Status, w.Database = profile.ID, "已连接", "app_db"
+						publishRuntimeFixture(t, s)
 						w.Databases = []string{"app_db"}
 						w.Cache = map[string][]mysqlsvc.MySQLDBObject{"app_db": {{Name: "orders", Kind: "表", Engine: "InnoDB", Comment: "订单 / orders"}, {Name: "sales", Kind: "视图"}, {Name: "discount", Kind: "函数", Definition: "CREATE FUNCTION discount(amount DECIMAL(10,2)) RETURNS DECIMAL(10,2)\nRETURN amount * 0.9", ReturnType: "DECIMAL(10,2)", Definer: "fixture@localhost"}}}
 						s.sessions.MarkOpened(profile.ID, "app_db")

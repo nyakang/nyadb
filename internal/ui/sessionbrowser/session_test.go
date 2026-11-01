@@ -25,7 +25,7 @@ func awaitJob(t *testing.T, done <-chan struct{}) {
 }
 func connectedState(t *testing.T) (*State, chan struct{}, func()) {
 	t.Helper()
-	s := New(Dependencies{})
+	s := newTestState(Dependencies{})
 	t.Cleanup(s.Close)
 	done := make(chan struct{}, 16)
 	notify := func() { done <- struct{}{} }
@@ -41,7 +41,7 @@ func connectedState(t *testing.T) (*State, chan struct{}, func()) {
 }
 
 func TestSessionBrowserParkedHandshakeKeepsActiveWorkspace(t *testing.T) {
-	s := New(Dependencies{})
+	s := newTestState(Dependencies{})
 	defer s.Close()
 	done := make(chan struct{}, 4)
 	notify := func() { done <- struct{}{} }
@@ -152,7 +152,7 @@ func TestSessionBrowserSecretFallbackAndErrorRedaction(t *testing.T) {
 		{name: "redacted connection error", secret: "private-secret", fail: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			s := New(Dependencies{ReadSecret: func(int64, string) (string, bool, error) { return tc.secret, tc.secret != "", tc.vaultErr }})
+			s := newTestState(Dependencies{ReadSecret: func(int64, string) (string, bool, error) { return tc.secret, tc.secret != "", tc.vaultErr }})
 			defer s.Close()
 			done := make(chan struct{}, 1)
 			s.Opener = func(_ context.Context, _ connections.ActiveSettings, password string) error {
@@ -183,7 +183,7 @@ func TestSessionBrowserSecretFallbackAndErrorRedaction(t *testing.T) {
 }
 
 func TestMySQLWorkbenchAllowsRemoteWithoutTLS(t *testing.T) {
-	s := New(Dependencies{})
+	s := newTestState(Dependencies{})
 	defer s.Close()
 	profile := testProfile(1)
 	profile.Host = "remote.example.test"

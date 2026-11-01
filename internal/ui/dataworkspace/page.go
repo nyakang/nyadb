@@ -3,16 +3,15 @@ package dataworkspace
 import (
 	"context"
 	"errors"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
 	"time"
 
 	"github.com/egoist/mygo/ui"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
-type mysqlDataLoader func(context.Context, int64, string, string, int64, int) (*mysqlsvc.MySQLDataPage, error)
-type mysqlDataAdvancedLoader func(context.Context, int64, string, string, mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error)
+type mysqlDataLoader func(context.Context, int64, string, string, int64, int) (*contract.DataPage, error)
+type mysqlDataAdvancedLoader func(context.Context, int64, string, string, contract.DataOptions) (*contract.DataPage, error)
 
 type mysqlDataResult struct {
 	History    mysqlDataHistoryEntry
@@ -20,7 +19,7 @@ type mysqlDataResult struct {
 	profileID  int64
 	request    uint64
 	offset     int64
-	page       *mysqlsvc.MySQLDataPage
+	page       *contract.DataPage
 	err        error
 }
 
@@ -45,8 +44,12 @@ func (s *State) Cancel(t *Document) {
 	t.loading = false
 }
 func (s *State) Load(services ui.Services, t *Document, refresh bool) {
-	if t == nil || t.closed || t.transfer.Busy || t.transfer.Uncertain || dataTransactionUnavailable(t) || t.profileID != s.session().ProfileID ||
-		!s.session().Connected || s.session().ProfileID <= 0 {
+	if t == nil || t.closed || t.transfer.Busy || t.transfer.Uncertain || dataTransactionUnavailable(t) || t.profileID != s.sessionFor(t).ProfileID ||
+		!s.sessionFor(t).Connected || s.sessionFor(t).ProfileID <= 0 {
+		return
+	}
+	if t.object.ProfileID != 0 && t.generation != s.sessionFor(t).Generation {
+		t.err = "原数据库会话已失效，请刷新表数据"
 		return
 	}
 	if t.loading && !refresh {
@@ -61,18 +64,21 @@ func (s *State) Load(services ui.Services, t *Document, refresh bool) {
 	t.loading = true
 	ctx, cancel := context.WithCancel(context.Background())
 	t.cancel = cancel
-	request, gen, profile := t.request, s.session().Generation, s.session().ProfileID
+	request, gen, profile := t.request, s.sessionFor(t).Generation, s.sessionFor(t).ProfileID
 	database, table, offset, limit := t.database, t.table, t.offset, t.limit
-	options := mysqlsvc.MySQLDataOptions{Offset: offset, Limit: limit,
+	options := contract.DataOptions{Object: t.object, Offset: offset, Limit: limit,
 		FilterColumn: t.filterColumn, FilterValue: t.filterValue,
 		FilterMode: t.filterMode, SortColumn: t.sortColumn,
 		SortDescending: t.sortDescending, UseKeyset: t.useKeyset, After: cloneCursor(t.after),
-		Filters: append([]mysqlsvc.MySQLDataFilterRule(nil), t.filterRules...), Sorts: append([]mysqlsvc.MySQLDataSortRule(nil), t.sortRules...)}
+		Filters: append([]contract.DataFilterRule(nil), t.filterRules...), Sorts: append([]contract.DataSortRule(nil), t.sortRules...)}
 	advanced := s.advancedLoaderFor(t)
 	legacy := s.pageLoader()
+	if s.Loader == nil {
+		legacy = s.runtimeFor(t).Loader
+	}
 	if advanced == nil && legacy == nil {
 		s.Cancel(t)
-		t.err = "MySQL 会话不可用"
+		t.err = "数据库会话不可用"
 		return
 	}
 	out := make(chan mysqlDataResult, 1)
@@ -82,14 +88,14 @@ func (s *State) Load(services ui.Services, t *Document, refresh bool) {
 	t.tools.historyActiveRead = &activeHistory
 	go func() {
 		started := time.Now()
-		var page *mysqlsvc.MySQLDataPage
+		var page *contract.DataPage
 		var err error
 		if advanced != nil {
 			page, err = advanced(ctx, profile, database, table, options)
 		} else if options.FilterMode == "" && options.SortColumn == "" {
 			page, err = legacy(ctx, profile, database, table, offset, limit)
 		} else {
-			err = mysqlsvc.ErrMySQLDataPage // mock-only legacy loader cannot silently ignore a filter.
+			err = contract.ErrDataPage // mock-only legacy loader cannot silently ignore a filter.
 		}
 		history.At, history.Duration = time.Now(), time.Since(started)
 		out <- mysqlDataResult{History: history, generation: gen, profileID: profile, request: request, offset: offset, page: page, err: err}
@@ -106,18 +112,18 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *Document, offset in
 	// Full unique-key results advance by a seek cursor; other tables retain
 	// the legacy OFFSET fallback and its explicit UI warning.
 	if offset == 0 {
-		t.useKeyset = true
+		t.useKeyset = t.keysetEnabled()
 		t.after = nil
 	} else if offset > t.offset && t.page != nil &&
 		t.page.KeysetAvailable && t.page.NextCursor != nil {
 		if t.cursorHistory == nil {
-			t.cursorHistory = map[int64]*mysqlsvc.MySQLDataCursor{}
+			t.cursorHistory = map[int64]*contract.DataCursor{}
 		}
 		t.cursorHistory[offset] = t.page.NextCursor
-		t.useKeyset = true
+		t.useKeyset = t.keysetEnabled()
 		t.after = t.page.NextCursor
 	} else if previous, ok := t.cursorHistory[offset]; ok {
-		t.useKeyset = true
+		t.useKeyset = t.keysetEnabled()
 		t.after = previous
 	} else {
 		t.useKeyset = false
@@ -135,28 +141,28 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *Document, offset in
 }
 func (s *State) consumePages() {
 	for _, t := range s.documents {
-		if t.closed || t.results == nil || t.profileID != s.session().ProfileID {
+		if t.closed || t.results == nil || !s.consumeFor(t) {
 			continue
 		}
 		select {
 		case result := <-t.results:
-			if result.profileID != s.session().ProfileID ||
+			if result.profileID != s.sessionFor(t).ProfileID ||
 				result.profileID != t.profileID ||
 				result.request != t.request ||
 				result.offset != t.offset {
 				continue
 			}
-			s.recordDataPageHistory(t, result, result.generation != s.session().Generation || !s.session().Connected)
+			s.recordDataPageHistory(t, result, result.generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected)
 			s.Cancel(t)
 			if !result.History.At.IsZero() {
 				t.tools.historyRequest, t.tools.historyRecorded = t.request, true
 			}
-			if result.generation != s.session().Generation || !s.session().Connected {
-				t.err = "原 MySQL 会话已失效，请刷新表数据"
+			if result.generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected {
+				t.err = "原数据库会话已失效，请刷新表数据"
 				continue
 			}
 			if result.err != nil {
-				if errors.Is(result.err, mysqlsvc.ErrMySQLDataTransactionLost) {
+				if errors.Is(result.err, contract.ErrDataTransactionLost) {
 					t.transaction.lost = true
 					t.transaction.err = result.err.Error()
 				}
@@ -178,7 +184,7 @@ func (s *State) consumePages() {
 				if i < len(result.page.ColumnKinds) {
 					kind = result.page.ColumnKinds[i]
 				}
-				sortable := kind != "" && !strings.Contains(kind, "blob") && !strings.Contains(kind, "text") && kind != "json" && kind != "geometry" && kind != "binary" && kind != "varbinary"
+				sortable := t.portable() || kind != "" && !strings.Contains(kind, "blob") && !strings.Contains(kind, "text") && kind != "json" && kind != "geometry" && kind != "binary" && kind != "varbinary"
 				t.columns[i] = ui.TableColumn{Title: name, ID: name, Width: 155, MinWidth: 65, Sortable: sortable}
 			}
 		default:
@@ -191,6 +197,9 @@ func (s *State) consumePages() {
 func (s *State) Close(t *Document) {
 	if t == nil || t.closed {
 		return
+	}
+	if s.guardDoc == t {
+		s.guardDoc = nil
 	}
 	s.flushMySQLDataLayout(t)
 	s.cancelMySQLDataEdit(t)

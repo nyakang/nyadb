@@ -31,20 +31,22 @@ func dataToolbarToggle(c *ui.Context, caption, icon string, active, disabled boo
 // navigation and moves trailing commands into its overflow menu at any width.
 func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 	page := t.page
-	disabled := t.closed || t.loading || t.edit.Busy || t.transfer.Busy
+	disabled := t.closed || t.loading || t.edit.Busy || t.transfer.Busy || t.export.Busy
 	var profilesButton, fillButton, copyButton ui.Element
 	ui.Toolbar(c, func() {
-		profilesButton = mysqlDataToolbarButton(c, "表配置文件 ▾", locales.Text("表配置文件"), "design-table", page == nil).
-			Menu(func(m *ui.Menu) { s.profilesMenu(c, t, m) })
+		if !t.portable() {
+			profilesButton = mysqlDataToolbarButton(c, "表配置文件 ▾", locales.Text("表配置文件"), "design-table", page == nil).
+				Menu(func(m *ui.Menu) { s.profilesMenu(c, t, m) })
+		}
 		ui.Divider(c).Width(1).Height(18)
-		if dataTransactionActive(t) {
+		if (t.object.ProfileID == 0 || t.capabilities.Transactions) && dataTransactionActive(t) {
 			if mysqlDataToolbarButton(c, "提交", locales.Text("提交事务"), "check", disabled || dataTransactionBusy(t)).Clicked() {
 				s.commitDataTransaction(c.Services(), t)
 			}
 			if mysqlDataToolbarButton(c, "回滚", locales.Text("回滚事务"), "history", disabled || dataTransactionBusy(t)).Clicked() {
 				s.rollbackDataTransaction(c.Services(), t)
 			}
-		} else if mysqlDataToolbarButton(c, "开始事务", locales.Text("开始事务"), "database", disabled || dataTransactionBusy(t) || !s.session().Connected || page == nil || t.objectKind != "表").Clicked() {
+		} else if (t.object.ProfileID == 0 || t.capabilities.Transactions) && mysqlDataToolbarButton(c, "开始事务", locales.Text("开始事务"), "database", disabled || dataTransactionBusy(t) || !s.session().Connected || page == nil || t.objectKind != "表").Clicked() {
 			s.beginDataTransaction(c.Services(), t)
 		}
 		ui.Divider(c).Width(1).Height(18)
@@ -71,7 +73,7 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 		ui.Divider(c).Width(1).Height(18)
 		fillButton = mysqlDataToolbarButton(c, "AI 自动填充 ▾", locales.Text("AI 自动填充"), "star", page == nil).
 			Menu(func(m *ui.Menu) { s.dataFillMenu(c, t, m) })
-		if dataToolbarToggle(c, "数据分析", "chart", t.tools.analysisOpen, page == nil || disabled).Clicked() {
+		if (t.object.ProfileID == 0 || t.capabilities.Analysis) && dataToolbarToggle(c, "数据分析", "chart", t.tools.analysisOpen, page == nil || disabled).Clicked() {
 			if t.tools.analysisOpen {
 				s.closeDataAnalysis(t)
 			} else {
@@ -79,11 +81,15 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 			}
 		}
 		ui.Divider(c).Width(1).Height(18)
-		if mysqlDataToolbarButton(c, "导入", locales.Text("导入"), "import", disabled || dataTransactionActive(t) || dataTransactionBusy(t) || t.transfer.Uncertain || page == nil || t.objectKind != "表").Clicked() {
+		if (t.object.ProfileID == 0 || t.capabilities.Import) && mysqlDataToolbarButton(c, "导入", locales.Text("导入"), "import", disabled || dataTransactionActive(t) || dataTransactionBusy(t) || t.transfer.Uncertain || page == nil || t.objectKind != "表").Clicked() {
 			s.openDataImport(t)
 		}
 		if mysqlDataToolbarButton(c, "导出", locales.Text("导出"), "export", disabled || dataTransactionActive(t) || dataTransactionBusy(t) || t.transfer.Uncertain || page == nil).Clicked() {
-			s.openDataExport(t)
+			if t.capabilities.JSONL {
+				s.ExportJSONL(c.Services(), t)
+			} else {
+				s.openDataExport(t)
+			}
 		}
 		ui.Divider(c).Width(1).Height(18)
 		if mysqlDataToolbarButton(c, "字段信息", locales.Text("查看字段信息"), "info", page == nil).Clicked() {
@@ -111,7 +117,9 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 	// A native overflow choice requests an earlier button's menu during the
 	// Toolbar's own build. Service that request once more before MyGo resolves
 	// unhandled menu requests at the end of this frame.
-	profilesButton.Menu(func(m *ui.Menu) { s.profilesMenu(c, t, m) })
+	if !t.portable() {
+		profilesButton.Menu(func(m *ui.Menu) { s.profilesMenu(c, t, m) })
+	}
 	fillButton.Menu(func(m *ui.Menu) { s.dataFillMenu(c, t, m) })
 	copyButton.Menu(func(m *ui.Menu) { s.mysqlDataCopyAsMenu(c, t, m) })
 }

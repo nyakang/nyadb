@@ -18,6 +18,7 @@ import (
 // editor. Host callbacks run on the UI thread after transient secrets and
 // pending work have been cleared.
 type Dependencies struct {
+	TestConnection  func(context.Context, connections.Profile, string) error
 	InitialSQLStore InitialSQLStore
 
 	Profiles        *connections.Service
@@ -87,6 +88,7 @@ type State struct {
 	connectionTestGeneration uint64
 	connectionTestCancel     context.CancelFunc
 	connectionTestResults    <-chan mysqlTestResult
+	connectionTester         func(context.Context, connections.Profile, string) error
 	mysqlConnectionTester    mysqlConnectionTester
 
 	sqliteFilePicker    func()
@@ -104,7 +106,7 @@ type State struct {
 
 func New(deps Dependencies) *State {
 	return &State{tunnelSecrets: deps.TunnelSecrets, mysqlTunnelTester: deps.TestMySQLTunnel, profileService: deps.Profiles, credentialVault: deps.Vault,
-		validateMySQL: deps.ValidateMySQL, mysqlConnectionTester: deps.TestMySQL,
+		validateMySQL: deps.ValidateMySQL, connectionTester: deps.TestConnection, mysqlConnectionTester: deps.TestMySQL,
 		saved: deps.Saved, back: deps.Back, canceled: deps.Cancel}
 }
 

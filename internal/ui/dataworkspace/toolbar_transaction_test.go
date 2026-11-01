@@ -2,6 +2,7 @@ package dataworkspace
 
 import (
 	"context"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -24,17 +25,17 @@ func transactionWorkspace(t *testing.T) (*State, *Document, *Session) {
 		return cloneEditingPage(page), nil
 	}
 	s.Transactions = DataTransactions{
-		Begin: func(context.Context, int64, string, string) (*mysqlsvc.MySQLDataTransaction, error) {
+		Begin: func(context.Context, int64, string, string) (contract.DataTransaction, error) {
 			return &mysqlsvc.MySQLDataTransaction{}, nil
 		},
-		Commit: func(context.Context, *mysqlsvc.MySQLDataTransaction) error { return nil }, Rollback: func(context.Context, *mysqlsvc.MySQLDataTransaction) error { return nil }, Close: func(*mysqlsvc.MySQLDataTransaction) {},
-		Page: func(context.Context, *mysqlsvc.MySQLDataTransaction, int64, string, string, mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {
+		Commit: func(context.Context, contract.DataTransaction) error { return nil }, Rollback: func(context.Context, contract.DataTransaction) error { return nil }, Close: func(contract.DataTransaction) {},
+		Page: func(context.Context, contract.DataTransaction, int64, string, string, mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {
 			return cloneEditingPage(page), nil
 		},
-		Row: func(context.Context, *mysqlsvc.MySQLDataTransaction, int64, string, string, mysqlsvc.MySQLRowRef) (*mysqlsvc.MySQLDataRow, error) {
+		Row: func(context.Context, contract.DataTransaction, int64, string, string, mysqlsvc.MySQLRowRef) (*mysqlsvc.MySQLDataRow, error) {
 			return &mysqlsvc.MySQLDataRow{Snapshot: cloneSnapshot(snapshot), Values: map[string]mysqlsvc.MySQLDataValue{"note": {Text: "pending"}}}, nil
 		},
-		Save: func(_ context.Context, _ *mysqlsvc.MySQLDataTransaction, _ int64, _, _ string, edits []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
+		Save: func(_ context.Context, _ contract.DataTransaction, _ int64, _, _ string, edits []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
 			r := &mysqlsvc.MySQLDataEditResult{}
 			for _, edit := range edits {
 				r.Outcomes = append(r.Outcomes, mysqlsvc.MySQLDataEditOutcome{Kind: edit.Kind, Original: edit.Original, Saved: cloneSnapshot(snapshot), PreviewColumns: []string{"id", "note"}, Previews: []mysqlsvc.MySQLDataCell{{Text: "1"}, {Text: edit.Values["note"].Text}}})
@@ -75,7 +76,7 @@ func consumeTransactionPage(t *testing.T, s *State, d *Document) {
 func TestDataTransactionParkedBeginRetainsOriginalProfileAndCloseRevokes(t *testing.T) {
 	s, d, session := transactionWorkspace(t)
 	closed := make(chan struct{}, 1)
-	s.Transactions.Close = func(*mysqlsvc.MySQLDataTransaction) { closed <- struct{}{} }
+	s.Transactions.Close = func(contract.DataTransaction) { closed <- struct{}{} }
 	s.beginDataTransaction(ui.Services{}, d)
 	result := <-d.transaction.results
 	out := make(chan dataTransactionResult, 1)
@@ -97,15 +98,15 @@ func TestDataTransactionRuntimeOwnsPageRowAndSaveRouting(t *testing.T) {
 	s, d, _ := transactionWorkspace(t)
 	var pages, rows, saves atomic.Int32
 	pageFn, rowFn, saveFn := s.Transactions.Page, s.Transactions.Row, s.Transactions.Save
-	s.Transactions.Page = func(ctx context.Context, token *mysqlsvc.MySQLDataTransaction, p int64, db, tb string, o mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {
+	s.Transactions.Page = func(ctx context.Context, token contract.DataTransaction, p int64, db, tb string, o mysqlsvc.MySQLDataOptions) (*mysqlsvc.MySQLDataPage, error) {
 		pages.Add(1)
 		return pageFn(ctx, token, p, db, tb, o)
 	}
-	s.Transactions.Row = func(ctx context.Context, token *mysqlsvc.MySQLDataTransaction, p int64, db, tb string, ref mysqlsvc.MySQLRowRef) (*mysqlsvc.MySQLDataRow, error) {
+	s.Transactions.Row = func(ctx context.Context, token contract.DataTransaction, p int64, db, tb string, ref mysqlsvc.MySQLRowRef) (*mysqlsvc.MySQLDataRow, error) {
 		rows.Add(1)
 		return rowFn(ctx, token, p, db, tb, ref)
 	}
-	s.Transactions.Save = func(ctx context.Context, token *mysqlsvc.MySQLDataTransaction, p int64, db, tb string, edits []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
+	s.Transactions.Save = func(ctx context.Context, token contract.DataTransaction, p int64, db, tb string, edits []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
 		saves.Add(1)
 		return saveFn(ctx, token, p, db, tb, edits)
 	}
@@ -132,11 +133,11 @@ func TestDataTransactionUnknownCommitPreservesDraftAndProhibitsReplay(t *testing
 	s, d, _ := transactionWorkspace(t)
 	var saves, commits atomic.Int32
 	saveFn := s.Transactions.Save
-	s.Transactions.Save = func(ctx context.Context, token *mysqlsvc.MySQLDataTransaction, p int64, db, tb string, edits []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
+	s.Transactions.Save = func(ctx context.Context, token contract.DataTransaction, p int64, db, tb string, edits []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
 		saves.Add(1)
 		return saveFn(ctx, token, p, db, tb, edits)
 	}
-	s.Transactions.Commit = func(context.Context, *mysqlsvc.MySQLDataTransaction) error {
+	s.Transactions.Commit = func(context.Context, contract.DataTransaction) error {
 		commits.Add(1)
 		return mysqlsvc.ErrMySQLDataCommitUncertain
 	}
@@ -170,7 +171,7 @@ func TestDataTransactionUnknownCommitPreservesDraftAndProhibitsReplay(t *testing
 func TestDataTransactionCancelStaysBusyUntilExecutorAcknowledges(t *testing.T) {
 	s, d, _ := transactionWorkspace(t)
 	started, release := make(chan struct{}), make(chan struct{})
-	s.Transactions.Commit = func(context.Context, *mysqlsvc.MySQLDataTransaction) error { close(started); <-release; return nil }
+	s.Transactions.Commit = func(context.Context, contract.DataTransaction) error { close(started); <-release; return nil }
 	s.beginDataTransaction(ui.Services{}, d)
 	consumeTransactionResult(t, s, d)
 	consumeTransactionPage(t, s, d)
@@ -219,7 +220,7 @@ func TestDataTransactionTransferBusyAndUncertainBlockAllEntryPoints(t *testing.T
 func TestDataTransactionRollbackDiscardsDraftOnlyAfterAcknowledgement(t *testing.T) {
 	s, d, _ := transactionWorkspace(t)
 	started, release := make(chan struct{}), make(chan struct{})
-	s.Transactions.Rollback = func(context.Context, *mysqlsvc.MySQLDataTransaction) error { close(started); <-release; return nil }
+	s.Transactions.Rollback = func(context.Context, contract.DataTransaction) error { close(started); <-release; return nil }
 	s.beginDataTransaction(ui.Services{}, d)
 	consumeTransactionResult(t, s, d)
 	consumeTransactionPage(t, s, d)
@@ -243,7 +244,7 @@ func TestDataTransactionFieldInspectorUsesOriginalTokenAndBoundedRead(t *testing
 	s, d, _ := transactionWorkspace(t)
 	s.inspector.deps.Session = s.deps.Session
 	var received atomic.Int32
-	s.Transactions.Chunk = func(_ context.Context, token *mysqlsvc.MySQLDataTransaction, profile int64, database, table, column string, ref mysqlsvc.MySQLRowRef, offset int64, units int) (*mysqlsvc.MySQLFieldChunk, error) {
+	s.Transactions.Chunk = func(_ context.Context, token contract.DataTransaction, profile int64, database, table, column string, ref mysqlsvc.MySQLRowRef, offset int64, units int) (*mysqlsvc.MySQLFieldChunk, error) {
 		if token == nil || profile != 12 || database != "db" || table != "orders" || column != "note" || string(ref.Values[0]) != "1" || offset != 0 || units != 1024 {
 			return nil, mysqlsvc.ErrMySQLDataPage
 		}
@@ -278,8 +279,8 @@ func TestDataTransactionFieldInspectorUsesOriginalTokenAndBoundedRead(t *testing
 func TestDataTransactionCommitWaitsForInsertedRowIdentityRefresh(t *testing.T) {
 	s, d, _ := transactionWorkspace(t)
 	var commits atomic.Int32
-	s.Transactions.Commit = func(context.Context, *mysqlsvc.MySQLDataTransaction) error { commits.Add(1); return nil }
-	s.Transactions.Save = func(context.Context, *mysqlsvc.MySQLDataTransaction, int64, string, string, []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
+	s.Transactions.Commit = func(context.Context, contract.DataTransaction) error { commits.Add(1); return nil }
+	s.Transactions.Save = func(context.Context, contract.DataTransaction, int64, string, string, []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
 		return &mysqlsvc.MySQLDataEditResult{Outcomes: []mysqlsvc.MySQLDataEditOutcome{{Kind: "insert"}}}, nil
 	}
 	s.beginDataTransaction(ui.Services{}, d)

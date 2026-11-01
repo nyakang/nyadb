@@ -39,6 +39,7 @@ func TestConnectionManagementEntryAndDynamicSessionMenu(t *testing.T) {
 	}
 	tt.CloseMenu()
 	s.sessions.Current().Status = "已连接"
+	publishRuntimeFixture(t, s)
 	tt.Frame()
 	if err := tt.RightClick("MenuTarget"); err != nil {
 		t.Fatal(err)

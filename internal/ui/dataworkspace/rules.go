@@ -4,19 +4,18 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
 
-func mysqlSelectedDataCell(t *Document) (string, mysqlsvc.MySQLDataCell, bool) {
+func mysqlSelectedDataCell(t *Document) (string, contract.DataCell, bool) {
 	if t == nil || t.page == nil || t.selectedRow < 0 ||
 		t.selectedRow >= len(t.page.Rows) {
-		return "", mysqlsvc.MySQLDataCell{}, false
+		return "", contract.DataCell{}, false
 	}
 	name := t.grid.Cells.Cursor
 	for col, candidate := range t.page.Columns {
@@ -24,7 +23,7 @@ func mysqlSelectedDataCell(t *Document) (string, mysqlsvc.MySQLDataCell, bool) {
 			return name, t.page.Rows[t.selectedRow][col], true
 		}
 	}
-	return "", mysqlsvc.MySQLDataCell{}, false
+	return "", contract.DataCell{}, false
 }
 
 func (s *State) applyMySQLDataFilter(services ui.Services, t *Document) {
@@ -54,7 +53,7 @@ func (s *State) Refresh(services ui.Services, t *Document) {
 	}
 	t.offset = 0
 	t.after = nil
-	t.useKeyset = true
+	t.useKeyset = t.keysetEnabled()
 	t.cursorHistory = nil
 	t.page = nil
 	t.selectedRow = -1
@@ -150,6 +149,10 @@ func mysqlFilterMode(mode string) string {
 		return "like"
 	case "不类似":
 		return "not_like"
+	case "小于或等于":
+		return "less_equal"
+	case "大于或等于":
+		return "greater_equal"
 	case "小于":
 		return "less"
 	case "大于":
@@ -167,7 +170,7 @@ func mysqlFilterMode(mode string) string {
 }
 func mysqlDataFilterModeNeedsValue(mode string) bool { return mode != "为空" && mode != "不为空" }
 
-func (s *State) mysqlDataRuleEditor(c *ui.Context, t *Document, page *mysqlsvc.MySQLDataPage) {
+func (s *State) mysqlDataRuleEditor(c *ui.Context, t *Document, page *contract.DataPage) {
 	palette := theme.Colors(c)
 
 	_, viewportHeight := c.Size()
@@ -198,14 +201,14 @@ func (s *State) mysqlDataRuleEditor(c *ui.Context, t *Document, page *mysqlsvc.M
 	})
 }
 
-func (s *State) mysqlDataRuleFields(c *ui.Context, t *Document, page *mysqlsvc.MySQLDataPage) {
+func (s *State) mysqlDataRuleFields(c *ui.Context, t *Document, page *contract.DataPage) {
 	palette := theme.Colors(c)
 
 	choices := append([]string{"选择字段"}, page.Columns...)
 	ui.Text(c, locales.Text("筛选  ·  所有已启用条件均满足 (AND)")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 	ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(6).AlignItems(ui.Center).Children(func() {
 		field := mysqlDataRuleSelect(c, &t.filterColumnDraft, choices, mysqlDataColumnChoiceLabel).Height(theme.RowHeight(c, theme.ControlHeight)).Width(150)
-		mysqlDataRuleSelect(c, &t.filterModeDraft, mysqlFilterModeChoices, locales.Text).Width(110)
+		mysqlDataRuleSelect(c, &t.filterModeDraft, t.filterChoices(), locales.Text).Width(110)
 		if mysqlDataFilterModeNeedsValue(t.filterModeDraft) {
 			input := ui.TextInput(c, &t.filterValueDraft).Label(locales.Text("数据筛选值")).Placeholder(locales.Text("筛选值")).Width(170)
 			if t.layout.filterFocus != "" && t.layout.filterFocus == t.filterColumnDraft {
@@ -217,8 +220,8 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *Document, page *mysqlsvc.M
 			t.layout.filterFocus = ""
 		}
 		ui.Box(c).Grow(1)
-		if ui.Button(c, locales.Text("添加条件")).Label(locales.Text("添加筛选规则")).Disabled(len(t.filterExtraDraft)+1 >= mysqlsvc.MySQLDataMaxFilterRules).Clicked() {
-			t.filterExtraDraft = append(t.filterExtraDraft, mysqlDataRuleDraft{Column: "选择字段", Mode: "包含"})
+		if ui.Button(c, locales.Text("添加条件")).Label(locales.Text("添加筛选规则")).Disabled(len(t.filterExtraDraft)+1 >= contract.DataMaxFilterRules).Clicked() {
+			t.filterExtraDraft = append(t.filterExtraDraft, mysqlDataRuleDraft{Column: "选择字段", Mode: t.defaultFilter()})
 		}
 	})
 	for i := range t.filterExtraDraft {
@@ -227,7 +230,7 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *Document, page *mysqlsvc.M
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, locales.Text("且")).TextColor(palette.Muted).FontSize(theme.Font(c, 11))
 			field := mysqlDataRuleSelect(c, &rule.Column, choices, mysqlDataColumnChoiceLabel).Width(140)
-			mysqlDataRuleSelect(c, &rule.Mode, mysqlFilterModeChoices, locales.Text).Width(110)
+			mysqlDataRuleSelect(c, &rule.Mode, t.filterChoices(), locales.Text).Width(110)
 			if mysqlDataFilterModeNeedsValue(rule.Mode) {
 				input := ui.TextInput(c, &rule.Value).Label(fmt.Sprintf(locales.Text("附加筛选值 %d"), i+1)).Placeholder(locales.Text("筛选值")).Width(170)
 				if t.layout.filterFocus != "" && t.layout.filterFocus == rule.Column {
@@ -247,7 +250,7 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *Document, page *mysqlsvc.M
 	ui.Row(c).Height(theme.RowHeight(c, theme.ControlHeight)).Gap(8).AlignItems(ui.Center).Children(func() {
 		ui.Text(c, locales.Text("排序方式 · 按规则优先级依次排序")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 		ui.Box(c).Grow(1)
-		if ui.Button(c, locales.Text("添加排序")).Disabled(len(t.sortDraft) >= mysqlsvc.MySQLDataMaxSortRules).Clicked() {
+		if ui.Button(c, locales.Text("添加排序")).Disabled(len(t.sortDraft) >= contract.DataMaxSortRules).Clicked() {
 			t.sortDraft = append(t.sortDraft, mysqlDataSortDraft{Column: "选择字段", Direction: "升序"})
 		}
 	})
@@ -288,7 +291,7 @@ func (s *State) applyMySQLDataRules(services ui.Services, t *Document) {
 		drafts = append(drafts, mysqlDataRuleDraft{Column: t.filterColumnDraft, Mode: t.filterModeDraft, Value: t.filterValueDraft})
 	}
 	drafts = append(drafts, t.filterExtraDraft...)
-	filters := make([]mysqlsvc.MySQLDataFilterRule, 0, len(drafts))
+	filters := make([]contract.DataFilterRule, 0, len(drafts))
 	for _, draft := range drafts {
 		valid := false
 		for _, col := range t.columns {
@@ -306,13 +309,13 @@ func (s *State) applyMySQLDataRules(services ui.Services, t *Document) {
 			t.ruleError = locales.Text("筛选条件无效或过长")
 			return
 		}
-		filters = append(filters, mysqlsvc.MySQLDataFilterRule{Column: draft.Column, Mode: mode, Value: draft.Value})
+		filters = append(filters, contract.DataFilterRule{Column: draft.Column, Mode: mode, Value: draft.Value})
 	}
 	if len(drafts) == 0 && len(t.sortDraft) == 0 && len(t.filterRules) == 0 && t.filterMode == "" && len(t.sortRules) == 0 && t.sortColumn == "" && (t.filterColumnDraft == "" || t.filterColumnDraft == "选择字段") {
 		t.ruleError = locales.Text("请先选择筛选字段，或添加排序规则")
 		return
 	}
-	sortRules := make([]mysqlsvc.MySQLDataSortRule, 0, len(t.sortDraft))
+	sortRules := make([]contract.DataSortRule, 0, len(t.sortDraft))
 	used := map[string]bool{}
 	for _, draft := range t.sortDraft {
 		found := false
@@ -327,7 +330,7 @@ func (s *State) applyMySQLDataRules(services ui.Services, t *Document) {
 			return
 		}
 		used[draft.Column] = true
-		sortRules = append(sortRules, mysqlsvc.MySQLDataSortRule{Column: draft.Column, Descending: draft.Direction == "降序"})
+		sortRules = append(sortRules, contract.DataSortRule{Column: draft.Column, Descending: draft.Direction == "降序"})
 	}
 	if len(filters) > 1 {
 		t.filterRules = filters
@@ -422,7 +425,7 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *Document, m *ui.Menu, row, s
 	}
 	ready := !t.loading && !t.edit.Busy && t.edit.Uncertain == nil && t.profileID == s.session().ProfileID && s.session().Connected
 	editable := ready && mysqlDataCanEdit(t, row, source)
-	var column mysqlsvc.MySQLStructureColumn
+	var column contract.StructureColumn
 	if source >= 0 && source < len(page.ColumnMetadata) {
 		column = page.ColumnMetadata[source]
 	}
@@ -431,7 +434,7 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *Document, m *ui.Menu, row, s
 	}
 	nullable := source >= 0 && source < len(page.ColumnMetadata) && page.ColumnMetadata[source].Nullable
 	if m.Item(locales.Text("设置为 NULL")).Disabled(!editable || !nullable).Chosen() {
-		s.setMySQLDataCell(c.Services(), t, row, source, mysqlsvc.MySQLDataValue{Null: true})
+		s.setMySQLDataCell(c.Services(), t, row, source, contract.DataValue{Null: true})
 	}
 	m.Submenu(locales.Text("生成 UUID"), func(sub *ui.Menu) {
 		for _, variant := range []struct {
@@ -447,7 +450,7 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *Document, m *ui.Menu, row, s
 					t.edit.Err = err.Error()
 					continue
 				}
-				s.setMySQLDataCell(c.Services(), t, row, source, mysqlsvc.MySQLDataValue{Text: value})
+				s.setMySQLDataCell(c.Services(), t, row, source, contract.DataValue{Text: value})
 			}
 		}
 	})
@@ -497,14 +500,17 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *Document, m *ui.Menu, row, s
 			}
 			// Binary previews are hex strings, not the server values; NULL
 			// predicates remain available even for binary or truncated fields.
-			valueAvailable := mysqlDataCellFilterValueAvailable(kind, cell)
+			valueAvailable := mysqlDataCellFilterValueAvailable(kind, cell) && (cell.Value == nil || cell.Value.Kind != contract.Binary)
 			for _, action := range []struct{ label, mode string }{
 				{"字段 = 值", "equal"}, {"字段 != 值", "not_equal"}, {"字段类似值", "like"}, {"字段不类似值", "not_like"},
 				{"字段 < 值", "less"}, {"字段 > 值", "greater"}, {"字段包含值", "contains"}, {"字段不包含值", "not_contains"},
 				{"为空", "is_null"}, {"不为空", "is_not_null"},
 			} {
+				if !t.supportsFilter(action.mode) {
+					continue
+				}
 				needsValue := action.mode != "is_null" && action.mode != "is_not_null"
-				disabled := !ready || (needsValue && !valueAvailable) || ((action.mode == "contains" || action.mode == "not_contains" || action.mode == "like" || action.mode == "not_like") && (!mysqlDataContainsType(kind) || cell.Null)) || ((action.mode == "less" || action.mode == "greater") && cell.Null)
+				disabled := !ready || (needsValue && !valueAvailable) || ((action.mode == "contains" || action.mode == "not_contains" || action.mode == "like" || action.mode == "not_like") && ((!t.portable() && !mysqlDataContainsType(kind)) || cell.Null)) || ((action.mode == "less" || action.mode == "greater") && cell.Null)
 				if sub.Item(locales.Text(action.label)).Disabled(disabled).Chosen() {
 					s.applyMySQLDataCellFilter(c.Services(), t, name, action.mode, cell)
 				}
@@ -547,7 +553,7 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *Document, m *ui.Menu, row, s
 	}
 }
 
-func mysqlDataCellFilterValueAvailable(kind string, cell mysqlsvc.MySQLDataCell) bool {
+func mysqlDataCellFilterValueAvailable(kind string, cell contract.DataCell) bool {
 	if cell.Truncated {
 		return false
 	}
@@ -558,11 +564,11 @@ func mysqlDataCellFilterValueAvailable(kind string, cell mysqlsvc.MySQLDataCell)
 	return true
 }
 
-func (s *State) applyMySQLDataCellFilter(services ui.Services, t *Document, name, mode string, cell mysqlsvc.MySQLDataCell) {
+func (s *State) applyMySQLDataCellFilter(services ui.Services, t *Document, name, mode string, cell contract.DataCell) {
 	if s.GuardLeave(t, func(next ui.Services) { s.applyMySQLDataCellFilter(next, t, name, mode, cell) }) {
 		return
 	}
-	if t.loading {
+	if t.loading || !t.supportsFilter(mode) {
 		return
 	}
 	if cell.Null {
@@ -573,9 +579,9 @@ func (s *State) applyMySQLDataCellFilter(services ui.Services, t *Document, name
 			mode = "is_not_null"
 		}
 	}
-	filters := append([]mysqlsvc.MySQLDataFilterRule(nil), t.filterRules...)
+	filters := append([]contract.DataFilterRule(nil), t.filterRules...)
 	if len(filters) == 0 && t.filterMode != "" {
-		filters = append(filters, mysqlsvc.MySQLDataFilterRule{Column: t.filterColumn, Mode: t.filterMode, Value: t.filterValue})
+		filters = append(filters, contract.DataFilterRule{Column: t.filterColumn, Mode: t.filterMode, Value: t.filterValue})
 	}
 	// Replace conditions on the clicked field and preserve other fields.
 	kept := filters[:0]
@@ -584,7 +590,7 @@ func (s *State) applyMySQLDataCellFilter(services ui.Services, t *Document, name
 			kept = append(kept, rule)
 		}
 	}
-	if len(kept) >= mysqlsvc.MySQLDataMaxFilterRules {
+	if len(kept) >= contract.DataMaxFilterRules {
 		t.ruleError = locales.Text("筛选条件已达到上限")
 		return
 	}
@@ -592,7 +598,7 @@ func (s *State) applyMySQLDataCellFilter(services ui.Services, t *Document, name
 	if mode == "is_null" || mode == "is_not_null" {
 		value = ""
 	}
-	t.filterRules = append(kept, mysqlsvc.MySQLDataFilterRule{Column: name, Mode: mode, Value: value})
+	t.filterRules = append(kept, contract.DataFilterRule{Column: name, Mode: mode, Value: value})
 	t.filterColumn, t.filterMode, t.filterValue = "", "", ""
 	t.filterExtraDraft = nil
 	for i, rule := range t.filterRules {
@@ -609,6 +615,10 @@ func (s *State) applyMySQLDataCellFilter(services ui.Services, t *Document, name
 
 func mysqlDataFilterModeLabel(mode string) string {
 	switch mode {
+	case "less_equal":
+		return "小于或等于"
+	case "greater_equal":
+		return "大于或等于"
 	case "like":
 		return "类似"
 	case "not_like":
@@ -695,28 +705,31 @@ func (s *State) clearMySQLDataCellRules(services ui.Services, t *Document) {
 	s.clearMySQLDataFilter(services, t)
 }
 
-func mysqlDataBinaryField(col mysqlsvc.MySQLStructureColumn) bool {
+func mysqlDataBinaryField(col contract.StructureColumn) bool {
+	if col.ValueKind == contract.Binary {
+		return true
+	}
 	switch strings.ToLower(col.DataType) {
 	case "binary", "varbinary", "tinyblob", "blob", "mediumblob", "longblob", "bit":
 		return true
 	}
 	return false
 }
-func mysqlDataSpatialField(col mysqlsvc.MySQLStructureColumn) bool {
+func mysqlDataSpatialField(col contract.StructureColumn) bool {
 	switch strings.ToLower(col.DataType) {
 	case "geometry", "point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon", "geometrycollection":
 		return true
 	}
 	return false
 }
-func mysqlDataEmptyValueAvailable(col mysqlsvc.MySQLStructureColumn) bool {
+func mysqlDataEmptyValueAvailable(col contract.StructureColumn) bool {
 	switch strings.ToLower(col.DataType) {
 	case "char", "varchar", "tinytext", "text", "mediumtext", "longtext":
 		return true
 	}
 	return mysqlDataBinaryField(col) && !strings.EqualFold(col.DataType, "bit")
 }
-func mysqlDataUUIDAvailable(col mysqlsvc.MySQLStructureColumn, compact bool) bool {
+func mysqlDataUUIDAvailable(col contract.StructureColumn, compact bool) bool {
 	// JSON, enum, numeric, temporal and binary fields cannot accept a textual
 	// UUID directly. Fixed/variable strings must have room for the chosen form.
 	switch strings.ToLower(col.DataType) {
@@ -731,11 +744,11 @@ func mysqlDataUUIDAvailable(col mysqlsvc.MySQLStructureColumn, compact bool) boo
 	return col.CharacterMaxLength == nil || *col.CharacterMaxLength >= length
 }
 
-func mysqlDataEmptyValue(col mysqlsvc.MySQLStructureColumn) mysqlsvc.MySQLDataValue {
+func mysqlDataEmptyValue(col contract.StructureColumn) contract.DataValue {
 	if mysqlDataBinaryField(col) {
-		return mysqlsvc.MySQLDataValue{Binary: true, Bytes: []byte{}}
+		return contract.DataValue{Binary: true, Bytes: []byte{}}
 	}
-	return mysqlsvc.MySQLDataValue{Text: ""}
+	return contract.DataValue{Text: ""}
 }
 
 func mysqlDataContainsType(kind string) bool {
@@ -760,9 +773,9 @@ func (s *State) removeMySQLDataFieldFilter(services ui.Services, t *Document, na
 	if s.GuardLeave(t, func(next ui.Services) { s.removeMySQLDataFieldFilter(next, t, name) }) {
 		return
 	}
-	filters := append([]mysqlsvc.MySQLDataFilterRule(nil), t.filterRules...)
+	filters := append([]contract.DataFilterRule(nil), t.filterRules...)
 	if len(filters) == 0 && t.filterMode != "" {
-		filters = append(filters, mysqlsvc.MySQLDataFilterRule{Column: t.filterColumn, Mode: t.filterMode, Value: t.filterValue})
+		filters = append(filters, contract.DataFilterRule{Column: t.filterColumn, Mode: t.filterMode, Value: t.filterValue})
 	}
 	kept := filters[:0]
 	for _, rule := range filters {
@@ -773,7 +786,7 @@ func (s *State) removeMySQLDataFieldFilter(services ui.Services, t *Document, na
 	t.filterRules = kept
 	t.filterColumn, t.filterMode, t.filterValue = "", "", ""
 	t.filterExtraDraft = nil
-	t.filterColumnDraft, t.filterModeDraft, t.filterValueDraft = "选择字段", "包含", ""
+	t.filterColumnDraft, t.filterModeDraft, t.filterValueDraft = "选择字段", t.defaultFilter(), ""
 	for i, rule := range kept {
 		draft := mysqlDataRuleDraft{Column: rule.Column, Mode: mysqlDataFilterModeLabel(rule.Mode), Value: rule.Value}
 		if i == 0 {

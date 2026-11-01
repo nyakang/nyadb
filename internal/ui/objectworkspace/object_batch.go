@@ -125,6 +125,16 @@ func (s *State) batchModal(c *ui.Context) {
 						ch := make(chan []mysqlsvc.ObjectBatchResult, 1)
 						b.result = ch
 						profile, generation, items, executor := b.profile, b.generation, append([]mysqlsvc.ObjectBatchItem(nil), b.items...), s.deps.BatchExecutor
+						if s.deps.AdministrationFor != nil {
+							admin := s.deps.AdministrationFor(profile)
+							if admin == nil {
+								cancel()
+								b.busy = false
+								b.result = nil
+								return
+							}
+							executor = admin.ApplyObjectBatch
+						}
 						go func() { ch <- executor(ctx, profile, generation, items); services.Invalidate() }()
 					}
 					var guard func(int, ui.Services)

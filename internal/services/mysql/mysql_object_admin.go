@@ -314,6 +314,12 @@ type mysqlGenerationContextKey struct{}
 func WithMySQLSessionGeneration(ctx context.Context, generation uint64) context.Context {
 	return context.WithValue(ctx, mysqlGenerationContextKey{}, generation)
 }
+
+// ExpectedMySQLSessionGeneration returns the identity captured by an async owner.
+func ExpectedMySQLSessionGeneration(ctx context.Context) uint64 {
+	generation, _ := ctx.Value(mysqlGenerationContextKey{}).(uint64)
+	return generation
+}
 func (m *MySQLSessionManager) expectedObjectGeneration(ctx context.Context, id int64) error {
 	if generation, ok := ctx.Value(mysqlGenerationContextKey{}).(uint64); ok && generation != 0 && m.SessionGeneration(id) != generation {
 		return ErrMySQLNotConnected

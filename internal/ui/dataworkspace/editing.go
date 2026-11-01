@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"reflect"
 	"slices"
 	"strings"
@@ -14,26 +15,25 @@ import (
 	"unicode/utf8"
 
 	"github.com/egoist/mygo/ui"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
 
-type mysqlDataSaver func(context.Context, int64, string, string, []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error)
-type mysqlDataRowReader func(context.Context, int64, string, string, mysqlsvc.MySQLRowRef) (*mysqlsvc.MySQLDataRow, error)
+type mysqlDataSaver func(context.Context, int64, string, string, []contract.DataEdit) (*contract.DataEditResult, error)
+type mysqlDataRowReader func(context.Context, int64, string, string, contract.RowRef) (*contract.DataRow, error)
 type mysqlRowDraft struct {
 	Key      string
 	Row      int
 	Kind     string
-	Original *mysqlsvc.MySQLRowSnapshot
-	Before   []mysqlsvc.MySQLDataCell
-	Values   map[string]mysqlsvc.MySQLDataValue
+	Original *contract.RowSnapshot
+	Before   []contract.DataCell
+	Values   map[string]contract.DataValue
 }
 type mysqlCellEditor struct {
+	Kind, InitialKind                             string
 	Key, Field, Text, Initial                     string
 	Row                                           int
-	Original                                      mysqlsvc.MySQLDataValue
+	Original                                      contract.DataValue
 	Dedicated, Open, Focused, Selected, Composing bool
 }
 type mysqlEditResult struct {
@@ -41,13 +41,13 @@ type mysqlEditResult struct {
 	Generation, Request uint64
 	Profile             int64
 	Keys                []string
-	Saved               *mysqlsvc.MySQLDataEditResult
-	Row                 *mysqlsvc.MySQLDataRow
+	Saved               *contract.DataEditResult
+	Row                 *contract.DataRow
 	TargetRow           int
 	TargetKey, Field    string
 	Dedicated           bool
 	Err                 error
-	Verification        *mysqlsvc.MySQLDataVerification
+	Verification        *contract.DataVerification
 }
 type mysqlCellHit struct {
 	Row, Source int
@@ -63,8 +63,9 @@ type mysqlDataEditState struct {
 	Request                   uint64
 	Cancel                    context.CancelFunc
 	Results                   <-chan mysqlEditResult
-	Uncertain                 *mysqlsvc.MySQLDataEditResult
+	Uncertain                 *contract.DataEditResult
 	UncertainKeys             []string
+	SaveErrorOpen             bool
 	LeaveOpen                 bool
 	LeaveNext                 func(ui.Services)
 	AfterSave                 func(ui.Services)
@@ -93,10 +94,10 @@ func mysqlDataDraftForRow(t *Document, row int) *mysqlRowDraft {
 	return t.edit.Drafts[mysqlDataRowKey(t, row)]
 }
 func mysqlDataCanEdit(t *Document, row, source int) bool {
-	if t == nil || t.page == nil || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil || row < 0 || row >= len(t.page.Rows) || source < 0 || source >= len(t.page.ColumnMetadata) {
+	if t == nil || t.page == nil || !t.editable() || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil || row < 0 || row >= len(t.page.Rows) || source < 0 || source >= len(t.page.ColumnMetadata) {
 		return false
 	}
-	if mysqlsvc.MySQLDataColumnGenerated(t.page.ColumnMetadata[source]) {
+	if t.page.ColumnMetadata[source].Generated || contract.DataColumnGenerated(t.page.ColumnMetadata[source]) {
 		return false
 	}
 	if d := mysqlDataDraftForRow(t, row); d != nil {
@@ -112,7 +113,7 @@ func mysqlDataHasDraft(t *Document) bool {
 		return true
 	}
 	e := t.edit.Editor
-	return e != nil && e.Text != e.Initial
+	return e != nil && (e.Text != e.Initial || e.Kind != e.InitialKind)
 }
 func (s *State) mysqlRowDraft(t *Document, row int) *mysqlRowDraft {
 	key := mysqlDataRowKey(t, row)
@@ -128,12 +129,22 @@ func (s *State) mysqlRowDraft(t *Document, row int) *mysqlRowDraft {
 	if row >= len(t.page.RowSnapshots) || t.page.RowSnapshots[row] == nil {
 		return nil
 	}
-	d := &mysqlRowDraft{Key: key, Row: row, Kind: "update", Original: t.page.RowSnapshots[row], Before: slices.Clone(t.page.Rows[row]), Values: map[string]mysqlsvc.MySQLDataValue{}}
+	d := &mysqlRowDraft{Key: key, Row: row, Kind: "update", Original: cloneSnapshot(t.page.RowSnapshots[row]), Before: clonePreviews(t.page.Rows[row]), Values: map[string]contract.DataValue{}}
 	t.edit.Drafts[key] = d
 	return d
 }
-func mysqlDataValuePreview(v mysqlsvc.MySQLDataValue) mysqlsvc.MySQLDataCell {
-	c := mysqlsvc.MySQLDataCell{Null: v.Null, Text: v.Text}
+func mysqlDataValuePreview(v contract.DataValue) contract.DataCell {
+	c := contract.DataCell{Null: v.Null, Text: v.Text}
+	if v.Kind != "" {
+		value := contract.Cell{Kind: v.Kind, Text: v.Text, Bytes: append([]byte(nil), v.Bytes...)}
+		if v.Null {
+			value.Kind = contract.Null
+		}
+		if v.Binary {
+			value.Kind = contract.Binary
+		}
+		c.Value = &value
+	}
 	if v.Default {
 		c.Text = "(Default)"
 	}
@@ -149,7 +160,7 @@ func mysqlDataValuePreview(v mysqlsvc.MySQLDataValue) mysqlsvc.MySQLDataCell {
 	}
 	return c
 }
-func (s *State) setMySQLDataCell(services ui.Services, t *Document, row, source int, v mysqlsvc.MySQLDataValue) {
+func (s *State) setMySQLDataCell(services ui.Services, t *Document, row, source int, v contract.DataValue) {
 	if !mysqlDataCanEdit(t, row, source) {
 		return
 	}
@@ -170,24 +181,35 @@ func (s *State) finishMySQLCellEdit(t *Document, accept bool) {
 		return
 	}
 	t.edit.Editor = nil
-	if !accept || e.Text == e.Initial {
+	if !accept || (e.Text == e.Initial && e.Kind == e.InitialKind) {
 		return
 	}
 	source := slices.Index(t.page.Columns, e.Field)
 	if source < 0 || mysqlDataRowKey(t, e.Row) != e.Key {
 		return
 	}
-	v := mysqlsvc.MySQLDataValue{Text: e.Text}
-	if e.Original.Binary {
+	v := contract.DataValue{Kind: e.Original.Kind, Text: e.Text}
+	if v.Kind == contract.Null {
+		v.Kind = t.page.ColumnMetadata[source].ValueKind
+	}
+	if t.portable() {
+		v.Kind = typedKind(e.Kind)
+		v.Null = v.Kind == contract.Null
+		v.Binary = v.Kind == contract.Binary
+		if v.Null {
+			v.Text = ""
+		}
+	}
+	if v.Binary || (!t.portable() && e.Original.Binary) {
 		raw, err := hex.DecodeString(strings.TrimPrefix(strings.TrimSpace(e.Text), "0x"))
 		if err != nil {
 			t.edit.Editor = e
 			t.edit.Err = locales.Text("二进制值必须是十六进制字节")
 			return
 		}
-		v = mysqlsvc.MySQLDataValue{Binary: true, Bytes: raw}
+		v = contract.DataValue{Kind: contract.Binary, Binary: true, Bytes: raw}
 	}
-	if len(v.Text)+len(v.Bytes) > mysqlsvc.MySQLDataEditMaxBytes {
+	if len(v.Text)+len(v.Bytes) > contract.DataEditMaxBytes {
 		t.edit.Editor = e
 		t.edit.Err = locales.Text("编辑内容超过 1 MiB 限制")
 		return
@@ -228,7 +250,10 @@ func (s *State) beginMySQLCellEdit(services ui.Services, t *Document, row, sourc
 	}
 	field := t.page.Columns[source]
 	cell := t.page.Rows[row][source]
-	v := mysqlsvc.MySQLDataValue{Text: cell.Text, Null: cell.Null}
+	v := contract.DataValue{Text: cell.Text, Null: cell.Null}
+	if cell.Value != nil {
+		v.Kind, v.Text, v.Bytes, v.Binary = cell.Value.Kind, cell.Value.Text, append([]byte(nil), cell.Value.Bytes...), cell.Value.Kind == contract.Binary
+	}
 	d := mysqlDataDraftForRow(t, row)
 	hasFullDraft := false
 	if d != nil {
@@ -236,11 +261,11 @@ func (s *State) beginMySQLCellEdit(services ui.Services, t *Document, row, sourc
 			v = draft
 			hasFullDraft = true
 		} else if d.Kind == "insert" {
-			v = mysqlsvc.MySQLDataValue{Default: true}
+			v = contract.DataValue{Default: true}
 		}
 	}
 	kind := strings.ToLower(t.page.ColumnMetadata[source].DataType)
-	binary := strings.Contains(kind, "blob") || kind == "binary" || kind == "varbinary" || kind == "bit"
+	binary := mysqlDataBinaryField(t.page.ColumnMetadata[source]) || v.Binary
 	spatial := strings.Contains(kind, "geometry") || kind == "point" || strings.Contains(kind, "line") || strings.Contains(kind, "polygon")
 	if spatial {
 		t.edit.Err = locales.Text("此字段类型暂不支持编辑")
@@ -260,7 +285,7 @@ func (s *State) beginMySQLCellEdit(services ui.Services, t *Document, row, sourc
 	s.openMySQLCellEditor(services, t, row, source, v, dedicated)
 }
 
-func (s *State) openMySQLCellEditor(services ui.Services, t *Document, row, source int, v mysqlsvc.MySQLDataValue, dedicated bool) {
+func (s *State) openMySQLCellEditor(services ui.Services, t *Document, row, source int, v contract.DataValue, dedicated bool) {
 	text := v.Text
 	if v.Null || v.Default {
 		text = ""
@@ -271,7 +296,7 @@ func (s *State) openMySQLCellEditor(services ui.Services, t *Document, row, sour
 	field := t.page.Columns[source]
 	dedicated = dedicated || mysqlDataEditorDockOpen(t)
 	t.edit.Err = ""
-	t.edit.Editor = &mysqlCellEditor{Key: mysqlDataRowKey(t, row), Field: field, Row: row, Text: text, Initial: text, Original: v, Dedicated: dedicated, Open: dedicated}
+	t.edit.Editor = &mysqlCellEditor{Key: mysqlDataRowKey(t, row), Field: field, Row: row, Text: text, Initial: text, Kind: typedKindLabel(v.Kind), InitialKind: typedKindLabel(v.Kind), Original: v, Dedicated: dedicated, Open: dedicated}
 	t.selectedRow = row
 	t.selection.Clear()
 	t.selection.Add(row)
@@ -285,7 +310,7 @@ func (s *State) startMySQLDataEditRead(services ui.Services, t *Document, row, s
 	t.edit.Busy = true
 	t.edit.Err = ""
 	t.edit.Request++
-	request, gen, profile := t.edit.Request, s.session().Generation, t.profileID
+	request, gen, profile := t.edit.Request, s.sessionFor(t).Generation, t.profileID
 	ref := cloneRowRef(*t.page.RowRefs[row])
 	key, field := mysqlDataRowKey(t, row), t.page.Columns[source]
 	db, table := t.database, t.table
@@ -298,7 +323,7 @@ func (s *State) startMySQLDataEditRead(services ui.Services, t *Document, row, s
 	}()
 }
 func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
-	if t == nil || t.page == nil || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil {
+	if t == nil || t.page == nil || !t.editable() || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil {
 		return
 	}
 	if !t.edit.Batch && mysqlDataHasDraft(t) {
@@ -307,12 +332,12 @@ func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
 		s.saveMySQLData(services, t)
 		return
 	}
-	if len(t.edit.Drafts) >= mysqlsvc.MySQLDataMaxPageSize {
+	if len(t.edit.Drafts) >= contract.DataMaxPageSize {
 		return
 	}
 	s.finishMySQLCellEdit(t, true)
 	row := len(t.page.Rows)
-	values := make([]mysqlsvc.MySQLDataCell, len(t.page.Columns))
+	values := make([]contract.DataCell, len(t.page.Columns))
 	for i := range values {
 		values[i].Text = "(Default)"
 	}
@@ -323,21 +348,21 @@ func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
 		t.edit.Drafts = map[string]*mysqlRowDraft{}
 	}
 	key := fmt.Sprintf("new:%d:%d", t.id, row)
-	t.edit.Drafts[key] = &mysqlRowDraft{Key: key, Row: row, Kind: "insert", Values: map[string]mysqlsvc.MySQLDataValue{}}
+	t.edit.Drafts[key] = &mysqlRowDraft{Key: key, Row: row, Kind: "insert", Values: map[string]contract.DataValue{}}
 	t.selectedRow = row
 	t.selection.Clear()
 	t.selection.Add(row)
 	mysqlDataClearColumnSelection(t)
 	mysqlDataScrollRecordIntoView(t, row)
 	for i, col := range t.page.ColumnMetadata {
-		if !mysqlsvc.MySQLDataColumnGenerated(col) && !strings.Contains(col.Extra, "auto_increment") && !t.hiddenColumns[col.Name] {
+		if !contract.DataColumnGenerated(col) && !strings.Contains(col.Extra, "auto_increment") && !t.hiddenColumns[col.Name] {
 			s.beginMySQLCellEdit(services, t, row, i, false)
 			break
 		}
 	}
 }
 func (s *State) deleteMySQLDataRecords(services ui.Services, t *Document, row int) {
-	if t == nil || t.page == nil || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil {
+	if t == nil || t.page == nil || !t.editable() || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil {
 		return
 	}
 	s.finishMySQLCellEdit(t, true)
@@ -369,7 +394,7 @@ func (s *State) deleteMySQLDataRecords(services ui.Services, t *Document, row in
 		} else {
 			d.Kind = "delete"
 		}
-		d.Values = map[string]mysqlsvc.MySQLDataValue{}
+		d.Values = map[string]contract.DataValue{}
 	}
 	s.removeMySQLDataDraftRows(t, func(d *mysqlRowDraft) bool { return d.Kind == "discard_insert" })
 	for key, d := range t.edit.Drafts {
@@ -383,7 +408,7 @@ func (s *State) deleteMySQLDataRecords(services ui.Services, t *Document, row in
 	}
 }
 func (s *State) saveMySQLData(services ui.Services, t *Document) {
-	if t == nil || t.closed || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil || t.profileID != s.session().ProfileID || !s.session().Connected {
+	if t == nil || t.closed || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil || !s.canUseSession(t) {
 		return
 	}
 	s.finishMySQLCellEdit(t, true)
@@ -395,10 +420,10 @@ func (s *State) saveMySQLData(services ui.Services, t *Document) {
 		keys = append(keys, key)
 	}
 	slices.SortFunc(keys, func(a, b string) int { return t.edit.Drafts[a].Row - t.edit.Drafts[b].Row })
-	edits := []mysqlsvc.MySQLDataEdit{}
+	edits := []contract.DataEdit{}
 	for _, key := range keys {
 		d := t.edit.Drafts[key]
-		edits = append(edits, mysqlsvc.MySQLDataEdit{Kind: d.Kind, Original: cloneSnapshot(d.Original), Values: cloneValues(d.Values)})
+		edits = append(edits, contract.DataEdit{Kind: d.Kind, Original: cloneSnapshot(d.Original), Values: cloneValues(d.Values)})
 	}
 	if len(edits) == 0 {
 		return
@@ -410,7 +435,7 @@ func (s *State) saveMySQLData(services ui.Services, t *Document) {
 		return
 	}
 	t.edit.Request++
-	request, gen, profile := t.edit.Request, s.session().Generation, t.profileID
+	request, gen, profile := t.edit.Request, s.sessionFor(t).Generation, t.profileID
 	ctx, cancel := context.WithCancel(context.Background())
 	t.edit.Cancel = cancel
 	t.edit.Busy = true
@@ -484,7 +509,7 @@ func (s *State) removeMySQLDataDraftRows(t *Document, remove func(*mysqlRowDraft
 	t.selection.Clear()
 	mysqlDataClearColumnSelection(t)
 }
-func (s *State) acceptMySQLDataSaved(t *Document, keys []string, saved *mysqlsvc.MySQLDataEditResult) {
+func (s *State) acceptMySQLDataSaved(t *Document, keys []string, saved *contract.DataEditResult) {
 	if saved == nil || len(saved.Outcomes) != len(keys) {
 		t.edit.Err = locales.Text("提交结果不完整，请核验数据库")
 		return
@@ -512,9 +537,9 @@ func (s *State) acceptMySQLDataSaved(t *Document, keys []string, saved *mysqlsvc
 						continue
 					}
 					idx := slices.Index(outcome.Saved.Ref.Columns, name)
-					value := mysqlsvc.MySQLDataValue{Text: string(outcome.Saved.Ref.Values[idx])}
+					value := contract.DataValue{Text: string(outcome.Saved.Ref.Values[idx])}
 					if j < len(t.page.ColumnMetadata) && mysqlDataBinaryField(t.page.ColumnMetadata[j]) {
-						value = mysqlsvc.MySQLDataValue{Binary: true, Bytes: outcome.Saved.Ref.Values[idx]}
+						value = contract.DataValue{Binary: true, Bytes: outcome.Saved.Ref.Values[idx]}
 					}
 					t.page.Rows[row][j] = mysqlDataValuePreview(value)
 				}
@@ -530,30 +555,30 @@ func (s *State) acceptMySQLDataSaved(t *Document, keys []string, saved *mysqlsvc
 }
 func (s *State) consumeEdits(services ui.Services) {
 	for _, t := range s.documents {
-		if t.closed || t.edit.Results == nil || t.profileID != s.session().ProfileID {
+		if t.closed || t.edit.Results == nil || !s.consumeFor(t) {
 			continue
 		}
 		select {
 		case r := <-t.edit.Results:
-			if r.Profile != s.session().ProfileID || r.Profile != t.profileID || r.Request != t.edit.Request {
+			if r.Profile != s.sessionFor(t).ProfileID || r.Profile != t.profileID || r.Request != t.edit.Request {
 				continue
 			}
-			s.recordDataWriteHistory(t, r.History, r.Saved, r.Err, r.Generation != s.session().Generation || !s.session().Connected)
+			s.recordDataWriteHistory(t, r.History, r.Saved, r.Err, r.Generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected)
 			if t.edit.Cancel != nil {
 				t.edit.Cancel()
 			}
 			t.edit.Cancel = nil
 			t.edit.Results = nil
 			t.edit.Busy = false
-			if r.Generation != s.session().Generation || !s.session().Connected {
+			if r.Generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected {
 				t.edit.AfterSave = nil
-				t.edit.Err = locales.Text("原 MySQL 会话已失效，请刷新表数据")
+				t.edit.Err = locales.Text("原数据库会话已失效，请刷新表数据")
 				// A write acknowledged by another generation must never replace
 				// this grid or become an automatic retry of the retained draft.
 				if len(r.Keys) > 0 {
 					t.edit.Uncertain = cloneEditResult(r.Saved)
 					if t.edit.Uncertain == nil {
-						t.edit.Uncertain = &mysqlsvc.MySQLDataEditResult{}
+						t.edit.Uncertain = &contract.DataEditResult{}
 					}
 					t.edit.Uncertain.CommitUncertain = true
 					t.edit.UncertainKeys = append([]string(nil), r.Keys...)
@@ -562,21 +587,30 @@ func (s *State) consumeEdits(services ui.Services) {
 				continue
 			}
 			if r.Err != nil {
-				if errors.Is(r.Err, mysqlsvc.ErrMySQLDataTransactionLost) {
+				if errors.Is(r.Err, contract.ErrDataTransactionLost) {
 					t.transaction.lost = true
 					t.transaction.err = r.Err.Error()
 				}
 				t.edit.Err = r.Err.Error()
+				if s.guardDoc == t {
+					t.edit.SaveErrorOpen = true
+					s.guardDoc = nil
+				}
 				t.edit.AfterSave = nil
-				if r.Saved != nil && r.Saved.CommitUncertain {
+				if r.Saved != nil && (r.Saved.CommitUncertain || r.Saved.Incomplete) {
 					t.edit.Uncertain = r.Saved
 					t.edit.UncertainKeys = r.Keys
-					s.verifyMySQLDataSave(services, t)
+					if !t.portable() {
+						s.verifyMySQLDataSave(services, t)
+					}
 				}
 				continue
 			}
 			if r.Verification != nil {
 				if r.Verification.Status == "applied" {
+					if r.Verification.Recovered != nil {
+						t.edit.Uncertain = cloneEditResult(r.Verification.Recovered)
+					}
 					if t.edit.Uncertain == nil || len(t.edit.Uncertain.Outcomes) != len(t.edit.UncertainKeys) {
 						t.edit.Err = locales.Text("提交结果不完整，请核验数据库")
 						continue
@@ -584,10 +618,16 @@ func (s *State) consumeEdits(services ui.Services) {
 					s.acceptMySQLDataSaved(t, t.edit.UncertainKeys, t.edit.Uncertain)
 					t.edit.Uncertain = nil
 					t.edit.UncertainKeys = nil
+					if t.transaction.uncertain {
+						s.closeDataTransaction(t)
+					}
 					t.edit.Err = locales.Text("已核验：数据更改已提交")
 				} else if r.Verification.Status == "not_applied" {
 					t.edit.Uncertain = nil
 					t.edit.UncertainKeys = nil
+					if t.transaction.uncertain {
+						s.closeDataTransaction(t)
+					}
 					t.edit.Err = locales.Text("已核验：更改未提交，草稿已保留")
 				} else {
 					t.edit.Err = locales.Text("提交结果仍不确定，禁止重放；请检查数据库")
@@ -601,13 +641,13 @@ func (s *State) consumeEdits(services ui.Services) {
 					source = slices.Index(t.page.Columns, r.Field)
 				}
 				if r.Row == nil || source < 0 || !mysqlDataCanEdit(t, row, source) || mysqlDataRowKey(t, row) != r.TargetKey || row >= len(t.page.RowSnapshots) || !reflect.DeepEqual(t.page.RowSnapshots[row], r.Row.Snapshot) {
-					t.edit.Err = mysqlsvc.ErrMySQLDataConflict.Error()
+					t.edit.Err = contract.ErrDataConflict.Error()
 					continue
 				}
 				field := r.Field
 				v, ok := r.Row.Values[field]
 				if !ok {
-					t.edit.Err = mysqlsvc.ErrMySQLDataPage.Error()
+					t.edit.Err = contract.ErrDataPage.Error()
 					continue
 				}
 				if d := mysqlDataDraftForRow(t, row); d != nil {
@@ -618,10 +658,10 @@ func (s *State) consumeEdits(services ui.Services) {
 				s.openMySQLCellEditor(services, t, row, source, v, r.Dedicated)
 				continue
 			}
-			if r.Saved == nil || len(r.Saved.Outcomes) != len(r.Keys) {
+			if r.Saved == nil || r.Saved.CommitUncertain || r.Saved.Incomplete || len(r.Saved.Outcomes) != len(r.Keys) {
 				t.edit.Uncertain = cloneEditResult(r.Saved)
 				if t.edit.Uncertain == nil {
-					t.edit.Uncertain = &mysqlsvc.MySQLDataEditResult{}
+					t.edit.Uncertain = &contract.DataEditResult{}
 				}
 				t.edit.Uncertain.CommitUncertain = true
 				t.edit.UncertainKeys = append([]string(nil), r.Keys...)
@@ -647,17 +687,17 @@ func (s *State) consumeEdits(services ui.Services) {
 	}
 }
 func (s *State) verifyMySQLDataSave(services ui.Services, t *Document) {
-	if dataTransactionActive(t) || t.edit.Uncertain == nil || t.edit.Busy || s.verifier() == nil {
+	if !s.canUseSession(t) || (dataTransactionActive(t) && !t.transaction.uncertain) || t.edit.Uncertain == nil || t.edit.Busy || s.verifierFor(t) == nil {
 		return
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	t.edit.Cancel = cancel
 	t.edit.Busy = true
 	t.edit.Request++
-	request, gen, profile := t.edit.Request, s.session().Generation, t.profileID
+	request, gen, profile := t.edit.Request, s.sessionFor(t).Generation, t.profileID
 	out := make(chan mysqlEditResult, 1)
 	t.edit.Results = out
-	verify := s.verifier()
+	verify := s.verifierFor(t)
 	db, table, result := t.database, t.table, cloneEditResult(t.edit.Uncertain)
 	go func() {
 		v, e := verify(ctx, profile, db, table, result)
@@ -681,10 +721,10 @@ func (s *State) GuardLeave(t *Document, next func(ui.Services)) bool {
 	return true
 }
 
-func stageMySQLDataValue(t *Document, d *mysqlRowDraft, source int, v mysqlsvc.MySQLDataValue) {
+func stageMySQLDataValue(t *Document, d *mysqlRowDraft, source int, v contract.DataValue) {
 	field := t.page.Columns[source]
 	preview := mysqlDataValuePreview(v)
-	if d.Kind == "update" && source < len(d.Before) && !d.Before[source].Truncated && !v.Default && preview == d.Before[source] {
+	if d.Kind == "update" && source < len(d.Before) && !d.Before[source].Truncated && !v.Default && samePreview(preview, d.Before[source]) {
 		delete(d.Values, field)
 	} else {
 		d.Values[field] = v
@@ -775,7 +815,7 @@ func (s *State) navigateMySQLCellEdit(services ui.Services, t *Document, row int
 	}
 	for _, name := range order {
 		source := slices.Index(t.page.Columns, name)
-		if source >= 0 && !t.hiddenColumns[name] && !mysqlsvc.MySQLDataColumnGenerated(t.page.ColumnMetadata[source]) {
+		if source >= 0 && !t.hiddenColumns[name] && !t.page.ColumnMetadata[source].Generated || contract.DataColumnGenerated(t.page.ColumnMetadata[source]) {
 			visible = append(visible, name)
 		}
 	}
@@ -832,6 +872,7 @@ func (s *State) Modals(c *ui.Context) {
 					if e.Original.Binary {
 						ui.Text(c, locales.Text("二进制值以十六进制编辑"))
 					}
+					s.typedEditorChoice(c, t, e)
 					ui.TextArea(c, &e.Text).Label(locales.Text("专用单元格编辑") + " " + e.Field).FillWidth().Height(280).AutoFocus().FontSize(theme.Font(c, 12))
 					if t.edit.Err != "" {
 						ui.Text(c, t.edit.Err).TextColor(theme.Colors(c).Error)
@@ -850,6 +891,9 @@ func (s *State) Modals(c *ui.Context) {
 				s.finishMySQLCellEdit(t, false)
 			}
 		}
+		if t.edit.SaveErrorOpen {
+			ui.AlertDialog(c, &t.edit.SaveErrorOpen, locales.Text("数据编辑服务不可用"), t.edit.Err, locales.Text("确定"))
+		}
 		if t.edit.LeaveOpen {
 			choice := ui.AlertDialog(c, &t.edit.LeaveOpen, locales.Text("待处理记录"), locales.Text("是否将待保存的数据更改应用到数据库？"), locales.Text("应用更改"), locales.Text("放弃"), locales.Text("取消"))
 			next := t.edit.LeaveNext
@@ -865,8 +909,13 @@ func (s *State) Modals(c *ui.Context) {
 			}
 			if choice == 0 {
 				t.edit.LeaveNext = nil
-				t.edit.AfterSave = next
-				s.activate(t)
+				t.edit.AfterSave = func(services ui.Services) {
+					s.guardDoc = nil
+					if next != nil {
+						next(services)
+					}
+				}
+				s.guardDoc = t
 				s.saveMySQLData(c.Services(), t)
 			}
 		}
@@ -927,4 +976,23 @@ func (s *State) mysqlDataGridPointer(services ui.Services, t *Document, bounds u
 		}
 	}
 	return false
+}
+
+func samePreview(a, b contract.DataCell) bool {
+	if a.Null && b.Null {
+		return true
+	}
+	if a.Null != b.Null || a.Text != b.Text || a.Truncated != b.Truncated {
+		return false
+	}
+	if a.Value == nil || b.Value == nil {
+		return true
+	}
+	return reflect.DeepEqual(a.Value, b.Value)
+}
+func (s *State) verifierFor(d *Document) Verifier {
+	if s.Verify != nil {
+		return s.Verify
+	}
+	return s.runtimeFor(d).Verify
 }

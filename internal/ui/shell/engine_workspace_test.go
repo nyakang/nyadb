@@ -59,35 +59,35 @@ func TestSQLiteRealProfileSchemaDataSQLDisconnectKeepsText(t *testing.T) {
 	}
 	s.submitNavigation(services, navigation.Node{Kind: "object", ProfileID: profile.ID, Database: "main", Object: "records", Category: "表"})
 	dataTab := s.currentTab()
-	if dataTab.kind != tabEngineData || dataTab.engine.Object.Catalog != "main" || dataTab.engine.Object.Schema != "main" {
+	if dataTab.kind != tabMySQLData || dataTab.data.Object().Catalog != "main" || dataTab.data.Object().Schema != "main" {
 		t.Fatalf("qualified generic document absent %+v", dataTab)
 	}
 	deadline = time.Now().Add(3 * time.Second)
-	for dataTab.engine.Busy && time.Now().Before(deadline) {
+	for dataTab.data.Busy() && time.Now().Before(deadline) {
 		tt.Frame()
 		time.Sleep(2 * time.Millisecond)
 	}
 	tt.Frame()
-	if dataTab.engine.Page == nil || !tt.HasText("before") {
-		t.Fatalf("native real grid missing %s", dataTab.engine.Error)
+	if dataTab.data.Page() == nil || !tt.HasText("before") {
+		t.Fatalf("native real grid missing %s", dataTab.data.Error())
 	}
-	s.engineData.EditCell(dataTab.engine, 0, "note", contract.Cell{Kind: contract.Text, Text: "changed in grid"})
-	if e = tt.Click("保存修改"); e != nil {
+	s.dataWorkspace.EditCell(services, dataTab.data, 0, "note", contract.Cell{Kind: contract.Text, Text: "changed in grid"})
+	if e = tt.Click("保存数据更改"); e != nil {
 		t.Fatal(e)
 	}
 	deadline = time.Now().Add(3 * time.Second)
-	for dataTab.engine.Busy && time.Now().Before(deadline) {
+	for dataTab.data.Busy() && time.Now().Before(deadline) {
 		tt.Frame()
 		time.Sleep(2 * time.Millisecond)
 	}
-	if dataTab.engine.Page.Rows[0][1].Text != "changed in grid" {
-		t.Fatalf("graphical write not saved %s", dataTab.engine.Error)
+	if dataTab.data.Page().Rows[0][1].Text != "changed in grid" {
+		t.Fatalf("graphical write not saved %s", dataTab.data.Error())
 	}
 	s.openMySQLStructure(services, "main", "records")
-	if s.currentTab().engine == nil || !s.currentTab().engine.StructureView {
+	if s.currentTab().object == nil || s.currentTab().kind != tabStructure {
 		t.Fatal("generic structure entry dispatched to MySQL designer")
 	}
-	s.currentTab().engine.StructureView = false
+
 	s.openQuery()
 	sqlTab := s.currentTab()
 	sql := `SELECT NULL AS null_value,'NULL' AS text_value,'' AS empty_value,x'' AS binary_value,note FROM records; SELECT 2;`
@@ -104,11 +104,11 @@ func TestSQLiteRealProfileSchemaDataSQLDisconnectKeepsText(t *testing.T) {
 	}
 	s.disconnectMySQLProfile(profile.ID)
 	tt.Frame()
-	if s.engines.IsConnected(profile.ID) || !sqlTab.query.NeedsRecovery() || sqlTab.query.Editor.Buffer.String() != sql {
+	if s.runtime.IsConnected(profile.ID) || !sqlTab.query.NeedsRecovery() || sqlTab.query.Editor.Buffer.String() != sql {
 		t.Fatal("disconnect discarded SQL or allowed implicit session recovery")
 	}
 	for _, tab := range s.tabs {
-		if tab.engine != nil {
+		if tab.data != nil {
 			t.Fatal("disconnect left scoped data document")
 		}
 	}

@@ -17,6 +17,7 @@ func TestNavigationResolvesActiveTabOnlyInMatchingSessionAndSnapshot(t *testing.
 	s.loadProfiles()
 	s.sessions.Current().ProfileID = p.ID
 	s.sessions.Current().Status = "已连接"
+	publishRuntimeFixture(t, s)
 	s.sessions.Current().Database = "app"
 	s.sessions.Current().Cache = map[string][]mysqlsvc.MySQLDBObject{
 		"app": {{Name: "customers", Kind: "表"}, {Name: "invoices", Kind: "表"}},

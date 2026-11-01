@@ -17,6 +17,7 @@ func TestProgramDefinitionTabIsReadOnlyAndScopedToProfile(t *testing.T) {
 	s := New()
 	s.sessions.Current().ProfileID = 41
 	s.sessions.Current().Status = "已连接"
+	publishRuntimeFixture(t, s)
 	s.sessions.Current().Cache = map[string][]mysqlsvc.MySQLDBObject{
 		"app": {{Name: "run_cleanup", Kind: "存储过程", Definition: "DELETE FROM logs"}},
 	}
@@ -187,6 +188,7 @@ func TestProgramTabCloseAndCloseOthersReleaseOnlyRemovedDefinitions(t *testing.T
 		t.Run(fmt.Sprint(closeOthers), func(t *testing.T) {
 			s := New()
 			s.sessions.Current().ProfileID, s.sessions.Current().Status = 41, "已连接"
+			publishRuntimeFixture(t, s)
 			s.sessions.Current().Cache = map[string][]mysqlsvc.MySQLDBObject{"app": {{Name: "first", Kind: "函数", Definition: "SELECT 1"}, {Name: "second", Kind: "事件", Definition: "DELETE FROM logs"}}}
 			s.openMySQLProgram("app", "first", "函数")
 			first := s.currentTab()

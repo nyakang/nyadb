@@ -8,22 +8,18 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"io"
 	"net"
-	"net/url"
-	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
-	_ "modernc.org/sqlite"
 )
 
-var ErrRevoked = errors.New("database session revoked; reconnect explicitly")
+var ErrRevoked = contract.ErrRevoked
 var ErrConflict = errors.New("row changed or no longer exists")
 var ErrUncertain = errors.New("commit outcome uncertain; do not replay")
 
@@ -50,45 +46,13 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 	intent := m.next
 	m.intents[p.ID] = intent
 	m.mu.Unlock()
-	var db *sql.DB
-	if p.Kind == connections.PostgreSQL {
-		u := url.URL{Scheme: "postgres", Host: net.JoinHostPort(p.Host, strconv.Itoa(int(p.Port))), Path: "/" + p.Database, User: url.UserPassword(p.Username, password)}
-		q := u.Query()
-		mode := p.TLSMode
-		if mode == "" {
-			mode = "require"
-		}
-		switch mode {
-		case "disable", "prefer", "require", "verify-ca", "verify-full":
-		default:
-			return errors.New("unsupported PostgreSQL TLS mode")
-		}
-		q.Set("sslmode", mode)
-		q.Set("connect_timeout", "10")
-		u.RawQuery = q.Encode()
-		cfg, e := pgx.ParseConfig(u.String())
-		if e != nil {
-			return errors.New("invalid PostgreSQL configuration")
-		}
-		if m.DialContext != nil {
-			cfg.DialFunc = m.DialContext
-		}
-		db = stdlib.OpenDB(*cfg)
-	} else {
-		abs, e := filepath.Abs(p.Database)
-		if e != nil {
-			return e
-		}
-		u := url.URL{Scheme: "file", Path: abs}
-		q := u.Query()
-		q.Add("_pragma", "busy_timeout(1000)")
-		q.Add("_pragma", "foreign_keys(1)")
-		u.RawQuery = q.Encode()
-		var e2 error
-		db, e2 = sql.Open("sqlite", u.String())
-		if e2 != nil {
-			return e2
-		}
+	strategy, err := strategyFor(p.Kind)
+	if err != nil {
+		return err
+	}
+	db, err := strategy.open(p, password, m.DialContext)
+	if err != nil {
+		return err
 	}
 	db.SetMaxOpenConns(8)
 	db.SetMaxIdleConns(2)
@@ -103,7 +67,7 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 		return ErrRevoked
 	}
 	sessionCtx, sessionCancel := context.WithCancel(context.Background())
-	s := &Session{db: db, kind: p.Kind, id: p.ID, generation: intent, ctx: sessionCtx, cancel: sessionCancel, catalog: p.Database, leases: make(map[*Lease]bool), transactions: make(map[*Tx]bool)}
+	s := &Session{db: db, strategy: strategy, kind: p.Kind, id: p.ID, generation: intent, ctx: sessionCtx, cancel: sessionCancel, catalog: p.Database, leases: make(map[*Lease]bool), transactions: make(map[*Tx]bool)}
 	old := m.sessions[p.ID]
 	m.sessions[p.ID] = s
 	m.mu.Unlock()
@@ -156,6 +120,7 @@ func (m *Manager) Close() error {
 }
 
 type Session struct {
+	strategy     dialectStrategy
 	db           *sql.DB
 	ctx          context.Context
 	cancel       context.CancelFunc
@@ -171,14 +136,10 @@ type Session struct {
 
 func (s *Session) ProfileID() int64   { return s.id }
 func (s *Session) Generation() uint64 { return s.generation }
-func (s *Session) Catalog() string {
-	if s.kind == connections.SQLite {
-		return "main"
-	}
-	return s.catalog
-}
+func (s *Session) Catalog() string    { return s.strategy.catalog(s.catalog) }
 func (s *Session) Capabilities() contract.Capabilities {
-	return contract.Capabilities{Schemas: true, Transactions: true, EditableTables: true, Explain: true}
+	d, _ := connections.Describe(s.kind)
+	return d.Capabilities
 }
 func (s *Session) isClosed() bool { s.mu.Lock(); defer s.mu.Unlock(); return s.closed }
 func (s *Session) Close() error {
@@ -215,19 +176,14 @@ func (s *Session) check(o contract.ObjectRef) error {
 	if o.ProfileID != s.id || o.Catalog != s.Catalog() || o.Schema == "" || o.Name == "" {
 		return errors.New("object identity does not match session")
 	}
-	if s.kind == connections.SQLite && o.Schema != "main" {
-		return errors.New("SQLite supports main schema only")
+	if err := s.strategy.namespace(o.Schema); err != nil {
+		return err
 	}
 	return nil
 }
 func quote(v string) string                 { return `"` + strings.ReplaceAll(v, `"`, `""`) + `"` }
 func qualified(o contract.ObjectRef) string { return quote(o.Schema) + "." + quote(o.Name) }
-func (s *Session) arg(i int) string {
-	if s.kind == connections.PostgreSQL {
-		return "$" + strconv.Itoa(i)
-	}
-	return "?"
-}
+func (s *Session) arg(i int) string         { return s.strategy.argument(i) }
 func (s *Session) Reserve(ctx context.Context) (contract.SQLLease, error) {
 	if s.isClosed() {
 		return nil, ErrRevoked
@@ -296,6 +252,7 @@ func (l *Lease) Stream(ctx context.Context, q string, sink contract.StreamSink) 
 	r, e := execute(ctx, l.c, l.s.kind, q, sink)
 	r.Duration = time.Since(start)
 	r.SetLegacyView()
+	e = l.connectionError(ctx, e)
 	return r, e
 }
 
@@ -306,26 +263,33 @@ func (s *Session) requestContext(ctx context.Context) (context.Context, context.
 }
 
 func (l *Lease) SetSchema(ctx context.Context, schema string) error {
-	if schema == "" {
-		return nil
-	}
-	if l.s.kind == connections.SQLite {
-		if schema != "main" {
-			return errors.New("SQLite only supports main")
-		}
-		return nil
-	}
-	l.ops.Lock()
-	defer l.ops.Unlock()
 	l.mu.Lock()
 	closed := l.closed
 	l.mu.Unlock()
 	if closed || l.s.isClosed() {
-		return ErrRevoked
+		return contract.ErrRevoked
 	}
-	ctx, cancel := context.WithCancel(ctx)
+	if schema == "" {
+		return nil
+	}
+	child, cancel := context.WithCancel(ctx)
 	stop := context.AfterFunc(l.ctx, cancel)
 	defer func() { stop(); cancel() }()
-	_, e := l.c.ExecContext(ctx, "SET search_path TO "+quote(schema))
-	return e
+	return l.connectionError(child, l.s.strategy.setSchema(child, l.c, schema))
+}
+
+func (l *Lease) connectionError(ctx context.Context, err error) error {
+	if err == nil {
+		return nil
+	}
+	lost := errors.Is(err, sql.ErrConnDone) || errors.Is(err, driver.ErrBadConn) || errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) || (pgconn.Timeout(err) && ctx.Err() == nil)
+	var pg *pgconn.PgError
+	if errors.As(err, &pg) {
+		lost = lost || pg.Severity == "FATAL" || pg.Severity == "PANIC" || strings.HasPrefix(pg.Code, "08")
+	}
+	if lost {
+		_ = l.Close()
+		return errors.Join(contract.ErrSQLSessionLost, err)
+	}
+	return err
 }

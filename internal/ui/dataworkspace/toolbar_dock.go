@@ -147,6 +147,7 @@ func (s *State) dataDock(c *ui.Context, t *Document) {
 			editable = false
 		}
 		if editable {
+			s.typedEditorChoice(c, t, e)
 			ui.TextArea(c, &e.Text).Label(locales.Text("单元格编辑器内容")).FillWidth().Grow(1).MinHeight(50).FontSize(theme.Font(c, 12))
 		} else {
 			ui.TextArea(c, &text).Label(locales.Text("单元格预览")).ReadOnly(true).FillWidth().Grow(1).MinHeight(50).FontSize(theme.Font(c, 12))

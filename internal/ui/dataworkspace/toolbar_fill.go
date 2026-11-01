@@ -2,12 +2,12 @@ package dataworkspace
 
 import (
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -70,12 +70,12 @@ func (s *State) fillSelectedData(t *Document) error {
 			return fmt.Errorf("%s", locales.Text("序列起点或步长无效"))
 		}
 	}
-	if len(t.fill.Text) > mysqlsvc.MySQLDataEditMaxBytes {
+	if len(t.fill.Text) > contract.DataEditMaxBytes {
 		return fmt.Errorf("%s", locales.Text("编辑内容超过 1 MiB 限制"))
 	}
 	type target struct {
 		row, source int
-		value       mysqlsvc.MySQLDataValue
+		value       contract.DataValue
 	}
 	targets := []target{}
 	value := start
@@ -85,12 +85,12 @@ func (s *State) fillSelectedData(t *Document) error {
 				mysqlDataBinaryField(t.page.ColumnMetadata[source]) && t.fill.Mode != "NULL" {
 				return fmt.Errorf("%s", locales.Text("选区包含不可编辑单元格"))
 			}
-			v := mysqlsvc.MySQLDataValue{Text: t.fill.Text}
+			v := contract.DataValue{Text: t.fill.Text}
 			if t.fill.Mode == "NULL" {
 				if !t.page.ColumnMetadata[source].Nullable {
 					return fmt.Errorf("%s", locales.Text("选区包含不允许 NULL 的字段"))
 				}
-				v = mysqlsvc.MySQLDataValue{Null: true}
+				v = contract.DataValue{Null: true}
 			}
 			if t.fill.Mode == "序列" {
 				v.Text = strconv.FormatInt(value, 10)

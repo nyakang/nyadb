@@ -2,14 +2,13 @@ package dataworkspace
 
 import (
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"math"
 	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -35,7 +34,7 @@ func (s *State) mysqlDataZoomMenu(t *Document, m *ui.Menu) {
 	})
 }
 
-func (s *State) mysqlDataHeaderActionMenu(c *ui.Context, t *Document, page *mysqlsvc.MySQLDataPage, source int, m *ui.Menu) {
+func (s *State) mysqlDataHeaderActionMenu(c *ui.Context, t *Document, page *contract.DataPage, source int, m *ui.Menu) {
 	if source < 0 || source >= len(page.Columns) {
 		return
 	}
@@ -74,7 +73,7 @@ func (s *State) mysqlDataAddHeaderFilter(t *Document, name string) {
 	}
 	if t.filterColumnDraft == "" || t.filterColumnDraft == "选择字段" {
 		t.filterColumnDraft, t.filterModeDraft, t.filterValueDraft = name, "精确匹配", ""
-	} else if len(t.filterExtraDraft)+1 < mysqlsvc.MySQLDataMaxFilterRules {
+	} else if len(t.filterExtraDraft)+1 < contract.DataMaxFilterRules {
 		t.filterExtraDraft = append(t.filterExtraDraft, mysqlDataRuleDraft{Column: name, Mode: "精确匹配"})
 	} else {
 		t.ruleError = locales.Text("筛选条件已达到上限")
@@ -84,7 +83,7 @@ func (s *State) mysqlDataAddHeaderFilter(t *Document, name string) {
 	t.layout.filterFocus = name
 }
 
-func (s *State) mysqlDataHeaderMenu(c *ui.Context, t *Document, page *mysqlsvc.MySQLDataPage, indices []int, m *ui.Menu, col int) {
+func (s *State) mysqlDataHeaderMenu(c *ui.Context, t *Document, page *contract.DataPage, indices []int, m *ui.Menu, col int) {
 	if col < 0 || col >= len(indices) {
 		return
 	}
@@ -193,7 +192,7 @@ func (s *State) mysqlDataColumnWidthModal(c *ui.Context, t *Document) {
 
 // Fit only the cached page, using the same font shaping as the actual grid.
 // It includes every header line and reserves room for the native action button.
-func mysqlDataFitColumn(c *ui.Context, t *Document, page *mysqlsvc.MySQLDataPage, source int) {
+func mysqlDataFitColumn(c *ui.Context, t *Document, page *contract.DataPage, source int) {
 	if source < 0 || source >= len(page.Columns) || source >= len(t.columns) {
 		return
 	}

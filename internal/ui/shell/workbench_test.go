@@ -19,6 +19,7 @@ func fixtureDataTab(t *testing.T, s *State, page *mysqlsvc.MySQLDataPage) *tab {
 	t.Helper()
 	s.sessions.Current().ProfileID = 19
 	s.sessions.Current().Status = "已连接"
+	publishRuntimeFixture(t, s)
 	s.dataWorkspace.Loader = func(context.Context, int64, string, string, int64, int) (*mysqlsvc.MySQLDataPage, error) {
 		return page, nil
 	}

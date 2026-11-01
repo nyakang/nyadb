@@ -4,13 +4,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"math"
 	"strings"
 	"time"
 
 	"github.com/egoist/mygo/ui"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -55,11 +54,26 @@ func (s *State) SetDataLayoutPreferences(read func(string) (string, error), writ
 }
 
 func mysqlDataLayoutKey(t *Document) string {
+	if t.portable() {
+		identity, _ := json.Marshal(t.object)
+		return "engine_data_layout:" + base64.RawURLEncoding.EncodeToString(identity)
+	}
 	identity, _ := json.Marshal([]any{t.profileID, t.database, t.table})
 	return "mysql_data_layout:" + base64.RawURLEncoding.EncodeToString(identity)
 }
 
 func mysqlDataLayoutSnapshot(t *Document) string {
+	if t.portable() {
+		encoded, err := json.Marshal(struct {
+			Version int                `json:"version"`
+			Order   []string           `json:"order,omitempty"`
+			Widths  map[string]float32 `json:"widths,omitempty"`
+		}{1, t.grid.Columns.Order, t.grid.Columns.Widths})
+		if err != nil {
+			return ""
+		}
+		return string(encoded)
+	}
 	encoded, err := json.Marshal(mysqlDataSavedLayout{
 		Version: mysqlDataLayoutVersion, Order: t.grid.Columns.Order,
 		Widths: t.grid.Columns.Widths, HiddenColumns: t.hiddenColumns,
@@ -127,11 +141,13 @@ func (s *State) restoreMySQLDataLayout(t *Document) {
 				var layout mysqlDataSavedLayout
 				if json.Unmarshal([]byte(value), &layout) == nil && layout.Version == mysqlDataLayoutVersion {
 					t.grid.Columns = ui.TableLayout{Order: layout.Order, Widths: layout.Widths}
-					t.hiddenColumns = layout.HiddenColumns
-					t.showFieldTypes = layout.ShowFieldTypes
-					t.layout.showRowNumbers = layout.ShowRowNumbers
-					t.layout.showComments = layout.ShowComments
-					t.edit.Zoom = mysqlDataValidZoom(layout.Zoom)
+					if !t.portable() {
+						t.hiddenColumns = layout.HiddenColumns
+						t.showFieldTypes = layout.ShowFieldTypes
+						t.layout.showRowNumbers = layout.ShowRowNumbers
+						t.layout.showComments = layout.ShowComments
+						t.edit.Zoom = mysqlDataValidZoom(layout.Zoom)
+					}
 				}
 			}
 		}
@@ -207,7 +223,7 @@ func mysqlDataRowHeaderText(t *Document, row int) string {
 	return fmt.Sprint(t.offset + int64(row) + 1)
 }
 
-func mysqlVisibleDataColumns(t *Document, page *mysqlsvc.MySQLDataPage) ([]int, []ui.TableColumn) {
+func mysqlVisibleDataColumns(t *Document, page *contract.DataPage) ([]int, []ui.TableColumn) {
 	indices := make([]int, 0, len(page.Columns))
 	visible := make([]ui.TableColumn, 0, len(page.Columns))
 	for i, name := range page.Columns {
@@ -272,7 +288,7 @@ func mysqlColumnKeyBadge(key string) string {
 	return ""
 }
 
-func mysqlDataCopyColumnPreview(page *mysqlsvc.MySQLDataPage, col int) string {
+func mysqlDataCopyColumnPreview(page *contract.DataPage, col int) string {
 	if col < 0 || col >= len(page.Columns) {
 		return ""
 	}
@@ -287,7 +303,7 @@ func mysqlDataCopyColumnPreview(page *mysqlsvc.MySQLDataPage, col int) string {
 	return strings.Join(values, "\n")
 }
 
-func mysqlDataHideColumn(t *Document, page *mysqlsvc.MySQLDataPage, column string) {
+func mysqlDataHideColumn(t *Document, page *contract.DataPage, column string) {
 	visible, _ := mysqlVisibleDataColumns(t, page)
 	if len(visible) <= 1 {
 		return
@@ -317,7 +333,7 @@ func mysqlDataHideColumn(t *Document, page *mysqlsvc.MySQLDataPage, column strin
 }
 
 // The toolbar and each native header expose the same column preferences.
-func (s *State) mysqlDataColumnsMenu(c *ui.Context, t *Document, page *mysqlsvc.MySQLDataPage, m *ui.Menu) {
+func (s *State) mysqlDataColumnsMenu(c *ui.Context, t *Document, page *contract.DataPage, m *ui.Menu) {
 	if page == nil {
 		return
 	}

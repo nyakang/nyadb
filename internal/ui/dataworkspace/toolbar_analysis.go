@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"math/big"
 	"regexp"
 	"sort"
@@ -12,8 +13,6 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -51,14 +50,14 @@ type mysqlDataAnalysis struct {
 	FilterCount     int
 }
 
-type mysqlDataAnalyzer func(context.Context, int64, string, string, mysqlsvc.MySQLDataOptions, []string) (*mysqlsvc.MySQLDataAnalysis, error)
+type mysqlDataAnalyzer func(context.Context, int64, string, string, contract.DataOptions, []string) (*contract.DataAnalysis, error)
 
 type mysqlDataAnalysisResult struct {
 	Profile             int64
 	Generation, Request uint64
 	Scope               string
 	FilterCount         int
-	Result              *mysqlsvc.MySQLDataAnalysis
+	Result              *contract.DataAnalysis
 	Err                 error
 }
 
@@ -265,7 +264,7 @@ func (s *State) startDataAnalysis(services ui.Services, t *Document) {
 		t.tools.analysisErr = locales.Text("完整数据分析服务不可用")
 		return
 	}
-	options := mysqlsvc.MySQLDataOptions{}
+	options := contract.DataOptions{}
 	if scope == "filtered" {
 		options.Filters, _ = mysqlDataCurrentRules(t)
 	}

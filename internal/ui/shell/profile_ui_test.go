@@ -22,6 +22,8 @@ func profileTestState(t *testing.T) (*State, *ui.Tester, *connections.Service, s
 	t.Cleanup(func() { db.Close() })
 	service := connections.NewService(localdb.NewProfileStore(db))
 	s := NewWithProfiles(service)
+	installRuntimeFixture(s)
+	t.Cleanup(s.CloseMySQLSessions)
 	return s, ui.NewTester(s.View, 1280, 800), service, path
 }
 

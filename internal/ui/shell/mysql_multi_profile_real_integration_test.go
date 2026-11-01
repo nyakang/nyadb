@@ -60,7 +60,7 @@ func TestMySQLTwoRealProfilesIsolateSameSchemaMetadata(t *testing.T) {
 		if s.sessions.Current().Status != "已连接" {
 			t.Fatalf("real profile %q connection failed: %s %s", p.Name, s.sessions.Current().Status, s.sessions.Current().Error)
 		}
-		if !s.sessions.Manager.IsConnected(p.ID) {
+		if !s.runtime.IsConnected(p.ID) {
 			t.Fatalf("session manager lost authenticated profile %q", p.Name)
 		}
 		s.navigation.Tree.Open.Add(navigation.ConnectionKey(p.ID))
@@ -76,7 +76,7 @@ func TestMySQLTwoRealProfilesIsolateSameSchemaMetadata(t *testing.T) {
 	}
 	connectAndRead(a, "a_orders")
 	connectAndRead(b, "b_orders")
-	if !s.sessions.Manager.IsConnected(a.ID) || !s.sessions.Manager.IsConnected(b.ID) {
+	if !s.runtime.IsConnected(a.ID) || !s.runtime.IsConnected(b.ID) {
 		t.Fatal("starting B disconnected A on the real MySQL session manager")
 	}
 	s.selectProfileByName(a.Name)
@@ -84,7 +84,7 @@ func TestMySQLTwoRealProfilesIsolateSameSchemaMetadata(t *testing.T) {
 		t.Fatalf("same schema metadata leaked from B into A: %+v", objects)
 	}
 	s.disconnectMySQLProfile(a.ID)
-	if s.sessions.Manager.IsConnected(a.ID) || !s.sessions.Manager.IsConnected(b.ID) {
+	if s.runtime.IsConnected(a.ID) || !s.runtime.IsConnected(b.ID) {
 		t.Fatal("disconnecting A closed B or left A connected")
 	}
 	s.selectProfileByName(b.Name)

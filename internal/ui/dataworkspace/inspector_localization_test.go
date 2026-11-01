@@ -1,6 +1,8 @@
 package dataworkspace
 
 import (
+	"context"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"testing"
 
 	"github.com/egoist/mygo/i18n"
@@ -19,6 +21,7 @@ func TestMySQLFieldInspectorTranslatesLabelsAndPreservesValues(t *testing.T) {
 	useEnglishInspector(t)
 	doc := sampleSelection()
 	s, p := testInspector(doc)
+	s.CountLoader = func(context.Context, int64, string, string) (int64, error) { return 0, contract.ErrUnsupported }
 	doc.Row = 0
 	doc.Column = "label"
 	doc.Page.Rows[0][1].Text = "复制"
@@ -51,6 +54,7 @@ func TestMySQLTableInspectorTranslatesLabelsAndPreservesServerError(t *testing.T
 	useEnglishInspector(t)
 	doc := sampleSelection()
 	s, p, _ := tableInfoTestState(doc)
+	s.CountLoader = func(context.Context, int64, string, string) (int64, error) { return 0, contract.ErrUnsupported }
 	p.info.attempted = true
 	p.info.err = "表信息"
 	p.info.info = &mysqlsvc.MySQLTableInfo{Database: p.database, Name: p.table, Kind: "BASE TABLE", Engine: "InnoDB", Comment: "刷新"}

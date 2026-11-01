@@ -3,15 +3,14 @@ package dataworkspace
 import (
 	"context"
 	"errors"
-	"time"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/locales"
+	"time"
 )
 
 type infoState struct {
 	fieldMode          bool
-	info               *mysqlsvc.MySQLTableInfo
+	info               *contract.TableInfo
 	attempted, loading bool
 	err                string
 	request            uint64
@@ -31,7 +30,7 @@ type infoResult struct {
 	profileID       int64
 	request         uint64
 	database, table string
-	info            *mysqlsvc.MySQLTableInfo
+	info            *contract.TableInfo
 	err             error
 }
 
@@ -92,7 +91,7 @@ func (s *inspectorState) LoadInfo(t *Panel, invalidate func(), refresh bool) {
 		loader = s.deps.InfoLoader()
 	}
 	if loader == nil {
-		d.err = locales.Text("MySQL 会话不可用")
+		d.err = locales.Text("数据库会话不可用")
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -122,7 +121,7 @@ func (s *inspectorState) LoadCount(t *Panel, invalidate func()) {
 		loader = s.deps.CountLoader()
 	}
 	if loader == nil {
-		d.countErr = locales.Text("MySQL 会话不可用")
+		d.countErr = locales.Text("数据库会话不可用")
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -162,7 +161,7 @@ func consumePanelInfo(p *Panel, session Session) {
 		}
 		d.cancel, d.results, d.loading = nil, nil, false
 		if r.generation != session.Generation || !session.Connected {
-			d.err = locales.Text("MySQL 会话不可用")
+			d.err = locales.Text("数据库会话不可用")
 			return
 		}
 		if r.err != nil {
@@ -191,7 +190,7 @@ func consumePanelCount(p *Panel, session Session) {
 		}
 		d.countCancel, d.countResults, d.countLoading = nil, nil, false
 		if r.generation != session.Generation || !session.Connected {
-			d.countErr = locales.Text("MySQL 会话不可用")
+			d.countErr = locales.Text("数据库会话不可用")
 			return
 		}
 		if r.err != nil {

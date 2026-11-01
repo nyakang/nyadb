@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"io"
 	"math/big"
 	"os"
@@ -22,16 +23,15 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/datasources"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
 
 var mysqlDataImportNumber = regexp.MustCompile(`^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$`)
 
-type mysqlDataExporter func(context.Context, int64, string, string, mysqlsvc.MySQLDataOptions, []string, func([]mysqlsvc.MySQLDataValue) error) error
-type mysqlDataNewTableImporter func(context.Context, int64, string, string, []mysqlsvc.MySQLDataImportColumn, []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataNewTableImportResult, error)
-type mysqlDataImporter func(context.Context, int64, string, string, mysqlsvc.MySQLDataImportRequest) (*mysqlsvc.MySQLDataImportResult, error)
+type mysqlDataExporter func(context.Context, int64, string, string, contract.DataOptions, []string, func([]contract.DataValue) error) error
+type mysqlDataNewTableImporter func(context.Context, int64, string, string, []contract.DataImportColumn, []contract.DataEdit) (*contract.DataNewTableImportResult, error)
+type mysqlDataImporter func(context.Context, int64, string, string, contract.DataImportRequest) (*contract.DataImportResult, error)
 
 type mysqlDataTransferState struct {
 	Batch                                        []mysqlDataBatchReceipt
@@ -42,7 +42,7 @@ type mysqlDataTransferState struct {
 	SourceTable                                  int
 	Capabilities                                 []datasources.Capability
 	TargetTable                                  string
-	TargetColumns                                []mysqlsvc.MySQLStructureColumn
+	TargetColumns                                []contract.StructureColumn
 	Journal                                      *mysqlDataImportJournal
 	JournalCommitted, JournalUncertain           bool
 	Wizard                                       bool
@@ -57,7 +57,7 @@ type mysqlDataTransferState struct {
 	PreparationKey                               string
 	ParsedSourceKey                              string
 	Assets                                       *mysqlDataSpoolOwner
-	Progress                                     <-chan mysqlsvc.MySQLDataImportProgress
+	Progress                                     <-chan contract.DataImportProgress
 	Processed                                    int64
 	LeaveOpen                                    bool
 	LeaveNext                                    func(ui.Services)
@@ -71,14 +71,14 @@ type mysqlDataTransferState struct {
 	ContinueOnError                              bool
 	Mode, DestructiveConfirmation                string
 	MatchColumns                                 []string
-	RowResults                                   []mysqlsvc.MySQLDataImportRowResult
+	RowResults                                   []contract.DataImportRowResult
 	ResultGrid                                   ui.ListState
 	ReviewInput                                  *mysqlDataImportInput
 	ReviewKey                                    string
 	ReviewRows                                   int
 	ReviewErr                                    error
 	Target, NewName, ResultTable                 string
-	NewColumns                                   []mysqlsvc.MySQLDataImportColumn
+	NewColumns                                   []contract.DataImportColumn
 	Created, Completed                           bool
 	Kind, Format, Scope, Path, Err, Confirmation string
 	Fields                                       []string
@@ -93,11 +93,11 @@ type mysqlDataTransferResult struct {
 	Batch                                []mysqlDataBatchReceipt
 	SourceTables                         []datasources.Table
 	Capabilities                         []datasources.Capability
-	TargetColumns                        []mysqlsvc.MySQLStructureColumn
+	TargetColumns                        []contract.StructureColumn
 	Journal                              *mysqlDataImportJournal
 	RawSpool, MappedSpool                *mysqlDataImportSpool
-	Streamed                             *mysqlsvc.MySQLDataImportStreamResult
-	Inferred                             []mysqlsvc.MySQLDataImportColumn
+	Streamed                             *contract.DataImportStreamResult
+	Inferred                             []contract.DataImportColumn
 	PreparationKey                       string
 	ParsedSourceKey                      string
 	TotalRows, ChangedValues             int64
@@ -108,8 +108,8 @@ type mysqlDataTransferResult struct {
 	Path                                 string
 	Rows                                 int
 	Input                                *mysqlDataImportInput
-	Saved                                *mysqlsvc.MySQLDataEditResult
-	Imported                             *mysqlsvc.MySQLDataImportResult
+	Saved                                *contract.DataEditResult
+	Imported                             *contract.DataImportResult
 	Err                                  error
 	Write                                bool
 	NewTable, Created, CreationUncertain bool
@@ -118,7 +118,7 @@ type mysqlDataTransferResult struct {
 }
 type mysqlDataImportInput struct {
 	Fields []string
-	Rows   [][]mysqlsvc.MySQLDataValue
+	Rows   [][]contract.DataValue
 }
 
 func (s *State) openDataImport(t *Document) { s.openDataTransfer(t, "import") }
@@ -390,7 +390,7 @@ func (s *State) chooseDataImportFile(services ui.Services, t *Document) {
 		services.Invalidate()
 		var input *mysqlDataImportInput
 		var spool *mysqlDataImportSpool
-		var inferred []mysqlsvc.MySQLDataImportColumn
+		var inferred []contract.DataImportColumn
 		path := ""
 		if err == nil && len(paths) > 0 && ctx.Err() == nil {
 			path = paths[0]
@@ -439,7 +439,7 @@ func (s *State) startDataImport(services ui.Services, t *Document) {
 	newImporter := s.newTableImporter()
 	importer := s.importer()
 	newTable := tr.Target == "new"
-	if importer == nil && (tr.ContinueOnError || mysqlDataImportMode(t) != "append" || !newTable && saver == nil || newTable && newImporter == nil || len(edits) > mysqlsvc.MySQLDataMaxPageSize) {
+	if importer == nil && (tr.ContinueOnError || mysqlDataImportMode(t) != "append" || !newTable && saver == nil || newTable && newImporter == nil || len(edits) > contract.DataMaxPageSize) {
 		tr.Err = locales.Text("数据编辑服务不可用")
 		return
 	}
@@ -457,10 +457,10 @@ func (s *State) startDataImport(services ui.Services, t *Document) {
 	}
 	go func() {
 		started := time.Now()
-		var result *mysqlsvc.MySQLDataEditResult
+		var result *contract.DataEditResult
 		var created, creationUncertain bool
 		var err error
-		var importedResult *mysqlsvc.MySQLDataImportResult
+		var importedResult *contract.DataImportResult
 		if importer != nil {
 			importedResult, err = importer(ctx, profile, db, table, importRequest)
 			if importedResult != nil {
@@ -496,7 +496,7 @@ func (s *State) startDataExport(services ui.Services, t *Document) {
 	}
 	if tr.Format == "SQL" {
 		for _, col := range t.page.ColumnMetadata {
-			if slices.Contains(fields, col.Name) && mysqlsvc.MySQLDataColumnGenerated(col) {
+			if slices.Contains(fields, col.Name) && contract.DataColumnGenerated(col) {
 				tr.Err = locales.Text("SQL 导出不能包含生成字段，请取消勾选该字段")
 				return
 			}
@@ -506,9 +506,9 @@ func (s *State) startDataExport(services ui.Services, t *Document) {
 		tr.Err = locales.Text("请选择至少一个字段")
 		return
 	}
-	var previewRows [][]mysqlsvc.MySQLDataValue
-	var refs []*mysqlsvc.MySQLRowRef
-	var snapshots []*mysqlsvc.MySQLRowSnapshot
+	var previewRows [][]contract.DataValue
+	var refs []*contract.RowRef
+	var snapshots []*contract.RowSnapshot
 	scope := tr.Scope
 	if scope != "all" {
 		var err error
@@ -537,7 +537,7 @@ func (s *State) startDataExport(services ui.Services, t *Document) {
 			return
 		}
 	}
-	options := mysqlsvc.MySQLDataOptions{FilterColumn: t.filterColumn, FilterValue: t.filterValue, FilterMode: t.filterMode, SortColumn: t.sortColumn, SortDescending: t.sortDescending, Filters: append([]mysqlsvc.MySQLDataFilterRule(nil), t.filterRules...), Sorts: append([]mysqlsvc.MySQLDataSortRule(nil), t.sortRules...)}
+	options := contract.DataOptions{FilterColumn: t.filterColumn, FilterValue: t.filterValue, FilterMode: t.filterMode, SortColumn: t.sortColumn, SortDescending: t.sortDescending, Filters: append([]contract.DataFilterRule(nil), t.filterRules...), Sorts: append([]contract.DataSortRule(nil), t.sortRules...)}
 	formatOptions := tr.Options
 	metadata := slices.Clone(t.page.ColumnMetadata)
 	ctx, out, request, gen := s.beginDataTransfer(t)
@@ -570,7 +570,7 @@ func (s *State) startDataExport(services ui.Services, t *Document) {
 					return e
 				}
 				defer encoder.Abort()
-				emit := func(values []mysqlsvc.MySQLDataValue) error {
+				emit := func(values []contract.DataValue) error {
 					if ctx.Err() != nil {
 						return ctx.Err()
 					}
@@ -585,20 +585,20 @@ func (s *State) startDataExport(services ui.Services, t *Document) {
 				} else {
 					for i, values := range previewRows {
 						if refs[i] != nil {
-							var row *mysqlsvc.MySQLDataRow
+							var row *contract.DataRow
 							row, e = reader(ctx, profile, db, table, *refs[i])
 							if e != nil {
 								break
 							}
 							if row == nil || snapshots[i] == nil || !reflect.DeepEqual(row.Snapshot, snapshots[i]) {
-								e = mysqlsvc.ErrMySQLDataConflict
+								e = contract.ErrDataConflict
 								break
 							}
-							values = make([]mysqlsvc.MySQLDataValue, len(fields))
+							values = make([]contract.DataValue, len(fields))
 							for j, field := range fields {
 								value, ok := row.Values[field]
 								if !ok {
-									e = mysqlsvc.ErrMySQLDataPage
+									e = contract.ErrDataPage
 									break
 								}
 								values[j] = value
@@ -681,7 +681,7 @@ func (s *State) consumeDataTransfers(services ui.Services) {
 					if !result.NewTable {
 						t.edit.Uncertain = cloneEditResult(result.Saved)
 						if t.edit.Uncertain == nil {
-							t.edit.Uncertain = &mysqlsvc.MySQLDataEditResult{}
+							t.edit.Uncertain = &contract.DataEditResult{}
 						}
 						t.edit.Uncertain.CommitUncertain = true
 					}
@@ -768,23 +768,23 @@ func (s *State) consumeDataTransfers(services ui.Services) {
 	}
 }
 
-func mysqlDataExportSnapshot(t *Document, fields []string, selected bool) ([][]mysqlsvc.MySQLDataValue, []*mysqlsvc.MySQLRowRef, []*mysqlsvc.MySQLRowSnapshot, error) {
-	var rows [][]mysqlsvc.MySQLDataValue
-	var refs []*mysqlsvc.MySQLRowRef
-	var snapshots []*mysqlsvc.MySQLRowSnapshot
+func mysqlDataExportSnapshot(t *Document, fields []string, selected bool) ([][]contract.DataValue, []*contract.RowRef, []*contract.RowSnapshot, error) {
+	var rows [][]contract.DataValue
+	var refs []*contract.RowRef
+	var snapshots []*contract.RowSnapshot
 	for i, line := range t.page.Rows {
 		if selected && !t.selection.Has(i) && (t.selection.Len() != 0 || i != t.selectedRow) {
 			continue
 		}
-		values := make([]mysqlsvc.MySQLDataValue, len(fields))
+		values := make([]contract.DataValue, len(fields))
 		needsFull := false
 		for j, field := range fields {
 			source := slices.Index(t.page.Columns, field)
 			if source < 0 || source >= len(line) {
-				return nil, nil, nil, mysqlsvc.ErrMySQLDataPage
+				return nil, nil, nil, contract.ErrDataPage
 			}
 			cell := line[source]
-			values[j] = mysqlsvc.MySQLDataValue{Text: cell.Text, Null: cell.Null}
+			values[j] = contract.DataValue{Text: cell.Text, Null: cell.Null}
 			if cell.Null {
 				values[j].Text = ""
 			}
@@ -794,11 +794,11 @@ func mysqlDataExportSnapshot(t *Document, fields []string, selected bool) ([][]m
 				if err != nil {
 					return nil, nil, nil, err
 				}
-				values[j] = mysqlsvc.MySQLDataValue{Binary: true, Bytes: value}
+				values[j] = contract.DataValue{Binary: true, Bytes: value}
 			}
 		}
-		var ref *mysqlsvc.MySQLRowRef
-		var snapshot *mysqlsvc.MySQLRowSnapshot
+		var ref *contract.RowRef
+		var snapshot *contract.RowSnapshot
 		if needsFull {
 			if i >= len(t.page.RowRefs) || t.page.RowRefs[i] == nil || i >= len(t.page.RowSnapshots) || t.page.RowSnapshots[i] == nil {
 				return nil, nil, nil, errors.New(locales.Text("截断字段缺少唯一行标识，无法完整导出"))
@@ -817,12 +817,12 @@ func mysqlDataExportSnapshot(t *Document, fields []string, selected bool) ([][]m
 // Parse the entire bounded input before any write. Headers are mandatory and
 // JSON numbers retain their exact spelling, including large integer values.
 func mysqlDataParseImport(r io.Reader, format string) (*mysqlDataImportInput, error) {
-	data, err := io.ReadAll(io.LimitReader(r, mysqlsvc.MaxMySQLDataImportBytes+1))
+	data, err := io.ReadAll(io.LimitReader(r, contract.MaxDataImportBytes+1))
 	if err != nil {
 		return nil, err
 	}
-	if len(data) > mysqlsvc.MaxMySQLDataImportBytes {
-		return nil, mysqlsvc.ErrMySQLDataEditLimit
+	if len(data) > contract.MaxDataImportBytes {
+		return nil, contract.ErrDataEditLimit
 	}
 	binaryFormat := format == "XLSX" || format == "XLS" || format == "DBF" || format == "Parquet"
 	if !binaryFormat && !utf8.Valid(data) {
@@ -859,13 +859,13 @@ func mysqlDataParseImport(r io.Reader, format string) (*mysqlDataImportInput, er
 			if e != nil {
 				return nil, e
 			}
-			values := make([]mysqlsvc.MySQLDataValue, len(line))
+			values := make([]contract.DataValue, len(line))
 			for i, value := range line {
 				values[i] = mysqlDataDecodeDelimited(value)
 			}
 			input.Rows = append(input.Rows, values)
-			if len(input.Rows) > mysqlsvc.MaxMySQLDataImportRows {
-				return nil, mysqlsvc.ErrMySQLDataEditLimit
+			if len(input.Rows) > contract.MaxDataImportRows {
+				return nil, contract.ErrDataEditLimit
 			}
 		}
 	case "XML":
@@ -897,8 +897,8 @@ func mysqlDataParseImport(r io.Reader, format string) (*mysqlDataImportInput, er
 		if dec.Decode(&extra) != io.EOF {
 			return nil, errors.New(locales.Text("JSON 文件必须只包含一个对象数组"))
 		}
-		if len(records) > mysqlsvc.MaxMySQLDataImportRows {
-			return nil, mysqlsvc.ErrMySQLDataEditLimit
+		if len(records) > contract.MaxDataImportRows {
+			return nil, contract.ErrDataEditLimit
 		}
 		if len(records) > 0 {
 			for field := range records[0] {
@@ -910,7 +910,7 @@ func mysqlDataParseImport(r io.Reader, format string) (*mysqlDataImportInput, er
 			if len(record) != len(input.Fields) {
 				return nil, errors.New(locales.Text("JSON 每行必须包含相同字段"))
 			}
-			values := make([]mysqlsvc.MySQLDataValue, len(input.Fields))
+			values := make([]contract.DataValue, len(input.Fields))
 			for i, field := range input.Fields {
 				value, ok := record[field]
 				if !ok {
@@ -954,48 +954,48 @@ func mysqlDataParseImport(r io.Reader, format string) (*mysqlDataImportInput, er
 	total := 0
 	for _, row := range input.Rows {
 		if len(row) != len(input.Fields) {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		for _, value := range row {
-			if len(value.Text)+len(value.Bytes) > mysqlsvc.MySQLDataEditMaxBytes {
-				return nil, mysqlsvc.ErrMySQLDataEditLimit
+			if len(value.Text)+len(value.Bytes) > contract.DataEditMaxBytes {
+				return nil, contract.ErrDataEditLimit
 			}
 			total += len(value.Text) + len(value.Bytes)
-			if total > mysqlsvc.MaxMySQLDataImportBytes {
-				return nil, mysqlsvc.ErrMySQLDataEditLimit
+			if total > contract.MaxDataImportBytes {
+				return nil, contract.ErrDataEditLimit
 			}
 		}
 	}
 	return input, nil
 }
-func mysqlDataDecodeDelimited(text string) mysqlsvc.MySQLDataValue {
+func mysqlDataDecodeDelimited(text string) contract.DataValue {
 	if text == `\N` {
-		return mysqlsvc.MySQLDataValue{Null: true}
+		return contract.DataValue{Null: true}
 	}
 	if strings.HasPrefix(text, `\\`) {
 		text = text[1:]
 	}
-	return mysqlsvc.MySQLDataValue{Text: text}
+	return contract.DataValue{Text: text}
 }
-func mysqlDataImportEdits(input *mysqlDataImportInput, mapping []string, columns []mysqlsvc.MySQLStructureColumn) ([]mysqlsvc.MySQLDataEdit, error) {
+func mysqlDataImportEdits(input *mysqlDataImportInput, mapping []string, columns []contract.StructureColumn) ([]contract.DataEdit, error) {
 	return mysqlDataImportEditsWithOptions(input, mapping, columns, false)
 }
 
 // Conversion is an explicit import choice. Keep the parsed source immutable so
 // disabling the choice restores the original preview and a worker owns its
 // already validated values. Empty byte strings and whitespace are not text "".
-func mysqlDataImportValue(value mysqlsvc.MySQLDataValue, emptyAsNull bool) mysqlsvc.MySQLDataValue {
+func mysqlDataImportValue(value contract.DataValue, emptyAsNull bool) contract.DataValue {
 	if emptyAsNull && !value.Null && !value.Binary && value.Text == "" {
-		return mysqlsvc.MySQLDataValue{Null: true}
+		return contract.DataValue{Null: true}
 	}
 	return value
 }
 
-func mysqlDataImportEditsWithOptions(input *mysqlDataImportInput, mapping []string, columns []mysqlsvc.MySQLStructureColumn, emptyAsNull bool) ([]mysqlsvc.MySQLDataEdit, error) {
-	if input == nil || len(mapping) != len(input.Fields) || len(input.Rows) == 0 || len(input.Rows) > mysqlsvc.MySQLDataMaxPageSize {
-		return nil, mysqlsvc.ErrMySQLDataPage
+func mysqlDataImportEditsWithOptions(input *mysqlDataImportInput, mapping []string, columns []contract.StructureColumn, emptyAsNull bool) ([]contract.DataEdit, error) {
+	if input == nil || len(mapping) != len(input.Fields) || len(input.Rows) == 0 || len(input.Rows) > contract.DataMaxPageSize {
+		return nil, contract.ErrDataPage
 	}
-	allowed := map[string]mysqlsvc.MySQLStructureColumn{}
+	allowed := map[string]contract.StructureColumn{}
 	for _, col := range columns {
 		allowed[col.Name] = col
 	}
@@ -1005,7 +1005,7 @@ func mysqlDataImportEditsWithOptions(input *mysqlDataImportInput, mapping []stri
 			continue
 		}
 		col, ok := allowed[target]
-		if !ok || seen[target] || mysqlsvc.MySQLDataColumnGenerated(col) {
+		if !ok || seen[target] || contract.DataColumnGenerated(col) {
 			return nil, errors.New(locales.Text("字段映射包含重复、未知或生成字段"))
 		}
 		if mysqlDataSpatialField(col) {
@@ -1017,17 +1017,17 @@ func mysqlDataImportEditsWithOptions(input *mysqlDataImportInput, mapping []stri
 		return nil, errors.New(locales.Text("请映射至少一个字段"))
 	}
 	for _, col := range columns {
-		if !seen[col.Name] && !mysqlsvc.MySQLDataColumnGenerated(col) && !col.Nullable && col.Default == nil && !strings.Contains(strings.ToLower(col.Extra), "auto_increment") {
+		if !seen[col.Name] && !contract.DataColumnGenerated(col) && !col.Nullable && col.Default == nil && !strings.Contains(strings.ToLower(col.Extra), "auto_increment") {
 			return nil, fmt.Errorf(locales.Text("必填字段未映射：%s"), col.Name)
 		}
 	}
-	edits := make([]mysqlsvc.MySQLDataEdit, len(input.Rows))
+	edits := make([]contract.DataEdit, len(input.Rows))
 	total := 0
 	for i, row := range input.Rows {
 		if len(row) != len(mapping) {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
-		values := map[string]mysqlsvc.MySQLDataValue{}
+		values := map[string]contract.DataValue{}
 		for j, target := range mapping {
 			if target == "" {
 				continue
@@ -1051,7 +1051,7 @@ func mysqlDataImportEditsWithOptions(input *mysqlDataImportInput, mapping []stri
 				if e != nil {
 					return nil, e
 				}
-				value = mysqlsvc.MySQLDataValue{Binary: true, Bytes: bytes}
+				value = contract.DataValue{Binary: true, Bytes: bytes}
 			}
 			if !value.Null && !value.Binary {
 				kind := strings.ToLower(col.DataType)
@@ -1073,12 +1073,12 @@ func mysqlDataImportEditsWithOptions(input *mysqlDataImportInput, mapping []stri
 				}
 			}
 			total += len(value.Text) + len(value.Bytes)
-			if total > mysqlsvc.MySQLDataEditMaxBytes {
-				return nil, mysqlsvc.ErrMySQLDataEditLimit
+			if total > contract.DataEditMaxBytes {
+				return nil, contract.ErrDataEditLimit
 			}
 			values[target] = value
 		}
-		edits[i] = mysqlsvc.MySQLDataEdit{Kind: "insert", Values: values}
+		edits[i] = contract.DataEdit{Kind: "insert", Values: values}
 	}
 	return edits, nil
 }
@@ -1171,16 +1171,16 @@ func newMySQLDataTransferEncoder(w io.Writer, format, db, table string, fields [
 	}
 	return e, nil
 }
-func (e *mysqlDataTransferEncoder) Row(values []mysqlsvc.MySQLDataValue) error {
+func (e *mysqlDataTransferEncoder) Row(values []contract.DataValue) error {
 	if len(values) != len(e.fields) {
-		return mysqlsvc.ErrMySQLDataPage
+		return contract.ErrDataPage
 	}
 	text := make([]string, len(values))
 	total := 0
 	for i, value := range values {
 		total += len(value.Text) + len(value.Bytes)
-		if len(value.Text)+len(value.Bytes) > mysqlsvc.MySQLDataExportFieldMaxBytes || total > mysqlsvc.MySQLDataExportRowMaxBytes {
-			return mysqlsvc.ErrMySQLDataEditLimit
+		if len(value.Text)+len(value.Bytes) > contract.DataExportFieldMaxBytes || total > contract.DataExportRowMaxBytes {
+			return contract.ErrDataEditLimit
 		}
 		text[i] = value.Text
 		if value.Binary {

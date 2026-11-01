@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/parquet-go/parquet-go"
+	parquetformat "github.com/parquet-go/parquet-go/format"
 	"io"
 	"math"
 	"math/big"
@@ -14,10 +17,6 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
-	"github.com/parquet-go/parquet-go"
-	parquetformat "github.com/parquet-go/parquet-go/format"
 )
 
 // The encoder uses standard Parquet UTF8 and BINARY annotations. Exact database
@@ -37,7 +36,7 @@ func newMySQLDataParquetEncoder(w io.Writer, fields []string) (*mysqlDataParquet
 	return &mysqlDataParquetEncoder{spool: s, w: w}, nil
 }
 
-func (e *mysqlDataParquetEncoder) Row(values []mysqlsvc.MySQLDataValue) error {
+func (e *mysqlDataParquetEncoder) Row(values []contract.DataValue) error {
 	return e.spool.Row(values)
 }
 func (e *mysqlDataParquetEncoder) Abort() error { return e.spool.close() }
@@ -69,12 +68,12 @@ func (e *mysqlDataParquetEncoder) CloseContext(ctx context.Context) (err error) 
 	for i, field := range e.spool.fields {
 		leaf, ok := schema.Lookup(field)
 		if !ok {
-			return mysqlsvc.ErrMySQLDataPage
+			return contract.ErrDataPage
 		}
 		indices[i] = leaf.ColumnIndex
 	}
 	groupBytes, groupRows := 0, 0
-	err = e.spool.each(ctx, func(values []mysqlsvc.MySQLDataValue) error {
+	err = e.spool.each(ctx, func(values []contract.DataValue) error {
 		rowBytes := 0
 		for _, v := range values {
 			rowBytes += len(v.Text) + len(v.Bytes)
@@ -123,7 +122,7 @@ func mysqlDataOpenParquetRows(input io.ReaderAt, size int64) (*mysqlDataParquetR
 	}
 	paths := f.Schema().Columns()
 	if len(paths) == 0 || len(paths) > 128 {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	r := &mysqlDataParquetRows{}
 	for _, path := range paths {
@@ -132,7 +131,7 @@ func mysqlDataOpenParquetRows(input io.ReaderAt, size int64) (*mysqlDataParquetR
 		}
 		leaf, ok := f.Schema().Lookup(path...)
 		if !ok || leaf.MaxRepetitionLevel != 0 || !leaf.Node.Leaf() {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		r.fields = append(r.fields, path[0])
 		r.nodes = append(r.nodes, leaf.Node)
@@ -141,7 +140,7 @@ func mysqlDataOpenParquetRows(input io.ReaderAt, size int64) (*mysqlDataParquetR
 	if order, ok := f.Lookup("nyadb.column_order"); ok {
 		var fields []string
 		if err := json.Unmarshal([]byte(order), &fields); err != nil || len(fields) != len(r.fields) {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		seen := map[string]bool{}
 		var nodes []parquet.Node
@@ -149,7 +148,7 @@ func mysqlDataOpenParquetRows(input io.ReaderAt, size int64) (*mysqlDataParquetR
 		for _, field := range fields {
 			leaf, ok := f.Schema().Lookup(field)
 			if !ok || seen[field] {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			seen[field] = true
 			nodes = append(nodes, leaf.Node)
@@ -169,7 +168,7 @@ func (r *mysqlDataParquetRows) Close() error {
 	r.closed = true
 	return r.reader.Close()
 }
-func (r *mysqlDataParquetRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataParquetRows) Next(ctx context.Context) ([]contract.DataValue, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -182,23 +181,23 @@ func (r *mysqlDataParquetRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataVa
 		return nil, err
 	}
 	if len(rows[0]) != len(r.fields) {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	byColumn := make([]parquet.Value, len(r.fields))
 	seen := make([]bool, len(r.fields))
 	for _, v := range rows[0] {
 		c := v.Column()
 		if c < 0 || c >= len(byColumn) || seen[c] || v.RepetitionLevel() != 0 {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		seen[c] = true
 		byColumn[c] = v
 	}
-	values := make([]mysqlsvc.MySQLDataValue, len(r.fields))
+	values := make([]contract.DataValue, len(r.fields))
 	total := 0
 	for i, index := range r.indices {
 		if !seen[index] {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		value, e := mysqlDataParquetValue(byColumn[index], r.nodes[i])
 		if e != nil {
@@ -206,8 +205,8 @@ func (r *mysqlDataParquetRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataVa
 		}
 		size := len(value.Text) + len(value.Bytes)
 		total += size
-		if size > mysqlsvc.MySQLDataExportFieldMaxBytes || total > mysqlsvc.MySQLDataExportRowMaxBytes {
-			return nil, mysqlsvc.ErrMySQLDataEditLimit
+		if size > contract.DataExportFieldMaxBytes || total > contract.DataExportRowMaxBytes {
+			return nil, contract.ErrDataEditLimit
 		}
 		values[i] = value
 	}
@@ -233,9 +232,9 @@ func mysqlDataParseParquetImport(data []byte) (*mysqlDataImportInput, error) {
 	}
 }
 
-func mysqlDataParquetValue(v parquet.Value, node parquet.Node) (mysqlsvc.MySQLDataValue, error) {
+func mysqlDataParquetValue(v parquet.Value, node parquet.Node) (contract.DataValue, error) {
 	if v.IsNull() {
-		return mysqlsvc.MySQLDataValue{Null: true}, nil
+		return contract.DataValue{Null: true}, nil
 	}
 	var logical parquetformat.LogicalTypeValue
 	if lt := node.Type().LogicalType(); lt != nil {
@@ -243,8 +242,8 @@ func mysqlDataParquetValue(v parquet.Value, node parquet.Node) (mysqlsvc.MySQLDa
 	}
 	switch lt := logical.(type) {
 	case *parquetformat.DecimalType:
-		if lt.Scale < 0 || lt.Scale > mysqlsvc.MySQLDataExportFieldMaxBytes || lt.Precision <= 0 {
-			return mysqlsvc.MySQLDataValue{}, mysqlsvc.ErrMySQLDataPage
+		if lt.Scale < 0 || lt.Scale > contract.DataExportFieldMaxBytes || lt.Precision <= 0 {
+			return contract.DataValue{}, contract.ErrDataPage
 		}
 		n := new(big.Int)
 		switch v.Kind() {
@@ -254,15 +253,15 @@ func mysqlDataParquetValue(v parquet.Value, node parquet.Node) (mysqlsvc.MySQLDa
 			n.SetInt64(v.Int64())
 		case parquet.ByteArray, parquet.FixedLenByteArray:
 			b := v.ByteArray()
-			if len(b) == 0 || len(b) > mysqlsvc.MySQLDataExportFieldMaxBytes {
-				return mysqlsvc.MySQLDataValue{}, mysqlsvc.ErrMySQLDataPage
+			if len(b) == 0 || len(b) > contract.DataExportFieldMaxBytes {
+				return contract.DataValue{}, contract.ErrDataPage
 			}
 			n.SetBytes(b)
 			if b[0]&0x80 != 0 {
 				n.Sub(n, new(big.Int).Lsh(big.NewInt(1), uint(8*len(b))))
 			}
 		default:
-			return mysqlsvc.MySQLDataValue{}, mysqlsvc.ErrMySQLDataPage
+			return contract.DataValue{}, contract.ErrDataPage
 		}
 		negative := n.Sign() < 0
 		n.Abs(n)
@@ -277,40 +276,40 @@ func mysqlDataParquetValue(v parquet.Value, node parquet.Node) (mysqlsvc.MySQLDa
 		if negative {
 			digits = "-" + digits
 		}
-		return mysqlsvc.MySQLDataValue{Text: digits}, nil
+		return contract.DataValue{Text: digits}, nil
 	case *parquetformat.IntType:
 		if !lt.IsSigned {
 			if v.Kind() == parquet.Int32 {
-				return mysqlsvc.MySQLDataValue{Text: strconv.FormatUint(uint64(v.Uint32()), 10)}, nil
+				return contract.DataValue{Text: strconv.FormatUint(uint64(v.Uint32()), 10)}, nil
 			}
 			if v.Kind() == parquet.Int64 {
-				return mysqlsvc.MySQLDataValue{Text: strconv.FormatUint(v.Uint64(), 10)}, nil
+				return contract.DataValue{Text: strconv.FormatUint(v.Uint64(), 10)}, nil
 			}
 		}
 	case *parquetformat.DateType:
 		if v.Kind() != parquet.Int32 {
-			return mysqlsvc.MySQLDataValue{}, mysqlsvc.ErrMySQLDataPage
+			return contract.DataValue{}, contract.ErrDataPage
 		}
 		d := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC).AddDate(0, 0, int(v.Int32()))
 		if d.Year() < 1 || d.Year() > 9999 {
-			return mysqlsvc.MySQLDataValue{}, mysqlsvc.ErrMySQLDataPage
+			return contract.DataValue{}, contract.ErrDataPage
 		}
-		return mysqlsvc.MySQLDataValue{Text: d.Format("2006-01-02")}, nil
+		return contract.DataValue{Text: d.Format("2006-01-02")}, nil
 	case *parquetformat.TimestampType:
 		if v.Kind() != parquet.Int64 || lt.Unit.Value == nil {
-			return mysqlsvc.MySQLDataValue{}, mysqlsvc.ErrMySQLDataPage
+			return contract.DataValue{}, contract.ErrDataPage
 		}
 		unit := lt.Unit.Value.Duration()
 		factor := int64(time.Second / unit)
 		raw := v.Int64()
 		d := time.Unix(raw/factor, (raw%factor)*int64(unit)).UTC()
 		if d.Year() < 1 || d.Year() > 9999 {
-			return mysqlsvc.MySQLDataValue{}, mysqlsvc.ErrMySQLDataPage
+			return contract.DataValue{}, contract.ErrDataPage
 		}
-		return mysqlsvc.MySQLDataValue{Text: d.Format("2006-01-02 15:04:05.999999999")}, nil
+		return contract.DataValue{Text: d.Format("2006-01-02 15:04:05.999999999")}, nil
 	case *parquetformat.TimeType:
 		if lt.Unit.Value == nil {
-			return mysqlsvc.MySQLDataValue{}, mysqlsvc.ErrMySQLDataPage
+			return contract.DataValue{}, contract.ErrDataPage
 		}
 		var raw int64
 		if v.Kind() == parquet.Int32 {
@@ -318,17 +317,17 @@ func mysqlDataParquetValue(v parquet.Value, node parquet.Node) (mysqlsvc.MySQLDa
 		} else if v.Kind() == parquet.Int64 {
 			raw = v.Int64()
 		} else {
-			return mysqlsvc.MySQLDataValue{}, mysqlsvc.ErrMySQLDataPage
+			return contract.DataValue{}, contract.ErrDataPage
 		}
 		unit := lt.Unit.Value.Duration()
 		factor := int64(time.Second / unit)
 		if raw < 0 || raw >= 86400*factor {
-			return mysqlsvc.MySQLDataValue{}, mysqlsvc.ErrMySQLDataPage
+			return contract.DataValue{}, contract.ErrDataPage
 		}
 		d := time.Unix(raw/factor, (raw%factor)*int64(unit)).UTC()
-		return mysqlsvc.MySQLDataValue{Text: d.Format("15:04:05.999999999")}, nil
+		return contract.DataValue{Text: d.Format("15:04:05.999999999")}, nil
 	}
-	value := mysqlsvc.MySQLDataValue{}
+	value := contract.DataValue{}
 	switch v.Kind() {
 	case parquet.Boolean:
 		if v.Boolean() {
@@ -342,19 +341,19 @@ func mysqlDataParquetValue(v parquet.Value, node parquet.Node) (mysqlsvc.MySQLDa
 		value.Text = strconv.FormatInt(v.Int64(), 10)
 	case parquet.Float:
 		if math.IsNaN(float64(v.Float())) || math.IsInf(float64(v.Float()), 0) {
-			return value, mysqlsvc.ErrMySQLDataPage
+			return value, contract.ErrDataPage
 		}
 		value.Text = strconv.FormatFloat(float64(v.Float()), 'g', -1, 32)
 	case parquet.Double:
 		if math.IsNaN(v.Double()) || math.IsInf(v.Double(), 0) {
-			return value, mysqlsvc.ErrMySQLDataPage
+			return value, contract.ErrDataPage
 		}
 		value.Text = strconv.FormatFloat(v.Double(), 'g', -1, 64)
 	case parquet.ByteArray, parquet.FixedLenByteArray:
 		switch logical.(type) {
 		case *parquetformat.StringType, *parquetformat.JsonType, *parquetformat.EnumType:
 			if !utf8.Valid(v.ByteArray()) {
-				return value, mysqlsvc.ErrMySQLDataPage
+				return value, contract.ErrDataPage
 			}
 			value.Text = string(v.ByteArray())
 		default:

@@ -2,12 +2,11 @@ package dataworkspace
 
 import (
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strconv"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -26,7 +25,7 @@ func (s *inspectorState) FieldView(c *ui.Context, t *Panel) {
 	if t.chunkField != "" && (!selected || t.chunkField != name || t.chunkRow != row || (t.chunkPage != nil && t.chunkPage != selection.Page)) {
 		s.CancelChunk(t)
 	}
-	canRead := selected && !cell.Null && row >= 0 && row < len(selection.Page.RowRefs) && selection.Page.RowRefs[row] != nil
+	canRead := s.chunkAvailable(t) && selected && !cell.Null && row >= 0 && row < len(selection.Page.RowRefs) && selection.Page.RowRefs[row] != nil
 	chunkShown := selected && t.chunkField == name && t.chunkRow == row && t.chunkNext > 0
 	ui.Column(c).Label(locales.Text("数据字段信息面板")).Fill().Background(palette.Panel).Children(func() {
 		s.header(c, t, true)
@@ -120,7 +119,7 @@ func (s *inspectorState) FieldView(c *ui.Context, t *Panel) {
 	})
 }
 
-func fieldAttributes(c *ui.Context, field mysqlsvc.MySQLStructureColumn) {
+func fieldAttributes(c *ui.Context, field contract.StructureColumn) {
 	notNull := locales.Text("否")
 	if !field.Nullable {
 		notNull = locales.Text("是")
@@ -200,4 +199,14 @@ func ColumnTypeGlyph(kind string) string {
 		return "✧"
 	}
 	return "·"
+}
+
+func (s *inspectorState) chunkAvailable(p *Panel) bool {
+	if p.chunkLoader != nil {
+		return p.chunkLoader() != nil
+	}
+	if s.ChunkLoader != nil {
+		return true
+	}
+	return s.deps.ChunkLoader != nil && s.deps.ChunkLoader() != nil
 }

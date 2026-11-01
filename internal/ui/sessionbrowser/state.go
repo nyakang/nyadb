@@ -4,14 +4,14 @@ package sessionbrowser
 
 import (
 	"context"
+	"github.com/nyakang/nyadb/internal/db/contract"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 type SessionOpener func(context.Context, connections.ActiveSettings, string) error
 type DatabaseLister func(context.Context, int64) ([]string, error)
-type ObjectLister func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error)
+type ObjectLister func(context.Context, int64, string) ([]contract.DBObject, error)
 
 type Dependencies struct {
 	ReadSecret       func(int64, string) (string, bool, error)
@@ -32,9 +32,11 @@ type Workspace struct {
 	Catalog                 string
 	Generation              uint64
 	Status, Error, Password string
+	QualifiedCache          map[contract.NamespaceRef][]contract.DBObject
+	Namespaces              map[string]contract.NamespaceRef
 	Databases               []string
 	Database                string
-	Cache                   map[string][]mysqlsvc.MySQLDBObject
+	Cache                   map[string][]contract.DBObject
 	Errors                  map[string]string
 	Pending                 string
 	opened                  map[string]bool
@@ -48,7 +50,7 @@ type Workspace struct {
 
 func newWorkspace() *Workspace {
 	w := &Workspace{Status: "未连接",
-		Cache: make(map[string][]mysqlsvc.MySQLDBObject), Errors: make(map[string]string), opened: make(map[string]bool)}
+		Cache: make(map[string][]contract.DBObject), Errors: make(map[string]string), opened: make(map[string]bool)}
 	return w
 }
 
@@ -59,7 +61,6 @@ func (w *Workspace) ObjectRequest() uint64 { return w.objectRequest }
 // fields into one shared browser. Manager and loader functions can be injected;
 // SQL/data/structure documents may use the same manager without owning its lifetime.
 type State struct {
-	Manager        *mysqlsvc.MySQLSessionManager
 	engines        EngineRuntime
 	Opener         SessionOpener
 	DatabaseLister DatabaseLister
@@ -99,7 +100,7 @@ func (s *State) DatabasesFor(id int64) []string {
 	}
 	return nil
 }
-func (s *State) CacheFor(id int64) map[string][]mysqlsvc.MySQLDBObject {
+func (s *State) CacheFor(id int64) map[string][]contract.DBObject {
 	if w := s.Workspace(id); w != nil {
 		return w.Cache
 	}
@@ -125,12 +126,7 @@ func (s *State) MarkOpened(id int64, database string) {
 	}
 	w.opened[database] = true
 }
-func (s *State) EnsureManager() *mysqlsvc.MySQLSessionManager {
-	if s.Manager == nil {
-		s.Manager = mysqlsvc.NewMySQLSessionManager()
-	}
-	return s.Manager
-}
+
 func (s *State) report(message string) {
 	if s.deps.Status != nil {
 		s.deps.Status(message)

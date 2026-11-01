@@ -7,6 +7,9 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/locales"
+	xhtml "golang.org/x/net/html"
 	"html"
 	"io"
 	"path"
@@ -16,14 +19,10 @@ import (
 	"time"
 	"unicode/utf16"
 	"unicode/utf8"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
-	"github.com/nyakang/nyadb/locales"
-	xhtml "golang.org/x/net/html"
 )
 
 type mysqlDataAdditionalEncoder interface {
-	Row([]mysqlsvc.MySQLDataValue) error
+	Row([]contract.DataValue) error
 	Close() error
 }
 
@@ -55,7 +54,7 @@ func newMySQLDataHTMLEncoderEncoding(w io.Writer, fields []string, encoding stri
 	return &mysqlDataHTMLEncoder{w: w}, err
 }
 
-func (e *mysqlDataHTMLEncoder) Row(values []mysqlsvc.MySQLDataValue) error {
+func (e *mysqlDataHTMLEncoder) Row(values []contract.DataValue) error {
 	if _, err := io.WriteString(e.w, "<tr>"); err != nil {
 		return err
 	}
@@ -100,7 +99,7 @@ func mysqlDataParseHTMLImport(data []byte) (*mysqlDataImportInput, error) {
 		}
 		count++
 		if count > 262144 {
-			return nil, mysqlsvc.ErrMySQLDataEditLimit
+			return nil, contract.ErrDataEditLimit
 		}
 		if typ == xhtml.StartTagToken {
 			name, _ := tokens.TagName()
@@ -113,7 +112,7 @@ func mysqlDataParseHTMLImport(data []byte) (*mysqlDataImportInput, error) {
 			depth = max(0, depth-1)
 		}
 		if depth > 256 {
-			return nil, mysqlsvc.ErrMySQLDataEditLimit
+			return nil, contract.ErrDataEditLimit
 		}
 	}
 	doc, err := xhtml.Parse(bytes.NewReader(data))
@@ -154,11 +153,11 @@ func mysqlDataParseHTMLImport(data []byte) (*mysqlDataImportInput, error) {
 		}
 	}
 	collect(table)
-	if len(rows) > mysqlsvc.MaxMySQLDataImportRows+1 {
-		return nil, mysqlsvc.ErrMySQLDataEditLimit
+	if len(rows) > contract.MaxDataImportRows+1 {
+		return nil, contract.ErrDataEditLimit
 	}
 	for i, row := range rows {
-		var values []mysqlsvc.MySQLDataValue
+		var values []contract.DataValue
 		for c := row.FirstChild; c != nil; c = c.NextSibling {
 			if c.Type != xhtml.ElementNode || c.Data != "td" && c.Data != "th" {
 				continue
@@ -189,22 +188,22 @@ func mysqlDataParseHTMLImport(data []byte) (*mysqlDataImportInput, error) {
 				}
 			}
 			read(c)
-			value := mysqlsvc.MySQLDataValue{Text: text.String()}
+			value := contract.DataValue{Text: text.String()}
 			switch kind {
 			case "null":
-				value = mysqlsvc.MySQLDataValue{Null: true}
+				value = contract.DataValue{Null: true}
 			case "binary":
 				if !strings.HasPrefix(value.Text, "0x") {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 				b, err := hex.DecodeString(value.Text[2:])
 				if err != nil {
 					return nil, err
 				}
-				value = mysqlsvc.MySQLDataValue{Binary: true, Bytes: b}
+				value = contract.DataValue{Binary: true, Bytes: b}
 			case "text":
 			default:
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			values = append(values, value)
 		}
@@ -214,7 +213,7 @@ func mysqlDataParseHTMLImport(data []byte) (*mysqlDataImportInput, error) {
 			}
 		} else {
 			if len(values) != len(input.Fields) {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			input.Rows = append(input.Rows, values)
 		}
@@ -271,7 +270,7 @@ type mysqlDataXLSXEncoder struct {
 // semantics, while the workbook remains standard SpreadsheetML.
 func newMySQLDataXLSXEncoder(w io.Writer, fields []string) (*mysqlDataXLSXEncoder, error) {
 	if len(fields) == 0 || len(fields) > 128 {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	e := &mysqlDataXLSXEncoder{zip: zip.NewWriter(w), fields: len(fields)}
 	files := []struct{ name, content string }{
@@ -298,7 +297,7 @@ func newMySQLDataXLSXEncoder(w io.Writer, fields []string) (*mysqlDataXLSXEncode
 	if _, err = io.WriteString(e.worksheet, xml.Header+`<worksheet xmlns="`+mysqlDataSpreadsheetNS+`"><sheetData>`); err != nil {
 		return nil, err
 	}
-	values := make([]mysqlsvc.MySQLDataValue, len(fields))
+	values := make([]contract.DataValue, len(fields))
 	for i, field := range fields {
 		values[i].Text = field
 	}
@@ -316,9 +315,9 @@ func mysqlDataXLSXColumn(index int) string {
 	return result
 }
 
-func (e *mysqlDataXLSXEncoder) Row(values []mysqlsvc.MySQLDataValue) error {
+func (e *mysqlDataXLSXEncoder) Row(values []contract.DataValue) error {
 	if e.closed || len(values) != e.fields || e.row >= 1048576 {
-		return mysqlsvc.ErrMySQLDataEditLimit
+		return contract.ErrDataEditLimit
 	}
 	// Excel limits string cells to 32767 UTF-16 code units. Reject unsupported
 	// control characters before xml.EscapeText can replace them silently.
@@ -403,12 +402,12 @@ func mysqlDataXLSXCellIndex(ref string) (int, int, error) {
 		column = column*26 + int(ref[at]-'A') + 1
 		at++
 		if column > 128 {
-			return 0, 0, mysqlsvc.ErrMySQLDataEditLimit
+			return 0, 0, contract.ErrDataEditLimit
 		}
 	}
 	row, err := strconv.Atoi(ref[at:])
 	if err != nil || column == 0 || row <= 0 || row > 1048576 {
-		return 0, 0, mysqlsvc.ErrMySQLDataPage
+		return 0, 0, contract.ErrDataPage
 	}
 	return column - 1, row, nil
 }
@@ -419,7 +418,7 @@ func mysqlDataParseXLSXImport(data []byte) (*mysqlDataImportInput, error) {
 		return nil, err
 	}
 	if len(z.File) > 4096 {
-		return nil, mysqlsvc.ErrMySQLDataEditLimit
+		return nil, contract.ErrDataEditLimit
 	}
 	files := make(map[string]*zip.File, len(z.File))
 	var uncompressed uint64
@@ -432,11 +431,11 @@ func mysqlDataParseXLSXImport(data []byte) (*mysqlDataImportInput, error) {
 			return nil, errors.New("XLSX contains unsafe or duplicate ZIP paths")
 		}
 		if f.UncompressedSize64 > 32<<20 {
-			return nil, mysqlsvc.ErrMySQLDataEditLimit
+			return nil, contract.ErrDataEditLimit
 		}
 		uncompressed += f.UncompressedSize64
 		if uncompressed > 64<<20 {
-			return nil, mysqlsvc.ErrMySQLDataEditLimit
+			return nil, contract.ErrDataEditLimit
 		}
 		files[name] = f
 	}
@@ -489,7 +488,7 @@ func mysqlDataParseXLSXImport(data []byte) (*mysqlDataImportInput, error) {
 		return nil, err
 	}
 	if len(workbook.Sheets) == 0 {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	var rels struct {
 		Items []struct {
@@ -512,7 +511,7 @@ func mysqlDataParseXLSXImport(data []byte) (*mysqlDataImportInput, error) {
 		}
 	}
 	if !strings.HasPrefix(sheet, "xl/") || files[sheet] == nil {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	var styles struct {
 		Formats []struct {
@@ -536,8 +535,8 @@ func mysqlDataParseXLSXImport(data []byte) (*mysqlDataImportInput, error) {
 	if err = read("xl/sharedStrings.xml", &shared, true); err != nil {
 		return nil, err
 	}
-	if len(shared.Items) > mysqlsvc.MaxMySQLDataImportRows*128+128 {
-		return nil, mysqlsvc.ErrMySQLDataEditLimit
+	if len(shared.Items) > contract.MaxDataImportRows*128+128 {
+		return nil, contract.ErrDataEditLimit
 	}
 	f, err := files[sheet].Open()
 	if err != nil {
@@ -556,7 +555,7 @@ func mysqlDataParseXLSXImport(data []byte) (*mysqlDataImportInput, error) {
 			return nil, err
 		}
 		if _, ok := token.(xml.Directive); ok {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		start, ok := token.(xml.StartElement)
 		if !ok || start.Name.Local != "row" {
@@ -573,13 +572,13 @@ func mysqlDataParseXLSXImport(data []byte) (*mysqlDataImportInput, error) {
 			row.Index = lastRow + 1
 		}
 		if row.Index <= lastRow || row.Index > 1048576 || len(row.Cells) > 128 {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		lastRow = row.Index
 		if len(row.Cells) == 0 {
 			continue
 		}
-		values := make([]mysqlsvc.MySQLDataValue, 128)
+		values := make([]contract.DataValue, 128)
 		for i := range values {
 			values[i].Null = true
 		}
@@ -593,34 +592,34 @@ func mysqlDataParseXLSXImport(data []byte) (*mysqlDataImportInput, error) {
 				}
 			}
 			if cellRow != row.Index || seen[column] || cell.Style < 0 {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			seen[column], maxColumn = true, max(maxColumn, column+1)
 			if cell.Formula != nil {
 				return nil, errors.New("XLSX formula cells are not supported; export their values first")
 			}
-			value := mysqlsvc.MySQLDataValue{}
+			value := contract.DataValue{}
 			switch cell.Type {
 			case "inlineStr":
 				value.Text = cell.Inline.value()
 			case "s":
 				at, err := strconv.Atoi(cell.Value)
 				if err != nil || at < 0 || at >= len(shared.Items) {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 				value.Text = shared.Items[at].value()
 			case "str", "d":
 				value.Text = cell.Value
 			case "b":
 				if cell.Value != "0" && cell.Value != "1" {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 				value.Text = cell.Value
 			case "", "n":
 				if cell.Value == "" {
 					value.Null = true
 				} else if !mysqlDataImportNumber.MatchString(cell.Value) {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				} else {
 					value.Text = cell.Value
 				}
@@ -631,16 +630,16 @@ func mysqlDataParseXLSXImport(data []byte) (*mysqlDataImportInput, error) {
 				formatID := styles.Cells[cell.Style].ID
 				code := formatCodes[formatID]
 				if code == mysqlDataXLSXNullFormat && value.Text == "" {
-					value = mysqlsvc.MySQLDataValue{Null: true}
+					value = contract.DataValue{Null: true}
 				} else if code == mysqlDataXLSXBinaryFormat {
 					if !strings.HasPrefix(value.Text, "0x") {
-						return nil, mysqlsvc.ErrMySQLDataPage
+						return nil, contract.ErrDataPage
 					}
 					b, err := hex.DecodeString(value.Text[2:])
 					if err != nil {
 						return nil, err
 					}
-					value = mysqlsvc.MySQLDataValue{Binary: true, Bytes: b}
+					value = contract.DataValue{Binary: true, Bytes: b}
 				} else if !value.Null && (cell.Type == "n" || cell.Type == "") && mysqlDataXLSXDateFormat(formatID, code) {
 					value.Text, err = mysqlDataXLSXDate(cell.Value, workbook.Properties.Date1904)
 					if err != nil {
@@ -648,31 +647,31 @@ func mysqlDataParseXLSXImport(data []byte) (*mysqlDataImportInput, error) {
 					}
 				}
 			} else if cell.Style != 0 {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			if !utf8.ValidString(value.Text) || len(utf16.Encode([]rune(value.Text))) > 32767 {
-				return nil, mysqlsvc.ErrMySQLDataEditLimit
+				return nil, contract.ErrDataEditLimit
 			}
 			total += len(value.Text) + len(value.Bytes)
-			if total > mysqlsvc.MaxMySQLDataImportBytes {
-				return nil, mysqlsvc.ErrMySQLDataEditLimit
+			if total > contract.MaxDataImportBytes {
+				return nil, contract.ErrDataEditLimit
 			}
 			values[column] = value
 		}
 		if len(input.Fields) == 0 {
 			for _, v := range values[:maxColumn] {
 				if v.Null || v.Binary {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 				input.Fields = append(input.Fields, v.Text)
 			}
 		} else {
 			if maxColumn > len(input.Fields) {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			input.Rows = append(input.Rows, values[:len(input.Fields)])
-			if len(input.Rows) > mysqlsvc.MaxMySQLDataImportRows {
-				return nil, mysqlsvc.ErrMySQLDataEditLimit
+			if len(input.Rows) > contract.MaxDataImportRows {
+				return nil, contract.ErrDataEditLimit
 			}
 		}
 	}
@@ -708,7 +707,7 @@ func mysqlDataXLSXDateFormat(id int, code string) bool {
 func mysqlDataXLSXDate(raw string, date1904 bool) (string, error) {
 	serial, err := strconv.ParseFloat(raw, 64)
 	if err != nil || serial < 0 || serial > 2958465 {
-		return "", mysqlsvc.ErrMySQLDataPage
+		return "", contract.ErrDataPage
 	}
 	days := int(serial)
 	if !date1904 && days == 60 {

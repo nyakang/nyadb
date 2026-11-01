@@ -5,7 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/mysqlspec"
 	"time"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -16,49 +17,19 @@ import (
 var ErrMySQLTableNotFound = errors.New("MySQL table or view not found")
 
 // MySQLTableStructure contains only read-only server metadata, never row data.
-type MySQLTableStructure struct {
-	Database, Name, Kind, Engine, Comment, Collation string
-	EstimatedRows                                    *int64 // TABLE_ROWS is approximate for InnoDB and NULL for some views.
-	Columns                                          []MySQLStructureColumn
-	Indexes                                          []MySQLStructureIndex
-	ForeignKeys                                      []MySQLStructureForeignKey
-}
+type MySQLTableStructure = contract.TableStructure
 
-type MySQLStructureColumn struct {
-	Name, Type, DataType, Key, Extra, Comment          string
-	Position                                           int64
-	Nullable                                           bool
-	Default                                            *string // nil distinguishes SQL NULL from empty string.
-	CharacterMaxLength, NumericPrecision, NumericScale *int64
-	DatetimePrecision                                  *int64
-	CharacterSet, Collation                            *string // nil for types without charset.
-}
+type MySQLStructureColumn = contract.StructureColumn
 
-type MySQLStructureIndexColumn struct {
-	Name, Direction string
-	Position        int64
-	SubPart         *int64
-}
+type MySQLStructureIndexColumn = contract.StructureIndexColumn
 
-type MySQLStructureIndex struct {
-	Name, Type string
-	Unique     bool
-	Columns    []MySQLStructureIndexColumn
-}
+type MySQLStructureIndex = contract.StructureIndex
 
-type MySQLStructureForeignKeyColumn struct {
-	Name, ReferencedName string
-	Position             int64
-}
+type MySQLStructureForeignKeyColumn = contract.StructureForeignKeyColumn
 
-type MySQLStructureForeignKey struct {
-	Name, ReferencedDatabase, ReferencedTable, OnUpdate, OnDelete string
-	Columns                                                       []MySQLStructureForeignKeyColumn
-}
+type MySQLStructureForeignKey = contract.StructureForeignKey
 
-func validMySQLMetadataName(name string) bool {
-	return name != "" && len(name) <= 256 && !strings.ContainsRune(name, 0)
-}
+func validMySQLMetadataName(name string) bool { return mysqlspec.ValidMetadataName(name) }
 
 func mysqlNullableInt(v sql.NullInt64) *int64 {
 	if !v.Valid {

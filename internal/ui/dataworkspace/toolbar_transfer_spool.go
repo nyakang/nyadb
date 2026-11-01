@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"hash"
 	"io"
 	"os"
@@ -16,8 +17,6 @@ import (
 	"slices"
 	"strings"
 	"sync"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // Spools are private immutable files, never configuration or product assets.
@@ -65,7 +64,7 @@ func (o *mysqlDataSpoolOwner) Close() {
 	o.spools = nil
 }
 
-func mysqlDataReadSpool(ctx context.Context, f *os.File, format string, options mysqlDataSourceOptions, owner *mysqlDataSpoolOwner) (*mysqlDataImportSpool, *mysqlDataImportInput, []mysqlsvc.MySQLDataImportColumn, error) {
+func mysqlDataReadSpool(ctx context.Context, f *os.File, format string, options mysqlDataSourceOptions, owner *mysqlDataSpoolOwner) (*mysqlDataImportSpool, *mysqlDataImportInput, []contract.DataImportColumn, error) {
 	reader, err := mysqlDataOpenImportRows(ctx, f, format, options)
 	if err != nil {
 		return nil, nil, nil, err
@@ -151,7 +150,7 @@ func (r *mysqlDataSpoolReader) Close() error {
 	r.file = nil
 	return err
 }
-func (r *mysqlDataSpoolReader) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataSpoolReader) Next(ctx context.Context) ([]contract.DataValue, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -163,7 +162,7 @@ func (r *mysqlDataSpoolReader) Next(ctx context.Context) ([]mysqlsvc.MySQLDataVa
 		part, e := r.reader.ReadSlice('\n')
 		data = append(data, part...)
 		if len(data) > 100<<20 {
-			return nil, mysqlsvc.ErrMySQLDataEditLimit
+			return nil, contract.ErrDataEditLimit
 		}
 		if e == bufio.ErrBufferFull {
 			continue
@@ -179,7 +178,7 @@ func (r *mysqlDataSpoolReader) Next(ctx context.Context) ([]mysqlsvc.MySQLDataVa
 		}
 		break
 	}
-	var row []mysqlsvc.MySQLDataValue
+	var row []contract.DataValue
 	if err := json.Unmarshal(data, &row); err != nil {
 		return nil, errors.New("invalid reviewed source")
 	}
@@ -190,16 +189,16 @@ func (r *mysqlDataSpoolReader) Next(ctx context.Context) ([]mysqlsvc.MySQLDataVa
 	return row, nil
 }
 
-func mysqlDataSpoolRows(ctx context.Context, reader mysqlDataImportRowReader) (*mysqlDataImportSpool, *mysqlDataImportInput, []mysqlsvc.MySQLDataImportColumn, error) {
+func mysqlDataSpoolRows(ctx context.Context, reader mysqlDataImportRowReader) (*mysqlDataImportSpool, *mysqlDataImportInput, []contract.DataImportColumn, error) {
 	defer reader.Close()
 	fields := reader.Fields()
 	seen := map[string]bool{}
 	if len(fields) == 0 || len(fields) > 128 {
-		return nil, nil, nil, mysqlsvc.ErrMySQLDataPage
+		return nil, nil, nil, contract.ErrDataPage
 	}
 	for _, field := range fields {
 		if field == "" || seen[field] {
-			return nil, nil, nil, mysqlsvc.ErrMySQLDataPage
+			return nil, nil, nil, contract.ErrDataPage
 		}
 		seen[field] = true
 	}
@@ -219,7 +218,7 @@ func mysqlDataSpoolRows(ctx context.Context, reader mysqlDataImportRowReader) (*
 	encoder := json.NewEncoder(writer)
 	spool := &mysqlDataImportSpool{path: f.Name(), fields: fields}
 	preview := &mysqlDataImportInput{Fields: append([]string(nil), fields...)}
-	var inferred []mysqlsvc.MySQLDataImportColumn
+	var inferred []contract.DataImportColumn
 	for {
 		row, e := reader.Next(ctx)
 		if e == io.EOF {
@@ -229,20 +228,20 @@ func mysqlDataSpoolRows(ctx context.Context, reader mysqlDataImportRowReader) (*
 			return nil, nil, nil, e
 		}
 		if len(row) != len(fields) {
-			return nil, nil, nil, mysqlsvc.ErrMySQLDataPage
+			return nil, nil, nil, contract.ErrDataPage
 		}
 		total := 0
 		for _, value := range row {
 			total += len(value.Text) + len(value.Bytes)
-			if len(value.Text)+len(value.Bytes) > mysqlsvc.MySQLDataEditMaxBytes || total > mysqlsvc.MySQLDataExportRowMaxBytes {
-				return nil, nil, nil, mysqlsvc.ErrMySQLDataEditLimit
+			if len(value.Text)+len(value.Bytes) > contract.DataEditMaxBytes || total > contract.DataExportRowMaxBytes {
+				return nil, nil, nil, contract.ErrDataEditLimit
 			}
 		}
 		if err = encoder.Encode(row); err != nil {
 			return nil, nil, nil, err
 		}
 		spool.rows++
-		one := mysqlDataInferImportColumns(&mysqlDataImportInput{Fields: fields, Rows: [][]mysqlsvc.MySQLDataValue{row}})
+		one := mysqlDataInferImportColumns(&mysqlDataImportInput{Fields: fields, Rows: [][]contract.DataValue{row}})
 		if inferred == nil {
 			inferred = one
 		} else {
@@ -257,7 +256,7 @@ func mysqlDataSpoolRows(ctx context.Context, reader mysqlDataImportRowReader) (*
 			}
 		}
 		if len(preview.Rows) < 100 {
-			owned := make([]mysqlsvc.MySQLDataValue, len(row))
+			owned := make([]contract.DataValue, len(row))
 			for i, v := range row {
 				v.Bytes = slices.Clone(v.Bytes)
 				owned[i] = v
@@ -266,7 +265,7 @@ func mysqlDataSpoolRows(ctx context.Context, reader mysqlDataImportRowReader) (*
 		}
 	}
 	if spool.rows == 0 {
-		return nil, nil, nil, mysqlsvc.ErrMySQLDataPage
+		return nil, nil, nil, contract.ErrDataPage
 	}
 	if err = writer.Flush(); err != nil {
 		return nil, nil, nil, err
@@ -291,7 +290,7 @@ type mysqlDataDelimitedRows struct {
 
 func (r *mysqlDataDelimitedRows) Fields() []string { return append([]string(nil), r.fields...) }
 func (r *mysqlDataDelimitedRows) Close() error     { return nil }
-func (r *mysqlDataDelimitedRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataDelimitedRows) Next(ctx context.Context) ([]contract.DataValue, error) {
 	for {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -308,9 +307,9 @@ func (r *mysqlDataDelimitedRows) Next(ctx context.Context) ([]mysqlsvc.MySQLData
 			continue
 		}
 		if len(cells) != len(r.fields) {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
-		row := make([]mysqlsvc.MySQLDataValue, len(cells))
+		row := make([]contract.DataValue, len(cells))
 		for i, text := range cells {
 			row[i] = mysqlDataDecodeDelimited(text)
 		}
@@ -381,15 +380,15 @@ func mysqlDataPreparationKey(t *Document) string {
 		Options                                               mysqlDataSourceOptions
 		Target, Name, Mode, Format, Destination, ParsedSource string
 		Mapping, Match                                        []string
-		Columns                                               []mysqlsvc.MySQLDataImportColumn
+		Columns                                               []contract.DataImportColumn
 		Empty, Continue, Extended, Ignore                     bool
 		StatementKB                                           int
-		Metadata                                              []mysqlsvc.MySQLStructureColumn
+		Metadata                                              []contract.StructureColumn
 	}{tr.Options, tr.Target, tr.NewName, tr.Mode, tr.Format, mysqlDataImportDestination(t), tr.ParsedSourceKey + ":" + mysqlDataCurrentSourceKey(tr), tr.Mapping, tr.MatchColumns, tr.NewColumns, tr.EmptyAsNull, tr.ContinueOnError, tr.ExtendedInsert, tr.IgnoreForeignKeys, tr.StatementKB, mysqlDataImportTargetMetadata(t)})
 	return string(key)
 }
 
-func mysqlDataConvertImportValue(value mysqlsvc.MySQLDataValue, col mysqlsvc.MySQLStructureColumn, options mysqlDataSourceOptions, emptyAsNull bool) (mysqlsvc.MySQLDataValue, error) {
+func mysqlDataConvertImportValue(value contract.DataValue, col contract.StructureColumn, options mysqlDataSourceOptions, emptyAsNull bool) (contract.DataValue, error) {
 	if options.Compatibility == "navicat_xml" && !value.Null && !value.Binary && value.Text == "" {
 		kind := strings.ToLower(col.DataType)
 		if slices.Contains([]string{"tinyint", "smallint", "mediumint", "int", "integer", "bigint", "decimal", "numeric", "double", "float"}, kind) {
@@ -413,7 +412,7 @@ func mysqlDataConvertImportValue(value mysqlsvc.MySQLDataValue, col mysqlsvc.MyS
 		if err != nil {
 			return value, err
 		}
-		return mysqlsvc.MySQLDataValue{Binary: true, Bytes: b}, nil
+		return contract.DataValue{Binary: true, Bytes: b}, nil
 	}
 	kind := strings.ToLower(col.DataType)
 	if options.DecimalSeparator != "" && options.DecimalSeparator != "." && slices.Contains([]string{"decimal", "numeric", "float", "double"}, kind) {
@@ -429,19 +428,19 @@ func mysqlDataConvertImportValue(value mysqlsvc.MySQLDataValue, col mysqlsvc.MyS
 	return value, nil
 }
 
-func mysqlDataMappedRow(row []mysqlsvc.MySQLDataValue, mapping []string, metadata []mysqlsvc.MySQLStructureColumn, options mysqlDataSourceOptions, empty bool) ([]mysqlsvc.MySQLDataValue, int64, error) {
-	columns := map[string]mysqlsvc.MySQLStructureColumn{}
+func mysqlDataMappedRow(row []contract.DataValue, mapping []string, metadata []contract.StructureColumn, options mysqlDataSourceOptions, empty bool) ([]contract.DataValue, int64, error) {
+	columns := map[string]contract.StructureColumn{}
 	for _, col := range metadata {
 		columns[col.Name] = col
 	}
-	values := make([]mysqlsvc.MySQLDataValue, 0, len(mapping))
+	values := make([]contract.DataValue, 0, len(mapping))
 	changed := int64(0)
 	for i, name := range mapping {
 		if name == "" {
 			continue
 		}
 		if i >= len(row) {
-			return nil, 0, mysqlsvc.ErrMySQLDataPage
+			return nil, 0, contract.ErrDataPage
 		}
 		value, err := mysqlDataConvertImportValue(row[i], columns[name], options, empty)
 		if err != nil {

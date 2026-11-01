@@ -25,6 +25,7 @@ func sqlUITestState(t *testing.T) (*State, *ui.Tester, int64) {
 	s.selectedProfileID = profile.ID
 	s.sessions.Current().ProfileID = profile.ID
 	s.sessions.Current().Status = "已连接"
+	publishRuntimeFixture(t, s)
 	s.sessions.Current().Databases = []string{"db_test"}
 	s.sessions.Current().Database = "db_test"
 	s.openQuery()
@@ -62,6 +63,7 @@ func TestSQLTabsProfileIsolationAndCloseCancel(t *testing.T) {
 	s.sessions.Activate(bProfile.ID)
 	s.sessions.Current().ProfileID = bProfile.ID
 	s.sessions.Current().Status = "已连接"
+	publishRuntimeFixture(t, s)
 	s.sessions.Current().Database = "db_other"
 	s.selectedProfileID = bProfile.ID
 	s.openQuery()

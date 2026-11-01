@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -15,11 +16,7 @@ const MySQLFieldChunkMaxUnits = 4096
 
 // MySQLFieldChunk is a bounded, explicitly requested segment of a field.
 // Offsets count MySQL characters for text and bytes for binary data.
-type MySQLFieldChunk struct {
-	Text                           string
-	Offset, NextOffset, TotalUnits int64
-	Binary, Null, HasMore          bool
-}
+type MySQLFieldChunk = contract.FieldChunk
 
 // ReadMySQLFieldChunk is never called by ordinary table pagination. It
 // revalidates the unique row identity against server metadata and retrieves

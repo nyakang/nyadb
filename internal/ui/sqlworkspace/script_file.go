@@ -10,10 +10,6 @@ type fileLease interface {
 	ExecuteFile(context.Context, string, io.Reader) (contract.SQLResult, error)
 }
 
-func (l *mySQLLease) ExecuteFile(ctx context.Context, db string, reader io.Reader) (contract.SQLResult, error) {
-	return l.manager.ExecuteSQLTabTokenFile(ctx, l.token, db, reader)
-}
-
 // RunFile is an explicit operation; it never replaces the document text or
 // acquires a replacement physical session. Cancellation waits for its receipt.
 func (s *State) RunFile(d *Document) {

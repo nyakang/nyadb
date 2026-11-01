@@ -6,19 +6,18 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/encoding/japanese"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/encoding/unicode"
 	"io"
 	"math"
 	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
-	"golang.org/x/text/encoding"
-	"golang.org/x/text/encoding/charmap"
-	"golang.org/x/text/encoding/japanese"
-	"golang.org/x/text/encoding/simplifiedchinese"
-	"golang.org/x/text/encoding/unicode"
 )
 
 // DBF imports follow the public dBASE/Visual FoxPro field descriptors. The
@@ -47,9 +46,9 @@ func newMySQLDataDBFEncoder(w io.Writer, fields []string) (*mysqlDataDBFEncoder,
 	}
 	return &mysqlDataDBFEncoder{spool: s, w: w}, nil
 }
-func (e *mysqlDataDBFEncoder) Row(row []mysqlsvc.MySQLDataValue) error {
+func (e *mysqlDataDBFEncoder) Row(row []contract.DataValue) error {
 	if e.spool.rows >= math.MaxUint32 {
-		return mysqlsvc.ErrMySQLDataEditLimit
+		return contract.ErrDataEditLimit
 	}
 	for _, v := range row {
 		if len(v.Text)+len(v.Bytes) > 254 {
@@ -73,7 +72,7 @@ func (e *mysqlDataDBFEncoder) CloseContext(ctx context.Context) (err error) {
 	}
 	headerLength := 32 + (fields+1)*32 + 1 + 263
 	if recordLength > 65535 || headerLength > 65535 {
-		return mysqlsvc.ErrMySQLDataEditLimit
+		return contract.ErrDataEditLimit
 	}
 	header := make([]byte, headerLength)
 	header[0] = 0x32
@@ -106,7 +105,7 @@ func (e *mysqlDataDBFEncoder) CloseContext(ctx context.Context) (err error) {
 	if _, err = e.w.Write(header); err != nil {
 		return err
 	}
-	err = e.spool.each(ctx, func(values []mysqlsvc.MySQLDataValue) error {
+	err = e.spool.each(ctx, func(values []contract.DataValue) error {
 		row := make([]byte, recordLength)
 		row[0] = ' '
 		flags := row[recordLength-flagsWidth:]
@@ -170,7 +169,7 @@ func mysqlDataOpenDBFRowsWithEncoding(reader io.Reader, name string) (*mysqlData
 	headerLength := int(binary.LittleEndian.Uint16(h[8:]))
 	recordLength := int(binary.LittleEndian.Uint16(h[10:]))
 	if headerLength < 33 || recordLength < 2 || recordLength > 65535 {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	block := make([]byte, headerLength-32)
 	if _, err := io.ReadFull(reader, block); err != nil {
@@ -191,7 +190,7 @@ func mysqlDataOpenDBFRowsWithEncoding(reader io.Reader, name string) (*mysqlData
 			break
 		}
 		if pos+32 > len(block) {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		d := block[pos : pos+32]
 		name := string(bytes.TrimRight(d[:11], "\x00"))
@@ -199,7 +198,7 @@ func mysqlDataOpenDBFRowsWithEncoding(reader io.Reader, name string) (*mysqlData
 			name = name[:n]
 		}
 		if name == "" || seen[strings.ToUpper(name)] {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		seen[strings.ToUpper(name)] = true
 		width := int(d[16])
@@ -207,7 +206,7 @@ func mysqlDataOpenDBFRowsWithEncoding(reader io.Reader, name string) (*mysqlData
 			width |= int(d[17]) << 8
 		}
 		if width == 0 || offset+width > recordLength {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		f := mysqlDataDBFField{name: name, kind: d[11], flags: d[18], offset: offset, width: width, scale: int(d[17]), lengthBit: -1, nullBit: -1}
 		offset += width
@@ -227,13 +226,13 @@ func mysqlDataOpenDBFRowsWithEncoding(reader io.Reader, name string) (*mysqlData
 			continue
 		}
 		if len(r.fields) >= 128 {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		r.fields = append(r.fields, f)
 		r.names = append(r.names, name)
 	}
 	if !ended || len(r.fields) == 0 || offset != recordLength || bit > 0 && (r.nullOffset < 0 || r.nullWidth*8 < bit) {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	return r, nil
 }
@@ -288,7 +287,7 @@ func mysqlDataDBFEncoding(code byte, name string) (encoding.Encoding, error) {
 }
 func (r *mysqlDataDBFRows) Fields() []string { return append([]string(nil), r.names...) }
 func (r *mysqlDataDBFRows) Close() error     { r.closed = true; r.reader = nil; return nil }
-func (r *mysqlDataDBFRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataDBFRows) Next(ctx context.Context) ([]contract.DataValue, error) {
 	for {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -305,10 +304,10 @@ func (r *mysqlDataDBFRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue,
 			continue
 		}
 		if data[0] != ' ' {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		flag := func(bit int) bool { return bit >= 0 && data[r.nullOffset+bit/8]&(1<<uint(bit%8)) != 0 }
-		row := make([]mysqlsvc.MySQLDataValue, len(r.fields))
+		row := make([]contract.DataValue, len(r.fields))
 		for i, f := range r.fields {
 			if flag(f.nullBit) {
 				row[i].Null = true
@@ -318,7 +317,7 @@ func (r *mysqlDataDBFRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue,
 			if f.lengthBit >= 0 && flag(f.lengthBit) {
 				length := int(value[len(value)-1])
 				if length >= len(value) {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 				value = value[:length]
 			}
@@ -331,8 +330,8 @@ func (r *mysqlDataDBFRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue,
 		return row, nil
 	}
 }
-func (r *mysqlDataDBFRows) value(f mysqlDataDBFField, data []byte) (mysqlsvc.MySQLDataValue, error) {
-	v := mysqlsvc.MySQLDataValue{}
+func (r *mysqlDataDBFRows) value(f mysqlDataDBFField, data []byte) (contract.DataValue, error) {
+	v := contract.DataValue{}
 	switch f.kind {
 	case 'Q':
 		v.Binary = true
@@ -373,11 +372,11 @@ func (r *mysqlDataDBFRows) value(f mysqlDataDBFField, data []byte) (mysqlsvc.MyS
 		if v.Text == "" {
 			v.Null = true
 		} else if !mysqlDataImportNumber.MatchString(v.Text) {
-			return v, mysqlsvc.ErrMySQLDataPage
+			return v, contract.ErrDataPage
 		}
 	case 'L':
 		if len(data) != 1 {
-			return v, mysqlsvc.ErrMySQLDataPage
+			return v, contract.ErrDataPage
 		}
 		switch data[0] {
 		case 'T', 't', 'Y', 'y':
@@ -387,7 +386,7 @@ func (r *mysqlDataDBFRows) value(f mysqlDataDBFField, data []byte) (mysqlsvc.MyS
 		case '?', ' ', '\x00':
 			v.Null = true
 		default:
-			return v, mysqlsvc.ErrMySQLDataPage
+			return v, contract.ErrDataPage
 		}
 	case 'D':
 		text := strings.TrimSpace(string(data))
@@ -402,7 +401,7 @@ func (r *mysqlDataDBFRows) value(f mysqlDataDBFField, data []byte) (mysqlsvc.MyS
 		}
 	case 'I', '+':
 		if len(data) != 4 {
-			return v, mysqlsvc.ErrMySQLDataPage
+			return v, contract.ErrDataPage
 		}
 		v.Text = strconv.FormatInt(int64(int32(binary.LittleEndian.Uint32(data))), 10)
 	case 'B', 'O':
@@ -411,12 +410,12 @@ func (r *mysqlDataDBFRows) value(f mysqlDataDBFField, data []byte) (mysqlsvc.MyS
 		}
 		n := math.Float64frombits(binary.LittleEndian.Uint64(data))
 		if math.IsNaN(n) || math.IsInf(n, 0) {
-			return v, mysqlsvc.ErrMySQLDataPage
+			return v, contract.ErrDataPage
 		}
 		v.Text = strconv.FormatFloat(n, 'g', -1, 64)
 	case 'Y':
 		if len(data) != 8 {
-			return v, mysqlsvc.ErrMySQLDataPage
+			return v, contract.ErrDataPage
 		}
 		n := int64(binary.LittleEndian.Uint64(data))
 		negative := n < 0
@@ -433,7 +432,7 @@ func (r *mysqlDataDBFRows) value(f mysqlDataDBFField, data []byte) (mysqlsvc.MyS
 		}
 	case 'T', '@':
 		if len(data) != 8 {
-			return v, mysqlsvc.ErrMySQLDataPage
+			return v, contract.ErrDataPage
 		}
 		days := int64(binary.LittleEndian.Uint32(data))
 		millis := int64(binary.LittleEndian.Uint32(data[4:]))
@@ -441,11 +440,11 @@ func (r *mysqlDataDBFRows) value(f mysqlDataDBFField, data []byte) (mysqlsvc.MyS
 			v.Null = true
 		} else {
 			if millis >= 86400000 {
-				return v, mysqlsvc.ErrMySQLDataPage
+				return v, contract.ErrDataPage
 			}
 			d := time.Unix((days-2440588)*86400, millis*int64(time.Millisecond)).UTC()
 			if d.Year() < 1 || d.Year() > 9999 {
-				return v, mysqlsvc.ErrMySQLDataPage
+				return v, contract.ErrDataPage
 			}
 			v.Text = d.Format("2006-01-02 15:04:05.999")
 		}

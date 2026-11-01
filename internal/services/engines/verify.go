@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"math/big"
+	"strconv"
 )
 
 // Verify is a fresh read only. It never infers that an uncertain COMMIT should
@@ -70,6 +71,21 @@ func (s *Session) Verify(ctx context.Context, o contract.ObjectRef, edits []cont
 func sameCell(a, b contract.Cell) bool {
 	if a.Kind == contract.Null || b.Kind == contract.Null {
 		return a.Kind == b.Kind
+	}
+	if a.Kind == contract.Boolean || b.Kind == contract.Boolean {
+		boolean, other := a, b
+		if b.Kind == contract.Boolean {
+			boolean, other = b, a
+		}
+		value, err := strconv.ParseBool(boolean.Text)
+		if err != nil {
+			return false
+		}
+		if other.Kind == contract.Integer {
+			return (value && other.Text == "1") || (!value && other.Text == "0")
+		}
+		otherValue, err := strconv.ParseBool(other.Text)
+		return err == nil && otherValue == value
 	}
 	if a.Kind == contract.Binary || b.Kind == contract.Binary {
 		return a.Kind == b.Kind && bytes.Equal(a.Bytes, b.Bytes)

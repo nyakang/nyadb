@@ -136,12 +136,14 @@ func TestMySQLMultiProfileTabsAndMetadataRefreshAreScoped(t *testing.T) {
 	}
 	s.loadProfiles()
 	s.sessions.Current().ProfileID, s.sessions.Current().Status, s.selectedProfileID = a.ID, "已连接", a.ID
+	publishRuntimeFixture(t, s)
 	s.sessions.Current().Databases = []string{"shared", "only_a"}
 	s.sessions.Current().Cache = map[string][]mysqlsvc.MySQLDBObject{"shared": {{Name: "one", Kind: "表"}}}
 	s.tabs = append(s.tabs, &tab{kind: tabMySQLData, title: "A data", data: newDataDocument(s, a.ID, "shared", "one")})
 	s.tabs = append(s.tabs, &tab{kind: tabStructure, title: "B structure", object: s.objectWorkspace.OpenStructure(2, b.ID, "shared", "two")})
 	s.sessions.Activate(b.ID)
 	s.sessions.Current().ProfileID, s.sessions.Current().Status, s.selectedProfileID = b.ID, "已连接", b.ID
+	publishRuntimeFixture(t, s)
 	s.sessions.Current().Databases = []string{"shared", "only_b"}
 	s.sessions.Current().Cache["shared"] = []mysqlsvc.MySQLDBObject{{Name: "two", Kind: "表"}}
 	s.pruneMySQLTabsFor(b.ID, map[string]bool{"only_b": true})
@@ -230,6 +232,7 @@ func TestMySQLMultiProfileOpeningOldTabReactivatesItsSession(t *testing.T) {
 	s.loadProfiles()
 	s.selectProfileByName(a.Name)
 	s.sessions.Current().ProfileID, s.sessions.Current().Status = a.ID, "已连接"
+	publishRuntimeFixture(t, s)
 	s.sessions.Current().Databases = []string{"app_a"}
 	s.tabs = append(s.tabs, &tab{kind: tabStructure, title: "app_a.orders", object: s.objectWorkspace.OpenStructure(2, a.ID, "app_a", "orders")})
 	s.selectProfileByName(b.Name)
@@ -237,6 +240,7 @@ func TestMySQLMultiProfileOpeningOldTabReactivatesItsSession(t *testing.T) {
 		t.Fatal("selecting B failed to park A and return to Objects tab")
 	}
 	s.sessions.Current().ProfileID, s.sessions.Current().Status = b.ID, "已连接"
+	publishRuntimeFixture(t, s)
 	s.sessions.Current().Databases = []string{"app_b"}
 	s.activeTab = 1 // clicking the previously opened A structure tab
 	tt.Frame()

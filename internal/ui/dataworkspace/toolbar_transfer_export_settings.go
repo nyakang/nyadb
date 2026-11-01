@@ -4,17 +4,16 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"io"
-	"slices"
-	"strings"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/encoding/japanese"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
+	"io"
+	"slices"
+	"strings"
 )
 
 type mysqlDataContextWriter struct {
@@ -34,7 +33,7 @@ type mysqlDataConfiguredEncoder struct {
 	text     *mysqlDataDelimitedEncoder
 	encoded  *transform.Writer
 	options  mysqlDataSourceOptions
-	metadata []mysqlsvc.MySQLStructureColumn
+	metadata []contract.StructureColumn
 	fields   []string
 	format   string
 }
@@ -61,7 +60,7 @@ func mysqlDataTextFormat(format string) bool {
 	return slices.Contains([]string{"CSV", "TXT", "TSV", "JSON", "XML", "HTML", "SQL"}, format)
 }
 
-func newMySQLDataConfiguredEncoder(ctx context.Context, w io.Writer, format, db, table string, fields []string, metadata []mysqlsvc.MySQLStructureColumn, o mysqlDataSourceOptions) (*mysqlDataConfiguredEncoder, error) {
+func newMySQLDataConfiguredEncoder(ctx context.Context, w io.Writer, format, db, table string, fields []string, metadata []contract.StructureColumn, o mysqlDataSourceOptions) (*mysqlDataConfiguredEncoder, error) {
 	e := &mysqlDataConfiguredEncoder{options: o, metadata: metadata, fields: fields, format: format}
 	w = mysqlDataContextWriter{ctx: ctx, writer: w}
 	if mysqlDataTextFormat(format) {
@@ -92,9 +91,9 @@ func newMySQLDataConfiguredEncoder(ctx context.Context, w io.Writer, format, db,
 	}
 	return e, nil
 }
-func (e *mysqlDataConfiguredEncoder) Row(values []mysqlsvc.MySQLDataValue) error {
+func (e *mysqlDataConfiguredEncoder) Row(values []contract.DataValue) error {
 	if len(values) != len(e.fields) {
-		return mysqlsvc.ErrMySQLDataPage
+		return contract.ErrDataPage
 	}
 	converted := slices.Clone(values)
 	for i, field := range e.fields {
