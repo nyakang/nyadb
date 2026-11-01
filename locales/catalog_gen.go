@@ -11267,3 +11267,263 @@ func ObjectDatabasePrefix() string { return In(i18n.Locale()).ObjectDatabasePref
 func (msgs Messages) ObjectDatabasePrefix() string {
 	return Catalog.Format(msgs.locale, "objectDatabasePrefix", nil)
 }
+
+// QueryAssets1 says "打开查询"
+// in the language the app shows.
+func QueryAssets1() string { return In(i18n.Locale()).QueryAssets1() }
+
+// QueryAssets1 says "打开查询"
+// in the language of msgs.
+func (msgs Messages) QueryAssets1() string {
+	return Catalog.Format(msgs.locale, "queryAssets1", nil)
+}
+
+// QueryAssets2 says "重命名查询"
+// in the language the app shows.
+func QueryAssets2() string { return In(i18n.Locale()).QueryAssets2() }
+
+// QueryAssets2 says "重命名查询"
+// in the language of msgs.
+func (msgs Messages) QueryAssets2() string {
+	return Catalog.Format(msgs.locale, "queryAssets2", nil)
+}
+
+// QueryAssets3 says "移动到查询分组"
+// in the language the app shows.
+func QueryAssets3() string { return In(i18n.Locale()).QueryAssets3() }
+
+// QueryAssets3 says "移动到查询分组"
+// in the language of msgs.
+func (msgs Messages) QueryAssets3() string {
+	return Catalog.Format(msgs.locale, "queryAssets3", nil)
+}
+
+// QueryAssets4 says "删除查询…"
+// in the language the app shows.
+func QueryAssets4() string { return In(i18n.Locale()).QueryAssets4() }
+
+// QueryAssets4 says "删除查询…"
+// in the language of msgs.
+func (msgs Messages) QueryAssets4() string {
+	return Catalog.Format(msgs.locale, "queryAssets4", nil)
+}
+
+// QueryAssets5 says "重命名查询分组"
+// in the language the app shows.
+func QueryAssets5() string { return In(i18n.Locale()).QueryAssets5() }
+
+// QueryAssets5 says "重命名查询分组"
+// in the language of msgs.
+func (msgs Messages) QueryAssets5() string {
+	return Catalog.Format(msgs.locale, "queryAssets5", nil)
+}
+
+// QueryAssets6 says "删除查询分组…"
+// in the language the app shows.
+func QueryAssets6() string { return In(i18n.Locale()).QueryAssets6() }
+
+// QueryAssets6 says "删除查询分组…"
+// in the language of msgs.
+func (msgs Messages) QueryAssets6() string {
+	return Catalog.Format(msgs.locale, "queryAssets6", nil)
+}
+
+// QueryAssets7 says "搜索查询名称"
+// in the language the app shows.
+func QueryAssets7() string { return In(i18n.Locale()).QueryAssets7() }
+
+// QueryAssets7 says "搜索查询名称"
+// in the language of msgs.
+func (msgs Messages) QueryAssets7() string {
+	return Catalog.Format(msgs.locale, "queryAssets7", nil)
+}
+
+// QueryAssets8 says "全部数据库"
+// in the language the app shows.
+func QueryAssets8() string { return In(i18n.Locale()).QueryAssets8() }
+
+// QueryAssets8 says "全部数据库"
+// in the language of msgs.
+func (msgs Messages) QueryAssets8() string {
+	return Catalog.Format(msgs.locale, "queryAssets8", nil)
+}
+
+// QueryAssets9 says "查询数据库筛选"
+// in the language the app shows.
+func QueryAssets9() string { return In(i18n.Locale()).QueryAssets9() }
+
+// QueryAssets9 says "查询数据库筛选"
+// in the language of msgs.
+func (msgs Messages) QueryAssets9() string {
+	return Catalog.Format(msgs.locale, "queryAssets9", nil)
+}
+
+// QueryAssets10 says "查询分组筛选"
+// in the language the app shows.
+func QueryAssets10() string { return In(i18n.Locale()).QueryAssets10() }
+
+// QueryAssets10 says "查询分组筛选"
+// in the language of msgs.
+func (msgs Messages) QueryAssets10() string {
+	return Catalog.Format(msgs.locale, "queryAssets10", nil)
+}
+
+// QueryAssets11 says "管理查询分组"
+// in the language the app shows.
+func QueryAssets11() string { return In(i18n.Locale()).QueryAssets11() }
+
+// QueryAssets11 says "管理查询分组"
+// in the language of msgs.
+func (msgs Messages) QueryAssets11() string {
+	return Catalog.Format(msgs.locale, "queryAssets11", nil)
+}
+
+// QueryAssets12 says "新建查询分组…"
+// in the language the app shows.
+func QueryAssets12() string { return In(i18n.Locale()).QueryAssets12() }
+
+// QueryAssets12 says "新建查询分组…"
+// in the language of msgs.
+func (msgs Messages) QueryAssets12() string {
+	return Catalog.Format(msgs.locale, "queryAssets12", nil)
+}
+
+// QueryAssets13 says "查询存储不可用，原有加密记录已保留"
+// in the language the app shows.
+func QueryAssets13() string { return In(i18n.Locale()).QueryAssets13() }
+
+// QueryAssets13 says "查询存储不可用，原有加密记录已保留"
+// in the language of msgs.
+func (msgs Messages) QueryAssets13() string {
+	return Catalog.Format(msgs.locale, "queryAssets13", nil)
+}
+
+// QueryAssets14 says "数据库/schema"
+// in the language the app shows.
+func QueryAssets14() string { return In(i18n.Locale()).QueryAssets14() }
+
+// QueryAssets14 says "数据库/schema"
+// in the language of msgs.
+func (msgs Messages) QueryAssets14() string {
+	return Catalog.Format(msgs.locale, "queryAssets14", nil)
+}
+
+// QueryAssets15 says "查询分组"
+// in the language the app shows.
+func QueryAssets15() string { return In(i18n.Locale()).QueryAssets15() }
+
+// QueryAssets15 says "查询分组"
+// in the language of msgs.
+func (msgs Messages) QueryAssets15() string {
+	return Catalog.Format(msgs.locale, "queryAssets15", nil)
+}
+
+// QueryAssets16 says "尚无匹配的已保存查询"
+// in the language the app shows.
+func QueryAssets16() string { return In(i18n.Locale()).QueryAssets16() }
+
+// QueryAssets16 says "尚无匹配的已保存查询"
+// in the language of msgs.
+func (msgs Messages) QueryAssets16() string {
+	return Catalog.Format(msgs.locale, "queryAssets16", nil)
+}
+
+// QueryAssets17 says "删除命名查询？"
+// in the language the app shows.
+func QueryAssets17() string { return In(i18n.Locale()).QueryAssets17() }
+
+// QueryAssets17 says "删除命名查询？"
+// in the language of msgs.
+func (msgs Messages) QueryAssets17() string {
+	return Catalog.Format(msgs.locale, "queryAssets17", nil)
+}
+
+// QueryAssets18 says "新建查询分组"
+// in the language the app shows.
+func QueryAssets18() string { return In(i18n.Locale()).QueryAssets18() }
+
+// QueryAssets18 says "新建查询分组"
+// in the language of msgs.
+func (msgs Messages) QueryAssets18() string {
+	return Catalog.Format(msgs.locale, "queryAssets18", nil)
+}
+
+// QueryAssets19 says "删除查询分组？"
+// in the language the app shows.
+func QueryAssets19() string { return In(i18n.Locale()).QueryAssets19() }
+
+// QueryAssets19 says "删除查询分组？"
+// in the language of msgs.
+func (msgs Messages) QueryAssets19() string {
+	return Catalog.Format(msgs.locale, "queryAssets19", nil)
+}
+
+// QueryAssets20 says "已打开的 SQL 标签将保留为未命名草稿。"
+// in the language the app shows.
+func QueryAssets20() string { return In(i18n.Locale()).QueryAssets20() }
+
+// QueryAssets20 says "已打开的 SQL 标签将保留为未命名草稿。"
+// in the language of msgs.
+func (msgs Messages) QueryAssets20() string {
+	return Catalog.Format(msgs.locale, "queryAssets20", nil)
+}
+
+// QueryAssets21 says "组内查询将移至未分组，不会删除查询。"
+// in the language the app shows.
+func QueryAssets21() string { return In(i18n.Locale()).QueryAssets21() }
+
+// QueryAssets21 says "组内查询将移至未分组，不会删除查询。"
+// in the language of msgs.
+func (msgs Messages) QueryAssets21() string {
+	return Catalog.Format(msgs.locale, "queryAssets21", nil)
+}
+
+// QueryAssets22 says "查询已变更，请重新选择"
+// in the language the app shows.
+func QueryAssets22() string { return In(i18n.Locale()).QueryAssets22() }
+
+// QueryAssets22 says "查询已变更，请重新选择"
+// in the language of msgs.
+func (msgs Messages) QueryAssets22() string {
+	return Catalog.Format(msgs.locale, "queryAssets22", nil)
+}
+
+// QueryAssets23 says "导出结构 SQL…"
+// in the language the app shows.
+func QueryAssets23() string { return In(i18n.Locale()).QueryAssets23() }
+
+// QueryAssets23 says "导出结构 SQL…"
+// in the language of msgs.
+func (msgs Messages) QueryAssets23() string {
+	return Catalog.Format(msgs.locale, "queryAssets23", nil)
+}
+
+// QueryAssets24 says "导出结构及数据 SQL…"
+// in the language the app shows.
+func QueryAssets24() string { return In(i18n.Locale()).QueryAssets24() }
+
+// QueryAssets24 says "导出结构及数据 SQL…"
+// in the language of msgs.
+func (msgs Messages) QueryAssets24() string {
+	return Catalog.Format(msgs.locale, "queryAssets24", nil)
+}
+
+// QueryAssetsRefresh says "刷新查询"
+// in the language the app shows.
+func QueryAssetsRefresh() string { return In(i18n.Locale()).QueryAssetsRefresh() }
+
+// QueryAssetsRefresh says "刷新查询"
+// in the language of msgs.
+func (msgs Messages) QueryAssetsRefresh() string {
+	return Catalog.Format(msgs.locale, "queryAssetsRefresh", nil)
+}
+
+// QueryAssetsGroupChanged says "查询分组已变更，请重新选择"
+// in the language the app shows.
+func QueryAssetsGroupChanged() string { return In(i18n.Locale()).QueryAssetsGroupChanged() }
+
+// QueryAssetsGroupChanged says "查询分组已变更，请重新选择"
+// in the language of msgs.
+func (msgs Messages) QueryAssetsGroupChanged() string {
+	return Catalog.Format(msgs.locale, "queryAssetsGroupChanged", nil)
+}

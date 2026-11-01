@@ -37,7 +37,7 @@ func (s *State) browserActions() browserActions {
 	caps := s.capabilities(b.ProfileID)
 	a.canBatch = a.ready && caps.DesignTables && s.deps.BatchExecutor != nil && !s.tablePending && (s.batch == nil || !s.batch.busy)
 	a.canCopy = a.ready && len(a.scope.objects) != 0
-	a.canAccounts = b.Connected && caps.DesignTables && s.deps.AccountLoader != nil && s.deps.AccountExecutor != nil && (s.accounts == nil || !s.accounts.busy)
+	a.canAccounts = s.CanAccounts(b.ProfileID)
 	a.canNewObject = a.ready && caps.DesignTables && s.deps.ObjectExecutor != nil
 	a.canResume = s.objectOp == nil && s.parkedObjectOp != nil && s.parkedObjectOp.profile == b.ProfileID
 	return a

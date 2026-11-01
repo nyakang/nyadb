@@ -49,3 +49,29 @@ func (s *SQLRepository) HasRecords(ctx context.Context) (bool, error) {
 	e := s.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM sql_documents)").Scan(&n)
 	return n != 0, e
 }
+
+// PutConditional makes deletion and revision conflicts atomic across Store instances.
+func (s *SQLRepository) PutConditional(ctx context.Context, r queries.Record, expected uint64) error {
+	if r.ID == "" || r.Version != 1 || len(r.Payload) == 0 || r.Revision != expected+1 {
+		return errors.New("invalid conditional SQL record")
+	}
+	var v sql.Result
+	var e error
+	if expected == 0 {
+		v, e = s.db.ExecContext(ctx, `INSERT INTO sql_documents(id,kind,profile_id,format_version,revision,payload) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING`, r.ID, r.Kind, r.ProfileID, r.Version, r.Revision, r.Payload)
+	} else {
+		source := r.Kind
+		if source == "query_deleted" {
+			source = "query"
+		}
+		v, e = s.db.ExecContext(ctx, `UPDATE sql_documents SET kind=?,format_version=?,revision=?,payload=? WHERE id=? AND profile_id=? AND kind=? AND revision=?`, r.Kind, r.Version, r.Revision, r.Payload, r.ID, r.ProfileID, source, expected)
+	}
+	if e != nil {
+		return e
+	}
+	n, e := v.RowsAffected()
+	if e == nil && n != 1 {
+		return queries.ErrStaleRevision
+	}
+	return e
+}

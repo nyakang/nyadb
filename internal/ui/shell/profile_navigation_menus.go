@@ -186,6 +186,18 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 		return
 	}
 	n := navigation.Parse(key)
+	if n.Category == "查询" {
+		opening := false
+		if n.Kind == "object" {
+			opening = s.sqlWorkspace.AssetContextMenu(m, n.ProfileID, n.Object, s.openNamedQuery)
+		} else if n.Kind == "query_group" {
+			opening = s.sqlWorkspace.AssetGroupContextMenu(m, n.ProfileID, n.GroupID)
+		}
+		if opening {
+			s.selectNavigationNode(services, key)
+		}
+		return
+	}
 	if n.Kind == "connection" {
 		for _, p := range s.navigation.Profiles() {
 			if p.ID == n.ProfileID {

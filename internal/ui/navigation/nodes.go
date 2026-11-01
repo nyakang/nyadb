@@ -24,6 +24,7 @@ type Node struct {
 	Category  string
 	Object    string
 	Catalog   string `json:",omitempty"`
+	GroupID   string `json:",omitempty"`
 }
 
 const navigationPrefix = "\x1fnavigation:"
@@ -46,8 +47,8 @@ func Parse(key string) Node {
 	return n
 }
 
-// Database programs are real server metadata; queries and backups remain
-// workspace features until they have their own persistence implementations.
+// Database programs are server metadata. Named queries also have a local,
+// connection-scoped catalog that can be browsed while disconnected.
 var mysqlNavigationCategories = []string{"表", "视图", "函数", "存储过程", "事件", "查询", "备份"}
 
 func SupportedCategory(category string) bool {
@@ -60,17 +61,28 @@ func SupportedCategory(category string) bool {
 
 func (s *State) databaseChildren(key string) []string {
 	n := Parse(key)
-	if s.sessionStatus(n.ProfileID) != "已连接" {
+	if s.sessionStatus(n.ProfileID) != "已连接" && n.Kind != "connection" && n.Category != "查询" {
 		return nil
 	}
 	switch n.Kind {
 	case "connection":
+		var local []string
+		if s.deps.Queries != nil {
+			local = append(local, (Node{Kind: "category", ProfileID: n.ProfileID, Category: "查询"}).Key())
+		}
+		if s.sessionStatus(n.ProfileID) != "已连接" {
+			return local
+		}
 		if s.deps.Catalog != nil {
 			if catalog := s.deps.Catalog(n.ProfileID); catalog != "" {
-				return []string{(Node{Kind: "catalog", ProfileID: n.ProfileID, Catalog: catalog}).Key()}
+				return append([]string{(Node{Kind: "catalog", ProfileID: n.ProfileID, Catalog: catalog}).Key()}, local...)
 			}
 		}
-		fallthrough
+		var remote []string
+		for _, db := range s.databases(n.ProfileID) {
+			remote = append(remote, DatabaseNode(n.ProfileID, db).Key())
+		}
+		return append(remote, local...)
 	case "catalog":
 		databases := s.databases(n.ProfileID)
 		children := make([]string, 0, len(databases))
@@ -104,10 +116,20 @@ func (s *State) databaseChildren(key string) []string {
 			children = append(children, child.Key())
 		}
 		return children
-	case "category":
+	case "category", "query_group":
 		if n.Category == "查询" && s.deps.Queries != nil {
 			var children []string
+			if n.Kind == "category" && s.deps.QueryGroups != nil {
+				for _, g := range s.deps.QueryGroups(n.ProfileID) {
+					child := n
+					child.Kind, child.GroupID = "query_group", g.Kind
+					children = append(children, child.Key())
+				}
+			}
 			for _, q := range s.deps.Queries(n.ProfileID, n.Database) {
+				if q.Group != n.GroupID {
+					continue
+				}
 				child := n
 				child.Kind, child.Object = "object", q.Kind
 				children = append(children, child.Key())

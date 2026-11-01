@@ -18,6 +18,8 @@
 
 2026-11-01 对象区域改为单行工具栏及“更多”菜单/分组弹窗；未连接及数据库未打开时无对象列头，已打开空库保留列头。见 [状态对齐与验证记录](object-browser-state-alignment-2026-11-01.md)。
 
+2026-11-01 完成离线命名查询列表、搜索、原连接打开、重命名、保留草稿的删除及逐连接一级分组；加密目录、条件修订更新和删除标记保持原存储兼容。接通函数/过程/事件、账户、备份/恢复/SQL 转储及实际表配置入口。实现 **I**、原生窗口验证范围、检查与密钥环限制见 [查询资产与入口交付记录](query-assets-2026-11-01.md)，不新增原版 **O/V**。
+
 The current Linux alignment target is Navicat 18, Simplified Chinese, dark
 theme, and compact density. Shared theme metrics now provide 19-DIP navigation
 and chooser list rows with 16-DIP icons, low-emphasis toolbar selection, and

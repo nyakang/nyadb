@@ -1,6 +1,9 @@
 package dataworkspace
 
-import "github.com/egoist/mygo/ui"
+import (
+	"encoding/json"
+	"github.com/egoist/mygo/ui"
+)
 
 // RequestAction retains the original data document while an initial metadata
 // read finishes. A later profile generation cannot open an old table's wizard.
@@ -12,7 +15,7 @@ func (s *State) RequestAction(services ui.Services, d *Document, action string) 
 	if !w.Connected || w.ProfileID != d.profileID {
 		return
 	}
-	if action != "import" && action != "export" && action != "profile" {
+	if action != "import" && action != "export" && action != "profile" && action != "saved_profile" {
 		return
 	}
 	if s.GuardTransactionLeave(d, func(services ui.Services) { s.RequestAction(services, d, action) }) || s.GuardLeave(d, func(services ui.Services) { s.RequestAction(services, d, action) }) {
@@ -22,9 +25,13 @@ func (s *State) RequestAction(services ui.Services, d *Document, action string) 
 	if d.page == nil && !d.importOnly && !d.loading {
 		s.Load(services, d, false)
 	}
-	s.consumeHostActions()
+	s.consumeHostActions(services)
 }
-func (s *State) consumeHostActions() {
+func (s *State) consumeHostActions(available ...ui.Services) {
+	services := ui.Services{}
+	if len(available) > 0 {
+		services = available[0]
+	}
 	w := s.session()
 	for _, d := range s.documents {
 		if d.hostAction == "" || d.closed || d.profileID != w.ProfileID {
@@ -32,6 +39,7 @@ func (s *State) consumeHostActions() {
 		}
 		if !w.Connected || w.Generation != d.hostActionGeneration || d.err != "" {
 			d.hostAction = ""
+			d.hostProfile = ""
 			continue
 		}
 		if d.loading || d.page == nil && !d.importOnly {
@@ -40,6 +48,16 @@ func (s *State) consumeHostActions() {
 		action := d.hostAction
 		d.hostAction = ""
 		switch action {
+		case "saved_profile":
+			value := d.hostProfile
+			d.hostProfile = ""
+			if s.GuardTransactionLeave(d, func(next ui.Services) { s.RequestProfile(next, d, value) }) {
+				continue
+			}
+			var owned savedProfile
+			if json.Unmarshal([]byte(value), &owned) == nil && owned.Object == d.object {
+				s.applyDataProfile(services, d, owned.Profile)
+			}
 		case "import":
 			s.openDataImport(d)
 		case "export":

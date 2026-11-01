@@ -44,6 +44,7 @@ type Document struct {
 
 	importOnly           bool
 	hostAction           string
+	hostProfile          string
 	hostActionGeneration uint64
 	toolbar              mysqlDataToolbarState
 	fill                 mysqlDataFillState
@@ -210,7 +211,7 @@ func (s *State) Consume(services ui.Services) {
 	s.consumeDataTransfers(services)
 	s.consumeDataAnalysis()
 	s.inspector.Consume()
-	s.consumeHostActions()
+	s.consumeHostActions(services)
 }
 func (s *State) inspectorPanel(t *Document) *Panel {
 	if t == nil || t.closed {

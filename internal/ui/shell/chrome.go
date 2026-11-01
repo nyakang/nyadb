@@ -16,6 +16,9 @@ func (s *State) View(c *ui.Context) {
 	if s.profileMode {
 		s.activateMySQLForCurrentTab()
 	}
+	if s.profileMode {
+		s.sqlWorkspace.ActivateAssets(s.selectedProfileID)
+	}
 	s.startAutoConnect(c.Services())
 	s.sessions.Consume()
 	s.objectWorkspace.Consume(c.Services())
@@ -264,8 +267,13 @@ func (s *State) toolBar(c *ui.Context) {
 						})
 					})
 				styleToolbarButton(c, button, active)
+				if item.label == "其它" || item.label == "备份" {
+					button.Menu(func(m *ui.Menu) { s.toolbarMenu(c.Services(), item.label, m) })
+				}
 				if button.Clicked() {
-					s.clickToolbar(item.label)
+					if item.label != "其它" && item.label != "备份" {
+						s.dispatchToolbar(item.label, c.Services())
+					}
 				}
 			}
 		}).Label(locales.Text("主工具栏")).Grow(1).MinWidth(0).Padding(0).Gap(1).Background(palette.Toolbar)
@@ -291,7 +299,20 @@ func (s *State) toolbarActionAvailable(action string) bool {
 	case "连接", "新建查询", "表", "视图", "信息":
 		return true
 	case "函数":
-		return !s.profileMode
+		if !s.profileMode {
+			return true
+		}
+		fallthrough
+	case "其它":
+		w := s.sessions.Current()
+		return w.Status == "已连接" && w.Database != "" && s.sessions.DatabaseOpened(w.ProfileID, w.Database) && s.objectCapabilitiesFor(w.ProfileID).DesignTables
+	case "查询":
+		return s.profileMode && s.selectedProfileID > 0 && !s.sqlWorkspace.PersistenceLoading()
+	case "用户":
+		return s.profileMode && s.objectWorkspace.CanAccounts(s.sessions.Current().ProfileID)
+	case "备份":
+		w := s.sessions.Current()
+		return s.profileMode && w.Database != "" && s.objectWorkspace.CanBackup(w.ProfileID)
 	default:
 		return false
 	}

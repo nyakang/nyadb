@@ -10,7 +10,7 @@ import (
 )
 
 // Object carries only the identity needed by the tree.
-type Object struct{ Name, Kind string }
+type Object struct{ Name, Kind, Group string }
 
 type Filter struct {
 	Search      string
@@ -31,6 +31,7 @@ type Shortcut struct {
 // Dependencies supplies read-only session metadata and explicit UI actions.
 // Callbacks run on the UI thread; the navigator never starts background jobs.
 type Dependencies struct {
+	QueryGroups    func(int64) []Object
 	Queries        func(int64, string) []Object
 	Catalog        func(int64) string
 	Engine         func(int64) connections.Kind
@@ -157,7 +158,7 @@ func (s *State) openDatabase(services ui.Services, node Node, force bool) {
 
 func (s *State) contextMenu(services ui.Services, key string, menu *ui.Menu) {
 	n := Parse(key)
-	if IsGroup(key) || n.Kind == "connection" || n.Kind == "database" || n.Kind == "category" || n.Kind == "object" {
+	if IsGroup(key) || n.Kind == "connection" || n.Kind == "database" || n.Kind == "category" || n.Kind == "object" || n.Kind == "query_group" {
 		s.menuBuilt = true
 	}
 	if s.deps.ContextMenu != nil {

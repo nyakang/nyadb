@@ -83,7 +83,7 @@ func TestMySQLMultiProfileBrowserSessionsDoNotDisconnectOrMixCaches(t *testing.T
 		len(s.sessions.Current().Cache["shared"]) != 1 || s.sessions.Current().Cache["shared"][0].Name != "a_orders" {
 		t.Fatalf("A browser state was replaced by B: active=%d cache=%+v", s.sessions.Current().ProfileID, s.sessions.Current().Cache)
 	}
-	if got := s.navigation.Children(navigation.ConnectionKey(b.ID)); len(got) != 2 {
+	if got := s.navigation.Children(navigation.ConnectionKey(b.ID)); len(got) != 3 || navigation.Parse(got[0]).Database != "shared" || navigation.Parse(got[1]).Database != "only_b" || navigation.Parse(got[2]).Category != "查询" {
 		t.Fatalf("parked B lost its database tree: %v", got)
 	}
 	s.selectProfileByName(b.Name)
