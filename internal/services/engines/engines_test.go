@@ -14,9 +14,12 @@ import (
 
 func sqliteSession(t *testing.T) *Session {
 	t.Helper()
+	// TempDir cleanup runs in reverse registration order; close the manager
+	// before removing its database, including on Windows where open files lock.
+	path := filepath.Join(t.TempDir(), "user.sqlite")
 	m := NewManager()
 	t.Cleanup(func() { m.Close() })
-	if e := m.Connect(context.Background(), connections.Profile{ID: 71, Kind: connections.SQLite, Database: filepath.Join(t.TempDir(), "user.sqlite")}, ""); e != nil {
+	if e := m.Connect(context.Background(), connections.Profile{ID: 71, Kind: connections.SQLite, Database: path}, ""); e != nil {
 		t.Fatal(e)
 	}
 	s, _ := m.Session(71)
