@@ -100,6 +100,7 @@ func (s *State) workspace(c *ui.Context) {
 
 func (s *State) sqlWorkspaceDependencies() sqlworkspace.Dependencies {
 	return sqlworkspace.Dependencies{
+		AssetsChanged:    s.sqlAssetsChanged,
 		StatementAtCaret: s.sqlStatementAtCaret, FormatSQL: s.sqlFormat,
 		ValidateExplain: s.sqlValidateExplain,
 		Completions: func(id int64, db string) []string {
@@ -274,6 +275,8 @@ func (s *State) pruneMySQLTabsFor(id int64, known map[string]bool) {
 
 func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 	return objectworkspace.Dependencies{
+		TableProfiles:     s.savedTableProfiles,
+		OpenTableProfile:  s.openSavedTableProfile,
 		Capabilities:      s.objectCapabilitiesFor,
 		AdministrationFor: func(id int64) mysqlsvc.Administration { return s.runtime.Administration(id) },
 		DataAction:        s.openTableDataAction,

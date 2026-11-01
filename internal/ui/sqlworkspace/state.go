@@ -26,6 +26,7 @@ type Runtime interface {
 }
 
 type Dependencies struct {
+	AssetsChanged    func(int64, string, bool)
 	Completions      func(int64, string) []string
 	StatementAtCaret func(int64, string, int) string
 	FormatSQL        func(int64, string) (string, error)
@@ -69,6 +70,7 @@ type Document struct {
 
 func (d *Document) ProfileID() int64            { return d.profileID }
 func (d *Document) Database() string            { return d.database }
+func (d *Document) QueryID() string             { return d.queryID }
 func (d *Document) Loading() bool               { return d.loading }
 func (d *Document) CancelRequested() bool       { return d.cancelRequested }
 func (d *Document) Error() string               { return d.err }
@@ -175,6 +177,9 @@ func (s *State) CloseAll() {
 	s.persistence.restored = nil
 	s.persistence.flushNext, s.persistence.awaitClose, s.persistence.guardNext, s.persistence.exitNext = nil, nil, nil, nil
 	s.persistence.nameDoc, s.persistence.guardDoc, s.persistence.explainDoc = nil, nil, nil
+	s.persistence.assetDialog, s.persistence.assetMenu = nil, nil
+	s.persistence.assetGroupMenu = nil
+	s.persistence.assets, s.persistence.catalogs, s.persistence.assetBusy, s.persistence.catalogBusy = nil, nil, nil, nil
 	for _, d := range s.documents {
 		s.Close(d)
 	}

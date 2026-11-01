@@ -33,6 +33,7 @@ func (s *State) selectProfileByName(name string) {
 			}
 		}
 		s.sessions.Activate(p.ID)
+		s.sqlWorkspace.ActivateAssets(p.ID)
 		if s.selectedProfileID != p.ID || s.navigation.Group != "" {
 			s.selectedProfileID = p.ID
 			s.navigation.Group = ""
@@ -168,12 +169,19 @@ func (s *State) profileInspector(c *ui.Context) {
 // the navigator owns presentation, filtering, tree selection and group drafts.
 func (s *State) navigationDependencies() navigation.Dependencies {
 	return navigation.Dependencies{
+		QueryGroups: func(id int64) []navigation.Object {
+			var out []navigation.Object
+			for _, g := range s.sqlWorkspace.AssetGroups(id) {
+				out = append(out, navigation.Object{Name: g.Name, Kind: g.ID})
+			}
+			return out
+		},
 		Catalog: s.sessions.EngineCatalog, Engine: s.sessions.EngineKind,
 		Queries: func(id int64, database string) []navigation.Object {
 			var out []navigation.Object
 			for _, q := range s.sqlWorkspace.Named(id) {
-				if q.Database == database || q.Database == "" {
-					out = append(out, navigation.Object{Name: q.Name, Kind: q.ID})
+				if database == "" || q.Database == database || q.Database == "" {
+					out = append(out, navigation.Object{Name: q.Name, Kind: q.ID, Group: s.sqlWorkspace.AssetGroup(id, q.ID)})
 				}
 			}
 			return out
@@ -212,6 +220,14 @@ func (s *State) navigationDependencies() navigation.Dependencies {
 }
 
 func (s *State) navigationShortcut(services ui.Services, n navigation.Node, shortcut navigation.Shortcut) {
+	if n.Category == "查询" {
+		if n.Kind == "object" {
+			s.sqlWorkspace.AssetShortcut(n.ProfileID, n.Object, shortcut.Key)
+		} else if n.Kind == "query_group" {
+			s.sqlWorkspace.AssetGroupShortcut(n.ProfileID, n.GroupID, shortcut.Key)
+		}
+		return
+	}
 	switch shortcut.Key {
 	case ui.KeyF2:
 		if n.Kind == "object" && n.Category == "表" {

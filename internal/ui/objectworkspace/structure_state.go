@@ -21,6 +21,8 @@ type Session struct {
 }
 
 type Dependencies struct {
+	TableProfiles     func(int64, string, string) ([]TableProfile, error)
+	OpenTableProfile  func(ui.Services, int64, string, string, string)
 	AdministrationFor func(int64) mysqlsvc.Administration
 	LoadObjectGroups  func(int64, string) map[string]string
 	SaveObjectGroups  func(int64, string, map[string]string)
@@ -110,6 +112,8 @@ type loadResult struct {
 }
 
 type State struct {
+	profileMenu                             *tableProfileMenu
+	contextEntryMenu                        *contextEntryScope
 	moreScope                               *browserActionScope
 	groupDialog                             *objectGroupDialog
 	tableGeneration, tableRuntimeGeneration uint64
@@ -235,6 +239,8 @@ func (s *State) Close(d *Document) {
 }
 func (s *State) CloseAll() {
 	s.moreScope, s.groupDialog = nil, nil
+	s.profileMenu = nil
+	s.contextEntryMenu = nil
 	s.closeBackup()
 	if s.batch != nil && s.batch.cancel != nil {
 		s.batch.cancel()

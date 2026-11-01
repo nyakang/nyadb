@@ -209,6 +209,7 @@ func (s *State) Close(t *Document) {
 	s.closeDataTransfer(t)
 	s.closeDataAnalysis(t)
 	t.tools = mysqlDataToolsState{}
+	t.hostAction, t.hostProfile = "", ""
 	t.toolbar = mysqlDataToolbarState{}
 	t.fill = mysqlDataFillState{}
 	t.layout.columnWidth = mysqlDataColumnWidthState{}

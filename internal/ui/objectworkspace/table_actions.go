@@ -65,17 +65,16 @@ func (s *State) CanChangeTable(profileID int64) bool {
 // Shared by the native navigator and central object grid. Unsupported entries
 // remain visibly disabled; they never dispatch placeholder callbacks.
 func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, database, name, kind string) {
+	entryScope := s.contextEntryMenu
+	s.contextEntryMenu = &contextEntryScope{profileID, s.sessionFor(profileID).Generation, database, name}
 	open, design := mysqlObjectActionLabels(kind)
 	if m.Item(locales.Text(open)).Shortcut(0, ui.KeyEnter).Chosen() {
 		s.openObjectFor(services, profileID, database, name, kind)
 	}
 	if kind == "表" {
 		m.Submenu(locales.Text("通过配置文件打开表"), func(sub *ui.Menu) {
-			sub.Item(locales.Text("无配置文件")).Disabled(true)
-			sub.Submenu(locales.Text("默认配置文件"), func(defaults *ui.Menu) {
-				defaults.Item(locales.Text("快速模式")).Disabled(true)
-			}).Disabled(true)
-		}).Disabled(true)
+			s.tableProfilesMenu(services, sub, profileID, database, name)
+		}).Disabled(s.deps.TableProfiles == nil || s.deps.OpenTableProfile == nil || !s.sessionFor(profileID).Connected)
 	}
 	if m.Item(locales.Text(design)).Shortcut(ui.Ctrl, ui.KeyD).Disabled(Supports(kind)).Chosen() {
 		if s.deps.OpenStructure != nil {
@@ -126,8 +125,11 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 			begin(mysqlsvc.MySQLTableCopyStructure)
 		}
 	}).Disabled(!ready)
-	if m.Item(locales.Text("设置权限")).Disabled(s.deps.AccountExecutor == nil || !s.capabilities(profileID).DesignTables).Chosen() {
-		s.OpenAccounts(services, profileID, database, name)
+	if m.Item(locales.Text("设置权限")).Disabled(!s.CanAccounts(profileID)).Chosen() {
+		s.contextEntryMenu = nil
+		if s.contextEntryValid(entryScope, profileID, database, name) {
+			s.OpenAccounts(services, profileID, database, name)
+		}
 	}
 	m.Separator()
 	for _, item := range []struct{ label, action string }{{"导入向导…", "import"}, {"导出向导…", "export"}, {"表配置文件", "profile"}} {
@@ -143,10 +145,13 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 		for _, item := range []struct{ label, action string }{{"结构和数据…", "sql_data"}, {"仅结构…", "sql_structure"}} {
 			it := item
 			if sub.Item(locales.Text(it.label)).Chosen() {
-				s.deps.Backup(services, profileID, database, name, it.action)
+				s.contextEntryMenu = nil
+				if s.CanBackup(profileID) && s.contextEntryValid(entryScope, profileID, database, name) {
+					s.deps.Backup(services, profileID, database, name, it.action)
+				}
 			}
 		}
-	}).Disabled(s.deps.Backup == nil || !s.capabilities(profileID).Backup)
+	}).Disabled(s.deps.Backup == nil || !s.CanBackup(profileID))
 	m.Submenu(locales.Text("维护"), func(sub *ui.Menu) {
 		for _, item := range []struct{ label, action string }{{"分析表", "ANALYZE"}, {"检查表", "CHECK"}, {"优化表", "OPTIMIZE"}, {"修复表", "REPAIR"}} {
 			it := item

@@ -42,10 +42,7 @@ type maintenanceRead struct {
 }
 
 func (s *State) OpenAccounts(services ui.Services, profile int64, database, table string) {
-	if !s.capabilities(profile).DesignTables || s.deps.AccountLoader == nil || s.deps.AccountExecutor == nil || !s.sessionFor(profile).Connected {
-		return
-	}
-	if s.accounts != nil && s.accounts.busy {
+	if !s.CanAccounts(profile) {
 		return
 	}
 	gen := s.sessionFor(profile).Generation

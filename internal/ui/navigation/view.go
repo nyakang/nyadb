@@ -173,6 +173,16 @@ func (s *State) renderRow(c *ui.Context, key string) {
 		}
 	}
 	switch n.Kind {
+	case "query_group":
+		icon = "folder-filled"
+		if s.deps.QueryGroups != nil {
+			for _, g := range s.deps.QueryGroups(n.ProfileID) {
+				if g.Kind == n.GroupID {
+					label = g.Name
+					break
+				}
+			}
+		}
 	case "connection":
 		for _, p := range s.profiles {
 			if p.ID != n.ProfileID {

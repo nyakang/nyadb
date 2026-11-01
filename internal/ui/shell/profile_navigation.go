@@ -165,6 +165,14 @@ func (s *State) selectNavigationNode(services ui.Services, key string) {
 	}
 	s.navigation.Key = key
 	s.navigation.Row = s.navigation.SelectionRow(s.navigation.Roots())
+	if n.Category == "查询" {
+		s.activeTab = 0
+		s.objectWorkspace.ShowCategory(n.ProfileID, "查询")
+		if n.Kind == "query_group" {
+			s.sqlWorkspace.SelectAssetGroup(n.ProfileID, n.GroupID)
+		}
+		return
+	}
 	if n.Database == "" {
 		s.sessions.CancelObjects()
 		s.sessions.SelectDatabase("")
@@ -243,8 +251,7 @@ func (s *State) submitNavigation(services ui.Services, n navigation.Node) {
 		if n.Category == "查询" {
 			for _, q := range s.sqlWorkspace.Named(n.ProfileID) {
 				if q.ID == n.Object {
-					s.openQuery()
-					s.sqlWorkspace.OpenNamed(s.currentTab().query, q)
+					s.openNamedQuery(q)
 					return
 				}
 			}

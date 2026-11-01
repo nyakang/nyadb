@@ -27,6 +27,11 @@ type ioResult struct {
 	named            queries.Named
 	workspace        queries.Workspace
 	names            []queries.Named
+	catalogs         []queries.Catalog
+	before           queries.Named
+	profile          int64
+	deleted          string
+	assetToken       uint64
 	revision         uint64
 	err              error
 }
@@ -66,6 +71,16 @@ type persistence struct {
 	exitOpen, keeping bool
 	exitNext          func(ui.Services)
 	lastWorkspace     queries.Workspace
+	catalogs          map[int64]queries.Catalog
+	assets            map[int64]*assetBrowser
+	assetBusy         map[string]bool
+	catalogBusy       map[int64]bool
+	assetScope        int64
+	assetDialog       *assetDialog
+	assetMenu         *assetMenuScope
+	assetGroupMenu    *assetMenuScope
+	assetSequence     uint64
+	assetsRefreshing  bool
 }
 
 func (d *Document) Name() string {
@@ -87,10 +102,26 @@ func (s *State) SetPersistence(store *queries.Store, files Files, restored func(
 			return ioResult{kind: "load", err: e}
 		}
 		names, e := store.ListNamed(context.Background(), 0)
-		return ioResult{kind: "load", workspace: w, names: names, err: e}
+		if e != nil {
+			return ioResult{kind: "load", err: e}
+		}
+		catalogs, e := store.ListCatalogs(context.Background())
+		return ioResult{kind: "load", workspace: w, names: names, catalogs: catalogs, err: e}
 	})
 }
 func (s *State) RestoreDocument(snapshot queries.Document) *Document {
+	if snapshot.QueryID != "" {
+		found := false
+		for _, n := range s.persistence.names {
+			if n.ID == snapshot.QueryID && n.ProfileID == snapshot.ProfileID {
+				found = true
+				break
+			}
+		}
+		if !found && s.persistence.store != nil && !s.persistence.loading && !s.persistence.blocked {
+			snapshot.QueryID, snapshot.Name, snapshot.SavedText, snapshot.NamedRevision = "", "", "", 0
+		}
+	}
 	d := s.Open(snapshot.ID, snapshot.Text, 0, "", false)
 	d.name, d.path, d.queryID, d.savedText = snapshot.Name, snapshot.Path, snapshot.QueryID, snapshot.SavedText
 	d.revision = snapshot.Revision
@@ -213,6 +244,9 @@ func (s *State) Save(d *Document, asFile bool, next func(ui.Services)) {
 	if d == nil || d.Editor == nil || d.closed || d.saving {
 		return
 	}
+	if d.queryID != "" && s.persistence.assetBusy[d.queryID] {
+		return
+	}
 	text, revision := d.Editor.Buffer.String(), d.Editor.Buffer.Version()
 	f := s.persistence.files
 	if asFile || d.path != "" {
@@ -300,6 +334,7 @@ func (s *State) consumeIO(services ui.Services) {
 	for _, job := range jobs {
 		select {
 		case r := <-job.out:
+			s.consumeAssetIO(r)
 			if job.doc != nil && (r.kind == "save" || r.kind == "named") {
 				job.doc.saving = false
 			}
@@ -312,6 +347,10 @@ func (s *State) consumeIO(services ui.Services) {
 					p.revision = r.workspace.Revision
 					p.savedRevision = r.workspace.Revision
 					p.names = r.names
+					p.catalogs = make(map[int64]queries.Catalog)
+					for _, catalog := range r.catalogs {
+						p.catalogs[catalog.ProfileID] = catalog
+					}
 					if p.restored != nil {
 						p.restored(r.workspace)
 					}
@@ -351,6 +390,9 @@ func (s *State) consumeIO(services ui.Services) {
 				}
 				if !found {
 					p.names = append(p.names, r.named)
+				}
+				if s.deps.AssetsChanged != nil {
+					s.deps.AssetsChanged(r.named.ProfileID, r.named.ID, false)
 				}
 			}
 			d := job.doc
@@ -426,6 +468,7 @@ func (s *State) GuardWorkspaceClose(next func(ui.Services)) bool {
 	return false
 }
 func (s *State) Modals(c *ui.Context) {
+	s.assetModals(c)
 	s.explainModal(c)
 	p := &s.persistence
 	if p.guardDoc != nil {

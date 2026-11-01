@@ -234,8 +234,8 @@ func (s *State) objectsWorkspace(c *ui.Context) {
 	palette := theme.Colors(c)
 
 	if s.profileMode {
-		if s.objectWorkspace.FilterKind(s.sessions.Current().ProfileID) == "查询" {
-			s.namedQueriesView(c, s.sessions.Current().ProfileID)
+		if s.objectWorkspace.FilterKind(s.selectedProfileID) == "查询" {
+			s.namedQueriesView(c, s.selectedProfileID)
 			return
 		}
 		s.objectWorkspace.BrowserView(c)
@@ -314,7 +314,11 @@ func (s *State) dataPreview(c *ui.Context) {
 
 func (s *State) currentObjectKind() string {
 	if s.profileMode {
-		return s.objectWorkspace.Category(s.sessions.Current().ProfileID)
+		id := s.selectedProfileID
+		if id == 0 {
+			id = s.sessions.Current().ProfileID
+		}
+		return s.objectWorkspace.Category(id)
 	}
 	return s.preview.kind
 }

@@ -3,8 +3,8 @@ package shell
 import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/queries"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/sqlworkspace"
-	"github.com/nyakang/nyadb/locales"
 )
 
 func (s *State) SetSQLPersistence(store *queries.Store, files sqlworkspace.Files, invalidate func()) {
@@ -31,18 +31,47 @@ func (s *State) observeSQLDocuments() {
 	s.sqlWorkspace.Observe(s.currentTab().id, ids)
 }
 func (s *State) namedQueriesView(c *ui.Context, profile int64) {
-	ui.Column(c).Fill().Padding(12).Gap(8).Children(func() {
-		ui.Text(c, locales.Text("命名查询"))
-		names := s.sqlWorkspace.Named(profile)
-		if len(names) == 0 {
-			ui.Text(c, locales.Text("尚无已保存的查询"))
+	s.sqlWorkspace.AssetsView(c, profile, s.openNamedQuery)
+}
+
+func (s *State) openNamedQuery(query queries.Named) {
+	if s.sqlWorkspace.PersistenceLoading() {
+		return
+	}
+	for _, t := range s.tabs {
+		if t.query != nil && t.query.QueryID() == query.ID {
+			s.selectTab(t.id)
+			return
 		}
-		for _, n := range names {
-			query := n
-			if ui.Button(c, n.Name).Clicked() {
-				s.openQuery()
-				s.sqlWorkspace.OpenNamed(s.currentTab().query, query)
-			}
+	}
+	// Construct directly in the original scope; openQuery would reserve the current scope first.
+	s.nextTabID++
+	profile, database := query.ProfileID, query.Database
+	if s.sessions.StatusFor(profile) != "已连接" {
+		profile, database = 0, ""
+	}
+	d := s.sqlWorkspace.Open(s.nextTabID, "", profile, database, false)
+	s.sqlWorkspace.OpenNamed(d, query)
+	t := &tab{id: s.nextTabID, kind: tabSQL, title: d.Name(), query: d}
+	s.tabs = append(s.tabs, t)
+	s.selectTab(t.id)
+	s.sqlWorkspace.Prepare(d)
+}
+func (s *State) sqlAssetsChanged(profile int64, id string, deleted bool) {
+	n := navigation.Parse(s.navigation.Key)
+	if n.ProfileID != profile || n.Category != "查询" {
+		return
+	}
+	if n.Kind == "object" {
+		if deleted && n.Object == id {
+			n.Kind, n.Object = "category", ""
 		}
-	})
+		n.GroupID = s.sqlWorkspace.AssetGroup(profile, n.Object)
+	}
+	if n.Kind == "query_group" && s.sqlWorkspace.AssetGroupName(profile, n.GroupID) == "" {
+		s.navigation.Tree.Open.Remove(n.Key())
+		n.Kind, n.GroupID = "category", ""
+	}
+	s.navigation.Key = n.Key()
+	s.navigation.Row = -1
 }

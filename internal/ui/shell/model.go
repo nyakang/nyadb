@@ -67,6 +67,7 @@ type State struct {
 	nextTabID             uint64
 	status                string
 	lastAction            string
+	toolbarMenus          map[string]toolbarScope
 
 	connectionEditor     *connectioneditor.State
 	connectionCatalog    *connectioncatalog.State
@@ -173,7 +174,11 @@ func (s *State) showObjects(kind string) {
 		s.preview.kind = kind
 	}
 	if s.profileMode {
-		s.objectWorkspace.ShowCategory(s.sessions.Current().ProfileID, kind)
+		id := s.selectedProfileID
+		if id == 0 {
+			id = s.sessions.Current().ProfileID
+		}
+		s.objectWorkspace.ShowCategory(id, kind)
 		s.status = "已切换到" + kind + "对象列表"
 		return
 	}
@@ -181,14 +186,23 @@ func (s *State) showObjects(kind string) {
 }
 
 func (s *State) clickToolbar(action string) {
+	s.dispatchToolbar(action, ui.Services{})
+}
+func (s *State) dispatchToolbar(action string, services ui.Services) {
+	if !s.toolbarActionAvailable(action) {
+		return
+	}
 	s.lastAction = action
 	switch action {
 	case "连接":
 		s.openConnectionDialog()
 	case "新建查询":
 		s.openQuery()
-	case "表", "视图", "函数":
+	case "表", "视图", "函数", "查询":
 		s.showObjects(action)
+	case "用户":
+		w := s.sessions.Current()
+		s.objectWorkspace.OpenAccounts(services, w.ProfileID, w.Database, "")
 	case "信息":
 		s.inspectorOn = !s.inspectorOn
 	default:

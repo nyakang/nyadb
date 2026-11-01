@@ -118,21 +118,30 @@ func aad(r Record) []byte {
 func (s *Store) put(ctx context.Context, r Record, value any) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	a, e := s.crypt(ctx)
+	r, e := s.seal(ctx, r, value)
 	if e != nil {
 		return e
+	}
+	return s.repository.Put(ctx, r)
+}
+
+// seal is called with mu held; encryption and conditional publication share one operation.
+func (s *Store) seal(ctx context.Context, r Record, value any) (Record, error) {
+	a, e := s.crypt(ctx)
+	if e != nil {
+		return r, e
 	}
 	plain, e := json.Marshal(value)
 	if e != nil {
-		return e
+		return r, e
 	}
 	nonce := make([]byte, a.NonceSize())
 	if _, e = rand.Read(nonce); e != nil {
-		return e
+		return r, e
 	}
 	r.Version = 1
 	r.Payload = a.Seal(nonce, nonce, plain, aad(r))
-	return s.repository.Put(ctx, r)
+	return r, nil
 }
 func (s *Store) open(ctx context.Context, r Record, dest any) error {
 	a, e := s.crypt(ctx)
@@ -168,7 +177,9 @@ func (s *Store) LoadWorkspace(ctx context.Context) (Workspace, error) {
 	return w, e
 }
 func (s *Store) SaveNamed(ctx context.Context, n Named) error {
-	return s.put(ctx, Record{ID: n.ID, Kind: "query", ProfileID: n.ProfileID, Revision: n.Revision}, n)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.saveNamed(ctx, n)
 }
 func (s *Store) ListNamed(ctx context.Context, profile int64) ([]Named, error) {
 	s.mu.Lock()
@@ -188,8 +199,11 @@ func (s *Store) ListNamed(ctx context.Context, profile int64) ([]Named, error) {
 	return ns, nil
 }
 func (s *Store) DeleteNamed(ctx context.Context, id string) error {
-	if id == "workspace" {
-		return errors.New("invalid query identity")
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	r, e := s.queryRecord(ctx, id)
+	if e != nil {
+		return e
 	}
-	return s.repository.Delete(ctx, id)
+	return s.deleteNamed(ctx, r.ProfileID, id, r.Revision)
 }
