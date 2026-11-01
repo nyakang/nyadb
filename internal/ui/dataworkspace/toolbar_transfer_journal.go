@@ -6,11 +6,10 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"io"
 	"os"
 	"sync"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // Both records and offsets stay on disk. A visible grid row performs one
@@ -53,7 +52,7 @@ func newMySQLDataImportJournal(owner *mysqlDataSpoolOwner, total int64) (*mysqlD
 	}
 	return j, nil
 }
-func (j *mysqlDataImportJournal) Record(row mysqlsvc.MySQLDataImportRowResult) error {
+func (j *mysqlDataImportJournal) Record(row contract.DataImportRowResult) error {
 	data, err := json.Marshal(row)
 	if err != nil {
 		return err
@@ -85,8 +84,8 @@ func (j *mysqlDataImportJournal) Close() error {
 	j.once.Do(func() { err = errors.Join(j.data.Close(), j.index.Close()) })
 	return err
 }
-func (j *mysqlDataImportJournal) Row(index int64, committed, uncertain bool) (mysqlsvc.MySQLDataImportRowResult, error) {
-	row := mysqlsvc.MySQLDataImportRowResult{Row: int(index + 1), Status: "not_processed"}
+func (j *mysqlDataImportJournal) Row(index int64, committed, uncertain bool) (contract.DataImportRowResult, error) {
+	row := contract.DataImportRowResult{Row: int(index + 1), Status: "not_processed"}
 	if index < 0 || index >= j.total {
 		return row, io.EOF
 	}

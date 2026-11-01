@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/mysqlspec"
 	"io"
 	"strings"
 )
@@ -25,7 +26,7 @@ func dumpLiteral(c contract.Cell) (string, error) {
 	case contract.Binary:
 		return "X'" + hex.EncodeToString(c.Bytes) + "'", nil
 	case contract.Integer, contract.Decimal, contract.Floating:
-		if !mysqlDataImportNumberPattern.MatchString(c.Text) {
+		if !mysqlspec.ValidNumber(c.Text) {
 			return "", errors.New("invalid numeric backup value")
 		}
 		return c.Text, nil

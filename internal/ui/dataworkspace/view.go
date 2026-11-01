@@ -2,11 +2,10 @@ package dataworkspace
 
 import (
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"time"
 
 	"github.com/egoist/mygo/ui"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -34,7 +33,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 	ui.Column(c).FillWidth().Grow(1).MinHeight(0).Background(palette.App).Children(func() {
 		page := t.page
 		if page == nil {
-			page = &mysqlsvc.MySQLDataPage{}
+			page = &contract.DataPage{}
 			for _, col := range t.columns {
 				page.Columns = append(page.Columns, col.ID)
 			}
@@ -66,13 +65,13 @@ func (s *State) View(c *ui.Context, t *Document) {
 	s.trackMySQLDataLayout(c, t)
 }
 
-func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *mysqlsvc.MySQLDataPage) {
+func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *contract.DataPage) {
 	palette := theme.Colors(c)
 	ui.Column(c).FillWidth().Grow(1).MinHeight(0).Children(func() {
 		if t.loading {
 			ui.Row(c).Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 6).Gap(6).AlignItems(ui.Center).Children(func() {
 				ui.Spinner(c).Width(16).Height(16)
-				ui.Text(c, locales.Text("正在读取真实 MySQL 数据…")).TextColor(palette.Muted).FontSize(theme.Font(c, theme.FontSize)).SingleLine().Grow(1).MinWidth(0)
+				ui.Text(c, locales.Text("正在读取数据库数据…")).TextColor(palette.Muted).FontSize(theme.Font(c, theme.FontSize)).SingleLine().Grow(1).MinWidth(0)
 			})
 		}
 		if t.err != "" {
@@ -232,7 +231,7 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *mysqlsvc.MySQLDa
 					}
 				}
 			}
-			if !t.edit.Batch && !t.edit.Busy && t.edit.Editor == nil {
+			if !t.edit.Batch && !t.edit.Busy && t.edit.Editor == nil && t.edit.Err == "" {
 				for _, d := range t.edit.Drafts {
 					if d.Row != t.selectedRow {
 						s.saveMySQLData(c.Services(), t)
@@ -254,7 +253,7 @@ type mysqlDataReadInfo struct {
 	Canceled    bool
 }
 
-func (info *mysqlDataReadInfo) accept(page *mysqlsvc.MySQLDataPage) {
+func (info *mysqlDataReadInfo) accept(page *contract.DataPage) {
 	info.QuerySQL, info.CompletedAt, info.Duration = page.QuerySQL, page.CompletedAt, page.Duration
 	info.Canceled = false
 }
@@ -273,7 +272,7 @@ func (s *State) changeMySQLDataPageSize(services ui.Services, t *Document, limit
 		return
 	}
 	if t == nil || t.loading || t.limit == limit ||
-		(limit != 50 && limit != 100 && limit != mysqlsvc.MySQLDataMaxPageSize) {
+		(limit != 50 && limit != 100 && limit != contract.DataMaxPageSize) {
 		return
 	}
 	t.limit = limit
@@ -299,7 +298,7 @@ func mysqlDataReadStatus(t *Document) string {
 		info.CompletedAt.Local().Format("15:04:05"), max(0, info.Duration.Milliseconds()))
 }
 
-func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *mysqlsvc.MySQLDataPage) {
+func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *contract.DataPage) {
 	palette := theme.Colors(c)
 	s.consumeMySQLDataExport(t)
 
@@ -319,7 +318,7 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *mysqlsvc.MySQL
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Shrink(0).Padding(2, 6).Gap(4).AlignItems(ui.Center).Children(func() {
 			ready := t.page != nil && !t.loading && !t.edit.Busy && t.edit.Uncertain == nil && !dataTransactionUnavailable(t) && !t.transfer.Busy && !t.transfer.Uncertain && t.profileID == s.session().ProfileID && s.session().Connected
 			dirty := mysqlDataHasDraft(t)
-			insertReady := ready && len(page.ColumnMetadata) > 0 && len(page.ColumnMetadata) == len(page.Columns)
+			insertReady := ready && t.editable() && len(page.ColumnMetadata) > 0 && len(page.ColumnMetadata) == len(page.Columns)
 			if ui.Button(c, "+").Label(locales.Text("添加记录")).Tooltip(locales.Text("添加记录")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!insertReady).Clicked() {
 				s.addMySQLDataRecord(c.Services(), t)
 			}
@@ -374,7 +373,7 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *mysqlsvc.MySQL
 			}
 			ui.Button(c, fmt.Sprintf("%d / %s", t.limit, locales.Text("页"))).Label(locales.Text("每页行数")).
 				Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 4).Disabled(t.loading || t.edit.Busy || t.edit.Uncertain != nil).Menu(func(m *ui.Menu) {
-				for _, limit := range []int{50, 100, mysqlsvc.MySQLDataMaxPageSize} {
+				for _, limit := range []int{50, 100, contract.DataMaxPageSize} {
 					if m.Item(fmt.Sprintf("%d %s", limit, locales.Text("行 / 页"))).Checked(t.limit == limit).Chosen() {
 						s.changeMySQLDataPageSize(c.Services(), t, limit)
 					}
@@ -408,7 +407,7 @@ func mysqlDataPendingRecordCount(t *Document) int {
 	return count
 }
 
-func mysqlDataPageMethod(page *mysqlsvc.MySQLDataPage) string {
+func mysqlDataPageMethod(page *contract.DataPage) string {
 	if page.KeysetAvailable {
 		return "Keyset"
 	}

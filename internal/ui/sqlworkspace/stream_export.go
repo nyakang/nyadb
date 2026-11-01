@@ -16,9 +16,6 @@ type streamLease interface {
 	ExecuteStream(context.Context, string, string, sqlresult.Sink) (contract.SQLResult, error)
 }
 
-func (l *mySQLLease) ExecuteStream(ctx context.Context, db, sql string, sink sqlresult.Sink) (contract.SQLResult, error) {
-	return l.manager.ExecuteSQLTabTokenStream(ctx, l.token, db, sql, sink)
-}
 func (s *State) RunExport(d *Document) {
 	if d == nil || d.loading || d.recoveryNeeded || !s.connected(d.profileID) {
 		return

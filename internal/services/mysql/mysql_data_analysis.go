@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -12,31 +13,11 @@ import (
 
 // Analysis aggregates remain on the server. Client memory and transferred
 // values are bounded by 128 fields and ten 128-character previews per field.
-type MySQLDataAnalysis struct {
-	Rows        int64
-	Columns     []MySQLDataColumnAnalysis
-	CompletedAt time.Time
-	Duration    time.Duration
-}
+type MySQLDataAnalysis = contract.DataAnalysis
 
-type MySQLDataColumnAnalysis struct {
-	Name, Kind, Collation   string
-	Rows, Null, Distinct    int64
-	Singletons              int64 // non-NULL value groups occurring exactly once
-	Numeric, Zero           int64
-	Min, Max, Mean          string
-	Median, StdDeviation    string
-	MaxFrequency, ModeCount int64
-	Modes                   []MySQLDataAnalysisFrequency
-	Distribution            []MySQLDataAnalysisFrequency
-}
+type MySQLDataColumnAnalysis = contract.DataColumnAnalysis
 
-type MySQLDataAnalysisFrequency struct {
-	Value     string
-	Count     int64
-	Truncated bool
-	Null      bool
-}
+type MySQLDataAnalysisFrequency = contract.DataAnalysisFrequency
 
 // AnalyzeMySQLData analyzes all rows matching the supplied AND filters.
 // Sorting/paging/cursors cannot silently restrict an aggregate. A read-only

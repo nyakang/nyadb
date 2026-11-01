@@ -1065,5 +1065,8 @@
   "corePlanAction24": "信任此主机",
   "corePlanAction25": "首次连接需确认 SHA-256 主机指纹；后续指纹变化将拒绝连接。",
   "corePlanAction26": "数据库隧道已断开；请显式重新连接，不会重放 SQL 或事务",
-  "httpClearLegacyBase64": "清除旧版 base64 设置"
+  "httpClearLegacyBase64": "清除旧版 base64 设置",
+  "unifiedData0": "原数据库会话已失效，请刷新表数据",
+  "unifiedData1": "数据库会话不可用",
+  "unifiedData2": "正在读取数据库数据…"
 }

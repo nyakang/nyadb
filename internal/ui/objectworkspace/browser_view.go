@@ -1,6 +1,7 @@
 package objectworkspace
 
 import (
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strconv"
 
 	"github.com/egoist/mygo/ui"
@@ -23,7 +24,7 @@ var mysqlObjectColumns = []ui.TableColumn{
 // MySQL's information_schema.TABLE_ROWS is not a reliable exact count for
 // InnoDB. The visible approximation mark prevents confusing it with COUNT(*).
 // NULL from the server remains empty, but a measured zero remains "0".
-func mysqlObjectCellText(obj mysqlsvc.MySQLDBObject, col int) string {
+func mysqlObjectCellText(obj contract.DBObject, col int) string {
 	number := func(n *int64) string {
 		if n == nil {
 			return ""
@@ -299,7 +300,7 @@ func (s *State) BrowserView(c *ui.Context) {
 }
 
 // ObjectProperties is the information panel for cached object metadata.
-func ObjectProperties(c *ui.Context, obj mysqlsvc.MySQLDBObject) {
+func ObjectProperties(c *ui.Context, obj contract.DBObject) {
 	theme.Property(c, "引擎", obj.Engine)
 	theme.Property(c, "注释", obj.Comment)
 	if Supports(obj.Kind) {

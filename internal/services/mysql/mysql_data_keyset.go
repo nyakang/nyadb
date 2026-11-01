@@ -3,22 +3,14 @@ package mysql
 import (
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
 )
 
 // MySQLDataCursor is a bounded, opaque-to-the-UI page boundary. Only cursors
 // returned by this read-only service should be reused. This is not a
 // cross-transaction snapshot: concurrent changes can still move rows.
-type MySQLDataCursor struct {
-	RuleSignature                         string
-	Database, Table                       string
-	FilterColumn, FilterMode, FilterValue string
-	SortColumn                            string
-	SortDescending                        bool
-	Columns                               []string
-	Descending                            []bool
-	Values                                [][]byte
-}
+type MySQLDataCursor = contract.DataCursor
 
 type mysqlOrderKey struct {
 	name string
@@ -94,11 +86,7 @@ func mysqlNextDataCursor(keys []mysqlOrderKey, values []any, scope MySQLDataCurs
 
 // MySQLRowRef is an identity from a verified full-length NOT NULL UNIQUE
 // index. It is used only for per-cell, bounded explicit reads.
-type MySQLRowRef struct {
-	Database, Table string
-	Columns         []string
-	Values          [][]byte
-}
+type MySQLRowRef = contract.RowRef
 
 func containsOrderColumn(keys []mysqlOrderKey, name string) bool {
 	for _, key := range keys {

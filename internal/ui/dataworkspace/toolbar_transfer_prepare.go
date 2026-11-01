@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"maps"
 	"os"
 	"slices"
@@ -14,15 +15,15 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/db/mysqlspec"
 	"github.com/nyakang/nyadb/locales"
 )
 
-type mysqlDataStreamImporter func(context.Context, int64, string, string, mysqlsvc.MySQLDataImportStreamRequest) (*mysqlsvc.MySQLDataImportStreamResult, error)
+type mysqlDataStreamImporter func(context.Context, int64, string, string, contract.DataImportStreamRequest) (*contract.DataImportStreamResult, error)
 
-func mysqlDataDecodeBase64Value(text string) (mysqlsvc.MySQLDataValue, error) {
+func mysqlDataDecodeBase64Value(text string) (contract.DataValue, error) {
 	b, err := base64.StdEncoding.DecodeString(text)
-	return mysqlsvc.MySQLDataValue{Binary: true, Bytes: b}, err
+	return contract.DataValue{Binary: true, Bytes: b}, err
 }
 func mysqlDataConvertDate(text, kind string, o mysqlDataSourceOptions) (string, error) {
 	if kind == "time" {
@@ -68,7 +69,7 @@ func (s *State) readDataImportPath(services ui.Services, t *Document, path strin
 		f, err := os.Open(path)
 		var spool *mysqlDataImportSpool
 		var input *mysqlDataImportInput
-		var columns []mysqlsvc.MySQLDataImportColumn
+		var columns []contract.DataImportColumn
 		if err == nil {
 			spool, input, columns, err = mysqlDataReadSpool(ctx, f, format, options, owner)
 			f.Close()
@@ -81,16 +82,16 @@ func (s *State) readDataImportPath(services ui.Services, t *Document, path strin
 type mysqlDataMappingReader struct {
 	raw             mysqlDataImportRowReader
 	mapping, fields []string
-	columns         []mysqlsvc.MySQLStructureColumn
+	columns         []contract.StructureColumn
 	options         mysqlDataSourceOptions
 	empty           bool
-	request         mysqlsvc.MySQLDataImportRequest
+	request         contract.DataImportRequest
 	changed         int64
 }
 
 func (r *mysqlDataMappingReader) Fields() []string { return append([]string(nil), r.fields...) }
 func (r *mysqlDataMappingReader) Close() error     { return r.raw.Close() }
-func (r *mysqlDataMappingReader) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataMappingReader) Next(ctx context.Context) ([]contract.DataValue, error) {
 	row, err := r.raw.Next(ctx)
 	if err != nil {
 		return nil, err
@@ -99,13 +100,13 @@ func (r *mysqlDataMappingReader) Next(ctx context.Context) ([]mysqlsvc.MySQLData
 	if err != nil {
 		return nil, err
 	}
-	edit := mysqlsvc.MySQLDataEdit{Kind: "insert", Values: map[string]mysqlsvc.MySQLDataValue{}}
+	edit := contract.DataEdit{Kind: "insert", Values: map[string]contract.DataValue{}}
 	for i, name := range r.fields {
 		edit.Values[name] = values[i]
 	}
 	request := r.request
-	request.Edits = []mysqlsvc.MySQLDataEdit{edit}
-	if err = mysqlsvc.ValidateMySQLDataImportRequest(r.columns, request); err != nil {
+	request.Edits = []contract.DataEdit{edit}
+	if err = mysqlspec.ValidateImportRequest(r.columns, request); err != nil {
 		return nil, err
 	}
 	r.changed += changed
@@ -169,12 +170,12 @@ func (s *State) prepareDataImport(services ui.Services, t *Document) {
 type mysqlDataEditSpoolReader struct{ rows *mysqlDataSpoolReader }
 
 func (r *mysqlDataEditSpoolReader) Close() error { return r.rows.Close() }
-func (r *mysqlDataEditSpoolReader) Next(ctx context.Context) (mysqlsvc.MySQLDataEdit, error) {
+func (r *mysqlDataEditSpoolReader) Next(ctx context.Context) (contract.DataEdit, error) {
 	row, err := r.rows.Next(ctx)
 	if err != nil {
-		return mysqlsvc.MySQLDataEdit{}, err
+		return contract.DataEdit{}, err
 	}
-	edit := mysqlsvc.MySQLDataEdit{Kind: "insert", Values: map[string]mysqlsvc.MySQLDataValue{}}
+	edit := contract.DataEdit{Kind: "insert", Values: map[string]contract.DataValue{}}
 	for i, name := range r.rows.fields {
 		edit.Values[name] = row[i]
 	}
@@ -231,7 +232,7 @@ func (s *State) consumeStreamedDataImport(services ui.Services, t *Document, r m
 	if tr.Uncertain {
 		tr.Err = locales.Text("导入结果不确定，禁止重放；请核验数据库")
 		if !r.NewTable {
-			t.edit.Uncertain = &mysqlsvc.MySQLDataEditResult{CommitUncertain: true}
+			t.edit.Uncertain = &contract.DataEditResult{CommitUncertain: true}
 		}
 	} else if r.Err != nil {
 		tr.Err = fmt.Sprintf(locales.Text("已提交 %d 行；后续导入失败，本次向导不会重放："), result.Progress.Prepared) + r.Err.Error()
@@ -286,7 +287,7 @@ func (s *State) dataImportConversionPreview(c *ui.Context, t *Document) {
 		}
 	}
 }
-func mysqlDataPreviewValues(row []mysqlsvc.MySQLDataValue) string {
+func mysqlDataPreviewValues(row []contract.DataValue) string {
 	values := []string{}
 	for _, v := range row {
 		if v.Null {
@@ -310,7 +311,7 @@ type mysqlDataTransferPreset struct {
 	Mode                                         string
 	Mapping, Match, Fields                       []string
 	Included                                     map[string]bool `json:",omitempty"`
-	Columns                                      []mysqlsvc.MySQLDataImportColumn
+	Columns                                      []contract.DataImportColumn
 }
 
 type mysqlDataTransferPresets struct {

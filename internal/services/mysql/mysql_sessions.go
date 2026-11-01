@@ -9,11 +9,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/transport"
 )
 
-var ErrMySQLNotConnected = errors.New("MySQL session not connected")
+var ErrMySQLNotConnected = contract.ErrRevoked
 var ErrMySQLManagerClosed = errors.New("MySQL session manager closed")
 
 // MySQLSessionManager owns authenticated connections and cancels in-flight

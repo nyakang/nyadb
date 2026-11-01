@@ -7,12 +7,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"io"
 	"os"
 	"strings"
 	"unicode/utf8"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // TXT defaults to a tab-delimited text table. The wizard can select other
@@ -34,7 +33,7 @@ func mysqlDataParseTXTImport(data []byte) (*mysqlDataImportInput, error) {
 		if err != nil {
 			return nil, err
 		}
-		values := make([]mysqlsvc.MySQLDataValue, len(row))
+		values := make([]contract.DataValue, len(row))
 		for i, value := range row {
 			values[i] = mysqlDataDecodeDelimited(value)
 		}
@@ -57,9 +56,9 @@ func newMySQLDataTXTEncoder(w io.Writer, fields []string) (*mysqlDataTXTEncoder,
 	return e, nil
 }
 
-func (e *mysqlDataTXTEncoder) Row(values []mysqlsvc.MySQLDataValue) error {
+func (e *mysqlDataTXTEncoder) Row(values []contract.DataValue) error {
 	if e.closed || len(values) != e.fields {
-		return mysqlsvc.ErrMySQLDataPage
+		return contract.ErrDataPage
 	}
 	row := make([]string, len(values))
 	for i, v := range values {
@@ -107,12 +106,12 @@ func mysqlDataCodecContext(w io.Writer) context.Context {
 
 func newMySQLDataCodecSpool(fields []string) (*mysqlDataCodecSpool, error) {
 	if len(fields) == 0 || len(fields) > 128 {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	seen := map[string]bool{}
 	for _, field := range fields {
 		if field == "" || !utf8.ValidString(field) || seen[field] {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		seen[field] = true
 	}
@@ -123,19 +122,19 @@ func newMySQLDataCodecSpool(fields []string) (*mysqlDataCodecSpool, error) {
 	return &mysqlDataCodecSpool{file: f, encoder: json.NewEncoder(f), fields: append([]string(nil), fields...), kinds: make([]string, len(fields)), widths: make([]int, len(fields))}, nil
 }
 
-func (s *mysqlDataCodecSpool) Row(values []mysqlsvc.MySQLDataValue) error {
+func (s *mysqlDataCodecSpool) Row(values []contract.DataValue) error {
 	if s.closed || len(values) != len(s.fields) {
-		return mysqlsvc.ErrMySQLDataPage
+		return contract.ErrDataPage
 	}
 	total := 0
 	for i, v := range values {
 		if v.Default || v.Null && v.Binary || !v.Binary && !utf8.ValidString(v.Text) {
-			return mysqlsvc.ErrMySQLDataPage
+			return contract.ErrDataPage
 		}
 		size := len(v.Text) + len(v.Bytes)
 		total += size
-		if size > mysqlsvc.MySQLDataExportFieldMaxBytes || total > mysqlsvc.MySQLDataExportRowMaxBytes {
-			return mysqlsvc.ErrMySQLDataEditLimit
+		if size > contract.DataExportFieldMaxBytes || total > contract.DataExportRowMaxBytes {
+			return contract.ErrDataEditLimit
 		}
 		if v.Null {
 			continue
@@ -157,7 +156,7 @@ func (s *mysqlDataCodecSpool) Row(values []mysqlsvc.MySQLDataValue) error {
 	return nil
 }
 
-func (s *mysqlDataCodecSpool) each(ctx context.Context, visit func([]mysqlsvc.MySQLDataValue) error) error {
+func (s *mysqlDataCodecSpool) each(ctx context.Context, visit func([]contract.DataValue) error) error {
 	if _, err := s.file.Seek(0, io.SeekStart); err != nil {
 		return err
 	}
@@ -166,7 +165,7 @@ func (s *mysqlDataCodecSpool) each(ctx context.Context, visit func([]mysqlsvc.My
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		var row []mysqlsvc.MySQLDataValue
+		var row []contract.DataValue
 		if err := dec.Decode(&row); err != nil {
 			if err == io.EOF {
 				return nil

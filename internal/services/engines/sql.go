@@ -1,6 +1,7 @@
 package engines
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
@@ -197,7 +198,7 @@ func cell(v any, decl string, kind connections.Kind) contract.Cell {
 		if kind == connections.PostgreSQL && typ != "BYTEA" {
 			return cell(string(n), decl, kind)
 		}
-		return contract.Cell{Kind: contract.Binary, Bytes: append([]byte(nil), n...)}
+		return contract.Cell{Kind: contract.Binary, Bytes: bytes.Clone(n)}
 	case int64:
 		return contract.Cell{Kind: contract.Integer, Text: strconv.FormatInt(n, 10)}
 	case float64:

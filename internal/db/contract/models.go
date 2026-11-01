@@ -4,6 +4,7 @@ package contract
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"time"
 )
 
@@ -42,7 +43,14 @@ func (c Cell) Display() string {
 	}
 	return c.Text
 }
-func (c Cell) Clone() Cell { c.Bytes = append([]byte(nil), c.Bytes...); return c }
+func (c Cell) Clone() Cell {
+	if c.Bytes != nil {
+		raw := make([]byte, len(c.Bytes))
+		copy(raw, c.Bytes)
+		c.Bytes = raw
+	}
+	return c
+}
 
 type Column struct {
 	Name, DatabaseType string
@@ -118,6 +126,7 @@ func (r SQLResult) ResultSets() []ResultSet {
 
 type Capabilities struct {
 	Schemas, Transactions, EditableTables, Explain, DesignTables, Import, Backup bool
+	Query, Metadata, Keyset, Count, FieldChunks, Analysis, Export, JSONL         bool
 }
 type PageRequest struct {
 	Object  ObjectRef
@@ -145,14 +154,31 @@ type Edit struct {
 	Values   map[string]Cell
 }
 type CommitResult struct {
-	Applied    int
-	Uncertain  bool
-	Incomplete bool
-	Verified   bool
-	Saved      []Edit
+	CommitConfirmed bool
+	Applied         int
+	Uncertain       bool
+	Incomplete      bool
+	Verified        bool
+	Saved           []Edit
 }
 type Lease interface {
 	Preconnect(context.Context) error
 	Execute(context.Context, string, string) (SQLResult, error)
 	Release()
+}
+
+// MarshalJSON retains empty binary payloads as bytes:"", while nil remains absent.
+// This preserves raw row evidence without conflating it with a SQL NULL cell.
+func (c Cell) MarshalJSON() ([]byte, error) {
+	type encoded struct {
+		Kind      CellKind `json:"kind"`
+		Text      string   `json:"text,omitempty"`
+		Bytes     *[]byte  `json:"bytes,omitempty"`
+		Truncated bool     `json:"truncated,omitempty"`
+	}
+	value := encoded{Kind: c.Kind, Text: c.Text, Truncated: c.Truncated}
+	if c.Bytes != nil {
+		value.Bytes = &c.Bytes
+	}
+	return json.Marshal(value)
 }

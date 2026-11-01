@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"time"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -12,11 +13,7 @@ import (
 
 // MySQLTableInfo is a snapshot of one table's server metadata. Nil statistics
 // mean unavailable, not zero; dates retain the server's timezone and spelling.
-type MySQLTableInfo struct {
-	Database, Name, Kind, Engine, RowFormat, Collation, Comment, CreateOptions     string
-	CreatedAt, ModifiedAt, CheckedAt                                               string
-	EstimatedRows, AutoIncrement, DataLength, IndexLength, MaxDataLength, DataFree *int64
-}
+type MySQLTableInfo = contract.TableInfo
 
 // TableInfo reads one object without loading its data, columns or indexes.
 func (m *MySQLSessionManager) TableInfo(ctx context.Context, id int64, database, table string) (*MySQLTableInfo, error) {

@@ -1,12 +1,11 @@
 package objectworkspace
 
 import (
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strconv"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -83,6 +82,9 @@ func (s *State) View(c *ui.Context, t *Document) {
 		})
 		ui.Row(c).Height(theme.RowHeight(c, theme.TabHeight)).Background(palette.Panel).Children(func() {
 			names := []string{"字段", "索引", "外键", "表信息"}
+			if t.data != nil && (t.data.Definition != "" || len(t.data.Definitions) > 0) {
+				names = append(names, "定义")
+			}
 			tabs := ui.TabsBase(c, &t.page, len(names))
 			tabs.List.Gap(0).Children(func() {
 				for i, name := range names {
@@ -115,6 +117,8 @@ func (s *State) View(c *ui.Context, t *Document) {
 			mysqlStructureForeignKeysView(c, t)
 		case 3:
 			mysqlStructureInfoView(c, t.data)
+		case 4:
+			structureDefinitionsView(c, t.data)
 		default:
 			mysqlStructureFieldsView(c, t)
 		}
@@ -265,7 +269,7 @@ func mysqlStructureForeignKeysView(c *ui.Context, t *Document) {
 		}).Grow(1)
 }
 
-func mysqlStructureInfoView(c *ui.Context, structure *mysqlsvc.MySQLTableStructure) {
+func mysqlStructureInfoView(c *ui.Context, structure *contract.TableStructure) {
 	palette := theme.Colors(c)
 
 	if structure == nil {
@@ -289,6 +293,23 @@ func mysqlStructureInfoView(c *ui.Context, structure *mysqlsvc.MySQLTableStructu
 					ui.Text(c, row[0]).Width(105).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 					ui.Text(c, row[1]).FontSize(theme.Font(c, theme.FontSize)).Grow(1).MinWidth(0)
 				})
+			}
+		})
+	})
+}
+
+func structureDefinitionsView(c *ui.Context, data *contract.TableStructure) {
+	if data == nil {
+		return
+	}
+	ui.ScrollBoth(c).Fill().Children(func() {
+		ui.Column(c).Padding(8).Gap(10).Children(func() {
+			if data.Definition != "" {
+				ui.Text(c, data.Definition).FontSize(theme.Font(c, 12))
+			}
+			for _, definition := range data.Definitions {
+				ui.Text(c, definition.Kind+" · "+definition.Name).Bold()
+				ui.Text(c, definition.SQL).FontSize(theme.Font(c, 12))
 			}
 		})
 	})

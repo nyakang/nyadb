@@ -8,6 +8,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"io"
 	"os"
 	"path"
@@ -16,8 +17,6 @@ import (
 	"strings"
 	"unicode/utf16"
 	"unicode/utf8"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // Both shared strings and their lookup index live on disk. Worksheet rows are
@@ -63,7 +62,7 @@ func (s *mysqlDataDiskStrings) append(text string) error {
 }
 func (s *mysqlDataDiskStrings) text(index int64) (string, error) {
 	if index < 0 || index >= s.count {
-		return "", mysqlsvc.ErrMySQLDataPage
+		return "", contract.ErrDataPage
 	}
 	h := make([]byte, 8)
 	if _, err := s.index.ReadAt(h, index*8); err != nil {
@@ -74,8 +73,8 @@ func (s *mysqlDataDiskStrings) text(index int64) (string, error) {
 		return "", err
 	}
 	size := int(binary.LittleEndian.Uint32(h))
-	if size > mysqlsvc.MySQLDataExportFieldMaxBytes {
-		return "", mysqlsvc.ErrMySQLDataEditLimit
+	if size > contract.DataExportFieldMaxBytes {
+		return "", contract.ErrDataEditLimit
 	}
 	data := make([]byte, size)
 	_, err := s.file.ReadAt(data, offset+4)
@@ -101,7 +100,7 @@ type mysqlDataXLSXRows struct {
 	formats      map[int]string
 	styles       []int
 	last         int
-	pending      []mysqlsvc.MySQLDataValue
+	pending      []contract.DataValue
 	pendingIndex int
 	closed       bool
 }
@@ -112,7 +111,7 @@ func mysqlDataOpenXLSXRows(ctx context.Context, input io.ReaderAt, size int64, o
 		return nil, err
 	}
 	if len(z.File) > 4096 {
-		return nil, mysqlsvc.ErrMySQLDataEditLimit
+		return nil, contract.ErrDataEditLimit
 	}
 	files := map[string]*zip.File{}
 	for _, f := range z.File {
@@ -152,7 +151,7 @@ func mysqlDataOpenXLSXRows(ctx context.Context, input io.ReaderAt, size int64, o
 		}
 		var extra any
 		if err = dec.Decode(&extra); err != io.EOF {
-			return mysqlsvc.ErrMySQLDataPage
+			return contract.ErrDataPage
 		}
 		return nil
 	}
@@ -211,7 +210,7 @@ func mysqlDataOpenXLSXRows(ctx context.Context, input io.ReaderAt, size int64, o
 		}
 	}
 	if !strings.HasPrefix(sheetName, "xl/") || files[sheetName] == nil {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	var styles struct {
 		Formats []struct {
@@ -254,7 +253,7 @@ func mysqlDataOpenXLSXRows(ctx context.Context, input io.ReaderAt, size int64, o
 			}
 			if _, ok := token.(xml.Directive); ok {
 				stream.Close()
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			if start, ok := token.(xml.StartElement); ok && start.Name.Local == "si" {
 				var text mysqlDataXLSXRichText
@@ -265,7 +264,7 @@ func mysqlDataOpenXLSXRows(ctx context.Context, input io.ReaderAt, size int64, o
 				value := text.value()
 				if len(utf16.Encode([]rune(value))) > 32767 {
 					stream.Close()
-					return nil, mysqlsvc.ErrMySQLDataEditLimit
+					return nil, contract.ErrDataEditLimit
 				}
 				if e = r.shared.append(value); e != nil {
 					stream.Close()
@@ -303,13 +302,13 @@ func mysqlDataOpenXLSXRows(ctx context.Context, input io.ReaderAt, size int64, o
 		}
 		for _, v := range row {
 			if v.Null || v.Binary || v.Text == "" {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			r.fields = append(r.fields, v.Text)
 		}
 		break
 	}
-	if err = mysqlDataRecordValuesValid(r.fields, make([]mysqlsvc.MySQLDataValue, len(r.fields))); err != nil {
+	if err = mysqlDataRecordValuesValid(r.fields, make([]contract.DataValue, len(r.fields))); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -331,7 +330,7 @@ func (r *mysqlDataXLSXRows) Close() error {
 	r.pending = nil
 	return err
 }
-func (r *mysqlDataXLSXRows) raw(ctx context.Context) (int, []mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataXLSXRows) raw(ctx context.Context) (int, []contract.DataValue, error) {
 	r.window.ctx = ctx
 	r.window.left = 40 << 20
 	for {
@@ -343,7 +342,7 @@ func (r *mysqlDataXLSXRows) raw(ctx context.Context) (int, []mysqlsvc.MySQLDataV
 			return 0, nil, err
 		}
 		if _, ok := token.(xml.Directive); ok {
-			return 0, nil, mysqlsvc.ErrMySQLDataPage
+			return 0, nil, contract.ErrDataPage
 		}
 		start, ok := token.(xml.StartElement)
 		if !ok || start.Name.Local != "row" {
@@ -360,13 +359,13 @@ func (r *mysqlDataXLSXRows) raw(ctx context.Context) (int, []mysqlsvc.MySQLDataV
 			row.Index = r.last + 1
 		}
 		if row.Index <= r.last || row.Index > 1048576 || len(row.Cells) > 128 {
-			return 0, nil, mysqlsvc.ErrMySQLDataPage
+			return 0, nil, contract.ErrDataPage
 		}
 		r.last = row.Index
 		if len(row.Cells) == 0 {
 			continue
 		}
-		values := make([]mysqlsvc.MySQLDataValue, 128)
+		values := make([]contract.DataValue, 128)
 		for i := range values {
 			values[i].Null = true
 		}
@@ -381,21 +380,21 @@ func (r *mysqlDataXLSXRows) raw(ctx context.Context) (int, []mysqlsvc.MySQLDataV
 				}
 			}
 			if cellRow != row.Index || column >= 128 || seen[column] || cell.Style < 0 {
-				return 0, nil, mysqlsvc.ErrMySQLDataPage
+				return 0, nil, contract.ErrDataPage
 			}
 			seen[column] = true
 			maxColumn = max(maxColumn, column+1)
 			if cell.Formula != nil {
 				return 0, nil, errors.New("XLSX formula cells require a value-only export")
 			}
-			value := mysqlsvc.MySQLDataValue{}
+			value := contract.DataValue{}
 			switch cell.Type {
 			case "inlineStr":
 				value.Text = cell.Inline.value()
 			case "s":
 				n, e := strconv.ParseInt(cell.Value, 10, 64)
 				if e != nil || r.shared == nil {
-					return 0, nil, mysqlsvc.ErrMySQLDataPage
+					return 0, nil, contract.ErrDataPage
 				}
 				value.Text, err = r.shared.text(n)
 				if err != nil {
@@ -405,7 +404,7 @@ func (r *mysqlDataXLSXRows) raw(ctx context.Context) (int, []mysqlsvc.MySQLDataV
 				value.Text = cell.Value
 			case "b":
 				if cell.Value != "0" && cell.Value != "1" {
-					return 0, nil, mysqlsvc.ErrMySQLDataPage
+					return 0, nil, contract.ErrDataPage
 				}
 				value.Text = cell.Value
 			case "", "n":
@@ -413,7 +412,7 @@ func (r *mysqlDataXLSXRows) raw(ctx context.Context) (int, []mysqlsvc.MySQLDataV
 					value.Null = true
 				} else {
 					if !mysqlDataImportNumber.MatchString(cell.Value) {
-						return 0, nil, mysqlsvc.ErrMySQLDataPage
+						return 0, nil, contract.ErrDataPage
 					}
 					value.Text = cell.Value
 				}
@@ -424,16 +423,16 @@ func (r *mysqlDataXLSXRows) raw(ctx context.Context) (int, []mysqlsvc.MySQLDataV
 				id := r.styles[cell.Style]
 				code := r.formats[id]
 				if code == mysqlDataXLSXNullFormat && value.Text == "" {
-					value = mysqlsvc.MySQLDataValue{Null: true}
+					value = contract.DataValue{Null: true}
 				} else if code == mysqlDataXLSXBinaryFormat {
 					if !strings.HasPrefix(value.Text, "0x") {
-						return 0, nil, mysqlsvc.ErrMySQLDataPage
+						return 0, nil, contract.ErrDataPage
 					}
 					b, e := hex.DecodeString(value.Text[2:])
 					if e != nil {
 						return 0, nil, e
 					}
-					value = mysqlsvc.MySQLDataValue{Binary: true, Bytes: b}
+					value = contract.DataValue{Binary: true, Bytes: b}
 				} else if !value.Null && (cell.Type == "n" || cell.Type == "") && mysqlDataXLSXDateFormat(id, code) {
 					value.Text, err = mysqlDataXLSXDate(cell.Value, r.date1904)
 					if err != nil {
@@ -441,17 +440,17 @@ func (r *mysqlDataXLSXRows) raw(ctx context.Context) (int, []mysqlsvc.MySQLDataV
 					}
 				}
 			} else if cell.Style != 0 {
-				return 0, nil, mysqlsvc.ErrMySQLDataPage
+				return 0, nil, contract.ErrDataPage
 			}
 			if !utf8.ValidString(value.Text) || len(utf16.Encode([]rune(value.Text))) > 32767 {
-				return 0, nil, mysqlsvc.ErrMySQLDataEditLimit
+				return 0, nil, contract.ErrDataEditLimit
 			}
 			values[column] = value
 		}
 		return row.Index, values[:maxColumn], nil
 	}
 }
-func (r *mysqlDataXLSXRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataXLSXRows) Next(ctx context.Context) ([]contract.DataValue, error) {
 	for {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -475,10 +474,10 @@ func (r *mysqlDataXLSXRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue
 			return nil, io.EOF
 		}
 		if len(row) > len(r.fields) {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		for len(row) < len(r.fields) {
-			row = append(row, mysqlsvc.MySQLDataValue{Null: true})
+			row = append(row, contract.DataValue{Null: true})
 		}
 		if err := mysqlDataRecordValuesValid(r.fields, row); err != nil {
 			return nil, err

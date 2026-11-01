@@ -74,11 +74,7 @@ func (s *State) setProfileStarred(id int64, starred bool) {
 func (s *State) activeTabObject() (int64, string, string, bool) {
 	t := s.currentTab()
 	switch t.kind {
-	case tabEngineData:
-		if t.engine == nil {
-			return 0, "", "", false
-		}
-		return t.engine.Object.ProfileID, t.engine.Object.Schema, t.engine.Object.Name, true
+
 	case tabMySQLData:
 		if t.data == nil {
 			return 0, "", "", false

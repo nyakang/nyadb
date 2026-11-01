@@ -7,13 +7,12 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/locales"
 	"io"
 	"strings"
 	"unicode"
 	"unicode/utf8"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
-	"github.com/nyakang/nyadb/locales"
 )
 
 const mysqlDataXMLSchemaInstance = "http://www.w3.org/2001/XMLSchema-instance"
@@ -61,9 +60,9 @@ func newMySQLDataXMLEncoderOptions(w io.Writer, fields []string, options mysqlDa
 	}
 	return e, nil
 }
-func (e *mysqlDataXMLEncoder) Row(values []mysqlsvc.MySQLDataValue) error {
+func (e *mysqlDataXMLEncoder) Row(values []contract.DataValue) error {
 	if e.closed || len(values) != len(e.fields) {
-		return mysqlsvc.ErrMySQLDataPage
+		return contract.ErrDataPage
 	}
 	// encoding/xml can replace unsupported characters; reject them before writing
 	// any part of a row rather than exporting silently changed text.
@@ -221,11 +220,11 @@ func mysqlDataParseXMLImport(data []byte) (*mysqlDataImportInput, error) {
 			if len(names) != len(input.Fields) {
 				return nil, errors.New(locales.Text("XML 每行必须包含相同字段"))
 			}
-			byName := make(map[string]mysqlsvc.MySQLDataValue, len(names))
+			byName := make(map[string]contract.DataValue, len(names))
 			for i, name := range names {
 				byName[name] = values[i]
 			}
-			ordered := make([]mysqlsvc.MySQLDataValue, len(input.Fields))
+			ordered := make([]contract.DataValue, len(input.Fields))
 			for i, name := range input.Fields {
 				value, ok := byName[name]
 				if !ok {
@@ -234,8 +233,8 @@ func mysqlDataParseXMLImport(data []byte) (*mysqlDataImportInput, error) {
 				ordered[i] = value
 			}
 			input.Rows = append(input.Rows, ordered)
-			if len(input.Rows) > mysqlsvc.MaxMySQLDataImportRows {
-				return nil, mysqlsvc.ErrMySQLDataEditLimit
+			if len(input.Rows) > contract.MaxDataImportRows {
+				return nil, contract.ErrDataEditLimit
 			}
 		case xml.EndElement:
 			if !opened || ended || t.Name.Space != "" || t.Name.Local != "RECORDS" {
@@ -256,12 +255,12 @@ func mysqlDataXMLNamespacesOnly(attrs []xml.Attr) bool {
 	}
 	return true
 }
-func mysqlDataReadXMLRecord(dec *xml.Decoder, start xml.StartElement) ([]string, []mysqlsvc.MySQLDataValue, error) {
+func mysqlDataReadXMLRecord(dec *xml.Decoder, start xml.StartElement) ([]string, []contract.DataValue, error) {
 	var fields []string
-	var values []mysqlsvc.MySQLDataValue
+	var values []contract.DataValue
 	seen := map[string]bool{}
 	attributes := false
-	add := func(name string, value mysqlsvc.MySQLDataValue) error {
+	add := func(name string, value contract.DataValue) error {
 		if name == "" || seen[name] || len(fields) >= 128 {
 			return errors.New(locales.Text("导入字段名不能为空或重复"))
 		}
@@ -278,7 +277,7 @@ func mysqlDataReadXMLRecord(dec *xml.Decoder, start xml.StartElement) ([]string,
 			return nil, nil, mysqlDataXMLError()
 		}
 		attributes = true
-		if err := add(attr.Name.Local, mysqlsvc.MySQLDataValue{Text: attr.Value}); err != nil {
+		if err := add(attr.Name.Local, contract.DataValue{Text: attr.Value}); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -314,16 +313,16 @@ func mysqlDataReadXMLRecord(dec *xml.Decoder, start xml.StartElement) ([]string,
 		}
 	}
 }
-func mysqlDataReadXMLField(dec *xml.Decoder, start xml.StartElement) (string, mysqlsvc.MySQLDataValue, error) {
+func mysqlDataReadXMLField(dec *xml.Decoder, start xml.StartElement) (string, contract.DataValue, error) {
 	if start.Name.Space != "" {
-		return "", mysqlsvc.MySQLDataValue{}, mysqlDataXMLError()
+		return "", contract.DataValue{}, mysqlDataXMLError()
 	}
 	name := start.Name.Local
 	nilValue, encoding := false, ""
 	seen := map[xml.Name]bool{}
 	for _, attr := range start.Attr {
 		if seen[attr.Name] {
-			return "", mysqlsvc.MySQLDataValue{}, mysqlDataXMLError()
+			return "", contract.DataValue{}, mysqlDataXMLError()
 		}
 		seen[attr.Name] = true
 		switch {
@@ -334,21 +333,21 @@ func mysqlDataReadXMLField(dec *xml.Decoder, start xml.StartElement) (string, my
 				nilValue = true
 			case "false", "0":
 			default:
-				return "", mysqlsvc.MySQLDataValue{}, mysqlDataXMLError()
+				return "", contract.DataValue{}, mysqlDataXMLError()
 			}
 		case attr.Name.Space == "" && attr.Name.Local == "encoding":
 			encoding = attr.Value
 		case attr.Name.Space == "" && attr.Name.Local == "name" && start.Name.Local == "FIELD":
 			name = attr.Value
 		default:
-			return "", mysqlsvc.MySQLDataValue{}, mysqlDataXMLError()
+			return "", contract.DataValue{}, mysqlDataXMLError()
 		}
 	}
 	var text strings.Builder
 	for {
 		token, err := dec.Token()
 		if err != nil {
-			return "", mysqlsvc.MySQLDataValue{}, err
+			return "", contract.DataValue{}, err
 		}
 		switch t := token.(type) {
 		case xml.Comment:
@@ -356,14 +355,14 @@ func mysqlDataReadXMLField(dec *xml.Decoder, start xml.StartElement) (string, my
 			text.Write(t)
 		case xml.EndElement:
 			if t.Name != start.Name {
-				return "", mysqlsvc.MySQLDataValue{}, mysqlDataXMLError()
+				return "", contract.DataValue{}, mysqlDataXMLError()
 			}
-			value := mysqlsvc.MySQLDataValue{Text: text.String()}
+			value := contract.DataValue{Text: text.String()}
 			if nilValue {
 				if text.Len() != 0 || encoding != "" {
 					return "", value, mysqlDataXMLError()
 				}
-				return name, mysqlsvc.MySQLDataValue{Null: true}, nil
+				return name, contract.DataValue{Null: true}, nil
 			}
 			if encoding != "" {
 				var raw []byte
@@ -378,11 +377,11 @@ func mysqlDataReadXMLField(dec *xml.Decoder, start xml.StartElement) (string, my
 				if err != nil {
 					return "", value, fmt.Errorf("%w: %v", mysqlDataXMLError(), err)
 				}
-				value = mysqlsvc.MySQLDataValue{Binary: true, Bytes: raw}
+				value = contract.DataValue{Binary: true, Bytes: raw}
 			}
 			return name, value, nil
 		default:
-			return "", mysqlsvc.MySQLDataValue{}, mysqlDataXMLError()
+			return "", contract.DataValue{}, mysqlDataXMLError()
 		}
 	}
 }

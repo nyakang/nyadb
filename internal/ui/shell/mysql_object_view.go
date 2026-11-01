@@ -118,9 +118,6 @@ func (s *State) openMySQLProgram(database, name, kind string) {
 }
 
 func (s *State) openMySQLData(services ui.Services, database, table string) {
-	if s.openEngineData(services, database, table) {
-		return
-	}
 	w := s.sessions.Current()
 	if w.Status != "已连接" || w.ProfileID <= 0 || !validStructureSelection(database, table) {
 		return
@@ -131,7 +128,12 @@ func (s *State) openMySQLData(services ui.Services, database, table string) {
 		return
 	}
 	s.nextTabID++
-	t := &tab{id: s.nextTabID, kind: tabMySQLData, title: database + "." + table + " · 数据", data: s.dataWorkspace.Open(s.nextTabID, w.ProfileID, database, table, kind)}
+	t := &tab{id: s.nextTabID, kind: tabMySQLData, title: database + "." + table + " · 数据", data: s.dataWorkspace.OpenObject(s.nextTabID, s.runtime.Namespace(w.ProfileID, database).Object(func() string {
+		if kind == "视图" {
+			return "view"
+		}
+		return "table"
+	}(), table), s.objectCapabilitiesFor(w.ProfileID))}
 	s.tabs = append(s.tabs, t)
 	s.activeTab = len(s.tabs) - 1
 	s.dataWorkspace.Load(services, t.data, false)

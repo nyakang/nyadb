@@ -35,18 +35,15 @@ func TestMySQLStructureRealDatabaseNativeViewer(t *testing.T) {
 	}
 	s.selectedProfileID = p.ID
 	s.loadProfiles()
-	settings, err := connections.ResolveActiveSettings(p)
-	if err != nil {
-		t.Fatal(err)
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	if err := s.sessions.Manager.Connect(ctx, settings, password); err != nil {
+	if err := s.runtime.Connect(ctx, p, password); err != nil {
 		t.Fatalf("isolated session: %v", err)
 	}
 	s.sessions.Current().ProfileID = p.ID
 	s.sessions.Current().Status = "已连接"
-	s.sessions.Current().Databases, err = s.sessions.Manager.Databases(ctx, p.ID)
+	s.sessions.Current().Generation = s.runtime.Generation(p.ID)
+	s.sessions.Current().Databases, err = runtimeNamespaceNames(ctx, s, p.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

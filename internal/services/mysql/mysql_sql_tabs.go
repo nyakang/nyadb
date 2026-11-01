@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/sqlresult"
 	"io"
 	"sync"
@@ -17,11 +18,11 @@ import (
 // ErrMySQLSQLSessionLost means that a tab's physical SQL session may no longer
 // hold its user variables, temporary tables, or uncommitted transaction.
 // Never silently recreate such a session and pretend the state is preserved.
-var ErrMySQLSQLSessionLost = errors.New("MySQL SQL tab session lost; open a new query tab")
+var ErrMySQLSQLSessionLost = contract.ErrSQLSessionLost
 
 // ErrMySQLSQLSessionLimit indicates that the per-profile SQL-tab budget is
 // exhausted. It does not mean the metadata pool or whole profile is full.
-var ErrMySQLSQLSessionLimit = errors.New("MySQL SQL tab session limit reached")
+var ErrMySQLSQLSessionLimit = contract.ErrSQLSessionLimit
 
 type mysqlSQLTabLease struct {
 	mu     sync.Mutex

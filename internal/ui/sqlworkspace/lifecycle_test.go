@@ -297,28 +297,36 @@ func TestSQLInactiveCompletionAndCancellationKeepActiveStatus(t *testing.T) {
 }
 
 func TestSQLRecoveryFailureRetainsOldLeaseAndEditor(t *testing.T) {
- old:=&testLease{replace:func()(Lease,error){return nil,mysqlsvc.ErrMySQLSQLSessionLimit}}
- runtime:=&testRuntime{reserve:func(int64,uint64)(Lease,error){return nil,mysqlsvc.ErrMySQLSQLSessionLimit}}
- s:=New(Dependencies{Runtime:func()Runtime{return runtime},Connected:runtime.IsConnected})
- d:=s.Open(7,"SELECT original",4,"original_db",false)
- d.lease=old
- d.recoveryNeeded,d.recoveryProfile,d.recoverySchema=true,4,"original_db"
- s.Recover(d)
- if !d.NeedsRecovery()||d.lease!=old||old.releases!=0||runtime.reservations!=0||d.Editor.Buffer.String()!="SELECT original"||!strings.Contains(d.Error(),"新会话创建失败"){t.Fatal("failed recovery revoked old context or discarded SQL")}
- s.CloseAll()
- if old.releases!=1{t.Fatal("failed recovery lost ownership of old lease")}
+	old := &testLease{replace: func() (Lease, error) { return nil, mysqlsvc.ErrMySQLSQLSessionLimit }}
+	runtime := &testRuntime{reserve: func(int64, uint64) (Lease, error) { return nil, mysqlsvc.ErrMySQLSQLSessionLimit }}
+	s := New(Dependencies{Runtime: func() Runtime { return runtime }, Connected: runtime.IsConnected})
+	d := s.Open(7, "SELECT original", 4, "original_db", false)
+	d.lease = old
+	d.recoveryNeeded, d.recoveryProfile, d.recoverySchema = true, 4, "original_db"
+	s.Recover(d)
+	if !d.NeedsRecovery() || d.lease != old || old.releases != 0 || runtime.reservations != 0 || d.Editor.Buffer.String() != "SELECT original" || !strings.Contains(d.Error(), "新会话创建失败") {
+		t.Fatal("failed recovery revoked old context or discarded SQL")
+	}
+	s.CloseAll()
+	if old.releases != 1 {
+		t.Fatal("failed recovery lost ownership of old lease")
+	}
 }
 
 func TestSQLDocumentKeepsLeaseOwnerWhenHostRuntimeChanges(t *testing.T) {
- oldLease,newLease:=&testLease{},&testLease{}
- oldRuntime:=&testRuntime{reserve:func(int64,uint64)(Lease,error){return oldLease,nil}}
- newRuntime:=&testRuntime{reserve:func(int64,uint64)(Lease,error){return newLease,nil}}
- var current Runtime=oldRuntime
- s:=New(Dependencies{Runtime:func()Runtime{return current},Connected:func(int64)bool{return true}})
- d:=s.Open(1,"SELECT @original_session",1,"original_db",false)
- s.Prepare(d);consumeUntil(t,s,func()bool{return d.prepareResults==nil})
- current=newRuntime
- s.Run(nil,d);consumeUntil(t,s,func()bool{return !d.Loading()})
- s.CloseAll()
- if oldLease.executions.Load()!=1||oldLease.releases!=1||newLease.executions.Load()!=0||newLease.releases!=0||newRuntime.reservations!=0{t.Fatal("host runtime change used or released a different lease")}
+	oldLease, newLease := &testLease{}, &testLease{}
+	oldRuntime := &testRuntime{reserve: func(int64, uint64) (Lease, error) { return oldLease, nil }}
+	newRuntime := &testRuntime{reserve: func(int64, uint64) (Lease, error) { return newLease, nil }}
+	var current Runtime = oldRuntime
+	s := New(Dependencies{Runtime: func() Runtime { return current }, Connected: func(int64) bool { return true }})
+	d := s.Open(1, "SELECT @original_session", 1, "original_db", false)
+	s.Prepare(d)
+	consumeUntil(t, s, func() bool { return d.prepareResults == nil })
+	current = newRuntime
+	s.Run(nil, d)
+	consumeUntil(t, s, func() bool { return !d.Loading() })
+	s.CloseAll()
+	if oldLease.executions.Load() != 1 || oldLease.releases != 1 || newLease.executions.Load() != 0 || newLease.releases != 0 || newRuntime.reservations != 0 {
+		t.Fatal("host runtime change used or released a different lease")
+	}
 }

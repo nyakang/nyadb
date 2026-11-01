@@ -88,6 +88,16 @@ func (s *State) BeginObject(services ui.Services, profile int64, ref mysqlsvc.Ob
 	ch := make(chan objectLoadResult, 1)
 	op.load = ch
 	loader := s.deps.ObjectLoader
+	if s.deps.AdministrationFor != nil {
+		admin := s.deps.AdministrationFor(profile)
+		if admin == nil {
+			cancel()
+			op.busy = false
+			op.load = nil
+			return
+		}
+		loader = admin.ObjectDefinition
+	}
 	go func() { v, e := loader(ctx, profile, ref); ch <- objectLoadResult{v, e}; services.Invalidate() }()
 }
 func objectStarter(ref mysqlsvc.ObjectIdentity) string {
@@ -272,6 +282,16 @@ func (s *State) executeObjectOperation(services ui.Services, op *objectOperation
 		plan := *op.plan
 		executor := s.deps.ObjectExecutor
 		profile := op.profile
+		if s.deps.AdministrationFor != nil {
+			admin := s.deps.AdministrationFor(profile)
+			if admin == nil {
+				cancel()
+				op.busy = false
+				op.result = nil
+				return
+			}
+			executor = admin.ApplyObject
+		}
 		go func() { ch <- executor(ctx, profile, plan); services.Invalidate() }()
 	}
 	if s.deps.BeforeDDL != nil && s.deps.BeforeDDL(services, op.profile, op.ref.Database, op.ref.Name, next) {

@@ -1,12 +1,11 @@
 package objectworkspace
 
 import (
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strconv"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -14,8 +13,8 @@ import (
 // Navicat 18's observed MySQL design Index page lists secondary indexes as
 // one row per index; PRIMARY is represented by the key field attributes.
 // Keep PRIMARY in the service metadata, filtering only the presentation.
-func mysqlStructureDesignIndexes(all []mysqlsvc.MySQLStructureIndex) []mysqlsvc.MySQLStructureIndex {
-	indexes := make([]mysqlsvc.MySQLStructureIndex, 0, len(all))
+func mysqlStructureDesignIndexes(all []contract.StructureIndex) []contract.StructureIndex {
+	indexes := make([]contract.StructureIndex, 0, len(all))
 	for _, index := range all {
 		if !strings.EqualFold(index.Name, "PRIMARY") {
 			indexes = append(indexes, index)
@@ -24,7 +23,7 @@ func mysqlStructureDesignIndexes(all []mysqlsvc.MySQLStructureIndex) []mysqlsvc.
 	return indexes
 }
 
-func mysqlStructureIndexColumnNames(cols []mysqlsvc.MySQLStructureIndexColumn) string {
+func mysqlStructureIndexColumnNames(cols []contract.StructureIndexColumn) string {
 	names := make([]string, 0, len(cols))
 	for _, col := range cols {
 		name := col.Name
@@ -36,7 +35,7 @@ func mysqlStructureIndexColumnNames(cols []mysqlsvc.MySQLStructureIndexColumn) s
 	return strings.Join(names, ", ")
 }
 
-func mysqlStructureFKColumnNames(cols []mysqlsvc.MySQLStructureForeignKeyColumn, referenced bool) string {
+func mysqlStructureFKColumnNames(cols []contract.StructureForeignKeyColumn, referenced bool) string {
 	names := make([]string, 0, len(cols))
 	for _, col := range cols {
 		if referenced {
@@ -48,7 +47,7 @@ func mysqlStructureFKColumnNames(cols []mysqlsvc.MySQLStructureForeignKeyColumn,
 	return strings.Join(names, ", ")
 }
 
-func mysqlStructureColumnLength(c mysqlsvc.MySQLStructureColumn) string {
+func mysqlStructureColumnLength(c contract.StructureColumn) string {
 	if c.CharacterMaxLength != nil {
 		return strconv.FormatInt(*c.CharacterMaxLength, 10)
 	}
@@ -61,7 +60,7 @@ func mysqlStructureColumnLength(c mysqlsvc.MySQLStructureColumn) string {
 	return ""
 }
 
-func mysqlStructureColumnDecimals(c mysqlsvc.MySQLStructureColumn) string {
+func mysqlStructureColumnDecimals(c contract.StructureColumn) string {
 	switch c.DataType {
 	case "decimal", "numeric", "float", "double":
 		if c.NumericScale != nil {
@@ -71,7 +70,7 @@ func mysqlStructureColumnDecimals(c mysqlsvc.MySQLStructureColumn) string {
 	return ""
 }
 
-func mysqlStructureColumnDefault(c mysqlsvc.MySQLStructureColumn) string {
+func mysqlStructureColumnDefault(c contract.StructureColumn) string {
 	if c.Default == nil {
 		// INFORMATION_SCHEMA represents both an absent default and DEFAULT NULL
 		// as SQL NULL. In the observed field designer, a NOT NULL identity with
@@ -87,7 +86,7 @@ func mysqlStructureColumnDefault(c mysqlsvc.MySQLStructureColumn) string {
 	return *c.Default
 }
 
-func fieldAttributes(c *ui.Context, field mysqlsvc.MySQLStructureColumn) {
+func fieldAttributes(c *ui.Context, field contract.StructureColumn) {
 	notNull := locales.Text("否")
 	if !field.Nullable {
 		notNull = locales.Text("是")

@@ -21,6 +21,9 @@ func (s *State) View(c *ui.Context, t *Document) {
 	p := theme.Colors(c)
 	connected := t.profileID != 0 && s.connected(t.profileID)
 	_, fileSupported := t.lease.(fileLease)
+	if lease, ok := t.lease.(interface{ SupportsFiles() bool }); ok {
+		fileSupported = lease.SupportsFiles()
+	}
 	ui.SplitVerticalPercent(c, &s.SplitPercent, func() {
 		ui.Column(c).Fill().Children(func() {
 			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).Gap(7).

@@ -5,11 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"io"
 	"strings"
 	"unicode/utf8"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // A record is bounded independently of the file. Qualifiers are doubled inside
@@ -44,8 +43,8 @@ func (r *mysqlDataDelimitedReader) Read() ([]string, error) {
 	appendRune := func(ch rune) error {
 		value.WriteRune(ch)
 		total += utf8.RuneLen(ch)
-		if value.Len() > mysqlsvc.MySQLDataExportFieldMaxBytes || total > mysqlsvc.MySQLDataExportRowMaxBytes {
-			return mysqlsvc.ErrMySQLDataEditLimit
+		if value.Len() > contract.DataExportFieldMaxBytes || total > contract.DataExportRowMaxBytes {
+			return contract.ErrDataEditLimit
 		}
 		return nil
 	}
@@ -90,7 +89,7 @@ func (r *mysqlDataDelimitedReader) Read() ([]string, error) {
 		if ch == r.delimiter {
 			fields = append(fields, value.String())
 			if len(fields) >= 128 {
-				return nil, mysqlsvc.ErrMySQLDataEditLimit
+				return nil, contract.ErrDataEditLimit
 			}
 			value.Reset()
 			ended = false
@@ -139,7 +138,7 @@ type mysqlDataDelimitedStream struct {
 
 func (r *mysqlDataDelimitedStream) Fields() []string { return append([]string(nil), r.fields...) }
 func (r *mysqlDataDelimitedStream) Close() error     { return nil }
-func (r *mysqlDataDelimitedStream) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataDelimitedStream) Next(ctx context.Context) ([]contract.DataValue, error) {
 	for {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -161,9 +160,9 @@ func (r *mysqlDataDelimitedStream) Next(ctx context.Context) ([]mysqlsvc.MySQLDa
 			continue
 		}
 		if len(cells) != len(r.fields) {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
-		row := make([]mysqlsvc.MySQLDataValue, len(cells))
+		row := make([]contract.DataValue, len(cells))
 		for i, text := range cells {
 			row[i] = mysqlDataDecodeDelimited(text)
 		}
@@ -253,9 +252,9 @@ func (e *mysqlDataDelimitedEncoder) write(fields []string) error {
 	_, err := io.WriteString(e.w, e.newline)
 	return err
 }
-func (e *mysqlDataDelimitedEncoder) Row(values []mysqlsvc.MySQLDataValue) error {
+func (e *mysqlDataDelimitedEncoder) Row(values []contract.DataValue) error {
 	if len(values) != e.fields {
-		return mysqlsvc.ErrMySQLDataPage
+		return contract.ErrDataPage
 	}
 	fields := make([]string, len(values))
 	for i, v := range values {

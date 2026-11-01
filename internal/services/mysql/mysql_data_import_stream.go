@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"io"
 	"time"
 
@@ -15,34 +16,13 @@ import (
 // A source factory must open the same immutable, reviewed rows on each call.
 // The executor validates a complete pass before DDL or row writes, then opens
 // an independent pass for execution. Readers and callbacks belong to its worker.
-type MySQLDataImportRowSource interface {
-	Next(context.Context) (MySQLDataEdit, error)
-	Close() error
-}
+type MySQLDataImportRowSource = contract.DataImportRowSource
 
-type MySQLDataImportStreamRequest struct {
-	Generation            uint64
-	CanonicalBackupValues bool
+type MySQLDataImportStreamRequest = contract.DataImportStreamRequest
 
-	Request           MySQLDataImportRequest
-	Rows              int64
-	Open              func(context.Context) (MySQLDataImportRowSource, error)
-	Record            func(MySQLDataImportRowResult) error
-	Progress          func(MySQLDataImportProgress)
-	IgnoreForeignKeys bool
-	ExtendedInsert    bool
-	StatementMaxBytes int
-}
+type MySQLDataImportProgress = contract.DataImportProgress
 
-type MySQLDataImportProgress struct {
-	Processed, Prepared, Skipped, Failed int64
-}
-
-type MySQLDataImportStreamResult struct {
-	Created, CreationUncertain, Committed, CommitUncertain bool
-	Progress                                               MySQLDataImportProgress
-	Rows                                                   []MySQLDataImportRowResult // bounded diagnostic sample; full records are journaled
-}
+type MySQLDataImportStreamResult = contract.DataImportStreamResult
 
 // ImportMySQLDataStream uses one physical connection and one row transaction
 // for all source rows. Record callbacks receive provisional rows; only the

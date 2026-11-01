@@ -3,8 +3,7 @@ package dataworkspace
 import (
 	"context"
 	"errors"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -13,8 +12,8 @@ type chunkResult struct {
 	profileID           int64
 	row                 int
 	field               string
-	page                *mysqlsvc.MySQLDataPage
-	chunk               *mysqlsvc.MySQLFieldChunk
+	page                *contract.DataPage
+	chunk               *contract.FieldChunk
 	err                 error
 }
 
@@ -114,14 +113,14 @@ func (s *inspectorState) consumeChunks() {
 			}
 			p.chunkCancel, p.chunkResults, p.chunkLoading = nil, nil, false
 			if r.generation != w.Generation || !w.Connected {
-				p.chunkErr = locales.Text("MySQL 会话不可用")
+				p.chunkErr = locales.Text("数据库会话不可用")
 				continue
 			}
 			if r.err != nil {
 				if p.chunkError != nil {
 					p.chunkError(r.err)
 				}
-				if errors.Is(r.err, mysqlsvc.ErrMySQLDataTransactionLost) || !errors.Is(r.err, context.Canceled) {
+				if errors.Is(r.err, contract.ErrDataTransactionLost) || !errors.Is(r.err, context.Canceled) {
 					p.chunkErr = r.err.Error()
 				}
 				continue

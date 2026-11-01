@@ -48,10 +48,17 @@ type Verification struct {
 	States  []string
 }
 type Session interface {
-	Verify(context.Context, ObjectRef, []Edit) (Verification, error)
 	ProfileID() int64
 	Generation() uint64
 	Capabilities() Capabilities
+	Close() error
+}
+
+// RelationalSession is the existing portable SQL backend contract. Hosts use
+// the smaller feature interfaces below instead of requiring every operation.
+type RelationalSession interface {
+	Session
+	Verify(context.Context, ObjectRef, []Edit) (Verification, error)
 	Catalog() string
 	Schemas(context.Context) ([]string, error)
 	Objects(context.Context, string) ([]Object, error)
@@ -59,7 +66,6 @@ type Session interface {
 	Page(context.Context, PageRequest) (Page, error)
 	Begin(context.Context) (Transaction, error)
 	Reserve(context.Context) (SQLLease, error)
-	Close() error
 }
 type SQLLease interface {
 	SetSchema(context.Context, string) error

@@ -40,6 +40,7 @@ func TestNavigationAssetVisualFixture(t *testing.T) {
 	s.loadProfiles()
 	s.sessions.Current().ProfileID = active.ID
 	s.sessions.Current().Status = "已连接"
+	publishRuntimeFixture(t, s)
 	s.sessions.Current().Databases = []string{"0_mysql_monitor", "aigc", "alg_mark_platform", "alg_train", "angular", "audit_platform", "audit_platform_tenant", "audit_platform_test", "audit_platform_web", "c2c", "dev_audit_platform"}
 	s.sessions.Current().Cache = make(map[string][]mysqlsvc.MySQLDBObject)
 	s.sessions.Current().Cache["dev_audit_platform"] = []mysqlsvc.MySQLDBObject{

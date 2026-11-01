@@ -1,14 +1,14 @@
 # PostgreSQL 与 SQLite 真实运行接口
 
-阶段 5 使用 pgx v5.8.0 的 database/sql 适配器和 modernc.org/sqlite v1.61.0。配置数据库由 localdb 独立持有句柄；用户 SQLite 文件由 engines.Session 持有另一组句柄。正式运行不借用配置库执行用户 SQL。
+现有适配器使用 pgx v5.8.0 的 database/sql 适配器和 modernc.org/sqlite v1.61.0。配置数据库由 localdb 独立持有句柄；用户 SQLite 文件由 engines.Session 持有另一组句柄。正式运行不借用配置库执行用户 SQL。
 
 ## 公共契约与身份
 
-internal/db/contract 不依赖 UI 或驱动，提供 ObjectRef、Cell、Column、Table、Page、Edit、SQLLease、Transaction、Session、Capabilities 和 Verification。ObjectRef 始终包含 profile、catalog、schema、kind、name。PostgreSQL 的 profile 绑定一个 database；导航在 profile 下显示固定 catalog，再显示实际 schema。SQLite 首轮仅列出文件的 main schema。
+internal/db/contract 不依赖 UI 或驱动，提供 ObjectRef、Cell、Column、Table、Page、Edit、SQLLease、Transaction、最小 Session、独立功能 provider、Capabilities 和 Verification。ObjectRef 始终包含 profile、catalog、schema、kind、name。PostgreSQL 的 profile 绑定一个 database；导航在 profile 下显示固定 catalog，再显示实际 schema。SQLite 首轮仅列出文件的 main schema。
 
-sessionbrowser 注入 EngineRuntime 负责异步连接与元数据，沿用原有 generation、停放及取消边界。导航用名称/种类投影显示真实对象，完整身份在 engine 数据文档中保留。PostgreSQL 结构补读公开约束及索引定义，视图补读 pg_get_viewdef；SQLite 保留 sqlite_schema 中的表/视图原文及独立索引/触发器原文。sqlworkspace.EngineRuntime 复用既有编辑器、类型化多结果、当前结果导出及明确的运行并导出。dataworkspace.EngineState 提供原生网格、筛选、排序、分页、选区复制、字段修改、新行、删除、显式事务和完整类型化 JSONL 导出。
+sessionbrowser 注入 EngineRuntime 负责异步连接与元数据，沿用原有 generation、停放及取消边界。导航用名称/种类投影显示真实对象，完整身份在统一数据文档中保留。PostgreSQL 结构补读公开约束及索引定义，视图补读 pg_get_viewdef；SQLite 保留 sqlite_schema 中的表/视图原文及独立索引/触发器原文。sqlworkspace.EngineRuntime 复用既有编辑器、类型化多结果、当前结果导出及明确的运行并导出。三引擎通过 dbruntime.Manager 共用 dataworkspace.State/Document 的成熟网格、信息面板、筛选、排序、分页、选区复制、类型化字段修改、新行、删除、显式事务和完整类型化 JSONL 导出；独立 EngineState/EngineDocument 已移除。
 
-MySQL 的正式入口与偏好键保持兼容。generic 网格列顺序和宽度使用独立版本化 engine_data_layout 键，身份包含完整 ObjectRef。引擎能力禁止进入 MySQL 的设计器、导入扩展、维护、用户权限和备份执行器；通用结构页仅展示公开元数据及可取得的完整定义。
+MySQL 的正式入口与偏好键保持兼容。PG/SQLite 的统一网格列顺序和宽度继续使用旧版本化 engine_data_layout 键，身份包含完整 ObjectRef。引擎能力禁止进入 MySQL 的设计器、导入扩展、维护、用户权限和备份执行器；通用结构页仅展示公开元数据及可取得的完整定义。
 
 ## 数值和编辑边界
 
@@ -45,3 +45,7 @@ I：隔离 Xvfb/GTK 原生夹具显示实际 SQLite 网格中的 NULL、空 BLOB
 Unknown：完整生产桌面人工操作验收与 Navicat 差分尚未完成。原版 Navicat 未运行。PostgreSQL/SQLite 图形表设计器及导入模式扩展属于后续范围。
 
 最终阶段 5 原生夹具截图 SHA-256：grid `749b9a9ab9b651650b57ef5865506b84cc086b340fe61b19d58505e3a71a6684`；SQL `3245a3e04696266cb80c4b426de5538b7ce5de3bc3c83a4268bf19c0bba3e9c9`。PostgreSQL 17 fixture image digest 为 `postgres@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193`。
+
+## 三引擎统一后的补充证据
+
+统一 runtime、公开 generation 转换、迟到句柄清理、唯一网格和两种旧布局格式详见 [架构说明](unified-database-architecture.md)。本次运行的完整 Go/race/静态/翻译/跨平台检查、一次性 MySQL/PostgreSQL/SQLite 真实网格截图见 [统一验证记录](unified-database-verification.md)。上述阶段 5 原生夹具仍作为历史证据；本次共享网格截图由 ui.NewTester 对真实数据库结果生成。

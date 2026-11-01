@@ -18,8 +18,6 @@ func (s *State) View(c *ui.Context) {
 	}
 	s.startAutoConnect(c.Services())
 	s.sessions.Consume()
-	s.engineData.SetInvalidate(c.Services().Invalidate)
-	s.engineData.Consume(c.Services())
 	s.objectWorkspace.Consume(c.Services())
 	s.dataWorkspace.Consume(c.Services())
 	s.sqlWorkspace.ConsumeDocuments(c.Services())
@@ -55,7 +53,6 @@ func (s *State) View(c *ui.Context) {
 	s.connectionModal(c)
 	s.objectWorkspace.Modals(c)
 	s.dataWorkspace.Modals(c)
-	s.engineData.Modals(c)
 	if s.profileMode && s.navigation.GroupDeleteConfirm {
 		if ui.AlertDialog(c, &s.navigation.GroupDeleteConfirm, locales.Text("删除连接组？"), locales.Text("仅删除虚拟文件夹；组内连接将移至根目录，不会删除连接档案或数据库。"), locales.Text("取消"), locales.Text("删除组")) == 1 {
 			s.navigation.DeleteGroup()

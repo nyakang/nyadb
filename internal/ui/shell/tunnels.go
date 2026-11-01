@@ -34,8 +34,8 @@ type tunnelRuntime struct {
 func (s *State) EnableTunnelServices(store *credentials.TunnelStore, hosts transport.HostStore) {
 	r := &tunnelRuntime{store: store, hosts: hosts, requests: make(chan hostConfirmation, 16), closed: make(chan struct{})}
 	s.tunnelRuntime = r
-	if s.sessions.Manager != nil {
-		s.sessions.Manager.TransportInvalidated = func() {
+	if s.mysqlTemplate != nil {
+		s.mysqlTemplate.TransportInvalidated = func() {
 			r.mu.Lock()
 			invalidate := r.invalidate
 			r.mu.Unlock()
@@ -43,7 +43,7 @@ func (s *State) EnableTunnelServices(store *credentials.TunnelStore, hosts trans
 				invalidate()
 			}
 		}
-		s.sessions.Manager.TransportProvider = func(ctx context.Context, settings connections.ActiveSettings) (transport.Dialer, error) {
+		s.mysqlTemplate.TransportProvider = func(ctx context.Context, settings connections.ActiveSettings) (transport.Dialer, error) {
 			var secrets transport.Secrets
 			var err error
 			if settings.MySQLAdvanced.SSH.Enabled || settings.MySQLAdvanced.HTTP.Enabled {

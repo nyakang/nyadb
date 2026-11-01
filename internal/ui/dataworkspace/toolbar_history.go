@@ -4,13 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/egoist/mygo/ui"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -29,8 +28,8 @@ type mysqlDataHistoryEntry struct {
 	Offset                   int64
 	Limit                    int
 	Rows                     int
-	Filters                  []mysqlsvc.MySQLDataFilterRule
-	Sorts                    []mysqlsvc.MySQLDataSortRule
+	Filters                  []contract.DataFilterRule
+	Sorts                    []contract.DataSortRule
 }
 
 // mysqlDataHistoryCounts tracks the whole document session independently of
@@ -47,8 +46,8 @@ func (s *State) appendDataHistory(t *Document, entry mysqlDataHistoryEntry) {
 	if len(entry.SQL) > 64<<10 {
 		entry.SQL = ""
 	}
-	entry.Filters = append([]mysqlsvc.MySQLDataFilterRule(nil), entry.Filters...)
-	entry.Sorts = append([]mysqlsvc.MySQLDataSortRule(nil), entry.Sorts...)
+	entry.Filters = append([]contract.DataFilterRule(nil), entry.Filters...)
+	entry.Sorts = append([]contract.DataSortRule(nil), entry.Sorts...)
 	stats := &t.tools.historyStats
 	switch entry.Kind {
 	case "SELECT":
@@ -78,7 +77,7 @@ func (s *State) recordDataHistory(t *Document) {
 	}
 	t.tools.historyRequest, t.tools.historyRecorded = t.request, true
 	filters, sorts := mysqlDataCurrentRules(t)
-	entry := mysqlDataReadHistoryRequest(t.database, t.table, mysqlsvc.MySQLDataOptions{Offset: t.offset, Limit: t.limit, Filters: filters, Sorts: sorts})
+	entry := mysqlDataReadHistoryRequest(t.database, t.table, contract.DataOptions{Offset: t.offset, Limit: t.limit, Filters: filters, Sorts: sorts})
 	entry.At, entry.Duration, entry.Rows = t.page.CompletedAt, t.page.Duration, len(t.page.Rows)
 	if mysqlDataHistorySafeReadSQL(t.page.QuerySQL) {
 		entry.SQL = t.page.QuerySQL
@@ -124,14 +123,14 @@ func mysqlDataHistorySafeReadSQL(query string) bool {
 	return !quoted
 }
 
-func mysqlDataReadHistoryRequest(database, table string, options mysqlsvc.MySQLDataOptions) mysqlDataHistoryEntry {
-	filters := append([]mysqlsvc.MySQLDataFilterRule(nil), options.Filters...)
+func mysqlDataReadHistoryRequest(database, table string, options contract.DataOptions) mysqlDataHistoryEntry {
+	filters := append([]contract.DataFilterRule(nil), options.Filters...)
 	if len(filters) == 0 && options.FilterMode != "" {
-		filters = []mysqlsvc.MySQLDataFilterRule{{Column: options.FilterColumn, Mode: options.FilterMode, Value: options.FilterValue}}
+		filters = []contract.DataFilterRule{{Column: options.FilterColumn, Mode: options.FilterMode, Value: options.FilterValue}}
 	}
-	sorts := append([]mysqlsvc.MySQLDataSortRule(nil), options.Sorts...)
+	sorts := append([]contract.DataSortRule(nil), options.Sorts...)
 	if len(sorts) == 0 && options.SortColumn != "" {
-		sorts = []mysqlsvc.MySQLDataSortRule{{Column: options.SortColumn, Descending: options.SortDescending}}
+		sorts = []contract.DataSortRule{{Column: options.SortColumn, Descending: options.SortDescending}}
 	}
 	query := "SELECT * FROM " + mysqlDataHistoryTable(database, table)
 	var where []string
@@ -163,7 +162,7 @@ func mysqlDataReadHistoryRequest(database, table string, options mysqlsvc.MySQLD
 	return mysqlDataHistoryEntry{At: time.Now(), Kind: "SELECT", SQL: query, Summary: true, Offset: options.Offset, Limit: options.Limit, Filters: filters, Sorts: sorts}
 }
 
-func mysqlDataWriteHistoryRequest(database, table string, edits []mysqlsvc.MySQLDataEdit, pending bool) []mysqlDataHistoryEntry {
+func mysqlDataWriteHistoryRequest(database, table string, edits []contract.DataEdit, pending bool) []mysqlDataHistoryEntry {
 	entries := make([]mysqlDataHistoryEntry, 0, len(edits))
 	for _, edit := range edits {
 		kind := strings.ToUpper(edit.Kind)
@@ -224,13 +223,13 @@ func mysqlDataHistoryError(err error, stale, incomplete, uncertain bool) string 
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return locales.Text("操作已取消或超时")
 	}
-	if errors.Is(err, mysqlsvc.ErrMySQLDataConflict) {
+	if errors.Is(err, contract.ErrDataConflict) {
 		return locales.Text("记录冲突")
 	}
-	if errors.Is(err, mysqlsvc.ErrMySQLDataReadOnly) {
+	if errors.Is(err, contract.ErrDataReadOnly) {
 		return locales.Text("表或记录不可编辑")
 	}
-	if errors.Is(err, mysqlsvc.ErrMySQLDataTransactionLost) || errors.Is(err, mysqlsvc.ErrMySQLNotConnected) {
+	if errors.Is(err, contract.ErrDataTransactionLost) || errors.Is(err, contract.ErrRevoked) {
 		return locales.Text("连接已失效")
 	}
 	return locales.Text("数据库操作失败")
@@ -257,7 +256,7 @@ func (s *State) recordDataPageHistory(t *Document, result mysqlDataResult, stale
 	s.appendDataHistory(t, entry)
 }
 
-func (s *State) recordDataWriteHistory(t *Document, entries []mysqlDataHistoryEntry, result *mysqlsvc.MySQLDataEditResult, err error, stale bool) {
+func (s *State) recordDataWriteHistory(t *Document, entries []mysqlDataHistoryEntry, result *contract.DataEditResult, err error, stale bool) {
 	if len(entries) == 0 {
 		return
 	}
@@ -317,7 +316,7 @@ func (s *State) clearDataHistory(t *Document) {
 	t.toolbar.historyRow = -1
 }
 
-func mysqlDataRestoreRuleDrafts(t *Document, filters []mysqlsvc.MySQLDataFilterRule, sorts []mysqlsvc.MySQLDataSortRule) {
+func mysqlDataRestoreRuleDrafts(t *Document, filters []contract.DataFilterRule, sorts []contract.DataSortRule) {
 	t.filterColumnDraft, t.filterModeDraft, t.filterValueDraft = "选择字段", "包含", ""
 	t.filterExtraDraft, t.sortDraft = nil, nil
 	for i, f := range filters {

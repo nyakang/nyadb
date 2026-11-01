@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
 	"sync"
 	"time"
@@ -13,7 +14,7 @@ import (
 
 // Data documents own physical transactions independently of metadata reads and
 // SQL-tab leases. Tokens never reconnect or replay a write after state loss.
-var ErrMySQLDataTransactionLost = errors.New("MySQL data transaction lost; refresh the table before starting another transaction")
+var ErrMySQLDataTransactionLost = contract.ErrDataTransactionLost
 
 type MySQLDataTransaction struct {
 	mu              sync.Mutex

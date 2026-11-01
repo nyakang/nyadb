@@ -4,25 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/mysqlspec"
 	"strings"
 	"time"
 )
 
 // MySQLDataOptions controls one server-side, read-only page. Column names are
 // checked against server metadata before they appear in SQL; values are bound.
-type MySQLDataOptions struct {
-	Offset         int64
-	Limit          int
-	FilterColumn   string
-	FilterValue    string
-	FilterMode     string // "" | "equal" | "contains"
-	SortColumn     string
-	SortDescending bool
-	UseKeyset      bool
-	After          *MySQLDataCursor
-	Filters        []MySQLDataFilterRule
-	Sorts          []MySQLDataSortRule
-}
+type MySQLDataOptions = contract.DataOptions
 
 // TableDataPageWithOptions reads bounded projections rather than SELECT *.
 // Every text and binary column is truncated ON THE SERVER, before transfer.
@@ -364,14 +354,7 @@ func mysqlDataPageWithOptions(queryCtx context.Context, queryer mysqlEditQueryer
 	return page, nil
 }
 
-func mysqlDataBinaryType(kind string) bool {
-	switch kind {
-	case "binary", "varbinary", "tinyblob", "blob", "mediumblob", "longblob", "bit", "geometry",
-		"point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon", "geometrycollection":
-		return true
-	}
-	return false
-}
+func mysqlDataBinaryType(kind string) bool { return mysqlspec.BinaryType(kind) }
 func mysqlDataTextType(kind string) bool {
 	switch kind {
 	case "char", "varchar", "tinytext", "text", "mediumtext", "longtext", "json", "enum", "set":

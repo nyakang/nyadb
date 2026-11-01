@@ -5,13 +5,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
+	xhtml "golang.org/x/net/html"
 	"io"
 	"slices"
 	"strings"
 	"unicode/utf8"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
-	xhtml "golang.org/x/net/html"
 )
 
 // Only inert cells of the first table are consumed. The tokenizer never builds
@@ -27,8 +26,8 @@ type mysqlDataHTMLRows struct {
 	skip                                 string
 	kind                                 string
 	text                                 strings.Builder
-	row                                  []mysqlsvc.MySQLDataValue
-	pending                              []mysqlsvc.MySQLDataValue
+	row                                  []contract.DataValue
+	pending                              []contract.DataValue
 }
 
 func mysqlDataOpenHTMLRows(ctx context.Context, input io.Reader, options mysqlDataSourceOptions) (*mysqlDataHTMLRows, error) {
@@ -53,7 +52,7 @@ func mysqlDataOpenHTMLRows(ctx context.Context, input io.Reader, options mysqlDa
 					continue
 				}
 				if v.Null || v.Binary || v.Text == "" {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 				r.fields = append(r.fields, v.Text)
 			}
@@ -63,7 +62,7 @@ func mysqlDataOpenHTMLRows(ctx context.Context, input io.Reader, options mysqlDa
 		}
 	}
 	r.index = header
-	if err := mysqlDataRecordValuesValid(r.fields, make([]mysqlsvc.MySQLDataValue, len(r.fields))); err != nil {
+	if err := mysqlDataRecordValuesValid(r.fields, make([]contract.DataValue, len(r.fields))); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -83,31 +82,31 @@ func (r *mysqlDataHTMLRows) cell() error {
 		return nil
 	}
 	r.inCell = false
-	v := mysqlsvc.MySQLDataValue{Text: r.text.String()}
+	v := contract.DataValue{Text: r.text.String()}
 	switch r.kind {
 	case "text":
 	case "null":
-		v = mysqlsvc.MySQLDataValue{Null: true}
+		v = contract.DataValue{Null: true}
 	case "binary":
 		if !strings.HasPrefix(v.Text, "0x") {
-			return mysqlsvc.ErrMySQLDataPage
+			return contract.ErrDataPage
 		}
 		b, err := hex.DecodeString(v.Text[2:])
 		if err != nil {
 			return err
 		}
-		v = mysqlsvc.MySQLDataValue{Binary: true, Bytes: b}
+		v = contract.DataValue{Binary: true, Bytes: b}
 	default:
-		return mysqlsvc.ErrMySQLDataPage
+		return contract.ErrDataPage
 	}
 	r.row = append(r.row, v)
 	r.text.Reset()
 	if len(r.row) > 128 {
-		return mysqlsvc.ErrMySQLDataEditLimit
+		return contract.ErrDataEditLimit
 	}
 	return nil
 }
-func (r *mysqlDataHTMLRows) raw(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataHTMLRows) raw(ctx context.Context) ([]contract.DataValue, error) {
 	r.window.ctx = ctx
 	r.window.left = 40 << 20
 	for {
@@ -216,14 +215,14 @@ func (r *mysqlDataHTMLRows) raw(ctx context.Context) ([]mysqlsvc.MySQLDataValue,
 				}
 			}
 		} else if typ == xhtml.TextToken && r.tableDepth == 1 && r.inCell && r.skip == "" {
-			if r.text.Len()+len(t.Data) > 2*mysqlsvc.MySQLDataExportFieldMaxBytes+2 {
-				return nil, mysqlsvc.ErrMySQLDataEditLimit
+			if r.text.Len()+len(t.Data) > 2*contract.DataExportFieldMaxBytes+2 {
+				return nil, contract.ErrDataEditLimit
 			}
 			r.text.WriteString(t.Data)
 		}
 	}
 }
-func (r *mysqlDataHTMLRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataHTMLRows) Next(ctx context.Context) ([]contract.DataValue, error) {
 	for {
 		if err := ctx.Err(); err != nil {
 			return nil, err

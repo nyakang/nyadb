@@ -3,12 +3,12 @@ package dataworkspace
 import (
 	"context"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"slices"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/datasources"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -89,14 +89,14 @@ func (r *mysqlDataExternalRows) Fields() []string {
 	return fields
 }
 func (r *mysqlDataExternalRows) Close() error { err := r.rows.Close(); r.source.Close(); return err }
-func (r *mysqlDataExternalRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataExternalRows) Next(ctx context.Context) ([]contract.DataValue, error) {
 	row, err := r.rows.Next(ctx)
 	if err != nil {
 		return nil, err
 	}
-	values := make([]mysqlsvc.MySQLDataValue, len(row))
+	values := make([]contract.DataValue, len(row))
 	for i, v := range row {
-		values[i] = mysqlsvc.MySQLDataValue{Text: v.Text, Bytes: slices.Clone(v.Bytes), Null: v.Null, Binary: v.Binary}
+		values[i] = contract.DataValue{Text: v.Text, Bytes: slices.Clone(v.Bytes), Null: v.Null, Binary: v.Binary}
 	}
 	return values, nil
 }
@@ -115,7 +115,7 @@ func (s *State) readExternalSource(services ui.Services, t *Document) {
 		source, err := open(ctx, config)
 		var spool *mysqlDataImportSpool
 		var input *mysqlDataImportInput
-		var columns []mysqlsvc.MySQLDataImportColumn
+		var columns []contract.DataImportColumn
 		if err == nil {
 			rows, e := source.Rows(ctx, table)
 			err = e
@@ -145,7 +145,7 @@ func (s *State) loadImportTarget(services ui.Services, t *Document) {
 	profile, db, table := t.profileID, t.database, mysqlDataImportDestination(t)
 	go func() {
 		snapshot, err := loader(ctx, profile, db, table)
-		var columns []mysqlsvc.MySQLStructureColumn
+		var columns []contract.StructureColumn
 		if err == nil && snapshot != nil {
 			columns = slices.Clone(snapshot.Columns)
 		}

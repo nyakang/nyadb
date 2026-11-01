@@ -166,12 +166,12 @@ func TestClosingInactiveDraftTabDefersCompletionAndKeepsActiveIdentity(t *testin
 			}
 			chooseHostDraftDecision(t, tt, "应用更改")
 			deadline := time.Now().Add(3 * time.Second)
-			for doc.data.Loading() && time.Now().Before(deadline) {
+			for doc.data.Busy() && time.Now().Before(deadline) {
 				tt.Frame()
 				time.Sleep(time.Millisecond)
 			}
 			tt.Frame()
-			if doc.data.Loading() {
+			if doc.data.Busy() {
 				t.Fatal("save did not settle")
 			}
 			if decision == "save failure" {

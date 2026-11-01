@@ -2,18 +2,21 @@ package sessionbrowser
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"strings"
 )
 
 // EngineRuntime is injected by bootstrap/shell and does not expose drivers.
 type EngineRuntime struct {
-	Connect    func(context.Context, connections.Profile, string) error
-	Session    func(int64) (contract.Session, error)
-	Disconnect func(int64) error
-	Close      func() error
+	Open        func(context.Context, connections.Profile, string) (contract.Session, error)
+	Connect     func(context.Context, connections.Profile, string) error
+	Session     func(int64) (contract.Session, error)
+	Disconnect  func(int64) error
+	Close       func() error
+	IsConnected func(int64) bool
 }
 
 func (s *State) SetEngineRuntime(r EngineRuntime) { s.engines = r }
@@ -41,7 +44,7 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 	var vaultErr error
 	if password == "" && s.deps.ReadSecret != nil {
 		var exists bool
-		password, exists, vaultErr = s.deps.ReadSecret(p.ID, "")
+		password, exists, vaultErr = s.deps.ReadSecret(p.ID, p.ActiveVariant)
 		if !exists {
 			password = ""
 		}
@@ -55,27 +58,58 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 	s.bumpGeneration(w)
 	generation := w.Generation
 	w.ProfileID, w.Status, w.Error = p.ID, "连接中", ""
-	w.Kind, w.Catalog = p.Kind, p.Database
+	w.Kind, w.Catalog = p.Kind, ""
+	if p.Kind == connections.PostgreSQL {
+		w.Catalog = p.Database
+	} else if p.Kind == connections.SQLite {
+		w.Catalog = "main"
+	}
 	w.Password = ""
 	w.Databases = nil
+	w.Namespaces = nil
 	s.ResetBrowser()
-	connect, lookup := s.engines.Connect, s.engines.Session
+	connect, lookup, open := s.engines.Connect, s.engines.Session, s.engines.Open
 	results := make(chan sessionResult, 1)
 	w.sessionResults = results
 	s.report("正在连接：" + p.Name)
 	go func() {
-		e := connect(ctx, p, password)
-		var names []string
-		var metaErr error
-		if e == nil && ctx.Err() == nil {
-			session, er := lookup(p.ID)
-			if er != nil {
-				metaErr = er
-			} else {
-				names, metaErr = session.Schemas(ctx)
+		var session contract.Session
+		var e error
+		if open != nil {
+			session, e = open(ctx, p, password)
+		} else {
+			e = connect(ctx, p, password)
+			if e == nil {
+				session, e = lookup(p.ID)
 			}
 		}
-		results <- sessionResult{generation: generation, id: p.ID, names: names, err: e, metadataErr: metaErr, vaultErr: vaultErr}
+		var names []string
+		var namespaces []contract.Namespace
+		var published uint64
+		var metaErr error
+		if e == nil && ctx.Err() == nil {
+			published = session.Generation()
+			provider, err := contract.Require[contract.MetadataProvider](session)
+			if err != nil {
+				metaErr = err
+			} else {
+				namespaces, metaErr = provider.Namespaces(ctx)
+				for _, n := range namespaces {
+					names = append(names, n.Label)
+				}
+			}
+		}
+		hide := func(err error) error {
+			if err == nil {
+				return nil
+			}
+			message := strings.ReplaceAll(err.Error(), "[hidden]", "[已隐藏]")
+			if password != "" {
+				message = strings.ReplaceAll(message, password, "[已隐藏]")
+			}
+			return errors.New(message)
+		}
+		results <- sessionResult{generation: generation, id: p.ID, published: published, namespaces: namespaces, names: names, err: hide(e), metadataErr: hide(metaErr), vaultErr: vaultErr}
 		if invalidate != nil {
 			invalidate()
 		}
@@ -86,24 +120,40 @@ func (s *State) engineSchemas(ctx context.Context, id int64) ([]string, error) {
 	if e != nil {
 		return nil, e
 	}
-	return session.Schemas(ctx)
+	return sessionNamespaces(ctx, session)
 }
-func (s *State) engineObjects(ctx context.Context, id int64, schema string) ([]mysqlsvc.MySQLDBObject, error) {
+func (s *State) engineObjects(ctx context.Context, id int64, name string) ([]contract.DBObject, error) {
 	session, e := s.engines.Session(id)
 	if e != nil {
 		return nil, e
 	}
-	objects, e := session.Objects(ctx, schema)
+	return sessionObjects(ctx, session, name)
+}
+func sessionObjects(ctx context.Context, session contract.Session, name string) ([]contract.DBObject, error) {
+	p, e := contract.Require[contract.MetadataProvider](session)
 	if e != nil {
 		return nil, e
 	}
-	out := make([]mysqlsvc.MySQLDBObject, len(objects))
-	for i, o := range objects {
-		kind := "表"
-		if o.Ref.Kind == "view" {
-			kind = "视图"
-		}
-		out[i] = mysqlsvc.MySQLDBObject{Name: o.Ref.Name, Kind: kind}
+	n, e := contract.Require[interface {
+		Namespace(string) contract.NamespaceRef
+	}](session)
+	if e != nil {
+		return nil, e
+	}
+	return p.Browse(ctx, n.Namespace(name))
+}
+func sessionNamespaces(ctx context.Context, s contract.Session) ([]string, error) {
+	p, e := contract.Require[contract.MetadataProvider](s)
+	if e != nil {
+		return nil, e
+	}
+	values, e := p.Namespaces(ctx)
+	if e != nil {
+		return nil, e
+	}
+	out := make([]string, len(values))
+	for i, n := range values {
+		out[i] = n.Label
 	}
 	return out, nil
 }

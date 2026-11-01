@@ -42,6 +42,7 @@ func TestNavigatorSwitchActiveProfileConfiguration(t *testing.T) {
 	}
 	s.sessions.Current().ProfileID = profile.ID
 	s.sessions.Current().Status = "已连接"
+	publishRuntimeFixture(t, s)
 	s.setProfileActiveVariant(profile.ID, "Lab")
 	stored, err = svc.Get(ctx, profile.ID)
 	if err != nil || stored.ActiveVariant != "Staging" {
@@ -73,6 +74,9 @@ func TestNavigatorConnectionStatusIdentityAndRootInspector(t *testing.T) {
 	s.loadProfiles()
 	for _, state := range []string{"未连接", "连接中", "已连接", "连接失败"} {
 		s.sessions.Current().ProfileID, s.sessions.Current().Status = p.ID, state
+		if state == "已连接" {
+			publishRuntimeFixture(t, s)
+		}
 		tt.Frame()
 		if _, ok := tt.Find("Connection · " + state); !ok {
 			t.Fatalf("connection status %q missing accessible row label", state)

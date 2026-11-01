@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/egoist/mygo/ui"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -21,11 +20,11 @@ const mysqlDataProfilesMaxBytes = 256 << 10
 // These settings deliberately exclude connection details, SQL, result rows and
 // editing drafts. The old presentation-only layout preference stays compatible.
 type mysqlDataTableProfile struct {
-	Name    string                         `json:"name"`
-	Layout  mysqlDataSavedLayout           `json:"layout"`
-	Filters []mysqlsvc.MySQLDataFilterRule `json:"filters,omitempty"`
-	Sorts   []mysqlsvc.MySQLDataSortRule   `json:"sorts,omitempty"`
-	Limit   int                            `json:"limit"`
+	Name    string                    `json:"name"`
+	Layout  mysqlDataSavedLayout      `json:"layout"`
+	Filters []contract.DataFilterRule `json:"filters,omitempty"`
+	Sorts   []contract.DataSortRule   `json:"sorts,omitempty"`
+	Limit   int                       `json:"limit"`
 }
 
 type mysqlDataProfiles struct {
@@ -66,30 +65,34 @@ type mysqlDataToolsState struct {
 }
 
 func mysqlDataProfilesKey(t *Document) string {
-	return strings.Replace(mysqlDataLayoutKey(t), "mysql_data_layout:", "mysql_data_profiles:", 1)
+	key := mysqlDataLayoutKey(t)
+	if t.portable() {
+		return strings.Replace(key, "engine_data_layout:", "engine_data_profiles:", 1)
+	}
+	return strings.Replace(key, "mysql_data_layout:", "mysql_data_profiles:", 1)
 }
 
-func mysqlDataCurrentRules(t *Document) ([]mysqlsvc.MySQLDataFilterRule, []mysqlsvc.MySQLDataSortRule) {
-	filters := append([]mysqlsvc.MySQLDataFilterRule(nil), t.filterRules...)
+func mysqlDataCurrentRules(t *Document) ([]contract.DataFilterRule, []contract.DataSortRule) {
+	filters := append([]contract.DataFilterRule(nil), t.filterRules...)
 	if len(filters) == 0 && t.filterMode != "" {
-		filters = append(filters, mysqlsvc.MySQLDataFilterRule{Column: t.filterColumn, Mode: t.filterMode, Value: t.filterValue})
+		filters = append(filters, contract.DataFilterRule{Column: t.filterColumn, Mode: t.filterMode, Value: t.filterValue})
 	}
 	for i := range filters {
 		if filters[i].Mode == "is_null" || filters[i].Mode == "is_not_null" {
 			filters[i].Value = ""
 		}
 	}
-	sorts := append([]mysqlsvc.MySQLDataSortRule(nil), t.sortRules...)
+	sorts := append([]contract.DataSortRule(nil), t.sortRules...)
 	if len(sorts) == 0 && t.sortColumn != "" {
-		sorts = append(sorts, mysqlsvc.MySQLDataSortRule{Column: t.sortColumn, Descending: t.sortDescending})
+		sorts = append(sorts, contract.DataSortRule{Column: t.sortColumn, Descending: t.sortDescending})
 	}
 	return filters, sorts
 }
 
 func validMySQLDataProfile(p mysqlDataTableProfile) bool {
 	if strings.TrimSpace(p.Name) == "" || utf8.RuneCountInString(p.Name) > 80 || !utf8.ValidString(p.Name) ||
-		p.Layout.Version != mysqlDataLayoutVersion || p.Limit <= 0 || p.Limit > mysqlsvc.MySQLDataMaxPageSize ||
-		len(p.Filters) > mysqlsvc.MySQLDataMaxFilterRules || len(p.Sorts) > mysqlsvc.MySQLDataMaxSortRules {
+		p.Layout.Version != mysqlDataLayoutVersion || p.Limit <= 0 || p.Limit > contract.DataMaxPageSize ||
+		len(p.Filters) > contract.DataMaxFilterRules || len(p.Sorts) > contract.DataMaxSortRules {
 		return false
 	}
 	for _, f := range p.Filters {
@@ -287,7 +290,7 @@ func (s *State) applyDataProfile(services ui.Services, t *Document, p mysqlDataT
 	s.Refresh(services, t)
 }
 
-func mysqlDataRulesAvailable(t *Document, filters []mysqlsvc.MySQLDataFilterRule, sorts []mysqlsvc.MySQLDataSortRule) bool {
+func mysqlDataRulesAvailable(t *Document, filters []contract.DataFilterRule, sorts []contract.DataSortRule) bool {
 	for _, f := range filters {
 		found := false
 		for _, col := range t.columns {

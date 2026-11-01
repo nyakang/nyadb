@@ -2,6 +2,7 @@ package objectworkspace
 
 import (
 	"context"
+	"github.com/nyakang/nyadb/internal/db/contract"
 
 	"github.com/egoist/mygo/ui"
 
@@ -13,7 +14,7 @@ type BrowserSnapshot struct {
 	Database, Error, Pending      string
 	Connected, Opened, Refreshing bool
 	Errors                        map[string]string
-	Objects                       []mysqlsvc.MySQLDBObject
+	Objects                       []contract.DBObject
 }
 type browserState struct {
 	groupFilter string
@@ -69,9 +70,9 @@ func (s *State) currentBrowser() *browserFrame {
 	}
 	return &browserFrame{browserState: b, BrowserSnapshot: snapshot}
 }
-func (s *State) SelectedObjects() []mysqlsvc.MySQLDBObject {
+func (s *State) SelectedObjects() []contract.DBObject {
 	w := s.currentBrowser()
-	items := []mysqlsvc.MySQLDBObject{}
+	items := []contract.DBObject{}
 	for _, o := range w.Objects {
 		if (w.Kind == "" || w.Kind == "全部" || o.Kind == w.Kind) && (w.groupFilter == "" || w.groups[objectKey{w.ProfileID, w.Database, o.Kind, o.Name}] == w.groupFilter) {
 			items = append(items, o)
@@ -84,7 +85,7 @@ func (s *State) Filter(kind string) {
 	if w.Kind == kind {
 		return
 	}
-	var selected *mysqlsvc.MySQLDBObject
+	var selected *contract.DBObject
 	items := s.SelectedObjects()
 	if w.Row >= 0 && w.Row < len(items) {
 		o := items[w.Row]

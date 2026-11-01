@@ -141,3 +141,69 @@ func TestMySQLConnectionTestUnsupportedOptionsNoNetwork(t *testing.T) {
 		t.Fatal("closed editor retained test")
 	}
 }
+
+func TestPortableConnectionTestCapturesDraftAndRejectsLateResult(t *testing.T) {
+	for _, kind := range []connections.Kind{connections.PostgreSQL, connections.SQLite} {
+		t.Run(string(kind), func(t *testing.T) {
+			s := newTestEditor()
+			s.openConnectionDialog()
+			s.chooseConnectionKind(kind)
+			s.nextConnectionStep()
+			s.connectionDraft.Name = "probe fixture"
+			if kind == connections.SQLite {
+				s.connectionDraft.Database = "probe.sqlite"
+			}
+			s.connectionSecret = "probe-secret"
+			started, release := make(chan connections.Profile, 1), make(chan struct{})
+			s.connectionTester = func(ctx context.Context, p connections.Profile, secret string) error {
+				started <- p
+				<-release
+				return errors.New("denied " + secret)
+			}
+			tt := ui.NewTester(s.ConnectionWindowView, 900, 700)
+			if e := tt.Click("测试连接"); e != nil {
+				t.Fatal(e)
+			}
+			var captured connections.Profile
+			select {
+			case captured = <-started:
+			case <-time.After(time.Second):
+				t.Fatalf("provider not called: error=%s testing=%v text=%v", s.connectionError, s.connectionTesting, tt.Texts())
+			}
+			if captured.Kind != kind || captured.Name != "probe fixture" {
+				t.Fatal("wrong provider snapshot")
+			}
+			s.connectionDraft.Name = "changed after launch"
+			close(release)
+			deadline := time.Now().Add(2 * time.Second)
+			for s.connectionTesting && time.Now().Before(deadline) {
+				tt.Frame()
+				time.Sleep(time.Millisecond)
+			}
+			if s.connectionTesting || strings.Contains(s.connectionError, "probe-secret") || !strings.Contains(s.connectionError, "[已隐藏]") {
+				t.Fatalf("unsafe probe result: %s", s.connectionError)
+			}
+			if captured.Name != "probe fixture" {
+				t.Fatal("worker retained mutable draft")
+			}
+			started, release = make(chan connections.Profile, 1), make(chan struct{})
+			if e := tt.Click("测试连接"); e != nil {
+				t.Fatal(e)
+			}
+			select {
+			case <-started:
+			case <-time.After(time.Second):
+				t.Fatal("second provider not called")
+			}
+			s.closeConnectionDialog()
+			close(release)
+			s.openConnectionDialog()
+			s.chooseConnectionKind(kind)
+			s.nextConnectionStep()
+			tt.Frame()
+			if s.connectionTestResults != nil || s.connectionTesting || s.connectionError != "" || s.connectionSecret != "" {
+				t.Fatal("late probe escaped editor lifetime")
+			}
+		})
+	}
+}

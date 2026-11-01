@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"io"
 	"slices"
 	"strings"
 	"unicode/utf8"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // A decoder may read ahead by one small buffer, but it cannot allocate from an
@@ -26,7 +25,7 @@ func (r *mysqlDataRecordWindow) Read(p []byte) (int, error) {
 		return 0, err
 	}
 	if r.left <= 0 {
-		return 0, mysqlsvc.ErrMySQLDataEditLimit
+		return 0, contract.ErrDataEditLimit
 	}
 	if int64(len(p)) > r.left {
 		p = p[:r.left]
@@ -35,21 +34,21 @@ func (r *mysqlDataRecordWindow) Read(p []byte) (int, error) {
 	r.left -= int64(n)
 	return n, err
 }
-func mysqlDataRecordValuesValid(fields []string, row []mysqlsvc.MySQLDataValue) error {
+func mysqlDataRecordValuesValid(fields []string, row []contract.DataValue) error {
 	if len(fields) == 0 || len(fields) > 128 || len(row) != len(fields) {
-		return mysqlsvc.ErrMySQLDataPage
+		return contract.ErrDataPage
 	}
 	total := 0
 	seen := map[string]bool{}
 	for i, f := range fields {
 		if f == "" || seen[f] {
-			return mysqlsvc.ErrMySQLDataPage
+			return contract.ErrDataPage
 		}
 		seen[f] = true
 		size := len(row[i].Text) + len(row[i].Bytes)
 		total += size
-		if size > mysqlsvc.MySQLDataExportFieldMaxBytes || total > mysqlsvc.MySQLDataExportRowMaxBytes {
-			return mysqlsvc.ErrMySQLDataEditLimit
+		if size > contract.DataExportFieldMaxBytes || total > contract.DataExportRowMaxBytes {
+			return contract.ErrDataEditLimit
 		}
 	}
 	return nil
@@ -59,7 +58,7 @@ type mysqlDataJSONRows struct {
 	decoder       *json.Decoder
 	window        *mysqlDataRecordWindow
 	fields        []string
-	pending       []mysqlsvc.MySQLDataValue
+	pending       []contract.DataValue
 	options       mysqlDataSourceOptions
 	index         int64
 	ended, closed bool
@@ -93,7 +92,7 @@ func (r *mysqlDataJSONRows) Close() error {
 	r.window = nil
 	return nil
 }
-func (r *mysqlDataJSONRows) raw(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataJSONRows) raw(ctx context.Context) ([]contract.DataValue, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -102,7 +101,7 @@ func (r *mysqlDataJSONRows) raw(ctx context.Context) ([]mysqlsvc.MySQLDataValue,
 	if !r.decoder.More() {
 		token, err := r.decoder.Token()
 		if err != nil || token != json.Delim(']') {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		var extra any
 		if err = r.decoder.Decode(&extra); err != io.EOF {
@@ -116,7 +115,7 @@ func (r *mysqlDataJSONRows) raw(ctx context.Context) ([]mysqlsvc.MySQLDataValue,
 		return nil, err
 	}
 	if len(raw) > 40<<20 {
-		return nil, mysqlsvc.ErrMySQLDataEditLimit
+		return nil, contract.ErrDataEditLimit
 	}
 	if !mysqlDataJSONUnicodeValid(raw) {
 		return nil, errors.New("JSON contains invalid Unicode; select the correct encoding")
@@ -143,11 +142,11 @@ func (r *mysqlDataJSONRows) raw(ctx context.Context) ([]mysqlsvc.MySQLDataValue,
 	if len(object) != len(r.fields) {
 		return nil, errors.New("JSON rows must contain identical fields")
 	}
-	row := make([]mysqlsvc.MySQLDataValue, len(r.fields))
+	row := make([]contract.DataValue, len(r.fields))
 	for i, f := range r.fields {
 		v, ok := object[f]
 		if !ok {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		switch value := v.(type) {
 		case nil:
@@ -236,7 +235,7 @@ func mysqlDataJSONUnicodeValid(raw []byte) bool {
 	}
 	return true
 }
-func (r *mysqlDataJSONRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataJSONRows) Next(ctx context.Context) ([]contract.DataValue, error) {
 	for {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -264,7 +263,7 @@ type mysqlDataXMLRows struct {
 	decoder               *xml.Decoder
 	window                *mysqlDataRecordWindow
 	fields                []string
-	pending               []mysqlsvc.MySQLDataValue
+	pending               []contract.DataValue
 	options               mysqlDataSourceOptions
 	index                 int64
 	opened, ended, closed bool
@@ -299,7 +298,7 @@ func (r *mysqlDataXMLRows) Close() error {
 	r.window = nil
 	return nil
 }
-func (r *mysqlDataXMLRows) raw(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataXMLRows) raw(ctx context.Context) ([]contract.DataValue, error) {
 	r.window.ctx = ctx
 	r.window.left = 40 << 20
 	for {
@@ -357,17 +356,17 @@ func (r *mysqlDataXMLRows) raw(ctx context.Context) ([]mysqlsvc.MySQLDataValue, 
 				r.fields = slices.Clone(fields)
 			}
 			if len(fields) != len(r.fields) {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
-			byName := map[string]mysqlsvc.MySQLDataValue{}
+			byName := map[string]contract.DataValue{}
 			for i, f := range fields {
 				byName[f] = values[i]
 			}
-			row := make([]mysqlsvc.MySQLDataValue, len(r.fields))
+			row := make([]contract.DataValue, len(r.fields))
 			for i, f := range r.fields {
 				v, ok := byName[f]
 				if !ok {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 				row[i] = v
 			}
@@ -385,7 +384,7 @@ func (r *mysqlDataXMLRows) raw(ctx context.Context) ([]mysqlsvc.MySQLDataValue, 
 		}
 	}
 }
-func (r *mysqlDataXMLRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataXMLRows) Next(ctx context.Context) ([]contract.DataValue, error) {
 	for {
 		if err := ctx.Err(); err != nil {
 			return nil, err

@@ -2,15 +2,15 @@ package dataworkspace
 
 import (
 	"context"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"time"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
-type InfoLoader func(context.Context, int64, string, string) (*mysqlsvc.MySQLTableInfo, error)
+type InfoLoader func(context.Context, int64, string, string) (*contract.TableInfo, error)
 type CountLoader func(context.Context, int64, string, string) (int64, error)
-type ChunkLoader func(context.Context, int64, string, string, string, mysqlsvc.MySQLRowRef, int64, int) (*mysqlsvc.MySQLFieldChunk, error)
+type ChunkLoader func(context.Context, int64, string, string, string, contract.RowRef, int64, int) (*contract.FieldChunk, error)
 type InspectorDependencies struct {
 	Session     func() Session
 	InfoLoader  func() InfoLoader
@@ -31,7 +31,7 @@ type Panel struct {
 	info                    infoState
 	chunkField              string
 	chunkRow                int
-	chunkPage               *mysqlsvc.MySQLDataPage
+	chunkPage               *contract.DataPage
 	chunkNext, chunkTotal   int64
 	chunkText, chunkErr     string
 	chunkDone, chunkLoading bool
@@ -47,19 +47,19 @@ func (p *Panel) Selection() Selection {
 	}
 	return Selection{Row: -1}
 }
-func (p *Panel) FieldMode() bool                { return p.info.fieldMode }
-func (p *Panel) Info() *mysqlsvc.MySQLTableInfo { return p.info.info }
-func (p *Panel) InfoLoading() bool              { return p.info.loading }
-func (p *Panel) InfoError() string              { return p.info.err }
-func (p *Panel) Count() *int64                  { return p.info.count }
-func (p *Panel) CountAt() time.Time             { return p.info.countAt }
-func (p *Panel) CountLoading() bool             { return p.info.countLoading }
-func (p *Panel) CountError() string             { return p.info.countErr }
-func (p *Panel) ChunkLoading() bool             { return p.chunkLoading }
-func (p *Panel) ChunkNext() int64               { return p.chunkNext }
-func (p *Panel) ChunkTotal() int64              { return p.chunkTotal }
-func (p *Panel) ChunkText() string              { return p.chunkText }
-func (p *Panel) ChunkError() string             { return p.chunkErr }
+func (p *Panel) FieldMode() bool           { return p.info.fieldMode }
+func (p *Panel) Info() *contract.TableInfo { return p.info.info }
+func (p *Panel) InfoLoading() bool         { return p.info.loading }
+func (p *Panel) InfoError() string         { return p.info.err }
+func (p *Panel) Count() *int64             { return p.info.count }
+func (p *Panel) CountAt() time.Time        { return p.info.countAt }
+func (p *Panel) CountLoading() bool        { return p.info.countLoading }
+func (p *Panel) CountError() string        { return p.info.countErr }
+func (p *Panel) ChunkLoading() bool        { return p.chunkLoading }
+func (p *Panel) ChunkNext() int64          { return p.chunkNext }
+func (p *Panel) ChunkTotal() int64         { return p.chunkTotal }
+func (p *Panel) ChunkText() string         { return p.chunkText }
+func (p *Panel) ChunkError() string        { return p.chunkErr }
 
 type inspectorState struct {
 	InfoLoader  InfoLoader

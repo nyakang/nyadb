@@ -7,7 +7,7 @@ import (
 
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
-	"github.com/nyakang/nyadb/internal/services/engines"
+	"github.com/nyakang/nyadb/internal/services/dbruntime"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/connectioncatalog"
 	"github.com/nyakang/nyadb/internal/ui/connectioneditor"
@@ -31,7 +31,6 @@ const (
 	tabSettings
 	tabProgram
 	tabConnections
-	tabEngineData
 )
 
 type tab struct {
@@ -42,16 +41,15 @@ type tab struct {
 
 	object *objectworkspace.Document
 
-	data   *dataworkspace.Document
-	engine *dataworkspace.EngineDocument
+	data *dataworkspace.Document
 }
 
 // State is UI state owned by the main thread. Never retain ui.Element values.
 type State struct {
 	autoConnectPending bool
 	tunnelRuntime      *tunnelRuntime
-	engines            *engines.Manager
-	engineData         *dataworkspace.EngineState
+	runtime            *dbruntime.Manager
+	mysqlTemplate      *mysqlsvc.MySQLSessionManager
 
 	navigateDatabase, navigateTable string
 	navigateProfileID               int64
@@ -119,14 +117,15 @@ func newState(preview bool) *State {
 	s.sqlWorkspace = sqlworkspace.New(s.sqlWorkspaceDependencies())
 	s.sessions = sessionbrowser.New(s.sessionBrowserDependencies())
 	s.navigation = navigation.New(s.navigationDependencies())
-	s.initEngines()
+	s.initRuntime()
 	s.connectionEditor = connectioneditor.New(connectioneditor.Dependencies{
 		ValidateMySQL: func(settings connections.ActiveSettings, secret string) error {
 			_, err := mysqlsvc.DirectMySQLConfig(settings, secret)
 			return err
 		},
-		TestMySQL: mysqlsvc.TestDirectMySQLConnection,
-		Saved:     s.connectionSaved, Back: s.backToConnectionCatalog, Cancel: s.closeConnectionDialog,
+		TestConnection: s.runtime.Test,
+		TestMySQL:      mysqlsvc.TestDirectMySQLConnection,
+		Saved:          s.connectionSaved, Back: s.backToConnectionCatalog, Cancel: s.closeConnectionDialog,
 	})
 	return s
 }

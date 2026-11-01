@@ -309,7 +309,7 @@ func (s *State) connectionEditorFooter(c *ui.Context, width float32) {
 			}
 		} else if ui.Button(c, locales.Text("测试连接")).Width(theme.Font(c, 155)).Height(theme.RowHeight(c, connectionFooterControlHeight)).
 			Background(palette.Header).Border(1, palette.Border).
-			Disabled(s.connectionDraft.Kind != connections.MySQL).Label(locales.Text("测试当前 MySQL 配置")).Clicked() {
+			Disabled(s.connectionDraft.Kind != connections.MySQL && s.connectionTester == nil).Label(s.connectionTestLabel()).Clicked() {
 			s.startMySQLConnectionTest(c.Services())
 		}
 		ui.Box(c).Grow(1)
@@ -355,4 +355,11 @@ func (s *State) connectionNotesEditor(c *ui.Context, width float32) {
 				FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 		})
 	})
+}
+
+func (s *State) connectionTestLabel() string {
+	if s.connectionDraft.Kind == connections.MySQL {
+		return locales.Text("测试当前 MySQL 配置")
+	}
+	return locales.Text("测试连接")
 }

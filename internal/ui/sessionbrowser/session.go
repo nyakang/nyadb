@@ -2,14 +2,14 @@ package sessionbrowser
 
 import (
 	"context"
-	"errors"
-	"strings"
+	"github.com/nyakang/nyadb/internal/db/contract"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 type sessionResult struct {
+	published                  uint64
+	namespaces                 []contract.Namespace
 	generation                 uint64
 	id                         int64
 	names                      []string
@@ -19,96 +19,28 @@ type sessionResult struct {
 // Connect consumes the current password draft, then owns the session job. The
 // host must resolve any unsaved-document guard before calling lifecycle methods.
 func (s *State) Connect(profile connections.Profile, invalidate func()) {
-	if profile.Kind != connections.MySQL {
-		s.connectEngine(profile, invalidate)
-		return
-	}
-	s.EnsureManager()
-	s.Activate(profile.ID)
-	w := s.current
-	settings, err := connections.ResolveActiveSettings(profile)
-	password := w.Password
-	var vaultErr error
-	if err == nil && password == "" && s.deps.ReadSecret != nil {
-		var exists bool
-		password, exists, vaultErr = s.deps.ReadSecret(profile.ID, profile.ActiveVariant)
-		if vaultErr != nil || !exists {
-			password = ""
-		}
-	}
-	if err == nil {
-		if s.Manager.TransportProvider != nil {
-			err = mysqlsvc.ValidateMySQLTransportSettings(settings, password)
-		} else {
-			_, err = mysqlsvc.DirectMySQLConfig(settings, password)
-		}
-	}
-	if err != nil {
-		w.Status, w.Error = "连接失败", err.Error()
-		s.report(w.Error)
-		return
-	}
-	if w.ProfileID == profile.ID {
-		s.Disconnect(profile.ID)
-	}
-	w = s.current
-	ctx, cancel := context.WithCancel(context.Background())
-	w.sessionCancel = cancel
-	s.bumpGeneration(w)
-	generation := w.Generation
-	w.ProfileID, w.Status, w.Error = profile.ID, "连接中", ""
-	w.Kind, w.Catalog = profile.Kind, profile.Database
-	w.Databases = nil
-	s.ResetBrowser()
-	s.report("正在连接 MySQL：" + profile.Name)
-	w.Password = ""
-	manager, opener, lister := s.Manager, s.Opener, s.DatabaseLister
-	if opener == nil {
-		opener = manager.Connect
-	}
-	if lister == nil {
-		lister = manager.Databases
-	}
-	results := make(chan sessionResult, 1)
-	w.sessionResults = results
-	go func() {
-		err := opener(ctx, settings, password)
-		var names []string
-		var metaErr error
-		if err == nil && ctx.Err() == nil {
-			names, metaErr = lister(ctx, profile.ID)
-		}
-		hide := func(err error) error {
-			if err != nil && password != "" {
-				return errors.New(strings.ReplaceAll(err.Error(), password, "[已隐藏]"))
-			}
-			return err
-		}
-		results <- sessionResult{generation: generation, id: profile.ID, names: names, err: hide(err), metadataErr: hide(metaErr), vaultErr: vaultErr}
-		if invalidate != nil {
-			invalidate()
-		}
-	}()
+	s.connectEngine(profile, invalidate)
 }
 
 // Consume processes parked handshakes, the active handshake/refresh, then active
 // object metadata. Parked object reads remain buffered until their profile returns.
 func (s *State) Consume() {
-	if s.Manager != nil {
+	if s.engines.IsConnected != nil {
 		var lost []int64
-		if s.current.Status == "已连接" && s.Manager.TunnelRevoked(s.current.ProfileID) {
-			lost = append(lost, s.current.ProfileID)
-		}
 		for id, w := range s.parked {
-			if w.Status == "已连接" && s.Manager.TunnelRevoked(id) {
+			if w.Status == "已连接" && !s.engines.IsConnected(id) {
 				lost = append(lost, id)
 			}
 		}
+		if w := s.current; w.Status == "已连接" && !s.engines.IsConnected(w.ProfileID) {
+			lost = append(lost, w.ProfileID)
+		}
 		for _, id := range lost {
 			s.Disconnect(id)
-			s.report("数据库隧道已断开；请显式重新连接，不会重放 SQL 或事务")
+			s.report("数据库会话已失效；请显式重新连接，不会重放 SQL 或事务")
 		}
 	}
+
 	for id, w := range s.parked {
 		s.consumeSession(id, w, false)
 	}
@@ -135,9 +67,28 @@ func (s *State) consumeSession(id int64, w *Workspace, active bool) {
 				if result.vaultErr != nil {
 					w.Error = "无法读取已保存密码（可手动输入）：" + result.vaultErr.Error() + "；空密码连接失败：" + w.Error
 				}
-				s.report("连接 MySQL 失败：" + w.Error)
+				s.report("连接数据库失败：" + w.Error)
 			}
 			return
+		}
+		if result.published != 0 {
+			w.Generation = result.published
+			s.generation = max(s.generation, w.Generation)
+		}
+		if result.namespaces != nil && result.metadataErr == nil {
+			known := make(map[contract.NamespaceRef]bool, len(result.namespaces))
+			for _, n := range result.namespaces {
+				known[n.Ref] = true
+			}
+			for n := range w.QualifiedCache {
+				if !known[n] {
+					delete(w.QualifiedCache, n)
+				}
+			}
+			w.Namespaces = make(map[string]contract.NamespaceRef, len(result.namespaces))
+			for _, n := range result.namespaces {
+				w.Namespaces[n.Label] = n.Ref
+			}
 		}
 		w.Status, w.Error = "已连接", ""
 		if active && s.deps.Connected != nil {
@@ -161,17 +112,23 @@ func (s *State) consumeSession(id int64, w *Workspace, active bool) {
 }
 func (s *State) RefreshDatabases(invalidate func()) {
 	w := s.current
-	if w.ProfileID == 0 || w.Status != "已连接" || (s.Manager == nil && s.engines.Session == nil) || w.Refreshing() {
+	if w.ProfileID == 0 || w.Status != "已连接" || s.engines.Session == nil || w.Refreshing() {
 		return
 	}
 	s.CancelObjects()
 	id, generation := w.ProfileID, w.Generation
 	lister := s.DatabaseLister
+	var metadata contract.MetadataProvider
 	if lister == nil {
-		if w.Kind != connections.MySQL && s.engines.Session != nil {
-			lister = s.engineSchemas
-		} else {
-			lister = s.Manager.Databases
+		session, err := s.engines.Session(w.ProfileID)
+		if err != nil {
+			w.Error = err.Error()
+			return
+		}
+		metadata, err = contract.Require[contract.MetadataProvider](session)
+		if err != nil {
+			w.Error = err.Error()
+			return
 		}
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -183,8 +140,18 @@ func (s *State) RefreshDatabases(invalidate func()) {
 	results := make(chan sessionResult, 1)
 	w.sessionResults = results
 	go func() {
-		names, err := lister(ctx, id)
-		results <- sessionResult{generation: generation, id: id, names: names, metadataErr: err}
+		var names []string
+		var namespaces []contract.Namespace
+		var err error
+		if metadata != nil {
+			namespaces, err = metadata.Namespaces(ctx)
+			for _, n := range namespaces {
+				names = append(names, n.Label)
+			}
+		} else {
+			names, err = lister(ctx, id)
+		}
+		results <- sessionResult{generation: generation, id: id, names: names, namespaces: namespaces, metadataErr: err}
 		if invalidate != nil {
 			invalidate()
 		}
@@ -221,9 +188,6 @@ func (s *State) Disconnect(id int64) {
 	if s.deps.Disconnected != nil {
 		s.deps.Disconnected(id)
 	}
-	if s.Manager != nil {
-		_ = s.Manager.Disconnect(id)
-	}
 	if s.engines.Disconnect != nil {
 		_ = s.engines.Disconnect(id)
 	}
@@ -239,10 +203,6 @@ func (s *State) DisconnectAll() {
 func (s *State) Close() {
 	s.DisconnectAll()
 	s.current.Password = ""
-	if s.Manager != nil {
-		_ = s.Manager.Close()
-	}
-	s.Manager = nil
 	if s.engines.Close != nil {
 		_ = s.engines.Close()
 	}

@@ -5,9 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"io"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // Source settings are copied into an owned preparation request. Row numbers
@@ -69,7 +68,7 @@ func mysqlDataCurrentSourceKey(tr *mysqlDataTransferState) string {
 
 type mysqlDataImportRowReader interface {
 	Fields() []string
-	Next(context.Context) ([]mysqlsvc.MySQLDataValue, error)
+	Next(context.Context) ([]contract.DataValue, error)
 	Close() error
 }
 
@@ -85,7 +84,7 @@ type mysqlDataRangeRowReader struct {
 
 func (r *mysqlDataRangeRowReader) Fields() []string { return r.reader.Fields() }
 func (r *mysqlDataRangeRowReader) Close() error     { return r.reader.Close() }
-func (r *mysqlDataRangeRowReader) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataRangeRowReader) Next(ctx context.Context) ([]contract.DataValue, error) {
 	for {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -105,7 +104,7 @@ func (r *mysqlDataRangeRowReader) Next(ctx context.Context) ([]mysqlsvc.MySQLDat
 }
 
 func (r *mysqlDataSliceRowReader) Fields() []string { return append([]string(nil), r.input.Fields...) }
-func (r *mysqlDataSliceRowReader) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataSliceRowReader) Next(ctx context.Context) ([]contract.DataValue, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

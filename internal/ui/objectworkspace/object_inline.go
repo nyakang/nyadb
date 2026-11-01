@@ -2,6 +2,7 @@ package objectworkspace
 
 import (
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
@@ -10,7 +11,7 @@ func (s *State) BeginInlineRename(name, kind string) {
 	b.renameName, b.renameKind, b.renameDraft = name, kind, name
 	b.renameEditing = true
 }
-func (s *State) objectNameCell(c *ui.Context, obj mysqlsvc.MySQLDBObject) {
+func (s *State) objectNameCell(c *ui.Context, obj contract.DBObject) {
 	if obj.Kind != "表" || !s.CanChangeTable(s.currentBrowser().ProfileID) {
 		ui.Text(c, obj.Name).SingleLine()
 		return

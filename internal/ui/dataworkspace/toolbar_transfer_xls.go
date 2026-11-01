@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"io"
 	"math"
 	"os"
@@ -14,8 +15,6 @@ import (
 	"strings"
 	"unicode/utf16"
 	"unicode/utf8"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 // BIFF8/CFB are documented in Microsoft's public [MS-XLS] and [MS-CFB]
@@ -35,14 +34,14 @@ func newMySQLDataXLSEncoder(w io.Writer, fields []string) (*mysqlDataXLSEncoder,
 	for _, field := range fields {
 		if len(utf16.Encode([]rune(field))) > 32767 {
 			s.close()
-			return nil, mysqlsvc.ErrMySQLDataEditLimit
+			return nil, contract.ErrDataEditLimit
 		}
 	}
 	return &mysqlDataXLSEncoder{spool: s, w: w}, nil
 }
-func (e *mysqlDataXLSEncoder) Row(values []mysqlsvc.MySQLDataValue) error {
+func (e *mysqlDataXLSEncoder) Row(values []contract.DataValue) error {
 	if e.spool.rows >= 65535 {
-		return mysqlsvc.ErrMySQLDataEditLimit
+		return contract.ErrDataEditLimit
 	}
 	for _, v := range values {
 		text := v.Text
@@ -53,7 +52,7 @@ func (e *mysqlDataXLSEncoder) Row(values []mysqlsvc.MySQLDataValue) error {
 			return errors.New("XLS cells support at most 32767 UTF-16 code units")
 		}
 		if !utf8.ValidString(text) {
-			return mysqlsvc.ErrMySQLDataPage
+			return contract.ErrDataPage
 		}
 	}
 	return e.spool.Row(values)
@@ -61,7 +60,7 @@ func (e *mysqlDataXLSEncoder) Row(values []mysqlsvc.MySQLDataValue) error {
 
 func mysqlDataBIFFRecord(w io.Writer, id uint16, data []byte) error {
 	if len(data) > 8224 {
-		return mysqlsvc.ErrMySQLDataEditLimit
+		return contract.ErrDataEditLimit
 	}
 	h := make([]byte, 4)
 	binary.LittleEndian.PutUint16(h, id)
@@ -111,7 +110,7 @@ func (s *mysqlDataBIFFSSTWriter) flush() error {
 func (s *mysqlDataBIFFSSTWriter) text(text string) error {
 	u := utf16.Encode([]rune(text))
 	if len(u) > 32767 {
-		return mysqlsvc.ErrMySQLDataEditLimit
+		return contract.ErrDataEditLimit
 	}
 	if len(s.data)+3 > 8224 {
 		if err := s.flush(); err != nil {
@@ -180,7 +179,7 @@ func (e *mysqlDataXLSEncoder) CloseContext(ctx context.Context) (err error) {
 		}
 	}
 	nonNull := int64(len(e.spool.fields))
-	err = e.spool.each(ctx, func(row []mysqlsvc.MySQLDataValue) error {
+	err = e.spool.each(ctx, func(row []contract.DataValue) error {
 		for _, v := range row {
 			if !v.Null {
 				nonNull++
@@ -193,7 +192,7 @@ func (e *mysqlDataXLSEncoder) CloseContext(ctx context.Context) (err error) {
 	}
 	count := nonNull + int64(len(e.spool.fields))*(e.spool.rows+1)
 	if count > math.MaxUint32 {
-		return mysqlsvc.ErrMySQLDataEditLimit
+		return contract.ErrDataEditLimit
 	}
 	sst := newMySQLDataBIFFSSTWriter(book, uint32(count))
 	for _, field := range e.spool.fields {
@@ -201,7 +200,7 @@ func (e *mysqlDataXLSEncoder) CloseContext(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	err = e.spool.each(ctx, func(row []mysqlsvc.MySQLDataValue) error {
+	err = e.spool.each(ctx, func(row []contract.DataValue) error {
 		for _, v := range row {
 			if v.Null {
 				continue
@@ -224,7 +223,7 @@ func (e *mysqlDataXLSEncoder) CloseContext(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	err = e.spool.each(ctx, func(row []mysqlsvc.MySQLDataValue) error {
+	err = e.spool.each(ctx, func(row []contract.DataValue) error {
 		for _, v := range row {
 			kind := "t"
 			if v.Null {
@@ -277,7 +276,7 @@ func (e *mysqlDataXLSEncoder) CloseContext(ctx context.Context) (err error) {
 			index++
 		}
 		rowNum := 1
-		err = e.spool.each(ctx, func(row []mysqlsvc.MySQLDataValue) error {
+		err = e.spool.each(ctx, func(row []contract.DataValue) error {
 			for column, v := range row {
 				if kind == 0 && v.Null {
 					continue
@@ -303,7 +302,7 @@ func (e *mysqlDataXLSEncoder) CloseContext(ctx context.Context) (err error) {
 	}
 	for i, offset := range offsets {
 		if offset > math.MaxUint32 {
-			return mysqlsvc.ErrMySQLDataEditLimit
+			return contract.ErrDataEditLimit
 		}
 		data := make([]byte, 4)
 		binary.LittleEndian.PutUint32(data, uint32(offset))
@@ -320,7 +319,7 @@ const mysqlDataCFBFree = uint32(0xffffffff)
 func mysqlDataWriteCFB(w io.Writer, book *os.File, bookSize int64) error {
 	streamSize := max(int64(4096), bookSize)
 	if streamSize > math.MaxUint32 {
-		return mysqlsvc.ErrMySQLDataEditLimit
+		return contract.ErrDataEditLimit
 	}
 	dataSectors := int((streamSize + 511) / 512)
 	fatSectors, difatSectors := 1, 0
@@ -454,7 +453,7 @@ type mysqlDataCFBStream struct {
 
 func (s *mysqlDataCFBStream) ReadAt(p []byte, off int64) (int, error) {
 	if off < 0 {
-		return 0, mysqlsvc.ErrMySQLDataPage
+		return 0, contract.ErrDataPage
 	}
 	if off >= s.size {
 		return 0, io.EOF
@@ -504,7 +503,7 @@ func (c *mysqlDataCFB) chain(start uint32, fat []uint32, limit int) ([]uint32, e
 	seen := map[uint32]bool{}
 	for start != mysqlDataCFBEnd {
 		if int(start) >= len(fat) || seen[start] || len(chain) >= limit {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		seen[start] = true
 		chain = append(chain, start)
@@ -518,23 +517,23 @@ func mysqlDataOpenCFB(input io.ReaderAt, size int64) (*mysqlDataCFBStream, error
 		return nil, err
 	}
 	if !bytes.Equal(h[:8], []byte{0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1}) || binary.LittleEndian.Uint16(h[28:]) != 0xfffe {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	major := binary.LittleEndian.Uint16(h[26:])
 	shift := binary.LittleEndian.Uint16(h[30:])
 	if major != 3 && major != 4 || major == 3 && shift != 9 || major == 4 && shift != 12 || binary.LittleEndian.Uint16(h[32:]) != 6 {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	unit := 1 << shift
 	c := &mysqlDataCFB{input: input, size: size, sector: unit}
 	maxSectors := int(size/int64(unit)) - 1
 	if maxSectors <= 0 {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	nfat := int(binary.LittleEndian.Uint32(h[44:]))
 	ndifat := int(binary.LittleEndian.Uint32(h[72:]))
 	if nfat <= 0 || nfat > maxSectors || ndifat > maxSectors {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	ids := []uint32{}
 	for i := 0; i < 109 && len(ids) < nfat; i++ {
@@ -547,7 +546,7 @@ func mysqlDataOpenCFB(input io.ReaderAt, size int64) (*mysqlDataCFBStream, error
 	seenD := map[uint32]bool{}
 	for count := 0; count < ndifat; count++ {
 		if int(difat) >= maxSectors || seenD[difat] {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		seenD[difat] = true
 		data := make([]byte, unit)
@@ -563,12 +562,12 @@ func mysqlDataOpenCFB(input io.ReaderAt, size int64) (*mysqlDataCFBStream, error
 		difat = binary.LittleEndian.Uint32(data[unit-4:])
 	}
 	if len(ids) != nfat {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	seenF := map[uint32]bool{}
 	for _, id := range ids {
 		if int(id) >= maxSectors || seenF[id] {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		seenF[id] = true
 		data := make([]byte, unit)
@@ -584,7 +583,7 @@ func mysqlDataOpenCFB(input io.ReaderAt, size int64) (*mysqlDataCFBStream, error
 		return nil, err
 	}
 	if len(dirs) == 0 || len(dirs) > 1024 {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	var rootStart, bookStart uint32
 	var rootSize, bookSize int64
@@ -610,14 +609,14 @@ func mysqlDataOpenCFB(input io.ReaderAt, size int64) (*mysqlDataCFBStream, error
 				streamSize &= math.MaxUint32
 			}
 			if streamSize > uint64(size) {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			if entry[66] == 5 {
 				rootStart, rootSize = binary.LittleEndian.Uint32(entry[116:]), int64(streamSize)
 			}
 			if entry[66] == 2 && (name == "Workbook" || name == "Book") {
 				if found {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 				found = true
 				bookStart, bookSize = binary.LittleEndian.Uint32(entry[116:]), int64(streamSize)
@@ -637,11 +636,11 @@ func mysqlDataOpenCFB(input io.ReaderAt, size int64) (*mysqlDataCFBStream, error
 		c.miniStream = &mysqlDataCFBStream{cfb: c, chain: rootChain, size: rootSize}
 		count := int(binary.LittleEndian.Uint32(h[64:]))
 		if count > maxSectors {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		mchain, e := c.chain(binary.LittleEndian.Uint32(h[60:]), c.fat, maxSectors)
 		if e != nil || len(mchain) != count {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		for _, id := range mchain {
 			data := make([]byte, unit)
@@ -661,7 +660,7 @@ func mysqlDataOpenCFB(input io.ReaderAt, size int64) (*mysqlDataCFBStream, error
 	}
 	s := &mysqlDataCFBStream{cfb: c, chain: chain, size: bookSize, mini: mini}
 	if int64(len(chain))*int64(unit) < bookSize && !mini || int64(len(chain))*64 < bookSize && mini {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	return s, nil
 }
@@ -684,7 +683,7 @@ func (r *mysqlDataBIFFRecordReader) next() (uint16, []byte, error) {
 	r.off += 4
 	n := int64(binary.LittleEndian.Uint16(h[2:]))
 	if n > 8224 || r.off+n > r.size {
-		return 0, nil, mysqlsvc.ErrMySQLDataPage
+		return 0, nil, contract.ErrDataPage
 	}
 	data := make([]byte, n)
 	if _, err := r.input.ReadAt(data, r.off); err != nil {
@@ -751,7 +750,7 @@ func (s *mysqlDataBIFFStringSegments) text() (string, error) {
 	}
 	chars := int(binary.LittleEndian.Uint16(header))
 	if chars > 32767 {
-		return "", mysqlsvc.ErrMySQLDataEditLimit
+		return "", contract.ErrDataEditLimit
 	}
 	flags := header[2]
 	runs, ext := 0, 0
@@ -768,8 +767,8 @@ func (s *mysqlDataBIFFStringSegments) text() (string, error) {
 			return "", e
 		}
 		ext = int(binary.LittleEndian.Uint32(b))
-		if ext > mysqlsvc.MySQLDataExportFieldMaxBytes {
-			return "", mysqlsvc.ErrMySQLDataEditLimit
+		if ext > contract.DataExportFieldMaxBytes {
+			return "", contract.ErrDataEditLimit
 		}
 	}
 	u := make([]uint16, 0, chars)
@@ -787,7 +786,7 @@ func (s *mysqlDataBIFFStringSegments) text() (string, error) {
 			width = 2
 		}
 		if len(s.data)-s.pos < width {
-			return "", mysqlsvc.ErrMySQLDataPage
+			return "", contract.ErrDataPage
 		}
 		ch := uint16(s.data[s.pos])
 		if wide {
@@ -823,7 +822,7 @@ func mysqlDataReadXLSSST(ctx context.Context, first []byte, records *mysqlDataBI
 	}
 	count := binary.LittleEndian.Uint32(h[4:])
 	if count > binary.LittleEndian.Uint32(h) {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	strings, err := newMySQLDataDiskStrings()
 	if err != nil {
@@ -862,12 +861,12 @@ type mysqlDataXLSRows struct {
 	kindPending *mysqlDataXLSCell
 	row         int
 	lastRow     int64
-	ready       []mysqlsvc.MySQLDataValue
+	ready       []contract.DataValue
 	closed      bool
 }
 type mysqlDataXLSCell struct {
 	row, column int
-	value       mysqlsvc.MySQLDataValue
+	value       contract.DataValue
 	xf          int
 }
 
@@ -914,7 +913,7 @@ func mysqlDataOpenXLSRowsOptions(ctx context.Context, input io.ReaderAt, size in
 			}
 		case 0x0085:
 			if len(data) < 8 {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			offset := int64(binary.LittleEndian.Uint32(data))
 			n := int(data[6])
@@ -932,7 +931,7 @@ func mysqlDataOpenXLSRowsOptions(ctx context.Context, input io.ReaderAt, size in
 			}
 		case 0x041e:
 			if len(data) < 5 {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			n := int(binary.LittleEndian.Uint16(data[2:]))
 			name, e := mysqlDataBIFFPlainString(data[5:], n, data[4]&1 != 0)
@@ -942,12 +941,12 @@ func mysqlDataOpenXLSRowsOptions(ctx context.Context, input io.ReaderAt, size in
 			r.formats[int(binary.LittleEndian.Uint16(data))] = name
 		case 0x00e0:
 			if len(data) < 4 {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			r.xfs = append(r.xfs, int(binary.LittleEndian.Uint16(data[2:])))
 		case 0x00fc:
 			if r.sst != nil {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			r.sst, e = mysqlDataReadXLSSST(ctx, data, &records)
 			if e != nil {
@@ -965,7 +964,7 @@ globalsDone:
 		return nil, errors.New("XLS selected worksheet is absent")
 	}
 	if sheets[options.Sheet] < 0 || sheets[options.Sheet] >= stream.size {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	r.reader = mysqlDataBIFFRecordReader{input: stream, off: sheets[options.Sheet], size: stream.size}
 	if kindOffset >= 0 && options.Sheet == 0 {
@@ -973,7 +972,7 @@ globalsDone:
 	}
 	headerIndex := max(int64(1), options.HeaderRow) - 1
 	if headerIndex >= 65536 {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	header, err := r.readRow(ctx, int(headerIndex), false)
 	if err != nil {
@@ -989,7 +988,7 @@ globalsDone:
 		}
 		r.fields = append(r.fields, value.Text)
 	}
-	if err = mysqlDataRecordValuesValid(r.fields, make([]mysqlsvc.MySQLDataValue, len(r.fields))); err != nil {
+	if err = mysqlDataRecordValuesValid(r.fields, make([]contract.DataValue, len(r.fields))); err != nil {
 		return nil, err
 	}
 	r.row = int(max(options.FirstRow, headerIndex+2)) - 1
@@ -1002,11 +1001,11 @@ globalsDone:
 		if options.HeaderRow == 1 {
 			h, e := r.readRow(ctx, 0, true)
 			if e != nil || len(h) != len(r.fields) {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			for i, v := range h {
 				if v.Text != r.fields[i] {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 			}
 		}
@@ -1019,7 +1018,7 @@ func mysqlDataBIFFPlainString(data []byte, chars int, wide bool) (string, error)
 		width = 2
 	}
 	if chars < 0 || chars*width > len(data) {
-		return "", mysqlsvc.ErrMySQLDataPage
+		return "", contract.ErrDataPage
 	}
 	u := make([]uint16, chars)
 	for i := range u {
@@ -1060,7 +1059,7 @@ func (r *mysqlDataXLSRows) Close() error {
 	r.stream, r.reader.input, r.kinds, r.sst, r.pending, r.kindPending, r.ready = nil, nil, nil, nil, nil, nil, nil
 	return err
 }
-func (r *mysqlDataXLSRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataXLSRows) Next(ctx context.Context) ([]contract.DataValue, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -1077,37 +1076,37 @@ func (r *mysqlDataXLSRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue,
 		}
 	}
 	if len(row) > len(r.fields) {
-		return nil, mysqlsvc.ErrMySQLDataPage
+		return nil, contract.ErrDataPage
 	}
 	for len(row) < len(r.fields) {
-		row = append(row, mysqlsvc.MySQLDataValue{Null: true})
+		row = append(row, contract.DataValue{Null: true})
 	}
 	// Row zero of the companion stores field names. Even a headerless import
 	// retains its binary/NULL markers for all subsequent physical rows.
 	if r.kinds != nil && r.row > 0 {
 		kinds, e := r.readRow(ctx, r.row, true)
 		if e != nil || len(kinds) != len(row) {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		for i, k := range kinds {
 			switch k.Text {
 			case "n":
-				row[i] = mysqlsvc.MySQLDataValue{Null: true}
+				row[i] = contract.DataValue{Null: true}
 			case "t":
 				if row[i].Null {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 			case "b":
 				if !strings.HasPrefix(row[i].Text, "0x") {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 				b, e := hex.DecodeString(row[i].Text[2:])
 				if e != nil {
 					return nil, e
 				}
-				row[i] = mysqlsvc.MySQLDataValue{Binary: true, Bytes: b}
+				row[i] = contract.DataValue{Binary: true, Bytes: b}
 			default:
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 		}
 	}
@@ -1117,14 +1116,14 @@ func (r *mysqlDataXLSRows) Next(ctx context.Context) ([]mysqlsvc.MySQLDataValue,
 	r.row++
 	return row, nil
 }
-func (r *mysqlDataXLSRows) readRow(ctx context.Context, want int, kind bool) ([]mysqlsvc.MySQLDataValue, error) {
+func (r *mysqlDataXLSRows) readRow(ctx context.Context, want int, kind bool) ([]contract.DataValue, error) {
 	reader := &r.reader
 	pending := &r.pending
 	if kind {
 		reader = r.kinds
 		pending = &r.kindPending
 	}
-	var row []mysqlsvc.MySQLDataValue
+	var row []contract.DataValue
 	seen := map[int]bool{}
 	for {
 		if err := ctx.Err(); err != nil {
@@ -1151,7 +1150,7 @@ func (r *mysqlDataXLSRows) readRow(ctx context.Context, want int, kind bool) ([]
 				if len(r.fields) == 0 {
 					return nil, errors.New("XLS selected header row is absent")
 				}
-				row = make([]mysqlsvc.MySQLDataValue, len(r.fields))
+				row = make([]contract.DataValue, len(r.fields))
 				for i := range row {
 					row[i].Null = true
 				}
@@ -1162,11 +1161,11 @@ func (r *mysqlDataXLSRows) readRow(ctx context.Context, want int, kind bool) ([]
 			continue
 		}
 		if cell.column < 0 || cell.column >= 128 || seen[cell.column] {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
 		seen[cell.column] = true
 		for len(row) <= cell.column {
-			row = append(row, mysqlsvc.MySQLDataValue{Null: true})
+			row = append(row, contract.DataValue{Null: true})
 		}
 		row[cell.column] = cell.value
 	}
@@ -1195,14 +1194,14 @@ func (r *mysqlDataXLSRows) nextCell(records *mysqlDataBIFFRecordReader) (*mysqlD
 		switch id {
 		case 0x00fd, 0x0204, 0x0203, 0x027e, 0x0205, 0x0201:
 			if len(data) < 6 {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			cell := &mysqlDataXLSCell{row: int(binary.LittleEndian.Uint16(data)), column: int(binary.LittleEndian.Uint16(data[2:])), xf: int(binary.LittleEndian.Uint16(data[4:]))}
 			var number *float64
 			switch id {
 			case 0x00fd:
 				if len(data) < 10 || r.sst == nil {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 				text, e := r.sst.text(binary.LittleEndian.Uint32(data[6:]))
 				if e != nil {
@@ -1211,7 +1210,7 @@ func (r *mysqlDataXLSRows) nextCell(records *mysqlDataBIFFRecordReader) (*mysqlD
 				cell.value.Text = text
 			case 0x0204:
 				if len(data) < 9 {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 				text, e := mysqlDataBIFFPlainString(data[9:], int(binary.LittleEndian.Uint16(data[6:])), data[8]&1 != 0)
 				if e != nil {
@@ -1220,19 +1219,19 @@ func (r *mysqlDataXLSRows) nextCell(records *mysqlDataBIFFRecordReader) (*mysqlD
 				cell.value.Text = text
 			case 0x0203:
 				if len(data) < 14 {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 				v := math.Float64frombits(binary.LittleEndian.Uint64(data[6:]))
 				number = &v
 			case 0x027e:
 				if len(data) < 10 {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 				v := mysqlDataBIFFRK(binary.LittleEndian.Uint32(data[6:]))
 				number = &v
 			case 0x0205:
 				if len(data) < 8 {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 				if data[7] != 0 {
 					return nil, errors.New("XLS error cell")
@@ -1243,7 +1242,7 @@ func (r *mysqlDataXLSRows) nextCell(records *mysqlDataBIFFRecordReader) (*mysqlD
 			}
 			if number != nil {
 				if math.IsNaN(*number) || math.IsInf(*number, 0) {
-					return nil, mysqlsvc.ErrMySQLDataPage
+					return nil, contract.ErrDataPage
 				}
 				cell.value.Text = strconv.FormatFloat(*number, 'g', -1, 64)
 				if cell.xf >= 0 && cell.xf < len(r.xfs) && mysqlDataXLSXDateFormat(r.xfs[cell.xf], r.formats[r.xfs[cell.xf]]) {
@@ -1257,11 +1256,11 @@ func (r *mysqlDataXLSRows) nextCell(records *mysqlDataBIFFRecordReader) (*mysqlD
 			return cell, nil
 		case 0x00bd, 0x00be:
 			if len(data) < 8 {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			first, last := int(binary.LittleEndian.Uint16(data[2:])), int(binary.LittleEndian.Uint16(data[len(data)-2:]))
 			if last < first || last >= 128 {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			count := last - first + 1
 			stride := 6
@@ -1269,7 +1268,7 @@ func (r *mysqlDataXLSRows) nextCell(records *mysqlDataBIFFRecordReader) (*mysqlD
 				stride = 2
 			}
 			if len(data) != 6+stride*count {
-				return nil, mysqlsvc.ErrMySQLDataPage
+				return nil, contract.ErrDataPage
 			}
 			for i := 0; i < count; i++ {
 				xf := int(binary.LittleEndian.Uint16(data[4+i*stride:]))

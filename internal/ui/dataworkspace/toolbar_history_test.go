@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
 	"testing"
 	"time"
@@ -188,7 +189,7 @@ func TestDataHistorySaveWorkerCapturesKindAndUncommittedStatus(t *testing.T) {
 	s, d, _ := transactionWorkspace(t)
 	started, release := make(chan struct{}), make(chan struct{})
 	saveFn := s.Transactions.Save
-	s.Transactions.Save = func(ctx context.Context, token *mysqlsvc.MySQLDataTransaction, p int64, db, tb string, edits []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
+	s.Transactions.Save = func(ctx context.Context, token contract.DataTransaction, p int64, db, tb string, edits []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
 		close(started)
 		<-release
 		return saveFn(ctx, token, p, db, tb, edits)

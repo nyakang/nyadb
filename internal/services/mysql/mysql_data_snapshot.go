@@ -18,7 +18,7 @@ func mysqlEditMetadata(columns []MySQLStructureColumn) string {
 	return hex.EncodeToString(hash[:])
 }
 func mysqlSnapshotFromRaw(ref MySQLRowRef, columns []MySQLStructureColumn, raw []any) *MySQLRowSnapshot {
-	s := &MySQLRowSnapshot{Ref: ref, Metadata: mysqlEditMetadata(columns)}
+	s := &MySQLRowSnapshot{Mode: "fingerprints", Ref: ref, Metadata: mysqlEditMetadata(columns)}
 	for i, col := range columns {
 		s.Columns = append(s.Columns, col.Name)
 		var fingerprint *string

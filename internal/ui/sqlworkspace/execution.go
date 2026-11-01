@@ -4,16 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 type executionResult struct {
 	request   uint64
 	profileID int64
-	data      mysqlsvc.MySQLSQLResult
+	data      contract.SQLResult
 	err       error
 }
 
@@ -59,7 +59,7 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 			return
 		}
 		lease := t.lease
-		execute = func(ctx context.Context, _ int64, database, statement string) (mysqlsvc.MySQLSQLResult, error) {
+		execute = func(ctx context.Context, _ int64, database, statement string) (contract.SQLResult, error) {
 			return lease.Execute(ctx, database, statement)
 		}
 	}
@@ -160,10 +160,10 @@ func (s *State) Consume() {
 					t.prepareCancel = nil
 				}
 				if err != nil && !errors.Is(err, context.Canceled) &&
-					!errors.Is(err, mysqlsvc.ErrMySQLNotConnected) &&
+					!errors.Is(err, contract.ErrRevoked) &&
 					!t.loading && t.result == nil && t.err == "" {
 					t.err = "SQL 预连接失败：" + err.Error()
-					if errors.Is(err, mysqlsvc.ErrMySQLSQLSessionLost) {
+					if errors.Is(err, contract.ErrSQLSessionLost) || errors.Is(err, contract.ErrRevoked) {
 						t.recoveryNeeded = true
 						t.recoveryProfile = t.profileID
 						t.recoverySchema = t.database
@@ -195,12 +195,12 @@ func (s *State) Consume() {
 				}
 				if canceled || errors.Is(r.err, context.Canceled) {
 					t.err = "SQL 执行已停止；服务器端更改可能已生效"
-				} else if errors.Is(r.err, mysqlsvc.ErrMySQLSQLSessionLost) {
+				} else if errors.Is(r.err, contract.ErrSQLSessionLost) || errors.Is(r.err, contract.ErrRevoked) {
 					t.recoveryNeeded = true
 					t.recoveryProfile = t.profileID
 					t.recoverySchema = t.database
 					t.err = "原查询会话已失效；事务、临时表、会话变量无法恢复，DML 结果请先核对。可选择以新会话继续"
-				} else if errors.Is(r.err, mysqlsvc.ErrMySQLSQLSessionLimit) {
+				} else if errors.Is(r.err, contract.ErrSQLSessionLimit) {
 					t.err = "SQL 标签会话数已达到上限，请关闭其他查询标签后重试"
 				} else {
 					t.err = r.err.Error()
@@ -270,7 +270,7 @@ func (s *State) Recover(t *Document) {
 		lease, err = runtime.Reserve(id, t.id)
 	} else {
 		lease, err = t.lease.Replace()
-		if errors.Is(err, mysqlsvc.ErrMySQLSQLSessionLost) {
+		if errors.Is(err, contract.ErrSQLSessionLost) || errors.Is(err, contract.ErrRevoked) {
 			// The profile was explicitly reconnected since this tab was
 			// created; a stale generation may not be used to replace the
 			// new profile's leases. The tab ID is unique to this workspace.

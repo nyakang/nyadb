@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"math/big"
 	"slices"
 	"strconv"
@@ -12,7 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/egoist/mygo/ui"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/db/mysqlspec"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -120,7 +121,7 @@ func (s *State) dataImportResultRows(c *ui.Context, t *Document) {
 		count = int(t.transfer.Journal.total)
 	}
 	ui.Table(c, &t.transfer.ResultGrid, columns, count, func(index, _ int) {
-		var row mysqlsvc.MySQLDataImportRowResult
+		var row contract.DataImportRowResult
 		if t.transfer.Journal != nil {
 			var err error
 			committed, uncertain := t.transfer.JournalCommitted, t.transfer.JournalUncertain
@@ -129,7 +130,7 @@ func (s *State) dataImportResultRows(c *ui.Context, t *Document) {
 			}
 			row, err = t.transfer.Journal.Row(int64(index), committed, uncertain)
 			if err != nil {
-				row = mysqlsvc.MySQLDataImportRowResult{Row: index + 1, Status: "uncertain", Error: "result journal unavailable"}
+				row = contract.DataImportRowResult{Row: index + 1, Status: "uncertain", Error: "result journal unavailable"}
 			}
 		} else {
 			row = t.transfer.RowResults[index]
@@ -179,7 +180,7 @@ func mysqlDataImportRowStatus(status string) string {
 func (s *State) consumeDataImportResult(services ui.Services, t *Document, result mysqlDataTransferResult, stale bool) {
 	tr, imported := &t.transfer, result.Imported
 	tr.Created, tr.ResultTable = imported.Created, result.Destination
-	tr.RowResults = append([]mysqlsvc.MySQLDataImportRowResult(nil), imported.Rows...)
+	tr.RowResults = append([]contract.DataImportRowResult(nil), imported.Rows...)
 	if result.NewTable {
 		entry := result.CreationHistory
 		entry.Failed = !imported.Created || imported.CreationUncertain || stale
@@ -219,7 +220,7 @@ func (s *State) consumeDataImportResult(services ui.Services, t *Document, resul
 		if !result.NewTable {
 			t.edit.Uncertain = cloneEditResult(imported.Saved)
 			if t.edit.Uncertain == nil {
-				t.edit.Uncertain = &mysqlsvc.MySQLDataEditResult{}
+				t.edit.Uncertain = &contract.DataEditResult{}
 			}
 			t.edit.Uncertain.CommitUncertain = true
 		}
@@ -291,7 +292,7 @@ func (s *State) dataImportTargetControls(c *ui.Context, t *Document) {
 	}
 }
 
-func mysqlDataImportMapping(t *Document) ([]string, []mysqlsvc.MySQLDataImportColumn, []mysqlsvc.MySQLStructureColumn, error) {
+func mysqlDataImportMapping(t *Document) ([]string, []contract.DataImportColumn, []contract.StructureColumn, error) {
 	tr := &t.transfer
 	if tr.Target != "new" {
 		if tr.TargetTable != "" && tr.TargetColumns == nil {
@@ -300,21 +301,21 @@ func mysqlDataImportMapping(t *Document) ([]string, []mysqlsvc.MySQLDataImportCo
 		return tr.Mapping, nil, mysqlDataImportTargetMetadata(t), nil
 	}
 	if tr.Input == nil || len(tr.NewColumns) != len(tr.Input.Fields) {
-		return nil, nil, nil, mysqlsvc.ErrMySQLDataPage
+		return nil, nil, nil, contract.ErrDataPage
 	}
 	mapping := make([]string, len(tr.NewColumns))
-	var columns []mysqlsvc.MySQLDataImportColumn
+	var columns []contract.DataImportColumn
 	for i, col := range tr.NewColumns {
 		mapping[i] = col.Name
 		if col.Name != "" {
 			columns = append(columns, col)
 		}
 	}
-	metadata, err := mysqlsvc.MySQLDataImportColumnMetadata(columns)
+	metadata, err := mysqlspec.ImportColumnMetadata(columns)
 	return mapping, columns, metadata, err
 }
 
-func mysqlDataImportTargetMetadata(t *Document) []mysqlsvc.MySQLStructureColumn {
+func mysqlDataImportTargetMetadata(t *Document) []contract.StructureColumn {
 	if t.transfer.TargetTable != "" {
 		return t.transfer.TargetColumns
 	}
@@ -334,7 +335,7 @@ func mysqlDataResetTargetMapping(t *Document) {
 	tr.Mapping = make([]string, len(tr.Input.Fields))
 	for i, field := range tr.Input.Fields {
 		for _, col := range mysqlDataImportTargetMetadata(t) {
-			if field == col.Name && !mysqlsvc.MySQLDataColumnGenerated(col) {
+			if field == col.Name && !contract.DataColumnGenerated(col) {
 				tr.Mapping[i] = field
 				if col.Key == "PRI" {
 					tr.MatchColumns = append(tr.MatchColumns, field)
@@ -344,9 +345,9 @@ func mysqlDataResetTargetMapping(t *Document) {
 	}
 }
 
-func mysqlDataImportRequest(t *Document) ([]mysqlsvc.MySQLDataImportColumn, []mysqlsvc.MySQLDataEdit, error) {
+func mysqlDataImportRequest(t *Document) ([]contract.DataImportColumn, []contract.DataEdit, error) {
 	if t.page == nil && (!t.importOnly || t.transfer.Target != "new") {
-		return nil, nil, mysqlsvc.ErrMySQLDataPage
+		return nil, nil, contract.ErrDataPage
 	}
 	if t.transfer.Target == "new" {
 		name := t.transfer.NewName
@@ -360,13 +361,13 @@ func mysqlDataImportRequest(t *Document) ([]mysqlsvc.MySQLDataImportColumn, []my
 	}
 	edits, err := mysqlDataImportMappedEdits(t, mapping, metadata)
 	if err == nil {
-		err = mysqlsvc.ValidateMySQLDataImportRequest(metadata, mysqlDataImportServiceRequest(t, columns, edits))
+		err = mysqlspec.ValidateImportRequest(metadata, mysqlDataImportServiceRequest(t, columns, edits))
 	}
 	return columns, edits, err
 }
 
-func mysqlDataImportServiceRequest(t *Document, columns []mysqlsvc.MySQLDataImportColumn, edits []mysqlsvc.MySQLDataEdit) mysqlsvc.MySQLDataImportRequest {
-	request := mysqlsvc.MySQLDataImportRequest{Mode: mysqlDataImportMode(t), ContinueOnError: t.transfer.ContinueOnError, NewTable: t.transfer.Target == "new", Columns: append([]mysqlsvc.MySQLDataImportColumn(nil), columns...), Edits: edits}
+func mysqlDataImportServiceRequest(t *Document, columns []contract.DataImportColumn, edits []contract.DataEdit) contract.DataImportRequest {
+	request := contract.DataImportRequest{Mode: mysqlDataImportMode(t), ContinueOnError: t.transfer.ContinueOnError, NewTable: t.transfer.Target == "new", Columns: append([]contract.DataImportColumn(nil), columns...), Edits: edits}
 	if mysqlDataImportNeedsMatch(request.Mode) {
 		request.MatchColumns = append([]string(nil), t.transfer.MatchColumns...)
 	}
@@ -375,12 +376,12 @@ func mysqlDataImportServiceRequest(t *Document, columns []mysqlsvc.MySQLDataImpo
 
 // Mapped source values remain immutable; the service shares bounded validation
 // with the review and determines each row's actual action inside its transaction.
-func mysqlDataImportMappedEdits(t *Document, mapping []string, metadata []mysqlsvc.MySQLStructureColumn) ([]mysqlsvc.MySQLDataEdit, error) {
+func mysqlDataImportMappedEdits(t *Document, mapping []string, metadata []contract.StructureColumn) ([]contract.DataEdit, error) {
 	input := t.transfer.Input
-	if input == nil || len(mapping) != len(input.Fields) || len(input.Rows) == 0 || len(input.Rows) > mysqlsvc.MaxMySQLDataImportRows {
-		return nil, mysqlsvc.ErrMySQLDataPage
+	if input == nil || len(mapping) != len(input.Fields) || len(input.Rows) == 0 || len(input.Rows) > contract.MaxDataImportRows {
+		return nil, contract.ErrDataPage
 	}
-	allowed := map[string]mysqlsvc.MySQLStructureColumn{}
+	allowed := map[string]contract.StructureColumn{}
 	for _, col := range metadata {
 		allowed[col.Name] = col
 	}
@@ -390,7 +391,7 @@ func mysqlDataImportMappedEdits(t *Document, mapping []string, metadata []mysqls
 			continue
 		}
 		col, ok := allowed[field]
-		if !ok || seen[field] || mysqlsvc.MySQLDataColumnGenerated(col) || mysqlDataSpatialField(col) {
+		if !ok || seen[field] || contract.DataColumnGenerated(col) || mysqlDataSpatialField(col) {
 			return nil, fmt.Errorf("%s", locales.Text("字段映射包含重复、未知或生成字段"))
 		}
 		seen[field] = true
@@ -398,12 +399,12 @@ func mysqlDataImportMappedEdits(t *Document, mapping []string, metadata []mysqls
 	if len(seen) == 0 {
 		return nil, fmt.Errorf("%s", locales.Text("请映射至少一个字段"))
 	}
-	edits := make([]mysqlsvc.MySQLDataEdit, len(input.Rows))
+	edits := make([]contract.DataEdit, len(input.Rows))
 	for i, row := range input.Rows {
 		if len(row) != len(mapping) {
-			return nil, mysqlsvc.ErrMySQLDataPage
+			return nil, contract.ErrDataPage
 		}
-		values := make(map[string]mysqlsvc.MySQLDataValue, len(seen))
+		values := make(map[string]contract.DataValue, len(seen))
 		for j, field := range mapping {
 			if field == "" {
 				continue
@@ -411,13 +412,13 @@ func mysqlDataImportMappedEdits(t *Document, mapping []string, metadata []mysqls
 			value := mysqlDataImportValue(row[j], t.transfer.EmptyAsNull)
 			if !value.Null && !value.Binary && mysqlDataBinaryField(allowed[field]) && strings.HasPrefix(value.Text, "0x") {
 				if b, err := hex.DecodeString(value.Text[2:]); err == nil {
-					value = mysqlsvc.MySQLDataValue{Binary: true, Bytes: b}
+					value = contract.DataValue{Binary: true, Bytes: b}
 				}
 			}
 			value.Bytes = slices.Clone(value.Bytes)
 			values[field] = value
 		}
-		edits[i] = mysqlsvc.MySQLDataEdit{Kind: "insert", Values: values}
+		edits[i] = contract.DataEdit{Kind: "insert", Values: values}
 	}
 	return edits, nil
 }
@@ -432,8 +433,8 @@ func mysqlDataImportReviewValidation(t *Document) (int, error) {
 		Target, NewName, Mode, Destination string
 		Empty, Continue                    bool
 		Mapping, Match                     []string
-		Columns                            []mysqlsvc.MySQLDataImportColumn
-		Metadata                           []mysqlsvc.MySQLStructureColumn
+		Columns                            []contract.DataImportColumn
+		Metadata                           []contract.StructureColumn
 	}{tr.Target, tr.NewName, tr.Mode, mysqlDataImportDestination(t), tr.EmptyAsNull, tr.ContinueOnError, tr.Mapping, tr.MatchColumns, tr.NewColumns, metadata})
 	if tr.ReviewInput != tr.Input || tr.ReviewKey != string(key) {
 		_, edits, err := mysqlDataImportRequest(t)
@@ -476,7 +477,7 @@ func (s *State) dataImportReview(c *ui.Context, t *Document) {
 			} else {
 				choices := []string{""}
 				for _, col := range mysqlDataImportTargetMetadata(t) {
-					if !mysqlsvc.MySQLDataColumnGenerated(col) {
+					if !contract.DataColumnGenerated(col) {
 						choices = append(choices, col.Name)
 					}
 				}
@@ -536,11 +537,11 @@ func (s *State) dataImportReview(c *ui.Context, t *Document) {
 // Infer from every parsed value rather than just the preview. The suggestion is
 // editable, never a conversion: values remain exact and unsupported numeric
 // precision falls back to text instead of approximate floating point.
-func mysqlDataInferImportColumns(input *mysqlDataImportInput) []mysqlsvc.MySQLDataImportColumn {
+func mysqlDataInferImportColumns(input *mysqlDataImportInput) []contract.DataImportColumn {
 	if input == nil {
 		return nil
 	}
-	columns := make([]mysqlsvc.MySQLDataImportColumn, len(input.Fields))
+	columns := make([]contract.DataImportColumn, len(input.Fields))
 	for i, name := range input.Fields {
 		var texts []string
 		binary, textual, maxBytes, maxChars := false, false, 0, 0
@@ -596,12 +597,12 @@ func mysqlDataInferImportColumns(input *mysqlDataImportInput) []mysqlsvc.MySQLDa
 				kind = "DATETIME(6)"
 			}
 		}
-		columns[i] = mysqlsvc.MySQLDataImportColumn{Name: name, Type: kind, Nullable: true}
+		columns[i] = contract.DataImportColumn{Name: name, Type: kind, Nullable: true}
 	}
 	return columns
 }
 
-func mysqlDataImportCreationHistory(database, table string, columns []mysqlsvc.MySQLDataImportColumn) mysqlDataHistoryEntry {
+func mysqlDataImportCreationHistory(database, table string, columns []contract.DataImportColumn) mysqlDataHistoryEntry {
 	var fields, primary []string
 	for _, col := range columns {
 		field := mysqlDataHistoryIdentifier(col.Name) + " " + strings.ToUpper(strings.TrimSpace(col.Type))

@@ -1,13 +1,13 @@
 package objectworkspace
 
-import mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+import "github.com/nyakang/nyadb/internal/db/contract"
 
 // programDocument holds an immutable qualified identity and its current metadata.
 // Creation, update, presentation and disposal belong to the UI thread.
 type programDocument struct {
 	profileID            int64
 	database, name, kind string
-	data                 mysqlsvc.MySQLDBObject
+	data                 contract.DBObject
 	closed               bool
 }
 
@@ -17,7 +17,7 @@ func Supports(kind string) bool {
 }
 
 // New copies metadata without activating a profile or opening a host tab.
-func newProgram(profileID int64, database string, data mysqlsvc.MySQLDBObject) *programDocument {
+func newProgram(profileID int64, database string, data contract.DBObject) *programDocument {
 	if profileID <= 0 || database == "" || data.Name == "" || !Supports(data.Kind) {
 		return nil
 	}
@@ -30,11 +30,11 @@ func (d *programDocument) Name() string     { return d.name }
 func (d *programDocument) Kind() string     { return d.kind }
 
 // Data returns a copy for read-only host presentation.
-func (d *programDocument) Data() mysqlsvc.MySQLDBObject { return copyMetadata(d.data) }
+func (d *programDocument) Data() contract.DBObject { return copyMetadata(d.data) }
 
 // Update replaces a snapshot only for this document's original object identity.
 // Reopening an existing tab supplies fresh cached metadata through this method.
-func (d *programDocument) Update(data mysqlsvc.MySQLDBObject) bool {
+func (d *programDocument) Update(data contract.DBObject) bool {
 	if d == nil || d.closed || data.Name != d.name || data.Kind != d.kind {
 		return false
 	}
@@ -49,10 +49,10 @@ func (d *programDocument) Close() {
 		return
 	}
 	d.closed = true
-	d.data = mysqlsvc.MySQLDBObject{}
+	d.data = contract.DBObject{}
 }
 
-func copyMetadata(data mysqlsvc.MySQLDBObject) mysqlsvc.MySQLDBObject {
+func copyMetadata(data contract.DBObject) contract.DBObject {
 	copyNumber := func(n *int64) *int64 {
 		if n == nil {
 			return nil

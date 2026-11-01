@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
 
@@ -20,7 +19,6 @@ func NewWithProfiles(service *connections.Service) *State {
 	s.navigation.Key = "我的连接"
 	s.navigation.Row = -1
 	s.status = "就绪 · 连接档案已加载（尚未连接数据库）"
-	s.sessions.Manager = mysqlsvc.NewMySQLSessionManager()
 	s.loadProfiles()
 	return s
 }

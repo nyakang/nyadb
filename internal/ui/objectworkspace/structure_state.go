@@ -10,7 +10,7 @@ import (
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
-type Loader func(context.Context, int64, string, string) (*mysqlsvc.MySQLTableStructure, error)
+type Loader func(context.Context, int64, string, string) (*contract.TableStructure, error)
 
 // Session is a UI-thread snapshot. A parked profile's results remain buffered
 // until the host activates it; its generation must still match on consumption.
@@ -21,8 +21,9 @@ type Session struct {
 }
 
 type Dependencies struct {
-	LoadObjectGroups func(int64, string) map[string]string
-	SaveObjectGroups func(int64, string, map[string]string)
+	AdministrationFor func(int64) mysqlsvc.Administration
+	LoadObjectGroups  func(int64, string) map[string]string
+	SaveObjectGroups  func(int64, string, map[string]string)
 
 	Capabilities  func(int64) contract.Capabilities
 	BatchExecutor func(context.Context, int64, uint64, []mysqlsvc.ObjectBatchItem) []mysqlsvc.ObjectBatchResult
@@ -67,11 +68,12 @@ type Dependencies struct {
 // Document owns its immutable object identity and mutable presentation state.
 // Only the UI thread changes it; workers publish to private buffered channels.
 type Document struct {
+	object                        contract.ObjectRef
 	id                            uint64
 	profileID                     int64
 	database, table               string
 	objectKind                    string
-	data                          *mysqlsvc.MySQLTableStructure
+	data                          *contract.TableStructure
 	page, fieldRow                int
 	columns, indexes, foreignKeys ui.ListState
 	loading                       bool
@@ -89,12 +91,12 @@ func (d *Document) Database() string { return d.database }
 func (d *Document) Table() string    { return d.table }
 
 // Data returns metadata for read-only host presentation.
-func (d *Document) Data() *mysqlsvc.MySQLTableStructure { return d.data }
-func (d *Document) Loading() bool                       { return d.loading }
-func (d *Document) Error() string                       { return d.err }
-func (d *Document) SelectedField() (mysqlsvc.MySQLStructureColumn, bool) {
+func (d *Document) Data() *contract.TableStructure { return d.data }
+func (d *Document) Loading() bool                  { return d.loading }
+func (d *Document) Error() string                  { return d.err }
+func (d *Document) SelectedField() (contract.StructureColumn, bool) {
 	if d.data == nil || d.fieldRow < 0 || d.fieldRow >= len(d.data.Columns) {
-		return mysqlsvc.MySQLStructureColumn{}, false
+		return contract.StructureColumn{}, false
 	}
 	return d.data.Columns[d.fieldRow], true
 }
@@ -103,7 +105,7 @@ type loadResult struct {
 	generation uint64
 	profileID  int64
 	request    uint64
-	data       *mysqlsvc.MySQLTableStructure
+	data       *contract.TableStructure
 	err        error
 }
 
@@ -301,7 +303,7 @@ func (s *State) Consume(services ui.Services) {
 	}
 }
 
-func (s *State) OpenProgram(id uint64, profileID int64, database string, data mysqlsvc.MySQLDBObject) *Document {
+func (s *State) OpenProgram(id uint64, profileID int64, database string, data contract.DBObject) *Document {
 	p := newProgram(profileID, database, data)
 	if p == nil {
 		return nil
@@ -320,13 +322,13 @@ func (d *Document) Kind() string {
 	}
 	return "structure"
 }
-func (d *Document) ProgramData() mysqlsvc.MySQLDBObject {
+func (d *Document) ProgramData() contract.DBObject {
 	if d.program == nil {
-		return mysqlsvc.MySQLDBObject{}
+		return contract.DBObject{}
 	}
 	return d.program.Data()
 }
-func (d *Document) Update(data mysqlsvc.MySQLDBObject) bool {
+func (d *Document) Update(data contract.DBObject) bool {
 	return !d.closed && d.program != nil && d.program.Update(data)
 }
 
@@ -335,4 +337,17 @@ func (d *Document) ObjectKind() string {
 		return d.program.Kind()
 	}
 	return d.objectKind
+}
+
+func (d *Document) Object() contract.ObjectRef { return d.object }
+func (s *State) OpenQualifiedStructure(id uint64, o contract.ObjectRef, kind string) *Document {
+	namespace := o.Schema
+	if namespace == "" {
+		namespace = o.Catalog
+	}
+	d := s.OpenStructure(id, o.ProfileID, namespace, o.Name, kind)
+	if d != nil {
+		d.object = o
+	}
+	return d
 }

@@ -4,20 +4,19 @@ package sqlworkspace
 
 import (
 	"context"
+	"github.com/nyakang/nyadb/internal/db/contract"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
-
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
-type Executor func(context.Context, int64, string, string) (mysqlsvc.MySQLSQLResult, error)
+type Executor func(context.Context, int64, string, string) (contract.SQLResult, error)
 
 // Lease is one document's physical SQL session. Replace revokes the old lease
 // without executing SQL. Release is idempotent and affects only this lease.
 type Lease interface {
 	Preconnect(context.Context) error
-	Execute(context.Context, string, string) (mysqlsvc.MySQLSQLResult, error)
+	Execute(context.Context, string, string) (contract.SQLResult, error)
 	Replace() (Lease, error)
 	Release()
 }
@@ -25,45 +24,6 @@ type Runtime interface {
 	IsConnected(int64) bool
 	Reserve(int64, uint64) (Lease, error)
 }
-
-// MySQLRuntime adapts the existing service without exposing its tokens to shell.
-func MySQLRuntime(manager *mysqlsvc.MySQLSessionManager) Runtime {
-	if manager == nil {
-		return nil
-	}
-	return mySQLRuntime{manager: manager}
-}
-
-type mySQLRuntime struct{ manager *mysqlsvc.MySQLSessionManager }
-
-func (r mySQLRuntime) IsConnected(id int64) bool { return r.manager.IsConnected(id) }
-func (r mySQLRuntime) Reserve(id int64, tabID uint64) (Lease, error) {
-	token, err := r.manager.ReserveSQLTabToken(id, tabID)
-	if err != nil {
-		return nil, err
-	}
-	return &mySQLLease{manager: r.manager, token: token}, nil
-}
-
-type mySQLLease struct {
-	manager *mysqlsvc.MySQLSessionManager
-	token   mysqlsvc.MySQLSQLTabToken
-}
-
-func (l *mySQLLease) Preconnect(ctx context.Context) error {
-	return l.manager.PreconnectSQLTabToken(ctx, l.token)
-}
-func (l *mySQLLease) Execute(ctx context.Context, database, statement string) (mysqlsvc.MySQLSQLResult, error) {
-	return l.manager.ExecuteSQLTabToken(ctx, l.token, database, statement)
-}
-func (l *mySQLLease) Replace() (Lease, error) {
-	token, err := l.manager.ReplaceSQLTabToken(l.token)
-	if err != nil {
-		return nil, err
-	}
-	return &mySQLLease{manager: l.manager, token: token}, nil
-}
-func (l *mySQLLease) Release() { l.manager.ReleaseSQLTabToken(l.token) }
 
 type Dependencies struct {
 	Completions      func(int64, string) []string
@@ -97,7 +57,7 @@ type Document struct {
 	recoverySchema           string
 	loading, cancelRequested bool
 	err                      string
-	result                   *mysqlsvc.MySQLSQLResult
+	result                   *contract.SQLResult
 	grid                     ui.ListState
 	cancel                   context.CancelFunc
 	results                  <-chan executionResult
@@ -107,15 +67,15 @@ type Document struct {
 	preview, closed          bool
 }
 
-func (d *Document) ProfileID() int64                 { return d.profileID }
-func (d *Document) Database() string                 { return d.database }
-func (d *Document) Loading() bool                    { return d.loading }
-func (d *Document) CancelRequested() bool            { return d.cancelRequested }
-func (d *Document) Error() string                    { return d.err }
-func (d *Document) Result() *mysqlsvc.MySQLSQLResult { return d.result }
-func (d *Document) NeedsRecovery() bool              { return d.recoveryNeeded }
-func (d *Document) RecoveryProfile() int64           { return d.recoveryProfile }
-func (d *Document) RecoverySchema() string           { return d.recoverySchema }
+func (d *Document) ProfileID() int64            { return d.profileID }
+func (d *Document) Database() string            { return d.database }
+func (d *Document) Loading() bool               { return d.loading }
+func (d *Document) CancelRequested() bool       { return d.cancelRequested }
+func (d *Document) Error() string               { return d.err }
+func (d *Document) Result() *contract.SQLResult { return d.result }
+func (d *Document) NeedsRecovery() bool         { return d.recoveryNeeded }
+func (d *Document) RecoveryProfile() int64      { return d.recoveryProfile }
+func (d *Document) RecoverySchema() string      { return d.recoverySchema }
 
 // State owns all SQL documents and their shared split position. Executor and
 // Invalidate are injectable; background jobs capture them before starting.

@@ -2,6 +2,7 @@ package shell
 
 import (
 	"context"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/datasources"
 	"slices"
 
@@ -85,8 +86,6 @@ func (s *State) workspace(c *ui.Context) {
 			s.dataPreview(c)
 		case tabStructure:
 			s.objectWorkspace.View(c, tab.object)
-		case tabEngineData:
-			s.engineData.View(c, tab.engine)
 		case tabMySQLData:
 			s.dataWorkspace.View(c, tab.data)
 		case tabProgram:
@@ -109,10 +108,8 @@ func (s *State) sqlWorkspaceDependencies() sqlworkspace.Dependencies {
 				out = append(out, o.Name)
 			}
 			for _, t := range s.tabs {
-				if t.engine != nil && t.engine.Object.ProfileID == id && t.engine.Object.Schema == db && t.engine.Page != nil {
-					for _, col := range t.engine.Page.Table.Columns {
-						out = append(out, col.Name)
-					}
+				if t.data != nil && t.data.ProfileID() == id && t.data.Database() == db && t.data.Page() != nil {
+					out = append(out, t.data.Page().Columns...)
 				}
 				if t.object != nil && t.object.ProfileID() == id && t.object.Database() == db && t.object.Data() != nil {
 					for _, c := range t.object.Data().Columns {
@@ -138,22 +135,13 @@ func (s *State) dataInspectorDependencies() dataworkspace.InspectorDependencies 
 			return dataworkspace.Session{ProfileID: w.ProfileID, Generation: w.Generation, Connected: w.Status == "已连接"}
 		},
 		InfoLoader: func() dataworkspace.InfoLoader {
-			if s.sessions.Manager == nil {
-				return nil
-			}
-			return s.sessions.Manager.TableInfo
+			return s.runtime.Data(s.sessions.Current().ProfileID).TableInfo
 		},
 		CountLoader: func() dataworkspace.CountLoader {
-			if s.sessions.Manager == nil {
-				return nil
-			}
-			return s.sessions.Manager.CountTableRows
+			return s.runtime.Data(s.sessions.Current().ProfileID).Count
 		},
 		ChunkLoader: func() dataworkspace.ChunkLoader {
-			if s.sessions.Manager == nil {
-				return nil
-			}
-			return s.sessions.Manager.ReadMySQLFieldChunk
+			return s.runtime.Data(s.sessions.Current().ProfileID).Chunk
 		},
 		Profile: func(id int64) (connections.Profile, bool) {
 			for _, p := range s.navigation.Profiles() {
@@ -182,8 +170,13 @@ func (s *State) dataWorkspaceDependencies() dataworkspace.Dependencies {
 			w := s.sessions.Current()
 			return dataworkspace.Session{ProfileID: w.ProfileID, Generation: w.Generation, Connected: w.Status == "已连接"}
 		},
-		Runtime:   func() dataworkspace.Runtime { return dataworkspace.MySQLRuntime(s.sessions.Manager) },
-		Inspector: s.dataInspectorDependencies(), Status: func(message string) { s.status = message },
+		SessionFor: func(id int64) dataworkspace.Session {
+			w := s.sessions.Workspace(id)
+			return dataworkspace.Session{ProfileID: id, Generation: w.Generation, Connected: w.Status == "已连接"}
+		},
+		RuntimeFor: func(id int64) dataworkspace.Runtime { return s.runtime.Data(id) },
+		Runtime:    func() dataworkspace.Runtime { return s.runtime.Data(s.sessions.Current().ProfileID) },
+		Inspector:  s.dataInspectorDependencies(), Status: func(message string) { s.status = message },
 		TableImported: func(services ui.Services, event dataworkspace.TableImportEvent) {
 			if !s.sessions.InvalidateDatabaseObjects(event.ProfileID, event.Generation, event.Database) {
 				return
@@ -213,7 +206,6 @@ func (s *State) dataWorkspaceDependencies() dataworkspace.Dependencies {
 func (s *State) SetDataLayoutPreferences(read func(string) (string, error), write func(string, string) error) {
 	s.dataWorkspace.SetDataLayoutPreferences(read, write)
 	s.objectWorkspace.SetObjectGroupPreferences(read, write)
-	s.engineData.SetLayoutPreferences(read, write)
 }
 
 // All document leave checks pass through this gate. Continuations retain the
@@ -223,7 +215,7 @@ func (s *State) guardTabsLeave(matches func(*tab) bool, next func(ui.Services)) 
 		return false
 	}
 	for _, t := range s.tabs {
-		if matches(t) && (s.engineData.GuardLeave(t.engine, next) || s.objectWorkspace.GuardDesignLeave(t.object, next) || s.dataWorkspace.GuardTransactionLeave(t.data, next) || s.dataWorkspace.GuardLeave(t.data, next)) {
+		if matches(t) && (s.objectWorkspace.GuardDesignLeave(t.object, next) || s.dataWorkspace.GuardTransactionLeave(t.data, next) || s.dataWorkspace.GuardLeave(t.data, next)) {
 			return true
 		}
 	}
@@ -249,9 +241,6 @@ func (s *State) RequestWorkbenchClose(next func()) bool {
 }
 
 func (s *State) openMySQLStructure(services ui.Services, database, table string) {
-	if s.openEngineStructure(services, database, table) {
-		return
-	}
 	profileID := s.sessions.Current().ProfileID
 	if s.sessions.Current().Status != "已连接" || profileID <= 0 || !validStructureSelection(database, table) {
 		return
@@ -263,7 +252,7 @@ func (s *State) openMySQLStructure(services ui.Services, database, table string)
 	}
 	s.nextTabID++
 	t := &tab{id: s.nextTabID, kind: tabStructure, title: database + "." + table,
-		object: s.objectWorkspace.OpenStructure(s.nextTabID, profileID, database, table, kind)}
+		object: s.objectWorkspace.OpenQualifiedStructure(s.nextTabID, s.runtime.Namespace(profileID, database).Object(neutralObjectKind(kind), table), kind)}
 	s.tabs = append(s.tabs, t)
 	s.activeTab = len(s.tabs) - 1
 	s.objectWorkspace.Load(t.object, services.Invalidate, false)
@@ -274,67 +263,76 @@ func validStructureSelection(database, table string) bool { return database != "
 // intentionally preserved so unrelated workspace documents are not lost.
 func (s *State) clearMySQLTabsFor(profileID int64) {
 	s.removeTabs(func(t *tab) bool {
-		return (t.engine != nil || t.data != nil || t.object != nil) && (profileID == 0 || t.profileID() == profileID)
+		return (t.data != nil || t.object != nil) && (profileID == 0 || t.profileID() == profileID)
 	})
 }
 func (s *State) pruneMySQLTabsFor(id int64, known map[string]bool) {
 	s.removeTabs(func(t *tab) bool {
-		return (t.engine != nil || t.data != nil || t.object != nil) && t.profileID() == id && !known[t.database()]
+		return (t.data != nil || t.object != nil) && t.profileID() == id && !known[t.database()]
 	})
 }
 
 func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 	return objectworkspace.Dependencies{
-		Capabilities: s.objectCapabilitiesFor,
-		DataAction:   s.openTableDataAction,
-		Backup:       s.objectWorkspaceBackup,
+		Capabilities:      s.objectCapabilitiesFor,
+		AdministrationFor: func(id int64) mysqlsvc.Administration { return s.runtime.Administration(id) },
+		DataAction:        s.openTableDataAction,
+		Backup:            s.objectWorkspaceBackup,
 		AccountLoader: func(ctx context.Context, id int64) ([]mysqlsvc.MySQLAccount, error) {
-			if s.sessions.Manager == nil {
+			admin := s.runtime.Administration(id)
+			if admin == nil {
 				return nil, mysqlsvc.ErrMySQLNotConnected
 			}
-			return s.sessions.Manager.Accounts(ctx, id)
+			return admin.Accounts(ctx, id)
 		},
 		AccountGrants: func(ctx context.Context, id int64, a mysqlsvc.MySQLAccount) ([]string, error) {
-			if s.sessions.Manager == nil {
+			admin := s.runtime.Administration(id)
+			if admin == nil {
 				return nil, mysqlsvc.ErrMySQLNotConnected
 			}
-			return s.sessions.Manager.AccountGrants(ctx, id, a)
+			return admin.AccountGrants(ctx, id, a)
 		},
 		AccountExecutor: func(ctx context.Context, id int64, generation uint64, c []mysqlsvc.AccountChange) mysqlsvc.DDLOutcome {
-			if s.sessions.Manager == nil {
+			admin := s.runtime.Administration(id)
+			if admin == nil {
 				return mysqlsvc.DDLOutcome{Error: mysqlsvc.ErrMySQLNotConnected}
 			}
-			return s.sessions.Manager.ChangeAccounts(ctx, id, generation, c)
+			return admin.ChangeAccounts(ctx, id, generation, c)
 		},
 		Maintenance: func(ctx context.Context, id int64, db, table, action string) ([]mysqlsvc.MaintenanceMessage, error) {
-			if s.sessions.Manager == nil {
+			admin := s.runtime.Administration(id)
+			if admin == nil {
 				return nil, mysqlsvc.ErrMySQLNotConnected
 			}
-			return s.sessions.Manager.MaintainTable(ctx, id, db, table, action)
+			return admin.MaintainTable(ctx, id, db, table, action)
 		},
 		BatchExecutor: func(ctx context.Context, id int64, generation uint64, items []mysqlsvc.ObjectBatchItem) []mysqlsvc.ObjectBatchResult {
-			if s.sessions.Manager == nil {
+			admin := s.runtime.Administration(id)
+			if admin == nil {
 				return nil
 			}
-			return s.sessions.Manager.ApplyObjectBatch(ctx, id, generation, items)
+			return admin.ApplyObjectBatch(ctx, id, generation, items)
 		},
 		ObjectLoader: func(ctx context.Context, id int64, ref mysqlsvc.ObjectIdentity) (mysqlsvc.ObjectDefinition, error) {
-			if s.sessions.Manager == nil {
+			admin := s.runtime.Administration(id)
+			if admin == nil {
 				return mysqlsvc.ObjectDefinition{}, mysqlsvc.ErrMySQLNotConnected
 			}
-			return s.sessions.Manager.ObjectDefinition(ctx, id, ref)
+			return admin.ObjectDefinition(ctx, id, ref)
 		},
 		ObjectExecutor: func(ctx context.Context, id int64, p mysqlsvc.ObjectPlan) mysqlsvc.ObjectOutcome {
-			if s.sessions.Manager == nil {
+			admin := s.runtime.Administration(id)
+			if admin == nil {
 				return mysqlsvc.ObjectOutcome{DDLOutcome: mysqlsvc.DDLOutcome{Error: mysqlsvc.ErrMySQLNotConnected}}
 			}
-			return s.sessions.Manager.ApplyObject(ctx, id, p)
+			return admin.ApplyObject(ctx, id, p)
 		},
 		RuntimeGeneration: func(id int64) uint64 {
-			if s.sessions.Manager == nil {
+			admin := s.runtime.Administration(id)
+			if admin == nil {
 				return 0
 			}
-			return s.sessions.Manager.SessionGeneration(id)
+			return admin.SessionGeneration(id)
 		},
 		ObjectChanged: s.mysqlObjectChanged,
 		ActivateDesign: func(d *objectworkspace.Document) {
@@ -347,22 +345,25 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 			}
 		},
 		DesignLoader: func() objectworkspace.DesignLoader {
-			if s.sessions.Manager == nil {
+			admin := s.runtime.Administration(s.sessions.Current().ProfileID)
+			if admin == nil {
 				return nil
 			}
-			return s.sessions.Manager.TableDesign
+			return admin.TableDesign
 		},
 		DesignExecutor: func() objectworkspace.DesignExecutor {
-			if s.sessions.Manager == nil {
+			admin := s.runtime.Administration(s.sessions.Current().ProfileID)
+			if admin == nil {
 				return nil
 			}
-			return s.sessions.Manager.ApplyTableDesign
+			return admin.ApplyTableDesign
 		},
 		DesignGeneration: func(id int64) uint64 {
-			if s.sessions.Manager == nil {
+			admin := s.runtime.Administration(id)
+			if admin == nil {
 				return 0
 			}
-			return s.sessions.Manager.SessionGeneration(id)
+			return admin.SessionGeneration(id)
 		},
 		BeforeDDL: func(services ui.Services, id int64, db, table string, next func(ui.Services)) bool {
 			var finish func(ui.Services)
@@ -399,17 +400,13 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 			}
 			return objectworkspace.Session{ProfileID: w.ProfileID, Generation: w.Generation, Connected: w.Status == "已连接"}
 		},
-		Loader: func() objectworkspace.Loader {
-			if s.sessions.Manager == nil {
-				return nil
-			}
-			return s.sessions.Manager.TableStructure
-		},
+		Loader: func() objectworkspace.Loader { return s.runtime.Data(s.sessions.Current().ProfileID).TableMetadata },
 		Runner: func() objectworkspace.TableRunner {
-			if s.sessions.Manager == nil {
+			admin := s.runtime.Administration(s.sessions.Current().ProfileID)
+			if admin == nil {
 				return nil
 			}
-			return s.sessions.Manager.ChangeTable
+			return admin.ChangeTable
 		},
 		Browser: func() objectworkspace.BrowserSnapshot {
 			w := s.sessions.Current()
@@ -447,15 +444,11 @@ func (s *State) disposeTab(t *tab) {
 	if t == nil {
 		return
 	}
-	s.engineData.Close(t.engine)
 	s.dataWorkspace.Close(t.data)
 	s.objectWorkspace.Close(t.object)
 	s.sqlWorkspace.Close(t.query)
 }
 func (t *tab) profileID() int64 {
-	if t.engine != nil {
-		return t.engine.Object.ProfileID
-	}
 	if t.data != nil {
 		return t.data.ProfileID()
 	}
@@ -468,9 +461,6 @@ func (t *tab) profileID() int64 {
 	return 0
 }
 func (t *tab) database() string {
-	if t.engine != nil {
-		return t.engine.Object.Schema
-	}
 	if t.data != nil {
 		return t.data.Database()
 	}
@@ -564,15 +554,23 @@ func (s *State) removeTabs(remove func(*tab) bool, after ...func()) {
 // documentIdentity includes both presentation purpose and qualified object type.
 // SQL documents are intentionally never reused: each has its own text and lease.
 type documentIdentity struct {
+	catalog, schema            string
 	profileID                  int64
 	database, objectKind, name string
 	view                       tabKind
 }
 
 func (t *tab) identity() documentIdentity {
-	key := documentIdentity{profileID: t.profileID(), database: t.database(), view: t.kind}
-	if t.engine != nil {
-		key.name, key.objectKind = t.engine.Object.Name, t.engine.Object.Kind
+	key := documentIdentity{profileID: t.profileID(), database: t.database(), catalog: t.database(), view: t.kind}
+	var ref contract.ObjectRef
+	if t.data != nil {
+		ref = t.data.Object()
+	}
+	if t.object != nil {
+		ref = t.object.Object()
+	}
+	if ref.ProfileID != 0 {
+		key.catalog, key.schema = ref.Catalog, ref.Schema
 	}
 	if t.data != nil {
 		key.name, key.objectKind = t.data.Table(), t.data.Kind()
@@ -583,7 +581,11 @@ func (t *tab) identity() documentIdentity {
 	return key
 }
 func (s *State) findDocument(view tabKind, profileID int64, database, objectKind, name string) *tab {
-	key := documentIdentity{profileID: profileID, database: database, objectKind: objectKind, name: name, view: view}
+	namespace := s.runtime.Namespace(profileID, database)
+	if namespace.Catalog == "" && namespace.Schema == "" {
+		namespace.Catalog = database
+	}
+	key := documentIdentity{profileID: profileID, database: database, catalog: namespace.Catalog, schema: namespace.Schema, objectKind: objectKind, name: name, view: view}
 	for i, t := range s.tabs {
 		if t.identity() == key {
 			s.activeTab = i
@@ -612,4 +614,14 @@ func (s *State) activateObjectProfile(id int64) bool {
 
 func (s *State) SetDataSources(open func(context.Context, datasources.Config) (datasources.Source, error), capabilities func(context.Context, datasources.Config) []datasources.Capability) {
 	s.dataWorkspace.SetDataSources(open, capabilities)
+}
+
+func neutralObjectKind(kind string) string {
+	if kind == "表" {
+		return "table"
+	}
+	if kind == "视图" {
+		return "view"
+	}
+	return kind
 }

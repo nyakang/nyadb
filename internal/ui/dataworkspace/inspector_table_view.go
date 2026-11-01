@@ -80,7 +80,7 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 					s.CancelCount(t)
 					d.countErr = locales.Text("行数统计已取消")
 				}
-			} else if ui.Button(c, locales.Text("获取行数")).Label(locales.Text("获取整表行数")).
+			} else if s.countAvailable() && ui.Button(c, locales.Text("获取行数")).Label(locales.Text("获取整表行数")).
 				Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(!connected).Clicked() {
 				s.LoadCount(t, c.Services().Invalidate)
 			}
@@ -98,7 +98,8 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 				if s.deps.Profile != nil {
 					if p, ok := s.deps.Profile(t.profileID); ok {
 						tableProperty(c, "连接", p.Name)
-						if active, err := connections.ResolveActiveSettings(p); err == nil {
+						descriptor, _ := connections.Describe(p.Kind)
+						if active, err := connections.ResolveActiveSettings(p); err == nil && descriptor.FormKind != "file" {
 							tableProperty(c, "主机", net.JoinHostPort(active.Host, strconv.Itoa(int(active.Port))))
 						}
 					}
@@ -132,7 +133,9 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 				if d.countErr != "" {
 					ui.Text(c, locales.Text("行数统计：")+d.countErr).FontSize(theme.Font(c, 11)).TextColor(palette.Error)
 				}
-				ui.Text(c, locales.Text("行数统计不应用当前筛选条件")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+				if s.countAvailable() {
+					ui.Text(c, locales.Text("行数统计不应用当前筛选条件")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+				}
 				if d.info == nil {
 					return
 				}
@@ -189,4 +192,11 @@ func tableBytes(value *int64) string {
 		i++
 	}
 	return fmt.Sprintf("%.2f %s (%d B)", amount, units[i], *value)
+}
+
+func (s *inspectorState) countAvailable() bool {
+	if s.CountLoader != nil {
+		return true
+	}
+	return s.deps.CountLoader != nil && s.deps.CountLoader() != nil
 }

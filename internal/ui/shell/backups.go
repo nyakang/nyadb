@@ -7,10 +7,11 @@ import (
 
 func (s *State) SetBackupFiles(files objectworkspace.BackupFiles) {
 	s.objectWorkspace.SetBackupServices(func() objectworkspace.BackupRuntime {
-		if s.sessions.Manager == nil {
+		admin := s.runtime.Administration(s.sessions.Current().ProfileID)
+		if admin == nil {
 			return nil
 		}
-		return s.sessions.Manager
+		return admin
 	}, files)
 }
 func (s *State) objectWorkspaceBackup(services ui.Services, id int64, db, name, operation string) {

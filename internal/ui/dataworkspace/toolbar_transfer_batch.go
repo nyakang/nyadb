@@ -3,16 +3,16 @@ package dataworkspace
 import (
 	"context"
 	"errors"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"slices"
 
 	"github.com/egoist/mygo/ui"
-	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/locales"
 )
 
 type mysqlDataPreparedSource struct {
 	spool            *mysqlDataImportSpool
-	request          mysqlsvc.MySQLDataImportRequest
+	request          contract.DataImportRequest
 	database, table  string
 	ignore, extended bool
 	maxBytes         int
@@ -21,7 +21,7 @@ type mysqlDataBatchReceipt struct {
 	Database, Table string
 	From, To        int64
 	NewTable        bool
-	Result          *mysqlsvc.MySQLDataImportStreamResult
+	Result          *contract.DataImportStreamResult
 }
 
 func (s *State) preparedImportSources(t *Document) ([]mysqlDataPreparedSource, error) {
@@ -59,7 +59,7 @@ func (s *State) executePreparedSources(services ui.Services, t *Document, import
 	tr.Submitted = true
 	tr.Step = 5
 	profile, owner := t.profileID, tr.Assets
-	progress := make(chan mysqlsvc.MySQLDataImportProgress, 1)
+	progress := make(chan contract.DataImportProgress, 1)
 	tr.Progress = progress
 	total := int64(0)
 	for _, plan := range plans {
@@ -67,7 +67,7 @@ func (s *State) executePreparedSources(services ui.Services, t *Document, import
 	}
 	go func() {
 		journal, err := newMySQLDataImportJournal(owner, total)
-		aggregate := &mysqlsvc.MySQLDataImportStreamResult{}
+		aggregate := &contract.DataImportStreamResult{}
 		receipts := []mysqlDataBatchReceipt{}
 		offset := int64(0)
 		if err == nil {
@@ -77,14 +77,14 @@ func (s *State) executePreparedSources(services ui.Services, t *Document, import
 				}
 				base := aggregate.Progress
 				sourceOffset := offset
-				observed := mysqlsvc.MySQLDataImportProgress{}
-				stream := mysqlsvc.MySQLDataImportStreamRequest{Request: plan.request, Rows: plan.spool.rows, IgnoreForeignKeys: plan.ignore, ExtendedInsert: plan.extended, StatementMaxBytes: plan.maxBytes, Open: func(ctx context.Context) (mysqlsvc.MySQLDataImportRowSource, error) {
+				observed := contract.DataImportProgress{}
+				stream := contract.DataImportStreamRequest{Request: plan.request, Rows: plan.spool.rows, IgnoreForeignKeys: plan.ignore, ExtendedInsert: plan.extended, StatementMaxBytes: plan.maxBytes, Open: func(ctx context.Context) (contract.DataImportRowSource, error) {
 					rows, err := plan.spool.open(ctx)
 					if err != nil {
 						return nil, err
 					}
 					return &mysqlDataEditSpoolReader{rows: rows}, nil
-				}, Record: func(row mysqlsvc.MySQLDataImportRowResult) error {
+				}, Record: func(row contract.DataImportRowResult) error {
 					if int64(row.Row) != observed.Processed+1 || observed.Processed >= plan.spool.rows {
 						return errors.New("import result journal has a duplicate or out-of-order row")
 					}
@@ -105,7 +105,7 @@ func (s *State) executePreparedSources(services ui.Services, t *Document, import
 						return errors.New("import result journal has an invalid row status")
 					}
 					return nil
-				}, Progress: func(p mysqlsvc.MySQLDataImportProgress) {
+				}, Progress: func(p contract.DataImportProgress) {
 					p.Processed += base.Processed
 					p.Prepared += base.Prepared
 					p.Skipped += base.Skipped
@@ -117,7 +117,7 @@ func (s *State) executePreparedSources(services ui.Services, t *Document, import
 				}}
 				result, e := importer(ctx, profile, plan.database, plan.table, stream)
 				if result == nil {
-					result = &mysqlsvc.MySQLDataImportStreamResult{CommitUncertain: observed.Prepared > 0, Progress: observed}
+					result = &contract.DataImportStreamResult{CommitUncertain: observed.Prepared > 0, Progress: observed}
 				}
 				if result.Committed && (e != nil || observed.Processed != plan.spool.rows || observed != result.Progress) {
 					result.Committed, result.CommitUncertain = false, true

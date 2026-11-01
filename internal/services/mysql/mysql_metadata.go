@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
 	"time"
 
@@ -15,27 +16,7 @@ var ErrMySQLMetadataLimit = errors.New("MySQL metadata result exceeds the allowe
 
 // MySQLDBObject describes only server metadata: it never contains table data
 // or user-authored SQL. Kind can be 表, 视图, 函数, 存储过程 or 事件.
-type MySQLDBObject struct {
-	Name          string
-	Kind          string
-	Engine        string
-	Comment       string
-	AutoIncrement *int64 // nil if the server has no next AUTO_INCREMENT value
-	ModifiedAt    string // server UPDATE_TIME; empty if unknown
-	DataLength    *int64 // server DATA_LENGTH in bytes; nil if unavailable
-	RowsEstimate  *int64 // TABLE_ROWS is an estimate for engines such as InnoDB
-	Definer       string
-	Parameters    string
-	ReturnType    string
-	SQLSecurity   string
-	CreatedAt     string
-	Status        string
-	Schedule      string
-	Starts        string
-	Ends          string
-	OnCompletion  string
-	Definition    string // only populated when server privileges permit
-}
+type MySQLDBObject = contract.DBObject
 
 const maxMySQLMetadataObjects = 10000
 

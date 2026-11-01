@@ -1065,5 +1065,8 @@
   "corePlanAction24": "Trust this host",
   "corePlanAction25": "Confirm the SHA-256 fingerprint on first connection. Changed fingerprints will be rejected.",
   "corePlanAction26": "Database tunnel disconnected. Explicit reconnection is required; SQL and transactions will not be replayed.",
-  "httpClearLegacyBase64": "Clear legacy base64 setting"
+  "httpClearLegacyBase64": "Clear legacy base64 setting",
+  "unifiedData0": "The original database session is unavailable; refresh the table data",
+  "unifiedData1": "Database session unavailable",
+  "unifiedData2": "Loading database data…"
 }

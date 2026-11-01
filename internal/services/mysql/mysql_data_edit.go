@@ -62,6 +62,8 @@ func (m *MySQLSessionManager) ApplyMySQLDataEdits(ctx context.Context, id int64,
 		result.CommitUncertain = true
 		return result, fmt.Errorf("%w: %v", ErrMySQLDataCommitUncertain, e)
 	}
+	result.Applied = len(result.Outcomes)
+	result.CommitConfirmed = true
 	return result, nil
 }
 
@@ -261,6 +263,7 @@ func applyMySQLDataEditsWithColumns(qctx context.Context, tx *sql.Tx, database, 
 			}
 		}
 		result.Outcomes = append(result.Outcomes, outcome)
+		result.Applied++
 	}
 	return result, nil
 }

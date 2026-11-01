@@ -1,13 +1,13 @@
 package mysql
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"database/sql/driver"
 	"errors"
 	"fmt"
-	"strings"
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/mysqlspec"
 	"time"
 
 	mysqldriver "github.com/go-sql-driver/mysql"
@@ -20,30 +20,11 @@ const (
 
 // An import row always describes mapped input values, not a forged existing
 // row snapshot. Update identities are resolved and locked by the executor.
-type MySQLDataImportRequest struct {
-	Mode            string // append | update | upsert | insert_missing | delete | replace; empty means append
-	MatchColumns    []string
-	ContinueOnError bool
-	NewTable        bool
-	Columns         []MySQLDataImportColumn
-	Edits           []MySQLDataEdit
-}
+type MySQLDataImportRequest = contract.DataImportRequest
 
-type MySQLDataImportRowResult struct {
-	Database, Table string `json:",omitempty"`
-	Row             int
-	Kind            string // insert | update | delete | skip | error
-	Status          string // committed | skipped | failed | rolled_back | not_processed | uncertain
-	Error           string // safe diagnostic; never includes input values or server SQL
-	Outcome         *MySQLDataEditOutcome
-}
+type MySQLDataImportRowResult = contract.DataImportRowResult
 
-type MySQLDataImportResult struct {
-	Created, CreationUncertain bool
-	Committed, CommitUncertain bool
-	Rows                       []MySQLDataImportRowResult
-	Saved                      *MySQLDataEditResult
-}
+type MySQLDataImportResult = contract.DataImportResult
 
 func mysqlDataImportErrorSummary(err error) string {
 	var serverError *mysqldriver.MySQLError
@@ -67,164 +48,31 @@ func mysqlDataImportErrorSummary(err error) string {
 }
 
 func mysqlDataImportOwnedRequest(request MySQLDataImportRequest) (MySQLDataImportRequest, error) {
-	if request.Mode == "" {
-		request.Mode = "append"
-	}
-	if request.Mode != "append" && request.Mode != "update" && request.Mode != "upsert" && request.Mode != "insert_missing" && request.Mode != "delete" && request.Mode != "replace" || request.NewTable && request.Mode != "append" || !request.NewTable && len(request.Columns) != 0 {
-		return request, ErrMySQLDataPage
-	}
-	if len(request.Edits) == 0 || len(request.Edits) > MaxMySQLDataImportRows || len(request.MatchColumns) > 16 || (request.Mode == "append" || request.Mode == "replace") && len(request.MatchColumns) != 0 {
-		return request, ErrMySQLDataPage
-	}
-	request.Columns = append([]MySQLDataImportColumn(nil), request.Columns...)
-	request.MatchColumns = append([]string(nil), request.MatchColumns...)
-	owned := make([]MySQLDataEdit, len(request.Edits))
-	total := 0
-	for i, edit := range request.Edits {
-		if edit.Kind != "insert" || edit.Original != nil || len(edit.Values) == 0 || len(edit.Values) > 128 {
-			return request, ErrMySQLDataPage
-		}
-		owned[i] = MySQLDataEdit{Kind: "insert", Values: make(map[string]MySQLDataValue, len(edit.Values))}
-		for name, value := range edit.Values {
-			if _, err := quotedMySQLIdentifier(name); err != nil || value.Default {
-				return request, ErrMySQLDataPage
-			}
-			total += len(value.Text) + len(value.Bytes)
-			if total > MaxMySQLDataImportBytes {
-				return request, ErrMySQLDataEditLimit
-			}
-			value.Bytes = bytes.Clone(value.Bytes)
-			if value.Binary && value.Bytes == nil {
-				value.Bytes = []byte{}
-			}
-			owned[i].Values[name] = value
-		}
-	}
-	request.Edits = owned
-	return request, nil
+	return mysqlspec.OwnedImportRequest(request)
 }
 
-func mysqlDataImportNeedsKey(mode string) bool {
-	return mode == "update" || mode == "upsert" || mode == "insert_missing" || mode == "delete"
-}
+func mysqlDataImportNeedsKey(mode string) bool { return mysqlspec.ImportNeedsKey(mode) }
 
 // ValidateMySQLDataImportRequest is the shared, bounded review preflight. It
 // cannot establish that a chosen field set is a real unique index; that check
 // is repeated under the target's transaction metadata lock by the executor.
 func ValidateMySQLDataImportRequest(metadata []MySQLStructureColumn, request MySQLDataImportRequest) error {
-	request, err := mysqlDataImportOwnedRequest(request)
-	if err != nil {
-		return err
-	}
-	if request.NewTable {
-		metadata, err = MySQLDataImportColumnMetadata(request.Columns)
-		if err != nil {
-			return err
-		}
-	}
-	if len(metadata) == 0 || len(metadata) > 128 {
-		return ErrMySQLDataPage
-	}
-	allowed := make(map[string]MySQLStructureColumn, len(metadata))
-	for _, col := range metadata {
-		allowed[col.Name] = col
-	}
-	if mysqlDataImportNeedsKey(request.Mode) {
-		if _, err = mysqlDataImportMatchKey(request.MatchColumns, [][]string{request.MatchColumns}); err != nil {
-			return err
-		}
-	}
-	for _, edit := range request.Edits {
-		for name := range edit.Values {
-			col, ok := allowed[name]
-			if !ok || MySQLDataColumnGenerated(col) {
-				return ErrMySQLDataPage
-			}
-		}
-		if mysqlDataImportNeedsKey(request.Mode) {
-			if _, err = mysqlDataImportRef("db", "table", request.MatchColumns, edit); err != nil {
-				return err
-			}
-			for _, name := range request.MatchColumns {
-				if !mysqlDataImportValueValid(allowed[name], edit.Values[name]) {
-					return ErrMySQLDataPage
-				}
-			}
-		}
-		if request.Mode == "delete" {
-			continue
-		}
-		if err = mysqlDataImportValidateRow(metadata, edit, request.Mode == "append" || request.Mode == "replace"); err != nil && !request.ContinueOnError {
-			return err
-		}
-	}
-	return nil
+	return mysqlspec.ValidateImportRequest(metadata, request)
 }
 
 func mysqlDataImportValidateRow(columns []MySQLStructureColumn, edit MySQLDataEdit, insert bool) error {
-	byName := make(map[string]MySQLStructureColumn, len(columns))
-	for _, col := range columns {
-		byName[col.Name] = col
-		if insert && !col.Nullable && col.Default == nil && !MySQLDataColumnGenerated(col) && !strings.Contains(strings.ToLower(col.Extra), "auto_increment") {
-			if _, ok := edit.Values[col.Name]; !ok {
-				return ErrMySQLDataPage
-			}
-		}
-	}
-	for name, value := range edit.Values {
-		col, ok := byName[name]
-		if !ok || value.Default || value.Null && value.Binary || !mysqlDataImportValueValid(col, value) {
-			return ErrMySQLDataPage
-		}
-	}
-	_, _, _, err := mysqlAssignmentsBounded(columns, edit.Values, insert, MaxMySQLDataImportBytes)
-	return err
+	return mysqlspec.ValidateImportRow(columns, edit, insert)
 }
 
 // Resolve the chosen field set to the metadata index's actual order. Nullable,
 // prefix and expression indexes are excluded by the same identity policy used
 // by ordinary data editing.
 func mysqlDataImportMatchKey(chosen []string, keys [][]string) ([]string, error) {
-	if len(chosen) == 0 {
-		return nil, ErrMySQLDataReadOnly
-	}
-	seen := make(map[string]bool, len(chosen))
-	for _, name := range chosen {
-		if _, err := quotedMySQLIdentifier(name); err != nil || seen[name] {
-			return nil, ErrMySQLDataReadOnly
-		}
-		seen[name] = true
-	}
-	for _, key := range keys {
-		if len(key) != len(chosen) {
-			continue
-		}
-		matches := true
-		for _, name := range key {
-			matches = matches && seen[name]
-		}
-		if matches {
-			return append([]string(nil), key...), nil
-		}
-	}
-	return nil, ErrMySQLDataReadOnly
+	return mysqlspec.ImportMatchKey(chosen, keys)
 }
 
 func mysqlDataImportRef(database, table string, key []string, edit MySQLDataEdit) (MySQLRowRef, error) {
-	ref := MySQLRowRef{Database: database, Table: table, Columns: append([]string(nil), key...)}
-	for _, name := range key {
-		value, ok := edit.Values[name]
-		if !ok || value.Null || value.Default {
-			return ref, ErrMySQLDataReadOnly
-		}
-		if value.Binary {
-			ref.Values = append(ref.Values, append([]byte{}, value.Bytes...))
-		} else {
-			ref.Values = append(ref.Values, []byte(value.Text))
-		}
-	}
-	_, _, err := mysqlEditWhere(ref, database, table)
-	return ref, err
+	return mysqlspec.ImportRowRef(database, table, key, edit)
 }
 
 // ImportMySQLData executes a reviewed mapped import on a single owned physical
