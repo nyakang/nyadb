@@ -16,6 +16,8 @@
 
 详见 [核心工作流技术设计、限制与验收](core-workflows-2026-10-31.md)。实现和测试属于 **I**；新功能原版采证 **O** 与差分 **V** 为 **Unknown**，不能由编译、Tester 或历史局部对照代替。原生窗口和跨平台编译的具体环境边界另见验收报告。验收快照生成于提交之前，后续提交状态见 Git 历史及远端。
 
+2026-11-01 对象区域改为单行工具栏及“更多”菜单/分组弹窗；未连接及数据库未打开时无对象列头，已打开空库保留列头。见 [状态对齐与验证记录](object-browser-state-alignment-2026-11-01.md)。
+
 The current Linux alignment target is Navicat 18, Simplified Chinese, dark
 theme, and compact density. Shared theme metrics now provide 19-DIP navigation
 and chooser list rows with 16-DIP icons, low-emphasis toolbar selection, and

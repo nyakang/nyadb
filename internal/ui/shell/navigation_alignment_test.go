@@ -100,14 +100,14 @@ func TestWorkbenchSplittersAreSharedAcrossDocumentKinds(t *testing.T) {
 	}
 }
 
-func TestEmptyObjectHeadersSurviveThemeScaleAndViewportChanges(t *testing.T) {
+func TestDisconnectedObjectWorkspaceStaysBlankAcrossScaleAndViewportChanges(t *testing.T) {
 	s, tt, _, _ := profileTestState(t)
 	for _, scale := range []float32{1, 1.25, 1.5} {
 		tt.SetScale(scale)
 		for _, size := range [][2]int{{1280, 800}, {840, 560}} {
 			tt.SetSize(size[0], size[1])
-			if !tt.HasText("名称") || !tt.HasText("自动递增值") {
-				t.Fatal("empty object headers disappeared")
+			if tt.HasText("自动递增值") || tt.HasText("对象分组名称") || tt.HasText("删除所选对象…") {
+				t.Fatal("disconnected object workspace exposed database controls")
 			}
 			if tt.HasText("右键空白处新建连接") {
 				t.Fatal("empty navigator advertises an unavailable action")

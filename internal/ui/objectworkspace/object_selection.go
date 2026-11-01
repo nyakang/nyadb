@@ -97,13 +97,25 @@ func (s *State) NextObjectName(profile int64, base string) string {
 }
 func (s *State) AssignObjectGroup(name string) {
 	w := s.currentBrowser()
-	if w.groups == nil {
-		w.groups = make(map[objectKey]string)
+	s.assignObjectGroup(w.ProfileID, w.Database, s.SelectedObjectIdentities(), name)
+}
+
+func (s *State) assignObjectGroup(profile int64, database string, objects []mysqlsvc.ObjectIdentity, name string) {
+	b := s.presentation(profile)
+	if b.groups == nil {
+		b.groups = make(map[objectKey]string)
 	}
-	for _, o := range s.SelectedObjectIdentities() {
-		w.groups[objectKey{w.ProfileID, o.Database, o.Kind, o.Name}] = strings.TrimSpace(name)
+	for _, o := range objects {
+		if o.Database == database {
+			key := objectKey{profile, database, o.Kind, o.Name}
+			if group := strings.TrimSpace(name); group != "" {
+				b.groups[key] = group
+			} else {
+				delete(b.groups, key)
+			}
+		}
 	}
-	s.saveObjectGroups(w.ProfileID, w.Database)
+	s.saveObjectGroups(profile, database)
 }
 func (s *State) ObjectGroup(profile int64, database, kind, name string) string {
 	return s.presentation(profile).groups[objectKey{profile, database, kind, name}]

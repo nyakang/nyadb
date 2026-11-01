@@ -1,8 +1,9 @@
 package objectworkspace
 
 import (
-	"github.com/nyakang/nyadb/internal/db/contract"
 	"strconv"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
 
 	"github.com/egoist/mygo/ui"
 
@@ -67,24 +68,22 @@ func mysqlObjectActionLabels(kind string) (open, design string) {
 func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 	palette := theme.Colors(c)
 
-	db := s.currentBrowser().Database
-	items := s.SelectedObjects()
-	connected := s.currentBrowser().Connected
-	if !connected || db == "" {
-		items = nil
+	b := s.currentBrowser()
+	db := b.Database
+	if !b.Connected || db == "" {
+		ui.Box(c).Grow(1)
+		return
 	}
+	if !b.Opened {
+		ui.Column(c).Grow(1).Children(func() {
+			ui.Text(c, locales.Text("双击打开数据库")).Padding(8).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Muted)
+		})
+		return
+	}
+	items := s.SelectedObjects()
 	message := ""
-	if connected && db != "" {
-		if !s.currentBrowser().Opened {
-			items = nil
-			message = locales.Text("双击打开数据库")
-		} else if s.currentBrowser().Pending == db {
-			message = "正在读取数据库对象…"
-		} else if err := s.currentBrowser().Errors[db]; err != "" {
-			message = "读取对象失败：" + err
-		} else if len(items) == 0 {
-			message = "当前筛选下没有可见的数据库对象"
-		}
+	if len(items) == 0 && b.Pending != db && b.Errors[db] == "" {
+		message = "当前筛选下没有可见的数据库对象"
 	}
 	s.currentBrowser().List.Selected = &s.currentBrowser().Row
 	s.currentBrowser().List.Selection = &s.currentBrowser().selection
@@ -105,6 +104,21 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 		s.selected(db, items[row].Name, items[row].Kind)
 		s.ContextMenu(c.Services(), m, s.currentBrowser().ProfileID, db, items[row].Name, items[row].Kind)
 	}
+	if b.Pending == db || b.Errors[db] != "" {
+		ui.Row(c).Padding(3, 8).Gap(6).AlignItems(ui.Center).Children(func() {
+			if b.Pending == db {
+				ui.Text(c, locales.Text("正在读取数据库对象…")).TextColor(palette.Muted)
+				if ui.Button(c, locales.Text("取消加载")).Clicked() {
+					s.cancelObjects()
+				}
+			} else {
+				ui.Text(c, locales.Text("读取对象失败：")+b.Errors[db]).TextColor(palette.Error)
+				if ui.Button(c, locales.Text("重试")).Clicked() {
+					s.loadObjects(c.Services(), db, true)
+				}
+			}
+		})
+	}
 	columns := append([]ui.TableColumn(nil), mysqlObjectColumns...)
 	for i := range columns {
 		columns[i].ID = mysqlObjectColumns[i].Title
@@ -112,13 +126,6 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 	}
 	if len(items) == 0 {
 		theme.EmptyTable(c, &s.currentBrowser().List, columns, message)
-		if connected && db != "" && s.currentBrowser().Errors[db] != "" && ui.Button(c, locales.Text("重试")).Clicked() {
-			s.loadObjects(c.Services(), db, true)
-		}
-		if connected && db != "" && s.currentBrowser().Pending == db && ui.Button(c, locales.Text("取消加载")).Clicked() {
-			s.cancelObjects()
-
-		}
 		return
 	}
 	previousRow := s.currentBrowser().Row
@@ -166,7 +173,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 	if table.Shortcut(ui.Ctrl, ui.KeyN) && (s.currentBrowser().Kind == "全部" || s.currentBrowser().Kind == "表") {
 		s.BeginTableChange(s.currentBrowser().ProfileID, db, "", mysqlsvc.MySQLTableCreate)
 	}
-	if table.Shortcut(0, ui.KeyF5) && s.currentBrowser().Pending == "" && connected {
+	if table.Shortcut(0, ui.KeyF5) && b.Pending == "" && !b.Refreshing {
 		s.loadObjects(c.Services(), db, true)
 	}
 
@@ -175,12 +182,11 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 func (s *State) BrowserView(c *ui.Context) {
 	palette := theme.Colors(c)
 
-	connected := s.currentBrowser().Connected
-	database := s.currentBrowser().Database
-	items := s.SelectedObjects()
-	canOpen := connected && database != "" && s.currentBrowser().Row >= 0 && s.currentBrowser().Row < len(items)
-	canProgram := canOpen && Supports(items[s.currentBrowser().Row].Kind)
-	canOpen = canOpen && !canProgram
+	s.validateGroupDialog()
+	a := s.browserActions()
+	database := a.scope.database
+	items := a.items
+	canOpen, canProgram := a.canOpen, a.canProgram
 	ui.Column(c).Fill().Children(func() {
 		ui.Row(c).Height(theme.RowHeight(c, 30)).Gap(3).Padding(1, 4).AlignItems(ui.Center).Background(palette.Header).Children(func() {
 			ui.Toolbar(c, func() {
@@ -195,16 +201,15 @@ func (s *State) BrowserView(c *ui.Context) {
 							ui.Text(c, locales.Text(item.label)).FontSize(theme.Font(c, 12)).SingleLine()
 						})
 					}).Clicked() {
-						obj := items[s.currentBrowser().Row]
-						if item.label == "打开表" {
-							s.openData(c.Services(), database, obj.Name)
-						} else {
-							s.openStructure(c.Services(), database, obj.Name)
+						obj := items[a.frame.Row]
+						if item.label == "打开表" && s.deps.OpenData != nil {
+							s.deps.OpenData(c.Services(), a.scope.profile, database, obj.Name)
+						} else if item.label == "设计表" && s.deps.OpenStructure != nil {
+							s.deps.OpenStructure(c.Services(), a.scope.profile, database, obj.Name)
 						}
 					}
 				}
-				canCreate := database != "" && s.CanChangeTable(s.currentBrowser().ProfileID) &&
-					(s.currentBrowser().Kind == "全部" || s.currentBrowser().Kind == "表")
+				canCreate := a.canCreate
 				if ui.ButtonBase(c).Label(locales.Text("新建表")).Tooltip(locales.Text("新建表")).
 					Disabled(!canCreate).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
 					ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
@@ -212,19 +217,19 @@ func (s *State) BrowserView(c *ui.Context) {
 						ui.Text(c, locales.Text("新建表")).FontSize(theme.Font(c, 12)).SingleLine()
 					})
 				}).Clicked() {
-					s.BeginTableChange(s.currentBrowser().ProfileID, database, "", mysqlsvc.MySQLTableCreate)
+					s.BeginTableChange(a.scope.profile, database, "", mysqlsvc.MySQLTableCreate)
 				}
-				if ui.ButtonBase(c).Label("查看程序定义").Tooltip("查看函数、存储过程或事件定义").
+				if ui.ButtonBase(c).Label(locales.Text("查看程序定义")).Tooltip(locales.Text("查看函数、存储过程或事件定义")).
 					Disabled(!canProgram).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
 					theme.Icon(c, "function", 14, palette.Muted)
 				}).Clicked() {
-					obj := items[s.currentBrowser().Row]
-					s.openProgram(database, obj.Name, obj.Kind)
+					obj := items[a.frame.Row]
+					s.openObjectFor(c.Services(), a.scope.profile, database, obj.Name, obj.Kind)
 				}
 				for _, kind := range []string{"全部", "表", "视图"} {
 					filter := kind
-					button := ui.ButtonBase(c).Label("筛选对象："+filter).Disabled(!connected || !s.currentBrowser().Opened).Height(theme.RowHeight(c, 25)).Padding(2, 5).Children(func() { ui.Text(c, locales.Text(filter)).FontSize(theme.Font(c, 11)) })
-					if connected && s.currentBrowser().Kind == filter {
+					button := ui.ButtonBase(c).Label(locales.Text("筛选对象：")+locales.Text(filter)).Disabled(!a.ready).Height(theme.RowHeight(c, 25)).Padding(2, 5).Children(func() { ui.Text(c, locales.Text(filter)).FontSize(theme.Font(c, 11)) })
+					if a.ready && a.frame.Kind == filter {
 						button.Background(palette.Border.Alpha(.35))
 					}
 					if button.Clicked() {
@@ -232,12 +237,22 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 				}
 			}).Label(locales.Text("对象操作")).Grow(1).MinWidth(0).Padding(0).Gap(2).Background(palette.Header)
+			ui.ButtonBase(c).Label(locales.Text("更多对象操作")).Tooltip(locales.Text("更多对象操作")).
+				Disabled(!a.ready && !a.canAccounts && !a.canResume).Padding(2, 5).Height(theme.RowHeight(c, 25)).
+				Children(func() { ui.Text(c, locales.Text("更多")).FontSize(theme.Font(c, 12)).SingleLine() }).
+				Menu(func(m *ui.Menu) { s.browserMoreMenu(c.Services(), m) })
 			// One refresh affordance follows the current scope.
-			label := "刷新数据库列表"
+			label := locales.Text("刷新数据库列表")
 			if database != "" {
-				label = "刷新元数据：" + database
+				label = locales.Text("刷新元数据：") + database
 			}
-			if ui.ButtonBase(c).Label(label).Tooltip(locales.Text("刷新")).Disabled(!connected || s.currentBrowser().Refreshing || s.currentBrowser().Pending != "").Size(25, 25).Children(func() { theme.Icon(c, "refresh", 14, palette.Blue) }).Clicked() {
+			if ui.ButtonBase(c).Label(label).Tooltip(locales.Text("刷新")).Disabled(!a.canRefresh).Size(25, 25).Children(func() {
+				color := palette.Muted
+				if a.canRefresh {
+					color = palette.Blue
+				}
+				theme.Icon(c, "refresh", 14, color)
+			}).Clicked() {
 				if database == "" {
 					s.refreshDatabases(c.Services())
 				} else {
@@ -245,56 +260,9 @@ func (s *State) BrowserView(c *ui.Context) {
 				}
 			}
 		})
-		if connected && s.currentBrowser().Error != "" {
-			ui.Text(c, s.currentBrowser().Error).Padding(5, 8).FontSize(theme.Font(c, 11)).TextColor(palette.Error)
+		if a.frame.Connected && a.frame.Error != "" {
+			ui.Text(c, a.frame.Error).Padding(5, 8).FontSize(theme.Font(c, 11)).TextColor(palette.Error)
 		}
-		ui.Row(c).Gap(6).Padding(3, 6).Children(func() {
-			if ui.Button(c, "删除所选对象…").Disabled(!connected || s.deps.BatchExecutor == nil || !s.capabilities(s.currentBrowser().ProfileID).DesignTables || len(s.SelectedObjectIdentities()) == 0).Clicked() {
-				s.BeginObjectBatch(s.currentBrowser().ProfileID, s.SelectedObjectIdentities(), "drop")
-			}
-			if ui.Button(c, "粘贴对象…").Disabled(!connected || s.deps.BatchExecutor == nil || !s.capabilities(s.currentBrowser().ProfileID).DesignTables).Clicked() {
-				clip, e := DecodeObjectClipboard(c.Services().ReadClipboard())
-				if e != nil {
-					s.report(e.Error())
-				} else if clip.ProfileID != s.currentBrowser().ProfileID {
-					s.report("对象剪贴板属于另一连接，请显式切换到原连接")
-				} else {
-					s.BeginObjectBatch(s.currentBrowser().ProfileID, clip.Objects, "copy")
-				}
-			}
-			if ui.Button(c, "复制所选对象").Disabled(len(s.SelectedObjectIdentities()) == 0).Clicked() {
-				raw, e := EncodeObjectClipboardFor(s.currentBrowser().ProfileID, s.SelectedObjectIdentities())
-				if e == nil {
-					c.WriteClipboard(raw)
-				}
-			}
-
-			if ui.Button(c, "用户与权限").Disabled(!connected || s.deps.AccountExecutor == nil || !s.capabilities(s.currentBrowser().ProfileID).DesignTables).Clicked() {
-				s.OpenAccounts(c.Services(), s.currentBrowser().ProfileID, database, "")
-			}
-			if ui.Button(c, "继续对象草稿").Disabled(s.parkedObjectOp == nil).Clicked() {
-				s.ResumeObjectDraft()
-			}
-
-		})
-		ui.Row(c).Gap(6).Padding(3, 6).Children(func() {
-			ui.TextInput(c, &s.currentBrowser().groupDraft).Label("对象分组名称").Width(150)
-			if ui.Button(c, "分组所选对象").Disabled(len(s.SelectedObjectIdentities()) == 0).Clicked() {
-				s.AssignObjectGroup(s.currentBrowser().groupDraft)
-			}
-			s.objectGroupsView(c)
-		})
-		ui.Row(c).Gap(6).Padding(3, 6).Children(func() {
-			if s.deps.ObjectExecutor != nil && s.capabilities(s.currentBrowser().ProfileID).DesignTables {
-				for _, kind := range []string{"视图", "函数", "存储过程", "事件"} {
-					k := kind
-					if ui.Button(c, "新建"+k).Disabled(!connected || database == "").Clicked() {
-						name := s.NextObjectName(s.currentBrowser().ProfileID, "new_object")
-						s.BeginObject(c.Services(), s.currentBrowser().ProfileID, mysqlsvc.ObjectIdentity{Database: database, Name: name, Kind: k}, "create")
-					}
-				}
-			}
-		})
 		s.mysqlObjectWorkspace(c)
 	})
 }
