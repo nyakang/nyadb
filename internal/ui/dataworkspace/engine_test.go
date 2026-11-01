@@ -15,9 +15,12 @@ import (
 
 func engineFixture(t *testing.T) (*State, *Document, *engines.Session, *ui.Tester) {
 	t.Helper()
+	// Register directory cleanup before resource cleanup so documents and
+	// sessions release all SQLite handles before Windows removes the file.
+	path := filepath.Join(t.TempDir(), "grid.sqlite")
 	m := engines.NewManager()
 	t.Cleanup(func() { m.Close() })
-	if e := m.Connect(context.Background(), connections.Profile{ID: 81, Kind: connections.SQLite, Database: filepath.Join(t.TempDir(), "grid.sqlite")}, ""); e != nil {
+	if e := m.Connect(context.Background(), connections.Profile{ID: 81, Kind: connections.SQLite, Database: path}, ""); e != nil {
 		t.Fatal(e)
 	}
 	session, _ := m.Session(81)

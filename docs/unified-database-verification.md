@@ -72,5 +72,6 @@ CGO_ENABLED=0，GOARCH=amd64 分别使用 GOOS=linux/windows/darwin 执行 `go b
 | WebSocket/TLS 关闭遇到阻塞写入 | 关闭客户端及网关的底层 TCP 后再关闭协议层；TLS closeNotify 会覆盖先前写入期限，不能只依赖 WebSocket.SetDeadline；验证两端关闭和执行器确认 |
 | SQL 工具栏尾部执行按钮被收进溢出菜单 | 运行/取消置于前面，窄窗口测试实际点击执行；shell 夹具提供懒 SQL 租约，避免预留接口缺失造成测试状态失真 |
 | macOS 对象名称测试未全选 | 使用 MyGo 的跨平台 ui.Cmd 选择全部，保留真实输入和定义正文的回归断言 |
+| Windows SQLite 临时文件清理遇到打开的句柄 | TempDir 先创建，再注册 manager/文档清理；testing.Cleanup 按后注册先执行，保证文档、会话、目录依次关闭/清理 |
 
 修复后本地通过 `CGO_ENABLED=0 GOWORK=off GOFLAGS=-mod=readonly go test ./...`、同环境 Go/MyGo vet、翻译生成与检查、三平台 CGO 禁用编译，以及 transport/engines/SQL/object/shell 相关 race 测试。阻塞关闭、SQL 标签隔离和窄窗口运行另外重复 30 次通过。原生 Windows/macOS 测试由仓库 CI 矩阵执行。
