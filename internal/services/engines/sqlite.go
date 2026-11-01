@@ -11,27 +11,31 @@ import (
 	"net/url"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 type sqliteDialect struct{}
 
 func (sqliteDialect) open(p connections.Profile, password string, dial func(context.Context, string, string) (net.Conn, error)) (*sql.DB, error) {
-	var db *sql.DB
-	abs, e := filepath.Abs(p.Database)
-	if e != nil {
-		return nil, e
+	abs, err := filepath.Abs(p.Database)
+	if err != nil {
+		return nil, err
 	}
-	u := url.URL{Scheme: "file", Path: abs}
+	return sql.Open("sqlite", sqliteFileURI(filepath.ToSlash(abs)))
+}
+
+// sqliteFileURI receives a slash-normalized absolute path. Windows drive
+// letters belong in the path, never in the URI authority.
+func sqliteFileURI(path string) string {
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+	u := url.URL{Scheme: "file", Path: path}
 	q := u.Query()
 	q.Add("_pragma", "busy_timeout(1000)")
 	q.Add("_pragma", "foreign_keys(1)")
 	u.RawQuery = q.Encode()
-	var e2 error
-	db, e2 = sql.Open("sqlite", u.String())
-	if e2 != nil {
-		return nil, e2
-	}
-	return db, nil
+	return u.String()
 }
 func (sqliteDialect) catalog(string) string { return "main" }
 func (sqliteDialect) namespace(name string) error {

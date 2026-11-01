@@ -155,14 +155,16 @@ func newHTTPDial(a connections.MySQLHTTP, s Secrets) (func(context.Context, stri
 			return nil, errors.New("gateway WebSocket handshake failed")
 		}
 		if ctx.Err() != nil {
+			_ = raw.Close()
 			_ = ws.Close()
 			return nil, ctx.Err()
 		}
 		if len(ws.Config().Protocol) != 1 || ws.Config().Protocol[0] != Protocol {
+			_ = raw.Close()
 			_ = ws.Close()
 			return nil, errors.New("gateway subprotocol mismatch")
 		}
 		success = true
-		return frameSocket(ws), nil
+		return frameSocket(ws, raw.Close), nil
 	}, nil
 }

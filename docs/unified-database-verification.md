@@ -58,6 +58,19 @@ Python 视觉工具测试需要 Pillow；本环境将依赖放在 /tmp/nyadb-vis
 
 CGO_ENABLED=0，GOARCH=amd64 分别使用 GOOS=linux/windows/darwin 执行 `go build ./cmd/nyadb`，产物位于 build/unified-validation。静态检查、完整测试、生命周期 race、真实夹具及编译日志保存在同一忽略目录中。
 
-## 最终结果
+## 本地检查结果
 
 完整 Go 测试、上述生命周期 race、Go/MyGo vet、翻译检查、33 项 Python 视觉工具测试、三平台 CGO 禁用编译、一次性三引擎真实运行回归均为 PASS。最后一轮源码 gofmt 检查和 git diff --check 通过，生产代码中无 EngineState/EngineDocument/engineData 接线，SQL/data/session/editor 不再直接导入具体运行服务。验证日志及机器可读结果位于 build/unified-validation/verification.json。
+
+## CI 回归修复
+
+[首次 CI](https://github.com/nyakang/nyadb/actions/runs/41264550917) 暴露了本地编译无法覆盖的平台运行差异。对应修复与回归如下：
+
+| 问题 | 修复与验证 |
+| --- | --- |
+| Windows SQLite 文件 URI 把盘符识别为 authority | 原生路径转为斜杠并保留在 URI path；覆盖盘符、UNC、特殊字符无损编码，以及实际配置文件的创建和重新打开 |
+| WebSocket/TLS 关闭遇到阻塞写入 | 关闭客户端及网关的底层 TCP 后再关闭协议层；TLS closeNotify 会覆盖先前写入期限，不能只依赖 WebSocket.SetDeadline；验证两端关闭和执行器确认 |
+| SQL 工具栏尾部执行按钮被收进溢出菜单 | 运行/取消置于前面，窄窗口测试实际点击执行；shell 夹具提供懒 SQL 租约，避免预留接口缺失造成测试状态失真 |
+| macOS 对象名称测试未全选 | 使用 MyGo 的跨平台 ui.Cmd 选择全部，保留真实输入和定义正文的回归断言 |
+
+修复后本地通过 `CGO_ENABLED=0 GOWORK=off GOFLAGS=-mod=readonly go test ./...`、同环境 Go/MyGo vet、翻译生成与检查、三平台 CGO 禁用编译，以及 transport/engines/SQL/object/shell 相关 race 测试。阻塞关闭、SQL 标签隔离和窄窗口运行另外重复 30 次通过。原生 Windows/macOS 测试由仓库 CI 矩阵执行。

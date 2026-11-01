@@ -1,8 +1,10 @@
 package transport
 
 import (
+	"bufio"
 	"context"
 	"crypto/subtle"
+	"crypto/tls"
 	"errors"
 	"io"
 	"net"
@@ -76,6 +78,7 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method", http.StatusMethodNotAllowed)
 		return
 	}
+	hijacked := &gatewayResponse{ResponseWriter: w}
 	srv := websocket.Server{Handshake: func(c *websocket.Config, _ *http.Request) error {
 		for _, p := range c.Protocol {
 			if p == Protocol {
@@ -94,11 +97,12 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		db, err := g.config.DialContext(ctx, "tcp", target)
 		cancel()
 		if err != nil {
+			_ = hijacked.abort()
 			_ = ws.Close()
 			g.log(GatewayEvent{State: "dial_failed", Duration: time.Since(start)})
 			return
 		}
-		client := frameSocket(ws)
+		client := frameSocket(ws, hijacked.abort)
 		g.mu.Lock()
 		if g.closed {
 			g.mu.Unlock()
@@ -126,7 +130,26 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		sent := <-out
 		g.log(GatewayEvent{State: "closed", Duration: time.Since(start), Sent: sent, Received: received})
 	}}
-	srv.ServeHTTP(w, r)
+	srv.ServeHTTP(hijacked, r)
+}
+
+// Capture the physical connection before WebSocket wraps it. For TLS, closing
+// the raw socket also interrupts a blocked closeNotify on the gateway side.
+type gatewayResponse struct {
+	http.ResponseWriter
+	abort func() error
+}
+
+func (w *gatewayResponse) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	c, b, err := http.NewResponseController(w.ResponseWriter).Hijack()
+	if err == nil {
+		physical := c
+		if secure, ok := c.(*tls.Conn); ok {
+			physical = secure.NetConn()
+		}
+		w.abort = physical.Close
+	}
+	return c, b, err
 }
 func (g *Gateway) log(e GatewayEvent) {
 	if g.config.Log != nil {

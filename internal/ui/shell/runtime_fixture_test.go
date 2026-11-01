@@ -107,6 +107,44 @@ func (s *runtimeFixtureSession) Administration() mysqlsvc.Administration {
 	return fixtureAdministration{mysqlsvc.NewMySQLSessionManager()}
 }
 
+// Reserve a lazy, successful fixture lease so SQL UI tests do not start with
+// unsupported-provider errors. Tests inject their captured executor separately.
+func (s *runtimeFixtureSession) ReserveQuery(uint64) (contract.QueryLease, error) {
+	if !s.Alive() {
+		return nil, contract.ErrRevoked
+	}
+	return &runtimeFixtureQuery{session: s}, nil
+}
+
+type runtimeFixtureQuery struct {
+	session *runtimeFixtureSession
+	closed  atomic.Bool
+}
+
+func (l *runtimeFixtureQuery) Preconnect(ctx context.Context) error {
+	if l.closed.Load() || !l.session.Alive() {
+		return contract.ErrRevoked
+	}
+	return ctx.Err()
+}
+func (l *runtimeFixtureQuery) Execute(ctx context.Context, _, _ string) (contract.SQLResult, error) {
+	if err := l.Preconnect(ctx); err != nil {
+		return contract.SQLResult{}, err
+	}
+	return contract.SQLResult{}, contract.ErrUnsupported
+}
+func (l *runtimeFixtureQuery) ExecuteStream(ctx context.Context, ns, sql string, _ func(int, []contract.Column, []contract.Cell) error) (contract.SQLResult, error) {
+	return l.Execute(ctx, ns, sql)
+}
+func (l *runtimeFixtureQuery) Replace() (contract.QueryLease, error) {
+	if err := l.Preconnect(context.Background()); err != nil {
+		return nil, err
+	}
+	l.Release()
+	return &runtimeFixtureQuery{session: l.session}, nil
+}
+func (l *runtimeFixtureQuery) Release() { l.closed.Store(true) }
+
 func runtimeNamespaceNames(ctx context.Context, s *State, id int64) ([]string, error) {
 	p, e := s.runtime.Metadata(id)
 	if e != nil {

@@ -34,18 +34,20 @@ var binaryCodec = websocket.Codec{Marshal: func(v any) ([]byte, byte, error) {
 
 type frameConn struct {
 	ws              *websocket.Conn
+	abort           func() error
 	readMu, writeMu sync.Mutex
 	pending         []byte
 	frames          chan []byte
 	done            chan struct{}
 	once            sync.Once
+	closeOnce       sync.Once
 	errMu           sync.Mutex
 	readErr         error
 }
 
-func frameSocket(ws *websocket.Conn) net.Conn {
+func frameSocket(ws *websocket.Conn, abort func() error) net.Conn {
 	ws.MaxPayloadBytes = MaxFrameBytes
-	c := &frameConn{ws: ws, frames: make(chan []byte, 2), done: make(chan struct{})}
+	c := &frameConn{ws: ws, abort: abort, frames: make(chan []byte, 2), done: make(chan struct{})}
 	go c.readLoop()
 	return c
 }
@@ -109,11 +111,15 @@ func (c *frameConn) Write(p []byte) (int, error) {
 	return n, nil
 }
 func (c *frameConn) Close() error {
-	c.once.Do(func() { close(c.done) })
-	// WebSocket.Close writes a close frame before closing TCP. Interrupt a
-	// blocked writer first so cancellation cannot wait for a stalled peer.
-	_ = c.ws.SetDeadline(time.Now())
-	_ = c.ws.Close()
+	c.closeOnce.Do(func() {
+		c.once.Do(func() { close(c.done) })
+		// Abort TCP before WebSocket/TLS shutdown. TLS closeNotify installs
+		// its own write deadline, so a WebSocket deadline alone cannot bound
+		// shutdown when the peer stops reading.
+		_ = c.abort()
+		_ = c.ws.SetDeadline(time.Now())
+		_ = c.ws.Close()
+	})
 	return nil
 }
 
