@@ -82,13 +82,19 @@ func (s *SessionAdapter) Browse(ctx context.Context, n contract.NamespaceRef) ([
 	if e := s.check(n.Object("table", "")); e != nil {
 		return nil, e
 	}
-	out, e := s.manager.Objects(ctx, s.id, n.Catalog)
+	out, e := s.manager.ObjectsWithPrograms(ctx, s.id, n.Catalog)
 	for i := range out {
 		kind := out[i].Kind
 		if kind == "表" {
 			kind = "table"
 		} else if kind == "视图" {
 			kind = "view"
+		} else if kind == "函数" {
+			kind = "function"
+		} else if kind == "存储过程" {
+			kind = "procedure"
+		} else if kind == "事件" {
+			kind = "event"
 		}
 		out[i].Ref = n.Object(kind, out[i].Name)
 	}

@@ -26,6 +26,11 @@ from PIL import Image, ImageChops, ImageStat
 from x11_display_metrics import display_metrics
 
 
+class XModifierKeymap(ctypes.Structure):
+    _fields_ = [("max_keypermod", ctypes.c_int),
+                ("modifiermap", ctypes.POINTER(ctypes.c_ubyte))]
+
+
 class NativeCapture:
     def __init__(self, display: str, output: Path, source_path: Path | None = None,
                  app_name: str = "nyadb", actual_scale=None, font_family=None,
@@ -43,6 +48,7 @@ class NativeCapture:
         if source_path:
             self.source_version = "sha256:" + hashlib.sha256(source_path.read_bytes()).hexdigest()
         self.metrics = display_metrics(display)
+        self.screenshot_backend = None
         self.actions: list[dict] = []
         self.expected_client_sizes: dict[int, tuple[int, int]] = {}
         self.x11 = ctypes.CDLL("libX11.so.6")
@@ -58,6 +64,18 @@ class NativeCapture:
         self.x11.XTranslateCoordinates.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.c_ulong,
                                                   ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),
                                                   ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_ulong)]
+        self.x11.XStringToKeysym.argtypes = [ctypes.c_char_p]
+        self.x11.XStringToKeysym.restype = ctypes.c_ulong
+        self.x11.XKeysymToKeycode.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
+        self.x11.XKeysymToKeycode.restype = ctypes.c_ubyte
+        self.x11.XQueryKeymap.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        self.x11.XGetModifierMapping.argtypes = [ctypes.c_void_p]
+        self.x11.XGetModifierMapping.restype = ctypes.POINTER(XModifierKeymap)
+        self.x11.XFreeModifiermap.argtypes = [ctypes.POINTER(XModifierKeymap)]
+        self.x11.XFlush.argtypes = [ctypes.c_void_p]
+        self.xtest = ctypes.CDLL("libXtst.so.6")
+        self.xtest.XTestFakeKeyEvent.argtypes = [ctypes.c_void_p, ctypes.c_uint,
+                                               ctypes.c_int, ctypes.c_ulong]
         self.x11.XCloseDisplay.argtypes = [ctypes.c_void_p]
         self.connection = self.x11.XOpenDisplay(display.encode())
         if not self.connection:
@@ -155,7 +173,50 @@ class NativeCapture:
         self.run("xdotool", "click", "--clearmodifiers", str(button))
 
     def key(self, *keys: str):
-        self.run("xdotool", "key", "--clearmodifiers", *keys)
+        for key in keys:
+            if re.fullmatch(r"F(?:[1-9]|[12][0-9]|3[0-5])", key):
+                self.function_key(key)
+            else:
+                self.run("xdotool", "key", "--clearmodifiers", key)
+
+    def function_key(self, name: str):
+        # Resolve the current X keyboard map. xdotool can synthesize an Alt
+        # chord for F2 on some layouts; XTest sends the physical key directly.
+        code = self.x11.XKeysymToKeycode(self.connection, self.x11.XStringToKeysym(name.encode()))
+        if not code:
+            raise RuntimeError(f"No X keycode for {name}")
+        pressed = (ctypes.c_ubyte * 32)()
+        self.x11.XQueryKeymap(self.connection, pressed)
+        mapping = self.x11.XGetModifierMapping(self.connection)
+        if not mapping:
+            raise RuntimeError("Cannot read X modifier map")
+        try:
+            modifiers = set(mapping.contents.modifiermap[i]
+                            for i in range(8 * mapping.contents.max_keypermod))
+            held = [k for k in modifiers if k and pressed[k // 8] & (1 << (k % 8))]
+            for k in held:
+                self.xtest.XTestFakeKeyEvent(self.connection, k, False, 0)
+            self.xtest.XTestFakeKeyEvent(self.connection, code, True, 0)
+            self.xtest.XTestFakeKeyEvent(self.connection, code, False, 0)
+            for k in held:
+                self.xtest.XTestFakeKeyEvent(self.connection, k, True, 0)
+            self.x11.XFlush(self.connection)
+        finally:
+            self.x11.XFreeModifiermap(mapping)
+
+    def screenshot(self, path: Path):
+        candidates = [("scrot", ["scrot", "-z", "-o", str(path)]),
+                      ("imagemagick-import", ["import", "-window", "root", str(path)])]
+        for name, args in candidates:
+            if not shutil.which(args[0]):
+                continue
+            try:
+                self.run(*args)
+                self.screenshot_backend = name
+                return
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                path.unlink(missing_ok=True)
+        raise RuntimeError("No working screenshot backend; install scrot or ImageMagick import")
 
     def capture(self, name: str, window: int, scene: str, ui_state: dict,
                 timeout: float = 35, locale: str = "zh-Hans", theme: str = "dark") -> dict:
@@ -180,7 +241,7 @@ class NativeCapture:
                 self.resize(window, *expected)
                 previous, stable = None, 0
                 continue
-            self.run("scrot", "-z", "-o", str(temporary))
+            self.screenshot(temporary)
             with Image.open(temporary) as desktop:
                 crop = geometry["client_crop"]
                 if crop[0] < 0 or crop[1] < 0 or crop[2] > desktop.width or crop[3] > desktop.height:
@@ -205,6 +266,7 @@ class NativeCapture:
                         "source_version": self.source_version,
                         "captured_at_utc": datetime.now(timezone.utc).isoformat(),
                         "platform": "linux-x11", "locale": locale, "theme": theme,
+                        "screenshot_backend": self.screenshot_backend,
                         "actual_scale": self.actual_scale, "font_family": self.font_family,
                         "font_size_dip": self.font_size_dip,
                         "dpi_x": self.metrics["dpi_x"], "dpi_y": self.metrics["dpi_y"],

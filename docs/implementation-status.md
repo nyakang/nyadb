@@ -20,6 +20,8 @@
 
 2026-11-01 完成离线命名查询列表、搜索、原连接打开、重命名、保留草稿的删除及逐连接一级分组；加密目录、条件修订更新和删除标记保持原存储兼容。接通函数/过程/事件、账户、备份/恢复/SQL 转储及实际表配置入口。实现 **I**、原生窗口验证范围、检查与密钥环限制见 [查询资产与入口交付记录](query-assets-2026-11-01.md)，不新增原版 **O/V**。
 
+2026-11-02 补齐真实 Secret Service / OSVault 的跨进程、密钥失败和服务恢复验收，以及真实 MySQL Shell 入口与 Linux 正式窗口验收。修复工作区首次写入对错误密钥的覆盖风险，以及 MySQL 适配器遗漏程序对象读取的问题。新增可重复隔离工具和 420 像素原生工具栏组件验证；具体测试、截图、清理及限制见 [系统密钥环与 MySQL 原生交付记录](system-keyring-mysql-native-2026-11-02.md)。证据为独立实现 I 与 NyaDB 运行结果，不新增 Navicat O/V。
+
 The current Linux alignment target is Navicat 18, Simplified Chinese, dark
 theme, and compact density. Shared theme metrics now provide 19-DIP navigation
 and chooser list rows with 16-DIP icons, low-emphasis toolbar selection, and
