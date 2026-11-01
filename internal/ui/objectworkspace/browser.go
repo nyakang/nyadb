@@ -23,7 +23,6 @@ type browserState struct {
 	groups                              map[objectKey]string
 	renameName, renameKind, renameDraft string
 	renameEditing                       bool
-	groupDraft                          string
 
 	List        ui.ListState
 	Row         int
@@ -108,7 +107,15 @@ func (s *State) Filter(kind string) {
 		s.deps.FilterChanged(w.ProfileID, w.Database, kind)
 	}
 }
-func (s *State) ResetBrowser(id int64) { delete(s.browsers, id) }
+func (s *State) ResetBrowser(id int64) {
+	if s.moreScope != nil && s.moreScope.profile == id {
+		s.moreScope = nil
+	}
+	if s.groupDialog != nil && s.groupDialog.scope.profile == id {
+		s.groupDialog = nil
+	}
+	delete(s.browsers, id)
+}
 func (s *State) selected(db, name, kind string) {
 	if s.deps.Selected != nil {
 		s.deps.Selected(s.session().ProfileID, db, name, kind)

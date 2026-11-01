@@ -3,8 +3,12 @@ package objectworkspace
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/egoist/mygo/ui"
 	"sort"
+	"strings"
+
+	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 func (s *State) saveObjectGroups(profile int64, database string) {
@@ -66,27 +70,76 @@ func (s *State) RenameObjectGroup(profile int64, database, from, to string) {
 	}
 	s.saveObjectGroups(profile, database)
 }
-func (s *State) objectGroupsView(c *ui.Context) {
-	b := s.currentBrowser()
-	groups := append([]string{"全部分组"}, s.ObjectGroups(b.ProfileID, b.Database)...)
-	selected := b.groupFilter
-	if selected == "" {
-		selected = "全部分组"
+
+// Object groups edit only local presentation preferences. Their modal owns
+// its opening scope and object selection, independently of the live table.
+type objectGroupDialog struct {
+	scope          browserActionScope
+	open           bool
+	selected, name string
+}
+
+func (s *State) beginObjectGroups(scope browserActionScope) {
+	if !s.browserScopeValid(scope, true) {
+		return
 	}
-	if ui.Select(c, &selected, groups).Label("对象分组筛选").Width(150).Changed() {
-		b.groupFilter = selected
-		if selected == "全部分组" {
-			b.groupFilter = ""
-		}
-		b.Row = -1
-		b.selection.Clear()
-		b.List = ui.ListState{Columns: b.List.Columns}
+	s.groupDialog = &objectGroupDialog{scope: scope, open: true, selected: scope.browser.groupFilter}
+}
+
+func (s *State) validateGroupDialog() {
+	if d := s.groupDialog; d != nil && (!d.open || !s.browserScopeValid(d.scope, true)) {
+		s.groupDialog = nil
 	}
-	if ui.Button(c, "重命名分组").Disabled(b.groupFilter == "" || b.groupDraft == "").Clicked() {
-		s.RenameObjectGroup(b.ProfileID, b.Database, b.groupFilter, b.groupDraft)
+}
+
+func (s *State) objectGroupModal(c *ui.Context) {
+	s.validateGroupDialog()
+	d := s.groupDialog
+	if d == nil {
+		return
 	}
-	if ui.Button(c, "删除分组").Disabled(b.groupFilter == "").Clicked() {
-		s.RenameObjectGroup(b.ProfileID, b.Database, b.groupFilter, "")
+	p := theme.Colors(c)
+	ui.Modal(c, &d.open, func() {
+		width, height := c.Size()
+		ui.Column(c).Width(min(float32(510), width-40)).MaxHeight(height - 40).Padding(16).Gap(10).Background(p.Header).Children(func() {
+			ui.Text(c, locales.Text("管理组…")).Bold().FontSize(theme.Font(c, 15))
+			ui.Text(c, locales.Text("数据库：")+d.scope.database).TextColor(p.Muted)
+			ui.Select(c, &d.selected, s.ObjectGroups(d.scope.profile, d.scope.database)).Label(locales.Text("对象分组"))
+			ui.TextInput(c, &d.name).Label(locales.Text("对象分组名称")).Placeholder(locales.Text("对象分组名称"))
+			ui.Column(c).Gap(6).Children(func() {
+				if ui.Button(c, locales.Text("分组所选对象")).Disabled(len(d.scope.objects) == 0 || strings.TrimSpace(d.name) == "").Clicked() {
+					if s.browserScopeValid(d.scope, true) {
+						s.assignObjectGroup(d.scope.profile, d.scope.database, d.scope.objects, d.name)
+						d.selected = strings.TrimSpace(d.name)
+					}
+				}
+				if ui.Button(c, locales.Text("从组中排除")).Disabled(len(d.scope.objects) == 0).Clicked() {
+					if s.browserScopeValid(d.scope, true) {
+						s.assignObjectGroup(d.scope.profile, d.scope.database, d.scope.objects, "")
+					}
+				}
+				if ui.Button(c, locales.Text("重命名分组")).Disabled(d.selected == "" || strings.TrimSpace(d.name) == "" || d.selected == strings.TrimSpace(d.name)).Clicked() {
+					if s.browserScopeValid(d.scope, true) {
+						s.RenameObjectGroup(d.scope.profile, d.scope.database, d.selected, strings.TrimSpace(d.name))
+						d.selected = strings.TrimSpace(d.name)
+					}
+				}
+				if ui.Button(c, locales.Text("删除分组")).Disabled(d.selected == "").Clicked() {
+					if s.browserScopeValid(d.scope, true) {
+						s.RenameObjectGroup(d.scope.profile, d.scope.database, d.selected, "")
+						d.selected = ""
+					}
+				}
+			})
+			ui.Row(c).Justify(ui.End).Children(func() {
+				if ui.Button(c, locales.Text("关闭")).Clicked() {
+					d.open = false
+				}
+			})
+		})
+	})
+	if !d.open {
+		s.groupDialog = nil
 	}
 }
 

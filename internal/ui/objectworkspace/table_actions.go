@@ -223,6 +223,7 @@ func (s *State) BeginTableChange(profileID int64, database, name string, action 
 }
 
 func (s *State) Modals(c *ui.Context) {
+	s.objectGroupModal(c)
 	s.backupModal(c)
 	s.objectManagementModal(c)
 	s.accountModal(c)

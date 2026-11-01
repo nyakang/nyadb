@@ -110,6 +110,8 @@ type loadResult struct {
 }
 
 type State struct {
+	moreScope                               *browserActionScope
+	groupDialog                             *objectGroupDialog
 	tableGeneration, tableRuntimeGeneration uint64
 
 	backup        *backupOperation
@@ -232,6 +234,7 @@ func (s *State) Close(d *Document) {
 	}
 }
 func (s *State) CloseAll() {
+	s.moreScope, s.groupDialog = nil, nil
 	s.closeBackup()
 	if s.batch != nil && s.batch.cancel != nil {
 		s.batch.cancel()
@@ -266,6 +269,7 @@ func (s *State) CloseAll() {
 // Consume runs on the UI thread. Generation changes invalidate completed work
 // without leaving a document stuck loading or automatically retrying it.
 func (s *State) Consume(services ui.Services) {
+	s.validateGroupDialog()
 	s.consumeBackup(services)
 	s.consumeMySQLTableChange(services)
 	s.consumeDesign(services)

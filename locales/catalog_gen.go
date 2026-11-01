@@ -10965,3 +10965,305 @@ func UnifiedData2() string { return In(i18n.Locale()).UnifiedData2() }
 func (msgs Messages) UnifiedData2() string {
 	return Catalog.Format(msgs.locale, "unifiedData2", nil)
 }
+
+// ObjectMoreActions says "更多对象操作"
+// in the language the app shows.
+func ObjectMoreActions() string { return In(i18n.Locale()).ObjectMoreActions() }
+
+// ObjectMoreActions says "更多对象操作"
+// in the language of msgs.
+func (msgs Messages) ObjectMoreActions() string {
+	return Catalog.Format(msgs.locale, "objectMoreActions", nil)
+}
+
+// ObjectMore says "更多"
+// in the language the app shows.
+func ObjectMore() string { return In(i18n.Locale()).ObjectMore() }
+
+// ObjectMore says "更多"
+// in the language of msgs.
+func (msgs Messages) ObjectMore() string {
+	return Catalog.Format(msgs.locale, "objectMore", nil)
+}
+
+// ObjectCopySelected says "复制所选对象"
+// in the language the app shows.
+func ObjectCopySelected() string { return In(i18n.Locale()).ObjectCopySelected() }
+
+// ObjectCopySelected says "复制所选对象"
+// in the language of msgs.
+func (msgs Messages) ObjectCopySelected() string {
+	return Catalog.Format(msgs.locale, "objectCopySelected", nil)
+}
+
+// ObjectPaste says "粘贴对象…"
+// in the language the app shows.
+func ObjectPaste() string { return In(i18n.Locale()).ObjectPaste() }
+
+// ObjectPaste says "粘贴对象…"
+// in the language of msgs.
+func (msgs Messages) ObjectPaste() string {
+	return Catalog.Format(msgs.locale, "objectPaste", nil)
+}
+
+// ObjectDropSelected says "删除所选对象…"
+// in the language the app shows.
+func ObjectDropSelected() string { return In(i18n.Locale()).ObjectDropSelected() }
+
+// ObjectDropSelected says "删除所选对象…"
+// in the language of msgs.
+func (msgs Messages) ObjectDropSelected() string {
+	return Catalog.Format(msgs.locale, "objectDropSelected", nil)
+}
+
+// ObjectNewMenu says "新建对象"
+// in the language the app shows.
+func ObjectNewMenu() string { return In(i18n.Locale()).ObjectNewMenu() }
+
+// ObjectNewMenu says "新建对象"
+// in the language of msgs.
+func (msgs Messages) ObjectNewMenu() string {
+	return Catalog.Format(msgs.locale, "objectNewMenu", nil)
+}
+
+// ObjectNewView says "新建视图"
+// in the language the app shows.
+func ObjectNewView() string { return In(i18n.Locale()).ObjectNewView() }
+
+// ObjectNewView says "新建视图"
+// in the language of msgs.
+func (msgs Messages) ObjectNewView() string {
+	return Catalog.Format(msgs.locale, "objectNewView", nil)
+}
+
+// ObjectNewFunction says "新建函数"
+// in the language the app shows.
+func ObjectNewFunction() string { return In(i18n.Locale()).ObjectNewFunction() }
+
+// ObjectNewFunction says "新建函数"
+// in the language of msgs.
+func (msgs Messages) ObjectNewFunction() string {
+	return Catalog.Format(msgs.locale, "objectNewFunction", nil)
+}
+
+// ObjectNewProcedure says "新建存储过程"
+// in the language the app shows.
+func ObjectNewProcedure() string { return In(i18n.Locale()).ObjectNewProcedure() }
+
+// ObjectNewProcedure says "新建存储过程"
+// in the language of msgs.
+func (msgs Messages) ObjectNewProcedure() string {
+	return Catalog.Format(msgs.locale, "objectNewProcedure", nil)
+}
+
+// ObjectNewEvent says "新建事件"
+// in the language the app shows.
+func ObjectNewEvent() string { return In(i18n.Locale()).ObjectNewEvent() }
+
+// ObjectNewEvent says "新建事件"
+// in the language of msgs.
+func (msgs Messages) ObjectNewEvent() string {
+	return Catalog.Format(msgs.locale, "objectNewEvent", nil)
+}
+
+// ObjectGroupFilter says "对象分组筛选"
+// in the language the app shows.
+func ObjectGroupFilter() string { return In(i18n.Locale()).ObjectGroupFilter() }
+
+// ObjectGroupFilter says "对象分组筛选"
+// in the language of msgs.
+func (msgs Messages) ObjectGroupFilter() string {
+	return Catalog.Format(msgs.locale, "objectGroupFilter", nil)
+}
+
+// ObjectAllGroups says "全部分组"
+// in the language the app shows.
+func ObjectAllGroups() string { return In(i18n.Locale()).ObjectAllGroups() }
+
+// ObjectAllGroups says "全部分组"
+// in the language of msgs.
+func (msgs Messages) ObjectAllGroups() string {
+	return Catalog.Format(msgs.locale, "objectAllGroups", nil)
+}
+
+// ObjectManageGroups says "管理组…"
+// in the language the app shows.
+func ObjectManageGroups() string { return In(i18n.Locale()).ObjectManageGroups() }
+
+// ObjectManageGroups says "管理组…"
+// in the language of msgs.
+func (msgs Messages) ObjectManageGroups() string {
+	return Catalog.Format(msgs.locale, "objectManageGroups", nil)
+}
+
+// ObjectAccounts says "用户与权限"
+// in the language the app shows.
+func ObjectAccounts() string { return In(i18n.Locale()).ObjectAccounts() }
+
+// ObjectAccounts says "用户与权限"
+// in the language of msgs.
+func (msgs Messages) ObjectAccounts() string {
+	return Catalog.Format(msgs.locale, "objectAccounts", nil)
+}
+
+// ObjectResumeDraft says "继续对象草稿"
+// in the language the app shows.
+func ObjectResumeDraft() string { return In(i18n.Locale()).ObjectResumeDraft() }
+
+// ObjectResumeDraft says "继续对象草稿"
+// in the language of msgs.
+func (msgs Messages) ObjectResumeDraft() string {
+	return Catalog.Format(msgs.locale, "objectResumeDraft", nil)
+}
+
+// ObjectGroupName says "对象分组名称"
+// in the language the app shows.
+func ObjectGroupName() string { return In(i18n.Locale()).ObjectGroupName() }
+
+// ObjectGroupName says "对象分组名称"
+// in the language of msgs.
+func (msgs Messages) ObjectGroupName() string {
+	return Catalog.Format(msgs.locale, "objectGroupName", nil)
+}
+
+// ObjectGroup says "对象分组"
+// in the language the app shows.
+func ObjectGroup() string { return In(i18n.Locale()).ObjectGroup() }
+
+// ObjectGroup says "对象分组"
+// in the language of msgs.
+func (msgs Messages) ObjectGroup() string {
+	return Catalog.Format(msgs.locale, "objectGroup", nil)
+}
+
+// ObjectAssignGroup says "分组所选对象"
+// in the language the app shows.
+func ObjectAssignGroup() string { return In(i18n.Locale()).ObjectAssignGroup() }
+
+// ObjectAssignGroup says "分组所选对象"
+// in the language of msgs.
+func (msgs Messages) ObjectAssignGroup() string {
+	return Catalog.Format(msgs.locale, "objectAssignGroup", nil)
+}
+
+// ObjectRenameGroup says "重命名分组"
+// in the language the app shows.
+func ObjectRenameGroup() string { return In(i18n.Locale()).ObjectRenameGroup() }
+
+// ObjectRenameGroup says "重命名分组"
+// in the language of msgs.
+func (msgs Messages) ObjectRenameGroup() string {
+	return Catalog.Format(msgs.locale, "objectRenameGroup", nil)
+}
+
+// ObjectDeleteGroup says "删除分组"
+// in the language the app shows.
+func ObjectDeleteGroup() string { return In(i18n.Locale()).ObjectDeleteGroup() }
+
+// ObjectDeleteGroup says "删除分组"
+// in the language of msgs.
+func (msgs Messages) ObjectDeleteGroup() string {
+	return Catalog.Format(msgs.locale, "objectDeleteGroup", nil)
+}
+
+// ObjectReading says "正在读取数据库对象…"
+// in the language the app shows.
+func ObjectReading() string { return In(i18n.Locale()).ObjectReading() }
+
+// ObjectReading says "正在读取数据库对象…"
+// in the language of msgs.
+func (msgs Messages) ObjectReading() string {
+	return Catalog.Format(msgs.locale, "objectReading", nil)
+}
+
+// ObjectReadFailedPrefix says "读取对象失败："
+// in the language the app shows.
+func ObjectReadFailedPrefix() string { return In(i18n.Locale()).ObjectReadFailedPrefix() }
+
+// ObjectReadFailedPrefix says "读取对象失败："
+// in the language of msgs.
+func (msgs Messages) ObjectReadFailedPrefix() string {
+	return Catalog.Format(msgs.locale, "objectReadFailedPrefix", nil)
+}
+
+// ObjectEmptyFilter says "当前筛选下没有可见的数据库对象"
+// in the language the app shows.
+func ObjectEmptyFilter() string { return In(i18n.Locale()).ObjectEmptyFilter() }
+
+// ObjectEmptyFilter says "当前筛选下没有可见的数据库对象"
+// in the language of msgs.
+func (msgs Messages) ObjectEmptyFilter() string {
+	return Catalog.Format(msgs.locale, "objectEmptyFilter", nil)
+}
+
+// ObjectRefreshDatabases says "刷新数据库列表"
+// in the language the app shows.
+func ObjectRefreshDatabases() string { return In(i18n.Locale()).ObjectRefreshDatabases() }
+
+// ObjectRefreshDatabases says "刷新数据库列表"
+// in the language of msgs.
+func (msgs Messages) ObjectRefreshDatabases() string {
+	return Catalog.Format(msgs.locale, "objectRefreshDatabases", nil)
+}
+
+// ObjectRefreshMetadataPrefix says "刷新元数据："
+// in the language the app shows.
+func ObjectRefreshMetadataPrefix() string { return In(i18n.Locale()).ObjectRefreshMetadataPrefix() }
+
+// ObjectRefreshMetadataPrefix says "刷新元数据："
+// in the language of msgs.
+func (msgs Messages) ObjectRefreshMetadataPrefix() string {
+	return Catalog.Format(msgs.locale, "objectRefreshMetadataPrefix", nil)
+}
+
+// ObjectFilterPrefix says "筛选对象："
+// in the language the app shows.
+func ObjectFilterPrefix() string { return In(i18n.Locale()).ObjectFilterPrefix() }
+
+// ObjectFilterPrefix says "筛选对象："
+// in the language of msgs.
+func (msgs Messages) ObjectFilterPrefix() string {
+	return Catalog.Format(msgs.locale, "objectFilterPrefix", nil)
+}
+
+// ObjectProgramDefinition says "查看程序定义"
+// in the language the app shows.
+func ObjectProgramDefinition() string { return In(i18n.Locale()).ObjectProgramDefinition() }
+
+// ObjectProgramDefinition says "查看程序定义"
+// in the language of msgs.
+func (msgs Messages) ObjectProgramDefinition() string {
+	return Catalog.Format(msgs.locale, "objectProgramDefinition", nil)
+}
+
+// ObjectProgramDefinitionTooltip says "查看函数、存储过程或事件定义"
+// in the language the app shows.
+func ObjectProgramDefinitionTooltip() string {
+	return In(i18n.Locale()).ObjectProgramDefinitionTooltip()
+}
+
+// ObjectProgramDefinitionTooltip says "查看函数、存储过程或事件定义"
+// in the language of msgs.
+func (msgs Messages) ObjectProgramDefinitionTooltip() string {
+	return Catalog.Format(msgs.locale, "objectProgramDefinitionTooltip", nil)
+}
+
+// ObjectClipboardOtherProfile says "对象剪贴板属于另一连接，请显式切换到原连接"
+// in the language the app shows.
+func ObjectClipboardOtherProfile() string { return In(i18n.Locale()).ObjectClipboardOtherProfile() }
+
+// ObjectClipboardOtherProfile says "对象剪贴板属于另一连接，请显式切换到原连接"
+// in the language of msgs.
+func (msgs Messages) ObjectClipboardOtherProfile() string {
+	return Catalog.Format(msgs.locale, "objectClipboardOtherProfile", nil)
+}
+
+// ObjectDatabasePrefix says "数据库："
+// in the language the app shows.
+func ObjectDatabasePrefix() string { return In(i18n.Locale()).ObjectDatabasePrefix() }
+
+// ObjectDatabasePrefix says "数据库："
+// in the language of msgs.
+func (msgs Messages) ObjectDatabasePrefix() string {
+	return Catalog.Format(msgs.locale, "objectDatabasePrefix", nil)
+}
