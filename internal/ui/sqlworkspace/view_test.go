@@ -125,3 +125,26 @@ func TestSQLQueryUICancelWaitsForWorkerAndRetainsEditor(t *testing.T) {
 		t.Fatalf("cancel misreported results or discarded SQL: error=%s result=%+v", q.Error(), q.Result())
 	}
 }
+
+func TestSQLExecutionControlsRemainVisibleWhenToolbarOverflows(t *testing.T) {
+	s, q, tt, _, _ := sqlUITestState(t)
+	q.Editor.Buffer.Set("SELECT 1")
+	s.Executor = func(context.Context, int64, string, string) (mysqlsvc.MySQLSQLResult, error) {
+		return mysqlsvc.MySQLSQLResult{Columns: []string{"one"}, Rows: [][]string{{"1"}}}, nil
+	}
+	tt.SetSize(480, 600)
+	tt.Frame()
+	if tt.HasText("命名查询") {
+		t.Fatal("fixture did not overflow the secondary toolbar controls")
+	}
+	if !tt.HasText("运行当前或选中 SQL") || !tt.HasText("取消") {
+		t.Fatalf("execution controls hidden by toolbar overflow: %v", tt.Texts())
+	}
+	if err := tt.Click("运行当前或选中 SQL"); err != nil {
+		t.Fatal(err)
+	}
+	waitSQLUI(t, tt, q)
+	if q.Result() == nil || q.Result().Rows[0][0] != "1" {
+		t.Fatalf("visible Run button did not execute: %s", q.Error())
+	}
+}

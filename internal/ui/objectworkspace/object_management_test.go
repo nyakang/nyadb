@@ -33,7 +33,7 @@ func TestObjectCreateNameChangesPreserveEditedDefinition(t *testing.T) {
 	if e := tt.Click("新对象名称"); e != nil {
 		t.Fatal(e)
 	}
-	tt.Key(ui.Ctrl, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyA)
 	tt.Type("renamed")
 	if s.objectOp.ref.Name != "renamed" || s.objectOp.original.Name != "renamed" {
 		t.Fatalf("form identity did not change: %+v", s.objectOp.ref)

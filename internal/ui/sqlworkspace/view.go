@@ -29,6 +29,14 @@ func (s *State) View(c *ui.Context, t *Document) {
 			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).Gap(7).
 				AlignItems(ui.Center).Background(p.Header).Children(func() {
 				ui.Toolbar(c, func() {
+					if ui.Button(c, locales.Text("运行")).Label(locales.Text("运行当前或选中 SQL")).
+						Disabled(!connected || t.loading || t.recoveryNeeded).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
+						s.Run(c.Services().Invalidate, t)
+					}
+					if ui.Button(c, locales.Text("取消")).Disabled(!t.loading || t.cancelRequested).
+						Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
+						s.RequestCancel(t)
+					}
 					if ui.Button(c, locales.Text("格式化 SQL")).Clicked() {
 						s.Format(t)
 					}
@@ -61,15 +69,6 @@ func (s *State) View(c *ui.Context, t *Document) {
 							}
 						}
 					})
-
-					if ui.Button(c, locales.Text("运行")).Label(locales.Text("运行当前或选中 SQL")).
-						Disabled(!connected || t.loading || t.recoveryNeeded).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
-						s.Run(c.Services().Invalidate, t)
-					}
-					if ui.Button(c, locales.Text("取消")).Disabled(!t.loading || t.cancelRequested).
-						Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
-						s.RequestCancel(t)
-					}
 				}).Label(locales.Text("SQL 执行操作")).Grow(1).MinWidth(0).Padding(0).Gap(5)
 				schema := t.database
 				if schema == "" {

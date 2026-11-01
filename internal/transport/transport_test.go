@@ -571,6 +571,50 @@ func TestGatewayCloseAcknowledgesBlockedWriter(t *testing.T) {
 	}
 }
 
+func TestGatewayServerCloseAcknowledgesBlockedWriter(t *testing.T) {
+	backend, writer := net.Pipe()
+	defer backend.Close()
+	defer writer.Close()
+	g, err := transport.NewGateway(transport.GatewayConfig{
+		Targets: map[string]string{"fixture": "unused:1"}, Token: "secret",
+		DialContext: func(context.Context, string, string) (net.Conn, error) { return backend, nil },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer g.Close()
+	server := httptest.NewTLSServer(g)
+	defer server.Close()
+	d, err := transport.New(httpSettings(t, server), transport.Options{Secrets: transport.Secrets{HTTPToken: "secret"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	if _, err = d.DialContext(context.Background(), "tcp", "unused:1"); err != nil {
+		t.Fatal(err)
+	}
+	// Leave the client unread: its bounded frame queue fills, then the gateway
+	// writer stalls and cannot send WebSocket or TLS shutdown notifications.
+	written := make(chan error, 1)
+	go func() { _, err := writer.Write(make([]byte, 16<<20)); written <- err }()
+	time.Sleep(20 * time.Millisecond)
+	closed := make(chan struct{})
+	go func() { g.Close(); close(closed) }()
+	select {
+	case <-closed:
+	case <-time.After(time.Second):
+		t.Fatal("gateway server Close blocked on writer")
+	}
+	select {
+	case err := <-written:
+		if err == nil {
+			t.Fatal("stalled backend writer completed after revoke")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("backend writer did not acknowledge gateway close")
+	}
+}
+
 func TestSSHCombinedAuthenticationServerRequiresPasswordThenKey(t *testing.T) {
 	endpoint, _ := sshServer(t, true)
 	host, ptext, _ := net.SplitHostPort(endpoint)
