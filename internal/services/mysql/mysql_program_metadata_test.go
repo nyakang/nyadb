@@ -119,3 +119,26 @@ func TestMySQLObjectsWithProgramsBindsSchemaAndPreservesDetails(t *testing.T) {
 		}
 	}
 }
+
+func TestSessionAdapterBrowseIncludesQualifiedPrograms(t *testing.T) {
+	manager := NewMySQLSessionManager()
+	manager.opener = func(context.Context, connections.ActiveSettings, string) (*sql.DB, error) {
+		return sql.OpenDB(programMetadataConnector{seen: make(chan string, 4)}), nil
+	}
+	if err := manager.Connect(context.Background(), connections.ActiveSettings{ProfileID: 101}, ""); err != nil {
+		t.Fatal(err)
+	}
+	defer manager.Close()
+	adapter := &SessionAdapter{manager: manager, id: 101}
+	namespace := adapter.Namespace("app")
+	objects, err := adapter.Browse(context.Background(), namespace)
+	if err != nil || len(objects) != 4 {
+		t.Fatalf("programs lost at runtime adapter: %v", err)
+	}
+	expected := map[string]string{"orders": "table", "get_price": "function", "record_sale": "procedure", "rotate_logs": "event"}
+	for _, object := range objects {
+		if object.Ref != namespace.Object(expected[object.Name], object.Name) {
+			t.Fatalf("unqualified object: %+v", object.Ref)
+		}
+	}
+}

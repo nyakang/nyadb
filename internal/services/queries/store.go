@@ -160,7 +160,25 @@ func (s *Store) open(ctx context.Context, r Record, dest any) error {
 	return json.Unmarshal(plain, dest)
 }
 func (s *Store) SaveWorkspace(ctx context.Context, w Workspace) error {
-	return s.put(ctx, Record{ID: "workspace", Kind: "workspace", Revision: w.Revision}, w)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	// A newly opened Store must authenticate existing drafts before writing.
+	// A valid-length but incorrect vault key must never replace their ciphertext.
+	old, exists, e := s.record(ctx, "workspace", "workspace")
+	if e != nil {
+		return e
+	}
+	if exists {
+		var original Workspace
+		if e = s.open(ctx, old, &original); e != nil {
+			return e
+		}
+	}
+	r, e := s.seal(ctx, Record{ID: "workspace", Kind: "workspace", Revision: w.Revision}, w)
+	if e != nil {
+		return e
+	}
+	return s.repository.Put(ctx, r)
 }
 func (s *Store) LoadWorkspace(ctx context.Context) (Workspace, error) {
 	s.mu.Lock()

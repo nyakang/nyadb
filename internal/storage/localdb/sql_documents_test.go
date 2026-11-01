@@ -74,3 +74,38 @@ func TestEncryptedSQLMigrationRoundTripRevisionAndMissingKey(t *testing.T) {
 		t.Fatal("original ciphertext not retained")
 	}
 }
+
+func TestWorkspaceWriteFirstRejectsWrongKeyWithoutReplacingCiphertext(t *testing.T) {
+	db, err := Open(filepath.Join(t.TempDir(), "config.sqlite"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	repo := NewSQLRepository(db)
+	key := &workspaceTestKey{key: bytes.Repeat([]byte{1}, 32)}
+	w := queries.Workspace{Revision: 1, Documents: []queries.Document{{ID: 1, Text: "unsaved draft"}}}
+	if err = queries.NewStore(repo, key).SaveWorkspace(ctx, w); err != nil {
+		t.Fatal(err)
+	}
+	before, err := repo.List(ctx, "workspace", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.Revision++
+	wrong := &workspaceTestKey{key: bytes.Repeat([]byte{2}, 32)}
+	if err = queries.NewStore(repo, wrong).SaveWorkspace(ctx, w); err == nil {
+		t.Fatal("wrong key overwrote drafts before any read")
+	}
+	after, err := repo.List(ctx, "workspace", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(before[0].Payload, after[0].Payload) || before[0].Revision != after[0].Revision {
+		t.Fatal("ciphertext changed")
+	}
+	restored, err := queries.NewStore(repo, key).LoadWorkspace(ctx)
+	if err != nil || restored.Documents[0].Text != "unsaved draft" {
+		t.Fatal("original key cannot recover drafts")
+	}
+}
