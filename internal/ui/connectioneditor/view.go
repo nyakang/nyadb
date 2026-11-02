@@ -68,6 +68,8 @@ func connectionEditorTabNames(kind connections.Kind) []string {
 		return []string{"常规", "高级", "附加的数据库", "HTTP", "备注"}
 	case connections.PostgreSQL:
 		return []string{"常规", "高级", "SSL", "SSH", "HTTP", "备注"}
+	case connections.ClickHouse:
+		return []string{"常规", "SSL", "备注"}
 	default:
 		return []string{"常规", "高级", "数据库", "SSL", "SSH", "HTTP", "备注"}
 	}
@@ -177,7 +179,7 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 		}
 		s.editorInputRow(c, "主机：", "主机", &p.Host, labelWidth, fieldWidth)
 		s.editorInputRow(c, "端口：", "端口", &s.connectionPort, labelWidth, min(fieldWidth, float32(80)))
-		if p.Kind == connections.PostgreSQL {
+		if p.Kind == connections.PostgreSQL || p.Kind == connections.ClickHouse {
 			s.editorInputRow(c, "初始数据库：", "初始数据库", &p.Database, labelWidth, fieldWidth)
 		}
 		s.editorInputRow(c, "用户名：", "用户名", &p.Username, labelWidth, min(fieldWidth, float32(200)))

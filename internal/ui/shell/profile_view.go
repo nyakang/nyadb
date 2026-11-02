@@ -131,7 +131,7 @@ func (s *State) profileInspector(c *ui.Context) {
 						ui.Text(c, connectionKindName(p.Kind)).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 					})
 				})
-				if p.Kind == connections.MySQL || p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite {
+				if p.Kind == connections.MySQL || p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse {
 					s.mysqlSessionToolbar(c)
 				}
 				theme.Property(c, locales.Text("状态"), locales.Text(s.sessions.StatusFor(p.ID)))

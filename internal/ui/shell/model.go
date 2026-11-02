@@ -154,7 +154,7 @@ func (s *State) openQuery() {
 	database := ""
 	if s.profileMode {
 		initial = "-- 输入 SQL；点击运行后发送至当前连接\n"
-		if p, ok := s.currentProfile(); ok && (p.Kind == connections.MySQL || p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite) {
+		if p, ok := s.currentProfile(); ok && (p.Kind == connections.MySQL || p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse) {
 			profileID = p.ID
 			if s.sessions.StatusFor(profileID) == "已连接" {
 				database = s.sessions.Current().Database

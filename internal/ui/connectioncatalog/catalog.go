@@ -37,9 +37,10 @@ var databaseCatalog = []catalogEntry{
 	{"华为云 PostgreSQL", "PostgreSQL", "华为", "云数据库", "database", "#d97777", ""},
 	{"AWS RDS MySQL", "MySQL", "AWS", "云数据库", "database", "#dd9933", ""},
 	{"Azure SQL", "SQL Server", "Microsoft", "云数据库", "table", "#378de0", ""},
+	{"ClickHouse", "ClickHouse", "", "全部", "database", "#e7b632", connections.ClickHouse},
 }
 
-var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "MariaDB", "MongoDB", "Redis", "Snowflake"}
+var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "ClickHouse", "MariaDB", "MongoDB", "Redis", "Snowflake"}
 var catalogVendors = catalogTreeVendorOrder
 
 func catalogMatch(e catalogEntry, query string, engines, vendors map[string]bool) bool {

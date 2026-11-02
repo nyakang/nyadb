@@ -27,6 +27,8 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, PostgreSQL: &p.PostgreSQLOptions}
 	case connections.SQLite:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, SQLite: &p.SQLiteOptions}
+	case connections.ClickHouse:
+		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind}
 	default:
 		return "", connections.ErrInvalid
 	}
@@ -59,6 +61,9 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 		checked, err := connections.NormalizeSQLiteOptions(p.SQLiteOptions)
 		p.SQLiteOptions = checked
 		return err
+	}
+	if p.Kind == connections.ClickHouse && envelope.SQLite == nil && envelope.PostgreSQL == nil {
+		return nil
 	}
 	return fmt.Errorf("engine options do not match profile")
 }

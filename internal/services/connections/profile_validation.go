@@ -88,7 +88,7 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	switch p.Kind {
-	case MySQL, PostgreSQL:
+	case MySQL, PostgreSQL, ClickHouse:
 		if p.Kind == MySQL {
 			var err error
 			p.MySQLAdvanced, err = NormalizeMySQLAdvanced(p.MySQLAdvanced)
@@ -107,6 +107,17 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 		if p.Host == "" || p.Port == 0 {
 			return p, fmt.Errorf("%w: server host and port are required", ErrInvalid)
+		}
+		if p.Kind == ClickHouse {
+			if strings.ContainsAny(p.Host, "@/?!#\\") || strings.ContainsAny(p.Host, " \t\r\n") || p.Database == "" || p.Username == "" {
+				return p, fmt.Errorf("%w: ClickHouse requires a hostname, database and username", ErrInvalid)
+			}
+			if p.TLSMode == "" {
+				p.TLSMode = "disable"
+			}
+			if p.TLSMode != "disable" && p.TLSMode != "verify-full" {
+				return p, fmt.Errorf("%w: ClickHouse TLS must be disable or verify-full", ErrInvalid)
+			}
 		}
 		switch p.TLSMode {
 		case "", "disable", "prefer", "require", "verify-ca", "verify-full":

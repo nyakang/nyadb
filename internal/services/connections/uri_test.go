@@ -44,7 +44,7 @@ func TestConnectionURIRejectsUnsupportedOrAmbiguousInputWithoutEchoingSecrets(t 
 		"mysql://user:private-password@host/db?sslmode=prefer", "mysql://user:private-password@host/db?sslmode=disable&sslmode=require",
 		"postgres://user:private-password@host/db?password=other", "postgres://user:private-password@host/db#fragment",
 		"sqlite://user:private-password@host/tmp/file", "sqlite:///tmp/file?mode=ro", "sqlite:relative.sqlite",
-		"clickhouse://user:private-password@host/db", "mysql://user:private-password%00@host/db", "mysql://user:private-password@host/%00",
+		"unknown://user:private-password@host/db", "mysql://user:private-password%00@host/db", "mysql://user:private-password@host/%00",
 		"mysql://user:private-password%XX@host/db",
 	} {
 		got, err := connections.ParseURI(uri)

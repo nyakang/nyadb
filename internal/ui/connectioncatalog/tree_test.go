@@ -8,8 +8,8 @@ import (
 
 func TestNavicatObservedTreeGroupHierarchy(t *testing.T) {
 	s := New()
-	if got := s.catalogTreeDirect(); len(got) != 9 {
-		t.Fatalf("Navicat list mode has nine direct database rows; got %d", len(got))
+	if got := s.catalogTreeDirect(); len(got) != 10 {
+		t.Fatalf("nine observed database rows plus the independent ClickHouse extension; got %d", len(got))
 	}
 	groups := s.catalogTreeGroups()
 	if len(groups) < 12 || groups[0].vendor != "阿里云" || groups[1].vendor != "华为" {

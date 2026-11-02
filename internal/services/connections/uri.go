@@ -44,6 +44,8 @@ func ParseURI(raw string) (URIImport, error) {
 		kind = MySQL
 	case "postgres", "postgresql":
 		kind = PostgreSQL
+	case "clickhouse":
+		kind = ClickHouse
 	case "sqlite", "file":
 		kind = SQLite
 	default:
@@ -108,6 +110,9 @@ func ParseURI(raw string) (URIImport, error) {
 	if err != nil {
 		return fail(ErrURI)
 	}
+	if kind == ClickHouse && p.Database == "" {
+		p.Database = "default"
+	}
 	if kind == PostgreSQL && p.Database == "" {
 		p.Database = p.Username
 		if p.Database == "" {
@@ -119,6 +124,9 @@ func ParseURI(raw string) (URIImport, error) {
 			return fail(ErrURIOptions)
 		}
 		mode := strings.ToLower(values[0])
+		if kind == ClickHouse && mode != "disable" && mode != "verify-full" {
+			return fail(ErrURIOptions)
+		}
 		if kind == MySQL && mode != "disable" && mode != "require" && mode != "verify-full" {
 			return fail(ErrURIOptions)
 		}

@@ -1337,5 +1337,10 @@
   "sqliteDesign359ad99c49": "Apply definition changes",
   "sqliteDesignbd264c16bf": "Columns to remove: ",
   "sqliteDesign760831c267": "Enter the target name to open the table designer. Rename occurs only after previewing and confirming ALTER TABLE.",
-  "sqliteDesignSave": "Save table design"
+  "sqliteDesignSave": "Save table design",
+  "clickhouseSessionPassword": "ClickHouse session password",
+  "clickhouseNativeProtocol": "ClickHouse uses the native TCP protocol on port 9000 by default; TLS servers typically use port 9440.",
+  "clickhouseTLSMode": "ClickHouse TLS mode",
+  "clickhouseTLSModeCaption": "TLS mode:",
+  "connectionURISupportedEngines": "Supports MySQL, PostgreSQL, SQLite and ClickHouse. Review the imported settings before connecting."
 }

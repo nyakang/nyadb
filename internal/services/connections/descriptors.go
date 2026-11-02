@@ -18,6 +18,8 @@ func Describe(kind Kind) (Descriptor, bool) {
 		return Descriptor{kind, "PostgreSQL", "postgres", "server", "postgres", 5432, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Export: true, JSONL: true}}, true
 	case SQLite:
 		return Descriptor{kind, "SQLite", "sqlite", "file", "sqlite", 0, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Export: true, JSONL: true}}, true
+	case ClickHouse:
+		return Descriptor{kind, "ClickHouse", "clickhouse", "server", "clickhouse", 9000, contract.Capabilities{Query: true, Metadata: true, Explain: true, Count: true, Export: true, JSONL: true}}, true
 	}
 	return Descriptor{}, false
 }

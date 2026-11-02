@@ -1337,5 +1337,10 @@
   "sqliteDesign359ad99c49": "应用定义修改",
   "sqliteDesignbd264c16bf": "将删除字段：",
   "sqliteDesign760831c267": "输入目标名称后打开表设计器，预览并确认 ALTER TABLE 后才会改名。",
-  "sqliteDesignSave": "保存表设计"
+  "sqliteDesignSave": "保存表设计",
+  "clickhouseSessionPassword": "ClickHouse 会话密码",
+  "clickhouseNativeProtocol": "ClickHouse 使用原生 TCP 协议，默认端口 9000；TLS 服务通常使用 9440。",
+  "clickhouseTLSMode": "ClickHouse TLS 模式",
+  "clickhouseTLSModeCaption": "TLS 模式：",
+  "connectionURISupportedEngines": "支持 MySQL、PostgreSQL、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。"
 }

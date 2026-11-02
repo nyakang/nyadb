@@ -146,7 +146,7 @@ func CompleteSQL(source string, offset int, catalog CompletionCatalog) Completio
 		seen[key] = true
 		insert := name
 		if kind != "keyword" && (quoted || !completionBareName(name) || completionReserved(name) || catalog.Dialect == "postgres" && name != strings.ToLower(name)) {
-			insert, _ = Identifier(name, catalog.Dialect == "mysql" || catalog.Dialect == "")
+			insert, _ = Identifier(name, catalog.Dialect == "mysql" || catalog.Dialect == "clickhouse" || catalog.Dialect == "")
 			if quoted && offset < len(source) && source[offset] == insert[len(insert)-1] {
 				insert = insert[:len(insert)-1]
 			}
@@ -503,7 +503,7 @@ var completionReservedWords = func() map[string]bool {
 // spans prevent suggestions in comments, strings and PostgreSQL dollar bodies.
 func completionTokens(source, dialect string) []completionToken {
 	var out []completionToken
-	mysql := dialect == "mysql" || dialect == ""
+	mysql := dialect == "mysql" || dialect == "clickhouse" || dialect == ""
 	for i := 0; i < len(source); {
 		if source[i] <= ' ' {
 			i++
@@ -526,7 +526,7 @@ func completionTokens(source, dialect string) []completionToken {
 					i++
 				}
 			}
-		case strings.HasPrefix(source[i:], "--") && (!mysql || i+2 == len(source) || source[i+2] <= ' ') || mysql && source[i] == '#':
+		case strings.HasPrefix(source[i:], "--") && (!mysql || dialect == "clickhouse" || i+2 == len(source) || source[i+2] <= ' ') || mysql && source[i] == '#':
 			t.protected = true
 			for i < len(source) && source[i] != '\n' {
 				i++
@@ -537,7 +537,7 @@ func completionTokens(source, dialect string) []completionToken {
 			if quote == '[' {
 				end = ']'
 			}
-			t.ident = quote == '`' || quote == '[' || quote == '"' && (!mysql)
+			t.ident = quote == '`' || quote == '[' || quote == '"' && (!mysql || dialect == "clickhouse")
 			t.protected = !t.ident
 			escape := mysql || quote == '\'' && i > 0 && (source[i-1] == 'E' || source[i-1] == 'e')
 			i++
@@ -555,7 +555,7 @@ func completionTokens(source, dialect string) []completionToken {
 				}
 			}
 		default:
-			if source[i] == '$' && dialect == "postgres" {
+			if source[i] == '$' && (dialect == "postgres" || dialect == "clickhouse") {
 				j := i + 1
 				for j < len(source) && (source[j] == '_' || source[j] >= 'a' && source[j] <= 'z' || source[j] >= 'A' && source[j] <= 'Z' || j > i+1 && source[j] >= '0' && source[j] <= '9') {
 					j++
