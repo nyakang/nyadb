@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
@@ -75,12 +76,14 @@ func (s *State) readAccounts(services ui.Services) {
 		}
 		loader, grants = admin.Accounts, admin.AccountGrants
 	}
+	complete := s.beginActivity(profile, a.sessionGeneration, a.database, a.table, "accounts", "READ ACCOUNTS AND GRANTS")
 	go func() {
 		list, e := loader(ctx, profile)
 		var gs []string
 		if e == nil && account.User != "" && grants != nil {
 			gs, e = grants(ctx, profile, account)
 		}
+		contract.CompleteActivity(complete, managementActivityOutcome(e))
 		ch <- accountRead{list, gs, e}
 		services.Invalidate()
 	}()
@@ -172,8 +175,10 @@ func (s *State) BeginMaintenance(services ui.Services, profile int64, database, 
 		}
 		executor = admin.MaintainTable
 	}
+	complete := s.beginActivity(profile, session.Generation, database, table, "maintenance", operation)
 	go func() {
 		v, e := executor(ctx, profile, database, table, operation)
+		contract.CompleteActivity(complete, managementActivityOutcome(e))
 		ch <- maintenanceRead{v, e}
 		services.Invalidate()
 	}()
@@ -273,8 +278,11 @@ func (s *State) accountModal(c *ui.Context) {
 						}
 						executor = admin.ChangeAccounts
 					}
+					complete := s.beginActivity(profile, a.sessionGeneration, change.Database, change.Table, "accounts", change.Action+" · "+change.Account.User+"@"+change.Account.Host)
 					go func() {
-						ch <- executor(ctx, profile, generation, []mysqlsvc.AccountChange{change})
+						outcome := executor(ctx, profile, generation, []mysqlsvc.AccountChange{change})
+						contract.CompleteActivity(complete, ddlActivityOutcome(outcome))
+						ch <- outcome
 						services.Invalidate()
 					}()
 				}

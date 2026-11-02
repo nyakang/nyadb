@@ -40,6 +40,9 @@ func (s *State) AssetContextMenu(m *ui.Menu, profile int64, id string, open func
 	}
 	writable := s.assetWritable(profile) && !s.assetPending(id)
 	action, group := "", ""
+	if m.Item(locales.Text("添加到收藏夹…")).Disabled(s.deps.FavoriteAsset == nil || s.deps.CanFavorite == nil || !s.deps.CanFavorite()).Chosen() {
+		action = "favorite"
+	}
 	if m.Item(locales.Text("打开查询")).Shortcut(0, ui.KeyEnter).Chosen() {
 		action = "open"
 	}
@@ -70,6 +73,10 @@ func (s *State) AssetContextMenu(m *ui.Menu, profile int64, id string, open func
 		return false
 	}
 	switch action {
+	case "favorite":
+		if s.deps.FavoriteAsset != nil {
+			s.deps.FavoriteAsset(n)
+		}
 	case "open":
 		if open != nil {
 			open(n)

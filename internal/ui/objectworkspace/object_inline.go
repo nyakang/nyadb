@@ -12,7 +12,7 @@ func (s *State) BeginInlineRename(name, kind string) {
 	b.renameEditing = true
 }
 func (s *State) objectNameCell(c *ui.Context, obj contract.DBObject) {
-	if obj.Kind != "表" || !s.CanChangeTable(s.currentBrowser().ProfileID) {
+	if obj.Kind != "表" || !s.CanRenameTable(s.currentBrowser().ProfileID, s.currentBrowser().Database, obj.Name) {
 		ui.Text(c, obj.Name).SingleLine()
 		return
 	}
@@ -29,7 +29,7 @@ func (s *State) objectNameCell(c *ui.Context, obj contract.DBObject) {
 			s.startMySQLTableChange(services)
 			s.tableDialog = false
 		}
-		if s.deps.BeforeDDL == nil || !s.deps.BeforeDDL(c.Services(), s.currentBrowser().ProfileID, s.currentBrowser().Database, obj.Name, next) {
+		if s.canSchemaDesign(s.currentBrowser().ProfileID, s.currentBrowser().Database, obj.Name) || s.deps.BeforeDDL == nil || !s.deps.BeforeDDL(c.Services(), s.currentBrowser().ProfileID, s.currentBrowser().Database, obj.Name, next) {
 			next(c.Services())
 		}
 	}

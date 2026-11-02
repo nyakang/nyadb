@@ -23,6 +23,7 @@ type Files struct {
 	Write       func(string, string) error
 }
 type ioResult struct {
+	assetOpen        func(queries.Named)
 	kind, path, text string
 	named            queries.Named
 	workspace        queries.Workspace
@@ -92,6 +93,7 @@ func (d *Document) Name() string {
 func (d *Document) Dirty() bool { return d.Editor != nil && d.Editor.Buffer.String() != d.savedText }
 func (s *State) SetPersistence(store *queries.Store, files Files, restored func(queries.Workspace)) {
 	s.persistence.store, s.persistence.files, s.persistence.restored = store, files, restored
+	s.loadHistory()
 	if store == nil {
 		return
 	}
@@ -368,6 +370,9 @@ func (s *State) consumeIO(services ui.Services) {
 				}
 				continue
 			}
+			if r.kind == "open_asset_reference" && r.assetOpen != nil {
+				r.assetOpen(r.named)
+			}
 			if r.kind == "workspace" {
 				p.savedRevision = r.revision
 				if p.savedRevision < p.revision {
@@ -447,6 +452,9 @@ func (s *State) GuardLeave(d *Document, next func(ui.Services)) bool {
 	return true
 }
 func (s *State) GuardWorkspaceClose(next func(ui.Services)) bool {
+	if s.guardHistoryClose(next) {
+		return true
+	}
 	if len(s.persistence.jobs) > 0 {
 		s.persistence.awaitClose = next
 		return true
@@ -468,6 +476,7 @@ func (s *State) GuardWorkspaceClose(next func(ui.Services)) bool {
 	return false
 }
 func (s *State) Modals(c *ui.Context) {
+	s.historyModals(c)
 	s.assetModals(c)
 	s.explainModal(c)
 	p := &s.persistence
@@ -567,9 +576,14 @@ func (s *State) ConsumeDocuments(services ui.Services) {
 	if s.persistence.closed {
 		return
 	}
+	s.consumeHistory()
 	s.consumeIO(services)
 	p := &s.persistence
-	if len(p.jobs) == 0 && p.awaitClose != nil {
+	if p.awaitClose != nil && s.HistoryPending() && s.history.err != "" {
+		s.history.exitOpen, s.history.exitNext = true, p.awaitClose
+		p.awaitClose = nil
+	}
+	if len(p.jobs) == 0 && !s.HistoryPending() && p.awaitClose != nil {
 		next := p.awaitClose
 		p.awaitClose = nil
 		next(services)

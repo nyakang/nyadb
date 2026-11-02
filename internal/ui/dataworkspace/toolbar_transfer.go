@@ -451,6 +451,7 @@ func (s *State) startDataImport(services ui.Services, t *Document) {
 	if importer == nil {
 		history = mysqlDataWriteHistoryRequest(db, table, edits, false)
 	}
+	complete := s.beginActivity(t, "import", "IMPORT "+mysqlDataHistoryTable(db, table))
 	creation := mysqlDataHistoryEntry{}
 	if newTable {
 		creation = mysqlDataImportCreationHistory(db, table, columns)
@@ -475,6 +476,12 @@ func (s *State) startDataImport(services ui.Services, t *Document) {
 		} else {
 			result, err = saver(ctx, profile, db, table, edits)
 		}
+		activity := dataActivityOutcome(err, result, len(edits), false)
+		if creationUncertain {
+			activity.State = "uncertain"
+			activity.Error = mysqlDataHistoryError(err, false, false, true)
+		}
+		contract.CompleteActivity(complete, activity)
 		for i := range history {
 			history[i].At, history[i].Duration = time.Now(), time.Since(started)
 		}
@@ -556,6 +563,7 @@ func (s *State) startDataExport(services ui.Services, t *Document) {
 	} else {
 		pickerDone = s.beginDataPicker(t)
 	}
+	complete := s.beginActivity(t, "data_export", "EXPORT "+mysqlDataHistoryTable(db, table)+" · "+format)
 	go func() {
 		path, err := saveDialog(mygo.SaveDialogOptions{Title: locales.Text("导出数据文件"), DefaultPath: table + "." + strings.ToLower(format), Filters: []mygo.FileFilter{{Name: format, Extensions: []string{strings.ToLower(format)}}}})
 		if pickerDone != nil {
@@ -618,6 +626,15 @@ func (s *State) startDataExport(services ui.Services, t *Document) {
 				return encoder.Close()
 			})
 		}
+		activity := contract.ActivityOutcome(err)
+		if err != nil {
+			activity.Error = mysqlDataHistoryError(err, false, false, false)
+		}
+		if path == "" && err == nil {
+			activity.State = "cancelled"
+		}
+		activity.Rows = int64(count)
+		contract.CompleteActivity(complete, activity)
 		out <- mysqlDataTransferResult{Request: request, Generation: gen, Profile: profile, Rows: count, Path: path, Err: err}
 		services.Invalidate()
 	}()

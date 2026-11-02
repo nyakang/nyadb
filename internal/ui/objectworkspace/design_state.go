@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/mysqlddl"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
@@ -39,21 +40,31 @@ type designDocument struct {
 	plan                                   *mysqlddl.Plan
 	preview, guard                         bool
 	next                                   func(ui.Services)
-	page, row, formRow                     int
+	page, row, formRow, clauseRow          int
 	list                                   ui.ListState
 	form, formBase                         mysqlddl.Field
+	constraint                             *designConstraintForm
 	formError                              string
-	optionName, optionValue                string
+	optionName, optionValue, optionBase    string
 	triggerRow                             int
 	outcome                                *mysqlsvc.DDLOutcome
 }
 
 func designSignature(draft mysqlddl.Draft) string { b, _ := json.Marshal(draft); return string(b) }
 func (d *Document) DesignDirty() bool {
-	return d != nil && d.design != nil && d.design.loaded && (designSignature(d.design.draft) != d.design.baseline || !reflect.DeepEqual(d.design.form, d.design.formBase))
+	if d != nil && d.schemaDesign != nil {
+		return d.schemaDesign.dirty()
+	}
+	return d != nil && d.design != nil && d.design.loaded && (designSignature(d.design.draft) != d.design.baseline || !reflect.DeepEqual(d.design.form, d.design.formBase) || d.design.constraint.dirty() || d.design.optionValue != d.design.optionBase)
 }
-func (d *Document) DesignBusy() bool { return d != nil && d.design != nil && d.design.busy }
+func (d *Document) DesignBusy() bool {
+	return d != nil && (d.design != nil && d.design.busy || d.schemaDesign != nil && d.schemaDesign.busy)
+}
 func (s *State) BeginDesign(d *Document, services ui.Services) {
+	if d != nil && s.canSchemaDesign(d.profileID, d.database, d.table) {
+		s.beginSchemaDesign(d, services)
+		return
+	}
 	if d == nil || d.closed || d.objectKind != "表" || d.design != nil || s.deps.DesignLoader == nil {
 		return
 	}
@@ -84,6 +95,8 @@ func (s *State) OpenNewDesign(id uint64, profile int64, database, name string) *
 	pk, _ := mysqlddl.ParseClause("PRIMARY KEY (`id`)")
 	x.draft.Table.Clauses = []mysqlddl.Clause{field, pk}
 	x.savedDraft = x.draft.Clone()
+	x.optionValue = mysqlddl.Option(x.draft.Table.Options, x.optionName)
+	x.optionBase = x.optionValue
 	d.design = x
 	return d
 }
@@ -173,6 +186,9 @@ func (s *State) consumeDesign(services ui.Services) {
 			x.formRow = -1
 			x.form = mysqlddl.Field{}
 			x.formBase = x.form
+			x.constraint = nil
+			x.optionValue = mysqlddl.Option(x.draft.Table.Options, x.optionName)
+			x.optionBase = x.optionValue
 			d.err = ""
 			if x.next != nil {
 				next := x.next
@@ -184,11 +200,14 @@ func (s *State) consumeDesign(services ui.Services) {
 	}
 }
 func (s *State) PrepareDesign(d *Document) error {
+	if d != nil && d.schemaDesign != nil {
+		return s.PrepareSchemaDesign(d)
+	}
 	if d == nil || d.design == nil || !d.design.loaded || d.design.busy || d.design.blocked {
 		return errors.New("design is not ready or requires explicit re-reading")
 	}
 	x := d.design
-	if !s.applyDesignField(d) {
+	if !s.applyDesignForms(d) {
 		return errors.New(x.formError)
 	}
 	p, e := mysqlddl.Build(x.original, x.draft)
@@ -214,16 +233,19 @@ func (s *State) executeDesign(d *Document, services ui.Services) {
 		d.err = "原表设计会话已失效"
 		return
 	}
-	run := s.deps.DesignExecutor()
-	if run == nil {
-		return
-	}
 	plan := *x.plan
 	plan.Desired = plan.Desired.Clone()
 	plan.Original.Triggers = append([]mysqlddl.Trigger(nil), plan.Original.Triggers...)
 	plan.Statements = append([]string(nil), plan.Statements...)
+	if !s.applyDesignForms(d) {
+		return
+	}
 	if designSignature(plan.Desired) != designSignature(x.draft) {
 		d.err = "预览后草稿已修改，请重新生成预览"
+		return
+	}
+	run := s.deps.DesignExecutor()
+	if run == nil {
 		return
 	}
 	x.request++
@@ -234,8 +256,10 @@ func (s *State) executeDesign(d *Document, services ui.Services) {
 	x.preview = false
 	ch := make(chan designReply, 1)
 	x.results = ch
+	complete := s.beginActivity(profile, generation, d.database, d.table, "structure", "APPLY TABLE DESIGN")
 	go func() {
 		out := run(ctx, profile, plan)
+		contract.CompleteActivity(complete, ddlActivityOutcome(out))
 		ch <- designReply{outcome: &out, generation: generation, request: request}
 		services.Invalidate()
 	}()
@@ -247,6 +271,7 @@ func (s *State) cancelDesign(d *Document) {
 	}
 }
 func (s *State) closeDesign(d *Document) {
+	s.closeSchemaDesign(d)
 	if d.design == nil {
 		return
 	}
@@ -257,6 +282,9 @@ func (s *State) closeDesign(d *Document) {
 	d.design = nil
 }
 func (s *State) GuardDesignLeave(d *Document, next func(ui.Services)) bool {
+	if d != nil && d.schemaDesign != nil {
+		return s.guardSchemaDesign(d, next)
+	}
 	if d == nil || d.design == nil {
 		return false
 	}
@@ -303,7 +331,7 @@ func (s *State) applyDesignField(d *Document) bool {
 }
 func (s *State) addDesignClause(d *Document, kind mysqlddl.Kind) {
 	x := d.design
-	if !s.applyDesignField(d) {
+	if !s.applyDesignForms(d) {
 		return
 	}
 	n := 1
@@ -365,4 +393,6 @@ func (s *State) addDesignClause(d *Document, kind mysqlddl.Kind) {
 	copy(x.draft.Table.Clauses[at+1:], x.draft.Table.Clauses[at:])
 	x.draft.Table.Clauses[at] = c
 	x.row = at
+	x.constraint = nil
+	x.formRow = -1
 }

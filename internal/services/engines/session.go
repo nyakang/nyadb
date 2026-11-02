@@ -50,12 +50,29 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 	if err != nil {
 		return err
 	}
+	if p.Kind == connections.SQLite {
+		options, e := connections.NormalizeSQLiteOptions(p.SQLiteOptions)
+		if e != nil {
+			return e
+		}
+		p.SQLiteOptions = options
+		strategy = sqliteDialect{options: options}
+	}
 	db, err := strategy.open(p, password, m.DialContext)
 	if err != nil {
 		return err
 	}
-	db.SetMaxOpenConns(8)
-	db.SetMaxIdleConns(2)
+	maxConnections := 8
+	if p.Kind == connections.PostgreSQL {
+		options, e := connections.NormalizePostgreSQLOptions(p.PostgreSQLOptions)
+		if e != nil {
+			db.Close()
+			return e
+		}
+		maxConnections = options.MaxConnections
+	}
+	db.SetMaxOpenConns(maxConnections)
+	db.SetMaxIdleConns(min(2, maxConnections))
 	if e := db.PingContext(ctx); e != nil {
 		db.Close()
 		return redact(e, password)
@@ -120,6 +137,7 @@ func (m *Manager) Close() error {
 }
 
 type Session struct {
+	schema       schemaGate
 	strategy     dialectStrategy
 	db           *sql.DB
 	ctx          context.Context
@@ -139,7 +157,11 @@ func (s *Session) Generation() uint64 { return s.generation }
 func (s *Session) Catalog() string    { return s.strategy.catalog(s.catalog) }
 func (s *Session) Capabilities() contract.Capabilities {
 	d, _ := connections.Describe(s.kind)
-	return d.Capabilities
+	caps := d.Capabilities
+	if sqlite, ok := s.strategy.(sqliteDialect); ok && sqlite.options.ReadOnly {
+		caps.EditableTables = false
+	}
+	return caps
 }
 func (s *Session) isClosed() bool { s.mu.Lock(); defer s.mu.Unlock(); return s.closed }
 func (s *Session) Close() error {
@@ -185,6 +207,16 @@ func quote(v string) string                 { return `"` + strings.ReplaceAll(v,
 func qualified(o contract.ObjectRef) string { return quote(o.Schema) + "." + quote(o.Name) }
 func (s *Session) arg(i int) string         { return s.strategy.argument(i) }
 func (s *Session) Reserve(ctx context.Context) (contract.SQLLease, error) {
+	if s.kind == connections.SQLite {
+		child, done := s.requestContext(ctx)
+		defer done()
+		ctx = child
+		release, err := s.schema.acquire(ctx, false)
+		if err != nil {
+			return nil, err
+		}
+		defer release()
+	}
 	if s.isClosed() {
 		return nil, ErrRevoked
 	}
@@ -248,6 +280,13 @@ func (l *Lease) Stream(ctx context.Context, q string, sink contract.StreamSink) 
 	ctx, cancel := context.WithCancel(ctx)
 	stop := context.AfterFunc(l.ctx, cancel)
 	defer func() { stop(); cancel() }()
+	if l.s.kind == connections.SQLite {
+		release, err := l.s.schema.acquire(ctx, false)
+		if err != nil {
+			return contract.SQLResult{}, err
+		}
+		defer release()
+	}
 	start := time.Now()
 	r, e := execute(ctx, l.c, l.s.kind, q, sink)
 	r.Duration = time.Since(start)

@@ -109,7 +109,7 @@ func (s *State) consumeMySQLConnectionTest() {
 		s.connectionTestCancel = nil
 		s.connectionTestResults = nil
 		if result.err == nil {
-			s.connectionTestMessage = "MySQL 连接测试成功（已关闭测试会话）"
+			s.connectionTestMessage = connectionKindName(s.connectionDraft.Kind) + " 连接测试成功（已关闭测试会话）"
 			s.connectionError = ""
 		} else if errors.Is(result.err, context.Canceled) {
 			s.connectionTestMessage = "连接测试已取消"
@@ -135,7 +135,7 @@ func (s *State) cancelMySQLConnectionTest() {
 
 func (s *State) connectionTestStatus(c *ui.Context) {
 	if s.connectionTesting {
-		ui.Text(c, "正在测试 MySQL 连接…").FontSize(theme.Font(c, 12))
+		ui.Text(c, "正在测试 "+connectionKindName(s.connectionDraft.Kind)+" 连接…").FontSize(theme.Font(c, 12))
 	} else if s.connectionTestMessage != "" {
 		ui.Text(c, s.connectionTestMessage).FontSize(theme.Font(c, 12))
 	}

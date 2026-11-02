@@ -24,7 +24,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 	if lease, ok := t.lease.(interface{ SupportsFiles() bool }); ok {
 		fileSupported = lease.SupportsFiles()
 	}
-	ui.SplitVerticalPercent(c, &s.SplitPercent, func() {
+	root := ui.SplitVerticalPercent(c, &s.SplitPercent, func() {
 		ui.Column(c).Fill().Children(func() {
 			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).Gap(7).
 				AlignItems(ui.Center).Background(p.Header).Children(func() {
@@ -58,6 +58,13 @@ func (s *State) View(c *ui.Context, t *Document) {
 					if ui.Button(c, locales.Text("另存为")).Clicked() {
 						s.Save(t, true, nil)
 					}
+					if ui.Button(c, locales.Text("SQL 历史")).Disabled(!s.HistoryAvailable()).Clicked() {
+						profile := t.profileID
+						if t.recoveryNeeded {
+							profile = t.recoveryProfile
+						}
+						s.OpenHistory(profile, s.history.openEntry)
+					}
 					ui.Button(c, locales.Text("命名查询")).Menu(func(m *ui.Menu) {
 						profile := t.profileID
 						if t.recoveryNeeded {
@@ -70,17 +77,17 @@ func (s *State) View(c *ui.Context, t *Document) {
 						}
 					})
 				}).Label(locales.Text("SQL 执行操作")).Grow(1).MinWidth(0).Padding(0).Gap(5)
-				schema := t.database
+				profile, schema := t.sourceScope()
 				if schema == "" {
 					schema = "未指定数据库"
 				}
-				ui.Text(c, fmt.Sprintf("连接 #%d · %s", t.profileID, schema)).
+				ui.Text(c, fmt.Sprintf("连接 #%d · %s", profile, schema)).
 					TextColor(p.Muted).FontSize(theme.Font(c, 11)).SingleLine()
 			})
 			if t.err != "" {
 				ui.Text(c, t.err).Padding(3, 8).FontSize(theme.Font(c, 11)).
 					TextColor(p.Error).SingleLine().Tooltip(t.err)
-			} else if !connected {
+			} else if !connected && !t.recoveryNeeded {
 				ui.Text(c, locales.Text("请连接数据库后新建查询")).Padding(3, 8).
 					TextColor(p.Muted).FontSize(theme.Font(c, 11))
 			}
@@ -98,9 +105,11 @@ func (s *State) View(c *ui.Context, t *Document) {
 				})
 			}
 			theme.ApplySQLAppearance(c, t.Editor)
+			t.Editor.Label = locales.Text("SQL 编辑器")
 			editor.View(c, t.Editor).Grow(1).FillWidth()
 		})
 	}, func() { s.resultGrid(c, t) }).Grow(1)
+	s.sqlKeyboard(c, root, t)
 }
 
 func (s *State) resultGrid(c *ui.Context, t *Document) {

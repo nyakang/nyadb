@@ -11527,3 +11527,2137 @@ func QueryAssetsGroupChanged() string { return In(i18n.Locale()).QueryAssetsGrou
 func (msgs Messages) QueryAssetsGroupChanged() string {
 	return Catalog.Format(msgs.locale, "queryAssetsGroupChanged", nil)
 }
+
+// HistoryWorkspaceTitle says "SQL 历史与日志"
+// in the language the app shows.
+func HistoryWorkspaceTitle() string { return In(i18n.Locale()).HistoryWorkspaceTitle() }
+
+// HistoryWorkspaceTitle says "SQL 历史与日志"
+// in the language of msgs.
+func (msgs Messages) HistoryWorkspaceTitle() string {
+	return Catalog.Format(msgs.locale, "historyWorkspaceTitle", nil)
+}
+
+// HistoryLocalEncrypted says "本地加密保存；打开历史只恢复文本，不执行 SQL。"
+// in the language the app shows.
+func HistoryLocalEncrypted() string { return In(i18n.Locale()).HistoryLocalEncrypted() }
+
+// HistoryLocalEncrypted says "本地加密保存；打开历史只恢复文本，不执行 SQL。"
+// in the language of msgs.
+func (msgs Messages) HistoryLocalEncrypted() string {
+	return Catalog.Format(msgs.locale, "historyLocalEncrypted", nil)
+}
+
+// HistorySearch says "搜索历史 SQL、数据库或错误"
+// in the language the app shows.
+func HistorySearch() string { return In(i18n.Locale()).HistorySearch() }
+
+// HistorySearch says "搜索历史 SQL、数据库或错误"
+// in the language of msgs.
+func (msgs Messages) HistorySearch() string {
+	return Catalog.Format(msgs.locale, "historySearch", nil)
+}
+
+// HistoryRefresh says "重新读取历史"
+// in the language the app shows.
+func HistoryRefresh() string { return In(i18n.Locale()).HistoryRefresh() }
+
+// HistoryRefresh says "重新读取历史"
+// in the language of msgs.
+func (msgs Messages) HistoryRefresh() string {
+	return Catalog.Format(msgs.locale, "historyRefresh", nil)
+}
+
+// HistorySettings says "历史设置"
+// in the language the app shows.
+func HistorySettings() string { return In(i18n.Locale()).HistorySettings() }
+
+// HistorySettings says "历史设置"
+// in the language of msgs.
+func (msgs Messages) HistorySettings() string {
+	return Catalog.Format(msgs.locale, "historySettings", nil)
+}
+
+// HistoryProfileFilter says "历史连接筛选"
+// in the language the app shows.
+func HistoryProfileFilter() string { return In(i18n.Locale()).HistoryProfileFilter() }
+
+// HistoryProfileFilter says "历史连接筛选"
+// in the language of msgs.
+func (msgs Messages) HistoryProfileFilter() string {
+	return Catalog.Format(msgs.locale, "historyProfileFilter", nil)
+}
+
+// HistoryStateFilter says "历史状态筛选"
+// in the language the app shows.
+func HistoryStateFilter() string { return In(i18n.Locale()).HistoryStateFilter() }
+
+// HistoryStateFilter says "历史状态筛选"
+// in the language of msgs.
+func (msgs Messages) HistoryStateFilter() string {
+	return Catalog.Format(msgs.locale, "historyStateFilter", nil)
+}
+
+// HistorySourceFilter says "历史操作筛选"
+// in the language the app shows.
+func HistorySourceFilter() string { return In(i18n.Locale()).HistorySourceFilter() }
+
+// HistorySourceFilter says "历史操作筛选"
+// in the language of msgs.
+func (msgs Messages) HistorySourceFilter() string {
+	return Catalog.Format(msgs.locale, "historySourceFilter", nil)
+}
+
+// HistoryTimeFilter says "历史时间筛选"
+// in the language the app shows.
+func HistoryTimeFilter() string { return In(i18n.Locale()).HistoryTimeFilter() }
+
+// HistoryTimeFilter says "历史时间筛选"
+// in the language of msgs.
+func (msgs Messages) HistoryTimeFilter() string {
+	return Catalog.Format(msgs.locale, "historyTimeFilter", nil)
+}
+
+// HistorySaving says "历史记录正在保存…"
+// in the language the app shows.
+func HistorySaving() string { return In(i18n.Locale()).HistorySaving() }
+
+// HistorySaving says "历史记录正在保存…"
+// in the language of msgs.
+func (msgs Messages) HistorySaving() string {
+	return Catalog.Format(msgs.locale, "historySaving", nil)
+}
+
+// HistoryTable says "SQL 历史记录"
+// in the language the app shows.
+func HistoryTable() string { return In(i18n.Locale()).HistoryTable() }
+
+// HistoryTable says "SQL 历史记录"
+// in the language of msgs.
+func (msgs Messages) HistoryTable() string {
+	return Catalog.Format(msgs.locale, "historyTable", nil)
+}
+
+// HistorySuccess says "成功"
+// in the language the app shows.
+func HistorySuccess() string { return In(i18n.Locale()).HistorySuccess() }
+
+// HistorySuccess says "成功"
+// in the language of msgs.
+func (msgs Messages) HistorySuccess() string {
+	return Catalog.Format(msgs.locale, "historySuccess", nil)
+}
+
+// HistoryFailed says "失败"
+// in the language the app shows.
+func HistoryFailed() string { return In(i18n.Locale()).HistoryFailed() }
+
+// HistoryFailed says "失败"
+// in the language of msgs.
+func (msgs Messages) HistoryFailed() string {
+	return Catalog.Format(msgs.locale, "historyFailed", nil)
+}
+
+// HistoryCancelled says "已取消（更改可能生效）"
+// in the language the app shows.
+func HistoryCancelled() string { return In(i18n.Locale()).HistoryCancelled() }
+
+// HistoryCancelled says "已取消（更改可能生效）"
+// in the language of msgs.
+func (msgs Messages) HistoryCancelled() string {
+	return Catalog.Format(msgs.locale, "historyCancelled", nil)
+}
+
+// HistoryLost says "会话失效（结果需核对）"
+// in the language the app shows.
+func HistoryLost() string { return In(i18n.Locale()).HistoryLost() }
+
+// HistoryLost says "会话失效（结果需核对）"
+// in the language of msgs.
+func (msgs Messages) HistoryLost() string {
+	return Catalog.Format(msgs.locale, "historyLost", nil)
+}
+
+// HistoryAllStates says "全部状态"
+// in the language the app shows.
+func HistoryAllStates() string { return In(i18n.Locale()).HistoryAllStates() }
+
+// HistoryAllStates says "全部状态"
+// in the language of msgs.
+func (msgs Messages) HistoryAllStates() string {
+	return Catalog.Format(msgs.locale, "historyAllStates", nil)
+}
+
+// HistorySummary says "耗时 %s · 预览 %d 行 · 影响 %d 行"
+// in the language the app shows.
+func HistorySummary() string { return In(i18n.Locale()).HistorySummary() }
+
+// HistorySummary says "耗时 %s · 预览 %d 行 · 影响 %d 行"
+// in the language of msgs.
+func (msgs Messages) HistorySummary() string {
+	return Catalog.Format(msgs.locale, "historySummary", nil)
+}
+
+// HistorySQLText says "历史 SQL 正文"
+// in the language the app shows.
+func HistorySQLText() string { return In(i18n.Locale()).HistorySQLText() }
+
+// HistorySQLText says "历史 SQL 正文"
+// in the language of msgs.
+func (msgs Messages) HistorySQLText() string {
+	return Catalog.Format(msgs.locale, "historySQLText", nil)
+}
+
+// HistoryClearScope says "清除当前范围历史…"
+// in the language the app shows.
+func HistoryClearScope() string { return In(i18n.Locale()).HistoryClearScope() }
+
+// HistoryClearScope says "清除当前范围历史…"
+// in the language of msgs.
+func (msgs Messages) HistoryClearScope() string {
+	return Catalog.Format(msgs.locale, "historyClearScope", nil)
+}
+
+// HistoryOpenSQL says "打开历史 SQL"
+// in the language the app shows.
+func HistoryOpenSQL() string { return In(i18n.Locale()).HistoryOpenSQL() }
+
+// HistoryOpenSQL says "打开历史 SQL"
+// in the language of msgs.
+func (msgs Messages) HistoryOpenSQL() string {
+	return Catalog.Format(msgs.locale, "historyOpenSQL", nil)
+}
+
+// HistoryClearTitle says "清除 SQL 历史？"
+// in the language the app shows.
+func HistoryClearTitle() string { return In(i18n.Locale()).HistoryClearTitle() }
+
+// HistoryClearTitle says "清除 SQL 历史？"
+// in the language of msgs.
+func (msgs Messages) HistoryClearTitle() string {
+	return Catalog.Format(msgs.locale, "historyClearTitle", nil)
+}
+
+// HistoryClearDescription says "清除所选连接范围的记录，并阻止此前执行的迟到回执重新写入。"
+// in the language the app shows.
+func HistoryClearDescription() string { return In(i18n.Locale()).HistoryClearDescription() }
+
+// HistoryClearDescription says "清除所选连接范围的记录，并阻止此前执行的迟到回执重新写入。"
+// in the language of msgs.
+func (msgs Messages) HistoryClearDescription() string {
+	return Catalog.Format(msgs.locale, "historyClearDescription", nil)
+}
+
+// HistoryClear says "清除历史"
+// in the language the app shows.
+func HistoryClear() string { return In(i18n.Locale()).HistoryClear() }
+
+// HistoryClear says "清除历史"
+// in the language of msgs.
+func (msgs Messages) HistoryClear() string {
+	return Catalog.Format(msgs.locale, "historyClear", nil)
+}
+
+// HistorySettingsTitle says "SQL 历史设置"
+// in the language the app shows.
+func HistorySettingsTitle() string { return In(i18n.Locale()).HistorySettingsTitle() }
+
+// HistorySettingsTitle says "SQL 历史设置"
+// in the language of msgs.
+func (msgs Messages) HistorySettingsTitle() string {
+	return Catalog.Format(msgs.locale, "historySettingsTitle", nil)
+}
+
+// HistoryRecordingEnabled says "记录 SQL 执行历史"
+// in the language the app shows.
+func HistoryRecordingEnabled() string { return In(i18n.Locale()).HistoryRecordingEnabled() }
+
+// HistoryRecordingEnabled says "记录 SQL 执行历史"
+// in the language of msgs.
+func (msgs Messages) HistoryRecordingEnabled() string {
+	return Catalog.Format(msgs.locale, "historyRecordingEnabled", nil)
+}
+
+// HistoryRetention says "历史保留天数"
+// in the language the app shows.
+func HistoryRetention() string { return In(i18n.Locale()).HistoryRetention() }
+
+// HistoryRetention says "历史保留天数"
+// in the language of msgs.
+func (msgs Messages) HistoryRetention() string {
+	return Catalog.Format(msgs.locale, "historyRetention", nil)
+}
+
+// HistoryMaxEntries says "最多保留记录数"
+// in the language the app shows.
+func HistoryMaxEntries() string { return In(i18n.Locale()).HistoryMaxEntries() }
+
+// HistoryMaxEntries says "最多保留记录数"
+// in the language of msgs.
+func (msgs Messages) HistoryMaxEntries() string {
+	return Catalog.Format(msgs.locale, "historyMaxEntries", nil)
+}
+
+// HistorySizeBound says "历史总正文最多 32 MiB；超过上限移除最旧完整记录。"
+// in the language the app shows.
+func HistorySizeBound() string { return In(i18n.Locale()).HistorySizeBound() }
+
+// HistorySizeBound says "历史总正文最多 32 MiB；超过上限移除最旧完整记录。"
+// in the language of msgs.
+func (msgs Messages) HistorySizeBound() string {
+	return Catalog.Format(msgs.locale, "historySizeBound", nil)
+}
+
+// HistorySaveSettings says "保存历史设置"
+// in the language the app shows.
+func HistorySaveSettings() string { return In(i18n.Locale()).HistorySaveSettings() }
+
+// HistorySaveSettings says "保存历史设置"
+// in the language of msgs.
+func (msgs Messages) HistorySaveSettings() string {
+	return Catalog.Format(msgs.locale, "historySaveSettings", nil)
+}
+
+// HistoryToolbar says "SQL 历史"
+// in the language the app shows.
+func HistoryToolbar() string { return In(i18n.Locale()).HistoryToolbar() }
+
+// HistoryToolbar says "SQL 历史"
+// in the language of msgs.
+func (msgs Messages) HistoryToolbar() string {
+	return Catalog.Format(msgs.locale, "historyToolbar", nil)
+}
+
+// HistoryAllOperations says "全部操作"
+// in the language the app shows.
+func HistoryAllOperations() string { return In(i18n.Locale()).HistoryAllOperations() }
+
+// HistoryAllOperations says "全部操作"
+// in the language of msgs.
+func (msgs Messages) HistoryAllOperations() string {
+	return Catalog.Format(msgs.locale, "historyAllOperations", nil)
+}
+
+// HistoryRun says "执行查询"
+// in the language the app shows.
+func HistoryRun() string { return In(i18n.Locale()).HistoryRun() }
+
+// HistoryRun says "执行查询"
+// in the language of msgs.
+func (msgs Messages) HistoryRun() string {
+	return Catalog.Format(msgs.locale, "historyRun", nil)
+}
+
+// HistoryExplain says "执行计划"
+// in the language the app shows.
+func HistoryExplain() string { return In(i18n.Locale()).HistoryExplain() }
+
+// HistoryExplain says "执行计划"
+// in the language of msgs.
+func (msgs Messages) HistoryExplain() string {
+	return Catalog.Format(msgs.locale, "historyExplain", nil)
+}
+
+// HistoryRunExport says "执行并导出"
+// in the language the app shows.
+func HistoryRunExport() string { return In(i18n.Locale()).HistoryRunExport() }
+
+// HistoryRunExport says "执行并导出"
+// in the language of msgs.
+func (msgs Messages) HistoryRunExport() string {
+	return Catalog.Format(msgs.locale, "historyRunExport", nil)
+}
+
+// HistoryRunFile says "执行脚本文件"
+// in the language the app shows.
+func HistoryRunFile() string { return In(i18n.Locale()).HistoryRunFile() }
+
+// HistoryRunFile says "执行脚本文件"
+// in the language of msgs.
+func (msgs Messages) HistoryRunFile() string {
+	return Catalog.Format(msgs.locale, "historyRunFile", nil)
+}
+
+// HistoryAllTime says "全部时间"
+// in the language the app shows.
+func HistoryAllTime() string { return In(i18n.Locale()).HistoryAllTime() }
+
+// HistoryAllTime says "全部时间"
+// in the language of msgs.
+func (msgs Messages) HistoryAllTime() string {
+	return Catalog.Format(msgs.locale, "historyAllTime", nil)
+}
+
+// HistoryLastDay says "最近一天"
+// in the language the app shows.
+func HistoryLastDay() string { return In(i18n.Locale()).HistoryLastDay() }
+
+// HistoryLastDay says "最近一天"
+// in the language of msgs.
+func (msgs Messages) HistoryLastDay() string {
+	return Catalog.Format(msgs.locale, "historyLastDay", nil)
+}
+
+// HistoryLastWeek says "最近一周"
+// in the language the app shows.
+func HistoryLastWeek() string { return In(i18n.Locale()).HistoryLastWeek() }
+
+// HistoryLastWeek says "最近一周"
+// in the language of msgs.
+func (msgs Messages) HistoryLastWeek() string {
+	return Catalog.Format(msgs.locale, "historyLastWeek", nil)
+}
+
+// DocumentOpenSQL says "打开 SQL…"
+// in the language the app shows.
+func DocumentOpenSQL() string { return In(i18n.Locale()).DocumentOpenSQL() }
+
+// DocumentOpenSQL says "打开 SQL…"
+// in the language of msgs.
+func (msgs Messages) DocumentOpenSQL() string {
+	return Catalog.Format(msgs.locale, "documentOpenSQL", nil)
+}
+
+// DocumentUndo says "撤销"
+// in the language the app shows.
+func DocumentUndo() string { return In(i18n.Locale()).DocumentUndo() }
+
+// DocumentUndo says "撤销"
+// in the language of msgs.
+func (msgs Messages) DocumentUndo() string {
+	return Catalog.Format(msgs.locale, "documentUndo", nil)
+}
+
+// DocumentRedo says "重做"
+// in the language the app shows.
+func DocumentRedo() string { return In(i18n.Locale()).DocumentRedo() }
+
+// DocumentRedo says "重做"
+// in the language of msgs.
+func (msgs Messages) DocumentRedo() string {
+	return Catalog.Format(msgs.locale, "documentRedo", nil)
+}
+
+// DocumentCut says "剪切"
+// in the language the app shows.
+func DocumentCut() string { return In(i18n.Locale()).DocumentCut() }
+
+// DocumentCut says "剪切"
+// in the language of msgs.
+func (msgs Messages) DocumentCut() string {
+	return Catalog.Format(msgs.locale, "documentCut", nil)
+}
+
+// DocumentCopy says "复制"
+// in the language the app shows.
+func DocumentCopy() string { return In(i18n.Locale()).DocumentCopy() }
+
+// DocumentCopy says "复制"
+// in the language of msgs.
+func (msgs Messages) DocumentCopy() string {
+	return Catalog.Format(msgs.locale, "documentCopy", nil)
+}
+
+// DocumentPaste says "粘贴"
+// in the language the app shows.
+func DocumentPaste() string { return In(i18n.Locale()).DocumentPaste() }
+
+// DocumentPaste says "粘贴"
+// in the language of msgs.
+func (msgs Messages) DocumentPaste() string {
+	return Catalog.Format(msgs.locale, "documentPaste", nil)
+}
+
+// DocumentSelectAll says "全选"
+// in the language the app shows.
+func DocumentSelectAll() string { return In(i18n.Locale()).DocumentSelectAll() }
+
+// DocumentSelectAll says "全选"
+// in the language of msgs.
+func (msgs Messages) DocumentSelectAll() string {
+	return Catalog.Format(msgs.locale, "documentSelectAll", nil)
+}
+
+// DocumentFind says "查找…"
+// in the language the app shows.
+func DocumentFind() string { return In(i18n.Locale()).DocumentFind() }
+
+// DocumentFind says "查找…"
+// in the language of msgs.
+func (msgs Messages) DocumentFind() string {
+	return Catalog.Format(msgs.locale, "documentFind", nil)
+}
+
+// DocumentReplace says "替换…"
+// in the language the app shows.
+func DocumentReplace() string { return In(i18n.Locale()).DocumentReplace() }
+
+// DocumentReplace says "替换…"
+// in the language of msgs.
+func (msgs Messages) DocumentReplace() string {
+	return Catalog.Format(msgs.locale, "documentReplace", nil)
+}
+
+// DocumentCloseOthers says "关闭其它页签"
+// in the language the app shows.
+func DocumentCloseOthers() string { return In(i18n.Locale()).DocumentCloseOthers() }
+
+// DocumentCloseOthers says "关闭其它页签"
+// in the language of msgs.
+func (msgs Messages) DocumentCloseOthers() string {
+	return Catalog.Format(msgs.locale, "documentCloseOthers", nil)
+}
+
+// DocumentCloseAll says "关闭所有页签"
+// in the language the app shows.
+func DocumentCloseAll() string { return In(i18n.Locale()).DocumentCloseAll() }
+
+// DocumentCloseAll says "关闭所有页签"
+// in the language of msgs.
+func (msgs Messages) DocumentCloseAll() string {
+	return Catalog.Format(msgs.locale, "documentCloseAll", nil)
+}
+
+// SqlEditorLabel says "SQL 编辑器"
+// in the language the app shows.
+func SqlEditorLabel() string { return In(i18n.Locale()).SqlEditorLabel() }
+
+// SqlEditorLabel says "SQL 编辑器"
+// in the language of msgs.
+func (msgs Messages) SqlEditorLabel() string {
+	return Catalog.Format(msgs.locale, "sqlEditorLabel", nil)
+}
+
+// TableDesignPages says "表设计子页"
+// in the language the app shows.
+func TableDesignPages() string { return In(i18n.Locale()).TableDesignPages() }
+
+// TableDesignPages says "表设计子页"
+// in the language of msgs.
+func (msgs Messages) TableDesignPages() string {
+	return Catalog.Format(msgs.locale, "tableDesignPages", nil)
+}
+
+// TableDesignComment says "表注释"
+// in the language the app shows.
+func TableDesignComment() string { return In(i18n.Locale()).TableDesignComment() }
+
+// TableDesignComment says "表注释"
+// in the language of msgs.
+func (msgs Messages) TableDesignComment() string {
+	return Catalog.Format(msgs.locale, "tableDesignComment", nil)
+}
+
+// TableDesignUnknownConstraint says "此约束含未支持的属性，保留完整原文并禁止修改。"
+// in the language the app shows.
+func TableDesignUnknownConstraint() string { return In(i18n.Locale()).TableDesignUnknownConstraint() }
+
+// TableDesignUnknownConstraint says "此约束含未支持的属性，保留完整原文并禁止修改。"
+// in the language of msgs.
+func (msgs Messages) TableDesignUnknownConstraint() string {
+	return Catalog.Format(msgs.locale, "tableDesignUnknownConstraint", nil)
+}
+
+// TableDesignConstraintName says "约束名称"
+// in the language the app shows.
+func TableDesignConstraintName() string { return In(i18n.Locale()).TableDesignConstraintName() }
+
+// TableDesignConstraintName says "约束名称"
+// in the language of msgs.
+func (msgs Messages) TableDesignConstraintName() string {
+	return Catalog.Format(msgs.locale, "tableDesignConstraintName", nil)
+}
+
+// TableDesignIndexKind says "索引类型"
+// in the language the app shows.
+func TableDesignIndexKind() string { return In(i18n.Locale()).TableDesignIndexKind() }
+
+// TableDesignIndexKind says "索引类型"
+// in the language of msgs.
+func (msgs Messages) TableDesignIndexKind() string {
+	return Catalog.Format(msgs.locale, "tableDesignIndexKind", nil)
+}
+
+// TableDesignIndexMethod says "索引方法"
+// in the language the app shows.
+func TableDesignIndexMethod() string { return In(i18n.Locale()).TableDesignIndexMethod() }
+
+// TableDesignIndexMethod says "索引方法"
+// in the language of msgs.
+func (msgs Messages) TableDesignIndexMethod() string {
+	return Catalog.Format(msgs.locale, "tableDesignIndexMethod", nil)
+}
+
+// TableDesignIndexVisible says "索引可见"
+// in the language the app shows.
+func TableDesignIndexVisible() string { return In(i18n.Locale()).TableDesignIndexVisible() }
+
+// TableDesignIndexVisible says "索引可见"
+// in the language of msgs.
+func (msgs Messages) TableDesignIndexVisible() string {
+	return Catalog.Format(msgs.locale, "tableDesignIndexVisible", nil)
+}
+
+// TableDesignIndexComment says "索引注释"
+// in the language the app shows.
+func TableDesignIndexComment() string { return In(i18n.Locale()).TableDesignIndexComment() }
+
+// TableDesignIndexComment says "索引注释"
+// in the language of msgs.
+func (msgs Messages) TableDesignIndexComment() string {
+	return Catalog.Format(msgs.locale, "tableDesignIndexComment", nil)
+}
+
+// TableDesignCheckExpression says "检查表达式"
+// in the language the app shows.
+func TableDesignCheckExpression() string { return In(i18n.Locale()).TableDesignCheckExpression() }
+
+// TableDesignCheckExpression says "检查表达式"
+// in the language of msgs.
+func (msgs Messages) TableDesignCheckExpression() string {
+	return Catalog.Format(msgs.locale, "tableDesignCheckExpression", nil)
+}
+
+// TableDesignCheckEnabled says "启用检查约束"
+// in the language the app shows.
+func TableDesignCheckEnabled() string { return In(i18n.Locale()).TableDesignCheckEnabled() }
+
+// TableDesignCheckEnabled says "启用检查约束"
+// in the language of msgs.
+func (msgs Messages) TableDesignCheckEnabled() string {
+	return Catalog.Format(msgs.locale, "tableDesignCheckEnabled", nil)
+}
+
+// TableDesignReferenceDatabase says "引用数据库"
+// in the language the app shows.
+func TableDesignReferenceDatabase() string { return In(i18n.Locale()).TableDesignReferenceDatabase() }
+
+// TableDesignReferenceDatabase says "引用数据库"
+// in the language of msgs.
+func (msgs Messages) TableDesignReferenceDatabase() string {
+	return Catalog.Format(msgs.locale, "tableDesignReferenceDatabase", nil)
+}
+
+// TableDesignReferenceTable says "引用表"
+// in the language the app shows.
+func TableDesignReferenceTable() string { return In(i18n.Locale()).TableDesignReferenceTable() }
+
+// TableDesignReferenceTable says "引用表"
+// in the language of msgs.
+func (msgs Messages) TableDesignReferenceTable() string {
+	return Catalog.Format(msgs.locale, "tableDesignReferenceTable", nil)
+}
+
+// TableDesignDeleteRule says "删除规则"
+// in the language the app shows.
+func TableDesignDeleteRule() string { return In(i18n.Locale()).TableDesignDeleteRule() }
+
+// TableDesignDeleteRule says "删除规则"
+// in the language of msgs.
+func (msgs Messages) TableDesignDeleteRule() string {
+	return Catalog.Format(msgs.locale, "tableDesignDeleteRule", nil)
+}
+
+// TableDesignUpdateRule says "更新规则"
+// in the language the app shows.
+func TableDesignUpdateRule() string { return In(i18n.Locale()).TableDesignUpdateRule() }
+
+// TableDesignUpdateRule says "更新规则"
+// in the language of msgs.
+func (msgs Messages) TableDesignUpdateRule() string {
+	return Catalog.Format(msgs.locale, "tableDesignUpdateRule", nil)
+}
+
+// TableDesignApplyConstraint says "应用约束修改"
+// in the language the app shows.
+func TableDesignApplyConstraint() string { return In(i18n.Locale()).TableDesignApplyConstraint() }
+
+// TableDesignApplyConstraint says "应用约束修改"
+// in the language of msgs.
+func (msgs Messages) TableDesignApplyConstraint() string {
+	return Catalog.Format(msgs.locale, "tableDesignApplyConstraint", nil)
+}
+
+// TableDesignConstraintField says "约束字段"
+// in the language the app shows.
+func TableDesignConstraintField() string { return In(i18n.Locale()).TableDesignConstraintField() }
+
+// TableDesignConstraintField says "约束字段"
+// in the language of msgs.
+func (msgs Messages) TableDesignConstraintField() string {
+	return Catalog.Format(msgs.locale, "tableDesignConstraintField", nil)
+}
+
+// TableDesignAddConstraintField says "添加约束字段"
+// in the language the app shows.
+func TableDesignAddConstraintField() string { return In(i18n.Locale()).TableDesignAddConstraintField() }
+
+// TableDesignAddConstraintField says "添加约束字段"
+// in the language of msgs.
+func (msgs Messages) TableDesignAddConstraintField() string {
+	return Catalog.Format(msgs.locale, "tableDesignAddConstraintField", nil)
+}
+
+// TableDesignRemoveConstraintField says "移除约束字段"
+// in the language the app shows.
+func TableDesignRemoveConstraintField() string {
+	return In(i18n.Locale()).TableDesignRemoveConstraintField()
+}
+
+// TableDesignRemoveConstraintField says "移除约束字段"
+// in the language of msgs.
+func (msgs Messages) TableDesignRemoveConstraintField() string {
+	return Catalog.Format(msgs.locale, "tableDesignRemoveConstraintField", nil)
+}
+
+// TableDesignMoveConstraintUp says "上移约束字段"
+// in the language the app shows.
+func TableDesignMoveConstraintUp() string { return In(i18n.Locale()).TableDesignMoveConstraintUp() }
+
+// TableDesignMoveConstraintUp says "上移约束字段"
+// in the language of msgs.
+func (msgs Messages) TableDesignMoveConstraintUp() string {
+	return Catalog.Format(msgs.locale, "tableDesignMoveConstraintUp", nil)
+}
+
+// TableDesignMoveConstraintDown says "下移约束字段"
+// in the language the app shows.
+func TableDesignMoveConstraintDown() string { return In(i18n.Locale()).TableDesignMoveConstraintDown() }
+
+// TableDesignMoveConstraintDown says "下移约束字段"
+// in the language of msgs.
+func (msgs Messages) TableDesignMoveConstraintDown() string {
+	return Catalog.Format(msgs.locale, "tableDesignMoveConstraintDown", nil)
+}
+
+// TableDesignIndexPrefix says "索引前缀"
+// in the language the app shows.
+func TableDesignIndexPrefix() string { return In(i18n.Locale()).TableDesignIndexPrefix() }
+
+// TableDesignIndexPrefix says "索引前缀"
+// in the language of msgs.
+func (msgs Messages) TableDesignIndexPrefix() string {
+	return Catalog.Format(msgs.locale, "tableDesignIndexPrefix", nil)
+}
+
+// TableDesignOrder says "顺序"
+// in the language the app shows.
+func TableDesignOrder() string { return In(i18n.Locale()).TableDesignOrder() }
+
+// TableDesignOrder says "顺序"
+// in the language of msgs.
+func (msgs Messages) TableDesignOrder() string {
+	return Catalog.Format(msgs.locale, "tableDesignOrder", nil)
+}
+
+// TableDesignReferenceField says "引用字段"
+// in the language the app shows.
+func TableDesignReferenceField() string { return In(i18n.Locale()).TableDesignReferenceField() }
+
+// TableDesignReferenceField says "引用字段"
+// in the language of msgs.
+func (msgs Messages) TableDesignReferenceField() string {
+	return Catalog.Format(msgs.locale, "tableDesignReferenceField", nil)
+}
+
+// TableDesignSelectedConstraintField says "所选约束字段"
+// in the language the app shows.
+func TableDesignSelectedConstraintField() string {
+	return In(i18n.Locale()).TableDesignSelectedConstraintField()
+}
+
+// TableDesignSelectedConstraintField says "所选约束字段"
+// in the language of msgs.
+func (msgs Messages) TableDesignSelectedConstraintField() string {
+	return Catalog.Format(msgs.locale, "tableDesignSelectedConstraintField", nil)
+}
+
+// TableDesignReferenceFieldName says "引用字段名称"
+// in the language the app shows.
+func TableDesignReferenceFieldName() string { return In(i18n.Locale()).TableDesignReferenceFieldName() }
+
+// TableDesignReferenceFieldName says "引用字段名称"
+// in the language of msgs.
+func (msgs Messages) TableDesignReferenceFieldName() string {
+	return Catalog.Format(msgs.locale, "tableDesignReferenceFieldName", nil)
+}
+
+// TableDesignPrefixLength says "索引前缀长度"
+// in the language the app shows.
+func TableDesignPrefixLength() string { return In(i18n.Locale()).TableDesignPrefixLength() }
+
+// TableDesignPrefixLength says "索引前缀长度"
+// in the language of msgs.
+func (msgs Messages) TableDesignPrefixLength() string {
+	return Catalog.Format(msgs.locale, "tableDesignPrefixLength", nil)
+}
+
+// HistoryPendingTransaction says "事务未提交"
+// in the language the app shows.
+func HistoryPendingTransaction() string { return In(i18n.Locale()).HistoryPendingTransaction() }
+
+// HistoryPendingTransaction says "事务未提交"
+// in the language of msgs.
+func (msgs Messages) HistoryPendingTransaction() string {
+	return Catalog.Format(msgs.locale, "historyPendingTransaction", nil)
+}
+
+// HistoryDroppedNotice says "有 %d 条日志因大小或队列上限未记录；原文档和数据库操作不受影响。"
+// in the language the app shows.
+func HistoryDroppedNotice() string { return In(i18n.Locale()).HistoryDroppedNotice() }
+
+// HistoryDroppedNotice says "有 %d 条日志因大小或队列上限未记录；原文档和数据库操作不受影响。"
+// in the language of msgs.
+func (msgs Messages) HistoryDroppedNotice() string {
+	return Catalog.Format(msgs.locale, "historyDroppedNotice", nil)
+}
+
+// HistoryRetainedPending says "保留 %d 条待保存日志；重新读取后重试，或明确放弃。"
+// in the language the app shows.
+func HistoryRetainedPending() string { return In(i18n.Locale()).HistoryRetainedPending() }
+
+// HistoryRetainedPending says "保留 %d 条待保存日志；重新读取后重试，或明确放弃。"
+// in the language of msgs.
+func (msgs Messages) HistoryRetainedPending() string {
+	return Catalog.Format(msgs.locale, "historyRetainedPending", nil)
+}
+
+// HistoryDiscardPending says "放弃待保存日志…"
+// in the language the app shows.
+func HistoryDiscardPending() string { return In(i18n.Locale()).HistoryDiscardPending() }
+
+// HistoryDiscardPending says "放弃待保存日志…"
+// in the language of msgs.
+func (msgs Messages) HistoryDiscardPending() string {
+	return Catalog.Format(msgs.locale, "historyDiscardPending", nil)
+}
+
+// HistorySummaryOnly says "操作摘要；不含参数值，不能作为 SQL 重新打开。"
+// in the language the app shows.
+func HistorySummaryOnly() string { return In(i18n.Locale()).HistorySummaryOnly() }
+
+// HistorySummaryOnly says "操作摘要；不含参数值，不能作为 SQL 重新打开。"
+// in the language of msgs.
+func (msgs Messages) HistorySummaryOnly() string {
+	return Catalog.Format(msgs.locale, "historySummaryOnly", nil)
+}
+
+// HistorySourceRead says "读取表数据"
+// in the language the app shows.
+func HistorySourceRead() string { return In(i18n.Locale()).HistorySourceRead() }
+
+// HistorySourceRead says "读取表数据"
+// in the language of msgs.
+func (msgs Messages) HistorySourceRead() string {
+	return Catalog.Format(msgs.locale, "historySourceRead", nil)
+}
+
+// HistorySourceWrite says "编辑表数据"
+// in the language the app shows.
+func HistorySourceWrite() string { return In(i18n.Locale()).HistorySourceWrite() }
+
+// HistorySourceWrite says "编辑表数据"
+// in the language of msgs.
+func (msgs Messages) HistorySourceWrite() string {
+	return Catalog.Format(msgs.locale, "historySourceWrite", nil)
+}
+
+// HistorySourceTransaction says "数据事务"
+// in the language the app shows.
+func HistorySourceTransaction() string { return In(i18n.Locale()).HistorySourceTransaction() }
+
+// HistorySourceTransaction says "数据事务"
+// in the language of msgs.
+func (msgs Messages) HistorySourceTransaction() string {
+	return Catalog.Format(msgs.locale, "historySourceTransaction", nil)
+}
+
+// HistorySourceImport says "导入数据"
+// in the language the app shows.
+func HistorySourceImport() string { return In(i18n.Locale()).HistorySourceImport() }
+
+// HistorySourceImport says "导入数据"
+// in the language of msgs.
+func (msgs Messages) HistorySourceImport() string {
+	return Catalog.Format(msgs.locale, "historySourceImport", nil)
+}
+
+// HistorySourceExport says "导出数据"
+// in the language the app shows.
+func HistorySourceExport() string { return In(i18n.Locale()).HistorySourceExport() }
+
+// HistorySourceExport says "导出数据"
+// in the language of msgs.
+func (msgs Messages) HistorySourceExport() string {
+	return Catalog.Format(msgs.locale, "historySourceExport", nil)
+}
+
+// HistorySourceRestore says "恢复"
+// in the language the app shows.
+func HistorySourceRestore() string { return In(i18n.Locale()).HistorySourceRestore() }
+
+// HistorySourceRestore says "恢复"
+// in the language of msgs.
+func (msgs Messages) HistorySourceRestore() string {
+	return Catalog.Format(msgs.locale, "historySourceRestore", nil)
+}
+
+// HistorySourceRestorePreview says "恢复预览"
+// in the language the app shows.
+func HistorySourceRestorePreview() string { return In(i18n.Locale()).HistorySourceRestorePreview() }
+
+// HistorySourceRestorePreview says "恢复预览"
+// in the language of msgs.
+func (msgs Messages) HistorySourceRestorePreview() string {
+	return Catalog.Format(msgs.locale, "historySourceRestorePreview", nil)
+}
+
+// HistorySourceAccounts says "账户与权限"
+// in the language the app shows.
+func HistorySourceAccounts() string { return In(i18n.Locale()).HistorySourceAccounts() }
+
+// HistorySourceAccounts says "账户与权限"
+// in the language of msgs.
+func (msgs Messages) HistorySourceAccounts() string {
+	return Catalog.Format(msgs.locale, "historySourceAccounts", nil)
+}
+
+// HistorySourceStructure says "结构设计"
+// in the language the app shows.
+func HistorySourceStructure() string { return In(i18n.Locale()).HistorySourceStructure() }
+
+// HistorySourceStructure says "结构设计"
+// in the language of msgs.
+func (msgs Messages) HistorySourceStructure() string {
+	return Catalog.Format(msgs.locale, "historySourceStructure", nil)
+}
+
+// HistorySourceTable says "表操作"
+// in the language the app shows.
+func HistorySourceTable() string { return In(i18n.Locale()).HistorySourceTable() }
+
+// HistorySourceTable says "表操作"
+// in the language of msgs.
+func (msgs Messages) HistorySourceTable() string {
+	return Catalog.Format(msgs.locale, "historySourceTable", nil)
+}
+
+// HistorySourceMaintenance says "表维护"
+// in the language the app shows.
+func HistorySourceMaintenance() string { return In(i18n.Locale()).HistorySourceMaintenance() }
+
+// HistorySourceMaintenance says "表维护"
+// in the language of msgs.
+func (msgs Messages) HistorySourceMaintenance() string {
+	return Catalog.Format(msgs.locale, "historySourceMaintenance", nil)
+}
+
+// HistoryDiscardConfirm says "放弃待保存日志？"
+// in the language the app shows.
+func HistoryDiscardConfirm() string { return In(i18n.Locale()).HistoryDiscardConfirm() }
+
+// HistoryDiscardConfirm says "放弃待保存日志？"
+// in the language of msgs.
+func (msgs Messages) HistoryDiscardConfirm() string {
+	return Catalog.Format(msgs.locale, "historyDiscardConfirm", nil)
+}
+
+// HistoryDiscardDescription says "仅放弃本次内存中尚未保存的日志和迟到回执，已保存历史及文档不变。"
+// in the language the app shows.
+func HistoryDiscardDescription() string { return In(i18n.Locale()).HistoryDiscardDescription() }
+
+// HistoryDiscardDescription says "仅放弃本次内存中尚未保存的日志和迟到回执，已保存历史及文档不变。"
+// in the language of msgs.
+func (msgs Messages) HistoryDiscardDescription() string {
+	return Catalog.Format(msgs.locale, "historyDiscardDescription", nil)
+}
+
+// HistoryDiscardLogs says "放弃日志"
+// in the language the app shows.
+func HistoryDiscardLogs() string { return In(i18n.Locale()).HistoryDiscardLogs() }
+
+// HistoryDiscardLogs says "放弃日志"
+// in the language of msgs.
+func (msgs Messages) HistoryDiscardLogs() string {
+	return Catalog.Format(msgs.locale, "historyDiscardLogs", nil)
+}
+
+// HistoryUnsavedTitle says "日志尚未保存"
+// in the language the app shows.
+func HistoryUnsavedTitle() string { return In(i18n.Locale()).HistoryUnsavedTitle() }
+
+// HistoryUnsavedTitle says "日志尚未保存"
+// in the language of msgs.
+func (msgs Messages) HistoryUnsavedTitle() string {
+	return Catalog.Format(msgs.locale, "historyUnsavedTitle", nil)
+}
+
+// HistoryUnsavedExitDescription says "…"
+// in the language the app shows.
+func HistoryUnsavedExitDescription() string { return In(i18n.Locale()).HistoryUnsavedExitDescription() }
+
+// HistoryUnsavedExitDescription says "…"
+// in the language of msgs.
+func (msgs Messages) HistoryUnsavedExitDescription() string {
+	return Catalog.Format(msgs.locale, "historyUnsavedExitDescription", nil)
+}
+
+// HistoryCancelExit says "取消退出"
+// in the language the app shows.
+func HistoryCancelExit() string { return In(i18n.Locale()).HistoryCancelExit() }
+
+// HistoryCancelExit says "取消退出"
+// in the language of msgs.
+func (msgs Messages) HistoryCancelExit() string {
+	return Catalog.Format(msgs.locale, "historyCancelExit", nil)
+}
+
+// HistoryRetrySave says "重试日志保存"
+// in the language the app shows.
+func HistoryRetrySave() string { return In(i18n.Locale()).HistoryRetrySave() }
+
+// HistoryRetrySave says "重试日志保存"
+// in the language of msgs.
+func (msgs Messages) HistoryRetrySave() string {
+	return Catalog.Format(msgs.locale, "historyRetrySave", nil)
+}
+
+// HistoryDiscardContinue says "放弃日志并继续"
+// in the language the app shows.
+func HistoryDiscardContinue() string { return In(i18n.Locale()).HistoryDiscardContinue() }
+
+// HistoryDiscardContinue says "放弃日志并继续"
+// in the language of msgs.
+func (msgs Messages) HistoryDiscardContinue() string {
+	return Catalog.Format(msgs.locale, "historyDiscardContinue", nil)
+}
+
+// HistoryControlConflict says "历史已由其它进程修改；请放弃待执行的清除或设置，再重新操作。"
+// in the language the app shows.
+func HistoryControlConflict() string { return In(i18n.Locale()).HistoryControlConflict() }
+
+// HistoryControlConflict says "历史已由其它进程修改；请放弃待执行的清除或设置，再重新操作。"
+// in the language of msgs.
+func (msgs Messages) HistoryControlConflict() string {
+	return Catalog.Format(msgs.locale, "historyControlConflict", nil)
+}
+
+// CommonEntry1 says "通过 URI 新建连接"
+// in the language the app shows.
+func CommonEntry1() string { return In(i18n.Locale()).CommonEntry1() }
+
+// CommonEntry1 says "通过 URI 新建连接"
+// in the language of msgs.
+func (msgs Messages) CommonEntry1() string {
+	return Catalog.Format(msgs.locale, "commonEntry1", nil)
+}
+
+// CommonEntry2 says "支持 MySQL、PostgreSQL 和 SQLite；导入后检查配置，不会自动连接。"
+// in the language the app shows.
+func CommonEntry2() string { return In(i18n.Locale()).CommonEntry2() }
+
+// CommonEntry2 says "支持 MySQL、PostgreSQL 和 SQLite；导入后检查配置，不会自动连接。"
+// in the language of msgs.
+func (msgs Messages) CommonEntry2() string {
+	return Catalog.Format(msgs.locale, "commonEntry2", nil)
+}
+
+// CommonEntry3 says "连接 URI"
+// in the language the app shows.
+func CommonEntry3() string { return In(i18n.Locale()).CommonEntry3() }
+
+// CommonEntry3 says "连接 URI"
+// in the language of msgs.
+func (msgs Messages) CommonEntry3() string {
+	return Catalog.Format(msgs.locale, "commonEntry3", nil)
+}
+
+// CommonEntry4 says "URI 输入隐藏，密码仅进入临时编辑器；是否保存到密钥环由连接表单决定。"
+// in the language the app shows.
+func CommonEntry4() string { return In(i18n.Locale()).CommonEntry4() }
+
+// CommonEntry4 says "URI 输入隐藏，密码仅进入临时编辑器；是否保存到密钥环由连接表单决定。"
+// in the language of msgs.
+func (msgs Messages) CommonEntry4() string {
+	return Catalog.Format(msgs.locale, "commonEntry4", nil)
+}
+
+// CommonEntry5 says "返回连接类型"
+// in the language the app shows.
+func CommonEntry5() string { return In(i18n.Locale()).CommonEntry5() }
+
+// CommonEntry5 says "返回连接类型"
+// in the language of msgs.
+func (msgs Messages) CommonEntry5() string {
+	return Catalog.Format(msgs.locale, "commonEntry5", nil)
+}
+
+// CommonEntry6 says "取消 URI 导入"
+// in the language the app shows.
+func CommonEntry6() string { return In(i18n.Locale()).CommonEntry6() }
+
+// CommonEntry6 says "取消 URI 导入"
+// in the language of msgs.
+func (msgs Messages) CommonEntry6() string {
+	return Catalog.Format(msgs.locale, "commonEntry6", nil)
+}
+
+// CommonEntry7 says "导入到连接表单"
+// in the language the app shows.
+func CommonEntry7() string { return In(i18n.Locale()).CommonEntry7() }
+
+// CommonEntry7 says "导入到连接表单"
+// in the language of msgs.
+func (msgs Messages) CommonEntry7() string {
+	return Catalog.Format(msgs.locale, "commonEntry7", nil)
+}
+
+// CommonEntry8 says "连接 URI 无效，请检查格式、主机、端口和数据库。"
+// in the language the app shows.
+func CommonEntry8() string { return In(i18n.Locale()).CommonEntry8() }
+
+// CommonEntry8 says "连接 URI 无效，请检查格式、主机、端口和数据库。"
+// in the language of msgs.
+func (msgs Messages) CommonEntry8() string {
+	return Catalog.Format(msgs.locale, "commonEntry8", nil)
+}
+
+// CommonEntry9 says "URI 含有当前引擎不支持的选项，请在连接表单中配置。"
+// in the language the app shows.
+func CommonEntry9() string { return In(i18n.Locale()).CommonEntry9() }
+
+// CommonEntry9 says "URI 含有当前引擎不支持的选项，请在连接表单中配置。"
+// in the language of msgs.
+func (msgs Messages) CommonEntry9() string {
+	return Catalog.Format(msgs.locale, "commonEntry9", nil)
+}
+
+// CommonEntry10 says "在数据库或模式中查找"
+// in the language the app shows.
+func CommonEntry10() string { return In(i18n.Locale()).CommonEntry10() }
+
+// CommonEntry10 says "在数据库或模式中查找"
+// in the language of msgs.
+func (msgs Messages) CommonEntry10() string {
+	return Catalog.Format(msgs.locale, "commonEntry10", nil)
+}
+
+// CommonEntry11 says "连接 #%d · 只读元数据搜索，不读取表记录。"
+// in the language the app shows.
+func CommonEntry11() string { return In(i18n.Locale()).CommonEntry11() }
+
+// CommonEntry11 says "连接 #%d · 只读元数据搜索，不读取表记录。"
+// in the language of msgs.
+func (msgs Messages) CommonEntry11() string {
+	return Catalog.Format(msgs.locale, "commonEntry11", nil)
+}
+
+// CommonEntry12 says "查找对象名称、注释或定义"
+// in the language the app shows.
+func CommonEntry12() string { return In(i18n.Locale()).CommonEntry12() }
+
+// CommonEntry12 says "查找对象名称、注释或定义"
+// in the language of msgs.
+func (msgs Messages) CommonEntry12() string {
+	return Catalog.Format(msgs.locale, "commonEntry12", nil)
+}
+
+// CommonEntry13 says "开始查找"
+// in the language the app shows.
+func CommonEntry13() string { return In(i18n.Locale()).CommonEntry13() }
+
+// CommonEntry13 says "开始查找"
+// in the language of msgs.
+func (msgs Messages) CommonEntry13() string {
+	return Catalog.Format(msgs.locale, "commonEntry13", nil)
+}
+
+// CommonEntry14 says "全部数据库或模式"
+// in the language the app shows.
+func CommonEntry14() string { return In(i18n.Locale()).CommonEntry14() }
+
+// CommonEntry14 says "全部数据库或模式"
+// in the language of msgs.
+func (msgs Messages) CommonEntry14() string {
+	return Catalog.Format(msgs.locale, "commonEntry14", nil)
+}
+
+// CommonEntry15 says "查找范围"
+// in the language the app shows.
+func CommonEntry15() string { return In(i18n.Locale()).CommonEntry15() }
+
+// CommonEntry15 says "查找范围"
+// in the language of msgs.
+func (msgs Messages) CommonEntry15() string {
+	return Catalog.Format(msgs.locale, "commonEntry15", nil)
+}
+
+// CommonEntry16 says "查找对象类型"
+// in the language the app shows.
+func CommonEntry16() string { return In(i18n.Locale()).CommonEntry16() }
+
+// CommonEntry16 says "查找对象类型"
+// in the language of msgs.
+func (msgs Messages) CommonEntry16() string {
+	return Catalog.Format(msgs.locale, "commonEntry16", nil)
+}
+
+// CommonEntry17 says "名称前缀"
+// in the language the app shows.
+func CommonEntry17() string { return In(i18n.Locale()).CommonEntry17() }
+
+// CommonEntry17 says "名称前缀"
+// in the language of msgs.
+func (msgs Messages) CommonEntry17() string {
+	return Catalog.Format(msgs.locale, "commonEntry17", nil)
+}
+
+// CommonEntry18 says "完全匹配"
+// in the language the app shows.
+func CommonEntry18() string { return In(i18n.Locale()).CommonEntry18() }
+
+// CommonEntry18 says "完全匹配"
+// in the language of msgs.
+func (msgs Messages) CommonEntry18() string {
+	return Catalog.Format(msgs.locale, "commonEntry18", nil)
+}
+
+// CommonEntry19 says "查找匹配方式"
+// in the language the app shows.
+func CommonEntry19() string { return In(i18n.Locale()).CommonEntry19() }
+
+// CommonEntry19 says "查找匹配方式"
+// in the language of msgs.
+func (msgs Messages) CommonEntry19() string {
+	return Catalog.Format(msgs.locale, "commonEntry19", nil)
+}
+
+// CommonEntry20 says "查找字段名称和注释"
+// in the language the app shows.
+func CommonEntry20() string { return In(i18n.Locale()).CommonEntry20() }
+
+// CommonEntry20 says "查找字段名称和注释"
+// in the language of msgs.
+func (msgs Messages) CommonEntry20() string {
+	return Catalog.Format(msgs.locale, "commonEntry20", nil)
+}
+
+// CommonEntry21 says "查找程序和视图定义"
+// in the language the app shows.
+func CommonEntry21() string { return In(i18n.Locale()).CommonEntry21() }
+
+// CommonEntry21 says "查找程序和视图定义"
+// in the language of msgs.
+func (msgs Messages) CommonEntry21() string {
+	return Catalog.Format(msgs.locale, "commonEntry21", nil)
+}
+
+// CommonEntry22 says "找到 %d 项"
+// in the language the app shows.
+func CommonEntry22() string { return In(i18n.Locale()).CommonEntry22() }
+
+// CommonEntry22 says "找到 %d 项"
+// in the language of msgs.
+func (msgs Messages) CommonEntry22() string {
+	return Catalog.Format(msgs.locale, "commonEntry22", nil)
+}
+
+// CommonEntry23 says "匹配位置"
+// in the language the app shows.
+func CommonEntry23() string { return In(i18n.Locale()).CommonEntry23() }
+
+// CommonEntry23 says "匹配位置"
+// in the language of msgs.
+func (msgs Messages) CommonEntry23() string {
+	return Catalog.Format(msgs.locale, "commonEntry23", nil)
+}
+
+// CommonEntry24 says "匹配内容"
+// in the language the app shows.
+func CommonEntry24() string { return In(i18n.Locale()).CommonEntry24() }
+
+// CommonEntry24 says "匹配内容"
+// in the language of msgs.
+func (msgs Messages) CommonEntry24() string {
+	return Catalog.Format(msgs.locale, "commonEntry24", nil)
+}
+
+// CommonEntry25 says "对象查找结果"
+// in the language the app shows.
+func CommonEntry25() string { return In(i18n.Locale()).CommonEntry25() }
+
+// CommonEntry25 says "对象查找结果"
+// in the language of msgs.
+func (msgs Messages) CommonEntry25() string {
+	return Catalog.Format(msgs.locale, "commonEntry25", nil)
+}
+
+// CommonEntry26 says "取消查找"
+// in the language the app shows.
+func CommonEntry26() string { return In(i18n.Locale()).CommonEntry26() }
+
+// CommonEntry26 says "取消查找"
+// in the language of msgs.
+func (msgs Messages) CommonEntry26() string {
+	return Catalog.Format(msgs.locale, "commonEntry26", nil)
+}
+
+// CommonEntry27 says "打开所选对象"
+// in the language the app shows.
+func CommonEntry27() string { return In(i18n.Locale()).CommonEntry27() }
+
+// CommonEntry27 says "打开所选对象"
+// in the language of msgs.
+func (msgs Messages) CommonEntry27() string {
+	return Catalog.Format(msgs.locale, "commonEntry27", nil)
+}
+
+// CommonEntry28 says "收藏夹管理"
+// in the language the app shows.
+func CommonEntry28() string { return In(i18n.Locale()).CommonEntry28() }
+
+// CommonEntry28 says "收藏夹管理"
+// in the language of msgs.
+func (msgs Messages) CommonEntry28() string {
+	return Catalog.Format(msgs.locale, "commonEntry28", nil)
+}
+
+// CommonEntry29 says "连接星标、对象和命名查询引用；打开查询仅恢复文本。"
+// in the language the app shows.
+func CommonEntry29() string { return In(i18n.Locale()).CommonEntry29() }
+
+// CommonEntry29 says "连接星标、对象和命名查询引用；打开查询仅恢复文本。"
+// in the language of msgs.
+func (msgs Messages) CommonEntry29() string {
+	return Catalog.Format(msgs.locale, "commonEntry29", nil)
+}
+
+// CommonEntry30 says "搜索收藏"
+// in the language the app shows.
+func CommonEntry30() string { return In(i18n.Locale()).CommonEntry30() }
+
+// CommonEntry30 says "搜索收藏"
+// in the language of msgs.
+func (msgs Messages) CommonEntry30() string {
+	return Catalog.Format(msgs.locale, "commonEntry30", nil)
+}
+
+// CommonEntry31 says "全部收藏分组"
+// in the language the app shows.
+func CommonEntry31() string { return In(i18n.Locale()).CommonEntry31() }
+
+// CommonEntry31 says "全部收藏分组"
+// in the language of msgs.
+func (msgs Messages) CommonEntry31() string {
+	return Catalog.Format(msgs.locale, "commonEntry31", nil)
+}
+
+// CommonEntry32 says "收藏分组"
+// in the language the app shows.
+func CommonEntry32() string { return In(i18n.Locale()).CommonEntry32() }
+
+// CommonEntry32 says "收藏分组"
+// in the language of msgs.
+func (msgs Messages) CommonEntry32() string {
+	return Catalog.Format(msgs.locale, "commonEntry32", nil)
+}
+
+// CommonEntry33 says "刷新收藏"
+// in the language the app shows.
+func CommonEntry33() string { return In(i18n.Locale()).CommonEntry33() }
+
+// CommonEntry33 says "刷新收藏"
+// in the language of msgs.
+func (msgs Messages) CommonEntry33() string {
+	return Catalog.Format(msgs.locale, "commonEntry33", nil)
+}
+
+// CommonEntry34 says "已失效"
+// in the language the app shows.
+func CommonEntry34() string { return In(i18n.Locale()).CommonEntry34() }
+
+// CommonEntry34 says "已失效"
+// in the language of msgs.
+func (msgs Messages) CommonEntry34() string {
+	return Catalog.Format(msgs.locale, "commonEntry34", nil)
+}
+
+// CommonEntry35 says "收藏列表"
+// in the language the app shows.
+func CommonEntry35() string { return In(i18n.Locale()).CommonEntry35() }
+
+// CommonEntry35 says "收藏列表"
+// in the language of msgs.
+func (msgs Messages) CommonEntry35() string {
+	return Catalog.Format(msgs.locale, "commonEntry35", nil)
+}
+
+// CommonEntry36 says "收藏共 %d 项"
+// in the language the app shows.
+func CommonEntry36() string { return In(i18n.Locale()).CommonEntry36() }
+
+// CommonEntry36 says "收藏共 %d 项"
+// in the language of msgs.
+func (msgs Messages) CommonEntry36() string {
+	return Catalog.Format(msgs.locale, "commonEntry36", nil)
+}
+
+// CommonEntry37 says "新建收藏分组"
+// in the language the app shows.
+func CommonEntry37() string { return In(i18n.Locale()).CommonEntry37() }
+
+// CommonEntry37 says "新建收藏分组"
+// in the language of msgs.
+func (msgs Messages) CommonEntry37() string {
+	return Catalog.Format(msgs.locale, "commonEntry37", nil)
+}
+
+// CommonEntry38 says "重命名收藏分组"
+// in the language the app shows.
+func CommonEntry38() string { return In(i18n.Locale()).CommonEntry38() }
+
+// CommonEntry38 says "重命名收藏分组"
+// in the language of msgs.
+func (msgs Messages) CommonEntry38() string {
+	return Catalog.Format(msgs.locale, "commonEntry38", nil)
+}
+
+// CommonEntry39 says "删除收藏分组…"
+// in the language the app shows.
+func CommonEntry39() string { return In(i18n.Locale()).CommonEntry39() }
+
+// CommonEntry39 says "删除收藏分组…"
+// in the language of msgs.
+func (msgs Messages) CommonEntry39() string {
+	return Catalog.Format(msgs.locale, "commonEntry39", nil)
+}
+
+// CommonEntry40 says "打开收藏"
+// in the language the app shows.
+func CommonEntry40() string { return In(i18n.Locale()).CommonEntry40() }
+
+// CommonEntry40 says "打开收藏"
+// in the language of msgs.
+func (msgs Messages) CommonEntry40() string {
+	return Catalog.Format(msgs.locale, "commonEntry40", nil)
+}
+
+// CommonEntry41 says "仅移除收藏引用；删除分组后条目转为未分组。"
+// in the language the app shows.
+func CommonEntry41() string { return In(i18n.Locale()).CommonEntry41() }
+
+// CommonEntry41 says "仅移除收藏引用；删除分组后条目转为未分组。"
+// in the language of msgs.
+func (msgs Messages) CommonEntry41() string {
+	return Catalog.Format(msgs.locale, "commonEntry41", nil)
+}
+
+// CommonEntry42 says "收藏名称"
+// in the language the app shows.
+func CommonEntry42() string { return In(i18n.Locale()).CommonEntry42() }
+
+// CommonEntry42 says "收藏名称"
+// in the language of msgs.
+func (msgs Messages) CommonEntry42() string {
+	return Catalog.Format(msgs.locale, "commonEntry42", nil)
+}
+
+// CommonEntry43 says "确认收藏操作"
+// in the language the app shows.
+func CommonEntry43() string { return In(i18n.Locale()).CommonEntry43() }
+
+// CommonEntry43 says "确认收藏操作"
+// in the language of msgs.
+func (msgs Messages) CommonEntry43() string {
+	return Catalog.Format(msgs.locale, "commonEntry43", nil)
+}
+
+// CommonEntry44 says "添加到收藏夹"
+// in the language the app shows.
+func CommonEntry44() string { return In(i18n.Locale()).CommonEntry44() }
+
+// CommonEntry44 says "添加到收藏夹"
+// in the language of msgs.
+func (msgs Messages) CommonEntry44() string {
+	return Catalog.Format(msgs.locale, "commonEntry44", nil)
+}
+
+// CommonEntry45 says "重命名收藏"
+// in the language the app shows.
+func CommonEntry45() string { return In(i18n.Locale()).CommonEntry45() }
+
+// CommonEntry45 says "重命名收藏"
+// in the language of msgs.
+func (msgs Messages) CommonEntry45() string {
+	return Catalog.Format(msgs.locale, "commonEntry45", nil)
+}
+
+// CommonEntry46 says "移除收藏？"
+// in the language the app shows.
+func CommonEntry46() string { return In(i18n.Locale()).CommonEntry46() }
+
+// CommonEntry46 says "移除收藏？"
+// in the language of msgs.
+func (msgs Messages) CommonEntry46() string {
+	return Catalog.Format(msgs.locale, "commonEntry46", nil)
+}
+
+// CommonEntry47 says "删除收藏分组？"
+// in the language the app shows.
+func CommonEntry47() string { return In(i18n.Locale()).CommonEntry47() }
+
+// CommonEntry47 says "删除收藏分组？"
+// in the language of msgs.
+func (msgs Messages) CommonEntry47() string {
+	return Catalog.Format(msgs.locale, "commonEntry47", nil)
+}
+
+// CommonEntry48 says "移动到收藏分组"
+// in the language the app shows.
+func CommonEntry48() string { return In(i18n.Locale()).CommonEntry48() }
+
+// CommonEntry48 says "移动到收藏分组"
+// in the language of msgs.
+func (msgs Messages) CommonEntry48() string {
+	return Catalog.Format(msgs.locale, "commonEntry48", nil)
+}
+
+// CommonEntry49 says "移除收藏…"
+// in the language the app shows.
+func CommonEntry49() string { return In(i18n.Locale()).CommonEntry49() }
+
+// CommonEntry49 says "移除收藏…"
+// in the language of msgs.
+func (msgs Messages) CommonEntry49() string {
+	return Catalog.Format(msgs.locale, "commonEntry49", nil)
+}
+
+// CommonEntry50 says "添加到收藏夹…"
+// in the language the app shows.
+func CommonEntry50() string { return In(i18n.Locale()).CommonEntry50() }
+
+// CommonEntry50 says "添加到收藏夹…"
+// in the language of msgs.
+func (msgs Messages) CommonEntry50() string {
+	return Catalog.Format(msgs.locale, "commonEntry50", nil)
+}
+
+// CommonEntry51 says "管理收藏夹…"
+// in the language the app shows.
+func CommonEntry51() string { return In(i18n.Locale()).CommonEntry51() }
+
+// CommonEntry51 says "管理收藏夹…"
+// in the language of msgs.
+func (msgs Messages) CommonEntry51() string {
+	return Catalog.Format(msgs.locale, "commonEntry51", nil)
+}
+
+// CommonEntry52 says "添加当前对象或查询到收藏夹…"
+// in the language the app shows.
+func CommonEntry52() string { return In(i18n.Locale()).CommonEntry52() }
+
+// CommonEntry52 says "添加当前对象或查询到收藏夹…"
+// in the language of msgs.
+func (msgs Messages) CommonEntry52() string {
+	return Catalog.Format(msgs.locale, "commonEntry52", nil)
+}
+
+// CommonEntry53 says "该对象或查询已在收藏夹中"
+// in the language the app shows.
+func CommonEntry53() string { return In(i18n.Locale()).CommonEntry53() }
+
+// CommonEntry53 says "该对象或查询已在收藏夹中"
+// in the language of msgs.
+func (msgs Messages) CommonEntry53() string {
+	return Catalog.Format(msgs.locale, "commonEntry53", nil)
+}
+
+// CommonEntry54 says "favorites changed; refresh before retrying"
+// in the language the app shows.
+func CommonEntry54() string { return In(i18n.Locale()).CommonEntry54() }
+
+// CommonEntry54 says "favorites changed; refresh before retrying"
+// in the language of msgs.
+func (msgs Messages) CommonEntry54() string {
+	return Catalog.Format(msgs.locale, "commonEntry54", nil)
+}
+
+// CommonEntry55 says "invalid favorites directory; original record retained"
+// in the language the app shows.
+func CommonEntry55() string { return In(i18n.Locale()).CommonEntry55() }
+
+// CommonEntry55 says "invalid favorites directory; original record retained"
+// in the language of msgs.
+func (msgs Messages) CommonEntry55() string {
+	return Catalog.Format(msgs.locale, "commonEntry55", nil)
+}
+
+// CommonEntryOffline says "离线"
+// in the language the app shows.
+func CommonEntryOffline() string { return In(i18n.Locale()).CommonEntryOffline() }
+
+// CommonEntryOffline says "离线"
+// in the language of msgs.
+func (msgs Messages) CommonEntryOffline() string {
+	return Catalog.Format(msgs.locale, "commonEntryOffline", nil)
+}
+
+// EngineOptions01 says "在高级页设置只读、文件创建和锁等待；附加库需使用现有文件。"
+// in the language the app shows.
+func EngineOptions01() string { return In(i18n.Locale()).EngineOptions01() }
+
+// EngineOptions01 says "在高级页设置只读、文件创建和锁等待；附加库需使用现有文件。"
+// in the language of msgs.
+func (msgs Messages) EngineOptions01() string {
+	return Catalog.Format(msgs.locale, "engineOptions01", nil)
+}
+
+// EngineOptions02 says "无法选择文件，请手动输入文件路径。"
+// in the language the app shows.
+func EngineOptions02() string { return In(i18n.Locale()).EngineOptions02() }
+
+// EngineOptions02 says "无法选择文件，请手动输入文件路径。"
+// in the language of msgs.
+func (msgs Messages) EngineOptions02() string {
+	return Catalog.Format(msgs.locale, "engineOptions02", nil)
+}
+
+// EngineOptions03 says "连接超时（秒）"
+// in the language the app shows.
+func EngineOptions03() string { return In(i18n.Locale()).EngineOptions03() }
+
+// EngineOptions03 says "连接超时（秒）"
+// in the language of msgs.
+func (msgs Messages) EngineOptions03() string {
+	return Catalog.Format(msgs.locale, "engineOptions03", nil)
+}
+
+// EngineOptions04 says "最大连接数"
+// in the language the app shows.
+func EngineOptions04() string { return In(i18n.Locale()).EngineOptions04() }
+
+// EngineOptions04 says "最大连接数"
+// in the language of msgs.
+func (msgs Messages) EngineOptions04() string {
+	return Catalog.Format(msgs.locale, "engineOptions04", nil)
+}
+
+// EngineOptions05 says "语句超时（毫秒）"
+// in the language the app shows.
+func EngineOptions05() string { return In(i18n.Locale()).EngineOptions05() }
+
+// EngineOptions05 says "语句超时（毫秒）"
+// in the language of msgs.
+func (msgs Messages) EngineOptions05() string {
+	return Catalog.Format(msgs.locale, "engineOptions05", nil)
+}
+
+// EngineOptions06 says "锁等待超时（毫秒）"
+// in the language the app shows.
+func EngineOptions06() string { return In(i18n.Locale()).EngineOptions06() }
+
+// EngineOptions06 says "锁等待超时（毫秒）"
+// in the language of msgs.
+func (msgs Messages) EngineOptions06() string {
+	return Catalog.Format(msgs.locale, "engineOptions06", nil)
+}
+
+// EngineOptions07 says "请输入整数。"
+// in the language the app shows.
+func EngineOptions07() string { return In(i18n.Locale()).EngineOptions07() }
+
+// EngineOptions07 says "请输入整数。"
+// in the language of msgs.
+func (msgs Messages) EngineOptions07() string {
+	return Catalog.Format(msgs.locale, "engineOptions07", nil)
+}
+
+// EngineOptions08 says "应用名称"
+// in the language the app shows.
+func EngineOptions08() string { return In(i18n.Locale()).EngineOptions08() }
+
+// EngineOptions08 says "应用名称"
+// in the language of msgs.
+func (msgs Messages) EngineOptions08() string {
+	return Catalog.Format(msgs.locale, "engineOptions08", nil)
+}
+
+// EngineOptions09 says "应用名称："
+// in the language the app shows.
+func EngineOptions09() string { return In(i18n.Locale()).EngineOptions09() }
+
+// EngineOptions09 says "应用名称："
+// in the language of msgs.
+func (msgs Messages) EngineOptions09() string {
+	return Catalog.Format(msgs.locale, "engineOptions09", nil)
+}
+
+// EngineOptions10 says "默认模式"
+// in the language the app shows.
+func EngineOptions10() string { return In(i18n.Locale()).EngineOptions10() }
+
+// EngineOptions10 says "默认模式"
+// in the language of msgs.
+func (msgs Messages) EngineOptions10() string {
+	return Catalog.Format(msgs.locale, "engineOptions10", nil)
+}
+
+// EngineOptions11 says "默认模式："
+// in the language the app shows.
+func EngineOptions11() string { return In(i18n.Locale()).EngineOptions11() }
+
+// EngineOptions11 says "默认模式："
+// in the language of msgs.
+func (msgs Messages) EngineOptions11() string {
+	return Catalog.Format(msgs.locale, "engineOptions11", nil)
+}
+
+// EngineOptions12 says "语句及锁等待超时为 0 时不设置超时；默认模式在每条物理连接初始化。"
+// in the language the app shows.
+func EngineOptions12() string { return In(i18n.Locale()).EngineOptions12() }
+
+// EngineOptions12 says "语句及锁等待超时为 0 时不设置超时；默认模式在每条物理连接初始化。"
+// in the language of msgs.
+func (msgs Messages) EngineOptions12() string {
+	return Catalog.Format(msgs.locale, "engineOptions12", nil)
+}
+
+// EngineOptions13 says "TLS 模式"
+// in the language the app shows.
+func EngineOptions13() string { return In(i18n.Locale()).EngineOptions13() }
+
+// EngineOptions13 says "TLS 模式"
+// in the language of msgs.
+func (msgs Messages) EngineOptions13() string {
+	return Catalog.Format(msgs.locale, "engineOptions13", nil)
+}
+
+// EngineOptions14 says "PostgreSQL TLS 模式"
+// in the language the app shows.
+func EngineOptions14() string { return In(i18n.Locale()).EngineOptions14() }
+
+// EngineOptions14 says "PostgreSQL TLS 模式"
+// in the language of msgs.
+func (msgs Messages) EngineOptions14() string {
+	return Catalog.Format(msgs.locale, "engineOptions14", nil)
+}
+
+// EngineOptions15 says "CA 证书"
+// in the language the app shows.
+func EngineOptions15() string { return In(i18n.Locale()).EngineOptions15() }
+
+// EngineOptions15 says "CA 证书"
+// in the language of msgs.
+func (msgs Messages) EngineOptions15() string {
+	return Catalog.Format(msgs.locale, "engineOptions15", nil)
+}
+
+// EngineOptions16 says "客户端证书"
+// in the language the app shows.
+func EngineOptions16() string { return In(i18n.Locale()).EngineOptions16() }
+
+// EngineOptions16 says "客户端证书"
+// in the language of msgs.
+func (msgs Messages) EngineOptions16() string {
+	return Catalog.Format(msgs.locale, "engineOptions16", nil)
+}
+
+// EngineOptions17 says "客户端密钥"
+// in the language the app shows.
+func EngineOptions17() string { return In(i18n.Locale()).EngineOptions17() }
+
+// EngineOptions17 says "客户端密钥"
+// in the language of msgs.
+func (msgs Messages) EngineOptions17() string {
+	return Catalog.Format(msgs.locale, "engineOptions17", nil)
+}
+
+// EngineOptions18 says "verify-full 校验证书链和主机名；客户端证书与密钥必须成对设置。"
+// in the language the app shows.
+func EngineOptions18() string { return In(i18n.Locale()).EngineOptions18() }
+
+// EngineOptions18 says "verify-full 校验证书链和主机名；客户端证书与密钥必须成对设置。"
+// in the language of msgs.
+func (msgs Messages) EngineOptions18() string {
+	return Catalog.Format(msgs.locale, "engineOptions18", nil)
+}
+
+// EngineOptions19 says "此引擎的隧道尚未实现。"
+// in the language the app shows.
+func EngineOptions19() string { return In(i18n.Locale()).EngineOptions19() }
+
+// EngineOptions19 says "此引擎的隧道尚未实现。"
+// in the language of msgs.
+func (msgs Messages) EngineOptions19() string {
+	return Catalog.Format(msgs.locale, "engineOptions19", nil)
+}
+
+// EngineOptions20 says "只读连接"
+// in the language the app shows.
+func EngineOptions20() string { return In(i18n.Locale()).EngineOptions20() }
+
+// EngineOptions20 says "只读连接"
+// in the language of msgs.
+func (msgs Messages) EngineOptions20() string {
+	return Catalog.Format(msgs.locale, "engineOptions20", nil)
+}
+
+// EngineOptions21 says "要求主数据库文件已存在"
+// in the language the app shows.
+func EngineOptions21() string { return In(i18n.Locale()).EngineOptions21() }
+
+// EngineOptions21 says "要求主数据库文件已存在"
+// in the language of msgs.
+func (msgs Messages) EngineOptions21() string {
+	return Catalog.Format(msgs.locale, "engineOptions21", nil)
+}
+
+// EngineOptions22 says "启用外键约束"
+// in the language the app shows.
+func EngineOptions22() string { return In(i18n.Locale()).EngineOptions22() }
+
+// EngineOptions22 says "启用外键约束"
+// in the language of msgs.
+func (msgs Messages) EngineOptions22() string {
+	return Catalog.Format(msgs.locale, "engineOptions22", nil)
+}
+
+// EngineOptions23 says "SQLite 锁等待超时"
+// in the language the app shows.
+func EngineOptions23() string { return In(i18n.Locale()).EngineOptions23() }
+
+// EngineOptions23 says "SQLite 锁等待超时"
+// in the language of msgs.
+func (msgs Messages) EngineOptions23() string {
+	return Catalog.Format(msgs.locale, "engineOptions23", nil)
+}
+
+// EngineOptions24 says "取消要求文件存在后，连接时可创建主数据库；只读连接始终要求文件存在。"
+// in the language the app shows.
+func EngineOptions24() string { return In(i18n.Locale()).EngineOptions24() }
+
+// EngineOptions24 says "取消要求文件存在后，连接时可创建主数据库；只读连接始终要求文件存在。"
+// in the language of msgs.
+func (msgs Messages) EngineOptions24() string {
+	return Catalog.Format(msgs.locale, "engineOptions24", nil)
+}
+
+// EngineOptions25 says "添加附加库"
+// in the language the app shows.
+func EngineOptions25() string { return In(i18n.Locale()).EngineOptions25() }
+
+// EngineOptions25 says "添加附加库"
+// in the language of msgs.
+func (msgs Messages) EngineOptions25() string {
+	return Catalog.Format(msgs.locale, "engineOptions25", nil)
+}
+
+// EngineOptions26 says "移除附加库"
+// in the language the app shows.
+func EngineOptions26() string { return In(i18n.Locale()).EngineOptions26() }
+
+// EngineOptions26 says "移除附加库"
+// in the language of msgs.
+func (msgs Messages) EngineOptions26() string {
+	return Catalog.Format(msgs.locale, "engineOptions26", nil)
+}
+
+// EngineOptions27 says "附加库名称"
+// in the language the app shows.
+func EngineOptions27() string { return In(i18n.Locale()).EngineOptions27() }
+
+// EngineOptions27 says "附加库名称"
+// in the language of msgs.
+func (msgs Messages) EngineOptions27() string {
+	return Catalog.Format(msgs.locale, "engineOptions27", nil)
+}
+
+// EngineOptions28 says "附加库名称："
+// in the language the app shows.
+func EngineOptions28() string { return In(i18n.Locale()).EngineOptions28() }
+
+// EngineOptions28 says "附加库名称："
+// in the language of msgs.
+func (msgs Messages) EngineOptions28() string {
+	return Catalog.Format(msgs.locale, "engineOptions28", nil)
+}
+
+// EngineOptions29 says "附加库文件"
+// in the language the app shows.
+func EngineOptions29() string { return In(i18n.Locale()).EngineOptions29() }
+
+// EngineOptions29 says "附加库文件"
+// in the language of msgs.
+func (msgs Messages) EngineOptions29() string {
+	return Catalog.Format(msgs.locale, "engineOptions29", nil)
+}
+
+// EngineOptions30 says "选择附加库文件"
+// in the language the app shows.
+func EngineOptions30() string { return In(i18n.Locale()).EngineOptions30() }
+
+// EngineOptions30 says "选择附加库文件"
+// in the language of msgs.
+func (msgs Messages) EngineOptions30() string {
+	return Catalog.Format(msgs.locale, "engineOptions30", nil)
+}
+
+// EngineOptions31 says "附加库只读"
+// in the language the app shows.
+func EngineOptions31() string { return In(i18n.Locale()).EngineOptions31() }
+
+// EngineOptions31 says "附加库只读"
+// in the language of msgs.
+func (msgs Messages) EngineOptions31() string {
+	return Catalog.Format(msgs.locale, "engineOptions31", nil)
+}
+
+// EngineOptions32 says "最多 10 个附加库，名称唯一；连接时不会创建附加文件。SQL 请使用附加库名限定对象。"
+// in the language the app shows.
+func EngineOptions32() string { return In(i18n.Locale()).EngineOptions32() }
+
+// EngineOptions32 says "最多 10 个附加库，名称唯一；连接时不会创建附加文件。SQL 请使用附加库名限定对象。"
+// in the language of msgs.
+func (msgs Messages) EngineOptions32() string {
+	return Catalog.Format(msgs.locale, "engineOptions32", nil)
+}
+
+// EngineOptions34 says "连接超时（秒）："
+// in the language the app shows.
+func EngineOptions34() string { return In(i18n.Locale()).EngineOptions34() }
+
+// EngineOptions34 says "连接超时（秒）："
+// in the language of msgs.
+func (msgs Messages) EngineOptions34() string {
+	return Catalog.Format(msgs.locale, "engineOptions34", nil)
+}
+
+// EngineOptions35 says "最大连接数："
+// in the language the app shows.
+func EngineOptions35() string { return In(i18n.Locale()).EngineOptions35() }
+
+// EngineOptions35 says "最大连接数："
+// in the language of msgs.
+func (msgs Messages) EngineOptions35() string {
+	return Catalog.Format(msgs.locale, "engineOptions35", nil)
+}
+
+// EngineOptions36 says "语句超时（毫秒）："
+// in the language the app shows.
+func EngineOptions36() string { return In(i18n.Locale()).EngineOptions36() }
+
+// EngineOptions36 says "语句超时（毫秒）："
+// in the language of msgs.
+func (msgs Messages) EngineOptions36() string {
+	return Catalog.Format(msgs.locale, "engineOptions36", nil)
+}
+
+// EngineOptions37 says "锁等待超时（毫秒）："
+// in the language the app shows.
+func EngineOptions37() string { return In(i18n.Locale()).EngineOptions37() }
+
+// EngineOptions37 says "锁等待超时（毫秒）："
+// in the language of msgs.
+func (msgs Messages) EngineOptions37() string {
+	return Catalog.Format(msgs.locale, "engineOptions37", nil)
+}
+
+// EngineOptions38 says "PostgreSQL CA 证书"
+// in the language the app shows.
+func EngineOptions38() string { return In(i18n.Locale()).EngineOptions38() }
+
+// EngineOptions38 says "PostgreSQL CA 证书"
+// in the language of msgs.
+func (msgs Messages) EngineOptions38() string {
+	return Catalog.Format(msgs.locale, "engineOptions38", nil)
+}
+
+// EngineOptions39 says "选择 PostgreSQL CA 证书"
+// in the language the app shows.
+func EngineOptions39() string { return In(i18n.Locale()).EngineOptions39() }
+
+// EngineOptions39 says "选择 PostgreSQL CA 证书"
+// in the language of msgs.
+func (msgs Messages) EngineOptions39() string {
+	return Catalog.Format(msgs.locale, "engineOptions39", nil)
+}
+
+// EngineOptions40 says "PostgreSQL 客户端证书"
+// in the language the app shows.
+func EngineOptions40() string { return In(i18n.Locale()).EngineOptions40() }
+
+// EngineOptions40 says "PostgreSQL 客户端证书"
+// in the language of msgs.
+func (msgs Messages) EngineOptions40() string {
+	return Catalog.Format(msgs.locale, "engineOptions40", nil)
+}
+
+// EngineOptions41 says "选择 PostgreSQL 客户端证书"
+// in the language the app shows.
+func EngineOptions41() string { return In(i18n.Locale()).EngineOptions41() }
+
+// EngineOptions41 says "选择 PostgreSQL 客户端证书"
+// in the language of msgs.
+func (msgs Messages) EngineOptions41() string {
+	return Catalog.Format(msgs.locale, "engineOptions41", nil)
+}
+
+// EngineOptions42 says "PostgreSQL 客户端密钥"
+// in the language the app shows.
+func EngineOptions42() string { return In(i18n.Locale()).EngineOptions42() }
+
+// EngineOptions42 says "PostgreSQL 客户端密钥"
+// in the language of msgs.
+func (msgs Messages) EngineOptions42() string {
+	return Catalog.Format(msgs.locale, "engineOptions42", nil)
+}
+
+// EngineOptions43 says "选择 PostgreSQL 客户端密钥"
+// in the language the app shows.
+func EngineOptions43() string { return In(i18n.Locale()).EngineOptions43() }
+
+// EngineOptions43 says "选择 PostgreSQL 客户端密钥"
+// in the language of msgs.
+func (msgs Messages) EngineOptions43() string {
+	return Catalog.Format(msgs.locale, "engineOptions43", nil)
+}
+
+// SqliteDesignba0934c977 says "约束"
+// in the language the app shows.
+func SqliteDesignba0934c977() string { return In(i18n.Locale()).SqliteDesignba0934c977() }
+
+// SqliteDesignba0934c977 says "约束"
+// in the language of msgs.
+func (msgs Messages) SqliteDesignba0934c977() string {
+	return Catalog.Format(msgs.locale, "sqliteDesignba0934c977", nil)
+}
+
+// SqliteDesigna4db48f4ec says "SQLite 表选项"
+// in the language the app shows.
+func SqliteDesigna4db48f4ec() string { return In(i18n.Locale()).SqliteDesigna4db48f4ec() }
+
+// SqliteDesigna4db48f4ec says "SQLite 表选项"
+// in the language of msgs.
+func (msgs Messages) SqliteDesigna4db48f4ec() string {
+	return Catalog.Format(msgs.locale, "sqliteDesigna4db48f4ec", nil)
+}
+
+// SqliteDesign4aad03a934 says "支持 STRICT、WITHOUT ROWID；现有表的 rowid 模式需要独立迁移。"
+// in the language the app shows.
+func SqliteDesign4aad03a934() string { return In(i18n.Locale()).SqliteDesign4aad03a934() }
+
+// SqliteDesign4aad03a934 says "支持 STRICT、WITHOUT ROWID；现有表的 rowid 模式需要独立迁移。"
+// in the language of msgs.
+func (msgs Messages) SqliteDesign4aad03a934() string {
+	return Catalog.Format(msgs.locale, "sqliteDesign4aad03a934", nil)
+}
+
+// SqliteDesign608ee98224 says "表或字段改名请单独预览并执行，数据库会改写依赖定义。"
+// in the language the app shows.
+func SqliteDesign608ee98224() string { return In(i18n.Locale()).SqliteDesign608ee98224() }
+
+// SqliteDesign608ee98224 says "表或字段改名请单独预览并执行，数据库会改写依赖定义。"
+// in the language of msgs.
+func (msgs Messages) SqliteDesign608ee98224() string {
+	return Catalog.Format(msgs.locale, "sqliteDesign608ee98224", nil)
+}
+
+// SqliteDesign3d07ac6fe3 says "添加约束"
+// in the language the app shows.
+func SqliteDesign3d07ac6fe3() string { return In(i18n.Locale()).SqliteDesign3d07ac6fe3() }
+
+// SqliteDesign3d07ac6fe3 says "添加约束"
+// in the language of msgs.
+func (msgs Messages) SqliteDesign3d07ac6fe3() string {
+	return Catalog.Format(msgs.locale, "sqliteDesign3d07ac6fe3", nil)
+}
+
+// SqliteDesign382d799edf says "此字段含高级属性；编辑完整定义时保留所需的全部属性。"
+// in the language the app shows.
+func SqliteDesign382d799edf() string { return In(i18n.Locale()).SqliteDesign382d799edf() }
+
+// SqliteDesign382d799edf says "此字段含高级属性；编辑完整定义时保留所需的全部属性。"
+// in the language of msgs.
+func (msgs Messages) SqliteDesign382d799edf() string {
+	return Catalog.Format(msgs.locale, "sqliteDesign382d799edf", nil)
+}
+
+// SqliteDesign4ba668764e says "定义名称"
+// in the language the app shows.
+func SqliteDesign4ba668764e() string { return In(i18n.Locale()).SqliteDesign4ba668764e() }
+
+// SqliteDesign4ba668764e says "定义名称"
+// in the language of msgs.
+func (msgs Messages) SqliteDesign4ba668764e() string {
+	return Catalog.Format(msgs.locale, "sqliteDesign4ba668764e", nil)
+}
+
+// SqliteDesigned88e5134e says "设置默认值"
+// in the language the app shows.
+func SqliteDesigned88e5134e() string { return In(i18n.Locale()).SqliteDesigned88e5134e() }
+
+// SqliteDesigned88e5134e says "设置默认值"
+// in the language of msgs.
+func (msgs Messages) SqliteDesigned88e5134e() string {
+	return Catalog.Format(msgs.locale, "sqliteDesigned88e5134e", nil)
+}
+
+// SqliteDesign5a68860b56 says "默认值表达式"
+// in the language the app shows.
+func SqliteDesign5a68860b56() string { return In(i18n.Locale()).SqliteDesign5a68860b56() }
+
+// SqliteDesign5a68860b56 says "默认值表达式"
+// in the language of msgs.
+func (msgs Messages) SqliteDesign5a68860b56() string {
+	return Catalog.Format(msgs.locale, "sqliteDesign5a68860b56", nil)
+}
+
+// SqliteDesignee3ad7f0b3 says "表设计有未保存的修改"
+// in the language the app shows.
+func SqliteDesignee3ad7f0b3() string { return In(i18n.Locale()).SqliteDesignee3ad7f0b3() }
+
+// SqliteDesignee3ad7f0b3 says "表设计有未保存的修改"
+// in the language of msgs.
+func (msgs Messages) SqliteDesignee3ad7f0b3() string {
+	return Catalog.Format(msgs.locale, "sqliteDesignee3ad7f0b3", nil)
+}
+
+// SqliteDesign359ad99c49 says "应用定义修改"
+// in the language the app shows.
+func SqliteDesign359ad99c49() string { return In(i18n.Locale()).SqliteDesign359ad99c49() }
+
+// SqliteDesign359ad99c49 says "应用定义修改"
+// in the language of msgs.
+func (msgs Messages) SqliteDesign359ad99c49() string {
+	return Catalog.Format(msgs.locale, "sqliteDesign359ad99c49", nil)
+}
+
+// SqliteDesignbd264c16bf says "将删除字段："
+// in the language the app shows.
+func SqliteDesignbd264c16bf() string { return In(i18n.Locale()).SqliteDesignbd264c16bf() }
+
+// SqliteDesignbd264c16bf says "将删除字段："
+// in the language of msgs.
+func (msgs Messages) SqliteDesignbd264c16bf() string {
+	return Catalog.Format(msgs.locale, "sqliteDesignbd264c16bf", nil)
+}
+
+// SqliteDesign760831c267 says "输入目标名称后打开表设计器，预览并确认 ALTER TABLE 后才会改名。"
+// in the language the app shows.
+func SqliteDesign760831c267() string { return In(i18n.Locale()).SqliteDesign760831c267() }
+
+// SqliteDesign760831c267 says "输入目标名称后打开表设计器，预览并确认 ALTER TABLE 后才会改名。"
+// in the language of msgs.
+func (msgs Messages) SqliteDesign760831c267() string {
+	return Catalog.Format(msgs.locale, "sqliteDesign760831c267", nil)
+}
+
+// SqliteDesignSave says "保存表设计"
+// in the language the app shows.
+func SqliteDesignSave() string { return In(i18n.Locale()).SqliteDesignSave() }
+
+// SqliteDesignSave says "保存表设计"
+// in the language of msgs.
+func (msgs Messages) SqliteDesignSave() string {
+	return Catalog.Format(msgs.locale, "sqliteDesignSave", nil)
+}

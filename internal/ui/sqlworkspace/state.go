@@ -5,6 +5,8 @@ package sqlworkspace
 import (
 	"context"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/sqltext"
+	"github.com/nyakang/nyadb/internal/services/queries"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
@@ -26,17 +28,20 @@ type Runtime interface {
 }
 
 type Dependencies struct {
-	AssetsChanged    func(int64, string, bool)
-	Completions      func(int64, string) []string
-	StatementAtCaret func(int64, string, int) string
-	FormatSQL        func(int64, string) (string, error)
-	ValidateExplain  func(int64, string) error
-	Runtime          func() Runtime
-	Connected        func(int64) bool
-	Active           func(*Document) bool
-	Status           func(string)
-	Recovered        func(int64)
-	Preview          func(*ui.Context)
+	FavoriteAsset     func(queries.Named)
+	CanFavorite       func() bool
+	AssetsChanged     func(int64, string, bool)
+	Completions       func(int64, string) []string
+	CompletionCatalog func(int64, string) sqltext.CompletionCatalog
+	StatementAtCaret  func(int64, string, int) string
+	FormatSQL         func(int64, string) (string, error)
+	ValidateExplain   func(int64, string) error
+	Runtime           func() Runtime
+	Connected         func(int64) bool
+	Active            func(*Document) bool
+	Status            func(string)
+	Recovered         func(int64)
+	Preview           func(*ui.Context)
 }
 
 // Document is owned by the UI thread. Workers capture a lease/executor and
@@ -79,6 +84,15 @@ func (d *Document) NeedsRecovery() bool         { return d.recoveryNeeded }
 func (d *Document) RecoveryProfile() int64      { return d.recoveryProfile }
 func (d *Document) RecoverySchema() string      { return d.recoverySchema }
 
+// sourceScope identifies the saved SQL document even before a new physical
+// session is explicitly established. It must not be used to execute SQL.
+func (d *Document) sourceScope() (int64, string) {
+	if d.recoveryNeeded {
+		return d.recoveryProfile, d.recoverySchema
+	}
+	return d.profileID, d.database
+}
+
 // State owns all SQL documents and their shared split position. Executor and
 // Invalidate are injectable; background jobs capture them before starting.
 type State struct {
@@ -89,6 +103,7 @@ type State struct {
 	demoRuns     int
 	deps         Dependencies
 	persistence  persistence
+	history      historyState
 }
 
 func New(deps Dependencies) *State {
@@ -101,6 +116,9 @@ func (s *State) Open(id uint64, text string, profileID int64, database string, p
 	buffer := editor.NewBuffer(text)
 	buffer.SetLanguage(editor.LanguageNamed("SQL"))
 	d := &Document{id: id, profileID: profileID, database: database, preview: preview, Editor: &editor.State{Buffer: buffer, WrapGuides: []int{100}}}
+	if !preview {
+		d.Editor.Bindings = sqlBindings()
+	}
 	d.Editor.OnCompletion = func(r editor.CompletionRequest) { s.completions(d, r) }
 	d.savedText, d.text, d.bufferVersion = text, text, buffer.Version()
 	s.documents[id] = d
@@ -169,6 +187,7 @@ func (s *State) Close(d *Document) {
 }
 func (s *State) CloseAll() {
 	s.persistence.closed = true
+	s.history = historyState{}
 	if s.persistence.timer != nil {
 		s.persistence.timer.Stop()
 	}

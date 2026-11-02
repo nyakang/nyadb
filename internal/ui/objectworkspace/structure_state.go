@@ -21,6 +21,15 @@ type Session struct {
 }
 
 type Dependencies struct {
+	SchemaDesignFor   func(int64) contract.SchemaDesignOperations
+	SchemaTarget      func(int64, string, string) contract.SchemaDesignTarget
+	SchemaDesigned    func(ui.Services, SchemaDesignEvent)
+	RenameSchema      func(ui.Services, int64, string, string, string)
+	Favorite          func(ui.Services, int64, string, string, string)
+	CanFavorite       func() bool
+	SearchRuntime     func(int64) (ObjectSearchRuntime, error)
+	OpenSearchObject  func(ui.Services, int64, uint64, ObjectSearchEntry)
+	RecordActivity    contract.ActivityRecorder
 	TableProfiles     func(int64, string, string) ([]TableProfile, error)
 	OpenTableProfile  func(ui.Services, int64, string, string, string)
 	AdministrationFor func(int64) mysqlsvc.Administration
@@ -86,6 +95,7 @@ type Document struct {
 	closed                        bool
 	program                       *programDocument
 	design                        *designDocument
+	schemaDesign                  *schemaDesignDocument
 }
 
 func (d *Document) ProfileID() int64 { return d.profileID }
@@ -112,6 +122,8 @@ type loadResult struct {
 }
 
 type State struct {
+	referenceRequest                        *objectReferenceRequest
+	search                                  *objectSearchState
 	profileMenu                             *tableProfileMenu
 	contextEntryMenu                        *contextEntryScope
 	moreScope                               *browserActionScope
@@ -238,6 +250,8 @@ func (s *State) Close(d *Document) {
 	}
 }
 func (s *State) CloseAll() {
+	s.closeObjectReference()
+	s.closeObjectSearch()
 	s.moreScope, s.groupDialog = nil, nil
 	s.profileMenu = nil
 	s.contextEntryMenu = nil
@@ -275,10 +289,13 @@ func (s *State) CloseAll() {
 // Consume runs on the UI thread. Generation changes invalidate completed work
 // without leaving a document stuck loading or automatically retrying it.
 func (s *State) Consume(services ui.Services) {
+	s.consumeObjectReference(services)
+	s.consumeObjectSearch()
 	s.validateGroupDialog()
 	s.consumeBackup(services)
 	s.consumeMySQLTableChange(services)
 	s.consumeDesign(services)
+	s.consumeSchemaDesign(services)
 	s.consumeObjectOperations(services)
 	s.consumeAdmin(services)
 	s.consumeBatch(services)

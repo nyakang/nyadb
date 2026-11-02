@@ -114,6 +114,7 @@ func (s *State) startDataTransactionRequest(services ui.Services, t *Document, o
 	tx.results = out
 	request, generation, profile, database, table := tx.request, s.sessionFor(t).Generation, t.profileID, t.database, t.table
 	runtime, token := tx.runtime, tx.token
+	complete := s.beginActivity(t, "transaction", operation)
 	go func() {
 		r := dataTransactionResult{generation: generation, request: request, profile: profile, operation: operation}
 		switch operation {
@@ -128,6 +129,14 @@ func (s *State) startDataTransactionRequest(services ui.Services, t *Document, o
 		case "rollback":
 			r.err = runtime.Rollback(ctx, token)
 		}
+		activity := contract.ActivityOutcome(r.err)
+		if r.err != nil {
+			activity.Error = mysqlDataHistoryError(r.err, false, false, operation == "commit")
+		}
+		if operation == "commit" && r.err != nil && activity.State != "session_lost" {
+			activity.State = "uncertain"
+		}
+		contract.CompleteActivity(complete, activity)
 		out <- r
 		services.Invalidate()
 	}()

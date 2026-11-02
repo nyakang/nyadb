@@ -48,8 +48,8 @@ func scanProfile(scan func(...any) error) (connections.Profile, error) {
 		if p.MySQLAdvanced, err = connections.NormalizeMySQLAdvanced(p.MySQLAdvanced); err != nil {
 			return connections.Profile{}, fmt.Errorf("invalid saved MySQL advanced settings: %w", err)
 		}
-	} else if advancedJSON != "" {
-		return connections.Profile{}, fmt.Errorf("unexpected MySQL advanced settings on %s", p.Kind)
+	} else if err := decodeEngineOptions(&p, advancedJSON); err != nil {
+		return connections.Profile{}, err
 	}
 	if variantsJSON != "" {
 		if err := json.Unmarshal([]byte(variantsJSON), &p.Variants); err != nil {
@@ -72,13 +72,9 @@ func (s *ProfileStore) Create(ctx context.Context, p connections.Profile) (conne
 	if err := s.requireGroup(ctx, &p); err != nil {
 		return connections.Profile{}, err
 	}
-	advancedJSON := ""
-	if p.Kind == connections.MySQL {
-		encoded, err := json.Marshal(p.MySQLAdvanced)
-		if err != nil {
-			return connections.Profile{}, fmt.Errorf("encode MySQL advanced settings: %w", err)
-		}
-		advancedJSON = string(encoded)
+	advancedJSON, err := encodeProfileOptions(p)
+	if err != nil {
+		return connections.Profile{}, fmt.Errorf("encode connection options: %w", err)
 	}
 	variantsJSON, err := json.Marshal(p.Variants)
 	if err != nil {
@@ -143,13 +139,9 @@ func (s *ProfileStore) Update(ctx context.Context, p connections.Profile) (conne
 	if err := s.requireGroup(ctx, &p); err != nil {
 		return connections.Profile{}, err
 	}
-	advancedJSON := ""
-	if p.Kind == connections.MySQL {
-		encoded, err := json.Marshal(p.MySQLAdvanced)
-		if err != nil {
-			return connections.Profile{}, fmt.Errorf("encode MySQL advanced settings: %w", err)
-		}
-		advancedJSON = string(encoded)
+	advancedJSON, err := encodeProfileOptions(p)
+	if err != nil {
+		return connections.Profile{}, fmt.Errorf("encode connection options: %w", err)
 	}
 	variantsJSON, err := json.Marshal(p.Variants)
 	if err != nil {

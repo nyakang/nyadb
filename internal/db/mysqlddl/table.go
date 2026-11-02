@@ -241,6 +241,14 @@ func Validate(t Table) error {
 	}
 	for _, c := range t.Clauses {
 		raw := c.SQL
+		if c.Kind == Foreign {
+			constraint, err := ParseConstraint(raw)
+			if err == nil && !constraint.Unsupported {
+				if err := validateSelfReference(constraint, t); err != nil {
+					return err
+				}
+			}
+		}
 		if c.Kind == Column {
 			f, _ := ParseColumn(raw)
 			raw = f.Generation

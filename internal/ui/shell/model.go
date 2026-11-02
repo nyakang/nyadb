@@ -12,6 +12,7 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/connectioncatalog"
 	"github.com/nyakang/nyadb/internal/ui/connectioneditor"
 	"github.com/nyakang/nyadb/internal/ui/dataworkspace"
+	"github.com/nyakang/nyadb/internal/ui/favoritesworkspace"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 	"github.com/nyakang/nyadb/internal/ui/sessionbrowser"
@@ -46,6 +47,8 @@ type tab struct {
 
 // State is UI state owned by the main thread. Never retain ui.Element values.
 type State struct {
+	favorites          *favoritesworkspace.State
+	favoriteMenuScope  *favoriteMenuScope
 	autoConnectPending bool
 	tunnelRuntime      *tunnelRuntime
 	runtime            *dbruntime.Manager
@@ -68,6 +71,7 @@ type State struct {
 	status                string
 	lastAction            string
 	toolbarMenus          map[string]toolbarScope
+	documentMenus         map[string]documentMenuScope
 
 	connectionEditor     *connectioneditor.State
 	connectionCatalog    *connectioncatalog.State
@@ -113,6 +117,7 @@ func newState(preview bool) *State {
 	if preview {
 		s.preview = newPreview()
 	}
+	s.favorites = favoritesworkspace.New(s.favoritesDependencies())
 	s.dataWorkspace = dataworkspace.New(s.dataWorkspaceDependencies())
 	s.objectWorkspace = objectworkspace.New(s.objectWorkspaceDependencies())
 	s.sqlWorkspace = sqlworkspace.New(s.sqlWorkspaceDependencies())

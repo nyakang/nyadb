@@ -10,7 +10,7 @@ import (
 
 func (s *Session) sqliteStructure(ctx context.Context, q queryer, o contract.ObjectRef) (contract.Table, error) {
 	t := contract.Table{Object: o}
-	rows, e := q.QueryContext(ctx, `SELECT sql,type FROM main.sqlite_schema WHERE name=?`, o.Name)
+	rows, e := q.QueryContext(ctx, `SELECT sql,type FROM `+quote(o.Schema)+`.sqlite_schema WHERE name=?`, o.Name)
 	if e != nil {
 		return t, e
 	}
@@ -27,7 +27,7 @@ func (s *Session) sqliteStructure(ctx context.Context, q queryer, o contract.Obj
 	if e != nil {
 		return t, e
 	}
-	rows, e = q.QueryContext(ctx, `PRAGMA main.table_xinfo(`+quote(o.Name)+`)`)
+	rows, e = q.QueryContext(ctx, `PRAGMA `+quote(o.Schema)+`.table_xinfo(`+quote(o.Name)+`)`)
 	if e != nil {
 		return t, e
 	}
@@ -64,7 +64,7 @@ func (s *Session) sqliteStructure(ctx context.Context, q queryer, o contract.Obj
 		return t, e
 	}
 	indexedPrimary := false
-	checkIndexes, er := q.QueryContext(ctx, `PRAGMA main.index_list(`+quote(o.Name)+`)`)
+	checkIndexes, er := q.QueryContext(ctx, `PRAGMA `+quote(o.Schema)+`.index_list(`+quote(o.Name)+`)`)
 	if er != nil {
 		return t, er
 	}
@@ -104,7 +104,7 @@ func (s *Session) sqliteStructure(ctx context.Context, q queryer, o contract.Obj
 		t.Key = append(t.Key, keys[i])
 	}
 	if len(t.Key) == 0 {
-		rows, e = q.QueryContext(ctx, `PRAGMA main.index_list(`+quote(o.Name)+`)`)
+		rows, e = q.QueryContext(ctx, `PRAGMA `+quote(o.Schema)+`.index_list(`+quote(o.Name)+`)`)
 		if e != nil {
 			return t, e
 		}
@@ -122,7 +122,7 @@ func (s *Session) sqliteStructure(ctx context.Context, q queryer, o contract.Obj
 		}
 		rows.Close()
 		for _, name := range indexes {
-			rs, er := q.QueryContext(ctx, `PRAGMA main.index_info(`+quote(name)+`)`)
+			rs, er := q.QueryContext(ctx, `PRAGMA `+quote(o.Schema)+`.index_info(`+quote(name)+`)`)
 			if er != nil {
 				return t, er
 			}
@@ -158,8 +158,17 @@ func (s *Session) sqliteStructure(ctx context.Context, q queryer, o contract.Obj
 			}
 		}
 	}
-	t.Editable = typ == "table" && o.Kind == "table" && len(t.Key) > 0
-	defs, err := q.QueryContext(ctx, `SELECT name,type,sql FROM main.sqlite_schema WHERE tbl_name=? AND type IN ('index','trigger') AND sql IS NOT NULL ORDER BY type,name`, o.Name)
+	readOnly := false
+	if d, ok := s.strategy.(sqliteDialect); ok {
+		readOnly = d.options.ReadOnly
+		for _, a := range d.options.Attachments {
+			if a.Name == o.Schema && a.ReadOnly {
+				readOnly = true
+			}
+		}
+	}
+	t.Editable = !readOnly && typ == "table" && o.Kind == "table" && len(t.Key) > 0
+	defs, err := q.QueryContext(ctx, `SELECT name,type,sql FROM `+quote(o.Schema)+`.sqlite_schema WHERE tbl_name=? AND type IN ('index','trigger') AND sql IS NOT NULL ORDER BY type,name`, o.Name)
 	if err != nil {
 		return t, err
 	}
@@ -183,12 +192,16 @@ func (s *Session) sqliteStructure(ctx context.Context, q queryer, o contract.Obj
 func (sqliteDialect) structure(ctx context.Context, s *Session, q queryer, o contract.ObjectRef) (contract.Table, error) {
 	return s.sqliteStructure(ctx, q, o)
 }
-func (sqliteDialect) schemas(context.Context, queryer) ([]string, error) {
-	return []string{"main"}, nil
+func (d sqliteDialect) schemas(context.Context, queryer) ([]string, error) {
+	names := []string{"main"}
+	for _, a := range d.options.Attachments {
+		names = append(names, a.Name)
+	}
+	return names, nil
 }
 func (d sqliteDialect) objects(ctx context.Context, q queryer, schema string) (*sql.Rows, error) {
 	if e := d.namespace(schema); e != nil {
 		return nil, e
 	}
-	return q.QueryContext(ctx, `SELECT name, type FROM main.sqlite_schema WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name`)
+	return q.QueryContext(ctx, `SELECT name, type FROM `+quote(schema)+`.sqlite_schema WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name`)
 }

@@ -220,6 +220,10 @@ func (s *State) navigationDependencies() navigation.Dependencies {
 }
 
 func (s *State) navigationShortcut(services ui.Services, n navigation.Node, shortcut navigation.Shortcut) {
+	if shortcut.Key == ui.KeyN && !(n.Kind == "database" || (n.Kind == "category" || n.Kind == "object") && n.Category == "表") {
+		s.openQuery()
+		return
+	}
 	if n.Category == "查询" {
 		if n.Kind == "object" {
 			s.sqlWorkspace.AssetShortcut(n.ProfileID, n.Object, shortcut.Key)

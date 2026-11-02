@@ -3,6 +3,7 @@ package sqlworkspace
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"sort"
 	"strings"
 
@@ -334,4 +335,26 @@ func (s *State) filteredAssets(profile int64) []queries.Named {
 		return out[i].ID < out[j].ID
 	})
 	return out
+}
+
+// OpenAssetReference resolves the latest encrypted asset before opening it. It
+// never falls back to a stale cached body or recreates a deleted query.
+func (s *State) OpenAssetReference(profile int64, id string, open func(queries.Named)) {
+	p := &s.persistence
+	if p.closed || p.loading || p.blocked || p.store == nil || s.assetPending(id) {
+		return
+	}
+	store := p.store
+	s.startIO(nil, nil, func() ioResult {
+		names, err := store.ListNamed(context.Background(), profile)
+		if err != nil {
+			return ioResult{kind: "open_asset_reference", err: err}
+		}
+		for _, n := range names {
+			if n.ID == id {
+				return ioResult{kind: "open_asset_reference", named: n, assetOpen: open}
+			}
+		}
+		return ioResult{kind: "open_asset_reference", err: errors.New("命名查询已删除或不属于原连接")}
+	})
 }

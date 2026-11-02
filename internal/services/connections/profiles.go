@@ -35,20 +35,22 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
-	ID            int64
-	Name          string
-	GroupName     string // Optional virtual navigation group; never a database name.
-	Starred       bool   // Local navigation favorite; never sent to a database.
-	Kind          Kind
-	Host          string
-	Port          uint16
-	Database      string
-	Username      string
-	TLSMode       string
-	MySQLAdvanced MySQLAdvanced
-	Notes         string
-	Variants      []ConnectionVariant
-	ActiveVariant string // Empty selects the primary configuration.
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	PostgreSQLOptions PostgreSQLOptions
+	SQLiteOptions     SQLiteOptions
+	ID                int64
+	Name              string
+	GroupName         string // Optional virtual navigation group; never a database name.
+	Starred           bool   // Local navigation favorite; never sent to a database.
+	Kind              Kind
+	Host              string
+	Port              uint16
+	Database          string
+	Username          string
+	TLSMode           string
+	MySQLAdvanced     MySQLAdvanced
+	Notes             string
+	Variants          []ConnectionVariant
+	ActiveVariant     string // Empty selects the primary configuration.
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }

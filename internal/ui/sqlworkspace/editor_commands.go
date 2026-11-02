@@ -21,7 +21,8 @@ func (s *State) Format(d *Document) {
 	}
 	format := sqltext.Format
 	if s.deps.FormatSQL != nil {
-		format = func(text string) (string, error) { return s.deps.FormatSQL(d.profileID, text) }
+		profile, _ := d.sourceScope()
+		format = func(text string) (string, error) { return s.deps.FormatSQL(profile, text) }
 	}
 	formatted, e := format(text)
 	if e != nil {
@@ -35,9 +36,35 @@ func (s *State) completions(d *Document, r editor.CompletionRequest) {
 	if d.closed || d.Editor == nil || d.Editor.Buffer.Version() != r.Version {
 		return
 	}
+	profile, database := d.sourceScope()
+	if s.deps.CompletionCatalog != nil {
+		source := d.Editor.Buffer.String()
+		result := sqltext.CompleteSQL(source, r.Offset, s.deps.CompletionCatalog(profile, database))
+		items := make([]editor.Completion, 0, len(result.Items))
+		for _, value := range result.Items {
+			kind := editor.CompletionText
+			switch value.Kind {
+			case "column":
+				kind = editor.CompletionField
+			case "keyword":
+				kind = editor.CompletionKeyword
+			case "namespace":
+				kind = editor.CompletionModule
+			case "alias":
+				kind = editor.CompletionVariable
+			}
+			filter := value.Name
+			if result.Start < len(source) && strings.ContainsRune("`\"[", rune(source[result.Start])) {
+				filter = value.Insert
+			}
+			items = append(items, editor.Completion{Label: value.Name, Insert: value.Insert, Detail: value.Detail, Kind: kind, FilterText: filter})
+		}
+		d.Editor.ShowCompletions(result.Start, items)
+		return
+	}
 	values := strings.Fields("SELECT FROM WHERE ORDER BY GROUP HAVING LIMIT INSERT INTO VALUES UPDATE SET DELETE JOIN LEFT RIGHT INNER ON NULL IS AND OR AS DISTINCT EXPLAIN")
 	if s.deps.Completions != nil {
-		values = append(values, s.deps.Completions(d.profileID, d.database)...)
+		values = append(values, s.deps.Completions(profile, database)...)
 	}
 	seen := map[string]bool{}
 	var items []editor.Completion

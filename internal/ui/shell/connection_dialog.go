@@ -90,6 +90,14 @@ func (s *State) connectionEditorView(c *ui.Context) {
 		width = min(float32(760), width-96)
 		height = min(float32(630), height-96)
 	}
+	if s.connectionStep == 2 {
+		s.connectionEditor.URIView(c, width, height, func() {
+			s.connectionKind = s.connectionEditor.Draft().Kind
+			s.connectionStep = 1
+			s.updateConnectionWindowTitle()
+		})
+		return
+	}
 	s.connectionEditor.View(c, width, height)
 }
 
@@ -163,8 +171,12 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 		s.connectionCatalog.View(c, dialogWidth, bodyHeight, s.chooseCatalogChoice)
 		ui.Box(c).Height(1).Background(palette.Border)
 		ui.Row(c).Height(catalogFooterHeight).Padding(5, 9).Gap(7).AlignItems(ui.Center).Background(palette.Toolbar).Children(func() {
-			ui.Button(c, locales.Text("通过 URI 新建连接…")).Height(theme.RowHeight(c, connectionFooterControlHeight)).
-				Label(locales.Text("URI 导入尚未支持")).Disabled(true)
+			if ui.Button(c, locales.Text("通过 URI 新建连接…")).Height(theme.RowHeight(c, connectionFooterControlHeight)).
+				Label(locales.Text("通过 URI 新建连接…")).Clicked() {
+				s.connectionEditor.BeginURI(s.connectionGroup)
+				s.connectionStep = 2
+				s.updateConnectionWindowTitle()
+			}
 			ui.Box(c).Grow(1)
 			if s.connectionError != "" {
 				ui.Text(c, s.connectionError).FontSize(theme.Font(c, 11)).TextColor(palette.Error).SingleLine().MinWidth(0).Grow(1)

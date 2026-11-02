@@ -29,7 +29,7 @@ func TestTableDesignDisposableMySQLRoundTrip(t *testing.T) {
 		t.Fatal(e)
 	}
 	db, name := "nyadb_core_it", "design_roundtrip"
-	table, e := mysqlddl.Parse(db, name, "CREATE TABLE `design_roundtrip` (`id` bigint NOT NULL AUTO_INCREMENT, `value` varchar(100) DEFAULT 'Case', `amount` decimal(65,30) NOT NULL DEFAULT '9007199254740993.0000000001', `next_id` bigint GENERATED ALWAYS AS ((`id` + 1)) STORED, PRIMARY KEY (`id`), KEY `idx_value` (`value`(12))) ENGINE=InnoDB")
+	table, e := mysqlddl.Parse(db, name, "CREATE TABLE `design_roundtrip` (`id` bigint NOT NULL AUTO_INCREMENT, `value` varchar(100) DEFAULT 'Case', `amount` decimal(65,30) NOT NULL DEFAULT '9007199254740993.0000000001', `next_id` bigint GENERATED ALWAYS AS ((`id` + 1)) STORED, `parent_id` bigint DEFAULT NULL, PRIMARY KEY (`id`), KEY `idx_value` (`value`(12))) ENGINE=InnoDB")
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -70,6 +70,56 @@ func TestTableDesignDisposableMySQLRoundTrip(t *testing.T) {
 	out = m.ApplyTableDesign(ctx, 901, plan)
 	if out.Error != nil || !out.Verified {
 		t.Fatalf("alter/trigger round trip: %+v", out)
+	}
+	original = *out.Actual
+	table, e = mysqlddl.Parse(db, name, original.DDL)
+	if e != nil {
+		t.Fatal(e)
+	}
+	// Exercise the same structured forms used by the native designer and
+	// verify MySQL's normalization without replaying a mismatching plan.
+	for i, clause := range table.Clauses {
+		if clause.Kind == mysqlddl.Index && clause.Name == "idx_value" {
+			form, err := mysqlddl.ParseConstraint(clause.SQL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			form.Name, form.IndexKind, form.Comment = "idx_structured", "UNIQUE", "structured form"
+			form.Columns[0].Prefix, form.Columns[0].Descending = 20, true
+			raw, err := form.SQL(table)
+			if err != nil {
+				t.Fatal(err)
+			}
+			edited, err := mysqlddl.ParseClause(raw)
+			if err != nil {
+				t.Fatal(err)
+			}
+			edited.ID = clause.ID
+			table.Clauses[i] = edited
+		}
+	}
+	for _, raw := range []string{"KEY `idx_parent` (`parent_id`)", "CONSTRAINT `ck_structured` CHECK (`amount` >= 0)", "CONSTRAINT `fk_structured` FOREIGN KEY (`parent_id`) REFERENCES `design_roundtrip` (`id`)"} {
+		form, err := mysqlddl.ParseConstraint(raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		statement, err := form.SQL(table)
+		if err != nil {
+			t.Fatal(err)
+		}
+		clause, err := mysqlddl.ParseClause(statement)
+		if err != nil {
+			t.Fatal(err)
+		}
+		table.Clauses = append(table.Clauses, clause)
+	}
+	plan, e = mysqlddl.Build(original, mysqlddl.Draft{Table: table, Triggers: original.Triggers})
+	if e != nil {
+		t.Fatal(e)
+	}
+	out = m.ApplyTableDesign(ctx, 901, plan)
+	if out.Error != nil || !out.Verified {
+		t.Fatalf("structured constraints round trip: %+v; original fixture definition: %s", out, original.DDL)
 	}
 	original = *out.Actual
 	table, e = mysqlddl.Parse(db, name, original.DDL)
