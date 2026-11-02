@@ -66,15 +66,26 @@ func (s *State) schemaDesignView(c *ui.Context, d *Document) {
 			ui.Scroll(c).Grow(1).MinHeight(0).Children(func() {
 				ui.Column(c).Padding(8).Gap(8).Children(func() {
 					schemaDesignInput(c, "表名称", &x.draft.Name, locked)
-					schemaDesignInput(c, "SQLite 表选项", &x.draft.Options, locked)
-					ui.Text(c, locales.Text("支持 STRICT、WITHOUT ROWID；现有表的 rowid 模式需要独立迁移。"))
+					if x.original.Schema.Engine == "postgresql" {
+						s.postgresSchemaOptions(c, d, locked)
+					} else {
+						schemaDesignInput(c, "SQLite 表选项", &x.draft.Options, locked)
+						ui.Text(c, locales.Text("支持 STRICT、WITHOUT ROWID；现有表的 rowid 模式需要独立迁移。"))
+					}
 					ui.Text(c, locales.Text("表或字段改名请单独预览并执行，数据库会改写依赖定义。"))
 				})
 			})
 		} else {
 			raw := x.original.Schema.DDL
 			if raw == "" {
-				raw, _ = schemaddl.CreateSQLite(x.draft, d.object.Schema, d.table)
+				if x.original.Schema.Engine == "postgresql" {
+					plan, err := schemaddl.PlanPostgreSQL(x.original.Schema, x.draft, d.object.Schema, true)
+					if err == nil {
+						raw = strings.Join(plan.SQL, ";\n\n")
+					}
+				} else {
+					raw, _ = schemaddl.CreateSQLite(x.draft, d.object.Schema, d.table)
+				}
 			}
 			ui.TextArea(c, &raw).Label(locales.Text("原始 DDL")).ReadOnly(true).Grow(1)
 		}
@@ -96,6 +107,7 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 				x.draft.Definitions = append(x.draft.Definitions[:x.row], x.draft.Definitions[x.row+1:]...)
 			}
 			x.field = x.fieldBase
+			x.pgField = x.pgFieldBase
 			x.raw = x.rawBase
 			x.name = x.nameBase
 			_ = s.schemaSelectRow(d, x.page, -1)
@@ -148,7 +160,9 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 	}
 	ui.Scroll(c).Grow(1).MinHeight(100).Children(func() {
 		ui.Column(c).Padding(8).Gap(8).Children(func() {
-			if x.page == 0 && !x.field.Unsupported {
+			if x.page == 0 && x.original.Schema.Engine == "postgresql" && !x.pgField.Unsupported {
+				s.postgresSchemaField(c, d, locked)
+			} else if x.page == 0 && x.original.Schema.Engine != "postgresql" && !x.field.Unsupported {
 				schemaDesignInput(c, "字段名称", &x.field.Name, locked)
 				schemaDesignInput(c, "字段类型", &x.field.Type, locked)
 				ui.Row(c).Wrap().Gap(8).Children(func() {
@@ -164,7 +178,7 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 				if x.page == 0 {
 					ui.Text(c, locales.Text("此字段含高级属性；编辑完整定义时保留所需的全部属性。"))
 				}
-				if x.page != 1 {
+				if x.page != 1 || x.original.Schema.Engine == "postgresql" {
 					schemaDesignInput(c, "定义名称", &x.name, locked)
 				}
 				ui.Text(c, locales.Text("完整定义"))
@@ -210,6 +224,7 @@ func (s *State) schemaDesignModals(c *ui.Context, d *Document) {
 						x.next = nil
 						x.draft = x.saved.Clone()
 						x.field = x.fieldBase
+						x.pgField = x.pgFieldBase
 						x.raw = x.rawBase
 						x.name = x.nameBase
 						_ = s.schemaSelectRow(d, x.page, -1)

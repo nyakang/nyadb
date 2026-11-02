@@ -14841,3 +14841,107 @@ func SqliteView7ed05fdd27() string { return In(i18n.Locale()).SqliteView7ed05fdd
 func (msgs Messages) SqliteView7ed05fdd27() string {
 	return Catalog.Format(msgs.locale, "sqliteView7ed05fdd27", nil)
 }
+
+// PostgresDesignIdentityMode says "标识列模式"
+// in the language the app shows.
+func PostgresDesignIdentityMode() string { return In(i18n.Locale()).PostgresDesignIdentityMode() }
+
+// PostgresDesignIdentityMode says "标识列模式"
+// in the language of msgs.
+func (msgs Messages) PostgresDesignIdentityMode() string {
+	return Catalog.Format(msgs.locale, "postgresDesignIdentityMode", nil)
+}
+
+// PostgresDesignIdentityOptions says "标识序列选项"
+// in the language the app shows.
+func PostgresDesignIdentityOptions() string { return In(i18n.Locale()).PostgresDesignIdentityOptions() }
+
+// PostgresDesignIdentityOptions says "标识序列选项"
+// in the language of msgs.
+func (msgs Messages) PostgresDesignIdentityOptions() string {
+	return Catalog.Format(msgs.locale, "postgresDesignIdentityOptions", nil)
+}
+
+// PostgresDesignGeneratedStorage says "生成列存储"
+// in the language the app shows.
+func PostgresDesignGeneratedStorage() string {
+	return In(i18n.Locale()).PostgresDesignGeneratedStorage()
+}
+
+// PostgresDesignGeneratedStorage says "生成列存储"
+// in the language of msgs.
+func (msgs Messages) PostgresDesignGeneratedStorage() string {
+	return Catalog.Format(msgs.locale, "postgresDesignGeneratedStorage", nil)
+}
+
+// PostgresDesignAccessMethod says "访问方法"
+// in the language the app shows.
+func PostgresDesignAccessMethod() string { return In(i18n.Locale()).PostgresDesignAccessMethod() }
+
+// PostgresDesignAccessMethod says "访问方法"
+// in the language of msgs.
+func (msgs Messages) PostgresDesignAccessMethod() string {
+	return Catalog.Format(msgs.locale, "postgresDesignAccessMethod", nil)
+}
+
+// PostgresDesignPersistence says "表持久性"
+// in the language the app shows.
+func PostgresDesignPersistence() string { return In(i18n.Locale()).PostgresDesignPersistence() }
+
+// PostgresDesignPersistence says "表持久性"
+// in the language of msgs.
+func (msgs Messages) PostgresDesignPersistence() string {
+	return Catalog.Format(msgs.locale, "postgresDesignPersistence", nil)
+}
+
+// PostgresDesignLogged says "持久表"
+// in the language the app shows.
+func PostgresDesignLogged() string { return In(i18n.Locale()).PostgresDesignLogged() }
+
+// PostgresDesignLogged says "持久表"
+// in the language of msgs.
+func (msgs Messages) PostgresDesignLogged() string {
+	return Catalog.Format(msgs.locale, "postgresDesignLogged", nil)
+}
+
+// PostgresDesignUnlogged says "不记录日志的表"
+// in the language the app shows.
+func PostgresDesignUnlogged() string { return In(i18n.Locale()).PostgresDesignUnlogged() }
+
+// PostgresDesignUnlogged says "不记录日志的表"
+// in the language of msgs.
+func (msgs Messages) PostgresDesignUnlogged() string {
+	return Catalog.Format(msgs.locale, "postgresDesignUnlogged", nil)
+}
+
+// PostgresDesignAddStorage says "添加存储参数"
+// in the language the app shows.
+func PostgresDesignAddStorage() string { return In(i18n.Locale()).PostgresDesignAddStorage() }
+
+// PostgresDesignAddStorage says "添加存储参数"
+// in the language of msgs.
+func (msgs Messages) PostgresDesignAddStorage() string {
+	return Catalog.Format(msgs.locale, "postgresDesignAddStorage", nil)
+}
+
+// PostgresDesignRemoveStorage says "删除末尾存储参数"
+// in the language the app shows.
+func PostgresDesignRemoveStorage() string { return In(i18n.Locale()).PostgresDesignRemoveStorage() }
+
+// PostgresDesignRemoveStorage says "删除末尾存储参数"
+// in the language of msgs.
+func (msgs Messages) PostgresDesignRemoveStorage() string {
+	return Catalog.Format(msgs.locale, "postgresDesignRemoveStorage", nil)
+}
+
+// PostgresDesignRetainedSettings says "此页面保留已有权限、行安全与继承设置。"
+// in the language the app shows.
+func PostgresDesignRetainedSettings() string {
+	return In(i18n.Locale()).PostgresDesignRetainedSettings()
+}
+
+// PostgresDesignRetainedSettings says "此页面保留已有权限、行安全与继承设置。"
+// in the language of msgs.
+func (msgs Messages) PostgresDesignRetainedSettings() string {
+	return Catalog.Format(msgs.locale, "postgresDesignRetainedSettings", nil)
+}

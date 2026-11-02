@@ -10,8 +10,8 @@ import (
 
 // postgresDesignDDLApply owns the complete native CREATE/ALTER transaction,
 // including the independent declaration and original-context verification.
-// It remains private until general expression/concurrency/new-value proofs and
-// PostgreSQL forms are ready. A successful limited fixture cannot publish Apply.
+// It remains private until referenced-type concurrency and the remaining
+// implicit callback scopes are settled. Engine-aware forms never grant Apply.
 func (s *Session) postgresDesignDDLApply(ctx context.Context, request contract.SchemaDesignRequest) (out contract.SchemaDesignOutcome) {
 	out.State = "not_executed"
 	r := request.Clone()

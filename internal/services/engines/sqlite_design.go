@@ -18,8 +18,8 @@ import (
 
 func (s *Session) SchemaDesign() contract.SchemaDesignOperations {
 	if s.kind == connections.PostgreSQL {
-		// Only the complete read baseline is exposed until transactional
-		// planning/execution and the PostgreSQL forms are implemented.
+		// The engine-aware form is ready, but referenced-type concurrency must
+		// be settled before hidden projections can obtain mutation permission.
 		return contract.SchemaDesignOperations{Snapshot: s.postgresDesignSnapshot}
 	}
 	if s.kind != connections.SQLite {
