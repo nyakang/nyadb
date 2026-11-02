@@ -74,6 +74,8 @@
 
 2026-11-02 后续修复 PG 独立 CREATE 探针接受显式用户索引函数的问题：在创建探针前词法收集调用并检查限定的 pg_catalog core overload，拒绝用户/扩展重载。PG 14/18 专项及 PG 17 全量真实服务 race 通过（34 个顶层 fixture，903.711 秒），本轮 9 个容器独立复核已清理。修复及结果保留在工作树，未 commit/push；类型/cast/运算符/其它探针及并发、正式 Apply/PG 表单仍未完成。自动检查、无新增原生窗口证据和完整限制见 [PG 显式索引函数探针记录](postgres-index-probe-routines-2026-11-02.md)，当前待办见 [剩余复刻清单](reconstruction-remaining-2026-11-02.md)。
 
+2026-11-02 按用户继续目标中的逐项提交要求，上一项索引函数修复已归档为 `5294f95`，未 push。后续补齐纯词法类型/CAST/类型字面量及常量候选、数组/域 CHECK 和继承默认值/复合/范围/opclass 回调与遇到的转换候选检查，拒绝虚假 IMMUTABLE 用户实现。真实 enum→integer、numeric→uuid 序列消费均有失败基线；最终 PG 17 全量真实服务 41 项通过（522.658 秒），PG 14/18 七项专项和 PG 17 类型/TIME race 通过，10 个本轮容器独立确认清理。完整最终检查、证据范围与尚未完成的一般表达式/运算符/并发、正式 Apply/PG 表单见 [PG 类型与转换探针记录](postgres-probe-types-2026-11-02.md)。该前置实现不标记完整目标完成，不新增窗口或 Navicat O/S/V。
+
 The current Linux alignment target is Navicat 18, Simplified Chinese, dark
 theme, and compact density. Shared theme metrics now provide 19-DIP navigation
 and chooser list rows with 16-DIP icons, low-emphasis toolbar selection, and

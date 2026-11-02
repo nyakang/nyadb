@@ -54,6 +54,9 @@ func (s *Session) postgresCanonicalDesired(ctx context.Context, c *sql.Conn, req
 	if err = postgresCheckIndexProbeRoutines(ctx, c, r.Desired, target.Object.Schema); err != nil {
 		return out, err
 	}
+	if err = postgresCheckProbeTypes(ctx, c, r.Desired, target.Object.Schema); err != nil {
+		return out, err
+	}
 	var random [16]byte
 	if _, err = rand.Read(random[:]); err != nil {
 		return out, err

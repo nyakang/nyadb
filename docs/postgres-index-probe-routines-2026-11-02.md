@@ -1,6 +1,6 @@
 # PostgreSQL CREATE 探针的显式索引函数检查 — 2026-11-02
 
-基于 `ff7cb5f` 继续正式 Apply 的前置工作。本步已完成自动检查、完整 PostgreSQL 17 真实服务 race 和资源清理复核，修复保留在工作树，未 commit/push。PG 正式 `SchemaDesign` 仍只读，不将本检查称为完整探针副作用证明或 COMMIT 授权。
+基于 `ff7cb5f` 继续正式 Apply 的前置工作。本步已完成自动检查、完整 PostgreSQL 17 真实服务 race 和资源清理复核；验收时修复保留在工作树，随后按用户继续目标中的逐项提交要求归档为 `5294f95`，未 push。PG 正式 `SchemaDesign` 仍只读，不将本检查称为完整探针副作用证明或 COMMIT 授权。
 
 ## 发现及修复范围
 
