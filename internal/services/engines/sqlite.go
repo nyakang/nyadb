@@ -6,7 +6,6 @@ import (
 	"errors"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
-	sqlitedriver "modernc.org/sqlite"
 	"net"
 	"net/url"
 	"os"
@@ -18,6 +17,10 @@ import (
 type sqliteDialect struct{ options connections.SQLiteOptions }
 
 func (sqliteDialect) open(p connections.Profile, password string, dial func(context.Context, string, string) (net.Conn, error)) (*sql.DB, error) {
+	dataDriver, err := newSQLiteDataDriver()
+	if err != nil {
+		return nil, err
+	}
 	abs, err := filepath.Abs(p.Database)
 	if err != nil {
 		return nil, err
@@ -58,7 +61,7 @@ func (sqliteDialect) open(p connections.Profile, password string, dial func(cont
 			}
 		}
 	}
-	return sql.OpenDB(&sqliteConnector{driver: &sqlitedriver.Driver{}, dsn: sqliteConfiguredURI(abs, a), options: a}), nil
+	return sql.OpenDB(&sqliteConnector{driver: dataDriver, dsn: sqliteConfiguredURI(abs, a), options: a}), nil
 }
 
 // sqliteFileURI receives a slash-normalized absolute path. Windows drive

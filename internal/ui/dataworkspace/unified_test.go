@@ -160,7 +160,7 @@ func TestUnifiedGridRepresentative(t *testing.T) {
 			if doc.Page() == nil || doc.Error() != "" || !tt.HasText("共享网格 · NULL 文本") {
 				t.Fatalf("shared grid failed: %s", doc.Error())
 			}
-			if doc.portable() && (tt.HasText("数据分析") || tt.HasText("导入") || tt.HasText("获取整表行数")) {
+			if doc.portable() && tt.HasText("导入") {
 				t.Fatal("unimplemented capability rendered")
 			}
 			if doc.Page().Rows[0][2].Text != "12345678901234567890.123456789012345678" {

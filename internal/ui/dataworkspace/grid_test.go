@@ -79,9 +79,10 @@ func TestSelectedNullCellKeepsReadableInkAfterColumnReorder(t *testing.T) {
 					t.Fatal("NULL cell missing")
 				}
 				pixels := 0
+				frame := tt.Image()
 				for y := int(r.Y); y < int(r.Y+r.H); y++ {
 					for x := int(r.X); x < int(r.X+r.W); x++ {
-						got := tt.Image().RGBAAt(x, y)
+						got := frame.RGBAAt(x, y)
 						if got.R == want.R && got.G == want.G && got.B == want.B {
 							pixels++
 						}
