@@ -108,6 +108,10 @@ func (s *Session) postgresDesignDDLApply(ctx context.Context, request contract.S
 		out.Error = err
 		return
 	}
+	if err = postgresCheckNewSequenceDefaults(ctx, c, actual.Schema, r.Desired, t.Object.Schema); err != nil {
+		out.Error = err
+		return
+	}
 	canonical, err := s.postgresCanonicalDesired(ctx, c, r)
 	if err != nil {
 		out.Error = err
@@ -185,6 +189,13 @@ func (s *Session) postgresDesignDDLApply(ctx context.Context, request contract.S
 	if err != nil {
 		out.Error = err
 		return
+	}
+	if actual.Schema.Exists {
+		want, err = schemaddl.PostgreSQLRetainedSerialDeclaration(actual.Schema, r.Desired, want)
+		if err != nil {
+			out.Error = err
+			return
+		}
 	}
 	if err = schemaddl.ComparePostgreSQLDeclarationGraphs(got, want); err != nil {
 		out.Error = err

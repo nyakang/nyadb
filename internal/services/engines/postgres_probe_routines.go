@@ -4,72 +4,187 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strconv"
+	"strings"
 
 	"github.com/nyakang/nyadb/internal/db/schemaddl"
 )
 
-// This protects explicit index routine calls before CREATE's expression
-// validation. It is not yet a general probe safety proof: custom types/casts,
-// operators/opclasses, implicit callbacks and other expression scopes remain
-// separate prerequisites. Never use this result alone to enable Apply.
-func postgresCheckIndexProbeRoutines(ctx context.Context, c *sql.Conn, desired schemaddl.Table, schema string) error {
-	approved := map[string]bool{
-		"abs": true, "round": true, "trunc": true, "ceil": true, "ceiling": true, "floor": true,
-		"sign": true, "sqrt": true, "power": true, "mod": true,
-		"lower": true, "upper": true, "length": true, "char_length": true, "character_length": true,
-		"octet_length": true, "bit_length": true, "substring": true, "substr": true,
-		"left": true, "right": true, "btrim": true, "ltrim": true, "rtrim": true,
-		"replace": true, "translate": true,
+var errPostgresProbeRoutine = errors.New("PostgreSQL definition probe requires supported core expression routines")
+var errPostgresSequenceDefault = errors.New("PostgreSQL new sequence default cannot populate existing rows safely")
+
+// Explicit declarations are checked before CREATE, which can evaluate constant
+// immutable expressions. This remains a limited preflight, not a concurrent
+// catalog stability proof or authorization to publish the general designer.
+func postgresCheckDeclarationProbeRoutines(ctx context.Context, c *sql.Conn, desired schemaddl.Table, schema string) error {
+	calls, err := schemaddl.PostgreSQLDeclarationProbeCalls(desired, schema)
+	if err != nil {
+		return err
 	}
-	checked := map[string]bool{}
-	for _, definition := range desired.Definitions {
-		if definition.Kind != "index" {
-			continue
-		}
-		calls, err := schemaddl.PostgreSQLIndexProbeCalls(definition, schema, desired.Name)
-		if err != nil {
+	p := postgresExpressionRoutineCheck{ctx: ctx, c: c, checked: map[string]bool{}}
+	for _, call := range calls {
+		if err := p.call(call.PostgreSQLProbeCall, call.Scope); err != nil {
 			return err
 		}
-		for _, call := range calls {
-			if call.Schema != "" && call.Schema != "pg_catalog" || !approved[call.Name] {
-				return errors.New("PostgreSQL definition probe requires a supported core index routine")
-			}
-			if checked[call.Name] {
-				continue
-			}
-			// The probe installs search_path=pg_catalog. Check EVERY overload,
-			// so a user/extension overload cannot acquire trust by sharing a
-			// supported builtin name. IMMUTABLE alone is never sufficient.
-			rows, err := c.QueryContext(ctx, `SELECT p.oid::bigint,p.prokind::text,p.provolatile::text,l.lanname::text
-FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
-JOIN pg_catalog.pg_language l ON l.oid=p.prolang WHERE n.nspname='pg_catalog' AND p.proname=$1`, call.Name)
-			if err != nil {
-				return err
-			}
-			count := 0
-			for rows.Next() {
-				var oid int64
-				var kind, volatility, language string
-				if err := rows.Scan(&oid, &kind, &volatility, &language); err != nil {
-					rows.Close()
-					return err
-				}
-				count++
-				if count > 64 || oid <= 0 || oid >= 16384 || kind != "f" || volatility != "i" || language != "internal" && language != "c" && language != "sql" {
-					rows.Close()
-					return errors.New("PostgreSQL index probe routine is not an immutable supported core overload")
-				}
-			}
-			err = rows.Err()
+	}
+	return ctx.Err()
+}
+
+type postgresExpressionRoutineCheck struct {
+	ctx     context.Context
+	c       *sql.Conn
+	checked map[string]bool
+}
+
+func postgresProbeRoutinePolicy(name, scope string) bool {
+	common := "abs round trunc ceil ceiling floor sign sqrt power mod lower upper length char_length character_length octet_length bit_length substring substr left right btrim ltrim rtrim replace translate encode decode md5 json_build_object jsonb_build_object json_build_array jsonb_build_array json_typeof jsonb_typeof json_array_length jsonb_array_length to_json to_jsonb"
+	if strings.Contains(" "+common+" ", " "+name+" ") {
+		return true
+	}
+	if scope == "index" || scope == "generated" {
+		return false
+	}
+	stable := "date_trunc date_part extract timezone now transaction_timestamp statement_timestamp"
+	if strings.Contains(" "+stable+" ", " "+name+" ") {
+		return true
+	}
+	return scope == "default" && (name == "nextval" || name == "gen_random_uuid" || name == "random" || name == "clock_timestamp")
+}
+
+func (p *postgresExpressionRoutineCheck) call(call schemaddl.PostgreSQLProbeCall, scope string) error {
+	if call.Schema != "" && call.Schema != "pg_catalog" || !postgresProbeRoutinePolicy(call.Name, scope) {
+		return errPostgresProbeRoutine
+	}
+	key := scope + ":" + call.Name
+	if p.checked[key] {
+		return nil
+	}
+	// Every overload is checked: a user overload sharing a trusted name must
+	// not get executed merely because the builtin exists. No expression is
+	// sent to the server to infer its selected overload.
+	rows, err := p.c.QueryContext(p.ctx, `SELECT p.oid::bigint FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='pg_catalog' AND p.proname=$1`, call.Name)
+	if err != nil {
+		return err
+	}
+	var ids []int64
+	for rows.Next() {
+		var oid int64
+		if err := rows.Scan(&oid); err != nil {
 			rows.Close()
-			if err != nil {
-				return err
-			}
-			if count == 0 {
-				return errors.New("PostgreSQL core index probe routine is unavailable")
-			}
-			checked[call.Name] = true
+			return err
 		}
+		if len(ids) >= 64 {
+			rows.Close()
+			return errPostgresProbeRoutine
+		}
+		ids = append(ids, oid)
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return err
+	}
+	if len(ids) == 0 {
+		return errPostgresProbeRoutine
+	}
+	for _, oid := range ids {
+		if _, err := p.routine(oid, scope, true); err != nil {
+			return err
+		}
+	}
+	p.checked[key] = true
+	return nil
+}
+
+type postgresExpressionRoutine struct {
+	arguments []int64
+	result    int64
+}
+
+func (p *postgresExpressionRoutineCheck) routine(oid int64, scope string, allowSQL bool) (postgresExpressionRoutine, error) {
+	var out postgresExpressionRoutine
+	if oid <= 0 || oid >= 16384 {
+		return out, errPostgresProbeRoutine
+	}
+	var namespace, name, kind, volatility, language, source, body, arguments string
+	var configured, returnsSet bool
+	err := p.c.QueryRowContext(p.ctx, `SELECT n.nspname::text,p.proname::text,p.prokind::text,p.provolatile::text,l.lanname::text,p.prosrc,COALESCE(p.prosqlbody::text,''),p.proargtypes::text,p.prorettype::bigint,p.proconfig IS NOT NULL,p.proretset
+FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace JOIN pg_catalog.pg_language l ON l.oid=p.prolang WHERE p.oid=$1`, oid).Scan(&namespace, &name, &kind, &volatility, &language, &source, &body, &arguments, &out.result, &configured, &returnsSet)
+	if err != nil {
+		return out, errors.Join(errPostgresProbeRoutine, err)
+	}
+	if namespace != "pg_catalog" || kind != "f" || configured || returnsSet || (volatility != "i" && (scope == "index" || scope == "generated" || volatility != "s" && scope != "default")) || volatility != "i" && volatility != "s" && volatility != "v" {
+		return out, errPostgresProbeRoutine
+	}
+	if volatility == "v" && (!allowSQL || name != "nextval" && name != "gen_random_uuid" && name != "random" && name != "clock_timestamp") {
+		return out, errPostgresProbeRoutine
+	}
+	// SQL wrappers may forward only to this feature's curated core functions.
+	// similar_to_escape is the nested terminal of core substring(text,text,text).
+	if !allowSQL && name != "similar_to_escape" && !postgresProbeRoutinePolicy(name, scope) {
+		return out, errPostgresProbeRoutine
+	}
+	for _, value := range strings.Fields(arguments) {
+		typ, err := strconv.ParseInt(value, 10, 64)
+		if err != nil || typ <= 0 || typ >= 16384 {
+			return out, errPostgresProbeRoutine
+		}
+		out.arguments = append(out.arguments, typ)
+	}
+	if language == "internal" || language == "c" {
+		return out, nil
+	}
+	if language != "sql" || !allowSQL || source != "" {
+		return out, errPostgresProbeRoutine
+	}
+	forwarders, err := schemaddl.PostgreSQLProbeRoutineForwarder(body, out.arguments, out.result)
+	if err != nil {
+		return out, errors.Join(errPostgresProbeRoutine, err)
+	}
+	for _, call := range forwarders {
+		if call.OID == oid {
+			return out, errPostgresProbeRoutine
+		}
+		actual, err := p.routine(call.OID, scope, false)
+		if err != nil {
+			return out, err
+		}
+		if actual.result != call.Result || schemaddl.Signature(actual.arguments) != schemaddl.Signature(call.Arguments) {
+			return out, errPostgresProbeRoutine
+		}
+	}
+	return out, nil
+}
+
+// Called with the original ACCESS EXCLUSIVE lock already held. Declaring a
+// trusted nextval default does not execute it on the empty probe, but ADD COLUMN
+// evaluates it for old rows and cannot undo sequence increments on rollback.
+func postgresCheckNewSequenceDefaults(ctx context.Context, c *sql.Conn, original schemaddl.Snapshot, desired schemaddl.Table, schema string) error {
+	if !original.Exists {
+		return nil
+	}
+	calls, err := schemaddl.PostgreSQLDeclarationProbeCalls(desired, schema)
+	if err != nil {
+		return err
+	}
+	prior := map[string]bool{}
+	for _, clause := range original.Table.Clauses {
+		if clause.Kind == "column" {
+			prior[clause.ID] = true
+		}
+	}
+	for _, call := range calls {
+		if call.Scope != "default" || call.Name != "nextval" || prior[call.ClauseID] {
+			continue
+		}
+		var rows bool
+		if err := c.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM ONLY "+schemaddl.Quote(schema)+"."+schemaddl.Quote(original.Table.Name)+" LIMIT 1)").Scan(&rows); err != nil {
+			return err
+		}
+		if rows {
+			return errPostgresSequenceDefault
+		}
+		break
 	}
 	return ctx.Err()
 }

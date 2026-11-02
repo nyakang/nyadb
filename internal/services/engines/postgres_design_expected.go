@@ -54,7 +54,7 @@ func (s *Session) postgresCanonicalDesired(ctx context.Context, c *sql.Conn, req
 	if err = postgresCheckProbeOperators(ctx, c, r.Desired, target.Object.Schema); err != nil {
 		return out, err
 	}
-	if err = postgresCheckIndexProbeRoutines(ctx, c, r.Desired, target.Object.Schema); err != nil {
+	if err = postgresCheckDeclarationProbeRoutines(ctx, c, r.Desired, target.Object.Schema); err != nil {
 		return out, err
 	}
 	if err = postgresCheckProbeTypes(ctx, c, r.Desired, target.Object.Schema); err != nil {
