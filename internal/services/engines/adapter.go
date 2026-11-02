@@ -152,12 +152,13 @@ func pageModel(p contract.Page) *contract.DataPage {
 		}
 		out.Rows = append(out.Rows, cells)
 		var snap *contract.RowSnapshot
-		if editable && !truncated && i < len(p.Identities) {
+		if editable && !truncated && i < len(p.Identities) && len(p.Identities[i].Columns) > 0 {
 			snap = rowSnapshot(p.Table.Object, p.Table, row, p.Identities[i])
 		}
 		out.RowSnapshots = append(out.RowSnapshots, snap)
-		if snap != nil {
-			out.RowRefs = append(out.RowRefs, &snap.Ref)
+		if i < len(p.Identities) && len(p.Identities[i].Columns) > 0 {
+			identity := rowSnapshot(p.Table.Object, p.Table, nil, p.Identities[i])
+			out.RowRefs = append(out.RowRefs, &identity.Ref)
 		} else {
 			out.RowRefs = append(out.RowRefs, nil)
 		}
@@ -172,7 +173,7 @@ func (s *Session) pageRequest(id int64, schema, name string, o contract.DataOpti
 		}
 		ref = o.Object
 	}
-	if id != s.id || o.After != nil {
+	if id != s.id {
 		return contract.PageRequest{}, contract.ErrUnsupported
 	}
 	r := contract.PageRequest{Object: ref, Offset: o.Offset, Limit: o.Limit}
@@ -202,18 +203,13 @@ func (s *Session) readData(ctx context.Context, id int64, schema, name string, o
 	if e != nil {
 		return nil, e
 	}
-	var p contract.Page
-	if tx != nil {
-		p, e = tx.Page(ctx, r)
-	} else {
-		p, e = s.Page(ctx, r)
-	}
-	if e != nil {
-		return nil, e
-	}
-	out := pageModel(p)
-	out.Limit = o.Limit
-	return out, nil
+	var out *contract.DataPage
+	e = s.dataQuery(ctx, r.Object, tx, func(ctx context.Context, q queryer) error {
+		var err error
+		out, err = s.advancedDataPage(ctx, q, r, o)
+		return err
+	})
+	return out, e
 }
 func (s *Session) readRow(ctx context.Context, id int64, schema, name string, ref contract.RowRef, tx contract.Transaction) (*contract.DataRow, error) {
 	o := s.Namespace(schema).Object("table", name)
@@ -225,12 +221,18 @@ func (s *Session) readRow(ctx context.Context, id int64, schema, name string, re
 		r.Filters = append(r.Filters, contract.Filter{Column: c, Operator: "=", Value: ref.TypedValues[i].Clone()})
 	}
 	var p contract.Page
-	var e error
-	if tx != nil {
-		p, e = tx.Page(ctx, r)
-	} else {
-		p, e = s.Page(ctx, r)
-	}
+	e := s.dataQuery(ctx, o, tx, func(ctx context.Context, q queryer) error {
+		t, err := s.structure(ctx, q, o)
+		if err != nil {
+			return err
+		}
+		if err = validateDataRef(t, ref); err != nil {
+			return err
+		}
+		// Complete editing remains explicit; the server also enforces its bound.
+		p, err = s.page(ctx, q, r)
+		return err
+	})
 	if e != nil {
 		return nil, e
 	}
@@ -377,7 +379,9 @@ func cellValue(v contract.DataValue) contract.Cell {
 	return contract.Cell{Kind: k, Text: v.Text, Bytes: append([]byte(nil), v.Bytes...)}
 }
 func (s *Session) DataRuntime() contract.DataRuntime {
-	r := contract.DataRuntime{Capabilities: s.Capabilities(), FilterModes: []string{"equal", "not_equal", "less", "greater", "less_equal", "greater_equal", "like", "is_null", "is_not_null"}, AdvancedLoader: func(ctx context.Context, id int64, db, t string, o contract.DataOptions) (*contract.DataPage, error) {
+	r := contract.DataRuntime{Count: s.countData, Chunk: func(ctx context.Context, id int64, db, t, f string, ref contract.RowRef, offset int64, units int) (*contract.FieldChunk, error) {
+		return s.chunkData(ctx, id, db, t, f, ref, offset, units, nil)
+	}, Analyzer: s.analyzeData, Capabilities: s.Capabilities(), FilterModes: []string{"equal", "not_equal", "less", "greater", "less_equal", "greater_equal", "like", "is_null", "is_not_null"}, AdvancedLoader: func(ctx context.Context, id int64, db, t string, o contract.DataOptions) (*contract.DataPage, error) {
 		return s.readData(ctx, id, db, t, o, nil)
 	}, RowReader: func(ctx context.Context, id int64, db, t string, ref contract.RowRef) (*contract.DataRow, error) {
 		return s.readRow(ctx, id, db, t, ref, nil)
@@ -440,6 +444,13 @@ func (s *Session) DataRuntime() contract.DataRuntime {
 		return verification, e
 	}
 	r.Transactions = contract.DataTransactions{
+		Chunk: func(ctx context.Context, t contract.DataTransaction, id int64, db, name, f string, ref contract.RowRef, offset int64, units int) (*contract.FieldChunk, error) {
+			v, ok := t.(*dataTx)
+			if !ok || v.session != s || v.object != s.Namespace(db).Object("table", name) {
+				return nil, connections.ErrInvalid
+			}
+			return s.chunkData(ctx, id, db, name, f, ref, offset, units, v.Transaction)
+		},
 		Begin: func(ctx context.Context, id int64, db, t string) (contract.DataTransaction, error) {
 			if id != s.id {
 				return nil, connections.ErrInvalid

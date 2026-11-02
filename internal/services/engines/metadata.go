@@ -90,13 +90,7 @@ func (s *Session) page(ctx context.Context, q queryer, r contract.PageRequest) (
 			return p, errors.New("unsupported filter operator")
 		}
 	}
-	sqlText := "SELECT "
-	for i, f := range t.Columns {
-		if i > 0 {
-			sqlText += ","
-		}
-		sqlText += quote(f.Name)
-	}
+	sqlText := "SELECT " + s.dataProjection(t, 1<<20)
 	sqlText += " FROM " + qualified(r.Object)
 	if len(where) > 0 {
 		sqlText += " WHERE " + strings.Join(where, " AND ")
@@ -128,13 +122,18 @@ func (s *Session) page(ctx context.Context, q queryer, r contract.PageRequest) (
 		return p, e
 	}
 	defer rows.Close()
-	budget := 16 << 20
-	set, e := scan(rows, s.kind, 0, nil, &budget, r.Limit+1, 1<<20)
+	p.Rows, e = s.dataScan(rows, t, 1<<20, r.Limit+1)
 	if e != nil {
 		return p, e
 	}
-	p.Rows = set.Rows
-	p.Truncation = append([]string(nil), set.Truncation...)
+	for _, row := range p.Rows {
+		for _, c := range row {
+			if c.Truncated {
+				p.Truncation = append(p.Truncation, "cell")
+				break
+			}
+		}
+	}
 	if len(p.Rows) > r.Limit {
 		p.More = true
 		p.Rows = p.Rows[:r.Limit]

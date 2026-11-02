@@ -7,11 +7,16 @@ fixture_cgo=0
 fixture_pg_version=17
 fixture_test_pattern='TestPostgreSQL17.*Fixture'
 fixture_shard=""
+fixture_test_package=./internal/services/engines
 while [[ $# -gt 0 ]]; do
  case "$1" in
   --race) test_options+=(-race); fixture_cgo=1; shift ;;
   --run) if [[ $# -lt 2 || -z "$2" ]]; then exit 2; fi; fixture_test_pattern=$2; shift 2 ;;
   --postgres-version) if [[ $# -lt 2 ]]; then exit 2; fi; case "$2" in 14|15|16|17|18) fixture_pg_version=$2 ;; *) exit 2 ;; esac; shift 2 ;;
+  --package)
+   if [[ $# -lt 2 ]]; then exit 2; fi
+   case "$2" in engines|dataworkspace|shell) fixture_test_package="./internal/"; if [[ "$2" == engines ]]; then fixture_test_package+="services/engines"; else fixture_test_package+="ui/$2"; fi ;; *) exit 2 ;; esac
+   shift 2 ;;
   --shard)
    if [[ $# -lt 2 || ! "$2" =~ ^([1-9][0-9]*)/([1-9][0-9]*)$ ]]; then exit 2; fi
    fixture_shard_index=${BASH_REMATCH[1]}
@@ -48,7 +53,7 @@ if [[ -n "$fixture_shard" ]]; then
  # Discover the entire requested inventory before creating any server. -list
  # does not run integration cases or require NYADB_POSTGRES_IT. Persist both
  # inventories so an audit can prove that the shards cover every named test.
- GOWORK=off CGO_ENABLED="$fixture_cgo" go test ./internal/services/engines -list "$fixture_test_pattern" > "$evidence_dir/test-list.raw"
+ GOWORK=off CGO_ENABLED="$fixture_cgo" go test "$fixture_test_package" -list "$fixture_test_pattern" > "$evidence_dir/test-list.raw"
  awk '/^Test[^[:space:]]+$/ { print }' "$evidence_dir/test-list.raw" > "$evidence_dir/test-list.txt"
  awk -v shard="$fixture_shard_index" -v count="$fixture_shard_count" '(NR-1)%count==shard-1' "$evidence_dir/test-list.txt" > "$evidence_dir/selected-tests.txt"
  if [[ ! -s "$evidence_dir/selected-tests.txt" ]]; then exit 2; fi
@@ -64,6 +69,7 @@ for attempt in {1..60}; do
  sleep 1
 done
 printf 'fixture_ready=%s\n' "$fixture_ready" >> "$evidence_dir/resource.txt"
+printf 'test_package=%s\n' "$fixture_test_package" >> "$evidence_dir/resource.txt"
 printf 'test_pattern=%s\n' "$fixture_test_pattern" >> "$evidence_dir/resource.txt"
 printf 'shard=%s\n' "$fixture_shard" >> "$evidence_dir/resource.txt"
 printf 'postgres_image=%s\n' "postgres:${fixture_pg_version}-alpine" >> "$evidence_dir/resource.txt"
@@ -73,7 +79,7 @@ fixture_port=${fixture_port##*:}
 go version > "$evidence_dir/versions.txt"
 docker exec "$fixture_id" postgres --version >> "$evidence_dir/versions.txt"
 set +e
-GOWORK=off CGO_ENABLED="$fixture_cgo" NYADB_POSTGRES_IT=1 NYADB_POSTGRES_PORT="$fixture_port" go test "${test_options[@]}" ./internal/services/engines -run "$fixture_test_pattern" -count=1 -v -timeout=20m 2>&1 | tee "$evidence_dir/tests.log"
+GOWORK=off CGO_ENABLED="$fixture_cgo" NYADB_POSTGRES_IT=1 NYADB_POSTGRES_PORT="$fixture_port" go test "${test_options[@]}" "$fixture_test_package" -run "$fixture_test_pattern" -count=1 -v -timeout=20m 2>&1 | tee "$evidence_dir/tests.log"
 test_exit=${PIPESTATUS[0]}
 set -e
 printf 'test_exit=%s\n' "$test_exit" >> "$evidence_dir/resource.txt"

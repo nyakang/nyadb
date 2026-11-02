@@ -4,6 +4,7 @@ package engines
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"database/sql/driver"
 	"errors"
@@ -84,7 +85,7 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 		return ErrRevoked
 	}
 	sessionCtx, sessionCancel := context.WithCancel(context.Background())
-	s := &Session{db: db, strategy: strategy, kind: p.Kind, id: p.ID, generation: intent, ctx: sessionCtx, cancel: sessionCancel, catalog: p.Database, leases: make(map[*Lease]bool), transactions: make(map[*Tx]bool)}
+	s := &Session{dataScope: rand.Text(), db: db, strategy: strategy, kind: p.Kind, id: p.ID, generation: intent, ctx: sessionCtx, cancel: sessionCancel, catalog: p.Database, leases: make(map[*Lease]bool), transactions: make(map[*Tx]bool)}
 	old := m.sessions[p.ID]
 	m.sessions[p.ID] = s
 	m.mu.Unlock()
@@ -137,6 +138,7 @@ func (m *Manager) Close() error {
 }
 
 type Session struct {
+	dataScope    string
 	schema       schemaGate
 	strategy     dialectStrategy
 	db           *sql.DB

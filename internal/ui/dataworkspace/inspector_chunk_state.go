@@ -1,6 +1,7 @@
 package dataworkspace
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"github.com/nyakang/nyadb/internal/db/contract"
@@ -63,9 +64,13 @@ func (s *inspectorState) LoadChunk(p *Panel, invalidate func()) {
 	ref.Columns = append([]string(nil), ref.Columns...)
 	values := make([][]byte, len(ref.Values))
 	for i, value := range ref.Values {
-		values[i] = append([]byte(nil), value...)
+		values[i] = bytes.Clone(value)
 	}
 	ref.Values = values
+	ref.TypedValues = append([]contract.Cell(nil), ref.TypedValues...)
+	for i := range ref.TypedValues {
+		ref.TypedValues[i] = ref.TypedValues[i].Clone()
+	}
 	p.chunkRequest++
 	ctx, cancel := context.WithCancel(context.Background())
 	p.chunkCancel, p.chunkLoading, p.chunkErr = cancel, true, ""

@@ -193,7 +193,7 @@ func TestPortableUnsupportedFeaturesFailAtContractLookup(t *testing.T) {
 	if _, err := contract.Require[contract.DataImportsProvider](s); !errors.Is(err, contract.ErrUnsupported) {
 		t.Fatalf("unsupported imports resolved: %v", err)
 	}
-	if _, err := contract.Require[contract.DataAnalysisProvider](s); !errors.Is(err, contract.ErrUnsupported) {
-		t.Fatalf("unsupported analysis resolved: %v", err)
+	if op, err := contract.Require[contract.DataAnalysisProvider](s); err != nil || op.DataAnalysisOperations().Analyzer == nil {
+		t.Fatalf("implemented analysis unavailable: %v", err)
 	}
 }

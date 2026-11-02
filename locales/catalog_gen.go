@@ -5500,21 +5500,21 @@ func (msgs Messages) MysqlDiscardPendingRecordsAction() string {
 	return Catalog.Format(msgs.locale, "mysqlDiscardPendingRecordsAction", nil)
 }
 
-// DataSessionExpired says "原 MySQL 会话已失效，请刷新表数据"
+// DataSessionExpired says "原数据库会话已失效，请刷新表数据"
 // in the language the app shows.
 func DataSessionExpired() string { return In(i18n.Locale()).DataSessionExpired() }
 
-// DataSessionExpired says "原 MySQL 会话已失效，请刷新表数据"
+// DataSessionExpired says "原数据库会话已失效，请刷新表数据"
 // in the language of msgs.
 func (msgs Messages) DataSessionExpired() string {
 	return Catalog.Format(msgs.locale, "dataSessionExpired", nil)
 }
 
-// StructureSessionExpired says "原 MySQL 会话已失效，请刷新表结构"
+// StructureSessionExpired says "原数据库会话已失效，请刷新表结构"
 // in the language the app shows.
 func StructureSessionExpired() string { return In(i18n.Locale()).StructureSessionExpired() }
 
-// StructureSessionExpired says "原 MySQL 会话已失效，请刷新表结构"
+// StructureSessionExpired says "原数据库会话已失效，请刷新表结构"
 // in the language of msgs.
 func (msgs Messages) StructureSessionExpired() string {
 	return Catalog.Format(msgs.locale, "structureSessionExpired", nil)
@@ -5980,37 +5980,37 @@ func (msgs Messages) MysqlToolbarHistoryRulesRestoredClickApplyFilterSort() stri
 	return Catalog.Format(msgs.locale, "mysqlToolbarHistoryRulesRestoredClickApplyFilterSort", nil)
 }
 
-// MysqlToolbarTheOriginalMysqlSessionHasExpiredAnalysis says "原 MySQL 会话已失效，分析结果已丢弃"
+// MysqlToolbarTheOriginalMysqlSessionHasExpiredAnalysis says "原数据库会话已失效，分析结果已丢弃"
 // in the language the app shows.
 func MysqlToolbarTheOriginalMysqlSessionHasExpiredAnalysis() string {
 	return In(i18n.Locale()).MysqlToolbarTheOriginalMysqlSessionHasExpiredAnalysis()
 }
 
-// MysqlToolbarTheOriginalMysqlSessionHasExpiredAnalysis says "原 MySQL 会话已失效，分析结果已丢弃"
+// MysqlToolbarTheOriginalMysqlSessionHasExpiredAnalysis says "原数据库会话已失效，分析结果已丢弃"
 // in the language of msgs.
 func (msgs Messages) MysqlToolbarTheOriginalMysqlSessionHasExpiredAnalysis() string {
 	return Catalog.Format(msgs.locale, "mysqlToolbarTheOriginalMysqlSessionHasExpiredAnalysis", nil)
 }
 
-// MysqlToolbarTheOriginalMysqlSessionHasExpiredClose says "原 MySQL 会话已失效，请关闭向导后重新打开"
+// MysqlToolbarTheOriginalMysqlSessionHasExpiredClose says "原数据库会话已失效，请关闭向导后重新打开"
 // in the language the app shows.
 func MysqlToolbarTheOriginalMysqlSessionHasExpiredClose() string {
 	return In(i18n.Locale()).MysqlToolbarTheOriginalMysqlSessionHasExpiredClose()
 }
 
-// MysqlToolbarTheOriginalMysqlSessionHasExpiredClose says "原 MySQL 会话已失效，请关闭向导后重新打开"
+// MysqlToolbarTheOriginalMysqlSessionHasExpiredClose says "原数据库会话已失效，请关闭向导后重新打开"
 // in the language of msgs.
 func (msgs Messages) MysqlToolbarTheOriginalMysqlSessionHasExpiredClose() string {
 	return Catalog.Format(msgs.locale, "mysqlToolbarTheOriginalMysqlSessionHasExpiredClose", nil)
 }
 
-// MysqlToolbarTheOriginalMysqlSessionHasExpiredReconnect says "原 MySQL 会话已失效，请重新连接后分析"
+// MysqlToolbarTheOriginalMysqlSessionHasExpiredReconnect says "原数据库会话已失效，请重新连接后分析"
 // in the language the app shows.
 func MysqlToolbarTheOriginalMysqlSessionHasExpiredReconnect() string {
 	return In(i18n.Locale()).MysqlToolbarTheOriginalMysqlSessionHasExpiredReconnect()
 }
 
-// MysqlToolbarTheOriginalMysqlSessionHasExpiredReconnect says "原 MySQL 会话已失效，请重新连接后分析"
+// MysqlToolbarTheOriginalMysqlSessionHasExpiredReconnect says "原数据库会话已失效，请重新连接后分析"
 // in the language of msgs.
 func (msgs Messages) MysqlToolbarTheOriginalMysqlSessionHasExpiredReconnect() string {
 	return Catalog.Format(msgs.locale, "mysqlToolbarTheOriginalMysqlSessionHasExpiredReconnect", nil)

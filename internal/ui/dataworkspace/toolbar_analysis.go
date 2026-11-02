@@ -253,7 +253,7 @@ func (s *State) startDataAnalysis(services ui.Services, t *Document) {
 	}
 	session := s.session()
 	if session.ProfileID != t.profileID || !session.Connected {
-		t.tools.analysisErr = locales.Text("原 MySQL 会话已失效，请重新连接后分析")
+		t.tools.analysisErr = locales.Text("原数据库会话已失效，请重新连接后分析")
 		return
 	}
 	analyzer := s.Analyzer
@@ -305,7 +305,7 @@ func (s *State) consumeDataAnalysis() {
 			t.tools.analysisCancel, t.tools.analysisResults = nil, nil
 			t.tools.analysisBusy, t.tools.analysisCanceling = false, false
 			if result.Generation != session.Generation || !session.Connected {
-				t.tools.analysisErr = locales.Text("原 MySQL 会话已失效，分析结果已丢弃")
+				t.tools.analysisErr = locales.Text("原数据库会话已失效，分析结果已丢弃")
 				continue
 			}
 			if canceling || errors.Is(result.Err, context.Canceled) {

@@ -19,7 +19,10 @@ func TestDescriptorsAreIndependentImmutableValues(t *testing.T) {
 		if after != before {
 			t.Fatal("descriptor mutation leaked")
 		}
-		if kind != connections.MySQL && (after.Capabilities.Import || after.Capabilities.Backup || after.Capabilities.Count || after.Capabilities.FieldChunks || after.Capabilities.DesignTables) {
+		if !after.Capabilities.Count || !after.Capabilities.FieldChunks || !after.Capabilities.Keyset || !after.Capabilities.Analysis {
+			t.Fatal("implemented data features are disabled")
+		}
+		if kind != connections.MySQL && (after.Capabilities.Import || after.Capabilities.Backup || after.Capabilities.DesignTables) {
 			t.Fatal("unsupported feature enabled")
 		}
 	}
