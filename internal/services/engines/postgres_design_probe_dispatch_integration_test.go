@@ -78,8 +78,8 @@ INSERT INTO nyadb_probe_default_class.original(value) VALUES(7);`)
 	base := pgDesignRead(t, s, "nyadb_probe_default_class", "original")
 	draft := base.Schema.Table.Clone()
 	draft.Definitions = append(draft.Definitions, schemaddl.Definition{Kind: "index", Name: "effect_index", SQL: `CREATE INDEX effect_index ON nyadb_probe_default_class.original (mood)`})
-	if err := pgAssertTypeProbeRejected(t, s, base, draft, "nyadb_probe_default_class"); !errors.Is(err, errPostgresProbeDispatch) {
-		t.Fatal("default class was not rejected by dispatch preflight", err)
+	if err := pgAssertTypeProbeRejected(t, s, base, draft, "nyadb_probe_default_class"); !errors.Is(err, errPostgresProbeTypeStability) {
+		t.Fatal("mutable enum reached default-class evaluation", err)
 	}
 }
 

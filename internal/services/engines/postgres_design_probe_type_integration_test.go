@@ -2,6 +2,8 @@ package engines
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"testing"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
@@ -102,7 +104,7 @@ CREATE TYPE nyadb_probe_structural.composite AS(value nyadb_probe_structural.amo
 CREATE TYPE nyadb_probe_structural.custom_range AS RANGE(subtype=integer);
 CREATE TABLE nyadb_probe_structural.original(value integer);`)
 	base := pgDesignRead(t, s, "nyadb_probe_structural", "original")
-	for _, typ := range []string{"integer", "numeric(40,20)", "text[]", "timestamp(6) with time zone", "interval day to second(3)", "jsonb", "bytea", "uuid", "regclass", "int4range", "int4multirange", "nyadb_probe_structural.amount", "nyadb_probe_structural.mood[]", "nyadb_probe_structural.composite", "nyadb_probe_structural.custom_range"} {
+	for _, typ := range []string{"integer", "numeric(40,20)", "text[]", "timestamp(6) with time zone", "interval day to second(3)", "jsonb", "bytea", "uuid", "regclass", "int4range", "int4multirange", "nyadb_probe_structural.amount", "nyadb_probe_structural.amount[]", "nyadb_probe_structural.mood", "nyadb_probe_structural.mood[]", "nyadb_probe_structural.composite", "nyadb_probe_structural.custom_range"} {
 		t.Run(typ, func(t *testing.T) {
 			draft := base.Schema.Table.Clone()
 			draft.Clauses = append(draft.Clauses, schemaddl.Clause{ID: "new:type", Kind: "column", Name: "typed", SQL: typ})
@@ -116,8 +118,12 @@ CREATE TABLE nyadb_probe_structural.original(value integer);`)
 			}
 			defer rollbackDesign(c)
 			out, err := s.postgresCanonicalDesired(context.Background(), c, contract.SchemaDesignRequest{Original: base, Desired: draft})
-			if err != nil || out.Table.Name != "original" || !out.Probe.Exists {
-				t.Fatal("supported type lost independent definition", err)
+			if strings.HasPrefix(typ, "nyadb_probe_structural.") {
+				if !errors.Is(err, errPostgresProbeTypeStability) || out.Table.Name != "" || out.Probe.Exists {
+					t.Fatal("mutable user identity acquired an independent declaration", err)
+				}
+			} else if err != nil || out.Table.Name != "original" || !out.Probe.Exists {
+				t.Fatal("core type lost independent definition", err)
 			}
 			pgProbeAbsent(t, c, "nyadb_probe_structural")
 		})
@@ -169,12 +175,12 @@ INSERT INTO nyadb_probe_refresh.original VALUES(7);`)
 		t.Fatal(err)
 	}
 	defer c.Close()
-	if err = postgresCheckProbeTypes(context.Background(), c, draft, "nyadb_probe_refresh"); err != nil {
-		t.Fatal("initial safe type unavailable", err)
+	if err = postgresCheckProbeTypes(context.Background(), c, draft, "nyadb_probe_refresh"); !errors.Is(err, errPostgresProbeTypeStability) {
+		t.Fatal("an initially harmless domain borrowed permission for later changes", err)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if err = postgresCheckProbeTypes(ctx, c, draft, "nyadb_probe_refresh"); err == nil {
+	if err = postgresCheckProbeTypes(ctx, c, base.Schema.Table, "nyadb_probe_refresh"); !errors.Is(err, context.Canceled) {
 		t.Fatal("canceled type check accepted a baseline")
 	}
 	run(t, s, `CREATE FUNCTION nyadb_probe_refresh.effect(integer) RETURNS boolean LANGUAGE plpgsql IMMUTABLE AS $$

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -89,7 +90,7 @@ func (p *postgresExpressionRoutineCheck) call(call schemaddl.PostgreSQLProbeCall
 	}
 	for _, oid := range ids {
 		if _, err := p.routine(oid, scope, true); err != nil {
-			return err
+			return fmt.Errorf("PostgreSQL %s routine %q OID %d: %w", scope, call.Name, oid, err)
 		}
 	}
 	p.checked[key] = true
@@ -113,8 +114,14 @@ FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
 	if err != nil {
 		return out, errors.Join(errPostgresProbeRoutine, err)
 	}
-	if namespace != "pg_catalog" || kind != "f" || configured || returnsSet || (volatility != "i" && (scope == "index" || scope == "generated" || volatility != "s" && scope != "default")) || volatility != "i" && volatility != "s" && volatility != "v" {
-		return out, errPostgresProbeRoutine
+	// The core length(text) overload is immutable, but the same name also has
+	// length(bytea,name), which reads the requested encoding and is stable. It
+	// cannot execute user code and must not disable an unrelated text overload.
+	// Check its fixed native identity/body/signature; PostgreSQL still rejects
+	// an actually selected stable expression in an index or generated column.
+	encodingLength := oid == 1713 && name == "length" && volatility == "s" && language == "internal" && source == "length_in_encoding" && arguments == "17 19" && out.result == 23
+	if namespace != "pg_catalog" || kind != "f" || configured || returnsSet || (volatility != "i" && !encodingLength && (scope == "index" || scope == "generated" || volatility != "s" && scope != "default")) || volatility != "i" && volatility != "s" && volatility != "v" {
+		return out, fmt.Errorf("core routine language %q, volatility %q, argument types %q: %w", language, volatility, arguments, errPostgresProbeRoutine)
 	}
 	if volatility == "v" && (!allowSQL || name != "nextval" && name != "gen_random_uuid" && name != "random" && name != "clock_timestamp") {
 		return out, errPostgresProbeRoutine

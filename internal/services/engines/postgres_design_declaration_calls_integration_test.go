@@ -6,6 +6,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/schemaddl"
 )
@@ -101,6 +103,38 @@ func TestPostgreSQL17DesignDeclarationCoreRoutinesFixture(t *testing.T) {
 	request.Desired.Definitions = append(request.Desired.Definitions, schemaddl.Definition{Kind: "trigger", Name: "core_trigger", SQL: `CREATE TRIGGER core_trigger BEFORE UPDATE ON nyadb_declaration_core.original FOR EACH ROW WHEN (length(NEW.label)>0) EXECUTE FUNCTION nyadb_declaration_core.callback()`})
 	if _, err := s.postgresCanonicalDesired(context.Background(), c, request); err != nil {
 		t.Fatal("trigger declaration treated as invocation", err)
+	}
+}
+
+func TestPostgreSQL17DesignGeneratedLengthOverloadsFixture(t *testing.T) {
+	s := postgresDesignFixture(t)
+	run(t, s, `CREATE SCHEMA nyadb_generated_length;
+CREATE TABLE nyadb_generated_length.original(id integer, label text, payload bytea);
+INSERT INTO nyadb_generated_length.original VALUES(7,'原值',convert_to('原值','UTF8'));`)
+	r := pgDDLRequest(t, s, "nyadb_generated_length", "original")
+	r.Desired.Clauses = append(r.Desired.Clauses, schemaddl.Clause{ID: "new:length", Kind: "column", Name: "label_length", SQL: "integer GENERATED ALWAYS AS (length(label)) STORED"})
+	out := s.postgresDesignDDLApply(context.Background(), r)
+	if out.Error != nil || out.State != "committed" || !out.Verified || out.Actual == nil {
+		t.Fatal("unrelated stable overload disabled immutable text length", out.State, out.Error)
+	}
+	var length int
+	if err := s.db.QueryRow(`SELECT label_length FROM nyadb_generated_length.original`).Scan(&length); err != nil || length != 2 {
+		t.Fatal("generated text length lost Unicode character semantics", length, err)
+	}
+	r = pgDDLRequest(t, s, "nyadb_generated_length", "original")
+	r.Desired.Clauses = append(r.Desired.Clauses, schemaddl.Clause{ID: "new:encoded", Kind: "column", Name: "encoded_length", SQL: "integer GENERATED ALWAYS AS (length(payload, 'UTF8'::name)) STORED"})
+	out = s.postgresDesignDDLApply(context.Background(), r)
+	var serverError *pgconn.PgError
+	if !errors.As(out.Error, &serverError) || serverError.Code != "42P17" || out.State != "rolled_back" || out.Verified || out.Actual != nil {
+		t.Fatal("actually selected stable overload gained generated-column permission", out.State, out.Error)
+	}
+	current := pgDDLRequest(t, s, "nyadb_generated_length", "original")
+	if current.Original.Schema.Revision != r.Original.Schema.Revision {
+		t.Fatal("native immutability rejection changed original catalog")
+	}
+	var label string
+	if err := s.db.QueryRow(`SELECT label,label_length FROM nyadb_generated_length.original`).Scan(&label, &length); err != nil || label != "原值" || length != 2 {
+		t.Fatal("native rejection changed original values", label, length, err)
 	}
 }
 
