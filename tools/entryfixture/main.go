@@ -146,6 +146,10 @@ func main() {
 		seed(root)
 	case "seed-engine-options":
 		seedEngineOptions(root)
+	case "seed-clickhouse":
+		seedClickHouse(root)
+	case "native-clickhouse":
+		nativeClickHouse(root)
 	case "native-renamed", "native-deleted", "native-saved", "native-grouped":
 		nativeCheck(root, os.Args[1])
 	case "native-common":

@@ -14,6 +14,10 @@ type Token struct {
 }
 
 func Tokens(source string) ([]Token, error) {
+	return tokens(source, false)
+}
+
+func tokens(source string, clickhouse bool) ([]Token, error) {
 	var out []Token
 	for i := 0; i < len(source); {
 		if source[i] == ' ' || source[i] == '\n' || source[i] == '\r' || source[i] == '\t' {
@@ -23,6 +27,14 @@ func Tokens(source string) ([]Token, error) {
 		start := i
 		q, c := false, false
 		switch {
+		case clickhouse && clickHouseDollarTag(source, i) != "":
+			q = true
+			tag := clickHouseDollarTag(source, i)
+			end := strings.Index(source[i+len(tag):], tag)
+			if end < 0 {
+				return nil, errors.New("unterminated ClickHouse heredoc")
+			}
+			i += len(tag)*2 + end
 		case source[i] == '\'' || source[i] == '"' || source[i] == '`':
 			q = true
 			quote := source[i]
@@ -54,7 +66,7 @@ func Tokens(source string) ([]Token, error) {
 				return nil, errors.New("unterminated SQL comment")
 			}
 			i += end + 4
-		case source[i] == '#' || strings.HasPrefix(source[i:], "--") && (i+2 == len(source) || source[i+2] <= ' '):
+		case source[i] == '#' || strings.HasPrefix(source[i:], "--") && (clickhouse || i+2 == len(source) || source[i+2] <= ' '):
 			c = true
 			for i < len(source) && source[i] != '\n' {
 				i++
@@ -78,6 +90,10 @@ func Format(source string) (string, error) {
 	if e != nil {
 		return "", e
 	}
+	return formatTokens(source, tokens), nil
+}
+
+func formatTokens(source string, tokens []Token) string {
 	keywords := strings.Fields("select from where order by group having limit offset insert into values update set delete join left right inner outer on as and or not null is create alter table view index primary key foreign references unique default check constraint begin end when then else case union all distinct asc desc explain returning")
 	known := map[string]bool{}
 	for _, v := range keywords {
@@ -111,7 +127,7 @@ func Format(source string) (string, error) {
 		last = t.End
 	}
 	b.WriteString(source[last:])
-	return b.String(), nil
+	return b.String()
 }
 
 // Identifier quotes a database object name for a supported SQL dialect.

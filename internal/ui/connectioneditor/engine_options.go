@@ -123,6 +123,18 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionFormWidth(width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.ClickHouse:
+		if tab != "SSL" {
+			return false
+		}
+		ui.Column(c).Width(formWidth).Gap(12).Children(func() {
+			ui.Text(c, locales.Text("ClickHouse 使用原生 TCP 协议，默认端口 9000；TLS 服务通常使用 9440。"))
+			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+				ui.Text(c, locales.Text("TLS 模式：")).Width(labelWidth)
+				connectionFormSelect(c, &s.connectionDraft.TLSMode, []string{"disable", "verify-full"}, "ClickHouse TLS 模式", fieldWidth, false)
+			})
+		})
+		return true
 	case connections.PostgreSQL:
 		a := &s.connectionDraft.PostgreSQLOptions
 		switch tab {

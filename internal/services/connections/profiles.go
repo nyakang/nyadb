@@ -13,6 +13,7 @@ const (
 	MySQL      Kind = "mysql"
 	PostgreSQL Kind = "postgresql"
 	SQLite     Kind = "sqlite"
+	ClickHouse Kind = "clickhouse"
 )
 
 var (

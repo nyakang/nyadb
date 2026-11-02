@@ -77,7 +77,7 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 	}
 	s.selectNavigationNode(services, navigation.ConnectionKey(profile.ID))
 	canMySQL := profile.Kind == connections.MySQL
-	canConnect := canMySQL || profile.Kind == connections.PostgreSQL || profile.Kind == connections.SQLite
+	canConnect := canMySQL || profile.Kind == connections.PostgreSQL || profile.Kind == connections.SQLite || profile.Kind == connections.ClickHouse
 	status := s.sessions.StatusFor(profile.ID)
 	connected := status == "已连接"
 	connecting := status == "连接中"

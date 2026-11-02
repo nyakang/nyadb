@@ -117,7 +117,7 @@ func (s *State) Save() {
 			return
 		}
 	}
-	if saved.Kind == connections.PostgreSQL {
+	if saved.Kind == connections.PostgreSQL || saved.Kind == connections.ClickHouse {
 		s.connectionMainConfig = s.currentConnectionSnapshot()
 		if err := s.persistConnectionPasswords(saved, before); err != nil {
 			if p.ID == 0 {

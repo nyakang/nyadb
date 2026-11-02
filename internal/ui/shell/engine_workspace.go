@@ -33,8 +33,12 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 	}
 	status := s.sessions.StatusFor(p.ID)
 	ui.Column(c).Gap(5).Children(func() {
-		if p.Kind == connections.PostgreSQL && status != "已连接" {
-			ui.TextInput(c, &s.sessions.Current().Password).Password().Label(locales.Text("PostgreSQL 会话密码"))
+		if (p.Kind == connections.PostgreSQL || p.Kind == connections.ClickHouse) && status != "已连接" {
+			label := locales.Text("PostgreSQL 会话密码")
+			if p.Kind == connections.ClickHouse {
+				label = locales.Text("ClickHouse 会话密码")
+			}
+			ui.TextInput(c, &s.sessions.Current().Password).Password().Label(label)
 		}
 		ui.Row(c).Gap(5).Children(func() {
 			if status == "连接中" || status == "已连接" {
@@ -65,7 +69,10 @@ func (s *State) objectCapabilitiesFor(id int64) contract.Capabilities {
 }
 func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string {
 	for _, p := range s.navigation.Profiles() {
-		if p.ID == id && p.Kind != connections.MySQL {
+		if p.ID == id && p.Kind == connections.ClickHouse {
+			return sqltext.ClickHouseStatementAt(source, cursor)
+		}
+		if p.ID == id && p.Kind != connections.MySQL && p.Kind != connections.ClickHouse {
 			return sqltext.PortableStatementAt(source, cursor)
 		}
 	}
@@ -74,7 +81,10 @@ func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string 
 
 func (s *State) sqlFormat(id int64, source string) (string, error) {
 	for _, p := range s.navigation.Profiles() {
-		if p.ID == id && p.Kind != connections.MySQL {
+		if p.ID == id && p.Kind == connections.ClickHouse {
+			return sqltext.FormatClickHouse(source)
+		}
+		if p.ID == id && p.Kind != connections.MySQL && p.Kind != connections.ClickHouse {
 			return sqltext.FormatPortable(source)
 		}
 	}
@@ -83,7 +93,10 @@ func (s *State) sqlFormat(id int64, source string) (string, error) {
 
 func (s *State) sqlValidateExplain(id int64, source string) error {
 	for _, p := range s.navigation.Profiles() {
-		if p.ID == id && p.Kind != connections.MySQL {
+		if p.ID == id && p.Kind == connections.ClickHouse {
+			return sqltext.SingleClickHouseStatement(source)
+		}
+		if p.ID == id && p.Kind != connections.MySQL && p.Kind != connections.ClickHouse {
 			return sqltext.SinglePortableStatement(source)
 		}
 	}

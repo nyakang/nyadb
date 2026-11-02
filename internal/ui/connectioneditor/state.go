@@ -158,7 +158,7 @@ func (s *State) OpenProfile(profile connections.Profile) {
 	if profile.Kind == connections.MySQL {
 		s.loadSavedConnectionPasswords()
 		s.loadTunnelSecrets()
-	} else if profile.Kind == connections.PostgreSQL {
+	} else if profile.Kind == connections.PostgreSQL || profile.Kind == connections.ClickHouse {
 		s.loadSavedConnectionPasswords()
 	}
 }
@@ -248,6 +248,8 @@ func connectionKindName(kind connections.Kind) string {
 		return "PostgreSQL"
 	case connections.SQLite:
 		return "SQLite"
+	case connections.ClickHouse:
+		return "ClickHouse"
 	default:
 		return "未知类型"
 	}

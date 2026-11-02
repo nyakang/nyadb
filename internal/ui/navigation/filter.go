@@ -48,7 +48,7 @@ func (s *State) filterMenu(m *ui.Menu) {
 		label string
 		kind  connections.Kind
 	}{
-		{"MySQL", connections.MySQL}, {"PostgreSQL", connections.PostgreSQL}, {"SQLite", connections.SQLite},
+		{"MySQL", connections.MySQL}, {"PostgreSQL", connections.PostgreSQL}, {"SQLite", connections.SQLite}, {"ClickHouse", connections.ClickHouse},
 	} {
 		if m.Item(item.label).Checked(s.Filter.Engine == item.kind).Chosen() {
 			s.Filter.Engine = item.kind

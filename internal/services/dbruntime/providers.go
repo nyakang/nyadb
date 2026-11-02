@@ -3,12 +3,14 @@ package dbruntime
 import (
 	"context"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	clickhousesvc "github.com/nyakang/nyadb/internal/services/clickhouse"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/engines"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.ClickHouse, ProviderFunc(clickhousesvc.OpenSession))
 	m.Register(connections.MySQL, ProviderFunc(func(ctx context.Context, p connections.Profile, password string) (contract.Session, error) {
 		return mysqlsvc.OpenSession(ctx, p, password, mysqlTemplate)
 	}))

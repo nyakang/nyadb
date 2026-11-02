@@ -13661,3 +13661,53 @@ func SqliteDesignSave() string { return In(i18n.Locale()).SqliteDesignSave() }
 func (msgs Messages) SqliteDesignSave() string {
 	return Catalog.Format(msgs.locale, "sqliteDesignSave", nil)
 }
+
+// ClickhouseSessionPassword says "ClickHouse 会话密码"
+// in the language the app shows.
+func ClickhouseSessionPassword() string { return In(i18n.Locale()).ClickhouseSessionPassword() }
+
+// ClickhouseSessionPassword says "ClickHouse 会话密码"
+// in the language of msgs.
+func (msgs Messages) ClickhouseSessionPassword() string {
+	return Catalog.Format(msgs.locale, "clickhouseSessionPassword", nil)
+}
+
+// ClickhouseNativeProtocol says "ClickHouse 使用原生 TCP 协议，默认端口 9000；TLS 服务通常使用 9440。"
+// in the language the app shows.
+func ClickhouseNativeProtocol() string { return In(i18n.Locale()).ClickhouseNativeProtocol() }
+
+// ClickhouseNativeProtocol says "ClickHouse 使用原生 TCP 协议，默认端口 9000；TLS 服务通常使用 9440。"
+// in the language of msgs.
+func (msgs Messages) ClickhouseNativeProtocol() string {
+	return Catalog.Format(msgs.locale, "clickhouseNativeProtocol", nil)
+}
+
+// ClickhouseTLSMode says "ClickHouse TLS 模式"
+// in the language the app shows.
+func ClickhouseTLSMode() string { return In(i18n.Locale()).ClickhouseTLSMode() }
+
+// ClickhouseTLSMode says "ClickHouse TLS 模式"
+// in the language of msgs.
+func (msgs Messages) ClickhouseTLSMode() string {
+	return Catalog.Format(msgs.locale, "clickhouseTLSMode", nil)
+}
+
+// ClickhouseTLSModeCaption says "TLS 模式："
+// in the language the app shows.
+func ClickhouseTLSModeCaption() string { return In(i18n.Locale()).ClickhouseTLSModeCaption() }
+
+// ClickhouseTLSModeCaption says "TLS 模式："
+// in the language of msgs.
+func (msgs Messages) ClickhouseTLSModeCaption() string {
+	return Catalog.Format(msgs.locale, "clickhouseTLSModeCaption", nil)
+}
+
+// ConnectionURISupportedEngines says "支持 MySQL、PostgreSQL、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。"
+// in the language the app shows.
+func ConnectionURISupportedEngines() string { return In(i18n.Locale()).ConnectionURISupportedEngines() }
+
+// ConnectionURISupportedEngines says "支持 MySQL、PostgreSQL、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。"
+// in the language of msgs.
+func (msgs Messages) ConnectionURISupportedEngines() string {
+	return Catalog.Format(msgs.locale, "connectionURISupportedEngines", nil)
+}
