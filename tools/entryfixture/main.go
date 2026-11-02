@@ -148,6 +148,12 @@ func main() {
 		seedEngineOptions(root)
 	case "seed-clickhouse":
 		seedClickHouse(root)
+	case "seed-ai":
+		seedAISQL(root)
+	case "native-ai":
+		nativeAISQL(root)
+	case "native-ai-keyfailures":
+		nativeAIKeyFailures(root)
 	case "native-clickhouse":
 		nativeClickHouse(root)
 	case "native-renamed", "native-deleted", "native-saved", "native-grouped":

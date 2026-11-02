@@ -29,7 +29,7 @@ func (s *State) RunAll(invalidate func(), d *Document) {
 }
 func (s *State) sqlKeyboard(c *ui.Context, root ui.Element, d *Document) {
 	mod := commandModifier()
-	active := func() bool { return d != nil && !d.closed && !d.preview && s.active(d) }
+	active := func() bool { return d != nil && !d.closed && !d.preview && s.active(d) && !s.ai.open }
 	root.OnShortcut(mod, ui.KeyEnter, func() {
 		if active() {
 			s.Run(c.Services().Invalidate, d)

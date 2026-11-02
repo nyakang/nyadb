@@ -9,6 +9,7 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/services/aisql"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
 	"github.com/nyakang/nyadb/internal/services/datasources"
@@ -41,6 +42,7 @@ func Run() error {
 		return err
 	}
 	state := shell.NewWithProfiles(connections.NewService(localdb.NewProfileStore(db)))
+	state.SetAISQL(aisql.NewStore(localdb.NewAISQLRepository(db), credentials.AISQLKeys{}), aisql.Client{})
 	state.SetFavoritesStore(favorites.NewStore(localdb.NewFavoritesRepository(db)))
 	state.SetCredentialVault(credentials.NewOSVault())
 	hosts, err := credentials.DefaultHostStore()

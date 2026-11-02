@@ -144,6 +144,9 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 }
 
 func (s *State) workbenchKeyboard(c *ui.Context) {
+	if s.sqlWorkspace.AIVisible() {
+		return
+	}
 	mod := primaryModifier()
 	if current := s.currentTab(); current.object != nil {
 		object := current.object

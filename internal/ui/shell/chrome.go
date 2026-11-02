@@ -171,6 +171,8 @@ func (s *State) menuCommands(section string, m *ui.Menu) {
 			}
 		})
 	case "工具":
+		s.aiMenuCommands(m)
+		m.Separator()
 		// Preserve the observed compact Navicat menu hierarchy without
 		// pretending that the unimplemented database tools can be executed.
 		for _, label := range []string{"数据传输…", "数据生成…", "数据脱敏…", "数据字典…", "数据同步…", "结构同步…"} {

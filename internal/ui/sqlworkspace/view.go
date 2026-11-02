@@ -58,6 +58,9 @@ func (s *State) View(c *ui.Context, t *Document) {
 					if ui.Button(c, locales.Text("另存为")).Clicked() {
 						s.Save(t, true, nil)
 					}
+					if ui.Button(c, locales.Text("AI SQL")).Label(locales.Text("打开 AI SQL 助手")).Disabled(!s.AIAvailable() || t.loading).Clicked() {
+						s.OpenAI(t)
+					}
 					if ui.Button(c, locales.Text("SQL 历史")).Disabled(!s.HistoryAvailable()).Clicked() {
 						profile := t.profileID
 						if t.recoveryNeeded {

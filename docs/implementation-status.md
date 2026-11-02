@@ -13,7 +13,9 @@
 | 隧道 | 统一 DialContext、SSH 指纹信任、HTTPS/WebSocket 自有网关、认证/TLS/代理及断线撤销 |
 | PostgreSQL / SQLite | 真实会话、schema 导航、SQL/多结果、元数据/结构、类型化图形数据编辑、事务/核验及复制/流式导出；PG 高级/TLS、完整目录只读基线、原生 DDL 规划、私有元数据/改名执行及保留值/目标形状核验；SQLite 高级/逐物理连接附加库及六页表设计、创建、改表与改名 |
 | 备份恢复 | 类型化校验包、一致性读取、完整 SQL 转储、冲突策略/预览/依赖恢复、SQL DELIMITER 文件执行；失败/部分/不确定状态不重放 |
-| 后置 | 高级同步、模型、自动运行、BI、AI、其他数据库引擎、PG 图形表设计、PG/SQLite 对象 CRUD 与导入/备份扩展 |
+| ClickHouse | 独立原生驱动/配置/URI/密钥环、SQL 租约与显式恢复、元数据、共享只读网格/分页/筛选/计数/导出 |
+| AI SQL | 可配置 OpenAI 兼容 Chat Completions、系统密钥环、opt-in 预览、流式/取消、生成/解释/优化及原连接未执行草稿 |
+| 后置 | 高级同步、模型、自动运行、BI、监控/字典/生成/脱敏/命令行、AI 表设计/数据填充、引擎深化、PG 图形表设计、PG/SQLite 对象 CRUD 与导入/备份扩展 |
 
 详见 [核心工作流技术设计、限制与验收](core-workflows-2026-10-31.md)。实现和测试属于 **I**；新功能原版采证 **O** 与差分 **V** 为 **Unknown**，不能由编译、Tester 或历史局部对照代替。原生窗口和跨平台编译的具体环境边界另见验收报告。验收快照生成于提交之前，后续提交状态见 Git 历史及远端。
 
@@ -58,6 +60,8 @@
 2026-11-02 后续按用户选择接入 ClickHouse 独立原生驱动、配置/URI/密钥环、表/视图元数据、独立 SQL 客户端和共享只读网格、分页/筛选/计数/流式导出。真实 ClickHouse 25.8.33.6 服务与 Shell race 验证精确值、会话隔离、取消/恢复和代次撤销。ClickHouse 高级管理、可配置 OpenAI 兼容 AI SQL 及其余完整目标继续有效；本阶段及原生采集发现的修复、检查和限制见 [ClickHouse 基础交付记录](clickhouse-native-2026-11-02.md)，没有新增 Navicat O/S/V。
 
 用户后续要求逐项本地提交，覆盖此前不提交的约束。此前保留的已验证前置成果与 ClickHouse 基础分别归档；不推送、不改写历史。文中各阶段的“未提交”描述为当时状态，当前归档和完整剩余项见 [工作台记录](workbench-completion-2026-11-02.md)。
+
+2026-11-02 后续完成可配置 OpenAI 兼容 AI SQL 基础：独立配置/HTTP/SSE 服务、系统密钥环 immutable 密钥及条件发布、原生请求预览、取消、生成/解释/优化与原连接未执行草稿。真实 Secret Service、自有协议服务和正式 Linux 1280×800 / 840×560 窗口验证生成/插入/重启恢复及密钥丢失/错误不覆盖配置；完整检查、截图、限制见 [AI SQL 交付记录](ai-sql-native-2026-11-02.md)。实现 I 与 NyaDB 运行证据不等于商业模型实测或 Navicat O/V；完整其余阶段继续有效。
 
 The current Linux alignment target is Navicat 18, Simplified Chinese, dark
 theme, and compact density. Shared theme metrics now provide 19-DIP navigation
