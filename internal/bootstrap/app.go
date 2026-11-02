@@ -112,6 +112,9 @@ func Run() error {
 		state.SetEngineFiles(func(name string) (string, error) {
 			return mygo.Dialog.Save(mygo.SaveDialogOptions{Parent: window, DefaultPath: name})
 		}, queries.WriteStream)
+		state.SetDictionaryFilePicker(func(name string) (string, error) {
+			return mygo.Dialog.Save(mygo.SaveDialogOptions{Parent: window, Title: locales.Text("导出数据字典"), DefaultPath: name})
+		})
 		window.OnClose(func(e *mygo.CloseEvent) {
 			if state.RequestWorkbenchClose(func() { window.Close() }) {
 				e.PreventDefault()

@@ -14241,3 +14241,193 @@ func AiSQLfe826cf799() string { return In(i18n.Locale()).AiSQLfe826cf799() }
 func (msgs Messages) AiSQLfe826cf799() string {
 	return Catalog.Format(msgs.locale, "aiSQLfe826cf799", nil)
 }
+
+// Dictionarye187e04d0e says "数据字典"
+// in the language the app shows.
+func Dictionarye187e04d0e() string { return In(i18n.Locale()).Dictionarye187e04d0e() }
+
+// Dictionarye187e04d0e says "数据字典"
+// in the language of msgs.
+func (msgs Messages) Dictionarye187e04d0e() string {
+	return Catalog.Format(msgs.locale, "dictionarye187e04d0e", nil)
+}
+
+// Dictionaryc1edda3651 says "数据字典…"
+// in the language the app shows.
+func Dictionaryc1edda3651() string { return In(i18n.Locale()).Dictionaryc1edda3651() }
+
+// Dictionaryc1edda3651 says "数据字典…"
+// in the language of msgs.
+func (msgs Messages) Dictionaryc1edda3651() string {
+	return Catalog.Format(msgs.locale, "dictionaryc1edda3651", nil)
+}
+
+// Dictionary3a48588008 says "导出数据字典"
+// in the language the app shows.
+func Dictionary3a48588008() string { return In(i18n.Locale()).Dictionary3a48588008() }
+
+// Dictionary3a48588008 says "导出数据字典"
+// in the language of msgs.
+func (msgs Messages) Dictionary3a48588008() string {
+	return Catalog.Format(msgs.locale, "dictionary3a48588008", nil)
+}
+
+// Dictionary79fbc2a32b says "附加属性"
+// in the language the app shows.
+func Dictionary79fbc2a32b() string { return In(i18n.Locale()).Dictionary79fbc2a32b() }
+
+// Dictionary79fbc2a32b says "附加属性"
+// in the language of msgs.
+func (msgs Messages) Dictionary79fbc2a32b() string {
+	return Catalog.Format(msgs.locale, "dictionary79fbc2a32b", nil)
+}
+
+// Dictionaryded3e048ce says "生成字段"
+// in the language the app shows.
+func Dictionaryded3e048ce() string { return In(i18n.Locale()).Dictionaryded3e048ce() }
+
+// Dictionaryded3e048ce says "生成字段"
+// in the language of msgs.
+func (msgs Messages) Dictionaryded3e048ce() string {
+	return Catalog.Format(msgs.locale, "dictionaryded3e048ce", nil)
+}
+
+// Dictionaryb0b84f3c1d says "被引用的对象"
+// in the language the app shows.
+func Dictionaryb0b84f3c1d() string { return In(i18n.Locale()).Dictionaryb0b84f3c1d() }
+
+// Dictionaryb0b84f3c1d says "被引用的对象"
+// in the language of msgs.
+func (msgs Messages) Dictionaryb0b84f3c1d() string {
+	return Catalog.Format(msgs.locale, "dictionaryb0b84f3c1d", nil)
+}
+
+// Dictionaryb4724185c9 says "未报告"
+// in the language the app shows.
+func Dictionaryb4724185c9() string { return In(i18n.Locale()).Dictionaryb4724185c9() }
+
+// Dictionaryb4724185c9 says "未报告"
+// in the language of msgs.
+func (msgs Messages) Dictionaryb4724185c9() string {
+	return Catalog.Format(msgs.locale, "dictionaryb4724185c9", nil)
+}
+
+// Dictionaryf609b1b0c5 says "字典已导出："
+// in the language the app shows.
+func Dictionaryf609b1b0c5() string { return In(i18n.Locale()).Dictionaryf609b1b0c5() }
+
+// Dictionaryf609b1b0c5 says "字典已导出："
+// in the language of msgs.
+func (msgs Messages) Dictionaryf609b1b0c5() string {
+	return Catalog.Format(msgs.locale, "dictionaryf609b1b0c5", nil)
+}
+
+// Dictionary11d39d9824 says "只读取表和视图的结构；多对象读取不保证同一时刻的快照。"
+// in the language the app shows.
+func Dictionary11d39d9824() string { return In(i18n.Locale()).Dictionary11d39d9824() }
+
+// Dictionary11d39d9824 says "只读取表和视图的结构；多对象读取不保证同一时刻的快照。"
+// in the language of msgs.
+func (msgs Messages) Dictionary11d39d9824() string {
+	return Catalog.Format(msgs.locale, "dictionary11d39d9824", nil)
+}
+
+// Dictionarydd8db60120 says "搜索字典表名"
+// in the language the app shows.
+func Dictionarydd8db60120() string { return In(i18n.Locale()).Dictionarydd8db60120() }
+
+// Dictionarydd8db60120 says "搜索字典表名"
+// in the language of msgs.
+func (msgs Messages) Dictionarydd8db60120() string {
+	return Catalog.Format(msgs.locale, "dictionarydd8db60120", nil)
+}
+
+// Dictionarya342498b71 says "读取字典"
+// in the language the app shows.
+func Dictionarya342498b71() string { return In(i18n.Locale()).Dictionarya342498b71() }
+
+// Dictionarya342498b71 says "读取字典"
+// in the language of msgs.
+func (msgs Messages) Dictionarya342498b71() string {
+	return Catalog.Format(msgs.locale, "dictionarya342498b71", nil)
+}
+
+// Dictionaryeeb4acad85 says "正在处理字典…"
+// in the language the app shows.
+func Dictionaryeeb4acad85() string { return In(i18n.Locale()).Dictionaryeeb4acad85() }
+
+// Dictionaryeeb4acad85 says "正在处理字典…"
+// in the language of msgs.
+func (msgs Messages) Dictionaryeeb4acad85() string {
+	return Catalog.Format(msgs.locale, "dictionaryeeb4acad85", nil)
+}
+
+// Dictionary2884bdd5da says "字典对象列表"
+// in the language the app shows.
+func Dictionary2884bdd5da() string { return In(i18n.Locale()).Dictionary2884bdd5da() }
+
+// Dictionary2884bdd5da says "字典对象列表"
+// in the language of msgs.
+func (msgs Messages) Dictionary2884bdd5da() string {
+	return Catalog.Format(msgs.locale, "dictionary2884bdd5da", nil)
+}
+
+// Dictionaryb31dc351c2 says "读取字典后选择表或视图。"
+// in the language the app shows.
+func Dictionaryb31dc351c2() string { return In(i18n.Locale()).Dictionaryb31dc351c2() }
+
+// Dictionaryb31dc351c2 says "读取字典后选择表或视图。"
+// in the language of msgs.
+func (msgs Messages) Dictionaryb31dc351c2() string {
+	return Catalog.Format(msgs.locale, "dictionaryb31dc351c2", nil)
+}
+
+// Dictionary21346db43e says "字典结构预览"
+// in the language the app shows.
+func Dictionary21346db43e() string { return In(i18n.Locale()).Dictionary21346db43e() }
+
+// Dictionary21346db43e says "字典结构预览"
+// in the language of msgs.
+func (msgs Messages) Dictionary21346db43e() string {
+	return Catalog.Format(msgs.locale, "dictionary21346db43e", nil)
+}
+
+// Dictionary85d0043989 says "字典包含 %d 个对象；导出完整已读字典，搜索仅过滤预览。"
+// in the language the app shows.
+func Dictionary85d0043989() string { return In(i18n.Locale()).Dictionary85d0043989() }
+
+// Dictionary85d0043989 says "字典包含 %d 个对象；导出完整已读字典，搜索仅过滤预览。"
+// in the language of msgs.
+func (msgs Messages) Dictionary85d0043989() string {
+	return Catalog.Format(msgs.locale, "dictionary85d0043989", nil)
+}
+
+// Dictionarya908c0cab5 says "字典导出格式"
+// in the language the app shows.
+func Dictionarya908c0cab5() string { return In(i18n.Locale()).Dictionarya908c0cab5() }
+
+// Dictionarya908c0cab5 says "字典导出格式"
+// in the language of msgs.
+func (msgs Messages) Dictionarya908c0cab5() string {
+	return Catalog.Format(msgs.locale, "dictionarya908c0cab5", nil)
+}
+
+// Dictionary12dcc125f2 says "导出字典…"
+// in the language the app shows.
+func Dictionary12dcc125f2() string { return In(i18n.Locale()).Dictionary12dcc125f2() }
+
+// Dictionary12dcc125f2 says "导出字典…"
+// in the language of msgs.
+func (msgs Messages) Dictionary12dcc125f2() string {
+	return Catalog.Format(msgs.locale, "dictionary12dcc125f2", nil)
+}
+
+// Dictionarycaf06adff4 says "取消读取"
+// in the language the app shows.
+func Dictionarycaf06adff4() string { return In(i18n.Locale()).Dictionarycaf06adff4() }
+
+// Dictionarycaf06adff4 says "取消读取"
+// in the language of msgs.
+func (msgs Messages) Dictionarycaf06adff4() string {
+	return Catalog.Format(msgs.locale, "dictionarycaf06adff4", nil)
+}

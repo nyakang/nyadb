@@ -86,6 +86,9 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 		}
 	}
 	if kind != "表" {
+		if (kind == "视图" || strings.EqualFold(kind, "view") || strings.EqualFold(kind, "table")) && m.Item(locales.Text("数据字典…")).Disabled(!s.CanDictionary(profileID, database, name, kind)).Chosen() && s.contextEntryValid(entryScope, profileID, database, name) {
+			s.OpenDictionary(profileID, database, name, kind)
+		}
 		if s.deps.ObjectExecutor != nil && s.capabilities(profileID).DesignTables {
 			m.Separator()
 			if m.Item("编辑完整定义…").Chosen() {
@@ -143,7 +146,10 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 			s.deps.DataAction(services, profileID, database, name, item.action)
 		}
 	}
-	for _, label := range []string{"数据字典…", "数据生成…", "数据脱敏…"} {
+	if m.Item(locales.Text("数据字典…")).Disabled(!s.CanDictionary(profileID, database, name, kind)).Chosen() && s.contextEntryValid(entryScope, profileID, database, name) {
+		s.OpenDictionary(profileID, database, name, kind)
+	}
+	for _, label := range []string{"数据生成…", "数据脱敏…"} {
 		m.Item(locales.Text(label)).Disabled(true)
 	}
 	m.Separator()
@@ -234,6 +240,7 @@ func (s *State) BeginTableChange(profileID int64, database, name string, action 
 }
 
 func (s *State) Modals(c *ui.Context) {
+	s.dictionaryModal(c)
 	s.searchModal(c)
 	s.objectGroupModal(c)
 	s.backupModal(c)

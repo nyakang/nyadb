@@ -5,6 +5,10 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 )
 
+func (s *State) SetDictionaryFilePicker(save func(string) (string, error)) {
+	s.objectWorkspace.SetDictionaryFilePicker(save)
+}
+
 func (s *State) SetBackupFiles(files objectworkspace.BackupFiles) {
 	s.objectWorkspace.SetBackupServices(func() objectworkspace.BackupRuntime {
 		admin := s.runtime.Administration(s.sessions.Current().ProfileID)

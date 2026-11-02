@@ -67,6 +67,9 @@ func (s *State) View(c *ui.Context, t *Document) {
 			ui.Text(c, t.database+" / "+t.table).FontSize(theme.Font(c, theme.SmallFontSize)).SingleLine().Grow(1).MinWidth(0).MaxWidth(220).Tooltip(t.database + " / " + t.table)
 			ui.Text(c, locales.Text("设计表 · 只读结构")).TextColor(palette.Muted).FontSize(theme.Font(c, theme.SmallFontSize)).SingleLine().Tooltip(t.database + " / " + t.table)
 			ui.Toolbar(c, func() {
+				if ui.Button(c, locales.Text("数据字典…")).Disabled(!s.CanDictionary(t.profileID, t.database, t.table, t.objectKind)).Clicked() {
+					s.OpenDictionary(t.profileID, t.database, t.table, t.objectKind)
+				}
 				if ui.Button(c, locales.Text("编辑表结构")).Disabled(!s.CanEditDesign(t) || t.loading).Clicked() {
 					s.BeginDesign(t, c.Services())
 				}
