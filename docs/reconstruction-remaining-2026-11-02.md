@@ -10,7 +10,7 @@ SQL 历史/全局加密日志、SQL 常用上下文补全和文档快捷键、My
 
 | 优先级 | 能力 | 实际剩余工作 |
 |---|---|---|
-| P1 | PostgreSQL 正式图形设计 | 当前 `SchemaDesign()` 仍只暴露 Snapshot，通用 UI 准备调用 SQLite 规划器。已有 PG 元数据/改名私有执行和 CREATE/ALTER 规划、保留值/目录/序列及限定 heap/TOAST 变化与新引用证据；显式索引函数、类型/转换、运算符/操作符类/访问方法均已补限定探针检查，内建 SQL 运算符只支持已解析且核对真实目标的双参数转发。仍需完整事务 Apply、并发/依赖/其它探针副作用/新字段语义、引擎专属原生表单及实际窗口保存验收；PG 18 独立 NOT NULL 约束尚未适配。 |
+| P1 | PostgreSQL 正式图形设计 | 当前 `SchemaDesign()` 仍只暴露 Snapshot，通用 UI 准备调用 SQLite 规划器。已有 PG 元数据/改名私有执行和 CREATE/ALTER 规划、保留值/目录/序列及限定 heap/TOAST 变化与新引用证据；显式索引函数、类型/转换、运算符/操作符类/访问方法均已补限定探针检查，内建 SQL 运算符只支持已解析且核对真实目标的双参数转发。CREATE/ALTER 服务内部事务执行器已整合并验证回滚/冲突/取消/关闭/丢失回执。仍需正式 Apply binding、并发/依赖/其它探针副作用/新字段语义、引擎专属原生表单及实际窗口保存验收；PG 18 独立 NOT NULL 约束尚未适配。 |
 | P1 | PG/SQLite 常用对象与文件工具 | PG 视图/程序 CRUD、账户权限适配；共享导入/多格式导出向导、PG/SQLite 备份恢复。SQLite 普通视图 CRUD 与表删除/复制已交付，自动依赖改写和图形查询设计仍不支持。PG SSH/HTTP、SQLite HTTP 尚未接通；运行必须继续明确拒绝未支持配置。 |
 | P1/P2 | PG/SQLite 大数据体验 | 产品描述仍未开启 Keyset、Count、FieldChunks、Analysis；共享网格已存在，但这两种引擎使用 LIMIT/OFFSET，尚缺后页稳定游标、显式精确计数、大字段分块及完整分析接线与真实大数据验收。不能把三引擎共用 UI 等同于同等运行能力。 |
 | P2 | 数据传输 | 当前入口禁用。建立源/目标映射、类型及 NULL/二进制/精确数值保真、预览、批次执行、取消与部分/不确定结果。已有文件导出不能算数据库间传输。 |
@@ -37,6 +37,7 @@ SQL 历史/全局加密日志、SQL 常用上下文补全和文档快捷键、My
 - [PG 显式索引函数探针修复](postgres-index-probe-routines-2026-11-02.md) 完成函数拒绝回归、PG 14/18 专项及 PG 17 全量真实服务 race；类型/cast/运算符/域及其它表达式、并发定义变化尚未形成完整探针证明，不据此启用正式 Apply。
 - [PG 类型与转换探针检查](postgres-probe-types-2026-11-02.md) 区分真实 enum/numeric 转换序列消费、没有观察到副作用的域样例、结构化类型兼容及尚未完成的一般表达式/运算符/并发证明。
 - [PG 运算符与访问方法探针检查](postgres-probe-dispatch-2026-11-02.md) 补拒绝运算符重载、显式/默认操作符类、用户访问方法和被替换的内建 SQL 转发体；不构成一般表达式/并发证明，也不启用正式 Apply。
+- [PG CREATE/ALTER 事务服务](postgres-ddl-transaction-2026-11-02.md) 将既有核验接入服务内部事务并覆盖真实生命周期；binding/表单、通用新字段与一般表达式/并发证明仍未完成。
 - [引擎能力](../internal/services/connections/descriptors.go)、[分页策略](../internal/services/engines/metadata.go)、[SQL Workspace 保存模型](../internal/services/queries/store.go)、[连接颜色/共享菜单](../internal/ui/shell/profile_navigation_menus.go) 分别支持上述大数据、完整工作区与协作缺口。
 
 本表的代码依据来自 NyaDB，不能标为原版静态证据 **S**。已有成果按实际测试标 **I**；新增原版 **O/S/V** 均未采集。对未完成能力只列实现需求，不从菜单名称推断 Navicat 的私有内部行为。用户恢复“每完成一项请提交一次”后，按逐项验收结果本地归档，不 push 或改写历史；前期未提交记录描述当时结果。完整目标保持进行中。
