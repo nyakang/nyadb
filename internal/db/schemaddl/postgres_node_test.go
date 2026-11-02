@@ -80,6 +80,25 @@ func TestPostgreSQLNodePreservesUnknownFieldsLiteralPayloadsAndVariableRoles(t *
 	}
 }
 
+func TestPostgreSQLNodeBindsLegacyArrayTypesAndPreservesContents(t *testing.T) {
+	a, b := pgNodeTestBindings(), pgNodeTestBindings()
+	b.Types = map[int64]string{81001: "row", 81002: "array"}
+	legacy := `{ARRAY :array_typeid 80002 :element_typeid 80001 :elements ({CONST :consttype 80001 :constvalue 4 [ 1 0 0 0 ] :location 5}) :multidims false :location 10}`
+	current := strings.NewReplacer("{ARRAY ", "{ARRAYEXPR ", "80001", "81001", "80002", "81002", ":location 5", ":location 50", ":location 10", ":location 100").Replace(legacy)
+	if pgNodeHash(t, legacy, a) != pgNodeHash(t, current, b) {
+		t.Fatal("legacy array retained physical types or parser locations")
+	}
+	for _, changed := range []string{
+		strings.Replace(legacy, "[ 1 0 0 0 ]", "[ 2 0 0 0 ]", 1),
+		strings.Replace(legacy, ":multidims false", ":multidims true", 1),
+		strings.Replace(legacy, ":location 10", ":unknown 1 :location 10", 1),
+	} {
+		if pgNodeHash(t, legacy, a) == pgNodeHash(t, changed, a) {
+			t.Fatal("legacy array discarded values or unknown properties")
+		}
+	}
+}
+
 func TestPostgreSQLNodeCoercionDisplayDoesNotChangeResolvedOperation(t *testing.T) {
 	b := pgNodeTestBindings()
 	for node, field := range map[string]string{"FUNCEXPR": "funcformat", "RELABELTYPE": "relabelformat", "COERCEVIAIO": "coerceformat", "ARRAYCOERCEEXPR": "coerceformat", "ROWEXPR": "row_format", "CONVERTROWTYPEEXPR": "convertformat", "COERCETODOMAIN": "coercionformat"} {

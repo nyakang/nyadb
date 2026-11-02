@@ -208,6 +208,12 @@ func pgNormalizeNode(node *pgNodeToken, bindings PostgreSQLNodeBindings) error {
 	if err != nil {
 		return err
 	}
+	// PostgreSQL 14 spells ArrayExpr as ARRAY in pg_node_tree. Its type
+	// references and parser locations have the same meaning as ARRAYEXPR.
+	if name == "ARRAY" {
+		name = "ARRAYEXPR"
+		node.children[0].atom = name
+	}
 	byName := map[string][]*pgNodeToken{}
 	for _, f := range fields {
 		byName[f.name] = f.values
