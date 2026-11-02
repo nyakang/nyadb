@@ -25,7 +25,8 @@ func (s *Session) SchemaDesign() contract.SchemaDesignOperations {
 	if s.kind != connections.SQLite {
 		return contract.SchemaDesignOperations{}
 	}
-	return contract.SchemaDesignOperations{CanApply: func(t contract.SchemaDesignTarget) bool { return s.checkDesign(t, true) == nil }, Snapshot: s.sqliteDesignSnapshot, Apply: s.sqliteDesignApply}
+	return contract.SchemaDesignOperations{CanApply: func(t contract.SchemaDesignTarget) bool { return s.checkDesign(t, true) == nil }, Snapshot: s.sqliteDesignSnapshot, Apply: s.sqliteDesignApply,
+		CanDrop: func(t contract.SchemaDesignTarget) bool { return s.checkSQLiteDrop(t) == nil }, Drop: s.sqliteDesignDrop}
 }
 func (s *Session) checkDesign(t contract.SchemaDesignTarget, write bool) error {
 	if t.Generation == 0 || t.Generation != s.generation || s.isClosed() {
@@ -418,6 +419,10 @@ func sqliteValidateDependents(ctx context.Context, c *sql.Conn, schema, table st
 		}
 		rows.Close()
 	}
+	return sqliteValidateTablePrograms(ctx, c, schema, table)
+}
+
+func sqliteValidateTablePrograms(ctx context.Context, c *sql.Conn, schema, table string) error {
 	info, err := sqliteDesignColumns(ctx, c, schema, table)
 	if err != nil {
 		return err
@@ -426,7 +431,7 @@ func sqliteValidateDependents(ctx context.Context, c *sql.Conn, schema, table st
 	for _, col := range info {
 		columns.Clauses = append(columns.Clauses, schemaddl.Clause{Kind: "column", Name: col.Name})
 	}
-	rows, err = c.QueryContext(ctx, "SELECT name,sql FROM "+quote(schema)+".sqlite_schema WHERE type='trigger' AND tbl_name=?", table)
+	rows, err := c.QueryContext(ctx, "SELECT name,sql FROM "+quote(schema)+".sqlite_schema WHERE type='trigger' AND tbl_name=?", table)
 	if err != nil {
 		return err
 	}

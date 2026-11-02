@@ -2,8 +2,44 @@ package shell
 
 import (
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 )
+
+func (s *State) schemaTableDropped(services ui.Services, event objectworkspace.SchemaDropEvent) {
+	out := event.Outcome
+	if out.State != "committed" && out.State != "uncertain" {
+		return
+	}
+	profile := event.Original.Object.ProfileID
+	if original, err := s.runtime.Session(profile); err != nil || original.Generation() != event.Original.Generation {
+		return
+	}
+	if !s.sessions.InvalidateDatabaseObjects(profile, event.Generation, event.Database) {
+		return
+	}
+	if out.State == "uncertain" || !out.Verified || out.Actual == nil || out.Actual.Target != event.Original || out.Actual.Schema.Exists || out.Error != nil {
+		if original, err := s.runtime.Session(profile); err == nil && original.Generation() == event.Original.Generation {
+			_ = original.Close()
+		}
+		return
+	}
+	w := s.sessions.Workspace(profile)
+	if w == s.sessions.Current() && w.Database == event.Database {
+		selected := navigation.Parse(s.navigation.Key)
+		if selected.ProfileID == profile && selected.Database == event.Database && selected.Object == event.Original.Object.Name {
+			s.navigation.Key = navigation.DatabaseNode(profile, event.Database).Key()
+			s.navigation.Row = -1
+		}
+		s.loadMySQLObjects(services, event.Database, true)
+	}
+	for i := len(s.tabs) - 1; i > 0; i-- {
+		t := s.tabs[i]
+		if t.data != nil && t.data.Object() == event.Original.Object || t.object != nil && t.object.Object() == event.Original.Object {
+			s.closeTab(i)
+		}
+	}
+}
 
 func (s *State) schemaTableDesigned(services ui.Services, event objectworkspace.SchemaDesignEvent) {
 	if event.Outcome.State != "committed" && event.Outcome.State != "uncertain" {

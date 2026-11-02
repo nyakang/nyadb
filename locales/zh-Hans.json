@@ -1414,5 +1414,11 @@
   "dictionary85d0043989": "字典包含 %d 个对象；导出完整已读字典，搜索仅过滤预览。",
   "dictionarya908c0cab5": "字典导出格式",
   "dictionary12dcc125f2": "导出字典…",
-  "dictionarycaf06adff4": "取消读取"
+  "dictionarycaf06adff4": "取消读取",
+  "sqliteDrop51c6f659dc": "删除 SQLite 表",
+  "sqliteDrop51bfffeb0a": "事务删除原表及其索引、触发器和数据；存在外键、视图或触发器依赖时拒绝删除。",
+  "sqliteDrop0b78634e0c": "删除结果未确认，请重新连接并核对原表。",
+  "sqliteDropca135360e4": "删除结果或结构已变化；重新读取后才能再次确认。",
+  "sqliteDropd7ed865885": "删除 SQL 预览",
+  "sqliteDrop0b1569e6af": "删除表成功"
 }

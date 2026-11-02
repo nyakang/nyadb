@@ -60,7 +60,7 @@ func mysqlTableActionDangerous(action mysqlsvc.MySQLTableAction) bool {
 
 func (s *State) CanChangeTable(profileID int64) bool {
 	return s.capabilities(profileID).DesignTables && s.runner() != nil &&
-		!s.tablePending && s.session().Connected && s.session().ProfileID == profileID
+		!s.tablePending && (s.schemaDrop == nil || !s.schemaDrop.busy) && s.session().Connected && s.session().ProfileID == profileID
 }
 
 // Shared by the native navigator and central object grid. Unsupported entries
@@ -117,7 +117,7 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 		begin(mysqlsvc.MySQLTableCreate)
 	}
 	m.Item(locales.Text("通过 AI 新建表")).Disabled(true)
-	if m.Item(locales.Text("删除表")).Shortcut(0, ui.KeyDelete).Disabled(!ready).Chosen() {
+	if m.Item(locales.Text("删除表")).Shortcut(0, ui.KeyDelete).Disabled(!s.CanDropTable(profileID, database, name)).Chosen() {
 		begin(mysqlsvc.MySQLTableDrop)
 	}
 	if m.Item(locales.Text("清空表")).Disabled(!ready).Chosen() {
@@ -213,6 +213,16 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 }
 
 func (s *State) BeginTableChange(profileID int64, database, name string, action mysqlsvc.MySQLTableAction) {
+	if s.schemaDrop != nil && s.schemaDrop.busy {
+		return
+	}
+	if action != mysqlsvc.MySQLTableDrop {
+		s.closeSchemaDrop()
+	}
+	if action == mysqlsvc.MySQLTableDrop && !s.CanChangeTable(profileID) {
+		s.beginSchemaDrop(profileID, database, name)
+		return
+	}
 	if action == mysqlsvc.MySQLTableCreate && !s.CanCreateTable(profileID, database) || action == mysqlsvc.MySQLTableRename && !s.CanRenameTable(profileID, database, name) || action != mysqlsvc.MySQLTableCreate && action != mysqlsvc.MySQLTableRename && !s.CanChangeTable(profileID) {
 		return
 	}
@@ -240,6 +250,7 @@ func (s *State) BeginTableChange(profileID int64, database, name string, action 
 }
 
 func (s *State) Modals(c *ui.Context) {
+	s.schemaDropModal(c)
 	s.dictionaryModal(c)
 	s.searchModal(c)
 	s.objectGroupModal(c)
@@ -422,14 +433,36 @@ func (s *State) consumeMySQLTableChange(services ui.Services) {
 	}
 }
 
-func (s *State) TableDialogOpen() bool                  { return s.tableDialog }
-func (s *State) TablePending() bool                     { return s.tablePending }
-func (s *State) TableAction() mysqlsvc.MySQLTableAction { return s.tableAction }
-func (s *State) TableError() string                     { return s.tableError }
+func (s *State) TableDialogOpen() bool {
+	return s.tableDialog || s.schemaDrop != nil && s.schemaDrop.open && !s.schemaDrop.guarding
+}
+func (s *State) TablePending() bool {
+	return s.tablePending || s.schemaDrop != nil && s.schemaDrop.busy
+}
+func (s *State) TableAction() mysqlsvc.MySQLTableAction {
+	if s.schemaDrop != nil {
+		return mysqlsvc.MySQLTableDrop
+	}
+	return s.tableAction
+}
+func (s *State) TableError() string {
+	if s.schemaDrop != nil {
+		return s.schemaDrop.err
+	}
+	return s.tableError
+}
 
 // CancelTableFor requests acknowledgement from the original operation. Keep
 // pending set until its executor returns so an uncertain command cannot replay.
 func (s *State) CancelTableFor(profileID int64) {
+	if x := s.schemaDrop; x != nil && x.target.Object.ProfileID == profileID {
+		if x.cancel != nil {
+			x.cancel()
+		}
+		if !x.applying {
+			s.closeSchemaDrop()
+		}
+	}
 	if s.tableProfileID != profileID {
 		return
 	}

@@ -14431,3 +14431,63 @@ func Dictionarycaf06adff4() string { return In(i18n.Locale()).Dictionarycaf06adf
 func (msgs Messages) Dictionarycaf06adff4() string {
 	return Catalog.Format(msgs.locale, "dictionarycaf06adff4", nil)
 }
+
+// SqliteDrop51c6f659dc says "删除 SQLite 表"
+// in the language the app shows.
+func SqliteDrop51c6f659dc() string { return In(i18n.Locale()).SqliteDrop51c6f659dc() }
+
+// SqliteDrop51c6f659dc says "删除 SQLite 表"
+// in the language of msgs.
+func (msgs Messages) SqliteDrop51c6f659dc() string {
+	return Catalog.Format(msgs.locale, "sqliteDrop51c6f659dc", nil)
+}
+
+// SqliteDrop51bfffeb0a says "事务删除原表及其索引、触发器和数据；存在外键、视图或触发器依赖时拒绝删除。"
+// in the language the app shows.
+func SqliteDrop51bfffeb0a() string { return In(i18n.Locale()).SqliteDrop51bfffeb0a() }
+
+// SqliteDrop51bfffeb0a says "事务删除原表及其索引、触发器和数据；存在外键、视图或触发器依赖时拒绝删除。"
+// in the language of msgs.
+func (msgs Messages) SqliteDrop51bfffeb0a() string {
+	return Catalog.Format(msgs.locale, "sqliteDrop51bfffeb0a", nil)
+}
+
+// SqliteDrop0b78634e0c says "删除结果未确认，请重新连接并核对原表。"
+// in the language the app shows.
+func SqliteDrop0b78634e0c() string { return In(i18n.Locale()).SqliteDrop0b78634e0c() }
+
+// SqliteDrop0b78634e0c says "删除结果未确认，请重新连接并核对原表。"
+// in the language of msgs.
+func (msgs Messages) SqliteDrop0b78634e0c() string {
+	return Catalog.Format(msgs.locale, "sqliteDrop0b78634e0c", nil)
+}
+
+// SqliteDropca135360e4 says "删除结果或结构已变化；重新读取后才能再次确认。"
+// in the language the app shows.
+func SqliteDropca135360e4() string { return In(i18n.Locale()).SqliteDropca135360e4() }
+
+// SqliteDropca135360e4 says "删除结果或结构已变化；重新读取后才能再次确认。"
+// in the language of msgs.
+func (msgs Messages) SqliteDropca135360e4() string {
+	return Catalog.Format(msgs.locale, "sqliteDropca135360e4", nil)
+}
+
+// SqliteDropd7ed865885 says "删除 SQL 预览"
+// in the language the app shows.
+func SqliteDropd7ed865885() string { return In(i18n.Locale()).SqliteDropd7ed865885() }
+
+// SqliteDropd7ed865885 says "删除 SQL 预览"
+// in the language of msgs.
+func (msgs Messages) SqliteDropd7ed865885() string {
+	return Catalog.Format(msgs.locale, "sqliteDropd7ed865885", nil)
+}
+
+// SqliteDrop0b1569e6af says "删除表成功"
+// in the language the app shows.
+func SqliteDrop0b1569e6af() string { return In(i18n.Locale()).SqliteDrop0b1569e6af() }
+
+// SqliteDrop0b1569e6af says "删除表成功"
+// in the language of msgs.
+func (msgs Messages) SqliteDrop0b1569e6af() string {
+	return Catalog.Format(msgs.locale, "sqliteDrop0b1569e6af", nil)
+}

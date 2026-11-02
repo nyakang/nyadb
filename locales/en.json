@@ -1414,5 +1414,11 @@
   "dictionary85d0043989": "Dictionary contains %d objects; export includes the full document. Search filters the preview only.",
   "dictionarya908c0cab5": "Dictionary export format",
   "dictionary12dcc125f2": "Export dictionary…",
-  "dictionarycaf06adff4": "Cancel reading"
+  "dictionarycaf06adff4": "Cancel reading",
+  "sqliteDrop51c6f659dc": "Drop SQLite table",
+  "sqliteDrop51bfffeb0a": "Delete the original table, its indexes, triggers and data in a transaction. Foreign key, view or trigger dependencies prevent deletion.",
+  "sqliteDrop0b78634e0c": "Deletion was not acknowledged. Reconnect and inspect the original table.",
+  "sqliteDropca135360e4": "The deletion outcome or schema has changed. Read the structure again before confirming.",
+  "sqliteDropd7ed865885": "Deletion SQL preview",
+  "sqliteDrop0b1569e6af": "Table deleted"
 }
