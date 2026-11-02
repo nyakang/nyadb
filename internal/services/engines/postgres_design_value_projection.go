@@ -263,7 +263,9 @@ func (s *Session) postgresCaptureValueProof(ctx context.Context, c *sql.Conn, r 
 }
 
 func (s *Session) postgresVerifyValueProof(ctx context.Context, c *sql.Conn, r contract.SchemaDesignRequest, canonical postgresDesiredBaseline, actual contract.SchemaDesignSnapshot, proof postgresDesignValueProof) error {
-	if proof.request != schemaddl.Signature(r) || actual.Target != r.Original.Target || actual.Schema.Table.Name != canonical.Table.Name {
+	expected := r.Original.Target
+	expected.Object.Name = canonical.Table.Name
+	if proof.request != schemaddl.Signature(r) || actual.Target != expected || actual.Schema.Table.Name != canonical.Table.Name {
 		return schemaddl.ErrConflict
 	}
 	wanted := map[string]bool{}
