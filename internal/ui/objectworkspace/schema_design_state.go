@@ -75,14 +75,14 @@ func (s *State) CanEditDesign(d *Document) bool {
 
 // CanCreateTable is distinct from MySQL table administration availability.
 func (s *State) CanCreateTable(profile int64, database string) bool {
-	if s.schemaDrop != nil && s.schemaDrop.busy {
+	if s.nativeTablePending() {
 		return false
 	}
 	return s.CanChangeTable(profile) || s.canSchemaDesign(profile, database, "new_table")
 }
 
 func (s *State) CanRenameTable(profile int64, database, table string) bool {
-	if s.schemaDrop != nil && s.schemaDrop.busy {
+	if s.nativeTablePending() {
 		return false
 	}
 	return s.CanChangeTable(profile) || s.deps.RenameSchema != nil && s.canSchemaDesign(profile, database, table)

@@ -1420,5 +1420,19 @@
   "sqliteDrop0b78634e0c": "Deletion was not acknowledged. Reconnect and inspect the original table.",
   "sqliteDropca135360e4": "The deletion outcome or schema has changed. Read the structure again before confirming.",
   "sqliteDropd7ed865885": "Deletion SQL preview",
-  "sqliteDrop0b1569e6af": "Table deleted"
+  "sqliteDrop0b1569e6af": "Table deleted",
+  "sqliteCopy6b0de2f444": "Copy table",
+  "sqliteCopy42f36ddb78": "Table copied",
+  "sqliteCopydf3f5c7449": "The copy outcome was not acknowledged. Reconnect and inspect the destination table.",
+  "sqliteCopy7ef7c5c04b": "Copy SQLite table",
+  "sqliteCopyd8e94d33e3": "Destination table name",
+  "sqliteCopyc1fe2276d1": "Copy data",
+  "sqliteCopy03f8a7a198": "Bind self-referencing foreign keys to the new table",
+  "sqliteCopyaaf598b2cb": "Preserve hidden rowid",
+  "sqliteCopyc21ad2d18a": "Copy within the same database or schema in a transaction. Existing targets are never overwritten. Generated values are recalculated and verified; structure-only copies reset autoincrement state.",
+  "sqliteCopybec7eabba5": "Triggers are created after copying data. Trigger bodies and external foreign keys retain their original object references.",
+  "sqliteCopy31a64635f8": "Allow hidden rowids to change. Ordinary values and row counts must still pass full verification.",
+  "sqliteCopy2dea9db1c5": "The copy outcome or schema changed. Read the structure again before confirming.",
+  "sqliteCopya66d18c584": "Copy structure SQL preview",
+  "sqliteCopye2fee0f0b6": "Confirm table copy"
 }

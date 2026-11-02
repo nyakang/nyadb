@@ -708,6 +708,13 @@ func (s *State) verifyMySQLDataSave(services ui.Services, t *Document) {
 		services.Invalidate()
 	}()
 }
+
+// LeavePending is presentation state for a host that suspended its own modal.
+// It does not discard a draft or run a saved continuation.
+func (t *Document) LeavePending() bool {
+	return t != nil && !t.closed && (t.edit.LeaveOpen || t.edit.Busy || t.edit.SaveErrorOpen || t.transaction.leaveOpen || dataTransactionBusy(t) || t.transfer.LeaveOpen || t.transfer.Busy)
+}
+
 func (s *State) GuardLeave(t *Document, next func(ui.Services)) bool {
 	if t == nil || t.closed {
 		return false

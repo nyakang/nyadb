@@ -309,6 +309,29 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 		},
 		SchemaDesigned: s.schemaTableDesigned,
 		SchemaDropped:  s.schemaTableDropped,
+		SchemaCopied:   s.schemaTableCopied,
+		TableGuardPending: func(id int64, db, table string) bool {
+			for _, t := range s.tabs {
+				if t.data != nil && t.data.ProfileID() == id && t.data.Database() == db && t.data.Table() == table && t.data.LeavePending() ||
+					t.object != nil && t.object.ProfileID() == id && t.object.Database() == db && t.object.Table() == table && t.object.DesignLeavePending() {
+					return true
+				}
+			}
+			return false
+		},
+		BeforeCopy: func(services ui.Services, id int64, db, table string, next func(ui.Services)) bool {
+			matches := func(t *tab) bool {
+				return t.data != nil && t.data.ProfileID() == id && t.data.Database() == db && t.data.Table() == table ||
+					t.object != nil && t.object.ProfileID() == id && t.object.Database() == db && t.object.Table() == table
+			}
+			var finish func(ui.Services)
+			finish = func(services ui.Services) {
+				if !s.guardTabsLeave(matches, finish) {
+					next(services)
+				}
+			}
+			return s.guardTabsLeave(matches, finish)
+		},
 		BeforeDrop: func(services ui.Services, id int64, db, table string, next func(ui.Services)) bool {
 			matches := func(t *tab) bool {
 				return t.data != nil && t.data.ProfileID() == id && t.data.Database() == db && t.data.Table() == table ||

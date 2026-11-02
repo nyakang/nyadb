@@ -29,6 +29,14 @@ func (r SchemaDesignRequest) Clone() SchemaDesignRequest {
 	return r
 }
 
+type SchemaCopyRequest struct {
+	Original                                      SchemaDesignSnapshot
+	Destination                                   string
+	WithData, RebindSelfReferences, PreserveRowID bool
+}
+
+func (r SchemaCopyRequest) Clone() SchemaCopyRequest { r.Original = r.Original.Clone(); return r }
+
 type SchemaDesignOutcome struct {
 	// State is not_executed, rolled_back, committed or uncertain. Only an
 	// acknowledged, verified commit permits the host to replace its draft.
@@ -46,5 +54,7 @@ type SchemaDesignOperations struct {
 	// retains that original target with Exists=false; it never means CASCADE.
 	CanDrop func(SchemaDesignTarget) bool
 	Drop    func(context.Context, SchemaDesignSnapshot) SchemaDesignOutcome
+	CanCopy func(SchemaDesignTarget) bool
+	Copy    func(context.Context, SchemaCopyRequest) SchemaDesignOutcome
 }
 type SchemaDesignProvider interface{ SchemaDesign() SchemaDesignOperations }
