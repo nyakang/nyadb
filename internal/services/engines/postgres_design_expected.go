@@ -51,6 +51,9 @@ func (s *Session) postgresCanonicalDesired(ctx context.Context, c *sql.Conn, req
 	if hooks {
 		return out, errors.New("definition validation requires no enabled PostgreSQL event triggers")
 	}
+	if err = postgresCheckProbeOperators(ctx, c, r.Desired, target.Object.Schema); err != nil {
+		return out, err
+	}
 	if err = postgresCheckIndexProbeRoutines(ctx, c, r.Desired, target.Object.Schema); err != nil {
 		return out, err
 	}

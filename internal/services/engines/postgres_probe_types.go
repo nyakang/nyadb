@@ -315,9 +315,9 @@ func (p *postgresProbeTypeCheck) operatorID(oid int64, depth int) error {
 		return errPostgresProbeType
 	}
 	var namespace string
-	var routine, left, right int64
-	err := p.c.QueryRowContext(p.ctx, `SELECT n.nspname::text,o.oprcode::bigint,o.oprleft::bigint,o.oprright::bigint
-FROM pg_catalog.pg_operator o JOIN pg_catalog.pg_namespace n ON n.oid=o.oprnamespace WHERE o.oid=$1`, oid).Scan(&namespace, &routine, &left, &right)
+	var routine, left, right, result int64
+	err := p.c.QueryRowContext(p.ctx, `SELECT n.nspname::text,o.oprcode::bigint,o.oprleft::bigint,o.oprright::bigint,o.oprresult::bigint
+FROM pg_catalog.pg_operator o JOIN pg_catalog.pg_namespace n ON n.oid=o.oprnamespace WHERE o.oid=$1`, oid).Scan(&namespace, &routine, &left, &right, &result)
 	if err != nil {
 		return errors.Join(errPostgresProbeType, err)
 	}
@@ -325,7 +325,9 @@ FROM pg_catalog.pg_operator o JOIN pg_catalog.pg_namespace n ON n.oid=o.oprnames
 		return errPostgresProbeType
 	}
 	if _, err = p.routineID(routine); err != nil {
-		return err
+		if err = p.operatorForwarder(routine, left, right, result); err != nil {
+			return err
+		}
 	}
 	p.operators[oid] = true
 	for _, nested := range []int64{left, right} {

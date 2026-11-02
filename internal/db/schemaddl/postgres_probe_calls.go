@@ -26,6 +26,10 @@ func PostgreSQLIndexProbeCalls(d Definition, schema, table string) ([]PostgreSQL
 	if err != nil {
 		return nil, err
 	}
+	_, classCalls, err := pgIndexProbeLayout(ts)
+	if err != nil {
+		return nil, err
+	}
 	at := 0
 	for at < len(ts) && !ts[at].word("ON") {
 		at++
@@ -49,6 +53,17 @@ func PostgreSQLIndexProbeCalls(d Definition, schema, table string) ([]PostgreSQL
 		if !identifierToken(ts[i]) || ts[i+1].text != "(" {
 			continue
 		}
+		if classCalls[i] {
+			continue // Class option grammar is checked by the class binding.
+		}
+		if ts[i].word("OPERATOR") && (i == 0 || ts[i-1].text != ".") {
+			_, end, err := pgExplicitProbeOperator(ts, i)
+			if err != nil {
+				return nil, err
+			}
+			i = end - 1
+			continue // Dispatch identity is captured by PostgreSQLProbeOperators.
+		}
 		// These grammar constructs are not pg_proc calls. Quoted spellings
 		// remain identifiers, so a function named "coalesce" is still checked.
 		syntax := false
@@ -57,9 +72,6 @@ func PostgreSQLIndexProbeCalls(d Definition, schema, table string) ([]PostgreSQL
 		}
 		if syntax {
 			continue
-		}
-		if ts[i].word("OPERATOR") {
-			return nil, ErrUnsupported // Explicit operator dispatch needs its own proof.
 		}
 		call := PostgreSQLProbeCall{Name: pgTokenName(ts[i])}
 		if i >= 2 && ts[i-1].text == "." {
