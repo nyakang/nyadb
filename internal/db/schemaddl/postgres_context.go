@@ -18,11 +18,12 @@ import (
 // inputs must contain the original context (including objects which left the
 // current dependency closure); a normal post-ALTER snapshot is insufficient.
 //
-// This deliberately rejects new context and unproved native side effects,
-// including unrequested dropped attributes and external physical changes. It is
-// not a physical target/sequence-value or concurrent-DDL proof and does not
-// authorize a production commit. Rename uses its separate complete proof.
-func VerifyPostgreSQLUnselectedCatalog(original Snapshot, desired Table, actual Snapshot, expected PostgreSQLDeclarationGraph, schema string, allowDrop bool) error {
+// Without request-bound storage/reference evidence this rejects new context
+// and native storage changes. Evidence normalizes only separately proved owned
+// storage transitions and before-write references; unrequested attributes and
+// external physical changes remain forbidden. This is not a sequence-value,
+// concurrent-DDL or commit authorization proof. Rename has its complete proof.
+func VerifyPostgreSQLUnselectedCatalog(original Snapshot, desired Table, actual Snapshot, expected PostgreSQLDeclarationGraph, schema string, allowDrop bool, storage ...PostgreSQLStorageTransition) error {
 	if err := VerifyPostgreSQLRetainedCatalog(original, desired, actual, expected, schema, allowDrop); err != nil {
 		return err
 	}
@@ -30,7 +31,20 @@ func VerifyPostgreSQLUnselectedCatalog(original Snapshot, desired Table, actual 
 	if err != nil {
 		return err
 	}
-	return pgVerifyUnselectedCatalog(*original.Postgres, pgPreservationNames(original.Table), *actual.Postgres, pgPreservationNames(desired), residuals...)
+	context := actual.Postgres
+	baseline := original.Postgres
+	if len(storage) > 1 {
+		return errors.New("ambiguous PostgreSQL storage transition evidence")
+	}
+	if len(storage) == 1 {
+		proof := storage[0]
+		if proof.context == nil || proof.baseline == nil || proof.original != Signature(original) || proof.desired != Signature(desired) || proof.actual != Signature(actual) {
+			return errors.New("PostgreSQL storage evidence belongs to another request or receipt")
+		}
+		context = proof.context.Clone()
+		baseline = proof.baseline.Clone()
+	}
+	return pgVerifyUnselectedCatalog(*baseline, pgPreservationNames(original.Table), *context, pgPreservationNames(desired), residuals...)
 }
 
 type pgContextKey struct {
@@ -92,7 +106,12 @@ func pgVerifyUnselectedCatalog(original PostgreSQLCatalog, originalNames Postgre
 		} else if !has {
 			reason = "missing or newly selected"
 		}
-		return fmt.Errorf("%w: PostgreSQL unselected catalog %s (OID %d, subobject %d)", ErrConflict, reason, key.oid, key.sub)
+		kind := "record"
+		switch strings.TrimPrefix(key.kind, "record:") {
+		case "relation", "column", "type", "default", "constraint", "index", "trigger", "sequence", "routine", "access_operator", "access_procedure", "operator_class", "operator_family", "cast", "collation", "namespace", "database", "rewrite", "policy", "publication", "publication_relation":
+			kind = strings.TrimPrefix(key.kind, "record:")
+		}
+		return fmt.Errorf("%w: PostgreSQL unselected catalog %s %s (OID %d, subobject %d)", ErrConflict, kind, reason, key.oid, key.sub)
 	}
 	return nil
 }
