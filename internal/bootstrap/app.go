@@ -12,6 +12,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
 	"github.com/nyakang/nyadb/internal/services/datasources"
+	"github.com/nyakang/nyadb/internal/services/favorites"
 	"github.com/nyakang/nyadb/internal/services/queries"
 	"github.com/nyakang/nyadb/internal/storage/localdb"
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
@@ -40,6 +41,7 @@ func Run() error {
 		return err
 	}
 	state := shell.NewWithProfiles(connections.NewService(localdb.NewProfileStore(db)))
+	state.SetFavoritesStore(favorites.NewStore(localdb.NewFavoritesRepository(db)))
 	state.SetCredentialVault(credentials.NewOSVault())
 	hosts, err := credentials.DefaultHostStore()
 	if err != nil {
@@ -196,9 +198,11 @@ func Run() error {
 			}
 		})
 		state.SetSQLiteFilePicker(func() {
+			version := state.EngineFileVersion()
+			parent := chooser
 			go func() {
 				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
-					Parent: window,
+					Parent: parent,
 					Title:  locales.Text("选择现有 SQLite 数据库文件"),
 					Filters: []mygo.FileFilter{
 						{Name: "SQLite databases", Extensions: []string{"db", "sqlite", "sqlite3"}},
@@ -206,11 +210,30 @@ func Run() error {
 				})
 				window.Update(func() {
 					if err != nil {
-						state.SQLiteFilePickerError()
+						state.EngineFilePickerError(version)
 						return
 					}
 					if len(paths) > 0 {
-						state.SelectSQLiteFile(paths[0])
+						state.SelectEngineFile(shell.SQLiteMainFile, -1, version, paths[0])
+					}
+				})
+			}()
+		})
+		state.SetEngineFilePicker(func(kind shell.EngineFile, row int, version uint64) {
+			parent := chooser
+			if parent == nil {
+				return
+			}
+			title := locales.Text("选择文件")
+			go func() {
+				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: parent, Title: title})
+				window.Update(func() {
+					if err != nil {
+						state.EngineFilePickerError(version)
+						return
+					}
+					if len(paths) > 0 {
+						state.SelectEngineFile(kind, row, version, paths[0])
 					}
 				})
 			}()

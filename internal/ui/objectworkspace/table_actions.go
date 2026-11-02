@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
@@ -67,6 +68,9 @@ func (s *State) CanChangeTable(profileID int64) bool {
 func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, database, name, kind string) {
 	entryScope := s.contextEntryMenu
 	s.contextEntryMenu = &contextEntryScope{profileID, s.sessionFor(profileID).Generation, database, name}
+	if m.Item(locales.Text("添加到收藏夹…")).Disabled(s.deps.Favorite == nil || s.deps.CanFavorite == nil || !s.deps.CanFavorite()).Chosen() && s.contextEntryValid(entryScope, profileID, database, name) {
+		s.deps.Favorite(services, profileID, database, name, kind)
+	}
 	open, design := mysqlObjectActionLabels(kind)
 	if m.Item(locales.Text(open)).Shortcut(0, ui.KeyEnter).Chosen() {
 		s.openObjectFor(services, profileID, database, name, kind)
@@ -100,11 +104,13 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 
 	ready := s.CanChangeTable(profileID)
 	begin := func(action mysqlsvc.MySQLTableAction) {
-		s.BeginTableChange(profileID, database, name, action)
+		if s.contextEntryValid(entryScope, profileID, database, name) {
+			s.BeginTableChange(profileID, database, name, action)
+		}
 	}
 	// The additional advanced Navicat functions are intentionally disabled
 	// until real services and workflows exist.
-	if m.Item(locales.Text("新建表")).Shortcut(ui.Ctrl, ui.KeyN).Disabled(!ready).Chosen() {
+	if m.Item(locales.Text("新建表")).Shortcut(ui.Ctrl, ui.KeyN).Disabled(!s.CanCreateTable(profileID, database)).Chosen() {
 		begin(mysqlsvc.MySQLTableCreate)
 	}
 	m.Item(locales.Text("通过 AI 新建表")).Disabled(true)
@@ -190,7 +196,7 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 	}
 
 	m.Item(locales.Text("共享…")).Disabled(true)
-	if m.Item(locales.Text("重命名")).Shortcut(0, ui.KeyF2).Disabled(!ready).Chosen() {
+	if m.Item(locales.Text("重命名")).Shortcut(0, ui.KeyF2).Disabled(!s.CanRenameTable(profileID, database, name)).Chosen() {
 		begin(mysqlsvc.MySQLTableRename)
 	}
 	m.Separator()
@@ -201,7 +207,7 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 }
 
 func (s *State) BeginTableChange(profileID int64, database, name string, action mysqlsvc.MySQLTableAction) {
-	if !s.CanChangeTable(profileID) {
+	if action == mysqlsvc.MySQLTableCreate && !s.CanCreateTable(profileID, database) || action == mysqlsvc.MySQLTableRename && !s.CanRenameTable(profileID, database, name) || action != mysqlsvc.MySQLTableCreate && action != mysqlsvc.MySQLTableRename && !s.CanChangeTable(profileID) {
 		return
 	}
 	s.tableDialog = true
@@ -228,6 +234,7 @@ func (s *State) BeginTableChange(profileID int64, database, name string, action 
 }
 
 func (s *State) Modals(c *ui.Context) {
+	s.searchModal(c)
 	s.objectGroupModal(c)
 	s.backupModal(c)
 	s.objectManagementModal(c)
@@ -272,7 +279,11 @@ func (s *State) Modals(c *ui.Context) {
 			case mysqlsvc.MySQLTableCopyData:
 				ui.Text(c, "完整公开 DDL 重建字段、约束和触发器；数据复制先于创建触发器。各步骤不是原子操作，失败后保留已完成对象。").FontSize(theme.Font(c, 12))
 			case mysqlsvc.MySQLTableRename:
-				ui.Text(c, "将执行 RENAME TABLE，并使原有名称下的已打开数据/结构标签失效。").FontSize(theme.Font(c, 12))
+				if s.canSchemaDesign(s.tableProfileID, db, name) {
+					ui.Text(c, locales.Text("输入目标名称后打开表设计器，预览并确认 ALTER TABLE 后才会改名。"))
+				} else {
+					ui.Text(c, "将执行 RENAME TABLE，并使原有名称下的已打开数据/结构标签失效。").FontSize(theme.Font(c, 12))
+				}
 			}
 			if danger {
 				ui.Text(c, "请输入原表名称以确认此操作：").FontSize(theme.Font(c, 12))
@@ -308,7 +319,7 @@ func (s *State) Modals(c *ui.Context) {
 
 func (s *State) startMySQLTableChange(services ui.Services) {
 	if s.tablePending || !s.tableDialog || s.tableProfileID != s.session().ProfileID ||
-		!s.session().Connected {
+		!s.session().Connected || s.tableGeneration != s.session().Generation {
 		return
 	}
 	action := s.tableAction
@@ -324,6 +335,11 @@ func (s *State) startMySQLTableChange(services ui.Services) {
 		Table: s.tableName, NewName: s.tableNewName,
 	}
 	request.RuntimeGeneration = s.tableRuntimeGeneration
+	if action == mysqlsvc.MySQLTableRename && s.canSchemaDesign(s.tableProfileID, s.tableDatabase, s.tableName) && s.deps.RenameSchema != nil {
+		s.tableDialog = false
+		s.deps.RenameSchema(services, s.tableProfileID, s.tableDatabase, s.tableName, s.tableNewName)
+		return
+	}
 	if action == mysqlsvc.MySQLTableCreate {
 		if s.deps.NewTable != nil {
 			s.tableDialog = false
@@ -349,8 +365,10 @@ func (s *State) startMySQLTableChange(services ui.Services) {
 	s.tableError = ""
 	ctx, cancel := context.WithCancel(context.Background())
 	s.tableCancel = cancel
+	complete := s.beginActivity(id, generation, request.Database, request.Table, "table", string(request.Action))
 	go func() {
 		err := run(ctx, id, request)
+		contract.CompleteActivity(complete, managementActivityOutcome(err))
 		ch <- mysqlTableChangeResult{profileID: id, generation: generation, database: request.Database,
 			table: request.Table, newName: request.NewName, action: request.Action, err: err}
 		services.Invalidate()

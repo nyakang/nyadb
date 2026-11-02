@@ -12,6 +12,7 @@ import (
 )
 
 func (s *State) View(c *ui.Context) {
+	s.workbenchKeyboard(c)
 	s.sqlWorkspace.Invalidate = c.Services().Invalidate
 	if s.profileMode {
 		s.activateMySQLForCurrentTab()
@@ -25,6 +26,8 @@ func (s *State) View(c *ui.Context) {
 	s.dataWorkspace.Consume(c.Services())
 	s.sqlWorkspace.ConsumeDocuments(c.Services())
 	s.sqlWorkspace.Consume()
+	s.favorites.Invalidate = c.Services().Invalidate
+	s.favorites.Consume()
 	s.observeSQLDocuments()
 	theme.Apply(c)
 
@@ -56,6 +59,7 @@ func (s *State) View(c *ui.Context) {
 	s.connectionModal(c)
 	s.objectWorkspace.Modals(c)
 	s.dataWorkspace.Modals(c)
+	s.favorites.View(c)
 	if s.profileMode && s.navigation.GroupDeleteConfirm {
 		if ui.AlertDialog(c, &s.navigation.GroupDeleteConfirm, locales.Text("删除连接组？"), locales.Text("仅删除虚拟文件夹；组内连接将移至根目录，不会删除连接档案或数据库。"), locales.Text("取消"), locales.Text("删除组")) == 1 {
 			s.navigation.DeleteGroup()
@@ -110,24 +114,12 @@ func (s *State) menuBar(c *ui.Context) {
 // MyGo owns popup placement, keyboard navigation and dismissal.
 func (s *State) menuCommands(section string, m *ui.Menu) {
 	switch section {
+	case "收藏夹":
+		s.favoritesMenu(m)
 	case "文件":
-		if m.Item(locales.Text("新建连接…")).Chosen() {
-			s.openConnectionDialog()
-		}
-		if m.Item(locales.Text("新建查询")).Chosen() {
-			s.openQuery()
-		}
-		m.Separator()
-		if m.Item(locales.Text("关闭当前页签")).Disabled(s.activeTab == 0).Chosen() {
-			s.closeActive()
-		}
+		s.documentMenuCommands(section, m)
 	case "编辑":
-		if m.Item(locales.Text("编辑连接")).Disabled(!s.profileMode || s.selectedProfileID == 0).Chosen() {
-			s.startEditProfile()
-		}
-		if m.Item(locales.Text("复制连接")).Disabled(!s.profileMode || s.selectedProfileID == 0).Chosen() {
-			s.duplicateProfile()
-		}
+		s.documentMenuCommands(section, m)
 	case "查看":
 		if m.Item(locales.Text("信息面板")).Checked(s.inspectorOn).Chosen() {
 			s.inspectorOn = !s.inspectorOn
@@ -188,20 +180,19 @@ func (s *State) menuCommands(section string, m *ui.Menu) {
 		m.Submenu(locales.Text("服务器监控"), func(sub *ui.Menu) {
 			sub.Item(locales.Text("管理服务器监控")).Disabled(true)
 		}).Disabled(true)
-		m.Item(locales.Text("在数据库或模式中查找…")).Shortcut(ui.Ctrl|ui.Shift, ui.KeyF).Disabled(true)
+		if m.Item(locales.Text("在数据库或模式中查找…")).Shortcut(ui.Ctrl|ui.Shift, ui.KeyF).Disabled(!s.objectWorkspace.CanSearchObjects(s.sessions.Current().ProfileID)).Chosen() {
+			s.openObjectSearch()
+		}
 		m.Separator()
-		m.Item(locales.Text("历史日志…")).Shortcut(ui.Ctrl, ui.KeyL).Disabled(true)
+		if m.Item(locales.Text("历史日志…")).Shortcut(ui.Ctrl, ui.KeyL).Disabled(!s.sqlWorkspace.HistoryAvailable()).Chosen() {
+			s.sqlWorkspace.OpenHistory(0, s.openHistoryQuery)
+		}
 		m.Separator()
 		if m.Item(locales.Text("选项…")).Chosen() {
 			s.openSettings()
 		}
 	case "窗口":
-		if m.Item(locales.Text("新建 SQL 页签")).Chosen() {
-			s.openQuery()
-		}
-		if m.Item(locales.Text("关闭当前页签")).Disabled(s.activeTab == 0).Chosen() {
-			s.closeActive()
-		}
+		s.documentMenuCommands(section, m)
 	case "帮助":
 		if m.Item(locales.Text("关于 NyaDB")).Chosen() {
 			s.status = "NyaDB · Go + MyGo Native UI"

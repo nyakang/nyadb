@@ -237,7 +237,7 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 			s.openDatabaseImport(n.ProfileID, n.Database)
 		}
 		if m.Item(locales.Text("新建表")).Shortcut(ui.Ctrl, ui.KeyN).
-			Disabled(!s.objectWorkspace.CanChangeTable(n.ProfileID)).Chosen() {
+			Disabled(!s.objectWorkspace.CanCreateTable(n.ProfileID, n.Database)).Chosen() {
 			s.objectWorkspace.BeginTableChange(n.ProfileID, n.Database, "", mysqlsvc.MySQLTableCreate)
 		}
 		m.Separator()

@@ -13,8 +13,8 @@ import (
 func (s *State) designView(c *ui.Context, d *Document) {
 	x := d.design
 	p := theme.Colors(c)
-	ui.Column(c).Fill().Gap(5).Children(func() {
-		ui.Row(c).Padding(5, 8).Gap(8).AlignItems(ui.Center).Children(func() {
+	ui.Column(c).Fill().MinHeight(0).Gap(5).Children(func() {
+		ui.Row(c).Wrap().Padding(5, 8).Gap(8).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, d.database+" / "+d.table).Bold().Grow(1)
 			if d.DesignDirty() {
 				ui.Text(c, "*")
@@ -43,6 +43,9 @@ func (s *State) designView(c *ui.Context, d *Document) {
 		if d.err != "" {
 			ui.Text(c, d.err).TextColor(p.Error).Tooltip(d.err)
 		}
+		if x.formError != "" {
+			ui.Text(c, x.formError).TextColor(p.Error)
+		}
 		if x.blocked {
 			ui.Text(c, locales.Text("结构操作已有执行步骤；请核对并重新读取，禁止自动重试。")).TextColor(p.Error)
 		}
@@ -63,21 +66,23 @@ func (s *State) designView(c *ui.Context, d *Document) {
 				})
 			})
 		}
-		names := []string{locales.Text("字段和约束"), locales.Text("表选项"), locales.Text("触发器"), locales.Text("原始 DDL")}
+		names := []string{locales.Text("字段"), locales.Text("索引"), locales.Text("外键"), locales.Text("检查"), locales.Text("触发器"), locales.Text("表选项"), locales.Text("注释"), locales.Text("原始 DDL")}
 		selected := names[max(0, min(x.page, len(names)-1))]
-		if ui.Select(c, &selected, names).Changed() {
+		if ui.Select(c, &selected, names).Label(locales.Text("表设计子页")).Disabled(x.busy || x.blocked).Changed() {
 			for i, n := range names {
 				if n == selected {
-					x.page = i
+					s.changeDesignPage(d, i)
 				}
 			}
 		}
 		switch x.page {
-		case 1:
+		case 5:
 			s.designOptions(c, d)
-		case 2:
+		case 4:
 			s.designTriggers(c, d)
-		case 3:
+		case 6:
+			s.designComment(c, d)
+		case 7:
 			raw := x.original.DDL
 			ui.TextArea(c, &raw).ReadOnly(true).Grow(1)
 		default:
@@ -88,26 +93,38 @@ func (s *State) designView(c *ui.Context, d *Document) {
 }
 func (s *State) designClauses(c *ui.Context, d *Document) {
 	x := d.design
-	ui.Row(c).Gap(5).Padding(3, 8).Children(func() {
+	accept := func(kind mysqlddl.Kind) bool {
+		return x.page == 0 && kind == mysqlddl.Column || x.page == 1 && (kind == mysqlddl.Primary || kind == mysqlddl.Index) || x.page == 2 && kind == mysqlddl.Foreign || x.page == 3 && kind == mysqlddl.Check
+	}
+	ui.Row(c).Wrap().Gap(5).Padding(3, 8).Children(func() {
 		for _, item := range []struct {
 			label string
 			kind  mysqlddl.Kind
 		}{{"添加字段", mysqlddl.Column}, {"添加主键", mysqlddl.Primary}, {"添加索引", mysqlddl.Index}, {"添加外键", mysqlddl.Foreign}, {"添加检查约束", mysqlddl.Check}} {
+			if !accept(item.kind) {
+				continue
+			}
 			if ui.Button(c, locales.Text(item.label)).Disabled(x.busy || x.blocked).Clicked() {
 				s.addDesignClause(d, item.kind)
 			}
 		}
 	})
-	ui.Row(c).FillWidth().Gap(5).Children(func() {
+	ui.Row(c).Wrap().FillWidth().Gap(5).Children(func() {
 		if ui.Button(c, locales.Text("删除定义")).Disabled(x.busy || x.blocked || x.row < 0 || x.row >= len(x.draft.Table.Clauses)).Clicked() {
 			c := x.draft.Table.Clauses[x.row]
-			if c.Kind == mysqlddl.Unknown {
+			unsupported := c.Kind == mysqlddl.Unknown
+			if c.Kind != mysqlddl.Column && c.Kind != mysqlddl.Unknown {
+				f, err := mysqlddl.ParseConstraint(c.SQL)
+				unsupported = err != nil || f.Unsupported
+			}
+			if unsupported {
 				d.err = "未支持的定义必须保持原样"
 			} else {
 				x.draft.Table.Clauses = append(x.draft.Table.Clauses[:x.row], x.draft.Table.Clauses[x.row+1:]...)
 				x.formRow = -1
 				x.form = mysqlddl.Field{}
 				x.formBase = x.form
+				x.constraint = nil
 				x.row = min(x.row, len(x.draft.Table.Clauses)-1)
 			}
 		}
@@ -115,8 +132,11 @@ func (s *State) designClauses(c *ui.Context, d *Document) {
 			label string
 			delta int
 		}{{"上移字段", -1}, {"下移字段", 1}} {
+			if x.page != 0 {
+				continue
+			}
 			if ui.Button(c, locales.Text(move.label)).Disabled(x.busy || x.blocked || x.row < 0 || x.row+move.delta < 0 || x.row+move.delta >= len(x.draft.Table.Clauses)).Clicked() {
-				if s.applyDesignField(d) {
+				if s.applyDesignForms(d) {
 					i, j := x.row, x.row+move.delta
 					a, b := x.draft.Table.Clauses[i], x.draft.Table.Clauses[j]
 					if a.Kind == mysqlddl.Column && b.Kind == mysqlddl.Column {
@@ -128,9 +148,19 @@ func (s *State) designClauses(c *ui.Context, d *Document) {
 			}
 		}
 	})
-	x.list.Selected = &x.row
-	theme.Table(c, &x.list, []ui.TableColumn{{Title: locales.Text("类型"), Width: 100}, {Title: locales.Text("名称"), Width: 150}, {Title: locales.Text("完整定义"), Width: 650}}, len(x.draft.Table.Clauses), func(row, col int) {
-		v := x.draft.Table.Clauses[row]
+	var indices []int
+	x.clauseRow = -1
+	for i, clause := range x.draft.Table.Clauses {
+		if accept(clause.Kind) {
+			if i == x.row {
+				x.clauseRow = len(indices)
+			}
+			indices = append(indices, i)
+		}
+	}
+	x.list.Selected = &x.clauseRow
+	theme.Table(c, &x.list, []ui.TableColumn{{Title: locales.Text("类型"), Width: 100}, {Title: locales.Text("名称"), Width: 150}, {Title: locales.Text("完整定义"), Width: 650}}, len(indices), func(row, col int) {
+		v := x.draft.Table.Clauses[indices[row]]
 		text := v.SQL
 		if col == 0 {
 			text = string(v.Kind)
@@ -138,29 +168,30 @@ func (s *State) designClauses(c *ui.Context, d *Document) {
 			text = v.Name
 		}
 		ui.Text(c, text).SingleLine().Tooltip(text)
-	}).Grow(1)
+	}).Grow(1).MinHeight(80).Shrink(1)
+	if x.clauseRow >= 0 && x.clauseRow < len(indices) && x.row != indices[x.clauseRow] {
+		if !s.applyDesignForms(d) {
+			return
+		}
+		x.row = indices[x.clauseRow]
+	}
 	if x.row < 0 || x.row >= len(x.draft.Table.Clauses) {
 		return
 	}
 	clause := &x.draft.Table.Clauses[x.row]
 	if clause.Kind != mysqlddl.Column {
-		if x.formRow >= 0 && !s.applyDesignField(d) {
+		if x.formRow >= 0 && !s.applyDesignForms(d) {
 			x.row = x.formRow
 			return
 		}
 		x.formRow = -1
 		x.form = mysqlddl.Field{}
 		x.formBase = x.form
-		if ui.TextArea(c, &clause.SQL).Label(locales.Text("完整约束定义")).Height(120).ReadOnly(x.busy || x.blocked || clause.Kind == mysqlddl.Unknown).Changed() {
-			v, e := mysqlddl.ParseClause(clause.SQL)
-			if e == nil {
-				clause.Kind, clause.Name = v.Kind, v.Name
-			}
-		}
+		s.designConstraintView(c, d)
 		return
 	}
 	if x.formRow != x.row {
-		if !s.applyDesignField(d) {
+		if !s.applyDesignForms(d) {
 			x.row = x.formRow
 			return
 		}
@@ -171,20 +202,21 @@ func (s *State) designClauses(c *ui.Context, d *Document) {
 		}
 		x.form, x.formBase = f, f
 		x.formRow = x.row
+		x.constraint = nil
 	}
 	if x.form.Unsupported {
 		ui.Text(c, locales.Text("此字段含未支持的属性，保留完整原文并禁止修改。"))
 		return
 	}
-	ui.Scroll(c).Height(280).Children(func() {
+	ui.Scroll(c).Height(0).Grow(1).MinHeight(100).MaxHeight(280).Children(func() {
 		ui.Column(c).Padding(8).Gap(7).Children(func() {
-			ui.Row(c).Gap(10).Children(func() {
+			ui.Row(c).Wrap().Gap(10).Children(func() {
 				ui.TextInput(c, &x.form.Name).Label(locales.Text("字段名称")).ReadOnly(x.busy || x.blocked)
 				ui.TextInput(c, &x.form.Type).Label(locales.Text("字段类型")).ReadOnly(x.busy || x.blocked)
 				ui.Checkbox(c, &x.form.Nullable, locales.Text("允许 NULL")).Disabled(x.busy || x.blocked)
 				ui.Checkbox(c, &x.form.AutoIncrement, locales.Text("自动递增")).Disabled(x.busy || x.blocked)
 			})
-			ui.Row(c).Gap(10).Children(func() {
+			ui.Row(c).Wrap().Gap(10).Children(func() {
 				values := []string{"none", "null", "literal", "expression"}
 				kind := string(x.form.DefaultKind)
 				if ui.Select(c, &kind, values).Disabled(x.busy || x.blocked).Changed() {
@@ -193,28 +225,31 @@ func (s *State) designClauses(c *ui.Context, d *Document) {
 				ui.TextInput(c, &x.form.Default).Label(locales.Text("默认值或表达式")).ReadOnly(x.busy || x.blocked)
 				ui.TextInput(c, &x.form.Comment).Label(locales.Text("字段注释")).ReadOnly(x.busy || x.blocked)
 			})
-			ui.Row(c).Gap(10).Children(func() {
+			ui.Row(c).Wrap().Gap(10).Children(func() {
 				ui.TextInput(c, &x.form.Charset).Label(locales.Text("字符集")).ReadOnly(x.busy || x.blocked)
 				ui.TextInput(c, &x.form.Collation).Label(locales.Text("排序规则")).ReadOnly(x.busy || x.blocked)
 			})
-			ui.Row(c).Gap(10).Children(func() {
+			ui.Row(c).Wrap().Gap(10).Children(func() {
 				ui.TextInput(c, &x.form.Generation).Label(locales.Text("生成列表达式")).Grow(1).ReadOnly(x.busy || x.blocked)
 				ui.Select(c, &x.form.Storage, []string{"", "VIRTUAL", "STORED"}).Disabled(x.busy || x.blocked)
 			})
 			if x.formError != "" {
 				ui.Text(c, x.formError).TextColor(theme.Colors(c).Error)
 			}
-			if ui.Button(c, locales.Text("应用字段修改")).Disabled(x.busy || x.blocked).Clicked() {
-				s.applyDesignField(d)
-			}
 		})
 	})
+	if ui.Button(c, locales.Text("应用字段修改")).Disabled(x.busy || x.blocked).Clicked() {
+		s.applyDesignForms(d)
+	}
 }
 func (s *State) designOptions(c *ui.Context, d *Document) {
 	x := d.design
 	ui.Column(c).Grow(1).Padding(12).Gap(10).Children(func() {
-		if ui.Select(c, &x.optionName, []string{"ENGINE", "CHARSET", "COLLATE", "COMMENT", "AUTO_INCREMENT"}).Changed() {
+		selected := x.optionName
+		if ui.Select(c, &selected, []string{"ENGINE", "CHARSET", "COLLATE", "COMMENT", "AUTO_INCREMENT"}).Changed() && s.applyDesignForms(d) {
+			x.optionName = selected
 			x.optionValue = mysqlddl.Option(x.draft.Table.Options, x.optionName)
+			x.optionBase = x.optionValue
 		}
 		ui.TextInput(c, &x.optionValue).Label(locales.Text("表选项值")).ReadOnly(x.busy || x.blocked)
 		if ui.Button(c, locales.Text("应用表选项")).Disabled(x.busy || x.blocked).Clicked() {
@@ -223,10 +258,24 @@ func (s *State) designOptions(c *ui.Context, d *Document) {
 				d.err = e.Error()
 			} else {
 				x.draft.Table.Options = value
+				x.optionBase = x.optionValue
 			}
 		}
 		raw := x.draft.Table.Options
 		ui.TextArea(c, &raw).ReadOnly(true).Grow(1)
+	})
+}
+
+func (s *State) designComment(c *ui.Context, d *Document) {
+	x := d.design
+	ui.Column(c).Grow(1).Padding(12).Gap(10).Children(func() {
+		ui.TextArea(c, &x.optionValue).Label(locales.Text("表注释")).ReadOnly(x.busy || x.blocked).Grow(1)
+		if x.formError != "" {
+			ui.Text(c, x.formError).TextColor(theme.Colors(c).Error)
+		}
+		if ui.Button(c, locales.Text("应用表选项")).Disabled(x.busy || x.blocked).Clicked() {
+			s.applyDesignForms(d)
+		}
 	})
 }
 func (s *State) designTriggers(c *ui.Context, d *Document) {
@@ -279,6 +328,9 @@ func (s *State) designModals(c *ui.Context, d *Document) {
 						x.form = mysqlddl.Field{}
 						x.formBase = x.form
 						x.formRow = -1
+						x.constraint = nil
+						x.optionValue = mysqlddl.Option(x.draft.Table.Options, x.optionName)
+						x.optionBase = x.optionValue
 						if next != nil {
 							next(c.Services())
 						}

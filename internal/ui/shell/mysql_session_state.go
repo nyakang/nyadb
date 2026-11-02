@@ -48,6 +48,7 @@ func (s *State) closeMySQLSessions() {
 	s.dataWorkspace.CloseAll()
 	s.objectWorkspace.CloseAll()
 	s.sqlWorkspace.CloseAll()
+	s.favorites.CloseAll()
 	s.sessions.Close()
 	s.closeTunnelServices()
 }

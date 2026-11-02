@@ -2,6 +2,7 @@ package shell
 
 import (
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/queries"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/sqlworkspace"
@@ -9,6 +10,7 @@ import (
 
 func (s *State) SetSQLPersistence(store *queries.Store, files sqlworkspace.Files, invalidate func()) {
 	s.sqlWorkspace.Invalidate = invalidate
+	s.sqlWorkspace.SetHistoryOpener(s.openHistoryQuery)
 	s.sqlWorkspace.SetPersistence(store, files, func(w queries.Workspace) {
 		for _, snapshot := range w.Documents {
 			if snapshot.ID <= 1 {
@@ -20,6 +22,23 @@ func (s *State) SetSQLPersistence(store *queries.Store, files sqlworkspace.Files
 		}
 		s.selectTab(w.ActiveID)
 	})
+}
+func (s *State) openHistoryQuery(entry queries.HistoryEntry) {
+	s.nextTabID++
+	profile, database := entry.ProfileID, entry.Database
+	connected := s.sessions.StatusFor(profile) == "已连接"
+	if !connected {
+		profile, database = 0, ""
+	}
+	var d *sqlworkspace.Document
+	if !connected {
+		d = s.sqlWorkspace.RestoreDocument(queries.Document{ID: s.nextTabID, Text: entry.SQL, ProfileID: entry.ProfileID, Database: entry.Database})
+	} else {
+		d = s.sqlWorkspace.Open(s.nextTabID, entry.SQL, profile, database, false)
+	}
+	s.tabs = append(s.tabs, &tab{id: s.nextTabID, kind: tabSQL, title: d.Name(), query: d})
+	s.selectTab(s.nextTabID)
+	s.sqlWorkspace.Prepare(d)
 }
 func (s *State) observeSQLDocuments() {
 	ids := make([]uint64, 0, len(s.tabs))
@@ -74,4 +93,11 @@ func (s *State) sqlAssetsChanged(profile int64, id string, deleted bool) {
 	}
 	s.navigation.Key = n.Key()
 	s.navigation.Row = -1
+}
+
+func (s *State) recordActivity(request contract.ActivityRequest) func(contract.ActivityResult) {
+	if s.sqlWorkspace == nil {
+		return nil
+	}
+	return s.sqlWorkspace.BeginActivity(request)
 }

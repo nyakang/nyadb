@@ -214,8 +214,7 @@ func (s *State) editorSQLiteFields(c *ui.Context, labelWidth, fieldWidth float32
 
 	ui.Row(c).Height(theme.RowHeight(c, 27)).Gap(0).AlignItems(ui.Center).Children(func() {
 		ui.Box(c).Width(labelWidth)
-		selected := true
-		connectionFormCheckbox(c, &selected, "现有数据库文件", true)
+		connectionFormCheckbox(c, &s.connectionDraft.SQLiteOptions.RequireExisting, "现有数据库文件", s.connectionDraft.SQLiteOptions.ReadOnly)
 	})
 	connectionFormRow(c).Children(func() {
 		ui.Text(c, locales.Text("数据库文件：")).Width(labelWidth).FontSize(theme.Font(c, 12))
@@ -225,7 +224,7 @@ func (s *State) editorSQLiteFields(c *ui.Context, labelWidth, fieldWidth float32
 	})
 	ui.Row(c).Gap(0).Children(func() {
 		ui.Box(c).Width(labelWidth)
-		ui.Text(c, locales.Text("仅支持选择现有数据库；不会擅自创建或修改数据库文件。")).
+		ui.Text(c, locales.Text("在高级页设置只读、文件创建和锁等待；附加库需使用现有文件。")).
 			FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 	})
 }
@@ -237,6 +236,9 @@ func (s *State) connectionEditorOtherTab(c *ui.Context, width float32) {
 	tab := names[s.connectionEditorTab]
 	if tab == "备注" {
 		s.connectionNotesEditor(c, width)
+		return
+	}
+	if s.connectionDraft.Kind != connections.MySQL && s.connectionEngineOptions(c, width, tab) {
 		return
 	}
 	formWidth := connectionFormWidth(width)

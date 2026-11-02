@@ -22,6 +22,7 @@ type Verifier func(context.Context, int64, string, string, *contract.DataEditRes
 type Runtime = contract.DataRuntime
 
 type Dependencies struct {
+	RecordActivity    contract.ActivityRecorder
 	ImportTargets     func(int64, string) []string
 	SessionFor        func(int64) Session
 	RuntimeFor        func(int64) Runtime

@@ -46,9 +46,11 @@ func (s *State) RunExport(d *Document) {
 	d.cancelRequested = false
 	d.result = nil
 	invalidate := s.Invalidate
+	history := s.beginHistory(d, "export", statement)
 	go func() {
 		path, e := f.SavePath(name)
 		var result contract.SQLResult
+		executed := false
 		if e == nil && path != "" {
 			e = f.WriteStream(path, func(w io.Writer) error {
 				archive := zip.NewWriter(w)
@@ -79,6 +81,7 @@ func (s *State) RunExport(d *Document) {
 					return encoder.Encode(row)
 				}
 				var runErr error
+				executed = true
 				result, runErr = lease.ExecuteStream(ctx, db, statement, sink)
 				if runErr != nil {
 					_ = archive.Close()
@@ -108,6 +111,7 @@ func (s *State) RunExport(d *Document) {
 		if e == nil && path == "" {
 			e = context.Canceled
 		}
+		completeHistory(history, result, e, executed)
 		ch <- executionResult{request: request, profileID: id, data: result, err: e}
 		if invalidate != nil {
 			invalidate()

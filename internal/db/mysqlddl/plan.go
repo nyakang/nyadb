@@ -102,6 +102,10 @@ func Build(original Snapshot, draft Draft) (Plan, error) {
 				continue
 			}
 			if !exists || Canonical(c.SQL) != Canonical(v.SQL) {
+				properties, err := ParseConstraint(c.SQL)
+				if err != nil || properties.Unsupported {
+					return p, errors.New("unsupported constraint cannot be changed or removed")
+				}
 				name, _ := sqltext.Identifier(c.Name, true)
 				switch c.Kind {
 				case Primary:
@@ -294,6 +298,9 @@ func Verify(desired Draft, actual Snapshot) error {
 			return fmt.Errorf("reloaded clause missing: %s", want.Name)
 		}
 		if Canonical(got.SQL) == Canonical(want.SQL) {
+			continue
+		}
+		if want.Kind != Column && want.Kind != Unknown && constraintEquivalent(want, got, desired.Table.Database) {
 			continue
 		}
 		if want.Kind == Column {

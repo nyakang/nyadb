@@ -100,9 +100,11 @@ func (s *State) workspace(c *ui.Context) {
 
 func (s *State) sqlWorkspaceDependencies() sqlworkspace.Dependencies {
 	return sqlworkspace.Dependencies{
+		FavoriteAsset: s.favoriteQuery, CanFavorite: s.favorites.Available,
 		AssetsChanged:    s.sqlAssetsChanged,
 		StatementAtCaret: s.sqlStatementAtCaret, FormatSQL: s.sqlFormat,
-		ValidateExplain: s.sqlValidateExplain,
+		ValidateExplain:   s.sqlValidateExplain,
+		CompletionCatalog: s.sqlCompletionCatalog,
 		Completions: func(id int64, db string) []string {
 			var out []string
 			for _, o := range s.sessions.CacheFor(id)[db] {
@@ -158,6 +160,7 @@ func (s *State) dataInspectorDependencies() dataworkspace.InspectorDependencies 
 
 func (s *State) dataWorkspaceDependencies() dataworkspace.Dependencies {
 	return dataworkspace.Dependencies{
+		RecordActivity: s.recordActivity,
 		ImportTargets: func(id int64, db string) []string {
 			var tables []string
 			for _, obj := range s.sessions.CacheFor(id)[db] {
@@ -275,6 +278,31 @@ func (s *State) pruneMySQLTabsFor(id int64, known map[string]bool) {
 
 func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 	return objectworkspace.Dependencies{
+		SchemaDesignFor: func(id int64) contract.SchemaDesignOperations {
+			if s.runtime == nil {
+				return contract.SchemaDesignOperations{}
+			}
+			return s.runtime.SchemaDesign(id)
+		},
+		SchemaTarget: func(id int64, database, table string) contract.SchemaDesignTarget {
+			if s.runtime == nil {
+				return contract.SchemaDesignTarget{}
+			}
+			return contract.SchemaDesignTarget{Object: s.runtime.Namespace(id, database).Object("table", table), Generation: s.runtime.Generation(id)}
+		},
+		SchemaDesigned: s.schemaTableDesigned,
+		RenameSchema: func(services ui.Services, profile int64, database, table, name string) {
+			if !s.activateObjectProfile(profile) {
+				return
+			}
+			s.openMySQLStructure(services, database, table)
+			if active := s.currentTab(); active != nil && active.object != nil {
+				s.objectWorkspace.BeginSchemaRename(active.object, name, services)
+			}
+		},
+		Favorite: s.favoriteObject, CanFavorite: s.favorites.Available,
+		SearchRuntime: s.objectSearchRuntime, OpenSearchObject: s.openSearchObject,
+		RecordActivity:    s.recordActivity,
 		TableProfiles:     s.savedTableProfiles,
 		OpenTableProfile:  s.openSavedTableProfile,
 		Capabilities:      s.objectCapabilitiesFor,
@@ -386,7 +414,13 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 				return
 			}
 			s.nextTabID++
-			d := s.objectWorkspace.OpenNewDesign(s.nextTabID, id, db, name)
+			var d *objectworkspace.Document
+			binding := s.runtime.SchemaDesign(id)
+			if binding.Snapshot != nil && binding.Apply != nil {
+				d = s.objectWorkspace.OpenNewSchemaDesign(s.nextTabID, s.runtime.Namespace(id, db).Object("table", name), services)
+			} else {
+				d = s.objectWorkspace.OpenNewDesign(s.nextTabID, id, db, name)
+			}
 			if d != nil {
 				s.tabs = append(s.tabs, &tab{id: s.nextTabID, kind: tabStructure, title: db + "." + name, object: d})
 				s.activeTab = len(s.tabs) - 1

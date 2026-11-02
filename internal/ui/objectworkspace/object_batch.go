@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
@@ -135,7 +136,25 @@ func (s *State) batchModal(c *ui.Context) {
 							}
 							executor = admin.ApplyObjectBatch
 						}
-						go func() { ch <- executor(ctx, profile, generation, items); services.Invalidate() }()
+						complete := s.beginActivity(profile, b.sessionGeneration, "", "", "structure", fmt.Sprintf("BATCH %d OBJECTS", len(items)))
+						go func() {
+							results := executor(ctx, profile, generation, items)
+							activity := contract.ActivityResult{State: "success"}
+							for _, result := range results {
+								outcome := ddlActivityOutcome(result.Outcome.DDLOutcome)
+								if outcome.State == "uncertain" {
+									activity.State = "uncertain"
+								} else if outcome.State != "success" && activity.State != "uncertain" {
+									activity.State = "partial"
+								}
+							}
+							if len(results) != len(items) {
+								activity.State = "uncertain"
+							}
+							contract.CompleteActivity(complete, activity)
+							ch <- results
+							services.Invalidate()
+						}()
 					}
 					var guard func(int, ui.Services)
 					guard = func(i int, services ui.Services) {

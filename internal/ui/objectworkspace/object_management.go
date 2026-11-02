@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
@@ -292,7 +293,13 @@ func (s *State) executeObjectOperation(services ui.Services, op *objectOperation
 			}
 			executor = admin.ApplyObject
 		}
-		go func() { ch <- executor(ctx, profile, plan); services.Invalidate() }()
+		complete := s.beginActivity(profile, op.sessionGeneration, op.ref.Database, op.ref.Name, "structure", plan.Action)
+		go func() {
+			out := executor(ctx, profile, plan)
+			contract.CompleteActivity(complete, ddlActivityOutcome(out.DDLOutcome))
+			ch <- out
+			services.Invalidate()
+		}()
 	}
 	if s.deps.BeforeDDL != nil && s.deps.BeforeDDL(services, op.profile, op.ref.Database, op.ref.Name, next) {
 		return

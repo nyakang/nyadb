@@ -45,6 +45,10 @@ func (s *State) View(c *ui.Context, t *Document) {
 		t.program.View(c)
 		return
 	}
+	if t.schemaDesign != nil {
+		s.schemaDesignView(c, t)
+		return
+	}
 	if t.design != nil {
 		s.designView(c, t)
 		return
@@ -63,7 +67,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 			ui.Text(c, t.database+" / "+t.table).FontSize(theme.Font(c, theme.SmallFontSize)).SingleLine().Grow(1).MinWidth(0).MaxWidth(220).Tooltip(t.database + " / " + t.table)
 			ui.Text(c, locales.Text("设计表 · 只读结构")).TextColor(palette.Muted).FontSize(theme.Font(c, theme.SmallFontSize)).SingleLine().Tooltip(t.database + " / " + t.table)
 			ui.Toolbar(c, func() {
-				if ui.Button(c, locales.Text("编辑表结构")).Disabled(t.objectKind != "表" || t.loading || s.deps.DesignLoader == nil || !session.Connected || session.ProfileID != t.profileID).Clicked() {
+				if ui.Button(c, locales.Text("编辑表结构")).Disabled(!s.CanEditDesign(t) || t.loading).Clicked() {
 					s.BeginDesign(t, c.Services())
 				}
 				if ui.Button(c, locales.Text("返回")).Label(locales.Text("返回对象列表")).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {

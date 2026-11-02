@@ -16,6 +16,12 @@ func NormalizeProfile(p Profile) (Profile, error) {
 			return p, err
 		}
 	}
+	if p.Kind != PostgreSQL && p.PostgreSQLOptions != (PostgreSQLOptions{}) {
+		return p, fmt.Errorf("%w: PostgreSQL options on another engine", ErrInvalid)
+	}
+	if p.Kind != SQLite && (p.SQLiteOptions.Version != 0 || p.SQLiteOptions.ReadOnly || p.SQLiteOptions.RequireExisting || p.SQLiteOptions.BusyTimeoutMS != 0 || p.SQLiteOptions.ForeignKeys || len(p.SQLiteOptions.Attachments) > 0) {
+		return p, fmt.Errorf("%w: SQLite options on another engine", ErrInvalid)
+	}
 	p.ActiveVariant = strings.TrimSpace(p.ActiveVariant)
 	if len(p.Variants) > 16 {
 		return p, fmt.Errorf("%w: too many connection configurations", ErrInvalid)
@@ -90,7 +96,14 @@ func NormalizeProfile(p Profile) (Profile, error) {
 				return p, err
 			}
 		} else if p.MySQLAdvanced != (MySQLAdvanced{}) {
-			return p, fmt.Errorf("%w: MySQL options on PostgreSQL profile", ErrInvalid)
+			return p, fmt.Errorf("%w: MySQL options on another engine", ErrInvalid)
+		}
+		if p.Kind == PostgreSQL {
+			var err error
+			p.PostgreSQLOptions, err = NormalizePostgreSQLOptions(p.PostgreSQLOptions)
+			if err != nil {
+				return p, err
+			}
 		}
 		if p.Host == "" || p.Port == 0 {
 			return p, fmt.Errorf("%w: server host and port are required", ErrInvalid)
@@ -101,6 +114,11 @@ func NormalizeProfile(p Profile) (Profile, error) {
 			return p, fmt.Errorf("%w: unsupported TLS mode", ErrInvalid)
 		}
 	case SQLite:
+		var sqliteErr error
+		p.SQLiteOptions, sqliteErr = NormalizeSQLiteOptions(p.SQLiteOptions)
+		if sqliteErr != nil {
+			return p, sqliteErr
+		}
 		if p.MySQLAdvanced != (MySQLAdvanced{}) {
 			return p, fmt.Errorf("%w: MySQL options on SQLite profile", ErrInvalid)
 		}

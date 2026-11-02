@@ -54,9 +54,9 @@ func Defaults(kind Kind) (Profile, error) {
 	case MySQL:
 		return Profile{Kind: MySQL, Host: "localhost", Port: 3306, Username: "root", MySQLAdvanced: DefaultMySQLAdvanced()}, nil
 	case PostgreSQL:
-		return Profile{Kind: PostgreSQL, Host: "localhost", Port: 5432, Database: "postgres", Username: "postgres"}, nil
+		return Profile{Kind: PostgreSQL, Host: "localhost", Port: 5432, Database: "postgres", Username: "postgres", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
 	case SQLite:
-		return Profile{Kind: SQLite}, nil
+		return Profile{Kind: SQLite, SQLiteOptions: DefaultSQLiteOptions()}, nil
 	default:
 		return Profile{}, errors.Join(ErrInvalid, fmt.Errorf("unsupported connection type"))
 	}

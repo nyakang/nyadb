@@ -35,13 +35,16 @@ func (s *State) RunFile(d *Document) {
 	d.cancelRequested = false
 	d.err = ""
 	invalidate := s.Invalidate
+	history := s.beginHistory(d, "file", "")
 	go func() {
 		var out contract.SQLResult
+		executed := false
 		path, e := files.OpenPath()
 		if e == nil && path != "" {
 			var reader io.ReadCloser
 			reader, e = files.OpenReader(path)
 			if e == nil {
+				executed = true
 				out, e = lease.ExecuteFile(ctx, db, reader)
 				ce := reader.Close()
 				if e == nil {
@@ -51,6 +54,7 @@ func (s *State) RunFile(d *Document) {
 		} else if e == nil {
 			e = context.Canceled
 		}
+		completeHistory(history, out, e, executed)
 		ch <- executionResult{request: request, profileID: id, data: out, err: e}
 		if invalidate != nil {
 			invalidate()

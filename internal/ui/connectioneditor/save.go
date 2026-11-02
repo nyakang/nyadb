@@ -12,6 +12,9 @@ import (
 
 func (s *State) draftProfile() (connections.Profile, error) {
 	p := s.connectionDraft
+	if err := s.advanceEngineOptions(&p); err != nil {
+		return p, err
+	}
 	if err := s.advanceDraft(&p); err != nil {
 		return p, err
 	}

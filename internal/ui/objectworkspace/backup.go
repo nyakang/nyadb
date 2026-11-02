@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/backups"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
@@ -102,6 +103,7 @@ func (s *State) startBackup(services ui.Services, op *backupOperation) {
 	op.err = ""
 	ch := make(chan backupReceipt, 1)
 	op.result = ch
+	complete := s.beginActivity(profile, op.generation, db, table, "backup", action)
 	go func() {
 		var e error
 		var path string
@@ -129,6 +131,7 @@ func (s *State) startBackup(services ui.Services, op *backupOperation) {
 				e = context.Canceled
 			}
 		}
+		contract.CompleteActivity(complete, managementActivityOutcome(e))
 		ch <- backupReceipt{path: path, err: e}
 		services.Invalidate()
 	}()
@@ -150,6 +153,7 @@ func (s *State) previewRestore(services ui.Services, op *backupOperation) {
 	op.cancel = cancel
 	ch := make(chan backupReceipt, 1)
 	op.result = ch
+	complete := s.beginActivity(profile, op.generation, target, "", "restore_preview", "RESTORE PREVIEW")
 	go func() {
 		reader := old
 		var e error
@@ -177,6 +181,7 @@ func (s *State) previewRestore(services ui.Services, op *backupOperation) {
 			_ = reader.Close()
 			receipt.reader = nil
 		}
+		contract.CompleteActivity(complete, managementActivityOutcome(e))
 		ch <- receipt
 		services.Invalidate()
 	}()
@@ -208,8 +213,10 @@ func (s *State) executeRestore(services ui.Services, op *backupOperation) {
 	op.err = ""
 	ch := make(chan backupReceipt, 1)
 	op.result = ch
+	complete := s.beginActivity(op.profile, op.generation, op.target, "", "restore", "RESTORE")
 	go func() {
 		out := runtime.RestoreMySQL(ctx, plan)
+		contract.CompleteActivity(complete, ddlActivityOutcome(out))
 		ch <- backupReceipt{reader: reader, outcome: &out, err: out.Error}
 		services.Invalidate()
 	}()

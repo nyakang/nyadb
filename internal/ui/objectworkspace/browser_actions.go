@@ -32,7 +32,7 @@ func (s *State) browserActions() browserActions {
 	selected := a.ready && b.Row >= 0 && b.Row < len(a.items)
 	a.canProgram = selected && Supports(a.items[b.Row].Kind)
 	a.canOpen = selected && !a.canProgram
-	a.canCreate = a.ready && s.CanChangeTable(b.ProfileID) && (b.Kind == "全部" || b.Kind == "表")
+	a.canCreate = a.ready && s.CanCreateTable(b.ProfileID, b.Database) && (b.Kind == "全部" || b.Kind == "表")
 	a.canRefresh = b.Connected && (b.Database == "" || a.ready) && !b.Refreshing && b.Pending == ""
 	caps := s.capabilities(b.ProfileID)
 	a.canBatch = a.ready && caps.DesignTables && s.deps.BatchExecutor != nil && !s.tablePending && (s.batch == nil || !s.batch.busy)

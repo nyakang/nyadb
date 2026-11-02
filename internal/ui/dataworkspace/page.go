@@ -84,6 +84,7 @@ func (s *State) Load(services ui.Services, t *Document, refresh bool) {
 	out := make(chan mysqlDataResult, 1)
 	t.results = out
 	history := mysqlDataReadHistoryRequest(database, table, options)
+	complete := s.beginActivity(t, "data_read", history.SQL)
 	activeHistory := history
 	t.tools.historyActiveRead = &activeHistory
 	go func() {
@@ -98,6 +99,18 @@ func (s *State) Load(services ui.Services, t *Document, refresh bool) {
 			err = contract.ErrDataPage // mock-only legacy loader cannot silently ignore a filter.
 		}
 		history.At, history.Duration = time.Now(), time.Since(started)
+		activity := contract.ActivityOutcome(err)
+		if err != nil {
+			activity.Error = mysqlDataHistoryError(err, false, false, false)
+		}
+		if err == nil && page == nil {
+			activity.State = "error"
+			activity.Error = mysqlDataHistoryError(nil, false, true, false)
+		}
+		if page != nil {
+			activity.Rows = int64(len(page.Rows))
+		}
+		contract.CompleteActivity(complete, activity)
 		out <- mysqlDataResult{History: history, generation: gen, profileID: profile, request: request, offset: offset, page: page, err: err}
 		services.Invalidate()
 	}()

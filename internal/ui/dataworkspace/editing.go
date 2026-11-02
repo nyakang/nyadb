@@ -443,10 +443,13 @@ func (s *State) saveMySQLData(services ui.Services, t *Document) {
 	out := make(chan mysqlEditResult, 1)
 	t.edit.Results = out
 	db, table := t.database, t.table
-	history := mysqlDataWriteHistoryRequest(db, table, edits, t.transaction.token != nil)
+	pending := t.transaction.token != nil
+	history := mysqlDataWriteHistoryRequest(db, table, edits, pending)
+	complete := s.beginActivity(t, "data_write", dataActivitySQL(history))
 	go func() {
 		started := time.Now()
 		result, err := saver(ctx, profile, db, table, edits)
+		contract.CompleteActivity(complete, dataActivityOutcome(err, result, len(edits), pending))
 		for i := range history {
 			history[i].At, history[i].Duration = time.Now(), time.Since(started)
 		}

@@ -76,11 +76,17 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 	resultChan := make(chan executionResult, 1)
 	t.results = resultChan
 	s.report("正在执行 SQL")
+	source := "query"
+	if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(statement)), "EXPLAIN ") {
+		source = "explain"
+	}
+	history := s.beginHistory(t, source, statement)
 	go func() {
 		result, err := execute(ctx, profileID, database, statement)
 		if err == nil && ctx.Err() != nil {
 			err = ctx.Err()
 		}
+		completeHistory(history, result, err, true)
 		resultChan <- executionResult{request: request, profileID: profileID, data: result, err: err}
 		if invalidate != nil {
 			invalidate()
@@ -150,6 +156,7 @@ func (s *State) DisconnectProfile(profileID int64) {
 }
 
 func (s *State) Consume() {
+	s.consumeHistory()
 	for _, t := range s.documents {
 		if t.prepareResults != nil {
 			select {

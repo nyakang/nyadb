@@ -144,8 +144,14 @@ func main() {
 		require(text == w.Documents[0].Text, "explicit SQL file lost text")
 	case "seed":
 		seed(root)
+	case "seed-engine-options":
+		seedEngineOptions(root)
 	case "native-renamed", "native-deleted", "native-saved", "native-grouped":
 		nativeCheck(root, os.Args[1])
+	case "native-common":
+		nativeCommon(root)
+	case "native-history", "native-history-cleared", "native-global-history":
+		nativeHistory(root, os.Args[1])
 	case "native-prepare", "native-restore", "native-account-created", "native-account-granted":
 		nativeDatabase(root, os.Args[1])
 	default:
@@ -153,6 +159,93 @@ func main() {
 	}
 	fmt.Println("PASS real Secret Service / SQLite phase:", os.Args[1])
 }
+
+func seedEngineOptions(root string) {
+	config := filepath.Join(root, "config", "NyaDB", "config.sqlite")
+	_, err := os.Stat(config)
+	require(os.IsNotExist(err), "engine options seed requires an empty owned config")
+	for name, value := range map[string]string{"engine-main.sqlite": "main fixture", "engine-attached.sqlite": "attached fixture"} {
+		path := filepath.Join(root, name)
+		_, err := os.Stat(path)
+		require(os.IsNotExist(err), "engine fixture file already exists")
+		db, err := sql.Open("sqlite", path)
+		check(err)
+		_, err = db.Exec("CREATE TABLE shared(id INTEGER PRIMARY KEY,label TEXT); INSERT INTO shared VALUES(1,?)", value)
+		check(err)
+		check(db.Close())
+	}
+	db, err := localdb.Open(config)
+	check(err)
+	defer db.Close()
+	profiles := localdb.NewProfileStore(db)
+	p, err := connections.Defaults(connections.SQLite)
+	check(err)
+	p.Name, p.Database = "验收 SQLite 附加库", filepath.Join(root, "engine-main.sqlite")
+	p.SQLiteOptions.Attachments = []connections.SQLiteAttachment{{Name: "aux", File: filepath.Join(root, "engine-attached.sqlite")}}
+	_, err = profiles.Create(context.Background(), p)
+	check(err)
+	p, err = connections.Defaults(connections.PostgreSQL)
+	check(err)
+	p.Name = "验收 PostgreSQL 配置"
+	p.PostgreSQLOptions.DefaultSchema = "tenant"
+	p.PostgreSQLOptions.StatementTimeoutMS = 2000
+	_, err = profiles.Create(context.Background(), p)
+	check(err)
+	check(localdb.SetPreference(db, "appearance", "dark"))
+}
+func nativeHistory(root, phase string) {
+	db, err := localdb.Open(filepath.Join(root, "config/NyaDB/config.sqlite"))
+	check(err)
+	defer db.Close()
+	profiles, err := connections.NewService(localdb.NewProfileStore(db)).List(context.Background())
+	check(err)
+	var id int64
+	for _, profile := range profiles {
+		if profile.Kind == connections.SQLite {
+			id = profile.ID
+		}
+	}
+	require(id > 0, "owned SQLite history profile missing")
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		history, err := queries.NewStore(localdb.NewSQLRepository(db), credentials.WorkspaceKey{}).LoadHistory(context.Background(), time.Now())
+		check(err)
+		valid := len(history.Entries) == 1 && history.Entries[0].ProfileID == id && history.Entries[0].SQL == "SELECT 'history-native-fixture' AS marker" && history.Entries[0].State == "success"
+		if phase == "native-global-history" {
+			query, read := false, false
+			for _, entry := range history.Entries {
+				if entry.ProfileID != id {
+					continue
+				}
+				query = query || entry.Source == "query" && entry.SQL == "SELECT 'history-native-fixture' AS marker" && entry.State == "success"
+				read = read || entry.Source == "data_read" && entry.Database == "main" && entry.Object == "fixture" && entry.Summary && entry.State == "success" && !strings.Contains(entry.SQL+entry.Error, "native fixture")
+			}
+			valid = query && read
+		}
+		if phase == "native-history-cleared" {
+			valid = len(history.Entries) == 0 && history.Epoch > 1
+		}
+		if valid {
+			data, err := json.MarshalIndent(struct {
+				Phase           string
+				Revision, Epoch uint64
+				Entries         int
+			}{phase, history.Revision, history.Epoch, len(history.Entries)}, "", "  ")
+			check(err)
+			check(os.WriteFile(filepath.Join(root, "evidence", phase+".json"), data, 0600))
+			return
+		}
+		if time.Now().After(deadline) {
+			fmt.Printf("History checkpoint: %d records, expected profile %d\n", len(history.Entries), id)
+			for _, entry := range history.Entries {
+				fmt.Printf("Observed profile %d, source %s, state %s, expected SQL match %t\n", entry.ProfileID, entry.Source, entry.State, entry.SQL == "SELECT 'history-native-fixture' AS marker")
+			}
+			panic("formal SQL history checkpoint failed")
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+}
+
 func seed(root string) {
 	db, e := localdb.Open(filepath.Join(root, "config", "NyaDB", "config.sqlite"))
 	check(e)
@@ -173,7 +266,7 @@ func seed(root string) {
 		}
 	}
 	sqlitePath := filepath.Join(root, "fixture.sqlite")
-	fixture, e := localdb.Open(sqlitePath)
+	fixture, e := sql.Open("sqlite", sqlitePath)
 	check(e)
 	_, e = fixture.Exec("CREATE TABLE fixture(id INTEGER PRIMARY KEY, label TEXT); INSERT INTO fixture VALUES(1,'native fixture')")
 	check(e)
@@ -306,4 +399,27 @@ func nativeDatabase(root, phase string) {
 	b, e := json.MarshalIndent(map[string]any{"phase": phase, "schema": "entry_native_target", "rows": actual, "verified_from_database": true}, "", "  ")
 	check(e)
 	check(os.WriteFile(filepath.Join(root, "evidence", phase+".json"), b, 0600))
+}
+
+// Read the final formal application's encrypted query/workspace using the real
+// owned Secret Service. Public favorites are checked by the Python replay.
+func nativeCommon(root string) {
+	db, e := localdb.Open(filepath.Join(root, "config", "NyaDB", "config.sqlite"))
+	check(e)
+	defer db.Close()
+	ctx := context.Background()
+	store := queries.NewStore(localdb.NewSQLRepository(db), credentials.WorkspaceKey{})
+	names, e := store.ListNamed(ctx, 0)
+	check(e)
+	require(len(names) == 1 && names[0].ID == named().ID && names[0].Text == named().Text, "common replay changed named query asset")
+	w, e := store.LoadWorkspace(ctx)
+	check(e)
+	found := false
+	for _, doc := range w.Documents {
+		if doc.QueryID == named().ID {
+			found = true
+			require(doc.Text == workspace().Documents[0].Text && doc.SavedText == named().Text, "common replay modified SQL draft")
+		}
+	}
+	require(found, "real keyring restart lost named draft")
 }

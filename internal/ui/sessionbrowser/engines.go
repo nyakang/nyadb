@@ -34,6 +34,7 @@ func (s *State) EngineKind(id int64) connections.Kind {
 	return ""
 }
 func (s *State) connectEngine(p connections.Profile, invalidate func()) {
+	p.SQLiteOptions.Attachments = append([]connections.SQLiteAttachment(nil), p.SQLiteOptions.Attachments...)
 	if s.engines.Connect == nil || s.engines.Session == nil {
 		s.report("此引擎运行接口尚未接入")
 		return

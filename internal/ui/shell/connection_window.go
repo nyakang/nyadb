@@ -38,6 +38,9 @@ func (s *State) ConnectionWindowClosed() {
 }
 
 func (s *State) ConnectionWindowTitle() string {
+	if s.connectionStep == 2 {
+		return locales.Text("通过 URI 新建连接")
+	}
 	if s.connectionStep == 1 {
 		return s.connectionEditor.Title()
 	}

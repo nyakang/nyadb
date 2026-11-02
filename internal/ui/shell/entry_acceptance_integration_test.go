@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -21,6 +22,7 @@ import (
 	"github.com/nyakang/nyadb/internal/storage/localdb"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
+	"github.com/nyakang/nyadb/internal/ui/sqlworkspace"
 )
 
 // Run only in a separate process inside tools/verify_entry_acceptance.py's
@@ -65,6 +67,8 @@ func TestEntryAcceptanceRealMySQLShell(t *testing.T) {
 	defer s.CloseMySQLSessions()
 	vault := credentials.NewOSVault()
 	s.SetCredentialVault(vault)
+	historyStore := queries.NewStore(localdb.NewSQLRepository(db), credentials.WorkspaceKey{})
+	s.SetSQLPersistence(historyStore, sqlworkspace.Files{}, nil)
 	var profiles []connections.Profile
 	for _, user := range []string{"entry_admin", "entry_read"} {
 		p, e := svc.Create(ctx, connections.Profile{Name: user, Kind: connections.MySQL, Host: "127.0.0.1", Port: uint16(port), Username: user, MySQLAdvanced: connections.DefaultMySQLAdvanced()})
@@ -432,6 +436,44 @@ func TestEntryAcceptanceRealMySQLShell(t *testing.T) {
 		}
 		s.objectWorkspace.CloseAll()
 		tt.Frame()
+	})
+
+	t.Run("encrypted-global-operation-history", func(t *testing.T) {
+		wait(t, "global log publication", func() bool { return !s.sqlWorkspace.HistoryPending() })
+		h := s.sqlWorkspace.HistorySnapshot()
+		sources, states := map[string]int{}, map[string]int{}
+		for _, entry := range h.Entries {
+			if entry.ProfileID != profiles[0].ID && entry.ProfileID != profiles[1].ID || entry.Generation == 0 || !entry.Summary {
+				t.Fatal("global management history lost original scope or summary safety")
+			}
+			if strings.Contains(entry.SQL+entry.Error, os.Getenv("NYADB_ENTRY_PASSWORD")) || strings.Contains(entry.SQL+entry.Error, os.Getenv("NYADB_ENTRY_READ_PASSWORD")) {
+				t.Fatal("credential entered the global log")
+			}
+			sources[entry.Source]++
+			states[entry.State]++
+			if entry.Source == "restore" && entry.Database != "entry_target" {
+				t.Fatal("global restore rebound the original target")
+			}
+		}
+		if sources["accounts"] < 7 || sources["backup"] < 5 || sources["restore_preview"] < 2 || sources["restore"] != 1 || states["error"] == 0 || states["success"] == 0 || states["cancelled"]+states["session_lost"] == 0 {
+			t.Fatalf("real global log missing operation/outcome categories: %v %v", sources, states)
+		}
+		restored, err := queries.NewStore(localdb.NewSQLRepository(db), credentials.WorkspaceKey{}).LoadHistory(ctx, time.Now())
+		if err != nil || len(restored.Entries) != len(h.Entries) {
+			t.Fatal("global MySQL history failed encrypted restart")
+		}
+		records, err := localdb.NewSQLRepository(db).List(ctx, "history", 0)
+		if err != nil || len(records) != 1 || bytes.Contains(records[0].Payload, []byte("READ ACCOUNTS")) {
+			t.Fatal("management history was not encrypted")
+		}
+		evidence, err := json.MarshalIndent(struct {
+			Entries             int
+			Sources, States     map[string]int
+			Encrypted, Restored bool
+		}{len(h.Entries), sources, states, true, true}, "", "  ")
+		if err != nil || os.WriteFile(filepath.Join(root, "evidence/mysql-global-history.json"), evidence, 0600) != nil {
+			t.Fatal("global log evidence failed")
+		}
 	})
 
 }

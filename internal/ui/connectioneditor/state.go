@@ -35,8 +35,16 @@ type Dependencies struct {
 // State is owned by the UI thread. Background tests return immutable results;
 // native picker completions are guarded by the editing session's version.
 type State struct {
-	initialSQLRequest uint64
-	initialSQLResults <-chan initialSQLResult
+	engineNumbers               [4]string
+	sqliteBusyTimeout           string
+	sqliteAttachmentList        ui.ListState
+	sqliteAttachmentRow         int
+	engineFileVersion           uint64
+	engineFilePicker            func(EngineFile, int, uint64)
+	uriOpen                     bool
+	uriGroup, uriText, uriError string
+	initialSQLRequest           uint64
+	initialSQLResults           <-chan initialSQLResult
 
 	initialSQLStore      InitialSQLStore
 	initialSQLSavedText  string
@@ -139,6 +147,7 @@ func (s *State) OpenNew(kind connections.Kind, group string) error {
 // OpenProfile restores saved configurations and vault passwords for editing.
 func (s *State) OpenProfile(profile connections.Profile) {
 	s.Close()
+	profile.SQLiteOptions.Attachments = append([]connections.SQLiteAttachment(nil), profile.SQLiteOptions.Attachments...)
 	s.connectionDraft = profile
 	s.initializeInputs()
 	s.connectionNameFocusPending = true
@@ -155,6 +164,7 @@ func (s *State) OpenProfile(profile connections.Profile) {
 }
 
 func (s *State) initializeInputs() {
+	s.initEngineOptionsInputs()
 	if s.connectionDraft.Kind == connections.MySQL {
 		s.initMySQLAdvancedInputs()
 		s.initMySQLSSHInputs()
@@ -169,6 +179,11 @@ func (s *State) initializeInputs() {
 // Close discards configuration drafts and secrets and invalidates async work.
 // The non-secret profile remains readable until the next Open call.
 func (s *State) Close() {
+	s.engineFileVersion++
+	s.uriOpen = false
+	s.uriGroup = ""
+	s.uriText = ""
+	s.uriError = ""
 	s.initialSQLRequest++
 	s.initialSQLResults = nil
 
@@ -193,6 +208,7 @@ func (s *State) Cancel() {
 }
 
 func (s *State) Back() {
+	s.engineFileVersion++
 	s.cancelMySQLConnectionTest()
 	s.active = false
 	s.connectionEditorTab = 0

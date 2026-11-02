@@ -3,6 +3,7 @@ package dataworkspace
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"slices"
 
@@ -65,6 +66,7 @@ func (s *State) executePreparedSources(services ui.Services, t *Document, import
 	for _, plan := range plans {
 		total += plan.spool.rows
 	}
+	complete := s.beginActivity(t, "import", fmt.Sprintf("IMPORT %d SOURCES · %d ROWS", len(plans), total))
 	go func() {
 		journal, err := newMySQLDataImportJournal(owner, total)
 		aggregate := &contract.DataImportStreamResult{}
@@ -159,6 +161,19 @@ func (s *State) executePreparedSources(services ui.Services, t *Document, import
 		if len(plans) > 0 {
 			destination = plans[len(plans)-1].table
 		}
+		activity := contract.ActivityOutcome(err)
+		if aggregate.CommitUncertain || aggregate.CreationUncertain {
+			activity.State = "uncertain"
+		} else if !aggregate.Committed && aggregate.Progress.Prepared > 0 {
+			activity.State = "partial"
+		} else if err == nil && aggregate.Progress.Failed > 0 {
+			activity.State = "partial"
+		}
+		if err != nil || activity.State == "uncertain" {
+			activity.Error = mysqlDataHistoryError(err, false, false, activity.State == "uncertain")
+		}
+		activity.AffectedRows = aggregate.Progress.Prepared
+		contract.CompleteActivity(complete, activity)
 		out <- mysqlDataTransferResult{Batch: receipts, Journal: journal, Streamed: aggregate, Request: request, Generation: gen, Profile: profile, Destination: destination, TotalRows: total, Write: true, Err: err}
 		services.Invalidate()
 	}()
