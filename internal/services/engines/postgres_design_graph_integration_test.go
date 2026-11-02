@@ -11,22 +11,7 @@ import (
 )
 
 func pgDesiredGraphNames(table schemaddl.Table) schemaddl.PostgreSQLGraphNames {
-	names := schemaddl.PostgreSQLGraphNames{Columns: map[string]string{}, Constraints: map[string]string{}, Indexes: map[string]string{}, Triggers: map[string]string{}}
-	for _, clause := range table.Clauses {
-		if clause.Kind == "column" {
-			names.Columns[clause.Name] = clause.ID
-		} else if clause.Kind == "constraint" {
-			names.Constraints[clause.Name] = clause.ID
-		}
-	}
-	for _, definition := range table.Definitions {
-		if definition.Kind == "index" {
-			names.Indexes[definition.Name] = definition.Name
-		} else if definition.Kind == "trigger" {
-			names.Triggers[definition.Name] = definition.Name
-		}
-	}
-	return names
+	return postgresDesignGraphNames(table)
 }
 
 func pgGraphNodeHashes(t *testing.T, catalog *schemaddl.PostgreSQLCatalog, bindings schemaddl.PostgreSQLGraphBindings) map[string]string {

@@ -51,6 +51,14 @@ func pgNativeFixtureApplyChecked(t *testing.T, s *Session, base contract.SchemaD
 	if err != nil || actual.Schema.Revision != base.Schema.Revision {
 		t.Fatal("native fixture scope changed before plan", err)
 	}
+	sequences, err := postgresSequenceStates(context.Background(), c, actual.Schema.Postgres)
+	if err != nil {
+		t.Fatal("original native sequence state unavailable", err)
+	}
+	removedSequences, err := postgresSequenceRemovals(base.Schema, draft, base.Target.Object.Schema, allowDrop)
+	if err != nil {
+		t.Fatal("native sequence removal permission unavailable", err)
+	}
 	var expected *postgresDesiredBaseline
 	if plan.Mode == "create" || plan.Mode == "alter" {
 		canonical, err := s.postgresCanonicalDesired(context.Background(), c, contract.SchemaDesignRequest{Original: base, Desired: draft, AllowColumnDrop: allowDrop})
@@ -58,6 +66,10 @@ func pgNativeFixtureApplyChecked(t *testing.T, s *Session, base contract.SchemaD
 			t.Fatal("independent desired definition unavailable", err)
 		}
 		expected = &canonical
+		probeSequences, err := postgresSequenceStates(context.Background(), c, actual.Schema.Postgres)
+		if err != nil || postgresCompareSequenceStates(sequences, probeSequences, nil) != nil {
+			t.Fatal("definition probe changed original sequence state", err)
+		}
 	}
 	beforeNames, afterNames, err := postgresRetainedValues(base.Schema.Table, draft)
 	if err != nil {
@@ -128,6 +140,17 @@ func pgNativeFixtureApplyChecked(t *testing.T, s *Session, base contract.SchemaD
 	}
 	if before != after {
 		t.Fatal("native change altered retained values/row count", schemaddl.ErrDataChanged)
+	}
+	sequenceCatalog, err := postgresCatalogSnapshotPreserving(context.Background(), c, target, base.Schema.Postgres)
+	if err != nil {
+		t.Fatal("native sequence catalog unavailable after change", err)
+	}
+	currentSequences, err := postgresSequenceStates(context.Background(), c, sequenceCatalog.Schema.Postgres)
+	if err != nil {
+		t.Fatal("native sequence state unavailable after change", err)
+	}
+	if err := postgresCompareSequenceStates(sequences, currentSequences, removedSequences); err != nil {
+		t.Fatal("native plan changed unrequested sequence state", err)
 	}
 	if _, err = c.ExecContext(context.Background(), "COMMIT"); err != nil {
 		t.Fatal(err)

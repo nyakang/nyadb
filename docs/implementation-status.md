@@ -63,6 +63,8 @@
 
 2026-11-02 后续完成可配置 OpenAI 兼容 AI SQL 基础：独立配置/HTTP/SSE 服务、系统密钥环 immutable 密钥及条件发布、原生请求预览、取消、生成/解释/优化与原连接未执行草稿。真实 Secret Service、自有协议服务和正式 Linux 1280×800 / 840×560 窗口验证生成/插入/重启恢复及密钥丢失/错误不覆盖配置；完整检查、截图、限制见 [AI SQL 交付记录](ai-sql-native-2026-11-02.md)。实现 I 与 NyaDB 运行证据不等于商业模型实测或 Navicat O/V；完整其余阶段继续有效。
 
+2026-11-02 后续新增 PG 原序列位置核验：按完整原目录身份读取精确 last_value/is_called，稳定字段 ID/原所有权限定删除许可，原生规划验收在独立 CREATE 探针和执行前后比较。元数据/改名保留原权限要求；表所有者缺少外部默认序列 SELECT 权限仍可编辑自己的注释。真实服务、失败修复、最终检查及剩余通用 Apply/PG 表单等完整范围见 [PG 序列状态核验](postgres-sequence-state-2026-11-02.md)，不新增 Navicat O/S/V 或标记整体完成。
+
 The current Linux alignment target is Navicat 18, Simplified Chinese, dark
 theme, and compact density. Shared theme metrics now provide 19-DIP navigation
 and chooser list rows with 16-DIP icons, low-emphasis toolbar selection, and
