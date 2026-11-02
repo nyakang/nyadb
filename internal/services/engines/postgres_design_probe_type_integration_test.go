@@ -59,7 +59,7 @@ INSERT INTO nyadb_probe_literal.original VALUES(7);`)
 	}
 }
 
-func pgAssertTypeProbeRejected(t *testing.T, s *Session, base contract.SchemaDesignSnapshot, draft schemaddl.Table, schema string) {
+func pgAssertTypeProbeRejected(t *testing.T, s *Session, base contract.SchemaDesignSnapshot, draft schemaddl.Table, schema string) error {
 	t.Helper()
 	c, err := s.db.Conn(context.Background())
 	if err != nil {
@@ -77,10 +77,10 @@ func pgAssertTypeProbeRejected(t *testing.T, s *Session, base contract.SchemaDes
 		t.Fatal("caller transaction unusable", err)
 	}
 	if called {
-		t.Error("definition probe executed a nontransactional type or cast callback")
+		t.Error("definition probe executed a nontransactional callback")
 	}
 	if probeErr == nil || out.Table.Name != "" || out.Probe.Exists {
-		t.Error("untrusted type/cast produced an accepted independent definition")
+		t.Error("untrusted callback produced an accepted independent definition")
 	}
 	pgProbeAbsent(t, c, schema)
 	var value int
@@ -90,6 +90,7 @@ func pgAssertTypeProbeRejected(t *testing.T, s *Session, base contract.SchemaDes
 	if schemaddl.Signature(draft) != before {
 		t.Fatal("type probe mutated request")
 	}
+	return probeErr
 }
 
 func TestPostgreSQL17DesignProbeStructuralTypesFixture(t *testing.T) {

@@ -17,6 +17,8 @@ func TestPostgreSQLIndexProbeCallsCaptureNestedAndQualifiedRoutines(t *testing.T
 		{`(("coalesce"(value)))`, []PostgreSQLProbeCall{{Name: "coalesce"}}},
 		{`((pg_catalog.coalesce(value)))`, []PostgreSQLProbeCall{{Schema: "pg_catalog", Name: "coalesce"}}},
 		{`((/* fake.evil() /* nested.evil() */ */ lower(value)))`, []PostgreSQLProbeCall{{Name: "lower"}}},
+		{`((value OPERATOR(pg_catalog.+) 1))`, nil},
+		{`(value pg_catalog.int4_minmax_multi_ops(values_per_range=64))`, nil},
 	} {
 		d := Definition{Kind: "index", Name: "i", SQL: "CREATE INDEX i ON s.t " + sample.body}
 		before := Signature(d)
@@ -39,7 +41,7 @@ func TestPostgreSQLIndexProbeCallsRejectUnboundAndUnsupportedDispatch(t *testing
 	for _, sql := range []string{
 		`CREATE INDEX i ON other.t(value)`,
 		`CREATE INDEX i ON s.t((a.b.c()))`,
-		`CREATE INDEX i ON s.t(value OPERATOR(evil.+) 1)`,
+		`CREATE INDEX i ON s.t(value OPERATOR(evil.+) 1)`, // Expression key needs parentheses.
 		`CREATE INDEX i ON s.t((lower(value))); SELECT 1`,
 		`CREATE INDEX i ON s.t`,
 	} {
