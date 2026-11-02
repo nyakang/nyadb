@@ -100,6 +100,17 @@ func (s *State) workspace(c *ui.Context) {
 
 func (s *State) sqlWorkspaceDependencies() sqlworkspace.Dependencies {
 	return sqlworkspace.Dependencies{
+		AIProposal: s.openAIProposal,
+		AIDialect: func(id int64) string {
+			for _, profile := range s.navigation.Profiles() {
+				if profile.ID == id {
+					if descriptor, ok := connections.Describe(profile.Kind); ok {
+						return descriptor.Dialect
+					}
+				}
+			}
+			return "SQL"
+		},
 		FavoriteAsset: s.favoriteQuery, CanFavorite: s.favorites.Available,
 		AssetsChanged:    s.sqlAssetsChanged,
 		StatementAtCaret: s.sqlStatementAtCaret, FormatSQL: s.sqlFormat,

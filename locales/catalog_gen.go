@@ -13711,3 +13711,533 @@ func ConnectionURISupportedEngines() string { return In(i18n.Locale()).Connectio
 func (msgs Messages) ConnectionURISupportedEngines() string {
 	return Catalog.Format(msgs.locale, "connectionURISupportedEngines", nil)
 }
+
+// AiSQLf03820a6c1 says "AI SQL"
+// in the language the app shows.
+func AiSQLf03820a6c1() string { return In(i18n.Locale()).AiSQLf03820a6c1() }
+
+// AiSQLf03820a6c1 says "AI SQL"
+// in the language of msgs.
+func (msgs Messages) AiSQLf03820a6c1() string {
+	return Catalog.Format(msgs.locale, "aiSQLf03820a6c1", nil)
+}
+
+// AiSQLd6eec480d6 says "打开 AI SQL 助手"
+// in the language the app shows.
+func AiSQLd6eec480d6() string { return In(i18n.Locale()).AiSQLd6eec480d6() }
+
+// AiSQLd6eec480d6 says "打开 AI SQL 助手"
+// in the language of msgs.
+func (msgs Messages) AiSQLd6eec480d6() string {
+	return Catalog.Format(msgs.locale, "aiSQLd6eec480d6", nil)
+}
+
+// AiSQLc54683df87 says "AI SQL 助手…"
+// in the language the app shows.
+func AiSQLc54683df87() string { return In(i18n.Locale()).AiSQLc54683df87() }
+
+// AiSQLc54683df87 says "AI SQL 助手…"
+// in the language of msgs.
+func (msgs Messages) AiSQLc54683df87() string {
+	return Catalog.Format(msgs.locale, "aiSQLc54683df87", nil)
+}
+
+// AiSQL36bb78b03e says "AI 服务设置…"
+// in the language the app shows.
+func AiSQL36bb78b03e() string { return In(i18n.Locale()).AiSQL36bb78b03e() }
+
+// AiSQL36bb78b03e says "AI 服务设置…"
+// in the language of msgs.
+func (msgs Messages) AiSQL36bb78b03e() string {
+	return Catalog.Format(msgs.locale, "aiSQL36bb78b03e", nil)
+}
+
+// AiSQL226a3caab6 says "AI 设置已保存"
+// in the language the app shows.
+func AiSQL226a3caab6() string { return In(i18n.Locale()).AiSQL226a3caab6() }
+
+// AiSQL226a3caab6 says "AI 设置已保存"
+// in the language of msgs.
+func (msgs Messages) AiSQL226a3caab6() string {
+	return Catalog.Format(msgs.locale, "aiSQL226a3caab6", nil)
+}
+
+// AiSQLa4cbe1d7ec says "AI 设置已保存，旧密钥清理尚未完成"
+// in the language the app shows.
+func AiSQLa4cbe1d7ec() string { return In(i18n.Locale()).AiSQLa4cbe1d7ec() }
+
+// AiSQLa4cbe1d7ec says "AI 设置已保存，旧密钥清理尚未完成"
+// in the language of msgs.
+func (msgs Messages) AiSQLa4cbe1d7ec() string {
+	return Catalog.Format(msgs.locale, "aiSQLa4cbe1d7ec", nil)
+}
+
+// AiSQL51ab30fcaf says "AI 建议已返回，请审阅"
+// in the language the app shows.
+func AiSQL51ab30fcaf() string { return In(i18n.Locale()).AiSQL51ab30fcaf() }
+
+// AiSQL51ab30fcaf says "AI 建议已返回，请审阅"
+// in the language of msgs.
+func (msgs Messages) AiSQL51ab30fcaf() string {
+	return Catalog.Format(msgs.locale, "aiSQL51ab30fcaf", nil)
+}
+
+// AiSQLc8f4420555 says "AI 服务返回 HTTP 状态"
+// in the language the app shows.
+func AiSQLc8f4420555() string { return In(i18n.Locale()).AiSQLc8f4420555() }
+
+// AiSQLc8f4420555 says "AI 服务返回 HTTP 状态"
+// in the language of msgs.
+func (msgs Messages) AiSQLc8f4420555() string {
+	return Catalog.Format(msgs.locale, "aiSQLc8f4420555", nil)
+}
+
+// AiSQL7011df3d38 says "AI 请求已取消"
+// in the language the app shows.
+func AiSQL7011df3d38() string { return In(i18n.Locale()).AiSQL7011df3d38() }
+
+// AiSQL7011df3d38 says "AI 请求已取消"
+// in the language of msgs.
+func (msgs Messages) AiSQL7011df3d38() string {
+	return Catalog.Format(msgs.locale, "aiSQL7011df3d38", nil)
+}
+
+// AiSQLcc90c7f7e4 says "AI 请求超时"
+// in the language the app shows.
+func AiSQLcc90c7f7e4() string { return In(i18n.Locale()).AiSQLcc90c7f7e4() }
+
+// AiSQLcc90c7f7e4 says "AI 请求超时"
+// in the language of msgs.
+func (msgs Messages) AiSQLcc90c7f7e4() string {
+	return Catalog.Format(msgs.locale, "aiSQLcc90c7f7e4", nil)
+}
+
+// AiSQLd5ab3d6514 says "系统密钥环不可用、密钥缺失，或服务地址变化后需要输入新密钥"
+// in the language the app shows.
+func AiSQLd5ab3d6514() string { return In(i18n.Locale()).AiSQLd5ab3d6514() }
+
+// AiSQLd5ab3d6514 says "系统密钥环不可用、密钥缺失，或服务地址变化后需要输入新密钥"
+// in the language of msgs.
+func (msgs Messages) AiSQLd5ab3d6514() string {
+	return Catalog.Format(msgs.locale, "aiSQLd5ab3d6514", nil)
+}
+
+// AiSQLb929b7e87d says "AI 设置已被其他进程修改，请重新打开设置"
+// in the language the app shows.
+func AiSQLb929b7e87d() string { return In(i18n.Locale()).AiSQLb929b7e87d() }
+
+// AiSQLb929b7e87d says "AI 设置已被其他进程修改，请重新打开设置"
+// in the language of msgs.
+func (msgs Messages) AiSQLb929b7e87d() string {
+	return Catalog.Format(msgs.locale, "aiSQLb929b7e87d", nil)
+}
+
+// AiSQL9c933db790 says "请检查 AI 地址、模型、密钥及请求限制；HTTP 仅支持本机服务"
+// in the language the app shows.
+func AiSQL9c933db790() string { return In(i18n.Locale()).AiSQL9c933db790() }
+
+// AiSQL9c933db790 says "请检查 AI 地址、模型、密钥及请求限制；HTTP 仅支持本机服务"
+// in the language of msgs.
+func (msgs Messages) AiSQL9c933db790() string {
+	return Catalog.Format(msgs.locale, "aiSQL9c933db790", nil)
+}
+
+// AiSQL6fed6953c4 says "AI 返回未完成、拒绝或工具调用；请重试，当前内容不能应用"
+// in the language the app shows.
+func AiSQL6fed6953c4() string { return In(i18n.Locale()).AiSQL6fed6953c4() }
+
+// AiSQL6fed6953c4 says "AI 返回未完成、拒绝或工具调用；请重试，当前内容不能应用"
+// in the language of msgs.
+func (msgs Messages) AiSQL6fed6953c4() string {
+	return Catalog.Format(msgs.locale, "aiSQL6fed6953c4", nil)
+}
+
+// AiSQL9b0d8db0ac says "无法读取或保存 AI 设置"
+// in the language the app shows.
+func AiSQL9b0d8db0ac() string { return In(i18n.Locale()).AiSQL9b0d8db0ac() }
+
+// AiSQL9b0d8db0ac says "无法读取或保存 AI 设置"
+// in the language of msgs.
+func (msgs Messages) AiSQL9b0d8db0ac() string {
+	return Catalog.Format(msgs.locale, "aiSQL9b0d8db0ac", nil)
+}
+
+// AiSQL03d6256451 says "AI 服务请求或响应失败，请检查服务配置"
+// in the language the app shows.
+func AiSQL03d6256451() string { return In(i18n.Locale()).AiSQL03d6256451() }
+
+// AiSQL03d6256451 says "AI 服务请求或响应失败，请检查服务配置"
+// in the language of msgs.
+func (msgs Messages) AiSQL03d6256451() string {
+	return Catalog.Format(msgs.locale, "aiSQL03d6256451", nil)
+}
+
+// AiSQLa01d718752 says "AI SQL 助手"
+// in the language the app shows.
+func AiSQLa01d718752() string { return In(i18n.Locale()).AiSQLa01d718752() }
+
+// AiSQLa01d718752 says "AI SQL 助手"
+// in the language of msgs.
+func (msgs Messages) AiSQLa01d718752() string {
+	return Catalog.Format(msgs.locale, "aiSQLa01d718752", nil)
+}
+
+// AiSQL71a5810998 says "AI 服务设置"
+// in the language the app shows.
+func AiSQL71a5810998() string { return In(i18n.Locale()).AiSQL71a5810998() }
+
+// AiSQL71a5810998 says "AI 服务设置"
+// in the language of msgs.
+func (msgs Messages) AiSQL71a5810998() string {
+	return Catalog.Format(msgs.locale, "aiSQL71a5810998", nil)
+}
+
+// AiSQLd3c08b8f51 says "取消 AI 请求"
+// in the language the app shows.
+func AiSQLd3c08b8f51() string { return In(i18n.Locale()).AiSQLd3c08b8f51() }
+
+// AiSQLd3c08b8f51 says "取消 AI 请求"
+// in the language of msgs.
+func (msgs Messages) AiSQLd3c08b8f51() string {
+	return Catalog.Format(msgs.locale, "aiSQLd3c08b8f51", nil)
+}
+
+// AiSQL974e74a63c says "保存 AI 设置"
+// in the language the app shows.
+func AiSQL974e74a63c() string { return In(i18n.Locale()).AiSQL974e74a63c() }
+
+// AiSQL974e74a63c says "保存 AI 设置"
+// in the language of msgs.
+func (msgs Messages) AiSQL974e74a63c() string {
+	return Catalog.Format(msgs.locale, "aiSQL974e74a63c", nil)
+}
+
+// AiSQL3370d3e0f7 says "发送给 AI"
+// in the language the app shows.
+func AiSQL3370d3e0f7() string { return In(i18n.Locale()).AiSQL3370d3e0f7() }
+
+// AiSQL3370d3e0f7 says "发送给 AI"
+// in the language of msgs.
+func (msgs Messages) AiSQL3370d3e0f7() string {
+	return Catalog.Format(msgs.locale, "aiSQL3370d3e0f7", nil)
+}
+
+// AiSQLe57baf0912 says "插入原 SQL 文档"
+// in the language the app shows.
+func AiSQLe57baf0912() string { return In(i18n.Locale()).AiSQLe57baf0912() }
+
+// AiSQLe57baf0912 says "插入原 SQL 文档"
+// in the language of msgs.
+func (msgs Messages) AiSQLe57baf0912() string {
+	return Catalog.Format(msgs.locale, "aiSQLe57baf0912", nil)
+}
+
+// AiSQL30047b842c says "作为新 SQL 草稿"
+// in the language the app shows.
+func AiSQL30047b842c() string { return In(i18n.Locale()).AiSQL30047b842c() }
+
+// AiSQL30047b842c says "作为新 SQL 草稿"
+// in the language of msgs.
+func (msgs Messages) AiSQL30047b842c() string {
+	return Catalog.Format(msgs.locale, "aiSQL30047b842c", nil)
+}
+
+// AiSQL07ac9c05b1 says "配置 OpenAI 兼容 Chat Completions 服务"
+// in the language the app shows.
+func AiSQL07ac9c05b1() string { return In(i18n.Locale()).AiSQL07ac9c05b1() }
+
+// AiSQL07ac9c05b1 says "配置 OpenAI 兼容 Chat Completions 服务"
+// in the language of msgs.
+func (msgs Messages) AiSQL07ac9c05b1() string {
+	return Catalog.Format(msgs.locale, "aiSQL07ac9c05b1", nil)
+}
+
+// AiSQLdc0f57a57a says "HTTPS 服务或本机 HTTP 服务；API 密钥只保存在系统密钥环。"
+// in the language the app shows.
+func AiSQLdc0f57a57a() string { return In(i18n.Locale()).AiSQLdc0f57a57a() }
+
+// AiSQLdc0f57a57a says "HTTPS 服务或本机 HTTP 服务；API 密钥只保存在系统密钥环。"
+// in the language of msgs.
+func (msgs Messages) AiSQLdc0f57a57a() string {
+	return Catalog.Format(msgs.locale, "aiSQLdc0f57a57a", nil)
+}
+
+// AiSQL720fe2c106 says "正在读取 AI 设置…"
+// in the language the app shows.
+func AiSQL720fe2c106() string { return In(i18n.Locale()).AiSQL720fe2c106() }
+
+// AiSQL720fe2c106 says "正在读取 AI 设置…"
+// in the language of msgs.
+func (msgs Messages) AiSQL720fe2c106() string {
+	return Catalog.Format(msgs.locale, "aiSQL720fe2c106", nil)
+}
+
+// AiSQLe8f107c41d says "AI API 地址"
+// in the language the app shows.
+func AiSQLe8f107c41d() string { return In(i18n.Locale()).AiSQLe8f107c41d() }
+
+// AiSQLe8f107c41d says "AI API 地址"
+// in the language of msgs.
+func (msgs Messages) AiSQLe8f107c41d() string {
+	return Catalog.Format(msgs.locale, "aiSQLe8f107c41d", nil)
+}
+
+// AiSQL15016bcb00 says "AI 模型名称"
+// in the language the app shows.
+func AiSQL15016bcb00() string { return In(i18n.Locale()).AiSQL15016bcb00() }
+
+// AiSQL15016bcb00 says "AI 模型名称"
+// in the language of msgs.
+func (msgs Messages) AiSQL15016bcb00() string {
+	return Catalog.Format(msgs.locale, "aiSQL15016bcb00", nil)
+}
+
+// AiSQLcaa565f2e5 says "本机或自有服务不需要 API 密钥"
+// in the language the app shows.
+func AiSQLcaa565f2e5() string { return In(i18n.Locale()).AiSQLcaa565f2e5() }
+
+// AiSQLcaa565f2e5 says "本机或自有服务不需要 API 密钥"
+// in the language of msgs.
+func (msgs Messages) AiSQLcaa565f2e5() string {
+	return Catalog.Format(msgs.locale, "aiSQLcaa565f2e5", nil)
+}
+
+// AiSQL64d46892f1 says "AI API 密钥"
+// in the language the app shows.
+func AiSQL64d46892f1() string { return In(i18n.Locale()).AiSQL64d46892f1() }
+
+// AiSQL64d46892f1 says "AI API 密钥"
+// in the language of msgs.
+func (msgs Messages) AiSQL64d46892f1() string {
+	return Catalog.Format(msgs.locale, "aiSQL64d46892f1", nil)
+}
+
+// AiSQLf5952eea8a says "留空保留已有密钥"
+// in the language the app shows.
+func AiSQLf5952eea8a() string { return In(i18n.Locale()).AiSQLf5952eea8a() }
+
+// AiSQLf5952eea8a says "留空保留已有密钥"
+// in the language of msgs.
+func (msgs Messages) AiSQLf5952eea8a() string {
+	return Catalog.Format(msgs.locale, "aiSQLf5952eea8a", nil)
+}
+
+// AiSQL74c0acc7ff says "已关联系统密钥环记录"
+// in the language the app shows.
+func AiSQL74c0acc7ff() string { return In(i18n.Locale()).AiSQL74c0acc7ff() }
+
+// AiSQL74c0acc7ff says "已关联系统密钥环记录"
+// in the language of msgs.
+func (msgs Messages) AiSQL74c0acc7ff() string {
+	return Catalog.Format(msgs.locale, "aiSQL74c0acc7ff", nil)
+}
+
+// AiSQL0640c2cc53 says "移除已保存的 AI 密钥"
+// in the language the app shows.
+func AiSQL0640c2cc53() string { return In(i18n.Locale()).AiSQL0640c2cc53() }
+
+// AiSQL0640c2cc53 says "移除已保存的 AI 密钥"
+// in the language of msgs.
+func (msgs Messages) AiSQL0640c2cc53() string {
+	return Catalog.Format(msgs.locale, "aiSQL0640c2cc53", nil)
+}
+
+// AiSQL7e560aae27 says "AI 输出 token 上限"
+// in the language the app shows.
+func AiSQL7e560aae27() string { return In(i18n.Locale()).AiSQL7e560aae27() }
+
+// AiSQL7e560aae27 says "AI 输出 token 上限"
+// in the language of msgs.
+func (msgs Messages) AiSQL7e560aae27() string {
+	return Catalog.Format(msgs.locale, "aiSQL7e560aae27", nil)
+}
+
+// AiSQLfc87acbe04 says "AI 超时（秒）"
+// in the language the app shows.
+func AiSQLfc87acbe04() string { return In(i18n.Locale()).AiSQLfc87acbe04() }
+
+// AiSQLfc87acbe04 says "AI 超时（秒）"
+// in the language of msgs.
+func (msgs Messages) AiSQLfc87acbe04() string {
+	return Catalog.Format(msgs.locale, "aiSQLfc87acbe04", nil)
+}
+
+// AiSQL4de418f4e3 says "token 限制参数（按服务支持选择）"
+// in the language the app shows.
+func AiSQL4de418f4e3() string { return In(i18n.Locale()).AiSQL4de418f4e3() }
+
+// AiSQL4de418f4e3 says "token 限制参数（按服务支持选择）"
+// in the language of msgs.
+func (msgs Messages) AiSQL4de418f4e3() string {
+	return Catalog.Format(msgs.locale, "aiSQL4de418f4e3", nil)
+}
+
+// AiSQL25ba72a36d says "AI token 参数"
+// in the language the app shows.
+func AiSQL25ba72a36d() string { return In(i18n.Locale()).AiSQL25ba72a36d() }
+
+// AiSQL25ba72a36d says "AI token 参数"
+// in the language of msgs.
+func (msgs Messages) AiSQL25ba72a36d() string {
+	return Catalog.Format(msgs.locale, "aiSQL25ba72a36d", nil)
+}
+
+// AiSQL521f75bfaa says "流式显示 AI 建议"
+// in the language the app shows.
+func AiSQL521f75bfaa() string { return In(i18n.Locale()).AiSQL521f75bfaa() }
+
+// AiSQL521f75bfaa says "流式显示 AI 建议"
+// in the language of msgs.
+func (msgs Messages) AiSQL521f75bfaa() string {
+	return Catalog.Format(msgs.locale, "aiSQL521f75bfaa", nil)
+}
+
+// AiSQL334c04c7c6 says "重试清理旧 AI 密钥"
+// in the language the app shows.
+func AiSQL334c04c7c6() string { return In(i18n.Locale()).AiSQL334c04c7c6() }
+
+// AiSQL334c04c7c6 says "重试清理旧 AI 密钥"
+// in the language of msgs.
+func (msgs Messages) AiSQL334c04c7c6() string {
+	return Catalog.Format(msgs.locale, "aiSQL334c04c7c6", nil)
+}
+
+// AiSQLb66b1d0835 says "请从 SQL 文档打开 AI 助手"
+// in the language the app shows.
+func AiSQLb66b1d0835() string { return In(i18n.Locale()).AiSQLb66b1d0835() }
+
+// AiSQLb66b1d0835 says "请从 SQL 文档打开 AI 助手"
+// in the language of msgs.
+func (msgs Messages) AiSQLb66b1d0835() string {
+	return Catalog.Format(msgs.locale, "aiSQLb66b1d0835", nil)
+}
+
+// AiSQL32b53fae31 says "生成 SQL"
+// in the language the app shows.
+func AiSQL32b53fae31() string { return In(i18n.Locale()).AiSQL32b53fae31() }
+
+// AiSQL32b53fae31 says "生成 SQL"
+// in the language of msgs.
+func (msgs Messages) AiSQL32b53fae31() string {
+	return Catalog.Format(msgs.locale, "aiSQL32b53fae31", nil)
+}
+
+// AiSQLe56e06be55 says "解释 SQL"
+// in the language the app shows.
+func AiSQLe56e06be55() string { return In(i18n.Locale()).AiSQLe56e06be55() }
+
+// AiSQLe56e06be55 says "解释 SQL"
+// in the language of msgs.
+func (msgs Messages) AiSQLe56e06be55() string {
+	return Catalog.Format(msgs.locale, "aiSQLe56e06be55", nil)
+}
+
+// AiSQL6783be73ae says "优化 SQL"
+// in the language the app shows.
+func AiSQL6783be73ae() string { return In(i18n.Locale()).AiSQL6783be73ae() }
+
+// AiSQL6783be73ae says "优化 SQL"
+// in the language of msgs.
+func (msgs Messages) AiSQL6783be73ae() string {
+	return Catalog.Format(msgs.locale, "aiSQL6783be73ae", nil)
+}
+
+// AiSQL8c80fd03b1 says "AI 操作"
+// in the language the app shows.
+func AiSQL8c80fd03b1() string { return In(i18n.Locale()).AiSQL8c80fd03b1() }
+
+// AiSQL8c80fd03b1 says "AI 操作"
+// in the language of msgs.
+func (msgs Messages) AiSQL8c80fd03b1() string {
+	return Catalog.Format(msgs.locale, "aiSQL8c80fd03b1", nil)
+}
+
+// AiSQLf1b49eacb0 says "AI 自然语言要求"
+// in the language the app shows.
+func AiSQLf1b49eacb0() string { return In(i18n.Locale()).AiSQLf1b49eacb0() }
+
+// AiSQLf1b49eacb0 says "AI 自然语言要求"
+// in the language of msgs.
+func (msgs Messages) AiSQLf1b49eacb0() string {
+	return Catalog.Format(msgs.locale, "aiSQLf1b49eacb0", nil)
+}
+
+// AiSQLec05647d89 says "描述需要生成、解释或优化的 SQL"
+// in the language the app shows.
+func AiSQLec05647d89() string { return In(i18n.Locale()).AiSQLec05647d89() }
+
+// AiSQLec05647d89 says "描述需要生成、解释或优化的 SQL"
+// in the language of msgs.
+func (msgs Messages) AiSQLec05647d89() string {
+	return Catalog.Format(msgs.locale, "aiSQLec05647d89", nil)
+}
+
+// AiSQL6e2b5ce133 says "包含当前 SQL 或选区"
+// in the language the app shows.
+func AiSQL6e2b5ce133() string { return In(i18n.Locale()).AiSQL6e2b5ce133() }
+
+// AiSQL6e2b5ce133 says "包含当前 SQL 或选区"
+// in the language of msgs.
+func (msgs Messages) AiSQL6e2b5ce133() string {
+	return Catalog.Format(msgs.locale, "aiSQL6e2b5ce133", nil)
+}
+
+// AiSQL9917d4144f says "包含已加载的对象和字段名称"
+// in the language the app shows.
+func AiSQL9917d4144f() string { return In(i18n.Locale()).AiSQL9917d4144f() }
+
+// AiSQL9917d4144f says "包含已加载的对象和字段名称"
+// in the language of msgs.
+func (msgs Messages) AiSQL9917d4144f() string {
+	return Catalog.Format(msgs.locale, "aiSQL9917d4144f", nil)
+}
+
+// AiSQL9215ed64d9 says "只发送下方预览内容；不自动发送表数据或执行建议。"
+// in the language the app shows.
+func AiSQL9215ed64d9() string { return In(i18n.Locale()).AiSQL9215ed64d9() }
+
+// AiSQL9215ed64d9 says "只发送下方预览内容；不自动发送表数据或执行建议。"
+// in the language of msgs.
+func (msgs Messages) AiSQL9215ed64d9() string {
+	return Catalog.Format(msgs.locale, "aiSQL9215ed64d9", nil)
+}
+
+// AiSQL1203860b25 says "填写要求；解释和优化需要选择包含 SQL。文档变化后请重新打开助手。"
+// in the language the app shows.
+func AiSQL1203860b25() string { return In(i18n.Locale()).AiSQL1203860b25() }
+
+// AiSQL1203860b25 says "填写要求；解释和优化需要选择包含 SQL。文档变化后请重新打开助手。"
+// in the language of msgs.
+func (msgs Messages) AiSQL1203860b25() string {
+	return Catalog.Format(msgs.locale, "aiSQL1203860b25", nil)
+}
+
+// AiSQLdfcfe36c13 says "AI 本次发送内容"
+// in the language the app shows.
+func AiSQLdfcfe36c13() string { return In(i18n.Locale()).AiSQLdfcfe36c13() }
+
+// AiSQLdfcfe36c13 says "AI 本次发送内容"
+// in the language of msgs.
+func (msgs Messages) AiSQLdfcfe36c13() string {
+	return Catalog.Format(msgs.locale, "aiSQLdfcfe36c13", nil)
+}
+
+// AiSQLdb1f842cc3 says "原文档或会话范围已变化；可另存建议为新草稿，请重新打开后继续编辑。"
+// in the language the app shows.
+func AiSQLdb1f842cc3() string { return In(i18n.Locale()).AiSQLdb1f842cc3() }
+
+// AiSQLdb1f842cc3 says "原文档或会话范围已变化；可另存建议为新草稿，请重新打开后继续编辑。"
+// in the language of msgs.
+func (msgs Messages) AiSQLdb1f842cc3() string {
+	return Catalog.Format(msgs.locale, "aiSQLdb1f842cc3", nil)
+}
+
+// AiSQLfe826cf799 says "AI 建议预览"
+// in the language the app shows.
+func AiSQLfe826cf799() string { return In(i18n.Locale()).AiSQLfe826cf799() }
+
+// AiSQLfe826cf799 says "AI 建议预览"
+// in the language of msgs.
+func (msgs Messages) AiSQLfe826cf799() string {
+	return Catalog.Format(msgs.locale, "aiSQLfe826cf799", nil)
+}

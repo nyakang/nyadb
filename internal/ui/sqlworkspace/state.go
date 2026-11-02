@@ -28,6 +28,8 @@ type Runtime interface {
 }
 
 type Dependencies struct {
+	AIProposal        func(int64, string, string)
+	AIDialect         func(int64) string
 	FavoriteAsset     func(queries.Named)
 	CanFavorite       func() bool
 	AssetsChanged     func(int64, string, bool)
@@ -96,6 +98,7 @@ func (d *Document) sourceScope() (int64, string) {
 // State owns all SQL documents and their shared split position. Executor and
 // Invalidate are injectable; background jobs capture them before starting.
 type State struct {
+	ai           aiState
 	SplitPercent float32
 	Executor     Executor
 	Invalidate   func()
@@ -162,6 +165,9 @@ func (s *State) Close(d *Document) {
 	if d == nil || d.closed {
 		return
 	}
+	if s.ai.target.doc == d {
+		s.closeAI()
+	}
 	s.dispose(d)
 	p := &s.persistence
 	if p.guardDoc == d {
@@ -186,6 +192,7 @@ func (s *State) Close(d *Document) {
 	}
 }
 func (s *State) CloseAll() {
+	s.closeAI()
 	s.persistence.closed = true
 	s.history = historyState{}
 	if s.persistence.timer != nil {
