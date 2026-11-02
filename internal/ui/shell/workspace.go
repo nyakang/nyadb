@@ -310,6 +310,19 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 		SchemaDesigned: s.schemaTableDesigned,
 		SchemaDropped:  s.schemaTableDropped,
 		SchemaCopied:   s.schemaTableCopied,
+		ViewDesignFor: func(id int64) contract.ViewDesignOperations {
+			if s.runtime == nil {
+				return contract.ViewDesignOperations{}
+			}
+			return s.runtime.ViewDesign(id)
+		},
+		ViewTarget: func(id int64, database, name string) contract.SchemaDesignTarget {
+			if s.runtime == nil {
+				return contract.SchemaDesignTarget{}
+			}
+			return contract.SchemaDesignTarget{Object: s.runtime.Namespace(id, database).Object("view", name), Generation: s.runtime.Generation(id)}
+		},
+		ViewChanged: s.nativeViewChanged,
 		TableGuardPending: func(id int64, db, table string) bool {
 			for _, t := range s.tabs {
 				if t.data != nil && t.data.ProfileID() == id && t.data.Database() == db && t.data.Table() == table && t.data.LeavePending() ||

@@ -30,6 +30,9 @@ type Dependencies struct {
 	BeforeDrop        func(ui.Services, int64, string, string, func(ui.Services)) bool
 	BeforeCopy        func(ui.Services, int64, string, string, func(ui.Services)) bool
 	TableGuardPending func(int64, string, string) bool
+	ViewDesignFor     func(int64) contract.ViewDesignOperations
+	ViewTarget        func(int64, string, string) contract.SchemaDesignTarget
+	ViewChanged       func(ui.Services, ViewEvent)
 	RenameSchema      func(ui.Services, int64, string, string, string)
 	Favorite          func(ui.Services, int64, string, string, string)
 	CanFavorite       func() bool
@@ -151,6 +154,7 @@ type State struct {
 	maintenance *maintenanceOperation
 
 	objectOp, parkedObjectOp *objectOperation
+	viewOp, parkedViewOp     *viewOperation
 
 	Loader                                                                Loader
 	deps                                                                  Dependencies
@@ -261,6 +265,8 @@ func (s *State) Close(d *Document) {
 	}
 }
 func (s *State) CloseAll() {
+	s.closeView()
+	s.parkedViewOp = nil
 	s.closeSchemaCopy()
 	s.closeSchemaDrop()
 	s.closeDictionary()
@@ -304,6 +310,7 @@ func (s *State) CloseAll() {
 // Consume runs on the UI thread. Generation changes invalidate completed work
 // without leaving a document stuck loading or automatically retrying it.
 func (s *State) Consume(services ui.Services) {
+	s.consumeView(services)
 	s.consumeSchemaCopy(services)
 	s.consumeSchemaDrop(services)
 	s.consumeDictionary(services)

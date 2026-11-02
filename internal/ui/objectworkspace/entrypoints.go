@@ -1,15 +1,31 @@
 package objectworkspace
 
+import "github.com/nyakang/nyadb/internal/db/contract"
+
 type contextEntryScope struct {
 	profile         int64
 	generation      uint64
 	database, table string
+	target          contract.SchemaDesignTarget
+}
+
+func (s *State) contextTarget(profile int64, database, name string) contract.SchemaDesignTarget {
+	if s.deps.ViewTarget != nil {
+		return s.deps.ViewTarget(profile, database, name)
+	}
+	if s.deps.SchemaTarget != nil {
+		return s.deps.SchemaTarget(profile, database, name)
+	}
+	return contract.SchemaDesignTarget{}
+}
+func (s *State) contextScope(profile int64, database, name string) contextEntryScope {
+	return contextEntryScope{profile: profile, generation: s.sessionFor(profile).Generation, database: database, table: name, target: s.contextTarget(profile, database, name)}
 }
 
 func (s *State) contextEntryValid(original *contextEntryScope, profile int64, database, table string) bool {
 	w := s.sessionFor(profile)
 	b := s.currentBrowser()
-	return original != nil && *original == (contextEntryScope{profile, w.Generation, database, table}) && w.Connected && s.session().ProfileID == profile && b.ProfileID == profile && b.Database == database
+	return original != nil && *original == s.contextScope(profile, database, table) && w.Connected && s.session().ProfileID == profile && b.ProfileID == profile && b.Database == database
 }
 
 // Capability checks are shared by the browser and its host's toolbar.

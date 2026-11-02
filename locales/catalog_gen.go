@@ -14631,3 +14631,213 @@ func SqliteCopye2fee0f0b6() string { return In(i18n.Locale()).SqliteCopye2fee0f0
 func (msgs Messages) SqliteCopye2fee0f0b6() string {
 	return Catalog.Format(msgs.locale, "sqliteCopye2fee0f0b6", nil)
 }
+
+// SqliteView151e8f1eb1 says "视图操作完成"
+// in the language the app shows.
+func SqliteView151e8f1eb1() string { return In(i18n.Locale()).SqliteView151e8f1eb1() }
+
+// SqliteView151e8f1eb1 says "视图操作完成"
+// in the language of msgs.
+func (msgs Messages) SqliteView151e8f1eb1() string {
+	return Catalog.Format(msgs.locale, "sqliteView151e8f1eb1", nil)
+}
+
+// SqliteViewe772056bab says "视图操作未确认，请重新连接并核对原对象。"
+// in the language the app shows.
+func SqliteViewe772056bab() string { return In(i18n.Locale()).SqliteViewe772056bab() }
+
+// SqliteViewe772056bab says "视图操作未确认，请重新连接并核对原对象。"
+// in the language of msgs.
+func (msgs Messages) SqliteViewe772056bab() string {
+	return Catalog.Format(msgs.locale, "sqliteViewe772056bab", nil)
+}
+
+// SqliteView0ec3c6b126 says "编辑视图"
+// in the language the app shows.
+func SqliteView0ec3c6b126() string { return In(i18n.Locale()).SqliteView0ec3c6b126() }
+
+// SqliteView0ec3c6b126 says "编辑视图"
+// in the language of msgs.
+func (msgs Messages) SqliteView0ec3c6b126() string {
+	return Catalog.Format(msgs.locale, "sqliteView0ec3c6b126", nil)
+}
+
+// SqliteView4fb5714aad says "重命名视图"
+// in the language the app shows.
+func SqliteView4fb5714aad() string { return In(i18n.Locale()).SqliteView4fb5714aad() }
+
+// SqliteView4fb5714aad says "重命名视图"
+// in the language of msgs.
+func (msgs Messages) SqliteView4fb5714aad() string {
+	return Catalog.Format(msgs.locale, "sqliteView4fb5714aad", nil)
+}
+
+// SqliteView865d0222d5 says "删除视图"
+// in the language the app shows.
+func SqliteView865d0222d5() string { return In(i18n.Locale()).SqliteView865d0222d5() }
+
+// SqliteView865d0222d5 says "删除视图"
+// in the language of msgs.
+func (msgs Messages) SqliteView865d0222d5() string {
+	return Catalog.Format(msgs.locale, "sqliteView865d0222d5", nil)
+}
+
+// SqliteViewf3264a2560 says "SQLite 视图定义"
+// in the language the app shows.
+func SqliteViewf3264a2560() string { return In(i18n.Locale()).SqliteViewf3264a2560() }
+
+// SqliteViewf3264a2560 says "SQLite 视图定义"
+// in the language of msgs.
+func (msgs Messages) SqliteViewf3264a2560() string {
+	return Catalog.Format(msgs.locale, "sqliteViewf3264a2560", nil)
+}
+
+// SqliteView729e738dce says "在原命名空间事务执行，不覆盖其它对象；依赖或触发器失效时整批回滚。"
+// in the language the app shows.
+func SqliteView729e738dce() string { return In(i18n.Locale()).SqliteView729e738dce() }
+
+// SqliteView729e738dce says "在原命名空间事务执行，不覆盖其它对象；依赖或触发器失效时整批回滚。"
+// in the language of msgs.
+func (msgs Messages) SqliteView729e738dce() string {
+	return Catalog.Format(msgs.locale, "sqliteView729e738dce", nil)
+}
+
+// SqliteView786c2050cf says "视图名称"
+// in the language the app shows.
+func SqliteView786c2050cf() string { return In(i18n.Locale()).SqliteView786c2050cf() }
+
+// SqliteView786c2050cf says "视图名称"
+// in the language of msgs.
+func (msgs Messages) SqliteView786c2050cf() string {
+	return Catalog.Format(msgs.locale, "sqliteView786c2050cf", nil)
+}
+
+// SqliteViewf546ec89b0 says "等待原视图操作回执…"
+// in the language the app shows.
+func SqliteViewf546ec89b0() string { return In(i18n.Locale()).SqliteViewf546ec89b0() }
+
+// SqliteViewf546ec89b0 says "等待原视图操作回执…"
+// in the language of msgs.
+func (msgs Messages) SqliteViewf546ec89b0() string {
+	return Catalog.Format(msgs.locale, "sqliteViewf546ec89b0", nil)
+}
+
+// SqliteView1b08a4e6aa says "完整 CREATE VIEW 定义"
+// in the language the app shows.
+func SqliteView1b08a4e6aa() string { return In(i18n.Locale()).SqliteView1b08a4e6aa() }
+
+// SqliteView1b08a4e6aa says "完整 CREATE VIEW 定义"
+// in the language of msgs.
+func (msgs Messages) SqliteView1b08a4e6aa() string {
+	return Catalog.Format(msgs.locale, "sqliteView1b08a4e6aa", nil)
+}
+
+// SqliteView130ce007a3 says "视图 SQL 预览"
+// in the language the app shows.
+func SqliteView130ce007a3() string { return In(i18n.Locale()).SqliteView130ce007a3() }
+
+// SqliteView130ce007a3 says "视图 SQL 预览"
+// in the language of msgs.
+func (msgs Messages) SqliteView130ce007a3() string {
+	return Catalog.Format(msgs.locale, "sqliteView130ce007a3", nil)
+}
+
+// SqliteViewa65e96e384 says "确认原视图名称"
+// in the language the app shows.
+func SqliteViewa65e96e384() string { return In(i18n.Locale()).SqliteViewa65e96e384() }
+
+// SqliteViewa65e96e384 says "确认原视图名称"
+// in the language of msgs.
+func (msgs Messages) SqliteViewa65e96e384() string {
+	return Catalog.Format(msgs.locale, "sqliteViewa65e96e384", nil)
+}
+
+// SqliteView92f27bce8c says "保留草稿并关闭"
+// in the language the app shows.
+func SqliteView92f27bce8c() string { return In(i18n.Locale()).SqliteView92f27bce8c() }
+
+// SqliteView92f27bce8c says "保留草稿并关闭"
+// in the language of msgs.
+func (msgs Messages) SqliteView92f27bce8c() string {
+	return Catalog.Format(msgs.locale, "sqliteView92f27bce8c", nil)
+}
+
+// SqliteView70403791a9 says "放弃草稿"
+// in the language the app shows.
+func SqliteView70403791a9() string { return In(i18n.Locale()).SqliteView70403791a9() }
+
+// SqliteView70403791a9 says "放弃草稿"
+// in the language of msgs.
+func (msgs Messages) SqliteView70403791a9() string {
+	return Catalog.Format(msgs.locale, "sqliteView70403791a9", nil)
+}
+
+// SqliteViewa7084fcb21 says "取消操作"
+// in the language the app shows.
+func SqliteViewa7084fcb21() string { return In(i18n.Locale()).SqliteViewa7084fcb21() }
+
+// SqliteViewa7084fcb21 says "取消操作"
+// in the language of msgs.
+func (msgs Messages) SqliteViewa7084fcb21() string {
+	return Catalog.Format(msgs.locale, "sqliteViewa7084fcb21", nil)
+}
+
+// SqliteView29d9f29d95 says "重新读取原定义"
+// in the language the app shows.
+func SqliteView29d9f29d95() string { return In(i18n.Locale()).SqliteView29d9f29d95() }
+
+// SqliteView29d9f29d95 says "重新读取原定义"
+// in the language of msgs.
+func (msgs Messages) SqliteView29d9f29d95() string {
+	return Catalog.Format(msgs.locale, "sqliteView29d9f29d95", nil)
+}
+
+// SqliteView2daaaae831 says "确认执行视图 SQL"
+// in the language the app shows.
+func SqliteView2daaaae831() string { return In(i18n.Locale()).SqliteView2daaaae831() }
+
+// SqliteView2daaaae831 says "确认执行视图 SQL"
+// in the language of msgs.
+func (msgs Messages) SqliteView2daaaae831() string {
+	return Catalog.Format(msgs.locale, "sqliteView2daaaae831", nil)
+}
+
+// SqliteViewf0de28e665 says "重命名视图…"
+// in the language the app shows.
+func SqliteViewf0de28e665() string { return In(i18n.Locale()).SqliteViewf0de28e665() }
+
+// SqliteViewf0de28e665 says "重命名视图…"
+// in the language of msgs.
+func (msgs Messages) SqliteViewf0de28e665() string {
+	return Catalog.Format(msgs.locale, "sqliteViewf0de28e665", nil)
+}
+
+// SqliteViewed194cdea3 says "编辑完整定义…"
+// in the language the app shows.
+func SqliteViewed194cdea3() string { return In(i18n.Locale()).SqliteViewed194cdea3() }
+
+// SqliteViewed194cdea3 says "编辑完整定义…"
+// in the language of msgs.
+func (msgs Messages) SqliteViewed194cdea3() string {
+	return Catalog.Format(msgs.locale, "sqliteViewed194cdea3", nil)
+}
+
+// SqliteViewd878d4d0bb says "删除对象…"
+// in the language the app shows.
+func SqliteViewd878d4d0bb() string { return In(i18n.Locale()).SqliteViewd878d4d0bb() }
+
+// SqliteViewd878d4d0bb says "删除对象…"
+// in the language of msgs.
+func (msgs Messages) SqliteViewd878d4d0bb() string {
+	return Catalog.Format(msgs.locale, "sqliteViewd878d4d0bb", nil)
+}
+
+// SqliteView7ed05fdd27 says "请先关闭当前视图定义窗口"
+// in the language the app shows.
+func SqliteView7ed05fdd27() string { return In(i18n.Locale()).SqliteView7ed05fdd27() }
+
+// SqliteView7ed05fdd27 says "请先关闭当前视图定义窗口"
+// in the language of msgs.
+func (msgs Messages) SqliteView7ed05fdd27() string {
+	return Catalog.Format(msgs.locale, "sqliteView7ed05fdd27", nil)
+}
