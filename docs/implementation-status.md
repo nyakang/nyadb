@@ -72,6 +72,8 @@
 
 2026-11-02 后续接通只读数据字典的工具菜单、表/视图右键和结构工具栏，原生字段/索引/外键预览及 Markdown/HTML 导出；修复 PG/SQLite 呈现元数据缺少索引/外键的问题。真实 SQLite、PG、只读 MySQL、ClickHouse 与 Linux 正式窗口的验证范围、失败记录及限制见 [数据字典交付记录](data-dictionary-2026-11-02.md)。字典不代表完整目录备份或全部高级功能完成，完整目标继续有效，不新增 O/S/V。
 
+2026-11-02 后续修复 PG 独立 CREATE 探针接受显式用户索引函数的问题：在创建探针前词法收集调用并检查限定的 pg_catalog core overload，拒绝用户/扩展重载。PG 14/18 专项及 PG 17 全量真实服务 race 通过（34 个顶层 fixture，903.711 秒），本轮 9 个容器独立复核已清理。修复及结果保留在工作树，未 commit/push；类型/cast/运算符/其它探针及并发、正式 Apply/PG 表单仍未完成。自动检查、无新增原生窗口证据和完整限制见 [PG 显式索引函数探针记录](postgres-index-probe-routines-2026-11-02.md)，当前待办见 [剩余复刻清单](reconstruction-remaining-2026-11-02.md)。
+
 The current Linux alignment target is Navicat 18, Simplified Chinese, dark
 theme, and compact density. Shared theme metrics now provide 19-DIP navigation
 and chooser list rows with 16-DIP icons, low-emphasis toolbar selection, and
