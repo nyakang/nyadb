@@ -10,7 +10,7 @@ SQL 历史/全局加密日志、SQL 常用上下文补全和文档快捷键、My
 
 | 优先级 | 能力 | 实际剩余工作 |
 |---|---|---|
-| P1 | PostgreSQL 正式图形设计 | 当前 `SchemaDesign()` 仍只暴露 Snapshot，通用 UI 准备调用 SQLite 规划器。已有 PG 元数据/改名私有执行和 CREATE/ALTER 规划、保留值/目录/序列及限定 heap/TOAST 变化与新引用证据；显式声明函数（默认/生成/约束/索引/WHEN）、类型/转换、运算符/操作符类/访问方法均已补限定探针检查；内建 SQL 运算符支持限定双参数转发，函数支持有界、核对真实类型的 core 转发。新增字段 nextval 默认值在填充旧行前拒绝，已有 serial 所有权声明保持原记录核验。CREATE/ALTER 服务内部事务执行器已整合并验证回滚/冲突/取消/关闭/丢失回执。仍需正式 Apply binding、并发/依赖/其它探针副作用/新字段语义、引擎专属原生表单及实际窗口保存验收；PG 18 独立 NOT NULL 约束尚未适配。 |
+| P1 | PostgreSQL 正式图形设计 | 当前 `SchemaDesign()` 仍只暴露 Snapshot，通用 UI 准备调用 SQLite 规划器。已有 PG 元数据/改名私有执行和 CREATE/ALTER 规划、保留值/目录/序列及限定 heap/TOAST 变化与新引用证据；显式声明函数（默认/生成/约束/索引/WHEN）、类型/转换、运算符/操作符类/访问方法均已补限定探针检查；内建 SQL 运算符支持限定双参数转发，函数支持有界、核对真实类型的 core 转发。新增字段 nextval 默认值在填充旧行前拒绝，已有 serial 所有权声明保持原记录核验。CREATE/ALTER 服务内部事务执行器已整合并验证回滚/冲突/取消/关闭/丢失回执；新默认值、存储生成列及 identity 已补独立回滚投影和限定分配状态核验，PG 14 数组节点格式已适配。仍需正式 Apply binding、并发/依赖/其它隐式回调与一般表达式范围、引擎专属原生表单及实际窗口保存验收；PG 18 独立 NOT NULL 约束尚未适配。 |
 | P1 | PG/SQLite 常用对象与文件工具 | PG 视图/程序 CRUD、账户权限适配；共享导入/多格式导出向导、PG/SQLite 备份恢复。SQLite 普通视图 CRUD 与表删除/复制已交付，自动依赖改写和图形查询设计仍不支持。PG SSH/HTTP、SQLite HTTP 尚未接通；运行必须继续明确拒绝未支持配置。 |
 | P1/P2 | PG/SQLite 大数据体验 | 产品描述仍未开启 Keyset、Count、FieldChunks、Analysis；共享网格已存在，但这两种引擎使用 LIMIT/OFFSET，尚缺后页稳定游标、显式精确计数、大字段分块及完整分析接线与真实大数据验收。不能把三引擎共用 UI 等同于同等运行能力。 |
 | P2 | 数据传输 | 当前入口禁用。建立源/目标映射、类型及 NULL/二进制/精确数值保真、预览、批次执行、取消与部分/不确定结果。已有文件导出不能算数据库间传输。 |
@@ -26,6 +26,8 @@ SQL 历史/全局加密日志、SQL 常用上下文补全和文档快捷键、My
 | 验收 | Windows/macOS 和原版对照 | 继续分别补跨平台实际窗口、行为规格及合法授权的 Navicat 观察/差分。Linux NyaDB 截图、构建和 Tester 都不能替代 O/V。 |
 
 ## 源码依据与验收区分
+
+本轮 PostgreSQL 新字段值核验的故障复现、真实服务结果、失败及兼容性修复记录见 [独立新值核验](postgres-new-value-proof-2026-11-02.md)。该内部实现不会自行开启正式设计入口；原生 GUI、跨平台及 Navicat 差分仍按各自实际证据计算。
 
 - [PG 当前 binding](../internal/services/engines/sqlite_design.go)、[通用设计器准备](../internal/ui/objectworkspace/schema_design_state.go)、[PG 私有 CREATE/ALTER 事务](../internal/services/engines/postgres_design_ddl_apply.go)。
 - [实际工具菜单及工具栏](../internal/ui/shell/chrome.go) 保留传输/同步/生成/脱敏/CLI/监控等禁用入口；预览页的静态演示不作为正式能力依据。

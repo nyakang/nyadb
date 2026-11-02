@@ -155,6 +155,11 @@ func (s *Session) postgresDesignDDLApply(ctx context.Context, request contract.S
 			return
 		}
 	}
+	valueProof, err := s.postgresCaptureValueProof(ctx, c, r, canonical, before.Rows)
+	if err != nil {
+		out.Error = err
+		return
+	}
 	for _, statement := range plan.SQL {
 		if _, err = c.ExecContext(ctx, statement); err != nil {
 			out.Error = err
@@ -228,6 +233,10 @@ func (s *Session) postgresDesignDDLApply(ctx context.Context, request contract.S
 	}
 	if before != after {
 		out.Error = schemaddl.ErrDataChanged
+		return
+	}
+	if err = s.postgresVerifyValueProof(ctx, c, r, canonical, verified, valueProof); err != nil {
+		out.Error = err
 		return
 	}
 	sequenceCatalog, err := postgresCatalogSnapshotPreserving(ctx, c, resultTarget, actual.Schema.Postgres)
