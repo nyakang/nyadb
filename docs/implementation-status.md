@@ -15,7 +15,8 @@
 | 备份恢复 | 类型化校验包、一致性读取、完整 SQL 转储、冲突策略/预览/依赖恢复、SQL DELIMITER 文件执行；失败/部分/不确定状态不重放 |
 | ClickHouse | 独立原生驱动/配置/URI/密钥环、SQL 租约与显式恢复、元数据、共享只读网格/分页/筛选/计数/导出 |
 | AI SQL | 可配置 OpenAI 兼容 Chat Completions、系统密钥环、opt-in 预览、流式/取消、生成/解释/优化及原连接未执行草稿 |
-| 后置 | 高级同步、模型、自动运行、BI、监控/字典/生成/脱敏/命令行、AI 表设计/数据填充、引擎深化、PG 图形表设计、PG/SQLite 对象 CRUD 与导入/备份扩展 |
+| 数据字典 | 当前数据库/schema 或单表/视图的只读字段/索引/外键预览、表名搜索及完整已读字典 Markdown/HTML 原生导出 |
+| 后置 | 高级同步、模型、自动运行、BI、监控/生成/脱敏/命令行、AI 表设计/数据填充、引擎深化、PG 图形表设计、PG/SQLite 对象 CRUD 与导入/备份扩展 |
 
 详见 [核心工作流技术设计、限制与验收](core-workflows-2026-10-31.md)。实现和测试属于 **I**；新功能原版采证 **O** 与差分 **V** 为 **Unknown**，不能由编译、Tester 或历史局部对照代替。原生窗口和跨平台编译的具体环境边界另见验收报告。验收快照生成于提交之前，后续提交状态见 Git 历史及远端。
 
@@ -64,6 +65,8 @@
 2026-11-02 后续完成可配置 OpenAI 兼容 AI SQL 基础：独立配置/HTTP/SSE 服务、系统密钥环 immutable 密钥及条件发布、原生请求预览、取消、生成/解释/优化与原连接未执行草稿。真实 Secret Service、自有协议服务和正式 Linux 1280×800 / 840×560 窗口验证生成/插入/重启恢复及密钥丢失/错误不覆盖配置；完整检查、截图、限制见 [AI SQL 交付记录](ai-sql-native-2026-11-02.md)。实现 I 与 NyaDB 运行证据不等于商业模型实测或 Navicat O/V；完整其余阶段继续有效。
 
 2026-11-02 后续新增 PG 原序列位置核验：按完整原目录身份读取精确 last_value/is_called，稳定字段 ID/原所有权限定删除许可，原生规划验收在独立 CREATE 探针和执行前后比较。元数据/改名保留原权限要求；表所有者缺少外部默认序列 SELECT 权限仍可编辑自己的注释。真实服务、失败修复、最终检查及剩余通用 Apply/PG 表单等完整范围见 [PG 序列状态核验](postgres-sequence-state-2026-11-02.md)，不新增 Navicat O/S/V 或标记整体完成。
+
+2026-11-02 后续接通只读数据字典的工具菜单、表/视图右键和结构工具栏，原生字段/索引/外键预览及 Markdown/HTML 导出；修复 PG/SQLite 呈现元数据缺少索引/外键的问题。真实 SQLite、PG、只读 MySQL、ClickHouse 与 Linux 正式窗口的验证范围、失败记录及限制见 [数据字典交付记录](data-dictionary-2026-11-02.md)。字典不代表完整目录备份或全部高级功能完成，完整目标继续有效，不新增 O/S/V。
 
 The current Linux alignment target is Navicat 18, Simplified Chinese, dark
 theme, and compact density. Shared theme metrics now provide 19-DIP navigation

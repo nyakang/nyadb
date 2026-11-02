@@ -73,11 +73,22 @@ func structureModel(t contract.Table) *contract.TableStructure {
 	return out
 }
 func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*contract.TableStructure, error) {
-	t, e := s.Structure(ctx, o)
+	ctx, done := s.requestContext(ctx)
+	defer done()
+	t, e := s.structure(ctx, s.db, o)
 	if e != nil {
 		return nil, e
 	}
-	return structureModel(t), nil
+	out := structureModel(t)
+	if s.kind == connections.SQLite {
+		e = s.sqlitePresentationMetadata(ctx, s.db, out)
+	} else {
+		e = s.postgresPresentationMetadata(ctx, s.db, out)
+	}
+	if e != nil {
+		return nil, e
+	}
+	return out, nil
 }
 func typeKind(t string) contract.CellKind {
 	t = strings.ToLower(t)

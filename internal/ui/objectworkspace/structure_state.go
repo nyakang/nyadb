@@ -21,6 +21,7 @@ type Session struct {
 }
 
 type Dependencies struct {
+	Namespace         func(int64, string) contract.NamespaceRef
 	SchemaDesignFor   func(int64) contract.SchemaDesignOperations
 	SchemaTarget      func(int64, string, string) contract.SchemaDesignTarget
 	SchemaDesigned    func(ui.Services, SchemaDesignEvent)
@@ -122,6 +123,9 @@ type loadResult struct {
 }
 
 type State struct {
+	dictionary                              *dictionaryState
+	dictionaryMenu                          *dictionaryScope
+	dictionarySave                          func(string) (string, error)
 	referenceRequest                        *objectReferenceRequest
 	search                                  *objectSearchState
 	profileMenu                             *tableProfileMenu
@@ -250,6 +254,8 @@ func (s *State) Close(d *Document) {
 	}
 }
 func (s *State) CloseAll() {
+	s.closeDictionary()
+	s.dictionaryMenu = nil
 	s.closeObjectReference()
 	s.closeObjectSearch()
 	s.moreScope, s.groupDialog = nil, nil
@@ -289,6 +295,7 @@ func (s *State) CloseAll() {
 // Consume runs on the UI thread. Generation changes invalidate completed work
 // without leaving a document stuck loading or automatically retrying it.
 func (s *State) Consume(services ui.Services) {
+	s.consumeDictionary(services)
 	s.consumeObjectReference(services)
 	s.consumeObjectSearch()
 	s.validateGroupDialog()

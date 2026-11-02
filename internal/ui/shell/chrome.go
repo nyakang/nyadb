@@ -175,7 +175,11 @@ func (s *State) menuCommands(section string, m *ui.Menu) {
 		m.Separator()
 		// Preserve the observed compact Navicat menu hierarchy without
 		// pretending that the unimplemented database tools can be executed.
-		for _, label := range []string{"数据传输…", "数据生成…", "数据脱敏…", "数据字典…", "数据同步…", "结构同步…"} {
+		for _, label := range []string{"数据传输…", "数据生成…", "数据脱敏…"} {
+			m.Item(locales.Text(label)).Disabled(true)
+		}
+		s.objectWorkspace.DictionaryMenu(m)
+		for _, label := range []string{"数据同步…", "结构同步…"} {
 			m.Item(locales.Text(label)).Disabled(true)
 		}
 		m.Item(locales.Text("命令列界面…")).Shortcut(0, ui.KeyF6).Disabled(true)

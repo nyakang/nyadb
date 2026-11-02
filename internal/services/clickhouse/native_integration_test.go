@@ -13,6 +13,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/dbruntime"
+	"github.com/nyakang/nyadb/internal/services/dictionary"
 )
 
 func fixtureProfile(t *testing.T) (connections.Profile, string) {
@@ -66,6 +67,20 @@ func TestClickHouseNativeFixture(t *testing.T) {
 	run("CREATE TABLE " + qdb + "`full values` (id UInt64, amount Decimal(38,20), nullable Nullable(String), text String, raw String, wide Int256, list Array(UInt64), byte_list Array(UInt8), calculated UInt64 ALIAS id+1) ENGINE=MergeTree ORDER BY id COMMENT 'native fixture'")
 	run("INSERT INTO " + qdb + "`full values` (id,amount,nullable,text,raw,wide,list,byte_list) VALUES (9007199254740993,'123456789012345678.12345678901234567890',NULL,'NULL',unhex('ff0001'),170141183460469231731687303715884105727,[18446744073709551615],[0,255]),(1,'0.00000000000000000001','','','',-170141183460469231731687303715884105727,[],[])")
 	run("CREATE VIEW " + qdb + "`values view` AS SELECT id,text FROM " + qdb + "`full values`")
+	t.Run("read-only dictionary includes uppercase table and view identities", func(t *testing.T) {
+		meta, err := m.Metadata(p.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		doc, err := dictionary.Build(ctx, dictionary.Reader{Browse: meta.Browse, Metadata: meta.TableMetadata}, m.Namespace(p.ID, database), nil)
+		if err != nil || len(doc.Tables) != 2 || doc.Tables[0].Engine != "MergeTree" || doc.Tables[1].Kind != "view" {
+			t.Fatal("ClickHouse dictionary scope", err)
+		}
+		b, err := dictionary.Render(ctx, doc, "html", dictionary.EnglishLabels())
+		if err != nil || !strings.Contains(string(b), "calculated") || strings.Contains(string(b), "123456789012345678.12345678901234567890") {
+			t.Fatal("dictionary missing metadata or leaking rows", err)
+		}
+	})
 
 	t.Run("namespaces metadata and exact native values", func(t *testing.T) {
 		meta, err := m.Metadata(p.ID)
