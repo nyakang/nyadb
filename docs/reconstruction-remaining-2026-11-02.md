@@ -10,7 +10,7 @@ SQL 历史/全局加密日志、SQL 常用上下文补全和文档快捷键、My
 
 | 优先级 | 能力 | 实际剩余工作 |
 |---|---|---|
-| P1 | PostgreSQL 正式图形设计 | 当前 `SchemaDesign()` 仍只暴露 Snapshot；共享设计文档已按真实引擎选用 PG 规划器，PG 字段/identity/生成列/表属性组件及预览已完成准备。已有 PG 元数据/改名私有执行和 CREATE/ALTER 规划、保留值/目录/序列及限定 heap/TOAST 变化与新引用证据；显式声明函数（默认/生成/约束/索引/WHEN）、类型/转换、运算符/操作符类/访问方法均已补限定探针检查；内建 SQL 运算符支持限定双参数转发，函数支持有界、核对真实类型的 core 转发。新增字段 nextval 默认值在填充旧行前拒绝，已有 serial 所有权声明保持原记录核验。CREATE/ALTER 服务内部事务执行器已整合并验证回滚/冲突/取消/关闭/丢失回执；新默认值、存储生成列及 identity 已补独立回滚投影和限定分配状态核验，PG 14 数组节点格式已适配。仍需正式 Apply binding、并发/依赖/其它隐式回调与一般表达式范围、原生表单正式接线及实际窗口保存验收；PG 18 独立 NOT NULL 约束尚未适配。 |
+| P1 | PostgreSQL 正式图形设计 | 当前 `SchemaDesign()` 仍只暴露 Snapshot；共享设计文档已按真实引擎选用 PG 规划器，PG 字段/identity/生成列/表属性组件及预览已完成准备。已有 PG 元数据/改名私有执行和 CREATE/ALTER 规划、保留值/目录/序列及限定 heap/TOAST 变化与新引用证据；显式声明函数（默认/生成/约束/索引/WHEN）、类型/转换、运算符/操作符类/访问方法均已补限定探针检查；内建 SQL 运算符支持限定双参数转发，函数支持有界、核对真实类型的 core 转发。新增字段 nextval 默认值在填充旧行前拒绝，已有 serial 所有权声明保持原记录核验。CREATE/ALTER 服务内部事务执行器已整合并验证回滚/冲突/取消/关闭/丢失回执；新默认值、存储生成列及 identity 已补独立回滚投影和限定分配状态核验，PG 14 数组节点格式已适配。隐藏验证已明确拒绝 domain 和可变用户类型，防止预检查后新增 CHECK/同名类型替换的副作用；仅保留固定系统类型。仍需正式 Apply binding、其它并发/依赖/隐式回调与一般表达式范围、用户类型稳定性方案、原生表单正式接线及实际窗口保存验收；PG 18 独立 NOT NULL 约束尚未适配。 |
 | P1 | PG/SQLite 常用对象与文件工具 | PG 视图/程序 CRUD、账户权限适配；共享导入/多格式导出向导、PG/SQLite 备份恢复。SQLite 普通视图 CRUD 与表删除/复制已交付，自动依赖改写和图形查询设计仍不支持。PG SSH/HTTP、SQLite HTTP 尚未接通；运行必须继续明确拒绝未支持配置。 |
 | P1/P2 | PG/SQLite 大数据体验 | 产品描述仍未开启 Keyset、Count、FieldChunks、Analysis；共享网格已存在，但这两种引擎使用 LIMIT/OFFSET，尚缺后页稳定游标、显式精确计数、大字段分块及完整分析接线与真实大数据验收。不能把三引擎共用 UI 等同于同等运行能力。 |
 | P2 | 数据传输 | 当前入口禁用。建立源/目标映射、类型及 NULL/二进制/精确数值保真、预览、批次执行、取消与部分/不确定结果。已有文件导出不能算数据库间传输。 |
@@ -29,7 +29,7 @@ SQL 历史/全局加密日志、SQL 常用上下文补全和文档快捷键、My
 
 本轮 PostgreSQL 新字段值核验的故障复现、真实服务结果、失败及兼容性修复记录见 [独立新值核验](postgres-new-value-proof-2026-11-02.md)。该内部实现不会自行开启正式设计入口；原生 GUI、跨平台及 Navicat 差分仍按各自实际证据计算。
 
-后续 PG 原生表单组件与预览已通过 Tester，[表单准备记录](postgres-designer-forms-2026-11-02.md) 同时保留真实 domain 并发失败：隐藏投影仍能执行预检查后新增的 CHECK 函数。普通表依赖没有稳定类型锁，因此 Apply 继续不公开。组件实现不能替代正式保存入口或该故障修复。
+后续 PG 原生表单组件与预览已通过 Tester，[表单准备记录](postgres-designer-forms-2026-11-02.md) 保留当时真实 domain 并发失败。当前[类型并发边界修复](postgres-probe-type-stability-2026-11-02.md) 已在隐藏 CREATE 前明确拒绝 domain 和可变用户类型，覆盖捕获类型 ID 后新增 CHECK、同名 enum 替换及不进入原失败注入点。普通表依赖没有稳定类型锁；一般表达式/其它依赖和隐式回调、用户类型稳定性方案及正式窗口保存仍待完成，Apply 继续不公开。组件实现和拒绝策略均不能替代正式 PG 设计器交付。
 
 - [PG 当前 binding](../internal/services/engines/sqlite_design.go)、[通用设计器准备](../internal/ui/objectworkspace/schema_design_state.go)、[PG 私有 CREATE/ALTER 事务](../internal/services/engines/postgres_design_ddl_apply.go)。
 - [实际工具菜单及工具栏](../internal/ui/shell/chrome.go) 保留传输/同步/生成/脱敏/CLI/监控等禁用入口；预览页的静态演示不作为正式能力依据。
@@ -40,6 +40,7 @@ SQL 历史/全局加密日志、SQL 常用上下文补全和文档快捷键、My
 - [PG 物理存储及新引用证据](postgres-storage-transition-2026-11-02.md) 区分代表性合法重写、严格未知属性保留、PG 18 拒绝及正式 Apply/新字段/并发/探针仍未完成；规范化证据不作为工作台目录或 COMMIT 授权。
 - [PG 显式索引函数探针修复](postgres-index-probe-routines-2026-11-02.md) 完成函数拒绝回归、PG 14/18 专项及 PG 17 全量真实服务 race；类型/cast/运算符/域及其它表达式、并发定义变化尚未形成完整探针证明，不据此启用正式 Apply。
 - [PG 类型与转换探针检查](postgres-probe-types-2026-11-02.md) 区分真实 enum/numeric 转换序列消费、没有观察到副作用的域样例、结构化类型兼容及尚未完成的一般表达式/运算符/并发证明。
+- [PG 类型并发边界](postgres-probe-type-stability-2026-11-02.md) 更新私有探针支持范围：仅固定系统类型；此前的无副作用 domain/用户结构类型样例不再授予隐藏 CREATE/投影许可。完整目录和已有值摘要读取范围保持独立。
 - [PG 运算符与访问方法探针检查](postgres-probe-dispatch-2026-11-02.md) 补拒绝运算符重载、显式/默认操作符类、用户访问方法和被替换的内建 SQL 转发体；不构成一般表达式/并发证明，也不启用正式 Apply。
 - [PG CREATE/ALTER 事务服务](postgres-ddl-transaction-2026-11-02.md) 将既有核验接入服务内部事务并覆盖真实生命周期；binding/表单、通用新字段与一般表达式/并发证明仍未完成。
 - [引擎能力](../internal/services/connections/descriptors.go)、[分页策略](../internal/services/engines/metadata.go)、[SQL Workspace 保存模型](../internal/services/queries/store.go)、[连接颜色/共享菜单](../internal/ui/shell/profile_navigation_menus.go) 分别支持上述大数据、完整工作区与协作缺口。

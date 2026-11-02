@@ -12,6 +12,7 @@ import (
 )
 
 var errPostgresProbeType = errors.New("PostgreSQL definition probe requires supported type and cast callbacks")
+var errPostgresProbeTypeStability = errors.New("PostgreSQL definition probe does not support mutable user type identities or domains")
 
 // All state is request-local. A previous successful read never authorizes a
 // changed definition in another transaction, profile or session generation.
@@ -148,56 +149,34 @@ func (p *postgresProbeTypeCheck) typeID(oid int64, depth int) error {
 	if oid <= 0 || depth >= 64 || len(p.types) >= 4096 {
 		return errPostgresProbeType
 	}
-	var namespace, kind, category string
+	// User type names, domain constraints and composite dependencies can change
+	// between our catalog read and CREATE's own type resolution. A referencing
+	// table does not lock these definitions; REPEATABLE READ also does not stop
+	// the parser using a later catalog state. Until a stable binding exists,
+	// reject every user identity, including enums/arrays that could be replaced
+	// at the same name. No hidden declaration may evaluate their callbacks.
+	if oid >= 16384 {
+		return errors.Join(errPostgresProbeType, errPostgresProbeTypeStability)
+	}
+	var namespace, kind string
 	var element, base, relation int64
 	var callbacks [8]int64
-	err := p.c.QueryRowContext(p.ctx, `SELECT n.nspname::text,t.typtype::text,t.typcategory::text,
+	err := p.c.QueryRowContext(p.ctx, `SELECT n.nspname::text,t.typtype::text,
 t.typelem::bigint,t.typbasetype::bigint,t.typrelid::bigint,t.typinput::bigint,t.typoutput::bigint,
 t.typreceive::bigint,t.typsend::bigint,t.typmodin::bigint,t.typmodout::bigint,t.typanalyze::bigint,t.typsubscript::bigint
-FROM pg_catalog.pg_type t JOIN pg_catalog.pg_namespace n ON n.oid=t.typnamespace WHERE t.oid=$1`, oid).Scan(&namespace, &kind, &category, &element, &base, &relation, &callbacks[0], &callbacks[1], &callbacks[2], &callbacks[3], &callbacks[4], &callbacks[5], &callbacks[6], &callbacks[7])
+FROM pg_catalog.pg_type t JOIN pg_catalog.pg_namespace n ON n.oid=t.typnamespace WHERE t.oid=$1`, oid).Scan(&namespace, &kind, &element, &base, &relation, &callbacks[0], &callbacks[1], &callbacks[2], &callbacks[3], &callbacks[4], &callbacks[5], &callbacks[6], &callbacks[7])
 	if err != nil {
 		return errors.Join(errPostgresProbeType, err)
+	}
+	if namespace != "pg_catalog" || kind == "d" {
+		return errors.Join(errPostgresProbeType, errPostgresProbeTypeStability)
 	}
 	if callbacks[0] == 0 || callbacks[1] == 0 {
 		return errPostgresProbeType
 	}
-	names := make([]string, len(callbacks))
-	for i, routine := range callbacks {
-		if names[i], err = p.routineID(routine); err != nil {
+	for _, routine := range callbacks {
+		if _, err = p.routineID(routine); err != nil {
 			return err
-		}
-	}
-	core := oid < 16384 && namespace == "pg_catalog"
-	if !core {
-		// Structural user types can use PostgreSQL's known I/O machinery.
-		// Arbitrary user-defined base representations remain unsupported.
-		switch {
-		case kind == "e":
-			if names[0] != "enum_in" || names[1] != "enum_out" {
-				return errPostgresProbeType
-			}
-		case kind == "d":
-			if names[0] != "domain_in" || base == 0 {
-				return errPostgresProbeType
-			}
-		case kind == "c":
-			if names[0] != "record_in" || names[1] != "record_out" || relation == 0 {
-				return errPostgresProbeType
-			}
-		case kind == "r":
-			if names[0] != "range_in" || names[1] != "range_out" {
-				return errPostgresProbeType
-			}
-		case kind == "m":
-			if names[0] != "multirange_in" || names[1] != "multirange_out" {
-				return errPostgresProbeType
-			}
-		case kind == "b" && category == "A" && element != 0:
-			if names[0] != "array_in" || names[1] != "array_out" {
-				return errPostgresProbeType
-			}
-		default:
-			return errPostgresProbeType
 		}
 	}
 	p.types[oid] = true // Structural composite/array references may form cycles.
@@ -233,54 +212,6 @@ FROM pg_catalog.pg_type t JOIN pg_catalog.pg_namespace n ON n.oid=t.typnamespace
 		}
 		for _, value := range nested {
 			if err = p.typeID(value, depth+1); err != nil {
-				return err
-			}
-		}
-	}
-	if kind == "d" {
-		// Dependency reads inspect CHECK and inherited DEFAULT implementations
-		// without evaluating VALUE or rendering user expressions into a query.
-		rows, err := p.c.QueryContext(p.ctx, `SELECT d.refclassid::bigint,d.refobjid::bigint,
-d.refclassid='pg_catalog.pg_proc'::regclass,d.refclassid='pg_catalog.pg_operator'::regclass,d.refclassid='pg_catalog.pg_type'::regclass
-FROM pg_catalog.pg_depend d WHERE (d.classid='pg_catalog.pg_type'::regclass AND d.objid=$1)
-OR (d.classid='pg_catalog.pg_constraint'::regclass AND d.objid IN
-(SELECT oid FROM pg_catalog.pg_constraint WHERE contypid=$1 AND contype='c'))`, oid)
-		if err != nil {
-			return err
-		}
-		type dependency struct {
-			class, oid             int64
-			routine, operator, typ bool
-		}
-		var dependencies []dependency
-		for rows.Next() {
-			var value dependency
-			if err = rows.Scan(&value.class, &value.oid, &value.routine, &value.operator, &value.typ); err != nil {
-				rows.Close()
-				return err
-			}
-			if len(dependencies) >= 4096 {
-				rows.Close()
-				return errPostgresProbeType
-			}
-			dependencies = append(dependencies, value)
-		}
-		err = rows.Err()
-		rows.Close()
-		if err != nil {
-			return err
-		}
-		for _, value := range dependencies {
-			if value.routine {
-				_, err = p.routineID(value.oid)
-			}
-			if value.operator {
-				err = p.operatorID(value.oid, depth+1)
-			}
-			if value.typ {
-				err = p.typeID(value.oid, depth+1)
-			}
-			if err != nil {
 				return err
 			}
 		}

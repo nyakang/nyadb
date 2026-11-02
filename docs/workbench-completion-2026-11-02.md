@@ -120,3 +120,5 @@ Go 1.27.3 / MyGo v0.7.3-nyadb.2，`GOWORK=off`，Linux amd64。HEAD 仍为 `5960
 前置成果使用独立 review 快照排除 ClickHouse 后运行全量测试；验证日志为忽略目录 `build/verify/clickhouse-rl2Bm0/go-test-baseline.log`。后续 ClickHouse 最终检查、最新二进制和原生结果以 [ClickHouse 交付记录](clickhouse-native-2026-11-02.md) 为准，前文结果保留为各阶段当时的验证记录。
 
 2026-11-02 后续交付可配置 OpenAI 兼容 AI SQL 基础，按独立服务/凭据/SQL 工作区边界实现。真实 Secret Service 与正式窗口验证请求预览、生成、插入保留草稿、重启恢复及缺失/错误密钥不覆盖配置；AI 不执行建议。自动测试、二进制/截图、隔离清理、未验证场景和最终归档见 [AI SQL 交付记录](ai-sql-native-2026-11-02.md)。完整 PG/SQLite、跨库工具、调度与其余高级功能仍待完成，不新增 Navicat O/S/V。
+
+2026-11-02 后续按逐项要求提交新字段独立值核验 `a321e32`、新表最终名称回执修复 `8cff800` 和 PG 原生表单组件准备 `2f11d6d`。真实发现预检查后 domain 新增 CHECK 的非事务副作用；当前通过隐藏 CREATE 前拒绝可变用户类型修复该限定问题，同时保留负面的 domain 依赖锁平台证据。并发回归、支持范围收缩及最终检查见 [类型并发边界修复](postgres-probe-type-stability-2026-11-02.md)。正式 PG Apply、一般表达式/其它隐式回调、正式窗口保存及完整剩余阶段继续待完成，不新增 Navicat O/S/V。
