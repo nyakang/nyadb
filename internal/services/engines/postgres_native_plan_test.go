@@ -14,15 +14,15 @@ import (
 // and engine-aware forms still have to be bound before exposing Apply.
 func pgNativeFixtureApply(t *testing.T, s *Session, base contract.SchemaDesignSnapshot, draft schemaddl.Table, allowDrop bool) contract.SchemaDesignSnapshot {
 	t.Helper()
-	return pgNativeFixtureApplyChecked(t, s, base, draft, allowDrop, false)
+	return pgNativeFixtureApplyChecked(t, s, base, draft, allowDrop)
 }
 
 func pgNativeFixtureApplyWithOriginalContext(t *testing.T, s *Session, base contract.SchemaDesignSnapshot, draft schemaddl.Table, allowDrop bool) contract.SchemaDesignSnapshot {
 	t.Helper()
-	return pgNativeFixtureApplyChecked(t, s, base, draft, allowDrop, true)
+	return pgNativeFixtureApplyChecked(t, s, base, draft, allowDrop)
 }
 
-func pgNativeFixtureApplyChecked(t *testing.T, s *Session, base contract.SchemaDesignSnapshot, draft schemaddl.Table, allowDrop, verifyContext bool) contract.SchemaDesignSnapshot {
+func pgNativeFixtureApplyChecked(t *testing.T, s *Session, base contract.SchemaDesignSnapshot, draft schemaddl.Table, allowDrop bool) contract.SchemaDesignSnapshot {
 	t.Helper()
 	plan, err := schemaddl.PlanPostgreSQL(base.Schema, draft, base.Target.Object.Schema, allowDrop)
 	if err != nil {
@@ -60,12 +60,26 @@ func pgNativeFixtureApplyChecked(t *testing.T, s *Session, base contract.SchemaD
 		t.Fatal("native sequence removal permission unavailable", err)
 	}
 	var expected *postgresDesiredBaseline
+	var beforeReferences []schemaddl.PostgreSQLReferenceBaseline
+	verificationContext := base.Schema.Postgres
 	if plan.Mode == "create" || plan.Mode == "alter" {
 		canonical, err := s.postgresCanonicalDesired(context.Background(), c, contract.SchemaDesignRequest{Original: base, Desired: draft, AllowColumnDrop: allowDrop})
 		if err != nil {
 			t.Fatal("independent desired definition unavailable", err)
 		}
 		expected = &canonical
+		if base.Schema.Exists {
+			beforeWrite, err := postgresCatalogSnapshotPreserving(context.Background(), c, base.Target, canonical.Probe.Postgres)
+			if err != nil {
+				t.Fatal("new reference before-images unavailable", err)
+			}
+			reference, err := schemaddl.CapturePostgreSQLReferenceBaseline(base.Schema, draft, canonical.Probe, beforeWrite.Schema)
+			if err != nil {
+				t.Fatal("new reference before-images are not independent", err)
+			}
+			beforeReferences = []schemaddl.PostgreSQLReferenceBaseline{reference}
+			verificationContext = beforeWrite.Schema.Postgres.Clone()
+		}
 		probeSequences, err := postgresSequenceStates(context.Background(), c, actual.Schema.Postgres)
 		if err != nil || postgresCompareSequenceStates(sequences, probeSequences, nil) != nil {
 			t.Fatal("definition probe changed original sequence state", err)
@@ -113,17 +127,19 @@ func pgNativeFixtureApplyChecked(t *testing.T, s *Session, base contract.SchemaD
 			t.Fatal("native declaration graph differs from independent target", err)
 		}
 		if base.Schema.Exists {
-			preservation, err := postgresCatalogSnapshotPreserving(context.Background(), c, target, base.Schema.Postgres)
+			preservation, err := postgresCatalogSnapshotPreserving(context.Background(), c, target, verificationContext)
 			if err != nil {
 				t.Fatal("original catalog context unavailable after native change", err)
 			}
 			if err := schemaddl.VerifyPostgreSQLRetainedCatalog(base.Schema, draft, preservation.Schema, want, target.Object.Schema, allowDrop); err != nil {
 				t.Fatal("native result lost retained original catalog properties", err)
 			}
-			if verifyContext || len(plan.Dropped) != 0 {
-				if err := schemaddl.VerifyPostgreSQLUnselectedCatalog(base.Schema, draft, preservation.Schema, want, target.Object.Schema, allowDrop); err != nil {
-					t.Fatal("native result changed unrequested original context", err)
-				}
+			storage, err := schemaddl.VerifyPostgreSQLStorage(base.Schema, draft, preservation.Schema, expected.Probe, target.Object.Schema, allowDrop, beforeReferences...)
+			if err != nil {
+				t.Fatal("native result changed unrequested physical storage", err)
+			}
+			if err := schemaddl.VerifyPostgreSQLUnselectedCatalog(base.Schema, draft, preservation.Schema, want, target.Object.Schema, allowDrop, storage); err != nil {
+				t.Fatal("native result changed unrequested original context", err)
 			}
 			// Supplemental old context is verification-only. The returned
 			// workbench baseline retains the ordinary current closure/revision.
