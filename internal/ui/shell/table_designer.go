@@ -6,6 +6,39 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 )
 
+func (s *State) schemaTableCopied(services ui.Services, event objectworkspace.SchemaCopyEvent) {
+	out := event.Outcome
+	if out.State != "committed" && out.State != "uncertain" {
+		return
+	}
+	profile := event.Original.Object.ProfileID
+	if original, err := s.runtime.Session(profile); err != nil || original.Generation() != event.Original.Generation {
+		return
+	}
+	if !s.sessions.InvalidateDatabaseObjects(profile, event.Generation, event.Database) {
+		return
+	}
+	expected := event.Original
+	expected.Object.Name = event.Destination
+	if out.State == "uncertain" || !out.Verified || out.Actual == nil || out.Actual.Target != expected || !out.Actual.Schema.Exists || out.Error != nil {
+		if original, err := s.runtime.Session(profile); err == nil && original.Generation() == event.Original.Generation {
+			_ = original.Close()
+		}
+		return
+	}
+	w := s.sessions.Workspace(profile)
+	if w == s.sessions.Current() && w.Database == event.Database {
+		s.loadMySQLObjects(services, event.Database, true)
+	}
+	// A copy keeps source documents and their leases. A pre-existing destination
+	// document receives the same guarded refresh as other table operations.
+	for _, t := range s.tabs {
+		if t.data != nil && t.data.Object() == expected.Object {
+			s.dataWorkspace.Refresh(services, t.data)
+		}
+	}
+}
+
 func (s *State) schemaTableDropped(services ui.Services, event objectworkspace.SchemaDropEvent) {
 	out := event.Outcome
 	if out.State != "committed" && out.State != "uncertain" {

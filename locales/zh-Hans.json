@@ -1420,5 +1420,19 @@
   "sqliteDrop0b78634e0c": "删除结果未确认，请重新连接并核对原表。",
   "sqliteDropca135360e4": "删除结果或结构已变化；重新读取后才能再次确认。",
   "sqliteDropd7ed865885": "删除 SQL 预览",
-  "sqliteDrop0b1569e6af": "删除表成功"
+  "sqliteDrop0b1569e6af": "删除表成功",
+  "sqliteCopy6b0de2f444": "复制表",
+  "sqliteCopy42f36ddb78": "复制表成功",
+  "sqliteCopydf3f5c7449": "复制结果未确认，请重新连接并核对目标表。",
+  "sqliteCopy7ef7c5c04b": "复制 SQLite 表",
+  "sqliteCopyd8e94d33e3": "目标表名称",
+  "sqliteCopyc1fe2276d1": "复制数据",
+  "sqliteCopy03f8a7a198": "自引用外键绑定到新表",
+  "sqliteCopyaaf598b2cb": "保留隐藏 rowid",
+  "sqliteCopyc21ad2d18a": "在同一数据库或模式中事务复制，不覆盖目标。生成字段重新计算并核验；仅结构复制重置自增状态。",
+  "sqliteCopybec7eabba5": "触发器在数据复制后创建，正文保留原对象引用；外部外键保持原引用。",
+  "sqliteCopy31a64635f8": "允许重新分配隐藏 rowid；普通字段和行数仍须完整核验。",
+  "sqliteCopy2dea9db1c5": "复制结果或结构已变化；重新读取后才能再次确认。",
+  "sqliteCopya66d18c584": "复制结构 SQL 预览",
+  "sqliteCopye2fee0f0b6": "确认复制表"
 }

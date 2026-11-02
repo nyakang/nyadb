@@ -87,6 +87,29 @@ func TestSchemaDropNativePreviewGuardAndImmutableOriginalRequest(t *testing.T) {
 	}
 }
 
+func TestSchemaDropCancelledGuardRestoresPreviewAndRevokesContinuation(t *testing.T) {
+	var calls atomic.Int32
+	s, _, tt := dropTestState(t, func(ctx context.Context, r contract.SchemaDesignSnapshot) contract.SchemaDesignOutcome {
+		calls.Add(1)
+		return dropCommit(ctx, r)
+	})
+	pending := true
+	var next func(ui.Services)
+	s.deps.BeforeDrop = func(_ ui.Services, _ int64, _, _ string, f func(ui.Services)) bool { next = f; return true }
+	s.deps.TableGuardPending = func(int64, string, string) bool { return pending }
+	confirmDrop(t, tt)
+	tt.Frame()
+	if s.TableDialogOpen() {
+		t.Fatal("drop preview covered draft decision")
+	}
+	pending = false
+	tt.Frame()
+	next(ui.Services{})
+	if !s.TableDialogOpen() || calls.Load() != 0 || s.TablePending() {
+		t.Fatal("cancel did not restore preview or revoked decision executed")
+	}
+}
+
 func TestSchemaDropClosedGuardAndReadReceiptCannotActOnReplacement(t *testing.T) {
 	var calls atomic.Int32
 	s, _, tt := dropTestState(t, func(ctx context.Context, r contract.SchemaDesignSnapshot) contract.SchemaDesignOutcome {

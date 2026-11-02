@@ -26,7 +26,10 @@ type Dependencies struct {
 	SchemaTarget      func(int64, string, string) contract.SchemaDesignTarget
 	SchemaDesigned    func(ui.Services, SchemaDesignEvent)
 	SchemaDropped     func(ui.Services, SchemaDropEvent)
+	SchemaCopied      func(ui.Services, SchemaCopyEvent)
 	BeforeDrop        func(ui.Services, int64, string, string, func(ui.Services)) bool
+	BeforeCopy        func(ui.Services, int64, string, string, func(ui.Services)) bool
+	TableGuardPending func(int64, string, string) bool
 	RenameSchema      func(ui.Services, int64, string, string, string)
 	Favorite          func(ui.Services, int64, string, string, string)
 	CanFavorite       func() bool
@@ -125,6 +128,7 @@ type loadResult struct {
 }
 
 type State struct {
+	schemaCopy                              *schemaCopyOperation
 	schemaDrop                              *schemaDropOperation
 	dictionary                              *dictionaryState
 	dictionaryMenu                          *dictionaryScope
@@ -257,6 +261,7 @@ func (s *State) Close(d *Document) {
 	}
 }
 func (s *State) CloseAll() {
+	s.closeSchemaCopy()
 	s.closeSchemaDrop()
 	s.closeDictionary()
 	s.dictionaryMenu = nil
@@ -299,6 +304,7 @@ func (s *State) CloseAll() {
 // Consume runs on the UI thread. Generation changes invalidate completed work
 // without leaving a document stuck loading or automatically retrying it.
 func (s *State) Consume(services ui.Services) {
+	s.consumeSchemaCopy(services)
 	s.consumeSchemaDrop(services)
 	s.consumeDictionary(services)
 	s.consumeObjectReference(services)

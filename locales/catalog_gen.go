@@ -14491,3 +14491,143 @@ func SqliteDrop0b1569e6af() string { return In(i18n.Locale()).SqliteDrop0b1569e6
 func (msgs Messages) SqliteDrop0b1569e6af() string {
 	return Catalog.Format(msgs.locale, "sqliteDrop0b1569e6af", nil)
 }
+
+// SqliteCopy6b0de2f444 says "复制表"
+// in the language the app shows.
+func SqliteCopy6b0de2f444() string { return In(i18n.Locale()).SqliteCopy6b0de2f444() }
+
+// SqliteCopy6b0de2f444 says "复制表"
+// in the language of msgs.
+func (msgs Messages) SqliteCopy6b0de2f444() string {
+	return Catalog.Format(msgs.locale, "sqliteCopy6b0de2f444", nil)
+}
+
+// SqliteCopy42f36ddb78 says "复制表成功"
+// in the language the app shows.
+func SqliteCopy42f36ddb78() string { return In(i18n.Locale()).SqliteCopy42f36ddb78() }
+
+// SqliteCopy42f36ddb78 says "复制表成功"
+// in the language of msgs.
+func (msgs Messages) SqliteCopy42f36ddb78() string {
+	return Catalog.Format(msgs.locale, "sqliteCopy42f36ddb78", nil)
+}
+
+// SqliteCopydf3f5c7449 says "复制结果未确认，请重新连接并核对目标表。"
+// in the language the app shows.
+func SqliteCopydf3f5c7449() string { return In(i18n.Locale()).SqliteCopydf3f5c7449() }
+
+// SqliteCopydf3f5c7449 says "复制结果未确认，请重新连接并核对目标表。"
+// in the language of msgs.
+func (msgs Messages) SqliteCopydf3f5c7449() string {
+	return Catalog.Format(msgs.locale, "sqliteCopydf3f5c7449", nil)
+}
+
+// SqliteCopy7ef7c5c04b says "复制 SQLite 表"
+// in the language the app shows.
+func SqliteCopy7ef7c5c04b() string { return In(i18n.Locale()).SqliteCopy7ef7c5c04b() }
+
+// SqliteCopy7ef7c5c04b says "复制 SQLite 表"
+// in the language of msgs.
+func (msgs Messages) SqliteCopy7ef7c5c04b() string {
+	return Catalog.Format(msgs.locale, "sqliteCopy7ef7c5c04b", nil)
+}
+
+// SqliteCopyd8e94d33e3 says "目标表名称"
+// in the language the app shows.
+func SqliteCopyd8e94d33e3() string { return In(i18n.Locale()).SqliteCopyd8e94d33e3() }
+
+// SqliteCopyd8e94d33e3 says "目标表名称"
+// in the language of msgs.
+func (msgs Messages) SqliteCopyd8e94d33e3() string {
+	return Catalog.Format(msgs.locale, "sqliteCopyd8e94d33e3", nil)
+}
+
+// SqliteCopyc1fe2276d1 says "复制数据"
+// in the language the app shows.
+func SqliteCopyc1fe2276d1() string { return In(i18n.Locale()).SqliteCopyc1fe2276d1() }
+
+// SqliteCopyc1fe2276d1 says "复制数据"
+// in the language of msgs.
+func (msgs Messages) SqliteCopyc1fe2276d1() string {
+	return Catalog.Format(msgs.locale, "sqliteCopyc1fe2276d1", nil)
+}
+
+// SqliteCopy03f8a7a198 says "自引用外键绑定到新表"
+// in the language the app shows.
+func SqliteCopy03f8a7a198() string { return In(i18n.Locale()).SqliteCopy03f8a7a198() }
+
+// SqliteCopy03f8a7a198 says "自引用外键绑定到新表"
+// in the language of msgs.
+func (msgs Messages) SqliteCopy03f8a7a198() string {
+	return Catalog.Format(msgs.locale, "sqliteCopy03f8a7a198", nil)
+}
+
+// SqliteCopyaaf598b2cb says "保留隐藏 rowid"
+// in the language the app shows.
+func SqliteCopyaaf598b2cb() string { return In(i18n.Locale()).SqliteCopyaaf598b2cb() }
+
+// SqliteCopyaaf598b2cb says "保留隐藏 rowid"
+// in the language of msgs.
+func (msgs Messages) SqliteCopyaaf598b2cb() string {
+	return Catalog.Format(msgs.locale, "sqliteCopyaaf598b2cb", nil)
+}
+
+// SqliteCopyc21ad2d18a says "…"
+// in the language the app shows.
+func SqliteCopyc21ad2d18a() string { return In(i18n.Locale()).SqliteCopyc21ad2d18a() }
+
+// SqliteCopyc21ad2d18a says "…"
+// in the language of msgs.
+func (msgs Messages) SqliteCopyc21ad2d18a() string {
+	return Catalog.Format(msgs.locale, "sqliteCopyc21ad2d18a", nil)
+}
+
+// SqliteCopybec7eabba5 says "触发器在数据复制后创建，正文保留原对象引用；外部外键保持原引用。"
+// in the language the app shows.
+func SqliteCopybec7eabba5() string { return In(i18n.Locale()).SqliteCopybec7eabba5() }
+
+// SqliteCopybec7eabba5 says "触发器在数据复制后创建，正文保留原对象引用；外部外键保持原引用。"
+// in the language of msgs.
+func (msgs Messages) SqliteCopybec7eabba5() string {
+	return Catalog.Format(msgs.locale, "sqliteCopybec7eabba5", nil)
+}
+
+// SqliteCopy31a64635f8 says "允许重新分配隐藏 rowid；普通字段和行数仍须完整核验。"
+// in the language the app shows.
+func SqliteCopy31a64635f8() string { return In(i18n.Locale()).SqliteCopy31a64635f8() }
+
+// SqliteCopy31a64635f8 says "允许重新分配隐藏 rowid；普通字段和行数仍须完整核验。"
+// in the language of msgs.
+func (msgs Messages) SqliteCopy31a64635f8() string {
+	return Catalog.Format(msgs.locale, "sqliteCopy31a64635f8", nil)
+}
+
+// SqliteCopy2dea9db1c5 says "复制结果或结构已变化；重新读取后才能再次确认。"
+// in the language the app shows.
+func SqliteCopy2dea9db1c5() string { return In(i18n.Locale()).SqliteCopy2dea9db1c5() }
+
+// SqliteCopy2dea9db1c5 says "复制结果或结构已变化；重新读取后才能再次确认。"
+// in the language of msgs.
+func (msgs Messages) SqliteCopy2dea9db1c5() string {
+	return Catalog.Format(msgs.locale, "sqliteCopy2dea9db1c5", nil)
+}
+
+// SqliteCopya66d18c584 says "复制结构 SQL 预览"
+// in the language the app shows.
+func SqliteCopya66d18c584() string { return In(i18n.Locale()).SqliteCopya66d18c584() }
+
+// SqliteCopya66d18c584 says "复制结构 SQL 预览"
+// in the language of msgs.
+func (msgs Messages) SqliteCopya66d18c584() string {
+	return Catalog.Format(msgs.locale, "sqliteCopya66d18c584", nil)
+}
+
+// SqliteCopye2fee0f0b6 says "确认复制表"
+// in the language the app shows.
+func SqliteCopye2fee0f0b6() string { return In(i18n.Locale()).SqliteCopye2fee0f0b6() }
+
+// SqliteCopye2fee0f0b6 says "确认复制表"
+// in the language of msgs.
+func (msgs Messages) SqliteCopye2fee0f0b6() string {
+	return Catalog.Format(msgs.locale, "sqliteCopye2fee0f0b6", nil)
+}

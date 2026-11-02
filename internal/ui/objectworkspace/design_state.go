@@ -281,6 +281,22 @@ func (s *State) closeDesign(d *Document) {
 	d.design.plan = nil
 	d.design = nil
 }
+
+// DesignLeavePending lets the host return a suspended table preview after a
+// leave decision is cancelled, without accessing or resolving its draft.
+func (d *Document) DesignLeavePending() bool {
+	if d == nil || d.closed {
+		return false
+	}
+	if x := d.schemaDesign; x != nil {
+		return x.guard || x.preview || x.busy
+	}
+	if x := d.design; x != nil {
+		return x.guard || x.preview || x.busy
+	}
+	return false
+}
+
 func (s *State) GuardDesignLeave(d *Document, next func(ui.Services)) bool {
 	if d != nil && d.schemaDesign != nil {
 		return s.guardSchemaDesign(d, next)

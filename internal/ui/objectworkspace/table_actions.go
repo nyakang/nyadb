@@ -60,7 +60,7 @@ func mysqlTableActionDangerous(action mysqlsvc.MySQLTableAction) bool {
 
 func (s *State) CanChangeTable(profileID int64) bool {
 	return s.capabilities(profileID).DesignTables && s.runner() != nil &&
-		!s.tablePending && (s.schemaDrop == nil || !s.schemaDrop.busy) && s.session().Connected && s.session().ProfileID == profileID
+		!s.tablePending && !s.nativeTablePending() && s.session().Connected && s.session().ProfileID == profileID
 }
 
 // Shared by the native navigator and central object grid. Unsupported entries
@@ -133,7 +133,7 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 		if sub.Item(locales.Text("仅结构")).Chosen() {
 			begin(mysqlsvc.MySQLTableCopyStructure)
 		}
-	}).Disabled(!ready)
+	}).Disabled(!s.CanCopyTable(profileID, database, name))
 	if m.Item(locales.Text("设置权限")).Disabled(!s.CanAccounts(profileID)).Chosen() {
 		s.contextEntryMenu = nil
 		if s.contextEntryValid(entryScope, profileID, database, name) {
@@ -213,11 +213,18 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 }
 
 func (s *State) BeginTableChange(profileID int64, database, name string, action mysqlsvc.MySQLTableAction) {
-	if s.schemaDrop != nil && s.schemaDrop.busy {
+	if s.nativeTablePending() {
 		return
 	}
 	if action != mysqlsvc.MySQLTableDrop {
 		s.closeSchemaDrop()
+	}
+	if action != mysqlsvc.MySQLTableCopyStructure && action != mysqlsvc.MySQLTableCopyData {
+		s.closeSchemaCopy()
+	}
+	if (action == mysqlsvc.MySQLTableCopyStructure || action == mysqlsvc.MySQLTableCopyData) && !s.CanChangeTable(profileID) {
+		s.beginSchemaCopy(profileID, database, name, action == mysqlsvc.MySQLTableCopyData)
+		return
 	}
 	if action == mysqlsvc.MySQLTableDrop && !s.CanChangeTable(profileID) {
 		s.beginSchemaDrop(profileID, database, name)
@@ -250,6 +257,7 @@ func (s *State) BeginTableChange(profileID int64, database, name string, action 
 }
 
 func (s *State) Modals(c *ui.Context) {
+	s.schemaCopyModal(c)
 	s.schemaDropModal(c)
 	s.dictionaryModal(c)
 	s.searchModal(c)
@@ -434,18 +442,27 @@ func (s *State) consumeMySQLTableChange(services ui.Services) {
 }
 
 func (s *State) TableDialogOpen() bool {
-	return s.tableDialog || s.schemaDrop != nil && s.schemaDrop.open && !s.schemaDrop.guarding
+	return s.tableDialog || s.schemaDrop != nil && s.schemaDrop.open && !s.schemaDrop.guarding || s.schemaCopy != nil && s.schemaCopy.open && !s.schemaCopy.guarding
 }
 func (s *State) TablePending() bool {
-	return s.tablePending || s.schemaDrop != nil && s.schemaDrop.busy
+	return s.tablePending || s.nativeTablePending()
 }
 func (s *State) TableAction() mysqlsvc.MySQLTableAction {
+	if x := s.schemaCopy; x != nil {
+		if x.withData {
+			return mysqlsvc.MySQLTableCopyData
+		}
+		return mysqlsvc.MySQLTableCopyStructure
+	}
 	if s.schemaDrop != nil {
 		return mysqlsvc.MySQLTableDrop
 	}
 	return s.tableAction
 }
 func (s *State) TableError() string {
+	if s.schemaCopy != nil {
+		return s.schemaCopy.err
+	}
 	if s.schemaDrop != nil {
 		return s.schemaDrop.err
 	}
@@ -455,6 +472,14 @@ func (s *State) TableError() string {
 // CancelTableFor requests acknowledgement from the original operation. Keep
 // pending set until its executor returns so an uncertain command cannot replay.
 func (s *State) CancelTableFor(profileID int64) {
+	if x := s.schemaCopy; x != nil && x.target.Object.ProfileID == profileID {
+		if x.cancel != nil {
+			x.cancel()
+		}
+		if !x.applying {
+			s.closeSchemaCopy()
+		}
+	}
 	if x := s.schemaDrop; x != nil && x.target.Object.ProfileID == profileID {
 		if x.cancel != nil {
 			x.cancel()

@@ -26,6 +26,7 @@ type schemaDropReply struct {
 type schemaDropOperation struct {
 	target                                                   contract.SchemaDesignTarget
 	generation                                               uint64
+	guardAttempt                                             uint64
 	database                                                 string
 	ops                                                      contract.SchemaDesignOperations
 	original                                                 *contract.SchemaDesignSnapshot
@@ -39,7 +40,7 @@ func (s *State) CanDropTable(profile int64, database, table string) bool {
 	if s.CanChangeTable(profile) {
 		return true
 	}
-	if s.tablePending || s.schemaDrop != nil && s.schemaDrop.busy {
+	if s.tablePending || s.nativeTablePending() {
 		return false
 	}
 	w := s.session()
@@ -59,6 +60,7 @@ func (s *State) beginSchemaDrop(profile int64, database, table string) {
 		return
 	}
 	s.closeSchemaDrop()
+	s.closeSchemaCopy()
 	ops, target := s.schemaBinding(profile, database, table)
 	s.schemaDrop = &schemaDropOperation{target: target, generation: s.session().Generation, database: database, ops: ops, open: true}
 }
@@ -87,12 +89,14 @@ func (s *State) readSchemaDrop(services ui.Services) {
 }
 func (s *State) applySchemaDrop(services ui.Services) {
 	x := s.schemaDrop
-	if x == nil || !x.open || x.busy || x.blocked || x.original == nil || x.confirmation != x.target.Object.Name || !s.schemaDropValid(x) {
+	if x == nil || !x.open || x.busy || x.blocked || x.guarding || x.original == nil || x.confirmation != x.target.Object.Name || !s.schemaDropValid(x) {
 		return
 	}
+	x.guardAttempt++
+	attempt := x.guardAttempt
 	next := func(services ui.Services) {
 		// Leave decisions may run much later or after this modal was replaced.
-		if s.schemaDrop != x || !x.open || x.busy || x.blocked || x.original == nil || x.confirmation != x.target.Object.Name || !s.schemaDropValid(x) {
+		if s.schemaDrop != x || x.guardAttempt != attempt || !x.open || x.busy || x.blocked || x.original == nil || x.confirmation != x.target.Object.Name || !s.schemaDropValid(x) {
 			return
 		}
 		ctx, cancel := context.WithCancel(context.Background())
@@ -127,6 +131,10 @@ func (s *State) consumeSchemaDrop(services ui.Services) {
 	x := s.schemaDrop
 	if x == nil {
 		return
+	}
+	if x.guarding && s.deps.TableGuardPending != nil && !s.deps.TableGuardPending(x.target.Object.ProfileID, x.database, x.target.Object.Name) {
+		x.guarding = false
+		x.guardAttempt++
 	}
 	if !s.schemaDropValid(x) {
 		if x.cancel != nil {

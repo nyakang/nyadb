@@ -26,7 +26,8 @@ func (s *Session) SchemaDesign() contract.SchemaDesignOperations {
 		return contract.SchemaDesignOperations{}
 	}
 	return contract.SchemaDesignOperations{CanApply: func(t contract.SchemaDesignTarget) bool { return s.checkDesign(t, true) == nil }, Snapshot: s.sqliteDesignSnapshot, Apply: s.sqliteDesignApply,
-		CanDrop: func(t contract.SchemaDesignTarget) bool { return s.checkSQLiteDrop(t) == nil }, Drop: s.sqliteDesignDrop}
+		CanDrop: func(t contract.SchemaDesignTarget) bool { return s.checkSQLiteDrop(t) == nil }, Drop: s.sqliteDesignDrop,
+		CanCopy: func(t contract.SchemaDesignTarget) bool { return s.checkSQLiteDrop(t) == nil }, Copy: s.sqliteDesignCopy}
 }
 func (s *Session) checkDesign(t contract.SchemaDesignTarget, write bool) error {
 	if t.Generation == 0 || t.Generation != s.generation || s.isClosed() {
