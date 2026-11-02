@@ -42,5 +42,9 @@ type SchemaDesignOperations struct {
 	CanApply func(SchemaDesignTarget) bool
 	Snapshot func(context.Context, SchemaDesignTarget) (SchemaDesignSnapshot, error)
 	Apply    func(context.Context, SchemaDesignRequest) SchemaDesignOutcome
+	// Drop consumes a complete original snapshot. A verified committed receipt
+	// retains that original target with Exists=false; it never means CASCADE.
+	CanDrop func(SchemaDesignTarget) bool
+	Drop    func(context.Context, SchemaDesignSnapshot) SchemaDesignOutcome
 }
 type SchemaDesignProvider interface{ SchemaDesign() SchemaDesignOperations }

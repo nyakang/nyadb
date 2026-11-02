@@ -308,6 +308,20 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 			return contract.SchemaDesignTarget{Object: s.runtime.Namespace(id, database).Object("table", table), Generation: s.runtime.Generation(id)}
 		},
 		SchemaDesigned: s.schemaTableDesigned,
+		SchemaDropped:  s.schemaTableDropped,
+		BeforeDrop: func(services ui.Services, id int64, db, table string, next func(ui.Services)) bool {
+			matches := func(t *tab) bool {
+				return t.data != nil && t.data.ProfileID() == id && t.data.Database() == db && t.data.Table() == table ||
+					t.object != nil && t.object.ProfileID() == id && t.object.Database() == db && t.object.Table() == table
+			}
+			var finish func(ui.Services)
+			finish = func(services ui.Services) {
+				if !s.guardTabsLeave(matches, finish) {
+					next(services)
+				}
+			}
+			return s.guardTabsLeave(matches, finish)
+		},
 		RenameSchema: func(services ui.Services, profile int64, database, table, name string) {
 			if !s.activateObjectProfile(profile) {
 				return

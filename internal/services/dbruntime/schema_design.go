@@ -76,6 +76,36 @@ func (s *session) SchemaDesign() contract.SchemaDesignOperations {
 			return out
 		}
 	}
+	if raw.CanDrop != nil {
+		ops.CanDrop = func(t contract.SchemaDesignTarget) bool {
+			if s.schemaDesignTarget(t) != nil {
+				return false
+			}
+			t.Generation = s.raw.Generation()
+			return raw.CanDrop(t)
+		}
+	}
+	if raw.Drop != nil {
+		ops.Drop = func(ctx context.Context, original contract.SchemaDesignSnapshot) contract.SchemaDesignOutcome {
+			if err := s.schemaDesignTarget(original.Target); err != nil {
+				return contract.SchemaDesignOutcome{State: "not_executed", Error: err}
+			}
+			r := original.Clone()
+			r.Target.Generation = s.raw.Generation()
+			out := raw.Drop(ctx, r)
+			if out.Actual != nil {
+				actual := out.Actual.Clone()
+				if actual.Target != r.Target || actual.Schema.Exists {
+					out.Verified, out.Actual = false, nil
+					out.Error = errors.Join(out.Error, errors.New("drop receipt differs from captured scope or table remains"))
+					return out
+				}
+				actual.Target.Generation = s.generation
+				out.Actual = &actual
+			}
+			return out
+		}
+	}
 	return ops
 }
 func (s *session) schemaDesignTarget(t contract.SchemaDesignTarget) error {

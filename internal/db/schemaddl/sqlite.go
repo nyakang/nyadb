@@ -312,6 +312,48 @@ func ValidateSQLiteTriggerColumns(d Definition, table Table) error {
 	return nil
 }
 
+// SQLiteTriggerEvent reads only the CREATE TRIGGER header. Keywords in a
+// quoted name, WHEN expression or body do not change the selected event.
+func SQLiteTriggerEvent(ddl string) (string, error) {
+	ts, err := lex(ddl)
+	if err != nil {
+		return "", err
+	}
+	i := 0
+	if len(ts) == 0 || !ts[i].word("CREATE") {
+		return "", ErrUnsupported
+	}
+	i++
+	if i < len(ts) && (ts[i].word("TEMP") || ts[i].word("TEMPORARY")) {
+		i++
+	}
+	if i >= len(ts) || !ts[i].word("TRIGGER") {
+		return "", ErrUnsupported
+	}
+	i++
+	if i+2 < len(ts) && ts[i].word("IF") && ts[i+1].word("NOT") && ts[i+2].word("EXISTS") {
+		i += 3
+	}
+	_, _, end, err := qualifiedName(ts, i)
+	if err != nil {
+		return "", err
+	}
+	i = end
+	if i < len(ts) && (ts[i].word("BEFORE") || ts[i].word("AFTER")) {
+		i++
+	} else if i+1 < len(ts) && ts[i].word("INSTEAD") && ts[i+1].word("OF") {
+		i += 2
+	}
+	if i < len(ts) {
+		for _, event := range []string{"insert", "update", "delete"} {
+			if ts[i].word(event) {
+				return event, nil
+			}
+		}
+	}
+	return "", errors.New("unreported SQLite trigger event")
+}
+
 func PlanSQLite(original Snapshot, desired Table, schema string, allowDrop bool) (Plan, error) {
 	p := Plan{}
 	if original.Engine != "sqlite" || original.Revision == "" {

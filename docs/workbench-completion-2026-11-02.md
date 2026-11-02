@@ -93,6 +93,8 @@ Go 1.27.3 / MyGo v0.7.3-nyadb.2，`GOWORK=off`，Linux amd64。HEAD 仍为 `5960
 
 ## 本地提交归档
 
+2026-11-02 后续完成 SQLite 原生事务表删除，按可选 binding 独立启用入口，复核原 namespace 修订，拒绝外键/视图/触发器依赖，取消等候回执，并补原表草稿守卫及提交后的限定标签/缓存清理。真实 SQLite、Tester、Linux 正式窗口结果和限制见 [SQLite 表删除交付记录](sqlite-table-drop-2026-11-02.md)。SQLite 复制/视图 CRUD、PG 正式 Apply、跨库工具/调度与其它高级功能仍未完成；完整目标继续进行。
+
 此前各阶段在禁止提交的边界下保留于工作树。按用户更新后的要求，将这些已验证的工作台、引擎配置及 SQLite/PG 结构基础归为前置成果提交；ClickHouse 驱动及其接线、独立方言和验收工具单独提交。两个提交均保持源码完整可编译，完整复刻目标仍未完成。
 
 前置成果使用独立 review 快照排除 ClickHouse 后运行全量测试；验证日志为忽略目录 `build/verify/clickhouse-rl2Bm0/go-test-baseline.log`。后续 ClickHouse 最终检查、最新二进制和原生结果以 [ClickHouse 交付记录](clickhouse-native-2026-11-02.md) 为准，前文结果保留为各阶段当时的验证记录。
