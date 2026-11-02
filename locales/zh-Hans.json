@@ -1455,5 +1455,15 @@
   "sqliteViewf0de28e665": "重命名视图…",
   "sqliteViewed194cdea3": "编辑完整定义…",
   "sqliteViewd878d4d0bb": "删除对象…",
-  "sqliteView7ed05fdd27": "请先关闭当前视图定义窗口"
+  "sqliteView7ed05fdd27": "请先关闭当前视图定义窗口",
+  "postgresDesignIdentityMode": "标识列模式",
+  "postgresDesignIdentityOptions": "标识序列选项",
+  "postgresDesignGeneratedStorage": "生成列存储",
+  "postgresDesignAccessMethod": "访问方法",
+  "postgresDesignPersistence": "表持久性",
+  "postgresDesignLogged": "持久表",
+  "postgresDesignUnlogged": "不记录日志的表",
+  "postgresDesignAddStorage": "添加存储参数",
+  "postgresDesignRemoveStorage": "删除末尾存储参数",
+  "postgresDesignRetainedSettings": "此页面保留已有权限、行安全与继承设置。"
 }

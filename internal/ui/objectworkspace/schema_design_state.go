@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
@@ -35,6 +36,7 @@ type schemaDesignDocument struct {
 	page, row, selected, definitionRow     int
 	list                                   ui.ListState
 	field, fieldBase                       schemaddl.SQLiteField
+	pgField, pgFieldBase                   schemaddl.PostgreSQLField
 	fieldRow                               int
 	raw, rawBase                           string
 	name, nameBase                         string
@@ -47,7 +49,10 @@ type schemaDesignDocument struct {
 }
 
 func (x *schemaDesignDocument) dirty() bool {
-	return x.loaded && (schemaddl.Signature(x.draft) != x.baseline || x.field != x.fieldBase || x.raw != x.rawBase || x.name != x.nameBase)
+	return x.loaded && (schemaddl.Signature(x.draft) != x.baseline || x.formsDirty())
+}
+func (x *schemaDesignDocument) formsDirty() bool {
+	return x.field != x.fieldBase || x.pgField != x.pgFieldBase || x.raw != x.rawBase || x.name != x.nameBase
 }
 func (s *State) schemaBinding(profile int64, database, table string) (contract.SchemaDesignOperations, contract.SchemaDesignTarget) {
 	if s.deps.SchemaDesignFor == nil || s.deps.SchemaTarget == nil {
@@ -231,7 +236,15 @@ func (s *State) consumeSchemaDesign(services ui.Services) {
 			x.original = reply.snapshot.Clone()
 			x.draft = reply.snapshot.Schema.Table.Clone()
 			if !reply.snapshot.Schema.Exists {
-				x.draft, _ = schemaddl.ParseSQLite("CREATE TABLE " + schemaddl.Quote(d.table) + " (id INTEGER PRIMARY KEY)")
+				if reply.snapshot.Schema.Engine == "postgresql" {
+					primary := postgresDefaultPrimaryName(d.table)
+					x.draft = schemaddl.Table{Name: d.table, Postgres: &schemaddl.PostgreSQLTableProperties{Kind: "r", Persistence: "p"}, Clauses: []schemaddl.Clause{
+						{ID: "new:id", Kind: "column", Name: "id", SQL: "bigint NOT NULL"},
+						{ID: "new:primary", Kind: "constraint", Name: primary, SQL: "CONSTRAINT " + schemaddl.Quote(primary) + " PRIMARY KEY (id)"},
+					}}
+				} else {
+					x.draft, _ = schemaddl.ParseSQLite("CREATE TABLE " + schemaddl.Quote(d.table) + " (id INTEGER PRIMARY KEY)")
+				}
 				x.baseline = ""
 			} else {
 				x.baseline = schemaddl.Signature(x.draft)
@@ -248,6 +261,8 @@ func (s *State) consumeSchemaDesign(services ui.Services) {
 			x.selected = -1
 			x.field = schemaddl.SQLiteField{}
 			x.fieldBase = x.field
+			x.pgField = schemaddl.PostgreSQLField{}
+			x.pgFieldBase = x.pgField
 			x.raw = ""
 			x.rawBase = ""
 			x.name = ""
@@ -272,6 +287,25 @@ func (s *State) consumeSchemaDesign(services ui.Services) {
 }
 func (s *State) applySchemaForms(d *Document) error {
 	x := d.schemaDesign
+	if x.original.Schema.Engine == "postgresql" && x.fieldRow >= 0 && (x.pgField != x.pgFieldBase || x.name != x.nameBase) && !x.pgField.Unsupported {
+		if x.fieldRow >= len(x.draft.Clauses) {
+			return errors.New("字段选择已改变")
+		}
+		if err := schemaddl.PostgreSQLIdentifier(x.name); err != nil {
+			return err
+		}
+		clause := &x.draft.Clauses[x.fieldRow]
+		if x.pgField != x.pgFieldBase {
+			body, err := x.pgField.SQL()
+			if err != nil {
+				return err
+			}
+			clause.SQL = body
+		}
+		clause.Name = x.name
+		x.pgFieldBase = x.pgField
+		x.nameBase = x.name
+	}
 	if x.fieldRow >= 0 && x.field != x.fieldBase {
 		if x.fieldRow >= len(x.draft.Clauses) {
 			return errors.New("字段选择已改变")
@@ -294,12 +328,22 @@ func (s *State) applySchemaForms(d *Document) error {
 	}
 	if x.raw != x.rawBase || x.name != x.nameBase {
 		if x.page == 1 && x.row >= 0 && x.row < len(x.draft.Clauses) {
-			x.draft.Clauses[x.row].SQL = x.raw
+			clause := x.draft.Clauses[x.row]
+			clause.SQL = x.raw
+			if x.original.Schema.Engine == "postgresql" && x.name != x.nameBase {
+				var err error
+				clause, err = schemaddl.RebindPostgreSQLConstraint(clause, d.object.Schema, x.draft.Name, x.draft.Name, x.name)
+				if err != nil {
+					return err
+				}
+				x.raw = clause.SQL
+			}
+			x.draft.Clauses[x.row] = clause
 		} else if (x.page == 2 || x.page == 3) && x.definitionRow >= 0 && x.definitionRow < len(x.draft.Definitions) {
 			definition := &x.draft.Definitions[x.definitionRow]
 			definition.Name = x.name
 			definition.SQL = x.raw
-		} else if x.page == 0 && x.row >= 0 && x.row < len(x.draft.Clauses) && x.field.Unsupported {
+		} else if x.page == 0 && x.row >= 0 && x.row < len(x.draft.Clauses) && (x.field.Unsupported || x.pgField.Unsupported) {
 			x.draft.Clauses[x.row].Name = x.name
 			x.draft.Clauses[x.row].SQL = x.raw
 		} else {
@@ -322,7 +366,16 @@ func (s *State) PrepareSchemaDesign(d *Document) error {
 		return err
 	}
 	request := contract.SchemaDesignRequest{Original: x.original.Clone(), Desired: x.draft.Clone(), AllowColumnDrop: true}
-	plan, err := schemaddl.PlanSQLite(request.Original.Schema, request.Desired, d.object.Schema, true)
+	var plan schemaddl.Plan
+	var err error
+	switch request.Original.Schema.Engine {
+	case "postgresql":
+		plan, err = schemaddl.PlanPostgreSQL(request.Original.Schema, request.Desired, d.object.Schema, true)
+	case "sqlite":
+		plan, err = schemaddl.PlanSQLite(request.Original.Schema, request.Desired, d.object.Schema, true)
+	default:
+		err = schemaddl.ErrUnsupported
+	}
 	if err != nil {
 		d.err = err.Error()
 		return err
@@ -351,7 +404,7 @@ func (s *State) executeSchemaDesign(d *Document, services ui.Services) {
 		d.err = "原表设计会话已失效"
 		return
 	}
-	if x.field != x.fieldBase || x.raw != x.rawBase || x.name != x.nameBase || schemaddl.Signature(x.draft) != schemaddl.Signature(x.prepared.Desired) {
+	if x.formsDirty() || schemaddl.Signature(x.draft) != schemaddl.Signature(x.prepared.Desired) {
 		d.err = "预览后草稿已修改，请重新生成预览"
 		return
 	}
@@ -429,25 +482,41 @@ func (s *State) schemaSelectRow(d *Document, page, row int) error {
 	x.definitionRow = -1
 	x.field = schemaddl.SQLiteField{}
 	x.fieldBase = x.field
+	x.pgField = schemaddl.PostgreSQLField{}
+	x.pgFieldBase = x.pgField
 	x.raw = ""
 	x.rawBase = ""
 	x.name = ""
 	x.nameBase = ""
 	if page == 0 && row >= 0 && row < len(x.draft.Clauses) {
-		f, err := schemaddl.ParseSQLiteField(x.draft.Clauses[row])
-		if err != nil {
-			return err
-		}
-		x.field = f
-		x.fieldBase = f
 		x.fieldRow = row
-		if f.Unsupported {
-			x.raw = f.Definition
-			x.name = f.Name
+		if x.original.Schema.Engine == "postgresql" {
+			f, err := schemaddl.ParsePostgreSQLField(x.draft.Clauses[row].SQL)
+			if err != nil {
+				return err
+			}
+			x.pgField, x.pgFieldBase = f, f
+			x.name = x.draft.Clauses[row].Name
+			if f.Unsupported {
+				x.raw = x.draft.Clauses[row].SQL
+			}
+		} else {
+			f, err := schemaddl.ParseSQLiteField(x.draft.Clauses[row])
+			if err != nil {
+				return err
+			}
+			x.field, x.fieldBase = f, f
+			if f.Unsupported {
+				x.raw = f.Definition
+				x.name = f.Name
+			}
 		}
 	}
 	if page == 1 && row >= 0 && row < len(x.draft.Clauses) {
 		x.raw = x.draft.Clauses[row].SQL
+		if x.original.Schema.Engine == "postgresql" {
+			x.name = x.draft.Clauses[row].Name
+		}
 	}
 	if (page == 2 || page == 3) && row >= 0 && row < len(x.draft.Definitions) {
 		definition := x.draft.Definitions[row]
@@ -469,7 +538,11 @@ func (s *State) schemaAdd(d *Document) {
 	if x.page == 0 {
 		used := map[string]bool{}
 		for _, c := range x.draft.Columns() {
-			used[strings.ToLower(c.Name)] = true
+			name := c.Name
+			if x.original.Schema.Engine != "postgresql" {
+				name = strings.ToLower(name)
+			}
+			used[name] = true
 		}
 		name := "field_1"
 		for i := 1; used[strings.ToLower(name)]; i++ {
@@ -478,7 +551,16 @@ func (s *State) schemaAdd(d *Document) {
 		x.draft.Clauses = append(x.draft.Clauses, schemaddl.Clause{ID: id, Kind: "column", Name: name, SQL: "TEXT"})
 		_ = s.schemaSelectRow(d, 0, len(x.draft.Clauses)-1)
 	} else if x.page == 1 {
-		x.draft.Clauses = append(x.draft.Clauses, schemaddl.Clause{ID: id, Kind: "constraint", SQL: "CHECK (1)"})
+		sql := "CHECK (1)"
+		if x.original.Schema.Engine == "postgresql" {
+			name := fmt.Sprintf("check_%d", x.nextID)
+			sql = "CONSTRAINT " + schemaddl.Quote(name) + " CHECK (true)"
+		}
+		name := ""
+		if x.original.Schema.Engine == "postgresql" {
+			name = fmt.Sprintf("check_%d", x.nextID)
+		}
+		x.draft.Clauses = append(x.draft.Clauses, schemaddl.Clause{ID: id, Kind: "constraint", Name: name, SQL: sql})
 		_ = s.schemaSelectRow(d, 1, len(x.draft.Clauses)-1)
 	} else if x.page == 2 || x.page == 3 {
 		kind := "index"
@@ -491,7 +573,17 @@ func (s *State) schemaAdd(d *Document) {
 			return
 		}
 		sql := "CREATE INDEX " + schemaddl.Quote(name) + " ON " + schemaddl.Quote(d.table) + " (" + schemaddl.Quote(columns[0].Name) + ")"
-		if kind == "trigger" {
+		if x.original.Schema.Engine == "postgresql" {
+			table := d.table
+			if !x.original.Schema.Exists {
+				table = x.draft.Name
+			}
+			target := schemaddl.Quote(d.object.Schema) + "." + schemaddl.Quote(table)
+			sql = "CREATE INDEX " + schemaddl.Quote(name) + " ON " + target + " (" + schemaddl.Quote(columns[0].Name) + ")"
+			if kind == "trigger" {
+				sql = "CREATE TRIGGER " + schemaddl.Quote(name) + " BEFORE UPDATE ON " + target + " FOR EACH ROW EXECUTE FUNCTION " + schemaddl.Quote(d.object.Schema) + "." + schemaddl.Quote("trigger_function") + "()"
+			}
+		} else if kind == "trigger" {
 			sql = "CREATE TRIGGER " + schemaddl.Quote(name) + " AFTER UPDATE ON " + schemaddl.Quote(d.table) + " BEGIN SELECT 1; END"
 		}
 		x.draft.Definitions = append(x.draft.Definitions, schemaddl.Definition{Name: name, Kind: kind, SQL: sql})
@@ -499,4 +591,13 @@ func (s *State) schemaAdd(d *Document) {
 	}
 	x.selected = -1
 	d.err = ""
+}
+
+func postgresDefaultPrimaryName(table string) string {
+	const suffix = "_pkey"
+	for len(table) > 63-len(suffix) {
+		_, size := utf8.DecodeLastRuneInString(table)
+		table = table[:len(table)-size]
+	}
+	return table + suffix
 }

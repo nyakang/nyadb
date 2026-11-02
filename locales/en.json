@@ -1455,5 +1455,15 @@
   "sqliteViewf0de28e665": "Rename view…",
   "sqliteViewed194cdea3": "Edit complete definition…",
   "sqliteViewd878d4d0bb": "Drop object…",
-  "sqliteView7ed05fdd27": "Close the current view definition window first"
+  "sqliteView7ed05fdd27": "Close the current view definition window first",
+  "postgresDesignIdentityMode": "Identity mode",
+  "postgresDesignIdentityOptions": "Identity sequence options",
+  "postgresDesignGeneratedStorage": "Generated column storage",
+  "postgresDesignAccessMethod": "Access method",
+  "postgresDesignPersistence": "Table persistence",
+  "postgresDesignLogged": "Logged table",
+  "postgresDesignUnlogged": "Unlogged table",
+  "postgresDesignAddStorage": "Add storage parameter",
+  "postgresDesignRemoveStorage": "Remove last storage parameter",
+  "postgresDesignRetainedSettings": "Existing privileges, row security and inheritance settings are preserved on this page."
 }
