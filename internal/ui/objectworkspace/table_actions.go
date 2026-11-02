@@ -67,7 +67,8 @@ func (s *State) CanChangeTable(profileID int64) bool {
 // remain visibly disabled; they never dispatch placeholder callbacks.
 func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, database, name, kind string) {
 	entryScope := s.contextEntryMenu
-	s.contextEntryMenu = &contextEntryScope{profileID, s.sessionFor(profileID).Generation, database, name}
+	scope := s.contextScope(profileID, database, name)
+	s.contextEntryMenu = &scope
 	if m.Item(locales.Text("添加到收藏夹…")).Disabled(s.deps.Favorite == nil || s.deps.CanFavorite == nil || !s.deps.CanFavorite()).Chosen() && s.contextEntryValid(entryScope, profileID, database, name) {
 		s.deps.Favorite(services, profileID, database, name, kind)
 	}
@@ -86,6 +87,15 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 		}
 	}
 	if kind != "表" {
+		viewOps, _ := s.viewBinding(profileID, database, name)
+		if (kind == "视图" || kind == "view") && viewOps.Snapshot != nil {
+			m.Separator()
+			for _, item := range []struct{ label, action string }{{"编辑完整定义…", "alter"}, {"重命名视图…", "rename"}, {"删除对象…", "drop"}} {
+				if m.Item(locales.Text(item.label)).Disabled(!s.CanView(profileID, database, name)).Chosen() && s.contextEntryValid(entryScope, profileID, database, name) {
+					s.BeginView(services, profileID, database, name, item.action)
+				}
+			}
+		}
 		if (kind == "视图" || strings.EqualFold(kind, "view") || strings.EqualFold(kind, "table")) && m.Item(locales.Text("数据字典…")).Disabled(!s.CanDictionary(profileID, database, name, kind)).Chosen() && s.contextEntryValid(entryScope, profileID, database, name) {
 			s.OpenDictionary(profileID, database, name, kind)
 		}
@@ -213,6 +223,10 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 }
 
 func (s *State) BeginTableChange(profileID int64, database, name string, action mysqlsvc.MySQLTableAction) {
+	if s.viewOp != nil {
+		s.report(locales.Text("请先关闭当前视图定义窗口"))
+		return
+	}
 	if s.nativeTablePending() {
 		return
 	}
@@ -257,6 +271,7 @@ func (s *State) BeginTableChange(profileID int64, database, name string, action 
 }
 
 func (s *State) Modals(c *ui.Context) {
+	s.viewModal(c)
 	s.schemaCopyModal(c)
 	s.schemaDropModal(c)
 	s.dictionaryModal(c)

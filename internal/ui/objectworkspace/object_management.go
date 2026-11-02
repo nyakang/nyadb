@@ -9,6 +9,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 type ObjectEvent struct {
@@ -41,6 +42,14 @@ type objectLoadResult struct {
 }
 
 func (s *State) BeginObject(services ui.Services, profile int64, ref mysqlsvc.ObjectIdentity, action string) {
+	if (ref.Kind == "视图" || ref.Kind == "view") && s.CanView(profile, ref.Database, ref.Name) {
+		s.BeginView(services, profile, ref.Database, ref.Name, action)
+		return
+	}
+	if s.viewOp != nil || s.parkedViewOp != nil {
+		s.report(locales.Text("请先关闭当前视图定义窗口"))
+		return
+	}
 	if !s.capabilities(profile).DesignTables {
 		return
 	}
@@ -307,6 +316,10 @@ func (s *State) executeObjectOperation(services ui.Services, op *objectOperation
 	next(services)
 }
 func (s *State) ResumeObjectDraft() {
+	if s.parkedViewOp != nil {
+		s.resumeView()
+		return
+	}
 	if s.objectOp == nil && s.parkedObjectOp != nil {
 		s.objectOp = s.parkedObjectOp
 		s.parkedObjectOp = nil

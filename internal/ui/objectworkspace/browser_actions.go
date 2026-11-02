@@ -2,6 +2,7 @@ package objectworkspace
 
 import (
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -12,6 +13,7 @@ type browserActionScope struct {
 	profile    int64
 	database   string
 	generation uint64
+	target     contract.SchemaDesignTarget
 	browser    *browserState
 	objects    []mysqlsvc.ObjectIdentity
 }
@@ -28,6 +30,7 @@ func (s *State) browserActions() browserActions {
 	b := s.currentBrowser()
 	a := browserActions{frame: b, items: s.SelectedObjects(), ready: b.Connected && b.Database != "" && b.Opened}
 	a.scope = browserActionScope{profile: b.ProfileID, database: b.Database, generation: s.sessionFor(b.ProfileID).Generation,
+		target:  s.contextTarget(b.ProfileID, b.Database, "new_object"),
 		browser: b.browserState, objects: append([]mysqlsvc.ObjectIdentity(nil), s.SelectedObjectIdentities()...)}
 	selected := a.ready && b.Row >= 0 && b.Row < len(a.items)
 	a.canProgram = selected && Supports(a.items[b.Row].Kind)
@@ -38,15 +41,15 @@ func (s *State) browserActions() browserActions {
 	a.canBatch = a.ready && caps.DesignTables && s.deps.BatchExecutor != nil && !s.tablePending && (s.batch == nil || !s.batch.busy)
 	a.canCopy = a.ready && len(a.scope.objects) != 0
 	a.canAccounts = s.CanAccounts(b.ProfileID)
-	a.canNewObject = a.ready && caps.DesignTables && s.deps.ObjectExecutor != nil
-	a.canResume = s.objectOp == nil && s.parkedObjectOp != nil && s.parkedObjectOp.profile == b.ProfileID
+	a.canNewObject = a.ready && (caps.DesignTables && s.deps.ObjectExecutor != nil || s.CanView(b.ProfileID, b.Database, "new_object"))
+	a.canResume = s.objectOp == nil && s.viewOp == nil && (s.parkedObjectOp != nil && s.parkedObjectOp.profile == b.ProfileID || s.canResumeView())
 	return a
 }
 
 func (s *State) browserScopeValid(scope browserActionScope, opened bool) bool {
 	b := s.currentBrowser()
 	return b.ProfileID == scope.profile && b.Database == scope.database && b.browserState == scope.browser &&
-		s.sessionFor(scope.profile).Generation == scope.generation && (!opened || b.Connected && b.Opened && b.Database != "")
+		s.sessionFor(scope.profile).Generation == scope.generation && s.contextTarget(scope.profile, scope.database, "new_object") == scope.target && (!opened || b.Connected && b.Opened && b.Database != "")
 }
 
 func (s *State) browserMoreMenu(services ui.Services, m *ui.Menu) {
@@ -69,7 +72,11 @@ func (s *State) browserMoreMenu(services ui.Services, m *ui.Menu) {
 	m.Separator()
 	m.Submenu(locales.Text("新建对象"), func(sub *ui.Menu) {
 		for _, kind := range []string{"视图", "函数", "存储过程", "事件"} {
-			if sub.Item(locales.Text("新建" + kind)).Disabled(!a.canNewObject).Chosen() {
+			enabled := a.ready && s.capabilities(a.scope.profile).DesignTables && s.deps.ObjectExecutor != nil
+			if kind == "视图" && s.CanView(a.scope.profile, a.scope.database, "new_object") {
+				enabled = a.ready
+			}
+			if sub.Item(locales.Text("新建" + kind)).Disabled(!enabled).Chosen() {
 				chosen = func(scope browserActionScope) {
 					name := s.NextObjectName(scope.profile, "new_object")
 					s.BeginObject(services, scope.profile, mysqlsvc.ObjectIdentity{Database: scope.database, Name: name, Kind: kind}, "create")
@@ -93,6 +100,10 @@ func (s *State) browserMoreMenu(services ui.Services, m *ui.Menu) {
 	m.Separator()
 	item("用户与权限", a.canAccounts, func(scope browserActionScope) { s.OpenAccounts(services, scope.profile, scope.database, "") })
 	item("继续对象草稿", a.canResume, func(scope browserActionScope) {
+		if s.viewOp == nil && s.parkedViewOp != nil && s.parkedViewOp.target.Object.ProfileID == scope.profile {
+			s.resumeView()
+			return
+		}
 		if s.objectOp == nil && s.parkedObjectOp != nil && s.parkedObjectOp.profile == scope.profile {
 			s.ResumeObjectDraft()
 		}
