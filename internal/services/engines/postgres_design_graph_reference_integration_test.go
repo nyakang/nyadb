@@ -90,7 +90,7 @@ func TestPostgreSQL17DesignStatisticsDefaultFixture(t *testing.T) {
 			t.Fatal(err)
 		}
 		if wanted == -1 {
-			if actual.Valid {
+			if original.Schema.Postgres.ServerVersion >= 170000 && actual.Valid || original.Schema.Postgres.ServerVersion < 170000 && (!actual.Valid || actual.Int64 != -1) {
 				t.Fatal("default reset retained an explicit zero/value")
 			}
 		} else if !actual.Valid || actual.Int64 != int64(wanted) {

@@ -51,13 +51,14 @@ func (s *Session) postgresCanonicalDesired(ctx context.Context, c *sql.Conn, req
 	if hooks {
 		return out, errors.New("definition validation requires no enabled PostgreSQL event triggers")
 	}
-	if err = postgresCheckProbeOperators(ctx, c, r.Desired, target.Object.Schema); err != nil {
+	types, err := postgresDeclarationProbeRoutineTypes(ctx, c, r.Desired, target.Object.Schema)
+	if err != nil {
 		return out, err
 	}
-	if err = postgresCheckDeclarationProbeRoutines(ctx, c, r.Desired, target.Object.Schema); err != nil {
+	if err = postgresCheckProbeTypes(ctx, c, r.Desired, target.Object.Schema, types...); err != nil {
 		return out, err
 	}
-	if err = postgresCheckProbeTypes(ctx, c, r.Desired, target.Object.Schema); err != nil {
+	if err = postgresCheckProbeOperators(ctx, c, r.Desired, target.Object.Schema, types...); err != nil {
 		return out, err
 	}
 	var random [16]byte

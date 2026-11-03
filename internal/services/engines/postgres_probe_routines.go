@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -18,23 +19,34 @@ var errPostgresSequenceDefault = errors.New("PostgreSQL new sequence default can
 // immutable expressions. This remains a limited preflight, not a concurrent
 // catalog stability proof or authorization to publish the general designer.
 func postgresCheckDeclarationProbeRoutines(ctx context.Context, c *sql.Conn, desired schemaddl.Table, schema string) error {
+	_, err := postgresDeclarationProbeRoutineTypes(ctx, c, desired, schema)
+	return err
+}
+
+func postgresDeclarationProbeRoutineTypes(ctx context.Context, c *sql.Conn, desired schemaddl.Table, schema string) ([]int64, error) {
 	calls, err := schemaddl.PostgreSQLDeclarationProbeCalls(desired, schema)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	p := postgresExpressionRoutineCheck{ctx: ctx, c: c, checked: map[string]bool{}}
+	p := postgresExpressionRoutineCheck{ctx: ctx, c: c, checked: map[string]bool{}, types: map[int64]bool{}}
 	for _, call := range calls {
 		if err := p.call(call.PostgreSQLProbeCall, call.Scope); err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return ctx.Err()
+	types := make([]int64, 0, len(p.types))
+	for oid := range p.types {
+		types = append(types, oid)
+	}
+	sort.Slice(types, func(i, j int) bool { return types[i] < types[j] })
+	return types, ctx.Err()
 }
 
 type postgresExpressionRoutineCheck struct {
 	ctx     context.Context
 	c       *sql.Conn
 	checked map[string]bool
+	types   map[int64]bool
 }
 
 func postgresProbeRoutinePolicy(name, scope string) bool {
@@ -137,6 +149,15 @@ FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
 			return out, errPostgresProbeRoutine
 		}
 		out.arguments = append(out.arguments, typ)
+	}
+	if out.result <= 0 || out.result >= 16384 {
+		return out, errPostgresProbeRoutine
+	}
+	if p.types != nil {
+		p.types[out.result] = true
+		for _, typ := range out.arguments {
+			p.types[typ] = true
+		}
 	}
 	if language == "internal" || language == "c" {
 		return out, nil

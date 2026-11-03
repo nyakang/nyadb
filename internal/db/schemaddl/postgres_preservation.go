@@ -47,6 +47,9 @@ func VerifyPostgreSQLRetainedCatalog(original Snapshot, desired Table, actual Sn
 	if err := pgPreservationIdentities(before, after, original.Postgres.RelationOID); err != nil {
 		return err
 	}
+	if err := pgVerifyNotNullNames(original.Postgres, actual.Postgres, desired); err != nil {
+		return err
+	}
 	oldGraph, err := ProjectPostgreSQLDeclarationGraph(*original.Postgres, beforeNames)
 	if err != nil {
 		return err

@@ -307,10 +307,16 @@ func TestPostgreSQL17DesignNativePlanFixture(t *testing.T) {
 	// PostgreSQL 17 supports replacing a stored generated expression natively.
 	draft = base.Schema.Table.Clone()
 	pgNativeEditField(t, &draft, "generated", func(f *schemaddl.PostgreSQLField) { f.Generation = "length(label)*2" })
-	base = pgNativeFixtureApply(t, s, base, draft, false)
-	var generated int
-	if err := s.db.QueryRow("SELECT generated FROM nyadb_native_plan.native_table").Scan(&generated); err != nil || generated != len(originalLabel)*2 {
-		t.Fatal("stored expression not replaced", err)
+	if base.Schema.Postgres.ServerVersion < 170000 {
+		if _, err := schemaddl.PlanPostgreSQL(base.Schema, draft, base.Target.Object.Schema, false); err == nil {
+			t.Fatal("pre-17 stored expression replacement accepted")
+		}
+	} else {
+		base = pgNativeFixtureApply(t, s, base, draft, false)
+		var generated int
+		if err := s.db.QueryRow("SELECT generated FROM nyadb_native_plan.native_table").Scan(&generated); err != nil || generated != len(originalLabel)*2 {
+			t.Fatal("stored expression not replaced", err)
+		}
 	}
 	// Explicit removal only emits RESTRICT, not a table rebuild or CASCADE.
 	draft = base.Schema.Table.Clone()

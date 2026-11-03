@@ -268,8 +268,67 @@ func VerifyPostgreSQLStorage(original Snapshot, desired Table, actual, probe Sna
 		}
 		baseline = x.catalog.Clone()
 	}
+	context, err = pgReferenceTriggerFlags(baseline, context, desired)
+	if err != nil {
+		return proof, err
+	}
 	proof = PostgreSQLStorageTransition{original: Signature(original), desired: Signature(desired), actual: Signature(actual), context: context, baseline: baseline}
 	return proof, nil
+}
+
+// A verified outgoing FK creates core internal triggers on its referenced
+// relation. Permit only the derived false-to-true relhastriggers transition;
+// every trigger itself remains subject to the independent declaration graph.
+func pgReferenceTriggerFlags(before, after *PostgreSQLCatalog, desired Table) (*PostgreSQLCatalog, error) {
+	b, err := BuildPostgreSQLGraphBindings(*after, pgPreservationNames(desired))
+	if err != nil {
+		return nil, err
+	}
+	parents := map[int64]bool{}
+	for _, entry := range after.Entries {
+		if entry.Kind != "trigger" || !strings.HasPrefix(b.Objects[PostgreSQLCatalogObject{b.Classes["pg_trigger"], entry.OID}], "@internal-trigger:") {
+			continue
+		}
+		fields, err := pgPreservationFields(entry.Data)
+		if err != nil {
+			return nil, err
+		}
+		parent, err := (pgGraphRecord{data: fields}).integer("tgrelid")
+		if err != nil {
+			return nil, err
+		}
+		if parent != after.RelationOID {
+			parents[parent] = true
+		}
+	}
+	original := map[int64]PostgreSQLCatalogEntry{}
+	for _, entry := range before.Entries {
+		if entry.Kind == "relation" {
+			original[entry.OID] = entry
+		}
+	}
+	out := after.Clone()
+	for i, entry := range out.Entries {
+		if entry.Kind != "relation" || !parents[entry.OID] || original[entry.OID].OID == 0 {
+			continue
+		}
+		a, err := pgPreservationFields(original[entry.OID].Data)
+		if err != nil {
+			return nil, err
+		}
+		fields, err := pgPreservationFields(entry.Data)
+		if err != nil {
+			return nil, err
+		}
+		if string(a["relhastriggers"]) == "false" && string(fields["relhastriggers"]) == "true" {
+			fields["relhastriggers"] = json.RawMessage("false")
+			out.Entries[i].Data, err = pgGraphCanonicalJSON(fields)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return out, nil
 }
 
 func pgStorageValidateProbe(original, probe Snapshot) error {

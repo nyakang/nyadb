@@ -81,6 +81,10 @@ func (s *Session) postgresDesignDDLApply(ctx context.Context, request contract.S
 			return
 		}
 	}
+	if err = postgresLockDesignReferences(ctx, c, r); err != nil {
+		out.Error = err
+		return
+	}
 	actual, err := postgresCatalogSnapshot(ctx, c, t)
 	if err != nil {
 		out.Error = err
@@ -90,6 +94,12 @@ func (s *Session) postgresDesignDDLApply(ctx context.Context, request contract.S
 		out.Error = schemaddl.ErrConflict
 		return
 	}
+	actual, err = postgresCaptureDesignReferences(ctx, c, actual, r.Desired)
+	if err != nil {
+		out.Error = err
+		return
+	}
+	r.Original = actual.Clone()
 	// Use the captured request only after its complete original before-image
 	// has been checked. Neither the caller's preview SQL nor its current profile
 	// may replace the plan for this locked original scope.
@@ -197,6 +207,13 @@ func (s *Session) postgresDesignDDLApply(ctx context.Context, request contract.S
 	}
 	if actual.Schema.Exists {
 		want, err = schemaddl.PostgreSQLRetainedSerialDeclaration(actual.Schema, r.Desired, want)
+		if err != nil {
+			out.Error = err
+			return
+		}
+	}
+	if actual.Schema.Exists {
+		want, err = schemaddl.PostgreSQLRetainedNotNullDeclaration(actual.Schema, r.Desired, want)
 		if err != nil {
 			out.Error = err
 			return

@@ -272,6 +272,16 @@ func BuildPostgreSQLGraphBindings(p PostgreSQLCatalog, names PostgreSQLGraphName
 		if kind == "t" { // A user constraint trigger owns this catalog row.
 			continue
 		}
+		if kind == "n" {
+			var keys []int
+			if json.Unmarshal(r.data["conkey"], &keys) != nil || len(keys) != 1 || targetColumns[keys[0]] == "" {
+				return out, errors.New("PostgreSQL NOT NULL constraint has no unique live column")
+			}
+			if err = bind("pg_constraint", oid, "@notnull:"+targetColumns[keys[0]]); err != nil {
+				return out, err
+			}
+			continue
+		}
 		name, e := r.text("conname")
 		if e != nil {
 			return out, e

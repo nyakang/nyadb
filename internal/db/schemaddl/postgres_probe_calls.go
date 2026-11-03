@@ -48,6 +48,9 @@ func PostgreSQLIndexProbeCalls(d Definition, schema, table string) ([]PostgreSQL
 	if at >= len(ts) || ts[at].text != "(" {
 		return nil, ErrUnsupported
 	}
+	if err := pgValidateProbeExpression(ts[at+1:]); err != nil {
+		return nil, err
+	}
 	return pgExpressionProbeCalls(ts, at+1, classCalls)
 }
 
@@ -67,6 +70,9 @@ func PostgreSQLDeclarationProbeCalls(table Table, schema string) ([]PostgreSQLDe
 	add := func(raw, scope, id string) error {
 		ts, err := postgresTokens(raw, true)
 		if err != nil {
+			return err
+		}
+		if err := pgValidateProbeExpression(ts); err != nil {
 			return err
 		}
 		calls, err := pgExpressionProbeCalls(ts, 0, nil)
@@ -151,6 +157,22 @@ func PostgreSQLDeclarationProbeCalls(table Table, schema string) ([]PostgreSQLDe
 		}
 	}
 	return out, nil
+}
+
+// Subqueries can invoke view/rule callbacks absent from lexical routine
+// evidence. Refuse them before any server parsing or independent CREATE.
+func pgValidateProbeExpression(ts []token) error {
+	for i, t := range ts {
+		for _, word := range []string{"SELECT", "VALUES", "TABLE", "EXISTS", "OVER", "WINDOW", "FILTER", "SYSTEM_USER", "CURRENT_USER", "SESSION_USER", "CURRENT_ROLE"} {
+			if t.word(word) {
+				return ErrUnsupported
+			}
+		}
+		if t.word("FROM") && !(i > 0 && ts[i-1].word("DISTINCT")) {
+			return ErrUnsupported
+		}
+	}
+	return nil
 }
 
 func pgExpressionProbeCalls(ts []token, start int, classCalls map[int]bool) ([]PostgreSQLProbeCall, error) {

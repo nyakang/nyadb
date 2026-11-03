@@ -43,6 +43,15 @@ func PlanPostgreSQL(original Snapshot, desired Table, schema string, allowDrop b
 		p.Mode = "noop"
 		return p, nil
 	}
+	for _, c := range old.Columns() {
+		for _, next := range desired.Columns() {
+			if c.ID == next.ID && postgresSQLSignature(c.SQL) != postgresSQLSignature(next.SQL) {
+				if err := PostgreSQLNotNullEditable(original.Postgres, c.ID); err != nil {
+					return Plan{}, err
+				}
+			}
+		}
+	}
 	if old.Name != desired.Name {
 		x := old.Clone()
 		x.Name = desired.Name
