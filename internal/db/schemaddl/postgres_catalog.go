@@ -312,9 +312,9 @@ func (p PostgreSQLCatalog) Table() (Table, error) {
 			continue
 		}
 		if e.Kind == "constraint" {
-			if r.Type == "t" {
+			if r.Type == "t" || r.Type == "n" {
 				continue
-			} // User constraint triggers are definitions below.
+			} // Constraint triggers are definitions; PG 18 NOT NULL belongs to its column.
 			if r.SQL == "" || r.Name == "" {
 				return t, errors.New("complete constraint definition missing")
 			}

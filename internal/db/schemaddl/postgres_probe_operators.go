@@ -112,6 +112,10 @@ func PostgreSQLProbeOperators(table Table, schema string) ([]PostgreSQLProbeOper
 				add("=")
 				add("<>")
 			}
+			if ts[i].word("GREATEST") || ts[i].word("LEAST") {
+				add("<")
+				add(">")
+			}
 			if ts[i].word("BETWEEN") {
 				add(">=")
 				add("<=")

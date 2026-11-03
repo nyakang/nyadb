@@ -44,7 +44,7 @@ WHERE o.oid=$1 AND o.oprcode=$2 AND o.oprleft=$3 AND o.oprright=$4 AND o.oprresu
 // This reads dispatch metadata BEFORE the independent CREATE. User code cannot
 // gain permission by declaring an operator, opclass or handler IMMUTABLE. The
 // result is request-local; it does not establish concurrent catalog stability.
-func postgresCheckProbeOperators(ctx context.Context, c *sql.Conn, desired schemaddl.Table, schema string) error {
+func postgresCheckProbeOperators(ctx context.Context, c *sql.Conn, desired schemaddl.Table, schema string, extraTypes ...int64) error {
 	refs, err := schemaddl.PostgreSQLProbeOperators(desired, schema)
 	if err != nil {
 		return err
@@ -128,6 +128,11 @@ func postgresCheckProbeOperators(ctx context.Context, c *sql.Conn, desired schem
 			if err = p.typeID(array, 0); err != nil {
 				return err
 			}
+		}
+	}
+	for _, oid := range extraTypes {
+		if err := p.typeID(oid, 0); err != nil {
+			return err
 		}
 	}
 	var typeIDs []string

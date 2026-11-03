@@ -25,7 +25,7 @@ type postgresProbeTypeCheck struct {
 	opclasses map[int64]bool
 }
 
-func postgresCheckProbeTypes(ctx context.Context, c *sql.Conn, desired schemaddl.Table, schema string) error {
+func postgresCheckProbeTypes(ctx context.Context, c *sql.Conn, desired schemaddl.Table, schema string, extraTypes ...int64) error {
 	refs, err := schemaddl.PostgreSQLProbeTypes(desired, schema)
 	if err != nil {
 		return err
@@ -56,6 +56,11 @@ JOIN pg_catalog.pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname=$1 AND t.
 			}
 		}
 	}
+	for _, oid := range extraTypes {
+		if err := check.typeID(oid, 0); err != nil {
+			return err
+		}
+	}
 	// Check explicit/implicit cast candidates between the actual encountered
 	// type identities. An unrelated extension cast touching text does not make
 	// every text declaration unavailable. No cast implementation is invoked.
@@ -69,19 +74,19 @@ JOIN pg_catalog.pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname=$1 AND t.
 		parts[i] = strconv.FormatInt(oid, 10)
 	}
 	array := "{" + strings.Join(parts, ",") + "}"
-	rows, err := c.QueryContext(ctx, `SELECT castfunc::bigint,castmethod::text FROM pg_catalog.pg_cast
+	rows, err := c.QueryContext(ctx, `SELECT oid::bigint,castfunc::bigint,castmethod::text FROM pg_catalog.pg_cast
 WHERE castsource=ANY($1::oid[]) AND casttarget=ANY($1::oid[])`, array)
 	if err != nil {
 		return err
 	}
 	type cast struct {
-		routine int64
-		method  string
+		oid, routine int64
+		method       string
 	}
 	var casts []cast
 	for rows.Next() {
 		var value cast
-		if err = rows.Scan(&value.routine, &value.method); err != nil {
+		if err = rows.Scan(&value.oid, &value.routine, &value.method); err != nil {
 			rows.Close()
 			return err
 		}
@@ -97,6 +102,9 @@ WHERE castsource=ANY($1::oid[]) AND casttarget=ANY($1::oid[])`, array)
 		return err
 	}
 	for _, value := range casts {
+		if value.oid <= 0 || value.oid >= 16384 {
+			return errPostgresProbeType
+		}
 		switch value.method {
 		case "f":
 			if value.routine == 0 {
@@ -261,7 +269,7 @@ FROM pg_catalog.pg_operator o JOIN pg_catalog.pg_namespace n ON n.oid=o.oprnames
 		}
 	}
 	p.operators[oid] = true
-	for _, nested := range []int64{left, right} {
+	for _, nested := range []int64{left, right, result} {
 		if nested != 0 {
 			if err = p.typeID(nested, depth+1); err != nil {
 				return err

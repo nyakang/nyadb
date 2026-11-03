@@ -12,6 +12,13 @@ func TestPostgreSQLProbeOperatorForwarderRequiresBoundReversedParameters(t *test
 	if err != nil || op != 1360 || routine != 1272 {
 		t.Fatalf("core forwarding identity unavailable: %d %d %v", op, routine, err)
 	}
+	pg15 := strings.Replace(pgProbeForwarderTree, ":isReturn true", ":isReturn true :mergeUseOuterJoin false", 1)
+	if _, _, err := PostgreSQLProbeOperatorForwarder(pg15, 1083, 1082, 1114); err != nil {
+		t.Fatal("PG 15 neutral merge field", err)
+	}
+	if _, _, err := PostgreSQLProbeOperatorForwarder(strings.Replace(pg15, ":mergeUseOuterJoin false", ":mergeUseOuterJoin true", 1), 1083, 1082, 1114); err == nil {
+		t.Fatal("active merge field accepted")
+	}
 	pg18 := strings.Replace(pgProbeForwarderTree, ":isReturn true", ":isReturn true :hasGroupRTE false :returningOldAlias <> :returningNewAlias <>", 1)
 	if op, routine, err := PostgreSQLProbeOperatorForwarder(pg18, 1083, 1082, 1114); err != nil || op != 1360 || routine != 1272 {
 		t.Fatal("PostgreSQL 18 inert query fields rejected", err)

@@ -115,9 +115,17 @@ CREATE OPERATOR FAMILY nyadb_design_external.int_family USING btree;
 CREATE OPERATOR CLASS nyadb_design_external.int_ops FOR TYPE integer USING btree FAMILY nyadb_design_external.int_family AS OPERATOR 1 < (integer,integer), OPERATOR 2 <= (integer,integer), OPERATOR 3 = (integer,integer), OPERATOR 4 >= (integer,integer), OPERATOR 5 > (integer,integer), FUNCTION 1 btint4cmp(integer,integer);
 CREATE INDEX opclass_index ON nyadb_design.inherit_parent (id nyadb_design_external.int_ops);
 CREATE PUBLICATION nyadb_design_publication FOR TABLE nyadb_design.partition_parent;
-CREATE PUBLICATION nyadb_design_schema_publication FOR TABLES IN SCHEMA nyadb_design;
 ALTER DEFAULT PRIVILEGES IN SCHEMA nyadb_design GRANT SELECT ON TABLES TO nyadb_design_reader;
 CREATE AGGREGATE nyadb_design.total(bigint) (SFUNC=int8pl,STYPE=bigint,INITCOND='0');`)
+	var version int
+	if err := s.db.QueryRow("SHOW server_version_num").Scan(&version); err != nil {
+		t.Fatal(err)
+	}
+	publication := "CREATE PUBLICATION nyadb_design_schema_publication FOR TABLES IN SCHEMA nyadb_design"
+	if version < 150000 {
+		publication = `CREATE PUBLICATION nyadb_design_schema_publication FOR TABLE nyadb_design."Full Table"`
+	}
+	run(t, s, publication)
 	snapshot := pgDesignRead(t, s, "nyadb_design", "Full Table")
 	p := snapshot.Schema.Postgres
 	if !snapshot.Schema.Exists || p == nil || p.RelationOID == 0 || snapshot.Schema.Revision == "" || len(snapshot.Schema.Table.Columns()) != 9 {
@@ -210,6 +218,9 @@ CREATE AGGREGATE nyadb_design.total(bigint) (SFUNC=int8pl,STYPE=bigint,INITCOND=
 		`ALTER TABLE nyadb_design_external.parent ADD COLUMN changed text`,
 		`ALTER DEFAULT PRIVILEGES IN SCHEMA nyadb_design REVOKE SELECT ON TABLES FROM nyadb_design_reader`,
 		`ALTER PUBLICATION nyadb_design_schema_publication DROP TABLES IN SCHEMA nyadb_design`,
+	}
+	if version < 150000 {
+		changes[len(changes)-1] = `ALTER PUBLICATION nyadb_design_schema_publication DROP TABLE nyadb_design."Full Table"`
 	}
 	previous := afterData.Schema.Revision
 	for _, sql := range changes {
