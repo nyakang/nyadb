@@ -50,7 +50,7 @@ func (s *State) BeginObject(services ui.Services, profile int64, ref mysqlsvc.Ob
 		s.report(locales.Text("请先关闭当前视图定义窗口"))
 		return
 	}
-	if !s.capabilities(profile).DesignTables {
+	if !s.canAdministration(profile) {
 		return
 	}
 	if s.objectOp != nil && s.objectOp.busy {

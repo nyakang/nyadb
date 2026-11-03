@@ -10,11 +10,13 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/schemaddl"
+	"github.com/nyakang/nyadb/locales"
 )
 
 type SchemaDesignEvent struct {
 	DocumentID, Generation uint64
 	Database               string
+	Destination            string
 	Original               contract.SchemaDesignTarget
 	Outcome                contract.SchemaDesignOutcome
 }
@@ -75,7 +77,7 @@ func (s *State) CanEditDesign(d *Document) bool {
 	if s.canSchemaDesign(d.profileID, d.database, d.table) {
 		return true
 	}
-	return s.deps.DesignLoader != nil && s.deps.DesignLoader() != nil && s.capabilities(d.profileID).DesignTables
+	return s.deps.DesignLoader != nil && s.deps.DesignLoader() != nil && s.canAdministration(d.profileID)
 }
 
 // CanCreateTable is distinct from MySQL table administration availability.
@@ -139,7 +141,7 @@ func (s *State) loadSchemaDesign(d *Document, services ui.Services) {
 	}
 	ops, target := s.schemaBinding(d.profileID, d.database, d.table)
 	if ops.Snapshot == nil || target.Object != d.object {
-		d.err = "原表设计范围不可用"
+		d.err = locales.Text("原表设计范围不可用")
 		return
 	}
 	w := s.session()
@@ -185,25 +187,35 @@ func (s *State) consumeSchemaDesign(services ui.Services) {
 			valid := w.Connected && w.Generation == reply.generation
 			if reply.outcome != nil {
 				out := *reply.outcome
+				expected := x.original.Target
+				destination := x.draft.Name
+				if x.prepared != nil {
+					destination = x.prepared.Desired.Name
+				}
+				expected.Object.Name = destination
+				if out.Verified && (out.State != "committed" || out.Actual == nil || out.Actual.Target != expected || !out.Actual.Schema.Exists || out.Actual.Schema.Table.Name != destination || out.Actual.Schema.Engine != x.original.Schema.Engine || out.Error != nil) {
+					out.Verified, out.Actual = false, nil
+					out.Error = errors.Join(out.Error, errors.New(locales.Text("结构回执与原连接或已预览目标不一致；保留草稿，禁止重试。")))
+				}
 				if out.State == "uncertain" || out.State == "committed" {
 					x.blocked = true
 				}
 				if s.deps.SchemaDesigned != nil {
-					s.deps.SchemaDesigned(services, SchemaDesignEvent{DocumentID: d.id, Generation: reply.generation, Database: d.database, Original: x.original.Target, Outcome: out})
+					s.deps.SchemaDesigned(services, SchemaDesignEvent{DocumentID: d.id, Generation: reply.generation, Database: d.database, Destination: destination, Original: x.original.Target, Outcome: out})
 				}
 				if !valid {
-					d.err = "原表设计会话已失效；保留草稿，请核对执行结果"
+					d.err = locales.Text("原表设计会话已失效；保留草稿，请核对执行结果")
 					x.blocked = true
 					x.next = nil
 					continue
 				}
 				if out.Error != nil {
-					d.err = out.Error.Error()
+					d.err = schemaDesignError(out.Error)
 					x.next = nil
 					continue
 				}
 				if !out.Verified || out.Actual == nil {
-					d.err = "结构核验未完成；禁止自动重试"
+					d.err = locales.Text("结构核验未完成；禁止自动重试")
 					x.blocked = true
 					x.next = nil
 					continue
@@ -219,17 +231,17 @@ func (s *State) consumeSchemaDesign(services ui.Services) {
 				d.data = nil
 				d.fieldRow = -1
 			} else if !valid {
-				d.err = "原表设计会话已失效；请重新读取"
+				d.err = locales.Text("原表设计会话已失效；请重新读取")
 				x.next = nil
 				continue
 			}
 			if reply.err != nil {
-				d.err = reply.err.Error()
+				d.err = schemaDesignError(reply.err)
 				x.next = nil
 				continue
 			}
 			if x.isNew && reply.outcome == nil && reply.snapshot.Schema.Exists {
-				d.err = "表名称已存在，请使用其他名称新建表"
+				d.err = locales.Text("表名称已存在，请使用其他名称新建表")
 				x.next = nil
 				continue
 			}
@@ -289,7 +301,7 @@ func (s *State) applySchemaForms(d *Document) error {
 	x := d.schemaDesign
 	if x.original.Schema.Engine == "postgresql" && x.fieldRow >= 0 && (x.pgField != x.pgFieldBase || x.name != x.nameBase) && !x.pgField.Unsupported {
 		if x.fieldRow >= len(x.draft.Clauses) {
-			return errors.New("字段选择已改变")
+			return errors.New(locales.Text("字段选择已改变"))
 		}
 		if err := schemaddl.PostgreSQLIdentifier(x.name); err != nil {
 			return err
@@ -308,7 +320,7 @@ func (s *State) applySchemaForms(d *Document) error {
 	}
 	if x.fieldRow >= 0 && x.field != x.fieldBase {
 		if x.fieldRow >= len(x.draft.Clauses) {
-			return errors.New("字段选择已改变")
+			return errors.New(locales.Text("字段选择已改变"))
 		}
 		pending := x.field
 		pending.Name = x.fieldBase.Name
@@ -347,7 +359,7 @@ func (s *State) applySchemaForms(d *Document) error {
 			x.draft.Clauses[x.row].Name = x.name
 			x.draft.Clauses[x.row].SQL = x.raw
 		} else {
-			return errors.New("定义选择已改变")
+			return errors.New(locales.Text("定义选择已改变"))
 		}
 		x.rawBase, x.nameBase = x.raw, x.name
 	}
@@ -355,14 +367,14 @@ func (s *State) applySchemaForms(d *Document) error {
 }
 func (s *State) PrepareSchemaDesign(d *Document) error {
 	if d == nil || d.closed || d.schemaDesign == nil {
-		return errors.New("设计文档不可用")
+		return errors.New(locales.Text("设计文档不可用"))
 	}
 	x := d.schemaDesign
 	if !x.loaded || x.busy || x.blocked {
-		return errors.New("请先完成结构读取或核对原操作")
+		return errors.New(locales.Text("请先完成结构读取或核对原操作"))
 	}
 	if err := s.applySchemaForms(d); err != nil {
-		d.err = err.Error()
+		d.err = schemaDesignError(err)
 		return err
 	}
 	request := contract.SchemaDesignRequest{Original: x.original.Clone(), Desired: x.draft.Clone(), AllowColumnDrop: true}
@@ -377,11 +389,11 @@ func (s *State) PrepareSchemaDesign(d *Document) error {
 		err = schemaddl.ErrUnsupported
 	}
 	if err != nil {
-		d.err = err.Error()
+		d.err = schemaDesignError(err)
 		return err
 	}
 	if plan.Mode == "noop" {
-		d.err = "结构没有修改"
+		d.err = locales.Text("结构没有修改")
 		return errors.New(d.err)
 	}
 	x.prepared = &request
@@ -401,20 +413,20 @@ func (s *State) executeSchemaDesign(d *Document, services ui.Services) {
 	}
 	w := s.session()
 	if !w.Connected || w.ProfileID != d.profileID || w.Generation != x.generation {
-		d.err = "原表设计会话已失效"
+		d.err = locales.Text("原表设计会话已失效")
 		return
 	}
 	if x.formsDirty() || schemaddl.Signature(x.draft) != schemaddl.Signature(x.prepared.Desired) {
-		d.err = "预览后草稿已修改，请重新生成预览"
+		d.err = locales.Text("预览后草稿已修改，请重新生成预览")
 		return
 	}
 	if len(x.plan.Dropped) > 0 && x.confirmation != d.table {
-		d.err = "请输入原表名称以确认删除字段"
+		d.err = locales.Text("请输入原表名称以确认删除字段")
 		return
 	}
 	ops, target := s.schemaBinding(d.profileID, d.database, d.table)
 	if ops.Apply == nil || ops.CanApply == nil || target != x.original.Target || !ops.CanApply(target) {
-		d.err = "原表设计范围不可用"
+		d.err = locales.Text("原表设计范围不可用")
 		return
 	}
 	request := x.prepared.Clone()
@@ -459,7 +471,7 @@ func (s *State) guardSchemaDesign(d *Document, next func(ui.Services)) bool {
 		if s.deps.ActivateDesign != nil {
 			s.deps.ActivateDesign(d)
 		}
-		d.err = "请先等待结构操作完成或取消确认"
+		d.err = locales.Text("请先等待结构操作完成或取消确认")
 		return true
 	}
 	if !x.dirty() {
@@ -530,7 +542,7 @@ func (s *State) schemaSelectRow(d *Document, page, row int) error {
 func (s *State) schemaAdd(d *Document) {
 	x := d.schemaDesign
 	if err := s.applySchemaForms(d); err != nil {
-		d.err = err.Error()
+		d.err = schemaDesignError(err)
 		return
 	}
 	x.nextID++

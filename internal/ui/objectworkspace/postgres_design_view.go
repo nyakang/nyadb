@@ -2,6 +2,7 @@ package objectworkspace
 
 import (
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/schemaddl"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -11,7 +12,14 @@ func (s *State) postgresSchemaField(c *ui.Context, d *Document, locked bool) {
 	f := &x.pgField
 	schemaDesignInput(c, "字段名称", &x.name, locked)
 	schemaDesignInput(c, "字段类型", &f.Type, locked)
-	ui.Checkbox(c, &f.NotNull, locales.Text("非空")).Disabled(locked || f.Identity != "")
+	notNullLocked := false
+	if x.fieldRow >= 0 && x.fieldRow < len(x.draft.Clauses) && x.original.Schema.Exists {
+		if err := schemaddl.PostgreSQLNotNullEditable(x.original.Schema.Postgres, x.draft.Clauses[x.fieldRow].ID); err != nil {
+			notNullLocked = true
+			ui.Text(c, schemaDesignError(err)).TextColor(theme.Colors(c).Muted)
+		}
+	}
+	ui.Checkbox(c, &f.NotNull, locales.Text("非空")).Disabled(locked || f.Identity != "" || notNullLocked)
 	ui.Checkbox(c, &f.HasDefault, locales.Text("设置默认值")).Disabled(locked || f.Identity != "" || f.Generation != "")
 	schemaDesignInput(c, "默认值表达式", &f.Default, locked || !f.HasDefault)
 	schemaDesignInput(c, "排序规则", &f.Collation, locked)

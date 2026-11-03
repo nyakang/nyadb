@@ -63,7 +63,12 @@ CREATE TYPE nyadb_rename._renamed AS ENUM ('collision')`)
 		t.Fatal(err)
 	}
 	var arrayType string
-	if err := s.db.QueryRow(`SELECT t.typname FROM pg_type t JOIN pg_type b ON b.typarray=t.oid WHERE b.typrelid='nyadb_rename.renamed'::regclass`).Scan(&arrayType); err != nil || arrayType != "_renamed_1" {
+	if err := s.db.QueryRow(`SELECT t.typname FROM pg_type t JOIN pg_type b ON b.typarray=t.oid WHERE b.typrelid='nyadb_rename.renamed'::regclass`).Scan(&arrayType); err != nil || arrayType != func() string {
+		if base.Schema.Postgres.ServerVersion < 160000 {
+			return "___renamed"
+		}
+		return "_renamed_1"
+	}() {
 		t.Fatal("rename fixture did not exercise array type name collision", arrayType, err)
 	}
 	base = *out.Actual
@@ -105,7 +110,12 @@ CREATE TYPE nyadb_rename._renamed AS ENUM ('collision')`)
 	if err := s.db.QueryRow(`SELECT a.typname FROM pg_type a JOIN pg_type b ON b.typarray=a.oid JOIN pg_namespace n ON n.oid=b.typnamespace WHERE b.typname='other' AND n.nspname='nyadb_rename'`).Scan(&displaced); err != nil || displaced != "__other" {
 		t.Fatal("rename changed the wrong conflicting type", displaced, err)
 	}
-	if err := s.db.QueryRow(`SELECT t.typname FROM pg_type t JOIN pg_type b ON b.typarray=t.oid WHERE b.typrelid='nyadb_rename._other'::regclass`).Scan(&arrayType); err != nil || arrayType != "__other_1" {
+	if err := s.db.QueryRow(`SELECT t.typname FROM pg_type t JOIN pg_type b ON b.typarray=t.oid WHERE b.typrelid='nyadb_rename._other'::regclass`).Scan(&arrayType); err != nil || arrayType != func() string {
+		if base.Schema.Postgres.ServerVersion < 160000 {
+			return "___other"
+		}
+		return "__other_1"
+	}() {
 		t.Fatal("row type array failed to avoid the moved array", arrayType, err)
 	}
 	// The row type can itself take its own array's name. PostgreSQL moves

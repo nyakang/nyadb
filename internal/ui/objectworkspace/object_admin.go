@@ -152,7 +152,7 @@ func (s *State) consumeAdmin(services ui.Services) {
 	}
 }
 func (s *State) BeginMaintenance(services ui.Services, profile int64, database, table, operation string) {
-	if !s.capabilities(profile).DesignTables || s.deps.Maintenance == nil || s.maintenance != nil {
+	if !s.canAdministration(profile) || s.deps.Maintenance == nil || s.maintenance != nil {
 		return
 	}
 	session := s.sessionFor(profile)

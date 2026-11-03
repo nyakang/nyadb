@@ -49,7 +49,7 @@ func (s *State) schemaDesignView(c *ui.Context, d *Document) {
 		selected := names[x.page]
 		if ui.Select(c, &selected, names).Label(locales.Text("表设计子页")).Disabled(locked).Changed() {
 			if err := s.applySchemaForms(d); err != nil {
-				d.err = err.Error()
+				d.err = schemaDesignError(err)
 			} else {
 				for i, name := range names {
 					if selected == name {
@@ -151,7 +151,7 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 	}).Grow(1).MinHeight(80).MaxHeight(180).Shrink(1)
 	if x.selected >= 0 && x.selected < len(indices) && indices[x.selected] != x.row {
 		if err := s.schemaSelectRow(d, x.page, indices[x.selected]); err != nil {
-			d.err = err.Error()
+			d.err = schemaDesignError(err)
 		}
 	}
 	if x.row < 0 {
@@ -188,7 +188,7 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 	})
 	if ui.Button(c, locales.Text("应用定义修改")).Disabled(locked).Clicked() {
 		if err := s.applySchemaForms(d); err != nil {
-			d.err = err.Error()
+			d.err = schemaDesignError(err)
 		} else {
 			d.err = ""
 		}

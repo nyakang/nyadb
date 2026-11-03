@@ -275,7 +275,27 @@ func pgRenameNumber(v any) int64 {
 	return n
 }
 
-func pgRenameUnusedArrayName(used map[string]int64, name string) (string, error) {
+func pgRenameUnusedArrayName(used map[string]int64, name string, versions ...int) (string, error) {
+	if len(versions) > 0 && versions[0] < 160000 {
+		for pass := 1; pass <= len(used)+1; pass++ {
+			prefix := strings.Repeat("_", pass)
+			if len(prefix) >= 63 {
+				return "", ErrUnsupported
+			}
+			clipped := name
+			if len(clipped) > 63-len(prefix) {
+				clipped = clipped[:63-len(prefix)]
+				for !utf8.ValidString(clipped) {
+					clipped = clipped[:len(clipped)-1]
+				}
+			}
+			candidate := prefix + clipped
+			if used[candidate] == 0 {
+				return candidate, nil
+			}
+		}
+		return "", ErrUnsupported
+	}
 	for pass := 0; pass <= len(used); pass++ {
 		suffix := ""
 		if pass > 0 {
@@ -336,7 +356,7 @@ func pgRenameTypes(records map[string]map[string]any, p *PostgreSQLCatalog, rowT
 		if array["typisdefined"] != true || base == nil || pgRenameNumber(base["typarray"]) != occupied {
 			return nil, errors.New("PostgreSQL rename conflicts with an existing non-array type")
 		}
-		moved, err := pgRenameUnusedArrayName(used, name)
+		moved, err := pgRenameUnusedArrayName(used, name, p.ServerVersion)
 		if err != nil {
 			return nil, err
 		}
@@ -348,7 +368,7 @@ func pgRenameTypes(records map[string]map[string]any, p *PostgreSQLCatalog, rowT
 		if array == nil || pgRenameNumber(array["typelem"]) != rowType {
 			return nil, errors.New("PostgreSQL rename requires the complete associated array type")
 		}
-		label, err := pgRenameUnusedArrayName(used, name)
+		label, err := pgRenameUnusedArrayName(used, name, p.ServerVersion)
 		if err != nil {
 			return nil, err
 		}

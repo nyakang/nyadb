@@ -22,7 +22,7 @@ func TestDescriptorsAreIndependentImmutableValues(t *testing.T) {
 		if !after.Capabilities.Count || !after.Capabilities.FieldChunks || !after.Capabilities.Keyset || !after.Capabilities.Analysis {
 			t.Fatal("implemented data features are disabled")
 		}
-		if kind != connections.MySQL && (after.Capabilities.Import || after.Capabilities.Backup || after.Capabilities.DesignTables) {
+		if kind != connections.MySQL && (after.Capabilities.Import || after.Capabilities.Backup || kind != connections.PostgreSQL && after.Capabilities.DesignTables) {
 			t.Fatal("unsupported feature enabled")
 		}
 	}

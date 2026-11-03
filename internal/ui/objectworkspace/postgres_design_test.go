@@ -11,9 +11,13 @@ import (
 	"testing"
 	"unicode/utf8"
 
+	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/schemaddl"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 func postgresFormState(t *testing.T) (*State, *Document, *ui.Tester, ui.Services) {
@@ -198,5 +202,61 @@ func TestPostgreSQLDesignerFieldLayoutRetainsApplyAtNarrowSizes(t *testing.T) {
 				t.Fatal(err, closeErr)
 			}
 		}
+	}
+}
+
+func TestPostgreSQL18DesignerShowsNotNullReadOnlyReasonInBothLanguages(t *testing.T) {
+	defer i18n.SetLocaleFunc(nil)
+	for _, language := range []string{"zh-Hans", "en"} {
+		t.Run(language, func(t *testing.T) {
+			i18n.SetLocaleFunc(func() string { return language })
+			s, d, tt, _ := postgresFormState(t)
+			p := d.schemaDesign.original.Schema.Postgres
+			p.ServerVersion = 180000
+			p.Entries = append(p.Entries, schemaddl.PostgreSQLCatalogEntry{Kind: "constraint", OID: 40, Data: json.RawMessage(`{"contype":"n","conrelid":16,"conkey":[1],"convalidated":false,"conenforced":true,"conislocal":true,"coninhcount":0,"conparentid":0}`)})
+			if err := s.schemaSelectRow(d, 0, 0); err != nil {
+				t.Fatal(err)
+			}
+			tt.Frame()
+			reason := locales.Text("未验证或继承的 PostgreSQL 非空约束只读；独立约束改名不受支持。")
+			if !tt.HasText(reason) {
+				t.Fatal("missing localized read-only reason", language)
+			}
+			before := d.schemaDesign.pgField.NotNull
+			if err := tt.Click(locales.Text("非空")); err != nil {
+				t.Fatal(err)
+			}
+			tt.Frame()
+			if d.schemaDesign.pgField.NotNull != before {
+				t.Fatal("unvalidated NOT NULL checkbox changed its field")
+			}
+			tt.SetSize(840, 560)
+			tt.Frame()
+			if !tt.HasText(reason) {
+				t.Fatal("narrow form lost the reason")
+			}
+		})
+	}
+}
+
+func TestPostgreSQLDesignerNewTableDialogIsLocalizedAndBounded(t *testing.T) {
+	defer i18n.SetLocaleFunc(nil)
+	for _, language := range []string{"zh-Hans", "en"} {
+		t.Run(language, func(t *testing.T) {
+			i18n.SetLocaleFunc(func() string { return language })
+			s, _, _, _ := postgresFormState(t)
+			s.deps.NewTable = func(ui.Services, int64, string, string) { t.Fatal("dialog created a table without confirmation") }
+			s.BeginTableChange(83, "main", "", mysqlsvc.MySQLTableCreate)
+			tt := ui.NewTester(func(c *ui.Context) { theme.Apply(c); s.Modals(c) }, 840, 560)
+			for _, source := range []string{"新建表", "目标表名称", "输入名称后打开表设计器，预览并确认 SQL 后才会创建表。", "确认新建表"} {
+				if !tt.HasText(locales.Text(source)) {
+					t.Fatal("missing dialog translation", language, source)
+				}
+			}
+			input, ok := tt.Find(locales.Text("新表名称"))
+			if !ok || input.X < 0 || input.Y < 0 || input.X+input.W > 840 || input.Y+input.H > 560 {
+				t.Fatal("new table input clipped", input)
+			}
+		})
 	}
 }

@@ -12,7 +12,7 @@ import (
 )
 
 var errPostgresProbeType = errors.New("PostgreSQL definition probe requires supported type and cast callbacks")
-var errPostgresProbeTypeStability = errors.New("PostgreSQL definition probe does not support mutable user type identities or domains")
+var errPostgresProbeTypeStability = schemaddl.ErrPostgreSQLCoreTypes
 
 // All state is request-local. A previous successful read never authorizes a
 // changed definition in another transaction, profile or session generation.

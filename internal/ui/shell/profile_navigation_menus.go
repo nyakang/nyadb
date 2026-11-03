@@ -213,17 +213,17 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 	s.selectNavigationNode(services, key)
 	s.navigation.Row = -1
 	if n.Kind == "database" {
-		canManage := s.objectCapabilitiesFor(n.ProfileID).DesignTables && s.sessions.StatusFor(n.ProfileID) == "已连接"
+		canManage := s.runtime.Administration(n.ProfileID) != nil && s.sessions.StatusFor(n.ProfileID) == "已连接"
 		if m.Item(locales.Text("修改数据库…")).Disabled(!canManage).Chosen() {
 			s.objectWorkspace.BeginObject(services, n.ProfileID, mysqlsvc.ObjectIdentity{Database: n.Database, Kind: "database"}, "alter")
 		}
 		if m.Item(locales.Text("删除数据库…")).Disabled(!canManage).Chosen() {
 			s.objectWorkspace.BeginObject(services, n.ProfileID, mysqlsvc.ObjectIdentity{Database: n.Database, Kind: "database"}, "drop")
 		}
-		if m.Item(locales.Text("备份数据库…")).Disabled(!canManage).Chosen() {
+		if m.Item(locales.Text("备份数据库…")).Disabled(!s.objectWorkspace.CanBackup(n.ProfileID)).Chosen() {
 			s.objectWorkspace.BeginBackup(services, n.ProfileID, n.Database, "", "backup")
 		}
-		if m.Item(locales.Text("恢复备份…")).Disabled(!canManage).Chosen() {
+		if m.Item(locales.Text("恢复备份…")).Disabled(!s.objectWorkspace.CanBackup(n.ProfileID)).Chosen() {
 			s.objectWorkspace.BeginBackup(services, n.ProfileID, n.Database, "", "restore")
 		}
 		if m.Item(locales.Text("打开数据库")).Shortcut(0, ui.KeyEnter).

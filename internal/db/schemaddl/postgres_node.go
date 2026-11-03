@@ -208,10 +208,10 @@ func pgNormalizeNode(node *pgNodeToken, bindings PostgreSQLNodeBindings) error {
 	if err != nil {
 		return err
 	}
-	// PostgreSQL 14 spells ArrayExpr as ARRAY in pg_node_tree. Its type
-	// references and parser locations have the same meaning as ARRAYEXPR.
-	if name == "ARRAY" {
-		name = "ARRAYEXPR"
+	// PostgreSQL 14 uses short names for these expression nodes. Only
+	// reviewed aliases gain typed bindings and parser-location normalization.
+	if alias := map[string]string{"ARRAY": "ARRAYEXPR", "CASE": "CASEEXPR", "WHEN": "CASEWHEN"}[name]; alias != "" {
+		name = alias
 		node.children[0].atom = name
 	}
 	byName := map[string][]*pgNodeToken{}

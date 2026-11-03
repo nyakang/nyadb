@@ -157,3 +157,16 @@ func TestPostgreSQLRenameMovesOnlyAssociatedConflictingArray(t *testing.T) {
 		t.Fatal("moving an array changed its unrelated base type")
 	}
 }
+
+func TestPostgreSQL14And15ArrayRenameUsesRepeatedPrefixes(t *testing.T) {
+	for _, version := range []int{140000, 150000, 160000, 180000} {
+		got, err := pgRenameUnusedArrayName(map[string]int64{"_renamed": 1, "__renamed": 2}, "renamed", version)
+		want := "_renamed_1"
+		if version < 160000 {
+			want = "___renamed"
+		}
+		if err != nil || got != want {
+			t.Fatal(version, got, err)
+		}
+	}
+}

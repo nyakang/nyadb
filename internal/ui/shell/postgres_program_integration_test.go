@@ -96,7 +96,7 @@ CREATE PROCEDURE nyadb_program_ui.mutate(arg integer) LANGUAGE plpgsql AS $$BEGI
 	wait(func() bool {
 		return s.sessions.Current().Pending == "" && s.sessions.Current().Cache["nyadb_program_ui"] != nil
 	})
-	if s.objectCapabilitiesFor(p.ID).DesignTables || !s.toolbarActionAvailable("函数") || !s.toolbarActionAvailable("其它") {
+	if !s.objectCapabilitiesFor(p.ID).DesignTables || !s.toolbarActionAvailable("函数") || !s.toolbarActionAvailable("其它") {
 		t.Fatal("read-only browse availability incorrectly depends on design capability")
 	}
 	if err = tt.Click("函数"); err != nil {

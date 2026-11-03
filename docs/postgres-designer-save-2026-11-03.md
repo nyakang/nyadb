@@ -12,6 +12,14 @@ PG 18 的 `contype=n` 绑定稳定字段身份，不重复生成字段 NOT NULL 
 
 验证记录：`build/verify/design-stage1-unit-final.log`、`design-stage1-race-final.log`；PG 14–18 定向服务清单均为 `TestPostgreSQL17Design{DeclarationCoreRoutines,ProbeReturnTypeClosure,ReferenceLock,ColumnNotNull}Fixture`（包含子场景），记录于 `design14-stage1-final.log` 至 `design18-stage1-final.log`。PG 18 另有未修改 NOT VALID 保留场景 `design18-notnull-retained.log`。失败探索记录保留，不能计为通过。最终矩阵与资源清理审计在第三阶段补全。
 
+## 第二阶段：正式绑定与工作台
+
+PG `SchemaDesign()` 公开非阻塞 `CanApply`、Snapshot 和 Apply，通过现有事务执行器保存；服务器版本、权限和声明由 worker 核验。公开代次转换仍在 dbruntime。核心类型范围同样约束改名和元数据路径，PG Drop/Copy 与程序/数据库/账户管理保持各自绑定。
+
+正式工作台贯通新建、设计、单独改名、六页表单及 SQL 预览确认。回执同时核对原 profile/catalog/schema/generation、预览后的目标名称和表属性；不完整或不一致回执保留草稿、禁止重放并撤销原句柄。晚到的回执不能关闭替代连接。成功后撤销旧 inspector 读取并刷新已核验对象；停放回执按原连接消费。
+
+公开服务测试通过真实 provider 完成 CREATE/ALTER/改名并独立读取精确 numeric、bytea、NULL、数组与 identity；工作台 Tester 从新建入口、Ctrl+S、确认保存走到真实 runtime 回读。`design-shell-receipt-final.log` 覆盖公开工作台与替代连接；PG 17/18 的设计和只读程序工作台 race 见 `design17-shell-race-settled.log`、`design18-shell-race-settled.log`，替代连接 race 另有记录。
+
 ## 后续验收
 
 正式 provider/runtime/工作台绑定、版本全量服务矩阵、生命周期与窗口采集、全量交付检查待后续阶段完成。支持普通核心 PostgreSQL 14–18 表；用户类型、分区/继承编辑、物理字段重排、身份序列完整选项修改和未支持表达式保持拒绝。Windows/macOS 实机和 Navicat 同条件差分仍待验证。
