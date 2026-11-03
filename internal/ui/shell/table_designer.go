@@ -78,19 +78,22 @@ func (s *State) schemaTableDesigned(services ui.Services, event objectworkspace.
 	if event.Outcome.State != "committed" && event.Outcome.State != "uncertain" {
 		return
 	}
-	if !s.sessions.InvalidateDatabaseObjects(event.Original.Object.ProfileID, event.Generation, event.Database) {
-		return
-	}
 	profile := event.Original.Object.ProfileID
-	if event.Outcome.State == "uncertain" {
-		// Revoke only the captured original published handle. Drafts remain in
-		// their modules; a replacement connection must never be closed here.
-		if original, err := s.runtime.Session(profile); err == nil && original.Generation() == event.Original.Generation {
-			_ = original.Close()
-		}
+	original, err := s.runtime.Session(profile)
+	if err != nil || original.Generation() != event.Original.Generation {
 		return
 	}
-	if !event.Outcome.Verified || event.Outcome.Actual == nil {
+	expected := event.Original
+	if event.Destination != "" {
+		expected.Object.Name = event.Destination
+	}
+	out := event.Outcome
+	if out.State == "uncertain" || !out.Verified || out.Actual == nil || out.Actual.Target != expected || !out.Actual.Schema.Exists || out.Actual.Schema.Table.Name != expected.Object.Name || out.Error != nil {
+		_ = original.Close()
+		s.sessions.InvalidateDatabaseObjects(profile, event.Generation, event.Database)
+		return
+	}
+	if !s.sessions.InvalidateDatabaseObjects(profile, event.Generation, event.Database) {
 		return
 	}
 	actual := event.Outcome.Actual.Target.Object

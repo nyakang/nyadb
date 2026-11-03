@@ -15037,3 +15037,243 @@ func ProgramDefinitionDisplayLimit() string { return In(i18n.Locale()).ProgramDe
 func (msgs Messages) ProgramDefinitionDisplayLimit() string {
 	return Catalog.Format(msgs.locale, "programDefinitionDisplayLimit", nil)
 }
+
+// PostgresSave69a60f1eca says "未验证或继承的 PostgreSQL 非空约束只读；独立约束改名不受支持。"
+// in the language the app shows.
+func PostgresSave69a60f1eca() string { return In(i18n.Locale()).PostgresSave69a60f1eca() }
+
+// PostgresSave69a60f1eca says "未验证或继承的 PostgreSQL 非空约束只读；独立约束改名不受支持。"
+// in the language of msgs.
+func (msgs Messages) PostgresSave69a60f1eca() string {
+	return Catalog.Format(msgs.locale, "postgresSave69a60f1eca", nil)
+}
+
+// PostgresSave2e777e4a33 says "PostgreSQL 表设计仅支持核心类型；用户类型保持只读。"
+// in the language the app shows.
+func PostgresSave2e777e4a33() string { return In(i18n.Locale()).PostgresSave2e777e4a33() }
+
+// PostgresSave2e777e4a33 says "PostgreSQL 表设计仅支持核心类型；用户类型保持只读。"
+// in the language of msgs.
+func (msgs Messages) PostgresSave2e777e4a33() string {
+	return Catalog.Format(msgs.locale, "postgresSave2e777e4a33", nil)
+}
+
+// PostgresSavef46e8e859a says "PostgreSQL 表设计保存仅支持服务器版本 14–18。"
+// in the language the app shows.
+func PostgresSavef46e8e859a() string { return In(i18n.Locale()).PostgresSavef46e8e859a() }
+
+// PostgresSavef46e8e859a says "PostgreSQL 表设计保存仅支持服务器版本 14–18。"
+// in the language of msgs.
+func (msgs Messages) PostgresSavef46e8e859a() string {
+	return Catalog.Format(msgs.locale, "postgresSavef46e8e859a", nil)
+}
+
+// PostgresSave1305d25760 says "…"
+// in the language the app shows.
+func PostgresSave1305d25760() string { return In(i18n.Locale()).PostgresSave1305d25760() }
+
+// PostgresSave1305d25760 says "…"
+// in the language of msgs.
+func (msgs Messages) PostgresSave1305d25760() string {
+	return Catalog.Format(msgs.locale, "postgresSave1305d25760", nil)
+}
+
+// PostgresSave9d97754555 says "原表结构或引用对象已改变；保留草稿，请重新读取并核对。"
+// in the language the app shows.
+func PostgresSave9d97754555() string { return In(i18n.Locale()).PostgresSave9d97754555() }
+
+// PostgresSave9d97754555 says "原表结构或引用对象已改变；保留草稿，请重新读取并核对。"
+// in the language of msgs.
+func (msgs Messages) PostgresSave9d97754555() string {
+	return Catalog.Format(msgs.locale, "postgresSave9d97754555", nil)
+}
+
+// PostgresSave8f75d61fb5 says "结构回执与原连接或已预览目标不一致；保留草稿，禁止重试。"
+// in the language the app shows.
+func PostgresSave8f75d61fb5() string { return In(i18n.Locale()).PostgresSave8f75d61fb5() }
+
+// PostgresSave8f75d61fb5 says "结构回执与原连接或已预览目标不一致；保留草稿，禁止重试。"
+// in the language of msgs.
+func (msgs Messages) PostgresSave8f75d61fb5() string {
+	return Catalog.Format(msgs.locale, "postgresSave8f75d61fb5", nil)
+}
+
+// PostgresSave87d41579ae says "原表设计会话已失效；保留草稿，请核对执行结果"
+// in the language the app shows.
+func PostgresSave87d41579ae() string { return In(i18n.Locale()).PostgresSave87d41579ae() }
+
+// PostgresSave87d41579ae says "原表设计会话已失效；保留草稿，请核对执行结果"
+// in the language of msgs.
+func (msgs Messages) PostgresSave87d41579ae() string {
+	return Catalog.Format(msgs.locale, "postgresSave87d41579ae", nil)
+}
+
+// PostgresSavef119bfe9d4 says "原表设计范围不可用"
+// in the language the app shows.
+func PostgresSavef119bfe9d4() string { return In(i18n.Locale()).PostgresSavef119bfe9d4() }
+
+// PostgresSavef119bfe9d4 says "原表设计范围不可用"
+// in the language of msgs.
+func (msgs Messages) PostgresSavef119bfe9d4() string {
+	return Catalog.Format(msgs.locale, "postgresSavef119bfe9d4", nil)
+}
+
+// PostgresSave0f39508dfe says "结构核验未完成；禁止自动重试"
+// in the language the app shows.
+func PostgresSave0f39508dfe() string { return In(i18n.Locale()).PostgresSave0f39508dfe() }
+
+// PostgresSave0f39508dfe says "结构核验未完成；禁止自动重试"
+// in the language of msgs.
+func (msgs Messages) PostgresSave0f39508dfe() string {
+	return Catalog.Format(msgs.locale, "postgresSave0f39508dfe", nil)
+}
+
+// PostgresSave4172fbdb9c says "原表设计会话已失效；请重新读取"
+// in the language the app shows.
+func PostgresSave4172fbdb9c() string { return In(i18n.Locale()).PostgresSave4172fbdb9c() }
+
+// PostgresSave4172fbdb9c says "原表设计会话已失效；请重新读取"
+// in the language of msgs.
+func (msgs Messages) PostgresSave4172fbdb9c() string {
+	return Catalog.Format(msgs.locale, "postgresSave4172fbdb9c", nil)
+}
+
+// PostgresSaveadc295b8af says "表名称已存在，请使用其他名称新建表"
+// in the language the app shows.
+func PostgresSaveadc295b8af() string { return In(i18n.Locale()).PostgresSaveadc295b8af() }
+
+// PostgresSaveadc295b8af says "表名称已存在，请使用其他名称新建表"
+// in the language of msgs.
+func (msgs Messages) PostgresSaveadc295b8af() string {
+	return Catalog.Format(msgs.locale, "postgresSaveadc295b8af", nil)
+}
+
+// PostgresSave268faea728 says "字段选择已改变"
+// in the language the app shows.
+func PostgresSave268faea728() string { return In(i18n.Locale()).PostgresSave268faea728() }
+
+// PostgresSave268faea728 says "字段选择已改变"
+// in the language of msgs.
+func (msgs Messages) PostgresSave268faea728() string {
+	return Catalog.Format(msgs.locale, "postgresSave268faea728", nil)
+}
+
+// PostgresSavee8b99ffb8c says "定义选择已改变"
+// in the language the app shows.
+func PostgresSavee8b99ffb8c() string { return In(i18n.Locale()).PostgresSavee8b99ffb8c() }
+
+// PostgresSavee8b99ffb8c says "定义选择已改变"
+// in the language of msgs.
+func (msgs Messages) PostgresSavee8b99ffb8c() string {
+	return Catalog.Format(msgs.locale, "postgresSavee8b99ffb8c", nil)
+}
+
+// PostgresSavefd29baa30b says "设计文档不可用"
+// in the language the app shows.
+func PostgresSavefd29baa30b() string { return In(i18n.Locale()).PostgresSavefd29baa30b() }
+
+// PostgresSavefd29baa30b says "设计文档不可用"
+// in the language of msgs.
+func (msgs Messages) PostgresSavefd29baa30b() string {
+	return Catalog.Format(msgs.locale, "postgresSavefd29baa30b", nil)
+}
+
+// PostgresSave68f597fd9b says "请先完成结构读取或核对原操作"
+// in the language the app shows.
+func PostgresSave68f597fd9b() string { return In(i18n.Locale()).PostgresSave68f597fd9b() }
+
+// PostgresSave68f597fd9b says "请先完成结构读取或核对原操作"
+// in the language of msgs.
+func (msgs Messages) PostgresSave68f597fd9b() string {
+	return Catalog.Format(msgs.locale, "postgresSave68f597fd9b", nil)
+}
+
+// PostgresSavead909f35a3 says "结构没有修改"
+// in the language the app shows.
+func PostgresSavead909f35a3() string { return In(i18n.Locale()).PostgresSavead909f35a3() }
+
+// PostgresSavead909f35a3 says "结构没有修改"
+// in the language of msgs.
+func (msgs Messages) PostgresSavead909f35a3() string {
+	return Catalog.Format(msgs.locale, "postgresSavead909f35a3", nil)
+}
+
+// PostgresSave538d75b9fa says "原表设计会话已失效"
+// in the language the app shows.
+func PostgresSave538d75b9fa() string { return In(i18n.Locale()).PostgresSave538d75b9fa() }
+
+// PostgresSave538d75b9fa says "原表设计会话已失效"
+// in the language of msgs.
+func (msgs Messages) PostgresSave538d75b9fa() string {
+	return Catalog.Format(msgs.locale, "postgresSave538d75b9fa", nil)
+}
+
+// PostgresSave9701a03f91 says "预览后草稿已修改，请重新生成预览"
+// in the language the app shows.
+func PostgresSave9701a03f91() string { return In(i18n.Locale()).PostgresSave9701a03f91() }
+
+// PostgresSave9701a03f91 says "预览后草稿已修改，请重新生成预览"
+// in the language of msgs.
+func (msgs Messages) PostgresSave9701a03f91() string {
+	return Catalog.Format(msgs.locale, "postgresSave9701a03f91", nil)
+}
+
+// PostgresSave1b17f558ee says "请输入原表名称以确认删除字段"
+// in the language the app shows.
+func PostgresSave1b17f558ee() string { return In(i18n.Locale()).PostgresSave1b17f558ee() }
+
+// PostgresSave1b17f558ee says "请输入原表名称以确认删除字段"
+// in the language of msgs.
+func (msgs Messages) PostgresSave1b17f558ee() string {
+	return Catalog.Format(msgs.locale, "postgresSave1b17f558ee", nil)
+}
+
+// PostgresSave803041e3cc says "请先等待结构操作完成或取消确认"
+// in the language the app shows.
+func PostgresSave803041e3cc() string { return In(i18n.Locale()).PostgresSave803041e3cc() }
+
+// PostgresSave803041e3cc says "请先等待结构操作完成或取消确认"
+// in the language of msgs.
+func (msgs Messages) PostgresSave803041e3cc() string {
+	return Catalog.Format(msgs.locale, "postgresSave803041e3cc", nil)
+}
+
+// TableNewNameInput says "新表名称"
+// in the language the app shows.
+func TableNewNameInput() string { return In(i18n.Locale()).TableNewNameInput() }
+
+// TableNewNameInput says "新表名称"
+// in the language of msgs.
+func (msgs Messages) TableNewNameInput() string {
+	return Catalog.Format(msgs.locale, "tableNewNameInput", nil)
+}
+
+// TableDesignTablePrefix says "表："
+// in the language the app shows.
+func TableDesignTablePrefix() string { return In(i18n.Locale()).TableDesignTablePrefix() }
+
+// TableDesignTablePrefix says "表："
+// in the language of msgs.
+func (msgs Messages) TableDesignTablePrefix() string {
+	return Catalog.Format(msgs.locale, "tableDesignTablePrefix", nil)
+}
+
+// TableDesignConfirmNew says "确认新建表"
+// in the language the app shows.
+func TableDesignConfirmNew() string { return In(i18n.Locale()).TableDesignConfirmNew() }
+
+// TableDesignConfirmNew says "确认新建表"
+// in the language of msgs.
+func (msgs Messages) TableDesignConfirmNew() string {
+	return Catalog.Format(msgs.locale, "tableDesignConfirmNew", nil)
+}
+
+// TableDesignConfirmRename says "确认重命名"
+// in the language the app shows.
+func TableDesignConfirmRename() string { return In(i18n.Locale()).TableDesignConfirmRename() }
+
+// TableDesignConfirmRename says "确认重命名"
+// in the language of msgs.
+func (msgs Messages) TableDesignConfirmRename() string {
+	return Catalog.Format(msgs.locale, "tableDesignConfirmRename", nil)
+}

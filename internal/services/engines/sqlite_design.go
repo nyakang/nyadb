@@ -18,9 +18,10 @@ import (
 
 func (s *Session) SchemaDesign() contract.SchemaDesignOperations {
 	if s.kind == connections.PostgreSQL {
-		// The engine-aware form is ready, but referenced-type concurrency must
-		// be settled before hidden projections can obtain mutation permission.
-		return contract.SchemaDesignOperations{Snapshot: s.postgresDesignSnapshot}
+		return contract.SchemaDesignOperations{
+			CanApply: func(t contract.SchemaDesignTarget) bool { return s.checkPostgresDesign(t) == nil },
+			Snapshot: s.postgresDesignSnapshot, Apply: s.postgresDesignApply,
+		}
 	}
 	if s.kind != connections.SQLite {
 		return contract.SchemaDesignOperations{}

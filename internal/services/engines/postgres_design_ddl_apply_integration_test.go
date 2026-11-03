@@ -278,9 +278,12 @@ func TestPostgreSQL17DesignDDLTransactionLostCommitFixture(t *testing.T) {
 	serverDB := s.db
 	t.Cleanup(func() { _ = serverDB.Close() })
 	s.db = sql.OpenDB(pgLostCommitConnector{Connector: stdlib.GetConnector(*cfg)})
-	out := s.postgresDesignDDLApply(context.Background(), r)
+	out := s.SchemaDesign().Apply(context.Background(), r)
 	if out.State != "uncertain" || out.Verified || out.Actual != nil || !errors.Is(out.Error, ErrUncertain) || !errors.Is(out.Error, io.ErrUnexpectedEOF) {
 		t.Fatal("lost DDL receipt acquired replacement permission", out)
+	}
+	if s.Alive() || s.SchemaDesign().CanApply(r.Original.Target) {
+		t.Fatal("public lost commit left the original generation replayable")
 	}
 	var value, extra int
 	if err := serverDB.QueryRow(`SELECT value,extra FROM nyadb_ddl_lost_commit.asset`).Scan(&value, &extra); err != nil || value != 7 || extra != 9 {

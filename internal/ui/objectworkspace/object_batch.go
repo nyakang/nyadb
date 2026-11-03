@@ -24,7 +24,7 @@ type objectBatch struct {
 }
 
 func (s *State) BeginObjectBatch(profile int64, refs []mysqlsvc.ObjectIdentity, action string) {
-	if !s.capabilities(profile).DesignTables || s.deps.BatchExecutor == nil || !s.sessionFor(profile).Connected || len(refs) == 0 {
+	if !s.canAdministration(profile) || s.deps.BatchExecutor == nil || !s.sessionFor(profile).Connected || len(refs) == 0 {
 		return
 	}
 	if s.batch != nil && s.batch.busy {

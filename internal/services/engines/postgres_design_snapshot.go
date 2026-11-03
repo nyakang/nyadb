@@ -128,6 +128,9 @@ FROM pg_database d JOIN pg_namespace n ON n.nspname=$1 LEFT JOIN pg_class c ON c
 	if err != nil {
 		return snap, err
 	}
+	if catalog.ServerVersion < 140000 || catalog.ServerVersion >= 190000 {
+		return snap, schemaddl.ErrPostgreSQLVersion
+	}
 	catalog.NativeByteOrder = postgresNativeByteOrder(serverPlatform)
 	if catalog.Database != target.Object.Catalog || catalog.Namespace != target.Object.Schema {
 		return snap, schemaddl.ErrConflict

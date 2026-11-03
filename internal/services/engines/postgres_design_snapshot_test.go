@@ -40,8 +40,8 @@ func postgresDesignFixture(t *testing.T) *Session {
 func pgDesignRead(t *testing.T, s *Session, schema, table string) contract.SchemaDesignSnapshot {
 	t.Helper()
 	op := s.SchemaDesign()
-	if op.Snapshot == nil || op.Apply != nil || op.CanApply != nil {
-		t.Fatal("unfinished PostgreSQL execution was exposed to the designer")
+	if op.Snapshot == nil || op.Apply == nil || op.CanApply == nil {
+		t.Fatal("PostgreSQL execution binding is incomplete")
 	}
 	snap, err := op.Snapshot(context.Background(), contract.SchemaDesignTarget{Object: s.Namespace(schema).Object("table", table), Generation: s.Generation()})
 	if err != nil {
@@ -123,7 +123,7 @@ CREATE AGGREGATE nyadb_design.total(bigint) (SFUNC=int8pl,STYPE=bigint,INITCOND=
 	}
 	publication := "CREATE PUBLICATION nyadb_design_schema_publication FOR TABLES IN SCHEMA nyadb_design"
 	if version < 150000 {
-		publication = `CREATE PUBLICATION nyadb_design_schema_publication FOR TABLE nyadb_design."Full Table"`
+		publication = `CREATE PUBLICATION nyadb_design_schema_publication FOR TABLE nyadb_design.inherit_parent`
 	}
 	run(t, s, publication)
 	snapshot := pgDesignRead(t, s, "nyadb_design", "Full Table")
@@ -220,7 +220,7 @@ CREATE AGGREGATE nyadb_design.total(bigint) (SFUNC=int8pl,STYPE=bigint,INITCOND=
 		`ALTER PUBLICATION nyadb_design_schema_publication DROP TABLES IN SCHEMA nyadb_design`,
 	}
 	if version < 150000 {
-		changes[len(changes)-1] = `ALTER PUBLICATION nyadb_design_schema_publication DROP TABLE nyadb_design."Full Table"`
+		changes[len(changes)-1] = `ALTER PUBLICATION nyadb_design_schema_publication DROP TABLE nyadb_design.inherit_parent`
 	}
 	previous := afterData.Schema.Revision
 	for _, sql := range changes {

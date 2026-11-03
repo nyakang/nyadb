@@ -297,3 +297,35 @@ func TestSQLiteDesignerVerifiedRenameRefreshesInspectorAndRevokesOldRead(t *test
 		t.Fatal("late inspector replaced the verified identity")
 	}
 }
+
+func TestDesignerInvalidCommittedReceiptRetainsOriginalDraftAndBlocksReplay(t *testing.T) {
+	s, d, _, tt, services := schemaTestState(t)
+	original := d.Object()
+	var received SchemaDesignEvent
+	s.deps.SchemaDesigned = func(_ ui.Services, event SchemaDesignEvent) { received = event }
+	binding := s.deps.SchemaDesignFor
+	s.deps.SchemaDesignFor = func(id int64) contract.SchemaDesignOperations {
+		ops := binding(id)
+		ops.Apply = func(_ context.Context, r contract.SchemaDesignRequest) contract.SchemaDesignOutcome {
+			actual := r.Original.Clone()
+			actual.Schema.Table = r.Desired.Clone()
+			actual.Target.Object.ProfileID++
+			return contract.SchemaDesignOutcome{State: "committed", Verified: true, Actual: &actual}
+		}
+		return ops
+	}
+	s.schemaAdd(d)
+	if err := s.PrepareSchemaDesign(d); err != nil {
+		t.Fatal(err)
+	}
+	s.executeSchemaDesign(d, services)
+	waitSchema(t, tt, func() bool { return !d.DesignBusy() })
+	if d.Object() != original || !d.DesignDirty() || !d.schemaDesign.blocked || received.Outcome.Verified || received.Outcome.Actual != nil || received.Original.Object != original {
+		t.Fatal("invalid commit replaced or replayed the draft", d.Error(), received)
+	}
+	if err := s.PrepareSchemaDesign(d); err == nil {
+		t.Fatal("invalid commit could be replayed")
+	}
+	s.Close(d)
+	s.Close(d)
+}

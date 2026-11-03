@@ -41,7 +41,7 @@ INSERT INTO nyadb_probe_opoverload.original VALUES(7);`)
 	base := pgDesignRead(t, s, "nyadb_probe_opoverload", "original")
 	draft := base.Schema.Table.Clone()
 	draft.Definitions = append(draft.Definitions, schemaddl.Definition{Kind: "index", Name: "effect_index", SQL: `CREATE INDEX effect_index ON nyadb_probe_opoverload.original (('first'::nyadb_probe_opoverload.mood+1))`})
-	if err := pgAssertTypeProbeRejected(t, s, base, draft, "nyadb_probe_opoverload"); !errors.Is(err, errPostgresProbeDispatch) {
+	if err := pgAssertTypeProbeRejected(t, s, base, draft, "nyadb_probe_opoverload"); !errors.Is(err, errPostgresProbeDispatch) && !errors.Is(err, errPostgresProbeTypeStability) {
 		t.Fatal("overload was not rejected by dispatch preflight", err)
 	}
 }

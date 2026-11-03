@@ -198,3 +198,15 @@ func TestPostgreSQLNodeMalformedFieldErrorDoesNotPrintExpressionText(t *testing.
 		t.Fatal("malformed reference text exposed in error", err)
 	}
 }
+
+func TestPostgreSQLNodeBindsLegacyCaseAndPreservesBranches(t *testing.T) {
+	b := pgNodeTestBindings()
+	legacy := `{CASE :casetype 80001 :casecollid 0 :arg <> :args ({WHEN :expr {CONST :consttype 16 :constvalue 1 [ 0 ] :location 12} :result {CONST :consttype 80001 :constvalue 1 [ 1 ] :location 18} :location 10}) :defresult <> :location 8}`
+	current := strings.NewReplacer("{CASE ", "{CASEEXPR ", "{WHEN ", "{CASEWHEN ", ":location 12", ":location 120", ":location 18", ":location 180", ":location 10", ":location 100", ":location 8", ":location 80").Replace(legacy)
+	if pgNodeHash(t, legacy, b) != pgNodeHash(t, current, b) {
+		t.Fatal("legacy CASE retained parser offsets")
+	}
+	if pgNodeHash(t, legacy, b) == pgNodeHash(t, strings.Replace(legacy, "[ 1 ]", "[ 2 ]", 1), b) {
+		t.Fatal("CASE result value was discarded")
+	}
+}

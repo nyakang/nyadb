@@ -123,7 +123,20 @@ func pgNativeFixtureApplyChecked(t *testing.T, s *Session, base contract.SchemaD
 		if err != nil {
 			t.Fatal("independent target declaration projection unavailable", err)
 		}
+		if base.Schema.Exists {
+			want, err = schemaddl.PostgreSQLRetainedNotNullDeclaration(base.Schema, draft, want)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
 		if err := schemaddl.ComparePostgreSQLDeclarationGraphs(got, want); err != nil {
+			for _, a := range got.Records {
+				for _, b := range want.Records {
+					if a.Kind == b.Kind && a.Object == b.Object && a.Attribute == b.Attribute && string(a.Declaration) != string(b.Declaration) {
+						t.Logf("difference %s %s %s: actual %s expected %s", a.Kind, a.Object, a.Attribute, a.Declaration, b.Declaration)
+					}
+				}
+			}
 			t.Fatal("native declaration graph differs from independent target", err)
 		}
 		if base.Schema.Exists {

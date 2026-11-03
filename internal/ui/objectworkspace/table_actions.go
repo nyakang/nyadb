@@ -59,7 +59,7 @@ func mysqlTableActionDangerous(action mysqlsvc.MySQLTableAction) bool {
 }
 
 func (s *State) CanChangeTable(profileID int64) bool {
-	return s.capabilities(profileID).DesignTables && s.runner() != nil &&
+	return s.canAdministration(profileID) && s.runner() != nil &&
 		!s.tablePending && !s.nativeTablePending() && s.session().Connected && s.session().ProfileID == profileID
 }
 
@@ -99,7 +99,7 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 		if (kind == "视图" || strings.EqualFold(kind, "view") || strings.EqualFold(kind, "table")) && m.Item(locales.Text("数据字典…")).Disabled(!s.CanDictionary(profileID, database, name, kind)).Chosen() && s.contextEntryValid(entryScope, profileID, database, name) {
 			s.OpenDictionary(profileID, database, name, kind)
 		}
-		if s.deps.ObjectExecutor != nil && s.capabilities(profileID).DesignTables {
+		if s.deps.ObjectExecutor != nil && s.canAdministration(profileID) {
 			m.Separator()
 			if m.Item("编辑完整定义…").Chosen() {
 				s.BeginObject(services, profileID, mysqlsvc.ObjectIdentity{Database: database, Name: name, Kind: kind}, "alter")
@@ -181,7 +181,7 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 				s.BeginMaintenance(services, profileID, database, name, it.action)
 			}
 		}
-	}).Disabled(s.deps.Maintenance == nil || s.maintenance != nil || !s.capabilities(profileID).DesignTables)
+	}).Disabled(s.deps.Maintenance == nil || s.maintenance != nil || !s.canAdministration(profileID))
 
 	for _, label := range []string{"逆向表到模型…", "创建 BI 工作区…"} {
 		m.Item(locales.Text(label)).Disabled(true)
@@ -294,15 +294,15 @@ func (s *State) Modals(c *ui.Context) {
 		ui.Column(c).Width(min(float32(510), width-40)).Padding(18, 23).
 			Background(colors.Header).Gap(12).Children(func() {
 			ui.Text(c, locales.Text(label)).Bold().FontSize(theme.Font(c, 15))
-			target := "数据库：" + db
+			target := locales.Text("数据库：") + db
 			if s.tableAction != mysqlsvc.MySQLTableCreate {
-				target += "    表：" + name
+				target += "    " + locales.Text("表：") + name
 			}
 			ui.Text(c, target).
 				FontSize(theme.Font(c, 12)).TextColor(colors.Muted)
 			if mysqlTableActionNeedsName(s.tableAction) {
-				ui.Text(c, "目标表名称").FontSize(theme.Font(c, 12))
-				ui.TextInput(c, &s.tableNewName).Label("新表名称").Grow(1)
+				ui.Text(c, locales.Text("目标表名称")).FontSize(theme.Font(c, 12))
+				ui.TextInput(c, &s.tableNewName).Label(locales.Text("新表名称")).Grow(1)
 			}
 			switch s.tableAction {
 			case mysqlsvc.MySQLTableCreate:
@@ -347,10 +347,10 @@ func (s *State) Modals(c *ui.Context) {
 				valid = valid && s.tableConfirmation == name
 			}
 			ui.Row(c).Justify(ui.End).Gap(8).Children(func() {
-				if ui.Button(c, "取消").Disabled(s.tablePending).Clicked() {
+				if ui.Button(c, locales.Text("取消")).Disabled(s.tablePending).Clicked() {
 					s.tableDialog = false
 				}
-				if ui.PrimaryButton(c, "确认"+label).Disabled(!valid).Clicked() {
+				if ui.PrimaryButton(c, locales.Text("确认"+label)).Disabled(!valid).Clicked() {
 					s.startMySQLTableChange(c.Services())
 				}
 			})

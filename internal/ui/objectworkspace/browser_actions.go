@@ -37,11 +37,10 @@ func (s *State) browserActions() browserActions {
 	a.canOpen = selected && !a.canProgram
 	a.canCreate = a.ready && s.CanCreateTable(b.ProfileID, b.Database) && (b.Kind == "全部" || b.Kind == "表")
 	a.canRefresh = b.Connected && (b.Database == "" || a.ready) && !b.Refreshing && b.Pending == ""
-	caps := s.capabilities(b.ProfileID)
-	a.canBatch = a.ready && caps.DesignTables && s.deps.BatchExecutor != nil && !s.tablePending && (s.batch == nil || !s.batch.busy)
+	a.canBatch = a.ready && s.canAdministration(b.ProfileID) && s.deps.BatchExecutor != nil && !s.tablePending && (s.batch == nil || !s.batch.busy)
 	a.canCopy = a.ready && len(a.scope.objects) != 0
 	a.canAccounts = s.CanAccounts(b.ProfileID)
-	a.canNewObject = a.ready && (caps.DesignTables && s.deps.ObjectExecutor != nil || s.CanView(b.ProfileID, b.Database, "new_object"))
+	a.canNewObject = a.ready && (s.canAdministration(b.ProfileID) && s.deps.ObjectExecutor != nil || s.CanView(b.ProfileID, b.Database, "new_object"))
 	a.canResume = s.objectOp == nil && s.viewOp == nil && (s.parkedObjectOp != nil && s.parkedObjectOp.profile == b.ProfileID || s.canResumeView())
 	return a
 }
@@ -72,7 +71,7 @@ func (s *State) browserMoreMenu(services ui.Services, m *ui.Menu) {
 	m.Separator()
 	m.Submenu(locales.Text("新建对象"), func(sub *ui.Menu) {
 		for _, kind := range []string{"视图", "函数", "存储过程", "事件"} {
-			enabled := a.ready && s.capabilities(a.scope.profile).DesignTables && s.deps.ObjectExecutor != nil
+			enabled := a.ready && s.canAdministration(a.scope.profile) && s.deps.ObjectExecutor != nil
 			if kind == "视图" && s.CanView(a.scope.profile, a.scope.database, "new_object") {
 				enabled = a.ready
 			}
