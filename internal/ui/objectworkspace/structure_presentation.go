@@ -150,6 +150,22 @@ func structureTextType(kind string) bool {
 
 // InspectorView presents the selected structure field without exposing grid state.
 func (s *State) InspectorView(c *ui.Context, d *Document) {
+	if d != nil && !d.closed && d.program != nil {
+		obj := d.ProgramData()
+		palette := theme.Colors(c)
+		icon := "function"
+		if obj.Kind == "序列" {
+			icon = "refresh"
+		}
+		ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
+			theme.Icon(c, icon, 32, palette.Blue)
+			ui.Text(c, obj.Name).FontSize(theme.Font(c, 14)).Bold()
+		})
+		theme.Property(c, "类型", locales.Text(obj.Kind))
+		theme.Property(c, "数据库", d.Database())
+		ObjectProperties(c, obj)
+		return
+	}
 	if d == nil || d.closed || d.data == nil {
 		return
 	}

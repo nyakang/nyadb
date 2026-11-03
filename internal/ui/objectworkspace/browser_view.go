@@ -138,7 +138,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 				iconName = "view"
 			} else if obj.Kind == "函数" || obj.Kind == "存储过程" {
 				iconName = "function"
-			} else if obj.Kind == "事件" {
+			} else if obj.Kind == "事件" || obj.Kind == "序列" {
 				iconName = "refresh"
 			}
 			ui.Row(c).AlignItems(ui.Center).Gap(6).Children(func() {
@@ -219,7 +219,7 @@ func (s *State) BrowserView(c *ui.Context) {
 				}).Clicked() {
 					s.BeginTableChange(a.scope.profile, database, "", mysqlsvc.MySQLTableCreate)
 				}
-				if ui.ButtonBase(c).Label(locales.Text("查看程序定义")).Tooltip(locales.Text("查看函数、存储过程或事件定义")).
+				if ui.ButtonBase(c).Label(locales.Text("查看程序定义")).Tooltip(locales.Text("查看函数、存储过程、事件或序列定义")).
 					Disabled(!canProgram).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
 					theme.Icon(c, "function", 14, palette.Muted)
 				}).Clicked() {
@@ -272,14 +272,10 @@ func ObjectProperties(c *ui.Context, obj contract.DBObject) {
 	theme.Property(c, "引擎", obj.Engine)
 	theme.Property(c, "注释", obj.Comment)
 	if Supports(obj.Kind) {
-		for _, field := range []struct{ label, value string }{
-			{"定义者", obj.Definer}, {"参数", obj.Parameters},
-			{"返回类型", obj.ReturnType}, {"SQL SECURITY", obj.SQLSecurity},
-			{"状态", obj.Status}, {"调度", obj.Schedule},
-			{"开始时间", obj.Starts}, {"结束时间", obj.Ends},
-			{"ON COMPLETION", obj.OnCompletion}, {"创建时间", obj.CreatedAt},
-			{"修改时间", obj.ModifiedAt},
-		} {
+		for _, field := range programProperties(obj) {
+			if field.label == "类型" || field.label == "名称" || field.label == "注释" {
+				continue
+			}
 			if field.value != "" {
 				theme.Property(c, field.label, field.value)
 			}

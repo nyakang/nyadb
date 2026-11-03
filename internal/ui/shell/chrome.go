@@ -6,6 +6,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/services/connections"
 
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -302,7 +303,8 @@ func (s *State) toolbarActionAvailable(action string) bool {
 		fallthrough
 	case "其它":
 		w := s.sessions.Current()
-		return w.Status == "已连接" && w.Database != "" && s.sessions.DatabaseOpened(w.ProfileID, w.Database) && s.objectCapabilitiesFor(w.ProfileID).DesignTables
+		caps := s.objectCapabilitiesFor(w.ProfileID)
+		return w.Status == "已连接" && w.Database != "" && s.sessions.DatabaseOpened(w.ProfileID, w.Database) && (caps.DesignTables || w.Kind == connections.PostgreSQL && caps.Metadata)
 	case "查询":
 		return s.profileMode && s.selectedProfileID > 0 && !s.sqlWorkspace.PersistenceLoading()
 	case "用户":

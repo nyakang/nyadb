@@ -1,6 +1,7 @@
 package objectworkspace
 
 import (
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"testing"
 
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
@@ -37,7 +38,7 @@ func TestProgramDocumentKeepsQualifiedIdentityAndOwnsSnapshots(t *testing.T) {
 }
 
 func TestProgramDocumentsAdmitOnlyQualifiedSupportedObjects(t *testing.T) {
-	for _, kind := range []string{"函数", "存储过程", "事件"} {
+	for _, kind := range []string{"函数", "存储过程", "事件", "序列"} {
 		d := newProgram(41, "app", mysqlsvc.MySQLDBObject{Name: "same_name", Kind: kind})
 		if d == nil || !Supports(kind) {
 			t.Fatalf("supported object rejected: %s", kind)
@@ -55,5 +56,45 @@ func TestProgramDocumentsAdmitOnlyQualifiedSupportedObjects(t *testing.T) {
 		if newProgram(input.profile, input.database, mysqlsvc.MySQLDBObject{Name: input.name, Kind: "存储过程"}) != nil {
 			t.Fatal("incomplete identity admitted")
 		}
+	}
+}
+
+func TestQualifiedProgramRejectsForeignRefreshAndClonesSequenceSettings(t *testing.T) {
+	ref := contract.ObjectRef{ProfileID: 91, Catalog: "nyadb_it", Schema: "app", Kind: "sequence", Name: "counter"}
+	object := contract.DBObject{Ref: ref, Name: ref.Name, Kind: "序列", Definition: "CREATE SEQUENCE app.counter", Sequence: &contract.SequenceInfo{Start: 9223372036854775805, Increment: -2, Min: -9223372036854775807, Max: 9223372036854775807, Cache: 17}}
+	s := New(Dependencies{})
+	d := s.OpenProgram(1, 91, "app", object)
+	if d == nil || d.Object() != ref {
+		t.Fatal("document lost qualified identity")
+	}
+	object.Sequence.Start = 1
+	data := d.ProgramData()
+	data.Sequence.Start = 2
+	if d.ProgramData().Sequence.Start != 9223372036854775805 {
+		t.Fatal("shared mutable sequence settings")
+	}
+	for _, change := range []func(*contract.DBObject){
+		func(o *contract.DBObject) { o.Ref.ProfileID++ },
+		func(o *contract.DBObject) { o.Ref.Catalog = "other" },
+		func(o *contract.DBObject) { o.Ref.Schema = "other" },
+		func(o *contract.DBObject) { o.Ref.Kind = "function" },
+		func(o *contract.DBObject) { o.Ref.Name = "other" },
+		func(o *contract.DBObject) { o.Ref = contract.ObjectRef{} },
+	} {
+		foreign := object
+		change(&foreign)
+		if d.Update(foreign) || d.ProgramData().Sequence.Start != 9223372036854775805 {
+			t.Fatal("foreign snapshot changed the original document")
+		}
+		if foreign.Ref != (contract.ObjectRef{}) && foreign.Ref.Catalog != "other" && newProgram(91, "app", foreign) != nil {
+			t.Fatal("invalid qualified identity admitted", foreign.Ref)
+		}
+	}
+	if !d.Update(object) || d.ProgramData().Sequence.Start != 1 {
+		t.Fatal("same identity refresh rejected")
+	}
+	s.Close(d)
+	if d.ProgramData().Sequence != nil || d.Object() != ref || d.Update(object) {
+		t.Fatal("close retained mutable data or lost cleanup identity")
 	}
 }

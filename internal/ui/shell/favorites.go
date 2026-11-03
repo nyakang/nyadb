@@ -73,6 +73,8 @@ func favoriteObjectKind(kind string) string {
 		return "存储过程"
 	case "event":
 		return "事件"
+	case "sequence":
+		return "序列"
 	}
 	return kind
 }
@@ -127,6 +129,8 @@ func searchFavoriteKind(kind string) string {
 		return "procedure"
 	case "事件":
 		return "event"
+	case "序列":
+		return "sequence"
 	}
 	return kind
 }

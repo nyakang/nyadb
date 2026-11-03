@@ -8,8 +8,48 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nyakang/nyadb/internal/db/contract"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
+
+func TestObjectRefreshRetainsCachedProgramsUntilSuccessfulReplacement(t *testing.T) {
+	s, done, notify := connectedState(t)
+	w := s.Current()
+	namespace := contract.NamespaceRef{ProfileID: w.ProfileID, Catalog: "catalog", Schema: "app"}
+	before := []contract.DBObject{{Ref: namespace.Object("sequence", "counter"), Name: "counter", Kind: "序列", Sequence: &contract.SequenceInfo{Start: 9223372036854775805}}}
+	w.Namespaces = map[string]contract.NamespaceRef{"app": namespace}
+	w.Cache["app"] = before
+	w.QualifiedCache = map[contract.NamespaceRef][]contract.DBObject{namespace: before}
+	var calls atomic.Int32
+	s.ObjectLister = func(context.Context, int64, string) ([]contract.DBObject, error) {
+		if calls.Add(1) == 1 {
+			return nil, errors.New("snapshot limit exceeded")
+		}
+		return []contract.DBObject{{Ref: namespace.Object("procedure", "replacement()"), Name: "replacement()", Kind: "存储过程"}}, nil
+	}
+	s.LoadObjects("app", true, notify)
+	if len(w.Cache["app"]) != 1 || w.Cache["app"][0].Sequence.Start != before[0].Sequence.Start {
+		t.Fatal("refresh evicted the cached directory before completion")
+	}
+	awaitJob(t, done)
+	s.Consume()
+	if w.Errors["app"] == "" || w.Cache["app"][0].Name != "counter" || w.QualifiedCache[namespace][0].Name != "counter" {
+		t.Fatal("failed refresh removed either cached snapshot")
+	}
+	s.LoadExpanded(func(string) bool { return true }, notify)
+	if calls.Load() != 1 {
+		t.Fatal("failed refresh retried without an explicit request")
+	}
+	s.LoadObjects("app", true, notify)
+	awaitJob(t, done)
+	s.Consume()
+	if w.Errors["app"] != "" || w.Cache["app"][0].Name != "replacement()" || w.QualifiedCache[namespace][0].Name != "replacement()" {
+		t.Fatal("successful refresh did not replace both snapshots")
+	}
+	if !s.InvalidateDatabaseObjects(w.ProfileID, w.Generation, "app") || len(w.Cache["app"]) != 0 || len(w.QualifiedCache[namespace]) != 0 {
+		t.Fatal("explicit mutation invalidation retained stale metadata")
+	}
+}
 
 func TestSessionBrowserObjectRetriesStayExplicit(t *testing.T) {
 	s, done, notify := connectedState(t)

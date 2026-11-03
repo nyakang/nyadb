@@ -1096,7 +1096,7 @@
   "objectRefreshMetadataPrefix": "刷新元数据：",
   "objectFilterPrefix": "筛选对象：",
   "objectProgramDefinition": "查看程序定义",
-  "objectProgramDefinitionTooltip": "查看函数、存储过程或事件定义",
+  "objectProgramDefinitionTooltip": "查看函数、存储过程、事件或序列定义",
   "objectClipboardOtherProfile": "对象剪贴板属于另一连接，请显式切换到原连接",
   "objectDatabasePrefix": "数据库：",
   "queryAssets1": "打开查询",
@@ -1465,5 +1465,14 @@
   "postgresDesignUnlogged": "不记录日志的表",
   "postgresDesignAddStorage": "添加存储参数",
   "postgresDesignRemoveStorage": "删除末尾存储参数",
-  "postgresDesignRetainedSettings": "此页面保留已有权限、行安全与继承设置。"
+  "postgresDesignRetainedSettings": "此页面保留已有权限、行安全与继承设置。",
+  "postgresSequenceType": "序列类型",
+  "postgresSequenceMinimum": "序列最小值",
+  "postgresSequenceMaximum": "序列最大值",
+  "postgresSequenceCache": "序列缓存",
+  "postgresSequenceCycle": "序列循环",
+  "programDefinitionSource": "对象定义（由服务器返回）",
+  "postgresSequenceDefinitionSource": "序列定义（根据服务器目录参数重建）",
+  "programDefinitionUnavailable": "当前账号未获取到定义，可能受到服务器权限限制",
+  "programDefinitionDisplayLimit": "… (定义过长，仅展示前 500 行)"
 }

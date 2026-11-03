@@ -211,7 +211,7 @@ func (s *State) renderRow(c *ui.Context, key string) {
 			icon = "function"
 		case "存储过程":
 			icon = "function"
-		case "事件":
+		case "事件", "序列":
 			icon = "refresh"
 		case "查询":
 			icon = "query"

@@ -77,6 +77,10 @@ func (s *State) profileInspector(c *ui.Context) {
 		s.inspectorHeader(c, "信息")
 		ui.Scroll(c).Grow(1).MinHeight(0).Children(func() {
 			ui.Column(c).Padding(28, 14).Gap(16).Children(func() {
+				if t := s.currentTab(); t.kind == tabProgram && t.object != nil {
+					s.objectWorkspace.InspectorView(c, t.object)
+					return
+				}
 				if s.navigation.Group != "" {
 					ui.Row(c).AlignItems(ui.Center).Gap(16).Children(func() {
 						theme.Icon(c, "folder-filled", 50, palette.Gold)

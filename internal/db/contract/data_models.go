@@ -259,7 +259,14 @@ type DBObject struct {
 	Starts        string
 	Ends          string
 	OnCompletion  string
-	Definition    string // only populated when server privileges permit
+	Definition    string        // only populated when server privileges permit
+	Sequence      *SequenceInfo // immutable sequence settings, never its current value
+}
+
+type SequenceInfo struct {
+	DataType                          string
+	Start, Increment, Min, Max, Cache int64
+	Cycle                             bool
 }
 
 type TableStructure struct {

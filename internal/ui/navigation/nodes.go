@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
@@ -50,10 +51,11 @@ func Parse(key string) Node {
 // Database programs are server metadata. Named queries also have a local,
 // connection-scoped catalog that can be browsed while disconnected.
 var mysqlNavigationCategories = []string{"表", "视图", "函数", "存储过程", "事件", "查询", "备份"}
+var postgresNavigationCategories = []string{"表", "视图", "函数", "存储过程", "序列", "查询"}
 
 func SupportedCategory(category string) bool {
 	switch category {
-	case "表", "视图", "函数", "存储过程", "事件", "查询":
+	case "表", "视图", "函数", "存储过程", "事件", "序列", "查询":
 		return true
 	}
 	return false
@@ -107,8 +109,14 @@ func (s *State) databaseChildren(key string) []string {
 		}
 		children := make([]string, 0, len(mysqlNavigationCategories))
 		categories := mysqlNavigationCategories
-		if s.deps.Engine != nil && s.deps.Engine(n.ProfileID) != "mysql" {
-			categories = []string{"表", "视图", "查询"}
+		if s.deps.Engine != nil {
+			switch s.deps.Engine(n.ProfileID) {
+			case connections.PostgreSQL:
+				categories = postgresNavigationCategories
+			case connections.MySQL:
+			default:
+				categories = []string{"表", "视图", "查询"}
+			}
 		}
 		for _, kind := range categories {
 			child := n

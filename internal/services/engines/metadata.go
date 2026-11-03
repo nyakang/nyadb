@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/services/connections"
 	"strings"
 )
 
@@ -17,6 +18,17 @@ func (s *Session) Schemas(ctx context.Context) ([]string, error) {
 	return s.strategy.schemas(ctx, s.db)
 }
 func (s *Session) Objects(ctx context.Context, schema string) ([]contract.Object, error) {
+	if s.kind == connections.PostgreSQL {
+		objects, err := s.postgresBrowse(ctx, s.Namespace(schema))
+		if err != nil {
+			return nil, err
+		}
+		out := make([]contract.Object, len(objects))
+		for i, object := range objects {
+			out[i] = contract.Object{Ref: object.Ref}
+		}
+		return out, nil
+	}
 	ctx, done := s.requestContext(ctx)
 	defer done()
 	if s.isClosed() {
