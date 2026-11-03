@@ -126,3 +126,5 @@ Go 1.27.3 / MyGo v0.7.3-nyadb.2，`GOWORK=off`，Linux amd64。HEAD 仍为 `5960
 2026-11-03 接续上轮未提交的 PG/SQLite 大数据工作，正式接通共享网格的稳定 seek、精确计数、限量字段和全表精确分析。复核及重跑真实 PG 服务、两引擎 Tester、十万行正确性、Linux 数值图片、跨平台编译及阶段检查；修正旧像素回归重复整帧转换的验证成本。逐项结果、SIGTERM 中断、实际截图身份及资源清理见 [大数据交付记录](portable-large-data-2026-11-03.md)。完整 PG 设计/对象与文件工具、命名工作区、传输/同步/自动运行和全部高级目标继续有效，不以本阶段代替总体完成。
 
 2026-11-03 完成 PostgreSQL 函数、过程、序列目录与只读定义阶段，保留完整限定身份和重载签名，贯通搜索与收藏，修复刷新失败丢失原目录缓存。真实 PG 14/17/18、PG 17 工作台 race、中英文 Tester、Linux 正式窗口及交付检查见 [PG 对象浏览记录](postgres-program-browse-2026-11-03.md)。正式 PG Apply、对象 CRUD、多引擎文件工具及完整后续目标继续有效；本阶段不新增 Navicat O/S/V。
+
+2026-11-03 完成 PostgreSQL 14–18 核心普通表图形设计正式保存，开放 provider/runtime 与工作台 CREATE/ALTER/独立改名，保留预览确认、原连接与草稿保护；PG 18 非空稳定身份和受限编辑、版本矩阵、Linux 正式打包窗口及完整交付检查见 [正式设计保存记录](postgres-designer-save-2026-11-03.md)。用户类型/分区继承/字段重排/完整 identity 选项、PG 对象 CRUD、多平台实机及 Navicat 差分继续保留。

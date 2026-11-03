@@ -4,13 +4,13 @@
 
 ## 已有成果
 
-SQL 历史/全局加密日志、SQL 常用上下文补全和文档快捷键、MySQL 八页设计器及常用约束表单、查询资产/分组、URI/对象查找/收藏夹、账户/备份新入口、PG 高级/TLS、SQLite 附加库和六页图形设计/事务表删除及复制/视图 CRUD、ClickHouse 原生 SQL/共享只读网格、AI SQL 建议、只读数据字典、PG 函数/过程/序列目录与只读定义分别有实现 **I** 和各自限定的运行记录。不要重复按“菜单曾禁用”将这些列为未实现；也不能把有测试 harness 的代码当作已经启用的正式功能。
+SQL 历史/全局加密日志、SQL 常用上下文补全和文档快捷键、MySQL 八页设计器及常用约束表单、查询资产/分组、URI/对象查找/收藏夹、账户/备份新入口、PG 高级/TLS、SQLite 附加库和六页图形设计/事务表删除及复制/视图 CRUD、ClickHouse 原生 SQL/共享只读网格、AI SQL 建议、只读数据字典、PG 函数/过程/序列目录与只读定义、PG 14–18 普通表正式设计保存分别有实现 **I** 和各自限定的运行记录。不要重复按“菜单曾禁用”将这些列为未实现；也不能把有测试 harness 的代码当作已经启用的正式功能。
 
 ## 当前缺口与实施顺序
 
 | 优先级 | 能力 | 实际剩余工作 |
 |---|---|---|
-| P1 | PostgreSQL 正式图形设计 | 当前 `SchemaDesign()` 仍只暴露 Snapshot；共享设计文档已按真实引擎选用 PG 规划器，PG 字段/identity/生成列/表属性组件及预览已完成准备。已有 PG 元数据/改名私有执行和 CREATE/ALTER 规划、保留值/目录/序列及限定 heap/TOAST 变化与新引用证据；显式声明函数（默认/生成/约束/索引/WHEN）、类型/转换、运算符/操作符类/访问方法均已补限定探针检查；内建 SQL 运算符支持限定双参数转发，函数支持有界、核对真实类型的 core 转发。新增字段 nextval 默认值在填充旧行前拒绝，已有 serial 所有权声明保持原记录核验。CREATE/ALTER 服务内部事务执行器已整合并验证回滚/冲突/取消/关闭/丢失回执；新默认值、存储生成列及 identity 已补独立回滚投影和限定分配状态核验，PG 14 数组节点格式已适配。隐藏验证已明确拒绝 domain 和可变用户类型，防止预检查后新增 CHECK/同名类型替换的副作用；仅保留固定系统类型。仍需正式 Apply binding、其它并发/依赖/隐式回调与一般表达式范围、用户类型稳定性方案、原生表单正式接线及实际窗口保存验收；PG 18 独立 NOT NULL 约束尚未适配。 |
+| 深化 | PostgreSQL 图形设计 | PG 14–18 核心普通表的字段、默认值、非空、identity、版本允许的生成列、常用约束、索引、触发器、表属性、SQL 预览及正式保存已交付，见 [设计保存记录](postgres-designer-save-2026-11-03.md)。表/字段改名单独保存，删除字段须输入原表名称。仍缺用户类型稳定性方案、分区/继承编辑、物理字段重排、身份序列完整选项修改和更多表达式；当前明确拒绝这些范围。PG 对象 Drop/Copy、视图/程序 CRUD 不随表设计开放。Windows/macOS 原生及 Navicat 行为/性能差分继续待验证。 |
 | P1 | PG/SQLite 常用对象与文件工具 | PG 函数/过程/序列目录、重载身份、只读定义及搜索/收藏入口已交付，见 [对象浏览记录](postgres-program-browse-2026-11-03.md)；仍缺 PG 视图/程序 CRUD、账户权限适配；共享导入/多格式导出向导、PG/SQLite 备份恢复。SQLite 普通视图 CRUD 与表删除/复制已交付，自动依赖改写和图形查询设计仍不支持。PG SSH/HTTP、SQLite HTTP 尚未接通；运行必须继续明确拒绝未支持配置。 |
 | 验收/深化 | PG/SQLite 大数据体验 | Keyset、Count、FieldChunks、Analysis 已接通真实运行及共享网格；原物理会话/规则限定游标、显式计数、1024 字符/字节字段读取和全表精确分析已补。真实 PG/SQLite 服务、Tester、十万行正确性及 Linux 正式窗口范围见 [大数据交付记录](portable-large-data-2026-11-03.md)。无稳定键/可空排序等不承诺 seek；同条件峰值 RSS、完整数据类型/排序范围、多平台和 Navicat 差分继续深化。 |
 | P2 | 数据传输 | 当前入口禁用。建立源/目标映射、类型及 NULL/二进制/精确数值保真、预览、批次执行、取消与部分/不确定结果。已有文件导出不能算数据库间传输。 |
@@ -22,20 +22,20 @@ SQL 历史/全局加密日志、SQL 常用上下文补全和文档快捷键、My
 | P3 | ClickHouse 深化 | 基础真实驱动与只读网格已实现。仍需复杂类型、集群/字典/函数、完整管理、TLS/多版本和更多真实服务/原生验证；现有产品能力不支持关系型事务/编辑/设计/导入/备份。 |
 | P3 | AI 深化 | SQL 生成/解释/优化和未执行草稿已实现。仍需商业兼容服务验收、多平台、AI 表设计/数据填充及各自的预览与执行边界；自有协议服务通过不等于商业模型实测。 |
 | P2/P3 | 完整工作区与连接协作 | 现有加密 Workspace 只保存 SQL Documents/ActiveID；数据/对象页恢复、命名工作区/切换仍需设计和实现。连接颜色、共享菜单仍禁用；共享须另定资产、凭据与协作范围，不能以已有连接分组替代。 |
-| 持续 | 已有体验精细行为 | 完整补全语义、图形分区/函数索引、专用程序编辑器、图形查询构建/执行计划、超大元数据性能及多平台布局；图形计划仍需行为规格，已有普通 EXPLAIN 不重复列为未实现。表菜单的“设计表（只读）”文字仍未按实际设计 binding 区分，菜单和工具栏的编辑提示需统一。数据字典已有基本预览/两个格式导出；完整目录/程序/权限/物理属性不是本次字典交付。 |
+| 持续 | 已有体验精细行为 | 完整补全语义、图形分区/函数索引、专用程序编辑器、图形查询构建/执行计划、超大元数据性能及多平台布局；图形计划仍需行为规格，已有普通 EXPLAIN 不重复列为未实现。表设计入口已按实际 binding 区分，管理、程序 CRUD、删除和复制仍各自校验能力。数据字典已有基本预览/两个格式导出；完整目录/程序/权限/物理属性不是本次字典交付。 |
 | 验收 | Windows/macOS 和原版对照 | 继续分别补跨平台实际窗口、行为规格及合法授权的 Navicat 观察/差分。Linux NyaDB 截图、构建和 Tester 都不能替代 O/V。 |
 
 ## 源码依据与验收区分
 
-[PG 对象浏览交付记录](postgres-program-browse-2026-11-03.md) 区分只读目录与对象 CRUD，记录 PG 14/17/18、工作台回归及 Linux 正式窗口；序列 SQL 是静态参数重建，不是完整备份，也不开放 PG 设计 Apply。
+[PG 对象浏览交付记录](postgres-program-browse-2026-11-03.md) 区分只读目录与对象 CRUD，记录 PG 14/17/18、工作台回归及 Linux 正式窗口；序列 SQL 是静态参数重建，不是完整备份，该阶段没有开放 PG 设计 Apply；随后正式保存见 [设计保存记录](postgres-designer-save-2026-11-03.md)。
 
-本轮 PostgreSQL 新字段值核验的故障复现、真实服务结果、失败及兼容性修复记录见 [独立新值核验](postgres-new-value-proof-2026-11-02.md)。该内部实现不会自行开启正式设计入口；原生 GUI、跨平台及 Navicat 差分仍按各自实际证据计算。
+早期 PostgreSQL 新字段值核验的故障复现、真实服务结果、失败及兼容性修复记录见 [独立新值核验](postgres-new-value-proof-2026-11-02.md)。该内部实现不会自行开启正式设计入口；原生 GUI、跨平台及 Navicat 差分仍按各自实际证据计算。
 
-后续 PG 原生表单组件与预览已通过 Tester，[表单准备记录](postgres-designer-forms-2026-11-02.md) 保留当时真实 domain 并发失败。当前[类型并发边界修复](postgres-probe-type-stability-2026-11-02.md) 已在隐藏 CREATE 前明确拒绝 domain 和可变用户类型，覆盖捕获类型 ID 后新增 CHECK、同名 enum 替换及不进入原失败注入点。普通表依赖没有稳定类型锁；一般表达式/其它依赖和隐式回调、用户类型稳定性方案及正式窗口保存仍待完成，Apply 继续不公开。组件实现和拒绝策略均不能替代正式 PG 设计器交付。
+后续 PG 原生表单组件与预览已通过 Tester，[表单准备记录](postgres-designer-forms-2026-11-02.md) 保留当时真实 domain 并发失败。当前[类型并发边界修复](postgres-probe-type-stability-2026-11-02.md) 已在隐藏 CREATE 前明确拒绝 domain 和可变用户类型，覆盖捕获类型 ID 后新增 CHECK、同名 enum 替换及不进入原失败注入点。普通表依赖没有稳定类型锁；随后 [正式保存阶段](postgres-designer-save-2026-11-03.md) 补齐受支持声明检查闭包、依赖锁定、版本矩阵与窗口验收，并公开 Apply；用户类型及其它未支持表达式继续拒绝。历史组件与拒绝记录按当时范围保留。
 
 - [PG 当前 binding](../internal/services/engines/sqlite_design.go)、[通用设计器准备](../internal/ui/objectworkspace/schema_design_state.go)、[PG 私有 CREATE/ALTER 事务](../internal/services/engines/postgres_design_ddl_apply.go)。
 - [实际工具菜单及工具栏](../internal/ui/shell/chrome.go) 保留传输/同步/生成/脱敏/CLI/监控等禁用入口；预览页的静态演示不作为正式能力依据。
-- [产品引擎能力](../internal/services/connections/descriptors.go) 的 Import/Backup/DesignTables 仍仅 MySQL 开启；SQLite 原生设计由实际 SchemaDesign binding 单独启用，不能只根据描述表漏算它。
+- [产品引擎能力](../internal/services/connections/descriptors.go) 的 Import/Backup 仍仅 MySQL 开启，DesignTables 已包含 PostgreSQL；SQLite 原生设计由实际 SchemaDesign binding 单独启用，不能只根据描述表漏算它。
 - [完整工作台记录](workbench-completion-2026-11-02.md) 保留逐阶段结果；[字典交付记录](data-dictionary-2026-11-02.md) 和 [PG 序列核验](postgres-sequence-state-2026-11-02.md) 为本轮新增成果。
 - [SQLite 表复制交付记录](sqlite-table-copy-2026-11-02.md) 单独列正式入口、真实 SQLite、Tester、race、Linux 窗口及未验证边界。
 - [SQLite 视图管理交付记录](sqlite-view-crud-2026-11-02.md) 单独列完整定义、依赖回滚、触发器保留、原连接草稿/回执、正式窗口及资源清理。
