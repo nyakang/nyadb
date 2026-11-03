@@ -149,9 +149,8 @@ func (s *State) LoadObjects(database string, force bool, invalidate func()) {
 		return
 	}
 	s.CancelObjects()
-	if force {
-		delete(w.Cache, database)
-	}
+	// Refresh replaces a snapshot only on success. Explicit invalidation after
+	// a mutation still evicts stale metadata through InvalidateDatabaseObjects.
 	delete(w.Errors, database)
 	ctx, cancel := context.WithCancel(context.Background())
 	w.objectCancel = cancel

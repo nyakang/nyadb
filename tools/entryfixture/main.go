@@ -146,6 +146,8 @@ func main() {
 		seed(root)
 	case "seed-engine-options":
 		seedEngineOptions(root)
+	case "seed-postgres-programs":
+		seedPostgresPrograms(root)
 	case "seed-clickhouse":
 		seedClickHouse(root)
 	case "seed-ai":

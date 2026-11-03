@@ -363,7 +363,7 @@ func (s *State) OpenProgram(id uint64, profileID int64, database string, data co
 	if old := s.documents[id]; old != nil {
 		s.Close(old)
 	}
-	d := &Document{id: id, profileID: profileID, database: database, table: data.Name, program: p}
+	d := &Document{object: data.Ref, id: id, profileID: profileID, database: database, table: data.Name, program: p}
 	s.documents[id] = d
 	return d
 }

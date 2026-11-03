@@ -41,6 +41,9 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 	if e := s.check(n.Object("table", "_")); e != nil {
 		return nil, e
 	}
+	if s.kind == connections.PostgreSQL {
+		return s.postgresBrowse(ctx, n)
+	}
 	objects, e := s.Objects(ctx, n.Schema)
 	if e != nil {
 		return nil, e

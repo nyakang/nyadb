@@ -292,6 +292,8 @@ func searchObjectKind(kind string) string {
 		return "procedure"
 	case "事件":
 		return "event"
+	case "序列":
+		return "sequence"
 	default:
 		return kind
 	}

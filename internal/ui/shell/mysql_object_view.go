@@ -87,7 +87,7 @@ func (s *State) openMySQLObject(services ui.Services, database, name, kind strin
 func (s *State) openMySQLProgram(database, name, kind string) {
 	id := s.sessions.Current().ProfileID
 	if id == 0 || s.sessions.StatusFor(id) != "已连接" {
-		s.status = "请先连接 MySQL"
+		s.status = "请先连接数据库"
 		return
 	}
 	var item *mysqlsvc.MySQLDBObject

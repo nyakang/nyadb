@@ -43,7 +43,7 @@ func (s *State) searchModal(c *ui.Context) {
 					}
 				}
 				kind := locales.Text(x.kind)
-				kinds := []string{"全部", "表", "视图", "函数", "存储过程", "事件"}
+				kinds := []string{"全部", "表", "视图", "函数", "存储过程", "事件", "序列"}
 				labels := make([]string, len(kinds))
 				for i, k := range kinds {
 					labels[i] = locales.Text(k)

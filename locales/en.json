@@ -1096,7 +1096,7 @@
   "objectRefreshMetadataPrefix": "Refresh Metadata: ",
   "objectFilterPrefix": "Filter Objects: ",
   "objectProgramDefinition": "View Program Definition",
-  "objectProgramDefinitionTooltip": "View function, procedure or event definition",
+  "objectProgramDefinitionTooltip": "View function, procedure, event or sequence definition",
   "objectClipboardOtherProfile": "The object clipboard belongs to another connection. Switch to the original connection.",
   "objectDatabasePrefix": "Database: ",
   "queryAssets1": "Open Query",
@@ -1465,5 +1465,14 @@
   "postgresDesignUnlogged": "Unlogged table",
   "postgresDesignAddStorage": "Add storage parameter",
   "postgresDesignRemoveStorage": "Remove last storage parameter",
-  "postgresDesignRetainedSettings": "Existing privileges, row security and inheritance settings are preserved on this page."
+  "postgresDesignRetainedSettings": "Existing privileges, row security and inheritance settings are preserved on this page.",
+  "postgresSequenceType": "Sequence type",
+  "postgresSequenceMinimum": "Sequence minimum",
+  "postgresSequenceMaximum": "Sequence maximum",
+  "postgresSequenceCache": "Sequence cache",
+  "postgresSequenceCycle": "Sequence cycle",
+  "programDefinitionSource": "Object definition (returned by server)",
+  "postgresSequenceDefinitionSource": "Sequence definition (reconstructed from server catalog settings)",
+  "programDefinitionUnavailable": "The current account could not retrieve the definition; server privileges may restrict access.",
+  "programDefinitionDisplayLimit": "… (long definition: showing the first 500 lines only)"
 }

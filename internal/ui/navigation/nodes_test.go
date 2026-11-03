@@ -4,6 +4,8 @@ import (
 	"iter"
 	"slices"
 	"testing"
+
+	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
 func TestNavigatorCategoriesAndMetadataProgress(t *testing.T) {
@@ -67,5 +69,42 @@ func TestNavigatorCategoriesAndMetadataProgress(t *testing.T) {
 		} else if len(items) != 0 {
 			t.Fatalf("unsupported category %q fabricated objects: %v", n.Category, items)
 		}
+	}
+}
+
+func TestPostgreSQLCategoriesKeepOverloadsAndOtherEnginesUnchanged(t *testing.T) {
+	objects := []Object{{Name: "over(integer)", Kind: "函数"}, {Name: "over(text)", Kind: "函数"}, {Name: "counter", Kind: "序列"}}
+	for _, kind := range []connections.Kind{connections.PostgreSQL, connections.SQLite, connections.ClickHouse} {
+		t.Run(string(kind), func(t *testing.T) {
+			s := New(Dependencies{
+				Engine:         func(int64) connections.Kind { return kind },
+				SessionStatus:  func(int64) string { return "已连接" },
+				DatabaseOpened: func(int64, string) bool { return true },
+				Objects:        func(int64, string) (iter.Seq[Object], bool) { return slices.Values(objects), true },
+			})
+			want := []string{"表", "视图", "查询"}
+			if kind == connections.PostgreSQL {
+				want = []string{"表", "视图", "函数", "存储过程", "序列", "查询"}
+			}
+			children := s.Children(DatabaseNode(91, "app").Key())
+			if len(children) != len(want) {
+				t.Fatalf("categories: %v", children)
+			}
+			for i, child := range children {
+				n := Parse(child)
+				if n.Category != want[i] {
+					t.Fatal("category order", n)
+				}
+				if n.Category == "函数" {
+					routines := s.Children(child)
+					if len(routines) != 2 || routines[0] == routines[1] || Parse(routines[1]).Object != "over(text)" {
+						t.Fatal("collapsed overloaded functions", routines)
+					}
+				}
+				if n.Category == "序列" && len(s.Children(child)) != 1 {
+					t.Fatal("sequence missing")
+				}
+			}
+		})
 	}
 }

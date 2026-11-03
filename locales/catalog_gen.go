@@ -11236,13 +11236,13 @@ func (msgs Messages) ObjectProgramDefinition() string {
 	return Catalog.Format(msgs.locale, "objectProgramDefinition", nil)
 }
 
-// ObjectProgramDefinitionTooltip says "查看函数、存储过程或事件定义"
+// ObjectProgramDefinitionTooltip says "查看函数、存储过程、事件或序列定义"
 // in the language the app shows.
 func ObjectProgramDefinitionTooltip() string {
 	return In(i18n.Locale()).ObjectProgramDefinitionTooltip()
 }
 
-// ObjectProgramDefinitionTooltip says "查看函数、存储过程或事件定义"
+// ObjectProgramDefinitionTooltip says "查看函数、存储过程、事件或序列定义"
 // in the language of msgs.
 func (msgs Messages) ObjectProgramDefinitionTooltip() string {
 	return Catalog.Format(msgs.locale, "objectProgramDefinitionTooltip", nil)
@@ -14944,4 +14944,96 @@ func PostgresDesignRetainedSettings() string {
 // in the language of msgs.
 func (msgs Messages) PostgresDesignRetainedSettings() string {
 	return Catalog.Format(msgs.locale, "postgresDesignRetainedSettings", nil)
+}
+
+// PostgresSequenceType says "序列类型"
+// in the language the app shows.
+func PostgresSequenceType() string { return In(i18n.Locale()).PostgresSequenceType() }
+
+// PostgresSequenceType says "序列类型"
+// in the language of msgs.
+func (msgs Messages) PostgresSequenceType() string {
+	return Catalog.Format(msgs.locale, "postgresSequenceType", nil)
+}
+
+// PostgresSequenceMinimum says "序列最小值"
+// in the language the app shows.
+func PostgresSequenceMinimum() string { return In(i18n.Locale()).PostgresSequenceMinimum() }
+
+// PostgresSequenceMinimum says "序列最小值"
+// in the language of msgs.
+func (msgs Messages) PostgresSequenceMinimum() string {
+	return Catalog.Format(msgs.locale, "postgresSequenceMinimum", nil)
+}
+
+// PostgresSequenceMaximum says "序列最大值"
+// in the language the app shows.
+func PostgresSequenceMaximum() string { return In(i18n.Locale()).PostgresSequenceMaximum() }
+
+// PostgresSequenceMaximum says "序列最大值"
+// in the language of msgs.
+func (msgs Messages) PostgresSequenceMaximum() string {
+	return Catalog.Format(msgs.locale, "postgresSequenceMaximum", nil)
+}
+
+// PostgresSequenceCache says "序列缓存"
+// in the language the app shows.
+func PostgresSequenceCache() string { return In(i18n.Locale()).PostgresSequenceCache() }
+
+// PostgresSequenceCache says "序列缓存"
+// in the language of msgs.
+func (msgs Messages) PostgresSequenceCache() string {
+	return Catalog.Format(msgs.locale, "postgresSequenceCache", nil)
+}
+
+// PostgresSequenceCycle says "序列循环"
+// in the language the app shows.
+func PostgresSequenceCycle() string { return In(i18n.Locale()).PostgresSequenceCycle() }
+
+// PostgresSequenceCycle says "序列循环"
+// in the language of msgs.
+func (msgs Messages) PostgresSequenceCycle() string {
+	return Catalog.Format(msgs.locale, "postgresSequenceCycle", nil)
+}
+
+// ProgramDefinitionSource says "对象定义（由服务器返回）"
+// in the language the app shows.
+func ProgramDefinitionSource() string { return In(i18n.Locale()).ProgramDefinitionSource() }
+
+// ProgramDefinitionSource says "对象定义（由服务器返回）"
+// in the language of msgs.
+func (msgs Messages) ProgramDefinitionSource() string {
+	return Catalog.Format(msgs.locale, "programDefinitionSource", nil)
+}
+
+// PostgresSequenceDefinitionSource says "序列定义（根据服务器目录参数重建）"
+// in the language the app shows.
+func PostgresSequenceDefinitionSource() string {
+	return In(i18n.Locale()).PostgresSequenceDefinitionSource()
+}
+
+// PostgresSequenceDefinitionSource says "序列定义（根据服务器目录参数重建）"
+// in the language of msgs.
+func (msgs Messages) PostgresSequenceDefinitionSource() string {
+	return Catalog.Format(msgs.locale, "postgresSequenceDefinitionSource", nil)
+}
+
+// ProgramDefinitionUnavailable says "当前账号未获取到定义，可能受到服务器权限限制"
+// in the language the app shows.
+func ProgramDefinitionUnavailable() string { return In(i18n.Locale()).ProgramDefinitionUnavailable() }
+
+// ProgramDefinitionUnavailable says "当前账号未获取到定义，可能受到服务器权限限制"
+// in the language of msgs.
+func (msgs Messages) ProgramDefinitionUnavailable() string {
+	return Catalog.Format(msgs.locale, "programDefinitionUnavailable", nil)
+}
+
+// ProgramDefinitionDisplayLimit says "… (定义过长，仅展示前 500 行)"
+// in the language the app shows.
+func ProgramDefinitionDisplayLimit() string { return In(i18n.Locale()).ProgramDefinitionDisplayLimit() }
+
+// ProgramDefinitionDisplayLimit says "… (定义过长，仅展示前 500 行)"
+// in the language of msgs.
+func (msgs Messages) ProgramDefinitionDisplayLimit() string {
+	return Catalog.Format(msgs.locale, "programDefinitionDisplayLimit", nil)
 }

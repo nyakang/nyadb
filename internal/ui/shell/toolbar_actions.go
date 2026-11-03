@@ -2,6 +2,7 @@ package shell
 
 import (
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -16,7 +17,11 @@ func (s *State) toolbarMenu(services ui.Services, action string, m *ui.Menu) {
 	scope := toolbarScope{w.ProfileID, w.Generation, w.Database}
 	selected := ""
 	if action == "其它" {
-		for _, kind := range []string{"存储过程", "事件"} {
+		kinds := []string{"存储过程", "事件"}
+		if w.Kind == connections.PostgreSQL {
+			kinds = []string{"存储过程", "序列"}
+		}
+		for _, kind := range kinds {
 			if m.Item(locales.Text(kind)).Disabled(!s.toolbarActionAvailable(action)).Chosen() {
 				selected = kind
 			}
