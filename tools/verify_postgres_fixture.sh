@@ -65,7 +65,7 @@ fixture_id=$(docker run --rm -d --name "$fixture_name" --label "org.nyadb.postgr
 printf 'run=%s\ncontainer_id=%s\ncontainer_name=%s\n' "$fixture_run" "$fixture_id" "$fixture_name" > "$evidence_dir/resource.txt"
 fixture_ready=false
 for attempt in {1..60}; do
- if docker exec "$fixture_id" pg_isready -U nyadb_it -d nyadb_it >/dev/null 2>&1; then fixture_ready=true; break; fi
+ if docker exec "$fixture_id" pg_isready -h 127.0.0.1 -U nyadb_it -d nyadb_it >/dev/null 2>&1; then fixture_ready=true; break; fi
  sleep 1
 done
 printf 'fixture_ready=%s\n' "$fixture_ready" >> "$evidence_dir/resource.txt"
