@@ -17,12 +17,14 @@ type viewHandle struct {
 
 func (h *viewHandle) Generation() uint64 { return 973 }
 func (h *viewHandle) ViewDesign() contract.ViewDesignOperations {
-	return contract.ViewDesignOperations{CanApply: func(t contract.SchemaDesignTarget) bool { return t.Generation == 973 }, Apply: h.apply}
+	return contract.ViewDesignOperations{Snapshot: func(_ context.Context, t contract.SchemaDesignTarget) (contract.ViewDesignSnapshot, error) {
+		return contract.ViewDesignSnapshot{Target: t}, nil
+	}, CanApply: func(t contract.SchemaDesignTarget) bool { return t.Generation == 973 }, Apply: h.apply}
 }
 func TestViewDesignTranslatesClonesAndPreservesLateRenameReceipt(t *testing.T) {
 	m := dbruntime.New()
 	defer m.Close()
-	h := &viewHandle{handle: handle{id: 1}}
+	h := &viewHandle{handle: handle{id: 1, caps: contract.Capabilities{DesignViews: true}}}
 	m.Register(connections.SQLite, dbruntime.ProviderFunc(func(context.Context, connections.Profile, string) (contract.Session, error) { return h, nil }))
 	s, err := m.ConnectSession(context.Background(), profile(1), "")
 	if err != nil {
@@ -62,7 +64,7 @@ func TestViewDesignRejectsForeignScopeAndWrongExistenceReceipt(t *testing.T) {
 		t.Run(change, func(t *testing.T) {
 			m := dbruntime.New()
 			defer m.Close()
-			h := &viewHandle{handle: handle{id: 1}}
+			h := &viewHandle{handle: handle{id: 1, caps: contract.Capabilities{DesignViews: true}}}
 			h.apply = func(_ context.Context, r contract.ViewDesignRequest) contract.ViewDesignOutcome {
 				a := r.Original.Clone()
 				a.Target.Object.Name = r.Desired.Name

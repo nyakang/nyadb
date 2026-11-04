@@ -33,7 +33,7 @@ func (s *State) CanAccounts(profile int64) bool {
 	if s.deps.AdministrationFor != nil && s.deps.AdministrationFor(profile) == nil {
 		return false
 	}
-	return s.sessionFor(profile).Connected && s.capabilities(profile).DesignTables && s.deps.AccountLoader != nil && s.deps.AccountExecutor != nil && (s.accounts == nil || !s.accounts.busy)
+	return s.sessionFor(profile).Connected && s.capabilities(profile).Accounts && s.deps.AccountLoader != nil && s.deps.AccountExecutor != nil && (s.accounts == nil || !s.accounts.busy)
 }
 func (s *State) CanBackup(profile int64) bool {
 	return s.sessionFor(profile).Connected && s.capabilities(profile).Backup && s.backupRuntime != nil && s.backupRuntime() != nil && (s.backup == nil || !s.backup.busy)

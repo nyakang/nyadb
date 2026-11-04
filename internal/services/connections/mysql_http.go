@@ -10,7 +10,7 @@ import (
 // MySQLHTTP contains non-secret HTTP tunnel and proxy configuration.
 // Authentication passwords, certificate passphrases and exported tunnel
 // scripts are not stored in the profile.
-type MySQLHTTP struct {
+type HTTPOptions struct {
 	Enabled           bool   `json:"enabled,omitempty"`
 	URL               string `json:"url,omitempty"`
 	TargetID          string `json:"targetId,omitempty"`
@@ -26,6 +26,8 @@ type MySQLHTTP struct {
 	ProxyPort         int    `json:"proxyPort"`
 	ProxyUsername     string `json:"proxyUsername,omitempty"`
 }
+
+type MySQLHTTP = HTTPOptions
 
 func DefaultMySQLHTTP() MySQLHTTP {
 	return MySQLHTTP{ProxyPort: 8080}

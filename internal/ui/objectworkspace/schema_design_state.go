@@ -68,7 +68,7 @@ func (s *State) canSchemaDesign(profile int64, database, table string) bool {
 		return false
 	}
 	ops, target := s.schemaBinding(profile, database, table)
-	return target.Generation != 0 && ops.Snapshot != nil && ops.Apply != nil && ops.CanApply != nil && ops.CanApply(target)
+	return target.Generation != 0 && s.operationAvailable("design_table", target) && ops.Snapshot != nil && ops.Apply != nil && ops.CanApply != nil && ops.CanApply(target)
 }
 func (s *State) CanEditDesign(d *Document) bool {
 	if d == nil || d.closed || d.objectKind != "表" || !s.session().Connected || s.session().ProfileID != d.profileID {

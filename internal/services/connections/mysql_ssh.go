@@ -8,7 +8,7 @@ import (
 
 // MySQLSSH stores non-secret SSH tunnel metadata only. Authentication
 // passwords, passphrases, and private key contents are never serialized.
-type MySQLSSH struct {
+type SSHOptions struct {
 	Enabled    bool   `json:"enabled,omitempty"`
 	Host       string `json:"host,omitempty"`
 	Port       int    `json:"port"`
@@ -16,6 +16,9 @@ type MySQLSSH struct {
 	AuthMethod string `json:"authMethod"`
 	PrivateKey string `json:"privateKey,omitempty"`
 }
+
+// MySQLSSH preserves the stored MySQL configuration and source compatibility.
+type MySQLSSH = SSHOptions
 
 const (
 	MySQLSSHPassword       = "密码"

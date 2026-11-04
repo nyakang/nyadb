@@ -52,11 +52,11 @@ func (s *State) EnableTunnelServices(store *credentials.TunnelStore, hosts trans
 					return nil, err
 				}
 			}
-			return transport.New(settings, transport.Options{Secrets: secrets, Hosts: hosts, ConfirmHost: r.confirm})
+			return transport.NewWithConfig(settings.Transport(), transport.Options{Secrets: secrets, Hosts: hosts, ConfirmHost: r.confirm})
 		}
 	}
 	s.connectionEditor.SetTunnelServices(store, func(ctx context.Context, settings connections.ActiveSettings, password string, secrets transport.Secrets) error {
-		dialer, err := transport.New(settings, transport.Options{Secrets: secrets, Hosts: hosts, ConfirmHost: r.confirm})
+		dialer, err := transport.NewWithConfig(settings.Transport(), transport.Options{Secrets: secrets, Hosts: hosts, ConfirmHost: r.confirm})
 		if err != nil {
 			return err
 		}

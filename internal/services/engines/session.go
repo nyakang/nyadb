@@ -178,6 +178,7 @@ func (s *Session) Capabilities() contract.Capabilities {
 	caps := d.Capabilities
 	if sqlite, ok := s.strategy.(sqliteDialect); ok && sqlite.options.ReadOnly {
 		caps.EditableTables = false
+		caps.DesignTables, caps.DesignViews, caps.Objects, caps.Import, caps.Restore = false, false, false, false, false
 	}
 	return caps
 }

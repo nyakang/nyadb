@@ -13,11 +13,11 @@ type Descriptor struct {
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
 	case MySQL:
-		return Descriptor{kind, "MySQL", "mysql", "server", "mysql", 3306, contract.Capabilities{Query: true, Metadata: true, Transactions: true, EditableTables: true, Explain: true, DesignTables: true, Import: true, Backup: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true}}, true
+		return Descriptor{kind, "MySQL", "mysql", "server", "mysql", 3306, contract.Capabilities{Objects: true, Maintenance: true, Accounts: true, Restore: true, DesignViews: true, Query: true, Metadata: true, Transactions: true, EditableTables: true, Explain: true, DesignTables: true, Import: true, Backup: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true}}, true
 	case PostgreSQL:
-		return Descriptor{kind, "PostgreSQL", "postgres", "server", "postgres", 5432, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, DesignTables: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
+		return Descriptor{kind, "PostgreSQL", "postgres", "server", "postgres", 5432, contract.Capabilities{Objects: true, DesignViews: true, Backup: true, Restore: true, Import: true, Maintenance: true, Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, DesignTables: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
 	case SQLite:
-		return Descriptor{kind, "SQLite", "sqlite", "file", "sqlite", 0, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
+		return Descriptor{kind, "SQLite", "sqlite", "file", "sqlite", 0, contract.Capabilities{Backup: true, Restore: true, Import: true, Maintenance: true, DesignTables: true, DesignViews: true, Objects: true, Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
 	case ClickHouse:
 		return Descriptor{kind, "ClickHouse", "clickhouse", "server", "clickhouse", 9000, contract.Capabilities{Query: true, Metadata: true, Explain: true, Count: true, Export: true, JSONL: true}}, true
 	}

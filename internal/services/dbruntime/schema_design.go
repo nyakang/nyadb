@@ -22,7 +22,7 @@ func (s *session) SchemaDesign() contract.SchemaDesignOperations {
 	ops := contract.SchemaDesignOperations{}
 	if raw.CanApply != nil {
 		ops.CanApply = func(t contract.SchemaDesignTarget) bool {
-			if s.schemaDesignTarget(t) != nil {
+			if s.schemaDesignTarget(t) != nil || !s.Capabilities().DesignTables {
 				return false
 			}
 			t.Generation = s.raw.Generation()
@@ -55,6 +55,9 @@ func (s *session) SchemaDesign() contract.SchemaDesignOperations {
 			if err := s.schemaDesignTarget(request.Original.Target); err != nil {
 				return contract.SchemaDesignOutcome{State: "not_executed", Error: err}
 			}
+			if !s.Capabilities().DesignTables {
+				return contract.SchemaDesignOutcome{State: "not_executed", Error: contract.ErrUnsupported}
+			}
 			r := request.Clone()
 			r.Original.Target.Generation = s.raw.Generation()
 			out := raw.Apply(ctx, r)
@@ -78,7 +81,7 @@ func (s *session) SchemaDesign() contract.SchemaDesignOperations {
 	}
 	if raw.CanDrop != nil {
 		ops.CanDrop = func(t contract.SchemaDesignTarget) bool {
-			if s.schemaDesignTarget(t) != nil {
+			if s.schemaDesignTarget(t) != nil || !s.Capabilities().Objects {
 				return false
 			}
 			t.Generation = s.raw.Generation()
@@ -89,6 +92,9 @@ func (s *session) SchemaDesign() contract.SchemaDesignOperations {
 		ops.Drop = func(ctx context.Context, original contract.SchemaDesignSnapshot) contract.SchemaDesignOutcome {
 			if err := s.schemaDesignTarget(original.Target); err != nil {
 				return contract.SchemaDesignOutcome{State: "not_executed", Error: err}
+			}
+			if !s.Capabilities().Objects {
+				return contract.SchemaDesignOutcome{State: "not_executed", Error: contract.ErrUnsupported}
 			}
 			r := original.Clone()
 			r.Target.Generation = s.raw.Generation()
@@ -108,7 +114,7 @@ func (s *session) SchemaDesign() contract.SchemaDesignOperations {
 	}
 	if raw.CanCopy != nil {
 		ops.CanCopy = func(t contract.SchemaDesignTarget) bool {
-			if s.schemaDesignTarget(t) != nil {
+			if s.schemaDesignTarget(t) != nil || !s.Capabilities().Objects {
 				return false
 			}
 			t.Generation = s.raw.Generation()
@@ -119,6 +125,9 @@ func (s *session) SchemaDesign() contract.SchemaDesignOperations {
 		ops.Copy = func(ctx context.Context, request contract.SchemaCopyRequest) contract.SchemaDesignOutcome {
 			if err := s.schemaDesignTarget(request.Original.Target); err != nil {
 				return contract.SchemaDesignOutcome{State: "not_executed", Error: err}
+			}
+			if !s.Capabilities().Objects {
+				return contract.SchemaDesignOutcome{State: "not_executed", Error: contract.ErrUnsupported}
 			}
 			r := request.Clone()
 			r.Original.Target.Generation = s.raw.Generation()

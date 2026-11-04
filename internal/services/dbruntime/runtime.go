@@ -206,7 +206,7 @@ func (s *session) Capabilities() contract.Capabilities {
 	caps.Import = caps.Import && (r.Importer != nil || r.StreamImporter != nil)
 	caps.JSONL = caps.JSONL && r.JSONL != nil
 	caps.Export = caps.Export && (r.Exporter != nil || r.JSONL != nil)
-	return caps
+	return s.managementCapabilities(caps)
 }
 func (s *session) alive() bool {
 	s.mu.Lock()

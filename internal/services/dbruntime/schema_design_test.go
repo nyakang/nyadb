@@ -20,13 +20,22 @@ type schemaHandle struct {
 
 func (s *schemaHandle) Generation() uint64 { return 973 }
 func (s *schemaHandle) SchemaDesign() contract.SchemaDesignOperations {
-	return contract.SchemaDesignOperations{Snapshot: s.load, Apply: s.apply}
+	ops := contract.SchemaDesignOperations{Snapshot: s.load, Apply: s.apply}
+	if s.apply != nil {
+		ops.CanApply = func(t contract.SchemaDesignTarget) bool { return t.Generation == 973 }
+		if ops.Snapshot == nil {
+			ops.Snapshot = func(_ context.Context, t contract.SchemaDesignTarget) (contract.SchemaDesignSnapshot, error) {
+				return contract.SchemaDesignSnapshot{Target: t}, nil
+			}
+		}
+	}
+	return ops
 }
 
 func TestSchemaFeatureTranslatesGenerationAndCannotBypassRevocation(t *testing.T) {
 	m := dbruntime.New()
 	defer m.Close()
-	h := &schemaHandle{handle: handle{id: 1}}
+	h := &schemaHandle{handle: handle{id: 1, caps: contract.Capabilities{DesignTables: true}}}
 	m.Register(connections.SQLite, dbruntime.ProviderFunc(func(context.Context, connections.Profile, string) (contract.Session, error) { return h, nil }))
 	s, err := m.ConnectSession(context.Background(), profile(1), "")
 	if err != nil {
@@ -96,7 +105,7 @@ func TestSchemaFeatureTranslatesGenerationAndCannotBypassRevocation(t *testing.T
 func TestSchemaLateCommitKeepsItsOriginalReceipt(t *testing.T) {
 	m := dbruntime.New()
 	defer m.Close()
-	h := &schemaHandle{handle: handle{id: 1}}
+	h := &schemaHandle{handle: handle{id: 1, caps: contract.Capabilities{DesignTables: true}}}
 	h.apply = func(_ context.Context, r contract.SchemaDesignRequest) contract.SchemaDesignOutcome {
 		if err := m.Disconnect(1); err != nil {
 			t.Fatal(err)
@@ -119,7 +128,7 @@ func TestSchemaLateCommitKeepsItsOriginalReceipt(t *testing.T) {
 func TestPostgreSQLReadOnlyCatalogBindingCopiesOriginalMetadataAndGeneration(t *testing.T) {
 	m := dbruntime.New()
 	defer m.Close()
-	h := &schemaHandle{handle: handle{id: 1}}
+	h := &schemaHandle{handle: handle{id: 1, caps: contract.Capabilities{DesignTables: true}}}
 	var original contract.SchemaDesignSnapshot
 	h.load = func(_ context.Context, target contract.SchemaDesignTarget) (contract.SchemaDesignSnapshot, error) {
 		if target.Generation != 973 {

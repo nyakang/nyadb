@@ -289,6 +289,12 @@ func (s *State) pruneMySQLTabsFor(id int64, known map[string]bool) {
 
 func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 	return objectworkspace.Dependencies{
+		Availability: func(id int64, operation string, target contract.SchemaDesignTarget) contract.Availability {
+			if s.runtime == nil {
+				return contract.Availability{Reason: "disconnected"}
+			}
+			return s.runtime.Availability(id, operation, target)
+		},
 		Namespace: func(id int64, database string) contract.NamespaceRef {
 			if s.runtime == nil {
 				return contract.NamespaceRef{}

@@ -6,11 +6,12 @@ import (
 	"errors"
 	"fmt"
 	mysqldriver "github.com/go-sql-driver/mysql"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
 	"unicode/utf8"
 )
 
-type MaintenanceMessage struct{ Table, Operation, Type, Message string }
+type MaintenanceMessage = contract.MaintenanceMessage
 
 func (m *MySQLSessionManager) MaintainTable(ctx context.Context, id int64, database, table, operation string) ([]MaintenanceMessage, error) {
 	op := strings.ToUpper(operation)
