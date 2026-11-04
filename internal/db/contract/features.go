@@ -60,6 +60,7 @@ type DataTransactions struct {
 // DataRuntime contains operation-bound functions. Workers capture this value
 // before starting; adapters must check the original session on every call.
 type DataRuntime struct {
+	ImportDialect    string
 	Loader           func(context.Context, int64, string, string, int64, int) (*DataPage, error)
 	AdvancedLoader   func(context.Context, int64, string, string, DataOptions) (*DataPage, error)
 	Saver            func(context.Context, int64, string, string, []DataEdit) (*DataEditResult, error)
@@ -122,6 +123,7 @@ type DataAnalysisOperations struct {
 }
 type DataAnalysisProvider interface{ DataAnalysisOperations() DataAnalysisOperations }
 type DataImports struct {
+	Dialect          string
 	NewTableImporter func(context.Context, int64, string, string, []DataImportColumn, []DataEdit) (*DataNewTableImportResult, error)
 	Importer         func(context.Context, int64, string, string, DataImportRequest) (*DataImportResult, error)
 	StreamImporter   func(context.Context, int64, string, string, DataImportStreamRequest) (*DataImportStreamResult, error)
@@ -158,6 +160,7 @@ func ComposeData(s Session) DataRuntime {
 	}
 	if p, e := Require[DataImportsProvider](s); e == nil {
 		v := p.DataImports()
+		r.ImportDialect = v.Dialect
 		r.NewTableImporter = v.NewTableImporter
 		r.Importer = v.Importer
 		r.StreamImporter = v.StreamImporter

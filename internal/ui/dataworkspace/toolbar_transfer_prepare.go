@@ -15,7 +15,7 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/db/mysqlspec"
+	"github.com/nyakang/nyadb/internal/db/importspec"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -80,6 +80,7 @@ func (s *State) readDataImportPath(services ui.Services, t *Document, path strin
 }
 
 type mysqlDataMappingReader struct {
+	dialect         string
 	raw             mysqlDataImportRowReader
 	mapping, fields []string
 	columns         []contract.StructureColumn
@@ -106,7 +107,7 @@ func (r *mysqlDataMappingReader) Next(ctx context.Context) ([]contract.DataValue
 	}
 	request := r.request
 	request.Edits = []contract.DataEdit{edit}
-	if err = mysqlspec.ValidateImportRequest(r.columns, request); err != nil {
+	if err = importspec.Validate(r.dialect, r.columns, request); err != nil {
 		return nil, err
 	}
 	r.changed += changed
@@ -149,13 +150,13 @@ func (s *State) prepareDataImport(services ui.Services, t *Document) {
 	mapping = slices.Clone(mapping)
 	metadata = slices.Clone(metadata)
 	ctx, out, request, gen := s.beginDataTransfer(t)
-	profile := t.profileID
+	profile, dialect := t.profileID, t.importDialect
 	go func() {
 		reader, err := raw.open(ctx)
 		var spool *mysqlDataImportSpool
 		changed := int64(0)
 		if err == nil {
-			mapped := &mysqlDataMappingReader{raw: reader, mapping: mapping, fields: fields, columns: metadata, options: options, empty: empty, request: requestValues}
+			mapped := &mysqlDataMappingReader{dialect: dialect, raw: reader, mapping: mapping, fields: fields, columns: metadata, options: options, empty: empty, request: requestValues}
 			spool, _, _, err = mysqlDataSpoolRows(ctx, mapped)
 			changed = mapped.changed
 			if err == nil {

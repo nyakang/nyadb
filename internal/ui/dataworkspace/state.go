@@ -38,10 +38,11 @@ type Dependencies struct {
 // Document has stable qualified identity. All mutable grid, draft and request
 // state belongs to this module and is accessed only on the UI thread.
 type Document struct {
-	generation   uint64
-	object       contract.ObjectRef
-	capabilities contract.Capabilities
-	filterModes  []string
+	importDialect string
+	generation    uint64
+	object        contract.ObjectRef
+	capabilities  contract.Capabilities
+	filterModes   []string
 
 	importOnly           bool
 	hostAction           string
@@ -185,7 +186,7 @@ func (s *State) Open(id uint64, profileID int64, database, table string, kind ..
 	if len(kind) > 0 && kind[0] != "" {
 		objectKind = kind[0]
 	}
-	d := &Document{objectKind: objectKind, id: id, profileID: profileID, database: database, table: table, limit: contract.DataDefaultPageSize, selectedRow: -1, filterColumnDraft: "选择字段", filterModeDraft: "包含", showFieldTypes: true, hiddenColumns: map[string]bool{}, useKeyset: true}
+	d := &Document{importDialect: s.runtimeFor(&Document{profileID: profileID}).ImportDialect, objectKind: objectKind, id: id, profileID: profileID, database: database, table: table, limit: contract.DataDefaultPageSize, selectedRow: -1, filterColumnDraft: "选择字段", filterModeDraft: "包含", showFieldTypes: true, hiddenColumns: map[string]bool{}, useKeyset: true}
 	if old := s.documents[id]; old != nil {
 		s.Close(old)
 	}

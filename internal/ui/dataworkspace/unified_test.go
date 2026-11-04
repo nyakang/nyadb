@@ -160,8 +160,8 @@ func TestUnifiedGridRepresentative(t *testing.T) {
 			if doc.Page() == nil || doc.Error() != "" || !tt.HasText("共享网格 · NULL 文本") {
 				t.Fatalf("shared grid failed: %s", doc.Error())
 			}
-			if doc.portable() && tt.HasText("导入") {
-				t.Fatal("unimplemented capability rendered")
+			if doc.capabilities.Import != tt.HasText("导入") {
+				t.Fatal("published import capability differs from toolbar")
 			}
 			if doc.Page().Rows[0][2].Text != "12345678901234567890.123456789012345678" {
 				t.Fatal("exact number changed")

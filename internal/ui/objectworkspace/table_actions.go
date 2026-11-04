@@ -152,7 +152,7 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 	}
 	m.Separator()
 	for _, item := range []struct{ label, action string }{{"导入向导…", "import"}, {"导出向导…", "export"}, {"表配置文件", "profile"}} {
-		if m.Item(locales.Text(item.label)).Disabled(s.deps.DataAction == nil || !s.capabilities(profileID).Import).Chosen() {
+		if m.Item(locales.Text(item.label)).Disabled(s.deps.DataAction == nil || (item.action == "import" && !s.capabilities(profileID).Import)).Chosen() {
 			s.deps.DataAction(services, profileID, database, name, item.action)
 		}
 	}

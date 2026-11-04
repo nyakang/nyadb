@@ -84,7 +84,7 @@ func (s *State) OpenImport(id uint64, profile int64, database string) *Document 
 	if old := s.documents[id]; old != nil {
 		s.Close(old)
 	}
-	d := &Document{id: id, profileID: profile, database: database, importOnly: true, objectKind: "import", selectedRow: -1, hiddenColumns: map[string]bool{}}
+	d := &Document{importDialect: s.runtimeFor(&Document{profileID: profile}).ImportDialect, id: id, profileID: profile, database: database, importOnly: true, objectKind: "import", selectedRow: -1, hiddenColumns: map[string]bool{}}
 	s.documents[id] = d
 	s.openDataImport(d)
 	return d

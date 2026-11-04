@@ -13,7 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/db/mysqlspec"
+	"github.com/nyakang/nyadb/internal/db/importspec"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -311,7 +311,7 @@ func mysqlDataImportMapping(t *Document) ([]string, []contract.DataImportColumn,
 			columns = append(columns, col)
 		}
 	}
-	metadata, err := mysqlspec.ImportColumnMetadata(columns)
+	metadata, err := importspec.Columns(t.importDialect, columns)
 	return mapping, columns, metadata, err
 }
 
@@ -351,7 +351,7 @@ func mysqlDataImportRequest(t *Document) ([]contract.DataImportColumn, []contrac
 	}
 	if t.transfer.Target == "new" {
 		name := t.transfer.NewName
-		if name == "" || !utf8.ValidString(name) || utf8.RuneCountInString(name) > 64 || strings.ContainsAny(name, "\x00\r\n") || strings.HasSuffix(name, " ") {
+		if importspec.Identifier(t.importDialect, name) != nil {
 			return nil, nil, fmt.Errorf("%s", locales.Text("目标表名称无效，最多 64 个字符"))
 		}
 	}
@@ -361,7 +361,7 @@ func mysqlDataImportRequest(t *Document) ([]contract.DataImportColumn, []contrac
 	}
 	edits, err := mysqlDataImportMappedEdits(t, mapping, metadata)
 	if err == nil {
-		err = mysqlspec.ValidateImportRequest(metadata, mysqlDataImportServiceRequest(t, columns, edits))
+		err = importspec.Validate(t.importDialect, metadata, mysqlDataImportServiceRequest(t, columns, edits))
 	}
 	return columns, edits, err
 }
@@ -495,6 +495,14 @@ func (s *State) dataImportReview(c *ui.Context, t *Document) {
 			}
 		})
 	})
+	if tr.Target == "new" && t.importDialect != "" && t.importDialect != "mysql" {
+		_, columns, _, err := mysqlDataImportMapping(t)
+		if err == nil {
+			if ddl, err := importspec.DDL(t.importDialect, t.database, tr.NewName, columns); err == nil {
+				ui.TextArea(c, &ddl).Label(locales.Text("创建 SQL 预览")).ReadOnly(true).Height(65)
+			}
+		}
+	}
 	mapping, _, _, mappingErr := mysqlDataImportMapping(t)
 	count, err := mysqlDataImportReviewValidation(t)
 	if err != nil {

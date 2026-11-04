@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/importspec"
 	"io"
 	"math/big"
 	"os"
@@ -455,6 +456,9 @@ func (s *State) startDataImport(services ui.Services, t *Document) {
 	creation := mysqlDataHistoryEntry{}
 	if newTable {
 		creation = mysqlDataImportCreationHistory(db, table, columns)
+		if t.importDialect != "" && t.importDialect != "mysql" {
+			creation.SQL, _ = importspec.DDL(t.importDialect, db, table, columns)
+		}
 	}
 	go func() {
 		started := time.Now()
@@ -769,6 +773,7 @@ func (s *State) consumeDataTransfers(services ui.Services) {
 				if result.Inferred != nil {
 					tr.NewColumns = result.Inferred
 				}
+				tr.NewColumns = importspec.AdaptInference(t.importDialect, tr.NewColumns)
 				tr.Path = result.Path
 				mysqlDataResetTargetMapping(t)
 			} else if result.Path != "" {

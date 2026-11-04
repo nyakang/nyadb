@@ -190,8 +190,8 @@ func TestAdapterRejectsMalformedTypedValuesWithoutChangingRow(t *testing.T) {
 
 func TestPortableUnsupportedFeaturesFailAtContractLookup(t *testing.T) {
 	s := adapterFixture(t)
-	if _, err := contract.Require[contract.DataImportsProvider](s); !errors.Is(err, contract.ErrUnsupported) {
-		t.Fatalf("unsupported imports resolved: %v", err)
+	if p, err := contract.Require[contract.DataImportsProvider](s); err != nil || p.DataImports().StreamImporter == nil {
+		t.Fatalf("implemented imports unavailable: %v", err)
 	}
 	if op, err := contract.Require[contract.DataAnalysisProvider](s); err != nil || op.DataAnalysisOperations().Analyzer == nil {
 		t.Fatalf("implemented analysis unavailable: %v", err)
