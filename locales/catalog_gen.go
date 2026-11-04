@@ -15277,3 +15277,373 @@ func TableDesignConfirmRename() string { return In(i18n.Locale()).TableDesignCon
 func (msgs Messages) TableDesignConfirmRename() string {
 	return Catalog.Format(msgs.locale, "tableDesignConfirmRename", nil)
 }
+
+// MultiEngineReliability1 says "PostgreSQL 工具目录"
+// in the language the app shows.
+func MultiEngineReliability1() string { return In(i18n.Locale()).MultiEngineReliability1() }
+
+// MultiEngineReliability1 says "PostgreSQL 工具目录"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability1() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability1", nil)
+}
+
+// MultiEngineReliability2 says "SQL 会话上限"
+// in the language the app shows.
+func MultiEngineReliability2() string { return In(i18n.Locale()).MultiEngineReliability2() }
+
+// MultiEngineReliability2 says "SQL 会话上限"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability2() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability2", nil)
+}
+
+// MultiEngineReliability3 says "后台连接上限"
+// in the language the app shows.
+func MultiEngineReliability3() string { return In(i18n.Locale()).MultiEngineReliability3() }
+
+// MultiEngineReliability3 says "后台连接上限"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability3() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability3", nil)
+}
+
+// MultiEngineReliability4 says "SQL 会话数量已达上限，请关闭其他查询标签后重试"
+// in the language the app shows.
+func MultiEngineReliability4() string { return In(i18n.Locale()).MultiEngineReliability4() }
+
+// MultiEngineReliability4 says "SQL 会话数量已达上限，请关闭其他查询标签后重试"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability4() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability4", nil)
+}
+
+// MultiEngineReliability5 says "SQL 预览与维护结果"
+// in the language the app shows.
+func MultiEngineReliability5() string { return In(i18n.Locale()).MultiEngineReliability5() }
+
+// MultiEngineReliability5 says "SQL 预览与维护结果"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability5() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability5", nil)
+}
+
+// MultiEngineReliability6 says "SQLite 备份只包含当前选择的一个数据库文件。"
+// in the language the app shows.
+func MultiEngineReliability6() string { return In(i18n.Locale()).MultiEngineReliability6() }
+
+// MultiEngineReliability6 says "SQLite 备份只包含当前选择的一个数据库文件。"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability6() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability6", nil)
+}
+
+// MultiEngineReliability7 says "保留所有者"
+// in the language the app shows.
+func MultiEngineReliability7() string { return In(i18n.Locale()).MultiEngineReliability7() }
+
+// MultiEngineReliability7 says "保留所有者"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability7() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability7", nil)
+}
+
+// MultiEngineReliability8 says "保留权限"
+// in the language the app shows.
+func MultiEngineReliability8() string { return In(i18n.Locale()).MultiEngineReliability8() }
+
+// MultiEngineReliability8 says "保留权限"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability8() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability8", nil)
+}
+
+// MultiEngineReliability9 says "再次输入目标名称以确认覆盖"
+// in the language the app shows.
+func MultiEngineReliability9() string { return In(i18n.Locale()).MultiEngineReliability9() }
+
+// MultiEngineReliability9 says "再次输入目标名称以确认覆盖"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability9() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability9", nil)
+}
+
+// MultiEngineReliability10 says "创建 SQL 预览"
+// in the language the app shows.
+func MultiEngineReliability10() string { return In(i18n.Locale()).MultiEngineReliability10() }
+
+// MultiEngineReliability10 says "创建 SQL 预览"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability10() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability10", nil)
+}
+
+// MultiEngineReliability11 says "原维护会话已失效"
+// in the language the app shows.
+func MultiEngineReliability11() string { return In(i18n.Locale()).MultiEngineReliability11() }
+
+// MultiEngineReliability11 says "原维护会话已失效"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability11() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability11", nil)
+}
+
+// MultiEngineReliability12 says "原连接已失效"
+// in the language the app shows.
+func MultiEngineReliability12() string { return In(i18n.Locale()).MultiEngineReliability12() }
+
+// MultiEngineReliability12 says "原连接已失效"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability12() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability12", nil)
+}
+
+// MultiEngineReliability13 says "备份与恢复"
+// in the language the app shows.
+func MultiEngineReliability13() string { return In(i18n.Locale()).MultiEngineReliability13() }
+
+// MultiEngineReliability13 says "备份与恢复"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability13() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability13", nil)
+}
+
+// MultiEngineReliability14 says "备份工具目录："
+// in the language the app shows.
+func MultiEngineReliability14() string { return In(i18n.Locale()).MultiEngineReliability14() }
+
+// MultiEngineReliability14 says "备份工具目录："
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability14() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability14", nil)
+}
+
+// MultiEngineReliability15 says "备份恢复计划与结果"
+// in the language the app shows.
+func MultiEngineReliability15() string { return In(i18n.Locale()).MultiEngineReliability15() }
+
+// MultiEngineReliability15 says "备份恢复计划与结果"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability15() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability15", nil)
+}
+
+// MultiEngineReliability16 says "备份文件路径"
+// in the language the app shows.
+func MultiEngineReliability16() string { return In(i18n.Locale()).MultiEngineReliability16() }
+
+// MultiEngineReliability16 says "备份文件路径"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability16() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability16", nil)
+}
+
+// MultiEngineReliability17 says "备份范围"
+// in the language the app shows.
+func MultiEngineReliability17() string { return In(i18n.Locale()).MultiEngineReliability17() }
+
+// MultiEngineReliability17 says "备份范围"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability17() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability17", nil)
+}
+
+// MultiEngineReliability18 says "备份表…"
+// in the language the app shows.
+func MultiEngineReliability18() string { return In(i18n.Locale()).MultiEngineReliability18() }
+
+// MultiEngineReliability18 says "备份表…"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability18() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability18", nil)
+}
+
+// MultiEngineReliability19 says "外键检查"
+// in the language the app shows.
+func MultiEngineReliability19() string { return In(i18n.Locale()).MultiEngineReliability19() }
+
+// MultiEngineReliability19 says "外键检查"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability19() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability19", nil)
+}
+
+// MultiEngineReliability20 says "完整性检查"
+// in the language the app shows.
+func MultiEngineReliability20() string { return In(i18n.Locale()).MultiEngineReliability20() }
+
+// MultiEngineReliability20 says "完整性检查"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability20() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability20", nil)
+}
+
+// MultiEngineReliability21 says "恢复结果不确定，禁止重放；请核验数据库。"
+// in the language the app shows.
+func MultiEngineReliability21() string { return In(i18n.Locale()).MultiEngineReliability21() }
+
+// MultiEngineReliability21 says "恢复结果不确定，禁止重放；请核验数据库。"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability21() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability21", nil)
+}
+
+// MultiEngineReliability22 says "正在等待维护回执…"
+// in the language the app shows.
+func MultiEngineReliability22() string { return In(i18n.Locale()).MultiEngineReliability22() }
+
+// MultiEngineReliability22 says "正在等待维护回执…"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability22() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability22", nil)
+}
+
+// MultiEngineReliability23 says "此操作不保证回滚；取消后请核对原目标。"
+// in the language the app shows.
+func MultiEngineReliability23() string { return In(i18n.Locale()).MultiEngineReliability23() }
+
+// MultiEngineReliability23 says "此操作不保证回滚；取消后请核对原目标。"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability23() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability23", nil)
+}
+
+// MultiEngineReliability24 says "此操作在独立事务中执行。"
+// in the language the app shows.
+func MultiEngineReliability24() string { return In(i18n.Locale()).MultiEngineReliability24() }
+
+// MultiEngineReliability24 says "此操作在独立事务中执行。"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability24() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability24", nil)
+}
+
+// MultiEngineReliability25 says "目标数据库或文件"
+// in the language the app shows.
+func MultiEngineReliability25() string { return In(i18n.Locale()).MultiEngineReliability25() }
+
+// MultiEngineReliability25 says "目标数据库或文件"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability25() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability25", nil)
+}
+
+// MultiEngineReliability26 says "确认执行"
+// in the language the app shows.
+func MultiEngineReliability26() string { return In(i18n.Locale()).MultiEngineReliability26() }
+
+// MultiEngineReliability26 says "确认执行"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability26() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability26", nil)
+}
+
+// MultiEngineReliability27 says "确认执行维护"
+// in the language the app shows.
+func MultiEngineReliability27() string { return In(i18n.Locale()).MultiEngineReliability27() }
+
+// MultiEngineReliability27 says "确认执行维护"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability27() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability27", nil)
+}
+
+// MultiEngineReliability28 says "维护"
+// in the language the app shows.
+func MultiEngineReliability28() string { return In(i18n.Locale()).MultiEngineReliability28() }
+
+// MultiEngineReliability28 says "维护"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability28() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability28", nil)
+}
+
+// MultiEngineReliability29 says "覆盖仅替换归档对象；归档外依赖冲突会导致恢复失败，不执行级联删除。"
+// in the language the app shows.
+func MultiEngineReliability29() string { return In(i18n.Locale()).MultiEngineReliability29() }
+
+// MultiEngineReliability29 says "覆盖仅替换归档对象；归档外依赖冲突会导致恢复失败，不执行级联删除。"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability29() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability29", nil)
+}
+
+// MultiEngineReliability30 says "覆盖已有目标"
+// in the language the app shows.
+func MultiEngineReliability30() string { return In(i18n.Locale()).MultiEngineReliability30() }
+
+// MultiEngineReliability30 says "覆盖已有目标"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability30() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability30", nil)
+}
+
+// MultiEngineReliability31 says "视图定义"
+// in the language the app shows.
+func MultiEngineReliability31() string { return In(i18n.Locale()).MultiEngineReliability31() }
+
+// MultiEngineReliability31 says "视图定义"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability31() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability31", nil)
+}
+
+// MultiEngineReliability32 says "选定表（每行一个名称）"
+// in the language the app shows.
+func MultiEngineReliability32() string { return In(i18n.Locale()).MultiEngineReliability32() }
+
+// MultiEngineReliability32 says "选定表（每行一个名称）"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability32() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability32", nil)
+}
+
+// MultiEngineReliability33 says "逻辑备份不包含集群角色及物理灾备信息。"
+// in the language the app shows.
+func MultiEngineReliability33() string { return In(i18n.Locale()).MultiEngineReliability33() }
+
+// MultiEngineReliability33 says "逻辑备份不包含集群角色及物理灾备信息。"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability33() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability33", nil)
+}
+
+// MultiEngineReliability34 says "部分备份不保证包含外部依赖；恢复前请检查依赖对象。"
+// in the language the app shows.
+func MultiEngineReliability34() string { return In(i18n.Locale()).MultiEngineReliability34() }
+
+// MultiEngineReliability34 says "部分备份不保证包含外部依赖；恢复前请检查依赖对象。"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability34() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability34", nil)
+}
+
+// MultiEngineReliability35 says "重建索引"
+// in the language the app shows.
+func MultiEngineReliability35() string { return In(i18n.Locale()).MultiEngineReliability35() }
+
+// MultiEngineReliability35 says "重建索引"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability35() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability35", nil)
+}
+
+// MultiEngineReliability36 says "预检查与预览"
+// in the language the app shows.
+func MultiEngineReliability36() string { return In(i18n.Locale()).MultiEngineReliability36() }
+
+// MultiEngineReliability36 says "预检查与预览"
+// in the language of msgs.
+func (msgs Messages) MultiEngineReliability36() string {
+	return Catalog.Format(msgs.locale, "multiEngineReliability36", nil)
+}
+
+// MultiEngineSuspendSQL says "确认暂停相关 SQL 会话并回滚未提交事务；SQL 正文将保留。"
+// in the language the app shows.
+func MultiEngineSuspendSQL() string { return In(i18n.Locale()).MultiEngineSuspendSQL() }
+
+// MultiEngineSuspendSQL says "确认暂停相关 SQL 会话并回滚未提交事务；SQL 正文将保留。"
+// in the language of msgs.
+func (msgs Messages) MultiEngineSuspendSQL() string {
+	return Catalog.Format(msgs.locale, "multiEngineSuspendSQL", nil)
+}

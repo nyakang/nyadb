@@ -19,7 +19,7 @@ func NormalizeProfile(p Profile) (Profile, error) {
 	if p.Kind != PostgreSQL && p.PostgreSQLOptions != (PostgreSQLOptions{}) {
 		return p, fmt.Errorf("%w: PostgreSQL options on another engine", ErrInvalid)
 	}
-	if p.Kind != SQLite && (p.SQLiteOptions.Version != 0 || p.SQLiteOptions.ReadOnly || p.SQLiteOptions.RequireExisting || p.SQLiteOptions.BusyTimeoutMS != 0 || p.SQLiteOptions.ForeignKeys || len(p.SQLiteOptions.Attachments) > 0) {
+	if p.Kind != SQLite && (p.SQLiteOptions.Version != 0 || p.SQLiteOptions.MaxConnections != 0 || p.SQLiteOptions.SQLMaxConnections != 0 || p.SQLiteOptions.ReadOnly || p.SQLiteOptions.RequireExisting || p.SQLiteOptions.BusyTimeoutMS != 0 || p.SQLiteOptions.ForeignKeys || len(p.SQLiteOptions.Attachments) > 0) {
 		return p, fmt.Errorf("%w: SQLite options on another engine", ErrInvalid)
 	}
 	p.ActiveVariant = strings.TrimSpace(p.ActiveVariant)

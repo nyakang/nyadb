@@ -31,6 +31,7 @@ func TestPostgreSQL17OptionsFixture(t *testing.T) {
 	a := connections.DefaultPostgreSQLOptions()
 	a.DefaultSchema, a.ApplicationName = "engine_options", "native options fixture"
 	a.ConnectTimeoutSeconds, a.MaxConnections = 3, 3
+	a.SQLMaxConnections = 3
 	a.StatementTimeoutMS, a.LockTimeoutMS = 70, 35
 	p.PostgreSQLOptions = a
 	m := NewManager()

@@ -70,3 +70,44 @@ func TestEngineOptionsRejectInvalidAndCrossEngineSettings(t *testing.T) {
 		t.Fatal("accepted PostgreSQL options on MySQL")
 	}
 }
+
+func TestIndependentPoolLimitDefaultsAndBounds(t *testing.T) {
+	for _, limit := range []int{-1, 0, 1, 64, 65} {
+		pg := connections.DefaultPostgreSQLOptions()
+		pg.SQLMaxConnections = limit
+		n, err := connections.NormalizePostgreSQLOptions(pg)
+		if limit < 0 || limit > 64 {
+			if !errors.Is(err, connections.ErrInvalid) {
+				t.Fatal(limit, err)
+			}
+		} else if err != nil || limit == 0 && n.SQLMaxConnections != 8 || limit > 0 && n.SQLMaxConnections != limit {
+			t.Fatal(limit, n, err)
+		}
+		for _, sqlBudget := range []bool{false, true} {
+			sq := connections.DefaultSQLiteOptions()
+			if sqlBudget {
+				sq.SQLMaxConnections = limit
+			} else {
+				sq.MaxConnections = limit
+			}
+			n, err := connections.NormalizeSQLiteOptions(sq)
+			if limit < 0 || limit > 64 {
+				if !errors.Is(err, connections.ErrInvalid) {
+					t.Fatal(limit, err)
+				}
+			} else {
+				want := limit
+				if want == 0 {
+					want = 8
+				}
+				got := n.MaxConnections
+				if sqlBudget {
+					got = n.SQLMaxConnections
+				}
+				if err != nil || got != want {
+					t.Fatal(limit, got, err)
+				}
+			}
+		}
+	}
+}

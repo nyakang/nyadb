@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/sqltext"
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
@@ -548,7 +549,8 @@ func (s *Session) ReserveQuery(tab uint64) (contract.QueryLease, error) {
 	if tab == 0 || s.isClosed() {
 		return nil, contract.ErrRevoked
 	}
-	return &queryLease{session: s}, nil
+	ctx, cancel := context.WithCancel(s.ctx)
+	return &queryLease{session: s, ctx: ctx, cancel: cancel, doc: tab}, nil
 }
 
 type queryLease struct {
@@ -558,6 +560,10 @@ type queryLease struct {
 	session  *Session
 	lease    contract.SQLLease
 	released bool
+	ctx      context.Context
+	cancel   context.CancelFunc
+	schema   string // last schema selected by the application, not user SETs
+	doc      uint64
 }
 
 func (l *queryLease) Preconnect(ctx context.Context) error {
@@ -573,7 +579,10 @@ func (l *queryLease) Preconnect(ctx context.Context) error {
 		return nil
 	}
 	l.mu.Unlock()
-	x, e := l.session.Reserve(ctx)
+	child, cancel := context.WithCancel(ctx)
+	stop := context.AfterFunc(l.ctx, cancel)
+	defer func() { stop(); cancel() }()
+	x, e := l.session.Reserve(child)
 	if e != nil {
 		return e
 	}
@@ -602,8 +611,15 @@ func (l *queryLease) ExecuteStream(ctx context.Context, schema, q string, sink f
 	if released {
 		return contract.SQLResult{}, contract.ErrRevoked
 	}
-	if e := x.SetSchema(ctx, schema); e != nil {
-		return contract.SQLResult{}, e
+	// Transaction recovery does not depend on a search path. A schema change
+	// requested while the transaction is failed must not prevent ROLLBACK;
+	// initialize that schema on the next application query instead.
+	recovery := l.session.kind == connections.PostgreSQL && sqltext.IsRollback(q)
+	if schema != "" && schema != l.schema && !recovery {
+		if e := x.SetSchema(ctx, schema); e != nil {
+			return contract.SQLResult{}, e
+		}
+		l.schema = schema
 	}
 	if sink == nil {
 		return x.Execute(ctx, q)
@@ -612,7 +628,7 @@ func (l *queryLease) ExecuteStream(ctx context.Context, schema, q string, sink f
 }
 func (l *queryLease) Replace() (contract.QueryLease, error) {
 	l.Release()
-	return &queryLease{session: l.session}, nil
+	return l.session.ReserveQuery(l.doc)
 }
 func (l *queryLease) Release() {
 	l.mu.Lock()
@@ -621,6 +637,7 @@ func (l *queryLease) Release() {
 		return
 	}
 	l.released = true
+	l.cancel()
 	x := l.lease
 	l.mu.Unlock()
 	if x != nil {
