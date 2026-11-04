@@ -383,7 +383,7 @@ func cellValue(v contract.DataValue) contract.Cell {
 	return contract.Cell{Kind: k, Text: v.Text, Bytes: append([]byte(nil), v.Bytes...)}
 }
 func (s *Session) DataRuntime() contract.DataRuntime {
-	r := contract.DataRuntime{Count: s.countData, Chunk: func(ctx context.Context, id int64, db, t, f string, ref contract.RowRef, offset int64, units int) (*contract.FieldChunk, error) {
+	r := contract.DataRuntime{ImportDialect: string(s.kind), Importer: s.importData, NewTableImporter: s.importNewTable, StreamImporter: s.importStream, Count: s.countData, Chunk: func(ctx context.Context, id int64, db, t, f string, ref contract.RowRef, offset int64, units int) (*contract.FieldChunk, error) {
 		return s.chunkData(ctx, id, db, t, f, ref, offset, units, nil)
 	}, Analyzer: s.analyzeData, Capabilities: s.Capabilities(), FilterModes: []string{"equal", "not_equal", "less", "greater", "less_equal", "greater_equal", "like", "is_null", "is_not_null"}, AdvancedLoader: func(ctx context.Context, id int64, db, t string, o contract.DataOptions) (*contract.DataPage, error) {
 		return s.readData(ctx, id, db, t, o, nil)

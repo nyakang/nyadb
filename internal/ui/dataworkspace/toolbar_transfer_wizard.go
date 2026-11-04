@@ -176,8 +176,8 @@ func (s *State) dataImportWizardPage(c *ui.Context, t *Document) {
 			}
 			return locales.Text("原版 XML 空值兼容转换")
 		}).Width(250)
-		ui.Checkbox(c, &tr.ExtendedInsert, locales.Text("使用扩展插入语句"))
-		ui.Checkbox(c, &tr.IgnoreForeignKeys, locales.Text("忽略外键约束"))
+		ui.Checkbox(c, &tr.ExtendedInsert, locales.Text("使用扩展插入语句")).Disabled(t.importDialect != "" && t.importDialect != "mysql")
+		ui.Checkbox(c, &tr.IgnoreForeignKeys, locales.Text("忽略外键约束")).Disabled(t.importDialect != "" && t.importDialect != "mysql")
 		kb := strconv.Itoa(tr.StatementKB)
 		mysqlDataWizardInput(c, &kb, locales.Text("最大语句大小（KB）")).Width(180)
 		if n, err := strconv.Atoi(kb); err == nil && n > 0 && n <= 16384 {
