@@ -343,11 +343,26 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 			}
 			services.Invalidate()
 		},
+		MaintenanceFor: func(id int64) contract.MaintenanceOperations {
+			if s.runtime == nil {
+				return contract.MaintenanceOperations{}
+			}
+			return s.runtime.Maintenance(id)
+		},
 		Availability: func(id int64, operation string, target contract.SchemaDesignTarget) contract.Availability {
 			if s.runtime == nil {
 				return contract.Availability{Reason: "disconnected"}
 			}
 			return s.runtime.Availability(id, operation, target)
+		},
+		Maintained: func(services ui.Services, event objectworkspace.MaintenanceEvent) {
+			if s.runtime == nil || s.runtime.Generation(event.Original.Object.ProfileID) != event.Original.Generation {
+				return
+			}
+			if event.Outcome.State == "completed" || event.Outcome.State == "uncertain" {
+				s.sessions.InvalidateDatabaseObjects(event.Original.Object.ProfileID, event.Generation, event.Database)
+				services.Invalidate()
+			}
 		},
 		Namespace: func(id int64, database string) contract.NamespaceRef {
 			if s.runtime == nil {

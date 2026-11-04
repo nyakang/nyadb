@@ -152,6 +152,10 @@ func (s *State) consumeAdmin(services ui.Services) {
 	}
 }
 func (s *State) BeginMaintenance(services ui.Services, profile int64, database, table, operation string) {
+	if s.deps.MaintenanceFor != nil {
+		s.beginNeutralMaintenance(services, profile, database, table, operation)
+		return
+	}
 	if !s.canAdministration(profile) || s.deps.Maintenance == nil || s.maintenance != nil {
 		return
 	}

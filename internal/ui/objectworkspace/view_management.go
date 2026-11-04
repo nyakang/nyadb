@@ -142,7 +142,7 @@ func (s *State) viewRequest(x *viewOperation) (contract.ViewDesignRequest, []str
 		if x.action == "create" && strings.TrimSpace(x.name) != x.target.Object.Name {
 			return r, nil, errors.New("creation name differs from captured absence scope")
 		}
-		v, err := schemaddl.ParseSQLiteView(x.text)
+		v, err := schemaddl.ParseView(viewEngine(x), x.text)
 		if err != nil {
 			return r, nil, err
 		}
@@ -154,7 +154,7 @@ func (s *State) viewRequest(x *viewOperation) (contract.ViewDesignRequest, []str
 	} else if x.action == "rename" {
 		r.Desired.Name = strings.TrimSpace(x.name)
 	}
-	p, err := schemaddl.PlanSQLiteView(r.Original.Schema, r.Action, r.Desired, x.target.Object.Schema)
+	p, err := schemaddl.PlanView(r.Original.Schema, r.Action, r.Desired, x.target.Object.Schema)
 	return r, p.SQL, err
 }
 func (s *State) prepareView() {
@@ -282,7 +282,7 @@ func (s *State) consumeView(services ui.Services) {
 			}
 		} else if reply.err != nil {
 			x.err = reply.err.Error()
-		} else if reply.snapshot.Target != x.target || reply.snapshot.Schema.Engine != "sqlite" || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.View.Name != x.target.Object.Name || reply.snapshot.Schema.View.Schema != x.target.Object.Schema {
+		} else if reply.snapshot.Target != x.target || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql") || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.View.Name != x.target.Object.Name || reply.snapshot.Schema.View.Schema != x.target.Object.Schema {
 			x.err = "original view snapshot differs from the captured scope"
 		} else {
 			original := reply.snapshot.Clone()
@@ -328,14 +328,14 @@ func (s *State) viewModal(c *ui.Context) {
 	ui.Modal(c, &x.open, func() {
 		w, h := c.Size()
 		ui.Column(c).Width(min(float32(800), w-70)).Height(min(float32(620), h-70)).Padding(16).Gap(8).Background(p.Header).Children(func() {
-			ui.Text(c, locales.Text("SQLite 视图定义")+" · "+viewActionLabel(x.action)+" · "+x.database+" / "+x.target.Object.Name).Bold()
+			ui.Text(c, locales.Text("视图定义")+" · "+viewActionLabel(x.action)+" · "+x.database+" / "+x.target.Object.Name).Bold()
 			ui.Text(c, locales.Text("在原命名空间事务执行，不覆盖其它对象；依赖或触发器失效时整批回滚。"))
 			if x.action == "create" || x.action == "rename" {
 				if ui.TextInput(c, &x.name).Label(locales.Text("视图名称")).Disabled(x.busy || x.blocked).Changed() {
 					x.prepared, x.sql = nil, nil
 					if x.action == "create" {
 						x.original = nil
-						v, err := schemaddl.ParseSQLiteView(x.text)
+						v, err := schemaddl.ParseView(viewEngine(x), x.text)
 						v.Name = strings.TrimSpace(x.name)
 						v.Schema = x.target.Object.Schema
 						if nameErr := schemaddl.Identifier(v.Name); nameErr == nil {
@@ -345,7 +345,7 @@ func (s *State) viewModal(c *ui.Context) {
 						}
 						if err == nil {
 							var raw string
-							raw, err = schemaddl.CreateSQLiteView(v, x.target.Object.Schema)
+							raw, err = schemaddl.CreateView(viewEngine(x), v, x.target.Object.Schema)
 							if err == nil {
 								x.text = raw
 								x.target.Object.Name = v.Name
@@ -418,4 +418,11 @@ func (s *State) ViewError() string {
 		return s.viewOp.err
 	}
 	return ""
+}
+
+func viewEngine(x *viewOperation) string {
+	if x.original != nil {
+		return x.original.Schema.Engine
+	}
+	return "sqlite"
 }
