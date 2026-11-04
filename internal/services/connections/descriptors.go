@@ -23,3 +23,16 @@ func Describe(kind Kind) (Descriptor, bool) {
 	}
 	return Descriptor{}, false
 }
+
+// FieldTypes offers common candidates without restricting custom declarations.
+func (d Descriptor) FieldTypes() []string {
+	switch d.Kind {
+	case MySQL:
+		return []string{"bigint", "int", "smallint", "decimal(10,2)", "varchar(255)", "text", "datetime", "timestamp", "date", "json", "blob", "boolean"}
+	case PostgreSQL:
+		return []string{"bigint", "integer", "smallint", "numeric(10,2)", "text", "varchar(255)", "boolean", "timestamp", "timestamptz", "date", "json", "jsonb", "bytea", "uuid"}
+	case SQLite:
+		return []string{"INTEGER", "TEXT", "REAL", "BLOB", "NUMERIC"}
+	}
+	return nil
+}

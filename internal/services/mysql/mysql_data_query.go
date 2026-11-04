@@ -49,7 +49,7 @@ func mysqlDataPageWithOptions(queryCtx context.Context, queryer mysqlEditQueryer
 	if err != nil {
 		return nil, err
 	}
-	signature := mysqlDataRuleSignature(filters, sortRules)
+	signature := mysqlDataRuleSignature(filters, sortRules, o.Condition)
 	columns, err := readMySQLColumnMetadata(queryCtx, queryer, database, table, 128)
 	if err != nil {
 		return nil, err
@@ -157,55 +157,12 @@ func mysqlDataPageWithOptions(queryCtx context.Context, queryer mysqlEditQueryer
 		}
 	}
 	query := "SELECT " + strings.Join(fields, ", ") + " FROM " + dbName + "." + tableName
-	var args []any
-	var conditions []string
-	for _, filter := range filters {
-		col, ok := allowed[filter.Column]
-		if !ok {
-			return nil, ErrMySQLDataPage
-		}
-		quoted, _ := quotedMySQLIdentifier(col.Name)
-		switch filter.Mode {
-		case "contains", "not_contains":
-			if !mysqlDataTextType(strings.ToLower(col.DataType)) {
-				return nil, ErrMySQLDataPage
-			}
-			predicate := "LOCATE(?, " + quoted + ") > 0"
-			if filter.Mode == "not_contains" {
-				predicate = "LOCATE(?, " + quoted + ") = 0"
-			}
-			conditions = append(conditions, predicate)
-			args = append(args, filter.Value)
-		case "like", "not_like":
-			if !mysqlDataTextType(strings.ToLower(col.DataType)) {
-				return nil, ErrMySQLDataPage
-			}
-			op := " LIKE "
-			if filter.Mode == "not_like" {
-				op = " NOT LIKE "
-			}
-			conditions = append(conditions, quoted+op+"?")
-			args = append(args, "%"+filter.Value+"%")
-		case "equal", "not_equal", "less", "greater":
-			op := " = "
-			switch filter.Mode {
-			case "not_equal":
-				op = " <> "
-			case "less":
-				op = " < "
-			case "greater":
-				op = " > "
-			}
-			conditions = append(conditions, quoted+op+"?")
-			args = append(args, filter.Value)
-		case "is_null":
-			conditions = append(conditions, quoted+" IS NULL")
-		case "is_not_null":
-			conditions = append(conditions, quoted+" IS NOT NULL")
-		}
+	where, args, err := mysqlFilterWhere(columns, filters, o.Condition)
+	if err != nil {
+		return nil, err
 	}
-	if len(conditions) > 0 {
-		query += " WHERE " + strings.Join(conditions, " AND ")
+	if where != "" {
+		query += " WHERE " + where
 	}
 	var sortParts []string
 	var orderKeys []mysqlOrderKey
@@ -249,7 +206,7 @@ func mysqlDataPageWithOptions(queryCtx context.Context, queryer mysqlEditQueryer
 		if err != nil {
 			return nil, err
 		}
-		if len(conditions) > 0 {
+		if where != "" {
 			query += " AND " + predicate
 		} else {
 			query += " WHERE " + predicate

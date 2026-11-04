@@ -133,6 +133,7 @@ type RowRef struct {
 }
 
 type DataOptions struct {
+	Condition      *FilterExpression[DataFilterRule]
 	Object         ObjectRef
 	Offset         int64
 	Limit          int
@@ -239,7 +240,9 @@ type TableInfo struct {
 }
 
 type DBObject struct {
-	Ref ObjectRef
+	HasIndexes, HasTriggers *bool
+	RootPage                *int64
+	Ref                     ObjectRef
 
 	Name          string
 	Kind          string

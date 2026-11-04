@@ -184,31 +184,34 @@ func (s *Session) dataScan(rows *sql.Rows, t contract.Table, units, maxRows int)
 }
 
 func (s *Session) dataWhere(t contract.Table, r contract.PageRequest) (string, []any, error) {
-	if len(r.Filters) > 32 {
-		return "", nil, connections.ErrInvalid
+	expression, err := contract.EffectivePageExpression(r)
+	if err != nil {
+		return "", nil, err
 	}
 	cols := validColumns(t)
-	var where []string
-	var args []any
-	for _, f := range r.Filters {
+	args := []any{}
+	leaf := func(f contract.Filter) (string, error) {
 		if _, ok := cols[f.Column]; !ok || len(f.Value.Text) > 4096 || len(f.Value.Bytes) > 4096 || f.Value.Truncated {
-			return "", nil, connections.ErrInvalid
+			return "", connections.ErrInvalid
 		}
 		op := strings.ToUpper(f.Operator)
 		switch op {
 		case "=", "!=", "<", ">", "<=", ">=", "LIKE":
 			args = append(args, parameter(f.Value))
-			where = append(where, quote(f.Column)+" "+op+" "+s.arg(len(args)))
+			return quote(f.Column) + " " + op + " " + s.arg(len(args)), nil
 		case "IS NULL", "IS NOT NULL":
-			where = append(where, quote(f.Column)+" "+op)
+			return quote(f.Column) + " " + op, nil
 		default:
-			return "", nil, contract.ErrUnsupported
+			return "", contract.ErrUnsupported
 		}
 	}
-	if len(where) == 0 {
-		return "1=1", args, nil
+	where, err := contract.CompileFilter(expression, leaf)
+	if where == "" {
+		where = "1=1"
+	} else if r.Condition == nil {
+		where = strings.TrimSuffix(strings.TrimPrefix(where, "("), ")")
 	}
-	return strings.Join(where, " AND "), args, nil
+	return where, args, err
 }
 
 type dataOrder struct {
@@ -275,10 +278,11 @@ func dataRuleSignature(s *Session, t contract.Table, r contract.PageRequest, ord
 		Scope      string
 		Generation uint64
 		Table      contract.Table
+		Condition  *contract.FilterExpression[contract.Filter] `json:",omitempty"`
 		Filters    []contract.Filter
 		Order      []dataOrder
 		Identity   string
-	}{s.kind, s.dataScope, s.generation, t, r.Filters, order, identity}
+	}{s.kind, s.dataScope, s.generation, t, r.Condition, r.Filters, order, identity}
 	b, _ := json.Marshal(v)
 	h := sha256.Sum256(b)
 	return hex.EncodeToString(h[:])

@@ -130,11 +130,12 @@ type Capabilities struct {
 	Query, Metadata, Keyset, Count, FieldChunks, Analysis, Export, JSONL         bool
 }
 type PageRequest struct {
-	Object  ObjectRef
-	Offset  int64
-	Limit   int
-	Filters []Filter
-	Sorts   []Sort
+	Condition *FilterExpression[Filter]
+	Object    ObjectRef
+	Offset    int64
+	Limit     int
+	Filters   []Filter
+	Sorts     []Sort
 }
 type Filter struct {
 	Column, Operator string

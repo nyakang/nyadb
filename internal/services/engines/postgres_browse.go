@@ -53,7 +53,9 @@ func (s *Session) postgresBrowse(ctx context.Context, namespace contract.Namespa
 		return nil
 	}
 	rows, err := tx.QueryContext(ctx, `SELECT c.relname,c.relkind,COALESCE(obj_description(c.oid,'pg_class'),''),pg_get_userbyid(c.relowner),
- COALESCE(format_type(seq.seqtypid,NULL),''),seq.seqstart,seq.seqincrement,seq.seqmin,seq.seqmax,seq.seqcache,seq.seqcycle
+ COALESCE(format_type(seq.seqtypid,NULL),''),seq.seqstart,seq.seqincrement,seq.seqmin,seq.seqmax,seq.seqcache,seq.seqcycle,
+ CASE WHEN c.relkind IN ('r','p','m','f') AND c.reltuples>=0 THEN c.reltuples::bigint END,
+ CASE WHEN c.relkind IN ('r','p','m') THEN pg_total_relation_size(c.oid) END
  FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace LEFT JOIN pg_sequence seq ON seq.seqrelid=c.oid
  WHERE n.nspname=$1 AND c.relkind IN ('r','p','v','m','f','S') ORDER BY c.relname LIMIT 50001`, namespace.Schema)
 	if err != nil {
@@ -64,8 +66,15 @@ func (s *Session) postgresBrowse(ctx context.Context, namespace contract.Namespa
 		var kind, dataType string
 		var start, increment, min, max, cache sql.NullInt64
 		var cycle sql.NullBool
-		if err = rows.Scan(&object.Name, &kind, &object.Comment, &object.Definer, &dataType, &start, &increment, &min, &max, &cache, &cycle); err != nil {
+		var estimate, size sql.NullInt64
+		if err = rows.Scan(&object.Name, &kind, &object.Comment, &object.Definer, &dataType, &start, &increment, &min, &max, &cache, &cycle, &estimate, &size); err != nil {
 			break
+		}
+		if estimate.Valid {
+			object.RowsEstimate = &estimate.Int64
+		}
+		if size.Valid {
+			object.DataLength = &size.Int64
 		}
 		neutralKind := "table"
 		object.Kind = "表"
