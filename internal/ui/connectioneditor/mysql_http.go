@@ -169,7 +169,7 @@ func (s *State) mysqlHTTPProxy(c *ui.Context, cfg *connections.MySQLHTTP,
 	s.mysqlHTTPInput(c, "主机：", &cfg.ProxyHost, labelWidth, fieldWidth, proxyActive)
 	connectionFormRow(c).Children(func() {
 		ui.Text(c, locales.Text("端口：")).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
-		connectionFormTextInput(c, &s.mysqlHTTPProxyPort, "HTTP 代理端口", 80, !proxyActive, false)
+		s.formTextInput(c, &s.mysqlHTTPProxyPort, "HTTP 代理端口", 80, !proxyActive, false)
 	})
 	s.mysqlHTTPInput(c, "用户名：", &cfg.ProxyUsername, labelWidth, 200, proxyActive)
 	s.mysqlHTTPPasswordRow(c, "密码：", &s.mysqlHTTPProxyPassword, labelWidth, 200, proxyActive)
@@ -183,7 +183,7 @@ func (s *State) mysqlHTTPInput(c *ui.Context, name string, value *string,
 
 	connectionFormRow(c).Children(func() {
 		ui.Text(c, name).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
-		connectionFormTextInput(c, value, "HTTP "+name, fieldWidth, !active, false)
+		s.formTextInput(c, value, "HTTP "+name, fieldWidth, !active, false)
 	})
 }
 
@@ -194,7 +194,7 @@ func (s *State) mysqlHTTPPasswordRow(c *ui.Context, name string, value *string,
 
 	connectionFormRow(c).Children(func() {
 		ui.Text(c, name).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
-		connectionFormTextInput(c, value, "HTTP "+name, fieldWidth, !active, true)
+		s.formTextInput(c, value, "HTTP "+name, fieldWidth, !active, true)
 	})
 }
 
@@ -212,7 +212,7 @@ func (s *State) mysqlHTTPFileRow(c *ui.Context, name string, value *string,
 
 	connectionFormRow(c).Children(func() {
 		ui.Text(c, name).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
-		connectionFormTextInput(c, value, "HTTP "+name, fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, false)
+		s.formTextInput(c, value, "HTTP "+name, fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, false)
 		ui.Box(c).Width(connectionFormBrowseGap)
 		connectionFormBrowse(c, "选择 HTTP "+name+"文件", !active || s.mysqlHTTPFilePicker == nil, func() { s.mysqlHTTPFilePicker(kind) })
 	})

@@ -11,6 +11,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
 	"github.com/nyakang/nyadb/internal/transport"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -18,6 +19,8 @@ import (
 // editor. Host callbacks run on the UI thread after transient secrets and
 // pending work have been cleared.
 type Dependencies struct {
+	EditFocus       *string
+	EditTarget      func(theme.EditTarget)
 	TestConnection  func(context.Context, connections.Profile, string) error
 	InitialSQLStore InitialSQLStore
 
@@ -44,6 +47,10 @@ type State struct {
 	engineFileVersion           uint64
 	engineFilePicker            func(EngineFile, int, uint64)
 	uriOpen                     bool
+	uriReturn, uriConfirm       bool
+	validationField             string
+	editFocus                   *string
+	editTarget                  func(theme.EditTarget)
 	uriGroup, uriText, uriError string
 	initialSQLRequest           uint64
 	initialSQLResults           <-chan initialSQLResult
@@ -115,7 +122,7 @@ type State struct {
 }
 
 func New(deps Dependencies) *State {
-	return &State{tunnelSecrets: deps.TunnelSecrets, mysqlTunnelTester: deps.TestMySQLTunnel, profileService: deps.Profiles, credentialVault: deps.Vault,
+	return &State{editFocus: deps.EditFocus, editTarget: deps.EditTarget, tunnelSecrets: deps.TunnelSecrets, mysqlTunnelTester: deps.TestMySQLTunnel, profileService: deps.Profiles, credentialVault: deps.Vault,
 		validateMySQL: deps.ValidateMySQL, connectionTester: deps.TestConnection, mysqlConnectionTester: deps.TestMySQL,
 		saved: deps.Saved, back: deps.Back, canceled: deps.Cancel}
 }
@@ -183,6 +190,7 @@ func (s *State) initializeInputs() {
 func (s *State) Close() {
 	s.engineFileVersion++
 	s.uriOpen = false
+	s.uriReturn, s.uriConfirm = false, false
 	s.uriGroup = ""
 	s.uriText = ""
 	s.uriError = ""
@@ -200,6 +208,7 @@ func (s *State) Close() {
 	s.tunnelSecretsLoadFailed = false
 	s.clearMySQLInitialQuery()
 	s.connectionError = ""
+	s.validationField = ""
 }
 
 func (s *State) Cancel() {

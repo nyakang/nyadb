@@ -15647,3 +15647,1153 @@ func MultiEngineSuspendSQL() string { return In(i18n.Locale()).MultiEngineSuspen
 func (msgs Messages) MultiEngineSuspendSQL() string {
 	return Catalog.Format(msgs.locale, "multiEngineSuspendSQL", nil)
 }
+
+// NavicatUx7172526095 says "%s必须是 1–%d 之间的整数"
+// in the language the app shows.
+func NavicatUx7172526095() string { return In(i18n.Locale()).NavicatUx7172526095() }
+
+// NavicatUx7172526095 says "%s必须是 1–%d 之间的整数"
+// in the language of msgs.
+func (msgs Messages) NavicatUx7172526095() string {
+	return Catalog.Format(msgs.locale, "navicatUx7172526095", nil)
+}
+
+// NavicatUxb83e89d26e says "%s：请输入有效范围内的整数"
+// in the language the app shows.
+func NavicatUxb83e89d26e() string { return In(i18n.Locale()).NavicatUxb83e89d26e() }
+
+// NavicatUxb83e89d26e says "%s：请输入有效范围内的整数"
+// in the language of msgs.
+func (msgs Messages) NavicatUxb83e89d26e() string {
+	return Catalog.Format(msgs.locale, "navicatUxb83e89d26e", nil)
+}
+
+// NavicatUxa9f7ba0092 says "URI …"
+// in the language the app shows.
+func NavicatUxa9f7ba0092() string { return In(i18n.Locale()).NavicatUxa9f7ba0092() }
+
+// NavicatUxa9f7ba0092 says "URI …"
+// in the language of msgs.
+func (msgs Messages) NavicatUxa9f7ba0092() string {
+	return Catalog.Format(msgs.locale, "navicatUxa9f7ba0092", nil)
+}
+
+// NavicatUxa7dea37897 says "使用条件组"
+// in the language the app shows.
+func NavicatUxa7dea37897() string { return In(i18n.Locale()).NavicatUxa7dea37897() }
+
+// NavicatUxa7dea37897 says "使用条件组"
+// in the language of msgs.
+func (msgs Messages) NavicatUxa7dea37897() string {
+	return Catalog.Format(msgs.locale, "navicatUxa7dea37897", nil)
+}
+
+// NavicatUxc46148c609 says "保存新工作区"
+// in the language the app shows.
+func NavicatUxc46148c609() string { return In(i18n.Locale()).NavicatUxc46148c609() }
+
+// NavicatUxc46148c609 says "保存新工作区"
+// in the language of msgs.
+func (msgs Messages) NavicatUxc46148c609() string {
+	return Catalog.Format(msgs.locale, "navicatUxc46148c609", nil)
+}
+
+// NavicatUx688a2da5c7 says "保存标签、布局和 SQL 文本；恢复后需显式连接，不会执行 SQL。"
+// in the language the app shows.
+func NavicatUx688a2da5c7() string { return In(i18n.Locale()).NavicatUx688a2da5c7() }
+
+// NavicatUx688a2da5c7 says "保存标签、布局和 SQL 文本；恢复后需显式连接，不会执行 SQL。"
+// in the language of msgs.
+func (msgs Messages) NavicatUx688a2da5c7() string {
+	return Catalog.Format(msgs.locale, "navicatUx688a2da5c7", nil)
+}
+
+// NavicatUxc48362c002 says "关闭右侧页签"
+// in the language the app shows.
+func NavicatUxc48362c002() string { return In(i18n.Locale()).NavicatUxc48362c002() }
+
+// NavicatUxc48362c002 says "关闭右侧页签"
+// in the language of msgs.
+func (msgs Messages) NavicatUxc48362c002() string {
+	return Catalog.Format(msgs.locale, "navicatUxc48362c002", nil)
+}
+
+// NavicatUx2c298e6366 says "删除所选工作区"
+// in the language the app shows.
+func NavicatUx2c298e6366() string { return In(i18n.Locale()).NavicatUx2c298e6366() }
+
+// NavicatUx2c298e6366 says "删除所选工作区"
+// in the language of msgs.
+func (msgs Messages) NavicatUx2c298e6366() string {
+	return Catalog.Format(msgs.locale, "navicatUx2c298e6366", nil)
+}
+
+// NavicatUxd23df0dcd5 says "删除条件或组"
+// in the language the app shows.
+func NavicatUxd23df0dcd5() string { return In(i18n.Locale()).NavicatUxd23df0dcd5() }
+
+// NavicatUxd23df0dcd5 says "删除条件或组"
+// in the language of msgs.
+func (msgs Messages) NavicatUxd23df0dcd5() string {
+	return Catalog.Format(msgs.locale, "navicatUxd23df0dcd5", nil)
+}
+
+// NavicatUx6bec187541 says "原 MySQL 会话已失效，请关闭向导后重新打开"
+// in the language the app shows.
+func NavicatUx6bec187541() string { return In(i18n.Locale()).NavicatUx6bec187541() }
+
+// NavicatUx6bec187541 says "原 MySQL 会话已失效，请关闭向导后重新打开"
+// in the language of msgs.
+func (msgs Messages) NavicatUx6bec187541() string {
+	return Catalog.Format(msgs.locale, "navicatUx6bec187541", nil)
+}
+
+// NavicatUx5ae32c1fb5 says "原始计划"
+// in the language the app shows.
+func NavicatUx5ae32c1fb5() string { return In(i18n.Locale()).NavicatUx5ae32c1fb5() }
+
+// NavicatUx5ae32c1fb5 says "原始计划"
+// in the language of msgs.
+func (msgs Messages) NavicatUx5ae32c1fb5() string {
+	return Catalog.Format(msgs.locale, "navicatUx5ae32c1fb5", nil)
+}
+
+// NavicatUx9e0a767e23 says "原执行语句"
+// in the language the app shows.
+func NavicatUx9e0a767e23() string { return In(i18n.Locale()).NavicatUx9e0a767e23() }
+
+// NavicatUx9e0a767e23 says "原执行语句"
+// in the language of msgs.
+func (msgs Messages) NavicatUx9e0a767e23() string {
+	return Catalog.Format(msgs.locale, "navicatUx9e0a767e23", nil)
+}
+
+// NavicatUx3b5ec3533b says "只读"
+// in the language the app shows.
+func NavicatUx3b5ec3533b() string { return In(i18n.Locale()).NavicatUx3b5ec3533b() }
+
+// NavicatUx3b5ec3533b says "只读"
+// in the language of msgs.
+func (msgs Messages) NavicatUx3b5ec3533b() string {
+	return Catalog.Format(msgs.locale, "navicatUx3b5ec3533b", nil)
+}
+
+// NavicatUx26724b1c4c says "命名工作区"
+// in the language the app shows.
+func NavicatUx26724b1c4c() string { return In(i18n.Locale()).NavicatUx26724b1c4c() }
+
+// NavicatUx26724b1c4c says "命名工作区"
+// in the language of msgs.
+func (msgs Messages) NavicatUx26724b1c4c() string {
+	return Catalog.Format(msgs.locale, "navicatUx26724b1c4c", nil)
+}
+
+// NavicatUx05fb7cba47 says "填充"
+// in the language the app shows.
+func NavicatUx05fb7cba47() string { return In(i18n.Locale()).NavicatUx05fb7cba47() }
+
+// NavicatUx05fb7cba47 says "填充"
+// in the language of msgs.
+func (msgs Messages) NavicatUx05fb7cba47() string {
+	return Catalog.Format(msgs.locale, "navicatUx05fb7cba47", nil)
+}
+
+// NavicatUxf06e635d5c says "填充 ▾"
+// in the language the app shows.
+func NavicatUxf06e635d5c() string { return In(i18n.Locale()).NavicatUxf06e635d5c() }
+
+// NavicatUxf06e635d5c says "填充 ▾"
+// in the language of msgs.
+func (msgs Messages) NavicatUxf06e635d5c() string {
+	return Catalog.Format(msgs.locale, "navicatUxf06e635d5c", nil)
+}
+
+// NavicatUxf3f6626200 says "复制列"
+// in the language the app shows.
+func NavicatUxf3f6626200() string { return In(i18n.Locale()).NavicatUxf3f6626200() }
+
+// NavicatUxf3f6626200 says "复制列"
+// in the language of msgs.
+func (msgs Messages) NavicatUxf3f6626200() string {
+	return Catalog.Format(msgs.locale, "navicatUxf3f6626200", nil)
+}
+
+// NavicatUx351aaf91ca says "外键"
+// in the language the app shows.
+func NavicatUx351aaf91ca() string { return In(i18n.Locale()).NavicatUx351aaf91ca() }
+
+// NavicatUx351aaf91ca says "外键"
+// in the language of msgs.
+func (msgs Messages) NavicatUx351aaf91ca() string {
+	return Catalog.Format(msgs.locale, "navicatUx351aaf91ca", nil)
+}
+
+// NavicatUxea1d963385 says "字段值预览"
+// in the language the app shows.
+func NavicatUxea1d963385() string { return In(i18n.Locale()).NavicatUxea1d963385() }
+
+// NavicatUxea1d963385 says "字段值预览"
+// in the language of msgs.
+func (msgs Messages) NavicatUxea1d963385() string {
+	return Catalog.Format(msgs.locale, "navicatUxea1d963385", nil)
+}
+
+// NavicatUx1a22c82b6f says "字段查看模式"
+// in the language the app shows.
+func NavicatUx1a22c82b6f() string { return In(i18n.Locale()).NavicatUx1a22c82b6f() }
+
+// NavicatUx1a22c82b6f says "字段查看模式"
+// in the language of msgs.
+func (msgs Messages) NavicatUx1a22c82b6f() string {
+	return Catalog.Format(msgs.locale, "navicatUx1a22c82b6f", nil)
+}
+
+// NavicatUx3797ba3c5b says "导入向导…"
+// in the language the app shows.
+func NavicatUx3797ba3c5b() string { return In(i18n.Locale()).NavicatUx3797ba3c5b() }
+
+// NavicatUx3797ba3c5b says "导入向导…"
+// in the language of msgs.
+func (msgs Messages) NavicatUx3797ba3c5b() string {
+	return Catalog.Format(msgs.locale, "navicatUx3797ba3c5b", nil)
+}
+
+// NavicatUx22dc6ee0c6 says "工作区名称"
+// in the language the app shows.
+func NavicatUx22dc6ee0c6() string { return In(i18n.Locale()).NavicatUx22dc6ee0c6() }
+
+// NavicatUx22dc6ee0c6 says "工作区名称"
+// in the language of msgs.
+func (msgs Messages) NavicatUx22dc6ee0c6() string {
+	return Catalog.Format(msgs.locale, "navicatUx22dc6ee0c6", nil)
+}
+
+// NavicatUx06c9674899 says "工作区操作失败；原现场保留"
+// in the language the app shows.
+func NavicatUx06c9674899() string { return In(i18n.Locale()).NavicatUx06c9674899() }
+
+// NavicatUx06c9674899 says "工作区操作失败；原现场保留"
+// in the language of msgs.
+func (msgs Messages) NavicatUx06c9674899() string {
+	return Catalog.Format(msgs.locale, "navicatUx06c9674899", nil)
+}
+
+// NavicatUx0a79dbe6a8 says "工作区版本不支持"
+// in the language the app shows.
+func NavicatUx0a79dbe6a8() string { return In(i18n.Locale()).NavicatUx0a79dbe6a8() }
+
+// NavicatUx0a79dbe6a8 says "工作区版本不支持"
+// in the language of msgs.
+func (msgs Messages) NavicatUx0a79dbe6a8() string {
+	return Catalog.Format(msgs.locale, "navicatUx0a79dbe6a8", nil)
+}
+
+// NavicatUx5f4d7cf2c8 says "已执行"
+// in the language the app shows.
+func NavicatUx5f4d7cf2c8() string { return In(i18n.Locale()).NavicatUx5f4d7cf2c8() }
+
+// NavicatUx5f4d7cf2c8 says "已执行"
+// in the language of msgs.
+func (msgs Messages) NavicatUx5f4d7cf2c8() string {
+	return Catalog.Format(msgs.locale, "navicatUx5f4d7cf2c8", nil)
+}
+
+// NavicatUx07408d66f6 says "开始使用 NyaDB"
+// in the language the app shows.
+func NavicatUx07408d66f6() string { return In(i18n.Locale()).NavicatUx07408d66f6() }
+
+// NavicatUx07408d66f6 says "开始使用 NyaDB"
+// in the language of msgs.
+func (msgs Messages) NavicatUx07408d66f6() string {
+	return Catalog.Format(msgs.locale, "navicatUx07408d66f6", nil)
+}
+
+// NavicatUx71a8210463 says "当前对象为只读"
+// in the language the app shows.
+func NavicatUx71a8210463() string { return In(i18n.Locale()).NavicatUx71a8210463() }
+
+// NavicatUx71a8210463 says "当前对象为只读"
+// in the language of msgs.
+func (msgs Messages) NavicatUx71a8210463() string {
+	return Catalog.Format(msgs.locale, "navicatUx71a8210463", nil)
+}
+
+// NavicatUxc2209f131c says "当前引擎不支持此操作"
+// in the language the app shows.
+func NavicatUxc2209f131c() string { return In(i18n.Locale()).NavicatUxc2209f131c() }
+
+// NavicatUxc2209f131c says "当前引擎不支持此操作"
+// in the language of msgs.
+func (msgs Messages) NavicatUxc2209f131c() string {
+	return Catalog.Format(msgs.locale, "navicatUxc2209f131c", nil)
+}
+
+// NavicatUx478f03d589 says "当前服务器版本不支持此操作"
+// in the language the app shows.
+func NavicatUx478f03d589() string { return In(i18n.Locale()).NavicatUx478f03d589() }
+
+// NavicatUx478f03d589 says "当前服务器版本不支持此操作"
+// in the language of msgs.
+func (msgs Messages) NavicatUx478f03d589() string {
+	return Catalog.Format(msgs.locale, "navicatUx478f03d589", nil)
+}
+
+// NavicatUx47ce528d4c says "当前账号权限不足"
+// in the language the app shows.
+func NavicatUx47ce528d4c() string { return In(i18n.Locale()).NavicatUx47ce528d4c() }
+
+// NavicatUx47ce528d4c says "当前账号权限不足"
+// in the language of msgs.
+func (msgs Messages) NavicatUx47ce528d4c() string {
+	return Catalog.Format(msgs.locale, "navicatUx47ce528d4c", nil)
+}
+
+// NavicatUx5f2ab7d156 says "恢复原连接"
+// in the language the app shows.
+func NavicatUx5f2ab7d156() string { return In(i18n.Locale()).NavicatUx5f2ab7d156() }
+
+// NavicatUx5f2ab7d156 says "恢复原连接"
+// in the language of msgs.
+func (msgs Messages) NavicatUx5f2ab7d156() string {
+	return Catalog.Format(msgs.locale, "navicatUx5f2ab7d156", nil)
+}
+
+// NavicatUxa0d2dc0305 says "恢复最近工作"
+// in the language the app shows.
+func NavicatUxa0d2dc0305() string { return In(i18n.Locale()).NavicatUxa0d2dc0305() }
+
+// NavicatUxa0d2dc0305 says "恢复最近工作"
+// in the language of msgs.
+func (msgs Messages) NavicatUxa0d2dc0305() string {
+	return Catalog.Format(msgs.locale, "navicatUxa0d2dc0305", nil)
+}
+
+// NavicatUx639de58eb6 says "成本"
+// in the language the app shows.
+func NavicatUx639de58eb6() string { return In(i18n.Locale()).NavicatUx639de58eb6() }
+
+// NavicatUx639de58eb6 says "成本"
+// in the language of msgs.
+func (msgs Messages) NavicatUx639de58eb6() string {
+	return Catalog.Format(msgs.locale, "navicatUx639de58eb6", nil)
+}
+
+// NavicatUx5a729bc956 says "截断表"
+// in the language the app shows.
+func NavicatUx5a729bc956() string { return In(i18n.Locale()).NavicatUx5a729bc956() }
+
+// NavicatUx5a729bc956 says "截断表"
+// in the language of msgs.
+func (msgs Messages) NavicatUx5a729bc956() string {
+	return Catalog.Format(msgs.locale, "navicatUx5a729bc956", nil)
+}
+
+// NavicatUx43a7f4b4c5 says "所有者"
+// in the language the app shows.
+func NavicatUx43a7f4b4c5() string { return In(i18n.Locale()).NavicatUx43a7f4b4c5() }
+
+// NavicatUx43a7f4b4c5 says "所有者"
+// in the language of msgs.
+func (msgs Messages) NavicatUx43a7f4b4c5() string {
+	return Catalog.Format(msgs.locale, "navicatUx43a7f4b4c5", nil)
+}
+
+// NavicatUx05cc68bdf7 says "打开工作区"
+// in the language the app shows.
+func NavicatUx05cc68bdf7() string { return In(i18n.Locale()).NavicatUx05cc68bdf7() }
+
+// NavicatUx05cc68bdf7 says "打开工作区"
+// in the language of msgs.
+func (msgs Messages) NavicatUx05cc68bdf7() string {
+	return Catalog.Format(msgs.locale, "navicatUx05cc68bdf7", nil)
+}
+
+// NavicatUxacfa6e5314 says "提交结果不确定"
+// in the language the app shows.
+func NavicatUxacfa6e5314() string { return In(i18n.Locale()).NavicatUxacfa6e5314() }
+
+// NavicatUxacfa6e5314 says "提交结果不确定"
+// in the language of msgs.
+func (msgs Messages) NavicatUxacfa6e5314() string {
+	return Catalog.Format(msgs.locale, "navicatUxacfa6e5314", nil)
+}
+
+// NavicatUx484d556139 says "无"
+// in the language the app shows.
+func NavicatUx484d556139() string { return In(i18n.Locale()).NavicatUx484d556139() }
+
+// NavicatUx484d556139 says "无"
+// in the language of msgs.
+func (msgs Messages) NavicatUx484d556139() string {
+	return Catalog.Format(msgs.locale, "navicatUx484d556139", nil)
+}
+
+// NavicatUx318af2264f says "无法解析结构计划，请查看原始结果或使用普通 EXPLAIN"
+// in the language the app shows.
+func NavicatUx318af2264f() string { return In(i18n.Locale()).NavicatUx318af2264f() }
+
+// NavicatUx318af2264f says "无法解析结构计划，请查看原始结果或使用普通 EXPLAIN"
+// in the language of msgs.
+func (msgs Messages) NavicatUx318af2264f() string {
+	return Catalog.Format(msgs.locale, "navicatUx318af2264f", nil)
+}
+
+// NavicatUx721f4a6ab6 says "普通 EXPLAIN"
+// in the language the app shows.
+func NavicatUx721f4a6ab6() string { return In(i18n.Locale()).NavicatUx721f4a6ab6() }
+
+// NavicatUx721f4a6ab6 says "普通 EXPLAIN"
+// in the language of msgs.
+func (msgs Messages) NavicatUx721f4a6ab6() string {
+	return Catalog.Format(msgs.locale, "navicatUx721f4a6ab6", nil)
+}
+
+// NavicatUx8eae5a1557 says "替换所选工作区"
+// in the language the app shows.
+func NavicatUx8eae5a1557() string { return In(i18n.Locale()).NavicatUx8eae5a1557() }
+
+// NavicatUx8eae5a1557 says "替换所选工作区"
+// in the language of msgs.
+func (msgs Messages) NavicatUx8eae5a1557() string {
+	return Catalog.Format(msgs.locale, "navicatUx8eae5a1557", nil)
+}
+
+// NavicatUx905ffa6bb4 says "替换连接配置？"
+// in the language the app shows.
+func NavicatUx905ffa6bb4() string { return In(i18n.Locale()).NavicatUx905ffa6bb4() }
+
+// NavicatUx905ffa6bb4 says "替换连接配置？"
+// in the language of msgs.
+func (msgs Messages) NavicatUx905ffa6bb4() string {
+	return Catalog.Format(msgs.locale, "navicatUx905ffa6bb4", nil)
+}
+
+// NavicatUx9e72fde707 says "替换配置"
+// in the language the app shows.
+func NavicatUx9e72fde707() string { return In(i18n.Locale()).NavicatUx9e72fde707() }
+
+// NavicatUx9e72fde707 says "替换配置"
+// in the language of msgs.
+func (msgs Messages) NavicatUx9e72fde707() string {
+	return Catalog.Format(msgs.locale, "navicatUx9e72fde707", nil)
+}
+
+// NavicatUx231fe22042 says "未执行"
+// in the language the app shows.
+func NavicatUx231fe22042() string { return In(i18n.Locale()).NavicatUx231fe22042() }
+
+// NavicatUx231fe22042 says "未执行"
+// in the language of msgs.
+func (msgs Messages) NavicatUx231fe22042() string {
+	return Catalog.Format(msgs.locale, "navicatUx231fe22042", nil)
+}
+
+// NavicatUx4d8c1c5b42 says "未知"
+// in the language the app shows.
+func NavicatUx4d8c1c5b42() string { return In(i18n.Locale()).NavicatUx4d8c1c5b42() }
+
+// NavicatUx4d8c1c5b42 says "未知"
+// in the language of msgs.
+func (msgs Messages) NavicatUx4d8c1c5b42() string {
+	return Catalog.Format(msgs.locale, "navicatUx4d8c1c5b42", nil)
+}
+
+// NavicatUx045a9f9046 says "条件组不能为空，最多 6 个条件和 3 层分组"
+// in the language the app shows.
+func NavicatUx045a9f9046() string { return In(i18n.Locale()).NavicatUx045a9f9046() }
+
+// NavicatUx045a9f9046 says "条件组不能为空，最多 6 个条件和 3 层分组"
+// in the language of msgs.
+func (msgs Messages) NavicatUx045a9f9046() string {
+	return Catalog.Format(msgs.locale, "navicatUx045a9f9046", nil)
+}
+
+// NavicatUx123c3ad024 says "条件组关系"
+// in the language the app shows.
+func NavicatUx123c3ad024() string { return In(i18n.Locale()).NavicatUx123c3ad024() }
+
+// NavicatUx123c3ad024 says "条件组关系"
+// in the language of msgs.
+func (msgs Messages) NavicatUx123c3ad024() string {
+	return Catalog.Format(msgs.locale, "navicatUx123c3ad024", nil)
+}
+
+// NavicatUx514bd3d961 says "查看结构（只读）"
+// in the language the app shows.
+func NavicatUx514bd3d961() string { return In(i18n.Locale()).NavicatUx514bd3d961() }
+
+// NavicatUx514bd3d961 says "查看结构（只读）"
+// in the language of msgs.
+func (msgs Messages) NavicatUx514bd3d961() string {
+	return Catalog.Format(msgs.locale, "navicatUx514bd3d961", nil)
+}
+
+// NavicatUxdaf54a22e2 says "查看结构"
+// in the language the app shows.
+func NavicatUxdaf54a22e2() string { return In(i18n.Locale()).NavicatUxdaf54a22e2() }
+
+// NavicatUxdaf54a22e2 says "查看结构"
+// in the language of msgs.
+func (msgs Messages) NavicatUxdaf54a22e2() string {
+	return Catalog.Format(msgs.locale, "navicatUxdaf54a22e2", nil)
+}
+
+// NavicatUxbbecd91f11 says "查询结果"
+// in the language the app shows.
+func NavicatUxbbecd91f11() string { return In(i18n.Locale()).NavicatUxbbecd91f11() }
+
+// NavicatUxbbecd91f11 says "查询结果"
+// in the language of msgs.
+func (msgs Messages) NavicatUxbbecd91f11() string {
+	return Catalog.Format(msgs.locale, "navicatUxbbecd91f11", nil)
+}
+
+// NavicatUx978e275133 says "检查"
+// in the language the app shows.
+func NavicatUx978e275133() string { return In(i18n.Locale()).NavicatUx978e275133() }
+
+// NavicatUx978e275133 says "检查"
+// in the language of msgs.
+func (msgs Messages) NavicatUx978e275133() string {
+	return Catalog.Format(msgs.locale, "navicatUx978e275133", nil)
+}
+
+// NavicatUx37dadf4857 says "正在编辑"
+// in the language the app shows.
+func NavicatUx37dadf4857() string { return In(i18n.Locale()).NavicatUx37dadf4857() }
+
+// NavicatUx37dadf4857 says "正在编辑"
+// in the language of msgs.
+func (msgs Messages) NavicatUx37dadf4857() string {
+	return Catalog.Format(msgs.locale, "navicatUx37dadf4857", nil)
+}
+
+// NavicatUxf38731b6e3 says "此功能尚未实现"
+// in the language the app shows.
+func NavicatUxf38731b6e3() string { return In(i18n.Locale()).NavicatUxf38731b6e3() }
+
+// NavicatUxf38731b6e3 says "此功能尚未实现"
+// in the language of msgs.
+func (msgs Messages) NavicatUxf38731b6e3() string {
+	return Catalog.Format(msgs.locale, "navicatUxf38731b6e3", nil)
+}
+
+// NavicatUxcb35cc5b43 says "添加条件组"
+// in the language the app shows.
+func NavicatUxcb35cc5b43() string { return In(i18n.Locale()).NavicatUxcb35cc5b43() }
+
+// NavicatUxcb35cc5b43 says "添加条件组"
+// in the language of msgs.
+func (msgs Messages) NavicatUxcb35cc5b43() string {
+	return Catalog.Format(msgs.locale, "navicatUxcb35cc5b43", nil)
+}
+
+// NavicatUx0a1b2b3e38 says "清空表"
+// in the language the app shows.
+func NavicatUx0a1b2b3e38() string { return In(i18n.Locale()).NavicatUx0a1b2b3e38() }
+
+// NavicatUx0a1b2b3e38 says "清空表"
+// in the language of msgs.
+func (msgs Messages) NavicatUx0a1b2b3e38() string {
+	return Catalog.Format(msgs.locale, "navicatUx0a1b2b3e38", nil)
+}
+
+// NavicatUx8a1121dff5 says "确认原表名称"
+// in the language the app shows.
+func NavicatUx8a1121dff5() string { return In(i18n.Locale()).NavicatUx8a1121dff5() }
+
+// NavicatUx8a1121dff5 says "确认原表名称"
+// in the language of msgs.
+func (msgs Messages) NavicatUx8a1121dff5() string {
+	return Catalog.Format(msgs.locale, "navicatUx8a1121dff5", nil)
+}
+
+// NavicatUxb46dba9d40 says "系统密钥服务不可用，无法保存工作区；已有加密内容已保留。请重试或另存 SQL 文件。"
+// in the language the app shows.
+func NavicatUxb46dba9d40() string { return In(i18n.Locale()).NavicatUxb46dba9d40() }
+
+// NavicatUxb46dba9d40 says "系统密钥服务不可用，无法保存工作区；已有加密内容已保留。请重试或另存 SQL 文件。"
+// in the language of msgs.
+func (msgs Messages) NavicatUxb46dba9d40() string {
+	return Catalog.Format(msgs.locale, "navicatUxb46dba9d40", nil)
+}
+
+// NavicatUx9ac22d24d8 says "索引"
+// in the language the app shows.
+func NavicatUx9ac22d24d8() string { return In(i18n.Locale()).NavicatUx9ac22d24d8() }
+
+// NavicatUx9ac22d24d8 says "索引"
+// in the language of msgs.
+func (msgs Messages) NavicatUx9ac22d24d8() string {
+	return Catalog.Format(msgs.locale, "navicatUx9ac22d24d8", nil)
+}
+
+// NavicatUxdd84213298 says "组内添加条件"
+// in the language the app shows.
+func NavicatUxdd84213298() string { return In(i18n.Locale()).NavicatUxdd84213298() }
+
+// NavicatUxdd84213298 says "组内添加条件"
+// in the language of msgs.
+func (msgs Messages) NavicatUxdd84213298() string {
+	return Catalog.Format(msgs.locale, "navicatUxdd84213298", nil)
+}
+
+// NavicatUxf34878197d says "结构计划"
+// in the language the app shows.
+func NavicatUxf34878197d() string { return In(i18n.Locale()).NavicatUxf34878197d() }
+
+// NavicatUxf34878197d says "结构计划"
+// in the language of msgs.
+func (msgs Messages) NavicatUxf34878197d() string {
+	return Catalog.Format(msgs.locale, "navicatUxf34878197d", nil)
+}
+
+// NavicatUxc05e434bd9 says "结果 %d"
+// in the language the app shows.
+func NavicatUxc05e434bd9() string { return In(i18n.Locale()).NavicatUxc05e434bd9() }
+
+// NavicatUxc05e434bd9 says "结果 %d"
+// in the language of msgs.
+func (msgs Messages) NavicatUxc05e434bd9() string {
+	return Catalog.Format(msgs.locale, "navicatUxc05e434bd9", nil)
+}
+
+// NavicatUx97d2592cd6 says "结果不确定"
+// in the language the app shows.
+func NavicatUx97d2592cd6() string { return In(i18n.Locale()).NavicatUx97d2592cd6() }
+
+// NavicatUx97d2592cd6 says "结果不确定"
+// in the language of msgs.
+func (msgs Messages) NavicatUx97d2592cd6() string {
+	return Catalog.Format(msgs.locale, "navicatUx97d2592cd6", nil)
+}
+
+// NavicatUxfd4b9e3b6c says "继续编辑"
+// in the language the app shows.
+func NavicatUxfd4b9e3b6c() string { return In(i18n.Locale()).NavicatUxfd4b9e3b6c() }
+
+// NavicatUxfd4b9e3b6c says "继续编辑"
+// in the language of msgs.
+func (msgs Messages) NavicatUxfd4b9e3b6c() string {
+	return Catalog.Format(msgs.locale, "navicatUxfd4b9e3b6c", nil)
+}
+
+// NavicatUx1ad29ea276 says "缓存内容不是完整 JSON"
+// in the language the app shows.
+func NavicatUx1ad29ea276() string { return In(i18n.Locale()).NavicatUx1ad29ea276() }
+
+// NavicatUx1ad29ea276 says "缓存内容不是完整 JSON"
+// in the language of msgs.
+func (msgs Messages) NavicatUx1ad29ea276() string {
+	return Catalog.Format(msgs.locale, "navicatUx1ad29ea276", nil)
+}
+
+// NavicatUxc8f785a6df says "缓存内容无法作为图像预览"
+// in the language the app shows.
+func NavicatUxc8f785a6df() string { return In(i18n.Locale()).NavicatUxc8f785a6df() }
+
+// NavicatUxc8f785a6df says "缓存内容无法作为图像预览"
+// in the language of msgs.
+func (msgs Messages) NavicatUxc8f785a6df() string {
+	return Catalog.Format(msgs.locale, "navicatUxc8f785a6df", nil)
+}
+
+// NavicatUx87109777fa says "自动递增"
+// in the language the app shows.
+func NavicatUx87109777fa() string { return In(i18n.Locale()).NavicatUx87109777fa() }
+
+// NavicatUx87109777fa says "自动递增"
+// in the language of msgs.
+func (msgs Messages) NavicatUx87109777fa() string {
+	return Catalog.Format(msgs.locale, "navicatUx87109777fa", nil)
+}
+
+// NavicatUx91ff7f2eee says "设置权限"
+// in the language the app shows.
+func NavicatUx91ff7f2eee() string { return In(i18n.Locale()).NavicatUx91ff7f2eee() }
+
+// NavicatUx91ff7f2eee says "设置权限"
+// in the language of msgs.
+func (msgs Messages) NavicatUx91ff7f2eee() string {
+	return Catalog.Format(msgs.locale, "navicatUx91ff7f2eee", nil)
+}
+
+// NavicatUxb9a25803dc says "语句 %d"
+// in the language the app shows.
+func NavicatUxb9a25803dc() string { return In(i18n.Locale()).NavicatUxb9a25803dc() }
+
+// NavicatUxb9a25803dc says "语句 %d"
+// in the language of msgs.
+func (msgs Messages) NavicatUxb9a25803dc() string {
+	return Catalog.Format(msgs.locale, "navicatUxb9a25803dc", nil)
+}
+
+// NavicatUxf7e208b752 says "请先连接原连接"
+// in the language the app shows.
+func NavicatUxf7e208b752() string { return In(i18n.Locale()).NavicatUxf7e208b752() }
+
+// NavicatUxf7e208b752 says "请先连接原连接"
+// in the language of msgs.
+func (msgs Messages) NavicatUxf7e208b752() string {
+	return Catalog.Format(msgs.locale, "navicatUxf7e208b752", nil)
+}
+
+// NavicatUx8896fd46ee says "请先选择适用的数据库对象"
+// in the language the app shows.
+func NavicatUx8896fd46ee() string { return In(i18n.Locale()).NavicatUx8896fd46ee() }
+
+// NavicatUx8896fd46ee says "请先选择适用的数据库对象"
+// in the language of msgs.
+func (msgs Messages) NavicatUx8896fd46ee() string {
+	return Catalog.Format(msgs.locale, "navicatUx8896fd46ee", nil)
+}
+
+// NavicatUxb6442fefae says "读取对象"
+// in the language the app shows.
+func NavicatUxb6442fefae() string { return In(i18n.Locale()).NavicatUxb6442fefae() }
+
+// NavicatUxb6442fefae says "读取对象"
+// in the language of msgs.
+func (msgs Messages) NavicatUxb6442fefae() string {
+	return Catalog.Format(msgs.locale, "navicatUxb6442fefae", nil)
+}
+
+// NavicatUx04052fb0b0 says "转储 SQL 文件"
+// in the language the app shows.
+func NavicatUx04052fb0b0() string { return In(i18n.Locale()).NavicatUx04052fb0b0() }
+
+// NavicatUx04052fb0b0 says "转储 SQL 文件"
+// in the language of msgs.
+func (msgs Messages) NavicatUx04052fb0b0() string {
+	return Catalog.Format(msgs.locale, "navicatUx04052fb0b0", nil)
+}
+
+// NavicatUx75b269496f says "运行"
+// in the language the app shows.
+func NavicatUx75b269496f() string { return In(i18n.Locale()).NavicatUx75b269496f() }
+
+// NavicatUx75b269496f says "运行"
+// in the language of msgs.
+func (msgs Messages) NavicatUx75b269496f() string {
+	return Catalog.Format(msgs.locale, "navicatUx75b269496f", nil)
+}
+
+// NavicatUx16b38790d5 says "返回编辑"
+// in the language the app shows.
+func NavicatUx16b38790d5() string { return In(i18n.Locale()).NavicatUx16b38790d5() }
+
+// NavicatUx16b38790d5 says "返回编辑"
+// in the language of msgs.
+func (msgs Messages) NavicatUx16b38790d5() string {
+	return Catalog.Format(msgs.locale, "navicatUx16b38790d5", nil)
+}
+
+// NavicatUx99c3518da7 says "连接所选数据库"
+// in the language the app shows.
+func NavicatUx99c3518da7() string { return In(i18n.Locale()).NavicatUx99c3518da7() }
+
+// NavicatUx99c3518da7 says "连接所选数据库"
+// in the language of msgs.
+func (msgs Messages) NavicatUx99c3518da7() string {
+	return Catalog.Format(msgs.locale, "navicatUx99c3518da7", nil)
+}
+
+// NavicatUxf264068e92 says "连接数据库，或打开 SQL 文件继续工作。"
+// in the language the app shows.
+func NavicatUxf264068e92() string { return In(i18n.Locale()).NavicatUxf264068e92() }
+
+// NavicatUxf264068e92 says "连接数据库，或打开 SQL 文件继续工作。"
+// in the language of msgs.
+func (msgs Messages) NavicatUxf264068e92() string {
+	return Catalog.Format(msgs.locale, "navicatUxf264068e92", nil)
+}
+
+// NavicatUxa9a2537dc6 says "连接颜色"
+// in the language the app shows.
+func NavicatUxa9a2537dc6() string { return In(i18n.Locale()).NavicatUxa9a2537dc6() }
+
+// NavicatUxa9a2537dc6 says "连接颜色"
+// in the language of msgs.
+func (msgs Messages) NavicatUxa9a2537dc6() string {
+	return Catalog.Format(msgs.locale, "navicatUxa9a2537dc6", nil)
+}
+
+// NavicatUx60b632879e says "适应列宽"
+// in the language the app shows.
+func NavicatUx60b632879e() string { return In(i18n.Locale()).NavicatUx60b632879e() }
+
+// NavicatUx60b632879e says "适应列宽"
+// in the language of msgs.
+func (msgs Messages) NavicatUx60b632879e() string {
+	return Catalog.Format(msgs.locale, "navicatUx60b632879e", nil)
+}
+
+// NavicatUxc6b2b6e8c8 says "选择工作区"
+// in the language the app shows.
+func NavicatUxc6b2b6e8c8() string { return In(i18n.Locale()).NavicatUxc6b2b6e8c8() }
+
+// NavicatUxc6b2b6e8c8 says "选择工作区"
+// in the language of msgs.
+func (msgs Messages) NavicatUxc6b2b6e8c8() string {
+	return Catalog.Format(msgs.locale, "navicatUxc6b2b6e8c8", nil)
+}
+
+// NavicatUxfba70bf65b says "通过 AI 新建表"
+// in the language the app shows.
+func NavicatUxfba70bf65b() string { return In(i18n.Locale()).NavicatUxfba70bf65b() }
+
+// NavicatUxfba70bf65b says "通过 AI 新建表"
+// in the language of msgs.
+func (msgs Messages) NavicatUxfba70bf65b() string {
+	return Catalog.Format(msgs.locale, "navicatUxfba70bf65b", nil)
+}
+
+// NavicatUx3fa43a80b7 says "通过 URI 配置连接"
+// in the language the app shows.
+func NavicatUx3fa43a80b7() string { return In(i18n.Locale()).NavicatUx3fa43a80b7() }
+
+// NavicatUx3fa43a80b7 says "通过 URI 配置连接"
+// in the language of msgs.
+func (msgs Messages) NavicatUx3fa43a80b7() string {
+	return Catalog.Format(msgs.locale, "navicatUx3fa43a80b7", nil)
+}
+
+// NavicatUx8db3caf4aa says "通过配置文件打开表"
+// in the language the app shows.
+func NavicatUx8db3caf4aa() string { return In(i18n.Locale()).NavicatUx8db3caf4aa() }
+
+// NavicatUx8db3caf4aa says "通过配置文件打开表"
+// in the language of msgs.
+func (msgs Messages) NavicatUx8db3caf4aa() string {
+	return Catalog.Format(msgs.locale, "navicatUx8db3caf4aa", nil)
+}
+
+// NavicatUx5b252a8dac says "重命名工作区"
+// in the language the app shows.
+func NavicatUx5b252a8dac() string { return In(i18n.Locale()).NavicatUx5b252a8dac() }
+
+// NavicatUx5b252a8dac says "重命名工作区"
+// in the language of msgs.
+func (msgs Messages) NavicatUx5b252a8dac() string {
+	return Catalog.Format(msgs.locale, "navicatUx5b252a8dac", nil)
+}
+
+// NavicatUx7c9371b934 says "重新绑定连接"
+// in the language the app shows.
+func NavicatUx7c9371b934() string { return In(i18n.Locale()).NavicatUx7c9371b934() }
+
+// NavicatUx7c9371b934 says "重新绑定连接"
+// in the language of msgs.
+func (msgs Messages) NavicatUx7c9371b934() string {
+	return Catalog.Format(msgs.locale, "navicatUx7c9371b934", nil)
+}
+
+// NavicatUxf12f7ebeaa says "重置列布局"
+// in the language the app shows.
+func NavicatUxf12f7ebeaa() string { return In(i18n.Locale()).NavicatUxf12f7ebeaa() }
+
+// NavicatUxf12f7ebeaa says "重置列布局"
+// in the language of msgs.
+func (msgs Messages) NavicatUxf12f7ebeaa() string {
+	return Catalog.Format(msgs.locale, "navicatUxf12f7ebeaa", nil)
+}
+
+// NavicatUx9c7ff3321e says "错误码"
+// in the language the app shows.
+func NavicatUx9c7ff3321e() string { return In(i18n.Locale()).NavicatUx9c7ff3321e() }
+
+// NavicatUx9c7ff3321e says "错误码"
+// in the language of msgs.
+func (msgs Messages) NavicatUx9c7ff3321e() string {
+	return Catalog.Format(msgs.locale, "navicatUx9c7ff3321e", nil)
+}
+
+// NavicatUxc3414b4a21 says "隐藏列"
+// in the language the app shows.
+func NavicatUxc3414b4a21() string { return In(i18n.Locale()).NavicatUxc3414b4a21() }
+
+// NavicatUxc3414b4a21 says "隐藏列"
+// in the language of msgs.
+func (msgs Messages) NavicatUxc3414b4a21() string {
+	return Catalog.Format(msgs.locale, "navicatUxc3414b4a21", nil)
+}
+
+// NavicatUx0e7d205569 says "隐藏字段信息"
+// in the language the app shows.
+func NavicatUx0e7d205569() string { return In(i18n.Locale()).NavicatUx0e7d205569() }
+
+// NavicatUx0e7d205569 says "隐藏字段信息"
+// in the language of msgs.
+func (msgs Messages) NavicatUx0e7d205569() string {
+	return Catalog.Format(msgs.locale, "navicatUx0e7d205569", nil)
+}
+
+// NavicatUx50f1f5b3c9 says "非空"
+// in the language the app shows.
+func NavicatUx50f1f5b3c9() string { return In(i18n.Locale()).NavicatUx50f1f5b3c9() }
+
+// NavicatUx50f1f5b3c9 says "非空"
+// in the language of msgs.
+func (msgs Messages) NavicatUx50f1f5b3c9() string {
+	return Catalog.Format(msgs.locale, "navicatUx50f1f5b3c9", nil)
+}
+
+// NavicatUx20590a6a7b says "取消固定"
+// in the language the app shows.
+func NavicatUx20590a6a7b() string { return In(i18n.Locale()).NavicatUx20590a6a7b() }
+
+// NavicatUx20590a6a7b says "取消固定"
+// in the language of msgs.
+func (msgs Messages) NavicatUx20590a6a7b() string {
+	return Catalog.Format(msgs.locale, "navicatUx20590a6a7b", nil)
+}
+
+// NavicatUx7699253e12 says "固定页签"
+// in the language the app shows.
+func NavicatUx7699253e12() string { return In(i18n.Locale()).NavicatUx7699253e12() }
+
+// NavicatUx7699253e12 says "固定页签"
+// in the language of msgs.
+func (msgs Messages) NavicatUx7699253e12() string {
+	return Catalog.Format(msgs.locale, "navicatUx7699253e12", nil)
+}
+
+// NavicatUx4d3c2c573c says "原连接已不存在，请重新绑定或关闭页签"
+// in the language the app shows.
+func NavicatUx4d3c2c573c() string { return In(i18n.Locale()).NavicatUx4d3c2c573c() }
+
+// NavicatUx4d3c2c573c says "原连接已不存在，请重新绑定或关闭页签"
+// in the language of msgs.
+func (msgs Messages) NavicatUx4d3c2c573c() string {
+	return Catalog.Format(msgs.locale, "navicatUx4d3c2c573c", nil)
+}
+
+// NavicatUxc8e435c55c says "恢复原连接后，点击读取对象继续工作"
+// in the language the app shows.
+func NavicatUxc8e435c55c() string { return In(i18n.Locale()).NavicatUxc8e435c55c() }
+
+// NavicatUxc8e435c55c says "恢复原连接后，点击读取对象继续工作"
+// in the language of msgs.
+func (msgs Messages) NavicatUxc8e435c55c() string {
+	return Catalog.Format(msgs.locale, "navicatUxc8e435c55c", nil)
+}
+
+// NavicatUx8c5583c30e says "返回连接表单"
+// in the language the app shows.
+func NavicatUx8c5583c30e() string { return In(i18n.Locale()).NavicatUx8c5583c30e() }
+
+// NavicatUx8c5583c30e says "返回连接表单"
+// in the language of msgs.
+func (msgs Messages) NavicatUx8c5583c30e() string {
+	return Catalog.Format(msgs.locale, "navicatUx8c5583c30e", nil)
+}
+
+// NavicatUxf1c93ff4bf says "SQL 会话上限必须是 1–64 之间的整数"
+// in the language the app shows.
+func NavicatUxf1c93ff4bf() string { return In(i18n.Locale()).NavicatUxf1c93ff4bf() }
+
+// NavicatUxf1c93ff4bf says "SQL 会话上限必须是 1–64 之间的整数"
+// in the language of msgs.
+func (msgs Messages) NavicatUxf1c93ff4bf() string {
+	return Catalog.Format(msgs.locale, "navicatUxf1c93ff4bf", nil)
+}
+
+// NavicatUx0f8edf6d0d says "后台连接上限必须是 1–64 之间的整数"
+// in the language the app shows.
+func NavicatUx0f8edf6d0d() string { return In(i18n.Locale()).NavicatUx0f8edf6d0d() }
+
+// NavicatUx0f8edf6d0d says "后台连接上限必须是 1–64 之间的整数"
+// in the language of msgs.
+func (msgs Messages) NavicatUx0f8edf6d0d() string {
+	return Catalog.Format(msgs.locale, "navicatUx0f8edf6d0d", nil)
+}
+
+// NavicatUxdf0509fb9a says "锁等待超时必须是有效的非负整数"
+// in the language the app shows.
+func NavicatUxdf0509fb9a() string { return In(i18n.Locale()).NavicatUxdf0509fb9a() }
+
+// NavicatUxdf0509fb9a says "锁等待超时必须是有效的非负整数"
+// in the language of msgs.
+func (msgs Messages) NavicatUxdf0509fb9a() string {
+	return Catalog.Format(msgs.locale, "navicatUxdf0509fb9a", nil)
+}
+
+// NavicatUx72be500fbc says "有索引"
+// in the language the app shows.
+func NavicatUx72be500fbc() string { return In(i18n.Locale()).NavicatUx72be500fbc() }
+
+// NavicatUx72be500fbc says "有索引"
+// in the language of msgs.
+func (msgs Messages) NavicatUx72be500fbc() string {
+	return Catalog.Format(msgs.locale, "navicatUx72be500fbc", nil)
+}
+
+// NavicatUxd26a1cf608 says "有触发器"
+// in the language the app shows.
+func NavicatUxd26a1cf608() string { return In(i18n.Locale()).NavicatUxd26a1cf608() }
+
+// NavicatUxd26a1cf608 says "有触发器"
+// in the language of msgs.
+func (msgs Messages) NavicatUxd26a1cf608() string {
+	return Catalog.Format(msgs.locale, "navicatUxd26a1cf608", nil)
+}
+
+// NavicatUx8353e393cd says "根页面"
+// in the language the app shows.
+func NavicatUx8353e393cd() string { return In(i18n.Locale()).NavicatUx8353e393cd() }
+
+// NavicatUx8353e393cd says "根页面"
+// in the language of msgs.
+func (msgs Messages) NavicatUx8353e393cd() string {
+	return Catalog.Format(msgs.locale, "navicatUx8353e393cd", nil)
+}
+
+// NavicatUxb5eeb66b00 says "设计选中表"
+// in the language the app shows.
+func NavicatUxb5eeb66b00() string { return In(i18n.Locale()).NavicatUxb5eeb66b00() }
+
+// NavicatUxb5eeb66b00 says "设计选中表"
+// in the language of msgs.
+func (msgs Messages) NavicatUxb5eeb66b00() string {
+	return Catalog.Format(msgs.locale, "navicatUxb5eeb66b00", nil)
+}
+
+// NavicatUx98f963cb66 says "空文本"
+// in the language the app shows.
+func NavicatUx98f963cb66() string { return In(i18n.Locale()).NavicatUx98f963cb66() }
+
+// NavicatUx98f963cb66 says "空文本"
+// in the language of msgs.
+func (msgs Messages) NavicatUx98f963cb66() string {
+	return Catalog.Format(msgs.locale, "navicatUx98f963cb66", nil)
+}
+
+// NavicatUx623eb714b0 says "空二进制"
+// in the language the app shows.
+func NavicatUx623eb714b0() string { return In(i18n.Locale()).NavicatUx623eb714b0() }
+
+// NavicatUx623eb714b0 says "空二进制"
+// in the language of msgs.
+func (msgs Messages) NavicatUx623eb714b0() string {
+	return Catalog.Format(msgs.locale, "navicatUx623eb714b0", nil)
+}
+
+// NavicatUx1b08e02598 says "正在读取对象，请稍后重试"
+// in the language the app shows.
+func NavicatUx1b08e02598() string { return In(i18n.Locale()).NavicatUx1b08e02598() }
+
+// NavicatUx1b08e02598 says "正在读取对象，请稍后重试"
+// in the language of msgs.
+func (msgs Messages) NavicatUx1b08e02598() string {
+	return Catalog.Format(msgs.locale, "navicatUx1b08e02598", nil)
+}
+
+// NavicatUxa4b1f4d3cc says "原对象已不存在，请重新绑定或关闭页签"
+// in the language the app shows.
+func NavicatUxa4b1f4d3cc() string { return In(i18n.Locale()).NavicatUxa4b1f4d3cc() }
+
+// NavicatUxa4b1f4d3cc says "原对象已不存在，请重新绑定或关闭页签"
+// in the language of msgs.
+func (msgs Messages) NavicatUxa4b1f4d3cc() string {
+	return Catalog.Format(msgs.locale, "navicatUxa4b1f4d3cc", nil)
+}
+
+// NavicatUx6043b97c2e says "可连接"
+// in the language the app shows.
+func NavicatUx6043b97c2e() string { return In(i18n.Locale()).NavicatUx6043b97c2e() }
+
+// NavicatUx6043b97c2e says "可连接"
+// in the language of msgs.
+func (msgs Messages) NavicatUx6043b97c2e() string {
+	return Catalog.Format(msgs.locale, "navicatUx6043b97c2e", nil)
+}
+
+// UxDesignTab says "设计"
+// in the language the app shows.
+func UxDesignTab() string { return In(i18n.Locale()).UxDesignTab() }
+
+// UxDesignTab says "设计"
+// in the language of msgs.
+func (msgs Messages) UxDesignTab() string {
+	return Catalog.Format(msgs.locale, "uxDesignTab", nil)
+}
+
+// UxResultShape says "%d 行 / %d 列 · %s"
+// in the language the app shows.
+func UxResultShape() string { return In(i18n.Locale()).UxResultShape() }
+
+// UxResultShape says "%d 行 / %d 列 · %s"
+// in the language of msgs.
+func (msgs Messages) UxResultShape() string {
+	return Catalog.Format(msgs.locale, "uxResultShape", nil)
+}
+
+// UxResultAffected says "影响 %d 行 · %s"
+// in the language the app shows.
+func UxResultAffected() string { return In(i18n.Locale()).UxResultAffected() }
+
+// UxResultAffected says "影响 %d 行 · %s"
+// in the language of msgs.
+func (msgs Messages) UxResultAffected() string {
+	return Catalog.Format(msgs.locale, "uxResultAffected", nil)
+}
+
+// UxNamedWorkspacesMenu says "命名工作区…"
+// in the language the app shows.
+func UxNamedWorkspacesMenu() string { return In(i18n.Locale()).UxNamedWorkspacesMenu() }
+
+// UxNamedWorkspacesMenu says "命名工作区…"
+// in the language of msgs.
+func (msgs Messages) UxNamedWorkspacesMenu() string {
+	return Catalog.Format(msgs.locale, "uxNamedWorkspacesMenu", nil)
+}
+
+// UxFieldHostMissing says "请输入数据库主机"
+// in the language the app shows.
+func UxFieldHostMissing() string { return In(i18n.Locale()).UxFieldHostMissing() }
+
+// UxFieldHostMissing says "请输入数据库主机"
+// in the language of msgs.
+func (msgs Messages) UxFieldHostMissing() string {
+	return Catalog.Format(msgs.locale, "uxFieldHostMissing", nil)
+}
+
+// UxFieldNameMissing says "请输入连接名称"
+// in the language the app shows.
+func UxFieldNameMissing() string { return In(i18n.Locale()).UxFieldNameMissing() }
+
+// UxFieldNameMissing says "请输入连接名称"
+// in the language of msgs.
+func (msgs Messages) UxFieldNameMissing() string {
+	return Catalog.Format(msgs.locale, "uxFieldNameMissing", nil)
+}
+
+// UxFieldSQLiteMissing says "请选择 SQLite 数据库文件"
+// in the language the app shows.
+func UxFieldSQLiteMissing() string { return In(i18n.Locale()).UxFieldSQLiteMissing() }
+
+// UxFieldSQLiteMissing says "请选择 SQLite 数据库文件"
+// in the language of msgs.
+func (msgs Messages) UxFieldSQLiteMissing() string {
+	return Catalog.Format(msgs.locale, "uxFieldSQLiteMissing", nil)
+}
+
+// UxFieldPortRange says "端口必须是 1–65535 之间的数字"
+// in the language the app shows.
+func UxFieldPortRange() string { return In(i18n.Locale()).UxFieldPortRange() }
+
+// UxFieldPortRange says "端口必须是 1–65535 之间的数字"
+// in the language of msgs.
+func (msgs Messages) UxFieldPortRange() string {
+	return Catalog.Format(msgs.locale, "uxFieldPortRange", nil)
+}
+
+// UxObjectSize says "大小"
+// in the language the app shows.
+func UxObjectSize() string { return In(i18n.Locale()).UxObjectSize() }
+
+// UxObjectSize says "大小"
+// in the language of msgs.
+func (msgs Messages) UxObjectSize() string {
+	return Catalog.Format(msgs.locale, "uxObjectSize", nil)
+}

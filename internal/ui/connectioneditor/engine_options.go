@@ -96,7 +96,7 @@ func (s *State) advanceEngineOptions(p *connections.Profile) error {
 	if p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite {
 		n, err := strconv.Atoi(strings.TrimSpace(s.sqlMaxConnections))
 		if err != nil || n < 1 || n > 64 {
-			return fmt.Errorf("%s: 1–64", locales.Text("SQL 会话上限"))
+			return fieldError("SQL 会话上限", "高级", "SQL 会话上限必须是 1–64 之间的整数")
 		}
 		if p.Kind == connections.PostgreSQL {
 			p.PostgreSQLOptions.SQLMaxConnections = n
@@ -111,7 +111,7 @@ func (s *State) advanceEngineOptions(p *connections.Profile) error {
 		for i, raw := range s.engineNumbers {
 			n, err := strconv.Atoi(strings.TrimSpace(raw))
 			if err != nil {
-				return fmt.Errorf("%s: %s", locales.Text(labels[i]), locales.Text("请输入整数。"))
+				return &FieldError{Field: labels[i], Page: "高级", Message: fmt.Sprintf(locales.Text("%s：请输入有效范围内的整数"), locales.Text(labels[i]))}
 			}
 			values[i] = n
 		}
@@ -123,12 +123,12 @@ func (s *State) advanceEngineOptions(p *connections.Profile) error {
 	case connections.SQLite:
 		limit, e := strconv.Atoi(strings.TrimSpace(s.sqliteMaxConnections))
 		if e != nil || limit < 1 || limit > 64 {
-			return fmt.Errorf("%s: 1–64", locales.Text("后台连接上限"))
+			return fieldError("后台连接上限", "高级", "后台连接上限必须是 1–64 之间的整数")
 		}
 		p.SQLiteOptions.MaxConnections = limit
 		n, err := strconv.Atoi(strings.TrimSpace(s.sqliteBusyTimeout))
 		if err != nil {
-			return fmt.Errorf("%s: %s", locales.Text("锁等待超时（毫秒）"), locales.Text("请输入整数。"))
+			return fieldError("SQLite 锁等待超时", "高级", "锁等待超时必须是有效的非负整数")
 		}
 		p.SQLiteOptions.BusyTimeoutMS = n
 		a, err := connections.NormalizeSQLiteOptions(p.SQLiteOptions)
@@ -189,7 +189,7 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 				} {
 					connectionFormRow(c).Children(func() {
 						ui.Text(c, locales.Text(f.name)).Width(labelWidth)
-						connectionFormTextInput(c, f.value, "PostgreSQL "+f.name, fieldWidth-29, false, false)
+						s.formTextInput(c, f.value, "PostgreSQL "+f.name, fieldWidth-29, false, false)
 						ui.Box(c).Width(connectionFormBrowseGap)
 						connectionFormBrowse(c, "选择 PostgreSQL "+f.name, s.engineFilePicker == nil, func() {
 							if s.engineFilePicker != nil {
@@ -269,7 +269,7 @@ func (s *State) connectionSQLiteAttachments(c *ui.Context, width float32) {
 			s.editorInputRow(c, "附加库名称：", "附加库名称", &v.Name, connectionFormLabelWidth, width-connectionFormLabelWidth)
 			connectionFormRow(c).Children(func() {
 				ui.Text(c, locales.Text("数据库文件")).Width(connectionFormLabelWidth)
-				connectionFormTextInput(c, &v.File, "附加库文件", width-connectionFormLabelWidth-29, false, false)
+				s.formTextInput(c, &v.File, "附加库文件", width-connectionFormLabelWidth-29, false, false)
 				ui.Box(c).Width(connectionFormBrowseGap)
 				connectionFormBrowse(c, "选择附加库文件", s.engineFilePicker == nil, func() {
 					if s.engineFilePicker != nil {

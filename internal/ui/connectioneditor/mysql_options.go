@@ -48,7 +48,8 @@ func (s *State) advanceDraft(p *connections.Profile) error {
 	for i, raw := range s.mysqlAdvancedNumbers {
 		num, err := strconv.Atoi(strings.TrimSpace(raw))
 		if err != nil || num < 1 || num > maxima[i] {
-			return fmt.Errorf("%s必须是 1–%d 之间的整数", labels[i], maxima[i])
+			names := []string{"保持连接间隔（秒）", "连接超时（秒）", "读取超时（秒）", "写入超时（秒）", "限制连接会话"}
+			return &FieldError{Field: names[i], Page: "高级", Message: fmt.Sprintf(locales.Text("%s必须是 1–%d 之间的整数"), locales.Text(labels[i]), maxima[i])}
 		}
 		values[i] = num
 	}
@@ -71,7 +72,7 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 	ui.Column(c).Width(formWidth).Gap(0).Children(func() {
 		connectionFormRow(c).Children(func() {
 			ui.Text(c, "设置位置：").Width(labelWidth).FontSize(theme.Font(c, 12))
-			connectionFormTextInput(c, &a.SettingsLocation, "设置位置", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false)
+			s.formTextInput(c, &a.SettingsLocation, "设置位置", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false)
 			ui.Box(c).Width(connectionFormBrowseGap)
 			connectionFormBrowse(c, "选择设置位置", s.mysqlSettingsPicker == nil, s.mysqlSettingsPicker)
 		})
@@ -95,13 +96,13 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 		s.mysqlAdvancedToggle(c, &a.AutoConnect, "自动连接")
 		connectionFormRow(c).Children(func() {
 			connectionFormCheckboxCompact(c, &a.NamedPipe, "使用命名管道，套接字：", false).Width(labelWidth)
-			connectionFormTextInput(c, &a.PipeName, "命名管道或套接字", 200, !a.NamedPipe, false)
+			s.formTextInput(c, &a.PipeName, "命名管道或套接字", 200, !a.NamedPipe, false)
 		})
 		s.mysqlAdvancedNumberRow(c, &a.LimitSessions, "限制连接会话：",
 			&s.mysqlAdvancedNumbers[mysqlSessionLimit], labelWidth)
 		connectionFormRow(c).Children(func() {
 			ui.Text(c, "初始查询：").Width(labelWidth).FontSize(theme.Font(c, 12))
-			if connectionFormTextInput(c, &s.mysqlInitialQueryPreview, "初始查询", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, s.initialSQLLoadFailed).Changed() {
+			if s.formTextInput(c, &s.mysqlInitialQueryPreview, "初始查询", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, s.initialSQLLoadFailed).Changed() {
 				s.mysqlInitialQuery = s.mysqlInitialQueryPreview
 			}
 			ui.Box(c).Width(connectionFormBrowseGap)
@@ -130,7 +131,7 @@ func (s *State) mysqlAdvancedNumberRow(
 ) {
 	connectionFormRow(c).Children(func() {
 		connectionFormCheckboxCompact(c, enabled, label, false).Width(labelWidth)
-		connectionFormTextInput(c, value, label+"数值", 80, !*enabled, false)
+		s.formTextInput(c, value, label+"数值", 80, !*enabled, false)
 	})
 }
 

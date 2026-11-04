@@ -45,6 +45,34 @@ func connectionFormTextInput(c *ui.Context, target *string, name string, width f
 	return field
 }
 
+func (s *State) formTextInput(c *ui.Context, target *string, name string, width float32, disabled, secret bool) ui.Element {
+	field := connectionFormTextInput(c, target, name, width, disabled, secret)
+	handle := ui.Local(field, "edit-target", func() ui.Handle { return ui.Handle{} })
+	field.Bind(handle)
+	if s.editFocus != nil {
+		field.FocusBind(s.editFocus, "connection/"+name)
+	}
+	if s.validationField == name && !disabled {
+		field.Focus()
+		s.validationField = ""
+	}
+	if field.Focused() && s.editTarget != nil {
+		version, page := s.engineFileVersion, s.connectionEditorTab
+		s.editTarget(theme.EditTarget{ID: "connection/" + name, Handle: handle, Native: true, Valid: func() bool {
+			return s.active && !s.uriOpen && s.engineFileVersion == version && s.connectionEditorTab == page
+		}, Enabled: func(command string) bool {
+			if disabled {
+				return false
+			}
+			if command == "copy" || command == "cut" {
+				return !secret
+			}
+			return command == "paste" || command == "select_all" || command == "undo" || command == "redo"
+		}})
+	}
+	return field
+}
+
 func connectionFormSelect(c *ui.Context, value *string, options []string, name string, width float32, disabled bool) ui.Element {
 	return ui.Select(c, value, options).Label(locales.Text(name)).
 		Width(width).Height(theme.RowHeight(c, connectionFormInputHeight)).Disabled(disabled)
