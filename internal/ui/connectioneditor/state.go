@@ -37,6 +37,8 @@ type Dependencies struct {
 type State struct {
 	engineNumbers               [4]string
 	sqliteBusyTimeout           string
+	sqlMaxConnections           string
+	sqliteMaxConnections        string
 	sqliteAttachmentList        ui.ListState
 	sqliteAttachmentRow         int
 	engineFileVersion           uint64

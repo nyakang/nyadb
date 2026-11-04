@@ -21,9 +21,12 @@ func TestEngineOptionsPersistDuplicateAndLegacyWithoutMigration(t *testing.T) {
 	pg.PostgreSQLOptions.ApplicationName = "restored application"
 	pg.PostgreSQLOptions.DefaultSchema = "tenant"
 	pg.PostgreSQLOptions.StatementTimeoutMS = 431
+	pg.PostgreSQLOptions.MaxConnections, pg.PostgreSQLOptions.SQLMaxConnections = 3, 17
+	pg.PostgreSQLOptions.ToolsDirectory = filepath.Join(t.TempDir(), "postgres-tools")
 	pg.PostgreSQLOptions.CertificateFile, pg.PostgreSQLOptions.KeyFile = "client.crt", "client.key"
 	sq, _ := connections.Defaults(connections.SQLite)
 	sq.Name, sq.Database = "SQLite options", filepath.Join(t.TempDir(), "main.sqlite")
+	sq.SQLiteOptions.MaxConnections, sq.SQLiteOptions.SQLMaxConnections = 2, 13
 	sq.SQLiteOptions.Attachments = []connections.SQLiteAttachment{{Name: "aux", File: filepath.Join(t.TempDir(), "aux.sqlite"), ReadOnly: true}}
 	pgSaved, err := store.Create(ctx, pg)
 	if err != nil {
@@ -62,7 +65,7 @@ func TestEngineOptionsPersistDuplicateAndLegacyWithoutMigration(t *testing.T) {
 		t.Fatalf("legacy PG defaults: %+v %v", legacyPG, err)
 	}
 	legacySQ, err := store.Get(ctx, sqSaved.ID)
-	if err != nil || legacySQ.SQLiteOptions.RequireExisting || !legacySQ.SQLiteOptions.ForeignKeys || legacySQ.SQLiteOptions.BusyTimeoutMS != 1000 || len(legacySQ.SQLiteOptions.Attachments) != 0 {
+	if err != nil || legacySQ.SQLiteOptions.MaxConnections != 8 || legacySQ.SQLiteOptions.SQLMaxConnections != 8 || legacySQ.SQLiteOptions.RequireExisting || !legacySQ.SQLiteOptions.ForeignKeys || legacySQ.SQLiteOptions.BusyTimeoutMS != 1000 || len(legacySQ.SQLiteOptions.Attachments) != 0 {
 		t.Fatalf("legacy SQLite defaults: %+v %v", legacySQ, err)
 	}
 	var after int

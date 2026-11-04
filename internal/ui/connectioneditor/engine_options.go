@@ -77,6 +77,7 @@ func (s *State) initEngineOptionsInputs() {
 		for i, n := range []int{a.ConnectTimeoutSeconds, a.MaxConnections, a.StatementTimeoutMS, a.LockTimeoutMS} {
 			s.engineNumbers[i] = strconv.Itoa(n)
 		}
+		s.sqlMaxConnections = strconv.Itoa(a.SQLMaxConnections)
 		if s.connectionDraft.TLSMode == "" {
 			s.connectionDraft.TLSMode = "require"
 		}
@@ -86,10 +87,23 @@ func (s *State) initEngineOptionsInputs() {
 			s.connectionDraft.SQLiteOptions = a
 		}
 		s.sqliteBusyTimeout = strconv.Itoa(a.BusyTimeoutMS)
+		s.sqlMaxConnections = strconv.Itoa(a.SQLMaxConnections)
+		s.sqliteMaxConnections = strconv.Itoa(a.MaxConnections)
 	}
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite {
+		n, err := strconv.Atoi(strings.TrimSpace(s.sqlMaxConnections))
+		if err != nil || n < 1 || n > 64 {
+			return fmt.Errorf("%s: 1–64", locales.Text("SQL 会话上限"))
+		}
+		if p.Kind == connections.PostgreSQL {
+			p.PostgreSQLOptions.SQLMaxConnections = n
+		} else {
+			p.SQLiteOptions.SQLMaxConnections = n
+		}
+	}
 	switch p.Kind {
 	case connections.PostgreSQL:
 		values := [4]int{}
@@ -107,6 +121,11 @@ func (s *State) advanceEngineOptions(p *connections.Profile) error {
 		p.PostgreSQLOptions = a
 		return err
 	case connections.SQLite:
+		limit, e := strconv.Atoi(strings.TrimSpace(s.sqliteMaxConnections))
+		if e != nil || limit < 1 || limit > 64 {
+			return fmt.Errorf("%s: 1–64", locales.Text("后台连接上限"))
+		}
+		p.SQLiteOptions.MaxConnections = limit
 		n, err := strconv.Atoi(strings.TrimSpace(s.sqliteBusyTimeout))
 		if err != nil {
 			return fmt.Errorf("%s: %s", locales.Text("锁等待超时（毫秒）"), locales.Text("请输入整数。"))
@@ -141,9 +160,15 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 		case "高级":
 			ui.Column(c).Width(formWidth).Gap(0).Children(func() {
 				for i, label := range []string{"连接超时（秒）", "最大连接数", "语句超时（毫秒）", "锁等待超时（毫秒）"} {
-					s.editorInputRow(c, label+"：", label, &s.engineNumbers[i], labelWidth, 120)
+					display := label
+					if i == 1 {
+						display = "后台连接上限"
+					}
+					s.editorInputRow(c, display+"：", label, &s.engineNumbers[i], labelWidth, 120)
 				}
+				s.editorInputRow(c, "SQL 会话上限", "SQL 会话上限", &s.sqlMaxConnections, labelWidth, 120)
 				s.editorInputRow(c, "应用名称：", "应用名称", &a.ApplicationName, labelWidth, fieldWidth)
+				s.editorInputRow(c, "备份工具目录：", "PostgreSQL 工具目录", &a.ToolsDirectory, labelWidth, fieldWidth)
 				s.editorInputRow(c, "默认模式：", "默认模式", &a.DefaultSchema, labelWidth, fieldWidth)
 				ui.Text(c, locales.Text("语句及锁等待超时为 0 时不设置超时；默认模式在每条物理连接初始化。"))
 			})
@@ -189,6 +214,8 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 				connectionFormCheckbox(c, &a.RequireExisting, "要求主数据库文件已存在", false)
 				connectionFormCheckbox(c, &a.ForeignKeys, "启用外键约束", false)
 				s.editorInputRow(c, "锁等待超时（毫秒）", "SQLite 锁等待超时", &s.sqliteBusyTimeout, labelWidth, 120)
+				s.editorInputRow(c, "后台连接上限", "后台连接上限", &s.sqliteMaxConnections, labelWidth, 120)
+				s.editorInputRow(c, "SQL 会话上限", "SQL 会话上限", &s.sqlMaxConnections, labelWidth, 120)
 				ui.Text(c, locales.Text("取消要求文件存在后，连接时可创建主数据库；只读连接始终要求文件存在。"))
 			})
 		case "附加的数据库":

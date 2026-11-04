@@ -170,6 +170,9 @@ func (s *State) Consume() {
 					!errors.Is(err, contract.ErrRevoked) &&
 					!t.loading && t.result == nil && t.err == "" {
 					t.err = "SQL 预连接失败：" + err.Error()
+					if errors.Is(err, contract.ErrSQLSessionLimit) {
+						t.err = "SQL 会话数量已达上限，请关闭其他查询标签后重试"
+					}
 					if errors.Is(err, contract.ErrSQLSessionLost) || errors.Is(err, contract.ErrRevoked) {
 						t.recoveryNeeded = true
 						t.recoveryProfile = t.profileID

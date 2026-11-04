@@ -63,14 +63,16 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 	if err != nil {
 		return err
 	}
-	maxConnections := 8
+	maxConnections, sqlLimit := p.SQLiteOptions.MaxConnections, p.SQLiteOptions.SQLMaxConnections
 	if p.Kind == connections.PostgreSQL {
 		options, e := connections.NormalizePostgreSQLOptions(p.PostgreSQLOptions)
 		if e != nil {
 			db.Close()
 			return e
 		}
+		p.PostgreSQLOptions = options
 		maxConnections = options.MaxConnections
+		sqlLimit = options.SQLMaxConnections
 	}
 	db.SetMaxOpenConns(maxConnections)
 	db.SetMaxIdleConns(min(2, maxConnections))
@@ -78,14 +80,24 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 		db.Close()
 		return redact(e, password)
 	}
+	// SQL documents pin physical sessions. Their pool must never consume the
+	// connections needed by metadata, data documents or maintenance jobs.
+	sqlDB, err := strategy.open(p, password, m.DialContext)
+	if err != nil {
+		db.Close()
+		return redact(err, password)
+	}
+	sqlDB.SetMaxOpenConns(sqlLimit)
+	sqlDB.SetMaxIdleConns(0)
 	m.mu.Lock()
 	if ctx.Err() != nil || m.intents[p.ID] != intent {
 		m.mu.Unlock()
 		db.Close()
+		sqlDB.Close()
 		return ErrRevoked
 	}
 	sessionCtx, sessionCancel := context.WithCancel(context.Background())
-	s := &Session{dataScope: rand.Text(), db: db, strategy: strategy, kind: p.Kind, id: p.ID, generation: intent, ctx: sessionCtx, cancel: sessionCancel, catalog: p.Database, leases: make(map[*Lease]bool), transactions: make(map[*Tx]bool)}
+	s := &Session{backupProfile: p, backupPassword: password, dataScope: rand.Text(), db: db, sqlDB: sqlDB, sqlSlots: make(chan struct{}, sqlLimit), strategy: strategy, kind: p.Kind, id: p.ID, generation: intent, ctx: sessionCtx, cancel: sessionCancel, catalog: p.Database, leases: make(map[*Lease]bool), transactions: make(map[*Tx]bool)}
 	old := m.sessions[p.ID]
 	m.sessions[p.ID] = s
 	m.mu.Unlock()
@@ -138,20 +150,24 @@ func (m *Manager) Close() error {
 }
 
 type Session struct {
-	dataScope    string
-	schema       schemaGate
-	strategy     dialectStrategy
-	db           *sql.DB
-	ctx          context.Context
-	cancel       context.CancelFunc
-	kind         connections.Kind
-	id           int64
-	generation   uint64
-	catalog      string
-	mu           sync.Mutex
-	closed       bool
-	leases       map[*Lease]bool
-	transactions map[*Tx]bool
+	backupProfile  connections.Profile
+	backupPassword string
+	dataScope      string
+	schema         schemaGate
+	strategy       dialectStrategy
+	db             *sql.DB
+	sqlDB          *sql.DB
+	sqlSlots       chan struct{}
+	ctx            context.Context
+	cancel         context.CancelFunc
+	kind           connections.Kind
+	id             int64
+	generation     uint64
+	catalog        string
+	mu             sync.Mutex
+	closed         bool
+	leases         map[*Lease]bool
+	transactions   map[*Tx]bool
 }
 
 func (s *Session) ProfileID() int64   { return s.id }
@@ -191,7 +207,7 @@ func (s *Session) Close() error {
 	for _, t := range txs {
 		t.Close()
 	}
-	return s.db.Close()
+	return errors.Join(s.sqlDB.Close(), s.db.Close())
 }
 func (s *Session) check(o contract.ObjectRef) error {
 	if s.isClosed() {
@@ -209,59 +225,78 @@ func quote(v string) string                 { return `"` + strings.ReplaceAll(v,
 func qualified(o contract.ObjectRef) string { return quote(o.Schema) + "." + quote(o.Name) }
 func (s *Session) arg(i int) string         { return s.strategy.argument(i) }
 func (s *Session) Reserve(ctx context.Context) (contract.SQLLease, error) {
+	ctx, done := s.requestContext(ctx)
+	defer done()
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if s.isClosed() {
+		return nil, ErrRevoked
+	}
+	select {
+	case s.sqlSlots <- struct{}{}:
+	default:
+		return nil, contract.ErrSQLSessionLimit
+	}
+	transferred := false
+	defer func() {
+		if !transferred {
+			<-s.sqlSlots
+		}
+	}()
 	if s.kind == connections.SQLite {
-		child, done := s.requestContext(ctx)
-		defer done()
-		ctx = child
 		release, err := s.schema.acquire(ctx, false)
 		if err != nil {
 			return nil, err
 		}
 		defer release()
 	}
-	if s.isClosed() {
-		return nil, ErrRevoked
-	}
-	c, e := s.db.Conn(ctx)
+	c, e := s.sqlDB.Conn(ctx)
 	if e != nil {
 		return nil, e
 	}
 	leasectx, leasecancel := context.WithCancel(s.ctx)
-	l := &Lease{s: s, c: c, ctx: leasectx, cancel: leasecancel}
+	l := &Lease{s: s, c: c, ctx: leasectx, cancel: leasecancel, closedDone: make(chan struct{})}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.closed {
+		leasecancel()
 		c.Close()
 		return nil, ErrRevoked
 	}
 	s.leases[l] = true
+	transferred = true
 	return l, nil
 }
 
 type Lease struct {
-	ctx    context.Context
-	cancel context.CancelFunc
-	ops    sync.Mutex
-	s      *Session
-	c      *sql.Conn
-	mu     sync.Mutex
-	closed bool
+	ctx        context.Context
+	cancel     context.CancelFunc
+	ops        sync.Mutex
+	s          *Session
+	c          *sql.Conn
+	mu         sync.Mutex
+	closed     bool
+	closedDone chan struct{}
 }
 
 func (l *Lease) Close() error {
 	l.mu.Lock()
 	if l.closed {
 		l.mu.Unlock()
+		<-l.closedDone
 		return nil
 	}
 	l.closed = true
 	l.cancel()
 	l.mu.Unlock()
+	defer close(l.closedDone)
+	_ = l.c.Raw(func(any) error { return driver.ErrBadConn })
+	err := l.c.Close()
+	<-l.s.sqlSlots
 	l.s.mu.Lock()
 	delete(l.s.leases, l)
 	l.s.mu.Unlock()
-	_ = l.c.Raw(func(any) error { return driver.ErrBadConn })
-	err := l.c.Close()
 	if errors.Is(err, sql.ErrConnDone) {
 		return nil
 	}
