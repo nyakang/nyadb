@@ -36,5 +36,18 @@ func (s *State) CanAccounts(profile int64) bool {
 	return s.sessionFor(profile).Connected && s.capabilities(profile).Accounts && s.deps.AccountLoader != nil && s.deps.AccountExecutor != nil && (s.accounts == nil || !s.accounts.busy)
 }
 func (s *State) CanBackup(profile int64) bool {
+	if s.deps.BackupsFor != nil && s.deps.BackupsFor(profile).Plan != nil {
+		return s.sessionFor(profile).Connected && s.capabilities(profile).Backup && (s.portableBackup == nil || !s.portableBackup.busy)
+	}
 	return s.sessionFor(profile).Connected && s.capabilities(profile).Backup && s.backupRuntime != nil && s.backupRuntime() != nil && (s.backup == nil || !s.backup.busy)
+}
+
+func (s *State) CanRestore(profile int64) bool {
+	if !s.sessionFor(profile).Connected || !s.capabilities(profile).Restore {
+		return false
+	}
+	if s.deps.BackupsFor != nil && s.deps.BackupsFor(profile).Plan != nil {
+		return s.portableBackup == nil || !s.portableBackup.busy
+	}
+	return s.backupRuntime != nil && s.backupRuntime() != nil && (s.backup == nil || !s.backup.busy)
 }

@@ -99,7 +99,7 @@ func Run() error {
 
 		state.SetBackupFiles(objectworkspace.BackupFiles{
 			Open: func() (string, error) {
-				paths, e := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: window, Title: locales.Text("恢复 NyaDB 备份"), Filters: []mygo.FileFilter{{Name: "NyaDB Backup", Extensions: []string{"nyabackup"}}}})
+				paths, e := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: window, Title: locales.Text("恢复 NyaDB 备份"), Filters: []mygo.FileFilter{{Name: "Database Backup", Extensions: []string{"nyabackup", "dump", "sqlite", "db"}}}})
 				if e != nil || len(paths) == 0 {
 					return "", e
 				}

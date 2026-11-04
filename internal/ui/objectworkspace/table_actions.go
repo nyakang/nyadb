@@ -173,7 +173,10 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 				}
 			}
 		}
-	}).Disabled(s.deps.Backup == nil || !s.CanBackup(profileID))
+	}).Disabled(s.deps.Backup == nil || !s.CanBackup(profileID) || !s.canAdministration(profileID))
+	if s.deps.BackupsFor != nil && s.deps.BackupsFor(profileID).Plan != nil && m.Item(locales.Text("备份表…")).Disabled(!s.CanBackup(profileID)).Chosen() {
+		s.BeginBackup(services, profileID, database, name, "backup")
+	}
 	m.Submenu(locales.Text("维护"), func(sub *ui.Menu) {
 		for _, item := range []struct{ label, action string }{{"分析表", "ANALYZE"}, {"检查表", "CHECK"}, {"优化表", "OPTIMIZE"}, {"修复表", "REPAIR"}} {
 			it := item
@@ -271,6 +274,7 @@ func (s *State) BeginTableChange(profileID int64, database, name string, action 
 }
 
 func (s *State) Modals(c *ui.Context) {
+	s.portableBackupModal(c)
 	s.viewModal(c)
 	s.schemaCopyModal(c)
 	s.schemaDropModal(c)

@@ -223,7 +223,7 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 		if m.Item(locales.Text("备份数据库…")).Disabled(!s.objectWorkspace.CanBackup(n.ProfileID)).Chosen() {
 			s.objectWorkspace.BeginBackup(services, n.ProfileID, n.Database, "", "backup")
 		}
-		if m.Item(locales.Text("恢复备份…")).Disabled(!s.objectWorkspace.CanBackup(n.ProfileID)).Chosen() {
+		if m.Item(locales.Text("恢复备份…")).Disabled(!s.objectWorkspace.CanRestore(n.ProfileID)).Chosen() {
 			s.objectWorkspace.BeginBackup(services, n.ProfileID, n.Database, "", "restore")
 		}
 		if m.Item(locales.Text("打开数据库")).Shortcut(0, ui.KeyEnter).
