@@ -41,5 +41,6 @@ export NYADB_MYSQL_DATA_EDIT_IT=1 NYADB_MYSQL_DATA_EDIT_PORT="$mysql_port" NYADB
 export NYADB_MYSQL_DATA_TX_IT=1 NYADB_MYSQL_DATA_TX_PORT="$mysql_port"
 export NYADB_UNIFIED_GRID_CAPTURE_DIR="${NYADB_UNIFIED_GRID_CAPTURE_DIR:-$PWD/build/unified-grid}"
 go test ./internal/services/mysql -run '^(TestTableDesignDisposableMySQLRoundTrip|TestSQLPipelineDisposableTypedMultiResultsAndFullStream|TestMySQLObjectManagementCoreFixture|TestMySQLBackupRestoreCoreFixture|TestNontransactionalRestoreCoreFixture|TestMySQLDataEditingIntegration|TestMySQLDataWholeCellEditingIntegration|TestMySQLDataUnknownCommitNetworkIntegration|TestMySQLDataDocumentTransactionIntegration)$' -count=1 -v
-go test ./internal/services/engines -run '^TestPostgreSQL17Fixture$' -count=1 -v
+go test ./internal/services/mysql -run '^TestMySQLGroupedTaskFixture$' -count=1 -v
+go test ./internal/services/engines -run '^(TestPostgreSQL17Fixture|TestPostgreSQL17GroupedTaskFixture|TestSQLiteGroupedTaskFixture)$' -count=1 -v
 go test ./internal/ui/dataworkspace -run '^TestUnifiedGridRepresentative$' -count=1 -v
