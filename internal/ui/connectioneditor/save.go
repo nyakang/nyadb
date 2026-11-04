@@ -12,6 +12,10 @@ import (
 
 func (s *State) draftProfile() (connections.Profile, error) {
 	p := s.connectionDraft
+	p.Name = strings.TrimSpace(p.Name)
+	if p.Name == "" {
+		return p, fieldError("连接名称", "常规", "请输入连接名称")
+	}
 	if err := s.advanceEngineOptions(&p); err != nil {
 		return p, err
 	}
@@ -26,24 +30,24 @@ func (s *State) draftProfile() (connections.Profile, error) {
 	}
 	p.Name = strings.TrimSpace(p.Name)
 	if p.Name == "" {
-		return p, fmt.Errorf("请输入连接名称")
+		return p, fieldError("连接名称", "常规", "请输入连接名称")
 	}
 	if p.Kind == connections.SQLite {
 		if strings.TrimSpace(p.Database) == "" {
-			return p, fmt.Errorf("请选择 SQLite 数据库文件")
+			return p, fieldError("数据库文件", "常规", "请选择 SQLite 数据库文件")
 		}
 		return p, nil
 	}
 	if p.Kind == connections.PostgreSQL && strings.TrimSpace(p.Database) == "" {
-		return p, fmt.Errorf("请输入此连接绑定的 PostgreSQL 数据库")
+		return p, fieldError("数据库", "常规", "请输入此连接绑定的 PostgreSQL 数据库")
 	}
 	port, err := strconv.ParseUint(strings.TrimSpace(s.connectionPort), 10, 16)
 	if err != nil || port == 0 {
-		return p, fmt.Errorf("端口必须是 1–65535 之间的数字")
+		return p, fieldError("端口", "常规", "端口必须是 1–65535 之间的数字")
 	}
 	p.Port = uint16(port)
 	if strings.TrimSpace(p.Host) == "" {
-		return p, fmt.Errorf("请输入数据库主机")
+		return p, fieldError("主机", "常规", "请输入数据库主机")
 	}
 	return p, nil
 }
@@ -57,7 +61,7 @@ func (s *State) Save() {
 		p, err = s.draftProfile()
 	}
 	if err != nil {
-		s.connectionError = err.Error()
+		s.validationError(err)
 		return
 	}
 	if s.profileService == nil {

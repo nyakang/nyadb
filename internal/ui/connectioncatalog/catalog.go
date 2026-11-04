@@ -177,6 +177,9 @@ type Choice struct {
 // State is chooser state owned by the UI thread. Create it with New and reuse
 // it when reopening the chooser. Never retain ui.Element values.
 type State struct {
+	editFocus     *string
+	editTarget    func(theme.EditTarget)
+	editValid     func() bool
 	selected      Choice
 	search        string
 	gridMode      bool
@@ -187,6 +190,10 @@ type State struct {
 	bundledIcons  map[string]*ui.Bitmap
 	providerIcons map[string]*ui.Bitmap
 	researchIcons map[string]*ui.Bitmap
+}
+
+func (s *State) SetEditing(focus *string, register func(theme.EditTarget), valid func() bool) {
+	s.editFocus, s.editTarget, s.editValid = focus, register, valid
 }
 
 func New() *State {

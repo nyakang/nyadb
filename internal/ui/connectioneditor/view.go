@@ -185,7 +185,7 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 		s.editorInputRow(c, "用户名：", "用户名", &p.Username, labelWidth, min(fieldWidth, float32(200)))
 		connectionFormRow(c).Children(func() {
 			ui.Text(c, locales.Text("密码：")).Width(labelWidth).FontSize(theme.Font(c, 12))
-			connectionFormTextInput(c, &s.connectionSecret, "密码", min(fieldWidth, float32(200)), false, true)
+			s.formTextInput(c, &s.connectionSecret, "密码", min(fieldWidth, float32(200)), false, true)
 		})
 		ui.Row(c).Height(theme.RowHeight(c, 28)).Gap(0).AlignItems(ui.Center).Children(func() {
 			ui.Box(c).Width(labelWidth)
@@ -200,7 +200,7 @@ func (s *State) editorInputRow(
 ) {
 	connectionFormRow(c).Children(func() {
 		ui.Text(c, locales.Text(caption)).Width(labelWidth).FontSize(theme.Font(c, 12))
-		input := connectionFormTextInput(c, target, label, fieldWidth,
+		input := s.formTextInput(c, target, label, fieldWidth,
 			s.connectionDraft.ID != 0 && s.connectionActiveConfig != 0 && label == "连接名称", false)
 		if label == "连接名称" && s.connectionActiveConfig == 0 && s.connectionNameFocusPending {
 			// Focus just once when the editor opens. Continuous AutoFocus on
@@ -220,7 +220,7 @@ func (s *State) editorSQLiteFields(c *ui.Context, labelWidth, fieldWidth float32
 	})
 	connectionFormRow(c).Children(func() {
 		ui.Text(c, locales.Text("数据库文件：")).Width(labelWidth).FontSize(theme.Font(c, 12))
-		connectionFormTextInput(c, &s.connectionDraft.Database, "数据库文件", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false)
+		s.formTextInput(c, &s.connectionDraft.Database, "数据库文件", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false)
 		ui.Box(c).Width(connectionFormBrowseGap)
 		connectionFormBrowse(c, "浏览文件", s.sqliteFilePicker == nil, s.sqliteFilePicker)
 	})
@@ -303,9 +303,11 @@ func (s *State) connectionEditorFooter(c *ui.Context, width float32) {
 			Label("切换连接配置文件侧栏").Clicked() {
 			s.connectionProfilesVisible = !s.connectionProfilesVisible
 		}
-		ui.Button(c, "URI").Width(theme.Font(c, 76)).Height(theme.RowHeight(c, connectionFooterControlHeight)).
+		if ui.Button(c, "URI").Width(theme.Font(c, 76)).Height(theme.RowHeight(c, connectionFooterControlHeight)).
 			Background(palette.Header).Border(1, palette.Border).
-			Disabled(true).Label(locales.Text("URI 导入尚未支持"))
+			Label(locales.Text("通过 URI 配置连接")).Clicked() {
+			s.BeginURIFromEditor()
+		}
 		if s.connectionTesting {
 			if ui.Button(c, locales.Text("取消测试")).Width(theme.Font(c, 155)).Height(theme.RowHeight(c, connectionFooterControlHeight)).Background(palette.Header).Border(1, palette.Border).Clicked() {
 				s.cancelMySQLConnectionTest()
@@ -347,13 +349,16 @@ func (s *State) connectionNotesEditor(c *ui.Context, width float32) {
 	editorHeight := max(float32(180), min(float32(475), height-226))
 	ui.Column(c).Width(formWidth).Gap(4).Children(func() {
 		ui.Row(c).Height(theme.RowHeight(c, 22)).AlignItems(ui.Center).Children(func() {
+			ui.Text(c, locales.Text("颜色"))
+			ui.Select(c, &s.connectionDraft.Color, connections.ProfileColors()).Label(locales.Text("连接颜色")).Width(120)
 			ui.Text(c, "备注：*").FontSize(theme.Font(c, 12))
 		})
-		ui.TextArea(c, &s.connectionDraft.Notes).
+		notes := ui.TextArea(c, &s.connectionDraft.Notes).
 			Label("连接备注").
 			Width(formWidth).Height(editorHeight).
 			Padding(7, 6).FontSize(theme.Font(c, 12)).
 			Background(palette.App).Border(1, palette.App)
+		theme.BindNativeEdit(c, notes, "connection/notes", s.editFocus, s.editTarget, func() bool { return s.active && !s.uriOpen }, true, false)
 		ui.Row(c).Height(18).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, "* 更改将应用于所有连接配置文件。").
 				FontSize(theme.Font(c, 11)).TextColor(palette.Muted)

@@ -93,7 +93,7 @@ func (s *State) connectionMySQLSSL(c *ui.Context, width float32) {
 		connectionFormRow(c).Children(func() {
 			ui.Text(c, locales.Text("指定密码：")).FontSize(theme.Font(c, 12)).Width(labelWidth).
 				TextColor(palette.Muted)
-			connectionFormTextInput(c, &s.mysqlSSLPassphrase, "SSL 密钥密码", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, true)
+			s.formTextInput(c, &s.mysqlSSLPassphrase, "SSL 密钥密码", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, true)
 		})
 		ui.Row(c).Height(theme.RowHeight(c, 26)).Gap(0).Children(func() {
 			ui.Box(c).Width(labelWidth)
@@ -114,7 +114,7 @@ func (s *State) mysqlSSLPathRow(c *ui.Context, caption string, value *string,
 
 	connectionFormRow(c).Children(func() {
 		ui.Text(c, caption).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
-		connectionFormTextInput(c, value, "SSL "+caption, fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, false)
+		s.formTextInput(c, value, "SSL "+caption, fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, false)
 		ui.Box(c).Width(connectionFormBrowseGap)
 		connectionFormBrowse(c, "选择"+caption+"文件", !active || s.mysqlSSLFilePicker == nil, func() { s.mysqlSSLFilePicker(kind) })
 	})
@@ -194,7 +194,7 @@ func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
 		s.mysqlSSHInputRow(c, "主机：", &ssh.Host, labelWidth, fieldWidth, active)
 		connectionFormRow(c).Children(func() {
 			ui.Text(c, locales.Text("端口：")).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
-			connectionFormTextInput(c, &s.mysqlSSHPort, "SSH 端口", 80, !active, false)
+			s.formTextInput(c, &s.mysqlSSHPort, "SSH 端口", 80, !active, false)
 		})
 		s.mysqlSSHInputRow(c, "用户名：", &ssh.Username, labelWidth, 200, active)
 		connectionFormRow(c).Children(func() {
@@ -206,19 +206,19 @@ func (s *State) connectionMySQLSSH(c *ui.Context, width float32) {
 		if passwordMode {
 			connectionFormRow(c).Children(func() {
 				ui.Text(c, locales.Text("密码：")).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
-				connectionFormTextInput(c, &s.mysqlSSHPassword, "SSH 密码", 200, !active, true)
+				s.formTextInput(c, &s.mysqlSSHPassword, "SSH 密码", 200, !active, true)
 			})
 		}
 		if keyMode {
 			connectionFormRow(c).Children(func() {
 				ui.Text(c, "Private Key:").Width(labelWidth).FontSize(theme.Font(c, 12))
-				connectionFormTextInput(c, &ssh.PrivateKey, "SSH 私钥文件", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, false)
+				s.formTextInput(c, &ssh.PrivateKey, "SSH 私钥文件", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, false)
 				ui.Box(c).Width(connectionFormBrowseGap)
 				connectionFormBrowse(c, "选择 SSH 私钥", !active || s.mysqlSSHKeyPicker == nil, s.mysqlSSHKeyPicker)
 			})
 			connectionFormRow(c).Children(func() {
 				ui.Text(c, "Passphrase:").Width(labelWidth).FontSize(theme.Font(c, 12))
-				connectionFormTextInput(c, &s.mysqlSSHPassphrase, "SSH 私钥口令", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, true)
+				s.formTextInput(c, &s.mysqlSSHPassphrase, "SSH 私钥口令", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, true)
 			})
 		}
 		connectionFormRow(c).Children(func() {
@@ -241,6 +241,6 @@ func (s *State) mysqlSSHInputRow(
 
 	connectionFormRow(c).Children(func() {
 		ui.Text(c, title).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
-		connectionFormTextInput(c, value, "SSH "+title, fieldWidth, !active, false)
+		s.formTextInput(c, value, "SSH "+title, fieldWidth, !active, false)
 	})
 }

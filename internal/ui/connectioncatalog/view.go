@@ -2,6 +2,7 @@ package connectioncatalog
 
 import (
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -129,7 +130,8 @@ func (s *State) catalogSearchToolbar(c *ui.Context) {
 		if segments.Track.Changed() {
 			s.gridMode = selected == 0
 		}
-		ui.SearchField(c, &s.search).Label(locales.Text("搜索连接类型")).Placeholder(locales.Text("搜索")).Width(236).Height(theme.RowHeight(c, catalogSearchInputHeight))
+		search := ui.SearchField(c, &s.search).Label(locales.Text("搜索连接类型")).Placeholder(locales.Text("搜索")).Width(236).Height(theme.RowHeight(c, catalogSearchInputHeight))
+		theme.BindNativeEdit(c, search, "connection/catalog-search", s.editFocus, s.editTarget, s.editValid, true, false)
 	})
 }
 
@@ -178,6 +180,11 @@ func (s *State) catalogIconItem(c *ui.Context, item catalogEntry, onSelect func(
 		ui.Column(c).AlignItems(ui.Center).Justify(ui.Center).Gap(4).Children(func() {
 			s.catalogIcon(c, item, 45)
 			ui.Text(c, item.name).Width(109).TextAlign(ui.Center).FontSize(theme.Font(c, 11))
+			if item.kind == "" {
+				ui.Text(c, locales.Text("尚未支持")).FontSize(theme.Font(c, 10)).TextColor(palette.Muted).Tooltip(theme.AvailabilityText(contract.Availability{Reason: "not_implemented"}))
+			} else {
+				ui.Text(c, locales.Text("可连接")).FontSize(theme.Font(c, 10)).TextColor(palette.Blue)
+			}
 		})
 	})
 	if control.Clicked() {
@@ -195,7 +202,9 @@ func (s *State) catalogListItem(c *ui.Context, item catalogEntry, onSelect func(
 			s.catalogIcon(c, item, 30)
 			ui.Text(c, item.name).FontSize(theme.Font(c, 12)).Grow(1)
 			if item.kind == "" {
-				ui.Text(c, locales.Text("尚未支持")).FontSize(theme.Font(c, 10)).TextColor(palette.Muted)
+				ui.Text(c, locales.Text("尚未支持")).FontSize(theme.Font(c, 10)).TextColor(palette.Muted).Tooltip(theme.AvailabilityText(contract.Availability{Reason: "not_implemented"}))
+			} else {
+				ui.Text(c, locales.Text("可连接")).FontSize(theme.Font(c, 10)).TextColor(palette.Blue)
 			}
 			if item.kind != "" && item.kind == s.selected.Kind {
 				ui.Text(c, "✓").TextColor(palette.Blue)
