@@ -49,6 +49,9 @@ func (s *State) SetBackupServices(runtime func() BackupRuntime, files BackupFile
 	s.backupRuntime, s.backupFiles = runtime, files
 }
 func (s *State) BeginBackup(services ui.Services, profile int64, database, table, action string) {
+	if s.beginPortableBackup(profile, database, table, action) {
+		return
+	}
 	if !s.capabilities(profile).Backup {
 		return
 	}

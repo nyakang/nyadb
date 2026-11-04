@@ -21,20 +21,22 @@ func (f ProviderFunc) Open(ctx context.Context, p connections.Profile, password 
 }
 
 type attempt struct {
+	profile    connections.Profile
 	generation uint64
 	cancel     context.CancelFunc
 }
 type Manager struct {
-	mu        sync.Mutex
-	next      uint64
-	closed    bool
-	providers map[connections.Kind]Provider
-	pending   map[int64]attempt
-	sessions  map[int64]*session
+	backupOperations map[*backupOperation]bool
+	mu               sync.Mutex
+	next             uint64
+	closed           bool
+	providers        map[connections.Kind]Provider
+	pending          map[int64]attempt
+	sessions         map[int64]*session
 }
 
 func New() *Manager {
-	return &Manager{providers: map[connections.Kind]Provider{}, pending: map[int64]attempt{}, sessions: map[int64]*session{}}
+	return &Manager{backupOperations: map[*backupOperation]bool{}, providers: map[connections.Kind]Provider{}, pending: map[int64]attempt{}, sessions: map[int64]*session{}}
 }
 func (m *Manager) Register(kind connections.Kind, p Provider) {
 	m.mu.Lock()
@@ -56,7 +58,7 @@ func (m *Manager) ConnectSession(ctx context.Context, p connections.Profile, pas
 	}
 	m.mu.Lock()
 	provider := m.providers[p.Kind]
-	if m.closed {
+	if m.closed || m.backupLocked(p) {
 		m.mu.Unlock()
 		return nil, contract.ErrRevoked
 	}
@@ -64,12 +66,17 @@ func (m *Manager) ConnectSession(ctx context.Context, p connections.Profile, pas
 		m.mu.Unlock()
 		return nil, contract.ErrUnsupported
 	}
+	for op := range m.backupOperations {
+		if op.owner == p.ID {
+			op.cancel()
+		}
+	}
 	m.next++
 	generation := m.next
 	opctx, cancel := context.WithCancel(ctx)
 	previous := m.pending[p.ID]
 	old := m.sessions[p.ID]
-	m.pending[p.ID] = attempt{generation, cancel}
+	m.pending[p.ID] = attempt{generation: generation, cancel: cancel, profile: p}
 	delete(m.sessions, p.ID)
 	m.mu.Unlock()
 	if previous.cancel != nil {
@@ -93,7 +100,7 @@ func (m *Manager) ConnectSession(ctx context.Context, p connections.Profile, pas
 	}
 	var published *session
 	if !stale && err == nil {
-		published = &session{raw: raw, id: p.ID, generation: generation, kind: p.Kind, cancel: cancel}
+		published = &session{profile: p, raw: raw, id: p.ID, generation: generation, kind: p.Kind, cancel: cancel}
 		m.sessions[p.ID] = published
 	}
 	m.mu.Unlock()
@@ -135,6 +142,11 @@ func (m *Manager) Generation(id int64) uint64 {
 }
 func (m *Manager) Disconnect(id int64) error {
 	m.mu.Lock()
+	for op := range m.backupOperations {
+		if op.owner == id {
+			op.cancel()
+		}
+	}
 	p := m.pending[id]
 	s := m.sessions[id]
 	delete(m.pending, id)
@@ -157,6 +169,11 @@ func (m *Manager) Close() error {
 	}
 	m.closed = true
 	pending, all := m.pending, m.sessions
+	operations := make([]*backupOperation, 0, len(m.backupOperations))
+	for op := range m.backupOperations {
+		op.cancel()
+		operations = append(operations, op)
+	}
 	m.pending = map[int64]attempt{}
 	m.sessions = map[int64]*session{}
 	m.mu.Unlock()
@@ -167,10 +184,14 @@ func (m *Manager) Close() error {
 	for _, s := range all {
 		err = errors.Join(err, s.Close())
 	}
+	for _, op := range operations {
+		<-op.done
+	}
 	return err
 }
 
 type session struct {
+	profile    connections.Profile
 	cancel     context.CancelFunc
 	mu         sync.Mutex
 	raw        contract.Session

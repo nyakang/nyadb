@@ -287,8 +287,62 @@ func (s *State) pruneMySQLTabsFor(id int64, known map[string]bool) {
 	})
 }
 
+func restoreIncludesProfile(plan contract.BackupPlan, profile int64) bool {
+	for _, affected := range plan.Affected {
+		if profile == affected.ProfileID {
+			return true
+		}
+	}
+	return plan.QuiesceFile == "" && profile == plan.Request.Target.Object.ProfileID
+}
+
 func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 	return objectworkspace.Dependencies{
+		BackupsFor: func(id int64) contract.BackupOperations {
+			if s.runtime == nil {
+				return contract.BackupOperations{}
+			}
+			return s.runtime.Backups(id)
+		},
+		BeforeRestore: func(services ui.Services, plan contract.BackupPlan, next func(ui.Services)) bool {
+			// Re-run the existing leave guards after every asynchronous decision,
+			// until every affected data transaction and draft has been settled.
+			var guard func(ui.Services)
+			matches := func(t *tab) bool {
+				return restoreIncludesProfile(plan, t.profileID())
+			}
+			guard = func(services ui.Services) {
+				if !s.guardTabsLeave(matches, guard) {
+					next(services)
+				}
+			}
+			return s.guardTabsLeave(matches, guard)
+		},
+		RestoreGuardPending: func(plan contract.BackupPlan) bool {
+			for _, t := range s.tabs {
+				if restoreIncludesProfile(plan, t.profileID()) && (t.data != nil && t.data.LeavePending() || t.object != nil && t.object.DesignLeavePending()) {
+					return true
+				}
+			}
+			return false
+		},
+		BackupCompleted: func(services ui.Services, event objectworkspace.BackupEvent) {
+			for _, drained := range event.Outcome.Drained {
+				if s.runtime != nil && s.runtime.Generation(drained.ProfileID) == 0 {
+					s.sessions.Disconnect(drained.ProfileID)
+				}
+			}
+			if s.runtime != nil && event.Outcome.Path == event.Original.Object.Catalog &&
+				(event.Outcome.State == "completed" || event.Outcome.State == "uncertain") &&
+				s.runtime.Generation(event.Original.Object.ProfileID) == event.Original.Generation {
+				// A PG overwrite can change every table/view in the archive. Retire
+				// inspected/data snapshots after the leave guards have settled them.
+				if s.sessions.InvalidateProfileObjects(event.Original.Object.ProfileID, event.Generation) {
+					s.clearMySQLTabsFor(event.Original.Object.ProfileID)
+				}
+			}
+			services.Invalidate()
+		},
 		Availability: func(id int64, operation string, target contract.SchemaDesignTarget) contract.Availability {
 			if s.runtime == nil {
 				return contract.Availability{Reason: "disconnected"}

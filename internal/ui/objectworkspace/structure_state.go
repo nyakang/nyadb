@@ -21,30 +21,34 @@ type Session struct {
 }
 
 type Dependencies struct {
-	Availability      func(int64, string, contract.SchemaDesignTarget) contract.Availability
-	Namespace         func(int64, string) contract.NamespaceRef
-	SchemaDesignFor   func(int64) contract.SchemaDesignOperations
-	SchemaTarget      func(int64, string, string) contract.SchemaDesignTarget
-	SchemaDesigned    func(ui.Services, SchemaDesignEvent)
-	SchemaDropped     func(ui.Services, SchemaDropEvent)
-	SchemaCopied      func(ui.Services, SchemaCopyEvent)
-	BeforeDrop        func(ui.Services, int64, string, string, func(ui.Services)) bool
-	BeforeCopy        func(ui.Services, int64, string, string, func(ui.Services)) bool
-	TableGuardPending func(int64, string, string) bool
-	ViewDesignFor     func(int64) contract.ViewDesignOperations
-	ViewTarget        func(int64, string, string) contract.SchemaDesignTarget
-	ViewChanged       func(ui.Services, ViewEvent)
-	RenameSchema      func(ui.Services, int64, string, string, string)
-	Favorite          func(ui.Services, int64, string, string, string)
-	CanFavorite       func() bool
-	SearchRuntime     func(int64) (ObjectSearchRuntime, error)
-	OpenSearchObject  func(ui.Services, int64, uint64, ObjectSearchEntry)
-	RecordActivity    contract.ActivityRecorder
-	TableProfiles     func(int64, string, string) ([]TableProfile, error)
-	OpenTableProfile  func(ui.Services, int64, string, string, string)
-	AdministrationFor func(int64) mysqlsvc.Administration
-	LoadObjectGroups  func(int64, string) map[string]string
-	SaveObjectGroups  func(int64, string, map[string]string)
+	BackupsFor          func(int64) contract.BackupOperations
+	BeforeRestore       func(ui.Services, contract.BackupPlan, func(ui.Services)) bool
+	RestoreGuardPending func(contract.BackupPlan) bool
+	BackupCompleted     func(ui.Services, BackupEvent)
+	Availability        func(int64, string, contract.SchemaDesignTarget) contract.Availability
+	Namespace           func(int64, string) contract.NamespaceRef
+	SchemaDesignFor     func(int64) contract.SchemaDesignOperations
+	SchemaTarget        func(int64, string, string) contract.SchemaDesignTarget
+	SchemaDesigned      func(ui.Services, SchemaDesignEvent)
+	SchemaDropped       func(ui.Services, SchemaDropEvent)
+	SchemaCopied        func(ui.Services, SchemaCopyEvent)
+	BeforeDrop          func(ui.Services, int64, string, string, func(ui.Services)) bool
+	BeforeCopy          func(ui.Services, int64, string, string, func(ui.Services)) bool
+	TableGuardPending   func(int64, string, string) bool
+	ViewDesignFor       func(int64) contract.ViewDesignOperations
+	ViewTarget          func(int64, string, string) contract.SchemaDesignTarget
+	ViewChanged         func(ui.Services, ViewEvent)
+	RenameSchema        func(ui.Services, int64, string, string, string)
+	Favorite            func(ui.Services, int64, string, string, string)
+	CanFavorite         func() bool
+	SearchRuntime       func(int64) (ObjectSearchRuntime, error)
+	OpenSearchObject    func(ui.Services, int64, uint64, ObjectSearchEntry)
+	RecordActivity      contract.ActivityRecorder
+	TableProfiles       func(int64, string, string) ([]TableProfile, error)
+	OpenTableProfile    func(ui.Services, int64, string, string, string)
+	AdministrationFor   func(int64) mysqlsvc.Administration
+	LoadObjectGroups    func(int64, string) map[string]string
+	SaveObjectGroups    func(int64, string, map[string]string)
 
 	Capabilities  func(int64) contract.Capabilities
 	BatchExecutor func(context.Context, int64, uint64, []mysqlsvc.ObjectBatchItem) []mysqlsvc.ObjectBatchResult
@@ -145,9 +149,10 @@ type State struct {
 	groupDialog                             *objectGroupDialog
 	tableGeneration, tableRuntimeGeneration uint64
 
-	backup        *backupOperation
-	backupRuntime func() BackupRuntime
-	backupFiles   BackupFiles
+	backup         *backupOperation
+	backupRuntime  func() BackupRuntime
+	backupFiles    BackupFiles
+	portableBackup *portableBackupPanel
 
 	batch *objectBatch
 
@@ -266,6 +271,7 @@ func (s *State) Close(d *Document) {
 	}
 }
 func (s *State) CloseAll() {
+	s.closePortableBackup()
 	s.closeView()
 	s.parkedViewOp = nil
 	s.closeSchemaCopy()
@@ -311,6 +317,7 @@ func (s *State) CloseAll() {
 // Consume runs on the UI thread. Generation changes invalidate completed work
 // without leaving a document stuck loading or automatically retrying it.
 func (s *State) Consume(services ui.Services) {
+	s.consumePortableBackup(services)
 	s.consumeView(services)
 	s.consumeSchemaCopy(services)
 	s.consumeSchemaDrop(services)
