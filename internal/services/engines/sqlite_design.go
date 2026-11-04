@@ -21,6 +21,8 @@ func (s *Session) SchemaDesign() contract.SchemaDesignOperations {
 		return contract.SchemaDesignOperations{
 			CanApply: func(t contract.SchemaDesignTarget) bool { return s.checkPostgresDesign(t) == nil },
 			Snapshot: s.postgresDesignSnapshot, Apply: s.postgresDesignApply,
+			CanDrop: func(t contract.SchemaDesignTarget) bool { return s.checkPostgresDesign(t) == nil }, Drop: s.postgresDrop,
+			CanCopy: func(t contract.SchemaDesignTarget) bool { return s.checkPostgresDesign(t) == nil }, Copy: s.postgresCopy,
 		}
 	}
 	if s.kind != connections.SQLite {

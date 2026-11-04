@@ -178,13 +178,13 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 		s.BeginBackup(services, profileID, database, name, "backup")
 	}
 	m.Submenu(locales.Text("维护"), func(sub *ui.Menu) {
-		for _, item := range []struct{ label, action string }{{"分析表", "ANALYZE"}, {"检查表", "CHECK"}, {"优化表", "OPTIMIZE"}, {"修复表", "REPAIR"}} {
+		for _, item := range s.maintenanceActions(profileID, database, name) {
 			it := item
-			if sub.Item(locales.Text(it.label)).Chosen() {
-				s.BeginMaintenance(services, profileID, database, name, it.action)
+			if sub.Item(locales.Text(it.Label)).Chosen() {
+				s.BeginMaintenance(services, profileID, database, name, it.ID)
 			}
 		}
-	}).Disabled(s.deps.Maintenance == nil || s.maintenance != nil || !s.canAdministration(profileID))
+	}).Disabled(len(s.maintenanceActions(profileID, database, name)) == 0 || s.maintenance != nil || s.maintenancePanel != nil)
 
 	for _, label := range []string{"逆向表到模型…", "创建 BI 工作区…"} {
 		m.Item(locales.Text(label)).Disabled(true)
@@ -275,6 +275,7 @@ func (s *State) BeginTableChange(profileID int64, database, name string, action 
 
 func (s *State) Modals(c *ui.Context) {
 	s.portableBackupModal(c)
+	s.maintenanceModal(c)
 	s.viewModal(c)
 	s.schemaCopyModal(c)
 	s.schemaDropModal(c)

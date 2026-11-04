@@ -25,6 +25,8 @@ type Dependencies struct {
 	BeforeRestore       func(ui.Services, contract.BackupPlan, func(ui.Services)) bool
 	RestoreGuardPending func(contract.BackupPlan) bool
 	BackupCompleted     func(ui.Services, BackupEvent)
+	MaintenanceFor      func(int64) contract.MaintenanceOperations
+	Maintained          func(ui.Services, MaintenanceEvent)
 	Availability        func(int64, string, contract.SchemaDesignTarget) contract.Availability
 	Namespace           func(int64, string) contract.NamespaceRef
 	SchemaDesignFor     func(int64) contract.SchemaDesignOperations
@@ -156,8 +158,9 @@ type State struct {
 
 	batch *objectBatch
 
-	accounts    *accountPanel
-	maintenance *maintenanceOperation
+	accounts         *accountPanel
+	maintenance      *maintenanceOperation
+	maintenancePanel *maintenancePanel
 
 	objectOp, parkedObjectOp *objectOperation
 	viewOp, parkedViewOp     *viewOperation
@@ -271,6 +274,7 @@ func (s *State) Close(d *Document) {
 	}
 }
 func (s *State) CloseAll() {
+	s.closeMaintenance()
 	s.closePortableBackup()
 	s.closeView()
 	s.parkedViewOp = nil
@@ -317,6 +321,7 @@ func (s *State) CloseAll() {
 // Consume runs on the UI thread. Generation changes invalidate completed work
 // without leaving a document stuck loading or automatically retrying it.
 func (s *State) Consume(services ui.Services) {
+	s.consumeMaintenance(services)
 	s.consumePortableBackup(services)
 	s.consumeView(services)
 	s.consumeSchemaCopy(services)

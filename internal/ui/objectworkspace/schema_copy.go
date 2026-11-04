@@ -97,6 +97,11 @@ func (s *State) schemaCopyRequest(x *schemaCopyOperation) (contract.SchemaCopyRe
 		return contract.SchemaCopyRequest{}, nil, errors.New("read the original table before copying")
 	}
 	r := contract.SchemaCopyRequest{Original: x.original.Clone(), Destination: strings.TrimSpace(x.destination), WithData: x.withData, RebindSelfReferences: x.rebindSelf, PreserveRowID: x.preserveRowID}
+	if r.Original.Schema.Engine == "postgresql" {
+		r.PreserveRowID = false
+		p, e := schemaddl.PlanPostgreSQLCopy(r.Original.Schema, r.Destination, r.WithData, r.RebindSelfReferences)
+		return r, p.SQL, e
+	}
 	table, err := schemaddl.CopySQLite(r.Original.Schema.Table, r.Original.Target.Object.Schema, r.Destination, r.RebindSelfReferences)
 	if err != nil {
 		return r, nil, err
@@ -224,8 +229,8 @@ func (s *State) consumeSchemaCopy(services ui.Services) {
 			}
 		} else if reply.err != nil {
 			x.err = reply.err.Error()
-		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || reply.snapshot.Schema.Engine != "sqlite" || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
-			x.err = "original SQLite table snapshot is incomplete or unavailable"
+		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql") || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
+			x.err = "original table snapshot is incomplete or unavailable"
 		} else {
 			snapshot := reply.snapshot.Clone()
 			x.original = &snapshot
@@ -240,13 +245,13 @@ func (s *State) schemaCopyModal(c *ui.Context) {
 	}
 	ui.Modal(c, &x.open, func() {
 		ui.Column(c).Width(800).MaxWidthPercent(92).Height(620).MaxHeightPercent(92).Padding(18).Gap(8).Children(func() {
-			ui.Text(c, locales.Text("复制 SQLite 表")).Bold()
+			ui.Text(c, locales.Text("复制表")).Bold()
 			ui.Text(c, fmt.Sprintf("#%d · %s / %s · %s", x.target.Object.ProfileID, x.target.Object.Catalog, x.target.Object.Schema, x.target.Object.Name)).SingleLine().Tooltip(x.target.Object.Name)
 			ui.TextInput(c, &x.destination).Label(locales.Text("目标表名称")).Disabled(x.busy)
 			ui.Row(c).Wrap().Gap(12).Children(func() {
 				ui.Checkbox(c, &x.withData, locales.Text("复制数据")).Disabled(x.busy)
 				ui.Checkbox(c, &x.rebindSelf, locales.Text("自引用外键绑定到新表")).Disabled(x.busy)
-				ui.Checkbox(c, &x.preserveRowID, locales.Text("保留隐藏 rowid")).Disabled(x.busy || !x.withData)
+				ui.Checkbox(c, &x.preserveRowID, locales.Text("保留隐藏 rowid")).Disabled(x.busy || !x.withData || x.original != nil && x.original.Schema.Engine == "postgresql")
 			})
 			ui.Text(c, locales.Text("在同一数据库或模式中事务复制，不覆盖目标。生成字段重新计算并核验；仅结构复制重置自增状态。"))
 			ui.Text(c, locales.Text("触发器在数据复制后创建，正文保留原对象引用；外部外键保持原引用。"))

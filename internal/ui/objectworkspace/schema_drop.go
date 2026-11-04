@@ -188,8 +188,8 @@ func (s *State) consumeSchemaDrop(services ui.Services) {
 			}
 		} else if reply.err != nil {
 			x.err = reply.err.Error()
-		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || reply.snapshot.Schema.Engine != "sqlite" || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
-			x.err = errors.New("original SQLite table snapshot is incomplete or unavailable").Error()
+		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql") || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
+			x.err = errors.New("original table snapshot is incomplete or unavailable").Error()
 		} else {
 			snapshot := reply.snapshot.Clone()
 			x.original = &snapshot
@@ -204,7 +204,7 @@ func (s *State) schemaDropModal(c *ui.Context) {
 	}
 	ui.Modal(c, &x.open, func() {
 		ui.Column(c).Width(680).MaxWidthPercent(92).Height(430).MaxHeightPercent(90).Padding(18).Gap(10).Children(func() {
-			ui.Text(c, locales.Text("删除 SQLite 表")).Bold()
+			ui.Text(c, locales.Text("删除表")).Bold()
 			ui.Text(c, fmt.Sprintf("#%d · %s / %s · %s", x.target.Object.ProfileID, x.target.Object.Catalog, x.target.Object.Schema, x.target.Object.Name)).SingleLine().Tooltip(x.target.Object.Name)
 			ui.Text(c, locales.Text("事务删除原表及其索引、触发器和数据；存在外键、视图或触发器依赖时拒绝删除。"))
 			if x.err != "" {
@@ -218,7 +218,11 @@ func (s *State) schemaDropModal(c *ui.Context) {
 			}
 			raw := ""
 			if x.original != nil {
-				raw = "DROP TABLE " + schemaddl.Quote(x.target.Object.Schema) + "." + schemaddl.Quote(x.target.Object.Name) + ";"
+				raw = "DROP TABLE " + schemaddl.Quote(x.target.Object.Schema) + "." + schemaddl.Quote(x.target.Object.Name)
+				if x.original.Schema.Engine == "postgresql" {
+					raw += " RESTRICT"
+				}
+				raw += ";"
 			}
 			ui.TextArea(c, &raw).Label(locales.Text("删除 SQL 预览")).ReadOnly(true).Grow(1).MinHeight(40)
 			ui.TextInput(c, &x.confirmation).Label(locales.Text("确认原表名称")).Disabled(x.busy || x.original == nil)
