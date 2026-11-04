@@ -14,7 +14,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const schemaVersion = 9
+const schemaVersion = 10
 
 // Open initializes or migrates an on-disk configuration database.
 // This database must never store passwords, tokens, or connection strings
@@ -176,6 +176,14 @@ func migrate(ctx context.Context, db *sql.DB) error {
 		}
 	}
 
+	if current <= 9 {
+		if _, err := tx.ExecContext(ctx, "ALTER TABLE connection_profiles ADD COLUMN color TEXT NOT NULL DEFAULT ''"); err != nil {
+			return fmt.Errorf("localdb: migrate connection color: %w", err)
+		}
+		if _, err := tx.ExecContext(ctx, "PRAGMA user_version = 10"); err != nil {
+			return err
+		}
+	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("localdb: commit migration: %w", err)
 	}

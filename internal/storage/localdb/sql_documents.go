@@ -61,6 +61,9 @@ func (s *SQLRepository) PutConditional(ctx context.Context, r queries.Record, ex
 		v, e = s.db.ExecContext(ctx, `INSERT INTO sql_documents(id,kind,profile_id,format_version,revision,payload) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING`, r.ID, r.Kind, r.ProfileID, r.Version, r.Revision, r.Payload)
 	} else {
 		source := r.Kind
+		if source == "named_workspace_deleted" {
+			source = "named_workspace"
+		}
 		if source == "query_deleted" {
 			source = "query"
 		}

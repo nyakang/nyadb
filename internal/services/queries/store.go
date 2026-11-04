@@ -35,17 +35,31 @@ type KeyProvider interface {
 }
 type Document struct {
 	NamedRevision                        uint64
+	Presentation                         json.RawMessage
 	ID                                   uint64
 	QueryID, Name, Path, Text, SavedText string
 	ProfileID                            int64
 	Database                             string
+	Catalog, Schema                      string
 	Cursor, Anchor                       int
 	Revision                             uint64
 }
+type WorkspaceTab struct {
+	ID                                                uint64
+	Kind                                              uint8
+	Title                                             string
+	ProfileID                                         int64
+	Catalog, Schema, Database, ObjectKind, ObjectName string
+	Pinned                                            bool
+	Presentation                                      json.RawMessage
+}
 type Workspace struct {
-	Documents []Document
-	ActiveID  uint64
-	Revision  uint64
+	SnapshotVersion int
+	Tabs            []WorkspaceTab
+	Shell           json.RawMessage
+	Documents       []Document
+	ActiveID        uint64
+	Revision        uint64
 }
 type Named struct {
 	ID, Name, Text string
@@ -64,6 +78,15 @@ type Store struct {
 
 func NewStore(repository Repository, keys KeyProvider) *Store {
 	return &Store{repository: repository, keys: keys}
+}
+
+// RetryAuthentication clears only in-memory authentication state. Callers must
+// authenticate retained records again before attempting any publication.
+func (s *Store) RetryAuthentication() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.aead = nil
+	s.blocked = nil
 }
 func NewID() string {
 	var b [16]byte

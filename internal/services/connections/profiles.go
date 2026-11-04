@@ -41,6 +41,7 @@ type Profile struct {
 	ID                int64
 	Name              string
 	GroupName         string // Optional virtual navigation group; never a database name.
+	Color             string // Local fixed-palette accent; never sent to a database.
 	Starred           bool   // Local navigation favorite; never sent to a database.
 	Kind              Kind
 	Host              string

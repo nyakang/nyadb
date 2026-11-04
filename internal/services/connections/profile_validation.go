@@ -9,6 +9,9 @@ import (
 // NormalizeProfile validates public settings and applies their canonical values.
 // Variants are normalized in place; callers retaining them must clone the slice.
 func NormalizeProfile(p Profile) (Profile, error) {
+	if !ValidProfileColor(p.Color) {
+		return p, fmt.Errorf("%w: invalid connection color", ErrInvalid)
+	}
 	p.Name = strings.TrimSpace(p.Name)
 	p.GroupName = strings.TrimSpace(p.GroupName)
 	if p.GroupName != "" {
