@@ -23,9 +23,13 @@ func mysqlDataEffectiveRules(o MySQLDataOptions) ([]MySQLDataFilterRule, []MySQL
 		(len(o.Filters) > 0 && o.FilterMode != "") || (len(o.Sorts) > 0 && o.SortColumn != "") {
 		return nil, nil, ErrMySQLDataPage
 	}
-	filters := append([]MySQLDataFilterRule(nil), o.Filters...)
-	if o.FilterMode != "" {
-		filters = append(filters, MySQLDataFilterRule{Column: o.FilterColumn, Mode: o.FilterMode, Value: o.FilterValue})
+	expr, err := contract.EffectiveDataExpression(o)
+	if err != nil {
+		return nil, nil, ErrMySQLDataPage
+	}
+	filters, err := expr.Rules(MySQLDataMaxFilterRules, 3)
+	if err != nil {
+		return nil, nil, ErrMySQLDataPage
 	}
 	sorts := append([]MySQLDataSortRule(nil), o.Sorts...)
 	if o.SortColumn != "" {
@@ -51,7 +55,15 @@ func mysqlDataEffectiveRules(o MySQLDataOptions) ([]MySQLDataFilterRule, []MySQL
 	return filters, sorts, nil
 }
 
-func mysqlDataRuleSignature(filters []MySQLDataFilterRule, sorts []MySQLDataSortRule) string {
+func mysqlDataRuleSignature(filters []MySQLDataFilterRule, sorts []MySQLDataSortRule, expression ...*contract.FilterExpression[contract.DataFilterRule]) string {
+	if len(expression) > 0 && expression[0] != nil {
+		canonical, _ := json.Marshal(struct {
+			Condition *contract.FilterExpression[contract.DataFilterRule]
+			Sorts     []MySQLDataSortRule
+		}{expression[0], sorts})
+		sum := sha256.Sum256(canonical)
+		return hex.EncodeToString(sum[:])
+	}
 	canonical, _ := json.Marshal(struct {
 		Filters []MySQLDataFilterRule
 		Sorts   []MySQLDataSortRule

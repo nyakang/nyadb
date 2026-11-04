@@ -45,6 +45,9 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 	if s.kind == connections.PostgreSQL {
 		return s.postgresBrowse(ctx, n)
 	}
+	if s.kind == connections.SQLite {
+		return s.sqliteBrowse(ctx, n)
+	}
 	objects, e := s.Objects(ctx, n.Schema)
 	if e != nil {
 		return nil, e
@@ -181,17 +184,43 @@ func (s *Session) pageRequest(id int64, schema, name string, o contract.DataOpti
 		return contract.PageRequest{}, contract.ErrUnsupported
 	}
 	r := contract.PageRequest{Object: ref, Offset: o.Offset, Limit: o.Limit}
-	filters := append([]contract.DataFilterRule(nil), o.Filters...)
-	if len(filters) == 0 && o.FilterMode != "" {
-		filters = append(filters, contract.DataFilterRule{Column: o.FilterColumn, Mode: o.FilterMode, Value: o.FilterValue})
+	expression, err := contract.EffectiveDataExpression(o)
+	if err != nil {
+		return r, err
 	}
 	ops := map[string]string{"equal": "=", "not_equal": "!=", "less": "<", "greater": ">", "less_equal": "<=", "greater_equal": ">=", "like": "LIKE", "is_null": "IS NULL", "is_not_null": "IS NOT NULL"}
-	for _, f := range filters {
-		op, ok := ops[f.Mode]
-		if !ok {
-			return r, contract.ErrUnsupported
+	var convert func(*contract.FilterExpression[contract.DataFilterRule]) (*contract.FilterExpression[contract.Filter], error)
+	convert = func(in *contract.FilterExpression[contract.DataFilterRule]) (*contract.FilterExpression[contract.Filter], error) {
+		if in == nil {
+			return nil, nil
 		}
-		r.Filters = append(r.Filters, contract.Filter{Column: f.Column, Operator: op, Value: contract.Cell{Kind: contract.Text, Text: f.Value}})
+		out := &contract.FilterExpression[contract.Filter]{Op: in.Op}
+		if in.Rule != nil {
+			f := *in.Rule
+			op, ok := ops[f.Mode]
+			if !ok {
+				return nil, contract.ErrUnsupported
+			}
+			rule := contract.Filter{Column: f.Column, Operator: op, Value: contract.Cell{Kind: contract.Text, Text: f.Value}}
+			out.Rule = &rule
+		}
+		for i := range in.Children {
+			child, e := convert(&in.Children[i])
+			if e != nil {
+				return nil, e
+			}
+			out.Children = append(out.Children, *child)
+		}
+		return out, nil
+	}
+	converted, err := convert(expression)
+	if err != nil {
+		return r, err
+	}
+	if o.Condition != nil {
+		r.Condition = converted
+	} else {
+		r.Filters, _ = converted.Rules(32, 3)
 	}
 	sorts := append([]contract.DataSortRule(nil), o.Sorts...)
 	if len(sorts) == 0 && o.SortColumn != "" {
@@ -509,6 +538,7 @@ func (s *Session) DataRuntime() contract.DataRuntime {
 			return s.readRow(ctx, id, db, name, ref, v.Transaction)
 		},
 	}
+	r.Exporter = s.exportData
 	r.JSONL = func(ctx context.Context, o contract.ObjectRef, w io.Writer) error {
 		if e := s.check(o); e != nil {
 			return e

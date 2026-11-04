@@ -72,6 +72,11 @@ func executeSQLOnConnWithSink(queryCtx context.Context, conn *sql.Conn, database
 }
 
 func executeSQLStatementOnConn(queryCtx context.Context, conn *sql.Conn, statement string, limits sqlresult.Limits, sink sqlresult.Sink) (result MySQLSQLResult, execErr error) {
+	defer func() {
+		if execErr != nil {
+			execErr = mysqlQueryDiagnostic(execErr, statement, 1)
+		}
+	}()
 
 	if !sqlReturnsRows(statement) {
 		execResult, err := conn.ExecContext(queryCtx, statement)

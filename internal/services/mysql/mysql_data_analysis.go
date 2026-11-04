@@ -48,7 +48,7 @@ func (m *MySQLSessionManager) AnalyzeMySQLData(ctx context.Context, id int64, da
 	if len(columns) == 0 {
 		return nil, ErrMySQLTableNotFound
 	}
-	result, err := mysqlAnalyzeData(qctx, tx, database, table, columns, fields, filters)
+	result, err := mysqlAnalyzeData(qctx, tx, database, table, columns, fields, filters, options.Condition)
 	if err != nil {
 		return nil, err
 	}
@@ -58,65 +58,23 @@ func (m *MySQLSessionManager) AnalyzeMySQLData(ctx context.Context, id int64, da
 	return result, nil
 }
 
-func mysqlDataAnalysisFrom(database, table string, columns []MySQLStructureColumn, filters []MySQLDataFilterRule) (string, []any, error) {
+func mysqlDataAnalysisFrom(database, table string, columns []MySQLStructureColumn, filters []MySQLDataFilterRule, expression ...*contract.FilterExpression[contract.DataFilterRule]) (string, []any, error) {
 	target, err := mysqlEditTable(database, table)
 	if err != nil {
 		return "", nil, err
 	}
-	allowed := make(map[string]MySQLStructureColumn, len(columns))
-	for _, col := range columns {
-		allowed[col.Name] = col
+	var expr *contract.FilterExpression[contract.DataFilterRule]
+	if len(expression) > 0 {
+		expr = expression[0]
 	}
-	if len(filters) > MySQLDataMaxFilterRules {
-		return "", nil, ErrMySQLDataPage
+	where, args, err := mysqlFilterWhere(columns, filters, expr)
+	if err != nil {
+		return "", nil, err
 	}
-	var conditions []string
-	var args []any
-	for _, rule := range filters {
-		col, ok := allowed[rule.Column]
-		if !ok || len(rule.Value) > 4096 {
-			return "", nil, ErrMySQLDataPage
-		}
-		q, err := quotedMySQLIdentifier(rule.Column)
-		if err != nil {
-			return "", nil, err
-		}
-		switch rule.Mode {
-		case "contains", "not_contains", "like", "not_like":
-			if !mysqlDataTextType(strings.ToLower(col.DataType)) {
-				return "", nil, ErrMySQLDataPage
-			}
-			switch rule.Mode {
-			case "contains":
-				conditions = append(conditions, "LOCATE(?, "+q+") > 0")
-				args = append(args, rule.Value)
-			case "not_contains":
-				conditions = append(conditions, "LOCATE(?, "+q+") = 0")
-				args = append(args, rule.Value)
-			case "like":
-				conditions = append(conditions, q+" LIKE ?")
-				args = append(args, "%"+rule.Value+"%")
-			case "not_like":
-				conditions = append(conditions, q+" NOT LIKE ?")
-				args = append(args, "%"+rule.Value+"%")
-			}
-		case "equal", "not_equal", "less", "greater":
-			op := map[string]string{"equal": " = ", "not_equal": " <> ", "less": " < ", "greater": " > "}[rule.Mode]
-			conditions = append(conditions, q+op+"?")
-			args = append(args, rule.Value)
-		case "is_null":
-			conditions = append(conditions, q+" IS NULL")
-		case "is_not_null":
-			conditions = append(conditions, q+" IS NOT NULL")
-		default:
-			return "", nil, ErrMySQLDataPage
-		}
+	if where == "" {
+		where = "1=1"
 	}
-	from := " FROM " + target + " WHERE "
-	if len(conditions) == 0 {
-		return from + "1=1", args, nil
-	}
-	return from + strings.Join(conditions, " AND "), args, nil
+	return " FROM " + target + " WHERE " + where, args, nil
 }
 
 func mysqlDataAnalysisQueries(from string, col MySQLStructureColumn) (aggregate, singleton, distribution string, err error) {
@@ -198,8 +156,8 @@ func mysqlDataAnalysisNumeric(kind string) bool {
 	return false
 }
 
-func mysqlAnalyzeData(ctx context.Context, q mysqlEditQueryer, database, table string, columns []MySQLStructureColumn, fields []string, filters []MySQLDataFilterRule) (*MySQLDataAnalysis, error) {
-	from, args, err := mysqlDataAnalysisFrom(database, table, columns, filters)
+func mysqlAnalyzeData(ctx context.Context, q mysqlEditQueryer, database, table string, columns []MySQLStructureColumn, fields []string, filters []MySQLDataFilterRule, expression ...*contract.FilterExpression[contract.DataFilterRule]) (*MySQLDataAnalysis, error) {
+	from, args, err := mysqlDataAnalysisFrom(database, table, columns, filters, expression...)
 	if err != nil {
 		return nil, err
 	}

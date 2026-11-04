@@ -57,6 +57,10 @@ func executeSQLScriptOnConn(ctx context.Context, conn *sql.Conn, reader io.Reade
 			if errors.As(e, &serverError) && !sqlScriptCall(statement) {
 				step.State = "not_executed"
 			}
+			if diagnostic := contract.QueryDiagnosis(e); diagnostic != nil {
+				diagnostic.Statement = n + 1
+				e = &contract.QueryError{Cause: e, Diagnostic: *diagnostic}
+			}
 			step.Error = e.Error()
 			out.Steps = append(out.Steps, step)
 			return out, e

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
-	"strings"
 )
 
 func (s *Session) Schemas(ctx context.Context) ([]string, error) {
@@ -85,28 +84,11 @@ func (s *Session) page(ctx context.Context, q queryer, r contract.PageRequest) (
 		return p, errors.New("invalid bounded page")
 	}
 	cols := validColumns(t)
-	var args []any
-	var where []string
-	for _, f := range r.Filters {
-		if _, ok := cols[f.Column]; !ok {
-			return p, errors.New("unknown filter field")
-		}
-		op := strings.ToUpper(f.Operator)
-		switch op {
-		case "=", "!=", "<", ">", "<=", ">=", "LIKE":
-			args = append(args, parameter(f.Value))
-			where = append(where, quote(f.Column)+" "+op+" "+s.arg(len(args)))
-		case "IS NULL", "IS NOT NULL":
-			where = append(where, quote(f.Column)+" "+op)
-		default:
-			return p, errors.New("unsupported filter operator")
-		}
+	where, args, err := s.dataWhere(t, r)
+	if err != nil {
+		return p, err
 	}
-	sqlText := "SELECT " + s.dataProjection(t, 1<<20)
-	sqlText += " FROM " + qualified(r.Object)
-	if len(where) > 0 {
-		sqlText += " WHERE " + strings.Join(where, " AND ")
-	}
+	sqlText := "SELECT " + s.dataProjection(t, 1<<20) + " FROM " + qualified(r.Object) + " WHERE " + where
 	sorts := r.Sorts
 	if len(sorts) == 0 {
 		for _, k := range t.Key {

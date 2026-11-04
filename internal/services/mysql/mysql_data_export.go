@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
 	"unicode/utf8"
 )
@@ -38,7 +39,7 @@ func (m *MySQLSessionManager) ExportMySQLData(ctx context.Context, id int64, dat
 	if len(columns) == 0 {
 		return ErrMySQLTableNotFound
 	}
-	query, args, kinds, err := mysqlDataExportQuery(database, table, columns, fields, filters, sorts, options.Offset, options.Limit)
+	query, args, kinds, err := mysqlDataExportQuery(database, table, columns, fields, filters, sorts, options.Offset, options.Limit, options.Condition)
 	if err != nil {
 		return err
 	}
@@ -90,7 +91,7 @@ func (m *MySQLSessionManager) ExportMySQLData(ctx context.Context, id int64, dat
 	return qctx.Err()
 }
 
-func mysqlDataExportQuery(database, table string, columns []MySQLStructureColumn, fields []string, filters []MySQLDataFilterRule, sorts []MySQLDataSortRule, offset int64, limit int) (string, []any, []string, error) {
+func mysqlDataExportQuery(database, table string, columns []MySQLStructureColumn, fields []string, filters []MySQLDataFilterRule, sorts []MySQLDataSortRule, offset int64, limit int, expression ...*contract.FilterExpression[contract.DataFilterRule]) (string, []any, []string, error) {
 	db, e := quotedMySQLIdentifier(database)
 	if e != nil {
 		return "", nil, nil, e
@@ -118,51 +119,17 @@ func mysqlDataExportQuery(database, table string, columns []MySQLStructureColumn
 		projection = append(projection, fmt.Sprintf("SUBSTRING(CAST(%s AS BINARY),1,%d) AS %s", q, MySQLDataExportFieldMaxBytes+1, q))
 		kinds = append(kinds, strings.ToLower(col.DataType))
 	}
-	var predicates []string
-	var args []any
-	for _, rule := range filters {
-		col, ok := allowed[rule.Column]
-		if !ok {
-			return "", nil, nil, ErrMySQLDataPage
-		}
-		q, quoteErr := quotedMySQLIdentifier(rule.Column)
-		if quoteErr != nil {
-			return "", nil, nil, quoteErr
-		}
-		switch rule.Mode {
-		case "contains", "not_contains", "like", "not_like":
-			if !mysqlDataTextType(strings.ToLower(col.DataType)) {
-				return "", nil, nil, ErrMySQLDataPage
-			}
-			switch rule.Mode {
-			case "contains":
-				predicates = append(predicates, "LOCATE(?, "+q+") > 0")
-				args = append(args, rule.Value)
-			case "not_contains":
-				predicates = append(predicates, "LOCATE(?, "+q+") = 0")
-				args = append(args, rule.Value)
-			case "like":
-				predicates = append(predicates, q+" LIKE ?")
-				args = append(args, "%"+rule.Value+"%")
-			case "not_like":
-				predicates = append(predicates, q+" NOT LIKE ?")
-				args = append(args, "%"+rule.Value+"%")
-			}
-		case "equal", "not_equal", "less", "greater":
-			op := map[string]string{"equal": " = ", "not_equal": " <> ", "less": " < ", "greater": " > "}[rule.Mode]
-			predicates = append(predicates, q+op+"?")
-			args = append(args, rule.Value)
-		case "is_null":
-			predicates = append(predicates, q+" IS NULL")
-		case "is_not_null":
-			predicates = append(predicates, q+" IS NOT NULL")
-		default:
-			return "", nil, nil, ErrMySQLDataPage
-		}
+	var expr *contract.FilterExpression[contract.DataFilterRule]
+	if len(expression) > 0 {
+		expr = expression[0]
+	}
+	where, args, err := mysqlFilterWhere(columns, filters, expr)
+	if err != nil {
+		return "", nil, nil, err
 	}
 	query := "SELECT " + strings.Join(projection, ", ") + " FROM " + db + "." + name
-	if len(predicates) > 0 {
-		query += " WHERE " + strings.Join(predicates, " AND ")
+	if where != "" {
+		query += " WHERE " + where
 	}
 	var order []string
 	for _, sort := range sorts {

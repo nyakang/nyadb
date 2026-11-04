@@ -29,7 +29,7 @@ func execute(ctx context.Context, c queryer, kind connections.Kind, src string, 
 	var result contract.SQLResult
 	budget := 8 << 20
 	remainingRows := 1000
-	for _, q := range parts {
+	for statementIndex, q := range parts {
 		if e = ctx.Err(); e != nil {
 			return result, e
 		}
@@ -45,7 +45,7 @@ func execute(ctx context.Context, c queryer, kind connections.Kind, src string, 
 				step.State = failureState(kind, q, err)
 				step.Error = err.Error()
 				result.Steps = append(result.Steps, step)
-				return result, err
+				return result, queryDiagnostic(err, q, statementIndex+1)
 			}
 			step.AffectedRows, _ = r.RowsAffected()
 			result.AffectedRows += step.AffectedRows
@@ -65,7 +65,7 @@ func execute(ctx context.Context, c queryer, kind connections.Kind, src string, 
 				step.State = failureState(kind, q, err)
 				step.Error = err.Error()
 				result.Steps = append(result.Steps, step)
-				return result, err
+				return result, queryDiagnostic(err, q, statementIndex+1)
 			}
 			for {
 				set, err := scan(rows, kind, len(result.Sets), sink, &budget, remainingRows, 64<<10)
@@ -85,7 +85,7 @@ func execute(ctx context.Context, c queryer, kind connections.Kind, src string, 
 			err = rows.Err()
 			rows.Close()
 			if err != nil {
-				return result, err
+				return result, queryDiagnostic(err, q, statementIndex+1)
 			}
 		}
 		result.Steps = append(result.Steps, step)
