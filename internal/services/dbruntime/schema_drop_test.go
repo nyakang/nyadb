@@ -24,7 +24,7 @@ func (h *dropHandle) SchemaDesign() contract.SchemaDesignOperations {
 func TestSchemaDropTranslatesCopiesAndRetainsLateOriginalReceipt(t *testing.T) {
 	m := dbruntime.New()
 	defer m.Close()
-	h := &dropHandle{handle: handle{id: 1}}
+	h := &dropHandle{handle: handle{id: 1, caps: contract.Capabilities{Objects: true}}}
 	m.Register(connections.SQLite, dbruntime.ProviderFunc(func(context.Context, connections.Profile, string) (contract.Session, error) { return h, nil }))
 	s, err := m.ConnectSession(context.Background(), profile(1), "")
 	if err != nil {
@@ -64,7 +64,7 @@ func TestSchemaDropRejectsAnotherScopeAndTableStillPresentReceipt(t *testing.T) 
 		t.Run(mismatch, func(t *testing.T) {
 			m := dbruntime.New()
 			defer m.Close()
-			h := &dropHandle{handle: handle{id: 1}}
+			h := &dropHandle{handle: handle{id: 1, caps: contract.Capabilities{Objects: true}}}
 			h.drop = func(_ context.Context, r contract.SchemaDesignSnapshot) contract.SchemaDesignOutcome {
 				r.Schema.Exists = false
 				switch mismatch {

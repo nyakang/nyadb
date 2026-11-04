@@ -27,9 +27,6 @@ func (m *Manager) Administration(id int64) mysqlsvc.Administration {
 	if e != nil {
 		return nil
 	}
-	if !s.Capabilities().DesignTables {
-		return nil
-	}
 	p, e := contract.Require[interface {
 		Administration() mysqlsvc.Administration
 	}](s)

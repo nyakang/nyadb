@@ -37,7 +37,11 @@ type Options struct {
 // New consumes only non-secret configuration plus a separately injected secret
 // snapshot. The returned scope owns every physical channel it dials.
 func New(s connections.ActiveSettings, o Options) (Dialer, error) {
-	a, err := connections.NormalizeMySQLAdvanced(s.MySQLAdvanced)
+	return NewWithConfig(s.Transport(), o)
+}
+
+func NewWithConfig(config connections.TransportOptions, o Options) (Dialer, error) {
+	a, err := connections.NormalizeTransportOptions(config)
 	if err != nil {
 		return nil, err
 	}

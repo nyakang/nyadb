@@ -21,6 +21,7 @@ type Session struct {
 }
 
 type Dependencies struct {
+	Availability      func(int64, string, contract.SchemaDesignTarget) contract.Availability
 	Namespace         func(int64, string) contract.NamespaceRef
 	SchemaDesignFor   func(int64) contract.SchemaDesignOperations
 	SchemaTarget      func(int64, string, string) contract.SchemaDesignTarget

@@ -11,20 +11,20 @@ import (
 // PostgreSQLOptions contains public settings only. Certificate paths are
 // metadata; passwords and key contents remain in separate credential stores.
 type PostgreSQLOptions struct {
-	ToolsDirectory        string    `json:"tools_directory,omitempty"`
-	Version               int       `json:"version"`
-	ConnectTimeoutSeconds int       `json:"connect_timeout_seconds"`
-	MaxConnections        int       `json:"max_connections"`
-	SQLMaxConnections     int       `json:"sql_max_connections,omitempty"`
-	ApplicationName       string    `json:"application_name,omitempty"`
-	DefaultSchema         string    `json:"default_schema,omitempty"`
-	StatementTimeoutMS    int       `json:"statement_timeout_ms,omitempty"`
-	LockTimeoutMS         int       `json:"lock_timeout_ms,omitempty"`
-	CAFile                string    `json:"ca_file,omitempty"`
-	CertificateFile       string    `json:"certificate_file,omitempty"`
-	KeyFile               string    `json:"key_file,omitempty"`
-	SSH                   MySQLSSH  `json:"ssh,omitempty"`
-	HTTP                  MySQLHTTP `json:"http,omitempty"`
+	ToolsDirectory        string      `json:"tools_directory,omitempty"`
+	Version               int         `json:"version"`
+	ConnectTimeoutSeconds int         `json:"connect_timeout_seconds"`
+	MaxConnections        int         `json:"max_connections"`
+	SQLMaxConnections     int         `json:"sql_max_connections,omitempty"`
+	ApplicationName       string      `json:"application_name,omitempty"`
+	DefaultSchema         string      `json:"default_schema,omitempty"`
+	StatementTimeoutMS    int         `json:"statement_timeout_ms,omitempty"`
+	LockTimeoutMS         int         `json:"lock_timeout_ms,omitempty"`
+	CAFile                string      `json:"ca_file,omitempty"`
+	CertificateFile       string      `json:"certificate_file,omitempty"`
+	KeyFile               string      `json:"key_file,omitempty"`
+	SSH                   SSHOptions  `json:"ssh,omitempty"`
+	HTTP                  HTTPOptions `json:"http,omitempty"`
 }
 
 func DefaultPostgreSQLOptions() PostgreSQLOptions {

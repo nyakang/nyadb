@@ -18,7 +18,7 @@ func (s *session) ViewDesign() contract.ViewDesignOperations {
 	ops := contract.ViewDesignOperations{}
 	if raw.CanApply != nil {
 		ops.CanApply = func(t contract.SchemaDesignTarget) bool {
-			if s.schemaDesignTarget(t) != nil || t.Object.Kind != "view" {
+			if s.schemaDesignTarget(t) != nil || t.Object.Kind != "view" || !s.Capabilities().DesignViews {
 				return false
 			}
 			t.Generation = s.raw.Generation()
@@ -50,6 +50,9 @@ func (s *session) ViewDesign() contract.ViewDesignOperations {
 		ops.Apply = func(ctx context.Context, request contract.ViewDesignRequest) contract.ViewDesignOutcome {
 			if err := s.schemaDesignTarget(request.Original.Target); err != nil {
 				return contract.ViewDesignOutcome{State: "not_executed", Error: err}
+			}
+			if !s.Capabilities().DesignViews {
+				return contract.ViewDesignOutcome{State: "not_executed", Error: contract.ErrUnsupported}
 			}
 			r := request.Clone()
 			r.Original.Target.Generation = s.raw.Generation()

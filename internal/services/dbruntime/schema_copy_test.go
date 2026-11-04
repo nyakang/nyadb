@@ -34,7 +34,7 @@ func copyRuntime(t *testing.T, h *copyHandle) (*dbruntime.Manager, contract.Sche
 }
 
 func TestSchemaCopyTranslatesClonesAndRetainsLateDestinationReceipt(t *testing.T) {
-	h := &copyHandle{handle: handle{id: 1}}
+	h := &copyHandle{handle: handle{id: 1, caps: contract.Capabilities{Objects: true}}}
 	m, request := copyRuntime(t, h)
 	h.copy = func(_ context.Context, r contract.SchemaCopyRequest) contract.SchemaDesignOutcome {
 		if r.Original.Target.Generation != 973 || r.Original.Target.Object != request.Original.Target.Object || r.Destination != "copied" || !r.WithData || !r.RebindSelfReferences || !r.PreserveRowID {
@@ -65,7 +65,7 @@ func TestSchemaCopyTranslatesClonesAndRetainsLateDestinationReceipt(t *testing.T
 func TestSchemaCopyRejectsMismatchedOrAbsentDestinationReceipt(t *testing.T) {
 	for _, field := range []string{"profile", "generation", "catalog", "schema", "name", "exists"} {
 		t.Run(field, func(t *testing.T) {
-			h := &copyHandle{handle: handle{id: 1}}
+			h := &copyHandle{handle: handle{id: 1, caps: contract.Capabilities{Objects: true}}}
 			m, request := copyRuntime(t, h)
 			h.copy = func(_ context.Context, r contract.SchemaCopyRequest) contract.SchemaDesignOutcome {
 				a := r.Original.Clone()

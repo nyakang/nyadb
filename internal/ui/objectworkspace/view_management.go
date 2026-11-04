@@ -48,7 +48,7 @@ func (s *State) CanView(id int64, database, name string) bool {
 	}
 	w := s.sessionFor(id)
 	ops, target := s.viewBinding(id, database, name)
-	return w.Connected && w.ProfileID == id && s.session().ProfileID == id && target.Generation != 0 && target.Object.Kind == "view" && ops.CanApply != nil && ops.Snapshot != nil && ops.Apply != nil && ops.CanApply(target)
+	return w.Connected && w.ProfileID == id && s.session().ProfileID == id && target.Generation != 0 && s.operationAvailable("design_view", target) && target.Object.Kind == "view" && ops.CanApply != nil && ops.Snapshot != nil && ops.Apply != nil && ops.CanApply(target)
 }
 func (s *State) viewValid(x *viewOperation) bool {
 	if x == nil {
