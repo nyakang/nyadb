@@ -7,10 +7,12 @@ fixture_cgo=0
 fixture_pg_version=17
 fixture_test_pattern='TestPostgreSQL17.*Fixture'
 fixture_shard=""
+fixture_native=false
 fixture_test_package=./internal/services/engines
 while [[ $# -gt 0 ]]; do
  case "$1" in
   --race) test_options+=(-race); fixture_cgo=1; shift ;;
+ --native) fixture_native=true; shift ;;
   --run) if [[ $# -lt 2 || -z "$2" ]]; then exit 2; fi; fixture_test_pattern=$2; shift 2 ;;
   --postgres-version) if [[ $# -lt 2 ]]; then exit 2; fi; case "$2" in 14|15|16|17|18) fixture_pg_version=$2 ;; *) exit 2 ;; esac; shift 2 ;;
   --package)
@@ -83,5 +85,14 @@ GOWORK=off CGO_ENABLED="$fixture_cgo" NYADB_POSTGRES_IT=1 NYADB_POSTGRES_PORT="$
 test_exit=${PIPESTATUS[0]}
 set -e
 printf 'test_exit=%s\n' "$test_exit" >> "$evidence_dir/resource.txt"
+if [[ "$test_exit" == 0 && "$fixture_native" == true ]]; then
+ GOWORK=off CGO_ENABLED=0 go test -c -o build/native-import ./internal/ui/dataworkspace
+ GOWORK=off CGO_ENABLED=0 go test -c -o build/native-maintenance ./internal/ui/objectworkspace
+ set +e
+ NYADB_NATIVE_POSTGRES_PORT="$fixture_port" "${NYADB_NATIVE_PYTHON:-python3}" tools/verify_multi_engine_native.py > "$evidence_dir/native.log" 2>&1
+ test_exit=$?
+ set -e
+ printf 'native_exit=%s\n' "$test_exit" >> "$evidence_dir/resource.txt"
+fi
 printf 'Evidence: %s\n' "$evidence_dir"
 exit "$test_exit"
