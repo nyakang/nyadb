@@ -20,7 +20,7 @@ func NewProfileStore(db *sql.DB) *ProfileStore { return &ProfileStore{db: db} }
 
 var _ connections.Repository = (*ProfileStore)(nil)
 
-const profileColumns = "id, name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, notes, variants_json, active_variant, created_at_ms, updated_at_ms, group_name, starred"
+const profileColumns = "id, name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, notes, variants_json, active_variant, created_at_ms, updated_at_ms, group_name, starred, color"
 
 func scanProfile(scan func(...any) error) (connections.Profile, error) {
 	var p connections.Profile
@@ -29,7 +29,7 @@ func scanProfile(scan func(...any) error) (connections.Profile, error) {
 	var created, updated int64
 	var starred int64
 	err := scan(&p.ID, &p.Name, &p.Kind, &p.Host, &port, &p.Database,
-		&p.Username, &p.TLSMode, &advancedJSON, &p.Notes, &variantsJSON, &p.ActiveVariant, &created, &updated, &p.GroupName, &starred)
+		&p.Username, &p.TLSMode, &advancedJSON, &p.Notes, &variantsJSON, &p.ActiveVariant, &created, &updated, &p.GroupName, &starred, &p.Color)
 	p.Starred = starred != 0
 	if err != nil {
 		return connections.Profile{}, err
@@ -82,8 +82,8 @@ func (s *ProfileStore) Create(ctx context.Context, p connections.Profile) (conne
 	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	result, err := s.db.ExecContext(ctx,
-		"INSERT INTO connection_profiles (name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, notes, variants_json, active_variant, created_at_ms, updated_at_ms, group_name, starred) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, p.Notes, string(variantsJSON), p.ActiveVariant, now.UnixMilli(), now.UnixMilli(), p.GroupName, p.Starred)
+		"INSERT INTO connection_profiles (name, kind, host, port, database_name, username, tls_mode, mysql_advanced_json, notes, variants_json, active_variant, created_at_ms, updated_at_ms, group_name, starred, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, p.Notes, string(variantsJSON), p.ActiveVariant, now.UnixMilli(), now.UnixMilli(), p.GroupName, p.Starred, p.Color)
 	if err != nil {
 		return connections.Profile{}, fmt.Errorf("create connection profile: %w", err)
 	}
@@ -149,8 +149,8 @@ func (s *ProfileStore) Update(ctx context.Context, p connections.Profile) (conne
 	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	result, err := s.db.ExecContext(ctx,
-		"UPDATE connection_profiles SET name=?, kind=?, host=?, port=?, database_name=?, username=?, tls_mode=?, mysql_advanced_json=?, notes=?, variants_json=?, active_variant=?, updated_at_ms=?, group_name=?, starred=? WHERE id=?",
-		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, p.Notes, string(variantsJSON), p.ActiveVariant, now.UnixMilli(), p.GroupName, p.Starred, p.ID)
+		"UPDATE connection_profiles SET name=?, kind=?, host=?, port=?, database_name=?, username=?, tls_mode=?, mysql_advanced_json=?, notes=?, variants_json=?, active_variant=?, updated_at_ms=?, group_name=?, starred=?, color=? WHERE id=?",
+		p.Name, p.Kind, p.Host, p.Port, p.Database, p.Username, p.TLSMode, advancedJSON, p.Notes, string(variantsJSON), p.ActiveVariant, now.UnixMilli(), p.GroupName, p.Starred, p.Color, p.ID)
 	if err != nil {
 		return connections.Profile{}, fmt.Errorf("update connection profile: %w", err)
 	}
