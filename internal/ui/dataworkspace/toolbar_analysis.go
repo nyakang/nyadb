@@ -266,7 +266,11 @@ func (s *State) startDataAnalysis(services ui.Services, t *Document) {
 	}
 	options := contract.DataOptions{}
 	if scope == "filtered" {
-		options.Filters, _ = mysqlDataCurrentRules(t)
+		if t.filterCondition != nil {
+			options.Condition = cloneDataCondition(t.filterCondition)
+		} else {
+			options.Filters, _ = mysqlDataCurrentRules(t)
+		}
 	}
 	fields := append([]string(nil), t.page.Columns...)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -279,6 +283,9 @@ func (s *State) startDataAnalysis(services ui.Services, t *Document) {
 	t.tools.analysisResults = out
 	profile, generation, database, table := t.profileID, session.Generation, t.database, t.table
 	filterCount := len(options.Filters)
+	if options.Condition != nil {
+		filterCount = dataConditionCount(options.Condition)
+	}
 	go func() {
 		result, err := analyzer(ctx, profile, database, table, options, fields)
 		out <- mysqlDataAnalysisResult{Profile: profile, Generation: generation, Request: request,

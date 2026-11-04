@@ -6,6 +6,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
 
 	"github.com/nyakang/nyadb/internal/ui/theme"
@@ -13,6 +14,8 @@ import (
 )
 
 func (s *State) View(c *ui.Context) {
+	s.editServices = c.Services()
+	s.consumeWorkspaces()
 	s.workbenchKeyboard(c)
 	s.sqlWorkspace.Invalidate = c.Services().Invalidate
 	if s.profileMode {
@@ -55,6 +58,7 @@ func (s *State) View(c *ui.Context) {
 		).Grow(1)
 		s.statusBar(c)
 	})
+	s.workspaceManagerView(c)
 	s.tunnelConfirmation(c)
 	s.sqlWorkspace.Modals(c)
 	s.connectionModal(c)
@@ -103,6 +107,12 @@ func (s *State) menuBar(c *ui.Context) {
 		Background(palette.Menu).Children(func() {
 		for _, label := range []string{"文件", "编辑", "查看", "收藏夹", "工具", "窗口", "帮助"} {
 			name := label
+			if name == "编辑" && s.editMenuHost != nil {
+				if ui.ButtonBase(c).Label(locales.Text(name)).Padding(4, 8).Radius(theme.ControlRadius).Children(func() { ui.Text(c, locales.Text(name)).FontSize(theme.Font(c, theme.FontSize)) }).Clicked() {
+					s.openEditMenu()
+				}
+				continue
+			}
 			ui.ButtonBase(c).Label(locales.Text(name)).Padding(4, 8).Radius(theme.ControlRadius).
 				Children(func() { ui.Text(c, locales.Text(name)).FontSize(theme.Font(c, theme.FontSize)) }).
 				Menu(func(m *ui.Menu) { s.menuCommands(name, m) })
@@ -177,7 +187,7 @@ func (s *State) menuCommands(section string, m *ui.Menu) {
 		// Preserve the observed compact Navicat menu hierarchy without
 		// pretending that the unimplemented database tools can be executed.
 		for _, label := range []string{"数据传输…", "数据生成…", "数据脱敏…"} {
-			m.Item(locales.Text(label)).Disabled(true)
+			m.Item(locales.Text(label) + " · " + theme.AvailabilityText(contract.Availability{Reason: "not_implemented"})).Disabled(true)
 		}
 		s.objectWorkspace.DictionaryMenu(m)
 		for _, label := range []string{"数据同步…", "结构同步…"} {
@@ -251,7 +261,19 @@ func (s *State) toolBar(c *ui.Context) {
 			for _, action := range actions {
 				item := action
 				active := s.currentObjectKind() == item.label && s.currentTab().kind == tabObjects
-				button := ui.Button(c, "").Label(locales.Text(item.label)).Tooltip(locales.Text(item.label)).
+				tip := locales.Text(item.label)
+				if !s.toolbarActionAvailable(item.label) {
+					reason := "invalid_target"
+					if item.label == "自动运行" || item.label == "模型" {
+						reason = "not_implemented"
+					} else if s.sessions.Current().Status != "已连接" {
+						reason = "disconnected"
+					} else if w := s.sessions.Current(); w.Database != "" && s.sessions.DatabaseOpened(w.ProfileID, w.Database) {
+						reason = "unsupported"
+					}
+					tip += " · " + theme.AvailabilityText(contract.Availability{Reason: reason})
+				}
+				button := ui.Button(c, "").Label(locales.Text(item.label)).Tooltip(tip).
 					Width(theme.ToolbarItemWidth).Height(theme.RowHeight(c, theme.ToolbarItemHeight)).Padding(3, 2).Radius(theme.ControlRadius).
 					Disabled(!s.toolbarActionAvailable(item.label)).Border(0, ui.Transparent).
 					Children(func() {

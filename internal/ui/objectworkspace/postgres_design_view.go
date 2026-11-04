@@ -10,8 +10,8 @@ import (
 func (s *State) postgresSchemaField(c *ui.Context, d *Document, locked bool) {
 	x := d.schemaDesign
 	f := &x.pgField
-	schemaDesignInput(c, "字段名称", &x.name, locked)
-	schemaDesignInput(c, "字段类型", &f.Type, locked)
+	s.schemaDesignInput(c, d, "字段名称", &x.name, locked)
+	s.schemaDesignInput(c, d, "字段类型", &f.Type, locked)
 	notNullLocked := false
 	if x.fieldRow >= 0 && x.fieldRow < len(x.draft.Clauses) && x.original.Schema.Exists {
 		if err := schemaddl.PostgreSQLNotNullEditable(x.original.Schema.Postgres, x.draft.Clauses[x.fieldRow].ID); err != nil {
@@ -21,8 +21,8 @@ func (s *State) postgresSchemaField(c *ui.Context, d *Document, locked bool) {
 	}
 	ui.Checkbox(c, &f.NotNull, locales.Text("非空")).Disabled(locked || f.Identity != "" || notNullLocked)
 	ui.Checkbox(c, &f.HasDefault, locales.Text("设置默认值")).Disabled(locked || f.Identity != "" || f.Generation != "")
-	schemaDesignInput(c, "默认值表达式", &f.Default, locked || !f.HasDefault)
-	schemaDesignInput(c, "排序规则", &f.Collation, locked)
+	s.schemaDesignInput(c, d, "默认值表达式", &f.Default, locked || !f.HasDefault)
+	s.schemaDesignInput(c, d, "排序规则", &f.Collation, locked)
 	identity := f.Identity
 	if identity == "" {
 		identity = locales.Text("无")
@@ -35,7 +35,7 @@ func (s *State) postgresSchemaField(c *ui.Context, d *Document, locked bool) {
 			f.NotNull = true
 		}
 	}
-	schemaDesignInput(c, "标识序列选项", &f.IdentityOptions, locked || f.Identity == "")
+	s.schemaDesignInput(c, d, "标识序列选项", &f.IdentityOptions, locked || f.Identity == "")
 	generation := f.GenerationStorage
 	if f.Generation == "" {
 		generation = locales.Text("无")
@@ -52,10 +52,10 @@ func (s *State) postgresSchemaField(c *ui.Context, d *Document, locked bool) {
 			f.Generation = "0"
 		}
 	}
-	schemaDesignInput(c, "生成表达式", &f.Generation, locked || f.GenerationStorage == "")
+	s.schemaDesignInput(c, d, "生成表达式", &f.Generation, locked || f.GenerationStorage == "")
 	if x.fieldRow >= 0 && x.fieldRow < len(x.draft.Clauses) {
 		if p := x.draft.Clauses[x.fieldRow].Postgres; p != nil {
-			schemaDesignInput(c, "字段注释", &p.Comment, locked)
+			s.schemaDesignInput(c, d, "字段注释", &p.Comment, locked)
 		}
 	}
 }
@@ -66,9 +66,9 @@ func (s *State) postgresSchemaOptions(c *ui.Context, d *Document, locked bool) {
 	if p == nil {
 		return
 	}
-	schemaDesignInput(c, "表注释", &p.Comment, locked)
-	schemaDesignInput(c, "访问方法", &p.AccessMethod, locked)
-	schemaDesignInput(c, "表空间", &p.Tablespace, locked)
+	s.schemaDesignInput(c, d, "表注释", &p.Comment, locked)
+	s.schemaDesignInput(c, d, "访问方法", &p.AccessMethod, locked)
+	s.schemaDesignInput(c, d, "表空间", &p.Tablespace, locked)
 	persistence := p.Persistence
 	if persistence == "u" {
 		persistence = locales.Text("不记录日志的表")
@@ -82,7 +82,7 @@ func (s *State) postgresSchemaOptions(c *ui.Context, d *Document, locked bool) {
 		}
 	}
 	for i := range p.Parameters {
-		schemaDesignInput(c, "存储参数", &p.Parameters[i], locked)
+		s.schemaDesignInput(c, d, "存储参数", &p.Parameters[i], locked)
 	}
 	ui.Row(c).Wrap().Gap(8).Children(func() {
 		if ui.Button(c, locales.Text("添加存储参数")).Disabled(locked).Clicked() {

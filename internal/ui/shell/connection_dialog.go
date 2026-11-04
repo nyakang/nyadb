@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"reflect"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
@@ -65,7 +66,16 @@ func (s *State) nextConnectionStep() {
 }
 
 func (s *State) connectionSaved(saved connections.Profile) {
-	if s.sessions.Current().ProfileID == saved.ID {
+	presentationOnly := false
+	for _, old := range s.navigation.Profiles() {
+		if old.ID == saved.ID {
+			old.Color = saved.Color
+			old.UpdatedAt = saved.UpdatedAt
+			presentationOnly = reflect.DeepEqual(old, saved)
+			break
+		}
+	}
+	if !presentationOnly && s.sessions.Current().ProfileID == saved.ID {
 		s.disconnectMySQLSession()
 	}
 	s.selectedProfileID = saved.ID
@@ -90,7 +100,7 @@ func (s *State) connectionEditorView(c *ui.Context) {
 		width = min(float32(760), width-96)
 		height = min(float32(630), height-96)
 	}
-	if s.connectionStep == 2 {
+	if s.connectionEditor.URIActive() {
 		s.connectionEditor.URIView(c, width, height, func() {
 			s.connectionKind = s.connectionEditor.Draft().Kind
 			s.connectionStep = 1
@@ -170,6 +180,7 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 			})
 			ui.Box(c).Height(1).Background(palette.Border)
 		}
+		s.connectionCatalog.SetEditing(&s.connectionEditFocus, func(target theme.EditTarget) { s.connectionEditTarget = target }, func() bool { return s.connectionDialog && s.connectionStep == 0 })
 		s.connectionCatalog.View(c, dialogWidth, bodyHeight, s.chooseCatalogChoice)
 		ui.Box(c).Height(1).Background(palette.Border)
 		ui.Row(c).Height(catalogFooterHeight).Padding(5, 9).Gap(7).AlignItems(ui.Center).Background(palette.Toolbar).Children(func() {

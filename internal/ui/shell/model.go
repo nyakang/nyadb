@@ -9,6 +9,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/credentials"
 	"github.com/nyakang/nyadb/internal/services/dbruntime"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/services/queries"
 	"github.com/nyakang/nyadb/internal/ui/connectioncatalog"
 	"github.com/nyakang/nyadb/internal/ui/connectioneditor"
 	"github.com/nyakang/nyadb/internal/ui/dataworkspace"
@@ -35,10 +36,12 @@ const (
 )
 
 type tab struct {
-	id    uint64
-	title string
-	kind  tabKind
-	query *sqlworkspace.Document
+	pinned      bool
+	placeholder *queries.WorkspaceTab
+	id          uint64
+	title       string
+	kind        tabKind
+	query       *sqlworkspace.Document
 
 	object *objectworkspace.Document
 
@@ -47,6 +50,7 @@ type tab struct {
 
 // State is UI state owned by the main thread. Never retain ui.Element values.
 type State struct {
+	workspaces         workspaceManager
 	favorites          *favoritesworkspace.State
 	favoriteMenuScope  *favoriteMenuScope
 	autoConnectPending bool
@@ -63,15 +67,20 @@ type State struct {
 	preview  *previewState
 	settings settingsState
 
-	connectionManagerRow  int
-	connectionManagerList ui.ListState
-	tabs                  []*tab
-	activeTab             int
-	nextTabID             uint64
-	status                string
-	lastAction            string
-	toolbarMenus          map[string]toolbarScope
-	documentMenus         map[string]documentMenuScope
+	connectionManagerRow           int
+	connectionManagerList          ui.ListState
+	tabs                           []*tab
+	activeTab                      int
+	nextTabID                      uint64
+	status                         string
+	lastAction                     string
+	toolbarMenus                   map[string]toolbarScope
+	documentMenus                  map[string]documentMenuScope
+	editFocus, connectionEditFocus string
+	editTarget                     theme.EditTarget
+	editServices                   ui.Services
+	connectionEditTarget           theme.EditTarget
+	editMenuHost                   func([]theme.EditMenuEntry)
 
 	connectionEditor     *connectioneditor.State
 	connectionCatalog    *connectioncatalog.State
@@ -125,6 +134,13 @@ func newState(preview bool) *State {
 	s.navigation = navigation.New(s.navigationDependencies())
 	s.initRuntime()
 	s.connectionEditor = connectioneditor.New(connectioneditor.Dependencies{
+		EditFocus: &s.connectionEditFocus,
+		EditTarget: func(target theme.EditTarget) {
+			valid := target.Valid
+			id := target.ID
+			target.Valid = func() bool { return valid != nil && valid() && s.connectionEditFocus == id }
+			s.connectionEditTarget = target
+		},
 		ValidateMySQL: func(settings connections.ActiveSettings, secret string) error {
 			_, err := mysqlsvc.DirectMySQLConfig(settings, secret)
 			return err
@@ -167,6 +183,7 @@ func (s *State) openQuery() {
 	s.activeTab = len(s.tabs) - 1
 	s.status = "已打开 " + t.title
 	s.sqlWorkspace.Prepare(t.query)
+	s.sqlWorkspace.Focus(t.query)
 	if !s.profileMode {
 		s.status += "（模拟工作区）"
 	}

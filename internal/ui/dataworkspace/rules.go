@@ -37,6 +37,7 @@ func (s *State) clearMySQLDataFilter(services ui.Services, t *Document) {
 	t.filterMode = ""
 	t.filterValue = ""
 	t.filterRules = nil
+	t.filterCondition, t.groupDraft = nil, nil
 	t.filterExtraDraft = nil
 	t.ruleError = ""
 	t.filterColumnDraft = "选择字段"
@@ -112,6 +113,9 @@ func (s *State) syncMySQLDataSort(services ui.Services, t *Document) {
 func mysqlDataFilterStatus(t *Document) string {
 	if t == nil {
 		return ""
+	}
+	if t.filterCondition != nil {
+		return dataConditionSummary(t.filterCondition)
 	}
 	if len(t.filterRules) > 0 {
 		parts := make([]string, 0, len(t.filterRules))
@@ -205,46 +209,65 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *Document, page *contract.D
 	palette := theme.Colors(c)
 
 	choices := append([]string{"选择字段"}, page.Columns...)
-	ui.Text(c, locales.Text("筛选  ·  所有已启用条件均满足 (AND)")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
-	ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(6).AlignItems(ui.Center).Children(func() {
-		field := mysqlDataRuleSelect(c, &t.filterColumnDraft, choices, mysqlDataColumnChoiceLabel).Height(theme.RowHeight(c, theme.ControlHeight)).Width(150)
-		mysqlDataRuleSelect(c, &t.filterModeDraft, t.filterChoices(), locales.Text).Width(110)
-		if mysqlDataFilterModeNeedsValue(t.filterModeDraft) {
-			input := ui.TextInput(c, &t.filterValueDraft).Label(locales.Text("数据筛选值")).Placeholder(locales.Text("筛选值")).Width(170)
-			if t.layout.filterFocus != "" && t.layout.filterFocus == t.filterColumnDraft {
-				input.Focus()
-				t.layout.filterFocus = ""
-			}
-		} else if t.layout.filterFocus != "" && t.layout.filterFocus == t.filterColumnDraft {
-			field.Focus()
-			t.layout.filterFocus = ""
-		}
-		ui.Box(c).Grow(1)
-		if ui.Button(c, locales.Text("添加条件")).Label(locales.Text("添加筛选规则")).Disabled(len(t.filterExtraDraft)+1 >= contract.DataMaxFilterRules).Clicked() {
-			t.filterExtraDraft = append(t.filterExtraDraft, mysqlDataRuleDraft{Column: "选择字段", Mode: t.defaultFilter()})
-		}
-	})
-	for i := range t.filterExtraDraft {
-		i := i
-		rule := &t.filterExtraDraft[i]
+	if t.groupDraft != nil {
+		s.filterGroupView(c, t, t.groupDraft, 1, "root", page.Columns)
+	} else {
+		ui.Text(c, locales.Text("筛选  ·  所有已启用条件均满足 (AND)")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(6).AlignItems(ui.Center).Children(func() {
-			ui.Text(c, locales.Text("且")).TextColor(palette.Muted).FontSize(theme.Font(c, 11))
-			field := mysqlDataRuleSelect(c, &rule.Column, choices, mysqlDataColumnChoiceLabel).Width(140)
-			mysqlDataRuleSelect(c, &rule.Mode, t.filterChoices(), locales.Text).Width(110)
-			if mysqlDataFilterModeNeedsValue(rule.Mode) {
-				input := ui.TextInput(c, &rule.Value).Label(fmt.Sprintf(locales.Text("附加筛选值 %d"), i+1)).Placeholder(locales.Text("筛选值")).Width(170)
-				if t.layout.filterFocus != "" && t.layout.filterFocus == rule.Column {
+			field := mysqlDataRuleSelect(c, &t.filterColumnDraft, choices, mysqlDataColumnChoiceLabel).Height(theme.RowHeight(c, theme.ControlHeight)).Width(150)
+			mysqlDataRuleSelect(c, &t.filterModeDraft, t.filterChoices(), locales.Text).Width(110)
+			if mysqlDataFilterModeNeedsValue(t.filterModeDraft) {
+				input := ui.TextInput(c, &t.filterValueDraft).Label(locales.Text("数据筛选值")).Placeholder(locales.Text("筛选值")).Width(170)
+				theme.BindNativeEdit(c, input, fmt.Sprintf("data/filter/%d/main", t.id), s.deps.EditFocus, s.deps.EditTarget, func() bool { return !t.closed && t.groupDraft == nil }, true, false)
+				if t.layout.filterFocus != "" && t.layout.filterFocus == t.filterColumnDraft {
 					input.Focus()
 					t.layout.filterFocus = ""
 				}
-			} else if t.layout.filterFocus != "" && t.layout.filterFocus == rule.Column {
+			} else if t.layout.filterFocus != "" && t.layout.filterFocus == t.filterColumnDraft {
 				field.Focus()
 				t.layout.filterFocus = ""
 			}
-			if ui.Button(c, locales.Text("移除")).Label(fmt.Sprintf(locales.Text("删除筛选规则 %d"), i+2)).Clicked() {
-				t.filterExtraDraft = append(t.filterExtraDraft[:i], t.filterExtraDraft[i+1:]...)
+			ui.Box(c).Grow(1)
+			if ui.Button(c, locales.Text("添加条件")).Label(locales.Text("添加筛选规则")).Disabled(len(t.filterExtraDraft)+1 >= contract.DataMaxFilterRules).Clicked() {
+				t.filterExtraDraft = append(t.filterExtraDraft, mysqlDataRuleDraft{Column: "选择字段", Mode: t.defaultFilter()})
 			}
 		})
+		for i := range t.filterExtraDraft {
+			i := i
+			rule := &t.filterExtraDraft[i]
+			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(6).AlignItems(ui.Center).Children(func() {
+				ui.Text(c, locales.Text("且")).TextColor(palette.Muted).FontSize(theme.Font(c, 11))
+				field := mysqlDataRuleSelect(c, &rule.Column, choices, mysqlDataColumnChoiceLabel).Width(140)
+				mysqlDataRuleSelect(c, &rule.Mode, t.filterChoices(), locales.Text).Width(110)
+				if mysqlDataFilterModeNeedsValue(rule.Mode) {
+					input := ui.TextInput(c, &rule.Value).Label(fmt.Sprintf(locales.Text("附加筛选值 %d"), i+1)).Placeholder(locales.Text("筛选值")).Width(170)
+					theme.BindNativeEdit(c, input, fmt.Sprintf("data/filter/%d/%p", t.id, rule), s.deps.EditFocus, s.deps.EditTarget, func() bool {
+						if t.closed || t.groupDraft != nil {
+							return false
+						}
+						for j := range t.filterExtraDraft {
+							if &t.filterExtraDraft[j] == rule {
+								return true
+							}
+						}
+						return false
+					}, true, false)
+					if t.layout.filterFocus != "" && t.layout.filterFocus == rule.Column {
+						input.Focus()
+						t.layout.filterFocus = ""
+					}
+				} else if t.layout.filterFocus != "" && t.layout.filterFocus == rule.Column {
+					field.Focus()
+					t.layout.filterFocus = ""
+				}
+				if ui.Button(c, locales.Text("移除")).Label(fmt.Sprintf(locales.Text("删除筛选规则 %d"), i+2)).Clicked() {
+					t.filterExtraDraft = append(t.filterExtraDraft[:i], t.filterExtraDraft[i+1:]...)
+				}
+			})
+		}
+		if ui.Button(c, locales.Text("使用条件组")).Clicked() {
+			s.beginFilterGroups(t)
+		}
 	}
 	ui.Divider(c)
 	ui.Row(c).Height(theme.RowHeight(c, theme.ControlHeight)).Gap(8).AlignItems(ui.Center).Children(func() {
@@ -291,6 +314,9 @@ func (s *State) applyMySQLDataRules(services ui.Services, t *Document) {
 		drafts = append(drafts, mysqlDataRuleDraft{Column: t.filterColumnDraft, Mode: t.filterModeDraft, Value: t.filterValueDraft})
 	}
 	drafts = append(drafts, t.filterExtraDraft...)
+	if t.groupDraft != nil {
+		drafts = nil
+	}
 	filters := make([]contract.DataFilterRule, 0, len(drafts))
 	for _, draft := range drafts {
 		valid := false
@@ -311,7 +337,7 @@ func (s *State) applyMySQLDataRules(services ui.Services, t *Document) {
 		}
 		filters = append(filters, contract.DataFilterRule{Column: draft.Column, Mode: mode, Value: draft.Value})
 	}
-	if len(drafts) == 0 && len(t.sortDraft) == 0 && len(t.filterRules) == 0 && t.filterMode == "" && len(t.sortRules) == 0 && t.sortColumn == "" && (t.filterColumnDraft == "" || t.filterColumnDraft == "选择字段") {
+	if t.groupDraft == nil && len(drafts) == 0 && len(t.sortDraft) == 0 && len(t.filterRules) == 0 && t.filterMode == "" && len(t.sortRules) == 0 && t.sortColumn == "" && (t.filterColumnDraft == "" || t.filterColumnDraft == "选择字段") {
 		t.ruleError = locales.Text("请先选择筛选字段，或添加排序规则")
 		return
 	}
@@ -332,20 +358,30 @@ func (s *State) applyMySQLDataRules(services ui.Services, t *Document) {
 		used[draft.Column] = true
 		sortRules = append(sortRules, contract.DataSortRule{Column: draft.Column, Descending: draft.Direction == "降序"})
 	}
-	if len(filters) > 1 {
-		t.filterRules = filters
-		t.filterMode = ""
-		t.filterColumn = ""
-		t.filterValue = ""
-	} else {
+	if t.groupDraft != nil {
+		if _, valid := s.validateFilterGroups(t); !valid {
+			return
+		}
+		t.filterCondition = cloneDataCondition(t.groupDraft)
 		t.filterRules = nil
-		t.filterMode = ""
-		t.filterColumn = ""
-		t.filterValue = ""
-		if len(filters) == 1 {
-			t.filterColumn = filters[0].Column
-			t.filterMode = filters[0].Mode
-			t.filterValue = filters[0].Value
+		t.filterColumn, t.filterMode, t.filterValue = "", "", ""
+	} else {
+		t.filterCondition = nil
+		if len(filters) > 1 {
+			t.filterRules = filters
+			t.filterMode = ""
+			t.filterColumn = ""
+			t.filterValue = ""
+		} else {
+			t.filterRules = nil
+			t.filterMode = ""
+			t.filterColumn = ""
+			t.filterValue = ""
+			if len(filters) == 1 {
+				t.filterColumn = filters[0].Column
+				t.filterMode = filters[0].Mode
+				t.filterValue = filters[0].Value
+			}
 		}
 	}
 	if len(sortRules) > 1 {
@@ -579,6 +615,13 @@ func (s *State) applyMySQLDataCellFilter(services ui.Services, t *Document, name
 			mode = "is_not_null"
 		}
 	}
+	valueForGroup := cell.Text
+	if mode == "is_null" || mode == "is_not_null" {
+		valueForGroup = ""
+	}
+	if s.applyGroupedCellFilter(services, t, name, mode, valueForGroup) {
+		return
+	}
 	filters := append([]contract.DataFilterRule(nil), t.filterRules...)
 	if len(filters) == 0 && t.filterMode != "" {
 		filters = append(filters, contract.DataFilterRule{Column: t.filterColumn, Mode: t.filterMode, Value: t.filterValue})
@@ -759,6 +802,17 @@ func mysqlDataContainsType(kind string) bool {
 	return false
 }
 func mysqlDataHasFieldFilter(t *Document, name string) bool {
+	if t.filterCondition != nil {
+		rules, err := t.filterCondition.Rules(6, 3)
+		if err == nil {
+			for _, rule := range rules {
+				if rule.Column == name {
+					return true
+				}
+			}
+		}
+		return false
+	}
 	if t.filterColumn == name && t.filterMode != "" {
 		return true
 	}
@@ -771,6 +825,13 @@ func mysqlDataHasFieldFilter(t *Document, name string) bool {
 }
 func (s *State) removeMySQLDataFieldFilter(services ui.Services, t *Document, name string) {
 	if s.GuardLeave(t, func(next ui.Services) { s.removeMySQLDataFieldFilter(next, t, name) }) {
+		return
+	}
+	if t.filterCondition != nil {
+		t.filterCondition = removeConditionField(t.filterCondition, name)
+		t.groupDraft = cloneDataCondition(t.filterCondition)
+		t.ruleError = ""
+		s.Refresh(services, t)
 		return
 	}
 	filters := append([]contract.DataFilterRule(nil), t.filterRules...)

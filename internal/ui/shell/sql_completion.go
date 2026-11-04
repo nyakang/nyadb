@@ -1,6 +1,9 @@
 package shell
 
 import (
+	"context"
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/ui/sqlworkspace"
 	"sort"
 
 	"github.com/nyakang/nyadb/internal/db/sqltext"
@@ -66,4 +69,33 @@ func (s *State) sqlCompletionCatalog(id int64, namespace string) sqltext.Complet
 		return a.Name < b.Name
 	})
 	return catalog
+}
+
+func (s *State) sqlCompletionSource(id int64) sqlworkspace.CompletionSource {
+	session, err := s.runtime.Session(id)
+	if err != nil {
+		return sqlworkspace.CompletionSource{}
+	}
+	provider, err := contract.Require[contract.MetadataProvider](session)
+	if err != nil {
+		return sqlworkspace.CompletionSource{}
+	}
+	namespace, err := contract.Require[interface {
+		Namespace(string) contract.NamespaceRef
+	}](session)
+	if err != nil {
+		return sqlworkspace.CompletionSource{}
+	}
+	return sqlworkspace.CompletionSource{Generation: s.runtime.Generation(id), Catalog: namespace.Namespace("").Catalog, Load: func(ctx context.Context, ns, name string) ([]string, error) {
+		object := namespace.Namespace(ns).Object("table", name)
+		table, err := provider.TableMetadata(ctx, object)
+		if err != nil {
+			return nil, err
+		}
+		columns := []string{}
+		for _, field := range table.Columns {
+			columns = append(columns, field.Name)
+		}
+		return columns, nil
+	}}
 }

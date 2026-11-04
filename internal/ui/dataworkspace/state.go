@@ -4,6 +4,7 @@ package dataworkspace
 import (
 	"context"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 	"io"
 
 	"github.com/egoist/mygo/ui"
@@ -22,6 +23,8 @@ type Verifier func(context.Context, int64, string, string, *contract.DataEditRes
 type Runtime = contract.DataRuntime
 
 type Dependencies struct {
+	EditFocus         *string
+	EditTarget        func(theme.EditTarget)
 	RecordActivity    contract.ActivityRecorder
 	ImportTargets     func(int64, string) []string
 	SessionFor        func(int64) Session
@@ -44,57 +47,58 @@ type Document struct {
 	capabilities  contract.Capabilities
 	filterModes   []string
 
-	importOnly           bool
-	hostAction           string
-	hostProfile          string
-	hostActionGeneration uint64
-	toolbar              mysqlDataToolbarState
-	fill                 mysqlDataFillState
-	id                   uint64
-	closed               bool
-	database, table      string
-	objectKind           string
-	profileID            int64
-	offset               int64
-	limit                int
-	page                 *contract.DataPage
-	panel                *Panel
-	readInfo             mysqlDataReadInfo
-	layout               mysqlDataLayoutState
-	grid                 ui.ListState
-	columns              []ui.TableColumn
-	loading              bool
-	err                  string
-	cancel               context.CancelFunc
-	results              <-chan mysqlDataResult
-	request              uint64
-	edit                 mysqlDataEditState
-	transaction          dataTransactionState
-	export               mysqlDataExportState
-	transfer             mysqlDataTransferState
-	selection            ui.Selection[int]
-	selectedRow          int
-	sort                 ui.SortOrder
-	sortColumn           string
-	sortDescending       bool
-	filterColumnDraft    string
-	filterModeDraft      string
-	filterValueDraft     string
-	filterColumn         string
-	filterMode           string
-	filterValue          string
-	rulesExpanded        bool
-	ruleError            string
-	filterExtraDraft     []mysqlDataRuleDraft
-	filterRules          []contract.DataFilterRule
-	sortDraft            []mysqlDataSortDraft
-	sortRules            []contract.DataSortRule
-	hiddenColumns        map[string]bool
-	showFieldTypes       bool
-	useKeyset            bool
-	after                *contract.DataCursor
-	cursorHistory        map[int64]*contract.DataCursor
-	tools                mysqlDataToolsState
+	importOnly                  bool
+	hostAction                  string
+	hostProfile                 string
+	hostActionGeneration        uint64
+	toolbar                     mysqlDataToolbarState
+	fill                        mysqlDataFillState
+	id                          uint64
+	closed                      bool
+	database, table             string
+	objectKind                  string
+	profileID                   int64
+	offset                      int64
+	limit                       int
+	page                        *contract.DataPage
+	panel                       *Panel
+	readInfo                    mysqlDataReadInfo
+	layout                      mysqlDataLayoutState
+	grid                        ui.ListState
+	columns                     []ui.TableColumn
+	loading                     bool
+	err                         string
+	cancel                      context.CancelFunc
+	results                     <-chan mysqlDataResult
+	request                     uint64
+	edit                        mysqlDataEditState
+	transaction                 dataTransactionState
+	export                      mysqlDataExportState
+	transfer                    mysqlDataTransferState
+	selection                   ui.Selection[int]
+	selectedRow                 int
+	sort                        ui.SortOrder
+	sortColumn                  string
+	sortDescending              bool
+	filterColumnDraft           string
+	filterModeDraft             string
+	filterValueDraft            string
+	filterColumn                string
+	filterMode                  string
+	filterValue                 string
+	rulesExpanded               bool
+	ruleError                   string
+	filterExtraDraft            []mysqlDataRuleDraft
+	filterRules                 []contract.DataFilterRule
+	filterCondition, groupDraft *contract.FilterExpression[contract.DataFilterRule]
+	sortDraft                   []mysqlDataSortDraft
+	sortRules                   []contract.DataSortRule
+	hiddenColumns               map[string]bool
+	showFieldTypes              bool
+	useKeyset                   bool
+	after                       *contract.DataCursor
+	cursorHistory               map[int64]*contract.DataCursor
+	tools                       mysqlDataToolsState
 }
 type State struct {
 	savePath    func(string) (string, error)

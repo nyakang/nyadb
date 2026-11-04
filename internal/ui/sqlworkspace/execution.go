@@ -6,11 +6,15 @@ import (
 	"fmt"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
-
-	"github.com/egoist/mygo/ui"
 )
 
 type executionResult struct {
+	statement string
+	version   uint64
+	origin    int
+	explain   bool
+	plan      *contract.ExecutionPlan
+	planError string
 	request   uint64
 	profileID int64
 	data      contract.SQLResult
@@ -70,6 +74,21 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 	t.cancel = cancel
 	t.loading = true
 	t.cancelRequested = false
+	explaining := strings.HasPrefix(strings.ToUpper(strings.TrimSpace(statement)), "EXPLAIN ")
+	if explaining {
+		if t.showOrdinary {
+			t.ordinaryReading = t.captureReading()
+		} else if t.explainReading == nil {
+			t.ordinaryReading = t.captureReading()
+		}
+	} else {
+		t.ordinaryReading, t.explainReading = nil, nil
+		t.plan = nil
+		t.planError = ""
+	}
+	t.showOrdinary = false
+	t.planVisible = false
+	t.rememberResultLayouts()
 	t.result = nil
 	t.err = ""
 	profileID, database := t.profileID, t.database
@@ -80,6 +99,11 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 	if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(statement)), "EXPLAIN ") {
 		source = "explain"
 	}
+	version, origin := t.Editor.Buffer.Version(), executionOrigin(t, statement)
+	var parse func(contract.SQLResult) (*contract.ExecutionPlan, error)
+	if s.deps.PlanParser != nil {
+		parse = s.deps.PlanParser(profileID)
+	}
 	history := s.beginHistory(t, source, statement)
 	go func() {
 		result, err := execute(ctx, profileID, database, statement)
@@ -87,7 +111,16 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 			err = ctx.Err()
 		}
 		completeHistory(history, result, err, true)
-		resultChan <- executionResult{request: request, profileID: profileID, data: result, err: err}
+		var plan *contract.ExecutionPlan
+		planError := ""
+		if explaining && err == nil && parse != nil {
+			var e error
+			plan, e = parse(result)
+			if e != nil {
+				planError = e.Error()
+			}
+		}
+		resultChan <- executionResult{statement: statement, version: version, origin: origin, explain: explaining, plan: plan, planError: planError, request: request, profileID: profileID, data: result, err: err}
 		if invalidate != nil {
 			invalidate()
 		}
@@ -117,6 +150,9 @@ func (s *State) dispose(t *Document) {
 	if t == nil {
 		return
 	}
+	t.plan = nil
+	t.ordinaryReading, t.explainReading = nil, nil
+	t.metadata.stop()
 	t.request++
 	if t.cancel != nil {
 		t.cancel()
@@ -143,12 +179,14 @@ func (s *State) DisconnectProfile(profileID int64) {
 			t.recoveryNeeded = true
 			t.recoveryProfile = t.profileID
 			t.recoverySchema = t.database
+			t.recoveryCatalog, t.recoveryNamespaceSchema = t.catalog, t.namespaceSchema
 			// Retain the unsaved editor, but sever the old session identity.
 			// A later Connect for the same profile must not let this tab
 			// silently obtain a new physical connection and lose the old
 			// transaction or user-variable state without warning.
 			t.profileID = 0
 			t.database = ""
+			t.rememberResultLayouts()
 			t.result = nil
 			t.err = "连接已断开；SQL 文本已保留。请先连接原配置，再以新会话继续；事务、临时表与变量不能恢复"
 		}
@@ -158,6 +196,7 @@ func (s *State) DisconnectProfile(profileID int64) {
 func (s *State) Consume() {
 	s.consumeHistory()
 	for _, t := range s.documents {
+		s.consumeCompletionMetadata(t)
 		if t.prepareResults != nil {
 			select {
 			case err := <-t.prepareResults:
@@ -177,6 +216,7 @@ func (s *State) Consume() {
 						t.recoveryNeeded = true
 						t.recoveryProfile = t.profileID
 						t.recoverySchema = t.database
+						t.recoveryCatalog, t.recoveryNamespaceSchema = t.catalog, t.namespaceSchema
 					}
 				}
 			default:
@@ -198,10 +238,21 @@ func (s *State) Consume() {
 			t.loading = false
 			canceled := t.cancelRequested
 			t.cancelRequested = false
+			s.acceptQueryDiagnostic(t, r)
+			if r.explain {
+				if r.err != nil {
+					t.planError = r.err.Error()
+					t.explainReading = &resultReading{Views: map[int]*resultView{}}
+				}
+				t.plan, t.planError, t.planVisible = r.plan, r.planError, r.plan != nil
+				if r.err != nil {
+					t.planError = r.err.Error()
+				}
+			}
 			if r.err != nil {
 				if len(r.data.Steps) > 0 {
 					result := r.data
-					t.result = &result
+					t.setResult(&result)
 				}
 				if canceled || errors.Is(r.err, context.Canceled) {
 					t.err = "SQL 执行已停止；服务器端更改可能已生效"
@@ -209,6 +260,7 @@ func (s *State) Consume() {
 					t.recoveryNeeded = true
 					t.recoveryProfile = t.profileID
 					t.recoverySchema = t.database
+					t.recoveryCatalog, t.recoveryNamespaceSchema = t.catalog, t.namespaceSchema
 					t.err = "原查询会话已失效；事务、临时表、会话变量无法恢复，DML 结果请先核对。可选择以新会话继续"
 				} else if errors.Is(r.err, contract.ErrSQLSessionLimit) {
 					t.err = "SQL 标签会话数已达到上限，请关闭其他查询标签后重试"
@@ -221,8 +273,11 @@ func (s *State) Consume() {
 				continue
 			}
 			result := r.data
-			t.result = &result
-			t.grid = ui.ListState{}
+			t.setResult(&result)
+			if r.explain {
+				t.explainReading = t.captureReading()
+			}
+
 			if canceled {
 				t.err = "取消请求可能未阻止执行；请检查服务器端结果"
 			} else {
@@ -298,11 +353,13 @@ func (s *State) Recover(t *Document) {
 	t.lease = lease
 	t.profileID = id
 	t.database = t.recoverySchema
+	t.catalog, t.namespaceSchema = t.recoveryCatalog, t.recoveryNamespaceSchema
 	t.recoveryNeeded = false
 	t.recoveryProfile = 0
 	t.recoverySchema = ""
+	t.rememberResultLayouts()
 	t.result = nil
-	t.grid = ui.ListState{}
+
 	t.err = ""
 	if s.deps.Recovered != nil {
 		s.deps.Recovered(id)

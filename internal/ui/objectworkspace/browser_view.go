@@ -119,11 +119,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 			}
 		})
 	}
-	columns := append([]ui.TableColumn(nil), mysqlObjectColumns...)
-	for i := range columns {
-		columns[i].ID = mysqlObjectColumns[i].Title
-		columns[i].Title = locales.Text(columns[i].Title)
-	}
+	columns := s.objectColumns(b.ProfileID)
 	if len(items) == 0 {
 		theme.EmptyTable(c, &s.currentBrowser().List, columns, message)
 		return
@@ -146,7 +142,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 				s.objectNameCell(c, obj)
 			})
 		default:
-			ui.Text(c, mysqlObjectCellText(obj, col)).SingleLine()
+			ui.Text(c, s.objectCell(b.ProfileID, obj, col)).SingleLine()
 		}
 	}).Grow(1)
 	if table.Submitted() {
@@ -170,6 +166,7 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 			}
 		}
 	}
+	table.TrackScroll(&b.Scroll)
 	if table.Shortcut(ui.Ctrl, ui.KeyN) && (s.currentBrowser().Kind == "全部" || s.currentBrowser().Kind == "表") {
 		s.BeginTableChange(s.currentBrowser().ProfileID, db, "", mysqlsvc.MySQLTableCreate)
 	}
@@ -192,7 +189,7 @@ func (s *State) BrowserView(c *ui.Context) {
 			ui.Toolbar(c, func() {
 				// Keep available object actions visible on narrow pages.
 				for _, action := range []struct{ label, icon, accessible string }{
-					{"打开表", "open-table", "打开选中表数据"}, {"设计表", "design-table", "打开选中表结构"},
+					{"打开表", "open-table", "打开选中表数据"}, {"设计表", "design-table", "设计选中表"}, {"查看结构", "design-table", "打开选中表结构"},
 				} {
 					item := action
 					if ui.ButtonBase(c).Label(locales.Text(item.accessible)).Tooltip(locales.Text(item.label)).Disabled(!canOpen).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
@@ -204,8 +201,10 @@ func (s *State) BrowserView(c *ui.Context) {
 						obj := items[a.frame.Row]
 						if item.label == "打开表" && s.deps.OpenData != nil {
 							s.deps.OpenData(c.Services(), a.scope.profile, database, obj.Name)
-						} else if item.label == "设计表" && s.deps.OpenStructure != nil {
-							s.deps.OpenStructure(c.Services(), a.scope.profile, database, obj.Name)
+						} else if item.label == "查看结构" {
+							s.openStructure(c.Services(), database, obj.Name)
+						} else if item.label == "设计表" {
+							s.openDesign(c.Services(), a.scope.profile, database, obj.Name)
 						}
 					}
 				}

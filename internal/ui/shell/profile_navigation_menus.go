@@ -148,8 +148,17 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 		s.setProfileStarred(profile.ID, !profile.Starred)
 	}
 	m.Submenu(locales.Text("颜色"), func(sub *ui.Menu) {
-		sub.Item(locales.Text("默认颜色")).Disabled(true)
-	}).Disabled(true)
+		for _, color := range connections.ProfileColors() {
+			value := color
+			label := value
+			if label == "" {
+				label = locales.Text("默认颜色")
+			}
+			if sub.Item(label).Checked(profile.Color == value).Chosen() {
+				s.setProfileColor(profile.ID, value)
+			}
+		}
+	})
 	m.Separator()
 	m.Submenu(locales.Text("管理组"), func(sub *ui.Menu) {
 		if sub.Item(locales.Text("新建组")).Chosen() {

@@ -92,7 +92,7 @@ func (s *State) profileInspector(c *ui.Context) {
 					return
 				}
 				t := s.currentTab()
-				if t.kind == tabStructure && t.object.Data() != nil {
+				if t.kind == tabStructure && t.object != nil {
 					s.objectWorkspace.InspectorView(c, t.object)
 					return
 				}
@@ -128,10 +128,10 @@ func (s *State) profileInspector(c *ui.Context) {
 					}
 					return
 				}
-				ui.Row(c).AlignItems(ui.Center).Gap(16).Children(func() {
+				ui.Row(c).Wrap().AlignItems(ui.Center).Gap(16).Children(func() {
 					navigation.BrandIcon(c, p.Kind, 50)
-					ui.Column(c).Grow(1).MinWidth(0).Gap(5).Children(func() {
-						ui.Text(c, p.Name).FontSize(theme.Font(c, 14)).Bold()
+					ui.Column(c).Grow(1).MinWidth(90).Gap(5).Children(func() {
+						ui.Text(c, p.Name).SingleLine().Tooltip(p.Name).FontSize(theme.Font(c, 14)).Bold()
 						ui.Text(c, connectionKindName(p.Kind)).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 					})
 				})
@@ -173,6 +173,7 @@ func (s *State) profileInspector(c *ui.Context) {
 // the navigator owns presentation, filtering, tree selection and group drafts.
 func (s *State) navigationDependencies() navigation.Dependencies {
 	return navigation.Dependencies{
+		EditFocus: &s.editFocus, EditTarget: s.registerEditTarget,
 		QueryGroups: func(id int64) []navigation.Object {
 			var out []navigation.Object
 			for _, g := range s.sqlWorkspace.AssetGroups(id) {
@@ -255,7 +256,7 @@ func (s *State) navigationShortcut(services ui.Services, n navigation.Node, shor
 		}
 	case ui.KeyD:
 		if n.Kind == "object" && !objectworkspace.Supports(n.Category) {
-			s.openMySQLStructure(services, n.Database, n.Object)
+			s.openMySQLStructure(services, n.Database, n.Object, true)
 		}
 	case ui.KeyF5:
 		if n.Database != "" {

@@ -166,10 +166,13 @@ func (s *State) InspectorView(c *ui.Context, d *Document) {
 		ObjectProperties(c, obj)
 		return
 	}
-	if d == nil || d.closed || d.data == nil {
+	if d == nil || d.closed || d.data == nil && d.design == nil && d.schemaDesign == nil {
 		return
 	}
 	ui.Text(c, d.Table()).FontSize(theme.Font(c, 14)).Bold()
+	if d.design != nil || d.schemaDesign != nil {
+		ui.Text(c, locales.Text("正在编辑")).TextColor(theme.Colors(c).NoticeText)
+	}
 	theme.Property(c, "数据库", d.Database())
 	if field, selected := d.SelectedField(); selected {
 		theme.Property(c, "名称", field.Name)

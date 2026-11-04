@@ -20,11 +20,12 @@ const mysqlDataProfilesMaxBytes = 256 << 10
 // These settings deliberately exclude connection details, SQL, result rows and
 // editing drafts. The old presentation-only layout preference stays compatible.
 type mysqlDataTableProfile struct {
-	Name    string                    `json:"name"`
-	Layout  mysqlDataSavedLayout      `json:"layout"`
-	Filters []contract.DataFilterRule `json:"filters,omitempty"`
-	Sorts   []contract.DataSortRule   `json:"sorts,omitempty"`
-	Limit   int                       `json:"limit"`
+	Condition *contract.FilterExpression[contract.DataFilterRule] `json:"condition,omitempty"`
+	Name      string                                              `json:"name"`
+	Layout    mysqlDataSavedLayout                                `json:"layout"`
+	Filters   []contract.DataFilterRule                           `json:"filters,omitempty"`
+	Sorts     []contract.DataSortRule                             `json:"sorts,omitempty"`
+	Limit     int                                                 `json:"limit"`
 }
 
 type mysqlDataProfiles struct {
@@ -74,6 +75,9 @@ func mysqlDataProfilesKey(t *Document) string {
 
 func mysqlDataCurrentRules(t *Document) ([]contract.DataFilterRule, []contract.DataSortRule) {
 	filters := append([]contract.DataFilterRule(nil), t.filterRules...)
+	if t.filterCondition != nil {
+		filters, _ = t.filterCondition.Rules(contract.DataMaxFilterRules, 3)
+	}
 	if len(filters) == 0 && t.filterMode != "" {
 		filters = append(filters, contract.DataFilterRule{Column: t.filterColumn, Mode: t.filterMode, Value: t.filterValue})
 	}
@@ -95,7 +99,15 @@ func validMySQLDataProfile(p mysqlDataTableProfile) bool {
 		len(p.Filters) > contract.DataMaxFilterRules || len(p.Sorts) > contract.DataMaxSortRules {
 		return false
 	}
-	for _, f := range p.Filters {
+	filters := p.Filters
+	if p.Condition != nil {
+		var err error
+		filters, err = p.Condition.Rules(contract.DataMaxFilterRules, 3)
+		if err != nil || len(p.Filters) > 0 {
+			return false
+		}
+	}
+	for _, f := range filters {
 		if f.Column == "" || len(f.Value) > 4096 {
 			return false
 		}
@@ -177,9 +189,12 @@ func (s *State) saveDataProfile(t *Document, name string) error {
 		return errors.New(locales.Text("表配置文件格式无效"))
 	}
 	filters, sorts := mysqlDataCurrentRules(t)
-	p := mysqlDataTableProfile{Name: strings.TrimSpace(name), Layout: layout, Filters: filters, Sorts: sorts, Limit: t.limit}
+	p := mysqlDataTableProfile{Condition: cloneDataCondition(t.filterCondition), Name: strings.TrimSpace(name), Layout: layout, Filters: filters, Sorts: sorts, Limit: t.limit}
 	if !validMySQLDataProfile(p) {
 		return errors.New(locales.Text("配置名称不能为空且最多 80 个字符"))
+	}
+	if p.Condition != nil {
+		p.Filters = nil
 	}
 	items := append([]mysqlDataTableProfile(nil), t.tools.profiles...)
 	for i := range items {
@@ -265,7 +280,11 @@ func (s *State) applyDataProfile(services ui.Services, t *Document, p mysqlDataT
 		t.ruleError = locales.Text("请等待表数据加载完成")
 		return
 	}
-	if !mysqlDataRulesAvailable(t, owned.Filters, owned.Sorts) {
+	filters := owned.Filters
+	if owned.Condition != nil {
+		filters, _ = owned.Condition.Rules(contract.DataMaxFilterRules, 3)
+	}
+	if !mysqlDataRulesAvailable(t, filters, owned.Sorts) {
 		t.ruleError = locales.Text("配置中的筛选或排序字段已不可用")
 		return
 	}
@@ -277,6 +296,8 @@ func (s *State) applyDataProfile(services ui.Services, t *Document, p mysqlDataT
 	reconcileMySQLDataLayout(t)
 	t.filterColumn, t.filterMode, t.filterValue = "", "", ""
 	t.filterRules = owned.Filters
+	t.filterCondition = cloneDataCondition(owned.Condition)
+	t.groupDraft = cloneDataCondition(owned.Condition)
 	t.sortColumn, t.sortDescending = "", false
 	t.sortRules = owned.Sorts
 	t.sort = ui.SortOrder{}

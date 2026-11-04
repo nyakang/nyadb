@@ -18,8 +18,6 @@ type mysqlDataFillState struct {
 }
 
 func (s *State) dataFillMenu(c *ui.Context, t *Document, m *ui.Menu) {
-	m.Item(locales.Text("AI 服务尚未配置")).Disabled(true)
-	m.Separator()
 	if m.Item(locales.Text("填充所选单元格…")).Disabled(t.page == nil || t.selectedRow < 0 || t.loading || t.edit.Busy).Chosen() {
 		t.fill = mysqlDataFillState{Open: true, Mode: "值", Start: "1", Step: "1"}
 	}

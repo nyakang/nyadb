@@ -81,10 +81,18 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 			s.tableProfilesMenu(services, sub, profileID, database, name)
 		}).Disabled(s.deps.TableProfiles == nil || s.deps.OpenTableProfile == nil || !s.sessionFor(profileID).Connected)
 	}
+	if kind == "表" && s.deps.OpenDesign != nil {
+		design = "设计表"
+	}
 	if m.Item(locales.Text(design)).Shortcut(ui.Ctrl, ui.KeyD).Disabled(Supports(kind)).Chosen() {
-		if s.deps.OpenStructure != nil {
+		if kind == "表" {
+			s.openDesign(services, profileID, database, name)
+		} else if s.deps.OpenStructure != nil {
 			s.deps.OpenStructure(services, profileID, database, name)
 		}
+	}
+	if kind == "表" && m.Item(locales.Text("查看结构（只读）")).Chosen() && s.deps.OpenStructure != nil {
+		s.deps.OpenStructure(services, profileID, database, name)
 	}
 	if kind != "表" {
 		viewOps, _ := s.viewBinding(profileID, database, name)

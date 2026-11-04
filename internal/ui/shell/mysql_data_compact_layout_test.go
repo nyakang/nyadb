@@ -34,7 +34,7 @@ func TestMySQLCompactHeaderAt1280AndNarrowNavigation(t *testing.T) {
 	if header.Y > 190 {
 		t.Fatalf("compact grid header too low at 1280: %+v", header)
 	}
-	if !tt.HasText("筛选 & 排序") || !tt.HasText("更多") {
+	if !tt.HasText("筛选 & 排序") || !tt.HasText("填充") {
 		t.Fatalf("compact navigation or count missing: %v", tt.Texts())
 	}
 	if err := tt.Click("筛选 & 排序"); err != nil {
@@ -64,7 +64,7 @@ func TestMySQLCompactHeaderAt1280AndNarrowNavigation(t *testing.T) {
 			t.Fatalf("%s overflows into inspector: %+v inspector=%+v", name, r, inspector)
 		}
 	}
-	if !small.HasText("对象") || !small.HasText("更多") {
+	if !small.HasText("对象") || !small.HasText("填充") && !small.HasText("更多") {
 		t.Fatal("narrow window lost navigation or refresh")
 	}
 	if err := small.Click("对象"); err != nil {

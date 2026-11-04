@@ -52,6 +52,7 @@ type persistence struct {
 	awaitClose        func(ui.Services)
 	explainDoc        *Document
 	explainSQL        string
+	explainSource     string
 	explainOpen       bool
 	store             *queries.Store
 	files             Files
@@ -129,8 +130,22 @@ func (s *State) RestoreDocument(snapshot queries.Document) *Document {
 	d.revision = snapshot.Revision
 	d.namedRevision = snapshot.NamedRevision
 	d.recoveryProfile, d.recoverySchema = snapshot.ProfileID, snapshot.Database
+	d.recoveryCatalog, d.recoveryNamespaceSchema = snapshot.Catalog, snapshot.Schema
+	if snapshot.Catalog == "" && snapshot.Schema == "" {
+		d.recoveryNamespaceSchema = snapshot.Database
+		if s.deps.Namespace != nil {
+			n := s.deps.Namespace(snapshot.ProfileID, snapshot.Database)
+			d.recoveryCatalog, d.recoveryNamespaceSchema = n.Catalog, n.Schema
+		}
+	}
 	d.recoveryNeeded = snapshot.ProfileID > 0
 	d.Editor.Select(max(0, min(snapshot.Anchor, len(snapshot.Text))), max(0, min(snapshot.Cursor, len(snapshot.Text))))
+	var p resultPresentation
+	if json.Unmarshal(snapshot.Presentation, &p) == nil && p.Version == 1 {
+		d.resultLayouts, d.resultPreferences = p.Layouts, p.Preferences
+	} else {
+		_ = json.Unmarshal(snapshot.Presentation, &d.resultLayouts)
+	}
 	return d
 }
 func (s *State) Snapshot(active uint64, order []uint64) queries.Workspace {
@@ -150,8 +165,11 @@ func (s *State) Snapshot(active uint64, order []uint64) queries.Workspace {
 		if d.recoveryNeeded {
 			profile, db = d.recoveryProfile, d.recoverySchema
 		}
+		d.rememberResultLayouts()
+		presentation, _ := json.Marshal(resultPresentation{Version: 1, Layouts: d.resultLayouts, Preferences: d.resultPreferences})
 		selection := d.Editor.Selection()
-		w.Documents = append(w.Documents, queries.Document{ID: id, QueryID: d.queryID, Name: d.name, Path: d.path, Text: d.text, SavedText: d.savedText, ProfileID: profile, Database: db, Cursor: selection.Head, Anchor: selection.Anchor, Revision: d.revision, NamedRevision: d.namedRevision})
+		n := d.Namespace()
+		w.Documents = append(w.Documents, queries.Document{Catalog: n.Catalog, Schema: n.Schema, Presentation: presentation, ID: id, QueryID: d.queryID, Name: d.name, Path: d.path, Text: d.text, SavedText: d.savedText, ProfileID: profile, Database: db, Cursor: selection.Head, Anchor: selection.Anchor, Revision: d.revision, NamedRevision: d.namedRevision})
 	}
 	return w
 }
@@ -162,7 +180,13 @@ func (s *State) Observe(active uint64, order []uint64) {
 	if p.store == nil || p.loading || p.blocked || p.closed {
 		return
 	}
-	w := s.Snapshot(active, order)
+	s.ObserveWorkspace(s.Snapshot(active, order))
+}
+func (s *State) ObserveWorkspace(w queries.Workspace) {
+	p := &s.persistence
+	if p.store == nil || p.loading || p.blocked || p.closed {
+		return
+	}
 	signature, _ := json.Marshal(w)
 	key := string(signature)
 	if key != p.signature {
@@ -312,6 +336,11 @@ func (s *State) OpenNamed(d *Document, n queries.Named) {
 		s.dispose(d)
 		d.profileID, d.database = 0, ""
 		d.recoveryProfile, d.recoverySchema = n.ProfileID, n.Database
+		d.recoveryCatalog, d.recoveryNamespaceSchema = "", n.Database
+		if s.deps.Namespace != nil {
+			ns := s.deps.Namespace(n.ProfileID, n.Database)
+			d.recoveryCatalog, d.recoveryNamespaceSchema = ns.Catalog, ns.Schema
+		}
 		d.recoveryNeeded = true
 		d.result = nil
 	}
@@ -346,6 +375,7 @@ func (s *State) consumeIO(services ui.Services) {
 			if r.kind == "load" {
 				p.loading = false
 				if r.err == nil {
+					p.blocked = false
 					p.revision = r.workspace.Revision
 					p.savedRevision = r.workspace.Revision
 					p.names = r.names
@@ -361,9 +391,9 @@ func (s *State) consumeIO(services ui.Services) {
 				}
 			}
 			if r.err != nil {
-				s.report(r.err.Error())
+				s.report(persistenceError(r.err))
 				if job.doc != nil && !job.doc.closed {
-					job.doc.err = r.err.Error()
+					job.doc.err = persistenceError(r.err)
 				}
 				if r.kind == "workspace" {
 					p.blocked = true
@@ -589,4 +619,19 @@ func (s *State) ConsumeDocuments(services ui.Services) {
 		p.awaitClose = nil
 		next(services)
 	}
+}
+
+func (s *State) FlushWorkspace(w queries.Workspace, next func(ui.Services)) {
+	s.ObserveWorkspace(w)
+	if s.persistence.store == nil {
+		if next != nil {
+			next(ui.Services{})
+		}
+		return
+	}
+	if s.persistence.blocked || s.persistence.loading {
+		s.report(persistenceError(queries.ErrKeyUnavailable))
+		return
+	}
+	s.saveWorkspace(next)
 }

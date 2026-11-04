@@ -30,6 +30,7 @@ func (s *State) View(c *ui.Context) {
 		if s.GroupEdit.Active && s.GroupEdit.Original == "" {
 			ui.Row(c).Padding(3, 6).Gap(4).AlignItems(ui.Center).Children(func() {
 				entry := ui.TextInput(c, &s.GroupEdit.Draft).Label(locales.Text("连接组名称")).Placeholder(locales.Text("组名称")).Grow(1).AutoFocus()
+				theme.BindNativeEdit(c, entry, "navigation/group-edit", s.deps.EditFocus, s.deps.EditTarget, func() bool { return s.GroupEdit.Active }, true, false)
 				if entry.Submitted() {
 					s.SaveGroup()
 				}
@@ -135,6 +136,7 @@ func (s *State) renderRow(c *ui.Context, key string) {
 				theme.Icon(c, "folder-filled", 16, palette.Gold)
 				entry := ui.TextInput(c, &s.GroupEdit.Draft).Label(locales.Text("连接组名称")).
 					Height(theme.RowHeight(c, 20)).Grow(1).MinWidth(35).AutoFocus()
+				theme.BindNativeEdit(c, entry, "navigation/group-edit", s.deps.EditFocus, s.deps.EditTarget, func() bool { return s.GroupEdit.Active && s.GroupEdit.Original == name }, true, false)
 				if entry.Submitted() {
 					s.SaveGroup()
 				}
@@ -190,6 +192,7 @@ func (s *State) renderRow(c *ui.Context, key string) {
 			}
 			row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, assetRowHeight)).Padding(0, 6).AlignItems(ui.Center).Gap(4).Children(func() {
 				status := s.sessionStatus(p.ID)
+				ui.Box(c).Absolute().Left(0).Top(4).Size(3, 14).Background(theme.ProfileColor(c, p.Color))
 				NavigationIcon(c, p.Kind, status, 16)
 				ui.Text(c, p.Name).FontSize(theme.Font(c, assetFontSize)).TextColor(palette.Text).SingleLine()
 			})
@@ -293,9 +296,11 @@ func (s *State) footer(c *ui.Context) {
 	ui.Column(c).BorderWidth(1, 0, 0, 0).BorderColor(palette.Border).
 		Padding(0, 4).Gap(0).Children(func() {
 		ui.Row(c).Height(theme.RowHeight(c, 24)).Gap(2).AlignItems(ui.Center).Children(func() {
-			if ui.SearchField(c, &s.Filter.Search).Label(locales.Text("搜索连接")).Placeholder(locales.Text("搜索")).
+			search := ui.SearchField(c, &s.Filter.Search).Label(locales.Text("搜索连接")).Placeholder(locales.Text("搜索")).
 				Height(theme.RowHeight(c, 22)).Grow(1).MinWidth(0).BorderWidth(0).Radius(0).
-				Background(palette.Sidebar).Changed() {
+				Background(palette.Sidebar)
+			theme.BindNativeEdit(c, search, "navigation/search", s.deps.EditFocus, s.deps.EditTarget, func() bool { return true }, true, false)
+			if search.Changed() {
 				s.ChangeFilter()
 			}
 			if s.CanRestoreFilter() {

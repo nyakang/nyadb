@@ -40,6 +40,12 @@ func (s *State) closeAllMySQLConnections() {
 // CloseMySQLSessions releases all workbench connections when the app exits.
 func (s *State) CloseMySQLSessions() { s.closeMySQLSessions() }
 func (s *State) closeMySQLSessions() {
+	if s.workspaces.cancel != nil {
+		s.workspaces.cancel()
+		s.workspaces.cancel = nil
+	}
+	s.workspaces.out = nil
+	s.workspaces.store = nil
 	s.mysqlForceClose = true
 	defer func() { s.mysqlForceClose = false }()
 	for _, t := range s.tabs {

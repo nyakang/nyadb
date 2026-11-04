@@ -71,7 +71,7 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 			}
 		}
 		ui.Divider(c).Width(1).Height(18)
-		fillButton = mysqlDataToolbarButton(c, "AI 自动填充 ▾", locales.Text("AI 自动填充"), "star", page == nil).
+		fillButton = mysqlDataToolbarButton(c, "填充 ▾", locales.Text("填充"), "star", page == nil).
 			Menu(func(m *ui.Menu) { s.dataFillMenu(c, t, m) })
 		if (t.object.ProfileID == 0 || t.capabilities.Analysis) && dataToolbarToggle(c, "数据分析", "chart", t.tools.analysisOpen, page == nil || disabled).Clicked() {
 			if t.tools.analysisOpen {
@@ -107,6 +107,9 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 		}
 		copyButton = ui.Button(c, "▾").Label(locales.Text("复制为")).Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 4).Disabled(!selected).Menu(func(m *ui.Menu) { s.mysqlDataCopyAsMenu(c, t, m) })
 		count := len(t.filterRules)
+		if t.filterCondition != nil {
+			count = dataConditionCount(t.filterCondition)
+		}
 		if count == 0 && t.filterMode != "" {
 			count = 1
 		}
