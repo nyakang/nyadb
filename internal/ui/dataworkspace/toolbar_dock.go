@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/ui/gridview"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -34,7 +36,8 @@ func (s *State) dataColumnsPanel(c *ui.Context, t *Document) {
 	palette := theme.Colors(c)
 	ui.Column(c).Width(185).MinWidth(120).Background(palette.Panel).BorderWidth(0, 1, 0, 0).BorderColor(palette.Border).Padding(6).Gap(5).Children(func() {
 		ui.Text(c, locales.Text("显示或隐藏列")).SingleLine()
-		ui.TextInput(c, &t.toolbar.columnSearch).Label(locales.Text("搜索列")).Placeholder(locales.Text("搜索列")).FillWidth()
+		search := ui.TextInput(c, &t.toolbar.columnSearch).Label(locales.Text("搜索列")).Placeholder(locales.Text("搜索列")).FillWidth()
+		theme.BindNativeEdit(c, search, fmt.Sprintf("data/column-search/%d", t.id), s.deps.EditFocus, s.deps.EditTarget, func() bool { return !t.closed }, true, false)
 		ui.Scroll(c).Grow(1).MinHeight(0).FillWidth().Children(func() {
 			for _, name := range t.page.Columns {
 				if !strings.Contains(strings.ToLower(name), strings.ToLower(t.toolbar.columnSearch)) {
@@ -113,6 +116,21 @@ func (s *State) dataDock(c *ui.Context, t *Document) {
 		if editable {
 			text = e.Text
 		}
+		if !editable && (e == nil || !e.Dedicated) {
+			cached := t.page.Rows[t.selectedRow][source]
+			value := contract.Cell{Kind: contract.Text, Text: cached.Text, Truncated: cached.Truncated}
+			if cached.Value != nil {
+				value = *cached.Value
+				value.Truncated = value.Truncated || cached.Truncated
+			} else if cached.Null {
+				value.Kind = contract.Null
+			}
+			gridview.PreviewValue(c, value, t.toolbar.dock, func(field ui.Element) {
+				field.Label(locales.Text("单元格预览")).MinHeight(50)
+				theme.BindNativeEdit(c, field, fmt.Sprintf("data/dock-preview/%d", t.id), s.deps.EditFocus, s.deps.EditTarget, func() bool { return !t.closed && t.toolbar.dock != "" }, false, false)
+			})
+			return
+		}
 		if t.toolbar.dock == "图像" {
 			raw, err := hex.DecodeString(strings.TrimPrefix(text, "0x"))
 			if err == nil {
@@ -148,9 +166,11 @@ func (s *State) dataDock(c *ui.Context, t *Document) {
 		}
 		if editable {
 			s.typedEditorChoice(c, t, e)
-			ui.TextArea(c, &e.Text).Label(locales.Text("单元格编辑器内容")).FillWidth().Grow(1).MinHeight(50).FontSize(theme.Font(c, 12))
+			field := ui.TextArea(c, &e.Text).Label(locales.Text("单元格编辑器内容")).FillWidth().Grow(1).MinHeight(50).FontSize(theme.Font(c, 12))
+			theme.BindNativeEdit(c, field, fmt.Sprintf("data/dock-edit/%d", t.id), s.deps.EditFocus, s.deps.EditTarget, func() bool { return !t.closed && t.edit.Editor == e && !t.edit.Busy }, true, false)
 		} else {
-			ui.TextArea(c, &text).Label(locales.Text("单元格预览")).ReadOnly(true).FillWidth().Grow(1).MinHeight(50).FontSize(theme.Font(c, 12))
+			field := ui.TextArea(c, &text).Label(locales.Text("单元格预览")).ReadOnly(true).FillWidth().Grow(1).MinHeight(50).FontSize(theme.Font(c, 12))
+			theme.BindNativeEdit(c, field, fmt.Sprintf("data/dock-preview/%d", t.id), s.deps.EditFocus, s.deps.EditTarget, func() bool { return !t.closed && t.toolbar.dock != "" }, false, false)
 		}
 		if t.edit.Err != "" {
 			ui.Text(c, t.edit.Err).TextColor(palette.Error).SingleLine().Tooltip(t.edit.Err)

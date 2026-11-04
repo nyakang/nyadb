@@ -83,7 +83,7 @@ func TestMySQLTableAndViewContextMenusUseCorrectObjectLabels(t *testing.T) {
 	}
 	menu = tt.Menu()
 	if !slices.Contains(menu, "打开表") || slices.Contains(menu, "打开表（只读）") ||
-		!slices.Contains(menu, "设计表（只读）") ||
+		!slices.Contains(menu, "设计表") ||
 		slices.Contains(menu, "查看视图结构（只读）") {
 		t.Fatalf("table context menu offered view actions: %v", menu)
 	}

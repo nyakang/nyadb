@@ -11,11 +11,9 @@ import (
 func TestStructuredDesignerPagesRenameKeepsIdentityAndPreviewOnly(t *testing.T) {
 	_, d, _, tt := designTestState(t)
 	originalFields := append([]mysqlddl.Clause(nil), d.design.draft.Table.Clauses...)
-	if err := tt.Click("表设计子页"); err != nil {
+	if err := tt.Click("表设计子页/索引"); err != nil {
 		t.Fatal(err)
 	}
-	tt.Key(0, ui.KeyDown)
-	tt.Key(0, ui.KeyEnter)
 	if d.design.page != 1 || !tt.HasText("添加索引") || tt.HasText("添加外键") {
 		t.Fatal("design page selector did not isolate index actions")
 	}

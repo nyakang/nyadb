@@ -52,6 +52,9 @@ type designDocument struct {
 
 func designSignature(draft mysqlddl.Draft) string { b, _ := json.Marshal(draft); return string(b) }
 func (d *Document) DesignDirty() bool {
+	if d != nil && d.inlineDirty() {
+		return true
+	}
 	if d != nil && d.schemaDesign != nil {
 		return d.schemaDesign.dirty()
 	}
@@ -179,6 +182,7 @@ func (s *State) consumeDesign(services ui.Services) {
 			}
 			x.original = r.snapshot
 			x.draft = mysqlddl.Draft{Table: table, Triggers: append([]mysqlddl.Trigger(nil), r.snapshot.Triggers...)}
+			d.inline = nil
 			x.baseline = designSignature(x.draft)
 			x.savedDraft = x.draft.Clone()
 			x.loaded = true
@@ -207,6 +211,10 @@ func (s *State) PrepareDesign(d *Document) error {
 		return errors.New("design is not ready or requires explicit re-reading")
 	}
 	x := d.design
+	if err := d.flushInline(); err != nil {
+		d.err = err.Error()
+		return err
+	}
 	if !s.applyDesignForms(d) {
 		return errors.New(x.formError)
 	}

@@ -285,3 +285,35 @@ func (s *State) selectObjectInNavigator(database, name, kind string) {
 	n := navigation.Node{Kind: "object", ProfileID: s.sessions.Current().ProfileID, Database: database, Category: kind, Object: name}
 	s.revealNavigationNode(n)
 }
+
+func (s *State) setProfileColor(id int64, color string) {
+	if s.profileService == nil || !connections.ValidProfileColor(color) {
+		return
+	}
+	p, err := s.profileService.Get(context.Background(), id)
+	if err == nil {
+		p.Color = color
+		_, err = s.profileService.Update(context.Background(), p)
+	}
+	if err != nil {
+		s.status = err.Error()
+		return
+	}
+	s.loadProfiles()
+}
+func (s *State) profileColor(id int64) string {
+	for _, p := range s.navigation.Profiles() {
+		if p.ID == id {
+			return p.Color
+		}
+	}
+	return ""
+}
+func (s *State) profileName(id int64) string {
+	for _, p := range s.navigation.Profiles() {
+		if p.ID == id {
+			return p.Name
+		}
+	}
+	return fmt.Sprintf("连接 #%d", id)
+}

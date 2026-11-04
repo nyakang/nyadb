@@ -6,6 +6,8 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/mysqlddl"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
@@ -21,6 +23,11 @@ type Session struct {
 }
 
 type Dependencies struct {
+	EditFocus           *string
+	EditTarget          func(theme.EditTarget)
+	Engine              func(int64) string
+	FieldTypes          func(int64) []string
+	OpenDesign          func(ui.Services, int64, string, string)
 	BackupsFor          func(int64) contract.BackupOperations
 	BeforeRestore       func(ui.Services, contract.BackupPlan, func(ui.Services)) bool
 	RestoreGuardPending func(contract.BackupPlan) bool
@@ -95,6 +102,7 @@ type Dependencies struct {
 // Document owns its immutable object identity and mutable presentation state.
 // Only the UI thread changes it; workers publish to private buffered channels.
 type Document struct {
+	inline                        map[string]*designCell
 	object                        contract.ObjectRef
 	id                            uint64
 	profileID                     int64
@@ -123,6 +131,45 @@ func (d *Document) Data() *contract.TableStructure { return d.data }
 func (d *Document) Loading() bool                  { return d.loading }
 func (d *Document) Error() string                  { return d.err }
 func (d *Document) SelectedField() (contract.StructureColumn, bool) {
+	if d == nil || d.closed {
+		return contract.StructureColumn{}, false
+	}
+	if x := d.schemaDesign; x != nil {
+		if x.page != 0 || x.fieldRow < 0 {
+			return contract.StructureColumn{}, false
+		}
+		if x.original.Schema.Engine == "postgresql" {
+			f := x.pgField
+			out := contract.StructureColumn{Name: x.name, Type: f.Type, Nullable: !f.NotNull}
+			if f.HasDefault {
+				out.Default = &f.Default
+			}
+			d.inlineFieldPreview(x.draft.Clauses[x.fieldRow].ID, &out)
+			return out, true
+		}
+		f := x.field
+		out := contract.StructureColumn{Name: f.Name, Type: f.Type, Nullable: !f.NotNull}
+		if f.HasDefault {
+			out.Default = &f.Default
+		}
+		if f.Primary {
+			out.Key = "PRI"
+		}
+		d.inlineFieldPreview(x.draft.Clauses[x.fieldRow].ID, &out)
+		return out, true
+	}
+	if x := d.design; x != nil {
+		if x.page != 0 || x.formRow < 0 {
+			return contract.StructureColumn{}, false
+		}
+		f := x.form
+		out := contract.StructureColumn{Name: f.Name, Type: f.Type, Nullable: f.Nullable, Comment: f.Comment, Generated: f.Generation != ""}
+		if f.DefaultKind != mysqlddl.NoDefault {
+			out.Default = &f.Default
+		}
+		d.inlineFieldPreview(x.draft.Table.Clauses[x.formRow].ID, &out)
+		return out, true
+	}
 	if d.data == nil || d.fieldRow < 0 || d.fieldRow >= len(d.data.Columns) {
 		return contract.StructureColumn{}, false
 	}
@@ -264,6 +311,7 @@ func (s *State) Close(d *Document) {
 	s.cancel(d)
 	s.closeDesign(d)
 	d.closed = true
+	d.inline = nil
 	if d.program != nil {
 		d.program.Close()
 	}

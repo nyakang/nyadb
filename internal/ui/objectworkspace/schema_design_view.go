@@ -46,30 +46,33 @@ func (s *State) schemaDesignView(c *ui.Context, d *Document) {
 			return
 		}
 		names := []string{locales.Text("字段"), locales.Text("约束"), locales.Text("索引"), locales.Text("触发器"), locales.Text("表选项"), locales.Text("原始 DDL")}
-		selected := names[x.page]
-		if ui.Select(c, &selected, names).Label(locales.Text("表设计子页")).Disabled(locked).Changed() {
-			if err := s.applySchemaForms(d); err != nil {
-				d.err = schemaDesignError(err)
-			} else {
+		ui.ScrollHorizontal(c).Height(theme.RowHeight(c, theme.TabHeight)).Children(func() {
+			ui.Row(c).Gap(4).Children(func() {
 				for i, name := range names {
-					if selected == name {
-						x.page = i
-						x.selected = -1
-						_ = s.schemaSelectRow(d, i, -1)
+					if ui.Button(c, name).Label(locales.Text("表设计子页") + "/" + name).Disabled(locked).Clicked() {
+						if err := d.flushInline(); err != nil {
+							d.err = err.Error()
+						} else if err := s.applySchemaForms(d); err != nil {
+							d.err = schemaDesignError(err)
+						} else {
+							x.page = i
+							x.selected = -1
+							_ = s.schemaSelectRow(d, i, -1)
+						}
 					}
 				}
-			}
-		}
+			})
+		})
 		if x.page < 4 {
 			s.schemaDefinitionView(c, d, locked)
 		} else if x.page == 4 {
 			ui.Scroll(c).Grow(1).MinHeight(0).Children(func() {
 				ui.Column(c).Padding(8).Gap(8).Children(func() {
-					schemaDesignInput(c, "表名称", &x.draft.Name, locked)
+					s.schemaDesignInput(c, d, "表名称", &x.draft.Name, locked)
 					if x.original.Schema.Engine == "postgresql" {
 						s.postgresSchemaOptions(c, d, locked)
 					} else {
-						schemaDesignInput(c, "SQLite 表选项", &x.draft.Options, locked)
+						s.schemaDesignInput(c, d, "SQLite 表选项", &x.draft.Options, locked)
 						ui.Text(c, locales.Text("支持 STRICT、WITHOUT ROWID；现有表的 rowid 模式需要独立迁移。"))
 					}
 					ui.Text(c, locales.Text("表或字段改名请单独预览并执行，数据库会改写依赖定义。"))
@@ -102,6 +105,7 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 		available := x.row >= 0 && (x.page < 2 && x.row < len(x.draft.Clauses) || x.page >= 2 && x.row < len(x.draft.Definitions))
 		if ui.Button(c, locales.Text("删除定义")).Disabled(locked || !available).Clicked() {
 			if x.page < 2 {
+				d.removeInlineField(x.draft.Clauses[x.row].ID)
 				x.draft.Clauses = append(x.draft.Clauses[:x.row], x.draft.Clauses[x.row+1:]...)
 			} else {
 				x.draft.Definitions = append(x.draft.Definitions[:x.row], x.draft.Definitions[x.row+1:]...)
@@ -135,7 +139,15 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 		}
 	}
 	x.list.Selected = &x.selected
-	theme.Table(c, &x.list, []ui.TableColumn{{Title: locales.Text("名称"), Width: 140}, {Title: locales.Text("完整定义"), Width: 650}}, len(indices), func(row, col int) {
+	columns := []ui.TableColumn{{Title: locales.Text("名称"), Width: 140}, {Title: locales.Text("完整定义"), Width: 650}}
+	if x.page == 0 {
+		columns = designFieldColumns(x.original.Schema.Engine)
+	}
+	theme.Table(c, &x.list, columns, len(indices), func(row, col int) {
+		if x.page == 0 {
+			s.schemaFieldCell(c, d, indices[row], col, locked)
+			return
+		}
 		index := indices[row]
 		name, raw := "", ""
 		if x.page < 2 {
@@ -149,6 +161,9 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 			ui.Text(c, raw).SingleLine().Tooltip(raw)
 		}
 	}).Grow(1).MinHeight(80).MaxHeight(180).Shrink(1)
+	if x.page == 0 {
+		s.syncInlineSelection(d)
+	}
 	if x.selected >= 0 && x.selected < len(indices) && indices[x.selected] != x.row {
 		if err := s.schemaSelectRow(d, x.page, indices[x.selected]); err != nil {
 			d.err = schemaDesignError(err)
@@ -163,8 +178,8 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 			if x.page == 0 && x.original.Schema.Engine == "postgresql" && !x.pgField.Unsupported {
 				s.postgresSchemaField(c, d, locked)
 			} else if x.page == 0 && x.original.Schema.Engine != "postgresql" && !x.field.Unsupported {
-				schemaDesignInput(c, "字段名称", &x.field.Name, locked)
-				schemaDesignInput(c, "字段类型", &x.field.Type, locked)
+				s.schemaDesignInput(c, d, "字段名称", &x.field.Name, locked)
+				s.schemaDesignInput(c, d, "字段类型", &x.field.Type, locked)
 				ui.Row(c).Wrap().Gap(8).Children(func() {
 					ui.Checkbox(c, &x.field.Primary, locales.Text("主键")).Disabled(locked)
 					ui.Checkbox(c, &x.field.AutoIncrement, locales.Text("自动递增")).Disabled(locked)
@@ -172,17 +187,17 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 					ui.Checkbox(c, &x.field.Unique, locales.Text("唯一")).Disabled(locked)
 				})
 				ui.Checkbox(c, &x.field.HasDefault, locales.Text("设置默认值")).Disabled(locked)
-				schemaDesignInput(c, "默认值表达式", &x.field.Default, locked || !x.field.HasDefault)
-				schemaDesignInput(c, "排序规则", &x.field.Collation, locked)
+				s.schemaDesignInput(c, d, "默认值表达式", &x.field.Default, locked || !x.field.HasDefault)
+				s.schemaDesignInput(c, d, "排序规则", &x.field.Collation, locked)
 			} else {
 				if x.page == 0 {
 					ui.Text(c, locales.Text("此字段含高级属性；编辑完整定义时保留所需的全部属性。"))
 				}
 				if x.page != 1 || x.original.Schema.Engine == "postgresql" {
-					schemaDesignInput(c, "定义名称", &x.name, locked)
+					s.schemaDesignInput(c, d, "定义名称", &x.name, locked)
 				}
 				ui.Text(c, locales.Text("完整定义"))
-				ui.TextArea(c, &x.raw).Label(locales.Text("完整定义")).Height(170).ReadOnly(locked)
+				s.designTextArea(c, d, &x.raw).Label(locales.Text("完整定义")).Height(170).ReadOnly(locked)
 			}
 		})
 	})
@@ -197,11 +212,11 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 
 // Label sets an accessibility name in MyGo; native forms also need visible
 // captions so empty default and collation inputs can be distinguished.
-func schemaDesignInput(c *ui.Context, label string, value *string, readOnly bool) {
+func (s *State) schemaDesignInput(c *ui.Context, d *Document, label string, value *string, readOnly bool) {
 	text := locales.Text(label)
 	ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 		ui.Text(c, text+":").Width(110).SingleLine().Tooltip(text)
-		ui.TextInput(c, value).Label(text).ReadOnly(readOnly).Grow(1).MinWidth(0)
+		s.designTextInput(c, d, value).Label(text).ReadOnly(readOnly).Grow(1).MinWidth(0)
 	})
 }
 
@@ -222,6 +237,7 @@ func (s *State) schemaDesignModals(c *ui.Context, d *Document) {
 						next := x.next
 						x.guard = false
 						x.next = nil
+						d.inline = nil
 						x.draft = x.saved.Clone()
 						x.field = x.fieldBase
 						x.pgField = x.pgFieldBase
@@ -255,7 +271,7 @@ func (s *State) schemaDesignModals(c *ui.Context, d *Document) {
 				ui.TextArea(c, &raw).ReadOnly(true).Height(min(float32(270), height-250)).MinHeight(80)
 				if len(x.plan.Dropped) > 0 {
 					ui.Text(c, locales.Text("将删除字段：")+strings.Join(x.plan.Dropped, ", ")).TextColor(p.Error)
-					ui.TextInput(c, &x.confirmation).Label(locales.Text("确认原表名称"))
+					s.designTextInput(c, d, &x.confirmation).Label(locales.Text("确认原表名称"))
 				}
 				ui.Row(c).Justify(ui.End).Gap(8).Children(func() {
 					if ui.Button(c, locales.Text("返回编辑")).Clicked() {

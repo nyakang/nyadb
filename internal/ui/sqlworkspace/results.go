@@ -5,6 +5,9 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/ui/gridview"
+	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
@@ -43,48 +46,50 @@ func selectedResult(d *Document) contract.ResultSet {
 	return sets[d.resultSet]
 }
 func resultData(d *Document, selection bool) contract.ResultSet {
-	s := selectedResult(d)
+	set := selectedResult(d)
 	if !selection {
-		return s
+		return set
 	}
 	out := contract.ResultSet{}
-	var fields []int
-	for i, c := range s.Columns {
-		id := fmt.Sprintf("sql_%d", i)
-		take := d.grid.Cells.All || d.grid.Cells.Cursor == ""
-		if d.grid.ColumnSelection != nil {
-			take = false
-			for _, x := range d.grid.ColumnSelection {
-				if x == id {
-					take = true
-				}
-			}
-		} else if !take {
-			a, b := -1, -1
-			for j := range s.Columns {
-				if fmt.Sprintf("sql_%d", j) == d.grid.Cells.Anchor {
-					a = j
-				}
-				if fmt.Sprintf("sql_%d", j) == d.grid.Cells.Cursor {
-					b = j
-				}
-			}
-			take = i >= min(a, b) && i <= max(a, b)
-		}
-		if take {
-			out.Columns = append(out.Columns, c)
-			fields = append(fields, i)
+	order := append([]string(nil), d.grid.Columns.Order...)
+	if len(order) == 0 {
+		for i := range set.Columns {
+			order = append(order, fmt.Sprintf("sql_%d", i))
 		}
 	}
-	for i, row := range s.Rows {
-		if !d.selection.Has(i) {
+	cursor, anchor := slices.Index(order, d.grid.Cells.Cursor), slices.Index(order, d.grid.Cells.Anchor)
+	fields := []int{}
+	for visual, id := range order {
+		if d.hiddenResultColumns[id] {
 			continue
 		}
-		r := make([]contract.Cell, len(fields))
-		for j, f := range fields {
-			r[j] = row[f]
+		source, e := strconv.Atoi(strings.TrimPrefix(id, "sql_"))
+		if e != nil || source < 0 || source >= len(set.Columns) {
+			continue
 		}
-		out.Rows = append(out.Rows, r)
+		take := d.grid.Cells.All || cursor < 0
+		if d.grid.ColumnSelection != nil {
+			take = slices.Contains(d.grid.ColumnSelection, id)
+		} else if !take {
+			take = visual >= min(cursor, anchor) && visual <= max(cursor, anchor)
+		}
+		if take {
+			fields = append(fields, source)
+			out.Columns = append(out.Columns, set.Columns[source])
+		}
+	}
+	for i, row := range set.Rows {
+		if !d.selection.Has(i) && !(d.selection.Len() == 0 && i == d.selectedRow) {
+			continue
+		}
+		values := []contract.Cell{}
+		for _, source := range fields {
+			if source >= len(row) {
+				return contract.ResultSet{}
+			}
+			values = append(values, row[source])
+		}
+		out.Rows = append(out.Rows, values)
 	}
 	return out
 }
@@ -133,10 +138,7 @@ func (s *State) copyResult(c *ui.Context, d *Document) {
 	if len(data.Rows) == 0 {
 		return
 	}
-	b, e := EncodeResult(data, "TSV")
-	if e == nil {
-		c.WriteClipboard(string(b))
-	}
+	c.WriteClipboard(gridview.Copy(data))
 }
 func (s *State) exportResult(d *Document, format string, selection bool) {
 	set := resultData(d, selection)

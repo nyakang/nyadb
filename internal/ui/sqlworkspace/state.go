@@ -7,6 +7,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/sqltext"
 	"github.com/nyakang/nyadb/internal/services/queries"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
@@ -28,6 +29,16 @@ type Runtime interface {
 }
 
 type Dependencies struct {
+	Namespace         func(int64, string) contract.NamespaceRef
+	Profiles          func() []ProfileChoice
+	ConnectProfile    func(ui.Services, int64)
+	EditFocus         *string
+	BuildExplain      func(int64, string) (string, error)
+	PlanParser        func(int64) func(contract.SQLResult) (*contract.ExecutionPlan, error)
+	CompletionSource  func(int64) CompletionSource
+	ProfileName       func(int64) string
+	ProfileColor      func(int64) string
+	EditTarget        func(theme.EditTarget)
 	AIProposal        func(int64, string, string)
 	AIDialect         func(int64) string
 	FavoriteAsset     func(queries.Named)
@@ -45,10 +56,23 @@ type Dependencies struct {
 	Recovered         func(int64)
 	Preview           func(*ui.Context)
 }
+type ProfileChoice struct {
+	ID   int64
+	Name string
+}
 
 // Document is owned by the UI thread. Workers capture a lease/executor and
 // immutable request values; only Consume reads their private buffered channels.
 type Document struct {
+	queryError                             error
+	diagnostic                             *contract.QueryDiagnostic
+	executedSQL                            string
+	executedVersion                        uint64
+	plan                                   *contract.ExecutionPlan
+	planError                              string
+	planVisible, showOrdinary              bool
+	ordinaryReading, explainReading        *resultReading
+	metadata                               completionMetadata
 	name, path, queryID, savedText, text   string
 	revision, bufferVersion, namedRevision uint64
 	resultSet, selectedRow                 int
@@ -59,10 +83,14 @@ type Document struct {
 	id                       uint64
 	profileID                int64
 	database                 string
+	catalog                  string
+	namespaceSchema          string
 	lease                    Lease
 	recoveryNeeded           bool
 	recoveryProfile          int64
 	recoverySchema           string
+	recoveryCatalog          string
+	recoveryNamespaceSchema  string
 	loading, cancelRequested bool
 	err                      string
 	result                   *contract.SQLResult
@@ -73,6 +101,13 @@ type Document struct {
 	prepareCancel            context.CancelFunc
 	prepareResults           <-chan error
 	preview, closed          bool
+	focusEditor              bool
+	resultViews              map[int]*resultView
+	resultLayouts            map[string]ui.TableLayout
+	resultPreferences        map[string]resultPreference
+	hiddenResultColumns      map[string]bool
+	resultFieldOpen          bool
+	resultFieldMode          string
 }
 
 func (d *Document) ProfileID() int64            { return d.profileID }
@@ -85,6 +120,15 @@ func (d *Document) Result() *contract.SQLResult { return d.result }
 func (d *Document) NeedsRecovery() bool         { return d.recoveryNeeded }
 func (d *Document) RecoveryProfile() int64      { return d.recoveryProfile }
 func (d *Document) RecoverySchema() string      { return d.recoverySchema }
+func (d *Document) Namespace() contract.NamespaceRef {
+	profile, _ := d.sourceScope()
+	schema := d.namespaceSchema
+	catalog := d.catalog
+	if d.recoveryNeeded {
+		catalog, schema = d.recoveryCatalog, d.recoveryNamespaceSchema
+	}
+	return contract.NamespaceRef{ProfileID: profile, Catalog: catalog, Schema: schema}
+}
 
 // sourceScope identifies the saved SQL document even before a new physical
 // session is explicitly established. It must not be used to execute SQL.
@@ -98,15 +142,17 @@ func (d *Document) sourceScope() (int64, string) {
 // State owns all SQL documents and their shared split position. Executor and
 // Invalidate are injectable; background jobs capture them before starting.
 type State struct {
-	ai           aiState
-	SplitPercent float32
-	Executor     Executor
-	Invalidate   func()
-	documents    map[uint64]*Document
-	demoRuns     int
-	deps         Dependencies
-	persistence  persistence
-	history      historyState
+	completionCache   map[string][]sqltext.CompletionObject
+	completionObjects map[string]sqltext.CompletionObject
+	ai                aiState
+	SplitPercent      float32
+	Executor          Executor
+	Invalidate        func()
+	documents         map[uint64]*Document
+	demoRuns          int
+	deps              Dependencies
+	persistence       persistence
+	history           historyState
 }
 
 func New(deps Dependencies) *State {
@@ -119,6 +165,11 @@ func (s *State) Open(id uint64, text string, profileID int64, database string, p
 	buffer := editor.NewBuffer(text)
 	buffer.SetLanguage(editor.LanguageNamed("SQL"))
 	d := &Document{id: id, profileID: profileID, database: database, preview: preview, Editor: &editor.State{Buffer: buffer, WrapGuides: []int{100}}}
+	d.namespaceSchema = database
+	if s.deps.Namespace != nil {
+		n := s.deps.Namespace(profileID, database)
+		d.catalog, d.namespaceSchema = n.Catalog, n.Schema
+	}
 	if !preview {
 		d.Editor.Bindings = sqlBindings()
 	}
@@ -185,6 +236,9 @@ func (s *State) Close(d *Document) {
 		}
 	}
 	d.Editor, d.result = nil, nil
+	d.resultViews, d.resultLayouts = nil, nil
+	d.resultPreferences = nil
+	d.hiddenResultColumns = nil
 	d.grid = ui.ListState{}
 	d.closed = true
 	if s.documents[d.id] == d {
@@ -192,6 +246,8 @@ func (s *State) Close(d *Document) {
 	}
 }
 func (s *State) CloseAll() {
+	s.completionCache = nil
+	s.completionObjects = nil
 	s.closeAI()
 	s.persistence.closed = true
 	s.history = historyState{}

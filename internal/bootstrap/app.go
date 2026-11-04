@@ -82,6 +82,28 @@ func Run() error {
 			StateKey:  "main",
 			Content:   ui.View(state.View),
 		})
+		var chooser *mygo.Window
+		state.SetEditMenuHost(func(entries []theme.EditMenuEntry) {
+			parent := window
+			if chooser != nil {
+				parent = chooser
+			}
+			parent.Update(func() {
+				items := make([]*mygo.MenuItem, 0, len(entries))
+				roles := map[string]mygo.MenuRole{"undo": mygo.RoleUndo, "redo": mygo.RoleRedo, "cut": mygo.RoleCut, "copy": mygo.RoleCopy, "paste": mygo.RolePaste, "select_all": mygo.RoleSelectAll}
+				for _, entry := range entries {
+					item := &mygo.MenuItem{Label: entry.Label, Disabled: !entry.Enabled}
+					if entry.Native {
+						item.Role = roles[entry.Command]
+					} else {
+						run := entry.Run
+						item.Click = func(*mygo.MenuItem, *mygo.Window) { run() }
+					}
+					items = append(items, item)
+				}
+				mygo.NewMenu(items).Popup(parent)
+			})
+		})
 		state.SetSQLPersistence(queryStore, sqlworkspace.Files{
 			OpenPath: func() (string, error) {
 				paths, e := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: window, Title: locales.Text("打开 SQL 文件"), Filters: []mygo.FileFilter{{Name: "SQL", Extensions: []string{"sql"}}}})
@@ -124,7 +146,6 @@ func Run() error {
 		window.OnClosed(func() { state.CloseMySQLSessions() })
 		// Native parent-owned modal window, not an in-workspace overlay.
 		// The OS provides the title bar, window movement and close button.
-		var chooser *mygo.Window
 		refreshWindows := func() {
 			window.Update(func() {})
 			if chooser != nil {

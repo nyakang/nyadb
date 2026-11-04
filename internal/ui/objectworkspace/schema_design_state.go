@@ -245,6 +245,7 @@ func (s *State) consumeSchemaDesign(services ui.Services) {
 				x.next = nil
 				continue
 			}
+			d.inline = nil
 			x.original = reply.snapshot.Clone()
 			x.draft = reply.snapshot.Schema.Table.Clone()
 			if !reply.snapshot.Schema.Exists {
@@ -373,6 +374,10 @@ func (s *State) PrepareSchemaDesign(d *Document) error {
 	if !x.loaded || x.busy || x.blocked {
 		return errors.New(locales.Text("请先完成结构读取或核对原操作"))
 	}
+	if err := d.flushInline(); err != nil {
+		d.err = err.Error()
+		return err
+	}
 	if err := s.applySchemaForms(d); err != nil {
 		d.err = schemaDesignError(err)
 		return err
@@ -474,7 +479,7 @@ func (s *State) guardSchemaDesign(d *Document, next func(ui.Services)) bool {
 		d.err = locales.Text("请先等待结构操作完成或取消确认")
 		return true
 	}
-	if !x.dirty() {
+	if !x.dirty() && !d.inlineDirty() {
 		return false
 	}
 	x.guard = true

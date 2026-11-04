@@ -777,6 +777,7 @@ func (s *State) mysqlDataInlineEditor(c *ui.Context, t *Document, row, source in
 		Absolute().Top(0).Right(0).Bottom(0).Left(0).MinWidth(0).
 		FontSize(font).Padding(0, c.Theme().Space(2.5)-1).Radius(0).
 		Background(theme.Colors(c).App).Border(1, theme.Colors(c).Focus).BorderWidth(1, 2, 2, 1).AutoFocus().ReadOnly(t.edit.Busy)
+	theme.BindNativeEdit(c, input, fmt.Sprintf("data/cell/%d", t.id), s.deps.EditFocus, s.deps.EditTarget, func() bool { return !t.closed && t.edit.Editor == e }, !t.edit.Busy, false)
 	input.OnTextKey(func(k ui.TextKey) bool {
 		if e.Composing && (k.Key == ui.KeyEnter || k.Key == ui.KeyTab || k.Key == ui.KeyEscape) {
 			return true
@@ -883,7 +884,8 @@ func (s *State) Modals(c *ui.Context) {
 						ui.Text(c, locales.Text("二进制值以十六进制编辑"))
 					}
 					s.typedEditorChoice(c, t, e)
-					ui.TextArea(c, &e.Text).Label(locales.Text("专用单元格编辑") + " " + e.Field).FillWidth().Height(280).AutoFocus().FontSize(theme.Font(c, 12))
+					field := ui.TextArea(c, &e.Text).Label(locales.Text("专用单元格编辑") + " " + e.Field).FillWidth().Height(280).AutoFocus().FontSize(theme.Font(c, 12))
+					theme.BindNativeEdit(c, field, fmt.Sprintf("data/cell/%d", t.id), s.deps.EditFocus, s.deps.EditTarget, func() bool { return !t.closed && t.edit.Editor == e }, !t.edit.Busy, false)
 					if t.edit.Err != "" {
 						ui.Text(c, t.edit.Err).TextColor(theme.Colors(c).Error)
 					}

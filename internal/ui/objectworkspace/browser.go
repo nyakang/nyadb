@@ -17,6 +17,7 @@ type BrowserSnapshot struct {
 	Objects                       []contract.DBObject
 }
 type browserState struct {
+	restored    *browserPresentation
 	groupFilter string
 
 	selection                           ui.Selection[objectKey]
@@ -24,6 +25,7 @@ type browserState struct {
 	renameName, renameKind, renameDraft string
 	renameEditing                       bool
 
+	Scroll      ui.ScrollState
 	List        ui.ListState
 	Row         int
 	Kind        string
@@ -57,6 +59,16 @@ func (s *State) currentBrowser() *browserFrame {
 		snapshot = s.deps.Browser()
 	}
 	b := s.presentation(snapshot.ProfileID)
+	if p := b.restored; p != nil && snapshot.Database != "" {
+		b.restored = nil
+		if snapshot.Database == p.Database {
+			b.database = p.Database
+			s.loadObjectGroups(snapshot.ProfileID, snapshot.Database)
+		}
+	}
+	if b.restored != nil && snapshot.Database == "" {
+		return &browserFrame{browserState: b, BrowserSnapshot: snapshot}
+	}
 	if b.database != snapshot.Database {
 		b.database = snapshot.Database
 		b.groupFilter = ""
@@ -141,6 +153,14 @@ func (s *State) openData(services ui.Services, db, name string) {
 func (s *State) openStructure(services ui.Services, db, name string) {
 	if s.deps.OpenStructure != nil {
 		s.deps.OpenStructure(services, s.session().ProfileID, db, name)
+	}
+}
+
+func (s *State) openDesign(services ui.Services, profile int64, db, name string) {
+	if s.deps.OpenDesign != nil {
+		s.deps.OpenDesign(services, profile, db, name)
+	} else if s.deps.OpenStructure != nil {
+		s.deps.OpenStructure(services, profile, db, name)
 	}
 }
 func (s *State) openProgram(db, name, kind string) {

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/ui/gridview"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -163,13 +164,16 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *contract.DataPag
 					mysqlDataModifiedBackground(c, t, gridRow, tableCol, content)
 				}
 				content.Children(func() {
+					value := cell.Text
 					if cell.Null {
-						ui.Text(c, "NULL").Italic().TextColor(theme.CellText(c, &t.grid, gridRow, tableCol, palette.GridNull)).FontSize(theme.Font(c, mysqlDataEditFont(t)))
-					} else {
-						text := ui.Text(c, cell.Text).SingleLine().FontSize(theme.Font(c, mysqlDataEditFont(t)))
-						if cell.Truncated {
-							text.Tooltip(locales.Text("已截断的预览；可在字段信息中按需读取"))
-						}
+						value = "NULL"
+					}
+					text := gridview.TextCell(c, value, cell.Null, cell.Truncated).FontSize(theme.Font(c, mysqlDataEditFont(t)))
+					if cell.Null {
+						text.Italic().TextColor(theme.CellText(c, &t.grid, gridRow, tableCol, palette.GridNull))
+					}
+					if cell.Truncated {
+						text.Tooltip(locales.Text("已截断的预览；可在字段信息中按需读取"))
 					}
 				})
 				if modified {
@@ -203,8 +207,23 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *contract.DataPag
 			}
 			gridControl := ui.Local(grid, "grid-bounds", func() ui.Handle { return ui.Handle{} })
 			grid.Bind(gridControl)
+			if s.deps.EditFocus != nil {
+				grid.FocusBind(s.deps.EditFocus, fmt.Sprintf("data/grid/%d", t.id))
+			}
 			gridServices := c.Services()
+			if grid.FocusWithin() && t.edit.Editor == nil && s.deps.EditTarget != nil {
+				target := s.gridEditTarget(t)
+				target.Handle = gridControl
+				s.deps.EditTarget(target)
+			}
 			grid.HandleInput(func(ev ui.InputEvent) bool {
+				if ev.Kind == ui.InputCommand {
+					command := ev.Text
+					if command == "selectAll" {
+						command = "select_all"
+					}
+					return s.gridEditTarget(t).Execute(gridServices, command)
+				}
 				refreshMySQLDataCellHits(c, t)
 				return s.mysqlDataGridPointer(gridServices, t, gridControl.Bounds(c), ev)
 			})
@@ -453,6 +472,9 @@ func (s *State) mysqlDataCompactActions(c *ui.Context, t *Document) {
 		Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 4).Disabled(!selected).
 		Menu(func(m *ui.Menu) { s.mysqlDataCopyAsMenu(c, t, m) })
 	count := len(t.filterRules)
+	if t.filterCondition != nil {
+		count = dataConditionCount(t.filterCondition)
+	}
 	if count == 0 && t.filterMode != "" {
 		count = 1
 	}

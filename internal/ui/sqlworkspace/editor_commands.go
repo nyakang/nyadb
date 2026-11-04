@@ -39,7 +39,10 @@ func (s *State) completions(d *Document, r editor.CompletionRequest) {
 	profile, database := d.sourceScope()
 	if s.deps.CompletionCatalog != nil {
 		source := d.Editor.Buffer.String()
-		result := sqltext.CompleteSQL(source, r.Offset, s.deps.CompletionCatalog(profile, database))
+		s.updateCompletionMetadata(d)
+		request := r
+		d.metadata.request = &request
+		result := sqltext.CompleteSQL(source, r.Offset, s.completionCatalog(d))
 		items := make([]editor.Completion, 0, len(result.Items))
 		for _, value := range result.Items {
 			kind := editor.CompletionText
@@ -100,7 +103,16 @@ func (s *State) Explain(d *Document) {
 		return
 	}
 	s.persistence.explainDoc = d
+	s.persistence.explainSource = text
 	s.persistence.explainSQL = "EXPLAIN " + text
+	if s.deps.BuildExplain != nil {
+		request, err := s.deps.BuildExplain(d.profileID, text)
+		if err != nil {
+			d.err = err.Error()
+			return
+		}
+		s.persistence.explainSQL = request
+	}
 	s.persistence.explainOpen = true
 }
 func (s *State) explainModal(c *ui.Context) {
@@ -113,6 +125,13 @@ func (s *State) explainModal(c *ui.Context) {
 			ui.Text(c, locales.Text("执行计划 SQL"))
 			ui.TextArea(c, &p.explainSQL).ReadOnly(true).Height(180)
 			ui.Row(c).Gap(8).Children(func() {
+				if s.deps.BuildExplain != nil && ui.Button(c, locales.Text("普通 EXPLAIN")).Clicked() {
+					p.explainOpen = false
+					text := p.explainSource
+					if s.deps.ValidateExplain == nil || s.deps.ValidateExplain(p.explainDoc.profileID, text) == nil {
+						s.runStatement(c.Services().Invalidate, p.explainDoc, "EXPLAIN "+text)
+					}
+				}
 				if ui.Button(c, "取消").Clicked() {
 					p.explainOpen = false
 				}

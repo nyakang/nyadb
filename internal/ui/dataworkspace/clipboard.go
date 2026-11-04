@@ -14,6 +14,7 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/ui/gridview"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -67,17 +68,7 @@ func mysqlDataHasSelectedPreview(t *Document) bool {
 }
 
 func mysqlDataDelimitedPreview(names []string, rows [][]string, comma rune, headers, data bool) string {
-	var out strings.Builder
-	w := csv.NewWriter(&out)
-	w.Comma = comma
-	if headers {
-		_ = w.Write(names)
-	}
-	if data {
-		w.WriteAll(rows)
-	}
-	w.Flush()
-	return strings.TrimSuffix(out.String(), "\n")
+	return gridview.Delimited(names, rows, comma, headers, data)
 }
 
 // Keep server values as strings and SQL NULL as JSON null. Type coercion here
@@ -114,6 +105,9 @@ func mysqlDataJSONPreview(names []string, rows [][]string, nulls [][]bool) strin
 }
 
 func (s *State) copyMySQLDataSelection(c *ui.Context, t *Document) {
+	s.copyDataSelection(c.Services(), t)
+}
+func (s *State) copyDataSelection(services ui.Services, t *Document) {
 	names, rows, _ := mysqlDataSelectedPreview(t)
 	if len(rows) == 0 || len(names) == 0 {
 		return
@@ -122,7 +116,7 @@ func (s *State) copyMySQLDataSelection(c *ui.Context, t *Document) {
 	if len(rows) != 1 || len(names) != 1 {
 		text = mysqlDataDelimitedPreview(names, rows, '\t', false, true)
 	}
-	c.WriteClipboard(text)
+	services.WriteClipboard(text)
 	s.setStatus(fmt.Sprintf(locales.Text("已复制 %d 行 × %d 列（当前页预览）"), len(rows), len(names)))
 }
 
@@ -269,7 +263,10 @@ func mysqlDataSQLSelection(t *Document, update bool) (string, error) {
 // is only selected by the explicit NULL action. Validate the full rectangle
 // before staging any cells so a rejected paste never leaves a partial draft.
 func (s *State) pasteMySQLDataSelection(c *ui.Context, t *Document, row, source int) {
-	text := c.Services().ReadClipboard()
+	s.pasteDataSelection(c.Services(), t, row, source)
+}
+func (s *State) pasteDataSelection(services ui.Services, t *Document, row, source int) {
+	text := services.ReadClipboard()
 	if len(text) > contract.DataEditMaxBytes {
 		t.edit.Err = locales.Text("粘贴数据超过编辑大小限制")
 		return
@@ -300,7 +297,7 @@ func (s *State) pasteMySQLDataSelection(c *ui.Context, t *Document, row, source 
 	}
 	for i, line := range values {
 		for j, value := range line {
-			s.setMySQLDataCell(c.Services(), t, row+i, indices[start+j], contract.DataValue{Text: value})
+			s.setMySQLDataCell(services, t, row+i, indices[start+j], contract.DataValue{Text: value})
 		}
 	}
 }

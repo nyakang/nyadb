@@ -3,6 +3,7 @@ package shell
 import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/queryplan"
 	"github.com/nyakang/nyadb/internal/db/sqltext"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/dbruntime"
@@ -101,4 +102,26 @@ func (s *State) sqlValidateExplain(id int64, source string) error {
 		}
 	}
 	return sqltext.SingleMySQLStatement(source)
+}
+
+func (s *State) sqlPlanEngine(id int64) string {
+	for _, p := range s.navigation.Profiles() {
+		if p.ID == id {
+			return string(p.Kind)
+		}
+	}
+	return "mysql"
+}
+func (s *State) sqlBuildExplain(id int64, text string) (string, error) {
+	return queryplan.Build(s.sqlPlanEngine(id), text)
+}
+func (s *State) sqlParsePlan(id int64, result contract.SQLResult) (*contract.ExecutionPlan, error) {
+	return queryplan.Parse(s.sqlPlanEngine(id), result)
+}
+
+func (s *State) sqlPlanParser(id int64) func(contract.SQLResult) (*contract.ExecutionPlan, error) {
+	engine := s.sqlPlanEngine(id)
+	return func(result contract.SQLResult) (*contract.ExecutionPlan, error) {
+		return queryplan.Parse(engine, result)
+	}
 }

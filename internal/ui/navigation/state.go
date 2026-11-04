@@ -7,6 +7,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
 // Object carries only the identity needed by the tree.
@@ -31,6 +32,8 @@ type Shortcut struct {
 // Dependencies supplies read-only session metadata and explicit UI actions.
 // Callbacks run on the UI thread; the navigator never starts background jobs.
 type Dependencies struct {
+	EditFocus      *string
+	EditTarget     func(theme.EditTarget)
 	QueryGroups    func(int64) []Object
 	Queries        func(int64, string) []Object
 	Catalog        func(int64) string
@@ -210,7 +213,7 @@ func (s *State) SetProfiles(profiles []connections.Profile, groups []connections
 			continue
 		}
 		s.Key = ConnectionKey(profile.ID)
-		if selected.ProfileID == profile.ID && selected.Database != "" && s.sessionStatus(profile.ID) == "已连接" {
+		if selected.ProfileID == profile.ID && selected.Database != "" {
 			s.Key = selected.Key()
 		}
 		if profile.GroupName != "" {

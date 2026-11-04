@@ -66,7 +66,7 @@ func (s *State) Load(services ui.Services, t *Document, refresh bool) {
 	t.cancel = cancel
 	request, gen, profile := t.request, s.sessionFor(t).Generation, s.sessionFor(t).ProfileID
 	database, table, offset, limit := t.database, t.table, t.offset, t.limit
-	options := contract.DataOptions{Object: t.object, Offset: offset, Limit: limit,
+	options := contract.DataOptions{Condition: cloneDataCondition(t.filterCondition), Object: t.object, Offset: offset, Limit: limit,
 		FilterColumn: t.filterColumn, FilterValue: t.filterValue,
 		FilterMode: t.filterMode, SortColumn: t.sortColumn,
 		SortDescending: t.sortDescending, UseKeyset: t.useKeyset, After: cloneCursor(t.after),
@@ -93,7 +93,7 @@ func (s *State) Load(services ui.Services, t *Document, refresh bool) {
 		var err error
 		if advanced != nil {
 			page, err = advanced(ctx, profile, database, table, options)
-		} else if options.FilterMode == "" && options.SortColumn == "" {
+		} else if options.Condition == nil && len(options.Filters) == 0 && len(options.Sorts) == 0 && options.FilterMode == "" && options.SortColumn == "" {
 			page, err = legacy(ctx, profile, database, table, offset, limit)
 		} else {
 			err = contract.ErrDataPage // mock-only legacy loader cannot silently ignore a filter.
@@ -237,6 +237,7 @@ func (s *State) Close(t *Document) {
 	t.cursorHistory, t.after = nil, nil
 	t.hiddenColumns = nil
 	t.filterExtraDraft, t.filterRules, t.sortDraft, t.sortRules = nil, nil, nil, nil
+	t.filterCondition, t.groupDraft = nil, nil
 	t.selection.Clear()
 	t.grid = ui.ListState{}
 	if s.documents[t.id] == t {

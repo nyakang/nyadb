@@ -51,22 +51,41 @@ func (s *State) workspace(c *ui.Context) {
 								} else if current.kind == tabConnections {
 									icon = "connection"
 								}
-								theme.Icon(c, icon, 14, palette.Blue)
-								ui.Text(c, s.workspaceTabCaption(current)).FontSize(theme.Font(c, theme.FontSize)).SingleLine().MaxWidth(220).Tooltip(current.title)
+								theme.Icon(c, icon, 14, theme.ProfileColor(c, s.profileColor(current.profileID())))
+								ui.Text(c, s.workspaceTabCaption(current)).FontSize(theme.Font(c, theme.FontSize)).SingleLine().MaxWidth(220).Tooltip(s.workspaceTabTooltip(current))
 								if current.kind != tabObjects {
 									if ui.ButtonBase(c).Label("关闭 "+current.title).Tooltip("关闭 "+current.title).
 										Size(16, 18).Children(func() { theme.Icon(c, "close", 10, palette.Muted) }).Clicked() {
-										s.closeTab(index)
+										s.closeTabID(current.id)
 									}
 								}
 							})
 						})
+						if index > 0 {
+							item.Drag(tabDrag{Owner: s, ID: current.id})
+						}
+						if dragged, ok := ui.Drop[tabDrag](item); ok && dragged.Owner == s {
+							s.moveTab(dragged.ID, current.id)
+						}
+						if item.Clicked() {
+							s.selectTab(current.id)
+						}
 						item.ContextMenu(func(m *ui.Menu) {
 							if m.Item(locales.Text("关闭 ") + current.title).Disabled(index == 0).Chosen() {
-								s.closeTab(index)
+								s.closeTabID(current.id)
 							}
 							if m.Item(locales.Text("关闭其他页签")).Disabled(len(s.tabs) <= 1 || (len(s.tabs) == 2 && index != 0)).Chosen() {
-								s.closeOtherTabs(index)
+								s.closeOtherTabs(s.tabIndex(current.id))
+							}
+							label := "固定页签"
+							if current.pinned {
+								label = "取消固定"
+							}
+							if m.Item(locales.Text(label)).Disabled(current.kind == tabObjects).Chosen() {
+								s.pinTab(current.id)
+							}
+							if m.Item(locales.Text("关闭右侧页签")).Chosen() {
+								s.closeRight(current.id)
 							}
 						})
 					}
@@ -77,6 +96,10 @@ func (s *State) workspace(c *ui.Context) {
 				s.openQuery()
 			}
 		})
+		if current := s.currentTab(); current.placeholder != nil {
+			s.restoredDocument(c, current)
+			return
+		}
 		switch tab := s.currentTab(); tab.kind {
 		case tabSQL:
 			s.sqlWorkspace.View(c, tab.query)
@@ -99,7 +122,16 @@ func (s *State) workspace(c *ui.Context) {
 }
 
 func (s *State) sqlWorkspaceDependencies() sqlworkspace.Dependencies {
-	return sqlworkspace.Dependencies{
+	return sqlworkspace.Dependencies{Namespace: s.sqlNamespace, Profiles: func() []sqlworkspace.ProfileChoice {
+		var out []sqlworkspace.ProfileChoice
+		for _, p := range s.navigation.Profiles() {
+			out = append(out, sqlworkspace.ProfileChoice{ID: p.ID, Name: p.Name})
+		}
+		return out
+	}, ConnectProfile: func(services ui.Services, id int64) {
+		s.connectWorkspaceProfile(services, id)
+	}, EditFocus: &s.editFocus, BuildExplain: s.sqlBuildExplain, PlanParser: s.sqlPlanParser, CompletionSource: s.sqlCompletionSource, ProfileName: s.profileName, ProfileColor: s.profileColor,
+		EditTarget: s.registerEditTarget,
 		AIProposal: s.openAIProposal,
 		AIDialect: func(id int64) string {
 			for _, profile := range s.navigation.Profiles() {
@@ -170,7 +202,8 @@ func (s *State) dataInspectorDependencies() dataworkspace.InspectorDependencies 
 }
 
 func (s *State) dataWorkspaceDependencies() dataworkspace.Dependencies {
-	return dataworkspace.Dependencies{
+	return dataworkspace.Dependencies{EditFocus: &s.editFocus,
+		EditTarget:     s.registerEditTarget,
 		RecordActivity: s.recordActivity,
 		ImportTargets: func(id int64, db string) []string {
 			var tables []string
@@ -255,14 +288,20 @@ func (s *State) RequestWorkbenchClose(next func()) bool {
 	})
 }
 
-func (s *State) openMySQLStructure(services ui.Services, database, table string) {
+func (s *State) openMySQLStructure(services ui.Services, database, table string, design ...bool) {
 	profileID := s.sessions.Current().ProfileID
 	if s.sessions.Current().Status != "已连接" || profileID <= 0 || !validStructureSelection(database, table) {
 		return
 	}
 	kind := s.objectKindFor(profileID, database, table)
 	if t := s.findDocument(tabStructure, profileID, database, kind, table); t != nil {
-		s.objectWorkspace.Load(t.object, services.Invalidate, false)
+		if len(design) > 0 && design[0] && s.objectWorkspace.CanEditDesign(t.object) {
+			if !t.object.DesignMode() {
+				s.objectWorkspace.BeginDesign(t.object, services)
+			}
+		} else {
+			s.objectWorkspace.Load(t.object, services.Invalidate, false)
+		}
 		return
 	}
 	s.nextTabID++
@@ -270,7 +309,13 @@ func (s *State) openMySQLStructure(services ui.Services, database, table string)
 		object: s.objectWorkspace.OpenQualifiedStructure(s.nextTabID, s.runtime.Namespace(profileID, database).Object(neutralObjectKind(kind), table), kind)}
 	s.tabs = append(s.tabs, t)
 	s.activeTab = len(s.tabs) - 1
-	s.objectWorkspace.Load(t.object, services.Invalidate, false)
+	if len(design) > 0 && design[0] && s.objectWorkspace.CanEditDesign(t.object) {
+		if !t.object.DesignMode() {
+			s.objectWorkspace.BeginDesign(t.object, services)
+		}
+	} else {
+		s.objectWorkspace.Load(t.object, services.Invalidate, false)
+	}
 }
 func validStructureSelection(database, table string) bool { return database != "" && table != "" }
 
@@ -297,7 +342,28 @@ func restoreIncludesProfile(plan contract.BackupPlan, profile int64) bool {
 }
 
 func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
-	return objectworkspace.Dependencies{
+	return objectworkspace.Dependencies{EditFocus: &s.editFocus, EditTarget: s.registerEditTarget, Engine: func(id int64) string {
+		for _, p := range s.navigation.Profiles() {
+			if p.ID == id {
+				return string(p.Kind)
+			}
+		}
+		return "mysql"
+	},
+		FieldTypes: func(id int64) []string {
+			for _, p := range s.navigation.Profiles() {
+				if p.ID == id {
+					descriptor, _ := connections.Describe(p.Kind)
+					return descriptor.FieldTypes()
+				}
+			}
+			return nil
+		},
+		OpenDesign: func(services ui.Services, id int64, db, table string) {
+			if s.activateObjectProfile(id) {
+				s.openMySQLStructure(services, db, table, true)
+			}
+		},
 		BackupsFor: func(id int64) contract.BackupOperations {
 			if s.runtime == nil {
 				return contract.BackupOperations{}
@@ -628,6 +694,9 @@ func (s *State) disposeTab(t *tab) {
 	s.sqlWorkspace.Close(t.query)
 }
 func (t *tab) profileID() int64 {
+	if t.placeholder != nil {
+		return t.placeholder.ProfileID
+	}
 	if t.data != nil {
 		return t.data.ProfileID()
 	}
@@ -640,6 +709,9 @@ func (t *tab) profileID() int64 {
 	return 0
 }
 func (t *tab) database() string {
+	if t.placeholder != nil {
+		return t.placeholder.Database
+	}
 	if t.data != nil {
 		return t.data.Database()
 	}
@@ -680,7 +752,7 @@ func (s *State) closeOtherTabs(index int) {
 		return
 	}
 	keep := s.tabs[index]
-	s.removeTabs(func(t *tab) bool { return slices.Contains(s.tabs, keep) && t != keep }, func() {
+	s.removeTabs(func(t *tab) bool { return slices.Contains(s.tabs, keep) && t != keep && !t.pinned }, func() {
 		if s.selectTab(keep.id) {
 			s.status = "已关闭其他页签"
 		}
@@ -691,6 +763,7 @@ func (s *State) selectTab(id uint64) bool {
 	for i, t := range s.tabs {
 		if t.id == id {
 			s.activeTab = i
+			s.tabFocus(t)
 			return true
 		}
 	}
@@ -741,6 +814,11 @@ type documentIdentity struct {
 
 func (t *tab) identity() documentIdentity {
 	key := documentIdentity{profileID: t.profileID(), database: t.database(), catalog: t.database(), view: t.kind}
+	if t.placeholder != nil {
+		v := t.placeholder
+		key.catalog, key.schema, key.objectKind, key.name = v.Catalog, v.Schema, v.ObjectKind, v.ObjectName
+		return key
+	}
 	var ref contract.ObjectRef
 	if t.data != nil {
 		ref = t.data.Object()
@@ -789,6 +867,19 @@ func (s *State) activateObjectProfile(id int64) bool {
 	s.sessions.Activate(id)
 	s.selectedProfileID = id
 	return true
+}
+
+// Recovered documents start disconnected. Activating an existing profile for
+// connection must remain distinct from activating it for object reads.
+func (s *State) connectWorkspaceProfile(services ui.Services, id int64) {
+	for _, profile := range s.navigation.Profiles() {
+		if profile.ID == id {
+			s.sessions.Activate(id)
+			s.selectedProfileID = id
+			s.startMySQLSession(services)
+			return
+		}
+	}
 }
 
 func (s *State) SetDataSources(open func(context.Context, datasources.Config) (datasources.Source, error), capabilities func(context.Context, datasources.Config) []datasources.Capability) {

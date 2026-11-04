@@ -28,6 +28,7 @@ type mysqlDataHistoryEntry struct {
 	Offset                   int64
 	Limit                    int
 	Rows                     int
+	Condition                *contract.FilterExpression[contract.DataFilterRule]
 	Filters                  []contract.DataFilterRule
 	Sorts                    []contract.DataSortRule
 }
@@ -46,6 +47,7 @@ func (s *State) appendDataHistory(t *Document, entry mysqlDataHistoryEntry) {
 	if len(entry.SQL) > 64<<10 {
 		entry.SQL = ""
 	}
+	entry.Condition = cloneDataCondition(entry.Condition)
 	entry.Filters = append([]contract.DataFilterRule(nil), entry.Filters...)
 	entry.Sorts = append([]contract.DataSortRule(nil), entry.Sorts...)
 	stats := &t.tools.historyStats
@@ -77,7 +79,10 @@ func (s *State) recordDataHistory(t *Document) {
 	}
 	t.tools.historyRequest, t.tools.historyRecorded = t.request, true
 	filters, sorts := mysqlDataCurrentRules(t)
-	entry := mysqlDataReadHistoryRequest(t.database, t.table, contract.DataOptions{Offset: t.offset, Limit: t.limit, Filters: filters, Sorts: sorts})
+	if t.filterCondition != nil {
+		filters = nil
+	}
+	entry := mysqlDataReadHistoryRequest(t.database, t.table, contract.DataOptions{Offset: t.offset, Limit: t.limit, Condition: cloneDataCondition(t.filterCondition), Filters: filters, Sorts: sorts})
 	entry.At, entry.Duration, entry.Rows = t.page.CompletedAt, t.page.Duration, len(t.page.Rows)
 	if mysqlDataHistorySafeReadSQL(t.page.QuerySQL) {
 		entry.SQL = t.page.QuerySQL
@@ -145,6 +150,22 @@ func mysqlDataReadHistoryRequest(database, table string, options contract.DataOp
 			where = append(where, column+op)
 		}
 	}
+	if options.Condition != nil {
+		expression, err := contract.EffectiveDataExpression(options)
+		if err == nil {
+			grouped, compileErr := contract.CompileFilter(expression, func(rule contract.DataFilterRule) (string, error) {
+				one := mysqlDataReadHistoryRequest(database, table, contract.DataOptions{Filters: []contract.DataFilterRule{rule}})
+				parts := strings.SplitN(one.SQL, " WHERE ", 2)
+				if len(parts) != 2 {
+					return "", errors.New("invalid filter")
+				}
+				return strings.SplitN(parts[1], " LIMIT ", 2)[0], nil
+			})
+			if compileErr == nil {
+				where = []string{grouped}
+			}
+		}
+	}
 	if len(where) > 0 {
 		query += " WHERE " + strings.Join(where, " AND ")
 	}
@@ -159,7 +180,7 @@ func mysqlDataReadHistoryRequest(database, table string, options contract.DataOp
 		query += " ORDER BY " + strings.Join(parts, ",")
 	}
 	query += " LIMIT ? OFFSET ?"
-	return mysqlDataHistoryEntry{At: time.Now(), Kind: "SELECT", SQL: query, Summary: true, Offset: options.Offset, Limit: options.Limit, Filters: filters, Sorts: sorts}
+	return mysqlDataHistoryEntry{At: time.Now(), Kind: "SELECT", SQL: query, Summary: true, Offset: options.Offset, Limit: options.Limit, Condition: cloneDataCondition(options.Condition), Filters: filters, Sorts: sorts}
 }
 
 func mysqlDataWriteHistoryRequest(database, table string, edits []contract.DataEdit, pending bool) []mysqlDataHistoryEntry {
@@ -344,7 +365,17 @@ func (s *State) restoreDataHistory(t *Document, entry mysqlDataHistoryEntry) {
 		s.setStatus(locales.Text("历史中的筛选或排序字段已不可用"))
 		return
 	}
+	rules := entry.Filters
+	if entry.Condition != nil {
+		var err error
+		rules, err = entry.Condition.Rules(6, 3)
+		if err != nil || !mysqlDataRulesAvailable(t, rules, entry.Sorts) {
+			s.setStatus(locales.Text("历史中的筛选或排序字段已不可用"))
+			return
+		}
+	}
 	mysqlDataRestoreRuleDrafts(t, entry.Filters, entry.Sorts)
+	t.groupDraft = cloneDataCondition(entry.Condition)
 	t.rulesExpanded = true
 	t.ruleError = ""
 	t.tools.historyOpen = false
@@ -357,7 +388,7 @@ func mysqlDataHistoryLabel(entry mysqlDataHistoryEntry, index int) string {
 		kind = "SELECT"
 	}
 	label := fmt.Sprintf(locales.Text("%d. %s · 第 %d–%d 行 · 筛选 %d · 排序 %d"), index+1,
-		entry.At.Format("15:04:05"), entry.Offset+1, entry.Offset+int64(entry.Rows), len(entry.Filters), len(entry.Sorts))
+		entry.At.Format("15:04:05"), entry.Offset+1, entry.Offset+int64(entry.Rows), len(entry.Filters)+dataConditionCount(entry.Condition), len(entry.Sorts))
 	return kind + " · " + label + " · " + mysqlDataHistoryMessage(entry)
 }
 
@@ -383,6 +414,9 @@ func (s *State) historyMenu(c *ui.Context, t *Document, m *ui.Menu) {
 
 func mysqlDataHistoryRules(entry mysqlDataHistoryEntry) string {
 	parts := make([]string, 0, len(entry.Filters)+len(entry.Sorts))
+	if entry.Condition != nil {
+		parts = append(parts, dataConditionSummary(entry.Condition))
+	}
 	for _, rule := range entry.Filters {
 		line := rule.Column + " " + locales.Text(mysqlDataFilterModeLabel(rule.Mode))
 		if rule.Mode != "is_null" && rule.Mode != "is_not_null" {

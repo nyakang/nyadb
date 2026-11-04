@@ -234,6 +234,10 @@ func (s *State) objectsWorkspace(c *ui.Context) {
 	palette := theme.Colors(c)
 
 	if s.profileMode {
+		if s.selectedProfileID == 0 {
+			s.emptyWorkbench(c)
+			return
+		}
 		if s.objectWorkspace.FilterKind(s.selectedProfileID) == "查询" {
 			s.namedQueriesView(c, s.selectedProfileID)
 			return

@@ -9,18 +9,11 @@ import (
 )
 
 func (s *State) SetSQLPersistence(store *queries.Store, files sqlworkspace.Files, invalidate func()) {
+	s.workspaces.store = store
 	s.sqlWorkspace.Invalidate = invalidate
 	s.sqlWorkspace.SetHistoryOpener(s.openHistoryQuery)
 	s.sqlWorkspace.SetPersistence(store, files, func(w queries.Workspace) {
-		for _, snapshot := range w.Documents {
-			if snapshot.ID <= 1 {
-				continue
-			}
-			doc := s.sqlWorkspace.RestoreDocument(snapshot)
-			s.tabs = append(s.tabs, &tab{id: snapshot.ID, kind: tabSQL, title: doc.Name(), query: doc})
-			s.nextTabID = max(s.nextTabID, snapshot.ID)
-		}
-		s.selectTab(w.ActiveID)
+		s.restoreWorkspace(w, len(s.tabs) > 1)
 	})
 }
 func (s *State) openHistoryQuery(entry queries.HistoryEntry) {
@@ -41,13 +34,7 @@ func (s *State) openHistoryQuery(entry queries.HistoryEntry) {
 	s.sqlWorkspace.Prepare(d)
 }
 func (s *State) observeSQLDocuments() {
-	ids := make([]uint64, 0, len(s.tabs))
-	for _, t := range s.tabs {
-		if t.query != nil {
-			ids = append(ids, t.id)
-		}
-	}
-	s.sqlWorkspace.Observe(s.currentTab().id, ids)
+	s.sqlWorkspace.ObserveWorkspace(s.workspaceSnapshot())
 }
 func (s *State) namedQueriesView(c *ui.Context, profile int64) {
 	s.sqlWorkspace.AssetsView(c, profile, s.openNamedQuery)

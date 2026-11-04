@@ -1,7 +1,11 @@
 package dataworkspace
 
 import (
+	"context"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"slices"
+	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/egoist/mygo/ui"
@@ -12,7 +16,7 @@ func TestTableToolbarKeepsOrderAndNativeOverflow(t *testing.T) {
 	s, doc, _, _ := editingTestWorkspace(t)
 	tt := ui.NewTester(func(c *ui.Context) { theme.Apply(c); s.View(c, doc); s.Modals(c) }, 1800, 650)
 	last := float32(-1)
-	for _, label := range []string{"表配置文件", "开始事务", "单元格编辑器", "筛选 & 排序", "列", "历史", "AI 自动填充", "数据分析", "导入", "导出"} {
+	for _, label := range []string{"表配置文件", "开始事务", "单元格编辑器", "筛选 & 排序", "列", "历史", "填充", "数据分析", "导入", "导出"} {
 		r, ok := tt.Find(label)
 		if !ok || r.X <= last {
 			t.Fatalf("missing or misplaced command %s: %+v", label, r)
@@ -35,6 +39,45 @@ func TestTableToolbarKeepsOrderAndNativeOverflow(t *testing.T) {
 	}
 	if doc.toolbar.dock != "历史" || !tt.HasText("时间戳") {
 		t.Fatalf("overflow lost history dock: %v", tt.Texts())
+	}
+}
+
+func TestReadOnlyFieldDockUsesTypedCacheWithoutQueriesOrDrafts(t *testing.T) {
+	s, doc, _, fixture := editingTestWorkspace(t)
+	editable := false
+	doc.page.Editable = &editable
+	doc.selectedRow = 0
+	doc.grid.Cells = ui.ColumnRange{Anchor: "note", Cursor: "note"}
+	value := contract.Cell{Kind: contract.Binary, Bytes: []byte{0, 255}}
+	doc.page.Rows[0][1] = contract.DataCell{Text: "legacy representation", Value: &value}
+	var reads atomic.Int64
+	s.AdvancedLoader = func(context.Context, int64, string, string, contract.DataOptions) (*contract.DataPage, error) {
+		reads.Add(1)
+		return nil, context.Canceled
+	}
+	doc.toolbar.dock = "文本"
+	tt := ui.NewTester(func(c *ui.Context) { theme.Apply(c); s.dataDock(c, doc) }, 350, 200)
+	copyPreview := func() string {
+		t.Helper()
+		if err := tt.Click("单元格预览"); err != nil {
+			t.Fatal(err)
+		}
+		tt.Key(ui.Cmd, ui.KeyA)
+		tt.Key(ui.Cmd, ui.KeyC)
+		return tt.Clipboard()
+	}
+	if copyPreview() != "0x00ff" {
+		t.Fatal("read-only preview ignored the typed cached value")
+	}
+	doc.toolbar.dock = "十六进制"
+	tt.Frame()
+	if !strings.Contains(copyPreview(), "00 ff") {
+		t.Fatal("hex preview did not use original bytes")
+	}
+	doc.toolbar.dock = "JSON"
+	tt.Frame()
+	if !tt.HasText("缓存内容不是完整 JSON") || reads.Load() != 0 || fixture.writeCount() != 0 || doc.edit.Editor != nil || doc.edit.Busy {
+		t.Fatal("switching a read-only preview queried or staged data")
 	}
 }
 

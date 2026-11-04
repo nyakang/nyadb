@@ -83,6 +83,10 @@ func (s *State) ConnectionWindowView(c *ui.Context) {
 		return
 	}
 	if !s.connectionEditor.InitialQueryOpen() && c.Shortcut(0, ui.KeyEscape) {
+		if s.connectionEditor.URIActive() {
+			s.connectionEditor.ReturnFromURI()
+			return
+		}
 		s.closeConnectionDialog()
 		return
 	}

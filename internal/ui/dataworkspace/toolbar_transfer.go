@@ -548,7 +548,7 @@ func (s *State) startDataExport(services ui.Services, t *Document) {
 			return
 		}
 	}
-	options := contract.DataOptions{FilterColumn: t.filterColumn, FilterValue: t.filterValue, FilterMode: t.filterMode, SortColumn: t.sortColumn, SortDescending: t.sortDescending, Filters: append([]contract.DataFilterRule(nil), t.filterRules...), Sorts: append([]contract.DataSortRule(nil), t.sortRules...)}
+	options := contract.DataOptions{Condition: cloneDataCondition(t.filterCondition), FilterColumn: t.filterColumn, FilterValue: t.filterValue, FilterMode: t.filterMode, SortColumn: t.sortColumn, SortDescending: t.sortDescending, Filters: append([]contract.DataFilterRule(nil), t.filterRules...), Sorts: append([]contract.DataSortRule(nil), t.sortRules...)}
 	formatOptions := tr.Options
 	metadata := slices.Clone(t.page.ColumnMetadata)
 	ctx, out, request, gen := s.beginDataTransfer(t)
