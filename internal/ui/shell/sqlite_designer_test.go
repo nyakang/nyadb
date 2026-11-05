@@ -71,7 +71,7 @@ func TestSQLiteNativeDesignerCreatesEditsAndRenamesRealTableThroughShell(t *test
 	if err := tt.Click("字段名称"); err != nil {
 		t.Fatal(err)
 	}
-	tt.Key(ui.Ctrl, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyA)
 	tt.Type("payload")
 	if err := tt.Click("应用定义修改"); err != nil {
 		t.Fatal(err)
@@ -122,7 +122,7 @@ func TestSQLiteNativeDesignerCreatesEditsAndRenamesRealTableThroughShell(t *test
 	if err := tt.Click("字段名称"); err != nil {
 		t.Fatal(err)
 	}
-	tt.Key(ui.Ctrl, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyA)
 	tt.Type("added")
 	if err := tt.Click("应用定义修改"); err != nil {
 		t.Fatal(err)

@@ -34,7 +34,8 @@ func TestSQLCompletionUsesOriginalScopeAndInsertsOnlyQualifiedPrefix(t *testing.
 				t.Fatal(err)
 			}
 			d.Editor.Select(offset, offset)
-			tt.Key(commandModifier(), ui.KeySpace)
+			// MyGo binds completion to Control+Space on every platform.
+			tt.Key(ui.Ctrl, ui.KeySpace)
 			tt.Key(0, ui.KeyTab)
 			if got := d.Editor.Buffer.String(); got != tc.want || calls == 0 {
 				t.Fatalf("completion insertion %q, want %q (calls %d)", got, tc.want, calls)

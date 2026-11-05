@@ -67,7 +67,7 @@ func TestSQLiteDesignerFormsKeepFieldIdentityAndNameOnlyRenamePreservesDefinitio
 	if err := tt.Click("字段名称"); err != nil {
 		t.Fatal(err)
 	}
-	tt.Key(ui.Ctrl, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyA)
 	tt.Type("label")
 	if !d.DesignDirty() {
 		t.Fatal("pending field name not dirty")
@@ -199,7 +199,7 @@ func TestSQLiteDesignerNarrowFormAndGuardKeepUnappliedText(t *testing.T) {
 	if err := tt.Click("字段名称"); err != nil {
 		t.Fatal(err)
 	}
-	tt.Key(ui.Ctrl, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyA)
 	tt.Type("pending_name")
 	if !s.GuardDesignLeave(d, func(ui.Services) { t.Fatal("guard continued before explicit choice") }) {
 		t.Fatal("form bypassed guard")
