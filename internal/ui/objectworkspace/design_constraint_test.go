@@ -28,7 +28,7 @@ func TestStructuredDesignerPagesRenameKeepsIdentityAndPreviewOnly(t *testing.T) 
 	if err := tt.Click("约束名称"); err != nil {
 		t.Fatal(err)
 	}
-	tt.Key(ui.Ctrl, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyA)
 	tt.Type("renamed_index")
 	if !d.DesignDirty() {
 		t.Fatal("pending constraint text not dirty")

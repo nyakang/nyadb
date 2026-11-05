@@ -91,7 +91,7 @@ func TestFavoritesTesterSearchRenameMoveDeleteGroupAndRestart(t *testing.T) {
 	if err := tt.Click("收藏名称"); err != nil {
 		t.Fatal(err)
 	}
-	tt.Key(ui.Ctrl, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyA)
 	tt.Type("Renamed")
 	if err := tt.Click("确认收藏操作"); err != nil {
 		t.Fatal(err)
@@ -139,7 +139,7 @@ func TestFavoritesTesterSearchRenameMoveDeleteGroupAndRestart(t *testing.T) {
 	if len(s.items()) != 0 {
 		t.Fatal("search ignored text")
 	}
-	tt.Key(ui.Ctrl, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyA)
 	tt.Type("renamed")
 	if err := tt.Click("Renamed"); err != nil {
 		t.Fatal(err)

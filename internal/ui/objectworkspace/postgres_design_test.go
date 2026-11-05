@@ -54,7 +54,7 @@ func TestPostgreSQLDesignerNameFormPreservesNativeDeclarationAndOpaqueProperties
 	if err := tt.Click("字段名称"); err != nil {
 		t.Fatal(err)
 	}
-	tt.Key(ui.Ctrl, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyA)
 	tt.Type("ExactValue")
 	if !d.DesignDirty() {
 		t.Fatal("native pending name change is not dirty")

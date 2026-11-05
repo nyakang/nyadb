@@ -26,7 +26,7 @@ func TestInlineFieldsCommitRetainsIdentityAndInvalidDraft(t *testing.T) {
 	if err := tt.Click(key); err != nil {
 		t.Fatal(err)
 	}
-	tt.Key(ui.Ctrl, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyA)
 	tt.Type("")
 	tt.Key(0, ui.KeyEnter)
 	if !d.inlineDirty() || d.inline[key].Error == "" || s.PrepareDesign(d) == nil {
@@ -90,7 +90,7 @@ func TestInlineFocusAndInspectorFollowDraftAcrossRows(t *testing.T) {
 				if err := tt.Click(key); err != nil {
 					t.Fatal(err)
 				}
-				tt.Key(ui.Ctrl, ui.KeyA)
+				tt.Key(ui.Cmd, ui.KeyA)
 				value := []string{"draft_second", "draft_first", "draft_last"}[step]
 				tt.Type(value)
 				tt.Frame()
