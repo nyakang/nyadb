@@ -18,6 +18,10 @@ func (s *State) toolbarMenu(services ui.Services, action string, m *ui.Menu) {
 	selected := ""
 	if action == "其它" {
 		kinds := []string{"存储过程", "事件"}
+		if w.Kind == connections.SQLite {
+			m.Item(locales.Text("此数据库没有其它对象分类")).Disabled(true)
+			return
+		}
 		if w.Kind == connections.PostgreSQL {
 			kinds = []string{"存储过程", "序列"}
 		}

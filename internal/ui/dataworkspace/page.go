@@ -127,7 +127,7 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *Document, offset in
 	if offset == 0 {
 		t.useKeyset = t.keysetEnabled()
 		t.after = nil
-	} else if offset > t.offset && t.page != nil &&
+	} else if offset == t.offset+int64(t.limit) && t.page != nil &&
 		t.page.KeysetAvailable && t.page.NextCursor != nil {
 		if t.cursorHistory == nil {
 			t.cursorHistory = map[int64]*contract.DataCursor{}
@@ -142,6 +142,7 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *Document, offset in
 		t.useKeyset = false
 		t.after = nil
 	}
+	clearDraftHistory(t)
 	t.offset = offset
 	t.page = nil
 	t.columns = nil
@@ -188,6 +189,7 @@ func (s *State) consumePages() {
 				t.err = "数据库没有返回数据页"
 				continue
 			}
+			clearDraftHistory(t)
 			t.page = result.page
 			t.readInfo.accept(result.page)
 			t.err = ""
@@ -238,6 +240,7 @@ func (s *State) Close(t *Document) {
 	t.hiddenColumns = nil
 	t.filterExtraDraft, t.filterRules, t.sortDraft, t.sortRules = nil, nil, nil, nil
 	t.filterCondition, t.groupDraft = nil, nil
+	t.disabledGroupRules = nil
 	t.selection.Clear()
 	t.grid = ui.ListState{}
 	if s.documents[t.id] == t {

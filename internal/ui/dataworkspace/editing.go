@@ -55,6 +55,8 @@ type mysqlCellHit struct {
 	Control     ui.Handle
 }
 type mysqlDataEditState struct {
+	Undo, Redo                []draftChange
+	historyGroup              int
 	Drafts                    map[string]*mysqlRowDraft
 	Editor                    *mysqlCellEditor
 	Busy, Batch, FocusGrid    bool
@@ -309,6 +311,7 @@ func (s *State) startMySQLDataEditRead(services ui.Services, t *Document, row, s
 	t.edit.Cancel = cancel
 	t.edit.Busy = true
 	t.edit.Err = ""
+	clearDraftHistory(t)
 	t.edit.Request++
 	request, gen, profile := t.edit.Request, s.sessionFor(t).Generation, t.profileID
 	ref := cloneRowRef(*t.page.RowRefs[row])
@@ -336,6 +339,8 @@ func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
 		return
 	}
 	s.finishMySQLCellEdit(t, true)
+	done := beginDraftChange(t)
+	defer done()
 	row := len(t.page.Rows)
 	values := make([]contract.DataCell, len(t.page.Columns))
 	for i := range values {
@@ -384,6 +389,8 @@ func (s *State) deleteMySQLDataRecords(services ui.Services, t *Document, row in
 			return
 		}
 	}
+	done := beginDraftChange(t)
+	defer done()
 	for _, i := range indices {
 		d := s.mysqlRowDraft(t, i)
 		if d == nil {
@@ -482,6 +489,7 @@ func (s *State) discardMySQLData(t *Document) {
 	}
 	s.removeMySQLDataDraftRows(t, func(d *mysqlRowDraft) bool { return d.Kind == "insert" })
 	t.edit.Drafts = nil
+	clearDraftHistory(t)
 	t.edit.Err = ""
 	t.edit.AfterSave = nil
 }
@@ -513,6 +521,7 @@ func (s *State) removeMySQLDataDraftRows(t *Document, remove func(*mysqlRowDraft
 	mysqlDataClearColumnSelection(t)
 }
 func (s *State) acceptMySQLDataSaved(t *Document, keys []string, saved *contract.DataEditResult) {
+	clearDraftHistory(t)
 	if saved == nil || len(saved.Outcomes) != len(keys) {
 		t.edit.Err = locales.Text("提交结果不完整，请核验数据库")
 		return
@@ -732,6 +741,9 @@ func (s *State) GuardLeave(t *Document, next func(ui.Services)) bool {
 }
 
 func stageMySQLDataValue(t *Document, d *mysqlRowDraft, source int, v contract.DataValue) {
+	done := beginDraftChange(t)
+	defer done()
+	v.Bytes = append([]byte(nil), v.Bytes...)
 	field := t.page.Columns[source]
 	preview := mysqlDataValuePreview(v)
 	if d.Kind == "update" && source < len(d.Before) && !d.Before[source].Truncated && !v.Default && samePreview(preview, d.Before[source]) {

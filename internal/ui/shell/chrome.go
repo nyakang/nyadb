@@ -258,7 +258,21 @@ func (s *State) toolBar(c *ui.Context) {
 	ui.Row(c).Height(theme.RowHeight(c, theme.ToolbarHeight)).AlignItems(ui.Center).Padding(1, 4).Gap(1).
 		Background(palette.Toolbar).Children(func() {
 		ui.Toolbar(c, func() {
+
+			kind := s.sessions.Current().Kind
+			if profile, ok := s.currentProfile(); ok {
+				kind = profile.Kind
+			}
 			for _, action := range actions {
+				if s.profileMode {
+					if kind == connections.SQLite && (action.label == "函数" || action.label == "用户" || action.label == "其它") {
+						continue
+					}
+					if kind == connections.PostgreSQL && action.label == "用户" {
+						continue
+					}
+				}
+
 				item := action
 				active := s.currentObjectKind() == item.label && s.currentTab().kind == tabObjects
 				tip := locales.Text(item.label)

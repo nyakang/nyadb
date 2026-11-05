@@ -2,10 +2,13 @@ package shell
 
 import (
 	"context"
+	"fmt"
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"testing"
+	"time"
 )
 
 func TestDocumentMenusRejectSwitchedTabAndKeepCloseGuards(t *testing.T) {
@@ -116,5 +119,56 @@ func TestDocumentShortcutFromConnectionNavigationCreatesQuery(t *testing.T) {
 	tt.Key(primaryModifier(), ui.KeyN)
 	if len(s.tabs) != count+1 || s.currentTab().query == nil || s.currentTab().query.ProfileID() != p.ID {
 		t.Fatal("navigator consumed new-query shortcut without creating the original-profile document")
+	}
+}
+
+func TestDataSaveMenuAndShortcutKeepOriginalActiveDocument(t *testing.T) {
+	s := New()
+	doc := fixtureDataTab(t, s, editableHostPage())
+	tt := ui.NewTester(s.View, 1100, 700)
+	staged := make(chan string, 2)
+	s.dataWorkspace.Saver = func(_ context.Context, id int64, db, table string, edits []mysqlsvc.MySQLDataEdit) (*mysqlsvc.MySQLDataEditResult, error) {
+		staged <- fmt.Sprintf("%d/%s/%s", id, db, table)
+		out := &mysqlsvc.MySQLDataEditResult{}
+		for _, e := range edits {
+			out.Outcomes = append(out.Outcomes, mysqlsvc.MySQLDataEditOutcome{Kind: e.Kind, Original: e.Original, Saved: e.Original})
+		}
+		return out, nil
+	}
+	stageHostDraft(t, tt, "pending")
+	if err := tt.Click("文件"); err != nil {
+		t.Fatal(err)
+	}
+	s.openQuery()
+	tt.Frame()
+	if err := tt.ChooseMenuItem("保存数据更改"); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case got := <-staged:
+		t.Fatal("stale file menu saved", got)
+	default:
+	}
+	if !doc.data.HasDraft() {
+		t.Fatal("stale command discarded original draft")
+	}
+	s.activeTab = 1
+	tt.Frame()
+	tt.Key(primaryModifier(), ui.KeyS)
+	deadline := time.Now().Add(2 * time.Second)
+	for doc.data.HasDraft() && time.Now().Before(deadline) {
+		tt.Frame()
+		time.Sleep(time.Millisecond)
+	}
+	select {
+	case got := <-staged:
+		if got != "19/edit_test/records" {
+			t.Fatal("shortcut saved different identity", got)
+		}
+	default:
+		t.Fatal("data Ctrl+S did not save")
+	}
+	if doc.data.HasDraft() {
+		t.Fatal("shortcut did not consume saved result")
 	}
 }

@@ -40,21 +40,30 @@ func dataConditionSummary(e *contract.FilterExpression[contract.DataFilterRule])
 }
 
 func (s *State) beginFilterGroups(t *Document) {
+	if t.groupDraft != nil {
+		return
+	}
+	t.disabledGroupRules = nil
 	if t.filterCondition != nil {
 		t.groupDraft = cloneDataCondition(t.filterCondition)
 		return
 	}
-	rules := []contract.DataFilterRule{}
+
+	drafts := []mysqlDataRuleDraft{}
 	if t.filterColumnDraft != "" && t.filterColumnDraft != "选择字段" {
-		rules = append(rules, contract.DataFilterRule{Column: t.filterColumnDraft, Mode: mysqlFilterMode(t.filterModeDraft), Value: t.filterValueDraft})
+		drafts = append(drafts, mysqlDataRuleDraft{Column: t.filterColumnDraft, Mode: t.filterModeDraft, Value: t.filterValueDraft, Disabled: t.mainFilterDisabled})
 	}
-	for _, d := range t.filterExtraDraft {
-		rules = append(rules, contract.DataFilterRule{Column: d.Column, Mode: mysqlFilterMode(d.Mode), Value: d.Value})
+	drafts = append(drafts, t.filterExtraDraft...)
+	t.groupDraft = &contract.FilterExpression[contract.DataFilterRule]{Op: "and"}
+	t.disabledGroupRules = map[*contract.DataFilterRule]bool{}
+	for _, d := range drafts {
+		rule := &contract.DataFilterRule{Column: d.Column, Mode: mysqlFilterMode(d.Mode), Value: d.Value}
+		t.groupDraft.Children = append(t.groupDraft.Children, contract.FilterExpression[contract.DataFilterRule]{Op: "rule", Rule: rule})
+		if d.Disabled {
+			t.disabledGroupRules[rule] = true
+		}
 	}
-	t.groupDraft = contract.AndFilters(rules)
-	if t.groupDraft == nil {
-		t.groupDraft = &contract.FilterExpression[contract.DataFilterRule]{Op: "and"}
-	}
+
 }
 
 func (s *State) filterGroupView(c *ui.Context, t *Document, node *contract.FilterExpression[contract.DataFilterRule], depth int, path string, columns []string) {
@@ -79,6 +88,14 @@ func (s *State) filterGroupView(c *ui.Context, t *Document, node *contract.Filte
 			ui.Row(c).Key(key).Wrap().Gap(4).Children(func() {
 				if child.Rule != nil {
 					f := child.Rule
+					enabled := !t.disabledGroupRules[f]
+					if ui.Checkbox(c, &enabled, locales.Text("启用条件")).Label(locales.Text("启用条件") + key).Changed() {
+						if t.disabledGroupRules == nil {
+							t.disabledGroupRules = map[*contract.DataFilterRule]bool{}
+						}
+						t.disabledGroupRules[f] = !enabled
+					}
+
 					mysqlDataRuleSelect(c, &f.Column, append([]string{"选择字段"}, columns...), mysqlDataColumnChoiceLabel).Label(locales.Text("筛选字段") + key).Width(150)
 					mode := mysqlDataFilterModeLabel(f.Mode)
 					if mysqlDataRuleSelect(c, &mode, t.filterChoices(), locales.Text).Width(110).Changed() {
@@ -106,6 +123,11 @@ func (s *State) filterGroupView(c *ui.Context, t *Document, node *contract.Filte
 							return contains(root)
 						}, true, false)
 					}
+					if t.ruleError != "" && !t.disabledGroupRules[f] {
+						if problem := dataRuleProblem(t, *f); problem != "" {
+							ui.Text(c, problem).TextColor(theme.Colors(c).Error).Label(locales.Text("条件错误") + key)
+						}
+					}
 				} else {
 					s.filterGroupView(c, t, child, depth+1, key, columns)
 				}
@@ -113,6 +135,19 @@ func (s *State) filterGroupView(c *ui.Context, t *Document, node *contract.Filte
 					remove = i
 				}
 			})
+		}
+
+		if remove >= 0 {
+			var forget func(*contract.FilterExpression[contract.DataFilterRule])
+			forget = func(e *contract.FilterExpression[contract.DataFilterRule]) {
+				if e.Rule != nil {
+					delete(t.disabledGroupRules, e.Rule)
+				}
+				for i := range e.Children {
+					forget(&e.Children[i])
+				}
+			}
+			forget(&node.Children[remove])
 		}
 		if remove >= 0 {
 			node.Children = append(node.Children[:remove], node.Children[remove+1:]...)
@@ -126,16 +161,22 @@ func (s *State) validateFilterGroups(t *Document) ([]contract.DataFilterRule, bo
 		t.ruleError = locales.Text("条件组不能为空，最多 6 个条件和 3 层分组")
 		return nil, false
 	}
-	for _, rule := range rules {
-		valid := false
-		for _, column := range t.columns {
-			valid = valid || column.ID == rule.Column
-		}
-		if !valid || !t.supportsFilter(rule.Mode) || len(rule.Value) > 4096 {
-			t.ruleError = locales.Text("筛选条件无效或过长")
+	condition := effectiveFilterGroup(t, t.groupDraft)
+	if condition == nil {
+		return nil, true
+	}
+	rules, err = condition.Rules(contract.DataMaxFilterRules, 3)
+	if err != nil {
+		t.ruleError = err.Error()
+		return nil, false
+	}
+	for i, rule := range rules {
+		if problem := dataRuleProblem(t, rule); problem != "" {
+			t.ruleError = fmt.Sprintf("%s %d: %s", locales.Text("条件"), i+1, problem)
 			return nil, false
 		}
 	}
+
 	return rules, true
 }
 
@@ -181,6 +222,7 @@ func (s *State) applyGroupedCellFilter(services ui.Services, t *Document, name, 
 	}
 	t.filterCondition = condition
 	t.groupDraft = cloneDataCondition(condition)
+	t.disabledGroupRules = nil
 	t.ruleError = ""
 	s.Refresh(services, t)
 	return true

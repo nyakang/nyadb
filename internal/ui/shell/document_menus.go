@@ -54,7 +54,9 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 		item("新建查询", "new_query", true, mod, ui.KeyN)
 		item("打开 SQL…", "open_sql", !s.sqlWorkspace.PersistenceLoading(), mod, ui.KeyO)
 		m.Separator()
-		if current.object != nil {
+		if current.data != nil {
+			item("保存数据更改", "save_data", s.dataWorkspace.CanSave(current.data), mod, ui.KeyS)
+		} else if current.object != nil {
 			item("保存表设计", "save_design", current.object.DesignDirty() && !current.object.DesignBusy() && s.objectWorkspace.CanEditDesign(current.object), mod, ui.KeyS)
 		} else {
 			item("保存查询", "save", ready, mod, ui.KeyS)
@@ -118,6 +120,10 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 		s.sqlWorkspace.Save(doc, false, nil)
 	case "save_design":
 		_ = s.objectWorkspace.PrepareDesign(current.object)
+	case "save_data":
+		if s.dataWorkspace.CanSave(current.data) {
+			s.dataWorkspace.Save(s.editServices, current.data)
+		}
 	case "save_as":
 		s.sqlWorkspace.Save(doc, true, nil)
 	case "close":
@@ -192,6 +198,14 @@ func (s *State) workbenchKeyboard(c *ui.Context) {
 		return
 	}
 	mod := primaryModifier()
+	if current := s.currentTab(); current.data != nil {
+		data := current.data
+		c.OnShortcut(mod, ui.KeyS, func() {
+			if s.currentTab().data == data && s.dataWorkspace.CanSave(data) {
+				s.dataWorkspace.Save(c.Services(), data)
+			}
+		})
+	}
 	if current := s.currentTab(); current.object != nil {
 		object := current.object
 		c.OnShortcut(mod, ui.KeyS, func() {

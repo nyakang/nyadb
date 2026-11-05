@@ -47,7 +47,10 @@ func (s *State) EditCell(services ui.Services, d *Document, row int, field strin
 		}
 	}
 }
-func (s *State) Save(services ui.Services, d *Document)     { s.saveMySQLData(services, d) }
+func (s *State) Save(services ui.Services, d *Document) { s.saveMySQLData(services, d) }
+func (s *State) CanSave(d *Document) bool {
+	return d != nil && !d.closed && !d.loading && !d.Busy() && d.edit.Uncertain == nil && !d.transfer.Uncertain && !dataTransactionUnavailable(d) && s.canUseSession(d) && d.profileID == s.session().ProfileID && d.HasDraft()
+}
 func (s *State) Begin(services ui.Services, d *Document)    { s.beginDataTransaction(services, d) }
 func (s *State) Commit(services ui.Services, d *Document)   { s.commitDataTransaction(services, d) }
 func (s *State) Rollback(services ui.Services, d *Document) { s.rollbackDataTransaction(services, d) }

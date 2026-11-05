@@ -42,7 +42,7 @@ func (s *State) dataTransferWizard(c *ui.Context, t *Document, available bool, t
 				}
 			})
 			if !available {
-				ui.Text(c, locales.Text("原 MySQL 会话已失效，请关闭向导后重新打开")).TextColor(theme.Colors(c).Error)
+				ui.Text(c, locales.Text("原数据库会话已失效，请关闭向导后重新打开")).TextColor(theme.Colors(c).Error)
 			}
 			ui.Scroll(c).Grow(1).FillWidth().Children(func() {
 				ui.Column(c).Gap(9).FillWidth().Children(func() {
