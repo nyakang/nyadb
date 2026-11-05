@@ -51,18 +51,15 @@ func Copy(set contract.ResultSet) string {
 	}
 	return Delimited(names, rows, '\t', false, true)
 }
-func TextCell(c *ui.Context, text string, null, truncated bool) ui.Element {
+func TextCell(c *ui.Context, text string, null bool) ui.Element {
 	e := ui.Text(c, text).SingleLine().FontSize(theme.Font(c, theme.FontSize))
 	if null {
 		e.TextColor(theme.Colors(c).Muted)
 	}
-	if truncated {
-		e.Tooltip(locales.Text("单元格预览已截断"))
-	}
 	return e
 }
 func Cell(c *ui.Context, cell contract.Cell) ui.Element {
-	return TextCell(c, cell.Display(), cell.Kind == contract.Null, cell.Truncated)
+	return TextCell(c, cell.Display(), cell.Kind == contract.Null)
 }
 func ColumnMenu(c *ui.Context, m *ui.Menu, layout *ui.TableLayout, hidden map[string]bool, columns []ui.TableColumn, col, rows int, read func(int, int) contract.Cell, copy func(string)) {
 	if col < 0 || col >= len(columns) {

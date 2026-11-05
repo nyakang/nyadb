@@ -5316,16 +5316,6 @@ func (msgs Messages) MysqlPendingDataChanges() string {
 	return Catalog.Format(msgs.locale, "mysqlPendingDataChanges", nil)
 }
 
-// MysqlTruncatedPreviewHint says "已截断的预览；可在字段信息中按需读取"
-// in the language the app shows.
-func MysqlTruncatedPreviewHint() string { return In(i18n.Locale()).MysqlTruncatedPreviewHint() }
-
-// MysqlTruncatedPreviewHint says "已截断的预览；可在字段信息中按需读取"
-// in the language of msgs.
-func (msgs Messages) MysqlTruncatedPreviewHint() string {
-	return Catalog.Format(msgs.locale, "mysqlTruncatedPreviewHint", nil)
-}
-
 // MysqlRemoveFieldFilter says "移除筛选"
 // in the language the app shows.
 func MysqlRemoveFieldFilter() string { return In(i18n.Locale()).MysqlRemoveFieldFilter() }
@@ -9232,16 +9222,6 @@ func ResetTableDensity() string { return In(i18n.Locale()).ResetTableDensity() }
 // in the language of msgs.
 func (msgs Messages) ResetTableDensity() string {
 	return Catalog.Format(msgs.locale, "resetTableDensity", nil)
-}
-
-// PendingCellChange says "此单元格有待保存的更改"
-// in the language the app shows.
-func PendingCellChange() string { return In(i18n.Locale()).PendingCellChange() }
-
-// PendingCellChange says "此单元格有待保存的更改"
-// in the language of msgs.
-func (msgs Messages) PendingCellChange() string {
-	return Catalog.Format(msgs.locale, "pendingCellChange", nil)
 }
 
 // DecreaseUIFont says "减小界面字号"
