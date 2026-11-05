@@ -6,7 +6,8 @@ import "github.com/egoist/mygo/ui"
 func PageButton(c *ui.Context, label string, active bool) ui.Element {
 	b := ui.Button(c, label).Selected(active)
 	if active {
-		b.Background(Colors(c).Focus).Border(1, Colors(c).Focus)
+		p := Colors(c)
+		b.Background(p.Selection).TextColor(p.SelectionText).Border(1, p.Focus)
 	}
 	return b
 }
