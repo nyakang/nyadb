@@ -2,6 +2,7 @@ package connectioncatalog
 
 import (
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -21,15 +22,24 @@ func (s *State) View(c *ui.Context, width, height float32, onSelect func(Choice)
 	palette := theme.Colors(c)
 	// Account for the sidebar, content padding and gaps rather than the
 	// outer window width: four fixed cards do not fit the smallest window.
-	columns := max(1, min(5, int((width-catalogSidebarWidth-1-28+8)/(116+8))))
+	scale := max(float32(1), theme.Font(c, 12)/12)
+	columns := max(1, min(5, int((width-catalogSidebarWidth-1-28+8)/(116*scale+8))))
 	ui.Row(c).Width(width).Height(height).Gap(0).Children(func() {
 		s.catalogFilterSidebar(c, height)
 		ui.Box(c).Width(1).Background(palette.Border)
 		ui.Column(c).Grow(1).Height(height).Gap(0).Children(func() {
 			s.catalogSearchToolbar(c)
 			ui.Box(c).Height(1).Background(palette.Border)
-			ui.Scroll(c).Height(height - catalogSearchHeight - 1).Children(func() {
+			if !s.gridMode {
+				s.catalogTree(c, onSelect)
+				return
+			}
+			ui.Scroll(c).Grow(1).MinHeight(0).Children(func() {
 				ui.Column(c).Padding(12, 14).Gap(15).Children(func() {
+					if len(s.catalogItems("全部"))+len(s.catalogItems("云数据库")) == 0 {
+						ui.Text(c, locales.Text("没有匹配的连接类型")).TextColor(palette.Muted)
+						return
+					}
 					if !s.gridMode {
 						s.catalogTree(c, onSelect)
 						return
@@ -53,7 +63,7 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 		ui.Row(c).Height(theme.RowHeight(c, 29)).Gap(7).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, locales.Text("连接筛选")).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 		})
-		ui.Scroll(c).Height(height - 58).Children(func() {
+		ui.Scroll(c).Grow(1).MinHeight(0).Children(func() {
 			ui.Column(c).Gap(0).Children(func() {
 				for _, name := range catalogEngines {
 					if !s.catalogSidebarFilterVisible(name, false) {
@@ -61,9 +71,11 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 					}
 					label := name
 					checked := s.engineFilters[label]
-					ui.Row(c).Height(catalogFilterHeight).Gap(4).AlignItems(ui.Center).Children(func() {
-						if ui.Checkbox(c, &checked, "").Label(locales.Text("筛选 ") + label).Changed() {
-							setCatalogFilter(s.engineFilters, label, checked)
+					control := ui.CheckboxBase(c, &checked).Label(locales.Text("筛选 ") + label).Height(theme.RowHeight(c, catalogFilterHeight)).Gap(4).AlignItems(ui.Center)
+					control.Children(func() {
+						box := ui.Box(c).Size(14, 14).Border(1, palette.Border).Background(palette.Panel)
+						if checked {
+							box.Children(func() { theme.Icon(c, "check", 12, palette.Text) })
 						}
 						if item, ok := catalogFilterIcon(label, false); ok {
 							s.catalogIcon(c, item, catalogTreeIconSize)
@@ -72,6 +84,9 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 						}
 						ui.Text(c, label).FontSize(theme.Font(c, 12)).SingleLine()
 					})
+					if control.Changed() {
+						setCatalogFilter(s.engineFilters, label, checked)
+					}
 				}
 				ui.Box(c).Height(1).Background(palette.Border).Margin(8, 0)
 				ui.Row(c).Height(theme.RowHeight(c, 30)).Gap(7).AlignItems(ui.Center).Children(func() {
@@ -87,13 +102,18 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 						displayName = name
 					}
 					checked := s.vendorFilters[label]
-					ui.Row(c).Height(catalogFilterHeight).Gap(4).AlignItems(ui.Center).Children(func() {
-						if ui.Checkbox(c, &checked, "").Label(locales.Text("筛选供应商 ") + label).Changed() {
-							setCatalogFilter(s.vendorFilters, label, checked)
+					control := ui.CheckboxBase(c, &checked).Label(locales.Text("筛选供应商 ") + label).Height(theme.RowHeight(c, catalogFilterHeight)).Gap(4).AlignItems(ui.Center)
+					control.Children(func() {
+						box := ui.Box(c).Size(14, 14).Border(1, palette.Border).Background(palette.Panel)
+						if checked {
+							box.Children(func() { theme.Icon(c, "check", 12, palette.Text) })
 						}
 						s.catalogProviderIcon(c, label, catalogTreeIconSize)
 						ui.Text(c, displayName).FontSize(theme.Font(c, 12)).SingleLine()
 					})
+					if control.Changed() {
+						setCatalogFilter(s.vendorFilters, label, checked)
+					}
 				}
 			})
 		})
@@ -103,7 +123,7 @@ func (s *State) catalogFilterSidebar(c *ui.Context, height float32) {
 func (s *State) catalogSearchToolbar(c *ui.Context) {
 	palette := theme.Colors(c)
 
-	ui.Row(c).Height(catalogSearchHeight).Padding(6, 13).Gap(8).AlignItems(ui.Center).Children(func() {
+	ui.Row(c).Wrap().MinHeight(theme.RowHeight(c, catalogSearchHeight)).Padding(6, 13).Gap(8).AlignItems(ui.Center).Children(func() {
 		ui.Text(c, locales.Text("选择一个连接类型：")).FontSize(theme.Font(c, 12))
 		ui.Box(c).Grow(1)
 		selected := 0 // Grid first, list second.
@@ -130,7 +150,7 @@ func (s *State) catalogSearchToolbar(c *ui.Context) {
 		if segments.Track.Changed() {
 			s.gridMode = selected == 0
 		}
-		search := ui.SearchField(c, &s.search).Label(locales.Text("搜索连接类型")).Placeholder(locales.Text("搜索")).Width(236).Height(theme.RowHeight(c, catalogSearchInputHeight))
+		search := ui.SearchField(c, &s.search).Label(locales.Text("搜索连接类型")).Placeholder(locales.Text("搜索")).MinWidth(120).MaxWidth(236).Grow(1).Height(theme.RowHeight(c, catalogSearchInputHeight))
 		theme.BindNativeEdit(c, search, "connection/catalog-search", s.editFocus, s.editTarget, s.editValid, true, false)
 	})
 }
@@ -141,13 +161,6 @@ func (s *State) catalogSection(c *ui.Context, title string, items []catalogEntry
 	}
 	ui.Column(c).Gap(10).Children(func() {
 		ui.Text(c, locales.Text(title)).FontSize(theme.Font(c, 13)).Bold()
-		if !s.gridMode {
-			for _, e := range items {
-				item := e
-				s.catalogListItem(c, item, onSelect)
-			}
-			return
-		}
 		// Five columns match the original's normal-size grid at this viewport.
 		for i := 0; i < len(items); i += columns {
 			start := i
@@ -174,40 +187,16 @@ func (s *State) catalogIconItem(c *ui.Context, item catalogEntry, onSelect func(
 	if item.kind == "" {
 		label += locales.Text("（尚未支持）")
 	}
-	control := ui.ButtonBase(c).Label(label).Width(116).Height(94).
+	control := ui.ButtonBase(c).Label(label).Width(theme.RowHeight(c, 116)).MinHeight(theme.RowHeight(c, 94)).
 		Radius(3).Background(bg).Border(1, border)
 	control.Children(func() {
 		ui.Column(c).AlignItems(ui.Center).Justify(ui.Center).Gap(4).Children(func() {
 			s.catalogIcon(c, item, 45)
-			ui.Text(c, item.name).Width(109).TextAlign(ui.Center).FontSize(theme.Font(c, 11))
+			ui.Text(c, item.name).Width(theme.RowHeight(c, 109)).TextAlign(ui.Center).FontSize(theme.Font(c, 11))
 			if item.kind == "" {
 				ui.Text(c, locales.Text("尚未支持")).FontSize(theme.Font(c, 10)).TextColor(palette.Muted).Tooltip(theme.AvailabilityText(contract.Availability{Reason: "not_implemented"}))
 			} else {
 				ui.Text(c, locales.Text("可连接")).FontSize(theme.Font(c, 10)).TextColor(palette.Blue)
-			}
-		})
-	})
-	if control.Clicked() {
-		s.chooseCatalogEntry(item, onSelect)
-	}
-}
-
-func (s *State) catalogListItem(c *ui.Context, item catalogEntry, onSelect func(Choice)) {
-	palette := theme.Colors(c)
-
-	control := ui.ButtonBase(c).Label(locales.Text("选择 ") + item.name).FillWidth().Height(43).
-		Radius(3).Background(palette.Panel)
-	control.Children(func() {
-		ui.Row(c).Padding(5, 10).AlignItems(ui.Center).Gap(10).Children(func() {
-			s.catalogIcon(c, item, 30)
-			ui.Text(c, item.name).FontSize(theme.Font(c, 12)).Grow(1)
-			if item.kind == "" {
-				ui.Text(c, locales.Text("尚未支持")).FontSize(theme.Font(c, 10)).TextColor(palette.Muted).Tooltip(theme.AvailabilityText(contract.Availability{Reason: "not_implemented"}))
-			} else {
-				ui.Text(c, locales.Text("可连接")).FontSize(theme.Font(c, 10)).TextColor(palette.Blue)
-			}
-			if item.kind != "" && item.kind == s.selected.Kind {
-				ui.Text(c, "✓").TextColor(palette.Blue)
 			}
 		})
 	})

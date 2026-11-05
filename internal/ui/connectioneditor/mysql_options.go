@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -64,24 +65,26 @@ func (s *State) advanceDraft(p *connections.Profile) error {
 func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 	palette := theme.Colors(c)
 
-	formWidth := connectionFormWidth(width)
+	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth := connectionFormLabelWidth
 	fieldWidth := formWidth - labelWidth
 	a := &s.connectionDraft.MySQLAdvanced
 	// The shared 31-DIP rhythm leaves room around 26-DIP native controls.
-	ui.Column(c).Width(formWidth).Gap(0).Children(func() {
-		connectionFormRow(c).Children(func() {
-			ui.Text(c, "设置位置：").Width(labelWidth).FontSize(theme.Font(c, 12))
-			s.formTextInput(c, &a.SettingsLocation, "设置位置", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false)
-			ui.Box(c).Width(connectionFormBrowseGap)
-			connectionFormBrowse(c, "选择设置位置", s.mysqlSettingsPicker == nil, s.mysqlSettingsPicker)
+	theme.Form(c, formWidth, func() {
+		theme.Field(c, locales.Text("设置位置："), func() {
+			ui.Row(c).Gap(0).FillWidth().AlignItems(ui.Center).Children(func() {
+
+				s.formTextInput(c, &a.SettingsLocation, "设置位置", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false)
+				ui.Box(c).Width(connectionFormBrowseGap)
+				connectionFormBrowse(c, "选择设置位置", s.mysqlSettingsPicker == nil, s.mysqlSettingsPicker)
+			})
 		})
-		connectionFormRow(c).Children(func() {
-			ui.Text(c, "客户端驱动程序：").Width(labelWidth).FontSize(theme.Font(c, 12))
+		theme.Field(c, locales.Text("客户端驱动程序："), func() {
+
 			connectionFormSelect(c, &a.ClientDriver, []string{"默认", "旧版"}, "客户端驱动程序", fieldWidth, false)
 		})
-		connectionFormRow(c).Children(func() {
-			ui.Text(c, "客户端字符集：").Width(labelWidth).FontSize(theme.Font(c, 12))
+		theme.Field(c, locales.Text("客户端字符集："), func() {
+
 			connectionFormSelect(c, &a.Charset, connections.MySQLCharsets, "客户端字符集", fieldWidth, false)
 		})
 		s.mysqlAdvancedNumberRow(c, &a.KeepAlive, "保持连接间隔（秒）：",
@@ -100,13 +103,15 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 		})
 		s.mysqlAdvancedNumberRow(c, &a.LimitSessions, "限制连接会话：",
 			&s.mysqlAdvancedNumbers[mysqlSessionLimit], labelWidth)
-		connectionFormRow(c).Children(func() {
-			ui.Text(c, "初始查询：").Width(labelWidth).FontSize(theme.Font(c, 12))
-			if s.formTextInput(c, &s.mysqlInitialQueryPreview, "初始查询", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, s.initialSQLLoadFailed).Changed() {
-				s.mysqlInitialQuery = s.mysqlInitialQueryPreview
-			}
-			ui.Box(c).Width(connectionFormBrowseGap)
-			connectionFormBrowse(c, "编辑初始查询", s.initialSQLLoadFailed, s.beginMySQLInitialQuery)
+		theme.Field(c, locales.Text("初始查询："), func() {
+			ui.Row(c).Gap(0).FillWidth().AlignItems(ui.Center).Children(func() {
+
+				if s.formTextInput(c, &s.mysqlInitialQueryPreview, "初始查询", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, s.initialSQLLoadFailed).Changed() {
+					s.mysqlInitialQuery = s.mysqlInitialQueryPreview
+				}
+				ui.Box(c).Width(connectionFormBrowseGap)
+				connectionFormBrowse(c, "编辑初始查询", s.initialSQLLoadFailed, s.beginMySQLInitialQuery)
+			})
 		})
 		if ui.Button(c, locales.Text("兼容性")).Width(160).Height(theme.RowHeight(c, connectionFormInputHeight)).Clicked() {
 			s.mysqlCompatibilityVisible = true
@@ -116,7 +121,7 @@ func (s *State) connectionMySQLAdvanced(c *ui.Context, width float32) {
 		if a.LimitSessions {
 			note = "会话限制仅作用于本连接的 SQL 标签（安全上限 8）；元数据连接独立。"
 		}
-		ui.Text(c, note).TextColor(palette.Muted).FontSize(theme.Font(c, 11))
+		ui.Text(c, locales.Text(note)).TextColor(palette.Muted).FontSize(theme.Font(c, 11))
 	})
 }
 
@@ -130,8 +135,12 @@ func (s *State) mysqlAdvancedNumberRow(
 	c *ui.Context, enabled *bool, label string, value *string, labelWidth float32,
 ) {
 	connectionFormRow(c).Children(func() {
-		connectionFormCheckboxCompact(c, enabled, label, false).Width(labelWidth)
-		s.formTextInput(c, value, label+"数值", 80, !*enabled, false)
+		connectionFormCheckboxCompact(c, enabled, label, false).Width(theme.LabelWidth(c, locales.Text(label), labelWidth))
+		name := strings.TrimSuffix(label, "：")
+		input := s.formTextInput(c, value, name, 80, !*enabled, false)
+		if s.validationErrorField == name {
+			input.Error(s.connectionError)
+		}
 	})
 }
 
@@ -140,10 +149,10 @@ func (s *State) mysqlAdvancedNumberRow(
 func (s *State) connectionMySQLCompatibility(c *ui.Context, width float32) {
 	palette := theme.Colors(c)
 
-	formWidth := connectionFormWidth(width)
+	formWidth := connectionScaledFormWidth(c, width)
 	compat := &s.connectionDraft.MySQLAdvanced.Compatibility
 	labelWidth := float32(216)
-	ui.Column(c).Width(formWidth).Gap(5).Children(func() {
+	theme.Form(c, formWidth, func() {
 		ui.Row(c).Height(theme.RowHeight(c, 26)).AlignItems(ui.Center).Children(func() {
 			connectionFormCheckbox(c, &compat.Enabled, "使用兼容模式", true)
 		})
@@ -152,7 +161,7 @@ func (s *State) connectionMySQLCompatibility(c *ui.Context, width float32) {
 			connections.MySQLLowerCaseValues, false, labelWidth)
 		ui.Row(c).Height(15).Children(func() {
 			ui.Box(c).Width(17)
-			ui.Text(c, "跳过 \"show variables like 'lower_case_%'\"").FontSize(theme.Font(c, 11))
+			ui.Text(c, locales.Text("跳过 \"show variables like 'lower_case_%'\"")).FontSize(theme.Font(c, 11))
 		})
 		ui.Row(c).Height(theme.RowHeight(c, 26)).Gap(0).AlignItems(ui.Center).Children(func() {
 			connectionFormCheckbox(c, &compat.ForceSQLMode, "强制 sql_mode 为：", true).Width(labelWidth)
@@ -169,9 +178,9 @@ func (s *State) connectionMySQLCompatibility(c *ui.Context, width float32) {
 		s.compatSelectRow(c, "强制视图列出方法为：",
 			&compat.ForceViewMethod, &compat.ViewMethod,
 			connections.MySQLViewMethods, false, labelWidth)
-		ui.Text(c, "当前版本不支持兼容性覆盖；这些选项保持禁用，旧配置保留。").
+		ui.Text(c, locales.Text("当前版本不支持兼容性覆盖；这些选项保持禁用，旧配置保留。")).
 			TextColor(palette.Muted).FontSize(theme.Font(c, 11))
-		if ui.Button(c, "清除旧兼容性覆盖").Disabled(!compat.Enabled && !compat.ForceLowerCase && !compat.ForceSQLMode && !compat.ForceNDB && !compat.ForceDatabaseMethod && !compat.ForceViewMethod).Clicked() {
+		if ui.Button(c, locales.Text("清除旧兼容性覆盖")).Disabled(!compat.Enabled && !compat.ForceLowerCase && !compat.ForceSQLMode && !compat.ForceNDB && !compat.ForceDatabaseMethod && !compat.ForceViewMethod).Clicked() {
 			compat.Enabled = false
 			compat.ForceLowerCase = false
 			compat.ForceSQLMode = false
@@ -216,12 +225,12 @@ func (s *State) connectionMySQLDatabases(c *ui.Context, width, height float32) {
 			if col == 0 {
 				ui.Text(c, names[row])
 			} else {
-				ui.Text(c, "显式打开")
+				ui.Text(c, locales.Text("显式打开"))
 			}
 		}).Width(pageWidth).Grow(1).Disabled(!*enabled)
 		ui.Row(c).Gap(8).Children(func() {
-			ui.TextInput(c, &s.customDatabaseName).Label("自定义数据库名称").Disabled(!*enabled).Grow(1)
-			if ui.Button(c, "添加数据库到列表").Disabled(!*enabled || strings.TrimSpace(s.customDatabaseName) == "").Clicked() {
+			ui.TextInput(c, &s.customDatabaseName).Label(locales.Text("自定义数据库名称")).Disabled(!*enabled).Grow(1)
+			if ui.Button(c, locales.Text("添加数据库到列表")).Disabled(!*enabled || strings.TrimSpace(s.customDatabaseName) == "").Clicked() {
 				name := strings.TrimSpace(s.customDatabaseName)
 				found := false
 				for _, n := range names {
@@ -235,12 +244,12 @@ func (s *State) connectionMySQLDatabases(c *ui.Context, width, height float32) {
 				}
 				s.customDatabaseName = ""
 			}
-			if ui.Button(c, "从列表中移除数据库").Disabled(!*enabled || len(names) == 0).Clicked() {
+			if ui.Button(c, locales.Text("从列表中移除数据库")).Disabled(!*enabled || len(names) == 0).Clicked() {
 				names = names[:len(names)-1]
 				s.connectionDraft.MySQLAdvanced.CustomDatabases = strings.Join(names, "\n")
 			}
 		})
-		ui.Text(c, "列表只控制显示范围；不会创建数据库或提升访问权限。自动打开需要显式连接。").FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+		ui.Text(c, locales.Text("列表只控制显示范围；不会创建数据库或提升访问权限。自动打开需要显式连接。")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 	})
 }
 
@@ -296,21 +305,20 @@ func (s *State) mysqlInitialQueryModal(c *ui.Context) {
 		return
 	}
 	width, height := c.Size()
-	dialogWidth := min(float32(700), width-40)
-	dialogHeight := min(float32(500), height-40)
-	ui.Modal(c, &s.mysqlInitialQueryOpen, func() {
-		ui.Column(c).Width(dialogWidth).Height(dialogHeight).Padding(15, 24).
-			Background(palette.Header).Gap(14).Children(func() {
+	dialogWidth := min(float32(700), width-68)
+	dialogHeight := min(float32(500), height-68)
+	theme.Modal(c, &s.mysqlInitialQueryOpen, func() {
+		ui.Column(c).Width(dialogWidth).Height(dialogHeight).Gap(14).Children(func() {
 			ui.Row(c).Justify(ui.Center).Children(func() {
-				ui.Text(c, "初始查询").Bold().FontSize(theme.Font(c, 13))
+				ui.Text(c, locales.Text("初始查询")).Bold().FontSize(theme.Font(c, 13))
 			})
-			ui.Text(c, "初始查询：").FontSize(theme.Font(c, 12))
+			ui.Text(c, locales.Text("初始查询：")).FontSize(theme.Font(c, 12))
 			ui.TextArea(c, &s.mysqlInitialQueryDraft).
-				Label("初始查询 SQL 编辑器").
+				Label(locales.Text("初始查询 SQL 编辑器")).
 				Placeholder("e.g.\nSET ROLE ALL;\nSET @var_name = 'value';").
 				Width(min(float32(602), dialogWidth-48)).Grow(1).MinHeight(120).FontSize(theme.Font(c, 12))
 			ui.Row(c).Children(func() {
-				if ui.Button(c, "复制到剪贴板").Clicked() {
+				if ui.Button(c, locales.Text("复制到剪贴板")).Clicked() {
 					c.WriteClipboard(s.mysqlInitialQueryDraft)
 				}
 			})
@@ -318,12 +326,12 @@ func (s *State) mysqlInitialQueryModal(c *ui.Context) {
 				ui.Text(c, s.mysqlInitialQueryError).
 					FontSize(theme.Font(c, 12)).TextColor(palette.Error)
 			}
-			ui.Row(c).Justify(ui.End).Gap(8).Children(func() {
-				if ui.PrimaryButton(c, "确定").Label("确认初始查询").Width(80).Clicked() {
-					s.confirmMySQLInitialQuery()
-				}
-				if ui.Button(c, "取消").Label("取消初始查询").Width(80).Clicked() {
+			ui.Row(c).Wrap().Justify(ui.End).Gap(8).Shrink(0).Children(func() {
+				if ui.Button(c, locales.Text("取消")).Label(locales.Text("取消初始查询")).Width(80).Clicked() {
 					s.cancelMySQLInitialQuery()
+				}
+				if ui.PrimaryButton(c, locales.Text("确定")).Label(locales.Text("确认初始查询")).Width(80).Clicked() {
+					s.confirmMySQLInitialQuery()
 				}
 			})
 		})

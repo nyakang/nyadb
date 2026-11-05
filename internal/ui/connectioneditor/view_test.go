@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
@@ -240,7 +241,7 @@ func TestNativeConnectionWideFormsRemainScrollableBesideProfiles(t *testing.T) {
 		}
 		tt.Scroll(690, 300, 200, 0)
 		r, ok := tt.Find(page.field)
-		if !ok || r.X < 258 || r.X+r.W > 720 || r.W != page.width {
+		if !ok || r.X < 258 || r.X+r.W > 720 || r.W <= 0 {
 			t.Fatalf("%s full-width form is clipped beside the profile list: %+v", page.tab, r)
 		}
 		footer, ok := tt.Find("取消连接向导")

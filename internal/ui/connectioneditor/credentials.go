@@ -6,6 +6,7 @@ import (
 
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // SetCredentialVault connects the editor and session manager to a native
@@ -33,14 +34,14 @@ func (s *State) loadSavedConnectionPasswords() {
 		return nil
 	}
 	if err := load(&s.connectionMainConfig, ""); err != nil {
-		s.connectionError = "无法读取系统保存的密码：" + err.Error()
+		s.connectionError = locales.Text("无法读取系统保存的密码：") + err.Error()
 		s.connectionPasswordLoadFailed = true
 		return
 	}
 	for i := range s.connectionOtherConfigs {
 		snap := &s.connectionOtherConfigs[i]
 		if err := load(snap, snap.name); err != nil {
-			s.connectionError = "无法读取系统保存的密码：" + err.Error()
+			s.connectionError = locales.Text("无法读取系统保存的密码：") + err.Error()
 			s.connectionPasswordLoadFailed = true
 			return
 		}
@@ -72,14 +73,14 @@ func (s *State) persistConnectionPasswords(saved, previous connections.Profile) 
 	// previously saved credentials.
 	if s.connectionPasswordLoadFailed {
 		if s.connectionSavePassword {
-			return fmt.Errorf("无法读取系统保存的密码，请先解锁密钥库")
+			return fmt.Errorf("%s", locales.Text("无法读取系统保存的密码，请先解锁密钥库"))
 		}
 		if len(saved.Variants) != len(previous.Variants) {
-			return fmt.Errorf("密钥库不可用时不能添加或删除备用配置，请先解锁密钥库")
+			return fmt.Errorf("%s", locales.Text("密钥库不可用时不能添加或删除备用配置，请先解锁密钥库"))
 		}
 		for i, v := range saved.Variants {
 			if v.Name != previous.Variants[i].Name {
-				return fmt.Errorf("密钥库不可用时不能重命名备用配置，请先解锁密钥库")
+				return fmt.Errorf("%s", locales.Text("密钥库不可用时不能重命名备用配置，请先解锁密钥库"))
 			}
 		}
 		return nil
@@ -95,7 +96,7 @@ func (s *State) persistConnectionPasswords(saved, previous connections.Profile) 
 	if s.credentialVault == nil {
 		for _, snap := range snapshots {
 			if snap.savePassword {
-				return fmt.Errorf("系统凭据存储不可用")
+				return fmt.Errorf("%s", locales.Text("系统凭据存储不可用"))
 			}
 		}
 		return nil
@@ -139,7 +140,7 @@ func (s *State) persistConnectionPasswords(saved, previous connections.Profile) 
 		}
 		password, found, err := s.credentialVault.Get(saved.ID, change.name)
 		if err != nil {
-			return fmt.Errorf("读取旧凭据失败：%w", err)
+			return fmt.Errorf(locales.Text("读取旧凭据失败：%w"), err)
 		}
 		before[change.name] = originalSecret{password: password, found: found}
 	}
@@ -156,13 +157,13 @@ func (s *State) persistConnectionPasswords(saved, previous connections.Profile) 
 				savedOriginal := before[applied.name]
 				if savedOriginal.found {
 					if restoreErr := s.credentialVault.Set(saved.ID, applied.name, savedOriginal.password); restoreErr != nil {
-						err = errors.Join(err, fmt.Errorf("回滚系统凭据失败：%w", restoreErr))
+						err = errors.Join(err, fmt.Errorf(locales.Text("回滚系统凭据失败：%w"), restoreErr))
 					}
 				} else if restoreErr := s.credentialVault.Delete(saved.ID, applied.name); restoreErr != nil {
-					err = errors.Join(err, fmt.Errorf("回滚系统凭据失败：%w", restoreErr))
+					err = errors.Join(err, fmt.Errorf(locales.Text("回滚系统凭据失败：%w"), restoreErr))
 				}
 			}
-			return fmt.Errorf("密码保存失败：%w", err)
+			return fmt.Errorf(locales.Text("密码保存失败：%w"), err)
 		}
 	}
 	return nil

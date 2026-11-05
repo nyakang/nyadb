@@ -37,7 +37,7 @@ func connectionFormRow(c *ui.Context) ui.Element {
 }
 
 func connectionFormTextInput(c *ui.Context, target *string, name string, width float32, disabled, secret bool) ui.Element {
-	field := ui.TextInput(c, target).Label(locales.Text(name)).Width(width).
+	field := ui.TextInput(c, target).Label(locales.Text(name)).MaxWidth(theme.RowHeight(c, width)).Grow(1).MinWidth(0).
 		Height(theme.RowHeight(c, connectionFormInputHeight)).Padding(2, 8).Disabled(disabled)
 	if secret {
 		field.Password()
@@ -47,6 +47,9 @@ func connectionFormTextInput(c *ui.Context, target *string, name string, width f
 
 func (s *State) formTextInput(c *ui.Context, target *string, name string, width float32, disabled, secret bool) ui.Element {
 	field := connectionFormTextInput(c, target, name, width, disabled, secret)
+	if field.Changed() && s.validationErrorField == name {
+		s.validationErrorField = ""
+	}
 	handle := ui.Local(field, "edit-target", func() ui.Handle { return ui.Handle{} })
 	field.Bind(handle)
 	if s.editFocus != nil {
@@ -74,12 +77,12 @@ func (s *State) formTextInput(c *ui.Context, target *string, name string, width 
 }
 
 func connectionFormSelect(c *ui.Context, value *string, options []string, name string, width float32, disabled bool) ui.Element {
-	return ui.Select(c, value, options).Label(locales.Text(name)).
-		Width(width).Height(theme.RowHeight(c, connectionFormInputHeight)).Disabled(disabled)
+	return theme.Choice(c, value, options, locales.Text).Label(locales.Text(name)).
+		MaxWidth(theme.RowHeight(c, width)).Grow(1).MinWidth(0).Height(theme.RowHeight(c, connectionFormInputHeight)).Disabled(disabled)
 }
 
 func connectionFormBrowse(c *ui.Context, label string, disabled bool, action func()) {
-	if ui.Button(c, "…").Label(locales.Text(label)).
+	if theme.IconButton(c, locales.Text(label), "more").Label(locales.Text(label)).
 		Width(connectionFormBrowseSize).Height(connectionFormBrowseSize).Padding(0, 0).
 		Disabled(disabled || action == nil).Clicked() && action != nil {
 		action()
@@ -107,43 +110,7 @@ func connectionFormCheckboxCompact(c *ui.Context, checked *bool, label string, d
 }
 
 func connectionFormCheckboxSized(c *ui.Context, checked *bool, label string, disabled bool, size float32) ui.Element {
-	palette := theme.Colors(c)
-
-	row := ui.CheckboxBase(c, checked).Label(locales.Text(label)).
-		Height(theme.RowHeight(c, connectionFormInputHeight)).Gap(5).AlignItems(ui.Center).
-		FocusRing(false).Disabled(disabled)
-	row.Children(func() {
-		fill := palette.Panel
-		border := palette.Border
-		tick := palette.Text
-		ink := palette.Text
-		if disabled {
-			fill = palette.App
-			border = palette.InputBorder
-			tick = palette.Muted
-			// MyGo dims disabled subtrees; avoid double-dimming the label.
-			ink = palette.Text
-		} else if row.Hovered() {
-			border = palette.Muted
-		}
-		ui.Box(c).Size(connectionCheckboxSize, connectionCheckboxSize).
-			Radius(1).Background(fill).Border(1, border).
-			DrawOver(func(p *ui.Painter, r ui.Rect) {
-				if *checked {
-					var mark ui.Path
-					mark.MoveTo(r.X+r.W*0.22, r.Y+r.H*0.52).
-						LineTo(r.X+r.W*0.42, r.Y+r.H*0.72).
-						LineTo(r.X+r.W*0.79, r.Y+r.H*0.29)
-					p.StrokePath(&mark, 1.6, tick)
-				}
-				if row.FocusVisible() {
-					p.Stroke(ui.Rect{X: r.X - 2, Y: r.Y - 2, W: r.W + 4, H: r.H + 4},
-						palette.Focus, 3, 1)
-				}
-			})
-		ui.Text(c, locales.Text(label)).FontSize(theme.Font(c, size)).TextColor(ink)
-	})
-	return row
+	return theme.CompactCheckbox(c, checked, label, disabled, size)
 }
 
 // SetMySQLSettingsPicker is invoked by the native browse button.
@@ -162,7 +129,7 @@ func (s *State) SelectMySQLSettingsDirectory(path string) {
 
 func (s *State) MySQLSettingsPickerError() {
 	if s.active && s.connectionDraft.Kind == connections.MySQL {
-		s.connectionError = "选择设置位置失败"
+		s.connectionError = locales.Text("选择设置位置失败")
 	}
 }
 
@@ -182,6 +149,18 @@ func (s *State) SelectSQLiteFile(path string) {
 
 func (s *State) SQLiteFilePickerError() {
 	if s.active {
-		s.connectionError = "无法打开数据库文件选择器，请手动输入文件路径"
+		s.connectionError = locales.Text("无法打开数据库文件选择器，请手动输入文件路径")
 	}
+}
+
+func (s *State) formField(c *ui.Context, caption, key string, build func()) ui.Element {
+	field := theme.Field(c, locales.Text(caption), build)
+	if s.validationErrorField == key {
+		field.Error(locales.Text(s.connectionError))
+	}
+	return field
+}
+
+func connectionScaledFormWidth(c *ui.Context, width float32) float32 {
+	return min(theme.RowHeight(c, connectionFormMaxWidth), width-connectionFormSideInset)
 }

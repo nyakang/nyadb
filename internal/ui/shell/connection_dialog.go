@@ -1,10 +1,11 @@
 package shell
 
 import (
+	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/connectioncatalog"
 	"github.com/nyakang/nyadb/internal/ui/theme"
@@ -46,8 +47,8 @@ func (s *State) chooseConnectionKind(kind connections.Kind) {
 
 func (s *State) nextConnectionStep() {
 	if s.connectionKind == "" {
-		if !strings.Contains(s.connectionError, "尚未支持") {
-			s.connectionError = "请先选择数据库类型"
+		if choice := s.connectionCatalog.Selected(); choice.Name == "" || choice.Kind != "" {
+			s.connectionError = locales.Text("请先选择数据库类型")
 		}
 		return
 	}
@@ -116,7 +117,7 @@ func (s *State) connectionModal(c *ui.Context) {
 	if !s.connectionDialog || s.showConnectionWindow != nil {
 		return
 	}
-	ui.Modal(c, &s.connectionDialog, func() {
+	theme.Modal(c, &s.connectionDialog, func() {
 		if s.connectionStep == 0 {
 			s.connectionTypes(c, false)
 			return
@@ -148,7 +149,7 @@ func (s *State) LoadLocalResearchIcons(dir string) (int, error) {
 func (s *State) chooseCatalogChoice(choice connectioncatalog.Choice) {
 	if choice.Kind == "" {
 		s.connectionKind = ""
-		s.connectionError = choice.Name + " 的连接驱动尚未支持"
+		s.connectionError = fmt.Sprintf(locales.Text("%s 的连接驱动尚未支持"), choice.Name)
 		return
 	}
 	s.chooseConnectionKind(choice.Kind)
@@ -166,11 +167,12 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 	w, h := c.Size()
 	dialogWidth := min(float32(860), w-72)
 	dialogHeight := min(float32(648), h-76)
-	bodyHeight := dialogHeight - catalogFooterHeight - 40
+	footerHeight := theme.RowHeight(c, catalogFooterHeight)
+	bodyHeight := dialogHeight - footerHeight - 40
 	if nativeWindow {
 		dialogWidth = w
 		dialogHeight = h
-		bodyHeight = h - catalogFooterHeight - 1
+		bodyHeight = h - footerHeight - 1
 	}
 	ui.Column(c).Width(dialogWidth).Height(dialogHeight).Gap(0).Children(func() {
 		if !nativeWindow {
@@ -183,7 +185,7 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 		s.connectionCatalog.SetEditing(&s.connectionEditFocus, func(target theme.EditTarget) { s.connectionEditTarget = target }, func() bool { return s.connectionDialog && s.connectionStep == 0 })
 		s.connectionCatalog.View(c, dialogWidth, bodyHeight, s.chooseCatalogChoice)
 		ui.Box(c).Height(1).Background(palette.Border)
-		ui.Row(c).Height(catalogFooterHeight).Padding(5, 9).Gap(7).AlignItems(ui.Center).Background(palette.Toolbar).Children(func() {
+		ui.Row(c).Height(footerHeight).Padding(5, 9).Gap(7).AlignItems(ui.Center).Background(palette.Toolbar).Children(func() {
 			if ui.Button(c, locales.Text("通过 URI 新建连接…")).Height(theme.RowHeight(c, connectionFooterControlHeight)).
 				Label(locales.Text("通过 URI 新建连接…")).Clicked() {
 				s.connectionEditor.BeginURI(s.connectionGroup)
@@ -194,10 +196,10 @@ func (s *State) connectionTypes(c *ui.Context, nativeWindow bool) {
 			if s.connectionError != "" {
 				ui.Text(c, s.connectionError).FontSize(theme.Font(c, 11)).TextColor(palette.Error).SingleLine().MinWidth(0).Grow(1)
 			}
-			if ui.Button(c, locales.Text("取消")).Label(locales.Text("取消连接向导")).Width(80).Height(theme.RowHeight(c, connectionFooterControlHeight)).Clicked() {
+			if ui.Button(c, locales.Text("取消")).Label(locales.Text("取消连接向导")).MinWidth(theme.Font(c, 80)).Height(theme.RowHeight(c, connectionFooterControlHeight)).Clicked() {
 				s.closeConnectionDialog()
 			}
-			if ui.Button(c, locales.Text("下一步")).Width(80).Height(theme.RowHeight(c, connectionFooterControlHeight)).Disabled(s.connectionKind == "").Clicked() {
+			if ui.Button(c, locales.Text("下一步")).Label(locales.Text("下一步")).MinWidth(theme.Font(c, 80)).Height(theme.RowHeight(c, connectionFooterControlHeight)).Disabled(s.connectionKind == "").Clicked() {
 				s.nextConnectionStep()
 			}
 		})

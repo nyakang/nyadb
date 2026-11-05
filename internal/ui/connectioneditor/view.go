@@ -1,11 +1,13 @@
 package connectioneditor
 
 import (
+	"time"
+
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
-	"time"
 )
 
 // The connection editor is a native MyGo view. Layout and tab order are based
@@ -49,7 +51,7 @@ func (s *State) View(c *ui.Context, width, height float32) {
 							s.connectionEditorOtherTab(c, formWidth)
 						}
 						if s.connectionError != "" {
-							ui.Text(c, s.connectionError).Width(connectionFormWidth(formWidth)).FontSize(theme.Font(c, 12)).TextColor(palette.Error).Padding(15, 0)
+							ui.Text(c, locales.Text(s.connectionError)).Width(connectionScaledFormWidth(c, formWidth)).FontSize(theme.Font(c, 12)).TextColor(palette.Error).Padding(15, 0)
 						}
 						s.connectionTestStatus(c)
 					})
@@ -95,7 +97,7 @@ func (s *State) connectionEditorTabs(c *ui.Context) {
 			for i, name := range names {
 				item := tabs.Tab(i).Height(theme.RowHeight(c, 28)).Padding(4, 12).Border(1, palette.Border)
 				if i == s.connectionEditorTab {
-					item.Background(palette.Toolbar)
+					item.Background(palette.Selection).TextColor(palette.SelectionText)
 				}
 				item.Children(func() {
 					ui.Text(c, locales.Text(name)).FontSize(theme.Font(c, 12)).SingleLine()
@@ -166,11 +168,11 @@ func (s *State) connectionEditorDiagram(c *ui.Context) {
 }
 
 func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
-	formWidth := connectionFormWidth(width)
+	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth := connectionFormLabelWidth
 	fieldWidth := formWidth - labelWidth
 	p := &s.connectionDraft
-	ui.Column(c).Width(formWidth).Gap(0).Children(func() {
+	theme.Form(c, formWidth, func() {
 		s.editorInputRow(c, "连接名称：", "连接名称", &p.Name, labelWidth, fieldWidth)
 		ui.Box(c).Height(theme.RowHeight(c, 31))
 		if p.Kind == connections.SQLite {
@@ -183,12 +185,11 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 			s.editorInputRow(c, "初始数据库：", "初始数据库", &p.Database, labelWidth, fieldWidth)
 		}
 		s.editorInputRow(c, "用户名：", "用户名", &p.Username, labelWidth, min(fieldWidth, float32(200)))
-		connectionFormRow(c).Children(func() {
-			ui.Text(c, locales.Text("密码：")).Width(labelWidth).FontSize(theme.Font(c, 12))
+		theme.Field(c, locales.Text("密码："), func() {
+
 			s.formTextInput(c, &s.connectionSecret, "密码", min(fieldWidth, float32(200)), false, true)
 		})
 		ui.Row(c).Height(theme.RowHeight(c, 28)).Gap(0).AlignItems(ui.Center).Children(func() {
-			ui.Box(c).Width(labelWidth)
 			connectionFormCheckbox(c, &s.connectionSavePassword, "保存密码",
 				s.connectionDraft.Kind == connections.SQLite || s.credentialVault == nil)
 		})
@@ -198,8 +199,8 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 func (s *State) editorInputRow(
 	c *ui.Context, caption, label string, target *string, labelWidth, fieldWidth float32,
 ) {
-	connectionFormRow(c).Children(func() {
-		ui.Text(c, locales.Text(caption)).Width(labelWidth).FontSize(theme.Font(c, 12))
+	s.formField(c, caption, label, func() {
+
 		input := s.formTextInput(c, target, label, fieldWidth,
 			s.connectionDraft.ID != 0 && s.connectionActiveConfig != 0 && label == "连接名称", false)
 		if label == "连接名称" && s.connectionActiveConfig == 0 && s.connectionNameFocusPending {
@@ -218,11 +219,13 @@ func (s *State) editorSQLiteFields(c *ui.Context, labelWidth, fieldWidth float32
 		ui.Box(c).Width(labelWidth)
 		connectionFormCheckbox(c, &s.connectionDraft.SQLiteOptions.RequireExisting, "现有数据库文件", s.connectionDraft.SQLiteOptions.ReadOnly)
 	})
-	connectionFormRow(c).Children(func() {
-		ui.Text(c, locales.Text("数据库文件：")).Width(labelWidth).FontSize(theme.Font(c, 12))
-		s.formTextInput(c, &s.connectionDraft.Database, "数据库文件", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false)
-		ui.Box(c).Width(connectionFormBrowseGap)
-		connectionFormBrowse(c, "浏览文件", s.sqliteFilePicker == nil, s.sqliteFilePicker)
+	theme.Field(c, locales.Text("数据库文件："), func() {
+		ui.Row(c).Gap(0).FillWidth().AlignItems(ui.Center).Children(func() {
+
+			s.formTextInput(c, &s.connectionDraft.Database, "数据库文件", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false)
+			ui.Box(c).Width(connectionFormBrowseGap)
+			connectionFormBrowse(c, "浏览文件", s.sqliteFilePicker == nil, s.sqliteFilePicker)
+		})
 	})
 	ui.Row(c).Gap(0).Children(func() {
 		ui.Box(c).Width(labelWidth)
@@ -243,7 +246,7 @@ func (s *State) connectionEditorOtherTab(c *ui.Context, width float32) {
 	if s.connectionDraft.Kind != connections.MySQL && s.connectionEngineOptions(c, width, tab) {
 		return
 	}
-	formWidth := connectionFormWidth(width)
+	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth := connectionFormLabelWidth
 	if s.connectionDraft.Kind == connections.MySQL {
 		switch tab {
@@ -268,7 +271,7 @@ func (s *State) connectionEditorOtherTab(c *ui.Context, width float32) {
 			return
 		}
 	}
-	ui.Column(c).Width(formWidth).Gap(12).Children(func() {
+	theme.Form(c, formWidth, func() {
 		// The profile model already has a database field. Keeping it on MySQL's
 		// database tab avoids adding a field not present on its observed General tab.
 		if tab == "数据库" {
@@ -278,7 +281,7 @@ func (s *State) connectionEditorOtherTab(c *ui.Context, width float32) {
 				FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 			return
 		}
-		ui.Text(c, tab+" 配置尚未实现").FontSize(theme.Font(c, 13)).TextColor(palette.Muted)
+		ui.Text(c, locales.Text(tab)+" · "+locales.Text("配置尚未实现")).FontSize(theme.Font(c, 13)).TextColor(palette.Muted)
 		ui.Text(c, locales.Text("此页仅保留原版导航位置；相关设置不会被静默保存或应用。")).
 			FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 	})
@@ -297,10 +300,10 @@ func (s *State) connectionEditorFooter(c *ui.Context, width float32) {
 	ui.Row(c).Wrap().Height(connectionEditorFooterHeight(c, width)-1).Padding(5, 9).Gap(7).AlignItems(ui.Center).
 		Background(palette.Toolbar).Children(func() {
 		// Show/hide the native editing configuration sidebar.
-		if ui.Button(c, "▣").Width(theme.Font(c, 26)).Height(theme.RowHeight(c, connectionFooterControlHeight)).
+		if theme.IconButton(c, "", "sidebar").Width(theme.Font(c, 26)).Height(theme.RowHeight(c, connectionFooterControlHeight)).
 			Background(palette.Header).Border(1, palette.Border).
 			Disabled(s.connectionDraft.ID == 0 || s.connectionDraft.Kind != connections.MySQL).
-			Label("切换连接配置文件侧栏").Clicked() {
+			Label(locales.Text("切换连接配置文件侧栏")).Clicked() {
 			s.connectionProfilesVisible = !s.connectionProfilesVisible
 		}
 		if ui.Button(c, "URI").Width(theme.Font(c, 76)).Height(theme.RowHeight(c, connectionFooterControlHeight)).
@@ -311,7 +314,7 @@ func (s *State) connectionEditorFooter(c *ui.Context, width float32) {
 		if s.connectionTesting {
 			if ui.Button(c, locales.Text("取消测试")).Width(theme.Font(c, 155)).Height(theme.RowHeight(c, connectionFooterControlHeight)).Background(palette.Header).Border(1, palette.Border).Clicked() {
 				s.cancelMySQLConnectionTest()
-				s.connectionTestMessage = "连接测试已取消"
+				s.connectionTestMessage = locales.Text("连接测试已取消")
 			}
 		} else if ui.Button(c, locales.Text("测试连接")).Width(theme.Font(c, 155)).Height(theme.RowHeight(c, connectionFooterControlHeight)).
 			Background(palette.Header).Border(1, palette.Border).
@@ -327,12 +330,12 @@ func (s *State) connectionEditorFooter(c *ui.Context, width float32) {
 			}
 		}
 		if ui.Button(c, locales.Text("确定")).Width(theme.Font(c, 80)).Height(theme.RowHeight(c, connectionFooterControlHeight)).
-			Background(palette.Header).Border(1, palette.Border).Label("保存连接").Clicked() {
+			Background(palette.Header).Border(1, palette.Border).Label(locales.Text("保存连接")).Clicked() {
 			s.Save()
 		}
 		if ui.Button(c, locales.Text("取消")).Width(theme.Font(c, 80)).Height(theme.RowHeight(c, connectionFooterControlHeight)).
 			Background(palette.Header).Border(1, palette.Border).
-			Label("取消连接向导").Clicked() {
+			Label(locales.Text("取消连接向导")).Clicked() {
 			s.Cancel()
 		}
 	})
@@ -351,16 +354,16 @@ func (s *State) connectionNotesEditor(c *ui.Context, width float32) {
 		ui.Row(c).Height(theme.RowHeight(c, 22)).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, locales.Text("颜色"))
 			ui.Select(c, &s.connectionDraft.Color, connections.ProfileColors()).Label(locales.Text("连接颜色")).Width(120)
-			ui.Text(c, "备注：*").FontSize(theme.Font(c, 12))
+			ui.Text(c, locales.Text("备注：*")).FontSize(theme.Font(c, 12))
 		})
 		notes := ui.TextArea(c, &s.connectionDraft.Notes).
-			Label("连接备注").
+			Label(locales.Text("连接备注")).
 			Width(formWidth).Height(editorHeight).
 			Padding(7, 6).FontSize(theme.Font(c, 12)).
 			Background(palette.App).Border(1, palette.App)
 		theme.BindNativeEdit(c, notes, "connection/notes", s.editFocus, s.editTarget, func() bool { return s.active && !s.uriOpen }, true, false)
 		ui.Row(c).Height(18).AlignItems(ui.Center).Children(func() {
-			ui.Text(c, "* 更改将应用于所有连接配置文件。").
+			ui.Text(c, locales.Text("* 更改将应用于所有连接配置文件。")).
 				FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 		})
 	})

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/locales"
 )
 
 func (s *State) draftProfile() (connections.Profile, error) {
@@ -39,7 +40,7 @@ func (s *State) draftProfile() (connections.Profile, error) {
 		return p, nil
 	}
 	if p.Kind == connections.PostgreSQL && strings.TrimSpace(p.Database) == "" {
-		return p, fieldError("数据库", "常规", "请输入此连接绑定的 PostgreSQL 数据库")
+		return p, fieldError("初始数据库", "常规", "请输入此连接绑定的 PostgreSQL 数据库")
 	}
 	port, err := strconv.ParseUint(strings.TrimSpace(s.connectionPort), 10, 16)
 	if err != nil || port == 0 {
@@ -65,7 +66,7 @@ func (s *State) Save() {
 		return
 	}
 	if s.profileService == nil {
-		s.connectionError = "连接档案尚未接入本地存储"
+		s.connectionError = locales.Text("连接档案尚未接入本地存储")
 		return
 	}
 	s.prepareInitialSQLRefs(&p)
@@ -73,7 +74,7 @@ func (s *State) Save() {
 	if p.ID > 0 {
 		before, err = s.profileService.Get(context.Background(), p.ID)
 		if err != nil {
-			s.connectionError = "读取原连接失败：" + err.Error()
+			s.connectionError = locales.Text("读取原连接失败：") + err.Error()
 			return
 		}
 	}
@@ -84,7 +85,7 @@ func (s *State) Save() {
 		saved, err = s.profileService.Create(context.Background(), p)
 	}
 	if err != nil {
-		s.connectionError = "保存失败（连接名称可能重复或配置无效）：" + err.Error()
+		s.connectionError = locales.Text("保存失败（连接名称可能重复或配置无效）：") + err.Error()
 		return
 	}
 	var undoDatabaseSecrets func() error
@@ -95,7 +96,7 @@ func (s *State) Save() {
 			} else {
 				_, _ = s.profileService.Update(context.Background(), before)
 			}
-			s.connectionError = "加密初始 SQL 保存失败，已尝试恢复原配置：" + err.Error()
+			s.connectionError = locales.Text("加密初始 SQL 保存失败，已尝试恢复原配置：") + err.Error()
 			return
 		}
 		undoDatabaseSecrets, err = s.connectionPasswordUndo(saved, before)
@@ -106,18 +107,18 @@ func (s *State) Save() {
 				_, rollbackErr := s.profileService.Update(context.Background(), before)
 				err = errors.Join(err, rollbackErr)
 			}
-			s.connectionError = "读取旧数据库凭据失败（已尝试恢复连接配置）：" + err.Error()
+			s.connectionError = locales.Text("读取旧数据库凭据失败（已尝试恢复连接配置）：") + err.Error()
 			return
 		}
 		if err := s.persistConnectionPasswords(saved, before); err != nil {
 			if p.ID == 0 {
 				if rollbackErr := s.profileService.Delete(context.Background(), saved.ID); rollbackErr != nil {
-					err = fmt.Errorf("%w；回滚新连接失败：%v", err, rollbackErr)
+					err = fmt.Errorf(locales.Text("%w；回滚新连接失败：%v"), err, rollbackErr)
 				}
 			} else if _, rollbackErr := s.profileService.Update(context.Background(), before); rollbackErr != nil {
-				err = fmt.Errorf("%w；回滚连接配置失败：%v", err, rollbackErr)
+				err = fmt.Errorf(locales.Text("%w；回滚连接配置失败：%v"), err, rollbackErr)
 			}
-			s.connectionError = "系统密钥库保存密码失败（连接配置已尝试回滚）：" + err.Error()
+			s.connectionError = locales.Text("系统密钥库保存密码失败（连接配置已尝试回滚）：") + err.Error()
 			return
 		}
 	}
@@ -130,7 +131,7 @@ func (s *State) Save() {
 				_, restoreErr := s.profileService.Update(context.Background(), before)
 				err = errors.Join(err, restoreErr)
 			}
-			s.connectionError = "系统密钥库保存密码失败（连接配置已尝试回滚）：" + err.Error()
+			s.connectionError = locales.Text("系统密钥库保存密码失败（连接配置已尝试回滚）：") + err.Error()
 			return
 		}
 	}
@@ -145,7 +146,7 @@ func (s *State) Save() {
 				_, rollbackErr := s.profileService.Update(context.Background(), before)
 				err = errors.Join(err, rollbackErr)
 			}
-			s.connectionError = "隧道凭据保存失败（已尝试恢复连接配置）：" + err.Error()
+			s.connectionError = locales.Text("隧道凭据保存失败（已尝试恢复连接配置）：") + err.Error()
 			return
 		}
 	}

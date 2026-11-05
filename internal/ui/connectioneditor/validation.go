@@ -2,6 +2,7 @@ package connectioneditor
 
 import (
 	"errors"
+
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -12,6 +13,7 @@ func (e *FieldError) Error() string                { return locales.Text(e.Messa
 func fieldError(field, page, message string) error { return &FieldError{field, page, message} }
 func (s *State) validationError(err error) {
 	s.connectionError = err.Error()
+	s.validationErrorField = ""
 	var field *FieldError
 	if errors.As(err, &field) {
 		for i, page := range s.connectionTabNames() {
@@ -21,5 +23,6 @@ func (s *State) validationError(err error) {
 			}
 		}
 		s.validationField = field.Field
+		s.validationErrorField = field.Field
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -139,17 +140,17 @@ func (s *State) advanceEngineOptions(p *connections.Profile) error {
 }
 
 func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string) bool {
-	formWidth := connectionFormWidth(width)
+	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
 	case connections.ClickHouse:
 		if tab != "SSL" {
 			return false
 		}
-		ui.Column(c).Width(formWidth).Gap(12).Children(func() {
+		theme.Form(c, formWidth, func() {
 			ui.Text(c, locales.Text("ClickHouse 使用原生 TCP 协议，默认端口 9000；TLS 服务通常使用 9440。"))
-			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
-				ui.Text(c, locales.Text("TLS 模式：")).Width(labelWidth)
+			theme.Field(c, locales.Text("TLS 模式："), func() {
+
 				connectionFormSelect(c, &s.connectionDraft.TLSMode, []string{"disable", "verify-full"}, "ClickHouse TLS 模式", fieldWidth, false)
 			})
 		})
@@ -158,7 +159,7 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 		a := &s.connectionDraft.PostgreSQLOptions
 		switch tab {
 		case "高级":
-			ui.Column(c).Width(formWidth).Gap(0).Children(func() {
+			theme.Form(c, formWidth, func() {
 				for i, label := range []string{"连接超时（秒）", "最大连接数", "语句超时（毫秒）", "锁等待超时（毫秒）"} {
 					display := label
 					if i == 1 {
@@ -173,9 +174,9 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 				ui.Text(c, locales.Text("语句及锁等待超时为 0 时不设置超时；默认模式在每条物理连接初始化。"))
 			})
 		case "SSL":
-			ui.Column(c).Width(formWidth).Gap(0).Children(func() {
-				connectionFormRow(c).Children(func() {
-					ui.Text(c, locales.Text("TLS 模式")).Width(labelWidth)
+			theme.Form(c, formWidth, func() {
+				theme.Field(c, locales.Text("TLS 模式"), func() {
+
 					connectionFormSelect(c, &s.connectionDraft.TLSMode, []string{"disable", "prefer", "require", "verify-ca", "verify-full"}, "PostgreSQL TLS 模式", fieldWidth, false)
 				})
 				for _, f := range []struct {
@@ -187,14 +188,16 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 					{"客户端证书", &a.CertificateFile, PostgreSQLCertificateFile},
 					{"客户端密钥", &a.KeyFile, PostgreSQLKeyFile},
 				} {
-					connectionFormRow(c).Children(func() {
-						ui.Text(c, locales.Text(f.name)).Width(labelWidth)
-						s.formTextInput(c, f.value, "PostgreSQL "+f.name, fieldWidth-29, false, false)
-						ui.Box(c).Width(connectionFormBrowseGap)
-						connectionFormBrowse(c, "选择 PostgreSQL "+f.name, s.engineFilePicker == nil, func() {
-							if s.engineFilePicker != nil {
-								s.engineFilePicker(f.kind, -1, s.engineFileVersion)
-							}
+					theme.Field(c, locales.Text(f.name), func() {
+						ui.Row(c).Gap(0).FillWidth().AlignItems(ui.Center).Children(func() {
+
+							s.formTextInput(c, f.value, "PostgreSQL "+f.name, fieldWidth-29, false, false)
+							ui.Box(c).Width(connectionFormBrowseGap)
+							connectionFormBrowse(c, "选择 PostgreSQL "+f.name, s.engineFilePicker == nil, func() {
+								if s.engineFilePicker != nil {
+									s.engineFilePicker(f.kind, -1, s.engineFileVersion)
+								}
+							})
 						})
 					})
 				}

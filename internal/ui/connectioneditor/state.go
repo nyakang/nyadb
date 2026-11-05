@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
 	"github.com/nyakang/nyadb/internal/transport"
@@ -49,6 +50,7 @@ type State struct {
 	uriOpen                     bool
 	uriReturn, uriConfirm       bool
 	validationField             string
+	validationErrorField        string
 	editFocus                   *string
 	editTarget                  func(theme.EditTarget)
 	uriGroup, uriText, uriError string
@@ -209,6 +211,7 @@ func (s *State) Close() {
 	s.clearMySQLInitialQuery()
 	s.connectionError = ""
 	s.validationField = ""
+	s.validationErrorField = ""
 }
 
 func (s *State) Cancel() {

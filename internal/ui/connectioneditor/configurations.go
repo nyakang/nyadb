@@ -6,9 +6,11 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/transport"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // The main config and alternatives are edited as raw per-window drafts. No
@@ -272,7 +274,7 @@ func (s *State) prepareConnectionConfigurations() (connections.Profile, error) {
 	main, err := s.draftProfile()
 	if err != nil {
 		s.connectionActiveConfig = 0
-		return main, fmt.Errorf("主要配置文件：%w", err)
+		return main, fmt.Errorf(locales.Text("主要配置文件：%w"), err)
 	}
 	main.Variants = nil
 	main.ActiveVariant = ""
@@ -281,7 +283,7 @@ func (s *State) prepareConnectionConfigurations() (connections.Profile, error) {
 	}
 	for i, v := range s.connectionOtherConfigs {
 		if strings.TrimSpace(v.name) == "" {
-			return main, fmt.Errorf("配置文件 %d 的名称不能为空", i+1)
+			return main, fmt.Errorf(locales.Text("配置文件 %d 的名称不能为空"), i+1)
 		}
 		s.restoreConnectionConfiguration(v)
 		// A variant has the same top-level name / ID; its own name is
@@ -289,7 +291,7 @@ func (s *State) prepareConnectionConfigurations() (connections.Profile, error) {
 		s.connectionDraft.Name = main.Name
 		checked, err := s.draftProfile()
 		if err != nil {
-			return main, fmt.Errorf("配置文件 %s：%w", v.name, err)
+			return main, fmt.Errorf(locales.Text("配置文件 %s：%w"), v.name, err)
 		}
 		main.Variants = append(main.Variants, connections.ConnectionVariant{
 			Name: v.name, Host: checked.Host, Port: checked.Port,
@@ -308,10 +310,10 @@ func (s *State) connectionConfigurationsSidebar(c *ui.Context, height float32) {
 		BorderColor(palette.Border).Children(func() {
 		ui.Row(c).Height(38).Padding(7, 10).AlignItems(ui.Center).Gap(5).
 			Background(palette.Header).Children(func() {
-			ui.Text(c, "连接配置文件").FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
+			ui.Text(c, locales.Text("连接配置文件")).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 			ui.Box(c).Grow(1)
-			if ui.Button(c, "+").Width(22).Height(theme.RowHeight(c, 22)).Padding(0, 0).
-				Label("添加连接配置文件").
+			if theme.IconButton(c, "", "plus").Width(22).Height(theme.RowHeight(c, 22)).Padding(0, 0).
+				Label(locales.Text("添加连接配置文件")).
 				Disabled(len(s.connectionOtherConfigs) >= 16).Clicked() {
 				s.addConnectionConfiguration()
 			}
@@ -347,20 +349,20 @@ func (s *State) connectionConfigRow(c *ui.Context, index int, name string) {
 		}
 		row.ContextMenu(func(m *ui.Menu) {
 			if index != s.connectionActiveTarget {
-				if m.Item("设置为活动配置文件").Chosen() {
+				if m.Item(locales.Text("设置为活动配置文件")).Chosen() {
 					s.markConnectionConfigurationActive(index)
 				}
 			}
 			if index == 0 {
 				return
 			}
-			if m.Item("复制配置文件").Chosen() {
+			if m.Item(locales.Text("复制配置文件")).Chosen() {
 				s.duplicateConnectionConfiguration(index)
 			}
-			if m.Item("删除配置文件").Chosen() {
+			if m.Item(locales.Text("删除配置文件")).Chosen() {
 				s.removeConnectionConfiguration(index)
 			}
-			if m.Item("重命名配置文件").Chosen() {
+			if m.Item(locales.Text("重命名配置文件")).Chosen() {
 				s.selectConnectionConfiguration(index)
 			}
 		})
@@ -390,8 +392,8 @@ func (s *State) connectionConfigurationCaption(c *ui.Context) {
 		return
 	}
 	ui.Row(c).Height(theme.RowHeight(c, 24)).Padding(2, 15).AlignItems(ui.Center).Gap(9).Children(func() {
-		ui.Text(c, "配置文件名称：").FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
-		ui.TextInput(c, &s.connectionOtherConfigs[index].name).Label("配置文件名称").
+		ui.Text(c, locales.Text("配置文件名称：")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+		ui.TextInput(c, &s.connectionOtherConfigs[index].name).Label(locales.Text("配置文件名称")).
 			Width(210).Height(21).Padding(2, 6)
 	})
 }
