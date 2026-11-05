@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -79,7 +80,7 @@ func (s *State) URIView(c *ui.Context, width, height float32, imported func()) {
 			ui.Text(c, s.uriError).TextColor(theme.Colors(c).Error)
 		}
 		ui.Box(c).Grow(1)
-		ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+		ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
 			back := "返回连接类型"
 			if s.uriReturn {
 				back = "返回连接表单"
@@ -108,8 +109,8 @@ func (s *State) URIView(c *ui.Context, width, height float32, imported func()) {
 			}
 		})
 	})
-	ui.Modal(c, &s.uriConfirm, func() {
-		ui.Column(c).Width(440).MaxWidthPercent(95).Padding(18).Gap(12).Children(func() {
+	theme.Modal(c, &s.uriConfirm, func() {
+		ui.Column(c).Width(440).MaxWidthPercent(95).Gap(12).Children(func() {
 			ui.Text(c, locales.Text("替换连接配置？")).Bold()
 			ui.Text(c, locales.Text("URI 将替换连接参数、高级选项和备用配置。名称与备注保留，保存前不会修改已有连接或密码。"))
 			ui.Row(c).Gap(8).Children(func() {

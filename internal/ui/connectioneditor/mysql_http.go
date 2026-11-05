@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -45,7 +46,7 @@ func (s *State) advanceMySQLHTTP(p *connections.Profile) error {
 	}
 	n, err := strconv.ParseUint(strings.TrimSpace(s.mysqlHTTPProxyPort), 10, 16)
 	if err != nil || n == 0 {
-		return fmt.Errorf("HTTP 代理端口必须是 1–65535 之间的整数")
+		return fmt.Errorf("%s", locales.Text("HTTP 代理端口必须是 1–65535 之间的整数"))
 	}
 	p.MySQLAdvanced.HTTP.ProxyPort = int(n)
 	return nil
@@ -83,7 +84,7 @@ func (s *State) SelectMySQLHTTPFile(kind MySQLHTTPFile, version uint64, path str
 func (s *State) MySQLHTTPFilePickerError(version uint64) {
 	if version == s.mysqlHTTPSessionVersion && s.active &&
 		s.connectionDraft.Kind == connections.MySQL {
-		s.connectionError = "选择 HTTP 隧道证书文件失败"
+		s.connectionError = locales.Text("选择 HTTP 隧道证书文件失败")
 	}
 }
 
@@ -95,7 +96,7 @@ func (s *State) connectionMySQLHTTP(c *ui.Context, width float32) {
 	fieldWidth := formWidth - labelWidth
 	cfg := &s.connectionDraft.MySQLAdvanced.HTTP
 	active := cfg.Enabled
-	ui.Column(c).Width(formWidth).Gap(0).Children(func() {
+	theme.Form(c, formWidth, func() {
 		connectionFormRow(c).Children(func() {
 			connectionFormCheckbox(c, &cfg.Enabled, "使用 HTTP 隧道", s.connectionDraft.MySQLAdvanced.SSH.Enabled)
 		})
@@ -104,7 +105,7 @@ func (s *State) connectionMySQLHTTP(c *ui.Context, width float32) {
 		connectionFormRow(c).Children(func() {
 			connectionFormCheckbox(c, &cfg.Base64Queries, "使用 base64 编码传出查询", true)
 			if cfg.Base64Queries {
-				if ui.Button(c, "清除旧版 base64 设置").Disabled(!active).Clicked() {
+				if ui.Button(c, locales.Text("清除旧版 base64 设置")).Disabled(!active).Clicked() {
 					cfg.Base64Queries = false
 				}
 			}
@@ -115,9 +116,9 @@ func (s *State) connectionMySQLHTTP(c *ui.Context, width float32) {
 				for i, name := range []string{"验证", "代理"} {
 					item := tabs.Tab(i).Height(theme.RowHeight(c, 27)).Padding(4, 12).Border(1, palette.Border)
 					if i == s.mysqlHTTPSubtab {
-						item.Background(palette.Header)
+						item.Background(palette.Selection).TextColor(palette.SelectionText)
 					}
-					item.Children(func() { ui.Text(c, name).FontSize(theme.Font(c, 12)) })
+					item.Children(func() { ui.Text(c, locales.Text(name)).FontSize(theme.Font(c, 12)) })
 				}
 			})
 			ui.Box(c).Grow(1)
@@ -134,7 +135,7 @@ func (s *State) connectionMySQLHTTP(c *ui.Context, width float32) {
 			}
 		})
 		ui.Row(c).Height(32).Margin(4, 0, 0, 0).Justify(ui.End).AlignItems(ui.Center).Children(func() {
-			ui.Text(c, "nyadb-tcp-v1 网关：HTTPS 身份验证与数据库 TLS 独立。 ").FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+			ui.Text(c, locales.Text("nyadb-tcp-v1 网关：HTTPS 身份验证与数据库 TLS 独立。 ")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 		})
 	})
 }
@@ -160,15 +161,14 @@ func (s *State) mysqlHTTPVerification(c *ui.Context, cfg *connections.MySQLHTTP,
 func (s *State) mysqlHTTPProxy(c *ui.Context, cfg *connections.MySQLHTTP,
 	labelWidth, fieldWidth float32, active bool,
 ) {
-	palette := theme.Colors(c)
 
 	connectionFormRow(c).Children(func() {
 		connectionFormCheckbox(c, &cfg.ProxyEnabled, "使用代理", !active)
 	})
 	proxyActive := active && cfg.ProxyEnabled
 	s.mysqlHTTPInput(c, "主机：", &cfg.ProxyHost, labelWidth, fieldWidth, proxyActive)
-	connectionFormRow(c).Children(func() {
-		ui.Text(c, locales.Text("端口：")).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
+	theme.Field(c, locales.Text("端口："), func() {
+
 		s.formTextInput(c, &s.mysqlHTTPProxyPort, "HTTP 代理端口", 80, !proxyActive, false)
 	})
 	s.mysqlHTTPInput(c, "用户名：", &cfg.ProxyUsername, labelWidth, 200, proxyActive)
@@ -179,10 +179,9 @@ func (s *State) mysqlHTTPProxy(c *ui.Context, cfg *connections.MySQLHTTP,
 func (s *State) mysqlHTTPInput(c *ui.Context, name string, value *string,
 	labelWidth, fieldWidth float32, active bool,
 ) {
-	palette := theme.Colors(c)
 
-	connectionFormRow(c).Children(func() {
-		ui.Text(c, name).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
+	theme.Field(c, name, func() {
+
 		s.formTextInput(c, value, "HTTP "+name, fieldWidth, !active, false)
 	})
 }
@@ -190,10 +189,9 @@ func (s *State) mysqlHTTPInput(c *ui.Context, name string, value *string,
 func (s *State) mysqlHTTPPasswordRow(c *ui.Context, name string, value *string,
 	labelWidth, fieldWidth float32, active bool,
 ) {
-	palette := theme.Colors(c)
 
-	connectionFormRow(c).Children(func() {
-		ui.Text(c, name).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
+	theme.Field(c, name, func() {
+
 		s.formTextInput(c, value, "HTTP "+name, fieldWidth, !active, true)
 	})
 }
@@ -208,12 +206,13 @@ func (s *State) mysqlHTTPSavePlaceholder(c *ui.Context, name string, labelWidth 
 func (s *State) mysqlHTTPFileRow(c *ui.Context, name string, value *string,
 	kind MySQLHTTPFile, labelWidth, fieldWidth float32, active bool,
 ) {
-	palette := theme.Colors(c)
 
-	connectionFormRow(c).Children(func() {
-		ui.Text(c, name).Width(labelWidth).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
-		s.formTextInput(c, value, "HTTP "+name, fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, false)
-		ui.Box(c).Width(connectionFormBrowseGap)
-		connectionFormBrowse(c, "选择 HTTP "+name+"文件", !active || s.mysqlHTTPFilePicker == nil, func() { s.mysqlHTTPFilePicker(kind) })
+	theme.Field(c, name, func() {
+		ui.Row(c).Gap(0).FillWidth().AlignItems(ui.Center).Children(func() {
+
+			s.formTextInput(c, value, "HTTP "+name, fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, !active, false)
+			ui.Box(c).Width(connectionFormBrowseGap)
+			connectionFormBrowse(c, "选择 HTTP "+name+"文件", !active || s.mysqlHTTPFilePicker == nil, func() { s.mysqlHTTPFilePicker(kind) })
+		})
 	})
 }

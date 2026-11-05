@@ -184,6 +184,9 @@ type State struct {
 	search        string
 	gridMode      bool
 	treeOpen      map[string]bool
+	tree          ui.OutlineState[catalogNodeKey]
+	treeRow       int
+	treeSearching bool
 	recent        []string
 	engineFilters map[string]bool
 	vendorFilters map[string]bool
@@ -197,7 +200,7 @@ func (s *State) SetEditing(focus *string, register func(theme.EditTarget), valid
 }
 
 func New() *State {
-	s := &State{gridMode: true, treeOpen: map[string]bool{}}
+	s := &State{gridMode: true, treeOpen: map[string]bool{}, treeRow: -1}
 	s.Reset()
 	s.bundledIcons, _ = theme.BundledConnectionIcons()
 	s.providerIcons, _ = theme.BundledProviderIcons()
@@ -208,6 +211,7 @@ func New() *State {
 // expansion state, in-session recents and loaded icons remain available.
 func (s *State) Reset() {
 	s.selected = Choice{}
+	s.treeRow = -1
 	s.clearCatalogFilters()
 }
 

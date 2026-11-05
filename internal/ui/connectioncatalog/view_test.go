@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
@@ -137,5 +138,37 @@ func TestProviderSidebarShowsDescriptiveCategoryLabels(t *testing.T) {
 	}
 	if len(s.vendorFilters) != 0 {
 		t.Fatal("vendor filter did not clear")
+	}
+}
+
+func TestChooserNativeKeyboardAndScaledRows(t *testing.T) {
+	metrics := theme.CurrentMetrics()
+	t.Cleanup(func() { theme.SetMetrics(metrics) })
+	theme.SetMetrics(theme.MetricsPreferences{UIFontSize: 16, SQLFontSize: 13, TableDensity: theme.DensityCompact})
+	s := New()
+	s.gridMode = false
+	tt := ui.NewTester(catalogTestView(s), 840, 560)
+	tt.SetPreferences(ui.Preferences{TextScale: 1.5})
+	if err := tt.Click("选择 MySQL"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Key(0, ui.KeyDown)
+	if s.Selected().Name != "PostgreSQL" {
+		t.Fatalf("native Down selected %+v", s.Selected())
+	}
+	previous := float32(-1)
+	for _, name := range []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite"} {
+		r, ok := tt.Find("选择 " + name)
+		if !ok || r.H < 38 || r.Y < previous {
+			t.Fatalf("scaled rows overlap: %s %+v", name, r)
+		}
+		previous = r.Y + r.H
+	}
+	// Text and glyph are inside one native checkbox hit target.
+	if err := tt.Click("筛选 MySQL"); err != nil {
+		t.Fatal(err)
+	}
+	if !s.engineFilters["MySQL"] {
+		t.Fatal("full checkbox row did not toggle")
 	}
 }

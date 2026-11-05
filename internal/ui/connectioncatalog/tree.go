@@ -4,7 +4,9 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // The original chooser list is a tree of *database types and vendors*, not
@@ -118,88 +120,138 @@ func (s *State) catalogTreeGroups() []catalogTreeGroup {
 	return groups
 }
 
-func (s *State) catalogTree(c *ui.Context, onSelect func(Choice)) {
-	palette := theme.Colors(c)
+// Section is part of the key because a recent entry also appears in All.
+type catalogNodeKey struct{ Section, Vendor, Name string }
 
-	ui.Column(c).Gap(0).Children(func() {
-		recent := s.catalogRecents()
-		if len(recent) > 0 {
-			s.catalogTreeHeading(c, "最近使用过的")
-			for _, item := range recent {
-				s.catalogTreeLeaf(c, item, 0, onSelect)
-			}
-		}
-		direct := s.catalogTreeDirect()
-		groups := s.catalogTreeGroups()
-		if len(direct)+len(groups) == 0 {
-			ui.Text(c, "没有匹配的连接类型").FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
+func (s *State) catalogTree(c *ui.Context, onSelect func(Choice)) {
+	p := theme.Colors(c)
+	roots := []catalogNodeKey{}
+	entries := map[catalogNodeKey]catalogEntry{}
+	children := map[catalogNodeKey][]catalogNodeKey{}
+	add := func(section string, items []catalogEntry) {
+		if len(items) == 0 {
 			return
 		}
-		s.catalogTreeHeading(c, "全部")
-		for _, item := range direct {
-			s.catalogTreeLeaf(c, item, 0, onSelect)
+		roots = append(roots, catalogNodeKey{Section: section})
+		for _, item := range items {
+			key := catalogNodeKey{Section: section, Name: item.name}
+			roots = append(roots, key)
+			entries[key] = item
 		}
-		for _, group := range groups {
-			group := group
-			open := s.treeOpen[group.vendor] ||
-				strings.TrimSpace(s.search) != ""
-			button := ui.ButtonBase(c).Label("展开 " + group.label).
-				FillWidth().Height(catalogTreeRowHeight).Radius(0).Background(ui.Transparent)
-			button.Children(func() {
-				ui.Row(c).FillWidth().Gap(4).Padding(0, 5).AlignItems(ui.Center).Children(func() {
-					arrow := "▸"
-					if open {
-						arrow = "▾"
-					}
-					ui.Text(c, arrow).Width(14).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
-					s.catalogProviderIcon(c, group.vendor, catalogTreeIconSize)
-					ui.Text(c, group.label).FontSize(theme.Font(c, 12)).SingleLine()
-				})
-			})
-			if button.Clicked() {
-				s.treeOpen[group.vendor] = !s.treeOpen[group.vendor]
-			}
-			if open {
-				for _, item := range group.items {
-					s.catalogTreeLeaf(c, item, 1, onSelect)
+	}
+	add("最近使用过的", s.catalogRecents())
+	direct, groups := s.catalogTreeDirect(), s.catalogTreeGroups()
+	if len(direct)+len(groups) == 0 {
+		ui.Text(c, locales.Text("没有匹配的连接类型")).TextColor(p.Muted)
+		return
+	}
+	roots = append(roots, catalogNodeKey{Section: "全部"})
+	for _, item := range direct {
+		key := catalogNodeKey{Section: "全部", Name: item.name}
+		roots = append(roots, key)
+		entries[key] = item
+	}
+	labels := map[string]string{}
+	searching := strings.TrimSpace(s.search) != ""
+	if searching != s.treeSearching {
+		s.tree.Open.Clear()
+		s.treeSearching = searching
+		if !searching {
+			for vendor, open := range s.treeOpen {
+				if open {
+					s.tree.Open.Add(catalogNodeKey{Section: "全部", Vendor: vendor})
 				}
 			}
 		}
-	})
-}
-
-func (s *State) catalogTreeHeading(c *ui.Context, title string) {
-	palette := theme.Colors(c)
-
-	ui.Row(c).Height(theme.RowHeight(c, 28)).Padding(0, 8).AlignItems(ui.Center).Children(func() {
-		ui.Text(c, title).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
-	})
-}
-
-func (s *State) catalogTreeLeaf(c *ui.Context, item catalogEntry, depth int, onSelect func(Choice)) {
-	palette := theme.Colors(c)
-
-	selected := s.selected.Name == item.name
-	bg := ui.Transparent
-	if selected {
-		bg = palette.Selection
 	}
-	button := ui.ButtonBase(c).Label("选择 " + item.name).
-		FillWidth().Height(catalogTreeRowHeight).Radius(0).Background(bg)
-	button.Children(func() {
-		ui.Row(c).FillWidth().Gap(4).Padding(0, 5).AlignItems(ui.Center).Children(func() {
-			indent := float32(18)
-			if depth > 0 {
-				indent = 36
+	for _, group := range groups {
+		key := catalogNodeKey{Section: "全部", Vendor: group.vendor}
+		roots = append(roots, key)
+		labels[group.vendor] = group.label
+		children[key] = []catalogNodeKey{}
+		for _, item := range group.items {
+			leaf := catalogNodeKey{Section: "全部", Vendor: group.vendor, Name: item.name}
+			children[key] = append(children[key], leaf)
+			entries[leaf] = item
+		}
+		if searching {
+			s.tree.Open.Add(key)
+		} else if s.treeOpen[group.vendor] {
+			s.tree.Open.Add(key)
+		}
+	}
+	s.tree.List.Selected = &s.treeRow
+	s.tree.List.Header = func(row int) bool { k := s.tree.Item(row); return k.Name == "" && k.Vendor == "" }
+	s.tree.List.Label = func(row int) string {
+		k := s.tree.Item(row)
+		if k.Name != "" {
+			return locales.Text("选择 ") + k.Name
+		}
+		if k.Vendor != "" {
+			return locales.Text("展开 ") + labels[k.Vendor]
+		}
+		return locales.Text(k.Section)
+	}
+	s.tree.Indent = 18
+	s.tree.DisclosureSize = 14
+	s.tree.Disclosure = ui.OutlineTriangle
+	base := c.Theme()
+	dense := *base
+	dense.Spacing = 1
+	c.SetTheme(&dense)
+	tree := theme.Outline(c, &s.tree, roots, func(k catalogNodeKey) []catalogNodeKey { return children[k] }, func(k catalogNodeKey) {
+		if k.Name == "" && k.Vendor == "" {
+			ui.Text(c, locales.Text(k.Section)).MinHeight(theme.RowHeight(c, 28)).TextColor(p.Muted).Background(p.Panel)
+			return
+		}
+		label := locales.Text("选择 ") + k.Name
+		if k.Name == "" {
+			label = locales.Text("展开 ") + labels[k.Vendor]
+		}
+		row := ui.Row(c).Label(label).FillWidth().Height(theme.RowHeight(c, catalogTreeRowHeight) - 2).Gap(4).AlignItems(ui.Center)
+		row.Children(func() {
+			if k.Name == "" {
+				s.catalogProviderIcon(c, k.Vendor, catalogTreeIconSize)
+				ui.Text(c, labels[k.Vendor]).SingleLine().Grow(1).MinWidth(0).Tooltip(labels[k.Vendor])
+				return
 			}
-			ui.Box(c).Width(indent)
+			item := entries[k]
 			s.catalogTreeIcon(c, item)
-			ui.Text(c, item.name).FontSize(theme.Font(c, 12)).SingleLine()
+			ui.Text(c, item.name).SingleLine().Grow(1).MinWidth(0).Tooltip(item.name)
+			s.catalogAvailability(c, item, s.selected.Name == item.name)
 		})
-	})
-	if button.Clicked() {
-		s.chooseCatalogEntry(item, onSelect)
+		if k.Name == "" && row.Clicked() {
+			if s.tree.Open.Has(k) {
+				s.tree.Open.Remove(k)
+			} else {
+				s.tree.Open.Add(k)
+			}
+		}
+	}).Label(locales.Text("连接类型列表")).Grow(1).MinHeight(0).Padding(0).Gap(0)
+	c.SetTheme(base)
+	if !searching {
+		for _, group := range groups {
+			s.treeOpen[group.vendor] = s.tree.Open.Has(catalogNodeKey{Section: "全部", Vendor: group.vendor})
+		}
 	}
+	if s.treeRow >= 0 && s.treeRow < s.tree.Rows() {
+		k := s.tree.Item(s.treeRow)
+		if item, ok := entries[k]; ok && (tree.Changed() || s.selected.Name != item.name) {
+			s.chooseCatalogEntry(item, onSelect)
+		}
+	}
+}
+
+func (s *State) catalogAvailability(c *ui.Context, item catalogEntry, selected bool) {
+	color := theme.Colors(c).Muted
+	if selected {
+		color = theme.Colors(c).SelectionText
+	}
+	text := locales.Text("尚未支持")
+	if item.kind != "" {
+		text = locales.Text("可连接")
+	}
+	ui.Text(c, text).FontSize(theme.Font(c, 10)).TextColor(color).SingleLine().Tooltip(text)
 }
 
 func (s *State) catalogTreeIcon(c *ui.Context, item catalogEntry) {

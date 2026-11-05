@@ -7,8 +7,10 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 type mysqlTestResult struct {
@@ -43,7 +45,7 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 	}
 	if err == nil && p.Kind == connections.MySQL {
 		if s.validateMySQL == nil {
-			err = fmt.Errorf("MySQL 连接测试服务不可用")
+			err = fmt.Errorf("%s", locales.Text("MySQL 连接测试服务不可用"))
 		} else {
 			err = s.validateMySQL(settings, s.connectionSecret)
 		}
@@ -64,7 +66,7 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 	providerTest := s.connectionTester
 	if tester == nil {
 		tester = func(context.Context, connections.ActiveSettings, string) error {
-			return fmt.Errorf("MySQL 连接测试服务不可用")
+			return fmt.Errorf("%s", locales.Text("MySQL 连接测试服务不可用"))
 		}
 	}
 	results := make(chan mysqlTestResult, 1)
@@ -76,7 +78,7 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 		} else if providerTest != nil {
 			err = providerTest(ctx, p, secret)
 		} else if p.Kind != connections.MySQL {
-			err = fmt.Errorf("连接测试服务不可用")
+			err = fmt.Errorf("%s", locales.Text("连接测试服务不可用"))
 		} else {
 			err = tester(ctx, settings, secret)
 		}
@@ -109,14 +111,14 @@ func (s *State) consumeMySQLConnectionTest() {
 		s.connectionTestCancel = nil
 		s.connectionTestResults = nil
 		if result.err == nil {
-			s.connectionTestMessage = connectionKindName(s.connectionDraft.Kind) + " 连接测试成功（已关闭测试会话）"
+			s.connectionTestMessage = fmt.Sprintf(locales.Text("%s 连接测试成功（已关闭测试会话）"), connectionKindName(s.connectionDraft.Kind))
 			s.connectionError = ""
 		} else if errors.Is(result.err, context.Canceled) {
-			s.connectionTestMessage = "连接测试已取消"
+			s.connectionTestMessage = locales.Text("连接测试已取消")
 			s.connectionError = ""
 		} else {
 			s.connectionTestMessage = ""
-			s.connectionError = fmt.Sprintf("连接测试失败：%v", result.err)
+			s.connectionError = fmt.Sprintf(locales.Text("连接测试失败：%v"), result.err)
 		}
 	default:
 	}
@@ -135,7 +137,7 @@ func (s *State) cancelMySQLConnectionTest() {
 
 func (s *State) connectionTestStatus(c *ui.Context) {
 	if s.connectionTesting {
-		ui.Text(c, "正在测试 "+connectionKindName(s.connectionDraft.Kind)+" 连接…").FontSize(theme.Font(c, 12))
+		ui.Text(c, fmt.Sprintf(locales.Text("正在测试 %s 连接…"), connectionKindName(s.connectionDraft.Kind))).FontSize(theme.Font(c, 12))
 	} else if s.connectionTestMessage != "" {
 		ui.Text(c, s.connectionTestMessage).FontSize(theme.Font(c, 12))
 	}
