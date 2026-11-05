@@ -5,7 +5,7 @@ go 1.27.3
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.50.0
 	github.com/ebitengine/purego v0.11.2
-	github.com/egoist/mygo v0.7.3
+	github.com/egoist/mygo v0.7.4
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/parquet-go/parquet-go v0.32.0
@@ -55,4 +55,4 @@ require (
 
 tool github.com/egoist/mygo/cmd/mygo
 
-replace github.com/egoist/mygo => github.com/nyakang/mygo v0.7.3-nyadb.2
+replace github.com/egoist/mygo => github.com/nyakang/mygo v0.7.4-nyadb.1
