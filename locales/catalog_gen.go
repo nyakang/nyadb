@@ -17427,3 +17427,1997 @@ func WorkflowExportOptions() string { return In(i18n.Locale()).WorkflowExportOpt
 func (msgs Messages) WorkflowExportOptions() string {
 	return Catalog.Format(msgs.locale, "workflowExportOptions", nil)
 }
+
+// UiFixab9c9c3247 says "%s 副本 %d"
+// in the language the app shows.
+func UiFixab9c9c3247() string { return In(i18n.Locale()).UiFixab9c9c3247() }
+
+// UiFixab9c9c3247 says "%s 副本 %d"
+// in the language of msgs.
+func (msgs Messages) UiFixab9c9c3247() string {
+	return Catalog.Format(msgs.locale, "uiFixab9c9c3247", nil)
+}
+
+// UiFixc7bc02b38a says "%s.%s · 数据"
+// in the language the app shows.
+func UiFixc7bc02b38a() string { return In(i18n.Locale()).UiFixc7bc02b38a() }
+
+// UiFixc7bc02b38a says "%s.%s · 数据"
+// in the language of msgs.
+func (msgs Messages) UiFixc7bc02b38a() string {
+	return Catalog.Format(msgs.locale, "uiFixc7bc02b38a", nil)
+}
+
+// UiFixb9e4291d85 says "%s失败：%v"
+// in the language the app shows.
+func UiFixb9e4291d85() string { return In(i18n.Locale()).UiFixb9e4291d85() }
+
+// UiFixb9e4291d85 says "%s失败：%v"
+// in the language of msgs.
+func (msgs Messages) UiFixb9e4291d85() string {
+	return Catalog.Format(msgs.locale, "uiFixb9e4291d85", nil)
+}
+
+// UiFix7564b4c881 says "* 更改将应用于所有连接配置文件。"
+// in the language the app shows.
+func UiFix7564b4c881() string { return In(i18n.Locale()).UiFix7564b4c881() }
+
+// UiFix7564b4c881 says "* 更改将应用于所有连接配置文件。"
+// in the language of msgs.
+func (msgs Messages) UiFix7564b4c881() string {
+	return Catalog.Format(msgs.locale, "uiFix7564b4c881", nil)
+}
+
+// UiFixad03c035bc says "MySQL 用户、角色与权限"
+// in the language the app shows.
+func UiFixad03c035bc() string { return In(i18n.Locale()).UiFixad03c035bc() }
+
+// UiFixad03c035bc says "MySQL 用户、角色与权限"
+// in the language of msgs.
+func (msgs Messages) UiFixad03c035bc() string {
+	return Catalog.Format(msgs.locale, "uiFixad03c035bc", nil)
+}
+
+// UiFix9837c7f303 says "SQL 已完成 · %d 行 · %s"
+// in the language the app shows.
+func UiFix9837c7f303() string { return In(i18n.Locale()).UiFix9837c7f303() }
+
+// UiFix9837c7f303 says "SQL 已完成 · %d 行 · %s"
+// in the language of msgs.
+func (msgs Messages) UiFix9837c7f303() string {
+	return Catalog.Format(msgs.locale, "uiFix9837c7f303", nil)
+}
+
+// UiFixff719fd2eb says "SQL 已完成 · 影响 %d 行 · %s"
+// in the language the app shows.
+func UiFixff719fd2eb() string { return In(i18n.Locale()).UiFixff719fd2eb() }
+
+// UiFixff719fd2eb says "SQL 已完成 · 影响 %d 行 · %s"
+// in the language of msgs.
+func (msgs Messages) UiFixff719fd2eb() string {
+	return Catalog.Format(msgs.locale, "uiFixff719fd2eb", nil)
+}
+
+// UiFixf3370259fc says "TLS 连接始终校验证书链和主机名，不允许关闭验证。"
+// in the language the app shows.
+func UiFixf3370259fc() string { return In(i18n.Locale()).UiFixf3370259fc() }
+
+// UiFixf3370259fc says "TLS 连接始终校验证书链和主机名，不允许关闭验证。"
+// in the language of msgs.
+func (msgs Messages) UiFixf3370259fc() string {
+	return Catalog.Format(msgs.locale, "uiFixf3370259fc", nil)
+}
+
+// UiFixad2e0542f8 says "nyadb-tcp-v1 网关：HTTPS 身份验证与数据库 TLS 独立。 "
+// in the language the app shows.
+func UiFixad2e0542f8() string { return In(i18n.Locale()).UiFixad2e0542f8() }
+
+// UiFixad2e0542f8 says "nyadb-tcp-v1 网关：HTTPS 身份验证与数据库 TLS 独立。 "
+// in the language of msgs.
+func (msgs Messages) UiFixad2e0542f8() string {
+	return Catalog.Format(msgs.locale, "uiFixad2e0542f8", nil)
+}
+
+// UiFix7bdd5ee0b4 says "从列表中移除数据库"
+// in the language the app shows.
+func UiFix7bdd5ee0b4() string { return In(i18n.Locale()).UiFix7bdd5ee0b4() }
+
+// UiFix7bdd5ee0b4 says "从列表中移除数据库"
+// in the language of msgs.
+func (msgs Messages) UiFix7bdd5ee0b4() string {
+	return Catalog.Format(msgs.locale, "uiFix7bdd5ee0b4", nil)
+}
+
+// UiFixe659c05e37 says "值类型"
+// in the language the app shows.
+func UiFixe659c05e37() string { return In(i18n.Locale()).UiFixe659c05e37() }
+
+// UiFixe659c05e37 says "值类型"
+// in the language of msgs.
+func (msgs Messages) UiFixe659c05e37() string {
+	return Catalog.Format(msgs.locale, "uiFixe659c05e37", nil)
+}
+
+// UiFixdbb2c7b443 says "全部连接"
+// in the language the app shows.
+func UiFixdbb2c7b443() string { return In(i18n.Locale()).UiFixdbb2c7b443() }
+
+// UiFixdbb2c7b443 says "全部连接"
+// in the language of msgs.
+func (msgs Messages) UiFixdbb2c7b443() string {
+	return Catalog.Format(msgs.locale, "uiFixdbb2c7b443", nil)
+}
+
+// UiFix399ee69347 says "分组"
+// in the language the app shows.
+func UiFix399ee69347() string { return In(i18n.Locale()).UiFix399ee69347() }
+
+// UiFix399ee69347 says "分组"
+// in the language of msgs.
+func (msgs Messages) UiFix399ee69347() string {
+	return Catalog.Format(msgs.locale, "uiFix399ee69347", nil)
+}
+
+// UiFix7ed80bb9bc says "列表只控制显示范围；不会创建数据库或提升访问权限。自动打开需要显式连接。"
+// in the language the app shows.
+func UiFix7ed80bb9bc() string { return In(i18n.Locale()).UiFix7ed80bb9bc() }
+
+// UiFix7ed80bb9bc says "列表只控制显示范围；不会创建数据库或提升访问权限。自动打开需要显式连接。"
+// in the language of msgs.
+func (msgs Messages) UiFix7ed80bb9bc() string {
+	return Catalog.Format(msgs.locale, "uiFix7ed80bb9bc", nil)
+}
+
+// UiFix328cfabf0d says "创建 InnoDB 基础表，初始字段为 id BIGINT AUTO_INCREMENT PRIMARY KEY；完整结构设计尚未接入。"
+// in the language the app shows.
+func UiFix328cfabf0d() string { return In(i18n.Locale()).UiFix328cfabf0d() }
+
+// UiFix328cfabf0d says "创建 InnoDB 基础表，初始字段为 id BIGINT AUTO_INCREMENT PRIMARY KEY；完整结构设计尚未接入。"
+// in the language of msgs.
+func (msgs Messages) UiFix328cfabf0d() string {
+	return Catalog.Format(msgs.locale, "uiFix328cfabf0d", nil)
+}
+
+// UiFix3064187af4 says "初始查询"
+// in the language the app shows.
+func UiFix3064187af4() string { return In(i18n.Locale()).UiFix3064187af4() }
+
+// UiFix3064187af4 says "初始查询"
+// in the language of msgs.
+func (msgs Messages) UiFix3064187af4() string {
+	return Catalog.Format(msgs.locale, "uiFix3064187af4", nil)
+}
+
+// UiFix2da33d7018 says "初始查询 SQL 编辑器"
+// in the language the app shows.
+func UiFix2da33d7018() string { return In(i18n.Locale()).UiFix2da33d7018() }
+
+// UiFix2da33d7018 says "初始查询 SQL 编辑器"
+// in the language of msgs.
+func (msgs Messages) UiFix2da33d7018() string {
+	return Catalog.Format(msgs.locale, "uiFix2da33d7018", nil)
+}
+
+// UiFix4425e1c2fa says "初始查询："
+// in the language the app shows.
+func UiFix4425e1c2fa() string { return In(i18n.Locale()).UiFix4425e1c2fa() }
+
+// UiFix4425e1c2fa says "初始查询："
+// in the language of msgs.
+func (msgs Messages) UiFix4425e1c2fa() string {
+	return Catalog.Format(msgs.locale, "uiFix4425e1c2fa", nil)
+}
+
+// UiFix8c7e3447ec says "区分大小写"
+// in the language the app shows.
+func UiFix8c7e3447ec() string { return In(i18n.Locale()).UiFix8c7e3447ec() }
+
+// UiFix8c7e3447ec says "区分大小写"
+// in the language of msgs.
+func (msgs Messages) UiFix8c7e3447ec() string {
+	return Catalog.Format(msgs.locale, "uiFix8c7e3447ec", nil)
+}
+
+// UiFixe351a5c67c says "原连接"
+// in the language the app shows.
+func UiFixe351a5c67c() string { return In(i18n.Locale()).UiFixe351a5c67c() }
+
+// UiFixe351a5c67c says "原连接"
+// in the language of msgs.
+func (msgs Messages) UiFixe351a5c67c() string {
+	return Catalog.Format(msgs.locale, "uiFixe351a5c67c", nil)
+}
+
+// UiFixc50bdcefa8 says "取消初始查询"
+// in the language the app shows.
+func UiFixc50bdcefa8() string { return In(i18n.Locale()).UiFixc50bdcefa8() }
+
+// UiFixc50bdcefa8 says "取消初始查询"
+// in the language of msgs.
+func (msgs Messages) UiFixc50bdcefa8() string {
+	return Catalog.Format(msgs.locale, "uiFixc50bdcefa8", nil)
+}
+
+// UiFix3687f953cf says "取消连接"
+// in the language the app shows.
+func UiFix3687f953cf() string { return In(i18n.Locale()).UiFix3687f953cf() }
+
+// UiFix3687f953cf says "取消连接"
+// in the language of msgs.
+func (msgs Messages) UiFix3687f953cf() string {
+	return Catalog.Format(msgs.locale, "uiFix3687f953cf", nil)
+}
+
+// UiFix57c3275e19 says "只读元数据搜索，不读取表记录。"
+// in the language the app shows.
+func UiFix57c3275e19() string { return In(i18n.Locale()).UiFix57c3275e19() }
+
+// UiFix57c3275e19 says "只读元数据搜索，不读取表记录。"
+// in the language of msgs.
+func (msgs Messages) UiFix57c3275e19() string {
+	return Catalog.Format(msgs.locale, "uiFix57c3275e19", nil)
+}
+
+// UiFix762b8536c5 says "备注：*"
+// in the language the app shows.
+func UiFix762b8536c5() string { return In(i18n.Locale()).UiFix762b8536c5() }
+
+// UiFix762b8536c5 says "备注：*"
+// in the language of msgs.
+func (msgs Messages) UiFix762b8536c5() string {
+	return Catalog.Format(msgs.locale, "uiFix762b8536c5", nil)
+}
+
+// UiFixae788c9d4b says "复制到剪贴板"
+// in the language the app shows.
+func UiFixae788c9d4b() string { return In(i18n.Locale()).UiFixae788c9d4b() }
+
+// UiFixae788c9d4b says "复制到剪贴板"
+// in the language of msgs.
+func (msgs Messages) UiFixae788c9d4b() string {
+	return Catalog.Format(msgs.locale, "uiFixae788c9d4b", nil)
+}
+
+// UiFix97d1192c5c says "完整公开 DDL …"
+// in the language the app shows.
+func UiFix97d1192c5c() string { return In(i18n.Locale()).UiFix97d1192c5c() }
+
+// UiFix97d1192c5c says "完整公开 DDL …"
+// in the language of msgs.
+func (msgs Messages) UiFix97d1192c5c() string {
+	return Catalog.Format(msgs.locale, "uiFix97d1192c5c", nil)
+}
+
+// UiFixc30ebf2457 says "完整公开对象定义"
+// in the language the app shows.
+func UiFixc30ebf2457() string { return In(i18n.Locale()).UiFixc30ebf2457() }
+
+// UiFixc30ebf2457 says "完整公开对象定义"
+// in the language of msgs.
+func (msgs Messages) UiFixc30ebf2457() string {
+	return Catalog.Format(msgs.locale, "uiFixc30ebf2457", nil)
+}
+
+// UiFix3d7fe56273 says "客户端字符集："
+// in the language the app shows.
+func UiFix3d7fe56273() string { return In(i18n.Locale()).UiFix3d7fe56273() }
+
+// UiFix3d7fe56273 says "客户端字符集："
+// in the language of msgs.
+func (msgs Messages) UiFix3d7fe56273() string {
+	return Catalog.Format(msgs.locale, "uiFix3d7fe56273", nil)
+}
+
+// UiFix91dec1ff52 says "客户端驱动程序："
+// in the language the app shows.
+func UiFix91dec1ff52() string { return In(i18n.Locale()).UiFix91dec1ff52() }
+
+// UiFix91dec1ff52 says "客户端驱动程序："
+// in the language of msgs.
+func (msgs Messages) UiFix91dec1ff52() string {
+	return Catalog.Format(msgs.locale, "uiFix91dec1ff52", nil)
+}
+
+// UiFix1af866a706 says "将执行 DELETE FROM，移除全部行；InnoDB 允许在事务中回滚，但本操作不会自动开启事务。"
+// in the language the app shows.
+func UiFix1af866a706() string { return In(i18n.Locale()).UiFix1af866a706() }
+
+// UiFix1af866a706 says "将执行 DELETE FROM，移除全部行；InnoDB 允许在事务中回滚，但本操作不会自动开启事务。"
+// in the language of msgs.
+func (msgs Messages) UiFix1af866a706() string {
+	return Catalog.Format(msgs.locale, "uiFix1af866a706", nil)
+}
+
+// UiFixa6589185ff says "将执行 DROP TABLE，永久删除表结构和数据。可能发生隐式提交。"
+// in the language the app shows.
+func UiFixa6589185ff() string { return In(i18n.Locale()).UiFixa6589185ff() }
+
+// UiFixa6589185ff says "将执行 DROP TABLE，永久删除表结构和数据。可能发生隐式提交。"
+// in the language of msgs.
+func (msgs Messages) UiFixa6589185ff() string {
+	return Catalog.Format(msgs.locale, "uiFixa6589185ff", nil)
+}
+
+// UiFix2084e7498d says "将执行 RENAME TABLE，并使原有名称下的已打开数据/结构标签失效。"
+// in the language the app shows.
+func UiFix2084e7498d() string { return In(i18n.Locale()).UiFix2084e7498d() }
+
+// UiFix2084e7498d says "将执行 RENAME TABLE，并使原有名称下的已打开数据/结构标签失效。"
+// in the language of msgs.
+func (msgs Messages) UiFix2084e7498d() string {
+	return Catalog.Format(msgs.locale, "uiFix2084e7498d", nil)
+}
+
+// UiFix12d49ae996 says "将执行 TRUNCATE TABLE，通常重置自增值，并发生隐式提交；不能按普通删除回滚。"
+// in the language the app shows.
+func UiFix12d49ae996() string { return In(i18n.Locale()).UiFix12d49ae996() }
+
+// UiFix12d49ae996 says "将执行 TRUNCATE TABLE，通常重置自增值，并发生隐式提交；不能按普通删除回滚。"
+// in the language of msgs.
+func (msgs Messages) UiFix12d49ae996() string {
+	return Catalog.Format(msgs.locale, "uiFix12d49ae996", nil)
+}
+
+// UiFix5e43128cd7 says "展开 "
+// in the language the app shows.
+func UiFix5e43128cd7() string { return In(i18n.Locale()).UiFix5e43128cd7() }
+
+// UiFix5e43128cd7 says "展开 "
+// in the language of msgs.
+func (msgs Messages) UiFix5e43128cd7() string {
+	return Catalog.Format(msgs.locale, "uiFix5e43128cd7", nil)
+}
+
+// UiFixece450912e says "已删除连接（#%d）"
+// in the language the app shows.
+func UiFixece450912e() string { return In(i18n.Locale()).UiFixece450912e() }
+
+// UiFixece450912e says "已删除连接（#%d）"
+// in the language of msgs.
+func (msgs Messages) UiFixece450912e() string {
+	return Catalog.Format(msgs.locale, "uiFixece450912e", nil)
+}
+
+// UiFixbd7bc3aa4c says "已连接 %s（%d 个命名空间）"
+// in the language the app shows.
+func UiFixbd7bc3aa4c() string { return In(i18n.Locale()).UiFixbd7bc3aa4c() }
+
+// UiFixbd7bc3aa4c says "已连接 %s（%d 个命名空间）"
+// in the language of msgs.
+func (msgs Messages) UiFixbd7bc3aa4c() string {
+	return Catalog.Format(msgs.locale, "uiFixbd7bc3aa4c", nil)
+}
+
+// UiFixec910fb1a4 says "当前授权"
+// in the language the app shows.
+func UiFixec910fb1a4() string { return In(i18n.Locale()).UiFixec910fb1a4() }
+
+// UiFixec910fb1a4 says "当前授权"
+// in the language of msgs.
+func (msgs Messages) UiFixec910fb1a4() string {
+	return Catalog.Format(msgs.locale, "uiFixec910fb1a4", nil)
+}
+
+// UiFix744a6726a7 says "当前版本不支持兼容性覆盖；这些选项保持禁用，旧配置保留。"
+// in the language the app shows.
+func UiFix744a6726a7() string { return In(i18n.Locale()).UiFix744a6726a7() }
+
+// UiFix744a6726a7 says "当前版本不支持兼容性覆盖；这些选项保持禁用，旧配置保留。"
+// in the language of msgs.
+func (msgs Messages) UiFix744a6726a7() string {
+	return Catalog.Format(msgs.locale, "uiFix744a6726a7", nil)
+}
+
+// UiFixb5f5a81d07 says "影响 %d 行"
+// in the language the app shows.
+func UiFixb5f5a81d07() string { return In(i18n.Locale()).UiFixb5f5a81d07() }
+
+// UiFixb5f5a81d07 says "影响 %d 行"
+// in the language of msgs.
+func (msgs Messages) UiFixb5f5a81d07() string {
+	return Catalog.Format(msgs.locale, "uiFixb5f5a81d07", nil)
+}
+
+// UiFixb03d89aa1c says "折叠所有连接组与数据库树"
+// in the language the app shows.
+func UiFixb03d89aa1c() string { return In(i18n.Locale()).UiFixb03d89aa1c() }
+
+// UiFixb03d89aa1c says "折叠所有连接组与数据库树"
+// in the language of msgs.
+func (msgs Messages) UiFixb03d89aa1c() string {
+	return Catalog.Format(msgs.locale, "uiFixb03d89aa1c", nil)
+}
+
+// UiFix136de7a8c4 says "拒绝"
+// in the language the app shows.
+func UiFix136de7a8c4() string { return In(i18n.Locale()).UiFix136de7a8c4() }
+
+// UiFix136de7a8c4 says "拒绝"
+// in the language of msgs.
+func (msgs Messages) UiFix136de7a8c4() string {
+	return Catalog.Format(msgs.locale, "uiFix136de7a8c4", nil)
+}
+
+// UiFix78658dac44 says "按列表顺序执行，遇错停止；已完成和结果不确定的步骤不会自动重放。"
+// in the language the app shows.
+func UiFix78658dac44() string { return In(i18n.Locale()).UiFix78658dac44() }
+
+// UiFix78658dac44 says "按列表顺序执行，遇错停止；已完成和结果不确定的步骤不会自动重放。"
+// in the language of msgs.
+func (msgs Messages) UiFix78658dac44() string {
+	return Catalog.Format(msgs.locale, "uiFix78658dac44", nil)
+}
+
+// UiFixa2f4e2c71e says "授权数据库（空为全部）"
+// in the language the app shows.
+func UiFixa2f4e2c71e() string { return In(i18n.Locale()).UiFixa2f4e2c71e() }
+
+// UiFixa2f4e2c71e says "授权数据库（空为全部）"
+// in the language of msgs.
+func (msgs Messages) UiFixa2f4e2c71e() string {
+	return Catalog.Format(msgs.locale, "uiFixa2f4e2c71e", nil)
+}
+
+// UiFix82f1fc2532 says "授权表（空为全部）"
+// in the language the app shows.
+func UiFix82f1fc2532() string { return In(i18n.Locale()).UiFix82f1fc2532() }
+
+// UiFix82f1fc2532 says "授权表（空为全部）"
+// in the language of msgs.
+func (msgs Messages) UiFix82f1fc2532() string {
+	return Catalog.Format(msgs.locale, "uiFix82f1fc2532", nil)
+}
+
+// UiFixdb3008c5b4 says "数据库或模式"
+// in the language the app shows.
+func UiFixdb3008c5b4() string { return In(i18n.Locale()).UiFixdb3008c5b4() }
+
+// UiFixdb3008c5b4 says "数据库或模式"
+// in the language of msgs.
+func (msgs Messages) UiFixdb3008c5b4() string {
+	return Catalog.Format(msgs.locale, "uiFixdb3008c5b4", nil)
+}
+
+// UiFix18721d9fcd says "新对象名称"
+// in the language the app shows.
+func UiFix18721d9fcd() string { return In(i18n.Locale()).UiFix18721d9fcd() }
+
+// UiFix18721d9fcd says "新对象名称"
+// in the language of msgs.
+func (msgs Messages) UiFix18721d9fcd() string {
+	return Catalog.Format(msgs.locale, "uiFix18721d9fcd", nil)
+}
+
+// UiFix8b6ff49851 says "时间"
+// in the language the app shows.
+func UiFix8b6ff49851() string { return In(i18n.Locale()).UiFix8b6ff49851() }
+
+// UiFix8b6ff49851 says "时间"
+// in the language of msgs.
+func (msgs Messages) UiFix8b6ff49851() string {
+	return Catalog.Format(msgs.locale, "uiFix8b6ff49851", nil)
+}
+
+// UiFixdd5b15b2fd says "显式打开"
+// in the language the app shows.
+func UiFixdd5b15b2fd() string { return In(i18n.Locale()).UiFixdd5b15b2fd() }
+
+// UiFixdd5b15b2fd says "显式打开"
+// in the language of msgs.
+func (msgs Messages) UiFixdd5b15b2fd() string {
+	return Catalog.Format(msgs.locale, "uiFixdd5b15b2fd", nil)
+}
+
+// UiFix5b3b51a316 says "暂无连接"
+// in the language the app shows.
+func UiFix5b3b51a316() string { return In(i18n.Locale()).UiFix5b3b51a316() }
+
+// UiFix5b3b51a316 says "暂无连接"
+// in the language of msgs.
+func (msgs Messages) UiFix5b3b51a316() string {
+	return Catalog.Format(msgs.locale, "uiFix5b3b51a316", nil)
+}
+
+// UiFix3055a035f0 says "更新"
+// in the language the app shows.
+func UiFix3055a035f0() string { return In(i18n.Locale()).UiFix3055a035f0() }
+
+// UiFix3055a035f0 says "更新"
+// in the language of msgs.
+func (msgs Messages) UiFix3055a035f0() string {
+	return Catalog.Format(msgs.locale, "uiFix3055a035f0", nil)
+}
+
+// UiFix3901b58e95 says "服务器权限和版本决定可执行能力；错误逐项报告。"
+// in the language the app shows.
+func UiFix3901b58e95() string { return In(i18n.Locale()).UiFix3901b58e95() }
+
+// UiFix3901b58e95 says "服务器权限和版本决定可执行能力；错误逐项报告。"
+// in the language of msgs.
+func (msgs Messages) UiFix3901b58e95() string {
+	return Catalog.Format(msgs.locale, "uiFix3901b58e95", nil)
+}
+
+// UiFixf242d2db4c says "未知操作"
+// in the language the app shows.
+func UiFixf242d2db4c() string { return In(i18n.Locale()).UiFixf242d2db4c() }
+
+// UiFixf242d2db4c says "未知操作"
+// in the language of msgs.
+func (msgs Messages) UiFixf242d2db4c() string {
+	return Catalog.Format(msgs.locale, "uiFixf242d2db4c", nil)
+}
+
+// UiFixc748a993b3 says "本次 MySQL 会话密码"
+// in the language the app shows.
+func UiFixc748a993b3() string { return In(i18n.Locale()).UiFixc748a993b3() }
+
+// UiFixc748a993b3 says "本次 MySQL 会话密码"
+// in the language of msgs.
+func (msgs Messages) UiFixc748a993b3() string {
+	return Catalog.Format(msgs.locale, "uiFixc748a993b3", nil)
+}
+
+// UiFix7e66a68787 says "权限（逗号分隔）"
+// in the language the app shows.
+func UiFix7e66a68787() string { return In(i18n.Locale()).UiFix7e66a68787() }
+
+// UiFix7e66a68787 says "权限（逗号分隔）"
+// in the language of msgs.
+func (msgs Messages) UiFix7e66a68787() string {
+	return Catalog.Format(msgs.locale, "uiFix7e66a68787", nil)
+}
+
+// UiFix59f51d34e7 says "来源 %d"
+// in the language the app shows.
+func UiFix59f51d34e7() string { return In(i18n.Locale()).UiFix59f51d34e7() }
+
+// UiFix59f51d34e7 says "来源 %d"
+// in the language of msgs.
+func (msgs Messages) UiFix59f51d34e7() string {
+	return Catalog.Format(msgs.locale, "uiFix59f51d34e7", nil)
+}
+
+// UiFixa344f98fdc says "来源 %s · %d 个对象"
+// in the language the app shows.
+func UiFixa344f98fdc() string { return In(i18n.Locale()).UiFixa344f98fdc() }
+
+// UiFixa344f98fdc says "来源 %s · %d 个对象"
+// in the language of msgs.
+func (msgs Messages) UiFixa344f98fdc() string {
+	return Catalog.Format(msgs.locale, "uiFixa344f98fdc", nil)
+}
+
+// UiFix598d2e1e8a says "模拟查询已运行 %d 次（没有访问数据库）"
+// in the language the app shows.
+func UiFix598d2e1e8a() string { return In(i18n.Locale()).UiFix598d2e1e8a() }
+
+// UiFix598d2e1e8a says "模拟查询已运行 %d 次（没有访问数据库）"
+// in the language of msgs.
+func (msgs Messages) UiFix598d2e1e8a() string {
+	return Catalog.Format(msgs.locale, "uiFix598d2e1e8a", nil)
+}
+
+// UiFix7d1b242dcf says "正在执行数据库操作…"
+// in the language the app shows.
+func UiFix7d1b242dcf() string { return In(i18n.Locale()).UiFix7d1b242dcf() }
+
+// UiFix7d1b242dcf says "正在执行数据库操作…"
+// in the language of msgs.
+func (msgs Messages) UiFix7d1b242dcf() string {
+	return Catalog.Format(msgs.locale, "uiFix7d1b242dcf", nil)
+}
+
+// UiFix70b156463a says "没有匹配的连接"
+// in the language the app shows.
+func UiFix70b156463a() string { return In(i18n.Locale()).UiFix70b156463a() }
+
+// UiFix70b156463a says "没有匹配的连接"
+// in the language of msgs.
+func (msgs Messages) UiFix70b156463a() string {
+	return Catalog.Format(msgs.locale, "uiFix70b156463a", nil)
+}
+
+// UiFix28780d5b35 says "没有匹配的连接类型"
+// in the language the app shows.
+func UiFix28780d5b35() string { return In(i18n.Locale()).UiFix28780d5b35() }
+
+// UiFix28780d5b35 says "没有匹配的连接类型"
+// in the language of msgs.
+func (msgs Messages) UiFix28780d5b35() string {
+	return Catalog.Format(msgs.locale, "uiFix28780d5b35", nil)
+}
+
+// UiFix4f5bb63d26 says "注释："
+// in the language the app shows.
+func UiFix4f5bb63d26() string { return In(i18n.Locale()).UiFix4f5bb63d26() }
+
+// UiFix4f5bb63d26 says "注释："
+// in the language of msgs.
+func (msgs Messages) UiFix4f5bb63d26() string {
+	return Catalog.Format(msgs.locale, "uiFix4f5bb63d26", nil)
+}
+
+// UiFix3ed399fd69 says "添加数据库到列表"
+// in the language the app shows.
+func UiFix3ed399fd69() string { return In(i18n.Locale()).UiFix3ed399fd69() }
+
+// UiFix3ed399fd69 says "添加数据库到列表"
+// in the language of msgs.
+func (msgs Messages) UiFix3ed399fd69() string {
+	return Catalog.Format(msgs.locale, "uiFix3ed399fd69", nil)
+}
+
+// UiFix7dc997cb01 says "添加连接"
+// in the language the app shows.
+func UiFix7dc997cb01() string { return In(i18n.Locale()).UiFix7dc997cb01() }
+
+// UiFix7dc997cb01 says "添加连接"
+// in the language of msgs.
+func (msgs Messages) UiFix7dc997cb01() string {
+	return Catalog.Format(msgs.locale, "uiFix7dc997cb01", nil)
+}
+
+// UiFixa452acfc30 says "添加连接配置文件"
+// in the language the app shows.
+func UiFixa452acfc30() string { return In(i18n.Locale()).UiFixa452acfc30() }
+
+// UiFixa452acfc30 says "添加连接配置文件"
+// in the language of msgs.
+func (msgs Messages) UiFixa452acfc30() string {
+	return Catalog.Format(msgs.locale, "uiFixa452acfc30", nil)
+}
+
+// UiFix1f546126e5 says "清除旧兼容性覆盖"
+// in the language the app shows.
+func UiFix1f546126e5() string { return In(i18n.Locale()).UiFix1f546126e5() }
+
+// UiFix1f546126e5 says "清除旧兼容性覆盖"
+// in the language of msgs.
+func (msgs Messages) UiFix1f546126e5() string {
+	return Catalog.Format(msgs.locale, "uiFix1f546126e5", nil)
+}
+
+// UiFix427a0164b5 says "现有账户"
+// in the language the app shows.
+func UiFix427a0164b5() string { return In(i18n.Locale()).UiFix427a0164b5() }
+
+// UiFix427a0164b5 says "现有账户"
+// in the language of msgs.
+func (msgs Messages) UiFix427a0164b5() string {
+	return Catalog.Format(msgs.locale, "uiFix427a0164b5", nil)
+}
+
+// UiFixd225bb3fe5 says "目标表"
+// in the language the app shows.
+func UiFixd225bb3fe5() string { return In(i18n.Locale()).UiFixd225bb3fe5() }
+
+// UiFixd225bb3fe5 says "目标表"
+// in the language of msgs.
+func (msgs Messages) UiFixd225bb3fe5() string {
+	return Catalog.Format(msgs.locale, "uiFixd225bb3fe5", nil)
+}
+
+// UiFix36f33adaf0 says "确认"
+// in the language the app shows.
+func UiFix36f33adaf0() string { return In(i18n.Locale()).UiFix36f33adaf0() }
+
+// UiFix36f33adaf0 says "确认"
+// in the language of msgs.
+func (msgs Messages) UiFix36f33adaf0() string {
+	return Catalog.Format(msgs.locale, "uiFix36f33adaf0", nil)
+}
+
+// UiFix9e0eefe002 says "确认初始查询"
+// in the language the app shows.
+func UiFix9e0eefe002() string { return In(i18n.Locale()).UiFix9e0eefe002() }
+
+// UiFix9e0eefe002 says "确认初始查询"
+// in the language of msgs.
+func (msgs Messages) UiFix9e0eefe002() string {
+	return Catalog.Format(msgs.locale, "uiFix9e0eefe002", nil)
+}
+
+// UiFix28242dc28d says "确认删除表"
+// in the language the app shows.
+func UiFix28242dc28d() string { return In(i18n.Locale()).UiFix28242dc28d() }
+
+// UiFix28242dc28d says "确认删除表"
+// in the language of msgs.
+func (msgs Messages) UiFix28242dc28d() string {
+	return Catalog.Format(msgs.locale, "uiFix28242dc28d", nil)
+}
+
+// UiFix54d6f65a76 says "确认所选对象操作"
+// in the language the app shows.
+func UiFix54d6f65a76() string { return In(i18n.Locale()).UiFix54d6f65a76() }
+
+// UiFix54d6f65a76 says "确认所选对象操作"
+// in the language of msgs.
+func (msgs Messages) UiFix54d6f65a76() string {
+	return Catalog.Format(msgs.locale, "uiFix54d6f65a76", nil)
+}
+
+// UiFixb0a4d0e372 says "确认执行所选对象操作"
+// in the language the app shows.
+func UiFixb0a4d0e372() string { return In(i18n.Locale()).UiFixb0a4d0e372() }
+
+// UiFixb0a4d0e372 says "确认执行所选对象操作"
+// in the language of msgs.
+func (msgs Messages) UiFixb0a4d0e372() string {
+	return Catalog.Format(msgs.locale, "uiFixb0a4d0e372", nil)
+}
+
+// UiFixbe760fb3c3 says "确认执行账户操作"
+// in the language the app shows.
+func UiFixbe760fb3c3() string { return In(i18n.Locale()).UiFixbe760fb3c3() }
+
+// UiFixbe760fb3c3 says "确认执行账户操作"
+// in the language of msgs.
+func (msgs Messages) UiFixbe760fb3c3() string {
+	return Catalog.Format(msgs.locale, "uiFixbe760fb3c3", nil)
+}
+
+// UiFix65b778d3de says "等待原会话操作回执…"
+// in the language the app shows.
+func UiFix65b778d3de() string { return In(i18n.Locale()).UiFix65b778d3de() }
+
+// UiFix65b778d3de says "等待原会话操作回执…"
+// in the language of msgs.
+func (msgs Messages) UiFix65b778d3de() string {
+	return Catalog.Format(msgs.locale, "uiFix65b778d3de", nil)
+}
+
+// UiFix664a977d5c says "管理连接"
+// in the language the app shows.
+func UiFix664a977d5c() string { return In(i18n.Locale()).UiFix664a977d5c() }
+
+// UiFix664a977d5c says "管理连接"
+// in the language of msgs.
+func (msgs Messages) UiFix664a977d5c() string {
+	return Catalog.Format(msgs.locale, "uiFix664a977d5c", nil)
+}
+
+// UiFixbb7ef73495 says "结果"
+// in the language the app shows.
+func UiFixbb7ef73495() string { return In(i18n.Locale()).UiFixbb7ef73495() }
+
+// UiFixbb7ef73495 says "结果"
+// in the language of msgs.
+func (msgs Messages) UiFixbb7ef73495() string {
+	return Catalog.Format(msgs.locale, "uiFixbb7ef73495", nil)
+}
+
+// UiFixcc9e45e615 says "自定义数据库名称"
+// in the language the app shows.
+func UiFixcc9e45e615() string { return In(i18n.Locale()).UiFixcc9e45e615() }
+
+// UiFixcc9e45e615 says "自定义数据库名称"
+// in the language of msgs.
+func (msgs Messages) UiFixcc9e45e615() string {
+	return Catalog.Format(msgs.locale, "uiFixcc9e45e615", nil)
+}
+
+// UiFix84949b7e56 says "被引用的字段"
+// in the language the app shows.
+func UiFix84949b7e56() string { return In(i18n.Locale()).UiFix84949b7e56() }
+
+// UiFix84949b7e56 says "被引用的字段"
+// in the language of msgs.
+func (msgs Messages) UiFix84949b7e56() string {
+	return Catalog.Format(msgs.locale, "uiFix84949b7e56", nil)
+}
+
+// UiFix6f79aef419 says "角色主机"
+// in the language the app shows.
+func UiFix6f79aef419() string { return In(i18n.Locale()).UiFix6f79aef419() }
+
+// UiFix6f79aef419 says "角色主机"
+// in the language of msgs.
+func (msgs Messages) UiFix6f79aef419() string {
+	return Catalog.Format(msgs.locale, "uiFix6f79aef419", nil)
+}
+
+// UiFixc0362bdb59 says "角色名"
+// in the language the app shows.
+func UiFixc0362bdb59() string { return In(i18n.Locale()).UiFixc0362bdb59() }
+
+// UiFixc0362bdb59 says "角色名"
+// in the language of msgs.
+func (msgs Messages) UiFixc0362bdb59() string {
+	return Catalog.Format(msgs.locale, "uiFixc0362bdb59", nil)
+}
+
+// UiFix70cb21a3ba says "设置位置："
+// in the language the app shows.
+func UiFix70cb21a3ba() string { return In(i18n.Locale()).UiFix70cb21a3ba() }
+
+// UiFix70cb21a3ba says "设置位置："
+// in the language of msgs.
+func (msgs Messages) UiFix70cb21a3ba() string {
+	return Catalog.Format(msgs.locale, "uiFix70cb21a3ba", nil)
+}
+
+// UiFix931f3d9900 says "请输入原表名称以确认此操作："
+// in the language the app shows.
+func UiFix931f3d9900() string { return In(i18n.Locale()).UiFix931f3d9900() }
+
+// UiFix931f3d9900 says "请输入原表名称以确认此操作："
+// in the language of msgs.
+func (msgs Messages) UiFix931f3d9900() string {
+	return Catalog.Format(msgs.locale, "uiFix931f3d9900", nil)
+}
+
+// UiFixf9c5e8696e says "读取账户与授权"
+// in the language the app shows.
+func UiFixf9c5e8696e() string { return In(i18n.Locale()).UiFixf9c5e8696e() }
+
+// UiFixf9c5e8696e says "读取账户与授权"
+// in the language of msgs.
+func (msgs Messages) UiFixf9c5e8696e() string {
+	return Catalog.Format(msgs.locale, "uiFixf9c5e8696e", nil)
+}
+
+// UiFix3e8fe6d815 says "账户主机"
+// in the language the app shows.
+func UiFix3e8fe6d815() string { return In(i18n.Locale()).UiFix3e8fe6d815() }
+
+// UiFix3e8fe6d815 says "账户主机"
+// in the language of msgs.
+func (msgs Messages) UiFix3e8fe6d815() string {
+	return Catalog.Format(msgs.locale, "uiFix3e8fe6d815", nil)
+}
+
+// UiFixbe0990df9a says "账户名"
+// in the language the app shows.
+func UiFixbe0990df9a() string { return In(i18n.Locale()).UiFixbe0990df9a() }
+
+// UiFixbe0990df9a says "账户名"
+// in the language of msgs.
+func (msgs Messages) UiFixbe0990df9a() string {
+	return Catalog.Format(msgs.locale, "uiFixbe0990df9a", nil)
+}
+
+// UiFixf883c1ac46 says "账户密码"
+// in the language the app shows.
+func UiFixf883c1ac46() string { return In(i18n.Locale()).UiFixf883c1ac46() }
+
+// UiFixf883c1ac46 says "账户密码"
+// in the language of msgs.
+func (msgs Messages) UiFixf883c1ac46() string {
+	return Catalog.Format(msgs.locale, "uiFixf883c1ac46", nil)
+}
+
+// UiFix46161a6cd4 says "账户操作"
+// in the language the app shows.
+func UiFix46161a6cd4() string { return In(i18n.Locale()).UiFix46161a6cd4() }
+
+// UiFix46161a6cd4 says "账户操作"
+// in the language of msgs.
+func (msgs Messages) UiFix46161a6cd4() string {
+	return Catalog.Format(msgs.locale, "uiFix46161a6cd4", nil)
+}
+
+// UiFix8eff2c78be says "跳过 \"show variables like 'lower_case_%'\""
+// in the language the app shows.
+func UiFix8eff2c78be() string { return In(i18n.Locale()).UiFix8eff2c78be() }
+
+// UiFix8eff2c78be says "跳过 \"show variables like 'lower_case_%'\""
+// in the language of msgs.
+func (msgs Messages) UiFix8eff2c78be() string {
+	return Catalog.Format(msgs.locale, "uiFix8eff2c78be", nil)
+}
+
+// UiFixce9634302b says "连接 #%d"
+// in the language the app shows.
+func UiFixce9634302b() string { return In(i18n.Locale()).UiFixce9634302b() }
+
+// UiFixce9634302b says "连接 #%d"
+// in the language of msgs.
+func (msgs Messages) UiFixce9634302b() string {
+	return Catalog.Format(msgs.locale, "uiFixce9634302b", nil)
+}
+
+// UiFixd55d3f747e says "连接 #%d · 数据库 %s"
+// in the language the app shows.
+func UiFixd55d3f747e() string { return In(i18n.Locale()).UiFixd55d3f747e() }
+
+// UiFixd55d3f747e says "连接 #%d · 数据库 %s"
+// in the language of msgs.
+func (msgs Messages) UiFixd55d3f747e() string {
+	return Catalog.Format(msgs.locale, "uiFixd55d3f747e", nil)
+}
+
+// UiFix2452f9d736 says "连接备注"
+// in the language the app shows.
+func UiFix2452f9d736() string { return In(i18n.Locale()).UiFix2452f9d736() }
+
+// UiFix2452f9d736 says "连接备注"
+// in the language of msgs.
+func (msgs Messages) UiFix2452f9d736() string {
+	return Catalog.Format(msgs.locale, "uiFix2452f9d736", nil)
+}
+
+// UiFixb3cd3534b5 says "连接所选 MySQL"
+// in the language the app shows.
+func UiFixb3cd3534b5() string { return In(i18n.Locale()).UiFixb3cd3534b5() }
+
+// UiFixb3cd3534b5 says "连接所选 MySQL"
+// in the language of msgs.
+func (msgs Messages) UiFixb3cd3534b5() string {
+	return Catalog.Format(msgs.locale, "uiFixb3cd3534b5", nil)
+}
+
+// UiFixace6cddefd says "连接测试失败：%v"
+// in the language the app shows.
+func UiFixace6cddefd() string { return In(i18n.Locale()).UiFixace6cddefd() }
+
+// UiFixace6cddefd says "连接测试失败：%v"
+// in the language of msgs.
+func (msgs Messages) UiFixace6cddefd() string {
+	return Catalog.Format(msgs.locale, "uiFixace6cddefd", nil)
+}
+
+// UiFix63e162a5d0 says "连接类型列表"
+// in the language the app shows.
+func UiFix63e162a5d0() string { return In(i18n.Locale()).UiFix63e162a5d0() }
+
+// UiFix63e162a5d0 says "连接类型列表"
+// in the language of msgs.
+func (msgs Messages) UiFix63e162a5d0() string {
+	return Catalog.Format(msgs.locale, "uiFix63e162a5d0", nil)
+}
+
+// UiFix8fa78f57d8 says "连接配置文件"
+// in the language the app shows.
+func UiFix8fa78f57d8() string { return In(i18n.Locale()).UiFix8fa78f57d8() }
+
+// UiFix8fa78f57d8 says "连接配置文件"
+// in the language of msgs.
+func (msgs Messages) UiFix8fa78f57d8() string {
+	return Catalog.Format(msgs.locale, "uiFix8fa78f57d8", nil)
+}
+
+// UiFixd91017c932 says "追加"
+// in the language the app shows.
+func UiFixd91017c932() string { return In(i18n.Locale()).UiFixd91017c932() }
+
+// UiFixd91017c932 says "追加"
+// in the language of msgs.
+func (msgs Messages) UiFixd91017c932() string {
+	return Catalog.Format(msgs.locale, "uiFixd91017c932", nil)
+}
+
+// UiFix1bd16b45b4 says "部分完成"
+// in the language the app shows.
+func UiFix1bd16b45b4() string { return In(i18n.Locale()).UiFix1bd16b45b4() }
+
+// UiFix1bd16b45b4 says "部分完成"
+// in the language of msgs.
+func (msgs Messages) UiFix1bd16b45b4() string {
+	return Catalog.Format(msgs.locale, "uiFix1bd16b45b4", nil)
+}
+
+// UiFixccd7f04c5e says "配置尚未实现"
+// in the language the app shows.
+func UiFixccd7f04c5e() string { return In(i18n.Locale()).UiFixccd7f04c5e() }
+
+// UiFixccd7f04c5e says "配置尚未实现"
+// in the language of msgs.
+func (msgs Messages) UiFixccd7f04c5e() string {
+	return Catalog.Format(msgs.locale, "uiFixccd7f04c5e", nil)
+}
+
+// UiFixd50368097f says "配置文件名称"
+// in the language the app shows.
+func UiFixd50368097f() string { return In(i18n.Locale()).UiFixd50368097f() }
+
+// UiFixd50368097f says "配置文件名称"
+// in the language of msgs.
+func (msgs Messages) UiFixd50368097f() string {
+	return Catalog.Format(msgs.locale, "uiFixd50368097f", nil)
+}
+
+// UiFix787f56bf46 says "配置文件名称："
+// in the language the app shows.
+func UiFix787f56bf46() string { return In(i18n.Locale()).UiFix787f56bf46() }
+
+// UiFix787f56bf46 says "配置文件名称："
+// in the language of msgs.
+func (msgs Messages) UiFix787f56bf46() string {
+	return Catalog.Format(msgs.locale, "uiFix787f56bf46", nil)
+}
+
+// UiFix6795716243 says "重连"
+// in the language the app shows.
+func UiFix6795716243() string { return In(i18n.Locale()).UiFix6795716243() }
+
+// UiFix6795716243 says "重连"
+// in the language of msgs.
+func (msgs Messages) UiFix6795716243() string {
+	return Catalog.Format(msgs.locale, "uiFix6795716243", nil)
+}
+
+// UiFix95ff7b033b says "默认值："
+// in the language the app shows.
+func UiFix95ff7b033b() string { return In(i18n.Locale()).UiFix95ff7b033b() }
+
+// UiFix95ff7b033b says "默认值："
+// in the language of msgs.
+func (msgs Messages) UiFix95ff7b033b() string {
+	return Catalog.Format(msgs.locale, "uiFix95ff7b033b", nil)
+}
+
+// UiFix5149d3bded says "%s（#%d）"
+// in the language the app shows.
+func UiFix5149d3bded() string { return In(i18n.Locale()).UiFix5149d3bded() }
+
+// UiFix5149d3bded says "%s（#%d）"
+// in the language of msgs.
+func (msgs Messages) UiFix5149d3bded() string {
+	return Catalog.Format(msgs.locale, "uiFix5149d3bded", nil)
+}
+
+// UiFixa1a9849724 says "设置位置"
+// in the language the app shows.
+func UiFixa1a9849724() string { return In(i18n.Locale()).UiFixa1a9849724() }
+
+// UiFixa1a9849724 says "设置位置"
+// in the language of msgs.
+func (msgs Messages) UiFixa1a9849724() string {
+	return Catalog.Format(msgs.locale, "uiFixa1a9849724", nil)
+}
+
+// UiFixa0b746447c says "客户端字符集"
+// in the language the app shows.
+func UiFixa0b746447c() string { return In(i18n.Locale()).UiFixa0b746447c() }
+
+// UiFixa0b746447c says "客户端字符集"
+// in the language of msgs.
+func (msgs Messages) UiFixa0b746447c() string {
+	return Catalog.Format(msgs.locale, "uiFixa0b746447c", nil)
+}
+
+// UiFix5ba82abda9 says "客户端驱动程序"
+// in the language the app shows.
+func UiFix5ba82abda9() string { return In(i18n.Locale()).UiFix5ba82abda9() }
+
+// UiFix5ba82abda9 says "客户端驱动程序"
+// in the language of msgs.
+func (msgs Messages) UiFix5ba82abda9() string {
+	return Catalog.Format(msgs.locale, "uiFix5ba82abda9", nil)
+}
+
+// UiFix04ea81768a says "旧版"
+// in the language the app shows.
+func UiFix04ea81768a() string { return In(i18n.Locale()).UiFix04ea81768a() }
+
+// UiFix04ea81768a says "旧版"
+// in the language of msgs.
+func (msgs Messages) UiFix04ea81768a() string {
+	return Catalog.Format(msgs.locale, "uiFix04ea81768a", nil)
+}
+
+// UiFix7eb336e42c says "自动"
+// in the language the app shows.
+func UiFix7eb336e42c() string { return In(i18n.Locale()).UiFix7eb336e42c() }
+
+// UiFix7eb336e42c says "自动"
+// in the language of msgs.
+func (msgs Messages) UiFix7eb336e42c() string {
+	return Catalog.Format(msgs.locale, "uiFix7eb336e42c", nil)
+}
+
+// UiFixeefef2e6ab says "授予权限"
+// in the language the app shows.
+func UiFixeefef2e6ab() string { return In(i18n.Locale()).UiFixeefef2e6ab() }
+
+// UiFixeefef2e6ab says "授予权限"
+// in the language of msgs.
+func (msgs Messages) UiFixeefef2e6ab() string {
+	return Catalog.Format(msgs.locale, "uiFixeefef2e6ab", nil)
+}
+
+// UiFix203a0c286e says "撤销权限"
+// in the language the app shows.
+func UiFix203a0c286e() string { return In(i18n.Locale()).UiFix203a0c286e() }
+
+// UiFix203a0c286e says "撤销权限"
+// in the language of msgs.
+func (msgs Messages) UiFix203a0c286e() string {
+	return Catalog.Format(msgs.locale, "uiFix203a0c286e", nil)
+}
+
+// UiFix733dee6d88 says "创建账户"
+// in the language the app shows.
+func UiFix733dee6d88() string { return In(i18n.Locale()).UiFix733dee6d88() }
+
+// UiFix733dee6d88 says "创建账户"
+// in the language of msgs.
+func (msgs Messages) UiFix733dee6d88() string {
+	return Catalog.Format(msgs.locale, "uiFix733dee6d88", nil)
+}
+
+// UiFix08d0080624 says "修改密码"
+// in the language the app shows.
+func UiFix08d0080624() string { return In(i18n.Locale()).UiFix08d0080624() }
+
+// UiFix08d0080624 says "修改密码"
+// in the language of msgs.
+func (msgs Messages) UiFix08d0080624() string {
+	return Catalog.Format(msgs.locale, "uiFix08d0080624", nil)
+}
+
+// UiFixe88e48df24 says "创建角色"
+// in the language the app shows.
+func UiFixe88e48df24() string { return In(i18n.Locale()).UiFixe88e48df24() }
+
+// UiFixe88e48df24 says "创建角色"
+// in the language of msgs.
+func (msgs Messages) UiFixe88e48df24() string {
+	return Catalog.Format(msgs.locale, "uiFixe88e48df24", nil)
+}
+
+// UiFix0710f9a6ba says "授予角色"
+// in the language the app shows.
+func UiFix0710f9a6ba() string { return In(i18n.Locale()).UiFix0710f9a6ba() }
+
+// UiFix0710f9a6ba says "授予角色"
+// in the language of msgs.
+func (msgs Messages) UiFix0710f9a6ba() string {
+	return Catalog.Format(msgs.locale, "uiFix0710f9a6ba", nil)
+}
+
+// UiFix862a849500 says "撤销角色"
+// in the language the app shows.
+func UiFix862a849500() string { return In(i18n.Locale()).UiFix862a849500() }
+
+// UiFix862a849500 says "撤销角色"
+// in the language of msgs.
+func (msgs Messages) UiFix862a849500() string {
+	return Catalog.Format(msgs.locale, "uiFix862a849500", nil)
+}
+
+// UiFixe1be761a0c says "锁定账户"
+// in the language the app shows.
+func UiFixe1be761a0c() string { return In(i18n.Locale()).UiFixe1be761a0c() }
+
+// UiFixe1be761a0c says "锁定账户"
+// in the language of msgs.
+func (msgs Messages) UiFixe1be761a0c() string {
+	return Catalog.Format(msgs.locale, "uiFixe1be761a0c", nil)
+}
+
+// UiFix1940b81290 says "解锁账户"
+// in the language the app shows.
+func UiFix1940b81290() string { return In(i18n.Locale()).UiFix1940b81290() }
+
+// UiFix1940b81290 says "解锁账户"
+// in the language of msgs.
+func (msgs Messages) UiFix1940b81290() string {
+	return Catalog.Format(msgs.locale, "uiFix1940b81290", nil)
+}
+
+// UiFixc42bae7b4f says "删除账户"
+// in the language the app shows.
+func UiFixc42bae7b4f() string { return In(i18n.Locale()).UiFixc42bae7b4f() }
+
+// UiFixc42bae7b4f says "删除账户"
+// in the language of msgs.
+func (msgs Messages) UiFixc42bae7b4f() string {
+	return Catalog.Format(msgs.locale, "uiFixc42bae7b4f", nil)
+}
+
+// UiFix5e7dadca70 says "删除角色"
+// in the language the app shows.
+func UiFix5e7dadca70() string { return In(i18n.Locale()).UiFix5e7dadca70() }
+
+// UiFix5e7dadca70 says "删除角色"
+// in the language of msgs.
+func (msgs Messages) UiFix5e7dadca70() string {
+	return Catalog.Format(msgs.locale, "uiFix5e7dadca70", nil)
+}
+
+// UiFix4e639cdeb6 says "会话限制仅作用于本连接的 SQL 标签（安全上限 8）；元数据连接独立。"
+// in the language the app shows.
+func UiFix4e639cdeb6() string { return In(i18n.Locale()).UiFix4e639cdeb6() }
+
+// UiFix4e639cdeb6 says "会话限制仅作用于本连接的 SQL 标签（安全上限 8）；元数据连接独立。"
+// in the language of msgs.
+func (msgs Messages) UiFix4e639cdeb6() string {
+	return Catalog.Format(msgs.locale, "uiFix4e639cdeb6", nil)
+}
+
+// UiFix0e3bfb5dcd says "高级及兼容性选项可保存；初始查询仅本次编辑有效，不保存或执行。"
+// in the language the app shows.
+func UiFix0e3bfb5dcd() string { return In(i18n.Locale()).UiFix0e3bfb5dcd() }
+
+// UiFix0e3bfb5dcd says "高级及兼容性选项可保存；初始查询仅本次编辑有效，不保存或执行。"
+// in the language of msgs.
+func (msgs Messages) UiFix0e3bfb5dcd() string {
+	return Catalog.Format(msgs.locale, "uiFix0e3bfb5dcd", nil)
+}
+
+// UiFix49a96b44a2 says "使用 HTTP 隧道"
+// in the language the app shows.
+func UiFix49a96b44a2() string { return In(i18n.Locale()).UiFix49a96b44a2() }
+
+// UiFix49a96b44a2 says "使用 HTTP 隧道"
+// in the language of msgs.
+func (msgs Messages) UiFix49a96b44a2() string {
+	return Catalog.Format(msgs.locale, "uiFix49a96b44a2", nil)
+}
+
+// UiFix4473309d5a says "使用 base64 编码传出查询"
+// in the language the app shows.
+func UiFix4473309d5a() string { return In(i18n.Locale()).UiFix4473309d5a() }
+
+// UiFix4473309d5a says "使用 base64 编码传出查询"
+// in the language of msgs.
+func (msgs Messages) UiFix4473309d5a() string {
+	return Catalog.Format(msgs.locale, "uiFix4473309d5a", nil)
+}
+
+// UiFix2d9a601ec5 says "使用代理"
+// in the language the app shows.
+func UiFix2d9a601ec5() string { return In(i18n.Locale()).UiFix2d9a601ec5() }
+
+// UiFix2d9a601ec5 says "使用代理"
+// in the language of msgs.
+func (msgs Messages) UiFix2d9a601ec5() string {
+	return Catalog.Format(msgs.locale, "uiFix2d9a601ec5", nil)
+}
+
+// UiFix8c552adfb9 says "使用兼容模式"
+// in the language the app shows.
+func UiFix8c552adfb9() string { return In(i18n.Locale()).UiFix8c552adfb9() }
+
+// UiFix8c552adfb9 says "使用兼容模式"
+// in the language of msgs.
+func (msgs Messages) UiFix8c552adfb9() string {
+	return Catalog.Format(msgs.locale, "uiFix8c552adfb9", nil)
+}
+
+// UiFix7e0c3bab18 says "使用压缩"
+// in the language the app shows.
+func UiFix7e0c3bab18() string { return In(i18n.Locale()).UiFix7e0c3bab18() }
+
+// UiFix7e0c3bab18 says "使用压缩"
+// in the language of msgs.
+func (msgs Messages) UiFix7e0c3bab18() string {
+	return Catalog.Format(msgs.locale, "uiFix7e0c3bab18", nil)
+}
+
+// UiFixf3af483d44 says "使用命名管道，套接字："
+// in the language the app shows.
+func UiFixf3af483d44() string { return In(i18n.Locale()).UiFixf3af483d44() }
+
+// UiFixf3af483d44 says "使用命名管道，套接字："
+// in the language of msgs.
+func (msgs Messages) UiFixf3af483d44() string {
+	return Catalog.Format(msgs.locale, "uiFixf3af483d44", nil)
+}
+
+// UiFixbb6e3b6878 says "使用自定义数据库列表"
+// in the language the app shows.
+func UiFixbb6e3b6878() string { return In(i18n.Locale()).UiFixbb6e3b6878() }
+
+// UiFixbb6e3b6878 says "使用自定义数据库列表"
+// in the language of msgs.
+func (msgs Messages) UiFixbb6e3b6878() string {
+	return Catalog.Format(msgs.locale, "uiFixbb6e3b6878", nil)
+}
+
+// UiFix36d1e37cb5 says "使用证书验证"
+// in the language the app shows.
+func UiFix36d1e37cb5() string { return In(i18n.Locale()).UiFix36d1e37cb5() }
+
+// UiFix36d1e37cb5 says "使用证书验证"
+// in the language of msgs.
+func (msgs Messages) UiFix36d1e37cb5() string {
+	return Catalog.Format(msgs.locale, "uiFix36d1e37cb5", nil)
+}
+
+// UiFix047129fcb0 says "保持连接间隔"
+// in the language the app shows.
+func UiFix047129fcb0() string { return In(i18n.Locale()).UiFix047129fcb0() }
+
+// UiFix047129fcb0 says "保持连接间隔"
+// in the language of msgs.
+func (msgs Messages) UiFix047129fcb0() string {
+	return Catalog.Format(msgs.locale, "uiFix047129fcb0", nil)
+}
+
+// UiFixe19b8fa5bd says "保持连接间隔（秒）"
+// in the language the app shows.
+func UiFixe19b8fa5bd() string { return In(i18n.Locale()).UiFixe19b8fa5bd() }
+
+// UiFixe19b8fa5bd says "保持连接间隔（秒）"
+// in the language of msgs.
+func (msgs Messages) UiFixe19b8fa5bd() string {
+	return Catalog.Format(msgs.locale, "uiFixe19b8fa5bd", nil)
+}
+
+// UiFixb5e1bd6977 says "保持连接间隔（秒）："
+// in the language the app shows.
+func UiFixb5e1bd6977() string { return In(i18n.Locale()).UiFixb5e1bd6977() }
+
+// UiFixb5e1bd6977 says "保持连接间隔（秒）："
+// in the language of msgs.
+func (msgs Messages) UiFixb5e1bd6977() string {
+	return Catalog.Format(msgs.locale, "uiFixb5e1bd6977", nil)
+}
+
+// UiFix6d3aa751ba says "写入超时"
+// in the language the app shows.
+func UiFix6d3aa751ba() string { return In(i18n.Locale()).UiFix6d3aa751ba() }
+
+// UiFix6d3aa751ba says "写入超时"
+// in the language of msgs.
+func (msgs Messages) UiFix6d3aa751ba() string {
+	return Catalog.Format(msgs.locale, "uiFix6d3aa751ba", nil)
+}
+
+// UiFixfc54e8791a says "写入超时（秒）"
+// in the language the app shows.
+func UiFixfc54e8791a() string { return In(i18n.Locale()).UiFixfc54e8791a() }
+
+// UiFixfc54e8791a says "写入超时（秒）"
+// in the language of msgs.
+func (msgs Messages) UiFixfc54e8791a() string {
+	return Catalog.Format(msgs.locale, "uiFixfc54e8791a", nil)
+}
+
+// UiFix18ea29eb87 says "写入超时（秒）："
+// in the language the app shows.
+func UiFix18ea29eb87() string { return In(i18n.Locale()).UiFix18ea29eb87() }
+
+// UiFix18ea29eb87 says "写入超时（秒）："
+// in the language of msgs.
+func (msgs Messages) UiFix18ea29eb87() string {
+	return Catalog.Format(msgs.locale, "uiFix18ea29eb87", nil)
+}
+
+// UiFix99d7f88307 says "切换配置文件："
+// in the language the app shows.
+func UiFix99d7f88307() string { return In(i18n.Locale()).UiFix99d7f88307() }
+
+// UiFix99d7f88307 says "切换配置文件："
+// in the language of msgs.
+func (msgs Messages) UiFix99d7f88307() string {
+	return Catalog.Format(msgs.locale, "uiFix99d7f88307", nil)
+}
+
+// UiFix40ea8ddc6c says "删除配置文件"
+// in the language the app shows.
+func UiFix40ea8ddc6c() string { return In(i18n.Locale()).UiFix40ea8ddc6c() }
+
+// UiFix40ea8ddc6c says "删除配置文件"
+// in the language of msgs.
+func (msgs Messages) UiFix40ea8ddc6c() string {
+	return Catalog.Format(msgs.locale, "uiFix40ea8ddc6c", nil)
+}
+
+// UiFix00c1a1efd0 says "复制配置文件"
+// in the language the app shows.
+func UiFix00c1a1efd0() string { return In(i18n.Locale()).UiFix00c1a1efd0() }
+
+// UiFix00c1a1efd0 says "复制配置文件"
+// in the language of msgs.
+func (msgs Messages) UiFix00c1a1efd0() string {
+	return Catalog.Format(msgs.locale, "uiFix00c1a1efd0", nil)
+}
+
+// UiFix85af5aa240 says "命名管道或套接字"
+// in the language the app shows.
+func UiFix85af5aa240() string { return In(i18n.Locale()).UiFix85af5aa240() }
+
+// UiFix85af5aa240 says "命名管道或套接字"
+// in the language of msgs.
+func (msgs Messages) UiFix85af5aa240() string {
+	return Catalog.Format(msgs.locale, "uiFix85af5aa240", nil)
+}
+
+// UiFix52548a3484 says "强制 NDB 集群支持为："
+// in the language the app shows.
+func UiFix52548a3484() string { return In(i18n.Locale()).UiFix52548a3484() }
+
+// UiFix52548a3484 says "强制 NDB 集群支持为："
+// in the language of msgs.
+func (msgs Messages) UiFix52548a3484() string {
+	return Catalog.Format(msgs.locale, "uiFix52548a3484", nil)
+}
+
+// UiFix3cc1f3df95 says "强制 lower_case_table_names 为："
+// in the language the app shows.
+func UiFix3cc1f3df95() string { return In(i18n.Locale()).UiFix3cc1f3df95() }
+
+// UiFix3cc1f3df95 says "强制 lower_case_table_names 为："
+// in the language of msgs.
+func (msgs Messages) UiFix3cc1f3df95() string {
+	return Catalog.Format(msgs.locale, "uiFix3cc1f3df95", nil)
+}
+
+// UiFix2d3c8ce31f says "强制 sql_mode 为："
+// in the language the app shows.
+func UiFix2d3c8ce31f() string { return In(i18n.Locale()).UiFix2d3c8ce31f() }
+
+// UiFix2d3c8ce31f says "强制 sql_mode 为："
+// in the language of msgs.
+func (msgs Messages) UiFix2d3c8ce31f() string {
+	return Catalog.Format(msgs.locale, "uiFix2d3c8ce31f", nil)
+}
+
+// UiFix31bb7ac0b3 says "强制数据库列出方法为："
+// in the language the app shows.
+func UiFix31bb7ac0b3() string { return In(i18n.Locale()).UiFix31bb7ac0b3() }
+
+// UiFix31bb7ac0b3 says "强制数据库列出方法为："
+// in the language of msgs.
+func (msgs Messages) UiFix31bb7ac0b3() string {
+	return Catalog.Format(msgs.locale, "uiFix31bb7ac0b3", nil)
+}
+
+// UiFixf8c122c2bf says "强制视图列出方法为："
+// in the language the app shows.
+func UiFixf8c122c2bf() string { return In(i18n.Locale()).UiFixf8c122c2bf() }
+
+// UiFixf8c122c2bf says "强制视图列出方法为："
+// in the language of msgs.
+func (msgs Messages) UiFixf8c122c2bf() string {
+	return Catalog.Format(msgs.locale, "uiFixf8c122c2bf", nil)
+}
+
+// UiFix68f0d76057 says "自动打开"
+// in the language the app shows.
+func UiFix68f0d76057() string { return In(i18n.Locale()).UiFix68f0d76057() }
+
+// UiFix68f0d76057 says "自动打开"
+// in the language of msgs.
+func (msgs Messages) UiFix68f0d76057() string {
+	return Catalog.Format(msgs.locale, "uiFix68f0d76057", nil)
+}
+
+// UiFix2b0b82b034 says "自动连接"
+// in the language the app shows.
+func UiFix2b0b82b034() string { return In(i18n.Locale()).UiFix2b0b82b034() }
+
+// UiFix2b0b82b034 says "自动连接"
+// in the language of msgs.
+func (msgs Messages) UiFix2b0b82b034() string {
+	return Catalog.Format(msgs.locale, "uiFix2b0b82b034", nil)
+}
+
+// UiFixd8f34be9a7 says "选择设置位置"
+// in the language the app shows.
+func UiFixd8f34be9a7() string { return In(i18n.Locale()).UiFixd8f34be9a7() }
+
+// UiFixd8f34be9a7 says "选择设置位置"
+// in the language of msgs.
+func (msgs Messages) UiFixd8f34be9a7() string {
+	return Catalog.Format(msgs.locale, "uiFixd8f34be9a7", nil)
+}
+
+// UiFixae5ead4d89 says "连接超时"
+// in the language the app shows.
+func UiFixae5ead4d89() string { return In(i18n.Locale()).UiFixae5ead4d89() }
+
+// UiFixae5ead4d89 says "连接超时"
+// in the language of msgs.
+func (msgs Messages) UiFixae5ead4d89() string {
+	return Catalog.Format(msgs.locale, "uiFixae5ead4d89", nil)
+}
+
+// UiFix8fb313c01c says "读取超时"
+// in the language the app shows.
+func UiFix8fb313c01c() string { return In(i18n.Locale()).UiFix8fb313c01c() }
+
+// UiFix8fb313c01c says "读取超时"
+// in the language of msgs.
+func (msgs Messages) UiFix8fb313c01c() string {
+	return Catalog.Format(msgs.locale, "uiFix8fb313c01c", nil)
+}
+
+// UiFix695fab8c04 says "读取超时（秒）"
+// in the language the app shows.
+func UiFix695fab8c04() string { return In(i18n.Locale()).UiFix695fab8c04() }
+
+// UiFix695fab8c04 says "读取超时（秒）"
+// in the language of msgs.
+func (msgs Messages) UiFix695fab8c04() string {
+	return Catalog.Format(msgs.locale, "uiFix695fab8c04", nil)
+}
+
+// UiFixafa22e3069 says "读取超时（秒）："
+// in the language the app shows.
+func UiFixafa22e3069() string { return In(i18n.Locale()).UiFixafa22e3069() }
+
+// UiFixafa22e3069 says "读取超时（秒）："
+// in the language of msgs.
+func (msgs Messages) UiFixafa22e3069() string {
+	return Catalog.Format(msgs.locale, "uiFixafa22e3069", nil)
+}
+
+// UiFixd2601d3380 says "限制连接会话"
+// in the language the app shows.
+func UiFixd2601d3380() string { return In(i18n.Locale()).UiFixd2601d3380() }
+
+// UiFixd2601d3380 says "限制连接会话"
+// in the language of msgs.
+func (msgs Messages) UiFixd2601d3380() string {
+	return Catalog.Format(msgs.locale, "uiFixd2601d3380", nil)
+}
+
+// UiFix7910f66750 says "限制连接会话："
+// in the language the app shows.
+func UiFix7910f66750() string { return In(i18n.Locale()).UiFix7910f66750() }
+
+// UiFix7910f66750 says "限制连接会话："
+// in the language of msgs.
+func (msgs Messages) UiFix7910f66750() string {
+	return Catalog.Format(msgs.locale, "uiFix7910f66750", nil)
+}
+
+// UiFix025a647a53 says "通行短语："
+// in the language the app shows.
+func UiFix025a647a53() string { return In(i18n.Locale()).UiFix025a647a53() }
+
+// UiFix025a647a53 says "通行短语："
+// in the language of msgs.
+func (msgs Messages) UiFix025a647a53() string {
+	return Catalog.Format(msgs.locale, "uiFix025a647a53", nil)
+}
+
+// UiFix1cbe474ff4 says "隧道网址："
+// in the language the app shows.
+func UiFix1cbe474ff4() string { return In(i18n.Locale()).UiFix1cbe474ff4() }
+
+// UiFix1cbe474ff4 says "隧道网址："
+// in the language of msgs.
+func (msgs Messages) UiFix1cbe474ff4() string {
+	return Catalog.Format(msgs.locale, "uiFix1cbe474ff4", nil)
+}
+
+// UiFixdc7be4b826 says "%w；回滚新连接失败：%v"
+// in the language the app shows.
+func UiFixdc7be4b826() string { return In(i18n.Locale()).UiFixdc7be4b826() }
+
+// UiFixdc7be4b826 says "%w；回滚新连接失败：%v"
+// in the language of msgs.
+func (msgs Messages) UiFixdc7be4b826() string {
+	return Catalog.Format(msgs.locale, "uiFixdc7be4b826", nil)
+}
+
+// UiFix5f169465dc says "%w；回滚连接配置失败：%v"
+// in the language the app shows.
+func UiFix5f169465dc() string { return In(i18n.Locale()).UiFix5f169465dc() }
+
+// UiFix5f169465dc says "%w；回滚连接配置失败：%v"
+// in the language of msgs.
+func (msgs Messages) UiFix5f169465dc() string {
+	return Catalog.Format(msgs.locale, "uiFix5f169465dc", nil)
+}
+
+// UiFix9884bf0df5 says "HTTP 代理端口必须是 1–65535 之间的整数"
+// in the language the app shows.
+func UiFix9884bf0df5() string { return In(i18n.Locale()).UiFix9884bf0df5() }
+
+// UiFix9884bf0df5 says "HTTP 代理端口必须是 1–65535 之间的整数"
+// in the language of msgs.
+func (msgs Messages) UiFix9884bf0df5() string {
+	return Catalog.Format(msgs.locale, "uiFix9884bf0df5", nil)
+}
+
+// UiFix668695fba9 says "MySQL 连接测试服务不可用"
+// in the language the app shows.
+func UiFix668695fba9() string { return In(i18n.Locale()).UiFix668695fba9() }
+
+// UiFix668695fba9 says "MySQL 连接测试服务不可用"
+// in the language of msgs.
+func (msgs Messages) UiFix668695fba9() string {
+	return Catalog.Format(msgs.locale, "uiFix668695fba9", nil)
+}
+
+// UiFix1bc419a9c0 says "SSH 端口必须是 1–65535 之间的整数"
+// in the language the app shows.
+func UiFix1bc419a9c0() string { return In(i18n.Locale()).UiFix1bc419a9c0() }
+
+// UiFix1bc419a9c0 says "SSH 端口必须是 1–65535 之间的整数"
+// in the language of msgs.
+func (msgs Messages) UiFix1bc419a9c0() string {
+	return Catalog.Format(msgs.locale, "uiFix1bc419a9c0", nil)
+}
+
+// UiFixa6c6cebfa6 says "主要配置文件：%w"
+// in the language the app shows.
+func UiFixa6c6cebfa6() string { return In(i18n.Locale()).UiFixa6c6cebfa6() }
+
+// UiFixa6c6cebfa6 says "主要配置文件：%w"
+// in the language of msgs.
+func (msgs Messages) UiFixa6c6cebfa6() string {
+	return Catalog.Format(msgs.locale, "uiFixa6c6cebfa6", nil)
+}
+
+// UiFixa43821da32 says "回滚系统凭据失败：%w"
+// in the language the app shows.
+func UiFixa43821da32() string { return In(i18n.Locale()).UiFixa43821da32() }
+
+// UiFixa43821da32 says "回滚系统凭据失败：%w"
+// in the language of msgs.
+func (msgs Messages) UiFixa43821da32() string {
+	return Catalog.Format(msgs.locale, "uiFixa43821da32", nil)
+}
+
+// UiFix4fe4e07304 says "密码保存失败：%w"
+// in the language the app shows.
+func UiFix4fe4e07304() string { return In(i18n.Locale()).UiFix4fe4e07304() }
+
+// UiFix4fe4e07304 says "密码保存失败：%w"
+// in the language of msgs.
+func (msgs Messages) UiFix4fe4e07304() string {
+	return Catalog.Format(msgs.locale, "uiFix4fe4e07304", nil)
+}
+
+// UiFixd2eae8d756 says "密钥库不可用时不能添加或删除备用配置，请先解锁密钥库"
+// in the language the app shows.
+func UiFixd2eae8d756() string { return In(i18n.Locale()).UiFixd2eae8d756() }
+
+// UiFixd2eae8d756 says "密钥库不可用时不能添加或删除备用配置，请先解锁密钥库"
+// in the language of msgs.
+func (msgs Messages) UiFixd2eae8d756() string {
+	return Catalog.Format(msgs.locale, "uiFixd2eae8d756", nil)
+}
+
+// UiFixda39dc45d4 says "密钥库不可用时不能重命名备用配置，请先解锁密钥库"
+// in the language the app shows.
+func UiFixda39dc45d4() string { return In(i18n.Locale()).UiFixda39dc45d4() }
+
+// UiFixda39dc45d4 says "密钥库不可用时不能重命名备用配置，请先解锁密钥库"
+// in the language of msgs.
+func (msgs Messages) UiFixda39dc45d4() string {
+	return Catalog.Format(msgs.locale, "uiFixda39dc45d4", nil)
+}
+
+// UiFix760936734a says "文件接口不可用"
+// in the language the app shows.
+func UiFix760936734a() string { return In(i18n.Locale()).UiFix760936734a() }
+
+// UiFix760936734a says "文件接口不可用"
+// in the language of msgs.
+func (msgs Messages) UiFix760936734a() string {
+	return Catalog.Format(msgs.locale, "uiFix760936734a", nil)
+}
+
+// UiFixb5d97bc9f5 says "无法读取系统保存的密码，请先解锁密钥库"
+// in the language the app shows.
+func UiFixb5d97bc9f5() string { return In(i18n.Locale()).UiFixb5d97bc9f5() }
+
+// UiFixb5d97bc9f5 says "无法读取系统保存的密码，请先解锁密钥库"
+// in the language of msgs.
+func (msgs Messages) UiFixb5d97bc9f5() string {
+	return Catalog.Format(msgs.locale, "uiFixb5d97bc9f5", nil)
+}
+
+// UiFix7c823847ee says "筛选对象"
+// in the language the app shows.
+func UiFix7c823847ee() string { return In(i18n.Locale()).UiFix7c823847ee() }
+
+// UiFix7c823847ee says "筛选对象"
+// in the language of msgs.
+func (msgs Messages) UiFix7c823847ee() string {
+	return Catalog.Format(msgs.locale, "uiFix7c823847ee", nil)
+}
+
+// UiFix9eb956a516 says "系统凭据存储不可用"
+// in the language the app shows.
+func UiFix9eb956a516() string { return In(i18n.Locale()).UiFix9eb956a516() }
+
+// UiFix9eb956a516 says "系统凭据存储不可用"
+// in the language of msgs.
+func (msgs Messages) UiFix9eb956a516() string {
+	return Catalog.Format(msgs.locale, "uiFix9eb956a516", nil)
+}
+
+// UiFix702745e8e4 says "设置为活动配置文件"
+// in the language the app shows.
+func UiFix702745e8e4() string { return In(i18n.Locale()).UiFix702745e8e4() }
+
+// UiFix702745e8e4 says "设置为活动配置文件"
+// in the language of msgs.
+func (msgs Messages) UiFix702745e8e4() string {
+	return Catalog.Format(msgs.locale, "uiFix702745e8e4", nil)
+}
+
+// UiFixa0ce86bb16 says "读取旧凭据失败：%w"
+// in the language the app shows.
+func UiFixa0ce86bb16() string { return In(i18n.Locale()).UiFixa0ce86bb16() }
+
+// UiFixa0ce86bb16 says "读取旧凭据失败：%w"
+// in the language of msgs.
+func (msgs Messages) UiFixa0ce86bb16() string {
+	return Catalog.Format(msgs.locale, "uiFixa0ce86bb16", nil)
+}
+
+// UiFixc4d754001d says "连接测试服务不可用"
+// in the language the app shows.
+func UiFixc4d754001d() string { return In(i18n.Locale()).UiFixc4d754001d() }
+
+// UiFixc4d754001d says "连接测试服务不可用"
+// in the language of msgs.
+func (msgs Messages) UiFixc4d754001d() string {
+	return Catalog.Format(msgs.locale, "uiFixc4d754001d", nil)
+}
+
+// UiFix9db9d32b30 says "配置文件 %d 的名称不能为空"
+// in the language the app shows.
+func UiFix9db9d32b30() string { return In(i18n.Locale()).UiFix9db9d32b30() }
+
+// UiFix9db9d32b30 says "配置文件 %d 的名称不能为空"
+// in the language of msgs.
+func (msgs Messages) UiFix9db9d32b30() string {
+	return Catalog.Format(msgs.locale, "uiFix9db9d32b30", nil)
+}
+
+// UiFix101a0c5b45 says "配置文件 %s：%w"
+// in the language the app shows.
+func UiFix101a0c5b45() string { return In(i18n.Locale()).UiFix101a0c5b45() }
+
+// UiFix101a0c5b45 says "配置文件 %s：%w"
+// in the language of msgs.
+func (msgs Messages) UiFix101a0c5b45() string {
+	return Catalog.Format(msgs.locale, "uiFix101a0c5b45", nil)
+}
+
+// UiFixb9b13a1f16 says "重命名配置文件"
+// in the language the app shows.
+func UiFixb9b13a1f16() string { return In(i18n.Locale()).UiFixb9b13a1f16() }
+
+// UiFixb9b13a1f16 says "重命名配置文件"
+// in the language of msgs.
+func (msgs Messages) UiFixb9b13a1f16() string {
+	return Catalog.Format(msgs.locale, "uiFixb9b13a1f16", nil)
+}
+
+// UiFix148fe58c0f says "约束设置内容"
+// in the language the app shows.
+func UiFix148fe58c0f() string { return In(i18n.Locale()).UiFix148fe58c0f() }
+
+// UiFix148fe58c0f says "约束设置内容"
+// in the language of msgs.
+func (msgs Messages) UiFix148fe58c0f() string {
+	return Catalog.Format(msgs.locale, "uiFix148fe58c0f", nil)
+}
+
+// UiFixe1d1cafe6d says "创建表"
+// in the language the app shows.
+func UiFixe1d1cafe6d() string { return In(i18n.Locale()).UiFixe1d1cafe6d() }
+
+// UiFixe1d1cafe6d says "创建表"
+// in the language of msgs.
+func (msgs Messages) UiFixe1d1cafe6d() string {
+	return Catalog.Format(msgs.locale, "uiFixe1d1cafe6d", nil)
+}
+
+// UiFixc1c0117d49 says "重命名表"
+// in the language the app shows.
+func UiFixc1c0117d49() string { return In(i18n.Locale()).UiFixc1c0117d49() }
+
+// UiFixc1c0117d49 says "重命名表"
+// in the language of msgs.
+func (msgs Messages) UiFixc1c0117d49() string {
+	return Catalog.Format(msgs.locale, "uiFixc1c0117d49", nil)
+}
+
+// UiFix0282216e01 says "删除所有记录"
+// in the language the app shows.
+func UiFix0282216e01() string { return In(i18n.Locale()).UiFix0282216e01() }
+
+// UiFix0282216e01 says "删除所有记录"
+// in the language of msgs.
+func (msgs Messages) UiFix0282216e01() string {
+	return Catalog.Format(msgs.locale, "uiFix0282216e01", nil)
+}
+
+// UiFix5e7d834264 says "复制表结构"
+// in the language the app shows.
+func UiFix5e7d834264() string { return In(i18n.Locale()).UiFix5e7d834264() }
+
+// UiFix5e7d834264 says "复制表结构"
+// in the language of msgs.
+func (msgs Messages) UiFix5e7d834264() string {
+	return Catalog.Format(msgs.locale, "uiFix5e7d834264", nil)
+}
+
+// UiFix506a8028fc says "复制表数据"
+// in the language the app shows.
+func UiFix506a8028fc() string { return In(i18n.Locale()).UiFix506a8028fc() }
+
+// UiFix506a8028fc says "复制表数据"
+// in the language of msgs.
+func (msgs Messages) UiFix506a8028fc() string {
+	return Catalog.Format(msgs.locale, "uiFix506a8028fc", nil)
+}
+
+// ConnectionTestSuccessMessage says "%s 连接测试成功（已关闭测试会话）"
+// in the language the app shows.
+func ConnectionTestSuccessMessage() string { return In(i18n.Locale()).ConnectionTestSuccessMessage() }
+
+// ConnectionTestSuccessMessage says "%s 连接测试成功（已关闭测试会话）"
+// in the language of msgs.
+func (msgs Messages) ConnectionTestSuccessMessage() string {
+	return Catalog.Format(msgs.locale, "connectionTestSuccessMessage", nil)
+}
+
+// ConnectionTestingMessage says "正在测试 %s 连接…"
+// in the language the app shows.
+func ConnectionTestingMessage() string { return In(i18n.Locale()).ConnectionTestingMessage() }
+
+// ConnectionTestingMessage says "正在测试 %s 连接…"
+// in the language of msgs.
+func (msgs Messages) ConnectionTestingMessage() string {
+	return Catalog.Format(msgs.locale, "connectionTestingMessage", nil)
+}
+
+// ConnectionReadOriginalError says "读取原连接失败："
+// in the language the app shows.
+func ConnectionReadOriginalError() string { return In(i18n.Locale()).ConnectionReadOriginalError() }
+
+// ConnectionReadOriginalError says "读取原连接失败："
+// in the language of msgs.
+func (msgs Messages) ConnectionReadOriginalError() string {
+	return Catalog.Format(msgs.locale, "connectionReadOriginalError", nil)
+}
+
+// ConnectionSaveErrorPrefix says "保存失败（连接名称可能重复或配置无效）："
+// in the language the app shows.
+func ConnectionSaveErrorPrefix() string { return In(i18n.Locale()).ConnectionSaveErrorPrefix() }
+
+// ConnectionSaveErrorPrefix says "保存失败（连接名称可能重复或配置无效）："
+// in the language of msgs.
+func (msgs Messages) ConnectionSaveErrorPrefix() string {
+	return Catalog.Format(msgs.locale, "connectionSaveErrorPrefix", nil)
+}
+
+// ConnectionInitialSQLSaveErrorPrefix says "加密初始 SQL 保存失败，已尝试恢复原配置："
+// in the language the app shows.
+func ConnectionInitialSQLSaveErrorPrefix() string {
+	return In(i18n.Locale()).ConnectionInitialSQLSaveErrorPrefix()
+}
+
+// ConnectionInitialSQLSaveErrorPrefix says "加密初始 SQL 保存失败，已尝试恢复原配置："
+// in the language of msgs.
+func (msgs Messages) ConnectionInitialSQLSaveErrorPrefix() string {
+	return Catalog.Format(msgs.locale, "connectionInitialSQLSaveErrorPrefix", nil)
+}
+
+// ConnectionOldCredentialsErrorPrefix says "读取旧数据库凭据失败（已尝试恢复连接配置）："
+// in the language the app shows.
+func ConnectionOldCredentialsErrorPrefix() string {
+	return In(i18n.Locale()).ConnectionOldCredentialsErrorPrefix()
+}
+
+// ConnectionOldCredentialsErrorPrefix says "读取旧数据库凭据失败（已尝试恢复连接配置）："
+// in the language of msgs.
+func (msgs Messages) ConnectionOldCredentialsErrorPrefix() string {
+	return Catalog.Format(msgs.locale, "connectionOldCredentialsErrorPrefix", nil)
+}
+
+// ConnectionVaultSaveErrorPrefix says "系统密钥库保存密码失败（连接配置已尝试回滚）："
+// in the language the app shows.
+func ConnectionVaultSaveErrorPrefix() string {
+	return In(i18n.Locale()).ConnectionVaultSaveErrorPrefix()
+}
+
+// ConnectionVaultSaveErrorPrefix says "系统密钥库保存密码失败（连接配置已尝试回滚）："
+// in the language of msgs.
+func (msgs Messages) ConnectionVaultSaveErrorPrefix() string {
+	return Catalog.Format(msgs.locale, "connectionVaultSaveErrorPrefix", nil)
+}
+
+// ConnectionTunnelSaveErrorPrefix says "隧道凭据保存失败（已尝试恢复连接配置）："
+// in the language the app shows.
+func ConnectionTunnelSaveErrorPrefix() string {
+	return In(i18n.Locale()).ConnectionTunnelSaveErrorPrefix()
+}
+
+// ConnectionTunnelSaveErrorPrefix says "隧道凭据保存失败（已尝试恢复连接配置）："
+// in the language of msgs.
+func (msgs Messages) ConnectionTunnelSaveErrorPrefix() string {
+	return Catalog.Format(msgs.locale, "connectionTunnelSaveErrorPrefix", nil)
+}
+
+// ConnectionVaultReadErrorPrefix says "无法读取系统保存的密码："
+// in the language the app shows.
+func ConnectionVaultReadErrorPrefix() string {
+	return In(i18n.Locale()).ConnectionVaultReadErrorPrefix()
+}
+
+// ConnectionVaultReadErrorPrefix says "无法读取系统保存的密码："
+// in the language of msgs.
+func (msgs Messages) ConnectionVaultReadErrorPrefix() string {
+	return Catalog.Format(msgs.locale, "connectionVaultReadErrorPrefix", nil)
+}
+
+// CreateInnoDBBaseTableDescription says "创建 InnoDB 基础表，初始字段为 id BIGINT AUTO_INCREMENT PRIMARY KEY。"
+// in the language the app shows.
+func CreateInnoDBBaseTableDescription() string {
+	return In(i18n.Locale()).CreateInnoDBBaseTableDescription()
+}
+
+// CreateInnoDBBaseTableDescription says "创建 InnoDB 基础表，初始字段为 id BIGINT AUTO_INCREMENT PRIMARY KEY。"
+// in the language of msgs.
+func (msgs Messages) CreateInnoDBBaseTableDescription() string {
+	return Catalog.Format(msgs.locale, "createInnoDBBaseTableDescription", nil)
+}
+
+// AccountAndGrantsLegend says "账户与授权"
+// in the language the app shows.
+func AccountAndGrantsLegend() string { return In(i18n.Locale()).AccountAndGrantsLegend() }
+
+// AccountAndGrantsLegend says "账户与授权"
+// in the language of msgs.
+func (msgs Messages) AccountAndGrantsLegend() string {
+	return Catalog.Format(msgs.locale, "accountAndGrantsLegend", nil)
+}
+
+// ObjectDefinitionTitle says "对象定义"
+// in the language the app shows.
+func ObjectDefinitionTitle() string { return In(i18n.Locale()).ObjectDefinitionTitle() }
+
+// ObjectDefinitionTitle says "对象定义"
+// in the language of msgs.
+func (msgs Messages) ObjectDefinitionTitle() string {
+	return Catalog.Format(msgs.locale, "objectDefinitionTitle", nil)
+}
+
+// BackupConflictPolicyCaption says "冲突策略："
+// in the language the app shows.
+func BackupConflictPolicyCaption() string { return In(i18n.Locale()).BackupConflictPolicyCaption() }
+
+// BackupConflictPolicyCaption says "冲突策略："
+// in the language of msgs.
+func (msgs Messages) BackupConflictPolicyCaption() string {
+	return Catalog.Format(msgs.locale, "backupConflictPolicyCaption", nil)
+}
+
+// FieldAutoIncrementCaption says "自动递增："
+// in the language the app shows.
+func FieldAutoIncrementCaption() string { return In(i18n.Locale()).FieldAutoIncrementCaption() }
+
+// FieldAutoIncrementCaption says "自动递增："
+// in the language of msgs.
+func (msgs Messages) FieldAutoIncrementCaption() string {
+	return Catalog.Format(msgs.locale, "fieldAutoIncrementCaption", nil)
+}
+
+// FieldUnsignedCaption says "无符号："
+// in the language the app shows.
+func FieldUnsignedCaption() string { return In(i18n.Locale()).FieldUnsignedCaption() }
+
+// FieldUnsignedCaption says "无符号："
+// in the language of msgs.
+func (msgs Messages) FieldUnsignedCaption() string {
+	return Catalog.Format(msgs.locale, "fieldUnsignedCaption", nil)
+}
+
+// FieldNotNullCaption says "不是 null："
+// in the language the app shows.
+func FieldNotNullCaption() string { return In(i18n.Locale()).FieldNotNullCaption() }
+
+// FieldNotNullCaption says "不是 null："
+// in the language of msgs.
+func (msgs Messages) FieldNotNullCaption() string {
+	return Catalog.Format(msgs.locale, "fieldNotNullCaption", nil)
+}
+
+// UnsupportedConnectionDriverMessage says "%s 的连接驱动尚未支持"
+// in the language the app shows.
+func UnsupportedConnectionDriverMessage() string {
+	return In(i18n.Locale()).UnsupportedConnectionDriverMessage()
+}
+
+// UnsupportedConnectionDriverMessage says "%s 的连接驱动尚未支持"
+// in the language of msgs.
+func (msgs Messages) UnsupportedConnectionDriverMessage() string {
+	return Catalog.Format(msgs.locale, "unsupportedConnectionDriverMessage", nil)
+}
