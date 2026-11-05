@@ -64,6 +64,16 @@ type ProfileChoice struct {
 // Document is owned by the UI thread. Workers capture a lease/executor and
 // immutable request values; only Consume reads their private buffered channels.
 type Document struct {
+	snapshotOwner    *Document
+	cachedExport     cachedExportDraft
+	layoutMode       string
+	showMessages     bool
+	resultFieldRight bool
+	fieldSplit       float32
+	snapshots        []resultSnapshot
+	snapshotIndex    int
+	nextSnapshot     uint64
+
 	queryError                             error
 	diagnostic                             *contract.QueryDiagnostic
 	executedSQL                            string
@@ -185,7 +195,19 @@ func (s *State) runtime() Runtime {
 	return nil
 }
 func (s *State) connected(id int64) bool { return s.deps.Connected != nil && s.deps.Connected(id) }
-func (s *State) active(d *Document) bool { return s.deps.Active == nil || s.deps.Active(d) }
+func (s *State) active(d *Document) bool {
+	if d == nil || d.closed {
+		return false
+	}
+	if d.snapshotOwner != nil {
+		owner := d.snapshotOwner
+		if owner.closed || owner.snapshotIndex <= 0 || owner.snapshotIndex > len(owner.snapshots) || owner.snapshots[owner.snapshotIndex-1].Document != d {
+			return false
+		}
+		return s.deps.Active == nil || s.deps.Active(owner)
+	}
+	return s.deps.Active == nil || s.deps.Active(d)
+}
 func (s *State) report(message string) {
 	if s.deps.Status != nil {
 		s.deps.Status(message)
@@ -235,6 +257,10 @@ func (s *State) Close(d *Document) {
 			job.next = nil
 		}
 	}
+	for len(d.snapshots) > 0 {
+		d.removeSnapshot(0)
+	}
+	d.cachedExport = cachedExportDraft{}
 	d.Editor, d.result = nil, nil
 	d.resultViews, d.resultLayouts = nil, nil
 	d.resultPreferences = nil

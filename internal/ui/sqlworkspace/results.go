@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/tabular"
 	"github.com/nyakang/nyadb/internal/ui/gridview"
 	"slices"
 	"strconv"
@@ -50,7 +51,7 @@ func resultData(d *Document, selection bool) contract.ResultSet {
 	if !selection {
 		return set
 	}
-	out := contract.ResultSet{}
+	out := contract.ResultSet{Truncation: append([]string(nil), set.Truncation...)}
 	order := append([]string(nil), d.grid.Columns.Order...)
 	if len(order) == 0 {
 		for i := range set.Columns {
@@ -93,7 +94,14 @@ func resultData(d *Document, selection bool) contract.ResultSet {
 	}
 	return out
 }
+func cachedResultFormats() []string {
+	return []string{"CSV", "TSV", "TXT", "JSON", "XML", "HTML", "XLSX"}
+}
 func EncodeResult(set contract.ResultSet, format string) ([]byte, error) {
+	if format == "XML" || format == "HTML" || format == "XLSX" {
+		return tabular.EncodeAdditional(set, format)
+	}
+
 	if format == "JSON" {
 		type output struct {
 			Columns    []contract.Column `json:"columns"`
@@ -104,7 +112,7 @@ func EncodeResult(set contract.ResultSet, format string) ([]byte, error) {
 	}
 	var b bytes.Buffer
 	w := csv.NewWriter(&b)
-	if format == "TSV" {
+	if format == "TSV" || format == "TXT" {
 		w.Comma = '\t'
 	} else if format != "CSV" {
 		return nil, fmt.Errorf("unsupported SQL export format")
@@ -141,7 +149,12 @@ func (s *State) copyResult(c *ui.Context, d *Document) {
 	c.WriteClipboard(gridview.Copy(data))
 }
 func (s *State) exportResult(d *Document, format string, selection bool) {
-	set := resultData(d, selection)
+	s.exportCachedSet(d, resultData(d, selection), format)
+}
+func (s *State) exportCachedSet(d *Document, set contract.ResultSet, format string) {
+	if d == nil || d.closed {
+		return
+	}
 	b, e := EncodeResult(set, format)
 	if e != nil {
 		d.err = e.Error()

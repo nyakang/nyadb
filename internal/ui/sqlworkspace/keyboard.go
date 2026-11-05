@@ -18,6 +18,22 @@ func sqlBindings() []editor.Binding {
 	mod := commandModifier()
 	return []editor.Binding{{Mods: mod, Key: ui.KeyEnter, Command: editor.NoCommand}, {Mods: mod, Key: ui.KeyL, Command: editor.NoCommand}}
 }
+func (s *State) RunCurrent(invalidate func(), d *Document) {
+	if d == nil || d.Editor == nil || d.closed || d.preview {
+		return
+	}
+	if text := strings.TrimSpace(s.statementAtCaret(d)); text != "" {
+		s.runStatement(invalidate, d, text)
+	}
+}
+func (s *State) RunSelection(invalidate func(), d *Document) {
+	if d == nil || d.Editor == nil || d.closed || d.preview {
+		return
+	}
+	if text := strings.TrimSpace(d.Editor.SelectedText()); text != "" {
+		s.runStatement(invalidate, d, text)
+	}
+}
 func (s *State) RunAll(invalidate func(), d *Document) {
 	if d == nil || d.Editor == nil || d.preview || d.closed || d.loading {
 		return

@@ -27,15 +27,31 @@ func (s *State) View(c *ui.Context, t *Document) {
 	if lease, ok := t.lease.(interface{ SupportsFiles() bool }); ok {
 		fileSupported = lease.SupportsFiles()
 	}
-	root := ui.SplitVerticalPercent(c, &s.SplitPercent, func() {
+	editorPane := func() {
 		ui.Column(c).Fill().Children(func() {
 			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).Gap(7).
 				AlignItems(ui.Center).Background(p.Header).Children(func() {
 				ui.Toolbar(c, func() {
-					if ui.Button(c, locales.Text("运行")).Label(locales.Text("运行当前或选中 SQL")).
+					caption := locales.Text("运行当前语句")
+					if strings.TrimSpace(t.Editor.SelectedText()) != "" {
+						caption = locales.Text("运行选中 SQL")
+					}
+					if ui.Button(c, caption).Tooltip(locales.Text("运行当前或选中 SQL") + " · Ctrl+Enter").Label(locales.Text("运行当前或选中 SQL")).
 						Disabled(!connected || t.loading || t.recoveryNeeded).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
 						s.Run(c.Services().Invalidate, t)
 					}
+					ui.Button(c, "▾").Label(locales.Text("选择 SQL 执行范围")).Disabled(!connected || t.loading || t.recoveryNeeded).Menu(func(m *ui.Menu) {
+						if m.Item(locales.Text("运行当前语句")).Chosen() {
+							s.RunCurrent(c.Services().Invalidate, t)
+						}
+						if m.Item(locales.Text("运行选中 SQL")).Disabled(strings.TrimSpace(t.Editor.SelectedText()) == "").Chosen() {
+							s.RunSelection(c.Services().Invalidate, t)
+						}
+						if m.Item(locales.Text("运行全部 SQL（F5）")).Chosen() {
+							s.RunAll(c.Services().Invalidate, t)
+						}
+					})
+					s.sqlLayoutMenu(c, t)
 					if ui.Button(c, locales.Text("取消")).Disabled(!t.loading || t.cancelRequested).
 						Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
 						s.RequestCancel(t)
@@ -148,47 +164,135 @@ func (s *State) View(c *ui.Context, t *Document) {
 			}
 			s.registerEditor(t, ed.Focused(), handle)
 		})
-	}, func() { s.resultGrid(c, t) }).Grow(1)
+	}
+	root := ui.Column(c).Grow(1).FillWidth().MinHeight(0).Children(func() {
+		switch t.layoutMode {
+		case "editor":
+			editorPane()
+		case "result":
+			s.resultGrid(c, t)
+		default:
+			if t.result == nil && !t.loading && len(t.snapshots) == 0 {
+				editorPane()
+			} else {
+				ui.SplitVerticalPercent(c, &s.SplitPercent, editorPane, func() { s.resultGrid(c, t) }).Grow(1)
+			}
+
+		}
+	})
 	s.sqlKeyboard(c, root, t)
 }
 
-func (s *State) resultGrid(c *ui.Context, t *Document) {
+func (s *State) sqlLayoutMenu(c *ui.Context, t *Document) {
+	ui.Button(c, locales.Text("布局")).Menu(func(m *ui.Menu) {
+		for _, item := range []struct{ label, mode string }{{"编辑器与结果", ""}, {"只看编辑器", "editor"}, {"只看结果", "result"}} {
+			if m.Item(locales.Text(item.label)).Checked(t.layoutMode == item.mode).Chosen() {
+				t.layoutMode = item.mode
+			}
+		}
+	})
+}
+func (s *State) resultGrid(c *ui.Context, owner *Document) {
+	ui.Column(c).Fill().Children(func() {
+		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).Gap(5).Children(func() {
+			s.sqlLayoutMenu(c, owner)
+			if theme.PageButton(c, locales.Text("实时结果"), owner.snapshotIndex == 0).Clicked() {
+				owner.snapshotIndex = 0
+			}
+			ui.Button(c, locales.Text("结果快照")).Menu(func(m *ui.Menu) {
+				if m.Item(locales.Text("固定本次结果")).Disabled(owner.loading || owner.result == nil).Chosen() {
+					s.pinResult(owner)
+				}
+				for i, snap := range owner.snapshots {
+					if m.Item(snap.Document.Name() + " · " + snap.Time.Format("15:04:05")).Checked(owner.snapshotIndex == i+1).Chosen() {
+						owner.snapshotIndex = i + 1
+					}
+				}
+				if m.Item(locales.Text("移除当前快照")).Disabled(owner.snapshotIndex == 0).Chosen() {
+					owner.removeSnapshot(owner.snapshotIndex - 1)
+				}
+			})
+			if owner.snapshotIndex > 0 && owner.snapshotIndex <= len(owner.snapshots) {
+				snap := owner.snapshots[owner.snapshotIndex-1]
+				ui.Text(c, snap.Document.Name()+" · "+snap.Time.Format("15:04:05")).SingleLine().Tooltip(fmt.Sprintf("%s\n%+v\n%s", snap.Time.Format("2006-01-02 15:04:05"), snap.Namespace, snap.SQL))
+			}
+			ui.Box(c).Grow(1)
+			displayed := owner
+			if owner.snapshotIndex > 0 && owner.snapshotIndex <= len(owner.snapshots) {
+				displayed = owner.snapshots[owner.snapshotIndex-1].Document
+			}
+			summary := sqlResultSummary(displayed)
+			ui.Text(c, summary).FontSize(theme.Font(c, 11)).TextColor(theme.Colors(c).Muted).SingleLine().MinWidth(0).Tooltip(summary)
+		})
+		t := owner
+		if owner.snapshotIndex > 0 && owner.snapshotIndex <= len(owner.snapshots) {
+			t = owner.snapshots[owner.snapshotIndex-1].Document
+		}
+		s.resultContent(c, t)
+	})
+}
+func sqlResultSummary(t *Document) string {
+	if t.cancelRequested {
+		return locales.Text("正在等待取消确认…")
+	}
+	if t.loading {
+		return locales.Text("正在执行…")
+	}
+	if t.result == nil {
+		return locales.Text("尚未执行")
+	}
+	set := selectedResult(t)
+	duration := fmt.Sprintf("%d ms", max(0, t.result.Duration.Milliseconds()))
+	if len(set.Columns) > 0 {
+		return fmt.Sprintf(locales.Text("%d 行 / %d 列 · %s"), len(set.Rows), len(set.Columns), duration)
+	}
+	return fmt.Sprintf(locales.Text("影响 %d 行 · %s"), set.AffectedRows, duration)
+}
+func (s *State) resultContent(c *ui.Context, t *Document) {
+	s.cachedExportView(c, t)
+	if t.err != "" && (t.snapshotOwner != nil || t.layoutMode == "result") {
+		ui.Text(c, t.err).TextColor(theme.Colors(c).Error).SingleLine().Tooltip(t.err)
+	}
 	s.planNavigation(c, t)
 	if t.planVisible && t.plan != nil && !t.showOrdinary {
 		s.planView(c, t)
 		return
 	}
-	p := theme.Colors(c)
-	ui.Column(c).Fill().Children(func() {
-		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Background(p.Header).
-			AlignItems(ui.Center).Padding(2, 7).Gap(8).Children(func() {
-			ui.Text(c, locales.Text("查询结果")).FontSize(theme.Font(c, 12)).Bold()
-			ui.Box(c).Grow(1)
-			message := locales.Text("尚未执行")
-			if t.loading {
-				message = locales.Text("正在执行…")
-			}
-			if t.cancelRequested {
-				message = locales.Text("正在等待取消确认…")
-			}
-			if r := t.result; r != nil {
-				set := selectedResult(t)
-				if len(set.Columns) > 0 {
-					message = fmt.Sprintf(locales.Text("%d 行 / %d 列 · %s"), len(set.Rows), len(set.Columns), r.Duration)
-				} else {
-					message = fmt.Sprintf(locales.Text("影响 %d 行 · %s"), set.AffectedRows, r.Duration)
-				}
-			}
-			ui.Text(c, message).SingleLine().FontSize(theme.Font(c, 11)).TextColor(p.Muted)
-		})
+	ui.Column(c).Label(locales.Text("查询结果")).Fill().Children(func() {
+
 		if t.result == nil {
 			ui.Box(c).Grow(1)
 			return
 		}
 		r := t.result
-		if len(r.Steps) > 0 {
-			ui.Scroll(c).MaxHeight(105).Children(func() {
-				ui.Column(c).Gap(3).Children(func() {
+		set := selectedResult(t)
+		sets := r.ResultSets()
+
+		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(5).Children(func() {
+			ui.ScrollHorizontal(c).Grow(1).MinWidth(0).Children(func() {
+				ui.Row(c).Gap(4).Children(func() {
+					for i := range sets {
+						if theme.PageButton(c, fmt.Sprintf(locales.Text("结果 %d"), i+1), !t.showMessages && t.resultSet == i).Clicked() {
+							t.selectResult(i)
+							t.showMessages = false
+						}
+					}
+					if theme.PageButton(c, locales.Text("消息"), t.showMessages).Clicked() {
+						t.showMessages = true
+					}
+				})
+			})
+			if ui.Button(c, locales.Text("复制结果选区")).Clicked() {
+				s.copyResult(c, t)
+			}
+			if ui.Button(c, locales.Text("导出当前结果")).Clicked() {
+				s.openCachedExport(t)
+			}
+		})
+		set = selectedResult(t)
+		if t.showMessages {
+			ui.Scroll(c).Grow(1).Children(func() {
+				ui.Column(c).Gap(4).Padding(6).Children(func() {
 					for i, step := range r.Steps {
 						state := step.State
 						switch state {
@@ -203,40 +307,15 @@ func (s *State) resultGrid(c *ui.Context, t *Document) {
 						if step.Error != "" {
 							text += " · " + step.Error
 						}
-						ui.Text(c, text).SingleLine().Tooltip(step.SQL)
+						ui.Text(c, text).Tooltip(step.SQL)
 					}
 				})
 			})
+			return
 		}
-		set := selectedResult(t)
-		sets := r.ResultSets()
-		if len(sets) > 1 {
-			ui.ScrollHorizontal(c).Height(theme.RowHeight(c, theme.TabHeight)).Children(func() {
-				ui.Row(c).Gap(4).Children(func() {
-					for i := range sets {
-						if ui.Button(c, fmt.Sprintf(locales.Text("结果 %d"), i+1)).Clicked() {
-							t.selectResult(i)
-						}
-					}
-				})
-			})
-			set = selectedResult(t)
+		if len(set.Truncation) > 0 {
+			ui.Text(c, truncationText(set.Truncation)).SingleLine().Tooltip(truncationText(set.Truncation))
 		}
-		ui.Row(c).Gap(6).Children(func() {
-			if ui.Button(c, locales.Text("复制结果选区")).Clicked() {
-				s.copyResult(c, t)
-			}
-			ui.Button(c, locales.Text("导出当前结果")).Menu(func(m *ui.Menu) {
-				for _, format := range []string{"CSV", "TSV", "JSON"} {
-					if m.Item(format).Chosen() {
-						s.exportResult(t, format, false)
-					}
-				}
-			})
-			if len(set.Truncation) > 0 {
-				ui.Text(c, truncationText(set.Truncation))
-			}
-		})
 		if len(set.Columns) == 0 {
 			ui.Text(c, fmt.Sprintf("影响 %d 行", set.AffectedRows)).
 				Padding(10).FontSize(theme.Font(c, 12))
@@ -287,7 +366,7 @@ func (s *State) resultGrid(c *ui.Context, t *Document) {
 			m.Separator()
 			gridview.ColumnMenu(m, &t.grid.Columns, t.hiddenResultColumns, allColumns, sources[col], len(set.Rows), func(row, col int) contract.Cell { return set.Rows[row][col] }, c.Services().WriteClipboard)
 		}
-		ui.Row(c).Grow(1).MinHeight(0).FillWidth().AlignItems(ui.Stretch).Children(func() {
+		tablePane := func() {
 			table := theme.Table(c, &t.grid, columns, len(set.Rows), func(row, col int) { gridview.Cell(c, set.Rows[row][sources[col]]) }).Grow(1).MinWidth(0)
 			s.registerResult(c, t, table)
 			table.HandleInput(func(ev ui.InputEvent) bool {
@@ -306,32 +385,52 @@ func (s *State) resultGrid(c *ui.Context, t *Document) {
 			if table.Shortcut(ui.Cmd, ui.KeyA) {
 				s.resultEditTarget(t).Execute(c.Services(), "select_all")
 			}
-			if t.resultFieldOpen {
-				ui.Column(c).Width(300).MinHeight(0).Padding(4).Gap(4).Children(func() {
-					col, err := strconv.Atoi(strings.TrimPrefix(t.grid.Cells.Cursor, "sql_"))
-					if err != nil {
-						col = 0
-					}
-					title := locales.Text("字段信息")
-					if col >= 0 && col < len(set.Columns) {
-						title += " · " + set.Columns[col].Name
-					}
-					ui.Row(c).Children(func() {
-						ui.Text(c, title).SingleLine().Bold().Grow(1)
-						if ui.Button(c, "×").Label(locales.Text("隐藏字段信息")).Clicked() {
-							t.resultFieldOpen = false
+		}
+		fieldPane := func() {
+			ui.Column(c).Fill().MinHeight(0).Padding(4).Gap(4).Children(func() {
+				col, err := strconv.Atoi(strings.TrimPrefix(t.grid.Cells.Cursor, "sql_"))
+				if err != nil {
+					col = 0
+				}
+				title := locales.Text("字段信息")
+				if col >= 0 && col < len(set.Columns) {
+					title += " · " + set.Columns[col].Name
+				}
+				ui.Row(c).Children(func() {
+					ui.Text(c, title).SingleLine().Bold().Grow(1)
+					ui.Button(c, locales.Text("位置")).Menu(func(m *ui.Menu) {
+						if m.Item(locales.Text("下方")).Checked(!t.resultFieldRight).Chosen() {
+							t.resultFieldRight = false
+						}
+						if m.Item(locales.Text("右侧")).Checked(t.resultFieldRight).Chosen() {
+							t.resultFieldRight = true
 						}
 					})
-					if t.selectedRow >= 0 && t.selectedRow < len(set.Rows) && col >= 0 && col < len(set.Rows[t.selectedRow]) {
-						gridview.FieldPreview(c, set.Rows[t.selectedRow][col], &t.resultFieldMode, func(e ui.Element) {
-							theme.BindNativeEdit(c, e, fmt.Sprintf("sql/field/%d", t.id), s.deps.EditFocus, s.deps.EditTarget, func() bool { return !t.closed && t.resultFieldOpen }, false, false)
-						})
-					} else {
-						ui.Text(c, locales.Text("选择一个单元格"))
+					if ui.Button(c, "×").Label(locales.Text("隐藏字段信息")).Clicked() {
+						t.resultFieldOpen = false
 					}
 				})
+				if t.selectedRow >= 0 && t.selectedRow < len(set.Rows) && col >= 0 && col < len(set.Rows[t.selectedRow]) {
+					gridview.FieldPreview(c, set.Rows[t.selectedRow][col], &t.resultFieldMode, func(e ui.Element) {
+						theme.BindNativeEdit(c, e, fmt.Sprintf("sql/field/%d", t.id), s.deps.EditFocus, s.deps.EditTarget, func() bool { return !t.closed && t.resultFieldOpen }, false, false)
+					})
+				} else {
+					ui.Text(c, locales.Text("选择一个单元格"))
+				}
+			})
+		}
+		if t.resultFieldOpen {
+			if t.fieldSplit == 0 {
+				t.fieldSplit = 65
 			}
-		})
+			if t.resultFieldRight {
+				ui.SplitPercent(c, &t.fieldSplit, tablePane, fieldPane).Grow(1)
+			} else {
+				ui.SplitVerticalPercent(c, &t.fieldSplit, tablePane, fieldPane).Grow(1)
+			}
+		} else {
+			tablePane()
+		}
 
 	})
 }
