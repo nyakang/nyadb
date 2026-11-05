@@ -18,8 +18,9 @@ import (
 func sqliteDesignFixture(t *testing.T, ddl string) *Session {
 	t.Helper()
 	m := NewManager()
-	t.Cleanup(func() { m.Close() })
 	p := connections.Profile{ID: 71, Kind: connections.SQLite, Database: filepath.Join(t.TempDir(), "design.sqlite")}
+	// Cleanup runs in reverse order: close the file before TempDir removes it.
+	t.Cleanup(func() { m.Close() })
 	if err := m.Connect(context.Background(), p, ""); err != nil {
 		t.Fatal(err)
 	}
