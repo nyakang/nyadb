@@ -226,7 +226,7 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 				ui.Text(c, title).Bold().FontSize(theme.Font(c, 15))
 				ui.Text(c, t.database+"."+t.table).TextColor(colors.Muted).SingleLine()
 				if !available {
-					ui.Text(c, locales.Text("原 MySQL 会话已失效，请关闭向导后重新打开")).TextColor(colors.Error)
+					ui.Text(c, locales.Text("原数据库会话已失效，请关闭向导后重新打开")).TextColor(colors.Error)
 				}
 				ui.Row(c).Gap(8).Children(func() {
 					ui.Text(c, locales.Text("文件格式"))
@@ -733,7 +733,7 @@ func (s *State) consumeDataTransfers(services ui.Services) {
 				if result.MappedSpool != nil {
 					result.MappedSpool.Close()
 				}
-				tr.Err = locales.Text("原 MySQL 会话已失效，请关闭向导后重新打开")
+				tr.Err = locales.Text("原数据库会话已失效，请关闭向导后重新打开")
 			} else if result.Err != nil {
 				if !errors.Is(result.Err, context.Canceled) {
 					tr.Err = result.Err.Error()

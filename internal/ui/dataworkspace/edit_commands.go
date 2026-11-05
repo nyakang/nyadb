@@ -10,6 +10,10 @@ import (
 func (s *State) gridEditTarget(t *Document) theme.EditTarget {
 	return theme.EditTarget{ID: fmt.Sprintf("data/grid/%d", t.id), Valid: func() bool { return !t.closed && t.page != nil && t.edit.Editor == nil }, Enabled: func(command string) bool {
 		switch command {
+		case "undo":
+			return s.canDraftUndo(t, false)
+		case "redo":
+			return s.canDraftUndo(t, true)
 		case "copy":
 			return mysqlDataHasSelectedPreview(t)
 		case "select_all":
@@ -21,6 +25,10 @@ func (s *State) gridEditTarget(t *Document) theme.EditTarget {
 		return false
 	}, Run: func(services ui.Services, command string) bool {
 		switch command {
+		case "undo":
+			return s.undoDraft(t, false)
+		case "redo":
+			return s.undoDraft(t, true)
 		case "copy":
 			s.copyDataSelection(services, t)
 		case "select_all":

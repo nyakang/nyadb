@@ -67,6 +67,10 @@ func (s *State) View(c *ui.Context, t *Document) {
 }
 
 func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *contract.DataPage) {
+	if t.recordFormMode {
+		s.recordForm(c, t)
+		return
+	}
 	palette := theme.Colors(c)
 	ui.Column(c).FillWidth().Grow(1).MinHeight(0).Children(func() {
 		if t.loading {
@@ -364,6 +368,13 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *contract.DataP
 					s.cancelMySQLDataRead(t)
 				}
 			}
+
+			if ui.Button(c, "↶").Label(locales.Text("撤销草稿更改")).Tooltip(locales.Text("撤销草稿更改")).Size(26, theme.ControlHeight).Padding(0).Disabled(!s.canDraftUndo(t, false)).Clicked() {
+				s.undoDraft(t, false)
+			}
+			if ui.Button(c, "↷").Label(locales.Text("重做草稿更改")).Tooltip(locales.Text("重做草稿更改")).Size(26, theme.ControlHeight).Padding(0).Disabled(!s.canDraftUndo(t, true)).Clicked() {
+				s.undoDraft(t, true)
+			}
 			ui.Checkbox(c, &t.edit.Batch, locales.Text("批量编辑")).Disabled(dirty || t.loading || t.edit.Busy || t.edit.Uncertain != nil).FontSize(theme.Font(c, theme.SmallFontSize))
 			s.mysqlDataEditStatus(c, t)
 		})
@@ -386,6 +397,19 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *contract.DataP
 			}
 			ui.Text(c, fmt.Sprintf(locales.Text("第 %d 页"), t.offset/int64(max(1, t.limit))+1)).
 				Label(locales.Text("当前数据页")).FontSize(theme.Font(c, theme.SmallFontSize)).SingleLine()
+
+			input := ui.TextInput(c, &t.pageNumberDraft).Label(locales.Text("跳转页号")).Placeholder(locales.Text("页号")).Width(54).Height(theme.RowHeight(c, theme.ControlHeight))
+			input.OnTextKey(func(k ui.TextKey) bool {
+				if k.Key == ui.KeyEnter && k.Mods == 0 {
+					t.pageNumberDraft = k.Text()
+					s.jumpDataPage(c.Services(), t)
+					return true
+				}
+				return false
+			})
+			if ui.Button(c, locales.Text("跳转")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(t.loading || t.edit.Busy || t.page == nil).Clicked() {
+				s.jumpDataPage(c.Services(), t)
+			}
 			if ui.Button(c, "›").Label(locales.Text("下一页数据")).Tooltip(locales.Text("下一页")).
 				Size(26, theme.ControlHeight).Padding(0).Disabled(t.loading || t.edit.Busy || t.edit.Uncertain != nil || t.page == nil || !page.HasMore).Clicked() {
 				s.changeMySQLDataPage(c.Services(), t, t.offset+int64(t.limit))
@@ -400,17 +424,27 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *contract.DataP
 			})
 
 		})
+		if t.pageNumberError != "" {
+			ui.Text(c, t.pageNumberError).TextColor(palette.Error).FontSize(theme.Font(c, theme.SmallFontSize))
+		}
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Shrink(0).Padding(2, 6).Gap(6).AlignItems(ui.Center).
 			BorderWidth(1, 0, 0, 0).BorderColor(palette.Border).Children(func() {
 			ui.Button(c, "SQL").Label(locales.Text("查询 SQL 操作")).Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 4).
 				Menu(func(m *ui.Menu) {
+					if m.Item(locales.Text("显示查询 SQL")).Checked(t.showSQLDetails).Chosen() {
+						t.showSQLDetails = !t.showSQLDetails
+					}
 					if m.Item(locales.Text("复制参数化 SQL")).Disabled(t.readInfo.QuerySQL == "").Chosen() {
 						c.WriteClipboard(t.readInfo.QuerySQL)
 					}
 				})
 			query := mysqlDataQueryStatus(t)
-			ui.Text(c, query).Label(locales.Text("数据查询 SQL")).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Muted).
-				SingleLine().Grow(1).MinWidth(0).Tooltip(query)
+			if t.showSQLDetails {
+				ui.Text(c, query).Label(locales.Text("数据查询 SQL")).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Muted).
+					SingleLine().Grow(1).MinWidth(0).Tooltip(query)
+			} else {
+				ui.Box(c).Grow(1)
+			}
 			readStatus := mysqlDataReadStatus(t)
 			ui.Text(c, readStatus).Label(locales.Text("数据读取时间")).FontSize(theme.Font(c, theme.SmallFontSize)).
 				TextColor(palette.Muted).SingleLine().MaxWidth(210).Tooltip(readStatus)

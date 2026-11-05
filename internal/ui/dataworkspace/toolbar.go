@@ -38,6 +38,19 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 			profilesButton = mysqlDataToolbarButton(c, "表配置文件 ▾", locales.Text("表配置文件"), "design-table", page == nil).
 				Menu(func(m *ui.Menu) { s.profilesMenu(c, t, m) })
 		}
+
+		if dataToolbarToggle(c, "记录表单", "table", t.recordFormMode, page == nil || t.loading || t.edit.Busy).Clicked() {
+			s.finishMySQLCellEdit(t, true)
+			if t.edit.Editor == nil {
+				t.recordFormMode = !t.recordFormMode
+				if t.recordFormMode {
+					t.toolbar.dock = ""
+					if t.selectedRow < 0 && len(page.Rows) > 0 {
+						t.selectedRow = 0
+					}
+				}
+			}
+		}
 		ui.Divider(c).Width(1).Height(18)
 		if (t.object.ProfileID == 0 || t.capabilities.Transactions) && dataTransactionActive(t) {
 			if mysqlDataToolbarButton(c, "提交", locales.Text("提交事务"), "check", disabled || dataTransactionBusy(t)).Clicked() {
@@ -85,11 +98,14 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 			s.openDataImport(t)
 		}
 		if mysqlDataToolbarButton(c, "导出", locales.Text("导出"), "export", disabled || dataTransactionActive(t) || dataTransactionBusy(t) || t.transfer.Uncertain || page == nil).Clicked() {
-			if t.capabilities.JSONL {
-				s.ExportJSONL(c.Services(), t)
-			} else {
-				s.openDataExport(t)
-			}
+			s.openDataExport(t)
+		}
+		if t.capabilities.JSONL {
+			ui.Button(c, "▾").Label(locales.Text("导出选项")).Disabled(disabled || page == nil || mysqlDataHasDraft(t) || dataTransactionActive(t) || dataTransactionBusy(t) || t.transfer.Uncertain).Menu(func(m *ui.Menu) {
+				if m.Item(locales.Text("整表导出为 JSONL（忽略当前筛选）")).Chosen() {
+					s.ExportJSONL(c.Services(), t)
+				}
+			})
 		}
 		ui.Divider(c).Width(1).Height(18)
 		if mysqlDataToolbarButton(c, "字段信息", locales.Text("查看字段信息"), "info", page == nil).Clicked() {

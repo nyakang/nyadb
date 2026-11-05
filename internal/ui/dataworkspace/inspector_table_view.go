@@ -67,6 +67,12 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 	palette := theme.Colors(c)
 
 	d := &t.info
+	engine := connections.MySQL
+	if s.deps.Profile != nil {
+		if profile, ok := s.deps.Profile(t.profileID); ok {
+			engine = profile.Kind
+		}
+	}
 	connected := s.connected(t)
 	ui.Column(c).Label(locales.Text("数据表信息面板")).Fill().Background(palette.Panel).Children(func() {
 		s.header(c, t, false)
@@ -122,7 +128,9 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 				if d.info != nil && d.info.EstimatedRows != nil {
 					estimate = strconv.FormatInt(*d.info.EstimatedRows, 10)
 				}
-				tableProperty(c, "估算行数", estimate)
+				if engine == connections.MySQL || d.info != nil && d.info.EstimatedRows != nil {
+					tableProperty(c, "估算行数", estimate)
+				}
 				if d.count != nil {
 					tableProperty(c, "整表行数", strconv.FormatInt(*d.count, 10))
 					tableProperty(c, "行数统计时间", d.countAt.Local().Format("2006-01-02 15:04:05"))
@@ -145,6 +153,24 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 					kind = "视图"
 				}
 				tableProperty(c, "类型", locales.Text(kind))
+
+				if engine != connections.MySQL {
+					if descriptor, ok := connections.Describe(engine); ok {
+						tableProperty(c, "数据库产品", descriptor.Label)
+					}
+					if engine == connections.PostgreSQL {
+						if info.DataLength != nil {
+							tableProperty(c, "数据长度", tableBytes(info.DataLength))
+						}
+						if info.IndexLength != nil {
+							tableProperty(c, "索引长度", tableBytes(info.IndexLength))
+						}
+						if info.Comment != "" {
+							tableProperty(c, "注释", info.Comment)
+						}
+					}
+					return
+				}
 				tableProperty(c, "引擎", info.Engine)
 				tableProperty(c, "自动递增值", tableNumber(info.AutoIncrement))
 				tableProperty(c, "行格式", info.RowFormat)

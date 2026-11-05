@@ -38,6 +38,8 @@ func (s *State) clearMySQLDataFilter(services ui.Services, t *Document) {
 	t.filterValue = ""
 	t.filterRules = nil
 	t.filterCondition, t.groupDraft = nil, nil
+	t.mainFilterDisabled = false
+	t.disabledGroupRules = nil
 	t.filterExtraDraft = nil
 	t.ruleError = ""
 	t.filterColumnDraft = "选择字段"
@@ -135,6 +137,7 @@ func mysqlDataFilterStatus(t *Document) string {
 }
 
 type mysqlDataRuleDraft struct {
+	Disabled            bool
 	Column, Mode, Value string
 }
 type mysqlDataSortDraft struct {
@@ -214,6 +217,11 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *Document, page *contract.D
 	} else {
 		ui.Text(c, locales.Text("筛选  ·  所有已启用条件均满足 (AND)")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(6).AlignItems(ui.Center).Children(func() {
+
+			enabled := !t.mainFilterDisabled
+			if ui.Checkbox(c, &enabled, locales.Text("启用条件")).Label(locales.Text("启用主筛选条件")).Changed() {
+				t.mainFilterDisabled = !enabled
+			}
 			field := mysqlDataRuleSelect(c, &t.filterColumnDraft, choices, mysqlDataColumnChoiceLabel).Height(theme.RowHeight(c, theme.ControlHeight)).Width(150)
 			mysqlDataRuleSelect(c, &t.filterModeDraft, t.filterChoices(), locales.Text).Width(110)
 			if mysqlDataFilterModeNeedsValue(t.filterModeDraft) {
@@ -232,10 +240,22 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *Document, page *contract.D
 				t.filterExtraDraft = append(t.filterExtraDraft, mysqlDataRuleDraft{Column: "选择字段", Mode: t.defaultFilter()})
 			}
 		})
+
+		if t.ruleError != "" && !t.mainFilterDisabled {
+			rule := contract.DataFilterRule{Column: t.filterColumnDraft, Mode: mysqlFilterMode(t.filterModeDraft), Value: t.filterValueDraft}
+			if problem := dataRuleProblem(t, rule); problem != "" {
+				ui.Text(c, problem).Label(locales.Text("条件错误") + " 1").FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Error)
+			}
+		}
 		for i := range t.filterExtraDraft {
 			i := i
 			rule := &t.filterExtraDraft[i]
 			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(6).AlignItems(ui.Center).Children(func() {
+
+				enabled := !rule.Disabled
+				if ui.Checkbox(c, &enabled, locales.Text("启用条件")).Label(fmt.Sprintf("%s %d", locales.Text("启用筛选条件"), i+2)).Changed() {
+					rule.Disabled = !enabled
+				}
 				ui.Text(c, locales.Text("且")).TextColor(palette.Muted).FontSize(theme.Font(c, 11))
 				field := mysqlDataRuleSelect(c, &rule.Column, choices, mysqlDataColumnChoiceLabel).Width(140)
 				mysqlDataRuleSelect(c, &rule.Mode, t.filterChoices(), locales.Text).Width(110)
@@ -264,6 +284,11 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *Document, page *contract.D
 					t.filterExtraDraft = append(t.filterExtraDraft[:i], t.filterExtraDraft[i+1:]...)
 				}
 			})
+			if t.ruleError != "" && !rule.Disabled {
+				if problem := dataRuleProblem(t, contract.DataFilterRule{Column: rule.Column, Mode: mysqlFilterMode(rule.Mode), Value: rule.Value}); problem != "" {
+					ui.Text(c, problem).Label(fmt.Sprintf("%s %d", locales.Text("条件错误"), i+2)).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Error)
+				}
+			}
 		}
 		if ui.Button(c, locales.Text("使用条件组")).Clicked() {
 			s.beginFilterGroups(t)
@@ -311,32 +336,26 @@ func (s *State) applyMySQLDataRules(services ui.Services, t *Document) {
 	t.ruleError = ""
 	var drafts []mysqlDataRuleDraft
 	if t.filterColumnDraft != "" && t.filterColumnDraft != "选择字段" {
-		drafts = append(drafts, mysqlDataRuleDraft{Column: t.filterColumnDraft, Mode: t.filterModeDraft, Value: t.filterValueDraft})
+		drafts = append(drafts, mysqlDataRuleDraft{Column: t.filterColumnDraft, Mode: t.filterModeDraft, Value: t.filterValueDraft, Disabled: t.mainFilterDisabled})
 	}
 	drafts = append(drafts, t.filterExtraDraft...)
 	if t.groupDraft != nil {
 		drafts = nil
 	}
 	filters := make([]contract.DataFilterRule, 0, len(drafts))
-	for _, draft := range drafts {
-		valid := false
-		for _, col := range t.columns {
-			if col.ID == draft.Column {
-				valid = true
-				break
-			}
+
+	for i, draft := range drafts {
+		if draft.Disabled {
+			continue
 		}
-		if !valid {
-			t.ruleError = locales.Text("筛选字段不存在或未选择")
+		rule := contract.DataFilterRule{Column: draft.Column, Mode: mysqlFilterMode(draft.Mode), Value: draft.Value}
+		if problem := dataRuleProblem(t, rule); problem != "" {
+			t.ruleError = fmt.Sprintf("%s %d: %s", locales.Text("条件"), i+1, problem)
 			return
 		}
-		mode := mysqlFilterMode(draft.Mode)
-		if mode == "" || len(draft.Value) > 4096 {
-			t.ruleError = locales.Text("筛选条件无效或过长")
-			return
-		}
-		filters = append(filters, contract.DataFilterRule{Column: draft.Column, Mode: mode, Value: draft.Value})
+		filters = append(filters, rule)
 	}
+
 	if t.groupDraft == nil && len(drafts) == 0 && len(t.sortDraft) == 0 && len(t.filterRules) == 0 && t.filterMode == "" && len(t.sortRules) == 0 && t.sortColumn == "" && (t.filterColumnDraft == "" || t.filterColumnDraft == "选择字段") {
 		t.ruleError = locales.Text("请先选择筛选字段，或添加排序规则")
 		return
@@ -362,7 +381,7 @@ func (s *State) applyMySQLDataRules(services ui.Services, t *Document) {
 		if _, valid := s.validateFilterGroups(t); !valid {
 			return
 		}
-		t.filterCondition = cloneDataCondition(t.groupDraft)
+		t.filterCondition = effectiveFilterGroup(t, t.groupDraft)
 		t.filterRules = nil
 		t.filterColumn, t.filterMode, t.filterValue = "", "", ""
 	} else {

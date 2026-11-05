@@ -295,6 +295,8 @@ func (s *State) pasteDataSelection(services ui.Services, t *Document, row, sourc
 			}
 		}
 	}
+	done := beginDraftChange(t)
+	defer done()
 	for i, line := range values {
 		for j, value := range line {
 			s.setMySQLDataCell(services, t, row+i, indices[start+j], contract.DataValue{Text: value})
