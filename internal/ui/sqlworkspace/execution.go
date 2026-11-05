@@ -88,6 +88,9 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 	}
 	t.showOrdinary = false
 	t.planVisible = false
+	if t.result == nil && len(t.snapshots) == 0 && t.layoutMode == "" {
+		t.focusEditor = true
+	}
 	t.rememberResultLayouts()
 	t.result = nil
 	t.err = ""

@@ -44,7 +44,7 @@ func (s *State) View(c *ui.Context) {
 				ui.Column(c).Fill().BorderWidth(0, theme.SplitterBorder, 0, 0).BorderColor(palette.Toolbar).Children(func() { s.sidebar(c) })
 			},
 			func() {
-				if s.inspectorOn {
+				if s.inspectorOn && s.currentTab().kind != tabSQL {
 					workbenchSplit(c, &s.centerPercent,
 						func() {
 							ui.Column(c).Fill().BorderWidth(0, theme.SplitterBorder, 0, 0).BorderColor(palette.Toolbar).Children(func() { s.workspace(c) })
