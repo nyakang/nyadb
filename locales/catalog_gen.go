@@ -344,16 +344,6 @@ func (msgs Messages) CurrentTheme() string {
 	return Catalog.Format(msgs.locale, "currentTheme", nil)
 }
 
-// SystemThemeHint says "随操作系统的深浅色设置自动切换"
-// in the language the app shows.
-func SystemThemeHint() string { return In(i18n.Locale()).SystemThemeHint() }
-
-// SystemThemeHint says "随操作系统的深浅色设置自动切换"
-// in the language of msgs.
-func (msgs Messages) SystemThemeHint() string {
-	return Catalog.Format(msgs.locale, "systemThemeHint", nil)
-}
-
 // NativeControlsPreview says "原生控件预览"
 // in the language the app shows.
 func NativeControlsPreview() string { return In(i18n.Locale()).NativeControlsPreview() }
@@ -432,16 +422,6 @@ func SqlSyntaxPreview() string { return In(i18n.Locale()).SqlSyntaxPreview() }
 // in the language of msgs.
 func (msgs Messages) SqlSyntaxPreview() string {
 	return Catalog.Format(msgs.locale, "sqlSyntaxPreview", nil)
-}
-
-// SqlSyntaxHint says "关键字、函数、数字、字符串、注释与编辑器背景将随主题变化。"
-// in the language the app shows.
-func SqlSyntaxHint() string { return In(i18n.Locale()).SqlSyntaxHint() }
-
-// SqlSyntaxHint says "关键字、函数、数字、字符串、注释与编辑器背景将随主题变化。"
-// in the language of msgs.
-func (msgs Messages) SqlSyntaxHint() string {
-	return Catalog.Format(msgs.locale, "sqlSyntaxHint", nil)
 }
 
 // SwatchPreview says "文本和边框预览"
@@ -2434,16 +2414,6 @@ func (msgs Messages) Remove() string {
 	return Catalog.Format(msgs.locale, "remove", nil)
 }
 
-// SortOrderHelp says "排序方式 · 按规则优先级依次排序"
-// in the language the app shows.
-func SortOrderHelp() string { return In(i18n.Locale()).SortOrderHelp() }
-
-// SortOrderHelp says "排序方式 · 按规则优先级依次排序"
-// in the language of msgs.
-func (msgs Messages) SortOrderHelp() string {
-	return Catalog.Format(msgs.locale, "sortOrderHelp", nil)
-}
-
 // AddSort says "添加排序"
 // in the language the app shows.
 func AddSort() string { return In(i18n.Locale()).AddSort() }
@@ -3138,11 +3108,11 @@ func (msgs Messages) AlignmentMockDataSummary() string {
 	return Catalog.Format(msgs.locale, "alignmentMockDataSummary", nil)
 }
 
-// AlignmentReadingStructure says "正在读取真实 MySQL 表结构…"
+// AlignmentReadingStructure says "正在读取表结构…"
 // in the language the app shows.
 func AlignmentReadingStructure() string { return In(i18n.Locale()).AlignmentReadingStructure() }
 
-// AlignmentReadingStructure says "正在读取真实 MySQL 表结构…"
+// AlignmentReadingStructure says "正在读取表结构…"
 // in the language of msgs.
 func (msgs Messages) AlignmentReadingStructure() string {
 	return Catalog.Format(msgs.locale, "alignmentReadingStructure", nil)
@@ -4384,11 +4354,11 @@ func (msgs Messages) DataFitAllColumns() string {
 	return Catalog.Format(msgs.locale, "dataFitAllColumns", nil)
 }
 
-// MysqlChooseCellPreview says "选择数据单元格以查看值的安全预览"
+// MysqlChooseCellPreview says "选择单元格查看内容"
 // in the language the app shows.
 func MysqlChooseCellPreview() string { return In(i18n.Locale()).MysqlChooseCellPreview() }
 
-// MysqlChooseCellPreview says "选择数据单元格以查看值的安全预览"
+// MysqlChooseCellPreview says "选择单元格查看内容"
 // in the language of msgs.
 func (msgs Messages) MysqlChooseCellPreview() string {
 	return Catalog.Format(msgs.locale, "mysqlChooseCellPreview", nil)
@@ -5692,18 +5662,6 @@ func MysqlToolbarInsertNewRowsOnlyUpTo200() string {
 // in the language of msgs.
 func (msgs Messages) MysqlToolbarInsertNewRowsOnlyUpTo200() string {
 	return Catalog.Format(msgs.locale, "mysqlToolbarInsertNewRowsOnlyUpTo200", nil)
-}
-
-// MysqlToolbarSaveAppliedRulesAndRowsPerPage says "保存已应用规则及每页行数；不会保存行数据或待保存更改。"
-// in the language the app shows.
-func MysqlToolbarSaveAppliedRulesAndRowsPerPage() string {
-	return In(i18n.Locale()).MysqlToolbarSaveAppliedRulesAndRowsPerPage()
-}
-
-// MysqlToolbarSaveAppliedRulesAndRowsPerPage says "保存已应用规则及每页行数；不会保存行数据或待保存更改。"
-// in the language of msgs.
-func (msgs Messages) MysqlToolbarSaveAppliedRulesAndRowsPerPage() string {
-	return Catalog.Format(msgs.locale, "mysqlToolbarSaveAppliedRulesAndRowsPerPage", nil)
 }
 
 // MysqlToolbarFailedToSaveTheTableProfile says "保存表配置文件失败"
@@ -7206,13 +7164,13 @@ func (msgs Messages) MysqlToolbarManageProfiles() string {
 	return Catalog.Format(msgs.locale, "mysqlToolbarManageProfiles", nil)
 }
 
-// MysqlToolbarTableProfilesSaveFiltersSortingAndColumn says "表的配置文件存储筛选、排序和列设置以供将来使用。"
+// MysqlToolbarTableProfilesSaveFiltersSortingAndColumn says "保存筛选、排序、列设置和每页行数。"
 // in the language the app shows.
 func MysqlToolbarTableProfilesSaveFiltersSortingAndColumn() string {
 	return In(i18n.Locale()).MysqlToolbarTableProfilesSaveFiltersSortingAndColumn()
 }
 
-// MysqlToolbarTableProfilesSaveFiltersSortingAndColumn says "表的配置文件存储筛选、排序和列设置以供将来使用。"
+// MysqlToolbarTableProfilesSaveFiltersSortingAndColumn says "保存筛选、排序、列设置和每页行数。"
 // in the language of msgs.
 func (msgs Messages) MysqlToolbarTableProfilesSaveFiltersSortingAndColumn() string {
 	return Catalog.Format(msgs.locale, "mysqlToolbarTableProfilesSaveFiltersSortingAndColumn", nil)
@@ -9016,16 +8974,6 @@ func (msgs Messages) AppearanceMode() string {
 	return Catalog.Format(msgs.locale, "appearanceMode", nil)
 }
 
-// ColorSchemeHint says "选择配色方案，再搭配喜欢的明暗模式。所有窗口将同步更新。"
-// in the language the app shows.
-func ColorSchemeHint() string { return In(i18n.Locale()).ColorSchemeHint() }
-
-// ColorSchemeHint says "选择配色方案，再搭配喜欢的明暗模式。所有窗口将同步更新。"
-// in the language of msgs.
-func (msgs Messages) ColorSchemeHint() string {
-	return Catalog.Format(msgs.locale, "colorSchemeHint", nil)
-}
-
 // ThemeClassic says "经典"
 // in the language the app shows.
 func ThemeClassic() string { return In(i18n.Locale()).ThemeClassic() }
@@ -9176,11 +9124,11 @@ func (msgs Messages) ReadingSettings() string {
 	return Catalog.Format(msgs.locale, "readingSettings", nil)
 }
 
-// ReadingSettingsHint says "字号在按 Enter 或离开输入框后应用。SQL 字号独立，系统文字缩放仍然生效。"
+// ReadingSettingsHint says "按 Enter 或离开输入框后应用字号。"
 // in the language the app shows.
 func ReadingSettingsHint() string { return In(i18n.Locale()).ReadingSettingsHint() }
 
-// ReadingSettingsHint says "字号在按 Enter 或离开输入框后应用。SQL 字号独立，系统文字缩放仍然生效。"
+// ReadingSettingsHint says "按 Enter 或离开输入框后应用字号。"
 // in the language of msgs.
 func (msgs Messages) ReadingSettingsHint() string {
 	return Catalog.Format(msgs.locale, "readingSettingsHint", nil)
@@ -11738,11 +11686,11 @@ func (msgs Messages) HistoryClearTitle() string {
 	return Catalog.Format(msgs.locale, "historyClearTitle", nil)
 }
 
-// HistoryClearDescription says "清除所选连接范围的记录，并阻止此前执行的迟到回执重新写入。"
+// HistoryClearDescription says "将清除所选连接的全部历史记录。"
 // in the language the app shows.
 func HistoryClearDescription() string { return In(i18n.Locale()).HistoryClearDescription() }
 
-// HistoryClearDescription says "清除所选连接范围的记录，并阻止此前执行的迟到回执重新写入。"
+// HistoryClearDescription says "将清除所选连接的全部历史记录。"
 // in the language of msgs.
 func (msgs Messages) HistoryClearDescription() string {
 	return Catalog.Format(msgs.locale, "historyClearDescription", nil)
@@ -12462,11 +12410,11 @@ func (msgs Messages) HistoryDiscardConfirm() string {
 	return Catalog.Format(msgs.locale, "historyDiscardConfirm", nil)
 }
 
-// HistoryDiscardDescription says "仅放弃本次内存中尚未保存的日志和迟到回执，已保存历史及文档不变。"
+// HistoryDiscardDescription says "放弃尚未保存的日志，已保存历史不受影响。"
 // in the language the app shows.
 func HistoryDiscardDescription() string { return In(i18n.Locale()).HistoryDiscardDescription() }
 
-// HistoryDiscardDescription says "仅放弃本次内存中尚未保存的日志和迟到回执，已保存历史及文档不变。"
+// HistoryDiscardDescription says "放弃尚未保存的日志，已保存历史不受影响。"
 // in the language of msgs.
 func (msgs Messages) HistoryDiscardDescription() string {
 	return Catalog.Format(msgs.locale, "historyDiscardDescription", nil)
@@ -15698,11 +15646,11 @@ func (msgs Messages) NavicatUxc46148c609() string {
 	return Catalog.Format(msgs.locale, "navicatUxc46148c609", nil)
 }
 
-// NavicatUx688a2da5c7 says "保存标签、布局和 SQL 文本；恢复后需显式连接，不会执行 SQL。"
+// NavicatUx688a2da5c7 says "保存页签、布局和 SQL 文本；恢复后需手动连接。"
 // in the language the app shows.
 func NavicatUx688a2da5c7() string { return In(i18n.Locale()).NavicatUx688a2da5c7() }
 
-// NavicatUx688a2da5c7 says "保存标签、布局和 SQL 文本；恢复后需显式连接，不会执行 SQL。"
+// NavicatUx688a2da5c7 says "保存页签、布局和 SQL 文本；恢复后需手动连接。"
 // in the language of msgs.
 func (msgs Messages) NavicatUx688a2da5c7() string {
 	return Catalog.Format(msgs.locale, "navicatUx688a2da5c7", nil)
@@ -17558,11 +17506,11 @@ func (msgs Messages) UiFix399ee69347() string {
 	return Catalog.Format(msgs.locale, "uiFix399ee69347", nil)
 }
 
-// UiFix7ed80bb9bc says "列表只控制显示范围；不会创建数据库或提升访问权限。自动打开需要显式连接。"
+// UiFix7ed80bb9bc says "仅影响数据库列表的显示范围。"
 // in the language the app shows.
 func UiFix7ed80bb9bc() string { return In(i18n.Locale()).UiFix7ed80bb9bc() }
 
-// UiFix7ed80bb9bc says "列表只控制显示范围；不会创建数据库或提升访问权限。自动打开需要显式连接。"
+// UiFix7ed80bb9bc says "仅影响数据库列表的显示范围。"
 // in the language of msgs.
 func (msgs Messages) UiFix7ed80bb9bc() string {
 	return Catalog.Format(msgs.locale, "uiFix7ed80bb9bc", nil)
@@ -17898,11 +17846,11 @@ func (msgs Messages) UiFix8b6ff49851() string {
 	return Catalog.Format(msgs.locale, "uiFix8b6ff49851", nil)
 }
 
-// UiFixdd5b15b2fd says "显式打开"
+// UiFixdd5b15b2fd says "手动打开"
 // in the language the app shows.
 func UiFixdd5b15b2fd() string { return In(i18n.Locale()).UiFixdd5b15b2fd() }
 
-// UiFixdd5b15b2fd says "显式打开"
+// UiFixdd5b15b2fd says "手动打开"
 // in the language of msgs.
 func (msgs Messages) UiFixdd5b15b2fd() string {
 	return Catalog.Format(msgs.locale, "uiFixdd5b15b2fd", nil)
@@ -19420,4 +19368,14 @@ func UnsupportedConnectionDriverMessage() string {
 // in the language of msgs.
 func (msgs Messages) UnsupportedConnectionDriverMessage() string {
 	return Catalog.Format(msgs.locale, "unsupportedConnectionDriverMessage", nil)
+}
+
+// DatabaseOpenMode says "打开方式"
+// in the language the app shows.
+func DatabaseOpenMode() string { return In(i18n.Locale()).DatabaseOpenMode() }
+
+// DatabaseOpenMode says "打开方式"
+// in the language of msgs.
+func (msgs Messages) DatabaseOpenMode() string {
+	return Catalog.Format(msgs.locale, "databaseOpenMode", nil)
 }

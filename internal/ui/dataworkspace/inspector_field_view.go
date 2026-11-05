@@ -79,7 +79,7 @@ func (s *inspectorState) FieldView(c *ui.Context, t *Panel) {
 				}
 				ui.Divider(c)
 				if !selected {
-					ui.Text(c, locales.Text("选择数据单元格以查看值的安全预览")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+					ui.Text(c, locales.Text("选择单元格查看内容")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 					return
 				}
 				theme.Property(c, "行号", fmt.Sprintf("%d", selection.Offset+int64(selection.Row)+1))

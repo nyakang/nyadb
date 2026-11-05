@@ -41,7 +41,7 @@ func TestMySQLGeneralAdvancedAndDatabaseControls(t *testing.T) {
 		controls []string
 	}{
 		{"高级", []string{"客户端驱动程序：", "保持连接间隔（秒）：", "连接超时（秒）：", "初始查询：", "兼容性"}},
-		{"数据库", []string{"使用自定义数据库列表", "自动打开"}},
+		{"数据库", []string{"使用自定义数据库列表", "打开方式"}},
 	} {
 		if err := tt.Click(page.name); err != nil {
 			t.Fatal(err)

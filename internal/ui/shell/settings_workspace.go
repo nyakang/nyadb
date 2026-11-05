@@ -39,8 +39,6 @@ func (s *State) settingsWorkspace(c *ui.Context) {
 			ui.Column(c).Padding(16).Gap(13).FillWidth().Children(func() {
 				ui.Text(c, locales.Text("修改后立即应用并自动保存")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 				ui.Text(c, locales.Text("选择主题")).Bold().FontSize(theme.Font(c, 14))
-				ui.Text(c, locales.Text("选择配色方案，再搭配喜欢的明暗模式。所有窗口将同步更新。")).
-					FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 				ui.Text(c, locales.Text("明暗模式")).FontSize(theme.Font(c, 12)).Bold()
 				mode := theme.CurrentMode()
 				ui.RadioGroup(c, func() {
@@ -68,7 +66,7 @@ func (s *State) settingsWorkspace(c *ui.Context) {
 					if theme.Frame(c).Dark {
 						label = "当前使用深色配色"
 					}
-					ui.Text(c, locales.Text(label)+" · "+locales.Text("随操作系统的深浅色设置自动切换")).
+					ui.Text(c, locales.Text(label)).
 						TextColor(palette.Muted).FontSize(theme.Font(c, 11))
 				}
 				ui.Column(c).Key("scheme-gallery").FillWidth().Gap(10).Children(func() {
@@ -133,8 +131,6 @@ func (s *State) settingsSQLPreview(c *ui.Context) {
 	palette := theme.Colors(c)
 
 	ui.Text(c, locales.Text("SQL 语法高亮预览")).FontSize(theme.Font(c, 14)).Bold()
-	ui.Text(c, locales.Text("关键字、函数、数字、字符串、注释与编辑器背景将随主题变化。")).
-		TextColor(palette.Muted).FontSize(theme.Font(c, 11))
 	if s.settings.preview == nil {
 		buf := editor.NewBuffer(sqlThemePreview)
 		buf.SetLanguage(editor.LanguageNamed("SQL"))

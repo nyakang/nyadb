@@ -33,7 +33,7 @@ func (s *State) changeMetrics(metrics theme.MetricsPreferences) bool {
 
 func (s *State) readingSettings(c *ui.Context) {
 	ui.Text(c, locales.Text("阅读设置")).Bold().FontSize(theme.Font(c, 14))
-	ui.Text(c, locales.Text("字号在按 Enter 或离开输入框后应用。SQL 字号独立，系统文字缩放仍然生效。")).FontSize(theme.Font(c, 11)).TextColor(theme.Colors(c).Muted)
+	ui.Text(c, locales.Text("按 Enter 或离开输入框后应用字号。")).FontSize(theme.Font(c, 11)).TextColor(theme.Colors(c).Muted)
 	s.readingSizeControl(c, "界面基准字号", &s.settings.uiSizeInput, false)
 	s.readingSizeControl(c, "SQL 字号", &s.settings.sqlSizeInput, true)
 	ui.Text(c, locales.Text("表格行高")).Bold().FontSize(theme.Font(c, 12))

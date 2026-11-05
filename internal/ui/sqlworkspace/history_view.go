@@ -180,7 +180,7 @@ func (s *State) historyModals(c *ui.Context) {
 		return
 	}
 	if h.clearOpen {
-		if ui.AlertDialog(c, &h.clearOpen, locales.Text("清除 SQL 历史？"), locales.Text("清除所选连接范围的记录，并阻止此前执行的迟到回执重新写入。"), locales.Text("取消"), locales.Text("清除历史")) == 1 {
+		if ui.AlertDialog(c, &h.clearOpen, locales.Text("清除 SQL 历史？"), locales.Text("将清除所选连接的全部历史记录。"), locales.Text("取消"), locales.Text("清除历史")) == 1 {
 			s.ClearHistory(b.profile)
 		}
 	}
@@ -236,7 +236,7 @@ func historySelect(c *ui.Context, value *string, label string, values, names []s
 func (s *State) historyRecoveryModal(c *ui.Context) {
 	h := &s.history
 	if h.discardOpen {
-		if ui.AlertDialog(c, &h.discardOpen, locales.Text("放弃待保存日志？"), locales.Text("仅放弃本次内存中尚未保存的日志和迟到回执，已保存历史及文档不变。"), locales.Text("取消"), locales.Text("放弃日志")) == 1 {
+		if ui.AlertDialog(c, &h.discardOpen, locales.Text("放弃待保存日志？"), locales.Text("放弃尚未保存的日志，已保存历史不受影响。"), locales.Text("取消"), locales.Text("放弃日志")) == 1 {
 			s.DiscardPendingHistory()
 		}
 	}
