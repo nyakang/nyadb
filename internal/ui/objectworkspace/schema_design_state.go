@@ -27,6 +27,8 @@ type schemaDesignReply struct {
 	err                 error
 }
 type schemaDesignDocument struct {
+	fieldDetails                           bool
+	structured                             *structuredDefinition
 	original                               contract.SchemaDesignSnapshot
 	draft, saved                           schemaddl.Table
 	baseline                               string
@@ -54,7 +56,7 @@ func (x *schemaDesignDocument) dirty() bool {
 	return x.loaded && (schemaddl.Signature(x.draft) != x.baseline || x.formsDirty())
 }
 func (x *schemaDesignDocument) formsDirty() bool {
-	return x.field != x.fieldBase || x.pgField != x.pgFieldBase || x.raw != x.rawBase || x.name != x.nameBase
+	return x.field != x.fieldBase || x.pgField != x.pgFieldBase || x.raw != x.rawBase || x.name != x.nameBase || x.structured.dirty()
 }
 func (s *State) schemaBinding(profile int64, database, table string) (contract.SchemaDesignOperations, contract.SchemaDesignTarget) {
 	if s.deps.SchemaDesignFor == nil || s.deps.SchemaTarget == nil {
@@ -300,6 +302,9 @@ func (s *State) consumeSchemaDesign(services ui.Services) {
 }
 func (s *State) applySchemaForms(d *Document) error {
 	x := d.schemaDesign
+	if err := s.applyStructuredDefinition(d); err != nil {
+		return err
+	}
 	if x.original.Schema.Engine == "postgresql" && x.fieldRow >= 0 && (x.pgField != x.pgFieldBase || x.name != x.nameBase) && !x.pgField.Unsupported {
 		if x.fieldRow >= len(x.draft.Clauses) {
 			return errors.New(locales.Text("字段选择已改变"))
@@ -495,6 +500,7 @@ func (s *State) schemaSelectRow(d *Document, page, row int) error {
 		return err
 	}
 	x.row = row
+	x.structured = nil
 	x.fieldRow = -1
 	x.definitionRow = -1
 	x.field = schemaddl.SQLiteField{}
@@ -542,6 +548,7 @@ func (s *State) schemaSelectRow(d *Document, page, row int) error {
 		x.raw = definition.SQL
 	}
 	x.rawBase, x.nameBase = x.raw, x.name
+	s.readStructuredDefinition(d, page)
 	return nil
 }
 func (s *State) schemaAdd(d *Document) {

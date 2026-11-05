@@ -68,6 +68,9 @@ func TestSQLiteNativeDesignerCreatesEditsAndRenamesRealTableThroughShell(t *test
 	if err := tt.Click("添加字段"); err != nil {
 		t.Fatal(err)
 	}
+	if err := tt.Click("高级字段属性"); err != nil {
+		t.Fatal(err)
+	}
 	if err := tt.Click("字段名称"); err != nil {
 		t.Fatal(err)
 	}

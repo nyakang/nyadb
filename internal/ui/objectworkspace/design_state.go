@@ -29,6 +29,7 @@ type designReply struct {
 	err                 error
 }
 type designDocument struct {
+	fieldDetails                           bool
 	original                               mysqlddl.Snapshot
 	draft                                  mysqlddl.Draft
 	savedDraft                             mysqlddl.Draft

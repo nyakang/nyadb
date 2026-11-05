@@ -50,6 +50,10 @@ func TestPostgreSQLDesignerNameFormPreservesNativeDeclarationAndOpaqueProperties
 		t.Fatal(err)
 	}
 	tt.Frame()
+	if err := tt.Click("高级字段属性"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
 	before := d.schemaDesign.draft.Clauses[1]
 	if err := tt.Click("字段名称"); err != nil {
 		t.Fatal(err)
@@ -181,6 +185,10 @@ func TestPostgreSQLDesignerFieldLayoutRetainsApplyAtNarrowSizes(t *testing.T) {
 	if err := s.schemaSelectRow(d, 0, 0); err != nil {
 		t.Fatal(err)
 	}
+	tt.Frame()
+	if err := tt.Click("高级字段属性"); err != nil {
+		t.Fatal(err)
+	}
 	for _, size := range [][2]int{{1280, 800}, {840, 560}, {530, 430}} {
 		tt.SetSize(size[0], size[1])
 		tt.Frame()
@@ -215,6 +223,10 @@ func TestPostgreSQL18DesignerShowsNotNullReadOnlyReasonInBothLanguages(t *testin
 			p.ServerVersion = 180000
 			p.Entries = append(p.Entries, schemaddl.PostgreSQLCatalogEntry{Kind: "constraint", OID: 40, Data: json.RawMessage(`{"contype":"n","conrelid":16,"conkey":[1],"convalidated":false,"conenforced":true,"conislocal":true,"coninhcount":0,"conparentid":0}`)})
 			if err := s.schemaSelectRow(d, 0, 0); err != nil {
+				t.Fatal(err)
+			}
+			tt.Frame()
+			if err := tt.Click(locales.Text("高级字段属性")); err != nil {
 				t.Fatal(err)
 			}
 			tt.Frame()

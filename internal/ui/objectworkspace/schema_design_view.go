@@ -49,7 +49,7 @@ func (s *State) schemaDesignView(c *ui.Context, d *Document) {
 		ui.ScrollHorizontal(c).Height(theme.RowHeight(c, theme.TabHeight)).Children(func() {
 			ui.Row(c).Gap(4).Children(func() {
 				for i, name := range names {
-					if ui.Button(c, name).Label(locales.Text("表设计子页") + "/" + name).Disabled(locked).Clicked() {
+					if theme.PageButton(c, name, x.page == i).Label(locales.Text("表设计子页") + "/" + name).Disabled(locked).Clicked() {
 						if err := d.flushInline(); err != nil {
 							d.err = err.Error()
 						} else if err := s.applySchemaForms(d); err != nil {
@@ -160,7 +160,7 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 		} else {
 			ui.Text(c, raw).SingleLine().Tooltip(raw)
 		}
-	}).Grow(1).MinHeight(80).MaxHeight(180).Shrink(1)
+	}).Grow(1).MinHeight(120).Shrink(1)
 	if x.page == 0 {
 		s.syncInlineSelection(d)
 	}
@@ -170,7 +170,16 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 		}
 	}
 	if x.row < 0 {
-		ui.Box(c).Grow(1)
+		return
+	}
+	if x.page == 0 {
+		ui.Checkbox(c, &x.fieldDetails, locales.Text("高级字段属性")).Disabled(locked)
+		if !x.fieldDetails {
+			return
+		}
+	}
+	if x.structured != nil {
+		s.structuredDefinitionView(c, d, locked)
 		return
 	}
 	ui.Scroll(c).Grow(1).MinHeight(100).Children(func() {

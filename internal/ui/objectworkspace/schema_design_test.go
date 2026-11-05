@@ -64,6 +64,10 @@ func TestSQLiteDesignerFormsKeepFieldIdentityAndNameOnlyRenamePreservesDefinitio
 	}
 	tt.Frame()
 	id, raw := d.schemaDesign.draft.Clauses[1].ID, d.schemaDesign.draft.Clauses[1].SQL
+	if err := tt.Click("高级字段属性"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
 	if err := tt.Click("字段名称"); err != nil {
 		t.Fatal(err)
 	}
@@ -191,6 +195,9 @@ func TestSQLiteDesignerNarrowFormAndGuardKeepUnappliedText(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.SetSize(530, 430)
+	if err := tt.Click("高级字段属性"); err != nil {
+		t.Fatal(err)
+	}
 	tt.Frame()
 	button, ok := tt.Find("应用定义修改")
 	if !ok || button.Y < 0 || button.Y+button.H > 430 || button.X+button.W > 530 {
