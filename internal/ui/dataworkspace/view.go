@@ -173,12 +173,9 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *contract.DataPag
 					if cell.Null {
 						value = "NULL"
 					}
-					text := gridview.TextCell(c, value, cell.Null, cell.Truncated).FontSize(theme.Font(c, mysqlDataEditFont(t)))
+					text := gridview.TextCell(c, value, cell.Null).FontSize(theme.Font(c, mysqlDataEditFont(t)))
 					if cell.Null {
 						text.Italic().TextColor(theme.CellText(c, &t.grid, gridRow, tableCol, palette.GridNull))
-					}
-					if cell.Truncated {
-						text.Tooltip(locales.Text("已截断的预览；可在字段信息中按需读取"))
 					}
 				})
 				if modified {
@@ -187,12 +184,6 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *contract.DataPag
 				// Absolute children span the native cell's padding box, so
 				// clicks in its whitespace have the same target as its text.
 				box := ui.Box(c).Key("cell-pointer").Absolute().Top(0).Right(0).Bottom(0).Left(0)
-				if modified {
-					box.Tooltip(locales.Text("此单元格有待保存的更改"))
-				}
-				if cell.Truncated {
-					box.Tooltip(locales.Text("已截断的预览；可在字段信息中按需读取"))
-				}
 				control := ui.Local(box, "cell-bounds", func() ui.Handle { return ui.Handle{} })
 				box.Bind(control)
 				bounds := box.Bounds()

@@ -3,7 +3,6 @@ package dataworkspace
 import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/ui/theme"
-	"github.com/nyakang/nyadb/locales"
 )
 
 // Only draft values for this source column mark a changed cell. A moved or
@@ -51,5 +50,5 @@ func mysqlDataModifiedBackground(c *ui.Context, t *Document, row, col int, conte
 func mysqlDataModifiedMark(c *ui.Context, t *Document, row, col int) {
 	ink := theme.CellText(c, &t.grid, row, col, theme.Colors(c).GridModifiedMark)
 	ui.Box(c).Key("draft-mark").Absolute().Top(2).Right(3).Size(4, 4).
-		Background(ink).Tooltip(locales.Text("此单元格有待保存的更改")).Role(ui.RoleNone)
+		Background(ink).Role(ui.RoleNone)
 }
