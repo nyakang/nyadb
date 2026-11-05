@@ -6,9 +6,11 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 type accountPanel struct {
@@ -202,68 +204,72 @@ func (s *State) accountModal(c *ui.Context) {
 		}
 	}
 	p := theme.Colors(c)
-	ui.Modal(c, &a.open, func() {
+	theme.Modal(c, &a.open, func() {
 		w, h := c.Size()
-		ui.Column(c).Width(min(float32(760), w-40)).Height(min(float32(660), h-40)).Padding(16).Gap(8).Background(p.Header).Children(func() {
-			ui.Text(c, "MySQL 用户、角色与权限").Bold()
-			ui.Text(c, "服务器权限和版本决定可执行能力；错误逐项报告。")
+		ui.Column(c).Width(min(float32(760), w-68)).Height(min(float32(660), h-68)).Gap(8).Children(func() {
+			ui.Text(c, locales.Text("MySQL 用户、角色与权限")).Bold()
+			ui.Text(c, locales.Text("服务器权限和版本决定可执行能力；错误逐项报告。"))
 			if a.err != "" {
 				ui.Text(c, a.err).TextColor(p.Error)
 			}
-			names := []string{}
-			for _, acct := range a.accounts {
-				names = append(names, acct.User+"@"+acct.Host)
-			}
-			selected := a.user + "@" + a.host
-			if len(names) > 0 && ui.Select(c, &selected, names).Label("现有账户").Disabled(a.busy).Changed() {
-				for _, acct := range a.accounts {
-					if acct.User+"@"+acct.Host == selected {
-						a.user, a.host = acct.User, acct.Host
+			ui.Scroll(c).Grow(1).MinHeight(0).FillWidth().Children(func() {
+				theme.Fieldset(c, locales.Text("账户与授权"), func() {
+					names := []string{}
+					for _, acct := range a.accounts {
+						names = append(names, acct.User+"@"+acct.Host)
 					}
-				}
-			}
-			ui.Row(c).Gap(8).Children(func() {
-				ui.TextInput(c, &a.user).Label("账户名").Disabled(a.busy).Grow(1)
-				ui.TextInput(c, &a.host).Label("账户主机").Disabled(a.busy).Grow(1)
+					selected := a.user + "@" + a.host
+					if len(names) > 0 && ui.Select(c, &selected, names).Label(locales.Text("现有账户")).Disabled(a.busy).Changed() {
+						for _, acct := range a.accounts {
+							if acct.User+"@"+acct.Host == selected {
+								a.user, a.host = acct.User, acct.Host
+							}
+						}
+					}
+					ui.Row(c).Gap(8).Children(func() {
+						theme.TextField(c, &a.user, locales.Text("账户名")).Disabled(a.busy).Grow(1)
+						theme.TextField(c, &a.host, locales.Text("账户主机")).Disabled(a.busy).Grow(1)
+					})
+					actions := []string{"grant", "revoke", "create_user", "password", "create_role", "grant_role", "revoke_role", "lock", "unlock", "drop", "drop_role"}
+					theme.Choice(c, &a.action, actions, accountActionLabel).Label(locales.Text("账户操作")).Disabled(a.busy)
+					if a.action == "password" || a.action == "create_user" {
+						theme.TextField(c, &a.password, locales.Text("账户密码")).Password().Disabled(a.busy)
+					}
+					if a.action == "grant" || a.action == "revoke" {
+						theme.TextField(c, &a.privileges, locales.Text("权限（逗号分隔）")).Disabled(a.busy)
+						ui.Row(c).Gap(8).Children(func() {
+							theme.TextField(c, &a.database, locales.Text("授权数据库（空为全部）")).Disabled(a.busy).Grow(1)
+							theme.TextField(c, &a.table, locales.Text("授权表（空为全部）")).Disabled(a.busy).Grow(1)
+						})
+					}
+					if a.action == "grant_role" || a.action == "revoke_role" {
+						ui.Row(c).Gap(8).Children(func() {
+							theme.TextField(c, &a.roleUser, locales.Text("角色名")).Disabled(a.busy).Grow(1)
+							theme.TextField(c, &a.roleHost, locales.Text("角色主机")).Disabled(a.busy).Grow(1)
+						})
+					}
+					raw := strings.Join(a.grants, "\n")
+					ui.TextArea(c, &raw).Label(locales.Text("当前授权")).ReadOnly(true).Height(140).MinHeight(60)
+					if a.outcome != nil {
+						for i, step := range a.outcome.Steps {
+							ui.Text(c, fmt.Sprintf("%d · %s", i+1, theme.OutcomeLabel(step.State))).Tooltip(step.SQL)
+						}
+					}
+				})
 			})
-			actions := []string{"grant", "revoke", "create_user", "password", "create_role", "grant_role", "revoke_role", "lock", "unlock", "drop", "drop_role"}
-			ui.Select(c, &a.action, actions).Label("账户操作").Disabled(a.busy)
-			if a.action == "password" || a.action == "create_user" {
-				ui.TextInput(c, &a.password).Label("账户密码").Password().Disabled(a.busy)
-			}
-			if a.action == "grant" || a.action == "revoke" {
-				ui.TextInput(c, &a.privileges).Label("权限（逗号分隔）").Disabled(a.busy)
-				ui.Row(c).Gap(8).Children(func() {
-					ui.TextInput(c, &a.database).Label("授权数据库（空为全部）").Disabled(a.busy).Grow(1)
-					ui.TextInput(c, &a.table).Label("授权表（空为全部）").Disabled(a.busy).Grow(1)
-				})
-			}
-			if a.action == "grant_role" || a.action == "revoke_role" {
-				ui.Row(c).Gap(8).Children(func() {
-					ui.TextInput(c, &a.roleUser).Label("角色名").Disabled(a.busy).Grow(1)
-					ui.TextInput(c, &a.roleHost).Label("角色主机").Disabled(a.busy).Grow(1)
-				})
-			}
-			raw := strings.Join(a.grants, "\n")
-			ui.TextArea(c, &raw).Label("当前授权").ReadOnly(true).Grow(1)
-			if a.outcome != nil {
-				for i, step := range a.outcome.Steps {
-					ui.Text(c, fmt.Sprintf("%d · %s", i+1, step.State)).Tooltip(step.SQL)
-				}
-			}
-			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
-				if ui.Button(c, "关闭").Disabled(a.busy).Clicked() {
+			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
+				if ui.Button(c, locales.Text("关闭")).Disabled(a.busy).Clicked() {
 					a.password = ""
 					s.accounts = nil
 				}
-				if ui.Button(c, "取消操作").Disabled(!a.busy || a.cancel == nil).Clicked() {
+				if ui.Button(c, locales.Text("取消操作")).Disabled(!a.busy || a.cancel == nil).Clicked() {
 					a.cancel()
 				}
-				if ui.Button(c, "读取账户与授权").Disabled(a.busy).Clicked() {
+				if ui.Button(c, locales.Text("读取账户与授权")).Disabled(a.busy).Clicked() {
 					a.blocked = false
 					s.readAccounts(c.Services())
 				}
-				if ui.PrimaryButton(c, "确认执行账户操作").Disabled(a.busy || a.blocked || a.user == "" || !s.sessionFor(a.profile).Connected || s.sessionFor(a.profile).Generation != a.sessionGeneration).Clicked() {
+				if ui.PrimaryButton(c, locales.Text("确认执行账户操作")).Disabled(a.busy || a.blocked || a.user == "" || !s.sessionFor(a.profile).Connected || s.sessionFor(a.profile).Generation != a.sessionGeneration).Clicked() {
 					a.busy = true
 					a.err = ""
 					ctx, cancel := context.WithCancel(context.Background())
@@ -293,4 +299,12 @@ func (s *State) accountModal(c *ui.Context) {
 			})
 		})
 	})
+}
+
+func accountActionLabel(value string) string {
+	labels := map[string]string{"grant": "授予权限", "revoke": "撤销权限", "create_user": "创建账户", "password": "修改密码", "create_role": "创建角色", "grant_role": "授予角色", "revoke_role": "撤销角色", "lock": "锁定账户", "unlock": "解锁账户", "drop": "删除账户", "drop_role": "删除角色"}
+	if label, ok := labels[value]; ok {
+		return locales.Text(label)
+	}
+	return locales.Text("未知操作")
 }

@@ -55,3 +55,26 @@ func TestAppearanceSettingsAndLiveSQLPreview(t *testing.T) {
 		t.Fatal("existing SQL tab did not update without losing its buffer")
 	}
 }
+
+func TestSettingsTemporarilyHideInspectorWithoutChangingPreference(t *testing.T) {
+	s := New()
+	s.inspectorOn = true
+	if !s.inspectorVisible() {
+		t.Fatal("object page should show inspector")
+	}
+	original := s.activeTab
+	s.openSettings()
+	if s.inspectorVisible() || !s.inspectorOn {
+		t.Fatal("settings visibility changed the saved inspector preference")
+	}
+	s.activeTab = original
+	if !s.inspectorVisible() {
+		t.Fatal("returning to object page did not restore inspector")
+	}
+	s.inspectorOn = false
+	s.openSettings()
+	s.activeTab = original
+	if s.inspectorVisible() {
+		t.Fatal("disabled inspector preference was lost")
+	}
+}

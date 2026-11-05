@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
-	"strings"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // EngineRuntime is injected by bootstrap/shell and does not expose drivers.
@@ -171,5 +173,5 @@ func (s *State) engineLabel(w *Workspace) string {
 	return "MySQL"
 }
 func (s *State) engineStatus(w *Workspace, n int) string {
-	return fmt.Sprintf("已连接 %s（%d 个命名空间）", s.engineLabel(w), n)
+	return fmt.Sprintf(locales.Text("已连接 %s（%d 个命名空间）"), s.engineLabel(w), n)
 }

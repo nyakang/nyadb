@@ -2,10 +2,13 @@ package shell
 
 import (
 	"fmt"
+
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
+	"github.com/nyakang/nyadb/locales"
 )
 
 func (s *State) objectSearchRuntime(profile int64) (objectworkspace.ObjectSearchRuntime, error) {
@@ -74,7 +77,7 @@ func (s *State) openSearchObject(services ui.Services, profile int64, generation
 	if doc == nil {
 		return
 	}
-	s.tabs = append(s.tabs, &tab{id: s.nextTabID, kind: tabMySQLData, title: fmt.Sprintf("%s.%s · 数据", database, object.Name), data: doc})
+	s.tabs = append(s.tabs, &tab{id: s.nextTabID, kind: tabMySQLData, title: fmt.Sprintf(locales.Text("%s.%s · 数据"), database, object.Name), data: doc})
 	s.activeTab = len(s.tabs) - 1
 	s.dataWorkspace.Load(services, doc, false)
 }

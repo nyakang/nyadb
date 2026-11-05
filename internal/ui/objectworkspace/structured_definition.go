@@ -6,7 +6,9 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/schemaddl"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -142,13 +144,13 @@ func (s *State) structuredDefinitionView(c *ui.Context, d *Document, locked bool
 						if f.Form.Kind == "index" {
 							ui.Checkbox(c, &column.Descending, locales.Text("降序")).Disabled(locked)
 						}
-						if ui.Button(c, "↑").Label(fmt.Sprintf("%s/%d", locales.Text("上移字段"), i)).Disabled(locked || i == 0).Clicked() {
+						if theme.IconButton(c, locales.Text("上移字段"), "expand").Label(fmt.Sprintf("%s/%d", locales.Text("上移字段"), i)).Disabled(locked || i == 0).Clicked() {
 							f.Form.Columns[i], f.Form.Columns[i-1] = f.Form.Columns[i-1], f.Form.Columns[i]
 							if f.Form.Kind == "foreign" && len(f.Form.ReferencedColumns) == len(f.Form.Columns) {
 								f.Form.ReferencedColumns[i], f.Form.ReferencedColumns[i-1] = f.Form.ReferencedColumns[i-1], f.Form.ReferencedColumns[i]
 							}
 						}
-						if ui.Button(c, "×").Label(fmt.Sprintf("%s/%d", locales.Text("移除字段"), i)).Disabled(locked).Clicked() {
+						if theme.IconButton(c, locales.Text("移除字段"), "close").Label(fmt.Sprintf("%s/%d", locales.Text("移除字段"), i)).Disabled(locked).Clicked() {
 							remove = i
 						}
 					})

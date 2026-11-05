@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -14,8 +15,8 @@ func (s *State) dictionaryModal(c *ui.Context) {
 	if x == nil || !x.open {
 		return
 	}
-	ui.Modal(c, &x.open, func() {
-		ui.Column(c).Width(1120).MaxWidthPercent(95).Height(700).MaxHeightPercent(92).Padding(14).Gap(8).Children(func() {
+	theme.Modal(c, &x.open, func() {
+		ui.Column(c).Width(1120).MaxWidthPercent(95).Height(700).MaxHeightPercent(92).Gap(8).Children(func() {
 			ui.Text(c, locales.Text("数据字典")).Bold()
 			scope := fmt.Sprintf("#%d · %s / %s", x.scope.namespace.ProfileID, x.scope.namespace.Catalog, x.scope.namespace.Schema)
 			if x.scope.object.Name != "" {

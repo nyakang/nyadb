@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -175,8 +176,8 @@ func (s *State) maintenanceModal(c *ui.Context) {
 	if x == nil || x.request.Target.Object.ProfileID != s.session().ProfileID {
 		return
 	}
-	ui.Modal(c, &x.open, func() {
-		ui.Column(c).Width(680).MaxWidthPercent(92).Height(450).MaxHeightPercent(90).Padding(18).Gap(10).Children(func() {
+	theme.Modal(c, &x.open, func() {
+		ui.Column(c).Width(680).MaxWidthPercent(92).Height(450).MaxHeightPercent(90).Gap(10).Children(func() {
 			ui.Text(c, locales.Text("维护")).Bold()
 			o := x.request.Target.Object
 			ui.Text(c, fmt.Sprintf("#%d · %s / %s · %s", o.ProfileID, o.Catalog, o.Schema, o.Name)).SingleLine()
@@ -197,14 +198,14 @@ func (s *State) maintenanceModal(c *ui.Context) {
 			}
 			if x.outcome != nil {
 				var lines []string
-				lines = append(lines, x.outcome.State)
+				lines = append(lines, theme.OutcomeLabel(x.outcome.State))
 				for _, m := range x.outcome.Messages {
 					lines = append(lines, m.Table+" · "+m.Operation+" · "+m.Message)
 				}
 				raw += "\n\n" + strings.Join(lines, "\n")
 			}
 			ui.TextArea(c, &raw).Label(locales.Text("SQL 预览与维护结果")).ReadOnly(true).Grow(1).MinHeight(40)
-			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
 				if ui.Button(c, locales.Text("关闭")).Disabled(x.busy).Clicked() {
 					s.closeMaintenance()
 				}

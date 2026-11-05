@@ -2,13 +2,13 @@ package shell
 
 import (
 	"context"
-	"github.com/nyakang/nyadb/internal/db/contract"
-	"github.com/nyakang/nyadb/internal/services/datasources"
 	"slices"
 
 	"github.com/egoist/mygo/ui"
 
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/services/datasources"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/dataworkspace"
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
@@ -31,7 +31,7 @@ func (s *State) workspace(c *ui.Context) {
 						index, current := i, doc
 						item := tabs.Tab(i).Height(theme.RowHeight(c, theme.TabHeight)).Padding(2, 8).Radius(0).Label(current.title)
 						if i == s.activeTab {
-							item.Background(palette.ToolbarSelected).BorderWidth(1, 1, 0, 1).BorderColor(palette.Border)
+							item.Background(palette.Selection).TextColor(palette.SelectionText).BorderWidth(1, 1, 0, 1).BorderColor(palette.Border)
 						}
 						item.Children(func() {
 							ui.Row(c).AlignItems(ui.Center).Gap(5).Children(func() {
@@ -342,7 +342,7 @@ func restoreIncludesProfile(plan contract.BackupPlan, profile int64) bool {
 }
 
 func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
-	return objectworkspace.Dependencies{EditFocus: &s.editFocus, EditTarget: s.registerEditTarget, Engine: func(id int64) string {
+	return objectworkspace.Dependencies{ProfileName: s.profileName, EditFocus: &s.editFocus, EditTarget: s.registerEditTarget, Engine: func(id int64) string {
 		for _, p := range s.navigation.Profiles() {
 			if p.ID == id {
 				return string(p.Kind)

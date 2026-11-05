@@ -6,6 +6,7 @@ import (
 
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // NewWithProfiles replaces the demo connection roots with persisted,
@@ -76,7 +77,7 @@ func (s *State) duplicateProfile() {
 	// Choose a fresh name instead of overwriting an existing connection.
 	name := p.Name + " 副本"
 	for n := 2; s.hasProfileName(name); n++ {
-		name = fmt.Sprintf("%s 副本 %d", p.Name, n)
+		name = fmt.Sprintf(locales.Text("%s 副本 %d"), p.Name, n)
 	}
 	created, err := s.profileService.Duplicate(context.Background(), p.ID, name)
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -99,9 +100,9 @@ func (s *State) objectGroupModal(c *ui.Context) {
 		return
 	}
 	p := theme.Colors(c)
-	ui.Modal(c, &d.open, func() {
+	theme.Modal(c, &d.open, func() {
 		width, height := c.Size()
-		ui.Column(c).Width(min(float32(510), width-40)).MaxHeight(height - 40).Padding(16).Gap(10).Background(p.Header).Children(func() {
+		ui.Column(c).Width(min(float32(510), width-68)).MaxHeight(height - 68).Gap(10).Children(func() {
 			ui.Text(c, locales.Text("管理组…")).Bold().FontSize(theme.Font(c, 15))
 			ui.Text(c, locales.Text("数据库：")+d.scope.database).TextColor(p.Muted)
 			ui.Select(c, &d.selected, s.ObjectGroups(d.scope.profile, d.scope.database)).Label(locales.Text("对象分组"))

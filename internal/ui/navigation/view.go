@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -37,7 +38,7 @@ func (s *State) View(c *ui.Context) {
 				if ui.Button(c, locales.Text("保存")).Label(locales.Text("保存组")).Clicked() {
 					s.SaveGroup()
 				}
-				if ui.Button(c, "×").Label(locales.Text("取消编辑组")).Clicked() {
+				if theme.IconButton(c, locales.Text("取消编辑组"), "close").Clicked() {
 					s.CancelGroupEdit()
 				}
 			})
@@ -335,7 +336,7 @@ func (s *State) footer(c *ui.Context) {
 				s.ChangeFilter()
 			}
 			active := ui.ButtonBase(c).Label(locales.Text("导航至活动标签的对象")).
-				Tooltip("在连接树中定位当前活动数据库对象").
+				Tooltip(locales.Text("在连接树中定位当前活动数据库对象")).
 				Width(24).Height(theme.RowHeight(c, 24)).Padding(3).Radius(1)
 			canNavigate := s.deps.CanNavigate != nil && s.deps.CanNavigate()
 			active.Disabled(!canNavigate)
@@ -346,7 +347,7 @@ func (s *State) footer(c *ui.Context) {
 				}
 			}
 			collapse := ui.ButtonBase(c).Label(locales.Text("全部折叠")).
-				Tooltip("折叠所有连接组与数据库树").
+				Tooltip(locales.Text("折叠所有连接组与数据库树")).
 				Width(24).Height(theme.RowHeight(c, 24)).Padding(3).Radius(1)
 			collapse.Children(func() { theme.Icon(c, "collapse-all", 15, palette.Muted) })
 			if collapse.Clicked() {

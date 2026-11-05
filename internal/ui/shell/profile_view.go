@@ -54,7 +54,7 @@ func (s *State) selectProfileByName(name string) {
 func (s *State) inspectorHeader(c *ui.Context, title string) {
 	palette := theme.Colors(c)
 
-	ui.Row(c).Label(locales.Text(title)).Height(42).Padding(1, 8).AlignItems(ui.Center).Children(func() {
+	ui.Row(c).Label(locales.Text(title)).Height(theme.RowHeight(c, 42)).Padding(1, 8).AlignItems(ui.Center).Children(func() {
 		ui.Box(c).Width(20)
 		ui.Box(c).Grow(1)
 		theme.Icon(c, "info", 16, palette.Blue)
@@ -115,7 +115,7 @@ func (s *State) profileInspector(c *ui.Context) {
 					}
 					ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
 						theme.Icon(c, icon, 32, palette.Blue)
-						ui.Text(c, name).FontSize(theme.Font(c, 14)).Bold()
+						ui.Text(c, name).FontSize(theme.Font(c, 14)).Bold().SingleLine().Grow(1).MinWidth(0).Tooltip(name)
 					})
 					theme.Property(c, locales.Text("类型"), s.navigationDescription(n))
 					theme.Property(c, locales.Text("连接"), p.Name)

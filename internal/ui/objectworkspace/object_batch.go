@@ -6,9 +6,11 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 type objectBatch struct {
@@ -86,20 +88,19 @@ func (s *State) batchModal(c *ui.Context) {
 			return
 		}
 	}
-	p := theme.Colors(c)
-	ui.Modal(c, &b.open, func() {
-		ui.Column(c).Width(620).MaxHeight(600).Padding(16).Gap(8).Background(p.Header).Children(func() {
-			ui.Text(c, "确认所选对象操作").Bold()
-			ui.Text(c, "按列表顺序执行，遇错停止；已完成和结果不确定的步骤不会自动重放。")
+	theme.Modal(c, &b.open, func() {
+		ui.Column(c).Width(620).MaxHeight(600).Gap(8).Children(func() {
+			ui.Text(c, locales.Text("确认所选对象操作")).Bold()
+			ui.Text(c, locales.Text("按列表顺序执行，遇错停止；已完成和结果不确定的步骤不会自动重放。"))
 			ui.Scroll(c).Grow(1).Children(func() {
 				ui.Column(c).Gap(4).Children(func() {
 					for i, item := range b.items {
-						label := fmt.Sprintf("%d · %s · %s.%s", i+1, item.Action, item.Ref.Database, item.Ref.Name)
+						label := fmt.Sprintf("%d · %s · %s.%s", i+1, theme.TableActionLabel(string(item.Action)), item.Ref.Database, item.Ref.Name)
 						if item.Destination != "" {
 							label += " → " + item.Destination
 						}
 						if i < len(b.outcome) {
-							label += " · " + b.outcome[i].Outcome.State
+							label += " · " + theme.OutcomeLabel(b.outcome[i].Outcome.State)
 							if e := b.outcome[i].Outcome.Error; e != nil {
 								label += " · " + e.Error()
 							}
@@ -108,14 +109,14 @@ func (s *State) batchModal(c *ui.Context) {
 					}
 				})
 			})
-			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
-				if ui.Button(c, "关闭").Disabled(b.busy).Clicked() {
+			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
+				if ui.Button(c, locales.Text("关闭")).Disabled(b.busy).Clicked() {
 					s.batch = nil
 				}
-				if ui.Button(c, "取消操作").Disabled(!b.busy || b.cancel == nil).Clicked() {
+				if ui.Button(c, locales.Text("取消操作")).Disabled(!b.busy || b.cancel == nil).Clicked() {
 					b.cancel()
 				}
-				if ui.PrimaryButton(c, "确认执行所选对象操作").Disabled(b.busy || b.blocked).Clicked() {
+				if ui.PrimaryButton(c, locales.Text("确认执行所选对象操作")).Disabled(b.busy || b.blocked).Clicked() {
 					next := func(services ui.Services) {
 						if b != s.batch || b.busy || !s.sessionFor(b.profile).Connected || s.sessionFor(b.profile).Generation != b.sessionGeneration {
 							return

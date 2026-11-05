@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
@@ -204,12 +205,12 @@ func (s *State) objectManagementModal(c *ui.Context) {
 	if !op.open {
 		op.open = true
 	}
-	ui.Modal(c, &op.open, func() {
+	theme.Modal(c, &op.open, func() {
 		w, h := c.Size()
-		ui.Column(c).Width(min(float32(820), w-40)).Height(min(float32(640), h-40)).Padding(16).Gap(8).Background(p.Header).Children(func() {
-			ui.Text(c, "对象定义 · "+op.action+" · "+op.ref.Database+" / "+op.ref.Name).Bold()
+		ui.Column(c).Width(min(float32(820), w-68)).Height(min(float32(640), h-68)).Gap(8).Children(func() {
+			ui.Text(c, locales.Text("对象定义")+" · "+objectDefinitionActionLabel(op.action)+" · "+op.ref.Database+" / "+op.ref.Name).Bold()
 			if op.action == "create" {
-				if ui.TextInput(c, &op.nameDraft).Label("新对象名称").Disabled(op.busy || op.blocked).Changed() {
+				if ui.TextInput(c, &op.nameDraft).Label(locales.Text("新对象名称")).Disabled(op.busy || op.blocked).Changed() {
 					raw, e := mysqlsvc.SetObjectDefinitionName(mysqlsvc.ObjectDefinition{ObjectIdentity: op.ref, SQL: op.text}, op.nameDraft)
 					if e != nil {
 						op.err = e.Error()
@@ -231,9 +232,9 @@ func (s *State) objectManagementModal(c *ui.Context) {
 				ui.Text(c, op.err).TextColor(p.Error)
 			}
 			if op.busy {
-				ui.Text(c, "等待原会话操作回执…")
+				ui.Text(c, locales.Text("等待原会话操作回执…"))
 			}
-			ui.TextArea(c, &op.text).Label("完整公开对象定义").ReadOnly(op.busy || op.action == "drop" || op.blocked).Grow(1)
+			ui.TextArea(c, &op.text).Label(locales.Text("完整公开对象定义")).ReadOnly(op.busy || op.action == "drop" || op.blocked).Grow(1)
 			if op.plan != nil && op.preview {
 				preview := op.plan.SQL
 				kind := op.ref.Kind
@@ -244,22 +245,22 @@ func (s *State) objectManagementModal(c *ui.Context) {
 			}
 			if op.outcome != nil {
 				for i, step := range op.outcome.Steps {
-					ui.Text(c, fmt.Sprintf("%d · %s", i+1, step.State)).Tooltip(step.SQL)
+					ui.Text(c, fmt.Sprintf("%d · %s", i+1, theme.OutcomeLabel(step.State))).Tooltip(step.SQL)
 				}
 			}
-			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
-				if ui.Button(c, "保留草稿并关闭").Disabled(op.busy).Clicked() {
+			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
+				if ui.Button(c, locales.Text("保留草稿并关闭")).Disabled(op.busy).Clicked() {
 					op.open = false
 					s.parkedObjectOp = op
 					s.objectOp = nil
 				}
-				if ui.Button(c, "放弃草稿").Disabled(op.busy).Clicked() {
+				if ui.Button(c, locales.Text("放弃草稿")).Disabled(op.busy).Clicked() {
 					s.objectOp = nil
 				}
-				if ui.Button(c, "取消操作").Disabled(!op.busy || op.cancel == nil).Clicked() {
+				if ui.Button(c, locales.Text("取消操作")).Disabled(!op.busy || op.cancel == nil).Clicked() {
 					op.cancel()
 				}
-				if ui.Button(c, "SQL 预览").Disabled(!op.loaded || op.busy || op.blocked).Clicked() {
+				if ui.Button(c, locales.Text("SQL 预览")).Disabled(!op.loaded || op.busy || op.blocked).Clicked() {
 					plan, e := mysqlsvc.BuildObjectPlan(op.original, op.action, op.text)
 					if e != nil {
 						op.err = e.Error()
@@ -269,7 +270,7 @@ func (s *State) objectManagementModal(c *ui.Context) {
 						op.err = ""
 					}
 				}
-				if ui.PrimaryButton(c, "确认执行").Disabled(op.plan == nil || !op.preview || op.busy || op.blocked || op.plan.SQL != op.text && op.action != "drop").Clicked() {
+				if ui.PrimaryButton(c, locales.Text("确认执行")).Disabled(op.plan == nil || !op.preview || op.busy || op.blocked || op.plan.SQL != op.text && op.action != "drop").Clicked() {
 					s.executeObjectOperation(c.Services(), op)
 				}
 			})
@@ -325,4 +326,16 @@ func (s *State) ResumeObjectDraft() {
 		s.parkedObjectOp = nil
 		s.objectOp.open = true
 	}
+}
+
+func objectDefinitionActionLabel(action string) string {
+	switch action {
+	case "create":
+		return locales.Text("新建")
+	case "alter":
+		return locales.Text("编辑")
+	case "drop":
+		return locales.Text("删除")
+	}
+	return locales.Text("重命名")
 }

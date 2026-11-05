@@ -2,14 +2,15 @@ package shell
 
 import (
 	"context"
-	"github.com/nyakang/nyadb/locales"
 	"sync"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/transport"
+	"github.com/nyakang/nyadb/locales"
 )
 
 type hostConfirmation struct {
@@ -114,7 +115,7 @@ func (s *State) tunnelConfirmation(c *ui.Context) {
 	}
 	q := r.pending
 	wasVisible := r.visible
-	choice := ui.AlertDialog(c, &r.visible, locales.Text("确认 SSH 主机身份"), q.identity.Host+"\n"+q.identity.Fingerprint+"\n确认后保存此指纹；后续指纹变化将拒绝连接。", "拒绝", locales.Text("信任此主机"))
+	choice := ui.AlertDialog(c, &r.visible, locales.Text("确认 SSH 主机身份"), q.identity.Host+"\n"+q.identity.Fingerprint+"\n确认后保存此指纹；后续指纹变化将拒绝连接。", locales.Text("拒绝"), locales.Text("信任此主机"))
 	if choice >= 0 || (wasVisible && !r.visible) {
 		accepted := choice == 1
 		select {

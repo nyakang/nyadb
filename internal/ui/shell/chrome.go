@@ -6,9 +6,9 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
-
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -44,7 +44,7 @@ func (s *State) View(c *ui.Context) {
 				ui.Column(c).Fill().BorderWidth(0, theme.SplitterBorder, 0, 0).BorderColor(palette.Toolbar).Children(func() { s.sidebar(c) })
 			},
 			func() {
-				if s.inspectorOn && s.currentTab().kind != tabSQL {
+				if s.inspectorVisible() {
 					workbenchSplit(c, &s.centerPercent,
 						func() {
 							ui.Column(c).Fill().BorderWidth(0, theme.SplitterBorder, 0, 0).BorderColor(palette.Toolbar).Children(func() { s.workspace(c) })
@@ -288,7 +288,7 @@ func (s *State) toolBar(c *ui.Context) {
 					tip += " · " + theme.AvailabilityText(contract.Availability{Reason: reason})
 				}
 				button := ui.Button(c, "").Label(locales.Text(item.label)).Tooltip(tip).
-					Width(theme.ToolbarItemWidth).Height(theme.RowHeight(c, theme.ToolbarItemHeight)).Padding(3, 2).Radius(theme.ControlRadius).
+					MinWidth(theme.LabelWidth(c, locales.Text(item.label), theme.ToolbarItemWidth)).Height(theme.RowHeight(c, theme.ToolbarItemHeight)).Padding(3, 2).Radius(theme.ControlRadius).
 					Disabled(!s.toolbarActionAvailable(item.label)).Border(0, ui.Transparent).
 					Children(func() {
 						ui.Column(c).Center().Gap(4).Children(func() {
@@ -313,7 +313,7 @@ func (s *State) toolBar(c *ui.Context) {
 		}).Label(locales.Text("主工具栏")).Grow(1).MinWidth(0).Padding(0).Gap(1).Background(palette.Toolbar)
 		// Keep the inspector toggle available even when toolbar actions overflow.
 		info := ui.Button(c, "").Label(locales.Text("信息")).Tooltip(locales.Text("显示或隐藏信息面板")).
-			Width(48).Height(theme.RowHeight(c, theme.ToolbarItemHeight)).Padding(3, 2).Radius(theme.ControlRadius).Border(0, ui.Transparent).Children(func() {
+			MinWidth(theme.LabelWidth(c, locales.Text("信息"), 48)).Height(theme.RowHeight(c, theme.ToolbarItemHeight)).Padding(3, 2).Radius(theme.ControlRadius).Border(0, ui.Transparent).Children(func() {
 			ui.Column(c).Center().Gap(4).Children(func() {
 				theme.Icon(c, "info", theme.ToolbarIconSize, palette.Blue)
 				ui.Text(c, locales.Text("信息")).FontSize(theme.Font(c, theme.FontSize))
@@ -391,4 +391,8 @@ func (s *State) statusBar(c *ui.Context) {
 		ui.Text(c, "5 "+locales.Text("个模拟连接")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 		ui.Text(c, "●  UI Preview").FontSize(theme.Font(c, 11)).TextColor(palette.Blue)
 	})
+}
+
+func (s *State) inspectorVisible() bool {
+	return s.inspectorOn && s.currentTab().kind != tabSQL && s.currentTab().kind != tabSettings
 }

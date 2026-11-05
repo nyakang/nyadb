@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/schemaddl"
 	"github.com/nyakang/nyadb/internal/ui/theme"
@@ -325,9 +326,9 @@ func (s *State) viewModal(c *ui.Context) {
 		return
 	}
 	p := theme.Colors(c)
-	ui.Modal(c, &x.open, func() {
+	theme.Modal(c, &x.open, func() {
 		w, h := c.Size()
-		ui.Column(c).Width(min(float32(800), w-70)).Height(min(float32(620), h-70)).Padding(16).Gap(8).Background(p.Header).Children(func() {
+		ui.Column(c).Width(min(float32(800), w-70)).Height(min(float32(620), h-70)).Gap(8).Children(func() {
 			ui.Text(c, locales.Text("视图定义")+" · "+viewActionLabel(x.action)+" · "+x.database+" / "+x.target.Object.Name).Bold()
 			ui.Text(c, locales.Text("在原命名空间事务执行，不覆盖其它对象；依赖或触发器失效时整批回滚。"))
 			if x.action == "create" || x.action == "rename" {

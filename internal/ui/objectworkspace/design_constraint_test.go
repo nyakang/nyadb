@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/mysqlddl"
 )
 
@@ -66,6 +67,7 @@ func TestStructuredDesignerInvalidPrefixRetainsFormAndRejectsPageSwitch(t *testi
 	}
 	f.columnRow = 0
 	tt.Frame()
+	tt.Scroll(700, 650, 0, 160)
 	if err := tt.Click("索引前缀长度"); err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +131,7 @@ func TestStructuredDesignerNarrowPaneKeepsListAndApplyReachable(t *testing.T) {
 	}
 	d.design.constraint.columnRow = 0
 	tt.Frame()
-	comment, ok := tt.Find("索引注释")
+	comment, ok := tt.Find("约束设置内容")
 	if !ok || comment.H == 0 {
 		t.Fatal("index form has no visible scroll target")
 	}

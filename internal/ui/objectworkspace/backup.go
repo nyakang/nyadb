@@ -3,15 +3,16 @@ package objectworkspace
 import (
 	"context"
 	"fmt"
-	"github.com/nyakang/nyadb/internal/ui/theme"
-	"github.com/nyakang/nyadb/locales"
 	"io"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/backups"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 type BackupRuntime interface {
@@ -111,7 +112,7 @@ func (s *State) startBackup(services ui.Services, op *backupOperation) {
 		var e error
 		var path string
 		if files.Save == nil || files.Write == nil {
-			e = fmt.Errorf("文件接口不可用")
+			e = fmt.Errorf("%s", locales.Text("文件接口不可用"))
 		} else {
 			extension := ".nyabackup"
 			if strings.HasPrefix(action, "sql_") {
@@ -162,7 +163,7 @@ func (s *State) previewRestore(services ui.Services, op *backupOperation) {
 		var e error
 		if reader == nil {
 			if files.Open == nil {
-				e = fmt.Errorf("文件接口不可用")
+				e = fmt.Errorf("%s", locales.Text("文件接口不可用"))
 			} else {
 				path, e = files.Open()
 			}
@@ -282,13 +283,13 @@ func (s *State) backupModal(c *ui.Context) {
 	if op.action == "restore" {
 		title = locales.Text("恢复 NyaDB 备份")
 	}
-	ui.Modal(c, &op.open, func() {
+	theme.Modal(c, &op.open, func() {
 		width, height := c.Size()
-		ui.Column(c).Width(min(float32(780), width-40)).Height(min(float32(740), height-40)).Background(theme.Colors(c).Header).Children(func() {
+		ui.Column(c).Width(min(float32(780), width-68)).Height(min(float32(740), height-68)).Children(func() {
 			ui.Text(c, title).Bold()
 			ui.Scroll(c).Grow(1).FillWidth().Children(func() {
 				ui.Column(c).Padding(12).Gap(8).Children(func() {
-					ui.Text(c, fmt.Sprintf("连接 #%d · 数据库 %s", op.profile, op.database))
+					ui.Text(c, fmt.Sprintf(locales.Text("连接 #%d · 数据库 %s"), op.profile, op.database))
 					if op.action == "restore" {
 						ui.TextInput(c, &op.target).Label(locales.Text("目标数据库")).Disabled(op.busy || op.outcome != nil)
 						ui.Row(c).Gap(8).Children(func() {
@@ -300,14 +301,14 @@ func (s *State) backupModal(c *ui.Context) {
 								op.policy = "replace"
 								op.plan = nil
 							}
-							ui.Text(c, "冲突策略："+op.policy)
+							ui.Text(c, locales.Text("冲突策略：")+backupConflictPolicyLabel(op.policy))
 						})
 						if ui.Button(c, locales.Text("读取备份并生成恢复预览")).Disabled(op.busy || op.outcome != nil || !session.Connected).Clicked() {
 							s.previewRestore(c.Services(), op)
 						}
 						if op.reader != nil {
 							manifest := op.reader.Manifest()
-							ui.Text(c, fmt.Sprintf("来源 %s · %d 个对象", manifest.Database, len(manifest.Objects)))
+							ui.Text(c, fmt.Sprintf(locales.Text("来源 %s · %d 个对象"), manifest.Database, len(manifest.Objects)))
 							for _, warning := range manifest.Warnings {
 								ui.Text(c, warning).FontSize(11)
 							}
@@ -333,10 +334,10 @@ func (s *State) backupModal(c *ui.Context) {
 						ui.Text(c, op.err).Selectable()
 					}
 					if op.outcome != nil {
-						ui.Text(c, "结果："+op.outcome.State)
+						ui.Text(c, locales.Text("结果：")+theme.OutcomeLabel(op.outcome.State))
 						ui.Scroll(c).MaxHeight(240).Children(func() {
 							for _, step := range op.outcome.Steps {
-								ui.Text(c, step.State+" · "+step.SQL).Selectable()
+								ui.Text(c, theme.OutcomeLabel(step.State)+" · "+step.SQL).Selectable()
 							}
 						})
 					}
@@ -346,7 +347,7 @@ func (s *State) backupModal(c *ui.Context) {
 								op.cancelRequested = true
 								op.cancel()
 							}
-						} else if ui.Button(c, "关闭").Clicked() {
+						} else if ui.Button(c, locales.Text("关闭")).Clicked() {
 							op.open = false
 							s.closeBackup()
 						}
@@ -364,4 +365,11 @@ func (s *State) backupModal(c *ui.Context) {
 			s.closeBackup()
 		}
 	}
+}
+
+func backupConflictPolicyLabel(policy string) string {
+	if policy == "replace" {
+		return locales.Text("替换已有对象")
+	}
+	return locales.Text("遇到已有对象停止")
 }

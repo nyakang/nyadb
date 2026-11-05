@@ -3,10 +3,13 @@ package shell
 import (
 	"context"
 	"encoding/json"
-	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/services/queries"
-	"github.com/nyakang/nyadb/locales"
 	"strings"
+
+	"github.com/egoist/mygo/ui"
+
+	"github.com/nyakang/nyadb/internal/services/queries"
+	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 type workspaceReply struct {
@@ -106,8 +109,8 @@ func (s *State) switchWorkspace(target queries.Workspace) {
 }
 func (s *State) workspaceManagerView(c *ui.Context) {
 	w := &s.workspaces
-	ui.Modal(c, &w.open, func() {
-		ui.Column(c).Width(600).MaxWidthPercent(95).Padding(18).Gap(10).Children(func() {
+	theme.Modal(c, &w.open, func() {
+		ui.Column(c).Width(600).MaxWidthPercent(95).Gap(10).Children(func() {
 			ui.Text(c, locales.Text("命名工作区")).Bold()
 			ui.Text(c, locales.Text("保存标签、布局和 SQL 文本；恢复后需显式连接，不会执行 SQL。"))
 			choices := []string{}
@@ -131,6 +134,9 @@ func (s *State) workspaceManagerView(c *ui.Context) {
 				duplicate = duplicate || strings.EqualFold(item.Name, strings.TrimSpace(w.name))
 			}
 			ui.Row(c).Wrap().Gap(6).Children(func() {
+				if ui.Button(c, locales.Text("关闭")).Clicked() {
+					w.open = false
+				}
 				if ui.Button(c, locales.Text("保存新工作区")).Disabled(w.busy || strings.TrimSpace(w.name) == "" || duplicate).Clicked() {
 					snapshot := s.workspaceSnapshot()
 					b, _ := json.Marshal(snapshot)
@@ -187,9 +193,6 @@ func (s *State) workspaceManagerView(c *ui.Context) {
 						items, err := store.ListWorkspaces(ctx)
 						return workspaceReply{Items: items, Err: err}
 					})
-				}
-				if ui.Button(c, locales.Text("关闭")).Clicked() {
-					w.open = false
 				}
 			})
 		})

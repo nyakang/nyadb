@@ -19,7 +19,7 @@ func (s *State) inspector(c *ui.Context) {
 			Background(palette.Header).Children(func() {
 			ui.Text(c, locales.Text("信息")).Bold().FontSize(theme.Font(c, 12))
 			ui.Box(c).Grow(1)
-			if ui.Button(c, "×").Label(locales.Text("隐藏信息面板")).Padding(2, 6).Clicked() {
+			if theme.IconButton(c, locales.Text("隐藏信息面板"), "close").Padding(2, 6).Clicked() {
 				s.inspectorOn = false
 			}
 		})

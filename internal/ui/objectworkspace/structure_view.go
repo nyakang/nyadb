@@ -1,11 +1,12 @@
 package objectworkspace
 
 import (
-	"github.com/nyakang/nyadb/internal/db/contract"
 	"strconv"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -97,7 +98,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 				for i, name := range names {
 					item := tabs.Tab(i).Height(theme.RowHeight(c, theme.TabHeight)).Padding(2, 9)
 					if i == t.page {
-						item.Background(palette.ToolbarSelected)
+						item.Background(palette.Selection).TextColor(palette.SelectionText)
 					}
 					item.Children(func() { ui.Text(c, locales.Text(name)).FontSize(theme.Font(c, theme.FontSize)) })
 				}
@@ -193,19 +194,19 @@ func mysqlStructureFieldsView(c *ui.Context, t *Document) {
 			ui.Row(c).Gap(16).AlignItems(ui.Center).Children(func() {
 				ui.Text(c, locales.Text("字段属性：")+field.Name).FontSize(theme.Font(c, theme.FontSize)).Bold().Grow(1).MinWidth(0)
 				ui.Box(c).Grow(1)
-				ui.Text(c, "只读").FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+				ui.Text(c, locales.Text("只读")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 			})
 			ui.Row(c).Gap(16).AlignItems(ui.Center).Children(func() {
-				ui.Text(c, "默认值：").Width(75).TextColor(palette.Muted).FontSize(theme.Font(c, 12))
+				ui.Text(c, locales.Text("默认值：")).Width(75).TextColor(palette.Muted).FontSize(theme.Font(c, 12))
 				ui.Text(c, mysqlStructureColumnDefault(field)).FontSize(theme.Font(c, theme.FontSize)).Grow(1).MinWidth(0)
 			})
 			ui.Row(c).Gap(20).AlignItems(ui.Center).Children(func() {
-				ui.Text(c, "自动递增："+yesNo(strings.Contains(strings.ToLower(field.Extra), "auto_increment"))).FontSize(theme.Font(c, 12))
-				ui.Text(c, "无符号："+yesNo(strings.Contains(strings.ToLower(field.Type), "unsigned"))).FontSize(theme.Font(c, 12))
-				ui.Text(c, "不是 null："+yesNo(!field.Nullable)).FontSize(theme.Font(c, 12))
+				ui.Text(c, locales.Text("自动递增：")+yesNo(strings.Contains(strings.ToLower(field.Extra), "auto_increment"))).FontSize(theme.Font(c, 12))
+				ui.Text(c, locales.Text("无符号：")+yesNo(strings.Contains(strings.ToLower(field.Type), "unsigned"))).FontSize(theme.Font(c, 12))
+				ui.Text(c, locales.Text("不是 null：")+yesNo(!field.Nullable)).FontSize(theme.Font(c, 12))
 			})
 			ui.Row(c).Gap(12).AlignItems(ui.Center).Children(func() {
-				ui.Text(c, "注释：").Width(75).TextColor(palette.Muted).FontSize(theme.Font(c, 12))
+				ui.Text(c, locales.Text("注释：")).Width(75).TextColor(palette.Muted).FontSize(theme.Font(c, 12))
 				ui.Text(c, field.Comment).FontSize(theme.Font(c, theme.FontSize)).Grow(1).MinWidth(0)
 			})
 		})
