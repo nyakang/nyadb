@@ -21,6 +21,14 @@ import (
 // A separate native test binary hosts the real Shell toolbar at 420 pixels.
 // Formal bootstrap keeps its 840 pixel minimum. This is component evidence.
 func TestMain(m *testing.M) {
+	if root := os.Getenv("NYADB_UX_NATIVE"); root != "" {
+		if err := runWorkflowNativeFixture(root); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+
 	if os.Getenv("NYADB_ENTRY_NATIVE") == "1" {
 		if err := runEntryNativeFixture(); err != nil {
 			fmt.Fprintln(os.Stderr, err)
