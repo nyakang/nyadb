@@ -217,15 +217,15 @@ func (s *State) connectionMySQLDatabases(c *ui.Context, width, height float32) {
 			connectionFormCheckbox(c, enabled, "使用自定义数据库列表", false)
 		})
 		columns := []ui.TableColumn{
-			{Title: "数据库", Width: pageWidth - 92},
-			{Title: "自动打开", Width: 88},
+			{Title: locales.Text("数据库"), Width: pageWidth - 92},
+			{Title: locales.Text("打开方式"), Width: 88},
 		}
 		names := strings.FieldsFunc(s.connectionDraft.MySQLAdvanced.CustomDatabases, func(r rune) bool { return r == '\n' })
 		theme.Table(c, &s.mysqlDatabaseTable, columns, len(names), func(row, col int) {
 			if col == 0 {
 				ui.Text(c, names[row])
 			} else {
-				ui.Text(c, locales.Text("显式打开"))
+				ui.Text(c, locales.Text("手动打开"))
 			}
 		}).Width(pageWidth).Grow(1).Disabled(!*enabled)
 		ui.Row(c).Gap(8).Children(func() {
@@ -249,7 +249,7 @@ func (s *State) connectionMySQLDatabases(c *ui.Context, width, height float32) {
 				s.connectionDraft.MySQLAdvanced.CustomDatabases = strings.Join(names, "\n")
 			}
 		})
-		ui.Text(c, locales.Text("列表只控制显示范围；不会创建数据库或提升访问权限。自动打开需要显式连接。")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+		ui.Text(c, locales.Text("仅影响数据库列表的显示范围。")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 	})
 }
 

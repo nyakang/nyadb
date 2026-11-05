@@ -297,7 +297,7 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *Document, page *contract.D
 	}
 	ui.Divider(c)
 	ui.Row(c).Height(theme.RowHeight(c, theme.ControlHeight)).Gap(8).AlignItems(ui.Center).Children(func() {
-		ui.Text(c, locales.Text("排序方式 · 按规则优先级依次排序")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+		ui.Text(c, locales.Text("排序")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 		ui.Box(c).Grow(1)
 		if ui.Button(c, locales.Text("添加排序")).Disabled(len(t.sortDraft) >= contract.DataMaxSortRules).Clicked() {
 			t.sortDraft = append(t.sortDraft, mysqlDataSortDraft{Column: "选择字段", Direction: "升序"})

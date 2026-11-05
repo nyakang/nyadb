@@ -112,7 +112,7 @@ func (s *State) workspaceManagerView(c *ui.Context) {
 	theme.Modal(c, &w.open, func() {
 		ui.Column(c).Width(600).MaxWidthPercent(95).Gap(10).Children(func() {
 			ui.Text(c, locales.Text("命名工作区")).Bold()
-			ui.Text(c, locales.Text("保存标签、布局和 SQL 文本；恢复后需显式连接，不会执行 SQL。"))
+			ui.Text(c, locales.Text("保存页签、布局和 SQL 文本；恢复后需手动连接。"))
 			choices := []string{}
 			for _, item := range w.items {
 				choices = append(choices, item.Name)

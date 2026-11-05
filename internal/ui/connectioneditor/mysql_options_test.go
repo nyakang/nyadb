@@ -130,7 +130,7 @@ func TestMySQLDatabaseTabNativeEmptyState(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !tt.HasText("使用自定义数据库列表") ||
-		!tt.HasText("自动打开") ||
+		!tt.HasText("打开方式") ||
 		!tt.HasText("添加数据库到列表") ||
 		!tt.HasText("从列表中移除数据库") {
 		t.Fatal("native Database tab missing observed controls")
@@ -142,8 +142,8 @@ func TestMySQLDatabaseTabNativeEmptyState(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !s.connectionDraft.MySQLAdvanced.UseCustomDatabaseList ||
-		!tt.HasText("列表只控制显示范围；不会创建数据库或提升访问权限。自动打开需要显式连接。") {
-		t.Fatal("custom list toggle or offline explanation missing")
+		!tt.HasText("仅影响数据库列表的显示范围。") {
+		t.Fatal("custom list toggle or display-scope hint missing")
 	}
 	// The tester may return nil for a click on a disabled control; verify that
 	// nothing was added, no network workflow opened and no state changed.
@@ -190,7 +190,7 @@ func TestMySQLDatabaseTabCustomFlagPersists(t *testing.T) {
 	if err := edited.Click("数据库"); err != nil {
 		t.Fatal(err)
 	}
-	if !edited.HasText("列表只控制显示范围；不会创建数据库或提升访问权限。自动打开需要显式连接。") {
+	if !edited.HasText("仅影响数据库列表的显示范围。") {
 		t.Fatal("custom list UI not restored on edit")
 	}
 }

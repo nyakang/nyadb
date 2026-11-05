@@ -107,7 +107,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 		if t.loading {
 			ui.Row(c).Height(theme.RowHeight(c, theme.ControlHeight)).Gap(6).AlignItems(ui.Center).Padding(2, 6).Children(func() {
 				ui.Spinner(c).Width(16).Height(16)
-				ui.Text(c, locales.Text("正在读取真实 MySQL 表结构…")).TextColor(palette.Muted).FontSize(theme.Font(c, theme.FontSize)).SingleLine().Grow(1).MinWidth(0)
+				ui.Text(c, locales.Text("正在读取表结构…")).TextColor(palette.Muted).FontSize(theme.Font(c, theme.FontSize)).SingleLine().Grow(1).MinWidth(0)
 			})
 		}
 		if t.err != "" {

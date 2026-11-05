@@ -373,8 +373,7 @@ func (s *State) profileModal(c *ui.Context, t *Document) {
 		ui.Column(c).Width(530).MaxWidthPercent(95).Gap(10).Children(func() {
 			ui.Text(c, locales.Text("表配置文件")).Bold().FontSize(theme.Font(c, 15))
 			ui.Text(c, t.database+"."+t.table).TextColor(theme.Colors(c).Muted)
-			ui.Text(c, locales.Text("表的配置文件存储筛选、排序和列设置以供将来使用。")).FontSize(theme.Font(c, 12))
-			ui.Text(c, locales.Text("保存已应用规则及每页行数；不会保存行数据或待保存更改。")).FontSize(theme.Font(c, 12))
+			ui.Text(c, locales.Text("保存筛选、排序、列设置和每页行数。")).FontSize(theme.Font(c, 12))
 			if t.tools.profileSave {
 				ui.Text(c, locales.Text("同名配置将被替换。"))
 			} else {
