@@ -16797,3 +16797,633 @@ func UxObjectSize() string { return In(i18n.Locale()).UxObjectSize() }
 func (msgs Messages) UxObjectSize() string {
 	return Catalog.Format(msgs.locale, "uxObjectSize", nil)
 }
+
+// WorkflowAdvancedFieldProperties says "高级字段属性"
+// in the language the app shows.
+func WorkflowAdvancedFieldProperties() string {
+	return In(i18n.Locale()).WorkflowAdvancedFieldProperties()
+}
+
+// WorkflowAdvancedFieldProperties says "高级字段属性"
+// in the language of msgs.
+func (msgs Messages) WorkflowAdvancedFieldProperties() string {
+	return Catalog.Format(msgs.locale, "workflowAdvancedFieldProperties", nil)
+}
+
+// WorkflowFullDefinitionAdvanced says "完整定义（高级）"
+// in the language the app shows.
+func WorkflowFullDefinitionAdvanced() string {
+	return In(i18n.Locale()).WorkflowFullDefinitionAdvanced()
+}
+
+// WorkflowFullDefinitionAdvanced says "完整定义（高级）"
+// in the language of msgs.
+func (msgs Messages) WorkflowFullDefinitionAdvanced() string {
+	return Catalog.Format(msgs.locale, "workflowFullDefinitionAdvanced", nil)
+}
+
+// WorkflowVisualEditor says "图形编辑"
+// in the language the app shows.
+func WorkflowVisualEditor() string { return In(i18n.Locale()).WorkflowVisualEditor() }
+
+// WorkflowVisualEditor says "图形编辑"
+// in the language of msgs.
+func (msgs Messages) WorkflowVisualEditor() string {
+	return Catalog.Format(msgs.locale, "workflowVisualEditor", nil)
+}
+
+// WorkflowConstraintType says "约束类型"
+// in the language the app shows.
+func WorkflowConstraintType() string { return In(i18n.Locale()).WorkflowConstraintType() }
+
+// WorkflowConstraintType says "约束类型"
+// in the language of msgs.
+func (msgs Messages) WorkflowConstraintType() string {
+	return Catalog.Format(msgs.locale, "workflowConstraintType", nil)
+}
+
+// WorkflowIndexOrConstraintColumn says "索引或约束字段"
+// in the language the app shows.
+func WorkflowIndexOrConstraintColumn() string {
+	return In(i18n.Locale()).WorkflowIndexOrConstraintColumn()
+}
+
+// WorkflowIndexOrConstraintColumn says "索引或约束字段"
+// in the language of msgs.
+func (msgs Messages) WorkflowIndexOrConstraintColumn() string {
+	return Catalog.Format(msgs.locale, "workflowIndexOrConstraintColumn", nil)
+}
+
+// WorkflowRemoveColumn says "移除字段"
+// in the language the app shows.
+func WorkflowRemoveColumn() string { return In(i18n.Locale()).WorkflowRemoveColumn() }
+
+// WorkflowRemoveColumn says "移除字段"
+// in the language of msgs.
+func (msgs Messages) WorkflowRemoveColumn() string {
+	return Catalog.Format(msgs.locale, "workflowRemoveColumn", nil)
+}
+
+// WorkflowAddIndexOrConstraintColumn says "添加索引或约束字段"
+// in the language the app shows.
+func WorkflowAddIndexOrConstraintColumn() string {
+	return In(i18n.Locale()).WorkflowAddIndexOrConstraintColumn()
+}
+
+// WorkflowAddIndexOrConstraintColumn says "添加索引或约束字段"
+// in the language of msgs.
+func (msgs Messages) WorkflowAddIndexOrConstraintColumn() string {
+	return Catalog.Format(msgs.locale, "workflowAddIndexOrConstraintColumn", nil)
+}
+
+// WorkflowReferencedSchema says "引用模式"
+// in the language the app shows.
+func WorkflowReferencedSchema() string { return In(i18n.Locale()).WorkflowReferencedSchema() }
+
+// WorkflowReferencedSchema says "引用模式"
+// in the language of msgs.
+func (msgs Messages) WorkflowReferencedSchema() string {
+	return Catalog.Format(msgs.locale, "workflowReferencedSchema", nil)
+}
+
+// WorkflowOnDelete says "删除时"
+// in the language the app shows.
+func WorkflowOnDelete() string { return In(i18n.Locale()).WorkflowOnDelete() }
+
+// WorkflowOnDelete says "删除时"
+// in the language of msgs.
+func (msgs Messages) WorkflowOnDelete() string {
+	return Catalog.Format(msgs.locale, "workflowOnDelete", nil)
+}
+
+// WorkflowOnUpdate says "更新时"
+// in the language the app shows.
+func WorkflowOnUpdate() string { return In(i18n.Locale()).WorkflowOnUpdate() }
+
+// WorkflowOnUpdate says "更新时"
+// in the language of msgs.
+func (msgs Messages) WorkflowOnUpdate() string {
+	return Catalog.Format(msgs.locale, "workflowOnUpdate", nil)
+}
+
+// WorkflowChooseSQLExecutionScope says "选择 SQL 执行范围"
+// in the language the app shows.
+func WorkflowChooseSQLExecutionScope() string {
+	return In(i18n.Locale()).WorkflowChooseSQLExecutionScope()
+}
+
+// WorkflowChooseSQLExecutionScope says "选择 SQL 执行范围"
+// in the language of msgs.
+func (msgs Messages) WorkflowChooseSQLExecutionScope() string {
+	return Catalog.Format(msgs.locale, "workflowChooseSQLExecutionScope", nil)
+}
+
+// WorkflowRunCurrentStatement says "运行当前语句"
+// in the language the app shows.
+func WorkflowRunCurrentStatement() string { return In(i18n.Locale()).WorkflowRunCurrentStatement() }
+
+// WorkflowRunCurrentStatement says "运行当前语句"
+// in the language of msgs.
+func (msgs Messages) WorkflowRunCurrentStatement() string {
+	return Catalog.Format(msgs.locale, "workflowRunCurrentStatement", nil)
+}
+
+// WorkflowRunSelectedSQL says "运行选中 SQL"
+// in the language the app shows.
+func WorkflowRunSelectedSQL() string { return In(i18n.Locale()).WorkflowRunSelectedSQL() }
+
+// WorkflowRunSelectedSQL says "运行选中 SQL"
+// in the language of msgs.
+func (msgs Messages) WorkflowRunSelectedSQL() string {
+	return Catalog.Format(msgs.locale, "workflowRunSelectedSQL", nil)
+}
+
+// WorkflowRunAllSQLF5 says "运行全部 SQL（F5）"
+// in the language the app shows.
+func WorkflowRunAllSQLF5() string { return In(i18n.Locale()).WorkflowRunAllSQLF5() }
+
+// WorkflowRunAllSQLF5 says "运行全部 SQL（F5）"
+// in the language of msgs.
+func (msgs Messages) WorkflowRunAllSQLF5() string {
+	return Catalog.Format(msgs.locale, "workflowRunAllSQLF5", nil)
+}
+
+// WorkflowEditorAndResults says "编辑器与结果"
+// in the language the app shows.
+func WorkflowEditorAndResults() string { return In(i18n.Locale()).WorkflowEditorAndResults() }
+
+// WorkflowEditorAndResults says "编辑器与结果"
+// in the language of msgs.
+func (msgs Messages) WorkflowEditorAndResults() string {
+	return Catalog.Format(msgs.locale, "workflowEditorAndResults", nil)
+}
+
+// WorkflowEditorOnly says "只看编辑器"
+// in the language the app shows.
+func WorkflowEditorOnly() string { return In(i18n.Locale()).WorkflowEditorOnly() }
+
+// WorkflowEditorOnly says "只看编辑器"
+// in the language of msgs.
+func (msgs Messages) WorkflowEditorOnly() string {
+	return Catalog.Format(msgs.locale, "workflowEditorOnly", nil)
+}
+
+// WorkflowResultsOnly says "只看结果"
+// in the language the app shows.
+func WorkflowResultsOnly() string { return In(i18n.Locale()).WorkflowResultsOnly() }
+
+// WorkflowResultsOnly says "只看结果"
+// in the language of msgs.
+func (msgs Messages) WorkflowResultsOnly() string {
+	return Catalog.Format(msgs.locale, "workflowResultsOnly", nil)
+}
+
+// WorkflowLayout says "布局"
+// in the language the app shows.
+func WorkflowLayout() string { return In(i18n.Locale()).WorkflowLayout() }
+
+// WorkflowLayout says "布局"
+// in the language of msgs.
+func (msgs Messages) WorkflowLayout() string {
+	return Catalog.Format(msgs.locale, "workflowLayout", nil)
+}
+
+// WorkflowLiveResult says "实时结果"
+// in the language the app shows.
+func WorkflowLiveResult() string { return In(i18n.Locale()).WorkflowLiveResult() }
+
+// WorkflowLiveResult says "实时结果"
+// in the language of msgs.
+func (msgs Messages) WorkflowLiveResult() string {
+	return Catalog.Format(msgs.locale, "workflowLiveResult", nil)
+}
+
+// WorkflowResultSnapshots says "结果快照"
+// in the language the app shows.
+func WorkflowResultSnapshots() string { return In(i18n.Locale()).WorkflowResultSnapshots() }
+
+// WorkflowResultSnapshots says "结果快照"
+// in the language of msgs.
+func (msgs Messages) WorkflowResultSnapshots() string {
+	return Catalog.Format(msgs.locale, "workflowResultSnapshots", nil)
+}
+
+// WorkflowPinThisResult says "固定本次结果"
+// in the language the app shows.
+func WorkflowPinThisResult() string { return In(i18n.Locale()).WorkflowPinThisResult() }
+
+// WorkflowPinThisResult says "固定本次结果"
+// in the language of msgs.
+func (msgs Messages) WorkflowPinThisResult() string {
+	return Catalog.Format(msgs.locale, "workflowPinThisResult", nil)
+}
+
+// WorkflowRemoveCurrentSnapshot says "移除当前快照"
+// in the language the app shows.
+func WorkflowRemoveCurrentSnapshot() string { return In(i18n.Locale()).WorkflowRemoveCurrentSnapshot() }
+
+// WorkflowRemoveCurrentSnapshot says "移除当前快照"
+// in the language of msgs.
+func (msgs Messages) WorkflowRemoveCurrentSnapshot() string {
+	return Catalog.Format(msgs.locale, "workflowRemoveCurrentSnapshot", nil)
+}
+
+// WorkflowCachedCurrentResult says "缓存的当前结果"
+// in the language the app shows.
+func WorkflowCachedCurrentResult() string { return In(i18n.Locale()).WorkflowCachedCurrentResult() }
+
+// WorkflowCachedCurrentResult says "缓存的当前结果"
+// in the language of msgs.
+func (msgs Messages) WorkflowCachedCurrentResult() string {
+	return Catalog.Format(msgs.locale, "workflowCachedCurrentResult", nil)
+}
+
+// WorkflowResultSelection says "结果选区"
+// in the language the app shows.
+func WorkflowResultSelection() string { return In(i18n.Locale()).WorkflowResultSelection() }
+
+// WorkflowResultSelection says "结果选区"
+// in the language of msgs.
+func (msgs Messages) WorkflowResultSelection() string {
+	return Catalog.Format(msgs.locale, "workflowResultSelection", nil)
+}
+
+// WorkflowPosition says "位置"
+// in the language the app shows.
+func WorkflowPosition() string { return In(i18n.Locale()).WorkflowPosition() }
+
+// WorkflowPosition says "位置"
+// in the language of msgs.
+func (msgs Messages) WorkflowPosition() string {
+	return Catalog.Format(msgs.locale, "workflowPosition", nil)
+}
+
+// WorkflowBelow says "下方"
+// in the language the app shows.
+func WorkflowBelow() string { return In(i18n.Locale()).WorkflowBelow() }
+
+// WorkflowBelow says "下方"
+// in the language of msgs.
+func (msgs Messages) WorkflowBelow() string {
+	return Catalog.Format(msgs.locale, "workflowBelow", nil)
+}
+
+// WorkflowRight says "右侧"
+// in the language the app shows.
+func WorkflowRight() string { return In(i18n.Locale()).WorkflowRight() }
+
+// WorkflowRight says "右侧"
+// in the language of msgs.
+func (msgs Messages) WorkflowRight() string {
+	return Catalog.Format(msgs.locale, "workflowRight", nil)
+}
+
+// WorkflowExportCachedQueryResult says "导出缓存的查询结果"
+// in the language the app shows.
+func WorkflowExportCachedQueryResult() string {
+	return In(i18n.Locale()).WorkflowExportCachedQueryResult()
+}
+
+// WorkflowExportCachedQueryResult says "导出缓存的查询结果"
+// in the language of msgs.
+func (msgs Messages) WorkflowExportCachedQueryResult() string {
+	return Catalog.Format(msgs.locale, "workflowExportCachedQueryResult", nil)
+}
+
+// WorkflowExportsCachedDataOnlySQLWillNot says "仅导出已缓存的数据；不会重新执行 SQL"
+// in the language the app shows.
+func WorkflowExportsCachedDataOnlySQLWillNot() string {
+	return In(i18n.Locale()).WorkflowExportsCachedDataOnlySQLWillNot()
+}
+
+// WorkflowExportsCachedDataOnlySQLWillNot says "仅导出已缓存的数据；不会重新执行 SQL"
+// in the language of msgs.
+func (msgs Messages) WorkflowExportsCachedDataOnlySQLWillNot() string {
+	return Catalog.Format(msgs.locale, "workflowExportsCachedDataOnlySQLWillNot", nil)
+}
+
+// WorkflowEachQueryCanKeepUpTo3 says "每个查询最多保留 3 个结果快照，总计 16 MiB；请先移除旧快照"
+// in the language the app shows.
+func WorkflowEachQueryCanKeepUpTo3() string { return In(i18n.Locale()).WorkflowEachQueryCanKeepUpTo3() }
+
+// WorkflowEachQueryCanKeepUpTo3 says "每个查询最多保留 3 个结果快照，总计 16 MiB；请先移除旧快照"
+// in the language of msgs.
+func (msgs Messages) WorkflowEachQueryCanKeepUpTo3() string {
+	return Catalog.Format(msgs.locale, "workflowEachQueryCanKeepUpTo3", nil)
+}
+
+// WorkflowRecordForm says "记录表单"
+// in the language the app shows.
+func WorkflowRecordForm() string { return In(i18n.Locale()).WorkflowRecordForm() }
+
+// WorkflowRecordForm says "记录表单"
+// in the language of msgs.
+func (msgs Messages) WorkflowRecordForm() string {
+	return Catalog.Format(msgs.locale, "workflowRecordForm", nil)
+}
+
+// WorkflowSelectARecord says "选择一条记录"
+// in the language the app shows.
+func WorkflowSelectARecord() string { return In(i18n.Locale()).WorkflowSelectARecord() }
+
+// WorkflowSelectARecord says "选择一条记录"
+// in the language of msgs.
+func (msgs Messages) WorkflowSelectARecord() string {
+	return Catalog.Format(msgs.locale, "workflowSelectARecord", nil)
+}
+
+// WorkflowEditRecordField says "编辑记录字段"
+// in the language the app shows.
+func WorkflowEditRecordField() string { return In(i18n.Locale()).WorkflowEditRecordField() }
+
+// WorkflowEditRecordField says "编辑记录字段"
+// in the language of msgs.
+func (msgs Messages) WorkflowEditRecordField() string {
+	return Catalog.Format(msgs.locale, "workflowEditRecordField", nil)
+}
+
+// WorkflowRecordFieldActions says "记录字段操作"
+// in the language the app shows.
+func WorkflowRecordFieldActions() string { return In(i18n.Locale()).WorkflowRecordFieldActions() }
+
+// WorkflowRecordFieldActions says "记录字段操作"
+// in the language of msgs.
+func (msgs Messages) WorkflowRecordFieldActions() string {
+	return Catalog.Format(msgs.locale, "workflowRecordFieldActions", nil)
+}
+
+// WorkflowRecordFieldEditor says "记录字段编辑"
+// in the language the app shows.
+func WorkflowRecordFieldEditor() string { return In(i18n.Locale()).WorkflowRecordFieldEditor() }
+
+// WorkflowRecordFieldEditor says "记录字段编辑"
+// in the language of msgs.
+func (msgs Messages) WorkflowRecordFieldEditor() string {
+	return Catalog.Format(msgs.locale, "workflowRecordFieldEditor", nil)
+}
+
+// WorkflowEditField says "编辑字段"
+// in the language the app shows.
+func WorkflowEditField() string { return In(i18n.Locale()).WorkflowEditField() }
+
+// WorkflowEditField says "编辑字段"
+// in the language of msgs.
+func (msgs Messages) WorkflowEditField() string {
+	return Catalog.Format(msgs.locale, "workflowEditField", nil)
+}
+
+// WorkflowApplyField says "应用字段"
+// in the language the app shows.
+func WorkflowApplyField() string { return In(i18n.Locale()).WorkflowApplyField() }
+
+// WorkflowApplyField says "应用字段"
+// in the language of msgs.
+func (msgs Messages) WorkflowApplyField() string {
+	return Catalog.Format(msgs.locale, "workflowApplyField", nil)
+}
+
+// WorkflowThisIsAFieldPreviewEditingReads says "此处是字段预览；编辑时读取完整字段"
+// in the language the app shows.
+func WorkflowThisIsAFieldPreviewEditingReads() string {
+	return In(i18n.Locale()).WorkflowThisIsAFieldPreviewEditingReads()
+}
+
+// WorkflowThisIsAFieldPreviewEditingReads says "此处是字段预览；编辑时读取完整字段"
+// in the language of msgs.
+func (msgs Messages) WorkflowThisIsAFieldPreviewEditingReads() string {
+	return Catalog.Format(msgs.locale, "workflowThisIsAFieldPreviewEditingReads", nil)
+}
+
+// WorkflowUndoDraftChanges says "撤销草稿更改"
+// in the language the app shows.
+func WorkflowUndoDraftChanges() string { return In(i18n.Locale()).WorkflowUndoDraftChanges() }
+
+// WorkflowUndoDraftChanges says "撤销草稿更改"
+// in the language of msgs.
+func (msgs Messages) WorkflowUndoDraftChanges() string {
+	return Catalog.Format(msgs.locale, "workflowUndoDraftChanges", nil)
+}
+
+// WorkflowRedoDraftChanges says "重做草稿更改"
+// in the language the app shows.
+func WorkflowRedoDraftChanges() string { return In(i18n.Locale()).WorkflowRedoDraftChanges() }
+
+// WorkflowRedoDraftChanges says "重做草稿更改"
+// in the language of msgs.
+func (msgs Messages) WorkflowRedoDraftChanges() string {
+	return Catalog.Format(msgs.locale, "workflowRedoDraftChanges", nil)
+}
+
+// WorkflowPageNumberToJumpTo says "跳转页号"
+// in the language the app shows.
+func WorkflowPageNumberToJumpTo() string { return In(i18n.Locale()).WorkflowPageNumberToJumpTo() }
+
+// WorkflowPageNumberToJumpTo says "跳转页号"
+// in the language of msgs.
+func (msgs Messages) WorkflowPageNumberToJumpTo() string {
+	return Catalog.Format(msgs.locale, "workflowPageNumberToJumpTo", nil)
+}
+
+// WorkflowPageNumber says "页号"
+// in the language the app shows.
+func WorkflowPageNumber() string { return In(i18n.Locale()).WorkflowPageNumber() }
+
+// WorkflowPageNumber says "页号"
+// in the language of msgs.
+func (msgs Messages) WorkflowPageNumber() string {
+	return Catalog.Format(msgs.locale, "workflowPageNumber", nil)
+}
+
+// WorkflowGo says "跳转"
+// in the language the app shows.
+func WorkflowGo() string { return In(i18n.Locale()).WorkflowGo() }
+
+// WorkflowGo says "跳转"
+// in the language of msgs.
+func (msgs Messages) WorkflowGo() string {
+	return Catalog.Format(msgs.locale, "workflowGo", nil)
+}
+
+// WorkflowPageNumberMustBeAValidPositive says "页号必须是有效的正整数"
+// in the language the app shows.
+func WorkflowPageNumberMustBeAValidPositive() string {
+	return In(i18n.Locale()).WorkflowPageNumberMustBeAValidPositive()
+}
+
+// WorkflowPageNumberMustBeAValidPositive says "页号必须是有效的正整数"
+// in the language of msgs.
+func (msgs Messages) WorkflowPageNumberMustBeAValidPositive() string {
+	return Catalog.Format(msgs.locale, "workflowPageNumberMustBeAValidPositive", nil)
+}
+
+// WorkflowPageNumberExceedsTheKnownDataRange says "页号超出已知的数据范围"
+// in the language the app shows.
+func WorkflowPageNumberExceedsTheKnownDataRange() string {
+	return In(i18n.Locale()).WorkflowPageNumberExceedsTheKnownDataRange()
+}
+
+// WorkflowPageNumberExceedsTheKnownDataRange says "页号超出已知的数据范围"
+// in the language of msgs.
+func (msgs Messages) WorkflowPageNumberExceedsTheKnownDataRange() string {
+	return Catalog.Format(msgs.locale, "workflowPageNumberExceedsTheKnownDataRange", nil)
+}
+
+// WorkflowShowQuerySQL says "显示查询 SQL"
+// in the language the app shows.
+func WorkflowShowQuerySQL() string { return In(i18n.Locale()).WorkflowShowQuerySQL() }
+
+// WorkflowShowQuerySQL says "显示查询 SQL"
+// in the language of msgs.
+func (msgs Messages) WorkflowShowQuerySQL() string {
+	return Catalog.Format(msgs.locale, "workflowShowQuerySQL", nil)
+}
+
+// WorkflowEnableCondition says "启用条件"
+// in the language the app shows.
+func WorkflowEnableCondition() string { return In(i18n.Locale()).WorkflowEnableCondition() }
+
+// WorkflowEnableCondition says "启用条件"
+// in the language of msgs.
+func (msgs Messages) WorkflowEnableCondition() string {
+	return Catalog.Format(msgs.locale, "workflowEnableCondition", nil)
+}
+
+// WorkflowEnablePrimaryFilter says "启用主筛选条件"
+// in the language the app shows.
+func WorkflowEnablePrimaryFilter() string { return In(i18n.Locale()).WorkflowEnablePrimaryFilter() }
+
+// WorkflowEnablePrimaryFilter says "启用主筛选条件"
+// in the language of msgs.
+func (msgs Messages) WorkflowEnablePrimaryFilter() string {
+	return Catalog.Format(msgs.locale, "workflowEnablePrimaryFilter", nil)
+}
+
+// WorkflowEnableFilterCondition says "启用筛选条件"
+// in the language the app shows.
+func WorkflowEnableFilterCondition() string { return In(i18n.Locale()).WorkflowEnableFilterCondition() }
+
+// WorkflowEnableFilterCondition says "启用筛选条件"
+// in the language of msgs.
+func (msgs Messages) WorkflowEnableFilterCondition() string {
+	return Catalog.Format(msgs.locale, "workflowEnableFilterCondition", nil)
+}
+
+// WorkflowConditionError says "条件错误"
+// in the language the app shows.
+func WorkflowConditionError() string { return In(i18n.Locale()).WorkflowConditionError() }
+
+// WorkflowConditionError says "条件错误"
+// in the language of msgs.
+func (msgs Messages) WorkflowConditionError() string {
+	return Catalog.Format(msgs.locale, "workflowConditionError", nil)
+}
+
+// WorkflowCondition says "条件"
+// in the language the app shows.
+func WorkflowCondition() string { return In(i18n.Locale()).WorkflowCondition() }
+
+// WorkflowCondition says "条件"
+// in the language of msgs.
+func (msgs Messages) WorkflowCondition() string {
+	return Catalog.Format(msgs.locale, "workflowCondition", nil)
+}
+
+// WorkflowDatabaseProduct says "数据库产品"
+// in the language the app shows.
+func WorkflowDatabaseProduct() string { return In(i18n.Locale()).WorkflowDatabaseProduct() }
+
+// WorkflowDatabaseProduct says "数据库产品"
+// in the language of msgs.
+func (msgs Messages) WorkflowDatabaseProduct() string {
+	return Catalog.Format(msgs.locale, "workflowDatabaseProduct", nil)
+}
+
+// WorkflowThisDatabaseHasNoOtherObjectCategories says "此数据库没有其它对象分类"
+// in the language the app shows.
+func WorkflowThisDatabaseHasNoOtherObjectCategories() string {
+	return In(i18n.Locale()).WorkflowThisDatabaseHasNoOtherObjectCategories()
+}
+
+// WorkflowThisDatabaseHasNoOtherObjectCategories says "此数据库没有其它对象分类"
+// in the language of msgs.
+func (msgs Messages) WorkflowThisDatabaseHasNoOtherObjectCategories() string {
+	return Catalog.Format(msgs.locale, "workflowThisDatabaseHasNoOtherObjectCategories", nil)
+}
+
+// WorkflowExportEntireTableAsJSONLIgnoresCurrent says "整表导出为 JSONL（忽略当前筛选）"
+// in the language the app shows.
+func WorkflowExportEntireTableAsJSONLIgnoresCurrent() string {
+	return In(i18n.Locale()).WorkflowExportEntireTableAsJSONLIgnoresCurrent()
+}
+
+// WorkflowExportEntireTableAsJSONLIgnoresCurrent says "整表导出为 JSONL（忽略当前筛选）"
+// in the language of msgs.
+func (msgs Messages) WorkflowExportEntireTableAsJSONLIgnoresCurrent() string {
+	return Catalog.Format(msgs.locale, "workflowExportEntireTableAsJSONLIgnoresCurrent", nil)
+}
+
+// WorkflowTheOriginalDatabaseSessionHasExpiredReopen says "原数据库会话已失效，请重新打开导入/导出"
+// in the language the app shows.
+func WorkflowTheOriginalDatabaseSessionHasExpiredReopen() string {
+	return In(i18n.Locale()).WorkflowTheOriginalDatabaseSessionHasExpiredReopen()
+}
+
+// WorkflowTheOriginalDatabaseSessionHasExpiredReopen says "原数据库会话已失效，请重新打开导入/导出"
+// in the language of msgs.
+func (msgs Messages) WorkflowTheOriginalDatabaseSessionHasExpiredReopen() string {
+	return Catalog.Format(msgs.locale, "workflowTheOriginalDatabaseSessionHasExpiredReopen", nil)
+}
+
+// WorkflowOriginalSessionExpired says "原数据库会话已失效，请关闭向导后重新打开"
+// in the language the app shows.
+func WorkflowOriginalSessionExpired() string {
+	return In(i18n.Locale()).WorkflowOriginalSessionExpired()
+}
+
+// WorkflowOriginalSessionExpired says "原数据库会话已失效，请关闭向导后重新打开"
+// in the language of msgs.
+func (msgs Messages) WorkflowOriginalSessionExpired() string {
+	return Catalog.Format(msgs.locale, "workflowOriginalSessionExpired", nil)
+}
+
+// WorkflowAdvancedDefinitionRequiresRaw says "此定义包含高级属性，请继续编辑完整定义"
+// in the language the app shows.
+func WorkflowAdvancedDefinitionRequiresRaw() string {
+	return In(i18n.Locale()).WorkflowAdvancedDefinitionRequiresRaw()
+}
+
+// WorkflowAdvancedDefinitionRequiresRaw says "此定义包含高级属性，请继续编辑完整定义"
+// in the language of msgs.
+func (msgs Messages) WorkflowAdvancedDefinitionRequiresRaw() string {
+	return Catalog.Format(msgs.locale, "workflowAdvancedDefinitionRequiresRaw", nil)
+}
+
+// WorkflowCachedResultShape says "%d 行 / %d 列"
+// in the language the app shows.
+func WorkflowCachedResultShape() string { return In(i18n.Locale()).WorkflowCachedResultShape() }
+
+// WorkflowCachedResultShape says "%d 行 / %d 列"
+// in the language of msgs.
+func (msgs Messages) WorkflowCachedResultShape() string {
+	return Catalog.Format(msgs.locale, "workflowCachedResultShape", nil)
+}
+
+// WorkflowExportFormat says "导出格式"
+// in the language the app shows.
+func WorkflowExportFormat() string { return In(i18n.Locale()).WorkflowExportFormat() }
+
+// WorkflowExportFormat says "导出格式"
+// in the language of msgs.
+func (msgs Messages) WorkflowExportFormat() string {
+	return Catalog.Format(msgs.locale, "workflowExportFormat", nil)
+}
+
+// WorkflowExportOptions says "导出选项"
+// in the language the app shows.
+func WorkflowExportOptions() string { return In(i18n.Locale()).WorkflowExportOptions() }
+
+// WorkflowExportOptions says "导出选项"
+// in the language of msgs.
+func (msgs Messages) WorkflowExportOptions() string {
+	return Catalog.Format(msgs.locale, "workflowExportOptions", nil)
+}
