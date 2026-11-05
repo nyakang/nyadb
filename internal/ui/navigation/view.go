@@ -193,7 +193,6 @@ func (s *State) renderRow(c *ui.Context, key string) {
 			}
 			row := ui.Row(c).Grow(1).MinWidth(0).Height(theme.RowHeight(c, assetRowHeight)).Padding(0, 6).AlignItems(ui.Center).Gap(4).Children(func() {
 				status := s.sessionStatus(p.ID)
-				ui.Box(c).Absolute().Left(0).Top(4).Size(3, 14).Background(theme.ProfileColor(c, p.Color))
 				NavigationIcon(c, p.Kind, status, 16)
 				ui.Text(c, p.Name).FontSize(theme.Font(c, assetFontSize)).TextColor(palette.Text).SingleLine()
 			})

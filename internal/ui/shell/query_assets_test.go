@@ -15,6 +15,7 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/sqlworkspace"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -25,6 +26,9 @@ func (k *assetTestKey) Get() ([]byte, bool, error) { return bytes.Clone(k.key), 
 func (k *assetTestKey) Set(v []byte) error         { k.key = bytes.Clone(v); return nil }
 func TestQueryToolbarOfflineOpenUsesOriginalScopeAndReusesTab(t *testing.T) {
 	s, tt, profiles, _ := profileTestState(t)
+	var reads atomic.Int32
+	s.sessions.DatabaseLister = func(context.Context, int64) ([]string, error) { reads.Add(1); return nil, nil }
+	s.sessions.ObjectLister = func(context.Context, int64, string) ([]mysqlsvc.MySQLDBObject, error) { reads.Add(1); return nil, nil }
 	ctx := context.Background()
 	a, e := profiles.Create(ctx, connections.Profile{Name: "Query A", Kind: connections.SQLite, Database: filepath.Join(t.TempDir(), "a.sqlite")})
 	if e != nil {
@@ -73,8 +77,9 @@ func TestQueryToolbarOfflineOpenUsesOriginalScopeAndReusesTab(t *testing.T) {
 	if e = tt.Click("取消"); e != nil {
 		t.Fatal(e)
 	}
-	s.navigation.Tree.Open.Add(navigation.ConnectionKey(a.ID))
-	s.navigation.Tree.Open.Add((navigation.Node{Kind: "category", ProfileID: a.ID, Category: "查询"}).Key())
+	if children := s.navigation.Children(navigation.ConnectionKey(a.ID)); children != nil {
+		t.Fatalf("offline connection still has disclosure children: %v", children)
+	}
 	tt.Frame()
 	if e = tt.RightClick(n.Name); e != nil {
 		t.Fatal(e)
@@ -85,7 +90,7 @@ func TestQueryToolbarOfflineOpenUsesOriginalScopeAndReusesTab(t *testing.T) {
 		t.Fatal(e)
 	}
 	if s.selectedProfileID != b.ID || len(s.tabs) != 1 {
-		t.Fatal("stale query navigator menu activated its original profile")
+		t.Fatal("stale query browser menu activated its original profile")
 	}
 	s.openNamedQuery(n)
 	tt.Frame()
@@ -97,6 +102,9 @@ func TestQueryToolbarOfflineOpenUsesOriginalScopeAndReusesTab(t *testing.T) {
 	s.openNamedQuery(n)
 	if len(s.tabs) != count || s.currentTab().query != doc {
 		t.Fatal("opening named query duplicated its tab")
+	}
+	if reads.Load() != 0 || s.sessions.StatusFor(a.ID) == "已连接" || s.sessions.StatusFor(b.ID) == "已连接" {
+		t.Fatal("offline query browsing connected or read database metadata")
 	}
 }
 func TestQueryNavigatorNeverDispatchesDatabaseObjectCommands(t *testing.T) {
