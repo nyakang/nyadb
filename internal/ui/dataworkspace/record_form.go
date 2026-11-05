@@ -2,7 +2,9 @@ package dataworkspace
 
 import (
 	"fmt"
+
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -56,7 +58,7 @@ func (s *State) recordForm(c *ui.Context, t *Document) {
 							if ui.Button(c, locales.Text("编辑字段")).Label(locales.Text("编辑记录字段") + " " + name).Disabled(!mysqlDataCanEdit(t, row, source)).Clicked() {
 								s.beginMySQLCellEdit(c.Services(), t, row, source, false)
 							}
-							ui.Button(c, "▾").Label(locales.Text("记录字段操作") + " " + name).Menu(func(m *ui.Menu) {
+							theme.IconButton(c, "", "chevron-down").Label(locales.Text("记录字段操作") + " " + name).Menu(func(m *ui.Menu) {
 								if m.Item("NULL").Disabled(!mysqlDataCanEdit(t, row, source) || !t.page.ColumnMetadata[source].Nullable).Chosen() {
 									s.setMySQLDataCell(c.Services(), t, row, source, contract.DataValue{Kind: contract.Null, Null: true})
 								}

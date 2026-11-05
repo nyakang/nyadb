@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/nyakang/nyadb/internal/db/contract"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/egoist/mygo/ui"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -435,8 +436,8 @@ func mysqlDataHistoryRules(entry mysqlDataHistoryEntry) string {
 }
 
 func (s *State) historyModal(c *ui.Context, t *Document) {
-	ui.Modal(c, &t.tools.historyOpen, func() {
-		ui.Column(c).Width(650).MaxWidthPercent(95).Padding(18).Gap(10).Children(func() {
+	theme.Modal(c, &t.tools.historyOpen, func() {
+		ui.Column(c).Width(650).MaxWidthPercent(95).Gap(10).Children(func() {
 			ui.Text(c, locales.Text("查询历史")).Bold().FontSize(theme.Font(c, 15))
 			ui.Text(c, locales.Text("仅保留此文档会话最近 50 次操作。仅成功查询可恢复规则，写操作不会重放。")).FontSize(theme.Font(c, 12))
 			choices := make([]string, len(t.tools.history))
@@ -469,15 +470,15 @@ func (s *State) historyModal(c *ui.Context, t *Document) {
 					ui.TextArea(c, &rules).Label(locales.Text("历史筛选与排序规则")).ReadOnly(true).FillWidth().Height(100)
 				}
 			}
-			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
+				if ui.Button(c, locales.Text("关闭")).Clicked() {
+					t.tools.historyOpen = false
+				}
 				if ui.Button(c, locales.Text("清除查询历史")).Clicked() {
 					s.clearDataHistory(t)
 				}
 				if ui.Button(c, locales.Text("恢复规则")).Disabled(selected < 0 || selected >= len(t.tools.history) || t.loading || t.page == nil || !mysqlDataHistoryCanRestore(t.tools.history[selected])).Clicked() {
 					s.restoreDataHistory(t, t.tools.history[selected])
-				}
-				if ui.Button(c, locales.Text("关闭")).Clicked() {
-					t.tools.historyOpen = false
 				}
 			})
 		})

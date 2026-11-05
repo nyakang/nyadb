@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/queries"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -53,8 +54,8 @@ func (s *State) historyModals(c *ui.Context) {
 		return
 	}
 	b := h.browsers[h.scope]
-	ui.Modal(c, &h.open, func() {
-		ui.Column(c).Width(980).MaxWidthPercent(95).Height(650).MaxHeightPercent(90).Padding(16).Gap(8).Children(func() {
+	theme.Modal(c, &h.open, func() {
+		ui.Column(c).Width(980).MaxWidthPercent(95).Height(650).MaxHeightPercent(90).Gap(8).Children(func() {
 			ui.Text(c, locales.Text("SQL 历史与日志")).Bold()
 			ui.Text(c, locales.Text("本地加密保存；打开历史只恢复文本，不执行 SQL。")).FontSize(theme.Font(c, 11))
 			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
@@ -68,23 +69,18 @@ func (s *State) historyModals(c *ui.Context) {
 				}
 			})
 			ui.Row(c).Gap(8).Children(func() {
-				profiles := []string{locales.Text("全部连接")}
-				seen := map[int64]bool{}
+				profiles := []int64{0}
+				seen := map[int64]bool{0: true}
 				for _, entry := range h.snapshot.Entries {
 					if !seen[entry.ProfileID] {
 						seen[entry.ProfileID] = true
-						profiles = append(profiles, fmt.Sprintf("#%d", entry.ProfileID))
+						profiles = append(profiles, entry.ProfileID)
 					}
 				}
 				if b.profile > 0 && !seen[b.profile] {
-					profiles = append(profiles, fmt.Sprintf("#%d", b.profile))
+					profiles = append(profiles, b.profile)
 				}
-				profile := profiles[0]
-				if b.profile != 0 {
-					profile = fmt.Sprintf("#%d", b.profile)
-				}
-				if ui.Select(c, &profile, profiles).Label(locales.Text("历史连接筛选")).Changed() {
-					b.profile, _ = strconv.ParseInt(strings.TrimPrefix(profile, "#"), 10, 64)
+				if theme.Choice(c, &b.profile, profiles, s.historyProfileLabel).Label(locales.Text("历史连接筛选")).Changed() {
 					b.selected, b.row, b.list = "", -1, ui.ListState{}
 				}
 				states := []string{"all", "success", "error", "cancelled", "session_lost", "uncertain", "partial", "pending"}
@@ -132,14 +128,14 @@ func (s *State) historyModals(c *ui.Context) {
 				}
 				return entries[row].ID
 			}
-			table := theme.Table(c, &b.list, []ui.TableColumn{{Title: locales.Text("时间"), Width: 145}, {Title: locales.Text("连接"), Width: 65}, {Title: locales.Text("数据库"), Width: 105}, {Title: locales.Text("结果"), Width: 140}, {Title: "SQL", Width: 420}}, len(entries), func(row, col int) {
+			table := theme.Table(c, &b.list, []ui.TableColumn{{Title: locales.Text("时间"), Width: 145}, {Title: locales.Text("连接"), Width: 180}, {Title: locales.Text("数据库"), Width: 105}, {Title: locales.Text("结果"), Width: 140}, {Title: "SQL", Width: 420}}, len(entries), func(row, col int) {
 				e := entries[row]
 				text := strings.Join(strings.Fields(e.SQL), " ")
 				switch col {
 				case 0:
 					text = e.Started.Local().Format("01-02 15:04:05")
 				case 1:
-					text = fmt.Sprintf("#%d", e.ProfileID)
+					text = s.historyProfileLabel(e.ProfileID)
 				case 2:
 					text = e.Database
 				case 3:
@@ -166,15 +162,15 @@ func (s *State) historyModals(c *ui.Context) {
 					ui.Text(c, e.Error).SingleLine().Tooltip(e.Error).TextColor(theme.Colors(c).Error)
 				}
 			}
-			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
+				if ui.Button(c, locales.Text("关闭")).Clicked() {
+					h.open = false
+				}
 				if ui.Button(c, locales.Text("清除当前范围历史…")).Disabled(!h.loaded || h.err != "").Clicked() {
 					h.clearOpen = true
 				}
 				if ui.Button(c, locales.Text("打开历史 SQL")).Disabled(b.row < 0 || h.openEntry == nil || b.row >= len(entries) || entries[b.row].Summary).Clicked() {
 					s.openHistorySelection(b.selected)
-				}
-				if ui.Button(c, locales.Text("关闭")).Clicked() {
-					h.open = false
 				}
 			})
 		})
@@ -189,8 +185,8 @@ func (s *State) historyModals(c *ui.Context) {
 		}
 	}
 	if h.settingsOpen {
-		ui.Modal(c, &h.settingsOpen, func() {
-			ui.Column(c).Width(420).Padding(18).Gap(12).Children(func() {
+		theme.Modal(c, &h.settingsOpen, func() {
+			ui.Column(c).Width(420).Gap(12).Children(func() {
 				ui.Text(c, locales.Text("SQL 历史设置")).Bold()
 				ui.Checkbox(c, &h.settings.Enabled, locales.Text("记录 SQL 执行历史"))
 				days, limit := strconv.Itoa(h.settings.RetentionDays), strconv.Itoa(h.settings.MaxEntries)
@@ -201,7 +197,7 @@ func (s *State) historyModals(c *ui.Context) {
 					h.settings.MaxEntries, _ = strconv.Atoi(limit)
 				}
 				ui.Text(c, locales.Text("历史总正文最多 32 MiB；超过上限移除最旧完整记录。")).FontSize(theme.Font(c, 11))
-				ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+				ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
 					if ui.Button(c, locales.Text("取消")).Clicked() {
 						h.settingsOpen = false
 					}
@@ -245,8 +241,8 @@ func (s *State) historyRecoveryModal(c *ui.Context) {
 		}
 	}
 	if h.exitOpen {
-		ui.Modal(c, &h.exitOpen, func() {
-			ui.Column(c).Width(520).MaxWidthPercent(95).Padding(18).Gap(12).Children(func() {
+		theme.Modal(c, &h.exitOpen, func() {
+			ui.Column(c).Width(520).MaxWidthPercent(95).Gap(12).Children(func() {
 				ui.Text(c, locales.Text("日志尚未保存")).Bold()
 				ui.Text(c, h.err).TextColor(theme.Colors(c).Error)
 				ui.Text(c, locales.Text("重新读取后重试保存，或放弃本次待保存日志再继续退出。文档草稿仍由既有退出流程处理。"))
@@ -276,4 +272,22 @@ func (s *State) historyRecoveryModal(c *ui.Context) {
 			h.exitNext = nil
 		}
 	}
+}
+
+func (s *State) historyProfileLabel(id int64) string {
+	if id == 0 {
+		return locales.Text("全部连接")
+	}
+	if s.deps.Profiles != nil {
+		for _, profile := range s.deps.Profiles() {
+			if profile.ID == id {
+				return fmt.Sprintf(locales.Text("%s（#%d）"), profile.Name, id)
+			}
+		}
+		return fmt.Sprintf(locales.Text("已删除连接（#%d）"), id)
+	}
+	if s.deps.ProfileName != nil {
+		return fmt.Sprintf(locales.Text("%s（#%d）"), s.deps.ProfileName(id), id)
+	}
+	return fmt.Sprintf(locales.Text("连接 #%d"), id)
 }

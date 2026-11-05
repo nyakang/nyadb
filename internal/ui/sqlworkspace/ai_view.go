@@ -6,6 +6,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
+
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -17,9 +18,9 @@ func (s *State) aiModal(c *ui.Context) {
 		return
 	}
 	s.aiNeedsFrame(c)
-	ui.Modal(c, &a.open, func() {
+	theme.Modal(c, &a.open, func() {
 		p := theme.Colors(c)
-		ui.Column(c).Width(720).MaxWidthPercent(95).Height(510).MaxHeightPercent(95).Padding(14).Gap(9).Children(func() {
+		ui.Column(c).Width(720).MaxWidthPercent(95).Height(510).MaxHeightPercent(95).Gap(9).Children(func() {
 			ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(10).Children(func() {
 				ui.Text(c, locales.Text("AI SQL 助手")).Bold().Grow(1)
 				if ui.Button(c, locales.Text("AI 服务设置")).Disabled(a.pending != nil).Clicked() {
@@ -42,6 +43,10 @@ func (s *State) aiModal(c *ui.Context) {
 				})
 			})
 			ui.Row(c).FillWidth().Gap(8).Justify(ui.End).Children(func() {
+				if ui.Button(c, locales.Text("关闭")).Clicked() {
+					s.closeAI()
+					return
+				}
 				if a.pending != nil {
 					if ui.Button(c, locales.Text("取消 AI 请求")).Disabled(a.cancelled).Clicked() {
 						a.cancelled = true
@@ -49,10 +54,6 @@ func (s *State) aiModal(c *ui.Context) {
 							a.cancel()
 						}
 					}
-				}
-				if ui.Button(c, locales.Text("关闭")).Clicked() {
-					s.closeAI()
-					return
 				}
 				if a.settings {
 					if ui.PrimaryButton(c, locales.Text("保存 AI 设置")).Disabled(!a.loaded || a.pending != nil).Clicked() {

@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/locales"
 )
 
 type executionResult struct {
@@ -288,9 +290,9 @@ func (s *State) Consume() {
 			}
 			if s.active(t) {
 				if len(result.Columns) > 0 {
-					s.report(fmt.Sprintf("SQL 已完成 · %d 行 · %s", len(result.Rows), result.Duration))
+					s.report(fmt.Sprintf(locales.Text("SQL 已完成 · %d 行 · %s"), len(result.Rows), result.Duration))
 				} else {
-					s.report(fmt.Sprintf("SQL 已完成 · 影响 %d 行 · %s", result.AffectedRows, result.Duration))
+					s.report(fmt.Sprintf(locales.Text("SQL 已完成 · 影响 %d 行 · %s"), result.AffectedRows, result.Duration))
 				}
 				if canceled {
 					s.report(t.err)

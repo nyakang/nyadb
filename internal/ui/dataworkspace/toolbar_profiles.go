@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/egoist/mygo/ui"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -368,8 +369,8 @@ func (s *State) profilesMenu(c *ui.Context, t *Document, m *ui.Menu) {
 }
 
 func (s *State) profileModal(c *ui.Context, t *Document) {
-	ui.Modal(c, &t.tools.profileOpen, func() {
-		ui.Column(c).Width(530).MaxWidthPercent(95).Padding(18).Gap(10).Children(func() {
+	theme.Modal(c, &t.tools.profileOpen, func() {
+		ui.Column(c).Width(530).MaxWidthPercent(95).Gap(10).Children(func() {
 			ui.Text(c, locales.Text("表配置文件")).Bold().FontSize(theme.Font(c, 15))
 			ui.Text(c, t.database+"."+t.table).TextColor(theme.Colors(c).Muted)
 			ui.Text(c, locales.Text("表的配置文件存储筛选、排序和列设置以供将来使用。")).FontSize(theme.Font(c, 12))
@@ -405,7 +406,10 @@ func (s *State) profileModal(c *ui.Context, t *Document) {
 			if t.tools.profilesErr != "" {
 				ui.Text(c, t.tools.profilesErr).TextColor(theme.Colors(c).Error)
 			}
-			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
+				if ui.Button(c, locales.Text("关闭")).Clicked() {
+					t.tools.profileOpen = false
+				}
 				if !t.tools.profileSave {
 					if ui.Button(c, locales.Text("加载配置")).Disabled(t.tools.profileChoice == "" || t.loading || t.page == nil).Clicked() {
 						for _, p := range t.tools.profiles {
@@ -436,9 +440,6 @@ func (s *State) profileModal(c *ui.Context, t *Document) {
 					} else {
 						t.tools.profileOpen = false
 					}
-				}
-				if ui.Button(c, locales.Text("关闭")).Clicked() {
-					t.tools.profileOpen = false
 				}
 			})
 		})

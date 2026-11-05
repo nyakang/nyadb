@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/gridview"
 	"github.com/nyakang/nyadb/internal/ui/theme"
@@ -68,16 +69,32 @@ func (s *State) dataDock(c *ui.Context, t *Document) {
 			if t.tools.analysisOpen && t.tools.analysis != nil {
 				tabs = append(tabs, "列统计")
 			}
-			for _, tab := range tabs {
-				if dataToolbarToggle(c, tab, "", t.toolbar.dock == tab, false).Clicked() {
-					t.toolbar.dock = tab
+			labels := make([]string, len(tabs))
+			chosen := 0
+			for i, tab := range tabs {
+				labels[i] = locales.Text(tab)
+				if t.toolbar.dock == tab {
+					chosen = i
 				}
 			}
+			ui.ScrollHorizontal(c).Grow(1).MinWidth(0).Children(func() {
+				if theme.Tabs(c, &chosen, labels, false, locales.Text("单元格编辑器")).Changed() {
+					// Validate the owning editor before leaving its editable presentation.
+					if t.edit.Editor != nil && t.edit.Editor.Dedicated {
+						s.finishMySQLCellEdit(t, true)
+					}
+					if t.edit.Editor == nil {
+						t.toolbar.dock = tabs[chosen]
+					} else {
+						t.edit.Editor.Refocus = true
+					}
+				}
+			})
 			ui.Box(c).Grow(1)
-			if ui.Button(c, "⌃").Label(locales.Text("展开编辑器")).Clicked() {
+			if theme.IconButton(c, "", "expand").Label(locales.Text("展开编辑器")).Clicked() {
 				t.toolbar.dockExpanded = !t.toolbar.dockExpanded
 			}
-			if ui.Button(c, "×").Label(locales.Text("关闭编辑器")).Clicked() {
+			if theme.IconButton(c, "", "close").Label(locales.Text("关闭编辑器")).Clicked() {
 				s.closeDataDock(t)
 			}
 		})
@@ -167,6 +184,12 @@ func (s *State) dataDock(c *ui.Context, t *Document) {
 		if editable {
 			s.typedEditorChoice(c, t, e)
 			field := ui.TextArea(c, &e.Text).Label(locales.Text("单元格编辑器内容")).FillWidth().Grow(1).MinHeight(50).FontSize(theme.Font(c, 12))
+			if e.Refocus {
+				field.Focus().ScrollIntoView()
+				if field.Focused() {
+					e.Refocus = false
+				}
+			}
 			theme.BindNativeEdit(c, field, fmt.Sprintf("data/dock-edit/%d", t.id), s.deps.EditFocus, s.deps.EditTarget, func() bool { return !t.closed && t.edit.Editor == e && !t.edit.Busy }, true, false)
 		} else {
 			field := ui.TextArea(c, &text).Label(locales.Text("单元格预览")).ReadOnly(true).FillWidth().Grow(1).MinHeight(50).FontSize(theme.Font(c, 12))

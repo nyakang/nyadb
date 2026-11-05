@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -21,10 +22,10 @@ func (s *State) dataTransferWizard(c *ui.Context, t *Document, available bool, t
 	tr := &t.transfer
 	steps := mysqlDataWizardSteps(tr.Kind)
 	tr.Step = max(0, min(tr.Step, len(steps)-1))
-	modal := ui.Modal(c, &tr.Open, func() {
+	modal := theme.Modal(c, &tr.Open, func() {
 		cw, ch := c.Size()
-		width, height := min(float32(800), cw-40), min(float32(620), ch-40)
-		ui.Column(c).Width(width).Height(height).Padding(18).Gap(10).Background(theme.Colors(c).Header).Children(func() {
+		width, height := min(float32(800), cw-68), min(float32(620), ch-68)
+		ui.Column(c).Width(width).Height(height).Gap(10).Children(func() {
 			ui.Text(c, title+" · "+locales.Text(steps[tr.Step])).Bold().FontSize(theme.Font(c, 15))
 			ui.Text(c, t.database+"."+t.table).TextColor(theme.Colors(c).Muted)
 			if tr.Kind == "import" {
@@ -67,7 +68,7 @@ func (s *State) dataTransferWizard(c *ui.Context, t *Document, available bool, t
 					}
 				})
 			})
-			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
 				if tr.Step > 0 && !tr.Submitted && ui.Button(c, locales.Text("上一步")).Disabled(tr.Busy).Clicked() {
 					tr.Step--
 					tr.Err = ""
@@ -102,7 +103,7 @@ func (s *State) dataTransferWizard(c *ui.Context, t *Document, available bool, t
 				}
 			})
 		})
-	}).Padding(0)
+	})
 	s.finishDataTransferModal(t, modal.PressedOutside())
 }
 
@@ -259,10 +260,7 @@ func (s *State) dataExportWizardPage(c *ui.Context, t *Document) {
 
 // Label is accessible metadata in MyGo; render the field name separately.
 func mysqlDataWizardField(c *ui.Context, label string, build func()) {
-	ui.Row(c).Gap(12).AlignItems(ui.Center).FillWidth().Children(func() {
-		ui.Text(c, label+":").Width(300).FontSize(theme.Font(c, 12))
-		build()
-	})
+	theme.Field(c, label, build).FillWidth()
 }
 
 func mysqlDataWizardInput(c *ui.Context, value *string, label string) ui.Element {

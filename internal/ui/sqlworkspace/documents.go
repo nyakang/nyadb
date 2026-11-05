@@ -4,13 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/nyakang/nyadb/locales"
 	"io"
 	"strings"
 	"time"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/queries"
+	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 type Files struct {
@@ -514,11 +516,15 @@ func (s *State) Modals(c *ui.Context) {
 	if p.guardDoc != nil {
 		d := p.guardDoc
 		open := true
-		ui.Modal(c, &open, func() {
-			ui.Column(c).Width(420).Padding(18).Gap(12).Children(func() {
+		theme.Modal(c, &open, func() {
+			ui.Column(c).Width(420).Gap(12).Children(func() {
 				ui.Text(c, locales.Text("保存查询更改？"))
 				ui.Row(c).Gap(8).Children(func() {
-					if ui.Button(c, "保存").Clicked() {
+					if ui.Button(c, locales.Text("取消")).Clicked() {
+						p.guardDoc = nil
+						p.guardNext = nil
+					}
+					if ui.Button(c, locales.Text("保存")).Clicked() {
 						next := p.guardNext
 						p.guardDoc = nil
 						p.guardNext = nil
@@ -534,10 +540,6 @@ func (s *State) Modals(c *ui.Context) {
 							next(c.Services())
 						}
 					}
-					if ui.Button(c, "取消").Clicked() {
-						p.guardDoc = nil
-						p.guardNext = nil
-					}
 				})
 			})
 		})
@@ -547,12 +549,12 @@ func (s *State) Modals(c *ui.Context) {
 		}
 	}
 	if p.nameOpen {
-		ui.Modal(c, &p.nameOpen, func() {
-			ui.Column(c).Width(420).Padding(18).Gap(10).Children(func() {
+		theme.Modal(c, &p.nameOpen, func() {
+			ui.Column(c).Width(420).Gap(10).Children(func() {
 				ui.Text(c, locales.Text("保存命名查询"))
 				ui.TextInput(c, &p.name).Label(locales.Text("查询名称"))
 				ui.Row(c).Gap(8).Children(func() {
-					if ui.Button(c, "取消").Clicked() {
+					if ui.Button(c, locales.Text("取消")).Clicked() {
 						p.nameOpen = false
 						p.guardNext = nil
 					}
@@ -570,11 +572,15 @@ func (s *State) Modals(c *ui.Context) {
 		})
 	}
 	if p.exitOpen {
-		ui.Modal(c, &p.exitOpen, func() {
-			ui.Column(c).Width(460).Padding(18).Gap(12).Children(func() {
+		theme.Modal(c, &p.exitOpen, func() {
+			ui.Column(c).Width(460).Gap(12).Children(func() {
 				ui.Text(c, locales.Text("退出前保存查询"))
 				ui.Text(c, locales.Text("未保存文本可加密保留，重新打开后不会执行 SQL。"))
 				ui.Row(c).Gap(8).Children(func() {
+					if ui.Button(c, locales.Text("取消")).Clicked() {
+						p.exitOpen = false
+						p.exitNext = nil
+					}
 					if ui.Button(c, locales.Text("保留草稿并退出")).Disabled(p.store == nil || p.blocked || p.loading).Clicked() {
 						p.exitOpen = false
 						s.saveWorkspace(func(services ui.Services) {
@@ -592,10 +598,6 @@ func (s *State) Modals(c *ui.Context) {
 								break
 							}
 						}
-					}
-					if ui.Button(c, "取消").Clicked() {
-						p.exitOpen = false
-						p.exitNext = nil
 					}
 				})
 			})

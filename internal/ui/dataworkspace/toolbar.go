@@ -2,6 +2,7 @@ package dataworkspace
 
 import (
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -20,9 +21,23 @@ type mysqlDataToolbarState struct {
 }
 
 func dataToolbarToggle(c *ui.Context, caption, icon string, active, disabled bool) ui.Element {
-	e := mysqlDataToolbarButton(c, caption, locales.Text(caption), icon, disabled)
+	on := active
+	e := ui.Toggle(c, &on, "").Label(locales.Text(caption)).Tooltip(locales.Text(caption)).Disabled(disabled).MinHeight(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 5)
 	if active {
-		e.Background(theme.Colors(c).ToolbarSelected)
+		p := theme.Colors(c)
+		e.Background(p.Selection).TextColor(p.SelectionText)
+	}
+	if icon != "" {
+		e.Children(func() {
+			ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
+				ink := theme.Colors(c).Text
+				if active {
+					ink = theme.Colors(c).SelectionText
+				}
+				theme.Icon(c, icon, theme.SmallIconSize, ink)
+				ui.Text(c, locales.Text(caption)).SingleLine()
+			})
+		})
 	}
 	return e
 }
@@ -35,7 +50,7 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 	var profilesButton, fillButton, copyButton ui.Element
 	ui.Toolbar(c, func() {
 		if !t.portable() {
-			profilesButton = mysqlDataToolbarButton(c, "表配置文件 ▾", locales.Text("表配置文件"), "design-table", page == nil).
+			profilesButton = mysqlDataToolbarButton(c, "表配置文件", locales.Text("表配置文件"), "design-table", page == nil).
 				Menu(func(m *ui.Menu) { s.profilesMenu(c, t, m) })
 		}
 
@@ -84,7 +99,7 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 			}
 		}
 		ui.Divider(c).Width(1).Height(18)
-		fillButton = mysqlDataToolbarButton(c, "填充 ▾", locales.Text("填充"), "star", page == nil).
+		fillButton = mysqlDataToolbarButton(c, "填充", locales.Text("填充"), "star", page == nil).
 			Menu(func(m *ui.Menu) { s.dataFillMenu(c, t, m) })
 		if (t.object.ProfileID == 0 || t.capabilities.Analysis) && dataToolbarToggle(c, "数据分析", "chart", t.tools.analysisOpen, page == nil || disabled).Clicked() {
 			if t.tools.analysisOpen {
@@ -101,7 +116,7 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 			s.openDataExport(t)
 		}
 		if t.capabilities.JSONL {
-			ui.Button(c, "▾").Label(locales.Text("导出选项")).Disabled(disabled || page == nil || mysqlDataHasDraft(t) || dataTransactionActive(t) || dataTransactionBusy(t) || t.transfer.Uncertain).Menu(func(m *ui.Menu) {
+			theme.IconButton(c, "", "chevron-down").Label(locales.Text("导出选项")).Disabled(disabled || page == nil || mysqlDataHasDraft(t) || dataTransactionActive(t) || dataTransactionBusy(t) || t.transfer.Uncertain).Menu(func(m *ui.Menu) {
 				if m.Item(locales.Text("整表导出为 JSONL（忽略当前筛选）")).Chosen() {
 					s.ExportJSONL(c.Services(), t)
 				}
@@ -121,7 +136,7 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 		if mysqlDataToolbarButton(c, "复制", locales.Text("复制所选数据预览"), "copy", !selected).Clicked() {
 			s.copyMySQLDataSelection(c, t)
 		}
-		copyButton = ui.Button(c, "▾").Label(locales.Text("复制为")).Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 4).Disabled(!selected).Menu(func(m *ui.Menu) { s.mysqlDataCopyAsMenu(c, t, m) })
+		copyButton = theme.IconButton(c, "", "chevron-down").Label(locales.Text("复制为")).Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 4).Disabled(!selected).Menu(func(m *ui.Menu) { s.mysqlDataCopyAsMenu(c, t, m) })
 		count := len(t.filterRules)
 		if t.filterCondition != nil {
 			count = dataConditionCount(t.filterCondition)

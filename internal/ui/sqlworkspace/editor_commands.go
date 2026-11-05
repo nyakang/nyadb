@@ -1,11 +1,14 @@
 package sqlworkspace
 
 import (
+	"strings"
+
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
+
 	"github.com/nyakang/nyadb/internal/db/sqltext"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
-	"strings"
 )
 
 func (s *State) Format(d *Document) {
@@ -120,20 +123,20 @@ func (s *State) explainModal(c *ui.Context) {
 	if !p.explainOpen {
 		return
 	}
-	ui.Modal(c, &p.explainOpen, func() {
-		ui.Column(c).Width(620).MaxWidthPercent(95).Padding(18).Gap(10).Children(func() {
+	theme.Modal(c, &p.explainOpen, func() {
+		ui.Column(c).Width(620).MaxWidthPercent(95).Gap(10).Children(func() {
 			ui.Text(c, locales.Text("执行计划 SQL"))
 			ui.TextArea(c, &p.explainSQL).ReadOnly(true).Height(180)
 			ui.Row(c).Gap(8).Children(func() {
+				if ui.Button(c, locales.Text("取消")).Clicked() {
+					p.explainOpen = false
+				}
 				if s.deps.BuildExplain != nil && ui.Button(c, locales.Text("普通 EXPLAIN")).Clicked() {
 					p.explainOpen = false
 					text := p.explainSource
 					if s.deps.ValidateExplain == nil || s.deps.ValidateExplain(p.explainDoc.profileID, text) == nil {
 						s.runStatement(c.Services().Invalidate, p.explainDoc, "EXPLAIN "+text)
 					}
-				}
-				if ui.Button(c, "取消").Clicked() {
-					p.explainOpen = false
 				}
 				if ui.PrimaryButton(c, locales.Text("执行 EXPLAIN")).Clicked() {
 					p.explainOpen = false

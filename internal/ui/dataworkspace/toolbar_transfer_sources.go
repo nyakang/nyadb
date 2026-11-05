@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -36,7 +37,7 @@ func (s *State) rememberWizardSource(t *Document) {
 	copy := mysqlDataCopyTransfer(*tr)
 	name := tr.Path
 	if name == "" {
-		name = fmt.Sprintf("来源 %d", tr.ActiveSource+1)
+		name = fmt.Sprintf(locales.Text("来源 %d"), tr.ActiveSource+1)
 	}
 	tr.Sources[tr.ActiveSource] = mysqlDataWizardSource{Name: name, State: &copy}
 }
@@ -68,7 +69,7 @@ func (s *State) addWizardSource(t *Document) {
 	}
 	s.rememberWizardSource(t)
 	sources, owner, request, gen := tr.Sources, tr.Assets, tr.Request+1, tr.Generation
-	sources = append(sources, mysqlDataWizardSource{Name: fmt.Sprintf("来源 %d", len(sources)+1)})
+	sources = append(sources, mysqlDataWizardSource{Name: fmt.Sprintf(locales.Text("来源 %d"), len(sources)+1)})
 	next := mysqlDataTransferState{Wizard: true, Open: true, Kind: "import", Format: "CSV", Options: defaultMySQLDataSourceOptions(), ContinueOnError: true, ExtendedInsert: true, StatementKB: 1024, Target: "existing", NewName: t.table + "_import", Fields: slices.Clone(t.page.Columns), Included: map[string]bool{}, Sources: sources, ActiveSource: len(sources) - 1, Assets: owner, Request: request, Generation: gen}
 	for _, field := range next.Fields {
 		next.Included[field] = true

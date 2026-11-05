@@ -2,7 +2,9 @@ package sqlworkspace
 
 import (
 	"fmt"
+
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -21,17 +23,18 @@ func (s *State) cachedExportView(c *ui.Context, d *Document) {
 		return
 	}
 	x := &d.cachedExport
-	ui.Modal(c, &x.Open, func() {
-		ui.Column(c).Width(440).MaxWidth(440).Padding(16).Gap(10).Children(func() {
+	theme.Modal(c, &x.Open, func() {
+		ui.Column(c).Width(440).MaxWidth(440).Gap(10).Children(func() {
 			ui.Text(c, locales.Text("导出缓存的查询结果")).Bold()
-			ui.Select(c, &x.Format, cachedResultFormats()).Label(locales.Text("导出格式"))
-			scope := locales.Text("缓存的当前结果")
-			if x.Selection {
-				scope = locales.Text("结果选区")
-			}
-			if ui.Select(c, &scope, []string{locales.Text("缓存的当前结果"), locales.Text("结果选区")}).Label(locales.Text("导出范围")).Changed() {
-				x.Selection = scope == locales.Text("结果选区")
-			}
+			theme.Field(c, locales.Text("导出格式"), func() { ui.Select(c, &x.Format, cachedResultFormats()).Label(locales.Text("导出格式")) })
+			theme.Field(c, locales.Text("导出范围"), func() {
+				theme.Choice(c, &x.Selection, []bool{false, true}, func(selection bool) string {
+					if selection {
+						return locales.Text("结果选区")
+					}
+					return locales.Text("缓存的当前结果")
+				}).Label(locales.Text("导出范围"))
+			})
 			set := x.Cached
 			if x.Selection {
 				set = x.Selected
@@ -41,11 +44,11 @@ func (s *State) cachedExportView(c *ui.Context, d *Document) {
 			if len(set.Truncation) > 0 {
 				ui.Text(c, truncationText(set.Truncation)).TextColor(theme.Colors(c).Warning)
 			}
-			ui.Row(c).Gap(8).Children(func() {
+			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
 				if ui.Button(c, locales.Text("取消")).Clicked() {
 					x.Open = false
 				}
-				if ui.Button(c, locales.Text("导出")).Disabled(len(set.Columns) == 0 || x.Selection && len(set.Rows) == 0).Clicked() {
+				if ui.PrimaryButton(c, locales.Text("导出")).Disabled(len(set.Columns) == 0 || x.Selection && len(set.Rows) == 0).Clicked() {
 					x.Open = false
 					s.exportCachedSet(d, set, x.Format)
 				}
