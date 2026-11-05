@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/db/contract"
 
+	"github.com/nyakang/nyadb/internal/db/contract"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -109,10 +109,10 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 		}
 		if s.deps.ObjectExecutor != nil && s.canAdministration(profileID) {
 			m.Separator()
-			if m.Item("编辑完整定义…").Chosen() {
+			if m.Item(locales.Text("编辑完整定义…")).Chosen() {
 				s.BeginObject(services, profileID, mysqlsvc.ObjectIdentity{Database: database, Name: name, Kind: kind}, "alter")
 			}
-			if m.Item("删除对象…").Chosen() {
+			if m.Item(locales.Text("删除对象…")).Chosen() {
 				s.BeginObject(services, profileID, mysqlsvc.ObjectIdentity{Database: database, Name: name, Kind: kind}, "drop")
 			}
 		}
@@ -302,10 +302,9 @@ func (s *State) Modals(c *ui.Context) {
 	label := mysqlTableActionLabel(s.tableAction)
 	db, name := s.tableDatabase, s.tableName
 	danger := mysqlTableActionDangerous(s.tableAction)
-	ui.Modal(c, &s.tableDialog, func() {
+	theme.Modal(c, &s.tableDialog, func() {
 		width, _ := c.Size()
-		ui.Column(c).Width(min(float32(510), width-40)).Padding(18, 23).
-			Background(colors.Header).Gap(12).Children(func() {
+		ui.Column(c).Width(min(float32(510), width-68)).Gap(12).Children(func() {
 			ui.Text(c, locales.Text(label)).Bold().FontSize(theme.Font(c, 15))
 			target := locales.Text("数据库：") + db
 			if s.tableAction != mysqlsvc.MySQLTableCreate {
@@ -322,32 +321,32 @@ func (s *State) Modals(c *ui.Context) {
 				if s.deps.NewTable != nil {
 					ui.Text(c, locales.Text("输入名称后打开表设计器，预览并确认 SQL 后才会创建表。"))
 				} else {
-					ui.Text(c, "创建 InnoDB 基础表，初始字段为 id BIGINT AUTO_INCREMENT PRIMARY KEY；完整结构设计尚未接入。").FontSize(theme.Font(c, 12))
+					ui.Text(c, locales.Text("创建 InnoDB 基础表，初始字段为 id BIGINT AUTO_INCREMENT PRIMARY KEY。")).FontSize(theme.Font(c, 12))
 				}
 			case mysqlsvc.MySQLTableDeleteRows:
-				ui.Text(c, "将执行 DELETE FROM，移除全部行；InnoDB 允许在事务中回滚，但本操作不会自动开启事务。").FontSize(theme.Font(c, 12))
+				ui.Text(c, locales.Text("将执行 DELETE FROM，移除全部行；InnoDB 允许在事务中回滚，但本操作不会自动开启事务。")).FontSize(theme.Font(c, 12))
 			case mysqlsvc.MySQLTableTruncate:
-				ui.Text(c, "将执行 TRUNCATE TABLE，通常重置自增值，并发生隐式提交；不能按普通删除回滚。").FontSize(theme.Font(c, 12)).TextColor(colors.Error)
+				ui.Text(c, locales.Text("将执行 TRUNCATE TABLE，通常重置自增值，并发生隐式提交；不能按普通删除回滚。")).FontSize(theme.Font(c, 12)).TextColor(colors.Error)
 			case mysqlsvc.MySQLTableDrop:
-				ui.Text(c, "将执行 DROP TABLE，永久删除表结构和数据。可能发生隐式提交。").FontSize(theme.Font(c, 12)).TextColor(colors.Error)
+				ui.Text(c, locales.Text("将执行 DROP TABLE，永久删除表结构和数据。可能发生隐式提交。")).FontSize(theme.Font(c, 12)).TextColor(colors.Error)
 			case mysqlsvc.MySQLTableCopyData:
-				ui.Text(c, "完整公开 DDL 重建字段、约束和触发器；数据复制先于创建触发器。各步骤不是原子操作，失败后保留已完成对象。").FontSize(theme.Font(c, 12))
+				ui.Text(c, locales.Text("完整公开 DDL 重建字段、约束和触发器；数据复制先于创建触发器。各步骤不是原子操作，失败后保留已完成对象。")).FontSize(theme.Font(c, 12))
 			case mysqlsvc.MySQLTableRename:
 				if s.canSchemaDesign(s.tableProfileID, db, name) {
 					ui.Text(c, locales.Text("输入目标名称后打开表设计器，预览并确认 ALTER TABLE 后才会改名。"))
 				} else {
-					ui.Text(c, "将执行 RENAME TABLE，并使原有名称下的已打开数据/结构标签失效。").FontSize(theme.Font(c, 12))
+					ui.Text(c, locales.Text("将执行 RENAME TABLE，并使原有名称下的已打开数据/结构标签失效。")).FontSize(theme.Font(c, 12))
 				}
 			}
 			if danger {
-				ui.Text(c, "请输入原表名称以确认此操作：").FontSize(theme.Font(c, 12))
-				ui.TextInput(c, &s.tableConfirmation).Label("确认原表名称").Grow(1)
+				ui.Text(c, locales.Text("请输入原表名称以确认此操作：")).FontSize(theme.Font(c, 12))
+				ui.TextInput(c, &s.tableConfirmation).Label(locales.Text("确认原表名称")).Grow(1)
 			}
 			if s.tableError != "" {
 				ui.Text(c, s.tableError).TextColor(colors.Error).FontSize(theme.Font(c, 12))
 			}
 			if s.tablePending {
-				ui.Text(c, "正在执行数据库操作…").FontSize(theme.Font(c, 12))
+				ui.Text(c, locales.Text("正在执行数据库操作…")).FontSize(theme.Font(c, 12))
 			}
 			valid := !s.tablePending && s.tableProfileID == s.session().ProfileID &&
 				s.tableGeneration == s.session().Generation && s.session().Connected
@@ -359,7 +358,7 @@ func (s *State) Modals(c *ui.Context) {
 			if danger {
 				valid = valid && s.tableConfirmation == name
 			}
-			ui.Row(c).Justify(ui.End).Gap(8).Children(func() {
+			ui.Row(c).Wrap().Justify(ui.End).Gap(8).Shrink(0).Children(func() {
 				if ui.Button(c, locales.Text("取消")).Disabled(s.tablePending).Clicked() {
 					s.tableDialog = false
 				}
@@ -455,7 +454,7 @@ func (s *State) consumeMySQLTableChange(services ui.Services) {
 		if r.err != nil {
 			s.tableDialog = current
 			s.tableError = r.err.Error()
-			s.report(fmt.Sprintf("%s失败：%v", mysqlTableActionLabel(r.action), r.err))
+			s.report(fmt.Sprintf(locales.Text("%s失败：%v"), mysqlTableActionLabel(r.action), r.err))
 		} else {
 			s.tableDialog = false
 			s.tableError = ""

@@ -1,12 +1,12 @@
 package objectworkspace
 
 import (
+	"fmt"
 	"strconv"
-
-	"github.com/nyakang/nyadb/internal/db/contract"
 
 	"github.com/egoist/mygo/ui"
 
+	"github.com/nyakang/nyadb/internal/db/contract"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -192,7 +192,7 @@ func (s *State) BrowserView(c *ui.Context) {
 					{"打开表", "open-table", "打开选中表数据"}, {"设计表", "design-table", "设计选中表"}, {"查看结构", "design-table", "打开选中表结构"},
 				} {
 					item := action
-					if ui.ButtonBase(c).Label(locales.Text(item.accessible)).Tooltip(locales.Text(item.label)).Disabled(!canOpen).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
+					if ui.Button(c, "").Label(locales.Text(item.accessible)).Tooltip(locales.Text(item.label)).Disabled(!canOpen).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
 						ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
 							theme.Icon(c, item.icon, 14, palette.Muted)
 							ui.Text(c, locales.Text(item.label)).FontSize(theme.Font(c, 12)).SingleLine()
@@ -209,7 +209,7 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 				}
 				canCreate := a.canCreate
-				if ui.ButtonBase(c).Label(locales.Text("新建表")).Tooltip(locales.Text("新建表")).
+				if ui.Button(c, "").Label(locales.Text("新建表")).Tooltip(locales.Text("新建表")).
 					Disabled(!canCreate).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
 					ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
 						theme.Icon(c, "table", 14, palette.Muted)
@@ -218,25 +218,32 @@ func (s *State) BrowserView(c *ui.Context) {
 				}).Clicked() {
 					s.BeginTableChange(a.scope.profile, database, "", mysqlsvc.MySQLTableCreate)
 				}
-				if ui.ButtonBase(c).Label(locales.Text("查看程序定义")).Tooltip(locales.Text("查看函数、存储过程、事件或序列定义")).
+				if ui.Button(c, "").Label(locales.Text("查看程序定义")).Tooltip(locales.Text("查看函数、存储过程、事件或序列定义")).
 					Disabled(!canProgram).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
 					theme.Icon(c, "function", 14, palette.Muted)
 				}).Clicked() {
 					obj := items[a.frame.Row]
 					s.openObjectFor(c.Services(), a.scope.profile, database, obj.Name, obj.Kind)
 				}
-				for _, kind := range []string{"全部", "表", "视图"} {
-					filter := kind
-					button := ui.ButtonBase(c).Label(locales.Text("筛选对象：")+locales.Text(filter)).Disabled(!a.ready).Height(theme.RowHeight(c, 25)).Padding(2, 5).Children(func() { ui.Text(c, locales.Text(filter)).FontSize(theme.Font(c, 11)) })
-					if a.ready && a.frame.Kind == filter {
-						button.Background(palette.Border.Alpha(.35))
-					}
-					if button.Clicked() {
-						s.Filter(filter)
+				kinds := []string{"全部", "表", "视图"}
+				chosen := 0
+				for i, kind := range kinds {
+					if a.frame.Kind == kind {
+						chosen = i
 					}
 				}
+				parts := ui.SegmentedBase(c, &chosen, len(kinds))
+				parts.Track.Label(locales.Text("筛选对象")).Disabled(!a.ready).Gap(2).Children(func() {
+					for i, kind := range kinds {
+						parts.Segment(i).Label(locales.Text("筛选对象：")+locales.Text(kind)).MinHeight(theme.RowHeight(c, 25)).Padding(2, 5).Children(func() { ui.Text(c, locales.Text(kind)).SingleLine() })
+					}
+				})
+				if parts.Track.Changed() {
+					s.Filter(kinds[chosen])
+				}
+
 			}).Label(locales.Text("对象操作")).Grow(1).MinWidth(0).Padding(0).Gap(2).Background(palette.Header)
-			ui.ButtonBase(c).Label(locales.Text("更多对象操作")).Tooltip(locales.Text("更多对象操作")).
+			ui.Button(c, "").Label(locales.Text("更多对象操作")).Tooltip(locales.Text("更多对象操作")).
 				Disabled(!a.ready && !a.canAccounts && !a.canResume).Padding(2, 5).Height(theme.RowHeight(c, 25)).
 				Children(func() { ui.Text(c, locales.Text("更多")).FontSize(theme.Font(c, 12)).SingleLine() }).
 				Menu(func(m *ui.Menu) { s.browserMoreMenu(c.Services(), m) })
@@ -245,7 +252,7 @@ func (s *State) BrowserView(c *ui.Context) {
 			if database != "" {
 				label = locales.Text("刷新元数据：") + database
 			}
-			if ui.ButtonBase(c).Label(label).Tooltip(locales.Text("刷新")).Disabled(!a.canRefresh).Size(25, 25).Children(func() {
+			if ui.Button(c, "").Label(label).Tooltip(locales.Text("刷新")).Disabled(!a.canRefresh).Size(25, 25).Children(func() {
 				color := palette.Muted
 				if a.canRefresh {
 					color = palette.Blue
@@ -270,6 +277,9 @@ func (s *State) BrowserView(c *ui.Context) {
 func ObjectProperties(c *ui.Context, obj contract.DBObject) {
 	theme.Property(c, "引擎", obj.Engine)
 	theme.Property(c, "注释", obj.Comment)
+	if obj.RootPage != nil {
+		theme.Property(c, "根页面", fmt.Sprint(*obj.RootPage))
+	}
 	if Supports(obj.Kind) {
 		for _, field := range programProperties(obj) {
 			if field.label == "类型" || field.label == "名称" || field.label == "注释" {

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/mysqlddl"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
@@ -29,6 +30,7 @@ type designReply struct {
 	err                 error
 }
 type designDocument struct {
+	pageChoice                             int
 	fieldDetails                           bool
 	original                               mysqlddl.Snapshot
 	draft                                  mysqlddl.Draft

@@ -8,6 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/schemaddl"
 	"github.com/nyakang/nyadb/locales"
@@ -27,6 +28,7 @@ type schemaDesignReply struct {
 	err                 error
 }
 type schemaDesignDocument struct {
+	pageChoice                             int
 	fieldDetails                           bool
 	structured                             *structuredDefinition
 	original                               contract.SchemaDesignSnapshot

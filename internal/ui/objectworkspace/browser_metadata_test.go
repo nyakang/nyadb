@@ -29,3 +29,18 @@ func TestMySQLObjectMetadataColumnsRespectServerNullsAndEstimates(t *testing.T) 
 		}
 	}
 }
+
+func TestSQLiteListHidesInternalRootPageAndDecodesLegacyLayout(t *testing.T) {
+	s := New(Dependencies{Engine: func(int64) string { return "sqlite" }})
+	for _, column := range s.objectColumns(1) {
+		if column.ID == "rootpage" {
+			t.Fatal("internal root page still appears in the default list")
+		}
+	}
+	if err := s.RestoreWorkspace([]byte(`[{"Profile":1,"Database":"main","Columns":{"Order":["rootpage","name"],"Widths":{"rootpage":90,"name":265}}}]`)); err != nil {
+		t.Fatal(err)
+	}
+	if s.presentation(1).List.Columns.Widths["name"] != 265 {
+		t.Fatal("legacy column widths were not preserved")
+	}
+}

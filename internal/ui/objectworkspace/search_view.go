@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -14,12 +15,13 @@ func (s *State) searchModal(c *ui.Context) {
 	if x == nil || !x.open {
 		return
 	}
-	ui.Modal(c, &x.open, func() {
-		ui.Column(c).Width(1000).MaxWidthPercent(95).Height(680).MaxHeightPercent(92).Padding(16).Gap(8).Children(func() {
+	theme.Modal(c, &x.open, func() {
+		width, height := c.Size()
+		ui.Column(c).Width(min(float32(1000), width-68)).Height(min(float32(680), height-68)).Gap(8).Children(func() {
 			ui.Text(c, locales.Text("在数据库或模式中查找")).Bold()
-			ui.Text(c, fmt.Sprintf(locales.Text("连接 #%d · 只读元数据搜索，不读取表记录。"), x.profile)).FontSize(theme.Font(c, 11))
+			ui.Text(c, s.searchProfileLabel(x.profile)+" · "+locales.Text("只读元数据搜索，不读取表记录。")).FontSize(theme.Font(c, 11))
 			ui.Row(c).Gap(8).Children(func() {
-				if ui.TextInput(c, &x.text).Label(locales.Text("查找对象名称、注释或定义")).Disabled(x.busy).Grow(1).Changed() {
+				if ui.SearchField(c, &x.text).Label(locales.Text("查找对象名称、注释或定义")).Placeholder(locales.Text("查找对象名称、注释或定义")).Disabled(x.busy).Grow(1).Changed() {
 					s.clearObjectSearchEntries()
 				}
 				if ui.PrimaryButton(c, locales.Text("开始查找")).Disabled(x.busy || strings.TrimSpace(x.text) == "").Clicked() {
@@ -107,16 +109,16 @@ func (s *State) searchModal(c *ui.Context) {
 			if table.Submitted() {
 				s.openSearchEntry(c.Services(), x.row)
 			}
-			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
+				if ui.Button(c, locales.Text("关闭")).Clicked() {
+					x.open = false
+					s.cancelObjectSearch()
+				}
 				if ui.Button(c, locales.Text("取消查找")).Disabled(!x.busy).Clicked() {
 					s.cancelObjectSearch()
 				}
 				if ui.Button(c, locales.Text("打开所选对象")).Disabled(x.busy || x.row < 0).Clicked() {
 					s.openSearchEntry(c.Services(), x.row)
-				}
-				if ui.Button(c, locales.Text("关闭")).Clicked() {
-					x.open = false
-					s.cancelObjectSearch()
 				}
 			})
 		})
@@ -124,4 +126,11 @@ func (s *State) searchModal(c *ui.Context) {
 	if !x.open {
 		s.cancelObjectSearch()
 	}
+}
+
+func (s *State) searchProfileLabel(id int64) string {
+	if s.deps.ProfileName != nil {
+		return fmt.Sprintf(locales.Text("%s（#%d）"), s.deps.ProfileName(id), id)
+	}
+	return fmt.Sprintf(locales.Text("连接 #%d"), id)
 }

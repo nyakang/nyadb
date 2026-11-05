@@ -62,14 +62,14 @@ func (s *State) sidebar(c *ui.Context) {
 			theme.Icon(c, "connection", 17, palette.AccentText)
 			ui.Text(c, locales.Text("我的连接")).FontSize(theme.Font(c, 12)).Bold()
 			ui.Box(c).Grow(1)
-			if ui.Button(c, "+").Label("添加连接").Padding(1, 6).Clicked() {
+			if ui.Button(c, "+").Label(locales.Text("添加连接")).Padding(1, 6).Clicked() {
 				s.clickToolbar("连接")
 			}
 		})
 		ui.Column(c).Grow(1).Padding(4, 5).Children(func() {
 			roots := s.filteredRoots()
 			if len(roots) == 0 {
-				ui.Text(c, "没有匹配的连接").Padding(12).TextColor(palette.Muted)
+				ui.Text(c, locales.Text("没有匹配的连接")).Padding(12).TextColor(palette.Muted)
 				return
 			}
 			s.preview.tree.List.Selected = &s.preview.row

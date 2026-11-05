@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/schemaddl"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -46,22 +47,24 @@ func (s *State) schemaDesignView(c *ui.Context, d *Document) {
 			return
 		}
 		names := []string{locales.Text("字段"), locales.Text("约束"), locales.Text("索引"), locales.Text("触发器"), locales.Text("表选项"), locales.Text("原始 DDL")}
+		candidate := &x.pageChoice
+		*candidate = x.page
 		ui.ScrollHorizontal(c).Height(theme.RowHeight(c, theme.TabHeight)).Children(func() {
-			ui.Row(c).Gap(4).Children(func() {
-				for i, name := range names {
-					if theme.PageButton(c, name, x.page == i).Label(locales.Text("表设计子页") + "/" + name).Disabled(locked).Clicked() {
-						if err := d.flushInline(); err != nil {
-							d.err = err.Error()
-						} else if err := s.applySchemaForms(d); err != nil {
-							d.err = schemaDesignError(err)
-						} else {
-							x.page = i
-							x.selected = -1
-							_ = s.schemaSelectRow(d, i, -1)
-						}
-					}
+			if theme.Tabs(c, candidate, names, locked, locales.Text("表设计子页")).Label(locales.Text("表设计子页")).Changed() {
+				if err := d.flushInline(); err != nil {
+					d.err = err.Error()
+					*candidate = x.page
+					d.formFocusPending = true
+				} else if err := s.applySchemaForms(d); err != nil {
+					d.err = schemaDesignError(err)
+					*candidate = x.page
+					d.formFocusPending = true
+				} else {
+					x.page = *candidate
+					x.selected = -1
+					_ = s.schemaSelectRow(d, x.page, -1)
 				}
-			})
+			}
 		})
 		if x.page < 4 {
 			s.schemaDefinitionView(c, d, locked)
@@ -223,19 +226,16 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 // captions so empty default and collation inputs can be distinguished.
 func (s *State) schemaDesignInput(c *ui.Context, d *Document, label string, value *string, readOnly bool) {
 	text := locales.Text(label)
-	ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
-		ui.Text(c, text+":").Width(110).SingleLine().Tooltip(text)
-		s.designTextInput(c, d, value).Label(text).ReadOnly(readOnly).Grow(1).MinWidth(0)
-	})
+	theme.Field(c, text, func() { s.designTextInput(c, d, value).Label(text).ReadOnly(readOnly).FillWidth() }).FillWidth()
 }
 
 func (s *State) schemaDesignModals(c *ui.Context, d *Document) {
 	x := d.schemaDesign
 	p := theme.Colors(c)
 	if x.guard {
-		ui.Modal(c, &x.guard, func() {
+		theme.Modal(c, &x.guard, func() {
 			width, _ := c.Size()
-			ui.Column(c).Width(min(float32(480), width-40)).Padding(18).Gap(10).Background(p.Header).Children(func() {
+			ui.Column(c).Width(min(float32(480), width-68)).Gap(10).Children(func() {
 				ui.Text(c, locales.Text("表设计有未保存的修改")).Bold()
 				ui.Row(c).Wrap().Gap(8).Children(func() {
 					if ui.Button(c, locales.Text("继续编辑")).Clicked() {
@@ -271,18 +271,18 @@ func (s *State) schemaDesignModals(c *ui.Context, d *Document) {
 		}
 	}
 	if x.preview && x.plan != nil {
-		ui.Modal(c, &x.preview, func() {
+		theme.Modal(c, &x.preview, func() {
 			width, height := c.Size()
-			ui.Column(c).Width(min(float32(780), width-40)).MaxHeight(height - 40).Padding(16).Gap(8).Background(p.Header).Children(func() {
+			ui.Column(c).Width(min(float32(780), width-68)).MaxHeight(height - 68).Gap(8).Children(func() {
 				ui.Text(c, locales.Text("SQL 预览")).Bold()
 				ui.Text(c, d.database+" / "+d.table)
 				raw := strings.Join(x.plan.SQL, ";\n\n")
 				ui.TextArea(c, &raw).ReadOnly(true).Height(min(float32(270), height-250)).MinHeight(80)
 				if len(x.plan.Dropped) > 0 {
 					ui.Text(c, locales.Text("将删除字段：")+strings.Join(x.plan.Dropped, ", ")).TextColor(p.Error)
-					s.designTextInput(c, d, &x.confirmation).Label(locales.Text("确认原表名称"))
+					s.designFieldInput(c, d, "确认原表名称", &x.confirmation)
 				}
-				ui.Row(c).Justify(ui.End).Gap(8).Children(func() {
+				ui.Row(c).Wrap().Justify(ui.End).Gap(8).Shrink(0).Children(func() {
 					if ui.Button(c, locales.Text("返回编辑")).Clicked() {
 						x.preview = false
 						x.next = nil

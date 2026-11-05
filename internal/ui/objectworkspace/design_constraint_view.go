@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/mysqlddl"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -31,16 +32,17 @@ func (s *State) designConstraintView(c *ui.Context, d *Document) {
 		return
 	}
 	locked := x.busy || x.blocked
-	ui.Scroll(c).Height(0).Grow(1).MinHeight(100).MaxHeight(300).Children(func() {
-		ui.Column(c).Padding(8).Gap(8).Children(func() {
-			s.designTextInput(c, d, &f.data.Name).Label(locales.Text("约束名称")).ReadOnly(locked || f.data.Kind == mysqlddl.Primary)
+	ui.Scroll(c).Label(locales.Text("约束设置内容")).Height(0).Grow(1).MinHeight(100).MaxHeight(300).Children(func() {
+		width, _ := c.Size()
+		theme.Form(c, width-16, func() {
+			s.designFieldInput(c, d, "约束名称", &f.data.Name).ReadOnly(locked || f.data.Kind == mysqlddl.Primary)
 			if f.data.Kind == mysqlddl.Index {
 				ui.Row(c).Wrap().Gap(8).Children(func() {
 					ui.Select(c, &f.data.IndexKind, []string{"INDEX", "UNIQUE", "FULLTEXT", "SPATIAL"}).Label(locales.Text("索引类型")).Disabled(locked)
 					ui.Select(c, &f.data.Method, []string{"", "BTREE", "HASH"}).Label(locales.Text("索引方法")).Disabled(locked)
 					ui.Checkbox(c, &f.data.Visible, locales.Text("索引可见")).Disabled(locked)
 				})
-				s.designTextInput(c, d, &f.data.Comment).Label(locales.Text("索引注释")).ReadOnly(locked)
+				s.designFieldInput(c, d, "索引注释", &f.data.Comment).ReadOnly(locked)
 			}
 			if f.data.Kind == mysqlddl.Check {
 				ui.TextArea(c, &f.data.Expression).Label(locales.Text("检查表达式")).Height(100).ReadOnly(locked)
@@ -50,8 +52,8 @@ func (s *State) designConstraintView(c *ui.Context, d *Document) {
 			}
 			if f.data.Kind == mysqlddl.Foreign {
 				ui.Row(c).Wrap().Gap(8).Children(func() {
-					s.designTextInput(c, d, &f.data.ReferencedDatabase).Label(locales.Text("引用数据库")).ReadOnly(locked)
-					s.designTextInput(c, d, &f.data.ReferencedTable).Label(locales.Text("引用表")).ReadOnly(locked)
+					s.designFieldInput(c, d, "引用数据库", &f.data.ReferencedDatabase).ReadOnly(locked)
+					s.designFieldInput(c, d, "引用表", &f.data.ReferencedTable).ReadOnly(locked)
 				})
 				ui.Row(c).Wrap().Gap(8).Children(func() {
 					actions := []string{"", "RESTRICT", "CASCADE", "SET NULL", "NO ACTION"}
@@ -165,9 +167,9 @@ func (s *State) designConstraintColumns(c *ui.Context, d *Document, locked bool)
 			for len(f.data.ReferencedColumns) < len(f.data.Columns) {
 				f.data.ReferencedColumns = append(f.data.ReferencedColumns, "")
 			}
-			s.designTextInput(c, d, &f.data.ReferencedColumns[f.columnRow]).Label(locales.Text("引用字段名称")).ReadOnly(locked)
+			s.designFieldInput(c, d, "引用字段名称", &f.data.ReferencedColumns[f.columnRow]).ReadOnly(locked)
 		} else {
-			s.designTextInput(c, d, &f.prefix).Label(locales.Text("索引前缀长度")).ReadOnly(locked)
+			s.designFieldInput(c, d, "索引前缀长度", &f.prefix).ReadOnly(locked)
 			ui.Checkbox(c, &column.Descending, locales.Text("降序")).Disabled(locked)
 		}
 	})

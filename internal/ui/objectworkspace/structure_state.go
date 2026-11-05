@@ -5,11 +5,11 @@ import (
 	"errors"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/mysqlddl"
-	"github.com/nyakang/nyadb/internal/ui/theme"
-
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
 type Loader func(context.Context, int64, string, string) (*contract.TableStructure, error)
@@ -23,6 +23,7 @@ type Session struct {
 }
 
 type Dependencies struct {
+	ProfileName         func(int64) string
 	EditFocus           *string
 	EditTarget          func(theme.EditTarget)
 	Engine              func(int64) string
@@ -102,6 +103,9 @@ type Dependencies struct {
 // Document owns its immutable object identity and mutable presentation state.
 // Only the UI thread changes it; workers publish to private buffered channels.
 type Document struct {
+	formFocusHandle               ui.Handle
+	formFocusTarget               *string
+	formFocusPending              bool
 	inline                        map[string]*designCell
 	object                        contract.ObjectRef
 	id                            uint64
@@ -310,6 +314,9 @@ func (s *State) Close(d *Document) {
 	}
 	s.cancel(d)
 	s.closeDesign(d)
+	d.formFocusHandle.CancelFocus()
+	d.formFocusHandle = ui.Handle{}
+	d.formFocusTarget, d.formFocusPending = nil, false
 	d.closed = true
 	d.inline = nil
 	if d.program != nil {

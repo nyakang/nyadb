@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/schemaddl"
 	"github.com/nyakang/nyadb/internal/ui/theme"
@@ -243,8 +244,8 @@ func (s *State) schemaCopyModal(c *ui.Context) {
 	if x == nil || !x.open || x.guarding {
 		return
 	}
-	ui.Modal(c, &x.open, func() {
-		ui.Column(c).Width(800).MaxWidthPercent(92).Height(620).MaxHeightPercent(92).Padding(18).Gap(8).Children(func() {
+	theme.Modal(c, &x.open, func() {
+		ui.Column(c).Width(800).MaxWidthPercent(92).Height(620).MaxHeightPercent(92).Gap(8).Children(func() {
 			ui.Text(c, locales.Text("复制表")).Bold()
 			ui.Text(c, fmt.Sprintf("#%d · %s / %s · %s", x.target.Object.ProfileID, x.target.Object.Catalog, x.target.Object.Schema, x.target.Object.Name)).SingleLine().Tooltip(x.target.Object.Name)
 			ui.TextInput(c, &x.destination).Label(locales.Text("目标表名称")).Disabled(x.busy)
@@ -277,9 +278,6 @@ func (s *State) schemaCopyModal(c *ui.Context) {
 				ui.Text(c, err.Error()).SingleLine().Tooltip(err.Error()).TextColor(theme.Colors(c).Error)
 			}
 			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Children(func() {
-				if ui.Button(c, locales.Text("重新读取结构")).Disabled(x.busy).Clicked() {
-					s.readSchemaCopy(c.Services())
-				}
 				if ui.Button(c, locales.Text("取消")).Disabled(x.cancelRequested).Clicked() {
 					if x.busy && x.applying {
 						x.cancelRequested = true
@@ -289,6 +287,9 @@ func (s *State) schemaCopyModal(c *ui.Context) {
 					} else {
 						x.open = false
 					}
+				}
+				if ui.Button(c, locales.Text("重新读取结构")).Disabled(x.busy).Clicked() {
+					s.readSchemaCopy(c.Services())
 				}
 				if ui.PrimaryButton(c, locales.Text("确认复制表")).Disabled(x.busy || x.blocked || err != nil || !s.schemaCopyValid(x)).Clicked() {
 					s.applySchemaCopy(c.Services())

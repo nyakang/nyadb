@@ -1,10 +1,12 @@
 package objectworkspace
 
 import (
+	"strconv"
+
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/locales"
-	"strconv"
 )
 
 func (s *State) objectColumns(profile int64) []ui.TableColumn {
@@ -17,7 +19,7 @@ func (s *State) objectColumns(profile int64) []ui.TableColumn {
 		columns = []ui.TableColumn{{ID: "name", Title: "名称", Width: 265}, {ID: "kind", Title: "类型", Width: 100}, {ID: "rows", Title: "估算行数", Width: 100}, {ID: "size", Title: "大小", Width: 110}, {ID: "comment", Title: "注释", Width: 200}}
 	}
 	if engine == "sqlite" {
-		columns = []ui.TableColumn{{ID: "name", Title: "名称", Width: 265}, {ID: "kind", Title: "类型", Width: 100}, {ID: "indexes", Title: "有索引", Width: 90}, {ID: "triggers", Title: "有触发器", Width: 90}, {ID: "rootpage", Title: "根页面", Width: 90}}
+		columns = []ui.TableColumn{{ID: "name", Title: "名称", Width: 265}, {ID: "kind", Title: "类型", Width: 100}, {ID: "indexes", Title: "有索引", Width: 90}, {ID: "triggers", Title: "有触发器", Width: 90}}
 	}
 	for i := range columns {
 		if columns[i].ID == "" {

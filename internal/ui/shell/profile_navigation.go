@@ -315,5 +315,5 @@ func (s *State) profileName(id int64) string {
 			return p.Name
 		}
 	}
-	return fmt.Sprintf("连接 #%d", id)
+	return fmt.Sprintf(locales.Text("连接 #%d"), id)
 }

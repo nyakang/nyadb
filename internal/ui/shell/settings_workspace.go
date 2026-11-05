@@ -154,7 +154,7 @@ func (s *State) settingsSQLPreview(c *ui.Context) {
 func (s *State) schemeCardLayout(c *ui.Context) (int, float32) {
 	width, _ := c.Size()
 	width = (width - 4) * (1 - s.sidebarPercent/100)
-	if s.inspectorOn {
+	if s.inspectorVisible() {
 		width = (width - 4) * s.centerPercent / 100
 	}
 	width = max(float32(100), width-52)
@@ -179,7 +179,7 @@ func (s *State) schemePreviewCard(c *ui.Context, scheme theme.SchemeInfo, width 
 				ui.Text(c, locales.Text(scheme.Name)).FontSize(theme.Font(c, 12)).Bold().TextColor(palette.Text)
 				ui.Box(c).Grow(1)
 				if selected {
-					ui.Text(c, "✓").TextColor(palette.Focus)
+					theme.Icon(c, "check", theme.SmallIconSize, palette.Focus)
 				}
 			})
 			variants := ui.Row(c).FillWidth().MinWidth(0).Gap(1)

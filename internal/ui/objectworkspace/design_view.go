@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/mysqlddl"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -57,7 +58,7 @@ func (s *State) designView(c *ui.Context, d *Document) {
 			ui.Scroll(c).MaxHeight(120).Children(func() {
 				ui.Column(c).Gap(3).Children(func() {
 					for i, step := range x.outcome.Steps {
-						label := fmt.Sprintf("%d · %s", i+1, step.State)
+						label := fmt.Sprintf("%d · %s", i+1, theme.OutcomeLabel(step.State))
 						if step.Error != nil {
 							label += " · " + step.Error.Error()
 						}
@@ -67,18 +68,21 @@ func (s *State) designView(c *ui.Context, d *Document) {
 			})
 		}
 		names := []string{locales.Text("字段"), locales.Text("索引"), locales.Text("外键"), locales.Text("检查"), locales.Text("触发器"), locales.Text("表选项"), locales.Text("注释"), locales.Text("原始 DDL")}
+		candidate := &x.pageChoice
+		*candidate = x.page
 		ui.ScrollHorizontal(c).Height(theme.RowHeight(c, theme.TabHeight)).Children(func() {
-			ui.Row(c).Gap(4).Children(func() {
-				for i, name := range names {
-					if theme.PageButton(c, name, x.page == i).Label(locales.Text("表设计子页") + "/" + name).Disabled(x.busy || x.blocked).Clicked() {
-						if err := d.flushInline(); err != nil {
-							d.err = err.Error()
-						} else {
-							s.changeDesignPage(d, i)
-						}
+			if theme.Tabs(c, candidate, names, x.busy || x.blocked, locales.Text("表设计子页")).Label(locales.Text("表设计子页")).Changed() {
+				if err := d.flushInline(); err != nil {
+					d.err = err.Error()
+					d.formFocusPending = true
+					*candidate = x.page
+				} else {
+					if !s.changeDesignPage(d, *candidate) {
+						d.formFocusPending = true
 					}
+					*candidate = x.page
 				}
-			})
+			}
 		})
 		switch x.page {
 		case 5:
@@ -232,8 +236,8 @@ func (s *State) designClauses(c *ui.Context, d *Document) {
 	ui.Scroll(c).Height(0).Grow(1).MinHeight(100).MaxHeight(280).Children(func() {
 		ui.Column(c).Padding(8).Gap(7).Children(func() {
 			ui.Row(c).Wrap().Gap(10).Children(func() {
-				s.designTextInput(c, d, &x.form.Name).Label(locales.Text("字段名称")).ReadOnly(x.busy || x.blocked)
-				s.designTextInput(c, d, &x.form.Type).Label(locales.Text("字段类型")).ReadOnly(x.busy || x.blocked)
+				s.designFieldInput(c, d, "字段名称", &x.form.Name).ReadOnly(x.busy || x.blocked)
+				s.designFieldInput(c, d, "字段类型", &x.form.Type).ReadOnly(x.busy || x.blocked)
 				ui.Checkbox(c, &x.form.Nullable, locales.Text("允许 NULL")).Disabled(x.busy || x.blocked)
 				ui.Checkbox(c, &x.form.AutoIncrement, locales.Text("自动递增")).Disabled(x.busy || x.blocked)
 			})
@@ -243,15 +247,15 @@ func (s *State) designClauses(c *ui.Context, d *Document) {
 				if ui.Select(c, &kind, values).Disabled(x.busy || x.blocked).Changed() {
 					x.form.DefaultKind = mysqlddl.DefaultKind(kind)
 				}
-				s.designTextInput(c, d, &x.form.Default).Label(locales.Text("默认值或表达式")).ReadOnly(x.busy || x.blocked)
-				s.designTextInput(c, d, &x.form.Comment).Label(locales.Text("字段注释")).ReadOnly(x.busy || x.blocked)
+				s.designFieldInput(c, d, "默认值或表达式", &x.form.Default).ReadOnly(x.busy || x.blocked)
+				s.designFieldInput(c, d, "字段注释", &x.form.Comment).ReadOnly(x.busy || x.blocked)
 			})
 			ui.Row(c).Wrap().Gap(10).Children(func() {
-				s.designTextInput(c, d, &x.form.Charset).Label(locales.Text("字符集")).ReadOnly(x.busy || x.blocked)
-				s.designTextInput(c, d, &x.form.Collation).Label(locales.Text("排序规则")).ReadOnly(x.busy || x.blocked)
+				s.designFieldInput(c, d, "字符集", &x.form.Charset).ReadOnly(x.busy || x.blocked)
+				s.designFieldInput(c, d, "排序规则", &x.form.Collation).ReadOnly(x.busy || x.blocked)
 			})
 			ui.Row(c).Wrap().Gap(10).Children(func() {
-				s.designTextInput(c, d, &x.form.Generation).Label(locales.Text("生成列表达式")).Grow(1).ReadOnly(x.busy || x.blocked)
+				s.designFieldInput(c, d, "生成列表达式", &x.form.Generation).Grow(1).ReadOnly(x.busy || x.blocked)
 				ui.Select(c, &x.form.Storage, []string{"", "VIRTUAL", "STORED"}).Disabled(x.busy || x.blocked)
 			})
 			if x.formError != "" {
@@ -272,7 +276,7 @@ func (s *State) designOptions(c *ui.Context, d *Document) {
 			x.optionValue = mysqlddl.Option(x.draft.Table.Options, x.optionName)
 			x.optionBase = x.optionValue
 		}
-		s.designTextInput(c, d, &x.optionValue).Label(locales.Text("表选项值")).ReadOnly(x.busy || x.blocked)
+		s.designFieldInput(c, d, "表选项值", &x.optionValue).ReadOnly(x.busy || x.blocked)
 		if ui.Button(c, locales.Text("应用表选项")).Disabled(x.busy || x.blocked).Clicked() {
 			value, e := mysqlddl.SetOption(x.draft.Table.Options, x.optionName, x.optionValue)
 			if e != nil {
@@ -326,16 +330,20 @@ func (s *State) designTriggers(c *ui.Context, d *Document) {
 		return
 	}
 	t := &x.draft.Triggers[x.triggerRow]
-	s.designTextInput(c, d, &t.Name).Label(locales.Text("触发器名称")).ReadOnly(x.busy || x.blocked)
+	s.designFieldInput(c, d, "触发器名称", &t.Name).ReadOnly(x.busy || x.blocked)
 	s.designTextArea(c, d, &t.SQL).Label(locales.Text("完整触发器定义")).ReadOnly(x.busy || x.blocked).Grow(1)
 }
 func (s *State) designModals(c *ui.Context, d *Document) {
 	x := d.design
 	if x.guard {
-		ui.Modal(c, &x.guard, func() {
-			ui.Column(c).Width(460).Padding(18).Gap(12).Children(func() {
+		theme.Modal(c, &x.guard, func() {
+			ui.Column(c).Width(460).Gap(12).Children(func() {
 				ui.Text(c, locales.Text("保存表设计更改？"))
 				ui.Row(c).Gap(8).Children(func() {
+					if ui.Button(c, locales.Text("取消")).Clicked() {
+						x.guard = false
+						x.next = nil
+					}
 					if ui.Button(c, locales.Text("保存并预览")).Disabled(x.blocked).Clicked() {
 						x.guard = false
 						_ = s.PrepareDesign(d)
@@ -357,10 +365,6 @@ func (s *State) designModals(c *ui.Context, d *Document) {
 							next(c.Services())
 						}
 					}
-					if ui.Button(c, locales.Text("取消")).Clicked() {
-						x.guard = false
-						x.next = nil
-					}
 				})
 			})
 		})
@@ -369,8 +373,8 @@ func (s *State) designModals(c *ui.Context, d *Document) {
 		}
 	}
 	if x.preview && x.plan != nil {
-		ui.Modal(c, &x.preview, func() {
-			ui.Column(c).Width(720).MaxWidthPercent(95).Padding(18).Gap(10).Children(func() {
+		theme.Modal(c, &x.preview, func() {
+			ui.Column(c).Width(720).MaxWidthPercent(95).Gap(10).Children(func() {
 				ui.Text(c, locales.Text("确认结构 SQL"))
 				ui.Text(c, d.database+" / "+d.table)
 				ui.Text(c, locales.Text("DDL 可能隐式提交；部分失败不会回滚已经完成的步骤。"))

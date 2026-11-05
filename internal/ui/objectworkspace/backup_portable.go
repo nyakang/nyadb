@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -225,8 +226,8 @@ func (s *State) portableBackupModal(c *ui.Context) {
 	if x == nil || x.guarding || x.request.Target.Object.ProfileID != s.session().ProfileID {
 		return
 	}
-	ui.Modal(c, &x.open, func() {
-		ui.Column(c).Width(740).MaxWidthPercent(94).Height(650).MaxHeightPercent(94).Padding(16).Gap(8).Children(func() {
+	theme.Modal(c, &x.open, func() {
+		ui.Column(c).Width(740).MaxWidthPercent(94).Height(650).MaxHeightPercent(94).Gap(8).Children(func() {
 			ui.Text(c, locales.Text("备份与恢复")).Bold()
 			ui.Text(c, fmt.Sprintf("#%d · %s / %s", x.request.Target.Object.ProfileID, x.request.Target.Object.Catalog, x.request.Target.Object.Schema)).SingleLine()
 			ui.Text(c, locales.Text("备份文件路径"))
@@ -272,7 +273,7 @@ func (s *State) portableBackupModal(c *ui.Context) {
 				raw = x.plan.Engine + " · " + x.plan.ToolVersion + "\n" + strings.Join(warnings, "\n") + "\n" + strings.Join(x.plan.Objects, "\n")
 			}
 			if x.outcome != nil {
-				raw += "\n" + x.outcome.State + " · " + x.outcome.Path
+				raw += "\n" + theme.OutcomeLabel(x.outcome.State) + " · " + x.outcome.Path
 				if x.outcome.State == "uncertain" {
 					raw += "\n" + locales.Text("恢复结果不确定，禁止重放；请核验数据库。")
 				}
@@ -281,7 +282,7 @@ func (s *State) portableBackupModal(c *ui.Context) {
 			if x.busy {
 				ui.Text(c, fmt.Sprintf("%s · %d / %d", x.progress.Phase, x.progress.Completed, x.progress.Total))
 			}
-			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
 				if ui.Button(c, locales.Text("关闭")).Disabled(x.busy).Clicked() {
 					s.closePortableBackup()
 				}

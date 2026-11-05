@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/schemaddl"
 	"github.com/nyakang/nyadb/internal/ui/theme"
@@ -202,8 +203,8 @@ func (s *State) schemaDropModal(c *ui.Context) {
 	if x == nil || !x.open || x.guarding {
 		return
 	}
-	ui.Modal(c, &x.open, func() {
-		ui.Column(c).Width(680).MaxWidthPercent(92).Height(430).MaxHeightPercent(90).Padding(18).Gap(10).Children(func() {
+	theme.Modal(c, &x.open, func() {
+		ui.Column(c).Width(680).MaxWidthPercent(92).Height(430).MaxHeightPercent(90).Gap(10).Children(func() {
 			ui.Text(c, locales.Text("删除表")).Bold()
 			ui.Text(c, fmt.Sprintf("#%d · %s / %s · %s", x.target.Object.ProfileID, x.target.Object.Catalog, x.target.Object.Schema, x.target.Object.Name)).SingleLine().Tooltip(x.target.Object.Name)
 			ui.Text(c, locales.Text("事务删除原表及其索引、触发器和数据；存在外键、视图或触发器依赖时拒绝删除。"))
@@ -227,9 +228,6 @@ func (s *State) schemaDropModal(c *ui.Context) {
 			ui.TextArea(c, &raw).Label(locales.Text("删除 SQL 预览")).ReadOnly(true).Grow(1).MinHeight(40)
 			ui.TextInput(c, &x.confirmation).Label(locales.Text("确认原表名称")).Disabled(x.busy || x.original == nil)
 			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Children(func() {
-				if ui.Button(c, locales.Text("重新读取结构")).Disabled(x.busy).Clicked() {
-					s.readSchemaDrop(c.Services())
-				}
 				if ui.Button(c, locales.Text("取消")).Disabled(x.cancelRequested).Clicked() {
 					if x.busy && x.applying {
 						x.cancelRequested = true
@@ -239,6 +237,9 @@ func (s *State) schemaDropModal(c *ui.Context) {
 					} else {
 						x.open = false
 					}
+				}
+				if ui.Button(c, locales.Text("重新读取结构")).Disabled(x.busy).Clicked() {
+					s.readSchemaDrop(c.Services())
 				}
 				if ui.PrimaryButton(c, locales.Text("确认删除表")).Disabled(x.busy || x.blocked || x.original == nil || x.confirmation != x.target.Object.Name || !s.schemaDropValid(x)).Clicked() {
 					s.applySchemaDrop(c.Services())
