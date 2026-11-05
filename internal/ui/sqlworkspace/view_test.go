@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/egoist/mygo/ui"
+
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
 
@@ -146,5 +148,19 @@ func TestSQLExecutionControlsRemainVisibleWhenToolbarOverflows(t *testing.T) {
 	waitSQLUI(t, tt, q)
 	if q.Result() == nil || q.Result().Rows[0][0] != "1" {
 		t.Fatalf("visible Run button did not execute: %s", q.Error())
+	}
+}
+
+func TestSQLLongContextKeepsPrimaryCommandsAtLargeText(t *testing.T) {
+	s, _, tt, _, _ := sqlUITestState(t)
+	s.deps.ProfileName = func(int64) string { return strings.Repeat("production_customer_database_", 8) }
+	tt.SetSize(480, 600)
+	tt.SetPreferences(ui.Preferences{TextScale: 2})
+	tt.Frame()
+	for _, label := range []string{"运行当前或选中 SQL", "选择 SQL 执行范围", "取消"} {
+		r, ok := tt.Find(label)
+		if !ok || r.W <= 0 || r.X < 0 || r.X+r.W > 480 || r.Y < 0 || r.Y+r.H > 600 {
+			t.Fatalf("primary command hidden: %s %+v", label, r)
+		}
 	}
 }

@@ -2,12 +2,13 @@ package dataworkspace
 
 import (
 	"fmt"
-	"github.com/nyakang/nyadb/internal/db/contract"
 	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -115,8 +116,8 @@ func (s *State) dataFillModal(c *ui.Context, t *Document) {
 	if !t.fill.Open {
 		return
 	}
-	ui.Modal(c, &t.fill.Open, func() {
-		ui.Column(c).Width(440).MaxWidthPercent(95).Padding(16).Gap(10).Children(func() {
+	theme.Modal(c, &t.fill.Open, func() {
+		ui.Column(c).Width(440).MaxWidthPercent(95).Gap(10).Children(func() {
 			ui.Text(c, locales.Text("填充所选单元格")).Bold()
 			mysqlDataRuleSelect(c, &t.fill.Mode, []string{"值", "序列", "NULL"}, locales.Text).Label(locales.Text("填充方式")).FillWidth()
 			if t.fill.Mode == "值" {
@@ -129,7 +130,7 @@ func (s *State) dataFillModal(c *ui.Context, t *Document) {
 			if t.fill.Err != "" {
 				ui.Text(c, t.fill.Err).TextColor(theme.Colors(c).Error)
 			}
-			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
 				if ui.Button(c, locales.Text("取消")).Clicked() {
 					t.fill.Open = false
 				}

@@ -2,11 +2,13 @@ package dataworkspace
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
-	"strings"
 )
 
 func cloneDataCondition(e *contract.FilterExpression[contract.DataFilterRule]) *contract.FilterExpression[contract.DataFilterRule] {
@@ -131,7 +133,7 @@ func (s *State) filterGroupView(c *ui.Context, t *Document, node *contract.Filte
 				} else {
 					s.filterGroupView(c, t, child, depth+1, key, columns)
 				}
-				if ui.Button(c, "×").Label(locales.Text("删除条件或组") + key).Clicked() {
+				if theme.IconButton(c, "", "close").Label(locales.Text("删除条件或组") + key).Clicked() {
 					remove = i
 				}
 			})

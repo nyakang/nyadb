@@ -198,3 +198,30 @@ func TestTableToolbarFillValidatesWholeSelectionBeforeStaging(t *testing.T) {
 		t.Fatal("overflow partly filled grid")
 	}
 }
+
+func TestTableToolbarDockTabsKeepInvalidDraftAndReturnFocus(t *testing.T) {
+	s, doc, _, executor := editingTestWorkspace(t)
+	doc.selectedRow = 0
+	doc.selection.Add(0)
+	doc.grid.Cells = ui.ColumnRange{Anchor: "note", Cursor: "note"}
+	tt := ui.NewTester(func(c *ui.Context) { s.Consume(c.Services()); theme.Apply(c); s.View(c, doc); s.Modals(c) }, 1400, 650)
+	if err := tt.Click("单元格编辑器"); err != nil {
+		t.Fatal(err)
+	}
+	waitEditing(t, s, doc, tt)
+	if doc.edit.Editor == nil {
+		t.Fatal("dedicated editor missing")
+	}
+	editor := doc.edit.Editor
+	editor.Original.Binary = true
+	editor.Text = "invalid hex"
+	if err := tt.Click("单元格编辑器内容"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.Click("单元格编辑器/历史"); err != nil {
+		t.Fatal(err)
+	}
+	if doc.toolbar.dock != "文本" || doc.edit.Editor != editor || editor.Text != "invalid hex" || !tt.Focused("单元格编辑器内容") || executor.writeCount() != 0 {
+		t.Fatal("native tab switch lost invalid draft, focus or write guard")
+	}
+}

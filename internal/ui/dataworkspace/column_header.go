@@ -2,13 +2,14 @@ package dataworkspace
 
 import (
 	"fmt"
-	"github.com/nyakang/nyadb/internal/db/contract"
 	"math"
 	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -171,14 +172,14 @@ func (s *State) mysqlDataColumnWidthModal(c *ui.Context, t *Document) {
 	if !draft.Open {
 		return
 	}
-	ui.Modal(c, &draft.Open, func() {
-		ui.Column(c).Width(320).MaxWidthPercent(95).Padding(16).Gap(10).Children(func() {
+	theme.Modal(c, &draft.Open, func() {
+		ui.Column(c).Width(320).MaxWidthPercent(95).Gap(10).Children(func() {
 			ui.Text(c, locales.Text("列宽")+" · "+draft.Column).Bold().SingleLine()
 			ui.TextInput(c, &draft.Value).Label(locales.Text("列宽（DIP）")).FillWidth()
 			if draft.Err != "" {
 				ui.Text(c, draft.Err).TextColor(theme.Colors(c).Error)
 			}
-			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
 				if ui.Button(c, locales.Text("取消")).Clicked() {
 					*draft = mysqlDataColumnWidthState{}
 				}

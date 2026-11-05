@@ -3,10 +3,12 @@ package sqlworkspace
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/queries"
 	"github.com/nyakang/nyadb/internal/ui/theme"
@@ -169,5 +171,18 @@ func TestSQLHistoryUIOfflineSearchFiltersAndEnterOnlyOpenText(t *testing.T) {
 	tt.Frame()
 	if s.history.open || s.history.openEntry != nil || s.history.pending != nil {
 		t.Fatal("terminal close retained history callbacks")
+	}
+}
+
+func TestHistoryConnectionNamesKeepStableIdentity(t *testing.T) {
+	s := New(Dependencies{Profiles: func() []ProfileChoice {
+		return []ProfileChoice{{ID: 1, Name: "Production"}, {ID: 2, Name: "Production"}}
+	}})
+	one, two := s.historyProfileLabel(1), s.historyProfileLabel(2)
+	if one == two || !strings.Contains(one, "Production") || !strings.Contains(one, "#1") || !strings.Contains(two, "#2") {
+		t.Fatalf("ambiguous history identity: %q %q", one, two)
+	}
+	if label := s.historyProfileLabel(3); !strings.Contains(label, "已删除连接") || !strings.Contains(label, "#3") {
+		t.Fatalf("missing deleted profile label: %q", label)
 	}
 }

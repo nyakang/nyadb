@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -13,8 +14,8 @@ func (s *State) View(c *ui.Context) {
 	if !s.open {
 		return
 	}
-	ui.Modal(c, &s.open, func() {
-		ui.Column(c).Width(960).MaxWidthPercent(95).Height(620).MaxHeightPercent(92).Padding(16).Gap(8).Children(func() {
+	theme.Modal(c, &s.open, func() {
+		ui.Column(c).Width(960).MaxWidthPercent(95).Height(620).MaxHeightPercent(92).Gap(8).Children(func() {
 			ui.Text(c, locales.Text("收藏夹管理")).Bold()
 			ui.Text(c, locales.Text("连接星标、对象和命名查询引用；打开查询仅恢复文本。"))
 			ui.Row(c).Gap(8).Children(func() {
@@ -162,8 +163,8 @@ func (s *State) dialogView(c *ui.Context) {
 	}
 	open := true
 	titles := map[string]string{"add": "添加到收藏夹", "rename": "重命名收藏", "delete": "移除收藏？", "new_group": "新建收藏分组", "rename_group": "重命名收藏分组", "delete_group": "删除收藏分组？"}
-	ui.Modal(c, &open, func() {
-		ui.Column(c).Width(460).MaxWidthPercent(92).Padding(16).Gap(12).Children(func() {
+	theme.Modal(c, &open, func() {
+		ui.Column(c).Width(460).MaxWidthPercent(92).Gap(12).Children(func() {
 			ui.Text(c, locales.Text(titles[d.kind])).Bold()
 			deleting := strings.HasPrefix(d.kind, "delete")
 			if deleting {
@@ -175,7 +176,7 @@ func (s *State) dialogView(c *ui.Context) {
 			if s.err != "" {
 				ui.Text(c, locales.Text(s.err)).SingleLine().Tooltip(locales.Text(s.err)).TextColor(theme.Colors(c).Error)
 			}
-			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
 				if ui.Button(c, locales.Text("取消")).Clicked() {
 					s.dialog = nil
 				}

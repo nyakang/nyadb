@@ -2,10 +2,11 @@ package dataworkspace
 
 import (
 	"fmt"
-	"github.com/nyakang/nyadb/internal/db/contract"
 	"time"
 
 	"github.com/egoist/mygo/ui"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/gridview"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -342,22 +343,22 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *contract.DataP
 			ready := t.page != nil && !t.loading && !t.edit.Busy && t.edit.Uncertain == nil && !dataTransactionUnavailable(t) && !t.transfer.Busy && !t.transfer.Uncertain && t.profileID == s.session().ProfileID && s.session().Connected
 			dirty := mysqlDataHasDraft(t)
 			insertReady := ready && t.editable() && len(page.ColumnMetadata) > 0 && len(page.ColumnMetadata) == len(page.Columns)
-			if ui.Button(c, "+").Label(locales.Text("添加记录")).Tooltip(locales.Text("添加记录")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!insertReady).Clicked() {
+			if theme.IconButton(c, "", "plus").Label(locales.Text("添加记录")).Tooltip(locales.Text("添加记录")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!insertReady).Clicked() {
 				s.addMySQLDataRecord(c.Services(), t)
 			}
-			if ui.Button(c, "−").Label(locales.Text("删除记录")).Tooltip(locales.Text("删除记录")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!ready || !mysqlDataCanDeleteSelection(t, t.selectedRow)).Clicked() {
+			if theme.IconButton(c, "", "minus").Label(locales.Text("删除记录")).Tooltip(locales.Text("删除记录")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!ready || !mysqlDataCanDeleteSelection(t, t.selectedRow)).Clicked() {
 				s.deleteMySQLDataRecords(c.Services(), t, t.selectedRow)
 			}
-			if ui.Button(c, "✓").Label(locales.Text("保存数据更改")).Tooltip(locales.Text("保存数据更改")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!ready || !dirty || t.edit.Uncertain != nil).Clicked() {
+			if theme.IconButton(c, "", "check").Label(locales.Text("保存数据更改")).Tooltip(locales.Text("保存数据更改")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!ready || !dirty || t.edit.Uncertain != nil).Clicked() {
 				s.saveMySQLData(c.Services(), t)
 			}
-			if ui.Button(c, "×").Label(locales.Text("取消数据更改")).Tooltip(locales.Text("取消数据更改")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(t.loading || t.edit.Busy || !dirty || t.edit.Uncertain != nil).Clicked() {
+			if theme.IconButton(c, "", "close").Label(locales.Text("取消数据更改")).Tooltip(locales.Text("取消数据更改")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(t.loading || t.edit.Busy || !dirty || t.edit.Uncertain != nil).Clicked() {
 				s.discardMySQLData(t)
 			}
-			if ui.Button(c, "↻").Label(locales.Text("刷新数据并返回首页")).Tooltip(locales.Text("刷新数据并返回首页")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!ready).Clicked() {
+			if theme.IconButton(c, "", "refresh").Label(locales.Text("刷新数据并返回首页")).Tooltip(locales.Text("刷新数据并返回首页")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!ready).Clicked() {
 				s.Refresh(c.Services(), t)
 			}
-			if ui.Button(c, "■").Label(locales.Text("停止数据操作")).Tooltip(locales.Text("停止数据操作")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!t.loading && !t.edit.Busy && !dataTransactionBusy(t) && !t.transfer.Busy).Clicked() {
+			if theme.IconButton(c, "", "stop").Label(locales.Text("停止数据操作")).Tooltip(locales.Text("停止数据操作")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!t.loading && !t.edit.Busy && !dataTransactionBusy(t) && !t.transfer.Busy).Clicked() {
 				if t.transfer.Busy {
 					s.stopDataTransfer(t)
 				} else if dataTransactionBusy(t) {
@@ -369,10 +370,10 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *contract.DataP
 				}
 			}
 
-			if ui.Button(c, "↶").Label(locales.Text("撤销草稿更改")).Tooltip(locales.Text("撤销草稿更改")).Size(26, theme.ControlHeight).Padding(0).Disabled(!s.canDraftUndo(t, false)).Clicked() {
+			if theme.IconButton(c, "", "undo").Label(locales.Text("撤销草稿更改")).Tooltip(locales.Text("撤销草稿更改")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!s.canDraftUndo(t, false)).Clicked() {
 				s.undoDraft(t, false)
 			}
-			if ui.Button(c, "↷").Label(locales.Text("重做草稿更改")).Tooltip(locales.Text("重做草稿更改")).Size(26, theme.ControlHeight).Padding(0).Disabled(!s.canDraftUndo(t, true)).Clicked() {
+			if theme.IconButton(c, "", "redo").Label(locales.Text("重做草稿更改")).Tooltip(locales.Text("重做草稿更改")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!s.canDraftUndo(t, true)).Clicked() {
 				s.undoDraft(t, true)
 			}
 			ui.Checkbox(c, &t.edit.Batch, locales.Text("批量编辑")).Disabled(dirty || t.loading || t.edit.Busy || t.edit.Uncertain != nil).FontSize(theme.Font(c, theme.SmallFontSize))
@@ -387,12 +388,12 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *contract.DataP
 			ui.Text(c, status).FontSize(theme.Font(c, theme.SmallFontSize)).
 				TextColor(palette.Muted).SingleLine().Grow(1).MinWidth(0).Tooltip(status)
 			previousDisabled := t.loading || t.edit.Busy || t.edit.Uncertain != nil || t.page == nil || t.offset <= 0
-			if ui.Button(c, "«").Label(locales.Text("首页数据")).Tooltip(locales.Text("首页")).
-				Size(26, theme.ControlHeight).Padding(0).Disabled(previousDisabled).Clicked() {
+			if theme.IconButton(c, "", "first-page").Label(locales.Text("首页数据")).Tooltip(locales.Text("首页")).
+				Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(previousDisabled).Clicked() {
 				s.changeMySQLDataPage(c.Services(), t, 0)
 			}
-			if ui.Button(c, "‹").Label(locales.Text("上一页数据")).Tooltip(locales.Text("上一页")).
-				Size(26, theme.ControlHeight).Padding(0).Disabled(previousDisabled).Clicked() {
+			if theme.IconButton(c, "", "previous-page").Label(locales.Text("上一页数据")).Tooltip(locales.Text("上一页")).
+				Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(previousDisabled).Clicked() {
 				s.changeMySQLDataPage(c.Services(), t, max(0, t.offset-int64(t.limit)))
 			}
 			ui.Text(c, fmt.Sprintf(locales.Text("第 %d 页"), t.offset/int64(max(1, t.limit))+1)).
@@ -410,8 +411,8 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *contract.DataP
 			if ui.Button(c, locales.Text("跳转")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(t.loading || t.edit.Busy || t.page == nil).Clicked() {
 				s.jumpDataPage(c.Services(), t)
 			}
-			if ui.Button(c, "›").Label(locales.Text("下一页数据")).Tooltip(locales.Text("下一页")).
-				Size(26, theme.ControlHeight).Padding(0).Disabled(t.loading || t.edit.Busy || t.edit.Uncertain != nil || t.page == nil || !page.HasMore).Clicked() {
+			if theme.IconButton(c, "", "next-page").Label(locales.Text("下一页数据")).Tooltip(locales.Text("下一页")).
+				Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(t.loading || t.edit.Busy || t.edit.Uncertain != nil || t.page == nil || !page.HasMore).Clicked() {
 				s.changeMySQLDataPage(c.Services(), t, t.offset+int64(t.limit))
 			}
 			ui.Button(c, fmt.Sprintf("%d / %s", t.limit, locales.Text("页"))).Label(locales.Text("每页行数")).
@@ -468,16 +469,7 @@ func mysqlDataPageMethod(page *contract.DataPage) string {
 }
 
 func mysqlDataToolbarButton(c *ui.Context, caption, label, icon string, disabled bool) ui.Element {
-	palette := theme.Colors(c)
-
-	return ui.ButtonBase(c).Label(label).Tooltip(label).Disabled(disabled).
-		Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 5).Radius(theme.ControlRadius).
-		Children(func() {
-			ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
-				theme.Icon(c, icon, theme.SmallIconSize, palette.Blue)
-				ui.Text(c, locales.Text(caption)).SingleLine().FontSize(theme.Font(c, theme.FontSize))
-			})
-		})
+	return theme.CommandButton(c, locales.Text(caption), label, icon).Disabled(disabled)
 }
 
 func (s *State) mysqlDataCompactActions(c *ui.Context, t *Document) {
@@ -502,7 +494,7 @@ func (s *State) mysqlDataCompactActions(c *ui.Context, t *Document) {
 	if mysqlDataToolbarButton(c, "复制", locales.Text("复制所选数据预览"), "copy", !selected).Clicked() {
 		s.copyMySQLDataSelection(c, t)
 	}
-	ui.Button(c, "▾").Label(locales.Text("复制为")).Tooltip(locales.Text("复制为")).
+	theme.IconButton(c, "", "chevron-down").Label(locales.Text("复制为")).Tooltip(locales.Text("复制为")).
 		Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 4).Disabled(!selected).
 		Menu(func(m *ui.Menu) { s.mysqlDataCopyAsMenu(c, t, m) })
 	count := len(t.filterRules)

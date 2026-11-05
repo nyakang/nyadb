@@ -2,13 +2,14 @@ package sqlworkspace
 
 import (
 	"fmt"
-	"github.com/nyakang/nyadb/internal/db/contract"
-	"github.com/nyakang/nyadb/internal/ui/gridview"
 	"strconv"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/ui/gridview"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -29,18 +30,47 @@ func (s *State) View(c *ui.Context, t *Document) {
 	}
 	editorPane := func() {
 		ui.Column(c).Fill().Children(func() {
-			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).Gap(7).
-				AlignItems(ui.Center).Background(p.Header).Children(func() {
+			commands := ui.Row(c).Key("sql-command-row").Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).Gap(7).AlignItems(ui.Center).Background(p.Header)
+			available := commands.Bounds().W
+			if available <= 0 {
+				available, _ = c.Size()
+			}
+			contextBelow := available < 420*max(float32(1), theme.Font(c, 12)/12)
+			profile, schema := t.sourceScope()
+			if schema == "" {
+				schema = locales.Text("未指定数据库")
+			}
+			name := fmt.Sprintf(locales.Text("连接 #%d"), profile)
+			if s.deps.ProfileName != nil {
+				name = s.deps.ProfileName(profile)
+			}
+
+			drawContext := func() {
+				if s.deps.ProfileColor != nil {
+					ui.Box(c).Size(3, 14).Background(theme.ProfileColor(c, s.deps.ProfileColor(profile)))
+				}
+				contextWidth := float32(160)
+				if contextBelow {
+					contextWidth = max(float32(1), available-12)
+				}
+				ui.Text(c, name+" · "+schema).MaxWidth(contextWidth).MinWidth(0).Shrink(1).
+					TextColor(p.Muted).FontSize(theme.Font(c, 11)).SingleLine().Tooltip(fmt.Sprintf("%s\nCatalog: %s\nSchema: %s", name, t.Namespace().Catalog, t.Namespace().Schema))
+			}
+			commands.Children(func() {
 				ui.Toolbar(c, func() {
 					caption := locales.Text("运行当前语句")
+					width := available
 					if strings.TrimSpace(t.Editor.SelectedText()) != "" {
 						caption = locales.Text("运行选中 SQL")
+					}
+					if width < 760*max(float32(1), theme.Font(c, 12)/12) {
+						caption = locales.Text("运行")
 					}
 					if ui.Button(c, caption).Tooltip(locales.Text("运行当前或选中 SQL") + " · Ctrl+Enter").Label(locales.Text("运行当前或选中 SQL")).
 						Disabled(!connected || t.loading || t.recoveryNeeded).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
 						s.Run(c.Services().Invalidate, t)
 					}
-					ui.Button(c, "▾").Label(locales.Text("选择 SQL 执行范围")).Disabled(!connected || t.loading || t.recoveryNeeded).Menu(func(m *ui.Menu) {
+					theme.IconButton(c, "", "chevron-down").Label(locales.Text("选择 SQL 执行范围")).Disabled(!connected || t.loading || t.recoveryNeeded).Menu(func(m *ui.Menu) {
 						if m.Item(locales.Text("运行当前语句")).Chosen() {
 							s.RunCurrent(c.Services().Invalidate, t)
 						}
@@ -51,11 +81,11 @@ func (s *State) View(c *ui.Context, t *Document) {
 							s.RunAll(c.Services().Invalidate, t)
 						}
 					})
-					s.sqlLayoutMenu(c, t)
 					if ui.Button(c, locales.Text("取消")).Disabled(!t.loading || t.cancelRequested).
 						Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
 						s.RequestCancel(t)
 					}
+					s.sqlLayoutMenu(c, t)
 					if ui.Button(c, locales.Text("格式化 SQL")).Clicked() {
 						s.Format(t)
 					}
@@ -99,20 +129,13 @@ func (s *State) View(c *ui.Context, t *Document) {
 						}
 					})
 				}).Label(locales.Text("SQL 执行操作")).Grow(1).MinWidth(0).Padding(0).Gap(5)
-				profile, schema := t.sourceScope()
-				if schema == "" {
-					schema = locales.Text("未指定数据库")
+				if !contextBelow {
+					drawContext()
 				}
-				name := fmt.Sprintf("连接 #%d", profile)
-				if s.deps.ProfileName != nil {
-					name = s.deps.ProfileName(profile)
-				}
-				if s.deps.ProfileColor != nil {
-					ui.Box(c).Size(3, 14).Background(theme.ProfileColor(c, s.deps.ProfileColor(profile)))
-				}
-				ui.Text(c, name+" · "+schema).
-					TextColor(p.Muted).FontSize(theme.Font(c, 11)).SingleLine().Tooltip(fmt.Sprintf("%s\nCatalog: %s\nSchema: %s", name, t.Namespace().Catalog, t.Namespace().Schema))
 			})
+			if contextBelow {
+				ui.Row(c).Height(theme.RowHeight(c, 22)).Padding(2, 6).Background(p.Header).Children(drawContext)
+			}
 			s.queryDiagnosticView(c, t)
 			if t.err != "" {
 				ui.Text(c, t.err).Padding(3, 8).FontSize(theme.Font(c, 11)).
@@ -270,17 +293,23 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(5).Children(func() {
 			ui.ScrollHorizontal(c).Grow(1).MinWidth(0).Children(func() {
-				ui.Row(c).Gap(4).Children(func() {
-					for i := range sets {
-						if theme.PageButton(c, fmt.Sprintf(locales.Text("结果 %d"), i+1), !t.showMessages && t.resultSet == i).Clicked() {
-							t.selectResult(i)
-							t.showMessages = false
-						}
-					}
-					if theme.PageButton(c, locales.Text("消息"), t.showMessages).Clicked() {
+				labels := make([]string, 0, len(sets)+1)
+				for i := range sets {
+					labels = append(labels, fmt.Sprintf(locales.Text("结果 %d"), i+1))
+				}
+				labels = append(labels, locales.Text("消息"))
+				chosen := t.resultSet
+				if t.showMessages {
+					chosen = len(sets)
+				}
+				if theme.Tabs(c, &chosen, labels, false).Changed() {
+					if chosen == len(sets) {
 						t.showMessages = true
+					} else {
+						t.selectResult(chosen)
+						t.showMessages = false
 					}
-				})
+				}
 			})
 			if ui.Button(c, locales.Text("复制结果选区")).Clicked() {
 				s.copyResult(c, t)
@@ -317,7 +346,7 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 			ui.Text(c, truncationText(set.Truncation)).SingleLine().Tooltip(truncationText(set.Truncation))
 		}
 		if len(set.Columns) == 0 {
-			ui.Text(c, fmt.Sprintf("影响 %d 行", set.AffectedRows)).
+			ui.Text(c, fmt.Sprintf(locales.Text("影响 %d 行"), set.AffectedRows)).
 				Padding(10).FontSize(theme.Font(c, 12))
 			ui.Box(c).Grow(1)
 			return
@@ -341,7 +370,7 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 		t.grid.DragSelect = true
 		t.grid.HeaderMenu = func(m *ui.Menu, col int) {
 			if col >= 0 && col < len(sources) {
-				gridview.ColumnMenu(m, &t.grid.Columns, t.hiddenResultColumns, allColumns, sources[col], len(set.Rows), func(row, col int) contract.Cell { return set.Rows[row][col] }, c.Services().WriteClipboard)
+				gridview.ColumnMenu(c, m, &t.grid.Columns, t.hiddenResultColumns, allColumns, sources[col], len(set.Rows), func(row, col int) contract.Cell { return set.Rows[row][col] }, c.Services().WriteClipboard)
 			}
 		}
 		t.grid.CellMenu = func(m *ui.Menu, row, col int) {
@@ -364,7 +393,7 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 				t.resultFieldOpen = true
 			}
 			m.Separator()
-			gridview.ColumnMenu(m, &t.grid.Columns, t.hiddenResultColumns, allColumns, sources[col], len(set.Rows), func(row, col int) contract.Cell { return set.Rows[row][col] }, c.Services().WriteClipboard)
+			gridview.ColumnMenu(c, m, &t.grid.Columns, t.hiddenResultColumns, allColumns, sources[col], len(set.Rows), func(row, col int) contract.Cell { return set.Rows[row][col] }, c.Services().WriteClipboard)
 		}
 		tablePane := func() {
 			table := theme.Table(c, &t.grid, columns, len(set.Rows), func(row, col int) { gridview.Cell(c, set.Rows[row][sources[col]]) }).Grow(1).MinWidth(0)
@@ -406,7 +435,7 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 							t.resultFieldRight = true
 						}
 					})
-					if ui.Button(c, "×").Label(locales.Text("隐藏字段信息")).Clicked() {
+					if theme.IconButton(c, "", "close").Label(locales.Text("隐藏字段信息")).Clicked() {
 						t.resultFieldOpen = false
 					}
 				})
@@ -446,7 +475,7 @@ func (s *State) previewView(c *ui.Context, tab *Document) {
 					ui.Toolbar(c, func() {
 						if ui.Button(c, locales.Text("运行模拟查询")).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
 							s.demoRuns++
-							s.report(fmt.Sprintf("模拟查询已运行 %d 次（没有访问数据库）", s.demoRuns))
+							s.report(fmt.Sprintf(locales.Text("模拟查询已运行 %d 次（没有访问数据库）"), s.demoRuns))
 						}
 						ui.Button(c, locales.Text("取消")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(true)
 					}).Label(locales.Text("查询操作")).Grow(1).MinWidth(0).Padding(0).Gap(4)

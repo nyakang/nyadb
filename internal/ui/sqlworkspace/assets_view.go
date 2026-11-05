@@ -1,12 +1,14 @@
 package sqlworkspace
 
 import (
+	"sort"
+	"strings"
+
 	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/services/queries"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
-	"sort"
-	"strings"
 )
 
 func (s *State) SelectAssetGroup(profile int64, group string) {
@@ -265,8 +267,8 @@ func (s *State) assetModals(c *ui.Context) {
 		return
 	}
 	visible := true
-	ui.Modal(c, &visible, func() {
-		ui.Column(c).Width(440).MaxWidthPercent(95).Padding(18).Gap(10).Children(func() {
+	theme.Modal(c, &visible, func() {
+		ui.Column(c).Width(440).MaxWidthPercent(95).Gap(10).Children(func() {
 			title := locales.Text("重命名查询")
 			switch d.kind {
 			case "delete":

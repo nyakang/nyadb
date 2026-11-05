@@ -4,10 +4,11 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"github.com/nyakang/nyadb/internal/db/contract"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -445,7 +446,7 @@ func mysqlDataRuleSelect(c *ui.Context, value *string, choices []string, labels 
 		Background(palette.Header).Border(1, palette.Border).Radius(theme.ControlRadius)
 	b.Children(func() {
 		ui.Text(c, labels(*value)).SingleLine().Grow(1).MinWidth(0)
-		ui.Text(c, "▾").TextColor(palette.Muted)
+		theme.Icon(c, "chevron-down", 12, palette.Muted)
 	})
 	sel.Popup(func(panel ui.Element) {
 		panel.Padding(3).Background(palette.Panel).Border(1, palette.Border).Radius(theme.ControlRadius)

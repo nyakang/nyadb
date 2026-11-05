@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/nyakang/nyadb/internal/db/contract"
 	"reflect"
 	"slices"
 	"strings"
@@ -15,6 +14,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/egoist/mygo/ui"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -35,6 +36,7 @@ type mysqlCellEditor struct {
 	Row                                           int
 	Original                                      contract.DataValue
 	Dedicated, Open, Focused, Selected, Composing bool
+	Refocus                                       bool
 }
 type mysqlEditResult struct {
 	History             []mysqlDataHistoryEntry
@@ -889,8 +891,8 @@ func (s *State) Modals(c *ui.Context) {
 		s.transferModals(c, t)
 		s.dataFillModal(c, t)
 		if e := t.edit.Editor; e != nil && e.Dedicated && !mysqlDataEditorDockOpen(t) {
-			ui.Modal(c, &e.Open, func() {
-				ui.Column(c).Width(640).MaxWidthPercent(95).Padding(12).Gap(8).Children(func() {
+			theme.Modal(c, &e.Open, func() {
+				ui.Column(c).Width(640).MaxWidthPercent(95).Gap(8).Children(func() {
 					ui.Text(c, locales.Text("单元格编辑器")+" · "+e.Field).FontSize(theme.Font(c, theme.FontSize))
 					if e.Original.Binary {
 						ui.Text(c, locales.Text("二进制值以十六进制编辑"))

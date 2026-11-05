@@ -8,8 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/nyakang/nyadb/internal/db/contract"
-	"github.com/nyakang/nyadb/internal/db/importspec"
 	"io"
 	"math/big"
 	"os"
@@ -23,6 +21,9 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/importspec"
 	"github.com/nyakang/nyadb/internal/services/datasources"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -219,111 +220,113 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 		s.dataTransferWizard(c, t, available, title)
 		return
 	}
-	modal := ui.Modal(c, &tr.Open, func() {
+	modal := theme.Modal(c, &tr.Open, func() {
 		width, height := c.Size()
-		ui.Scroll(c).Width(min(float32(620), width-40)).MaxHeight(height - 40).Children(func() {
-			ui.Column(c).Width(min(float32(620), width-40)).Padding(18).Gap(10).Background(colors.Header).Children(func() {
-				ui.Text(c, title).Bold().FontSize(theme.Font(c, 15))
-				ui.Text(c, t.database+"."+t.table).TextColor(colors.Muted).SingleLine()
-				if !available {
-					ui.Text(c, locales.Text("原数据库会话已失效，请关闭向导后重新打开")).TextColor(colors.Error)
-				}
-				ui.Row(c).Gap(8).Children(func() {
-					ui.Text(c, locales.Text("文件格式"))
-					choices := mysqlDataTransferFormatChoices(tr.Kind)
-					mysqlDataRuleSelect(c, &tr.Format, choices, func(x string) string { return x }).Disabled(tr.Busy || tr.Input != nil).Width(130)
-				})
-				if tr.Format == "XML" {
-					ui.Text(c, locales.Text("XML 使用 RECORDS/RECORD；空元素作为空字符串，xsi:nil 表示 NULL，仅显式 encoding=base64/hex 解码二进制。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
-				}
-				if tr.Format == "XLSX" {
-					ui.Text(c, locales.Text("XLSX 使用首个工作表，首行为字段名；数字文本保留精度，公式单元格不支持导入。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
-				}
-				if tr.Kind == "export" {
+		ui.Column(c).Width(min(float32(620), width-68)).Height(min(float32(620), height-68)).Gap(10).Children(func() {
+			ui.Text(c, title).Bold().FontSize(theme.Font(c, 15))
+			ui.Text(c, t.database+"."+t.table).TextColor(colors.Muted).SingleLine()
+			if !available {
+				ui.Text(c, locales.Text("原数据库会话已失效，请关闭向导后重新打开")).TextColor(colors.Error)
+			}
+			ui.Scroll(c).Grow(1).MinHeight(0).FillWidth().Children(func() {
+				ui.Column(c).Gap(10).FillWidth().Children(func() {
 					ui.Row(c).Gap(8).Children(func() {
-						ui.Text(c, locales.Text("导出范围"))
-						mysqlDataRuleSelect(c, &tr.Scope, []string{"page", "selection", "all"}, func(x string) string {
-							switch x {
-							case "page":
-								return locales.Text("当前页")
-							case "selection":
-								return locales.Text("当前选区")
-							default:
-								return locales.Text("完整筛选结果")
-							}
-						}).Disabled(tr.Busy).Width(200)
+						ui.Text(c, locales.Text("文件格式"))
+						choices := mysqlDataTransferFormatChoices(tr.Kind)
+						mysqlDataRuleSelect(c, &tr.Format, choices, func(x string) string { return x }).Disabled(tr.Busy || tr.Input != nil).Width(130)
 					})
-					ui.Text(c, locales.Text("选择导出字段")).Bold()
-					ui.Scroll(c).MaxHeight(150).Children(func() {
-						ui.Column(c).Gap(3).Children(func() {
-							for _, field := range tr.Fields {
-								checked := tr.Included[field]
-								ui.Checkbox(c, &checked, field).Disabled(tr.Busy)
-								tr.Included[field] = checked
-							}
-						})
-					})
-					ui.Text(c, locales.Text("完整值导出：每字段最多 1 MiB、每行最多 16 MiB，超限将失败并保留原文件。CSV/TSV 使用 \\N 表示 NULL，二进制使用 0x 十六进制。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
-				} else {
-					ui.Text(c, locales.Text("最多 10000 行、文件最多 16 MiB。CSV/TSV 首行为字段名，\\N 表示 NULL，二进制使用 0x 十六进制。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
-					s.dataImportTargetControls(c, t)
-					s.dataImportModeControls(c, t)
-					ui.Checkbox(c, &tr.EmptyAsNull, locales.Text("使用 NULL 取代空字符串")).Disabled(tr.Busy || tr.Submitted)
-					if tr.EmptyAsNull {
-						ui.Text(c, locales.Text("只转换长度为零的文本值；空二进制和空格保留原值。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
+					if tr.Format == "XML" {
+						ui.Text(c, locales.Text("XML 使用 RECORDS/RECORD；空元素作为空字符串，xsi:nil 表示 NULL，仅显式 encoding=base64/hex 解码二进制。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
 					}
-					ui.Row(c).Gap(8).Children(func() {
-						ui.Text(c, tr.Path).SingleLine().Grow(1).MinWidth(0)
-						if ui.Button(c, locales.Text("选择文件")).Disabled(tr.Busy || tr.Submitted).Clicked() {
-							s.chooseDataImportFile(c.Services(), t)
-						}
-					})
-					if tr.Input != nil {
-						s.dataImportReview(c, t)
-					}
-					s.dataImportResultRows(c, t)
-				}
-				if tr.Err != "" {
-					color := colors.Error
-					if tr.Completed {
-						color = colors.Muted
-					}
-					ui.Text(c, tr.Err).TextColor(color).FontSize(theme.Font(c, 12))
-				}
-				if tr.Busy {
-					label := locales.Text("正在处理数据文件…")
-					if tr.Canceling {
-						label = locales.Text("正在等待取消确认…")
-					}
-					ui.Text(c, label).TextColor(colors.Muted)
-				}
-				ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
-					label := locales.Text("取消")
-					if tr.Submitted && !tr.Busy {
-						label = locales.Text("关闭")
-					}
-					if ui.Button(c, label).Disabled(tr.Canceling).Clicked() {
-						s.stopDataTransfer(t)
+					if tr.Format == "XLSX" {
+						ui.Text(c, locales.Text("XLSX 使用首个工作表，首行为字段名；数字文本保留精度，公式单元格不支持导入。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
 					}
 					if tr.Kind == "export" {
-						if ui.PrimaryButton(c, locales.Text("导出")).Disabled(tr.Busy || !available).Clicked() {
-							s.startDataExport(c.Services(), t)
-						}
+						ui.Row(c).Gap(8).Children(func() {
+							ui.Text(c, locales.Text("导出范围"))
+							mysqlDataRuleSelect(c, &tr.Scope, []string{"page", "selection", "all"}, func(x string) string {
+								switch x {
+								case "page":
+									return locales.Text("当前页")
+								case "selection":
+									return locales.Text("当前选区")
+								default:
+									return locales.Text("完整筛选结果")
+								}
+							}).Disabled(tr.Busy).Width(200)
+						})
+						ui.Text(c, locales.Text("选择导出字段")).Bold()
+						ui.Scroll(c).MaxHeight(150).Children(func() {
+							ui.Column(c).Gap(3).Children(func() {
+								for _, field := range tr.Fields {
+									checked := tr.Included[field]
+									ui.Checkbox(c, &checked, field).Disabled(tr.Busy)
+									tr.Included[field] = checked
+								}
+							})
+						})
+						ui.Text(c, locales.Text("完整值导出：每字段最多 1 MiB、每行最多 16 MiB，超限将失败并保留原文件。CSV/TSV 使用 \\N 表示 NULL，二进制使用 0x 十六进制。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
 					} else {
-						valid := available && tr.Input != nil && mysqlDataImportConfirmed(t) && !tr.Busy && !tr.Submitted
-						if valid {
-							_, err := mysqlDataImportReviewValidation(t)
-							valid = err == nil && (s.importer() != nil || (!tr.ContinueOnError && mysqlDataImportMode(t) == "append" && (tr.Target != "new" || s.newTableImporter() != nil)))
+						ui.Text(c, locales.Text("最多 10000 行、文件最多 16 MiB。CSV/TSV 首行为字段名，\\N 表示 NULL，二进制使用 0x 十六进制。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
+						s.dataImportTargetControls(c, t)
+						s.dataImportModeControls(c, t)
+						ui.Checkbox(c, &tr.EmptyAsNull, locales.Text("使用 NULL 取代空字符串")).Disabled(tr.Busy || tr.Submitted)
+						if tr.EmptyAsNull {
+							ui.Text(c, locales.Text("只转换长度为零的文本值；空二进制和空格保留原值。")).FontSize(theme.Font(c, 11)).TextColor(colors.Muted)
 						}
-						if tr.Created && !tr.Uncertain && !tr.Busy && s.deps.OpenImportedTable != nil && ui.Button(c, locales.Text("打开目标表")).Clicked() {
-							tr.Open = false
-							s.deps.OpenImportedTable(c.Services(), TableImportEvent{ProfileID: t.profileID, Generation: tr.Generation, Database: t.database, Table: tr.ResultTable, Created: true, Completed: tr.Completed})
+						ui.Row(c).Gap(8).Children(func() {
+							ui.Text(c, tr.Path).SingleLine().Grow(1).MinWidth(0)
+							if ui.Button(c, locales.Text("选择文件")).Disabled(tr.Busy || tr.Submitted).Clicked() {
+								s.chooseDataImportFile(c.Services(), t)
+							}
+						})
+						if tr.Input != nil {
+							s.dataImportReview(c, t)
 						}
-						if ui.PrimaryButton(c, locales.Text("确认导入")).Disabled(!valid).Clicked() {
-							s.startDataImport(c.Services(), t)
+						s.dataImportResultRows(c, t)
+					}
+					if tr.Err != "" {
+						color := colors.Error
+						if tr.Completed {
+							color = colors.Muted
 						}
+						ui.Text(c, tr.Err).TextColor(color).FontSize(theme.Font(c, 12))
+					}
+					if tr.Busy {
+						label := locales.Text("正在处理数据文件…")
+						if tr.Canceling {
+							label = locales.Text("正在等待取消确认…")
+						}
+						ui.Text(c, label).TextColor(colors.Muted)
 					}
 				})
+			})
+			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Shrink(0).Children(func() {
+				label := locales.Text("取消")
+				if tr.Submitted && !tr.Busy {
+					label = locales.Text("关闭")
+				}
+				if ui.Button(c, label).Disabled(tr.Canceling).Clicked() {
+					s.stopDataTransfer(t)
+				}
+				if tr.Kind == "export" {
+					if ui.PrimaryButton(c, locales.Text("导出")).Disabled(tr.Busy || !available).Clicked() {
+						s.startDataExport(c.Services(), t)
+					}
+				} else {
+					valid := available && tr.Input != nil && mysqlDataImportConfirmed(t) && !tr.Busy && !tr.Submitted
+					if valid {
+						_, err := mysqlDataImportReviewValidation(t)
+						valid = err == nil && (s.importer() != nil || (!tr.ContinueOnError && mysqlDataImportMode(t) == "append" && (tr.Target != "new" || s.newTableImporter() != nil)))
+					}
+					if tr.Created && !tr.Uncertain && !tr.Busy && s.deps.OpenImportedTable != nil && ui.Button(c, locales.Text("打开目标表")).Clicked() {
+						tr.Open = false
+						s.deps.OpenImportedTable(c.Services(), TableImportEvent{ProfileID: t.profileID, Generation: tr.Generation, Database: t.database, Table: tr.ResultTable, Created: true, Completed: tr.Completed})
+					}
+					if ui.PrimaryButton(c, locales.Text("确认导入")).Disabled(!valid).Clicked() {
+						s.startDataImport(c.Services(), t)
+					}
+				}
 			})
 		})
 	})

@@ -7,16 +7,18 @@ import (
 	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/egoist/mygo/ui"
-	"github.com/nyakang/nyadb/internal/db/contract"
-	"github.com/nyakang/nyadb/internal/ui/theme"
-	"github.com/nyakang/nyadb/locales"
 	"image"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/egoist/mygo/ui"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
 
 func Delimited(names []string, rows [][]string, comma rune, headers, data bool) string {
@@ -62,7 +64,7 @@ func TextCell(c *ui.Context, text string, null, truncated bool) ui.Element {
 func Cell(c *ui.Context, cell contract.Cell) ui.Element {
 	return TextCell(c, cell.Display(), cell.Kind == contract.Null, cell.Truncated)
 }
-func ColumnMenu(m *ui.Menu, layout *ui.TableLayout, hidden map[string]bool, columns []ui.TableColumn, col, rows int, read func(int, int) contract.Cell, copy func(string)) {
+func ColumnMenu(c *ui.Context, m *ui.Menu, layout *ui.TableLayout, hidden map[string]bool, columns []ui.TableColumn, col, rows int, read func(int, int) contract.Cell, copy func(string)) {
 	if col < 0 || col >= len(columns) {
 		return
 	}
@@ -75,14 +77,10 @@ func ColumnMenu(m *ui.Menu, layout *ui.TableLayout, hidden map[string]bool, colu
 		copy(Copy(out))
 	}
 	if m.Item(locales.Text("适应列宽")).Chosen() {
-		width := utf8.RuneCountInString(column.Title)
-		for row := 0; row < rows; row++ {
-			width = max(width, utf8.RuneCountInString(read(row, col).Display()))
-		}
 		if layout.Widths == nil {
 			layout.Widths = map[string]float32{}
 		}
-		layout.Widths[column.ID] = min(float32(800), max(float32(64), float32(width*8+24)))
+		layout.Widths[column.ID] = FitColumn(c, column, rows, func(row int) contract.Cell { return read(row, col) })
 	}
 	if m.Item(locales.Text("隐藏列")).Disabled(len(columns)-len(hidden) <= 1).Chosen() {
 		hidden[column.ID] = true
@@ -111,18 +109,7 @@ func FieldPreview(c *ui.Context, cell contract.Cell, mode *string, bind ...func(
 		*mode = "文本"
 	}
 	modes := []string{"文本", "JSON", "十六进制", "图像"}
-	labels := make([]string, len(modes))
-	for i, v := range modes {
-		labels[i] = locales.Text(v)
-	}
-	label := locales.Text(*mode)
-	if ui.Select(c, &label, labels).Label(locales.Text("字段查看模式")).Changed() {
-		for i, v := range labels {
-			if v == label {
-				*mode = modes[i]
-			}
-		}
-	}
+	theme.Choice(c, mode, modes, locales.Text).Label(locales.Text("字段查看模式"))
 	PreviewValue(c, cell, *mode, bind...)
 }
 
@@ -171,4 +158,27 @@ func PreviewValue(c *ui.Context, cell contract.Cell, mode string, bind ...func(u
 	if len(bind) > 0 && bind[0] != nil {
 		bind[0](field)
 	}
+}
+
+// FitColumn measures only cached display values, with a bounded uniform sample.
+func FitColumn(c *ui.Context, column ui.TableColumn, rows int, read func(int) contract.Cell) float32 {
+	padding := 24 * max(float32(1), theme.Font(c, 12)/12)
+	measure := func(text string, size float32, weight int) float32 {
+		if utf8.RuneCountInString(text) > 1024 {
+			return 800
+		}
+		width, _ := c.MeasureText(0, ui.Span{Text: text, Size: size, Weight: weight})
+		return width + padding
+	}
+	width := max(float32(64), measure(column.Title, theme.Font(c, 12), 700))
+	width = max(width, measure(column.Subtitle, theme.Font(c, 11), 400))
+	samples := min(max(0, rows), 200)
+	for i := 0; i < samples && width < 800; i++ {
+		row := 0
+		if samples > 1 {
+			row = i * (rows - 1) / (samples - 1)
+		}
+		width = max(width, measure(read(row).Display(), theme.Font(c, 12), 400))
+	}
+	return min(float32(800), width)
 }

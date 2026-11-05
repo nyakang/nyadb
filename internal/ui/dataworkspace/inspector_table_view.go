@@ -31,30 +31,25 @@ func (s *inspectorState) View(c *ui.Context, t *Panel) {
 func (s *inspectorState) header(c *ui.Context, t *Panel, fieldMode bool) {
 	palette := theme.Colors(c)
 
-	ui.Row(c).Label(locales.Text("数据信息切换栏")).Height(42).Padding(1, 5).Gap(3).AlignItems(ui.Center).Children(func() {
-		ui.Toolbar(c, func() {
-			for _, item := range []struct {
-				label string
-				field bool
-			}{{"表信息", false}, {"字段信息", true}} {
-				button := ui.Button(c, locales.Text(item.label)).Height(theme.RowHeight(c, theme.ControlHeight)).FontSize(theme.Font(c, theme.SmallFontSize)).Padding(2, 4)
-				if item.field == fieldMode {
-					button.Background(palette.ToolbarSelected)
-				}
-				if button.Clicked() {
-					if item.field {
-						s.ShowField(t)
-					} else {
-						t.info.fieldMode = false
-						s.CancelChunk(t)
-						if !t.info.attempted {
-							s.LoadInfo(t, c.Services().Invalidate, false)
-						}
+	ui.Row(c).Label(locales.Text("数据信息切换栏")).Height(theme.RowHeight(c, 42)).Padding(1, 5).Gap(3).AlignItems(ui.Center).Children(func() {
+		chosen := 0
+		if fieldMode {
+			chosen = 1
+		}
+		ui.ScrollHorizontal(c).Grow(1).MinWidth(0).Children(func() {
+			if theme.Tabs(c, &chosen, []string{locales.Text("表信息"), locales.Text("字段信息")}, false).Changed() {
+				if chosen == 1 {
+					s.ShowField(t)
+				} else {
+					t.info.fieldMode = false
+					s.CancelChunk(t)
+					if !t.info.attempted {
+						s.LoadInfo(t, c.Services().Invalidate, false)
 					}
 				}
 			}
-		}).Grow(1).MinWidth(0).Padding(0).Gap(3)
-		if ui.ButtonBase(c).Label(locales.Text("隐藏信息面板")).Tooltip(locales.Text("隐藏信息面板")).Size(20, 20).
+		})
+		if theme.IconButton(c, locales.Text("隐藏信息面板"), "close").Tooltip(locales.Text("隐藏信息面板")).Size(20, 20).
 			Children(func() { theme.Icon(c, "close", 12, palette.Muted) }).Clicked() {
 			if s.deps.Hide != nil {
 				s.deps.Hide()
