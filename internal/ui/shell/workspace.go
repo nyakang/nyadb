@@ -32,6 +32,9 @@ func (s *State) workspace(c *ui.Context) {
 						item := tabs.Tab(i).Height(theme.RowHeight(c, theme.TabHeight)).Padding(2, 8).Radius(0).Label(current.title)
 						if i == s.activeTab {
 							item.Background(palette.Selection).TextColor(palette.SelectionText).BorderWidth(1, 1, 0, 1).BorderColor(palette.Border)
+							if current.kind == tabObjects {
+								item.Background(palette.Header).TextColor(palette.Text)
+							}
 						}
 						item.Children(func() {
 							ui.Row(c).AlignItems(ui.Center).Gap(5).Children(func() {

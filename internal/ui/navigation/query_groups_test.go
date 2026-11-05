@@ -7,11 +7,10 @@ func TestOfflineQueryGroupsDoNotReadDatabaseMetadata(t *testing.T) {
 	s := New(Dependencies{SessionStatus: func(int64) string { return "未连接" }, QueryGroups: func(int64) []Object { return []Object{{Name: "Reports", Kind: "g"}} }, Queries: func(int64, string) []Object {
 		return []Object{{Name: "Grouped", Kind: "q", Group: "g"}, {Name: "Loose", Kind: "loose"}}
 	}, Databases: func(int64) []string { reads++; return nil }})
-	roots := s.Children(ConnectionKey(7))
-	if len(roots) != 1 || Parse(roots[0]).Category != "查询" {
-		t.Fatalf("offline queries unavailable: %v", roots)
+	if children := s.Children(ConnectionKey(7)); children != nil {
+		t.Fatalf("offline connection has disclosure children: %v", children)
 	}
-	children := s.Children(roots[0])
+	children := s.Children((Node{Kind: "category", ProfileID: 7, Category: "查询"}).Key())
 	if len(children) != 2 || Parse(children[0]).Kind != "query_group" || Parse(children[1]).Object != "loose" {
 		t.Fatalf("group tree: %v", children)
 	}

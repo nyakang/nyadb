@@ -273,6 +273,9 @@ func (s *State) toolBar(c *ui.Context) {
 					}
 				}
 
+				if action.label == "表" {
+					ui.Divider(c).Margin(4).Background(palette.Border)
+				}
 				item := action
 				active := s.currentObjectKind() == item.label && s.currentTab().kind == tabObjects
 				tip := locales.Text(item.label)

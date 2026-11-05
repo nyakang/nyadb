@@ -68,12 +68,12 @@ func (s *State) databaseChildren(key string) []string {
 	}
 	switch n.Kind {
 	case "connection":
+		if s.sessionStatus(n.ProfileID) != "已连接" {
+			return nil
+		}
 		var local []string
 		if s.deps.Queries != nil {
 			local = append(local, (Node{Kind: "category", ProfileID: n.ProfileID, Category: "查询"}).Key())
-		}
-		if s.sessionStatus(n.ProfileID) != "已连接" {
-			return local
 		}
 		if s.deps.Catalog != nil {
 			if catalog := s.deps.Catalog(n.ProfileID); catalog != "" {
