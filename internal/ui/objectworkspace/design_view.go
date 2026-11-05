@@ -70,7 +70,7 @@ func (s *State) designView(c *ui.Context, d *Document) {
 		ui.ScrollHorizontal(c).Height(theme.RowHeight(c, theme.TabHeight)).Children(func() {
 			ui.Row(c).Gap(4).Children(func() {
 				for i, name := range names {
-					if ui.Button(c, name).Label(locales.Text("表设计子页") + "/" + name).Disabled(x.busy || x.blocked).Clicked() {
+					if theme.PageButton(c, name, x.page == i).Label(locales.Text("表设计子页") + "/" + name).Disabled(x.busy || x.blocked).Clicked() {
 						if err := d.flushInline(); err != nil {
 							d.err = err.Error()
 						} else {
@@ -223,6 +223,10 @@ func (s *State) designClauses(c *ui.Context, d *Document) {
 	}
 	if x.form.Unsupported {
 		ui.Text(c, locales.Text("此字段含未支持的属性，保留完整原文并禁止修改。"))
+		return
+	}
+	ui.Checkbox(c, &x.fieldDetails, locales.Text("高级字段属性")).Disabled(x.busy || x.blocked)
+	if !x.fieldDetails {
 		return
 	}
 	ui.Scroll(c).Height(0).Grow(1).MinHeight(100).MaxHeight(280).Children(func() {
