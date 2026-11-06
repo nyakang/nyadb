@@ -149,6 +149,9 @@ func (a *administration) TableDesign(ctx context.Context, id int64, db, t string
 	return v, e
 }
 func (a *administration) ApplyTableDesign(ctx context.Context, id int64, p mysqlddl.Plan) mysqlsvc.DDLOutcome {
+	if a.session != nil && !a.session.Capabilities().DesignTables {
+		return mysqlsvc.DDLOutcome{State: "not_executed", Error: contract.ErrUnsupported}
+	}
 	ctx, ectx := a.context(ctx, id)
 	if ectx != nil {
 		e := ectx

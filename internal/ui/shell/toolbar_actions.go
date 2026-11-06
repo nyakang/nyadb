@@ -28,7 +28,7 @@ func (s *State) toolbarMenu(services ui.Services, action string, m *ui.Menu) {
 		if w.Kind == connections.Oracle {
 			kinds = []string{"存储过程", "包", "触发器", "序列", "类型"}
 		}
-		if w.Kind == connections.DuckDB || w.Kind == connections.TiDB {
+		if w.Kind == connections.DuckDB || w.Kind == connections.TiDB || w.Kind == connections.OceanBase {
 			kinds = []string{"序列"}
 		}
 		for _, kind := range kinds {

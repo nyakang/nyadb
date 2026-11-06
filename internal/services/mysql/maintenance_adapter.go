@@ -13,7 +13,7 @@ func (s *SessionAdapter) Maintenance() contract.MaintenanceOperations {
 				return nil
 			}
 			actions := []contract.MaintenanceAction{{ID: "ANALYZE", Label: "分析表", Mutates: true}, {ID: "CHECK", Label: "检查表"}}
-			if s.kind != connections.TiDB {
+			if s.kind != connections.TiDB && s.kind != connections.OceanBase {
 				actions = append(actions, contract.MaintenanceAction{ID: "OPTIMIZE", Label: "优化表", Mutates: true}, contract.MaintenanceAction{ID: "REPAIR", Label: "修复表", Mutates: true})
 			}
 			return actions

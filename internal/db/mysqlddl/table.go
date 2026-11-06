@@ -31,6 +31,7 @@ type Clause struct {
 type Trigger struct{ Name, SQL, SQLMode string }
 type Snapshot struct {
 	// Engine is empty for legacy MySQL snapshots, or mysql/mariadb/tidb.
+	// OceanBase snapshots use oceanbase and are read-only to this planner.
 	Engine               string
 	TriggersUnknown      bool
 	Database, Table, DDL string

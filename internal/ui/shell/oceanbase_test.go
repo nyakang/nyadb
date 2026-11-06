@@ -1,0 +1,50 @@
+package shell
+
+import (
+	"os"
+	"testing"
+
+	"github.com/egoist/mygo/i18n"
+	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/locales"
+)
+
+func TestOceanBaseChooserOpensIndependentNativeEditor(t *testing.T) {
+	for _, language := range []string{"zh-Hans", "en"} {
+		t.Run(language, func(t *testing.T) {
+			i18n.SetLocaleFunc(func() string { return language })
+			t.Cleanup(func() { i18n.SetLocaleFunc(nil) })
+			s := New()
+			t.Cleanup(s.CloseMySQLSessions)
+			s.SetConnectionWindowHost(func() {}, func() {})
+			s.openConnectionDialog()
+			tt := ui.NewTester(s.ConnectionWindowView, 900, 700)
+			if err := tt.Click(locales.Text("选择 ") + "OceanBase"); err != nil {
+				t.Fatal(err)
+			}
+			if err := tt.Click(locales.Text("下一步")); err != nil {
+				t.Fatal(err)
+			}
+			if s.connectionStep != 1 || s.connectionEditor.Draft().Kind != connections.OceanBase || s.ConnectionWindowTitle() != locales.Text("新建连接")+" (OceanBase)" {
+				t.Fatal("chooser lost OceanBase identity")
+			}
+			icon, err := s.ConnectionWindowIcon()
+			if err != nil || len(icon) == 0 {
+				t.Fatal("OceanBase native window missing brand icon")
+			}
+			if !tt.HasText(locales.Text("测试连接")) {
+				t.Fatal("OceanBase test button missing")
+			}
+			if !tt.HasText(locales.Text("仅支持 MySQL 租户；用户名使用 user@tenant。")) {
+				t.Fatal("OceanBase tenant compatibility hint missing")
+			}
+			if output := os.Getenv("NYADB_OCEANBASE_VISUAL_DIR"); output != "" {
+				if err := os.MkdirAll(output, 0755); err != nil {
+					t.Fatal(err)
+				}
+				writeDomainCapture(t, output, language+"-oceanbase-editor", tt)
+			}
+		})
+	}
+}

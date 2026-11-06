@@ -54,6 +54,8 @@ func ParseURI(raw string) (URIImport, error) {
 		kind = MySQL
 	case "mariadb":
 		kind = MariaDB
+	case "oceanbase":
+		kind = OceanBase
 	case "tidb":
 		kind = TiDB
 	case "postgres", "postgresql":

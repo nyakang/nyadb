@@ -99,7 +99,7 @@ func (m *MySQLSessionManager) Connect(ctx context.Context, s connections.ActiveS
 			db, sqlDB, dialer, err = openMySQLPools(connectCtx, s, password, dialer, initial)
 		}
 	}
-	if err == nil && (s.Kind == connections.MariaDB || s.Kind == connections.TiDB) {
+	if err == nil && (s.Kind.IsMySQLFamily() && s.Kind != connections.MySQL) {
 		probeCtx, probeCancel := context.WithTimeout(connectCtx, 10*time.Second)
 		err = validateMySQLFamilyServer(probeCtx, db, s.Kind)
 		probeCancel()

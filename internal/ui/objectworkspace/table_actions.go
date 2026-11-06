@@ -81,7 +81,7 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 			s.tableProfilesMenu(services, sub, profileID, database, name)
 		}).Disabled(s.deps.TableProfiles == nil || s.deps.OpenTableProfile == nil || !s.sessionFor(profileID).Connected)
 	}
-	if kind == "表" && s.deps.OpenDesign != nil {
+	if kind == "表" && s.deps.OpenDesign != nil && s.capabilities(profileID).DesignTables {
 		design = "设计表"
 	}
 	if m.Item(locales.Text(design)).Shortcut(ui.Ctrl, ui.KeyD).Disabled(Supports(kind)).Chosen() {

@@ -21,7 +21,7 @@ func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
 	m.Register(connections.DuckDB, ProviderFunc(duckdb.OpenSession))
 	m.Register(connections.SQLServer, ProviderFunc(sqlserver.OpenSession))
 	m.Register(connections.ClickHouse, ProviderFunc(clickhousesvc.OpenSession))
-	for _, kind := range []connections.Kind{connections.MySQL, connections.MariaDB, connections.TiDB} {
+	for _, kind := range []connections.Kind{connections.MySQL, connections.MariaDB, connections.TiDB, connections.OceanBase} {
 		m.Register(kind, ProviderFunc(func(ctx context.Context, p connections.Profile, password string) (contract.Session, error) {
 			return mysqlsvc.OpenSession(ctx, p, password, mysqlTemplate)
 		}))

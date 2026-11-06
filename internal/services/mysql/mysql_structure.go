@@ -86,6 +86,22 @@ AND TABLE_TYPE IN ('BASE TABLE', 'VIEW')`
 	if err := readMySQLStructureForeignKeys(queryCtx, session.db, database, table, result); err != nil {
 		return nil, err
 	}
+	if session.settings.Kind == connections.OceanBase {
+		conn, err := session.db.Conn(queryCtx)
+		if err != nil {
+			return nil, err
+		}
+		defer conn.Close()
+		kind := "TABLE"
+		if result.Kind == "VIEW" {
+			kind = "VIEW"
+		}
+		result.Definition, err = readCreate(queryCtx, conn, kind, database, table)
+		if err != nil {
+			return nil, err
+		}
+		result.Definitions = []contract.Definition{{Name: table, Kind: kind, SQL: result.Definition}}
+	}
 	if err := queryCtx.Err(); err != nil {
 		return nil, err
 	}

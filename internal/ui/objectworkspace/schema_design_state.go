@@ -81,7 +81,7 @@ func (s *State) CanEditDesign(d *Document) bool {
 	if s.canSchemaDesign(d.profileID, d.database, d.table) {
 		return true
 	}
-	return s.deps.DesignLoader != nil && s.deps.DesignLoader() != nil && s.canAdministration(d.profileID)
+	return s.capabilities(d.profileID).DesignTables && s.deps.DesignLoader != nil && s.deps.DesignLoader() != nil && s.canAdministration(d.profileID)
 }
 
 // CanCreateTable is distinct from MySQL table administration availability.

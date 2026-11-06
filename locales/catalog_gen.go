@@ -13672,11 +13672,21 @@ func (msgs Messages) ClickhouseTLSModeCaption() string {
 	return Catalog.Format(msgs.locale, "clickhouseTLSModeCaption", nil)
 }
 
-// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、TiDB、PostgreSQL、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。"
+// OceanbaseMySQLTenantHint says "仅支持 MySQL 租户；用户名使用 user@tenant。"
+// in the language the app shows.
+func OceanbaseMySQLTenantHint() string { return In(i18n.Locale()).OceanbaseMySQLTenantHint() }
+
+// OceanbaseMySQLTenantHint says "仅支持 MySQL 租户；用户名使用 user@tenant。"
+// in the language of msgs.
+func (msgs Messages) OceanbaseMySQLTenantHint() string {
+	return Catalog.Format(msgs.locale, "oceanbaseMySQLTenantHint", nil)
+}
+
+// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、TiDB、OceanBase、PostgreSQL、SQLite 和 ClickHouse…"
 // in the language the app shows.
 func ConnectionURISupportedEngines() string { return In(i18n.Locale()).ConnectionURISupportedEngines() }
 
-// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、TiDB、PostgreSQL、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。"
+// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、TiDB、OceanBase、PostgreSQL、SQLite 和 ClickHouse…"
 // in the language of msgs.
 func (msgs Messages) ConnectionURISupportedEngines() string {
 	return Catalog.Format(msgs.locale, "connectionURISupportedEngines", nil)

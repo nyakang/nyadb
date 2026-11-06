@@ -17,7 +17,8 @@ import (
 // ObjectIdentity is a fully qualified, immutable MySQL target.
 type ObjectIdentity struct{ Database, Name, Kind string }
 type ObjectDefinition struct {
-	SQLModeKnown bool
+	SQLModeKnown     bool
+	Product, Definer string
 
 	ObjectIdentity
 	SQL, SQLMode, Fingerprint string
@@ -65,7 +66,11 @@ func objectTarget(ref ObjectIdentity) (string, error) {
 	return db + "." + n, e
 }
 func definitionFingerprint(s ObjectDefinition) string {
-	h := sha256.Sum256([]byte(s.SQL + "\x00" + s.SQLMode))
+	raw := s.SQL + "\x00" + s.SQLMode
+	if s.Product != "" {
+		raw += "\x00" + s.Product + "\x00" + s.Definer
+	}
+	h := sha256.Sum256([]byte(raw))
 	return hex.EncodeToString(h[:])
 }
 func readObjectDefinition(ctx context.Context, c *sql.Conn, ref ObjectIdentity) (ObjectDefinition, error) {
@@ -109,6 +114,12 @@ func readObjectDefinition(ctx context.Context, c *sql.Conn, ref ObjectIdentity) 
 	}
 	if r.SQL == "" || len(r.SQL) > 8<<20 {
 		return r, errors.New("complete public object definition is unavailable or oversized")
+	}
+	if e = rows.Close(); e != nil {
+		return r, e
+	}
+	if e = readOceanBaseViewOwner(ctx, c, &r); e != nil {
+		return r, e
 	}
 	r.Fingerprint = definitionFingerprint(r)
 	return r, rows.Err()
@@ -317,6 +328,10 @@ func (m *MySQLSessionManager) ApplyObject(ctx context.Context, id int64, p Objec
 		}
 	}
 	kind, _ := objectKind(p.Original.Kind)
+	if e = guardOceanBaseViewPlan(qctx, c, checked, kind); e != nil {
+		out.Error = e
+		return out
+	}
 	if kind != "DATABASE" {
 		db, _ := quotedMySQLIdentifier(p.Original.Database)
 		if _, e = c.ExecContext(qctx, "USE "+db); e != nil {
