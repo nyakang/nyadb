@@ -1,0 +1,3563 @@
+{
+  "schema_version": 1,
+  "reference_commit": "a3add88da1c44fc97d233f90977f67dc8c277fc1",
+  "reference_manifest_sha256": "19acc009bb73373f4dd1596a063b84265156d568cdbe6f5d7feabe683a207881",
+  "scope": "database and middleware products, management workflows and cross-product tools; descriptor flags are targets requiring runtime evidence, not proof of parity",
+  "drivers": [
+    {
+      "dbType": "mysql",
+      "label": "MySQL",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": true,
+        "sqlExplain": true,
+        "userAdmin": true,
+        "driverManagement": false
+      },
+      "profiles": [
+        "mysql",
+        "mariadb",
+        "tidb",
+        "oceanbase",
+        "tdsql",
+        "polardb",
+        "greatsql",
+        "doris",
+        "selectdb",
+        "starrocks",
+        "custom_mysql",
+        "dolt"
+      ],
+      "nyadb_kind": "mysql",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "dbType": "postgres",
+      "label": "PostgreSQL",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": true,
+        "sqlExplain": true,
+        "userAdmin": true,
+        "driverManagement": false
+      },
+      "profiles": [
+        "postgres",
+        "cloudberry",
+        "opentenbase",
+        "cockroachdb",
+        "custom_postgres"
+      ],
+      "nyadb_kind": "postgresql",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "dbType": "sqlite",
+      "label": "SQLite",
+      "runtimeMode": "file",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": true,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "sqlite"
+      ],
+      "nyadb_kind": "sqlite",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "dbType": "rqlite",
+      "label": "RQLite",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": true,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "rqlite"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "turso",
+      "label": "Turso",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": true,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "turso"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "cloudflare-d1",
+      "label": "Cloudflare D1",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": true,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "cloudflare-d1"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "redis",
+      "label": "Redis",
+      "runtimeMode": "native",
+      "supportLevel": "connect",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": false,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "redis"
+      ],
+      "nyadb_kind": "redis",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "dbType": "duckdb",
+      "label": "DuckDB",
+      "runtimeMode": "file",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "duckdb"
+      ],
+      "nyadb_kind": "duckdb",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "dbType": "clickhouse",
+      "label": "ClickHouse",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "clickhouse"
+      ],
+      "nyadb_kind": "clickhouse",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "dbType": "sqlserver",
+      "label": "SQL Server",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": true,
+        "sqlExplain": true,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "sqlserver"
+      ],
+      "nyadb_kind": "sqlserver",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "dbType": "mongodb",
+      "label": "MongoDB (Legacy)",
+      "runtimeMode": "agent",
+      "supportLevel": "connect",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": false,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": true,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "mongodb",
+        "mongodb-legacy"
+      ],
+      "nyadb_kind": "mongodb",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "dbType": "dynamodb",
+      "label": "Amazon DynamoDB",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "dynamodb"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "oracle",
+      "label": "Oracle",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": true,
+        "sqlExplain": true,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "oracle"
+      ],
+      "nyadb_kind": "oracle",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "dbType": "elasticsearch",
+      "label": "Elasticsearch",
+      "runtimeMode": "native",
+      "supportLevel": "connect",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": false,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "elasticsearch"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "easysearch",
+      "label": "Easysearch",
+      "runtimeMode": "native",
+      "supportLevel": "connect",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": false,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "easysearch"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "meilisearch",
+      "label": "Meilisearch",
+      "runtimeMode": "native",
+      "supportLevel": "browse",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "meilisearch"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "solr",
+      "label": "Apache Solr",
+      "runtimeMode": "native",
+      "supportLevel": "browse",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "solr"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "couchdb",
+      "label": "Apache CouchDB",
+      "runtimeMode": "native",
+      "supportLevel": "browse",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "couchdb"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "hbase",
+      "label": "Apache HBase",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": false,
+        "metadataBrowse": true,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "hbase"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "qdrant",
+      "label": "Qdrant",
+      "runtimeMode": "native",
+      "supportLevel": "browse",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "qdrant"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "chromadb",
+      "label": "ChromaDB",
+      "runtimeMode": "native",
+      "supportLevel": "browse",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "chromadb"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "milvus",
+      "label": "Milvus",
+      "runtimeMode": "native",
+      "supportLevel": "browse",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "milvus"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "weaviate",
+      "label": "Weaviate",
+      "runtimeMode": "native",
+      "supportLevel": "browse",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "weaviate"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "doris",
+      "label": "Doris",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": false,
+        "sqlExplain": true,
+        "userAdmin": true,
+        "driverManagement": false
+      },
+      "profiles": [],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "starrocks",
+      "label": "StarRocks",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": true,
+        "driverManagement": false
+      },
+      "profiles": [],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "manticoresearch",
+      "label": "Manticore Search",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "manticoresearch"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "redshift",
+      "label": "Redshift",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": true,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "redshift"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "dameng",
+      "label": "达梦 DM8",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": true,
+        "sqlExplain": true,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "dm"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "kingbase",
+      "label": "金仓KingbaseES",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": true,
+        "driverManagement": true
+      },
+      "profiles": [
+        "kingbase"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "highgo",
+      "label": "瀚高 HighGo",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": true,
+        "driverManagement": true
+      },
+      "profiles": [
+        "highgo"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "uxdb",
+      "label": "优炫 UXDB",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "uxdb"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "vastbase",
+      "label": "海量 Vastbase",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": true,
+        "driverManagement": true
+      },
+      "profiles": [
+        "vastbase"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "goldendb",
+      "label": "金篆 GoldenDB",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": true,
+        "driverManagement": true
+      },
+      "profiles": [
+        "goldendb"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "databend",
+      "label": "Databend",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "databend"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "gaussdb",
+      "label": "GaussDB",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": true,
+        "sqlExplain": false,
+        "userAdmin": true,
+        "driverManagement": false
+      },
+      "profiles": [
+        "gaussdb"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "kwdb",
+      "label": "KWDB",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": true,
+        "sqlExplain": false,
+        "userAdmin": true,
+        "driverManagement": false
+      },
+      "profiles": [
+        "kwdb"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "yashandb",
+      "label": "崖山 YashanDB",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "yashandb"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "databricks",
+      "label": "Databricks SQL",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "databricks"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "saphana",
+      "label": "SAP HANA",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "saphana"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "teradata",
+      "label": "Teradata",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "teradata"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "vertica",
+      "label": "Vertica",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "vertica"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "firebird",
+      "label": "Firebird",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "firebird"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "exasol",
+      "label": "Exasol",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "exasol"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "opengauss",
+      "label": "openGauss",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": true,
+        "sqlExplain": true,
+        "userAdmin": true,
+        "driverManagement": false
+      },
+      "profiles": [
+        "opengauss"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "questdb",
+      "label": "QuestDB",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": true,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "questdb"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "oceanbase-oracle",
+      "label": "OceanBase Oracle Mode",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": true,
+        "sqlExplain": true,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "oceanbase-oracle"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "gbase",
+      "label": "南大通用 GBase 8a",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "gbase",
+        "gbase8a"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "gbase8s",
+      "label": "南大通用 GBase 8s",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "gbase8s"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "gbase8c",
+      "label": "南大通用 GBase 8c",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "gbase8c"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "access",
+      "label": "Microsoft Access",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "access"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "h2",
+      "label": "H2",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": false,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "h2",
+        "h2-legacy"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "snowflake",
+      "label": "Snowflake",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "snowflake"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "trino",
+      "label": "Trino",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "trino"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "prestosql",
+      "label": "PrestoSQL",
+      "runtimeMode": "external",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "prestosql"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "hive",
+      "label": "Apache Hive",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "hive"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "argo",
+      "label": "星环Argo",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "argo"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "transwarp",
+      "label": "星环Inceptor",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "transwarp-inceptor"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "kyuubi",
+      "label": "Apache Kyuubi",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": true,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "kyuubi"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "impala",
+      "label": "Apache Impala",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": true,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "impala"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "db2",
+      "label": "IBM DB2",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": true,
+        "sqlExplain": true,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "db2"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "informix",
+      "label": "IBM Informix",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "informix"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "neo4j",
+      "label": "Neo4j",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "neo4j"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "nebula",
+      "label": "NebulaGraph",
+      "runtimeMode": "agent",
+      "supportLevel": "browse",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "nebula"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "cassandra",
+      "label": "Apache Cassandra",
+      "runtimeMode": "agent",
+      "supportLevel": "understand",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "cassandra"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "bigquery",
+      "label": "Google BigQuery",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "bigquery"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "spanner",
+      "label": "Google Cloud Spanner",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "spanner"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "kylin",
+      "label": "Apache Kylin",
+      "runtimeMode": "agent",
+      "supportLevel": "understand",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "kylin"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "ignite",
+      "label": "Apache Ignite",
+      "runtimeMode": "agent",
+      "supportLevel": "understand",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "ignite"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "ignite3",
+      "label": "Apache Ignite 3",
+      "runtimeMode": "agent",
+      "supportLevel": "understand",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "ignite3"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "sundb",
+      "label": "科蓝 SUNDB",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "sundb"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "oscar",
+      "label": "神通 OSCAR",
+      "runtimeMode": "agent",
+      "supportLevel": "browse",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "oscar"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "tdengine",
+      "label": "TDengine",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "tdengine"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "xugu",
+      "label": "虚谷 XuguDB",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": true,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": true,
+        "sqlExplain": true,
+        "userAdmin": true,
+        "driverManagement": true
+      },
+      "profiles": [
+        "xugu"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "etcd",
+      "label": "etcd",
+      "runtimeMode": "agent",
+      "supportLevel": "connect",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": false,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "etcd",
+        "etcd-v2"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "zookeeper",
+      "label": "Apache ZooKeeper",
+      "runtimeMode": "agent",
+      "supportLevel": "connect",
+      "capabilities": {
+        "queryExecution": false,
+        "metadataBrowse": false,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "zookeeper"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "nacos",
+      "label": "Nacos",
+      "runtimeMode": "native",
+      "supportLevel": "connect",
+      "capabilities": {
+        "queryExecution": false,
+        "metadataBrowse": false,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "nacos"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "consul",
+      "label": "Consul",
+      "runtimeMode": "native",
+      "supportLevel": "connect",
+      "capabilities": {
+        "queryExecution": false,
+        "metadataBrowse": false,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "consul"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "mq",
+      "label": "Message Queue",
+      "runtimeMode": "native",
+      "supportLevel": "connect",
+      "capabilities": {
+        "queryExecution": false,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "mq",
+        "kafka",
+        "rocketmq",
+        "rabbitmq"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "mqtt",
+      "label": "MQTT",
+      "runtimeMode": "native",
+      "supportLevel": "connect",
+      "capabilities": {
+        "queryExecution": false,
+        "metadataBrowse": false,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "mqtt"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "iotdb",
+      "label": "Apache IoTDB",
+      "runtimeMode": "agent",
+      "supportLevel": "understand",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "iotdb"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "iris",
+      "label": "InterSystems IRIS",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": true,
+        "schemaSearch": true,
+        "diagram": true,
+        "tableDataEdit": true,
+        "tableStructureEdit": true,
+        "tableImport": false,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "iris",
+        "cache"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "influxdb",
+      "label": "InfluxDB",
+      "runtimeMode": "agent",
+      "supportLevel": "connect",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": true,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "influxdb"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "influxdb3",
+      "label": "InfluxDB 3.x",
+      "runtimeMode": "native",
+      "supportLevel": "connect",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "influxdb3"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "victoriametrics",
+      "label": "VictoriaMetrics",
+      "runtimeMode": "native",
+      "supportLevel": "browse",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "victoriametrics"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "jdbc",
+      "label": "JDBC",
+      "runtimeMode": "external",
+      "supportLevel": "browse",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "dremio",
+        "jdbcx",
+        "jdbc"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "spark",
+      "label": "Apache Spark",
+      "runtimeMode": "agent",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": true,
+        "sqlFileExecution": true,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": true
+      },
+      "profiles": [
+        "spark"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "plugin",
+      "label": "Plugin",
+      "runtimeMode": "external",
+      "supportLevel": "connect",
+      "capabilities": {
+        "queryExecution": false,
+        "metadataBrowse": false,
+        "objectBrowser": false,
+        "objectSource": false,
+        "schemaSearch": false,
+        "diagram": false,
+        "tableDataEdit": false,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [],
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "dbType": "salesforce",
+      "label": "Salesforce",
+      "runtimeMode": "native",
+      "supportLevel": "operate",
+      "capabilities": {
+        "queryExecution": true,
+        "metadataBrowse": true,
+        "objectBrowser": true,
+        "objectSource": false,
+        "schemaSearch": true,
+        "diagram": false,
+        "tableDataEdit": true,
+        "tableStructureEdit": false,
+        "tableImport": false,
+        "dataTransfer": false,
+        "sqlFileExecution": false,
+        "databaseCreate": false,
+        "fieldLineage": false,
+        "sqlExplain": false,
+        "userAdmin": false,
+        "driverManagement": false
+      },
+      "profiles": [
+        "salesforce"
+      ],
+      "nyadb_kind": null,
+      "status": "missing"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "mysql",
+      "dbType": "mysql",
+      "label": "MySQL",
+      "category": "sql",
+      "port": "3306",
+      "nyadb_kind": "mysql",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "id": "postgres",
+      "dbType": "postgres",
+      "label": "PostgreSQL",
+      "category": "sql",
+      "port": "5432",
+      "nyadb_kind": "postgresql",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "id": "cloudberry",
+      "dbType": "postgres",
+      "label": "Apache Cloudberry",
+      "category": "analytics",
+      "port": "5432",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "opentenbase",
+      "dbType": "postgres",
+      "label": "OpenTenBase",
+      "category": "domestic",
+      "port": "11000",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "redis",
+      "dbType": "redis",
+      "label": "Redis",
+      "category": "document",
+      "port": "6379",
+      "nyadb_kind": "redis",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "id": "sqlite",
+      "dbType": "sqlite",
+      "label": "SQLite",
+      "category": "lightweight",
+      "port": "0",
+      "nyadb_kind": "sqlite",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "id": "rqlite",
+      "dbType": "rqlite",
+      "label": "RQLite",
+      "category": "lightweight",
+      "port": "4001",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "turso",
+      "dbType": "turso",
+      "label": "Turso",
+      "category": "lightweight",
+      "port": "443",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "cloudflare-d1",
+      "dbType": "cloudflare-d1",
+      "label": "Cloudflare D1",
+      "category": "lightweight",
+      "port": "443",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "duckdb",
+      "dbType": "duckdb",
+      "label": "DuckDB",
+      "category": "lightweight",
+      "port": "0",
+      "nyadb_kind": "duckdb",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "id": "access",
+      "dbType": "access",
+      "label": "Microsoft Access",
+      "category": "lightweight",
+      "port": "0",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "mongodb",
+      "dbType": "mongodb",
+      "label": "MongoDB",
+      "category": "document",
+      "port": "27017",
+      "nyadb_kind": "mongodb",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "id": "mongodb-legacy",
+      "dbType": "mongodb",
+      "label": "MongoDB (Legacy)",
+      "port": "27017",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "dynamodb",
+      "dbType": "dynamodb",
+      "label": "Amazon DynamoDB",
+      "category": "document",
+      "port": "443",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "clickhouse",
+      "dbType": "clickhouse",
+      "label": "ClickHouse",
+      "category": "analytics",
+      "port": "8123",
+      "nyadb_kind": "clickhouse",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "id": "sqlserver",
+      "dbType": "sqlserver",
+      "label": "SQL Server",
+      "category": "sql",
+      "port": "1433",
+      "nyadb_kind": "sqlserver",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "id": "oracle",
+      "dbType": "oracle",
+      "label": "Oracle",
+      "category": "sql",
+      "port": "1521",
+      "nyadb_kind": "oracle",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "id": "elasticsearch",
+      "dbType": "elasticsearch",
+      "label": "Elasticsearch",
+      "category": "document",
+      "port": "9200",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "easysearch",
+      "dbType": "easysearch",
+      "label": "Easysearch",
+      "category": "document",
+      "port": "9200",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "solr",
+      "dbType": "solr",
+      "label": "Apache Solr",
+      "category": "document",
+      "port": "8983",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "couchdb",
+      "dbType": "couchdb",
+      "label": "Apache CouchDB",
+      "category": "document",
+      "port": "5984",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "meilisearch",
+      "dbType": "meilisearch",
+      "label": "Meilisearch",
+      "category": "document",
+      "port": "7700",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "hbase",
+      "dbType": "hbase",
+      "label": "Apache HBase",
+      "category": "document",
+      "port": "8080",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "qdrant",
+      "dbType": "qdrant",
+      "label": "Qdrant",
+      "category": "graph_ai",
+      "port": "6333",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "milvus",
+      "dbType": "milvus",
+      "label": "Milvus",
+      "category": "graph_ai",
+      "port": "19530",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "weaviate",
+      "dbType": "weaviate",
+      "label": "Weaviate",
+      "category": "graph_ai",
+      "port": "8080",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "chromadb",
+      "dbType": "chromadb",
+      "label": "ChromaDB",
+      "category": "graph_ai",
+      "port": "8000",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "mariadb",
+      "dbType": "mysql",
+      "label": "MariaDB",
+      "category": "sql",
+      "port": "3306",
+      "nyadb_kind": "mariadb",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "id": "tidb",
+      "dbType": "mysql",
+      "label": "TiDB",
+      "category": "domestic",
+      "port": "4000",
+      "nyadb_kind": "tidb",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "id": "oceanbase",
+      "dbType": "mysql",
+      "label": "OceanBase",
+      "category": "domestic",
+      "port": "2883",
+      "nyadb_kind": "oceanbase",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "id": "oceanbase-oracle",
+      "dbType": "oceanbase-oracle",
+      "label": "OceanBase Oracle Mode",
+      "port": "2883",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "goldendb",
+      "dbType": "goldendb",
+      "label": "金篆 GoldenDB",
+      "category": "domestic",
+      "port": "3306",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "databend",
+      "dbType": "databend",
+      "label": "Databend",
+      "category": "analytics",
+      "port": "8000",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "tdsql",
+      "dbType": "mysql",
+      "label": "TDSQL",
+      "category": "domestic",
+      "port": "3306",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "polardb",
+      "dbType": "mysql",
+      "label": "PolarDB",
+      "category": "domestic",
+      "port": "3306",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "greatsql",
+      "dbType": "mysql",
+      "label": "GreatSQL",
+      "category": "domestic",
+      "port": "3306",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "databricks",
+      "dbType": "databricks",
+      "label": "Databricks SQL",
+      "category": "analytics",
+      "port": "443",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "saphana",
+      "dbType": "saphana",
+      "label": "SAP HANA",
+      "category": "analytics",
+      "port": "30015",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "teradata",
+      "dbType": "teradata",
+      "label": "Teradata",
+      "category": "analytics",
+      "port": "1025",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "vertica",
+      "dbType": "vertica",
+      "label": "Vertica",
+      "category": "analytics",
+      "port": "5433",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "firebird",
+      "dbType": "firebird",
+      "label": "Firebird",
+      "category": "sql",
+      "port": "3050",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "exasol",
+      "dbType": "exasol",
+      "label": "Exasol",
+      "category": "analytics",
+      "port": "8563",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "gbase",
+      "dbType": "gbase",
+      "label": "南大通用 GBase 8a",
+      "category": "domestic",
+      "port": "5258",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "gbase8a",
+      "dbType": "gbase",
+      "label": "南大通用 GBase 8a",
+      "port": "5258",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "gbase8s",
+      "dbType": "gbase8s",
+      "label": "南大通用 GBase 8s",
+      "port": "9088",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "gbase8c",
+      "dbType": "gbase8c",
+      "label": "南大通用 GBase 8c",
+      "port": "5432",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "opengauss",
+      "dbType": "opengauss",
+      "label": "openGauss",
+      "category": "domestic",
+      "port": "5432",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "gaussdb",
+      "dbType": "gaussdb",
+      "label": "GaussDB",
+      "category": "domestic",
+      "port": "5432",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "kwdb",
+      "dbType": "kwdb",
+      "label": "KWDB",
+      "category": "domestic",
+      "port": "26257",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "questdb",
+      "dbType": "questdb",
+      "label": "QuestDB",
+      "category": "timeseries",
+      "port": "8812",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "kingbase",
+      "dbType": "kingbase",
+      "label": "金仓KingbaseES",
+      "category": "domestic",
+      "port": "54321",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "highgo",
+      "dbType": "highgo",
+      "label": "瀚高 HighGo",
+      "category": "domestic",
+      "port": "5866",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "uxdb",
+      "dbType": "uxdb",
+      "label": "优炫 UXDB",
+      "category": "domestic",
+      "port": "52025",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "yashandb",
+      "dbType": "yashandb",
+      "label": "崖山 YashanDB",
+      "category": "domestic",
+      "port": "1688",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "vastbase",
+      "dbType": "vastbase",
+      "label": "海量 Vastbase",
+      "category": "domestic",
+      "port": "5432",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "doris",
+      "dbType": "mysql",
+      "label": "Doris",
+      "category": "analytics",
+      "port": "9030",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "selectdb",
+      "dbType": "mysql",
+      "label": "SelectDB",
+      "category": "analytics",
+      "port": "9030",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "starrocks",
+      "dbType": "mysql",
+      "label": "StarRocks",
+      "category": "analytics",
+      "port": "9030",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "manticoresearch",
+      "dbType": "manticoresearch",
+      "label": "Manticore Search",
+      "category": "document",
+      "port": "9306",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "redshift",
+      "dbType": "redshift",
+      "label": "Redshift",
+      "category": "analytics",
+      "port": "5439",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "cockroachdb",
+      "dbType": "postgres",
+      "label": "CockroachDB",
+      "category": "sql",
+      "port": "26257",
+      "nyadb_kind": "cockroachdb",
+      "status": "implemented_with_gaps"
+    },
+    {
+      "id": "dm",
+      "dbType": "dameng",
+      "label": "达梦 Dameng",
+      "category": "domestic",
+      "port": "5236",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "h2",
+      "dbType": "h2",
+      "label": "H2",
+      "category": "lightweight",
+      "port": "9092",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "h2-legacy",
+      "dbType": "h2",
+      "label": "H2 2.1 Legacy",
+      "port": "9092",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "snowflake",
+      "dbType": "snowflake",
+      "label": "Snowflake",
+      "category": "analytics",
+      "port": "443",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "trino",
+      "dbType": "trino",
+      "label": "Trino",
+      "category": "analytics",
+      "port": "8080",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "prestosql",
+      "dbType": "prestosql",
+      "label": "PrestoSQL",
+      "category": "analytics",
+      "port": "8080",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "hive",
+      "dbType": "hive",
+      "label": "Apache Hive",
+      "category": "analytics",
+      "port": "10000",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "kyuubi",
+      "dbType": "kyuubi",
+      "label": "Apache Kyuubi",
+      "category": "analytics",
+      "port": "10009",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "transwarp-inceptor",
+      "dbType": "transwarp",
+      "label": "星环Inceptor",
+      "category": "domestic",
+      "port": "10000",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "argo",
+      "dbType": "argo",
+      "label": "ArgoDB (Transwarp)",
+      "category": "domestic",
+      "port": "10000",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "impala",
+      "dbType": "impala",
+      "label": "Apache Impala",
+      "category": "analytics",
+      "port": "21050",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "spark",
+      "dbType": "spark",
+      "label": "Apache Spark",
+      "category": "analytics",
+      "port": "10015",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "db2",
+      "dbType": "db2",
+      "label": "IBM DB2",
+      "category": "sql",
+      "port": "50000",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "informix",
+      "dbType": "informix",
+      "label": "Informix",
+      "category": "sql",
+      "port": "9088",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "dremio",
+      "dbType": "jdbc",
+      "label": "Dremio",
+      "category": "analytics",
+      "port": "31010",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "jdbcx",
+      "dbType": "jdbc",
+      "label": "JDBCX",
+      "category": "sql",
+      "port": "0",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "neo4j",
+      "dbType": "neo4j",
+      "label": "Neo4j",
+      "category": "graph_ai",
+      "port": "7687",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "nebula",
+      "dbType": "nebula",
+      "label": "NebulaGraph",
+      "category": "graph_ai",
+      "port": "9669",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "cassandra",
+      "dbType": "cassandra",
+      "label": "Cassandra",
+      "category": "document",
+      "port": "9042",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "bigquery",
+      "dbType": "bigquery",
+      "label": "BigQuery",
+      "category": "analytics",
+      "port": "443",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "spanner",
+      "dbType": "spanner",
+      "label": "Cloud Spanner",
+      "category": "sql",
+      "port": "443",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "kylin",
+      "dbType": "kylin",
+      "label": "Apache Kylin",
+      "category": "analytics",
+      "port": "7070",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "ignite",
+      "dbType": "ignite",
+      "label": "Apache Ignite",
+      "category": "analytics",
+      "port": "10800",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "ignite3",
+      "dbType": "ignite3",
+      "label": "Apache Ignite 3",
+      "category": "analytics",
+      "port": "10800",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "sundb",
+      "dbType": "sundb",
+      "label": "科蓝 SUNDB",
+      "category": "domestic",
+      "port": "22000",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "oscar",
+      "dbType": "oscar",
+      "label": "神通 OSCAR",
+      "category": "domestic",
+      "port": "2003",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "jdbc",
+      "dbType": "jdbc",
+      "label": "JDBC",
+      "port": "0",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "tdengine",
+      "dbType": "tdengine",
+      "label": "TDengine",
+      "category": "timeseries",
+      "port": "6041",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "xugu",
+      "dbType": "xugu",
+      "label": "虚谷 XuguDB",
+      "category": "domestic",
+      "port": "5138",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "iotdb",
+      "dbType": "iotdb",
+      "label": "Apache IoTDB",
+      "category": "timeseries",
+      "port": "6667",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "etcd",
+      "dbType": "etcd",
+      "label": "etcd",
+      "category": "registry_config",
+      "port": "2379",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "etcd-v2",
+      "dbType": "etcd",
+      "label": "etcd 2.x (v2 API)",
+      "port": "2379",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "zookeeper",
+      "dbType": "zookeeper",
+      "label": "Apache ZooKeeper",
+      "category": "registry_config",
+      "port": "2181",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "mq",
+      "dbType": "mq",
+      "label": "Apache Pulsar",
+      "category": "mq",
+      "port": "8080",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "kafka",
+      "dbType": "mq",
+      "label": "Apache Kafka",
+      "category": "mq",
+      "port": "9092",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "rocketmq",
+      "dbType": "mq",
+      "label": "Apache RocketMQ",
+      "category": "mq",
+      "port": "9876",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "rabbitmq",
+      "dbType": "mq",
+      "label": "RabbitMQ",
+      "category": "mq",
+      "port": "5672",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "nacos",
+      "dbType": "nacos",
+      "label": "Nacos",
+      "category": "registry_config",
+      "port": "8848",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "consul",
+      "dbType": "consul",
+      "label": "Consul",
+      "category": "registry_config",
+      "port": "8500",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "mqtt",
+      "dbType": "mqtt",
+      "label": "MQTT",
+      "category": "mq",
+      "port": "1883",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "iris",
+      "dbType": "iris",
+      "label": "IRIS",
+      "category": "sql",
+      "port": "1972",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "cache",
+      "dbType": "iris",
+      "label": "InterSystems Caché",
+      "category": "sql",
+      "port": "1972",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "influxdb",
+      "dbType": "influxdb",
+      "label": "InfluxDB",
+      "category": "timeseries",
+      "port": "8086",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "influxdb3",
+      "dbType": "influxdb3",
+      "label": "InfluxDB 3.x",
+      "category": "timeseries",
+      "port": "8181",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "victoriametrics",
+      "dbType": "victoriametrics",
+      "label": "VictoriaMetrics",
+      "category": "timeseries",
+      "port": "8428",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "salesforce",
+      "dbType": "salesforce",
+      "label": "Salesforce",
+      "category": "analytics",
+      "port": "443",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "custom_mysql",
+      "dbType": "mysql",
+      "label": "Custom",
+      "category": "sql",
+      "port": "3306",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "dolt",
+      "dbType": "mysql",
+      "label": "Dolt",
+      "category": "sql",
+      "port": "3306",
+      "nyadb_kind": null,
+      "status": "missing"
+    },
+    {
+      "id": "custom_postgres",
+      "dbType": "postgres",
+      "label": "Custom",
+      "category": "sql",
+      "port": "5432",
+      "nyadb_kind": null,
+      "status": "missing"
+    }
+  ]
+}
