@@ -51,6 +51,8 @@ func (s *Service) Duplicate(ctx context.Context, id int64, name string) (Profile
 // Defaults are UI-independent initial values, not connection attempts.
 func Defaults(kind Kind) (Profile, error) {
 	switch kind {
+	case Redis:
+		return Profile{Kind: Redis, Host: "localhost", Port: 6379, Database: "0", TLSMode: "disable", RedisOptions: DefaultRedisOptions()}, nil
 	case Oracle:
 		return Profile{Kind: Oracle, Host: "localhost", Port: 1521, Database: "XEPDB1", Username: "", TLSMode: "disable", OracleOptions: DefaultOracleOptions()}, nil
 	case MongoDB:

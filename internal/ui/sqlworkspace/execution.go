@@ -44,7 +44,7 @@ func (s *State) Run(invalidate func(), t *Document) {
 	if statement == "" {
 		t.err = "请输入 SQL"
 		if t.nativeCommands {
-			t.err = "请输入 MongoDB 命令"
+			t.err = t.commandText("请输入 MongoDB 命令", "请输入 Redis 命令")
 		}
 		s.report(t.err)
 		return
@@ -104,7 +104,7 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 	t.results = resultChan
 	s.report("正在执行 SQL")
 	if t.nativeCommands {
-		s.report("正在执行 MongoDB 命令")
+		s.report(t.commandText("正在执行 MongoDB 命令", "正在执行 Redis 命令"))
 	}
 	source := "query"
 	if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(statement)), "EXPLAIN ") {
@@ -201,7 +201,7 @@ func (s *State) DisconnectProfile(profileID int64) {
 			t.result = nil
 			t.err = "连接已断开；SQL 文本已保留。请先连接原配置，再以新会话继续；事务、临时表与变量不能恢复"
 			if t.nativeCommands {
-				t.err = "连接已断开；MongoDB 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令"
+				t.err = t.commandText("连接已断开；MongoDB 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；Redis 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令")
 			}
 		}
 	}

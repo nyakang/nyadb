@@ -274,6 +274,14 @@ func (s *State) toolBar(c *ui.Context) {
 					}
 				}
 
+				if kind == connections.Redis {
+					if action.label == "视图" || action.label == "函数" || action.label == "用户" || action.label == "其它" {
+						continue
+					}
+					if action.label == "表" {
+						action.label = "键"
+					}
+				}
 				if kind == connections.MongoDB {
 					if action.label == "函数" || action.label == "用户" || action.label == "其它" {
 						continue
@@ -342,7 +350,7 @@ func (s *State) toolBar(c *ui.Context) {
 // menu, but never announce a successful operation for an unsupported feature.
 func (s *State) toolbarActionAvailable(action string) bool {
 	switch action {
-	case "连接", "新建查询", "集合", "表", "视图", "信息":
+	case "连接", "新建查询", "键", "集合", "表", "视图", "信息":
 		return true
 	case "函数":
 		if !s.profileMode {

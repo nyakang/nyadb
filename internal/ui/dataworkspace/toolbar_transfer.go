@@ -126,7 +126,7 @@ type mysqlDataImportInput struct {
 func (s *State) openDataImport(t *Document) { s.openDataTransfer(t, "import") }
 func (s *State) openDataExport(t *Document) { s.openDataTransfer(t, "export") }
 func (s *State) openDataTransfer(t *Document, kind string) {
-	if t != nil && t.capabilities.Documents && kind == "import" {
+	if t != nil && (t.capabilities.Documents || t.capabilities.KeyValues) && kind == "import" {
 		return
 	}
 	if t == nil || t.closed || t.page == nil && !t.importOnly || t.importOnly && kind != "import" || t.loading || t.edit.Busy || t.edit.Uncertain != nil || t.transfer.Busy || t.transfer.Uncertain || dataTransactionActive(t) || dataTransactionBusy(t) {
@@ -240,7 +240,7 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 					ui.Row(c).Gap(8).Children(func() {
 						ui.Text(c, locales.Text("文件格式"))
 						choices := mysqlDataTransferFormatChoices(tr.Kind)
-						if t.capabilities.Documents {
+						if t.capabilities.Documents || t.capabilities.KeyValues {
 							choices = slices.DeleteFunc(choices, func(format string) bool { return format == "SQL" })
 						}
 						mysqlDataRuleSelect(c, &tr.Format, choices, func(x string) string { return x }).Disabled(tr.Busy || tr.Input != nil).Width(130)
@@ -509,7 +509,7 @@ func (s *State) startDataImport(services ui.Services, t *Document) {
 }
 func (s *State) startDataExport(services ui.Services, t *Document) {
 	tr := &t.transfer
-	if t.capabilities.Documents && tr.Format == "SQL" {
+	if (t.capabilities.Documents || t.capabilities.KeyValues) && tr.Format == "SQL" {
 		tr.Err = contract.ErrUnsupported.Error()
 		return
 	}

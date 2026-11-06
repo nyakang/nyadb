@@ -123,7 +123,7 @@ func (s *State) copyDataSelection(services ui.Services, t *Document) {
 func (s *State) mysqlDataCopyAsMenu(c *ui.Context, t *Document, m *ui.Menu) {
 	names, rows, nulls := mysqlDataSelectedPreview(t)
 	empty := len(rows) == 0 || len(names) == 0
-	if !t.portable() && !t.capabilities.Documents {
+	if !t.portable() && !(t.capabilities.Documents || t.capabilities.KeyValues) {
 		for _, item := range []struct {
 			label  string
 			update bool
@@ -172,7 +172,7 @@ func mysqlDataSQLIdentifier(name string) string {
 	return "`" + strings.ReplaceAll(name, "`", "``") + "`"
 }
 func mysqlDataSQLSelection(t *Document, update bool) (string, error) {
-	if t != nil && t.capabilities.Documents {
+	if t != nil && (t.capabilities.Documents || t.capabilities.KeyValues) {
 		return "", contract.ErrUnsupported
 	}
 	selectedFields, _, _ := mysqlDataSelectedPreview(t)

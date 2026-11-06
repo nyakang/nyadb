@@ -66,6 +66,7 @@ type ProfileChoice struct {
 // immutable request values; only Consume reads their private buffered channels.
 type Document struct {
 	nativeCommands   bool
+	commandDialect   string
 	snapshotOwner    *Document
 	cachedExport     cachedExportDraft
 	layoutMode       string
@@ -177,9 +178,12 @@ func (s *State) Open(id uint64, text string, profileID int64, database string, p
 	buffer := editor.NewBuffer(text)
 	buffer.SetLanguage(editor.LanguageNamed("SQL"))
 	d := &Document{id: id, profileID: profileID, database: database, preview: preview, Editor: &editor.State{Buffer: buffer, WrapGuides: []int{100}}}
-	if s.deps.QueryDialect != nil && s.deps.QueryDialect(profileID) == "mongodb" {
-		d.nativeCommands = true
-		buffer.SetLanguage(editor.LanguageNamed("JSON"))
+	if s.deps.QueryDialect != nil {
+		d.commandDialect = s.deps.QueryDialect(profileID)
+		if d.commandDialect == "mongodb" || d.commandDialect == "redis" {
+			d.nativeCommands = true
+			buffer.SetLanguage(editor.LanguageNamed("JSON"))
+		}
 	}
 	d.namespaceSchema = database
 	if s.deps.Namespace != nil {

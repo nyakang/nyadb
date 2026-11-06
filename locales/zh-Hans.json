@@ -1962,5 +1962,22 @@
   "mongoExplain": "MongoDB 请使用原生 explain 命令",
   "mongoSeedsHelp": "附加节点使用逗号分隔的 host:port；SRV 使用单个域名和 TLS。",
   "mongoPoolLimit": "连接池上限",
-  "mongoCollectionInfo": "集合信息"
+  "mongoCollectionInfo": "集合信息",
+  "redisKey": "键",
+  "redisKeyInfo": "键信息",
+  "redisOpenKey": "打开键",
+  "redisOpenKeyData": "打开选中键数据",
+  "redisKeyStructure": "查看键结构（只读）",
+  "redisTLSMode": "Redis TLS 模式",
+  "redisCA": "Redis CA 证书",
+  "redisPassword": "Redis 会话密码",
+  "redisRun": "运行 Redis 命令",
+  "redisEditor": "Redis 命令编辑器",
+  "redisEnter": "请输入 Redis 命令",
+  "redisExecuting": "正在执行 Redis 命令",
+  "redisExplain": "Redis 不支持 SQL EXPLAIN",
+  "redisRecovery": "连接已断开；Redis 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令",
+  "redisStandalone": "Redis 单节点连接；支持 Redis 7 及以上版本。用户名留空使用默认用户。",
+  "redisScanWarning": "SCAN 不提供稳定快照；扫描期间键变化可能导致重复或遗漏。键和值中的字节使用 base64。",
+  "redisCommand": "Redis 命令："
 }

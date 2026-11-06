@@ -11,6 +11,7 @@ require (
 	github.com/jackc/pgx/v5 v5.12.0
 	github.com/microsoft/go-mssqldb v1.11.2
 	github.com/parquet-go/parquet-go v0.32.0
+	github.com/redis/go-redis/v9 v9.23.0
 	github.com/shopspring/decimal v1.6.0
 	github.com/sijms/go-ora/v2 v2.9.0
 	github.com/zalando/go-keyring v0.2.8
@@ -54,6 +55,7 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	go.opentelemetry.io/otel v1.47.0 // indirect
 	go.opentelemetry.io/otel/trace v1.47.0 // indirect
+	go.uber.org/atomic v1.12.0 // indirect
 	golang.org/x/image v0.47.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect

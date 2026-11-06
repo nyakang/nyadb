@@ -5,7 +5,7 @@
 
 [![Listed on Awesome MyGo](https://awesomemygo.dev/badge.svg)](https://awesomemygo.dev/apps/nyadb)
 
-NyaDB is a cross-platform, native desktop database workbench built with [Go](https://go.dev/) and the [NyaDB fork of MyGo Native UI](https://github.com/nyakang/mygo). It supports live MySQL, MariaDB, PostgreSQL, SQLite, ClickHouse, SQL Server, DuckDB, Oracle and MongoDB connections, SQL or native MongoDB commands, and database browsing, with data editing and administration tools for supported engines.
+NyaDB is a cross-platform, native desktop database workbench built with [Go](https://go.dev/) and the [NyaDB fork of MyGo Native UI](https://github.com/nyakang/mygo). It supports live MySQL, MariaDB, PostgreSQL, SQLite, ClickHouse, SQL Server, DuckDB, Oracle, MongoDB and Redis connections, SQL or native MongoDB/Redis commands, and database browsing, with data editing and administration tools for supported engines.
 
 ![NyaDB workbench preview](docs/ui-preview.png)
 
@@ -39,6 +39,8 @@ This image is a historical headless UI preview. For recent native-window verific
 | Oracle | Service name or SID connections, schema/object browsing, SQL and PL/SQL, EXPLAIN PLAN, shared-grid editing, transactions, field previews, counting, analysis and append import/export | Uses a pure Go driver; no Instant Client required. Views, unsupported types and unreliable keys are read-only. LOB editing requires DBMS_CRYPTO. No designer, administration, backup/restore, TNS aliases, wallets or tunnels. |
 | DuckDB | Local files or `:memory:`, schema/object browsing, SQL and JSON EXPLAIN, shared-grid editing, snapshot transactions, filtering, counting, analysis and append import/export | Requires the verified official DuckDB 1.4.4 runtime. Views and unsupported column types are read-only for editing. No designer, object-management dialogs, backup/restore or tunnels. |
 | MongoDB | Hosts/seeds or SRV, SCRAM and TLS, database/collection/index browsing, native Extended JSON commands, shared-grid document editing, counting and export | Verified on MongoDB 7.0.28 standalone and replica-set fixtures. Complete-document editing preserves BSON types and checks concurrent changes. No SQL/mongosh JavaScript, transaction controls, import wizard, designer, backup/restore or tunnels. See the [MongoDB report](docs/mongodb-2026-11-06.md). |
+
+| Redis | Standalone Redis 7+, ACL authentication and verified TLS; logical databases, SCAN key browsing, pinned native command sessions, shared-grid viewing/editing of string/hash/list/set/zset/stream values, TTL, rename, count and export | Bytes use base64. Updates check serialized values and absolute expiry. Stream IDs are immutable; append/delete preserve consumer groups. Complete editing/export is limited to 1 MiB per value; string field previews are bounded. Cluster, Sentinel, Pub/Sub, SQL, table design and backup/restore are unavailable. See the [Redis report](docs/redis-2026-11-06.md). |
 
 Grid editing requires a reliable row identity; views, generated fields, and unsupported objects remain read-only. Availability is checked against the engine, adapter, server permissions, and selected object. Unsupported operations are disabled or rejected explicitly.
 

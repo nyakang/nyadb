@@ -172,7 +172,7 @@ func (s *State) OpenProfile(profile connections.Profile) {
 	if profile.Kind.IsMySQLFamily() {
 		s.loadSavedConnectionPasswords()
 		s.loadTunnelSecrets()
-	} else if profile.Kind == connections.PostgreSQL || profile.Kind == connections.ClickHouse || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.MongoDB {
+	} else if profile.Kind == connections.PostgreSQL || profile.Kind == connections.ClickHouse || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis {
 		s.loadSavedConnectionPasswords()
 	}
 }
@@ -265,6 +265,8 @@ func connectionKindName(kind connections.Kind) string {
 		return "MySQL"
 	case connections.MariaDB:
 		return "MariaDB"
+	case connections.Redis:
+		return "Redis"
 	case connections.MongoDB:
 		return "MongoDB"
 	case connections.Oracle:

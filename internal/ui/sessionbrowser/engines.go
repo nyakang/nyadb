@@ -161,6 +161,9 @@ func sessionNamespaces(ctx context.Context, s contract.Session) ([]string, error
 	return out, nil
 }
 func (s *State) engineLabel(w *Workspace) string {
+	if w.Kind == connections.Redis {
+		return "Redis"
+	}
 	if w.Kind == connections.MongoDB {
 		return "MongoDB"
 	}

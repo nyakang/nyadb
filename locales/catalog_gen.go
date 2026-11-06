@@ -19967,3 +19967,173 @@ func MongoCollectionInfo() string { return In(i18n.Locale()).MongoCollectionInfo
 func (msgs Messages) MongoCollectionInfo() string {
 	return Catalog.Format(msgs.locale, "mongoCollectionInfo", nil)
 }
+
+// RedisKey says "键"
+// in the language the app shows.
+func RedisKey() string { return In(i18n.Locale()).RedisKey() }
+
+// RedisKey says "键"
+// in the language of msgs.
+func (msgs Messages) RedisKey() string {
+	return Catalog.Format(msgs.locale, "redisKey", nil)
+}
+
+// RedisKeyInfo says "键信息"
+// in the language the app shows.
+func RedisKeyInfo() string { return In(i18n.Locale()).RedisKeyInfo() }
+
+// RedisKeyInfo says "键信息"
+// in the language of msgs.
+func (msgs Messages) RedisKeyInfo() string {
+	return Catalog.Format(msgs.locale, "redisKeyInfo", nil)
+}
+
+// RedisOpenKey says "打开键"
+// in the language the app shows.
+func RedisOpenKey() string { return In(i18n.Locale()).RedisOpenKey() }
+
+// RedisOpenKey says "打开键"
+// in the language of msgs.
+func (msgs Messages) RedisOpenKey() string {
+	return Catalog.Format(msgs.locale, "redisOpenKey", nil)
+}
+
+// RedisOpenKeyData says "打开选中键数据"
+// in the language the app shows.
+func RedisOpenKeyData() string { return In(i18n.Locale()).RedisOpenKeyData() }
+
+// RedisOpenKeyData says "打开选中键数据"
+// in the language of msgs.
+func (msgs Messages) RedisOpenKeyData() string {
+	return Catalog.Format(msgs.locale, "redisOpenKeyData", nil)
+}
+
+// RedisKeyStructure says "查看键结构（只读）"
+// in the language the app shows.
+func RedisKeyStructure() string { return In(i18n.Locale()).RedisKeyStructure() }
+
+// RedisKeyStructure says "查看键结构（只读）"
+// in the language of msgs.
+func (msgs Messages) RedisKeyStructure() string {
+	return Catalog.Format(msgs.locale, "redisKeyStructure", nil)
+}
+
+// RedisTLSMode says "Redis TLS 模式"
+// in the language the app shows.
+func RedisTLSMode() string { return In(i18n.Locale()).RedisTLSMode() }
+
+// RedisTLSMode says "Redis TLS 模式"
+// in the language of msgs.
+func (msgs Messages) RedisTLSMode() string {
+	return Catalog.Format(msgs.locale, "redisTLSMode", nil)
+}
+
+// RedisCA says "Redis CA 证书"
+// in the language the app shows.
+func RedisCA() string { return In(i18n.Locale()).RedisCA() }
+
+// RedisCA says "Redis CA 证书"
+// in the language of msgs.
+func (msgs Messages) RedisCA() string {
+	return Catalog.Format(msgs.locale, "redisCA", nil)
+}
+
+// RedisPassword says "Redis 会话密码"
+// in the language the app shows.
+func RedisPassword() string { return In(i18n.Locale()).RedisPassword() }
+
+// RedisPassword says "Redis 会话密码"
+// in the language of msgs.
+func (msgs Messages) RedisPassword() string {
+	return Catalog.Format(msgs.locale, "redisPassword", nil)
+}
+
+// RedisRun says "运行 Redis 命令"
+// in the language the app shows.
+func RedisRun() string { return In(i18n.Locale()).RedisRun() }
+
+// RedisRun says "运行 Redis 命令"
+// in the language of msgs.
+func (msgs Messages) RedisRun() string {
+	return Catalog.Format(msgs.locale, "redisRun", nil)
+}
+
+// RedisEditor says "Redis 命令编辑器"
+// in the language the app shows.
+func RedisEditor() string { return In(i18n.Locale()).RedisEditor() }
+
+// RedisEditor says "Redis 命令编辑器"
+// in the language of msgs.
+func (msgs Messages) RedisEditor() string {
+	return Catalog.Format(msgs.locale, "redisEditor", nil)
+}
+
+// RedisEnter says "请输入 Redis 命令"
+// in the language the app shows.
+func RedisEnter() string { return In(i18n.Locale()).RedisEnter() }
+
+// RedisEnter says "请输入 Redis 命令"
+// in the language of msgs.
+func (msgs Messages) RedisEnter() string {
+	return Catalog.Format(msgs.locale, "redisEnter", nil)
+}
+
+// RedisExecuting says "正在执行 Redis 命令"
+// in the language the app shows.
+func RedisExecuting() string { return In(i18n.Locale()).RedisExecuting() }
+
+// RedisExecuting says "正在执行 Redis 命令"
+// in the language of msgs.
+func (msgs Messages) RedisExecuting() string {
+	return Catalog.Format(msgs.locale, "redisExecuting", nil)
+}
+
+// RedisExplain says "Redis 不支持 SQL EXPLAIN"
+// in the language the app shows.
+func RedisExplain() string { return In(i18n.Locale()).RedisExplain() }
+
+// RedisExplain says "Redis 不支持 SQL EXPLAIN"
+// in the language of msgs.
+func (msgs Messages) RedisExplain() string {
+	return Catalog.Format(msgs.locale, "redisExplain", nil)
+}
+
+// RedisRecovery says "连接已断开；Redis 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令"
+// in the language the app shows.
+func RedisRecovery() string { return In(i18n.Locale()).RedisRecovery() }
+
+// RedisRecovery says "连接已断开；Redis 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令"
+// in the language of msgs.
+func (msgs Messages) RedisRecovery() string {
+	return Catalog.Format(msgs.locale, "redisRecovery", nil)
+}
+
+// RedisStandalone says "Redis 单节点连接；支持 Redis 7 及以上版本。用户名留空使用默认用户。"
+// in the language the app shows.
+func RedisStandalone() string { return In(i18n.Locale()).RedisStandalone() }
+
+// RedisStandalone says "Redis 单节点连接；支持 Redis 7 及以上版本。用户名留空使用默认用户。"
+// in the language of msgs.
+func (msgs Messages) RedisStandalone() string {
+	return Catalog.Format(msgs.locale, "redisStandalone", nil)
+}
+
+// RedisScanWarning says "SCAN 不提供稳定快照；扫描期间键变化可能导致重复或遗漏。键和值中的字节使用 base64。"
+// in the language the app shows.
+func RedisScanWarning() string { return In(i18n.Locale()).RedisScanWarning() }
+
+// RedisScanWarning says "SCAN 不提供稳定快照；扫描期间键变化可能导致重复或遗漏。键和值中的字节使用 base64。"
+// in the language of msgs.
+func (msgs Messages) RedisScanWarning() string {
+	return Catalog.Format(msgs.locale, "redisScanWarning", nil)
+}
+
+// RedisCommand says "Redis 命令："
+// in the language the app shows.
+func RedisCommand() string { return In(i18n.Locale()).RedisCommand() }
+
+// RedisCommand says "Redis 命令："
+// in the language of msgs.
+func (msgs Messages) RedisCommand() string {
+	return Catalog.Format(msgs.locale, "redisCommand", nil)
+}

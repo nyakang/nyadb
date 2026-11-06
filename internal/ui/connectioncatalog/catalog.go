@@ -25,7 +25,7 @@ var databaseCatalog = []catalogEntry{
 	{"DuckDB", "DuckDB", "", "全部", "duckdb-type", "#d6ad00", connections.DuckDB},
 	{"MariaDB", "MariaDB", "", "全部", "maria-type", "#b58a61", connections.MariaDB},
 	{"MongoDB", "MongoDB", "", "全部", "mongo-type", "#bb691d", connections.MongoDB},
-	{"Redis", "Redis", "", "全部", "redis-type", "#e77679", ""},
+	{"Redis", "Redis", "", "全部", "redis-type", "#e77679", connections.Redis},
 	{"Snowflake", "Snowflake", "", "全部", "snowflake-type", "#3daac7", ""},
 	{"达梦", "达梦", "", "全部", "dm-type", "#7e63cc", ""},
 	{"OceanBase", "OceanBase", "", "全部", "ocean-type", "#3486d1", ""},

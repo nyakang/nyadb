@@ -96,8 +96,11 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *contract.DataPag
 			theme.EmptyTable(c, &t.grid, nil, locales.Text("此对象没有可见字段"))
 		} else {
 			if !page.StableOrder {
-				ui.Text(c, locales.Text("此对象没有完整非空唯一键，OFFSET 分页期间数据变化可能导致行重复或遗漏")).
-					Padding(2, 6).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Warning).SingleLine().Tooltip(locales.Text("此对象没有完整非空唯一键，OFFSET 分页期间数据变化可能导致行重复或遗漏"))
+				warning := locales.Text("此对象没有完整非空唯一键，OFFSET 分页期间数据变化可能导致行重复或遗漏")
+				if t.capabilities.KeyValues {
+					warning = locales.Text("SCAN 不提供稳定快照；扫描期间键变化可能导致重复或遗漏。键和值中的字节使用 base64。")
+				}
+				ui.Text(c, warning).Padding(2, 6).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Warning).SingleLine().Tooltip(warning)
 			}
 			visibleIndices, visibleColumns := mysqlVisibleDataColumns(t, page)
 			columns := append([]ui.TableColumn{mysqlDataRowHeaderColumn(t)}, visibleColumns...)
@@ -301,6 +304,9 @@ func mysqlDataQueryStatus(t *Document) string {
 	if t.loading || t.err != "" || t.readInfo.Canceled || t.page == nil {
 		return locales.Text("上次成功查询（参数化）：") + t.readInfo.QuerySQL
 	}
+	if t.capabilities.KeyValues {
+		return locales.Text("Redis 命令：") + t.readInfo.QuerySQL
+	}
 	return locales.Text("参数化 SQL：") + t.readInfo.QuerySQL
 }
 
@@ -453,6 +459,9 @@ func mysqlDataPendingRecordCount(t *Document) int {
 }
 
 func mysqlDataPageMethod(page *contract.DataPage) string {
+	if page.Object.Kind == "keyspace" {
+		return "SCAN"
+	}
 	if page.KeysetAvailable {
 		return "Keyset"
 	}

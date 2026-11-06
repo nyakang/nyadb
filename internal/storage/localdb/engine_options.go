@@ -12,6 +12,7 @@ import (
 // Keep the existing column and MySQL JSON format. Other engines use an
 // explicit versioned envelope; older empty records receive engine defaults.
 type engineOptionsEnvelope struct {
+	Redis      *connections.RedisOptions      `json:"redis,omitempty"`
 	MongoDB    *connections.MongoDBOptions    `json:"mongodb,omitempty"`
 	Oracle     *connections.OracleOptions     `json:"oracle,omitempty"`
 	DuckDB     *connections.DuckDBOptions     `json:"duckdb,omitempty"`
@@ -25,6 +26,8 @@ type engineOptionsEnvelope struct {
 func encodeProfileOptions(p connections.Profile) (string, error) {
 	var value any
 	switch p.Kind {
+	case connections.Redis:
+		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Redis: &p.RedisOptions}
 	case connections.MongoDB:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, MongoDB: &p.MongoDBOptions}
 	case connections.Oracle:
@@ -49,6 +52,9 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 }
 func decodeEngineOptions(p *connections.Profile, raw string) error {
 	if raw == "" {
+		if p.Kind == connections.Redis {
+			p.RedisOptions = connections.DefaultRedisOptions()
+		}
 		if p.Kind == connections.MongoDB {
 			p.MongoDBOptions = connections.DefaultMongoDBOptions()
 		}
@@ -73,6 +79,17 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 	decoder.DisallowUnknownFields()
 	if len(raw) > 128<<10 || decoder.Decode(&envelope) != nil || decoder.Decode(new(any)) != io.EOF || envelope.Version != 1 || envelope.Kind != p.Kind {
 		return fmt.Errorf("invalid saved engine options")
+	}
+	if p.Kind == connections.Redis {
+		if envelope.Redis == nil || envelope.MongoDB != nil || envelope.Oracle != nil || envelope.DuckDB != nil || envelope.SQLServer != nil || envelope.SQLite != nil || envelope.PostgreSQL != nil {
+			return connections.ErrInvalid
+		}
+		var err error
+		p.RedisOptions, err = connections.NormalizeRedisOptions(*envelope.Redis)
+		return err
+	}
+	if envelope.Redis != nil {
+		return connections.ErrInvalid
 	}
 	if p.Kind == connections.Oracle {
 		if envelope.MongoDB != nil {

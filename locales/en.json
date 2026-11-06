@@ -1962,5 +1962,22 @@
   "mongoExplain": "Use a native explain command for MongoDB",
   "mongoSeedsHelp": "Separate additional host:port seeds with commas; SRV uses one domain and TLS.",
   "mongoPoolLimit": "Connection pool limit",
-  "mongoCollectionInfo": "Collection info"
+  "mongoCollectionInfo": "Collection info",
+  "redisKey": "Keys",
+  "redisKeyInfo": "Key info",
+  "redisOpenKey": "Open keys",
+  "redisOpenKeyData": "Open selected key data",
+  "redisKeyStructure": "View key structure (read only)",
+  "redisTLSMode": "Redis TLS mode",
+  "redisCA": "Redis CA certificate",
+  "redisPassword": "Redis session password",
+  "redisRun": "Run Redis command",
+  "redisEditor": "Redis command editor",
+  "redisEnter": "Enter a Redis command",
+  "redisExecuting": "Executing Redis command",
+  "redisExplain": "Redis does not support SQL EXPLAIN",
+  "redisRecovery": "Disconnected; Redis commands were preserved. Connect to the original profile and explicitly start a new session; commands will not run automatically.",
+  "redisStandalone": "Standalone Redis 7 or later. Leave the username empty to use the default user.",
+  "redisScanWarning": "SCAN is not a stable snapshot; key changes may cause duplicates or omissions. Key and value bytes use base64.",
+  "redisCommand": "Redis command: "
 }
