@@ -27,7 +27,7 @@ func (s *State) setProfileActiveVariant(id int64, name string) {
 		s.status = "读取连接配置失败：" + err.Error()
 		return
 	}
-	if p.Kind != connections.MySQL {
+	if !p.Kind.IsMySQLFamily() {
 		return
 	}
 	if name != "" {

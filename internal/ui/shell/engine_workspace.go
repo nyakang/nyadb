@@ -29,7 +29,7 @@ func (s *State) SetEngineFiles(pick func(string) (string, error), write func(str
 }
 func (s *State) engineSessionToolbar(c *ui.Context) bool {
 	p, ok := s.currentProfile()
-	if !ok || p.Kind == connections.MySQL {
+	if !ok || p.Kind.IsMySQLFamily() {
 		return false
 	}
 	status := s.sessions.StatusFor(p.ID)
@@ -73,7 +73,7 @@ func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string 
 		if p.ID == id && p.Kind == connections.ClickHouse {
 			return sqltext.ClickHouseStatementAt(source, cursor)
 		}
-		if p.ID == id && p.Kind != connections.MySQL && p.Kind != connections.ClickHouse {
+		if p.ID == id && !p.Kind.IsMySQLFamily() && p.Kind != connections.ClickHouse {
 			return sqltext.PortableStatementAt(source, cursor)
 		}
 	}
@@ -85,7 +85,7 @@ func (s *State) sqlFormat(id int64, source string) (string, error) {
 		if p.ID == id && p.Kind == connections.ClickHouse {
 			return sqltext.FormatClickHouse(source)
 		}
-		if p.ID == id && p.Kind != connections.MySQL && p.Kind != connections.ClickHouse {
+		if p.ID == id && !p.Kind.IsMySQLFamily() && p.Kind != connections.ClickHouse {
 			return sqltext.FormatPortable(source)
 		}
 	}
@@ -97,7 +97,7 @@ func (s *State) sqlValidateExplain(id int64, source string) error {
 		if p.ID == id && p.Kind == connections.ClickHouse {
 			return sqltext.SingleClickHouseStatement(source)
 		}
-		if p.ID == id && p.Kind != connections.MySQL && p.Kind != connections.ClickHouse {
+		if p.ID == id && !p.Kind.IsMySQLFamily() && p.Kind != connections.ClickHouse {
 			return sqltext.SinglePortableStatement(source)
 		}
 	}

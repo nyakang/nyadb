@@ -30,6 +30,8 @@ type Clause struct {
 }
 type Trigger struct{ Name, SQL, SQLMode string }
 type Snapshot struct {
+	// Engine is empty for legacy MySQL snapshots, or mysql/mariadb.
+	Engine               string
 	TriggersUnknown      bool
 	Database, Table, DDL string
 	SQLMode              string
@@ -41,10 +43,11 @@ func (s Snapshot) Fingerprint() string {
 	triggers := append([]Trigger(nil), s.Triggers...)
 
 	b, _ := json.Marshal(struct {
+		Engine          string `json:",omitempty"`
 		DDL             string
 		Triggers        []Trigger
 		TriggersUnknown bool
-	}{s.DDL, triggers, s.TriggersUnknown})
+	}{s.Engine, s.DDL, triggers, s.TriggersUnknown})
 	h := sha256.Sum256(b)
 	return hex.EncodeToString(h[:])
 }

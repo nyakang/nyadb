@@ -51,8 +51,8 @@ func (s *Service) Duplicate(ctx context.Context, id int64, name string) (Profile
 // Defaults are UI-independent initial values, not connection attempts.
 func Defaults(kind Kind) (Profile, error) {
 	switch kind {
-	case MySQL:
-		return Profile{Kind: MySQL, Host: "localhost", Port: 3306, Username: "root", MySQLAdvanced: DefaultMySQLAdvanced()}, nil
+	case MySQL, MariaDB:
+		return Profile{Kind: kind, Host: "localhost", Port: 3306, Username: "root", MySQLAdvanced: DefaultMySQLAdvanced()}, nil
 	case PostgreSQL:
 		return Profile{Kind: PostgreSQL, Host: "localhost", Port: 5432, Database: "postgres", Username: "postgres", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
 	case SQLite:

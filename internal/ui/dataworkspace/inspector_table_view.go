@@ -123,7 +123,7 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 				if d.info != nil && d.info.EstimatedRows != nil {
 					estimate = strconv.FormatInt(*d.info.EstimatedRows, 10)
 				}
-				if engine == connections.MySQL || d.info != nil && d.info.EstimatedRows != nil {
+				if engine.IsMySQLFamily() || d.info != nil && d.info.EstimatedRows != nil {
 					tableProperty(c, "估算行数", estimate)
 				}
 				if d.count != nil {
@@ -149,7 +149,7 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 				}
 				tableProperty(c, "类型", locales.Text(kind))
 
-				if engine != connections.MySQL {
+				if !engine.IsMySQLFamily() {
 					if descriptor, ok := connections.Describe(engine); ok {
 						tableProperty(c, "数据库产品", descriptor.Label)
 					}

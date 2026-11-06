@@ -34,7 +34,7 @@ func (s *State) MySQLSSLSessionVersion() uint64 {
 
 func (s *State) SelectMySQLSSLFile(kind MySQLSSLFile, version uint64, path string) {
 	if version != s.mysqlSSLSessionVersion || !s.active ||
-		s.connectionDraft.Kind != connections.MySQL ||
+		!s.connectionDraft.Kind.IsMySQLFamily() ||
 		!s.connectionDraft.MySQLAdvanced.SSL.Enabled ||
 		!s.connectionDraft.MySQLAdvanced.SSL.UseVerification || path == "" {
 		return
@@ -54,7 +54,7 @@ func (s *State) SelectMySQLSSLFile(kind MySQLSSLFile, version uint64, path strin
 
 func (s *State) MySQLSSLFilePickerError(version uint64) {
 	if version == s.mysqlSSLSessionVersion && s.active &&
-		s.connectionDraft.Kind == connections.MySQL {
+		s.connectionDraft.Kind.IsMySQLFamily() {
 		s.connectionError = locales.Text("选择 SSL 文件失败")
 	}
 }
@@ -140,7 +140,7 @@ func (s *State) clearMySQLSSHSecrets() {
 }
 
 func (s *State) advanceMySQLSSH(p *connections.Profile) error {
-	if p.Kind != connections.MySQL {
+	if !p.Kind.IsMySQLFamily() {
 		return nil
 	}
 	port, err := strconv.ParseUint(strings.TrimSpace(s.mysqlSSHPort), 10, 16)
@@ -161,7 +161,7 @@ func (s *State) MySQLSSHSessionVersion() uint64 {
 
 func (s *State) SelectMySQLSSHPrivateKey(version uint64, path string) {
 	if version != s.mysqlSSHSessionVersion ||
-		!s.active || s.connectionDraft.Kind != connections.MySQL ||
+		!s.active || !s.connectionDraft.Kind.IsMySQLFamily() ||
 		!s.connectionDraft.MySQLAdvanced.SSH.Enabled ||
 		s.connectionDraft.MySQLAdvanced.SSH.AuthMethod == connections.MySQLSSHPassword ||
 		path == "" {
@@ -173,7 +173,7 @@ func (s *State) SelectMySQLSSHPrivateKey(version uint64, path string) {
 
 func (s *State) MySQLSSHKeyPickerError(version uint64) {
 	if version == s.mysqlSSHSessionVersion && s.active &&
-		s.connectionDraft.Kind == connections.MySQL {
+		s.connectionDraft.Kind.IsMySQLFamily() {
 		s.connectionError = locales.Text("选择 SSH 私钥文件失败")
 	}
 }

@@ -161,6 +161,9 @@ func sessionNamespaces(ctx context.Context, s contract.Session) ([]string, error
 	return out, nil
 }
 func (s *State) engineLabel(w *Workspace) string {
+	if w.Kind == connections.MariaDB {
+		return "MariaDB"
+	}
 	if w.Kind == connections.ClickHouse {
 		return "ClickHouse"
 	}

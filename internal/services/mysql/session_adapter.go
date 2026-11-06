@@ -37,18 +37,23 @@ func OpenSession(ctx context.Context, p connections.Profile, password string, te
 		_ = m.Close()
 		return nil, e
 	}
-	return &SessionAdapter{manager: m, id: p.ID}, nil
+	return &SessionAdapter{manager: m, id: p.ID, kind: p.Kind}, nil
 }
 
 type SessionAdapter struct {
 	manager *MySQLSessionManager
 	id      int64
+	kind    connections.Kind
 }
 
 func (s *SessionAdapter) ProfileID() int64   { return s.id }
 func (s *SessionAdapter) Generation() uint64 { return s.manager.SessionGeneration(s.id) }
 func (s *SessionAdapter) Capabilities() contract.Capabilities {
-	d, _ := connections.Describe(connections.MySQL)
+	kind := s.kind
+	if kind == "" {
+		kind = connections.MySQL
+	}
+	d, _ := connections.Describe(kind)
 	return d.Capabilities
 }
 func (s *SessionAdapter) Alive() bool {

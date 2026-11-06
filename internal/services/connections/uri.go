@@ -40,8 +40,10 @@ func ParseURI(raw string) (URIImport, error) {
 	}
 	var kind Kind
 	switch strings.ToLower(u.Scheme) {
-	case "mysql", "mariadb":
+	case "mysql":
 		kind = MySQL
+	case "mariadb":
+		kind = MariaDB
 	case "postgres", "postgresql":
 		kind = PostgreSQL
 	case "clickhouse":
@@ -127,7 +129,7 @@ func ParseURI(raw string) (URIImport, error) {
 		if kind == ClickHouse && mode != "disable" && mode != "verify-full" {
 			return fail(ErrURIOptions)
 		}
-		if kind == MySQL && mode != "disable" && mode != "require" && mode != "verify-full" {
+		if kind.IsMySQLFamily() && mode != "disable" && mode != "require" && mode != "verify-full" {
 			return fail(ErrURIOptions)
 		}
 		if kind == PostgreSQL && mode != "disable" && mode != "prefer" && mode != "require" && mode != "verify-ca" && mode != "verify-full" {

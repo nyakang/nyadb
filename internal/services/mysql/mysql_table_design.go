@@ -11,6 +11,7 @@ import (
 
 	mysqldriver "github.com/go-sql-driver/mysql"
 	"github.com/nyakang/nyadb/internal/db/mysqlddl"
+	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
 type DDLStep struct {
@@ -56,6 +57,7 @@ func (m *MySQLSessionManager) TableDesign(ctx context.Context, id int64, databas
 	}
 	defer conn.Close()
 	result, e := readTableDesign(qctx, conn, database, table)
+	result.Engine = tableDesignEngine(s.settings.Kind)
 	result.RuntimeGeneration = generation
 	return result, e
 }
@@ -190,6 +192,14 @@ func (m *MySQLSessionManager) ApplyTableDesign(ctx context.Context, id int64, pl
 		return out
 	}
 	defer cancel()
+	engine := plan.Original.Engine
+	if engine == "mysql" {
+		engine = ""
+	}
+	if engine != tableDesignEngine(s.settings.Kind) {
+		out.Error = errors.New("table design engine does not match original session")
+		return out
+	}
 	valid := func() bool {
 		m.mu.Lock()
 		defer m.mu.Unlock()
@@ -234,6 +244,7 @@ func (m *MySQLSessionManager) ApplyTableDesign(ctx context.Context, id int64, pl
 		}
 	} else {
 		actual, e := readTableDesign(qctx, conn, plan.Original.Database, plan.Original.Table)
+		actual.Engine = tableDesignEngine(s.settings.Kind)
 		if e != nil {
 			out.Error = e
 			return out
@@ -282,6 +293,7 @@ func (m *MySQLSessionManager) ApplyTableDesign(ctx context.Context, id int64, pl
 		out.State = "executed"
 	}
 	actual, e := readTableDesign(qctx, conn, plan.Original.Database, plan.Original.Table)
+	actual.Engine = tableDesignEngine(s.settings.Kind)
 	if e != nil {
 		out.Error = fmt.Errorf("DDL completed, verification read failed: %w", e)
 		out.State = "uncertain"
@@ -300,4 +312,12 @@ func (m *MySQLSessionManager) ApplyTableDesign(ctx context.Context, id int64, pl
 	}
 	out.Verified = true
 	return out
+}
+
+// Retain the empty engine on legacy MySQL snapshots for compatibility.
+func tableDesignEngine(kind connections.Kind) string {
+	if kind == connections.MariaDB {
+		return "mariadb"
+	}
+	return ""
 }

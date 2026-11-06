@@ -73,7 +73,7 @@ func (s *State) consumeInitialSQL() {
 	}
 }
 func (s *State) prepareInitialSQLRefs(p *connections.Profile) {
-	if p.Kind != connections.MySQL {
+	if !p.Kind.IsMySQLFamily() {
 		return
 	}
 	if p.ID == 0 {

@@ -56,7 +56,7 @@ func (s *State) draftProfile() (connections.Profile, error) {
 func (s *State) Save() {
 	var p connections.Profile
 	var err error
-	if s.connectionDraft.ID != 0 && s.connectionDraft.Kind == connections.MySQL {
+	if s.connectionDraft.ID != 0 && s.connectionDraft.Kind.IsMySQLFamily() {
 		p, err = s.prepareConnectionConfigurations()
 	} else {
 		p, err = s.draftProfile()
@@ -112,7 +112,7 @@ func (s *State) Save() {
 		return
 	}
 	var undoDatabaseSecrets func() error
-	if saved.Kind == connections.MySQL {
+	if saved.Kind.IsMySQLFamily() {
 		writtenInitialSQL, err = s.persistInitialSQL(saved)
 		if err != nil {
 			var rollbackErr error
@@ -160,7 +160,7 @@ func (s *State) Save() {
 			return
 		}
 	}
-	if saved.Kind == connections.MySQL {
+	if saved.Kind.IsMySQLFamily() {
 		if err := s.persistTunnelSecrets(saved, before); err != nil {
 			if undoDatabaseSecrets != nil {
 				err = errors.Join(err, undoDatabaseSecrets())

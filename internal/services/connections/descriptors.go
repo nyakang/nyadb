@@ -14,6 +14,13 @@ func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
 	case MySQL:
 		return Descriptor{kind, "MySQL", "mysql", "server", "mysql", 3306, contract.Capabilities{Objects: true, Maintenance: true, Accounts: true, Restore: true, DesignViews: true, Query: true, Metadata: true, Transactions: true, EditableTables: true, Explain: true, DesignTables: true, Import: true, Backup: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true}}, true
+	case MariaDB:
+		d, _ := Describe(MySQL)
+		d.Kind, d.Label = kind, "MariaDB"
+		// Account administration currently targets MySQL's system tables and
+		// authentication plugins; MariaDB does not share that contract.
+		d.Capabilities.Accounts = false
+		return d, true
 	case PostgreSQL:
 		return Descriptor{kind, "PostgreSQL", "postgres", "server", "postgres", 5432, contract.Capabilities{Objects: true, DesignViews: true, Backup: true, Restore: true, Import: true, Maintenance: true, Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, DesignTables: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
 	case SQLite:
@@ -27,7 +34,7 @@ func Describe(kind Kind) (Descriptor, bool) {
 // FieldTypes offers common candidates without restricting custom declarations.
 func (d Descriptor) FieldTypes() []string {
 	switch d.Kind {
-	case MySQL:
+	case MySQL, MariaDB:
 		return []string{"bigint", "int", "smallint", "decimal(10,2)", "varchar(255)", "text", "datetime", "timestamp", "date", "json", "blob", "boolean"}
 	case PostgreSQL:
 		return []string{"bigint", "integer", "smallint", "numeric(10,2)", "text", "varchar(255)", "boolean", "timestamp", "timestamptz", "date", "json", "jsonb", "bytea", "uuid"}

@@ -40,7 +40,7 @@ func (s *State) initMySQLAdvancedInputs() {
 // advanceDraft validates the disabled as well as enabled numeric fields, so
 // toggling a checkbox never accidentally destroys the user's chosen value.
 func (s *State) advanceDraft(p *connections.Profile) error {
-	if p.Kind != connections.MySQL {
+	if !p.Kind.IsMySQLFamily() {
 		return nil
 	}
 	labels := []string{"保持连接间隔", "连接超时", "读取超时", "写入超时", "限制连接会话"}
@@ -257,7 +257,7 @@ func (s *State) connectionMySQLDatabases(c *ui.Context, width, height float32) {
 // sqlite configuration, logs or error reports. This editor is UI-only until
 // encrypted storage and actual connection execution are independently built.
 func (s *State) beginMySQLInitialQuery() {
-	if !s.active || s.connectionDraft.Kind != connections.MySQL || s.initialSQLLoadFailed {
+	if !s.active || !s.connectionDraft.Kind.IsMySQLFamily() || s.initialSQLLoadFailed {
 		return
 	}
 	s.mysqlInitialQueryDraft = s.mysqlInitialQuery

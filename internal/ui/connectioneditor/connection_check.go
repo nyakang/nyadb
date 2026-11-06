@@ -38,12 +38,12 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 	p.Variants = nil
 	p.ActiveVariant = ""
 	var settings connections.ActiveSettings
-	if p.Kind == connections.MySQL {
+	if p.Kind.IsMySQLFamily() {
 		settings, err = connections.ResolveActiveSettings(p)
 	} else {
 		p, err = connections.NormalizeProfile(p)
 	}
-	if err == nil && p.Kind == connections.MySQL {
+	if err == nil && p.Kind.IsMySQLFamily() {
 		if s.validateMySQL == nil {
 			err = fmt.Errorf("%s", locales.Text("MySQL 连接测试服务不可用"))
 		} else {
@@ -77,7 +77,7 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 			err = tunnelTester(ctx, settings, secret, tunnelSecrets)
 		} else if providerTest != nil {
 			err = providerTest(ctx, p, secret)
-		} else if p.Kind != connections.MySQL {
+		} else if !p.Kind.IsMySQLFamily() {
 			err = fmt.Errorf("%s", locales.Text("连接测试服务不可用"))
 		} else {
 			err = tester(ctx, settings, secret)

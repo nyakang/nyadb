@@ -12,6 +12,8 @@ func profileBrand(kind connections.Kind, p theme.Palette) (asset, fallback strin
 	switch kind {
 	case connections.MySQL:
 		return "MySQL", "mysql-type", p.Blue
+	case connections.MariaDB:
+		return "MariaDB", "maria-type", p.Gold
 	case connections.PostgreSQL:
 		return "PostgreSQL", "postgres-type", p.Blue
 	case connections.SQLite:
@@ -38,7 +40,7 @@ func BrandIcon(c *ui.Context, kind connections.Kind, size float32) {
 // Keep the engine's recognizable artwork in every lifecycle state. A native
 // corner badge conveys status without replacing or tinting the brand bitmap.
 func NavigationIcon(c *ui.Context, kind connections.Kind, status string, size float32) {
-	if kind == connections.MySQL {
+	if kind.IsMySQLFamily() {
 		palette := theme.Colors(c)
 		ink := palette.Muted
 		switch status {

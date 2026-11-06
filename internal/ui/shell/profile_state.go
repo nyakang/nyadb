@@ -140,7 +140,7 @@ func (s *State) deleteProfileID(id int64) {
 	}
 	s.loadProfiles()
 	var credentialErr error
-	if (p.Kind == connections.MySQL || p.Kind == connections.PostgreSQL || p.Kind == connections.ClickHouse) && s.credentialVault != nil {
+	if (p.Kind.IsMySQLFamily() || p.Kind == connections.PostgreSQL || p.Kind == connections.ClickHouse) && s.credentialVault != nil {
 		credentialErr = s.credentialVault.Delete(p.ID, "")
 		for _, variant := range p.Variants {
 			credentialErr = errors.Join(credentialErr, s.credentialVault.Delete(p.ID, variant.Name))

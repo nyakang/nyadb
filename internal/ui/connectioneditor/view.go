@@ -1,6 +1,7 @@
 package connectioneditor
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/egoist/mygo/ui"
@@ -29,7 +30,7 @@ func (s *State) View(c *ui.Context, width, height float32) {
 	ui.Column(c).Width(w).Height(h).Gap(0).Background(palette.Toolbar).Children(func() {
 		ui.Row(c).Height(h - footerHeight).Gap(0).Children(func() {
 			contentWidth := w
-			if s.connectionDraft.ID != 0 && s.connectionDraft.Kind == connections.MySQL &&
+			if s.connectionDraft.ID != 0 && s.connectionDraft.Kind.IsMySQLFamily() &&
 				s.connectionProfilesVisible {
 				s.connectionConfigurationsSidebar(c, h-footerHeight)
 				contentWidth -= 258
@@ -78,7 +79,7 @@ func connectionEditorTabNames(kind connections.Kind) []string {
 }
 
 func (s *State) connectionTabNames() []string {
-	if s.connectionDraft.Kind == connections.MySQL && s.mysqlCompatibilityVisible {
+	if s.connectionDraft.Kind.IsMySQLFamily() && s.mysqlCompatibilityVisible {
 		return []string{"常规", "高级", "数据库", "SSL", "SSH", "HTTP", "兼容性", "备注"}
 	}
 	return connectionEditorTabNames(s.connectionDraft.Kind)
@@ -112,7 +113,7 @@ func (s *State) connectionEditorDiagram(c *ui.Context) {
 
 	// The tunnel endpoint appears across tabs, mirroring the original
 	// connection editor; all graphics are independently authored for NyaDB.
-	if s.connectionDraft.Kind == connections.MySQL &&
+	if s.connectionDraft.Kind.IsMySQLFamily() &&
 		s.connectionDraft.MySQLAdvanced.HTTP.Enabled {
 		ui.Row(c).MinHeight(91).Gap(7).AlignItems(ui.Center).Justify(ui.Center).Children(func() {
 			ui.Column(c).MinWidth(theme.Font(c, 65)).Shrink(0).Gap(3).AlignItems(ui.Center).Children(func() {
@@ -134,7 +135,7 @@ func (s *State) connectionEditorDiagram(c *ui.Context) {
 	}
 	// The original inserts an SSH server node only when the tunnel is
 	// enabled. These icons are independently authored NyaDB assets.
-	if s.connectionDraft.Kind == connections.MySQL &&
+	if s.connectionDraft.Kind.IsMySQLFamily() &&
 		s.connectionDraft.MySQLAdvanced.SSH.Enabled {
 		ui.Row(c).MinHeight(91).Gap(7).AlignItems(ui.Center).Justify(ui.Center).Children(func() {
 			ui.Column(c).MinWidth(theme.Font(c, 65)).Shrink(0).Gap(3).AlignItems(ui.Center).Children(func() {
@@ -243,12 +244,12 @@ func (s *State) connectionEditorOtherTab(c *ui.Context, width float32) {
 		s.connectionNotesEditor(c, width)
 		return
 	}
-	if s.connectionDraft.Kind != connections.MySQL && s.connectionEngineOptions(c, width, tab) {
+	if !s.connectionDraft.Kind.IsMySQLFamily() && s.connectionEngineOptions(c, width, tab) {
 		return
 	}
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth := connectionFormLabelWidth
-	if s.connectionDraft.Kind == connections.MySQL {
+	if s.connectionDraft.Kind.IsMySQLFamily() {
 		switch tab {
 		case "高级":
 			s.connectionMySQLAdvanced(c, width)
@@ -302,7 +303,7 @@ func (s *State) connectionEditorFooter(c *ui.Context, width float32) {
 		// Show/hide the native editing configuration sidebar.
 		if theme.IconButton(c, "", "sidebar").Width(theme.Font(c, 26)).Height(theme.RowHeight(c, connectionFooterControlHeight)).
 			Background(palette.Header).Border(1, palette.Border).
-			Disabled(s.connectionDraft.ID == 0 || s.connectionDraft.Kind != connections.MySQL).
+			Disabled(s.connectionDraft.ID == 0 || !s.connectionDraft.Kind.IsMySQLFamily()).
 			Label(locales.Text("切换连接配置文件侧栏")).Clicked() {
 			s.connectionProfilesVisible = !s.connectionProfilesVisible
 		}
@@ -318,7 +319,7 @@ func (s *State) connectionEditorFooter(c *ui.Context, width float32) {
 			}
 		} else if ui.Button(c, locales.Text("测试连接")).Width(theme.Font(c, 155)).Height(theme.RowHeight(c, connectionFooterControlHeight)).
 			Background(palette.Header).Border(1, palette.Border).
-			Disabled(s.connectionDraft.Kind != connections.MySQL && s.connectionTester == nil).Label(s.connectionTestLabel()).Clicked() {
+			Disabled(!s.connectionDraft.Kind.IsMySQLFamily() && s.connectionTester == nil).Label(s.connectionTestLabel()).Clicked() {
 			s.startMySQLConnectionTest(c.Services())
 		}
 		ui.Box(c).Grow(1)
@@ -372,6 +373,9 @@ func (s *State) connectionNotesEditor(c *ui.Context, width float32) {
 func (s *State) connectionTestLabel() string {
 	if s.connectionDraft.Kind == connections.MySQL {
 		return locales.Text("测试当前 MySQL 配置")
+	}
+	if s.connectionDraft.Kind.IsMySQLFamily() {
+		return fmt.Sprintf(locales.Text("测试当前 %s 配置"), connectionKindName(s.connectionDraft.Kind))
 	}
 	return locales.Text("测试连接")
 }

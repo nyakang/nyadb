@@ -64,6 +64,8 @@ func (s *State) ConnectionWindowIcon() ([]byte, error) {
 	switch s.connectionEditor.Draft().Kind {
 	case connections.MySQL:
 		file = "mysql.png"
+	case connections.MariaDB:
+		file = "mariadb.png"
 	case connections.PostgreSQL:
 		file = "postgresql.png"
 	case connections.SQLite:
