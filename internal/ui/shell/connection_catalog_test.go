@@ -103,7 +103,7 @@ func TestConnectionCatalogUnsupportedType(t *testing.T) {
 	if tt.HasText("最近使用过的") {
 		t.Fatal("selecting a card must not insert recents and move the catalog")
 	}
-	if err := tt.Click("选择 Oracle（尚未支持）"); err != nil {
+	if err := tt.Click("选择 MongoDB（尚未支持）"); err != nil {
 		t.Fatal(err)
 	}
 	if s.connectionKind != "" || !strings.Contains(s.connectionError, "尚未支持") {
@@ -183,5 +183,18 @@ func TestConnectionCatalogMinimumWindow(t *testing.T) {
 	}
 	if s.connectionStep != 1 || s.connectionEditor.Draft().Kind != connections.SQLite {
 		t.Fatal("minimum window failed to enter native connection editor")
+	}
+}
+
+func TestOracleConnectionCatalogOpensServiceEditor(t *testing.T) {
+	s := New()
+	tt := ui.NewTester(s.View, 1280, 800)
+	for _, label := range []string{"连接", "选择 Oracle", "下一步"} {
+		if err := tt.Click(label); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if s.connectionStep != 1 || s.connectionEditor.Draft().Kind != connections.Oracle || s.connectionEditor.Draft().Port != 1521 {
+		t.Fatal("Oracle chooser did not open the Oracle editor")
 	}
 }

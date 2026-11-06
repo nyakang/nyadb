@@ -77,7 +77,7 @@ func mysqlDataImportModeLabel(mode string) string {
 func (s *State) dataImportModeControls(c *ui.Context, t *Document) {
 	tr := &t.transfer
 	modes := []string{"append", "update", "upsert", "insert_missing", "delete", "replace"}
-	if t.importDialect == "sqlserver" || t.importDialect == "duckdb" {
+	if t.importDialect == "sqlserver" || t.importDialect == "duckdb" || t.importDialect == "oracle" {
 		modes = []string{"append"}
 	}
 	if tr.Target != "new" {
@@ -86,10 +86,12 @@ func (s *State) dataImportModeControls(c *ui.Context, t *Document) {
 			mysqlDataRuleSelect(c, &tr.Mode, modes, mysqlDataImportModeLabel).Width(220).Disabled(tr.Busy || tr.Submitted)
 		})
 	}
-	ui.Checkbox(c, &tr.ContinueOnError, locales.Text("遇到行错误时继续")).Disabled(tr.Busy || tr.Submitted || (t.importDialect == "sqlserver" || t.importDialect == "duckdb"))
-	if t.importDialect == "sqlserver" || t.importDialect == "duckdb" {
+	ui.Checkbox(c, &tr.ContinueOnError, locales.Text("遇到行错误时继续")).Disabled(tr.Busy || tr.Submitted || (t.importDialect == "sqlserver" || t.importDialect == "duckdb" || t.importDialect == "oracle"))
+	if t.importDialect == "sqlserver" || t.importDialect == "duckdb" || t.importDialect == "oracle" {
 		if t.importDialect == "duckdb" {
 			ui.Text(c, locales.Text("DuckDB 导入追加到已有表；全部记录在同一事务中提交。"))
+		} else if t.importDialect == "oracle" {
+			ui.Text(c, locales.Text("Oracle 导入追加到已有表；全部记录在同一事务中提交。"))
 		} else {
 			ui.Text(c, locales.Text("SQL Server 导入追加到已有表；全部记录在同一事务中提交。"))
 		}
@@ -666,7 +668,7 @@ func mysqlDataInferDecimal(text string) (int, int, bool) {
 }
 
 func mysqlDataImportTargetChoices(t *Document) []string {
-	if t.importDialect == "sqlserver" || t.importDialect == "duckdb" {
+	if t.importDialect == "sqlserver" || t.importDialect == "duckdb" || t.importDialect == "oracle" {
 		return []string{"existing"}
 	}
 	if t.importOnly {

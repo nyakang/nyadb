@@ -12,6 +12,7 @@ require (
 	github.com/microsoft/go-mssqldb v1.11.2
 	github.com/parquet-go/parquet-go v0.32.0
 	github.com/shopspring/decimal v1.6.0
+	github.com/sijms/go-ora/v2 v2.9.0
 	github.com/zalando/go-keyring v0.2.8
 	golang.org/x/crypto v0.58.0
 	golang.org/x/net v0.62.0

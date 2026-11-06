@@ -1928,5 +1928,15 @@
   "duckDBThreads": "DuckDB 工作线程数",
   "duckDBRuntimeLimits": "DuckDB 运行限制",
   "duckDBLibrary": "DuckDB 运行库",
-  "duckDBAtomicImport": "DuckDB 导入追加到已有表；全部记录在同一事务中提交。"
+  "duckDBAtomicImport": "DuckDB 导入追加到已有表；全部记录在同一事务中提交。",
+  "oracleSessionPassword": "Oracle 会话密码",
+  "oracleConnectionType": "Oracle 连接类型",
+  "connectionTypeCaption": "连接类型：",
+  "oracleServiceCaption": "服务名 / SID：",
+  "oracleService": "服务名 / SID",
+  "oracleServiceRequired": "请输入 Oracle 服务名或 SID",
+  "oracleCA": "Oracle CA 证书",
+  "oracleTLSMode": "Oracle TLS 模式",
+  "oracleAppendImport": "Oracle 导入追加到已有表；全部记录在同一事务中提交。",
+  "oraclePackage": "包"
 }

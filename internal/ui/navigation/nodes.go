@@ -51,11 +51,12 @@ func Parse(key string) Node {
 // Database programs are server metadata. Named queries also have a local,
 // connection-scoped catalog that can be browsed while disconnected.
 var mysqlNavigationCategories = []string{"表", "视图", "函数", "存储过程", "事件", "查询", "备份"}
+var oracleNavigationCategories = []string{"表", "视图", "函数", "存储过程", "包", "触发器", "序列", "类型", "查询"}
 var postgresNavigationCategories = []string{"表", "视图", "函数", "存储过程", "序列", "查询"}
 
 func SupportedCategory(category string) bool {
 	switch category {
-	case "表", "视图", "函数", "存储过程", "事件", "序列", "查询":
+	case "表", "视图", "函数", "存储过程", "事件", "序列", "查询", "包", "触发器", "类型":
 		return true
 	}
 	return false
@@ -111,6 +112,8 @@ func (s *State) databaseChildren(key string) []string {
 		categories := mysqlNavigationCategories
 		if s.deps.Engine != nil {
 			switch s.deps.Engine(n.ProfileID) {
+			case connections.Oracle:
+				categories = oracleNavigationCategories
 			case connections.PostgreSQL, connections.SQLServer, connections.DuckDB:
 				categories = postgresNavigationCategories
 			case connections.MySQL, connections.MariaDB:

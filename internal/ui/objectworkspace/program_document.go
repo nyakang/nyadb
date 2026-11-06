@@ -13,7 +13,7 @@ type programDocument struct {
 
 // Supports recognizes read-only routines, events and sequence definitions.
 func Supports(kind string) bool {
-	return kind == "函数" || kind == "存储过程" || kind == "事件" || kind == "序列"
+	return kind == "函数" || kind == "存储过程" || kind == "事件" || kind == "序列" || kind == "包" || kind == "触发器" || kind == "类型"
 }
 
 // New copies metadata without activating a profile or opening a host tab.

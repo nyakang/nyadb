@@ -38,7 +38,7 @@ func TestProgramDocumentKeepsQualifiedIdentityAndOwnsSnapshots(t *testing.T) {
 }
 
 func TestProgramDocumentsAdmitOnlyQualifiedSupportedObjects(t *testing.T) {
-	for _, kind := range []string{"函数", "存储过程", "事件", "序列"} {
+	for _, kind := range []string{"函数", "存储过程", "事件", "序列", "包", "触发器", "类型"} {
 		d := newProgram(41, "app", mysqlsvc.MySQLDBObject{Name: "same_name", Kind: kind})
 		if d == nil || !Supports(kind) {
 			t.Fatalf("supported object rejected: %s", kind)

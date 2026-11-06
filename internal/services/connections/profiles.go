@@ -17,6 +17,7 @@ const (
 	ClickHouse Kind = "clickhouse"
 	SQLServer  Kind = "sqlserver"
 	DuckDB     Kind = "duckdb"
+	Oracle     Kind = "oracle"
 )
 
 // IsMySQLFamily identifies products sharing the MySQL client and connection
@@ -43,6 +44,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	OracleOptions     OracleOptions
 	SQLServerOptions  SQLServerOptions
 	DuckDBOptions     DuckDBOptions
 	PostgreSQLOptions PostgreSQLOptions
