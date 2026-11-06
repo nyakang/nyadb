@@ -20,10 +20,11 @@ import (
 // editor. Host callbacks run on the UI thread after transient secrets and
 // pending work have been cleared.
 type Dependencies struct {
-	EditFocus       *string
-	EditTarget      func(theme.EditTarget)
-	TestConnection  func(context.Context, connections.Profile, string) error
-	InitialSQLStore InitialSQLStore
+	EditFocus         *string
+	EditTarget        func(theme.EditTarget)
+	TestConnection    func(context.Context, connections.Profile, string) error
+	InitialSQLStore   InitialSQLStore
+	CleanupInitialSQL func([]string) error
 
 	Profiles        *connections.Service
 	Vault           credentials.Vault
@@ -58,6 +59,7 @@ type State struct {
 	initialSQLResults           <-chan initialSQLResult
 
 	initialSQLStore      InitialSQLStore
+	cleanupInitialSQL    func([]string) error
 	initialSQLSavedText  string
 	initialSQLLoadFailed bool
 	customDatabaseName   string
@@ -125,6 +127,7 @@ type State struct {
 
 func New(deps Dependencies) *State {
 	return &State{editFocus: deps.EditFocus, editTarget: deps.EditTarget, tunnelSecrets: deps.TunnelSecrets, mysqlTunnelTester: deps.TestMySQLTunnel, profileService: deps.Profiles, credentialVault: deps.Vault,
+		initialSQLStore: deps.InitialSQLStore, cleanupInitialSQL: deps.CleanupInitialSQL,
 		validateMySQL: deps.ValidateMySQL, connectionTester: deps.TestConnection, mysqlConnectionTester: deps.TestMySQL,
 		saved: deps.Saved, back: deps.Back, canceled: deps.Cancel}
 }

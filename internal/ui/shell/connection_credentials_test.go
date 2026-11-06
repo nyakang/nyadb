@@ -12,9 +12,11 @@ import (
 )
 
 type memoryCredentialVault struct {
-	secrets map[string]string
-	getErr  error
-	setErr  error
+	secrets      map[string]string
+	getErr       error
+	setErr       error
+	deleteCalls  []string
+	deleteErrors map[string]error
 }
 
 func (v *memoryCredentialVault) key(id int64, variant string) string {
@@ -38,6 +40,11 @@ func (v *memoryCredentialVault) Set(id int64, variant, password string) error {
 }
 
 func (v *memoryCredentialVault) Delete(id int64, variant string) error {
+	key := v.key(id, variant)
+	v.deleteCalls = append(v.deleteCalls, key)
+	if err := v.deleteErrors[key]; err != nil {
+		return err
+	}
 	delete(v.secrets, v.key(id, variant))
 	return nil
 }

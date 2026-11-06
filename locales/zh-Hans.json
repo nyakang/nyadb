@@ -1902,5 +1902,8 @@
   "fieldUnsignedCaption": "无符号：",
   "fieldNotNullCaption": "不是 null：",
   "unsupportedConnectionDriverMessage": "%s 的连接驱动尚未支持",
-  "databaseOpenMode": "打开方式"
+  "databaseOpenMode": "打开方式",
+  "connectionInitialSQLCleanupError": "初始 SQL 清理失败；记录已保留，可重试",
+  "connectionInitialSQLCleanupRetry": "重试清理初始 SQL",
+  "connectionInitialSQLCleanupComplete": "初始 SQL 清理完成"
 }

@@ -178,8 +178,9 @@ func (s *State) Disconnect(id int64) {
 		w.objectCancel, w.objectResults = nil, nil
 		w.Password = ""
 		if w == s.current {
-			w.ProfileID, w.Databases = 0, nil
+			w.Databases = nil
 			s.ResetBrowser()
+			w.ProfileID = 0
 			w.Error, w.Status = "", "未连接"
 		} else {
 			delete(s.parked, id)

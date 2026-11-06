@@ -9,7 +9,9 @@ import (
 )
 
 func (s *State) SetInitialSQLStore(store *queries.Store) {
+	s.initialSQLCleanup.store = store
 	s.connectionEditor.SetInitialSQLStore(store)
+	s.connectionEditor.SetInitialSQLCleanup(s.queueInitialSQLCleanup)
 	if s.mysqlTemplate != nil {
 		s.mysqlTemplate.InitialSQLLoader = func(ctx context.Context, id string) (string, error) {
 			v, e := store.LoadInitialSQL(ctx, id)

@@ -19359,3 +19359,39 @@ func DatabaseOpenMode() string { return In(i18n.Locale()).DatabaseOpenMode() }
 func (msgs Messages) DatabaseOpenMode() string {
 	return Catalog.Format(msgs.locale, "databaseOpenMode", nil)
 }
+
+// ConnectionInitialSQLCleanupError says "初始 SQL 清理失败；记录已保留，可重试"
+// in the language the app shows.
+func ConnectionInitialSQLCleanupError() string {
+	return In(i18n.Locale()).ConnectionInitialSQLCleanupError()
+}
+
+// ConnectionInitialSQLCleanupError says "初始 SQL 清理失败；记录已保留，可重试"
+// in the language of msgs.
+func (msgs Messages) ConnectionInitialSQLCleanupError() string {
+	return Catalog.Format(msgs.locale, "connectionInitialSQLCleanupError", nil)
+}
+
+// ConnectionInitialSQLCleanupRetry says "重试清理初始 SQL"
+// in the language the app shows.
+func ConnectionInitialSQLCleanupRetry() string {
+	return In(i18n.Locale()).ConnectionInitialSQLCleanupRetry()
+}
+
+// ConnectionInitialSQLCleanupRetry says "重试清理初始 SQL"
+// in the language of msgs.
+func (msgs Messages) ConnectionInitialSQLCleanupRetry() string {
+	return Catalog.Format(msgs.locale, "connectionInitialSQLCleanupRetry", nil)
+}
+
+// ConnectionInitialSQLCleanupComplete says "初始 SQL 清理完成"
+// in the language the app shows.
+func ConnectionInitialSQLCleanupComplete() string {
+	return In(i18n.Locale()).ConnectionInitialSQLCleanupComplete()
+}
+
+// ConnectionInitialSQLCleanupComplete says "初始 SQL 清理完成"
+// in the language of msgs.
+func (msgs Messages) ConnectionInitialSQLCleanupComplete() string {
+	return Catalog.Format(msgs.locale, "connectionInitialSQLCleanupComplete", nil)
+}

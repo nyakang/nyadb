@@ -190,6 +190,10 @@ func TestTableToolbarFillValidatesWholeSelectionBeforeStaging(t *testing.T) {
 		t.Fatal("invalid fill partly changed grid")
 	}
 	doc.page.ColumnMetadata[1].Nullable = true
+	// Discard resets selection; select two targets to exercise an actual
+	// overflow rather than the unused value after a valid final target.
+	doc.selection.Add(0)
+	doc.selection.Add(1)
 	doc.fill = mysqlDataFillState{Mode: "序列", Start: "9223372036854775807", Step: "1"}
 	if err := s.fillSelectedData(doc); err == nil {
 		t.Fatal("integer overflow accepted")

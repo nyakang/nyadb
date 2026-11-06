@@ -1902,5 +1902,8 @@
   "fieldUnsignedCaption": "Unsigned:",
   "fieldNotNullCaption": "Not null:",
   "unsupportedConnectionDriverMessage": "The connection driver for %s is not supported yet",
-  "databaseOpenMode": "Opening mode"
+  "databaseOpenMode": "Opening mode",
+  "connectionInitialSQLCleanupError": "Initial SQL cleanup failed; records retained for retry",
+  "connectionInitialSQLCleanupRetry": "Retry initial SQL cleanup",
+  "connectionInitialSQLCleanupComplete": "Initial SQL cleanup completed"
 }

@@ -22,7 +22,8 @@ type initialSQLResult struct {
 	err     error
 }
 
-func (s *State) SetInitialSQLStore(store InitialSQLStore) { s.initialSQLStore = store }
+func (s *State) SetInitialSQLStore(store InitialSQLStore)          { s.initialSQLStore = store }
+func (s *State) SetInitialSQLCleanup(cleanup func([]string) error) { s.cleanupInitialSQL = cleanup }
 func (s *State) loadInitialSQL() {
 	s.initialSQLRequest++
 	s.initialSQLResults = nil
@@ -91,31 +92,37 @@ func (s *State) prepareInitialSQLRefs(p *connections.Profile) {
 		}
 	}
 }
-func (s *State) persistInitialSQL(saved connections.Profile) error {
+func (s *State) persistInitialSQL(saved connections.Profile) ([]string, error) {
+	var written []string
 	write := func(id, text string) error {
 		if s.initialSQLStore == nil {
 			return queries.ErrKeyUnavailable
 		}
-		return s.initialSQLStore.SaveInitialSQL(context.Background(), queries.InitialSQL{ID: id, ProfileID: saved.ID, Text: text, Revision: 1})
+		err := s.initialSQLStore.SaveInitialSQL(context.Background(), queries.InitialSQL{ID: id, ProfileID: saved.ID, Text: text, Revision: 1})
+		if err == nil {
+			written = append(written, id)
+		}
+		return err
 	}
 	if s.connectionDraft.ID == 0 {
 		if s.mysqlInitialQuery != s.initialSQLSavedText {
-			return write(saved.MySQLAdvanced.InitialSQLID, s.mysqlInitialQuery)
+			err := write(saved.MySQLAdvanced.InitialSQLID, s.mysqlInitialQuery)
+			return written, err
 		}
-		return nil
+		return written, nil
 	}
 	if s.connectionMainConfig.initialSQL != s.connectionMainConfig.initialSaved {
 		if e := write(saved.MySQLAdvanced.InitialSQLID, s.connectionMainConfig.initialSQL); e != nil {
-			return e
+			return written, e
 		}
 	}
 	for i, v := range saved.Variants {
 		snap := s.connectionOtherConfigs[i]
 		if snap.initialSQL != snap.initialSaved {
 			if e := write(v.MySQLAdvanced.InitialSQLID, snap.initialSQL); e != nil {
-				return e
+				return written, e
 			}
 		}
 	}
-	return nil
+	return written, nil
 }

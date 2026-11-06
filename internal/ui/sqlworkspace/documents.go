@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"reflect"
 	"strings"
 	"time"
 
@@ -41,6 +42,13 @@ type ioResult struct {
 
 func (s *State) PersistenceLoading() bool { return s.persistence.loading }
 
+// A host that cannot restore a loaded snapshot must prevent autosave from
+// replacing the retained encrypted scene with its fallback presentation.
+func (s *State) RejectWorkspaceRestore(err error) {
+	s.persistence.blocked = true
+	s.report(persistenceError(err))
+}
+
 type ioJob struct {
 	doc  *Document
 	out  <-chan ioResult
@@ -61,7 +69,7 @@ type persistence struct {
 	jobs              []*ioJob
 	names             []queries.Named
 	revision          uint64
-	signature         string
+	observed          bool
 	changed           time.Time
 	pending           <-chan ioResult
 	loading           bool
@@ -189,13 +197,13 @@ func (s *State) ObserveWorkspace(w queries.Workspace) {
 	if p.store == nil || p.loading || p.blocked || p.closed {
 		return
 	}
-	signature, _ := json.Marshal(w)
-	key := string(signature)
-	if key != p.signature {
-		p.signature = key
+	if !p.observed || !sameWorkspace(w, p.lastWorkspace) {
+		p.observed = true
 		p.keeping = false
 		p.revision++
 		p.changed = time.Now()
+		p.lastWorkspace = queries.CloneWorkspace(w)
+		p.lastWorkspace.Revision = p.revision
 		invalidate := s.Invalidate
 		if invalidate != nil {
 			if p.timer != nil {
@@ -204,12 +212,18 @@ func (s *State) ObserveWorkspace(w queries.Workspace) {
 			p.timer = time.AfterFunc(500*time.Millisecond, invalidate)
 		}
 	}
-	w.Revision = p.revision
-	p.lastWorkspace = w
 	if p.pending == nil && p.changed != (time.Time{}) && time.Since(p.changed) >= 500*time.Millisecond {
 		s.saveWorkspace(nil)
 	}
 }
+
+// Text comes from the buffer-version cache and remains immutable. Comparing
+// unchanged snapshots reuses those strings without encoding or copying SQL.
+func sameWorkspace(a, b queries.Workspace) bool {
+	a.Revision, b.Revision = 0, 0
+	return reflect.DeepEqual(a, b)
+}
+
 func (s *State) saveWorkspace(next func(ui.Services)) {
 	p := &s.persistence
 	if p.store == nil || p.blocked {

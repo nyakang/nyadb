@@ -25,6 +25,9 @@ type Catalog struct {
 }
 
 func (s *Store) record(ctx context.Context, kind, id string) (Record, bool, error) {
+	if repo, ok := s.repository.(RecordLookup); ok {
+		return repo.GetRecord(ctx, kind, id)
+	}
 	rs, err := s.repository.List(ctx, kind, 0)
 	if err != nil {
 		return Record{}, false, err
