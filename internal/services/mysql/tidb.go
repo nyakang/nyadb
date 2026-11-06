@@ -15,6 +15,9 @@ import (
 )
 
 func validateMySQLFamilyServer(ctx context.Context, db *sql.DB, kind connections.Kind) error {
+	if kind == connections.OceanBase {
+		return validateOceanBaseServer(ctx, db)
+	}
 	if kind == connections.MariaDB {
 		return validateMariaDBServer(ctx, db)
 	}
@@ -31,6 +34,9 @@ func validateMySQLFamilyServer(ctx context.Context, db *sql.DB, kind connections
 var tidbVersionPattern = regexp.MustCompile(`(?i)(?:^|-)tidb-v?([0-9]+)\.([0-9]+)\.([0-9]+)(?:$|[-+])`)
 
 func validateProductObject(kind connections.Kind, object string) error {
+	if kind == connections.OceanBase && (object == "sequence" || object == "序列") {
+		return fmt.Errorf("%w: OceanBase sequences have read-only reconstructed definitions", contract.ErrUnsupported)
+	}
 	if kind != connections.TiDB {
 		return nil
 	}

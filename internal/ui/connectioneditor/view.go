@@ -208,6 +208,9 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 			connectionFormCheckbox(c, &s.connectionSavePassword, "保存密码",
 				s.connectionDraft.Kind == connections.SQLite || s.credentialVault == nil)
 		})
+		if p.Kind == connections.OceanBase {
+			ui.Text(c, locales.Text("仅支持 MySQL 租户；用户名使用 user@tenant。")).TextColor(theme.Colors(c).Muted)
+		}
 	})
 }
 

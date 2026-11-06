@@ -123,6 +123,8 @@ func (s *State) databaseChildren(key string) []string {
 			case connections.MySQL, connections.MariaDB:
 			case connections.TiDB:
 				categories = []string{"表", "视图", "序列", "查询"}
+			case connections.OceanBase:
+				categories = []string{"表", "视图", "序列", "函数", "存储过程", "事件", "查询"}
 			default:
 				categories = []string{"表", "视图", "查询"}
 			}

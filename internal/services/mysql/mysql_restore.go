@@ -131,6 +131,9 @@ func (m *MySQLSessionManager) PlanRestore(ctx context.Context, id int64, generat
 		return p, e
 	}
 	defer cancel()
+	if s.settings.Kind == connections.OceanBase || strings.Contains(strings.ToLower(r.Manifest().Server), "oceanbase") {
+		return p, fmt.Errorf("%w: OceanBase logical archive restore is unavailable", contract.ErrUnsupported)
+	}
 	if m.SessionGeneration(id) != generation {
 		return p, ErrMySQLNotConnected
 	}

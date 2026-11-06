@@ -181,6 +181,9 @@ func (m *MySQLSessionManager) BackupMySQL(ctx context.Context, id int64, request
 		return backups.Manifest{}, e
 	}
 	defer cancel()
+	if s.settings.Kind == connections.OceanBase {
+		return backups.Manifest{}, fmt.Errorf("%w: OceanBase logical archives are unavailable", contract.ErrUnsupported)
+	}
 	valid := func() bool {
 		m.mu.Lock()
 		defer m.mu.Unlock()

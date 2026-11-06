@@ -157,6 +157,9 @@ func (m *MySQLSessionManager) ObjectsWithPrograms(ctx context.Context, id int64,
 	if err := queryCtx.Err(); err != nil {
 		return nil, err
 	}
+	if session.settings.Kind == connections.OceanBase {
+		return readOceanBaseSequences(queryCtx, session.db, database, objects)
+	}
 	sort.SliceStable(objects, func(i, j int) bool {
 		if objects[i].Kind != objects[j].Kind {
 			return objects[i].Kind < objects[j].Kind

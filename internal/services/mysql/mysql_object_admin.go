@@ -34,6 +34,9 @@ func (m *MySQLSessionManager) MaintainTable(ctx context.Context, id int64, datab
 		return nil, e
 	}
 	defer cancel()
+	if s.settings.Kind == connections.OceanBase && op != "ANALYZE" && op != "CHECK" {
+		return nil, contract.ErrUnsupported
+	}
 	if s.settings.Kind == connections.TiDB {
 		if op != "ANALYZE" && op != "CHECK" {
 			return nil, contract.ErrUnsupported
@@ -50,7 +53,7 @@ func (m *MySQLSessionManager) MaintainTable(ctx context.Context, id int64, datab
 		return nil, e
 	}
 	defer c.Close()
-	if s.settings.Kind == connections.TiDB {
+	if s.settings.Kind == connections.TiDB || s.settings.Kind == connections.OceanBase && op == "ANALYZE" {
 		if _, e = c.ExecContext(qctx, op+" TABLE "+db+"."+name); e != nil {
 			return nil, e
 		}

@@ -132,7 +132,7 @@ func OpenDirectMySQL(ctx context.Context, s connections.ActiveSettings, password
 		}
 		return nil, err
 	}
-	if s.Kind == connections.MariaDB || s.Kind == connections.TiDB {
+	if s.Kind.IsMySQLFamily() && s.Kind != connections.MySQL {
 		if err = validateMySQLFamilyServer(testCtx, db, s.Kind); err != nil {
 			_ = db.Close()
 			return nil, err
@@ -241,7 +241,7 @@ func TestMySQLTransportConnection(ctx context.Context, s connections.ActiveSetti
 	if scope != nil {
 		defer scope.Close()
 	}
-	if s.Kind == connections.MariaDB || s.Kind == connections.TiDB {
+	if s.Kind.IsMySQLFamily() && s.Kind != connections.MySQL {
 		probeCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		err = validateMySQLFamilyServer(probeCtx, db, s.Kind)
 		cancel()

@@ -16,6 +16,8 @@ func profileBrand(kind connections.Kind, p theme.Palette) (asset, fallback strin
 		return "MySQL", "mysql-type", p.Blue
 	case connections.MariaDB:
 		return "MariaDB", "maria-type", p.Gold
+	case connections.OceanBase:
+		return "OceanBase", "ocean-type", p.Blue
 	case connections.TiDB:
 		return "TiDB", "database", p.Error
 	case connections.Redis:

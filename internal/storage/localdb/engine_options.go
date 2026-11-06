@@ -36,7 +36,7 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, DuckDB: &p.DuckDBOptions}
 	case connections.SQLServer:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, SQLServer: &p.SQLServerOptions}
-	case connections.MySQL, connections.MariaDB, connections.TiDB:
+	case connections.MySQL, connections.MariaDB, connections.TiDB, connections.OceanBase:
 		value = p.MySQLAdvanced
 	case connections.PostgreSQL:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, PostgreSQL: &p.PostgreSQLOptions}

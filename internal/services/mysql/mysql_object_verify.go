@@ -56,6 +56,16 @@ func ObjectDefinitionEquivalent(p ObjectPlan, actual ObjectDefinition, execution
 	if e != nil {
 		return fail()
 	}
+	if actual.Product == "oceanbase" && kind == "VIEW" {
+		expectedOwner := p.Original.Definer
+		if p.Action == "create" {
+			expectedOwner = execution.CurrentUser
+		}
+		if expectedOwner == "" || actual.Definer != expectedOwner || want.definer != "" || want.options["algorithm"] != "" || want.options["security"] != "" || len(got.options) > 1 || got.definer != "" || got.options["columns"] != want.options["columns"] || verifiedTokens(want.body) != verifiedTokens(got.body) {
+			return fail()
+		}
+		return nil
+	}
 	if kind == "DATABASE" {
 		if execution.DatabaseCharset == "" || execution.DatabaseCollation == "" || execution.DatabaseEncryption == "" {
 			return fail()
