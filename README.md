@@ -1,4 +1,6 @@
-# NyaDB
+<p align="center">
+  <img src="./internal/assets/appicon/icon.svg" alt="NyaDB" width="128" height="128">
+</p>
 
 NyaDB is a cross-platform, native desktop database workbench built with [Go](https://go.dev/) and the [NyaDB fork of MyGo Native UI](https://github.com/nyakang/mygo). It supports live MySQL, PostgreSQL, SQLite, and ClickHouse connections, SQL execution, and database browsing, with data editing and administration tools for supported engines.
 
