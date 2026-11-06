@@ -23,6 +23,17 @@ func (s *State) loadSavedConnectionPasswords() {
 		return
 	}
 	id := s.connectionDraft.ID
+	if s.connectionDraft.Kind == connections.Redis {
+		password, found, err := s.credentialVault.Get(id, connections.RedisSentinelCredential)
+		if err != nil {
+			s.connectionError = locales.Text("无法读取系统保存的密码：") + err.Error()
+			s.connectionPasswordLoadFailed = true
+			return
+		}
+		s.redisSentinelPassword = password
+		s.redisSaveSentinelPassword = found
+		s.redisHadSentinelPassword = found
+	}
 	load := func(snap *connectionEditorSnapshot, variant string) error {
 		password, found, err := s.credentialVault.Get(id, variant)
 		if err != nil {
@@ -72,7 +83,7 @@ func (s *State) persistConnectionPasswords(saved, previous connections.Profile) 
 	// A vault read failure must not make an ordinary host/port edit erase
 	// previously saved credentials.
 	if s.connectionPasswordLoadFailed {
-		if s.connectionSavePassword {
+		if s.connectionSavePassword || saved.Kind == connections.Redis && s.redisSaveSentinelPassword {
 			return fmt.Errorf("%s", locales.Text("无法读取系统保存的密码，请先解锁密钥库"))
 		}
 		if len(saved.Variants) != len(previous.Variants) {
@@ -94,6 +105,9 @@ func (s *State) persistConnectionPasswords(saved, previous connections.Profile) 
 		snapshots = append(snapshots, s.connectionOtherConfigs...)
 	}
 	if s.credentialVault == nil {
+		if saved.Kind == connections.Redis && s.redisSaveSentinelPassword {
+			return fmt.Errorf("%s", locales.Text("系统凭据存储不可用"))
+		}
 		for _, snap := range snapshots {
 			if snap.savePassword {
 				return fmt.Errorf("%s", locales.Text("系统凭据存储不可用"))
@@ -115,6 +129,13 @@ func (s *State) persistConnectionPasswords(saved, previous connections.Profile) 
 		}
 	}
 	enqueue("", primary)
+	if saved.Kind == connections.Redis {
+		if s.redisSaveSentinelPassword && s.redisSentinelPassword != "" {
+			changes = append(changes, change{name: connections.RedisSentinelCredential, password: s.redisSentinelPassword, set: true})
+		} else if s.redisHadSentinelPassword && !s.redisSaveSentinelPassword {
+			changes = append(changes, change{name: connections.RedisSentinelCredential})
+		}
+	}
 	for _, snap := range snapshots[1:] {
 		enqueue(snap.name, snap)
 	}

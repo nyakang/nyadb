@@ -180,6 +180,7 @@ func (s *State) Disconnect(id int64) {
 		}
 		w.objectCancel, w.objectResults = nil, nil
 		w.Password = ""
+		w.SentinelPassword = ""
 		if w == s.current {
 			w.Databases = nil
 			s.ResetBrowser()
@@ -207,6 +208,7 @@ func (s *State) DisconnectAll() {
 func (s *State) Close() {
 	s.DisconnectAll()
 	s.current.Password = ""
+	s.current.SentinelPassword = ""
 	if s.engines.Close != nil {
 		_ = s.engines.Close()
 	}

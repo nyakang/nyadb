@@ -56,6 +56,9 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 				label = locales.Text("ClickHouse 会话密码")
 			}
 			ui.TextInput(c, &s.sessions.Current().Password).Password().Label(label)
+			if p.Kind == connections.Redis && p.RedisOptions.Topology == "sentinel" {
+				ui.TextInput(c, &s.sessions.Current().SentinelPassword).Password().Label(locales.Text("Sentinel 会话密码"))
+			}
 		}
 		ui.Row(c).Gap(5).Children(func() {
 			if status == "连接中" || status == "已连接" {

@@ -27,6 +27,7 @@ type Dependencies struct {
 // by the UI thread. Background jobs return immutable results through private
 // buffered channels; they never retain a Workspace or write its fields.
 type Workspace struct {
+	SentinelPassword        string
 	ProfileID               int64
 	Kind                    connections.Kind
 	Catalog                 string
