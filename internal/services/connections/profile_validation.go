@@ -122,7 +122,7 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		if p.Database == ":memory:" && p.DuckDBOptions.ReadOnly {
 			return p, fmt.Errorf("%w: an in-memory DuckDB database cannot be read-only", ErrInvalid)
 		}
-	case MySQL, MariaDB, TiDB, OceanBase, PostgreSQL, CockroachDB, ClickHouse, SQLServer, Oracle:
+	case MySQL, MariaDB, TiDB, OceanBase, PostgreSQL, CockroachDB, OpenGauss, ClickHouse, SQLServer, Oracle:
 		if p.Kind == Oracle {
 			var err error
 			p.OracleOptions, err = NormalizeOracleOptions(p.OracleOptions)
@@ -182,6 +182,20 @@ func NormalizeProfile(p Profile) (Profile, error) {
 			}
 			if p.PostgreSQLOptions.ToolsDirectory != "" {
 				return p, fmt.Errorf("%w: CockroachDB does not use PostgreSQL backup tools", ErrInvalid)
+			}
+		}
+		if p.Kind == OpenGauss {
+			if p.PostgreSQLOptions.LockTimeoutMS != 0 {
+				return p, fmt.Errorf("%w: openGauss per-connection lock timeout is unavailable", ErrInvalid)
+			}
+			if p.Database == "" || p.Username == "" || strings.ContainsAny(p.Host, "@/?!#\\ \t\r\n") {
+				return p, fmt.Errorf("%w: openGauss requires a hostname, database and username", ErrInvalid)
+			}
+			if p.TLSMode == "" {
+				p.TLSMode = "verify-full"
+			}
+			if p.PostgreSQLOptions.ToolsDirectory != "" {
+				return p, fmt.Errorf("%w: openGauss requires its own backup tools", ErrInvalid)
 			}
 		}
 		if p.Kind.IsPostgreSQLFamily() {

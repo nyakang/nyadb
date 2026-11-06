@@ -42,6 +42,9 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 	if e := s.check(n.Object("table", "_")); e != nil {
 		return nil, e
 	}
+	if s.kind == connections.OpenGauss {
+		return s.openGaussBrowse(ctx, n)
+	}
 	if s.kind == connections.CockroachDB {
 		return s.cockroachBrowse(ctx, n)
 	}
@@ -94,6 +97,8 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*con
 		e = s.sqlitePresentationMetadata(ctx, s.db, out)
 	} else if s.kind == connections.CockroachDB {
 		e = s.cockroachPresentationMetadata(ctx, s.db, out)
+	} else if s.kind == connections.OpenGauss {
+		e = s.openGaussPresentationMetadata(ctx, s.db, out)
 	} else {
 		e = s.postgresPresentationMetadata(ctx, s.db, out)
 	}

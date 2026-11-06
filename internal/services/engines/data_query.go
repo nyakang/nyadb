@@ -51,7 +51,7 @@ func (s *Session) dataQuery(ctx context.Context, o contract.ObjectRef, owner con
 	}
 	defer tx.Rollback()
 	// Protect qualified relation identity while metadata and values are read.
-	if s.kind == connections.PostgreSQL {
+	if s.kind == connections.PostgreSQL || s.kind == connections.OpenGauss {
 		if _, err = tx.ExecContext(ctx, "LOCK TABLE "+qualified(o)+" IN ACCESS SHARE MODE"); err != nil {
 			return err
 		}
@@ -239,6 +239,23 @@ func (s *Session) dataOrder(ctx context.Context, q queryer, t contract.Table, r 
 			return nil, false, "", err
 		}
 		return s.cockroachDataOrder(t, r, identity)
+	} else if s.kind == connections.OpenGauss {
+		var err error
+		identity, err = openGaussRelationIdentity(ctx, q, t)
+		if err != nil {
+			return nil, false, "", err
+		}
+		keys, err := openGaussImportKeys(ctx, q, t)
+		if err != nil {
+			return nil, false, "", err
+		}
+		approved := false
+		for _, key := range keys {
+			if reflect.DeepEqual(key, t.Key) {
+				approved = true
+			}
+		}
+		stable = stable && approved
 	} else {
 		// A custom index operator class cannot prove uniqueness for the comparison
 		// used by ORDER BY. Reject seek rather than assuming interchangeable rules.
@@ -260,14 +277,14 @@ func (s *Session) dataOrder(ctx context.Context, q queryer, t contract.Table, r 
 		if !ok {
 			return nil, false, "", connections.ErrInvalid
 		}
-		if f.Nullable || (s.kind == connections.PostgreSQL && !pgDataScalar(f.DatabaseType) && !pgDataNumeric(f.DatabaseType) && !pgDataText(f.DatabaseType) && canonicalDataType(f.DatabaseType) != "bytea") {
+		if f.Nullable || (s.kind.IsPostgreSQLFamily() && !pgDataScalar(f.DatabaseType) && !pgDataNumeric(f.DatabaseType) && !pgDataText(f.DatabaseType) && canonicalDataType(f.DatabaseType) != "bytea") {
 			stable = false
 		}
 		orders = append(orders, dataOrder{sort.Column, quote(sort.Column), sort.Descending})
 	}
 	for _, key := range t.Key {
 		f := cols[key]
-		if f.Nullable || (s.kind == connections.PostgreSQL && !pgDataScalar(f.DatabaseType) && !pgDataNumeric(f.DatabaseType) && !pgDataText(f.DatabaseType) && canonicalDataType(f.DatabaseType) != "bytea") {
+		if f.Nullable || (s.kind.IsPostgreSQLFamily() && !pgDataScalar(f.DatabaseType) && !pgDataNumeric(f.DatabaseType) && !pgDataText(f.DatabaseType) && canonicalDataType(f.DatabaseType) != "bytea") {
 			stable = false
 		}
 		expr := quote(key)

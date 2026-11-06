@@ -204,6 +204,9 @@ func (s *State) engineLabel(w *Workspace) string {
 	if w.Kind == connections.CockroachDB {
 		return "CockroachDB"
 	}
+	if w.Kind == connections.OpenGauss {
+		return "openGauss"
+	}
 	if w.Kind == connections.PostgreSQL {
 		return "PostgreSQL"
 	}

@@ -13,7 +13,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/importspec"
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -73,8 +72,7 @@ func (s *Session) importStream(ctx context.Context, id int64, db, table string, 
 		if err == nil {
 			return
 		}
-		var pg *pgconn.PgError
-		if errors.As(err, &pg) {
+		if pg, ok := postgresServerError(err); ok {
 			err = fmt.Errorf("database rejected import (SQLSTATE %s)", pg.Code)
 		}
 	}()
@@ -160,7 +158,7 @@ func (s *Session) importStream(ctx context.Context, id int64, db, table string, 
 		if _, err = c.ExecContext(ctx, ddl); err != nil {
 			return
 		}
-	} else if s.kind == connections.PostgreSQL {
+	} else if s.kind == connections.PostgreSQL || s.kind == connections.OpenGauss {
 		if _, err = c.ExecContext(ctx, "LOCK TABLE "+qualified(o)+" IN SHARE ROW EXCLUSIVE MODE"); err != nil {
 			return
 		}
@@ -447,6 +445,9 @@ func (s *Session) importParameter(col contract.StructureColumn, v contract.DataV
 	return parameter(cell), nil
 }
 func (s *Session) importKeys(ctx context.Context, c *sql.Conn, t contract.Table) ([][]string, error) {
+	if s.kind == connections.OpenGauss {
+		return openGaussImportKeys(ctx, c, t)
+	}
 	keys := [][]string{}
 	if len(t.Key) > 0 {
 		keys = append(keys, t.Key)

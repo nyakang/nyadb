@@ -38,7 +38,7 @@ func (s *Session) backupAvailability(t contract.SchemaDesignTarget, action strin
 	if s.check(o) != nil {
 		return contract.Availability{Reason: "invalid_target"}
 	}
-	if s.kind == connections.CockroachDB {
+	if s.kind == connections.CockroachDB || s.kind == connections.OpenGauss {
 		return contract.Availability{Reason: "unsupported"}
 	}
 	if action != "backup" && action != "restore" {

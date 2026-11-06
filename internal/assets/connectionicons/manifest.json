@@ -19,6 +19,20 @@
       "sha256": "490982872730445a318d998139e398c2414a748db0124731303eb9ed74c1e6e3"
     },
     {
+      "name": "CockroachDB",
+      "file": "cockroachdb.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "972d48368a5025e85f16ab790a8bbc2ec5518ffb857a853d0728291545ca540d"
+    },
+    {
+      "name": "openGauss",
+      "file": "opengauss.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "c00fd80efb1d13c2af330386946c2562e9da210bea16a0b5605de6c585d44c3c"
+    },
+    {
       "name": "SQL Server",
       "file": "sql-server.png",
       "source": "NyaDB independently drawn SVG geometry",
@@ -157,13 +171,6 @@
       "source": "NyaDB independently drawn SVG geometry",
       "artwork": "NyaDB own geometry",
       "sha256": "7e25493781b4e3a1042da86829edc292051d396986a08c8b33103f8a21e2560a"
-    },
-    {
-      "name": "CockroachDB",
-      "file": "cockroachdb.png",
-      "source": "NyaDB independently drawn SVG geometry",
-      "artwork": "NyaDB own geometry",
-      "sha256": "972d48368a5025e85f16ab790a8bbc2ec5518ffb857a853d0728291545ca540d"
     }
   ]
 }

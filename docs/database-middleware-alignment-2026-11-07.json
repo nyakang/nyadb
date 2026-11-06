@@ -1289,8 +1289,8 @@
       "profiles": [
         "opengauss"
       ],
-      "nyadb_kind": null,
-      "status": "missing"
+      "nyadb_kind": "opengauss",
+      "status": "implemented_with_gaps"
     },
     {
       "dbType": "questdb",
@@ -2992,8 +2992,8 @@
       "label": "openGauss",
       "category": "domestic",
       "port": "5432",
-      "nyadb_kind": null,
-      "status": "missing"
+      "nyadb_kind": "opengauss",
+      "status": "implemented_with_gaps"
     },
     {
       "id": "gaussdb",

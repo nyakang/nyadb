@@ -118,7 +118,7 @@ func (s *State) databaseChildren(key string) []string {
 				categories = []string{"集合", "视图", "查询"}
 			case connections.Oracle:
 				categories = oracleNavigationCategories
-			case connections.PostgreSQL, connections.CockroachDB, connections.SQLServer, connections.DuckDB:
+			case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.SQLServer, connections.DuckDB:
 				categories = postgresNavigationCategories
 			case connections.MySQL, connections.MariaDB:
 			case connections.TiDB:

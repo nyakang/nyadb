@@ -86,6 +86,12 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 			return redact(err, password)
 		}
 	}
+	if p.Kind == connections.OpenGauss {
+		if err := validateOpenGaussServer(ctx, db); err != nil {
+			db.Close()
+			return redact(err, password)
+		}
+	}
 	// SQL documents pin physical sessions. Their pool must never consume the
 	// connections needed by metadata, data documents or maintenance jobs.
 	sqlDB, err := strategy.open(p, password, m.DialContext)
@@ -362,12 +368,19 @@ func (l *Lease) SetSchema(ctx context.Context, schema string) error {
 }
 
 func (l *Lease) connectionError(ctx context.Context, err error) error {
+	if err == nil && l.s.kind == connections.OpenGauss && ctx.Err() != nil {
+		err = ctx.Err()
+	}
 	if err == nil {
 		return nil
 	}
 	lost := errors.Is(err, sql.ErrConnDone) || errors.Is(err, driver.ErrBadConn) || errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) || (pgconn.Timeout(err) && ctx.Err() == nil)
-	var pg *pgconn.PgError
-	if errors.As(err, &pg) {
+	lost = lost || l.s.kind == connections.OpenGauss && ctx.Err() != nil
+	var networkError net.Error
+	if errors.As(err, &networkError) && (!networkError.Timeout() || ctx.Err() == nil) {
+		lost = true
+	}
+	if pg, ok := postgresServerError(err); ok {
 		lost = lost || pg.Severity == "FATAL" || pg.Severity == "PANIC" || strings.HasPrefix(pg.Code, "08")
 	}
 	if lost {

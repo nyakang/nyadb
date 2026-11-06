@@ -3,6 +3,7 @@ module github.com/nyakang/nyadb
 go 1.27.3
 
 require (
+	gitcode.com/opengauss/openGauss-connector-go-pq v1.0.9
 	github.com/ClickHouse/clickhouse-go/v2 v2.50.0
 	github.com/ebitengine/purego v0.11.3
 	github.com/egoist/mygo v0.7.4
@@ -25,7 +26,6 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.2.0 // indirect
-	gitcode.com/opengauss/openGauss-connector-go-pq v1.0.9 // indirect
 	github.com/ClickHouse/ch-go v0.75.0 // indirect
 	github.com/andybalholm/brotli v1.2.8 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

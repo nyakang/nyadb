@@ -25,38 +25,11 @@ func (postgresDialect) open(p connections.Profile, password string, dial func(co
 	return stdlib.OpenDB(*cfg), nil
 }
 func postgresConfig(p connections.Profile, password string, dial func(context.Context, string, string) (net.Conn, error)) (*pgx.ConnConfig, error) {
-	a, e := connections.NormalizePostgreSQLOptions(p.PostgreSQLOptions)
+	dsn, a, e := postgresConnectionURL(p, password)
 	if e != nil {
 		return nil, e
 	}
-	if a.SSH.Enabled || a.HTTP.Enabled {
-		return nil, errors.New("PostgreSQL tunnels are not supported")
-	}
-	u := url.URL{Scheme: "postgres", Host: net.JoinHostPort(p.Host, strconv.Itoa(int(p.Port))), Path: "/" + p.Database, User: url.UserPassword(p.Username, password)}
-	q := u.Query()
-	mode := p.TLSMode
-	if mode == "" {
-		mode = "require"
-		if p.Kind == connections.CockroachDB {
-			mode = "verify-full"
-		}
-	}
-	switch mode {
-	case "disable", "prefer", "require", "verify-ca", "verify-full":
-	default:
-		return nil, errors.New("unsupported PostgreSQL TLS mode")
-	}
-	q.Set("sslmode", mode)
-	q.Set("connect_timeout", strconv.Itoa(a.ConnectTimeoutSeconds))
-	// Override libpq environment certificate/password defaults with this profile.
-	q.Set("sslrootcert", a.CAFile)
-	q.Set("sslcert", a.CertificateFile)
-	q.Set("sslkey", a.KeyFile)
-	q.Set("sslpassword", "")
-	q.Set("passfile", "")
-	q.Set("sslnegotiation", "postgres")
-	u.RawQuery = q.Encode()
-	cfg, e := pgx.ParseConfig(u.String())
+	cfg, e := pgx.ParseConfig(dsn)
 	if e != nil {
 		return nil, errors.New("invalid PostgreSQL configuration")
 	}
@@ -73,6 +46,41 @@ func postgresConfig(p connections.Profile, password string, dial func(context.Co
 		cfg.DialFunc = dial
 	}
 	return cfg, nil
+}
+
+func postgresConnectionURL(p connections.Profile, password string) (string, connections.PostgreSQLOptions, error) {
+	a, e := connections.NormalizePostgreSQLOptions(p.PostgreSQLOptions)
+	if e != nil {
+		return "", a, e
+	}
+	if a.SSH.Enabled || a.HTTP.Enabled {
+		return "", a, errors.New("PostgreSQL-family tunnels are not supported")
+	}
+	u := url.URL{Scheme: "postgres", Host: net.JoinHostPort(p.Host, strconv.Itoa(int(p.Port))), Path: "/" + p.Database, User: url.UserPassword(p.Username, password)}
+	q := u.Query()
+	mode := p.TLSMode
+	if mode == "" {
+		mode = "require"
+		if p.Kind == connections.CockroachDB || p.Kind == connections.OpenGauss {
+			mode = "verify-full"
+		}
+	}
+	switch mode {
+	case "disable", "prefer", "require", "verify-ca", "verify-full":
+	default:
+		return "", a, errors.New("unsupported PostgreSQL-family TLS mode")
+	}
+	q.Set("sslmode", mode)
+	q.Set("connect_timeout", strconv.Itoa(a.ConnectTimeoutSeconds))
+	// Override libpq environment certificate/password defaults with this profile.
+	q.Set("sslrootcert", a.CAFile)
+	q.Set("sslcert", a.CertificateFile)
+	q.Set("sslkey", a.KeyFile)
+	q.Set("sslpassword", "")
+	q.Set("passfile", "")
+	q.Set("sslnegotiation", "postgres")
+	u.RawQuery = q.Encode()
+	return u.String(), a, nil
 }
 func (postgresDialect) catalog(name string) string { return name }
 func (postgresDialect) namespace(string) error     { return nil }
