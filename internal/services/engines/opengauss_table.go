@@ -66,6 +66,36 @@ const openGaussTableCatalogSQL = `WITH RECURSIVE
    SELECT json_agg(row_to_json(d) ORDER BY d.inhrelid,d.inhparent,d.inhseqno) AS rows FROM pg_inherits d WHERE d.inhrelid=t.oid OR d.inhparent=t.oid)) FROM target t
   UNION ALL SELECT 'publications',t.oid,0,json_build_object('rows',(
    SELECT json_agg(row_to_json(d) ORDER BY d.prpubid,d.prrelid) AS rows FROM pg_publication_rel d WHERE d.prrelid IN(SELECT oid FROM relations))) FROM target t
+  UNION ALL SELECT 'copy_definition',t.oid,0,json_build_object(
+   'owner',pg_get_userbyid(t.relowner),'creator',current_user,'can_create',has_schema_privilege(t.relnamespace,'CREATE'),
+   'tablespace',(SELECT spcname FROM pg_tablespace WHERE oid=t.reltablespace),'comment',obj_description(t.oid,'pg_class'),
+   'columns',(SELECT json_agg(json_build_object('number',a.attnum,'dimensions',a.attndims,'name',a.attname,'type',format_type(a.atttypid,a.atttypmod),
+    'default',COALESCE(pg_get_expr(d.adbin,d.adrelid,false),''),'generated',COALESCE(d.adgencol::text,''),'comment',col_description(a.attrelid,a.attnum)) ORDER BY a.attnum)
+    FROM pg_attribute a LEFT JOIN pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum WHERE a.attrelid=t.oid AND a.attnum>0 AND NOT a.attisdropped),
+   'indexes',(SELECT json_agg(json_build_object('oid',i.indexrelid::bigint,'name',ic.relname,'kind','index','sql',pg_get_indexdef(i.indexrelid),
+    'comment',obj_description(ic.oid,'pg_class')) ORDER BY i.indexrelid) FROM pg_index i JOIN pg_class ic ON ic.oid=i.indexrelid WHERE i.indrelid=t.oid),
+   'constraints',(SELECT json_agg(json_build_object('oid',con.oid::bigint,'name',con.conname,'kind',con.contype::text,'sql',pg_get_constraintdef(con.oid,false),
+    'indexoid',con.conindid::bigint,'referenceoid',con.confrelid::bigint,'referenceschema',rn.nspname,'referencename',rc.relname,
+    'comment',obj_description(con.oid,'pg_constraint')) ORDER BY con.oid) FROM pg_constraint con LEFT JOIN pg_class rc ON rc.oid=con.confrelid LEFT JOIN pg_namespace rn ON rn.oid=rc.relnamespace WHERE con.conrelid=t.oid),
+   'triggers',(SELECT json_agg(json_build_object('oid',tr.oid::bigint,'name',tr.tgname,'kind','trigger','sql',pg_get_triggerdef(tr.oid,false),
+    'internal',tr.tgisinternal,'enabled',tr.tgenabled::text,'comment',obj_description(tr.oid,'pg_trigger')) ORDER BY tr.oid) FROM pg_trigger tr WHERE tr.tgrelid=t.oid),
+   'rules',(SELECT json_agg(json_build_object('oid',w.oid::bigint,'name',w.rulename,'kind','rule','sql',pg_get_ruledef(w.oid,false),
+    'enabled',w.ev_enabled::text,'comment',obj_description(w.oid,'pg_rewrite')) ORDER BY w.oid) FROM pg_rewrite w WHERE w.ev_class=t.oid),
+   'policies',(SELECT json_agg(json_build_object('oid',pol.oid::bigint,'name',pol.polname,'command',pol.polcmd::text,'permissive',pol.polpermissive,
+    'expression',COALESCE(pg_get_expr(pol.polqual,pol.polrelid,false),''),
+    'roles',(SELECT json_agg(json_build_object('oid',roleid::bigint,'name',CASE WHEN roleid=0 THEN 'PUBLIC' ELSE pg_get_userbyid(roleid) END) ORDER BY roleid) FROM unnest(pol.polroles) roleid)) ORDER BY pol.oid)
+    FROM pg_rlspolicy pol WHERE pol.polrelid=t.oid),
+   'sequences',(SELECT json_agg(json_build_object('oid',seq.oid::bigint,'column',dep.refobjsubid,'schema',ns.nspname,'name',seq.relname,'owner',pg_get_userbyid(seq.relowner),'large',seq.relkind='L',
+    'start',(SELECT start_value::text FROM pg_sequence_parameters(seq.oid)),
+    'increment',(SELECT increment::text FROM pg_sequence_parameters(seq.oid)),
+    'min',(SELECT minimum_value::text FROM pg_sequence_parameters(seq.oid)),
+    'max',(SELECT maximum_value::text FROM pg_sequence_parameters(seq.oid)),
+    'cache',(SELECT cache_value::text FROM pg_sequence_last_value(seq.oid)),
+    'cycle',(SELECT cycle_option FROM pg_sequence_parameters(seq.oid)),
+    'comment',obj_description(seq.oid,'pg_class')) ORDER BY seq.oid)
+    FROM pg_class seq JOIN pg_namespace ns ON ns.oid=seq.relnamespace JOIN pg_depend dep ON dep.classid='pg_class'::regclass AND dep.objid=seq.oid
+    WHERE seq.relkind IN('S','L') AND dep.refclassid='pg_class'::regclass AND dep.refobjid=t.oid AND dep.refobjsubid>0 AND dep.deptype IN('a','i'))
+  ) FROM target t
  )
  SELECT CASE WHEN octet_length(row_to_json(v)::text)<=16777216 THEN row_to_json(v)::text END FROM(
   SELECT current_database() AS database,$1::text AS namespace,$2::text AS name,d.oid::bigint AS databaseoid,n.oid::bigint AS namespaceoid,
