@@ -1,32 +1,47 @@
 # NyaDB
 
-NyaDB is a cross-platform, native desktop database workbench built with [Go](https://go.dev/) and the [NyaDB fork of MyGo Native UI](https://github.com/nyakang/mygo). It provides connection management, live read-only MySQL browsing, and a SQL editor with explicitly simulated execution.
+NyaDB is a cross-platform, native desktop database workbench built with [Go](https://go.dev/) and the [NyaDB fork of MyGo Native UI](https://github.com/nyakang/mygo). It supports live MySQL, PostgreSQL, SQLite, and ClickHouse connections, SQL execution, and database browsing, with data editing and administration tools for supported engines.
 
 ![NyaDB workbench preview](docs/ui-preview.png)
 
-This image is a historical headless UI preview; it does not show the current live MySQL workspace or establish visual parity with Navicat.
+This image is a historical headless UI preview. For recent native-window verification, see the [UI optimization report](docs/ui-global-optimization-2026-11-05.md) and [workbench workflow report](docs/navicat-ux-implementation-2026-11-05.md).
 
 ## Features
 
 - Native desktop interface targeting Windows, macOS, and Linux, with shared resizable navigation and inspector panes.
 - Consistent Lucide SVG operation icons with a separate set of embedded database brand icons.
-- Create, edit, duplicate, delete, group, star, and search connection profiles for MySQL, PostgreSQL, and SQLite.
-- Persist non-secret connection settings in a local SQLite configuration database.
-- Database chooser icons embedded in the application, with documented third-party artwork provenance.
-- Managed MySQL sessions with explicit connect/disconnect, asynchronous cancellation, and verified TLS support.
-- A unified native navigation tree with lazy database and table/view metadata loading.
-- Read-only MySQL structure and data tabs, with virtualized tables, server-side filtering/sorting, bounded paging, and large-field previews.
-- Multi-tab SQL editor with syntax highlighting and clearly labeled simulated results.
-- Five [color schemes](docs/THEME_SYSTEM.md)—Classic, Ocean, Forest, Rose and Sand—with light, dark and system appearance, live previews and saved preferences. Compact native controls, headless UI tests, and cross-platform Go build checks.
+- Create, edit, duplicate, delete, group, star, and search connection profiles; import connection URIs and optionally save credentials in the system credential vault.
+- A unified navigation tree with lazy database/schema and object loading, favorites, and object search.
+- Multi-tab SQL editor with real execution, cancellation, syntax highlighting, completion, formatting, EXPLAIN, multiple results, result snapshots, and export.
+- Named queries, SQL files, encrypted workspace recovery, and execution history. Disconnection preserves SQL text and requires explicit session recovery before further execution.
+- A shared virtualized data grid with filtering, sorting, paging, column layouts, field previews, and export. MySQL, PostgreSQL, and SQLite also support editing, draft undo/redo, transactions, counting, and data analysis where available.
+- Table designers, object management, import, backup/restore, and maintenance tools for supported engines, with SQL previews and explicit confirmation for applicable operations.
+- MySQL SSH tunnels and a NyaDB HTTPS/WebSocket TCP gateway, with host fingerprint trust and optional saved tunnel credentials.
+- Optional AI SQL generation, explanation, and optimization through a configurable OpenAI-compatible service, with request previews and suggestions inserted as unexecuted SQL.
+- Read-only data dictionaries with Markdown and HTML export.
+- Five [color schemes](docs/THEME_SYSTEM.md)—Classic, Ocean, Forest, Rose and Sand—with light, dark and system appearance, live previews, text scaling, and saved preferences.
 
-**Current functionality:** MySQL sessions, database objects, table structure, and table/view data use real database reads. PostgreSQL and SQLite support local profile management only. The SQL editor runs a simulation; arbitrary SQL execution, data writes, import/export, and SSH/HTTP tunnels are not implemented. Unimplemented commands remain disabled, and unsupported connection options are rejected before dialing. See the [current implementation status](docs/implementation-status.md) for capability and evidence boundaries.
+## Database support
+
+| Engine | Current capabilities | Main limits |
+| --- | --- | --- |
+| MySQL | SQL, metadata, data editing, table design, object/account management, import/export, backup/restore, maintenance, TLS and SSH/HTTP tunnels | Tools depend on server capabilities, permissions, and object structure. |
+| PostgreSQL | SQL, schema navigation, data editing, table design, ordinary table/view management, import/export, backup/restore and maintenance | Table design supports standard core PostgreSQL 14–18 ordinary tables; unsupported types and definitions are rejected. Backup/restore requires matching `pg_dump`/`pg_restore` tools. SSH/HTTP tunnels are unavailable. |
+| SQLite | SQL, attached databases, data editing, table/view design and management, import/export, online backup/restore and maintenance | Backup/restore operates on one database file at a time. Editing requires a reliable row identity. |
+| ClickHouse | Native connections, SQL, metadata/structure browsing, a shared read-only data grid, filtering, sorting, counting and export | No grid editing, transactions, table designer, import, backup/restore or tunnels. Paging uses offsets. |
+
+Grid editing requires a reliable row identity; views, generated fields, and unsupported objects remain read-only. Availability is checked against the engine, adapter, server permissions, and selected object. Unsupported operations are disabled or rejected explicitly.
+
+See the [multi-engine delivery report](docs/multi-engine-reliability-2026-11-04.md), [PostgreSQL designer support boundaries](docs/postgres-designer-save-2026-11-03.md), and [ClickHouse report](docs/clickhouse-native-2026-11-02.md) for detailed limits and verification. Advanced synchronization, modeling, automation, and other planned tools remain in development.
 
 ## Requirements
 
-- Go 1.27.1 or later.
-- MyGo Native UI fork `v0.6.3-nyadb.2` (the `go.mod` replacement for upstream `v0.6.3`).
+- Go 1.27.3 or later, as specified in `go.mod`.
+- MyGo Native UI fork `v0.7.4-nyadb.1` (the `go.mod` replacement for upstream `v0.7.4`, downloaded automatically).
 - On Linux, GTK 3 runtime libraries and a graphical desktop session. On Debian/Ubuntu, install `libgtk-3-0`.
 - On Windows and macOS, the operating system's native UI libraries.
+- A working system credential vault for saved passwords, AI API keys, and encrypted SQL workspace persistence. Linux uses a desktop Secret Service provider; Windows uses Credential Manager and macOS uses Keychain.
+- For PostgreSQL backup/restore, `pg_dump` and `pg_restore` matching the server's major version (14–18), available on `PATH` or in the configured tool directory.
 
 No Node.js or web frontend toolchain is required.
 
@@ -52,14 +67,14 @@ go tool mygo dev
 
 NyaDB includes Simplified Chinese (`zh-Hans`) and English (`en`). The app follows the system's preferred language on first launch. To change it, open **View → Language** and choose **简体中文**, **English**, or **Follow System Language**. MyGo saves an explicit selection between launches.
 
-Translations are maintained in `locales/zh-Hans.json` and `locales/en.json`. After editing the ARB catalogs, regenerate and validate the Go accessors:
+Translations are maintained in `locales/zh-Hans.json` and `locales/en.json`. After editing the JSON catalogs, regenerate and validate the Go accessors:
 
 ```bash
 go tool mygo generate
 go tool mygo i18n check
 ```
 
-The generated `locales/catalog_gen.go` is committed and checked for drift on all three CI platforms. `.gitattributes` enforces LF line endings for Go files and locale JSON catalogs, even with Windows Git `core.autocrlf=true`, so regeneration does not create line-ending-only changes. After updating translations, commit the JSON catalogs and regenerated Go accessors together. If an older Windows checkout already has CRLF in the generated file, inspect `git diff` first; when the file has no intentional local changes, use `git restore -- locales/catalog_gen.go` before pulling.
+The generated `locales/catalog_gen.go` is committed and checked for drift on all three CI platforms. Do not edit it by hand; commit the JSON catalogs and regenerated accessors together. `.gitattributes` enforces LF line endings for Go files and locale JSON catalogs.
 
 Some work-in-progress database screens and runtime diagnostic messages have not yet been translated and may display Chinese text.
 
@@ -79,45 +94,75 @@ To build an application package with MyGo:
 go tool mygo build
 ```
 
-The Python visual-tool tests require Pillow. Native packaging requirements vary by operating system. The GitHub Actions workflow runs Go tests, static checks, and builds on Linux, Windows, and macOS. Compilation and headless tests do not establish native GUI behavior or visual parity; see the verification reports for the platforms and states actually observed.
+The Python visual-tool tests require Pillow. Native packaging requirements vary by operating system. [GitHub Actions](.github/workflows/verify.yml) runs Go tests, static checks, and builds with `CGO_ENABLED=0` on Linux, Windows, and macOS, and checks generated translations for drift.
+
+Database integration tests use explicit environment flags and disposable fixtures; ordinary `go test ./...` does not enable them. See the [unified database verification guide](docs/unified-database-verification.md) and engine reports before running fixture tools. For lifecycle or concurrency changes, run the relevant packages with `go test -race`.
+
+Compilation and headless tests do not establish native GUI behavior or visual parity. Native reports document the Linux environments actually observed; Windows/macOS desktop behavior, IME, and multiple-monitor scaling still require separate verification.
 
 ## Configuration and privacy
 
-NyaDB stores connection profiles in `NyaDB/config.sqlite` under the directory returned by Go's `os.UserConfigDir()`. Profiles contain connection names, database types, hosts, ports, database paths or names, usernames, and optional TLS settings.
+NyaDB stores connection profiles and application preferences in `NyaDB/config.sqlite` under the directory returned by Go's `os.UserConfigDir()`. Profiles contain non-secret connection settings, including engine, host, port, database, username, TLS, and supported advanced options.
 
-Passwords, tokens, and credential-bearing connection strings are not stored in the profile database. Creating or selecting a profile does not open a network connection. Explicit MySQL connection testing or Connect starts network access; credentials are held only for the active operation/session and must be reentered for reconnect. On Unix systems, newly created configuration directories and files use restrictive permissions; on Windows, access is governed by filesystem ACLs. Protect existing files, backups, and your user account accordingly.
+Database passwords, tunnel secrets, and AI API keys are stored separately in the operating system's credential vault when saving is enabled. Unsaved database and tunnel credentials remain temporary. Named queries, SQL drafts/workspace snapshots, and history are encrypted in the local database using a separate key held in the system vault. If the vault or workspace key is unavailable, the app reports the affected persistence features as unavailable and retains existing encrypted records.
+
+Connection testing, connecting, and profiles configured for automatic connection can initiate database network access. AI requests go to the configured service only when requested; including SQL text or loaded schema metadata is opt-in, and suggestions are never executed automatically. See the [AI SQL report](docs/ai-sql-native-2026-11-02.md) for request and storage behavior.
+
+On Unix systems, newly created configuration directories and files use restrictive permissions; on Windows, access is governed by filesystem ACLs. Protect configuration files, exports, backups, and your user account accordingly.
 
 ## Repository structure
 
 ```text
-cmd/nyadb/                    Desktop application entry point
-internal/bootstrap/           Application initialization
-internal/assets/lucide/       Embedded Lucide UI icons (ISC license)
-internal/assets/connectionicons/ Embedded icon assets and provenance
-internal/services/connections/ Connection models, validation, and configuration
-internal/services/mysql/       MySQL sessions, queries, metadata, and data operations
-internal/storage/localdb/     SQLite configuration storage and migrations
-internal/ui/shell/            Native windows, workbench coordination, and data pages
-internal/ui/connectioncatalog/ Connection type chooser
-internal/ui/connectioneditor/ Connection forms, credentials, and async checks
-internal/ui/navigation/       Connection navigator and filtering
-internal/ui/sessionbrowser/   Session workspaces and metadata jobs
-internal/ui/sqlworkspace/     SQL documents and execution
-internal/ui/dataworkspace/    Data pages, editing, layout, export and information panels
-internal/ui/objectworkspace/  Object lists, table actions, structures and program definitions
-internal/ui/theme/            Theme, UI icons, and shared bitmap caches
-resources/                    Application assets
-docs/                         Design and UI documentation
-.github/workflows/            Cross-platform CI
+cmd/nyadb/                        Desktop application entry point
+cmd/nyadb-gateway/                Optional HTTPS/WebSocket TCP gateway
+main.go                           Entry point for MyGo tooling
+internal/bootstrap/               Application initialization
+internal/assets/appicon/          Application icon SVG, PNG, and native embedding
+internal/assets/lucide/           Embedded Lucide UI icons (ISC license)
+internal/assets/connectionicons/  Embedded icon assets and provenance
+internal/services/connections/    Connection models, validation, and configuration
+internal/db/contract/             Database-neutral models and feature contracts
+internal/db/                      SQL, schema, import, and tabular format rules
+internal/services/dbruntime/      Provider registration and session publication
+internal/services/mysql/          MySQL sessions, queries, metadata, and data operations
+internal/services/engines/        PostgreSQL and SQLite adapters
+internal/services/clickhouse/     Native ClickHouse adapter
+internal/services/credentials/    System vault, workspace keys, and SSH trust
+internal/services/queries/        Encrypted SQL assets, workspace, and history
+internal/services/aisql/          AI SQL configuration and HTTP/SSE client
+internal/transport/               SSH and HTTPS/WebSocket transport
+internal/storage/localdb/         SQLite configuration storage and migrations
+internal/ui/shell/                Native windows, tabs, and workbench coordination
+internal/ui/connectioncatalog/    Connection type chooser
+internal/ui/connectioneditor/     Connection forms, credentials, and async checks
+internal/ui/navigation/           Connection navigator and filtering
+internal/ui/sessionbrowser/       Session workspaces and metadata jobs
+internal/ui/sqlworkspace/         SQL documents and execution
+internal/ui/dataworkspace/        Data pages, editing, layout, export and information panels
+internal/ui/objectworkspace/      Object lists, table actions, structures and program definitions
+internal/ui/theme/                Theme, UI icons, and shared bitmap caches
+locales/                          Translation catalogs and generated accessors
+docs/                             Design and UI documentation
+tools/                            Fixture, packaging, and verification tools
+tests/                            Python visual-tool tests
+.github/workflows/                Cross-platform CI
 ```
 
 ## Documentation
 
-- [2026-10-25 UI alignment and verification](docs/UI_ALIGNMENT_2026-10-25.md)
-- [Current implementation status and historical milestones](docs/implementation-status.md)
-- [UI visual evidence and differential gate](docs/UI_VISUAL_GATE_2026-10-25.md)
-- [Technical design](docs/NYADB_TECHNICAL_DESIGN.md)
-- [UI layout and interactions](docs/UI_LAYOUT.md)
+- [Multi-engine reliability, import, backup/restore, and verification](docs/multi-engine-reliability-2026-11-04.md)
+- [Unified database runtime and workspace architecture](docs/unified-database-architecture.md)
+- [Unified database verification and fixtures](docs/unified-database-verification.md)
+- [PostgreSQL table designer and support boundaries](docs/postgres-designer-save-2026-11-03.md)
+- [PostgreSQL/SQLite paging, large fields, and analysis](docs/portable-large-data-2026-11-03.md)
+- [ClickHouse native driver and read-only workspace](docs/clickhouse-native-2026-11-02.md)
+- [SSH and NyaDB TCP gateway](docs/transport-gateway.md)
+- [AI SQL configuration, requests, and verification](docs/ai-sql-native-2026-11-02.md)
+- [Workbench workflows and native verification](docs/navicat-ux-implementation-2026-11-05.md)
+- [Global UI optimization and acceptance](docs/ui-global-optimization-2026-11-05.md)
+- [MyGo v0.7.4 fork upgrade](docs/MYGO_UPGRADE_0_7_4_2026-11-05.md)
+- [Implementation history and milestone reports](docs/implementation-status.md)
+- [Application icon source and regeneration](internal/assets/appicon/README.md)
 - [Lucide general UI icons](docs/LUCIDE_ICONS.md)
 - [Connection icon assets and licenses](docs/ICON_ASSETS.md)
 
