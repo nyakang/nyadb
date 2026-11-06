@@ -51,7 +51,19 @@ func (s *Session) dataQuery(ctx context.Context, o contract.ObjectRef, owner con
 	}
 	defer tx.Rollback()
 	// Protect qualified relation identity while metadata and values are read.
-	if s.kind == connections.PostgreSQL || s.kind == connections.OpenGauss {
+	if s.kind == connections.OpenGauss {
+		// Native LOCK TABLE rejects views. A bounded SELECT locks both the
+		// qualified relation and its referenced relations without modifying it
+		// or requiring ownership, and retains those locks until this read ends.
+		rows, lockErr := tx.QueryContext(ctx, "SELECT * FROM "+qualified(o)+" LIMIT 0")
+		if lockErr != nil {
+			return lockErr
+		}
+		err = errors.Join(rows.Err(), rows.Close())
+		if err != nil {
+			return err
+		}
+	} else if s.kind == connections.PostgreSQL {
 		if _, err = tx.ExecContext(ctx, "LOCK TABLE "+qualified(o)+" IN ACCESS SHARE MODE"); err != nil {
 			return err
 		}

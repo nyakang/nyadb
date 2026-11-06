@@ -6,6 +6,27 @@ import (
 )
 
 func ParsePostgreSQLView(ddl string) (View, error) {
+	return parsePostgreSQLView(ddl, false)
+}
+
+func parsePostgreSQLView(ddl string, native bool) (View, error) {
+	if native {
+		// Accept one terminal delimiter (including following comments), but
+		// keep embedded delimiters for the normal fragment check to reject.
+		if len(ddl) > 1<<20 {
+			return View{}, ErrUnsupported
+		}
+		ts, err := postgresLex(ddl)
+		if err != nil {
+			return View{}, err
+		}
+		if len(ts) > 0 {
+			last := ts[len(ts)-1]
+			if last.kind == 'p' && last.text == ";" {
+				ddl = ddl[:last.start]
+			}
+		}
+	}
 	ts, err := postgresTokens(strings.TrimSpace(ddl), true)
 	if err != nil {
 		return View{}, err
@@ -57,6 +78,29 @@ func ParsePostgreSQLView(ddl string) (View, error) {
 			break
 		}
 	}
+	if native && i < len(ts) && ts[i].word("WITH") {
+		i++
+		if i >= len(ts) || ts[i].text != "(" {
+			return v, ErrUnsupported
+		}
+		i++
+		for {
+			if i+2 >= len(ts) || !identifierToken(ts[i]) || ts[i+1].text != "=" {
+				return v, ErrUnsupported
+			}
+			v.Options = append(v.Options, pgTokenName(ts[i])+"="+strings.ToLower(pgTokenName(ts[i+2])))
+			i += 3
+			if i < len(ts) && ts[i].text == "," {
+				i++
+				continue
+			}
+			if i >= len(ts) || ts[i].text != ")" {
+				return v, ErrUnsupported
+			}
+			i++
+			break
+		}
+	}
 	if i >= len(ts) || !ts[i].word("AS") || i+1 >= len(ts) {
 		return v, ErrUnsupported
 	}
@@ -64,11 +108,18 @@ func ParsePostgreSQLView(ddl string) (View, error) {
 	raw := strings.TrimSpace(ddl)
 	v.SelectSQL = strings.TrimSpace(raw[ts[i].start:])
 	v.SelectSQL = strings.TrimSuffix(v.SelectSQL, ";")
-	_, err = CreatePostgreSQLView(v, v.Schema)
+	if native {
+		v, err = normalizeOpenGaussView(v)
+		if err == nil {
+			_, err = CreateOpenGaussView(v, v.Schema)
+		}
+	} else {
+		_, err = CreatePostgreSQLView(v, v.Schema)
+	}
 	return v, err
 }
 func CreatePostgreSQLView(v View, schema string) (string, error) {
-	if PostgreSQLIdentifier(v.Name) != nil || schema != "" && PostgreSQLIdentifier(schema) != nil || v.Schema != "" && v.Schema != schema || len(v.Triggers) > 0 {
+	if PostgreSQLIdentifier(v.Name) != nil || schema != "" && PostgreSQLIdentifier(schema) != nil || v.Schema != "" && v.Schema != schema || len(v.Triggers) > 0 || len(v.Options) > 0 {
 		return "", ErrUnsupported
 	}
 	ts, err := postgresTokens(v.SelectSQL, true)
@@ -136,18 +187,27 @@ func PlanPostgreSQLView(original ViewSnapshot, action string, desired View, sche
 	return p, nil
 }
 func ParseView(engine, ddl string) (View, error) {
+	if engine == "opengauss" {
+		return parsePostgreSQLView(ddl, true)
+	}
 	if engine == "postgresql" {
 		return ParsePostgreSQLView(ddl)
 	}
 	return ParseSQLiteView(ddl)
 }
 func CreateView(engine string, v View, schema string) (string, error) {
+	if engine == "opengauss" {
+		return CreateOpenGaussView(v, schema)
+	}
 	if engine == "postgresql" {
 		return CreatePostgreSQLView(v, schema)
 	}
 	return CreateSQLiteView(v, schema)
 }
 func PlanView(original ViewSnapshot, action string, desired View, schema string) (ViewPlan, error) {
+	if original.Engine == "opengauss" {
+		return PlanOpenGaussView(original, action, desired, schema)
+	}
 	if original.Engine == "postgresql" {
 		return PlanPostgreSQLView(original, action, desired, schema)
 	}
