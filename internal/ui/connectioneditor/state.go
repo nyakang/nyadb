@@ -151,7 +151,7 @@ func (s *State) OpenNew(kind connections.Kind, group string) error {
 	draft.GroupName = group
 	s.connectionDraft = draft
 	s.initializeInputs()
-	s.connectionSavePassword = kind == connections.MySQL && s.credentialVault != nil
+	s.connectionSavePassword = kind.IsMySQLFamily() && s.credentialVault != nil
 	s.connectionEditorTab = 0
 	s.connectionNameFocusPending = true
 	s.active = true
@@ -169,7 +169,7 @@ func (s *State) OpenProfile(profile connections.Profile) {
 	s.active = true
 	s.initializeConnectionConfigurations()
 	s.loadInitialSQL()
-	if profile.Kind == connections.MySQL {
+	if profile.Kind.IsMySQLFamily() {
 		s.loadSavedConnectionPasswords()
 		s.loadTunnelSecrets()
 	} else if profile.Kind == connections.PostgreSQL || profile.Kind == connections.ClickHouse {
@@ -179,7 +179,7 @@ func (s *State) OpenProfile(profile connections.Profile) {
 
 func (s *State) initializeInputs() {
 	s.initEngineOptionsInputs()
-	if s.connectionDraft.Kind == connections.MySQL {
+	if s.connectionDraft.Kind.IsMySQLFamily() {
 		s.initMySQLAdvancedInputs()
 		s.initMySQLSSHInputs()
 		s.initMySQLHTTPInputs()
@@ -249,8 +249,8 @@ func (s *State) Title() string {
 		prefix = "编辑连接"
 	}
 	if s.active && s.connectionDraft.Kind != "" {
-		if s.connectionDraft.ID != 0 && s.connectionDraft.Kind == connections.MySQL {
-			return s.connectionMainConfig.profile.Name + " - " + locales.Text("编辑连接") + " (MySQL)"
+		if s.connectionDraft.ID != 0 && s.connectionDraft.Kind.IsMySQLFamily() {
+			return s.connectionMainConfig.profile.Name + " - " + locales.Text("编辑连接") + " (" + connectionKindName(s.connectionDraft.Kind) + ")"
 		}
 		return locales.Text(prefix) + " (" + connectionKindName(s.connectionDraft.Kind) + ")"
 	}
@@ -261,6 +261,8 @@ func connectionKindName(kind connections.Kind) string {
 	switch kind {
 	case connections.MySQL:
 		return "MySQL"
+	case connections.MariaDB:
+		return "MariaDB"
 	case connections.PostgreSQL:
 		return "PostgreSQL"
 	case connections.SQLite:

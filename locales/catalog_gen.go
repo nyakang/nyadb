@@ -34,6 +34,48 @@ type Messages struct{ locale string }
 // source language.
 func In(locale string) Messages { return Messages{locale} }
 
+// MysqlFamilyDisconnected says "%s 已断开"
+// in the language the app shows.
+func MysqlFamilyDisconnected() string { return In(i18n.Locale()).MysqlFamilyDisconnected() }
+
+// MysqlFamilyDisconnected says "%s 已断开"
+// in the language of msgs.
+func (msgs Messages) MysqlFamilyDisconnected() string {
+	return Catalog.Format(msgs.locale, "mysqlFamilyDisconnected", nil)
+}
+
+// MysqlFamilyConnectionCanceled says "%s 连接已取消"
+// in the language the app shows.
+func MysqlFamilyConnectionCanceled() string { return In(i18n.Locale()).MysqlFamilyConnectionCanceled() }
+
+// MysqlFamilyConnectionCanceled says "%s 连接已取消"
+// in the language of msgs.
+func (msgs Messages) MysqlFamilyConnectionCanceled() string {
+	return Catalog.Format(msgs.locale, "mysqlFamilyConnectionCanceled", nil)
+}
+
+// MysqlFamilySessionPassword says "本次 %s 会话密码"
+// in the language the app shows.
+func MysqlFamilySessionPassword() string { return In(i18n.Locale()).MysqlFamilySessionPassword() }
+
+// MysqlFamilySessionPassword says "本次 %s 会话密码"
+// in the language of msgs.
+func (msgs Messages) MysqlFamilySessionPassword() string {
+	return Catalog.Format(msgs.locale, "mysqlFamilySessionPassword", nil)
+}
+
+// MysqlFamilyTestCurrentConfiguration says "测试当前 %s 配置"
+// in the language the app shows.
+func MysqlFamilyTestCurrentConfiguration() string {
+	return In(i18n.Locale()).MysqlFamilyTestCurrentConfiguration()
+}
+
+// MysqlFamilyTestCurrentConfiguration says "测试当前 %s 配置"
+// in the language of msgs.
+func (msgs Messages) MysqlFamilyTestCurrentConfiguration() string {
+	return Catalog.Format(msgs.locale, "mysqlFamilyTestCurrentConfiguration", nil)
+}
+
 // SqlConnectDatabasePrompt says "请连接数据库后新建查询"
 // in the language the app shows.
 func SqlConnectDatabasePrompt() string { return In(i18n.Locale()).SqlConnectDatabasePrompt() }
@@ -13630,11 +13672,11 @@ func (msgs Messages) ClickhouseTLSModeCaption() string {
 	return Catalog.Format(msgs.locale, "clickhouseTLSModeCaption", nil)
 }
 
-// ConnectionURISupportedEngines says "支持 MySQL、PostgreSQL、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。"
+// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、PostgreSQL、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。"
 // in the language the app shows.
 func ConnectionURISupportedEngines() string { return In(i18n.Locale()).ConnectionURISupportedEngines() }
 
-// ConnectionURISupportedEngines says "支持 MySQL、PostgreSQL、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。"
+// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、PostgreSQL、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。"
 // in the language of msgs.
 func (msgs Messages) ConnectionURISupportedEngines() string {
 	return Catalog.Format(msgs.locale, "connectionURISupportedEngines", nil)

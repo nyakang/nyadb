@@ -31,3 +31,33 @@ func TestPlansUseRealMetricsAndBoundReadOnlyRequests(t *testing.T) {
 		t.Fatal("SQLite metrics invented", plan, err)
 	}
 }
+
+func TestMariaDBPlanTraversesSortAndMaterializationWithRealRows(t *testing.T) {
+	q, e := Build("mariadb", "SELECT `t`.`id` FROM `t` ORDER BY id")
+	if e != nil || !strings.HasPrefix(q, "EXPLAIN FORMAT=JSON ") {
+		t.Fatal(q, e)
+	}
+	raw := `{"query_block":{"read_sorted_file":{"filesort":{"sort_key":"t.id","table":{"table_name":"t","access_type":"ALL","rows":42}}},"subqueries":[{"expression_cache":{"query_block":{"table":{"table_name":"s","access_type":"ref","rows":3}}}}]}}`
+	result := contract.SQLResult{Sets: []contract.ResultSet{{Rows: [][]contract.Cell{{{Kind: contract.JSON, Text: raw}}}}}}
+	plan, e := Parse("mariadb", result)
+	if e != nil {
+		t.Fatal(e)
+	}
+	seen := map[string]float64{}
+	var walk func([]contract.PlanNode)
+	walk = func(nodes []contract.PlanNode) {
+		for _, n := range nodes {
+			if n.Rows != nil {
+				seen[n.Label] = *n.Rows
+			}
+			if n.Cost != nil {
+				t.Fatal("invented MariaDB cost")
+			}
+			walk(n.Children)
+		}
+	}
+	walk(plan.Nodes)
+	if seen["t · ALL"] != 42 || seen["s · ref"] != 3 {
+		t.Fatal("MariaDB plan lost nested metrics", seen)
+	}
+}

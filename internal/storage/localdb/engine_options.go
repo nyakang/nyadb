@@ -21,7 +21,7 @@ type engineOptionsEnvelope struct {
 func encodeProfileOptions(p connections.Profile) (string, error) {
 	var value any
 	switch p.Kind {
-	case connections.MySQL:
+	case connections.MySQL, connections.MariaDB:
 		value = p.MySQLAdvanced
 	case connections.PostgreSQL:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, PostgreSQL: &p.PostgreSQLOptions}

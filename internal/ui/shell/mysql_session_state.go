@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"fmt"
 	"github.com/egoist/mygo/ui"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -12,7 +13,7 @@ import (
 
 func (s *State) startMySQLSession(services ui.Services) {
 	p, ok := s.currentProfile()
-	if !ok || (p.Kind != connections.MySQL && p.Kind != connections.PostgreSQL && p.Kind != connections.SQLite && p.Kind != connections.ClickHouse) || s.profileService == nil {
+	if !ok || (!p.Kind.IsMySQLFamily() && p.Kind != connections.PostgreSQL && p.Kind != connections.SQLite && p.Kind != connections.ClickHouse) || s.profileService == nil {
 		s.status = "请选择 MySQL 连接"
 		return
 	}
@@ -65,30 +66,36 @@ func (s *State) mysqlSessionToolbar(c *ui.Context) {
 		return
 	}
 	p, ok := s.currentProfile()
-	if !ok || p.Kind != connections.MySQL {
+	if !ok || !p.Kind.IsMySQLFamily() {
 		return
+	}
+	passwordLabel := locales.Text("本次 MySQL 会话密码")
+	connectLabel := locales.Text("连接所选 MySQL")
+	if p.Kind == connections.MariaDB {
+		passwordLabel = fmt.Sprintf(locales.Text("本次 %s 会话密码"), "MariaDB")
+		connectLabel = locales.Text("连接所选数据库")
 	}
 	ui.Column(c).Gap(5).Children(func() {
 		if s.sessions.Current().Status != "连接中" && s.sessions.StatusFor(p.ID) != "已连接" {
 			ui.TextInput(c, &s.sessions.Current().Password).Password().
-				Label(locales.Text("本次 MySQL 会话密码")).Placeholder(locales.Text("密码（留空使用已保存密码）")).Height(theme.RowHeight(c, 26))
+				Label(passwordLabel).Placeholder(locales.Text("密码（留空使用已保存密码）")).Height(theme.RowHeight(c, 26))
 		}
 		ui.Row(c).Gap(5).Children(func() {
 			if s.sessions.StatusFor(p.ID) == "连接中" {
 				if ui.Button(c, locales.Text("取消连接")).Clicked() {
 					s.disconnectMySQLSession()
-					s.status = "MySQL 连接已取消"
+					s.status = fmt.Sprintf(locales.Text("%s 连接已取消"), connectionKindName(p.Kind))
 				}
 			} else if s.sessions.StatusFor(p.ID) == "已连接" {
 				if ui.Button(c, locales.Text("断开连接")).Clicked() {
 					s.disconnectMySQLSession()
-					s.status = "MySQL 已断开"
+					s.status = fmt.Sprintf(locales.Text("%s 已断开"), connectionKindName(p.Kind))
 				}
 				if ui.Button(c, locales.Text("重连")).Clicked() {
 					s.disconnectMySQLSession()
 					s.status = "请重新输入密码后点击连接"
 				}
-			} else if ui.Button(c, locales.Text("连接")).Label(locales.Text("连接所选 MySQL")).Clicked() {
+			} else if ui.Button(c, locales.Text("连接")).Label(connectLabel).Clicked() {
 				s.startMySQLSession(c.Services())
 			}
 		})

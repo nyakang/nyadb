@@ -38,7 +38,7 @@ func scanProfile(scan func(...any) error) (connections.Profile, error) {
 		return connections.Profile{}, fmt.Errorf("corrupt profile port: %d", port)
 	}
 	p.Port = uint16(port)
-	if p.Kind == connections.MySQL {
+	if p.Kind.IsMySQLFamily() {
 		if advancedJSON == "" {
 			p.MySQLAdvanced = connections.DefaultMySQLAdvanced()
 		} else if err := json.Unmarshal([]byte(advancedJSON), &p.MySQLAdvanced); err != nil {
@@ -55,7 +55,7 @@ func scanProfile(scan func(...any) error) (connections.Profile, error) {
 		if err := json.Unmarshal([]byte(variantsJSON), &p.Variants); err != nil {
 			return connections.Profile{}, fmt.Errorf("decode connection configurations: %w", err)
 		}
-		if p.Kind != connections.MySQL && len(p.Variants) > 0 {
+		if !p.Kind.IsMySQLFamily() && len(p.Variants) > 0 {
 			return connections.Profile{}, fmt.Errorf("unexpected variants on %s", p.Kind)
 		}
 	}

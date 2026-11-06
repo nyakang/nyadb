@@ -93,6 +93,9 @@ func (s *State) OpenNewDesign(id uint64, profile int64, database, name string) *
 	}
 	x := &designDocument{row: 0, formRow: -1, triggerRow: -1, optionName: "ENGINE", loaded: true, generation: s.sessionFor(profile).Generation}
 	x.original = mysqlddl.Snapshot{Database: database, Table: name}
+	if s.deps.Engine != nil && s.deps.Engine(profile) == "mariadb" {
+		x.original.Engine = "mariadb"
+	}
 	if s.deps.DesignGeneration != nil {
 		x.original.RuntimeGeneration = s.deps.DesignGeneration(profile)
 	}

@@ -5,7 +5,7 @@
 
 [![Listed on Awesome MyGo](https://awesomemygo.dev/badge.svg)](https://awesomemygo.dev/apps/nyadb)
 
-NyaDB is a cross-platform, native desktop database workbench built with [Go](https://go.dev/) and the [NyaDB fork of MyGo Native UI](https://github.com/nyakang/mygo). It supports live MySQL, PostgreSQL, SQLite, and ClickHouse connections, SQL execution, and database browsing, with data editing and administration tools for supported engines.
+NyaDB is a cross-platform, native desktop database workbench built with [Go](https://go.dev/) and the [NyaDB fork of MyGo Native UI](https://github.com/nyakang/mygo). It supports live MySQL, MariaDB, PostgreSQL, SQLite, and ClickHouse connections, SQL execution, and database browsing, with data editing and administration tools for supported engines.
 
 ![NyaDB workbench preview](docs/ui-preview.png)
 
@@ -19,9 +19,9 @@ This image is a historical headless UI preview. For recent native-window verific
 - A unified navigation tree with lazy database/schema and object loading, favorites, and object search.
 - Multi-tab SQL editor with real execution, cancellation, syntax highlighting, completion, formatting, EXPLAIN, multiple results, result snapshots, and export.
 - Named queries, SQL files, encrypted workspace recovery, and execution history. Disconnection preserves SQL text and requires explicit session recovery before further execution.
-- A shared virtualized data grid with filtering, sorting, paging, column layouts, field previews, and export. MySQL, PostgreSQL, and SQLite also support editing, draft undo/redo, transactions, counting, and data analysis where available.
+- A shared virtualized data grid with filtering, sorting, paging, column layouts, field previews, and export. MySQL, MariaDB, PostgreSQL, and SQLite also support editing, draft undo/redo, transactions, counting, and data analysis where available.
 - Table designers, object management, import, backup/restore, and maintenance tools for supported engines, with SQL previews and explicit confirmation for applicable operations.
-- MySQL SSH tunnels and a NyaDB HTTPS/WebSocket TCP gateway, with host fingerprint trust and optional saved tunnel credentials.
+- MySQL/MariaDB SSH tunnels and a NyaDB HTTPS/WebSocket TCP gateway, with host fingerprint trust and optional saved tunnel credentials.
 - Optional AI SQL generation, explanation, and optimization through a configurable OpenAI-compatible service, with request previews and suggestions inserted as unexecuted SQL.
 - Read-only data dictionaries with Markdown and HTML export.
 - Five [color schemes](docs/THEME_SYSTEM.md)—Classic, Ocean, Forest, Rose and Sand—with light, dark and system appearance, live previews, text scaling, and saved preferences.
@@ -31,13 +31,14 @@ This image is a historical headless UI preview. For recent native-window verific
 | Engine | Current capabilities | Main limits |
 | --- | --- | --- |
 | MySQL | SQL, metadata, data editing, table design, object/account management, import/export, backup/restore, maintenance, TLS and SSH/HTTP tunnels | Tools depend on server capabilities, permissions, and object structure. |
+| MariaDB | Independent connection profiles and `mariadb://` URIs; SQL, metadata, data editing, table/view design, object management, import/export, backup/restore, maintenance, TLS and SSH/HTTP tunnels | Requires MariaDB 10.11 or later. Account/role management and MySQL-only check enforcement/index visibility are unavailable. Tools retain complete definitions and reject unsupported changes. |
 | PostgreSQL | SQL, schema navigation, data editing, table design, ordinary table/view management, import/export, backup/restore and maintenance | Table design supports standard core PostgreSQL 14–18 ordinary tables; unsupported types and definitions are rejected. Backup/restore requires matching `pg_dump`/`pg_restore` tools. SSH/HTTP tunnels are unavailable. |
 | SQLite | SQL, attached databases, data editing, table/view design and management, import/export, online backup/restore and maintenance | Backup/restore operates on one database file at a time. Editing requires a reliable row identity. |
 | ClickHouse | Native connections, SQL, metadata/structure browsing, a shared read-only data grid, filtering, sorting, counting and export | No grid editing, transactions, table designer, import, backup/restore or tunnels. Paging uses offsets. |
 
 Grid editing requires a reliable row identity; views, generated fields, and unsupported objects remain read-only. Availability is checked against the engine, adapter, server permissions, and selected object. Unsupported operations are disabled or rejected explicitly.
 
-See the [multi-engine delivery report](docs/multi-engine-reliability-2026-11-04.md), [PostgreSQL designer support boundaries](docs/postgres-designer-save-2026-11-03.md), and [ClickHouse report](docs/clickhouse-native-2026-11-02.md) for detailed limits and verification. Advanced synchronization, modeling, automation, and other planned tools remain in development.
+See the [multi-engine delivery report](docs/multi-engine-reliability-2026-11-04.md), [MariaDB report](docs/mariadb-2026-11-06.md), [PostgreSQL designer support boundaries](docs/postgres-designer-save-2026-11-03.md), and [ClickHouse report](docs/clickhouse-native-2026-11-02.md) for detailed limits and verification. Advanced synchronization, modeling, automation, and other planned tools remain in development.
 
 ## Requirements
 

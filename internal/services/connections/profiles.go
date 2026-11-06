@@ -11,10 +11,15 @@ type Kind string
 
 const (
 	MySQL      Kind = "mysql"
+	MariaDB    Kind = "mariadb"
 	PostgreSQL Kind = "postgresql"
 	SQLite     Kind = "sqlite"
 	ClickHouse Kind = "clickhouse"
 )
+
+// IsMySQLFamily identifies products sharing the MySQL client and connection
+// settings. Product identity and capabilities remain separate.
+func (k Kind) IsMySQLFamily() bool { return k == MySQL || k == MariaDB }
 
 var (
 	ErrNotFound = errors.New("connection profile not found")

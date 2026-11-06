@@ -113,7 +113,7 @@ func (s *State) databaseChildren(key string) []string {
 			switch s.deps.Engine(n.ProfileID) {
 			case connections.PostgreSQL:
 				categories = postgresNavigationCategories
-			case connections.MySQL:
+			case connections.MySQL, connections.MariaDB:
 			default:
 				categories = []string{"表", "视图", "查询"}
 			}

@@ -120,7 +120,7 @@ func (s *State) SetMySQLSettingsPicker(pick func()) {
 }
 
 func (s *State) SelectMySQLSettingsDirectory(path string) {
-	if !s.active || s.connectionDraft.Kind != connections.MySQL {
+	if !s.active || !s.connectionDraft.Kind.IsMySQLFamily() {
 		return
 	}
 	s.connectionDraft.MySQLAdvanced.SettingsLocation = path
@@ -128,7 +128,7 @@ func (s *State) SelectMySQLSettingsDirectory(path string) {
 }
 
 func (s *State) MySQLSettingsPickerError() {
-	if s.active && s.connectionDraft.Kind == connections.MySQL {
+	if s.active && s.connectionDraft.Kind.IsMySQLFamily() {
 		s.connectionError = locales.Text("选择设置位置失败")
 	}
 }

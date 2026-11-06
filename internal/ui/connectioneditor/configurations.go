@@ -61,7 +61,7 @@ func (s *State) initializeConnectionConfigurations() {
 		return
 	}
 	s.connectionMainConfig = s.currentConnectionSnapshot()
-	if s.connectionDraft.Kind != connections.MySQL {
+	if !s.connectionDraft.Kind.IsMySQLFamily() {
 		return
 	}
 	s.connectionProfilesVisible = true
@@ -104,7 +104,7 @@ func (s *State) initializeConnectionConfigurations() {
 }
 
 func (s *State) captureConnectionConfiguration() {
-	if s.connectionDraft.ID == 0 || s.connectionDraft.Kind != connections.MySQL {
+	if s.connectionDraft.ID == 0 || !s.connectionDraft.Kind.IsMySQLFamily() {
 		return
 	}
 	snap := s.currentConnectionSnapshot()
@@ -174,7 +174,7 @@ func (s *State) markConnectionConfigurationActive(index int) {
 }
 
 func (s *State) addConnectionConfiguration() {
-	if s.connectionDraft.Kind != connections.MySQL || s.connectionDraft.ID == 0 ||
+	if !s.connectionDraft.Kind.IsMySQLFamily() || s.connectionDraft.ID == 0 ||
 		len(s.connectionOtherConfigs) >= 16 {
 		return
 	}
@@ -383,7 +383,7 @@ func (s *State) connectionConfigRow(c *ui.Context, index int, name string) {
 func (s *State) connectionConfigurationCaption(c *ui.Context) {
 	palette := theme.Colors(c)
 
-	if s.connectionDraft.ID == 0 || s.connectionDraft.Kind != connections.MySQL ||
+	if s.connectionDraft.ID == 0 || !s.connectionDraft.Kind.IsMySQLFamily() ||
 		!s.connectionProfilesVisible || s.connectionActiveConfig == 0 {
 		return
 	}

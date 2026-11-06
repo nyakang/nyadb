@@ -135,7 +135,7 @@ func (s *State) profileInspector(c *ui.Context) {
 						ui.Text(c, connectionKindName(p.Kind)).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 					})
 				})
-				if p.Kind == connections.MySQL || p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse {
+				if p.Kind.IsMySQLFamily() || p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse {
 					s.mysqlSessionToolbar(c)
 				}
 				theme.Property(c, locales.Text("状态"), locales.Text(s.sessions.StatusFor(p.ID)))
@@ -143,7 +143,7 @@ func (s *State) profileInspector(c *ui.Context) {
 					theme.Property(c, locales.Text("文件"), p.Database)
 					return
 				}
-				if p.Kind == connections.MySQL {
+				if p.Kind.IsMySQLFamily() {
 					resolved, err := connections.ResolveActiveSettings(p)
 					if err != nil {
 						theme.Property(c, locales.Text("活动配置"), locales.Text("无效，请编辑连接"))

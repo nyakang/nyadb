@@ -9,6 +9,7 @@ import (
 // MySQL session factory will consume. Resolution never dials a server and
 // never exposes a password, private-key content, or a raw connection string.
 type ActiveSettings struct {
+	Kind              Kind
 	ProfileID         int64
 	ConnectionName    string
 	ConfigurationName string // Empty denotes the primary configuration.
@@ -24,7 +25,7 @@ type ActiveSettings struct {
 // configuration row currently highlighted in the editor. Corrupt or stale
 // references fail closed rather than silently connecting to the main host.
 func ResolveActiveSettings(profile Profile) (ActiveSettings, error) {
-	if profile.Kind != MySQL {
+	if !profile.Kind.IsMySQLFamily() {
 		return ActiveSettings{}, fmt.Errorf("%w: active MySQL settings require a MySQL profile", ErrInvalid)
 	}
 	// normalize edits variant slices, so do not alias the repository's copy.
@@ -35,6 +36,7 @@ func ResolveActiveSettings(profile Profile) (ActiveSettings, error) {
 		return ActiveSettings{}, err
 	}
 	result := ActiveSettings{
+		Kind:      profile.Kind,
 		ProfileID: profile.ID, ConnectionName: profile.Name,
 		ConfigurationName: profile.ActiveVariant,
 		Host:              profile.Host, Port: profile.Port, Database: profile.Database,

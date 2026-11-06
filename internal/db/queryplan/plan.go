@@ -11,14 +11,14 @@ import (
 
 func Build(engine, sql string) (string, error) {
 	validate := sqltext.SinglePortableStatement
-	if engine == "mysql" {
+	if engine == "mysql" || engine == "mariadb" {
 		validate = sqltext.SingleMySQLStatement
 	}
 	if err := validate(sql); err != nil {
 		return "", err
 	}
 	switch engine {
-	case "mysql":
+	case "mysql", "mariadb":
 		return "EXPLAIN FORMAT=JSON " + sql, nil
 	case "postgresql", "postgres":
 		return "EXPLAIN (FORMAT JSON) " + sql, nil
@@ -183,7 +183,7 @@ func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, e
 		plan.Nodes = []contract.PlanNode{node}
 		return plan, nil
 	}
-	if engine != "mysql" {
+	if engine != "mysql" && engine != "mariadb" {
 		return nil, contract.ErrUnsupported
 	}
 	var mysql func(string, any, int) ([]contract.PlanNode, error)
@@ -208,6 +208,9 @@ func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, e
 			if n.Rows == nil {
 				n.Rows = numeric(m["rows_examined_per_scan"])
 			}
+			if n.Rows == nil && engine == "mariadb" {
+				n.Rows = numeric(m["rows"])
+			}
 			if name, ok := m["table_name"].(string); ok {
 				n.Label = name
 				if access, ok := m["access_type"].(string); ok {
@@ -221,6 +224,9 @@ func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, e
 				}
 			}
 			keys := []string{"query_block", "nested_loop", "table", "ordering_operation", "grouping_operation", "duplicates_removal", "union_result", "query_specifications", "materialized_from_subquery", "attached_subqueries", "dependent_subquery", "buffer_result"}
+			if engine == "mariadb" {
+				keys = append(keys, "read_sorted_file", "filesort", "temporary_table", "materialized", "subqueries", "expression_cache", "block-nl-join", "query_specification")
+			}
 			for _, childKey := range keys {
 				if child, ok := m[childKey]; ok {
 					nodes, err := mysql(childKey, child, depth+1)

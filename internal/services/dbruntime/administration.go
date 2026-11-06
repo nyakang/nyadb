@@ -5,6 +5,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/mysqlddl"
 	"github.com/nyakang/nyadb/internal/services/backups"
+	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"io"
 )
@@ -38,7 +39,17 @@ func (a *administration) context(ctx context.Context, id int64) (context.Context
 	}
 	return mysqlsvc.WithMySQLSessionGeneration(ctx, a.Administration.SessionGeneration(id)), nil
 }
+func (a *administration) accountsSupported() bool {
+	if a.session == nil {
+		return true
+	}
+	d, _ := connections.Describe(a.session.kind)
+	return d.Capabilities.Accounts
+}
 func (a *administration) Accounts(ctx context.Context, id int64) ([]mysqlsvc.MySQLAccount, error) {
+	if !a.accountsSupported() {
+		return nil, contract.ErrUnsupported
+	}
 	ctx, e := a.context(ctx, id)
 	if e != nil {
 		return nil, e
@@ -46,6 +57,9 @@ func (a *administration) Accounts(ctx context.Context, id int64) ([]mysqlsvc.MyS
 	return a.Administration.Accounts(ctx, id)
 }
 func (a *administration) AccountGrants(ctx context.Context, id int64, account mysqlsvc.MySQLAccount) ([]string, error) {
+	if !a.accountsSupported() {
+		return nil, contract.ErrUnsupported
+	}
 	ctx, e := a.context(ctx, id)
 	if e != nil {
 		return nil, e
@@ -74,6 +88,9 @@ func (a *administration) TableStructure(ctx context.Context, id int64, db, table
 	return a.Administration.TableStructure(ctx, id, db, table)
 }
 func (a *administration) ChangeAccounts(ctx context.Context, id int64, generation uint64, c []mysqlsvc.AccountChange) mysqlsvc.DDLOutcome {
+	if !a.accountsSupported() {
+		return mysqlsvc.DDLOutcome{State: "not_executed", Error: contract.ErrUnsupported}
+	}
 	ctx, ectx := a.context(ctx, id)
 	if ectx != nil {
 		e := ectx

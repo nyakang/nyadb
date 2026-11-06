@@ -21,6 +21,7 @@ func TestConnectionURIImportSeparatesSecretsAndPreservesEngineSettings(t *testin
 		{"postgresql://alice:secret@db.example:5433/research?sslmode=verify-ca", connections.PostgreSQL, "db.example", "alice", "research", "verify-ca", "secret", 5433},
 		{"postgres://db.example", connections.PostgreSQL, "db.example", "postgres", "postgres", "", "", 5432},
 		{"mysql://db.example", connections.MySQL, "db.example", "root", "", "", "", 3306},
+		{"mariadb://db.example", connections.MariaDB, "db.example", "root", "", "", "", 3306},
 		{"sqlite:///tmp/user%20database.sqlite", connections.SQLite, "", "", "/tmp/user database.sqlite", "", "", 0},
 	} {
 		if runtime.GOOS == "windows" && spec.kind == connections.SQLite {

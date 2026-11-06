@@ -30,6 +30,22 @@ type Plan struct {
 
 func Build(original Snapshot, draft Draft) (Plan, error) {
 	p := Plan{Original: original, Desired: draft.Clone(), Fingerprint: original.Fingerprint()}
+	if original.Engine != "" && original.Engine != "mysql" && original.Engine != "mariadb" {
+		return p, errors.New("unsupported table design engine")
+	}
+	if original.Engine == "mariadb" {
+		for _, clause := range draft.Table.Clauses {
+			tokens, err := significant(clause.SQL)
+			if err != nil {
+				return p, err
+			}
+			for _, token := range tokens {
+				if clause.Kind == Check && sqltext.Word(token, "ENFORCED") || clause.Kind == Index && (sqltext.Word(token, "INVISIBLE") || sqltext.Word(token, "VISIBLE")) {
+					return p, errors.New("MySQL check enforcement and index visibility are unsupported in MariaDB")
+				}
+			}
+		}
+	}
 	if draft.Table.Database != original.Database || draft.Table.Name != original.Table {
 		return p, errors.New("draft changed the original object identity")
 	}
@@ -115,7 +131,11 @@ func Build(original Snapshot, draft Draft) (Plan, error) {
 				case Foreign:
 					drops = append(drops, "DROP FOREIGN KEY "+name)
 				case Check:
-					drops = append(drops, "DROP CHECK "+name)
+					if original.Engine == "mariadb" {
+						drops = append(drops, "DROP CONSTRAINT "+name)
+					} else {
+						drops = append(drops, "DROP CHECK "+name)
+					}
 				}
 			}
 		}
@@ -306,6 +326,9 @@ func Verify(desired Draft, actual Snapshot) error {
 		if want.Kind == Column {
 			a, e1 := ParseColumn(want.SQL)
 			b, e2 := ParseColumn(got.SQL)
+			if e1 == nil && e2 == nil && actual.Engine == "mariadb" {
+				mariaDBComparisonFields(&a, &b, got.SQL)
+			}
 			if e1 == nil && e2 == nil && !a.Unsupported && !b.Unsupported {
 				if a.Nullable && a.DefaultKind == NoDefault && b.DefaultKind == NullDefault {
 					a.DefaultKind = NullDefault

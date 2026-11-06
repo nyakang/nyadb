@@ -40,10 +40,10 @@ func NormalizeProfile(p Profile) (Profile, error) {
 				return p, fmt.Errorf("%w: duplicate configuration name", ErrInvalid)
 			}
 		}
-		if p.Kind != MySQL {
+		if !p.Kind.IsMySQLFamily() {
 			return p, fmt.Errorf("%w: alternative configurations require MySQL", ErrInvalid)
 		}
-		checked, err := NormalizeProfile(Profile{Name: "configuration", Kind: MySQL,
+		checked, err := NormalizeProfile(Profile{Name: "configuration", Kind: p.Kind,
 			Host: variant.Host, Port: variant.Port, Database: variant.Database,
 			Username: variant.Username, TLSMode: variant.TLSMode,
 			MySQLAdvanced: variant.MySQLAdvanced})
@@ -60,7 +60,7 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		p.Variants[i] = variant
 	}
 	if p.ActiveVariant != "" {
-		if p.Kind != MySQL {
+		if !p.Kind.IsMySQLFamily() {
 			return p, fmt.Errorf("%w: active alternatives require MySQL", ErrInvalid)
 		}
 		found := false
@@ -91,8 +91,8 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	switch p.Kind {
-	case MySQL, PostgreSQL, ClickHouse:
-		if p.Kind == MySQL {
+	case MySQL, MariaDB, PostgreSQL, ClickHouse:
+		if p.Kind.IsMySQLFamily() {
 			var err error
 			p.MySQLAdvanced, err = NormalizeMySQLAdvanced(p.MySQLAdvanced)
 			if err != nil {

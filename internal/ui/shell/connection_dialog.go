@@ -130,6 +130,8 @@ func connectionKindName(kind connections.Kind) string {
 	switch kind {
 	case connections.MySQL:
 		return "MySQL"
+	case connections.MariaDB:
+		return "MariaDB"
 	case connections.PostgreSQL:
 		return "PostgreSQL"
 	case connections.SQLite:

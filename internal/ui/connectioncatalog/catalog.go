@@ -22,7 +22,7 @@ var databaseCatalog = []catalogEntry{
 	{"SQL Server", "SQL Server", "", "全部", "mssql-type", "#edab24", ""},
 	{"Oracle", "Oracle", "", "全部", "oracle-type", "#ef3b5c", ""},
 	{"SQLite", "SQLite", "", "全部", "sqlite-type", "#4cbfc2", connections.SQLite},
-	{"MariaDB", "MariaDB", "", "全部", "maria-type", "#b58a61", ""},
+	{"MariaDB", "MariaDB", "", "全部", "maria-type", "#b58a61", connections.MariaDB},
 	{"MongoDB", "MongoDB", "", "全部", "mongo-type", "#bb691d", ""},
 	{"Redis", "Redis", "", "全部", "redis-type", "#e77679", ""},
 	{"Snowflake", "Snowflake", "", "全部", "snowflake-type", "#3daac7", ""},

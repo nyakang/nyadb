@@ -99,6 +99,20 @@ func (m *MySQLSessionManager) Connect(ctx context.Context, s connections.ActiveS
 			db, sqlDB, dialer, err = openMySQLPools(connectCtx, s, password, dialer, initial)
 		}
 	}
+	if err == nil && s.Kind == connections.MariaDB {
+		probeCtx, probeCancel := context.WithTimeout(connectCtx, 10*time.Second)
+		err = validateMariaDBServer(probeCtx, db)
+		probeCancel()
+		if err != nil {
+			_ = db.Close()
+			if sqlDB != db {
+				_ = sqlDB.Close()
+			}
+			if dialer != nil {
+				_ = dialer.Close()
+			}
+		}
+	}
 	if err != nil {
 		cancel()
 		m.mu.Lock()

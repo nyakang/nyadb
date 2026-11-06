@@ -17,6 +17,7 @@ func TestWorkbenchProfileBrandsReuseEmbeddedCatalogAssets(t *testing.T) {
 		asset, fallback string
 	}{
 		{connections.MySQL, "MySQL", "mysql-type"},
+		{connections.MariaDB, "MariaDB", "maria-type"},
 		{connections.PostgreSQL, "PostgreSQL", "postgres-type"},
 		{connections.SQLite, "SQLite", "sqlite-type"},
 	} {
