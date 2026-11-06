@@ -13,6 +13,10 @@ func (s *State) SetSQLPersistence(store *queries.Store, files sqlworkspace.Files
 	s.sqlWorkspace.Invalidate = invalidate
 	s.sqlWorkspace.SetHistoryOpener(s.openHistoryQuery)
 	s.sqlWorkspace.SetPersistence(store, files, func(w queries.Workspace) {
+		if err := validateWorkspace(w); err != nil {
+			s.sqlWorkspace.RejectWorkspaceRestore(err)
+			return
+		}
 		s.restoreWorkspace(w, len(s.tabs) > 1)
 	})
 }

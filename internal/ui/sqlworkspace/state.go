@@ -283,6 +283,7 @@ func (s *State) CloseAll() {
 	s.persistence.jobs = nil
 	s.persistence.pending = nil
 	s.persistence.restored = nil
+	s.persistence.lastWorkspace = queries.Workspace{}
 	s.persistence.flushNext, s.persistence.awaitClose, s.persistence.guardNext, s.persistence.exitNext = nil, nil, nil, nil
 	s.persistence.nameDoc, s.persistence.guardDoc, s.persistence.explainDoc = nil, nil, nil
 	s.persistence.assetDialog, s.persistence.assetMenu = nil, nil

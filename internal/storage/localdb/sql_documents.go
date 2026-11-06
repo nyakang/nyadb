@@ -10,6 +10,20 @@ import (
 type SQLRepository struct{ db *sql.DB }
 
 func NewSQLRepository(db *sql.DB) *SQLRepository { return &SQLRepository{db: db} }
+
+func (s *SQLRepository) GetRecord(ctx context.Context, kind, id string) (queries.Record, bool, error) {
+	var r queries.Record
+	err := s.db.QueryRowContext(ctx, "SELECT id,kind,profile_id,format_version,revision,payload FROM sql_documents WHERE id=? AND kind=?", id, kind).Scan(&r.ID, &r.Kind, &r.ProfileID, &r.Version, &r.Revision, &r.Payload)
+	if errors.Is(err, sql.ErrNoRows) {
+		return r, false, nil
+	}
+	return r, err == nil, err
+}
+
+func (s *SQLRepository) DeleteInitialSQL(ctx context.Context, id string) error {
+	_, err := s.db.ExecContext(ctx, "DELETE FROM sql_documents WHERE id=? AND kind='initial_sql'", id)
+	return err
+}
 func (s *SQLRepository) List(ctx context.Context, kind string, profile int64) ([]queries.Record, error) {
 	rows, e := s.db.QueryContext(ctx, "SELECT id,kind,profile_id,format_version,revision,payload FROM sql_documents WHERE kind=? AND (?=0 OR profile_id=?) ORDER BY id", kind, profile, profile)
 	if e != nil {

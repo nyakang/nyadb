@@ -26,6 +26,7 @@ func (s *State) View(c *ui.Context) {
 	}
 	s.startAutoConnect(c.Services())
 	s.sessions.Consume()
+	_ = s.consumeInitialSQLCleanup()
 	s.objectWorkspace.Consume(c.Services())
 	s.dataWorkspace.Consume(c.Services())
 	s.sqlWorkspace.ConsumeDocuments(c.Services())
@@ -386,6 +387,11 @@ func (s *State) statusBar(c *ui.Context) {
 	ui.Row(c).Height(theme.RowHeight(c, theme.StatusBarHeight)).Padding(1, 6).AlignItems(ui.Center).Gap(10).
 		Background(palette.Menu).BorderWidth(1, 0, 0, 0).BorderColor(palette.Border).Children(func() {
 		ui.Text(c, locales.Text(s.status)).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Text).SingleLine().Grow(1).MinWidth(0)
+		if s.initialSQLCleanup.err != nil && len(s.initialSQLCleanup.candidates) > 0 {
+			if ui.Button(c, locales.Text("重试清理初始 SQL")).Height(theme.RowHeight(c, theme.StatusBarHeight)-2).FontSize(theme.Font(c, theme.SmallFontSize)).Padding(0, 4).Disabled(s.sessions.HasPendingConnections()).Clicked() {
+				_ = s.RetryInitialSQLCleanup()
+			}
+		}
 		if s.profileMode {
 			ui.Text(c, fmt.Sprintf("%d %s", len(s.navigation.Profiles()), locales.Text("个连接档案"))).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 			ui.Text(c, "●  "+locales.Text(s.mysqlWorkbenchStatus())).FontSize(theme.Font(c, 11)).TextColor(palette.Blue)

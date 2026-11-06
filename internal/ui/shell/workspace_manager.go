@@ -2,7 +2,6 @@ package shell
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
@@ -85,6 +84,12 @@ func (s *State) consumeWorkspaces() {
 	}
 }
 func (s *State) switchWorkspace(target queries.Workspace) {
+	if err := validateWorkspace(target); err != nil {
+		s.workspaces.err = locales.Text("工作区操作失败；原现场保留") + ": " + err.Error()
+		s.status = s.workspaces.err
+		return
+	}
+	target = queries.CloneWorkspace(target)
 	// Designer guards are rendered with their document. Release this modal so
 	// it cannot cover the leave decision while the scene is still unchanged.
 	s.workspaces.open = false
@@ -138,9 +143,7 @@ func (s *State) workspaceManagerView(c *ui.Context) {
 					w.open = false
 				}
 				if ui.Button(c, locales.Text("保存新工作区")).Disabled(w.busy || strings.TrimSpace(w.name) == "" || duplicate).Clicked() {
-					snapshot := s.workspaceSnapshot()
-					b, _ := json.Marshal(snapshot)
-					_ = json.Unmarshal(b, &snapshot)
+					snapshot := queries.CloneWorkspace(s.workspaceSnapshot())
 					value := queries.NamedWorkspace{ID: "workspace/" + queries.NewID(), Name: w.name, Revision: 1, Workspace: snapshot}
 					store := w.store
 					s.workspaceJob(func(ctx context.Context) workspaceReply {
@@ -155,7 +158,7 @@ func (s *State) workspaceManagerView(c *ui.Context) {
 				if ui.Button(c, locales.Text("替换所选工作区")).Disabled(w.busy || selected == nil).Clicked() {
 					value := *selected
 					value.Revision++
-					value.Workspace = s.workspaceSnapshot()
+					value.Workspace = queries.CloneWorkspace(s.workspaceSnapshot())
 					store := w.store
 					s.workspaceJob(func(ctx context.Context) workspaceReply {
 						err := store.SaveNamedWorkspace(ctx, value)

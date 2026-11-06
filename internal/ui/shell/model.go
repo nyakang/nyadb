@@ -51,6 +51,7 @@ type tab struct {
 // State is UI state owned by the main thread. Never retain ui.Element values.
 type State struct {
 	workspaces         workspaceManager
+	initialSQLCleanup  initialSQLCleanupState
 	favorites          *favoritesworkspace.State
 	favoriteMenuScope  *favoriteMenuScope
 	autoConnectPending bool

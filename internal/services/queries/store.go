@@ -29,6 +29,17 @@ type Repository interface {
 	Delete(context.Context, string) error
 	HasRecords(context.Context) (bool, error)
 }
+
+// RecordLookup avoids loading unrelated encrypted payloads. Older injected
+// repositories remain compatible through List.
+type RecordLookup interface {
+	GetRecord(context.Context, string, string) (Record, bool, error)
+}
+
+// InitialSQLDeleter is deliberately limited to initial SQL records.
+type InitialSQLDeleter interface {
+	DeleteInitialSQL(context.Context, string) error
+}
 type KeyProvider interface {
 	Get() ([]byte, bool, error)
 	Set([]byte) error

@@ -88,6 +88,20 @@ func (s *State) Workspace(id int64) *Workspace {
 	return s.Parked(id)
 }
 func (s *State) HasSessions() bool { return s.current.ProfileID != 0 || len(s.parked) != 0 }
+
+// Pending handshakes may still read the captured original initial SQL ID.
+// This read-only gate also conservatively defers cleanup during refreshes.
+func (s *State) HasPendingConnections() bool {
+	if s.current.Refreshing() {
+		return true
+	}
+	for _, w := range s.parked {
+		if w.Refreshing() {
+			return true
+		}
+	}
+	return false
+}
 func (s *State) StatusFor(id int64) string {
 	if w := s.Workspace(id); w != nil && w.Status != "" {
 		return w.Status

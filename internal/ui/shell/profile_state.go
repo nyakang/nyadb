@@ -2,7 +2,10 @@ package shell
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/egoist/mygo/ui"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
@@ -110,41 +113,46 @@ func (s *State) deleteProfile() {
 	if s.profileService == nil || s.pendingDeleteID == 0 {
 		return
 	}
-	p, err := s.profileService.Get(context.Background(), s.pendingDeleteID)
+	id := s.pendingDeleteID
+	s.pendingDeleteID = 0
+	s.deleteProfileID(id)
+}
+
+func (s *State) deleteProfileID(id int64) {
+	p, err := s.profileService.Get(context.Background(), id)
 	if err != nil {
 		s.status = "无法读取待删除连接：" + err.Error()
-		s.pendingDeleteID = 0
+		return
+	}
+	if s.guardMySQLProfileLeave(id, func(ui.Services) { s.deleteProfileID(id) }) {
 		return
 	}
 	err = s.profileService.Delete(context.Background(), p.ID)
-	s.pendingDeleteID = 0
 	if err != nil {
 		s.status = "删除连接失败：" + err.Error()
 		return
 	}
 	// Deleting a parked connection must not disconnect the selected/active one.
-	s.disconnectMySQLProfile(p.ID)
+	s.sessions.Disconnect(p.ID)
 	tunnelErr := s.forgetTunnelProfile(p)
 	if s.selectedProfileID == p.ID {
 		s.selectedProfileID = 0
 	}
 	s.loadProfiles()
-	if (p.Kind == connections.MySQL || p.Kind == connections.PostgreSQL) && s.credentialVault != nil {
-		if err := s.credentialVault.Delete(p.ID, ""); err != nil {
-			s.status = "连接已删除，但清理系统凭据失败：" + err.Error()
-			return
-		}
+	var credentialErr error
+	if (p.Kind == connections.MySQL || p.Kind == connections.PostgreSQL || p.Kind == connections.ClickHouse) && s.credentialVault != nil {
+		credentialErr = s.credentialVault.Delete(p.ID, "")
 		for _, variant := range p.Variants {
-			if err := s.credentialVault.Delete(p.ID, variant.Name); err != nil {
-				s.status = "连接已删除，但清理系统凭据失败：" + err.Error()
-				return
-			}
+			credentialErr = errors.Join(credentialErr, s.credentialVault.Delete(p.ID, variant.Name))
 		}
 	}
 	s.status = "已删除连接档案：" + p.Name + "（未删除数据库文件）"
-	if tunnelErr != nil {
+	if credentialErr != nil {
+		s.status = "连接已删除，但清理系统凭据失败：" + errors.Join(credentialErr, tunnelErr).Error()
+	} else if tunnelErr != nil {
 		s.status = "连接已删除，但清理隧道凭据失败：" + tunnelErr.Error()
 	}
+	_ = s.queueInitialSQLCleanup(profileInitialSQLIDs(p))
 }
 
 func (s *State) selectGroup(name string) {

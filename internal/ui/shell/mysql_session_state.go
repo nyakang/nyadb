@@ -40,6 +40,8 @@ func (s *State) closeAllMySQLConnections() {
 // CloseMySQLSessions releases all workbench connections when the app exits.
 func (s *State) CloseMySQLSessions() { s.closeMySQLSessions() }
 func (s *State) closeMySQLSessions() {
+	s.connectionEditor.SetInitialSQLCleanup(nil)
+	s.initialSQLCleanup = initialSQLCleanupState{}
 	if s.workspaces.cancel != nil {
 		s.workspaces.cancel()
 		s.workspaces.cancel = nil
@@ -130,8 +132,8 @@ func (s *State) sessionBrowserDependencies() sessionbrowser.Dependencies {
 		BrowserReset: func(id int64) {
 			s.objectWorkspace.ResetBrowser(id)
 			s.clearMySQLDatabaseNavigation(id)
-			if navigation.Parse(s.navigation.Key).Database != "" {
-				s.navigation.Key = navigation.ConnectionKey(s.selectedProfileID)
+			if node := navigation.Parse(s.navigation.Key); node.ProfileID == id && node.Database != "" {
+				s.navigation.Key = navigation.ConnectionKey(id)
 				s.navigation.Row = -1
 			}
 		},

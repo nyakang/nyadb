@@ -255,17 +255,23 @@ func (s *State) Consume() {
 				}
 			}
 			if r.err != nil {
+				lost := errors.Is(r.err, contract.ErrSQLSessionLost) || errors.Is(r.err, contract.ErrRevoked)
+				if lost {
+					t.recoveryNeeded = true
+					t.recoveryProfile = t.profileID
+					t.recoverySchema = t.database
+					t.recoveryCatalog, t.recoveryNamespaceSchema = t.catalog, t.namespaceSchema
+				}
 				if len(r.data.Steps) > 0 {
 					result := r.data
 					t.setResult(&result)
 				}
 				if canceled || errors.Is(r.err, context.Canceled) {
 					t.err = "SQL 执行已停止；服务器端更改可能已生效"
-				} else if errors.Is(r.err, contract.ErrSQLSessionLost) || errors.Is(r.err, contract.ErrRevoked) {
-					t.recoveryNeeded = true
-					t.recoveryProfile = t.profileID
-					t.recoverySchema = t.database
-					t.recoveryCatalog, t.recoveryNamespaceSchema = t.catalog, t.namespaceSchema
+					if lost {
+						t.err += "；" + locales.Text("原查询会话已失效；事务、临时表、会话变量无法恢复，DML 结果请先核对。可选择以新会话继续")
+					}
+				} else if lost {
 					t.err = "原查询会话已失效；事务、临时表、会话变量无法恢复，DML 结果请先核对。可选择以新会话继续"
 				} else if errors.Is(r.err, contract.ErrSQLSessionLimit) {
 					t.err = "SQL 标签会话数已达到上限，请关闭其他查询标签后重试"

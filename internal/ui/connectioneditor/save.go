@@ -79,6 +79,29 @@ func (s *State) Save() {
 		}
 	}
 	var saved connections.Profile
+	var writtenInitialSQL []string
+	completed := false
+	defer func() {
+		if s.cleanupInitialSQL == nil {
+			return
+		}
+		candidates := writtenInitialSQL
+		if completed {
+			if before.MySQLAdvanced.InitialSQLID != "" {
+				candidates = append(candidates, before.MySQLAdvanced.InitialSQLID)
+			}
+			for _, v := range before.Variants {
+				if v.MySQLAdvanced.InitialSQLID != "" {
+					candidates = append(candidates, v.MySQLAdvanced.InitialSQLID)
+				}
+			}
+		}
+		if len(candidates) > 0 {
+			if err := s.cleanupInitialSQL(candidates); err != nil {
+				s.connectionError += "；" + locales.Text("初始 SQL 清理失败；记录已保留，可重试") + ": " + err.Error()
+			}
+		}
+	}()
 	if p.ID > 0 {
 		saved, err = s.profileService.Update(context.Background(), p)
 	} else {
@@ -90,13 +113,15 @@ func (s *State) Save() {
 	}
 	var undoDatabaseSecrets func() error
 	if saved.Kind == connections.MySQL {
-		if err := s.persistInitialSQL(saved); err != nil {
+		writtenInitialSQL, err = s.persistInitialSQL(saved)
+		if err != nil {
+			var rollbackErr error
 			if p.ID == 0 {
-				_ = s.profileService.Delete(context.Background(), saved.ID)
+				rollbackErr = s.profileService.Delete(context.Background(), saved.ID)
 			} else {
-				_, _ = s.profileService.Update(context.Background(), before)
+				_, rollbackErr = s.profileService.Update(context.Background(), before)
 			}
-			s.connectionError = locales.Text("加密初始 SQL 保存失败，已尝试恢复原配置：") + err.Error()
+			s.connectionError = locales.Text("加密初始 SQL 保存失败，已尝试恢复原配置：") + errors.Join(err, rollbackErr).Error()
 			return
 		}
 		undoDatabaseSecrets, err = s.connectionPasswordUndo(saved, before)
@@ -150,6 +175,7 @@ func (s *State) Save() {
 			return
 		}
 	}
+	completed = true
 	s.Close()
 	if s.saved != nil {
 		s.saved(saved)

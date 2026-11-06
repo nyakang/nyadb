@@ -93,15 +93,19 @@ func (s *State) fillSelectedData(t *Document) error {
 			}
 			if t.fill.Mode == "序列" {
 				v.Text = strconv.FormatInt(value, 10)
-				next := value + step
-				if (step > 0 && next < value) || (step < 0 && next > value) {
-					return fmt.Errorf("%s", locales.Text("序列超出整数范围"))
+				if len(targets)+1 < len(rows)*len(columns) {
+					next := value + step
+					if (step > 0 && next < value) || (step < 0 && next > value) {
+						return fmt.Errorf("%s", locales.Text("序列超出整数范围"))
+					}
+					value = next
 				}
-				value = next
 			}
 			targets = append(targets, target{row, source, v})
 		}
 	}
+	done := beginDraftChange(t)
+	defer done()
 	t.edit.Batch = true
 	for _, target := range targets {
 		draft := s.mysqlRowDraft(t, target.row)

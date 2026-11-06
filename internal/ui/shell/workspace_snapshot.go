@@ -2,6 +2,7 @@ package shell
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
@@ -14,6 +15,47 @@ type workbenchPresentation struct {
 	Sidebar, Center, SQLSplit float32
 	Inspector                 bool
 	SelectedProfile           int64
+}
+
+// Validate before any leave guard or disposal. Missing optional presentation
+// remains compatible with older snapshots; malformed identities do not.
+func validateWorkspace(w queries.Workspace) error {
+	if w.SnapshotVersion < 0 || w.SnapshotVersion > 2 {
+		return errors.New(locales.Text("工作区版本不支持"))
+	}
+	docs := make(map[uint64]bool, len(w.Documents))
+	for _, d := range w.Documents {
+		if d.ID <= 1 || docs[d.ID] {
+			return errors.New("invalid or duplicate SQL document ID")
+		}
+		docs[d.ID] = true
+		if len(d.Presentation) > 0 && !json.Valid(d.Presentation) {
+			return errors.New("invalid SQL document presentation")
+		}
+	}
+	ids := make(map[uint64]bool, len(w.Tabs))
+	for _, t := range w.Tabs {
+		if t.ID == 0 || ids[t.ID] || t.ID == 1 && tabKind(t.Kind) != tabObjects {
+			return errors.New("invalid or duplicate workspace tab ID")
+		}
+		ids[t.ID] = true
+		switch tabKind(t.Kind) {
+		case tabSQL:
+			if !docs[t.ID] {
+				return errors.New("SQL tab document is missing")
+			}
+		case tabObjects, tabMySQLData, tabStructure, tabProgram, tabSettings, tabConnections:
+		default:
+			return errors.New("unsupported workspace tab kind")
+		}
+		if len(t.Presentation) > 0 && !json.Valid(t.Presentation) {
+			return errors.New("invalid workspace tab presentation")
+		}
+	}
+	if len(w.Shell) > 0 && !json.Valid(w.Shell) {
+		return errors.New("invalid workbench presentation")
+	}
+	return nil
 }
 
 func (s *State) workspaceSnapshot() queries.Workspace {
@@ -49,8 +91,8 @@ func (s *State) workspaceSnapshot() queries.Workspace {
 // Restoration creates presentation placeholders only. No lease, metadata request,
 // SQL execution, data drafts or design drafts are reconstructed here.
 func (s *State) restoreWorkspace(w queries.Workspace, merge bool) {
-	if w.SnapshotVersion > 2 {
-		s.status = locales.Text("工作区版本不支持")
+	if err := validateWorkspace(w); err != nil {
+		s.status = err.Error()
 		return
 	}
 	active := s.currentTab().id
@@ -111,7 +153,7 @@ func (s *State) restoreWorkspace(w queries.Workspace, merge bool) {
 	}
 	s.tabs = append(pinned, normal...)
 	if !merge {
-		var p workbenchPresentation
+		p := workbenchPresentation{Inspector: s.inspectorOn}
 		if json.Unmarshal(w.Shell, &p) == nil {
 			if p.Sidebar > 0 && p.Sidebar < 100 {
 				s.sidebarPercent = p.Sidebar
