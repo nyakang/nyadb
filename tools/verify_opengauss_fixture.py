@@ -113,6 +113,7 @@ def verify(hold=False, plain=False):
                 time.sleep(1)
             bootstrap = "CREATE USER nyadb_it WITH PASSWORD '" + password + "'; CREATE DATABASE nyadb_opengauss_it OWNER nyadb_it;\n"
             bootstrap += "\\connect nyadb_opengauss_it\nCREATE TABLE public.records(id BIGINT PRIMARY KEY,note TEXT,amount NUMERIC(40,20)); INSERT INTO public.records VALUES(1,'alpha',9007199254740993.12345678901234567890),(2,'beta',2); GRANT ALL ON TABLE public.records TO nyadb_it; CREATE SEQUENCE public.fixture_sequence START 987; GRANT SELECT,USAGE ON SEQUENCE public.fixture_sequence TO nyadb_it; CREATE SEQUENCE public.private_sequence START 321;\n"
+            bootstrap += "CREATE VIEW public.fixture_owned_view AS SELECT id,note FROM public.records; GRANT SELECT ON public.fixture_owned_view TO nyadb_it;\n"
             result = fixture_sql(sql, bootstrap)
             if result.returncode:
                 raise RuntimeError("openGauss fixture account bootstrap failed: " + result.stderr.replace(password, "[redacted]"))

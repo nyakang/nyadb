@@ -26,7 +26,7 @@ func TestOpenGaussProductURIOptionsAndCapabilities(t *testing.T) {
 		t.Fatal("secret persisted")
 	}
 	d, ok := connections.Describe(p.Kind)
-	if !ok || d.ClientFamily != "postgres" || d.Dialect != "postgres" || len(d.FieldTypes()) == 0 || !d.Capabilities.Transactions || !d.Capabilities.Explain || !d.Capabilities.Import || d.Capabilities.DesignTables || d.Capabilities.Backup || d.Capabilities.Accounts {
+	if !ok || d.ClientFamily != "postgres" || d.Dialect != "postgres" || len(d.FieldTypes()) == 0 || !d.Capabilities.Transactions || !d.Capabilities.Explain || !d.Capabilities.Import || !d.Capabilities.DesignViews || d.Capabilities.DesignTables || d.Capabilities.Backup || d.Capabilities.Accounts {
 		t.Fatal("product capability contract")
 	}
 	p.Name = "fixture"

@@ -10,10 +10,12 @@ type View struct {
 	Schema, Name, SelectSQL string
 	Columns                 []string
 	Triggers                []Definition
+	Options                 []string `json:",omitempty"`
 }
 
 func (v View) Clone() View {
 	v.Columns = slices.Clone(v.Columns)
+	v.Options = slices.Clone(v.Options)
 	v.Triggers = slices.Clone(v.Triggers)
 	for i := range v.Triggers {
 		v.Triggers[i].Postgres = v.Triggers[i].Postgres.Clone()
@@ -85,6 +87,9 @@ func ParseSQLiteView(ddl string) (View, error) {
 	return v, nil
 }
 func validateSQLiteView(v View) error {
+	if len(v.Options) > 0 {
+		return ErrUnsupported
+	}
 	if err := Identifier(v.Name); err != nil {
 		return err
 	}

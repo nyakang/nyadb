@@ -40,7 +40,7 @@ func Describe(kind Kind) (Descriptor, bool) {
 	case CockroachDB:
 		return Descriptor{kind, "CockroachDB", "postgres", "server", "postgres", 26257, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Import: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
 	case OpenGauss:
-		return Descriptor{kind, "openGauss", "postgres", "server", "postgres", 5432, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Import: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
+		return Descriptor{kind, "openGauss", "postgres", "server", "postgres", 5432, contract.Capabilities{DesignViews: true, Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Import: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
 	case PostgreSQL:
 		return Descriptor{kind, "PostgreSQL", "postgres", "server", "postgres", 5432, contract.Capabilities{Objects: true, DesignViews: true, Backup: true, Restore: true, Import: true, Maintenance: true, Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, DesignTables: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
 	case SQLite:

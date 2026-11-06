@@ -1290,7 +1290,27 @@
         "opengauss"
       ],
       "nyadb_kind": "opengauss",
-      "status": "implemented_with_gaps"
+      "status": "implemented_with_gaps",
+      "nyadb_progress": {
+        "reports": [
+          "opengauss-2026-11-07.md",
+          "opengauss-native-scripts-2026-11-07.md",
+          "opengauss-views-2026-11-07.md"
+        ],
+        "completed": [
+          "native connections and verified TLS",
+          "metadata and shared data workflows",
+          "native routine scripts and bounded SQL files",
+          "ordinary view create/alter/rename/restrict-drop"
+        ],
+        "remaining": [
+          "table design",
+          "other object and account administration",
+          "backup/restore and maintenance",
+          "cross-product tools and remaining reference capabilities"
+        ],
+        "verified_server": "openGauss 6.0.0 PG compatibility"
+      }
     },
     {
       "dbType": "questdb",

@@ -11,6 +11,9 @@ import (
 )
 
 func (s *Session) ViewDesign() contract.ViewDesignOperations {
+	if s.kind == connections.OpenGauss {
+		return contract.ViewDesignOperations{CanApply: func(t contract.SchemaDesignTarget) bool { return s.checkOpenGaussView(t) == nil }, Snapshot: s.readOpenGaussView, Apply: s.applyOpenGaussView}
+	}
 	if s.kind == connections.PostgreSQL {
 		return contract.ViewDesignOperations{CanApply: func(t contract.SchemaDesignTarget) bool { return s.checkPostgresView(t) == nil }, Snapshot: s.readPostgresView, Apply: s.applyPostgresView}
 	}

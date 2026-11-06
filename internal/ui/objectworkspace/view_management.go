@@ -25,6 +25,7 @@ type viewReply struct {
 	err      error
 }
 type viewOperation struct {
+	engine                                                        string
 	target                                                        contract.SchemaDesignTarget
 	generation, guardAttempt                                      uint64
 	database, action, name, text, originalText, confirmation, err string
@@ -283,7 +284,7 @@ func (s *State) consumeView(services ui.Services) {
 			}
 		} else if reply.err != nil {
 			x.err = reply.err.Error()
-		} else if reply.snapshot.Target != x.target || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql") || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.View.Name != x.target.Object.Name || reply.snapshot.Schema.View.Schema != x.target.Object.Schema {
+		} else if reply.snapshot.Target != x.target || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql" && reply.snapshot.Schema.Engine != "opengauss") || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.View.Name != x.target.Object.Name || reply.snapshot.Schema.View.Schema != x.target.Object.Schema {
 			x.err = "original view snapshot differs from the captured scope"
 		} else {
 			original := reply.snapshot.Clone()
@@ -302,6 +303,7 @@ func (s *State) consumeView(services ui.Services) {
 				x.originalText = original.Schema.DDL
 			}
 			x.original = &original
+			x.engine = original.Schema.Engine
 		}
 	default:
 	}
@@ -424,6 +426,9 @@ func (s *State) ViewError() string {
 func viewEngine(x *viewOperation) string {
 	if x.original != nil {
 		return x.original.Schema.Engine
+	}
+	if x.engine != "" {
+		return x.engine
 	}
 	return "sqlite"
 }
