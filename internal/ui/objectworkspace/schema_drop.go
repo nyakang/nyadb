@@ -189,7 +189,7 @@ func (s *State) consumeSchemaDrop(services ui.Services) {
 			}
 		} else if reply.err != nil {
 			x.err = reply.err.Error()
-		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql") || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
+		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql" && reply.snapshot.Schema.Engine != "opengauss") || reply.snapshot.Schema.Engine == "opengauss" && reply.snapshot.Schema.OpenGauss == nil || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
 			x.err = errors.New("original table snapshot is incomplete or unavailable").Error()
 		} else {
 			snapshot := reply.snapshot.Clone()
@@ -220,12 +220,13 @@ func (s *State) schemaDropModal(c *ui.Context) {
 			raw := ""
 			if x.original != nil {
 				raw = "DROP TABLE " + schemaddl.Quote(x.target.Object.Schema) + "." + schemaddl.Quote(x.target.Object.Name)
-				if x.original.Schema.Engine == "postgresql" {
+				if x.original.Schema.Engine == "postgresql" || x.original.Schema.Engine == "opengauss" {
 					raw += " RESTRICT"
 				}
 				raw += ";"
 			}
 			ui.TextArea(c, &raw).Label(locales.Text("删除 SQL 预览")).ReadOnly(true).Grow(1).MinHeight(40)
+			ui.Text(c, locales.Text("请输入原表名称以确认此操作："))
 			ui.TextInput(c, &x.confirmation).Label(locales.Text("确认原表名称")).Disabled(x.busy || x.original == nil)
 			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Children(func() {
 				if ui.Button(c, locales.Text("取消")).Disabled(x.cancelRequested).Clicked() {
