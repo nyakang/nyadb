@@ -2,7 +2,8 @@
 
 本项增加独立 openGauss 产品连接，接通原生认证、对象浏览、SQL、共享数据
 网格编辑及导入导出。状态为 `implemented_with_gaps`；整体 Navicat/DBX
-对齐目标继续保留，设计、管理和原生过程脚本执行仍需后续交付。
+对齐目标继续保留，设计和管理能力仍需后续交付。原生过程脚本及有界
+SQL 文件已在后续独立项中补齐，见 [脚本验证](opengauss-native-scripts-2026-11-07.md)。
 
 ## 配置与认证
 
@@ -103,11 +104,9 @@ Windows amd64 和 macOS arm64 构建通过。真实 TLS 集成的 engines、dbru
 
 ## 保留缺口
 
-- 普通 SQL 和 dollar-quoted 函数可执行；未加引号的原生过程正文
-  `CREATE PROCEDURE ... AS BEGIN ...; END; /` 尚无专用脚本切分。
-  本次过程元数据测试用直接 driver Exec 建立 fixture，不能作为工作台
-  执行整个过程脚本的证据。SQL 文件执行入口目前也不可用。下一项补齐
-  脚本切分和光标语句分派。
+- 原生过程脚本、原生 `RETURN` 函数、光标/选中执行及 SQL 文件已补齐。
+  普通 SQL/scripts/file 输入最多 8 MiB；packages、局部子程序声明及其它
+  未验收的程序语法仍不支持。程序浏览继续使用只读对象模块。
 - 无表/视图设计、对象管理弹窗、账户管理、备份恢复、维护或隧道；产品
   能力和运行时入口均拒绝不支持操作，不落入 SQLite/PG 的不适用实现。
 - A/B/MySQL 兼容模式、packages、其它存储类型、分区、SM3 独立服务器、

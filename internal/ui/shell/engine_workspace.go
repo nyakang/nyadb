@@ -104,6 +104,9 @@ func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string 
 		if p.ID == id && p.Kind == connections.Oracle {
 			return sqltext.OracleStatementAt(source, cursor)
 		}
+		if p.ID == id && p.Kind == connections.OpenGauss {
+			return sqltext.OpenGaussStatementAt(source, cursor)
+		}
 		if p.ID == id && p.Kind == connections.DuckDB {
 			return sqltext.DuckDBStatementAt(source, cursor)
 		}
@@ -134,6 +137,9 @@ func (s *State) sqlFormat(id int64, source string) (string, error) {
 		}
 		if p.ID == id && p.Kind == connections.Oracle {
 			return sqltext.FormatOracle(source)
+		}
+		if p.ID == id && p.Kind == connections.OpenGauss {
+			return sqltext.FormatOpenGauss(source)
 		}
 		if p.ID == id && p.Kind == connections.DuckDB {
 			return sqltext.FormatDuckDB(source)
