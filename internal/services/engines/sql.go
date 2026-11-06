@@ -195,7 +195,7 @@ func cell(v any, decl string, kind connections.Kind) contract.Cell {
 	typ := strings.ToUpper(decl)
 	switch n := v.(type) {
 	case []byte:
-		if kind == connections.PostgreSQL && typ != "BYTEA" {
+		if kind.IsPostgreSQLFamily() && typ != "BYTEA" {
 			return cell(string(n), decl, kind)
 		}
 		return contract.Cell{Kind: contract.Binary, Bytes: bytes.Clone(n)}
@@ -209,7 +209,7 @@ func cell(v any, decl string, kind connections.Kind) contract.Cell {
 		return contract.Cell{Kind: contract.DateTime, Text: n.Format(time.RFC3339Nano)}
 	case string:
 		k := contract.Text
-		if kind == connections.PostgreSQL {
+		if kind.IsPostgreSQLFamily() {
 			switch typ {
 			case "NUMERIC", "DECIMAL":
 				k = contract.Decimal
@@ -262,7 +262,10 @@ func firstWord(q string) string {
 
 func failureState(kind connections.Kind, q string, e error) string {
 	var pg *pgconn.PgError
-	if kind == connections.PostgreSQL && errors.As(e, &pg) && firstWord(q) != "CALL" && firstWord(q) != "DO" {
+	if kind.IsPostgreSQLFamily() && errors.As(e, &pg) && firstWord(q) != "CALL" && firstWord(q) != "DO" {
+		if kind == connections.CockroachDB && pg.Code == "40003" {
+			return "uncertain"
+		}
 		return "not_executed"
 	}
 	return "uncertain"

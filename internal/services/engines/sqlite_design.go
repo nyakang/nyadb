@@ -17,6 +17,9 @@ import (
 )
 
 func (s *Session) SchemaDesign() contract.SchemaDesignOperations {
+	if s.kind == connections.CockroachDB {
+		return contract.SchemaDesignOperations{}
+	}
 	if s.kind == connections.PostgreSQL {
 		return contract.SchemaDesignOperations{
 			CanApply: func(t contract.SchemaDesignTarget) bool { return s.checkPostgresDesign(t) == nil },

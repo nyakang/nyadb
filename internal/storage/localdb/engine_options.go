@@ -38,7 +38,7 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, SQLServer: &p.SQLServerOptions}
 	case connections.MySQL, connections.MariaDB, connections.TiDB, connections.OceanBase:
 		value = p.MySQLAdvanced
-	case connections.PostgreSQL:
+	case connections.PostgreSQL, connections.CockroachDB:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, PostgreSQL: &p.PostgreSQLOptions}
 	case connections.SQLite:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, SQLite: &p.SQLiteOptions}
@@ -67,7 +67,7 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 		if p.Kind == connections.SQLServer {
 			p.SQLServerOptions = connections.DefaultSQLServerOptions()
 		}
-		if p.Kind == connections.PostgreSQL {
+		if p.Kind.IsPostgreSQLFamily() {
 			p.PostgreSQLOptions = connections.DefaultPostgreSQLOptions()
 		} else if p.Kind == connections.SQLite {
 			p.SQLiteOptions, _ = connections.NormalizeSQLiteOptions(connections.SQLiteOptions{})
@@ -127,7 +127,7 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 	if envelope.DuckDB != nil {
 		return connections.ErrInvalid
 	}
-	if p.Kind == connections.PostgreSQL && envelope.PostgreSQL != nil && envelope.SQLite == nil {
+	if p.Kind.IsPostgreSQLFamily() && envelope.PostgreSQL != nil && envelope.SQLite == nil {
 		if envelope.SQLServer != nil {
 			return connections.ErrInvalid
 		}

@@ -272,7 +272,7 @@ func (s *State) toolBar(c *ui.Context) {
 					if kind == connections.SQLite && (action.label == "函数" || action.label == "用户" || action.label == "其它") {
 						continue
 					}
-					if kind == connections.PostgreSQL && action.label == "用户" {
+					if kind.IsPostgreSQLFamily() && action.label == "用户" {
 						continue
 					}
 				}
@@ -366,7 +366,7 @@ func (s *State) toolbarActionAvailable(action string) bool {
 	case "其它":
 		w := s.sessions.Current()
 		caps := s.objectCapabilitiesFor(w.ProfileID)
-		return w.Status == "已连接" && w.Database != "" && s.sessions.DatabaseOpened(w.ProfileID, w.Database) && (caps.DesignTables || (w.Kind == connections.PostgreSQL || w.Kind == connections.SQLServer || w.Kind == connections.Oracle || w.Kind == connections.DuckDB) && caps.Metadata)
+		return w.Status == "已连接" && w.Database != "" && s.sessions.DatabaseOpened(w.ProfileID, w.Database) && (caps.DesignTables || (w.Kind.IsPostgreSQLFamily() || w.Kind == connections.SQLServer || w.Kind == connections.Oracle || w.Kind == connections.DuckDB) && caps.Metadata)
 	case "查询":
 		return s.profileMode && s.selectedProfileID > 0 && !s.sqlWorkspace.PersistenceLoading()
 	case "用户":

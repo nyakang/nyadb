@@ -57,7 +57,7 @@ func (s *State) SelectEngineFile(kind EngineFile, row int, version uint64, path 
 		}
 		s.connectionDraft.SQLiteOptions.Attachments[row].File = path
 	} else {
-		if s.connectionDraft.Kind != connections.PostgreSQL {
+		if !s.connectionDraft.Kind.IsPostgreSQLFamily() {
 			return
 		}
 		a := &s.connectionDraft.PostgreSQLOptions
@@ -118,7 +118,7 @@ func (s *State) initEngineOptionsInputs() {
 	}
 	s.sqliteAttachmentList = ui.ListState{}
 	s.sqliteAttachmentRow = -1
-	if s.connectionDraft.Kind == connections.PostgreSQL {
+	if s.connectionDraft.Kind.IsPostgreSQLFamily() {
 		a, err := connections.NormalizePostgreSQLOptions(s.connectionDraft.PostgreSQLOptions)
 		if err == nil {
 			s.connectionDraft.PostgreSQLOptions = a
@@ -208,19 +208,19 @@ func (s *State) advanceEngineOptions(p *connections.Profile) error {
 		p.SQLServerOptions = a
 		return err
 	}
-	if p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite {
+	if p.Kind.IsPostgreSQLFamily() || p.Kind == connections.SQLite {
 		n, err := strconv.Atoi(strings.TrimSpace(s.sqlMaxConnections))
 		if err != nil || n < 1 || n > 64 {
 			return fieldError("SQL 会话上限", "高级", "SQL 会话上限必须是 1–64 之间的整数")
 		}
-		if p.Kind == connections.PostgreSQL {
+		if p.Kind.IsPostgreSQLFamily() {
 			p.PostgreSQLOptions.SQLMaxConnections = n
 		} else {
 			p.SQLiteOptions.SQLMaxConnections = n
 		}
 	}
 	switch p.Kind {
-	case connections.PostgreSQL:
+	case connections.PostgreSQL, connections.CockroachDB:
 		values := [4]int{}
 		labels := []string{"连接超时（秒）", "最大连接数", "语句超时（毫秒）", "锁等待超时（毫秒）"}
 		for i, raw := range s.engineNumbers {
@@ -306,8 +306,12 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 			})
 		})
 		return true
-	case connections.PostgreSQL:
+	case connections.PostgreSQL, connections.CockroachDB:
 		a := &s.connectionDraft.PostgreSQLOptions
+		product := "PostgreSQL"
+		if s.connectionDraft.Kind == connections.CockroachDB {
+			product = "CockroachDB"
+		}
 		switch tab {
 		case "高级":
 			theme.Form(c, formWidth, func() {
@@ -320,7 +324,9 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 				}
 				s.editorInputRow(c, "SQL 会话上限", "SQL 会话上限", &s.sqlMaxConnections, labelWidth, 120)
 				s.editorInputRow(c, "应用名称：", "应用名称", &a.ApplicationName, labelWidth, fieldWidth)
-				s.editorInputRow(c, "备份工具目录：", "PostgreSQL 工具目录", &a.ToolsDirectory, labelWidth, fieldWidth)
+				if s.connectionDraft.Kind == connections.PostgreSQL {
+					s.editorInputRow(c, "备份工具目录：", "PostgreSQL 工具目录", &a.ToolsDirectory, labelWidth, fieldWidth)
+				}
 				s.editorInputRow(c, "默认模式：", "默认模式", &a.DefaultSchema, labelWidth, fieldWidth)
 				ui.Text(c, locales.Text("语句及锁等待超时为 0 时不设置超时；默认模式在每条物理连接初始化。"))
 			})
@@ -328,7 +334,7 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 			theme.Form(c, formWidth, func() {
 				theme.Field(c, locales.Text("TLS 模式"), func() {
 
-					connectionFormSelect(c, &s.connectionDraft.TLSMode, []string{"disable", "prefer", "require", "verify-ca", "verify-full"}, "PostgreSQL TLS 模式", fieldWidth, false)
+					connectionFormSelect(c, &s.connectionDraft.TLSMode, []string{"disable", "prefer", "require", "verify-ca", "verify-full"}, product+" TLS 模式", fieldWidth, false)
 				})
 				for _, f := range []struct {
 					name  string
@@ -342,9 +348,9 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 					theme.Field(c, locales.Text(f.name), func() {
 						ui.Row(c).Gap(0).FillWidth().AlignItems(ui.Center).Children(func() {
 
-							s.formTextInput(c, f.value, "PostgreSQL "+f.name, fieldWidth-29, false, false)
+							s.formTextInput(c, f.value, product+" "+f.name, fieldWidth-29, false, false)
 							ui.Box(c).Width(connectionFormBrowseGap)
-							connectionFormBrowse(c, "选择 PostgreSQL "+f.name, s.engineFilePicker == nil, func() {
+							connectionFormBrowse(c, "选择 "+product+" "+f.name, s.engineFilePicker == nil, func() {
 								if s.engineFilePicker != nil {
 									s.engineFilePicker(f.kind, -1, s.engineFileVersion)
 								}

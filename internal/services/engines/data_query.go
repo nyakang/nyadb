@@ -35,10 +35,14 @@ func (s *Session) dataQuery(ctx context.Context, o contract.ObjectRef, owner con
 		if tx.closed {
 			return ErrRevoked
 		}
-		return read(ctx, tx.tx)
+		err := read(ctx, tx.tx)
+		if s.kind == connections.CockroachDB && cockroachRetryable(err) {
+			return tx.abortCockroachRetry(err)
+		}
+		return err
 	}
 	opts := &sql.TxOptions{ReadOnly: true}
-	if s.kind == connections.PostgreSQL {
+	if s.kind.IsPostgreSQLFamily() {
 		opts.Isolation = sql.LevelRepeatableRead
 	}
 	tx, err := s.db.BeginTx(ctx, opts)
@@ -229,6 +233,12 @@ func (s *Session) dataOrder(ctx context.Context, q queryer, t contract.Table, r 
 			return nil, false, "", err
 		}
 		identity = fmt.Sprint(version)
+	} else if s.kind == connections.CockroachDB {
+		identity, err := cockroachTableIdentity(ctx, q, t.Object)
+		if err != nil {
+			return nil, false, "", err
+		}
+		return s.cockroachDataOrder(t, r, identity)
 	} else {
 		// A custom index operator class cannot prove uniqueness for the comparison
 		// used by ORDER BY. Reject seek rather than assuming interchangeable rules.

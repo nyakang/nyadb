@@ -70,6 +70,8 @@ func (s *State) ConnectionWindowIcon() ([]byte, error) {
 		file = "oceanbase.png"
 	case connections.TiDB:
 		file = "tidb.png"
+	case connections.CockroachDB:
+		file = "cockroachdb.png"
 	case connections.PostgreSQL:
 		file = "postgresql.png"
 	case connections.Redis:

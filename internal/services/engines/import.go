@@ -134,6 +134,9 @@ func (s *Session) importStream(ctx context.Context, id int64, db, table string, 
 				err = errors.Join(err, rb)
 			}
 			out.CommitUncertain = commitAttempted || rb != nil
+			if s.kind == connections.CockroachDB && cockroachRetryable(err) {
+				out.CommitUncertain = false
+			}
 			out.CreationUncertain = r.NewTable && out.CommitUncertain
 		}
 		for i := range out.Rows {
@@ -447,6 +450,30 @@ func (s *Session) importKeys(ctx context.Context, c *sql.Conn, t contract.Table)
 	keys := [][]string{}
 	if len(t.Key) > 0 {
 		keys = append(keys, t.Key)
+	}
+	if s.kind == connections.CockroachDB {
+		indexes, err := cockroachIndexes(ctx, c, t.Object)
+		if err != nil {
+			return nil, err
+		}
+		keys = nil
+		columns := validColumns(t)
+		for _, index := range indexes {
+			if !index.unique || index.unsafe {
+				continue
+			}
+			valid := len(index.columns) > 0
+			var key []string
+			for _, c := range index.columns {
+				f, ok := columns[c.Name]
+				valid = valid && ok && !f.Nullable && !strings.Contains(f.DatabaseType, "collate")
+				key = append(key, c.Name)
+			}
+			if valid {
+				keys = append(keys, key)
+			}
+		}
+		return keys, nil
 	}
 	if s.kind == connections.PostgreSQL {
 		rows, e := c.QueryContext(ctx, `SELECT i.indexrelid,a.attname FROM pg_index i CROSS JOIN LATERAL unnest(i.indkey) WITH ORDINALITY k(num,ord) JOIN pg_attribute a ON a.attrelid=i.indrelid AND a.attnum=k.num WHERE i.indrelid=to_regclass($1) AND i.indisunique AND i.indisvalid AND i.indimmediate AND i.indpred IS NULL AND i.indexprs IS NULL AND k.ord<=i.indnkeyatts AND NOT EXISTS (SELECT 1 FROM unnest(i.indkey) WITH ORDINALITY kk(num,ord) JOIN pg_attribute aa ON aa.attrelid=i.indrelid AND aa.attnum=kk.num WHERE kk.ord<=i.indnkeyatts AND NOT aa.attnotnull) ORDER BY i.indexrelid,k.ord`, qualified(t.Object))

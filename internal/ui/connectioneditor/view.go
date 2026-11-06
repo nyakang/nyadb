@@ -71,6 +71,8 @@ func connectionEditorTabNames(kind connections.Kind) []string {
 		return []string{"常规", "高级", "备注"}
 	case connections.SQLite:
 		return []string{"常规", "高级", "附加的数据库", "HTTP", "备注"}
+	case connections.CockroachDB:
+		return []string{"常规", "高级", "SSL", "备注"}
 	case connections.PostgreSQL:
 		return []string{"常规", "高级", "SSL", "SSH", "HTTP", "备注"}
 	case connections.Redis, connections.SQLServer, connections.Oracle, connections.MongoDB:
@@ -190,7 +192,7 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 		}
 		s.editorInputRow(c, "主机：", "主机", &p.Host, labelWidth, fieldWidth)
 		s.editorInputRow(c, "端口：", "端口", &s.connectionPort, labelWidth, min(fieldWidth, float32(80)))
-		if p.Kind == connections.PostgreSQL || p.Kind == connections.ClickHouse || p.Kind == connections.SQLServer || p.Kind == connections.MongoDB || p.Kind == connections.Redis {
+		if p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.SQLServer || p.Kind == connections.MongoDB || p.Kind == connections.Redis {
 			s.editorInputRow(c, "初始数据库：", "初始数据库", &p.Database, labelWidth, fieldWidth)
 		}
 		if p.Kind == connections.Oracle {

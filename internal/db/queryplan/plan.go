@@ -47,6 +47,8 @@ func Build(engine, sql string) (string, error) {
 	switch engine {
 	case "mysql", "mariadb":
 		return "EXPLAIN FORMAT=JSON " + sql, nil
+	case "cockroachdb":
+		return "EXPLAIN (OPT, VERBOSE) " + sql, nil
 	case "postgresql", "postgres":
 		return "EXPLAIN (FORMAT JSON) " + sql, nil
 	case "sqlite":
@@ -72,6 +74,9 @@ func numeric(v any) *float64 {
 	return &n
 }
 func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, error) {
+	if engine == "cockroachdb" {
+		return parseCockroach(result)
+	}
 	if engine == "oceanbase" {
 		return parseOceanBase(result)
 	}

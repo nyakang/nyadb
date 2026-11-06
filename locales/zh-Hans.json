@@ -1034,6 +1034,7 @@
   "engineWorkflow46": "类型",
   "engineWorkflow47": "精确小数",
   "engineWorkflow48": "请输入此连接绑定的 PostgreSQL 数据库",
+  "cockroachFixedDatabase": "请输入此连接绑定的 CockroachDB 数据库",
   "engineWorkflow49": "运算符",
   "engineWorkflow50": "连接",
   "corePlanAction1": "执行 SQL 文件",
@@ -1340,7 +1341,7 @@
   "clickhouseTLSMode": "ClickHouse TLS 模式",
   "clickhouseTLSModeCaption": "TLS 模式：",
   "oceanbaseMySQLTenantHint": "仅支持 MySQL 租户；用户名使用 user@tenant。",
-  "connectionURISupportedEngines": "支持 MySQL、MariaDB、TiDB、OceanBase、PostgreSQL、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。",
+  "connectionURISupportedEngines": "支持 MySQL、MariaDB、TiDB、OceanBase、PostgreSQL、CockroachDB、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。",
   "aiSQLf03820a6c1": "AI SQL",
   "aiSQLd6eec480d6": "打开 AI SQL 助手",
   "aiSQLc54683df87": "AI SQL 助手…",
@@ -1997,5 +1998,6 @@
   "redisSentinelCA": "Sentinel CA 证书",
   "redisSentinelServerName": "Sentinel 证书服务器名",
   "redisSentinelSessionPassword": "Sentinel 会话密码",
-  "redisTopologyHelp": "Redis 7 及以上版本；附加节点使用 host:port，逗号分隔。Sentinel 主机和端口指向 Sentinel，Redis 与 Sentinel 密码独立。"
+  "redisTopologyHelp": "Redis 7 及以上版本；附加节点使用 host:port，逗号分隔。Sentinel 主机和端口指向 Sentinel，Redis 与 Sentinel 密码独立。",
+  "cockroachSessionPassword": "CockroachDB 会话密码"
 }

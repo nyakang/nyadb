@@ -146,6 +146,8 @@ func connectionKindName(kind connections.Kind) string {
 		return "Oracle"
 	case connections.SQLServer:
 		return "SQL Server"
+	case connections.CockroachDB:
+		return "CockroachDB"
 	case connections.PostgreSQL:
 		return "PostgreSQL"
 	case connections.SQLite:

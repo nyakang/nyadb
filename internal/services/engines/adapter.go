@@ -42,6 +42,9 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 	if e := s.check(n.Object("table", "_")); e != nil {
 		return nil, e
 	}
+	if s.kind == connections.CockroachDB {
+		return s.cockroachBrowse(ctx, n)
+	}
 	if s.kind == connections.PostgreSQL {
 		return s.postgresBrowse(ctx, n)
 	}
@@ -89,6 +92,8 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*con
 	out := structureModel(t)
 	if s.kind == connections.SQLite {
 		e = s.sqlitePresentationMetadata(ctx, s.db, out)
+	} else if s.kind == connections.CockroachDB {
+		e = s.cockroachPresentationMetadata(ctx, s.db, out)
 	} else {
 		e = s.postgresPresentationMetadata(ctx, s.db, out)
 	}
@@ -346,7 +351,7 @@ type dataTx struct {
 	result  contract.CommitResult
 }
 
-func (s *Session) saveData(ctx context.Context, id int64, schema, name string, edits []contract.DataEdit, t *dataTx) (*contract.DataEditResult, error) {
+func (s *Session) saveDataOnce(ctx context.Context, id int64, schema, name string, edits []contract.DataEdit, t *dataTx) (*contract.DataEditResult, error) {
 	o := s.Namespace(schema).Object("table", name)
 	if id != s.id {
 		return nil, connections.ErrInvalid
@@ -380,6 +385,10 @@ func (s *Session) saveData(ctx context.Context, id int64, schema, name string, e
 			row, err := s.readRow(ctx, id, schema, name, ref, t.Transaction)
 			if err != nil {
 				out.Incomplete = true
+				out.CommitUncertain = errors.Is(err, ErrUncertain) || errors.Is(err, contract.ErrDataCommitUncertain)
+				if s.kind == connections.CockroachDB && cockroachRetryable(err) {
+					return &contract.DataEditResult{}, err
+				}
 				return out, err
 			}
 			outcome.Saved = row.Snapshot
@@ -391,15 +400,25 @@ func (s *Session) saveData(ctx context.Context, id int64, schema, name string, e
 		out.Outcomes = append(out.Outcomes, outcome)
 	}
 	if own {
-		committed, err := t.Commit(ctx)
-		out.CommitConfirmed = committed.CommitConfirmed
-		out.CommitUncertain = committed.Uncertain
-		out.Incomplete = committed.Incomplete
-		out.Verified = committed.Verified
-		out.Saved = committed.Saved
-		return out, err
+		return s.commitDataResult(ctx, t.Transaction, out)
 	}
 	return out, nil
+}
+
+func (s *Session) commitDataResult(ctx context.Context, tx contract.Transaction, out *contract.DataEditResult) (*contract.DataEditResult, error) {
+	committed, err := tx.Commit(ctx)
+	if s.kind == connections.CockroachDB && cockroachRetryable(err) && !committed.CommitConfirmed && !committed.Uncertain && !committed.Incomplete {
+		// The server rejected the entire transaction. Returned row snapshots
+		// from its earlier writes are invalid, including on retry exhaustion.
+		return &contract.DataEditResult{}, err
+	}
+	out.Applied = committed.Applied
+	out.CommitConfirmed = committed.CommitConfirmed
+	out.CommitUncertain = committed.Uncertain
+	out.Incomplete = committed.Incomplete
+	out.Verified = committed.Verified
+	out.Saved = committed.Saved
+	return out, err
 }
 func cellValue(v contract.DataValue) contract.Cell {
 	k := v.Kind
@@ -644,7 +663,7 @@ func (l *queryLease) ExecuteStream(ctx context.Context, schema, q string, sink f
 	// Transaction recovery does not depend on a search path. A schema change
 	// requested while the transaction is failed must not prevent ROLLBACK;
 	// initialize that schema on the next application query instead.
-	recovery := l.session.kind == connections.PostgreSQL && sqltext.IsRollback(q)
+	recovery := l.session.kind.IsPostgreSQLFamily() && sqltext.IsRollback(q)
 	if schema != "" && schema != l.schema && !recovery {
 		if e := x.SetSchema(ctx, schema); e != nil {
 			return contract.SQLResult{}, e

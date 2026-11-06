@@ -28,6 +28,8 @@ func profileBrand(kind connections.Kind, p theme.Palette) (asset, fallback strin
 		return "Oracle", "oracle-type", p.Error
 	case connections.SQLServer:
 		return "SQL Server", "mssql-type", p.Gold
+	case connections.CockroachDB:
+		return "CockroachDB", "database", p.Purple
 	case connections.PostgreSQL:
 		return "PostgreSQL", "postgres-type", p.Blue
 	case connections.SQLite:

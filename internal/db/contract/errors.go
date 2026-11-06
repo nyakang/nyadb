@@ -6,6 +6,7 @@ import (
 )
 
 var (
+	ErrTransactionRetry    = errors.New("serialization failure; retry the complete transaction")
 	ErrDataConflict        = errors.New("record changed or disappeared; reload before saving")
 	ErrDataReadOnly        = errors.New("table has no complete non-null unique key or is not transactional")
 	ErrDataEditLimit       = errors.New("complete record exceeds the 1 MiB editor limit")
