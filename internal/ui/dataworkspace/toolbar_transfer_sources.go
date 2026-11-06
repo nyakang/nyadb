@@ -71,7 +71,7 @@ func (s *State) addWizardSource(t *Document) {
 	sources, owner, request, gen := tr.Sources, tr.Assets, tr.Request+1, tr.Generation
 	sources = append(sources, mysqlDataWizardSource{Name: fmt.Sprintf(locales.Text("来源 %d"), len(sources)+1)})
 	next := mysqlDataTransferState{Wizard: true, Open: true, Kind: "import", Format: "CSV", Options: defaultMySQLDataSourceOptions(), ContinueOnError: true, ExtendedInsert: true, StatementKB: 1024, Target: "existing", NewName: t.table + "_import", Fields: slices.Clone(t.page.Columns), Included: map[string]bool{}, Sources: sources, ActiveSource: len(sources) - 1, Assets: owner, Request: request, Generation: gen}
-	if t.importDialect == "sqlserver" || t.importDialect == "duckdb" {
+	if t.importDialect == "sqlserver" || t.importDialect == "duckdb" || t.importDialect == "oracle" {
 		next.ContinueOnError = false
 		next.ExtendedInsert = false
 	}

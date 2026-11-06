@@ -40,6 +40,8 @@ func ParseURI(raw string) (URIImport, error) {
 	}
 	var kind Kind
 	switch strings.ToLower(u.Scheme) {
+	case "oracle":
+		kind = Oracle
 	case "duckdb":
 		kind = DuckDB
 	case "sqlserver", "mssql":
@@ -157,6 +159,21 @@ func ParseURI(raw string) (URIImport, error) {
 			p.Database = "postgres"
 		}
 	}
+	if kind == Oracle {
+		for _, key := range []string{"connection_type", "schema"} {
+			if values, ok := options[key]; ok {
+				if len(values) != 1 || values[0] == "" {
+					return fail(ErrURIOptions)
+				}
+				if key == "connection_type" {
+					p.OracleOptions.ConnectionType = values[0]
+				} else {
+					p.OracleOptions.DefaultSchema = values[0]
+				}
+				delete(options, key)
+			}
+		}
+	}
 	if kind == SQLServer {
 		canonical := url.Values{}
 		for key, values := range options {
@@ -219,6 +236,9 @@ func ParseURI(raw string) (URIImport, error) {
 			return fail(ErrURIOptions)
 		}
 		mode := strings.ToLower(values[0])
+		if kind == Oracle && mode != "disable" && mode != "require" && mode != "verify-full" {
+			return fail(ErrURIOptions)
+		}
 		if kind == SQLServer && mode != "disable" && mode != "require" && mode != "verify-full" {
 			return fail(ErrURIOptions)
 		}

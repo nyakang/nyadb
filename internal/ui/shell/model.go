@@ -171,7 +171,7 @@ func (s *State) openQuery() {
 	database := ""
 	if s.profileMode {
 		initial = "-- 输入 SQL；点击运行后发送至当前连接\n"
-		if p, ok := s.currentProfile(); ok && (p.Kind.IsMySQLFamily() || p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse || p.Kind == connections.SQLServer || p.Kind == connections.DuckDB) {
+		if p, ok := s.currentProfile(); ok && (p.Kind.IsMySQLFamily() || p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.DuckDB) {
 			profileID = p.ID
 			if s.sessions.StatusFor(profileID) == "已连接" {
 				database = s.sessions.Current().Database

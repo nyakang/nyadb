@@ -51,6 +51,8 @@ func (s *Service) Duplicate(ctx context.Context, id int64, name string) (Profile
 // Defaults are UI-independent initial values, not connection attempts.
 func Defaults(kind Kind) (Profile, error) {
 	switch kind {
+	case Oracle:
+		return Profile{Kind: Oracle, Host: "localhost", Port: 1521, Database: "XEPDB1", Username: "", TLSMode: "disable", OracleOptions: DefaultOracleOptions()}, nil
 	case DuckDB:
 		return Profile{Kind: DuckDB, Database: ":memory:", DuckDBOptions: DefaultDuckDBOptions()}, nil
 	case SQLServer:

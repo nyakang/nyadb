@@ -45,6 +45,9 @@ func (s *State) draftProfile() (connections.Profile, error) {
 		}
 		return p, nil
 	}
+	if p.Kind == connections.Oracle && strings.TrimSpace(p.Database) == "" {
+		return p, fieldError("服务名 / SID", "常规", "请输入 Oracle 服务名或 SID")
+	}
 	if p.Kind == connections.SQLServer && strings.TrimSpace(p.Database) == "" {
 		return p, fieldError("初始数据库", "常规", "请输入此连接绑定的 SQL Server 数据库")
 	}
@@ -156,7 +159,7 @@ func (s *State) Save() {
 			return
 		}
 	}
-	if saved.Kind == connections.PostgreSQL || saved.Kind == connections.ClickHouse || saved.Kind == connections.SQLServer {
+	if saved.Kind == connections.PostgreSQL || saved.Kind == connections.ClickHouse || saved.Kind == connections.SQLServer || saved.Kind == connections.Oracle {
 		s.connectionMainConfig = s.currentConnectionSnapshot()
 		if err := s.persistConnectionPasswords(saved, before); err != nil {
 			if p.ID == 0 {

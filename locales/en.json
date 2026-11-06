@@ -1928,5 +1928,15 @@
   "duckDBThreads": "DuckDB worker threads",
   "duckDBRuntimeLimits": "DuckDB runtime limits",
   "duckDBLibrary": "DuckDB runtime library",
-  "duckDBAtomicImport": "DuckDB imports append to an existing table. All records commit in one transaction."
+  "duckDBAtomicImport": "DuckDB imports append to an existing table. All records commit in one transaction.",
+  "oracleSessionPassword": "Oracle session password",
+  "oracleConnectionType": "Oracle connection type",
+  "connectionTypeCaption": "Connection type:",
+  "oracleServiceCaption": "Service name / SID:",
+  "oracleService": "Service name / SID",
+  "oracleServiceRequired": "Enter an Oracle service name or SID",
+  "oracleCA": "Oracle CA certificate",
+  "oracleTLSMode": "Oracle TLS mode",
+  "oracleAppendImport": "Oracle imports append to an existing table; all records commit in one transaction.",
+  "oraclePackage": "Package"
 }

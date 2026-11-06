@@ -10,6 +10,9 @@ import (
 )
 
 func Build(engine, sql string) (string, error) {
+	if engine == "oracle" {
+		return buildOracle(sql)
+	}
 	if engine == "duckdb" {
 		if err := sqltext.SingleDuckDBStatement(sql); err != nil {
 			return "", err
@@ -57,6 +60,9 @@ func numeric(v any) *float64 {
 	return &n
 }
 func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, error) {
+	if engine == "oracle" {
+		return parseOracle(result)
+	}
 	if engine == "duckdb" {
 		return parseDuckDB(result)
 	}

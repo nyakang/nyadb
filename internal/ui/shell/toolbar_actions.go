@@ -22,8 +22,11 @@ func (s *State) toolbarMenu(services ui.Services, action string, m *ui.Menu) {
 			m.Item(locales.Text("此数据库没有其它对象分类")).Disabled(true)
 			return
 		}
-		if w.Kind == connections.PostgreSQL || w.Kind == connections.SQLServer {
+		if w.Kind == connections.PostgreSQL || w.Kind == connections.SQLServer || w.Kind == connections.Oracle {
 			kinds = []string{"存储过程", "序列"}
+		}
+		if w.Kind == connections.Oracle {
+			kinds = []string{"存储过程", "包", "触发器", "序列", "类型"}
 		}
 		if w.Kind == connections.DuckDB {
 			kinds = []string{"序列"}

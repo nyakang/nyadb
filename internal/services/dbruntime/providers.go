@@ -8,10 +8,12 @@ import (
 	"github.com/nyakang/nyadb/internal/services/duckdb"
 	"github.com/nyakang/nyadb/internal/services/engines"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	oraclesvc "github.com/nyakang/nyadb/internal/services/oracle"
 	"github.com/nyakang/nyadb/internal/services/sqlserver"
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.Oracle, ProviderFunc(oraclesvc.OpenSession))
 	m.Register(connections.DuckDB, ProviderFunc(duckdb.OpenSession))
 	m.Register(connections.SQLServer, ProviderFunc(sqlserver.OpenSession))
 	m.Register(connections.ClickHouse, ProviderFunc(clickhousesvc.OpenSession))

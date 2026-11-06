@@ -20,7 +20,7 @@ var databaseCatalog = []catalogEntry{
 	{"MySQL", "MySQL", "", "全部", "mysql-type", "#24bf65", connections.MySQL},
 	{"PostgreSQL", "PostgreSQL", "", "全部", "postgres-type", "#397cdf", connections.PostgreSQL},
 	{"SQL Server", "SQL Server", "", "全部", "mssql-type", "#edab24", connections.SQLServer},
-	{"Oracle", "Oracle", "", "全部", "oracle-type", "#ef3b5c", ""},
+	{"Oracle", "Oracle", "", "全部", "oracle-type", "#ef3b5c", connections.Oracle},
 	{"SQLite", "SQLite", "", "全部", "sqlite-type", "#4cbfc2", connections.SQLite},
 	{"DuckDB", "DuckDB", "", "全部", "duckdb-type", "#d6ad00", connections.DuckDB},
 	{"MariaDB", "MariaDB", "", "全部", "maria-type", "#b58a61", connections.MariaDB},

@@ -82,6 +82,15 @@ func (s *State) EngineFilePickerError(version uint64) {
 }
 
 func (s *State) initEngineOptionsInputs() {
+	if s.connectionDraft.Kind == connections.Oracle {
+		a, err := connections.NormalizeOracleOptions(s.connectionDraft.OracleOptions)
+		if err == nil {
+			s.connectionDraft.OracleOptions = a
+		}
+		s.engineNumbers[0], s.engineNumbers[1] = strconv.Itoa(a.ConnectTimeoutSeconds), strconv.Itoa(a.MaxConnections)
+		s.sqlMaxConnections = strconv.Itoa(a.SQLMaxConnections)
+	}
+
 	if s.connectionDraft.Kind == connections.DuckDB {
 		a, err := connections.NormalizeDuckDBOptions(s.connectionDraft.DuckDBOptions)
 		if err == nil {
@@ -123,6 +132,20 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.Oracle {
+		values := []*int{&p.OracleOptions.ConnectTimeoutSeconds, &p.OracleOptions.MaxConnections, &p.OracleOptions.SQLMaxConnections}
+		for i, raw := range []string{s.engineNumbers[0], s.engineNumbers[1], s.sqlMaxConnections} {
+			n, err := strconv.Atoi(strings.TrimSpace(raw))
+			if err != nil {
+				return fieldError("最大连接数", "高级", "请输入有效范围内的整数")
+			}
+			*values[i] = n
+		}
+		a, err := connections.NormalizeOracleOptions(p.OracleOptions)
+		p.OracleOptions = a
+		return err
+	}
+
 	if p.Kind == connections.DuckDB {
 		values := []*int{&p.DuckDBOptions.MemoryLimitMB, &p.DuckDBOptions.Threads, &p.DuckDBOptions.MaxConnections, &p.DuckDBOptions.SQLMaxConnections}
 		for i, raw := range s.engineNumbers {
@@ -198,6 +221,8 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.Oracle:
+		return s.oracleOptions(c, formWidth, tab)
 	case connections.DuckDB:
 		if tab == "高级" {
 			s.duckDBAdvanced(c, width)

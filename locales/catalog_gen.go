@@ -19627,3 +19627,103 @@ func DuckDBAtomicImport() string { return In(i18n.Locale()).DuckDBAtomicImport()
 func (msgs Messages) DuckDBAtomicImport() string {
 	return Catalog.Format(msgs.locale, "duckDBAtomicImport", nil)
 }
+
+// OracleSessionPassword says "Oracle 会话密码"
+// in the language the app shows.
+func OracleSessionPassword() string { return In(i18n.Locale()).OracleSessionPassword() }
+
+// OracleSessionPassword says "Oracle 会话密码"
+// in the language of msgs.
+func (msgs Messages) OracleSessionPassword() string {
+	return Catalog.Format(msgs.locale, "oracleSessionPassword", nil)
+}
+
+// OracleConnectionType says "Oracle 连接类型"
+// in the language the app shows.
+func OracleConnectionType() string { return In(i18n.Locale()).OracleConnectionType() }
+
+// OracleConnectionType says "Oracle 连接类型"
+// in the language of msgs.
+func (msgs Messages) OracleConnectionType() string {
+	return Catalog.Format(msgs.locale, "oracleConnectionType", nil)
+}
+
+// ConnectionTypeCaption says "连接类型："
+// in the language the app shows.
+func ConnectionTypeCaption() string { return In(i18n.Locale()).ConnectionTypeCaption() }
+
+// ConnectionTypeCaption says "连接类型："
+// in the language of msgs.
+func (msgs Messages) ConnectionTypeCaption() string {
+	return Catalog.Format(msgs.locale, "connectionTypeCaption", nil)
+}
+
+// OracleServiceCaption says "服务名 / SID："
+// in the language the app shows.
+func OracleServiceCaption() string { return In(i18n.Locale()).OracleServiceCaption() }
+
+// OracleServiceCaption says "服务名 / SID："
+// in the language of msgs.
+func (msgs Messages) OracleServiceCaption() string {
+	return Catalog.Format(msgs.locale, "oracleServiceCaption", nil)
+}
+
+// OracleService says "服务名 / SID"
+// in the language the app shows.
+func OracleService() string { return In(i18n.Locale()).OracleService() }
+
+// OracleService says "服务名 / SID"
+// in the language of msgs.
+func (msgs Messages) OracleService() string {
+	return Catalog.Format(msgs.locale, "oracleService", nil)
+}
+
+// OracleServiceRequired says "请输入 Oracle 服务名或 SID"
+// in the language the app shows.
+func OracleServiceRequired() string { return In(i18n.Locale()).OracleServiceRequired() }
+
+// OracleServiceRequired says "请输入 Oracle 服务名或 SID"
+// in the language of msgs.
+func (msgs Messages) OracleServiceRequired() string {
+	return Catalog.Format(msgs.locale, "oracleServiceRequired", nil)
+}
+
+// OracleCA says "Oracle CA 证书"
+// in the language the app shows.
+func OracleCA() string { return In(i18n.Locale()).OracleCA() }
+
+// OracleCA says "Oracle CA 证书"
+// in the language of msgs.
+func (msgs Messages) OracleCA() string {
+	return Catalog.Format(msgs.locale, "oracleCA", nil)
+}
+
+// OracleTLSMode says "Oracle TLS 模式"
+// in the language the app shows.
+func OracleTLSMode() string { return In(i18n.Locale()).OracleTLSMode() }
+
+// OracleTLSMode says "Oracle TLS 模式"
+// in the language of msgs.
+func (msgs Messages) OracleTLSMode() string {
+	return Catalog.Format(msgs.locale, "oracleTLSMode", nil)
+}
+
+// OracleAppendImport says "Oracle 导入追加到已有表；全部记录在同一事务中提交。"
+// in the language the app shows.
+func OracleAppendImport() string { return In(i18n.Locale()).OracleAppendImport() }
+
+// OracleAppendImport says "Oracle 导入追加到已有表；全部记录在同一事务中提交。"
+// in the language of msgs.
+func (msgs Messages) OracleAppendImport() string {
+	return Catalog.Format(msgs.locale, "oracleAppendImport", nil)
+}
+
+// OraclePackage says "包"
+// in the language the app shows.
+func OraclePackage() string { return In(i18n.Locale()).OraclePackage() }
+
+// OraclePackage says "包"
+// in the language of msgs.
+func (msgs Messages) OraclePackage() string {
+	return Catalog.Format(msgs.locale, "oraclePackage", nil)
+}

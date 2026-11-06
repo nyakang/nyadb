@@ -12,6 +12,7 @@ import (
 // Keep the existing column and MySQL JSON format. Other engines use an
 // explicit versioned envelope; older empty records receive engine defaults.
 type engineOptionsEnvelope struct {
+	Oracle     *connections.OracleOptions     `json:"oracle,omitempty"`
 	DuckDB     *connections.DuckDBOptions     `json:"duckdb,omitempty"`
 	SQLServer  *connections.SQLServerOptions  `json:"sqlserver,omitempty"`
 	Version    int                            `json:"version"`
@@ -23,6 +24,8 @@ type engineOptionsEnvelope struct {
 func encodeProfileOptions(p connections.Profile) (string, error) {
 	var value any
 	switch p.Kind {
+	case connections.Oracle:
+		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Oracle: &p.OracleOptions}
 	case connections.DuckDB:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, DuckDB: &p.DuckDBOptions}
 	case connections.SQLServer:
@@ -43,6 +46,9 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 }
 func decodeEngineOptions(p *connections.Profile, raw string) error {
 	if raw == "" {
+		if p.Kind == connections.Oracle {
+			p.OracleOptions = connections.DefaultOracleOptions()
+		}
 		if p.Kind == connections.DuckDB {
 			p.DuckDBOptions = connections.DefaultDuckDBOptions()
 		}
@@ -61,6 +67,17 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 	decoder.DisallowUnknownFields()
 	if len(raw) > 128<<10 || decoder.Decode(&envelope) != nil || decoder.Decode(new(any)) != io.EOF || envelope.Version != 1 || envelope.Kind != p.Kind {
 		return fmt.Errorf("invalid saved engine options")
+	}
+	if p.Kind == connections.Oracle {
+		if envelope.Oracle == nil || envelope.DuckDB != nil || envelope.SQLServer != nil || envelope.SQLite != nil || envelope.PostgreSQL != nil {
+			return connections.ErrInvalid
+		}
+		checked, err := connections.NormalizeOracleOptions(*envelope.Oracle)
+		p.OracleOptions = checked
+		return err
+	}
+	if envelope.Oracle != nil {
+		return connections.ErrInvalid
 	}
 	if p.Kind == connections.DuckDB {
 		if envelope.DuckDB == nil || envelope.SQLServer != nil || envelope.SQLite != nil || envelope.PostgreSQL != nil {

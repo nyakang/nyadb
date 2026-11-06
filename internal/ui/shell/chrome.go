@@ -344,7 +344,7 @@ func (s *State) toolbarActionAvailable(action string) bool {
 	case "其它":
 		w := s.sessions.Current()
 		caps := s.objectCapabilitiesFor(w.ProfileID)
-		return w.Status == "已连接" && w.Database != "" && s.sessions.DatabaseOpened(w.ProfileID, w.Database) && (caps.DesignTables || (w.Kind == connections.PostgreSQL || w.Kind == connections.SQLServer || w.Kind == connections.DuckDB) && caps.Metadata)
+		return w.Status == "已连接" && w.Database != "" && s.sessions.DatabaseOpened(w.ProfileID, w.Database) && (caps.DesignTables || (w.Kind == connections.PostgreSQL || w.Kind == connections.SQLServer || w.Kind == connections.Oracle || w.Kind == connections.DuckDB) && caps.Metadata)
 	case "查询":
 		return s.profileMode && s.selectedProfileID > 0 && !s.sqlWorkspace.PersistenceLoading()
 	case "用户":

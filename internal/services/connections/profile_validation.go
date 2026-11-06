@@ -13,6 +13,9 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		return p, fmt.Errorf("%w: invalid connection color", ErrInvalid)
 	}
 	p.Name = strings.TrimSpace(p.Name)
+	if p.Kind != Oracle && p.OracleOptions != (OracleOptions{}) {
+		return p, fmt.Errorf("%w: Oracle options on another engine", ErrInvalid)
+	}
 	if p.Kind != DuckDB && p.DuckDBOptions != (DuckDBOptions{}) {
 		return p, fmt.Errorf("%w: DuckDB options on another engine", ErrInvalid)
 	}
@@ -109,7 +112,29 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		if p.Database == ":memory:" && p.DuckDBOptions.ReadOnly {
 			return p, fmt.Errorf("%w: an in-memory DuckDB database cannot be read-only", ErrInvalid)
 		}
-	case MySQL, MariaDB, PostgreSQL, ClickHouse, SQLServer:
+	case MySQL, MariaDB, PostgreSQL, ClickHouse, SQLServer, Oracle:
+		if p.Kind == Oracle {
+			var err error
+			p.OracleOptions, err = NormalizeOracleOptions(p.OracleOptions)
+			if err != nil {
+				return p, err
+			}
+			if p.Database == "" || p.Username == "" || !validEngineText(p.Username, 128) || strings.ContainsAny(p.Host, "@/?!#\\()= \t\r\n") || !validEngineText(p.Database, 4096) || strings.ContainsAny(p.Database, "()=\\ \t\r\n") {
+				return p, fmt.Errorf("%w: Oracle requires a hostname, service/SID and username", ErrInvalid)
+			}
+			if p.OracleOptions.DefaultSchema == "" {
+				p.OracleOptions.DefaultSchema = strings.ToUpper(p.Username)
+			}
+			if p.TLSMode == "" {
+				p.TLSMode = "disable"
+			}
+			if p.TLSMode != "disable" && p.TLSMode != "require" && p.TLSMode != "verify-full" {
+				return p, fmt.Errorf("%w: Oracle TLS must be disable, require or verify-full", ErrInvalid)
+			}
+			if p.TLSMode == "disable" && (p.OracleOptions.CAFile != "" || p.OracleOptions.ServerName != "") {
+				return p, fmt.Errorf("%w: Oracle certificate settings require TCPS", ErrInvalid)
+			}
+		}
 		if p.Kind == SQLServer {
 			var err error
 			p.SQLServerOptions, err = NormalizeSQLServerOptions(p.SQLServerOptions)
