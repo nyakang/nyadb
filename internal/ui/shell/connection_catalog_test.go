@@ -103,7 +103,7 @@ func TestConnectionCatalogUnsupportedType(t *testing.T) {
 	if tt.HasText("最近使用过的") {
 		t.Fatal("selecting a card must not insert recents and move the catalog")
 	}
-	if err := tt.Click("选择 MongoDB（尚未支持）"); err != nil {
+	if err := tt.Click("选择 Redis（尚未支持）"); err != nil {
 		t.Fatal(err)
 	}
 	if s.connectionKind != "" || !strings.Contains(s.connectionError, "尚未支持") {

@@ -53,6 +53,8 @@ func Defaults(kind Kind) (Profile, error) {
 	switch kind {
 	case Oracle:
 		return Profile{Kind: Oracle, Host: "localhost", Port: 1521, Database: "XEPDB1", Username: "", TLSMode: "disable", OracleOptions: DefaultOracleOptions()}, nil
+	case MongoDB:
+		return Profile{Kind: MongoDB, Host: "localhost", Port: 27017, MongoDBOptions: DefaultMongoDBOptions(), TLSMode: "disable"}, nil
 	case DuckDB:
 		return Profile{Kind: DuckDB, Database: ":memory:", DuckDBOptions: DefaultDuckDBOptions()}, nil
 	case SQLServer:

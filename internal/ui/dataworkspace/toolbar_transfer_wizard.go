@@ -223,7 +223,11 @@ func (s *State) dataExportWizardPage(c *ui.Context, t *Document) {
 	switch tr.Step {
 	case 0:
 		oldFormat := tr.Format
-		mysqlDataRuleSelect(c, &tr.Format, mysqlDataTransferFormatChoices("export"), func(x string) string { return x }).Width(180)
+		choices := mysqlDataTransferFormatChoices("export")
+		if t.capabilities.Documents {
+			choices = choices[:len(choices)-1]
+		}
+		mysqlDataRuleSelect(c, &tr.Format, choices, func(x string) string { return x }).Width(180)
 		if oldFormat != tr.Format {
 			tr.Options = mysqlDataSourceDefaults(tr.Format)
 		}

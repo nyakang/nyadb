@@ -59,6 +59,11 @@ func (s *State) View(c *ui.Context, t *Document) {
 			commands.Children(func() {
 				ui.Toolbar(c, func() {
 					caption := locales.Text("运行当前语句")
+					runLabel, formatLabel := locales.Text("运行当前或选中 SQL"), locales.Text("格式化 SQL")
+					if t.nativeCommands {
+						runLabel = locales.Text("运行 MongoDB 命令")
+						formatLabel = locales.Text("格式化 JSON")
+					}
 					width := available
 					if strings.TrimSpace(t.Editor.SelectedText()) != "" {
 						caption = locales.Text("运行选中 SQL")
@@ -66,7 +71,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 					if width < 760*max(float32(1), theme.Font(c, 12)/12) {
 						caption = locales.Text("运行")
 					}
-					if ui.Button(c, caption).Tooltip(locales.Text("运行当前或选中 SQL") + " · Ctrl+Enter").Label(locales.Text("运行当前或选中 SQL")).
+					if ui.Button(c, caption).Tooltip(runLabel + " · Ctrl+Enter").Label(runLabel).
 						Disabled(!connected || t.loading || t.recoveryNeeded).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
 						s.Run(c.Services().Invalidate, t)
 					}
@@ -86,10 +91,10 @@ func (s *State) View(c *ui.Context, t *Document) {
 						s.RequestCancel(t)
 					}
 					s.sqlLayoutMenu(c, t)
-					if ui.Button(c, locales.Text("格式化 SQL")).Clicked() {
+					if ui.Button(c, formatLabel).Clicked() {
 						s.Format(t)
 					}
-					if ui.Button(c, "EXPLAIN").Disabled(t.loading || !connected).Clicked() {
+					if ui.Button(c, "EXPLAIN").Disabled(t.loading || !connected || t.nativeCommands).Clicked() {
 						s.Explain(t)
 					}
 					if ui.Button(c, locales.Text("运行并导出")).Disabled(t.loading || t.recoveryNeeded || !connected).Clicked() {
@@ -175,6 +180,9 @@ func (s *State) View(c *ui.Context, t *Document) {
 			}
 			theme.ApplySQLAppearance(c, t.Editor)
 			t.Editor.Label = locales.Text("SQL 编辑器")
+			if t.nativeCommands {
+				t.Editor.Label = locales.Text("MongoDB 命令编辑器")
+			}
 			ed := editor.View(c, t.Editor).Grow(1).FillWidth()
 			if s.deps.EditFocus != nil {
 				ed.FocusBind(s.deps.EditFocus, fmt.Sprintf("sql/editor/%d", t.id))

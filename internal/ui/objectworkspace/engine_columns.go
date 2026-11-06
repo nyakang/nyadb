@@ -15,6 +15,9 @@ func (s *State) objectColumns(profile int64) []ui.TableColumn {
 		engine = s.deps.Engine(profile)
 	}
 	columns := append([]ui.TableColumn(nil), mysqlObjectColumns...)
+	if engine == "mongodb" {
+		columns = []ui.TableColumn{{ID: "name", Title: "名称", Width: 265}, {ID: "kind", Title: "类型", Width: 100}}
+	}
 	if engine == "postgresql" {
 		columns = []ui.TableColumn{{ID: "name", Title: "名称", Width: 265}, {ID: "kind", Title: "类型", Width: 100}, {ID: "rows", Title: "估算行数", Width: 100}, {ID: "size", Title: "大小", Width: 110}, {ID: "comment", Title: "注释", Width: 200}}
 	}
@@ -33,6 +36,15 @@ func (s *State) objectCell(profile int64, obj contract.DBObject, col int) string
 	engine := "mysql"
 	if s.deps.Engine != nil {
 		engine = s.deps.Engine(profile)
+	}
+	if engine == "mongodb" {
+		if col == 0 {
+			return obj.Name
+		}
+		if col == 1 {
+			return locales.Text(obj.Kind)
+		}
+		return ""
 	}
 	unknown := locales.Text("未知")
 	number := func(v *int64) string {

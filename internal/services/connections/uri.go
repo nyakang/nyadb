@@ -40,6 +40,8 @@ func ParseURI(raw string) (URIImport, error) {
 	}
 	var kind Kind
 	switch strings.ToLower(u.Scheme) {
+	case "mongodb", "mongodb+srv":
+		return parseMongoDBURI(u)
 	case "oracle":
 		kind = Oracle
 	case "duckdb":

@@ -18,6 +18,7 @@ const (
 	SQLServer  Kind = "sqlserver"
 	DuckDB     Kind = "duckdb"
 	Oracle     Kind = "oracle"
+	MongoDB    Kind = "mongodb"
 )
 
 // IsMySQLFamily identifies products sharing the MySQL client and connection
@@ -44,6 +45,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	MongoDBOptions    MongoDBOptions
 	OracleOptions     OracleOptions
 	SQLServerOptions  SQLServerOptions
 	DuckDBOptions     DuckDBOptions

@@ -57,6 +57,9 @@ func mysqlObjectActionLabels(kind string) (open, design string) {
 	if Supports(kind) {
 		return "查看定义（只读）", "查看结构（不适用）"
 	}
+	if kind == "集合" {
+		return "打开集合", "查看集合结构（只读）"
+	}
 	if kind == "视图" {
 		return "打开视图（只读）", "查看视图结构（只读）"
 	}
@@ -183,6 +186,7 @@ func (s *State) BrowserView(c *ui.Context) {
 	a := s.browserActions()
 	database := a.scope.database
 	items := a.items
+	documentEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "mongodb"
 	canOpen, canProgram := a.canOpen, a.canProgram
 	ui.Column(c).Fill().Children(func() {
 		ui.Row(c).Height(theme.RowHeight(c, 30)).Gap(3).Padding(1, 4).AlignItems(ui.Center).Background(palette.Header).Children(func() {
@@ -192,6 +196,18 @@ func (s *State) BrowserView(c *ui.Context) {
 					{"打开表", "open-table", "打开选中表数据"}, {"设计表", "design-table", "设计选中表"}, {"查看结构", "design-table", "打开选中表结构"},
 				} {
 					item := action
+					if documentEngine {
+						if item.label == "设计表" {
+							continue
+						}
+						if item.label == "打开表" {
+							item.label = "打开集合"
+							item.accessible = "打开选中集合文档"
+						}
+						if item.label == "查看结构" {
+							item.accessible = "查看集合结构（只读）"
+						}
+					}
 					if ui.Button(c, "").Label(locales.Text(item.accessible)).Tooltip(locales.Text(item.label)).Disabled(!canOpen).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
 						ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
 							theme.Icon(c, item.icon, 14, palette.Muted)
@@ -199,7 +215,7 @@ func (s *State) BrowserView(c *ui.Context) {
 						})
 					}).Clicked() {
 						obj := items[a.frame.Row]
-						if item.label == "打开表" && s.deps.OpenData != nil {
+						if (item.label == "打开表" || item.label == "打开集合") && s.deps.OpenData != nil {
 							s.deps.OpenData(c.Services(), a.scope.profile, database, obj.Name)
 						} else if item.label == "查看结构" {
 							s.openStructure(c.Services(), database, obj.Name)
@@ -209,23 +225,28 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 				}
 				canCreate := a.canCreate
-				if ui.Button(c, "").Label(locales.Text("新建表")).Tooltip(locales.Text("新建表")).
-					Disabled(!canCreate).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
-					ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
-						theme.Icon(c, "table", 14, palette.Muted)
-						ui.Text(c, locales.Text("新建表")).FontSize(theme.Font(c, 12)).SingleLine()
-					})
-				}).Clicked() {
-					s.BeginTableChange(a.scope.profile, database, "", mysqlsvc.MySQLTableCreate)
-				}
-				if ui.Button(c, "").Label(locales.Text("查看程序定义")).Tooltip(locales.Text("查看函数、存储过程、事件或序列定义")).
-					Disabled(!canProgram).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
-					theme.Icon(c, "function", 14, palette.Muted)
-				}).Clicked() {
-					obj := items[a.frame.Row]
-					s.openObjectFor(c.Services(), a.scope.profile, database, obj.Name, obj.Kind)
+				if !documentEngine {
+					if ui.Button(c, "").Label(locales.Text("新建表")).Tooltip(locales.Text("新建表")).
+						Disabled(!canCreate).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
+						ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
+							theme.Icon(c, "table", 14, palette.Muted)
+							ui.Text(c, locales.Text("新建表")).FontSize(theme.Font(c, 12)).SingleLine()
+						})
+					}).Clicked() {
+						s.BeginTableChange(a.scope.profile, database, "", mysqlsvc.MySQLTableCreate)
+					}
+					if ui.Button(c, "").Label(locales.Text("查看程序定义")).Tooltip(locales.Text("查看函数、存储过程、事件或序列定义")).
+						Disabled(!canProgram).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
+						theme.Icon(c, "function", 14, palette.Muted)
+					}).Clicked() {
+						obj := items[a.frame.Row]
+						s.openObjectFor(c.Services(), a.scope.profile, database, obj.Name, obj.Kind)
+					}
 				}
 				kinds := []string{"全部", "表", "视图"}
+				if documentEngine {
+					kinds = []string{"全部", "集合", "视图"}
+				}
 				chosen := 0
 				for i, kind := range kinds {
 					if a.frame.Kind == kind {

@@ -12,6 +12,8 @@ type Descriptor struct {
 
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
+	case MongoDB:
+		return Descriptor{kind, "MongoDB", "mongodb", "server", "mongodb", 27017, contract.Capabilities{Documents: true, Query: true, Metadata: true, EditableTables: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
 	case Oracle:
 		return Descriptor{kind, "Oracle", "oracle", "server", "oracle", 1521, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true, Import: true}}, true
 	case DuckDB:
