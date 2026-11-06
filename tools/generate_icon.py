@@ -10,7 +10,9 @@ import tempfile
 from pathlib import Path
 
 SIZE = 1024
-ARTWORK_SIZE = 840
+# Keep 32px of vertical padding while giving the transparent mark more
+# visual weight at native window, taskbar and launcher icon sizes.
+ARTWORK_SIZE = 960
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "internal" / "assets" / "appicon"
 

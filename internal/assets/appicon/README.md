@@ -6,8 +6,10 @@ and transparent background are retained unchanged. No additional license
 declaration is assigned to this user-provided artwork.
 
 `icon.png` is the generated 1024×1024 RGBA application icon. The artwork is
-trimmed, scaled proportionally to a longest edge of 840 pixels, and centered
-on the transparent canvas. It has no added background, outline or shadow.
+trimmed, scaled proportionally to a longest edge of 960 pixels, and centered
+on the transparent canvas. The 32-pixel top and bottom padding keeps the
+mark clear of the edges while making it more legible at small display sizes.
+It has no added background, outline or shadow.
 
 MyGo packaging reads this PNG via `mygo.json`. The `appicon` package embeds
 the same file for native startup, including direct development runs. The
