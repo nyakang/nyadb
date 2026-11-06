@@ -73,7 +73,7 @@ func TestOpenGaussTableDropMenuPreviewAndOriginalTabCleanupFixture(t *testing.T)
 	waitSQLiteDesigner(t, tt, func() bool { return s.sessions.Current().Pending == "" })
 	s.submitNavigation(services, navigation.DatabaseNode(p.ID, schema))
 	waitSQLiteDesigner(t, tt, func() bool { return s.sessions.Current().Pending == "" && s.sessions.Current().Cache[schema] != nil })
-	if !s.objectWorkspace.CanDropTable(p.ID, schema, "original") || s.objectWorkspace.CanCopyTable(p.ID, schema, "original") {
+	if !s.objectWorkspace.CanDropTable(p.ID, schema, "original") || !s.objectWorkspace.CanCopyTable(p.ID, schema, "original") {
 		t.Fatal("native table menu availability")
 	}
 	s.openMySQLData(services, schema, "original")

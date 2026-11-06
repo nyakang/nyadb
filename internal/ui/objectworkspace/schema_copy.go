@@ -98,6 +98,11 @@ func (s *State) schemaCopyRequest(x *schemaCopyOperation) (contract.SchemaCopyRe
 		return contract.SchemaCopyRequest{}, nil, errors.New("read the original table before copying")
 	}
 	r := contract.SchemaCopyRequest{Original: x.original.Clone(), Destination: strings.TrimSpace(x.destination), WithData: x.withData, RebindSelfReferences: x.rebindSelf, PreserveRowID: x.preserveRowID}
+	if r.Original.Schema.Engine == "opengauss" {
+		r.PreserveRowID = false
+		p, e := schemaddl.PlanOpenGaussCopy(r.Original.Schema, r.Destination, r.WithData, r.RebindSelfReferences)
+		return r, p.SQL, e
+	}
 	if r.Original.Schema.Engine == "postgresql" {
 		r.PreserveRowID = false
 		p, e := schemaddl.PlanPostgreSQLCopy(r.Original.Schema, r.Destination, r.WithData, r.RebindSelfReferences)
@@ -230,7 +235,7 @@ func (s *State) consumeSchemaCopy(services ui.Services) {
 			}
 		} else if reply.err != nil {
 			x.err = reply.err.Error()
-		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql") || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
+		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "sqlite" && reply.snapshot.Schema.Engine != "postgresql" && reply.snapshot.Schema.Engine != "opengauss") || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
 			x.err = "original table snapshot is incomplete or unavailable"
 		} else {
 			snapshot := reply.snapshot.Clone()
@@ -252,11 +257,13 @@ func (s *State) schemaCopyModal(c *ui.Context) {
 			ui.Row(c).Wrap().Gap(12).Children(func() {
 				ui.Checkbox(c, &x.withData, locales.Text("复制数据")).Disabled(x.busy)
 				ui.Checkbox(c, &x.rebindSelf, locales.Text("自引用外键绑定到新表")).Disabled(x.busy)
-				ui.Checkbox(c, &x.preserveRowID, locales.Text("保留隐藏 rowid")).Disabled(x.busy || !x.withData || x.original != nil && x.original.Schema.Engine == "postgresql")
+				if x.original != nil && x.original.Schema.Engine == "sqlite" || x.original == nil && (s.deps.Engine == nil || s.deps.Engine(x.target.Object.ProfileID) == "sqlite") {
+					ui.Checkbox(c, &x.preserveRowID, locales.Text("保留隐藏 rowid")).Disabled(x.busy || !x.withData)
+				}
 			})
 			ui.Text(c, locales.Text("在同一数据库或模式中事务复制，不覆盖目标。生成字段重新计算并核验；仅结构复制重置自增状态。"))
 			ui.Text(c, locales.Text("触发器在数据复制后创建，正文保留原对象引用；外部外键保持原引用。"))
-			if x.withData && !x.preserveRowID {
+			if x.withData && !x.preserveRowID && x.original != nil && x.original.Schema.Engine == "sqlite" {
 				ui.Text(c, locales.Text("允许重新分配隐藏 rowid；普通字段和行数仍须完整核验。"))
 			}
 			if x.err != "" {

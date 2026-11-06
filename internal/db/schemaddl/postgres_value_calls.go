@@ -7,18 +7,29 @@ import "sort"
 // callback permission or resolves user SQL. Sequence expressions and unknown
 // expression node kinds cannot acquire a repeatable value baseline.
 func PostgreSQLValueExpressionRoutines(raw string) ([]int64, error) {
+	return valueExpressionRoutines(raw, false)
+}
+
+// OpenGaussCopyExpressionRoutines inspects native expression trees directly.
+// Native generated expressions may lack pg_depend routine edges. Product
+// catalog checks must validate each resolved OID before any expression runs.
+func OpenGaussCopyExpressionRoutines(raw string) ([]int64, error) {
+	return valueExpressionRoutines(raw, true)
+}
+
+func valueExpressionRoutines(raw string, native bool) ([]int64, error) {
 	if len(raw) > 1<<20 {
 		return nil, ErrUnsupported
 	}
 	ts, err := pgParseNode(raw)
-	if err != nil || len(ts) != 1 || ts[0].kind != '{' {
+	if err != nil || len(ts) != 1 || ts[0].kind != '{' && !(native && ts[0].kind == '(') {
 		return nil, ErrUnsupported
 	}
 	seen := map[int64]bool{}
 	var walk func(*pgNodeToken) error
 	walk = func(t *pgNodeToken) error {
 		if t.kind == '{' {
-			name, fields, err := pgNodeFields(t)
+			name, fields, err := pgNodeFieldsDialect(t, native)
 			// PostgreSQL 14 emits ARRAY for ArrayExpr in pg_node_tree;
 			// later versions emit ARRAYEXPR. Traverse both identically so
 			// nested dispatch cannot disappear behind the legacy spelling.
@@ -26,6 +37,11 @@ func PostgreSQLValueExpressionRoutines(raw string) ([]int64, error) {
 				name = "ARRAYEXPR"
 			}
 			if err != nil || !pgKnownExpressionNode(name) || name == "NEXTVALUEEXPR" || name == "AGGREF" || name == "WINDOWFUNC" || name == "RANGETBLENTRY" {
+				return ErrUnsupported
+			}
+			// These nodes dispatch through type or comparison support routines
+			// without a funcid/opfuncid. Native copy has no proof for that path.
+			if native && (name == "COERCEVIAIO" || name == "COERCETODOMAIN" || name == "ARRAYCOERCEEXPR" || name == "ROWCOMPAREEXPR" || name == "MINMAXEXPR" || name == "XMLEXPR") {
 				return ErrUnsupported
 			}
 			required := ""
@@ -39,12 +55,18 @@ func PostgreSQLValueExpressionRoutines(raw string) ([]int64, error) {
 			}
 			found := required == ""
 			for _, f := range fields {
+				if native && name == "CONST" && f.name == ":consttype" {
+					oid, err := pgNodeInteger(f.values)
+					if err != nil || oid <= 0 || oid >= 16384 {
+						return ErrUnsupported
+					}
+				}
 				if f.name == required {
 					found = true
 				}
 				if f.name == ":funcid" && name == "FUNCEXPR" || f.name == ":opfuncid" && (name == "OPEXPR" || name == "DISTINCTEXPR" || name == "NULLIFEXPR" || name == "SCALARARRAYOPEXPR") {
 					oid, err := pgNodeInteger(f.values)
-					if err != nil || oid <= 0 || oid >= 16384 {
+					if err != nil || oid <= 0 || !native && oid >= 16384 || oid > 4294967295 {
 						return ErrUnsupported
 					}
 					seen[oid] = true

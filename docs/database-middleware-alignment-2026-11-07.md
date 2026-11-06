@@ -65,6 +65,7 @@ DBX 的能力参考还包含其 SQL/schema/transfer 模块和
 - [x] openGauss 原生过程脚本切分、光标执行及有界 SQL 文件执行，见 [脚本验证](opengauss-native-scripts-2026-11-07.md)。
 - [x] openGauss 普通视图管理及原生选项/元数据保留，见 [视图验证](opengauss-views-2026-11-07.md)。
 - [x] openGauss 原生事务删除表及结构/依赖校验，见 [删除表验证](opengauss-table-drop-2026-11-07.md)。
+- [x] openGauss 原生事务表复制、独立普通/LARGE 序列及完整数据核验，见 [表复制验证](opengauss-table-copy-2026-11-07.md)。
 - [ ] openGauss 表设计、其它对象/账户管理、备份恢复和维护能力补齐。
 - [ ] 其它参考连接、现有产品缺口和跨产品工具。
 - [ ] 按完整清单逐项审计所有用户流程和验证范围，证明最终对齐。

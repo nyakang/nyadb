@@ -1296,18 +1296,20 @@
           "opengauss-2026-11-07.md",
           "opengauss-native-scripts-2026-11-07.md",
           "opengauss-views-2026-11-07.md",
-          "opengauss-table-drop-2026-11-07.md"
+          "opengauss-table-drop-2026-11-07.md",
+          "opengauss-table-copy-2026-11-07.md"
         ],
         "completed": [
           "native connections and verified TLS",
           "metadata and shared data workflows",
           "native routine scripts and bounded SQL files",
           "ordinary view create/alter/rename/restrict-drop",
-          "native transactional restrict-drop tables"
+          "native transactional restrict-drop tables",
+          "native transactional table copy and full value/sequence verification"
         ],
         "remaining": [
           "table design",
-          "table copy/rename/clear and other table operations",
+          "table rename/clear and other table operations",
           "other object and account administration",
           "backup/restore and maintenance",
           "cross-product tools and remaining reference capabilities"

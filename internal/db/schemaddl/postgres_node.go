@@ -158,15 +158,20 @@ func pgParseNode(raw string) ([]*pgNodeToken, error) {
 }
 
 func pgNodeFields(node *pgNodeToken) (string, []pgNodeField, error) {
+	return pgNodeFieldsDialect(node, false)
+}
+
+func pgNodeFieldsDialect(node *pgNodeToken, native bool) (string, []pgNodeField, error) {
 	if node.kind != '{' || len(node.children) < 1 || node.children[0].kind != 'a' {
 		return "", nil, errors.New("invalid PostgreSQL expression node")
 	}
 	name := node.children[0].atom
+	emptyCursor := func(field pgNodeField) bool { return native && name == "CONST" && field.name == ":cursor_data" }
 	var fields []pgNodeField
 	seen := map[string]bool{}
 	for _, token := range node.children[1:] {
 		if token.kind == 'a' && strings.HasPrefix(token.atom, ":") {
-			if len(token.atom) == 1 || seen[token.atom] || len(fields) > 0 && len(fields[len(fields)-1].values) == 0 {
+			if len(token.atom) == 1 || seen[token.atom] || len(fields) > 0 && len(fields[len(fields)-1].values) == 0 && !emptyCursor(fields[len(fields)-1]) {
 				return "", nil, errors.New("invalid PostgreSQL expression field")
 			}
 			seen[token.atom] = true
@@ -178,7 +183,7 @@ func pgNodeFields(node *pgNodeToken) (string, []pgNodeField, error) {
 			fields[len(fields)-1].values = append(fields[len(fields)-1].values, token)
 		}
 	}
-	if len(fields) > 0 && len(fields[len(fields)-1].values) == 0 {
+	if len(fields) > 0 && len(fields[len(fields)-1].values) == 0 && !emptyCursor(fields[len(fields)-1]) {
 		return "", nil, errors.New("empty PostgreSQL expression field")
 	}
 	return name, fields, nil
