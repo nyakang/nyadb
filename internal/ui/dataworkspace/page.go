@@ -201,6 +201,13 @@ func (s *State) consumePages() {
 				}
 				sortable := t.portable() || kind != "" && !strings.Contains(kind, "blob") && !strings.Contains(kind, "text") && kind != "json" && kind != "geometry" && kind != "binary" && kind != "varbinary"
 				t.columns[i] = ui.TableColumn{Title: name, ID: name, Width: 155, MinWidth: 65, Sortable: sortable}
+				if t.capabilities.Documents {
+					t.columns[i].Width = 240
+					if name == "document" {
+						t.columns[i].Width = 500
+						t.columns[i].Sortable = false
+					}
+				}
 			}
 		default:
 		}

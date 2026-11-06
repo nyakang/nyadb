@@ -19727,3 +19727,243 @@ func OraclePackage() string { return In(i18n.Locale()).OraclePackage() }
 func (msgs Messages) OraclePackage() string {
 	return Catalog.Format(msgs.locale, "oraclePackage", nil)
 }
+
+// MongoCollection says "集合"
+// in the language the app shows.
+func MongoCollection() string { return In(i18n.Locale()).MongoCollection() }
+
+// MongoCollection says "集合"
+// in the language of msgs.
+func (msgs Messages) MongoCollection() string {
+	return Catalog.Format(msgs.locale, "mongoCollection", nil)
+}
+
+// MongoOpenCollection says "打开集合"
+// in the language the app shows.
+func MongoOpenCollection() string { return In(i18n.Locale()).MongoOpenCollection() }
+
+// MongoOpenCollection says "打开集合"
+// in the language of msgs.
+func (msgs Messages) MongoOpenCollection() string {
+	return Catalog.Format(msgs.locale, "mongoOpenCollection", nil)
+}
+
+// MongoOpenSelected says "打开选中集合文档"
+// in the language the app shows.
+func MongoOpenSelected() string { return In(i18n.Locale()).MongoOpenSelected() }
+
+// MongoOpenSelected says "打开选中集合文档"
+// in the language of msgs.
+func (msgs Messages) MongoOpenSelected() string {
+	return Catalog.Format(msgs.locale, "mongoOpenSelected", nil)
+}
+
+// MongoStructure says "查看集合结构（只读）"
+// in the language the app shows.
+func MongoStructure() string { return In(i18n.Locale()).MongoStructure() }
+
+// MongoStructure says "查看集合结构（只读）"
+// in the language of msgs.
+func (msgs Messages) MongoStructure() string {
+	return Catalog.Format(msgs.locale, "mongoStructure", nil)
+}
+
+// MongoSRV says "MongoDB SRV（Atlas）"
+// in the language the app shows.
+func MongoSRV() string { return In(i18n.Locale()).MongoSRV() }
+
+// MongoSRV says "MongoDB SRV（Atlas）"
+// in the language of msgs.
+func (msgs Messages) MongoSRV() string {
+	return Catalog.Format(msgs.locale, "mongoSRV", nil)
+}
+
+// MongoDirect says "直接连接单个 MongoDB 节点"
+// in the language the app shows.
+func MongoDirect() string { return In(i18n.Locale()).MongoDirect() }
+
+// MongoDirect says "直接连接单个 MongoDB 节点"
+// in the language of msgs.
+func (msgs Messages) MongoDirect() string {
+	return Catalog.Format(msgs.locale, "mongoDirect", nil)
+}
+
+// MongoSeeds says "MongoDB 附加节点"
+// in the language the app shows.
+func MongoSeeds() string { return In(i18n.Locale()).MongoSeeds() }
+
+// MongoSeeds says "MongoDB 附加节点"
+// in the language of msgs.
+func (msgs Messages) MongoSeeds() string {
+	return Catalog.Format(msgs.locale, "mongoSeeds", nil)
+}
+
+// MongoSeedsCaption says "附加节点："
+// in the language the app shows.
+func MongoSeedsCaption() string { return In(i18n.Locale()).MongoSeedsCaption() }
+
+// MongoSeedsCaption says "附加节点："
+// in the language of msgs.
+func (msgs Messages) MongoSeedsCaption() string {
+	return Catalog.Format(msgs.locale, "mongoSeedsCaption", nil)
+}
+
+// MongoReplica says "副本集名称"
+// in the language the app shows.
+func MongoReplica() string { return In(i18n.Locale()).MongoReplica() }
+
+// MongoReplica says "副本集名称"
+// in the language of msgs.
+func (msgs Messages) MongoReplica() string {
+	return Catalog.Format(msgs.locale, "mongoReplica", nil)
+}
+
+// MongoReplicaCaption says "副本集名称："
+// in the language the app shows.
+func MongoReplicaCaption() string { return In(i18n.Locale()).MongoReplicaCaption() }
+
+// MongoReplicaCaption says "副本集名称："
+// in the language of msgs.
+func (msgs Messages) MongoReplicaCaption() string {
+	return Catalog.Format(msgs.locale, "mongoReplicaCaption", nil)
+}
+
+// MongoAuthSource says "认证数据库"
+// in the language the app shows.
+func MongoAuthSource() string { return In(i18n.Locale()).MongoAuthSource() }
+
+// MongoAuthSource says "认证数据库"
+// in the language of msgs.
+func (msgs Messages) MongoAuthSource() string {
+	return Catalog.Format(msgs.locale, "mongoAuthSource", nil)
+}
+
+// MongoAuthSourceCaption says "认证数据库："
+// in the language the app shows.
+func MongoAuthSourceCaption() string { return In(i18n.Locale()).MongoAuthSourceCaption() }
+
+// MongoAuthSourceCaption says "认证数据库："
+// in the language of msgs.
+func (msgs Messages) MongoAuthSourceCaption() string {
+	return Catalog.Format(msgs.locale, "mongoAuthSourceCaption", nil)
+}
+
+// MongoAuthMechanism says "MongoDB 认证机制"
+// in the language the app shows.
+func MongoAuthMechanism() string { return In(i18n.Locale()).MongoAuthMechanism() }
+
+// MongoAuthMechanism says "MongoDB 认证机制"
+// in the language of msgs.
+func (msgs Messages) MongoAuthMechanism() string {
+	return Catalog.Format(msgs.locale, "mongoAuthMechanism", nil)
+}
+
+// MongoAuthMechanismCaption says "认证机制："
+// in the language the app shows.
+func MongoAuthMechanismCaption() string { return In(i18n.Locale()).MongoAuthMechanismCaption() }
+
+// MongoAuthMechanismCaption says "认证机制："
+// in the language of msgs.
+func (msgs Messages) MongoAuthMechanismCaption() string {
+	return Catalog.Format(msgs.locale, "mongoAuthMechanismCaption", nil)
+}
+
+// MongoQueryLimit says "查询会话上限"
+// in the language the app shows.
+func MongoQueryLimit() string { return In(i18n.Locale()).MongoQueryLimit() }
+
+// MongoQueryLimit says "查询会话上限"
+// in the language of msgs.
+func (msgs Messages) MongoQueryLimit() string {
+	return Catalog.Format(msgs.locale, "mongoQueryLimit", nil)
+}
+
+// MongoCA says "MongoDB CA 证书"
+// in the language the app shows.
+func MongoCA() string { return In(i18n.Locale()).MongoCA() }
+
+// MongoCA says "MongoDB CA 证书"
+// in the language of msgs.
+func (msgs Messages) MongoCA() string {
+	return Catalog.Format(msgs.locale, "mongoCA", nil)
+}
+
+// MongoTLS says "MongoDB TLS 模式"
+// in the language the app shows.
+func MongoTLS() string { return In(i18n.Locale()).MongoTLS() }
+
+// MongoTLS says "MongoDB TLS 模式"
+// in the language of msgs.
+func (msgs Messages) MongoTLS() string {
+	return Catalog.Format(msgs.locale, "mongoTLS", nil)
+}
+
+// MongoPassword says "MongoDB 会话密码"
+// in the language the app shows.
+func MongoPassword() string { return In(i18n.Locale()).MongoPassword() }
+
+// MongoPassword says "MongoDB 会话密码"
+// in the language of msgs.
+func (msgs Messages) MongoPassword() string {
+	return Catalog.Format(msgs.locale, "mongoPassword", nil)
+}
+
+// MongoRun says "运行 MongoDB 命令"
+// in the language the app shows.
+func MongoRun() string { return In(i18n.Locale()).MongoRun() }
+
+// MongoRun says "运行 MongoDB 命令"
+// in the language of msgs.
+func (msgs Messages) MongoRun() string {
+	return Catalog.Format(msgs.locale, "mongoRun", nil)
+}
+
+// MongoEditor says "MongoDB 命令编辑器"
+// in the language the app shows.
+func MongoEditor() string { return In(i18n.Locale()).MongoEditor() }
+
+// MongoEditor says "MongoDB 命令编辑器"
+// in the language of msgs.
+func (msgs Messages) MongoEditor() string {
+	return Catalog.Format(msgs.locale, "mongoEditor", nil)
+}
+
+// MongoExplain says "MongoDB 请使用原生 explain 命令"
+// in the language the app shows.
+func MongoExplain() string { return In(i18n.Locale()).MongoExplain() }
+
+// MongoExplain says "MongoDB 请使用原生 explain 命令"
+// in the language of msgs.
+func (msgs Messages) MongoExplain() string {
+	return Catalog.Format(msgs.locale, "mongoExplain", nil)
+}
+
+// MongoSeedsHelp says "附加节点使用逗号分隔的 host:port；SRV 使用单个域名和 TLS。"
+// in the language the app shows.
+func MongoSeedsHelp() string { return In(i18n.Locale()).MongoSeedsHelp() }
+
+// MongoSeedsHelp says "附加节点使用逗号分隔的 host:port；SRV 使用单个域名和 TLS。"
+// in the language of msgs.
+func (msgs Messages) MongoSeedsHelp() string {
+	return Catalog.Format(msgs.locale, "mongoSeedsHelp", nil)
+}
+
+// MongoPoolLimit says "连接池上限"
+// in the language the app shows.
+func MongoPoolLimit() string { return In(i18n.Locale()).MongoPoolLimit() }
+
+// MongoPoolLimit says "连接池上限"
+// in the language of msgs.
+func (msgs Messages) MongoPoolLimit() string {
+	return Catalog.Format(msgs.locale, "mongoPoolLimit", nil)
+}
+
+// MongoCollectionInfo says "集合信息"
+// in the language the app shows.
+func MongoCollectionInfo() string { return In(i18n.Locale()).MongoCollectionInfo() }
+
+// MongoCollectionInfo says "集合信息"
+// in the language of msgs.
+func (msgs Messages) MongoCollectionInfo() string {
+	return Catalog.Format(msgs.locale, "mongoCollectionInfo", nil)
+}

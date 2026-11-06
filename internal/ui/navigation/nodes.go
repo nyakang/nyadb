@@ -56,7 +56,7 @@ var postgresNavigationCategories = []string{"表", "视图", "函数", "存储�
 
 func SupportedCategory(category string) bool {
 	switch category {
-	case "表", "视图", "函数", "存储过程", "事件", "序列", "查询", "包", "触发器", "类型":
+	case "集合", "表", "视图", "函数", "存储过程", "事件", "序列", "查询", "包", "触发器", "类型":
 		return true
 	}
 	return false
@@ -112,6 +112,8 @@ func (s *State) databaseChildren(key string) []string {
 		categories := mysqlNavigationCategories
 		if s.deps.Engine != nil {
 			switch s.deps.Engine(n.ProfileID) {
+			case connections.MongoDB:
+				categories = []string{"集合", "视图", "查询"}
 			case connections.Oracle:
 				categories = oracleNavigationCategories
 			case connections.PostgreSQL, connections.SQLServer, connections.DuckDB:

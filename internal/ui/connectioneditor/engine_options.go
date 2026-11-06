@@ -82,6 +82,11 @@ func (s *State) EngineFilePickerError(version uint64) {
 }
 
 func (s *State) initEngineOptionsInputs() {
+	if s.connectionDraft.Kind == connections.MongoDB {
+		a, _ := connections.NormalizeMongoDBOptions(s.connectionDraft.MongoDBOptions)
+		s.connectionDraft.MongoDBOptions = a
+		s.engineNumbers[0], s.engineNumbers[1], s.sqlMaxConnections = strconv.Itoa(a.ConnectTimeoutSeconds), strconv.Itoa(a.MaxConnections), strconv.Itoa(a.QueryMaxConnections)
+	}
 	if s.connectionDraft.Kind == connections.Oracle {
 		a, err := connections.NormalizeOracleOptions(s.connectionDraft.OracleOptions)
 		if err == nil {
@@ -132,6 +137,19 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.MongoDB {
+		values := []*int{&p.MongoDBOptions.ConnectTimeoutSeconds, &p.MongoDBOptions.MaxConnections, &p.MongoDBOptions.QueryMaxConnections}
+		for i, raw := range []string{s.engineNumbers[0], s.engineNumbers[1], s.sqlMaxConnections} {
+			n, err := strconv.Atoi(strings.TrimSpace(raw))
+			if err != nil {
+				return fieldError("最大连接数", "高级", "请输入有效范围内的整数")
+			}
+			*values[i] = n
+		}
+		a, err := connections.NormalizeMongoDBOptions(p.MongoDBOptions)
+		p.MongoDBOptions = a
+		return err
+	}
 	if p.Kind == connections.Oracle {
 		values := []*int{&p.OracleOptions.ConnectTimeoutSeconds, &p.OracleOptions.MaxConnections, &p.OracleOptions.SQLMaxConnections}
 		for i, raw := range []string{s.engineNumbers[0], s.engineNumbers[1], s.sqlMaxConnections} {
@@ -221,6 +239,8 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.MongoDB:
+		return s.mongoDBOptions(c, formWidth, tab)
 	case connections.Oracle:
 		return s.oracleOptions(c, formWidth, tab)
 	case connections.DuckDB:

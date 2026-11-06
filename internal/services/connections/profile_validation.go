@@ -13,6 +13,9 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		return p, fmt.Errorf("%w: invalid connection color", ErrInvalid)
 	}
 	p.Name = strings.TrimSpace(p.Name)
+	if p.Kind != MongoDB && p.MongoDBOptions != (MongoDBOptions{}) {
+		return p, fmt.Errorf("%w: MongoDB options on another engine", ErrInvalid)
+	}
 	if p.Kind != Oracle && p.OracleOptions != (OracleOptions{}) {
 		return p, fmt.Errorf("%w: Oracle options on another engine", ErrInvalid)
 	}
@@ -100,6 +103,8 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	switch p.Kind {
+	case MongoDB:
+		return normalizeMongoDBProfile(p)
 	case DuckDB:
 		var err error
 		p.DuckDBOptions, err = NormalizeDuckDBOptions(p.DuckDBOptions)

@@ -49,7 +49,7 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 	disabled := t.closed || t.loading || t.edit.Busy || t.transfer.Busy || t.export.Busy
 	var profilesButton, fillButton, copyButton ui.Element
 	ui.Toolbar(c, func() {
-		if !t.portable() {
+		if !t.portable() && !t.capabilities.Documents {
 			profilesButton = mysqlDataToolbarButton(c, "表配置文件", locales.Text("表配置文件"), "design-table", page == nil).
 				Menu(func(m *ui.Menu) { s.profilesMenu(c, t, m) })
 		}
@@ -151,7 +151,7 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 	// A native overflow choice requests an earlier button's menu during the
 	// Toolbar's own build. Service that request once more before MyGo resolves
 	// unhandled menu requests at the end of this frame.
-	if !t.portable() {
+	if !t.portable() && !t.capabilities.Documents {
 		profilesButton.Menu(func(m *ui.Menu) { s.profilesMenu(c, t, m) })
 	}
 	fillButton.Menu(func(m *ui.Menu) { s.dataFillMenu(c, t, m) })

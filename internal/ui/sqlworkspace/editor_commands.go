@@ -36,6 +36,9 @@ func (s *State) Format(d *Document) {
 	d.Editor.Insert(formatted)
 }
 func (s *State) completions(d *Document, r editor.CompletionRequest) {
+	if d != nil && d.nativeCommands {
+		return
+	}
 	if d.closed || d.Editor == nil || d.Editor.Buffer.Version() != r.Version {
 		return
 	}
@@ -84,6 +87,10 @@ func (s *State) completions(d *Document, r editor.CompletionRequest) {
 	d.Editor.ShowCompletions(r.Offset-len(r.Prefix), items)
 }
 func (s *State) Explain(d *Document) {
+	if d != nil && d.nativeCommands {
+		d.err = locales.Text("MongoDB 请使用原生 explain 命令")
+		return
+	}
 	if d == nil || d.Editor == nil || d.closed || d.loading || d.recoveryNeeded {
 		return
 	}

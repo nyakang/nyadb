@@ -14,6 +14,9 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 		namespace = o.Catalog
 	}
 	kind := "表"
+	if o.Kind == "collection" {
+		kind = "集合"
+	}
 	if o.Kind == "view" {
 		kind = "视图"
 	}

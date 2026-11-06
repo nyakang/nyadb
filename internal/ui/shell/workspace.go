@@ -148,7 +148,7 @@ func (s *State) sqlWorkspaceDependencies() sqlworkspace.Dependencies {
 		},
 		FavoriteAsset: s.favoriteQuery, CanFavorite: s.favorites.Available,
 		AssetsChanged:    s.sqlAssetsChanged,
-		StatementAtCaret: s.sqlStatementAtCaret, FormatSQL: s.sqlFormat,
+		StatementAtCaret: s.sqlStatementAtCaret, FormatSQL: s.sqlFormat, QueryDialect: s.sqlPlanEngine,
 		ValidateExplain:   s.sqlValidateExplain,
 		CompletionCatalog: s.sqlCompletionCatalog,
 		Completions: func(id int64, db string) []string {
@@ -857,7 +857,7 @@ func (s *State) findDocument(view tabKind, profileID int64, database, objectKind
 }
 func (s *State) objectKindFor(id int64, database, name string) string {
 	for _, obj := range s.sessions.CacheFor(id)[database] {
-		if obj.Name == name && (obj.Kind == "表" || obj.Kind == "视图") {
+		if obj.Name == name && (obj.Kind == "表" || obj.Kind == "视图" || obj.Kind == "集合") {
 			return obj.Kind
 		}
 	}
@@ -890,6 +890,9 @@ func (s *State) SetDataSources(open func(context.Context, datasources.Config) (d
 }
 
 func neutralObjectKind(kind string) string {
+	if kind == "集合" {
+		return "collection"
+	}
 	if kind == "表" {
 		return "table"
 	}

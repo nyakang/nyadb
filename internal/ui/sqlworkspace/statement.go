@@ -81,6 +81,9 @@ func sqlAtCaret(source string, cursor int) string {
 }
 
 func (s *State) statementAtCaret(d *Document) string {
+	if d.nativeCommands {
+		return strings.TrimSpace(d.Editor.Buffer.String())
+	}
 	src, cursor := d.Editor.Buffer.String(), d.Editor.Cursor()
 	if s.deps.StatementAtCaret != nil {
 		if q := s.deps.StatementAtCaret(d.profileID, src, cursor); q != "" {

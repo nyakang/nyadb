@@ -29,6 +29,7 @@ type Runtime interface {
 }
 
 type Dependencies struct {
+	QueryDialect      func(int64) string
 	Namespace         func(int64, string) contract.NamespaceRef
 	Profiles          func() []ProfileChoice
 	ConnectProfile    func(ui.Services, int64)
@@ -64,6 +65,7 @@ type ProfileChoice struct {
 // Document is owned by the UI thread. Workers capture a lease/executor and
 // immutable request values; only Consume reads their private buffered channels.
 type Document struct {
+	nativeCommands   bool
 	snapshotOwner    *Document
 	cachedExport     cachedExportDraft
 	layoutMode       string
@@ -175,6 +177,10 @@ func (s *State) Open(id uint64, text string, profileID int64, database string, p
 	buffer := editor.NewBuffer(text)
 	buffer.SetLanguage(editor.LanguageNamed("SQL"))
 	d := &Document{id: id, profileID: profileID, database: database, preview: preview, Editor: &editor.State{Buffer: buffer, WrapGuides: []int{100}}}
+	if s.deps.QueryDialect != nil && s.deps.QueryDialect(profileID) == "mongodb" {
+		d.nativeCommands = true
+		buffer.SetLanguage(editor.LanguageNamed("JSON"))
+	}
 	d.namespaceSchema = database
 	if s.deps.Namespace != nil {
 		n := s.deps.Namespace(profileID, database)

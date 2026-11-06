@@ -125,6 +125,7 @@ func (r SQLResult) ResultSets() []ResultSet {
 }
 
 type Capabilities struct {
+	Documents                                                                    bool
 	Objects, Maintenance, Accounts, Restore, DesignViews                         bool
 	Schemas, Transactions, EditableTables, Explain, DesignTables, Import, Backup bool
 	Query, Metadata, Keyset, Count, FieldChunks, Analysis, Export, JSONL         bool

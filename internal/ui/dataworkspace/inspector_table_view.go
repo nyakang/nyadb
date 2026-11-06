@@ -37,7 +37,13 @@ func (s *inspectorState) header(c *ui.Context, t *Panel, fieldMode bool) {
 			chosen = 1
 		}
 		ui.ScrollHorizontal(c).Grow(1).MinWidth(0).Children(func() {
-			if theme.Tabs(c, &chosen, []string{locales.Text("表信息"), locales.Text("字段信息")}, false).Changed() {
+			infoLabel := locales.Text("表信息")
+			if s.deps.Profile != nil {
+				if p, ok := s.deps.Profile(t.profileID); ok && p.Kind == connections.MongoDB {
+					infoLabel = locales.Text("集合信息")
+				}
+			}
+			if theme.Tabs(c, &chosen, []string{infoLabel, locales.Text("字段信息")}, false).Changed() {
 				if chosen == 1 {
 					s.ShowField(t)
 				} else {
@@ -144,6 +150,9 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 				}
 				info := d.info
 				kind := "表"
+				if info.Kind == "COLLECTION" {
+					kind = "集合"
+				}
 				if info.Kind == "VIEW" {
 					kind = "视图"
 				}
