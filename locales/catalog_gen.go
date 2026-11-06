@@ -13692,11 +13692,11 @@ func (msgs Messages) OceanbaseMySQLTenantHint() string {
 	return Catalog.Format(msgs.locale, "oceanbaseMySQLTenantHint", nil)
 }
 
-// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、TiDB、OceanBase、PostgreSQL、CockroachDB、SQLite 和 ClickHouse…"
+// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、TiDB、OceanBase、PostgreSQL、CockroachDB、openGauss、SQLite 和 ClickHouse…"
 // in the language the app shows.
 func ConnectionURISupportedEngines() string { return In(i18n.Locale()).ConnectionURISupportedEngines() }
 
-// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、TiDB、OceanBase、PostgreSQL、CockroachDB、SQLite 和 ClickHouse…"
+// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、TiDB、OceanBase、PostgreSQL、CockroachDB、openGauss、SQLite 和 ClickHouse…"
 // in the language of msgs.
 func (msgs Messages) ConnectionURISupportedEngines() string {
 	return Catalog.Format(msgs.locale, "connectionURISupportedEngines", nil)
@@ -20336,4 +20336,74 @@ func CockroachSessionPassword() string { return In(i18n.Locale()).CockroachSessi
 // in the language of msgs.
 func (msgs Messages) CockroachSessionPassword() string {
 	return Catalog.Format(msgs.locale, "cockroachSessionPassword", nil)
+}
+
+// OpenGaussFixedDatabase says "请输入此连接绑定的 openGauss 数据库"
+// in the language the app shows.
+func OpenGaussFixedDatabase() string { return In(i18n.Locale()).OpenGaussFixedDatabase() }
+
+// OpenGaussFixedDatabase says "请输入此连接绑定的 openGauss 数据库"
+// in the language of msgs.
+func (msgs Messages) OpenGaussFixedDatabase() string {
+	return Catalog.Format(msgs.locale, "openGaussFixedDatabase", nil)
+}
+
+// OpenGaussLockPolicy says "锁等待使用服务器配置；默认模式在每条物理连接初始化。"
+// in the language the app shows.
+func OpenGaussLockPolicy() string { return In(i18n.Locale()).OpenGaussLockPolicy() }
+
+// OpenGaussLockPolicy says "锁等待使用服务器配置；默认模式在每条物理连接初始化。"
+// in the language of msgs.
+func (msgs Messages) OpenGaussLockPolicy() string {
+	return Catalog.Format(msgs.locale, "openGaussLockPolicy", nil)
+}
+
+// OpenGaussSessionPassword says "openGauss 会话密码"
+// in the language the app shows.
+func OpenGaussSessionPassword() string { return In(i18n.Locale()).OpenGaussSessionPassword() }
+
+// OpenGaussSessionPassword says "openGauss 会话密码"
+// in the language of msgs.
+func (msgs Messages) OpenGaussSessionPassword() string {
+	return Catalog.Format(msgs.locale, "openGaussSessionPassword", nil)
+}
+
+// OpenGaussTLSMode says "openGauss TLS 模式"
+// in the language the app shows.
+func OpenGaussTLSMode() string { return In(i18n.Locale()).OpenGaussTLSMode() }
+
+// OpenGaussTLSMode says "openGauss TLS 模式"
+// in the language of msgs.
+func (msgs Messages) OpenGaussTLSMode() string {
+	return Catalog.Format(msgs.locale, "openGaussTLSMode", nil)
+}
+
+// OpenGaussCAFile says "openGauss CA 证书"
+// in the language the app shows.
+func OpenGaussCAFile() string { return In(i18n.Locale()).OpenGaussCAFile() }
+
+// OpenGaussCAFile says "openGauss CA 证书"
+// in the language of msgs.
+func (msgs Messages) OpenGaussCAFile() string {
+	return Catalog.Format(msgs.locale, "openGaussCAFile", nil)
+}
+
+// OpenGaussCertificateFile says "openGauss 客户端证书"
+// in the language the app shows.
+func OpenGaussCertificateFile() string { return In(i18n.Locale()).OpenGaussCertificateFile() }
+
+// OpenGaussCertificateFile says "openGauss 客户端证书"
+// in the language of msgs.
+func (msgs Messages) OpenGaussCertificateFile() string {
+	return Catalog.Format(msgs.locale, "openGaussCertificateFile", nil)
+}
+
+// OpenGaussKeyFile says "openGauss 客户端密钥"
+// in the language the app shows.
+func OpenGaussKeyFile() string { return In(i18n.Locale()).OpenGaussKeyFile() }
+
+// OpenGaussKeyFile says "openGauss 客户端密钥"
+// in the language of msgs.
+func (msgs Messages) OpenGaussKeyFile() string {
+	return Catalog.Format(msgs.locale, "openGaussKeyFile", nil)
 }

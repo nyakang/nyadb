@@ -69,6 +69,8 @@ func Defaults(kind Kind) (Profile, error) {
 		return Profile{Kind: kind, Host: "localhost", Port: 4000, Username: "root", MySQLAdvanced: DefaultMySQLAdvanced()}, nil
 	case CockroachDB:
 		return Profile{Kind: CockroachDB, Host: "localhost", Port: 26257, Database: "defaultdb", Username: "root", TLSMode: "verify-full", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
+	case OpenGauss:
+		return Profile{Kind: OpenGauss, Host: "localhost", Port: 5432, Database: "postgres", Username: "gaussdb", TLSMode: "verify-full", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
 	case PostgreSQL:
 		return Profile{Kind: PostgreSQL, Host: "localhost", Port: 5432, Database: "postgres", Username: "postgres", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
 	case SQLite:

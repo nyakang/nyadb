@@ -15,8 +15,8 @@ func TestCommittedCatalogIconsAndProvenance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(m.Entries) != 23 {
-		t.Fatalf("expected 23 committed catalog icons, got %d", len(m.Entries))
+	if len(m.Entries) != 24 {
+		t.Fatalf("expected 24 committed catalog icons, got %d", len(m.Entries))
 	}
 	seen := make(map[string]bool)
 	for _, entry := range m.Entries {

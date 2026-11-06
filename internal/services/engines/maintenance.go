@@ -40,7 +40,7 @@ func (s *Session) namespaceReadOnly(schema string) bool {
 	return false
 }
 func (s *Session) maintenanceActions(t contract.SchemaDesignTarget) []contract.MaintenanceAction {
-	if s.kind == connections.CockroachDB || s.maintenanceTarget(t) != nil {
+	if s.kind == connections.CockroachDB || s.kind == connections.OpenGauss || s.maintenanceTarget(t) != nil {
 		return nil
 	}
 	var actions []contract.MaintenanceAction

@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/sqltext"
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -261,8 +259,10 @@ func firstWord(q string) string {
 }
 
 func failureState(kind connections.Kind, q string, e error) string {
-	var pg *pgconn.PgError
-	if kind.IsPostgreSQLFamily() && errors.As(e, &pg) && firstWord(q) != "CALL" && firstWord(q) != "DO" {
+	if pg, ok := postgresServerError(e); kind.IsPostgreSQLFamily() && ok && firstWord(q) != "CALL" && firstWord(q) != "DO" {
+		if kind == connections.OpenGauss && (pg.Severity == "FATAL" || pg.Severity == "PANIC" || strings.HasPrefix(pg.Code, "08") || pg.Code == "40003") {
+			return "uncertain"
+		}
 		if kind == connections.CockroachDB && pg.Code == "40003" {
 			return "uncertain"
 		}

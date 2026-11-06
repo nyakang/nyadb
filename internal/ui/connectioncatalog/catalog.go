@@ -20,6 +20,7 @@ var databaseCatalog = []catalogEntry{
 	{"MySQL", "MySQL", "", "全部", "mysql-type", "#24bf65", connections.MySQL},
 	{"PostgreSQL", "PostgreSQL", "", "全部", "postgres-type", "#397cdf", connections.PostgreSQL},
 	{"CockroachDB", "CockroachDB", "", "全部", "database", "#6933a6", connections.CockroachDB},
+	{"openGauss", "openGauss", "", "全部", "database", "#1c77c3", connections.OpenGauss},
 	{"SQL Server", "SQL Server", "", "全部", "mssql-type", "#edab24", connections.SQLServer},
 	{"Oracle", "Oracle", "", "全部", "oracle-type", "#ef3b5c", connections.Oracle},
 	{"SQLite", "SQLite", "", "全部", "sqlite-type", "#4cbfc2", connections.SQLite},
@@ -43,7 +44,7 @@ var databaseCatalog = []catalogEntry{
 	{"ClickHouse", "ClickHouse", "", "全部", "database", "#e7b632", connections.ClickHouse},
 }
 
-var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "MariaDB", "TiDB", "OceanBase", "CockroachDB", "MongoDB", "Redis", "Snowflake"}
+var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "MariaDB", "TiDB", "OceanBase", "CockroachDB", "openGauss", "MongoDB", "Redis", "Snowflake"}
 var catalogVendors = catalogTreeVendorOrder
 
 func catalogMatch(e catalogEntry, query string, engines, vendors map[string]bool) bool {
@@ -113,7 +114,6 @@ var additionalCatalog = []catalogEntry{
 	{"华为云 SQL Server", "SQL Server", "华为", "云数据库", "cloud-type", "#fab115", ""},
 	{"华为云 DDS", "MongoDB", "华为", "云数据库", "cloud-type", "#b25a0d", ""},
 	{"华为云 Redis", "Redis", "华为", "云数据库", "cloud-type", "#fa858a", ""},
-	{"openGauss", "openGauss", "华为", "云数据库", "database", "#159ac1", ""},
 	{"腾讯云 PostgreSQL", "PostgreSQL", "腾讯云", "云数据库", "cloud-type", "#4087f7", ""},
 	{"腾讯云 SQL Server", "SQL Server", "腾讯云", "云数据库", "cloud-type", "#f1af14", ""},
 	{"腾讯云 MariaDB", "MariaDB", "腾讯云", "云数据库", "cloud-type", "#b98b5e", ""},

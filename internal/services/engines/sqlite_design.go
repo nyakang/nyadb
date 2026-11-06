@@ -17,7 +17,7 @@ import (
 )
 
 func (s *Session) SchemaDesign() contract.SchemaDesignOperations {
-	if s.kind == connections.CockroachDB {
+	if (s.kind == connections.CockroachDB || s.kind == connections.OpenGauss) {
 		return contract.SchemaDesignOperations{}
 	}
 	if s.kind == connections.PostgreSQL {

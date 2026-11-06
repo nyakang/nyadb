@@ -72,7 +72,7 @@ func (s *State) URIView(c *ui.Context, width, height float32, imported func()) {
 	}
 	ui.Column(c).Width(width).Height(height).Padding(20).Gap(12).Children(func() {
 		ui.Text(c, locales.Text("通过 URI 新建连接")).Bold()
-		ui.Text(c, locales.Text("支持 MySQL、MariaDB、TiDB、OceanBase、PostgreSQL、CockroachDB、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。"))
+		ui.Text(c, locales.Text("支持 MySQL、MariaDB、TiDB、OceanBase、PostgreSQL、CockroachDB、openGauss、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。"))
 		uri := ui.TextInput(c, &s.uriText).Password().Label(locales.Text("连接 URI")).Placeholder("mysql://host:3306/database").FillWidth()
 		theme.BindNativeEdit(c, uri, "connection/uri", s.editFocus, s.editTarget, func() bool { return s.uriOpen }, true, true)
 		ui.Text(c, locales.Text("URI 输入隐藏，密码仅进入临时编辑器；是否保存到密钥环由连接表单决定。"))

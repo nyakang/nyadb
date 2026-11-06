@@ -16,6 +16,7 @@ const (
 	OceanBase   Kind = "oceanbase"
 	PostgreSQL  Kind = "postgresql"
 	CockroachDB Kind = "cockroachdb"
+	OpenGauss   Kind = "opengauss"
 	SQLite      Kind = "sqlite"
 	ClickHouse  Kind = "clickhouse"
 	SQLServer   Kind = "sqlserver"
@@ -30,7 +31,7 @@ const (
 func (k Kind) IsMySQLFamily() bool { return k == MySQL || k == MariaDB || k == TiDB || k == OceanBase }
 
 // IsPostgreSQLFamily identifies products sharing PostgreSQL wire transport and options.
-func (k Kind) IsPostgreSQLFamily() bool { return k == PostgreSQL || k == CockroachDB }
+func (k Kind) IsPostgreSQLFamily() bool { return k == PostgreSQL || k == CockroachDB || k == OpenGauss }
 
 var (
 	ErrNotFound = errors.New("connection profile not found")

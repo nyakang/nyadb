@@ -71,7 +71,7 @@ func connectionEditorTabNames(kind connections.Kind) []string {
 		return []string{"常规", "高级", "备注"}
 	case connections.SQLite:
 		return []string{"常规", "高级", "附加的数据库", "HTTP", "备注"}
-	case connections.CockroachDB:
+	case connections.CockroachDB, connections.OpenGauss:
 		return []string{"常规", "高级", "SSL", "备注"}
 	case connections.PostgreSQL:
 		return []string{"常规", "高级", "SSL", "SSH", "HTTP", "备注"}

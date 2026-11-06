@@ -3,17 +3,32 @@ package engines
 import (
 	"errors"
 	"fmt"
+	"strconv"
+
+	gausspq "gitcode.com/opengauss/openGauss-connector-go-pq"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nyakang/nyadb/internal/db/contract"
 )
+
+func postgresServerError(err error) (*pgconn.PgError, bool) {
+	var pg *pgconn.PgError
+	if errors.As(err, &pg) {
+		return pg, true
+	}
+	var gauss *gausspq.Error
+	if errors.As(err, &gauss) {
+		position, _ := strconv.ParseInt(gauss.Position, 10, 32)
+		return &pgconn.PgError{Severity: gauss.Severity, Code: string(gauss.Code), Message: gauss.Message, Detail: gauss.Detail, Hint: gauss.Hint, Position: int32(position)}, true
+	}
+	return nil, false
+}
 
 func queryDiagnostic(err error, sql string, statement int) error {
 	if err == nil {
 		return nil
 	}
 	d := contract.QueryDiagnostic{SQL: sql, Statement: statement}
-	var pg *pgconn.PgError
-	if errors.As(err, &pg) {
+	if pg, ok := postgresServerError(err); ok {
 		d.Code, d.Detail, d.Hint = pg.Code, pg.Detail, pg.Hint
 		if pg.Code == "40001" && d.Hint == "" {
 			d.Hint = "Retry the complete transaction after refreshing its reads."

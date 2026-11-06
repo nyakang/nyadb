@@ -220,7 +220,7 @@ func (s *State) advanceEngineOptions(p *connections.Profile) error {
 		}
 	}
 	switch p.Kind {
-	case connections.PostgreSQL, connections.CockroachDB:
+	case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss:
 		values := [4]int{}
 		labels := []string{"连接超时（秒）", "最大连接数", "语句超时（毫秒）", "锁等待超时（毫秒）"}
 		for i, raw := range s.engineNumbers {
@@ -306,16 +306,21 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 			})
 		})
 		return true
-	case connections.PostgreSQL, connections.CockroachDB:
+	case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss:
 		a := &s.connectionDraft.PostgreSQLOptions
 		product := "PostgreSQL"
 		if s.connectionDraft.Kind == connections.CockroachDB {
 			product = "CockroachDB"
+		} else if s.connectionDraft.Kind == connections.OpenGauss {
+			product = "openGauss"
 		}
 		switch tab {
 		case "高级":
 			theme.Form(c, formWidth, func() {
 				for i, label := range []string{"连接超时（秒）", "最大连接数", "语句超时（毫秒）", "锁等待超时（毫秒）"} {
+					if i == 3 && s.connectionDraft.Kind == connections.OpenGauss {
+						continue
+					}
 					display := label
 					if i == 1 {
 						display = "后台连接上限"
@@ -328,7 +333,11 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 					s.editorInputRow(c, "备份工具目录：", "PostgreSQL 工具目录", &a.ToolsDirectory, labelWidth, fieldWidth)
 				}
 				s.editorInputRow(c, "默认模式：", "默认模式", &a.DefaultSchema, labelWidth, fieldWidth)
-				ui.Text(c, locales.Text("语句及锁等待超时为 0 时不设置超时；默认模式在每条物理连接初始化。"))
+				if s.connectionDraft.Kind == connections.OpenGauss {
+					ui.Text(c, locales.Text("锁等待使用服务器配置；默认模式在每条物理连接初始化。"))
+				} else {
+					ui.Text(c, locales.Text("语句及锁等待超时为 0 时不设置超时；默认模式在每条物理连接初始化。"))
+				}
 			})
 		case "SSL":
 			theme.Form(c, formWidth, func() {

@@ -17,6 +17,17 @@ func (s *Session) Schemas(ctx context.Context) ([]string, error) {
 	return s.strategy.schemas(ctx, s.db)
 }
 func (s *Session) Objects(ctx context.Context, schema string) ([]contract.Object, error) {
+	if s.kind == connections.OpenGauss {
+		objects, err := s.openGaussBrowse(ctx, s.Namespace(schema))
+		if err != nil {
+			return nil, err
+		}
+		out := make([]contract.Object, len(objects))
+		for i, o := range objects {
+			out[i] = contract.Object{Ref: o.Ref}
+		}
+		return out, nil
+	}
 	if s.kind == connections.CockroachDB {
 		objects, err := s.cockroachBrowse(ctx, s.Namespace(schema))
 		if err != nil {

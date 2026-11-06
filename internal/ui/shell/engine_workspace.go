@@ -43,6 +43,9 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 			if p.Kind == connections.CockroachDB {
 				label = locales.Text("CockroachDB 会话密码")
 			}
+			if p.Kind == connections.OpenGauss {
+				label = locales.Text("openGauss 会话密码")
+			}
 			if p.Kind == connections.Redis {
 				label = locales.Text("Redis 会话密码")
 			}

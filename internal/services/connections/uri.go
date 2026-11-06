@@ -60,6 +60,8 @@ func ParseURI(raw string) (URIImport, error) {
 		kind = TiDB
 	case "cockroachdb", "cockroach":
 		kind = CockroachDB
+	case "opengauss":
+		kind = OpenGauss
 	case "postgres", "postgresql":
 		kind = PostgreSQL
 	case "clickhouse":
@@ -165,6 +167,9 @@ func ParseURI(raw string) (URIImport, error) {
 	}
 	if kind == CockroachDB && p.Database == "" {
 		p.Database = "defaultdb"
+	}
+	if kind == OpenGauss && p.Database == "" {
+		p.Database = "postgres"
 	}
 	if kind == PostgreSQL && p.Database == "" {
 		p.Database = p.Username
