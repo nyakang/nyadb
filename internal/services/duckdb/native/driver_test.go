@@ -6,9 +6,72 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 	"time"
 )
+
+func TestNativeDuckDBSharedFileFixture(t *testing.T) {
+	if os.Getenv("NYADB_DUCKDB_IT") != "1" {
+		t.Skip("set NYADB_DUCKDB_IT=1 with the DuckDB runtime installed")
+	}
+	for _, alias := range []string{"directory case", "directory symlink"} {
+		t.Run(alias, func(t *testing.T) {
+			dir := filepath.Join(t.TempDir(), "MixedCase")
+			if err := os.Mkdir(dir, 0700); err != nil {
+				t.Fatal(err)
+			}
+			path := filepath.Join(dir, "shared.duckdb")
+			switch alias {
+			case "directory case":
+				if runtime.GOOS == "windows" {
+					path = strings.ToLower(path)
+				}
+			case "directory symlink":
+				link := filepath.Join(filepath.Dir(dir), "alias")
+				if err := os.Symlink(dir, link); err != nil {
+					t.Skipf("directory symlinks unavailable: %v", err)
+				}
+				path = filepath.Join(link, "shared.duckdb")
+			}
+			options := Options{MemoryMB: 256, Threads: 2}
+			first, err := Open(path, options)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer first.Close()
+			db := sql.OpenDB(first)
+			defer db.Close()
+			if _, err := db.Exec("CREATE TABLE records AS SELECT 42 AS id"); err != nil {
+				t.Fatal(err)
+			}
+			canonical, err := filepath.EvalSymlinks(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			options.RequireExisting = true
+			second, err := Open(canonical, options)
+			if err != nil {
+				t.Fatal("reopening a newly created file through its canonical path:", err)
+			}
+			defer second.Close()
+			if first.db != second.db {
+				t.Fatal("path aliases created separate native database owners")
+			}
+			other := sql.OpenDB(second)
+			defer other.Close()
+			if err := db.Close(); err != nil {
+				t.Fatal(err)
+			}
+			first.Close()
+			var id int
+			if err := other.QueryRow("SELECT id FROM records").Scan(&id); err != nil || id != 42 {
+				t.Fatalf("closing the first owner affected the shared database: %d %v", id, err)
+			}
+		})
+	}
+}
 
 func TestNativeDuckDBFixture(t *testing.T) {
 	if os.Getenv("NYADB_DUCKDB_IT") != "1" {

@@ -49,6 +49,10 @@ func Open(path string, options Options) (*Connector, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Resolve paths while holding the registry lock so another opener cannot
+	// create the file between canonicalization and the shared-instance lookup.
+	databases.Lock()
+	defer databases.Unlock()
 	if path != ":memory:" {
 		path, err = filepath.Abs(path)
 		if err != nil {
@@ -68,8 +72,6 @@ func Open(path string, options Options) (*Connector, error) {
 			}
 		}
 	}
-	databases.Lock()
-	defer databases.Unlock()
 	if path != ":memory:" {
 		if d := databases.values[path]; d != nil {
 			if d.a != a || d.options.ReadOnly != options.ReadOnly || d.options.MemoryMB != options.MemoryMB || d.options.Threads != options.Threads {
@@ -104,6 +106,15 @@ func Open(path string, options Options) (*Connector, error) {
 		return nil, errors.New("DuckDB database could not be opened; check its format, permissions and file lock")
 	}
 	a.free(message)
+	if path != ":memory:" {
+		// A newly created file can now be resolved, including directory links
+		// and Windows path casing/short names. Store the same key future opens use.
+		path, err = filepath.EvalSymlinks(path)
+		if err != nil {
+			a.close(&h)
+			return nil, err
+		}
+	}
 	d := &database{a: a, h: h, refs: 1, options: options, key: path}
 	if path != ":memory:" {
 		databases.values[path] = d
