@@ -104,7 +104,7 @@ func readCreateMode(ctx context.Context, conn *sql.Conn, kind, database, name st
 		}
 	}
 	for i, c := range cols {
-		if strings.EqualFold(c, "Create Table") || strings.EqualFold(c, "SQL Original Statement") || strings.EqualFold(c, "Create View") {
+		if strings.EqualFold(c, "Create Table") || strings.EqualFold(c, "SQL Original Statement") || strings.EqualFold(c, "Create View") || kind == "SEQUENCE" && strings.EqualFold(c, "Create Sequence") {
 			if !values[i].Valid || len(values[i].String) > 8<<20 {
 				return "", errors.New("invalid or oversized public DDL")
 			}
@@ -218,6 +218,10 @@ func (m *MySQLSessionManager) ApplyTableDesign(ctx context.Context, id int64, pl
 	// The DDL connection is discarded after use, including partial trigger SQL
 	// mode changes. It never returns altered session state to a metadata pool.
 	defer conn.Raw(func(any) error { return driver.ErrBadConn })
+	if e = guardTiDBChecks(qctx, conn, s.settings.Kind, plan.Statements); e != nil {
+		out.Error = e
+		return out
+	}
 	var mode string
 	if e = conn.QueryRowContext(qctx, "SELECT @@SESSION.sql_mode").Scan(&mode); e != nil {
 		out.Error = e
@@ -316,6 +320,9 @@ func (m *MySQLSessionManager) ApplyTableDesign(ctx context.Context, id int64, pl
 
 // Retain the empty engine on legacy MySQL snapshots for compatibility.
 func tableDesignEngine(kind connections.Kind) string {
+	if kind == connections.TiDB {
+		return "tidb"
+	}
 	if kind == connections.MariaDB {
 		return "mariadb"
 	}

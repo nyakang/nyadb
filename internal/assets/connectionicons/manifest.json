@@ -54,6 +54,13 @@
       "sha256": "c44573b05a6ce9df0d527c61be1a5bd156aecc57c741745de7a23e1551f56587"
     },
     {
+      "name": "TiDB",
+      "file": "tidb.png",
+      "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/tidb.svg",
+      "artwork": "Simple Icons source, CC0 collection; trademark rights retained",
+      "sha256": "ac85e7516412b4d4895247aab1bd1dc08358bcca3863a808614066f55b0e1fa8"
+    },
+    {
       "name": "MongoDB",
       "file": "mongodb.png",
       "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/mongodb.svg",

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/services/connections"
 	"sort"
 	"strings"
 	"time"
@@ -22,6 +23,9 @@ func (m *MySQLSessionManager) ObjectsWithPrograms(ctx context.Context, id int64,
 		return nil, err
 	}
 	defer cancel()
+	if session.settings.Kind == connections.TiDB {
+		return readTiDBSequences(queryCtx, session.db, database, objects)
+	}
 
 	const routinesQuery = `SELECT ROUTINE_NAME, ROUTINE_TYPE, COALESCE(DEFINER, ''),
  COALESCE(SECURITY_TYPE, ''), COALESCE(DTD_IDENTIFIER, ''),

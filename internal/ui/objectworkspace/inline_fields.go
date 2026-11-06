@@ -410,7 +410,7 @@ func (s *State) mysqlFieldCell(c *ui.Context, d *Document, index, col int) {
 
 func designFieldColumns(engine string) []ui.TableColumn {
 	cols := []ui.TableColumn{{ID: "name", Title: locales.Text("名称"), Width: 160}, {ID: "type", Title: locales.Text("类型"), Width: 180}, {ID: "not_null", Title: locales.Text("非空"), Width: 70}, {ID: "default", Title: locales.Text("默认值表达式"), Width: 230}}
-	if engine == "mysql" || engine == "mariadb" {
+	if engine == "mysql" || engine == "mariadb" || engine == "tidb" {
 		cols = append(cols, ui.TableColumn{ID: "auto_increment", Title: locales.Text("自动递增"), Width: 85}, ui.TableColumn{ID: "comment", Title: locales.Text("字段注释"), Width: 160})
 	}
 	if engine == "sqlite" {

@@ -207,7 +207,11 @@ func (s *State) accountModal(c *ui.Context) {
 	theme.Modal(c, &a.open, func() {
 		w, h := c.Size()
 		ui.Column(c).Width(min(float32(760), w-68)).Height(min(float32(660), h-68)).Gap(8).Children(func() {
-			ui.Text(c, locales.Text("MySQL 用户、角色与权限")).Bold()
+			title := locales.Text("MySQL 用户、角色与权限")
+			if s.deps.Engine != nil && s.deps.Engine(a.profile) == "tidb" {
+				title = strings.Replace(title, "MySQL", "TiDB", 1)
+			}
+			ui.Text(c, title).Bold()
 			ui.Text(c, locales.Text("服务器权限和版本决定可执行能力；错误逐项报告。"))
 			if a.err != "" {
 				ui.Text(c, a.err).TextColor(p.Error)

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	mysqldriver "github.com/go-sql-driver/mysql"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/services/connections"
 	"strings"
 	"unicode/utf8"
 )
@@ -33,6 +34,14 @@ func (m *MySQLSessionManager) MaintainTable(ctx context.Context, id int64, datab
 		return nil, e
 	}
 	defer cancel()
+	if s.settings.Kind == connections.TiDB {
+		if op != "ANALYZE" && op != "CHECK" {
+			return nil, contract.ErrUnsupported
+		}
+		if op == "CHECK" {
+			op = "ADMIN CHECK"
+		}
+	}
 	if e = m.expectedObjectGeneration(ctx, id); e != nil {
 		return nil, e
 	}
@@ -41,6 +50,12 @@ func (m *MySQLSessionManager) MaintainTable(ctx context.Context, id int64, datab
 		return nil, e
 	}
 	defer c.Close()
+	if s.settings.Kind == connections.TiDB {
+		if _, e = c.ExecContext(qctx, op+" TABLE "+db+"."+name); e != nil {
+			return nil, e
+		}
+		return []MaintenanceMessage{{Table: database + "." + table, Operation: op, Type: "status", Message: "OK"}}, nil
+	}
 	rows, e := c.QueryContext(qctx, op+" TABLE "+db+"."+name)
 	if e != nil {
 		return nil, e
@@ -231,6 +246,17 @@ func (m *MySQLSessionManager) ChangeAccounts(ctx context.Context, id int64, gene
 		return out
 	}
 	defer cancel()
+	if s.settings.Kind == connections.TiDB {
+		for _, change := range changes {
+			for _, privilege := range change.Privileges {
+				switch strings.ToUpper(strings.TrimSpace(privilege)) {
+				case "TRIGGER", "EXECUTE", "CREATE ROUTINE", "ALTER ROUTINE", "EVENT", "LOCK TABLES":
+					out.Error = fmt.Errorf("%w: privilege has no supported TiDB semantics", contract.ErrUnsupported)
+					return out
+				}
+			}
+		}
+	}
 	if m.SessionGeneration(id) != generation {
 		out.Error = ErrMySQLNotConnected
 		return out

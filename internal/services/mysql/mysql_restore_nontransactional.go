@@ -123,7 +123,7 @@ func restoreNontransactionalData(ctx context.Context, c *sql.Conn, database, tab
 		}
 		out.RowsApplied++
 		out.RowState = "executed"
-		warnings, e := c.QueryContext(ctx, "SHOW WARNINGS LIMIT 1")
+		warnings, e := c.QueryContext(ctx, mysqlWarningsSQL(ctx))
 		if e != nil {
 			return fail(e, row, true)
 		}

@@ -58,6 +58,9 @@ func (m *MySQLSessionManager) ImportMySQLDataStream(ctx context.Context, id int6
 		return result, err
 	}
 	defer conn.Close()
+	if err = mysqlPrepareWrite(qctx, conn); err != nil {
+		return result, err
+	}
 	if stream.CanonicalBackupValues {
 		defer conn.Raw(func(any) error { return driver.ErrBadConn })
 		if _, err = conn.ExecContext(qctx, "SET NAMES utf8mb4"); err != nil {

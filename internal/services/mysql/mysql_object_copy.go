@@ -205,6 +205,9 @@ func (m *MySQLSessionManager) copyCompleteTable(ctx context.Context, id int64, c
 		return errors.New("copy target already exists")
 	}
 	statements := []string{desired.DDL()}
+	if e = guardTiDBChecks(qctx, c, s.settings.Kind, statements); e != nil {
+		return e
+	}
 	if change.Action == MySQLTableCopyData {
 		stmt, e := tableCopyDataConnSQL(qctx, c, change)
 		if e != nil {
@@ -234,6 +237,7 @@ func (m *MySQLSessionManager) copyCompleteTable(ctx context.Context, id int64, c
 		}
 	}
 	got, e := readTableDesign(qctx, c, change.Database, change.NewName)
+	got.Engine = tableDesignEngine(s.settings.Kind)
 	if e != nil {
 		return fmt.Errorf("copy completed; verification failed: %w", e)
 	}

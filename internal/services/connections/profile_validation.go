@@ -122,7 +122,7 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		if p.Database == ":memory:" && p.DuckDBOptions.ReadOnly {
 			return p, fmt.Errorf("%w: an in-memory DuckDB database cannot be read-only", ErrInvalid)
 		}
-	case MySQL, MariaDB, PostgreSQL, ClickHouse, SQLServer, Oracle:
+	case MySQL, MariaDB, TiDB, PostgreSQL, ClickHouse, SQLServer, Oracle:
 		if p.Kind == Oracle {
 			var err error
 			p.OracleOptions, err = NormalizeOracleOptions(p.OracleOptions)

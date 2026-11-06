@@ -68,8 +68,15 @@ func (s *State) designView(c *ui.Context, d *Document) {
 			})
 		}
 		names := []string{locales.Text("字段"), locales.Text("索引"), locales.Text("外键"), locales.Text("检查"), locales.Text("触发器"), locales.Text("表选项"), locales.Text("注释"), locales.Text("原始 DDL")}
+		tidb := x.original.Engine == "tidb"
+		if tidb {
+			names = append(names[:4], names[5:]...)
+		}
 		candidate := &x.pageChoice
 		*candidate = x.page
+		if tidb && *candidate > 4 {
+			*candidate--
+		}
 		ui.ScrollHorizontal(c).Height(theme.RowHeight(c, theme.TabHeight)).Children(func() {
 			if theme.Tabs(c, candidate, names, x.busy || x.blocked, locales.Text("表设计子页")).Label(locales.Text("表设计子页")).Changed() {
 				if err := d.flushInline(); err != nil {
@@ -77,10 +84,17 @@ func (s *State) designView(c *ui.Context, d *Document) {
 					d.formFocusPending = true
 					*candidate = x.page
 				} else {
-					if !s.changeDesignPage(d, *candidate) {
+					page := *candidate
+					if tidb && page >= 4 {
+						page++
+					}
+					if !s.changeDesignPage(d, page) {
 						d.formFocusPending = true
 					}
 					*candidate = x.page
+					if tidb && *candidate > 4 {
+						*candidate--
+					}
 				}
 			}
 		})

@@ -30,8 +30,13 @@ type Plan struct {
 
 func Build(original Snapshot, draft Draft) (Plan, error) {
 	p := Plan{Original: original, Desired: draft.Clone(), Fingerprint: original.Fingerprint()}
-	if original.Engine != "" && original.Engine != "mysql" && original.Engine != "mariadb" {
+	if original.Engine != "" && original.Engine != "mysql" && original.Engine != "mariadb" && original.Engine != "tidb" {
 		return p, errors.New("unsupported table design engine")
+	}
+	if original.Engine == "tidb" {
+		if err := validateTiDBDraft(original, draft); err != nil {
+			return p, err
+		}
 	}
 	if original.Engine == "mariadb" {
 		for _, clause := range draft.Table.Clauses {
@@ -117,8 +122,12 @@ func Build(original Snapshot, draft Draft) (Plan, error) {
 				}
 				continue
 			}
-			if !exists || Canonical(c.SQL) != Canonical(v.SQL) {
-				properties, err := ParseConstraint(c.SQL)
+			if !exists || tableDesignCanonical(original.Engine, c.SQL) != tableDesignCanonical(original.Engine, v.SQL) {
+				constraintSQL := c.SQL
+				if original.Engine == "tidb" {
+					constraintSQL = expandTiDBVersionComments(constraintSQL)
+				}
+				properties, err := ParseConstraint(constraintSQL)
 				if err != nil || properties.Unsupported {
 					return p, errors.New("unsupported constraint cannot be changed or removed")
 				}
@@ -131,7 +140,7 @@ func Build(original Snapshot, draft Draft) (Plan, error) {
 				case Foreign:
 					drops = append(drops, "DROP FOREIGN KEY "+name)
 				case Check:
-					if original.Engine == "mariadb" {
+					if original.Engine == "mariadb" || original.Engine == "tidb" {
 						drops = append(drops, "DROP CONSTRAINT "+name)
 					} else {
 						drops = append(drops, "DROP CHECK "+name)
@@ -149,7 +158,7 @@ func Build(original Snapshot, draft Draft) (Plan, error) {
 				continue
 			}
 			if c.Kind != Column {
-				if !exists || Canonical(v.SQL) != Canonical(c.SQL) {
+				if !exists || tableDesignCanonical(original.Engine, v.SQL) != tableDesignCanonical(original.Engine, c.SQL) {
 					adds = append(adds, "ADD "+c.SQL)
 				}
 				continue
@@ -162,7 +171,7 @@ func Build(original Snapshot, draft Draft) (Plan, error) {
 			previous = c.Name
 			if !exists {
 				fields = append(fields, "ADD COLUMN "+c.SQL+position)
-			} else if Canonical(v.SQL) != Canonical(c.SQL) || oldPositions[c.ID] != positions[c.ID] {
+			} else if tableDesignCanonical(original.Engine, v.SQL) != tableDesignCanonical(original.Engine, c.SQL) || oldPositions[c.ID] != positions[c.ID] {
 				name, _ := sqltext.Identifier(v.Name, true)
 				fields = append(fields, "CHANGE COLUMN "+name+" "+c.SQL+position)
 			}
@@ -179,7 +188,15 @@ func Build(original Snapshot, draft Draft) (Plan, error) {
 			changes = append(changes, optionSQL)
 		}
 		if len(changes) > 0 {
-			p.Statements = append(p.Statements, "ALTER TABLE "+target+" "+strings.Join(changes, ",\n  "))
+			if original.Engine == "tidb" {
+				// TiDB rejects multiple changes to the same key in one ALTER
+				// (e.g. DROP/ADD INDEX). Keep reviewed steps and acknowledgements.
+				for _, change := range changes {
+					p.Statements = append(p.Statements, "ALTER TABLE "+target+" "+change)
+				}
+			} else {
+				p.Statements = append(p.Statements, "ALTER TABLE "+target+" "+strings.Join(changes, ",\n  "))
+			}
 		}
 	}
 	oldTriggers := map[string]Trigger{}
@@ -291,6 +308,11 @@ func Verify(desired Draft, actual Snapshot) error {
 	if e != nil {
 		return e
 	}
+	if actual.Engine == "tidb" {
+		if err := verifyTiDBDirectives(desired, t); err != nil {
+			return err
+		}
+	}
 	clauses := map[string]Clause{}
 	for _, c := range t.Clauses {
 		clauses[string(c.Kind)+":"+c.Name] = c
@@ -317,6 +339,10 @@ func Verify(desired Draft, actual Snapshot) error {
 		if !ok {
 			return fmt.Errorf("reloaded clause missing: %s", want.Name)
 		}
+		if actual.Engine == "tidb" {
+			want.SQL = expandTiDBVersionComments(want.SQL)
+			got.SQL = expandTiDBVersionComments(got.SQL)
+		}
 		if Canonical(got.SQL) == Canonical(want.SQL) {
 			continue
 		}
@@ -328,6 +354,13 @@ func Verify(desired Draft, actual Snapshot) error {
 			b, e2 := ParseColumn(got.SQL)
 			if e1 == nil && e2 == nil && actual.Engine == "mariadb" {
 				mariaDBComparisonFields(&a, &b, got.SQL)
+			}
+			if e1 == nil && e2 == nil && actual.Engine == "tidb" {
+				a.Type, b.Type = mariaDBComparisonType(a.Type), mariaDBComparisonType(b.Type)
+				// TiDB quotes numeric defaults in SHOW CREATE, including BOOLEAN.
+				if (a.DefaultKind == LiteralDefault || a.DefaultKind == ExpressionDefault) && (b.DefaultKind == LiteralDefault || b.DefaultKind == ExpressionDefault) && defaultsEqual(a, b) {
+					a.DefaultKind = b.DefaultKind
+				}
 			}
 			if e1 == nil && e2 == nil && !a.Unsupported && !b.Unsupported {
 				if a.Nullable && a.DefaultKind == NoDefault && b.DefaultKind == NullDefault {

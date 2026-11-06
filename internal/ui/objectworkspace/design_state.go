@@ -96,6 +96,9 @@ func (s *State) OpenNewDesign(id uint64, profile int64, database, name string) *
 	if s.deps.Engine != nil && s.deps.Engine(profile) == "mariadb" {
 		x.original.Engine = "mariadb"
 	}
+	if s.deps.Engine != nil && s.deps.Engine(profile) == "tidb" {
+		x.original.Engine = "tidb"
+	}
 	if s.deps.DesignGeneration != nil {
 		x.original.RuntimeGeneration = s.deps.DesignGeneration(profile)
 	}

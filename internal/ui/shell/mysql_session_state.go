@@ -71,8 +71,8 @@ func (s *State) mysqlSessionToolbar(c *ui.Context) {
 	}
 	passwordLabel := locales.Text("本次 MySQL 会话密码")
 	connectLabel := locales.Text("连接所选 MySQL")
-	if p.Kind == connections.MariaDB {
-		passwordLabel = fmt.Sprintf(locales.Text("本次 %s 会话密码"), "MariaDB")
+	if p.Kind != connections.MySQL {
+		passwordLabel = fmt.Sprintf(locales.Text("本次 %s 会话密码"), connectionKindName(p.Kind))
 		connectLabel = locales.Text("连接所选数据库")
 	}
 	ui.Column(c).Gap(5).Children(func() {

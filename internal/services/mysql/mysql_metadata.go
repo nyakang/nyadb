@@ -33,11 +33,14 @@ func (m *MySQLSessionManager) Objects(ctx context.Context, id int64, database st
 	}
 	defer cancel()
 
-	const query = `SELECT TABLE_NAME, TABLE_TYPE, COALESCE(ENGINE, ''), COALESCE(TABLE_COMMENT, ''),
+	query := `SELECT TABLE_NAME, TABLE_TYPE, COALESCE(ENGINE, ''), COALESCE(TABLE_COMMENT, ''),
        AUTO_INCREMENT, CAST(UPDATE_TIME AS CHAR), DATA_LENGTH, TABLE_ROWS
 FROM information_schema.TABLES
 WHERE TABLE_SCHEMA = ? AND TABLE_TYPE IN ('BASE TABLE', 'VIEW')
 ORDER BY TABLE_NAME`
+	if session.settings.Kind == connections.TiDB {
+		query = strings.Replace(query, "('BASE TABLE', 'VIEW')", "('BASE TABLE', 'VIEW', 'SEQUENCE')", 1)
+	}
 	rows, err := session.db.QueryContext(queryCtx, query, database)
 	if err != nil {
 		return nil, err
@@ -58,6 +61,8 @@ ORDER BY TABLE_NAME`
 			obj.Kind = "表"
 		case "VIEW":
 			obj.Kind = "视图"
+		case "SEQUENCE":
+			obj.Kind = "序列"
 		default:
 			continue
 		}

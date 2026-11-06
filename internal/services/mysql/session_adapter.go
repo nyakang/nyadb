@@ -100,6 +100,8 @@ func (s *SessionAdapter) Browse(ctx context.Context, n contract.NamespaceRef) ([
 			kind = "procedure"
 		} else if kind == "事件" {
 			kind = "event"
+		} else if kind == "序列" {
+			kind = "sequence"
 		}
 		out[i].Ref = n.Object(kind, out[i].Name)
 	}

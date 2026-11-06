@@ -99,9 +99,9 @@ func (m *MySQLSessionManager) Connect(ctx context.Context, s connections.ActiveS
 			db, sqlDB, dialer, err = openMySQLPools(connectCtx, s, password, dialer, initial)
 		}
 	}
-	if err == nil && s.Kind == connections.MariaDB {
+	if err == nil && (s.Kind == connections.MariaDB || s.Kind == connections.TiDB) {
 		probeCtx, probeCancel := context.WithTimeout(connectCtx, 10*time.Second)
-		err = validateMariaDBServer(probeCtx, db)
+		err = validateMySQLFamilyServer(probeCtx, db, s.Kind)
 		probeCancel()
 		if err != nil {
 			_ = db.Close()

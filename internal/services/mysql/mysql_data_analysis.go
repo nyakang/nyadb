@@ -36,7 +36,7 @@ func (m *MySQLSessionManager) AnalyzeMySQLData(ctx context.Context, id int64, da
 		return nil, err
 	}
 	defer cancel()
-	tx, err := session.db.BeginTx(qctx, &sql.TxOptions{ReadOnly: true, Isolation: sql.LevelRepeatableRead})
+	tx, err := session.db.BeginTx(qctx, mysqlReadOptions(session.settings.Kind))
 	if err != nil {
 		return nil, err
 	}

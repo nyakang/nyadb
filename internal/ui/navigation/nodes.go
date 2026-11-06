@@ -121,6 +121,8 @@ func (s *State) databaseChildren(key string) []string {
 			case connections.PostgreSQL, connections.SQLServer, connections.DuckDB:
 				categories = postgresNavigationCategories
 			case connections.MySQL, connections.MariaDB:
+			case connections.TiDB:
+				categories = []string{"表", "视图", "序列", "查询"}
 			default:
 				categories = []string{"表", "视图", "查询"}
 			}

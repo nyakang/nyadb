@@ -63,6 +63,8 @@ func Defaults(kind Kind) (Profile, error) {
 		return Profile{Kind: SQLServer, Host: "localhost", Port: 1433, Database: "master", Username: "sa", TLSMode: "verify-full", SQLServerOptions: DefaultSQLServerOptions()}, nil
 	case MySQL, MariaDB:
 		return Profile{Kind: kind, Host: "localhost", Port: 3306, Username: "root", MySQLAdvanced: DefaultMySQLAdvanced()}, nil
+	case TiDB:
+		return Profile{Kind: kind, Host: "localhost", Port: 4000, Username: "root", MySQLAdvanced: DefaultMySQLAdvanced()}, nil
 	case PostgreSQL:
 		return Profile{Kind: PostgreSQL, Host: "localhost", Port: 5432, Database: "postgres", Username: "postgres", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
 	case SQLite:
