@@ -17,8 +17,12 @@ import (
 )
 
 func (s *Session) SchemaDesign() contract.SchemaDesignOperations {
-	if (s.kind == connections.CockroachDB || s.kind == connections.OpenGauss) {
+	if s.kind == connections.CockroachDB {
 		return contract.SchemaDesignOperations{}
+	}
+	if s.kind == connections.OpenGauss {
+		return contract.SchemaDesignOperations{Snapshot: s.openGaussTableSnapshot,
+			CanDrop: func(t contract.SchemaDesignTarget) bool { return s.checkOpenGaussTable(t) == nil }, Drop: s.openGaussDropTable}
 	}
 	if s.kind == connections.PostgreSQL {
 		return contract.SchemaDesignOperations{

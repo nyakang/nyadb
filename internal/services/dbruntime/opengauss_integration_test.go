@@ -3,6 +3,7 @@ package dbruntime_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -109,6 +110,19 @@ func TestOpenGaussRuntimeTLSAndGenerationRevocationFixture(t *testing.T) {
 	if out, e := file.ExecuteFile(ctx, "public", strings.NewReader("SELECT 2;")); e != nil || out.Rows[0][0] != "2" {
 		t.Fatal("runtime SQL file did not use original session", e)
 	}
+	table := fmt.Sprintf("nyadb_gauss_drop_%d", time.Now().UnixNano())
+	if _, err = l.Execute(ctx, "public", "CREATE SCHEMA "+table+"; CREATE TABLE "+table+".original(id bigint)"); err != nil {
+		t.Fatal(err)
+	}
+	target := contract.SchemaDesignTarget{Object: m.Namespace(p.ID, table).Object("table", "original"), Generation: original.Generation()}
+	ops := m.SchemaDesign(p.ID)
+	if !m.Availability(p.ID, "drop_table", target).Enabled || m.Availability(p.ID, "copy_table", target).Enabled || m.Availability(p.ID, "design_table", target).Enabled || ops.Apply != nil || ops.Copy != nil {
+		t.Fatal("native table operation capability boundary")
+	}
+	snapshot, err := ops.Snapshot(ctx, target)
+	if err != nil || snapshot.Target != target || snapshot.Schema.OpenGauss == nil {
+		t.Fatal("public/raw native table snapshot identity", err)
+	}
 	if err = m.Connect(ctx, p, password); err != nil {
 		t.Fatal(err)
 	}
@@ -124,6 +138,30 @@ func TestOpenGaussRuntimeTLSAndGenerationRevocationFixture(t *testing.T) {
 	}
 	if _, err = data.AdvancedLoader(ctx, p.ID, "public", "records", contract.DataOptions{Limit: 10}); err == nil {
 		t.Fatal("old data binding survived replacement")
+	}
+	if out := ops.Drop(ctx, snapshot); out.State != "not_executed" || !errors.Is(out.Error, contract.ErrRevoked) || ops.CanDrop(target) {
+		t.Fatal("native table drop binding survived replacement", out)
+	}
+	target.Generation = replacement.Generation()
+	next := m.SchemaDesign(p.ID)
+	snapshot, err = next.Snapshot(ctx, target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out := next.Drop(ctx, snapshot); out.Error != nil || out.State != "committed" || !out.Verified || out.Actual == nil || out.Actual.Target != target || out.Actual.Schema.Exists {
+		t.Fatal("native drop receipt lost published scope", out)
+	}
+	replacementQuery, err := contract.Require[contract.QueryProvider](replacement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanup, err := replacementQuery.ReserveQuery(3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup.Release()
+	if _, err = cleanup.Execute(ctx, table, "DROP SCHEMA "+table); err != nil {
+		t.Fatal(err)
 	}
 	caps := replacement.Capabilities()
 	if !caps.Transactions || !caps.Metadata || !caps.Explain || caps.Backup || caps.Restore || caps.DesignTables || caps.Maintenance {

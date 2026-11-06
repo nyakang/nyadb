@@ -37,6 +37,7 @@ type Snapshot struct {
 	Exists                bool
 	Table                 Table
 	Postgres              *PostgreSQLCatalog `json:",omitempty"`
+	OpenGauss             *OpenGaussCatalog  `json:",omitempty"`
 }
 
 func (t Table) Clone() Table {
@@ -54,6 +55,7 @@ func (t Table) Clone() Table {
 func (s Snapshot) Clone() Snapshot {
 	s.Table = s.Table.Clone()
 	s.Postgres = s.Postgres.Clone()
+	s.OpenGauss = s.OpenGauss.Clone()
 	return s
 }
 func Signature(v any) string {
