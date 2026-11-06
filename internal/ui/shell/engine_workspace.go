@@ -34,8 +34,11 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 	}
 	status := s.sessions.StatusFor(p.ID)
 	ui.Column(c).Gap(5).Children(func() {
-		if (p.Kind == connections.PostgreSQL || p.Kind == connections.ClickHouse) && status != "已连接" {
+		if (p.Kind == connections.PostgreSQL || p.Kind == connections.ClickHouse || p.Kind == connections.SQLServer) && status != "已连接" {
 			label := locales.Text("PostgreSQL 会话密码")
+			if p.Kind == connections.SQLServer {
+				label = locales.Text("SQL Server 会话密码")
+			}
 			if p.Kind == connections.ClickHouse {
 				label = locales.Text("ClickHouse 会话密码")
 			}
@@ -70,6 +73,9 @@ func (s *State) objectCapabilitiesFor(id int64) contract.Capabilities {
 }
 func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string {
 	for _, p := range s.navigation.Profiles() {
+		if p.ID == id && p.Kind == connections.SQLServer {
+			return sqltext.SQLServerStatementAt(source, cursor)
+		}
 		if p.ID == id && p.Kind == connections.ClickHouse {
 			return sqltext.ClickHouseStatementAt(source, cursor)
 		}
@@ -82,6 +88,9 @@ func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string 
 
 func (s *State) sqlFormat(id int64, source string) (string, error) {
 	for _, p := range s.navigation.Profiles() {
+		if p.ID == id && p.Kind == connections.SQLServer {
+			return sqltext.FormatSQLServer(source)
+		}
 		if p.ID == id && p.Kind == connections.ClickHouse {
 			return sqltext.FormatClickHouse(source)
 		}
@@ -93,6 +102,11 @@ func (s *State) sqlFormat(id int64, source string) (string, error) {
 }
 
 func (s *State) sqlValidateExplain(id int64, source string) error {
+	for _, p := range s.navigation.Profiles() {
+		if p.ID == id && p.Kind == connections.SQLServer {
+			return sqltext.SingleSQLServerStatement(source)
+		}
+	}
 	for _, p := range s.navigation.Profiles() {
 		if p.ID == id && p.Kind == connections.ClickHouse {
 			return sqltext.SingleClickHouseStatement(source)

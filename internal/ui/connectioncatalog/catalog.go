@@ -19,7 +19,7 @@ type catalogEntry struct {
 var databaseCatalog = []catalogEntry{
 	{"MySQL", "MySQL", "", "全部", "mysql-type", "#24bf65", connections.MySQL},
 	{"PostgreSQL", "PostgreSQL", "", "全部", "postgres-type", "#397cdf", connections.PostgreSQL},
-	{"SQL Server", "SQL Server", "", "全部", "mssql-type", "#edab24", ""},
+	{"SQL Server", "SQL Server", "", "全部", "mssql-type", "#edab24", connections.SQLServer},
 	{"Oracle", "Oracle", "", "全部", "oracle-type", "#ef3b5c", ""},
 	{"SQLite", "SQLite", "", "全部", "sqlite-type", "#4cbfc2", connections.SQLite},
 	{"MariaDB", "MariaDB", "", "全部", "maria-type", "#b58a61", connections.MariaDB},

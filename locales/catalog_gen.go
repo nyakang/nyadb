@@ -19437,3 +19437,83 @@ func ConnectionInitialSQLCleanupComplete() string {
 func (msgs Messages) ConnectionInitialSQLCleanupComplete() string {
 	return Catalog.Format(msgs.locale, "connectionInitialSQLCleanupComplete", nil)
 }
+
+// SqlServerSessionPassword says "SQL Server 会话密码"
+// in the language the app shows.
+func SqlServerSessionPassword() string { return In(i18n.Locale()).SqlServerSessionPassword() }
+
+// SqlServerSessionPassword says "SQL Server 会话密码"
+// in the language of msgs.
+func (msgs Messages) SqlServerSessionPassword() string {
+	return Catalog.Format(msgs.locale, "sqlServerSessionPassword", nil)
+}
+
+// SqlServerNavigationSchema says "默认模式用于导航排序；SQL 中请使用模式名限定对象。"
+// in the language the app shows.
+func SqlServerNavigationSchema() string { return In(i18n.Locale()).SqlServerNavigationSchema() }
+
+// SqlServerNavigationSchema says "默认模式用于导航排序；SQL 中请使用模式名限定对象。"
+// in the language of msgs.
+func (msgs Messages) SqlServerNavigationSchema() string {
+	return Catalog.Format(msgs.locale, "sqlServerNavigationSchema", nil)
+}
+
+// SqlServerTLSModes says "verify-full 校验服务器证书；require 仅加密，disable 关闭 TLS。"
+// in the language the app shows.
+func SqlServerTLSModes() string { return In(i18n.Locale()).SqlServerTLSModes() }
+
+// SqlServerTLSModes says "verify-full 校验服务器证书；require 仅加密，disable 关闭 TLS。"
+// in the language of msgs.
+func (msgs Messages) SqlServerTLSModes() string {
+	return Catalog.Format(msgs.locale, "sqlServerTLSModes", nil)
+}
+
+// SqlServerCertificateHost says "证书服务器名"
+// in the language the app shows.
+func SqlServerCertificateHost() string { return In(i18n.Locale()).SqlServerCertificateHost() }
+
+// SqlServerCertificateHost says "证书服务器名"
+// in the language of msgs.
+func (msgs Messages) SqlServerCertificateHost() string {
+	return Catalog.Format(msgs.locale, "sqlServerCertificateHost", nil)
+}
+
+// SqlServerCA says "SQL Server CA 证书"
+// in the language the app shows.
+func SqlServerCA() string { return In(i18n.Locale()).SqlServerCA() }
+
+// SqlServerCA says "SQL Server CA 证书"
+// in the language of msgs.
+func (msgs Messages) SqlServerCA() string {
+	return Catalog.Format(msgs.locale, "sqlServerCA", nil)
+}
+
+// SqlServerTLSMode says "SQL Server TLS 模式"
+// in the language the app shows.
+func SqlServerTLSMode() string { return In(i18n.Locale()).SqlServerTLSMode() }
+
+// SqlServerTLSMode says "SQL Server TLS 模式"
+// in the language of msgs.
+func (msgs Messages) SqlServerTLSMode() string {
+	return Catalog.Format(msgs.locale, "sqlServerTLSMode", nil)
+}
+
+// SqlServerAtomicImport says "SQL Server 导入追加到已有表；全部记录在同一事务中提交。"
+// in the language the app shows.
+func SqlServerAtomicImport() string { return In(i18n.Locale()).SqlServerAtomicImport() }
+
+// SqlServerAtomicImport says "SQL Server 导入追加到已有表；全部记录在同一事务中提交。"
+// in the language of msgs.
+func (msgs Messages) SqlServerAtomicImport() string {
+	return Catalog.Format(msgs.locale, "sqlServerAtomicImport", nil)
+}
+
+// SqlServerFixedDatabase says "请输入此连接绑定的 SQL Server 数据库"
+// in the language the app shows.
+func SqlServerFixedDatabase() string { return In(i18n.Locale()).SqlServerFixedDatabase() }
+
+// SqlServerFixedDatabase says "请输入此连接绑定的 SQL Server 数据库"
+// in the language of msgs.
+func (msgs Messages) SqlServerFixedDatabase() string {
+	return Catalog.Format(msgs.locale, "sqlServerFixedDatabase", nil)
+}

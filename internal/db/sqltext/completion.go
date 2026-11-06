@@ -147,6 +147,9 @@ func CompleteSQL(source string, offset int, catalog CompletionCatalog) Completio
 		insert := name
 		if kind != "keyword" && (quoted || !completionBareName(name) || completionReserved(name) || catalog.Dialect == "postgres" && name != strings.ToLower(name)) {
 			insert, _ = Identifier(name, catalog.Dialect == "mysql" || catalog.Dialect == "clickhouse" || catalog.Dialect == "")
+			if catalog.Dialect == "tsql" {
+				insert = "[" + strings.ReplaceAll(name, "]", "]]") + "]"
+			}
 			if quoted && offset < len(source) && source[offset] == insert[len(insert)-1] {
 				insert = insert[:len(insert)-1]
 			}
@@ -154,6 +157,21 @@ func CompleteSQL(source string, offset int, catalog CompletionCatalog) Completio
 		result.Items = append(result.Items, SQLCompletion{name, insert, detail, kind})
 	}
 	if len(qualifiers) > 0 {
+		// An incomplete FROM schema. is a namespace prefix, even if the
+		// relation parser temporarily treats schema as a table/alias.
+		if len(qualifiers) == 1 && len(before) >= 3 {
+			context := strings.ToUpper(before[len(before)-3].text)
+			if context == "FROM" || context == "JOIN" || context == "UPDATE" || context == "INTO" || context == "TABLE" {
+				for _, o := range catalog.Objects {
+					if strings.EqualFold(o.Namespace, qualifiers[0]) {
+						add(o.Name, o.Namespace, "table")
+					}
+				}
+				if len(result.Items) > 0 {
+					return finishCompletion(result)
+				}
+			}
+		}
 		var relations []completionRelation
 		if len(qualifiers) == 1 {
 			for s := scope; s != nil; s = s.parent {
@@ -236,6 +254,10 @@ func CompleteSQL(source string, offset int, catalog CompletionCatalog) Completio
 			}
 		}
 	}
+	return finishCompletion(result)
+}
+
+func finishCompletion(result CompletionResult) CompletionResult {
 	sort.SliceStable(result.Items, func(i, j int) bool {
 		if result.Items[i].Kind != result.Items[j].Kind {
 			return completionRank(result.Items[i].Kind) < completionRank(result.Items[j].Kind)
@@ -476,6 +498,8 @@ func completionRank(kind string) int {
 func completionKeywords(dialect string) []string {
 	base := "SELECT FROM WHERE ORDER BY GROUP HAVING LIMIT OFFSET INSERT INTO VALUES UPDATE SET DELETE JOIN LEFT RIGHT INNER OUTER CROSS ON USING NULL IS AND OR NOT AS DISTINCT EXPLAIN CREATE ALTER DROP TABLE VIEW INDEX PRIMARY KEY FOREIGN REFERENCES UNIQUE DEFAULT CHECK CONSTRAINT BEGIN END WHEN THEN ELSE CASE UNION ALL ASC DESC EXISTS WITH RECURSIVE OVER PARTITION ROWS RANGE BETWEEN EXCEPT INTERSECT"
 	switch dialect {
+	case "tsql":
+		base = "SELECT FROM WHERE ORDER BY GROUP HAVING OFFSET FETCH NEXT ROWS ONLY TOP INSERT INTO VALUES UPDATE SET DELETE JOIN LEFT RIGHT INNER OUTER CROSS ON NULL IS AND OR NOT AS DISTINCT CREATE ALTER DROP TABLE VIEW INDEX PRIMARY KEY FOREIGN REFERENCES UNIQUE DEFAULT CHECK CONSTRAINT BEGIN END WHEN THEN ELSE CASE UNION ALL ASC DESC EXISTS WITH OVER PARTITION ROWS RANGE BETWEEN EXCEPT INTERSECT DECLARE EXEC EXECUTE PROCEDURE FUNCTION OUTPUT IDENTITY TRY CATCH THROW TRANSACTION COMMIT ROLLBACK USE GO NVARCHAR VARBINARY DATETIME2 DATETIMEOFFSET UNIQUEIDENTIFIER"
 	case "postgres":
 		base += " RETURNING ILIKE LATERAL FILTER CONFLICT MATERIALIZED JSONB SERIAL BIGSERIAL"
 	case "sqlite":
@@ -491,7 +515,7 @@ func completionReserved(name string) bool {
 
 var completionReservedWords = func() map[string]bool {
 	words := map[string]bool{}
-	for _, dialect := range []string{"mysql", "postgres", "sqlite"} {
+	for _, dialect := range []string{"mysql", "postgres", "sqlite", "tsql"} {
 		for _, word := range completionKeywords(dialect) {
 			words[word] = true
 		}

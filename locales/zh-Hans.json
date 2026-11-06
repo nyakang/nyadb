@@ -1909,5 +1909,13 @@
   "databaseOpenMode": "打开方式",
   "connectionInitialSQLCleanupError": "初始 SQL 清理失败；记录已保留，可重试",
   "connectionInitialSQLCleanupRetry": "重试清理初始 SQL",
-  "connectionInitialSQLCleanupComplete": "初始 SQL 清理完成"
+  "connectionInitialSQLCleanupComplete": "初始 SQL 清理完成",
+  "sqlServerSessionPassword": "SQL Server 会话密码",
+  "sqlServerNavigationSchema": "默认模式用于导航排序；SQL 中请使用模式名限定对象。",
+  "sqlServerTLSModes": "verify-full 校验服务器证书；require 仅加密，disable 关闭 TLS。",
+  "sqlServerCertificateHost": "证书服务器名",
+  "sqlServerCA": "SQL Server CA 证书",
+  "sqlServerTLSMode": "SQL Server TLS 模式",
+  "sqlServerAtomicImport": "SQL Server 导入追加到已有表；全部记录在同一事务中提交。",
+  "sqlServerFixedDatabase": "请输入此连接绑定的 SQL Server 数据库"
 }

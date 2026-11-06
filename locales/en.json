@@ -1909,5 +1909,13 @@
   "databaseOpenMode": "Opening mode",
   "connectionInitialSQLCleanupError": "Initial SQL cleanup failed; records retained for retry",
   "connectionInitialSQLCleanupRetry": "Retry initial SQL cleanup",
-  "connectionInitialSQLCleanupComplete": "Initial SQL cleanup completed"
+  "connectionInitialSQLCleanupComplete": "Initial SQL cleanup completed",
+  "sqlServerSessionPassword": "SQL Server session password",
+  "sqlServerNavigationSchema": "The default schema controls navigation order. Qualify objects with their schema in SQL.",
+  "sqlServerTLSModes": "verify-full validates the server certificate; require encrypts without verification; disable turns TLS off.",
+  "sqlServerCertificateHost": "Certificate server name",
+  "sqlServerCA": "SQL Server CA certificate",
+  "sqlServerTLSMode": "SQL Server TLS mode",
+  "sqlServerAtomicImport": "SQL Server imports append to an existing table. All records commit in one transaction.",
+  "sqlServerFixedDatabase": "Enter the SQL Server database for this connection"
 }

@@ -7,9 +7,11 @@ import (
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/engines"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/services/sqlserver"
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.SQLServer, ProviderFunc(sqlserver.OpenSession))
 	m.Register(connections.ClickHouse, ProviderFunc(clickhousesvc.OpenSession))
 	for _, kind := range []connections.Kind{connections.MySQL, connections.MariaDB} {
 		m.Register(kind, ProviderFunc(func(ctx context.Context, p connections.Profile, password string) (contract.Session, error) {

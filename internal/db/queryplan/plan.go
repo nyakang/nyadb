@@ -10,6 +10,12 @@ import (
 )
 
 func Build(engine, sql string) (string, error) {
+	if engine == "sqlserver" {
+		if err := sqltext.SingleSQLServerStatement(sql); err != nil {
+			return "", err
+		}
+		return "SET SHOWPLAN_XML ON\nGO\n" + sql + "\nGO\nSET SHOWPLAN_XML OFF", nil
+	}
 	validate := sqltext.SinglePortableStatement
 	if engine == "mysql" || engine == "mariadb" {
 		validate = sqltext.SingleMySQLStatement
@@ -45,6 +51,9 @@ func numeric(v any) *float64 {
 	return &n
 }
 func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, error) {
+	if engine == "sqlserver" {
+		return parseSQLServer(result)
+	}
 	sets := result.ResultSets()
 	if len(sets) == 0 {
 		return nil, errors.New("empty execution plan")

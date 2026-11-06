@@ -13,6 +13,9 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		return p, fmt.Errorf("%w: invalid connection color", ErrInvalid)
 	}
 	p.Name = strings.TrimSpace(p.Name)
+	if p.Kind != SQLServer && p.SQLServerOptions != (SQLServerOptions{}) {
+		return p, fmt.Errorf("%w: SQL Server options on another engine", ErrInvalid)
+	}
 	p.GroupName = strings.TrimSpace(p.GroupName)
 	if p.GroupName != "" {
 		if err := ValidateGroupName(p.GroupName); err != nil {
@@ -91,7 +94,26 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	switch p.Kind {
-	case MySQL, MariaDB, PostgreSQL, ClickHouse:
+	case MySQL, MariaDB, PostgreSQL, ClickHouse, SQLServer:
+		if p.Kind == SQLServer {
+			var err error
+			p.SQLServerOptions, err = NormalizeSQLServerOptions(p.SQLServerOptions)
+			if err != nil {
+				return p, err
+			}
+			if p.Database == "" || p.Username == "" || len([]rune(p.Database)) > 128 || strings.ContainsAny(p.Host, "@/?!#\\ \t\r\n") {
+				return p, fmt.Errorf("%w: SQL Server requires a hostname, database and SQL username", ErrInvalid)
+			}
+			if p.TLSMode == "" {
+				p.TLSMode = "verify-full"
+			}
+			if p.TLSMode != "disable" && p.TLSMode != "require" && p.TLSMode != "verify-full" {
+				return p, fmt.Errorf("%w: SQL Server TLS must be disable, require or verify-full", ErrInvalid)
+			}
+			if p.TLSMode == "disable" && (p.SQLServerOptions.CAFile != "" || p.SQLServerOptions.ServerName != "") {
+				return p, fmt.Errorf("%w: SQL Server certificate settings require TLS", ErrInvalid)
+			}
+		}
 		if p.Kind.IsMySQLFamily() {
 			var err error
 			p.MySQLAdvanced, err = NormalizeMySQLAdvanced(p.MySQLAdvanced)

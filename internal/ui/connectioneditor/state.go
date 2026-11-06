@@ -172,7 +172,7 @@ func (s *State) OpenProfile(profile connections.Profile) {
 	if profile.Kind.IsMySQLFamily() {
 		s.loadSavedConnectionPasswords()
 		s.loadTunnelSecrets()
-	} else if profile.Kind == connections.PostgreSQL || profile.Kind == connections.ClickHouse {
+	} else if profile.Kind == connections.PostgreSQL || profile.Kind == connections.ClickHouse || profile.Kind == connections.SQLServer {
 		s.loadSavedConnectionPasswords()
 	}
 }
@@ -263,6 +263,8 @@ func connectionKindName(kind connections.Kind) string {
 		return "MySQL"
 	case connections.MariaDB:
 		return "MariaDB"
+	case connections.SQLServer:
+		return "SQL Server"
 	case connections.PostgreSQL:
 		return "PostgreSQL"
 	case connections.SQLite:

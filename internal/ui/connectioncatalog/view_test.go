@@ -33,14 +33,11 @@ func TestSelectionCallbackUsesTheCurrentChoice(t *testing.T) {
 				t.Fatal("rendering must not trigger selection")
 			}
 			for _, label := range []string{"选择 MySQL", "选择 SQL Server"} {
-				if grid && label == "选择 SQL Server" {
-					label += "（尚未支持）"
-				}
 				if err := tt.Click(label); err != nil {
 					t.Fatal(err)
 				}
 			}
-			if len(choices) != 2 || choices[0] != (Choice{Name: "MySQL", Kind: connections.MySQL}) || choices[1] != (Choice{Name: "SQL Server"}) {
+			if len(choices) != 2 || choices[0] != (Choice{Name: "MySQL", Kind: connections.MySQL}) || choices[1] != (Choice{Name: "SQL Server", Kind: connections.SQLServer}) {
 				t.Fatalf("selection callbacks: %v", choices)
 			}
 			if len(s.recent) != 0 {

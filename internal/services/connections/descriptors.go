@@ -12,6 +12,8 @@ type Descriptor struct {
 
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
+	case SQLServer:
+		return Descriptor{kind, "SQL Server", "sqlserver", "server", "tsql", 1433, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true, Import: true}}, true
 	case MySQL:
 		return Descriptor{kind, "MySQL", "mysql", "server", "mysql", 3306, contract.Capabilities{Objects: true, Maintenance: true, Accounts: true, Restore: true, DesignViews: true, Query: true, Metadata: true, Transactions: true, EditableTables: true, Explain: true, DesignTables: true, Import: true, Backup: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true}}, true
 	case MariaDB:
@@ -34,6 +36,8 @@ func Describe(kind Kind) (Descriptor, bool) {
 // FieldTypes offers common candidates without restricting custom declarations.
 func (d Descriptor) FieldTypes() []string {
 	switch d.Kind {
+	case SQLServer:
+		return []string{"bigint", "int", "smallint", "decimal(18,2)", "nvarchar(255)", "nvarchar(max)", "datetime2", "datetimeoffset", "date", "varbinary(max)", "bit", "uniqueidentifier"}
 	case MySQL, MariaDB:
 		return []string{"bigint", "int", "smallint", "decimal(10,2)", "varchar(255)", "text", "datetime", "timestamp", "date", "json", "blob", "boolean"}
 	case PostgreSQL:

@@ -68,6 +68,14 @@ func (s *State) EngineFilePickerError(version uint64) {
 }
 
 func (s *State) initEngineOptionsInputs() {
+	if s.connectionDraft.Kind == connections.SQLServer {
+		a, err := connections.NormalizeSQLServerOptions(s.connectionDraft.SQLServerOptions)
+		if err == nil {
+			s.connectionDraft.SQLServerOptions = a
+		}
+		s.engineNumbers[0], s.engineNumbers[1] = strconv.Itoa(a.ConnectTimeoutSeconds), strconv.Itoa(a.MaxConnections)
+		s.sqlMaxConnections = strconv.Itoa(a.SQLMaxConnections)
+	}
 	s.sqliteAttachmentList = ui.ListState{}
 	s.sqliteAttachmentRow = -1
 	if s.connectionDraft.Kind == connections.PostgreSQL {
@@ -94,6 +102,19 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.SQLServer {
+		values := []*int{&p.SQLServerOptions.ConnectTimeoutSeconds, &p.SQLServerOptions.MaxConnections, &p.SQLServerOptions.SQLMaxConnections}
+		for i, raw := range []string{s.engineNumbers[0], s.engineNumbers[1], s.sqlMaxConnections} {
+			n, err := strconv.Atoi(strings.TrimSpace(raw))
+			if err != nil {
+				return fieldError("最大连接数", "高级", "请输入有效范围内的整数")
+			}
+			*values[i] = n
+		}
+		a, err := connections.NormalizeSQLServerOptions(p.SQLServerOptions)
+		p.SQLServerOptions = a
+		return err
+	}
 	if p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite {
 		n, err := strconv.Atoi(strings.TrimSpace(s.sqlMaxConnections))
 		if err != nil || n < 1 || n > 64 {
@@ -143,6 +164,31 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.SQLServer:
+		a := &s.connectionDraft.SQLServerOptions
+		if tab == "高级" {
+			theme.Form(c, formWidth, func() {
+				s.editorInputRow(c, "连接超时（秒）", "连接超时（秒）", &s.engineNumbers[0], labelWidth, 120)
+				s.editorInputRow(c, "后台连接上限", "后台连接上限", &s.engineNumbers[1], labelWidth, 120)
+				s.editorInputRow(c, "SQL 会话上限", "SQL 会话上限", &s.sqlMaxConnections, labelWidth, 120)
+				s.editorInputRow(c, "应用名称：", "应用名称", &a.ApplicationName, labelWidth, fieldWidth)
+				s.editorInputRow(c, "默认模式：", "默认模式", &a.DefaultSchema, labelWidth, fieldWidth)
+				ui.Text(c, locales.Text("默认模式用于导航排序；SQL 中请使用模式名限定对象。"))
+			})
+			return true
+		}
+		if tab == "SSL" {
+			theme.Form(c, formWidth, func() {
+				theme.Field(c, locales.Text("TLS 模式："), func() {
+					connectionFormSelect(c, &s.connectionDraft.TLSMode, []string{"verify-full", "require", "disable"}, "SQL Server TLS 模式", fieldWidth, false)
+				})
+				s.editorInputRow(c, "CA 证书", "SQL Server CA 证书", &a.CAFile, labelWidth, fieldWidth)
+				s.editorInputRow(c, "证书服务器名", "证书服务器名", &a.ServerName, labelWidth, fieldWidth)
+				ui.Text(c, locales.Text("verify-full 校验服务器证书；require 仅加密，disable 关闭 TLS。"))
+			})
+			return true
+		}
+		return false
 	case connections.ClickHouse:
 		if tab != "SSL" {
 			return false

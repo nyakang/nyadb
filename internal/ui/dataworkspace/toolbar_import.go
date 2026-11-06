@@ -76,13 +76,20 @@ func mysqlDataImportModeLabel(mode string) string {
 
 func (s *State) dataImportModeControls(c *ui.Context, t *Document) {
 	tr := &t.transfer
+	modes := []string{"append", "update", "upsert", "insert_missing", "delete", "replace"}
+	if t.importDialect == "sqlserver" {
+		modes = []string{"append"}
+	}
 	if tr.Target != "new" {
 		ui.Row(c).Gap(8).Children(func() {
 			ui.Text(c, locales.Text("导入模式"))
-			mysqlDataRuleSelect(c, &tr.Mode, []string{"append", "update", "upsert", "insert_missing", "delete", "replace"}, mysqlDataImportModeLabel).Width(220).Disabled(tr.Busy || tr.Submitted)
+			mysqlDataRuleSelect(c, &tr.Mode, modes, mysqlDataImportModeLabel).Width(220).Disabled(tr.Busy || tr.Submitted)
 		})
 	}
-	ui.Checkbox(c, &tr.ContinueOnError, locales.Text("遇到行错误时继续")).Disabled(tr.Busy || tr.Submitted)
+	ui.Checkbox(c, &tr.ContinueOnError, locales.Text("遇到行错误时继续")).Disabled(tr.Busy || tr.Submitted || t.importDialect == "sqlserver")
+	if t.importDialect == "sqlserver" {
+		ui.Text(c, locales.Text("SQL Server 导入追加到已有表；全部记录在同一事务中提交。"))
+	}
 	if tr.ContinueOnError {
 		ui.Text(c, locales.Text("失败行会跳过，成功行一起提交；完成后逐行显示结果。")).TextColor(theme.Colors(c).Muted).FontSize(theme.Font(c, 11))
 	}
@@ -655,6 +662,9 @@ func mysqlDataInferDecimal(text string) (int, int, bool) {
 }
 
 func mysqlDataImportTargetChoices(t *Document) []string {
+	if t.importDialect == "sqlserver" {
+		return []string{"existing"}
+	}
 	if t.importOnly {
 		return []string{"new"}
 	}

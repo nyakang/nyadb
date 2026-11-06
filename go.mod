@@ -7,7 +7,9 @@ require (
 	github.com/ebitengine/purego v0.11.3
 	github.com/egoist/mygo v0.7.4
 	github.com/go-sql-driver/mysql v1.10.1
+	github.com/golang-sql/sqlexp v0.1.0
 	github.com/jackc/pgx/v5 v5.12.0
+	github.com/microsoft/go-mssqldb v1.11.2
 	github.com/parquet-go/parquet-go v0.32.0
 	github.com/shopspring/decimal v1.6.0
 	github.com/zalando/go-keyring v0.2.8
@@ -29,6 +31,7 @@ require (
 	github.com/go-faster/errors v0.8.0 // indirect
 	github.com/go-text/typesetting v0.3.5 // indirect
 	github.com/godbus/dbus/v5 v5.2.4 // indirect
+	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
