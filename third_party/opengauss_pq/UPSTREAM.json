@@ -1,0 +1,170 @@
+{
+  "module": "gitcode.com/opengauss/openGauss-connector-go-pq",
+  "version": "v1.0.9",
+  "commit": "1b2ca1e407de54157316fcb4a808d8a87e007dac",
+  "module_sum": "h1:0JBGKG5oMVxd7ZL/ZqM6IhUd2fpuiZj3bpvcg/wSoV4=",
+  "source_mirror": "https://github.com/opengauss-mirror/openGauss-connector-go-pq",
+  "license": "MIT; LICENSE.md retained",
+  "files": [
+    {
+      "path": "LICENSE.md",
+      "upstream_sha256": "3e2d79d27727d59ab1c9752f57654733d6c8824936c22800594dccfe8864ec28"
+    },
+    {
+      "path": "copy.go",
+      "upstream_sha256": "fcdba116ad0182e54d761b7fa303bd666afabdd707ab70a1caa729877859d8c5"
+    },
+    {
+      "path": "connector.go",
+      "upstream_sha256": "19679c4a0075b975798af68e6e5d55cfb2397d3abf21e853039422960ef1e14c"
+    },
+    {
+      "path": "conn_go18.go",
+      "upstream_sha256": "8c4bf2d12049327c5cd1c584ec171643611b6746effb600316cfdb614818df6b"
+    },
+    {
+      "path": "conn.go",
+      "upstream_sha256": "443a1e28160a827e2206860dd2d9f9b86a2b7dcc8c12f8a83918ffc8216dcfe2"
+    },
+    {
+      "path": "krb.go",
+      "upstream_sha256": "6da8c64e1718670fab10104d5dac26df54ca0c74f9b005b8eb02e4b6b1a3eec1"
+    },
+    {
+      "path": "user_windows.go",
+      "upstream_sha256": "ff8e5c0ce84b28adad92a092e33cece3872bbf772f4d90ff012b19e2053e3e75"
+    },
+    {
+      "path": "notice.go",
+      "upstream_sha256": "798c889f37cc292cd64f2ce3094f363c8de69b3b81f1ce98f629e11ad708923a"
+    },
+    {
+      "path": "conn_validate.go",
+      "upstream_sha256": "9ff19cd6e4b566593c1ee3cd866917ff4102bc4b53f56a1941259b3a82c50450"
+    },
+    {
+      "path": "go.sum",
+      "upstream_sha256": "d60b14cca495447af7ca8c2e889180886f41369b8506973e95d0d8b6216bcb5b"
+    },
+    {
+      "path": "defaults_windows.go",
+      "upstream_sha256": "07b14c57a0edaa2e6ca0090d66d3927d35b8298090bf68d15391c525dee54c75"
+    },
+    {
+      "path": "doc.go",
+      "upstream_sha256": "31c6d2b440518bb25ceed3b8c142743f45cd2a1b1a4efed4d69d21c89e319e6c"
+    },
+    {
+      "path": "encode.go",
+      "upstream_sha256": "9a671d055d16292e748fe749d116d7aafec5becc6c48963ad9a784b48ee1c7c0"
+    },
+    {
+      "path": "user_other.go",
+      "upstream_sha256": "6f77103beb0723a6deaf6bba4f4151118de9de4bd1f845c76ee50c428a3cbadb"
+    },
+    {
+      "path": "notify.go",
+      "upstream_sha256": "38f991f1e73076d2a65aef8569c93ba3117784f7e8f51fc272a688011b98aae2"
+    },
+    {
+      "path": "error.go",
+      "upstream_sha256": "7d7be5461fe4a1b0fe708bfb9ec47a050b180ab9b9b0effc2ee31411c73679ad"
+    },
+    {
+      "path": "buf.go",
+      "upstream_sha256": "3a7ec57280ed81fb9cd636d0bc8aa8112c24cd94da1fa925ac3697702f3ce487"
+    },
+    {
+      "path": "ssl_permissions.go",
+      "upstream_sha256": "781e3058bfdd91db604c073e5b4d304ea8a8b5435ccc6c95f6359e60c3e76138"
+    },
+    {
+      "path": "README.md",
+      "upstream_sha256": "3e9314b4e0c722e8d2084e812edd566a3e33de2a70554b92614061f09211fc87"
+    },
+    {
+      "path": "array.go",
+      "upstream_sha256": "5e69423ab27d2c76ae640367623b642ffd34dc25526b1253d72b1013881771ed"
+    },
+    {
+      "path": "rows.go",
+      "upstream_sha256": "4110ba0a342c61b5934c3c2ac24f18dd8af359eedc5c2df3e0a109bc03f4bbf2"
+    },
+    {
+      "path": "ssl_windows.go",
+      "upstream_sha256": "192336e434d8d27da9568822622044a720346a78101a03c7ecea9d619422e8ec"
+    },
+    {
+      "path": "uuid.go",
+      "upstream_sha256": "6cb39994206827017a6e57babe5a44cfe950734b48bfdc0e012b972abbd57c13"
+    },
+    {
+      "path": "parallel.go",
+      "upstream_sha256": "dd3e03fb114b18f9ba27b18cabdd7ec4635112870e2c864bf352c9bcd08dc181"
+    },
+    {
+      "path": "ssl.go",
+      "upstream_sha256": "39c5adca88e0187f09b23ef2276b3c36dad3471b885f7f807c0182bdea8775a2"
+    },
+    {
+      "path": "user_posix.go",
+      "upstream_sha256": "50029de029f478db50d06f562b2a8595b5ee00fa8069c74991a786e66df0dbc8"
+    },
+    {
+      "path": "defaults.go",
+      "upstream_sha256": "4dfb9f7036ed0704c11657e7d0a3058c3a30e71fb7bba4e3e873875eb7c09732"
+    },
+    {
+      "path": "url.go",
+      "upstream_sha256": "9a041c16fa795c878c3e9be5bd7b2bc21751cda9f13875b1e170cae7b690cb56"
+    },
+    {
+      "path": "go.mod",
+      "upstream_sha256": "45386d94275c2b216b8847ec56876011336ca36b3128496628e8454bcfc9b1bd"
+    },
+    {
+      "path": "config.go",
+      "upstream_sha256": "bb4d87e98923e9af98edc15e33f1218cae12104ec30e1490fb549b9b6f220363"
+    },
+    {
+      "path": "rfcdigest.go",
+      "upstream_sha256": "8450885c85ca17e8588dc884af9167191d290ffd35b4b1715b595e165e5542e2"
+    },
+    {
+      "path": "logger.go",
+      "upstream_sha256": "bed7956155144815264f2d6f82f790b4e22dd989d1dd153e5e0130eaa9ee0499"
+    },
+    {
+      "path": "pgservicefile/pgservicefile.go",
+      "upstream_sha256": "70357320fa3aff41def03e964c66219f2c325c1ce1e9c6133920aa31a33956e9"
+    },
+    {
+      "path": "pgpassfile/pgpass.go",
+      "upstream_sha256": "2dc680617b309a0cf6eca564c952421d31f96f5e057d8ff9a31a875840531458"
+    },
+    {
+      "path": "hstore/hstore.go",
+      "upstream_sha256": "7c2b295214013fd69a426a8275359b16874023c4940219a3df34268f3319ea3d"
+    },
+    {
+      "path": "oid/types.go",
+      "upstream_sha256": "d74bd97f978e4f8896b2e111a2d19dca1768f43598051c11fecb337306bc57f0"
+    },
+    {
+      "path": "oid/doc.go",
+      "upstream_sha256": "02fd3ca324b619d602695d3139a4f4ec6240590ab09daf7fc28bc92e75748309"
+    },
+    {
+      "path": "oid/gen.go",
+      "upstream_sha256": "3da93519d1bfc921317bb788a62b3b74ad0f98764f1304975b445edcf2f54e1c"
+    },
+    {
+      "path": "oid/conv.go",
+      "upstream_sha256": "3407572af1a89a89ac0a94df4ee19dfedf9e9ab29532f6bfa0475e39e3d14f71"
+    },
+    {
+      "path": "scram/scram.go",
+      "upstream_sha256": "80317e4cd866fb0a42cd4627ea537a4466fbfbf29c821d6979a777d03cddd920"
+    }
+  ]
+}
