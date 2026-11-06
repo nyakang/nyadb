@@ -79,9 +79,7 @@ func TestOpenGaussNativeMetadataGridAndPlansFixture(t *testing.T) {
 	run("CREATE FUNCTION " + quote(schema) + ".plus_one(n BIGINT) RETURNS BIGINT LANGUAGE SQL AS $$ SELECT n+1 $$")
 	// Native procedural definitions are read through the same browse snapshot.
 	// This server form has a slash delimiter in its emitted source.
-	if _, err = s.db.ExecContext(ctx, "CREATE PROCEDURE "+quote(schema)+".noop() AS BEGIN NULL; END;"); err != nil {
-		t.Fatal(err)
-	}
+	run("CREATE PROCEDURE " + quote(schema) + ".noop() AS BEGIN NULL; END;\n/")
 	run("CREATE TABLE " + quote(schema) + ".child(a BIGINT PRIMARY KEY, parent BIGINT REFERENCES " + table + "(id))")
 	objects, err := s.Browse(ctx, s.Namespace(schema))
 	if err != nil {

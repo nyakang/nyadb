@@ -604,7 +604,11 @@ func (s *Session) ReserveQuery(tab uint64) (contract.QueryLease, error) {
 		return nil, contract.ErrRevoked
 	}
 	ctx, cancel := context.WithCancel(s.ctx)
-	return &queryLease{session: s, ctx: ctx, cancel: cancel, doc: tab}, nil
+	l := &queryLease{session: s, ctx: ctx, cancel: cancel, doc: tab}
+	if s.kind == connections.OpenGauss {
+		return &openGaussQueryLease{queryLease: l}, nil
+	}
+	return l, nil
 }
 
 type queryLease struct {

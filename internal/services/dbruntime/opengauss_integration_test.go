@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -101,6 +102,13 @@ func TestOpenGaussRuntimeTLSAndGenerationRevocationFixture(t *testing.T) {
 	if _, err = l.Execute(ctx, "public", "SELECT 1"); err != nil {
 		t.Fatal(err)
 	}
+	file, ok := l.(contract.QueryFileLease)
+	if !ok {
+		t.Fatal("runtime SQL file entry is absent")
+	}
+	if out, e := file.ExecuteFile(ctx, "public", strings.NewReader("SELECT 2;")); e != nil || out.Rows[0][0] != "2" {
+		t.Fatal("runtime SQL file did not use original session", e)
+	}
 	if err = m.Connect(ctx, p, password); err != nil {
 		t.Fatal(err)
 	}
@@ -110,6 +118,9 @@ func TestOpenGaussRuntimeTLSAndGenerationRevocationFixture(t *testing.T) {
 	}
 	if _, err = l.Execute(ctx, "public", "SELECT 1"); !errors.Is(err, contract.ErrRevoked) {
 		t.Fatal("old physical lease survived replacement", err)
+	}
+	if _, err = file.ExecuteFile(ctx, "public", strings.NewReader("SELECT 2;")); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal("old SQL file binding survived replacement", err)
 	}
 	if _, err = data.AdvancedLoader(ctx, p.ID, "public", "records", contract.DataOptions{Limit: 10}); err == nil {
 		t.Fatal("old data binding survived replacement")

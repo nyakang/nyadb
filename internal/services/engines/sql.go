@@ -20,7 +20,13 @@ type queryer interface {
 
 func splitSQL(src string) ([]string, error) { return sqltext.SplitPortable(src) }
 func execute(ctx context.Context, c queryer, kind connections.Kind, src string, sink contract.StreamSink) (contract.SQLResult, error) {
-	parts, e := splitSQL(src)
+	var parts []string
+	var e error
+	if kind == connections.OpenGauss {
+		parts, e = sqltext.SplitOpenGauss(src)
+	} else {
+		parts, e = splitSQL(src)
+	}
 	if e != nil {
 		return contract.SQLResult{}, e
 	}

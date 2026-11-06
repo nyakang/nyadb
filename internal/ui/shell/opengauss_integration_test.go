@@ -2,8 +2,10 @@ package shell
 
 import (
 	"context"
+	"io"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
+	"github.com/nyakang/nyadb/internal/ui/sqlworkspace"
 )
 
 func TestOpenGaussSessionAndSharedGridDisposableFixture(t *testing.T) {
@@ -122,6 +125,81 @@ func TestOpenGaussSessionAndSharedGridDisposableFixture(t *testing.T) {
 	if s.sqlCompletionCatalog(p.ID, "public").Dialect != "postgres" || s.sqlNamespace(p.ID, "public").Catalog != p.Database {
 		t.Fatal("openGauss lost PostgreSQL dialect or namespace")
 	}
+	scriptSchema := "nyadb_ui_script_" + strconv.FormatInt(time.Now().UnixNano(), 10)
+	script := "CREATE SCHEMA \"" + scriptSchema + "\"; CREATE PROCEDURE \"" + scriptSchema + "\".p() AS BEGIN IF true THEN NULL; END IF; END;\n/\nSELECT 2;"
+	sqlTab.query.Editor.Buffer.Set(script)
+	sqlTab.query.Editor.Select(0, len(script))
+	tt.Frame()
+	if e = tt.Click("运行当前或选中 SQL"); e != nil {
+		t.Fatal(e)
+	}
+	waitSQLUI(t, s, tt, sqlTab)
+	if r := sqlTab.query.Result(); sqlTab.query.Error() != "" || r == nil || len(r.Steps) != 3 {
+		t.Fatal("workbench native script failed", sqlTab.query.Error())
+	}
+	scriptCleaned := false
+	cleanupScript := func() {
+		if scriptCleaned {
+			return
+		}
+		cleanup, stop := context.WithTimeout(context.Background(), 10*time.Second)
+		defer stop()
+		session, err := s.engineSession(p.ID)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		lease, err := session.Reserve(cleanup)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		defer lease.Close()
+		if _, err = lease.Execute(cleanup, "DROP SCHEMA \""+scriptSchema+"\" CASCADE"); err != nil {
+			t.Error(err)
+		} else {
+			scriptCleaned = true
+		}
+	}
+	defer cleanupScript()
+	body := "CREATE OR REPLACE PROCEDURE \"" + scriptSchema + "\".p() AS BEGIN IF true THEN NULL; END IF; END;"
+	sql = body + "\n/\nSELECT missing_column FROM absent_table;"
+	sqlTab.query.Editor.Buffer.Set(sql)
+	caret := strings.Index(sql, "NULL") + 2
+	sqlTab.query.Editor.Select(caret, caret)
+	tt.Frame()
+	if e = tt.Click("运行当前或选中 SQL"); e != nil {
+		t.Fatal(e)
+	}
+	waitSQLUI(t, s, tt, sqlTab)
+	if r := sqlTab.query.Result(); sqlTab.query.Error() != "" || r == nil || len(r.Steps) != 1 || r.Steps[0].SQL != body {
+		t.Fatal("workbench caret fragmented/replayed script", sqlTab.query.Error())
+	}
+	fileText := "CALL \"" + scriptSchema + "\".p(); SELECT 42;"
+	s.SetSQLPersistence(nil, sqlworkspace.Files{
+		OpenPath: func() (string, error) { return "native-script.sql", nil },
+		OpenReader: func(string) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader(fileText)), nil
+		},
+	}, nil)
+	tt.Frame()
+	if e = tt.Click("执行 SQL 文件"); e != nil {
+		t.Fatal(e)
+	}
+	waitSQLUI(t, s, tt, sqlTab)
+	if r := sqlTab.query.Result(); sqlTab.query.Error() != "" || r == nil || len(r.Steps) != 2 || sqlTab.query.Editor.Buffer.String() != sql {
+		t.Fatal("workbench SQL file failed or changed editor text", sqlTab.query.Error())
+	}
+	if e = tt.Click("结果 2"); e != nil {
+		t.Fatal(e)
+	}
+	if !tt.HasText("42") {
+		t.Fatal("SQL file result was not displayed")
+	}
+	if output := os.Getenv("NYADB_OPENGAUSS_VISUAL_DIR"); output != "" {
+		writeDomainCapture(t, output, "opengauss-live-script", tt)
+	}
+	cleanupScript()
 	s.disconnectMySQLProfile(p.ID)
 	tt.Frame()
 	if s.runtime.IsConnected(p.ID) || !sqlTab.query.NeedsRecovery() || sqlTab.query.Editor.Buffer.String() != sql {
