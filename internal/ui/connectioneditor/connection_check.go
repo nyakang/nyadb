@@ -58,6 +58,10 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 	generation := s.connectionTestGeneration
 	ctx, cancel := context.WithCancel(context.Background())
 	s.connectionTestCancel = cancel
+	sentinelPassword := s.redisSentinelPassword
+	if p.Kind == connections.Redis {
+		ctx = connections.WithRedisSentinelPassword(ctx, sentinelPassword)
+	}
 	s.connectionTesting = true
 	secret := s.connectionSecret // never log or persist this value
 	tunnelSecrets := s.tunnelSnapshot()
@@ -83,7 +87,7 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 			err = tester(ctx, settings, secret)
 		}
 		if err != nil {
-			for _, sensitive := range []string{secret, tunnelSecrets.SSHPassword, tunnelSecrets.SSHPassphrase, tunnelSecrets.HTTPToken, tunnelSecrets.ProxyPassword, tunnelSecrets.HTTPKeyPassphrase} {
+			for _, sensitive := range []string{secret, sentinelPassword, tunnelSecrets.SSHPassword, tunnelSecrets.SSHPassphrase, tunnelSecrets.HTTPToken, tunnelSecrets.ProxyPassword, tunnelSecrets.HTTPKeyPassphrase} {
 				if sensitive != "" {
 					err = errors.New(strings.ReplaceAll(err.Error(), sensitive, "[已隐藏]"))
 				}

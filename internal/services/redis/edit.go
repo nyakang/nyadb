@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/rediscommand"
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
@@ -37,16 +38,21 @@ for i=1,count do
  if type(result)=='table' and result.err then redis.call('DEL',temp);return redis.error_reply('NYADB_TEMP_FAILED') end
 end
 local expiry=tonumber(ARGV[4])
+local relative=ARGV[at]
+if relative and relative~='preserve' then
+ local ttl=tonumber(relative)
+ if ttl==-1 then expiry=-1 else local now=redis.call('TIME');expiry=tonumber(now[1])*1000+math.floor(tonumber(now[2])/1000)+ttl end
+end
 if expiry~=-1 then
  local now=redis.call('TIME')
  if expiry<=tonumber(now[1])*1000+math.floor(tonumber(now[2])/1000) then redis.call('DEL',temp);return 0 end
- local result=redis.pcall('PEXPIREAT',temp,ARGV[4])
+ local result=redis.pcall('PEXPIREAT',temp,expiry)
  if type(result)=='table' and result.err then redis.call('DEL',temp);return redis.error_reply('NYADB_TEMP_FAILED') end
 end
 local renamed=redis.pcall('RENAME',temp,dest)
 if type(renamed)=='table' and renamed.err then redis.call('DEL',temp);return redis.error_reply('NYADB_TEMP_FAILED') end
 if op~='insert' and old~=dest then redis.call('DEL',old) end
-return {1,redis.call('DUMP',dest)}
+return {1,redis.call('DUMP',dest),expiry}
 `
 
 type preparedEdit struct {
@@ -119,6 +125,9 @@ func (s *Session) prepare(o contract.ObjectRef, edits []contract.DataEdit) ([]pr
 				return nil, err
 			}
 			p.value = v
+		}
+		if e.Kind == "update" && s.topology != nil && s.topology.mode == "cluster" && rediscommand.Slot(string(e.Original.Ref.Values[0])) != rediscommand.Slot(p.key) {
+			return nil, errors.New("Redis Cluster rename requires source and destination in the same hash slot")
 		}
 		out = append(out, p)
 	}
@@ -300,6 +309,12 @@ func (s *Session) save(ctx context.Context, id int64, db, name string, edits []c
 			return result, err
 		}
 		temp := "__nyadb_edit_" + hex.EncodeToString(random[:])
+		if s.topology != nil && s.topology.mode == "cluster" {
+			if rediscommand.Slot(oldKey) != rediscommand.Slot(p.key) {
+				return result, errors.New("Redis Cluster rename requires source and destination in the same hash slot")
+			}
+			temp = "__nyadb_edit_{" + rediscommand.SlotTag(rediscommand.Slot(oldKey)) + "}_" + hex.EncodeToString(random[:])
+		}
 		commands := [][]string{}
 		if p.edit.Kind != "delete" {
 			commands, err = makeCommands(temp, current, p.value, p.hasValue)
@@ -320,14 +335,22 @@ func (s *Session) save(ctx context.Context, id int64, db, name string, edits []c
 			}
 		}
 		// EVAL, never EVALSHA: no automatic script retry following a failed send.
-		raw, e := c.Eval(ctx, saveScript, []string{oldKey, p.key, temp}, args...).Result()
+		relative := "preserve"
+		if p.ttl != nil {
+			relative = strconv.FormatInt(*p.ttl, 10)
+		}
+		args = append(args, relative)
+		raw, e := s.keyEval(ctx, c, saveScript, []string{oldKey, p.key, temp}, args...)
 		applied := int64(0)
 		if n, ok := raw.(int64); ok {
 			applied = n
 		}
-		if values, ok := raw.([]any); ok && len(values) == 2 {
+		if values, ok := raw.([]any); ok && (len(values) == 2 || len(values) == 3) {
 			applied, _ = values[0].(int64)
 			desired.dump, _ = values[1].(string)
+			if len(values) == 3 {
+				desired.expiry, _ = values[2].(int64)
+			}
 			outcome.Saved = s.snapshot(o, desired)
 		}
 		if e != nil {

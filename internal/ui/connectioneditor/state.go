@@ -40,6 +40,9 @@ type Dependencies struct {
 // State is owned by the UI thread. Background tests return immutable results;
 // native picker completions are guarded by the editing session's version.
 type State struct {
+	redisSentinelPassword       string
+	redisSaveSentinelPassword   bool
+	redisHadSentinelPassword    bool
 	engineNumbers               [4]string
 	sqliteBusyTimeout           string
 	sqlMaxConnections           string
@@ -206,6 +209,9 @@ func (s *State) Close() {
 	s.resetConnectionConfigurations()
 	s.active = false
 	s.connectionSecret = ""
+	s.redisSentinelPassword = ""
+	s.redisSaveSentinelPassword = false
+	s.redisHadSentinelPassword = false
 	s.clearMySQLSSLPassphrase()
 	s.clearMySQLSSHSecrets()
 	s.clearMySQLHTTPSecrets()
@@ -231,6 +237,9 @@ func (s *State) Back() {
 	s.connectionEditorTab = 0
 	s.connectionSecret = ""
 	s.connectionSavePassword = false
+	s.redisSentinelPassword = ""
+	s.redisSaveSentinelPassword = false
+	s.redisHadSentinelPassword = false
 	s.clearMySQLSSLPassphrase()
 	s.clearMySQLSSHSecrets()
 	s.clearMySQLHTTPSecrets()

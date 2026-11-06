@@ -4,12 +4,9 @@ package redis
 import (
 	"context"
 	"crypto/rand"
-	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"net"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -21,15 +18,16 @@ import (
 )
 
 type Session struct {
-	mu      sync.Mutex
-	profile connections.Profile
-	options redisdriver.Options
-	clients map[int]*redisdriver.Client
-	leases  map[*queryLease]bool
-	ctx     context.Context
-	cancel  context.CancelFunc
-	closed  bool
-	key     [32]byte
+	topology *topology
+	mu       sync.Mutex
+	profile  connections.Profile
+	options  redisdriver.Options
+	clients  map[int]*redisdriver.Client
+	leases   map[*queryLease]bool
+	ctx      context.Context
+	cancel   context.CancelFunc
+	closed   bool
+	key      [32]byte
 }
 
 func OpenSession(ctx context.Context, p connections.Profile, password string) (contract.Session, error) {
@@ -43,46 +41,60 @@ func OpenSession(ctx context.Context, p connections.Profile, password string) (c
 	db, _ := connections.RedisDatabase(p.Database)
 	a := p.RedisOptions
 	o := redisdriver.Options{Addr: net.JoinHostPort(p.Host, strconv.Itoa(int(p.Port))), Username: p.Username, Password: password, DB: db, Protocol: 2, MaxRetries: -1, PoolSize: a.MaxConnections, DialTimeout: time.Duration(a.ConnectTimeoutSeconds) * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, ContextTimeoutEnabled: true, DisableIdentity: true}
-	if p.TLSMode == "verify-full" {
-		cfg := &tls.Config{MinVersion: tls.VersionTLS12, ServerName: a.ServerName}
-		if cfg.ServerName == "" {
-			cfg.ServerName = p.Host
-		}
-		if a.CAFile != "" {
-			raw, e := os.ReadFile(a.CAFile)
-			roots, e2 := x509.SystemCertPool()
-			if e2 != nil {
-				roots = x509.NewCertPool()
-			}
-			if e != nil || len(raw) > 1<<20 || !roots.AppendCertsFromPEM(raw) {
-				return nil, errors.New("Redis CA certificate could not be loaded")
-			}
-			cfg.RootCAs = roots
-		}
-		o.TLSConfig = cfg
+	o.TLSConfig, err = redisTLS(p.TLSMode, a.CAFile, a.ServerName)
+	if err != nil {
+		return nil, err
 	}
-	c := redisdriver.NewClient(&o)
+	sctx, cancel := context.WithCancel(context.Background())
+	s := &Session{profile: p, options: o, clients: map[int]*redisdriver.Client{}, leases: map[*queryLease]bool{}, ctx: sctx, cancel: cancel}
 	open, stop := context.WithTimeout(ctx, o.DialTimeout)
 	defer stop()
+	var c *redisdriver.Client
+	if a.Topology == "standalone" {
+		c = redisdriver.NewClient(&o)
+		s.clients[db] = c
+	} else {
+		s.topology, err = newTopology(p, o, connections.RedisSentinelPassword(ctx))
+		if err != nil {
+			s.Close()
+			return nil, err
+		}
+		addr := ""
+		if a.Topology == "sentinel" {
+			addr, err = s.topology.master(open)
+		} else {
+			var ranges []clusterRange
+			ranges, err = s.topology.refresh(open)
+			if err == nil {
+				addr = ranges[0].Addr
+			}
+		}
+		if err == nil {
+			c, err = s.topology.client(addr, db)
+		}
+		if err != nil {
+			s.Close()
+			return nil, safeError(err)
+		}
+	}
 	if err = c.Ping(open).Err(); err != nil {
-		c.Close()
+		s.Close()
 		return nil, safeError(err)
 	}
 	info, err := c.Info(open, "server", "cluster").Result()
 	if err != nil {
-		c.Close()
+		s.Close()
 		return nil, safeError(err)
 	}
-	if strings.Contains(info, "cluster_enabled:1") || !redis7(info) {
-		c.Close()
-		return nil, errors.New("Redis requires a standalone Redis 7 or later server")
+	cluster := strings.Contains(info, "cluster_enabled:1")
+	if !redis7(info) || cluster != (a.Topology == "cluster") {
+		s.Close()
+		return nil, errors.New("Redis version or server mode does not match the configured topology")
 	}
 	if err = ctx.Err(); err != nil {
-		c.Close()
+		s.Close()
 		return nil, err
 	}
-	sctx, cancel := context.WithCancel(context.Background())
-	s := &Session{profile: p, options: o, clients: map[int]*redisdriver.Client{db: c}, leases: map[*queryLease]bool{}, ctx: sctx, cancel: cancel}
 	if _, err = rand.Read(s.key[:]); err != nil {
 		s.Close()
 		return nil, err
@@ -113,25 +125,56 @@ func (s *Session) request(ctx context.Context, db string) (context.Context, cont
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.closed {
-		return nil, nil, nil, contract.ErrRevoked
+	if s.topology != nil && s.topology.mode == "cluster" && n != 0 {
+		return nil, nil, nil, errors.New("Redis Cluster supports only database 0")
 	}
-	c := s.clients[n]
-	if c == nil {
-		if len(s.clients) >= 64 {
-			return nil, nil, nil, errors.New("Redis active database limit reached")
-		}
-		opts := s.options
-		opts.DB = n
-		c = redisdriver.NewClient(&opts)
-		s.clients[n] = c
+	s.mu.Lock()
+	if s.closed {
+		s.mu.Unlock()
+		return nil, nil, nil, contract.ErrRevoked
 	}
 	r, cancel := context.WithCancel(ctx)
 	stop := context.AfterFunc(s.ctx, cancel)
-	return r, func() { stop(); cancel() }, c, nil
+	done := func() { stop(); cancel() }
+	if s.topology == nil {
+		c := s.clients[n]
+		if c == nil {
+			if len(s.clients) >= 64 {
+				s.mu.Unlock()
+				done()
+				return nil, nil, nil, errors.New("Redis active database limit reached")
+			}
+			o := s.options
+			o.DB = n
+			c = redisdriver.NewClient(&o)
+			s.clients[n] = c
+		}
+		s.mu.Unlock()
+		return r, done, c, nil
+	}
+	s.mu.Unlock()
+	addr := ""
+	if s.topology.mode == "sentinel" {
+		addr, err = s.topology.master(r)
+	} else {
+		var nodes []scanNode
+		nodes, err = s.topology.masters(r)
+		if err == nil {
+			addr = nodes[0].Addr
+		}
+	}
+	if err != nil {
+		done()
+		return nil, nil, nil, safeError(err)
+	}
+	c, err := s.topology.client(addr, n)
+	if err != nil {
+		done()
+		return nil, nil, nil, err
+	}
+	return r, done, c, nil
 }
+
 func (s *Session) object(o contract.ObjectRef) error {
 	if o.ProfileID != s.ProfileID() || o.Schema != "" || o.Kind != "keyspace" || o.Name != "keys" {
 		return connections.ErrInvalid
@@ -161,6 +204,9 @@ func (s *Session) Close() error {
 	var err error
 	for _, c := range clients {
 		err = errors.Join(err, c.Close())
+	}
+	if s.topology != nil {
+		err = errors.Join(err, s.topology.Close())
 	}
 	return safeError(err)
 }

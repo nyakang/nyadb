@@ -44,6 +44,7 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 	s.Activate(p.ID)
 	w := s.current
 	password := w.Password
+	sentinelPassword := w.SentinelPassword
 	var vaultErr error
 	if password == "" && s.deps.ReadSecret != nil {
 		var exists bool
@@ -52,12 +53,20 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 			password = ""
 		}
 	}
+	if p.Kind == connections.Redis && p.RedisOptions.Topology == "sentinel" && sentinelPassword == "" && s.deps.ReadSecret != nil {
+		var e error
+		sentinelPassword, _, e = s.deps.ReadSecret(p.ID, connections.RedisSentinelCredential)
+		vaultErr = errors.Join(vaultErr, e)
+	}
 	if w.ProfileID == p.ID {
 		s.Disconnect(p.ID)
 	}
 	w = s.current
 	ctx, cancel := context.WithCancel(context.Background())
 	w.sessionCancel = cancel
+	if p.Kind == connections.Redis {
+		ctx = connections.WithRedisSentinelPassword(ctx, sentinelPassword)
+	}
 	s.bumpGeneration(w)
 	generation := w.Generation
 	w.ProfileID, w.Status, w.Error = p.ID, "连接中", ""
@@ -68,6 +77,7 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 		w.Catalog = "main"
 	}
 	w.Password = ""
+	w.SentinelPassword = ""
 	w.Databases = nil
 	w.Namespaces = nil
 	s.ResetBrowser()
@@ -107,6 +117,9 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 				return nil
 			}
 			message := strings.ReplaceAll(err.Error(), "[hidden]", "[已隐藏]")
+			if sentinelPassword != "" {
+				message = strings.ReplaceAll(message, sentinelPassword, "[已隐藏]")
+			}
 			if password != "" {
 				message = strings.ReplaceAll(message, password, "[已隐藏]")
 			}

@@ -1,12 +1,47 @@
 package connections_test
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
+
+func TestRedisTopologyURIValidationAndSeparateCredentials(t *testing.T) {
+	for _, uri := range []string{
+		"redis://acl:secret@localhost:7000/0?topology=cluster&seeds=localhost:7001,[::1]:7002",
+		"rediss://acl:secret@localhost:26379/3?topology=sentinel&seeds=localhost:26380&master_name=mymaster&sentinel_username=monitor&sentinel_tls=true",
+	} {
+		u, err := connections.ParseURI(uri)
+		if err != nil {
+			t.Fatal(err)
+		}
+		raw, _ := json.Marshal(u.Profile)
+		if strings.Contains(string(raw), "secret") {
+			t.Fatal("URI password entered public profile")
+		}
+		if u.Profile.RedisOptions.Topology == "standalone" {
+			t.Fatal("topology lost")
+		}
+	}
+	for _, uri := range []string{
+		"redis://localhost/1?topology=cluster", "redis://localhost?topology=sentinel",
+		"redis://localhost?topology=cluster&seeds=localhost", "redis://localhost?topology=cluster&seeds=localhost:0",
+		"redis://localhost?topology=cluster&seeds=localhost:1,localhost:1", "redis://localhost?seeds=localhost:1",
+		"redis://localhost?topology=cluster&master_name=m", "redis://localhost?topology=other",
+		"redis://localhost?topology=sentinel&master_name=m&sentinel_password=secret",
+	} {
+		if _, err := connections.ParseURI(uri); err == nil {
+			t.Fatalf("invalid topology accepted: %s", uri)
+		}
+	}
+	ctx := connections.WithRedisSentinelPassword(context.Background(), "sentinel-only-secret")
+	if connections.RedisSentinelPassword(ctx) != "sentinel-only-secret" || connections.RedisSentinelPassword(context.Background()) != "" {
+		t.Fatal("transient credential crossed context scope")
+	}
+}
 
 func TestRedisURIAndOptionsPreservePublicSettings(t *testing.T) {
 	u, e := connections.ParseURI("rediss://acl:temp%40secret@[::1]:6380/3")

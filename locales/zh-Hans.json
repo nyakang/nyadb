@@ -1979,5 +1979,22 @@
   "redisRecovery": "连接已断开；Redis 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令",
   "redisStandalone": "Redis 单节点连接；支持 Redis 7 及以上版本。用户名留空使用默认用户。",
   "redisScanWarning": "SCAN 不提供稳定快照；扫描期间键变化可能导致重复或遗漏。键和值中的字节使用 base64。",
-  "redisCommand": "Redis 命令："
+  "redisCommand": "Redis 命令：",
+  "redisTopologyCaption": "Redis 拓扑：",
+  "redisTopology": "Redis 拓扑",
+  "redisSeedsCaption": "附加节点：",
+  "redisSeeds": "Redis 附加节点",
+  "redisMasterCaption": "主节点名称：",
+  "redisMaster": "Sentinel 主节点名称",
+  "redisSentinelUserCaption": "Sentinel 用户名：",
+  "redisSentinelUser": "Sentinel 用户名",
+  "redisSentinelPasswordCaption": "Sentinel 密码：",
+  "redisSentinelPassword": "Sentinel 密码",
+  "redisSaveSentinelPassword": "保存 Sentinel 密码",
+  "redisSentinelTLSCaption": "Sentinel TLS 模式：",
+  "redisSentinelTLS": "Sentinel TLS 模式",
+  "redisSentinelCA": "Sentinel CA 证书",
+  "redisSentinelServerName": "Sentinel 证书服务器名",
+  "redisSentinelSessionPassword": "Sentinel 会话密码",
+  "redisTopologyHelp": "Redis 7 及以上版本；附加节点使用 host:port，逗号分隔。Sentinel 主机和端口指向 Sentinel，Redis 与 Sentinel 密码独立。"
 }

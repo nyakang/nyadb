@@ -16,6 +16,13 @@ func TestRedisOptionsRoundTripAndLegacyCompatibility(t *testing.T) {
 	p.RedisOptions.CAFile = "/tmp/ca.crt"
 	p.RedisOptions.ServerName = "redis.example"
 	p.RedisOptions.MaxConnections = 3
+	p.RedisOptions.Topology = "sentinel"
+	p.RedisOptions.Seeds = "127.0.0.1:26380,[::1]:26381"
+	p.RedisOptions.MasterName = "mymaster"
+	p.RedisOptions.SentinelUsername = "monitor"
+	p.RedisOptions.SentinelTLSMode = "verify-full"
+	p.RedisOptions.SentinelCAFile = "/tmp/sentinel-ca.crt"
+	p.RedisOptions.SentinelServerName = "sentinel.example"
 	saved, err := store.Create(ctx, p)
 	if err != nil {
 		t.Fatal(err)

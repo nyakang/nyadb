@@ -22,6 +22,12 @@ import (
 )
 
 type queryLease struct {
+	targetAddress, boundAddress  string
+	boundSlot                    int
+	pendingMulti                 bool
+	multiFailed                  bool
+	pendingCommands              [][]string
+	pendingBytes                 int
 	mu                           sync.Mutex
 	op                           sync.Mutex
 	session                      *Session
@@ -45,7 +51,7 @@ func (s *Session) ReserveQuery(_ uint64) (contract.QueryLease, error) {
 		return nil, contract.ErrSQLSessionLimit
 	}
 	ctx, cancel := context.WithCancel(s.ctx)
-	l := &queryLease{session: s, ctx: ctx, cancel: cancel, catalog: s.profile.Database}
+	l := &queryLease{session: s, ctx: ctx, cancel: cancel, catalog: s.profile.Database, boundSlot: -1}
 	s.leases[l] = true
 	return l, nil
 }
@@ -86,6 +92,23 @@ func (l *queryLease) dial(ctx context.Context) error {
 	l.session.mu.Lock()
 	o := l.session.options
 	l.session.mu.Unlock()
+	if l.targetAddress != "" {
+		o.Addr = l.targetAddress
+	} else if l.session.topology != nil {
+		if l.session.topology.mode == "sentinel" {
+			addr, e := l.session.topology.master(ctx)
+			if e != nil {
+				return e
+			}
+			o.Addr = addr
+		} else {
+			nodes, e := l.session.topology.masters(ctx)
+			if e != nil {
+				return e
+			}
+			o.Addr = nodes[0].Addr
+		}
+	}
 	d := net.Dialer{Timeout: o.DialTimeout}
 	var c net.Conn
 	var err error
@@ -99,6 +122,7 @@ func (l *queryLease) dial(ctx context.Context) error {
 		return safeError(err)
 	}
 	l.conn = c
+	l.boundAddress = o.Addr
 	l.reader = bufio.NewReader(c)
 	done := make(chan struct{})
 	stop := context.AfterFunc(ctx, func() { c.Close(); close(done) })
@@ -282,69 +306,14 @@ func (l *queryLease) ExecuteStream(ctx context.Context, db, text string, sink fu
 	defer cancel()
 	stopLease := context.AfterFunc(l.ctx, cancel)
 	defer stopLease()
-	if err = l.dial(ctx); err != nil {
-		return result, err
-	}
-	l.mu.Lock()
-	if l.closed || l.lost {
-		l.mu.Unlock()
-		return result, contract.ErrSQLSessionLost
-	}
-	c := l.conn
-	if db != l.catalog && (l.multi || l.watched) {
-		l.mu.Unlock()
-		return result, errors.New("finish Redis MULTI/WATCH before changing databases")
-	}
-	l.mu.Unlock()
-	done := make(chan struct{})
-	stop := context.AfterFunc(ctx, func() { c.Close(); close(done) })
-	defer func() {
-		if !stop() {
-			<-done
-		}
-		c.SetDeadline(time.Time{})
-		deadline, hasDeadline := ctx.Deadline()
-		if ctx.Err() != nil || hasDeadline && !time.Now().Before(deadline) {
-			err = ctx.Err()
-			if err == nil {
-				err = context.DeadlineExceeded
-			}
-			l.mu.Lock()
-			l.lost = true
-			c.Close()
-			l.mu.Unlock()
-		}
-	}()
-	if deadline, ok := ctx.Deadline(); ok {
-		c.SetDeadline(deadline)
+	if l.session.topology != nil && l.session.topology.mode == "cluster" && db != "0" {
+		return result, errors.New("Redis Cluster supports only database 0")
 	}
 	start := time.Now()
 	defer func() { result.Duration = time.Since(start) }()
-	if db != l.catalog {
-		if _, err = l.exchange([]string{"SELECT", db}); err != nil {
-			return result, l.fail(err)
-		}
-		l.catalog = db
-	}
-	value, err := l.exchange(args)
+	value, err := l.runNative(ctx, db, args)
 	if err != nil {
-		var server replyError
-		if command == "EXEC" && errors.As(err, &server) && strings.HasPrefix(string(server), "EXECABORT") {
-			l.multi = false
-			l.watched = false
-		}
-		return result, l.fail(err)
-	}
-	switch command {
-	case "MULTI":
-		l.multi = true
-	case "WATCH":
-		l.watched = true
-	case "UNWATCH":
-		l.watched = false
-	case "EXEC", "DISCARD":
-		l.multi = false
-		l.watched = false
+		return result, err
 	}
 	raw, e := json.Marshal(responseJSON(value))
 	if e != nil {

@@ -20137,3 +20137,173 @@ func RedisCommand() string { return In(i18n.Locale()).RedisCommand() }
 func (msgs Messages) RedisCommand() string {
 	return Catalog.Format(msgs.locale, "redisCommand", nil)
 }
+
+// RedisTopologyCaption says "Redis 拓扑："
+// in the language the app shows.
+func RedisTopologyCaption() string { return In(i18n.Locale()).RedisTopologyCaption() }
+
+// RedisTopologyCaption says "Redis 拓扑："
+// in the language of msgs.
+func (msgs Messages) RedisTopologyCaption() string {
+	return Catalog.Format(msgs.locale, "redisTopologyCaption", nil)
+}
+
+// RedisTopology says "Redis 拓扑"
+// in the language the app shows.
+func RedisTopology() string { return In(i18n.Locale()).RedisTopology() }
+
+// RedisTopology says "Redis 拓扑"
+// in the language of msgs.
+func (msgs Messages) RedisTopology() string {
+	return Catalog.Format(msgs.locale, "redisTopology", nil)
+}
+
+// RedisSeedsCaption says "附加节点："
+// in the language the app shows.
+func RedisSeedsCaption() string { return In(i18n.Locale()).RedisSeedsCaption() }
+
+// RedisSeedsCaption says "附加节点："
+// in the language of msgs.
+func (msgs Messages) RedisSeedsCaption() string {
+	return Catalog.Format(msgs.locale, "redisSeedsCaption", nil)
+}
+
+// RedisSeeds says "Redis 附加节点"
+// in the language the app shows.
+func RedisSeeds() string { return In(i18n.Locale()).RedisSeeds() }
+
+// RedisSeeds says "Redis 附加节点"
+// in the language of msgs.
+func (msgs Messages) RedisSeeds() string {
+	return Catalog.Format(msgs.locale, "redisSeeds", nil)
+}
+
+// RedisMasterCaption says "主节点名称："
+// in the language the app shows.
+func RedisMasterCaption() string { return In(i18n.Locale()).RedisMasterCaption() }
+
+// RedisMasterCaption says "主节点名称："
+// in the language of msgs.
+func (msgs Messages) RedisMasterCaption() string {
+	return Catalog.Format(msgs.locale, "redisMasterCaption", nil)
+}
+
+// RedisMaster says "Sentinel 主节点名称"
+// in the language the app shows.
+func RedisMaster() string { return In(i18n.Locale()).RedisMaster() }
+
+// RedisMaster says "Sentinel 主节点名称"
+// in the language of msgs.
+func (msgs Messages) RedisMaster() string {
+	return Catalog.Format(msgs.locale, "redisMaster", nil)
+}
+
+// RedisSentinelUserCaption says "Sentinel 用户名："
+// in the language the app shows.
+func RedisSentinelUserCaption() string { return In(i18n.Locale()).RedisSentinelUserCaption() }
+
+// RedisSentinelUserCaption says "Sentinel 用户名："
+// in the language of msgs.
+func (msgs Messages) RedisSentinelUserCaption() string {
+	return Catalog.Format(msgs.locale, "redisSentinelUserCaption", nil)
+}
+
+// RedisSentinelUser says "Sentinel 用户名"
+// in the language the app shows.
+func RedisSentinelUser() string { return In(i18n.Locale()).RedisSentinelUser() }
+
+// RedisSentinelUser says "Sentinel 用户名"
+// in the language of msgs.
+func (msgs Messages) RedisSentinelUser() string {
+	return Catalog.Format(msgs.locale, "redisSentinelUser", nil)
+}
+
+// RedisSentinelPasswordCaption says "Sentinel 密码："
+// in the language the app shows.
+func RedisSentinelPasswordCaption() string { return In(i18n.Locale()).RedisSentinelPasswordCaption() }
+
+// RedisSentinelPasswordCaption says "Sentinel 密码："
+// in the language of msgs.
+func (msgs Messages) RedisSentinelPasswordCaption() string {
+	return Catalog.Format(msgs.locale, "redisSentinelPasswordCaption", nil)
+}
+
+// RedisSentinelPassword says "Sentinel 密码"
+// in the language the app shows.
+func RedisSentinelPassword() string { return In(i18n.Locale()).RedisSentinelPassword() }
+
+// RedisSentinelPassword says "Sentinel 密码"
+// in the language of msgs.
+func (msgs Messages) RedisSentinelPassword() string {
+	return Catalog.Format(msgs.locale, "redisSentinelPassword", nil)
+}
+
+// RedisSaveSentinelPassword says "保存 Sentinel 密码"
+// in the language the app shows.
+func RedisSaveSentinelPassword() string { return In(i18n.Locale()).RedisSaveSentinelPassword() }
+
+// RedisSaveSentinelPassword says "保存 Sentinel 密码"
+// in the language of msgs.
+func (msgs Messages) RedisSaveSentinelPassword() string {
+	return Catalog.Format(msgs.locale, "redisSaveSentinelPassword", nil)
+}
+
+// RedisSentinelTLSCaption says "Sentinel TLS 模式："
+// in the language the app shows.
+func RedisSentinelTLSCaption() string { return In(i18n.Locale()).RedisSentinelTLSCaption() }
+
+// RedisSentinelTLSCaption says "Sentinel TLS 模式："
+// in the language of msgs.
+func (msgs Messages) RedisSentinelTLSCaption() string {
+	return Catalog.Format(msgs.locale, "redisSentinelTLSCaption", nil)
+}
+
+// RedisSentinelTLS says "Sentinel TLS 模式"
+// in the language the app shows.
+func RedisSentinelTLS() string { return In(i18n.Locale()).RedisSentinelTLS() }
+
+// RedisSentinelTLS says "Sentinel TLS 模式"
+// in the language of msgs.
+func (msgs Messages) RedisSentinelTLS() string {
+	return Catalog.Format(msgs.locale, "redisSentinelTLS", nil)
+}
+
+// RedisSentinelCA says "Sentinel CA 证书"
+// in the language the app shows.
+func RedisSentinelCA() string { return In(i18n.Locale()).RedisSentinelCA() }
+
+// RedisSentinelCA says "Sentinel CA 证书"
+// in the language of msgs.
+func (msgs Messages) RedisSentinelCA() string {
+	return Catalog.Format(msgs.locale, "redisSentinelCA", nil)
+}
+
+// RedisSentinelServerName says "Sentinel 证书服务器名"
+// in the language the app shows.
+func RedisSentinelServerName() string { return In(i18n.Locale()).RedisSentinelServerName() }
+
+// RedisSentinelServerName says "Sentinel 证书服务器名"
+// in the language of msgs.
+func (msgs Messages) RedisSentinelServerName() string {
+	return Catalog.Format(msgs.locale, "redisSentinelServerName", nil)
+}
+
+// RedisSentinelSessionPassword says "Sentinel 会话密码"
+// in the language the app shows.
+func RedisSentinelSessionPassword() string { return In(i18n.Locale()).RedisSentinelSessionPassword() }
+
+// RedisSentinelSessionPassword says "Sentinel 会话密码"
+// in the language of msgs.
+func (msgs Messages) RedisSentinelSessionPassword() string {
+	return Catalog.Format(msgs.locale, "redisSentinelSessionPassword", nil)
+}
+
+// RedisTopologyHelp says "Redis 7 及以上版本；附加节点使用 host:port，逗号分隔。Sentinel 主机和端口指向 Sentinel，Red…"
+// in the language the app shows.
+func RedisTopologyHelp() string { return In(i18n.Locale()).RedisTopologyHelp() }
+
+// RedisTopologyHelp says "Redis 7 及以上版本；附加节点使用 host:port，逗号分隔。Sentinel 主机和端口指向 Sentinel，Red…"
+// in the language of msgs.
+func (msgs Messages) RedisTopologyHelp() string {
+	return Catalog.Format(msgs.locale, "redisTopologyHelp", nil)
+}

@@ -43,7 +43,7 @@ return {t,expiry,ttl,dump,v,1}
 `
 
 func (s *Session) read(ctx context.Context, c *redisdriver.Client, key string) (keyRecord, error) {
-	raw, err := c.Eval(ctx, readScript, []string{key}).Result()
+	raw, err := s.keyEval(ctx, c, readScript, []string{key})
 	if err != nil {
 		return keyRecord{}, safeError(err)
 	}
@@ -114,6 +114,9 @@ func (s *Session) read(ctx context.Context, c *redisdriver.Client, key string) (
 	return r, nil
 }
 func (s *Session) Namespaces(ctx context.Context) ([]contract.Namespace, error) {
+	if s.topology != nil && s.topology.mode == "cluster" {
+		return []contract.Namespace{{Ref: s.Namespace("0"), Label: "0"}}, nil
+	}
 	ctx, cancel, c, err := s.request(ctx, s.profile.Database)
 	if err != nil {
 		return nil, err
@@ -187,9 +190,10 @@ func (s *Session) load(ctx context.Context, id int64, db, name string, offset in
 }
 
 type scanState struct {
-	Cursor  uint64
+	Nodes   []scanNode
+	Active  int
 	Pending []string
-	Started bool
+	Epoch   string
 }
 
 func (s *Session) cursorSignature(o contract.ObjectRef, state []byte, match string) string {
@@ -257,6 +261,17 @@ func (s *Session) page(ctx context.Context, id int64, db, name string, o contrac
 		return nil, err
 	}
 	defer cancel()
+	nodes, err := s.scanPlan(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+	epoch := s.scanEpoch(nodes)
+	if o.After == nil {
+		state.Nodes = nodes
+		state.Epoch = epoch
+	} else if state.Epoch != epoch || len(state.Nodes) != len(nodes) || state.Active < 0 || state.Active > len(nodes) {
+		return nil, errors.New("Redis topology changed; refresh the key browser")
+	}
 	start := time.Now()
 	editable := true
 	p := &contract.DataPage{Object: object, Database: db, Table: name, Columns: []string{"key", "type", "ttl_ms", "value"}, ColumnKinds: []string{"text", "text", "bigint", "json"}, ColumnMetadata: cols(), Offset: o.Offset, Limit: o.Limit, Editable: &editable, KeysetAvailable: true, QuerySQL: "Redis SCAN MATCH; results are not a stable snapshot"}
@@ -264,19 +279,27 @@ func (s *Session) page(ctx context.Context, id int64, db, name string, o contrac
 	scans := 0
 	for len(p.Rows) < o.Limit {
 		if len(state.Pending) == 0 {
-			if state.Started && state.Cursor == 0 {
-				break
+			for state.Active < len(state.Nodes) && state.Nodes[state.Active].Started && state.Nodes[state.Active].Cursor == 0 {
+				state.Active++
 			}
-			if scans >= 128 {
+			if state.Active == len(state.Nodes) || scans >= 128 {
 				break
 			}
 			scans++
-			keys, next, e := c.Scan(ctx, state.Cursor, match, 200).Result()
+			node := &state.Nodes[state.Active]
+			client := c
+			if s.topology != nil {
+				client, err = s.topology.client(node.Addr, c.Options().DB)
+				if err != nil {
+					return nil, err
+				}
+			}
+			keys, next, e := client.Scan(ctx, node.Cursor, match, 200).Result()
 			if e != nil {
 				return nil, safeError(e)
 			}
-			state.Started = true
-			state.Cursor = next
+			node.Started = true
+			node.Cursor = next
 			size := 0
 			for _, k := range keys {
 				size += len(k)
@@ -321,7 +344,19 @@ func (s *Session) page(ctx context.Context, id int64, db, name string, o contrac
 		}
 		p.RowSnapshots = append(p.RowSnapshots, snap)
 	}
-	p.HasMore = len(state.Pending) > 0 || state.Cursor != 0 || !state.Started
+	for state.Active < len(state.Nodes) && len(state.Pending) == 0 && state.Nodes[state.Active].Started && state.Nodes[state.Active].Cursor == 0 {
+		state.Active++
+	}
+	p.HasMore = len(state.Pending) > 0 || state.Active < len(state.Nodes)
+	if s.topology != nil {
+		fresh, e := s.scanPlan(ctx, c)
+		if e != nil {
+			return nil, e
+		}
+		if s.scanEpoch(fresh) != state.Epoch {
+			return nil, errors.New("Redis topology changed during scanning; refresh the key browser")
+		}
+	}
 	if p.HasMore {
 		raw, _ := json.Marshal(state)
 		p.NextCursor = &contract.DataCursor{Database: db, Table: name, Columns: []string{"scan"}, Values: [][]byte{raw}, RuleSignature: s.cursorSignature(object, raw, match)}
@@ -363,6 +398,33 @@ func (s *Session) count(ctx context.Context, id int64, db, name string) (int64, 
 		return 0, err
 	}
 	defer cancel()
+	if s.topology != nil && s.topology.mode == "cluster" {
+		nodes, e := s.scanPlan(ctx, c)
+		if e != nil {
+			return 0, e
+		}
+		epoch := s.scanEpoch(nodes)
+		var total int64
+		for _, node := range nodes {
+			client, e := s.topology.client(node.Addr, 0)
+			if e != nil {
+				return 0, e
+			}
+			n, e := client.DBSize(ctx).Result()
+			if e != nil {
+				return 0, safeError(e)
+			}
+			total += n
+		}
+		fresh, e := s.scanPlan(ctx, c)
+		if e != nil {
+			return 0, e
+		}
+		if epoch != s.scanEpoch(fresh) {
+			return 0, errors.New("Redis Cluster topology changed during counting")
+		}
+		return total, nil
+	}
 	n, err := c.DBSize(ctx).Result()
 	return n, safeError(err)
 }
@@ -470,7 +532,7 @@ func (s *Session) stringChunk(ctx context.Context, db, key string, offset int64,
 	block := b64Start / 4
 	byteStart := block * 3
 	byteEnd := byteStart + int64((units+12)/4*3) - 1
-	raw, err := c.Eval(ctx, `local t=redis.call('TYPE',KEYS[1]).ok; if t=='none' then return false end; if t~='string' then return {t} end;return {t,redis.call('STRLEN',KEYS[1]),redis.call('GETRANGE',KEYS[1],ARGV[1],ARGV[2])}`, []string{key}, byteStart, byteEnd).Result()
+	raw, err := s.keyEval(ctx, c, `local t=redis.call('TYPE',KEYS[1]).ok; if t=='none' then return false end; if t~='string' then return {t} end;return {t,redis.call('STRLEN',KEYS[1]),redis.call('GETRANGE',KEYS[1],ARGV[1],ARGV[2])}`, []string{key}, byteStart, byteEnd)
 	if err != nil {
 		return nil, safeError(err)
 	}

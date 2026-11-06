@@ -1979,5 +1979,22 @@
   "redisRecovery": "Disconnected; Redis commands were preserved. Connect to the original profile and explicitly start a new session; commands will not run automatically.",
   "redisStandalone": "Standalone Redis 7 or later. Leave the username empty to use the default user.",
   "redisScanWarning": "SCAN is not a stable snapshot; key changes may cause duplicates or omissions. Key and value bytes use base64.",
-  "redisCommand": "Redis command: "
+  "redisCommand": "Redis command: ",
+  "redisTopologyCaption": "Redis topology:",
+  "redisTopology": "Redis topology",
+  "redisSeedsCaption": "Additional nodes:",
+  "redisSeeds": "Additional Redis nodes",
+  "redisMasterCaption": "Master name:",
+  "redisMaster": "Sentinel master name",
+  "redisSentinelUserCaption": "Sentinel username:",
+  "redisSentinelUser": "Sentinel username",
+  "redisSentinelPasswordCaption": "Sentinel password:",
+  "redisSentinelPassword": "Sentinel password",
+  "redisSaveSentinelPassword": "Save Sentinel password",
+  "redisSentinelTLSCaption": "Sentinel TLS mode:",
+  "redisSentinelTLS": "Sentinel TLS mode",
+  "redisSentinelCA": "Sentinel CA certificate",
+  "redisSentinelServerName": "Sentinel certificate server name",
+  "redisSentinelSessionPassword": "Sentinel session password",
+  "redisTopologyHelp": "Redis 7 or later. Additional nodes use comma-separated host:port addresses. In Sentinel mode, host and port point to a Sentinel; Redis and Sentinel passwords are separate."
 }
