@@ -36,7 +36,7 @@ func NewManager() *Manager {
 	return &Manager{sessions: make(map[int64]*Session), intents: make(map[int64]uint64)}
 }
 func (m *Manager) Connect(ctx context.Context, p connections.Profile, password string) error {
-	if p.Kind != connections.PostgreSQL && p.Kind != connections.SQLite {
+	if !p.Kind.IsPostgreSQLFamily() && p.Kind != connections.SQLite {
 		return fmt.Errorf("unsupported engine %s", p.Kind)
 	}
 	if p.ID <= 0 || p.Database == "" {
@@ -64,7 +64,7 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 		return err
 	}
 	maxConnections, sqlLimit := p.SQLiteOptions.MaxConnections, p.SQLiteOptions.SQLMaxConnections
-	if p.Kind == connections.PostgreSQL {
+	if p.Kind.IsPostgreSQLFamily() {
 		options, e := connections.NormalizePostgreSQLOptions(p.PostgreSQLOptions)
 		if e != nil {
 			db.Close()
@@ -79,6 +79,12 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 	if e := db.PingContext(ctx); e != nil {
 		db.Close()
 		return redact(e, password)
+	}
+	if p.Kind == connections.CockroachDB {
+		if err := validateCockroachServer(ctx, db); err != nil {
+			db.Close()
+			return redact(err, password)
+		}
 	}
 	// SQL documents pin physical sessions. Their pool must never consume the
 	// connections needed by metadata, data documents or maintenance jobs.
@@ -107,7 +113,7 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 	return nil
 }
 func redact(e error, password string) error {
-	if e != nil && password != "" {
+	if e != nil && password != "" && strings.Contains(e.Error(), password) {
 		return errors.New(strings.ReplaceAll(e.Error(), password, "[hidden]"))
 	}
 	return e

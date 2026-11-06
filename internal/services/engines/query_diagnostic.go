@@ -15,6 +15,9 @@ func queryDiagnostic(err error, sql string, statement int) error {
 	var pg *pgconn.PgError
 	if errors.As(err, &pg) {
 		d.Code, d.Detail, d.Hint = pg.Code, pg.Detail, pg.Hint
+		if pg.Code == "40001" && d.Hint == "" {
+			d.Hint = "Retry the complete transaction after refreshing its reads."
+		}
 		d.Position = contract.QueryCharacterPosition(sql, int(pg.Position))
 	} else if code, ok := err.(interface{ Code() int }); ok {
 		d.Code = fmt.Sprint(code.Code())

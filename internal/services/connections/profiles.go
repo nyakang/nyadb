@@ -10,23 +10,27 @@ import (
 type Kind string
 
 const (
-	MySQL      Kind = "mysql"
-	MariaDB    Kind = "mariadb"
-	TiDB       Kind = "tidb"
-	OceanBase  Kind = "oceanbase"
-	PostgreSQL Kind = "postgresql"
-	SQLite     Kind = "sqlite"
-	ClickHouse Kind = "clickhouse"
-	SQLServer  Kind = "sqlserver"
-	DuckDB     Kind = "duckdb"
-	Oracle     Kind = "oracle"
-	MongoDB    Kind = "mongodb"
-	Redis      Kind = "redis"
+	MySQL       Kind = "mysql"
+	MariaDB     Kind = "mariadb"
+	TiDB        Kind = "tidb"
+	OceanBase   Kind = "oceanbase"
+	PostgreSQL  Kind = "postgresql"
+	CockroachDB Kind = "cockroachdb"
+	SQLite      Kind = "sqlite"
+	ClickHouse  Kind = "clickhouse"
+	SQLServer   Kind = "sqlserver"
+	DuckDB      Kind = "duckdb"
+	Oracle      Kind = "oracle"
+	MongoDB     Kind = "mongodb"
+	Redis       Kind = "redis"
 )
 
 // IsMySQLFamily identifies products sharing the MySQL client and connection
 // settings. Product identity and capabilities remain separate.
 func (k Kind) IsMySQLFamily() bool { return k == MySQL || k == MariaDB || k == TiDB || k == OceanBase }
+
+// IsPostgreSQLFamily identifies products sharing PostgreSQL wire transport and options.
+func (k Kind) IsPostgreSQLFamily() bool { return k == PostgreSQL || k == CockroachDB }
 
 var (
 	ErrNotFound = errors.New("connection profile not found")

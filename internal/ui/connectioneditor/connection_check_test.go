@@ -143,7 +143,7 @@ func TestMySQLConnectionTestUnsupportedOptionsNoNetwork(t *testing.T) {
 }
 
 func TestPortableConnectionTestCapturesDraftAndRejectsLateResult(t *testing.T) {
-	for _, kind := range []connections.Kind{connections.PostgreSQL, connections.SQLite} {
+	for _, kind := range []connections.Kind{connections.PostgreSQL, connections.CockroachDB, connections.SQLite} {
 		t.Run(string(kind), func(t *testing.T) {
 			s := newTestEditor()
 			s.openConnectionDialog()

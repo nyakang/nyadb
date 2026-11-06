@@ -74,9 +74,12 @@ func (s *Session) analyzeColumn(ctx context.Context, q queryer, f contract.Field
 	c := quote(f.Name)
 	group := c
 	stats := contract.DataColumnAnalysis{Name: f.Name, Kind: f.DatabaseType}
-	if s.kind == connections.PostgreSQL {
+	if s.kind.IsPostgreSQLFamily() {
 		if !pgDataScalar(f.DatabaseType) && !pgDataNumeric(f.DatabaseType) && canonicalDataType(f.DatabaseType) != "bytea" {
 			group = c + `::text COLLATE "C"`
+			if s.kind == connections.CockroachDB {
+				group = c + "::text"
+			}
 			stats.Collation = "C (text representation)"
 		} else if canonicalDataType(f.DatabaseType) == "bytea" {
 			stats.Collation = "binary"

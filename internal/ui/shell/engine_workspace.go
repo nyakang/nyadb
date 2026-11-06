@@ -38,8 +38,11 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 	}
 	status := s.sessions.StatusFor(p.ID)
 	ui.Column(c).Gap(5).Children(func() {
-		if (p.Kind == connections.PostgreSQL || p.Kind == connections.ClickHouse || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.MongoDB || p.Kind == connections.Redis) && status != "已连接" {
+		if (p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.MongoDB || p.Kind == connections.Redis) && status != "已连接" {
 			label := locales.Text("PostgreSQL 会话密码")
+			if p.Kind == connections.CockroachDB {
+				label = locales.Text("CockroachDB 会话密码")
+			}
 			if p.Kind == connections.Redis {
 				label = locales.Text("Redis 会话密码")
 			}

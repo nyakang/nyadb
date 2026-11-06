@@ -24,6 +24,7 @@ const sources = new Set([
 const entries = [
   ["MySQL","mysql","mysql","#34C759"],
   ["PostgreSQL","postgresql","postgresql","#4385EE"],
+  ["CockroachDB","cockroachdb","cockroachdb","#6933A6"],
   ["SQL Server","sql-server","sqlserver","#F8AD04"],
   ["Oracle","oracle","oracle","#F60644"],
   ["SQLite","sqlite","sqlite","#4DBFBE"],
@@ -53,6 +54,7 @@ function ownShape(symbol) {
     case "sqlserver": return '<path fill="none" stroke="#fff" stroke-width="1.4" d="M3 6L15 2 21 7 10 12Z M3 6L4 20 16 16 21 7 M10 12L11 23 19 19 21 7 M4 20L11 23 M8 4L12 9 M13 3L17 8"/>';
     case "oracle": return '<rect x="2" y="7" width="20" height="10" rx="5" fill="none" stroke="white" stroke-width="2.5"/>';
     case "dameng": return '<path d="M3 13C4 7 8 4 14 3c4 0 6 3 7 5-6-2-11 0-12 5 3-3 8-2 10 1-3 5-9 7-14 5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>';
+    case "cockroachdb": return '<ellipse cx="12" cy="5" rx="8" ry="3" '+s+'/><path '+s+' d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/>';
     case "oceanbase": return '<text x="12" y="16.4" fill="#fff" font-size="10" text-anchor="middle" font-family="sans-serif" font-weight="bold">OB</text>';
     case "cloud": return '<rect x="2" y="7" width="20" height="10" rx="3" fill="none" stroke="#fff" stroke-width="2.2"/><path d="M5 12h5m4 0h5M9 9l3 3-3 3m6-6-3 3 3 3" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/>';
     case "aws": return '<text x="12" y="13.5" fill="#fff" font-family="sans-serif" font-weight="bold" font-size="10" text-anchor="middle">aws</text><path d="M5 16q7 5 14-1" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>';

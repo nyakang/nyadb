@@ -157,6 +157,13 @@
       "source": "NyaDB independently drawn SVG geometry",
       "artwork": "NyaDB own geometry",
       "sha256": "7e25493781b4e3a1042da86829edc292051d396986a08c8b33103f8a21e2560a"
+    },
+    {
+      "name": "CockroachDB",
+      "file": "cockroachdb.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "972d48368a5025e85f16ab790a8bbc2ec5518ffb857a853d0728291545ca540d"
     }
   ]
 }

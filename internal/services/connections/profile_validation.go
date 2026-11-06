@@ -34,7 +34,7 @@ func NormalizeProfile(p Profile) (Profile, error) {
 			return p, err
 		}
 	}
-	if p.Kind != PostgreSQL && p.PostgreSQLOptions != (PostgreSQLOptions{}) {
+	if !p.Kind.IsPostgreSQLFamily() && p.PostgreSQLOptions != (PostgreSQLOptions{}) {
 		return p, fmt.Errorf("%w: PostgreSQL options on another engine", ErrInvalid)
 	}
 	if p.Kind != SQLite && (p.SQLiteOptions.Version != 0 || p.SQLiteOptions.MaxConnections != 0 || p.SQLiteOptions.SQLMaxConnections != 0 || p.SQLiteOptions.ReadOnly || p.SQLiteOptions.RequireExisting || p.SQLiteOptions.BusyTimeoutMS != 0 || p.SQLiteOptions.ForeignKeys || len(p.SQLiteOptions.Attachments) > 0) {
@@ -122,7 +122,7 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		if p.Database == ":memory:" && p.DuckDBOptions.ReadOnly {
 			return p, fmt.Errorf("%w: an in-memory DuckDB database cannot be read-only", ErrInvalid)
 		}
-	case MySQL, MariaDB, TiDB, OceanBase, PostgreSQL, ClickHouse, SQLServer, Oracle:
+	case MySQL, MariaDB, TiDB, OceanBase, PostgreSQL, CockroachDB, ClickHouse, SQLServer, Oracle:
 		if p.Kind == Oracle {
 			var err error
 			p.OracleOptions, err = NormalizeOracleOptions(p.OracleOptions)
@@ -173,7 +173,18 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		} else if p.MySQLAdvanced != (MySQLAdvanced{}) {
 			return p, fmt.Errorf("%w: MySQL options on another engine", ErrInvalid)
 		}
-		if p.Kind == PostgreSQL {
+		if p.Kind == CockroachDB {
+			if p.Database == "" || p.Username == "" || strings.ContainsAny(p.Host, "@/?!#\\ \t\r\n") {
+				return p, fmt.Errorf("%w: CockroachDB requires a hostname, database and username", ErrInvalid)
+			}
+			if p.TLSMode == "" {
+				p.TLSMode = "verify-full"
+			}
+			if p.PostgreSQLOptions.ToolsDirectory != "" {
+				return p, fmt.Errorf("%w: CockroachDB does not use PostgreSQL backup tools", ErrInvalid)
+			}
+		}
+		if p.Kind.IsPostgreSQLFamily() {
 			var err error
 			p.PostgreSQLOptions, err = NormalizePostgreSQLOptions(p.PostgreSQLOptions)
 			if err != nil {

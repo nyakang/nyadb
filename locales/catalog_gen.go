@@ -10616,6 +10616,16 @@ func (msgs Messages) EngineWorkflow48() string {
 	return Catalog.Format(msgs.locale, "engineWorkflow48", nil)
 }
 
+// CockroachFixedDatabase says "请输入此连接绑定的 CockroachDB 数据库"
+// in the language the app shows.
+func CockroachFixedDatabase() string { return In(i18n.Locale()).CockroachFixedDatabase() }
+
+// CockroachFixedDatabase says "请输入此连接绑定的 CockroachDB 数据库"
+// in the language of msgs.
+func (msgs Messages) CockroachFixedDatabase() string {
+	return Catalog.Format(msgs.locale, "cockroachFixedDatabase", nil)
+}
+
 // EngineWorkflow49 says "运算符"
 // in the language the app shows.
 func EngineWorkflow49() string { return In(i18n.Locale()).EngineWorkflow49() }
@@ -13682,11 +13692,11 @@ func (msgs Messages) OceanbaseMySQLTenantHint() string {
 	return Catalog.Format(msgs.locale, "oceanbaseMySQLTenantHint", nil)
 }
 
-// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、TiDB、OceanBase、PostgreSQL、SQLite 和 ClickHouse…"
+// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、TiDB、OceanBase、PostgreSQL、CockroachDB、SQLite 和 ClickHouse…"
 // in the language the app shows.
 func ConnectionURISupportedEngines() string { return In(i18n.Locale()).ConnectionURISupportedEngines() }
 
-// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、TiDB、OceanBase、PostgreSQL、SQLite 和 ClickHouse…"
+// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、TiDB、OceanBase、PostgreSQL、CockroachDB、SQLite 和 ClickHouse…"
 // in the language of msgs.
 func (msgs Messages) ConnectionURISupportedEngines() string {
 	return Catalog.Format(msgs.locale, "connectionURISupportedEngines", nil)
@@ -20316,4 +20326,14 @@ func RedisTopologyHelp() string { return In(i18n.Locale()).RedisTopologyHelp() }
 // in the language of msgs.
 func (msgs Messages) RedisTopologyHelp() string {
 	return Catalog.Format(msgs.locale, "redisTopologyHelp", nil)
+}
+
+// CockroachSessionPassword says "CockroachDB 会话密码"
+// in the language the app shows.
+func CockroachSessionPassword() string { return In(i18n.Locale()).CockroachSessionPassword() }
+
+// CockroachSessionPassword says "CockroachDB 会话密码"
+// in the language of msgs.
+func (msgs Messages) CockroachSessionPassword() string {
+	return Catalog.Format(msgs.locale, "cockroachSessionPassword", nil)
 }

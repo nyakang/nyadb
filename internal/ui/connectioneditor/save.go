@@ -51,7 +51,10 @@ func (s *State) draftProfile() (connections.Profile, error) {
 	if p.Kind == connections.SQLServer && strings.TrimSpace(p.Database) == "" {
 		return p, fieldError("初始数据库", "常规", "请输入此连接绑定的 SQL Server 数据库")
 	}
-	if p.Kind == connections.PostgreSQL && strings.TrimSpace(p.Database) == "" {
+	if p.Kind.IsPostgreSQLFamily() && strings.TrimSpace(p.Database) == "" {
+		if p.Kind == connections.CockroachDB {
+			return p, fieldError("初始数据库", "常规", "请输入此连接绑定的 CockroachDB 数据库")
+		}
 		return p, fieldError("初始数据库", "常规", "请输入此连接绑定的 PostgreSQL 数据库")
 	}
 	port, err := strconv.ParseUint(strings.TrimSpace(s.connectionPort), 10, 16)
@@ -159,7 +162,7 @@ func (s *State) Save() {
 			return
 		}
 	}
-	if saved.Kind == connections.PostgreSQL || saved.Kind == connections.ClickHouse || saved.Kind == connections.SQLServer || saved.Kind == connections.Oracle || saved.Kind == connections.MongoDB || saved.Kind == connections.Redis {
+	if saved.Kind.IsPostgreSQLFamily() || saved.Kind == connections.ClickHouse || saved.Kind == connections.SQLServer || saved.Kind == connections.Oracle || saved.Kind == connections.MongoDB || saved.Kind == connections.Redis {
 		s.connectionMainConfig = s.currentConnectionSnapshot()
 		if err := s.persistConnectionPasswords(saved, before); err != nil {
 			if p.ID == 0 {

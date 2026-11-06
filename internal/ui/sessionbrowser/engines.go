@@ -24,7 +24,7 @@ type EngineRuntime struct {
 func (s *State) SetEngineRuntime(r EngineRuntime) { s.engines = r }
 func (s *State) EngineCatalog(id int64) string {
 	w := s.Workspace(id)
-	if w != nil && (w.Kind == connections.PostgreSQL || w.Kind == connections.SQLServer || w.Kind == connections.Oracle || w.Kind == connections.DuckDB) {
+	if w != nil && (w.Kind.IsPostgreSQLFamily() || w.Kind == connections.SQLServer || w.Kind == connections.Oracle || w.Kind == connections.DuckDB) {
 		return w.Catalog
 	}
 	return ""
@@ -71,7 +71,7 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 	generation := w.Generation
 	w.ProfileID, w.Status, w.Error = p.ID, "连接中", ""
 	w.Kind, w.Catalog = p.Kind, ""
-	if p.Kind == connections.PostgreSQL || p.Kind == connections.SQLServer || p.Kind == connections.Oracle {
+	if p.Kind.IsPostgreSQLFamily() || p.Kind == connections.SQLServer || p.Kind == connections.Oracle {
 		w.Catalog = p.Database
 	} else if p.Kind == connections.SQLite {
 		w.Catalog = "main"
@@ -200,6 +200,9 @@ func (s *State) engineLabel(w *Workspace) string {
 	}
 	if w.Kind == connections.ClickHouse {
 		return "ClickHouse"
+	}
+	if w.Kind == connections.CockroachDB {
+		return "CockroachDB"
 	}
 	if w.Kind == connections.PostgreSQL {
 		return "PostgreSQL"

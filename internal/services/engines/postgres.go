@@ -37,6 +37,9 @@ func postgresConfig(p connections.Profile, password string, dial func(context.Co
 	mode := p.TLSMode
 	if mode == "" {
 		mode = "require"
+		if p.Kind == connections.CockroachDB {
+			mode = "verify-full"
+		}
 	}
 	switch mode {
 	case "disable", "prefer", "require", "verify-ca", "verify-full":
@@ -60,6 +63,9 @@ func postgresConfig(p connections.Profile, password string, dial func(context.Co
 	cfg.Password = password
 	cfg.ConnectTimeout = time.Duration(a.ConnectTimeoutSeconds) * time.Second
 	cfg.RuntimeParams = map[string]string{"application_name": a.ApplicationName, "statement_timeout": strconv.Itoa(a.StatementTimeoutMS), "lock_timeout": strconv.Itoa(a.LockTimeoutMS)}
+	if p.Kind == connections.CockroachDB {
+		cfg.RuntimeParams["autocommit_before_ddl"] = "off"
+	}
 	if a.DefaultSchema != "" {
 		cfg.RuntimeParams["search_path"] = quote(a.DefaultSchema)
 	}

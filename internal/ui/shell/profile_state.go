@@ -140,7 +140,7 @@ func (s *State) deleteProfileID(id int64) {
 	}
 	s.loadProfiles()
 	var credentialErr error
-	if (p.Kind.IsMySQLFamily() || p.Kind == connections.PostgreSQL || p.Kind == connections.ClickHouse || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.MongoDB || p.Kind == connections.Redis) && s.credentialVault != nil {
+	if (p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.MongoDB || p.Kind == connections.Redis) && s.credentialVault != nil {
 		credentialErr = s.credentialVault.Delete(p.ID, "")
 		if p.Kind == connections.Redis {
 			credentialErr = errors.Join(credentialErr, s.credentialVault.Delete(p.ID, connections.RedisSentinelCredential))

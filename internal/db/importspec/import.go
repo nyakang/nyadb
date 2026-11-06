@@ -14,6 +14,9 @@ import (
 )
 
 func Identifier(engine, name string) error {
+	if engine == "cockroachdb" {
+		engine = "postgresql"
+	}
 	if engine == "" || engine == "mysql" {
 		if !utf8.ValidString(name) || utf8.RuneCountInString(name) > 64 || strings.HasSuffix(name, " ") {
 			return contract.ErrDataPage
@@ -31,6 +34,9 @@ func quote(s string) string { return `"` + strings.ReplaceAll(s, `"`, `""`) + `"
 var pgType = regexp.MustCompile(`^(?:SMALLINT|INTEGER|BIGINT|REAL|DOUBLE PRECISION|BOOLEAN|TEXT|BYTEA|JSONB?|UUID|DATE|TIMESTAMP(?:\([0-6]\))?(?: WITH(?:OUT)? TIME ZONE)?|TIME(?:\([0-6]\))?(?: WITH(?:OUT)? TIME ZONE)?|NUMERIC(?:\([1-9][0-9]{0,3}(?:,[0-9]{1,4})?\))?|VARCHAR\([1-9][0-9]{0,5}\))$`)
 
 func Columns(engine string, cols []contract.DataImportColumn) ([]contract.StructureColumn, error) {
+	if engine == "cockroachdb" {
+		engine = "postgresql"
+	}
 	if engine == "" || engine == "mysql" {
 		return mysqlspec.ImportColumnMetadata(cols)
 	}
@@ -73,6 +79,9 @@ func Columns(engine string, cols []contract.DataImportColumn) ([]contract.Struct
 	return out, nil
 }
 func DDL(engine, schema, table string, cols []contract.DataImportColumn) (string, error) {
+	if engine == "cockroachdb" {
+		engine = "postgresql"
+	}
 	if err := Identifier(engine, schema); err != nil {
 		return "", err
 	}
@@ -103,6 +112,9 @@ func DDL(engine, schema, table string, cols []contract.DataImportColumn) (string
 // AdaptInference keeps the existing format readers' whole-file inference while
 // mapping its suggestions to types with lossless storage in the target engine.
 func AdaptInference(engine string, cols []contract.DataImportColumn) []contract.DataImportColumn {
+	if engine == "cockroachdb" {
+		engine = "postgresql"
+	}
 	out := slices.Clone(cols)
 	for i, c := range out {
 		t := strings.ToUpper(c.Type)
@@ -169,6 +181,9 @@ func Own(r contract.DataImportRequest) (contract.DataImportRequest, error) {
 	return r, nil
 }
 func Validate(engine string, metadata []contract.StructureColumn, r contract.DataImportRequest) error {
+	if engine == "cockroachdb" {
+		engine = "postgresql"
+	}
 	if (engine == "sqlserver" || engine == "duckdb" || engine == "oracle") && (r.NewTable || r.ContinueOnError || r.Mode != "" && r.Mode != "append") {
 		return contract.ErrUnsupported
 	}

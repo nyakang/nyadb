@@ -62,7 +62,11 @@ func (t *Tx) Page(ctx context.Context, r contract.PageRequest) (contract.Page, e
 	if t.closed {
 		return contract.Page{}, ErrRevoked
 	}
-	return t.s.page(ctx, t.tx, r)
+	page, err := t.s.page(ctx, t.tx, r)
+	if t.s.kind == connections.CockroachDB && cockroachRetryable(err) {
+		err = t.abortCockroachRetry(err)
+	}
+	return page, err
 }
 func (t *Tx) Apply(ctx context.Context, o contract.ObjectRef, edits []contract.Edit) (result contract.CommitResult, err error) {
 	t.mu.Lock()
@@ -78,6 +82,10 @@ func (t *Tx) Apply(ctx context.Context, o contract.ObjectRef, edits []contract.E
 		}
 	}
 	if _, err = t.tx.ExecContext(ctx, "SAVEPOINT nyadb_data_batch"); err != nil {
+		if t.s.kind == connections.CockroachDB && cockroachRetryable(err) {
+			err = t.abortCockroachRetry(err)
+			result.Uncertain = t.uncertain
+		}
 		return result, err
 	}
 	applied := t.applied
@@ -92,6 +100,11 @@ func (t *Tx) Apply(ctx context.Context, o contract.ObjectRef, edits []contract.E
 			_, err = t.tx.ExecContext(ctx, "RELEASE SAVEPOINT nyadb_data_batch")
 		}
 		if err != nil {
+			if t.s.kind == connections.CockroachDB && cockroachRetryable(err) {
+				err = t.abortCockroachRetry(err)
+				result = contract.CommitResult{Uncertain: t.uncertain}
+				return
+			}
 			cleanup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			_, rollbackErr := t.tx.ExecContext(cleanup, "ROLLBACK TO SAVEPOINT nyadb_data_batch")
@@ -264,6 +277,11 @@ func (t *Tx) Commit(ctx context.Context) (contract.CommitResult, error) {
 	}
 	t.remove()
 	if e != nil {
+		if t.s.kind == connections.CockroachDB && cockroachRetryable(e) {
+			t.applied = 0
+			t.staged = make(map[contract.ObjectRef][]contract.Edit)
+			return contract.CommitResult{}, cockroachRetryError(e)
+		}
 		t.uncertain = true
 		saved := t.saved()
 		return contract.CommitResult{Applied: t.applied, Uncertain: true, Saved: saved}, fmt.Errorf("%w: %v", ErrUncertain, e)
