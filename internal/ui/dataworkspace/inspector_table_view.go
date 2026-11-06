@@ -39,6 +39,9 @@ func (s *inspectorState) header(c *ui.Context, t *Panel, fieldMode bool) {
 		ui.ScrollHorizontal(c).Grow(1).MinWidth(0).Children(func() {
 			infoLabel := locales.Text("表信息")
 			if s.deps.Profile != nil {
+				if p, ok := s.deps.Profile(t.profileID); ok && p.Kind == connections.Redis {
+					infoLabel = locales.Text("键信息")
+				}
 				if p, ok := s.deps.Profile(t.profileID); ok && p.Kind == connections.MongoDB {
 					infoLabel = locales.Text("集合信息")
 				}
@@ -150,6 +153,9 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 				}
 				info := d.info
 				kind := "表"
+				if info.Kind == "KEYSPACE" {
+					kind = "键"
+				}
 				if info.Kind == "COLLECTION" {
 					kind = "集合"
 				}

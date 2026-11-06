@@ -68,6 +68,8 @@ func (s *State) ConnectionWindowIcon() ([]byte, error) {
 		file = "mariadb.png"
 	case connections.PostgreSQL:
 		file = "postgresql.png"
+	case connections.Redis:
+		file = "redis.png"
 	case connections.MongoDB:
 		file = "mongodb.png"
 	case connections.Oracle:

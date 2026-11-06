@@ -19,6 +19,7 @@ const (
 	DuckDB     Kind = "duckdb"
 	Oracle     Kind = "oracle"
 	MongoDB    Kind = "mongodb"
+	Redis      Kind = "redis"
 )
 
 // IsMySQLFamily identifies products sharing the MySQL client and connection
@@ -45,6 +46,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	RedisOptions      RedisOptions
 	MongoDBOptions    MongoDBOptions
 	OracleOptions     OracleOptions
 	SQLServerOptions  SQLServerOptions

@@ -57,6 +57,9 @@ func mysqlObjectActionLabels(kind string) (open, design string) {
 	if Supports(kind) {
 		return "查看定义（只读）", "查看结构（不适用）"
 	}
+	if kind == "键" {
+		return "打开键", "查看键结构（只读）"
+	}
 	if kind == "集合" {
 		return "打开集合", "查看集合结构（只读）"
 	}
@@ -186,6 +189,7 @@ func (s *State) BrowserView(c *ui.Context) {
 	a := s.browserActions()
 	database := a.scope.database
 	items := a.items
+	redisEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "redis"
 	documentEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "mongodb"
 	canOpen, canProgram := a.canOpen, a.canProgram
 	ui.Column(c).Fill().Children(func() {
@@ -196,6 +200,18 @@ func (s *State) BrowserView(c *ui.Context) {
 					{"打开表", "open-table", "打开选中表数据"}, {"设计表", "design-table", "设计选中表"}, {"查看结构", "design-table", "打开选中表结构"},
 				} {
 					item := action
+					if redisEngine {
+						if item.label == "设计表" {
+							continue
+						}
+						if item.label == "打开表" {
+							item.label = "打开键"
+							item.accessible = "打开选中键数据"
+						}
+						if item.label == "查看结构" {
+							item.accessible = "查看键结构（只读）"
+						}
+					}
 					if documentEngine {
 						if item.label == "设计表" {
 							continue
@@ -215,7 +231,7 @@ func (s *State) BrowserView(c *ui.Context) {
 						})
 					}).Clicked() {
 						obj := items[a.frame.Row]
-						if (item.label == "打开表" || item.label == "打开集合") && s.deps.OpenData != nil {
+						if (item.label == "打开表" || item.label == "打开集合" || item.label == "打开键") && s.deps.OpenData != nil {
 							s.deps.OpenData(c.Services(), a.scope.profile, database, obj.Name)
 						} else if item.label == "查看结构" {
 							s.openStructure(c.Services(), database, obj.Name)
@@ -225,7 +241,7 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 				}
 				canCreate := a.canCreate
-				if !documentEngine {
+				if !documentEngine && !redisEngine {
 					if ui.Button(c, "").Label(locales.Text("新建表")).Tooltip(locales.Text("新建表")).
 						Disabled(!canCreate).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
 						ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
@@ -244,6 +260,9 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 				}
 				kinds := []string{"全部", "表", "视图"}
+				if redisEngine {
+					kinds = []string{"全部", "键"}
+				}
 				if documentEngine {
 					kinds = []string{"全部", "集合", "视图"}
 				}

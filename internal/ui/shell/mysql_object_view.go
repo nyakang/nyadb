@@ -129,6 +129,9 @@ func (s *State) openMySQLData(services ui.Services, database, table string) {
 	}
 	s.nextTabID++
 	t := &tab{id: s.nextTabID, kind: tabMySQLData, title: database + "." + table + " · 数据", data: s.dataWorkspace.OpenObject(s.nextTabID, s.runtime.Namespace(w.ProfileID, database).Object(func() string {
+		if kind == "键" {
+			return "keyspace"
+		}
 		if kind == "集合" {
 			return "collection"
 		}

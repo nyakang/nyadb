@@ -1,6 +1,9 @@
 package sqlworkspace
 
-import "strings"
+import (
+	"github.com/nyakang/nyadb/internal/db/rediscommand"
+	"strings"
+)
 
 // sqlAtCaret isolates the statement under a SQL editor's byte-offset cursor.
 // Semicolons inside string literals, quoted names and comments are ignored.
@@ -81,6 +84,9 @@ func sqlAtCaret(source string, cursor int) string {
 }
 
 func (s *State) statementAtCaret(d *Document) string {
+	if d.commandDialect == "redis" {
+		return rediscommand.StatementAt(d.Editor.Buffer.String(), d.Editor.Cursor())
+	}
 	if d.nativeCommands {
 		return strings.TrimSpace(d.Editor.Buffer.String())
 	}

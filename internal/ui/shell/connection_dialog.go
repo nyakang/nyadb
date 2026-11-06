@@ -134,6 +134,8 @@ func connectionKindName(kind connections.Kind) string {
 		return "MySQL"
 	case connections.MariaDB:
 		return "MariaDB"
+	case connections.Redis:
+		return "Redis"
 	case connections.MongoDB:
 		return "MongoDB"
 	case connections.Oracle:

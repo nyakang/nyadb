@@ -290,6 +290,8 @@ func searchObjectKind(kind string) string {
 		return "type"
 	}
 	switch kind {
+	case "键":
+		return "keyspace"
 	case "表":
 		return "table"
 	case "视图":

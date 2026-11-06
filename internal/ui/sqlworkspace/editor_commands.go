@@ -88,7 +88,7 @@ func (s *State) completions(d *Document, r editor.CompletionRequest) {
 }
 func (s *State) Explain(d *Document) {
 	if d != nil && d.nativeCommands {
-		d.err = locales.Text("MongoDB 请使用原生 explain 命令")
+		d.err = d.commandText("MongoDB 请使用原生 explain 命令", "Redis 不支持 SQL EXPLAIN")
 		return
 	}
 	if d == nil || d.Editor == nil || d.closed || d.loading || d.recoveryNeeded {

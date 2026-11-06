@@ -171,8 +171,11 @@ func (s *State) openQuery() {
 	database := ""
 	if s.profileMode {
 		initial = "-- 输入 SQL；点击运行后发送至当前连接\n"
-		if p, ok := s.currentProfile(); ok && (p.Kind.IsMySQLFamily() || p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.DuckDB || p.Kind == connections.MongoDB) {
+		if p, ok := s.currentProfile(); ok && (p.Kind.IsMySQLFamily() || p.Kind == connections.PostgreSQL || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.DuckDB || p.Kind == connections.MongoDB || p.Kind == connections.Redis) {
 			profileID = p.ID
+			if p.Kind == connections.Redis {
+				initial = "[\"PING\"]"
+			}
 			if p.Kind == connections.MongoDB {
 				initial = "{\"ping\": 1}"
 			}
@@ -182,6 +185,9 @@ func (s *State) openQuery() {
 		}
 	}
 	t := &tab{id: s.nextTabID, title: fmt.Sprintf("SQL %d", s.nextTabID-1), kind: tabSQL}
+	if s.sessions.EngineKind(profileID) == connections.Redis {
+		t.title = fmt.Sprintf("Redis %d", s.nextTabID-1)
+	}
 	if s.sessions.EngineKind(profileID) == connections.MongoDB {
 		t.title = fmt.Sprintf("MongoDB %d", s.nextTabID-1)
 	}
@@ -227,7 +233,7 @@ func (s *State) dispatchToolbar(action string, services ui.Services) {
 		s.openConnectionDialog()
 	case "新建查询":
 		s.openQuery()
-	case "集合", "表", "视图", "函数", "查询":
+	case "键", "集合", "表", "视图", "函数", "查询":
 		s.showObjects(action)
 	case "用户":
 		w := s.sessions.Current()

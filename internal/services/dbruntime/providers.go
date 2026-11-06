@@ -10,10 +10,12 @@ import (
 	mongosvc "github.com/nyakang/nyadb/internal/services/mongodb"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	oraclesvc "github.com/nyakang/nyadb/internal/services/oracle"
+	redissvc "github.com/nyakang/nyadb/internal/services/redis"
 	"github.com/nyakang/nyadb/internal/services/sqlserver"
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.Redis, ProviderFunc(redissvc.OpenSession))
 	m.Register(connections.MongoDB, ProviderFunc(mongosvc.OpenSession))
 	m.Register(connections.Oracle, ProviderFunc(oraclesvc.OpenSession))
 	m.Register(connections.DuckDB, ProviderFunc(duckdb.OpenSession))

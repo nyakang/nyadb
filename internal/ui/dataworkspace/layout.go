@@ -54,7 +54,7 @@ func (s *State) SetDataLayoutPreferences(read func(string) (string, error), writ
 }
 
 func mysqlDataLayoutKey(t *Document) string {
-	if t.portable() || t.capabilities.Documents {
+	if t.portable() || (t.capabilities.Documents || t.capabilities.KeyValues) {
 		identity, _ := json.Marshal(t.object)
 		return "engine_data_layout:" + base64.RawURLEncoding.EncodeToString(identity)
 	}
