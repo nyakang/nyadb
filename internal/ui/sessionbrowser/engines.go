@@ -24,7 +24,7 @@ type EngineRuntime struct {
 func (s *State) SetEngineRuntime(r EngineRuntime) { s.engines = r }
 func (s *State) EngineCatalog(id int64) string {
 	w := s.Workspace(id)
-	if w != nil && w.Kind == connections.PostgreSQL {
+	if w != nil && (w.Kind == connections.PostgreSQL || w.Kind == connections.SQLServer) {
 		return w.Catalog
 	}
 	return ""
@@ -62,7 +62,7 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 	generation := w.Generation
 	w.ProfileID, w.Status, w.Error = p.ID, "连接中", ""
 	w.Kind, w.Catalog = p.Kind, ""
-	if p.Kind == connections.PostgreSQL {
+	if p.Kind == connections.PostgreSQL || p.Kind == connections.SQLServer {
 		w.Catalog = p.Database
 	} else if p.Kind == connections.SQLite {
 		w.Catalog = "main"
@@ -163,6 +163,9 @@ func sessionNamespaces(ctx context.Context, s contract.Session) ([]string, error
 func (s *State) engineLabel(w *Workspace) string {
 	if w.Kind == connections.MariaDB {
 		return "MariaDB"
+	}
+	if w.Kind == connections.SQLServer {
+		return "SQL Server"
 	}
 	if w.Kind == connections.ClickHouse {
 		return "ClickHouse"

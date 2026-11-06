@@ -40,6 +40,8 @@ func ParseURI(raw string) (URIImport, error) {
 	}
 	var kind Kind
 	switch strings.ToLower(u.Scheme) {
+	case "sqlserver", "mssql":
+		kind = SQLServer
 	case "mysql":
 		kind = MySQL
 	case "mariadb":
@@ -115,10 +117,70 @@ func ParseURI(raw string) (URIImport, error) {
 	if kind == ClickHouse && p.Database == "" {
 		p.Database = "default"
 	}
+	if kind == SQLServer && p.Database == "" {
+		p.Database = "master"
+	}
 	if kind == PostgreSQL && p.Database == "" {
 		p.Database = p.Username
 		if p.Database == "" {
 			p.Database = "postgres"
+		}
+	}
+	if kind == SQLServer {
+		canonical := url.Values{}
+		for key, values := range options {
+			lower := strings.ToLower(key)
+			if _, exists := canonical[lower]; exists {
+				return fail(ErrURIOptions)
+			}
+			canonical[lower] = values
+		}
+		options = canonical
+		for _, key := range []string{"database", "encrypt", "trustservercertificate", "app name"} {
+			if values, ok := options[key]; ok && len(values) != 1 {
+				return fail(ErrURIOptions)
+			}
+		}
+		if values, ok := options["database"]; ok {
+			if path != "" || values[0] == "" {
+				return fail(ErrURIOptions)
+			}
+			p.Database = values[0]
+			delete(options, "database")
+		}
+		_, encryptSet := options["encrypt"]
+		_, trustSet := options["trustservercertificate"]
+		_, sslSet := options["sslmode"]
+		if sslSet && (encryptSet || trustSet) {
+			return fail(ErrURIOptions)
+		}
+		if values, ok := options["encrypt"]; ok {
+			switch strings.ToLower(values[0]) {
+			case "true", "mandatory", "yes", "1":
+				p.TLSMode = "verify-full"
+			case "disable":
+				p.TLSMode = "disable"
+			default:
+				return fail(ErrURIOptions)
+			}
+			delete(options, "encrypt")
+		}
+		if values, ok := options["trustservercertificate"]; ok {
+			switch strings.ToLower(values[0]) {
+			case "true", "yes", "1":
+				if p.TLSMode == "disable" {
+					return fail(ErrURIOptions)
+				}
+				p.TLSMode = "require"
+			case "false", "no", "0":
+			default:
+				return fail(ErrURIOptions)
+			}
+			delete(options, "trustservercertificate")
+		}
+		if values, ok := options["app name"]; ok {
+			p.SQLServerOptions.ApplicationName = values[0]
+			delete(options, "app name")
 		}
 	}
 	for key, values := range options {
@@ -126,6 +188,9 @@ func ParseURI(raw string) (URIImport, error) {
 			return fail(ErrURIOptions)
 		}
 		mode := strings.ToLower(values[0])
+		if kind == SQLServer && mode != "disable" && mode != "require" && mode != "verify-full" {
+			return fail(ErrURIOptions)
+		}
 		if kind == ClickHouse && mode != "disable" && mode != "verify-full" {
 			return fail(ErrURIOptions)
 		}

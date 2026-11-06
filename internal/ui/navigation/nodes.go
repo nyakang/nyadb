@@ -111,7 +111,7 @@ func (s *State) databaseChildren(key string) []string {
 		categories := mysqlNavigationCategories
 		if s.deps.Engine != nil {
 			switch s.deps.Engine(n.ProfileID) {
-			case connections.PostgreSQL:
+			case connections.PostgreSQL, connections.SQLServer:
 				categories = postgresNavigationCategories
 			case connections.MySQL, connections.MariaDB:
 			default:

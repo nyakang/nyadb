@@ -1,0 +1,171 @@
+package sqlserver
+
+import (
+	"context"
+	"database/sql"
+	"time"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
+)
+
+func (s *Session) DataAnalysisOperations() contract.DataAnalysisOperations {
+	return contract.DataAnalysisOperations{Analyzer: s.analyze}
+}
+func (s *Session) analyze(ctx context.Context, id int64, schema, name string, o contract.DataOptions, columns []string) (*contract.DataAnalysis, error) {
+	child, done, err := s.request(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer done()
+	t, err := s.resolve(child, s.db, id, schema, name, o.Object)
+	if err != nil {
+		return nil, err
+	}
+	if len(columns) == 0 {
+		for _, c := range t.Columns {
+			columns = append(columns, c.Name)
+		}
+	}
+	query, args, err := dataQuery(t, o, nil, false)
+	if err != nil {
+		return nil, err
+	}
+	if len(o.Sorts) > 0 || o.SortColumn != "" || len(keyColumns(t)) > 0 {
+		query += " OFFSET 0 ROWS"
+	}
+	from := " FROM (" + query + ") AS nyadb_analysis"
+	tx, err := s.db.BeginTx(child, &sql.TxOptions{Isolation: sql.LevelSerializable})
+	if err != nil {
+		return nil, safeError(err)
+	}
+	defer tx.Rollback()
+	result := &contract.DataAnalysis{}
+	start := time.Now()
+	for _, name := range columns {
+		var col *contract.StructureColumn
+		for i := range t.Columns {
+			if t.Columns[i].Name == name {
+				col = &t.Columns[i]
+			}
+		}
+		if col == nil || !comparable(*col) || col.ValueKind == contract.Binary {
+			return nil, contract.ErrUnsupported
+		}
+		c := quote(name)
+		aggregate := c
+		if col.ValueKind == contract.Boolean {
+			aggregate = "CONVERT(tinyint," + c + ")"
+		}
+		statement := "SELECT COUNT_BIG(*),COUNT_BIG(*)-COUNT_BIG(" + c + "),COUNT_BIG(DISTINCT " + c + "),MIN(" + aggregate + "),MAX(" + aggregate + ")" + from
+		rows, err := tx.QueryContext(child, statement, args...)
+		if err != nil {
+			return nil, safeError(err)
+		}
+		v := contract.DataColumnAnalysis{Name: name, Kind: col.DataType}
+		var min, max any
+		if !rows.Next() {
+			rows.Close()
+			return nil, contract.ErrUnsupported
+		}
+		err = rows.Scan(&v.Rows, &v.Null, &v.Distinct, &min, &max)
+		rows.Close()
+		if err != nil {
+			return nil, safeError(err)
+		}
+		v.Min = previewValue(min, col.DataType, 1024).Display()
+		v.Max = previewValue(max, col.DataType, 1024).Display()
+		if col.Collation != nil {
+			v.Collation = *col.Collation
+		}
+		if col.ValueKind == contract.Decimal || col.ValueKind == contract.Integer || col.ValueKind == contract.Floating {
+			rows, err = tx.QueryContext(child, "SELECT COUNT_BIG("+c+"),COALESCE(SUM(CONVERT(bigint,CASE WHEN "+c+"=0 THEN 1 ELSE 0 END)),0),AVG("+averageExpression(*col, c)+"),STDEV(CONVERT(float,"+c+"))"+from, args...)
+			if err != nil {
+				return nil, safeError(err)
+			}
+			var mean, std any
+			if !rows.Next() {
+				rows.Close()
+				return nil, contract.ErrUnsupported
+			}
+			err = rows.Scan(&v.Numeric, &v.Zero, &mean, &std)
+			rows.Close()
+			if err != nil {
+				return nil, safeError(err)
+			}
+			v.Mean = cell(mean, "decimal").Display()
+			v.StdDeviation = cell(std, "float").Display()
+		}
+		rows, err = tx.QueryContext(child, "SELECT TOP (5) "+c+",COUNT_BIG(*) AS n"+from+" GROUP BY "+c+" ORDER BY n DESC,"+c, args...)
+		if err != nil {
+			return nil, safeError(err)
+		}
+		for rows.Next() {
+			var raw any
+			var n int64
+			if err = rows.Scan(&raw, &n); err != nil {
+				rows.Close()
+				return nil, safeError(err)
+			}
+			value := previewValue(raw, col.DataType, 1024)
+			frequency := contract.DataAnalysisFrequency{Value: value.Display(), Count: n, Null: value.Kind == contract.Null, Truncated: value.Truncated}
+			v.Distribution = append(v.Distribution, frequency)
+			if n > v.MaxFrequency {
+				v.MaxFrequency = n
+			}
+			if n == v.MaxFrequency {
+				v.Modes = append(v.Modes, frequency)
+				v.ModeCount++
+			}
+		}
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			return nil, safeError(err)
+		}
+		grouped := "SELECT COUNT_BIG(*) AS n" + from + " WHERE " + c + " IS NOT NULL GROUP BY " + c
+		rows, err = tx.QueryContext(child, "SELECT COALESCE(MAX(n),0),COALESCE(SUM(CONVERT(bigint,CASE WHEN n=1 THEN 1 ELSE 0 END)),0) FROM ("+grouped+") nyadb_frequencies", args...)
+		if err != nil {
+			return nil, safeError(err)
+		}
+		if !rows.Next() {
+			rows.Close()
+			return nil, contract.ErrUnsupported
+		}
+		err = rows.Scan(&v.MaxFrequency, &v.Singletons)
+		rows.Close()
+		if err != nil {
+			return nil, safeError(err)
+		}
+		rows, err = tx.QueryContext(child, "SELECT COUNT_BIG(*) FROM ("+grouped+") nyadb_modes WHERE n=(SELECT COALESCE(MAX(n),0) FROM ("+grouped+") nyadb_max)", args...)
+		if err != nil {
+			return nil, safeError(err)
+		}
+		if !rows.Next() {
+			rows.Close()
+			return nil, contract.ErrUnsupported
+		}
+		err = rows.Scan(&v.ModeCount)
+		rows.Close()
+		if err != nil {
+			return nil, safeError(err)
+		}
+		v.Modes = nil
+		for _, frequency := range v.Distribution {
+			if !frequency.Null && frequency.Count == v.MaxFrequency {
+				v.Modes = append(v.Modes, frequency)
+			}
+		}
+		result.Rows = v.Rows
+		result.Columns = append(result.Columns, v)
+	}
+	result.Duration = time.Since(start)
+	result.CompletedAt = time.Now()
+	return result, nil
+}
+
+func averageExpression(col contract.StructureColumn, expression string) string {
+	if col.ValueKind == contract.Integer {
+		return "CONVERT(decimal(38,10)," + expression + ")"
+	}
+	return expression
+}

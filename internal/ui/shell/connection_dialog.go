@@ -132,6 +132,8 @@ func connectionKindName(kind connections.Kind) string {
 		return "MySQL"
 	case connections.MariaDB:
 		return "MariaDB"
+	case connections.SQLServer:
+		return "SQL Server"
 	case connections.PostgreSQL:
 		return "PostgreSQL"
 	case connections.SQLite:
