@@ -67,6 +67,8 @@ func (s *State) View(c *ui.Context, width, height float32) {
 
 func connectionEditorTabNames(kind connections.Kind) []string {
 	switch kind {
+	case connections.DuckDB:
+		return []string{"常规", "高级", "备注"}
 	case connections.SQLite:
 		return []string{"常规", "高级", "附加的数据库", "HTTP", "备注"}
 	case connections.PostgreSQL:
@@ -180,6 +182,10 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 		ui.Box(c).Height(theme.RowHeight(c, 31))
 		if p.Kind == connections.SQLite {
 			s.editorSQLiteFields(c, labelWidth, fieldWidth)
+			return
+		}
+		if p.Kind == connections.DuckDB {
+			s.editorDuckDBFields(c, labelWidth, fieldWidth)
 			return
 		}
 		s.editorInputRow(c, "主机：", "主机", &p.Host, labelWidth, fieldWidth)

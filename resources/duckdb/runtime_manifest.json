@@ -1,0 +1,37 @@
+{
+  "version": "v1.4.4",
+  "source": "https://github.com/duckdb/duckdb/releases/tag/v1.4.4",
+  "license": "MIT",
+  "archives": {
+    "linux-amd64": {
+      "name": "libduckdb-linux-amd64.zip",
+      "sha256": "09cc288295964d897b47665d1898e16e8ef176cae9ea615797fc136eae15bd5d",
+      "library_sha256": "1ef33048e12235115ac0d277a0aaccbb560e33248144f488b5ac005cd9ba81b5"
+    },
+    "linux-arm64": {
+      "name": "libduckdb-linux-arm64.zip",
+      "sha256": "768f66e0b40838d567a5524ae3901daa4823f4829fd1e6f3615d75ae55562b52",
+      "library_sha256": "c8e20af1e0064bdb7bf79af4d16f17ee8be16803bc98a4df58588bed1301c042"
+    },
+    "darwin-amd64": {
+      "name": "libduckdb-osx-universal.zip",
+      "sha256": "5e6d79f5fb86bbd4f24d59cee3bc38f113d1433761df35337e3c01c62eeafe26",
+      "library_sha256": "a763d7f2690b69c329fac7eecd1b50444800a3210b10ab6020723c8ecde168d3"
+    },
+    "darwin-arm64": {
+      "name": "libduckdb-osx-universal.zip",
+      "sha256": "5e6d79f5fb86bbd4f24d59cee3bc38f113d1433761df35337e3c01c62eeafe26",
+      "library_sha256": "a763d7f2690b69c329fac7eecd1b50444800a3210b10ab6020723c8ecde168d3"
+    },
+    "windows-amd64": {
+      "name": "libduckdb-windows-amd64.zip",
+      "sha256": "18184f2d73bf962cb78eeefb17196d112fcd18b9411b16a3b47cd718693e004c",
+      "library_sha256": "bc68fcd80f618374fa6f2b4fb7215fdde2977b620a8d2324713c68e26b2f54f0"
+    },
+    "windows-arm64": {
+      "name": "libduckdb-windows-arm64.zip",
+      "sha256": "f5d3507e611fdab7e972b13edde62205ffc39333f68ac9010e93bf1aa2983ab7",
+      "library_sha256": "cffa9c989793366cbeaec2062b0cd515b67de538ce85196953a300b370893f0e"
+    }
+  }
+}

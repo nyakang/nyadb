@@ -61,8 +61,8 @@ func TestRecentConnectionsDeduplicateAndKeepFiveNewest(t *testing.T) {
 
 func TestConnectionCatalogFiltering(t *testing.T) {
 	s := New()
-	if n := len(s.catalogItems("全部")); n != 12 {
-		t.Fatalf("catalog should offer 11 observed local types plus ClickHouse, got %d", n)
+	if n := len(s.catalogItems("全部")); n != 13 {
+		t.Fatalf("catalog should offer 11 observed local types plus ClickHouse and DuckDB, got %d", n)
 	}
 	s.search = "sql"
 	if items := s.catalogItems("全部"); len(items) != 4 {
@@ -83,11 +83,28 @@ func TestConnectionCatalogFiltering(t *testing.T) {
 	}
 }
 
+func TestDuckDBCatalogSelectionKeepsIndependentIdentity(t *testing.T) {
+	s := New()
+	s.search = "duckdb"
+	items := s.catalogItems("全部")
+	if len(items) != 1 || items[0].kind != connections.DuckDB {
+		t.Fatalf("DuckDB search: %+v", items)
+	}
+	s.chooseCatalogEntry(items[0], nil)
+	if s.Selected().Kind != connections.DuckDB {
+		t.Fatalf("DuckDB choice: %+v", s.Selected())
+	}
+	setCatalogFilter(s.engineFilters, "SQLite", true)
+	if len(s.catalogItems("全部")) != 0 {
+		t.Fatal("DuckDB incorrectly matched SQLite filter")
+	}
+}
+
 func TestExpandedCatalogMirrorsObservedGroups(t *testing.T) {
 	if len(databaseCatalog) < 60 {
 		t.Fatalf("expected expanded connection browser with at least 60 choices, got %d", len(databaseCatalog))
 	}
-	if len(catalogVendors) < 12 || len(catalogEngines) != 10 {
+	if len(catalogVendors) < 12 || len(catalogEngines) != 11 {
 		t.Fatalf("missing engine/vendor filters: %d/%d", len(catalogEngines), len(catalogVendors))
 	}
 	seen := map[string]bool{}

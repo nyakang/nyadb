@@ -40,6 +40,13 @@
       "sha256": "5c6420bb06ba5f33f106eccacf6059947303ced2b27384722dbfdfbfb3ee0abf"
     },
     {
+      "name": "DuckDB",
+      "file": "duckdb.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "71efa15ed383c02861bd2b05a8963386d751b43f55bfa1999fd6c5faf38f29a1"
+    },
+    {
       "name": "MariaDB",
       "file": "mariadb.png",
       "source": "https://github.com/simple-icons/simple-icons/blob/c71c69e3a27e4436936b831c72643e6513b9f49b/icons/mariadb.svg",

@@ -13,6 +13,9 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		return p, fmt.Errorf("%w: invalid connection color", ErrInvalid)
 	}
 	p.Name = strings.TrimSpace(p.Name)
+	if p.Kind != DuckDB && p.DuckDBOptions != (DuckDBOptions{}) {
+		return p, fmt.Errorf("%w: DuckDB options on another engine", ErrInvalid)
+	}
 	if p.Kind != SQLServer && p.SQLServerOptions != (SQLServerOptions{}) {
 		return p, fmt.Errorf("%w: SQL Server options on another engine", ErrInvalid)
 	}
@@ -94,6 +97,18 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	switch p.Kind {
+	case DuckDB:
+		var err error
+		p.DuckDBOptions, err = NormalizeDuckDBOptions(p.DuckDBOptions)
+		if err != nil {
+			return p, err
+		}
+		if p.Database == "" || p.Host != "" || p.Port != 0 || p.Username != "" || p.TLSMode != "" || p.MySQLAdvanced != (MySQLAdvanced{}) {
+			return p, fmt.Errorf("%w: DuckDB requires a file path or :memory: and no server settings", ErrInvalid)
+		}
+		if p.Database == ":memory:" && p.DuckDBOptions.ReadOnly {
+			return p, fmt.Errorf("%w: an in-memory DuckDB database cannot be read-only", ErrInvalid)
+		}
 	case MySQL, MariaDB, PostgreSQL, ClickHouse, SQLServer:
 		if p.Kind == SQLServer {
 			var err error

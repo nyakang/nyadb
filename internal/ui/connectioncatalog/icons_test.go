@@ -93,7 +93,10 @@ func TestResearchIconResourceMapCoverage(t *testing.T) {
 	if len(researchIconResources) != 20 {
 		t.Fatalf("unexpected research engine mapping count: %d", len(researchIconResources))
 	}
-	for _, entry := range databaseCatalog[:20] {
+	for _, entry := range databaseCatalog[:21] {
+		if entry.name == "DuckDB" {
+			continue
+		} // Independently drawn extension, absent from the research artifact.
 		if researchIconResources[entry.name] == "" {
 			t.Errorf("missing mapped catalog item: %s", entry.name)
 		}
@@ -105,10 +108,10 @@ func TestBundledIconCacheForFullCatalog(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(loaded) != 20 {
-		t.Fatalf("expected 20 bundled icons, got %d", len(loaded))
+	if len(loaded) != 21 {
+		t.Fatalf("expected 21 bundled icons, got %d", len(loaded))
 	}
-	for _, item := range databaseCatalog[:20] {
+	for _, item := range databaseCatalog[:21] {
 		icon := loaded[item.name]
 		if icon == nil {
 			t.Errorf("missing embedded icon for %q", item.name)
@@ -119,7 +122,7 @@ func TestBundledIconCacheForFullCatalog(t *testing.T) {
 		}
 	}
 	s := New()
-	if len(s.bundledIcons) != 20 {
+	if len(s.bundledIcons) != 21 {
 		t.Fatal("default app state must load bundled catalog images")
 	}
 }

@@ -39,6 +39,12 @@ func (s *State) draftProfile() (connections.Profile, error) {
 		}
 		return p, nil
 	}
+	if p.Kind == connections.DuckDB {
+		if strings.TrimSpace(p.Database) == "" {
+			return p, fieldError("数据库文件", "常规", "请输入 DuckDB 文件路径或 :memory:")
+		}
+		return p, nil
+	}
 	if p.Kind == connections.SQLServer && strings.TrimSpace(p.Database) == "" {
 		return p, fieldError("初始数据库", "常规", "请输入此连接绑定的 SQL Server 数据库")
 	}

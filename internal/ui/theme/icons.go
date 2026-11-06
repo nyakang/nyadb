@@ -63,6 +63,7 @@ var Symbols = map[string]*ui.SVG{
 	// An independently drawn, solid folder is more legible in the compact tree.
 	"folder-filled": symbol(`<path d="M2.3 7a2.2 2.2 0 0 1 2.2-2.2h5.1l2.1 2.1h7.8a2.2 2.2 0 0 1 2.2 2.2v9.4a2.2 2.2 0 0 1-2.2 2.2h-15a2.2 2.2 0 0 1-2.2-2.2Z" fill="currentColor" stroke="none"/><path d="M3.4 9h17.2" stroke="#98731a" stroke-width=".8" opacity=".6"/>`),
 	"database":      lucideSymbol("database"),
+	"duckdb-type":   symbol(`<path d="M4 14c0 4 3 6 7 6h3c4 0 6-3 6-6V8a4 4 0 0 0-8 0v3H4l3 3"/><path d="M20 9h3v3h-3M10 15c1 2 3 2 5 1"/><circle cx="17" cy="7" r=".5"/>`),
 	// NyaDB's own solid, segmented database cylinder stays legible at 15 DIPs.
 	"database-solid": symbol(`<ellipse cx="12" cy="4.7" rx="8.7" ry="3.1" fill="currentColor" stroke="none" opacity=".95"/>
 		<path d="M3.3 5.5v3.1c0 1.8 3.9 3.2 8.7 3.2s8.7-1.4 8.7-3.2V5.5c-.9 2-4.6 3.1-8.7 3.1S4.2 7.5 3.3 5.5Z" fill="currentColor" stroke="none" opacity=".77"/>

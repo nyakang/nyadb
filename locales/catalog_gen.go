@@ -19517,3 +19517,113 @@ func SqlServerFixedDatabase() string { return In(i18n.Locale()).SqlServerFixedDa
 func (msgs Messages) SqlServerFixedDatabase() string {
 	return Catalog.Format(msgs.locale, "sqlServerFixedDatabase", nil)
 }
+
+// DuckDBMemoryHint says "输入 :memory: 创建临时内存数据库；断开连接后数据会释放。"
+// in the language the app shows.
+func DuckDBMemoryHint() string { return In(i18n.Locale()).DuckDBMemoryHint() }
+
+// DuckDBMemoryHint says "输入 :memory: 创建临时内存数据库；断开连接后数据会释放。"
+// in the language of msgs.
+func (msgs Messages) DuckDBMemoryHint() string {
+	return Catalog.Format(msgs.locale, "duckDBMemoryHint", nil)
+}
+
+// DuckDBRuntimeHint says "运行库路径可留空，使用随应用安装的 DuckDB 运行库。"
+// in the language the app shows.
+func DuckDBRuntimeHint() string { return In(i18n.Locale()).DuckDBRuntimeHint() }
+
+// DuckDBRuntimeHint says "运行库路径可留空，使用随应用安装的 DuckDB 运行库。"
+// in the language of msgs.
+func (msgs Messages) DuckDBRuntimeHint() string {
+	return Catalog.Format(msgs.locale, "duckDBRuntimeHint", nil)
+}
+
+// DuckDBFilePrompt says "请输入 DuckDB 文件路径或 :memory:"
+// in the language the app shows.
+func DuckDBFilePrompt() string { return In(i18n.Locale()).DuckDBFilePrompt() }
+
+// DuckDBFilePrompt says "请输入 DuckDB 文件路径或 :memory:"
+// in the language of msgs.
+func (msgs Messages) DuckDBFilePrompt() string {
+	return Catalog.Format(msgs.locale, "duckDBFilePrompt", nil)
+}
+
+// DuckDBSelectExistingFile says "选择现有 DuckDB 数据库文件"
+// in the language the app shows.
+func DuckDBSelectExistingFile() string { return In(i18n.Locale()).DuckDBSelectExistingFile() }
+
+// DuckDBSelectExistingFile says "选择现有 DuckDB 数据库文件"
+// in the language of msgs.
+func (msgs Messages) DuckDBSelectExistingFile() string {
+	return Catalog.Format(msgs.locale, "duckDBSelectExistingFile", nil)
+}
+
+// DuckDBMemoryLimitCaption says "内存限制（MiB）"
+// in the language the app shows.
+func DuckDBMemoryLimitCaption() string { return In(i18n.Locale()).DuckDBMemoryLimitCaption() }
+
+// DuckDBMemoryLimitCaption says "内存限制（MiB）"
+// in the language of msgs.
+func (msgs Messages) DuckDBMemoryLimitCaption() string {
+	return Catalog.Format(msgs.locale, "duckDBMemoryLimitCaption", nil)
+}
+
+// DuckDBMemoryLimit says "DuckDB 内存限制"
+// in the language the app shows.
+func DuckDBMemoryLimit() string { return In(i18n.Locale()).DuckDBMemoryLimit() }
+
+// DuckDBMemoryLimit says "DuckDB 内存限制"
+// in the language of msgs.
+func (msgs Messages) DuckDBMemoryLimit() string {
+	return Catalog.Format(msgs.locale, "duckDBMemoryLimit", nil)
+}
+
+// DuckDBThreadsCaption says "工作线程数"
+// in the language the app shows.
+func DuckDBThreadsCaption() string { return In(i18n.Locale()).DuckDBThreadsCaption() }
+
+// DuckDBThreadsCaption says "工作线程数"
+// in the language of msgs.
+func (msgs Messages) DuckDBThreadsCaption() string {
+	return Catalog.Format(msgs.locale, "duckDBThreadsCaption", nil)
+}
+
+// DuckDBThreads says "DuckDB 工作线程数"
+// in the language the app shows.
+func DuckDBThreads() string { return In(i18n.Locale()).DuckDBThreads() }
+
+// DuckDBThreads says "DuckDB 工作线程数"
+// in the language of msgs.
+func (msgs Messages) DuckDBThreads() string {
+	return Catalog.Format(msgs.locale, "duckDBThreads", nil)
+}
+
+// DuckDBRuntimeLimits says "DuckDB 运行限制"
+// in the language the app shows.
+func DuckDBRuntimeLimits() string { return In(i18n.Locale()).DuckDBRuntimeLimits() }
+
+// DuckDBRuntimeLimits says "DuckDB 运行限制"
+// in the language of msgs.
+func (msgs Messages) DuckDBRuntimeLimits() string {
+	return Catalog.Format(msgs.locale, "duckDBRuntimeLimits", nil)
+}
+
+// DuckDBLibrary says "DuckDB 运行库"
+// in the language the app shows.
+func DuckDBLibrary() string { return In(i18n.Locale()).DuckDBLibrary() }
+
+// DuckDBLibrary says "DuckDB 运行库"
+// in the language of msgs.
+func (msgs Messages) DuckDBLibrary() string {
+	return Catalog.Format(msgs.locale, "duckDBLibrary", nil)
+}
+
+// DuckDBAtomicImport says "DuckDB 导入追加到已有表；全部记录在同一事务中提交。"
+// in the language the app shows.
+func DuckDBAtomicImport() string { return In(i18n.Locale()).DuckDBAtomicImport() }
+
+// DuckDBAtomicImport says "DuckDB 导入追加到已有表；全部记录在同一事务中提交。"
+// in the language of msgs.
+func (msgs Messages) DuckDBAtomicImport() string {
+	return Catalog.Format(msgs.locale, "duckDBAtomicImport", nil)
+}

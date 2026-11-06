@@ -1917,5 +1917,16 @@
   "sqlServerCA": "SQL Server CA 证书",
   "sqlServerTLSMode": "SQL Server TLS 模式",
   "sqlServerAtomicImport": "SQL Server 导入追加到已有表；全部记录在同一事务中提交。",
-  "sqlServerFixedDatabase": "请输入此连接绑定的 SQL Server 数据库"
+  "sqlServerFixedDatabase": "请输入此连接绑定的 SQL Server 数据库",
+  "duckDBMemoryHint": "输入 :memory: 创建临时内存数据库；断开连接后数据会释放。",
+  "duckDBRuntimeHint": "运行库路径可留空，使用随应用安装的 DuckDB 运行库。",
+  "duckDBFilePrompt": "请输入 DuckDB 文件路径或 :memory:",
+  "duckDBSelectExistingFile": "选择现有 DuckDB 数据库文件",
+  "duckDBMemoryLimitCaption": "内存限制（MiB）",
+  "duckDBMemoryLimit": "DuckDB 内存限制",
+  "duckDBThreadsCaption": "工作线程数",
+  "duckDBThreads": "DuckDB 工作线程数",
+  "duckDBRuntimeLimits": "DuckDB 运行限制",
+  "duckDBLibrary": "DuckDB 运行库",
+  "duckDBAtomicImport": "DuckDB 导入追加到已有表；全部记录在同一事务中提交。"
 }

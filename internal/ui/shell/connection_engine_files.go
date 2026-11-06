@@ -7,6 +7,8 @@ type EngineFile = connectioneditor.EngineFile
 const (
 	SQLiteAttachedFile        = connectioneditor.SQLiteAttachedFile
 	SQLiteMainFile            = connectioneditor.SQLiteMainFile
+	DuckDBMainFile            = connectioneditor.DuckDBMainFile
+	DuckDBLibraryFile         = connectioneditor.DuckDBLibraryFile
 	PostgreSQLCAFile          = connectioneditor.PostgreSQLCAFile
 	PostgreSQLCertificateFile = connectioneditor.PostgreSQLCertificateFile
 	PostgreSQLKeyFile         = connectioneditor.PostgreSQLKeyFile

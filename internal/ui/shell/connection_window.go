@@ -70,6 +70,8 @@ func (s *State) ConnectionWindowIcon() ([]byte, error) {
 		file = "postgresql.png"
 	case connections.SQLServer:
 		file = "sql-server.png"
+	case connections.DuckDB:
+		file = "duckdb.png"
 	case connections.SQLite:
 		file = "sqlite.png"
 	default:

@@ -27,6 +27,7 @@ const entries = [
   ["SQL Server","sql-server","sqlserver","#F8AD04"],
   ["Oracle","oracle","oracle","#F60644"],
   ["SQLite","sqlite","sqlite","#4DBFBE"],
+  ["DuckDB","duckdb","duckdb","#D6AD00"],
   ["MariaDB","mariadb","mariadb","#B68C65"],
   ["MongoDB","mongodb","mongodb","#BE620B"],
   ["Redis","redis","redis","#F5787B"],
@@ -47,6 +48,7 @@ const entries = [
 function ownShape(symbol) {
   const s = 'fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"';
   switch (symbol) {
+    case "duckdb": return '<path '+s+' d="M4 14c0 4 3 6 7 6h3c4 0 6-3 6-6V8a4 4 0 0 0-8 0v3H4l3 3"/><path '+s+' d="M20 9h3v3h-3M10 15c1 2 3 2 5 1"/><circle cx="17" cy="7" r=".6" fill="white"/>';
     case "sqlserver": return '<path fill="none" stroke="#fff" stroke-width="1.4" d="M3 6L15 2 21 7 10 12Z M3 6L4 20 16 16 21 7 M10 12L11 23 19 19 21 7 M4 20L11 23 M8 4L12 9 M13 3L17 8"/>';
     case "oracle": return '<rect x="2" y="7" width="20" height="10" rx="5" fill="none" stroke="white" stroke-width="2.5"/>';
     case "dameng": return '<path d="M3 13C4 7 8 4 14 3c4 0 6 3 7 5-6-2-11 0-12 5 3-3 8-2 10 1-3 5-9 7-14 5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>';

@@ -140,7 +140,7 @@ func (s *State) openDataTransfer(t *Document, kind string) {
 		fields = append([]string(nil), t.page.Columns...)
 	}
 	tr := mysqlDataTransferState{Wizard: true, Assets: &mysqlDataSpoolOwner{}, Options: defaultMySQLDataSourceOptions(), ContinueOnError: true, ExtendedInsert: true, StatementKB: 1024, Open: true, Kind: kind, Format: "CSV", Scope: "page", Target: "existing", NewName: t.table + "_import", Fields: fields, Included: map[string]bool{}, Request: request, Generation: s.session().Generation}
-	if t.importDialect == "sqlserver" {
+	if t.importDialect == "sqlserver" || t.importDialect == "duckdb" {
 		tr.ContinueOnError = false
 		tr.ExtendedInsert = false
 	}

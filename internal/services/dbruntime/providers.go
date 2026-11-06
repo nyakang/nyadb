@@ -5,12 +5,14 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 	clickhousesvc "github.com/nyakang/nyadb/internal/services/clickhouse"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/services/duckdb"
 	"github.com/nyakang/nyadb/internal/services/engines"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/services/sqlserver"
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.DuckDB, ProviderFunc(duckdb.OpenSession))
 	m.Register(connections.SQLServer, ProviderFunc(sqlserver.OpenSession))
 	m.Register(connections.ClickHouse, ProviderFunc(clickhousesvc.OpenSession))
 	for _, kind := range []connections.Kind{connections.MySQL, connections.MariaDB} {
