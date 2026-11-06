@@ -61,6 +61,9 @@ func (m *MySQLSessionManager) BeginMySQLDataTransaction(ctx context.Context, pro
 		}
 	}
 	if err == nil {
+		err = mysqlPrepareWrite(initCtx, t.conn)
+	}
+	if err == nil {
 		t.tx, err = t.conn.BeginTx(txCtx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	}
 	if err == nil {
@@ -137,6 +140,7 @@ func (m *MySQLSessionManager) dataTransactionContext(ctx context.Context, t *MyS
 		return nil, nil, ErrMySQLDataTransactionLost
 	}
 	qctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	qctx = context.WithValue(qctx, mysqlProductKey{}, t.session.settings.Kind)
 	stop := context.AfterFunc(t.ctx, cancel)
 	return qctx, func() { stop(); cancel() }, nil
 }

@@ -71,6 +71,9 @@ func (s *State) browserMoreMenu(services ui.Services, m *ui.Menu) {
 	m.Separator()
 	m.Submenu(locales.Text("新建对象"), func(sub *ui.Menu) {
 		for _, kind := range []string{"视图", "函数", "存储过程", "事件"} {
+			if s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "tidb" && kind != "视图" {
+				continue
+			}
 			enabled := a.ready && s.canAdministration(a.scope.profile) && s.deps.ObjectExecutor != nil
 			if kind == "视图" && s.CanView(a.scope.profile, a.scope.database, "new_object") {
 				enabled = a.ready

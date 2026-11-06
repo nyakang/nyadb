@@ -31,6 +31,9 @@ func (m *MySQLSessionManager) ApplyMySQLDataEdits(ctx context.Context, id int64,
 		return nil, e
 	}
 	defer conn.Close()
+	if e = mysqlPrepareWrite(qctx, conn); e != nil {
+		return nil, e
+	}
 	// Metadata-pool connections never inherit SQL-tab session options. Enforce
 	// strict coercion checks temporarily and restore before returning to pool.
 	var originalMode string
@@ -178,19 +181,22 @@ func applyMySQLDataEditsWithColumns(qctx context.Context, tx *sql.Tx, database, 
 		if e != nil {
 			return nil, e
 		}
-		warnings, warningErr := tx.QueryContext(qctx, "SHOW WARNINGS LIMIT 1")
+		warnings, warningErr := tx.QueryContext(qctx, mysqlWarningsSQL(qctx))
 		if warningErr != nil {
 			return nil, warningErr
 		}
-		if warnings.Next() {
+		for warnings.Next() {
 			var level, message string
 			var code int
 			warningErr = warnings.Scan(&level, &code, &message)
-			warnings.Close()
 			if warningErr != nil {
+				warnings.Close()
 				return nil, warningErr
 			}
-			return nil, fmt.Errorf("%w: server rejected exact value preservation (%d)", ErrMySQLDataPage, code)
+			if mysqlValueWarning(qctx, code, message) {
+				warnings.Close()
+				return nil, fmt.Errorf("%w: server rejected exact value preservation (%d)", ErrMySQLDataPage, code)
+			}
 		}
 		warningErr = warnings.Err()
 		warnings.Close()

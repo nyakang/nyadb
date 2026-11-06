@@ -133,6 +133,9 @@ func (m *MySQLSessionManager) ImportMySQLData(ctx context.Context, id int64, dat
 		return result, err
 	}
 	defer conn.Close()
+	if err = mysqlPrepareWrite(qctx, conn); err != nil {
+		return result, err
+	}
 	var originalMode string
 	if err = conn.QueryRowContext(qctx, "SELECT @@SESSION.sql_mode").Scan(&originalMode); err != nil {
 		return result, err

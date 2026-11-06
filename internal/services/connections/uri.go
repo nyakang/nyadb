@@ -54,6 +54,8 @@ func ParseURI(raw string) (URIImport, error) {
 		kind = MySQL
 	case "mariadb":
 		kind = MariaDB
+	case "tidb":
+		kind = TiDB
 	case "postgres", "postgresql":
 		kind = PostgreSQL
 	case "clickhouse":

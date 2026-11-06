@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
 func (s *SessionAdapter) Maintenance() contract.MaintenanceOperations {
@@ -11,7 +12,11 @@ func (s *SessionAdapter) Maintenance() contract.MaintenanceOperations {
 			if s.check(t.Object) != nil || t.Generation != s.Generation() || t.Object.Kind != "table" {
 				return nil
 			}
-			return []contract.MaintenanceAction{{ID: "ANALYZE", Label: "分析表", Mutates: true}, {ID: "CHECK", Label: "检查表"}, {ID: "OPTIMIZE", Label: "优化表", Mutates: true}, {ID: "REPAIR", Label: "修复表", Mutates: true}}
+			actions := []contract.MaintenanceAction{{ID: "ANALYZE", Label: "分析表", Mutates: true}, {ID: "CHECK", Label: "检查表"}}
+			if s.kind != connections.TiDB {
+				actions = append(actions, contract.MaintenanceAction{ID: "OPTIMIZE", Label: "优化表", Mutates: true}, contract.MaintenanceAction{ID: "REPAIR", Label: "修复表", Mutates: true})
+			}
+			return actions
 		},
 		Plan: func(_ context.Context, r contract.MaintenanceRequest) (contract.MaintenancePlan, error) {
 			for _, a := range s.Maintenance().Actions(r.Target) {
@@ -24,7 +29,11 @@ func (s *SessionAdapter) Maintenance() contract.MaintenanceOperations {
 					if e != nil {
 						return contract.MaintenancePlan{}, e
 					}
-					return contract.MaintenancePlan{Request: r, SQL: r.Action + " TABLE " + db + "." + table}, nil
+					op := r.Action
+					if s.kind == connections.TiDB && op == "CHECK" {
+						op = "ADMIN CHECK"
+					}
+					return contract.MaintenancePlan{Request: r, SQL: op + " TABLE " + db + "." + table}, nil
 				}
 			}
 			return contract.MaintenancePlan{}, contract.ErrUnsupported

@@ -44,6 +44,8 @@ func objectKind(kind string) (string, error) {
 		return "PROCEDURE", nil
 	case "event", "事件":
 		return "EVENT", nil
+	case "sequence", "序列":
+		return "SEQUENCE", nil
 	}
 	return "", errors.New("unsupported MySQL object kind")
 }
@@ -117,6 +119,9 @@ func (m *MySQLSessionManager) ObjectDefinition(ctx context.Context, id int64, re
 		return ObjectDefinition{}, e
 	}
 	defer cancel()
+	if e = validateProductObject(s.settings.Kind, ref.Kind); e != nil {
+		return ObjectDefinition{}, e
+	}
 	gen := m.SessionGeneration(id)
 	c, e := s.db.Conn(qctx)
 	if e != nil {
@@ -243,6 +248,8 @@ func objectExists(ctx context.Context, c *sql.Conn, ref ObjectIdentity) (bool, e
 		e = c.QueryRowContext(ctx, "SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME=?", ref.Database).Scan(&n)
 	case "VIEW":
 		e = c.QueryRowContext(ctx, "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?", ref.Database, ref.Name).Scan(&n)
+	case "SEQUENCE":
+		e = c.QueryRowContext(ctx, "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?", ref.Database, ref.Name).Scan(&n)
 	case "FUNCTION", "PROCEDURE":
 		e = c.QueryRowContext(ctx, "SELECT COUNT(*) FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA=? AND ROUTINE_NAME=? AND ROUTINE_TYPE=?", ref.Database, ref.Name, kind).Scan(&n)
 	case "EVENT":
@@ -267,6 +274,10 @@ func (m *MySQLSessionManager) ApplyObject(ctx context.Context, id int64, p Objec
 		return out
 	}
 	defer cancel()
+	if e = validateProductObject(s.settings.Kind, p.Original.Kind); e != nil {
+		out.Error = e
+		return out
+	}
 	valid := func() bool {
 		m.mu.Lock()
 		defer m.mu.Unlock()

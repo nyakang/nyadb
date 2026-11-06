@@ -19,7 +19,7 @@ const { Resvg } = require("@resvg/resvg-js");
 
 const sources = new Set([
   "mysql", "postgresql", "sqlite", "mariadb", "mongodb",
-  "redis", "snowflake", "alibabacloud", "huawei",
+  "redis", "snowflake", "alibabacloud", "huawei", "tidb",
 ]);
 const entries = [
   ["MySQL","mysql","mysql","#34C759"],
@@ -29,6 +29,7 @@ const entries = [
   ["SQLite","sqlite","sqlite","#4DBFBE"],
   ["DuckDB","duckdb","duckdb","#D6AD00"],
   ["MariaDB","mariadb","mariadb","#B68C65"],
+  ["TiDB","tidb","tidb","#E21515"],
   ["MongoDB","mongodb","mongodb","#BE620B"],
   ["Redis","redis","redis","#F5787B"],
   ["Snowflake","snowflake","snowflake","#27B4E0"],

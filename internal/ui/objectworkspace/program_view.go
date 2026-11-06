@@ -41,7 +41,7 @@ func (d *programDocument) View(c *ui.Context) {
 					})
 				}
 				label := "对象定义（由服务器返回）"
-				if obj.Kind == "序列" && obj.Sequence != nil {
+				if obj.Kind == "序列" && obj.Sequence != nil && !obj.Sequence.DefinitionFromServer {
 					label = "序列定义（根据服务器目录参数重建）"
 				}
 				ui.Text(c, locales.Text(label)).FontSize(theme.Font(c, 12)).Bold()

@@ -31,6 +31,10 @@ func Describe(kind Kind) (Descriptor, bool) {
 		// authentication plugins; MariaDB does not share that contract.
 		d.Capabilities.Accounts = false
 		return d, true
+	case TiDB:
+		d, _ := Describe(MySQL)
+		d.Kind, d.Label, d.DefaultPort = kind, "TiDB", 4000
+		return d, true
 	case PostgreSQL:
 		return Descriptor{kind, "PostgreSQL", "postgres", "server", "postgres", 5432, contract.Capabilities{Objects: true, DesignViews: true, Backup: true, Restore: true, Import: true, Maintenance: true, Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, DesignTables: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
 	case SQLite:
@@ -50,7 +54,7 @@ func (d Descriptor) FieldTypes() []string {
 		return []string{"BIGINT", "HUGEINT", "DECIMAL(18,2)", "VARCHAR", "BOOLEAN", "DATE", "TIMESTAMP", "TIMESTAMPTZ", "BLOB", "UUID", "JSON", "INTEGER[]"}
 	case SQLServer:
 		return []string{"bigint", "int", "smallint", "decimal(18,2)", "nvarchar(255)", "nvarchar(max)", "datetime2", "datetimeoffset", "date", "varbinary(max)", "bit", "uniqueidentifier"}
-	case MySQL, MariaDB:
+	case MySQL, MariaDB, TiDB:
 		return []string{"bigint", "int", "smallint", "decimal(10,2)", "varchar(255)", "text", "datetime", "timestamp", "date", "json", "blob", "boolean"}
 	case PostgreSQL:
 		return []string{"bigint", "integer", "smallint", "numeric(10,2)", "text", "varchar(255)", "boolean", "timestamp", "timestamptz", "date", "json", "jsonb", "bytea", "uuid"}

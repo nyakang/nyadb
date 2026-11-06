@@ -76,6 +76,12 @@ func ObjectDefinitionEquivalent(p ObjectPlan, actual ObjectDefinition, execution
 		}
 		return nil
 	}
+	if kind == "SEQUENCE" {
+		if verifiedTokens(want.body) != verifiedTokens(got.body) {
+			return fail()
+		}
+		return nil
+	}
 
 	expectedDefiner := want.definer
 	if expectedDefiner == "" || expectedDefiner == "CURRENT_USER" {
@@ -279,7 +285,7 @@ func parseVerifiedObject(raw, kind string, ref ObjectIdentity) (verifiedObject, 
 	switch kind {
 	case "DATABASE":
 		return parseVerifiedDatabase(v, rest)
-	case "FUNCTION", "PROCEDURE":
+	case "FUNCTION", "PROCEDURE", "SEQUENCE":
 		v.body = rest
 		return v, nil
 	case "VIEW":

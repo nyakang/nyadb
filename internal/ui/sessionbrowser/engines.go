@@ -189,6 +189,9 @@ func (s *State) engineLabel(w *Workspace) string {
 	if w.Kind == connections.MariaDB {
 		return "MariaDB"
 	}
+	if w.Kind == connections.TiDB {
+		return "TiDB"
+	}
 	if w.Kind == connections.SQLServer {
 		return "SQL Server"
 	}

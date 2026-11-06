@@ -24,6 +24,7 @@ var databaseCatalog = []catalogEntry{
 	{"SQLite", "SQLite", "", "全部", "sqlite-type", "#4cbfc2", connections.SQLite},
 	{"DuckDB", "DuckDB", "", "全部", "duckdb-type", "#d6ad00", connections.DuckDB},
 	{"MariaDB", "MariaDB", "", "全部", "maria-type", "#b58a61", connections.MariaDB},
+	{"TiDB", "TiDB", "", "全部", "database", "#e21515", connections.TiDB},
 	{"MongoDB", "MongoDB", "", "全部", "mongo-type", "#bb691d", connections.MongoDB},
 	{"Redis", "Redis", "", "全部", "redis-type", "#e77679", connections.Redis},
 	{"Snowflake", "Snowflake", "", "全部", "snowflake-type", "#3daac7", ""},
@@ -41,7 +42,7 @@ var databaseCatalog = []catalogEntry{
 	{"ClickHouse", "ClickHouse", "", "全部", "database", "#e7b632", connections.ClickHouse},
 }
 
-var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "MariaDB", "MongoDB", "Redis", "Snowflake"}
+var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "MariaDB", "TiDB", "MongoDB", "Redis", "Snowflake"}
 var catalogVendors = catalogTreeVendorOrder
 
 func catalogMatch(e catalogEntry, query string, engines, vendors map[string]bool) bool {
@@ -118,7 +119,6 @@ var additionalCatalog = []catalogEntry{
 	{"腾讯云 MongoDB", "MongoDB", "腾讯云", "云数据库", "cloud-type", "#b2590e", ""},
 	{"腾讯云 Redis", "Redis", "腾讯云", "云数据库", "cloud-type", "#f57b7d", ""},
 	{"KingbaseES", "KingbaseES", "电科金仓", "云数据库", "database", "#d73337", ""},
-	{"TiDB", "TiDB", "亚信星辰", "云数据库", "database", "#e21515", ""},
 	{"IvorySQL", "IvorySQL", "瀚高", "云数据库", "database", "#ffa73c", ""},
 	{"OceanBase 社区版", "OceanBase", "OceanBase", "云数据库", "ocean-type", "#147dff", ""},
 	{"OceanBase 企业版（MySQL 模式）", "OceanBase", "OceanBase", "云数据库", "ocean-type", "#147dff", ""},

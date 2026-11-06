@@ -118,6 +118,9 @@ func (m *MySQLSessionManager) ImportMySQLDataIntoNewTable(ctx context.Context, i
 		return result, err
 	}
 	defer conn.Close()
+	if err = mysqlPrepareWrite(qctx, conn); err != nil {
+		return result, err
+	}
 	var originalMode string
 	if err = conn.QueryRowContext(qctx, "SELECT @@SESSION.sql_mode").Scan(&originalMode); err != nil {
 		return result, err
@@ -155,5 +158,6 @@ func (m *MySQLSessionManager) ImportMySQLDataIntoNewTable(ctx context.Context, i
 		result.Saved.CommitUncertain = true
 		return result, fmt.Errorf("%w: %v", ErrMySQLDataCommitUncertain, err)
 	}
+	result.Saved.CommitConfirmed = true
 	return result, nil
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/mysqlddl"
 	"github.com/nyakang/nyadb/internal/db/sqltext"
 	"github.com/nyakang/nyadb/internal/services/backups"
+	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
 type RestoreStep struct {
@@ -47,7 +48,7 @@ func RebindBackupDDL(raw, source, target string) (string, error) {
 	var rs []sqlReplacement
 	q, _ := quotedMySQLIdentifier(target)
 	for i, t := range ts {
-		if t.Comment && strings.HasPrefix(t.Text, "/*!") && strings.Contains(t.Text, source) {
+		if t.Comment && (strings.HasPrefix(t.Text, "/*!") || strings.HasPrefix(t.Text, "/*T!")) && strings.Contains(t.Text, source) {
 			return "", errors.New("cannot safely remap a schema inside an executable comment")
 		}
 		if i+1 < len(ts) && ts[i+1].Text == "." && unquoteObjectToken(t) == source {
@@ -77,7 +78,7 @@ func restoreFingerprint(ctx context.Context, c *sql.Conn, db, kind, name string)
 		return "TRIGGER:" + definitionFingerprint(ObjectDefinition{SQL: ddl, SQLMode: mode}) + ":" + table, nil
 	}
 	var n int
-	if kind == "TABLE" || kind == "VIEW" {
+	if kind == "TABLE" || kind == "VIEW" || kind == "SEQUENCE" {
 		var actual string
 		e := c.QueryRowContext(ctx, "SELECT TABLE_TYPE FROM information_schema.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?", db, name).Scan(&actual)
 		if errors.Is(e, sql.ErrNoRows) {
@@ -88,6 +89,8 @@ func restoreFingerprint(ctx context.Context, c *sql.Conn, db, kind, name string)
 		}
 		if actual == "VIEW" {
 			kind = "VIEW"
+		} else if actual == "SEQUENCE" {
+			kind = "SEQUENCE"
 		} else {
 			kind = "TABLE"
 		}
@@ -141,6 +144,9 @@ func (m *MySQLSessionManager) PlanRestore(ctx context.Context, id int64, generat
 		return p, e
 	}
 	manifest := r.Manifest()
+	if (s.settings.Kind == connections.TiDB) != strings.Contains(strings.ToLower(manifest.Server), "tidb") {
+		return p, fmt.Errorf("%w: TiDB backups require a TiDB target and TiDB targets require a TiDB backup", contract.ErrUnsupported)
+	}
 	var drops, creates, data, constraints, late []RestoreStep
 	tableNames := map[string]bool{}
 	for _, o := range manifest.Objects {
@@ -171,6 +177,9 @@ func (m *MySQLSessionManager) PlanRestore(ctx context.Context, id int64, generat
 		}
 	}
 	for i, o := range manifest.Objects {
+		if e = validateProductObject(s.settings.Kind, strings.ToLower(o.Kind)); e != nil {
+			return p, e
+		}
 		ddl, e := r.DDL(i)
 		if e != nil {
 			return p, e
@@ -215,7 +224,7 @@ func (m *MySQLSessionManager) PlanRestore(ctx context.Context, id int64, generat
 			}
 		}
 		switch o.Kind {
-		case "TABLE", "VIEW", "FUNCTION", "PROCEDURE", "EVENT":
+		case "TABLE", "VIEW", "FUNCTION", "PROCEDURE", "EVENT", "SEQUENCE":
 		default:
 			return p, errors.New("unsupported backup object kind")
 		}
@@ -266,18 +275,20 @@ func (m *MySQLSessionManager) PlanRestore(ctx context.Context, id int64, generat
 		switch kind {
 		case "DATABASE":
 			return 0
-		case "TABLE":
+		case "SEQUENCE":
 			return 1
-		case "FUNCTION":
+		case "TABLE":
 			return 2
-		case "PROCEDURE":
+		case "FUNCTION":
 			return 3
-		case "VIEW":
+		case "PROCEDURE":
 			return 4
-		case "EVENT":
+		case "VIEW":
 			return 5
+		case "EVENT":
+			return 6
 		}
-		return 6
+		return 7
 	}
 	sort.SliceStable(creates, func(i, j int) bool { return priority(creates[i].Kind) < priority(creates[j].Kind) })
 	// Views may depend on other views. Topologically order their public FROM/JOIN
@@ -414,6 +425,14 @@ func (m *MySQLSessionManager) RestoreMySQL(ctx context.Context, plan RestorePlan
 	}
 	defer c.Close()
 	defer c.Raw(func(any) error { return driver.ErrBadConn })
+	var statements []string
+	for _, step := range plan.Steps {
+		statements = append(statements, step.SQL)
+	}
+	if e = guardTiDBChecks(qctx, c, s.settings.Kind, statements); e != nil {
+		out.Error = e
+		return out
+	}
 	if _, e = c.ExecContext(qctx, "SET NAMES utf8mb4"); e != nil {
 		out.Error = e
 		return out
@@ -547,6 +566,7 @@ func (m *MySQLSessionManager) RestoreMySQL(ctx context.Context, plan RestorePlan
 		}
 		if o.Kind == "TABLE" {
 			actual, e := readTableDesign(qctx, c, plan.Database, o.Name)
+			actual.Engine = tableDesignEngine(s.settings.Kind)
 			if e != nil {
 				out.Error = e
 				out.State = "uncertain"

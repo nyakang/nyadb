@@ -265,6 +265,9 @@ func (s *State) toolBar(c *ui.Context) {
 				kind = profile.Kind
 			}
 			for _, action := range actions {
+				if kind == connections.TiDB && action.label == "函数" {
+					continue
+				}
 				if s.profileMode {
 					if kind == connections.SQLite && (action.label == "函数" || action.label == "用户" || action.label == "其它") {
 						continue
@@ -353,6 +356,9 @@ func (s *State) toolbarActionAvailable(action string) bool {
 	case "连接", "新建查询", "键", "集合", "表", "视图", "信息":
 		return true
 	case "函数":
+		if s.sessions.Current().Kind == connections.TiDB {
+			return false
+		}
 		if !s.profileMode {
 			return true
 		}

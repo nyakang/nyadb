@@ -13672,11 +13672,11 @@ func (msgs Messages) ClickhouseTLSModeCaption() string {
 	return Catalog.Format(msgs.locale, "clickhouseTLSModeCaption", nil)
 }
 
-// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、PostgreSQL、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。"
+// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、TiDB、PostgreSQL、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。"
 // in the language the app shows.
 func ConnectionURISupportedEngines() string { return In(i18n.Locale()).ConnectionURISupportedEngines() }
 
-// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、PostgreSQL、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。"
+// ConnectionURISupportedEngines says "支持 MySQL、MariaDB、TiDB、PostgreSQL、SQLite 和 ClickHouse；导入后检查配置，不会自动连接。"
 // in the language of msgs.
 func (msgs Messages) ConnectionURISupportedEngines() string {
 	return Catalog.Format(msgs.locale, "connectionURISupportedEngines", nil)

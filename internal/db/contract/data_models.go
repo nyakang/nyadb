@@ -267,6 +267,7 @@ type DBObject struct {
 }
 
 type SequenceInfo struct {
+	DefinitionFromServer              bool
 	DataType                          string
 	Start, Increment, Min, Max, Cache int64
 	Cycle                             bool

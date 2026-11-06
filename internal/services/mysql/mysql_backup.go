@@ -17,6 +17,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/mysqlddl"
 	"github.com/nyakang/nyadb/internal/db/sqlresult"
 	"github.com/nyakang/nyadb/internal/services/backups"
+	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
 type BackupRequest struct {
@@ -31,7 +32,11 @@ type backupDefinition struct {
 	fingerprint string
 }
 
-func backupCatalog(ctx context.Context, c *sql.Conn, db string, tables []string) ([]backupDefinition, error) {
+func backupCatalog(ctx context.Context, c *sql.Conn, db string, tables []string, products ...connections.Kind) ([]backupDefinition, error) {
+	kind := connections.MySQL
+	if len(products) > 0 {
+		kind = products[0]
+	}
 	var all []backupDefinition
 	database, e := readObjectDefinition(ctx, c, ObjectIdentity{Database: db, Kind: "database"})
 	if e != nil {
@@ -71,6 +76,17 @@ func backupCatalog(ctx context.Context, c *sql.Conn, db string, tables []string)
 			continue
 		}
 		found++
+		if t.kind == "SEQUENCE" {
+			if kind != connections.TiDB {
+				return nil, fmt.Errorf("%w: sequence backup requires TiDB", contract.ErrUnsupported)
+			}
+			v, e := readObjectDefinition(ctx, c, ObjectIdentity{Database: db, Name: t.name, Kind: "sequence"})
+			if e != nil {
+				return nil, e
+			}
+			all = append(all, backupDefinition{backups.Object{Kind: "SEQUENCE", Name: t.name, SQLMode: v.SQLMode, Consistency: "definition-only"}, v.SQL, v.Fingerprint})
+			continue
+		}
 		if t.kind == "VIEW" {
 			v, e := readObjectDefinition(ctx, c, ObjectIdentity{Database: db, Name: t.name, Kind: "view"})
 			if e != nil {
@@ -107,7 +123,7 @@ func backupCatalog(ctx context.Context, c *sql.Conn, db string, tables []string)
 	if len(selected) > 0 && found != len(selected) {
 		return nil, errors.New("a selected backup object disappeared")
 	}
-	if len(selected) > 0 {
+	if len(selected) > 0 || kind == connections.TiDB {
 		return all, nil
 	}
 	for _, kind := range []string{"FUNCTION", "PROCEDURE", "EVENT"} {
@@ -192,7 +208,11 @@ func (m *MySQLSessionManager) BackupMySQL(ctx context.Context, id int64, request
 	if _, e = c.ExecContext(qctx, "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ"); e != nil {
 		return backups.Manifest{}, e
 	}
-	if _, e = c.ExecContext(qctx, "START TRANSACTION WITH CONSISTENT SNAPSHOT, READ ONLY"); e != nil {
+	begin := "START TRANSACTION WITH CONSISTENT SNAPSHOT, READ ONLY"
+	if s.settings.Kind == connections.TiDB {
+		begin = "START TRANSACTION WITH CONSISTENT SNAPSHOT"
+	}
+	if _, e = c.ExecContext(qctx, begin); e != nil {
 		return backups.Manifest{}, e
 	}
 	defer func() {
@@ -200,13 +220,16 @@ func (m *MySQLSessionManager) BackupMySQL(ctx context.Context, id int64, request
 		defer stop()
 		_, _ = c.ExecContext(cleanup, "ROLLBACK")
 	}()
-	before, e := backupCatalog(qctx, c, request.Database, request.Tables)
+	before, e := backupCatalog(qctx, c, request.Database, request.Tables, s.settings.Kind)
 	if e != nil {
 		return backups.Manifest{}, e
 	}
 	archive := backups.NewWriter(w, request.Database, version)
 	archive.Warning("Object inventory is limited to objects visible to the authenticated account; no server-wide completeness is claimed.")
 	for _, d := range before {
+		if d.object.Kind == "SEQUENCE" {
+			archive.Warning("Sequence " + d.object.Name + " includes its definition only; allocated/current values are not exported and restore restarts at START WITH.")
+		}
 		var stream func(func([]contract.Cell) error) error
 		if request.Data && d.object.Kind == "TABLE" {
 			if d.object.Consistency == "not-guaranteed" {
@@ -242,7 +265,7 @@ func (m *MySQLSessionManager) BackupMySQL(ctx context.Context, id int64, request
 			return backups.Manifest{}, e
 		}
 	}
-	after, e := backupCatalog(qctx, c, request.Database, request.Tables)
+	after, e := backupCatalog(qctx, c, request.Database, request.Tables, s.settings.Kind)
 	if e != nil {
 		return backups.Manifest{}, e
 	}
@@ -266,7 +289,15 @@ func SQLDump(ctx context.Context, r *backups.Reader, w io.Writer, data bool) err
 	if _, e = io.WriteString(w, "-- NyaDB SQL dump v1; visible objects only\nSET NAMES utf8mb4;\nSET SESSION time_zone='+00:00';\n"); e != nil {
 		return e
 	}
-	var tables, programs, late []RestoreStep
+	for _, object := range m.Objects {
+		if object.Kind == "SEQUENCE" {
+			if _, e = io.WriteString(w, "-- Sequence definitions restart at START WITH; current/allocated values are not included.\n"); e != nil {
+				return e
+			}
+			break
+		}
+	}
+	var sequences, tables, programs, late []RestoreStep
 	var constraints []string
 	for i, o := range m.Objects {
 		ddl, e := r.DDL(i)
@@ -282,6 +313,8 @@ func SQLDump(ctx context.Context, r *backups.Reader, w io.Writer, data bool) err
 		}
 		step := RestoreStep{Kind: o.Kind, Name: o.Name, SQL: ddl, Index: i}
 		switch o.Kind {
+		case "SEQUENCE":
+			sequences = append(sequences, step)
 		case "TABLE":
 			table, e := mysqlddl.Parse(m.Database, o.Name, ddl)
 			if e != nil {
@@ -313,7 +346,7 @@ func SQLDump(ctx context.Context, r *backups.Reader, w io.Writer, data bool) err
 	if e != nil {
 		return e
 	}
-	for _, step := range append(tables, programs...) {
+	for _, step := range append(append(sequences, tables...), programs...) {
 		if e = dumpRawDefinition(w, step.SQL, m.Objects[step.Index].SQLMode); e != nil {
 			return e
 		}

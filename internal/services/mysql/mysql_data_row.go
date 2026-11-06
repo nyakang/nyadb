@@ -36,7 +36,7 @@ func (m *MySQLSessionManager) ReadMySQLDataRow(ctx context.Context, id int64, da
 	if e = mysqlEditValidateRef(qctx, conn, database, table, ref); e != nil {
 		return nil, e
 	}
-	tx, e := conn.BeginTx(qctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	tx, e := conn.BeginTx(qctx, mysqlReadOptions(session.settings.Kind))
 	if e != nil {
 		return nil, e
 	}
