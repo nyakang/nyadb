@@ -255,8 +255,13 @@ func Run() error {
 				return
 			}
 			title := locales.Text("选择文件")
+			var filters []mygo.FileFilter
+			if kind == shell.DuckDBMainFile {
+				title = locales.Text("选择现有 DuckDB 数据库文件")
+				filters = []mygo.FileFilter{{Name: "DuckDB databases", Extensions: []string{"duckdb", "db"}}}
+			}
 			go func() {
-				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: parent, Title: title})
+				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: parent, Title: title, Filters: filters})
 				window.Update(func() {
 					if err != nil {
 						state.EngineFilePickerError(version)

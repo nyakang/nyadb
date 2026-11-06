@@ -169,7 +169,7 @@ func Own(r contract.DataImportRequest) (contract.DataImportRequest, error) {
 	return r, nil
 }
 func Validate(engine string, metadata []contract.StructureColumn, r contract.DataImportRequest) error {
-	if engine == "sqlserver" && (r.NewTable || r.ContinueOnError || r.Mode != "" && r.Mode != "append") {
+	if (engine == "sqlserver" || engine == "duckdb") && (r.NewTable || r.ContinueOnError || r.Mode != "" && r.Mode != "append") {
 		return contract.ErrUnsupported
 	}
 	if engine == "" || engine == "mysql" {

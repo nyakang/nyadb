@@ -1917,5 +1917,16 @@
   "sqlServerCA": "SQL Server CA certificate",
   "sqlServerTLSMode": "SQL Server TLS mode",
   "sqlServerAtomicImport": "SQL Server imports append to an existing table. All records commit in one transaction.",
-  "sqlServerFixedDatabase": "Enter the SQL Server database for this connection"
+  "sqlServerFixedDatabase": "Enter the SQL Server database for this connection",
+  "duckDBMemoryHint": "Enter :memory: for a temporary in-memory database. Disconnecting releases its data.",
+  "duckDBRuntimeHint": "Leave the library path empty to use the DuckDB runtime installed with the application.",
+  "duckDBFilePrompt": "Enter a DuckDB file path or :memory:",
+  "duckDBSelectExistingFile": "Select an existing DuckDB database file",
+  "duckDBMemoryLimitCaption": "Memory limit (MiB)",
+  "duckDBMemoryLimit": "DuckDB memory limit",
+  "duckDBThreadsCaption": "Worker threads",
+  "duckDBThreads": "DuckDB worker threads",
+  "duckDBRuntimeLimits": "DuckDB runtime limits",
+  "duckDBLibrary": "DuckDB runtime library",
+  "duckDBAtomicImport": "DuckDB imports append to an existing table. All records commit in one transaction."
 }

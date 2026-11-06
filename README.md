@@ -5,7 +5,7 @@
 
 [![Listed on Awesome MyGo](https://awesomemygo.dev/badge.svg)](https://awesomemygo.dev/apps/nyadb)
 
-NyaDB is a cross-platform, native desktop database workbench built with [Go](https://go.dev/) and the [NyaDB fork of MyGo Native UI](https://github.com/nyakang/mygo). It supports live MySQL, MariaDB, PostgreSQL, SQLite, ClickHouse, and SQL Server connections, SQL execution, and database browsing, with data editing and administration tools for supported engines.
+NyaDB is a cross-platform, native desktop database workbench built with [Go](https://go.dev/) and the [NyaDB fork of MyGo Native UI](https://github.com/nyakang/mygo). It supports live MySQL, MariaDB, PostgreSQL, SQLite, ClickHouse, SQL Server, and DuckDB connections, SQL execution, and database browsing, with data editing and administration tools for supported engines.
 
 ![NyaDB workbench preview](docs/ui-preview.png)
 
@@ -19,7 +19,7 @@ This image is a historical headless UI preview. For recent native-window verific
 - A unified navigation tree with lazy database/schema and object loading, favorites, and object search.
 - Multi-tab SQL editor with real execution, cancellation, syntax highlighting, completion, formatting, EXPLAIN, multiple results, result snapshots, and export.
 - Named queries, SQL files, encrypted workspace recovery, and execution history. Disconnection preserves SQL text and requires explicit session recovery before further execution.
-- A shared virtualized data grid with filtering, sorting, paging, column layouts, field previews, and export. MySQL, MariaDB, PostgreSQL, SQLite, and SQL Server also support editing, draft undo/redo, transactions, counting, and data analysis where available.
+- A shared virtualized data grid with filtering, sorting, paging, column layouts, field previews, and export. MySQL, MariaDB, PostgreSQL, SQLite, SQL Server, and DuckDB also support editing, draft undo/redo, transactions, counting, and data analysis where available.
 - Table designers, object management, import, backup/restore, and maintenance tools for supported engines, with SQL previews and explicit confirmation for applicable operations.
 - MySQL/MariaDB SSH tunnels and a NyaDB HTTPS/WebSocket TCP gateway, with host fingerprint trust and optional saved tunnel credentials.
 - Optional AI SQL generation, explanation, and optimization through a configurable OpenAI-compatible service, with request previews and suggestions inserted as unexecuted SQL.
@@ -37,9 +37,11 @@ This image is a historical headless UI preview. For recent native-window verific
 | ClickHouse | Native connections, SQL, metadata/structure browsing, a shared read-only data grid, filtering, sorting, counting and export | No grid editing, transactions, table designer, import, backup/restore or tunnels. Paging uses offsets. |
 | SQL Server | SQL authentication and TLS, fixed database/schema navigation, T-SQL batches, XML estimated plans, shared-grid editing, transactions, filtering, counting, analysis and import/export | Verified on SQL Server 2019 and 2022. Imports append atomically to existing tables. SQL requires explicit schema qualification. Table/view design, object mutations, backup/restore, account management, integrated/Entra authentication and tunnels are unavailable. |
 
+| DuckDB | Local files or `:memory:`, schema/object browsing, SQL and JSON EXPLAIN, shared-grid editing, snapshot transactions, filtering, counting, analysis and append import/export | Requires the verified official DuckDB 1.4.4 runtime. Views and unsupported column types are read-only for editing. No designer, object-management dialogs, backup/restore or tunnels. |
+
 Grid editing requires a reliable row identity; views, generated fields, and unsupported objects remain read-only. Availability is checked against the engine, adapter, server permissions, and selected object. Unsupported operations are disabled or rejected explicitly.
 
-See the [multi-engine delivery report](docs/multi-engine-reliability-2026-11-04.md), [MariaDB report](docs/mariadb-2026-11-06.md), [SQL Server report](docs/sqlserver-2026-11-06.md), [PostgreSQL designer support boundaries](docs/postgres-designer-save-2026-11-03.md), and [ClickHouse report](docs/clickhouse-native-2026-11-02.md) for detailed limits and verification. Advanced synchronization, modeling, automation, and other planned tools remain in development.
+See the [multi-engine delivery report](docs/multi-engine-reliability-2026-11-04.md), [MariaDB report](docs/mariadb-2026-11-06.md), [SQL Server report](docs/sqlserver-2026-11-06.md), [DuckDB report](docs/duckdb-2026-11-06.md), [PostgreSQL designer support boundaries](docs/postgres-designer-save-2026-11-03.md), and [ClickHouse report](docs/clickhouse-native-2026-11-02.md) for detailed limits and verification. Advanced synchronization, modeling, automation, and other planned tools remain in development.
 
 ## Requirements
 
@@ -48,6 +50,7 @@ See the [multi-engine delivery report](docs/multi-engine-reliability-2026-11-04.
 - On Linux, GTK 3 runtime libraries and a graphical desktop session. On Debian/Ubuntu, install `libgtk-3-0`.
 - On Windows and macOS, the operating system's native UI libraries.
 - A working system credential vault for saved passwords, AI API keys, and encrypted SQL workspace persistence. Linux uses a desktop Secret Service provider; Windows uses Credential Manager and macOS uses Keychain.
+- For DuckDB, install the verified runtime with `python3 tools/install_duckdb_runtime.py`, or use the portable package from `python3 tools/package_duckdb.py`. The Go application still builds with `CGO_ENABLED=0`.
 - For PostgreSQL backup/restore, `pg_dump` and `pg_restore` matching the server's major version (14–18), available on `PATH` or in the configured tool directory.
 
 No Node.js or web frontend toolchain is required.
@@ -135,6 +138,7 @@ internal/services/mysql/          MySQL sessions, queries, metadata, and data op
 internal/services/engines/        PostgreSQL and SQLite adapters
 internal/services/clickhouse/     Native ClickHouse adapter
 internal/services/sqlserver/      SQL Server TDS adapter
+internal/services/duckdb/         Embedded DuckDB adapter and purego C API binding
 internal/services/credentials/    System vault, workspace keys, and SSH trust
 internal/services/queries/        Encrypted SQL assets, workspace, and history
 internal/services/aisql/          AI SQL configuration and HTTP/SSE client
@@ -164,6 +168,7 @@ tests/                            Python visual-tool tests
 - [PostgreSQL table designer and support boundaries](docs/postgres-designer-save-2026-11-03.md)
 - [PostgreSQL/SQLite paging, large fields, and analysis](docs/portable-large-data-2026-11-03.md)
 - [ClickHouse native driver and read-only workspace](docs/clickhouse-native-2026-11-02.md)
+- [DuckDB runtime, capabilities and verification](docs/duckdb-2026-11-06.md)
 - [SSH and NyaDB TCP gateway](docs/transport-gateway.md)
 - [AI SQL configuration, requests, and verification](docs/ai-sql-native-2026-11-02.md)
 - [Workbench workflows and native verification](docs/navicat-ux-implementation-2026-11-05.md)

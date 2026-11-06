@@ -11,6 +11,7 @@ jobs:
     env:
       GOWORK: "off"
       GOFLAGS: "-mod=readonly"
+      NYADB_DUCKDB_IT: "1"
     strategy:
       fail-fast: false
       matrix:
@@ -24,6 +25,11 @@ jobs:
       - name: Install Linux native dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libgtk-3-0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install verified DuckDB runtime
+        run: python tools/install_duckdb_runtime.py
       - name: Verify generated locales
         run: |
           go tool mygo generate

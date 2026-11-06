@@ -22,6 +22,8 @@ const (
 	PostgreSQLCertificateFile
 	PostgreSQLKeyFile
 	SQLiteMainFile
+	DuckDBMainFile
+	DuckDBLibraryFile
 )
 
 func (s *State) SetEngineFilePicker(pick func(EngineFile, int, uint64)) { s.engineFilePicker = pick }
@@ -30,6 +32,18 @@ func (s *State) EngineFileVersion() uint64 { return s.engineFileVersion }
 
 func (s *State) SelectEngineFile(kind EngineFile, row int, version uint64, path string) {
 	if !s.active || version != s.engineFileVersion || path == "" {
+		return
+	}
+	if kind == DuckDBMainFile || kind == DuckDBLibraryFile {
+		if s.connectionDraft.Kind != connections.DuckDB {
+			return
+		}
+		if kind == DuckDBMainFile {
+			s.connectionDraft.Database = path
+		} else {
+			s.connectionDraft.DuckDBOptions.LibraryFile = path
+		}
+		s.connectionError = ""
 		return
 	}
 	if kind == SQLiteMainFile {
@@ -68,6 +82,13 @@ func (s *State) EngineFilePickerError(version uint64) {
 }
 
 func (s *State) initEngineOptionsInputs() {
+	if s.connectionDraft.Kind == connections.DuckDB {
+		a, err := connections.NormalizeDuckDBOptions(s.connectionDraft.DuckDBOptions)
+		if err == nil {
+			s.connectionDraft.DuckDBOptions = a
+		}
+		s.engineNumbers = [4]string{strconv.Itoa(a.MemoryLimitMB), strconv.Itoa(a.Threads), strconv.Itoa(a.MaxConnections), strconv.Itoa(a.SQLMaxConnections)}
+	}
 	if s.connectionDraft.Kind == connections.SQLServer {
 		a, err := connections.NormalizeSQLServerOptions(s.connectionDraft.SQLServerOptions)
 		if err == nil {
@@ -102,6 +123,19 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.DuckDB {
+		values := []*int{&p.DuckDBOptions.MemoryLimitMB, &p.DuckDBOptions.Threads, &p.DuckDBOptions.MaxConnections, &p.DuckDBOptions.SQLMaxConnections}
+		for i, raw := range s.engineNumbers {
+			n, err := strconv.Atoi(strings.TrimSpace(raw))
+			if err != nil {
+				return fieldError("DuckDB 运行限制", "高级", "请输入有效范围内的整数")
+			}
+			*values[i] = n
+		}
+		a, err := connections.NormalizeDuckDBOptions(p.DuckDBOptions)
+		p.DuckDBOptions = a
+		return err
+	}
 	if p.Kind == connections.SQLServer {
 		values := []*int{&p.SQLServerOptions.ConnectTimeoutSeconds, &p.SQLServerOptions.MaxConnections, &p.SQLServerOptions.SQLMaxConnections}
 		for i, raw := range []string{s.engineNumbers[0], s.engineNumbers[1], s.sqlMaxConnections} {
@@ -164,6 +198,12 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.DuckDB:
+		if tab == "高级" {
+			s.duckDBAdvanced(c, width)
+			return true
+		}
+		return false
 	case connections.SQLServer:
 		a := &s.connectionDraft.SQLServerOptions
 		if tab == "高级" {

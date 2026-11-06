@@ -25,6 +25,9 @@ func (s *State) toolbarMenu(services ui.Services, action string, m *ui.Menu) {
 		if w.Kind == connections.PostgreSQL || w.Kind == connections.SQLServer {
 			kinds = []string{"存储过程", "序列"}
 		}
+		if w.Kind == connections.DuckDB {
+			kinds = []string{"序列"}
+		}
 		for _, kind := range kinds {
 			if m.Item(locales.Text(kind)).Disabled(!s.toolbarActionAvailable(action)).Chosen() {
 				selected = kind

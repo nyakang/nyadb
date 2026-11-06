@@ -40,6 +40,8 @@ func ParseURI(raw string) (URIImport, error) {
 	}
 	var kind Kind
 	switch strings.ToLower(u.Scheme) {
+	case "duckdb":
+		kind = DuckDB
 	case "sqlserver", "mssql":
 		kind = SQLServer
 	case "mysql":
@@ -62,6 +64,35 @@ func ParseURI(raw string) (URIImport, error) {
 	options, err := url.ParseQuery(u.RawQuery)
 	if err != nil {
 		return fail(ErrURI)
+	}
+	if kind == DuckDB {
+		if u.User != nil || u.Host != "" && u.Host != "localhost" || !strings.HasPrefix(u.Path, "/") || strings.IndexFunc(u.Path, unicode.IsControl) >= 0 {
+			return fail(ErrURIOptions)
+		}
+		for key, values := range options {
+			if key != "read_only" || len(values) != 1 || values[0] != "true" && values[0] != "false" {
+				return fail(ErrURIOptions)
+			}
+			p.DuckDBOptions.ReadOnly = values[0] == "true"
+		}
+		path := u.Path
+		if path == "/:memory:" {
+			p.Database = ":memory:"
+		} else {
+			if runtime.GOOS == "windows" && len(path) >= 4 && path[2] == ':' && path[3] == '/' {
+				path = path[1:]
+			}
+			p.Database = filepath.Clean(filepath.FromSlash(path))
+			if !filepath.IsAbs(p.Database) {
+				return fail(ErrURI)
+			}
+		}
+		p.Name = "DuckDB · " + filepath.Base(p.Database)
+		p, err = NormalizeProfile(p)
+		if err != nil {
+			return fail(ErrURI)
+		}
+		return URIImport{Profile: p}, nil
 	}
 	if kind == SQLite {
 		if u.User != nil || u.Host != "" && u.Host != "localhost" || len(options) > 0 || !strings.HasPrefix(u.Path, "/") || strings.IndexFunc(u.Path, unicode.IsControl) >= 0 {

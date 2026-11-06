@@ -10,6 +10,8 @@ import (
 // connection chooser. The symbols are an offline fallback, never Navicat assets.
 func profileBrand(kind connections.Kind, p theme.Palette) (asset, fallback string, color ui.Color) {
 	switch kind {
+	case connections.DuckDB:
+		return "DuckDB", "duckdb-type", p.Gold
 	case connections.MySQL:
 		return "MySQL", "mysql-type", p.Blue
 	case connections.MariaDB:
