@@ -2,6 +2,7 @@
   "name": "NyaDB",
   "identifier": "io.github.nyakang.nyadb",
   "version": "0.1.0",
+  "icon": "internal/assets/appicon/icon.png",
   "out": "build",
   "i18n": {
     "dir": "locales",

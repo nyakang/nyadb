@@ -9,6 +9,7 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/assets/appicon"
 	"github.com/nyakang/nyadb/internal/services/aisql"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
@@ -72,6 +73,9 @@ func Run() error {
 	state.SetInitialSQLStore(queryStore)
 	state.EnableAutoConnect()
 	mygo.App.WhenReady(func() {
+		if err := mygo.App.Dock.SetIcon(appicon.PNG()); err != nil {
+			fmt.Fprintf(os.Stderr, "NyaDB application icon: %v\n", err)
+		}
 		setNativeAppearance(theme.CurrentMode())
 		window := mygo.NewWindow(mygo.WindowOptions{
 			Title:     "NyaDB",
