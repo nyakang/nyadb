@@ -8,7 +8,6 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -107,14 +106,8 @@ func Open(ctx context.Context, cfg connections.ElasticsearchConfig, secret strin
 	if err != nil {
 		return nil, err
 	}
-	if len(secret) > 4096 || !utf8.ValidString(secret) || strings.ContainsRune(secret, 0) || cfg.Auth == "none" && secret != "" || cfg.Auth != "none" && secret == "" {
-		return nil, connections.ErrInvalid
-	}
-	if cfg.Auth == "api_key" {
-		decoded, e := base64.StdEncoding.DecodeString(secret)
-		if e != nil || !bytes.Contains(decoded, []byte(":")) || strings.ContainsAny(secret, "\r\n ") {
-			return nil, connections.ErrInvalid
-		}
+	if err = connections.ValidateElasticsearchCredential(cfg, secret, true); err != nil {
+		return nil, err
 	}
 	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12, ServerName: cfg.ServerName}
 	if cfg.CAFile != "" {

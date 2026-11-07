@@ -21057,3 +21057,153 @@ func TrinoPasswordRequiresTLS() string { return In(i18n.Locale()).TrinoPasswordR
 func (msgs Messages) TrinoPasswordRequiresTLS() string {
 	return Catalog.Format(msgs.locale, "trinoPasswordRequiresTLS", nil)
 }
+
+// ElasticsearchAuthMode says "Elasticsearch 认证方式"
+// in the language the app shows.
+func ElasticsearchAuthMode() string { return In(i18n.Locale()).ElasticsearchAuthMode() }
+
+// ElasticsearchAuthMode says "Elasticsearch 认证方式"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchAuthMode() string {
+	return Catalog.Format(msgs.locale, "elasticsearchAuthMode", nil)
+}
+
+// ElasticsearchAuthCaption says "认证方式："
+// in the language the app shows.
+func ElasticsearchAuthCaption() string { return In(i18n.Locale()).ElasticsearchAuthCaption() }
+
+// ElasticsearchAuthCaption says "认证方式："
+// in the language of msgs.
+func (msgs Messages) ElasticsearchAuthCaption() string {
+	return Catalog.Format(msgs.locale, "elasticsearchAuthCaption", nil)
+}
+
+// ElasticsearchBasicAuth says "用户名和密码"
+// in the language the app shows.
+func ElasticsearchBasicAuth() string { return In(i18n.Locale()).ElasticsearchBasicAuth() }
+
+// ElasticsearchBasicAuth says "用户名和密码"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchBasicAuth() string {
+	return Catalog.Format(msgs.locale, "elasticsearchBasicAuth", nil)
+}
+
+// ElasticsearchNoAuth says "无认证"
+// in the language the app shows.
+func ElasticsearchNoAuth() string { return In(i18n.Locale()).ElasticsearchNoAuth() }
+
+// ElasticsearchNoAuth says "无认证"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchNoAuth() string {
+	return Catalog.Format(msgs.locale, "elasticsearchNoAuth", nil)
+}
+
+// ElasticsearchAPIKey says "API key"
+// in the language the app shows.
+func ElasticsearchAPIKey() string { return In(i18n.Locale()).ElasticsearchAPIKey() }
+
+// ElasticsearchAPIKey says "API key"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchAPIKey() string {
+	return Catalog.Format(msgs.locale, "elasticsearchAPIKey", nil)
+}
+
+// ElasticsearchAPIKeyCaption says "API key："
+// in the language the app shows.
+func ElasticsearchAPIKeyCaption() string { return In(i18n.Locale()).ElasticsearchAPIKeyCaption() }
+
+// ElasticsearchAPIKeyCaption says "API key："
+// in the language of msgs.
+func (msgs Messages) ElasticsearchAPIKeyCaption() string {
+	return Catalog.Format(msgs.locale, "elasticsearchAPIKeyCaption", nil)
+}
+
+// ElasticsearchAPIKeyInput says "Elasticsearch API key"
+// in the language the app shows.
+func ElasticsearchAPIKeyInput() string { return In(i18n.Locale()).ElasticsearchAPIKeyInput() }
+
+// ElasticsearchAPIKeyInput says "Elasticsearch API key"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchAPIKeyInput() string {
+	return Catalog.Format(msgs.locale, "elasticsearchAPIKeyInput", nil)
+}
+
+// ElasticsearchSaveCredential says "保存凭据"
+// in the language the app shows.
+func ElasticsearchSaveCredential() string { return In(i18n.Locale()).ElasticsearchSaveCredential() }
+
+// ElasticsearchSaveCredential says "保存凭据"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchSaveCredential() string {
+	return Catalog.Format(msgs.locale, "elasticsearchSaveCredential", nil)
+}
+
+// ElasticsearchTLSMode says "Elasticsearch TLS 模式"
+// in the language the app shows.
+func ElasticsearchTLSMode() string { return In(i18n.Locale()).ElasticsearchTLSMode() }
+
+// ElasticsearchTLSMode says "Elasticsearch TLS 模式"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchTLSMode() string {
+	return Catalog.Format(msgs.locale, "elasticsearchTLSMode", nil)
+}
+
+// ElasticsearchCA says "Elasticsearch CA 证书"
+// in the language the app shows.
+func ElasticsearchCA() string { return In(i18n.Locale()).ElasticsearchCA() }
+
+// ElasticsearchCA says "Elasticsearch CA 证书"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchCA() string {
+	return Catalog.Format(msgs.locale, "elasticsearchCA", nil)
+}
+
+// ElasticsearchRESTPort says "Elasticsearch 使用 REST 接口，默认端口 9200。"
+// in the language the app shows.
+func ElasticsearchRESTPort() string { return In(i18n.Locale()).ElasticsearchRESTPort() }
+
+// ElasticsearchRESTPort says "Elasticsearch 使用 REST 接口，默认端口 9200。"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchRESTPort() string {
+	return Catalog.Format(msgs.locale, "elasticsearchRESTPort", nil)
+}
+
+// ElasticsearchHTTPSCredentials says "密码和 API key 需要 HTTPS；HTTP 仅用于无认证连接。"
+// in the language the app shows.
+func ElasticsearchHTTPSCredentials() string { return In(i18n.Locale()).ElasticsearchHTTPSCredentials() }
+
+// ElasticsearchHTTPSCredentials says "密码和 API key 需要 HTTPS；HTTP 仅用于无认证连接。"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchHTTPSCredentials() string {
+	return Catalog.Format(msgs.locale, "elasticsearchHTTPSCredentials", nil)
+}
+
+// ElasticsearchCheckSettings says "请检查 Elasticsearch 认证方式、用户名和证书设置"
+// in the language the app shows.
+func ElasticsearchCheckSettings() string { return In(i18n.Locale()).ElasticsearchCheckSettings() }
+
+// ElasticsearchCheckSettings says "请检查 Elasticsearch 认证方式、用户名和证书设置"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchCheckSettings() string {
+	return Catalog.Format(msgs.locale, "elasticsearchCheckSettings", nil)
+}
+
+// ElasticsearchCheckCredential says "请检查 Elasticsearch 凭据；API key 使用完整编码值"
+// in the language the app shows.
+func ElasticsearchCheckCredential() string { return In(i18n.Locale()).ElasticsearchCheckCredential() }
+
+// ElasticsearchCheckCredential says "请检查 Elasticsearch 凭据；API key 使用完整编码值"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchCheckCredential() string {
+	return Catalog.Format(msgs.locale, "elasticsearchCheckCredential", nil)
+}
+
+// ElasticsearchUnlockAuthChange says "更改认证方式前请先解锁凭据存储"
+// in the language the app shows.
+func ElasticsearchUnlockAuthChange() string { return In(i18n.Locale()).ElasticsearchUnlockAuthChange() }
+
+// ElasticsearchUnlockAuthChange says "更改认证方式前请先解锁凭据存储"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchUnlockAuthChange() string {
+	return Catalog.Format(msgs.locale, "elasticsearchUnlockAuthChange", nil)
+}

@@ -1,6 +1,8 @@
 package connections
 
 import (
+	"bytes"
+	"encoding/base64"
 	"net/url"
 	"path/filepath"
 	"strconv"
@@ -8,6 +10,25 @@ import (
 	"unicode"
 	"unicode/utf8"
 )
+
+// ValidateElasticsearchCredential can allow an empty temporary credential when
+// saving a profile. Actual connection attempts require one for Basic/API key.
+func ValidateElasticsearchCredential(c ElasticsearchConfig, secret string, required bool) error {
+	if c.Auth != "none" && c.Auth != "basic" && c.Auth != "api_key" {
+		return ErrInvalid
+	}
+	if len(secret) > 4096 || !utf8.ValidString(secret) || strings.ContainsRune(secret, 0) || c.Auth == "none" && secret != "" || required && c.Auth != "none" && secret == "" {
+		return ErrInvalid
+	}
+	if c.Auth == "api_key" && secret != "" {
+		decoded, err := base64.StdEncoding.DecodeString(secret)
+		colon := bytes.IndexByte(decoded, ':')
+		if err != nil || colon <= 0 || colon == len(decoded)-1 || strings.ContainsAny(secret, "\r\n ") {
+			return ErrInvalid
+		}
+	}
+	return nil
+}
 
 // ElasticsearchConfig contains public native REST settings. Passwords and
 // encoded API keys are supplied separately. Product registration is separate.

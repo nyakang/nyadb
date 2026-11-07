@@ -43,6 +43,8 @@ func ParseURI(raw string) (URIImport, error) {
 	}
 	var kind Kind
 	switch strings.ToLower(u.Scheme) {
+	case "elasticsearch":
+		return parseElasticsearchURI(u)
 	case "trino":
 		return parseTrinoURI(u)
 	case "dameng", "dm":

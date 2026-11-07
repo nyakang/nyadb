@@ -10,26 +10,27 @@ import (
 type Kind string
 
 const (
-	MySQL       Kind = "mysql"
-	MariaDB     Kind = "mariadb"
-	TiDB        Kind = "tidb"
-	OceanBase   Kind = "oceanbase"
-	PostgreSQL  Kind = "postgresql"
-	CockroachDB Kind = "cockroachdb"
-	OpenGauss   Kind = "opengauss"
-	GaussDB     Kind = "gaussdb"
-	Kingbase    Kind = "kingbase"
-	Dameng      Kind = "dameng"
-	SQLite      Kind = "sqlite"
-	ClickHouse  Kind = "clickhouse"
-	Doris       Kind = "doris"
-	StarRocks   Kind = "starrocks"
-	Trino       Kind = "trino"
-	SQLServer   Kind = "sqlserver"
-	DuckDB      Kind = "duckdb"
-	Oracle      Kind = "oracle"
-	MongoDB     Kind = "mongodb"
-	Redis       Kind = "redis"
+	MySQL         Kind = "mysql"
+	MariaDB       Kind = "mariadb"
+	TiDB          Kind = "tidb"
+	OceanBase     Kind = "oceanbase"
+	PostgreSQL    Kind = "postgresql"
+	CockroachDB   Kind = "cockroachdb"
+	OpenGauss     Kind = "opengauss"
+	GaussDB       Kind = "gaussdb"
+	Kingbase      Kind = "kingbase"
+	Dameng        Kind = "dameng"
+	SQLite        Kind = "sqlite"
+	ClickHouse    Kind = "clickhouse"
+	Doris         Kind = "doris"
+	StarRocks     Kind = "starrocks"
+	Trino         Kind = "trino"
+	Elasticsearch Kind = "elasticsearch"
+	SQLServer     Kind = "sqlserver"
+	DuckDB        Kind = "duckdb"
+	Oracle        Kind = "oracle"
+	MongoDB       Kind = "mongodb"
+	Redis         Kind = "redis"
 )
 
 // IsMySQLFamily identifies products sharing the MySQL client and connection
@@ -65,33 +66,34 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
-	TrinoOptions      TrinoOptions
-	StarRocksOptions  StarRocksOptions
-	DorisOptions      DorisOptions
-	DamengOptions     DamengOptions
-	GaussDBOptions    GaussDBOptions
-	RedisOptions      RedisOptions
-	MongoDBOptions    MongoDBOptions
-	OracleOptions     OracleOptions
-	SQLServerOptions  SQLServerOptions
-	DuckDBOptions     DuckDBOptions
-	PostgreSQLOptions PostgreSQLOptions
-	SQLiteOptions     SQLiteOptions
-	ID                int64
-	Name              string
-	GroupName         string // Optional virtual navigation group; never a database name.
-	Color             string // Local fixed-palette accent; never sent to a database.
-	Starred           bool   // Local navigation favorite; never sent to a database.
-	Kind              Kind
-	Host              string
-	Port              uint16
-	Database          string
-	Username          string
-	TLSMode           string
-	MySQLAdvanced     MySQLAdvanced
-	Notes             string
-	Variants          []ConnectionVariant
-	ActiveVariant     string // Empty selects the primary configuration.
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
+	ElasticsearchOptions ElasticsearchOptions
+	TrinoOptions         TrinoOptions
+	StarRocksOptions     StarRocksOptions
+	DorisOptions         DorisOptions
+	DamengOptions        DamengOptions
+	GaussDBOptions       GaussDBOptions
+	RedisOptions         RedisOptions
+	MongoDBOptions       MongoDBOptions
+	OracleOptions        OracleOptions
+	SQLServerOptions     SQLServerOptions
+	DuckDBOptions        DuckDBOptions
+	PostgreSQLOptions    PostgreSQLOptions
+	SQLiteOptions        SQLiteOptions
+	ID                   int64
+	Name                 string
+	GroupName            string // Optional virtual navigation group; never a database name.
+	Color                string // Local fixed-palette accent; never sent to a database.
+	Starred              bool   // Local navigation favorite; never sent to a database.
+	Kind                 Kind
+	Host                 string
+	Port                 uint16
+	Database             string
+	Username             string
+	TLSMode              string
+	MySQLAdvanced        MySQLAdvanced
+	Notes                string
+	Variants             []ConnectionVariant
+	ActiveVariant        string // Empty selects the primary configuration.
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
 }

@@ -2070,5 +2070,20 @@
   "trinoCA": "Trino CA certificate",
   "trinoSessionPassword": "Trino session password",
   "trinoHTTPProtocol": "Trino connects over HTTP/HTTPS; passwords require HTTPS.",
-  "trinoPasswordRequiresTLS": "Trino passwords require HTTPS"
+  "trinoPasswordRequiresTLS": "Trino passwords require HTTPS",
+  "elasticsearchAuthMode": "Elasticsearch authentication",
+  "elasticsearchAuthCaption": "Authentication:",
+  "elasticsearchBasicAuth": "Username and password",
+  "elasticsearchNoAuth": "No authentication",
+  "elasticsearchAPIKey": "API key",
+  "elasticsearchAPIKeyCaption": "API key:",
+  "elasticsearchAPIKeyInput": "Elasticsearch API key",
+  "elasticsearchSaveCredential": "Save credential",
+  "elasticsearchTLSMode": "Elasticsearch TLS mode",
+  "elasticsearchCA": "Elasticsearch CA certificate",
+  "elasticsearchRESTPort": "Elasticsearch uses REST on port 9200 by default.",
+  "elasticsearchHTTPSCredentials": "Passwords and API keys require HTTPS. HTTP supports unauthenticated connections only.",
+  "elasticsearchCheckSettings": "Check the Elasticsearch authentication, username and certificate settings",
+  "elasticsearchCheckCredential": "Check the Elasticsearch credential. Use the complete encoded API key.",
+  "elasticsearchUnlockAuthChange": "Unlock the credential store before changing authentication"
 }

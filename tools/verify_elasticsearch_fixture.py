@@ -32,7 +32,7 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(plain=False, hold=False, race=False):
+def verify(plain=False, hold=False, race=False, profile=False):
     base, output = ROOT/'temp/elasticsearch', ROOT/'build/elasticsearch'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
@@ -112,12 +112,18 @@ def verify(plain=False, hold=False, race=False):
             else:
                 env = os.environ.copy()
                 env.update({'NYADB_ELASTICSEARCH_IT': '1', 'NYADB_ELASTICSEARCH_CONFIG': str(probe)})
-                args = ['go', 'test', '-count=1', '-v', '-run', 'ElasticsearchNative', *(['-race'] if race else []), './internal/services/elasticsearch']
-                logfile = output/('acceptance-'+nonce+'.log')
+                packages = ['./internal/services/elasticsearch']
+                if profile:
+                    packages.append('./internal/ui/connectioneditor')
+                    env['NYADB_ELASTICSEARCH_PROFILE_IMAGES'] = str(output/('profile-images-'+nonce))
+                args = ['go', 'test', '-count=1', '-v', '-run', 'ElasticsearchNative', *(['-race'] if race else []), *packages]
+                logfile = output/(('profile-acceptance-' if profile else 'acceptance-')+nonce+'.log')
                 with logfile.open('w') as log:
                     result = subprocess.run(args, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=600)
                 if result.returncode or 'TestElasticsearchNative' not in logfile.read_text():
                     raise RuntimeError('Elasticsearch native acceptance failed; inspect captured test log')
+                if profile and '--- PASS: TestElasticsearchNativeProfileURIReopenAndEditorConnectionChecks' not in logfile.read_text():
+                    raise RuntimeError('Elasticsearch profile acceptance did not execute')
                 print('Native Elasticsearch acceptance passed', flush=True)
         finally:
             if identifier:
@@ -134,5 +140,6 @@ if __name__ == '__main__':
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--hold', action='store_true')
     parser.add_argument('--race', action='store_true')
+    parser.add_argument('--profile', action='store_true', help='also verify saved profiles, vault lifecycle and localized editor forms')
     args = parser.parse_args()
-    verify(args.plain, args.hold, args.race)
+    verify(args.plain, args.hold, args.race, args.profile)

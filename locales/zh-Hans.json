@@ -2070,5 +2070,20 @@
   "trinoCA": "Trino CA 证书",
   "trinoSessionPassword": "Trino 会话密码",
   "trinoHTTPProtocol": "Trino 通过 HTTP/HTTPS 连接；使用密码时必须启用 HTTPS。",
-  "trinoPasswordRequiresTLS": "Trino 使用密码时必须启用 HTTPS"
+  "trinoPasswordRequiresTLS": "Trino 使用密码时必须启用 HTTPS",
+  "elasticsearchAuthMode": "Elasticsearch 认证方式",
+  "elasticsearchAuthCaption": "认证方式：",
+  "elasticsearchBasicAuth": "用户名和密码",
+  "elasticsearchNoAuth": "无认证",
+  "elasticsearchAPIKey": "API key",
+  "elasticsearchAPIKeyCaption": "API key：",
+  "elasticsearchAPIKeyInput": "Elasticsearch API key",
+  "elasticsearchSaveCredential": "保存凭据",
+  "elasticsearchTLSMode": "Elasticsearch TLS 模式",
+  "elasticsearchCA": "Elasticsearch CA 证书",
+  "elasticsearchRESTPort": "Elasticsearch 使用 REST 接口，默认端口 9200。",
+  "elasticsearchHTTPSCredentials": "密码和 API key 需要 HTTPS；HTTP 仅用于无认证连接。",
+  "elasticsearchCheckSettings": "请检查 Elasticsearch 认证方式、用户名和证书设置",
+  "elasticsearchCheckCredential": "请检查 Elasticsearch 凭据；API key 使用完整编码值",
+  "elasticsearchUnlockAuthChange": "更改认证方式前请先解锁凭据存储"
 }

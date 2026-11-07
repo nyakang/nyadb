@@ -40,6 +40,7 @@ type Dependencies struct {
 // State is owned by the UI thread. Background tests return immutable results;
 // native picker completions are guarded by the editing session's version.
 type State struct {
+	elasticsearchAuthChoice     string
 	redisSentinelPassword       string
 	redisSaveSentinelPassword   bool
 	redisHadSentinelPassword    bool
@@ -175,12 +176,15 @@ func (s *State) OpenProfile(profile connections.Profile) {
 	if profile.Kind.IsMySQLFamily() {
 		s.loadSavedConnectionPasswords()
 		s.loadTunnelSecrets()
-	} else if profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis {
+	} else if profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.Elasticsearch || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis {
 		s.loadSavedConnectionPasswords()
 	}
 }
 
 func (s *State) initializeInputs() {
+	if s.connectionDraft.Kind == connections.Elasticsearch {
+		s.elasticsearchAuthChoice = elasticsearchAuthCaption(s.connectionDraft.ElasticsearchOptions.Auth)
+	}
 	s.initEngineOptionsInputs()
 	if s.connectionDraft.Kind.IsMySQLFamily() {
 		s.initMySQLAdvancedInputs()
@@ -196,6 +200,7 @@ func (s *State) initializeInputs() {
 // Close discards configuration drafts and secrets and invalidates async work.
 // The non-secret profile remains readable until the next Open call.
 func (s *State) Close() {
+	s.elasticsearchAuthChoice = ""
 	s.engineFileVersion++
 	s.uriOpen = false
 	s.uriReturn, s.uriConfirm = false, false
@@ -268,6 +273,8 @@ func (s *State) Title() string {
 
 func connectionKindName(kind connections.Kind) string {
 	switch kind {
+	case connections.Elasticsearch:
+		return "Elasticsearch"
 	case connections.DuckDB:
 		return "DuckDB"
 	case connections.MySQL:

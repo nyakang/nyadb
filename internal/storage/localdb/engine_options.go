@@ -12,25 +12,28 @@ import (
 // Keep the existing column and MySQL JSON format. Other engines use an
 // explicit versioned envelope; older empty records receive engine defaults.
 type engineOptionsEnvelope struct {
-	Trino      *connections.TrinoOptions      `json:"trino,omitempty"`
-	StarRocks  *connections.StarRocksOptions  `json:"starrocks,omitempty"`
-	Doris      *connections.DorisOptions      `json:"doris,omitempty"`
-	Dameng     *connections.DamengOptions     `json:"dameng,omitempty"`
-	GaussDB    *connections.GaussDBOptions    `json:"gaussdb,omitempty"`
-	Redis      *connections.RedisOptions      `json:"redis,omitempty"`
-	MongoDB    *connections.MongoDBOptions    `json:"mongodb,omitempty"`
-	Oracle     *connections.OracleOptions     `json:"oracle,omitempty"`
-	DuckDB     *connections.DuckDBOptions     `json:"duckdb,omitempty"`
-	SQLServer  *connections.SQLServerOptions  `json:"sqlserver,omitempty"`
-	Version    int                            `json:"version"`
-	Kind       connections.Kind               `json:"kind"`
-	PostgreSQL *connections.PostgreSQLOptions `json:"postgresql,omitempty"`
-	SQLite     *connections.SQLiteOptions     `json:"sqlite,omitempty"`
+	Elasticsearch *connections.ElasticsearchOptions `json:"elasticsearch,omitempty"`
+	Trino         *connections.TrinoOptions         `json:"trino,omitempty"`
+	StarRocks     *connections.StarRocksOptions     `json:"starrocks,omitempty"`
+	Doris         *connections.DorisOptions         `json:"doris,omitempty"`
+	Dameng        *connections.DamengOptions        `json:"dameng,omitempty"`
+	GaussDB       *connections.GaussDBOptions       `json:"gaussdb,omitempty"`
+	Redis         *connections.RedisOptions         `json:"redis,omitempty"`
+	MongoDB       *connections.MongoDBOptions       `json:"mongodb,omitempty"`
+	Oracle        *connections.OracleOptions        `json:"oracle,omitempty"`
+	DuckDB        *connections.DuckDBOptions        `json:"duckdb,omitempty"`
+	SQLServer     *connections.SQLServerOptions     `json:"sqlserver,omitempty"`
+	Version       int                               `json:"version"`
+	Kind          connections.Kind                  `json:"kind"`
+	PostgreSQL    *connections.PostgreSQLOptions    `json:"postgresql,omitempty"`
+	SQLite        *connections.SQLiteOptions        `json:"sqlite,omitempty"`
 }
 
 func encodeProfileOptions(p connections.Profile) (string, error) {
 	var value any
 	switch p.Kind {
+	case connections.Elasticsearch:
+		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Elasticsearch: &p.ElasticsearchOptions}
 	case connections.Trino:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Trino: &p.TrinoOptions}
 	case connections.StarRocks:
@@ -67,6 +70,9 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 }
 func decodeEngineOptions(p *connections.Profile, raw string) error {
 	if raw == "" {
+		if p.Kind == connections.Elasticsearch {
+			return connections.ErrInvalid
+		}
 		if p.Kind == connections.Trino {
 			p.TrinoOptions = connections.TrinoOptions{Version: 1}
 		}
@@ -105,10 +111,28 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 		return nil
 	}
 	var envelope engineOptionsEnvelope
+	if p.Kind == connections.Elasticsearch && !uniqueElasticsearchOptionsJSON(raw) {
+		return connections.ErrInvalid
+	}
 	decoder := json.NewDecoder(strings.NewReader(raw))
 	decoder.DisallowUnknownFields()
 	if len(raw) > 128<<10 || decoder.Decode(&envelope) != nil || decoder.Decode(new(any)) != io.EOF || envelope.Version != 1 || envelope.Kind != p.Kind {
 		return fmt.Errorf("invalid saved engine options")
+	}
+	if p.Kind == connections.Elasticsearch {
+		if envelope.Elasticsearch == nil || envelope.Trino != nil || envelope.StarRocks != nil || envelope.Doris != nil || envelope.Dameng != nil || envelope.GaussDB != nil || envelope.Redis != nil || envelope.MongoDB != nil || envelope.Oracle != nil || envelope.DuckDB != nil || envelope.SQLServer != nil || envelope.SQLite != nil || envelope.PostgreSQL != nil {
+			return connections.ErrInvalid
+		}
+		p.ElasticsearchOptions = *envelope.Elasticsearch
+		if p.ElasticsearchOptions.Version != 1 {
+			return connections.ErrInvalid
+		}
+		checked, err := connections.NormalizeProfile(*p)
+		*p = checked
+		return err
+	}
+	if envelope.Elasticsearch != nil {
+		return connections.ErrInvalid
 	}
 	if p.Kind == connections.Trino {
 		if envelope.Trino == nil || envelope.StarRocks != nil || envelope.Doris != nil || envelope.Dameng != nil || envelope.GaussDB != nil || envelope.Redis != nil || envelope.MongoDB != nil || envelope.Oracle != nil || envelope.DuckDB != nil || envelope.SQLServer != nil || envelope.SQLite != nil || envelope.PostgreSQL != nil {
