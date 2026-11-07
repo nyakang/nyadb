@@ -139,7 +139,7 @@ func Open(ctx context.Context, cfg connections.EasysearchConfig, secret string) 
 	c := &Client{config: cfg, secret: secret, ctx: root, cancel: cancel, opaque: "nyadb-" + hex.EncodeToString(random[:]), pits: map[*Cursor]string{}, scrolls: map[*ScrollCursor]string{}}
 	c.http = &http.Client{Transport: transport, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	r, err := c.Do(ctx, Request{Method: "GET", Path: "/"})
-	if err != nil || decodeJSON(r.Body, &c.identity) != nil || c.identity.Version.Number != "2.5.1" || c.identity.Version.Distribution != "easysearch" || c.identity.Version.Distributor != "INFINI Labs" || c.identity.Version.Hash != "c8206f7d5ec3da50ae75b7db483cefb90a0b726b" || c.identity.Version.Snapshot || c.identity.Version.Lucene != "9.12.2" || c.identity.ClusterUUID == "" || c.identity.ClusterUUID == "_na_" || c.identity.Tagline != "You Know, For Easy Search!" {
+	if err != nil || decodeJSON(r.Body, &c.identity) != nil || !validNativeIdentity(c.identity) {
 		_ = c.Close()
 		if err != nil {
 			return nil, err
@@ -147,6 +147,13 @@ func Open(ctx context.Context, cfg connections.EasysearchConfig, secret string) 
 		return nil, errors.New("Easysearch native identity requires verified native 2.5.1")
 	}
 	return c, nil
+}
+
+func validNativeIdentity(identity Identity) bool {
+	v := identity.Version
+	return v.Number == "2.5.1" && v.Distribution == "easysearch" && v.Distributor == "INFINI Labs" &&
+		v.Hash == "c8206f7d5ec3da50ae75b7db483cefb90a0b726b" && !v.Snapshot && v.Lucene == "9.12.2" &&
+		identity.ClusterUUID != "" && identity.ClusterUUID != "_na_" && identity.Tagline == "You Know, For Easy Search!"
 }
 
 func (c *Client) Identity() Identity { return c.identity }

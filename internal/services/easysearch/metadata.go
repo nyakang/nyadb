@@ -72,6 +72,10 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*con
 	if err != nil {
 		return nil, err
 	}
+	return s.targetStructure(o, m)
+}
+
+func (s *Session) targetStructure(o contract.ObjectRef, m TargetMetadata) (*contract.TableStructure, error) {
 	columns, err := mappingColumns(m.Mappings)
 	if err != nil {
 		return nil, err

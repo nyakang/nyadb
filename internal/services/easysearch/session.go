@@ -23,6 +23,7 @@ type Session struct {
 	closeErr        error
 	work            sync.WaitGroup
 	leases          map[*queryLease]bool
+	datas           map[*dataLease]bool
 }
 
 func OpenSession(ctx context.Context, p connections.Profile, secret string) (contract.Session, error) {
@@ -56,7 +57,12 @@ func OpenSession(ctx context.Context, p connections.Profile, secret string) (con
 func (s *Session) ProfileID() int64   { return s.profile.ID }
 func (s *Session) Generation() uint64 { return 1 }
 func (s *Session) Capabilities() contract.Capabilities {
-	return contract.Capabilities{Documents: true, Query: true, Metadata: true}
+	c := s.DataDocumentCapabilities()
+	c.Query = true
+	return c
+}
+func (*Session) DataDocumentCapabilities() contract.Capabilities {
+	return contract.Capabilities{Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
 }
 func (s *Session) Alive() bool        { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed && !s.revoked }
 func (s *Session) Identity() Identity { return s.identity }
@@ -115,10 +121,7 @@ func (s *Session) open(ctx context.Context) (*Client, error) {
 	}
 	if c.Identity().ClusterUUID != s.identity.ClusterUUID {
 		_ = c.Close()
-		s.mu.Lock()
-		s.revoked, s.secret = true, ""
-		s.cancel()
-		s.mu.Unlock()
+		s.revoke()
 		return nil, contract.ErrRevoked
 	}
 	if err := ctx.Err(); err != nil {
@@ -127,6 +130,13 @@ func (s *Session) open(ctx context.Context) (*Client, error) {
 	}
 	return c, nil
 }
+func (s *Session) revoke() {
+	s.mu.Lock()
+	s.revoked, s.secret = true, ""
+	s.cancel()
+	s.mu.Unlock()
+}
+
 func (s *Session) Close() error {
 	s.mu.Lock()
 	if s.closed {
@@ -140,11 +150,20 @@ func (s *Session) Close() error {
 	for l := range s.leases {
 		leases = append(leases, l)
 	}
+	datas := make([]*dataLease, 0, len(s.datas))
+	for l := range s.datas {
+		datas = append(datas, l)
+	}
 	s.mu.Unlock()
 	for _, l := range leases {
 		l.Release()
 	}
+	var closeErr error
+	for _, l := range datas {
+		closeErr = errors.Join(closeErr, l.Close())
+	}
 	s.work.Wait()
+	s.closeErr = closeErr
 	close(s.closeDone)
 	return s.closeErr
 }

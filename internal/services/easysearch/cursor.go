@@ -38,7 +38,7 @@ type Page struct {
 }
 
 func (c *Client) OpenCursor(ctx context.Context, index string, query json.RawMessage, pageSize int) (*Cursor, error) {
-	if !validIndex(index) || pageSize < 1 || pageSize > 500 || !validSource(query) {
+	if !validTargetSelector(index) || pageSize < 1 || pageSize > 500 || !validSource(query) {
 		return nil, ErrInvalid
 	}
 	if !c.operation.TryLock() {

@@ -21,7 +21,7 @@ type ScrollCursor struct {
 }
 
 func (c *Client) OpenScroll(ctx context.Context, index string, query json.RawMessage, pageSize int) (*ScrollCursor, error) {
-	if !validIndex(index) || !validSource(query) || pageSize < 1 || pageSize > 500 {
+	if !validTargetSelector(index) || !validSource(query) || pageSize < 1 || pageSize > 500 {
 		return nil, ErrInvalid
 	}
 	if !c.operation.TryLock() {

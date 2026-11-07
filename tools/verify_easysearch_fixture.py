@@ -40,7 +40,7 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(compat_base=False, plain=False, race=False, profiles=False, sessions=False):
+def verify(compat_base=False, plain=False, race=False, profiles=False, sessions=False, documents=False):
     base, output = ROOT/'temp/easysearch', ROOT/'build/easysearch'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
@@ -123,6 +123,9 @@ def verify(compat_base=False, plain=False, race=False, profiles=False, sessions=
             print('Native Easysearch 2.5.1 ready; fixture nonce: '+nonce, flush=True)
             env = os.environ.copy()
             env.update({'NYADB_EASYSEARCH_IT': '1', 'NYADB_EASYSEARCH_CONFIG': str(probe)})
+            sources = sorted((ROOT/'internal/services/easysearch').glob('*.go'))+[Path(__file__).resolve()]
+            source_hashes = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources}
+            evidence['source_sha256'] = source_hashes
             logfile = output/('acceptance-'+nonce+'.log')
             packages = ['./internal/services/connections', './internal/storage/localdb', './internal/ui/connectioneditor'] if profiles else ['./internal/services/easysearch', './internal/services/connections']
             if profiles:
@@ -139,9 +142,14 @@ def verify(compat_base=False, plain=False, race=False, profiles=False, sessions=
             else:
                 if not plain:
                     required.append('AccessTokenUsesNativeHeaderAndPermissions')
-                if sessions:
+                if sessions or documents:
                     required += ['SessionIndexAliasDataStreamMetadataAndREST', 'MetadataRejectsCapturedIndexReplacementAndAliasChange', 'QueryLostCommittedReplyRequiresExplicitRecoveryWithoutReplay', 'AliasCaseKeepsQualifiedIdentity']
                     evidence['scope'] = 'native_metadata_and_request_sessions'
+                if documents:
+                    required += ['DataDocumentExactRowsPagingFieldsFilteredExportAndCleanup', 'DataDocumentAliasScopeAndStreamConcreteIdentity', 'DataDocumentRejectsSameNameIndexRecreation', 'DataDocumentBoundedGridAndCompleteFrozenScrollExport', 'DataDocumentKeepsEqualIDsOnRoutingShards', 'DataExportLostAdvanceFailsWithoutReplayAndReleasesScroll', 'DataCloseCancelsUnpublishedPageAndKeepsOtherDocument', 'DataRejectsScopeChangeAfterReadReceipt']
+                    evidence['scope'] = 'private_shared_data_document_reads_and_complete_scroll_exports'
+            if any(hashlib.sha256((ROOT/path).read_bytes()).hexdigest() != digest for path, digest in source_hashes.items()):
+                raise RuntimeError('Verification sources changed during acceptance; rerun on stable sources')
             if result.returncode or any('--- PASS: TestEasysearchNative'+name not in text for name in required):
                 raise RuntimeError('Native Easysearch acceptance failed; inspect captured test log')
             evidence.update({'status': 'passed_with_race' if race else 'passed', 'log': str(logfile.relative_to(ROOT)), 'log_sha256': hashlib.sha256(logfile.read_bytes()).hexdigest()})
@@ -163,7 +171,8 @@ if __name__ == '__main__':
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--race', action='store_true')
     mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--documents', action='store_true', help='verify bound shared grid, field reads and complete native Scroll exports')
     mode.add_argument('--sessions', action='store_true', help='verify metadata and native request-session contracts')
     mode.add_argument('--profiles', action='store_true', help='verify native profile, restart and localized connection form')
     args = parser.parse_args()
-    verify(args.compat_base, args.plain, args.race, args.profiles, args.sessions)
+    verify(args.compat_base, args.plain, args.race, args.profiles, args.sessions, args.documents)
