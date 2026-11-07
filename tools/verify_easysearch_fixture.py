@@ -40,7 +40,9 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(compat_base=False, plain=False, race=False, profiles=False, sessions=False, documents=False, write_gates=False, edits=False):
+def verify(compat_base=False, plain=False, race=False, profiles=False, sessions=False, documents=False, write_gates=False, edits=False, workbench=False, workbench_only=False):
+    if workbench_only:
+        workbench = True
     base, output = ROOT/'temp/easysearch', ROOT/'build/easysearch'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
@@ -124,17 +126,23 @@ def verify(compat_base=False, plain=False, race=False, profiles=False, sessions=
             env = os.environ.copy()
             env.update({'NYADB_EASYSEARCH_IT': '1', 'NYADB_EASYSEARCH_CONFIG': str(probe)})
             sources = sorted((ROOT/'internal/services/easysearch').glob('*.go'))+[Path(__file__).resolve()]
+            if workbench:
+                sources = sorted((ROOT/'internal').rglob('*.go'))+sorted((ROOT/'locales').glob('*.go'))+sorted((ROOT/'locales').glob('*.json'))+[ROOT/'go.mod', ROOT/'go.sum', Path(__file__).resolve()]
             source_hashes = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources}
             evidence['source_sha256'] = source_hashes
             logfile = output/('acceptance-'+nonce+'.log')
             packages = ['./internal/services/connections', './internal/storage/localdb', './internal/ui/connectioneditor'] if profiles else ['./internal/services/easysearch', './internal/services/connections']
+            if workbench:
+                packages = ([] if workbench_only else packages)+['./internal/services/dbruntime', './internal/ui/shell', './internal/ui/dataworkspace', './internal/ui/connectioneditor', './internal/ui/sqlworkspace']
+                env['NYADB_EASYSEARCH_WORKBENCH_IMAGES'] = str(output/('workbench-images-'+nonce))
+                env['NYADB_EASYSEARCH_PROFILE_IMAGES'] = str(output/('profile-images-'+nonce))
             if write_gates:
                 env['NYADB_EASYSEARCH_WRITE_GATE_REPORT'] = str(output/('write-gates-'+nonce+'.json'))
             if profiles:
                 env['NYADB_EASYSEARCH_PROFILE_IMAGES'] = str(output/('profile-images-'+nonce))
-            args = ['go', 'test', '-count=1', '-v', *(['-run', '^TestEasysearchNativeWriteParameterGates$'] if write_gates else []), *(['-race'] if race else []), *packages]
+            args = ['go', 'test', '-count=1', '-v', *(['-run', '^TestEasysearchNativeWriteParameterGates$'] if write_gates else ['-run', '^TestEasysearchNative'] if workbench_only else []), *(['-race'] if race else []), *packages]
             with logfile.open('w') as log:
-                result = subprocess.run(args, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=600)
+                result = subprocess.run(args, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=1200 if workbench else 600)
             text = logfile.read_text()
             required = ['TransportAuthenticationDocumentsAndPIT', 'LostWriteReceiptRetiresOriginalWithoutReplay', 'CancellationSettlesOriginalHTTPWorkerAndReleasesPIT', 'PITKeepsEqualIDsOnDifferentRoutingShards', 'ScrollReadsCompleteOriginalSnapshotBeyondPITWindow', 'ScrollLostResponseDoesNotReplayAdvancedResource', 'IncompletePITReceiptRetiresAndCleansCapturedResource']
             if profiles:
@@ -157,6 +165,12 @@ def verify(compat_base=False, plain=False, race=False, profiles=False, sessions=
                 required = ['WriteParameterGates']
                 evidence['scope'] = 'native_write_parameter_gates'
                 evidence['write_gate_report'] = str(Path(env['NYADB_EASYSEARCH_WRITE_GATE_REPORT']).relative_to(ROOT))
+            if workbench:
+                public = ['PublicDocumentFeaturesAndPublishedGenerations', 'PublicChooserURIGridRESTAndRecovery', 'SharedGridPagingCreateDeleteParkAndGeneration', 'SharedGridLostMalformedWritesVerifyWithoutReplay', 'RESTLostWriteCancelAndExplicitRecovery', 'ProfileURIReopenAndEditorConnectionChecks', 'EditorLocalizedFormEvidence']
+                required = public if workbench_only else required+public
+                evidence['scope'] = 'public_native_easysearch_runtime_chooser_uri_editor_navigation_shared_grid_and_recovery'
+                evidence['images'] = str(Path(env['NYADB_EASYSEARCH_WORKBENCH_IMAGES']).relative_to(ROOT))
+                evidence['profile_images'] = str(Path(env['NYADB_EASYSEARCH_PROFILE_IMAGES']).relative_to(ROOT))
             if any(hashlib.sha256((ROOT/path).read_bytes()).hexdigest() != digest for path, digest in source_hashes.items()):
                 raise RuntimeError('Verification sources changed during acceptance; rerun on stable sources')
             if result.returncode or any('--- PASS: TestEasysearchNative'+name not in text for name in required):
@@ -182,8 +196,10 @@ if __name__ == '__main__':
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--write-gates', action='store_true', help='probe native alias and stream write-parameter protections')
     mode.add_argument('--edits', action='store_true', help='verify native shared document edits, conflicts and outcome recovery')
+    mode.add_argument('--workbench', action='store_true', help='verify public runtime, URI, chooser, shared grid, native requests and recovery')
+    mode.add_argument('--workbench-only', action='store_true', help='focus on public workflows after completed native service verification')
     mode.add_argument('--documents', action='store_true', help='verify bound shared grid, field reads and complete native Scroll exports')
     mode.add_argument('--sessions', action='store_true', help='verify metadata and native request-session contracts')
     mode.add_argument('--profiles', action='store_true', help='verify native profile, restart and localized connection form')
     args = parser.parse_args()
-    verify(args.compat_base, args.plain, args.race, args.profiles, args.sessions, args.documents, args.write_gates, args.edits)
+    verify(args.compat_base, args.plain, args.race, args.profiles, args.sessions, args.documents, args.write_gates, args.edits, args.workbench, args.workbench_only)

@@ -302,11 +302,15 @@ func mysqlDataQueryStatus(t *Document) string {
 	if t.readInfo.QuerySQL == "" {
 		return locales.Text("查询信息不可用")
 	}
+	search := t.object.Kind == "index" || t.object.Kind == "alias" || t.object.Kind == "data_stream"
 	if t.loading || t.err != "" || t.readInfo.Canceled || t.page == nil {
+		if search {
+			return locales.Text("上次成功请求：") + t.readInfo.QuerySQL
+		}
 		return locales.Text("上次成功查询（参数化）：") + t.readInfo.QuerySQL
 	}
-	if t.object.Kind == "index" || t.object.Kind == "alias" || t.object.Kind == "data_stream" {
-		return locales.Text("Elasticsearch 查询：") + t.readInfo.QuerySQL
+	if search {
+		return locales.Text("原生请求：") + t.readInfo.QuerySQL
 	}
 	if t.capabilities.KeyValues {
 		return locales.Text("Redis 命令：") + t.readInfo.QuerySQL

@@ -49,6 +49,25 @@ func TestObjectSearchMatchesQualifiedObjectsFieldsAndBoundedDefinition(t *testin
 	}
 }
 
+func TestObjectSearchFindsFieldsInNativeIndexAliasAndStreamMappings(t *testing.T) {
+	for _, kind := range []string{"index", "alias", "data_stream"} {
+		r, n := searchFixture()
+		r.Browse = func(context.Context, contract.NamespaceRef) ([]contract.DBObject, error) {
+			return []contract.DBObject{{Ref: n.Ref.Object(kind, "native"), Name: "native", Kind: kind}}, nil
+		}
+		r.TableMetadata = func(_ context.Context, o contract.ObjectRef) (*contract.TableStructure, error) {
+			if o != n.Ref.Object(kind, "native") {
+				t.Fatal("field lookup lost the original qualified target")
+			}
+			return &contract.TableStructure{Columns: []contract.StructureColumn{{Name: "nested.invoice_id"}}}, nil
+		}
+		got := runObjectSearch(context.Background(), r, objectSearchRequest{profile: n.Ref.ProfileID, query: "invoice", fields: true})
+		if got.err != nil || len(got.entries) != 1 || got.entries[0].Field != "字段" || got.entries[0].Object.Ref.Kind != kind {
+			t.Fatal("native mapping field search was silently ignored", kind, got.err)
+		}
+	}
+}
+
 func TestObjectSearchRejectsWrongIdentityAndBoundsMemoryAndErrors(t *testing.T) {
 	r, n := searchFixture()
 	r.Browse = func(context.Context, contract.NamespaceRef) ([]contract.DBObject, error) {

@@ -21424,11 +21424,11 @@ func (msgs Messages) NativeRecoverWithoutReplay() string {
 	return Catalog.Format(msgs.locale, "nativeRecoverWithoutReplay", nil)
 }
 
-// NativeSupportedURI says "支持关系数据库、MongoDB、Redis 和 Elasticsearch URI；导入后检查配置，不会自动连接。"
+// NativeSupportedURI says "支持关系数据库、MongoDB、Redis、Elasticsearch 和 Easysearch URI…"
 // in the language the app shows.
 func NativeSupportedURI() string { return In(i18n.Locale()).NativeSupportedURI() }
 
-// NativeSupportedURI says "支持关系数据库、MongoDB、Redis 和 Elasticsearch URI；导入后检查配置，不会自动连接。"
+// NativeSupportedURI says "支持关系数据库、MongoDB、Redis、Elasticsearch 和 Easysearch URI…"
 // in the language of msgs.
 func (msgs Messages) NativeSupportedURI() string {
 	return Catalog.Format(msgs.locale, "nativeSupportedURI", nil)
@@ -21644,4 +21644,178 @@ func EasysearchCheckCredential() string { return In(i18n.Locale()).EasysearchChe
 // in the language of msgs.
 func (msgs Messages) EasysearchCheckCredential() string {
 	return Catalog.Format(msgs.locale, "easysearchCheckCredential", nil)
+}
+
+// EasysearchSessionCredentials says "Easysearch 会话凭据"
+// in the language the app shows.
+func EasysearchSessionCredentials() string { return In(i18n.Locale()).EasysearchSessionCredentials() }
+
+// EasysearchSessionCredentials says "Easysearch 会话凭据"
+// in the language of msgs.
+func (msgs Messages) EasysearchSessionCredentials() string {
+	return Catalog.Format(msgs.locale, "easysearchSessionCredentials", nil)
+}
+
+// EasysearchRunREST says "运行 Easysearch REST 请求"
+// in the language the app shows.
+func EasysearchRunREST() string { return In(i18n.Locale()).EasysearchRunREST() }
+
+// EasysearchRunREST says "运行 Easysearch REST 请求"
+// in the language of msgs.
+func (msgs Messages) EasysearchRunREST() string {
+	return Catalog.Format(msgs.locale, "easysearchRunREST", nil)
+}
+
+// EasysearchRESTEditor says "Easysearch REST 编辑器"
+// in the language the app shows.
+func EasysearchRESTEditor() string { return In(i18n.Locale()).EasysearchRESTEditor() }
+
+// EasysearchRESTEditor says "Easysearch REST 编辑器"
+// in the language of msgs.
+func (msgs Messages) EasysearchRESTEditor() string {
+	return Catalog.Format(msgs.locale, "easysearchRESTEditor", nil)
+}
+
+// EasysearchEnterREST says "请输入 Easysearch REST 请求"
+// in the language the app shows.
+func EasysearchEnterREST() string { return In(i18n.Locale()).EasysearchEnterREST() }
+
+// EasysearchEnterREST says "请输入 Easysearch REST 请求"
+// in the language of msgs.
+func (msgs Messages) EasysearchEnterREST() string {
+	return Catalog.Format(msgs.locale, "easysearchEnterREST", nil)
+}
+
+// EasysearchExecutingREST says "正在执行 Easysearch REST 请求"
+// in the language the app shows.
+func EasysearchExecutingREST() string { return In(i18n.Locale()).EasysearchExecutingREST() }
+
+// EasysearchExecutingREST says "正在执行 Easysearch REST 请求"
+// in the language of msgs.
+func (msgs Messages) EasysearchExecutingREST() string {
+	return Catalog.Format(msgs.locale, "easysearchExecutingREST", nil)
+}
+
+// EasysearchUseRESTAPI says "Easysearch 请使用原生 REST API"
+// in the language the app shows.
+func EasysearchUseRESTAPI() string { return In(i18n.Locale()).EasysearchUseRESTAPI() }
+
+// EasysearchUseRESTAPI says "Easysearch 请使用原生 REST API"
+// in the language of msgs.
+func (msgs Messages) EasysearchUseRESTAPI() string {
+	return Catalog.Format(msgs.locale, "easysearchUseRESTAPI", nil)
+}
+
+// NativeQueryStatus says "原生请求："
+// in the language the app shows.
+func NativeQueryStatus() string { return In(i18n.Locale()).NativeQueryStatus() }
+
+// NativeQueryStatus says "原生请求："
+// in the language of msgs.
+func (msgs Messages) NativeQueryStatus() string {
+	return Catalog.Format(msgs.locale, "nativeQueryStatus", nil)
+}
+
+// NativeLastSuccessfulRequest says "上次成功请求："
+// in the language the app shows.
+func NativeLastSuccessfulRequest() string { return In(i18n.Locale()).NativeLastSuccessfulRequest() }
+
+// NativeLastSuccessfulRequest says "上次成功请求："
+// in the language of msgs.
+func (msgs Messages) NativeLastSuccessfulRequest() string {
+	return Catalog.Format(msgs.locale, "nativeLastSuccessfulRequest", nil)
+}
+
+// NativeSessionRunRecovery says "原请求会话已失效；请核对服务器端结果后建立新会话，不会自动执行现有请求"
+// in the language the app shows.
+func NativeSessionRunRecovery() string { return In(i18n.Locale()).NativeSessionRunRecovery() }
+
+// NativeSessionRunRecovery says "原请求会话已失效；请核对服务器端结果后建立新会话，不会自动执行现有请求"
+// in the language of msgs.
+func (msgs Messages) NativeSessionRunRecovery() string {
+	return Catalog.Format(msgs.locale, "nativeSessionRunRecovery", nil)
+}
+
+// NativeSessionMissing says "请求会话已失效，请新建请求标签后重试"
+// in the language the app shows.
+func NativeSessionMissing() string { return In(i18n.Locale()).NativeSessionMissing() }
+
+// NativeSessionMissing says "请求会话已失效，请新建请求标签后重试"
+// in the language of msgs.
+func (msgs Messages) NativeSessionMissing() string {
+	return Catalog.Format(msgs.locale, "nativeSessionMissing", nil)
+}
+
+// NativeSessionPreconnectFailed says "请求会话预连接失败："
+// in the language the app shows.
+func NativeSessionPreconnectFailed() string { return In(i18n.Locale()).NativeSessionPreconnectFailed() }
+
+// NativeSessionPreconnectFailed says "请求会话预连接失败："
+// in the language of msgs.
+func (msgs Messages) NativeSessionPreconnectFailed() string {
+	return Catalog.Format(msgs.locale, "nativeSessionPreconnectFailed", nil)
+}
+
+// NativeSessionLimit says "请求会话数量已达上限，请关闭其他请求标签后重试"
+// in the language the app shows.
+func NativeSessionLimit() string { return In(i18n.Locale()).NativeSessionLimit() }
+
+// NativeSessionLimit says "请求会话数量已达上限，请关闭其他请求标签后重试"
+// in the language of msgs.
+func (msgs Messages) NativeSessionLimit() string {
+	return Catalog.Format(msgs.locale, "nativeSessionLimit", nil)
+}
+
+// NativeRequestStopped says "请求执行已停止；服务器端更改可能已生效"
+// in the language the app shows.
+func NativeRequestStopped() string { return In(i18n.Locale()).NativeRequestStopped() }
+
+// NativeRequestStopped says "请求执行已停止；服务器端更改可能已生效"
+// in the language of msgs.
+func (msgs Messages) NativeRequestStopped() string {
+	return Catalog.Format(msgs.locale, "nativeRequestStopped", nil)
+}
+
+// NativeSessionOutcomeRecovery says "原请求会话已失效；请先核对服务器端结果，再建立新会话。不会自动执行现有请求"
+// in the language the app shows.
+func NativeSessionOutcomeRecovery() string { return In(i18n.Locale()).NativeSessionOutcomeRecovery() }
+
+// NativeSessionOutcomeRecovery says "原请求会话已失效；请先核对服务器端结果，再建立新会话。不会自动执行现有请求"
+// in the language of msgs.
+func (msgs Messages) NativeSessionOutcomeRecovery() string {
+	return Catalog.Format(msgs.locale, "nativeSessionOutcomeRecovery", nil)
+}
+
+// NativeSessionReconnectOriginal says "请先连接原配置，再建立新会话；不会自动执行现有请求"
+// in the language the app shows.
+func NativeSessionReconnectOriginal() string {
+	return In(i18n.Locale()).NativeSessionReconnectOriginal()
+}
+
+// NativeSessionReconnectOriginal says "请先连接原配置，再建立新会话；不会自动执行现有请求"
+// in the language of msgs.
+func (msgs Messages) NativeSessionReconnectOriginal() string {
+	return Catalog.Format(msgs.locale, "nativeSessionReconnectOriginal", nil)
+}
+
+// NativeRequestFailed says "请求执行失败："
+// in the language the app shows.
+func NativeRequestFailed() string { return In(i18n.Locale()).NativeRequestFailed() }
+
+// NativeRequestFailed says "请求执行失败："
+// in the language of msgs.
+func (msgs Messages) NativeRequestFailed() string {
+	return Catalog.Format(msgs.locale, "nativeRequestFailed", nil)
+}
+
+// NativeSessionReservationFailed says "请求会话预留失败："
+// in the language the app shows.
+func NativeSessionReservationFailed() string {
+	return In(i18n.Locale()).NativeSessionReservationFailed()
+}
+
+// NativeSessionReservationFailed says "请求会话预留失败："
+// in the language of msgs.
+func (msgs Messages) NativeSessionReservationFailed() string {
+	return Catalog.Format(msgs.locale, "nativeSessionReservationFailed", nil)
 }

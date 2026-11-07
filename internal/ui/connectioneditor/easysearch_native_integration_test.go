@@ -126,10 +126,9 @@ func TestEasysearchNativeProfileURIReopenAndEditorConnectionChecks(t *testing.T)
 				return err
 			}
 			s := New(Dependencies{Profiles: service, Vault: vault, TestConnection: probe})
-			// Pure URI parsing is available in this foundation. Public URI import
-			// waits for the provider/descriptor/chooser workbench stage.
-			s.OpenProfile(parsed.Profile)
-			s.connectionSecret = parsed.Password
+			if err := s.ImportURI(uri.String()); err != nil {
+				t.Fatal("public Easysearch URI import failed", err)
+			}
 			s.connectionSavePassword = tc.auth != "none"
 			s.Save()
 			if s.Error() != "" || s.Active() {

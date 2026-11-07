@@ -180,7 +180,7 @@ func (s *State) Open(id uint64, text string, profileID int64, database string, p
 	d := &Document{id: id, profileID: profileID, database: database, preview: preview, Editor: &editor.State{Buffer: buffer, WrapGuides: []int{100}}}
 	if s.deps.QueryDialect != nil {
 		d.commandDialect = s.deps.QueryDialect(profileID)
-		if d.commandDialect == "elasticsearch" || d.commandDialect == "mongodb" || d.commandDialect == "redis" {
+		if d.restRequests() || d.commandDialect == "mongodb" || d.commandDialect == "redis" {
 			d.nativeCommands = true
 			buffer.SetLanguage(editor.LanguageNamed("JSON"))
 		}
@@ -238,6 +238,9 @@ func (s *State) Prepare(d *Document) {
 	lease, err := runtime.Reserve(d.profileID, d.id)
 	if err != nil {
 		d.err = "SQL 会话预留失败：" + err.Error()
+		if d.nativeCommands {
+			d.err = "请求会话预留失败：" + err.Error()
+		}
 		s.report(d.err)
 		return
 	}

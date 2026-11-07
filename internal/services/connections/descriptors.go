@@ -12,6 +12,8 @@ type Descriptor struct {
 
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
+	case Easysearch:
+		return Descriptor{kind, "Easysearch", "easysearch", "server", "easysearch", 9200, contract.Capabilities{Documents: true, Query: true, Metadata: true, EditableTables: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
 	case Elasticsearch:
 		return Descriptor{kind, "Elasticsearch", "elasticsearch", "server", "elasticsearch", 9200, contract.Capabilities{Documents: true, Query: true, Metadata: true, EditableTables: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
 	case Trino:

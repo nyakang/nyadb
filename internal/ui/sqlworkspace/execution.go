@@ -29,6 +29,9 @@ func (s *State) Run(invalidate func(), t *Document) {
 	}
 	if t.recoveryNeeded {
 		t.err = "原 SQL 会话已失效；请确认状态可能丢失后点击「以新会话继续」，不会自动重跑 SQL"
+		if t.nativeCommands {
+			t.err = "原请求会话已失效；请核对服务器端结果后建立新会话，不会自动执行现有请求"
+		}
 		s.report(t.err)
 		return
 	}
@@ -44,7 +47,7 @@ func (s *State) Run(invalidate func(), t *Document) {
 	if statement == "" {
 		t.err = "请输入 SQL"
 		if t.nativeCommands {
-			t.err = t.commandText("请输入 MongoDB 命令", "请输入 Redis 命令", "请输入 Elasticsearch REST 请求")
+			t.err = t.commandText("请输入 MongoDB 命令", "请输入 Redis 命令", "请输入 Elasticsearch REST 请求", "请输入 Easysearch REST 请求")
 		}
 		s.report(t.err)
 		return
@@ -64,6 +67,9 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 		}
 		if t.lease == nil {
 			t.err = "查询会话已失效，请新建 SQL 标签后重试"
+			if t.nativeCommands {
+				t.err = "请求会话已失效，请新建请求标签后重试"
+			}
 			s.report(t.err)
 			return
 		}
@@ -104,7 +110,7 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 	t.results = resultChan
 	s.report("正在执行 SQL")
 	if t.nativeCommands {
-		s.report(t.commandText("正在执行 MongoDB 命令", "正在执行 Redis 命令", "正在执行 Elasticsearch REST 请求"))
+		s.report(t.commandText("正在执行 MongoDB 命令", "正在执行 Redis 命令", "正在执行 Elasticsearch REST 请求", "正在执行 Easysearch REST 请求"))
 	}
 	source := "query"
 	if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(statement)), "EXPLAIN ") {
@@ -201,7 +207,7 @@ func (s *State) DisconnectProfile(profileID int64) {
 			t.result = nil
 			t.err = "连接已断开；SQL 文本已保留。请先连接原配置，再以新会话继续；事务、临时表与变量不能恢复"
 			if t.nativeCommands {
-				t.err = t.commandText("连接已断开；MongoDB 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；Redis 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求")
+				t.err = t.commandText("连接已断开；MongoDB 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；Redis 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求")
 			}
 		}
 	}
@@ -223,8 +229,14 @@ func (s *State) Consume() {
 					!errors.Is(err, contract.ErrRevoked) &&
 					!t.loading && t.result == nil && t.err == "" {
 					t.err = "SQL 预连接失败：" + err.Error()
+					if t.nativeCommands {
+						t.err = "请求会话预连接失败：" + err.Error()
+					}
 					if errors.Is(err, contract.ErrSQLSessionLimit) {
 						t.err = "SQL 会话数量已达上限，请关闭其他查询标签后重试"
+						if t.nativeCommands {
+							t.err = "请求会话数量已达上限，请关闭其他请求标签后重试"
+						}
 					}
 					if errors.Is(err, contract.ErrSQLSessionLost) || errors.Is(err, contract.ErrRevoked) {
 						t.recoveryNeeded = true
@@ -277,18 +289,35 @@ func (s *State) Consume() {
 				}
 				if canceled || errors.Is(r.err, context.Canceled) {
 					t.err = "SQL 执行已停止；服务器端更改可能已生效"
+					if t.nativeCommands {
+						t.err = "请求执行已停止；服务器端更改可能已生效"
+					}
 					if lost {
-						t.err += "；" + locales.Text("原查询会话已失效；事务、临时表、会话变量无法恢复，DML 结果请先核对。可选择以新会话继续")
+						if t.nativeCommands {
+							t.err += "；" + locales.Text("原请求会话已失效；请先核对服务器端结果，再建立新会话。不会自动执行现有请求")
+						} else {
+							t.err += "；" + locales.Text("原查询会话已失效；事务、临时表、会话变量无法恢复，DML 结果请先核对。可选择以新会话继续")
+						}
 					}
 				} else if lost {
 					t.err = "原查询会话已失效；事务、临时表、会话变量无法恢复，DML 结果请先核对。可选择以新会话继续"
+					if t.nativeCommands {
+						t.err = "原请求会话已失效；请先核对服务器端结果，再建立新会话。不会自动执行现有请求"
+					}
 				} else if errors.Is(r.err, contract.ErrSQLSessionLimit) {
 					t.err = "SQL 标签会话数已达到上限，请关闭其他查询标签后重试"
+					if t.nativeCommands {
+						t.err = "请求会话数量已达上限，请关闭其他请求标签后重试"
+					}
 				} else {
 					t.err = r.err.Error()
 				}
 				if s.active(t) {
-					s.report("SQL 执行失败：" + t.err)
+					if t.nativeCommands {
+						s.report("请求执行失败：" + t.err)
+					} else {
+						s.report("SQL 执行失败：" + t.err)
+					}
 				}
 				continue
 			}
@@ -346,6 +375,9 @@ func (s *State) Recover(t *Document) {
 	runtime := s.runtime()
 	if id <= 0 || runtime == nil || !runtime.IsConnected(id) || !s.connected(id) {
 		t.err = "请先连接原 MySQL 配置，再选择以新会话继续"
+		if t.nativeCommands {
+			t.err = "请先连接原配置，再建立新会话；不会自动执行现有请求"
+		}
 		s.report(t.err)
 		return
 	}

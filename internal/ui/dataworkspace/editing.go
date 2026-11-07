@@ -614,7 +614,7 @@ func (s *State) consumeEdits(services ui.Services) {
 				if r.Saved != nil && (r.Saved.CommitUncertain || r.Saved.Incomplete) {
 					t.edit.Uncertain = r.Saved
 					t.edit.UncertainKeys = r.Keys
-					if !t.portable() {
+					if !t.portable() && !(t.capabilities.Documents || t.capabilities.KeyValues) {
 						s.verifyMySQLDataSave(services, t)
 					}
 				}

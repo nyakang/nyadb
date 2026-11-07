@@ -112,7 +112,7 @@ func (s *State) databaseChildren(key string) []string {
 		categories := mysqlNavigationCategories
 		if s.deps.Engine != nil {
 			switch s.deps.Engine(n.ProfileID) {
-			case connections.Elasticsearch:
+			case connections.Elasticsearch, connections.Easysearch:
 				categories = []string{"索引", "别名", "数据流", "查询"}
 			case connections.Redis:
 				categories = []string{"键", "查询"}

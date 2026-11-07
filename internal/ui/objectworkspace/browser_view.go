@@ -193,7 +193,7 @@ func (s *State) BrowserView(c *ui.Context) {
 	database := a.scope.database
 	items := a.items
 	redisEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "redis"
-	searchEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "elasticsearch"
+	searchEngine := s.deps.Engine != nil && (s.deps.Engine(a.scope.profile) == "elasticsearch" || s.deps.Engine(a.scope.profile) == "easysearch")
 	documentEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "mongodb"
 	canOpen, canProgram := a.canOpen, a.canProgram
 	ui.Column(c).Fill().Children(func() {

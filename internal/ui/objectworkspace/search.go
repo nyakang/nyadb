@@ -234,7 +234,7 @@ func runObjectSearch(ctx context.Context, runtime ObjectSearchRuntime, request o
 			if request.definitions && object.Definition != "" && matches(object.Definition) {
 				add("定义", object.Definition)
 			}
-			if request.fields && (kind == "table" || kind == "view") && runtime.TableMetadata != nil && !limited {
+			if request.fields && (kind == "table" || kind == "view" || kind == "index" || kind == "alias" || kind == "data_stream") && runtime.TableMetadata != nil && !limited {
 				metadata, e := runtime.TableMetadata(ctx, ref)
 				if e != nil {
 					issue(e)

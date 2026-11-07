@@ -285,7 +285,7 @@ func (s *State) toolBar(c *ui.Context) {
 						action.label = "键"
 					}
 				}
-				if kind == connections.Elasticsearch {
+				if kind.IsRESTSearch() {
 					if action.label == "函数" || action.label == "用户" || action.label == "其它" {
 						continue
 					}

@@ -171,9 +171,9 @@ func (s *State) openQuery() {
 	database := ""
 	if s.profileMode {
 		initial = "-- 输入 SQL；点击运行后发送至当前连接\n"
-		if p, ok := s.currentProfile(); ok && (p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind == connections.DuckDB || p.Kind == connections.Elasticsearch || p.Kind == connections.MongoDB || p.Kind == connections.Redis) {
+		if p, ok := s.currentProfile(); ok && (p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind == connections.DuckDB || p.Kind.IsRESTSearch() || p.Kind == connections.MongoDB || p.Kind == connections.Redis) {
 			profileID = p.ID
-			if p.Kind == connections.Elasticsearch {
+			if p.Kind.IsRESTSearch() {
 				initial = "GET /"
 			}
 			if p.Kind == connections.Redis {
@@ -188,7 +188,7 @@ func (s *State) openQuery() {
 		}
 	}
 	t := &tab{id: s.nextTabID, title: fmt.Sprintf("SQL %d", s.nextTabID-1), kind: tabSQL}
-	if s.sessions.EngineKind(profileID) == connections.Elasticsearch {
+	if s.sessions.EngineKind(profileID).IsRESTSearch() {
 		t.title = fmt.Sprintf("REST %d", s.nextTabID-1)
 	}
 	if s.sessions.EngineKind(profileID) == connections.Redis {

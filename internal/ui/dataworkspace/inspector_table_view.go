@@ -42,7 +42,7 @@ func (s *inspectorState) header(c *ui.Context, t *Panel, fieldMode bool) {
 				if p, ok := s.deps.Profile(t.profileID); ok && p.Kind == connections.Redis {
 					infoLabel = locales.Text("键信息")
 				}
-				if p, ok := s.deps.Profile(t.profileID); ok && p.Kind == connections.Elasticsearch {
+				if p, ok := s.deps.Profile(t.profileID); ok && p.Kind.IsRESTSearch() {
 					infoLabel = locales.Text("对象信息")
 				}
 				if p, ok := s.deps.Profile(t.profileID); ok && p.Kind == connections.MongoDB {
@@ -179,7 +179,7 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 					if descriptor, ok := connections.Describe(engine); ok {
 						tableProperty(c, "数据库产品", descriptor.Label)
 					}
-					if engine == connections.Elasticsearch {
+					if engine.IsRESTSearch() {
 						ui.Text(c, locales.Text("计数反映请求时的目标数据，不代表网格快照总数")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 					}
 					if engine == connections.PostgreSQL {
