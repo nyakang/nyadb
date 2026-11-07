@@ -1,0 +1,59 @@
+PLAN COST
+  CPU: 96.0
+  Memory: 16.0
+
+PLAN FRAGMENT 0(F02)
+  Output Exprs:4: id
+  Input Partition: UNPARTITIONED
+  RESULT SINK
+
+  4:EXCHANGE
+     cardinality: 2
+
+PLAN FRAGMENT 1(F00)
+
+  Input Partition: RANDOM
+  OutPut Partition: UNPARTITIONED
+  OutPut Exchange Id: 04
+
+  3:Project
+  |  output columns:
+  |  4 <-> [4: id, BIGINT, false]
+  |  cardinality: 2
+  |  column statistics: 
+  |  * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  
+  2:HASH JOIN
+  |  join op: INNER JOIN (COLOCATE)
+  |  colocate: true
+  |  equal join conjunct: [4: id, BIGINT, false] = [7: id, BIGINT, false]
+  |  build runtime filters:
+  |  - filter_id = 0, build_expr = (7: id), remote = false
+  |  output columns: 4
+  |  can local shuffle: false
+  |  cardinality: 2
+  |  column statistics: 
+  |  * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  
+  |----1:OlapScanNode
+  |       table: plan_a, rollup: plan_a
+  |       preAggregation: on
+  |       partitionsRatio=1/1, tabletsRatio=1/1
+  |       tabletList=10307
+  |       actualRows=0, avgRowSize=8.0
+  |       cardinality: 2
+  |       column statistics: 
+  |       * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |    
+  0:OlapScanNode
+     table: plan_a, rollup: plan_a
+     preAggregation: on
+     partitionsRatio=1/1, tabletsRatio=1/1
+     tabletList=10307
+     actualRows=0, avgRowSize=8.0
+     cardinality: 2
+     probe runtime filters:
+     - filter_id = 0, probe_expr = (4: id)
+     column statistics: 
+     * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE

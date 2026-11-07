@@ -1,0 +1,68 @@
+PLAN COST
+  CPU: 64.0
+  Memory: 0.0
+
+PLAN FRAGMENT 0(F05)
+  Output Exprs:7: id
+  Input Partition: UNPARTITIONED
+  RESULT SINK
+
+  5:EXCHANGE
+     cardinality: 4
+
+PLAN FRAGMENT 1(F04)
+
+  Input Partition: RANDOM
+  OutPut Partition: UNPARTITIONED
+  OutPut Exchange Id: 05
+
+  0:UNION
+  |  output exprs:
+  |      [7, BIGINT, false]
+  |  child exprs:
+  |      [1: id, BIGINT, false]
+  |      [4: id, BIGINT, false]
+  |  pass-through-operands: all
+  |  cardinality: 4
+  |  column statistics: 
+  |  * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  
+  |----4:EXCHANGE
+  |       distribution type: ROUND_ROBIN
+  |       cardinality: 2
+  |    
+  2:EXCHANGE
+     distribution type: ROUND_ROBIN
+     cardinality: 2
+
+PLAN FRAGMENT 2(F02)
+
+  Input Partition: RANDOM
+  OutPut Partition: RANDOM
+  OutPut Exchange Id: 04
+
+  3:OlapScanNode
+     table: plan_b, rollup: plan_b
+     preAggregation: on
+     partitionsRatio=1/1, tabletsRatio=1/1
+     tabletList=10316
+     actualRows=0, avgRowSize=8.0
+     cardinality: 2
+     column statistics: 
+     * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+
+PLAN FRAGMENT 3(F00)
+
+  Input Partition: RANDOM
+  OutPut Partition: RANDOM
+  OutPut Exchange Id: 02
+
+  1:OlapScanNode
+     table: plan_a, rollup: plan_a
+     preAggregation: on
+     partitionsRatio=1/1, tabletsRatio=1/1
+     tabletList=10307
+     actualRows=0, avgRowSize=8.0
+     cardinality: 2
+     column statistics: 
+     * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE

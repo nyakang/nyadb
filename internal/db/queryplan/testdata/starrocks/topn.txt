@@ -1,0 +1,55 @@
+PLAN COST
+  CPU: 66.0
+  Memory: 44.0
+
+PLAN FRAGMENT 0(F01)
+  Output Exprs:3: note
+  Input Partition: UNPARTITIONED
+  RESULT SINK
+
+  3:Project
+  |  output columns:
+  |  3 <-> [3: note, VARCHAR(200), true]
+  |  limit: 2
+  |  cardinality: 2
+  |  column statistics: 
+  |  * note-->[-Infinity, Infinity, 0.0, 3.0, 2.0] ESTIMATE
+  |  
+  2:MERGING-EXCHANGE
+     distribution type: GATHER
+     limit: 2
+     cardinality: 2
+     column statistics: 
+     * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+     * note-->[-Infinity, Infinity, 0.0, 3.0, 2.0] ESTIMATE
+
+PLAN FRAGMENT 1(F00)
+
+  Input Partition: RANDOM
+  OutPut Partition: UNPARTITIONED
+  OutPut Exchange Id: 02
+
+  1:TOP-N
+  |  order by: [1, BIGINT, false] ASC
+  |  build runtime filters:
+  |  - filter_id = 0, build_expr = (<slot 1> 1: id), remote = false
+  |  offset: 0
+  |  limit: 2
+  |  cardinality: 2
+  |  column statistics: 
+  |  * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  * note-->[-Infinity, Infinity, 0.0, 3.0, 2.0] ESTIMATE
+  |  
+  0:OlapScanNode
+     table: plan_a, rollup: plan_a
+     preAggregation: on
+     Predicates: [1: id, BIGINT, false] > 0
+     partitionsRatio=1/1, tabletsRatio=1/1
+     tabletList=10307
+     actualRows=0, avgRowSize=11.0
+     cardinality: 2
+     probe runtime filters:
+     - filter_id = 0, probe_expr = (<slot 1> 1: id)
+     column statistics: 
+     * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+     * note-->[-Infinity, Infinity, 0.0, 3.0, 2.0] ESTIMATE

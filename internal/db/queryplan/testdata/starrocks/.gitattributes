@@ -1,0 +1,2 @@
+# Preserve native COSTS serializer padding and empty branch-detail lines.
+*.txt whitespace=-blank-at-eol

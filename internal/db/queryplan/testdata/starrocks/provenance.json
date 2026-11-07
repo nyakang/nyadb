@@ -1,0 +1,63 @@
+{
+  "kernel": "4.1.7-b81ff9c",
+  "image": "starrocks/allin1-ubuntu@sha256:7f6041f6d537162a2627668565630e3204756f5e85b60944de3acc2d3abd96f8",
+  "be_execution": "official binary under QEMU Haswell",
+  "capture_date": "2026-11-08",
+  "plans": [
+    {
+      "file": "constant.txt",
+      "sql": "EXPLAIN COSTS SELECT 1"
+    },
+    {
+      "file": "scan.txt",
+      "sql": "EXPLAIN COSTS SELECT note FROM plan_a WHERE id=1"
+    },
+    {
+      "file": "topn.txt",
+      "sql": "EXPLAIN COSTS SELECT note FROM plan_a WHERE id>0 ORDER BY id LIMIT 2"
+    },
+    {
+      "file": "join_aggregate.txt",
+      "sql": "EXPLAIN COSTS SELECT a.note,SUM(b.n) FROM plan_a a JOIN plan_b b ON a.id=b.id WHERE b.n>0 GROUP BY a.note ORDER BY SUM(b.n) DESC LIMIT 2"
+    },
+    {
+      "file": "union.txt",
+      "sql": "EXPLAIN COSTS SELECT id FROM plan_a UNION ALL SELECT id FROM plan_b"
+    },
+    {
+      "file": "cte_join.txt",
+      "sql": "EXPLAIN COSTS WITH t AS (SELECT id FROM plan_a) SELECT a.id FROM t a JOIN t b ON a.id=b.id"
+    },
+    {
+      "file": "window.txt",
+      "sql": "EXPLAIN COSTS SELECT id,ROW_NUMBER() OVER(ORDER BY n) FROM plan_a"
+    },
+    {
+      "file": "insert.txt",
+      "sql": "EXPLAIN COSTS INSERT INTO plan_a VALUES(99,99,'must not execute')"
+    },
+    {
+      "file": "update.txt",
+      "sql": "EXPLAIN COSTS UPDATE plan_pk SET note='must not execute' WHERE id=1"
+    },
+    {
+      "file": "delete.txt",
+      "sql": "EXPLAIN COSTS DELETE FROM plan_pk WHERE id=1"
+    },
+    {
+      "file": "multicast_cte.txt",
+      "sql": "EXPLAIN COSTS WITH t AS (SELECT id,SUM(n) AS n FROM plan_a GROUP BY id) SELECT a.id,a.n+b.n FROM t a JOIN t b ON a.id=b.id",
+      "session_setup": "SET cbo_cte_reuse=true,cbo_cte_reuse_rate=0"
+    },
+    {
+      "file": "nested_join.txt",
+      "sql": "EXPLAIN COSTS SELECT a.id FROM plan_a a JOIN (SELECT b.id FROM plan_b b JOIN plan_pk c ON b.id=c.id) bc ON a.id=bc.id",
+      "session_setup": "SET cbo_cte_reuse=true,cbo_cte_reuse_rate=0"
+    },
+    {
+      "file": "nested_side_branches.txt",
+      "sql": "EXPLAIN COSTS SELECT a.id,x.id FROM nested_a a LEFT JOIN (SELECT b.id FROM nested_b b JOIN nested_c c ON b.id=c.id) x ON a.id=x.id",
+      "setup": "three colocated nonempty tables; SET disable_join_reorder=true"
+    }
+  ]
+}

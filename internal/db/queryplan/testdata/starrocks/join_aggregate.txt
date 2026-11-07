@@ -1,0 +1,129 @@
+PLAN COST
+  CPU: 257.6
+  Memory: 90.2
+
+PLAN FRAGMENT 0(F04)
+  Output Exprs:3: note | 7: sum
+  Input Partition: UNPARTITIONED
+  RESULT SINK
+
+  10:Decode
+  |  <dict id 8> : <string id 3>
+  |  cardinality: 2
+  |  column statistics: 
+  |  * note-->[-Infinity, Infinity, 0.0, 3.0, 2.0] ESTIMATE
+  |  * sum-->[3.0, 4.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  
+  9:MERGING-EXCHANGE
+     distribution type: GATHER
+     limit: 2
+     cardinality: 2
+     column statistics: 
+     * note-->[-Infinity, Infinity, 0.0, 3.0, 2.0] ESTIMATE
+     * sum-->[3.0, 4.0, 0.0, 8.0, 2.0] ESTIMATE
+
+PLAN FRAGMENT 1(F03)
+
+  Input Partition: HASH_PARTITIONED: 8: note
+  OutPut Partition: UNPARTITIONED
+  OutPut Exchange Id: 09
+
+  8:TOP-N
+  |  order by: [7, BIGINT, true] DESC
+  |  offset: 0
+  |  limit: 2
+  |  cardinality: 2
+  |  column statistics: 
+  |  * note-->[-Infinity, Infinity, 0.0, 3.0, 2.0] ESTIMATE
+  |  * sum-->[3.0, 4.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  
+  7:AGGREGATE (merge finalize)
+  |  aggregate: sum[([7: sum, BIGINT, true]); args: BIGINT; result: BIGINT; args nullable: true; result nullable: true]
+  |  group by: [8: note, INT, true]
+  |  group by min-max stats:
+  |  - 0:2
+  |  cardinality: 2
+  |  column statistics: 
+  |  * note-->[-Infinity, Infinity, 0.0, 3.0, 2.0] ESTIMATE
+  |  * sum-->[3.0, 4.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  
+  6:EXCHANGE
+     distribution type: SHUFFLE
+     partition exprs: [8: note, INT, true]
+     cardinality: 2
+
+PLAN FRAGMENT 2(F00)
+
+  Input Partition: RANDOM
+  OutPut Partition: HASH_PARTITIONED: 8: note
+  OutPut Exchange Id: 06
+
+  5:AGGREGATE (update serialize)
+  |  STREAMING
+  |  aggregate: sum[([5: n, BIGINT, true]); args: BIGINT; result: BIGINT; args nullable: true; result nullable: true]
+  |  group by: [8: note, INT, true]
+  |  group by min-max stats:
+  |  - 0:2
+  |  cardinality: 2
+  |  column statistics: 
+  |  * note-->[-Infinity, Infinity, 0.0, 3.0, 2.0] ESTIMATE
+  |  * sum-->[3.0, 4.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  
+  4:Project
+  |  output columns:
+  |  5 <-> [5: n, BIGINT, true]
+  |  8 <-> [8: note, INT, true]
+  |  cardinality: 2
+  |  column statistics: 
+  |  * n-->[3.0, 4.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  
+  3:HASH JOIN
+  |  join op: INNER JOIN (BUCKET_SHUFFLE)
+  |  equal join conjunct: [4: id, BIGINT, false] = [1: id, BIGINT, false]
+  |  build runtime filters:
+  |  - filter_id = 0, build_expr = (1: id), remote = false
+  |  output columns: 5, 8
+  |  can local shuffle: true
+  |  cardinality: 2
+  |  column statistics: 
+  |  * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  * note-->[-Infinity, Infinity, 0.0, 3.0, 2.0] ESTIMATE
+  |  * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  * n-->[3.0, 4.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  
+  |----2:EXCHANGE
+  |       distribution type: SHUFFLE
+  |       partition exprs: [1: id, BIGINT, false]
+  |       cardinality: 2
+  |    
+  0:OlapScanNode
+     table: plan_b, rollup: plan_b
+     preAggregation: on
+     Predicates: [5: n, BIGINT, true] > 0
+     partitionsRatio=1/1, tabletsRatio=1/1
+     tabletList=10316
+     actualRows=0, avgRowSize=16.0
+     cardinality: 2
+     probe runtime filters:
+     - filter_id = 0, probe_expr = (4: id)
+     column statistics: 
+     * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+     * n-->[3.0, 4.0, 0.0, 8.0, 2.0] ESTIMATE
+
+PLAN FRAGMENT 3(F01)
+
+  Input Partition: RANDOM
+  OutPut Partition: BUCKET_SHUFFLE_HASH_PARTITIONED: 1: id
+  OutPut Exchange Id: 02
+
+  1:OlapScanNode
+     table: plan_a, rollup: plan_a
+     preAggregation: on
+     dict_col=note
+     partitionsRatio=1/1, tabletsRatio=1/1
+     tabletList=10307
+     actualRows=0, avgRowSize=11.0
+     cardinality: 2
+     column statistics: 
+     * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+     * note-->[-Infinity, Infinity, 0.0, 3.0, 2.0] ESTIMATE

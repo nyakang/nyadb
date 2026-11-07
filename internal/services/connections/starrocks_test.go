@@ -16,7 +16,7 @@ func TestStarRocksNativeProfileAndIndependentCapabilities(t *testing.T) {
 		t.Fatal(err)
 	}
 	d, ok := connections.Describe(p.Kind)
-	if !ok || d.ClientFamily != "starrocks" || !d.Capabilities.Query || !d.Capabilities.Metadata || !d.Capabilities.Export || d.Capabilities.EditableTables || d.Capabilities.Transactions || d.Capabilities.Import || d.Capabilities.Accounts || d.Capabilities.Backup || d.Capabilities.Explain {
+	if !ok || d.ClientFamily != "starrocks" || !d.Capabilities.Query || !d.Capabilities.Metadata || !d.Capabilities.Export || d.Capabilities.EditableTables || d.Capabilities.Transactions || d.Capabilities.Import || d.Capabilities.Accounts || d.Capabilities.Backup || !d.Capabilities.Explain {
 		t.Fatal("StarRocks inherited unverified capabilities")
 	}
 	for _, mode := range []string{"require", "prefer", "verify-ca"} {

@@ -1,0 +1,59 @@
+PLAN COST
+  CPU: 144.0
+  Memory: 32.0
+
+PLAN FRAGMENT 0(F01)
+  Output Exprs:1: id | 4: row_number()
+  Input Partition: UNPARTITIONED
+  RESULT SINK
+
+  4:Project
+  |  output columns:
+  |  1 <-> [1: id, BIGINT, false]
+  |  4 <-> [4: row_number(), BIGINT, true]
+  |  cardinality: 2
+  |  column statistics: 
+  |  * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  * row_number()-->[-Infinity, Infinity, 0.0, 1.0, 1.0] UNKNOWN
+  |  
+  3:ANALYTIC
+  |  functions: [, row_number[(); args: ; result: BIGINT; args nullable: false; result nullable: true], ]
+  |  order by: [2: n, BIGINT, true] ASC
+  |  window: ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+  |  cardinality: 2
+  |  column statistics: 
+  |  * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  * n-->[3.0, 4.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  * row_number()-->[-Infinity, Infinity, 0.0, 1.0, 1.0] UNKNOWN
+  |  
+  2:MERGING-EXCHANGE
+     distribution type: GATHER
+     cardinality: 2
+     column statistics: 
+     * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+     * n-->[3.0, 4.0, 0.0, 8.0, 2.0] ESTIMATE
+
+PLAN FRAGMENT 1(F00)
+
+  Input Partition: RANDOM
+  OutPut Partition: UNPARTITIONED
+  OutPut Exchange Id: 02
+
+  1:SORT
+  |  order by: [2, BIGINT, true] ASC
+  |  offset: 0
+  |  cardinality: 2
+  |  column statistics: 
+  |  * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  * n-->[3.0, 4.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  
+  0:OlapScanNode
+     table: plan_a, rollup: plan_a
+     preAggregation: on
+     partitionsRatio=1/1, tabletsRatio=1/1
+     tabletList=10307
+     actualRows=0, avgRowSize=16.0
+     cardinality: 2
+     column statistics: 
+     * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+     * n-->[3.0, 4.0, 0.0, 8.0, 2.0] ESTIMATE

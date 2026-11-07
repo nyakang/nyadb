@@ -1,0 +1,32 @@
+PLAN COST
+  CPU: 24.0
+  Memory: 0.0
+
+PLAN FRAGMENT 0(F00)
+  Output Exprs:1: id | 3: expr
+  Input Partition: RANDOM
+  OLAP TABLE SINK
+    TABLE: plan_pk
+    TUPLE ID: 2
+    RANDOM
+
+  1:Project
+  |  output columns:
+  |  1 <-> [1: id, BIGINT, false]
+  |  3 <-> 'must not execute'
+  |  cardinality: 1
+  |  column statistics: 
+  |  * id-->[1.0, 1.0, 0.0, 8.0, 1.0] ESTIMATE
+  |  * expr-->[-Infinity, Infinity, 0.0, 16.0, 1.0] MCV: [[must not execute:1]] ESTIMATE
+  |  
+  0:OlapScanNode
+     table: plan_pk, rollup: plan_pk
+     preAggregation: on
+     Predicates: [1: id, BIGINT, false] = 1
+     partitionsRatio=1/1, tabletsRatio=1/1
+     tabletList=10325
+     actualRows=0, avgRowSize=24.0
+     cardinality: 1
+     column statistics: 
+     * id-->[1.0, 1.0, 0.0, 8.0, 1.0] ESTIMATE
+     * expr-->[-Infinity, Infinity, 0.0, 16.0, 1.0] MCV: [[must not execute:1]] ESTIMATE

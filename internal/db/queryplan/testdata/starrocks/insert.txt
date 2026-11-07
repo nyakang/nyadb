@@ -1,0 +1,20 @@
+PLAN COST
+  CPU: 0.0
+  Memory: 0.0
+
+PLAN FRAGMENT 0(F00)
+  Output Exprs:1: column_0 | 2: column_1 | 3: column_2
+  Input Partition: UNPARTITIONED
+  OLAP TABLE SINK
+    TABLE: plan_a
+    TUPLE ID: 1
+    RANDOM
+
+  0:UNION
+     constant exprs: 
+         99 | 99 | 'must not execute'
+     cardinality: 1
+     column statistics: 
+     * column_0-->[-Infinity, Infinity, 0.0, 1.0, 1.0] UNKNOWN
+     * column_1-->[-Infinity, Infinity, 0.0, 1.0, 1.0] UNKNOWN
+     * column_2-->[-Infinity, Infinity, 0.0, 1.0, 1.0] UNKNOWN

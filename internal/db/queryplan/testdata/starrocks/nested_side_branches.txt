@@ -1,0 +1,79 @@
+PLAN COST
+  CPU: 176.0
+  Memory: 32.0
+
+PLAN FRAGMENT 0(F03)
+  Output Exprs:1: id | 2: id
+  Input Partition: UNPARTITIONED
+  RESULT SINK
+
+  6:EXCHANGE
+     cardinality: 2
+
+PLAN FRAGMENT 1(F00)
+
+  Input Partition: RANDOM
+  OutPut Partition: UNPARTITIONED
+  OutPut Exchange Id: 06
+
+  5:HASH JOIN
+  |  join op: LEFT OUTER JOIN (COLOCATE)
+  |  colocate: true
+  |  equal join conjunct: [1: id, BIGINT, false] = [2: id, BIGINT, true]
+  |  can local shuffle: false
+  |  cardinality: 2
+  |  column statistics: 
+  |  * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |  
+  |----4:Project
+  |    |  output columns:
+  |    |  2 <-> [2: id, BIGINT, false]
+  |    |  cardinality: 2
+  |    |  column statistics: 
+  |    |  * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |    |  
+  |    3:HASH JOIN
+  |    |  join op: INNER JOIN (COLOCATE)
+  |    |  colocate: true
+  |    |  equal join conjunct: [2: id, BIGINT, false] = [3: id, BIGINT, false]
+  |    |  build runtime filters:
+  |    |  - filter_id = 0, build_expr = (3: id), remote = false
+  |    |  output columns: 2
+  |    |  can local shuffle: false
+  |    |  cardinality: 2
+  |    |  column statistics: 
+  |    |  * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |    |  * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |    |  
+  |    |----2:OlapScanNode
+  |    |       table: nested_c, rollup: nested_c
+  |    |       preAggregation: on
+  |    |       partitionsRatio=1/1, tabletsRatio=1/1
+  |    |       tabletList=10498
+  |    |       actualRows=0, avgRowSize=8.0
+  |    |       cardinality: 2
+  |    |       column statistics: 
+  |    |       * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |    |    
+  |    1:OlapScanNode
+  |       table: nested_b, rollup: nested_b
+  |       preAggregation: on
+  |       partitionsRatio=1/1, tabletsRatio=1/1
+  |       tabletList=10492
+  |       actualRows=0, avgRowSize=8.0
+  |       cardinality: 2
+  |       probe runtime filters:
+  |       - filter_id = 0, probe_expr = (2: id)
+  |       column statistics: 
+  |       * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE
+  |    
+  0:OlapScanNode
+     table: nested_a, rollup: nested_a
+     preAggregation: on
+     partitionsRatio=1/1, tabletsRatio=1/1
+     tabletList=10486
+     actualRows=0, avgRowSize=8.0
+     cardinality: 2
+     column statistics: 
+     * id-->[1.0, 2.0, 0.0, 8.0, 2.0] ESTIMATE

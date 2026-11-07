@@ -78,8 +78,8 @@ func TestStarRocksNativeRuntimePublicationFixture(t *testing.T) {
 		t.Fatal("runtime lost native catalog/database identity")
 	}
 	runtime := contract.ComposeData(first)
-	if first.Capabilities().Explain {
-		t.Fatal("runtime exposed unverified structured plan capability")
+	if !first.Capabilities().Explain {
+		t.Fatal("runtime lost verified native plan capability")
 	}
 	if runtime.AdvancedLoader == nil || runtime.TableMetadata == nil || runtime.Exporter == nil || runtime.Saver != nil || runtime.Importer != nil || runtime.Transactions.Begin != nil || runtime.Capabilities.EditableTables {
 		t.Fatal("runtime composed unsupported OLTP tools")

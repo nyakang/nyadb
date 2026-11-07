@@ -151,9 +151,50 @@ func TestStarRocksNativeShellFixture(t *testing.T) {
 	if output := os.Getenv("NYADB_STARROCKS_VISUAL_DIR"); output != "" {
 		writeDomainCapture(t, output, "starrocks-live-sql", tt)
 	}
+	planSource := "SELECT id,note FROM `" + table + "` WHERE id>0 ORDER BY id LIMIT 2"
+	sqlTab.query.Editor.Buffer.Set(planSource)
+	sqlTab.query.Editor.Select(0, len(planSource))
+	tt.Frame()
+	if err = tt.Click("EXPLAIN"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if err = tt.Click("执行 EXPLAIN"); err != nil {
+		t.Fatal(err)
+	}
+	waitSQLUI(t, s, tt, sqlTab)
+	tt.Frame()
+	if !tt.HasText("StarRocks estimated plan") || sqlTab.query.Error() != "" || sqlTab.query.Result() == nil {
+		t.Fatalf("native plan did not enter shared structure view: %s", sqlTab.query.Error())
+	}
+	if output := os.Getenv("NYADB_STARROCKS_VISUAL_DIR"); output != "" {
+		writeDomainCapture(t, output, "starrocks-live-plan", tt)
+	}
+	if err = tt.Click("原始计划"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	planResult := sqlTab.query.Result()
+	if len(planResult.Sets) != 1 || planResult.Sets[0].Rows[0][0].Text != "PLAN COST" {
+		t.Fatal("native original plan rows were replaced")
+	}
+	if err = tt.Click("查询结果"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if sqlTab.query.Result() != r || r.Sets[0].Rows[0][0].Text != "9007199254740993" {
+		t.Fatal("plan navigation replaced ordinary multi-result reading")
+	}
+	if err = tt.Click("结构计划"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if sqlTab.query.Result() != planResult || !tt.HasText("StarRocks estimated plan") {
+		t.Fatal("structured plan lost original result binding")
+	}
 	s.disconnectMySQLProfile(profile.ID)
 	tt.Frame()
-	if !sqlTab.query.NeedsRecovery() || sqlTab.query.Editor.Buffer.String() != sql || s.runtime.IsConnected(profile.ID) {
+	if !sqlTab.query.NeedsRecovery() || sqlTab.query.Editor.Buffer.String() != planSource || s.runtime.IsConnected(profile.ID) {
 		t.Fatal("disconnect discarded SQL or implicitly reconnected")
 	}
 }
