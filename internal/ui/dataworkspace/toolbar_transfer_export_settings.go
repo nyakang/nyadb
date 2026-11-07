@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/sqlexport"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/encoding/japanese"
@@ -29,13 +30,14 @@ func (w mysqlDataContextWriter) Write(data []byte) (int, error) {
 }
 
 type mysqlDataConfiguredEncoder struct {
-	base     *mysqlDataTransferEncoder
-	text     *mysqlDataDelimitedEncoder
-	encoded  *transform.Writer
-	options  mysqlDataSourceOptions
-	metadata []contract.StructureColumn
-	fields   []string
-	format   string
+	nativeSQL *sqlexport.DamengTable
+	base      *mysqlDataTransferEncoder
+	text      *mysqlDataDelimitedEncoder
+	encoded   *transform.Writer
+	options   mysqlDataSourceOptions
+	metadata  []contract.StructureColumn
+	fields    []string
+	format    string
 }
 
 func mysqlDataTextEncoding(name string) (encoding.Encoding, error) {
@@ -94,6 +96,14 @@ func newMySQLDataConfiguredEncoder(ctx context.Context, w io.Writer, format, db,
 func (e *mysqlDataConfiguredEncoder) Row(values []contract.DataValue) error {
 	if len(values) != len(e.fields) {
 		return contract.ErrDataPage
+	}
+	if e.nativeSQL != nil {
+		statement, err := e.nativeSQL.Insert(values)
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(e.base.w, statement)
+		return err
 	}
 	converted := slices.Clone(values)
 	for i, field := range e.fields {

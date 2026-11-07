@@ -24,6 +24,7 @@ import (
 
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/importspec"
+	"github.com/nyakang/nyadb/internal/db/sqlexport"
 	"github.com/nyakang/nyadb/internal/services/datasources"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
@@ -240,7 +241,7 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 					ui.Row(c).Gap(8).Children(func() {
 						ui.Text(c, locales.Text("文件格式"))
 						choices := mysqlDataTransferFormatChoices(tr.Kind)
-						if t.capabilities.Documents || t.capabilities.KeyValues || t.importDialect == "dameng" {
+						if t.capabilities.Documents || t.capabilities.KeyValues {
 							choices = slices.DeleteFunc(choices, func(format string) bool { return format == "SQL" })
 						}
 						mysqlDataRuleSelect(c, &tr.Format, choices, func(x string) string { return x }).Disabled(tr.Busy || tr.Input != nil).Width(130)
@@ -509,7 +510,7 @@ func (s *State) startDataImport(services ui.Services, t *Document) {
 }
 func (s *State) startDataExport(services ui.Services, t *Document) {
 	tr := &t.transfer
-	if (t.capabilities.Documents || t.capabilities.KeyValues || t.importDialect == "dameng") && tr.Format == "SQL" {
+	if (t.capabilities.Documents || t.capabilities.KeyValues) && tr.Format == "SQL" {
 		tr.Err = contract.ErrUnsupported.Error()
 		return
 	}
@@ -524,7 +525,7 @@ func (s *State) startDataExport(services ui.Services, t *Document) {
 	}
 	if tr.Format == "SQL" {
 		for _, col := range t.page.ColumnMetadata {
-			if slices.Contains(fields, col.Name) && contract.DataColumnGenerated(col) {
+			if slices.Contains(fields, col.Name) && contract.DataColumnGenerated(col) && !(t.importDialect == "dameng" && col.Extra == "IDENTITY") {
 				tr.Err = locales.Text("SQL 导出不能包含生成字段，请取消勾选该字段")
 				return
 			}
@@ -533,6 +534,15 @@ func (s *State) startDataExport(services ui.Services, t *Document) {
 	if len(fields) == 0 {
 		tr.Err = locales.Text("请选择至少一个字段")
 		return
+	}
+	var nativeSQL *sqlexport.DamengTable
+	if tr.Format == "SQL" && t.importDialect == "dameng" {
+		var err error
+		nativeSQL, err = damengDataSQLTable(t, fields)
+		if err != nil {
+			tr.Err = err.Error()
+			return
+		}
 	}
 	var previewRows [][]contract.DataValue
 	var refs []*contract.RowRef
@@ -598,6 +608,7 @@ func (s *State) startDataExport(services ui.Services, t *Document) {
 				if e != nil {
 					return e
 				}
+				encoder.nativeSQL = nativeSQL
 				defer encoder.Abort()
 				emit := func(values []contract.DataValue) error {
 					if ctx.Err() != nil {

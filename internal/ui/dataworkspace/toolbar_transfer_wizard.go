@@ -224,7 +224,7 @@ func (s *State) dataExportWizardPage(c *ui.Context, t *Document) {
 	case 0:
 		oldFormat := tr.Format
 		choices := mysqlDataTransferFormatChoices("export")
-		if t.capabilities.Documents || t.capabilities.KeyValues || t.importDialect == "dameng" {
+		if t.capabilities.Documents || t.capabilities.KeyValues {
 			choices = choices[:len(choices)-1]
 		}
 		mysqlDataRuleSelect(c, &tr.Format, choices, func(x string) string { return x }).Width(180)
