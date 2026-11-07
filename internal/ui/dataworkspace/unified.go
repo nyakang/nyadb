@@ -29,6 +29,7 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 	}
 	d.object = o
 	d.capabilities = c
+	d.exportFormats = append([]string(nil), s.runtimeFor(d).ExportFormats...)
 	d.generation = s.sessionFor(d).Generation
 	d.filterModes = append([]string(nil), s.runtimeFor(d).FilterModes...)
 	if len(d.filterModes) > 0 {
@@ -115,7 +116,19 @@ func (s *State) runtimeFor(d *Document) Runtime {
 func (s *State) consumeFor(d *Document) bool {
 	return d.profileID == s.session().ProfileID || s.guardDoc == d
 }
-func (d *Document) portable() bool      { return d.object.Schema != "" }
+func (d *Document) portable() bool { return d.object.Schema != "" }
+
+func (d *Document) supportsExportFormat(format string) bool {
+	if len(d.exportFormats) == 0 {
+		return true
+	}
+	for _, allowed := range d.exportFormats {
+		if format == allowed {
+			return true
+		}
+	}
+	return false
+}
 func (d *Document) keysetEnabled() bool { return d.object.ProfileID == 0 || d.capabilities.Keyset }
 func (d *Document) editable() bool {
 	return d.objectKind != "视图" && d.page != nil && (d.page.Editable == nil || *d.page.Editable) && (d.object.ProfileID == 0 || d.capabilities.EditableTables)

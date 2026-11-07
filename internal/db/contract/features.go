@@ -60,6 +60,7 @@ type DataTransactions struct {
 // DataRuntime contains operation-bound functions. Workers capture this value
 // before starting; adapters must check the original session on every call.
 type DataRuntime struct {
+	ExportFormats    []string // nil preserves existing providers' format availability.
 	ImportDialect    string
 	Loader           func(context.Context, int64, string, string, int64, int) (*DataPage, error)
 	AdvancedLoader   func(context.Context, int64, string, string, DataOptions) (*DataPage, error)
@@ -114,6 +115,7 @@ type DataEdits struct {
 }
 type DataEditsProvider interface{ DataEdits() DataEdits }
 type DataExports struct {
+	Formats  []string // An explicit list limits the neutral workbench serializers.
 	Exporter func(context.Context, int64, string, string, DataOptions, []string, func([]DataValue) error) error
 	JSONL    func(context.Context, ObjectRef, io.Writer) error
 }
@@ -151,6 +153,7 @@ func ComposeData(s Session) DataRuntime {
 	}
 	if p, e := Require[DataExportsProvider](s); e == nil {
 		v := p.DataExports()
+		r.ExportFormats = append([]string(nil), v.Formats...)
 		r.Exporter = v.Exporter
 		r.JSONL = v.JSONL
 	}

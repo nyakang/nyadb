@@ -9,6 +9,9 @@ import (
 // NormalizeProfile validates public settings and applies their canonical values.
 // Variants are normalized in place; callers retaining them must clone the slice.
 func NormalizeProfile(p Profile) (Profile, error) {
+	if p.Kind != Doris && p.DorisOptions != (DorisOptions{}) {
+		return p, fmt.Errorf("%w: Doris options on another engine", ErrInvalid)
+	}
 	if !ValidProfileColor(p.Color) {
 		return p, fmt.Errorf("%w: invalid connection color", ErrInvalid)
 	}
@@ -114,6 +117,8 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	switch p.Kind {
+	case Doris:
+		return normalizeDorisProfile(p)
 	case Dameng:
 		if p.MySQLAdvanced != (MySQLAdvanced{}) {
 			return p, fmt.Errorf("%w: MySQL options on DM8", ErrInvalid)

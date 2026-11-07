@@ -73,6 +73,8 @@ func ParseURI(raw string) (URIImport, error) {
 		kind = PostgreSQL
 	case "clickhouse":
 		kind = ClickHouse
+	case "doris":
+		kind = Doris
 	case "sqlite", "file":
 		kind = SQLite
 	default:
@@ -260,6 +262,20 @@ func ParseURI(raw string) (URIImport, error) {
 		}
 	}
 	for key, values := range options {
+		if kind == Doris && (key == "catalog" || key == "ca_file" || key == "server_name") {
+			if len(values) != 1 || values[0] == "" {
+				return fail(ErrURIOptions)
+			}
+			switch key {
+			case "catalog":
+				p.DorisOptions.Catalog = values[0]
+			case "ca_file":
+				p.DorisOptions.CAFile = values[0]
+			case "server_name":
+				p.DorisOptions.ServerName = values[0]
+			}
+			continue
+		}
 		if key != "sslmode" || len(values) != 1 {
 			return fail(ErrURIOptions)
 		}

@@ -9,6 +9,7 @@ import (
 
 func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 	out := r
+	out.ExportFormats = append([]string(nil), r.ExportFormats...)
 	out.Transactions = sessionTransactions(s, r.Transactions)
 	if r.Loader != nil {
 		out.Loader = func(ctx context.Context, id int64, db, table string, offset int64, limit int) (*contract.DataPage, error) {

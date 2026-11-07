@@ -20917,3 +20917,33 @@ func SqlSessionLimitCaption() string { return In(i18n.Locale()).SqlSessionLimitC
 func (msgs Messages) SqlSessionLimitCaption() string {
 	return Catalog.Format(msgs.locale, "sqlSessionLimitCaption", nil)
 }
+
+// DorisNativeEndpoint says "Apache Doris 的 FE 查询端口默认为 9030。"
+// in the language the app shows.
+func DorisNativeEndpoint() string { return In(i18n.Locale()).DorisNativeEndpoint() }
+
+// DorisNativeEndpoint says "Apache Doris 的 FE 查询端口默认为 9030。"
+// in the language of msgs.
+func (msgs Messages) DorisNativeEndpoint() string {
+	return Catalog.Format(msgs.locale, "dorisNativeEndpoint", nil)
+}
+
+// DorisTLSModes says "verify-full 校验证书链和主机名；disable 关闭 TLS。"
+// in the language the app shows.
+func DorisTLSModes() string { return In(i18n.Locale()).DorisTLSModes() }
+
+// DorisTLSModes says "verify-full 校验证书链和主机名；disable 关闭 TLS。"
+// in the language of msgs.
+func (msgs Messages) DorisTLSModes() string {
+	return Catalog.Format(msgs.locale, "dorisTLSModes", nil)
+}
+
+// DorisSessionPassword says "Doris 会话密码"
+// in the language the app shows.
+func DorisSessionPassword() string { return In(i18n.Locale()).DorisSessionPassword() }
+
+// DorisSessionPassword says "Doris 会话密码"
+// in the language of msgs.
+func (msgs Messages) DorisSessionPassword() string {
+	return Catalog.Format(msgs.locale, "dorisSessionPassword", nil)
+}

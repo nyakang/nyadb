@@ -2056,5 +2056,8 @@
   "damengTLSHint": "verify-full verifies the certificate chain and host name; Dameng TLS requires a client certificate and key.",
   "operationTimeoutCaption": "Operation timeout (s):",
   "operationTimeout": "Operation timeout (s)",
-  "sqlSessionLimitCaption": "SQL session limit:"
+  "sqlSessionLimitCaption": "SQL session limit:",
+  "dorisNativeEndpoint": "Apache Doris uses FE query port 9030 by default.",
+  "dorisTLSModes": "verify-full verifies the certificate chain and hostname; disable turns TLS off.",
+  "dorisSessionPassword": "Doris session password"
 }

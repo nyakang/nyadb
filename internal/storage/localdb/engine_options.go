@@ -12,6 +12,7 @@ import (
 // Keep the existing column and MySQL JSON format. Other engines use an
 // explicit versioned envelope; older empty records receive engine defaults.
 type engineOptionsEnvelope struct {
+	Doris      *connections.DorisOptions      `json:"doris,omitempty"`
 	Dameng     *connections.DamengOptions     `json:"dameng,omitempty"`
 	GaussDB    *connections.GaussDBOptions    `json:"gaussdb,omitempty"`
 	Redis      *connections.RedisOptions      `json:"redis,omitempty"`
@@ -28,6 +29,8 @@ type engineOptionsEnvelope struct {
 func encodeProfileOptions(p connections.Profile) (string, error) {
 	var value any
 	switch p.Kind {
+	case connections.Doris:
+		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Doris: &p.DorisOptions}
 	case connections.Dameng:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Dameng: &p.DamengOptions}
 	case connections.GaussDB:
@@ -58,6 +61,9 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 }
 func decodeEngineOptions(p *connections.Profile, raw string) error {
 	if raw == "" {
+		if p.Kind == connections.Doris {
+			p.DorisOptions = connections.DorisOptions{Version: 1, Catalog: "internal"}
+		}
 		if p.Kind == connections.Dameng {
 			return connections.ErrInvalid
 		}
@@ -91,6 +97,18 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 	decoder.DisallowUnknownFields()
 	if len(raw) > 128<<10 || decoder.Decode(&envelope) != nil || decoder.Decode(new(any)) != io.EOF || envelope.Version != 1 || envelope.Kind != p.Kind {
 		return fmt.Errorf("invalid saved engine options")
+	}
+	if p.Kind == connections.Doris {
+		if envelope.Doris == nil || envelope.Dameng != nil || envelope.GaussDB != nil || envelope.Redis != nil || envelope.MongoDB != nil || envelope.Oracle != nil || envelope.DuckDB != nil || envelope.SQLServer != nil || envelope.SQLite != nil || envelope.PostgreSQL != nil {
+			return connections.ErrInvalid
+		}
+		p.DorisOptions = *envelope.Doris
+		checked, err := connections.NormalizeProfile(*p)
+		*p = checked
+		return err
+	}
+	if envelope.Doris != nil {
+		return connections.ErrInvalid
 	}
 	if p.Kind == connections.Dameng {
 		if envelope.Dameng == nil || envelope.GaussDB != nil || envelope.Redis != nil || envelope.MongoDB != nil || envelope.Oracle != nil || envelope.DuckDB != nil || envelope.SQLServer != nil || envelope.SQLite != nil || envelope.PostgreSQL != nil {

@@ -338,6 +338,21 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 			})
 		})
 		return true
+	case connections.Doris:
+		if tab != "SSL" {
+			return false
+		}
+		a := &s.connectionDraft.DorisOptions
+		theme.Form(c, formWidth, func() {
+			ui.Text(c, locales.Text("Apache Doris 的 FE 查询端口默认为 9030。"))
+			theme.Field(c, locales.Text("TLS 模式："), func() {
+				connectionFormSelect(c, &s.connectionDraft.TLSMode, []string{"verify-full", "disable"}, "Doris TLS 模式", fieldWidth, false)
+			})
+			s.editorInputRow(c, "CA 证书", "Doris CA 证书", &a.CAFile, labelWidth, fieldWidth)
+			s.editorInputRow(c, "证书服务器名", "证书服务器名", &a.ServerName, labelWidth, fieldWidth)
+			ui.Text(c, locales.Text("verify-full 校验证书链和主机名；disable 关闭 TLS。"))
+		})
+		return true
 	case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.GaussDB, connections.Kingbase:
 		a := &s.connectionDraft.PostgreSQLOptions
 		product := "PostgreSQL"

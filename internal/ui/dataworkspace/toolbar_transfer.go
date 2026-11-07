@@ -241,6 +241,9 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 					ui.Row(c).Gap(8).Children(func() {
 						ui.Text(c, locales.Text("文件格式"))
 						choices := mysqlDataTransferFormatChoices(tr.Kind)
+						if tr.Kind == "export" {
+							choices = slices.DeleteFunc(choices, func(format string) bool { return !t.supportsExportFormat(format) })
+						}
 						if t.capabilities.Documents || t.capabilities.KeyValues {
 							choices = slices.DeleteFunc(choices, func(format string) bool { return format == "SQL" })
 						}
@@ -510,6 +513,10 @@ func (s *State) startDataImport(services ui.Services, t *Document) {
 }
 func (s *State) startDataExport(services ui.Services, t *Document) {
 	tr := &t.transfer
+	if !t.supportsExportFormat(tr.Format) {
+		tr.Err = contract.ErrUnsupported.Error()
+		return
+	}
 	if (t.capabilities.Documents || t.capabilities.KeyValues) && tr.Format == "SQL" {
 		tr.Err = contract.ErrUnsupported.Error()
 		return

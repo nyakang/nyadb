@@ -22,6 +22,7 @@ const (
 	Dameng      Kind = "dameng"
 	SQLite      Kind = "sqlite"
 	ClickHouse  Kind = "clickhouse"
+	Doris       Kind = "doris"
 	SQLServer   Kind = "sqlserver"
 	DuckDB      Kind = "duckdb"
 	Oracle      Kind = "oracle"
@@ -62,6 +63,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	DorisOptions      DorisOptions
 	DamengOptions     DamengOptions
 	GaussDBOptions    GaussDBOptions
 	RedisOptions      RedisOptions

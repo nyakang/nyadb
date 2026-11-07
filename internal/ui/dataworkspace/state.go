@@ -48,6 +48,7 @@ type Document struct {
 	showSQLDetails                   bool
 
 	importDialect string
+	exportFormats []string
 	generation    uint64
 	object        contract.ObjectRef
 	capabilities  contract.Capabilities

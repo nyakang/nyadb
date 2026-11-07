@@ -6,6 +6,7 @@ import (
 	clickhousesvc "github.com/nyakang/nyadb/internal/services/clickhouse"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/dameng"
+	"github.com/nyakang/nyadb/internal/services/doris"
 	"github.com/nyakang/nyadb/internal/services/duckdb"
 	"github.com/nyakang/nyadb/internal/services/engines"
 	mongosvc "github.com/nyakang/nyadb/internal/services/mongodb"
@@ -16,6 +17,7 @@ import (
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.Doris, ProviderFunc(doris.OpenSession))
 	m.Register(connections.Dameng, ProviderFunc(dameng.OpenSession))
 	m.Register(connections.Redis, ProviderFunc(redissvc.OpenSession))
 	m.Register(connections.MongoDB, ProviderFunc(mongosvc.OpenSession))

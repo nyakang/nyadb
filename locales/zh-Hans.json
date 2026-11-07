@@ -2056,5 +2056,8 @@
   "damengTLSHint": "verify-full 校验证书链和主机名；达梦 TLS 需要客户端证书和密钥。",
   "operationTimeoutCaption": "执行超时（秒）：",
   "operationTimeout": "执行超时（秒）",
-  "sqlSessionLimitCaption": "SQL 会话上限："
+  "sqlSessionLimitCaption": "SQL 会话上限：",
+  "dorisNativeEndpoint": "Apache Doris 的 FE 查询端口默认为 9030。",
+  "dorisTLSModes": "verify-full 校验证书链和主机名；disable 关闭 TLS。",
+  "dorisSessionPassword": "Doris 会话密码"
 }
