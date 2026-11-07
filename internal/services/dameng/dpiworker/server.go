@@ -293,7 +293,13 @@ func (s *server) execute(ctx context.Context, q request) (response, bool) {
 				}
 			case "commit", "rollback":
 				if tx := s.transactions[q.Handle]; tx != nil {
-					if q.Method == "commit" {
+					if contextual, ok := tx.(dpi.ContextTransaction); ok {
+						if q.Method == "commit" {
+							err = contextual.CommitContext(ctx)
+						} else {
+							err = contextual.RollbackContext(ctx)
+						}
+					} else if q.Method == "commit" {
 						err = tx.Commit()
 					} else {
 						err = tx.Rollback()

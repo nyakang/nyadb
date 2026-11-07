@@ -229,8 +229,10 @@ type transaction struct {
 	ended         bool
 }
 
-func (t *transaction) Commit() error   { return t.end(t.ctx, "commit") }
-func (t *transaction) Rollback() error { return t.end(context.Background(), "rollback") }
+func (t *transaction) Commit() error                             { return t.end(t.ctx, "commit") }
+func (t *transaction) Rollback() error                           { return t.end(context.Background(), "rollback") }
+func (t *transaction) CommitContext(ctx context.Context) error   { return t.end(ctx, "commit") }
+func (t *transaction) RollbackContext(ctx context.Context) error { return t.end(ctx, "rollback") }
 func (t *transaction) end(ctx context.Context, method string) error {
 	t.c.mu.Lock()
 	defer t.c.mu.Unlock()
@@ -243,7 +245,19 @@ func (t *transaction) end(ctx context.Context, method string) error {
 		return err
 	}
 	t.ended = true
-	_, err := t.c.callLocked(ctx, request{Method: method, Handle: t.handle, Owner: t.owner}, true)
+	r, err := t.c.callLocked(ctx, request{Method: method, Handle: t.handle, Owner: t.owner}, true)
+	if err != nil {
+		if r.ID == 0 && !errors.Is(err, dpi.ErrOutcomeUnknown) && (errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)) {
+			// Cancellation can race between end's check and callLocked's
+			// check. No frame was sent; retain this original rollback handle.
+			t.ended = false
+		} else if method == "commit" {
+			// A received response ends the child's transaction ownership even
+			// when it reports cancellation before native COMMIT. Never treat a
+			// submitted terminal request as a reusable transaction.
+			err = errors.Join(err, dpi.ErrOutcomeUnknown)
+		}
+	}
 	return err
 }
 

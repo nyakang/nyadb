@@ -166,6 +166,80 @@ func (t *fakeTx) Commit() error {
 	return errors.Join(t.ctx.Err(), dpi.ErrOutcomeUnknown)
 }
 func (t *fakeTx) Rollback() error { return nil }
+func (t *fakeTx) CommitContext(ctx context.Context) error {
+	markEntered()
+	<-ctx.Done()
+	time.Sleep(120 * time.Millisecond)
+	return errors.Join(ctx.Err(), dpi.ErrOutcomeUnknown)
+}
+func (t *fakeTx) RollbackContext(ctx context.Context) error { return ctx.Err() }
+
+type cancelBeforeFrameContext struct {
+	context.Context
+	checks int
+}
+
+func (c *cancelBeforeFrameContext) Err() error {
+	c.checks++
+	if c.checks > 1 {
+		return context.Canceled
+	}
+	return nil
+}
+
+func TestWorkerCancellationBeforeTerminalFramePreservesOriginalRollback(t *testing.T) {
+	c := testConn(t)
+	defer c.Close()
+	tx, err := c.BeginTx(context.Background(), driver.TxOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := &cancelBeforeFrameContext{Context: context.Background()}
+	if err = tx.(dpi.ContextTransaction).CommitContext(ctx); !errors.Is(err, context.Canceled) || errors.Is(err, dpi.ErrOutcomeUnknown) {
+		t.Fatal("unsent terminal request claimed submission", err)
+	}
+	if err = tx.Rollback(); err != nil {
+		t.Fatal("pre-frame cancellation lost captured rollback", err)
+	}
+	if err = c.Ping(context.Background()); err != nil {
+		t.Fatal("pre-frame cancellation retired original session", err)
+	}
+}
+
+func TestWorkerCommitUsesCurrentRequestAndWaitsForNativeAcknowledgement(t *testing.T) {
+	c := testConn(t)
+	defer c.Close()
+	begin, stopBegin := context.WithCancel(context.Background())
+	tx, err := c.BeginTx(begin, driver.TxOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	stopBegin()
+	commit, stopCommit := context.WithCancel(context.Background())
+	defer stopCommit()
+	done := make(chan error, 1)
+	go func() { done <- tx.(dpi.ContextTransaction).CommitContext(commit) }()
+	awaitEntered(t, c.dir)
+	select {
+	case err := <-done:
+		t.Fatal("commit used expired begin request", err)
+	default:
+	}
+	stopCommit()
+	select {
+	case err := <-done:
+		t.Fatal("commit skipped native acknowledgement", err)
+	case <-time.After(40 * time.Millisecond):
+	}
+	select {
+	case err := <-done:
+		if !errors.Is(err, context.Canceled) || !errors.Is(err, dpi.ErrOutcomeUnknown) || errors.Is(err, driver.ErrBadConn) {
+			t.Fatal("current cancellation lost commit uncertainty", err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("commit ignored current cancellation")
+	}
+}
 
 func testConn(t *testing.T) *conn {
 	t.Helper()

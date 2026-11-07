@@ -15,18 +15,19 @@ import (
 // Session keeps background metadata and document physical connections in
 // separate bounded pools. Public generations belong to dbruntime, not DPI.
 type Session struct {
-	mu        sync.Mutex
-	profile   connections.Profile
-	dataScope string
-	db, sqlDB *sql.DB
-	ctx       context.Context
-	cancel    context.CancelFunc
-	closed    bool
-	closeDone chan struct{}
-	closeErr  error
-	requests  sync.WaitGroup
-	leases    map[*queryLease]struct{}
-	slots     chan struct{}
+	mu                sync.Mutex
+	profile           connections.Profile
+	dataScope         string
+	db, sqlDB, dataDB *sql.DB
+	ctx               context.Context
+	cancel            context.CancelFunc
+	closed            bool
+	closeDone         chan struct{}
+	closeErr          error
+	requests          sync.WaitGroup
+	leases            map[*queryLease]struct{}
+	dataTransactions  map[*dataTransaction]struct{}
+	slots             chan struct{}
 }
 
 func OpenSession(ctx context.Context, p connections.Profile, password string) (contract.Session, error) {
@@ -59,15 +60,18 @@ func OpenSession(ctx context.Context, p connections.Profile, password string) (c
 	sqlDB := sql.OpenDB(c)
 	sqlDB.SetMaxOpenConns(cfg.Options.SQLMaxConnections)
 	sqlDB.SetMaxIdleConns(0)
+	dataDB := sql.OpenDB(c)
+	dataDB.SetMaxOpenConns(cfg.Options.MaxConnections)
+	dataDB.SetMaxIdleConns(0)
 	sctx, cancel := context.WithCancel(context.Background())
-	return &Session{profile: p, dataScope: rand.Text(), db: db, sqlDB: sqlDB, ctx: sctx, cancel: cancel, closeDone: make(chan struct{}), leases: make(map[*queryLease]struct{}), slots: make(chan struct{}, cfg.Options.SQLMaxConnections)}, nil
+	return &Session{profile: p, dataScope: rand.Text(), db: db, sqlDB: sqlDB, dataDB: dataDB, ctx: sctx, cancel: cancel, closeDone: make(chan struct{}), leases: make(map[*queryLease]struct{}), dataTransactions: make(map[*dataTransaction]struct{}), slots: make(chan struct{}, cfg.Options.SQLMaxConnections)}, nil
 }
 
 func (s *Session) ProfileID() int64   { return s.profile.ID }
 func (s *Session) Generation() uint64 { return 1 }
 func (s *Session) Catalog() string    { return s.profile.Database }
 func (s *Session) Capabilities() contract.Capabilities {
-	return contract.Capabilities{Query: true, Metadata: true, Schemas: true, Count: true, Keyset: true, FieldChunks: true, EditableTables: true}
+	return contract.Capabilities{Query: true, Metadata: true, Schemas: true, Count: true, Keyset: true, FieldChunks: true, EditableTables: true, Transactions: true}
 }
 func (s *Session) Alive() bool { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed }
 func (s *Session) request(ctx context.Context) (context.Context, context.CancelFunc, error) {
@@ -95,12 +99,22 @@ func (s *Session) Close() error {
 	for l := range s.leases {
 		leases = append(leases, l)
 	}
+	transactions := make([]*dataTransaction, 0, len(s.dataTransactions))
+	for t := range s.dataTransactions {
+		transactions = append(transactions, t)
+	}
 	s.mu.Unlock()
 	for _, l := range leases {
 		l.Release()
 	}
+	for _, t := range transactions {
+		t.Close()
+	}
 	s.requests.Wait()
 	s.closeErr = errors.Join(s.sqlDB.Close(), s.db.Close())
+	if s.dataDB != nil {
+		s.closeErr = errors.Join(s.closeErr, s.dataDB.Close())
+	}
 	close(s.closeDone)
 	return s.closeErr
 }

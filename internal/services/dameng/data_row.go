@@ -176,12 +176,16 @@ func (s *Session) completeDataRead(ctx context.Context, o contract.ObjectRef, re
 	return s.dataReadLocked(ctx, o, true, read)
 }
 
-func (s *Session) readDataRow(ctx context.Context, id int64, schema, name string, ref contract.RowRef) (out *contract.DataRow, err error) {
+func (s *Session) readDataRow(ctx context.Context, id int64, schema, name string, ref contract.RowRef) (*contract.DataRow, error) {
+	return s.readDataRowWith(ctx, id, schema, name, ref, s.completeDataRead)
+}
+
+func (s *Session) readDataRowWith(ctx context.Context, id int64, schema, name string, ref contract.RowRef, read dataReader) (out *contract.DataRow, err error) {
 	o, err := s.dataObject(id, schema, name, ref.Object)
 	if err != nil {
 		return nil, err
 	}
-	err = s.completeDataRead(ctx, o, func(ctx context.Context, q *sql.Conn, t *contract.TableStructure) error {
+	err = read(ctx, o, func(ctx context.Context, q *sql.Conn, t *contract.TableStructure) error {
 		identity, e := tableIdentityAt(ctx, q, o)
 		if e != nil {
 			return e
