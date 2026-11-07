@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
 func (s *Session) openGaussBrowse(ctx context.Context, n contract.NamespaceRef) (out []contract.DBObject, err error) {
@@ -35,7 +36,8 @@ func (s *Session) openGaussBrowse(ctx context.Context, n contract.NamespaceRef) 
 		if len(out) >= postgresBrowseObjectLimit || used > postgresBrowseByteLimit || len(o.Definition) > postgresProgramByteLimit {
 			return errors.New("openGauss object metadata limit exceeded")
 		}
-		o.Engine = "openGauss"
+		descriptor, _ := connections.Describe(s.kind)
+		o.Engine = descriptor.Label
 		out = append(out, o)
 		return nil
 	}

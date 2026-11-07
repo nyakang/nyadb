@@ -27,6 +27,9 @@ func (s *Session) maintenanceTarget(t contract.SchemaDesignTarget) error {
 	return s.check(o)
 }
 func (s *Session) namespaceReadOnly(schema string) bool {
+	if s.readOnly {
+		return true
+	}
 	if d, ok := s.strategy.(sqliteDialect); ok {
 		if d.options.ReadOnly {
 			return true
@@ -40,7 +43,7 @@ func (s *Session) namespaceReadOnly(schema string) bool {
 	return false
 }
 func (s *Session) maintenanceActions(t contract.SchemaDesignTarget) []contract.MaintenanceAction {
-	if s.kind == connections.CockroachDB || s.kind == connections.OpenGauss || s.maintenanceTarget(t) != nil {
+	if s.kind == connections.CockroachDB || s.kind.IsGaussFamily() || s.maintenanceTarget(t) != nil {
 		return nil
 	}
 	var actions []contract.MaintenanceAction

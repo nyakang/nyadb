@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	gausspq "gitcode.com/opengauss/openGauss-connector-go-pq"
+	"github.com/HuaweiCloudDeveloper/gaussdb-go/gaussdbconn"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nyakang/nyadb/internal/db/contract"
 )
@@ -14,6 +15,10 @@ func postgresServerError(err error) (*pgconn.PgError, bool) {
 	var pg *pgconn.PgError
 	if errors.As(err, &pg) {
 		return pg, true
+	}
+	var native *gaussdbconn.GaussdbError
+	if errors.As(err, &native) {
+		return &pgconn.PgError{Severity: native.Severity, Code: native.Code, Message: native.Message, Detail: native.Detail, Hint: native.Hint, Position: native.Position}, true
 	}
 	var gauss *gausspq.Error
 	if errors.As(err, &gauss) {

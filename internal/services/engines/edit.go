@@ -74,6 +74,9 @@ func (t *Tx) Apply(ctx context.Context, o contract.ObjectRef, edits []contract.E
 	if t.closed {
 		return contract.CommitResult{Uncertain: t.uncertain}, ErrRevoked
 	}
+	if t.s.readOnly {
+		return contract.CommitResult{}, contract.ErrDataReadOnly
+	}
 	for _, edit := range edits {
 		for _, v := range edit.Values {
 			if err := validateTypedValue(v, t.s.kind); err != nil {

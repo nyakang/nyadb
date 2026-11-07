@@ -1028,25 +1028,28 @@
       "profiles": [
         "gaussdb"
       ],
-      "nyadb_kind": null,
-      "status": "missing",
+      "nyadb_kind": "gaussdb",
+      "status": "implemented_with_gaps",
       "nyadb_progress": {
         "reports": [
-          "gaussdb-native-transport-2026-11-07.md"
+          "gaussdb-native-transport-2026-11-07.md",
+          "gaussdb-2026-11-07.md"
         ],
         "completed": [
-          "native Go connector and immutable public multi-endpoint configuration",
-          "native SHA256 authentication, per-endpoint TLS and exact type round trips against a genuine Docker fixture",
-          "native transactions, physical connection isolation and original-handle cancellation cleanup verification"
+          "independent profiles, multi-host IPv6 URI, public options persistence, credential save/rollback and bilingual chooser/editor",
+          "native per-physical-connection product/PG-mode validation, SHA256 authentication and TLS",
+          "qualified catalog/schema/table/view/sequence/function/procedure metadata and read-only program definitions",
+          "SQL document leases, native scripts/caret/SQL files, diagnostics, JSON explain and explicit cancellation recovery",
+          "shared USTORE/ubtree and ASTORE/btree grid, precise values, verified editing, stale-row rejection, paging/count/fields/analysis/import/export",
+          "lost native commit receipts retain uncertain saved values and uncertain table-import state; published generations revoke original bindings"
         ],
         "remaining": [
-          "workbench provider registration, profiles/URI/persistence/credentials and connection forms",
-          "per-physical-connection product/version validation, query leases and acknowledged workbench cancellation/recovery",
-          "native namespaces/object/type metadata and shared data browsing/editing/import/export",
-          "all remaining GaussDB reference capabilities, management and cross-product tools",
-          "HA/distributed/DWS and other-version verification"
+          "table/view design and object/account management, database creation, backup/restore and maintenance",
+          "comparison/synchronization, transfer, diagrams/lineage, monitoring and other full reference capabilities",
+          "SSH/HTTP tunnels, SM3 and mutual TLS/other authentication validation",
+          "real HA/failover/distributed/DWS and other-version verification"
         ],
-        "verified_server": "GaussDB Kernel 503.1.0 build f53b4ed8, native single-node PG compatibility; transport only"
+        "verified_server": "GaussDB Kernel 503.1.0 build f53b4ed8, genuine single-node PG compatibility; native core workbench verified"
       }
     },
     {
@@ -3047,8 +3050,8 @@
       "label": "GaussDB",
       "category": "domestic",
       "port": "5432",
-      "nyadb_kind": null,
-      "status": "missing"
+      "nyadb_kind": "gaussdb",
+      "status": "implemented_with_gaps"
     },
     {
       "id": "kwdb",

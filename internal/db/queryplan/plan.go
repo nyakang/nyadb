@@ -49,7 +49,7 @@ func Build(engine, sql string) (string, error) {
 		return "EXPLAIN FORMAT=JSON " + sql, nil
 	case "cockroachdb":
 		return "EXPLAIN (OPT, VERBOSE) " + sql, nil
-	case "postgresql", "postgres", "opengauss":
+	case "postgresql", "postgres", "opengauss", "gaussdb":
 		return "EXPLAIN (FORMAT JSON) " + sql, nil
 	case "sqlite":
 		return "EXPLAIN QUERY PLAN " + sql, nil
@@ -210,7 +210,7 @@ func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, e
 		}
 		return n, nil
 	}
-	if engine == "postgresql" || engine == "postgres" || engine == "opengauss" {
+	if engine == "postgresql" || engine == "postgres" || engine == "opengauss" || engine == "gaussdb" {
 		array, ok := value.([]any)
 		if !ok || len(array) == 0 {
 			return nil, errors.New("invalid PostgreSQL plan envelope")

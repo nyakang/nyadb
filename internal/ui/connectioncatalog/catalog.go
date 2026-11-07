@@ -21,6 +21,7 @@ var databaseCatalog = []catalogEntry{
 	{"PostgreSQL", "PostgreSQL", "", "全部", "postgres-type", "#397cdf", connections.PostgreSQL},
 	{"CockroachDB", "CockroachDB", "", "全部", "database", "#6933a6", connections.CockroachDB},
 	{"openGauss", "openGauss", "", "全部", "database", "#1c77c3", connections.OpenGauss},
+	{"GaussDB", "GaussDB", "", "全部", "database", "#1c77c3", connections.GaussDB},
 	{"SQL Server", "SQL Server", "", "全部", "mssql-type", "#edab24", connections.SQLServer},
 	{"Oracle", "Oracle", "", "全部", "oracle-type", "#ef3b5c", connections.Oracle},
 	{"SQLite", "SQLite", "", "全部", "sqlite-type", "#4cbfc2", connections.SQLite},
@@ -44,7 +45,7 @@ var databaseCatalog = []catalogEntry{
 	{"ClickHouse", "ClickHouse", "", "全部", "database", "#e7b632", connections.ClickHouse},
 }
 
-var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "MariaDB", "TiDB", "OceanBase", "CockroachDB", "openGauss", "MongoDB", "Redis", "Snowflake"}
+var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "MariaDB", "TiDB", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "MongoDB", "Redis", "Snowflake"}
 var catalogVendors = catalogTreeVendorOrder
 
 func catalogMatch(e catalogEntry, query string, engines, vendors map[string]bool) bool {

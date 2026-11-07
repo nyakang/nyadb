@@ -290,6 +290,8 @@ func connectionKindName(kind connections.Kind) string {
 		return "CockroachDB"
 	case connections.OpenGauss:
 		return "openGauss"
+	case connections.GaussDB:
+		return "GaussDB"
 	case connections.PostgreSQL:
 		return "PostgreSQL"
 	case connections.SQLite:

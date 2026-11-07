@@ -42,7 +42,7 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 	if e := s.check(n.Object("table", "_")); e != nil {
 		return nil, e
 	}
-	if s.kind == connections.OpenGauss {
+	if s.kind.IsGaussFamily() {
 		return s.openGaussBrowse(ctx, n)
 	}
 	if s.kind == connections.CockroachDB {
@@ -97,7 +97,7 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*con
 		e = s.sqlitePresentationMetadata(ctx, s.db, out)
 	} else if s.kind == connections.CockroachDB {
 		e = s.cockroachPresentationMetadata(ctx, s.db, out)
-	} else if s.kind == connections.OpenGauss {
+	} else if s.kind.IsGaussFamily() {
 		e = s.openGaussPresentationMetadata(ctx, s.db, out)
 	} else {
 		e = s.postgresPresentationMetadata(ctx, s.db, out)
@@ -361,6 +361,9 @@ func (s *Session) saveDataOnce(ctx context.Context, id int64, schema, name strin
 	if id != s.id {
 		return nil, connections.ErrInvalid
 	}
+	if s.readOnly {
+		return nil, contract.ErrDataReadOnly
+	}
 	values, e := s.edits(ctx, o, edits)
 	if e != nil {
 		return nil, e
@@ -605,7 +608,7 @@ func (s *Session) ReserveQuery(tab uint64) (contract.QueryLease, error) {
 	}
 	ctx, cancel := context.WithCancel(s.ctx)
 	l := &queryLease{session: s, ctx: ctx, cancel: cancel, doc: tab}
-	if s.kind == connections.OpenGauss {
+	if s.kind.IsGaussFamily() {
 		return &openGaussQueryLease{queryLease: l}, nil
 	}
 	return l, nil

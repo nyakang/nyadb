@@ -17,7 +17,7 @@ func (s *Session) Schemas(ctx context.Context) ([]string, error) {
 	return s.strategy.schemas(ctx, s.db)
 }
 func (s *Session) Objects(ctx context.Context, schema string) ([]contract.Object, error) {
-	if s.kind == connections.OpenGauss {
+	if s.kind.IsGaussFamily() {
 		objects, err := s.openGaussBrowse(ctx, s.Namespace(schema))
 		if err != nil {
 			return nil, err

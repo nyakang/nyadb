@@ -10,8 +10,8 @@ NyaDB 基线为 `c4cf751`，已有 13 个独立产品连接，能力边界见 RE
 CockroachDB 已提交，无需重复提交。本地 DBX 的参考提交为
 `a3add88da1c44fc97d233f90977f67dc8c277fc1`。
 
-openGauss 核心接入后，当前已注册 14 个独立产品：MySQL、MariaDB、
-TiDB、OceanBase、PostgreSQL、CockroachDB、openGauss、SQLite、DuckDB、
+GaussDB 核心接入后，当前已注册 15 个独立产品：MySQL、MariaDB、
+TiDB、OceanBase、PostgreSQL、CockroachDB、openGauss、GaussDB、SQLite、DuckDB、
 SQL Server、Oracle、ClickHouse、MongoDB 和 Redis。注册连接与管理功能
 完整度分别验收；openGauss 表设计仍在开发，没有开启公开 Apply。
 
@@ -72,8 +72,9 @@ DBX 的能力参考还包含其 SQL/schema/transfer 模块和
 - [x] openGauss 原生事务删除表及结构/依赖校验，见 [删除表验证](opengauss-table-drop-2026-11-07.md)。
 - [x] openGauss 原生事务表复制、独立普通/LARGE 序列及完整数据核验，见 [表复制验证](opengauss-table-copy-2026-11-07.md)。
 - [x] openGauss 原生事务表重命名、完整目录/物理身份核验及工作台草稿处理，见 [重命名验证](opengauss-table-rename-2026-11-07.md)。
-- [x] GaussDB 原生连接基础：华为 Go 驱动、独立多端点/TLS、公开配置、真实 Kernel 503.1.0 Docker 认证/类型/事务/取消清理验证；尚未注册工作台，见 [传输基础与保留范围](gaussdb-native-transport-2026-11-07.md)。
-- [ ] GaussDB 工作台接入、元数据/共享数据能力及其它完整参考功能。
+- [x] GaussDB 原生连接基础：华为 Go 驱动、独立多端点/TLS、公开配置、真实 Kernel 503.1.0 Docker 认证/类型/事务/取消清理验证；基础阶段记录见 [传输基础与保留范围](gaussdb-native-transport-2026-11-07.md)。
+- [x] GaussDB 工作台核心：独立多端点配置、逐物理连接原生身份校验、SQL/过程脚本/文件、真实 USTORE/ubtree 和 ASTORE/btree 共享数据编辑/事务/导入导出、取消恢复及不确定回执验证，见 [核心验证](gaussdb-2026-11-07.md)。
+- [ ] GaussDB 设计/对象/账户管理、备份维护、主备/分布式/DWS 验证及其它完整参考功能。
 - [x] openGauss 私有表设计验证基础：原生规划、完整值/目录证明、事务执行、self/outgoing/incoming 与循环外键、注释保留和取消回滚；公开能力仍关闭，见 [基础阶段与验收边界](opengauss-table-design-2026-11-07.md)。
 - [x] openGauss 表设计表单阶段：原生字段/约束/索引表单、可空注释、触发器状态、存储选项、独立规划与小窗口中英文检查；通过注入测试绑定验证，公开保存仍未开放，见 [表单阶段](opengauss-table-design-2026-11-07.md#原生表单与独立规划阶段)。
 - [x] openGauss 原生 SQL 转换预检：32 条原生转换及嵌套实现检查、真实值/typmod、独立声明回滚和已提交替换拒绝；不代表检查到执行之间的并发稳定性，公开表设计保存仍关闭，见 [转换阶段](opengauss-table-design-2026-11-07.md#原生-sql-转换预检阶段)。

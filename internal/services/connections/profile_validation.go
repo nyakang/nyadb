@@ -13,6 +13,9 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		return p, fmt.Errorf("%w: invalid connection color", ErrInvalid)
 	}
 	p.Name = strings.TrimSpace(p.Name)
+	if p.Kind != GaussDB && p.GaussDBOptions != (GaussDBOptions{}) {
+		return p, fmt.Errorf("%w: GaussDB options on another engine", ErrInvalid)
+	}
 	if p.Kind != Redis && p.RedisOptions != (RedisOptions{}) {
 		return p, fmt.Errorf("%w: Redis options on another engine", ErrInvalid)
 	}
@@ -106,6 +109,11 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	switch p.Kind {
+	case GaussDB:
+		if p.MySQLAdvanced != (MySQLAdvanced{}) {
+			return p, fmt.Errorf("%w: MySQL options on GaussDB", ErrInvalid)
+		}
+		return normalizeGaussDBProfile(p)
 	case Redis:
 		return normalizeRedisProfile(p)
 	case MongoDB:

@@ -71,6 +71,8 @@ func Defaults(kind Kind) (Profile, error) {
 		return Profile{Kind: CockroachDB, Host: "localhost", Port: 26257, Database: "defaultdb", Username: "root", TLSMode: "verify-full", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
 	case OpenGauss:
 		return Profile{Kind: OpenGauss, Host: "localhost", Port: 5432, Database: "postgres", Username: "gaussdb", TLSMode: "verify-full", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
+	case GaussDB:
+		return Profile{Kind: GaussDB, Host: "localhost", Port: 5432, Database: "postgres", Username: "gaussdb", TLSMode: "verify-full", PostgreSQLOptions: DefaultPostgreSQLOptions(), GaussDBOptions: DefaultGaussDBOptions()}, nil
 	case PostgreSQL:
 		return Profile{Kind: PostgreSQL, Host: "localhost", Port: 5432, Database: "postgres", Username: "postgres", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
 	case SQLite:

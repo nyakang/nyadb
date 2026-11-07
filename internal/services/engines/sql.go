@@ -22,7 +22,7 @@ func splitSQL(src string) ([]string, error) { return sqltext.SplitPortable(src) 
 func execute(ctx context.Context, c queryer, kind connections.Kind, src string, sink contract.StreamSink) (contract.SQLResult, error) {
 	var parts []string
 	var e error
-	if kind == connections.OpenGauss {
+	if kind.IsGaussFamily() {
 		parts, e = sqltext.SplitOpenGauss(src)
 	} else {
 		parts, e = splitSQL(src)
@@ -266,7 +266,7 @@ func firstWord(q string) string {
 
 func failureState(kind connections.Kind, q string, e error) string {
 	if pg, ok := postgresServerError(e); kind.IsPostgreSQLFamily() && ok && firstWord(q) != "CALL" && firstWord(q) != "DO" {
-		if kind == connections.OpenGauss && (pg.Severity == "FATAL" || pg.Severity == "PANIC" || strings.HasPrefix(pg.Code, "08") || pg.Code == "40003") {
+		if kind.IsGaussFamily() && (pg.Severity == "FATAL" || pg.Severity == "PANIC" || strings.HasPrefix(pg.Code, "08") || pg.Code == "40003") {
 			return "uncertain"
 		}
 		if kind == connections.CockroachDB && pg.Code == "40003" {

@@ -33,6 +33,13 @@
       "sha256": "c00fd80efb1d13c2af330386946c2562e9da210bea16a0b5605de6c585d44c3c"
     },
     {
+      "name": "GaussDB",
+      "file": "gaussdb.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "258b8ecf097aa24822564d50cf5ccdb264e00c6c5502909012ae3568a22b75d0"
+    },
+    {
       "name": "SQL Server",
       "file": "sql-server.png",
       "source": "NyaDB independently drawn SVG geometry",

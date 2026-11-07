@@ -65,7 +65,7 @@ chmod 700 /nyadb-fixture /nyadb-data
 chmod 600 /nyadb-fixture/*
 /opt/gaussdb/app/bin/gosu omm /opt/gaussdb/app/bin/gs_initdb -D /nyadb-data --nodename=nyadb_dn --dbcompatibility=PG --encoding=UTF8 --pwfile=/nyadb-fixture/password
 cat /nyadb-fixture/postgresql.extra.conf >> /nyadb-data/postgresql.conf
-printf '\\nlocal all all trust\\nhost all all 0.0.0.0/0 sha256\\n' > /nyadb-data/pg_hba.conf
+printf '\\nlocal all all trust\\nhost all omm ::1/128 trust\\nhost all omm 127.0.0.1/32 trust\\nhost all all 0.0.0.0/0 sha256\\n' > /nyadb-data/pg_hba.conf
 chown omm:omm /nyadb-data/postgresql.conf /nyadb-data/pg_hba.conf
 chmod 600 /nyadb-data/postgresql.conf /nyadb-data/pg_hba.conf
 exec /opt/gaussdb/app/bin/gosu omm /opt/gaussdb/app/bin/gaussdb --single_node -D /nyadb-data
@@ -106,10 +106,11 @@ exec /opt/gaussdb/app/bin/gosu omm /opt/gaussdb/app/bin/gaussdb --single_node -D
                     time.sleep(1)
             race = os.environ.get("NYADB_GAUSSDB_RACE") == "1"
             environment = dict(os.environ, **environment, CGO_ENABLED="1" if race else "0", GOWORK="off")
-            logpath = output / ("race-transport.log" if race else "plain-transport.log" if plain else "tls-transport.log")
+            environment["NYADB_GAUSSDB_VISUAL_DIR"] = str(output / "ui")
+            logpath = output / ("race-workbench.log" if race else "plain-workbench.log" if plain else "tls-workbench.log")
             with logpath.open("w") as log:
-                subprocess.run(["go", "test"] + (["-race"] if race else []) + ["./internal/services/gaussdb", "-run", "^TestNativeGaussDB", "-count=1", "-v", "-timeout=120s"], cwd=ROOT, env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
-            print("GaussDB native transport verification passed:", logpath, flush=True)
+                subprocess.run(["go", "test"] + (["-race"] if race else []) + ["./internal/services/gaussdb", "./internal/services/engines", "./internal/services/dbruntime", "./internal/ui/shell", "-run", "^Test(NativeGaussDB|GaussDB)", "-count=1", "-v", "-timeout=180s"], cwd=ROOT, env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
+            print("GaussDB native workbench verification passed:", logpath, flush=True)
         finally:
             remove_owned(name, nonce)
 

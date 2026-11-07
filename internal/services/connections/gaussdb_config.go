@@ -3,6 +3,7 @@ package connections
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 )
 
@@ -10,6 +11,93 @@ import (
 type GaussDBEndpoint struct {
 	Host string `json:"host"`
 	Port uint16 `json:"port"`
+}
+
+// GaussDBOptions stores additional host:port endpoints as canonical public
+// text, keeping profile snapshots independent without sharing mutable slices.
+type GaussDBOptions struct {
+	Version             int    `json:"version"`
+	AdditionalEndpoints string `json:"additional_endpoints,omitempty"`
+	TargetSessionAttrs  string `json:"target_session_attrs,omitempty"`
+}
+
+func DefaultGaussDBOptions() GaussDBOptions {
+	return GaussDBOptions{Version: 1, TargetSessionAttrs: "read-write"}
+}
+
+// ParseGaussDBEndpoints accepts comma-separated hosts, host:port or bracketed
+// IPv6:port. An omitted port uses the primary profile port.
+func ParseGaussDBEndpoints(raw string, defaultPort uint16) ([]GaussDBEndpoint, error) {
+	if defaultPort == 0 || !validEngineText(raw, 8192) {
+		return nil, fmt.Errorf("%w: invalid GaussDB endpoint list", ErrInvalid)
+	}
+	parts := strings.Split(raw, ",")
+	if len(parts) > 16 {
+		return nil, fmt.Errorf("%w: too many GaussDB endpoints", ErrInvalid)
+	}
+	out := make([]GaussDBEndpoint, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		host, port := part, defaultPort
+		if strings.HasPrefix(part, "[") && strings.HasSuffix(part, "]") {
+			host = part[1 : len(part)-1]
+			if net.ParseIP(host) == nil || !strings.Contains(host, ":") {
+				return nil, fmt.Errorf("%w: invalid GaussDB IPv6 endpoint", ErrInvalid)
+			}
+		} else if strings.HasPrefix(part, "[") || strings.Count(part, ":") == 1 {
+			var portText string
+			var err error
+			host, portText, err = net.SplitHostPort(part)
+			if err != nil {
+				return nil, fmt.Errorf("%w: invalid GaussDB host and port", ErrInvalid)
+			}
+			n, err := strconv.ParseUint(portText, 10, 16)
+			if err != nil || n == 0 {
+				return nil, fmt.Errorf("%w: invalid GaussDB endpoint port", ErrInvalid)
+			}
+			port = uint16(n)
+		}
+		out = append(out, GaussDBEndpoint{Host: host, Port: port})
+	}
+	checked, err := NormalizeGaussDBConfig(GaussDBConfig{Endpoints: out, Database: "_", Username: "_"})
+	return checked.Endpoints, err
+}
+
+func GaussDBProfileConfig(p Profile) (GaussDBConfig, error) {
+	if p.Kind != GaussDB {
+		return GaussDBConfig{}, fmt.Errorf("%w: native GaussDB profile required", ErrInvalid)
+	}
+	a := p.GaussDBOptions
+	if a == (GaussDBOptions{}) {
+		a = DefaultGaussDBOptions()
+	}
+	if a.Version != 1 || p.Port == 0 {
+		return GaussDBConfig{}, fmt.Errorf("%w: invalid GaussDB profile options", ErrInvalid)
+	}
+	endpoints := []GaussDBEndpoint{{Host: p.Host, Port: p.Port}}
+	if a.AdditionalEndpoints != "" {
+		additional, err := ParseGaussDBEndpoints(a.AdditionalEndpoints, p.Port)
+		if err != nil {
+			return GaussDBConfig{}, err
+		}
+		endpoints = append(endpoints, additional...)
+	}
+	return NormalizeGaussDBConfig(GaussDBConfig{Endpoints: endpoints, Database: p.Database, Username: p.Username, TLSMode: p.TLSMode, Options: p.PostgreSQLOptions, TargetSessionAttrs: a.TargetSessionAttrs})
+}
+
+func normalizeGaussDBProfile(p Profile) (Profile, error) {
+	c, err := GaussDBProfileConfig(p)
+	if err != nil {
+		return p, err
+	}
+	p.Host, p.Port, p.TLSMode, p.PostgreSQLOptions = c.Endpoints[0].Host, c.Endpoints[0].Port, c.TLSMode, c.Options
+	p.GaussDBOptions = GaussDBOptions{Version: 1, TargetSessionAttrs: c.TargetSessionAttrs}
+	var additional []string
+	for _, endpoint := range c.Endpoints[1:] {
+		additional = append(additional, net.JoinHostPort(endpoint.Host, strconv.Itoa(int(endpoint.Port))))
+	}
+	p.GaussDBOptions.AdditionalEndpoints = strings.Join(additional, ",")
+	return p, nil
 }
 
 // GaussDBConfig is the public native transport configuration. Runtime product

@@ -41,6 +41,8 @@ func Describe(kind Kind) (Descriptor, bool) {
 		return Descriptor{kind, "CockroachDB", "postgres", "server", "postgres", 26257, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Import: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
 	case OpenGauss:
 		return Descriptor{kind, "openGauss", "postgres", "server", "postgres", 5432, contract.Capabilities{Objects: true, DesignViews: true, Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Import: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
+	case GaussDB:
+		return Descriptor{kind, "GaussDB", "postgres", "server", "postgres", 5432, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Import: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
 	case PostgreSQL:
 		return Descriptor{kind, "PostgreSQL", "postgres", "server", "postgres", 5432, contract.Capabilities{Objects: true, DesignViews: true, Backup: true, Restore: true, Import: true, Maintenance: true, Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, DesignTables: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
 	case SQLite:
@@ -62,7 +64,7 @@ func (d Descriptor) FieldTypes() []string {
 		return []string{"bigint", "int", "smallint", "decimal(18,2)", "nvarchar(255)", "nvarchar(max)", "datetime2", "datetimeoffset", "date", "varbinary(max)", "bit", "uniqueidentifier"}
 	case MySQL, MariaDB, TiDB, OceanBase:
 		return []string{"bigint", "int", "smallint", "decimal(10,2)", "varchar(255)", "text", "datetime", "timestamp", "date", "json", "blob", "boolean"}
-	case PostgreSQL, CockroachDB, OpenGauss:
+	case PostgreSQL, CockroachDB, OpenGauss, GaussDB:
 		return []string{"bigint", "integer", "smallint", "numeric(10,2)", "text", "varchar(255)", "boolean", "timestamp", "timestamptz", "date", "json", "jsonb", "bytea", "uuid"}
 	case SQLite:
 		return []string{"INTEGER", "TEXT", "REAL", "BLOB", "NUMERIC"}

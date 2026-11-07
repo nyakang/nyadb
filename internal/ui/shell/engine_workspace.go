@@ -43,8 +43,11 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 			if p.Kind == connections.CockroachDB {
 				label = locales.Text("CockroachDB 会话密码")
 			}
-			if p.Kind == connections.OpenGauss {
+			if p.Kind.IsGaussFamily() {
 				label = locales.Text("openGauss 会话密码")
+				if p.Kind == connections.GaussDB {
+					label = locales.Text("GaussDB 会话密码")
+				}
 			}
 			if p.Kind == connections.Redis {
 				label = locales.Text("Redis 会话密码")
@@ -104,7 +107,7 @@ func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string 
 		if p.ID == id && p.Kind == connections.Oracle {
 			return sqltext.OracleStatementAt(source, cursor)
 		}
-		if p.ID == id && p.Kind == connections.OpenGauss {
+		if p.ID == id && p.Kind.IsGaussFamily() {
 			return sqltext.OpenGaussStatementAt(source, cursor)
 		}
 		if p.ID == id && p.Kind == connections.DuckDB {
@@ -138,7 +141,7 @@ func (s *State) sqlFormat(id int64, source string) (string, error) {
 		if p.ID == id && p.Kind == connections.Oracle {
 			return sqltext.FormatOracle(source)
 		}
-		if p.ID == id && p.Kind == connections.OpenGauss {
+		if p.ID == id && p.Kind.IsGaussFamily() {
 			return sqltext.FormatOpenGauss(source)
 		}
 		if p.ID == id && p.Kind == connections.DuckDB {

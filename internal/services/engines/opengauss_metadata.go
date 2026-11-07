@@ -10,6 +10,7 @@ import (
 	"unicode"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
 // Catalog vectors are decoded in the adapter, avoiding LATERAL/ORDINALITY and
@@ -43,13 +44,23 @@ type openGaussIndex struct {
 }
 
 func openGaussIndexes(ctx context.Context, q queryer, o contract.ObjectRef) ([]openGaussIndex, error) {
+	return gaussIndexes(ctx, q, o, connections.OpenGauss)
+}
+
+// GaussDB's default USTORE uses ubtree with native default operator classes.
+// Keep that permission product-specific; openGauss design rules remain btree.
+func gaussIndexes(ctx context.Context, q queryer, o contract.ObjectRef, kind connections.Kind) ([]openGaussIndex, error) {
+	secondMethod := "btree"
+	if kind == connections.GaussDB {
+		secondMethod = "ubtree"
+	}
 	rows, err := q.QueryContext(ctx, `SELECT i.indexrelid,ic.relname,am.amname,i.indisunique,i.indisprimary,i.indnkeyatts,i.indkey::text,
- NOT i.indisvalid OR NOT i.indisready OR NOT i.indisusable OR NOT i.indimmediate OR i.indpred IS NOT NULL OR i.indexprs IS NOT NULL OR am.amname<>'btree'
- OR EXISTS(SELECT 1 FROM pg_catalog.pg_opclass oc JOIN pg_catalog.pg_namespace ns ON ns.oid=oc.opcnamespace WHERE oc.oid=ANY(i.indclass) AND (NOT oc.opcdefault OR ns.nspname<>'pg_catalog')),
+ NOT i.indisvalid OR NOT i.indisready OR NOT i.indisusable OR NOT i.indimmediate OR i.indpred IS NOT NULL OR i.indexprs IS NOT NULL OR (am.amname<>'btree' AND am.amname<>$3)
+ OR EXISTS(SELECT 1 FROM pg_catalog.pg_opclass oc JOIN pg_catalog.pg_namespace ns ON ns.oid=oc.opcnamespace WHERE oc.oid=ANY(i.indclass) AND (NOT oc.opcdefault OR ns.nspname<>'pg_catalog' OR oc.opcmethod<>am.oid)),
  pg_get_indexdef(i.indexrelid)
  FROM pg_catalog.pg_index i JOIN pg_catalog.pg_class c ON c.oid=i.indrelid JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
  JOIN pg_catalog.pg_class ic ON ic.oid=i.indexrelid JOIN pg_catalog.pg_am am ON am.oid=ic.relam
- WHERE n.nspname=$1 AND c.relname=$2 ORDER BY i.indisprimary DESC,i.indexrelid`, o.Schema, o.Name)
+ WHERE n.nspname=$1 AND c.relname=$2 ORDER BY i.indisprimary DESC,i.indexrelid`, o.Schema, o.Name, secondMethod)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +170,7 @@ func (openGaussDialect) structure(ctx context.Context, s *Session, q queryer, o 
 	if len(t.Columns) == 0 {
 		return t, errors.New("object absent or has no visible fields")
 	}
-	indexes, err := openGaussIndexes(ctx, q, o)
+	indexes, err := gaussIndexes(ctx, q, o, s.kind)
 	if err != nil {
 		return t, err
 	}
@@ -178,7 +189,7 @@ func (openGaussDialect) structure(ctx context.Context, s *Session, q queryer, o 
 		}
 		t.Definitions = append(t.Definitions, contract.Definition{Name: index.name, Kind: "index", SQL: index.definition})
 	}
-	t.Editable = o.Kind == "table" && kind == "r" && len(t.Key) > 0
+	t.Editable = !s.readOnly && o.Kind == "table" && kind == "r" && len(t.Key) > 0
 	rows, err = q.QueryContext(ctx, `SELECT conname,pg_get_constraintdef(oid,true) FROM pg_catalog.pg_constraint WHERE conrelid=$1 ORDER BY conname`, relation)
 	if err != nil {
 		return t, err
@@ -241,7 +252,7 @@ func (s *Session) openGaussPresentationMetadata(ctx context.Context, q queryer, 
 	if err != nil {
 		return err
 	}
-	indexes, err := openGaussIndexes(ctx, q, o)
+	indexes, err := gaussIndexes(ctx, q, o, s.kind)
 	if err != nil {
 		return err
 	}
@@ -321,6 +332,10 @@ func (s *Session) openGaussPresentationMetadata(ctx context.Context, q queryer, 
 }
 
 func openGaussImportKeys(ctx context.Context, q queryer, t contract.Table) ([][]string, error) {
+	return gaussImportKeys(ctx, q, t, connections.OpenGauss)
+}
+
+func gaussImportKeys(ctx context.Context, q queryer, t contract.Table, kind connections.Kind) ([][]string, error) {
 	var relation int64
 	if err := queryOne(ctx, q, `SELECT c.oid FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=$1 AND c.relname=$2`, []any{t.Object.Schema, t.Object.Name}, &relation); err != nil {
 		return nil, err
@@ -329,7 +344,7 @@ func openGaussImportKeys(ctx context.Context, q queryer, t contract.Table) ([][]
 	if err != nil {
 		return nil, err
 	}
-	indexes, err := openGaussIndexes(ctx, q, t.Object)
+	indexes, err := gaussIndexes(ctx, q, t.Object, kind)
 	if err != nil {
 		return nil, err
 	}
