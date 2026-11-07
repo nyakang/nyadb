@@ -826,7 +826,9 @@
         "dm"
       ],
       "nyadb_kind": null,
-      "status": "missing"
+      "status": "missing",
+      "preintegration_evidence": "dameng-readiness-2026-11-07.json",
+      "preintegration_status": "owned_fixture_and_unmodified_candidate_audit_only; workbench_missing"
     },
     {
       "dbType": "kingbase",
@@ -3229,7 +3231,8 @@
       "category": "domestic",
       "port": "5236",
       "nyadb_kind": null,
-      "status": "missing"
+      "status": "missing",
+      "preintegration_evidence": "dameng-readiness-2026-11-07.json"
     },
     {
       "id": "h2",

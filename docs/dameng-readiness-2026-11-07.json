@@ -1,0 +1,46 @@
+{
+  "driver": "gitee.com/chunanyong/dm v1.8.23 (unmodified external research dependency)",
+  "server": [
+    "DM Database Server 64 V8",
+    "DB Version: 0x7000c",
+    "08134283904-20220804-166351-20005"
+  ],
+  "exact_values": false,
+  "expected_decimal": "123456789012345678.12345678901234567891",
+  "observed_bound_decimal": "123456789012345678.125",
+  "observed_text_cast_decimal": "123456789012345678.12345678901234567891",
+  "rollback": true,
+  "commit": true,
+  "unknown_write_attempt_error": true,
+  "unknown_write_committed_rows": 3,
+  "no_switch_committed_rows": 1,
+  "safe_for_workbench": false,
+  "scope": "pre-integration audit only; no workbench product or native transport acceptance",
+  "fixture": {
+    "image": "sizx/dm8@sha256:c4088323442747a45d58bd33ef59e657c9b85f9e7dd956ba60b36d04a35b141d",
+    "compatibility_mode": 0,
+    "unicode_flag": 1,
+    "case_sensitive": 1,
+    "database": "DAMENG",
+    "license": "default development trial; server reported expiry 2026-11-21 on this run"
+  },
+  "provenance": {
+    "candidate_origin_commit": "8ba262af5d7ddcd733eb21e7485f8831689d8c28",
+    "candidate_module_sum": "h1:IadSVTP3l1qv41yzTaHffpsAdNtyR3Bl2FwR9Xpgpb8=",
+    "official_zip_url": "https://download.dameng.com/eco/adapter/resource/go/dm-go-driver.zip",
+    "official_outer_sha256": "5d10cc42bbe8e4c7e6d9031d5306caff57b6da6e918868b5d7f70fc678063599",
+    "official_inner_sha256": "1c9a3ffd76b8650eb68e743f11465d8dea24f8397cc30d6d65e1d0e12b0781d2",
+    "official_package_driver_version": "8.1.3.12",
+    "redistribution_permission_verified": false
+  },
+  "remaining": [
+    "driver redistribution/provenance or user-supplied external client boundary",
+    "ordinary-user and authentication rejection matrix",
+    "verified TLS including server name and no cleartext fallback",
+    "acknowledged cancellation and startup cleanup",
+    "original physical session retirement and outcome-unknown mapping",
+    "independent profiles/provider and qualified metadata",
+    "shared SQL/data workspaces, precision-preserving bindings and import/export",
+    "all declared design/management and cross-product alignment gaps"
+  ]
+}
