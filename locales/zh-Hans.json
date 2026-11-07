@@ -2036,5 +2036,7 @@
   "gaussdbCAFile": "GaussDB CA 证书",
   "gaussdbClientCertificate": "GaussDB 客户端证书",
   "gaussdbClientKey": "GaussDB 客户端密钥",
-  "backgroundConnectionLimitCaption": "后台连接上限："
+  "backgroundConnectionLimitCaption": "后台连接上限：",
+  "kingbaseFixedDatabaseRequired": "请输入此连接绑定的 KingbaseES 数据库",
+  "kingbaseSessionPassword": "KingbaseES 会话密码"
 }

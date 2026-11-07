@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	kingbasepq "gitea.com/kingbase/gokb"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -42,7 +43,7 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 	if p.ID <= 0 || p.Database == "" {
 		return errors.New("profile and fixed database/file are required")
 	}
-	if p.Kind == connections.GaussDB {
+	if p.Kind == connections.GaussDB || p.Kind == connections.Kingbase {
 		var err error
 		p, err = connections.NormalizeProfile(p)
 		if err != nil {
@@ -88,7 +89,7 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 		return redact(e, password)
 	}
 	readOnly := false
-	if p.Kind == connections.GaussDB {
+	if p.Kind == connections.GaussDB || p.Kind == connections.Kingbase {
 		var mode string
 		if err := db.QueryRowContext(ctx, "SHOW transaction_read_only").Scan(&mode); err != nil {
 			db.Close()
@@ -389,14 +390,15 @@ func (l *Lease) SetSchema(ctx context.Context, schema string) error {
 }
 
 func (l *Lease) connectionError(ctx context.Context, err error) error {
-	if err == nil && l.s.kind.IsGaussFamily() && ctx.Err() != nil {
+	if err == nil && (l.s.kind.IsGaussFamily() || l.s.kind == connections.Kingbase) && ctx.Err() != nil {
 		err = ctx.Err()
 	}
 	if err == nil {
 		return nil
 	}
 	lost := errors.Is(err, sql.ErrConnDone) || errors.Is(err, driver.ErrBadConn) || errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) || (pgconn.Timeout(err) && ctx.Err() == nil)
-	lost = lost || l.s.kind.IsGaussFamily() && ctx.Err() != nil
+	lost = lost || errors.Is(err, kingbasepq.ErrOutcomeUnknown)
+	lost = lost || (l.s.kind.IsGaussFamily() || l.s.kind == connections.Kingbase) && ctx.Err() != nil
 	var networkError net.Error
 	if errors.As(err, &networkError) && (!networkError.Timeout() || ctx.Err() == nil) {
 		lost = true

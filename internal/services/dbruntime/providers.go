@@ -26,7 +26,7 @@ func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
 			return mysqlsvc.OpenSession(ctx, p, password, mysqlTemplate)
 		}))
 	}
-	for _, kind := range []connections.Kind{connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.GaussDB, connections.SQLite} {
+	for _, kind := range []connections.Kind{connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.GaussDB, connections.Kingbase, connections.SQLite} {
 		m.Register(kind, ProviderFunc(func(ctx context.Context, p connections.Profile, password string) (contract.Session, error) {
 			return engines.OpenSession(ctx, p, password)
 		}))

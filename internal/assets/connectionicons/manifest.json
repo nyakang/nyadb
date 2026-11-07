@@ -40,6 +40,13 @@
       "sha256": "258b8ecf097aa24822564d50cf5ccdb264e00c6c5502909012ae3568a22b75d0"
     },
     {
+      "name": "KingbaseES",
+      "file": "kingbase.png",
+      "source": "NyaDB independently drawn SVG geometry",
+      "artwork": "NyaDB own geometry",
+      "sha256": "15670e78f8de36961d5a455437693c45000dd115e7e8fe845002b0a2a6f8431d"
+    },
+    {
       "name": "SQL Server",
       "file": "sql-server.png",
       "source": "NyaDB independently drawn SVG geometry",

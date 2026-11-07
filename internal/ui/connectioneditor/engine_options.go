@@ -220,7 +220,7 @@ func (s *State) advanceEngineOptions(p *connections.Profile) error {
 		}
 	}
 	switch p.Kind {
-	case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.GaussDB:
+	case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.GaussDB, connections.Kingbase:
 		values := [4]int{}
 		labels := []string{"连接超时（秒）", "最大连接数", "语句超时（毫秒）", "锁等待超时（毫秒）"}
 		for i, raw := range s.engineNumbers {
@@ -306,11 +306,13 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 			})
 		})
 		return true
-	case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.GaussDB:
+	case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.GaussDB, connections.Kingbase:
 		a := &s.connectionDraft.PostgreSQLOptions
 		product := "PostgreSQL"
 		if s.connectionDraft.Kind == connections.CockroachDB {
 			product = "CockroachDB"
+		} else if s.connectionDraft.Kind == connections.Kingbase {
+			product = "KingbaseES"
 		} else if s.connectionDraft.Kind.IsGaussFamily() {
 			product = "openGauss"
 			if s.connectionDraft.Kind == connections.GaussDB {
@@ -328,7 +330,7 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 					ui.Text(c, locales.Text("其他端点用逗号分隔；IPv6 和端口写作 [地址]:端口。"))
 				}
 				for i, label := range []string{"连接超时（秒）", "最大连接数", "语句超时（毫秒）", "锁等待超时（毫秒）"} {
-					if i == 3 && s.connectionDraft.Kind.IsGaussFamily() {
+					if i == 3 && (s.connectionDraft.Kind.IsGaussFamily() || s.connectionDraft.Kind == connections.Kingbase) {
 						continue
 					}
 					display := label
@@ -343,7 +345,7 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 					s.editorInputRow(c, "备份工具目录：", "PostgreSQL 工具目录", &a.ToolsDirectory, labelWidth, fieldWidth)
 				}
 				s.editorInputRow(c, "默认模式：", "默认模式", &a.DefaultSchema, labelWidth, fieldWidth)
-				if s.connectionDraft.Kind.IsGaussFamily() {
+				if s.connectionDraft.Kind.IsGaussFamily() || s.connectionDraft.Kind == connections.Kingbase {
 					ui.Text(c, locales.Text("锁等待使用服务器配置；默认模式在每条物理连接初始化。"))
 				} else {
 					ui.Text(c, locales.Text("语句及锁等待超时为 0 时不设置超时；默认模式在每条物理连接初始化。"))
@@ -353,7 +355,11 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 			theme.Form(c, formWidth, func() {
 				theme.Field(c, locales.Text("TLS 模式"), func() {
 
-					connectionFormSelect(c, &s.connectionDraft.TLSMode, []string{"disable", "prefer", "require", "verify-ca", "verify-full"}, product+" TLS 模式", fieldWidth, false)
+					modes := []string{"disable", "prefer", "require", "verify-ca", "verify-full"}
+					if s.connectionDraft.Kind == connections.Kingbase {
+						modes = []string{"disable", "require", "verify-ca", "verify-full"}
+					}
+					connectionFormSelect(c, &s.connectionDraft.TLSMode, modes, product+" TLS 模式", fieldWidth, false)
 				})
 				for _, f := range []struct {
 					name  string

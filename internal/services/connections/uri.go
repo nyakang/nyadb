@@ -65,6 +65,8 @@ func ParseURI(raw string) (URIImport, error) {
 		kind = CockroachDB
 	case "opengauss":
 		kind = OpenGauss
+	case "kingbase":
+		kind = Kingbase
 	case "postgres", "postgresql":
 		kind = PostgreSQL
 	case "clickhouse":
@@ -160,6 +162,9 @@ func ParseURI(raw string) (URIImport, error) {
 	}
 	p.Database, err = url.PathUnescape(path)
 	if err != nil {
+		return fail(ErrURI)
+	}
+	if kind == Kingbase && (p.Database == "" || u.User == nil || p.Username == "") {
 		return fail(ErrURI)
 	}
 	if kind == ClickHouse && p.Database == "" {

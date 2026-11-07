@@ -18,6 +18,13 @@ type KingbaseConfig struct {
 	Options  PostgreSQLOptions `json:"options"`
 }
 
+func KingbaseProfileConfig(p Profile) (KingbaseConfig, error) {
+	if p.Kind != Kingbase || p.Port == 0 {
+		return KingbaseConfig{}, fmt.Errorf("%w: native Kingbase profile with explicit port required", ErrInvalid)
+	}
+	return NormalizeKingbaseConfig(KingbaseConfig{Host: p.Host, Port: p.Port, Database: p.Database, Username: p.Username, TLSMode: p.TLSMode, Options: p.PostgreSQLOptions})
+}
+
 func NormalizeKingbaseConfig(c KingbaseConfig) (KingbaseConfig, error) {
 	c.Host = strings.TrimSpace(c.Host)
 	if c.Host == "" || !validEngineText(c.Host, 255) || strings.ContainsAny(c.Host, "@/?!#\\[]=,' \t\r\n") || strings.Contains(c.Host, ":") && net.ParseIP(c.Host) == nil {

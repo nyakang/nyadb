@@ -22,6 +22,7 @@ var databaseCatalog = []catalogEntry{
 	{"CockroachDB", "CockroachDB", "", "全部", "database", "#6933a6", connections.CockroachDB},
 	{"openGauss", "openGauss", "", "全部", "database", "#1c77c3", connections.OpenGauss},
 	{"GaussDB", "GaussDB", "", "全部", "database", "#1c77c3", connections.GaussDB},
+	{"KingbaseES", "KingbaseES", "", "全部", "database", "#c9272e", connections.Kingbase},
 	{"SQL Server", "SQL Server", "", "全部", "mssql-type", "#edab24", connections.SQLServer},
 	{"Oracle", "Oracle", "", "全部", "oracle-type", "#ef3b5c", connections.Oracle},
 	{"SQLite", "SQLite", "", "全部", "sqlite-type", "#4cbfc2", connections.SQLite},
@@ -45,7 +46,7 @@ var databaseCatalog = []catalogEntry{
 	{"ClickHouse", "ClickHouse", "", "全部", "database", "#e7b632", connections.ClickHouse},
 }
 
-var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "MariaDB", "TiDB", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "MongoDB", "Redis", "Snowflake"}
+var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "MariaDB", "TiDB", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "MongoDB", "Redis", "Snowflake"}
 var catalogVendors = catalogTreeVendorOrder
 
 func catalogMatch(e catalogEntry, query string, engines, vendors map[string]bool) bool {
@@ -110,6 +111,7 @@ var additionalCatalog = []catalogEntry{
 	{"阿里云 PolarDB 分布式版", "MySQL", "阿里云", "云数据库", "cloud-type", "#34c66b", ""},
 	{"华为云 GaussDB 主备版", "GaussDB", "华为", "云数据库", "cloud-type", "#d20716", ""},
 	{"华为云 GaussDB 分布式", "GaussDB", "华为", "云数据库", "cloud-type", "#d20716", ""},
+	{"电科金仓 KingbaseES", "KingbaseES", "电科金仓", "云数据库", "database", "#c9272e", connections.Kingbase},
 	{"华为云 GaussDB(DWS)", "GaussDB", "华为", "云数据库", "cloud-type", "#c91e35", ""},
 	{"华为云 MySQL", "MySQL", "华为", "云数据库", "cloud-type", "#3bcb53", ""},
 	{"华为云 SQL Server", "SQL Server", "华为", "云数据库", "cloud-type", "#fab115", ""},
@@ -120,7 +122,6 @@ var additionalCatalog = []catalogEntry{
 	{"腾讯云 MariaDB", "MariaDB", "腾讯云", "云数据库", "cloud-type", "#b98b5e", ""},
 	{"腾讯云 MongoDB", "MongoDB", "腾讯云", "云数据库", "cloud-type", "#b2590e", ""},
 	{"腾讯云 Redis", "Redis", "腾讯云", "云数据库", "cloud-type", "#f57b7d", ""},
-	{"KingbaseES", "KingbaseES", "电科金仓", "云数据库", "database", "#d73337", ""},
 	{"IvorySQL", "IvorySQL", "瀚高", "云数据库", "database", "#ffa73c", ""},
 	{"OceanBase 社区版", "OceanBase", "OceanBase", "云数据库", "ocean-type", "#147dff", ""},
 	{"OceanBase 企业版（MySQL 模式）", "OceanBase", "OceanBase", "云数据库", "ocean-type", "#147dff", ""},

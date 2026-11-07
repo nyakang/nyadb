@@ -49,6 +49,9 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 					label = locales.Text("GaussDB 会话密码")
 				}
 			}
+			if p.Kind == connections.Kingbase {
+				label = locales.Text("KingbaseES 会话密码")
+			}
 			if p.Kind == connections.Redis {
 				label = locales.Text("Redis 会话密码")
 			}

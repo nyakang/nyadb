@@ -10,7 +10,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/sqltext"
 )
 
-// Only openGauss advertises the validated, bounded file operation. Embedded
+// Audited native engines advertise this bounded file operation. Embedded
 // queryLease retains the original physical session and replacement lifecycle.
 type openGaussQueryLease struct{ *queryLease }
 
@@ -30,7 +30,7 @@ func (l *openGaussQueryLease) ExecuteFile(ctx context.Context, schema string, re
 		return contract.SQLResult{}, err
 	}
 	if reader == nil {
-		return contract.SQLResult{}, errors.New("openGauss SQL file reader is absent")
+		return contract.SQLResult{}, errors.New("SQL file reader is absent")
 	}
 	// Read and lexically validate the complete bounded file before executing any
 	// of it. An incomplete body/read error cannot leave earlier statements run.

@@ -1,0 +1,167 @@
+package dbruntime_test
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/services/dbruntime"
+)
+
+func TestKingbaseRuntimeTLSAndGenerationRevocationFixture(t *testing.T) {
+	if os.Getenv("NYADB_KINGBASE_IT") != "1" {
+		t.Skip("requires explicit disposable Kingbase fixture")
+	}
+	if os.Getenv("NYADB_KINGBASE_CA_FILE") == "" {
+		t.Skip("requires the verified TLS fixture")
+	}
+	port, err := strconv.Atoi(os.Getenv("NYADB_KINGBASE_PORT"))
+	if err != nil || port < 1024 || port > 65535 {
+		t.Fatal("explicit disposable loopback port required")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	m := dbruntime.New()
+	defer m.Close()
+	dbruntime.RegisterBuiltins(m, nil)
+	p, _ := connections.Defaults(connections.Kingbase)
+	p.ID, p.Name, p.Host, p.Port, p.Database, p.Username = 903, "Kingbase runtime", "127.0.0.1", uint16(port), "nyadb_kingbase_it", "nyadb_it"
+	p.PostgreSQLOptions.MaxConnections, p.PostgreSQLOptions.SQLMaxConnections = 2, 2
+	p.PostgreSQLOptions.CAFile = os.Getenv("NYADB_KINGBASE_CA_FILE")
+	password := os.Getenv("NYADB_KINGBASE_PASSWORD")
+	untrusted := p
+	untrusted.ID = 904
+	untrusted.PostgreSQLOptions.CAFile = ""
+	if err = m.Connect(ctx, untrusted, password); err == nil {
+		t.Fatal("untrusted TLS server published")
+	}
+	if m.IsConnected(untrusted.ID) {
+		t.Fatal("failed TLS session remained published")
+	}
+	if err = m.Connect(ctx, p, password); err != nil {
+		t.Fatal(err)
+	}
+	original, err := m.Session(p.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	meta, err := m.Metadata(p.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ns, err := meta.Namespaces(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, n := range ns {
+		if n.Ref == m.Namespace(p.ID, "public") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("fixed catalog/schema identity missing")
+	}
+	q, err := contract.Require[contract.QueryProvider](original)
+	if err != nil {
+		t.Fatal(err)
+	}
+	l, err := q.ReserveQuery(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Release()
+	if err = l.Preconnect(ctx); err != nil {
+		t.Fatal(err)
+	}
+	short, stop := context.WithTimeout(ctx, 50*time.Millisecond)
+	_, err = l.Execute(short, "public", "SELECT pg_sleep(5)")
+	stop()
+	if !errors.Is(err, contract.ErrSQLSessionLost) {
+		t.Fatal("SQL cancellation not acknowledged")
+	}
+	if _, err = l.Execute(ctx, "public", "SELECT 1"); !errors.Is(err, contract.ErrSQLSessionLost) && !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal("cancelled physical session was silently replaced", err)
+	}
+	l.Release()
+	l, err = q.ReserveQuery(2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Release()
+	if _, err = l.Execute(ctx, "public", "SELECT 1"); err != nil {
+		t.Fatal(err)
+	}
+	file, ok := l.(contract.QueryFileLease)
+	if !ok {
+		t.Fatal("runtime SQL file entry is absent")
+	}
+	if out, e := file.ExecuteFile(ctx, "public", strings.NewReader("SELECT 2;")); e != nil || out.Rows[0][0] != "2" {
+		t.Fatal("runtime SQL file did not use original session", e)
+	}
+	schema := fmt.Sprintf("nyadb_kingbase_runtime_%d", time.Now().UnixNano())
+	if _, err = l.Execute(ctx, "public", "CREATE SCHEMA "+schema+"; CREATE TABLE "+schema+".records(id bigint primary key,note text); INSERT INTO "+schema+".records VALUES(1,'native')"); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		published, err := m.Session(p.ID)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		provider, err := contract.Require[contract.QueryProvider](published)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		current, err := provider.ReserveQuery(99)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		defer current.Release()
+		cleanup, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if _, err = current.Execute(cleanup, "public", "DROP SCHEMA "+schema+" CASCADE"); err != nil {
+			t.Error(err)
+		}
+	}()
+	data := m.Data(p.ID)
+	object := m.Namespace(p.ID, schema).Object("table", "records")
+	page, err := data.AdvancedLoader(ctx, p.ID, schema, "records", contract.DataOptions{Object: object, Limit: 10})
+	if err != nil || len(page.Rows) != 1 {
+		t.Fatal("bound native shared grid", err)
+	}
+	caps := original.Capabilities()
+	if !caps.Transactions || !caps.Metadata || !caps.Explain || !caps.EditableTables || !caps.Import || caps.Backup || caps.Restore || caps.DesignTables || caps.DesignViews || caps.Objects || caps.Maintenance {
+		t.Fatal("unsafe administration offered")
+	}
+	if err = m.Connect(ctx, p, password); err != nil {
+		t.Fatal(err)
+	}
+	replacement, err := m.Session(p.ID)
+	if err != nil || replacement.Generation() <= original.Generation() {
+		t.Fatal("published generation did not increase", err)
+	}
+	if _, err = l.Execute(ctx, "public", "SELECT 1"); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal("old physical lease survived replacement", err)
+	}
+	if _, err = file.ExecuteFile(ctx, "public", strings.NewReader("SELECT 2;")); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal("old SQL file binding survived replacement", err)
+	}
+	if _, err = data.AdvancedLoader(ctx, p.ID, schema, "records", contract.DataOptions{Object: object, Limit: 10}); err == nil {
+		t.Fatal("old data binding survived replacement")
+	}
+	foreign := object
+	foreign.ProfileID++
+	if _, err = m.Data(p.ID).AdvancedLoader(ctx, p.ID, schema, "records", contract.DataOptions{Object: foreign, Limit: 10}); !errors.Is(err, connections.ErrInvalid) {
+		t.Fatal("foreign qualified identity accepted", err)
+	}
+}

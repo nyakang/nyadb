@@ -73,6 +73,8 @@ func Defaults(kind Kind) (Profile, error) {
 		return Profile{Kind: OpenGauss, Host: "localhost", Port: 5432, Database: "postgres", Username: "gaussdb", TLSMode: "verify-full", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
 	case GaussDB:
 		return Profile{Kind: GaussDB, Host: "localhost", Port: 5432, Database: "postgres", Username: "gaussdb", TLSMode: "verify-full", PostgreSQLOptions: DefaultPostgreSQLOptions(), GaussDBOptions: DefaultGaussDBOptions()}, nil
+	case Kingbase:
+		return Profile{Kind: Kingbase, Host: "localhost", Port: 54321, Database: "test", Username: "system", TLSMode: "verify-full", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
 	case PostgreSQL:
 		return Profile{Kind: PostgreSQL, Host: "localhost", Port: 5432, Database: "postgres", Username: "postgres", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
 	case SQLite:

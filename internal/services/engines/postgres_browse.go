@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
 const (
@@ -48,7 +49,8 @@ func (s *Session) postgresBrowse(ctx context.Context, namespace contract.Namespa
 		if len(out) >= postgresBrowseObjectLimit || used > postgresBrowseByteLimit || len(object.Definition) > postgresProgramByteLimit {
 			return errors.New("PostgreSQL object metadata exceeds the 50000-object, 32 MiB snapshot or 1 MiB definition limit")
 		}
-		object.Engine = "PostgreSQL"
+		descriptor, _ := connections.Describe(s.kind)
+		object.Engine = descriptor.Label
 		out = append(out, object)
 		return nil
 	}
@@ -57,7 +59,7 @@ func (s *Session) postgresBrowse(ctx context.Context, namespace contract.Namespa
  CASE WHEN c.relkind IN ('r','p','m','f') AND c.reltuples>=0 THEN c.reltuples::bigint END,
  CASE WHEN c.relkind IN ('r','p','m') THEN pg_total_relation_size(c.oid) END
  FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace LEFT JOIN pg_sequence seq ON seq.seqrelid=c.oid
- WHERE n.nspname=$1 AND c.relkind IN ('r','p','v','m','f','S') ORDER BY c.relname LIMIT 50001`, namespace.Schema)
+ WHERE n.nspname=$1 AND has_schema_privilege(n.oid,'USAGE') AND CASE WHEN c.relkind='S' THEN has_sequence_privilege(c.oid,'USAGE,SELECT') ELSE has_table_privilege(c.oid,'SELECT') END AND c.relkind IN ('r','p','v','m','f','S') ORDER BY c.relname LIMIT 50001`, namespace.Schema)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +112,7 @@ func (s *Session) postgresBrowse(ctx context.Context, namespace contract.Namespa
  COALESCE(pg_get_function_result(p.oid),''),CASE WHEN p.prosecdef THEN 'DEFINER' ELSE 'INVOKER' END,
  octet_length(pg_get_functiondef(p.oid)),CASE WHEN octet_length(pg_get_functiondef(p.oid)) <= $2 THEN pg_get_functiondef(p.oid) ELSE '' END
  FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
- WHERE n.nspname=$1 AND p.prokind IN ('f','p','w') ORDER BY 1 LIMIT 50001`, namespace.Schema, postgresProgramByteLimit)
+ WHERE n.nspname=$1 AND has_schema_privilege(n.oid,'USAGE') AND has_function_privilege(p.oid,'EXECUTE') AND p.prokind IN ('f','p','w') ORDER BY 1 LIMIT 50001`, namespace.Schema, postgresProgramByteLimit)
 	if err != nil {
 		return nil, err
 	}

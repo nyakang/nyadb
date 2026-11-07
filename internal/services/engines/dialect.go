@@ -22,6 +22,8 @@ type dialectStrategy interface {
 
 func strategyFor(kind connections.Kind) (dialectStrategy, error) {
 	switch kind {
+	case connections.Kingbase:
+		return kingbaseDialect{}, nil
 	case connections.GaussDB:
 		return gaussDBDialect{}, nil
 	case connections.OpenGauss:

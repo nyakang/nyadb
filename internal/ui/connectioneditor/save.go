@@ -52,6 +52,9 @@ func (s *State) draftProfile() (connections.Profile, error) {
 		return p, fieldError("初始数据库", "常规", "请输入此连接绑定的 SQL Server 数据库")
 	}
 	if p.Kind.IsPostgreSQLFamily() && strings.TrimSpace(p.Database) == "" {
+		if p.Kind == connections.Kingbase {
+			return p, fieldError("初始数据库", "常规", "请输入此连接绑定的 KingbaseES 数据库")
+		}
 		if p.Kind == connections.GaussDB {
 			return p, fieldError("初始数据库", "常规", "请输入此连接绑定的 GaussDB 数据库")
 		}

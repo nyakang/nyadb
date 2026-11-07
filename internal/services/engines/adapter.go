@@ -48,7 +48,7 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 	if s.kind == connections.CockroachDB {
 		return s.cockroachBrowse(ctx, n)
 	}
-	if s.kind == connections.PostgreSQL {
+	if s.kind == connections.PostgreSQL || s.kind == connections.Kingbase {
 		return s.postgresBrowse(ctx, n)
 	}
 	if s.kind == connections.SQLite {
@@ -93,6 +93,9 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*con
 		return nil, e
 	}
 	out := structureModel(t)
+	if s.kind == connections.Kingbase {
+		out.Engine = "KingbaseES"
+	}
 	if s.kind == connections.SQLite {
 		e = s.sqlitePresentationMetadata(ctx, s.db, out)
 	} else if s.kind == connections.CockroachDB {
@@ -608,7 +611,7 @@ func (s *Session) ReserveQuery(tab uint64) (contract.QueryLease, error) {
 	}
 	ctx, cancel := context.WithCancel(s.ctx)
 	l := &queryLease{session: s, ctx: ctx, cancel: cancel, doc: tab}
-	if s.kind.IsGaussFamily() {
+	if s.kind.IsGaussFamily() || s.kind == connections.Kingbase {
 		return &openGaussQueryLease{queryLease: l}, nil
 	}
 	return l, nil

@@ -38,7 +38,7 @@ func NewConnector(c connections.KingbaseConfig, password string, dial func(conte
 }
 
 // OpenDB creates a bounded operation pool. SQL document leases require their
-// own original physical connection and explicit recovery in a future adapter.
+// own original physical connection and explicit recovery in the engine adapter.
 func OpenDB(c connections.KingbaseConfig, password string, dial func(context.Context, string, string) (net.Conn, error)) (*sql.DB, error) {
 	c, err := connections.NormalizeKingbaseConfig(c)
 	if err != nil {
