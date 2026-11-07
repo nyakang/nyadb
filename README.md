@@ -60,4 +60,6 @@ KingbaseES core workbench support has been validated against a disposable native
 
 Elasticsearch public connections and workbench workflows are verified against the official default 9.2.0 Docker fixture. See the [workbench report](docs/elasticsearch-workbench-2026-11-08.md) for the public scope and links to the transport, profile, metadata, read, export and write-recovery verification.
 
+Easysearch 2.5.1 native REST, document and PIT/Scroll foundations have passed local Docker verification. Public profiles, provider and workbench integration remain in development; Easysearch is not yet an available connection. See the [foundation report](docs/easysearch-native-foundation-2026-11-08.md).
+
 See the [Oracle report](docs/oracle-2026-11-06.md), [multi-engine delivery report](docs/multi-engine-reliability-2026-11-04.md), [MariaDB report](docs/mariadb-2026-11-06.md), [SQL Server report](docs/sqlserver-2026-11-06.md), [DuckDB report](docs/duckdb-2026-11-06.md), [PostgreSQL designer support boundaries](docs/postgres-designer-save-2026-11-03.md), and [ClickHouse report](docs/clickhouse-native-2026-11-02.md) for detailed limits and verification. Advanced synchronization, modeling, automation, and other planned tools remain in development.
