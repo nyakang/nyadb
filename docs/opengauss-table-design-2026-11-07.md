@@ -858,3 +858,112 @@ replacement 子场景仍因上述既有缺口失败，所以该进程退出码�
 本轮所属容器、证书与私有凭据由创建它们的 fixture 脚本清理，已核对
 容器、私有目录与所属进程均不存在。完整检查、既有失败及清理状态汇总
 于 `build/opengauss/table-design/am-verification-summary.json`。
+
+## 固定宽度字段替换的原生存储证明
+
+上一阶段保留的完整字段替换失败，根因是独立 CREATE 的最终声明只有
+固定宽度字段，没有 TOAST；原生 ALTER 在删除旧变长字段前添加生成列，
+却会重建已有 TOAST。完整目录核验因此找不到新 TOAST 索引对象的独立
+`creator` 原型。带阶段定位的旧实现诊断仍保留在
+`build/opengauss/table-design/storage-transition-before-fix.log`，没有将
+诊断代码或实际结果属性作为生产核验模板。
+
+新增证明只针对原始普通堆已有 TOAST、独立最终声明没有 TOAST且请求
+新增存储生成字段的情形。独立空载体保留已解析字段类型，去除默认值、
+生成表达式、约束、程序定义和拥有序列；私有 text 字段强制创建 TOAST。
+存储、持久性和表空间沿用原始声明，没有显式存储类型的普通堆明确使用
+`storage_type=astore`。载体及新增表达式都先经过原生回调预检。
+
+每个新增生成字段在自己的 savepoint 中以独立名字执行原生 ALTER，
+读取完整前后目录，检查始终为零行，再撤销并核对完整原始目录和物理
+记录。保留原字段时，规划先删除被移除字段；载体也先 DROP 私有 text，
+确认 DROP 单独保留物理堆与 TOAST，再观察生成字段重写移除 TOAST。
+全部字段替换则按原有规划先增加字段，载体观察已有 TOAST 的重建。
+两种结果分别证明，没有因最终 CREATE 不需要 TOAST 就授权普通 DROP
+删除存储对象。
+
+证明绑定完整 original/desired、原 profile/generation、规范声明目录、
+字段签名、前后完整目录、database/schema/执行者及原生目录 class。
+普通 fingerprint 忽略 relfilenode，因此另保存完整原始目录签名来保护
+物理证据。只有已授权重写、独立声明缺少对应对象且载体证明实际重建时，
+才使用独立 TOAST 对象的 `creator` 原型；其余属性继续取自
+原始目录，所有保留用户对象继续比较原始身份。移除只采用独立证明的
+固定宽度拓扑，完整依赖、声明和实际目录仍分别核验。
+
+载体/字段撤销或释放 savepoint 的回执丢失会丢弃物理连接，返回
+`ErrUncertain` 并撤销所属会话，不能重放。原始完整值、重复次数、NULL、
+新序列和生成值仍由原有独立值证明检查，载体不读取或执行原始行数据。
+
+首轮补充回归发现保留 ID 时原生重写实际移除 TOAST，而原有核验仍要求
+保留；同时不同所有者测试首次建角色没有密码，被服务器明确拒绝。
+两个失败保留在 `storage-transition-native-race.log`。随后补充了上述
+独立移除证明，并按原生要求通过私有 fixture 凭据创建独立角色，
+保留所有者/执行者不同的验证要求。
+
+不同所有者回归还发现原生角色可见性边界：`pg_roles` 对普通账户只暴露
+自身，角色成员关系不改变这个过滤，`pg_get_userbyid` 因而返回 NULL。
+成员可以具有 CanManage，却仍不能取得完整所有者蓝图；该情况继续明确
+拒绝。测试先证明此拒绝，再仅在本轮所属 fixture 中临时授予执行者
+CREATEROLE，让真实蓝图可读后验证所有者保留与重建 creator 的变化，
+清理时恢复 NOCREATEROLE。没有把管理员目录结果注入普通用户蓝图。
+原生参考为
+[ruleutils.cpp](https://github.com/opengauss-mirror/openGauss-server/blob/6.0.0/src/common/backend/utils/adt/ruleutils.cpp)
+（SHA256 `04e977ddc3a9ab6eb31eb9cc5d428059b3cb0c75dfe7935e3fc2b63d3cfb3fd7`）和
+[system_views.sql](https://github.com/opengauss-mirror/openGauss-server/blob/6.0.0/src/common/backend/catalog/system_views.sql)
+（SHA256 `086013caa56bce4d0b1af8477cfe21696a49bdd861c2658f8ab4cb2236338ce5`），
+源码仅留在忽略研究目录。
+
+角色可见性修正后，真实 ALTER 进一步证明新 TOAST 索引的 `creator`
+绑定堆的所有者，而非发起请求的认证账户。原生 index.cpp 的 index_create
+调用 CreatePgObject 时显式传入 indexRelation 的 relowner。空载体现在在
+生成字段观察前转交给捕获的原始所有者，前后目录都核对同一 relowner；
+认证账户、管理权限和原请求归属另行保留。不同所有者测试先由执行者
+创建原表，再独立转交所有权，确认旧 creator 为执行者、新 creator 为
+原始堆所有者且所有权不变。缺少原型、其它 owner 或其它 creator 的
+证据仍被拒绝。原生来源为
+[index.cpp](https://github.com/opengauss-mirror/openGauss-server/blob/6.0.0/src/common/backend/catalog/index.cpp)
+（SHA256 `568979419ca45b84341a12efce0792fa5de1153f5fc0c021a14c8067d0df8a88`）。
+
+最终新增三组真实 verify-full TLS race 用例全部通过（engines
+182.281 秒），见 `storage-transition-native-owner-bound-race.log`：
+
+- 普通表完整字段替换、保留 ID/用户索引和 UNLOGGED 表：三行、重复值、
+  原始完整长文本/二进制与 NULL、独立新序列和两个生成字段（含显式
+  NULL），同时检查请求不变、原表身份和载体清理。缺失、不同请求/字段/
+  generation、不同角色/schema/owner/creator、篡改物理记录或没有实际
+  重写的证据均拒绝；完整活动目录的未知属性与身份篡改也逐项拒绝。
+- 不同堆所有者：成员账户不能读完整蓝图时拒绝；临时 CREATEROLE 后
+  完整私有 Apply 保留 owner，TOAST 索引 creator 从原执行者变为捕获的
+  堆所有者。原生权限在用例清理时恢复。
+- 载体/字段 savepoint 后取消、字段撤销及载体释放回执丢失：原表完整值
+  和目录不变，载体不存在；回执丢失返回不确定状态并关闭所属会话。
+
+中途的 `storage-transition-native-final-race.log` 保留 ID 分支已经在
+缺少证明时明确拒绝，但测试只接受 ErrConflict 类型，未接受完整目录
+缺失的现有错误；最终用例继续要求拒绝。角色可见性和 creator 绑定的
+中途失败另保留在 `storage-transition-owner-diagnostic-race.log` 与
+`storage-transition-owner-retained-final-race.log`，不将它们算作成功。
+
+已有 14 组真实 TLS race 回归全部通过（engines 444.666 秒），见
+`storage-transition-regression-native-race.log`：包括原先失败的完整字段
+替换、完整值与新序列/生成字段、普通索引与原生数组、默认值混合转换/
+有损回滚、改名/对象/存储图、行存/列存/分区和取消/提交回执丢失。
+
+最终四类默认值回归也共同通过真实 TLS race（engines 164.921 秒），见
+`storage-transition-defaults-native-race.log`：短 text、124 字节边界、
+完整长文本和 nvarchar2 显式 NULL；同时验证实际 TOAST chunk、完整值、
+原有对象身份与未知目录属性拒绝。所有最终原生进程均以退出码 0 终结，
+没有报告数据竞争。
+
+最终 CGO=0 全仓库普通测试、Go vet、MyGo vet、i18n check（2017 条
+消息）和 schemaddl/engines 普通包 race 均通过；Linux amd64、Windows
+amd64、macOS arm64 的 CGO=0 编译通过，不将编译描述为原生运行。
+每个检查的命令、退出码和耗时均保留于对应 `.result.json`。
+
+本轮所属脚本的参数、工作目录、日志和容器 nonce 标签核对后，由原脚本
+处理 SIGTERM 清理；容器、私有证书/凭据目录与所属进程均确认不存在。
+阶段汇总见 `build/opengauss/table-design/storage-transition-verification-summary.json`。
+
+本阶段没有开启公开 `CanApply` / `Apply` 和 `DesignTables`。普通用户的
+完整目录并发屏障、其它原生调度绑定和真实工作台生命周期仍待完成；
+数据库与中间件整体对齐也仍未完成。
