@@ -64,17 +64,26 @@ var clientDigests = map[string][]string{
 	},
 }
 
-func load(path string) (*api, error) {
+// VerifyLibrary checks the admitted client bytes without loading native code.
+func VerifyLibrary(path string) (string, error) {
 	if !filepath.IsAbs(path) {
-		return nil, errors.New("DM8 requires an explicit absolute native client path")
+		return "", errors.New("DM8 requires an explicit absolute native client path")
 	}
 	data, err := os.ReadFile(path)
 	if err != nil || len(data) > 128<<20 {
-		return nil, errors.New("DM8 native client is unavailable")
+		return "", errors.New("DM8 native client is unavailable")
 	}
 	hash := fmt.Sprintf("%x", sha256.Sum256(data))
 	if !slices.Contains(clientDigests[runtime.GOOS+"-"+runtime.GOARCH], hash) {
-		return nil, errors.New("DM8 native client ABI has not been verified")
+		return "", errors.New("DM8 native client ABI has not been verified")
+	}
+	return hash, nil
+}
+
+func load(path string) (*api, error) {
+	hash, err := VerifyLibrary(path)
+	if err != nil {
+		return nil, err
 	}
 	loaded.Lock()
 	defer loaded.Unlock()

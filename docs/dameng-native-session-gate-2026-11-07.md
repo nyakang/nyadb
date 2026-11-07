@@ -80,3 +80,7 @@ Linux amd64 / Windows amd64 / macOS arm64 的应用以及
 类型/LOB/认证/其它构建与管理工具尚未接入。固定服务器的客户端证书
 强制验证限制仍以[TLS 报告](dameng-native-tls-2026-11-07.md)为准。本项
 不开启工作台能力，也不宣称达梦或 Navicat/DBX 的整体对齐完成。
+
+本报告记录会话校验阶段；后续原厂环境/客户端配置隔离已在
+[进程隔离阶段](dameng-native-process-isolation-2026-11-07.md)完成限定客户端验收，
+工作台注册及其余范围仍保留。

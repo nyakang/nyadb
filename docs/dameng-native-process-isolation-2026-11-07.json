@@ -1,0 +1,55 @@
+{
+  "scope": "native environment/client configuration isolation for three admitted Linux amd64 clients",
+  "workbench_registered": false,
+  "registered_products": 16,
+  "vendor_files_bundled": false,
+  "verified_native_platform": "linux-amd64",
+  "verified_client_versions": [
+    "8.1.2.128/2022-08-04",
+    "8.1.3.59/2023-07-25",
+    "8.1.5.88/2026-09-22"
+  ],
+  "server_version": "08134283904-20220804-166351-20005",
+  "one_worker_per_original_physical_connection": true,
+  "parent_loads_native_client": false,
+  "parent_and_child_verify_library_digest": true,
+  "parent_environment_modified": false,
+  "private_existing_native_and_openssl_files": true,
+  "native_system_config_fallback_observed_in_application_trace": false,
+  "private_directory_mode": "0700",
+  "private_config_file_mode": "0600",
+  "native_pool_attribute_12347_and_trace_attribute_104_supported": false,
+  "path_candidate_attribute_12431_supported_clients": [
+    "2026"
+  ],
+  "path_candidate_attribute_12431_used_in_production": false,
+  "missing_private_file_retires_original_process": true,
+  "child_configuration_gate_independently_verified": true,
+  "precise_values_and_full_column_metadata_preserved": true,
+  "ipc_frame_max_bytes": 16777216,
+  "complete_field_max_bytes": 1048576,
+  "ddl_success_and_unknown_affected_count_separate": true,
+  "rows_and_transaction_original_context_retained": true,
+  "cancellation_waits_for_native_acknowledgement": true,
+  "original_caller_deadline_preserved": true,
+  "captured_process_hard_stop_waits_for_os_exit": true,
+  "submitted_lost_reply_outcome_unknown": true,
+  "driver_bad_connection_retry_signal": false,
+  "automatic_replay": false,
+  "fresh_tls_and_explicit_plain_fixtures_verified": true,
+  "client_2026_tls_and_plain_race_verified": true,
+  "complete_remote_mutual_certificate_authentication_verified": false,
+  "operating_system_security_sandbox": false,
+  "ghidra_analysis_completed": false,
+  "rea_static_evidence_ids": [
+    "ev_75548b303c47abeb2684fa79652980ab19ac1e1950484f8a7d0af2e529ac677b",
+    "ev_d17d38d6098e9e75ec1ad31ddd7fd7ac64f1b17b664a19add1936ff49372cc88",
+    "ev_a25e68de4361db7da9647c582e4c0aa4494894599580a335219d99a09d796b25"
+  ],
+  "remaining": [
+    "Kind/Profile/URI/persistence/credential/editor/provider and qualified native metadata integration",
+    "shared SQL/data workbench and full type/LOB matrix",
+    "other platforms, server/client builds, compatibility modes and authentication",
+    "complete management and Navicat/DBX cross-product alignment"
+  ]
+}
