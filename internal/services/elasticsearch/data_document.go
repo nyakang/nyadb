@@ -119,8 +119,7 @@ func (l *dataLease) identity(id int64, db, name string) error {
 	return l.session.checkObject(l.object)
 }
 func (l *dataLease) Runtime() contract.DataRuntime {
-	// This internal binding is verified before public provider registration.
-	return contract.DataRuntime{Capabilities: contract.Capabilities{Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true, EditableTables: true}, AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, Saver: l.save, Verify: l.verify, Exporter: l.exportRows, JSONL: l.jsonl, TableMetadata: l.metadata, TableInfo: l.info, FilterModes: []string{"equal", "not_equal"}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
+	return contract.DataRuntime{Capabilities: l.session.DataDocumentCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, Saver: l.save, Verify: l.verify, Exporter: l.exportRows, JSONL: l.jsonl, TableMetadata: l.metadata, TableInfo: l.info, FilterModes: []string{"equal", "not_equal"}, FilterColumns: []string{"_id", "_routing"}, SortColumns: []string{}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
 }
 func (l *dataLease) sign(v any) string {
 	raw, _ := json.Marshal(v)

@@ -1,0 +1,63 @@
+package objectworkspace
+
+import (
+	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
+)
+
+// Document mappings keep native definitions and field paths. They do not
+// inherit relational index, foreign-key, default or nullability presentation.
+func (s *State) documentMappingView(c *ui.Context, d *Document) {
+	p := theme.Colors(c)
+	snapshot := s.sessionFor(d.profileID)
+	ready := snapshot.Connected && snapshot.ProfileID == d.profileID && !d.loading
+	ui.Column(c).Fill().Children(func() {
+		ui.Row(c).Padding(3, 8).Gap(8).AlignItems(ui.Center).Children(func() {
+			ui.Text(c, d.table+" · "+locales.Text("映射（只读）")).Grow(1).SingleLine()
+			if ui.Button(c, locales.Text("刷新")).Disabled(!ready).Clicked() {
+				s.Load(d, c.Services().Invalidate, true)
+			}
+			if d.loading && ui.Button(c, locales.Text("取消加载")).Clicked() {
+				s.Cancel(d)
+			}
+			if ui.Button(c, locales.Text("返回")).Label(locales.Text("返回对象列表")).Clicked() && s.deps.Back != nil {
+				s.deps.Back()
+			}
+		})
+		names := []string{locales.Text("字段"), locales.Text("原生定义")}
+		ui.Row(c).Children(func() {
+			for i, name := range names {
+				if ui.Button(c, name).Clicked() {
+					d.page = i
+				}
+			}
+		})
+		if d.loading {
+			ui.Text(c, locales.Text("正在读取映射…")).TextColor(p.Muted)
+		}
+		if d.err != "" {
+			ui.Text(c, d.err).TextColor(p.Error)
+		}
+		if d.page == 1 {
+			structureDefinitionsView(c, d.data)
+			return
+		}
+		cols := []ui.TableColumn{{ID: "name", Title: locales.Text("字段"), Width: 300}, {ID: "type", Title: locales.Text("映射类型"), Width: 160}, {ID: "extra", Title: locales.Text("附加属性"), Width: 240}}
+		if d.data == nil || len(d.data.Columns) == 0 {
+			theme.EmptyTable(c, &d.columns, cols, locales.Text("没有已加载的映射字段"))
+			return
+		}
+		theme.Table(c, &d.columns, cols, len(d.data.Columns), func(row, col int) {
+			f := d.data.Columns[row]
+			v := f.Name
+			if col == 1 {
+				v = f.Type
+			}
+			if col == 2 {
+				v = f.Extra
+			}
+			ui.Text(c, v).SingleLine().Tooltip(v)
+		}).Grow(1)
+	})
+}

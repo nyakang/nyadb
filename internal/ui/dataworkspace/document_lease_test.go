@@ -36,6 +36,7 @@ func TestDocumentLeaseOwnsUnpublishedPageAndWaitsOriginalExecutor(t *testing.T) 
 	runtime := Runtime{ReserveDocument: func(o contract.ObjectRef) (contract.DataDocumentLease, error) {
 		ctx, cancel := context.WithCancel(context.Background())
 		l := &testDocumentLease{cancel: cancel}
+		l.runtime.Capabilities = contract.Capabilities{Documents: true, Keyset: true, Metadata: true, Count: true, FieldChunks: true, EditableTables: true}
 		l.runtime.AdvancedLoader = func(_ context.Context, _ int64, _, _ string, _ contract.DataOptions) (*contract.DataPage, error) {
 			l.work.Add(1)
 			defer l.work.Done()
@@ -115,6 +116,7 @@ func TestDocumentLeasePageNavigationKeepsFirstBoundaryAndRefreshClearsIt(t *test
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	l := &testDocumentLease{cancel: cancel}
+	l.runtime.Capabilities = contract.Capabilities{Documents: true, Keyset: true, Metadata: true, Count: true, FieldChunks: true, EditableTables: true}
 	requests := make(chan contract.DataOptions, 8)
 	l.runtime.AdvancedLoader = func(_ context.Context, _ int64, _, _ string, o contract.DataOptions) (*contract.DataPage, error) {
 		if err := ctx.Err(); err != nil {
@@ -176,6 +178,7 @@ func TestDocumentInspectorUsesItsCapturedLeaseRuntime(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	l := &testDocumentLease{cancel: cancel}
+	l.runtime.Capabilities = contract.Capabilities{Documents: true, Keyset: true, Metadata: true, Count: true, FieldChunks: true, EditableTables: true}
 	l.runtime = Runtime{
 		TableInfo: func(_ context.Context, _ int64, db, name string) (*contract.TableInfo, error) {
 			return &contract.TableInfo{Database: db, Name: name, Engine: "original lease"}, nil
@@ -232,6 +235,7 @@ func TestConfirmedAndVerifiedWritesRefreshOriginalDocumentWithoutOldCursor(t *te
 			defer cancel()
 			requests := make(chan contract.DataOptions, 1)
 			l := &testDocumentLease{cancel: cancel}
+			l.runtime.Capabilities = contract.Capabilities{Documents: true, Keyset: true, Metadata: true, Count: true, FieldChunks: true, EditableTables: true}
 			l.runtime.AdvancedLoader = func(_ context.Context, _ int64, _, _ string, o contract.DataOptions) (*contract.DataPage, error) {
 				requests <- o
 				return &contract.DataPage{Object: o.Object, Columns: []string{"document"}, Rows: [][]contract.DataCell{{{Text: "fresh snapshot"}}}, Offset: o.Offset, Limit: o.Limit}, ctx.Err()

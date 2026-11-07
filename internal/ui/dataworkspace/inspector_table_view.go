@@ -42,6 +42,9 @@ func (s *inspectorState) header(c *ui.Context, t *Panel, fieldMode bool) {
 				if p, ok := s.deps.Profile(t.profileID); ok && p.Kind == connections.Redis {
 					infoLabel = locales.Text("键信息")
 				}
+				if p, ok := s.deps.Profile(t.profileID); ok && p.Kind == connections.Elasticsearch {
+					infoLabel = locales.Text("对象信息")
+				}
 				if p, ok := s.deps.Profile(t.profileID); ok && p.Kind == connections.MongoDB {
 					infoLabel = locales.Text("集合信息")
 				}
@@ -153,6 +156,14 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 				}
 				info := d.info
 				kind := "表"
+				switch info.Kind {
+				case "index", "索引":
+					kind = "索引"
+				case "alias", "别名":
+					kind = "别名"
+				case "data_stream", "数据流":
+					kind = "数据流"
+				}
 				if info.Kind == "KEYSPACE" {
 					kind = "键"
 				}
@@ -167,6 +178,9 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 				if !engine.IsMySQLFamily() {
 					if descriptor, ok := connections.Describe(engine); ok {
 						tableProperty(c, "数据库产品", descriptor.Label)
+					}
+					if engine == connections.Elasticsearch {
+						ui.Text(c, locales.Text("计数反映请求时的目标数据，不代表网格快照总数")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 					}
 					if engine == connections.PostgreSQL {
 						if info.DataLength != nil {

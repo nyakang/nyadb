@@ -21207,3 +21207,351 @@ func ElasticsearchUnlockAuthChange() string { return In(i18n.Locale()).Elasticse
 func (msgs Messages) ElasticsearchUnlockAuthChange() string {
 	return Catalog.Format(msgs.locale, "elasticsearchUnlockAuthChange", nil)
 }
+
+// ElasticsearchRunRequest says "运行 Elasticsearch REST 请求"
+// in the language the app shows.
+func ElasticsearchRunRequest() string { return In(i18n.Locale()).ElasticsearchRunRequest() }
+
+// ElasticsearchRunRequest says "运行 Elasticsearch REST 请求"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchRunRequest() string {
+	return Catalog.Format(msgs.locale, "elasticsearchRunRequest", nil)
+}
+
+// ElasticsearchRequestEditor says "Elasticsearch REST 编辑器"
+// in the language the app shows.
+func ElasticsearchRequestEditor() string { return In(i18n.Locale()).ElasticsearchRequestEditor() }
+
+// ElasticsearchRequestEditor says "Elasticsearch REST 编辑器"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchRequestEditor() string {
+	return Catalog.Format(msgs.locale, "elasticsearchRequestEditor", nil)
+}
+
+// ElasticsearchEmptyRequest says "请输入 Elasticsearch REST 请求"
+// in the language the app shows.
+func ElasticsearchEmptyRequest() string { return In(i18n.Locale()).ElasticsearchEmptyRequest() }
+
+// ElasticsearchEmptyRequest says "请输入 Elasticsearch REST 请求"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchEmptyRequest() string {
+	return Catalog.Format(msgs.locale, "elasticsearchEmptyRequest", nil)
+}
+
+// ElasticsearchExecutingRequest says "正在执行 Elasticsearch REST 请求"
+// in the language the app shows.
+func ElasticsearchExecutingRequest() string { return In(i18n.Locale()).ElasticsearchExecutingRequest() }
+
+// ElasticsearchExecutingRequest says "正在执行 Elasticsearch REST 请求"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchExecutingRequest() string {
+	return Catalog.Format(msgs.locale, "elasticsearchExecutingRequest", nil)
+}
+
+// ElasticsearchRequestRecovery says "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求"
+// in the language the app shows.
+func ElasticsearchRequestRecovery() string { return In(i18n.Locale()).ElasticsearchRequestRecovery() }
+
+// ElasticsearchRequestRecovery says "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchRequestRecovery() string {
+	return Catalog.Format(msgs.locale, "elasticsearchRequestRecovery", nil)
+}
+
+// ElasticsearchNativeAPI says "Elasticsearch 请使用原生 REST API"
+// in the language the app shows.
+func ElasticsearchNativeAPI() string { return In(i18n.Locale()).ElasticsearchNativeAPI() }
+
+// ElasticsearchNativeAPI says "Elasticsearch 请使用原生 REST API"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchNativeAPI() string {
+	return Catalog.Format(msgs.locale, "elasticsearchNativeAPI", nil)
+}
+
+// ElasticsearchSessionCredential says "Elasticsearch 会话凭据"
+// in the language the app shows.
+func ElasticsearchSessionCredential() string {
+	return In(i18n.Locale()).ElasticsearchSessionCredential()
+}
+
+// ElasticsearchSessionCredential says "Elasticsearch 会话凭据"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchSessionCredential() string {
+	return Catalog.Format(msgs.locale, "elasticsearchSessionCredential", nil)
+}
+
+// ElasticsearchAlias says "别名"
+// in the language the app shows.
+func ElasticsearchAlias() string { return In(i18n.Locale()).ElasticsearchAlias() }
+
+// ElasticsearchAlias says "别名"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchAlias() string {
+	return Catalog.Format(msgs.locale, "elasticsearchAlias", nil)
+}
+
+// ElasticsearchDataStream says "数据流"
+// in the language the app shows.
+func ElasticsearchDataStream() string { return In(i18n.Locale()).ElasticsearchDataStream() }
+
+// ElasticsearchDataStream says "数据流"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchDataStream() string {
+	return Catalog.Format(msgs.locale, "elasticsearchDataStream", nil)
+}
+
+// ElasticsearchOpenDocuments says "打开文档"
+// in the language the app shows.
+func ElasticsearchOpenDocuments() string { return In(i18n.Locale()).ElasticsearchOpenDocuments() }
+
+// ElasticsearchOpenDocuments says "打开文档"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchOpenDocuments() string {
+	return Catalog.Format(msgs.locale, "elasticsearchOpenDocuments", nil)
+}
+
+// ElasticsearchOpenSelectedDocuments says "打开选中对象文档"
+// in the language the app shows.
+func ElasticsearchOpenSelectedDocuments() string {
+	return In(i18n.Locale()).ElasticsearchOpenSelectedDocuments()
+}
+
+// ElasticsearchOpenSelectedDocuments says "打开选中对象文档"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchOpenSelectedDocuments() string {
+	return Catalog.Format(msgs.locale, "elasticsearchOpenSelectedDocuments", nil)
+}
+
+// ElasticsearchReadOnlyMapping says "查看映射（只读）"
+// in the language the app shows.
+func ElasticsearchReadOnlyMapping() string { return In(i18n.Locale()).ElasticsearchReadOnlyMapping() }
+
+// ElasticsearchReadOnlyMapping says "查看映射（只读）"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchReadOnlyMapping() string {
+	return Catalog.Format(msgs.locale, "elasticsearchReadOnlyMapping", nil)
+}
+
+// ElasticsearchMappingTitle says "映射（只读）"
+// in the language the app shows.
+func ElasticsearchMappingTitle() string { return In(i18n.Locale()).ElasticsearchMappingTitle() }
+
+// ElasticsearchMappingTitle says "映射（只读）"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchMappingTitle() string {
+	return Catalog.Format(msgs.locale, "elasticsearchMappingTitle", nil)
+}
+
+// ElasticsearchReadingMapping says "正在读取映射…"
+// in the language the app shows.
+func ElasticsearchReadingMapping() string { return In(i18n.Locale()).ElasticsearchReadingMapping() }
+
+// ElasticsearchReadingMapping says "正在读取映射…"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchReadingMapping() string {
+	return Catalog.Format(msgs.locale, "elasticsearchReadingMapping", nil)
+}
+
+// ElasticsearchNativeDefinitions says "原生定义"
+// in the language the app shows.
+func ElasticsearchNativeDefinitions() string {
+	return In(i18n.Locale()).ElasticsearchNativeDefinitions()
+}
+
+// ElasticsearchNativeDefinitions says "原生定义"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchNativeDefinitions() string {
+	return Catalog.Format(msgs.locale, "elasticsearchNativeDefinitions", nil)
+}
+
+// ElasticsearchMappingType says "映射类型"
+// in the language the app shows.
+func ElasticsearchMappingType() string { return In(i18n.Locale()).ElasticsearchMappingType() }
+
+// ElasticsearchMappingType says "映射类型"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchMappingType() string {
+	return Catalog.Format(msgs.locale, "elasticsearchMappingType", nil)
+}
+
+// ElasticsearchEmptyMapping says "没有已加载的映射字段"
+// in the language the app shows.
+func ElasticsearchEmptyMapping() string { return In(i18n.Locale()).ElasticsearchEmptyMapping() }
+
+// ElasticsearchEmptyMapping says "没有已加载的映射字段"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchEmptyMapping() string {
+	return Catalog.Format(msgs.locale, "elasticsearchEmptyMapping", nil)
+}
+
+// DataUnsupportedFilterColumn says "此字段不支持筛选"
+// in the language the app shows.
+func DataUnsupportedFilterColumn() string { return In(i18n.Locale()).DataUnsupportedFilterColumn() }
+
+// DataUnsupportedFilterColumn says "此字段不支持筛选"
+// in the language of msgs.
+func (msgs Messages) DataUnsupportedFilterColumn() string {
+	return Catalog.Format(msgs.locale, "dataUnsupportedFilterColumn", nil)
+}
+
+// NativeRunSelectedRequest says "运行选中请求"
+// in the language the app shows.
+func NativeRunSelectedRequest() string { return In(i18n.Locale()).NativeRunSelectedRequest() }
+
+// NativeRunSelectedRequest says "运行选中请求"
+// in the language of msgs.
+func (msgs Messages) NativeRunSelectedRequest() string {
+	return Catalog.Format(msgs.locale, "nativeRunSelectedRequest", nil)
+}
+
+// NativeRequestPreserved says "请求原文已保留；恢复连接后不会自动执行请求"
+// in the language the app shows.
+func NativeRequestPreserved() string { return In(i18n.Locale()).NativeRequestPreserved() }
+
+// NativeRequestPreserved says "请求原文已保留；恢复连接后不会自动执行请求"
+// in the language of msgs.
+func (msgs Messages) NativeRequestPreserved() string {
+	return Catalog.Format(msgs.locale, "nativeRequestPreserved", nil)
+}
+
+// NativeRecoverWithoutReplay says "建立新会话（不执行现有请求）"
+// in the language the app shows.
+func NativeRecoverWithoutReplay() string { return In(i18n.Locale()).NativeRecoverWithoutReplay() }
+
+// NativeRecoverWithoutReplay says "建立新会话（不执行现有请求）"
+// in the language of msgs.
+func (msgs Messages) NativeRecoverWithoutReplay() string {
+	return Catalog.Format(msgs.locale, "nativeRecoverWithoutReplay", nil)
+}
+
+// NativeSupportedURI says "支持关系数据库、MongoDB、Redis 和 Elasticsearch URI；导入后检查配置，不会自动连接。"
+// in the language the app shows.
+func NativeSupportedURI() string { return In(i18n.Locale()).NativeSupportedURI() }
+
+// NativeSupportedURI says "支持关系数据库、MongoDB、Redis 和 Elasticsearch URI；导入后检查配置，不会自动连接。"
+// in the language of msgs.
+func (msgs Messages) NativeSupportedURI() string {
+	return Catalog.Format(msgs.locale, "nativeSupportedURI", nil)
+}
+
+// ElasticsearchQueryStatus says "Elasticsearch 查询："
+// in the language the app shows.
+func ElasticsearchQueryStatus() string { return In(i18n.Locale()).ElasticsearchQueryStatus() }
+
+// ElasticsearchQueryStatus says "Elasticsearch 查询："
+// in the language of msgs.
+func (msgs Messages) ElasticsearchQueryStatus() string {
+	return Catalog.Format(msgs.locale, "elasticsearchQueryStatus", nil)
+}
+
+// NativeRunRequest says "运行请求"
+// in the language the app shows.
+func NativeRunRequest() string { return In(i18n.Locale()).NativeRunRequest() }
+
+// NativeRunRequest says "运行请求"
+// in the language of msgs.
+func (msgs Messages) NativeRunRequest() string {
+	return Catalog.Format(msgs.locale, "nativeRunRequest", nil)
+}
+
+// NativeOpenRequestText says "打开请求文本"
+// in the language the app shows.
+func NativeOpenRequestText() string { return In(i18n.Locale()).NativeOpenRequestText() }
+
+// NativeOpenRequestText says "打开请求文本"
+// in the language of msgs.
+func (msgs Messages) NativeOpenRequestText() string {
+	return Catalog.Format(msgs.locale, "nativeOpenRequestText", nil)
+}
+
+// NativeRequestHistory says "请求历史"
+// in the language the app shows.
+func NativeRequestHistory() string { return In(i18n.Locale()).NativeRequestHistory() }
+
+// NativeRequestHistory says "请求历史"
+// in the language of msgs.
+func (msgs Messages) NativeRequestHistory() string {
+	return Catalog.Format(msgs.locale, "nativeRequestHistory", nil)
+}
+
+// NativeRequestCompleted says "原生请求已完成 · %d 条响应 · %s"
+// in the language the app shows.
+func NativeRequestCompleted() string { return In(i18n.Locale()).NativeRequestCompleted() }
+
+// NativeRequestCompleted says "原生请求已完成 · %d 条响应 · %s"
+// in the language of msgs.
+func (msgs Messages) NativeRequestCompleted() string {
+	return Catalog.Format(msgs.locale, "nativeRequestCompleted", nil)
+}
+
+// NativeSessionCreated says "已创建新会话；请求尚未执行"
+// in the language the app shows.
+func NativeSessionCreated() string { return In(i18n.Locale()).NativeSessionCreated() }
+
+// NativeSessionCreated says "已创建新会话；请求尚未执行"
+// in the language of msgs.
+func (msgs Messages) NativeSessionCreated() string {
+	return Catalog.Format(msgs.locale, "nativeSessionCreated", nil)
+}
+
+// ElasticsearchCountSnapshotNote says "计数反映请求时的目标数据，不代表网格快照总数"
+// in the language the app shows.
+func ElasticsearchCountSnapshotNote() string {
+	return In(i18n.Locale()).ElasticsearchCountSnapshotNote()
+}
+
+// ElasticsearchCountSnapshotNote says "计数反映请求时的目标数据，不代表网格快照总数"
+// in the language of msgs.
+func (msgs Messages) ElasticsearchCountSnapshotNote() string {
+	return Catalog.Format(msgs.locale, "elasticsearchCountSnapshotNote", nil)
+}
+
+// NativeQueryInformationActions says "查询信息操作"
+// in the language the app shows.
+func NativeQueryInformationActions() string { return In(i18n.Locale()).NativeQueryInformationActions() }
+
+// NativeQueryInformationActions says "查询信息操作"
+// in the language of msgs.
+func (msgs Messages) NativeQueryInformationActions() string {
+	return Catalog.Format(msgs.locale, "nativeQueryInformationActions", nil)
+}
+
+// NativeShowQueryInformation says "显示查询信息"
+// in the language the app shows.
+func NativeShowQueryInformation() string { return In(i18n.Locale()).NativeShowQueryInformation() }
+
+// NativeShowQueryInformation says "显示查询信息"
+// in the language of msgs.
+func (msgs Messages) NativeShowQueryInformation() string {
+	return Catalog.Format(msgs.locale, "nativeShowQueryInformation", nil)
+}
+
+// NativeCopyQueryInformation says "复制查询信息"
+// in the language the app shows.
+func NativeCopyQueryInformation() string { return In(i18n.Locale()).NativeCopyQueryInformation() }
+
+// NativeCopyQueryInformation says "复制查询信息"
+// in the language of msgs.
+func (msgs Messages) NativeCopyQueryInformation() string {
+	return Catalog.Format(msgs.locale, "nativeCopyQueryInformation", nil)
+}
+
+// NativeObjectInformation says "对象信息"
+// in the language the app shows.
+func NativeObjectInformation() string { return In(i18n.Locale()).NativeObjectInformation() }
+
+// NativeObjectInformation says "对象信息"
+// in the language of msgs.
+func (msgs Messages) NativeObjectInformation() string {
+	return Catalog.Format(msgs.locale, "nativeObjectInformation", nil)
+}
+
+// NativeQueryInformation says "查询信息"
+// in the language the app shows.
+func NativeQueryInformation() string { return In(i18n.Locale()).NativeQueryInformation() }
+
+// NativeQueryInformation says "查询信息"
+// in the language of msgs.
+func (msgs Messages) NativeQueryInformation() string {
+	return Catalog.Format(msgs.locale, "nativeQueryInformation", nil)
+}

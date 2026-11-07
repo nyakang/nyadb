@@ -57,9 +57,13 @@ func OpenSession(ctx context.Context, p connections.Profile, secret string) (con
 func (s *Session) ProfileID() int64   { return s.profile.ID }
 func (s *Session) Generation() uint64 { return 1 }
 func (s *Session) Capabilities() contract.Capabilities {
-	// Registration remains separate until the complete shared-grid binding is
-	// verified. Only implemented feature contracts are advertised here.
-	return contract.Capabilities{Query: true, Metadata: true, Documents: true}
+	c := s.DataDocumentCapabilities()
+	c.Query = true
+	return c
+}
+
+func (*Session) DataDocumentCapabilities() contract.Capabilities {
+	return contract.Capabilities{Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true, EditableTables: true}
 }
 func (s *Session) Alive() bool        { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed && !s.revoked }
 func (s *Session) Identity() Identity { return s.identity }

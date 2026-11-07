@@ -82,3 +82,52 @@ func TestDataDocumentRuntimeCannotRebindToReplacementAndCloseKeepsOriginalLease(
 		t.Fatal("old Close damaged replacement or leaked resource")
 	}
 }
+
+type describedDocumentHandle struct {
+	documentHandle
+	features     contract.Capabilities
+	reservations atomic.Int32
+}
+
+func (h *describedDocumentHandle) DataDocumentCapabilities() contract.Capabilities { return h.features }
+func (h *describedDocumentHandle) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
+	h.reservations.Add(1)
+	return h.documentHandle.ReserveDataDocument(o)
+}
+func TestDocumentFeaturesAreLazyAndReservedFunctionsConstrainAdvertisement(t *testing.T) {
+	m := dbruntime.New()
+	defer m.Close()
+	caps := contract.Capabilities{Documents: true, EditableTables: true, Count: true, FieldChunks: true, Export: true, JSONL: true, Keyset: true}
+	h := &describedDocumentHandle{documentHandle: documentHandle{handle: handle{id: 1, caps: caps}, lease: &documentLease{}}, features: caps}
+	m.Register(connections.Elasticsearch, dbruntime.ProviderFunc(func(context.Context, connections.Profile, string) (contract.Session, error) { return h, nil }))
+	p, _ := connections.Defaults(connections.Elasticsearch)
+	p.ID = 1
+	p.Name = "document capability test"
+	s, err := m.ConnectSession(context.Background(), p, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c := s.Capabilities(); !c.EditableTables || !c.Count || !c.Export || !c.Keyset || c.Transactions {
+		t.Fatal("document advertisement lost", c)
+	}
+	r := m.Data(1)
+	if h.reservations.Load() != 0 || r.Saver != nil || r.AdvancedLoader != nil {
+		t.Fatal("capability discovery opened an unowned document")
+	}
+	l, err := r.ReserveDocument(m.Namespace(1, "cluster").Object("index", "docs"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Close()
+	bound := l.Runtime()
+	if c := bound.Capabilities; c.EditableTables || c.Count || c.Export || c.JSONL || c.FieldChunks || c.Keyset {
+		t.Fatal("missing bound executors were advertised", c)
+	}
+	if h.reservations.Load() != 1 {
+		t.Fatal("binding reserved another resource")
+	}
+	h.features = contract.Capabilities{}
+	if c := s.Capabilities(); c.EditableTables || c.Count || c.Export {
+		t.Fatal("missing feature declaration was accepted", c)
+	}
+}

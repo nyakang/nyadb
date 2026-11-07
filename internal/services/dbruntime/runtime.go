@@ -219,14 +219,20 @@ func (s *session) Capabilities() contract.Capabilities {
 	if p, err := contract.Require[contract.DataProvider](s.raw); err == nil {
 		r = p.DataRuntime()
 	}
-	caps.EditableTables = caps.EditableTables && r.Saver != nil
-	caps.Transactions = caps.Transactions && r.Transactions.Begin != nil && r.Transactions.Commit != nil && r.Transactions.Rollback != nil
-	caps.Count = caps.Count && r.Count != nil
-	caps.FieldChunks = caps.FieldChunks && r.Chunk != nil
-	caps.Analysis = caps.Analysis && r.Analyzer != nil
-	caps.Import = caps.Import && (r.Importer != nil || r.StreamImporter != nil)
-	caps.JSONL = caps.JSONL && r.JSONL != nil
-	caps.Export = caps.Export && (r.Exporter != nil || r.JSONL != nil)
+	var documents contract.Capabilities
+	if r.ReserveDocument != nil {
+		if p, err := contract.Require[contract.DataDocumentFeaturesProvider](s.raw); err == nil {
+			documents = p.DataDocumentCapabilities()
+		}
+	}
+	caps.EditableTables = caps.EditableTables && (r.Saver != nil || documents.EditableTables)
+	caps.Transactions = caps.Transactions && (r.Transactions.Begin != nil && r.Transactions.Commit != nil && r.Transactions.Rollback != nil || documents.Transactions)
+	caps.Count = caps.Count && (r.Count != nil || documents.Count)
+	caps.FieldChunks = caps.FieldChunks && (r.Chunk != nil || documents.FieldChunks)
+	caps.Analysis = caps.Analysis && (r.Analyzer != nil || documents.Analysis)
+	caps.Import = caps.Import && (r.Importer != nil || r.StreamImporter != nil || documents.Import)
+	caps.JSONL = caps.JSONL && (r.JSONL != nil || documents.JSONL)
+	caps.Export = caps.Export && (r.Exporter != nil || r.JSONL != nil || documents.Export)
 	return s.managementCapabilities(caps)
 }
 func (s *session) alive() bool {

@@ -44,7 +44,7 @@ func (s *State) Run(invalidate func(), t *Document) {
 	if statement == "" {
 		t.err = "请输入 SQL"
 		if t.nativeCommands {
-			t.err = t.commandText("请输入 MongoDB 命令", "请输入 Redis 命令")
+			t.err = t.commandText("请输入 MongoDB 命令", "请输入 Redis 命令", "请输入 Elasticsearch REST 请求")
 		}
 		s.report(t.err)
 		return
@@ -104,7 +104,7 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 	t.results = resultChan
 	s.report("正在执行 SQL")
 	if t.nativeCommands {
-		s.report(t.commandText("正在执行 MongoDB 命令", "正在执行 Redis 命令"))
+		s.report(t.commandText("正在执行 MongoDB 命令", "正在执行 Redis 命令", "正在执行 Elasticsearch REST 请求"))
 	}
 	source := "query"
 	if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(statement)), "EXPLAIN ") {
@@ -201,7 +201,7 @@ func (s *State) DisconnectProfile(profileID int64) {
 			t.result = nil
 			t.err = "连接已断开；SQL 文本已保留。请先连接原配置，再以新会话继续；事务、临时表与变量不能恢复"
 			if t.nativeCommands {
-				t.err = t.commandText("连接已断开；MongoDB 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；Redis 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令")
+				t.err = t.commandText("连接已断开；MongoDB 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；Redis 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求")
 			}
 		}
 	}
@@ -304,7 +304,9 @@ func (s *State) Consume() {
 				t.err = ""
 			}
 			if s.active(t) {
-				if len(result.Columns) > 0 {
+				if t.nativeCommands {
+					s.report(fmt.Sprintf(locales.Text("原生请求已完成 · %d 条响应 · %s"), len(result.Rows), result.Duration))
+				} else if len(result.Columns) > 0 {
 					s.report(fmt.Sprintf(locales.Text("SQL 已完成 · %d 行 · %s"), len(result.Rows), result.Duration))
 				} else {
 					s.report(fmt.Sprintf(locales.Text("SQL 已完成 · 影响 %d 行 · %s"), result.AffectedRows, result.Duration))
@@ -384,6 +386,10 @@ func (s *State) Recover(t *Document) {
 	if s.deps.Recovered != nil {
 		s.deps.Recovered(id)
 	}
-	s.report("已创建新 SQL 会话；未执行任何 SQL，请自行核对事务结果后再运行")
+	if t.nativeCommands {
+		s.report(locales.Text("已创建新会话；请求尚未执行"))
+	} else {
+		s.report("已创建新 SQL 会话；未执行任何 SQL，请自行核对事务结果后再运行")
+	}
 	s.preconnect(t)
 }

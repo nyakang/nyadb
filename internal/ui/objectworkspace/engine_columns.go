@@ -15,7 +15,7 @@ func (s *State) objectColumns(profile int64) []ui.TableColumn {
 		engine = s.deps.Engine(profile)
 	}
 	columns := append([]ui.TableColumn(nil), mysqlObjectColumns...)
-	if engine == "mongodb" || engine == "redis" {
+	if engine == "mongodb" || engine == "redis" || engine == "elasticsearch" {
 		columns = []ui.TableColumn{{ID: "name", Title: "名称", Width: 265}, {ID: "kind", Title: "类型", Width: 100}}
 	}
 	if engine == "postgresql" {
@@ -37,7 +37,7 @@ func (s *State) objectCell(profile int64, obj contract.DBObject, col int) string
 	if s.deps.Engine != nil {
 		engine = s.deps.Engine(profile)
 	}
-	if engine == "mongodb" || engine == "redis" {
+	if engine == "mongodb" || engine == "redis" || engine == "elasticsearch" {
 		if col == 0 {
 			return obj.Name
 		}

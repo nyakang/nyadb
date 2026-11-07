@@ -38,7 +38,7 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 	}
 	status := s.sessions.StatusFor(p.ID)
 	ui.Column(c).Gap(5).Children(func() {
-		if (p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind == connections.MongoDB || p.Kind == connections.Redis) && status != "已连接" {
+		if (p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind == connections.Elasticsearch || p.Kind == connections.MongoDB || p.Kind == connections.Redis) && status != "已连接" {
 			label := locales.Text("PostgreSQL 会话密码")
 			if p.Kind == connections.CockroachDB {
 				label = locales.Text("CockroachDB 会话密码")
@@ -54,6 +54,9 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 			}
 			if p.Kind == connections.Redis {
 				label = locales.Text("Redis 会话密码")
+			}
+			if p.Kind == connections.Elasticsearch {
+				label = locales.Text("Elasticsearch 会话凭据")
 			}
 			if p.Kind == connections.MongoDB {
 				label = locales.Text("MongoDB 会话密码")
@@ -116,7 +119,7 @@ func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string 
 		if p.ID == id && p.Kind == connections.Redis {
 			return rediscommand.StatementAt(source, cursor)
 		}
-		if p.ID == id && p.Kind == connections.MongoDB {
+		if p.ID == id && (p.Kind == connections.MongoDB || p.Kind == connections.Elasticsearch) {
 			return strings.TrimSpace(source)
 		}
 		if p.ID == id && p.Kind == connections.Dameng {
@@ -149,6 +152,9 @@ func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string 
 
 func (s *State) sqlFormat(id int64, source string) (string, error) {
 	for _, p := range s.navigation.Profiles() {
+		if p.ID == id && p.Kind == connections.Elasticsearch {
+			return source, nil
+		}
 		if p.ID == id && p.Kind == connections.Redis {
 			return rediscommand.Format(source)
 		}

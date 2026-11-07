@@ -32,7 +32,9 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(plain=False, hold=False, race=False, profile=False):
+def verify(plain=False, hold=False, race=False, profile=False, workbench=False, workbench_only=False):
+    if workbench_only:
+        workbench = True
     base, output = ROOT/'temp/elasticsearch', ROOT/'build/elasticsearch'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
@@ -112,18 +114,26 @@ def verify(plain=False, hold=False, race=False, profile=False):
             else:
                 env = os.environ.copy()
                 env.update({'NYADB_ELASTICSEARCH_IT': '1', 'NYADB_ELASTICSEARCH_CONFIG': str(probe)})
-                packages = ['./internal/services/elasticsearch']
+                packages = [] if workbench_only else ['./internal/services/elasticsearch']
+                if workbench:
+                    packages += ['./internal/services/dbruntime', './internal/ui/shell', './internal/ui/dataworkspace']
+                    env['NYADB_ELASTICSEARCH_WORKBENCH_IMAGES'] = str(output/('workbench-images-'+nonce))
                 if profile:
                     packages.append('./internal/ui/connectioneditor')
                     env['NYADB_ELASTICSEARCH_PROFILE_IMAGES'] = str(output/('profile-images-'+nonce))
                 args = ['go', 'test', '-count=1', '-v', '-run', 'ElasticsearchNative', *(['-race'] if race else []), *packages]
                 logfile = output/(('profile-acceptance-' if profile else 'acceptance-')+nonce+'.log')
                 with logfile.open('w') as log:
-                    result = subprocess.run(args, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=600)
+                    result = subprocess.run(args, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=900)
                 if result.returncode or 'TestElasticsearchNative' not in logfile.read_text():
                     raise RuntimeError('Elasticsearch native acceptance failed; inspect captured test log')
                 if profile and '--- PASS: TestElasticsearchNativeProfileURIReopenAndEditorConnectionChecks' not in logfile.read_text():
                     raise RuntimeError('Elasticsearch profile acceptance did not execute')
+                if workbench:
+                    text = logfile.read_text()
+                    for name in ['TestElasticsearchNativePublicDocumentFeaturesAndPublishedGenerations', 'TestElasticsearchNativePublicChooserURIGridRESTAndRecovery', 'TestElasticsearchNativeSharedGridPagingCreateDeleteParkAndGeneration']:
+                        if '--- PASS: '+name not in text:
+                            raise RuntimeError('Public Elasticsearch acceptance did not execute: '+name)
                 print('Native Elasticsearch acceptance passed', flush=True)
         finally:
             if identifier:
@@ -141,5 +151,7 @@ if __name__ == '__main__':
     parser.add_argument('--hold', action='store_true')
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--profile', action='store_true', help='also verify saved profiles, vault lifecycle and localized editor forms')
+    parser.add_argument('--workbench', action='store_true', help='also verify builtin runtime, public chooser, shared grid, REST and recovery')
+    parser.add_argument('--workbench-only', action='store_true', help='focus on public runtime and UI workflows after native service verification')
     args = parser.parse_args()
-    verify(args.plain, args.hold, args.race, args.profile)
+    verify(args.plain, args.hold, args.race, args.profile, args.workbench, args.workbench_only)

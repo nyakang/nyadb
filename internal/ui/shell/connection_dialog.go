@@ -138,6 +138,8 @@ func connectionKindName(kind connections.Kind) string {
 		return "OceanBase"
 	case connections.TiDB:
 		return "TiDB"
+	case connections.Elasticsearch:
+		return "Elasticsearch"
 	case connections.Redis:
 		return "Redis"
 	case connections.MongoDB:

@@ -285,6 +285,19 @@ func (s *State) toolBar(c *ui.Context) {
 						action.label = "键"
 					}
 				}
+				if kind == connections.Elasticsearch {
+					if action.label == "函数" || action.label == "用户" || action.label == "其它" {
+						continue
+					}
+					switch action.label {
+					case "表":
+						action.label = "索引"
+					case "视图":
+						action.label = "别名"
+					case "查询":
+						action.label = "数据流"
+					}
+				}
 				if kind == connections.MongoDB {
 					if action.label == "函数" || action.label == "用户" || action.label == "其它" {
 						continue
@@ -353,7 +366,7 @@ func (s *State) toolBar(c *ui.Context) {
 // menu, but never announce a successful operation for an unsupported feature.
 func (s *State) toolbarActionAvailable(action string) bool {
 	switch action {
-	case "连接", "新建查询", "键", "集合", "表", "视图", "信息":
+	case "连接", "新建查询", "索引", "别名", "数据流", "键", "集合", "表", "视图", "信息":
 		return true
 	case "函数":
 		if s.sessions.Current().Kind == connections.TiDB {

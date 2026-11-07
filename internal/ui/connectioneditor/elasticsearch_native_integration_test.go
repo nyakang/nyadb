@@ -124,8 +124,10 @@ func TestElasticsearchNativeProfileURIReopenAndEditorConnectionChecks(t *testing
 				return err
 			}
 			s := New(Dependencies{Profiles: service, Vault: vault, TestConnection: probe})
-			s.OpenProfile(parsed.Profile)
-			s.connectionSecret, s.connectionSavePassword = parsed.Password, tc.auth != "none"
+			if err := s.ImportURI(uri.String()); err != nil {
+				t.Fatal("public URI editor rejected Elasticsearch")
+			}
+			s.connectionSavePassword = tc.auth != "none"
 			s.Save()
 			if s.Error() != "" || s.Active() {
 				t.Fatal("native editor profile save failed", s.Error())

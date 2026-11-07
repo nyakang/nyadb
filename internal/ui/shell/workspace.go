@@ -650,7 +650,8 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 			}
 			return objectworkspace.Session{ProfileID: w.ProfileID, Generation: w.Generation, Connected: w.Status == "已连接"}
 		},
-		Loader: func() objectworkspace.Loader { return s.runtime.Data(s.sessions.Current().ProfileID).TableMetadata },
+		Loader:      func() objectworkspace.Loader { return s.runtime.Data(s.sessions.Current().ProfileID).TableMetadata },
+		MetadataFor: func(id int64) (contract.MetadataProvider, error) { return s.runtime.Metadata(id) },
 		Runner: func() objectworkspace.TableRunner {
 			admin := s.runtime.Administration(s.sessions.Current().ProfileID)
 			if admin == nil {
@@ -859,7 +860,7 @@ func (s *State) findDocument(view tabKind, profileID int64, database, objectKind
 }
 func (s *State) objectKindFor(id int64, database, name string) string {
 	for _, obj := range s.sessions.CacheFor(id)[database] {
-		if obj.Name == name && (obj.Kind == "表" || obj.Kind == "视图" || obj.Kind == "集合" || obj.Kind == "键") {
+		if obj.Name == name && (obj.Kind == "表" || obj.Kind == "视图" || obj.Kind == "集合" || obj.Kind == "键" || obj.Kind == "索引" || obj.Kind == "别名" || obj.Kind == "数据流") {
 			return obj.Kind
 		}
 	}
@@ -892,6 +893,14 @@ func (s *State) SetDataSources(open func(context.Context, datasources.Config) (d
 }
 
 func neutralObjectKind(kind string) string {
+	switch kind {
+	case "索引":
+		return "index"
+	case "别名":
+		return "alias"
+	case "数据流":
+		return "data_stream"
+	}
 	if kind == "键" {
 		return "keyspace"
 	}

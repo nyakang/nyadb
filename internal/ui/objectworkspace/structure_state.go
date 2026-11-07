@@ -23,6 +23,7 @@ type Session struct {
 }
 
 type Dependencies struct {
+	MetadataFor         func(int64) (contract.MetadataProvider, error)
 	NamespaceLabel      func(contract.NamespaceRef) string
 	ProfileName         func(int64) string
 	EditFocus           *string
@@ -284,6 +285,20 @@ func (s *State) Load(d *Document, invalidate func(), refresh bool) {
 	loader := s.Loader
 	if loader == nil && s.deps.Loader != nil {
 		loader = s.deps.Loader()
+	}
+	if s.Loader == nil && d.object.ProfileID != 0 && s.deps.MetadataFor != nil {
+		provider, err := s.deps.MetadataFor(d.profileID)
+		if err != nil || provider == nil {
+			if err == nil {
+				err = contract.ErrUnsupported
+			}
+			d.err = err.Error()
+			return
+		}
+		object := d.object
+		loader = func(ctx context.Context, _ int64, _, _ string) (*contract.TableStructure, error) {
+			return provider.TableMetadata(ctx, object)
+		}
 	}
 	if loader == nil {
 		d.err = "MySQL 会话不可用"

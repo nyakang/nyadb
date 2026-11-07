@@ -28,6 +28,8 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 		}
 	}
 	out.ExportFormats = append([]string(nil), r.ExportFormats...)
+	out.FilterColumns = cloneColumns(r.FilterColumns)
+	out.SortColumns = cloneColumns(r.SortColumns)
 	out.Transactions = sessionTransactions(s, r.Transactions)
 	if r.Loader != nil {
 		out.Loader = func(ctx context.Context, id int64, db, table string, offset int64, limit int) (*contract.DataPage, error) {
@@ -187,9 +189,17 @@ func (l *dataDocumentLease) Runtime() contract.DataRuntime {
 	r := l.raw.Runtime()
 	r.ReserveDocument = nil
 	r.Capabilities = contract.IntersectCapabilities(r.Capabilities, l.session.Capabilities())
+	r.Capabilities = contract.BoundDataCapabilities(r)
 	return mSessionData(l.session, r)
 }
 func (l *dataDocumentLease) Close() error { return l.raw.Close() }
+
+func cloneColumns(v []string) []string {
+	if v == nil {
+		return nil
+	}
+	return append([]string{}, v...)
+}
 
 func (s *session) dataObject(id int64, db, table string, o contract.ObjectRef) error {
 	if o.ProfileID == 0 {

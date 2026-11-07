@@ -55,6 +55,13 @@ type DataDocumentLease interface {
 type DataDocumentsProvider interface {
 	ReserveDataDocument(ObjectRef) (DataDocumentLease, error)
 }
+
+// DataDocumentFeaturesProvider describes operations available after reservation,
+// without opening a document or performing I/O. Each reserved Runtime is checked
+// again against its actual functions and the product/session capabilities.
+type DataDocumentFeaturesProvider interface {
+	DataDocumentCapabilities() Capabilities
+}
 type DataTransaction interface{ Close() }
 
 type DataTransactions struct {
@@ -92,6 +99,8 @@ type DataRuntime struct {
 	JSONL            func(context.Context, ObjectRef, io.Writer) error
 	Capabilities     Capabilities
 	FilterModes      []string
+	FilterColumns    []string // nil permits all fields; empty permits none.
+	SortColumns      []string // nil preserves metadata defaults; empty disables sorting.
 }
 
 // Require traverses a generation wrapper without exposing drivers to callers.

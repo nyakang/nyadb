@@ -6,6 +6,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/locales"
 	"io"
+	"slices"
 )
 
 func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilities) *Document {
@@ -26,6 +27,14 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 	if o.Kind == "view" {
 		kind = "视图"
 	}
+	switch o.Kind {
+	case "index":
+		kind = "索引"
+	case "alias":
+		kind = "别名"
+	case "data_stream":
+		kind = "数据流"
+	}
 	d := s.Open(id, o.ProfileID, namespace, o.Name, kind)
 	if d == nil {
 		return nil
@@ -43,11 +52,15 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 				_ = lease.Close()
 			}
 			d.err = err.Error()
-			d.boundRuntime = &Runtime{Capabilities: c}
+			d.capabilities = contract.Capabilities{}
+			d.boundRuntime = &Runtime{}
 		} else {
 			d.runtimeLease = lease
 			bound := lease.Runtime()
 			bound.ReserveDocument = nil
+			bound.Capabilities = contract.BoundDataCapabilities(bound)
+			d.capabilities = contract.IntersectCapabilities(c, bound.Capabilities)
+			bound.Capabilities = d.capabilities
 			d.boundRuntime = &bound
 		}
 	}
@@ -57,7 +70,7 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 	if len(d.filterModes) > 0 {
 		d.filterModeDraft = mysqlDataFilterModeLabel(d.filterModes[0])
 	}
-	d.useKeyset = c.Keyset
+	d.useKeyset = d.capabilities.Keyset
 	return d
 }
 func (d *Document) Object() contract.ObjectRef { return d.object }
@@ -224,4 +237,22 @@ func (s *State) typedEditorChoice(c *ui.Context, d *Document, e *mysqlCellEditor
 		return
 	}
 	mysqlDataRuleSelect(c, &e.Kind, []string{"NULL", "文本", "整数", "精确小数", "浮点", "布尔", "二进制", "JSON", "日期时间"}, locales.Text).Label(locales.Text("值类型")).Width(150)
+}
+
+func (s *State) filterColumns(d *Document, columns []string) []string {
+	allowed := s.runtimeFor(d).FilterColumns
+	if allowed == nil {
+		return columns
+	}
+	out := []string{}
+	for _, name := range columns {
+		if slices.Contains(allowed, name) {
+			out = append(out, name)
+		}
+	}
+	return out
+}
+func (s *State) sortable(d *Document, name string) bool {
+	allowed := s.runtimeFor(d).SortColumns
+	return allowed == nil || slices.Contains(allowed, name)
 }

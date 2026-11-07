@@ -61,12 +61,16 @@ func (s *State) View(c *ui.Context, t *Document) {
 					caption := locales.Text("运行当前语句")
 					runLabel, formatLabel := locales.Text("运行当前或选中 SQL"), locales.Text("格式化 SQL")
 					if t.nativeCommands {
-						runLabel = t.commandText("运行 MongoDB 命令", "运行 Redis 命令")
+						runLabel = t.commandText("运行 MongoDB 命令", "运行 Redis 命令", "运行 Elasticsearch REST 请求")
 						formatLabel = locales.Text("格式化 JSON")
+						caption = locales.Text("运行请求")
 					}
 					width := available
 					if strings.TrimSpace(t.Editor.SelectedText()) != "" {
 						caption = locales.Text("运行选中 SQL")
+						if t.nativeCommands {
+							caption = locales.Text("运行选中请求")
+						}
 					}
 					if width < 760*max(float32(1), theme.Font(c, 12)/12) {
 						caption = locales.Text("运行")
@@ -75,35 +79,47 @@ func (s *State) View(c *ui.Context, t *Document) {
 						Disabled(!connected || t.loading || t.recoveryNeeded).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
 						s.Run(c.Services().Invalidate, t)
 					}
-					theme.IconButton(c, "", "chevron-down").Label(locales.Text("选择 SQL 执行范围")).Disabled(!connected || t.loading || t.recoveryNeeded).Menu(func(m *ui.Menu) {
-						if m.Item(locales.Text("运行当前语句")).Chosen() {
-							s.RunCurrent(c.Services().Invalidate, t)
-						}
-						if m.Item(locales.Text("运行选中 SQL")).Disabled(strings.TrimSpace(t.Editor.SelectedText()) == "").Chosen() {
-							s.RunSelection(c.Services().Invalidate, t)
-						}
-						if m.Item(locales.Text("运行全部 SQL（F5）")).Chosen() {
-							s.RunAll(c.Services().Invalidate, t)
-						}
-					})
+					if !t.nativeCommands {
+						theme.IconButton(c, "", "chevron-down").Label(locales.Text("选择 SQL 执行范围")).Disabled(!connected || t.loading || t.recoveryNeeded).Menu(func(m *ui.Menu) {
+							if m.Item(locales.Text("运行当前语句")).Chosen() {
+								s.RunCurrent(c.Services().Invalidate, t)
+							}
+							if m.Item(locales.Text("运行选中 SQL")).Disabled(strings.TrimSpace(t.Editor.SelectedText()) == "").Chosen() {
+								s.RunSelection(c.Services().Invalidate, t)
+							}
+							if m.Item(locales.Text("运行全部 SQL（F5）")).Chosen() {
+								s.RunAll(c.Services().Invalidate, t)
+							}
+						})
+					}
 					if ui.Button(c, locales.Text("取消")).Disabled(!t.loading || t.cancelRequested).
 						Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
 						s.RequestCancel(t)
 					}
 					s.sqlLayoutMenu(c, t)
-					if ui.Button(c, formatLabel).Clicked() {
-						s.Format(t)
+					if t.commandDialect != "elasticsearch" {
+						if ui.Button(c, formatLabel).Clicked() {
+							s.Format(t)
+						}
 					}
-					if ui.Button(c, "EXPLAIN").Disabled(t.loading || !connected || t.nativeCommands).Clicked() {
-						s.Explain(t)
+					if !t.nativeCommands {
+						if ui.Button(c, "EXPLAIN").Disabled(t.loading || !connected || t.nativeCommands).Clicked() {
+							s.Explain(t)
+						}
 					}
 					if ui.Button(c, locales.Text("运行并导出")).Disabled(t.loading || t.recoveryNeeded || !connected).Clicked() {
 						s.RunExport(t)
 					}
-					if ui.Button(c, locales.Text("执行 SQL 文件")).Disabled(t.loading || t.recoveryNeeded || !connected || !fileSupported).Clicked() {
-						s.RunFile(t)
+					if !t.nativeCommands {
+						if ui.Button(c, locales.Text("执行 SQL 文件")).Disabled(t.loading || t.recoveryNeeded || !connected || !fileSupported).Clicked() {
+							s.RunFile(t)
+						}
 					}
-					if ui.Button(c, locales.Text("打开 SQL")).Disabled(t.loading).Clicked() {
+					openLabel := locales.Text("打开 SQL")
+					if t.nativeCommands {
+						openLabel = locales.Text("打开请求文本")
+					}
+					if ui.Button(c, openLabel).Disabled(t.loading).Clicked() {
 						s.OpenFile(t)
 					}
 					if ui.Button(c, locales.Text("保存查询")).Clicked() {
@@ -112,10 +128,16 @@ func (s *State) View(c *ui.Context, t *Document) {
 					if ui.Button(c, locales.Text("另存为")).Clicked() {
 						s.Save(t, true, nil)
 					}
-					if ui.Button(c, locales.Text("AI SQL")).Label(locales.Text("打开 AI SQL 助手")).Disabled(!s.AIAvailable() || t.loading).Clicked() {
-						s.OpenAI(t)
+					if !t.nativeCommands {
+						if ui.Button(c, locales.Text("AI SQL")).Label(locales.Text("打开 AI SQL 助手")).Disabled(!s.AIAvailable() || t.loading).Clicked() {
+							s.OpenAI(t)
+						}
 					}
-					if ui.Button(c, locales.Text("SQL 历史")).Disabled(!s.HistoryAvailable()).Clicked() {
+					historyLabel := locales.Text("SQL 历史")
+					if t.nativeCommands {
+						historyLabel = locales.Text("请求历史")
+					}
+					if ui.Button(c, historyLabel).Disabled(!s.HistoryAvailable()).Clicked() {
 						profile := t.profileID
 						if t.recoveryNeeded {
 							profile = t.recoveryProfile
@@ -154,12 +176,21 @@ func (s *State) View(c *ui.Context, t *Document) {
 				canRecover := !t.loading && t.prepareResults == nil &&
 					id > 0 && s.runtime() != nil && s.connected(id) && s.runtime().IsConnected(id)
 				ui.Row(c).Padding(3, 8).Gap(9).AlignItems(ui.Center).Children(func() {
-					ui.Text(c, locales.Text("新会话无法恢复事务或临时状态；不会自动执行 SQL")).
+					recoveryText := locales.Text("新会话无法恢复事务或临时状态；不会自动执行 SQL")
+					if t.nativeCommands {
+						recoveryText = locales.Text("请求原文已保留；恢复连接后不会自动执行请求")
+					}
+					ui.Text(c, recoveryText).
 						FontSize(theme.Font(c, 11)).TextColor(p.Muted)
 					if s.deps.ConnectProfile != nil && ui.Button(c, locales.Text("恢复原连接")).Disabled(s.connected(id) || !s.profileExists(id) || t.loading).Clicked() {
 						s.deps.ConnectProfile(c.Services(), id)
 					}
-					if ui.Button(c, locales.Text("以新会话继续")).Label(locales.Text("建立新物理会话（不执行现有 SQL）")).
+					if ui.Button(c, locales.Text("以新会话继续")).Label(func() string {
+						if t.nativeCommands {
+							return locales.Text("建立新会话（不执行现有请求）")
+						}
+						return locales.Text("建立新物理会话（不执行现有 SQL）")
+					}()).
 						Disabled(!canRecover).Clicked() {
 						s.Recover(t)
 					}
@@ -181,7 +212,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 			theme.ApplySQLAppearance(c, t.Editor)
 			t.Editor.Label = locales.Text("SQL 编辑器")
 			if t.nativeCommands {
-				t.Editor.Label = t.commandText("MongoDB 命令编辑器", "Redis 命令编辑器")
+				t.Editor.Label = t.commandText("MongoDB 命令编辑器", "Redis 命令编辑器", "Elasticsearch REST 编辑器")
 			}
 			ed := editor.View(c, t.Editor).Grow(1).FillWidth()
 			if s.deps.EditFocus != nil {

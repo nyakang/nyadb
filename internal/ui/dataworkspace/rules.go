@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
@@ -212,9 +213,10 @@ func (s *State) mysqlDataRuleEditor(c *ui.Context, t *Document, page *contract.D
 func (s *State) mysqlDataRuleFields(c *ui.Context, t *Document, page *contract.DataPage) {
 	palette := theme.Colors(c)
 
-	choices := append([]string{"选择字段"}, page.Columns...)
+	filterColumns := s.filterColumns(t, page.Columns)
+	choices := append([]string{"选择字段"}, filterColumns...)
 	if t.groupDraft != nil {
-		s.filterGroupView(c, t, t.groupDraft, 1, "root", page.Columns)
+		s.filterGroupView(c, t, t.groupDraft, 1, "root", filterColumns)
 	} else {
 		ui.Text(c, locales.Text("筛选  ·  所有已启用条件均满足 (AND)")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Gap(6).AlignItems(ui.Center).Children(func() {
@@ -299,7 +301,7 @@ func (s *State) mysqlDataRuleFields(c *ui.Context, t *Document, page *contract.D
 	ui.Row(c).Height(theme.RowHeight(c, theme.ControlHeight)).Gap(8).AlignItems(ui.Center).Children(func() {
 		ui.Text(c, locales.Text("排序")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 		ui.Box(c).Grow(1)
-		if ui.Button(c, locales.Text("添加排序")).Disabled(len(t.sortDraft) >= contract.DataMaxSortRules).Clicked() {
+		if ui.Button(c, locales.Text("添加排序")).Disabled(len(t.sortDraft) >= contract.DataMaxSortRules || len(s.runtimeFor(t).SortColumns) == 0 && s.runtimeFor(t).SortColumns != nil).Clicked() {
 			t.sortDraft = append(t.sortDraft, mysqlDataSortDraft{Column: "选择字段", Direction: "升序"})
 		}
 	})
@@ -566,7 +568,7 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *Document, m *ui.Menu, row, s
 					continue
 				}
 				needsValue := action.mode != "is_null" && action.mode != "is_not_null"
-				disabled := !ready || (needsValue && !valueAvailable) || ((action.mode == "contains" || action.mode == "not_contains" || action.mode == "like" || action.mode == "not_like") && ((!t.portable() && !mysqlDataContainsType(kind)) || cell.Null)) || ((action.mode == "less" || action.mode == "greater") && cell.Null)
+				disabled := !ready || !slices.Contains(s.filterColumns(t, page.Columns), name) || (needsValue && !valueAvailable) || ((action.mode == "contains" || action.mode == "not_contains" || action.mode == "like" || action.mode == "not_like") && ((!t.portable() && !mysqlDataContainsType(kind)) || cell.Null)) || ((action.mode == "less" || action.mode == "greater") && cell.Null)
 				if sub.Item(locales.Text(action.label)).Disabled(disabled).Chosen() {
 					s.applyMySQLDataCellFilter(c.Services(), t, name, action.mode, cell)
 				}

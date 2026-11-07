@@ -17,6 +17,7 @@ type catalogEntry struct {
 }
 
 var databaseCatalog = []catalogEntry{
+	{"Elasticsearch", "Elasticsearch", "", "全部", "database", "#00bfb3", connections.Elasticsearch},
 	{"MySQL", "MySQL", "", "全部", "mysql-type", "#24bf65", connections.MySQL},
 	{"PostgreSQL", "PostgreSQL", "", "全部", "postgres-type", "#397cdf", connections.PostgreSQL},
 	{"CockroachDB", "CockroachDB", "", "全部", "database", "#6933a6", connections.CockroachDB},
@@ -49,7 +50,7 @@ var databaseCatalog = []catalogEntry{
 	{"Apache Doris", "Apache Doris", "", "全部", "database", "#259aca", connections.Doris},
 }
 
-var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "Apache Doris", "StarRocks", "Trino", "MariaDB", "TiDB", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "达梦", "MongoDB", "Redis", "Snowflake"}
+var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "Apache Doris", "StarRocks", "Trino", "MariaDB", "TiDB", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "达梦", "MongoDB", "Redis", "Elasticsearch", "Snowflake"}
 var catalogVendors = catalogTreeVendorOrder
 
 func catalogMatch(e catalogEntry, query string, engines, vendors map[string]bool) bool {

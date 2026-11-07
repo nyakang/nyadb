@@ -61,8 +61,8 @@ func TestRecentConnectionsDeduplicateAndKeepFiveNewest(t *testing.T) {
 
 func TestConnectionCatalogFiltering(t *testing.T) {
 	s := New()
-	if n := len(s.catalogItems("全部")); n != 21 {
-		t.Fatalf("catalog should offer 21 local choices including Trino, got %d", n)
+	if n := len(s.catalogItems("全部")); n != 22 {
+		t.Fatalf("catalog should offer 22 local choices including Elasticsearch, got %d", n)
 	}
 	s.search = "sql"
 	if items := s.catalogItems("全部"); len(items) != 4 {
@@ -104,7 +104,7 @@ func TestExpandedCatalogMirrorsObservedGroups(t *testing.T) {
 	if len(databaseCatalog) < 60 {
 		t.Fatalf("expected expanded connection browser with at least 60 choices, got %d", len(databaseCatalog))
 	}
-	if len(catalogVendors) < 12 || len(catalogEngines) != 21 {
+	if len(catalogVendors) < 12 || len(catalogEngines) != 22 {
 		t.Fatalf("missing engine/vendor filters: %d/%d", len(catalogEngines), len(catalogVendors))
 	}
 	seen := map[string]bool{}

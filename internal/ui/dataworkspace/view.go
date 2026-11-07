@@ -305,6 +305,9 @@ func mysqlDataQueryStatus(t *Document) string {
 	if t.loading || t.err != "" || t.readInfo.Canceled || t.page == nil {
 		return locales.Text("上次成功查询（参数化）：") + t.readInfo.QuerySQL
 	}
+	if t.object.Kind == "index" || t.object.Kind == "alias" || t.object.Kind == "data_stream" {
+		return locales.Text("Elasticsearch 查询：") + t.readInfo.QuerySQL
+	}
 	if t.capabilities.KeyValues {
 		return locales.Text("Redis 命令：") + t.readInfo.QuerySQL
 	}
@@ -428,12 +431,22 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *contract.DataP
 		}
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Shrink(0).Padding(2, 6).Gap(6).AlignItems(ui.Center).
 			BorderWidth(1, 0, 0, 0).BorderColor(palette.Border).Children(func() {
-			ui.Button(c, "SQL").Label(locales.Text("查询 SQL 操作")).Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 4).
+			queryCaption := "SQL"
+			if t.capabilities.Documents || t.capabilities.KeyValues {
+				queryCaption = locales.Text("查询信息")
+			}
+			queryLabel, showLabel, copyLabel := locales.Text("查询 SQL 操作"), locales.Text("显示查询 SQL"), locales.Text("复制参数化 SQL")
+			if t.capabilities.Documents || t.capabilities.KeyValues {
+				queryLabel = locales.Text("查询信息操作")
+				showLabel = locales.Text("显示查询信息")
+				copyLabel = locales.Text("复制查询信息")
+			}
+			ui.Button(c, queryCaption).Label(queryLabel).Height(theme.RowHeight(c, theme.ControlHeight)).Padding(2, 4).
 				Menu(func(m *ui.Menu) {
-					if m.Item(locales.Text("显示查询 SQL")).Checked(t.showSQLDetails).Chosen() {
+					if m.Item(showLabel).Checked(t.showSQLDetails).Chosen() {
 						t.showSQLDetails = !t.showSQLDetails
 					}
-					if m.Item(locales.Text("复制参数化 SQL")).Disabled(t.readInfo.QuerySQL == "").Chosen() {
+					if m.Item(copyLabel).Disabled(t.readInfo.QuerySQL == "").Chosen() {
 						c.WriteClipboard(t.readInfo.QuerySQL)
 					}
 				})

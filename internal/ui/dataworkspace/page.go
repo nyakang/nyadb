@@ -216,7 +216,7 @@ func (s *State) consumePages() {
 					kind = result.page.ColumnKinds[i]
 				}
 				sortable := t.portable() || kind != "" && !strings.Contains(kind, "blob") && !strings.Contains(kind, "text") && kind != "json" && kind != "geometry" && kind != "binary" && kind != "varbinary"
-				t.columns[i] = ui.TableColumn{Title: name, ID: name, Width: 155, MinWidth: 65, Sortable: sortable}
+				t.columns[i] = ui.TableColumn{Title: name, ID: name, Width: 155, MinWidth: 65, Sortable: sortable && s.sortable(t, name)}
 				if t.capabilities.Documents || t.capabilities.KeyValues {
 					t.columns[i].Width = 240
 					if name == "document" || t.capabilities.KeyValues && name == "value" {

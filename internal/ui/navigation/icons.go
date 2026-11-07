@@ -22,6 +22,8 @@ func profileBrand(kind connections.Kind, p theme.Palette) (asset, fallback strin
 		return "OceanBase", "ocean-type", p.Blue
 	case connections.TiDB:
 		return "TiDB", "database", p.Error
+	case connections.Elasticsearch:
+		return "", "database", p.Blue
 	case connections.Redis:
 		return "Redis", "redis-type", p.Error
 	case connections.MongoDB:

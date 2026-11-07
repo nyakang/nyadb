@@ -290,6 +290,14 @@ func searchObjectKind(kind string) string {
 		return "type"
 	}
 	switch kind {
+	case "索引":
+		return "index"
+	case "别名":
+		return "alias"
+	case "数据流":
+		return "data_stream"
+	case "集合":
+		return "collection"
 	case "键":
 		return "keyspace"
 	case "表":

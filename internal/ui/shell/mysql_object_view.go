@@ -128,18 +128,7 @@ func (s *State) openMySQLData(services ui.Services, database, table string) {
 		return
 	}
 	s.nextTabID++
-	t := &tab{id: s.nextTabID, kind: tabMySQLData, title: database + "." + table + " · 数据", data: s.dataWorkspace.OpenObject(s.nextTabID, s.runtime.Namespace(w.ProfileID, database).Object(func() string {
-		if kind == "键" {
-			return "keyspace"
-		}
-		if kind == "集合" {
-			return "collection"
-		}
-		if kind == "视图" {
-			return "view"
-		}
-		return "table"
-	}(), table), s.objectCapabilitiesFor(w.ProfileID))}
+	t := &tab{id: s.nextTabID, kind: tabMySQLData, title: database + "." + table + " · 数据", data: s.dataWorkspace.OpenObject(s.nextTabID, s.runtime.Namespace(w.ProfileID, database).Object(neutralObjectKind(kind), table), s.objectCapabilitiesFor(w.ProfileID))}
 	s.tabs = append(s.tabs, t)
 	s.activeTab = len(s.tabs) - 1
 	s.dataWorkspace.Load(services, t.data, false)

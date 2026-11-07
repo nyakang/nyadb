@@ -74,6 +74,10 @@ func (s *inspectorState) FieldView(c *ui.Context, t *Panel) {
 				theme.Property(c, "类型", field.Type)
 				if !complete {
 					ui.Text(c, locales.Text("仅有基础字段类型，完整元数据尚未加载")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+				} else if t.runtime != nil && t.runtime.Capabilities.Documents {
+					if field.Comment != "" {
+						theme.Property(c, "说明", field.Comment)
+					}
 				} else {
 					fieldAttributes(c, field)
 				}

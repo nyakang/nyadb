@@ -53,7 +53,7 @@ func (s *State) mysqlDataHeaderActionMenu(c *ui.Context, t *Document, page *cont
 		s.applyMySQLDataCellSort(c.Services(), t, "", false)
 	}
 	m.Separator()
-	if m.Item(locales.Text("添加筛选")).Chosen() {
+	if m.Item(locales.Text("添加筛选")).Disabled(!slices.Contains(s.filterColumns(t, page.Columns), page.Columns[source])).Chosen() {
 		s.mysqlDataAddHeaderFilter(t, page.Columns[source])
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/dameng"
 	"github.com/nyakang/nyadb/internal/services/doris"
 	"github.com/nyakang/nyadb/internal/services/duckdb"
+	"github.com/nyakang/nyadb/internal/services/elasticsearch"
 	"github.com/nyakang/nyadb/internal/services/engines"
 	mongosvc "github.com/nyakang/nyadb/internal/services/mongodb"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
@@ -19,6 +20,7 @@ import (
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.Elasticsearch, ProviderFunc(elasticsearch.OpenSession))
 	m.Register(connections.Trino, ProviderFunc(trino.OpenSession))
 	m.Register(connections.StarRocks, ProviderFunc(starrocks.OpenSession))
 	m.Register(connections.Doris, ProviderFunc(doris.OpenSession))

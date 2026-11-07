@@ -58,6 +58,10 @@ func (s *State) View(c *ui.Context, t *Document) {
 	if t == nil || t.closed {
 		return
 	}
+	if t.object.Kind == "index" || t.object.Kind == "alias" || t.object.Kind == "data_stream" {
+		s.documentMappingView(c, t)
+		return
+	}
 	session := s.session()
 	palette := theme.Colors(c)
 

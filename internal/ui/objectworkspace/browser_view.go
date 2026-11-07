@@ -57,6 +57,9 @@ func mysqlObjectActionLabels(kind string) (open, design string) {
 	if Supports(kind) {
 		return "查看定义（只读）", "查看结构（不适用）"
 	}
+	if kind == "索引" || kind == "别名" || kind == "数据流" {
+		return "打开文档", "查看映射（只读）"
+	}
 	if kind == "键" {
 		return "打开键", "查看键结构（只读）"
 	}
@@ -190,6 +193,7 @@ func (s *State) BrowserView(c *ui.Context) {
 	database := a.scope.database
 	items := a.items
 	redisEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "redis"
+	searchEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "elasticsearch"
 	documentEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "mongodb"
 	canOpen, canProgram := a.canOpen, a.canProgram
 	ui.Column(c).Fill().Children(func() {
@@ -200,6 +204,18 @@ func (s *State) BrowserView(c *ui.Context) {
 					{"打开表", "open-table", "打开选中表数据"}, {"设计表", "design-table", "设计选中表"}, {"查看结构", "design-table", "打开选中表结构"},
 				} {
 					item := action
+					if searchEngine {
+						if item.label == "设计表" {
+							continue
+						}
+						if item.label == "打开表" {
+							item.label = "打开文档"
+							item.accessible = "打开选中对象文档"
+						}
+						if item.label == "查看结构" {
+							item.accessible = "查看映射（只读）"
+						}
+					}
 					if redisEngine {
 						if item.label == "设计表" {
 							continue
@@ -231,7 +247,7 @@ func (s *State) BrowserView(c *ui.Context) {
 						})
 					}).Clicked() {
 						obj := items[a.frame.Row]
-						if (item.label == "打开表" || item.label == "打开集合" || item.label == "打开键") && s.deps.OpenData != nil {
+						if (item.label == "打开表" || item.label == "打开集合" || item.label == "打开键" || item.label == "打开文档") && s.deps.OpenData != nil {
 							s.deps.OpenData(c.Services(), a.scope.profile, database, obj.Name)
 						} else if item.label == "查看结构" {
 							s.openStructure(c.Services(), database, obj.Name)
@@ -241,7 +257,7 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 				}
 				canCreate := a.canCreate
-				if !documentEngine && !redisEngine {
+				if !documentEngine && !redisEngine && !searchEngine {
 					if ui.Button(c, "").Label(locales.Text("新建表")).Tooltip(locales.Text("新建表")).
 						Disabled(!canCreate).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
 						ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
@@ -260,6 +276,9 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 				}
 				kinds := []string{"全部", "表", "视图"}
+				if searchEngine {
+					kinds = []string{"全部", "索引", "别名", "数据流"}
+				}
 				if redisEngine {
 					kinds = []string{"全部", "键"}
 				}
