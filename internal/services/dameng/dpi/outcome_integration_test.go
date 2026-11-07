@@ -3,10 +3,12 @@ package dpi
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"database/sql/driver"
 	"errors"
 	"io"
 	"net"
+	"path/filepath"
 	"strconv"
 	"sync/atomic"
 	"testing"
@@ -24,13 +26,38 @@ type lostReply struct {
 	stop      chan struct{}
 }
 
-func dropNativeReply(t *testing.T, endpoint, marker string) *lostReply {
+func dropNativeReply(t *testing.T, endpoint, marker string, settings ...TLSOptions) *lostReply {
 	t.Helper()
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	p := &lostReply{listener: listener, dropped: make(chan struct{}), done: make(chan struct{}), stop: make(chan struct{})}
+	var remoteConfig, serverConfig *tls.Config
+	if len(settings) > 0 {
+		host, _, err := net.SplitHostPort(endpoint)
+		if err != nil {
+			t.Fatal(err)
+		}
+		remoteConfig, _, err = remoteTLS(host, settings[0])
+		if err != nil {
+			t.Fatal(err)
+		}
+		folder := filepath.Join(filepath.Dir(settings[0].CAFile), "..", "server_ssl")
+		certificate, err := tls.LoadX509KeyPair(filepath.Join(folder, "server-cert.pem"), filepath.Join(folder, "server-key.pem"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		serverConfig = &tls.Config{MinVersion: tls.VersionTLS12, Certificates: []tls.Certificate{certificate}, ClientAuth: tls.RequireAndVerifyClientCert, ClientCAs: remoteConfig.RootCAs}
+		// The trust audit varies only the identity sent to the original server.
+		// The owned fault proxy continues to verify the application's identity.
+		if len(settings) > 1 {
+			remoteConfig, _, err = remoteTLS(host, settings[1])
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
 	go func() {
 		defer close(p.done)
 		client, err := listener.Accept()
@@ -53,20 +80,48 @@ func dropNativeReply(t *testing.T, endpoint, marker string) *lostReply {
 			}
 		}()
 		defer close(watchDone)
+		reader, writer := client, server
+		if remoteConfig != nil {
+			request, err := readGreeting(client)
+			if err != nil {
+				return
+			}
+			if _, err = io.Copy(server, bytes.NewReader(request)); err != nil {
+				return
+			}
+			response, err := readGreeting(server)
+			if err != nil {
+				return
+			}
+			upstream := tls.Client(server, remoteConfig)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if err = upstream.HandshakeContext(ctx); err != nil {
+				return
+			}
+			if _, err = io.Copy(client, bytes.NewReader(response)); err != nil {
+				return
+			}
+			downstream := tls.Server(client, serverConfig)
+			if err = downstream.HandshakeContext(ctx); err != nil {
+				return
+			}
+			reader, writer = downstream, upstream
+		}
 		forwardDone := make(chan struct{})
 		go func() {
 			defer close(forwardDone)
 			buffer := make([]byte, 64<<10)
 			var tail []byte
 			for {
-				n, err := client.Read(buffer)
+				n, err := reader.Read(buffer)
 				if n > 0 {
 					combined := append(tail, buffer[:n]...)
 					if p.armed.Load() && bytes.Contains(combined, []byte(marker)) {
 						p.requested.Store(true)
 					}
 					tail = append([]byte(nil), combined[max(0, len(combined)-len(marker)):]...)
-					if _, err = io.Copy(server, bytes.NewReader(buffer[:n])); err != nil {
+					if _, err = io.Copy(writer, bytes.NewReader(buffer[:n])); err != nil {
 						break
 					}
 				}
@@ -78,13 +133,13 @@ func dropNativeReply(t *testing.T, endpoint, marker string) *lostReply {
 		}()
 		buffer := make([]byte, 64<<10)
 		for {
-			n, err := server.Read(buffer)
+			n, err := writer.Read(buffer)
 			if n > 0 {
 				if p.requested.Load() {
 					close(p.dropped)
 					break
 				}
-				if _, err = client.Write(buffer[:n]); err != nil {
+				if _, err = reader.Write(buffer[:n]); err != nil {
 					break
 				}
 			}
@@ -116,7 +171,11 @@ func TestNativeDPILostWriteAndCommitRepliesAreNeverReplayed(t *testing.T) {
 			if commit {
 				marker = "COMMIT"
 			}
-			proxy := dropNativeReply(t, net.JoinHostPort(o.Host, strconv.Itoa(int(o.Port))), marker)
+			var tlsSettings []TLSOptions
+			if o.TLS != nil {
+				tlsSettings = append(tlsSettings, *o.TLS)
+			}
+			proxy := dropNativeReply(t, net.JoinHostPort(o.Host, strconv.Itoa(int(o.Port))), marker, tlsSettings...)
 			opts := o
 			opts.Port = uint16(proxy.listener.Addr().(*net.TCPAddr).Port)
 			db := nativeDB(t, opts, password)
