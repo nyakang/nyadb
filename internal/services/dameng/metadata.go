@@ -206,8 +206,17 @@ func metadataDenied(err error) bool {
 }
 
 func (s *Session) definition(ctx context.Context, o contract.ObjectRef) (string, error) {
+	return definitionAt(ctx, s.db, o)
+}
+
+type metadataQueryer interface {
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+func definitionAt(ctx context.Context, q metadataQueryer, o contract.ObjectRef) (string, error) {
 	var text string
-	err := s.db.QueryRowContext(ctx, `SELECT SYS.DBMS_METADATA.GET_DDL(?,?,?)`, strings.ToUpper(o.Kind), o.Name, o.Schema).Scan(&text)
+	err := q.QueryRowContext(ctx, `SELECT SYS.DBMS_METADATA.GET_DDL(?,?,?)`, strings.ToUpper(o.Kind), o.Name, o.Schema).Scan(&text)
 	if err == nil && (len(text) > 1<<20 || !utf8.ValidString(text)) {
 		return "", contract.ErrUnsupported
 	}
