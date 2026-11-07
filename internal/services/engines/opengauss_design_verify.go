@@ -235,11 +235,15 @@ func openGaussVerifyDesignCatalogWithIncoming(original contract.SchemaDesignSnap
 			typeChanged = typeChanged || a.Type != b.Type
 		}
 	}
+	toastPrototypes, toastRemoved, err := openGaussVerifiedToastRewrite(original, desired, baseline)
+	if err != nil {
+		return err
+	}
 	// Direct declaration objects intentionally removed/recreated by the plan.
 	changed := map[string]bool{}
 	// Native ALTER may first create TOAST storage when a variable-length
 	// field is added. Its topology comes from the independent declaration;
-	// existing storage is retained even if CREATE no longer requires it.
+	// existing storage is retained unless a native rewrite proves its removal.
 	for _, owner := range []string{"@table", "@table:reldeltarelid"} {
 		main, prototype := expected["relation:"+owner], probeGraph.Records["relation:"+owner]
 		if main == nil || prototype == nil {
@@ -251,9 +255,10 @@ func openGaussVerifyDesignCatalogWithIncoming(original contract.SchemaDesignSnap
 		for _, field := range []string{"reltoastrelid", "reltoastidxid"} {
 			// The native type rewrite swaps TOAST by links. If independent
 			// CREATE needs no TOAST for the resulting descriptor, the old
-			// internal tree is removed. A plain DROP COLUMN does not rewrite
-			// storage and therefore does not receive this removal permission.
-			if typeChanged && fmt.Sprint(prototype[field]) == "0" {
+			// internal tree is removed. A separate empty carrier can also prove
+			// this for ADD GENERATED after removed fields have been dropped.
+			// A plain DROP COLUMN does not receive this removal permission.
+			if (typeChanged || toastRemoved) && fmt.Sprint(prototype[field]) == "0" {
 				if root, hadStorage := main[field].(string); hadStorage {
 					main[field] = prototype[field]
 					for _, id := range beforeGraph.Objects {
@@ -452,12 +457,15 @@ func openGaussVerifyDesignCatalogWithIncoming(original contract.SchemaDesignSnap
 		}
 		if !retained && beforeGraph.Identities[key] != 0 && beforeGraph.Identities[key] != actualGraph.Identities[key] && strings.HasPrefix(key, "object:") {
 			prototype := probeGraph.Records[key]
+			if prototype == nil && (rewriteGenerated || rewriteDefault) {
+				prototype = toastPrototypes[key]
+			}
 			if prototype == nil || prototype["creator"] == nil {
 				return schemaddl.ErrConflict
 			}
-			// A proven native user/storage index reconstruction records this authenticated actor
-			// as creator. Retained objects and every other property keep
-			// their captured original values.
+			// The independent native prototype binds the recreated index's
+			// creator. Retained objects and every other property keep their
+			// captured original values.
 			want = gaussDesignCloneRecord(want)
 			want["creator"] = prototype["creator"]
 		}

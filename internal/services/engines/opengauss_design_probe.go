@@ -22,6 +22,7 @@ type openGaussDesignBaseline struct {
 	Incoming       map[uint64]openGaussIncomingEvidence
 	IncomingProbes map[uint64]openGaussIncomingProbe
 	DefaultRewrite *openGaussDefaultRewriteProof
+	ToastRewrite   *openGaussToastRewriteProof
 }
 
 // An independent, empty declaration asks the native parser to normalize
@@ -327,6 +328,10 @@ func openGaussCanonicalDesign(ctx context.Context, c *sql.Conn, r contract.Schem
 	}
 	out = openGaussDesignBaseline{Table: canonical, Catalog: snapshot.Schema.OpenGauss.Clone(), Names: names, References: referenceProbes, Incoming: incoming, IncomingProbes: incomingProbes}
 	out.DefaultRewrite, err = openGaussCaptureDefaultRewrite(ctx, c, r.Original, r.Desired, out.Catalog)
+	if err != nil {
+		return openGaussDesignBaseline{}, err
+	}
+	out.ToastRewrite, err = openGaussCaptureToastRewrite(ctx, c, r, out)
 	if err != nil {
 		return openGaussDesignBaseline{}, err
 	}
