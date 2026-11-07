@@ -147,6 +147,41 @@ func (s *session) SchemaDesign() contract.SchemaDesignOperations {
 			return out
 		}
 	}
+	if raw.CanRename != nil {
+		ops.CanRename = func(t contract.SchemaDesignTarget) bool {
+			if s.schemaDesignTarget(t) != nil || !s.Capabilities().Objects {
+				return false
+			}
+			t.Generation = s.raw.Generation()
+			return raw.CanRename(t)
+		}
+	}
+	if raw.Rename != nil {
+		ops.Rename = func(ctx context.Context, request contract.SchemaRenameRequest) contract.SchemaDesignOutcome {
+			if err := s.schemaDesignTarget(request.Original.Target); err != nil {
+				return contract.SchemaDesignOutcome{State: "not_executed", Error: err}
+			}
+			if !s.Capabilities().Objects {
+				return contract.SchemaDesignOutcome{State: "not_executed", Error: contract.ErrUnsupported}
+			}
+			r := request.Clone()
+			r.Original.Target.Generation = s.raw.Generation()
+			out := raw.Rename(ctx, r)
+			if out.Actual != nil {
+				actual := out.Actual.Clone()
+				expected := r.Original.Target
+				expected.Object.Name = r.Destination
+				if actual.Target != expected || !actual.Schema.Exists || actual.Schema.Table.Name != r.Destination {
+					out.Verified, out.Actual = false, nil
+					out.Error = errors.Join(out.Error, errors.New("rename receipt differs from captured destination scope"))
+					return out
+				}
+				actual.Target.Generation = s.generation
+				out.Actual = &actual
+			}
+			return out
+		}
+	}
 	return ops
 }
 func (s *session) schemaDesignTarget(t contract.SchemaDesignTarget) error {

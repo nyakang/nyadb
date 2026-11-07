@@ -37,6 +37,13 @@ type SchemaCopyRequest struct {
 
 func (r SchemaCopyRequest) Clone() SchemaCopyRequest { r.Original = r.Original.Clone(); return r }
 
+type SchemaRenameRequest struct {
+	Original    SchemaDesignSnapshot
+	Destination string
+}
+
+func (r SchemaRenameRequest) Clone() SchemaRenameRequest { r.Original = r.Original.Clone(); return r }
+
 type SchemaDesignOutcome struct {
 	// State is not_executed, rolled_back, committed or uncertain. Only an
 	// acknowledged, verified commit permits the host to replace its draft.
@@ -52,9 +59,11 @@ type SchemaDesignOperations struct {
 	Apply    func(context.Context, SchemaDesignRequest) SchemaDesignOutcome
 	// Drop consumes a complete original snapshot. A verified committed receipt
 	// retains that original target with Exists=false; it never means CASCADE.
-	CanDrop func(SchemaDesignTarget) bool
-	Drop    func(context.Context, SchemaDesignSnapshot) SchemaDesignOutcome
-	CanCopy func(SchemaDesignTarget) bool
-	Copy    func(context.Context, SchemaCopyRequest) SchemaDesignOutcome
+	CanDrop   func(SchemaDesignTarget) bool
+	Drop      func(context.Context, SchemaDesignSnapshot) SchemaDesignOutcome
+	CanCopy   func(SchemaDesignTarget) bool
+	Copy      func(context.Context, SchemaCopyRequest) SchemaDesignOutcome
+	CanRename func(SchemaDesignTarget) bool
+	Rename    func(context.Context, SchemaRenameRequest) SchemaDesignOutcome
 }
 type SchemaDesignProvider interface{ SchemaDesign() SchemaDesignOperations }

@@ -42,8 +42,10 @@ type Dependencies struct {
 	SchemaDesigned      func(ui.Services, SchemaDesignEvent)
 	SchemaDropped       func(ui.Services, SchemaDropEvent)
 	SchemaCopied        func(ui.Services, SchemaCopyEvent)
+	SchemaRenamed       func(ui.Services, SchemaRenameEvent)
 	BeforeDrop          func(ui.Services, int64, string, string, func(ui.Services)) bool
 	BeforeCopy          func(ui.Services, int64, string, string, func(ui.Services)) bool
+	BeforeRename        func(ui.Services, int64, string, string, func(ui.Services)) bool
 	TableGuardPending   func(int64, string, string) bool
 	ViewDesignFor       func(int64) contract.ViewDesignOperations
 	ViewTarget          func(int64, string, string) contract.SchemaDesignTarget
@@ -197,6 +199,7 @@ type loadResult struct {
 
 type State struct {
 	schemaCopy                              *schemaCopyOperation
+	schemaRename                            *schemaRenameOperation
 	schemaDrop                              *schemaDropOperation
 	dictionary                              *dictionaryState
 	dictionaryMenu                          *dictionaryScope
@@ -342,6 +345,7 @@ func (s *State) CloseAll() {
 	s.parkedViewOp = nil
 	s.closeSchemaCopy()
 	s.closeSchemaDrop()
+	s.closeSchemaRename()
 	s.closeDictionary()
 	s.dictionaryMenu = nil
 	s.closeObjectReference()
@@ -388,6 +392,7 @@ func (s *State) Consume(services ui.Services) {
 	s.consumeView(services)
 	s.consumeSchemaCopy(services)
 	s.consumeSchemaDrop(services)
+	s.consumeSchemaRename(services)
 	s.consumeDictionary(services)
 	s.consumeObjectReference(services)
 	s.consumeObjectSearch()

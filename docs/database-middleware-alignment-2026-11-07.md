@@ -71,6 +71,7 @@ DBX 的能力参考还包含其 SQL/schema/transfer 模块和
 - [x] openGauss 普通视图管理及原生选项/元数据保留，见 [视图验证](opengauss-views-2026-11-07.md)。
 - [x] openGauss 原生事务删除表及结构/依赖校验，见 [删除表验证](opengauss-table-drop-2026-11-07.md)。
 - [x] openGauss 原生事务表复制、独立普通/LARGE 序列及完整数据核验，见 [表复制验证](opengauss-table-copy-2026-11-07.md)。
+- [x] openGauss 原生事务表重命名、完整目录/物理身份核验及工作台草稿处理，见 [重命名验证](opengauss-table-rename-2026-11-07.md)。
 - [x] openGauss 私有表设计验证基础：原生规划、完整值/目录证明、事务执行、self/outgoing/incoming 与循环外键、注释保留和取消回滚；公开能力仍关闭，见 [基础阶段与验收边界](opengauss-table-design-2026-11-07.md)。
 - [x] openGauss 表设计表单阶段：原生字段/约束/索引表单、可空注释、触发器状态、存储选项、独立规划与小窗口中英文检查；通过注入测试绑定验证，公开保存仍未开放，见 [表单阶段](opengauss-table-design-2026-11-07.md#原生表单与独立规划阶段)。
 - [x] openGauss 原生 SQL 转换预检：32 条原生转换及嵌套实现检查、真实值/typmod、独立声明回滚和已提交替换拒绝；不代表检查到执行之间的并发稳定性，公开表设计保存仍关闭，见 [转换阶段](opengauss-table-design-2026-11-07.md#原生-sql-转换预检阶段)。

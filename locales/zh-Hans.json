@@ -2016,5 +2016,13 @@
   "nativeDesignTriggerNormal": "正常启用",
   "nativeDesignTriggerDisabled": "禁用",
   "nativeDesignTriggerReplica": "仅复制时启用",
-  "nativeDesignTriggerAlways": "始终启用"
+  "nativeDesignTriggerAlways": "始终启用",
+  "nativeRenamePreservesIdentity": "在同一模式中事务重命名，保留原表、索引、序列和依赖身份。",
+  "nativeRenameClosesOriginalTabs": "成功后关闭原名称下的数据和结构标签；未保存内容须先处理。",
+  "nativeRenameRereadRequired": "重命名结果或结构已变化；重新读取后才能再次确认。",
+  "nativeRenameSQLPreview": "重命名 SQL 预览",
+  "nativeRenameConfirmTable": "确认重命名表",
+  "nativeRenameUnconfirmed": "重命名结果未确认，请重新连接并核对原表与目标表。",
+  "nativeRenameTableSuccess": "重命名表成功",
+  "nativeRenameTableTitle": "重命名表"
 }

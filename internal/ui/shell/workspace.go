@@ -454,6 +454,8 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 		SchemaDesigned: s.schemaTableDesigned,
 		SchemaDropped:  s.schemaTableDropped,
 		SchemaCopied:   s.schemaTableCopied,
+		SchemaRenamed:  s.schemaTableRenamed,
+		BeforeRename:   s.guardSchemaTableRename,
 		ViewDesignFor: func(id int64) contract.ViewDesignOperations {
 			if s.runtime == nil {
 				return contract.ViewDesignOperations{}

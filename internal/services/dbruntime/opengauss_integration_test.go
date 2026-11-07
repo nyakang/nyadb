@@ -116,7 +116,7 @@ func TestOpenGaussRuntimeTLSAndGenerationRevocationFixture(t *testing.T) {
 	}
 	target := contract.SchemaDesignTarget{Object: m.Namespace(p.ID, table).Object("table", "original"), Generation: original.Generation()}
 	ops := m.SchemaDesign(p.ID)
-	if !m.Availability(p.ID, "drop_table", target).Enabled || !m.Availability(p.ID, "copy_table", target).Enabled || m.Availability(p.ID, "design_table", target).Enabled || ops.Apply != nil || ops.Copy == nil {
+	if !m.Availability(p.ID, "drop_table", target).Enabled || !m.Availability(p.ID, "copy_table", target).Enabled || !m.Availability(p.ID, "rename_table", target).Enabled || m.Availability(p.ID, "design_table", target).Enabled || ops.Apply != nil || ops.Copy == nil || ops.Rename == nil {
 		t.Fatal("native table operation capability boundary")
 	}
 	snapshot, err := ops.Snapshot(ctx, target)
@@ -144,6 +144,9 @@ func TestOpenGaussRuntimeTLSAndGenerationRevocationFixture(t *testing.T) {
 	}
 	if out := ops.Copy(ctx, contract.SchemaCopyRequest{Original: snapshot, Destination: "obsolete_copy", WithData: true}); out.State != "not_executed" || !errors.Is(out.Error, contract.ErrRevoked) || ops.CanCopy(target) {
 		t.Fatal("native table copy binding survived replacement", out)
+	}
+	if out := ops.Rename(ctx, contract.SchemaRenameRequest{Original: snapshot, Destination: "obsolete_rename"}); out.State != "not_executed" || !errors.Is(out.Error, contract.ErrRevoked) || ops.CanRename(target) {
+		t.Fatal("native table rename binding survived replacement", out)
 	}
 	target.Generation = replacement.Generation()
 	next := m.SchemaDesign(p.ID)

@@ -6,6 +6,56 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 )
 
+func (s *State) guardSchemaTableRename(services ui.Services, profile int64, database, table string, next func(ui.Services)) bool {
+	matches := func(t *tab) bool {
+		return t.data != nil && t.data.ProfileID() == profile && t.data.Database() == database && t.data.Table() == table ||
+			t.object != nil && t.object.ProfileID() == profile && t.object.Database() == database && t.object.Table() == table
+	}
+	var finish func(ui.Services)
+	finish = func(services ui.Services) {
+		if !s.guardTabsLeave(matches, finish) {
+			next(services)
+		}
+	}
+	return s.guardTabsLeave(matches, finish)
+}
+
+func (s *State) schemaTableRenamed(services ui.Services, event objectworkspace.SchemaRenameEvent) {
+	out := event.Outcome
+	if out.State != "committed" && out.State != "uncertain" {
+		return
+	}
+	profile := event.Original.Object.ProfileID
+	original, err := s.runtime.Session(profile)
+	if err != nil || original.Generation() != event.Original.Generation {
+		return
+	}
+	if !s.sessions.InvalidateDatabaseObjects(profile, event.Generation, event.Database) {
+		return
+	}
+	expected := event.Original
+	expected.Object.Name = event.Destination
+	if out.State == "uncertain" || !out.Verified || out.Actual == nil || out.Actual.Target != expected || !out.Actual.Schema.Exists || out.Actual.Schema.Table.Name != expected.Object.Name || out.Error != nil {
+		_ = original.Close()
+		return
+	}
+	w := s.sessions.Workspace(profile)
+	if w == s.sessions.Current() && w.Database == event.Database {
+		selected := navigation.Parse(s.navigation.Key)
+		if selected.ProfileID == profile && selected.Database == event.Database && selected.Object == event.Original.Object.Name {
+			selected.Object = event.Destination
+			s.navigation.Key, s.navigation.Row = selected.Key(), -1
+		}
+		s.loadMySQLObjects(services, event.Database, true)
+	}
+	for i := len(s.tabs) - 1; i > 0; i-- {
+		t := s.tabs[i]
+		if t.data != nil && t.data.Object() == event.Original.Object || t.object != nil && t.object.Object() == event.Original.Object {
+			s.closeTab(i)
+		}
+	}
+}
+
 func (s *State) schemaTableCopied(services ui.Services, event objectworkspace.SchemaCopyEvent) {
 	out := event.Outcome
 	if out.State != "committed" && out.State != "uncertain" {
