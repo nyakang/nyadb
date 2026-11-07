@@ -381,9 +381,15 @@ func openGaussVerifyDesignCatalogWithIncoming(original contract.SchemaDesignSnap
 	}
 	// Native ExecRewriteRowTable calls finish_heap_swap with toast-by-links.
 	// Adding a stored generated field necessarily rewrites an ordinary heap;
+	// new defaults can also rewrite it, as observed on the independent empty
+	// declaration. Short instant defaults do not acquire this permission.
 	// its internal TOAST tree can acquire new physical identities. Preserve
 	// every record/property and all original user object identities regardless.
 	rewriteGenerated := false
+	rewriteDefault, err := openGaussVerifiedDefaultRewrite(original, desired, baseline)
+	if err != nil {
+		return err
+	}
 	if main := beforeGraph.Records["relation:@table"]; main != nil && main["parttype"] == "n" {
 		columnStore := false
 		for _, option := range original.Schema.Table.OpenGauss.Parameters {
@@ -411,7 +417,7 @@ func openGaussVerifyDesignCatalogWithIncoming(original contract.SchemaDesignSnap
 		if rebound[beforeGraph.Objects[key]] && beforeGraph.Identities[key] != actualGraph.Identities[key] {
 			retained = false
 		}
-		if rewriteGenerated && beforeGraph.Identities[key] != actualGraph.Identities[key] {
+		if (rewriteGenerated || rewriteDefault) && beforeGraph.Identities[key] != actualGraph.Identities[key] {
 			object := beforeGraph.Objects[key]
 			if strings.HasPrefix(object, "@table:reltoastrelid") || strings.HasPrefix(object, "@table:reltoastidxid") || strings.HasPrefix(object, "@physical-index:@table:reltoast") {
 				retained = false

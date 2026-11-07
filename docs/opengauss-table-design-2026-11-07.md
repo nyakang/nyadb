@@ -627,9 +627,9 @@ openGauss 6.0.0 的 `pg_cast` 有 32 条 SQL 实现的原生转换。此前显�
 作为普遍可用的回调屏障。实际绑定、完整并发与工作台验收仍待完成，
 公开 `CanApply` / `Apply` 与 `DesignTables` 继续关闭。
 
-本轮也观察到，在已有表上同时添加这些默认值字段时，原生 ALTER 会
-新增 TOAST 身份；当前保留目录身份校验拒绝该变化，并撤销事务。
-该已有表场景仍需独立实现 TOAST 转换证明，不以放宽身份校验取得通过。
+转换预检阶段也观察到，在已有表上同时添加这些默认值字段时，原生 ALTER 会
+新增 TOAST 身份；当时的保留目录身份校验拒绝该变化，并撤销事务。
+该阶段没有放宽身份校验；后续默认值重写证明见下节。
 
 验证终结结果：全仓库 CGO=0 普通测试、Go vet、MyGo vet 和 i18n check
 （2017 条消息）通过；最终改动的 schemaddl/engines 普通测试与 Go vet
@@ -642,3 +642,63 @@ amd64、Windows amd64 和 macOS arm64 编译通过。
 完整通过（46.988 秒），见 `sql-casts-native-create-final-race.log`。
 未因失败放宽已有表身份校验，也未重复执行没有代码变化的其它成功组。
 本轮所属临时实例与私有凭据在验证后由创建它们的 fixture 脚本清理。
+
+## 新增默认值的原生重写证明
+
+普通行存表新增默认值字段现在用独立原生 ADD COLUMN 观察是否重写堆。
+原生 [6.0.0 tablecmds.cpp](https://github.com/opengauss-mirror/openGauss-server/blob/6.0.0/src/gausskernel/optimizer/commands/tablecmds.cpp)
+的 `shouldUpdateAllTuples` 根据类型、表达式及求值后的存储长度选择
+即时默认值或重写；`ExecRewriteRowTable` 调用 `finish_heap_swap` 按链接
+替换 TOAST。源码说明了分支，实际服务器决定本次声明走哪个分支。
+
+- 在已经通过回调预检的独立空声明上，逐个新增同类型/默认值的随机命名
+  字段，记录同一私有 relation 的 `relfilenode` 是否变化；前后都确认
+  零行。每次 ADD 撤销专用 savepoint，整个独立声明也在修改原表前回滚。
+  观察入口拒绝原表身份和非私有声明，没有原始数据进入重写观察。
+- 证据绑定完整原始快照（含 profile/命名空间/generation）、目标声明、
+  独立目录指纹与每个新字段。验证时核对字段签名、私有 relation 身份和
+  非零文件身份；不同声明、会话或目录不能复用。短默认值的负观察不授予
+  TOAST 替换权限。回滚或释放失败沿用不确定状态与物理连接撤销。
+- 原表与用户索引、约束、默认值及序列仍保留原始身份。只有已观察到的
+  普通默认值重写可以替换内部 TOAST 树身份；完整目录记录、未知属性、
+  creator 和依赖继续和原始/独立声明比较。列存和分区不套用此普通堆路径。
+- 值证明中的实际 `adbin` 可以保留原生 SQL cast 身份。这些固定 SQL
+  实现再次核对完整签名、正文和嵌套实现，然后参与独立完整值投影；其它
+  SQL 实现继续拒绝。完整值摘要、重复次数、NULL 与原始序列状态继续决定
+  提交，新增默认值不会代替数据核验。
+
+真实 verify-full TLS、openGauss 6.0.0 PG 模式新增验证包含：
+
+1. 短文本、123/124 字节 ASCII 边界、长中文默认值、text/nvarchar2 的
+   显式 NULL、nvarchar2 到精确 numeric、circle 到 12 顶点 polygon。
+   123 字节文本保持 TOAST 身份，124 字节和长文本重写，显式 NULL 均
+   保持身份。每次真实事务核对独立目录与完整新值。
+2. 原始 17,920 字节文本与 8,192 字节二进制、精确 numeric、重复行和
+   NULL 字段。所属 fixture 管理员读取 TOAST chunk 表，确认前后确有
+   外部存储；重写后原 TOAST 关系消失，原表与用户对象仍保留身份。
+3. 无重写证据时拒绝内部身份变化；改变声明、generation 或独立目录的
+   证据被拒绝。每个场景还逐条篡改完整目录属性及保留默认值身份，验证
+   拒绝且没有改写原始/独立/结果快照。
+4. 在原有表上共同新增 numeric、interval、smalldatetime 和 polygon
+   转换默认值，真实私有 Apply 提交；精度、原生舍入、几何顶点及原始长
+   文本均正确。新增长默认值与有损 varchar 修改组合撤销整个事务，恢复
+   原始值、目录修订和 TOAST 身份。
+
+本阶段解决转换预检阶段记录的普通表默认值 TOAST 拒绝，并未开启公开
+表设计保存；完整实际调度/目录并发和工作台生命周期验收仍待完成。
+
+最终验证：CGO=0 全仓库普通测试、Go vet、MyGo vet 和 i18n check
+（2017 条消息）通过；schemaddl/engines race 通过，engines 63.955 秒。
+Linux amd64、Windows amd64、macOS arm64 的 CGO=0 编译通过。
+`build/opengauss/table-design/toast-native-final-race.log` 的新增默认值八类
+完整目录/值/TOAST 组通过（336.01 秒），混合转换、有损回滚、图身份、
+原生转换、取消与提交回执丢失组也通过。整组随后触及 Go 的默认 10 分钟
+总超时，不能将该进程描述为完整成功。尚未终结的共享值证明组独立运行
+后全部通过（38.246 秒），见 `toast-value-proof-final-race.log`；没有重跑
+已经成功且没有代码变化的其它组。未报告数据竞争。
+
+首轮测试曾误把 BIGSERIAL 当作可空字段，随后改为保留非空 ID、验证
+其它字段的 NULL；对 nvarchar2 显式 NULL 的重写预期也由实际服务器
+结果校正为保留身份。几何默认值的真实私有 Apply 曾在值证明中因 SQL
+语言被拒绝，修正为只接受已核验的原生转发器，最终混合提交验证通过。
+本阶段 fixture 的容器、证书与私有凭据在验证后由所属脚本清理。

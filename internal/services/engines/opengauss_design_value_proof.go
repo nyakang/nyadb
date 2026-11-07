@@ -122,6 +122,15 @@ func openGaussCheckValueRepeatability(ctx context.Context, c *sql.Conn, r contra
 			return errors.Join(errOpenGaussValueRepeatability, err)
 		}
 		for _, oid := range calls {
+			// A bound native SQL cast keeps its SQL routine identity in adbin.
+			// It has the same exact body/signature/nested-binding checks as
+			// declaration preflight; arbitrary SQL routines remain rejected.
+			if _, nativeSQL := openGaussNativeSQLRoutines[uint64(oid)]; nativeSQL {
+				if err = openGaussCheckNativeSQLRoutine(ctx, c, uint64(oid), map[uint64]bool{}); err != nil {
+					return errors.Join(errOpenGaussValueRepeatability, err)
+				}
+				continue
+			}
 			var trusted bool
 			err = c.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
  WHERE p.oid=$1::oid AND n.nspname='pg_catalog' AND p.prolang IN(12,13) AND p.provolatile IN('i','s') AND p.proname<>'statement_timestamp' AND NOT p.proisagg AND NOT p.proiswindow)`, oid).Scan(&trusted)
