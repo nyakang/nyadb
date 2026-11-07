@@ -4,6 +4,7 @@ go 1.27.3
 
 require (
 	gitcode.com/opengauss/openGauss-connector-go-pq v1.0.9
+	gitea.com/kingbase/gokb v0.0.0-20201021123113-29bd62a876c3
 	github.com/ClickHouse/clickhouse-go/v2 v2.50.0
 	github.com/HuaweiCloudDeveloper/gaussdb-go v1.0.0-rc1
 	github.com/ebitengine/purego v0.11.3
@@ -73,3 +74,5 @@ tool github.com/egoist/mygo/cmd/mygo
 replace github.com/egoist/mygo => github.com/nyakang/mygo v0.7.4-nyadb.1
 
 replace gitcode.com/opengauss/openGauss-connector-go-pq => ./third_party/opengauss_pq
+
+replace gitea.com/kingbase/gokb => ./third_party/kingbase_gokb

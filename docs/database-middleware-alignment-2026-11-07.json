@@ -855,7 +855,12 @@
         "kingbase"
       ],
       "nyadb_kind": null,
-      "status": "missing"
+      "status": "missing",
+      "native_transport_foundation": {
+        "report": "kingbase-native-transport-2026-11-07.md",
+        "verified_server": "KingbaseES V008R006C009B0014, database_mode=pg",
+        "workbench_registered": false
+      }
     },
     {
       "dbType": "highgo",
@@ -3078,7 +3083,12 @@
       "category": "domestic",
       "port": "54321",
       "nyadb_kind": null,
-      "status": "missing"
+      "status": "missing",
+      "native_transport_foundation": {
+        "report": "kingbase-native-transport-2026-11-07.md",
+        "verified_server": "KingbaseES V008R006C009B0014, database_mode=pg",
+        "workbench_registered": false
+      }
     },
     {
       "id": "highgo",

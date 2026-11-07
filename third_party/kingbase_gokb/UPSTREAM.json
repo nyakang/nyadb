@@ -1,0 +1,125 @@
+{
+  "module": "gitea.com/kingbase/gokb",
+  "version": "v0.0.0-20201021123113-29bd62a876c3",
+  "commit": "29bd62a876c30fc79f64efd0985712f91b005f2e",
+  "license": "MIT; original LICENSE.md retained",
+  "files": [
+    {
+      "path": "LICENSE.md",
+      "upstream_sha256": "3e2d79d27727d59ab1c9752f57654733d6c8824936c22800594dccfe8864ec28"
+    },
+    {
+      "path": "README.md",
+      "upstream_sha256": "ce4a9358da1bc03d19bf2b09fd3766142a0f46f96688acec5123245e52f42ef8"
+    },
+    {
+      "path": "array.go",
+      "upstream_sha256": "6b345c2f69bb8a5c087f7ff79428951fdaef86a73d98b5267cd24882263b59ca"
+    },
+    {
+      "path": "buf.go",
+      "upstream_sha256": "02683d2263169a396bee5b55ae901da2356c6d4558996ef60ca844668a310eb3"
+    },
+    {
+      "path": "conn.go",
+      "upstream_sha256": "8d88b49df052f4f81e3147fe1cb6c7d4d8237d444e6c9f2b9c8bf01ef5a407c2"
+    },
+    {
+      "path": "conn_go18.go",
+      "upstream_sha256": "36b07867909dd5b12e885b5cffb9e72c943c7e2088f33dbe798afc24ce417fc5"
+    },
+    {
+      "path": "connector.go",
+      "upstream_sha256": "22410fae30e4ea8f02b5fde2db7bbedf4b5d4d8f5a094ea394d65aac3248429d"
+    },
+    {
+      "path": "copy.go",
+      "upstream_sha256": "dafc68f9754ce0b62cb7a0a13b1a9537a65dbccb068af0039dcd3dd8b757508d"
+    },
+    {
+      "path": "doc.go",
+      "upstream_sha256": "b9a17d5f5ec5a8e9d747f642b837f425d3de7db7763cf57f582f22a884086eb4"
+    },
+    {
+      "path": "encode.go",
+      "upstream_sha256": "5c6e2b423aa3648c93a0e4a9f77828ab7584b2bfc45352c13ea737351032d55b"
+    },
+    {
+      "path": "error.go",
+      "upstream_sha256": "84eb10c5eeae23178fbc3422c5162e4aa3026f24f72923e4cb97b7f555a21ad3"
+    },
+    {
+      "path": "example/listen/doc.go",
+      "upstream_sha256": "94fb3ac7ad149bcffd8fd0fea254fca5e6e440232372157e8893ff0c6c7dba8c"
+    },
+    {
+      "path": "go.mod",
+      "upstream_sha256": "14d9a65bde9435cbb3271ea05e8bd4bfe0108a1b47481e39642077c923b123db"
+    },
+    {
+      "path": "hstore/hstore.go",
+      "upstream_sha256": "7c2b295214013fd69a426a8275359b16874023c4940219a3df34268f3319ea3d"
+    },
+    {
+      "path": "krb.go",
+      "upstream_sha256": "dd3096205b1cc4168fd31c74b3a9d2ba4149a477725cb69870a3b087181bc762"
+    },
+    {
+      "path": "notice.go",
+      "upstream_sha256": "c9e57fbee2257a518c13811ba89dcdeb38df0af6f02db4a02ee9ec751d939aa4"
+    },
+    {
+      "path": "notify.go",
+      "upstream_sha256": "a400229a8f7875cbae47998df84a40c92415ec2adc33d458414d407210f09339"
+    },
+    {
+      "path": "oid/doc.go",
+      "upstream_sha256": "02fd3ca324b619d602695d3139a4f4ec6240590ab09daf7fc28bc92e75748309"
+    },
+    {
+      "path": "oid/gen.go",
+      "upstream_sha256": "df239806ffc8c6af8b1a07c0483934b0c9fb971024bdfdeda2f059af56bbe470"
+    },
+    {
+      "path": "oid/types.go",
+      "upstream_sha256": "514403c98f60efdaa571f0432bcc4395e4e321d57daa62294e84da6366de98ec"
+    },
+    {
+      "path": "rows.go",
+      "upstream_sha256": "fcf4cf9b80c24fb608d42beeb5e285f0d426b3bf388530e47af18b652fb9ea27"
+    },
+    {
+      "path": "scram/scram.go",
+      "upstream_sha256": "80317e4cd866fb0a42cd4627ea537a4466fbfbf29c821d6979a777d03cddd920"
+    },
+    {
+      "path": "ssl.go",
+      "upstream_sha256": "3b8e3c058f5219163273c4a67712a8b4121846f367337e13854cde2bd8c090b3"
+    },
+    {
+      "path": "ssl_permissions.go",
+      "upstream_sha256": "79c4e977549a96a0b3e6f7d1abe1120dae75b9988ae9437b84378902fba92108"
+    },
+    {
+      "path": "ssl_windows.go",
+      "upstream_sha256": "da4e7b1f5c6dc2b116ab0076d12ba81f6dcb242e5c754b69e1621ac208d00ee7"
+    },
+    {
+      "path": "url.go",
+      "upstream_sha256": "3daa5dbd5b1385b3a2bd4a561a5d568c9088395aa2d8fd7eccd3428bb6941b9f"
+    },
+    {
+      "path": "user_posix.go",
+      "upstream_sha256": "24d7d179011a741ddc74cd4feab353eba0eee845d4aaf8f8c2b2ee071cfeeda8"
+    },
+    {
+      "path": "user_windows.go",
+      "upstream_sha256": "3d9c1f13acca31272180b5491e2f0f5883691fd70ac70a40077a1f7d16a5e35a"
+    },
+    {
+      "path": "uuid.go",
+      "upstream_sha256": "254cd4f7f160888ca82e30a411032600a5402c7426c6564ba1953cc3f0acb7d7"
+    }
+  ],
+  "module_sum": "h1:QjslQNaH5Nuap5i4nijS0OYV6GMk5kqrAmgU90zBKd4="
+}
