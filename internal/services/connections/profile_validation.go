@@ -9,6 +9,9 @@ import (
 // NormalizeProfile validates public settings and applies their canonical values.
 // Variants are normalized in place; callers retaining them must clone the slice.
 func NormalizeProfile(p Profile) (Profile, error) {
+	if p.Kind != Trino && p.TrinoOptions != (TrinoOptions{}) {
+		return p, fmt.Errorf("%w: Trino options on another engine", ErrInvalid)
+	}
 	if p.Kind != StarRocks && p.StarRocksOptions != (StarRocksOptions{}) {
 		return p, fmt.Errorf("%w: StarRocks options on another engine", ErrInvalid)
 	}
@@ -120,6 +123,8 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	switch p.Kind {
+	case Trino:
+		return normalizeTrinoProfile(p)
 	case StarRocks:
 		return normalizeStarRocksProfile(p)
 	case Doris:

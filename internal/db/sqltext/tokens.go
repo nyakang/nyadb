@@ -18,6 +18,10 @@ func Tokens(source string) ([]Token, error) {
 }
 
 func tokens(source string, clickhouse bool) ([]Token, error) {
+	return tokensWithRules(source, clickhouse, false)
+}
+
+func tokensWithRules(source string, clickhouse, trino bool) ([]Token, error) {
 	var out []Token
 	for i := 0; i < len(source); {
 		if source[i] == ' ' || source[i] == '\n' || source[i] == '\r' || source[i] == '\t' {
@@ -41,7 +45,7 @@ func tokens(source string, clickhouse bool) ([]Token, error) {
 			i++
 			closed := false
 			for i < len(source) {
-				if source[i] == '\\' && i+1 < len(source) {
+				if !trino && source[i] == '\\' && i+1 < len(source) {
 					i += 2
 					continue
 				}
@@ -66,7 +70,7 @@ func tokens(source string, clickhouse bool) ([]Token, error) {
 				return nil, errors.New("unterminated SQL comment")
 			}
 			i += end + 4
-		case source[i] == '#' || strings.HasPrefix(source[i:], "--") && (clickhouse || i+2 == len(source) || source[i+2] <= ' '):
+		case !trino && source[i] == '#' || strings.HasPrefix(source[i:], "--") && (trino || clickhouse || i+2 == len(source) || source[i+2] <= ' '):
 			c = true
 			for i < len(source) && source[i] != '\n' {
 				i++

@@ -2061,5 +2061,14 @@
   "dorisTLSModes": "verify-full 校验证书链和主机名；disable 关闭 TLS。",
   "dorisSessionPassword": "Doris 会话密码",
   "starrocksNativeEndpoint": "StarRocks 的 FE 查询端口默认为 9030。",
-  "starrocksSessionPassword": "StarRocks 会话密码"
+  "starrocksSessionPassword": "StarRocks 会话密码",
+  "trinoDefaultCatalogCaption": "默认 Catalog：",
+  "trinoDefaultSchemaCaption": "默认 Schema：",
+  "trinoDefaultCatalog": "Trino 默认 Catalog",
+  "trinoDefaultSchema": "Trino 默认 Schema",
+  "trinoTLSMode": "Trino TLS 模式",
+  "trinoCA": "Trino CA 证书",
+  "trinoSessionPassword": "Trino 会话密码",
+  "trinoHTTPProtocol": "Trino 通过 HTTP/HTTPS 连接；使用密码时必须启用 HTTPS。",
+  "trinoPasswordRequiresTLS": "Trino 使用密码时必须启用 HTTPS"
 }

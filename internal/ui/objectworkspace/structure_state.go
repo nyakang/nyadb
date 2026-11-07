@@ -23,6 +23,7 @@ type Session struct {
 }
 
 type Dependencies struct {
+	NamespaceLabel      func(contract.NamespaceRef) string
 	ProfileName         func(int64) string
 	EditFocus           *string
 	EditTarget          func(theme.EditTarget)
@@ -476,6 +477,9 @@ func (s *State) OpenQualifiedStructure(id uint64, o contract.ObjectRef, kind str
 	namespace := o.Schema
 	if namespace == "" {
 		namespace = o.Catalog
+	}
+	if s.deps.NamespaceLabel != nil {
+		namespace = s.deps.NamespaceLabel(o.Namespace())
 	}
 	d := s.OpenStructure(id, o.ProfileID, namespace, o.Name, kind)
 	if d != nil {

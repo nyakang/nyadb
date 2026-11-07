@@ -13,6 +13,9 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 	if namespace == "" {
 		namespace = o.Catalog
 	}
+	if s.deps.NamespaceLabel != nil {
+		namespace = s.deps.NamespaceLabel(o.Namespace())
+	}
 	kind := "表"
 	if o.Kind == "keyspace" {
 		kind = "键"

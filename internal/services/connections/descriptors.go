@@ -12,6 +12,8 @@ type Descriptor struct {
 
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
+	case Trino:
+		return Descriptor{kind, "Trino", "trino", "server", "trino", 8080, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Count: true, Export: true, JSONL: true}}, true
 	case StarRocks:
 		return Descriptor{kind, "StarRocks", "starrocks", "server", "mysql", 9030, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Count: true, Export: true, JSONL: true, Explain: true}}, true
 	case Doris:

@@ -29,6 +29,22 @@ func (s *State) EngineCatalog(id int64) string {
 	}
 	return ""
 }
+
+// NamespaceLabel maps immutable identity back to its session presentation label.
+// A label can include both catalog and schema; it is never a schema identifier.
+func (s *State) NamespaceLabel(n contract.NamespaceRef) string {
+	if w := s.Workspace(n.ProfileID); w != nil {
+		for label, ref := range w.Namespaces {
+			if ref == n {
+				return label
+			}
+		}
+	}
+	if n.Schema != "" {
+		return n.Schema
+	}
+	return n.Catalog
+}
 func (s *State) EngineKind(id int64) connections.Kind {
 	if w := s.Workspace(id); w != nil {
 		return w.Kind
@@ -75,6 +91,8 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 		w.Catalog = p.Database
 	} else if p.Kind == connections.Doris {
 		w.Catalog = p.DorisOptions.Catalog
+	} else if p.Kind == connections.Trino {
+		w.Catalog = p.Database
 	} else if p.Kind == connections.StarRocks {
 		w.Catalog = p.StarRocksOptions.Catalog
 	} else if p.Kind == connections.SQLite {
@@ -207,6 +225,9 @@ func (s *State) engineLabel(w *Workspace) string {
 	}
 	if w.Kind == connections.ClickHouse {
 		return "ClickHouse"
+	}
+	if w.Kind == connections.Trino {
+		return "Trino"
 	}
 	if w.Kind == connections.StarRocks {
 		return "StarRocks"

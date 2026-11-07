@@ -10,8 +10,7 @@ import (
 )
 
 // TrinoConfig is the public native HTTP connection configuration. Credentials
-// are supplied separately. Profile persistence and workbench wiring follow the
-// transport foundation; this type does not advertise a registered product.
+// are supplied separately and never persisted in a public profile.
 type TrinoConfig struct {
 	Endpoint, Username, Catalog, Schema, CAFile, ServerName string
 }

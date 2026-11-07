@@ -277,7 +277,7 @@ func (c *Client) Run(ctx context.Context, source string, consume Consumer) (Resu
 			return result, c.interrupted(result.QueryID, next, err)
 		}
 		var page response
-		if !json.Valid(raw) || json.Unmarshal(raw, &page) != nil || !queryID.MatchString(page.ID) || result.QueryID != "" && page.ID != result.QueryID {
+		if !utf8.Valid(raw) || !json.Valid(raw) || json.Unmarshal(raw, &page) != nil || !queryID.MatchString(page.ID) || result.QueryID != "" && page.ID != result.QueryID {
 			return result, c.interrupted(result.QueryID, next, ErrProtocol)
 		}
 		result.QueryID = page.ID

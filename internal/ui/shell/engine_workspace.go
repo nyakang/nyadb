@@ -38,7 +38,7 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 	}
 	status := s.sessions.StatusFor(p.ID)
 	ui.Column(c).Gap(5).Children(func() {
-		if (p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind == connections.MongoDB || p.Kind == connections.Redis) && status != "已连接" {
+		if (p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind == connections.MongoDB || p.Kind == connections.Redis) && status != "已连接" {
 			label := locales.Text("PostgreSQL 会话密码")
 			if p.Kind == connections.CockroachDB {
 				label = locales.Text("CockroachDB 会话密码")
@@ -69,6 +69,9 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 			}
 			if p.Kind == connections.Doris {
 				label = locales.Text("Doris 会话密码")
+			}
+			if p.Kind == connections.Trino {
+				label = locales.Text("Trino 会话密码")
 			}
 			if p.Kind == connections.StarRocks {
 				label = locales.Text("StarRocks 会话密码")
@@ -131,6 +134,9 @@ func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string 
 		if p.ID == id && p.Kind == connections.SQLServer {
 			return sqltext.SQLServerStatementAt(source, cursor)
 		}
+		if p.ID == id && p.Kind == connections.Trino {
+			return sqltext.TrinoStatementAt(source, cursor)
+		}
 		if p.ID == id && p.Kind == connections.ClickHouse {
 			return sqltext.ClickHouseStatementAt(source, cursor)
 		}
@@ -167,6 +173,9 @@ func (s *State) sqlFormat(id int64, source string) (string, error) {
 		}
 		if p.ID == id && p.Kind == connections.SQLServer {
 			return sqltext.FormatSQLServer(source)
+		}
+		if p.ID == id && p.Kind == connections.Trino {
+			return sqltext.FormatTrino(source)
 		}
 		if p.ID == id && p.Kind == connections.ClickHouse {
 			return sqltext.FormatClickHouse(source)

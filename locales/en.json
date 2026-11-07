@@ -2061,5 +2061,14 @@
   "dorisTLSModes": "verify-full verifies the certificate chain and hostname; disable turns TLS off.",
   "dorisSessionPassword": "Doris session password",
   "starrocksNativeEndpoint": "StarRocks uses FE query port 9030 by default.",
-  "starrocksSessionPassword": "StarRocks session password"
+  "starrocksSessionPassword": "StarRocks session password",
+  "trinoDefaultCatalogCaption": "Default Catalog:",
+  "trinoDefaultSchemaCaption": "Default Schema:",
+  "trinoDefaultCatalog": "Trino default Catalog",
+  "trinoDefaultSchema": "Trino default Schema",
+  "trinoTLSMode": "Trino TLS mode",
+  "trinoCA": "Trino CA certificate",
+  "trinoSessionPassword": "Trino session password",
+  "trinoHTTPProtocol": "Trino connects over HTTP/HTTPS; passwords require HTTPS.",
+  "trinoPasswordRequiresTLS": "Trino passwords require HTTPS"
 }

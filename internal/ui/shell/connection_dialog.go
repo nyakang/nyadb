@@ -160,6 +160,8 @@ func connectionKindName(kind connections.Kind) string {
 		return "PostgreSQL"
 	case connections.SQLite:
 		return "SQLite"
+	case connections.Trino:
+		return "Trino"
 	case connections.StarRocks:
 		return "StarRocks"
 	case connections.Doris:

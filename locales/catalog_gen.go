@@ -20967,3 +20967,93 @@ func StarrocksSessionPassword() string { return In(i18n.Locale()).StarrocksSessi
 func (msgs Messages) StarrocksSessionPassword() string {
 	return Catalog.Format(msgs.locale, "starrocksSessionPassword", nil)
 }
+
+// TrinoDefaultCatalogCaption says "默认 Catalog："
+// in the language the app shows.
+func TrinoDefaultCatalogCaption() string { return In(i18n.Locale()).TrinoDefaultCatalogCaption() }
+
+// TrinoDefaultCatalogCaption says "默认 Catalog："
+// in the language of msgs.
+func (msgs Messages) TrinoDefaultCatalogCaption() string {
+	return Catalog.Format(msgs.locale, "trinoDefaultCatalogCaption", nil)
+}
+
+// TrinoDefaultSchemaCaption says "默认 Schema："
+// in the language the app shows.
+func TrinoDefaultSchemaCaption() string { return In(i18n.Locale()).TrinoDefaultSchemaCaption() }
+
+// TrinoDefaultSchemaCaption says "默认 Schema："
+// in the language of msgs.
+func (msgs Messages) TrinoDefaultSchemaCaption() string {
+	return Catalog.Format(msgs.locale, "trinoDefaultSchemaCaption", nil)
+}
+
+// TrinoDefaultCatalog says "Trino 默认 Catalog"
+// in the language the app shows.
+func TrinoDefaultCatalog() string { return In(i18n.Locale()).TrinoDefaultCatalog() }
+
+// TrinoDefaultCatalog says "Trino 默认 Catalog"
+// in the language of msgs.
+func (msgs Messages) TrinoDefaultCatalog() string {
+	return Catalog.Format(msgs.locale, "trinoDefaultCatalog", nil)
+}
+
+// TrinoDefaultSchema says "Trino 默认 Schema"
+// in the language the app shows.
+func TrinoDefaultSchema() string { return In(i18n.Locale()).TrinoDefaultSchema() }
+
+// TrinoDefaultSchema says "Trino 默认 Schema"
+// in the language of msgs.
+func (msgs Messages) TrinoDefaultSchema() string {
+	return Catalog.Format(msgs.locale, "trinoDefaultSchema", nil)
+}
+
+// TrinoTLSMode says "Trino TLS 模式"
+// in the language the app shows.
+func TrinoTLSMode() string { return In(i18n.Locale()).TrinoTLSMode() }
+
+// TrinoTLSMode says "Trino TLS 模式"
+// in the language of msgs.
+func (msgs Messages) TrinoTLSMode() string {
+	return Catalog.Format(msgs.locale, "trinoTLSMode", nil)
+}
+
+// TrinoCA says "Trino CA 证书"
+// in the language the app shows.
+func TrinoCA() string { return In(i18n.Locale()).TrinoCA() }
+
+// TrinoCA says "Trino CA 证书"
+// in the language of msgs.
+func (msgs Messages) TrinoCA() string {
+	return Catalog.Format(msgs.locale, "trinoCA", nil)
+}
+
+// TrinoSessionPassword says "Trino 会话密码"
+// in the language the app shows.
+func TrinoSessionPassword() string { return In(i18n.Locale()).TrinoSessionPassword() }
+
+// TrinoSessionPassword says "Trino 会话密码"
+// in the language of msgs.
+func (msgs Messages) TrinoSessionPassword() string {
+	return Catalog.Format(msgs.locale, "trinoSessionPassword", nil)
+}
+
+// TrinoHTTPProtocol says "Trino 通过 HTTP/HTTPS 连接；使用密码时必须启用 HTTPS。"
+// in the language the app shows.
+func TrinoHTTPProtocol() string { return In(i18n.Locale()).TrinoHTTPProtocol() }
+
+// TrinoHTTPProtocol says "Trino 通过 HTTP/HTTPS 连接；使用密码时必须启用 HTTPS。"
+// in the language of msgs.
+func (msgs Messages) TrinoHTTPProtocol() string {
+	return Catalog.Format(msgs.locale, "trinoHTTPProtocol", nil)
+}
+
+// TrinoPasswordRequiresTLS says "Trino 使用密码时必须启用 HTTPS"
+// in the language the app shows.
+func TrinoPasswordRequiresTLS() string { return In(i18n.Locale()).TrinoPasswordRequiresTLS() }
+
+// TrinoPasswordRequiresTLS says "Trino 使用密码时必须启用 HTTPS"
+// in the language of msgs.
+func (msgs Messages) TrinoPasswordRequiresTLS() string {
+	return Catalog.Format(msgs.locale, "trinoPasswordRequiresTLS", nil)
+}

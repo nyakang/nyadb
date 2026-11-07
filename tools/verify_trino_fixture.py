@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify native Trino against a disposable, owned official coordinator."""
+"""Verify native Trino transport and workbench against an owned coordinator."""
 import argparse
 import base64
 import hashlib
@@ -33,7 +33,7 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(plain=False, hold=False, race=False):
+def verify(plain=False, hold=False, race=False, transport_only=False):
     base, output = ROOT/'temp/trino', ROOT/'build/trino'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
@@ -108,10 +108,14 @@ def verify(plain=False, hold=False, race=False):
             else:
                 env = os.environ.copy()
                 env.update({'NYADB_TRINO_IT':'1', 'NYADB_TRINO_CONFIG':str(probe)})
-                args = ['go','test','-count=1','-v','-run','TrinoNative', *(['-race'] if race else []), './internal/services/trino']
+                env['NYADB_TRINO_VISUAL_DIR'] = str(output/('workbench-'+nonce))
+                packages = ['./internal/services/trino']
+                if not transport_only:
+                    packages += ['./internal/services/dbruntime','./internal/ui/shell']
+                args = ['go','test','-count=1','-v','-run','TrinoNative|TrinoChooser', *(['-race'] if race else []), *packages]
                 logfile = output/('acceptance-'+nonce+'.log')
                 with logfile.open('w') as log:
-                    result = subprocess.run(args, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=240)
+                    result = subprocess.run(args, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=600)
                 if result.returncode or 'TestTrinoNative' not in logfile.read_text():
                     raise RuntimeError('Trino native acceptance failed; inspect captured test log')
                 print('Native Trino acceptance passed', flush=True)
@@ -131,5 +135,6 @@ if __name__ == '__main__':
     parser.add_argument('--plain',action='store_true')
     parser.add_argument('--hold',action='store_true')
     parser.add_argument('--race',action='store_true')
+    parser.add_argument('--transport-only',action='store_true',help='skip runtime and workbench acceptance')
     args=parser.parse_args()
-    verify(args.plain,args.hold,args.race)
+    verify(args.plain,args.hold,args.race,args.transport_only)

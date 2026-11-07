@@ -205,7 +205,7 @@ func (s *State) dataInspectorDependencies() dataworkspace.InspectorDependencies 
 }
 
 func (s *State) dataWorkspaceDependencies() dataworkspace.Dependencies {
-	return dataworkspace.Dependencies{EditFocus: &s.editFocus,
+	return dataworkspace.Dependencies{NamespaceLabel: func(n contract.NamespaceRef) string { return s.sessions.NamespaceLabel(n) }, EditFocus: &s.editFocus,
 		EditTarget:     s.registerEditTarget,
 		RecordActivity: s.recordActivity,
 		ImportTargets: func(id int64, db string) []string {
@@ -345,7 +345,7 @@ func restoreIncludesProfile(plan contract.BackupPlan, profile int64) bool {
 }
 
 func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
-	return objectworkspace.Dependencies{ProfileName: s.profileName, EditFocus: &s.editFocus, EditTarget: s.registerEditTarget, Engine: func(id int64) string {
+	return objectworkspace.Dependencies{NamespaceLabel: func(n contract.NamespaceRef) string { return s.sessions.NamespaceLabel(n) }, ProfileName: s.profileName, EditFocus: &s.editFocus, EditTarget: s.registerEditTarget, Engine: func(id int64) string {
 		for _, p := range s.navigation.Profiles() {
 			if p.ID == id {
 				return string(p.Kind)

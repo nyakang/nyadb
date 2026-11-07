@@ -24,6 +24,7 @@ const (
 	ClickHouse  Kind = "clickhouse"
 	Doris       Kind = "doris"
 	StarRocks   Kind = "starrocks"
+	Trino       Kind = "trino"
 	SQLServer   Kind = "sqlserver"
 	DuckDB      Kind = "duckdb"
 	Oracle      Kind = "oracle"
@@ -64,6 +65,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	TrinoOptions      TrinoOptions
 	StarRocksOptions  StarRocksOptions
 	DorisOptions      DorisOptions
 	DamengOptions     DamengOptions

@@ -338,6 +338,20 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 			})
 		})
 		return true
+	case connections.Trino:
+		if tab != "SSL" {
+			return false
+		}
+		a := &s.connectionDraft.TrinoOptions
+		theme.Form(c, formWidth, func() {
+			ui.Text(c, locales.Text("Trino 通过 HTTP/HTTPS 连接；使用密码时必须启用 HTTPS。"))
+			theme.Field(c, locales.Text("TLS 模式："), func() {
+				connectionFormSelect(c, &s.connectionDraft.TLSMode, []string{"verify-full", "disable"}, "Trino TLS 模式", fieldWidth, false)
+			})
+			s.editorInputRow(c, "CA 证书", "Trino CA 证书", &a.CAFile, labelWidth, fieldWidth)
+			s.editorInputRow(c, "证书服务器名", "证书服务器名", &a.ServerName, labelWidth, fieldWidth)
+		})
+		return true
 	case connections.StarRocks:
 		if tab != "SSL" {
 			return false
