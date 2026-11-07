@@ -23,8 +23,9 @@
   "startup_and_execution_join_before_handle_release": true,
   "uncertain_original_session_reusable": false,
   "automatic_replay": false,
+  "successor_report": "dameng-native-session-gate-2026-11-07.json",
   "remaining": [
-    "complete native environment/client configuration isolation and per-physical product gate",
+    "complete native environment/client configuration isolation",
     "other platforms, server/client versions and enforced mutual certificate authentication",
     "complete authentication/type/LOB matrix",
     "profile/URI/persistence/credential/editor/provider and qualified native metadata integration",

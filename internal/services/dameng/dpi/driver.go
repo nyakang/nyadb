@@ -54,6 +54,9 @@ func NewConnector(o Options, password string) (driver.Connector, error) {
 	if len(o.Username) > 128 || len(o.Schema) > 128 || len(password) > 512 {
 		return nil, errors.New("DM8 native identity exceeds its explicit bounds")
 	}
+	if o.Schema != "" && !validInitialSchema(o.Schema) {
+		return nil, errors.New("invalid bounded DM8 initial schema")
+	}
 	if o.Port == 0 {
 		o.Port = 5236
 	}
@@ -147,12 +150,6 @@ func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 			return nil, c.a.error(2, d.h, fmt.Sprintf("connection attribute %d", attr.id))
 		}
 	}
-	if c.o.Schema != "" {
-		text := append([]byte(c.o.Schema), 0)
-		if !succeeded(c.a.setCon(d.h, 12354, uintptr(unsafe.Pointer(&text[0])), int32(len(c.o.Schema)))) {
-			return nil, c.a.error(2, d.h, "initial schema")
-		}
-	}
 	var pin runtime.Pinner
 	defer pin.Unpin()
 	if d.localTLS != nil {
@@ -180,6 +177,11 @@ func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 	}
 	if err := ctx.Err(); err != nil {
 		return nil, err
+	}
+	if c.o.Schema != "" {
+		if err := InitializeSchema(ctx, d, c.o.Schema); err != nil {
+			return nil, err
+		}
 	}
 	complete = true
 	return d, nil
@@ -368,12 +370,11 @@ func (c *conn) PrepareContext(ctx context.Context, query string) (value driver.S
 	return c.prepareLocked(ctx, query)
 }
 func (c *conn) Ping(ctx context.Context) error {
-	rows, err := c.QueryContext(ctx, "SELECT 1 FROM DUAL", nil)
+	rows, err := c.QueryContext(ctx, "SELECT 1", nil)
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
-	return rows.Next(make([]driver.Value, 1))
+	return errors.Join(rows.Next(make([]driver.Value, 1)), rows.Close(), ctx.Err())
 }
 
 func (c *conn) ExecContext(ctx context.Context, query string, values []driver.NamedValue) (value driver.Result, err error) {

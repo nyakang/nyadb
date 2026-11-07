@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Owned DM8 deployment and optional Go-driver or loopback DPI audit.
+"""Owned DM8 deployment and optional Go-driver or native DPI/session audit.
 
 Passing this audit records observed limitations; it does not register a provider.
 No vendor driver source or binaries are redistributed with NyaDB.
@@ -133,7 +133,7 @@ EXIT;
             if audit_dpi:
                 environment = dict(os.environ, GOWORK="off", CGO_ENABLED="1" if race else "0", NYADB_DAMENG_DPI_IT="1", NYADB_DAMENG_DPI_CONFIG=str(private), NYADB_DAMENG_DPI_LIBRARY=str(Path(dpi_library).resolve()))
                 with (output / ("dpi-race.log" if race else "dpi-audit.log")).open("w") as log:
-                    subprocess.run(["go", "test"] + (["-race"] if race else []) + ["-count=1", "-timeout=180s", "-v", "./internal/services/dameng/dpi"], cwd=ROOT, env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
+                    subprocess.run(["go", "test"] + (["-race"] if race else []) + ["-count=1", "-timeout=180s", "-v", "./internal/services/dameng", "./internal/services/dameng/dpi"], cwd=ROOT, env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
                 print("DM8 " + ("verified server TLS" if tls else "loopback") + " DPI verification passed; workbench remains unregistered", flush=True)
             if hold:
                 while True:
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--hold", action="store_true")
     parser.add_argument("--audit-driver", action="store_true", help="audit the unmodified external Go driver in its isolated research module")
-    parser.add_argument("--audit-dpi", action="store_true", help="verify the private loopback DPI boundary against an externally installed native client")
+    parser.add_argument("--audit-dpi", action="store_true", help="verify the native DPI boundary and physical-session product/schema gate against an externally installed client")
     parser.add_argument("--dpi-library", type=Path, help="path to the caller's original native client library; no binaries are installed or redistributed")
     parser.add_argument("--race", action="store_true", help="run the enabled audits with the Go race detector")
     parser.add_argument("--tls", action="store_true", help="deploy the owned server with native certificate TLS")

@@ -828,8 +828,10 @@
       "nyadb_kind": null,
       "status": "missing",
       "preintegration_evidence": "dameng-readiness-2026-11-07.json",
-      "preintegration_status": "owned_fixture_candidate_audit_and_private_loopback_dpi_boundary; remote_tls_and_workbench_missing",
-      "loopback_dpi_evidence": "dameng-dpi-boundary-2026-11-07.json"
+      "preintegration_status": "owned_native_tls_and_physical_session_gate_foundation; native_configuration_isolation_and_workbench_missing",
+      "loopback_dpi_evidence": "dameng-dpi-boundary-2026-11-07.json",
+      "native_tls_evidence": "dameng-native-tls-2026-11-07.json",
+      "native_session_gate_evidence": "dameng-native-session-gate-2026-11-07.json"
     },
     {
       "dbType": "kingbase",
@@ -3234,7 +3236,9 @@
       "nyadb_kind": null,
       "status": "missing",
       "preintegration_evidence": "dameng-readiness-2026-11-07.json",
-      "loopback_dpi_evidence": "dameng-dpi-boundary-2026-11-07.json"
+      "loopback_dpi_evidence": "dameng-dpi-boundary-2026-11-07.json",
+      "native_tls_evidence": "dameng-native-tls-2026-11-07.json",
+      "native_session_gate_evidence": "dameng-native-session-gate-2026-11-07.json"
     },
     {
       "id": "h2",

@@ -71,6 +71,8 @@ func TestConnectorRejectsUnverifiedRemoteTransportAndInvalidIdentity(t *testing.
 		{Host: "127.0.0.1:5236", Username: "user"}, {Host: "127.0.0.1", Username: "user\x00"},
 		{Host: "127.0.0.1", Username: "user", ConnectTimeoutSeconds: -1},
 		{Host: "127.0.0.1", Username: "user", OperationTimeoutSeconds: 121},
+		{Host: "127.0.0.1", Username: "user", Schema: "invalid\nidentity"},
+		{Host: "127.0.0.1", Username: "user", Schema: "invalid\xffidentity"},
 	} {
 		if _, err := NewConnector(o, "temporary-password"); err == nil {
 			t.Fatal("unverified transport/identity accepted")
