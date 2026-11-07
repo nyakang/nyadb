@@ -188,6 +188,7 @@ type DataEditOutcome struct {
 }
 
 type DataEditResult struct {
+	RefreshRequired      bool // Confirmed/recovered writes require a new provider-owned read snapshot.
 	Applied              int
 	CommitConfirmed      bool
 	Incomplete, Verified bool

@@ -629,6 +629,7 @@ func (s *State) consumeEdits(services ui.Services) {
 						t.edit.Err = locales.Text("提交结果不完整，请核验数据库")
 						continue
 					}
+					refresh := t.edit.Uncertain.RefreshRequired
 					s.acceptMySQLDataSaved(t, t.edit.UncertainKeys, t.edit.Uncertain)
 					t.edit.Uncertain = nil
 					t.edit.UncertainKeys = nil
@@ -636,6 +637,9 @@ func (s *State) consumeEdits(services ui.Services) {
 						s.closeDataTransaction(t)
 					}
 					t.edit.Err = locales.Text("已核验：数据更改已提交")
+					if refresh {
+						s.refreshDataAfterWrite(services, t)
+					}
 				} else if r.Verification.Status == "not_applied" {
 					t.edit.Uncertain = nil
 					t.edit.UncertainKeys = nil
@@ -695,10 +699,17 @@ func (s *State) consumeEdits(services ui.Services) {
 			t.edit.AfterSave = nil
 			if after != nil {
 				after(services)
+			} else if r.Saved.RefreshRequired {
+				s.refreshDataAfterWrite(services, t)
 			}
 		default:
 		}
 	}
+}
+func (s *State) refreshDataAfterWrite(services ui.Services, t *Document) {
+	t.offset, t.after, t.cursorHistory = 0, nil, nil
+	t.useKeyset = t.keysetEnabled()
+	s.Load(services, t, true)
 }
 func (s *State) verifyMySQLDataSave(services ui.Services, t *Document) {
 	if !s.canUseSession(t) || (dataTransactionActive(t) && !t.transaction.uncertain) || t.edit.Uncertain == nil || t.edit.Busy || s.verifierFor(t) == nil {

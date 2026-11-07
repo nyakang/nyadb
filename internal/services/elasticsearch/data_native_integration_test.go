@@ -87,8 +87,8 @@ func TestElasticsearchNativeDataDocumentExactRowsPagingFieldsFilteredExportAndCl
 	if err != nil || len(first.Rows) != 3 || !first.KeysetAvailable || first.CurrentCursor == nil || first.NextCursor == nil {
 		t.Fatal("native shared data binding failed", err)
 	}
-	if !slices.Equal(first.Columns, documentFields()) || first.Editable == nil || *first.Editable {
-		t.Fatal("partial stage advertised unverified editing")
+	if !slices.Equal(first.Columns, documentFields()) || first.Editable == nil || !*first.Editable {
+		t.Fatal("normal index lost its native document editing capability")
 	}
 	if _, err = b.Runtime().AdvancedLoader(ctx, s.ProfileID(), db, index, contract.DataOptions{Object: b.object, Offset: 3, Limit: 3, After: first.NextCursor}); err == nil {
 		t.Fatal("cursor crossed document leases")

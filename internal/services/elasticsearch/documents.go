@@ -92,7 +92,16 @@ func (c *Client) GetDocument(ctx context.Context, id DocumentID) (Snapshot, erro
 	if !validDocumentID(id) {
 		return Snapshot{}, ErrInvalid
 	}
-	r, err := c.Do(ctx, Request{Method: "GET", Path: documentPath(id, "_doc", nil)})
+	if !c.operation.TryLock() {
+		return Snapshot{}, ErrBusy
+	}
+	defer c.operation.Unlock()
+	if err := c.available(); err != nil {
+		return Snapshot{}, err
+	}
+	// Typed components are encoded independently. An escaped slash inside an
+	// ID is data, and must not be parsed as raw REST path traversal.
+	r, err := c.perform(ctx, Request{Method: "GET", Path: documentPath(id, "_doc", nil)})
 	if err != nil {
 		return Snapshot{}, err
 	}
@@ -104,25 +113,55 @@ func (c *Client) GetDocument(ctx context.Context, id DocumentID) (Snapshot, erro
 }
 
 func (c *Client) CreateDocument(ctx context.Context, id DocumentID, source json.RawMessage) (MutationResult, error) {
-	return c.mutateDocument(ctx, "PUT", "_create", id, nil, source, "created")
+	return c.mutateDocument(ctx, "PUT", "_create", id, nil, source, mutationOptions{}, "created")
 }
 
 // ReplaceDocument requires both original native concurrency tokens. It does
 // not fetch a newer version or retry a conflict behind the user's back.
 func (c *Client) ReplaceDocument(ctx context.Context, original Snapshot, source json.RawMessage) (MutationResult, error) {
-	return c.mutateDocument(ctx, "PUT", "_doc", original.Identity, &original, source, "updated", "noop")
+	return c.mutateDocument(ctx, "PUT", "_doc", original.Identity, &original, source, mutationOptions{}, "updated", "noop")
 }
 
 func (c *Client) DeleteDocument(ctx context.Context, original Snapshot) (MutationResult, error) {
-	return c.mutateDocument(ctx, "DELETE", "_doc", original.Identity, &original, nil, "deleted")
+	return c.mutateDocument(ctx, "DELETE", "_doc", original.Identity, &original, nil, mutationOptions{}, "deleted")
 }
 
-func (c *Client) mutateDocument(ctx context.Context, method, action string, id DocumentID, original *Snapshot, source json.RawMessage, accepted ...string) (MutationResult, error) {
+type mutationOptions struct {
+	Target                                   string
+	WaitRefresh, RequireAlias, RequireStream bool
+}
+
+func (c *Client) mutateDocument(ctx context.Context, method, action string, id DocumentID, original *Snapshot, source json.RawMessage, options mutationOptions, accepted ...string) (MutationResult, error) {
 	var result MutationResult
 	if !validDocumentID(id) || method != "DELETE" && !validSource(source) || original != nil && (original.Sequence < 0 || original.PrimaryTerm <= 0) {
 		return result, ErrInvalid
 	}
 	request := Request{Method: method, Path: documentPath(id, action, original), Body: bytes.Clone(source)}
+	if options.Target != "" {
+		if !validIndex(options.Target) || method == "DELETE" || original != nil {
+			return result, ErrInvalid
+		}
+		target := id
+		target.Index = options.Target
+		request.Path = documentPath(target, action, original)
+	}
+	parsed, _ := url.Parse(request.Path)
+	query := parsed.Query()
+	query.Set("include_source_on_error", "false")
+	if method == "DELETE" {
+		query.Del("include_source_on_error")
+	}
+	if options.WaitRefresh {
+		query.Set("refresh", "wait_for")
+	}
+	if options.RequireAlias {
+		query.Set("require_alias", "true")
+	}
+	if options.RequireStream {
+		query.Set("require_data_stream", "true")
+	}
+	parsed.RawQuery = query.Encode()
+	request.Path = parsed.String()
 	if !c.operation.TryLock() {
 		return result, ErrBusy
 	}

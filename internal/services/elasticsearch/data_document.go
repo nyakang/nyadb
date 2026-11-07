@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/url"
 	"slices"
@@ -23,6 +24,7 @@ import (
 type dataLease struct {
 	mu       sync.Mutex
 	pageMu   sync.Mutex
+	editMu   sync.Mutex
 	session  *Session
 	object   contract.ObjectRef
 	ctx      context.Context
@@ -38,6 +40,8 @@ type dataLease struct {
 	query    json.RawMessage
 	limit    int
 	members  map[string]string // concrete index name -> original index UUID
+	pending  *pendingBatch
+	dirty    bool
 }
 
 func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
@@ -100,6 +104,7 @@ func (l *dataLease) Close() error {
 		l.closeErr = l.client.Close()
 	}
 	l.client, l.cursor, l.query, l.members = nil, nil, nil, nil
+	l.pending = nil
 	clear(l.key[:])
 	l.session.mu.Lock()
 	delete(l.session.datas, l)
@@ -115,8 +120,7 @@ func (l *dataLease) identity(id int64, db, name string) error {
 }
 func (l *dataLease) Runtime() contract.DataRuntime {
 	// This internal binding is verified before public provider registration.
-	// Editing is added separately; no product entry advertises this partial stage.
-	return contract.DataRuntime{Capabilities: contract.Capabilities{Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}, AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, Exporter: l.exportRows, JSONL: l.jsonl, TableMetadata: l.metadata, TableInfo: l.info, FilterModes: []string{"equal", "not_equal"}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
+	return contract.DataRuntime{Capabilities: contract.Capabilities{Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true, EditableTables: true}, AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, Saver: l.save, Verify: l.verify, Exporter: l.exportRows, JSONL: l.jsonl, TableMetadata: l.metadata, TableInfo: l.info, FilterModes: []string{"equal", "not_equal"}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
 }
 func (l *dataLease) sign(v any) string {
 	raw, _ := json.Marshal(v)
@@ -318,10 +322,17 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 		l.epoch++
 		l.mu.Lock()
 		l.members = members
+		l.dirty = false
 		l.mu.Unlock()
 	} else {
 		if l.cursor == nil || !bytes.Equal(query, l.query) {
 			return nil, ErrInvalid
+		}
+		l.mu.Lock()
+		dirty := l.dirty
+		l.mu.Unlock()
+		if dirty {
+			return nil, fmt.Errorf("%w: Elasticsearch document changed; refresh its read snapshot", contract.ErrDataConflict)
 		}
 		after, err = l.decodeBoundary(db, o)
 		if err != nil {
@@ -333,6 +344,14 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 		return nil, err
 	}
 	editable := false
+	writeTarget, writeErr := l.dataTarget(ctx, l.client)
+	if writeErr == nil {
+		l.mu.Lock()
+		editable = writeTarget.editable && sameMembers(writeTarget.members, l.members)
+		l.mu.Unlock()
+	} else if !isNativeStatus(writeErr, 403) {
+		return nil, writeErr
+	}
 	out := &contract.DataPage{Object: l.object, Database: db, Table: name, Columns: documentFields(), ColumnMetadata: documentColumns(), ColumnKinds: []string{"text", "text", "text", "json"}, Offset: o.Offset, Limit: o.Limit, HasMore: page.HasMore, StableOrder: true, KeysetAvailable: true, Editable: &editable, QuerySQL: "Elasticsearch PIT search; original _shard_doc boundary"}
 	out.CurrentCursor = l.boundary(db, o.Offset, after)
 	if page.HasMore {

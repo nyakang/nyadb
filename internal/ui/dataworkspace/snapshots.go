@@ -41,7 +41,9 @@ func cloneSnapshot(snapshot *contract.RowSnapshot) *contract.RowSnapshot {
 	out.Ref = cloneRowRef(snapshot.Ref)
 	out.Original = cloneCells(snapshot.Original)
 	out.Columns = append([]string(nil), snapshot.Columns...)
-	out.Fingerprints = make([]*string, len(snapshot.Fingerprints))
+	if snapshot.Fingerprints != nil {
+		out.Fingerprints = make([]*string, len(snapshot.Fingerprints))
+	}
 	for i, value := range snapshot.Fingerprints {
 		if value != nil {
 			copy := *value

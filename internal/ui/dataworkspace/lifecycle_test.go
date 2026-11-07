@@ -1,13 +1,37 @@
 package dataworkspace
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
+
+func TestSignedValuesSnapshotSurvivesSaveAndVerificationCopies(t *testing.T) {
+	snap := &contract.RowSnapshot{Mode: "values", Original: []contract.Cell{{Kind: contract.JSON, Text: `{"n":9007199254740993}`}}, Metadata: "adapter signed values payload"}
+	result := &contract.DataEditResult{CommitUncertain: true, Outcomes: []contract.DataEditOutcome{{Kind: "update", Original: snap, Saved: snap}}}
+	want, err := json.Marshal(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	copy := cloneEditResult(result)
+	got, err := json.Marshal(copy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(want, got) || copy.Outcomes[0].Original.Fingerprints != nil {
+		t.Fatal("copy changed signed values-mode payload or invented fingerprints")
+	}
+	copy.Outcomes[0].Original.Original[0].Text = "changed"
+	if snap.Original[0].Text != `{"n":9007199254740993}` {
+		t.Fatal("verification copy shared authoritative original values")
+	}
+}
 
 func TestPageWorkerOwnsCursorAndParkedResult(t *testing.T) {
 	session := Session{ProfileID: 12, Generation: 2, Connected: true}

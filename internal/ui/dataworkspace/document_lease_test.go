@@ -224,3 +224,64 @@ func TestDocumentInspectorUsesItsCapturedLeaseRuntime(t *testing.T) {
 		t.Fatal("closed inspector retained document lease callbacks")
 	}
 }
+
+func TestConfirmedAndVerifiedWritesRefreshOriginalDocumentWithoutOldCursor(t *testing.T) {
+	for _, verified := range []bool{false, true} {
+		t.Run(map[bool]string{false: "confirmed", true: "verified"}[verified], func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			requests := make(chan contract.DataOptions, 1)
+			l := &testDocumentLease{cancel: cancel}
+			l.runtime.AdvancedLoader = func(_ context.Context, _ int64, _, _ string, o contract.DataOptions) (*contract.DataPage, error) {
+				requests <- o
+				return &contract.DataPage{Object: o.Object, Columns: []string{"document"}, Rows: [][]contract.DataCell{{{Text: "fresh snapshot"}}}, Offset: o.Offset, Limit: o.Limit}, ctx.Err()
+			}
+			runtime := Runtime{ReserveDocument: func(contract.ObjectRef) (contract.DataDocumentLease, error) { return l, nil }}
+			s := New(Dependencies{Session: func() Session { return Session{ProfileID: 12, Generation: 1, Connected: true} }, Runtime: func() Runtime { return runtime }})
+			d := s.OpenObject(1, contract.NamespaceRef{ProfileID: 12, Catalog: "original"}.Object("index", "docs"), contract.Capabilities{Documents: true, EditableTables: true, Keyset: true})
+			defer s.Close(d)
+			snap := &contract.RowSnapshot{Mode: "fingerprints", Ref: contract.RowRef{Object: d.object, Database: d.database, Table: d.table}}
+			d.page = &contract.DataPage{Columns: []string{"document"}, ColumnMetadata: []contract.StructureColumn{{Name: "document", ValueKind: contract.JSON}}, Rows: [][]contract.DataCell{{{Text: "old snapshot"}}}, RowRefs: []*contract.RowRef{&snap.Ref}, RowSnapshots: []*contract.RowSnapshot{snap}}
+			d.offset = 100
+			d.after = &contract.DataCursor{Offset: 100, Values: [][]byte{[]byte("old PIT")}}
+			d.cursorHistory = map[int64]*contract.DataCursor{100: d.after}
+			d.edit.Drafts = map[string]*mysqlRowDraft{"row": {Row: 0, Kind: "update", Original: snap, Values: map[string]contract.DataValue{"document": {Kind: contract.JSON, Text: `{"n":9007199254740993}`}}}}
+			result := &contract.DataEditResult{CommitConfirmed: true, RefreshRequired: true, Applied: 1, Outcomes: []contract.DataEditOutcome{{Kind: "update", Original: snap, Saved: snap, PreviewColumns: []string{"document"}, Previews: []contract.DataCell{{Text: "saved source"}}}}}
+			d.edit.Busy, d.edit.Request = true, 1
+			out := make(chan mysqlEditResult, 1)
+			d.edit.Results = out
+			message := mysqlEditResult{Generation: 1, Request: 1, Profile: 12, Keys: []string{"row"}, Saved: result}
+			if verified {
+				d.edit.Uncertain = cloneEditResult(result)
+				d.edit.UncertainKeys = []string{"row"}
+				message.Saved = nil
+				message.Verification = &contract.DataVerification{Status: "applied", Recovered: result}
+			}
+			out <- message
+			s.Consume(ui.Services{})
+			select {
+			case o := <-requests:
+				if o.Object != d.object || o.Offset != 0 || o.After != nil {
+					t.Fatal("refresh changed identity or reused old cursor")
+				}
+			case <-time.After(time.Second):
+				t.Fatal("write did not request new read view")
+			}
+			if d.HasDraft() || d.edit.Uncertain != nil || !d.loading || d.offset != 0 || d.after != nil || d.cursorHistory != nil {
+				t.Fatal("write lost settlement or retained old paging view")
+			}
+			select {
+			case page := <-d.results:
+				ready := make(chan mysqlDataResult, 1)
+				ready <- page
+				d.results = ready
+			case <-time.After(time.Second):
+				t.Fatal("new view did not settle")
+			}
+			s.Consume(ui.Services{})
+			if d.page == nil || d.page.Rows[0][0].Text != "fresh snapshot" || d.loading {
+				t.Fatal("new snapshot was not consumed")
+			}
+		})
+	}
+}
