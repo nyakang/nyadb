@@ -2006,5 +2006,15 @@
   "openGaussTLSMode": "openGauss TLS 模式",
   "openGaussCAFile": "openGauss CA 证书",
   "openGaussCertificateFile": "openGauss 客户端证书",
-  "openGaussKeyFile": "openGauss 客户端密钥"
+  "openGaussKeyFile": "openGauss 客户端密钥",
+  "nativeDesignSetComment": "设置注释",
+  "openGaussDesignNotNullReadOnly": "openGauss 列存表的已有字段非空属性只读。",
+  "openGaussDesignRetainedStorage": "已有表的存储与所有者设置保留；更改需独立操作。",
+  "nativeDesignConstraintComment": "约束注释",
+  "nativeDesignTriggerComment": "触发器注释",
+  "nativeDesignTriggerState": "触发器状态",
+  "nativeDesignTriggerNormal": "正常启用",
+  "nativeDesignTriggerDisabled": "禁用",
+  "nativeDesignTriggerReplica": "仅复制时启用",
+  "nativeDesignTriggerAlways": "始终启用"
 }

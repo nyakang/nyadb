@@ -29,7 +29,7 @@ func ParseBasicDefinition(engine, kind, raw string) (BasicDefinition, error) {
 	}
 	var ts []token
 	var err error
-	if engine == "postgresql" {
+	if engine == "postgresql" || engine == "opengauss" {
 		ts, err = postgresLex(raw)
 	} else if engine == "sqlite" {
 		ts, err = lex(raw)
@@ -39,7 +39,7 @@ func ParseBasicDefinition(engine, kind, raw string) (BasicDefinition, error) {
 	if err != nil || single(ts, false) != nil {
 		return f, ErrUnsupported
 	}
-	if engine == "postgresql" {
+	if engine == "postgresql" || engine == "opengauss" {
 		for i := range ts {
 			if ts[i].kind == 'w' {
 				ts[i].text = strings.ToLower(ts[i].text)
@@ -81,7 +81,7 @@ func ParseBasicDefinition(engine, kind, raw string) (BasicDefinition, error) {
 			f.Schema = indexSchema
 		}
 		if word("USING") {
-			if engine != "postgresql" || !word("BTREE") {
+			if (engine != "postgresql" && engine != "opengauss") || !word("BTREE") {
 				return f, ErrUnsupported
 			}
 			f.Using = "btree"
@@ -214,7 +214,7 @@ func ParseBasicDefinition(engine, kind, raw string) (BasicDefinition, error) {
 
 func (f BasicDefinition) SQL(engine string) (string, error) {
 	validate := Identifier
-	if engine == "postgresql" {
+	if engine == "postgresql" || engine == "opengauss" {
 		validate = PostgreSQLIdentifier
 	} else if engine != "sqlite" {
 		return "", ErrUnsupported
@@ -270,7 +270,7 @@ func (f BasicDefinition) SQL(engine string) (string, error) {
 		}
 		using := ""
 		if f.Using != "" {
-			if engine != "postgresql" || f.Using != "btree" {
+			if (engine != "postgresql" && engine != "opengauss") || f.Using != "btree" {
 				return "", ErrUnsupported
 			}
 			using = " USING btree"
@@ -287,7 +287,7 @@ func (f BasicDefinition) SQL(engine string) (string, error) {
 		raw := prefix + "CHECK (" + f.Expression + ")"
 		var ts []token
 		var err error
-		if engine == "postgresql" {
+		if engine == "postgresql" || engine == "opengauss" {
 			ts, err = postgresLex(raw)
 		} else {
 			ts, err = lex(raw)
@@ -302,7 +302,7 @@ func (f BasicDefinition) SQL(engine string) (string, error) {
 		}
 		ref := Quote(f.ReferencedTable)
 		if f.ReferencedSchema != "" {
-			if engine != "postgresql" || validate(f.ReferencedSchema) != nil {
+			if (engine != "postgresql" && engine != "opengauss") || validate(f.ReferencedSchema) != nil {
 				return "", ErrUnsupported
 			}
 			ref = Quote(f.ReferencedSchema) + "." + ref

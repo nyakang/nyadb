@@ -10,6 +10,8 @@ import (
 
 func schemaDesignError(err error) string {
 	switch {
+	case errors.Is(err, schemaddl.ErrOpenGaussNotNull):
+		return locales.Text("openGauss 列存表的已有字段非空属性只读。")
 	case errors.Is(err, schemaddl.ErrPostgreSQLNotNull):
 		return locales.Text("未验证或继承的 PostgreSQL 非空约束只读；独立约束改名不受支持。")
 	case errors.Is(err, schemaddl.ErrPostgreSQLCoreTypes):

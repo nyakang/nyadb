@@ -72,9 +72,12 @@ func (s *State) schemaDesignView(c *ui.Context, d *Document) {
 			ui.Scroll(c).Grow(1).MinHeight(0).Children(func() {
 				ui.Column(c).Padding(8).Gap(8).Children(func() {
 					s.schemaDesignInput(c, d, "表名称", &x.draft.Name, locked)
-					if x.original.Schema.Engine == "postgresql" {
+					switch x.original.Schema.Engine {
+					case "postgresql":
 						s.postgresSchemaOptions(c, d, locked)
-					} else {
+					case "opengauss":
+						s.openGaussSchemaOptions(c, d, locked)
+					case "sqlite":
 						s.schemaDesignInput(c, d, "SQLite 表选项", &x.draft.Options, locked)
 						ui.Text(c, locales.Text("支持 STRICT、WITHOUT ROWID；现有表的 rowid 模式需要独立迁移。"))
 					}
@@ -84,13 +87,9 @@ func (s *State) schemaDesignView(c *ui.Context, d *Document) {
 		} else {
 			raw := x.original.Schema.DDL
 			if raw == "" {
-				if x.original.Schema.Engine == "postgresql" {
-					plan, err := schemaddl.PlanPostgreSQL(x.original.Schema, x.draft, d.object.Schema, true)
-					if err == nil {
-						raw = strings.Join(plan.SQL, ";\n\n")
-					}
-				} else {
-					raw, _ = schemaddl.CreateSQLite(x.draft, d.object.Schema, d.table)
+				plan, err := planSchemaDesign(x.original.Schema, x.draft, d.object.Schema)
+				if err == nil {
+					raw = strings.Join(plan.SQL, ";\n\n")
 				}
 			}
 			ui.TextArea(c, &raw).Label(locales.Text("原始 DDL")).ReadOnly(true).Grow(1)
@@ -187,9 +186,9 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 	}
 	ui.Scroll(c).Grow(1).MinHeight(100).Children(func() {
 		ui.Column(c).Padding(8).Gap(8).Children(func() {
-			if x.page == 0 && x.original.Schema.Engine == "postgresql" && !x.pgField.Unsupported {
-				s.postgresSchemaField(c, d, locked)
-			} else if x.page == 0 && x.original.Schema.Engine != "postgresql" && !x.field.Unsupported {
+			if x.page == 0 && schemaNativeFieldGrammar(x.original.Schema.Engine) && !x.pgField.Unsupported {
+				s.nativeSchemaField(c, d, locked)
+			} else if x.page == 0 && x.original.Schema.Engine == "sqlite" && !x.field.Unsupported {
 				s.schemaDesignInput(c, d, "字段名称", &x.field.Name, locked)
 				s.schemaDesignInput(c, d, "字段类型", &x.field.Type, locked)
 				ui.Row(c).Wrap().Gap(8).Children(func() {
@@ -205,12 +204,13 @@ func (s *State) schemaDefinitionView(c *ui.Context, d *Document, locked bool) {
 				if x.page == 0 {
 					ui.Text(c, locales.Text("此字段含高级属性；编辑完整定义时保留所需的全部属性。"))
 				}
-				if x.page != 1 || x.original.Schema.Engine == "postgresql" {
+				if x.page != 1 || schemaNativeFieldGrammar(x.original.Schema.Engine) {
 					s.schemaDesignInput(c, d, "定义名称", &x.name, locked)
 				}
 				ui.Text(c, locales.Text("完整定义"))
 				s.designTextArea(c, d, &x.raw).Label(locales.Text("完整定义")).Height(170).ReadOnly(locked)
 			}
+			s.openGaussDefinitionProperties(c, d, locked)
 		})
 	})
 	if ui.Button(c, locales.Text("应用定义修改")).Disabled(locked).Clicked() {

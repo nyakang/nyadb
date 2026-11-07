@@ -20407,3 +20407,107 @@ func OpenGaussKeyFile() string { return In(i18n.Locale()).OpenGaussKeyFile() }
 func (msgs Messages) OpenGaussKeyFile() string {
 	return Catalog.Format(msgs.locale, "openGaussKeyFile", nil)
 }
+
+// NativeDesignSetComment says "设置注释"
+// in the language the app shows.
+func NativeDesignSetComment() string { return In(i18n.Locale()).NativeDesignSetComment() }
+
+// NativeDesignSetComment says "设置注释"
+// in the language of msgs.
+func (msgs Messages) NativeDesignSetComment() string {
+	return Catalog.Format(msgs.locale, "nativeDesignSetComment", nil)
+}
+
+// OpenGaussDesignNotNullReadOnly says "openGauss 列存表的已有字段非空属性只读。"
+// in the language the app shows.
+func OpenGaussDesignNotNullReadOnly() string {
+	return In(i18n.Locale()).OpenGaussDesignNotNullReadOnly()
+}
+
+// OpenGaussDesignNotNullReadOnly says "openGauss 列存表的已有字段非空属性只读。"
+// in the language of msgs.
+func (msgs Messages) OpenGaussDesignNotNullReadOnly() string {
+	return Catalog.Format(msgs.locale, "openGaussDesignNotNullReadOnly", nil)
+}
+
+// OpenGaussDesignRetainedStorage says "已有表的存储与所有者设置保留；更改需独立操作。"
+// in the language the app shows.
+func OpenGaussDesignRetainedStorage() string {
+	return In(i18n.Locale()).OpenGaussDesignRetainedStorage()
+}
+
+// OpenGaussDesignRetainedStorage says "已有表的存储与所有者设置保留；更改需独立操作。"
+// in the language of msgs.
+func (msgs Messages) OpenGaussDesignRetainedStorage() string {
+	return Catalog.Format(msgs.locale, "openGaussDesignRetainedStorage", nil)
+}
+
+// NativeDesignConstraintComment says "约束注释"
+// in the language the app shows.
+func NativeDesignConstraintComment() string { return In(i18n.Locale()).NativeDesignConstraintComment() }
+
+// NativeDesignConstraintComment says "约束注释"
+// in the language of msgs.
+func (msgs Messages) NativeDesignConstraintComment() string {
+	return Catalog.Format(msgs.locale, "nativeDesignConstraintComment", nil)
+}
+
+// NativeDesignTriggerComment says "触发器注释"
+// in the language the app shows.
+func NativeDesignTriggerComment() string { return In(i18n.Locale()).NativeDesignTriggerComment() }
+
+// NativeDesignTriggerComment says "触发器注释"
+// in the language of msgs.
+func (msgs Messages) NativeDesignTriggerComment() string {
+	return Catalog.Format(msgs.locale, "nativeDesignTriggerComment", nil)
+}
+
+// NativeDesignTriggerState says "触发器状态"
+// in the language the app shows.
+func NativeDesignTriggerState() string { return In(i18n.Locale()).NativeDesignTriggerState() }
+
+// NativeDesignTriggerState says "触发器状态"
+// in the language of msgs.
+func (msgs Messages) NativeDesignTriggerState() string {
+	return Catalog.Format(msgs.locale, "nativeDesignTriggerState", nil)
+}
+
+// NativeDesignTriggerNormal says "正常启用"
+// in the language the app shows.
+func NativeDesignTriggerNormal() string { return In(i18n.Locale()).NativeDesignTriggerNormal() }
+
+// NativeDesignTriggerNormal says "正常启用"
+// in the language of msgs.
+func (msgs Messages) NativeDesignTriggerNormal() string {
+	return Catalog.Format(msgs.locale, "nativeDesignTriggerNormal", nil)
+}
+
+// NativeDesignTriggerDisabled says "禁用"
+// in the language the app shows.
+func NativeDesignTriggerDisabled() string { return In(i18n.Locale()).NativeDesignTriggerDisabled() }
+
+// NativeDesignTriggerDisabled says "禁用"
+// in the language of msgs.
+func (msgs Messages) NativeDesignTriggerDisabled() string {
+	return Catalog.Format(msgs.locale, "nativeDesignTriggerDisabled", nil)
+}
+
+// NativeDesignTriggerReplica says "仅复制时启用"
+// in the language the app shows.
+func NativeDesignTriggerReplica() string { return In(i18n.Locale()).NativeDesignTriggerReplica() }
+
+// NativeDesignTriggerReplica says "仅复制时启用"
+// in the language of msgs.
+func (msgs Messages) NativeDesignTriggerReplica() string {
+	return Catalog.Format(msgs.locale, "nativeDesignTriggerReplica", nil)
+}
+
+// NativeDesignTriggerAlways says "始终启用"
+// in the language the app shows.
+func NativeDesignTriggerAlways() string { return In(i18n.Locale()).NativeDesignTriggerAlways() }
+
+// NativeDesignTriggerAlways says "始终启用"
+// in the language of msgs.
+func (msgs Messages) NativeDesignTriggerAlways() string {
+	return Catalog.Format(msgs.locale, "nativeDesignTriggerAlways", nil)
+}

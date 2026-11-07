@@ -253,14 +253,26 @@ func (s *State) consumeSchemaDesign(services ui.Services) {
 			x.original = reply.snapshot.Clone()
 			x.draft = reply.snapshot.Schema.Table.Clone()
 			if !reply.snapshot.Schema.Exists {
-				if reply.snapshot.Schema.Engine == "postgresql" {
+				if schemaNativeFieldGrammar(reply.snapshot.Schema.Engine) {
 					primary := postgresDefaultPrimaryName(d.table)
-					x.draft = schemaddl.Table{Name: d.table, Postgres: &schemaddl.PostgreSQLTableProperties{Kind: "r", Persistence: "p"}, Clauses: []schemaddl.Clause{
+					x.draft = schemaddl.Table{Name: d.table, Clauses: []schemaddl.Clause{
 						{ID: "new:id", Kind: "column", Name: "id", SQL: "bigint NOT NULL"},
 						{ID: "new:primary", Kind: "constraint", Name: primary, SQL: "CONSTRAINT " + schemaddl.Quote(primary) + " PRIMARY KEY (id)"},
 					}}
-				} else {
+					if reply.snapshot.Schema.Engine == "opengauss" {
+						x.draft.OpenGauss = &schemaddl.OpenGaussTableProperties{Persistence: "p"}
+						for i := range x.draft.Clauses {
+							x.draft.Clauses[i].OpenGauss = &schemaddl.OpenGaussColumnProperties{}
+						}
+					} else {
+						x.draft.Postgres = &schemaddl.PostgreSQLTableProperties{Kind: "r", Persistence: "p"}
+					}
+				} else if reply.snapshot.Schema.Engine == "sqlite" {
 					x.draft, _ = schemaddl.ParseSQLite("CREATE TABLE " + schemaddl.Quote(d.table) + " (id INTEGER PRIMARY KEY)")
+				} else {
+					d.err = schemaDesignError(schemaddl.ErrUnsupported)
+					x.next = nil
+					continue
 				}
 				x.baseline = ""
 			} else {
@@ -307,7 +319,7 @@ func (s *State) applySchemaForms(d *Document) error {
 	if err := s.applyStructuredDefinition(d); err != nil {
 		return err
 	}
-	if x.original.Schema.Engine == "postgresql" && x.fieldRow >= 0 && (x.pgField != x.pgFieldBase || x.name != x.nameBase) && !x.pgField.Unsupported {
+	if schemaNativeFieldGrammar(x.original.Schema.Engine) && x.fieldRow >= 0 && (x.pgField != x.pgFieldBase || x.name != x.nameBase) && !x.pgField.Unsupported {
 		if x.fieldRow >= len(x.draft.Clauses) {
 			return errors.New(locales.Text("字段选择已改变"))
 		}
@@ -316,8 +328,16 @@ func (s *State) applySchemaForms(d *Document) error {
 		}
 		clause := &x.draft.Clauses[x.fieldRow]
 		if x.pgField != x.pgFieldBase {
+			if x.pgField.NotNull != x.pgFieldBase.NotNull {
+				if err := schemaNotNullEditable(x.original.Schema, clause.ID); err != nil {
+					return err
+				}
+			}
 			body, err := x.pgField.SQL()
 			if err != nil {
+				return err
+			}
+			if _, err := parseSchemaNativeField(x.original.Schema.Engine, body); err != nil {
 				return err
 			}
 			clause.SQL = body
@@ -350,7 +370,7 @@ func (s *State) applySchemaForms(d *Document) error {
 		if x.page == 1 && x.row >= 0 && x.row < len(x.draft.Clauses) {
 			clause := x.draft.Clauses[x.row]
 			clause.SQL = x.raw
-			if x.original.Schema.Engine == "postgresql" && x.name != x.nameBase {
+			if schemaNativeFieldGrammar(x.original.Schema.Engine) && x.name != x.nameBase {
 				var err error
 				clause, err = schemaddl.RebindPostgreSQLConstraint(clause, d.object.Schema, x.draft.Name, x.draft.Name, x.name)
 				if err != nil {
@@ -390,16 +410,7 @@ func (s *State) PrepareSchemaDesign(d *Document) error {
 		return err
 	}
 	request := contract.SchemaDesignRequest{Original: x.original.Clone(), Desired: x.draft.Clone(), AllowColumnDrop: true}
-	var plan schemaddl.Plan
-	var err error
-	switch request.Original.Schema.Engine {
-	case "postgresql":
-		plan, err = schemaddl.PlanPostgreSQL(request.Original.Schema, request.Desired, d.object.Schema, true)
-	case "sqlite":
-		plan, err = schemaddl.PlanSQLite(request.Original.Schema, request.Desired, d.object.Schema, true)
-	default:
-		err = schemaddl.ErrUnsupported
-	}
+	plan, err := planSchemaDesign(request.Original.Schema, request.Desired, d.object.Schema)
 	if err != nil {
 		d.err = schemaDesignError(err)
 		return err
@@ -515,8 +526,8 @@ func (s *State) schemaSelectRow(d *Document, page, row int) error {
 	x.nameBase = ""
 	if page == 0 && row >= 0 && row < len(x.draft.Clauses) {
 		x.fieldRow = row
-		if x.original.Schema.Engine == "postgresql" {
-			f, err := schemaddl.ParsePostgreSQLField(x.draft.Clauses[row].SQL)
+		if schemaNativeFieldGrammar(x.original.Schema.Engine) {
+			f, err := parseSchemaNativeField(x.original.Schema.Engine, x.draft.Clauses[row].SQL)
 			if err != nil {
 				return err
 			}
@@ -539,7 +550,7 @@ func (s *State) schemaSelectRow(d *Document, page, row int) error {
 	}
 	if page == 1 && row >= 0 && row < len(x.draft.Clauses) {
 		x.raw = x.draft.Clauses[row].SQL
-		if x.original.Schema.Engine == "postgresql" {
+		if schemaNativeFieldGrammar(x.original.Schema.Engine) {
 			x.name = x.draft.Clauses[row].Name
 		}
 	}
@@ -565,28 +576,36 @@ func (s *State) schemaAdd(d *Document) {
 		used := map[string]bool{}
 		for _, c := range x.draft.Columns() {
 			name := c.Name
-			if x.original.Schema.Engine != "postgresql" {
+			if !schemaNativeFieldGrammar(x.original.Schema.Engine) {
 				name = strings.ToLower(name)
 			}
 			used[name] = true
 		}
 		name := "field_1"
-		for i := 1; used[strings.ToLower(name)]; i++ {
+		for i := 1; used[name]; i++ {
 			name = fmt.Sprintf("field_%d", i+1)
 		}
-		x.draft.Clauses = append(x.draft.Clauses, schemaddl.Clause{ID: id, Kind: "column", Name: name, SQL: "TEXT"})
+		clause := schemaddl.Clause{ID: id, Kind: "column", Name: name, SQL: "TEXT"}
+		if x.original.Schema.Engine == "opengauss" {
+			clause.OpenGauss = &schemaddl.OpenGaussColumnProperties{}
+		}
+		x.draft.Clauses = append(x.draft.Clauses, clause)
 		_ = s.schemaSelectRow(d, 0, len(x.draft.Clauses)-1)
 	} else if x.page == 1 {
 		sql := "CHECK (1)"
-		if x.original.Schema.Engine == "postgresql" {
+		if schemaNativeFieldGrammar(x.original.Schema.Engine) {
 			name := fmt.Sprintf("check_%d", x.nextID)
 			sql = "CONSTRAINT " + schemaddl.Quote(name) + " CHECK (true)"
 		}
 		name := ""
-		if x.original.Schema.Engine == "postgresql" {
+		if schemaNativeFieldGrammar(x.original.Schema.Engine) {
 			name = fmt.Sprintf("check_%d", x.nextID)
 		}
-		x.draft.Clauses = append(x.draft.Clauses, schemaddl.Clause{ID: id, Kind: "constraint", Name: name, SQL: sql})
+		clause := schemaddl.Clause{ID: id, Kind: "constraint", Name: name, SQL: sql}
+		if x.original.Schema.Engine == "opengauss" {
+			clause.OpenGauss = &schemaddl.OpenGaussColumnProperties{}
+		}
+		x.draft.Clauses = append(x.draft.Clauses, clause)
 		_ = s.schemaSelectRow(d, 1, len(x.draft.Clauses)-1)
 	} else if x.page == 2 || x.page == 3 {
 		kind := "index"
@@ -599,7 +618,7 @@ func (s *State) schemaAdd(d *Document) {
 			return
 		}
 		sql := "CREATE INDEX " + schemaddl.Quote(name) + " ON " + schemaddl.Quote(d.table) + " (" + schemaddl.Quote(columns[0].Name) + ")"
-		if x.original.Schema.Engine == "postgresql" {
+		if schemaNativeFieldGrammar(x.original.Schema.Engine) {
 			table := d.table
 			if !x.original.Schema.Exists {
 				table = x.draft.Name
@@ -607,12 +626,20 @@ func (s *State) schemaAdd(d *Document) {
 			target := schemaddl.Quote(d.object.Schema) + "." + schemaddl.Quote(table)
 			sql = "CREATE INDEX " + schemaddl.Quote(name) + " ON " + target + " (" + schemaddl.Quote(columns[0].Name) + ")"
 			if kind == "trigger" {
-				sql = "CREATE TRIGGER " + schemaddl.Quote(name) + " BEFORE UPDATE ON " + target + " FOR EACH ROW EXECUTE FUNCTION " + schemaddl.Quote(d.object.Schema) + "." + schemaddl.Quote("trigger_function") + "()"
+				invocation := "FUNCTION"
+				if x.original.Schema.Engine == "opengauss" {
+					invocation = "PROCEDURE"
+				}
+				sql = "CREATE TRIGGER " + schemaddl.Quote(name) + " BEFORE UPDATE ON " + target + " FOR EACH ROW EXECUTE " + invocation + " " + schemaddl.Quote(d.object.Schema) + "." + schemaddl.Quote("trigger_function") + "()"
 			}
 		} else if kind == "trigger" {
 			sql = "CREATE TRIGGER " + schemaddl.Quote(name) + " AFTER UPDATE ON " + schemaddl.Quote(d.table) + " BEGIN SELECT 1; END"
 		}
-		x.draft.Definitions = append(x.draft.Definitions, schemaddl.Definition{Name: name, Kind: kind, SQL: sql})
+		definition := schemaddl.Definition{Name: name, Kind: kind, SQL: sql}
+		if x.original.Schema.Engine == "opengauss" {
+			definition.OpenGauss = &schemaddl.OpenGaussDefinitionProperties{}
+		}
+		x.draft.Definitions = append(x.draft.Definitions, definition)
 		_ = s.schemaSelectRow(d, x.page, len(x.draft.Definitions)-1)
 	}
 	x.selected = -1
