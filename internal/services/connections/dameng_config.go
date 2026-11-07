@@ -38,6 +38,15 @@ type DamengConfig struct {
 	Options  DamengOptions `json:"options"`
 }
 
+// DamengProfileConfig retains the native catalog/identity and independent
+// client settings; profiles never select an Oracle or PostgreSQL transport.
+func DamengProfileConfig(p Profile) (DamengConfig, error) {
+	if p.Kind != Dameng || p.Port == 0 {
+		return DamengConfig{}, fmt.Errorf("%w: an explicit native DM8 profile and port are required", ErrInvalid)
+	}
+	return NormalizeDamengConfig(DamengConfig{Host: p.Host, Port: p.Port, Database: p.Database, Username: p.Username, TLSMode: p.TLSMode, Options: p.DamengOptions})
+}
+
 func NormalizeDamengConfig(c DamengConfig) (DamengConfig, error) {
 	c.Host = strings.TrimSpace(c.Host)
 	if c.Host == "" || !validEngineText(c.Host, 255) || strings.ContainsAny(c.Host, "@/?!#\\[]=,' \t\r\n") || strings.Contains(c.Host, ":") && net.ParseIP(c.Host) == nil {

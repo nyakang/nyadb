@@ -19,6 +19,7 @@ const (
 	OpenGauss   Kind = "opengauss"
 	GaussDB     Kind = "gaussdb"
 	Kingbase    Kind = "kingbase"
+	Dameng      Kind = "dameng"
 	SQLite      Kind = "sqlite"
 	ClickHouse  Kind = "clickhouse"
 	SQLServer   Kind = "sqlserver"
@@ -61,6 +62,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	DamengOptions     DamengOptions
 	GaussDBOptions    GaussDBOptions
 	RedisOptions      RedisOptions
 	MongoDBOptions    MongoDBOptions
