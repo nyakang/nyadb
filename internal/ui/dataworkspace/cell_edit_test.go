@@ -25,6 +25,28 @@ func editingCellBounds(t *testing.T, doc *Document, row, source int) ui.Rect {
 	return ui.Rect{}
 }
 
+func TestMySQLDataCanceledCellPressReleasesObservationWithoutEditing(t *testing.T) {
+	_, doc, tt, executor := editingTestWorkspace(t)
+	cell := editingCellBounds(t, doc, 0, 1)
+	x, y := cell.X+cell.W/2, cell.Y+cell.H/2
+	tt.Press(x, y)
+	if !doc.edit.PointerActive {
+		t.Fatal("grid did not observe the cell press")
+	}
+	tt.CancelPress()
+	tt.Frame()
+	tt.Release(x, y)
+	if doc.edit.PointerActive || doc.edit.Editor != nil || mysqlDataHasDraft(doc) || executor.writeCount() != 0 {
+		t.Fatal("canceled press retained pointer state, began editing or wrote data")
+	}
+	if err := tt.Click("alpha"); err != nil {
+		t.Fatal(err)
+	}
+	if e := doc.edit.Editor; e == nil || e.Row != 0 || e.Field != "note" {
+		t.Fatal("a normal click after cancellation did not enter the original cell")
+	}
+}
+
 func TestMySQLDataEditorFillsCellWithoutResizingRows(t *testing.T) {
 	before := theme.CurrentMode()
 	t.Cleanup(func() { theme.SetMode(before) })

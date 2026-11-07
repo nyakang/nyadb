@@ -191,12 +191,6 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *contract.DataPag
 				box.Bind(control)
 				bounds := box.Bounds()
 				t.edit.Hits = append(t.edit.Hits, mysqlCellHit{Row: row, Source: col, Bounds: bounds, Control: *control})
-				source := col
-				services := c.Services()
-				box.HandleInput(func(ev ui.InputEvent) bool {
-					refreshMySQLDataCellHits(c, t)
-					return s.mysqlDataCellPointer(services, t, row, source, control.Bounds(c), ev)
-				})
 
 			}).Grow(1)
 			mysqlDataSyncAnalysisGrid(t)
@@ -223,8 +217,15 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *contract.DataPag
 					}
 					return s.gridEditTarget(t).Execute(gridServices, command)
 				}
-				refreshMySQLDataCellHits(c, t)
-				return s.mysqlDataGridPointer(gridServices, t, gridControl.Bounds(c), ev)
+				return false
+			})
+			// Observe presses before native selection without putting a
+			// separate input target over the cell's text or context menu.
+			grid.ObserveInput(func(ev ui.InputEvent) {
+				if ev.Kind == ui.InputPointerDown || ev.Kind == ui.InputPointerUp {
+					refreshMySQLDataCellHits(c, t)
+					s.mysqlDataGridPointer(gridServices, t, gridControl.Bounds(c), ev)
+				}
 			})
 			if t.edit.Editor == nil && grid.Shortcut(ui.Cmd, ui.KeyC) {
 				s.copyMySQLDataSelection(c, t)
