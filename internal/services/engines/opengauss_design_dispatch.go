@@ -30,12 +30,8 @@ func openGaussCheckDesignDispatch(ctx context.Context, c *sql.Conn, table schema
 			return 0, errOpenGaussDesignDeclaration
 		}
 		var oid uint64
-		var raw string
-		err := c.QueryRowContext(ctx, `SELECT a.oid::bigint,json_build_array(a.aminsert::oid::bigint,a.ambeginscan::oid::bigint,
- a.amgettuple::oid::bigint,a.amgetbitmap::oid::bigint,a.amrescan::oid::bigint,a.amendscan::oid::bigint,a.ammarkpos::oid::bigint,
- a.amrestrpos::oid::bigint,a.ammerge::oid::bigint,a.ambuild::oid::bigint,a.ambuildempty::oid::bigint,a.ambulkdelete::oid::bigint,
- a.amvacuumcleanup::oid::bigint,a.amcanreturn::oid::bigint,a.amcostestimate::oid::bigint,a.amoptions::oid::bigint,a.amhandler::oid::bigint)::text
- FROM pg_am a WHERE a.amname=$1`, name).Scan(&oid, &raw)
+		var definition, raw string
+		err := c.QueryRowContext(ctx, openGaussAccessMethodCatalogSQL, name).Scan(&oid, &definition, &raw)
 		if err != nil || oid == 0 || oid >= 16384 {
 			return 0, errors.Join(errOpenGaussDesignDeclaration, err)
 		}
@@ -43,19 +39,8 @@ func openGaussCheckDesignDispatch(ctx context.Context, c *sql.Conn, table schema
 		if json.Unmarshal([]byte(raw), &callbacks) != nil || len(callbacks) != 17 {
 			return 0, errOpenGaussDesignDeclaration
 		}
-		var parts []string
-		for _, id := range callbacks {
-			if id != 0 {
-				parts = append(parts, strconv.FormatUint(id, 10))
-			}
-		}
-		var unsafe bool
-		err = c.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM unnest($1::oid[]) r(oid)
- LEFT JOIN pg_proc p ON p.oid=r.oid LEFT JOIN pg_namespace n ON n.oid=p.pronamespace
- WHERE p.oid IS NULL OR p.oid>=16384 OR n.nspname<>'pg_catalog' OR p.prolang NOT IN(12,13)
- OR p.proisagg OR p.proiswindow OR p.proretset OR p.prosecdef OR p.proconfig IS NOT NULL)`, "{"+strings.Join(parts, ",")+"}").Scan(&unsafe)
-		if err != nil || unsafe {
-			return 0, errors.Join(errOpenGaussDesignDeclaration, err)
+		if err = openGaussCheckNativeAccessMethod(ctx, c, name, oid, definition, callbacks); err != nil {
+			return 0, err
 		}
 		// Automatic polymorphic classes may be selected through a concrete
 		// array's elements, including when no explicit index is requested.
@@ -73,7 +58,16 @@ func openGaussCheckDesignDispatch(ctx context.Context, c *sql.Conn, table schema
 		checkedMethods[name] = oid
 		return oid, nil
 	}
-	for _, method := range []string{"btree", "hash"} {
+	var defaultUstore bool
+	if err := c.QueryRowContext(ctx, "SELECT current_setting('enable_ustore')::boolean AND current_setting('enable_default_ustore_table')::boolean").Scan(&defaultUstore); err != nil {
+		return err
+	}
+	implicit, err := schemaddl.OpenGaussDesignImplicitIndexMethods(table, defaultUstore)
+	if err != nil {
+		return errors.Join(errOpenGaussDesignDeclaration, err)
+	}
+	// Heap btree/hash can also be selected by grouping/value proof plans.
+	for _, method := range append([]string{"btree", "hash"}, implicit...) {
 		if _, err := checkMethod(method); err != nil {
 			return err
 		}
@@ -82,9 +76,9 @@ func openGaussCheckDesignDispatch(ctx context.Context, c *sql.Conn, table schema
 		if definition.Kind != "index" {
 			continue
 		}
-		layout, err := schemaddl.PostgreSQLIndexProbeLayout(definition, schema, table.Name)
+		layout, err := schemaddl.OpenGaussIndexProbeLayout(definition, schema, table, defaultUstore)
 		if err != nil {
-			return err
+			return errors.Join(errOpenGaussDesignDeclaration, err)
 		}
 		method, err := checkMethod(layout.Method)
 		if err != nil {

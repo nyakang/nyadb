@@ -759,3 +759,102 @@ ProcedureCreate 中用于替换特定用户 C 库的对象锁不能推断为所�
 
 本轮所属容器、证书和私有凭据在验证后由 fixture 创建脚本清理，并核对
 容器与私有目录均不存在；汇总见 `implicit-verification-summary.json`。
+
+## 原生索引访问方法绑定阶段
+
+原有预检只检查访问方法/回调的 low OID、namespace 和通用调用属性，
+无法识别把 B-tree 的 insert/options 换成原生 Hash 回调，或直接修改
+原生回调的实现符号和签名。本阶段核对从源码导出的固定调度表，而非将
+当前服务器报告的内容当作可信模板。
+
+- 核对方法 OID、完整 `pg_am` 定义及 17 个数值回调槽；策略/support 数量、
+  key type、所有布尔属性、未知目录属性和不同回调绑定均不能被忽略。
+- 批量核对固定回调的 namespace、名称、`prosrc`、参数 OID、返回类型、
+  internal 语言、原生 volatility、strict 与参数数量；拒绝外部库、
+  默认/variadic 参数、其它参数模式、聚合/window/set-returning、
+  security-definer 或局部配置。缺失回调和重复身份也不能通过。
+- 验证清单覆盖实际 6.0.0 服务器的 btree、hash、gist、gin、spgist、
+  psort、cbtree、ubtree、cgin，共 106 个不同回调。运行服务器的 `pg_am`
+  有 32 列；下载的源头包含额外尾列 `amdelete` 和 vector 方法，这些
+  扩展没有被当作本轮实际版本的能力开启。
+- 纯 schemaddl 规则根据原生存储选定实际方法：列存默认 psort，显式
+  btree/gin 映射 cbtree/cgin，唯一约束使用 cbtree；Ustore 默认 ubtree，
+  显式 btree 被拒绝。运行时同时读取 `enable_ustore` 和
+  `enable_default_ustore_table`，显式 `storage_type=astore` 覆盖默认值。
+  约束/内部索引也进入预检，普通 B-tree/Hash 的值证明路径继续检查。
+  不支持的存储组合在服务器解析声明前拒绝；未知/重复存储参数与列存的
+  `storage_type` 冲突同样拒绝。原始声明及 PostgreSQL 规则没有被改写。
+
+源码均来自 `opengauss-mirror/openGauss-server` 的 `6.0.0` 引用，
+只保存在忽略的 `temp/opengauss/` 研究目录：
+
+| 源码 | SHA256 |
+| --- | --- |
+| `src/include/catalog/pg_am.h` | `d8e0f77d82c47a126500fd0a4e615dfd29f94e47c8c0fca1610c63c000e4a59e` |
+| `src/common/backend/catalog/builtin_funcs.ini` | `cfa5d84b62eeab513b71950c7e5e122a201c338a3fc0b1637d252fcc28e2dc02` |
+| `src/common/backend/parser/parse_utilcmd.cpp` | `373faec35e5c4ff68e822fa8e9a72ae4baf553a9a99f6a60a86644ca4315d7c8` |
+| `src/gausskernel/optimizer/commands/indexcmds.cpp` | `dded8e236839554a63cf8ed9d0e8bc285d2ab4e110d519865d94093dd2878c30` |
+| `src/gausskernel/optimizer/commands/tablecmds.cpp` | `393abf35b96c145ab47f7833634b63eadaba879ac3625edf08d1f2eec1a60db9` |
+
+真实 verify-full TLS、openGauss 6.0.0 PG 模式的验证范围为：
+
+1. 旧预检对 insert/options 绑定、support/key type、实现符号、参数/返回
+   类型、strict、volatility、语言、外部库、默认参数和 variadic 的 13 类
+   修改全部错误放行，见 `am-before-fix.log`。修正后下一次声明预检和
+   独立 CREATE 入口均拒绝；修改由本轮所属 fixture 管理员提交，每次
+   注册兜底恢复，并核对恢复后的完整目录记录与原始相等。
+2. 全部 9 种实际方法与 106 个原生回调核对；未知方法属性明确拒绝。
+   普通行存用 btree/hash/gist/gin 共同创建索引，私有 Apply 完整提交，
+   原生目录证明索引 valid/ready/usable，插入并读取中文、整数数组、
+   NULL 数组元素和 point。
+3. 六种存储调度替换被拒绝：列存默认 psort、btree 别名、唯一约束、
+   gin 别名、显式 Ustore 和打开默认 Ustore。七种原生存储选择另在
+   savepoint 内实际创建索引、检查方法并插入/读取，再撤销并核对原始
+   修订不变。该组证明原生选择与预检一致，不代表列存/Ustore 的完整
+   私有 Apply 已全部验收；cgin 只证明调度绑定预检，没有宣称原生管理
+   完成。
+4. 原生服务器与预检均拒绝行存 SP-GiST、行存 ubtree、列存 hash 和
+   Ustore btree。初轮测试误把 SP-GiST 当作行存支持的索引，实际服务器
+   撤销事务；随后保留明确拒绝用例，并按实际支持的四种方法验证提交。
+   存储参数还曾误用 `heap`，实际合法值是 `astore`；失败保留在
+   `am-final-native-race.log`，最终测试使用实际原生参数，并增加每个
+   子场景的独立 savepoint 撤销，避免一个失败连带其它场景。
+
+这些检查没有建立系统目录并发屏障。普通 fixture 账户尝试
+`pgxc_lock_for_backup()` 和 `pgxc_lock_for_sp_database(...)` 时，实际
+服务器均要求 system admin 权限；因此没有将备份锁作为普通连接可用的
+屏障。namespace 的部分原生 DDL 锁也不等于任意 rename/目录更新的
+保护。下一次预检拒绝已提交的替换，不能证明预检到执行之间不会变化。
+其它类型/表达式/操作符类/排序规则的完整绑定、目录并发、故障和真实
+工作台生命周期仍待完成；公开 `CanApply` / `Apply` 和 `DesignTables`
+继续关闭，数据库/中间件整体目标仍未完成。
+
+最终新增六组真实 TLS race 全部通过（engines 113.242 秒），见
+`build/opengauss/table-design/am-native-final-race.log`；每个检查的命令、
+退出码与耗时保留在对应 `.result.json`。CGO=0 全仓库普通测试、Go vet、
+MyGo vet 和 i18n check（2017 条消息）通过；schemaddl/engines 普通包
+race 通过；Linux amd64、Windows amd64、macOS arm64 的 CGO=0 编译
+通过，不将编译描述为三平台原生执行。
+
+已有真实回归还发现“替换全部字段”的私有 Apply 在完整目录核验阶段
+返回结构冲突并撤销事务。使用只存在于 `temp/opengauss/am-diagnostics/`
+的 Go overlay 恢复上一提交 `99c4db3` 的原有调度实现，同一 fixture 中
+再次出现相同失败；当前实现的独立诊断也在同一阶段失败，分别见
+`am-replacement-parent-diagnostic.log` 与
+`am-replacement-current-diagnostic.log`。overlay 仅给现有错误添加阶段
+定位，诊断代码没有进入生产源文件。进一步的
+`am-replacement-verifier-diagnostic.log` 定位到目录身份变化后缺少独立
+`creator` 原型的拒绝分支。该既有目录核验缺口没有通过放宽
+身份检查来绕过，继续留作下一项修复，不能将整个私有 Apply 描述为已
+全面通过。
+
+已有 15 组真实 TLS race 回归完整终结（engines 626.618 秒），其中
+14 组通过：行存/列存/分区 ALTER、序列/生成字段/索引 CREATE、完整目录
+损坏拒绝、原生数组/SQL 转换、独立声明回滚、外部引用及仅 REFERENCES
+权限、取消与提交回执丢失等。全部字段替换组的 CREATE 子场景通过，
+replacement 子场景仍因上述既有缺口失败，所以该进程退出码是 1，不能
+报告为整组通过，见 `am-regression-native-race.log`。没有报告数据竞争。
+
+本轮所属容器、证书与私有凭据由创建它们的 fixture 脚本清理，已核对
+容器、私有目录与所属进程均不存在。完整检查、既有失败及清理状态汇总
+于 `build/opengauss/table-design/am-verification-summary.json`。
