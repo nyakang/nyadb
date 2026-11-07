@@ -1,0 +1,33 @@
+{
+  "scope": "explicit native DPI transport foundation; workbench unregistered",
+  "workbench_registered": false,
+  "registered_products": 16,
+  "vendor_files_bundled": false,
+  "verified_native_platform": "linux-amd64",
+  "verified_client_versions": ["8.1.2.128/2022-08-04", "8.1.3.59/2023-07-25", "8.1.5.88/2026-09-22"],
+  "server_version": "08134283904-20220804-166351-20005",
+  "accepted_encrypted_server_modes": [1],
+  "tls_default_policy": "verify-full",
+  "remote_server_identity_verified_in_go": true,
+  "credentials_withheld_until_remote_verification": true,
+  "explicit_client_certificate_presented": true,
+  "private_session_mutual_tls": true,
+  "original_server_enforces_client_certificate_presence": false,
+  "original_server_enforces_client_ca_trust": false,
+  "complete_remote_mutual_certificate_authentication_verified": false,
+  "cleartext_fallback": false,
+  "native_login_and_connection_timeout_units": "milliseconds",
+  "native_query_timeout_units": "seconds",
+  "delayed_original_greeting_ms": 400,
+  "production_signal_masks_changed": false,
+  "startup_and_execution_join_before_handle_release": true,
+  "uncertain_original_session_reusable": false,
+  "automatic_replay": false,
+  "remaining": [
+    "complete native environment/client configuration isolation and per-physical product gate",
+    "other platforms, server/client versions and enforced mutual certificate authentication",
+    "complete authentication/type/LOB matrix",
+    "profile/URI/persistence/credential/editor/provider and qualified native metadata integration",
+    "shared SQL/data workbench and complete management/cross-product alignment"
+  ]
+}

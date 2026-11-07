@@ -2,6 +2,7 @@ package dpi
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"io"
 	"net"
@@ -12,17 +13,27 @@ import (
 // transport owns exactly one upstream socket and one native client's socket.
 // DPI does not expose its socket. The private loopback bridge lets cancellation
 // interrupt original I/O without freeing handles underneath a native call.
-// It neither interprets messages nor reconnects, retries or records their bytes.
+// Explicit TLS parses only the bounded initial greeting. After authentication,
+// it forwards bytes without reconnecting, retrying or recording them.
 type transport struct {
-	listener   net.Listener
-	upstream   net.Conn
-	mu         sync.Mutex
-	downstream net.Conn
-	closed     bool
-	done       chan struct{}
+	listener     net.Listener
+	upstream     net.Conn
+	mu           sync.Mutex
+	downstream   net.Conn
+	closed       bool
+	done         chan struct{}
+	startup      context.Context
+	negotiateTLS bool
+	remoteTLS    *tls.Config
+	localTLS     *tls.Config
+	failure      error
 }
 
 func openTransport(ctx context.Context, endpoint string, timeout time.Duration) (*transport, error) {
+	return openConfiguredTransport(ctx, endpoint, timeout, false, nil, nil)
+}
+
+func openConfiguredTransport(ctx context.Context, endpoint string, timeout time.Duration, negotiate bool, remote, local *tls.Config) (*transport, error) {
 	dialer := net.Dialer{Timeout: timeout}
 	upstream, err := dialer.DialContext(ctx, "tcp", endpoint)
 	if err != nil {
@@ -36,7 +47,7 @@ func openTransport(ctx context.Context, endpoint string, timeout time.Duration) 
 		upstream.Close()
 		return nil, errors.New("DM8 private native transport is unavailable")
 	}
-	t := &transport{listener: listener, upstream: upstream, done: make(chan struct{})}
+	t := &transport{listener: listener, upstream: upstream, done: make(chan struct{}), startup: ctx, negotiateTLS: negotiate, remoteTLS: remote, localTLS: local}
 	go t.serve()
 	return t, nil
 }
@@ -57,15 +68,33 @@ func (t *transport) serve() {
 	t.downstream = downstream
 	t.mu.Unlock()
 	t.listener.Close()
+	reader, writer := downstream, t.upstream
+	if t.negotiateTLS {
+		var err error
+		reader, writer, err = t.negotiate(downstream)
+		if err != nil {
+			t.mu.Lock()
+			t.failure = err
+			t.mu.Unlock()
+			t.closeSockets()
+			return
+		}
+	}
 	joined := make(chan struct{})
 	go func() {
 		defer close(joined)
-		io.Copy(t.upstream, downstream)
+		io.Copy(writer, reader)
 		t.closeSockets()
 	}()
-	io.Copy(downstream, t.upstream)
+	io.Copy(reader, writer)
 	t.closeSockets()
 	<-joined
+}
+
+func (t *transport) startupFailure() error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.failure
 }
 
 func (t *transport) closeSockets() {

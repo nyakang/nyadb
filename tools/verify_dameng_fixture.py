@@ -38,7 +38,27 @@ def remove_owned(identifier, nonce):
     subprocess.run(["docker", "rm", "-f", captured], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
 
 
-def verify(hold=False, audit_driver=False, race=False, audit_dpi=False, dpi_library=None):
+def create_tls_material(folder):
+    """Create independent, short-lived CA/server/client keys for this fixture."""
+    server = folder / "server_ssl"
+    client = folder / "client_ssl"
+    for path in (server, client):
+        path.mkdir(mode=0o700)
+    def openssl(*args):
+        subprocess.run(["openssl", *args], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    openssl("req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", str(folder / "ca-key.pem"), "-out", str(folder / "ca-cert.pem"), "-days", "1", "-subj", "/CN=NyaDB disposable DM8 CA", "-addext", "basicConstraints=critical,CA:TRUE", "-addext", "keyUsage=critical,keyCertSign,cRLSign")
+    for path, name, subject, usage, san in ((server, "server", "localhost", "serverAuth", "DNS:localhost,IP:127.0.0.1"), (client, "client", "SYSDBA", "clientAuth", "DNS:SYSDBA")):
+        openssl("req", "-new", "-newkey", "rsa:2048", "-nodes", "-keyout", str(path / (name + "-key.pem")), "-out", str(path / (name + ".csr")), "-subj", "/CN=" + subject)
+        ext = path / "extensions"
+        ext.write_text("basicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature,keyEncipherment\nextendedKeyUsage=" + usage + "\nsubjectAltName=" + san + "\n")
+        openssl("x509", "-req", "-in", str(path / (name + ".csr")), "-CA", str(folder / "ca-cert.pem"), "-CAkey", str(folder / "ca-key.pem"), "-CAcreateserial", "-out", str(path / (name + "-cert.pem")), "-days", "1", "-sha256", "-extfile", str(ext))
+        (path / "ca-cert.pem").write_bytes((folder / "ca-cert.pem").read_bytes())
+    for path in folder.rglob("*"):
+        if path.is_file():
+            path.chmod(0o600)
+
+
+def verify(hold=False, audit_driver=False, race=False, audit_dpi=False, dpi_library=None, tls=False):
     nonce = uuid.uuid4().hex
     base = ROOT / "temp" / "dameng"
     base.mkdir(parents=True, exist_ok=True)
@@ -51,11 +71,20 @@ def verify(hold=False, audit_driver=False, race=False, audit_dpi=False, dpi_libr
         password_file = folder / "admin-password"
         password_file.write_text(password)
         password_file.chmod(0o600)
+        if tls:
+            create_tls_material(folder)
         startup = """set -eu
 export LD_LIBRARY_PATH=/opt/dmdbms/bin
 cd /opt/dmdbms/bin
 mkdir -p /nyadb-fixture/data
+if [ ! -f /nyadb-fixture/data/DAMENG/dm.ini ]; then
 ./dminit PATH=/nyadb-fixture/data PAGE_SIZE=16 CASE_SENSITIVE=1 UNICODE_FLAG=1 LENGTH_IN_CHAR=1 SYSDBA_PWD="$(cat /nyadb-source/admin-password)" > /nyadb-fixture/init.log 2>&1
+fi
+if [ -d /nyadb-source/server_ssl ]; then
+mkdir -p /opt/dmdbms/bin/server_ssl
+cp /nyadb-source/server_ssl/* /opt/dmdbms/bin/server_ssl/
+sed -i 's/^[[:space:]]*ENABLE_ENCRYPT[[:space:]]*=.*/ENABLE_ENCRYPT = 1/' /nyadb-fixture/data/DAMENG/dm.ini
+fi
 exec ./dmserver /nyadb-fixture/data/DAMENG/dm.ini -noconsole
 """
         identifier = None
@@ -69,16 +98,19 @@ exec ./dmserver /nyadb-fixture/data/DAMENG/dm.ini -noconsole
 SELECT 'NYADB_DM_CASE=' || SF_GET_CASE_SENSITIVE_FLAG() AS CHECK_VALUE FROM DUAL;
 SELECT 'NYADB_DM_MODE=' || PARA_VALUE AS CHECK_VALUE FROM V$DM_INI WHERE PARA_NAME='COMPATIBLE_MODE';
 SELECT 'NYADB_DM_DATABASE=' || NAME AS CHECK_VALUE FROM V$DATABASE;
+SELECT 'NYADB_DM_TLS=' || PARA_VALUE AS CHECK_VALUE FROM V$DM_INI WHERE PARA_NAME='ENABLE_ENCRYPT';
 SELECT BANNER FROM V$VERSION;
 EXIT;
 """
+            if tls:
+                sql = sql.replace("@localhost:5236\n", '@localhost:5236#{ssl_path=/nyadb-source/client_ssl}\n')
             deadline = time.monotonic() + 120
             while True:
                 try:
                     probe = subprocess.run(command, input=sql, capture_output=True, text=True, check=False, timeout=10)
                 except subprocess.TimeoutExpired:
                     probe = subprocess.CompletedProcess(command, 124, "", "fixture SQL timed out")
-                checks = ["NYADB_DM_UTF8=1", "NYADB_DM_CASE=1", "NYADB_DM_MODE=0", "NYADB_DM_DATABASE=DAMENG"]
+                checks = ["NYADB_DM_UTF8=1", "NYADB_DM_CASE=1", "NYADB_DM_MODE=0", "NYADB_DM_DATABASE=DAMENG", "NYADB_DM_TLS=" + ("1" if tls else "0")]
                 if probe.returncode == 0 and all(re.search(r"^\s*\d+\s+" + re.escape(check) + r"\s*$", probe.stdout, re.MULTILINE) for check in checks):
                     if not re.search(r"^\s*\d+\s+" + re.escape(VERSION) + r"\s*$", probe.stdout, re.MULTILINE) or not re.search(r"^\s*\d+\s+DM Database Server 64 V8\s*$", probe.stdout, re.MULTILINE):
                         raise RuntimeError("DM8 candidate did not prove the expected native server version")
@@ -90,7 +122,7 @@ EXIT;
                 time.sleep(1)
             port = subprocess.check_output(["docker", "port", identifier, "5236/tcp"], text=True).strip().rsplit(":", 1)[1]
             private = folder / "probe.json"
-            private.write_text(json.dumps({"endpoint": "127.0.0.1:" + port, "password_file": str(password_file), "output": str(output / "driver-audit.json")}))
+            private.write_text(json.dumps({"endpoint": "127.0.0.1:" + port, "password_file": str(password_file), "output": str(output / "driver-audit.json"), "native_ssl_directory": str(folder / "client_ssl") if tls else ""}))
             private.chmod(0o600)
             print("DM8 fixture verified; private probe configuration:", private, flush=True)
             if audit_driver:
@@ -101,8 +133,8 @@ EXIT;
             if audit_dpi:
                 environment = dict(os.environ, GOWORK="off", CGO_ENABLED="1" if race else "0", NYADB_DAMENG_DPI_IT="1", NYADB_DAMENG_DPI_CONFIG=str(private), NYADB_DAMENG_DPI_LIBRARY=str(Path(dpi_library).resolve()))
                 with (output / ("dpi-race.log" if race else "dpi-audit.log")).open("w") as log:
-                    subprocess.run(["go", "test"] + (["-race"] if race else []) + ["-count=1", "-v", "./internal/services/dameng/dpi"], cwd=ROOT, env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
-                print("DM8 loopback DPI verification passed; TLS/remote/workbench remain unregistered", flush=True)
+                    subprocess.run(["go", "test"] + (["-race"] if race else []) + ["-count=1", "-timeout=180s", "-v", "./internal/services/dameng/dpi"], cwd=ROOT, env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
+                print("DM8 " + ("verified server TLS" if tls else "loopback") + " DPI verification passed; workbench remains unregistered", flush=True)
             if hold:
                 while True:
                     time.sleep(1)
@@ -123,14 +155,17 @@ if __name__ == "__main__":
     parser.add_argument("--audit-dpi", action="store_true", help="verify the private loopback DPI boundary against an externally installed native client")
     parser.add_argument("--dpi-library", type=Path, help="path to the caller's original native client library; no binaries are installed or redistributed")
     parser.add_argument("--race", action="store_true", help="run the enabled audits with the Go race detector")
+    parser.add_argument("--tls", action="store_true", help="deploy the owned server with native certificate TLS")
     args = parser.parse_args()
     if args.race and not (args.audit_driver or args.audit_dpi):
         parser.error("--race requires --audit-driver or --audit-dpi")
+    if args.tls and args.audit_driver:
+        parser.error("--tls requires the DPI audit; the external Go-driver audit accepts a plain server only")
     if args.audit_dpi and (not args.dpi_library or not args.dpi_library.is_file()):
         parser.error("--audit-dpi requires an existing --dpi-library")
     if args.dpi_library and not args.audit_dpi:
         parser.error("--dpi-library requires --audit-dpi")
     try:
-        verify(args.hold, args.audit_driver, args.race, args.audit_dpi, args.dpi_library)
+        verify(args.hold, args.audit_driver, args.race, args.audit_dpi, args.dpi_library, args.tls)
     except KeyboardInterrupt:
         raise SystemExit(130)

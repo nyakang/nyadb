@@ -2,12 +2,15 @@ package dpi
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
 	"net"
+	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -20,8 +23,9 @@ var (
 	ErrOutcomeUnknown = errors.New("DM8 operation outcome is unknown; do not replay")
 )
 
-// Options configure the private loopback-only DPI verification boundary.
-// Verified TLS, remote endpoints and workbench registration remain separate.
+// Options configure an explicitly installed native client's session boundary.
+// Remote endpoints require an explicit TLS policy. Workbench registration is
+// separate; omitting TLS retains the original loopback-only verification mode.
 type Options struct {
 	LibraryFile             string
 	Host                    string
@@ -30,19 +34,21 @@ type Options struct {
 	Schema                  string
 	ConnectTimeoutSeconds   int
 	OperationTimeoutSeconds int
+	TLS                     *TLSOptions
 }
 
 type connector struct {
 	a        *api
 	o        Options
 	password string
+	tls      *tls.Config
 }
 
 func NewConnector(o Options, password string) (driver.Connector, error) {
 	if o.Host == "" || o.Username == "" || strings.ContainsAny(o.Host, "@/\\?#[] \t\r\n\x00") || strings.Contains(o.Host, ":") && net.ParseIP(o.Host) == nil || strings.ContainsRune(o.Username+o.Schema+password, 0) {
 		return nil, errors.New("invalid explicit DM8 endpoint or identity")
 	}
-	if address := net.ParseIP(o.Host); address == nil || !address.IsLoopback() {
+	if address := net.ParseIP(o.Host); o.TLS == nil && (address == nil || !address.IsLoopback()) {
 		return nil, errors.New("DM8 DPI verification currently requires an explicit loopback address")
 	}
 	if len(o.Username) > 128 || len(o.Schema) > 128 || len(password) > 512 {
@@ -60,11 +66,21 @@ func NewConnector(o Options, password string) (driver.Connector, error) {
 	if o.ConnectTimeoutSeconds < 1 || o.ConnectTimeoutSeconds > 120 || o.OperationTimeoutSeconds < 1 || o.OperationTimeoutSeconds > 120 {
 		return nil, errors.New("invalid bounded DM8 native timeout")
 	}
+	var secure *tls.Config
+	if o.TLS != nil {
+		var normalized TLSOptions
+		var err error
+		secure, normalized, err = remoteTLS(o.Host, *o.TLS)
+		if err != nil {
+			return nil, err
+		}
+		o.TLS = &normalized
+	}
 	a, err := load(o.LibraryFile)
 	if err != nil {
 		return nil, err
 	}
-	return &connector{a: a, o: o, password: password}, nil
+	return &connector{a: a, o: o, password: password, tls: secure}, nil
 }
 
 func (c *connector) Driver() driver.Driver { return driverType{} }
@@ -97,7 +113,16 @@ func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 	if !succeeded(c.a.allocCon(d.env, &d.h)) {
 		return nil, c.a.error(1, d.env, "connection allocation")
 	}
-	owned, err := openTransport(ctx, net.JoinHostPort(c.o.Host, strconv.Itoa(int(c.o.Port))), time.Duration(c.o.ConnectTimeoutSeconds)*time.Second)
+	var local *tls.Config
+	if c.tls != nil {
+		var err error
+		d.localTLS, err = newLocalTLS(c.o.Username)
+		if err != nil {
+			return nil, errors.New("DM8 private native TLS material is unavailable")
+		}
+		local = d.localTLS.server
+	}
+	owned, err := openConfiguredTransport(ctx, net.JoinHostPort(c.o.Host, strconv.Itoa(int(c.o.Port))), time.Duration(c.o.ConnectTimeoutSeconds)*time.Second, c.o.TLS != nil, c.tls, local)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +136,10 @@ func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 		id    int32
 		value uintptr
 	}{
-		{103, uintptr(seconds)}, {113, uintptr(c.o.OperationTimeoutSeconds)}, {12350, uintptr(port)},
+		// Login/connection I/O attributes use milliseconds. In the 2026 client,
+		// passing 10 produces a 10 ms SO_RCVTIMEO and can abort before verified
+		// remote TLS finishes. The statement query timeout uses seconds.
+		{103, uintptr(seconds * 1000)}, {113, uintptr(c.o.OperationTimeoutSeconds * 1000)}, {12350, uintptr(port)},
 		{12345, 1}, {12412, 0}, {12408, 0}, {12424, 0}, {12359, 0}, {102, 1},
 		{12358, 0}, {12403, 1}, {12413, 0},
 	} {
@@ -125,6 +153,15 @@ func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 			return nil, c.a.error(2, d.h, "initial schema")
 		}
 	}
+	var pin runtime.Pinner
+	defer pin.Unpin()
+	if d.localTLS != nil {
+		path := append([]byte(d.localTLS.directory), 0)
+		pin.Pin(&path[0])
+		if !succeeded(c.a.setCon(d.h, 12401, uintptr(unsafe.Pointer(&path[0])), int32(len(d.localTLS.directory)))) {
+			return nil, c.a.error(2, d.h, "private native TLS configuration")
+		}
+	}
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -135,6 +172,9 @@ func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 	if !succeeded(rc) {
 		if err := ctx.Err(); err != nil {
 			return nil, err
+		}
+		if err := d.transport.startupFailure(); err != nil {
+			return nil, errors.Join(err, c.a.error(2, d.h, "authentication"))
 		}
 		return nil, c.a.error(2, d.h, "authentication")
 	}
@@ -168,6 +208,7 @@ type conn struct {
 	env, h        uintptr
 	options       Options
 	transport     *transport
+	localTLS      *localTLS
 	statements    map[uintptr]*statement
 	inTransaction bool
 }
@@ -189,6 +230,10 @@ func (c *conn) retireLocked() {
 	if c.env != 0 {
 		c.a.freeEnv(c.env)
 		c.env = 0
+	}
+	if c.localTLS != nil {
+		os.RemoveAll(c.localTLS.directory)
+		c.localTLS = nil
 	}
 }
 

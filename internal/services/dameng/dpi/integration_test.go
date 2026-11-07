@@ -11,6 +11,8 @@ import (
 	"errors"
 	"net"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -27,8 +29,9 @@ func nativeFixture(t *testing.T) (Options, string) {
 		t.Fatal(err)
 	}
 	var cfg struct {
-		Endpoint     string `json:"endpoint"`
-		PasswordFile string `json:"password_file"`
+		Endpoint           string `json:"endpoint"`
+		PasswordFile       string `json:"password_file"`
+		NativeSSLDirectory string `json:"native_ssl_directory"`
 	}
 	if err = json.Unmarshal(data, &cfg); err != nil {
 		t.Fatal(err)
@@ -45,7 +48,13 @@ func nativeFixture(t *testing.T) (Options, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return Options{LibraryFile: os.Getenv("NYADB_DAMENG_DPI_LIBRARY"), Host: host, Port: uint16(n), Username: "SYSDBA", ConnectTimeoutSeconds: 3, OperationTimeoutSeconds: 5}, string(password)
+	o := Options{LibraryFile: os.Getenv("NYADB_DAMENG_DPI_LIBRARY"), Host: host, Port: uint16(n), Username: "SYSDBA", ConnectTimeoutSeconds: 3, OperationTimeoutSeconds: 5}
+	if cfg.NativeSSLDirectory != "" {
+		o.ConnectTimeoutSeconds = 10
+		o.OperationTimeoutSeconds = 10
+		o.TLS = &TLSOptions{Mode: "verify-full", CAFile: filepath.Join(cfg.NativeSSLDirectory, "ca-cert.pem"), CertificateFile: filepath.Join(cfg.NativeSSLDirectory, "client-cert.pem"), KeyFile: filepath.Join(cfg.NativeSSLDirectory, "client-key.pem")}
+	}
+	return o, string(password)
 }
 
 func nativeDB(t *testing.T, o Options, password string) *sql.DB {
@@ -176,6 +185,27 @@ func TestNativeDPIOrdinaryAuthentication(t *testing.T) {
 	}
 	t.Cleanup(func() { admin.ExecContext(context.Background(), "DROP USER "+username+" CASCADE") })
 	o.Username = username
+	if o.TLS != nil {
+		settings := *o.TLS
+		folder := t.TempDir()
+		settings.CertificateFile = filepath.Join(folder, "client-cert.pem")
+		settings.KeyFile = filepath.Join(folder, "client-key.pem")
+		csr := filepath.Join(folder, "client.csr")
+		ext := filepath.Join(folder, "extensions")
+		if err := os.WriteFile(ext, []byte("basicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature,keyEncipherment\nextendedKeyUsage=clientAuth\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		for _, args := range [][]string{
+			{"req", "-new", "-newkey", "rsa:2048", "-nodes", "-keyout", settings.KeyFile, "-out", csr, "-subj", "/CN=" + username},
+			{"x509", "-req", "-in", csr, "-CA", settings.CAFile, "-CAkey", filepath.Join(filepath.Dir(settings.CAFile), "..", "ca-key.pem"), "-CAcreateserial", "-out", settings.CertificateFile, "-days", "1", "-sha256", "-extfile", ext},
+		} {
+			if err := exec.Command("openssl", args...).Run(); err != nil {
+				t.Fatal("owned ordinary-user certificate generation failed")
+			}
+		}
+		os.Chmod(settings.KeyFile, 0o600)
+		o.TLS = &settings
+	}
 	for _, value := range []string{userPassword, "", "incorrect-password"} {
 		db := nativeDB(t, o, value)
 		err := db.PingContext(ctx)
