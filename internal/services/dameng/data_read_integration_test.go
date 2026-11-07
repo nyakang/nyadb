@@ -78,7 +78,7 @@ func TestNativeDamengDataReadTypedPagingAndBoundedFields(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 	r := contract.ComposeData(s)
-	if r.AdvancedLoader == nil || r.Count == nil || r.Chunk == nil || r.Saver != nil || r.RowReader != nil || r.Transactions.Begin != nil || r.Importer != nil || r.Exporter != nil || r.Capabilities.EditableTables {
+	if r.AdvancedLoader == nil || r.Count == nil || r.Chunk == nil || r.Saver != nil || r.RowReader == nil || r.Transactions.Begin != nil || r.Importer != nil || r.Exporter != nil || r.Capabilities.EditableTables {
 		t.Fatal("native read foundation advertised unimplemented writes")
 	}
 	opt := contract.DataOptions{Object: o, Limit: 2, UseKeyset: true, Sorts: []contract.DataSortRule{{Column: "GRP", Descending: true}}}
@@ -387,6 +387,9 @@ func TestNativeDamengDataReadOrdinaryGrantsAndExactCompositeKeys(t *testing.T) {
 		}
 		t.Fatal("ordinary SELECT grant did not support bounded locked reads", err)
 	}
+	if row, e := ordinary.DataReads().RowReader(ctx, ordinary.ProfileID(), o.Schema, o.Name, *page.RowRefs[0]); e != nil || len(row.Values["B"].Bytes) != 5600 {
+		t.Fatal("ordinary SELECT grant did not support complete SHARE-locked reads", e)
+	}
 	if _, err = admin.ExecContext(ctx, "CREATE TABLE "+quote(o.Schema)+`."UnGranted"(ID INT PRIMARY KEY,T VARCHAR(32))`); err != nil {
 		t.Fatal(err)
 	}
@@ -411,6 +414,9 @@ func TestNativeDamengDataReadOrdinaryGrantsAndExactCompositeKeys(t *testing.T) {
 		chunk, e := s.DataReads().Chunk(ctx, s.ProfileID(), o.Schema, composite.Name, "T", *p.RowRefs[0], 0, 32)
 		if e != nil || chunk.Text != strconv.Itoa(i) {
 			t.Fatal("typed composite row reference lost decimal precision", e, chunk)
+		}
+		if row, e := s.DataReads().RowReader(ctx, s.ProfileID(), o.Schema, composite.Name, *p.RowRefs[0]); e != nil || row.Values["D"].Text != p.Rows[0][1].Text || row.Values["T"].Text != strconv.Itoa(i) {
+			t.Fatal("complete composite snapshot lost exact native decimal identity", e)
 		}
 		after = p.NextCursor
 	}

@@ -141,7 +141,9 @@ func newBinding(value any) (*binding, error) {
 	default:
 		return nil, errors.New("unsupported DM8 native parameter type")
 	}
-	if len(b.bytes) > 1<<20 {
+	// Text/binary buffers include a trailing sentinel; the public limit applies
+	// to the value sent to DPI, not that private byte.
+	if b.length > 1<<20 || len(b.bytes) > (1<<20)+1 {
 		return nil, errors.New("DM8 native parameter exceeds 1 MiB")
 	}
 	b.pin.Pin(&b.bytes[0])

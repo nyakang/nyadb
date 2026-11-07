@@ -30,6 +30,10 @@ func (s *Session) dataObject(id int64, schema, name string, requested contract.O
 // only adapter-owned reads are issued here. SELECT LIMIT 0 alone does not
 // prevent native DDL. No database/sql transaction retry path is involved.
 func (s *Session) dataRead(ctx context.Context, o contract.ObjectRef, read func(context.Context, *sql.Conn, *contract.TableStructure) error) (err error) {
+	return s.dataReadLocked(ctx, o, false, read)
+}
+
+func (s *Session) dataReadLocked(ctx context.Context, o contract.ObjectRef, complete bool, read func(context.Context, *sql.Conn, *contract.TableStructure) error) (err error) {
 	if err = s.checkObject(o); err != nil {
 		return err
 	}
@@ -72,7 +76,11 @@ func (s *Session) dataRead(ctx context.Context, o contract.ObjectRef, read func(
 		_ = c.Raw(func(any) error { return driver.ErrBadConn })
 		return err
 	}
-	for _, q := range []string{"SET TRANSACTION ISOLATION LEVEL SERIALIZABLE", "LOCK TABLE " + qualified(o) + " IN ROW SHARE MODE"} {
+	mode := "ROW SHARE"
+	if complete {
+		mode = "SHARE"
+	}
+	for _, q := range []string{"SET TRANSACTION ISOLATION LEVEL SERIALIZABLE", "LOCK TABLE " + qualified(o) + " IN " + mode + " MODE"} {
 		if _, err = c.ExecContext(ctx, q); err != nil {
 			return err
 		}
@@ -108,7 +116,17 @@ func dataProjection(t *contract.TableStructure, units int) (string, error) {
 			return "", contract.ErrUnsupported
 		}
 		if length != "" {
-			expr = "CASE WHEN " + length + "=0 THEN " + name + " ELSE " + expr + " END"
+			empty := name
+			// Returning the original LOB in CASE forces native conversion of a
+			// large value even on the bounded branch (-6108). Fixed constructors
+			// preserve empty versus NULL without sending the original large LOB.
+			switch c.DataType {
+			case "CLOB", "TEXT":
+				empty = "EMPTY_CLOB()"
+			case "BLOB", "IMAGE":
+				empty = "EMPTY_BLOB()"
+			}
+			expr = "CASE WHEN " + length + "=0 THEN " + empty + " ELSE " + expr + " END"
 		}
 		cols[i] = expr + " AS " + name
 	}
@@ -409,7 +427,7 @@ func (s *Session) chunkData(ctx context.Context, id int64, schema, name, field s
 func (s *Session) DataReads() contract.DataReads {
 	return contract.DataReads{AdvancedLoader: s.loadData, Loader: func(ctx context.Context, id int64, schema, name string, offset int64, limit int) (*contract.DataPage, error) {
 		return s.loadData(ctx, id, schema, name, contract.DataOptions{Offset: offset, Limit: limit})
-	}, Count: s.countData, Chunk: s.chunkData, TableMetadata: func(ctx context.Context, id int64, schema, name string) (*contract.TableStructure, error) {
+	}, Count: s.countData, Chunk: s.chunkData, RowReader: s.readDataRow, TableMetadata: func(ctx context.Context, id int64, schema, name string) (*contract.TableStructure, error) {
 		o, err := s.dataObject(id, schema, name, contract.ObjectRef{})
 		if err != nil {
 			return nil, err

@@ -57,11 +57,25 @@ func TestParametersRejectUnsupportedValuesAndOwnTheirBytes(t *testing.T) {
 		}
 		b.release()
 	}
-	for _, v := range []any{math.NaN(), math.Inf(1), struct{}{}, []byte(strings.Repeat("x", (1<<20)+1)), Decimal("1e3")} {
+	for _, v := range []any{math.NaN(), math.Inf(1), struct{}{}, strings.Repeat("x", (1<<20)+1), []byte(strings.Repeat("x", (1<<20)+1)), Decimal("1e3")} {
 		if b, err := newBinding(v); err == nil {
 			b.release()
 			t.Fatal("unsupported binding accepted")
 		}
+	}
+}
+
+func TestParametersAcceptExactOneMiBContentWithoutCountingSentinel(t *testing.T) {
+	for _, value := range []any{strings.Repeat("x", 1<<20), []byte(strings.Repeat("x", 1<<20))} {
+		b, err := newBinding(value)
+		if err != nil {
+			t.Fatal("exact public parameter boundary rejected", err)
+		}
+		if b.length != 1<<20 || len(b.bytes) != (1<<20)+1 || b.bytes[1<<20] != 0 {
+			b.release()
+			t.Fatal("complete native parameter lost its length or sentinel")
+		}
+		b.release()
 	}
 }
 
