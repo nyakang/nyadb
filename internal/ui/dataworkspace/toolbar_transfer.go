@@ -240,7 +240,7 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 					ui.Row(c).Gap(8).Children(func() {
 						ui.Text(c, locales.Text("文件格式"))
 						choices := mysqlDataTransferFormatChoices(tr.Kind)
-						if t.capabilities.Documents || t.capabilities.KeyValues {
+						if t.capabilities.Documents || t.capabilities.KeyValues || t.importDialect == "dameng" {
 							choices = slices.DeleteFunc(choices, func(format string) bool { return format == "SQL" })
 						}
 						mysqlDataRuleSelect(c, &tr.Format, choices, func(x string) string { return x }).Disabled(tr.Busy || tr.Input != nil).Width(130)
@@ -509,7 +509,7 @@ func (s *State) startDataImport(services ui.Services, t *Document) {
 }
 func (s *State) startDataExport(services ui.Services, t *Document) {
 	tr := &t.transfer
-	if (t.capabilities.Documents || t.capabilities.KeyValues) && tr.Format == "SQL" {
+	if (t.capabilities.Documents || t.capabilities.KeyValues || t.importDialect == "dameng") && tr.Format == "SQL" {
 		tr.Err = contract.ErrUnsupported.Error()
 		return
 	}

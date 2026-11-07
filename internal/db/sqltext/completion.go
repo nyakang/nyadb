@@ -498,6 +498,8 @@ func completionRank(kind string) int {
 func completionKeywords(dialect string) []string {
 	base := "SELECT FROM WHERE ORDER BY GROUP HAVING LIMIT OFFSET INSERT INTO VALUES UPDATE SET DELETE JOIN LEFT RIGHT INNER OUTER CROSS ON USING NULL IS AND OR NOT AS DISTINCT EXPLAIN CREATE ALTER DROP TABLE VIEW INDEX PRIMARY KEY FOREIGN REFERENCES UNIQUE DEFAULT CHECK CONSTRAINT BEGIN END WHEN THEN ELSE CASE UNION ALL ASC DESC EXISTS WITH RECURSIVE OVER PARTITION ROWS RANGE BETWEEN EXCEPT INTERSECT"
 	switch dialect {
+	case "dameng":
+		base += " DECLARE COMMIT ROLLBACK SAVEPOINT PROCEDURE FUNCTION PACKAGE TRIGGER SEQUENCE SCHEMA IDENTITY GENERATED CLOB BLOB VARBINARY BIT DECIMAL TIMESTAMP DUAL SET SCHEMA RETURNING INTO"
 	case "oracle":
 		base = "SELECT FROM WHERE ORDER BY GROUP HAVING OFFSET FETCH FIRST NEXT ROWS ONLY INSERT INTO VALUES UPDATE SET DELETE MERGE JOIN LEFT RIGHT INNER OUTER CROSS ON USING NULL IS AND OR NOT AS DISTINCT EXPLAIN PLAN CREATE ALTER DROP TABLE VIEW INDEX PRIMARY KEY FOREIGN REFERENCES UNIQUE DEFAULT CHECK CONSTRAINT BEGIN DECLARE END WHEN THEN ELSE CASE UNION ALL ASC DESC EXISTS WITH OVER PARTITION ROWS RANGE BETWEEN MINUS INTERSECT RETURNING INTO COMMIT ROLLBACK SAVEPOINT PROCEDURE FUNCTION PACKAGE TRIGGER SEQUENCE NUMBER VARCHAR2 NVARCHAR2 CLOB NCLOB BLOB RAW TIMESTAMP DUAL CONNECT START PRIOR NOCYCLE LEVEL CURRENT_SCHEMA"
 	case "duckdb":
@@ -519,7 +521,7 @@ func completionReserved(name string) bool {
 
 var completionReservedWords = func() map[string]bool {
 	words := map[string]bool{}
-	for _, dialect := range []string{"mysql", "postgres", "sqlite", "tsql", "oracle", "duckdb"} {
+	for _, dialect := range []string{"mysql", "postgres", "sqlite", "tsql", "oracle", "duckdb", "dameng"} {
 		for _, word := range completionKeywords(dialect) {
 			words[word] = true
 		}
@@ -559,7 +561,7 @@ func completionTokens(source, dialect string) []completionToken {
 			for i < len(source) && source[i] != '\n' {
 				i++
 			}
-		case dialect == "oracle" && ((source[i] == 'q' || source[i] == 'Q') && i+2 < len(source) && source[i+1] == '\'' || (source[i] == 'n' || source[i] == 'N') && i+3 < len(source) && (source[i+1] == 'q' || source[i+1] == 'Q') && source[i+2] == '\''):
+		case (dialect == "oracle" || dialect == "dameng") && ((source[i] == 'q' || source[i] == 'Q') && i+2 < len(source) && source[i+1] == '\'' || (source[i] == 'n' || source[i] == 'N') && i+3 < len(source) && (source[i+1] == 'q' || source[i+1] == 'Q') && source[i+2] == '\''):
 			t.protected = true
 			offset := 2
 			if source[i] == 'n' || source[i] == 'N' {

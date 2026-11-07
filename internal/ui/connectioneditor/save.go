@@ -171,7 +171,7 @@ func (s *State) Save() {
 			return
 		}
 	}
-	if saved.Kind.IsPostgreSQLFamily() || saved.Kind == connections.ClickHouse || saved.Kind == connections.SQLServer || saved.Kind == connections.Oracle || saved.Kind == connections.MongoDB || saved.Kind == connections.Redis {
+	if saved.Kind.IsPostgreSQLFamily() || saved.Kind == connections.ClickHouse || saved.Kind == connections.SQLServer || saved.Kind == connections.Oracle || saved.Kind == connections.Dameng || saved.Kind == connections.MongoDB || saved.Kind == connections.Redis {
 		s.connectionMainConfig = s.currentConnectionSnapshot()
 		if err := s.persistConnectionPasswords(saved, before); err != nil {
 			if p.ID == 0 {

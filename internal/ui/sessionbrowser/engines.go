@@ -24,7 +24,7 @@ type EngineRuntime struct {
 func (s *State) SetEngineRuntime(r EngineRuntime) { s.engines = r }
 func (s *State) EngineCatalog(id int64) string {
 	w := s.Workspace(id)
-	if w != nil && (w.Kind.IsPostgreSQLFamily() || w.Kind == connections.SQLServer || w.Kind == connections.Oracle || w.Kind == connections.DuckDB) {
+	if w != nil && (w.Kind.IsPostgreSQLFamily() || w.Kind == connections.SQLServer || w.Kind == connections.Oracle || w.Kind == connections.Dameng || w.Kind == connections.DuckDB) {
 		return w.Catalog
 	}
 	return ""
@@ -71,7 +71,7 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 	generation := w.Generation
 	w.ProfileID, w.Status, w.Error = p.ID, "连接中", ""
 	w.Kind, w.Catalog = p.Kind, ""
-	if p.Kind.IsPostgreSQLFamily() || p.Kind == connections.SQLServer || p.Kind == connections.Oracle {
+	if p.Kind.IsPostgreSQLFamily() || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng {
 		w.Catalog = p.Database
 	} else if p.Kind == connections.SQLite {
 		w.Catalog = "main"
@@ -179,6 +179,9 @@ func (s *State) engineLabel(w *Workspace) string {
 	}
 	if w.Kind == connections.MongoDB {
 		return "MongoDB"
+	}
+	if w.Kind == connections.Dameng {
+		return "达梦"
 	}
 	if w.Kind == connections.Oracle {
 		return "Oracle"

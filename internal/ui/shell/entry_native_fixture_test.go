@@ -12,6 +12,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
+	"github.com/nyakang/nyadb/internal/services/dameng/dpiworker"
 	"github.com/nyakang/nyadb/internal/services/queries"
 	"github.com/nyakang/nyadb/internal/storage/localdb"
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
@@ -21,6 +22,9 @@ import (
 // A separate native test binary hosts the real Shell toolbar at 420 pixels.
 // Formal bootstrap keeps its 840 pixel minimum. This is component evidence.
 func TestMain(m *testing.M) {
+	if dpiworker.Dispatch() {
+		return
+	}
 	if root := os.Getenv("NYADB_UX_NATIVE"); root != "" {
 		if err := runWorkflowNativeFixture(root); err != nil {
 			fmt.Fprintln(os.Stderr, err)

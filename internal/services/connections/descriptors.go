@@ -12,6 +12,8 @@ type Descriptor struct {
 
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
+	case Dameng:
+		return Descriptor{kind, "达梦", "dameng", "server", "dameng", 5236, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Count: true, Keyset: true, FieldChunks: true, Export: true, JSONL: true, Import: true}}, true
 	case Redis:
 		return Descriptor{kind, "Redis", "redis", "server", "redis", 6379, contract.Capabilities{KeyValues: true, Query: true, Metadata: true, EditableTables: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
 	case MongoDB:
@@ -58,6 +60,8 @@ func Describe(kind Kind) (Descriptor, bool) {
 // FieldTypes offers common candidates without restricting custom declarations.
 func (d Descriptor) FieldTypes() []string {
 	switch d.Kind {
+	case Dameng:
+		return []string{"BIGINT", "INT", "DECIMAL(38,20)", "VARCHAR(255)", "CLOB", "BLOB", "VARBINARY(255)", "BIT", "DATE", "TIME(6)", "TIMESTAMP(6)", "TIMESTAMP(6) WITH TIME ZONE"}
 	case Oracle:
 		return []string{"NUMBER(19,0)", "NUMBER(38,20)", "VARCHAR2(255)", "NVARCHAR2(255)", "DATE", "TIMESTAMP(9)", "TIMESTAMP WITH TIME ZONE", "CLOB", "NCLOB", "BLOB", "RAW(16)"}
 	case DuckDB:

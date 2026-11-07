@@ -84,6 +84,8 @@ func (s *State) ConnectionWindowIcon() ([]byte, error) {
 		file = "redis.png"
 	case connections.MongoDB:
 		file = "mongodb.png"
+	case connections.Dameng:
+		file = "dameng.png"
 	case connections.Oracle:
 		file = "oracle.png"
 	case connections.SQLServer:

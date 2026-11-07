@@ -62,7 +62,7 @@ func TestRecentConnectionsDeduplicateAndKeepFiveNewest(t *testing.T) {
 func TestConnectionCatalogFiltering(t *testing.T) {
 	s := New()
 	if n := len(s.catalogItems("全部")); n != 18 {
-		t.Fatalf("catalog should offer 18 local types including KingbaseES, got %d", n)
+		t.Fatalf("catalog should offer 18 local choices including Dameng, got %d", n)
 	}
 	s.search = "sql"
 	if items := s.catalogItems("全部"); len(items) != 4 {
@@ -104,7 +104,7 @@ func TestExpandedCatalogMirrorsObservedGroups(t *testing.T) {
 	if len(databaseCatalog) < 60 {
 		t.Fatalf("expected expanded connection browser with at least 60 choices, got %d", len(databaseCatalog))
 	}
-	if len(catalogVendors) < 12 || len(catalogEngines) != 17 {
+	if len(catalogVendors) < 12 || len(catalogEngines) != 18 {
 		t.Fatalf("missing engine/vendor filters: %d/%d", len(catalogEngines), len(catalogVendors))
 	}
 	seen := map[string]bool{}
@@ -196,5 +196,20 @@ func TestDamengVendorFilterIsNotEmpty(t *testing.T) {
 	groups := s.catalogTreeGroups()
 	if len(groups) != 1 || groups[0].vendor != "达梦" || len(groups[0].items) != 1 {
 		t.Fatalf("Dameng tree group absent with active filter: %+v", groups)
+	}
+}
+
+func TestDamengNativeSearchAndSelection(t *testing.T) {
+	s := New()
+	for _, query := range []string{"达梦", "Dameng", "dm8"} {
+		s.search = query
+		items := s.catalogItems("全部")
+		if len(items) != 1 || items[0].kind != connections.Dameng {
+			t.Fatal("native search did not find registered Dameng", query, items)
+		}
+		s.chooseCatalogEntry(items[0], nil)
+		if s.Selected().Kind != connections.Dameng {
+			t.Fatal("native choice lost product identity")
+		}
 	}
 }

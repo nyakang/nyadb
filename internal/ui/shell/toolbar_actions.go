@@ -25,7 +25,7 @@ func (s *State) toolbarMenu(services ui.Services, action string, m *ui.Menu) {
 		if w.Kind.IsPostgreSQLFamily() || w.Kind == connections.SQLServer || w.Kind == connections.Oracle {
 			kinds = []string{"存储过程", "序列"}
 		}
-		if w.Kind == connections.Oracle {
+		if w.Kind == connections.Oracle || w.Kind == connections.Dameng {
 			kinds = []string{"存储过程", "包", "触发器", "序列", "类型"}
 		}
 		if w.Kind == connections.DuckDB || w.Kind == connections.TiDB || w.Kind == connections.OceanBase {

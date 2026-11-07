@@ -76,7 +76,7 @@ func (s *State) consumeSession(id int64, w *Workspace, active bool) {
 			s.generation = max(s.generation, w.Generation)
 		}
 		if result.namespaces != nil && result.metadataErr == nil {
-			if (w.Kind == connections.DuckDB || w.Kind == connections.Oracle) && len(result.namespaces) > 0 {
+			if (w.Kind == connections.DuckDB || w.Kind == connections.Oracle || w.Kind == connections.Dameng) && len(result.namespaces) > 0 {
 				w.Catalog = result.namespaces[0].Ref.Catalog
 			}
 			known := make(map[contract.NamespaceRef]bool, len(result.namespaces))

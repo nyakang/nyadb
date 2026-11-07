@@ -32,7 +32,7 @@ var databaseCatalog = []catalogEntry{
 	{"MongoDB", "MongoDB", "", "全部", "mongo-type", "#bb691d", connections.MongoDB},
 	{"Redis", "Redis", "", "全部", "redis-type", "#e77679", connections.Redis},
 	{"Snowflake", "Snowflake", "", "全部", "snowflake-type", "#3daac7", ""},
-	{"达梦", "达梦", "", "全部", "dm-type", "#7e63cc", ""},
+	{"达梦", "达梦", "", "全部", "dm-type", "#7e63cc", connections.Dameng},
 	{"OceanBase", "OceanBase", "", "全部", "ocean-type", "#3486d1", connections.OceanBase},
 	{"阿里云 RDS MySQL 版", "MySQL", "阿里云", "云数据库", "database", "#32c963", ""},
 	{"阿里云 RDS PostgreSQL 版", "PostgreSQL", "阿里云", "云数据库", "database", "#4b86e1", ""},
@@ -46,12 +46,16 @@ var databaseCatalog = []catalogEntry{
 	{"ClickHouse", "ClickHouse", "", "全部", "database", "#e7b632", connections.ClickHouse},
 }
 
-var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "MariaDB", "TiDB", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "MongoDB", "Redis", "Snowflake"}
+var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "MariaDB", "TiDB", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "达梦", "MongoDB", "Redis", "Snowflake"}
 var catalogVendors = catalogTreeVendorOrder
 
 func catalogMatch(e catalogEntry, query string, engines, vendors map[string]bool) bool {
 	q := strings.ToLower(strings.TrimSpace(query))
-	if q != "" && !strings.Contains(strings.ToLower(e.name+" "+e.engine+" "+e.vendor), q) {
+	names := e.name + " " + e.engine + " " + e.vendor
+	if e.kind == connections.Dameng {
+		names += " Dameng DM8"
+	}
+	if q != "" && !strings.Contains(strings.ToLower(names), q) {
 		return false
 	}
 	if len(engines) != 0 && !engines[e.engine] {

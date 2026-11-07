@@ -20737,3 +20737,183 @@ func KingbaseSessionPassword() string { return In(i18n.Locale()).KingbaseSession
 func (msgs Messages) KingbaseSessionPassword() string {
 	return Catalog.Format(msgs.locale, "kingbaseSessionPassword", nil)
 }
+
+// DamengSessionPassword says "达梦会话密码"
+// in the language the app shows.
+func DamengSessionPassword() string { return In(i18n.Locale()).DamengSessionPassword() }
+
+// DamengSessionPassword says "达梦会话密码"
+// in the language of msgs.
+func (msgs Messages) DamengSessionPassword() string {
+	return Catalog.Format(msgs.locale, "damengSessionPassword", nil)
+}
+
+// DamengLibraryCaption says "原厂客户端库："
+// in the language the app shows.
+func DamengLibraryCaption() string { return In(i18n.Locale()).DamengLibraryCaption() }
+
+// DamengLibraryCaption says "原厂客户端库："
+// in the language of msgs.
+func (msgs Messages) DamengLibraryCaption() string {
+	return Catalog.Format(msgs.locale, "damengLibraryCaption", nil)
+}
+
+// DamengLibrary says "达梦原厂客户端库"
+// in the language the app shows.
+func DamengLibrary() string { return In(i18n.Locale()).DamengLibrary() }
+
+// DamengLibrary says "达梦原厂客户端库"
+// in the language of msgs.
+func (msgs Messages) DamengLibrary() string {
+	return Catalog.Format(msgs.locale, "damengLibrary", nil)
+}
+
+// DamengSchema says "达梦默认模式"
+// in the language the app shows.
+func DamengSchema() string { return In(i18n.Locale()).DamengSchema() }
+
+// DamengSchema says "达梦默认模式"
+// in the language of msgs.
+func (msgs Messages) DamengSchema() string {
+	return Catalog.Format(msgs.locale, "damengSchema", nil)
+}
+
+// DamengLibraryRequired says "请选择已安装的达梦原厂客户端库，路径必须为绝对路径"
+// in the language the app shows.
+func DamengLibraryRequired() string { return In(i18n.Locale()).DamengLibraryRequired() }
+
+// DamengLibraryRequired says "请选择已安装的达梦原厂客户端库，路径必须为绝对路径"
+// in the language of msgs.
+func (msgs Messages) DamengLibraryRequired() string {
+	return Catalog.Format(msgs.locale, "damengLibraryRequired", nil)
+}
+
+// DamengDatabaseRequired says "请输入此连接绑定的达梦数据库"
+// in the language the app shows.
+func DamengDatabaseRequired() string { return In(i18n.Locale()).DamengDatabaseRequired() }
+
+// DamengDatabaseRequired says "请输入此连接绑定的达梦数据库"
+// in the language of msgs.
+func (msgs Messages) DamengDatabaseRequired() string {
+	return Catalog.Format(msgs.locale, "damengDatabaseRequired", nil)
+}
+
+// DamengUsernameRequired says "请输入达梦用户名"
+// in the language the app shows.
+func DamengUsernameRequired() string { return In(i18n.Locale()).DamengUsernameRequired() }
+
+// DamengUsernameRequired says "请输入达梦用户名"
+// in the language of msgs.
+func (msgs Messages) DamengUsernameRequired() string {
+	return Catalog.Format(msgs.locale, "damengUsernameRequired", nil)
+}
+
+// DamengCertificateRequired says "达梦 TLS 需要客户端证书和密钥"
+// in the language the app shows.
+func DamengCertificateRequired() string { return In(i18n.Locale()).DamengCertificateRequired() }
+
+// DamengCertificateRequired says "达梦 TLS 需要客户端证书和密钥"
+// in the language of msgs.
+func (msgs Messages) DamengCertificateRequired() string {
+	return Catalog.Format(msgs.locale, "damengCertificateRequired", nil)
+}
+
+// DamengClientHint says "请选择本机已安装的原厂 libdmdpi 库；默认模式在每条物理连接初始化。"
+// in the language the app shows.
+func DamengClientHint() string { return In(i18n.Locale()).DamengClientHint() }
+
+// DamengClientHint says "请选择本机已安装的原厂 libdmdpi 库；默认模式在每条物理连接初始化。"
+// in the language of msgs.
+func (msgs Messages) DamengClientHint() string {
+	return Catalog.Format(msgs.locale, "damengClientHint", nil)
+}
+
+// DamengTLSMode says "达梦 TLS 模式"
+// in the language the app shows.
+func DamengTLSMode() string { return In(i18n.Locale()).DamengTLSMode() }
+
+// DamengTLSMode says "达梦 TLS 模式"
+// in the language of msgs.
+func (msgs Messages) DamengTLSMode() string {
+	return Catalog.Format(msgs.locale, "damengTLSMode", nil)
+}
+
+// DamengCAFile says "达梦 CA 证书"
+// in the language the app shows.
+func DamengCAFile() string { return In(i18n.Locale()).DamengCAFile() }
+
+// DamengCAFile says "达梦 CA 证书"
+// in the language of msgs.
+func (msgs Messages) DamengCAFile() string {
+	return Catalog.Format(msgs.locale, "damengCAFile", nil)
+}
+
+// DamengClientCertificate says "达梦客户端证书"
+// in the language the app shows.
+func DamengClientCertificate() string { return In(i18n.Locale()).DamengClientCertificate() }
+
+// DamengClientCertificate says "达梦客户端证书"
+// in the language of msgs.
+func (msgs Messages) DamengClientCertificate() string {
+	return Catalog.Format(msgs.locale, "damengClientCertificate", nil)
+}
+
+// DamengClientKey says "达梦客户端密钥"
+// in the language the app shows.
+func DamengClientKey() string { return In(i18n.Locale()).DamengClientKey() }
+
+// DamengClientKey says "达梦客户端密钥"
+// in the language of msgs.
+func (msgs Messages) DamengClientKey() string {
+	return Catalog.Format(msgs.locale, "damengClientKey", nil)
+}
+
+// DamengServerName says "达梦证书服务器名"
+// in the language the app shows.
+func DamengServerName() string { return In(i18n.Locale()).DamengServerName() }
+
+// DamengServerName says "达梦证书服务器名"
+// in the language of msgs.
+func (msgs Messages) DamengServerName() string {
+	return Catalog.Format(msgs.locale, "damengServerName", nil)
+}
+
+// DamengTLSHint says "verify-full 校验证书链和主机名；达梦 TLS 需要客户端证书和密钥。"
+// in the language the app shows.
+func DamengTLSHint() string { return In(i18n.Locale()).DamengTLSHint() }
+
+// DamengTLSHint says "verify-full 校验证书链和主机名；达梦 TLS 需要客户端证书和密钥。"
+// in the language of msgs.
+func (msgs Messages) DamengTLSHint() string {
+	return Catalog.Format(msgs.locale, "damengTLSHint", nil)
+}
+
+// OperationTimeoutCaption says "执行超时（秒）："
+// in the language the app shows.
+func OperationTimeoutCaption() string { return In(i18n.Locale()).OperationTimeoutCaption() }
+
+// OperationTimeoutCaption says "执行超时（秒）："
+// in the language of msgs.
+func (msgs Messages) OperationTimeoutCaption() string {
+	return Catalog.Format(msgs.locale, "operationTimeoutCaption", nil)
+}
+
+// OperationTimeout says "执行超时（秒）"
+// in the language the app shows.
+func OperationTimeout() string { return In(i18n.Locale()).OperationTimeout() }
+
+// OperationTimeout says "执行超时（秒）"
+// in the language of msgs.
+func (msgs Messages) OperationTimeout() string {
+	return Catalog.Format(msgs.locale, "operationTimeout", nil)
+}
+
+// SqlSessionLimitCaption says "SQL 会话上限："
+// in the language the app shows.
+func SqlSessionLimitCaption() string { return In(i18n.Locale()).SqlSessionLimitCaption() }
+
+// SqlSessionLimitCaption says "SQL 会话上限："
+// in the language of msgs.
+func (msgs Messages) SqlSessionLimitCaption() string {
+	return Catalog.Format(msgs.locale, "sqlSessionLimitCaption", nil)
+}

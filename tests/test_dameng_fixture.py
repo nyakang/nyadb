@@ -14,7 +14,7 @@ SPEC.loader.exec_module(FIXTURE)
 
 class DamengFixtureTests(unittest.TestCase):
     def test_dpi_arguments_are_validated_before_docker_deployment(self):
-        for args in [["--audit-dpi"], ["--dpi-library", "/missing/libdmdpi.so"], ["--race"], ["--tls", "--audit-driver"]]:
+        for args in [["--audit-dpi"], ["--audit-workbench"], ["--dpi-library", "/missing/libdmdpi.so"], ["--race"], ["--tls", "--audit-driver"]]:
             with self.subTest(args=args):
                 result = subprocess.run([sys.executable, str(Path(FIXTURE.__file__)), *args], capture_output=True, text=True, check=False)
                 self.assertEqual(result.returncode, 2)

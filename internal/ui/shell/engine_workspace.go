@@ -38,7 +38,7 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 	}
 	status := s.sessions.StatusFor(p.ID)
 	ui.Column(c).Gap(5).Children(func() {
-		if (p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.MongoDB || p.Kind == connections.Redis) && status != "已连接" {
+		if (p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind == connections.MongoDB || p.Kind == connections.Redis) && status != "已连接" {
 			label := locales.Text("PostgreSQL 会话密码")
 			if p.Kind == connections.CockroachDB {
 				label = locales.Text("CockroachDB 会话密码")
@@ -57,6 +57,9 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 			}
 			if p.Kind == connections.MongoDB {
 				label = locales.Text("MongoDB 会话密码")
+			}
+			if p.Kind == connections.Dameng {
+				label = locales.Text("达梦会话密码")
 			}
 			if p.Kind == connections.Oracle {
 				label = locales.Text("Oracle 会话密码")
@@ -107,6 +110,9 @@ func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string 
 		if p.ID == id && p.Kind == connections.MongoDB {
 			return strings.TrimSpace(source)
 		}
+		if p.ID == id && p.Kind == connections.Dameng {
+			return sqltext.DamengStatementAt(source, cursor)
+		}
 		if p.ID == id && p.Kind == connections.Oracle {
 			return sqltext.OracleStatementAt(source, cursor)
 		}
@@ -140,6 +146,9 @@ func (s *State) sqlFormat(id int64, source string) (string, error) {
 			var out bytes.Buffer
 			err := json.Indent(&out, []byte(source), "", "  ")
 			return out.String(), err
+		}
+		if p.ID == id && p.Kind == connections.Dameng {
+			return sqltext.FormatDameng(source)
 		}
 		if p.ID == id && p.Kind == connections.Oracle {
 			return sqltext.FormatOracle(source)

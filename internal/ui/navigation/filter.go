@@ -48,7 +48,7 @@ func (s *State) filterMenu(m *ui.Menu) {
 		label string
 		kind  connections.Kind
 	}{
-		{"MySQL", connections.MySQL}, {"MariaDB", connections.MariaDB}, {"TiDB", connections.TiDB}, {"OceanBase", connections.OceanBase}, {"PostgreSQL", connections.PostgreSQL}, {"CockroachDB", connections.CockroachDB}, {"openGauss", connections.OpenGauss}, {"GaussDB", connections.GaussDB}, {"KingbaseES", connections.Kingbase}, {"SQLite", connections.SQLite}, {"ClickHouse", connections.ClickHouse},
+		{"MySQL", connections.MySQL}, {"MariaDB", connections.MariaDB}, {"TiDB", connections.TiDB}, {"OceanBase", connections.OceanBase}, {"PostgreSQL", connections.PostgreSQL}, {"CockroachDB", connections.CockroachDB}, {"openGauss", connections.OpenGauss}, {"GaussDB", connections.GaussDB}, {"KingbaseES", connections.Kingbase}, {"达梦", connections.Dameng}, {"SQLite", connections.SQLite}, {"ClickHouse", connections.ClickHouse},
 	} {
 		if m.Item(item.label).Checked(s.Filter.Engine == item.kind).Chosen() {
 			s.Filter.Engine = item.kind

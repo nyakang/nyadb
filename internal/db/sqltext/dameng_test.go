@@ -5,6 +5,45 @@ import (
 	"testing"
 )
 
+func TestDamengCaretAndFormattingPreserveNativeBlockBoundaries(t *testing.T) {
+	body := "CREATE OR REPLACE PROCEDURE p AS BEGIN IF 1=1 THEN NULL; END IF; END;"
+	source := "SELECT 'a;b';\n" + body + "\n/\nSELECT 42;"
+	if got := DamengStatementAt(source, strings.Index(source, "NULL")+2); got != body {
+		t.Fatal("caret fragmented native block", got)
+	}
+	if got := DamengStatementAt(source, strings.Index(source, "42")); got != "SELECT 42" {
+		t.Fatal("caret retained native client delimiter", got)
+	}
+	if formatted, err := FormatDameng(source); err != nil || formatted != source {
+		t.Fatal("native script formatting changed execution boundaries", err)
+	}
+	ordinary := "select 'a;b' from records where id = 1; select 42;"
+	formatted, err := FormatDameng(ordinary)
+	before, _ := SplitDameng(ordinary)
+	after, splitErr := SplitDameng(formatted)
+	if err != nil || splitErr != nil || len(after) != len(before) || !strings.Contains(formatted, "'a;b'") {
+		t.Fatal("ordinary native formatting changed protected source", err, splitErr)
+	}
+	if _, err := FormatDameng("SELECT 1; BEGIN NULL;"); err == nil {
+		t.Fatal("formatter accepted incomplete native block")
+	}
+	for _, source := range []string{"SELECT q'[don't complete FROM here]'", "SELECT nq'<don't complete WHERE here>'"} {
+		protected := false
+		for _, token := range completionTokens(source, "dameng") {
+			if strings.Contains(token.text, "don't complete") {
+				protected = token.protected
+			}
+		}
+		if !protected {
+			t.Fatal("native protected source exposed completion suggestions")
+		}
+	}
+	keywords := strings.Join(completionKeywords("dameng"), " ")
+	if !strings.Contains(keywords, "IDENTITY") || strings.Contains(keywords, "AUTO_INCREMENT") {
+		t.Fatal("native completion used unrelated product vocabulary")
+	}
+}
+
 func TestDamengNativeScriptsPreserveBodiesQuotedSemicolonsAndDivision(t *testing.T) {
 	source := `SELECT 'a;b',12/3;
 CREATE TABLE t (procedure INT);

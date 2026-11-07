@@ -91,6 +91,52 @@ func SplitDameng(source string) ([]string, error) {
 	return out, nil
 }
 
+func DamengStatementAt(source string, offset int) string {
+	parts, err := SplitDameng(source)
+	if err != nil {
+		return source
+	}
+	at := 0
+	for _, part := range parts {
+		start := strings.Index(source[at:], part) + at
+		end := start + len(part)
+		if offset <= end {
+			return part
+		}
+		at = end
+	}
+	if len(parts) > 0 {
+		return parts[len(parts)-1]
+	}
+	return ""
+}
+
+func FormatDameng(source string) (string, error) {
+	parts, err := SplitDameng(source)
+	if err != nil {
+		return "", err
+	}
+	for _, part := range parts {
+		tokens, err := OracleTokens(part)
+		if err != nil {
+			return "", err
+		}
+		if damengBlock(tokens) {
+			return source, nil
+		}
+	}
+	for line := range strings.SplitSeq(source, "\n") {
+		if strings.TrimSpace(line) == "/" {
+			return source, nil
+		}
+	}
+	tokens, err := OracleTokens(source)
+	if err != nil {
+		return "", err
+	}
+	return formatTokens(source, tokens), nil
+}
+
 func damengBlock(ts []Token) bool {
 	var words []string
 	for _, t := range ts {

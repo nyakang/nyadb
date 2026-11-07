@@ -24,6 +24,10 @@ const (
 	SQLiteMainFile
 	DuckDBMainFile
 	DuckDBLibraryFile
+	DamengLibraryFile
+	DamengCAFile
+	DamengCertificateFile
+	DamengKeyFile
 )
 
 func (s *State) SetEngineFilePicker(pick func(EngineFile, int, uint64)) { s.engineFilePicker = pick }
@@ -32,6 +36,24 @@ func (s *State) EngineFileVersion() uint64 { return s.engineFileVersion }
 
 func (s *State) SelectEngineFile(kind EngineFile, row int, version uint64, path string) {
 	if !s.active || version != s.engineFileVersion || path == "" {
+		return
+	}
+	if kind >= DamengLibraryFile && kind <= DamengKeyFile {
+		if s.connectionDraft.Kind != connections.Dameng {
+			return
+		}
+		a := &s.connectionDraft.DamengOptions
+		switch kind {
+		case DamengLibraryFile:
+			a.LibraryFile = path
+		case DamengCAFile:
+			a.CAFile = path
+		case DamengCertificateFile:
+			a.CertificateFile = path
+		case DamengKeyFile:
+			a.KeyFile = path
+		}
+		s.connectionError = ""
 		return
 	}
 	if kind == DuckDBMainFile || kind == DuckDBLibraryFile {
@@ -82,6 +104,11 @@ func (s *State) EngineFilePickerError(version uint64) {
 }
 
 func (s *State) initEngineOptionsInputs() {
+	if s.connectionDraft.Kind == connections.Dameng {
+		a := s.connectionDraft.DamengOptions
+		s.engineNumbers[0], s.engineNumbers[1], s.engineNumbers[2] = strconv.Itoa(a.ConnectTimeoutSeconds), strconv.Itoa(a.MaxConnections), strconv.Itoa(a.OperationTimeoutSeconds)
+		s.sqlMaxConnections = strconv.Itoa(a.SQLMaxConnections)
+	}
 	if s.connectionDraft.Kind == connections.Redis {
 		a, _ := connections.NormalizeRedisOptions(s.connectionDraft.RedisOptions)
 		s.connectionDraft.RedisOptions = a
@@ -142,6 +169,9 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.Dameng {
+		return s.advanceDamengOptions(p)
+	}
 	if p.Kind == connections.Redis {
 		values := []*int{&p.RedisOptions.ConnectTimeoutSeconds, &p.RedisOptions.MaxConnections, &p.RedisOptions.QueryMaxConnections}
 		for i, raw := range []string{s.engineNumbers[0], s.engineNumbers[1], s.sqlMaxConnections} {
@@ -257,6 +287,8 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.Dameng:
+		return s.damengOptions(c, formWidth, tab)
 	case connections.Redis:
 		return s.redisOptions(c, formWidth, tab)
 	case connections.MongoDB:

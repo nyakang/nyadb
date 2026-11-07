@@ -12,6 +12,10 @@ const (
 	PostgreSQLCAFile          = connectioneditor.PostgreSQLCAFile
 	PostgreSQLCertificateFile = connectioneditor.PostgreSQLCertificateFile
 	PostgreSQLKeyFile         = connectioneditor.PostgreSQLKeyFile
+	DamengLibraryFile         = connectioneditor.DamengLibraryFile
+	DamengCAFile              = connectioneditor.DamengCAFile
+	DamengCertificateFile     = connectioneditor.DamengCertificateFile
+	DamengKeyFile             = connectioneditor.DamengKeyFile
 )
 
 func (s *State) SetEngineFilePicker(pick func(EngineFile, int, uint64)) {

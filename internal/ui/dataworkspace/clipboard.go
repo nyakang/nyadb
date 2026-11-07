@@ -172,7 +172,7 @@ func mysqlDataSQLIdentifier(name string) string {
 	return "`" + strings.ReplaceAll(name, "`", "``") + "`"
 }
 func mysqlDataSQLSelection(t *Document, update bool) (string, error) {
-	if t != nil && (t.capabilities.Documents || t.capabilities.KeyValues) {
+	if t != nil && (t.capabilities.Documents || t.capabilities.KeyValues || t.importDialect == "dameng") {
 		return "", contract.ErrUnsupported
 	}
 	selectedFields, _, _ := mysqlDataSelectedPreview(t)

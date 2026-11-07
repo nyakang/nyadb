@@ -14,11 +14,15 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/services/dameng/dpiworker"
 	"github.com/nyakang/nyadb/internal/services/dbruntime"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 )
 
 func TestMain(m *testing.M) {
+	if dpiworker.Dispatch() {
+		return
+	}
 	if root := os.Getenv("NYADB_IMPORT_NATIVE"); root != "" {
 		if e := runImportNative(root); e != nil {
 			fmt.Fprintln(os.Stderr, e)
