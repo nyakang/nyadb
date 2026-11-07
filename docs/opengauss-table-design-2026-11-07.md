@@ -1,0 +1,516 @@
+# openGauss 原生表设计 — 开发记录，2026-11-07
+
+本项仍在开发，尚未注册表设计 `CanApply` / `Apply` 或开启产品的
+`DesignTables` 能力。原生规划、完整值证明及私有事务执行器已经实现，
+已验证的私有基础设施按独立阶段提交；完整引用/回调目录并发和工作台
+流程验收完成后再交付公开表设计整项。
+[完整对齐清单](database-middleware-alignment-2026-11-07.md)
+中的表设计状态仍为未完成。
+
+## 已有实现与证据
+
+- `schemaddl` 新增独立 openGauss 表、字段、对象属性及深复制；原始
+  `OpenGaussCatalog` 保留未知属性、目录身份、权限、存储和分区。
+- 同一原生目录查询补充完整 DDL、非空、显式排序规则和 schema CREATE
+  权限。设计读取把目录蓝图转换为有稳定字段/约束身份的声明，不创建
+  PostgreSQL 版本或 PostgreSQL 目录模型。
+- 独立规划支持新建、单独表/字段改名、字段增删、类型/默认值/非空及
+  注释修改、约束和索引/程序定义变更。元数据修改保留约束/对象身份，
+  不为更改注释而 DROP/CREATE；所有删除使用 RESTRICT。已有列顺序、
+  owner、持久性、表空间和存储参数变化需要另行验证。
+- 声明解析前读取原生类型、函数、操作符及转换目录；自定义类型、用户
+  函数及未支持的声明被拒绝。原生 `+` 的参数反转 SQL 转发器按下面的
+  原生签名和终端实现核验；其它 SQL 实现仍受限制，并发范围尚待补齐。
+- 独立空声明通过回滚专用 savepoint 规范化类型别名、表达式与约束；
+  私有表/索引/序列在执行真正 ALTER 前撤销。规则正文不作为表达式探针。
+- 保留值使用同一原生 record_send 多重集摘要；类型修改后反向转换到
+  原始声明类型，再比较完整值、NULL 与重复次数，每行最多 16 MiB。
+  新字段和新生成值采用下面的独立完整值证明。
+
+真实 verify-full TLS、openGauss 6.0.0 PG 兼容模式验证覆盖：
+
+1. 原生序列、非空、生成字段、注释、约束/索引与完整 DDL 的读取。
+2. 行存、列存和 range 分区表原生 ALTER；存储参数保持。
+3. 原生 CREATE、序列/主键/索引/CHECK 及精确数值生成列。
+4. 用户 IMMUTABLE 函数和自定义类型在声明解析前拒绝，副作用序列没有被调用。
+5. 独立声明规范化 decimal → numeric 后全部回滚，原表目录和拥有序列不变。
+6. 2,001 字符文本、精确大数、NULL 和重复行；无损转换相等，服务器
+   接受的 varchar 截断与 numeric 舍入被摘要识别，回滚恢复完整原值。
+
+列存测试确认 openGauss 6.0 不支持修改已有字段的非空属性；规划在 DDL
+前明确拒绝，该检查保留在真实测试中。列存的类型、默认值和新增字段
+变更仍按实际服务器结果分别验证。
+
+`go test ./internal/db/schemaddl ./internal/services/engines` 及聚焦原生
+设计测试通过；已有原生连接/SQL/视图/删除/复制服务测试也已验证。
+使用同一真实 TLS fixture 的 `go test -race`、`-run '^TestOpenGauss'`
+在 schemaddl 和 engines 均通过（1.386 / 81.987 秒），相关包 `go vet`
+通过。独立声明入口补充了请求深复制，其最新验证在阶段日志中单独记录。
+本项阶段日志在忽略目录 `build/opengauss/table-design/`。运行原生
+fixture 仍使用 `python3 tools/verify_opengauss_fixture.py`；最终 Go/MyGo、
+全包生命周期、三平台构建和 UI 证据在整项完成前记录。
+
+## 原生目录图核验补充
+
+本轮已补齐独立声明和完整目录图的核验基础，仍未注册实际 Apply 或
+开放设计器，也未将本项记为交付完成：
+
+- CU 描述表、delta 表、其嵌套 TOAST、内部索引和行/数组类型按捕获的
+  原生目录关系递归绑定。显式关系指针先于类型和索引推导处理，不能由
+  目录遍历顺序或数值 OID 的分配顺序决定稳定身份；反转目录记录的真实
+  fixture 测试覆盖行存、列存、分区和新建表。
+- 列存 ALTER ADD 的 delta 字段采用无压缩，并传播新增默认值；直接
+  CREATE 的 delta 描述符缺少这两个 ALTER 状态。预期从独立解析的主表
+  字段和原生规则推导，默认值的目录记录及依赖也独立绑定到 delta 字段。
+  不从待验证结果复制这些状态。
+- 普通表首次新增变长字段时，由独立声明推导新 TOAST 结构；已存在的
+  存储关系继续保留。分区根表不套用普通 CREATE 的根 TOAST，继续核验
+  捕获的 pg_partition 存储记录。
+- 类型变化的约束/索引通过原始字段依赖、conkey/indkey 及约束拥有索引
+  的关系选取，只采用独立声明的类型、opclass、排序规则和表达式语义。
+  原始未知属性、注释和权限继续保留；原已拥有序列的所有权关系不会被
+  私有 CREATE 探针遗漏的关系替代。
+- 保留对象核验数值身份；有明确类型变更依据的内部存储/索引重建与
+  明确更改的默认值分开处理。测试协调替换保留默认值的 OID 和依赖，
+  并重算有效 fingerprint，仍必须因身份改变失败。
+- 结果必须属于原 profile/generation/catalog/schema 和预期表名；数据库、
+  命名空间、认证角色、schema CREATE、管理权限及 DDL hook 的捕获边界
+  逐项比较，不能以其它目录的相同数值 OID 借用原始身份。
+- 在每个受测目录记录中注入未知高精度属性并重算 fingerprint，均应被
+  拒绝。该检查覆盖保留的活动对象、内部存储及聚合记录；合成的展示
+  记录和明确删除字段的墓碑不被声称为保留对象。
+
+原生规则参考 openGauss-server `6.0.0` 的
+[ATExecAddColumn](https://github.com/opengauss-mirror/openGauss-server/blob/6.0.0/src/gausskernel/optimizer/commands/tablecmds.cpp#L13317)。
+本次获取的 `tablecmds.cpp` SHA256 为
+`393abf35b96c145ab47f7833634b63eadaba879ac3625edf08d1f2eec1a60db9`；
+源文件留在忽略目录 `temp/opengauss/`，没有将服务器源码引入产品。
+独立字段改名的空表探针先解析原字段名的声明，再对私有表执行同一字段的
+单独改名，以获得约束/索引的原生改名呈现；不改写原表或插入探针行。
+
+真实 verify-full TLS fixture 的设计测试新增表/主键字段改名、删除字段、
+首次新增 TOAST 和 bigint 主键转 numeric，以及上述目录篡改、协调身份
+替换和记录顺序检查。最终阶段结果见
+`build/opengauss/table-design/native-graph-order-verification.log`；后续的
+私有执行器与完整值证明的新增阶段见下文；目录引用并发和工作台验收
+仍是交付前的必要工作。
+
+首次扩展后的 race 检查在 300 秒上限失败：逐记录的纯内存篡改检查
+使两个随后才运行的 SQL 精确值读取超过各自 20 秒上下文，整组最终触及
+测试超时；该次日志没有数据竞争报告。已将真实 SQL 验收放在纯内存
+篡改检查之前，并在保留所有检查的前提下将整组上限改为 900 秒重跑。
+失败日志为 `native-graph-race-verification.log`，最终重跑结果单独记录在
+`native-graph-final-race-verification.log`，不以失败轮次推断功能验证通过。
+
+## 完整值证明与私有执行阶段
+
+新增实现仍不构成公开 Apply 或整项交付：
+
+- 原生 `+` 包含九个合法 SQL 参数反转重载。预检查逐个核对操作符和
+  函数 OID、参数/返回类型、语言、易变性、配置、集合及权限状态，只
+  接受 `select $2 + $1` 或其括号形式，再核对反向参数的精确 C/internal
+  终端。没有用服务器解析任意表达式来猜测重载，也没有套用 PostgreSQL
+  `prokind` / `prosqlbody`。
+- 显式声明/调用的类型转换维持原来的实现检查；从所有检查过的操作符
+  输入/输出追踪隐式转换目录，用户转换和未知目的类型在解析前被拒绝。
+  `pg_am` 的十七个原生回调、默认/显式 opclass、opfamily、支持函数、
+  操作符及排序 family 的目录闭包，以及排序规则和固定 search_path
+  也在空声明创建之前检查。实际绑定的全部隐式调度和并发稳定性仍有
+  后续范围，不能由目录中的 `pg_catalog` 名字推断全部能力完成。
+- 回滚专用的独立 heap 不带约束、索引、触发器或规则。保留的普通值
+  按稳定字段 ID 显式转换后输入；新的可重复默认值和新的拥有序列在
+  该独立表中产生。普通列元组、新序列列多重集及 Last/Called 状态分别
+  核对；生成列再从已验证的实际普通/序列输入独立重算完整元组。
+  没有把原表的已存储生成值当作生成表达式的证明。
+- 新增普通字段默认值的可重复性从实际原生表达式树检查；`random()`、
+  `statement_timestamp()` 等不能获得旧行的可重复证明。新 serial
+  单独验证，原表拥有的序列不会因声明或值探针而被调用。
+- openGauss 6.0 PG 模式同时禁止 ADD serial 和 ADD nextval 默认值。
+  规划展开为新建独立序列、添加可空数值字段、绑定拥有关系、设置默认、
+  显式填充和检查非空。序列名结合原修订、字段 ID 和名称，避免下一次
+  编辑复用新字段 ID 时碰到旧序列；不使用 IF NOT EXISTS、重置或复用
+  原序列。此填充是 UPDATE，因此已有用户触发器、规则和行策略会在
+  执行前被拒绝。
+- 原生不允许零列表。全部字段替换先释放复用名称并添加新字段，再
+  RESTRICT 删除原字段；删除的生成字段先于它们的输入。保留生成字段
+  的输入类型变化通过原生 pg_class 属性槽的依赖在规划时拒绝。
+- 普通行存新增 STORED 生成字段会进入 `ExecRewriteRowTable`，其
+  `finish_heap_swap` 按链接替换内部 TOAST。只为该已规划路径允许内部
+  TOAST 身份变化，原表与用户对象仍保留身份和全部未知属性。类型重写
+  后不再需要 TOAST 时，结构移除由独立声明推导；单纯删除字段不获得
+  此权限。原生 relhaspkey 是延迟清除的正向提示位，约束和索引仍按真实
+  目录对象核验，不能用此位代替主键存在性。
+- 私有执行器深复制请求，先校验原目标/代次/声明，取得原表 ACCESS
+  EXCLUSIVE 锁后用 READ COMMITTED 新语句重新读取完整修订，再接入
+  独立声明、目录图、保留值、新值/生成值和原序列状态证明。明确删除
+  字段所拥有的旧序列还需按原 OID 证明不存在。
+- 取消等待驱动确认。COMMIT 已尝试但回执丢失、回滚失败或内部探针
+  清理不确定时，结果为 uncertain，撤销捕获的原会话且不返回可替换
+  草稿的 Actual。测试让真实服务器完成提交后丢弃回执，并证明原请求
+  不能在该已撤销会话重放。
+
+本阶段真实 verify-full TLS 测试包含 3,003 字符中文、4 KiB 二进制、
+超出 float64 精度的 numeric、NULL/空值、行存/列存/分区、序列关联的
+生成列、空表 CREATE、全部字段替换、截断/舍入回滚、用户隐式转换和
+触发器拒绝、等待锁期间的外部 DDL/表替换、取消/撤销及提交回执丢失。
+阶段日志位于 `build/opengauss/table-design/`；最终扩展后的 race 和
+全仓库 Go/MyGo 检查结果在相应日志终结后记录。
+
+当前代码的 `go test ./...`、`go vet ./...`、`go tool mygo vet` 和
+CGO=0 Linux/Windows/macOS amd64 构建已经通过。对应检查日志为
+`all-go-tests-corrected.log`、`all-go-vet-corrected.log`、
+`mygo-vet-corrected.log` 及三个 `build-{linux,windows,darwin}-corrected.log`；
+首轮真实扩展 race 日志为 `native-apply-final-race-verification.log`：
+schemaddl、dbruntime 和 shell 通过，engines 在 386.055 秒终结失败，
+失败原因为原生 `>=` 重载含 OID 3272 的 `pg_catalog.anyset`，它的
+typtype 为 `s`，未被原来的 polymorphic 签名检查识别。该轮没有观察到
+DATA RACE 报告，但不算通过。修正只放行固定 OID/名称/namespace/kind
+及 I/O 标识的原生操作符占位签名；显式 anyset/SET 字段继续拒绝。
+真实 CREATE 与拒绝字段的聚焦重跑已经通过，见
+`native-anyset-correction.log`。完整修正 race 另记为
+`native-apply-corrected-race-verification.log`，已成功终结：schemaddl
+1.349 秒、engines 470.781 秒、dbruntime 3.318 秒、shell 245.636 秒。
+完整工作台生命周期 race 也已成功终结，日志为
+`workspace-lifecycle-race.log`，包含全部 AGENTS.md 指定生命周期包。
+其中 shell 542.597 秒、dataworkspace 259.743 秒、objectworkspace
+35.512 秒；没有数据竞争报告。完整生命周期轮次在追加 anyset/自引用/
+独立引用锁测试前启动，这些后加内容由修正原生 race 和独立引用锁
+race、最新全仓库普通测试分别覆盖，不混同两轮的代码/测试范围。
+
+本轮先后遇到原生 ADD serial/nextval、零列、TOAST 重建/移除、延迟
+主键提示位和生成输入类型限制。对应失败没有当作通过：保留序列依赖
+的 `+` 生成表达式和完整值检查，补齐原生执行顺序/目录规则后重跑。
+舍入测试在独立 fixture 中去掉既有生成依赖，以实际验证舍入回滚；
+保留依赖的请求另外验证在执行前拒绝。
+
+## 执行范围与引用锁的追加验证
+
+真实私有 Apply 追加表/主键字段的含引号改名、带索引的 bigint → numeric、
+表/字段注释及默认值/非空、CHECK/索引新增和生成字段删除。全部通过，
+保留原表身份和精确原值，见 `native-execution-paths-verification.log`。
+该日志也证明：在已执行原生 ALTER 后，由第二个物理连接 setval 原序列
+会触发目录/数据修改回滚，且不会把外部写入的序列值重置；在实际 ALTER
+回执后取消，也会等待驱动确认并恢复原目录。
+
+外键范围检查追加新建自引用路径。原来的外部引用集合有意省略自引用，
+不能用于“拒绝全部外键”的门控；现在 native 入口使用包含自引用的集合，
+PostgreSQL 既有外部锁集合不变。纯解析和真实自引用拒绝已通过，见
+`native-reference-scope-verification.log`。
+
+原生引用锁的独立真实测试使用一次性受限角色、独立 verify-full TLS
+物理连接和列级 REFERENCES 权限。测试确认：
+
+- 普通 SHARE ROW EXCLUSIVE LOCK 需要额外权限，只有 REFERENCES 时拒绝。
+- 永久私有 anchor 表通过 ADD FOREIGN KEY NOT VALID 获得父表的
+  ShareRowExclusiveLock；anchor 的既有无效值没有被扫描，convalidated
+  保持 false。
+- anchor 在声明探针 savepoint 之前创建。回滚嵌套声明探针、甚至删除
+  anchor 都不释放事务级父表锁；第二个物理连接的真实 ALTER 等待到
+  原事务回滚，随后才完成并提交。
+- 临时角色和对象仅在显式拥有的 fixture 中创建并清理。受限角色直接
+  认证，密码只走私有 fixture 输入和驱动配置，不发到 SET ROLE SQL。
+
+最终聚焦证据为 `native-reference-anchor-tls-role-verification.log`。
+同一受限 TLS 角色的 race 聚焦验证也通过（3.931 秒），日志为
+`native-reference-anchor-race-verification.log`。此前启动的完整修正
+race 没有包含这个后加的独立锁测试，二者均已终结，范围分别记录。
+先前两轮分别暴露原生 NOLOGIN 也要求密码和 SET ROLE 要求密码，失败
+日志保留为 `native-reference-anchor-verification.log` 和
+`native-reference-anchor-corrected-verification.log`。锁原语的成功尚未
+接入 Apply；独立父表目录、实际绑定比较/转换回调、权限和并发修订的
+完整证明仍需完成，外键入口继续关闭。
+
+锁规则参考原生
+[ATAddForeignKeyConstraint](https://github.com/opengauss-mirror/openGauss-server/blob/6.0.0/src/gausskernel/optimizer/commands/tablecmds.cpp#L15243)：
+父表按 ShareRowExclusiveLock 打开，NOT VALID 不安排旧值验证，
+heap_close(..., NoLock) 保留锁到事务结束。不能把嵌套 savepoint 之后
+创建并回滚的临时声明误当作持有该锁的证据。
+
+补充源码参考仍仅留在忽略目录，不进入产品依赖：
+
+- [cluster.cpp / finish_heap_swap](https://github.com/opengauss-mirror/openGauss-server/blob/6.0.0/src/gausskernel/optimizer/commands/cluster.cpp#L3468)，
+  SHA256 `ebfcb4610713615e572e5cbd0544a7c2518f7de1756f4d36df5dc12c5a8a5273`。
+- [index.cpp / index_update_stats](https://github.com/opengauss-mirror/openGauss-server/blob/6.0.0/src/common/backend/catalog/index.cpp#L2981)，
+  SHA256 `568979419ca45b84341a12efce0792fa5de1153f5fc0c021a14c8067d0df8a88`。
+
+## 交付前仍需完成
+
+- 补齐实际绑定的隐式函数/类型调度和目录稳定性；已声明的规划路径
+  逐项核对。外部父表引用的锁和实际提交前核验已接入私有执行器，见
+  下文；self 和 incoming 引用的私有执行验证见后续阶段，行策略和
+  新增/改写规则仍需完成。
+- 扩展私有执行器验证到其它受支持的原生修改、序列竞争、执行中取消、
+  故障注入和目录引用并发，不由当前成功 fixture 推断全部范围完成。
+- 通过中立 runtime 注册 Apply，接通共享设计字段、约束/索引、原生选项、
+  SQL 预览、明确确认、未保存离开保护和原连接导航/标签刷新。
+- 验证目录与数据故障注入、工作台流程、回归、race、Go/MyGo、三平台
+  构建和可检查的截图证据；更新能力清单后提交整项。
+
+其它 openGauss 账户管理、备份恢复、维护和其它产品/跨产品工具仍在
+完整目标中，不能由本项的原生规划测试推断为完成。
+
+## 外部引用锁与实际执行核验
+
+外部父表引用已经接入私有事务 Apply，不再只在独立探针里检查。
+公开 `SchemaDesign` 的 Apply/CanApply 和 `DesignTables` 仍未开启，
+本项也尚未提交；原生外部引用证明不能替代工作台流程与其它剩余范围。
+
+- 对原声明和目标声明涉及的外部父表按 schema/name 排序逐个锁定。
+  锁表只有字段类型/排序规则及指向选定父表的 NOT VALID 外键，没有
+  默认值、生成表达式、用户程序、索引或输入行。普通/大 serial 只保留
+  数值类型，不创建或消费原表/父表序列。
+- 锁表的 CREATE 和 RESTRICT DROP 均在独立声明 savepoint 之外执行。
+  捕获独立父表目录，核对实际绑定回调、FK/父表触发器及完整目录变化，
+  显式 DROP 后证明没有遗留对象和依赖，再通过 pg_locks 核对原事务的
+  ShareRowExclusiveLock。锁不会随随后声明探针的 savepoint 回滚释放。
+- 保存前再次比较锁定父表的完整原始目录；锁等待期间提交的目录修改
+  会导致冲突。父表写入/DDL 等待事务锁，直到原事务确认提交或回滚。
+  父表 owner/administrator 权限和 SELECT 不是这里的权限替代条件；
+  实际 REFERENCES 权限由原生 FK 创建验证。
+- 执行后比较独立声明和实际父表的 FK、两个内部 action 触发器及其
+  依赖变化。仅捕获的 child/constraint/trigger 身份获得稳定名称，父表
+  与父索引 OID 保持原生身份；未知字段、精确大数及依赖属性保留。
+  从前后父表目录移除已验证的原/目标 FK 效果，再比较所有保留记录，
+  不把一次探针的临时副作用当作任意父表修改许可。
+- 未修改的 FK 和 action 触发器保持原 OID。允许类型重绑定由实际
+  原生字段的 atttypid/atttypmod/attcollation 变化选取；仅改变 bigint/int8
+  之类的拼写不能允许替换保留对象。类型重绑定还须通过独立语义核验。
+- 真实 verify-full TLS fixture 已证明新增单列、重排的可延迟复合键、
+  保留/删除外键、修改 CASCADE 动作，以及无效旧值的完整回滚。
+  只有 REFERENCES(id)、没有父表 SELECT 的独立认证受限角色可以保存；
+  私有父表序列不需要 SELECT。锁等待期间的外部父表注释提交会拒绝保存。
+- 真实事务测试证明声明探针回滚后锁仍持有，竞争父表 DDL 在事务确认
+  回滚后才能完成。逐父表目录记录及依赖属性注入未知高精度值，并重算
+  有效 fingerprint，提交前核验仍拒绝；请求和原始输入快照没有被修改。
+
+初轮原生验证日志为 `native-reference-apply-verification.log`（engines
+39.259 秒）和 `native-reference-apply-permission-lock-verification.log`
+（8.289 秒）。补入逐记录/依赖篡改验证后的聚焦原生 race 已成功终结，
+见 `native-reference-apply-race-verification.log`（schemaddl 1.070 秒，
+engines 94.227 秒），没有数据竞争报告。该轮未包含随后新增的混合
+integer/numeric 引用键、取消/撤销和基于原生类型的身份保留检查；
+最新轮次单独记录在 `native-reference-apply-final-race-verification.log`。
+该轮已成功终结：schemaddl 1.064 秒、engines 108.697 秒，包含混合
+integer/numeric 键、取消/撤销、受限角色、锁等待、savepoint 回滚和未知
+父表属性/依赖检查，没有数据竞争报告。独立身份保留的纯 Go race
+回归也已通过。
+
+随后新增已有外键字段 bigint → integer 的真实执行验证，首轮在
+`native-reference-key-type-verification.log` 失败并完整回滚：原生类型
+变化会重新绑定 equality operators 并重建 child 的 RI check triggers，
+原先的保留对象核验把这两个触发器当作必须保留的身份。
+修正从捕获的 FK key/dependency 选取重绑定约束及其内部触发器；只有
+这类约束的三个 equality-operator 数组使用独立 CREATE 的预期值。
+未知字段、其它触发器及父表身份没有获得重建许可。
+`native-reference-key-type-corrected-verification.log` 已通过（6.921 秒），
+同一路径和 bigint/int8 拼写不能借用替换许可的回归也已通过 race，见
+`native-reference-key-type-race-verification.log`（schemaddl 1.100 秒、
+engines 14.066 秒）。这两个聚焦轮次在上述完整外部引用 race 后新增，
+分别记录代码和验证范围，未把失败轮次当作通过。
+
+交接时已在运行的先前完整原生 race 也已确认终结成功，日志为
+`native-reference-final-race-verification.log`：schemaddl 1.433 秒、engines
+473.590 秒、dbruntime 3.354 秒、shell 221.619 秒。它在实际外部引用
+Apply 改动前启动，证明独立引用/回滚和已有功能，不证明新增执行路径。
+新增执行路径后的全仓库普通 `CGO_ENABLED=0 go test ./...` 已通过，
+见 `all-go-reference-apply-tests.log`；相关包 go vet 已通过，见
+`reference-apply-go-vet.log`。最终工作台、完整生命周期和构建仍需在
+整项交付前按最终代码范围验收。
+最后一次原生 FK 类型重绑定修正后的焦点包普通测试及 go vet 也已通过，
+见 `reference-final-focused-go-tests.log` 与 `reference-final-go-vet.log`。
+
+## 自引用原生执行与传入引用基线
+
+自引用已经加入私有 Apply：原表与独立声明均校验实际选中的键类型、
+equality operators、索引 opclass 和内部 RI 函数。自引用属于原表的完整
+声明图，不为它创建外部父表锁表。单独表名改名的私有声明从原表名重绑；
+自引用父键的 confkey 按稳定字段身份归一化，不假定物理字段号连续。
+
+真实 TLS fixture 的 13 个自引用用例通过：新增、保留、删除、子键/父键
+类型变化、表名/子字段/父字段改名、子字段/父字段删除槽、重排复合键、
+新建空表和无效旧值回滚。请求快照和保留数据不变，没有外部锁表遗留；
+公开 Apply 仍关闭。日志为 `native-self-reference-verification.log`
+（52.778 秒）和 `native-self-reference-race-verification.log`
+（102.298 秒），均已成功终结，没有数据竞争报告。
+
+传入引用前一阶段完成了独立目录基线、空声明与原生锁/权限证据，
+当时私有 Apply 尚拒绝 incoming 引用。后续实际事务证明见下一节；
+公开 `CanApply` / `Apply` 和 `DesignTables` 继续关闭。
+
+- 原生父表类型变化会锁定子表 AccessExclusiveLock，并保留到外层事务
+  确认结束。竞争子表 DDL 等待该事务回滚后才能完成。
+- 父表 owner 不自动获得子表 REFERENCES。原生重建外键对父子两侧都
+  调用 checkFkeyPermissions；子表 SELECT 不能替代该权限。仅授予对应
+  子字段 REFERENCES、没有子表 SELECT 或表级 REFERENCES，即可完成
+  原生父键类型变化，不要求子表管理权限。
+- 前两轮权限假设测试失败于 `permission denied for relation other`，
+  日志为 `native-incoming-lock-verification.log` 与
+  `native-incoming-lock-select-verification.log`。修正后
+  `native-incoming-lock-reference-verification.log` 通过（1.410 秒）；
+  未将失败的 SELECT 假设保留为产品权限规则。
+- incoming 基线按父表目录里的原生 OID 独立读取子表完整 raw catalog，
+  不读取子表序列状态、生成可执行 dump 或取得子表管理权限。父子两份
+  FK 记录须完整相等；双方字段号分别关联实际子字段及稳定父字段 ID。
+  基线深复制，保留未知属性、精确大数、ACL、注释和依赖，绑定原始快照
+  与目标声明；不能借用其它请求或省略子表的未知目录修改。
+- 原生 6.0 的系统列 oid 不出现在 row_to_json 中，以单独捕获的 entry
+  OID 为准；JSON 明确含有 oid 时仍校验它。普通外键的目录匹配值是
+  `u`，SQL MATCH SIMPLE 也生成该值；不接受 PostgreSQL 的 `s` 作为
+  原生匹配证据，MATCH FULL 为 `f`，PARTIAL 仍拒绝。
+- 独立私有父表建立后，再创建仅有选定键类型/排序规则及原始外键属性
+  的空子表。子表默认值、生成表达式、用户程序、序列和输入数据没有
+  被复制；父键改名按稳定 ID 重绑。实际选中的类型、比较算子和索引类
+  再次检查；类型格式化的 CASE 先拒绝非原生类型，避免在这一元数据
+  查询里先调用自定义 typmod output。系统目录回调并发的完整证明仍
+  属于前述待完成项。
+- 私有父子声明一起回滚并确认 release 后，再独立比较每个原始子表
+  目录。成功的真实用例覆盖父键类型修改、单独表名/父字段改名、子字段
+  删除槽、重排复合键及 MATCH FULL、多个子表/外键、NOT VALID，以及
+  没有子表 SELECT、REFERENCES 或管理权限的独立认证角色。该元数据
+  角色测试不授予实际 ALTER 权限。源子表 nextval 默认值的序列没有被
+  调用，探针表没有遗留；UUID 父键与 bigint 子键的外键在原生声明阶段
+  拒绝，并恢复目录。
+- 首轮探针测试暴露系统列 oid 和测试 fixture 的延迟触发器事务问题；
+  第二轮修正后暴露普通匹配值 `u`。随后一轮发现服务器支持 bigint/text
+  键转换，不能以该组合断言外键不兼容；改用原生拒绝的 UUID/bigint
+  组合，并明确检查 foreign key 错误。三个失败日志分别为
+  `native-incoming-probe-verification.log`、
+  `native-incoming-probe-corrected-verification.log` 和
+  `native-incoming-probe-match-verification.log`。
+  最终锁/权限与九类探针共同通过，日志为
+  `native-incoming-probe-final-verification.log`（33.272 秒）。
+- 子表 COMMENT 可以在父表 AccessExclusiveLock 期间提交，而父表
+  fingerprint 保持不变；独立子表基线仍识别冲突。子表 DROP FOREIGN KEY
+  必须等待父表事务结束，提交后旧基线被拒绝。并发证据见
+  `native-incoming-concurrency-verification.log`（2.520 秒）。
+
+新增纯 Go 测试验证精确未知值、输入/输出深复制、跨请求与目录不一致
+拒绝、仅键类型的私有声明及改名字段绑定。schemaddl、engines、dbruntime、
+objectworkspace、connections 的普通 `CGO_ENABLED=0 go test` 和 `go vet`
+在本轮原生探针成功版本通过；新增并发 fixture 不在该次普通检查的运行
+范围中，随后最终检查按新范围单独记录。
+
+包含新增并发 fixture 的最终焦点包普通测试与 go vet 也已终结成功，
+见 `incoming-final-focused-go-verification.log`。本轮纯 Go incoming 基线、
+真实 incoming 锁/权限/探针/并发及全部 13 个自引用用例的 race 共同通过，
+见 `native-incoming-self-final-race-verification.log`：schemaddl 1.249 秒，
+engines 158.457 秒，没有数据竞争报告。该轮只证明上述原生执行/探针
+范围，不证明尚未实现的 incoming 实际提交、系统目录回调并发或 UI。
+
+原生权限参考
+[ATAddForeignKeyConstraint](https://github.com/opengauss-mirror/openGauss-server/blob/6.0.0/src/gausskernel/optimizer/commands/tablecmds.cpp#L15378)
+与 checkFkeyPermissions（同文件 16301 行）。原生匹配枚举参考
+[parsenodes_common.h](https://github.com/opengauss-mirror/openGauss-server/blob/6.0.0/src/include/nodes/parsenodes_common.h)，
+SHA256 `5364d6c860560e6a8a2ddb3f0dbd11259159650021927ba714ea121d2697f4f1`。
+这些源码只保存在忽略的 temp/opengauss 研究目录。
+
+上述阶段的下一步是传入 FK/父子 RI 触发器、依赖身份和实际提交证明，
+现已按下一节接入私有执行器。空声明仍不能替代原生执行权限或真实提交
+验证。行策略/新增规则、其它回调并发和完整生命周期/UI 验收继续保留
+在交付范围中。
+
+## 传入引用的私有事务与循环引用组合
+
+私有 Apply 已移除 incoming 的整体拒绝，继续拒绝行策略和新增/改写
+规则动作。公开设计器和产品能力仍未开启，不将私有基础阶段提交
+记为表设计整项完成。
+
+- 父表的 incoming FK 与子表的 constraint 完整原生记录须相等。稳定
+  身份来自捕获的原始 FK OID、子表 schema/name、真实物理字段号与
+  父字段 ID，涵盖删除字段留下的槽位及重排复合键。名字表深复制，
+  不能覆盖其它外部引用的已有身份。
+- 私有父子声明全部建立后冻结双方完整目录、修订和绑定。实际子侧
+  FK 比较算子与独立声明比较；只有选定父键的物理类型/typmod/维度/
+  排序规则确实变化才允许原生重建。未变化的 FK 和检查触发器必须
+  保留原 OID，继续核对 RI 原生例程、父索引及所有未知属性。
+- 已继续存在的依赖边按原生 pg_depend/pg_shdepend 键保留未知属性，
+  新增/删除的类型边由独立声明决定。选定 FK/检查触发器的实际效果
+  证明后，仅移除这些已证明效果，再比较子表其余完整 raw fingerprint。
+  提交前再次读取每个原始子表，核对实际回调与所需事务级 AXX 锁。
+- 原生 `ALTER TYPE int8` 即使与 bigint 物理类型相同，也会重建 incoming
+  FK。有效计划比较独立捕获的物理描述符，省略冗余 ALTER 并保留请求
+  中其它修改。类型别名及类型别名同时改注释均保持原 FK/触发器身份。
+- REFERENCES-only 角色执行重建时，原生 pg_object 的索引及 TOAST
+  索引 creator 会变成该执行角色。只对已有明确重建依据、原 OID 非零
+  且实际 OID 不同的对象采用独立声明 creator；保留对象继续使用原身份
+  和所有原始属性，不从实际结果复制预期 creator。
+- 循环引用的子表也承受 outgoing FK 的父侧效果。组合验证先证明
+  incoming 的独立效果，在实际目录副本中恢复且仅恢复这些原始记录/
+  边，再由普通外部引用证明检查 outgoing 效果与全部保留上下文。
+  提交前对最后一次读取的同一子表执行完整组合证明，覆盖原声明有而
+  目标声明移除的 outgoing FK，不能凭先前读取或仅效果校验放行。
+- 原生键类型 ALTER 会丢失重建 FK 的注释。恢复计划只重建缺失的原
+  注释，不覆盖不同的已有注释，也不能为保留 FK 的 OID 替换授权。
+  先证明选定效果只有可恢复注释差异，再执行原生 COMMENT，重新读取
+  实际子表并做完整证明。REFERENCES 不授予 COMMENT 权限；拒绝时
+  整个父键 ALTER 回滚，原父子目录保留。取得原生 COMMENT 权限后
+  显式重试可精确保留引号、反斜杠及中文注释。
+
+本阶段真实 verify-full TLS 提交通过类型变化、类型别名、表注释、
+单独表/父键改名、父子删除槽位、跨 schema 子表、重排复合键、多个
+子表/FK、子表 nextval 默认值及带无效旧值的 NOT VALID。循环引用验证
+包含只改 incoming 键、同时改两端键、移除 outgoing FK；组合路径的
+未知 raw 属性和依赖属性注入同样必须拒绝。请求不变，保留父表行与
+原始序列状态；子表默认值序列没有被调用。完整子表二进制多重集检查
+在后加的完整值重跑日志中单独记录。
+
+主要阶段日志在 `build/opengauss/table-design/`：
+
+- `native-incoming-private-apply-verification.log`：原八类父子事务提交
+  （76.468 秒）。
+- `native-incoming-private-apply-adversarial-verification.log`：类型与元数据
+  的全 raw 记录/依赖精确未知属性拒绝（20.252 秒）。
+- `native-incoming-private-apply-permission-storage-creator-verification.log`：
+  无 REFERENCES 回滚与仅列级 REFERENCES 显式重试（15.923 秒）。
+- `native-incoming-cycle-composed-transition-verification.log`：第一类循环
+  引用组合（13.131 秒）。
+- `native-incoming-combined-cycle-verification.log`：同时改两端键、移除
+  outgoing FK、别名与注释组合（43.719 秒）。
+- `native-incoming-comment-restoration-verification.log`：原生注释恢复及
+  真正私有提交（10.721 秒）。
+- `native-incoming-comment-permission-context-verification.log`：COMMENT
+  权限拒绝的完整回滚与取得原生权限后的精确注释重试（21.324 秒）。
+- `native-incoming-namespace-default-notvalid-verification.log`：子槽位、
+  跨 schema、默认值不执行及 NOT VALID 提交（39.395 秒）。
+
+失败证据继续保留：`native-incoming-cycle-transition-verification.log`
+暴露同一子表上两端效果未组合；
+`native-incoming-constraint-comment-verification.log` 证明服务器重建
+会丢失原注释。二者都由完整回滚后的原生证明修正，没有归一化掉
+注释或其它保留 raw 属性。第一轮 COMMENT 权限追加测试在重新捕获
+子表时漏设固定事务 GUC，触发声明验证拒绝，见
+`native-incoming-comment-permission-verification.log`；修正测试的
+事务上下文后通过，未降低产品的 GUC 要求。
+
+CGO=0 全仓库 `go test ./...`、`go vet ./...`、`go tool mygo vet`
+与 Linux/Windows/macOS amd64 构建均已终结通过，日志分别为
+`incoming-foundation-all-go-tests.log`、`incoming-foundation-all-go-vet.log`、
+`incoming-foundation-mygo-vet.log` 及三个
+`incoming-foundation-build-{linux,windows,darwin}.log`。
+
+独立取消用例在原生父键 ALTER 确实完成后取消：另一个物理连接的子表
+COMMENT 被真实 AXX 锁阻塞，回滚确认后才成功。原父表完整修订、子 FK/
+检查触发器 OID 与完整原记录、原 FK 注释和子行恢复；回滚不撤销随后
+独立提交的子表注释。该用例与九类 outgoing 私有 Apply、仅 REFERENCES
+角色、独立引用锁及 canonical 引用探针的 race 已通过，见
+`native-incoming-full-values-lifecycle-race-verification.log`（136.883 秒）。
+该轮 -run 的嵌套选择没有运行 parent-graph 子用例，不能据此声称覆盖
+后加的完整子表值检查；完整范围由后续不含该嵌套选择的轮次证明。
+
+新增传入引用的完整父子事务、权限/注释拒绝、循环组合、独立子表并发、
+引用锁与 13 类自引用，以及纯 incoming/reference 测试的 race 已成功
+终结，见 `native-incoming-composed-final-race-verification.log`：
+schemaddl 1.695 秒，engines 613.335 秒，没有数据竞争报告。
+
+后加的完整二进制子表多重集比较，对全部 17 类 parent-graph 用例均在
+race 下通过（393.55 秒），包括循环两端同时改变、移除反向外键和
+原生注释恢复/冲突拒绝。包含该完整值检查、执行后取消、全部上述
+outgoing 回归与独立锁/权限/canonical 探针的最终轮次也已成功终结，
+见 `native-incoming-full-values-lifecycle-corrected-race-verification.log`：
+engines 529.970 秒，没有数据竞争报告。
+
+原生模型/规划、独立声明与完整值证明、私有事务执行、self/outgoing/
+incoming 引用及上述回滚/取消验证作为私有基础阶段独立提交。公开
+Apply/CanApply 与 DesignTables 仍关闭；其它引用/回调目录并发、故障
+与工作台验收仍未完成，不由上述私有基础提交推断为公开表设计或整体
+对齐完成。

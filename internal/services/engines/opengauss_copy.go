@@ -457,6 +457,12 @@ func openGaussCopyDigest(ctx context.Context, c *sql.Conn, o contract.ObjectRef,
 	for _, col := range d.Columns {
 		names = append(names, quote(col.Name))
 	}
+	return openGaussBinaryDigest(ctx, c, o, names)
+}
+
+// Callers supply quoted columns or previously validated native projections.
+// Copy and table design share one complete binary multiset implementation.
+func openGaussBinaryDigest(ctx context.Context, c *sql.Conn, o contract.ObjectRef, names []string) (out postgresDesignDigest, err error) {
 	q := "SELECT CASE WHEN octet_length(v.payload)<=16777216 THEN v.payload END FROM (SELECT record_send(ROW(" + strings.Join(names, ",") + ")) AS payload FROM " + qualified(o) + ") v"
 	rows, err := c.QueryContext(ctx, q)
 	if err != nil {

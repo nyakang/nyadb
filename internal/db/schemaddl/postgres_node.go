@@ -18,6 +18,7 @@ type PostgreSQLNodeBindings struct {
 	Variables        map[int]map[int]string
 	ByteOrder        string
 	CompositeColumns map[int64]map[int]string
+	SequenceNames    map[string]string
 }
 
 type pgNodeToken struct {
@@ -35,6 +36,18 @@ type pgNodeField struct {
 // complete unknown fields and native constant payloads. It maps typed local
 // references and known Var attribute numbers, and excludes parser locations.
 func NormalizePostgreSQLNode(raw string, bindings PostgreSQLNodeBindings) (string, error) {
+	return normalizeCatalogNode(raw, bindings, false)
+}
+
+// OpenGaussNodeBindings shares the tree grammar, without adopting a PostgreSQL
+// catalog/version model. Native CONST cursor_data may be an empty field.
+type OpenGaussNodeBindings PostgreSQLNodeBindings
+
+func NormalizeOpenGaussNode(raw string, bindings OpenGaussNodeBindings) (string, error) {
+	return normalizeCatalogNode(raw, PostgreSQLNodeBindings(bindings), true)
+}
+
+func normalizeCatalogNode(raw string, bindings PostgreSQLNodeBindings, native bool) (string, error) {
 	if len(raw) > 1<<20 {
 		return "", errors.New("PostgreSQL expression tree exceeds 1 MiB")
 	}
@@ -49,7 +62,7 @@ func NormalizePostgreSQLNode(raw string, bindings PostgreSQLNodeBindings) (strin
 		return "", errors.New("invalid PostgreSQL expression root")
 	}
 	for _, token := range tokens {
-		if err := pgNormalizeNode(token, bindings); err != nil {
+		if err := pgNormalizeNodeDialect(token, bindings, native); err != nil {
 			return "", err
 		}
 	}
@@ -201,15 +214,19 @@ func pgNodeInteger(values []*pgNodeToken) (int64, error) {
 }
 
 func pgNormalizeNode(node *pgNodeToken, bindings PostgreSQLNodeBindings) error {
+	return pgNormalizeNodeDialect(node, bindings, false)
+}
+
+func pgNormalizeNodeDialect(node *pgNodeToken, bindings PostgreSQLNodeBindings, native bool) error {
 	if node.kind != '{' {
 		for _, child := range node.children {
-			if err := pgNormalizeNode(child, bindings); err != nil {
+			if err := pgNormalizeNodeDialect(child, bindings, native); err != nil {
 				return err
 			}
 		}
 		return nil
 	}
-	name, fields, err := pgNodeFields(node)
+	name, fields, err := pgNodeFieldsDialect(node, native)
 	if err != nil {
 		return err
 	}
@@ -240,7 +257,7 @@ func pgNormalizeNode(node *pgNodeToken, bindings PostgreSQLNodeBindings) error {
 		}
 	}
 	if name == "FIELDSELECT" && len(byName[":arg"]) == 1 && byName[":arg"][0].kind == '{' {
-		argName, argFields, err := pgNodeFields(byName[":arg"][0])
+		argName, argFields, err := pgNodeFieldsDialect(byName[":arg"][0], native)
 		if err != nil {
 			return err
 		}
@@ -282,9 +299,15 @@ func pgNormalizeNode(node *pgNodeToken, bindings PostgreSQLNodeBindings) error {
 		}
 	}
 	known := pgKnownExpressionNode(name)
+	sequenceAlias := ""
+	if native && name == "FUNCEXPR" && len(byName[":seqName"]) == 1 && len(byName[":seqNameSpace"]) == 1 {
+		sequenceAlias = bindings.SequenceNames[byName[":seqNameSpace"][0].atom+"."+byName[":seqName"][0].atom]
+	}
 	for _, field := range fields {
 		var references map[int64]string
 		switch {
+		case native && sequenceAlias != "" && (field.name == ":seqName" || field.name == ":seqNameSpace"):
+			field.values[0].kind, field.values[0].atom = 'r', sequenceAlias
 		case known && pgNodeTypeField(name, field.name):
 			references = bindings.Types
 		case name == "TARGETENTRY" && field.name == ":resorigtbl" || name == "RANGETBLENTRY" && field.name == ":relid" || name == "NEXTVALUEEXPR" && field.name == ":seqid":
@@ -303,13 +326,19 @@ func pgNormalizeNode(node *pgNodeToken, bindings PostgreSQLNodeBindings) error {
 			// operation. pg_get_expr can turn an implicit coercion into an
 			// explicit cast on reparse; function/type/args still prove meaning.
 			field.values[0].kind, field.values[0].atom = 'f', "coercion-display"
-		case name == "VAR" && (field.name == ":varattno" || field.name == ":varattnosyn"):
+		case name == "VAR" && (field.name == ":varattno" || field.name == ":varattnosyn" || native && field.name == ":varoattno"):
 			if varno != 0 {
 				variable := varno
 				if field.name == ":varattnosyn" {
 					variable, err = pgNodeInteger(byName[":varnosyn"])
 					if err != nil || variable < 0 {
 						return errors.New("invalid PostgreSQL syntactic expression variable")
+					}
+				}
+				if native && field.name == ":varoattno" {
+					variable, err = pgNodeInteger(byName[":varnoold"])
+					if err != nil || variable <= 0 {
+						return errors.New("unbound native old expression variable")
 					}
 				}
 				n, err := pgNodeInteger(field.values)
@@ -335,7 +364,7 @@ func pgNormalizeNode(node *pgNodeToken, bindings PostgreSQLNodeBindings) error {
 			}
 		}
 		for _, child := range field.values {
-			if err := pgNormalizeNode(child, bindings); err != nil {
+			if err := pgNormalizeNodeDialect(child, bindings, native); err != nil {
 				return err
 			}
 		}

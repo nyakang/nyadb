@@ -10,6 +10,11 @@ NyaDB 基线为 `c4cf751`，已有 13 个独立产品连接，能力边界见 RE
 CockroachDB 已提交，无需重复提交。本地 DBX 的参考提交为
 `a3add88da1c44fc97d233f90977f67dc8c277fc1`。
 
+openGauss 核心接入后，当前已注册 14 个独立产品：MySQL、MariaDB、
+TiDB、OceanBase、PostgreSQL、CockroachDB、openGauss、SQLite、DuckDB、
+SQL Server、Oracle、ClickHouse、MongoDB 和 Redis。注册连接与管理功能
+完整度分别验收；openGauss 表设计仍在开发，没有开启公开 Apply。
+
 [机器可读清单](database-middleware-alignment-2026-11-07.json) 保留 DBX 的
 88 个稳定连接类型、110 个产品配置，以及每个类型声明的能力。来源为
 `plugins/connection-types/*.yaml`、`profiles/catalog.yaml` 和生成的
@@ -66,6 +71,7 @@ DBX 的能力参考还包含其 SQL/schema/transfer 模块和
 - [x] openGauss 普通视图管理及原生选项/元数据保留，见 [视图验证](opengauss-views-2026-11-07.md)。
 - [x] openGauss 原生事务删除表及结构/依赖校验，见 [删除表验证](opengauss-table-drop-2026-11-07.md)。
 - [x] openGauss 原生事务表复制、独立普通/LARGE 序列及完整数据核验，见 [表复制验证](opengauss-table-copy-2026-11-07.md)。
-- [ ] openGauss 表设计、其它对象/账户管理、备份恢复和维护能力补齐。
+- [x] openGauss 私有表设计验证基础：原生规划、完整值/目录证明、事务执行、self/outgoing/incoming 与循环外键、注释保留和取消回滚；公开能力仍关闭，见 [基础阶段与验收边界](opengauss-table-design-2026-11-07.md)。
+- [ ] openGauss 表设计、其它对象/账户管理、备份恢复和维护能力补齐；[表设计开发证据](opengauss-table-design-2026-11-07.md)记录私有事务、自引用/传入引用与循环外键组合验证；公开表设计入口和剩余范围仍未完成。
 - [ ] 其它参考连接、现有产品缺口和跨产品工具。
 - [ ] 按完整清单逐项审计所有用户流程和验证范围，证明最终对齐。

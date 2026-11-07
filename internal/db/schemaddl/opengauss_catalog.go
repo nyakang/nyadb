@@ -18,7 +18,9 @@ type OpenGaussCatalog struct {
 	Database, Namespace, Name              string
 	DatabaseOID, NamespaceOID, RelationOID uint64
 	RoleOID                                uint64
-	CanManage, Hooks                       bool
+	CanManage, CanCreate, Hooks            bool
+	Classes                                map[string]uint64
+	NativeByteOrder                        string
 	Entries                                []OpenGaussCatalogEntry
 }
 
@@ -34,6 +36,12 @@ func (p *OpenGaussCatalog) Clone() *OpenGaussCatalog {
 		return nil
 	}
 	x := *p
+	if p.Classes != nil {
+		x.Classes = map[string]uint64{}
+		for k, v := range p.Classes {
+			x.Classes[k] = v
+		}
+	}
 	x.Entries = slices.Clone(p.Entries)
 	for i := range x.Entries {
 		x.Entries[i].Data = slices.Clone(p.Entries[i].Data)
