@@ -20593,3 +20593,127 @@ func NativeRenameTableTitle() string { return In(i18n.Locale()).NativeRenameTabl
 func (msgs Messages) NativeRenameTableTitle() string {
 	return Catalog.Format(msgs.locale, "nativeRenameTableTitle", nil)
 }
+
+// GaussdbAdditionalEndpointsLabel says "其他端点："
+// in the language the app shows.
+func GaussdbAdditionalEndpointsLabel() string {
+	return In(i18n.Locale()).GaussdbAdditionalEndpointsLabel()
+}
+
+// GaussdbAdditionalEndpointsLabel says "其他端点："
+// in the language of msgs.
+func (msgs Messages) GaussdbAdditionalEndpointsLabel() string {
+	return Catalog.Format(msgs.locale, "gaussdbAdditionalEndpointsLabel", nil)
+}
+
+// GaussdbAdditionalEndpoints says "GaussDB 其他端点"
+// in the language the app shows.
+func GaussdbAdditionalEndpoints() string { return In(i18n.Locale()).GaussdbAdditionalEndpoints() }
+
+// GaussdbAdditionalEndpoints says "GaussDB 其他端点"
+// in the language of msgs.
+func (msgs Messages) GaussdbAdditionalEndpoints() string {
+	return Catalog.Format(msgs.locale, "gaussdbAdditionalEndpoints", nil)
+}
+
+// GaussdbTargetSessionLabel says "目标会话："
+// in the language the app shows.
+func GaussdbTargetSessionLabel() string { return In(i18n.Locale()).GaussdbTargetSessionLabel() }
+
+// GaussdbTargetSessionLabel says "目标会话："
+// in the language of msgs.
+func (msgs Messages) GaussdbTargetSessionLabel() string {
+	return Catalog.Format(msgs.locale, "gaussdbTargetSessionLabel", nil)
+}
+
+// GaussdbTargetSession says "GaussDB 目标会话"
+// in the language the app shows.
+func GaussdbTargetSession() string { return In(i18n.Locale()).GaussdbTargetSession() }
+
+// GaussdbTargetSession says "GaussDB 目标会话"
+// in the language of msgs.
+func (msgs Messages) GaussdbTargetSession() string {
+	return Catalog.Format(msgs.locale, "gaussdbTargetSession", nil)
+}
+
+// GaussdbEndpointsHint says "其他端点用逗号分隔；IPv6 和端口写作 [地址]:端口。"
+// in the language the app shows.
+func GaussdbEndpointsHint() string { return In(i18n.Locale()).GaussdbEndpointsHint() }
+
+// GaussdbEndpointsHint says "其他端点用逗号分隔；IPv6 和端口写作 [地址]:端口。"
+// in the language of msgs.
+func (msgs Messages) GaussdbEndpointsHint() string {
+	return Catalog.Format(msgs.locale, "gaussdbEndpointsHint", nil)
+}
+
+// GaussdbSessionPassword says "GaussDB 会话密码"
+// in the language the app shows.
+func GaussdbSessionPassword() string { return In(i18n.Locale()).GaussdbSessionPassword() }
+
+// GaussdbSessionPassword says "GaussDB 会话密码"
+// in the language of msgs.
+func (msgs Messages) GaussdbSessionPassword() string {
+	return Catalog.Format(msgs.locale, "gaussdbSessionPassword", nil)
+}
+
+// GaussdbDatabaseRequired says "请输入此连接绑定的 GaussDB 数据库"
+// in the language the app shows.
+func GaussdbDatabaseRequired() string { return In(i18n.Locale()).GaussdbDatabaseRequired() }
+
+// GaussdbDatabaseRequired says "请输入此连接绑定的 GaussDB 数据库"
+// in the language of msgs.
+func (msgs Messages) GaussdbDatabaseRequired() string {
+	return Catalog.Format(msgs.locale, "gaussdbDatabaseRequired", nil)
+}
+
+// GaussdbTLSMode says "GaussDB TLS 模式"
+// in the language the app shows.
+func GaussdbTLSMode() string { return In(i18n.Locale()).GaussdbTLSMode() }
+
+// GaussdbTLSMode says "GaussDB TLS 模式"
+// in the language of msgs.
+func (msgs Messages) GaussdbTLSMode() string {
+	return Catalog.Format(msgs.locale, "gaussdbTLSMode", nil)
+}
+
+// GaussdbCAFile says "GaussDB CA 证书"
+// in the language the app shows.
+func GaussdbCAFile() string { return In(i18n.Locale()).GaussdbCAFile() }
+
+// GaussdbCAFile says "GaussDB CA 证书"
+// in the language of msgs.
+func (msgs Messages) GaussdbCAFile() string {
+	return Catalog.Format(msgs.locale, "gaussdbCAFile", nil)
+}
+
+// GaussdbClientCertificate says "GaussDB 客户端证书"
+// in the language the app shows.
+func GaussdbClientCertificate() string { return In(i18n.Locale()).GaussdbClientCertificate() }
+
+// GaussdbClientCertificate says "GaussDB 客户端证书"
+// in the language of msgs.
+func (msgs Messages) GaussdbClientCertificate() string {
+	return Catalog.Format(msgs.locale, "gaussdbClientCertificate", nil)
+}
+
+// GaussdbClientKey says "GaussDB 客户端密钥"
+// in the language the app shows.
+func GaussdbClientKey() string { return In(i18n.Locale()).GaussdbClientKey() }
+
+// GaussdbClientKey says "GaussDB 客户端密钥"
+// in the language of msgs.
+func (msgs Messages) GaussdbClientKey() string {
+	return Catalog.Format(msgs.locale, "gaussdbClientKey", nil)
+}
+
+// BackgroundConnectionLimitCaption says "后台连接上限："
+// in the language the app shows.
+func BackgroundConnectionLimitCaption() string {
+	return In(i18n.Locale()).BackgroundConnectionLimitCaption()
+}
+
+// BackgroundConnectionLimitCaption says "后台连接上限："
+// in the language of msgs.
+func (msgs Messages) BackgroundConnectionLimitCaption() string {
+	return Catalog.Format(msgs.locale, "backgroundConnectionLimitCaption", nil)
+}

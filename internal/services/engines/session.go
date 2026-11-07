@@ -42,6 +42,13 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 	if p.ID <= 0 || p.Database == "" {
 		return errors.New("profile and fixed database/file are required")
 	}
+	if p.Kind == connections.GaussDB {
+		var err error
+		p, err = connections.NormalizeProfile(p)
+		if err != nil {
+			return err
+		}
+	}
 	m.mu.Lock()
 	m.next++
 	intent := m.next
@@ -80,6 +87,16 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 		db.Close()
 		return redact(e, password)
 	}
+	readOnly := false
+	if p.Kind == connections.GaussDB {
+		var mode string
+		if err := db.QueryRowContext(ctx, "SHOW transaction_read_only").Scan(&mode); err != nil {
+			db.Close()
+			return redact(err, password)
+		}
+		a := p.GaussDBOptions.TargetSessionAttrs
+		readOnly = mode == "on" || a == "read-only" || a == "standby" || a == "prefer-standby"
+	}
 	if p.Kind == connections.CockroachDB {
 		if err := validateCockroachServer(ctx, db); err != nil {
 			db.Close()
@@ -109,7 +126,7 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 		return ErrRevoked
 	}
 	sessionCtx, sessionCancel := context.WithCancel(context.Background())
-	s := &Session{backupProfile: p, backupPassword: password, dataScope: rand.Text(), db: db, sqlDB: sqlDB, sqlSlots: make(chan struct{}, sqlLimit), strategy: strategy, kind: p.Kind, id: p.ID, generation: intent, ctx: sessionCtx, cancel: sessionCancel, catalog: p.Database, leases: make(map[*Lease]bool), transactions: make(map[*Tx]bool)}
+	s := &Session{backupProfile: p, backupPassword: password, dataScope: rand.Text(), db: db, sqlDB: sqlDB, sqlSlots: make(chan struct{}, sqlLimit), strategy: strategy, kind: p.Kind, id: p.ID, generation: intent, ctx: sessionCtx, cancel: sessionCancel, catalog: p.Database, readOnly: readOnly, leases: make(map[*Lease]bool), transactions: make(map[*Tx]bool)}
 	old := m.sessions[p.ID]
 	m.sessions[p.ID] = s
 	m.mu.Unlock()
@@ -176,6 +193,7 @@ type Session struct {
 	id             int64
 	generation     uint64
 	catalog        string
+	readOnly       bool
 	mu             sync.Mutex
 	closed         bool
 	leases         map[*Lease]bool
@@ -188,6 +206,9 @@ func (s *Session) Catalog() string    { return s.strategy.catalog(s.catalog) }
 func (s *Session) Capabilities() contract.Capabilities {
 	d, _ := connections.Describe(s.kind)
 	caps := d.Capabilities
+	if s.readOnly {
+		caps.EditableTables, caps.Import = false, false
+	}
 	if sqlite, ok := s.strategy.(sqliteDialect); ok && sqlite.options.ReadOnly {
 		caps.EditableTables = false
 		caps.DesignTables, caps.DesignViews, caps.Objects, caps.Import, caps.Restore = false, false, false, false, false
@@ -368,14 +389,14 @@ func (l *Lease) SetSchema(ctx context.Context, schema string) error {
 }
 
 func (l *Lease) connectionError(ctx context.Context, err error) error {
-	if err == nil && l.s.kind == connections.OpenGauss && ctx.Err() != nil {
+	if err == nil && l.s.kind.IsGaussFamily() && ctx.Err() != nil {
 		err = ctx.Err()
 	}
 	if err == nil {
 		return nil
 	}
 	lost := errors.Is(err, sql.ErrConnDone) || errors.Is(err, driver.ErrBadConn) || errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) || (pgconn.Timeout(err) && ctx.Err() == nil)
-	lost = lost || l.s.kind == connections.OpenGauss && ctx.Err() != nil
+	lost = lost || l.s.kind.IsGaussFamily() && ctx.Err() != nil
 	var networkError net.Error
 	if errors.As(err, &networkError) && (!networkError.Timeout() || ctx.Err() == nil) {
 		lost = true

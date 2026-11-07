@@ -51,7 +51,7 @@ func (s *Session) dataQuery(ctx context.Context, o contract.ObjectRef, owner con
 	}
 	defer tx.Rollback()
 	// Protect qualified relation identity while metadata and values are read.
-	if s.kind == connections.OpenGauss {
+	if s.kind.IsGaussFamily() {
 		// Native LOCK TABLE rejects views. A bounded SELECT locks both the
 		// qualified relation and its referenced relations without modifying it
 		// or requiring ownership, and retains those locks until this read ends.
@@ -251,13 +251,13 @@ func (s *Session) dataOrder(ctx context.Context, q queryer, t contract.Table, r 
 			return nil, false, "", err
 		}
 		return s.cockroachDataOrder(t, r, identity)
-	} else if s.kind == connections.OpenGauss {
+	} else if s.kind.IsGaussFamily() {
 		var err error
 		identity, err = openGaussRelationIdentity(ctx, q, t)
 		if err != nil {
 			return nil, false, "", err
 		}
-		keys, err := openGaussImportKeys(ctx, q, t)
+		keys, err := gaussImportKeys(ctx, q, t, s.kind)
 		if err != nil {
 			return nil, false, "", err
 		}

@@ -17,6 +17,7 @@ const (
 	PostgreSQL  Kind = "postgresql"
 	CockroachDB Kind = "cockroachdb"
 	OpenGauss   Kind = "opengauss"
+	GaussDB     Kind = "gaussdb"
 	SQLite      Kind = "sqlite"
 	ClickHouse  Kind = "clickhouse"
 	SQLServer   Kind = "sqlserver"
@@ -31,7 +32,13 @@ const (
 func (k Kind) IsMySQLFamily() bool { return k == MySQL || k == MariaDB || k == TiDB || k == OceanBase }
 
 // IsPostgreSQLFamily identifies products sharing PostgreSQL wire transport and options.
-func (k Kind) IsPostgreSQLFamily() bool { return k == PostgreSQL || k == CockroachDB || k == OpenGauss }
+func (k Kind) IsPostgreSQLFamily() bool {
+	return k == PostgreSQL || k == CockroachDB || k == OpenGauss || k == GaussDB
+}
+
+// IsGaussFamily identifies native Gauss syntax and catalog rules. Each product
+// retains its own connector, server identity, configuration and capabilities.
+func (k Kind) IsGaussFamily() bool { return k == OpenGauss || k == GaussDB }
 
 var (
 	ErrNotFound = errors.New("connection profile not found")
@@ -53,6 +60,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	GaussDBOptions    GaussDBOptions
 	RedisOptions      RedisOptions
 	MongoDBOptions    MongoDBOptions
 	OracleOptions     OracleOptions

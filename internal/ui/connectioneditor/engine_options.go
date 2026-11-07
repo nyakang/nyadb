@@ -220,7 +220,7 @@ func (s *State) advanceEngineOptions(p *connections.Profile) error {
 		}
 	}
 	switch p.Kind {
-	case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss:
+	case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.GaussDB:
 		values := [4]int{}
 		labels := []string{"连接超时（秒）", "最大连接数", "语句超时（毫秒）", "锁等待超时（毫秒）"}
 		for i, raw := range s.engineNumbers {
@@ -306,19 +306,29 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 			})
 		})
 		return true
-	case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss:
+	case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.GaussDB:
 		a := &s.connectionDraft.PostgreSQLOptions
 		product := "PostgreSQL"
 		if s.connectionDraft.Kind == connections.CockroachDB {
 			product = "CockroachDB"
-		} else if s.connectionDraft.Kind == connections.OpenGauss {
+		} else if s.connectionDraft.Kind.IsGaussFamily() {
 			product = "openGauss"
+			if s.connectionDraft.Kind == connections.GaussDB {
+				product = "GaussDB"
+			}
 		}
 		switch tab {
 		case "高级":
 			theme.Form(c, formWidth, func() {
+				if s.connectionDraft.Kind == connections.GaussDB {
+					s.editorInputRow(c, "其他端点：", "GaussDB 其他端点", &s.connectionDraft.GaussDBOptions.AdditionalEndpoints, labelWidth, fieldWidth)
+					theme.Field(c, locales.Text("目标会话："), func() {
+						connectionFormSelect(c, &s.connectionDraft.GaussDBOptions.TargetSessionAttrs, []string{"read-write", "read-only", "any", "primary", "standby", "prefer-standby"}, "GaussDB 目标会话", fieldWidth, false)
+					})
+					ui.Text(c, locales.Text("其他端点用逗号分隔；IPv6 和端口写作 [地址]:端口。"))
+				}
 				for i, label := range []string{"连接超时（秒）", "最大连接数", "语句超时（毫秒）", "锁等待超时（毫秒）"} {
-					if i == 3 && s.connectionDraft.Kind == connections.OpenGauss {
+					if i == 3 && s.connectionDraft.Kind.IsGaussFamily() {
 						continue
 					}
 					display := label
@@ -333,7 +343,7 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 					s.editorInputRow(c, "备份工具目录：", "PostgreSQL 工具目录", &a.ToolsDirectory, labelWidth, fieldWidth)
 				}
 				s.editorInputRow(c, "默认模式：", "默认模式", &a.DefaultSchema, labelWidth, fieldWidth)
-				if s.connectionDraft.Kind == connections.OpenGauss {
+				if s.connectionDraft.Kind.IsGaussFamily() {
 					ui.Text(c, locales.Text("锁等待使用服务器配置；默认模式在每条物理连接初始化。"))
 				} else {
 					ui.Text(c, locales.Text("语句及锁等待超时为 0 时不设置超时；默认模式在每条物理连接初始化。"))

@@ -83,6 +83,9 @@ func (s *Session) importStream(ctx context.Context, id int64, db, table string, 
 	if s.isClosed() || stream.Generation != 0 && stream.Generation != s.generation {
 		return out, contract.ErrRevoked
 	}
+	if s.readOnly {
+		return out, contract.ErrDataReadOnly
+	}
 	if err = s.check(o); err != nil {
 		return
 	}
@@ -158,7 +161,7 @@ func (s *Session) importStream(ctx context.Context, id int64, db, table string, 
 		if _, err = c.ExecContext(ctx, ddl); err != nil {
 			return
 		}
-	} else if s.kind == connections.PostgreSQL || s.kind == connections.OpenGauss {
+	} else if s.kind == connections.PostgreSQL || s.kind.IsGaussFamily() {
 		if _, err = c.ExecContext(ctx, "LOCK TABLE "+qualified(o)+" IN SHARE ROW EXCLUSIVE MODE"); err != nil {
 			return
 		}
@@ -445,8 +448,8 @@ func (s *Session) importParameter(col contract.StructureColumn, v contract.DataV
 	return parameter(cell), nil
 }
 func (s *Session) importKeys(ctx context.Context, c *sql.Conn, t contract.Table) ([][]string, error) {
-	if s.kind == connections.OpenGauss {
-		return openGaussImportKeys(ctx, c, t)
+	if s.kind.IsGaussFamily() {
+		return gaussImportKeys(ctx, c, t, s.kind)
 	}
 	keys := [][]string{}
 	if len(t.Key) > 0 {

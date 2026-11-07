@@ -2024,5 +2024,17 @@
   "nativeRenameConfirmTable": "确认重命名表",
   "nativeRenameUnconfirmed": "重命名结果未确认，请重新连接并核对原表与目标表。",
   "nativeRenameTableSuccess": "重命名表成功",
-  "nativeRenameTableTitle": "重命名表"
+  "nativeRenameTableTitle": "重命名表",
+  "gaussdbAdditionalEndpointsLabel": "其他端点：",
+  "gaussdbAdditionalEndpoints": "GaussDB 其他端点",
+  "gaussdbTargetSessionLabel": "目标会话：",
+  "gaussdbTargetSession": "GaussDB 目标会话",
+  "gaussdbEndpointsHint": "其他端点用逗号分隔；IPv6 和端口写作 [地址]:端口。",
+  "gaussdbSessionPassword": "GaussDB 会话密码",
+  "gaussdbDatabaseRequired": "请输入此连接绑定的 GaussDB 数据库",
+  "gaussdbTLSMode": "GaussDB TLS 模式",
+  "gaussdbCAFile": "GaussDB CA 证书",
+  "gaussdbClientCertificate": "GaussDB 客户端证书",
+  "gaussdbClientKey": "GaussDB 客户端密钥",
+  "backgroundConnectionLimitCaption": "后台连接上限："
 }

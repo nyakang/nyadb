@@ -8,7 +8,7 @@ import (
 
 func TestNavicatObservedTreeGroupHierarchy(t *testing.T) {
 	s := New()
-	if got := s.catalogTreeDirect(); len(got) != 15 {
+	if got := s.catalogTreeDirect(); len(got) != 16 {
 		t.Fatalf("database rows including openGauss; got %d", len(got))
 	}
 	groups := s.catalogTreeGroups()
@@ -67,7 +67,7 @@ func TestNavicatObservedTreeSearchExpandsWithoutOverwritingState(t *testing.T) {
 		s.catalogSidebarFilterVisible("阿里云", true) {
 		t.Fatal("sidebar must filter unrelated engines and vendors like original")
 	}
-	if len(direct) != 1 || direct[0].name != "openGauss" {
+	if len(direct) != 2 || direct[0].name != "openGauss" || direct[1].name != "GaussDB" {
 		t.Fatalf("unexpected direct matches: %+v", direct)
 	}
 	groups := s.catalogTreeGroups()

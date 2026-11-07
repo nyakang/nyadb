@@ -2024,5 +2024,17 @@
   "nativeRenameConfirmTable": "Confirm table rename",
   "nativeRenameUnconfirmed": "The rename result is unconfirmed. Reconnect and inspect the original and destination tables.",
   "nativeRenameTableSuccess": "Table renamed",
-  "nativeRenameTableTitle": "Rename table"
+  "nativeRenameTableTitle": "Rename table",
+  "gaussdbAdditionalEndpointsLabel": "Additional endpoints:",
+  "gaussdbAdditionalEndpoints": "GaussDB additional endpoints",
+  "gaussdbTargetSessionLabel": "Target session:",
+  "gaussdbTargetSession": "GaussDB target session",
+  "gaussdbEndpointsHint": "Separate additional endpoints with commas; write IPv6 and port as [address]:port.",
+  "gaussdbSessionPassword": "GaussDB session password",
+  "gaussdbDatabaseRequired": "Enter the GaussDB database bound to this connection",
+  "gaussdbTLSMode": "GaussDB TLS mode",
+  "gaussdbCAFile": "GaussDB CA certificate",
+  "gaussdbClientCertificate": "GaussDB client certificate",
+  "gaussdbClientKey": "GaussDB client key",
+  "backgroundConnectionLimitCaption": "Background connection limit:"
 }
