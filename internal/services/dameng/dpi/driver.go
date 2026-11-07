@@ -461,7 +461,9 @@ type transaction struct {
 	ctx context.Context
 }
 
-func (t *transaction) Commit() error { return t.end(t.ctx, "COMMIT") }
+func (t *transaction) Commit() error                             { return t.end(t.ctx, "COMMIT") }
+func (t *transaction) CommitContext(ctx context.Context) error   { return t.end(ctx, "COMMIT") }
+func (t *transaction) RollbackContext(ctx context.Context) error { return t.end(ctx, "ROLLBACK") }
 func (t *transaction) Rollback() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(t.c.options.OperationTimeoutSeconds)*time.Second)
 	defer cancel()

@@ -320,39 +320,54 @@ func (s *Session) saveData(ctx context.Context, id int64, schema, name string, i
 	if err != nil {
 		return out, fmt.Errorf("DM8 editable table: %w", err)
 	}
-	if err = validateEditBatch(ctx, s, c, t, key, identity, edits); err != nil {
+	if err = s.applyDataEditsAt(ctx, c, t, key, identity, edits, out, &mutationAttempted); err != nil {
 		return out, err
+	}
+	commitAttempted = true
+	if err = tx.Commit(); err != nil {
+		out.CommitUncertain = true
+		return out, errors.Join(err, contract.ErrDataCommitUncertain)
+	}
+	out.CommitConfirmed = true
+	return out, nil
+}
+
+// applyDataEditsAt validates, mutates and rereads one batch on a captured
+// connection. The caller alone owns its commit or savepoint rollback.
+func (s *Session) applyDataEditsAt(ctx context.Context, c *sql.Conn, t *contract.TableStructure, key []string, identity string, edits []contract.DataEdit, out *contract.DataEditResult, mutationAttempted *bool) (err error) {
+	if err = validateEditBatch(ctx, s, c, t, key, identity, edits); err != nil {
+		return err
 	}
 	budget := dataBatchBytes
 	for _, e := range edits {
 		if err = ctx.Err(); err != nil {
-			return out, err
+			return err
 		}
 		// Earlier triggers in the batch may have changed another submitted row.
 		if e.Original != nil {
 			row, e2 := readFullRowAt(ctx, c, t, key, e.Original.Ref)
 			if e2 != nil {
-				return out, e2
+				return e2
 			}
 			if !sameDataRow(row, e.Original.Original) {
-				return out, contract.ErrDataConflict
+				return contract.ErrDataConflict
 			}
 		}
 		out.Outcomes = append(out.Outcomes, contract.DataEditOutcome{Kind: e.Kind, Original: e.Original})
-		mutationAttempted = true
+		*mutationAttempted = true
 		ref, e2 := executeDataEdit(ctx, c, t, key, e)
 		if e2 != nil {
-			return out, e2
+			return e2
 		}
 		out.Applied++
 		index := len(out.Outcomes) - 1
 		if e.Kind != "delete" {
 			row, e2 := readFullRowAt(ctx, c, t, key, ref)
 			if e2 != nil {
-				return out, e2
+				return e2
 			}
 			if err = chargeDataRow(&budget, row); err != nil {
-				return out, err
+				return err
 			}
 			out.Outcomes[index].Saved = s.fullSnapshot(t, key, row, identity)
 		}
@@ -364,17 +379,17 @@ func (s *Session) saveData(ctx context.Context, id int64, schema, name string, i
 		if e.Kind != "delete" {
 			row, e2 := readFullRowAt(ctx, c, t, key, outcome.Saved.Ref)
 			if e2 != nil {
-				return out, e2
+				return e2
 			}
 			if err = chargeDataRow(&budget, row); err != nil {
-				return out, err
+				return err
 			}
 			outcome.Saved = s.fullSnapshot(t, key, row, identity)
 			setOutcomePreview(outcome, t, row)
 			if e.Kind == "insert" && len(key) == 1 && dataColumns(t)[key[0]].Extra == "IDENTITY" && outcome.Saved.Ref.TypedValues[0].Kind == contract.Integer {
 				p, e2 := dataParameter(outcome.Saved.Ref.TypedValues[0], contract.Integer)
 				if e2 != nil {
-					return out, e2
+					return e2
 				}
 				outcome.GeneratedID = p.(int64)
 			}
@@ -382,15 +397,9 @@ func (s *Session) saveData(ctx context.Context, id int64, schema, name string, i
 		out.Saved = append(out.Saved, savedEdit(e, outcome.Saved))
 	}
 	if err = ctx.Err(); err != nil {
-		return out, err
+		return err
 	}
-	commitAttempted = true
-	if err = tx.Commit(); err != nil {
-		out.CommitUncertain = true
-		return out, errors.Join(err, contract.ErrDataCommitUncertain)
-	}
-	out.CommitConfirmed = true
-	return out, nil
+	return nil
 }
 
 func (s *Session) DataEdits() contract.DataEdits {

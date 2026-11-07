@@ -90,6 +90,7 @@ DBX 的能力参考还包含其 SQL/schema/transfer 模块和
 - [x] 达梦原生完整行读取基础：共享 RowReader、完整精确值/values 快照与独立字节副本、1 MiB 文本/二进制和超限拒绝；原生 LOB 分块的 SHARE 写入保护、普通 SELECT 授权读取、复合 DECIMAL 身份、取消和原 Session 关闭通过三客户端 TLS/明文验证，保存/事务/导入导出及工作台仍待完成，见 [完整读取验证与原生边界](dameng-native-complete-row-2026-11-07.md)。
 - [x] 达梦原生输出参数基础：匿名块 RETURNING INTO、实际 IDENTITY/DEFAULT/生成列/触发器返回、精确整数与小数文本、NULL/空值、原始事务与预编译复用；三客户端 TLS/明文及取消/回执丢失禁止重放验证，保存和工作台仍待完成，见 [输出验证与原生边界](dameng-native-output-2026-11-07.md)。
 - [x] 达梦原生精确保存与只读核验基础：原物理 SERIALIZABLE/EXCLUSIVE 锁、完整 values 快照、精度/长度与整批校验、实际键/默认/生成/最终触发器值、1 MiB LOB 和批次回滚、原始 COMMIT 回执丢失及取消确认禁止重放；含 LOB 且带触发器的表因原生 locator 回滚缺陷保持只读，事务工作区/导入导出和正式入口仍待完成，见 [保存验证与原生限制](dameng-native-data-edit-2026-11-07.md)。
+- [x] 达梦原生共享数据事务基础：限定原始 Session/表、有界独立数据池、当前请求提交/回滚、同物理分页/完整字段/暂存修改、保存点失败批次回滚、净证据副本与丢失回执禁止重放；含 LOB 的触发器表保持只读，导入导出和正式入口仍待完成，见 [事务验证与原生边界](dameng-native-data-transaction-2026-11-07.md)。
 - [x] openGauss 私有表设计验证基础：原生规划、完整值/目录证明、事务执行、self/outgoing/incoming 与循环外键、注释保留和取消回滚；公开能力仍关闭，见 [基础阶段与验收边界](opengauss-table-design-2026-11-07.md)。
 - [x] openGauss 表设计表单阶段：原生字段/约束/索引表单、可空注释、触发器状态、存储选项、独立规划与小窗口中英文检查；通过注入测试绑定验证，公开保存仍未开放，见 [表单阶段](opengauss-table-design-2026-11-07.md#原生表单与独立规划阶段)。
 - [x] openGauss 原生 SQL 转换预检：32 条原生转换及嵌套实现检查、真实值/typmod、独立声明回滚和已提交替换拒绝；不代表检查到执行之间的并发稳定性，公开表设计保存仍关闭，见 [转换阶段](opengauss-table-design-2026-11-07.md#原生-sql-转换预检阶段)。

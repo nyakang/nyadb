@@ -207,7 +207,13 @@ func tableIdentityAt(ctx context.Context, q metadataQueryer, o contract.ObjectRe
 	return fmt.Sprintf("%d/%s/%s", id, created, changed), nil
 }
 
-func (s *Session) loadData(ctx context.Context, id int64, schema, name string, o contract.DataOptions) (out *contract.DataPage, err error) {
+type dataReader func(context.Context, contract.ObjectRef, func(context.Context, *sql.Conn, *contract.TableStructure) error) error
+
+func (s *Session) loadData(ctx context.Context, id int64, schema, name string, o contract.DataOptions) (*contract.DataPage, error) {
+	return s.loadDataWith(ctx, id, schema, name, o, s.dataRead)
+}
+
+func (s *Session) loadDataWith(ctx context.Context, id int64, schema, name string, o contract.DataOptions, read dataReader) (out *contract.DataPage, err error) {
 	object, err := s.dataObject(id, schema, name, o.Object)
 	if err != nil {
 		return nil, err
@@ -219,7 +225,7 @@ func (s *Session) loadData(ctx context.Context, id int64, schema, name string, o
 		return nil, connections.ErrInvalid
 	}
 	started := time.Now()
-	err = s.dataRead(ctx, object, func(ctx context.Context, q *sql.Conn, t *contract.TableStructure) error {
+	err = read(ctx, object, func(ctx context.Context, q *sql.Conn, t *contract.TableStructure) error {
 		identity, e := tableIdentityAt(ctx, q, object)
 		if e != nil {
 			return e
@@ -356,7 +362,11 @@ func (s *Session) countData(ctx context.Context, id int64, schema, name string) 
 	return count, err
 }
 
-func (s *Session) chunkData(ctx context.Context, id int64, schema, name, field string, ref contract.RowRef, offset int64, units int) (out *contract.FieldChunk, err error) {
+func (s *Session) chunkData(ctx context.Context, id int64, schema, name, field string, ref contract.RowRef, offset int64, units int) (*contract.FieldChunk, error) {
+	return s.chunkDataWith(ctx, id, schema, name, field, ref, offset, units, s.dataRead)
+}
+
+func (s *Session) chunkDataWith(ctx context.Context, id int64, schema, name, field string, ref contract.RowRef, offset int64, units int, read dataReader) (out *contract.FieldChunk, err error) {
 	o, err := s.dataObject(id, schema, name, ref.Object)
 	if err != nil {
 		return nil, err
@@ -364,7 +374,7 @@ func (s *Session) chunkData(ctx context.Context, id int64, schema, name, field s
 	if offset < 0 || offset > 1<<53 || units <= 0 || units > 1024 {
 		return nil, connections.ErrInvalid
 	}
-	err = s.dataRead(ctx, o, func(ctx context.Context, q *sql.Conn, t *contract.TableStructure) error {
+	err = read(ctx, o, func(ctx context.Context, q *sql.Conn, t *contract.TableStructure) error {
 		key, e := primaryKeyAt(ctx, q, t)
 		if e != nil {
 			return e
