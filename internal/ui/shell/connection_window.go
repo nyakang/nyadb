@@ -74,6 +74,8 @@ func (s *State) ConnectionWindowIcon() ([]byte, error) {
 		file = "cockroachdb.png"
 	case connections.OpenGauss:
 		file = "opengauss.png"
+	case connections.Kingbase:
+		file = "kingbase.png"
 	case connections.GaussDB:
 		file = "gaussdb.png"
 	case connections.PostgreSQL:

@@ -2036,5 +2036,7 @@
   "gaussdbCAFile": "GaussDB CA certificate",
   "gaussdbClientCertificate": "GaussDB client certificate",
   "gaussdbClientKey": "GaussDB client key",
-  "backgroundConnectionLimitCaption": "Background connection limit:"
+  "backgroundConnectionLimitCaption": "Background connection limit:",
+  "kingbaseFixedDatabaseRequired": "Enter the fixed KingbaseES database for this connection",
+  "kingbaseSessionPassword": "KingbaseES session password"
 }

@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	gausspq "gitcode.com/opengauss/openGauss-connector-go-pq"
+	kingbasepq "gitea.com/kingbase/gokb"
 	"github.com/HuaweiCloudDeveloper/gaussdb-go/gaussdbconn"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nyakang/nyadb/internal/db/contract"
@@ -24,6 +25,11 @@ func postgresServerError(err error) (*pgconn.PgError, bool) {
 	if errors.As(err, &gauss) {
 		position, _ := strconv.ParseInt(gauss.Position, 10, 32)
 		return &pgconn.PgError{Severity: gauss.Severity, Code: string(gauss.Code), Message: gauss.Message, Detail: gauss.Detail, Hint: gauss.Hint, Position: int32(position)}, true
+	}
+	var kb *kingbasepq.Error
+	if errors.As(err, &kb) {
+		position, _ := strconv.ParseInt(kb.Position, 10, 32)
+		return &pgconn.PgError{Severity: kb.Severity, Code: string(kb.Code), Message: kb.Message, Detail: kb.Detail, Hint: kb.Hint, Position: int32(position)}, true
 	}
 	return nil, false
 }

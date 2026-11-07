@@ -204,6 +204,9 @@ func (s *State) engineLabel(w *Workspace) string {
 	if w.Kind == connections.CockroachDB {
 		return "CockroachDB"
 	}
+	if w.Kind == connections.Kingbase {
+		return "KingbaseES"
+	}
 	if w.Kind == connections.GaussDB {
 		return "GaussDB"
 	}

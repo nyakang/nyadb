@@ -18,6 +18,7 @@ const (
 	CockroachDB Kind = "cockroachdb"
 	OpenGauss   Kind = "opengauss"
 	GaussDB     Kind = "gaussdb"
+	Kingbase    Kind = "kingbase"
 	SQLite      Kind = "sqlite"
 	ClickHouse  Kind = "clickhouse"
 	SQLServer   Kind = "sqlserver"
@@ -33,7 +34,7 @@ func (k Kind) IsMySQLFamily() bool { return k == MySQL || k == MariaDB || k == T
 
 // IsPostgreSQLFamily identifies products sharing PostgreSQL wire transport and options.
 func (k Kind) IsPostgreSQLFamily() bool {
-	return k == PostgreSQL || k == CockroachDB || k == OpenGauss || k == GaussDB
+	return k == PostgreSQL || k == CockroachDB || k == OpenGauss || k == GaussDB || k == Kingbase
 }
 
 // IsGaussFamily identifies native Gauss syntax and catalog rules. Each product

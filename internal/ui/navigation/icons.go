@@ -34,6 +34,8 @@ func profileBrand(kind connections.Kind, p theme.Palette) (asset, fallback strin
 		return "openGauss", "database", p.Blue
 	case connections.GaussDB:
 		return "GaussDB", "database", p.Blue
+	case connections.Kingbase:
+		return "KingbaseES", "database", p.Error
 	case connections.PostgreSQL:
 		return "PostgreSQL", "postgres-type", p.Blue
 	case connections.SQLite:

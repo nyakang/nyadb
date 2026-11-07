@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Owned native KingbaseES V8R6 PG-mode transport fixture."""
+"""Owned native KingbaseES V8R6 PG-mode transport and workbench fixture."""
 import argparse
 import json
 import os
@@ -99,7 +99,7 @@ exec setpriv --reuid=1000 --regid=1000 --init-groups /home/kingbase/install/king
                 raise RuntimeError("Kingbase fixture user bootstrap failed: " + result.stderr.replace(password, "[redacted]"))
             if not result.stdout.rstrip().endswith("t"):
                 raise RuntimeError("Kingbase fixture did not verify a SCRAM-SHA-256 account")
-            environment = {"NYADB_KINGBASE_IT": "1", "NYADB_KINGBASE_PORT": subprocess.check_output(["docker", "port", name, "54321/tcp"], text=True).strip().rsplit(":", 1)[1], "NYADB_KINGBASE_PASSWORD": password, "NYADB_KINGBASE_CONTAINER": name}
+            environment = {"NYADB_KINGBASE_IT": "1", "NYADB_KINGBASE_PORT": subprocess.check_output(["docker", "port", name, "54321/tcp"], text=True).strip().rsplit(":", 1)[1], "NYADB_KINGBASE_PASSWORD": password, "NYADB_KINGBASE_CONTAINER": name, "NYADB_KINGBASE_VISUAL_DIR": str(output / "ui")}
             if not plain:
                 environment["NYADB_KINGBASE_CA_FILE"] = str(cert)
             private = folder / "environment.json"
@@ -111,10 +111,10 @@ exec setpriv --reuid=1000 --regid=1000 --init-groups /home/kingbase/install/king
                     time.sleep(1)
             race = os.environ.get("NYADB_KINGBASE_RACE") == "1"
             environment = dict(os.environ, **environment, CGO_ENABLED="1" if race else "0", GOWORK="off")
-            logpath = output / ("race-transport.log" if race else "plain-transport.log" if plain else "tls-transport.log")
+            logpath = output / ("race-core.log" if race else "plain-core.log" if plain else "tls-core.log")
             with logpath.open("w") as log:
-                subprocess.run(["go", "test"] + (["-race"] if race else []) + ["./internal/services/kingbase", "-run", "^TestNativeKingbase", "-count=1", "-v", "-timeout=180s"], cwd=ROOT, env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
-            print("Kingbase native transport verification passed:", logpath, flush=True)
+                subprocess.run(["go", "test"] + (["-race"] if race else []) + ["-p=1", "./internal/services/kingbase", "./internal/services/engines", "./internal/services/dbruntime", "./internal/ui/shell", "-run", "^Test(NativeKingbase|Kingbase)", "-count=1", "-v", "-timeout=240s"], cwd=ROOT, env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
+            print("Kingbase native transport and core verification passed:", logpath, flush=True)
         finally:
             remove_owned(name, nonce)
 

@@ -292,6 +292,8 @@ func connectionKindName(kind connections.Kind) string {
 		return "openGauss"
 	case connections.GaussDB:
 		return "GaussDB"
+	case connections.Kingbase:
+		return "KingbaseES"
 	case connections.PostgreSQL:
 		return "PostgreSQL"
 	case connections.SQLite:

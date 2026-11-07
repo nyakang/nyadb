@@ -17,7 +17,7 @@ func (s *State) sqlNamespace(id int64, database string) contract.NamespaceRef {
 		switch p.Kind {
 		case connections.MySQL, connections.MariaDB, connections.TiDB, connections.OceanBase:
 			return contract.NamespaceRef{ProfileID: id, Catalog: database}
-		case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.GaussDB, connections.SQLServer:
+		case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.GaussDB, connections.Kingbase, connections.SQLServer:
 			return contract.NamespaceRef{ProfileID: id, Catalog: p.Database, Schema: database}
 		}
 	}

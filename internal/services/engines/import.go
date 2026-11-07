@@ -161,7 +161,7 @@ func (s *Session) importStream(ctx context.Context, id int64, db, table string, 
 		if _, err = c.ExecContext(ctx, ddl); err != nil {
 			return
 		}
-	} else if s.kind == connections.PostgreSQL || s.kind.IsGaussFamily() {
+	} else if s.kind == connections.PostgreSQL || s.kind.IsGaussFamily() || s.kind == connections.Kingbase {
 		if _, err = c.ExecContext(ctx, "LOCK TABLE "+qualified(o)+" IN SHARE ROW EXCLUSIVE MODE"); err != nil {
 			return
 		}
@@ -175,13 +175,22 @@ func (s *Session) importStream(ctx context.Context, id int64, db, table string, 
 	}
 	columns := structureModel(meta).Columns
 	// Identity defaults are server-managed; no OVERRIDING clause is injected.
-	if s.kind == connections.PostgreSQL {
+	if s.kind == connections.PostgreSQL || s.kind == connections.Kingbase {
 		var kind string
 		if err = c.QueryRowContext(ctx, `SELECT relkind FROM pg_class WHERE oid=to_regclass($1)`, qualified(o)).Scan(&kind); err != nil {
 			return
 		}
 		if kind != "r" {
 			return out, contract.ErrUnsupported
+		}
+		if s.kind == connections.Kingbase {
+			var ordinary bool
+			if err = c.QueryRowContext(ctx, `SELECT NOT c.relispartition AND NOT c.relhassubclass AND am.amname='heap' AND NOT EXISTS(SELECT 1 FROM pg_catalog.pg_inherits inh WHERE inh.inhrelid=c.oid OR inh.inhparent=c.oid) FROM pg_catalog.pg_class c LEFT JOIN pg_catalog.pg_am am ON am.oid=c.relam WHERE c.oid=pg_catalog.to_regclass($1)`, qualified(o)).Scan(&ordinary); err != nil {
+				return
+			}
+			if !ordinary {
+				return out, contract.ErrUnsupported
+			}
 		}
 		rows, e := c.QueryContext(ctx, `SELECT attname,attidentity FROM pg_attribute WHERE attrelid=to_regclass($1) AND attidentity<>''`, qualified(o))
 		if e != nil {
@@ -448,6 +457,9 @@ func (s *Session) importParameter(col contract.StructureColumn, v contract.DataV
 	return parameter(cell), nil
 }
 func (s *Session) importKeys(ctx context.Context, c *sql.Conn, t contract.Table) ([][]string, error) {
+	if s.kind == connections.Kingbase {
+		return kingbaseKeys(ctx, c, t)
+	}
 	if s.kind.IsGaussFamily() {
 		return gaussImportKeys(ctx, c, t, s.kind)
 	}

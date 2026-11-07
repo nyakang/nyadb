@@ -20717,3 +20717,23 @@ func BackgroundConnectionLimitCaption() string {
 func (msgs Messages) BackgroundConnectionLimitCaption() string {
 	return Catalog.Format(msgs.locale, "backgroundConnectionLimitCaption", nil)
 }
+
+// KingbaseFixedDatabaseRequired says "请输入此连接绑定的 KingbaseES 数据库"
+// in the language the app shows.
+func KingbaseFixedDatabaseRequired() string { return In(i18n.Locale()).KingbaseFixedDatabaseRequired() }
+
+// KingbaseFixedDatabaseRequired says "请输入此连接绑定的 KingbaseES 数据库"
+// in the language of msgs.
+func (msgs Messages) KingbaseFixedDatabaseRequired() string {
+	return Catalog.Format(msgs.locale, "kingbaseFixedDatabaseRequired", nil)
+}
+
+// KingbaseSessionPassword says "KingbaseES 会话密码"
+// in the language the app shows.
+func KingbaseSessionPassword() string { return In(i18n.Locale()).KingbaseSessionPassword() }
+
+// KingbaseSessionPassword says "KingbaseES 会话密码"
+// in the language of msgs.
+func (msgs Messages) KingbaseSessionPassword() string {
+	return Catalog.Format(msgs.locale, "kingbaseSessionPassword", nil)
+}

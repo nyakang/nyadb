@@ -109,6 +109,16 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	switch p.Kind {
+	case Kingbase:
+		if p.MySQLAdvanced != (MySQLAdvanced{}) {
+			return p, fmt.Errorf("%w: MySQL options on Kingbase", ErrInvalid)
+		}
+		cfg, err := KingbaseProfileConfig(p)
+		if err != nil {
+			return p, err
+		}
+		p.Host, p.Port, p.TLSMode, p.PostgreSQLOptions = cfg.Host, cfg.Port, cfg.TLSMode, cfg.Options
+		return p, nil
 	case GaussDB:
 		if p.MySQLAdvanced != (MySQLAdvanced{}) {
 			return p, fmt.Errorf("%w: MySQL options on GaussDB", ErrInvalid)

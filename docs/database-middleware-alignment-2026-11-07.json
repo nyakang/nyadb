@@ -854,12 +854,33 @@
       "profiles": [
         "kingbase"
       ],
-      "nyadb_kind": null,
-      "status": "missing",
+      "nyadb_kind": "kingbase",
+      "status": "implemented_with_gaps",
       "native_transport_foundation": {
         "report": "kingbase-native-transport-2026-11-07.md",
         "verified_server": "KingbaseES V008R006C009B0014, database_mode=pg",
-        "workbench_registered": false
+        "workbench_registered": true
+      },
+      "nyadb_progress": {
+        "reports": [
+          "kingbase-native-transport-2026-11-07.md",
+          "kingbase-2026-11-07.md"
+        ],
+        "completed": [
+          "independent native profiles and explicit-database URI, public options persistence, credential rollback and bilingual chooser/editor",
+          "native per-physical-connection V8R6 C9 B14/PG-mode product gate, SCRAM-SHA-256 and explicit verified TLS",
+          "qualified catalog/schema/table/view/sequence/function/procedure metadata, field/index/FK structures and read-only program definitions",
+          "original SQL leases, native PG-mode routine scripts/caret/files, diagnostics, JSON plans and explicit cancellation recovery",
+          "shared precise heap/btree grid, reliable immediate keys, verified saves, stale-row rejection, paging/count/fields/analysis/import/export",
+          "uncertain native commit receipts retain saved values and table-import uncertainty; original bindings revoked by published generation changes"
+        ],
+        "remaining": [
+          "table/view design and object/account management, database creation, backup/restore and maintenance",
+          "comparison/synchronization, transfer, modeling/lineage, monitoring and all other full reference capabilities",
+          "SSH/HTTP tunnels, mutual TLS and other-authentication acceptance",
+          "other builds/major versions, Oracle/MySQL compatibility modes and HA/failover verification"
+        ],
+        "verified_server": "KingbaseES V008R006C009B0014, database_mode=pg; genuine native core workbench verified"
       }
     },
     {
@@ -3082,12 +3103,33 @@
       "label": "金仓KingbaseES",
       "category": "domestic",
       "port": "54321",
-      "nyadb_kind": null,
-      "status": "missing",
+      "nyadb_kind": "kingbase",
+      "status": "implemented_with_gaps",
       "native_transport_foundation": {
         "report": "kingbase-native-transport-2026-11-07.md",
         "verified_server": "KingbaseES V008R006C009B0014, database_mode=pg",
-        "workbench_registered": false
+        "workbench_registered": true
+      },
+      "nyadb_progress": {
+        "reports": [
+          "kingbase-native-transport-2026-11-07.md",
+          "kingbase-2026-11-07.md"
+        ],
+        "completed": [
+          "independent native profiles and explicit-database URI, public options persistence, credential rollback and bilingual chooser/editor",
+          "native per-physical-connection V8R6 C9 B14/PG-mode product gate, SCRAM-SHA-256 and explicit verified TLS",
+          "qualified catalog/schema/table/view/sequence/function/procedure metadata, field/index/FK structures and read-only program definitions",
+          "original SQL leases, native PG-mode routine scripts/caret/files, diagnostics, JSON plans and explicit cancellation recovery",
+          "shared precise heap/btree grid, reliable immediate keys, verified saves, stale-row rejection, paging/count/fields/analysis/import/export",
+          "uncertain native commit receipts retain saved values and table-import uncertainty; original bindings revoked by published generation changes"
+        ],
+        "remaining": [
+          "table/view design and object/account management, database creation, backup/restore and maintenance",
+          "comparison/synchronization, transfer, modeling/lineage, monitoring and all other full reference capabilities",
+          "SSH/HTTP tunnels, mutual TLS and other-authentication acceptance",
+          "other builds/major versions, Oracle/MySQL compatibility modes and HA/failover verification"
+        ],
+        "verified_server": "KingbaseES V008R006C009B0014, database_mode=pg; genuine native core workbench verified"
       }
     },
     {
