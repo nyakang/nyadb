@@ -1297,7 +1297,8 @@
           "opengauss-native-scripts-2026-11-07.md",
           "opengauss-views-2026-11-07.md",
           "opengauss-table-drop-2026-11-07.md",
-          "opengauss-table-copy-2026-11-07.md"
+          "opengauss-table-copy-2026-11-07.md",
+          "opengauss-table-design-2026-11-07.md"
         ],
         "completed": [
           "native connections and verified TLS",
