@@ -3,6 +3,7 @@ import importlib.util
 import json
 from pathlib import Path
 import subprocess
+import sys
 import unittest
 from unittest.mock import patch
 
@@ -12,6 +13,13 @@ SPEC.loader.exec_module(FIXTURE)
 
 
 class DamengFixtureTests(unittest.TestCase):
+    def test_dpi_arguments_are_validated_before_docker_deployment(self):
+        for args in [["--audit-dpi"], ["--dpi-library", "/missing/libdmdpi.so"], ["--race"]]:
+            with self.subTest(args=args):
+                result = subprocess.run([sys.executable, str(Path(FIXTURE.__file__)), *args], capture_output=True, text=True, check=False)
+                self.assertEqual(result.returncode, 2)
+                self.assertIn("requires", result.stderr)
+
     def test_cleanup_requires_matching_immutable_id_and_ownership(self):
         identifier = "a" * 64
         inspected = [{"Id": identifier, "Config": {"Labels": {"nyadb.fixture": "dameng", "nyadb.fixture.nonce": "nonce"}}}]

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Owned DM8 deployment and optional isolated, unmodified Go-driver audit.
+"""Owned DM8 deployment and optional Go-driver or loopback DPI audit.
 
 Passing this audit records observed limitations; it does not register a provider.
 No vendor driver source or binaries are redistributed with NyaDB.
@@ -38,7 +38,7 @@ def remove_owned(identifier, nonce):
     subprocess.run(["docker", "rm", "-f", captured], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
 
 
-def verify(hold=False, audit_driver=False, race=False):
+def verify(hold=False, audit_driver=False, race=False, audit_dpi=False, dpi_library=None):
     nonce = uuid.uuid4().hex
     base = ROOT / "temp" / "dameng"
     base.mkdir(parents=True, exist_ok=True)
@@ -98,6 +98,11 @@ EXIT;
                 with (output / ("driver-race.log" if race else "driver-audit.log")).open("w") as log:
                     subprocess.run(["go", "run"] + (["-race"] if race else []) + [".", str(private)], cwd=ROOT / "tools" / "damengprobe", env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
                 print("DM8 isolated driver audit recorded; safe_for_workbench remains false", flush=True)
+            if audit_dpi:
+                environment = dict(os.environ, GOWORK="off", CGO_ENABLED="1" if race else "0", NYADB_DAMENG_DPI_IT="1", NYADB_DAMENG_DPI_CONFIG=str(private), NYADB_DAMENG_DPI_LIBRARY=str(Path(dpi_library).resolve()))
+                with (output / ("dpi-race.log" if race else "dpi-audit.log")).open("w") as log:
+                    subprocess.run(["go", "test"] + (["-race"] if race else []) + ["-count=1", "-v", "./internal/services/dameng/dpi"], cwd=ROOT, env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
+                print("DM8 loopback DPI verification passed; TLS/remote/workbench remain unregistered", flush=True)
             if hold:
                 while True:
                     time.sleep(1)
@@ -115,11 +120,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--hold", action="store_true")
     parser.add_argument("--audit-driver", action="store_true", help="audit the unmodified external Go driver in its isolated research module")
-    parser.add_argument("--race", action="store_true", help="run the isolated driver audit with the Go race detector")
+    parser.add_argument("--audit-dpi", action="store_true", help="verify the private loopback DPI boundary against an externally installed native client")
+    parser.add_argument("--dpi-library", type=Path, help="path to the caller's original native client library; no binaries are installed or redistributed")
+    parser.add_argument("--race", action="store_true", help="run the enabled audits with the Go race detector")
     args = parser.parse_args()
-    if args.race and not args.audit_driver:
-        parser.error("--race requires --audit-driver")
+    if args.race and not (args.audit_driver or args.audit_dpi):
+        parser.error("--race requires --audit-driver or --audit-dpi")
+    if args.audit_dpi and (not args.dpi_library or not args.dpi_library.is_file()):
+        parser.error("--audit-dpi requires an existing --dpi-library")
+    if args.dpi_library and not args.audit_dpi:
+        parser.error("--dpi-library requires --audit-dpi")
     try:
-        verify(args.hold, args.audit_driver, args.race)
+        verify(args.hold, args.audit_driver, args.race, args.audit_dpi, args.dpi_library)
     except KeyboardInterrupt:
         raise SystemExit(130)
