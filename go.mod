@@ -8,7 +8,7 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.50.0
 	github.com/HuaweiCloudDeveloper/gaussdb-go v1.0.0-rc1
 	github.com/ebitengine/purego v0.11.3
-	github.com/egoist/mygo v0.7.4
+	github.com/egoist/mygo v0.8.1
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/golang-sql/sqlexp v0.1.0
 	github.com/jackc/pgx/v5 v5.12.0
@@ -71,7 +71,7 @@ require (
 
 tool github.com/egoist/mygo/cmd/mygo
 
-replace github.com/egoist/mygo => github.com/nyakang/mygo v0.7.4-nyadb.1
+replace github.com/egoist/mygo => github.com/nyakang/mygo v0.8.1-nyadb.1
 
 replace gitcode.com/opengauss/openGauss-connector-go-pq => ./third_party/opengauss_pq
 

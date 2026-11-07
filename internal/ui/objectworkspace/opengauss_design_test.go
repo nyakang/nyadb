@@ -177,6 +177,10 @@ func TestOpenGaussDesignerConstraintIndexAndTriggerMetadataKeepOriginalOIDs(t *t
 			if err := tt.Click("设置注释/" + caption); err != nil {
 				t.Fatal(err)
 			}
+			// Enabling the comment adds its editor below the checkbox.
+			// Bring that new field into view before sending real input.
+			tt.Scroll(740, 580, 0, 1000)
+			tt.Frame()
 			if err := tt.Click(caption); err != nil {
 				t.Fatal(err)
 			}
