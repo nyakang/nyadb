@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
@@ -313,7 +314,7 @@ func TestElasticsearchNativeCommittedWriteLostReplyNeverReplays(t *testing.T) {
 			w.WriteHeader(502)
 			return
 		}
-		if request.Method == "PUT" && strings.HasSuffix(request.URL.Path, "/_create/lost") {
+		if request.Method == "PUT" && (strings.HasSuffix(request.URL.Path, "/_create/lost") || strings.HasSuffix(request.URL.Path, "/_create/lost_lease")) {
 			calls.Add(1)
 			if response.StatusCode != 201 {
 				t.Error("native proxy write did not actually commit")
@@ -354,6 +355,35 @@ func TestElasticsearchNativeCommittedWriteLostReplyNeverReplays(t *testing.T) {
 	verified, err := origin.GetDocument(ctx, id)
 	if err != nil || string(verified.Source) != `{"n":9007199254740993}` || calls.Load() != 1 {
 		t.Fatal("original committed write not found by independent read", err)
+	}
+	// Exercise the same real committed/lost-reply boundary through the neutral
+	// workbench lease, including explicit replacement without executing SQL.
+	rawSession, err := OpenSession(ctx, sessionProfile(t, cfg), origin.secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rawSession.Close()
+	session := rawSession.(*Session)
+	lease, err := session.ReserveQuery(31)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer lease.Release()
+	_, err = lease.Execute(ctx, session.Identity().ClusterName, "PUT /"+index+"/_create/lost_lease\n{\"n\":9007199254740993}")
+	if !errors.Is(err, contract.ErrSQLSessionLost) || !errors.As(err, &interrupted) || !interrupted.WriteOutcomeUnknown || calls.Load() != 2 {
+		t.Fatal("neutral lease hid an uncertain committed write or replayed it", err)
+	}
+	if _, err = lease.Execute(ctx, "", "GET /"); !errors.Is(err, contract.ErrSQLSessionLost) || calls.Load() != 2 {
+		t.Fatal("lost neutral lease implicitly recovered")
+	}
+	replaced, err := lease.Replace()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer replaced.Release()
+	readback, err := replaced.Execute(ctx, "", "GET /"+index+"/_doc/lost_lease")
+	if err != nil || !strings.Contains(readback.Sets[0].Rows[0][1].Text, "9007199254740993") || calls.Load() != 2 {
+		t.Fatal("explicit replacement failed independent readback", err)
 	}
 }
 
