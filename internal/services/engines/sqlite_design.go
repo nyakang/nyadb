@@ -22,6 +22,7 @@ func (s *Session) SchemaDesign() contract.SchemaDesignOperations {
 	}
 	if s.kind == connections.OpenGauss {
 		return contract.SchemaDesignOperations{Snapshot: s.openGaussTableSnapshot,
+			CanRename: func(t contract.SchemaDesignTarget) bool { return s.checkOpenGaussTable(t) == nil }, Rename: s.openGaussRenameTable,
 			CanCopy: func(t contract.SchemaDesignTarget) bool { return s.checkOpenGaussTable(t) == nil }, Copy: s.openGaussCopyTable,
 			CanDrop: func(t contract.SchemaDesignTarget) bool { return s.checkOpenGaussTable(t) == nil }, Drop: s.openGaussDropTable}
 	}

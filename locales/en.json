@@ -2016,5 +2016,13 @@
   "nativeDesignTriggerNormal": "Enabled",
   "nativeDesignTriggerDisabled": "Disabled",
   "nativeDesignTriggerReplica": "Enabled for replica",
-  "nativeDesignTriggerAlways": "Always enabled"
+  "nativeDesignTriggerAlways": "Always enabled",
+  "nativeRenamePreservesIdentity": "Rename transactionally in the same schema, preserving table, index, sequence and dependency identities.",
+  "nativeRenameClosesOriginalTabs": "After success, close data and structure tabs for the original name. Resolve unsaved changes first.",
+  "nativeRenameRereadRequired": "The rename result or structure has changed. Read the structure again before confirming.",
+  "nativeRenameSQLPreview": "Rename SQL preview",
+  "nativeRenameConfirmTable": "Confirm table rename",
+  "nativeRenameUnconfirmed": "The rename result is unconfirmed. Reconnect and inspect the original and destination tables.",
+  "nativeRenameTableSuccess": "Table renamed",
+  "nativeRenameTableTitle": "Rename table"
 }

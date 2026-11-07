@@ -62,6 +62,7 @@ func (s *State) beginSchemaDrop(profile int64, database, table string) {
 	}
 	s.closeSchemaDrop()
 	s.closeSchemaCopy()
+	s.closeSchemaRename()
 	ops, target := s.schemaBinding(profile, database, table)
 	s.schemaDrop = &schemaDropOperation{target: target, generation: s.session().Generation, database: database, ops: ops, open: true}
 }

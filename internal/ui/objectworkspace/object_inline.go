@@ -18,6 +18,13 @@ func (s *State) objectNameCell(c *ui.Context, obj contract.DBObject) {
 	}
 	name := obj.Name
 	if ui.EditableText(c, &name).Label("对象名称："+obj.Name).Changed() && name != obj.Name {
+		if s.canNativeRename(s.currentBrowser().ProfileID, s.currentBrowser().Database, obj.Name) {
+			s.beginSchemaRenameOperation(s.currentBrowser().ProfileID, s.currentBrowser().Database, obj.Name)
+			if x := s.schemaRename; x != nil {
+				x.destination = name
+			}
+			return
+		}
 		s.BeginTableChange(s.currentBrowser().ProfileID, s.currentBrowser().Database, obj.Name, mysqlsvc.MySQLTableRename)
 		s.tableNewName = name
 

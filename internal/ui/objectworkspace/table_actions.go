@@ -241,6 +241,11 @@ func (s *State) BeginTableChange(profileID int64, database, name string, action 
 	if s.nativeTablePending() {
 		return
 	}
+	if action == mysqlsvc.MySQLTableRename && s.canNativeRename(profileID, database, name) {
+		s.beginSchemaRenameOperation(profileID, database, name)
+		return
+	}
+	s.closeSchemaRename()
 	if action != mysqlsvc.MySQLTableDrop {
 		s.closeSchemaDrop()
 	}
@@ -287,6 +292,7 @@ func (s *State) Modals(c *ui.Context) {
 	s.viewModal(c)
 	s.schemaCopyModal(c)
 	s.schemaDropModal(c)
+	s.schemaRenameModal(c)
 	s.dictionaryModal(c)
 	s.searchModal(c)
 	s.objectGroupModal(c)
@@ -469,12 +475,15 @@ func (s *State) consumeMySQLTableChange(services ui.Services) {
 }
 
 func (s *State) TableDialogOpen() bool {
-	return s.tableDialog || s.schemaDrop != nil && s.schemaDrop.open && !s.schemaDrop.guarding || s.schemaCopy != nil && s.schemaCopy.open && !s.schemaCopy.guarding
+	return s.tableDialog || s.schemaDrop != nil && s.schemaDrop.open && !s.schemaDrop.guarding || s.schemaCopy != nil && s.schemaCopy.open && !s.schemaCopy.guarding || s.schemaRename != nil && s.schemaRename.open && !s.schemaRename.guarding
 }
 func (s *State) TablePending() bool {
 	return s.tablePending || s.nativeTablePending()
 }
 func (s *State) TableAction() mysqlsvc.MySQLTableAction {
+	if s.schemaRename != nil {
+		return mysqlsvc.MySQLTableRename
+	}
 	if x := s.schemaCopy; x != nil {
 		if x.withData {
 			return mysqlsvc.MySQLTableCopyData
@@ -487,6 +496,9 @@ func (s *State) TableAction() mysqlsvc.MySQLTableAction {
 	return s.tableAction
 }
 func (s *State) TableError() string {
+	if s.schemaRename != nil {
+		return s.schemaRename.err
+	}
 	if s.schemaCopy != nil {
 		return s.schemaCopy.err
 	}
@@ -499,6 +511,14 @@ func (s *State) TableError() string {
 // CancelTableFor requests acknowledgement from the original operation. Keep
 // pending set until its executor returns so an uncertain command cannot replay.
 func (s *State) CancelTableFor(profileID int64) {
+	if x := s.schemaRename; x != nil && x.target.Object.ProfileID == profileID {
+		if x.cancel != nil {
+			x.cancel()
+		}
+		if !x.applying {
+			s.closeSchemaRename()
+		}
+	}
 	if x := s.schemaCopy; x != nil && x.target.Object.ProfileID == profileID {
 		if x.cancel != nil {
 			x.cancel()

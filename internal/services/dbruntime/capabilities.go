@@ -22,7 +22,7 @@ func (s *session) managementCapabilities(c contract.Capabilities) contract.Capab
 	}
 	c.DesignTables = c.DesignTables && (admin || design.Snapshot != nil && design.Apply != nil && design.CanApply != nil)
 	c.DesignViews = c.DesignViews && (admin || view.Snapshot != nil && view.Apply != nil && view.CanApply != nil)
-	c.Objects = c.Objects && (admin || design.Drop != nil || design.Copy != nil || view.Apply != nil)
+	c.Objects = c.Objects && (admin || design.Drop != nil || design.Copy != nil || design.Rename != nil || view.Apply != nil)
 	c.Accounts = c.Accounts && admin
 	backup := false
 	if p, e := contract.Require[contract.BackupProvider](s.raw); e == nil {
@@ -62,6 +62,9 @@ func (m *Manager) Availability(id int64, operation string, target contract.Schem
 	case "copy_table":
 		ops := m.SchemaDesign(id)
 		enabled = caps.Objects && ops.CanCopy != nil && ops.CanCopy(target)
+	case "rename_table":
+		ops := m.SchemaDesign(id)
+		enabled = caps.Objects && ops.CanRename != nil && ops.CanRename(target)
 	case "design_view":
 		ops := m.ViewDesign(id)
 		enabled = caps.DesignViews && ops.CanApply != nil && ops.CanApply(target)

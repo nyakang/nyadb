@@ -96,7 +96,7 @@ func (s *State) CanRenameTable(profile int64, database, table string) bool {
 	if s.nativeTablePending() {
 		return false
 	}
-	return s.CanChangeTable(profile) || s.deps.RenameSchema != nil && s.canSchemaDesign(profile, database, table)
+	return s.CanChangeTable(profile) || s.canNativeRename(profile, database, table) || s.deps.RenameSchema != nil && s.canSchemaDesign(profile, database, table)
 }
 func (s *State) BeginSchemaRename(d *Document, name string, services ui.Services) {
 	if d == nil || d.closed {

@@ -20511,3 +20511,85 @@ func NativeDesignTriggerAlways() string { return In(i18n.Locale()).NativeDesignT
 func (msgs Messages) NativeDesignTriggerAlways() string {
 	return Catalog.Format(msgs.locale, "nativeDesignTriggerAlways", nil)
 }
+
+// NativeRenamePreservesIdentity says "在同一模式中事务重命名，保留原表、索引、序列和依赖身份。"
+// in the language the app shows.
+func NativeRenamePreservesIdentity() string { return In(i18n.Locale()).NativeRenamePreservesIdentity() }
+
+// NativeRenamePreservesIdentity says "在同一模式中事务重命名，保留原表、索引、序列和依赖身份。"
+// in the language of msgs.
+func (msgs Messages) NativeRenamePreservesIdentity() string {
+	return Catalog.Format(msgs.locale, "nativeRenamePreservesIdentity", nil)
+}
+
+// NativeRenameClosesOriginalTabs says "成功后关闭原名称下的数据和结构标签；未保存内容须先处理。"
+// in the language the app shows.
+func NativeRenameClosesOriginalTabs() string {
+	return In(i18n.Locale()).NativeRenameClosesOriginalTabs()
+}
+
+// NativeRenameClosesOriginalTabs says "成功后关闭原名称下的数据和结构标签；未保存内容须先处理。"
+// in the language of msgs.
+func (msgs Messages) NativeRenameClosesOriginalTabs() string {
+	return Catalog.Format(msgs.locale, "nativeRenameClosesOriginalTabs", nil)
+}
+
+// NativeRenameRereadRequired says "重命名结果或结构已变化；重新读取后才能再次确认。"
+// in the language the app shows.
+func NativeRenameRereadRequired() string { return In(i18n.Locale()).NativeRenameRereadRequired() }
+
+// NativeRenameRereadRequired says "重命名结果或结构已变化；重新读取后才能再次确认。"
+// in the language of msgs.
+func (msgs Messages) NativeRenameRereadRequired() string {
+	return Catalog.Format(msgs.locale, "nativeRenameRereadRequired", nil)
+}
+
+// NativeRenameSQLPreview says "重命名 SQL 预览"
+// in the language the app shows.
+func NativeRenameSQLPreview() string { return In(i18n.Locale()).NativeRenameSQLPreview() }
+
+// NativeRenameSQLPreview says "重命名 SQL 预览"
+// in the language of msgs.
+func (msgs Messages) NativeRenameSQLPreview() string {
+	return Catalog.Format(msgs.locale, "nativeRenameSQLPreview", nil)
+}
+
+// NativeRenameConfirmTable says "确认重命名表"
+// in the language the app shows.
+func NativeRenameConfirmTable() string { return In(i18n.Locale()).NativeRenameConfirmTable() }
+
+// NativeRenameConfirmTable says "确认重命名表"
+// in the language of msgs.
+func (msgs Messages) NativeRenameConfirmTable() string {
+	return Catalog.Format(msgs.locale, "nativeRenameConfirmTable", nil)
+}
+
+// NativeRenameUnconfirmed says "重命名结果未确认，请重新连接并核对原表与目标表。"
+// in the language the app shows.
+func NativeRenameUnconfirmed() string { return In(i18n.Locale()).NativeRenameUnconfirmed() }
+
+// NativeRenameUnconfirmed says "重命名结果未确认，请重新连接并核对原表与目标表。"
+// in the language of msgs.
+func (msgs Messages) NativeRenameUnconfirmed() string {
+	return Catalog.Format(msgs.locale, "nativeRenameUnconfirmed", nil)
+}
+
+// NativeRenameTableSuccess says "重命名表成功"
+// in the language the app shows.
+func NativeRenameTableSuccess() string { return In(i18n.Locale()).NativeRenameTableSuccess() }
+
+// NativeRenameTableSuccess says "重命名表成功"
+// in the language of msgs.
+func (msgs Messages) NativeRenameTableSuccess() string {
+	return Catalog.Format(msgs.locale, "nativeRenameTableSuccess", nil)
+}
+
+// NativeRenameTableTitle says "重命名表"
+// in the language the app shows.
+func NativeRenameTableTitle() string { return In(i18n.Locale()).NativeRenameTableTitle() }
+
+// NativeRenameTableTitle says "重命名表"
+// in the language of msgs.
+func (msgs Messages) NativeRenameTableTitle() string {
+	return Catalog.Format(msgs.locale, "nativeRenameTableTitle", nil)
+}
