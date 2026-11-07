@@ -16,10 +16,12 @@ import (
 // All catalog records are captured by one native statement. Automatic/internal
 // relation dependencies include serial sequences, indexes and storage relations.
 // Native pg_partition and pg_rlspolicy must not be replaced by PG catalogs.
-const openGaussTableCatalogSQL = `WITH RECURSIVE
+const openGaussTableCatalogRowsSQL = `WITH RECURSIVE
  target AS(SELECT c.oid,c.* FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=$1 AND c.relname=$2),
- relations(oid) AS(SELECT oid FROM target UNION SELECT d.objid FROM pg_depend d JOIN relations r ON r.oid=d.refobjid
-  WHERE d.refclassid='pg_class'::regclass AND d.classid='pg_class'::regclass AND d.deptype IN('a','i') AND d.objsubid=0),
+ relation_edges(parent,child) AS(SELECT d.refobjid,d.objid FROM pg_depend d
+  WHERE d.refclassid='pg_class'::regclass AND d.classid='pg_class'::regclass AND d.deptype IN('a','i') AND d.objsubid=0
+  UNION SELECT i.indrelid,i.indexrelid FROM pg_index i),
+ relations(oid) AS(SELECT oid FROM target UNION SELECT e.child FROM relation_edges e JOIN relations r ON r.oid=e.parent),
  partitions(oid) AS(SELECT p.oid FROM pg_partition p WHERE p.parentid IN(SELECT oid FROM relations)
   UNION SELECT p.oid FROM pg_partition p JOIN partitions x ON p.parentid=x.oid),
  types AS(SELECT p.oid FROM pg_type p WHERE p.typrelid IN(SELECT oid FROM relations)
@@ -65,12 +67,16 @@ const openGaussTableCatalogSQL = `WITH RECURSIVE
   UNION ALL SELECT 'inheritance',t.oid,0,json_build_object('rows',(
    SELECT json_agg(row_to_json(d) ORDER BY d.inhrelid,d.inhparent,d.inhseqno) AS rows FROM pg_inherits d WHERE d.inhrelid=t.oid OR d.inhparent=t.oid)) FROM target t
   UNION ALL SELECT 'publications',t.oid,0,json_build_object('rows',(
-   SELECT json_agg(row_to_json(d) ORDER BY d.prpubid,d.prrelid) AS rows FROM pg_publication_rel d WHERE d.prrelid IN(SELECT oid FROM relations))) FROM target t
+   SELECT json_agg(row_to_json(d) ORDER BY d.prpubid,d.prrelid) AS rows FROM pg_publication_rel d WHERE d.prrelid IN(SELECT oid FROM relations))) FROM target t`
+
+const openGaussTableCatalogPresentationSQL = `
   UNION ALL SELECT 'copy_definition',t.oid,0,json_build_object(
    'owner',pg_get_userbyid(t.relowner),'creator',current_user,'can_create',has_schema_privilege(t.relnamespace,'CREATE'),
    'tablespace',(SELECT spcname FROM pg_tablespace WHERE oid=t.reltablespace),'comment',obj_description(t.oid,'pg_class'),
    'columns',(SELECT json_agg(json_build_object('number',a.attnum,'dimensions',a.attndims,'name',a.attname,'type',format_type(a.atttypid,a.atttypmod),
-    'default',COALESCE(pg_get_expr(d.adbin,d.adrelid,false),''),'generated',COALESCE(d.adgencol::text,''),'comment',col_description(a.attrelid,a.attnum)) ORDER BY a.attnum)
+   'default',COALESCE(pg_get_expr(d.adbin,d.adrelid,false),''),'generated',COALESCE(d.adgencol::text,''),'notnull',a.attnotnull,
+   'collation',COALESCE((SELECT quote_ident(ns.nspname)||'.'||quote_ident(co.collname) FROM pg_collation co JOIN pg_namespace ns ON ns.oid=co.collnamespace WHERE co.oid=a.attcollation AND co.oid<>100),''),
+   'comment',col_description(a.attrelid,a.attnum)) ORDER BY a.attnum)
     FROM pg_attribute a LEFT JOIN pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum WHERE a.attrelid=t.oid AND a.attnum>0 AND NOT a.attisdropped),
    'indexes',(SELECT json_agg(json_build_object('oid',i.indexrelid::bigint,'name',ic.relname,'kind','index','sql',pg_get_indexdef(i.indexrelid),
     'comment',obj_description(ic.oid,'pg_class')) ORDER BY i.indexrelid) FROM pg_index i JOIN pg_class ic ON ic.oid=i.indexrelid WHERE i.indrelid=t.oid),
@@ -96,17 +102,29 @@ const openGaussTableCatalogSQL = `WITH RECURSIVE
     FROM pg_class seq JOIN pg_namespace ns ON ns.oid=seq.relnamespace JOIN pg_depend dep ON dep.classid='pg_class'::regclass AND dep.objid=seq.oid
     WHERE seq.relkind IN('S','L') AND dep.refclassid='pg_class'::regclass AND dep.refobjid=t.oid AND dep.refobjsubid>0 AND dep.deptype IN('a','i'))
   ) FROM target t
- )
+  UNION ALL SELECT 'design_definition',t.oid,0,json_build_object('ddl',pg_get_tabledef(t.oid)) FROM target t`
+
+const openGaussTableCatalogMetadataSQL = ` )
  SELECT CASE WHEN octet_length(row_to_json(v)::text)<=16777216 THEN row_to_json(v)::text END FROM(
-  SELECT current_database() AS database,$1::text AS namespace,$2::text AS name,d.oid::bigint AS databaseoid,n.oid::bigint AS namespaceoid,
+  SELECT current_database() AS database,$1::text AS namespace,$2::text AS name,version() AS platform,d.oid::bigint AS databaseoid,n.oid::bigint AS namespaceoid,
    COALESCE(t.oid::bigint,0) AS relationoid,r.oid::bigint AS roleoid,
    COALESCE(pg_has_role(current_user,t.relowner,'USAGE') OR r.rolsuper OR r.rolsystemadmin,false) AS canmanage,
+   has_schema_privilege(n.oid,'CREATE') AS cancreate,
+   (SELECT json_object_agg(c.relname,c.oid::bigint) FROM pg_class c JOIN pg_namespace ns ON ns.oid=c.relnamespace
+    WHERE ns.nspname='pg_catalog' AND c.relname IN('pg_class','pg_type','pg_attrdef','pg_constraint','pg_trigger','pg_rewrite','pg_rlspolicy','pg_partition','pg_namespace','pg_proc','pg_operator','pg_collation','pg_opclass','pg_am','pg_cast','pg_authid')) AS classes,
    EXISTS(SELECT 1 FROM pg_event_trigger WHERE evtenabled<>'D') AS hooks,
    -- row_to_json of this UNION CTE loses its aliases on native 6.0.0.
    (SELECT json_agg(json_build_object('kind',e.kind,'oid',e.oid::bigint,'subid',e.subid,'data',e.data) ORDER BY e.kind,e.oid,e.subid) FROM entries e) AS entries
   FROM pg_database d CROSS JOIN pg_roles r CROSS JOIN pg_namespace n LEFT JOIN target t ON true
   WHERE d.datname=current_database() AND r.rolname=current_user AND n.nspname=$1
  ) v`
+
+const openGaussTableCatalogSQL = openGaussTableCatalogRowsSQL + openGaussTableCatalogPresentationSQL + openGaussTableCatalogMetadataSQL
+
+// References need immutable metadata, without managing the referenced table
+// or reading its owned sequences. Keep the native raw catalog closure identical
+// to table snapshots and omit all synthesized declarations and sequence state.
+const openGaussDesignReferenceCatalogSQL = openGaussTableCatalogRowsSQL + openGaussTableCatalogMetadataSQL
 
 func (s *Session) checkOpenGaussTable(t contract.SchemaDesignTarget) error {
 	if s.kind != connections.OpenGauss || t.Object.Kind != "table" {
@@ -141,6 +159,11 @@ func openGaussReadTable(ctx context.Context, c *sql.Conn, t contract.SchemaDesig
 	if !raw.Valid || json.Unmarshal([]byte(raw.String), p) != nil || p.Database != t.Object.Catalog || p.Namespace != t.Object.Schema || p.Name != t.Object.Name {
 		return out, errors.New("invalid or excessive native table catalog")
 	}
+	var platform struct{ Platform string }
+	if json.Unmarshal([]byte(raw.String), &platform) != nil {
+		return out, schemaddl.ErrConflict
+	}
+	p.NativeByteOrder = postgresNativeByteOrder(platform.Platform)
 	revision, err := p.Fingerprint()
 	if err != nil {
 		return out, err

@@ -28,6 +28,8 @@ type OpenGaussCopyColumn struct {
 	Dimensions         int
 	Name, Type         string
 	Default, Generated string
+	Collation          string
+	NotNull            bool
 	Comment            *string
 }
 

@@ -19,18 +19,21 @@ var ErrUnsupported = errors.New("schema change is not supported safely")
 type Clause struct {
 	ID, Kind, Name string
 	// SQL is the complete constraint, or the column definition after its name.
-	SQL      string
-	Postgres *PostgreSQLColumnProperties `json:",omitempty"`
+	SQL       string
+	Postgres  *PostgreSQLColumnProperties `json:",omitempty"`
+	OpenGauss *OpenGaussColumnProperties  `json:",omitempty"`
 }
 type Definition struct {
 	Name, Kind, SQL string
 	Postgres        *PostgreSQLDefinitionProperties `json:",omitempty"`
+	OpenGauss       *OpenGaussDefinitionProperties  `json:",omitempty"`
 }
 type Table struct {
 	Name, Options string
 	Clauses       []Clause
 	Definitions   []Definition
 	Postgres      *PostgreSQLTableProperties `json:",omitempty"`
+	OpenGauss     *OpenGaussTableProperties  `json:",omitempty"`
 }
 type Snapshot struct {
 	Engine, Revision, DDL string
@@ -44,12 +47,15 @@ func (t Table) Clone() Table {
 	t.Clauses = slices.Clone(t.Clauses)
 	for i := range t.Clauses {
 		t.Clauses[i].Postgres = t.Clauses[i].Postgres.Clone()
+		t.Clauses[i].OpenGauss = t.Clauses[i].OpenGauss.Clone()
 	}
 	t.Definitions = slices.Clone(t.Definitions)
 	for i := range t.Definitions {
 		t.Definitions[i].Postgres = t.Definitions[i].Postgres.Clone()
+		t.Definitions[i].OpenGauss = t.Definitions[i].OpenGauss.Clone()
 	}
 	t.Postgres = t.Postgres.Clone()
+	t.OpenGauss = t.OpenGauss.Clone()
 	return t
 }
 func (s Snapshot) Clone() Snapshot {
