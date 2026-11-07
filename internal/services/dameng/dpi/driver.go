@@ -275,6 +275,10 @@ func (c *conn) CheckNamedValue(v *driver.NamedValue) error {
 	if _, ok := v.Value.(Decimal); ok {
 		return nil
 	}
+	if out, ok := v.Value.(sql.Out); ok {
+		_, err := OutputKind(out)
+		return err
+	}
 	return driver.ErrSkip
 }
 
@@ -395,15 +399,19 @@ func (c *conn) ExecContext(ctx context.Context, query string, values []driver.Na
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	ctx, finish := c.operationLocked(ctx, true)
-	defer finish(&err)
 	s, err := c.requestLocked(ctx, query, values)
 	if err != nil {
+		finish(&err)
 		return nil, err
 	}
+	defer func() { finish(&err); s.finishOutputsLocked(err) }()
 	defer s.freeLocked()
 	return s.execLocked(ctx, values)
 }
 func (c *conn) QueryContext(ctx context.Context, query string, values []driver.NamedValue) (value driver.Rows, err error) {
+	if err := rejectQueryOutputs(values); err != nil {
+		return nil, err
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	operation, finish := c.operationLocked(ctx, true)
@@ -477,11 +485,12 @@ func (t *transaction) end(ctx context.Context, query string) error {
 }
 
 type statement struct {
-	c      *conn
-	h      uintptr
-	count  int
-	busy   bool
-	direct string
+	c       *conn
+	h       uintptr
+	count   int
+	busy    bool
+	direct  string
+	outputs []func()
 }
 
 func (s *statement) NumInput() int { return s.count }
@@ -517,10 +526,13 @@ func (s *statement) ExecContext(ctx context.Context, values []driver.NamedValue)
 	s.c.mu.Lock()
 	defer s.c.mu.Unlock()
 	ctx, finish := s.c.operationLocked(ctx, true)
-	defer finish(&err)
+	defer func() { finish(&err); s.finishOutputsLocked(err) }()
 	return s.execLocked(ctx, values)
 }
 func (s *statement) QueryContext(ctx context.Context, values []driver.NamedValue) (value driver.Rows, err error) {
+	if err := rejectQueryOutputs(values); err != nil {
+		return nil, err
+	}
 	s.c.mu.Lock()
 	defer s.c.mu.Unlock()
 	operation, finish := s.c.operationLocked(ctx, true)
@@ -533,6 +545,7 @@ func (s *statement) QueryContext(ctx context.Context, values []driver.NamedValue
 }
 
 func (s *statement) executeLocked(ctx context.Context, values []driver.NamedValue, write bool) error {
+	s.outputs = nil
 	if s.h == 0 || s.c.h == 0 {
 		return ErrSessionClosed
 	}
@@ -541,6 +554,18 @@ func (s *statement) executeLocked(ctx context.Context, values []driver.NamedValu
 	}
 	if len(values) != s.count {
 		return errors.New("DM8 parameter count mismatch")
+	}
+	outputCount := 0
+	for _, v := range values {
+		if out, ok := v.Value.(sql.Out); ok {
+			if _, err := OutputKind(out); err != nil {
+				return err
+			}
+			outputCount++
+		}
+	}
+	if outputCount > MaxOutputParameters {
+		return errors.New("DM8 output parameter count exceeds its bound")
 	}
 	if err := ctx.Err(); err != nil {
 		return err
@@ -570,16 +595,59 @@ func (s *statement) executeLocked(ctx context.Context, values []driver.NamedValu
 			return err
 		}
 		bindings = append(bindings, b)
-		if !succeeded(s.c.a.bind(s.h, uint16(i+1), 1, b.ctype, b.dtype, b.precision, b.scale, b.pointer(), int64(len(b.bytes)), &b.length)) {
+		rc := s.c.a.bind(s.h, uint16(i+1), b.direction, b.ctype, b.dtype, b.precision, b.scale, b.pointer(), int64(len(b.bytes)), &b.length)
+		if !succeeded(rc) || b.output != nil && rc != 0 {
 			return s.c.a.error(3, s.h, "parameter binding")
 		}
 	}
-	return s.c.runLocked(ctx, s, write, "execution", func() int16 {
+	var executionRC int16
+	err := s.c.runLocked(ctx, s, write, "execution", func() int16 {
 		if s.direct != "" {
-			return s.c.a.execDirect(s.h, s.direct)
+			executionRC = s.c.a.execDirect(s.h, s.direct)
+		} else {
+			executionRC = s.c.a.execute(s.h)
 		}
-		return s.c.a.execute(s.h)
+		return executionRC
 	})
+	if err != nil {
+		return err
+	}
+	if outputCount > 0 && executionRC != 0 {
+		err := s.c.a.error(3, s.h, "output execution warning")
+		s.c.retireLocked()
+		return errors.Join(err, ErrSessionClosed, ErrOutcomeUnknown)
+	}
+	for _, b := range bindings {
+		if b.output == nil {
+			continue
+		}
+		set, err := b.stageOutput()
+		if err != nil {
+			s.outputs = nil
+			s.c.retireLocked()
+			return errors.Join(err, ErrSessionClosed, ErrOutcomeUnknown)
+		}
+		s.outputs = append(s.outputs, set)
+	}
+	return nil
+}
+
+func (s *statement) finishOutputsLocked(err error) {
+	if err == nil {
+		for _, set := range s.outputs {
+			set()
+		}
+	}
+	s.outputs = nil
+}
+
+func rejectQueryOutputs(values []driver.NamedValue) error {
+	for _, v := range values {
+		if _, ok := v.Value.(sql.Out); ok {
+			return errors.New("DM8 output parameters require ExecContext")
+		}
+	}
+	return nil
 }
 
 func (s *statement) execLocked(ctx context.Context, values []driver.NamedValue) (driver.Result, error) {
@@ -588,7 +656,12 @@ func (s *statement) execLocked(ctx context.Context, values []driver.NamedValue) 
 	}
 	var changed int64
 	if !succeeded(s.c.a.rowCount(s.h, &changed)) {
-		return nil, s.c.a.error(3, s.h, "affected rows")
+		err := s.c.a.error(3, s.h, "affected rows")
+		if len(s.outputs) > 0 {
+			s.c.retireLocked()
+			err = errors.Join(err, ErrSessionClosed, ErrOutcomeUnknown)
+		}
+		return nil, err
 	}
 	return result(changed), nil
 }

@@ -185,6 +185,14 @@ func (s *server) execute(ctx context.Context, q request) (response, bool) {
 	} else {
 		var values []driver.NamedValue
 		values, err = decodeValues(q.Values)
+		if err == nil && q.Method != "exec" && q.Method != "stmt-exec" {
+			for _, v := range q.Values {
+				if v.Kind == "out" {
+					err = errProtocol
+					break
+				}
+			}
+		}
 		if err == nil {
 			switch q.Method {
 			case "ping":
@@ -217,6 +225,11 @@ func (s *server) execute(ctx context.Context, q request) (response, bool) {
 					err = dpi.ErrSessionClosed
 				}
 				if err == nil {
+					r.Outputs, err = encodeOutputs(values)
+					if err != nil {
+						err = errors.Join(err, dpi.ErrOutcomeUnknown, dpi.ErrSessionClosed, s.conn.Close())
+						break
+					}
 					var countErr error
 					r.Affected, countErr = result.RowsAffected()
 					r.AffectedError = encodeError(countErr)
@@ -308,12 +321,23 @@ func decodeValues(values []value) ([]driver.NamedValue, error) {
 		return nil, errProtocol
 	}
 	out := make([]driver.NamedValue, len(values))
+	outputCount := 0
 	for i, v := range values {
-		x, err := decodeValue(v)
+		var x any
+		var err error
+		if v.Kind == "out" {
+			x, err = decodeOutput(v)
+			outputCount++
+		} else {
+			x, err = decodeValue(v)
+		}
 		if err != nil {
 			return nil, err
 		}
 		out[i] = driver.NamedValue{Ordinal: i + 1, Value: x}
+	}
+	if outputCount > dpi.MaxOutputParameters {
+		return nil, errProtocol
 	}
 	return out, nil
 }
