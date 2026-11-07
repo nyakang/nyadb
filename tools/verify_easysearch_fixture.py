@@ -40,7 +40,7 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(compat_base=False, plain=False, race=False, profiles=False):
+def verify(compat_base=False, plain=False, race=False, profiles=False, sessions=False):
     base, output = ROOT/'temp/easysearch', ROOT/'build/easysearch'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
@@ -136,8 +136,12 @@ def verify(compat_base=False, plain=False, race=False, profiles=False):
                 required = ['ProfileURIReopenAndEditorConnectionChecks', 'EditorLocalizedFormEvidence']
                 evidence['scope'] = 'profile_uri_vault_injected_restart_editor'
                 evidence['images'] = str(Path(env['NYADB_EASYSEARCH_PROFILE_IMAGES']).relative_to(ROOT))
-            elif not plain:
-                required.append('AccessTokenUsesNativeHeaderAndPermissions')
+            else:
+                if not plain:
+                    required.append('AccessTokenUsesNativeHeaderAndPermissions')
+                if sessions:
+                    required += ['SessionIndexAliasDataStreamMetadataAndREST', 'MetadataRejectsCapturedIndexReplacementAndAliasChange', 'QueryLostCommittedReplyRequiresExplicitRecoveryWithoutReplay', 'AliasCaseKeepsQualifiedIdentity']
+                    evidence['scope'] = 'native_metadata_and_request_sessions'
             if result.returncode or any('--- PASS: TestEasysearchNative'+name not in text for name in required):
                 raise RuntimeError('Native Easysearch acceptance failed; inspect captured test log')
             evidence.update({'status': 'passed_with_race' if race else 'passed', 'log': str(logfile.relative_to(ROOT)), 'log_sha256': hashlib.sha256(logfile.read_bytes()).hexdigest()})
@@ -158,6 +162,8 @@ if __name__ == '__main__':
     parser.add_argument('--compat-base', action='store_true')
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--race', action='store_true')
-    parser.add_argument('--profiles', action='store_true', help='verify native profile, restart and localized connection form')
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--sessions', action='store_true', help='verify metadata and native request-session contracts')
+    mode.add_argument('--profiles', action='store_true', help='verify native profile, restart and localized connection form')
     args = parser.parse_args()
-    verify(args.compat_base, args.plain, args.race, args.profiles)
+    verify(args.compat_base, args.plain, args.race, args.profiles, args.sessions)
