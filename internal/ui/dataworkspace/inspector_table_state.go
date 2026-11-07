@@ -90,6 +90,9 @@ func (s *inspectorState) LoadInfo(t *Panel, invalidate func(), refresh bool) {
 	if loader == nil && s.deps.InfoLoader != nil {
 		loader = s.deps.InfoLoader()
 	}
+	if t.runtime != nil {
+		loader = t.runtime.TableInfo
+	}
 	if loader == nil {
 		d.err = locales.Text("数据库会话不可用")
 		return
@@ -119,6 +122,9 @@ func (s *inspectorState) LoadCount(t *Panel, invalidate func()) {
 	loader := s.CountLoader
 	if loader == nil && s.deps.CountLoader != nil {
 		loader = s.deps.CountLoader()
+	}
+	if t.runtime != nil {
+		loader = t.runtime.Count
 	}
 	if loader == nil {
 		d.countErr = locales.Text("数据库会话不可用")

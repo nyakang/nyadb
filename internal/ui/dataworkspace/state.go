@@ -239,6 +239,7 @@ func (s *State) inspectorPanel(t *Document) *Panel {
 			return Selection{Page: t.page, Column: t.grid.Cells.Cursor, Row: t.selectedRow, Hidden: t.hiddenColumns, Offset: t.offset, Loading: t.loading, Error: t.err}
 		})
 	}
+	t.panel.runtime = t.boundRuntime
 	t.panel.chunkError = func(err error) { s.dataTransactionReadFailed(t, err) }
 	t.panel.chunkLoader = func() ChunkLoader {
 		if dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain {
@@ -251,6 +252,9 @@ func (s *State) inspectorPanel(t *Document) *Panel {
 			return func(ctx context.Context, profile int64, database, table, column string, ref contract.RowRef, offset int64, units int) (*contract.FieldChunk, error) {
 				return read(ctx, token, profile, database, table, column, ref, offset, units)
 			}
+		}
+		if t.boundRuntime != nil {
+			return t.boundRuntime.Chunk
 		}
 		if s.inspector.ChunkLoader != nil {
 			return s.inspector.ChunkLoader

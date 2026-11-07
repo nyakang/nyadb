@@ -19,8 +19,11 @@ type Session struct {
 	ctx             context.Context
 	cancel          context.CancelFunc
 	closed, revoked bool
+	closeDone       chan struct{}
+	closeErr        error
 	work            sync.WaitGroup
 	leases          map[*queryLease]bool
+	datas           map[*dataLease]bool
 }
 
 func OpenSession(ctx context.Context, p connections.Profile, secret string) (contract.Session, error) {
@@ -48,7 +51,7 @@ func OpenSession(ctx context.Context, p connections.Profile, secret string) (con
 		return nil, err
 	}
 	root, cancel := context.WithCancel(context.Background())
-	return &Session{profile: p, secret: secret, identity: identity, ctx: root, cancel: cancel, leases: map[*queryLease]bool{}}, nil
+	return &Session{profile: p, secret: secret, identity: identity, ctx: root, cancel: cancel, leases: map[*queryLease]bool{}, closeDone: make(chan struct{})}, nil
 }
 
 func (s *Session) ProfileID() int64   { return s.profile.ID }
@@ -131,8 +134,8 @@ func (s *Session) Close() error {
 	s.mu.Lock()
 	if s.closed {
 		s.mu.Unlock()
-		s.work.Wait()
-		return nil
+		<-s.closeDone
+		return s.closeErr
 	}
 	s.closed, s.secret = true, ""
 	s.cancel()
@@ -140,12 +143,22 @@ func (s *Session) Close() error {
 	for l := range s.leases {
 		leases = append(leases, l)
 	}
+	datas := make([]*dataLease, 0, len(s.datas))
+	for l := range s.datas {
+		datas = append(datas, l)
+	}
 	s.mu.Unlock()
 	for _, l := range leases {
 		l.Release()
 	}
+	var closeErr error
+	for _, l := range datas {
+		closeErr = errors.Join(closeErr, l.Close())
+	}
 	s.work.Wait()
-	return nil
+	s.closeErr = closeErr
+	close(s.closeDone)
+	return s.closeErr
 }
 func operationError(err error) error {
 	if errors.Is(err, ErrRetired) {
