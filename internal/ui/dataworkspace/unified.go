@@ -32,6 +32,25 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 	}
 	d.object = o
 	d.capabilities = c
+	parent := s.runtimeFor(d)
+	if parent.ReserveDocument != nil {
+		lease, err := parent.ReserveDocument(o)
+		if err == nil && lease == nil {
+			err = contract.ErrUnsupported
+		}
+		if err != nil {
+			if lease != nil {
+				_ = lease.Close()
+			}
+			d.err = err.Error()
+			d.boundRuntime = &Runtime{Capabilities: c}
+		} else {
+			d.runtimeLease = lease
+			bound := lease.Runtime()
+			bound.ReserveDocument = nil
+			d.boundRuntime = &bound
+		}
+	}
 	d.exportFormats = append([]string(nil), s.runtimeFor(d).ExportFormats...)
 	d.generation = s.sessionFor(d).Generation
 	d.filterModes = append([]string(nil), s.runtimeFor(d).FilterModes...)
@@ -111,6 +130,9 @@ func (s *State) sessionFor(d *Document) Session {
 	return s.session()
 }
 func (s *State) runtimeFor(d *Document) Runtime {
+	if d != nil && d.boundRuntime != nil {
+		return *d.boundRuntime
+	}
 	if d != nil && s.deps.RuntimeFor != nil {
 		return s.deps.RuntimeFor(d.profileID)
 	}

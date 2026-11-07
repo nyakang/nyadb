@@ -9,6 +9,24 @@ import (
 
 func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 	out := r
+	if r.ReserveDocument != nil {
+		out.ReserveDocument = func(o contract.ObjectRef) (contract.DataDocumentLease, error) {
+			if e := s.require(true, o.ProfileID); e != nil {
+				return nil, e
+			}
+			l, e := r.ReserveDocument(o)
+			if e != nil {
+				if l != nil {
+					_ = l.Close()
+				}
+				return nil, e
+			}
+			if l == nil {
+				return nil, contract.ErrUnsupported
+			}
+			return &dataDocumentLease{session: s, raw: l}, nil
+		}
+	}
 	out.ExportFormats = append([]string(nil), r.ExportFormats...)
 	out.Transactions = sessionTransactions(s, r.Transactions)
 	if r.Loader != nil {
@@ -159,6 +177,19 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 	}
 	return out
 }
+
+type dataDocumentLease struct {
+	session *session
+	raw     contract.DataDocumentLease
+}
+
+func (l *dataDocumentLease) Runtime() contract.DataRuntime {
+	r := l.raw.Runtime()
+	r.ReserveDocument = nil
+	r.Capabilities = contract.IntersectCapabilities(r.Capabilities, l.session.Capabilities())
+	return mSessionData(l.session, r)
+}
+func (l *dataDocumentLease) Close() error { return l.raw.Close() }
 
 func (s *session) dataObject(id int64, db, table string, o contract.ObjectRef) error {
 	if o.ProfileID == 0 {

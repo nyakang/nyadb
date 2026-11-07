@@ -44,6 +44,17 @@ type QueryProvider interface {
 	ReserveQuery(uint64) (QueryLease, error)
 }
 type DataProvider interface{ DataRuntime() DataRuntime }
+
+// DataDocumentLease owns server resources for one immutable data document.
+// Reservation performs no I/O; Close revokes requests and waits for their
+// executors before releasing resources, including unpublished read results.
+type DataDocumentLease interface {
+	Runtime() DataRuntime
+	Close() error
+}
+type DataDocumentsProvider interface {
+	ReserveDataDocument(ObjectRef) (DataDocumentLease, error)
+}
 type DataTransaction interface{ Close() }
 
 type DataTransactions struct {
@@ -60,6 +71,7 @@ type DataTransactions struct {
 // DataRuntime contains operation-bound functions. Workers capture this value
 // before starting; adapters must check the original session on every call.
 type DataRuntime struct {
+	ReserveDocument  func(ObjectRef) (DataDocumentLease, error)
 	ExportFormats    []string // nil preserves existing providers' format availability.
 	ImportDialect    string
 	Loader           func(context.Context, int64, string, string, int64, int) (*DataPage, error)
@@ -136,6 +148,9 @@ type DataTransactionsProvider interface{ DataTransactions() DataTransactions }
 // ComposeData resolves each feature independently into the workbench binding.
 func ComposeData(s Session) DataRuntime {
 	r := DataRuntime{Capabilities: s.Capabilities()}
+	if p, e := Require[DataDocumentsProvider](s); e == nil {
+		r.ReserveDocument = p.ReserveDataDocument
+	}
 	if p, e := Require[DataReadsProvider](s); e == nil {
 		v := p.DataReads()
 		r.Loader = v.Loader

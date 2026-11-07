@@ -59,6 +59,11 @@ func (s *State) Load(services ui.Services, t *Document, refresh bool) {
 		return
 	}
 	s.Cancel(t)
+	if refresh && t.runtimeLease != nil && !t.pagingRead {
+		t.offset = 0
+		t.after = nil
+		t.cursorHistory = nil
+	}
 	t.err = ""
 	t.readInfo.Canceled = false
 	t.loading = true
@@ -124,7 +129,10 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *Document, offset in
 	}
 	// Full unique-key results advance by a seek cursor; other tables retain
 	// the legacy OFFSET fallback and its explicit UI warning.
-	if offset == 0 {
+	if previous, ok := t.cursorHistory[offset]; ok && offset == 0 {
+		t.useKeyset = t.keysetEnabled()
+		t.after = previous
+	} else if offset == 0 {
 		t.useKeyset = t.keysetEnabled()
 		t.after = nil
 	} else if offset == t.offset+int64(t.limit) && t.page != nil &&
@@ -151,7 +159,9 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *Document, offset in
 	s.cancelMySQLChunk(t)
 	mysqlDataClearColumnSelection(t)
 	t.grid.Cells = ui.ColumnRange{}
+	t.pagingRead = true
 	s.Load(services, t, true)
+	t.pagingRead = false
 }
 func (s *State) consumePages() {
 	for _, t := range s.documents {
@@ -191,6 +201,12 @@ func (s *State) consumePages() {
 			}
 			clearDraftHistory(t)
 			t.page = result.page
+			if result.page.CurrentCursor != nil {
+				if t.cursorHistory == nil {
+					t.cursorHistory = map[int64]*contract.DataCursor{}
+				}
+				t.cursorHistory[t.offset] = cloneCursor(result.page.CurrentCursor)
+			}
 			t.readInfo.accept(result.page)
 			t.err = ""
 			t.columns = make([]ui.TableColumn, len(result.page.Columns))
@@ -242,6 +258,16 @@ func (s *State) Close(t *Document) {
 	s.inspector.Close(t.panel)
 	s.closeDataTransfer(t)
 	s.closeDataAnalysis(t)
+	if t.export.Cancel != nil {
+		t.export.Cancel()
+	}
+	if t.runtimeLease != nil {
+		if err := t.runtimeLease.Close(); err != nil && s.deps.Status != nil {
+			s.deps.Status(err.Error())
+		}
+		t.runtimeLease = nil
+		t.boundRuntime = nil
+	}
 	t.tools = mysqlDataToolsState{}
 	t.hostAction, t.hostProfile = "", ""
 	t.toolbar = mysqlDataToolbarState{}
@@ -251,9 +277,6 @@ func (s *State) Close(t *Document) {
 	t.closed = true
 	t.page, t.panel, t.columns = nil, nil, nil
 	t.edit = mysqlDataEditState{}
-	if t.export.Cancel != nil {
-		t.export.Cancel()
-	}
 	t.export = mysqlDataExportState{}
 	t.cursorHistory, t.after = nil, nil
 	t.hiddenColumns = nil

@@ -113,6 +113,7 @@ type DataSortRule struct {
 }
 
 type DataCursor struct {
+	Offset                                int64 // Original page boundary position, for server-owned snapshots.
 	RuleSignature                         string
 	Database, Table                       string
 	FilterColumn, FilterMode, FilterValue string
@@ -225,6 +226,7 @@ type DataPage struct {
 	StableOrder     bool // true when a complete non-null unique index orders rows.
 	KeysetAvailable bool
 	NextCursor      *DataCursor
+	CurrentCursor   *DataCursor // Optional original start boundary for repeat/back reads.
 	RowRefs         []*RowRef
 	RowSnapshots    []*RowSnapshot
 	// QuerySQL is the executed parameterized statement, without bound values.

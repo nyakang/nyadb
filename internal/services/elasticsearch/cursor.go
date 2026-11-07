@@ -29,6 +29,7 @@ type Page struct {
 	Documents []Snapshot
 	Total     int64
 	HasMore   bool
+	After     []json.RawMessage
 }
 
 func (c *Client) OpenCursor(ctx context.Context, index string, query json.RawMessage, pageSize int) (*Cursor, error) {
@@ -75,6 +76,41 @@ func validPIT(id string) bool {
 func (cursor *Cursor) Next(ctx context.Context) (Page, error) {
 	cursor.mu.Lock()
 	defer cursor.mu.Unlock()
+	if cursor.exhausted && !cursor.closed {
+		return Page{Total: cursor.total}, nil
+	}
+	page, err := cursor.readPage(ctx, cursor.after, cursor.pageSize)
+	if err == nil {
+		cursor.after = cloneBoundary(page.After)
+		cursor.exhausted = !page.HasMore
+	}
+	return page, err
+}
+
+// ReadAfter rereads an explicit original boundary without advancing the
+// sequential iterator. The server PIT ID is still updated after every response.
+func (cursor *Cursor) ReadAfter(ctx context.Context, after []json.RawMessage, limit int) (Page, error) {
+	cursor.mu.Lock()
+	defer cursor.mu.Unlock()
+	if limit < 1 || limit > 500 || len(after) > 1 {
+		return Page{}, ErrInvalid
+	}
+	if len(after) == 1 {
+		var n int64
+		if json.Unmarshal(after[0], &n) != nil || n < 0 {
+			return Page{}, ErrInvalid
+		}
+	}
+	return cursor.readPage(ctx, cloneBoundary(after), limit)
+}
+func cloneBoundary(after []json.RawMessage) []json.RawMessage {
+	out := make([]json.RawMessage, len(after))
+	for i, v := range after {
+		out[i] = bytes.Clone(v)
+	}
+	return out
+}
+func (cursor *Cursor) readPage(ctx context.Context, boundary []json.RawMessage, limit int) (Page, error) {
 	c := cursor.client
 	if cursor.closed {
 		return Page{}, ErrRetired
@@ -86,18 +122,15 @@ func (cursor *Cursor) Next(ctx context.Context) (Page, error) {
 	if err := c.available(); err != nil {
 		return Page{}, err
 	}
-	if cursor.exhausted {
-		return Page{Total: cursor.total}, nil
-	}
 	c.mu.Lock()
 	id, exists := c.pits[cursor]
 	c.mu.Unlock()
 	if !exists {
 		return Page{}, ErrRetired
 	}
-	body := map[string]any{"query": json.RawMessage(bytes.Clone(cursor.query)), "size": cursor.pageSize + 1, "track_total_hits": true, "seq_no_primary_term": true, "_source": true, "stored_fields": []string{"_routing"}, "sort": []map[string]string{{"_shard_doc": "asc"}}, "pit": map[string]string{"id": id, "keep_alive": "1m"}}
-	if len(cursor.after) != 0 {
-		body["search_after"] = cursor.after
+	body := map[string]any{"query": json.RawMessage(bytes.Clone(cursor.query)), "size": limit + 1, "track_total_hits": true, "seq_no_primary_term": true, "_source": true, "stored_fields": []string{"_routing"}, "sort": []map[string]string{{"_shard_doc": "asc"}}, "pit": map[string]string{"id": id, "keep_alive": "1m"}}
+	if len(boundary) != 0 {
+		body["search_after"] = boundary
 	}
 	encoded, _ := json.Marshal(body)
 	r, err := c.perform(ctx, Request{Method: "POST", Path: "/_search?allow_partial_search_results=false", Body: encoded})
@@ -139,16 +172,16 @@ func (cursor *Cursor) Next(ctx context.Context) (Page, error) {
 		c.pits[cursor] = native.PIT
 		c.mu.Unlock()
 	}
-	if !validPIT(native.PIT) || native.TimedOut == nil || *native.TimedOut || native.Shards.Total <= 0 || native.Shards.Failed != 0 || native.Shards.Successful != native.Shards.Total || native.Hits.Total.Value == nil || *native.Hits.Total.Value < 0 || native.Hits.Total.Relation != "eq" || len(native.Hits.Hits) > cursor.pageSize+1 {
+	if !validPIT(native.PIT) || native.TimedOut == nil || *native.TimedOut || native.Shards.Total <= 0 || native.Shards.Failed != 0 || native.Shards.Successful != native.Shards.Total || native.Hits.Total.Value == nil || *native.Hits.Total.Value < 0 || native.Hits.Total.Relation != "eq" || len(native.Hits.Hits) > limit+1 {
 		return Page{}, ErrProtocol
 	}
-	page := Page{Total: *native.Hits.Total.Value, HasMore: len(native.Hits.Hits) > cursor.pageSize}
+	page := Page{Total: *native.Hits.Total.Value, HasMore: len(native.Hits.Hits) > limit}
 	if cursor.started && cursor.total != page.Total {
 		return Page{}, ErrProtocol
 	}
 	var after []json.RawMessage
 	var previous int64 = -1
-	if len(cursor.after) != 0 && json.Unmarshal(cursor.after[0], &previous) != nil {
+	if len(boundary) != 0 && json.Unmarshal(boundary[0], &previous) != nil {
 		return Page{}, ErrProtocol
 	}
 	for i, hit := range native.Hits.Hits {
@@ -174,13 +207,12 @@ func (cursor *Cursor) Next(ctx context.Context) (Page, error) {
 		if e != nil {
 			return Page{}, e
 		}
-		if i < cursor.pageSize {
+		if i < limit {
 			page.Documents = append(page.Documents, snapshot)
 			after = []json.RawMessage{bytes.Clone(hit.Sort[0])}
 		}
 	}
-	cursor.after = after
-	cursor.exhausted = !page.HasMore
+	page.After = after
 	cursor.total = page.Total
 	cursor.started = true
 	return page, nil

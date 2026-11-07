@@ -224,6 +224,7 @@ func TestElasticsearchNativePITPagingPreservesSnapshotAndClosesOriginalResources
 	if err != nil || page.Total != 16 || len(page.Documents) != 3 || !page.HasMore {
 		t.Fatal("native first PIT page failed", err)
 	}
+	first := page
 	removed := page.Documents[0]
 	if removed.Identity.Routing == "" {
 		t.Fatal("search lost actual routing metadata")
@@ -235,6 +236,28 @@ func TestElasticsearchNativePITPagingPreservesSnapshotAndClosesOriginalResources
 		t.Fatal(err)
 	}
 	nativeRun(t, admin, ctx, "POST", "/"+index+"/_refresh", nil)
+	second, err := cursor.ReadAfter(ctx, first.After, 3)
+	if err != nil || second.Total != 16 || len(second.Documents) != 3 {
+		t.Fatal("explicit native boundary failed", err)
+	}
+	repeated, err := cursor.ReadAfter(ctx, first.After, 3)
+	if err != nil || len(repeated.Documents) != len(second.Documents) {
+		t.Fatal("repeating native page failed", err)
+	}
+	for i := range repeated.Documents {
+		if repeated.Documents[i].Identity != second.Documents[i].Identity || !bytes.Equal(repeated.Documents[i].Source, second.Documents[i].Source) {
+			t.Fatal("repeat changed original snapshot")
+		}
+	}
+	back, err := cursor.ReadAfter(ctx, nil, 3)
+	if err != nil || len(back.Documents) != len(first.Documents) {
+		t.Fatal("return to native first page failed", err)
+	}
+	for i := range back.Documents {
+		if back.Documents[i].Identity != first.Documents[i].Identity || !bytes.Equal(back.Documents[i].Source, first.Documents[i].Source) {
+			t.Fatal("return to first page followed live index changes")
+		}
+	}
 	for {
 		for _, document := range page.Documents {
 			if seen[document.Identity.ID] || document.Identity.ID == "late" || document.Identity.Routing == "" {
