@@ -702,3 +702,60 @@ Linux amd64、Windows amd64、macOS arm64 的 CGO=0 编译通过。
 结果校正为保留身份。几何默认值的真实私有 Apply 曾在值证明中因 SQL
 语言被拒绝，修正为只接受已核验的原生转发器，最终混合提交验证通过。
 本阶段 fixture 的容器、证书与私有凭据在验证后由所属脚本清理。
+
+## 隐式类型与数组元素闭包阶段
+
+声明前的原生预检原先沿隐式转换检查目标 namespace 和转换函数，但没有
+将所有可达目标交给字段类型检查。即使表单只声明 text，openGauss 6.0.0
+的隐式转换仍可到达 int16；其输入、输出和 typmod 等回调此前未全部检查。
+
+- 将隐式 cast 边和原生数组的 typelem 边合并，计算从声明、表达式操作数
+  和返回值出发的固定闭包。每个可达普通类型都检查原生 namespace、类型
+  类别、输入/输出、接收/发送、typmod 输入/输出与分析回调；输入和输出
+  不能缺失。数组元素还会引入自己的转换边，不止检查第一层数组。
+- 所有可达隐式转换函数都进入相同的回调验证缓存；原生 SQL cast 仍逐项
+  核对固定目录、函数体和嵌套绑定，不由 low OID 或函数语言单独授权。
+  原有 4096 个类型和 16384 条转换的限制保留。
+- 原生 anyset 只作为固定的隐式转换签名处理，核对完整已声明的类型边界
+  和输入/输出回调。它没有获得字段声明权限，表单或直接请求仍不能借此
+  创建 SET/任意伪类型字段。
+
+真实 verify-full TLS、openGauss 6.0.0 PG 模式的回归先证明旧实现的七类
+漏洞：将未写入声明的 int16 输入、输出、接收、发送、typmod 输入、typmod
+输出和分析回调替换为本轮所属用户函数后，旧预检全部错误通过，见
+`build/opengauss/table-design/implicit-types-before-fix.log`。修正后的预检
+与独立 CREATE 入口均拒绝替换，副作用序列未调用，恢复后的完整类型
+目录记录与原始相等，独立声明回滚后不存在。最终回归还包含输入/输出
+回调被清零的拒绝。
+
+新增原生数组用例通过私有 Apply 创建 integer[]、numeric(40,20)[]、text[]，
+保留原生数组类型与 typmod；随后实际写入/读取确认
+`9007199254740993.12345678901234567890`、中文、NULL 元素和空字符串。
+同一请求增加 anyset 字段仍被拒绝。
+
+闭包预检仍不是并发锁。补充的
+[functioncmds.cpp](https://github.com/opengauss-mirror/openGauss-server/blob/6.0.0/src/gausskernel/optimizer/commands/functioncmds.cpp)
+和 [pg_proc.cpp](https://github.com/opengauss-mirror/openGauss-server/blob/6.0.0/src/common/backend/catalog/pg_proc.cpp)
+源码分别记录 SHA256
+`9153ac1085c47a492b6885134b162ec24e5e4a0c59575c3b7ac569b889a85714` 与
+`30d8b556ff409cc0c4f78559ad3662fbf972f54b83eedc3581e3ac9ce1b7a76b`。
+ProcedureCreate 中用于替换特定用户 C 库的对象锁不能推断为所有原生
+回调或直接系统目录更新的屏障。源码仅保留在忽略研究目录，完整实际
+绑定、目录并发、故障与真实工作台验收继续待完成；公开 CanApply/Apply
+与 DesignTables 仍关闭。
+
+验证终结结果保留在 `build/opengauss/table-design/implicit-*.log`，每个
+检查对应 `.result.json` 的命令、退出码和耗时：
+
+- 闭包主体的 15 组真实 TLS race 回归通过（engines 455.762 秒），见
+  `implicit-native-race.log`：包括行存/列存/分区、新表、完整值/默认值/
+  原生 SQL 转换、九类外部引用及仅 REFERENCES 权限、取消与提交回执丢失。
+- 输入/输出缺失保护补充后，最终九类类型回调替换/缺失拒绝与原生数组
+  用例再次共同通过 race（32.616 秒），见 `implicit-final-native-race.log`。
+- 最终 CGO=0 全仓库普通测试、Go vet、MyGo vet、i18n check 通过；
+  schemaddl/engines 的普通包 race 通过，没有报告数据竞争。
+- Linux amd64、Windows amd64 和 macOS arm64 的 CGO=0 编译通过，
+  不将编译描述为三平台原生执行。
+
+本轮所属容器、证书和私有凭据在验证后由 fixture 创建脚本清理，并核对
+容器与私有目录均不存在；汇总见 `implicit-verification-summary.json`。

@@ -89,7 +89,7 @@ func openGaussCheckDesignDeclaration(ctx context.Context, c *sql.Conn, desired s
 		err := c.QueryRowContext(ctx, `SELECT n.nspname,t.typtype::text,t.typelem::bigint,t.typinput::bigint,t.typoutput::bigint,
  t.typreceive::bigint,t.typsend::bigint,t.typmodin::bigint,t.typmodout::bigint,t.typanalyze::bigint
  FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace WHERE t.oid=$1::oid`, oid).Scan(&namespace, &kind, &element, &routines[0], &routines[1], &routines[2], &routines[3], &routines[4], &routines[5], &routines[6])
-		if err != nil || namespace != "pg_catalog" || kind != "b" {
+		if err != nil || namespace != "pg_catalog" || kind != "b" || routines[0] == 0 || routines[1] == 0 {
 			return errors.Join(errOpenGaussDesignDeclaration, err)
 		}
 		checkedTypes[oid] = true
@@ -204,7 +204,7 @@ func openGaussCheckDesignDeclaration(ctx context.Context, c *sql.Conn, desired s
 	if err = openGaussCheckDesignOperators(ctx, c, operators, checkType); err != nil {
 		return err
 	}
-	if err = openGaussCheckDesignCastClosure(ctx, c, checkedTypes, castTypes, checkRoutine); err != nil {
+	if err = openGaussCheckDesignCastClosure(ctx, c, checkedTypes, castTypes, checkType, checkRoutine); err != nil {
 		return fmt.Errorf("native cast closure: %w", err)
 	}
 	if err = openGaussCheckDesignDispatch(ctx, c, scope, schema, checkedTypes); err != nil {

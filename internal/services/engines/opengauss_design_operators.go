@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -136,7 +135,7 @@ func openGaussCheckDesignOperatorRoutine(ctx context.Context, c *sql.Conn, name 
 // was absent from the written declaration. SQL casts must match known native
 // forwarders and their nested coercions. This preflight is not a concurrent
 // callback binding barrier; actual dispatch still needs independent proof.
-func openGaussCheckDesignCastClosure(ctx context.Context, c *sql.Conn, operands, declarations map[uint64]bool, checkRoutine func(uint64) error) error {
+func openGaussCheckDesignCastClosure(ctx context.Context, c *sql.Conn, operands, declarations map[uint64]bool, checkType, checkRoutine func(uint64) error) error {
 	var declared []string
 	for oid := range declarations {
 		declared = append(declared, strconv.FormatUint(oid, 10))
@@ -195,15 +194,16 @@ func openGaussCheckDesignCastClosure(ctx context.Context, c *sql.Conn, operands,
 	}
 	var count int
 	var unsafe bool
-	var sqlCasts string
-	var knownSQLIDs []string
-	for oid := range openGaussNativeSQLCasts {
-		knownSQLIDs = append(knownSQLIDs, strconv.FormatUint(oid, 10))
-	}
-	sort.Strings(knownSQLIDs)
-	err := c.QueryRowContext(ctx, `WITH RECURSIVE reachable(oid) AS (
+	var implicitTypes, implicitCasts string
+	// A cast destination and an array element can introduce another implicit
+	// cast source. Compute their joint fixed point before checking callbacks;
+	// the written declaration alone is not the complete native type scope.
+	err := c.QueryRowContext(ctx, `WITH RECURSIVE edges(source,target) AS (
+ SELECT castsource,casttarget FROM pg_cast WHERE castcontext='i'
+ UNION SELECT oid,typelem FROM pg_type WHERE typelem<>0
+ ), reachable(oid) AS (
  SELECT unnest($1::oid[])
- UNION SELECT ca.casttarget FROM pg_cast ca JOIN reachable r ON r.oid=ca.castsource WHERE ca.castcontext='i'
+ UNION SELECT e.target FROM edges e JOIN reachable r ON r.oid=e.source
  ) SELECT (SELECT count(*) FROM reachable), EXISTS(
  SELECT 1 FROM pg_cast ca JOIN reachable r ON r.oid=ca.castsource
  LEFT JOIN pg_type t ON t.oid=ca.casttarget LEFT JOIN pg_namespace tn ON tn.oid=t.typnamespace
@@ -212,19 +212,60 @@ func openGaussCheckDesignCastClosure(ctx context.Context, c *sql.Conn, operands,
  OR ca.castmethod NOT IN('b','i','f') OR ca.castmethod<>'f' AND ca.castfunc<>0
  OR ca.castmethod='f' AND (p.oid IS NULL OR p.oid>=16384 OR pn.nspname<>'pg_catalog' OR p.prolang NOT IN(12,13,14)
  OR p.provolatile NOT IN('i','s') OR p.proisagg OR p.proiswindow OR p.proretset OR p.prosecdef OR p.proconfig IS NOT NULL))),
- COALESCE((SELECT json_agg(json_build_object('oid',ca.oid::bigint,'source',ca.castsource::bigint,'target',ca.casttarget::bigint,'routine',ca.castfunc::bigint))::text
- FROM pg_cast ca JOIN reachable r ON r.oid=ca.castsource JOIN pg_proc p ON p.oid=ca.castfunc WHERE ca.castcontext='i' AND (p.prolang=14 OR ca.oid=ANY($2::oid[]))),'[]')`, "{"+strings.Join(inputs, ",")+"}", "{"+strings.Join(knownSQLIDs, ",")+"}").Scan(&count, &unsafe, &sqlCasts)
+ COALESCE((SELECT json_agg(oid::bigint)::text FROM reachable),'[]'),
+ COALESCE((SELECT json_agg(json_build_object('oid',ca.oid::bigint,'source',ca.castsource::bigint,'target',ca.casttarget::bigint,
+ 'routine',ca.castfunc::bigint,'sql',COALESCE(p.prolang=14,false)))::text
+ FROM pg_cast ca JOIN reachable r ON r.oid=ca.castsource LEFT JOIN pg_proc p ON p.oid=ca.castfunc WHERE ca.castcontext='i'),'[]')`, "{"+strings.Join(inputs, ",")+"}").Scan(&count, &unsafe, &implicitTypes, &implicitCasts)
 	if err != nil || unsafe || count > 4096 {
 		return errors.Join(errOpenGaussDesignDeclaration, err)
 	}
+	var reachable []uint64
+	if json.Unmarshal([]byte(implicitTypes), &reachable) != nil || len(reachable) != count {
+		return errOpenGaussDesignDeclaration
+	}
+	for _, oid := range reachable {
+		if err = openGaussCheckDesignImplicitType(ctx, c, oid, checkType, checkRoutine); err != nil {
+			return fmt.Errorf("native implicit type %d: %w", oid, err)
+		}
+	}
 	var native []struct {
 		OID, Source, Target, Routine uint64
+		SQL                          bool
 	}
-	if json.Unmarshal([]byte(sqlCasts), &native) != nil || len(native) > 16384 {
+	if json.Unmarshal([]byte(implicitCasts), &native) != nil || len(native) > 16384 {
 		return errOpenGaussDesignDeclaration
 	}
 	for _, cast := range native {
-		if err := openGaussCheckNativeSQLCast(ctx, c, cast.OID, cast.Source, cast.Target, cast.Routine); err != nil {
+		_, knownSQL := openGaussNativeSQLCasts[cast.OID]
+		if cast.SQL || knownSQL {
+			err = openGaussCheckNativeSQLCast(ctx, c, cast.OID, cast.Source, cast.Target, cast.Routine)
+		} else {
+			err = checkRoutine(cast.Routine)
+		}
+		if err != nil {
+			return fmt.Errorf("native implicit cast %d routine %d: %w", cast.OID, cast.Routine, err)
+		}
+	}
+	return ctx.Err()
+}
+
+// anyset is a fixed native polymorphic cast signature, rather than a field
+// declaration. Checking it here must not permit storing SET or arbitrary
+// pseudo types. Its input/output callbacks still participate in verification.
+func openGaussCheckDesignImplicitType(ctx context.Context, c *sql.Conn, oid uint64, checkType, checkRoutine func(uint64) error) error {
+	if oid != 3272 {
+		return checkType(oid)
+	}
+	var native bool
+	err := c.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
+ WHERE t.oid=3272 AND n.nspname='pg_catalog' AND t.typname='anyset' AND t.typtype='s' AND t.typelem=0 AND t.typarray=0
+ AND t.typinput=3295 AND t.typoutput=3296 AND t.typreceive=0 AND t.typsend=0
+ AND t.typmodin=0 AND t.typmodout=0 AND t.typanalyze=0)`).Scan(&native)
+	if err != nil || !native {
+		return errors.Join(errOpenGaussDesignDeclaration, err)
+	}
+	for _, routine := range []uint64{3295, 3296} {
+		if err = checkRoutine(routine); err != nil {
 			return err
 		}
 	}
