@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/services/dameng/dpiworker"
 )
 
 func nativeFixture(t *testing.T) (connections.DamengConfig, string) {
@@ -66,4 +67,11 @@ func nativeSuffix(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return hex.EncodeToString(b[:])
+}
+
+func TestMain(m *testing.M) {
+	if dpiworker.Dispatch() {
+		return
+	}
+	os.Exit(m.Run())
 }

@@ -133,7 +133,7 @@ EXIT;
             if audit_dpi:
                 environment = dict(os.environ, GOWORK="off", CGO_ENABLED="1" if race else "0", NYADB_DAMENG_DPI_IT="1", NYADB_DAMENG_DPI_CONFIG=str(private), NYADB_DAMENG_DPI_LIBRARY=str(Path(dpi_library).resolve()))
                 with (output / ("dpi-race.log" if race else "dpi-audit.log")).open("w") as log:
-                    subprocess.run(["go", "test"] + (["-race"] if race else []) + ["-count=1", "-timeout=180s", "-v", "./internal/services/dameng", "./internal/services/dameng/dpi"], cwd=ROOT, env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
+                    subprocess.run(["go", "test"] + (["-race"] if race else []) + ["-count=1", "-timeout=180s", "-v", "./internal/services/dameng", "./internal/services/dameng/dpi", "./internal/services/dameng/dpiworker"], cwd=ROOT, env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
                 print("DM8 " + ("verified server TLS" if tls else "loopback") + " DPI verification passed; workbench remains unregistered", flush=True)
             if hold:
                 while True:

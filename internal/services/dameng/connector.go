@@ -7,6 +7,7 @@ import (
 
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/dameng/dpi"
+	"github.com/nyakang/nyadb/internal/services/dameng/dpiworker"
 )
 
 func NewConnector(c connections.DamengConfig, password string) (driver.Connector, error) {
@@ -15,7 +16,7 @@ func NewConnector(c connections.DamengConfig, password string) (driver.Connector
 		return nil, err
 	}
 	a := c.Options
-	return dpi.NewConnector(dpi.Options{
+	return dpiworker.NewConnector(dpi.Options{
 		LibraryFile: a.LibraryFile, Host: c.Host, Port: c.Port, Username: c.Username,
 		Schema: a.DefaultSchema, ConnectTimeoutSeconds: a.ConnectTimeoutSeconds,
 		OperationTimeoutSeconds: a.OperationTimeoutSeconds,

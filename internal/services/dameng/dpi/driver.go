@@ -44,18 +44,18 @@ type connector struct {
 	tls      *tls.Config
 }
 
-func NewConnector(o Options, password string) (driver.Connector, error) {
+func normalizeOptions(o Options, password string) (Options, *tls.Config, error) {
 	if o.Host == "" || o.Username == "" || strings.ContainsAny(o.Host, "@/\\?#[] \t\r\n\x00") || strings.Contains(o.Host, ":") && net.ParseIP(o.Host) == nil || strings.ContainsRune(o.Username+o.Schema+password, 0) {
-		return nil, errors.New("invalid explicit DM8 endpoint or identity")
+		return Options{}, nil, errors.New("invalid explicit DM8 endpoint or identity")
 	}
 	if address := net.ParseIP(o.Host); o.TLS == nil && (address == nil || !address.IsLoopback()) {
-		return nil, errors.New("DM8 DPI verification currently requires an explicit loopback address")
+		return Options{}, nil, errors.New("DM8 DPI verification currently requires an explicit loopback address")
 	}
 	if len(o.Username) > 128 || len(o.Schema) > 128 || len(password) > 512 {
-		return nil, errors.New("DM8 native identity exceeds its explicit bounds")
+		return Options{}, nil, errors.New("DM8 native identity exceeds its explicit bounds")
 	}
 	if o.Schema != "" && !validInitialSchema(o.Schema) {
-		return nil, errors.New("invalid bounded DM8 initial schema")
+		return Options{}, nil, errors.New("invalid bounded DM8 initial schema")
 	}
 	if o.Port == 0 {
 		o.Port = 5236
@@ -67,7 +67,7 @@ func NewConnector(o Options, password string) (driver.Connector, error) {
 		o.OperationTimeoutSeconds = 10
 	}
 	if o.ConnectTimeoutSeconds < 1 || o.ConnectTimeoutSeconds > 120 || o.OperationTimeoutSeconds < 1 || o.OperationTimeoutSeconds > 120 {
-		return nil, errors.New("invalid bounded DM8 native timeout")
+		return Options{}, nil, errors.New("invalid bounded DM8 native timeout")
 	}
 	var secure *tls.Config
 	if o.TLS != nil {
@@ -75,9 +75,23 @@ func NewConnector(o Options, password string) (driver.Connector, error) {
 		var err error
 		secure, normalized, err = remoteTLS(o.Host, *o.TLS)
 		if err != nil {
-			return nil, err
+			return Options{}, nil, err
 		}
 		o.TLS = &normalized
+	}
+	return o, secure, nil
+}
+
+// ValidateOptions performs all public configuration checks without dlopen.
+func ValidateOptions(o Options, password string) (Options, error) {
+	o, _, err := normalizeOptions(o, password)
+	return o, err
+}
+
+func NewConnector(o Options, password string) (driver.Connector, error) {
+	o, secure, err := normalizeOptions(o, password)
+	if err != nil {
+		return nil, err
 	}
 	a, err := load(o.LibraryFile)
 	if err != nil {
