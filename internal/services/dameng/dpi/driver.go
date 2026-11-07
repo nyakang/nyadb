@@ -467,20 +467,39 @@ func (t *transaction) Rollback() error {
 	defer cancel()
 	return t.end(ctx, "ROLLBACK")
 }
-func (t *transaction) end(ctx context.Context, query string) error {
+func (t *transaction) end(ctx context.Context, query string) (err error) {
+	if err = ctx.Err(); err != nil {
+		return err
+	}
 	if _, err := t.c.ExecContext(ctx, query, nil); err != nil {
+		if query == "COMMIT" {
+			return errors.Join(err, ErrOutcomeUnknown)
+		}
 		return err
 	}
 	t.c.mu.Lock()
 	defer t.c.mu.Unlock()
+	if query == "COMMIT" {
+		defer func() {
+			if err != nil {
+				err = errors.Join(err, ErrOutcomeUnknown)
+			}
+		}()
+	}
 	if t.c.h == 0 {
 		return ErrSessionClosed
 	}
-	t.c.inTransaction = false
+	if err = ctx.Err(); err != nil {
+		t.c.retireLocked()
+		return err
+	}
+	_, finish := t.c.operationLocked(ctx, query == "COMMIT")
+	defer finish(&err)
 	if !succeeded(t.c.a.setCon(t.c.h, 102, 1, 0)) {
 		t.c.retireLocked()
 		return ErrSessionClosed
 	}
+	t.c.inTransaction = false
 	return nil
 }
 

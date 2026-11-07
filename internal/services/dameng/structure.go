@@ -58,6 +58,11 @@ func structureAt(ctx context.Context, q metadataQueryer, o contract.ObjectRef) (
 		if err = rows.Scan(&c.Name, &c.DataType, &c.Position, &nullable, &def, &length, &precision, &scale, &chars, &comment); err != nil {
 			break
 		}
+		// Native ALL_TAB_COLS names the TIMESTAMP WITH TIME ZONE synonym
+		// DATETIME WITH TIME ZONE; DPI result metadata uses TIMESTAMP.
+		if c.DataType == "DATETIME WITH TIME ZONE" {
+			c.DataType = "TIMESTAMP WITH TIME ZONE"
+		}
 		if !validName(c.Name) || c.Position != int64(len(t.Columns)) || len(t.Columns) >= 4096 || nullable != "Y" && nullable != "N" {
 			err = contract.ErrUnsupported
 			break
@@ -178,5 +183,13 @@ func structureAt(ctx context.Context, q metadataQueryer, o contract.ObjectRef) (
 	if err != nil {
 		return nil, err
 	}
-	return t, nil // Data editing is enabled only by the subsequent native data adapter.
+	if o.Kind == "table" {
+		_, e := editableTableAt(ctx, q, t)
+		if e == nil {
+			t.Editable = true
+		} else if !errors.Is(e, contract.ErrDataReadOnly) && !errors.Is(e, contract.ErrUnsupported) {
+			return nil, e
+		}
+	}
+	return t, nil
 }

@@ -22,8 +22,8 @@ func TestNativeDamengCompleteRowsPreserveValuesAndSnapshotOwnership(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.RowReader == nil || r.Saver != nil || r.Capabilities.EditableTables {
-		t.Fatal("complete row reads changed unimplemented edit capability")
+	if r.RowReader == nil || r.Saver == nil || r.Verify == nil || !r.Capabilities.EditableTables {
+		t.Fatal("complete row reads lost verified edit capability")
 	}
 	for i, ref := range page.RowRefs {
 		row, err := r.RowReader(ctx, s.ProfileID(), o.Schema, o.Name, *ref)

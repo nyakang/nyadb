@@ -67,7 +67,7 @@ func (s *Session) ProfileID() int64   { return s.profile.ID }
 func (s *Session) Generation() uint64 { return 1 }
 func (s *Session) Catalog() string    { return s.profile.Database }
 func (s *Session) Capabilities() contract.Capabilities {
-	return contract.Capabilities{Query: true, Metadata: true, Schemas: true, Count: true, Keyset: true, FieldChunks: true}
+	return contract.Capabilities{Query: true, Metadata: true, Schemas: true, Count: true, Keyset: true, FieldChunks: true, EditableTables: true}
 }
 func (s *Session) Alive() bool { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed }
 func (s *Session) request(ctx context.Context) (context.Context, context.CancelFunc, error) {

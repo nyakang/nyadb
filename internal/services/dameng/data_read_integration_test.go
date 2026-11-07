@@ -78,15 +78,15 @@ func TestNativeDamengDataReadTypedPagingAndBoundedFields(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 	r := contract.ComposeData(s)
-	if r.AdvancedLoader == nil || r.Count == nil || r.Chunk == nil || r.Saver != nil || r.RowReader == nil || r.Transactions.Begin != nil || r.Importer != nil || r.Exporter != nil || r.Capabilities.EditableTables {
-		t.Fatal("native read foundation advertised unimplemented writes")
+	if r.AdvancedLoader == nil || r.Count == nil || r.Chunk == nil || r.Saver == nil || r.Verify == nil || r.RowReader == nil || r.Transactions.Begin != nil || r.Importer != nil || r.Exporter != nil || !r.Capabilities.EditableTables {
+		t.Fatal("native data foundation lost verified edits or advertised unimplemented transfers")
 	}
 	opt := contract.DataOptions{Object: o, Limit: 2, UseKeyset: true, Sorts: []contract.DataSortRule{{Column: "GRP", Descending: true}}}
 	p, err := r.AdvancedLoader(ctx, s.ProfileID(), o.Schema, o.Name, opt)
 	if err != nil {
 		t.Fatal("native bounded page failed", err)
 	}
-	if p.Object != o || len(p.Rows) != 2 || !p.HasMore || !p.StableOrder || !p.KeysetAvailable || p.NextCursor == nil || p.Editable == nil || *p.Editable || len(p.ColumnMetadata) != 11 {
+	if p.Object != o || len(p.Rows) != 2 || !p.HasMore || !p.StableOrder || !p.KeysetAvailable || p.NextCursor == nil || p.Editable == nil || !*p.Editable || len(p.ColumnMetadata) != 11 {
 		t.Fatal("native read page lost identity/order/bounds", p)
 	}
 	row := p.Rows[0]
@@ -389,6 +389,17 @@ func TestNativeDamengDataReadOrdinaryGrantsAndExactCompositeKeys(t *testing.T) {
 	}
 	if row, e := ordinary.DataReads().RowReader(ctx, ordinary.ProfileID(), o.Schema, o.Name, *page.RowRefs[0]); e != nil || len(row.Values["B"].Bytes) != 5600 {
 		t.Fatal("ordinary SELECT grant did not support complete SHARE-locked reads", e)
+	}
+	trigger := quote(o.Schema) + "." + quote("LOBGuard")
+	if _, err = admin.ExecContext(ctx, "CREATE TRIGGER "+trigger+" BEFORE UPDATE ON "+qualified(o)+" FOR EACH ROW BEGIN NULL; END;"); err != nil {
+		t.Fatal(err)
+	}
+	guarded, err := ordinary.DataReads().AdvancedLoader(ctx, ordinary.ProfileID(), o.Schema, o.Name, contract.DataOptions{Limit: 1})
+	if err != nil || guarded.Editable == nil || *guarded.Editable {
+		t.Fatal("ordinary granted account missed the native LOB trigger guard", err, guarded)
+	}
+	if _, err = admin.ExecContext(ctx, "DROP TRIGGER "+trigger); err != nil {
+		t.Fatal(err)
 	}
 	if _, err = admin.ExecContext(ctx, "CREATE TABLE "+quote(o.Schema)+`."UnGranted"(ID INT PRIMARY KEY,T VARCHAR(32))`); err != nil {
 		t.Fatal(err)

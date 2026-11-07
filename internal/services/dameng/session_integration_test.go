@@ -51,7 +51,7 @@ func TestNativeDamengSessionQualifiedMetadataAndSQLPhysicalLeases(t *testing.T) 
 	}
 	c.Options.DefaultSchema, c.Options.MaxConnections, c.Options.SQLMaxConnections = schema, 1, 2
 	s := fixtureSession(t, c, password)
-	if caps := s.Capabilities(); !caps.Query || !caps.Metadata || !caps.Schemas || caps.EditableTables || caps.Import || caps.DesignTables || caps.Accounts || caps.Backup || caps.Restore {
+	if caps := s.Capabilities(); !caps.Query || !caps.Metadata || !caps.Schemas || !caps.EditableTables || caps.Import || caps.DesignTables || caps.Accounts || caps.Backup || caps.Restore {
 		t.Fatal("native foundation advertised an unimplemented feature")
 	}
 	ns, err := s.Namespaces(ctx)
@@ -75,7 +75,7 @@ func TestNativeDamengSessionQualifiedMetadataAndSQLPhysicalLeases(t *testing.T) 
 		}
 	}
 	metadata, err := s.TableMetadata(ctx, s.Namespace(schema).Object("table", "Data"))
-	if err != nil || len(metadata.Columns) != 7 || metadata.Editable || !strings.Contains(metadata.Definition, "IDENTITY") || len(metadata.ForeignKeys) != 1 || metadata.Comment != " 中文 table " {
+	if err != nil || len(metadata.Columns) != 7 || !metadata.Editable || !strings.Contains(metadata.Definition, "IDENTITY") || len(metadata.ForeignKeys) != 1 || metadata.Comment != " 中文 table " {
 		t.Fatal("native structure or feature boundary failed", err, metadata)
 	}
 	cols := make(map[string]contract.StructureColumn)

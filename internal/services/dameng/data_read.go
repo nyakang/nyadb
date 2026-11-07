@@ -113,7 +113,7 @@ func dataProjection(t *contract.TableStructure, units int) (string, error) {
 		case "DECIMAL", "NUMERIC", "NUMBER", "DEC", "INT", "INTEGER", "BIGINT", "SMALLINT", "TINYINT", "BIT", "BOOLEAN", "REAL", "DOUBLE", "FLOAT", "DATE", "TIME", "TIMESTAMP", "TIME WITH TIME ZONE", "TIMESTAMP WITH TIME ZONE":
 			expr = name
 		default:
-			return "", contract.ErrUnsupported
+			return "", fmt.Errorf("DM8 column %s type %s: %w", c.Name, c.DataType, contract.ErrUnsupported)
 		}
 		if length != "" {
 			empty := name
@@ -126,7 +126,9 @@ func dataProjection(t *contract.TableStructure, units int) (string, error) {
 			case "BLOB", "IMAGE":
 				empty = "EMPTY_BLOB()"
 			}
-			expr = "CASE WHEN " + length + "=0 THEN " + empty + " ELSE " + expr + " END"
+			// Native UTL_RAW.SUBSTR(NULL,...) rejects -20177. Guard the actual
+			// column before invoking it; NULL and empty remain distinct.
+			expr = "CASE WHEN " + name + " IS NULL THEN NULL WHEN " + length + "=0 THEN " + empty + " ELSE " + expr + " END"
 		}
 		cols[i] = expr + " AS " + name
 	}
@@ -273,7 +275,7 @@ func (s *Session) loadData(ctx context.Context, id int64, schema, name string, o
 		if e = errors.Join(e, rows.Err(), rows.Close()); e != nil {
 			return e
 		}
-		editable := false
+		editable := t.Editable
 		out = &contract.DataPage{Object: object, Editable: &editable, Database: schema, Table: name, Offset: o.Offset, Limit: o.Limit, HasMore: len(values) > o.Limit, StableOrder: stable, KeysetAvailable: stable && o.UseKeyset, QuerySQL: text, ColumnMetadata: t.Columns}
 		for _, c := range t.Columns {
 			out.Columns = append(out.Columns, c.Name)
@@ -307,6 +309,15 @@ func (s *Session) loadData(ctx context.Context, id int64, schema, name string, o
 				}
 			}
 			out.RowRefs = append(out.RowRefs, ref)
+			var snapshot *contract.RowSnapshot
+			complete := true
+			for _, c := range row {
+				complete = complete && !c.Truncated
+			}
+			if editable && ref != nil && complete {
+				snapshot = s.fullSnapshot(t, key, row, identity)
+			}
+			out.RowSnapshots = append(out.RowSnapshots, snapshot)
 		}
 		if out.KeysetAvailable && len(values) > 0 {
 			cursor := &contract.DataCursor{RuleSignature: signature, Database: schema, Table: name}
