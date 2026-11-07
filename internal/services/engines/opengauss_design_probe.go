@@ -21,12 +21,14 @@ type openGaussDesignBaseline struct {
 	References     map[schemaddl.PostgreSQLTableReference]schemaddl.OpenGaussReferenceProbe
 	Incoming       map[uint64]openGaussIncomingEvidence
 	IncomingProbes map[uint64]openGaussIncomingProbe
+	DefaultRewrite *openGaussDefaultRewriteProof
 }
 
 // An independent, empty declaration asks the native parser to normalize
-// aliases, generated expressions and constraints. It never executes the ALTER
-// plan or inserts rows. The entire probe and its private sequences/indexes are
-// rolled back before the actual original table may be changed.
+// aliases, generated expressions and constraints. Optional ADD COLUMN probes
+// on that private empty table establish default-triggered heap rewrites. It
+// never executes the requested ALTER plan or inserts rows. All private objects
+// are rolled back before the actual original table may be changed.
 func openGaussCanonicalDesign(ctx context.Context, c *sql.Conn, r contract.SchemaDesignRequest) (out openGaussDesignBaseline, err error) {
 	r = r.Clone()
 	target := r.Original.Target
@@ -324,5 +326,9 @@ func openGaussCanonicalDesign(ctx context.Context, c *sql.Conn, r contract.Schem
 		}
 	}
 	out = openGaussDesignBaseline{Table: canonical, Catalog: snapshot.Schema.OpenGauss.Clone(), Names: names, References: referenceProbes, Incoming: incoming, IncomingProbes: incomingProbes}
+	out.DefaultRewrite, err = openGaussCaptureDefaultRewrite(ctx, c, r.Original, r.Desired, out.Catalog)
+	if err != nil {
+		return openGaussDesignBaseline{}, err
+	}
 	return out, nil
 }
