@@ -48,6 +48,8 @@ This image is a historical headless UI preview. For recent native-window verific
 
 Grid editing requires a reliable row identity; views, generated fields, and unsupported objects remain read-only. Availability is checked against the engine, adapter, server permissions, and selected object. Unsupported operations are disabled or rejected explicitly.
 
-GaussDB native transport has been validated against a disposable GaussDB Kernel 503.1.0 container; workbench integration remains in development. See the [transport foundation report](docs/gaussdb-native-transport-2026-11-07.md).
+GaussDB core workbench support has been validated against a disposable native GaussDB Kernel 503.1.0 container. See the [core report](docs/gaussdb-2026-11-07.md).
+
+KingbaseES native transport has been validated against a disposable KingbaseES V8R6 PG-mode container, including SCRAM-SHA-256, TLS, exact values, transactions and acknowledged cancellation. Workbench registration remains in development. See the [transport foundation report](docs/kingbase-native-transport-2026-11-07.md).
 
 See the [Oracle report](docs/oracle-2026-11-06.md), [multi-engine delivery report](docs/multi-engine-reliability-2026-11-04.md), [MariaDB report](docs/mariadb-2026-11-06.md), [SQL Server report](docs/sqlserver-2026-11-06.md), [DuckDB report](docs/duckdb-2026-11-06.md), [PostgreSQL designer support boundaries](docs/postgres-designer-save-2026-11-03.md), and [ClickHouse report](docs/clickhouse-native-2026-11-02.md) for detailed limits and verification. Advanced synchronization, modeling, automation, and other planned tools remain in development.
