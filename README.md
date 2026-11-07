@@ -63,4 +63,6 @@ Elasticsearch public connections and workbench workflows are verified against th
 
 Easysearch public connections and workbench workflows are verified on the unchanged official 2.5.1 server/JDK deployed in an Ubuntu compatibility container. See the [workbench report](docs/easysearch-workbench-2026-11-08.md) for HTTP/HTTPS acceptance and links to the earlier transport, profile, session, document and write-verification reports.
 
+Apache Solr has a private native transport foundation verified against the official standalone 9.9.0 Docker image over HTTP and native Jetty HTTPS with Basic authentication. It handles GET mutations and unknown write outcomes without replay. Public Solr profiles and workbench support are still pending; see the [foundation report](docs/solr-native-foundation-2026-11-08.md).
+
 See the [Oracle report](docs/oracle-2026-11-06.md), [multi-engine delivery report](docs/multi-engine-reliability-2026-11-04.md), [MariaDB report](docs/mariadb-2026-11-06.md), [SQL Server report](docs/sqlserver-2026-11-06.md), [DuckDB report](docs/duckdb-2026-11-06.md), [PostgreSQL designer support boundaries](docs/postgres-designer-save-2026-11-03.md), and [ClickHouse report](docs/clickhouse-native-2026-11-02.md) for detailed limits and verification. Advanced synchronization, modeling, automation, and other planned tools remain in development.
