@@ -1,0 +1,39 @@
+{
+  "0" : {
+    "id" : "5",
+    "name" : "Output",
+    "descriptor" : {
+      "columnNames" : "[_col0]"
+    },
+    "outputs" : [ {
+      "type" : "integer",
+      "name" : "expr"
+    } ],
+    "details" : [ "_col0 := expr" ],
+    "estimates" : [ {
+      "outputRowCount" : 1.0,
+      "outputSizeInBytes" : 5.0,
+      "cpuCost" : 0.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ {
+      "id" : "0",
+      "name" : "Values",
+      "descriptor" : { },
+      "outputs" : [ {
+        "type" : "integer",
+        "name" : "expr"
+      } ],
+      "details" : [ "(integer '1')" ],
+      "estimates" : [ {
+        "outputRowCount" : 1.0,
+        "outputSizeInBytes" : 5.0,
+        "cpuCost" : 0.0,
+        "memoryCost" : 0.0,
+        "networkCost" : 0.0
+      } ],
+      "children" : [ ]
+    } ]
+  }
+}

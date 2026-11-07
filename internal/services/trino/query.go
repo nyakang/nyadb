@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/queryplan"
 	"github.com/nyakang/nyadb/internal/db/sqltext"
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
@@ -139,6 +140,7 @@ func (l *queryLease) ExecuteStream(ctx context.Context, namespace, source string
 	defer func() { result.Duration = time.Since(start); result.SetLegacyView() }()
 	budget := previewBytes
 	for _, q := range parts {
+		fullPlan := queryplan.IsTrinoPlanRequest(q)
 		step := contract.StatementOutcome{SQL: q, State: "completed"}
 		set := contract.ResultSet{}
 		reasons := map[string]bool{}
@@ -164,7 +166,11 @@ func (l *queryLease) ExecuteStream(ctx context.Context, namespace, source string
 			}
 			size := len(cells) * 64
 			for i, c := range cells {
-				cells[i] = preview(c)
+				// Native JSON EXPLAIN is one complete bounded VARCHAR cell. Keep
+				// its original bytes for structural parsing and raw-plan reading.
+				if !fullPlan {
+					cells[i] = preview(c)
+				}
 				if cells[i].Truncated {
 					reasons["cell"] = true
 				}

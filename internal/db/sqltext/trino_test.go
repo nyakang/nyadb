@@ -28,3 +28,21 @@ func TestTrinoSQLQuotesCommentsRoutinesAndFormat(t *testing.T) {
 		}
 	}
 }
+
+func TestTrinoCommentsDoNotBecomeExecutableStatements(t *testing.T) {
+	for _, source := range []string{"SELECT 1; -- trailing comment", "/* before */; SELECT 1; /* after */; -- last", "SELECT 1; /* ; SELECT 2 */"} {
+		parts, err := SplitTrino(source)
+		if err != nil || len(parts) != 1 || !strings.Contains(parts[0], "SELECT 1") {
+			t.Fatal("comments became a second command", parts, err)
+		}
+		if err = SingleTrinoStatement(source); err != nil {
+			t.Fatal("one real statement rejected", err)
+		}
+	}
+	for _, source := range []string{"-- comment", "/* comment */; -- last"} {
+		parts, err := SplitTrino(source)
+		if err == nil || len(parts) != 0 || SingleTrinoStatement(source) == nil {
+			t.Fatal("comment-only input became SQL", parts, err)
+		}
+	}
+}

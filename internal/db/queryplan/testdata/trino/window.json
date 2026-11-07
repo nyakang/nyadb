@@ -1,0 +1,140 @@
+{
+  "0" : {
+    "id" : "8",
+    "name" : "Output",
+    "descriptor" : {
+      "columnNames" : "[name, _col1]"
+    },
+    "outputs" : [ {
+      "type" : "varchar(25)",
+      "name" : "name"
+    }, {
+      "type" : "bigint",
+      "name" : "row_number_0"
+    } ],
+    "details" : [ "_col1 := row_number_0" ],
+    "estimates" : [ {
+      "outputRowCount" : "NaN",
+      "outputSizeInBytes" : "NaN",
+      "cpuCost" : 0.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ {
+      "id" : "25",
+      "name" : "Project",
+      "descriptor" : { },
+      "outputs" : [ {
+        "type" : "varchar(25)",
+        "name" : "name"
+      }, {
+        "type" : "bigint",
+        "name" : "row_number_0"
+      } ],
+      "details" : [ ],
+      "estimates" : [ {
+        "outputRowCount" : "NaN",
+        "outputSizeInBytes" : "NaN",
+        "cpuCost" : "NaN",
+        "memoryCost" : 0.0,
+        "networkCost" : 0.0
+      } ],
+      "children" : [ {
+        "id" : "3",
+        "name" : "Window",
+        "descriptor" : {
+          "partitionBy" : "[regionkey]",
+          "orderBy" : "[nationkey ASC NULLS LAST]"
+        },
+        "outputs" : [ {
+          "type" : "bigint",
+          "name" : "nationkey"
+        }, {
+          "type" : "varchar(25)",
+          "name" : "name"
+        }, {
+          "type" : "bigint",
+          "name" : "regionkey"
+        }, {
+          "type" : "bigint",
+          "name" : "row_number_0"
+        } ],
+        "details" : [ "row_number_0 := row_number() RANGE UNBOUNDED_PRECEDING CURRENT_ROW" ],
+        "estimates" : [ ],
+        "children" : [ {
+          "id" : "170",
+          "name" : "LocalExchange",
+          "descriptor" : {
+            "partitioning" : "HASH",
+            "isReplicateNullsAndAny" : "",
+            "arguments" : "[regionkey::bigint]"
+          },
+          "outputs" : [ {
+            "type" : "bigint",
+            "name" : "nationkey"
+          }, {
+            "type" : "varchar(25)",
+            "name" : "name"
+          }, {
+            "type" : "bigint",
+            "name" : "regionkey"
+          } ],
+          "details" : [ ],
+          "estimates" : [ {
+            "outputRowCount" : 25.0,
+            "outputSizeInBytes" : 752.0,
+            "cpuCost" : 752.0,
+            "memoryCost" : 0.0,
+            "networkCost" : 0.0
+          } ],
+          "children" : [ {
+            "id" : "141",
+            "name" : "RemoteSource",
+            "descriptor" : {
+              "sourceFragmentIds" : "[1]"
+            },
+            "outputs" : [ {
+              "type" : "bigint",
+              "name" : "nationkey"
+            }, {
+              "type" : "varchar(25)",
+              "name" : "name"
+            }, {
+              "type" : "bigint",
+              "name" : "regionkey"
+            } ],
+            "details" : [ ],
+            "estimates" : [ ],
+            "children" : [ ]
+          } ]
+        } ]
+      } ]
+    } ]
+  },
+  "1" : {
+    "id" : "0",
+    "name" : "TableScan",
+    "descriptor" : {
+      "table" : "tpch:tiny:nation"
+    },
+    "outputs" : [ {
+      "type" : "bigint",
+      "name" : "nationkey"
+    }, {
+      "type" : "varchar(25)",
+      "name" : "name"
+    }, {
+      "type" : "bigint",
+      "name" : "regionkey"
+    } ],
+    "details" : [ "nationkey := tpch:nationkey", "regionkey := tpch:regionkey", "name := tpch:name" ],
+    "estimates" : [ {
+      "outputRowCount" : 25.0,
+      "outputSizeInBytes" : 752.0,
+      "cpuCost" : 752.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ ]
+  }
+}

@@ -1,0 +1,235 @@
+{
+  "0" : {
+    "id" : "9",
+    "name" : "Output",
+    "descriptor" : {
+      "columnNames" : "[nationkey, name]"
+    },
+    "outputs" : [ {
+      "type" : "bigint",
+      "name" : "nationkey"
+    }, {
+      "type" : "varchar(25)",
+      "name" : "name"
+    } ],
+    "details" : [ ],
+    "estimates" : [ {
+      "outputRowCount" : 2.0,
+      "outputSizeInBytes" : 42.16,
+      "cpuCost" : 0.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ {
+      "id" : "143",
+      "name" : "TopN",
+      "descriptor" : {
+        "count" : "2",
+        "orderBy" : "[nationkey ASC NULLS LAST]"
+      },
+      "outputs" : [ {
+        "type" : "bigint",
+        "name" : "nationkey"
+      }, {
+        "type" : "varchar(25)",
+        "name" : "name"
+      } ],
+      "details" : [ ],
+      "estimates" : [ {
+        "outputRowCount" : 2.0,
+        "outputSizeInBytes" : 42.16,
+        "cpuCost" : "NaN",
+        "memoryCost" : "NaN",
+        "networkCost" : "NaN"
+      } ],
+      "children" : [ {
+        "id" : "204",
+        "name" : "LocalExchange",
+        "descriptor" : {
+          "partitioning" : "SINGLE",
+          "isReplicateNullsAndAny" : "",
+          "arguments" : "[]"
+        },
+        "outputs" : [ {
+          "type" : "bigint",
+          "name" : "nationkey"
+        }, {
+          "type" : "varchar(25)",
+          "name" : "name"
+        } ],
+        "details" : [ ],
+        "estimates" : [ {
+          "outputRowCount" : 2.0,
+          "outputSizeInBytes" : 42.16,
+          "cpuCost" : 0.0,
+          "memoryCost" : 0.0,
+          "networkCost" : 0.0
+        } ],
+        "children" : [ {
+          "id" : "166",
+          "name" : "RemoteSource",
+          "descriptor" : {
+            "sourceFragmentIds" : "[1]"
+          },
+          "outputs" : [ {
+            "type" : "bigint",
+            "name" : "nationkey"
+          }, {
+            "type" : "varchar(25)",
+            "name" : "name"
+          } ],
+          "details" : [ ],
+          "estimates" : [ ],
+          "children" : [ ]
+        } ]
+      } ]
+    } ]
+  },
+  "1" : {
+    "id" : "213",
+    "name" : "TopNPartial",
+    "descriptor" : {
+      "count" : "2",
+      "orderBy" : "[nationkey ASC NULLS LAST]"
+    },
+    "outputs" : [ {
+      "type" : "bigint",
+      "name" : "nationkey"
+    }, {
+      "type" : "varchar(25)",
+      "name" : "name"
+    } ],
+    "details" : [ ],
+    "estimates" : [ {
+      "outputRowCount" : 2.0,
+      "outputSizeInBytes" : 42.16,
+      "cpuCost" : "NaN",
+      "memoryCost" : "NaN",
+      "networkCost" : "NaN"
+    } ],
+    "children" : [ {
+      "id" : "214",
+      "name" : "LocalExchange",
+      "descriptor" : {
+        "partitioning" : "SINGLE",
+        "isReplicateNullsAndAny" : "",
+        "arguments" : "[]"
+      },
+      "outputs" : [ {
+        "type" : "bigint",
+        "name" : "nationkey"
+      }, {
+        "type" : "varchar(25)",
+        "name" : "name"
+      } ],
+      "details" : [ ],
+      "estimates" : [ {
+        "outputRowCount" : 2.0,
+        "outputSizeInBytes" : 42.16,
+        "cpuCost" : 0.0,
+        "memoryCost" : 0.0,
+        "networkCost" : 0.0
+      } ],
+      "children" : [ {
+        "id" : "211",
+        "name" : "TopNPartial",
+        "descriptor" : {
+          "count" : "2",
+          "orderBy" : "[nationkey ASC NULLS LAST]"
+        },
+        "outputs" : [ {
+          "type" : "bigint",
+          "name" : "nationkey"
+        }, {
+          "type" : "varchar(25)",
+          "name" : "name"
+        } ],
+        "details" : [ ],
+        "estimates" : [ {
+          "outputRowCount" : 2.0,
+          "outputSizeInBytes" : 42.16,
+          "cpuCost" : "NaN",
+          "memoryCost" : "NaN",
+          "networkCost" : "NaN"
+        } ],
+        "children" : [ {
+          "id" : "212",
+          "name" : "LocalExchange",
+          "descriptor" : {
+            "partitioning" : "ROUND_ROBIN",
+            "isReplicateNullsAndAny" : "",
+            "arguments" : "[]"
+          },
+          "outputs" : [ {
+            "type" : "bigint",
+            "name" : "nationkey"
+          }, {
+            "type" : "varchar(25)",
+            "name" : "name"
+          } ],
+          "details" : [ ],
+          "estimates" : [ {
+            "outputRowCount" : 2.0,
+            "outputSizeInBytes" : 42.16,
+            "cpuCost" : 42.16,
+            "memoryCost" : 0.0,
+            "networkCost" : 0.0
+          } ],
+          "children" : [ {
+            "id" : "142",
+            "name" : "TopNPartial",
+            "descriptor" : {
+              "count" : "2",
+              "orderBy" : "[nationkey ASC NULLS LAST]"
+            },
+            "outputs" : [ {
+              "type" : "bigint",
+              "name" : "nationkey"
+            }, {
+              "type" : "varchar(25)",
+              "name" : "name"
+            } ],
+            "details" : [ ],
+            "estimates" : [ {
+              "outputRowCount" : 2.0,
+              "outputSizeInBytes" : 42.16,
+              "cpuCost" : "NaN",
+              "memoryCost" : "NaN",
+              "networkCost" : "NaN"
+            } ],
+            "children" : [ {
+              "id" : "1",
+              "name" : "ScanFilter",
+              "descriptor" : {
+                "table" : "tpch:tiny:nation",
+                "filterPredicate" : "(bigint '1' < nationkey)"
+              },
+              "outputs" : [ {
+                "type" : "bigint",
+                "name" : "nationkey"
+              }, {
+                "type" : "varchar(25)",
+                "name" : "name"
+              } ],
+              "details" : [ "nationkey := tpch:nationkey", "name := tpch:name" ],
+              "estimates" : [ {
+                "outputRowCount" : 25.0,
+                "outputSizeInBytes" : 527.0,
+                "cpuCost" : 527.0,
+                "memoryCost" : 0.0,
+                "networkCost" : 0.0
+              }, {
+                "outputRowCount" : 23.958333333333336,
+                "outputSizeInBytes" : 505.04166666666674,
+                "cpuCost" : 527.0,
+                "memoryCost" : 0.0,
+                "networkCost" : 0.0
+              } ],
+              "children" : [ ]
+            } ]
+          } ]
+        } ]
+      } ]
+    } ]
+  }
+}

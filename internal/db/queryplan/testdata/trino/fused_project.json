@@ -1,0 +1,54 @@
+{
+  "0" : {
+    "id" : "6",
+    "name" : "Output",
+    "descriptor" : {
+      "columnNames" : "[_col0]"
+    },
+    "outputs" : [ {
+      "type" : "bigint",
+      "name" : "expr"
+    } ],
+    "details" : [ "_col0 := expr" ],
+    "estimates" : [ {
+      "outputRowCount" : 23.958333333333336,
+      "outputSizeInBytes" : 215.62500000000003,
+      "cpuCost" : 0.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ {
+      "id" : "19",
+      "name" : "ScanFilterProject",
+      "descriptor" : {
+        "table" : "tpch:tiny:nation",
+        "filterPredicate" : "(bigint '1' < nationkey)"
+      },
+      "outputs" : [ {
+        "type" : "bigint",
+        "name" : "expr"
+      } ],
+      "details" : [ "expr := $operator$add(nationkey, bigint '1')", "nationkey := tpch:nationkey" ],
+      "estimates" : [ {
+        "outputRowCount" : 25.0,
+        "outputSizeInBytes" : 225.0,
+        "cpuCost" : 225.0,
+        "memoryCost" : 0.0,
+        "networkCost" : 0.0
+      }, {
+        "outputRowCount" : 23.958333333333336,
+        "outputSizeInBytes" : 215.62500000000003,
+        "cpuCost" : 225.0,
+        "memoryCost" : 0.0,
+        "networkCost" : 0.0
+      }, {
+        "outputRowCount" : 23.958333333333336,
+        "outputSizeInBytes" : 215.62500000000003,
+        "cpuCost" : 215.62500000000003,
+        "memoryCost" : 0.0,
+        "networkCost" : 0.0
+      } ],
+      "children" : [ ]
+    } ]
+  }
+}

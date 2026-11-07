@@ -18,11 +18,13 @@ func SplitTrino(source string) ([]string, error) {
 	var quote byte
 	line, block := false, false
 	function, routine := false, false
+	hasCode := false
 	appendPart := func(end int) {
-		if q := strings.TrimSpace(source[start:end]); q != "" {
+		if q := strings.TrimSpace(source[start:end]); q != "" && hasCode {
 			parts = append(parts, q)
 		}
 		start = end + 1
+		hasCode = false
 	}
 	for i := 0; i < len(source); i++ {
 		c := source[i]
@@ -53,6 +55,7 @@ func SplitTrino(source string) ([]string, error) {
 			continue
 		}
 		if c == '\'' || c == '"' {
+			hasCode = true
 			quote = c
 			continue
 		}
@@ -68,6 +71,9 @@ func SplitTrino(source string) ([]string, error) {
 			block = true
 			i++
 			continue
+		}
+		if c != ';' && c != ' ' && c != '\n' && c != '\r' && c != '\t' {
+			hasCode = true
 		}
 		if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_' {
 			j := i + 1
@@ -142,4 +148,22 @@ func FormatTrino(source string) (string, error) {
 		return "", err
 	}
 	return formatTokens(source, ts), nil
+}
+
+func TrinoTokens(source string) ([]Token, error) {
+	if _, err := SplitTrino(source); err != nil {
+		return nil, err
+	}
+	return tokensWithRules(source, false, true)
+}
+
+func SingleTrinoStatement(source string) error {
+	parts, err := SplitTrino(source)
+	if err != nil {
+		return err
+	}
+	if len(parts) != 1 {
+		return errors.New("Trino plan requires a single statement")
+	}
+	return nil
 }

@@ -189,6 +189,9 @@ func (s *State) sqlFormat(id int64, source string) (string, error) {
 
 func (s *State) sqlValidateExplain(id int64, source string) error {
 	for _, p := range s.navigation.Profiles() {
+		if p.ID == id && p.Kind == connections.Trino {
+			return sqltext.SingleTrinoStatement(source)
+		}
 		if p.ID == id && p.Kind == connections.Oracle {
 			return sqltext.SingleOracleStatement(source)
 		}

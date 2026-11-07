@@ -109,6 +109,7 @@ def verify(plain=False, hold=False, race=False, transport_only=False):
                 env = os.environ.copy()
                 env.update({'NYADB_TRINO_IT':'1', 'NYADB_TRINO_CONFIG':str(probe)})
                 env['NYADB_TRINO_VISUAL_DIR'] = str(output/('workbench-'+nonce))
+                env['NYADB_TRINO_PLAN_DIR'] = str(output/('plans-'+nonce))
                 packages = ['./internal/services/trino']
                 if not transport_only:
                     packages += ['./internal/services/dbruntime','./internal/ui/shell']

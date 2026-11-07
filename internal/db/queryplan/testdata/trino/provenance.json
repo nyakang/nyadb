@@ -1,0 +1,70 @@
+{
+  "server": "Trino 484",
+  "image": "trinodb/trino@sha256:2704eb53935af5e582d63d6033e9bf99d20c325e9b0e30b1016ef59a4773979f",
+  "capture": "Unmodified native HTTP EXPLAIN response through NyaDB Trino QueryLease, JSON VARCHAR decoded without preview truncation",
+  "sources": [
+    {
+      "url": "https://raw.githubusercontent.com/trinodb/trino/484/core/trino-main/src/main/java/io/trino/sql/planner/planprinter/JsonRenderer.java",
+      "sha256": "bcfe922445affc04a308a00210cf4679fb932f8908a924cddb63a25e99f57c13"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/trinodb/trino/484/core/trino-main/src/main/java/io/trino/sql/planner/planprinter/PlanPrinter.java",
+      "sha256": "759f4602c7a3f42e9f3f46debfacc54a0b35286042ad3a3ac81b4c694f5ad6bb"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/trinodb/trino/484/core/trino-main/src/main/java/io/trino/sql/planner/planprinter/NodeRepresentation.java",
+      "sha256": "92e3d0283d9f2a0cd7720dc29c3321ff0500f30d8936288a4ddd1746323d788f"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/trinodb/trino/484/core/trino-main/src/main/java/io/trino/sql/planner/planprinter/TextRenderer.java",
+      "sha256": "cbcd424bb7694d80d7e1e18da4a3b6615072dbd63f4c9594078b5e861266a10e"
+    }
+  ],
+  "fixtures": [
+    {
+      "fixture": "constant.json",
+      "native_sql": "EXPLAIN (TYPE DISTRIBUTED, FORMAT JSON) SELECT 1",
+      "sha256": "19f8ebdc534b38653e2135ea521f00a98dd1e1d0560b25f188c01dc0d8b4f34d"
+    },
+    {
+      "fixture": "empty.json",
+      "native_sql": "EXPLAIN (TYPE DISTRIBUTED, FORMAT JSON) SELECT nationkey FROM tpch.tiny.nation WHERE FALSE",
+      "sha256": "2eb60a817ec8bf40562bfc39e5ccd2329760b52c466c2eb57d8043f883be1e77"
+    },
+    {
+      "fixture": "scan.json",
+      "native_sql": "EXPLAIN (TYPE DISTRIBUTED, FORMAT JSON) SELECT nationkey,name FROM tpch.tiny.nation WHERE nationkey>1 ORDER BY nationkey LIMIT 2",
+      "sha256": "acb26792d9190bf26599ef8d23ee4ae8226961891212ebd5104a4567ab7491eb"
+    },
+    {
+      "fixture": "join.json",
+      "native_sql": "EXPLAIN (TYPE DISTRIBUTED, FORMAT JSON) SELECT r.name,COUNT(*) FROM tpch.tiny.nation n JOIN tpch.tiny.region r ON n.regionkey=r.regionkey GROUP BY r.name ORDER BY COUNT(*) DESC",
+      "sha256": "875f2b9ee4e1ef652cfea902acc1a62991ed82ea0662c3ae6f2cad66dd770cab"
+    },
+    {
+      "fixture": "union.json",
+      "native_sql": "EXPLAIN (TYPE DISTRIBUTED, FORMAT JSON) SELECT nationkey FROM tpch.tiny.nation UNION ALL SELECT regionkey FROM tpch.tiny.region",
+      "sha256": "d4d85664d6224bf6dbfd9bba0db4b069bc01b66041d368bf8c5ae87ca5abad3e"
+    },
+    {
+      "fixture": "window.json",
+      "native_sql": "EXPLAIN (TYPE DISTRIBUTED, FORMAT JSON) SELECT name,ROW_NUMBER() OVER(PARTITION BY regionkey ORDER BY nationkey) FROM tpch.tiny.nation",
+      "sha256": "3dac79a9732c2ac739a73bf56ee30275413d51819881d4b60faf5f1ff6223945"
+    },
+    {
+      "fixture": "cte.json",
+      "native_sql": "EXPLAIN (TYPE DISTRIBUTED, FORMAT JSON) WITH n AS(SELECT nationkey FROM tpch.tiny.nation) SELECT a.nationkey FROM n a JOIN n b ON a.nationkey=b.nationkey",
+      "sha256": "7887ed8b49d5a63635ced840a40985d7f4a64562fa03774105a1ef673201a246"
+    },
+    {
+      "fixture": "fused_project.json",
+      "native_sql": "EXPLAIN (TYPE DISTRIBUTED, FORMAT JSON) SELECT nationkey+1 FROM tpch.tiny.nation WHERE nationkey>1",
+      "sha256": "96e9920c51ad4b8f675c7415f6a334fd17fc59def3ca4d11dfa72f1ce3c15144"
+    },
+    {
+      "fixture": "insert.json",
+      "native_sql": "EXPLAIN (TYPE DISTRIBUTED, FORMAT JSON) INSERT INTO memory.default.nyadb_plan_dmp5awcdo7n2 VALUES(99,'must not execute')",
+      "sha256": "b71f552bb42b339049875ab67c3d3acaabf96b49754ac8bf8846fc1ad5350e63"
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "0" : {
+    "id" : "21",
+    "name" : "Output",
+    "descriptor" : {
+      "columnNames" : "[nationkey]"
+    },
+    "outputs" : [ {
+      "type" : "bigint",
+      "name" : "nationkey"
+    } ],
+    "details" : [ ],
+    "estimates" : [ {
+      "outputRowCount" : 25.0,
+      "outputSizeInBytes" : 225.0,
+      "cpuCost" : 0.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ {
+      "id" : "182",
+      "name" : "InnerJoin",
+      "descriptor" : {
+        "criteria" : "(nationkey = nationkey_1)",
+        "distribution" : "REPLICATED"
+      },
+      "outputs" : [ {
+        "type" : "bigint",
+        "name" : "nationkey"
+      } ],
+      "details" : [ "Distribution: REPLICATED", "dynamicFilterAssignments = {nationkey_1 -> #df_223}" ],
+      "estimates" : [ {
+        "outputRowCount" : 25.0,
+        "outputSizeInBytes" : 225.0,
+        "cpuCost" : 675.0,
+        "memoryCost" : 225.0,
+        "networkCost" : 0.0
+      } ],
+      "children" : [ {
+        "id" : "224",
+        "name" : "ScanFilter",
+        "descriptor" : {
+          "table" : "tpch:tiny:nation",
+          "filterPredicate" : "",
+          "dynamicFilters" : "{nationkey = #df_223}"
+        },
+        "outputs" : [ {
+          "type" : "bigint",
+          "name" : "nationkey"
+        } ],
+        "details" : [ "nationkey := tpch:nationkey" ],
+        "estimates" : [ {
+          "outputRowCount" : 25.0,
+          "outputSizeInBytes" : 225.0,
+          "cpuCost" : 225.0,
+          "memoryCost" : 0.0,
+          "networkCost" : 0.0
+        }, {
+          "outputRowCount" : 25.0,
+          "outputSizeInBytes" : 225.0,
+          "cpuCost" : 225.0,
+          "memoryCost" : 0.0,
+          "networkCost" : 0.0
+        } ],
+        "children" : [ ]
+      }, {
+        "id" : "250",
+        "name" : "LocalExchange",
+        "descriptor" : {
+          "partitioning" : "SINGLE",
+          "isReplicateNullsAndAny" : "",
+          "arguments" : "[]"
+        },
+        "outputs" : [ {
+          "type" : "bigint",
+          "name" : "nationkey_1"
+        } ],
+        "details" : [ ],
+        "estimates" : [ {
+          "outputRowCount" : 25.0,
+          "outputSizeInBytes" : 225.0,
+          "cpuCost" : 0.0,
+          "memoryCost" : 0.0,
+          "networkCost" : 0.0
+        } ],
+        "children" : [ {
+          "id" : "206",
+          "name" : "RemoteSource",
+          "descriptor" : {
+            "sourceFragmentIds" : "[1]"
+          },
+          "outputs" : [ {
+            "type" : "bigint",
+            "name" : "nationkey_1"
+          } ],
+          "details" : [ ],
+          "estimates" : [ ],
+          "children" : [ ]
+        } ]
+      } ]
+    } ]
+  },
+  "1" : {
+    "id" : "6",
+    "name" : "TableScan",
+    "descriptor" : {
+      "table" : "tpch:tiny:nation"
+    },
+    "outputs" : [ {
+      "type" : "bigint",
+      "name" : "nationkey_1"
+    } ],
+    "details" : [ "nationkey_1 := tpch:nationkey" ],
+    "estimates" : [ {
+      "outputRowCount" : 25.0,
+      "outputSizeInBytes" : 225.0,
+      "cpuCost" : 225.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ ]
+  }
+}

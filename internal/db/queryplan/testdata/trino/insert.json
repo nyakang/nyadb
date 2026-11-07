@@ -1,0 +1,151 @@
+{
+  "0" : {
+    "id" : "6",
+    "name" : "Output",
+    "descriptor" : {
+      "columnNames" : "[rows]"
+    },
+    "outputs" : [ {
+      "type" : "bigint",
+      "name" : "rows"
+    } ],
+    "details" : [ ],
+    "estimates" : [ {
+      "outputRowCount" : "NaN",
+      "outputSizeInBytes" : "NaN",
+      "cpuCost" : 0.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ {
+      "id" : "4",
+      "name" : "TableCommit",
+      "descriptor" : {
+        "target" : "memory:MemoryInsertTableHandle[table=0, mode=APPEND, activeTableIds=[0]]"
+      },
+      "outputs" : [ {
+        "type" : "bigint",
+        "name" : "rows"
+      } ],
+      "details" : [ ],
+      "estimates" : [ ],
+      "children" : [ {
+        "id" : "155",
+        "name" : "LocalExchange",
+        "descriptor" : {
+          "partitioning" : "SINGLE",
+          "isReplicateNullsAndAny" : "",
+          "arguments" : "[]"
+        },
+        "outputs" : [ {
+          "type" : "bigint",
+          "name" : "partialrows"
+        }, {
+          "type" : "varbinary",
+          "name" : "fragment"
+        } ],
+        "details" : [ ],
+        "estimates" : [ {
+          "outputRowCount" : "NaN",
+          "outputSizeInBytes" : "NaN",
+          "cpuCost" : 0.0,
+          "memoryCost" : 0.0,
+          "networkCost" : 0.0
+        } ],
+        "children" : [ {
+          "id" : "118",
+          "name" : "RemoteSource",
+          "descriptor" : {
+            "sourceFragmentIds" : "[1]"
+          },
+          "outputs" : [ {
+            "type" : "bigint",
+            "name" : "partialrows"
+          }, {
+            "type" : "varbinary",
+            "name" : "fragment"
+          } ],
+          "details" : [ ],
+          "estimates" : [ ],
+          "children" : [ ]
+        } ]
+      } ]
+    } ]
+  },
+  "1" : {
+    "id" : "5",
+    "name" : "TableWriter",
+    "descriptor" : { },
+    "outputs" : [ {
+      "type" : "bigint",
+      "name" : "partialrows"
+    }, {
+      "type" : "varbinary",
+      "name" : "fragment"
+    } ],
+    "details" : [ "id := id", "note := note" ],
+    "estimates" : [ ],
+    "children" : [ {
+      "id" : "154",
+      "name" : "LocalExchange",
+      "descriptor" : {
+        "partitioning" : "SINGLE",
+        "isReplicateNullsAndAny" : "",
+        "arguments" : "[]"
+      },
+      "outputs" : [ {
+        "type" : "bigint",
+        "name" : "id"
+      }, {
+        "type" : "varchar",
+        "name" : "note"
+      } ],
+      "details" : [ ],
+      "estimates" : [ {
+        "outputRowCount" : 1.0,
+        "outputSizeInBytes" : 64.0,
+        "cpuCost" : 0.0,
+        "memoryCost" : 0.0,
+        "networkCost" : 0.0
+      } ],
+      "children" : [ {
+        "id" : "117",
+        "name" : "RemoteSource",
+        "descriptor" : {
+          "sourceFragmentIds" : "[2]"
+        },
+        "outputs" : [ {
+          "type" : "bigint",
+          "name" : "id"
+        }, {
+          "type" : "varchar",
+          "name" : "note"
+        } ],
+        "details" : [ ],
+        "estimates" : [ ],
+        "children" : [ ]
+      } ]
+    } ]
+  },
+  "2" : {
+    "id" : "0",
+    "name" : "Values",
+    "descriptor" : { },
+    "outputs" : [ {
+      "type" : "bigint",
+      "name" : "id"
+    }, {
+      "type" : "varchar",
+      "name" : "note"
+    } ],
+    "details" : [ "(bigint '99', varchar 'must not execute')" ],
+    "estimates" : [ {
+      "outputRowCount" : 1.0,
+      "outputSizeInBytes" : 64.0,
+      "cpuCost" : 0.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ ]
+  }
+}

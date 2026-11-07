@@ -1,0 +1,39 @@
+{
+  "0" : {
+    "id" : "6",
+    "name" : "Output",
+    "descriptor" : {
+      "columnNames" : "[nationkey]"
+    },
+    "outputs" : [ {
+      "type" : "bigint",
+      "name" : "nationkey"
+    } ],
+    "details" : [ ],
+    "estimates" : [ {
+      "outputRowCount" : 0.0,
+      "outputSizeInBytes" : 0.0,
+      "cpuCost" : 0.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ {
+      "id" : "38",
+      "name" : "Values",
+      "descriptor" : { },
+      "outputs" : [ {
+        "type" : "bigint",
+        "name" : "nationkey"
+      } ],
+      "details" : [ ],
+      "estimates" : [ {
+        "outputRowCount" : 0.0,
+        "outputSizeInBytes" : 0.0,
+        "cpuCost" : 0.0,
+        "memoryCost" : 0.0,
+        "networkCost" : 0.0
+      } ],
+      "children" : [ ]
+    } ]
+  }
+}

@@ -10,6 +10,9 @@ import (
 )
 
 func Build(engine, sql string) (string, error) {
+	if engine == "trino" {
+		return buildTrino(sql)
+	}
 	if engine == "starrocks" {
 		return buildStarRocks(sql)
 	}
@@ -80,6 +83,9 @@ func numeric(v any) *float64 {
 	return &n
 }
 func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, error) {
+	if engine == "trino" {
+		return parseTrino(result)
+	}
 	if engine == "starrocks" {
 		return parseStarRocks(result)
 	}

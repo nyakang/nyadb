@@ -1,0 +1,326 @@
+{
+  "0" : {
+    "id" : "18",
+    "name" : "Output",
+    "descriptor" : {
+      "columnNames" : "[name, _col1]"
+    },
+    "outputs" : [ {
+      "type" : "varchar(25)",
+      "name" : "name_2"
+    }, {
+      "type" : "bigint",
+      "name" : "count"
+    } ],
+    "details" : [ "name := name_2", "_col1 := count" ],
+    "estimates" : [ {
+      "outputRowCount" : 5.0,
+      "outputSizeInBytes" : 104.0,
+      "cpuCost" : 0.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ {
+      "id" : "254",
+      "name" : "RemoteMerge",
+      "descriptor" : {
+        "sourceFragmentIds" : "[1]"
+      },
+      "outputs" : [ {
+        "type" : "varchar(25)",
+        "name" : "name_2"
+      }, {
+        "type" : "bigint",
+        "name" : "count"
+      } ],
+      "details" : [ ],
+      "estimates" : [ ],
+      "children" : [ ]
+    } ]
+  },
+  "1" : {
+    "id" : "339",
+    "name" : "LocalMerge",
+    "descriptor" : {
+      "orderBy" : "[count DESC NULLS LAST]"
+    },
+    "outputs" : [ {
+      "type" : "varchar(25)",
+      "name" : "name_2"
+    }, {
+      "type" : "bigint",
+      "name" : "count"
+    } ],
+    "details" : [ ],
+    "estimates" : [ {
+      "outputRowCount" : 5.0,
+      "outputSizeInBytes" : 104.0,
+      "cpuCost" : 0.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ {
+      "id" : "255",
+      "name" : "PartialSort",
+      "descriptor" : {
+        "orderBy" : "[count DESC NULLS LAST]"
+      },
+      "outputs" : [ {
+        "type" : "varchar(25)",
+        "name" : "name_2"
+      }, {
+        "type" : "bigint",
+        "name" : "count"
+      } ],
+      "details" : [ ],
+      "estimates" : [ {
+        "outputRowCount" : 5.0,
+        "outputSizeInBytes" : 104.0,
+        "cpuCost" : "NaN",
+        "memoryCost" : "NaN",
+        "networkCost" : "NaN"
+      } ],
+      "children" : [ {
+        "id" : "253",
+        "name" : "RemoteSource",
+        "descriptor" : {
+          "sourceFragmentIds" : "[2]"
+        },
+        "outputs" : [ {
+          "type" : "varchar(25)",
+          "name" : "name_2"
+        }, {
+          "type" : "bigint",
+          "name" : "count"
+        } ],
+        "details" : [ ],
+        "estimates" : [ ],
+        "children" : [ ]
+      } ]
+    } ]
+  },
+  "2" : {
+    "id" : "10",
+    "name" : "Aggregate",
+    "descriptor" : {
+      "type" : "FINAL",
+      "keys" : "[name_2]"
+    },
+    "outputs" : [ {
+      "type" : "varchar(25)",
+      "name" : "name_2"
+    }, {
+      "type" : "bigint",
+      "name" : "count"
+    } ],
+    "details" : [ "count := count(count_4)" ],
+    "estimates" : [ {
+      "outputRowCount" : 5.0,
+      "outputSizeInBytes" : 104.0,
+      "cpuCost" : 520.0,
+      "memoryCost" : 104.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ {
+      "id" : "374",
+      "name" : "LocalExchange",
+      "descriptor" : {
+        "partitioning" : "HASH",
+        "isReplicateNullsAndAny" : "",
+        "arguments" : "[name_2::varchar(25)]"
+      },
+      "outputs" : [ {
+        "type" : "varchar(25)",
+        "name" : "name_2"
+      }, {
+        "type" : "bigint",
+        "name" : "count_4"
+      } ],
+      "details" : [ ],
+      "estimates" : [ {
+        "outputRowCount" : 25.0,
+        "outputSizeInBytes" : 520.0,
+        "cpuCost" : 520.0,
+        "memoryCost" : 0.0,
+        "networkCost" : 0.0
+      } ],
+      "children" : [ {
+        "id" : "380",
+        "name" : "RemoteSource",
+        "descriptor" : {
+          "sourceFragmentIds" : "[3]"
+        },
+        "outputs" : [ {
+          "type" : "varchar(25)",
+          "name" : "name_2"
+        }, {
+          "type" : "bigint",
+          "name" : "count_4"
+        } ],
+        "details" : [ ],
+        "estimates" : [ ],
+        "children" : [ ]
+      } ]
+    } ]
+  },
+  "3" : {
+    "id" : "385",
+    "name" : "Aggregate",
+    "descriptor" : {
+      "type" : "INTERMEDIATE",
+      "keys" : "[name_2]"
+    },
+    "outputs" : [ {
+      "type" : "varchar(25)",
+      "name" : "name_2"
+    }, {
+      "type" : "bigint",
+      "name" : "count_4"
+    } ],
+    "details" : [ "count_4 := count(count_4)" ],
+    "estimates" : [ {
+      "outputRowCount" : 25.0,
+      "outputSizeInBytes" : 520.0,
+      "cpuCost" : "NaN",
+      "memoryCost" : "NaN",
+      "networkCost" : "NaN"
+    } ],
+    "children" : [ {
+      "id" : "213",
+      "name" : "InnerJoin",
+      "descriptor" : {
+        "criteria" : "(regionkey = regionkey_1)",
+        "distribution" : "REPLICATED"
+      },
+      "outputs" : [ {
+        "type" : "bigint",
+        "name" : "count_4"
+      }, {
+        "type" : "varchar(25)",
+        "name" : "name_2"
+      } ],
+      "details" : [ "Distribution: REPLICATED", "dynamicFilterAssignments = {regionkey_1 -> #df_292}" ],
+      "estimates" : [ {
+        "outputRowCount" : 25.0,
+        "outputSizeInBytes" : 520.0,
+        "cpuCost" : 1074.0,
+        "memoryCost" : 104.0,
+        "networkCost" : 0.0
+      } ],
+      "children" : [ {
+        "id" : "378",
+        "name" : "Aggregate",
+        "descriptor" : {
+          "type" : "PARTIAL",
+          "keys" : "[regionkey]"
+        },
+        "outputs" : [ {
+          "type" : "bigint",
+          "name" : "regionkey"
+        }, {
+          "type" : "bigint",
+          "name" : "count_4"
+        } ],
+        "details" : [ "count_4 := count(*)" ],
+        "estimates" : [ {
+          "outputRowCount" : 25.0,
+          "outputSizeInBytes" : 450.0,
+          "cpuCost" : "NaN",
+          "memoryCost" : "NaN",
+          "networkCost" : "NaN"
+        } ],
+        "children" : [ {
+          "id" : "293",
+          "name" : "ScanFilter",
+          "descriptor" : {
+            "table" : "tpch:tiny:nation",
+            "filterPredicate" : "",
+            "dynamicFilters" : "{regionkey = #df_292}"
+          },
+          "outputs" : [ {
+            "type" : "bigint",
+            "name" : "regionkey"
+          } ],
+          "details" : [ "regionkey := tpch:regionkey" ],
+          "estimates" : [ {
+            "outputRowCount" : 25.0,
+            "outputSizeInBytes" : 225.0,
+            "cpuCost" : 225.0,
+            "memoryCost" : 0.0,
+            "networkCost" : 0.0
+          }, {
+            "outputRowCount" : 25.0,
+            "outputSizeInBytes" : 225.0,
+            "cpuCost" : 225.0,
+            "memoryCost" : 0.0,
+            "networkCost" : 0.0
+          } ],
+          "children" : [ ]
+        } ]
+      }, {
+        "id" : "337",
+        "name" : "LocalExchange",
+        "descriptor" : {
+          "partitioning" : "SINGLE",
+          "isReplicateNullsAndAny" : "",
+          "arguments" : "[]"
+        },
+        "outputs" : [ {
+          "type" : "bigint",
+          "name" : "regionkey_1"
+        }, {
+          "type" : "varchar(25)",
+          "name" : "name_2"
+        } ],
+        "details" : [ ],
+        "estimates" : [ {
+          "outputRowCount" : 5.0,
+          "outputSizeInBytes" : 104.0,
+          "cpuCost" : 0.0,
+          "memoryCost" : 0.0,
+          "networkCost" : 0.0
+        } ],
+        "children" : [ {
+          "id" : "251",
+          "name" : "RemoteSource",
+          "descriptor" : {
+            "sourceFragmentIds" : "[4]"
+          },
+          "outputs" : [ {
+            "type" : "bigint",
+            "name" : "regionkey_1"
+          }, {
+            "type" : "varchar(25)",
+            "name" : "name_2"
+          } ],
+          "details" : [ ],
+          "estimates" : [ ],
+          "children" : [ ]
+        } ]
+      } ]
+    } ]
+  },
+  "4" : {
+    "id" : "1",
+    "name" : "TableScan",
+    "descriptor" : {
+      "table" : "tpch:tiny:region"
+    },
+    "outputs" : [ {
+      "type" : "bigint",
+      "name" : "regionkey_1"
+    }, {
+      "type" : "varchar(25)",
+      "name" : "name_2"
+    } ],
+    "details" : [ "name_2 := tpch:name", "regionkey_1 := tpch:regionkey" ],
+    "estimates" : [ {
+      "outputRowCount" : 5.0,
+      "outputSizeInBytes" : 104.0,
+      "cpuCost" : 104.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ ]
+  }
+}

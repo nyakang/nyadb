@@ -178,15 +178,55 @@ func TestTrinoNativeShellFixture(t *testing.T) {
 	if output := os.Getenv("NYADB_TRINO_VISUAL_DIR"); output != "" {
 		writeDomainCapture(t, output, "trino-live-sql", tt)
 	}
+	planSource := "SELECT r.name,COUNT(*) FROM tpch.tiny.nation n JOIN tpch.tiny.region r ON n.regionkey=r.regionkey GROUP BY r.name ORDER BY COUNT(*) DESC"
+	sqlTab.query.Editor.Buffer.Set(planSource)
+	sqlTab.query.Editor.Select(0, len(planSource))
+	tt.Frame()
+	if err = tt.Click("EXPLAIN"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if err = tt.Click("执行 EXPLAIN"); err != nil {
+		t.Fatal(err)
+	}
+	waitSQLUI(t, s, tt, sqlTab)
+	if !tt.HasText("Trino estimated plan") || sqlTab.query.Error() != "" || sqlTab.query.Result() == nil {
+		t.Fatal("native plan did not enter shared view", sqlTab.query.Error())
+	}
+	if output := os.Getenv("NYADB_TRINO_VISUAL_DIR"); output != "" {
+		writeDomainCapture(t, output, "trino-live-plan", tt)
+	}
+	if err = tt.Click("原始计划"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	planResult := sqlTab.query.Result()
+	if len(planResult.Sets) != 1 || len(planResult.Sets[0].Rows[0][0].Text) <= 4096 || planResult.Sets[0].Rows[0][0].Truncated {
+		t.Fatal("original native JSON plan was clipped or replaced")
+	}
+	if err = tt.Click("查询结果"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if sqlTab.query.Result() != r || r.Sets[0].Rows[0][0].Text != "9007199254740993" {
+		t.Fatal("plan navigation lost ordinary multi-results")
+	}
+	if err = tt.Click("结构计划"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if sqlTab.query.Result() != planResult || !tt.HasText("Trino estimated plan") {
+		t.Fatal("structured plan lost original result")
+	}
 	s.disconnectMySQLProfile(profile.ID)
 	tt.Frame()
-	if !sqlTab.query.NeedsRecovery() || sqlTab.query.Editor.Buffer.String() != sql || s.runtime.IsConnected(profile.ID) {
+	if !sqlTab.query.NeedsRecovery() || sqlTab.query.Editor.Buffer.String() != planSource || s.runtime.IsConnected(profile.ID) {
 		t.Fatal("disconnect discarded SQL or implicitly reconnected")
 	}
 	s.sessions.Current().Password = string(secret)
 	s.startMySQLSession(services)
 	wait(func() bool { return s.sessions.StatusFor(profile.ID) != "连接中" })
-	if !s.runtime.IsConnected(profile.ID) || !sqlTab.query.NeedsRecovery() || sqlTab.query.Editor.Buffer.String() != sql {
+	if !s.runtime.IsConnected(profile.ID) || !sqlTab.query.NeedsRecovery() || sqlTab.query.Editor.Buffer.String() != planSource {
 		t.Fatal("common session connection menu failed or silently recovered SQL")
 	}
 }

@@ -1,0 +1,75 @@
+{
+  "0" : {
+    "id" : "11",
+    "name" : "Output",
+    "descriptor" : {
+      "columnNames" : "[nationkey]"
+    },
+    "outputs" : [ {
+      "type" : "bigint",
+      "name" : "nationkey"
+    } ],
+    "details" : [ ],
+    "estimates" : [ {
+      "outputRowCount" : 30.0,
+      "outputSizeInBytes" : 270.0,
+      "cpuCost" : 0.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ {
+      "id" : "139",
+      "name" : "RemoteSource",
+      "descriptor" : {
+        "sourceFragmentIds" : "[1, 2]"
+      },
+      "outputs" : [ {
+        "type" : "bigint",
+        "name" : "nationkey"
+      } ],
+      "details" : [ ],
+      "estimates" : [ ],
+      "children" : [ ]
+    } ]
+  },
+  "1" : {
+    "id" : "0",
+    "name" : "TableScan",
+    "descriptor" : {
+      "table" : "tpch:tiny:nation"
+    },
+    "outputs" : [ {
+      "type" : "bigint",
+      "name" : "nationkey_0"
+    } ],
+    "details" : [ "nationkey_0 := tpch:nationkey" ],
+    "estimates" : [ {
+      "outputRowCount" : 25.0,
+      "outputSizeInBytes" : 225.0,
+      "cpuCost" : 225.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ ]
+  },
+  "2" : {
+    "id" : "4",
+    "name" : "TableScan",
+    "descriptor" : {
+      "table" : "tpch:tiny:region"
+    },
+    "outputs" : [ {
+      "type" : "bigint",
+      "name" : "regionkey_2"
+    } ],
+    "details" : [ "regionkey_2 := tpch:regionkey" ],
+    "estimates" : [ {
+      "outputRowCount" : 5.0,
+      "outputSizeInBytes" : 45.0,
+      "cpuCost" : 45.0,
+      "memoryCost" : 0.0,
+      "networkCost" : 0.0
+    } ],
+    "children" : [ ]
+  }
+}
