@@ -25,6 +25,10 @@ func nativeFixture(t *testing.T) (connections.SolrConfig, string) {
 	if os.Getenv("NYADB_SOLR_IT") != "1" {
 		t.Skip("requires owned native Solr fixture")
 	}
+	return readNativeFixture(t)
+}
+func readNativeFixture(t *testing.T) (connections.SolrConfig, string) {
+	t.Helper()
 	raw, e := os.ReadFile(os.Getenv("NYADB_SOLR_CONFIG"))
 	if e != nil {
 		t.Fatal("private probe unavailable")

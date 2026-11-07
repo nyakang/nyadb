@@ -37,7 +37,13 @@ const responseLimit = 16 << 20
 type Identity struct {
 	Mode     string `json:"mode"`
 	SolrHome string `json:"solr_home"`
-	Lucene   struct {
+	ZKHost   string `json:"zkHost"`
+	JVM      struct {
+		JMX struct {
+			StartTime string `json:"startTime"`
+		} `json:"jmx"`
+	} `json:"jvm"`
+	Lucene struct {
 		SolrVersion   string `json:"solr-spec-version"`
 		SolrBuild     string `json:"solr-impl-version"`
 		LuceneVersion string `json:"lucene-spec-version"`

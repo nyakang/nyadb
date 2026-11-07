@@ -34,12 +34,12 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(plain=False, race=False, profile=False):
+def verify(plain=False, race=False, profile=False, session=False):
     base, output = ROOT/'temp/solr', ROOT/'build/solr'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
     nonce, identifier = uuid.uuid4().hex, None
-    evidence = {'nonce': nonce, 'image': IMAGE, 'tls': not plain, 'scope': 'private_solr_profile_editor' if profile else 'private_native_solr_transport_foundation', 'storage': 'owned_private_bind_mount'}
+    evidence = {'nonce': nonce, 'image': IMAGE, 'tls': not plain, 'scope': 'private_solr_sessions_metadata_rest' if session else ('private_solr_profile_editor' if profile else 'private_native_solr_transport_foundation'), 'storage': 'owned_private_bind_mount'}
     def shutdown(signum, _frame):
         raise SystemExit(128+signum)
     signal.signal(signal.SIGTERM, shutdown)
@@ -117,6 +117,9 @@ def verify(plain=False, race=False, profile=False):
                 try:
                     identity = get('/admin/info/system?wt=json')
                     cores = get('/admin/cores?action=STATUS&wt=json')
+                    if session:
+                        get('/nyadb_fixture/schema?wt=json')
+                        get('/nyadb_fixture/config?wt=json')
                     if identity.get('mode') == 'std' and identity.get('lucene', {}).get('solr-spec-version') == '9.9.0' and BUILD in identity['lucene']['solr-impl-version'] and 'nyadb_fixture' in cores.get('status', {}):
                         break
                 except Exception:
@@ -135,10 +138,15 @@ def verify(plain=False, race=False, profile=False):
                     sources += sorted((ROOT/'internal'/package).glob('*.go'))
                 sources += sorted((ROOT/'locales').glob('*.go'))+sorted((ROOT/'locales').glob('*.json'))
                 sources += [ROOT/'tests/test_solr_fixture.py']
+            if session:
+                sources += sorted((ROOT/'internal/db/contract').glob('*.go'))
+                sources += [ROOT/'tests/test_solr_fixture.py']
             source_hashes = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources}
             evidence['source_sha256'] = source_hashes
             env = os.environ.copy()
             env.update({'NYADB_SOLR_IT': '1', 'NYADB_SOLR_CONFIG': str(probe)})
+            if session:
+                env['NYADB_SOLR_SESSION_IT'] = '1'
             if profile:
                 env['NYADB_SOLR_PROFILE_IMAGES'] = str(output/('profile-images-'+nonce))
             logfile = output/('acceptance-'+nonce+'.log')
@@ -149,6 +157,8 @@ def verify(plain=False, race=False, profile=False):
                 result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=600)
             text = logfile.read_text()
             required = ['TransportAuthenticationIdentityAndExactDocuments', 'LostPostAndGETCoreMutationsNeverReplay', 'CancelSettlesOriginalWorkerAndKeepsOtherClient', 'ConflictCanApplyPrefixWithoutReplay']
+            if session:
+                required += ['SessionMetadataRESTAndChangedBindings']
             if profile:
                 required += ['ProfileURIReopenAndOriginalEditorCheck', 'ProfileProxyContextAndCanceledOriginalCheck', 'EditorLocalizedFormEvidence']
             if any(hashlib.sha256((ROOT/path).read_bytes()).hexdigest() != digest for path, digest in source_hashes.items()):
@@ -182,6 +192,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--race', action='store_true')
-    parser.add_argument('--profile', action='store_true', help='Verify private profiles, storage, credentials and localized forms')
+    scopes = parser.add_mutually_exclusive_group()
+    scopes.add_argument('--session', action='store_true', help='Verify private sessions, native metadata and original REST leases')
+    scopes.add_argument('--profile', action='store_true', help='Verify private profiles, storage, credentials and localized forms')
     args = parser.parse_args()
-    verify(args.plain, args.race, args.profile)
+    verify(args.plain, args.race, args.profile, args.session)
