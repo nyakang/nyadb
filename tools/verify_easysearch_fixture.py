@@ -40,7 +40,7 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(compat_base=False, plain=False, race=False):
+def verify(compat_base=False, plain=False, race=False, profiles=False):
     base, output = ROOT/'temp/easysearch', ROOT/'build/easysearch'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
@@ -124,12 +124,19 @@ def verify(compat_base=False, plain=False, race=False):
             env = os.environ.copy()
             env.update({'NYADB_EASYSEARCH_IT': '1', 'NYADB_EASYSEARCH_CONFIG': str(probe)})
             logfile = output/('acceptance-'+nonce+'.log')
-            args = ['go', 'test', '-count=1', '-v', *(['-race'] if race else []), './internal/services/easysearch', './internal/services/connections']
+            packages = ['./internal/services/connections', './internal/storage/localdb', './internal/ui/connectioneditor'] if profiles else ['./internal/services/easysearch', './internal/services/connections']
+            if profiles:
+                env['NYADB_EASYSEARCH_PROFILE_IMAGES'] = str(output/('profile-images-'+nonce))
+            args = ['go', 'test', '-count=1', '-v', *(['-race'] if race else []), *packages]
             with logfile.open('w') as log:
                 result = subprocess.run(args, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=600)
             text = logfile.read_text()
             required = ['TransportAuthenticationDocumentsAndPIT', 'LostWriteReceiptRetiresOriginalWithoutReplay', 'CancellationSettlesOriginalHTTPWorkerAndReleasesPIT', 'PITKeepsEqualIDsOnDifferentRoutingShards', 'ScrollReadsCompleteOriginalSnapshotBeyondPITWindow', 'ScrollLostResponseDoesNotReplayAdvancedResource', 'IncompletePITReceiptRetiresAndCleansCapturedResource']
-            if not plain:
+            if profiles:
+                required = ['ProfileURIReopenAndEditorConnectionChecks', 'EditorLocalizedFormEvidence']
+                evidence['scope'] = 'profile_uri_vault_injected_restart_editor'
+                evidence['images'] = str(Path(env['NYADB_EASYSEARCH_PROFILE_IMAGES']).relative_to(ROOT))
+            elif not plain:
                 required.append('AccessTokenUsesNativeHeaderAndPermissions')
             if result.returncode or any('--- PASS: TestEasysearchNative'+name not in text for name in required):
                 raise RuntimeError('Native Easysearch acceptance failed; inspect captured test log')
@@ -151,5 +158,6 @@ if __name__ == '__main__':
     parser.add_argument('--compat-base', action='store_true')
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--race', action='store_true')
+    parser.add_argument('--profiles', action='store_true', help='verify native profile, restart and localized connection form')
     args = parser.parse_args()
-    verify(args.compat_base, args.plain, args.race)
+    verify(args.compat_base, args.plain, args.race, args.profiles)

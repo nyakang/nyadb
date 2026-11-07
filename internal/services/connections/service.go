@@ -51,6 +51,8 @@ func (s *Service) Duplicate(ctx context.Context, id int64, name string) (Profile
 // Defaults are UI-independent initial values, not connection attempts.
 func Defaults(kind Kind) (Profile, error) {
 	switch kind {
+	case Easysearch:
+		return Profile{Kind: Easysearch, Host: "localhost", Port: 9200, Username: "admin", TLSMode: "verify-full", EasysearchOptions: DefaultEasysearchOptions()}, nil
 	case Elasticsearch:
 		return Profile{Kind: Elasticsearch, Host: "localhost", Port: 9200, Username: "elastic", TLSMode: "verify-full", ElasticsearchOptions: DefaultElasticsearchOptions()}, nil
 	case Trino:

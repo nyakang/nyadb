@@ -8,7 +8,7 @@ import (
 
 // A duplicate authentication member must not silently change the meaning of a
 // separate saved credential. Existing engines retain their historical formats.
-func uniqueElasticsearchOptionsJSON(raw string) bool {
+func uniqueNativeAuthOptionsJSON(raw string) bool {
 	if len(raw) == 0 || len(raw) > 128<<10 {
 		return false
 	}

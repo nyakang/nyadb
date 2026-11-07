@@ -21555,3 +21555,93 @@ func NativeQueryInformation() string { return In(i18n.Locale()).NativeQueryInfor
 func (msgs Messages) NativeQueryInformation() string {
 	return Catalog.Format(msgs.locale, "nativeQueryInformation", nil)
 }
+
+// EasysearchAuthMode says "Easysearch 认证方式"
+// in the language the app shows.
+func EasysearchAuthMode() string { return In(i18n.Locale()).EasysearchAuthMode() }
+
+// EasysearchAuthMode says "Easysearch 认证方式"
+// in the language of msgs.
+func (msgs Messages) EasysearchAuthMode() string {
+	return Catalog.Format(msgs.locale, "easysearchAuthMode", nil)
+}
+
+// EasysearchAccessToken says "访问令牌"
+// in the language the app shows.
+func EasysearchAccessToken() string { return In(i18n.Locale()).EasysearchAccessToken() }
+
+// EasysearchAccessToken says "访问令牌"
+// in the language of msgs.
+func (msgs Messages) EasysearchAccessToken() string {
+	return Catalog.Format(msgs.locale, "easysearchAccessToken", nil)
+}
+
+// EasysearchAccessTokenInput says "Easysearch 访问令牌"
+// in the language the app shows.
+func EasysearchAccessTokenInput() string { return In(i18n.Locale()).EasysearchAccessTokenInput() }
+
+// EasysearchAccessTokenInput says "Easysearch 访问令牌"
+// in the language of msgs.
+func (msgs Messages) EasysearchAccessTokenInput() string {
+	return Catalog.Format(msgs.locale, "easysearchAccessTokenInput", nil)
+}
+
+// EasysearchRESTPort says "Easysearch 使用 REST 接口，默认端口 9200。"
+// in the language the app shows.
+func EasysearchRESTPort() string { return In(i18n.Locale()).EasysearchRESTPort() }
+
+// EasysearchRESTPort says "Easysearch 使用 REST 接口，默认端口 9200。"
+// in the language of msgs.
+func (msgs Messages) EasysearchRESTPort() string {
+	return Catalog.Format(msgs.locale, "easysearchRESTPort", nil)
+}
+
+// EasysearchTLSMode says "Easysearch TLS 模式"
+// in the language the app shows.
+func EasysearchTLSMode() string { return In(i18n.Locale()).EasysearchTLSMode() }
+
+// EasysearchTLSMode says "Easysearch TLS 模式"
+// in the language of msgs.
+func (msgs Messages) EasysearchTLSMode() string {
+	return Catalog.Format(msgs.locale, "easysearchTLSMode", nil)
+}
+
+// EasysearchCA says "Easysearch CA 证书"
+// in the language the app shows.
+func EasysearchCA() string { return In(i18n.Locale()).EasysearchCA() }
+
+// EasysearchCA says "Easysearch CA 证书"
+// in the language of msgs.
+func (msgs Messages) EasysearchCA() string {
+	return Catalog.Format(msgs.locale, "easysearchCA", nil)
+}
+
+// EasysearchHTTPSCredentials says "密码和访问令牌需要 HTTPS；HTTP 仅用于无认证连接。"
+// in the language the app shows.
+func EasysearchHTTPSCredentials() string { return In(i18n.Locale()).EasysearchHTTPSCredentials() }
+
+// EasysearchHTTPSCredentials says "密码和访问令牌需要 HTTPS；HTTP 仅用于无认证连接。"
+// in the language of msgs.
+func (msgs Messages) EasysearchHTTPSCredentials() string {
+	return Catalog.Format(msgs.locale, "easysearchHTTPSCredentials", nil)
+}
+
+// EasysearchCheckSettings says "请检查 Easysearch 认证方式、用户名和证书设置"
+// in the language the app shows.
+func EasysearchCheckSettings() string { return In(i18n.Locale()).EasysearchCheckSettings() }
+
+// EasysearchCheckSettings says "请检查 Easysearch 认证方式、用户名和证书设置"
+// in the language of msgs.
+func (msgs Messages) EasysearchCheckSettings() string {
+	return Catalog.Format(msgs.locale, "easysearchCheckSettings", nil)
+}
+
+// EasysearchCheckCredential says "请检查 Easysearch 凭据；访问令牌使用原生完整值"
+// in the language the app shows.
+func EasysearchCheckCredential() string { return In(i18n.Locale()).EasysearchCheckCredential() }
+
+// EasysearchCheckCredential says "请检查 Easysearch 凭据；访问令牌使用原生完整值"
+// in the language of msgs.
+func (msgs Messages) EasysearchCheckCredential() string {
+	return Catalog.Format(msgs.locale, "easysearchCheckCredential", nil)
+}

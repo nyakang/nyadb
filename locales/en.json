@@ -2119,5 +2119,14 @@
   "nativeShowQueryInformation": "Show Query Information",
   "nativeCopyQueryInformation": "Copy Query Information",
   "nativeObjectInformation": "Object Information",
-  "nativeQueryInformation": "Query Information"
+  "nativeQueryInformation": "Query Information",
+  "easysearchAuthMode": "Easysearch authentication",
+  "easysearchAccessToken": "Access token",
+  "easysearchAccessTokenInput": "Easysearch access token",
+  "easysearchRESTPort": "Easysearch uses REST on port 9200 by default.",
+  "easysearchTLSMode": "Easysearch TLS mode",
+  "easysearchCA": "Easysearch CA certificate",
+  "easysearchHTTPSCredentials": "Passwords and access tokens require HTTPS; HTTP supports unauthenticated connections only.",
+  "easysearchCheckSettings": "Check the Easysearch authentication, username and certificate settings.",
+  "easysearchCheckCredential": "Check the Easysearch credential; use the complete native access token."
 }

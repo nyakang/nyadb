@@ -77,7 +77,7 @@ func connectionEditorTabNames(kind connections.Kind) []string {
 		return []string{"常规", "高级", "SSL", "SSH", "HTTP", "备注"}
 	case connections.Redis, connections.SQLServer, connections.Oracle, connections.MongoDB, connections.Dameng:
 		return []string{"常规", "高级", "SSL", "备注"}
-	case connections.Elasticsearch, connections.Trino, connections.StarRocks, connections.Doris, connections.ClickHouse:
+	case connections.Easysearch, connections.Elasticsearch, connections.Trino, connections.StarRocks, connections.Doris, connections.ClickHouse:
 		return []string{"常规", "SSL", "备注"}
 	default:
 		return []string{"常规", "高级", "数据库", "SSL", "SSH", "HTTP", "备注"}
@@ -192,6 +192,10 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 		}
 		s.editorInputRow(c, "主机：", "主机", &p.Host, labelWidth, fieldWidth)
 		s.editorInputRow(c, "端口：", "端口", &s.connectionPort, labelWidth, min(fieldWidth, float32(80)))
+		if p.Kind == connections.Easysearch {
+			s.editorEasysearchFields(c, labelWidth, fieldWidth)
+			return
+		}
 		if p.Kind == connections.Elasticsearch {
 			s.editorElasticsearchFields(c, labelWidth, fieldWidth)
 			return

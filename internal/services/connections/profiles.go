@@ -26,6 +26,7 @@ const (
 	StarRocks     Kind = "starrocks"
 	Trino         Kind = "trino"
 	Elasticsearch Kind = "elasticsearch"
+	Easysearch    Kind = "easysearch"
 	SQLServer     Kind = "sqlserver"
 	DuckDB        Kind = "duckdb"
 	Oracle        Kind = "oracle"
@@ -66,6 +67,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	EasysearchOptions    EasysearchOptions
 	ElasticsearchOptions ElasticsearchOptions
 	TrinoOptions         TrinoOptions
 	StarRocksOptions     StarRocksOptions

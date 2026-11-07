@@ -2119,5 +2119,14 @@
   "nativeShowQueryInformation": "显示查询信息",
   "nativeCopyQueryInformation": "复制查询信息",
   "nativeObjectInformation": "对象信息",
-  "nativeQueryInformation": "查询信息"
+  "nativeQueryInformation": "查询信息",
+  "easysearchAuthMode": "Easysearch 认证方式",
+  "easysearchAccessToken": "访问令牌",
+  "easysearchAccessTokenInput": "Easysearch 访问令牌",
+  "easysearchRESTPort": "Easysearch 使用 REST 接口，默认端口 9200。",
+  "easysearchTLSMode": "Easysearch TLS 模式",
+  "easysearchCA": "Easysearch CA 证书",
+  "easysearchHTTPSCredentials": "密码和访问令牌需要 HTTPS；HTTP 仅用于无认证连接。",
+  "easysearchCheckSettings": "请检查 Easysearch 认证方式、用户名和证书设置",
+  "easysearchCheckCredential": "请检查 Easysearch 凭据；访问令牌使用原生完整值"
 }
