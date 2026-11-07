@@ -1,6 +1,7 @@
 package dpi
 
 import (
+	"database/sql"
 	"encoding/binary"
 	"errors"
 	"math"
@@ -95,6 +96,8 @@ func decodeDecimal(value numeric) (string, error) {
 }
 
 type binding struct {
+	direction    int16
+	output       *sql.Out
 	ctype, dtype int16
 	precision    uint64
 	scale        int16
@@ -104,7 +107,10 @@ type binding struct {
 }
 
 func newBinding(value any) (*binding, error) {
-	b := &binding{ctype: 1003, dtype: 2}
+	if out, ok := value.(sql.Out); ok {
+		return newOutputBinding(out)
+	}
+	b := &binding{direction: 1, ctype: 1003, dtype: 2}
 	switch v := value.(type) {
 	case nil:
 		b.bytes, b.length = []byte{0}, -1

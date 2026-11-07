@@ -167,6 +167,7 @@ type response struct {
 	Handle        uint64   `json:"handle,omitempty"`
 	Affected      int64    `json:"affected,omitempty"`
 	AffectedError *failure `json:"affected_error,omitempty"`
+	Outputs       []value  `json:"outputs,omitempty"`
 	Inputs        int      `json:"inputs,omitempty"`
 	Columns       []column `json:"columns,omitempty"`
 	Values        []value  `json:"values,omitempty"`

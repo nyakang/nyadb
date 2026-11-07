@@ -1,0 +1,88 @@
+{
+  "scope": "native output parameter prerequisite for precise DataEdits; statement acknowledgements do not prove commit",
+  "workbench_registered": false,
+  "registered_products": 16,
+  "editable_tables": false,
+  "saver_implemented": false,
+  "verify_implemented": false,
+  "standard_parameter": "database/sql.Out",
+  "parameter_direction": 4,
+  "supported_destinations": [
+    "*int64",
+    "*sql.NullInt64",
+    "*string",
+    "*sql.NullString"
+  ],
+  "input_output_supported": false,
+  "query_outputs_supported": false,
+  "limits": {
+    "output_text_bytes": 8192,
+    "output_parameter_count": 128
+  },
+  "bare_returning_error": -2007,
+  "anonymous_returning_into_verified": true,
+  "integer_output_uses_text_and_lossless_parse": true,
+  "native_bigint_binding_silently_truncates_fractional_output": true,
+  "fractional_out_of_range_invalid_and_incomplete_output_rejected": true,
+  "native_success_with_info_output_rejected": true,
+  "null_empty_exact_bigint_and_decimal_text_preserved": true,
+  "identity_default_generated_and_before_trigger_returned_values_match_stored_row": true,
+  "prepared_reuse_and_native_sql_rowcount_verified": true,
+  "original_raw_transaction_commit_and_rollback_verified": true,
+  "output_receipt_is_commit_receipt": false,
+  "insert_default_values_error": -2030,
+  "explicit_identity_default_error": -2871,
+  "ordinary_column_default_insert_verified": true,
+  "native_oversize_output_error": -6108,
+  "all_outputs_staged_before_atomic_publication": true,
+  "publication_after_outer_native_cancellation_acknowledgement": true,
+  "ipc_contains_private_output_descriptors_without_addresses": true,
+  "child_output_destinations_independent_from_parent": true,
+  "malformed_missing_extra_or_oversize_ipc_output_retires_original_only": true,
+  "native_post_execution_unrepresentable_output_retires_original_with_unknown_outcome": true,
+  "original_native_reply_loss_and_independent_single_write_proof_verified": true,
+  "pre_cancellation_no_submission_verified": true,
+  "running_cancellation_waits_for_native_acknowledgement": true,
+  "automatic_replay": false,
+  "submitted_errors_use_driver_errbadconn": false,
+  "native_platform": "linux-amd64",
+  "server_version": "08134283904-20220804-166351-20005",
+  "native_clients": [
+    "8.1.2.128/2022-08-04",
+    "8.1.3.59/2023-07-25",
+    "8.1.5.88/2026-09-22"
+  ],
+  "transports_verified": [
+    "loopback-plain",
+    "verified-server-tls"
+  ],
+  "native_tests_per_driver": 4,
+  "drivers": [
+    "dpi",
+    "dpiworker"
+  ],
+  "client_2026_both_transports_race_verified": true,
+  "cgo0_full_go_tests": true,
+  "relevant_lifecycle_race": true,
+  "go_vet": true,
+  "mygo_vet": true,
+  "i18n_check": true,
+  "cgo0_app_and_both_native_test_builds": [
+    "linux-amd64",
+    "windows-amd64",
+    "darwin-arm64"
+  ],
+  "compilation_proves_unverified_platform_native_abi": false,
+  "full_remote_mutual_certificate_authentication_verified": false,
+  "vendor_files_bundled": false,
+  "verification_evidence": "build/dameng/output-verification.json",
+  "pending": [
+    "precise DataEdits values validation and save",
+    "commit receipt loss through original driver.Tx",
+    "read-only Verify without replay",
+    "SHA256 fingerprints",
+    "explicit data transactions and import/export",
+    "workbench provider chooser editor vault registration",
+    "additional servers modes platforms and complete management"
+  ]
+}

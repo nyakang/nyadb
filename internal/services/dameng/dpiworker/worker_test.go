@@ -3,6 +3,7 @@ package dpiworker
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"database/sql/driver"
 	"errors"
 	"io"
@@ -59,8 +60,27 @@ func (c *fakeConn) Begin() (driver.Tx, error) {
 func (c *fakeConn) BeginTx(ctx context.Context, _ driver.TxOptions) (driver.Tx, error) {
 	return &fakeTx{ctx}, nil
 }
-func (c *fakeConn) ExecContext(ctx context.Context, sql string, _ []driver.NamedValue) (driver.Result, error) {
-	switch sql {
+func (c *fakeConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	switch query {
+	case "out-success":
+		for _, arg := range args {
+			out, ok := arg.Value.(sql.Out)
+			if !ok {
+				continue
+			}
+			var value any
+			switch out.Dest.(type) {
+			case *int64:
+				value = int64(9007199254740993)
+			case *string:
+				value = "数据库 🌸"
+			}
+			set, err := dpi.StageOutput(out, value)
+			if err != nil {
+				return nil, err
+			}
+			set()
+		}
 	case "wait":
 		markEntered()
 		<-ctx.Done()

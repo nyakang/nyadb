@@ -828,7 +828,7 @@
       "nyadb_kind": null,
       "status": "missing",
       "preintegration_evidence": "dameng-readiness-2026-11-07.json",
-      "preintegration_status": "owned_native_tls_physical_session_gate_process_isolation_profile_persistence_metadata_sql_data_read_and_complete_row_foundation; workbench_missing",
+      "preintegration_status": "owned_native_tls_physical_session_gate_process_isolation_profile_persistence_metadata_sql_data_read_complete_row_and_output_foundation; workbench_missing",
       "loopback_dpi_evidence": "dameng-dpi-boundary-2026-11-07.json",
       "native_tls_evidence": "dameng-native-tls-2026-11-07.json",
       "native_session_gate_evidence": "dameng-native-session-gate-2026-11-07.json",
@@ -836,7 +836,8 @@
       "profile_foundation_evidence": "dameng-profile-foundation-2026-11-07.json",
       "native_workspace_foundation_evidence": "dameng-native-workspace-foundation-2026-11-07.json",
       "native_data_read_evidence": "dameng-native-data-read-2026-11-07.json",
-      "native_complete_row_evidence": "dameng-native-complete-row-2026-11-07.json"
+      "native_complete_row_evidence": "dameng-native-complete-row-2026-11-07.json",
+      "native_output_evidence": "dameng-native-output-2026-11-07.json"
     },
     {
       "dbType": "kingbase",
@@ -3248,7 +3249,8 @@
       "profile_foundation_evidence": "dameng-profile-foundation-2026-11-07.json",
       "native_workspace_foundation_evidence": "dameng-native-workspace-foundation-2026-11-07.json",
       "native_data_read_evidence": "dameng-native-data-read-2026-11-07.json",
-      "native_complete_row_evidence": "dameng-native-complete-row-2026-11-07.json"
+      "native_complete_row_evidence": "dameng-native-complete-row-2026-11-07.json",
+      "native_output_evidence": "dameng-native-output-2026-11-07.json"
     },
     {
       "id": "h2",

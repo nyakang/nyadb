@@ -2,6 +2,7 @@ package dpiworker
 
 import (
 	"context"
+	"database/sql"
 	"database/sql/driver"
 	"errors"
 	"io"
@@ -33,13 +34,28 @@ func (c *conn) exec(ctx context.Context, q request, args []driver.NamedValue) (d
 	if err != nil {
 		return nil, err
 	}
-	r, err := c.invoke(ctx, q, true)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	r, err := c.callLocked(ctx, q, true)
 	if err != nil {
 		return nil, err
+	}
+	setters, err := stageOutputs(args, r.Outputs)
+	if err != nil {
+		c.terminateLocked()
+		return nil, errors.Join(err, dpi.ErrSessionClosed, dpi.ErrOutcomeUnknown)
+	}
+	for _, set := range setters {
+		set()
 	}
 	return result{affected: r.Affected, err: r.AffectedError.err()}, nil
 }
 func (c *conn) query(ctx context.Context, q request, args []driver.NamedValue) (driver.Rows, error) {
+	for _, arg := range args {
+		if _, ok := arg.Value.(sql.Out); ok {
+			return nil, errors.New("DM8 output parameters require ExecContext")
+		}
+	}
 	var err error
 	q.Values, err = encodeValues(args)
 	if err != nil {

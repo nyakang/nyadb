@@ -2,6 +2,7 @@ package dpiworker
 
 import (
 	"context"
+	"database/sql"
 	"database/sql/driver"
 	"errors"
 	"io"
@@ -295,6 +296,10 @@ func (c *conn) CheckNamedValue(v *driver.NamedValue) error {
 	if _, ok := v.Value.(dpi.Decimal); ok {
 		return nil
 	}
+	if out, ok := v.Value.(sql.Out); ok {
+		_, err := dpi.OutputKind(out)
+		return err
+	}
 	return driver.ErrSkip
 }
 
@@ -303,15 +308,27 @@ func encodeValues(values []driver.NamedValue) ([]value, error) {
 		return nil, errProtocol
 	}
 	out := make([]value, len(values))
+	outputCount := 0
 	for i, v := range values {
 		if v.Name != "" || v.Ordinal != i+1 {
 			return nil, errors.New("DM8 parameters must be consecutive positional values")
 		}
-		b, err := encodeValue(v.Value)
+		var b value
+		var err error
+		if output, ok := v.Value.(sql.Out); ok {
+			b.Kind = "out"
+			b.Text, err = dpi.OutputKind(output)
+			outputCount++
+		} else {
+			b, err = encodeValue(v.Value)
+		}
 		if err != nil {
 			return nil, err
 		}
 		out[i] = b
+	}
+	if outputCount > dpi.MaxOutputParameters {
+		return nil, errProtocol
 	}
 	return out, nil
 }
