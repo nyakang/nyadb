@@ -90,7 +90,7 @@ func TestNativeDamengOrdinaryMetadataVisibilityAndGeneratedColumnProof(t *testin
 			t.Fatal("ordinary native object visibility failed", schema, err, objects)
 		}
 		table, err := s.TableMetadata(ctx, s.Namespace(schema).Object("table", "Data"))
-		if err != nil || len(table.Columns) != 4 || !table.Columns[1].Generated || !table.Columns[2].Generated || table.Columns[3].Generated || table.Editable {
+		if err != nil || len(table.Columns) != 4 || !table.Columns[1].Generated || !table.Columns[2].Generated || table.Columns[3].Generated || !table.Editable {
 			t.Fatal("ordinary native generated-field metadata failed", schema, err, table)
 		}
 	}
