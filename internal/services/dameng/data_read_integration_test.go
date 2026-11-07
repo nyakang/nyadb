@@ -78,8 +78,8 @@ func TestNativeDamengDataReadTypedPagingAndBoundedFields(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 	r := contract.ComposeData(s)
-	if r.AdvancedLoader == nil || r.Count == nil || r.Chunk == nil || r.Saver == nil || r.Verify == nil || r.RowReader == nil || r.Transactions.Begin == nil || r.Importer != nil || r.Exporter != nil || !r.Capabilities.EditableTables || !r.Capabilities.Transactions {
-		t.Fatal("native data foundation lost verified edits or advertised unimplemented transfers")
+	if r.AdvancedLoader == nil || r.Count == nil || r.Chunk == nil || r.Saver == nil || r.Verify == nil || r.RowReader == nil || r.Transactions.Begin == nil || r.Importer != nil || r.Exporter == nil || r.JSONL == nil || !r.Capabilities.EditableTables || !r.Capabilities.Transactions {
+		t.Fatal("native data foundation lost verified features or advertised unimplemented imports")
 	}
 	opt := contract.DataOptions{Object: o, Limit: 2, UseKeyset: true, Sorts: []contract.DataSortRule{{Column: "GRP", Descending: true}}}
 	p, err := r.AdvancedLoader(ctx, s.ProfileID(), o.Schema, o.Name, opt)
