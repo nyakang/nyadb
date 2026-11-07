@@ -3,8 +3,10 @@ package engines
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -131,28 +133,29 @@ func openGaussCheckDesignOperatorRoutine(ctx context.Context, c *sql.Conn, name 
 // Preserve the explicit/assignment cast check over declaration/call types.
 // Separately follow native implicit edges from every checked operand/result:
 // user casts and non-core destinations must be rejected even when their type
-// was absent from the written declaration. Merely reaching an unrelated core
-// SQL cast does not authorize its body; actually bound SQL cast implementations
-// still need independent native callback verification before executing values.
+// was absent from the written declaration. SQL casts must match known native
+// forwarders and their nested coercions. This preflight is not a concurrent
+// callback binding barrier; actual dispatch still needs independent proof.
 func openGaussCheckDesignCastClosure(ctx context.Context, c *sql.Conn, operands, declarations map[uint64]bool, checkRoutine func(uint64) error) error {
 	var declared []string
 	for oid := range declarations {
 		declared = append(declared, strconv.FormatUint(oid, 10))
 	}
 	if len(declared) > 0 {
-		rows, err := c.QueryContext(ctx, `SELECT ca.oid::bigint,ca.castfunc::bigint,ca.castmethod::text
- FROM pg_cast ca WHERE ca.castsource=ANY($1::oid[]) AND ca.casttarget=ANY($1::oid[])`, "{"+strings.Join(declared, ",")+"}")
+		rows, err := c.QueryContext(ctx, `SELECT ca.oid::bigint,ca.castfunc::bigint,ca.castsource::bigint,ca.casttarget::bigint,ca.castmethod::text,COALESCE(p.prolang=14,false)
+ FROM pg_cast ca LEFT JOIN pg_proc p ON p.oid=ca.castfunc WHERE ca.castsource=ANY($1::oid[]) AND ca.casttarget=ANY($1::oid[])`, "{"+strings.Join(declared, ",")+"}")
 		if err != nil {
 			return err
 		}
 		type cast struct {
-			oid, routine uint64
-			method       string
+			oid, routine, source, target uint64
+			method                       string
+			sql                          bool
 		}
 		var casts []cast
 		for rows.Next() {
 			var v cast
-			if err = rows.Scan(&v.oid, &v.routine, &v.method); err != nil {
+			if err = rows.Scan(&v.oid, &v.routine, &v.source, &v.target, &v.method, &v.sql); err != nil {
 				break
 			}
 			if len(casts) >= 16384 {
@@ -172,7 +175,13 @@ func openGaussCheckDesignCastClosure(ctx context.Context, c *sql.Conn, operands,
 			if v.oid == 0 || v.oid >= 16384 || v.method != "b" && v.method != "i" && v.method != "f" || v.method == "f" && v.routine == 0 || v.method != "f" && v.routine != 0 {
 				return fmt.Errorf("native cast %d: %w", v.oid, errOpenGaussDesignDeclaration)
 			}
-			if err = checkRoutine(v.routine); err != nil {
+			_, knownSQL := openGaussNativeSQLCasts[v.oid]
+			if v.sql || knownSQL {
+				err = openGaussCheckNativeSQLCast(ctx, c, v.oid, v.source, v.target, v.routine)
+			} else {
+				err = checkRoutine(v.routine)
+			}
+			if err != nil {
 				return fmt.Errorf("native cast %d routine %d: %w", v.oid, v.routine, err)
 			}
 		}
@@ -186,6 +195,12 @@ func openGaussCheckDesignCastClosure(ctx context.Context, c *sql.Conn, operands,
 	}
 	var count int
 	var unsafe bool
+	var sqlCasts string
+	var knownSQLIDs []string
+	for oid := range openGaussNativeSQLCasts {
+		knownSQLIDs = append(knownSQLIDs, strconv.FormatUint(oid, 10))
+	}
+	sort.Strings(knownSQLIDs)
 	err := c.QueryRowContext(ctx, `WITH RECURSIVE reachable(oid) AS (
  SELECT unnest($1::oid[])
  UNION SELECT ca.casttarget FROM pg_cast ca JOIN reachable r ON r.oid=ca.castsource WHERE ca.castcontext='i'
@@ -196,9 +211,22 @@ func openGaussCheckDesignCastClosure(ctx context.Context, c *sql.Conn, operands,
  WHERE ca.castcontext='i' AND (ca.oid>=16384 OR ca.casttarget>=16384 OR t.oid IS NULL OR tn.nspname<>'pg_catalog'
  OR ca.castmethod NOT IN('b','i','f') OR ca.castmethod<>'f' AND ca.castfunc<>0
  OR ca.castmethod='f' AND (p.oid IS NULL OR p.oid>=16384 OR pn.nspname<>'pg_catalog' OR p.prolang NOT IN(12,13,14)
- OR p.provolatile NOT IN('i','s') OR p.proisagg OR p.proiswindow OR p.proretset OR p.prosecdef OR p.proconfig IS NOT NULL)))`, "{"+strings.Join(inputs, ",")+"}").Scan(&count, &unsafe)
+ OR p.provolatile NOT IN('i','s') OR p.proisagg OR p.proiswindow OR p.proretset OR p.prosecdef OR p.proconfig IS NOT NULL))),
+ COALESCE((SELECT json_agg(json_build_object('oid',ca.oid::bigint,'source',ca.castsource::bigint,'target',ca.casttarget::bigint,'routine',ca.castfunc::bigint))::text
+ FROM pg_cast ca JOIN reachable r ON r.oid=ca.castsource JOIN pg_proc p ON p.oid=ca.castfunc WHERE ca.castcontext='i' AND (p.prolang=14 OR ca.oid=ANY($2::oid[]))),'[]')`, "{"+strings.Join(inputs, ",")+"}", "{"+strings.Join(knownSQLIDs, ",")+"}").Scan(&count, &unsafe, &sqlCasts)
 	if err != nil || unsafe || count > 4096 {
 		return errors.Join(errOpenGaussDesignDeclaration, err)
+	}
+	var native []struct {
+		OID, Source, Target, Routine uint64
+	}
+	if json.Unmarshal([]byte(sqlCasts), &native) != nil || len(native) > 16384 {
+		return errOpenGaussDesignDeclaration
+	}
+	for _, cast := range native {
+		if err := openGaussCheckNativeSQLCast(ctx, c, cast.OID, cast.Source, cast.Target, cast.Routine); err != nil {
+			return err
+		}
 	}
 	return ctx.Err()
 }

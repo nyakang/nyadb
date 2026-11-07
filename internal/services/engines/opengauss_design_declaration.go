@@ -205,10 +205,10 @@ func openGaussCheckDesignDeclaration(ctx context.Context, c *sql.Conn, desired s
 		return err
 	}
 	if err = openGaussCheckDesignCastClosure(ctx, c, checkedTypes, castTypes, checkRoutine); err != nil {
-		return err
+		return fmt.Errorf("native cast closure: %w", err)
 	}
 	if err = openGaussCheckDesignDispatch(ctx, c, scope, schema, checkedTypes); err != nil {
-		return err
+		return fmt.Errorf("native expression dispatch: %w", err)
 	}
 	return ctx.Err()
 }
