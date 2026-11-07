@@ -24,6 +24,8 @@ func fakeDataDocument(t *testing.T) (*Session, *dataLease, *atomic.Int32) {
 			_, _ = io.WriteString(w, `{"indices":[{"name":"own","attributes":["open"]}],"aliases":[],"data_streams":[]}`)
 		case strings.Contains(r.URL.Path, "/_settings/"):
 			_, _ = io.WriteString(w, `{"own":{"settings":{"index.uuid":"original-uuid"}}}`)
+		case r.URL.Path == "/own/_mapping":
+			_, _ = io.WriteString(w, `{"own":{"mappings":{"properties":{}}}}`)
 		case r.URL.Path == "/own/_pit":
 			_, _ = io.WriteString(w, `{"pit_id":"original-pit","_shards":{"total":1,"successful":1,"failed":0}}`)
 		case r.URL.Path == "/_search":

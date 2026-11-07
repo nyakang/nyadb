@@ -98,8 +98,8 @@ func TestEasysearchNativeDataDocumentExactRowsPagingFieldsFilteredExportAndClean
 	if err != nil || len(first.Rows) != 3 || !first.KeysetAvailable || first.CurrentCursor == nil || first.NextCursor == nil {
 		t.Fatal("native shared data binding failed", err)
 	}
-	if !slices.Equal(first.Columns, documentFields()) || first.Editable == nil || *first.Editable {
-		t.Fatal("read stage must keep editing disabled")
+	if !slices.Equal(first.Columns, documentFields()) || first.Editable == nil || !*first.Editable {
+		t.Fatal("normal native index should advertise bound editing")
 	}
 	if _, err = b.Runtime().AdvancedLoader(ctx, s.ProfileID(), db, index, contract.DataOptions{Object: b.object, Offset: 3, Limit: 3, After: first.NextCursor}); err == nil {
 		t.Fatal("cursor crossed document leases")

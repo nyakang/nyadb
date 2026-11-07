@@ -21,24 +21,28 @@ import (
 // dataLease owns the PIT independently of whether a worker's page is published.
 // Boundaries and row identities are signed for this immutable document only.
 type dataLease struct {
-	mu       sync.Mutex
-	pageMu   sync.Mutex
-	session  *Session
-	object   contract.ObjectRef
-	ctx      context.Context
-	cancel   context.CancelFunc
-	work     sync.WaitGroup
-	closed   bool
-	done     chan struct{}
-	closeErr error
-	key      [32]byte
-	client   *Client
-	cursor   *Cursor
-	epoch    uint64
-	query    json.RawMessage
-	limit    int
-	binding  *targetBinding // immutable original concrete UUIDs and alias/stream scope
-	changed  bool
+	mu             sync.Mutex
+	pageMu         sync.Mutex
+	editMu         sync.Mutex
+	session        *Session
+	object         contract.ObjectRef
+	ctx            context.Context
+	cancel         context.CancelFunc
+	work           sync.WaitGroup
+	closed         bool
+	done           chan struct{}
+	closeErr       error
+	key            [32]byte
+	client         *Client
+	cursor         *Cursor
+	epoch          uint64
+	query          json.RawMessage
+	limit          int
+	binding        *targetBinding // immutable original concrete UUIDs and alias/stream scope
+	changed        bool
+	dirty, writing bool
+	revision       uint64
+	pending        *pendingBatch
 }
 
 func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
@@ -101,6 +105,7 @@ func (l *dataLease) Close() error {
 		l.closeErr = l.client.Close()
 	}
 	l.client, l.cursor, l.query, l.binding = nil, nil, nil, nil
+	l.pending = nil
 	clear(l.key[:])
 	l.session.mu.Lock()
 	delete(l.session.datas, l)
@@ -115,7 +120,7 @@ func (l *dataLease) identity(id int64, db, name string) error {
 	return l.session.checkObject(l.object)
 }
 func (l *dataLease) Runtime() contract.DataRuntime {
-	return contract.DataRuntime{Capabilities: l.session.DataDocumentCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, Exporter: l.exportRows, JSONL: l.jsonl, TableMetadata: l.metadata, TableInfo: l.info, FilterModes: []string{"equal", "not_equal"}, FilterColumns: []string{"_id", "_routing"}, SortColumns: []string{}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
+	return contract.DataRuntime{Capabilities: l.session.DataDocumentCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, Saver: l.save, Verify: l.verify, Exporter: l.exportRows, JSONL: l.jsonl, TableMetadata: l.metadata, TableInfo: l.info, FilterModes: []string{"equal", "not_equal"}, FilterColumns: []string{"_id", "_routing"}, SortColumns: []string{}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
 }
 func (l *dataLease) sign(v any) string {
 	raw, _ := json.Marshal(v)
@@ -248,10 +253,13 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 		return nil, err
 	}
 	l.mu.Lock()
-	changed := l.changed
+	changed, writing, revision := l.changed, l.writing, l.revision
 	l.mu.Unlock()
+	if writing {
+		return nil, ErrBusy
+	}
 	if changed {
-		return nil, ErrTargetChanged
+		return nil, ErrDataTargetChanged
 	}
 	started := time.Now()
 	var after []json.RawMessage
@@ -290,6 +298,12 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 		if l.cursor == nil || !bytes.Equal(query, l.query) {
 			return nil, ErrInvalid
 		}
+		l.mu.Lock()
+		dirty := l.dirty
+		l.mu.Unlock()
+		if dirty {
+			return nil, contract.ErrDataConflict
+		}
 		after, err = l.decodeBoundary(db, o)
 		if err != nil {
 			return nil, err
@@ -310,6 +324,12 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 		return nil, err
 	}
 	editable := false
+	writeTarget, e := l.dataTarget(ctx, l.client)
+	if e == nil {
+		editable = writeTarget.editable
+	} else if !isNativeStatus(e, 403) {
+		return nil, e
+	}
 	out := &contract.DataPage{Object: l.object, Database: db, Table: name, Columns: documentFields(), ColumnMetadata: documentColumns(), ColumnKinds: []string{"text", "text", "text", "json"}, Offset: o.Offset, Limit: o.Limit, HasMore: page.HasMore, StableOrder: true, KeysetAvailable: true, Editable: &editable, QuerySQL: "Easysearch native PIT; original frozen offset; grid window 10000; complete export uses Scroll"}
 	out.CurrentCursor = l.boundary(db, o.Offset, after)
 	if page.HasMore {
@@ -328,6 +348,15 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 	if err = ctx.Err(); err != nil {
 		return nil, err
 	}
+	l.mu.Lock()
+	if revision != l.revision || l.writing {
+		l.mu.Unlock()
+		return nil, contract.ErrDataConflict
+	}
+	if o.After == nil {
+		l.dirty = false
+	}
+	l.mu.Unlock()
 	out.CompletedAt, out.Duration = time.Now(), time.Since(started)
 	return out, nil
 }
@@ -470,6 +499,11 @@ func (l *dataLease) row(ctx context.Context, id int64, db, name string, r contra
 		return nil, err
 	}
 	out := &contract.DataRow{Columns: documentColumns(), Snapshot: l.snapshot(db, document, identity.UUID), Values: map[string]contract.DataValue{}}
+	// Full edit reads carry exact typed values; page snapshots remain bounded
+	// fingerprints. Both envelopes include the original native version tokens.
+	out.Snapshot.Mode, out.Snapshot.Fingerprints = "values", nil
+	out.Snapshot.Original = documentCells(document)
+	l.sealSnapshot(out.Snapshot, rowVersion{Sequence: document.Sequence, PrimaryTerm: document.PrimaryTerm})
 	for i, cell := range documentCells(document) {
 		out.Values[documentFields()[i]] = contract.DataValue{Kind: cell.Kind, Text: cell.Text}
 	}

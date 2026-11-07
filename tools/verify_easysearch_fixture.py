@@ -40,7 +40,7 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(compat_base=False, plain=False, race=False, profiles=False, sessions=False, documents=False):
+def verify(compat_base=False, plain=False, race=False, profiles=False, sessions=False, documents=False, write_gates=False, edits=False):
     base, output = ROOT/'temp/easysearch', ROOT/'build/easysearch'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
@@ -128,9 +128,11 @@ def verify(compat_base=False, plain=False, race=False, profiles=False, sessions=
             evidence['source_sha256'] = source_hashes
             logfile = output/('acceptance-'+nonce+'.log')
             packages = ['./internal/services/connections', './internal/storage/localdb', './internal/ui/connectioneditor'] if profiles else ['./internal/services/easysearch', './internal/services/connections']
+            if write_gates:
+                env['NYADB_EASYSEARCH_WRITE_GATE_REPORT'] = str(output/('write-gates-'+nonce+'.json'))
             if profiles:
                 env['NYADB_EASYSEARCH_PROFILE_IMAGES'] = str(output/('profile-images-'+nonce))
-            args = ['go', 'test', '-count=1', '-v', *(['-race'] if race else []), *packages]
+            args = ['go', 'test', '-count=1', '-v', *(['-run', '^TestEasysearchNativeWriteParameterGates$'] if write_gates else []), *(['-race'] if race else []), *packages]
             with logfile.open('w') as log:
                 result = subprocess.run(args, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=600)
             text = logfile.read_text()
@@ -142,12 +144,19 @@ def verify(compat_base=False, plain=False, race=False, profiles=False, sessions=
             else:
                 if not plain:
                     required.append('AccessTokenUsesNativeHeaderAndPermissions')
-                if sessions or documents:
+                if sessions or documents or edits:
                     required += ['SessionIndexAliasDataStreamMetadataAndREST', 'MetadataRejectsCapturedIndexReplacementAndAliasChange', 'QueryLostCommittedReplyRequiresExplicitRecoveryWithoutReplay', 'AliasCaseKeepsQualifiedIdentity']
                     evidence['scope'] = 'native_metadata_and_request_sessions'
-                if documents:
+                if documents or edits:
                     required += ['DataDocumentExactRowsPagingFieldsFilteredExportAndCleanup', 'DataDocumentAliasScopeAndStreamConcreteIdentity', 'DataDocumentRejectsSameNameIndexRecreation', 'DataDocumentBoundedGridAndCompleteFrozenScrollExport', 'DataDocumentKeepsEqualIDsOnRoutingShards', 'DataExportLostAdvanceFailsWithoutReplayAndReleasesScroll', 'DataCloseCancelsUnpublishedPageAndKeepsOtherDocument', 'DataRejectsScopeChangeAfterReadReceipt']
                     evidence['scope'] = 'private_shared_data_document_reads_and_complete_scroll_exports'
+                if edits:
+                    required += ['DataCRUDValidationModesPipelinesAndRefresh', 'DataAliasAndStreamWriteIdentity', 'DataLostAndMalformedWriteVerificationNeverReplays', 'DataConflictPrefixAndFinalScopeGuard', 'DataWriteReadOnlyTargetsAndRoutingIsolation', 'DataSaveCancellationKeepsUnknownAndOtherLease']
+                    evidence['scope'] = 'private_shared_data_document_edits_and_original_outcome_verification'
+            if write_gates:
+                required = ['WriteParameterGates']
+                evidence['scope'] = 'native_write_parameter_gates'
+                evidence['write_gate_report'] = str(Path(env['NYADB_EASYSEARCH_WRITE_GATE_REPORT']).relative_to(ROOT))
             if any(hashlib.sha256((ROOT/path).read_bytes()).hexdigest() != digest for path, digest in source_hashes.items()):
                 raise RuntimeError('Verification sources changed during acceptance; rerun on stable sources')
             if result.returncode or any('--- PASS: TestEasysearchNative'+name not in text for name in required):
@@ -171,8 +180,10 @@ if __name__ == '__main__':
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--race', action='store_true')
     mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--write-gates', action='store_true', help='probe native alias and stream write-parameter protections')
+    mode.add_argument('--edits', action='store_true', help='verify native shared document edits, conflicts and outcome recovery')
     mode.add_argument('--documents', action='store_true', help='verify bound shared grid, field reads and complete native Scroll exports')
     mode.add_argument('--sessions', action='store_true', help='verify metadata and native request-session contracts')
     mode.add_argument('--profiles', action='store_true', help='verify native profile, restart and localized connection form')
     args = parser.parse_args()
-    verify(args.compat_base, args.plain, args.race, args.profiles, args.sessions, args.documents)
+    verify(args.compat_base, args.plain, args.race, args.profiles, args.sessions, args.documents, args.write_gates, args.edits)

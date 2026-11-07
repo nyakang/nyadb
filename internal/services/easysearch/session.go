@@ -62,7 +62,7 @@ func (s *Session) Capabilities() contract.Capabilities {
 	return c
 }
 func (*Session) DataDocumentCapabilities() contract.Capabilities {
-	return contract.Capabilities{Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
+	return contract.Capabilities{Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true, EditableTables: true}
 }
 func (s *Session) Alive() bool        { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed && !s.revoked }
 func (s *Session) Identity() Identity { return s.identity }

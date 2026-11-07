@@ -13,6 +13,17 @@ import (
 
 var ErrPITWindow = fmt.Errorf("%w: Easysearch grid snapshot is limited to 10000 hits; filter the target or use complete Scroll export", ErrBounds)
 
+// Data documents retain their first binding across refreshes. Metadata can
+// recapture a current target; a revoked data document must be opened again.
+var ErrDataTargetChanged error = dataTargetChanged{}
+
+type dataTargetChanged struct{}
+
+func (dataTargetChanged) Error() string {
+	return "Easysearch original document target changed; reopen the data document explicitly"
+}
+func (dataTargetChanged) Unwrap() error { return ErrTargetChanged }
+
 // targetBinding is immutable after publication. A document never follows a
 // replacement UUID, alias filter/routing change or data-stream rollover, even
 // when a later refresh happens to see the original name again.
@@ -117,7 +128,7 @@ func (l *dataLease) guard(ctx context.Context, c *Client) (*targetBinding, error
 	changed := l.changed
 	l.mu.Unlock()
 	if changed {
-		return nil, ErrTargetChanged
+		return nil, ErrDataTargetChanged
 	}
 	// A retained page client can outlive endpoint changes. Prove the cluster
 	// again as well as concrete UUIDs; restored UUIDs in another cluster must
@@ -138,21 +149,21 @@ func (l *dataLease) guard(ctx context.Context, c *Client) (*targetBinding, error
 			l.mu.Lock()
 			l.changed = true
 			l.mu.Unlock()
-			return nil, errors.Join(ErrTargetChanged, err)
+			return nil, ErrDataTargetChanged
 		}
 		return nil, err
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.changed {
-		return nil, ErrTargetChanged
+		return nil, ErrDataTargetChanged
 	}
 	if l.binding == nil {
 		l.binding = actual
 	}
 	if !sameBinding(l.binding, actual) {
 		l.changed = true
-		return nil, ErrTargetChanged
+		return nil, ErrDataTargetChanged
 	}
 	return l.binding, ctx.Err()
 }

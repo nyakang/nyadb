@@ -127,8 +127,9 @@ func (c *Client) DeleteDocument(ctx context.Context, original Snapshot) (Mutatio
 }
 
 type mutationOptions struct {
-	Target      string
-	WaitRefresh bool
+	Target       string
+	WaitRefresh  bool
+	RequireAlias bool
 }
 
 func (c *Client) mutateDocument(ctx context.Context, method, action string, id DocumentID, original *Snapshot, source json.RawMessage, options mutationOptions, accepted ...string) (MutationResult, error) {
@@ -136,9 +137,12 @@ func (c *Client) mutateDocument(ctx context.Context, method, action string, id D
 	if !validDocumentID(id) || method != "DELETE" && !validSource(source) || original != nil && (original.Sequence < 0 || original.PrimaryTerm <= 0) {
 		return result, ErrInvalid
 	}
+	if options.RequireAlias && (options.Target == "" || action != "_create" || method != "PUT" || original != nil) {
+		return result, ErrInvalid
+	}
 	request := Request{Method: method, Path: documentPath(id, action, original), Body: bytes.Clone(source)}
 	if options.Target != "" {
-		if !validIndex(options.Target) || method == "DELETE" || original != nil {
+		if !validTargetSelector(options.Target) || method == "DELETE" || original != nil {
 			return result, ErrInvalid
 		}
 		target := id
@@ -147,6 +151,9 @@ func (c *Client) mutateDocument(ctx context.Context, method, action string, id D
 	}
 	parsed, _ := url.Parse(request.Path)
 	query := parsed.Query()
+	if options.RequireAlias {
+		query.Set("require_alias", "true")
+	}
 	if options.WaitRefresh {
 		query.Set("refresh", "wait_for")
 	}
