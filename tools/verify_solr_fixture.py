@@ -34,12 +34,12 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(plain=False, race=False):
+def verify(plain=False, race=False, profile=False):
     base, output = ROOT/'temp/solr', ROOT/'build/solr'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
     nonce, identifier = uuid.uuid4().hex, None
-    evidence = {'nonce': nonce, 'image': IMAGE, 'tls': not plain, 'scope': 'private_native_solr_transport_foundation', 'storage': 'owned_private_bind_mount'}
+    evidence = {'nonce': nonce, 'image': IMAGE, 'tls': not plain, 'scope': 'private_solr_profile_editor' if profile else 'private_native_solr_transport_foundation', 'storage': 'owned_private_bind_mount'}
     def shutdown(signum, _frame):
         raise SystemExit(128+signum)
     signal.signal(signal.SIGTERM, shutdown)
@@ -84,7 +84,7 @@ def verify(plain=False, race=False):
             salt = secrets.token_bytes(32)
             salted = base64.b64encode(hashlib.sha256(hashlib.sha256(salt+password.encode()).digest()).digest()).decode()+' '+base64.b64encode(salt).decode()
             security = data/'security.json'
-            security.write_text(json.dumps({'authentication': {'class': 'solr.BasicAuthPlugin', 'blockUnknown': True, 'credentials': {'native-admin': salted}}}))
+            security.write_text(json.dumps({'authentication': {'class': 'solr.BasicAuthPlugin', 'blockUnknown': True, 'credentials': {'native-admin': salted, '\u00a0native-nbsp\u00a0': salted}}}))
             security.chmod(0o400)
             if os.getuid() == 0:
                 os.chown(tls, 8983, 8983)
@@ -130,21 +130,39 @@ def verify(plain=False, race=False):
             probe.chmod(0o600)
             print('Native Solr 9.9.0 ready; fixture nonce: '+nonce, flush=True)
             sources = sorted((ROOT/'internal/services/solr').glob('*.go'))+sorted((ROOT/'internal/services/connections').glob('solr*.go'))+[Path(__file__).resolve(), ROOT/'go.mod', ROOT/'go.sum']
+            if profile:
+                for package in ['services/connections', 'services/credentials', 'storage/localdb', 'ui/connectioneditor', 'ui/theme']:
+                    sources += sorted((ROOT/'internal'/package).glob('*.go'))
+                sources += sorted((ROOT/'locales').glob('*.go'))+sorted((ROOT/'locales').glob('*.json'))
+                sources += [ROOT/'tests/test_solr_fixture.py']
             source_hashes = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources}
             evidence['source_sha256'] = source_hashes
             env = os.environ.copy()
             env.update({'NYADB_SOLR_IT': '1', 'NYADB_SOLR_CONFIG': str(probe)})
+            if profile:
+                env['NYADB_SOLR_PROFILE_IMAGES'] = str(output/('profile-images-'+nonce))
             logfile = output/('acceptance-'+nonce+'.log')
             command = ['go', 'test', '-count=1', '-v', *(['-race'] if race else []), './internal/services/connections', './internal/services/solr']
+            if profile:
+                command += ['./internal/storage/localdb', './internal/ui/connectioneditor', '-run', 'Solr']
             with logfile.open('w') as log:
                 result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=600)
             text = logfile.read_text()
             required = ['TransportAuthenticationIdentityAndExactDocuments', 'LostPostAndGETCoreMutationsNeverReplay', 'CancelSettlesOriginalWorkerAndKeepsOtherClient', 'ConflictCanApplyPrefixWithoutReplay']
+            if profile:
+                required += ['ProfileURIReopenAndOriginalEditorCheck', 'ProfileProxyContextAndCanceledOriginalCheck', 'EditorLocalizedFormEvidence']
             if any(hashlib.sha256((ROOT/path).read_bytes()).hexdigest() != digest for path, digest in source_hashes.items()):
                 raise RuntimeError('Verification sources changed during acceptance; rerun on stable sources')
             if result.returncode or any('--- PASS: TestSolrNative'+name not in text for name in required):
                 raise RuntimeError('Native Solr acceptance failed; inspect captured log')
+            if profile and not plain and any('--- PASS: TestSolrNativeProfileURIReopenAndOriginalEditorCheck/'+name not in text for name in ['raw_native_padding_and_local_rejection', 'exact_unicode_principal']):
+                raise RuntimeError('Native Basic principal semantics were not verified')
             evidence.update({'status': 'passed_with_race' if race else 'passed', 'log': str(logfile.relative_to(ROOT)), 'log_sha256': hashlib.sha256(logfile.read_bytes()).hexdigest()})
+            if profile:
+                images = sorted(Path(env['NYADB_SOLR_PROFILE_IMAGES']).glob('*.png'))
+                if len(images) != 16:
+                    raise RuntimeError('Expected all 16 localized form images')
+                evidence['headless_form_images'] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in images}
             print('Native Solr acceptance passed', flush=True)
         finally:
             if identifier:
@@ -164,5 +182,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--race', action='store_true')
+    parser.add_argument('--profile', action='store_true', help='Verify private profiles, storage, credentials and localized forms')
     args = parser.parse_args()
-    verify(args.plain, args.race)
+    verify(args.plain, args.race, args.profile)

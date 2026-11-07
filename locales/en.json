@@ -2145,5 +2145,14 @@
   "nativeSessionOutcomeRecovery": "The original request session has expired. Check the server outcome before creating a new session. Existing requests will not run automatically.",
   "nativeSessionReconnectOriginal": "Connect the original profile before creating a new session. Existing requests will not run automatically.",
   "nativeRequestFailed": "Request execution failed: ",
-  "nativeSessionReservationFailed": "Request session reservation failed: "
+  "nativeSessionReservationFailed": "Request session reservation failed: ",
+  "solrServicePathCaption": "Service path:",
+  "solrServicePath": "Solr service path",
+  "solrAuthentication": "Solr authentication",
+  "solrTLSMode": "Solr TLS mode",
+  "solrCACertificate": "Solr CA certificate",
+  "solrDefaultsHint": "Solr uses port 8983 and service path /solr by default.",
+  "solrHTTPSHint": "Solr passwords require HTTPS; HTTP is available only without authentication.",
+  "solrSettingsInvalid": "Check the Solr service path, authentication and certificate settings",
+  "solrPasswordInvalid": "Check the Solr password"
 }

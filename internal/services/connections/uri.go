@@ -43,6 +43,8 @@ func ParseURI(raw string) (URIImport, error) {
 	}
 	var kind Kind
 	switch strings.ToLower(u.Scheme) {
+	case "solr":
+		return parseSolrURI(u)
 	case "easysearch":
 		return parseEasysearchURI(u)
 	case "elasticsearch":

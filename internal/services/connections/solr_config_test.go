@@ -3,6 +3,7 @@ package connections_test
 import (
 	"errors"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"path/filepath"
 	"testing"
 )
 
@@ -13,7 +14,7 @@ func TestSolrConfigKeepsContextAndSeparatesCredentials(t *testing.T) {
 			t.Fatal("native context was changed", e)
 		}
 	}
-	valid := connections.SolrConfig{Endpoint: "https://localhost:8983/solr", Auth: "basic", Username: "native-user", CAFile: "/private/ca.pem"}
+	valid := connections.SolrConfig{Endpoint: "https://localhost:8983/solr", Auth: "basic", Username: "native-user", CAFile: filepath.Join(t.TempDir(), "ca.pem")}
 	if _, e := connections.NormalizeSolrConfig(valid); e != nil {
 		t.Fatal(e)
 	}
@@ -29,7 +30,7 @@ func TestSolrConfigKeepsContextAndSeparatesCredentials(t *testing.T) {
 	if e := connections.ValidateSolrCredential(valid, "native-password", true); e != nil {
 		t.Fatal(e)
 	}
-	for _, secret := range []string{"", string([]byte{0xff}), "has\x00null"} {
+	for _, secret := range []string{"", string([]byte{0xff}), "has\x00null", " padded", "padded ", "\tpadded", "padded\r"} {
 		if e := connections.ValidateSolrCredential(valid, secret, true); e == nil {
 			t.Fatal("invalid password accepted")
 		}

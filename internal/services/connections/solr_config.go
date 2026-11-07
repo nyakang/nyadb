@@ -48,7 +48,7 @@ func NormalizeSolrConfig(c SolrConfig) (SolrConfig, error) {
 			return c, ErrInvalid
 		}
 	case "basic":
-		if c.Username == "" || strings.Contains(c.Username, ":") {
+		if c.Username == "" || strings.Contains(c.Username, ":") || solrTrimPadding(c.Username) {
 			return c, ErrInvalid
 		}
 	default:
@@ -68,5 +68,14 @@ func ValidateSolrCredential(c SolrConfig, secret string, required bool) error {
 	if (c.Auth != "none" && c.Auth != "basic") || len(secret) > 4096 || !utf8.ValidString(secret) || strings.ContainsRune(secret, 0) || (c.Auth == "none" && secret != "") || (required && c.Auth == "basic" && secret == "") {
 		return ErrInvalid
 	}
+	if c.Auth == "basic" && solrTrimPadding(secret) {
+		return ErrInvalid
+	}
 	return nil
+}
+
+// The original BasicAuthPlugin uses Java String.trim on both username and
+// password. Reject padding it would silently remove; retain other Unicode.
+func solrTrimPadding(s string) bool {
+	return len(s) != 0 && (s[0] <= 0x20 || s[len(s)-1] <= 0x20)
 }

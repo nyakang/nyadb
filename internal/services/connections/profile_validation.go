@@ -9,6 +9,9 @@ import (
 // NormalizeProfile validates public settings and applies their canonical values.
 // Variants are normalized in place; callers retaining them must clone the slice.
 func NormalizeProfile(p Profile) (Profile, error) {
+	if p.Kind != Solr && p.SolrOptions != (SolrOptions{}) {
+		return p, fmt.Errorf("%w: Solr options on another engine", ErrInvalid)
+	}
 	if p.Kind != Easysearch && p.EasysearchOptions != (EasysearchOptions{}) {
 		return p, fmt.Errorf("%w: Easysearch options on another engine", ErrInvalid)
 	}
@@ -113,7 +116,9 @@ func NormalizeProfile(p Profile) (Profile, error) {
 	p.Host = strings.TrimSpace(p.Host)
 	if p.Kind != Dameng {
 		p.Database = strings.TrimSpace(p.Database)
-		p.Username = strings.TrimSpace(p.Username)
+		if p.Kind != Solr {
+			p.Username = strings.TrimSpace(p.Username)
+		}
 	}
 	p.TLSMode = strings.ToLower(strings.TrimSpace(p.TLSMode))
 	// Notes are user-authored multiline profile metadata, not credentials.
@@ -129,6 +134,8 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	switch p.Kind {
+	case Solr:
+		return normalizeSolrProfile(p)
 	case Easysearch:
 		return normalizeEasysearchProfile(p)
 	case Elasticsearch:

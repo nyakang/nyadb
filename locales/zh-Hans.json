@@ -2145,5 +2145,14 @@
   "nativeSessionOutcomeRecovery": "原请求会话已失效；请先核对服务器端结果，再建立新会话。不会自动执行现有请求",
   "nativeSessionReconnectOriginal": "请先连接原配置，再建立新会话；不会自动执行现有请求",
   "nativeRequestFailed": "请求执行失败：",
-  "nativeSessionReservationFailed": "请求会话预留失败："
+  "nativeSessionReservationFailed": "请求会话预留失败：",
+  "solrServicePathCaption": "服务路径：",
+  "solrServicePath": "Solr 服务路径",
+  "solrAuthentication": "Solr 认证方式",
+  "solrTLSMode": "Solr TLS 模式",
+  "solrCACertificate": "Solr CA 证书",
+  "solrDefaultsHint": "Solr 默认端口 8983，服务路径默认为 /solr。",
+  "solrHTTPSHint": "Solr 密码需要 HTTPS；HTTP 仅用于无认证连接。",
+  "solrSettingsInvalid": "请检查 Solr 服务路径、认证方式和证书设置",
+  "solrPasswordInvalid": "请检查 Solr 密码"
 }

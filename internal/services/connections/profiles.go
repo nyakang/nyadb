@@ -27,6 +27,7 @@ const (
 	Trino         Kind = "trino"
 	Elasticsearch Kind = "elasticsearch"
 	Easysearch    Kind = "easysearch"
+	Solr          Kind = "solr"
 	SQLServer     Kind = "sqlserver"
 	DuckDB        Kind = "duckdb"
 	Oracle        Kind = "oracle"
@@ -71,6 +72,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	SolrOptions          SolrOptions
 	EasysearchOptions    EasysearchOptions
 	ElasticsearchOptions ElasticsearchOptions
 	TrinoOptions         TrinoOptions

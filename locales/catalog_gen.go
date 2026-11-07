@@ -21819,3 +21819,93 @@ func NativeSessionReservationFailed() string {
 func (msgs Messages) NativeSessionReservationFailed() string {
 	return Catalog.Format(msgs.locale, "nativeSessionReservationFailed", nil)
 }
+
+// SolrServicePathCaption says "服务路径："
+// in the language the app shows.
+func SolrServicePathCaption() string { return In(i18n.Locale()).SolrServicePathCaption() }
+
+// SolrServicePathCaption says "服务路径："
+// in the language of msgs.
+func (msgs Messages) SolrServicePathCaption() string {
+	return Catalog.Format(msgs.locale, "solrServicePathCaption", nil)
+}
+
+// SolrServicePath says "Solr 服务路径"
+// in the language the app shows.
+func SolrServicePath() string { return In(i18n.Locale()).SolrServicePath() }
+
+// SolrServicePath says "Solr 服务路径"
+// in the language of msgs.
+func (msgs Messages) SolrServicePath() string {
+	return Catalog.Format(msgs.locale, "solrServicePath", nil)
+}
+
+// SolrAuthentication says "Solr 认证方式"
+// in the language the app shows.
+func SolrAuthentication() string { return In(i18n.Locale()).SolrAuthentication() }
+
+// SolrAuthentication says "Solr 认证方式"
+// in the language of msgs.
+func (msgs Messages) SolrAuthentication() string {
+	return Catalog.Format(msgs.locale, "solrAuthentication", nil)
+}
+
+// SolrTLSMode says "Solr TLS 模式"
+// in the language the app shows.
+func SolrTLSMode() string { return In(i18n.Locale()).SolrTLSMode() }
+
+// SolrTLSMode says "Solr TLS 模式"
+// in the language of msgs.
+func (msgs Messages) SolrTLSMode() string {
+	return Catalog.Format(msgs.locale, "solrTLSMode", nil)
+}
+
+// SolrCACertificate says "Solr CA 证书"
+// in the language the app shows.
+func SolrCACertificate() string { return In(i18n.Locale()).SolrCACertificate() }
+
+// SolrCACertificate says "Solr CA 证书"
+// in the language of msgs.
+func (msgs Messages) SolrCACertificate() string {
+	return Catalog.Format(msgs.locale, "solrCACertificate", nil)
+}
+
+// SolrDefaultsHint says "Solr 默认端口 8983，服务路径默认为 /solr。"
+// in the language the app shows.
+func SolrDefaultsHint() string { return In(i18n.Locale()).SolrDefaultsHint() }
+
+// SolrDefaultsHint says "Solr 默认端口 8983，服务路径默认为 /solr。"
+// in the language of msgs.
+func (msgs Messages) SolrDefaultsHint() string {
+	return Catalog.Format(msgs.locale, "solrDefaultsHint", nil)
+}
+
+// SolrHTTPSHint says "Solr 密码需要 HTTPS；HTTP 仅用于无认证连接。"
+// in the language the app shows.
+func SolrHTTPSHint() string { return In(i18n.Locale()).SolrHTTPSHint() }
+
+// SolrHTTPSHint says "Solr 密码需要 HTTPS；HTTP 仅用于无认证连接。"
+// in the language of msgs.
+func (msgs Messages) SolrHTTPSHint() string {
+	return Catalog.Format(msgs.locale, "solrHTTPSHint", nil)
+}
+
+// SolrSettingsInvalid says "请检查 Solr 服务路径、认证方式和证书设置"
+// in the language the app shows.
+func SolrSettingsInvalid() string { return In(i18n.Locale()).SolrSettingsInvalid() }
+
+// SolrSettingsInvalid says "请检查 Solr 服务路径、认证方式和证书设置"
+// in the language of msgs.
+func (msgs Messages) SolrSettingsInvalid() string {
+	return Catalog.Format(msgs.locale, "solrSettingsInvalid", nil)
+}
+
+// SolrPasswordInvalid says "请检查 Solr 密码"
+// in the language the app shows.
+func SolrPasswordInvalid() string { return In(i18n.Locale()).SolrPasswordInvalid() }
+
+// SolrPasswordInvalid says "请检查 Solr 密码"
+// in the language of msgs.
+func (msgs Messages) SolrPasswordInvalid() string {
+	return Catalog.Format(msgs.locale, "solrPasswordInvalid", nil)
+}

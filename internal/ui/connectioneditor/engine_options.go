@@ -287,6 +287,8 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.Solr:
+		return s.solrSSL(c, width, tab)
 	case connections.Easysearch:
 		return s.easysearchSSL(c, width, tab)
 	case connections.Elasticsearch:
