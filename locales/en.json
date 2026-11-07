@@ -2006,5 +2006,15 @@
   "openGaussTLSMode": "openGauss TLS mode",
   "openGaussCAFile": "openGauss CA certificate",
   "openGaussCertificateFile": "openGauss client certificate",
-  "openGaussKeyFile": "openGauss client key"
+  "openGaussKeyFile": "openGauss client key",
+  "nativeDesignSetComment": "Set comment",
+  "openGaussDesignNotNullReadOnly": "Nullability of existing openGauss column-store columns is read-only.",
+  "openGaussDesignRetainedStorage": "Existing storage and ownership are retained; changes require a separate operation.",
+  "nativeDesignConstraintComment": "Constraint comment",
+  "nativeDesignTriggerComment": "Trigger comment",
+  "nativeDesignTriggerState": "Trigger state",
+  "nativeDesignTriggerNormal": "Enabled",
+  "nativeDesignTriggerDisabled": "Disabled",
+  "nativeDesignTriggerReplica": "Enabled for replica",
+  "nativeDesignTriggerAlways": "Always enabled"
 }

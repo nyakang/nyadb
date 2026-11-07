@@ -6,7 +6,7 @@ import (
 )
 
 func TestBasicIndexKeepsQualifiedIdentityAndColumnOrder(t *testing.T) {
-	for _, engine := range []string{"sqlite", "postgresql"} {
+	for _, engine := range []string{"sqlite", "postgresql", "opengauss"} {
 		f, err := ParseBasicDefinition(engine, "index", `CREATE UNIQUE INDEX "idx" ON "main"."t" ("a", "b" DESC)`)
 		if err != nil {
 			t.Fatal(err)
@@ -71,5 +71,46 @@ func TestBasicPostgresNamesFoldOnlyUnquotedIdentifiers(t *testing.T) {
 	f, e := ParseBasicDefinition("postgresql", "index", `CREATE INDEX IDX ON PUBLIC.T (ID, "ExactCase")`)
 	if e != nil || f.Name != "idx" || f.Schema != "public" || f.Table != "t" || f.Columns[0].Name != "id" || f.Columns[1].Name != "ExactCase" {
 		t.Fatal(f, e)
+	}
+}
+
+func TestOpenGaussBasicDefinitionsKeepNativeQualifiedNamesAndRejectAdvancedProperties(t *testing.T) {
+	for _, raw := range []string{
+		`CREATE UNIQUE INDEX IDX ON MAIN.T USING btree (ID, "ExactCase" DESC)`,
+		`CONSTRAINT FK FOREIGN KEY (ID) REFERENCES Other.Parent("ExactCase") ON DELETE CASCADE`,
+		`CONSTRAINT "checked" CHECK ("ExactCase" > 9007199254740993.12345678901234567890)`,
+	} {
+		kind := "constraint"
+		if strings.HasPrefix(raw, "CREATE") {
+			kind = "index"
+		}
+		form, err := ParseBasicDefinition("opengauss", kind, raw)
+		if err != nil {
+			t.Fatal(raw, err)
+		}
+		sql, err := form.SQL("opengauss")
+		if err != nil {
+			t.Fatal(err)
+		}
+		parsed, err := ParseBasicDefinition("opengauss", kind, sql)
+		if err != nil || Signature(parsed) != Signature(form) {
+			t.Fatal("native definition round trip lost names, order or precision", parsed, err)
+		}
+	}
+	for _, raw := range []string{
+		`CREATE INDEX idx ON main.t USING cbtree(id)`,
+		`CREATE INDEX idx ON main.t(id) LOCAL`,
+		`CREATE INDEX idx ON main.t(id) WITH (fillfactor=80)`,
+		`CREATE INDEX idx ON main.t(id) TABLESPACE custom`,
+		`CREATE INDEX idx ON main.t((id+1))`,
+		`CONSTRAINT fk FOREIGN KEY(id) REFERENCES main.parent(id) NOT VALID`,
+	} {
+		kind := "index"
+		if strings.HasPrefix(raw, "CONSTRAINT") {
+			kind = "constraint"
+		}
+		if _, err := ParseBasicDefinition("opengauss", kind, raw); err == nil {
+			t.Fatal("advanced native properties were discarded by the simple form", raw)
+		}
 	}
 }

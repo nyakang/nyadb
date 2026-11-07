@@ -174,7 +174,7 @@ func (d *Document) inlineFieldPreview(id string, out *contract.StructureColumn) 
 				out.Default = &value
 			}
 		case "5":
-			if d.design != nil {
+			if d.design != nil || d.schemaDesign != nil && d.schemaDesign.original.Schema.Engine == "opengauss" {
 				out.Comment = cell.Text
 			}
 		}
@@ -200,7 +200,7 @@ func (s *State) commitSchemaCell(d *Document, id string, col int, value string) 
 		return err
 	}
 	beforeField, beforePG, beforeName := x.field, x.pgField, x.name
-	if x.original.Schema.Engine == "postgresql" {
+	if schemaNativeFieldGrammar(x.original.Schema.Engine) {
 		switch col {
 		case 0:
 			x.name = value
@@ -213,6 +213,14 @@ func (s *State) commitSchemaCell(d *Document, id string, col int, value string) 
 			x.pgField.Default = value
 		case 4:
 			x.pgField.Collation = value
+		case 5:
+			if x.original.Schema.Engine == "opengauss" {
+				clause := &x.draft.Clauses[index]
+				if clause.OpenGauss == nil {
+					clause.OpenGauss = &schemaddl.OpenGaussColumnProperties{}
+				}
+				setSchemaComment(&clause.OpenGauss.Comment, value)
+			}
 		}
 	} else {
 		switch col {
@@ -248,8 +256,8 @@ func (s *State) schemaFieldCell(c *ui.Context, d *Document, index, col int, lock
 	name, typ, def, collation := "", "", "", ""
 	primary, autoIncrement, unique := false, false, false
 	notNull, unsupported := false, false
-	if x.original.Schema.Engine == "postgresql" {
-		field, err := schemaddl.ParsePostgreSQLField(clause.SQL)
+	if schemaNativeFieldGrammar(x.original.Schema.Engine) {
+		field, err := parseSchemaNativeField(x.original.Schema.Engine, clause.SQL)
 		if err != nil {
 			ui.Text(c, clause.SQL)
 			return
@@ -261,9 +269,7 @@ func (s *State) schemaFieldCell(c *ui.Context, d *Document, index, col int, lock
 		}
 		if col == 2 {
 			locked = locked || field.Identity != ""
-			if x.original.Schema.Postgres != nil && x.original.Schema.Exists {
-				locked = locked || schemaddl.PostgreSQLNotNullEditable(x.original.Schema.Postgres, clause.ID) != nil
-			}
+			locked = locked || schemaNotNullEditable(x.original.Schema, clause.ID) != nil
 		}
 		if col == 3 {
 			locked = locked || field.Identity != "" || field.Generation != ""
@@ -281,7 +287,7 @@ func (s *State) schemaFieldCell(c *ui.Context, d *Document, index, col int, lock
 		}
 	}
 	locked = locked || unsupported
-	if col == 2 || x.original.Schema.Engine != "postgresql" && col >= 4 && col <= 6 {
+	if col == 2 || !schemaNativeFieldGrammar(x.original.Schema.Engine) && col >= 4 && col <= 6 {
 		checked := notNull
 		if col == 4 {
 			checked = primary
@@ -300,6 +306,12 @@ func (s *State) schemaFieldCell(c *ui.Context, d *Document, index, col int, lock
 		return
 	}
 	value := collation
+	if x.original.Schema.Engine == "opengauss" && col == 5 {
+		value = ""
+		if clause.OpenGauss != nil && clause.OpenGauss.Comment != nil {
+			value = *clause.OpenGauss.Comment
+		}
+	}
 	if col < 4 {
 		value = []string{name, typ, "", def}[col]
 	}
@@ -416,7 +428,11 @@ func designFieldColumns(engine string) []ui.TableColumn {
 	if engine == "sqlite" {
 		cols = append(cols, ui.TableColumn{ID: "primary", Title: locales.Text("主键"), Width: 70}, ui.TableColumn{ID: "auto_increment", Title: locales.Text("自动递增"), Width: 85}, ui.TableColumn{ID: "unique", Title: locales.Text("唯一"), Width: 70})
 	}
-	return append(cols, ui.TableColumn{ID: "collation", Title: locales.Text("排序规则"), Width: 130})
+	cols = append(cols, ui.TableColumn{ID: "collation", Title: locales.Text("排序规则"), Width: 130})
+	if engine == "opengauss" {
+		cols = append(cols, ui.TableColumn{ID: "comment", Title: locales.Text("字段注释"), Width: 160})
+	}
+	return cols
 }
 
 func (d *Document) removeInlineField(id string) {

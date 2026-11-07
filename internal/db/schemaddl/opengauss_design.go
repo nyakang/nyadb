@@ -509,10 +509,8 @@ func PlanOpenGauss(original Snapshot, desired Table, schema string, allowDrop bo
 				p.SQL = append(p.SQL, q)
 			}
 			if a.NotNull != b.NotNull {
-				for _, option := range oldProps.Parameters {
-					if strings.EqualFold(strings.ReplaceAll(option, " ", ""), "orientation=column") {
-						return p, errors.New("native column-store tables do not support changing existing nullability")
-					}
+				if err := OpenGaussNotNullEditable(original, c.ID); err != nil {
+					return p, err
 				}
 				action := "DROP NOT NULL"
 				if b.NotNull {

@@ -514,3 +514,69 @@ incoming 引用及上述回滚/取消验证作为私有基础阶段独立提交�
 Apply/CanApply 与 DesignTables 仍关闭；其它引用/回调目录并发、故障
 与工作台验收仍未完成，不由上述私有基础提交推断为公开表设计或整体
 对齐完成。
+
+## 原生表单与独立规划阶段
+
+共享 objectworkspace 设计文档现已增加 openGauss 表单与独立规划分支。
+本阶段仍不注册公开 `CanApply` / `Apply`，不声明 `DesignTables`；测试
+通过注入操作绑定验证表单，不能据此声称真实工作台保存流程已经交付。
+公开运行时仍保留原有读取、复制及删除能力。
+
+- 仅共享 PostgreSQL/openGauss 重叠的字段与普通约束/索引声明语法；
+  原生目录、稳定字段/对象身份、属性、规划及产品能力仍彼此独立。
+  openGauss 不显示 PostgreSQL identity、VIRTUAL 生成列、访问方法或
+  SQLite rowid 选项；输入其它产品的 identity 声明仍在应用字段前拒绝。
+- 新建表模板、后续添加字段/约束/索引/触发器均初始化原生属性；索引与
+  触发器绑定实际 schema 和选择的目标表名，触发器使用原生
+  `EXECUTE PROCEDURE`。普通 btree、CHECK 和外键使用图形表单；含
+  存储、分区、表达式或其它高级属性的定义保持完整 SQL 编辑。
+- 字段改名保持原声明、精确数值默认值、字段号（包括删除留下的槽位）
+  和注释；字段信息面板同步未提交的名称、类型、默认值及注释。
+- 表/字段/约束/索引/触发器注释保留 SQL NULL 与空字符串的区别；仅查看
+  表单不会把 NULL 改成空注释。显式存在开关和文本编辑纳入脏状态与
+  草稿签名，预览后修改不能借用旧执行请求。
+- 触发器保留并编辑 O/D/R/A 启用状态。元数据预览只产生 COMMENT 或
+  对应的 ENABLE/DISABLE SQL；原字段、约束和程序 OID 不为此重建。
+- 已有表 owner、持久性、表空间及存储参数显示并保留；新表可编辑对应
+  存储设置。已有列存字段非空属性由 UI 和原生规划共同使用同一规则，
+  内联提交也不能绕过只读限制，新字段仍可声明非空。
+- 独立探针重绑定约束/索引时深复制原生注释和对象属性，避免工作线程
+  修改原始请求；取消要等待注入执行器回执，结果停留在原 profile。
+  uncertain 回执保留原快照及草稿，并禁止重放。
+
+新增纯 Go 和 MyGo 测试覆盖上述字段身份、精度、注释存在性、原生模板、
+普通/高级定义、存储控件、取消/停放回执及三种窗口尺寸。中英文
+1280×800、840×560、530×430 均保留应用按钮；高级字段和注释区域通过
+滚动访问。以下截图来自测试注入的原生目录蓝图和 MyGo headless 渲染，
+不是公开设计器或真实桌面保存的证明：
+
+![openGauss 表单中文测试](opengauss-design-forms-zh-2026-11-07.png)
+![openGauss 表单英文测试](opengauss-design-forms-en-2026-11-07.png)
+
+该阶段的检查日志位于 `build/opengauss/table-design/forms-*.log`：
+
+- CGO=0 全仓库普通测试及 Go vet，MyGo vet 与 i18n check（2017 条消息）
+  通过；`forms-objectworkspace-final.log` 和
+  `forms-objectworkspace-final-vet.log` 另覆盖最后补充的停放回执确认。
+- `forms-native-ui-final-race.log`：最终原生表单、注释、存储和取消/停放
+  测试通过 race（13.013 秒），并生成上述三种尺寸的中英文截图。
+- `forms-workspace-race-retry.log`：AGENTS.md 指定的全部生命周期包和
+  新增 schemaddl 包通过完整 race；shell 536.582 秒、dataworkspace
+  229.117 秒、objectworkspace 44.530 秒，没有数据竞争报告。
+- `forms-native-tls-race-final.log`：真实 openGauss 6.0.0 verify-full TLS
+  目录读取、行存/列存/分区独立 ALTER 声明、原生 CREATE 声明及规范化
+  回滚的四个测试组通过 race（121.538 秒）。本轮范围不包含公开保存、
+  完整引用并发或真实工作台操作。
+- `forms-build-{linux,windows,darwin}.log`：Linux amd64、Windows amd64
+  和 macOS arm64 的 CGO=0 编译通过；不把编译描述为三平台原生执行。
+
+首次工作区 race 以 SIGTERM（143）终止，未产生完整结果，保留
+`forms-workspace-race.log`；降低编译并行度后的完整轮次使用
+`forms-workspace-race-retry.log`。旧 TLS fixture 在运行时已清理容器与
+证书，首轮连接配置检查失败，见 `forms-native-tls-race.log`；确认旧
+进程、容器及目录均已终止后创建新的唯一 fixture，最终四组真实测试
+才取得上述成功证据。本阶段自建的新容器和临时凭据随后由所属脚本
+清理，不借用或删除用户数据库。
+
+完整公开设计器仍须完成其它引用/回调目录并发、故障与真实工作台
+生命周期验收；表设计整项及数据库/中间件整体对齐状态继续未完成。

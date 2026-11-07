@@ -139,12 +139,19 @@ func (d *Document) SelectedField() (contract.StructureColumn, bool) {
 		return contract.StructureColumn{}, false
 	}
 	if x := d.schemaDesign; x != nil {
-		if x.page != 0 || x.fieldRow < 0 {
+		if x.page != 0 || x.fieldRow < 0 || x.fieldRow >= len(x.draft.Clauses) {
 			return contract.StructureColumn{}, false
 		}
-		if x.original.Schema.Engine == "postgresql" {
+		if schemaNativeFieldGrammar(x.original.Schema.Engine) {
 			f := x.pgField
-			out := contract.StructureColumn{Name: x.name, Type: f.Type, Nullable: !f.NotNull}
+			out := contract.StructureColumn{Name: x.name, Type: f.Type, Nullable: !f.NotNull, Generated: f.Generation != ""}
+			clause := x.draft.Clauses[x.fieldRow]
+			if clause.Postgres != nil {
+				out.Comment = clause.Postgres.Comment
+			}
+			if clause.OpenGauss != nil && clause.OpenGauss.Comment != nil {
+				out.Comment = *clause.OpenGauss.Comment
+			}
 			if f.HasDefault {
 				out.Default = &f.Default
 			}

@@ -103,6 +103,7 @@ func (s *State) structuredDefinitionView(c *ui.Context, d *Document, locked bool
 			if f.Advanced {
 				s.schemaDesignInput(c, d, "定义名称", &x.name, locked)
 				s.designTextArea(c, d, &x.raw).Label(locales.Text("完整定义")).Height(170).ReadOnly(locked)
+				s.openGaussDefinitionProperties(c, d, locked)
 				return
 			}
 			s.schemaDesignInput(c, d, "定义名称", &f.Form.Name, locked)
@@ -171,7 +172,7 @@ func (s *State) structuredDefinitionView(c *ui.Context, d *Document, locked bool
 				}
 			}
 			if f.Form.Kind == "foreign" {
-				if x.original.Schema.Engine == "postgresql" {
+				if schemaNativeFieldGrammar(x.original.Schema.Engine) {
 					s.schemaDesignInput(c, d, "引用模式", &f.Form.ReferencedSchema, locked)
 				}
 				s.schemaDesignInput(c, d, "引用表", &f.Form.ReferencedTable, locked)
@@ -186,6 +187,7 @@ func (s *State) structuredDefinitionView(c *ui.Context, d *Document, locked bool
 				schemaDesignChoice(c, "删除时", &f.Form.OnDelete, choices, locked)
 				schemaDesignChoice(c, "更新时", &f.Form.OnUpdate, choices, locked)
 			}
+			s.openGaussDefinitionProperties(c, d, locked)
 		})
 	})
 	if ui.Button(c, locales.Text("应用定义修改")).Disabled(locked).Clicked() {

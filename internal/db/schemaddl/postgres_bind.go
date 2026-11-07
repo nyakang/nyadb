@@ -60,6 +60,7 @@ func RebindPostgreSQLDefinition(d Definition, schema, from, to, name string) (De
 	}
 	d.Name = name
 	d.Postgres = d.Postgres.Clone()
+	d.OpenGauss = d.OpenGauss.Clone()
 	d.SQL = raw[:ts[nameAt].start] + Quote(name) + raw[ts[nameAt].end:ts[start].start] + Quote(schema) + "." + Quote(to) + raw[ts[end-1].end:]
 	return d, nil
 }
@@ -100,6 +101,7 @@ func RebindPostgreSQLConstraint(c Clause, schema, from, to, name string) (Clause
 	c.Name = name
 	c.SQL = "CONSTRAINT " + Quote(name) + " " + body
 	c.Postgres = c.Postgres.Clone()
+	c.OpenGauss = c.OpenGauss.Clone()
 	return c, nil
 }
 
