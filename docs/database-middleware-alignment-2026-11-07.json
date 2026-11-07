@@ -1029,7 +1029,25 @@
         "gaussdb"
       ],
       "nyadb_kind": null,
-      "status": "missing"
+      "status": "missing",
+      "nyadb_progress": {
+        "reports": [
+          "gaussdb-native-transport-2026-11-07.md"
+        ],
+        "completed": [
+          "native Go connector and immutable public multi-endpoint configuration",
+          "native SHA256 authentication, per-endpoint TLS and exact type round trips against a genuine Docker fixture",
+          "native transactions, physical connection isolation and original-handle cancellation cleanup verification"
+        ],
+        "remaining": [
+          "workbench provider registration, profiles/URI/persistence/credentials and connection forms",
+          "per-physical-connection product/version validation, query leases and acknowledged workbench cancellation/recovery",
+          "native namespaces/object/type metadata and shared data browsing/editing/import/export",
+          "all remaining GaussDB reference capabilities, management and cross-product tools",
+          "HA/distributed/DWS and other-version verification"
+        ],
+        "verified_server": "GaussDB Kernel 503.1.0 build f53b4ed8, native single-node PG compatibility; transport only"
+      }
     },
     {
       "dbType": "kwdb",

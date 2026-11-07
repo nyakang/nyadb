@@ -5,6 +5,7 @@ go 1.27.3
 require (
 	gitcode.com/opengauss/openGauss-connector-go-pq v1.0.9
 	github.com/ClickHouse/clickhouse-go/v2 v2.50.0
+	github.com/HuaweiCloudDeveloper/gaussdb-go v1.0.0-rc1
 	github.com/ebitengine/purego v0.11.3
 	github.com/egoist/mygo v0.7.4
 	github.com/go-sql-driver/mysql v1.10.1
