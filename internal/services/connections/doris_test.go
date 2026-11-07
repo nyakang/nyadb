@@ -16,7 +16,7 @@ func TestDorisNativeProfileAndIndependentCapabilities(t *testing.T) {
 		t.Fatal(err)
 	}
 	d, _ := connections.Describe(p.Kind)
-	if d.Capabilities != (contract.Capabilities{Query: true, Metadata: true, Schemas: true, Count: true, Export: true, JSONL: true}) {
+	if d.Capabilities != (contract.Capabilities{Query: true, Metadata: true, Schemas: true, Count: true, Export: true, JSONL: true, Explain: true}) {
 		t.Fatal("unsupported Doris operation advertised")
 	}
 	for _, mode := range []string{"require", "prefer", "verify-ca"} {

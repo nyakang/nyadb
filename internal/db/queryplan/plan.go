@@ -10,6 +10,9 @@ import (
 )
 
 func Build(engine, sql string) (string, error) {
+	if engine == "doris" {
+		return buildDoris(sql)
+	}
 	if engine == "oceanbase" {
 		if err := sqltext.SingleMySQLStatement(sql); err != nil {
 			return "", err
@@ -74,6 +77,9 @@ func numeric(v any) *float64 {
 	return &n
 }
 func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, error) {
+	if engine == "doris" {
+		return parseDoris(result)
+	}
 	if engine == "cockroachdb" {
 		return parseCockroach(result)
 	}
