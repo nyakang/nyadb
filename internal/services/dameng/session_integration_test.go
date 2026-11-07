@@ -51,7 +51,7 @@ func TestNativeDamengSessionQualifiedMetadataAndSQLPhysicalLeases(t *testing.T) 
 	}
 	c.Options.DefaultSchema, c.Options.MaxConnections, c.Options.SQLMaxConnections = schema, 1, 2
 	s := fixtureSession(t, c, password)
-	if caps := s.Capabilities(); !caps.Query || !caps.Metadata || !caps.Schemas || !caps.EditableTables || caps.Import || caps.DesignTables || caps.Accounts || caps.Backup || caps.Restore {
+	if caps := s.Capabilities(); !caps.Query || !caps.Metadata || !caps.Schemas || !caps.EditableTables || !caps.Import || caps.DesignTables || caps.Accounts || caps.Backup || caps.Restore {
 		t.Fatal("native foundation advertised an unimplemented feature")
 	}
 	ns, err := s.Namespaces(ctx)

@@ -14,6 +14,9 @@ import (
 )
 
 func Identifier(engine, name string) error {
+	if engine == "dameng" && len(name) > 128 {
+		return contract.ErrDataPage
+	}
 	if engine == "cockroachdb" || engine == "opengauss" || engine == "gaussdb" || engine == "kingbase" {
 		engine = "postgresql"
 	}
@@ -34,6 +37,9 @@ func quote(s string) string { return `"` + strings.ReplaceAll(s, `"`, `""`) + `"
 var pgType = regexp.MustCompile(`^(?:SMALLINT|INTEGER|BIGINT|REAL|DOUBLE PRECISION|BOOLEAN|TEXT|BYTEA|JSONB?|UUID|DATE|TIMESTAMP(?:\([0-6]\))?(?: WITH(?:OUT)? TIME ZONE)?|TIME(?:\([0-6]\))?(?: WITH(?:OUT)? TIME ZONE)?|NUMERIC(?:\([1-9][0-9]{0,3}(?:,[0-9]{1,4})?\))?|VARCHAR\([1-9][0-9]{0,5}\))$`)
 
 func Columns(engine string, cols []contract.DataImportColumn) ([]contract.StructureColumn, error) {
+	if engine == "dameng" {
+		return damengColumns(cols)
+	}
 	if engine == "cockroachdb" || engine == "opengauss" || engine == "gaussdb" || engine == "kingbase" {
 		engine = "postgresql"
 	}
@@ -119,6 +125,19 @@ func AdaptInference(engine string, cols []contract.DataImportColumn) []contract.
 	for i, c := range out {
 		t := strings.ToUpper(c.Type)
 		switch engine {
+		case "dameng":
+			switch {
+			case strings.Contains(t, "BLOB") || strings.Contains(t, "BINARY"):
+				t = "BLOB"
+			case strings.Contains(t, "TEXT"):
+				t = "CLOB"
+			case t == "DATETIME":
+				t = "TIMESTAMP(6)"
+			default:
+				if _, e := damengColumns([]contract.DataImportColumn{{Name: c.Name, Type: t, Nullable: true}}); e != nil {
+					t = "CLOB"
+				}
+			}
 		case "sqlite":
 			switch {
 			case strings.Contains(t, "BLOB") || strings.Contains(t, "BINARY"):
@@ -181,6 +200,9 @@ func Own(r contract.DataImportRequest) (contract.DataImportRequest, error) {
 	return r, nil
 }
 func Validate(engine string, metadata []contract.StructureColumn, r contract.DataImportRequest) error {
+	if engine == "dameng" {
+		return damengValidate(metadata, r)
+	}
 	if engine == "cockroachdb" || engine == "opengauss" || engine == "gaussdb" || engine == "kingbase" {
 		engine = "postgresql"
 	}
