@@ -46,6 +46,9 @@ func (s *State) ImportURI(raw string) error {
 	if err != nil {
 		return err
 	}
+	if _, registered := connections.Describe(parsed.Profile.Kind); !registered {
+		return connections.ErrURI
+	}
 	group := s.uriGroup
 	original, returning := s.connectionDraft, s.uriReturn
 	s.Close()

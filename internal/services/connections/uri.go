@@ -43,6 +43,8 @@ func ParseURI(raw string) (URIImport, error) {
 	}
 	var kind Kind
 	switch strings.ToLower(u.Scheme) {
+	case "dameng", "dm":
+		return parseDamengURI(u)
 	case "redis", "rediss":
 		return parseRedisURI(u)
 	case "mongodb", "mongodb+srv":

@@ -13,6 +13,9 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		return p, fmt.Errorf("%w: invalid connection color", ErrInvalid)
 	}
 	p.Name = strings.TrimSpace(p.Name)
+	if p.Kind != Dameng && p.DamengOptions != (DamengOptions{}) {
+		return p, fmt.Errorf("%w: DM8 options on another engine", ErrInvalid)
+	}
 	if p.Kind != GaussDB && p.GaussDBOptions != (GaussDBOptions{}) {
 		return p, fmt.Errorf("%w: GaussDB options on another engine", ErrInvalid)
 	}
@@ -93,8 +96,10 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	p.Host = strings.TrimSpace(p.Host)
-	p.Database = strings.TrimSpace(p.Database)
-	p.Username = strings.TrimSpace(p.Username)
+	if p.Kind != Dameng {
+		p.Database = strings.TrimSpace(p.Database)
+		p.Username = strings.TrimSpace(p.Username)
+	}
 	p.TLSMode = strings.ToLower(strings.TrimSpace(p.TLSMode))
 	// Notes are user-authored multiline profile metadata, not credentials.
 	if !utf8.ValidString(p.Notes) || strings.ContainsRune(p.Notes, 0) || len(p.Notes) > 64*1024 {
@@ -109,6 +114,16 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	switch p.Kind {
+	case Dameng:
+		if p.MySQLAdvanced != (MySQLAdvanced{}) {
+			return p, fmt.Errorf("%w: MySQL options on DM8", ErrInvalid)
+		}
+		cfg, err := DamengProfileConfig(p)
+		if err != nil {
+			return p, err
+		}
+		p.Host, p.Port, p.TLSMode, p.DamengOptions = cfg.Host, cfg.Port, cfg.TLSMode, cfg.Options
+		return p, nil
 	case Kingbase:
 		if p.MySQLAdvanced != (MySQLAdvanced{}) {
 			return p, fmt.Errorf("%w: MySQL options on Kingbase", ErrInvalid)
