@@ -2059,5 +2059,7 @@
   "sqlSessionLimitCaption": "SQL session limit:",
   "dorisNativeEndpoint": "Apache Doris uses FE query port 9030 by default.",
   "dorisTLSModes": "verify-full verifies the certificate chain and hostname; disable turns TLS off.",
-  "dorisSessionPassword": "Doris session password"
+  "dorisSessionPassword": "Doris session password",
+  "starrocksNativeEndpoint": "StarRocks uses FE query port 9030 by default.",
+  "starrocksSessionPassword": "StarRocks session password"
 }

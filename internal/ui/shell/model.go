@@ -171,7 +171,7 @@ func (s *State) openQuery() {
 	database := ""
 	if s.profileMode {
 		initial = "-- 输入 SQL；点击运行后发送至当前连接\n"
-		if p, ok := s.currentProfile(); ok && (p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind == connections.DuckDB || p.Kind == connections.MongoDB || p.Kind == connections.Redis) {
+		if p, ok := s.currentProfile(); ok && (p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind == connections.DuckDB || p.Kind == connections.MongoDB || p.Kind == connections.Redis) {
 			profileID = p.ID
 			if p.Kind == connections.Redis {
 				initial = "[\"PING\"]"

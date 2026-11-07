@@ -17,7 +17,7 @@ const (
 )
 
 var catalogTreeDirectEngines = []string{
-	"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "Apache Doris",
+	"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "Apache Doris", "StarRocks",
 	"MariaDB", "TiDB", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "MongoDB", "Redis", "Snowflake",
 }
 

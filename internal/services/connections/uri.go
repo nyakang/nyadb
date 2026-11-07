@@ -75,6 +75,8 @@ func ParseURI(raw string) (URIImport, error) {
 		kind = ClickHouse
 	case "doris":
 		kind = Doris
+	case "starrocks":
+		kind = StarRocks
 	case "sqlite", "file":
 		kind = SQLite
 	default:
@@ -262,6 +264,20 @@ func ParseURI(raw string) (URIImport, error) {
 		}
 	}
 	for key, values := range options {
+		if kind == StarRocks && (key == "catalog" || key == "ca_file" || key == "server_name") {
+			if len(values) != 1 || values[0] == "" {
+				return fail(ErrURIOptions)
+			}
+			switch key {
+			case "catalog":
+				p.StarRocksOptions.Catalog = values[0]
+			case "ca_file":
+				p.StarRocksOptions.CAFile = values[0]
+			case "server_name":
+				p.StarRocksOptions.ServerName = values[0]
+			}
+			continue
+		}
 		if kind == Doris && (key == "catalog" || key == "ca_file" || key == "server_name") {
 			if len(values) != 1 || values[0] == "" {
 				return fail(ErrURIOptions)

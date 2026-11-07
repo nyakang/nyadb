@@ -14,9 +14,11 @@ import (
 	oraclesvc "github.com/nyakang/nyadb/internal/services/oracle"
 	redissvc "github.com/nyakang/nyadb/internal/services/redis"
 	"github.com/nyakang/nyadb/internal/services/sqlserver"
+	"github.com/nyakang/nyadb/internal/services/starrocks"
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.StarRocks, ProviderFunc(starrocks.OpenSession))
 	m.Register(connections.Doris, ProviderFunc(doris.OpenSession))
 	m.Register(connections.Dameng, ProviderFunc(dameng.OpenSession))
 	m.Register(connections.Redis, ProviderFunc(redissvc.OpenSession))

@@ -2059,5 +2059,7 @@
   "sqlSessionLimitCaption": "SQL 会话上限：",
   "dorisNativeEndpoint": "Apache Doris 的 FE 查询端口默认为 9030。",
   "dorisTLSModes": "verify-full 校验证书链和主机名；disable 关闭 TLS。",
-  "dorisSessionPassword": "Doris 会话密码"
+  "dorisSessionPassword": "Doris 会话密码",
+  "starrocksNativeEndpoint": "StarRocks 的 FE 查询端口默认为 9030。",
+  "starrocksSessionPassword": "StarRocks 会话密码"
 }

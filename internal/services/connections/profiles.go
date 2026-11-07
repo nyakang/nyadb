@@ -23,6 +23,7 @@ const (
 	SQLite      Kind = "sqlite"
 	ClickHouse  Kind = "clickhouse"
 	Doris       Kind = "doris"
+	StarRocks   Kind = "starrocks"
 	SQLServer   Kind = "sqlserver"
 	DuckDB      Kind = "duckdb"
 	Oracle      Kind = "oracle"
@@ -63,6 +64,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	StarRocksOptions  StarRocksOptions
 	DorisOptions      DorisOptions
 	DamengOptions     DamengOptions
 	GaussDBOptions    GaussDBOptions

@@ -20947,3 +20947,23 @@ func DorisSessionPassword() string { return In(i18n.Locale()).DorisSessionPasswo
 func (msgs Messages) DorisSessionPassword() string {
 	return Catalog.Format(msgs.locale, "dorisSessionPassword", nil)
 }
+
+// StarrocksNativeEndpoint says "StarRocks 的 FE 查询端口默认为 9030。"
+// in the language the app shows.
+func StarrocksNativeEndpoint() string { return In(i18n.Locale()).StarrocksNativeEndpoint() }
+
+// StarrocksNativeEndpoint says "StarRocks 的 FE 查询端口默认为 9030。"
+// in the language of msgs.
+func (msgs Messages) StarrocksNativeEndpoint() string {
+	return Catalog.Format(msgs.locale, "starrocksNativeEndpoint", nil)
+}
+
+// StarrocksSessionPassword says "StarRocks 会话密码"
+// in the language the app shows.
+func StarrocksSessionPassword() string { return In(i18n.Locale()).StarrocksSessionPassword() }
+
+// StarrocksSessionPassword says "StarRocks 会话密码"
+// in the language of msgs.
+func (msgs Messages) StarrocksSessionPassword() string {
+	return Catalog.Format(msgs.locale, "starrocksSessionPassword", nil)
+}

@@ -12,6 +12,7 @@ import (
 // Keep the existing column and MySQL JSON format. Other engines use an
 // explicit versioned envelope; older empty records receive engine defaults.
 type engineOptionsEnvelope struct {
+	StarRocks  *connections.StarRocksOptions  `json:"starrocks,omitempty"`
 	Doris      *connections.DorisOptions      `json:"doris,omitempty"`
 	Dameng     *connections.DamengOptions     `json:"dameng,omitempty"`
 	GaussDB    *connections.GaussDBOptions    `json:"gaussdb,omitempty"`
@@ -29,6 +30,8 @@ type engineOptionsEnvelope struct {
 func encodeProfileOptions(p connections.Profile) (string, error) {
 	var value any
 	switch p.Kind {
+	case connections.StarRocks:
+		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, StarRocks: &p.StarRocksOptions}
 	case connections.Doris:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Doris: &p.DorisOptions}
 	case connections.Dameng:
@@ -61,6 +64,9 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 }
 func decodeEngineOptions(p *connections.Profile, raw string) error {
 	if raw == "" {
+		if p.Kind == connections.StarRocks {
+			p.StarRocksOptions = connections.StarRocksOptions{Version: 1, Catalog: "default_catalog"}
+		}
 		if p.Kind == connections.Doris {
 			p.DorisOptions = connections.DorisOptions{Version: 1, Catalog: "internal"}
 		}
@@ -97,6 +103,18 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 	decoder.DisallowUnknownFields()
 	if len(raw) > 128<<10 || decoder.Decode(&envelope) != nil || decoder.Decode(new(any)) != io.EOF || envelope.Version != 1 || envelope.Kind != p.Kind {
 		return fmt.Errorf("invalid saved engine options")
+	}
+	if p.Kind == connections.StarRocks {
+		if envelope.StarRocks == nil || envelope.Doris != nil || envelope.Dameng != nil || envelope.GaussDB != nil || envelope.Redis != nil || envelope.MongoDB != nil || envelope.Oracle != nil || envelope.DuckDB != nil || envelope.SQLServer != nil || envelope.SQLite != nil || envelope.PostgreSQL != nil {
+			return connections.ErrInvalid
+		}
+		p.StarRocksOptions = *envelope.StarRocks
+		checked, err := connections.NormalizeProfile(*p)
+		*p = checked
+		return err
+	}
+	if envelope.StarRocks != nil {
+		return connections.ErrInvalid
 	}
 	if p.Kind == connections.Doris {
 		if envelope.Doris == nil || envelope.Dameng != nil || envelope.GaussDB != nil || envelope.Redis != nil || envelope.MongoDB != nil || envelope.Oracle != nil || envelope.DuckDB != nil || envelope.SQLServer != nil || envelope.SQLite != nil || envelope.PostgreSQL != nil {
