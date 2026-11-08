@@ -11,6 +11,25 @@ spec.loader.exec_module(fixture)
 
 
 class QdrantFixtureTests(unittest.TestCase):
+    def test_public_snapshots_require_generation_stream_ownership_and_original_evidence(self):
+        names = ['PublicSnapshotsOriginalGenerationScopesTransfersAndRecovery',
+                 'PublicSnapshotsRevocationRetainsReceiptAndClosesOriginalStreams']
+        required = fixture.REQUIRED + fixture.PROFILE_REQUIRED + fixture.SESSION_REQUIRED + fixture.PUBLIC_REQUIRED
+        log = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in required)
+        for name in names:
+            self.assertIn(name, fixture.PUBLIC_REQUIRED)
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(log.replace('--- PASS: TestQdrantNative'+name,
+                                                     '--- SKIP: TestQdrantNative'+name), public=True)
+        paths = fixture.source_hashes(profile=True)
+        for path in ['internal/db/contract/snapshots.go',
+                     'internal/services/qdrant/snapshot_adapter.go',
+                     'internal/services/qdrant/snapshot_adapter_test.go',
+                     'internal/services/dbruntime/snapshots.go',
+                     'internal/services/dbruntime/snapshots_test.go',
+                     'internal/services/dbruntime/qdrant_snapshots_integration_test.go']:
+            self.assertIn(path, paths)
+
     def test_snapshot_sessions_require_original_claims_transfers_and_readback_faults(self):
         names = ['SnapshotSessionOriginalScopesArchivesTransfersAndRecovery',
                  'SnapshotSessionPreflightPermissionsAndFailedRecoveryEvidence',
@@ -74,6 +93,7 @@ class QdrantFixtureTests(unittest.TestCase):
 
     def test_native_command_is_explicit_and_bounded(self):
         command = fixture.native_test_command(True)
+        self.assertIn('-p=1', command)
         self.assertIn('-race', command)
         self.assertIn('-timeout=5m', command)
         self.assertIn('^TestQdrantNative', command)

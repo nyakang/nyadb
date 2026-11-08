@@ -62,6 +62,8 @@ SESSION_REQUIRED = (
     'SessionTypedPostReadLossIsInterruptedWithoutReplay',
 )
 PUBLIC_REQUIRED = (
+    'PublicSnapshotsOriginalGenerationScopesTransfersAndRecovery',
+    'PublicSnapshotsRevocationRetainsReceiptAndClosesOriginalStreams',
     'PublicCollectionManagementOriginalGenerationClaimsReceiptAndNoReplay',
     'PublicProviderMetadataAndPublishedGenerations',
     'PublicReadOnlyProviderDenialAndOriginalRecovery',
@@ -132,7 +134,9 @@ def native_test_command(race, profile=False, session=False, public=False, data=F
     profile = profile or session
     exclusions = [name for name, enabled in [('Session',session),('Public',public),('Data',data)] if not enabled]
     skip = '^TestQdrantNative'+(exclusions[0] if len(exclusions)==1 else '('+'|'.join(exclusions)+')') if exclusions else None
-    return ['go', 'test', '-count=1', '-timeout=5m', '-v', *(['-race'] if race else []),
+    # Packages share one owned storage namespace. Concurrent package mutations
+    # would correctly revoke whole-storage previews in another package.
+    return ['go', 'test', '-p=1', '-count=1', '-timeout=5m', '-v', *(['-race'] if race else []),
             *(['-skip', skip] if skip else []),
             '-run', '^TestQdrant' if profile else '^TestQdrantNative', './internal/services/qdrant',
             *(['./internal/services/connections', './internal/storage/localdb', './internal/ui/connectioneditor'] if profile else []),
@@ -267,7 +271,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                 logfile = output/('native-'+nonce+'.log')
                 command = native_test_command(race, profile, session, public, data)
                 with logfile.open('w') as log:
-                    result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=330)
+                    result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=660 if public or data else 330)
                 if hashes != source_hashes(profile):
                     raise RuntimeError('Acceptance sources changed during verification')
                 if result.returncode:

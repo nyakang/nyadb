@@ -191,14 +191,15 @@ func (m *Manager) Close() error {
 }
 
 type session struct {
-	profile    connections.Profile
-	cancel     context.CancelFunc
-	mu         sync.Mutex
-	raw        contract.Session
-	id         int64
-	generation uint64
-	kind       connections.Kind
-	closed     bool
+	profile         connections.Profile
+	cancel          context.CancelFunc
+	mu              sync.Mutex
+	raw             contract.Session
+	id              int64
+	generation      uint64
+	kind            connections.Kind
+	closed          bool
+	snapshotStreams sync.WaitGroup
 }
 
 func (s *session) ProfileID() int64             { return s.id }
@@ -251,6 +252,7 @@ func (s *session) Close() error {
 	s.mu.Lock()
 	if s.closed {
 		s.mu.Unlock()
+		s.snapshotStreams.Wait()
 		return nil
 	}
 	s.closed = true
@@ -258,7 +260,9 @@ func (s *session) Close() error {
 	if s.cancel != nil {
 		s.cancel()
 	}
-	return s.raw.Close()
+	err := s.raw.Close()
+	s.snapshotStreams.Wait()
+	return err
 }
 func (m *Manager) Data(id int64) contract.DataRuntime {
 	s, e := m.Session(id)
