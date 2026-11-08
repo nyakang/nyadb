@@ -121,16 +121,28 @@ func Open(ctx context.Context, cfg connections.CouchDBConfig, secret string) (*C
 	root, cancel := context.WithCancel(context.Background())
 	c := &Client{config: cfg, secret: secret, ctx: root, cancel: cancel, http: &http.Client{Transport: transport, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}}
 	fail := func(err error) (*Client, error) { c.Close(); return nil, err }
-	r, err := c.Do(ctx, Request{Method: "GET", Path: "/"})
+	identity, principal, err := c.observe(ctx)
 	if err != nil {
 		return fail(err)
 	}
-	if decodeJSON(r.Body, &c.identity) != nil || !validIdentity(c.identity) {
-		return fail(ErrProtocol)
+	c.identity, c.principal = identity, principal
+	return c, nil
+}
+
+// observe checks the native node and actual principal on the captured client.
+// Neither observation is atomic with a later request or a database incarnation.
+func (c *Client) observe(ctx context.Context) (Identity, Principal, error) {
+	var identity Identity
+	r, err := c.Do(ctx, Request{Method: "GET", Path: "/"})
+	if err != nil {
+		return Identity{}, Principal{}, err
+	}
+	if decodeJSON(r.Body, &identity) != nil || !validIdentity(identity) {
+		return Identity{}, Principal{}, ErrProtocol
 	}
 	r, err = c.Do(ctx, Request{Method: "GET", Path: "/_session"})
 	if err != nil {
-		return fail(err)
+		return Identity{}, Principal{}, err
 	}
 	var session struct {
 		OK      bool      `json:"ok"`
@@ -140,17 +152,16 @@ func Open(ctx context.Context, cfg connections.CouchDBConfig, secret string) (*C
 		} `json:"info"`
 	}
 	if decodeJSON(r.Body, &session) != nil || !session.OK || session.UserCtx.Roles == nil {
-		return fail(ErrProtocol)
+		return Identity{}, Principal{}, ErrProtocol
 	}
-	if cfg.Auth == "basic" {
-		if session.UserCtx.Name == nil || *session.UserCtx.Name != cfg.Username || session.Info.Authenticated != "default" {
-			return fail(ErrProtocol)
+	if c.config.Auth == "basic" {
+		if session.UserCtx.Name == nil || *session.UserCtx.Name != c.config.Username || session.Info.Authenticated != "default" {
+			return Identity{}, Principal{}, ErrProtocol
 		}
 	} else if session.UserCtx.Name != nil || session.Info.Authenticated != "" {
-		return fail(ErrProtocol)
+		return Identity{}, Principal{}, ErrProtocol
 	}
-	c.principal = session.UserCtx
-	return c, nil
+	return identity, session.UserCtx, nil
 }
 
 func validIdentity(v Identity) bool {

@@ -55,6 +55,16 @@ class CouchDBFixtureTests(unittest.TestCase):
         self.assertLess(command.index('-run'), command.index('./internal/storage/localdb'))
         self.assertIn('./internal/ui/connectioneditor', command)
 
+    def test_session_acceptance_requires_every_native_lifecycle_pass(self):
+        base = '\n'.join('--- PASS: TestCouchDBNative'+name+' (0.03s)' for name in FIXTURE.REQUIRED)
+        with self.assertRaises(RuntimeError):
+            FIXTURE.check_acceptance(base, session=True)
+        complete = base+'\n'+'\n'.join('--- PASS: TestCouchDBNative'+name+' (0.03s)' for name in FIXTURE.SESSION_REQUIRED)
+        FIXTURE.check_acceptance(complete, session=True)
+        for name in FIXTURE.SESSION_REQUIRED:
+            with self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(complete.replace('--- PASS: TestCouchDBNative'+name, '--- FAIL: TestCouchDBNative'+name), session=True)
+
 
 if __name__ == '__main__':
     unittest.main()
