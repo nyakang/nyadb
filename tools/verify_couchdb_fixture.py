@@ -27,6 +27,8 @@ REQUIRED = [
     'MangoOpaqueBookmarksAndChangesLifetime',
     'LostWriteResponseNeverReplays',
     'CancellationSettlesOriginalWorker',
+    'DocumentAllDocsMangoExactJSONAndDeletedBoundary',
+    'DocumentMangoLostReadCancellationNeverReplays',
 ]
 WORKBENCH_REQUIRED = ['PublicProviderMetadataAndPublishedGenerations', 'RESTLostWriteCancelAndExplicitRecovery', 'PublicChooserURINavigationDefinitionsRESTAndRecovery']
 SESSION_REQUIRED = ['SessionMetadataPermissionsAndQualifiedDefinitions', 'SessionRESTReceiptsAndRecoveryWithoutReplay', 'SessionLostReceiptCancellationAndOriginalClose', 'SessionRejectsChangedNodeAndPrincipalBeforeDispatch']

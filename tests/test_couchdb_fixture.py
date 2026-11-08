@@ -76,6 +76,14 @@ class CouchDBFixtureTests(unittest.TestCase):
         for package in ['dbruntime', 'shell', 'sqlworkspace', 'objectworkspace', 'navigation', 'connectioncatalog']:
             self.assertTrue(any(value.endswith('/'+package) for value in command))
 
+    def test_document_reads_are_mandatory_native_acceptance(self):
+        required = ['DocumentAllDocsMangoExactJSONAndDeletedBoundary', 'DocumentMangoLostReadCancellationNeverReplays']
+        complete = '\n'.join('--- PASS: TestCouchDBNative'+name+' (0.03s)' for name in FIXTURE.REQUIRED)
+        for name in required:
+            self.assertIn(name, FIXTURE.REQUIRED)
+            with self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(complete.replace('--- PASS: TestCouchDBNative'+name, '--- FAIL: TestCouchDBNative'+name))
+
 
 if __name__ == '__main__':
     unittest.main()
