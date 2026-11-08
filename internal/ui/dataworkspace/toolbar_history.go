@@ -85,7 +85,9 @@ func (s *State) recordDataHistory(t *Document) {
 	}
 	entry := mysqlDataReadHistoryRequest(t.database, t.table, contract.DataOptions{Offset: t.offset, Limit: t.limit, Condition: cloneDataCondition(t.filterCondition), Filters: filters, Sorts: sorts})
 	entry.At, entry.Duration, entry.Rows = t.page.CompletedAt, t.page.Duration, len(t.page.Rows)
-	if mysqlDataHistorySafeReadSQL(t.page.QuerySQL) {
+	if describe := s.runtimeFor(t).ReadDescription; describe != nil {
+		entry.SQL, entry.Summary = describe(contract.DataOptions{Condition: t.filterCondition, Filters: filters, FilterMode: t.filterMode}), false
+	} else if mysqlDataHistorySafeReadSQL(t.page.QuerySQL) {
 		entry.SQL = t.page.QuerySQL
 		entry.Summary = false
 	}
@@ -362,6 +364,18 @@ func (s *State) restoreDataHistory(t *Document, entry mysqlDataHistoryEntry) {
 	if !mysqlDataHistoryCanRestore(entry) {
 		return
 	}
+	selector := s.selectorFor(t)
+	if t != nil && t.page != nil && selector.Dialect != "" && len(entry.Filters) == 1 && entry.Filters[0].Column == selector.Column && entry.Filters[0].Mode == selector.Mode {
+		if selector.Validate(entry.Filters[0].Value) != nil || !mysqlDataRulesAvailable(t, nil, entry.Sorts) {
+			return
+		}
+		t.selectorDraft, t.selectorError, t.selectorOpen = entry.Filters[0].Value, "", true
+		t.selectorHistory, t.selectorHistorySorts = true, slices.Clone(entry.Sorts)
+		mysqlDataRestoreRuleDrafts(t, nil, entry.Sorts)
+		t.tools.historyOpen = false
+		s.setStatus(locales.Text("Mango 查询已恢复；请点击应用 Mango 查询执行"))
+		return
+	}
 	if t == nil || t.closed || t.page == nil || !mysqlDataRulesAvailable(t, entry.Filters, entry.Sorts) {
 		s.setStatus(locales.Text("历史中的筛选或排序字段已不可用"))
 		return
@@ -377,6 +391,7 @@ func (s *State) restoreDataHistory(t *Document, entry mysqlDataHistoryEntry) {
 	}
 	mysqlDataRestoreRuleDrafts(t, entry.Filters, entry.Sorts)
 	t.groupDraft = cloneDataCondition(entry.Condition)
+	t.selectorHistory, t.selectorHistorySorts = false, nil
 	t.rulesExpanded = true
 	t.ruleError = ""
 	t.tools.historyOpen = false
@@ -392,18 +407,24 @@ func mysqlDataHistoryLabel(entry mysqlDataHistoryEntry, index int) string {
 		entry.At.Format("15:04:05"), entry.Offset+1, entry.Offset+int64(entry.Rows), len(entry.Filters)+dataConditionCount(entry.Condition), len(entry.Sorts))
 	return kind + " · " + label + " · " + mysqlDataHistoryMessage(entry)
 }
+func (s *State) dataHistoryLabel(t *Document, entry mysqlDataHistoryEntry, index int) string {
+	if s.runtimeFor(t).ReadDescription != nil && (entry.Kind == "" || entry.Kind == "SELECT") {
+		entry.Kind = "READ"
+	}
+	return mysqlDataHistoryLabel(entry, index)
+}
 
 func (s *State) historyMenu(c *ui.Context, t *Document, m *ui.Menu) {
 	if m.Item(locales.Text("查看查询历史…")).Disabled(len(t.tools.history) == 0).Chosen() {
 		t.tools.historyOpen = true
-		t.tools.historyChoice = mysqlDataHistoryLabel(t.tools.history[0], 0)
+		t.tools.historyChoice = s.dataHistoryLabel(t, t.tools.history[0], 0)
 	}
 	m.Submenu(locales.Text("恢复历史规则"), func(sub *ui.Menu) {
 		if len(t.tools.history) == 0 {
 			sub.Item(locales.Text("本会话尚无成功查询")).Disabled(true)
 		}
 		for i, entry := range t.tools.history[:min(10, len(t.tools.history))] {
-			if sub.Item(mysqlDataHistoryLabel(entry, i)).Disabled(t.page == nil || t.loading || !mysqlDataHistoryCanRestore(entry)).Chosen() {
+			if sub.Item(s.dataHistoryLabel(t, entry, i)).Disabled(t.page == nil || t.loading || !mysqlDataHistoryCanRestore(entry)).Chosen() {
 				s.restoreDataHistory(t, entry)
 			}
 		}
@@ -443,7 +464,7 @@ func (s *State) historyModal(c *ui.Context, t *Document) {
 			choices := make([]string, len(t.tools.history))
 			selected := -1
 			for i, entry := range t.tools.history {
-				choices[i] = mysqlDataHistoryLabel(entry, i)
+				choices[i] = s.dataHistoryLabel(t, entry, i)
 				if choices[i] == t.tools.historyChoice {
 					selected = i
 				}
@@ -464,7 +485,11 @@ func (s *State) historyModal(c *ui.Context, t *Document) {
 					ui.Text(c, fmt.Sprintf(locales.Text("每页 %d 行 · 返回 %d 行 · 用时 %s"), entry.Limit, entry.Rows, entry.Duration.Round(time.Millisecond)))
 				}
 				text := entry.SQL
-				ui.TextArea(c, &text).Label(locales.Text("历史参数化 SQL")).ReadOnly(true).FillWidth().Height(100)
+				label := locales.Text("历史参数化 SQL")
+				if s.runtimeFor(t).ReadDescription != nil {
+					label = locales.Text("查询信息")
+				}
+				ui.TextArea(c, &text).Label(label).ReadOnly(true).FillWidth().Height(100)
 				if entry.Kind == "" || entry.Kind == "SELECT" {
 					rules := mysqlDataHistoryRules(entry)
 					ui.TextArea(c, &rules).Label(locales.Text("历史筛选与排序规则")).ReadOnly(true).FillWidth().Height(100)

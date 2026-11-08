@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"net/url"
 	"strconv"
 	"strings"
@@ -184,12 +183,8 @@ func (c *Client) Find(ctx context.Context, database string, request FindRequest)
 	if err != nil || len(body) > requestLimit {
 		return nil, ErrInvalid
 	}
-	response, err := c.Do(ctx, Request{Method: "POST", Path: "/" + url.PathEscape(database) + "/_find", Body: body})
+	response, err := c.do(ctx, Request{Method: "POST", Path: "/" + url.PathEscape(database) + "/_find", Body: body}, true)
 	if err != nil {
-		var interrupted *Interrupted
-		if errors.As(err, &interrupted) {
-			return nil, &Interrupted{Cause: interrupted.Cause, WriteOutcomeUnknown: false}
-		}
 		return nil, err
 	}
 	var native struct {

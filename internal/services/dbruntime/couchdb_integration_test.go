@@ -129,7 +129,7 @@ func TestCouchDBNativePublicProviderMetadataAndPublishedGenerations(t *testing.T
 		t.Fatal("qualified public database missing")
 	}
 	objects, err := meta.Browse(ctx, m.Namespace(p.ID, name))
-	if err != nil || len(objects) != 2 || objects[0].Kind != "数据库信息" || objects[1].Kind != "设计文档" || objects[1].Ref.Kind != "design_document" {
+	if err != nil || len(objects) != 3 || objects[0].Kind != "数据库信息" || objects[1].Kind != "设计文档" || objects[1].Ref.Kind != "design_document" {
 		t.Fatal(objects, err)
 	}
 	structure, err := meta.TableMetadata(ctx, objects[1].Ref)
@@ -138,8 +138,25 @@ func TestCouchDBNativePublicProviderMetadataAndPublishedGenerations(t *testing.T
 	}
 	features := first.Capabilities()
 	data := m.Data(p.ID)
-	if !features.Query || !features.Metadata || features.Documents || features.EditableTables || data.ReserveDocument != nil || data.Saver != nil || data.Importer != nil {
-		t.Fatal("unverified public data capabilities")
+	if !features.Query || !features.Metadata || !features.Documents || features.EditableTables || data.ReserveDocument == nil || data.Saver != nil || data.Importer != nil {
+		t.Fatal("readonly public data capabilities")
+	}
+	object := m.Namespace(p.ID, name).Object("documents", "_all_docs")
+	document, err := data.ReserveDocument(object)
+	if err != nil {
+		t.Fatal("public document reservation", err)
+	}
+	defer document.Close()
+	bound := document.Runtime()
+	page, err := bound.AdvancedLoader(ctx, p.ID, name, "_all_docs", contract.DataOptions{Object: object, Limit: 1})
+	if err != nil || len(page.Rows) != 1 || page.Rows[0][0].Text != "_design/shared" || !strings.Contains(page.Rows[0][2].Text, "9007199254740993") || bound.Selector.Dialect != "mango" || bound.ReadDescription == nil {
+		t.Fatal("public original document page", err)
+	}
+	if bound.Capabilities.EditableTables || bound.Saver != nil || bound.Importer != nil || bound.Transactions.Begin != nil {
+		t.Fatal("public document inferred write semantics")
+	}
+	if _, err = data.ReserveDocument((contract.NamespaceRef{ProfileID: p.ID + 1, Catalog: name}).Object("documents", "_all_docs")); err == nil {
+		t.Fatal("foreign profile document accepted")
 	}
 	if err = lease.Preconnect(ctx); err != nil {
 		t.Fatal(err)
@@ -158,7 +175,14 @@ func TestCouchDBNativePublicProviderMetadataAndPublishedGenerations(t *testing.T
 	if _, err = meta.Browse(ctx, m.Namespace(p.ID, name)); !errors.Is(err, contract.ErrRevoked) {
 		t.Fatal("old metadata rebound", err)
 	}
+	if _, err = bound.Count(ctx, p.ID, name, "_all_docs"); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal("old document rebound after published generation replacement", err)
+	}
+	if _, err = data.ReserveDocument(object); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal("old provider reopened data on replacement", err)
+	}
 	_ = first.Close()
+	_ = document.Close()
 	lease.Release()
 	if !m.IsConnected(p.ID) {
 		t.Fatal("original close killed replacement")
@@ -174,5 +198,14 @@ func TestCouchDBNativePublicProviderMetadataAndPublishedGenerations(t *testing.T
 	defer q.Release()
 	if _, err = q.Execute(ctx, name, "GET /"+name); err != nil {
 		t.Fatal("replacement damaged", err)
+	}
+	freshDocument, err := m.Data(p.ID).ReserveDocument(object)
+	if err != nil {
+		t.Fatal("replacement document unavailable", err)
+	}
+	defer freshDocument.Close()
+	count, err := freshDocument.Runtime().Count(ctx, p.ID, name, "_all_docs")
+	if err != nil || count != 1 {
+		t.Fatal("original close damaged replacement document", count, err)
 	}
 }

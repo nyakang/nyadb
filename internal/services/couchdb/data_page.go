@@ -1,10 +1,10 @@
 package couchdb
 
 import (
-	"bytes"
 	"context"
 	"crypto/hmac"
 	"encoding/json"
+	"net/url"
 	"slices"
 	"time"
 	"unicode/utf8"
@@ -64,6 +64,9 @@ func documentDataQuery(o contract.DataOptions) (dataQuery, error) {
 				return nil, ErrInvalid
 			}
 			if r.Mode == "mango" && r.Column == "document" {
+				if err := validateMangoSelector(r.Value); err != nil {
+					return nil, err
+				}
 				var selector map[string]any
 				if decodeJSON([]byte(r.Value), &selector) != nil || selector == nil {
 					return nil, ErrInvalid
@@ -116,6 +119,22 @@ func documentDataQuery(o contract.DataOptions) (dataQuery, error) {
 	}
 	return q, nil
 }
+func validateMangoSelector(raw string) error {
+	if len(raw) > requestLimit {
+		return ErrBounds
+	}
+	var selector map[string]json.RawMessage
+	if decodeJSON([]byte(raw), &selector) != nil || selector == nil {
+		return ErrInvalid
+	}
+	return nil
+}
+func documentReadDescription(database string, o contract.DataOptions) string {
+	if o.Condition != nil || len(o.Filters) != 0 || o.FilterMode != "" {
+		return "POST /" + url.PathEscape(database) + "/_find"
+	}
+	return "GET /" + url.PathEscape(database) + "/_all_docs"
+}
 func (q dataQuery) signature() string { raw, _ := json.Marshal(q); return string(raw) }
 func (q dataQuery) find(bookmark string, limit int) FindRequest {
 	direction := "asc"
@@ -123,7 +142,12 @@ func (q dataQuery) find(bookmark string, limit int) FindRequest {
 		direction = "desc"
 	}
 	sort, _ := json.Marshal([]map[string]string{{"_id": direction}})
-	return FindRequest{Selector: bytes.Clone(q.Selector), Sort: sort, Bookmark: bookmark, Limit: limit}
+	// Every native document ID is a string and collates above null. This bound
+	// permits the built-in _all_docs index to satisfy _id order even when the
+	// user's selector only has $in or predicates on other fields. It does not
+	// change which documents match or create an index as a hidden side effect.
+	selector, _ := json.Marshal(map[string]any{"$and": []any{map[string]any{"_id": map[string]any{"$gt": nil}}, json.RawMessage(q.Selector)}})
+	return FindRequest{Selector: selector, Sort: sort, Bookmark: bookmark, Limit: limit}
 }
 func (l *dataLease) cursor(epoch uint64, offset int64, limit int, q dataQuery, p dataBoundary) *contract.DataCursor {
 	p.Epoch = epoch
@@ -228,9 +252,9 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 		return nil, err
 	}
 	editable := false
-	page := &contract.DataPage{Object: l.object, Database: db, Table: name, Columns: []string{"_id", "_rev", "document"}, ColumnKinds: []string{"text", "text", "json"}, ColumnMetadata: documentColumns(), Editable: &editable, Offset: o.Offset, Limit: o.Limit, HasMore: ids.HasMore, PagingMode: "cursor", LiveRead: true, StableOrder: true, KeysetAvailable: true, QuerySQL: "GET /" + db + "/_all_docs"}
+	page := &contract.DataPage{Object: l.object, Database: db, Table: name, Columns: []string{"_id", "_rev", "document"}, ColumnKinds: []string{"text", "text", "json"}, ColumnMetadata: documentColumns(), Editable: &editable, Offset: o.Offset, Limit: o.Limit, HasMore: ids.HasMore, PagingMode: "cursor", LiveRead: true, StableOrder: true, KeysetAvailable: true, QuerySQL: "GET /" + url.PathEscape(db) + "/_all_docs"}
 	if q.Mango {
-		page.QuerySQL = "POST /" + db + "/_find"
+		page.QuerySQL = "POST /" + url.PathEscape(db) + "/_find"
 	}
 	budget := 16 << 20
 	for _, identity := range ids.Documents {

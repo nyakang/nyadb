@@ -22673,3 +22673,125 @@ func CouchdbURISupport() string { return In(i18n.Locale()).CouchdbURISupport() }
 func (msgs Messages) CouchdbURISupport() string {
 	return Catalog.Format(msgs.locale, "couchdbURISupport", nil)
 }
+
+// CouchdbDocuments says "文档"
+// in the language the app shows.
+func CouchdbDocuments() string { return In(i18n.Locale()).CouchdbDocuments() }
+
+// CouchdbDocuments says "文档"
+// in the language of msgs.
+func (msgs Messages) CouchdbDocuments() string {
+	return Catalog.Format(msgs.locale, "couchdbDocuments", nil)
+}
+
+// CouchdbDocumentStructure says "查看文档结构（只读）"
+// in the language the app shows.
+func CouchdbDocumentStructure() string { return In(i18n.Locale()).CouchdbDocumentStructure() }
+
+// CouchdbDocumentStructure says "查看文档结构（只读）"
+// in the language of msgs.
+func (msgs Messages) CouchdbDocumentStructure() string {
+	return Catalog.Format(msgs.locale, "couchdbDocumentStructure", nil)
+}
+
+// CouchdbMangoQuery says "Mango 查询"
+// in the language the app shows.
+func CouchdbMangoQuery() string { return In(i18n.Locale()).CouchdbMangoQuery() }
+
+// CouchdbMangoQuery says "Mango 查询"
+// in the language of msgs.
+func (msgs Messages) CouchdbMangoQuery() string {
+	return Catalog.Format(msgs.locale, "couchdbMangoQuery", nil)
+}
+
+// CouchdbMangoApplied says "Mango 查询已应用"
+// in the language the app shows.
+func CouchdbMangoApplied() string { return In(i18n.Locale()).CouchdbMangoApplied() }
+
+// CouchdbMangoApplied says "Mango 查询已应用"
+// in the language of msgs.
+func (msgs Messages) CouchdbMangoApplied() string {
+	return Catalog.Format(msgs.locale, "couchdbMangoApplied", nil)
+}
+
+// CouchdbMangoInvalidSelector says "请输入有效的 Mango selector JSON 对象"
+// in the language the app shows.
+func CouchdbMangoInvalidSelector() string { return In(i18n.Locale()).CouchdbMangoInvalidSelector() }
+
+// CouchdbMangoInvalidSelector says "请输入有效的 Mango selector JSON 对象"
+// in the language of msgs.
+func (msgs Messages) CouchdbMangoInvalidSelector() string {
+	return Catalog.Format(msgs.locale, "couchdbMangoInvalidSelector", nil)
+}
+
+// CouchdbMangoDescription says "输入 selector 对象；查询排除设计文档，文档总数包含设计文档。"
+// in the language the app shows.
+func CouchdbMangoDescription() string { return In(i18n.Locale()).CouchdbMangoDescription() }
+
+// CouchdbMangoDescription says "输入 selector 对象；查询排除设计文档，文档总数包含设计文档。"
+// in the language of msgs.
+func (msgs Messages) CouchdbMangoDescription() string {
+	return Catalog.Format(msgs.locale, "couchdbMangoDescription", nil)
+}
+
+// CouchdbMangoSelector says "Mango selector JSON"
+// in the language the app shows.
+func CouchdbMangoSelector() string { return In(i18n.Locale()).CouchdbMangoSelector() }
+
+// CouchdbMangoSelector says "Mango selector JSON"
+// in the language of msgs.
+func (msgs Messages) CouchdbMangoSelector() string {
+	return Catalog.Format(msgs.locale, "couchdbMangoSelector", nil)
+}
+
+// CouchdbMangoApply says "应用 Mango 查询"
+// in the language the app shows.
+func CouchdbMangoApply() string { return In(i18n.Locale()).CouchdbMangoApply() }
+
+// CouchdbMangoApply says "应用 Mango 查询"
+// in the language of msgs.
+func (msgs Messages) CouchdbMangoApply() string {
+	return Catalog.Format(msgs.locale, "couchdbMangoApply", nil)
+}
+
+// CouchdbMangoClear says "清除 Mango 查询"
+// in the language the app shows.
+func CouchdbMangoClear() string { return In(i18n.Locale()).CouchdbMangoClear() }
+
+// CouchdbMangoClear says "清除 Mango 查询"
+// in the language of msgs.
+func (msgs Messages) CouchdbMangoClear() string {
+	return Catalog.Format(msgs.locale, "couchdbMangoClear", nil)
+}
+
+// CouchdbMangoCollapse says "收起 Mango 查询"
+// in the language the app shows.
+func CouchdbMangoCollapse() string { return In(i18n.Locale()).CouchdbMangoCollapse() }
+
+// CouchdbMangoCollapse says "收起 Mango 查询"
+// in the language of msgs.
+func (msgs Messages) CouchdbMangoCollapse() string {
+	return Catalog.Format(msgs.locale, "couchdbMangoCollapse", nil)
+}
+
+// CouchdbMangoRestored says "Mango 查询已恢复；请点击应用 Mango 查询执行"
+// in the language the app shows.
+func CouchdbMangoRestored() string { return In(i18n.Locale()).CouchdbMangoRestored() }
+
+// CouchdbMangoRestored says "Mango 查询已恢复；请点击应用 Mango 查询执行"
+// in the language of msgs.
+func (msgs Messages) CouchdbMangoRestored() string {
+	return Catalog.Format(msgs.locale, "couchdbMangoRestored", nil)
+}
+
+// CouchdbNativeReadHistoryCounts says "读取：%d · 错误：%d · 总数：%d"
+// in the language the app shows.
+func CouchdbNativeReadHistoryCounts() string {
+	return In(i18n.Locale()).CouchdbNativeReadHistoryCounts()
+}
+
+// CouchdbNativeReadHistoryCounts says "读取：%d · 错误：%d · 总数：%d"
+// in the language of msgs.
+func (msgs Messages) CouchdbNativeReadHistoryCounts() string {
+	return Catalog.Format(msgs.locale, "couchdbNativeReadHistoryCounts", nil)
+}

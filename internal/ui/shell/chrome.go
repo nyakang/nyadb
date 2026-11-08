@@ -309,8 +309,10 @@ func (s *State) toolBar(c *ui.Context) {
 				if kind == connections.CouchDB {
 					switch action.label {
 					case "表":
-						action.label = "数据库信息"
+						action.label = "文档"
 					case "视图":
+						action.label = "数据库信息"
+					case "函数":
 						action.label = "设计文档"
 					case "查询":
 					default:

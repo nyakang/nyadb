@@ -33,9 +33,9 @@ type dataLease struct {
 	query           string
 }
 
-// ReserveNativeDocument is private to the native data acceptance stage. It does
-// not implement DataDocumentsProvider or publish unverified product capabilities.
-func (s *Session) ReserveNativeDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
+// ReserveDataDocument binds a readonly native document range to the original
+// session. Reservation performs no I/O and never chooses a replacement session.
+func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
 	if err := s.checkNamespace(o.Namespace()); err != nil {
 		return nil, err
 	}
@@ -70,9 +70,12 @@ func (s *Session) ReserveNativeDocument(o contract.ObjectRef) (contract.DataDocu
 func nativeDataCapabilities() contract.Capabilities {
 	return contract.Capabilities{Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
 }
+func (s *Session) DataDocumentCapabilities() contract.Capabilities { return nativeDataCapabilities() }
 func (l *dataLease) Runtime() contract.DataRuntime {
 	return contract.DataRuntime{Capabilities: nativeDataCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
-		FilterModes: []string{"equal", "not_equal"}, FilterColumns: []string{"_id", "_rev"}, SortColumns: []string{"_id"}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
+		Selector:        contract.DataSelector{Dialect: "mango", Column: "document", Mode: "mango", Validate: validateMangoSelector},
+		ReadDescription: func(o contract.DataOptions) string { return documentReadDescription(l.object.Catalog, o) },
+		FilterModes:     []string{"equal", "not_equal"}, FilterColumns: []string{"_id", "_rev"}, SortColumns: []string{"_id"}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
 }
 func (l *dataLease) identity(id int64, db, name string) error {
 	if id != l.object.ProfileID || db != l.object.Catalog || name != l.object.Name {
@@ -219,3 +222,5 @@ func (l *dataLease) Close() error {
 }
 
 var _ contract.DataDocumentLease = (*dataLease)(nil)
+var _ contract.DataDocumentsProvider = (*Session)(nil)
+var _ contract.DataDocumentFeaturesProvider = (*Session)(nil)

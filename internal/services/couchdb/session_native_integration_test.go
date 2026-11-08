@@ -47,7 +47,7 @@ func TestCouchDBNativeSessionMetadataPermissionsAndQualifiedDefinitions(t *testi
 			t.Fatal("owned database absent")
 		}
 		objects, err := s.Browse(context.Background(), s.Namespace(name))
-		if err != nil || len(objects) != 2 {
+		if err != nil || len(objects) != 3 {
 			t.Fatal(objects, err)
 		}
 		refs = append(refs, objects[1].Ref)
@@ -67,7 +67,7 @@ func TestCouchDBNativeSessionMetadataPermissionsAndQualifiedDefinitions(t *testi
 		t.Fatal("default admin_only_all_dbs failure hidden", denied, err)
 	}
 	t.Log("native default admin_only_all_dbs: regular principal GET /_all_dbs = 401; explicitly granted database browse succeeds")
-	if list, err := regular.Browse(context.Background(), regular.Namespace(names[0])); err != nil || len(list) != 2 {
+	if list, err := regular.Browse(context.Background(), regular.Namespace(names[0])); err != nil || len(list) != 3 {
 		t.Fatal("granted database browse failed", list, err)
 	}
 }

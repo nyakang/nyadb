@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"net/url"
 	"strconv"
 	"unicode/utf8"
@@ -137,12 +136,8 @@ func (c *Client) FindDocumentIdentities(ctx context.Context, database string, re
 	if err != nil || len(body) > requestLimit {
 		return nil, ErrInvalid
 	}
-	r, err := c.Do(ctx, Request{Method: "POST", Path: "/" + url.PathEscape(database) + "/_find", Body: body})
+	r, err := c.do(ctx, Request{Method: "POST", Path: "/" + url.PathEscape(database) + "/_find", Body: body}, true)
 	if err != nil {
-		var interrupted *Interrupted
-		if errors.As(err, &interrupted) {
-			return nil, &Interrupted{Cause: interrupted.Cause}
-		}
 		return nil, err
 	}
 	var native struct {

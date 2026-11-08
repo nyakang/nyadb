@@ -89,6 +89,9 @@ func (s *State) Load(services ui.Services, t *Document, refresh bool) {
 	out := make(chan mysqlDataResult, 1)
 	t.results = out
 	history := mysqlDataReadHistoryRequest(database, table, options)
+	if describe := s.runtimeFor(t).ReadDescription; describe != nil {
+		history.SQL, history.Summary = describe(options), false
+	}
 	complete := s.beginActivity(t, "data_read", history.SQL)
 	activeHistory := history
 	t.tools.historyActiveRead = &activeHistory
@@ -282,6 +285,8 @@ func (s *State) Close(t *Document) {
 	t.hiddenColumns = nil
 	t.filterExtraDraft, t.filterRules, t.sortDraft, t.sortRules = nil, nil, nil, nil
 	t.filterCondition, t.groupDraft = nil, nil
+	t.selectorDraft, t.selectorError, t.selectorOpen = "", "", false
+	t.selectorHistory, t.selectorHistorySorts = false, nil
 	t.disabledGroupRules = nil
 	t.selection.Clear()
 	t.grid = ui.ListState{}

@@ -75,12 +75,21 @@ type DataTransactions struct {
 	Chunk    func(context.Context, DataTransaction, int64, string, string, string, RowRef, int64, int) (*FieldChunk, error)
 }
 
+// DataSelector describes an adapter's native readonly JSON selector. Validation
+// is pure and must not reserve a resource or dispatch a database request.
+type DataSelector struct {
+	Dialect, Column, Mode string
+	Validate              func(string) error
+}
+
 // DataRuntime contains operation-bound functions. Workers capture this value
 // before starting; adapters must check the original session on every call.
 type DataRuntime struct {
 	ReserveDocument  func(ObjectRef) (DataDocumentLease, error)
 	ExportFormats    []string // nil preserves existing providers' format availability.
 	ImportDialect    string
+	Selector         DataSelector
+	ReadDescription  func(DataOptions) string // pure, parameter-free native request information.
 	Loader           func(context.Context, int64, string, string, int64, int) (*DataPage, error)
 	AdvancedLoader   func(context.Context, int64, string, string, DataOptions) (*DataPage, error)
 	Saver            func(context.Context, int64, string, string, []DataEdit) (*DataEditResult, error)

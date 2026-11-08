@@ -15,7 +15,7 @@ func TestCouchDBPublicProfileIndependentContextAndExactPrincipal(t *testing.T) {
 	if err != nil || p.Port != 5984 || p.TLSMode != "disable" || p.Username != "" || p.Database != "" || p.CouchDBOptions.ContextPath != "" || p.CouchDBOptions.Auth != "none" || p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind.IsRESTSearch() {
 		t.Fatal("CouchDB native defaults or family changed")
 	}
-	if d, registered := connections.Describe(connections.CouchDB); !registered || d.ClientFamily != "couchdb" || d.Dialect != "couchdb" || !connections.CouchDB.IsREST() || d.Capabilities.Documents || d.Capabilities.EditableTables || d.Capabilities.Export {
+	if d, registered := connections.Describe(connections.CouchDB); !registered || d.ClientFamily != "couchdb" || d.Dialect != "couchdb" || !connections.CouchDB.IsREST() || !d.Capabilities.Documents || d.Capabilities.EditableTables || !d.Capabilities.Export {
 		t.Fatal("native public descriptor inflated or missing")
 	}
 	p.Name, p.Host, p.Username, p.TLSMode = "native", "::1", " 原生用户🐱 ", "verify-full"

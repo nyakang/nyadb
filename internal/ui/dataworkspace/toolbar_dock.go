@@ -204,6 +204,9 @@ func (s *State) dataDock(c *ui.Context, t *Document) {
 func (s *State) dataHistoryDock(c *ui.Context, t *Document) {
 	ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(4, 8).Gap(12).Children(func() {
 		choices := []string{"all", "SELECT", "INSERT", "UPDATE", "DELETE", "errors"}
+		if s.runtimeFor(t).ReadDescription != nil && !t.capabilities.EditableTables {
+			choices = []string{"all", "SELECT", "errors"}
+		}
 		if t.tools.historyFilter == "" {
 			t.tools.historyFilter = "all"
 		}
@@ -214,6 +217,9 @@ func (s *State) dataHistoryDock(c *ui.Context, t *Document) {
 			}
 			if kind == "errors" {
 				return locales.Text("错误")
+			}
+			if kind == "SELECT" && s.runtimeFor(t).ReadDescription != nil {
+				return "READ"
 			}
 			return kind
 		}).Label(locales.Text("历史类型")).Width(125)
@@ -242,6 +248,10 @@ func (s *State) dataHistoryDock(c *ui.Context, t *Document) {
 	}).Grow(1).MinHeight(50).FillWidth()
 	stats := t.tools.historyStats
 	ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(4, 8).Children(func() {
-		ui.Text(c, fmt.Sprintf(locales.Text("SELECT：%d · INSERT：%d · UPDATE：%d · DELETE：%d · 错误：%d · 总数：%d"), stats.Select, stats.Insert, stats.Update, stats.Delete, stats.Errors, stats.Total)).SingleLine().FontSize(theme.Font(c, theme.SmallFontSize))
+		text := fmt.Sprintf(locales.Text("SELECT：%d · INSERT：%d · UPDATE：%d · DELETE：%d · 错误：%d · 总数：%d"), stats.Select, stats.Insert, stats.Update, stats.Delete, stats.Errors, stats.Total)
+		if s.runtimeFor(t).ReadDescription != nil && !t.capabilities.EditableTables {
+			text = fmt.Sprintf(locales.Text("读取：%d · 错误：%d · 总数：%d"), stats.Select, stats.Errors, stats.Total)
+		}
+		ui.Text(c, text).SingleLine().FontSize(theme.Font(c, theme.SmallFontSize))
 	})
 }

@@ -46,6 +46,21 @@ func TestCouchDBNativeDocumentAllDocsMangoExactJSONAndDeletedBoundary(t *testing
 	nativeRun(t, admin, Request{Method: "PUT", Path: "/" + db + "/_design/sample", Body: []byte(`{"views":{"v":{"map":"function(doc) { emit(doc._id, doc.n); }"}}}`)})
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
+	// A complete server rejection is a known read error. The caller can
+	// explicitly correct its query on this same original client afterward.
+	for _, identities := range []bool{false, true} {
+		request := FindRequest{Selector: json.RawMessage(`{"n":{"$eq":9007199254740993}}`), Sort: json.RawMessage(`["_id"]`), Limit: 2}
+		var err error
+		if identities {
+			_, err = c.FindDocumentIdentities(ctx, db, request)
+		} else {
+			_, err = c.Find(ctx, db, request)
+		}
+		var status *HTTPError
+		if !errors.As(err, &status) || status.Status != 400 || errors.Is(err, ErrRetired) {
+			t.Fatal("native Mango rejected sort claimed an interrupted write", err)
+		}
+	}
 	seen := map[string]bool{}
 	start := ""
 	var first *AllDocumentsPage

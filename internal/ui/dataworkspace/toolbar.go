@@ -88,6 +88,12 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 		if dataToolbarToggle(c, "筛选 & 排序", "catalog-filter", t.rulesExpanded, false).Clicked() {
 			t.rulesExpanded = !t.rulesExpanded
 		}
+		if s.selectorFor(t).Dialect == "mango" && dataToolbarToggle(c, "Mango 查询", "catalog-filter", t.selectorOpen, false).Clicked() {
+			t.selectorOpen = !t.selectorOpen
+			if t.selectorOpen && t.selectorDraft == "" {
+				t.selectorDraft = "{}"
+			}
+		}
 		if dataToolbarToggle(c, "列", "table", t.toolbar.columnsOpen, page == nil).Clicked() {
 			t.toolbar.columnsOpen = !t.toolbar.columnsOpen
 		}

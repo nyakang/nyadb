@@ -1,9 +1,11 @@
 package shell
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -105,6 +107,12 @@ func TestCouchDBNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t *te
 		}()
 	}
 	run("PUT", "/"+dbs[0]+"/original", `{"_id":"original","n":9007199254740993,"text":"原始;文档🐱"}`)
+	rows := make([]map[string]any, 0, 100)
+	for i := range 100 {
+		rows = append(rows, map[string]any{"_id": fmt.Sprintf("row_%03d", i), "n": json.Number("9007199254740993")})
+	}
+	body, _ := json.Marshal(map[string]any{"docs": rows})
+	run("POST", "/"+dbs[0]+"/_bulk_docs", string(body))
 	s, _, profiles, path := profileTestState(t)
 	vault := &memoryCredentialVault{secrets: map[string]string{}}
 	s.SetCredentialVault(vault)
@@ -190,7 +198,7 @@ func TestCouchDBNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t *te
 	if w.Status != "已连接" {
 		t.Fatal(w.Error)
 	}
-	var definitions []*tab
+	var definitions, documents []*tab
 	for _, database := range dbs {
 		s.submitNavigation(services, navigation.DatabaseNode(p.ID, database))
 		wait(func() bool { return w.Pending == "" && w.Cache[database] != nil })
@@ -204,7 +212,7 @@ func TestCouchDBNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t *te
 			t.Fatal("qualified public design document missing")
 		}
 		categories := s.navigation.Children(navigation.DatabaseNode(p.ID, database).Key())
-		if len(categories) != 3 || navigation.Parse(categories[0]).Category != "数据库信息" || navigation.Parse(categories[1]).Category != "设计文档" {
+		if len(categories) != 4 || navigation.Parse(categories[0]).Category != "文档" || navigation.Parse(categories[1]).Category != "数据库信息" || navigation.Parse(categories[2]).Category != "设计文档" {
 			t.Fatal("native categories changed", categories)
 		}
 		s.submitNavigation(services, navigation.Node{Kind: "object", ProfileID: p.ID, Database: database, Category: "设计文档", Object: "_design/shared"})
@@ -217,9 +225,80 @@ func TestCouchDBNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t *te
 			t.Fatal("native JSON definition lost or routed into SQL schema", view.object.Error())
 		}
 		definitions = append(definitions, view)
+		s.submitNavigation(services, navigation.Node{Kind: "object", ProfileID: p.ID, Database: database, Category: "文档", Object: "_all_docs"})
+		data := s.currentTab()
+		if data.data == nil || data.data.Object() != s.runtime.Namespace(p.ID, database).Object("documents", "_all_docs") {
+			t.Fatal("public documents did not open the qualified shared grid")
+		}
+		wait(func() bool { return !data.data.Busy() })
+		if data.data.Error() != "" || data.data.Page() == nil || data.data.Page().Editable == nil || *data.data.Page().Editable || len(data.data.Page().Columns) != 3 {
+			t.Fatal("public readonly native document grid", data.data.Error())
+		}
+		documents = append(documents, data)
 	}
 	if definitions[0].id == definitions[1].id || definitions[0].object.Database() == definitions[1].object.Database() {
 		t.Fatal("cross-database same-name tabs aliased")
+	}
+	if documents[0].id == documents[1].id || documents[0].data.Object() == documents[1].data.Object() {
+		t.Fatal("same-name native document ranges aliased")
+	}
+	s.submitNavigation(services, navigation.Node{Kind: "object", ProfileID: p.ID, Database: dbs[0], Category: "文档", Object: "_all_docs"})
+	data := documents[0].data
+	if s.currentTab().data != data || !data.Page().HasMore {
+		t.Fatal("original public document could not be reactivated")
+	}
+	first := data.Page().Rows[0][0].Text
+	if err = tt.Click("下一页数据"); err != nil {
+		t.Fatal(err)
+	}
+	wait(func() bool { return !data.Busy() })
+	if data.Error() != "" || data.Offset() != 100 || data.Page().Rows[0][0].Text == first || documents[1].data.Page().Rows[0][0].Text != "_design/shared" {
+		t.Fatal("public cursor paging changed original/sibling identity", data.Error())
+	}
+	if err = tt.Click("上一页数据"); err != nil {
+		t.Fatal(err)
+	}
+	wait(func() bool { return !data.Busy() })
+	if data.Page().Rows[0][0].Text != first || data.Offset() != 0 {
+		t.Fatal("public back navigation lost original boundary")
+	}
+	if err = clickMySQLDataToolbar(tt, "Mango 查询"); err != nil {
+		t.Fatal("public Mango editor missing", err)
+	}
+	if err = tt.Click("Mango selector JSON"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Key(ui.Cmd, ui.KeyA)
+	tt.Type(`{"_id":{"$in":["row_000","row_001"]},"n":{"$eq":9007199254740993}}`)
+	if err = tt.Click("应用 Mango 查询"); err != nil {
+		t.Fatal(err)
+	}
+	wait(func() bool { return !data.Busy() })
+	if data.Error() != "" || len(data.Page().Rows) != 2 || data.Page().Rows[0][0].Text != "row_000" || !strings.Contains(data.Page().Rows[0][2].Text, "9007199254740993") || !strings.HasPrefix(data.Page().QuerySQL, "POST /") {
+		t.Fatal("public Mango selector did not preserve native query/range", data.Error())
+	}
+	var exported bytes.Buffer
+	s.SetEngineFiles(func(name string) (string, error) { return name, nil }, func(_ string, write func(io.Writer) error) error { return write(&exported) })
+	if err = clickMySQLDataToolbar(tt, "导出选项"); err != nil {
+		t.Fatal(err)
+	}
+	if err = tt.ChooseMenuItem("整表导出为 JSONL（忽略当前筛选）"); err != nil {
+		t.Fatal(err)
+	}
+	wait(func() bool { return !data.Busy() })
+	lines := bytes.Split(bytes.TrimSpace(exported.Bytes()), []byte("\n"))
+	if data.Error() != "" || len(lines) != 102 {
+		t.Fatal("public native complete export followed preview/filter range", len(lines), data.Error())
+	}
+	for _, line := range lines {
+		var raw map[string]json.RawMessage
+		if json.Unmarshal(line, &raw) != nil || string(raw["n"]) != "9007199254740993" {
+			t.Fatal("public export wrapped or rounded native documents")
+		}
+	}
+	caps := s.objectCapabilitiesFor(p.ID)
+	if caps.EditableTables || caps.Import || caps.Transactions {
+		t.Fatal("public document grid inferred unsupported write capabilities")
 	}
 	// Return to the original database and use the real REST run control.
 	s.submitNavigation(services, navigation.DatabaseNode(p.ID, dbs[0]))
@@ -252,7 +331,7 @@ func TestCouchDBNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t *te
 				for _, view := range []struct {
 					name string
 					tab  *tab
-				}{{"definition", definitions[0]}, {"rest", query}} {
+				}{{"definition", definitions[0]}, {"rest", query}, {"documents", documents[0]}} {
 					for i, candidate := range s.tabs {
 						if candidate.id == view.tab.id {
 							s.activeTab = i
@@ -264,6 +343,8 @@ func TestCouchDBNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t *te
 					control := "运行 CouchDB REST 请求"
 					if view.name == "definition" {
 						control = "刷新原生定义"
+					} else if view.name == "documents" {
+						control = "应用 Mango 查询"
 					}
 					rect, ok := capture.Find(locales.Text(control))
 					if !ok || rect.W <= 0 || rect.H <= 0 || rect.X < 0 || rect.Y < 0 || rect.X+rect.W > float32(size[0])+1 || rect.Y+rect.H > float32(size[1])+1 {

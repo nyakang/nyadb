@@ -69,6 +69,9 @@ func mysqlObjectActionLabels(kind string) (open, design string) {
 	if kind == "集合" {
 		return "打开集合", "查看集合结构（只读）"
 	}
+	if kind == "文档" {
+		return "打开文档", "查看文档结构（只读）"
+	}
 	if kind == "视图" {
 		return "打开视图（只读）", "查看视图结构（只读）"
 	}
@@ -209,10 +212,14 @@ func (s *State) BrowserView(c *ui.Context) {
 				} {
 					item := action
 					if couchdbEngine {
-						if action.label != "查看结构" {
+						if action.label == "设计表" {
 							continue
 						}
-						item.label, item.accessible = "查看定义（只读）", "查看 CouchDB 原生定义"
+						if action.label == "打开表" {
+							item.label, item.accessible = "打开文档", "打开选中对象文档"
+						} else {
+							item.label, item.accessible = "查看定义（只读）", "查看 CouchDB 原生定义"
+						}
 					}
 					if searchEngine {
 						if item.label == "设计表" {
@@ -253,7 +260,11 @@ func (s *State) BrowserView(c *ui.Context) {
 							item.accessible = "查看集合结构（只读）"
 						}
 					}
-					if ui.Button(c, "").Label(locales.Text(item.accessible)).Tooltip(locales.Text(item.label)).Disabled(!canOpen).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
+					canAction := canOpen
+					if couchdbEngine && action.label == "打开表" {
+						canAction = canOpen && items[a.frame.Row].Kind == "文档"
+					}
+					if ui.Button(c, "").Label(locales.Text(item.accessible)).Tooltip(locales.Text(item.label)).Disabled(!canAction).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
 						ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
 							theme.Icon(c, item.icon, 14, palette.Muted)
 							ui.Text(c, locales.Text(item.label)).FontSize(theme.Font(c, 12)).SingleLine()
@@ -290,7 +301,7 @@ func (s *State) BrowserView(c *ui.Context) {
 				}
 				kinds := []string{"全部", "表", "视图"}
 				if couchdbEngine {
-					kinds = []string{"全部", "数据库信息", "设计文档"}
+					kinds = []string{"全部", "文档", "数据库信息", "设计文档"}
 				}
 				if searchEngine {
 					kinds = []string{"全部", "索引", "别名", "数据流"}

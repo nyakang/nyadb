@@ -63,7 +63,7 @@ func TestCouchDBNativeDataPagingOriginalRowsFieldsAndCompleteExport(t *testing.T
 		nativeRun(t, admin, Request{Method: "PUT", Path: "/" + o.Catalog + "/" + id, Body: body})
 	}
 	nativeRun(t, admin, Request{Method: "PUT", Path: "/" + o.Catalog + "/_design/sample", Body: []byte(`{"views":{"v":{"map":"function(doc) { emit(doc._id, doc.n); }"}}}`)})
-	lease, err := s.ReserveNativeDocument(o)
+	lease, err := s.ReserveDataDocument(o)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,7 +158,7 @@ func TestCouchDBNativeDataPagingOriginalRowsFieldsAndCompleteExport(t *testing.T
 	if _, err = r.RowReader(ctx, o.ProfileID, o.Catalog, o.Name, foreign); !errors.Is(err, ErrInvalid) {
 		t.Fatal("foreign original row accepted", err)
 	}
-	if _, err = s.ReserveNativeDocument(o.Namespace().Object("table", o.Name)); !errors.Is(err, contract.ErrUnsupported) {
+	if _, err = s.ReserveDataDocument(o.Namespace().Object("table", o.Name)); !errors.Is(err, contract.ErrUnsupported) {
 		t.Fatal("relational identity accepted")
 	}
 	descending := contract.DataOptions{Object: o, Limit: 2, SortColumn: "_id", SortDescending: true}
@@ -232,12 +232,12 @@ func TestCouchDBNativeDataCanceledOriginalPageKeepsIndependentCountAndLease(t *t
 	originalCfg.Endpoint, originalCfg.CAFile, originalCfg.ServerName = relay.URL, ca, relay.Certificate().DNSNames[0]
 	s := testSession(t, originalCfg, secret)
 	o := s.Namespace(db).Object("documents", "_all_docs")
-	lease, err := s.ReserveNativeDocument(o)
+	lease, err := s.ReserveDataDocument(o)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer lease.Close()
-	other, err := s.ReserveNativeDocument(o)
+	other, err := s.ReserveDataDocument(o)
 	if err != nil {
 		t.Fatal(err)
 	}

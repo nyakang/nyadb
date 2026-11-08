@@ -221,6 +221,12 @@ func readOnly(r Request) bool {
 }
 
 func (c *Client) Do(ctx context.Context, r Request) (Response, error) {
+	return c.do(ctx, r, readOnly(r))
+}
+
+// Only native codecs can certify their constructed POST as a read. Raw REST
+// requests retain conservative write outcome semantics.
+func (c *Client) do(ctx context.Context, r Request, read bool) (Response, error) {
 	if err := validateRequest(r); err != nil {
 		return Response{}, err
 	}
@@ -257,7 +263,7 @@ func (c *Client) Do(ctx context.Context, r Request) (Response, error) {
 		c.mu.Lock()
 		c.retired = true
 		c.mu.Unlock()
-		return result, &Interrupted{WriteOutcomeUnknown: !readOnly(r), Cause: cause}
+		return result, &Interrupted{WriteOutcomeUnknown: !read, Cause: cause}
 	}
 	response, err := c.http.Do(req)
 	if err != nil {
@@ -284,7 +290,7 @@ func (c *Client) Do(ctx context.Context, r Request) (Response, error) {
 	}
 	if result.Status < 200 || result.Status >= 300 {
 		diagnostic := &HTTPError{Status: result.Status}
-		if !readOnly(r) {
+		if !read {
 			return interrupted(diagnostic)
 		}
 		return result, diagnostic

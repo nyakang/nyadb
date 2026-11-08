@@ -9,19 +9,19 @@ import (
 
 func TestCouchDBNavigatorQualifiedDatabaseInfoAndDesignCategories(t *testing.T) {
 	s := New(Dependencies{Engine: func(int64) connections.Kind { return connections.CouchDB }, SessionStatus: func(int64) string { return "已连接" }, DatabaseOpened: func(int64, string) bool { return true }, Objects: func(_ int64, db string) (iter.Seq[Object], bool) {
-		return slices.Values([]Object{{Name: db, Kind: "数据库信息"}, {Name: "_design/shared", Kind: "设计文档"}}), true
+		return slices.Values([]Object{{Name: "_all_docs", Kind: "文档"}, {Name: db, Kind: "数据库信息"}, {Name: "_design/shared", Kind: "设计文档"}}), true
 	}})
 	for _, db := range []string{"owned", "other"} {
 		categories := s.Children(DatabaseNode(7, db).Key())
-		if len(categories) != 3 {
+		if len(categories) != 4 {
 			t.Fatal(categories)
 		}
-		for i, want := range []string{"数据库信息", "设计文档", "查询"} {
+		for i, want := range []string{"文档", "数据库信息", "设计文档", "查询"} {
 			if Parse(categories[i]).Category != want || !SupportedCategory(want) {
 				t.Fatal(categories)
 			}
 		}
-		children := s.Children(categories[1])
+		children := s.Children(categories[2])
 		if len(children) != 1 {
 			t.Fatal(children)
 		}

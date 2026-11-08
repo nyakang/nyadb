@@ -42,6 +42,10 @@ type Dependencies struct {
 // Document has stable qualified identity. All mutable grid, draft and request
 // state belongs to this module and is accessed only on the UI thread.
 type Document struct {
+	selectorOpen                     bool
+	selectorDraft, selectorError     string
+	selectorHistory                  bool
+	selectorHistorySorts             []contract.DataSortRule
 	pagingRead                       bool
 	runtimeLease                     contract.DataDocumentLease
 	boundRuntime                     *Runtime

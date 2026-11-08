@@ -189,6 +189,7 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 	if err = s.validateObservation(ctx, c); err != nil {
 		return nil, err
 	}
+	out = append(out, contract.DBObject{Ref: n.Object("documents", "_all_docs"), Name: "_all_docs", Kind: "文档", Engine: "Apache CouchDB", Comment: "Native document range, including design documents"})
 	return out, nil
 }
 func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*contract.TableStructure, error) {
@@ -198,6 +199,10 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*con
 	var path string
 	var err error
 	switch o.Kind {
+	case "documents":
+		if o.Name != "_all_docs" {
+			return nil, connections.ErrInvalid
+		}
 	case "database":
 		if o.Name != o.Catalog {
 			return nil, connections.ErrInvalid
@@ -217,7 +222,7 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*con
 	defer done()
 	var raw []byte
 	var definitions []contract.Definition
-	if o.Kind == "database" {
+	if o.Kind == "database" || o.Kind == "documents" {
 		raw, err = databaseInfo(ctx, c, o.Catalog)
 		definitions = []contract.Definition{{Name: o.Name, Kind: "database", SQL: string(raw)}}
 	} else {
@@ -234,5 +239,10 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*con
 	if err = s.validateObservation(ctx, c); err != nil {
 		return nil, err
 	}
-	return &contract.TableStructure{Object: o, Database: o.Catalog, Name: o.Name, Kind: o.Kind, Engine: "Apache CouchDB", Definition: string(raw), Definitions: definitions}, nil
+	metadata := &contract.TableStructure{Object: o, Database: o.Catalog, Name: o.Name, Kind: o.Kind, Engine: "Apache CouchDB", Definition: string(raw), Definitions: definitions}
+	if o.Kind == "documents" {
+		metadata.Columns = documentColumns()
+		metadata.Comment = "Native document range, including design documents; Mango excludes design documents"
+	}
+	return metadata, nil
 }

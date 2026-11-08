@@ -60,6 +60,7 @@ def source_hashes():
 
 
 def check_acceptance(log, profile=False, session=False, workbench=False, data=False):
+    data = data or workbench
     for name in REQUIRED + (PROFILE_REQUIRED if profile else []) + (SESSION_REQUIRED if session else []) + (WORKBENCH_REQUIRED if workbench else []) + (DATA_REQUIRED if data else []):
         if not re.search(r'^--- PASS: TestCouchDBNative'+name+r' \(', log, re.M):
             raise RuntimeError('Missing required native PASS: '+name)
@@ -68,6 +69,7 @@ def check_acceptance(log, profile=False, session=False, workbench=False, data=Fa
 
 
 def native_test_command(profile=False, race=False, workbench=False, data=False):
+    data = data or workbench
     packages = ['./internal/services/connections', './internal/services/couchdb']
     if profile:
         packages += ['./internal/storage/localdb', './internal/ui/connectioneditor']
@@ -79,13 +81,14 @@ def native_test_command(profile=False, race=False, workbench=False, data=False):
 
 
 def verify(plain=False, race=False, profile=False, session=False, workbench=False, data=False):
+    data = data or workbench
     profile, session = profile or workbench, session or workbench or data
     output = ROOT/'build/couchdb'
     output.mkdir(parents=True, exist_ok=True)
     nonce = uuid.uuid4().hex
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
-    evidence = {'nonce': nonce, 'image': IMAGE, 'requested_version': VERSION, 'mode': 'plain-none' if plain else 'tls-basic', 'scope': 'private_native_shared_data_documents' if data else 'public_workbench' if workbench else 'private_session_metadata_query' if session else 'private_profile' if profile else 'private_native_transport', 'status': 'failed', 'fixture_cleaned': False}
+    evidence = {'nonce': nonce, 'image': IMAGE, 'requested_version': VERSION, 'mode': 'plain-none' if plain else 'tls-basic', 'scope': 'public_workbench_documents_mango' if workbench else 'public_native_shared_data_documents' if data else 'private_session_metadata_query' if session else 'private_profile' if profile else 'private_native_transport', 'status': 'failed', 'fixture_cleaned': False}
     with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
         folder = Path(private)
         # Directory traversal for the native CouchDB UID; secrets stay mode 600
@@ -194,16 +197,16 @@ def verify(plain=False, race=False, profile=False, session=False, workbench=Fals
                 evidence['headless_form_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
             if workbench:
                 images = sorted(Path(env['NYADB_COUCHDB_WORKBENCH_IMAGES']).rglob('*.png'))
-                expected = {language+'/'+view+'-'+str(width)+'x'+str(height)+'.png' for language in ['zh-Hans', 'en'] for width, height in [(1280, 800), (720, 520)] for view in ['definition', 'rest']}
+                expected = {language+'/'+view+'-'+str(width)+'x'+str(height)+'.png' for language in ['zh-Hans', 'en'] for width, height in [(1280, 800), (720, 520)] for view in ['definition', 'rest', 'documents']}
                 base = Path(env['NYADB_COUCHDB_WORKBENCH_IMAGES'])
                 if {str(p.relative_to(base)) for p in images} != expected:
-                    raise RuntimeError('Expected all 8 localized native workbench images')
+                    raise RuntimeError('Expected all 12 localized native workbench images')
                 evidence['headless_workbench_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
             if data:
                 images = sorted(Path(env['NYADB_COUCHDB_DATA_IMAGES']).glob('*.png'))
-                expected = {language+'-'+str(width)+'-native-shared-grid.png' for language in ['zh-Hans', 'en'] for width in [1200, 900]}
+                expected = {language+'-'+str(width)+'-'+view+'.png' for language in ['zh-Hans', 'en'] for width in [1200, 900] for view in ['native-shared-grid', 'native-mango-grid']}
                 if {p.name for p in images} != expected:
-                    raise RuntimeError('Expected all 4 localized native shared-grid images')
+                    raise RuntimeError('Expected all 8 localized native shared-grid/Mango images')
                 evidence['headless_data_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
             evidence.update(status='passed_with_race' if race else 'passed', observed_identity=identity, source_hashes=hashes, log=str(logfile.relative_to(ROOT)), log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest(), required_passes=REQUIRED+(PROFILE_REQUIRED if profile else [])+(SESSION_REQUIRED if session else [])+(WORKBENCH_REQUIRED if workbench else [])+(DATA_REQUIRED if data else []))
             print('Native CouchDB '+VERSION+' '+evidence['mode']+' acceptance passed', flush=True)
@@ -227,6 +230,6 @@ if __name__ == '__main__':
     parser.add_argument('--profile', action='store_true', help='Verify private URI/storage/vault/editor and native original checks')
     parser.add_argument('--session', action='store_true', help='Require native session, qualified metadata, REST lease and recovery acceptance')
     parser.add_argument('--workbench', action='store_true', help='Verify public provider, URI, chooser, metadata definitions, REST workflow and recovery (includes profile and session)')
-    parser.add_argument('--data', action='store_true', help='Verify private native data leases and the sole shared readonly grid (includes session)')
+    parser.add_argument('--data', action='store_true', help='Verify public native data leases, the sole shared readonly grid and Mango editor (includes session)')
     options = parser.parse_args()
     verify(options.plain, options.race, options.profile, options.session, options.workbench, options.data)

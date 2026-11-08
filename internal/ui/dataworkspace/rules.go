@@ -38,6 +38,8 @@ func (s *State) clearMySQLDataFilter(services ui.Services, t *Document) {
 	t.filterColumn = ""
 	t.filterMode = ""
 	t.filterValue = ""
+	t.selectorDraft, t.selectorError = "", ""
+	t.selectorHistory, t.selectorHistorySorts = false, nil
 	t.filterRules = nil
 	t.filterCondition, t.groupDraft = nil, nil
 	t.mainFilterDisabled = false
@@ -111,6 +113,7 @@ func (s *State) syncMySQLDataSort(services ui.Services, t *Document) {
 	}
 	t.sortColumn = t.sort.Column
 	t.sortDescending = t.sort.Descending
+	t.selectorHistory, t.selectorHistorySorts = false, nil
 	s.Refresh(services, t)
 }
 
@@ -130,6 +133,9 @@ func mysqlDataFilterStatus(t *Document) string {
 	}
 	if t.filterMode == "" {
 		return ""
+	}
+	if t.filterMode == "mango" {
+		return locales.Text("Mango 查询已应用")
 	}
 	label := "等于"
 	if strings.EqualFold(t.filterMode, "contains") {
@@ -380,6 +386,7 @@ func (s *State) applyMySQLDataRules(services ui.Services, t *Document) {
 		used[draft.Column] = true
 		sortRules = append(sortRules, contract.DataSortRule{Column: draft.Column, Descending: draft.Direction == "降序"})
 	}
+	t.selectorHistory, t.selectorHistorySorts = false, nil
 	if t.groupDraft != nil {
 		if _, valid := s.validateFilterGroups(t); !valid {
 			return

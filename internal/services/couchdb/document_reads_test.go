@@ -124,6 +124,39 @@ func TestCouchDBFindCancellationCertifiesReadAndNeverReplays(t *testing.T) {
 	}
 }
 
+func TestCouchDBFindCompleteHTTPErrorKeepsReadClientWithoutReplay(t *testing.T) {
+	for _, identities := range []bool{false, true} {
+		t.Run(fmt.Sprintf("identities_%t", identities), func(t *testing.T) {
+			var calls atomic.Int32
+			c, _ := mockOpen(t, func(w http.ResponseWriter, r *http.Request) {
+				if calls.Add(1) == 1 {
+					w.WriteHeader(http.StatusBadRequest)
+					fmt.Fprint(w, `{"error":"no_usable_index","reason":"No index exists for this sort"}`)
+					return
+				}
+				fmt.Fprintf(w, `{"docs":[%s],"bookmark":"explicit-next"}`, documentWire("a"))
+			})
+			find := func() error {
+				request := FindRequest{Selector: json.RawMessage(`{}`), Limit: 2}
+				if identities {
+					_, err := c.FindDocumentIdentities(context.Background(), "owned", request)
+					return err
+				}
+				_, err := c.Find(context.Background(), "owned", request)
+				return err
+			}
+			var status *HTTPError
+			var interrupted *Interrupted
+			if err := find(); !errors.As(err, &status) || status.Status != 400 || errors.As(err, &interrupted) || errors.Is(err, ErrRetired) || calls.Load() != 1 {
+				t.Fatal("complete native read error claimed unknown outcome or replayed", err)
+			}
+			if err := find(); err != nil || calls.Load() != 2 {
+				t.Fatal("explicit corrected read could not use original client", err)
+			}
+		})
+	}
+}
+
 func TestCouchDBFindRejectsInvalidOpaqueBookmarkWithoutIO(t *testing.T) {
 	var calls atomic.Int32
 	c, _ := mockOpen(t, func(w http.ResponseWriter, r *http.Request) { calls.Add(1) })

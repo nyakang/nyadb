@@ -860,7 +860,7 @@ func (s *State) findDocument(view tabKind, profileID int64, database, objectKind
 }
 func (s *State) objectKindFor(id int64, database, name string) string {
 	for _, obj := range s.sessions.CacheFor(id)[database] {
-		if obj.Name == name && (obj.Kind == "Core" || obj.Kind == "表" || obj.Kind == "视图" || obj.Kind == "集合" || obj.Kind == "键" || obj.Kind == "索引" || obj.Kind == "别名" || obj.Kind == "数据流" || objectworkspace.NativeDefinitionKind(obj.Kind)) {
+		if obj.Name == name && (obj.Kind == "文档" || obj.Kind == "Core" || obj.Kind == "表" || obj.Kind == "视图" || obj.Kind == "集合" || obj.Kind == "键" || obj.Kind == "索引" || obj.Kind == "别名" || obj.Kind == "数据流" || objectworkspace.NativeDefinitionKind(obj.Kind)) {
 			return obj.Kind
 		}
 	}
@@ -894,6 +894,8 @@ func (s *State) SetDataSources(open func(context.Context, datasources.Config) (d
 
 func neutralObjectKind(kind string) string {
 	switch kind {
+	case "文档":
+		return "documents"
 	case "数据库信息":
 		return "database"
 	case "设计文档":

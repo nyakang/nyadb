@@ -176,7 +176,7 @@ func TestCouchDBSessionQualifiedDatabasesAndCompleteNativeDefinitions(t *testing
 	var objects []contract.DBObject
 	for _, name := range []string{"owned", "other"} {
 		list, err := s.Browse(context.Background(), s.Namespace(name))
-		if err != nil || len(list) != 2 {
+		if err != nil || len(list) != 3 {
 			t.Fatal(list, err)
 		}
 		objects = append(objects, list[1])
@@ -201,7 +201,7 @@ func TestCouchDBSessionQualifiedDatabasesAndCompleteNativeDefinitions(t *testing
 		t.Fatal("invalid identity dispatched")
 	}
 	c := s.Capabilities()
-	if !c.Query || !c.Objects || !c.Metadata || c.Documents || c.EditableTables {
+	if !c.Query || !c.Objects || !c.Metadata || !c.Documents || c.EditableTables {
 		t.Fatal(c)
 	}
 }
@@ -253,7 +253,7 @@ func TestCouchDBDesignPaginationDoesNotSkipDeletedBoundary(t *testing.T) {
 	})
 	s := testSession(t, connections.CouchDBConfig{Endpoint: server.URL}, "")
 	list, err := s.Browse(context.Background(), s.Namespace("owned"))
-	if err != nil || len(list) != 301 || list[257].Name != "_design/d0256" || pages.Load() != 2 {
+	if err != nil || len(list) != 302 || list[257].Name != "_design/d0256" || pages.Load() != 2 {
 		t.Fatal(len(list), err, pages.Load())
 	}
 }

@@ -118,12 +118,12 @@ func dataFixture(t *testing.T, total int) *documentFixture {
 	return f
 }
 
-func TestCouchDBDataReservationHasNoIOAndKeepsPublicDataGated(t *testing.T) {
+func TestCouchDBDataReservationHasNoIOAndPublishesOnlyReadonlyData(t *testing.T) {
 	f := dataFixture(t, 2)
 	before := f.requests.Load()
 	leases := make([]contract.DataDocumentLease, 0, 32)
 	for range 32 {
-		lease, err := f.session.ReserveNativeDocument(f.object)
+		lease, err := f.session.ReserveDataDocument(f.object)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -132,22 +132,36 @@ func TestCouchDBDataReservationHasNoIOAndKeepsPublicDataGated(t *testing.T) {
 	if f.requests.Load() != before {
 		t.Fatal("reservation performed I/O")
 	}
-	if _, err := f.session.ReserveNativeDocument(f.object); !errors.Is(err, ErrBounds) {
+	if _, err := f.session.ReserveDataDocument(f.object); !errors.Is(err, ErrBounds) {
 		t.Fatal("unbounded reservation", err)
 	}
-	if _, err := contract.Require[contract.DataDocumentsProvider](f.session); !errors.Is(err, contract.ErrUnsupported) {
-		t.Fatal("unverified public provider exposed")
+	if _, err := contract.Require[contract.DataDocumentsProvider](f.session); err != nil {
+		t.Fatal("verified public provider absent")
 	}
 	r := leases[0].Runtime()
 	if !r.Capabilities.Documents || r.Capabilities.EditableTables || r.Saver != nil || r.Importer != nil {
 		t.Fatal("private read capabilities inflated")
+	}
+	if r.Selector.Dialect != "mango" || r.Selector.Validate == nil || r.ReadDescription == nil {
+		t.Fatal("native selector/description feature missing")
+	}
+	for _, raw := range []string{`[]`, `null`, `{"n":1,"n":2}`, string([]byte{'{', '"', 'x', '"', ':', '"', 0xff, '"', '}'})} {
+		if r.Selector.Validate(raw) == nil || f.requests.Load() != before {
+			t.Fatal("invalid selector reached transport")
+		}
+	}
+	if r.Selector.Validate(`{"n":{"$eq":9007199254740993}}`) != nil || f.requests.Load() != before {
+		t.Fatal("pure selector validation changed exact JSON or did I/O")
+	}
+	if documentReadDescription("owned/child", contract.DataOptions{}) != "GET /owned%2Fchild/_all_docs" {
+		t.Fatal("native description changed database path identity")
 	}
 	for _, lease := range leases {
 		if err := lease.Close(); err != nil {
 			t.Fatal(err)
 		}
 	}
-	lease, err := f.session.ReserveNativeDocument(f.object)
+	lease, err := f.session.ReserveDataDocument(f.object)
 	if err != nil {
 		t.Fatal("slot not reclaimed", err)
 	}
@@ -156,7 +170,7 @@ func TestCouchDBDataReservationHasNoIOAndKeepsPublicDataGated(t *testing.T) {
 
 func TestCouchDBDataRejectsCyclicDeepAndOversizedFiltersBeforeCopyOrIO(t *testing.T) {
 	f := dataFixture(t, 1)
-	lease, err := f.session.ReserveNativeDocument(f.object)
+	lease, err := f.session.ReserveDataDocument(f.object)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,7 +211,7 @@ func TestCouchDBDataRejectsCyclicDeepAndOversizedFiltersBeforeCopyOrIO(t *testin
 
 func TestCouchDBDataCursorOriginalRevisionAndTypedSnapshotSafety(t *testing.T) {
 	f := dataFixture(t, 4)
-	lease, err := f.session.ReserveNativeDocument(f.object)
+	lease, err := f.session.ReserveDataDocument(f.object)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,7 +264,7 @@ func TestCouchDBDataFieldAndExportKeepCompleteLargeNativeJSON(t *testing.T) {
 	f.mu.Lock()
 	f.docs["row_00000"] = fmt.Sprintf(`{"_id":"row_00000","_rev":%q,"large":%q,"n":9007199254740993}`, documentTestRevision, large)
 	f.mu.Unlock()
-	lease, err := f.session.ReserveNativeDocument(f.object)
+	lease, err := f.session.ReserveDataDocument(f.object)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,9 +297,9 @@ func TestCouchDBDataFieldAndExportKeepCompleteLargeNativeJSON(t *testing.T) {
 
 func TestCouchDBDataCancelKeepsCountIndependentAndCloseSettlesOriginalWorker(t *testing.T) {
 	f := dataFixture(t, 2)
-	lease, _ := f.session.ReserveNativeDocument(f.object)
+	lease, _ := f.session.ReserveDataDocument(f.object)
 	defer lease.Close()
-	other, _ := f.session.ReserveNativeDocument(f.object)
+	other, _ := f.session.ReserveDataDocument(f.object)
 	defer other.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
