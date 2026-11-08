@@ -42,6 +42,27 @@ class SolrFixtureOwnershipTests(unittest.TestCase):
             self.assertTrue(run.call_args.kwargs['check'])
 
 
+class SolrFixtureOrchestrationTests(unittest.TestCase):
+    def test_combined_profile_and_data_keep_every_package_before_test_arguments(self):
+        for race in [False, True]:
+            command = FIXTURE.native_test_command(True, True, race)
+            packages = ['./internal/services/connections', './internal/services/solr', './internal/storage/localdb', './internal/ui/connectioneditor', './internal/ui/dataworkspace']
+            first = command.index(packages[0])
+            self.assertEqual(command[first:], packages)
+            self.assertEqual(command.count('-run'), 1)
+            self.assertEqual(command[command.index('-run')+1], 'Solr')
+            self.assertLess(command.index('-run'), first)
+            self.assertEqual('-race' in command, race)
+
+    def test_independent_scopes_do_not_add_unselected_packages(self):
+        for profile, data in [(False, False), (True, False), (False, True)]:
+            command = FIXTURE.native_test_command(profile, data, False)
+            self.assertEqual('./internal/ui/connectioneditor' in command, profile)
+            self.assertEqual('./internal/storage/localdb' in command, profile)
+            self.assertEqual('./internal/ui/dataworkspace' in command, data)
+            self.assertEqual(command.count('-run'), int(profile or data))
+
+
 CLOUD_SPEC = importlib.util.spec_from_file_location('solrcloud_fixture', Path(__file__).resolve().parents[1]/'tools/verify_solrcloud_fixture.py')
 # The executable helper imports its adjacent fixture module.
 import sys

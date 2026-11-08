@@ -56,7 +56,7 @@ var postgresNavigationCategories = []string{"表", "视图", "函数", "存储�
 
 func SupportedCategory(category string) bool {
 	switch category {
-	case "索引", "别名", "数据流", "键", "集合", "表", "视图", "函数", "存储过程", "事件", "序列", "查询", "包", "触发器", "类型":
+	case "Core", "索引", "别名", "数据流", "键", "集合", "表", "视图", "函数", "存储过程", "事件", "序列", "查询", "包", "触发器", "类型":
 		return true
 	}
 	return false
@@ -112,6 +112,8 @@ func (s *State) databaseChildren(key string) []string {
 		categories := mysqlNavigationCategories
 		if s.deps.Engine != nil {
 			switch s.deps.Engine(n.ProfileID) {
+			case connections.Solr:
+				categories = []string{"Core", "集合", "别名", "查询"}
 			case connections.Elasticsearch, connections.Easysearch:
 				categories = []string{"索引", "别名", "数据流", "查询"}
 			case connections.Redis:

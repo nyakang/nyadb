@@ -8,8 +8,8 @@ import (
 
 func TestNavicatObservedTreeGroupHierarchy(t *testing.T) {
 	s := New()
-	if got := s.catalogTreeDirect(); len(got) != 22 {
-		t.Fatalf("database rows including Easysearch; got %d", len(got))
+	if got := s.catalogTreeDirect(); len(got) != 23 {
+		t.Fatalf("database rows including Solr; got %d", len(got))
 	}
 	groups := s.catalogTreeGroups()
 	if len(groups) < 12 || groups[0].vendor != "阿里云" || groups[1].vendor != "华为" {
@@ -29,7 +29,7 @@ func TestNavicatObservedTreeGroupHierarchy(t *testing.T) {
 
 func TestNavicatObservedTreeExpansionAndSelection(t *testing.T) {
 	s := New()
-	tt := ui.NewTester(catalogTestView(s), 860, 566)
+	tt := ui.NewTester(catalogTestView(s), 860, 620)
 	if err := tt.Click("列表视图"); err != nil {
 		t.Fatal(err)
 	}

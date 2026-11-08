@@ -94,7 +94,7 @@ func TestResearchIconResourceMapCoverage(t *testing.T) {
 		t.Fatalf("unexpected research engine mapping count: %d", len(researchIconResources))
 	}
 	for _, entry := range databaseCatalog[:27] {
-		if entry.name == "Elasticsearch" || entry.name == "Easysearch" || entry.name == "DuckDB" || entry.name == "TiDB" || entry.name == "CockroachDB" || entry.name == "openGauss" || entry.name == "GaussDB" || entry.name == "KingbaseES" {
+		if entry.name == "Apache Solr" || entry.name == "Elasticsearch" || entry.name == "Easysearch" || entry.name == "DuckDB" || entry.name == "TiDB" || entry.name == "CockroachDB" || entry.name == "openGauss" || entry.name == "GaussDB" || entry.name == "KingbaseES" {
 			continue
 		} // Independently drawn extension, absent from the research artifact.
 		if researchIconResources[entry.name] == "" {
@@ -112,7 +112,7 @@ func TestBundledIconCacheForFullCatalog(t *testing.T) {
 		t.Fatalf("expected 26 bundled icons, got %d", len(loaded))
 	}
 	for _, item := range databaseCatalog[:28] {
-		if item.name == "Elasticsearch" || item.name == "Easysearch" {
+		if item.name == "Apache Solr" || item.name == "Elasticsearch" || item.name == "Easysearch" {
 			continue
 		} // Independent generic symbol; no branded bitmap.
 		icon := loaded[item.name]

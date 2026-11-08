@@ -61,7 +61,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 					caption := locales.Text("运行当前语句")
 					runLabel, formatLabel := locales.Text("运行当前或选中 SQL"), locales.Text("格式化 SQL")
 					if t.nativeCommands {
-						runLabel = t.commandText("运行 MongoDB 命令", "运行 Redis 命令", "运行 Elasticsearch REST 请求", "运行 Easysearch REST 请求")
+						runLabel = t.commandText("运行 MongoDB 命令", "运行 Redis 命令", "运行 Elasticsearch REST 请求", "运行 Easysearch REST 请求", "运行 Solr REST 请求")
 						formatLabel = locales.Text("格式化 JSON")
 						caption = locales.Text("运行请求")
 					}
@@ -212,7 +212,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 			theme.ApplySQLAppearance(c, t.Editor)
 			t.Editor.Label = locales.Text("SQL 编辑器")
 			if t.nativeCommands {
-				t.Editor.Label = t.commandText("MongoDB 命令编辑器", "Redis 命令编辑器", "Elasticsearch REST 编辑器", "Easysearch REST 编辑器")
+				t.Editor.Label = t.commandText("MongoDB 命令编辑器", "Redis 命令编辑器", "Elasticsearch REST 编辑器", "Easysearch REST 编辑器", "Solr REST 编辑器")
 			}
 			ed := editor.View(c, t.Editor).Grow(1).FillWidth()
 			if s.deps.EditFocus != nil {

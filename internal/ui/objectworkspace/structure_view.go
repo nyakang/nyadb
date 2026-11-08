@@ -58,7 +58,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 	if t == nil || t.closed {
 		return
 	}
-	if t.object.Kind == "index" || t.object.Kind == "alias" || t.object.Kind == "data_stream" {
+	if s.documentStructure(t) {
 		s.documentMappingView(c, t)
 		return
 	}

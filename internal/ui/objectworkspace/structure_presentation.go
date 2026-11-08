@@ -177,7 +177,7 @@ func (s *State) InspectorView(c *ui.Context, d *Document) {
 	if field, selected := d.SelectedField(); selected {
 		theme.Property(c, "名称", field.Name)
 		theme.Property(c, "类型", field.Type)
-		if d.object.Kind == "index" || d.object.Kind == "alias" || d.object.Kind == "data_stream" {
+		if s.documentStructure(d) {
 			if field.Extra != "" {
 				theme.Property(c, "附加属性", field.Extra)
 			}

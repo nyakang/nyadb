@@ -54,9 +54,21 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 	}
 	out := make([]contract.DBObject, 0, len(targets))
 	for _, t := range targets {
-		out = append(out, contract.DBObject{Ref: n.Object(t.Kind, t.Name), Name: t.Name, Kind: t.Kind, Engine: "Solr", Status: strings.Join(t.Members, ", "), Definition: string(t.Definition)})
+		out = append(out, contract.DBObject{Ref: n.Object(t.Kind, t.Name), Name: t.Name, Kind: targetCaption(t.Kind), Engine: "Solr", Status: strings.Join(t.Members, ", "), Definition: string(t.Definition)})
 	}
 	return out, nil
+}
+
+func targetCaption(kind string) string {
+	switch kind {
+	case "core":
+		return "Core"
+	case "collection":
+		return "集合"
+	case "alias":
+		return "别名"
+	}
+	return kind
 }
 func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*contract.TableStructure, error) {
 	if err := s.checkObject(o); err != nil {

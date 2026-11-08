@@ -79,7 +79,7 @@ func observationCatalog(endpoint string, i Identity) string {
 func (s *Session) Alive() bool        { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed && !s.revoked }
 func (s *Session) Identity() Identity { return s.identity }
 func (s *Session) Namespace(label string) contract.NamespaceRef {
-	if label == "" || label == s.catalog || label == s.identity.Mode {
+	if label == "" || label == s.catalog || label == s.identity.Mode || label == "Solr · "+s.identity.Mode {
 		return contract.NamespaceRef{ProfileID: s.ProfileID(), Catalog: s.catalog}
 	}
 	return contract.NamespaceRef{ProfileID: s.ProfileID()}

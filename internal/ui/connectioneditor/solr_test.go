@@ -154,7 +154,7 @@ func TestSolrEditorInvalidPathAndPlaintextCredentialNeverReachStorage(t *testing
 	}
 }
 
-func TestSolrEditorAuthSwitchRevokesCapturedCheckAndPublicImportStaysPending(t *testing.T) {
+func TestSolrEditorAuthSwitchRevokesCapturedCheckAndInvalidImport(t *testing.T) {
 	started, canceled, finished := make(chan struct{}), make(chan struct{}), make(chan struct{})
 	release := make(chan struct{})
 	s := New(Dependencies{TestConnection: func(ctx context.Context, p connections.Profile, secret string) error {
@@ -176,8 +176,8 @@ func TestSolrEditorAuthSwitchRevokesCapturedCheckAndPublicImportStaysPending(t *
 	s.setSolrAuth("basic")
 	s.connectionDraft.Username, s.connectionDraft.SolrOptions.ContextPath = "reader", "/gateway/solr"
 	s.connectionSecret = "captured-password"
-	if err := s.ImportURI("solr://reader:private@localhost"); !errors.Is(err, connections.ErrURI) || s.connectionSecret != "captured-password" || s.connectionDraft.Name != "captured check" {
-		t.Fatal("public import enabled before provider or changed parked draft")
+	if err := s.ImportURI("solr://reader:private@localhost?auth=api_key"); err == nil || s.connectionSecret != "captured-password" || s.connectionDraft.Name != "captured check" {
+		t.Fatal("invalid public import changed parked draft")
 	}
 	tt := solrEditorTester(s)
 	if err := tt.Click("测试连接"); err != nil {

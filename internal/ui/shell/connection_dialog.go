@@ -142,6 +142,8 @@ func connectionKindName(kind connections.Kind) string {
 		return "Elasticsearch"
 	case connections.Easysearch:
 		return "Easysearch"
+	case connections.Solr:
+		return "Apache Solr"
 	case connections.Redis:
 		return "Redis"
 	case connections.MongoDB:

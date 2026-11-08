@@ -15,12 +15,14 @@ import (
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	oraclesvc "github.com/nyakang/nyadb/internal/services/oracle"
 	redissvc "github.com/nyakang/nyadb/internal/services/redis"
+	"github.com/nyakang/nyadb/internal/services/solr"
 	"github.com/nyakang/nyadb/internal/services/sqlserver"
 	"github.com/nyakang/nyadb/internal/services/starrocks"
 	"github.com/nyakang/nyadb/internal/services/trino"
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.Solr, ProviderFunc(solr.OpenSession))
 	m.Register(connections.Easysearch, ProviderFunc(easysearch.OpenSession))
 	m.Register(connections.Elasticsearch, ProviderFunc(elasticsearch.OpenSession))
 	m.Register(connections.Trino, ProviderFunc(trino.OpenSession))

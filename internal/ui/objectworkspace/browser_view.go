@@ -57,6 +57,9 @@ func mysqlObjectActionLabels(kind string) (open, design string) {
 	if Supports(kind) {
 		return "查看定义（只读）", "查看结构（不适用）"
 	}
+	if kind == "Core" {
+		return "打开文档", "查看 Schema（只读）"
+	}
 	if kind == "索引" || kind == "别名" || kind == "数据流" {
 		return "打开文档", "查看映射（只读）"
 	}
@@ -193,7 +196,7 @@ func (s *State) BrowserView(c *ui.Context) {
 	database := a.scope.database
 	items := a.items
 	redisEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "redis"
-	searchEngine := s.deps.Engine != nil && (s.deps.Engine(a.scope.profile) == "elasticsearch" || s.deps.Engine(a.scope.profile) == "easysearch")
+	searchEngine := s.deps.Engine != nil && (s.deps.Engine(a.scope.profile) == "elasticsearch" || s.deps.Engine(a.scope.profile) == "easysearch" || s.deps.Engine(a.scope.profile) == "solr")
 	documentEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "mongodb"
 	canOpen, canProgram := a.canOpen, a.canProgram
 	ui.Column(c).Fill().Children(func() {
@@ -214,6 +217,9 @@ func (s *State) BrowserView(c *ui.Context) {
 						}
 						if item.label == "查看结构" {
 							item.accessible = "查看映射（只读）"
+							if s.deps.Engine(a.scope.profile) == "solr" {
+								item.accessible = "查看 Schema（只读）"
+							}
 						}
 					}
 					if redisEngine {
@@ -278,6 +284,9 @@ func (s *State) BrowserView(c *ui.Context) {
 				kinds := []string{"全部", "表", "视图"}
 				if searchEngine {
 					kinds = []string{"全部", "索引", "别名", "数据流"}
+					if s.deps.Engine(a.scope.profile) == "solr" {
+						kinds = []string{"全部", "Core", "集合", "别名"}
+					}
 				}
 				if redisEngine {
 					kinds = []string{"全部", "键"}

@@ -17,7 +17,7 @@ import time
 import urllib.request
 import uuid
 
-from verify_solr_fixture import IMAGE, ROOT, remove_owned, prepare_edit_config
+from verify_solr_fixture import IMAGE, ROOT, remove_owned, prepare_edit_config, workbench_sources, verify_public_workbench
 
 ZK_IMAGE = 'zookeeper@sha256:dfa9ba46d14bd52bcb3c1dac3ba91f179cf4cebf7ee576e1c2df09c68fc1d30d'
 
@@ -35,13 +35,15 @@ def remove_owned_network(identifier, nonce):
     subprocess.run(['docker', 'network', 'rm', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(race=False, data_scope=False, document_scope=False, edit_scope=False):
+def verify(race=False, data_scope=False, document_scope=False, edit_scope=False, workbench=False, workbench_only=False):
     base, output = ROOT/'temp/solr', ROOT/'build/solr'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
     nonce, ids, network = uuid.uuid4().hex, [], None
+    workbench = workbench or workbench_only
+    edit_scope = edit_scope or workbench
     data_scope = data_scope or edit_scope
-    record = {'nonce': nonce, 'scope': 'private_solrcloud_qualified_document_edits' if edit_scope else ('private_native_solrcloud_single_document_codec' if document_scope else ('private_solrcloud_data_documents' if data_scope else 'private_solrcloud_sessions_metadata_rest')), 'solr_image': IMAGE, 'zk_image': ZK_IMAGE,
+    record = {'nonce': nonce, 'scope': ('public_solrcloud_workbench_only' if workbench_only else 'public_solrcloud_complete_workbench') if workbench else 'private_solrcloud_qualified_document_edits' if edit_scope else ('private_native_solrcloud_single_document_codec' if document_scope else ('private_solrcloud_data_documents' if data_scope else 'private_solrcloud_sessions_metadata_rest')), 'solr_image': IMAGE, 'zk_image': ZK_IMAGE,
               'deployment': 'one node; two primary shards; RF=1; HTTP none; default open ZK ACL; private mounts/isolated network'}
 
     def shutdown(signum, _frame):
@@ -115,12 +117,15 @@ def verify(race=False, data_scope=False, document_scope=False, edit_scope=False)
             probe.write_text(json.dumps({'endpoint': endpoint, 'auth': 'none', 'password_file': str(password)}))
             probe.chmod(0o600)
             sources = sorted((ROOT/'internal/services/solr').glob('*.go'))+sorted((ROOT/'internal/services/connections').glob('*.go'))+sorted((ROOT/'internal/db/contract').glob('*.go'))+[Path(__file__).resolve(), ROOT/'tools/verify_solr_fixture.py', ROOT/'tests/test_solr_fixture.py', ROOT/'go.mod', ROOT/'go.sum']
+            if workbench:
+                sources = workbench_sources()
             hashes = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}
             record['source_sha256'] = hashes
             env = os.environ.copy()
             env.pop('NYADB_SOLR_IT', None)
             env.pop('NYADB_SOLR_EDIT_IT', None)
             env.pop('NYADB_SOLR_DOCUMENT_IT', None)
+            env.pop('NYADB_SOLR_WORKBENCH_IT', None)
             env.update({'NYADB_SOLR_CLOUD_IT': '1', 'NYADB_SOLR_CONFIG': str(probe)})
             if edit_scope:
                 env['NYADB_SOLR_EDIT_IT'] = '1'
@@ -132,14 +137,17 @@ def verify(race=False, data_scope=False, document_scope=False, edit_scope=False)
             command = ['go', 'test', '-count=1', '-timeout=20m' if edit_scope else '-timeout=15m', '-v', *(['-race'] if race else []), './internal/services/solr']
             print('Native SolrCloud ready; fixture nonce: '+nonce, flush=True)
             with logfile.open('w') as log:
-                result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=1200 if edit_scope else 600)
+                result = subprocess.CompletedProcess(command, 0) if workbench_only else subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=1200 if edit_scope else 600)
             text = logfile.read_text()
-            if result.returncode or '--- PASS: TestSolrNativeCloudSessionAliasesSchemasAndREST' not in text or (data_scope and '--- PASS: TestSolrNativeCloudDataMemberShardDuplicateIdentityAndAliasRevocation' not in text):
+            if not workbench_only and (result.returncode or '--- PASS: TestSolrNativeCloudSessionAliasesSchemasAndREST' not in text or (data_scope and '--- PASS: TestSolrNativeCloudDataMemberShardDuplicateIdentityAndAliasRevocation' not in text)):
                 raise RuntimeError('Cloud native acceptance failed; inspect captured log')
-            if edit_scope and '--- PASS: TestSolrNativeCloudSharedEditsNaturalRoutingAndExplicitMembers' not in text:
+            if edit_scope and not workbench_only and '--- PASS: TestSolrNativeCloudSharedEditsNaturalRoutingAndExplicitMembers' not in text:
                 raise RuntimeError('Qualified Cloud editing acceptance was not verified')
-            if document_scope and '--- PASS: TestSolrNativeCloudDocumentCRUDCodecImplicitAndCompositeRouting' not in text:
+            if document_scope and not workbench_only and '--- PASS: TestSolrNativeCloudDocumentCRUDCodecImplicitAndCompositeRouting' not in text:
                 raise RuntimeError('Cloud native document codec acceptance was not verified')
+            if workbench:
+                env['NYADB_SOLR_WORKBENCH_IMAGES'] = str(output/('cloud-workbench-images-'+nonce))
+                record['headless_workbench_images'] = verify_public_workbench(env, logfile, race)
             if any(hashlib.sha256((ROOT/p).read_bytes()).hexdigest() != digest for p, digest in hashes.items()):
                 raise RuntimeError('Sources changed during cloud acceptance; rerun on stable sources')
             record.update({'status': 'passed_with_race' if race else 'passed', 'log': str(logfile.relative_to(ROOT)), 'log_sha256': hashlib.sha256(logfile.read_bytes()).hexdigest()})
@@ -160,8 +168,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--race', action='store_true')
     scopes = parser.add_mutually_exclusive_group()
+    scopes.add_argument('--workbench', action='store_true', help='Complete native and public workbench acceptance, sequential packages')
+    scopes.add_argument('--workbench-only', action='store_true', help='Focus on public workflow after native acceptance')
     scopes.add_argument('--data', action='store_true')
     scopes.add_argument('--edit', action='store_true')
     scopes.add_argument('--documents', action='store_true', help='Verify bounded native single-document CRUD codec and RTG')
     args = parser.parse_args()
-    verify(args.race, args.data, args.documents, args.edit)
+    verify(args.race, args.data, args.documents, args.edit, args.workbench, args.workbench_only)

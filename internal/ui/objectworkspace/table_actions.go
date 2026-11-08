@@ -73,6 +73,9 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 		s.deps.Favorite(services, profileID, database, name, kind)
 	}
 	open, design := mysqlObjectActionLabels(kind)
+	if s.deps.Engine != nil && s.deps.Engine(profileID) == "solr" && (kind == "Core" || kind == "集合" || kind == "别名") {
+		open, design = "打开文档", "查看 Schema（只读）"
+	}
 	if m.Item(locales.Text(open)).Shortcut(0, ui.KeyEnter).Chosen() {
 		s.openObjectFor(services, profileID, database, name, kind)
 	}

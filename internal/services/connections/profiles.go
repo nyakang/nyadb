@@ -50,7 +50,7 @@ func (k Kind) IsGaussFamily() bool { return k == OpenGauss || k == GaussDB }
 
 // IsRESTSearch identifies the native request/document workbench presentation.
 // Each product retains an independent client, identity and paging strategy.
-func (k Kind) IsRESTSearch() bool { return k == Elasticsearch || k == Easysearch }
+func (k Kind) IsRESTSearch() bool { return k == Elasticsearch || k == Easysearch || k == Solr }
 
 var (
 	ErrNotFound = errors.New("connection profile not found")

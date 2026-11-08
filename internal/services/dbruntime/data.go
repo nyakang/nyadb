@@ -36,7 +36,7 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			if e := s.require(true, id); e != nil {
 				return nil, e
 			}
-			return r.Loader(ctx, id, db, table, offset, limit)
+			return r.Loader(ctx, id, s.dataDatabase(db), table, offset, limit)
 		}
 	}
 	if r.AdvancedLoader != nil {
@@ -47,7 +47,7 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			if e := s.dataObject(id, db, table, options.Object); e != nil {
 				return nil, e
 			}
-			return r.AdvancedLoader(ctx, id, db, table, options)
+			return r.AdvancedLoader(ctx, id, s.dataDatabase(db), table, options)
 		}
 	}
 	if r.Saver != nil {
@@ -62,7 +62,7 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 					}
 				}
 			}
-			return r.Saver(ctx, id, db, table, edits)
+			return r.Saver(ctx, id, s.dataDatabase(db), table, edits)
 		}
 	}
 	if r.RowReader != nil {
@@ -73,7 +73,7 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			if e := s.dataObject(id, db, table, ref.Object); e != nil {
 				return nil, e
 			}
-			return r.RowReader(ctx, id, db, table, ref)
+			return r.RowReader(ctx, id, s.dataDatabase(db), table, ref)
 		}
 	}
 	if r.Verify != nil {
@@ -81,7 +81,7 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			if e := s.require(true, id); e != nil {
 				return nil, e
 			}
-			return r.Verify(ctx, id, db, table, result)
+			return r.Verify(ctx, id, s.dataDatabase(db), table, result)
 		}
 	}
 	if r.Exporter != nil {
@@ -92,7 +92,7 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			if e := s.dataObject(id, db, table, options.Object); e != nil {
 				return e
 			}
-			return r.Exporter(ctx, id, db, table, options, columns, sink)
+			return r.Exporter(ctx, id, s.dataDatabase(db), table, options, columns, sink)
 		}
 	}
 	if r.Analyzer != nil {
@@ -103,7 +103,7 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			if e := s.dataObject(id, db, table, options.Object); e != nil {
 				return nil, e
 			}
-			return r.Analyzer(ctx, id, db, table, options, columns)
+			return r.Analyzer(ctx, id, s.dataDatabase(db), table, options, columns)
 		}
 	}
 	if r.NewTableImporter != nil {
@@ -111,7 +111,7 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			if e := s.require(r.Capabilities.Import, id); e != nil {
 				return nil, e
 			}
-			return r.NewTableImporter(ctx, id, db, table, columns, edits)
+			return r.NewTableImporter(ctx, id, s.dataDatabase(db), table, columns, edits)
 		}
 	}
 	if r.Importer != nil {
@@ -119,7 +119,7 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			if e := s.require(r.Capabilities.Import, id); e != nil {
 				return nil, e
 			}
-			return r.Importer(ctx, id, db, table, req)
+			return r.Importer(ctx, id, s.dataDatabase(db), table, req)
 		}
 	}
 	if r.StreamImporter != nil {
@@ -131,7 +131,7 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 				return nil, contract.ErrRevoked
 			}
 			req.Generation = s.raw.Generation()
-			return r.StreamImporter(ctx, id, db, table, req)
+			return r.StreamImporter(ctx, id, s.dataDatabase(db), table, req)
 		}
 	}
 	if r.TableMetadata != nil {
@@ -139,7 +139,14 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			if e := s.require(r.Capabilities.Metadata, id); e != nil {
 				return nil, e
 			}
-			return r.TableMetadata(ctx, id, db, table)
+			nativeDB := s.dataDatabase(db)
+			value, err := r.TableMetadata(ctx, id, nativeDB, table)
+			if value != nil && s.kind == connections.Solr && value.Database == nativeDB && value.Name == table {
+				copy := *value
+				copy.Database = db
+				value = &copy
+			}
+			return value, err
 		}
 	}
 	if r.TableInfo != nil {
@@ -147,7 +154,14 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			if e := s.require(r.Capabilities.Metadata, id); e != nil {
 				return nil, e
 			}
-			return r.TableInfo(ctx, id, db, table)
+			nativeDB := s.dataDatabase(db)
+			value, err := r.TableInfo(ctx, id, nativeDB, table)
+			if value != nil && s.kind == connections.Solr && value.Database == nativeDB && value.Name == table {
+				copy := *value
+				copy.Database = db
+				value = &copy
+			}
+			return value, err
 		}
 	}
 	if r.Count != nil {
@@ -155,7 +169,7 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			if e := s.require(r.Capabilities.Count, id); e != nil {
 				return 0, e
 			}
-			return r.Count(ctx, id, db, table)
+			return r.Count(ctx, id, s.dataDatabase(db), table)
 		}
 	}
 	if r.Chunk != nil {
@@ -166,7 +180,7 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			if e := s.dataObject(id, db, table, ref.Object); e != nil {
 				return nil, e
 			}
-			return r.Chunk(ctx, id, db, table, column, ref, offset, units)
+			return r.Chunk(ctx, id, s.dataDatabase(db), table, column, ref, offset, units)
 		}
 	}
 	if r.JSONL != nil {
@@ -183,6 +197,15 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 type dataDocumentLease struct {
 	session *session
 	raw     contract.DataDocumentLease
+}
+
+// Workbench labels resolve through the owning session. Solr's native data
+// leases retain the observed endpoint catalog as their immutable identity.
+func (s *session) dataDatabase(label string) string {
+	if s.kind == connections.Solr {
+		return s.Namespace(label).Catalog
+	}
+	return label
 }
 
 func (l *dataDocumentLease) Runtime() contract.DataRuntime {

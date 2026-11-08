@@ -16,8 +16,8 @@ func TestSolrProfileContextAuthAndIndependentDefaults(t *testing.T) {
 	if err != nil || p.Port != 8983 || p.Username != "" || p.Database != "" || p.TLSMode != "verify-full" || p.SolrOptions.Auth != "none" || p.SolrOptions.ContextPath != "/solr" || p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() {
 		t.Fatal("independent native defaults lost")
 	}
-	if _, registered := connections.Describe(connections.Solr); registered {
-		t.Fatal("profile foundation prematurely registered public capabilities")
+	if d, registered := connections.Describe(connections.Solr); !registered || d.ClientFamily != "solr" || d.Dialect != "solr" {
+		t.Fatal("native public descriptor missing")
 	}
 	p.Host = "::1"
 	p.SolrOptions.ContextPath = "/gateway/solr/"

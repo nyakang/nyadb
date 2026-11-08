@@ -49,13 +49,56 @@ def prepare_edit_config(identifier, folder):
     return config_path
 
 
-def verify(plain=False, race=False, profile=False, session=False, data_scope=False, document_scope=False, edit_scope=False):
+
+
+def native_test_command(profile, data_scope, race):
+    packages = ['./internal/services/connections', './internal/services/solr']
+    if profile:
+        packages += ['./internal/storage/localdb', './internal/ui/connectioneditor']
+    if data_scope:
+        packages += ['./internal/ui/dataworkspace']
+    # Put the single test filter before every package. Packages appended after
+    # an earlier package list and -run are treated as test-binary arguments.
+    return ['go', 'test', '-count=1', '-timeout=15m', '-v', *(['-race'] if race else []), *(['-run', 'Solr'] if profile or data_scope else []), *packages]
+
+def workbench_sources():
+    return sorted((ROOT/'internal').rglob('*.go')) + sorted((ROOT/'locales').glob('*.go')) + sorted((ROOT/'locales').glob('*.json')) + [ROOT/'main.go', ROOT/'go.mod', ROOT/'go.sum', ROOT/'tools/verify_solr_fixture.py', ROOT/'tools/verify_solrcloud_fixture.py', ROOT/'tests/test_solr_fixture.py']
+
+
+def verify_public_workbench(env, logfile, race):
+    # These packages create their own targets. Run after the private suites and
+    # sequentially so Cloud metadata never observes another package's fixture.
+    env['NYADB_SOLR_WORKBENCH_IT'] = '1'
+    required = {
+        './internal/services/dbruntime': 'PublicDocumentFeaturesAndPublishedGenerations',
+        './internal/ui/sqlworkspace': 'RESTLostWriteCancelAndExplicitRecovery',
+        './internal/ui/shell': 'PublicChooserURIGridRESTAndRecovery',
+    }
+    with logfile.open('a') as log:
+        for package, name in required.items():
+            result = subprocess.run(['go', 'test', '-count=1', '-timeout=15m', '-v', *(['-race'] if race else []), '-run', '^TestSolrNative'+name+'$', package], cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=900)
+            log.flush()
+            if result.returncode:
+                raise RuntimeError('Public native Solr acceptance failed in '+package+'; inspect captured log')
+    text = logfile.read_text()
+    if any('--- PASS: TestSolrNative'+name not in text for name in required.values()):
+        raise RuntimeError('Missing public native Solr PASS evidence')
+    images = sorted(Path(env['NYADB_SOLR_WORKBENCH_IMAGES']).rglob('*.png'))
+    expected = {language+'/'+view+'-'+size+'.png' for language in ['zh-Hans', 'en'] for view in ['grid', 'schema', 'rest'] for size in ['1280x800', '720x520']}
+    if {str(path.relative_to(env['NYADB_SOLR_WORKBENCH_IMAGES'])) for path in images} != expected:
+        raise RuntimeError('Expected all 12 localized real workbench images')
+    return {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in images}
+
+def verify(plain=False, race=False, profile=False, session=False, data_scope=False, document_scope=False, edit_scope=False, workbench=False, workbench_only=False):
     base, output = ROOT/'temp/solr', ROOT/'build/solr'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
     nonce, identifier = uuid.uuid4().hex, None
+    workbench = workbench or workbench_only
+    edit_scope = edit_scope or workbench
+    profile = profile or workbench
     data_scope = data_scope or edit_scope
-    evidence = {'nonce': nonce, 'image': IMAGE, 'tls': not plain, 'scope': 'private_solr_qualified_shared_grid_edits' if edit_scope else ('private_native_solr_single_document_codec' if document_scope else ('private_solr_shared_data_documents' if data_scope else ('private_solr_sessions_metadata_rest' if session else ('private_solr_profile_editor' if profile else 'private_native_solr_transport_foundation')))), 'storage': 'owned_private_bind_mount'}
+    evidence = {'nonce': nonce, 'image': IMAGE, 'tls': not plain, 'scope': ('public_solr_workbench_only' if workbench_only else 'public_solr_complete_workbench') if workbench else 'private_solr_qualified_shared_grid_edits' if edit_scope else ('private_native_solr_single_document_codec' if document_scope else ('private_solr_shared_data_documents' if data_scope else ('private_solr_sessions_metadata_rest' if session else ('private_solr_profile_editor' if profile else 'private_native_solr_transport_foundation')))), 'storage': 'owned_private_bind_mount'}
     session = session or document_scope
     def shutdown(signum, _frame):
         raise SystemExit(128+signum)
@@ -187,12 +230,15 @@ def verify(plain=False, race=False, profile=False, session=False, data_scope=Fal
                 sources += sorted((ROOT/'internal/services/connections').glob('*.go'))
                 sources += sorted((ROOT/'internal/ui/dataworkspace').glob('*.go'))
                 sources += sorted((ROOT/'internal/ui/theme').glob('*.go'))
+            if workbench:
+                sources = workbench_sources()
             source_hashes = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources}
             evidence['source_sha256'] = source_hashes
             env = os.environ.copy()
             env.pop('NYADB_SOLR_EDIT_IT', None)
             env.pop('NYADB_SOLR_DOCUMENT_IT', None)
             env.pop('NYADB_SOLR_CLOUD_IT', None)
+            env.pop('NYADB_SOLR_WORKBENCH_IT', None)
             env.update({'NYADB_SOLR_IT': '1', 'NYADB_SOLR_CONFIG': str(probe)})
             if edit_scope:
                 env['NYADB_SOLR_EDIT_IT'] = '1'
@@ -206,13 +252,9 @@ def verify(plain=False, race=False, profile=False, session=False, data_scope=Fal
             if profile:
                 env['NYADB_SOLR_PROFILE_IMAGES'] = str(output/('profile-images-'+nonce))
             logfile = output/('acceptance-'+nonce+'.log')
-            command = ['go', 'test', '-count=1', '-timeout=15m', '-v', *(['-race'] if race else []), './internal/services/connections', './internal/services/solr']
-            if profile:
-                command += ['./internal/storage/localdb', './internal/ui/connectioneditor', '-run', 'Solr']
-            if data_scope:
-                command += ['./internal/ui/dataworkspace', '-run', 'Solr']
+            command = native_test_command(profile, data_scope, race)
             with logfile.open('w') as log:
-                result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=900 if edit_scope else 600)
+                result = subprocess.CompletedProcess(command, 0) if workbench_only else subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=900 if edit_scope else 600)
             text = logfile.read_text()
             required = ['TransportAuthenticationIdentityAndExactDocuments', 'LostPostAndGETCoreMutationsNeverReplay', 'CancelSettlesOriginalWorkerAndKeepsOtherClient', 'ConflictCanApplyPrefixWithoutReplay']
             if session or data_scope:
@@ -225,14 +267,20 @@ def verify(plain=False, race=False, profile=False, session=False, data_scope=Fal
                 required += ['DocumentCRUDCodecExactRTGAndConflict', 'DocumentLostReceiptKeepsOriginalMutationWithoutReplay']
             if profile:
                 required += ['ProfileURIReopenAndOriginalEditorCheck', 'ProfileProxyContextAndCanceledOriginalCheck', 'EditorLocalizedFormEvidence']
+            if workbench_only:
+                required = []
+            if workbench:
+                env['NYADB_SOLR_WORKBENCH_IMAGES'] = str(output/('workbench-images-'+nonce))
+                evidence['headless_workbench_images'] = verify_public_workbench(env, logfile, race)
+                text = logfile.read_text()
             if any(hashlib.sha256((ROOT/path).read_bytes()).hexdigest() != digest for path, digest in source_hashes.items()):
                 raise RuntimeError('Verification sources changed during acceptance; rerun on stable sources')
             if result.returncode or any('--- PASS: TestSolrNative'+name not in text for name in required):
                 raise RuntimeError('Native Solr acceptance failed; inspect captured log')
-            if profile and not plain and any('--- PASS: TestSolrNativeProfileURIReopenAndOriginalEditorCheck/'+name not in text for name in ['raw_native_padding_and_local_rejection', 'exact_unicode_principal']):
+            if profile and not workbench_only and not plain and any('--- PASS: TestSolrNativeProfileURIReopenAndOriginalEditorCheck/'+name not in text for name in ['raw_native_padding_and_local_rejection', 'exact_unicode_principal']):
                 raise RuntimeError('Native Basic principal semantics were not verified')
             evidence.update({'status': 'passed_with_race' if race else 'passed', 'log': str(logfile.relative_to(ROOT)), 'log_sha256': hashlib.sha256(logfile.read_bytes()).hexdigest()})
-            if data_scope:
+            if data_scope and not workbench_only:
                 images = sorted(Path(env['NYADB_SOLR_DATA_IMAGES']).glob('*.png'))
                 expected = {'native-shared-grid.png'}
                 if edit_scope:
@@ -240,7 +288,7 @@ def verify(plain=False, race=False, profile=False, session=False, data_scope=Fal
                 if {path.name for path in images} != expected:
                     raise RuntimeError('Expected representative real shared-grid images for the verified scope')
                 evidence['headless_grid_images'] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in images}
-            if profile:
+            if profile and not workbench_only:
                 images = sorted(Path(env['NYADB_SOLR_PROFILE_IMAGES']).glob('*.png'))
                 if len(images) != 16:
                     raise RuntimeError('Expected all 16 localized form images')
@@ -265,10 +313,12 @@ if __name__ == '__main__':
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--race', action='store_true')
     scopes = parser.add_mutually_exclusive_group()
+    scopes.add_argument('--workbench', action='store_true', help='Verify complete native and public workbench suites sequentially')
+    scopes.add_argument('--workbench-only', action='store_true', help='Focus on public workflow after native acceptance')
     scopes.add_argument('--edit', action='store_true', help='Verify qualified original shared-grid document editing and read-only schema gates')
     scopes.add_argument('--documents', action='store_true', help='Verify bounded native single-document CRUD codec and RTG, not grid editing')
     scopes.add_argument('--data', action='store_true', help='Verify private shared data documents, native projection and grid')
     scopes.add_argument('--session', action='store_true', help='Verify private sessions, native metadata and original REST leases')
     scopes.add_argument('--profile', action='store_true', help='Verify private profiles, storage, credentials and localized forms')
     args = parser.parse_args()
-    verify(args.plain, args.race, args.profile, args.session, args.data, args.documents, args.edit)
+    verify(args.plain, args.race, args.profile, args.session, args.data, args.documents, args.edit, args.workbench, args.workbench_only)

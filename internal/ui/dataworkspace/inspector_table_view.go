@@ -157,6 +157,8 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 				info := d.info
 				kind := "表"
 				switch info.Kind {
+				case "core", "Core":
+					kind = "Core"
 				case "index", "索引":
 					kind = "索引"
 				case "alias", "别名":

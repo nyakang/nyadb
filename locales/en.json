@@ -2107,7 +2107,7 @@
   "nativeRunSelectedRequest": "Run Selected Request",
   "nativeRequestPreserved": "Request text preserved; reconnecting does not execute requests",
   "nativeRecoverWithoutReplay": "Create New Session (Keep Requests Unexecuted)",
-  "nativeSupportedURI": "Relational database, MongoDB, Redis, Elasticsearch and Easysearch URIs are supported. Review the imported settings; importing does not connect automatically.",
+  "nativeSupportedURI": "Relational database, MongoDB, Redis, Elasticsearch, Easysearch and Solr URIs are supported. Review the imported settings; importing does not connect automatically.",
   "elasticsearchQueryStatus": "Elasticsearch query: ",
   "nativeRunRequest": "Run Request",
   "nativeOpenRequestText": "Open Request Text",
@@ -2154,5 +2154,18 @@
   "solrDefaultsHint": "Solr uses port 8983 and service path /solr by default.",
   "solrHTTPSHint": "Solr passwords require HTTPS; HTTP is available only without authentication.",
   "solrSettingsInvalid": "Check the Solr service path, authentication and certificate settings",
-  "solrPasswordInvalid": "Check the Solr password"
+  "solrPasswordInvalid": "Check the Solr password",
+  "solrProductName": "Apache Solr",
+  "solrCore": "Core",
+  "solrSessionCredential": "Solr session credential",
+  "solrRunREST": "Run Solr REST request",
+  "solrEnterREST": "Enter a Solr REST request",
+  "solrExecutingREST": "Executing Solr REST request",
+  "solrRESTEditor": "Solr REST editor",
+  "solrUseRESTAPI": "Use the native Solr REST API",
+  "solrSchemaTitle": "Schema (read-only)",
+  "solrViewSchema": "View schema (read-only)",
+  "solrReadingSchema": "Loading schema…",
+  "solrSchemaFieldType": "Schema field type",
+  "solrNoSchemaFields": "No schema fields loaded"
 }

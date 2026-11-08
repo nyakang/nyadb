@@ -2107,7 +2107,7 @@
   "nativeRunSelectedRequest": "运行选中请求",
   "nativeRequestPreserved": "请求原文已保留；恢复连接后不会自动执行请求",
   "nativeRecoverWithoutReplay": "建立新会话（不执行现有请求）",
-  "nativeSupportedURI": "支持关系数据库、MongoDB、Redis、Elasticsearch 和 Easysearch URI；导入后检查配置，不会自动连接。",
+  "nativeSupportedURI": "支持关系数据库、MongoDB、Redis、Elasticsearch、Easysearch 和 Solr URI；导入后检查配置，不会自动连接。",
   "elasticsearchQueryStatus": "Elasticsearch 查询：",
   "nativeRunRequest": "运行请求",
   "nativeOpenRequestText": "打开请求文本",
@@ -2154,5 +2154,18 @@
   "solrDefaultsHint": "Solr 默认端口 8983，服务路径默认为 /solr。",
   "solrHTTPSHint": "Solr 密码需要 HTTPS；HTTP 仅用于无认证连接。",
   "solrSettingsInvalid": "请检查 Solr 服务路径、认证方式和证书设置",
-  "solrPasswordInvalid": "请检查 Solr 密码"
+  "solrPasswordInvalid": "请检查 Solr 密码",
+  "solrProductName": "Apache Solr",
+  "solrCore": "Core",
+  "solrSessionCredential": "Solr 会话凭据",
+  "solrRunREST": "运行 Solr REST 请求",
+  "solrEnterREST": "请输入 Solr REST 请求",
+  "solrExecutingREST": "正在执行 Solr REST 请求",
+  "solrRESTEditor": "Solr REST 编辑器",
+  "solrUseRESTAPI": "Solr 请使用原生 REST API",
+  "solrSchemaTitle": "Schema（只读）",
+  "solrViewSchema": "查看 Schema（只读）",
+  "solrReadingSchema": "正在读取 Schema…",
+  "solrSchemaFieldType": "Schema 字段类型",
+  "solrNoSchemaFields": "没有已加载的 Schema 字段"
 }

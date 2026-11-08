@@ -21424,11 +21424,11 @@ func (msgs Messages) NativeRecoverWithoutReplay() string {
 	return Catalog.Format(msgs.locale, "nativeRecoverWithoutReplay", nil)
 }
 
-// NativeSupportedURI says "支持关系数据库、MongoDB、Redis、Elasticsearch 和 Easysearch URI…"
+// NativeSupportedURI says "支持关系数据库、MongoDB、Redis、Elasticsearch、Easysearch 和 Solr URI…"
 // in the language the app shows.
 func NativeSupportedURI() string { return In(i18n.Locale()).NativeSupportedURI() }
 
-// NativeSupportedURI says "支持关系数据库、MongoDB、Redis、Elasticsearch 和 Easysearch URI…"
+// NativeSupportedURI says "支持关系数据库、MongoDB、Redis、Elasticsearch、Easysearch 和 Solr URI…"
 // in the language of msgs.
 func (msgs Messages) NativeSupportedURI() string {
 	return Catalog.Format(msgs.locale, "nativeSupportedURI", nil)
@@ -21908,4 +21908,134 @@ func SolrPasswordInvalid() string { return In(i18n.Locale()).SolrPasswordInvalid
 // in the language of msgs.
 func (msgs Messages) SolrPasswordInvalid() string {
 	return Catalog.Format(msgs.locale, "solrPasswordInvalid", nil)
+}
+
+// SolrProductName says "Apache Solr"
+// in the language the app shows.
+func SolrProductName() string { return In(i18n.Locale()).SolrProductName() }
+
+// SolrProductName says "Apache Solr"
+// in the language of msgs.
+func (msgs Messages) SolrProductName() string {
+	return Catalog.Format(msgs.locale, "solrProductName", nil)
+}
+
+// SolrCore says "Core"
+// in the language the app shows.
+func SolrCore() string { return In(i18n.Locale()).SolrCore() }
+
+// SolrCore says "Core"
+// in the language of msgs.
+func (msgs Messages) SolrCore() string {
+	return Catalog.Format(msgs.locale, "solrCore", nil)
+}
+
+// SolrSessionCredential says "Solr 会话凭据"
+// in the language the app shows.
+func SolrSessionCredential() string { return In(i18n.Locale()).SolrSessionCredential() }
+
+// SolrSessionCredential says "Solr 会话凭据"
+// in the language of msgs.
+func (msgs Messages) SolrSessionCredential() string {
+	return Catalog.Format(msgs.locale, "solrSessionCredential", nil)
+}
+
+// SolrRunREST says "运行 Solr REST 请求"
+// in the language the app shows.
+func SolrRunREST() string { return In(i18n.Locale()).SolrRunREST() }
+
+// SolrRunREST says "运行 Solr REST 请求"
+// in the language of msgs.
+func (msgs Messages) SolrRunREST() string {
+	return Catalog.Format(msgs.locale, "solrRunREST", nil)
+}
+
+// SolrEnterREST says "请输入 Solr REST 请求"
+// in the language the app shows.
+func SolrEnterREST() string { return In(i18n.Locale()).SolrEnterREST() }
+
+// SolrEnterREST says "请输入 Solr REST 请求"
+// in the language of msgs.
+func (msgs Messages) SolrEnterREST() string {
+	return Catalog.Format(msgs.locale, "solrEnterREST", nil)
+}
+
+// SolrExecutingREST says "正在执行 Solr REST 请求"
+// in the language the app shows.
+func SolrExecutingREST() string { return In(i18n.Locale()).SolrExecutingREST() }
+
+// SolrExecutingREST says "正在执行 Solr REST 请求"
+// in the language of msgs.
+func (msgs Messages) SolrExecutingREST() string {
+	return Catalog.Format(msgs.locale, "solrExecutingREST", nil)
+}
+
+// SolrRESTEditor says "Solr REST 编辑器"
+// in the language the app shows.
+func SolrRESTEditor() string { return In(i18n.Locale()).SolrRESTEditor() }
+
+// SolrRESTEditor says "Solr REST 编辑器"
+// in the language of msgs.
+func (msgs Messages) SolrRESTEditor() string {
+	return Catalog.Format(msgs.locale, "solrRESTEditor", nil)
+}
+
+// SolrUseRESTAPI says "Solr 请使用原生 REST API"
+// in the language the app shows.
+func SolrUseRESTAPI() string { return In(i18n.Locale()).SolrUseRESTAPI() }
+
+// SolrUseRESTAPI says "Solr 请使用原生 REST API"
+// in the language of msgs.
+func (msgs Messages) SolrUseRESTAPI() string {
+	return Catalog.Format(msgs.locale, "solrUseRESTAPI", nil)
+}
+
+// SolrSchemaTitle says "Schema（只读）"
+// in the language the app shows.
+func SolrSchemaTitle() string { return In(i18n.Locale()).SolrSchemaTitle() }
+
+// SolrSchemaTitle says "Schema（只读）"
+// in the language of msgs.
+func (msgs Messages) SolrSchemaTitle() string {
+	return Catalog.Format(msgs.locale, "solrSchemaTitle", nil)
+}
+
+// SolrViewSchema says "查看 Schema（只读）"
+// in the language the app shows.
+func SolrViewSchema() string { return In(i18n.Locale()).SolrViewSchema() }
+
+// SolrViewSchema says "查看 Schema（只读）"
+// in the language of msgs.
+func (msgs Messages) SolrViewSchema() string {
+	return Catalog.Format(msgs.locale, "solrViewSchema", nil)
+}
+
+// SolrReadingSchema says "正在读取 Schema…"
+// in the language the app shows.
+func SolrReadingSchema() string { return In(i18n.Locale()).SolrReadingSchema() }
+
+// SolrReadingSchema says "正在读取 Schema…"
+// in the language of msgs.
+func (msgs Messages) SolrReadingSchema() string {
+	return Catalog.Format(msgs.locale, "solrReadingSchema", nil)
+}
+
+// SolrSchemaFieldType says "Schema 字段类型"
+// in the language the app shows.
+func SolrSchemaFieldType() string { return In(i18n.Locale()).SolrSchemaFieldType() }
+
+// SolrSchemaFieldType says "Schema 字段类型"
+// in the language of msgs.
+func (msgs Messages) SolrSchemaFieldType() string {
+	return Catalog.Format(msgs.locale, "solrSchemaFieldType", nil)
+}
+
+// SolrNoSchemaFields says "没有已加载的 Schema 字段"
+// in the language the app shows.
+func SolrNoSchemaFields() string { return In(i18n.Locale()).SolrNoSchemaFields() }
+
+// SolrNoSchemaFields says "没有已加载的 Schema 字段"
+// in the language of msgs.
+func (msgs Messages) SolrNoSchemaFields() string {
+	return Catalog.Format(msgs.locale, "solrNoSchemaFields", nil)
 }
