@@ -117,6 +117,7 @@ type Document struct {
 	database, table               string
 	objectKind                    string
 	data                          *contract.TableStructure
+	nativeDefinitionChoice        string
 	page, fieldRow                int
 	columns, indexes, foreignKeys ui.ListState
 	loading                       bool
@@ -349,6 +350,7 @@ func (s *State) Close(d *Document) {
 		d.program.Close()
 	}
 	d.data = nil
+	d.nativeDefinitionChoice = ""
 	d.columns, d.indexes, d.foreignKeys = ui.ListState{}, ui.ListState{}, ui.ListState{}
 	if s.documents[d.id] == d {
 		delete(s.documents, d.id)

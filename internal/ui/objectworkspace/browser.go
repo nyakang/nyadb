@@ -137,6 +137,12 @@ func (s *State) openObject(services ui.Services, db, name, kind string) {
 	s.openObjectFor(services, s.session().ProfileID, db, name, kind)
 }
 func (s *State) openObjectFor(services ui.Services, profileID int64, db, name, kind string) {
+	if NativeDefinitionKind(kind) {
+		if s.deps.OpenStructure != nil {
+			s.deps.OpenStructure(services, profileID, db, name)
+		}
+		return
+	}
 	if Supports(kind) {
 		if s.deps.OpenProgram != nil {
 			s.deps.OpenProgram(profileID, db, name, kind)

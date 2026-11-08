@@ -81,8 +81,8 @@ func couchdbNativeProfile(t *testing.T, cfg connections.CouchDBConfig, secret st
 	if err != nil || config != cfg {
 		t.Fatal("native URI changed original endpoint/TLS context", err)
 	}
-	if _, err := connections.ParseURI(uri.String()); err == nil {
-		t.Fatal("private URI bypassed public registration gate")
+	if _, err := connections.ParseURI(uri.String()); err != nil {
+		t.Fatal("public URI rejected CouchDB")
 	}
 	return parsed
 }

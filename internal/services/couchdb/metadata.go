@@ -132,7 +132,7 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 	if err != nil {
 		return nil, err
 	}
-	out := []contract.DBObject{{Ref: n.Object("database", n.Catalog), Name: n.Catalog, Kind: "database", Engine: "Apache CouchDB", Definition: string(info)}}
+	out := []contract.DBObject{{Ref: n.Object("database", n.Catalog), Name: n.Catalog, Kind: "数据库信息", Engine: "Apache CouchDB", Definition: string(info)}}
 	seen := map[string]bool{}
 	last := ""
 	bytes := len(info)
@@ -180,7 +180,7 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 			if len(seen) > metadataLimit || bytes > responseLimit {
 				return nil, ErrBounds
 			}
-			out = append(out, contract.DBObject{Ref: n.Object("design_document", row.ID), Name: row.ID, Kind: "design_document", Engine: "Apache CouchDB", Definition: string(row.Doc)})
+			out = append(out, contract.DBObject{Ref: n.Object("design_document", row.ID), Name: row.ID, Kind: "设计文档", Engine: "Apache CouchDB", Definition: string(row.Doc)})
 		}
 		if !more {
 			break

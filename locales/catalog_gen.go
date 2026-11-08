@@ -22511,3 +22511,165 @@ func CouchdbProductName() string { return In(i18n.Locale()).CouchdbProductName()
 func (msgs Messages) CouchdbProductName() string {
 	return Catalog.Format(msgs.locale, "couchdbProductName", nil)
 }
+
+// CouchdbRunRequest says "运行 CouchDB REST 请求"
+// in the language the app shows.
+func CouchdbRunRequest() string { return In(i18n.Locale()).CouchdbRunRequest() }
+
+// CouchdbRunRequest says "运行 CouchDB REST 请求"
+// in the language of msgs.
+func (msgs Messages) CouchdbRunRequest() string {
+	return Catalog.Format(msgs.locale, "couchdbRunRequest", nil)
+}
+
+// CouchdbRESTEditor says "CouchDB REST 编辑器"
+// in the language the app shows.
+func CouchdbRESTEditor() string { return In(i18n.Locale()).CouchdbRESTEditor() }
+
+// CouchdbRESTEditor says "CouchDB REST 编辑器"
+// in the language of msgs.
+func (msgs Messages) CouchdbRESTEditor() string {
+	return Catalog.Format(msgs.locale, "couchdbRESTEditor", nil)
+}
+
+// CouchdbEnterRequest says "请输入 CouchDB REST 请求"
+// in the language the app shows.
+func CouchdbEnterRequest() string { return In(i18n.Locale()).CouchdbEnterRequest() }
+
+// CouchdbEnterRequest says "请输入 CouchDB REST 请求"
+// in the language of msgs.
+func (msgs Messages) CouchdbEnterRequest() string {
+	return Catalog.Format(msgs.locale, "couchdbEnterRequest", nil)
+}
+
+// CouchdbExecutingRequest says "正在执行 CouchDB REST 请求"
+// in the language the app shows.
+func CouchdbExecutingRequest() string { return In(i18n.Locale()).CouchdbExecutingRequest() }
+
+// CouchdbExecutingRequest says "正在执行 CouchDB REST 请求"
+// in the language of msgs.
+func (msgs Messages) CouchdbExecutingRequest() string {
+	return Catalog.Format(msgs.locale, "couchdbExecutingRequest", nil)
+}
+
+// CouchdbUseNativeAPI says "CouchDB 请使用原生 REST API"
+// in the language the app shows.
+func CouchdbUseNativeAPI() string { return In(i18n.Locale()).CouchdbUseNativeAPI() }
+
+// CouchdbUseNativeAPI says "CouchDB 请使用原生 REST API"
+// in the language of msgs.
+func (msgs Messages) CouchdbUseNativeAPI() string {
+	return Catalog.Format(msgs.locale, "couchdbUseNativeAPI", nil)
+}
+
+// CouchdbSessionPassword says "CouchDB 会话密码"
+// in the language the app shows.
+func CouchdbSessionPassword() string { return In(i18n.Locale()).CouchdbSessionPassword() }
+
+// CouchdbSessionPassword says "CouchDB 会话密码"
+// in the language of msgs.
+func (msgs Messages) CouchdbSessionPassword() string {
+	return Catalog.Format(msgs.locale, "couchdbSessionPassword", nil)
+}
+
+// CouchdbDatabaseInfo says "数据库信息"
+// in the language the app shows.
+func CouchdbDatabaseInfo() string { return In(i18n.Locale()).CouchdbDatabaseInfo() }
+
+// CouchdbDatabaseInfo says "数据库信息"
+// in the language of msgs.
+func (msgs Messages) CouchdbDatabaseInfo() string {
+	return Catalog.Format(msgs.locale, "couchdbDatabaseInfo", nil)
+}
+
+// CouchdbDesignDocuments says "设计文档"
+// in the language the app shows.
+func CouchdbDesignDocuments() string { return In(i18n.Locale()).CouchdbDesignDocuments() }
+
+// CouchdbDesignDocuments says "设计文档"
+// in the language of msgs.
+func (msgs Messages) CouchdbDesignDocuments() string {
+	return Catalog.Format(msgs.locale, "couchdbDesignDocuments", nil)
+}
+
+// CouchdbViewNativeDefinition says "查看 CouchDB 原生定义"
+// in the language the app shows.
+func CouchdbViewNativeDefinition() string { return In(i18n.Locale()).CouchdbViewNativeDefinition() }
+
+// CouchdbViewNativeDefinition says "查看 CouchDB 原生定义"
+// in the language of msgs.
+func (msgs Messages) CouchdbViewNativeDefinition() string {
+	return Catalog.Format(msgs.locale, "couchdbViewNativeDefinition", nil)
+}
+
+// CouchdbNativeDefinitionReadOnly says "CouchDB 原生定义（只读）"
+// in the language the app shows.
+func CouchdbNativeDefinitionReadOnly() string {
+	return In(i18n.Locale()).CouchdbNativeDefinitionReadOnly()
+}
+
+// CouchdbNativeDefinitionReadOnly says "CouchDB 原生定义（只读）"
+// in the language of msgs.
+func (msgs Messages) CouchdbNativeDefinitionReadOnly() string {
+	return Catalog.Format(msgs.locale, "couchdbNativeDefinitionReadOnly", nil)
+}
+
+// CouchdbRefreshDefinition says "刷新原生定义"
+// in the language the app shows.
+func CouchdbRefreshDefinition() string { return In(i18n.Locale()).CouchdbRefreshDefinition() }
+
+// CouchdbRefreshDefinition says "刷新原生定义"
+// in the language of msgs.
+func (msgs Messages) CouchdbRefreshDefinition() string {
+	return Catalog.Format(msgs.locale, "couchdbRefreshDefinition", nil)
+}
+
+// CouchdbReadingDefinition says "正在读取原生定义…"
+// in the language the app shows.
+func CouchdbReadingDefinition() string { return In(i18n.Locale()).CouchdbReadingDefinition() }
+
+// CouchdbReadingDefinition says "正在读取原生定义…"
+// in the language of msgs.
+func (msgs Messages) CouchdbReadingDefinition() string {
+	return Catalog.Format(msgs.locale, "couchdbReadingDefinition", nil)
+}
+
+// CouchdbNoDefinition says "没有已加载的原生定义"
+// in the language the app shows.
+func CouchdbNoDefinition() string { return In(i18n.Locale()).CouchdbNoDefinition() }
+
+// CouchdbNoDefinition says "没有已加载的原生定义"
+// in the language of msgs.
+func (msgs Messages) CouchdbNoDefinition() string {
+	return Catalog.Format(msgs.locale, "couchdbNoDefinition", nil)
+}
+
+// CouchdbSelectDefinition says "选择原生定义"
+// in the language the app shows.
+func CouchdbSelectDefinition() string { return In(i18n.Locale()).CouchdbSelectDefinition() }
+
+// CouchdbSelectDefinition says "选择原生定义"
+// in the language of msgs.
+func (msgs Messages) CouchdbSelectDefinition() string {
+	return Catalog.Format(msgs.locale, "couchdbSelectDefinition", nil)
+}
+
+// CouchdbNativeJSONDefinition says "CouchDB 原生 JSON 定义"
+// in the language the app shows.
+func CouchdbNativeJSONDefinition() string { return In(i18n.Locale()).CouchdbNativeJSONDefinition() }
+
+// CouchdbNativeJSONDefinition says "CouchDB 原生 JSON 定义"
+// in the language of msgs.
+func (msgs Messages) CouchdbNativeJSONDefinition() string {
+	return Catalog.Format(msgs.locale, "couchdbNativeJSONDefinition", nil)
+}
+
+// CouchdbURISupport says "支持关系数据库、MongoDB、Redis、Elasticsearch、Easysearch、Solr 和 CouchDB URI…"
+// in the language the app shows.
+func CouchdbURISupport() string { return In(i18n.Locale()).CouchdbURISupport() }
+
+// CouchdbURISupport says "支持关系数据库、MongoDB、Redis、Elasticsearch、Easysearch、Solr 和 CouchDB URI…"
+// in the language of msgs.
+func (msgs Messages) CouchdbURISupport() string {
+	return Catalog.Format(msgs.locale, "couchdbURISupport", nil)
+}

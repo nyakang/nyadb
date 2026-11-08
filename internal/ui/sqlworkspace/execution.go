@@ -49,7 +49,7 @@ func (s *State) Run(invalidate func(), t *Document) {
 		if t.cql() {
 			t.err = locales.Text("请输入 CQL")
 		} else if t.nativeCommands {
-			t.err = t.commandText("请输入 MongoDB 命令", "请输入 Redis 命令", "请输入 Elasticsearch REST 请求", "请输入 Easysearch REST 请求", "请输入 Solr REST 请求")
+			t.err = t.commandText("请输入 MongoDB 命令", "请输入 Redis 命令", "请输入 Elasticsearch REST 请求", "请输入 Easysearch REST 请求", "请输入 Solr REST 请求", "请输入 CouchDB REST 请求")
 		}
 		s.report(t.err)
 		return
@@ -114,7 +114,7 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 	if t.cql() {
 		s.report(locales.Text("正在执行 CQL"))
 	} else if t.nativeCommands {
-		s.report(t.commandText("正在执行 MongoDB 命令", "正在执行 Redis 命令", "正在执行 Elasticsearch REST 请求", "正在执行 Easysearch REST 请求", "正在执行 Solr REST 请求"))
+		s.report(t.commandText("正在执行 MongoDB 命令", "正在执行 Redis 命令", "正在执行 Elasticsearch REST 请求", "正在执行 Easysearch REST 请求", "正在执行 Solr REST 请求", "正在执行 CouchDB REST 请求"))
 	}
 	source := "query"
 	if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(statement)), "EXPLAIN ") {
@@ -213,7 +213,7 @@ func (s *State) DisconnectProfile(profileID int64) {
 			if t.cql() {
 				t.err = locales.Text("连接已断开；CQL 已保留。请连接原配置，再以新会话继续；不会自动执行 CQL")
 			} else if t.nativeCommands {
-				t.err = t.commandText("连接已断开；MongoDB 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；Redis 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求")
+				t.err = t.commandText("连接已断开；MongoDB 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；Redis 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求")
 			}
 		}
 	}

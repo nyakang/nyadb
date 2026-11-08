@@ -50,9 +50,12 @@ func (k Kind) IsPostgreSQLFamily() bool {
 // retains its own connector, server identity, configuration and capabilities.
 func (k Kind) IsGaussFamily() bool { return k == OpenGauss || k == GaussDB }
 
-// IsRESTSearch identifies the native request/document workbench presentation.
+// IsRESTSearch identifies search products with native REST interfaces.
 // Each product retains an independent client, identity and paging strategy.
 func (k Kind) IsRESTSearch() bool { return k == Elasticsearch || k == Easysearch || k == Solr }
+
+// IsREST selects native request presentation while preserving product families.
+func (k Kind) IsREST() bool { return k.IsRESTSearch() || k == CouchDB }
 
 var (
 	ErrNotFound = errors.New("connection profile not found")

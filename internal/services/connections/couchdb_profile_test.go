@@ -10,13 +10,13 @@ import (
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
-func TestCouchDBPrivateProfileIndependentContextAndExactPrincipal(t *testing.T) {
+func TestCouchDBPublicProfileIndependentContextAndExactPrincipal(t *testing.T) {
 	p, err := connections.Defaults(connections.CouchDB)
 	if err != nil || p.Port != 5984 || p.TLSMode != "disable" || p.Username != "" || p.Database != "" || p.CouchDBOptions.ContextPath != "" || p.CouchDBOptions.Auth != "none" || p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind.IsRESTSearch() {
 		t.Fatal("CouchDB native defaults or family changed")
 	}
-	if _, registered := connections.Describe(connections.CouchDB); registered {
-		t.Fatal("private foundation registered before workbench acceptance")
+	if d, registered := connections.Describe(connections.CouchDB); !registered || d.ClientFamily != "couchdb" || d.Dialect != "couchdb" || !connections.CouchDB.IsREST() || d.Capabilities.Documents || d.Capabilities.EditableTables || d.Capabilities.Export {
+		t.Fatal("native public descriptor inflated or missing")
 	}
 	p.Name, p.Host, p.Username, p.TLSMode = "native", "::1", " 原生用户🐱 ", "verify-full"
 	p.CouchDBOptions.Auth = "basic"
@@ -64,7 +64,7 @@ func TestCouchDBPrivateProfileIndependentContextAndExactPrincipal(t *testing.T) 
 	}
 }
 
-func TestCouchDBPrivateURIKeepsExactSecretAndRejectsAmbiguity(t *testing.T) {
+func TestCouchDBPublicURIKeepsExactSecretAndRejectsAmbiguity(t *testing.T) {
 	for _, tc := range []struct{ uri, auth, username, secret, endpoint string }{
 		{"couchdb://localhost", "none", "", "", "http://localhost:5984"},
 		{"couchdb://localhost/", "none", "", "", "http://localhost:5984"},
@@ -84,8 +84,8 @@ func TestCouchDBPrivateURIKeepsExactSecretAndRejectsAmbiguity(t *testing.T) {
 		if tc.secret != "" && (strings.Contains(string(public), tc.secret) || strings.Contains(fmt.Sprintf("%+v %#v", v, v), tc.secret)) {
 			t.Fatal("temporary secret leaked")
 		}
-		if _, err := connections.ParseURI(tc.uri); err == nil {
-			t.Fatal("public importer bypassed registration gate")
+		if public, err := connections.ParseURI(tc.uri); err != nil || public.Profile.Kind != connections.CouchDB || public.Password != v.Password {
+			t.Fatal("public importer lost native settings or secret", err)
 		}
 	}
 	for _, uri := range []string{

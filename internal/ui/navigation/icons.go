@@ -26,6 +26,8 @@ func profileBrand(kind connections.Kind, p theme.Palette) (asset, fallback strin
 		return "", "database", p.Blue
 	case connections.Easysearch:
 		return "", "database", ui.Hex("#4066d5")
+	case connections.CouchDB:
+		return "", "database", p.Error
 	case connections.Solr:
 		return "", "database", ui.Hex("#d9411e")
 	case connections.Redis:

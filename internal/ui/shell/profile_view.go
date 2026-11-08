@@ -135,7 +135,7 @@ func (s *State) profileInspector(c *ui.Context) {
 						ui.Text(c, connectionKindName(p.Kind)).FontSize(theme.Font(c, 12)).TextColor(palette.Muted)
 					})
 				})
-				if p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind == connections.DuckDB || p.Kind.IsRESTSearch() || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Cassandra {
+				if p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind == connections.DuckDB || p.Kind.IsREST() || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Cassandra {
 					s.mysqlSessionToolbar(c)
 				}
 				theme.Property(c, locales.Text("状态"), locales.Text(s.sessions.StatusFor(p.ID)))

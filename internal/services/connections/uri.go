@@ -43,6 +43,8 @@ func ParseURI(raw string) (URIImport, error) {
 	}
 	var kind Kind
 	switch strings.ToLower(u.Scheme) {
+	case "couchdb":
+		return ParseCouchDBURI(raw)
 	case "cassandra":
 		return ParseCassandraURI(raw)
 	case "solr":

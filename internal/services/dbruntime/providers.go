@@ -6,6 +6,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/cassandra"
 	clickhousesvc "github.com/nyakang/nyadb/internal/services/clickhouse"
 	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/services/couchdb"
 	"github.com/nyakang/nyadb/internal/services/dameng"
 	"github.com/nyakang/nyadb/internal/services/doris"
 	"github.com/nyakang/nyadb/internal/services/duckdb"
@@ -23,6 +24,7 @@ import (
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.CouchDB, ProviderFunc(couchdb.OpenSession))
 	m.Register(connections.Cassandra, ProviderFunc(cassandra.OpenSession))
 	m.Register(connections.Solr, ProviderFunc(solr.OpenSession))
 	m.Register(connections.Easysearch, ProviderFunc(easysearch.OpenSession))

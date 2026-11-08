@@ -58,6 +58,10 @@ func (s *State) View(c *ui.Context, t *Document) {
 	if t == nil || t.closed {
 		return
 	}
+	if s.couchdbDefinition(t) {
+		s.couchdbDefinitionView(c, t)
+		return
+	}
 	if s.cassandraStructure(t) {
 		s.cassandraStructureView(c, t)
 		return

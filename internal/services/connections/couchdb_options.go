@@ -61,8 +61,7 @@ func CouchDBProfileConfig(p Profile) (CouchDBConfig, error) {
 	return NormalizeCouchDBConfig(CouchDBConfig{Endpoint: scheme + "://" + net.JoinHostPort(p.Host, strconv.Itoa(int(p.Port))) + o.ContextPath, Auth: o.Auth, Username: p.Username, CAFile: o.CAFile, ServerName: o.ServerName})
 }
 
-// ParseCouchDBURI is pure and keeps the secret temporary. Public ParseURI and
-// product/provider registration remain gated until workbench acceptance.
+// ParseCouchDBURI is pure and keeps credentials separate from Profile.
 func ParseCouchDBURI(raw string) (URIImport, error) {
 	fail := func() (URIImport, error) { return URIImport{}, ErrURIOptions }
 	raw = strings.TrimSpace(raw)

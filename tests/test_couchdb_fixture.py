@@ -65,6 +65,17 @@ class CouchDBFixtureTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 FIXTURE.check_acceptance(complete.replace('--- PASS: TestCouchDBNative'+name, '--- FAIL: TestCouchDBNative'+name), session=True)
 
+    def test_workbench_requires_native_provider_ui_recovery_and_packages(self):
+        names = FIXTURE.REQUIRED+FIXTURE.PROFILE_REQUIRED+FIXTURE.SESSION_REQUIRED+FIXTURE.WORKBENCH_REQUIRED
+        complete = '\n'.join('--- PASS: TestCouchDBNative'+name+' (0.03s)' for name in names)
+        FIXTURE.check_acceptance(complete, profile=True, session=True, workbench=True)
+        for name in FIXTURE.WORKBENCH_REQUIRED:
+            with self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(complete.replace('--- PASS: TestCouchDBNative'+name, '--- FAIL: TestCouchDBNative'+name), profile=True, session=True, workbench=True)
+        command = FIXTURE.native_test_command(profile=True, race=True, workbench=True)
+        for package in ['dbruntime', 'shell', 'sqlworkspace', 'objectworkspace', 'navigation', 'connectioncatalog']:
+            self.assertTrue(any(value.endswith('/'+package) for value in command))
+
 
 if __name__ == '__main__':
     unittest.main()

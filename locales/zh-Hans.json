@@ -2214,5 +2214,21 @@
   "couchdbDefaultsHint": "CouchDB 默认端口 5984，服务路径留空表示服务器根路径。",
   "couchdbSettingsInvalid": "请检查 CouchDB 服务路径、认证方式和证书设置",
   "couchdbPasswordInvalid": "请检查 CouchDB 密码",
-  "couchdbProductName": "Apache CouchDB"
+  "couchdbProductName": "Apache CouchDB",
+  "couchdbRunRequest": "运行 CouchDB REST 请求",
+  "couchdbRESTEditor": "CouchDB REST 编辑器",
+  "couchdbEnterRequest": "请输入 CouchDB REST 请求",
+  "couchdbExecutingRequest": "正在执行 CouchDB REST 请求",
+  "couchdbUseNativeAPI": "CouchDB 请使用原生 REST API",
+  "couchdbSessionPassword": "CouchDB 会话密码",
+  "couchdbDatabaseInfo": "数据库信息",
+  "couchdbDesignDocuments": "设计文档",
+  "couchdbViewNativeDefinition": "查看 CouchDB 原生定义",
+  "couchdbNativeDefinitionReadOnly": "CouchDB 原生定义（只读）",
+  "couchdbRefreshDefinition": "刷新原生定义",
+  "couchdbReadingDefinition": "正在读取原生定义…",
+  "couchdbNoDefinition": "没有已加载的原生定义",
+  "couchdbSelectDefinition": "选择原生定义",
+  "couchdbNativeJSONDefinition": "CouchDB 原生 JSON 定义",
+  "couchdbURISupport": "支持关系数据库、MongoDB、Redis、Elasticsearch、Easysearch、Solr 和 CouchDB URI；导入后检查配置，不会自动连接。"
 }

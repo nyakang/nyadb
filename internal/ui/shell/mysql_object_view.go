@@ -75,6 +75,10 @@ func (s *State) loadMySQLObjects(services ui.Services, database string, force bo
 }
 
 func (s *State) openMySQLObject(services ui.Services, database, name, kind string) {
+	if objectworkspace.NativeDefinitionKind(kind) {
+		s.openMySQLStructure(services, database, name)
+		return
+	}
 	if objectworkspace.Supports(kind) {
 		s.openMySQLProgram(database, name, kind)
 		return

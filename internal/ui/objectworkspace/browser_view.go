@@ -198,6 +198,7 @@ func (s *State) BrowserView(c *ui.Context) {
 	redisEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "redis"
 	searchEngine := s.deps.Engine != nil && (s.deps.Engine(a.scope.profile) == "elasticsearch" || s.deps.Engine(a.scope.profile) == "easysearch" || s.deps.Engine(a.scope.profile) == "solr")
 	documentEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "mongodb"
+	couchdbEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "couchdb"
 	canOpen, canProgram := a.canOpen, a.canProgram
 	ui.Column(c).Fill().Children(func() {
 		ui.Row(c).Height(theme.RowHeight(c, 30)).Gap(3).Padding(1, 4).AlignItems(ui.Center).Background(palette.Header).Children(func() {
@@ -207,6 +208,12 @@ func (s *State) BrowserView(c *ui.Context) {
 					{"打开表", "open-table", "打开选中表数据"}, {"设计表", "design-table", "设计选中表"}, {"查看结构", "design-table", "打开选中表结构"},
 				} {
 					item := action
+					if couchdbEngine {
+						if action.label != "查看结构" {
+							continue
+						}
+						item.label, item.accessible = "查看定义（只读）", "查看 CouchDB 原生定义"
+					}
 					if searchEngine {
 						if item.label == "设计表" {
 							continue
@@ -255,7 +262,7 @@ func (s *State) BrowserView(c *ui.Context) {
 						obj := items[a.frame.Row]
 						if (item.label == "打开表" || item.label == "打开集合" || item.label == "打开键" || item.label == "打开文档") && s.deps.OpenData != nil {
 							s.deps.OpenData(c.Services(), a.scope.profile, database, obj.Name)
-						} else if item.label == "查看结构" {
+						} else if action.label == "查看结构" {
 							s.openStructure(c.Services(), database, obj.Name)
 						} else if item.label == "设计表" {
 							s.openDesign(c.Services(), a.scope.profile, database, obj.Name)
@@ -263,7 +270,7 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 				}
 				canCreate := a.canCreate
-				if !documentEngine && !redisEngine && !searchEngine {
+				if !documentEngine && !redisEngine && !searchEngine && !couchdbEngine {
 					if ui.Button(c, "").Label(locales.Text("新建表")).Tooltip(locales.Text("新建表")).
 						Disabled(!canCreate).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
 						ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
@@ -282,6 +289,9 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 				}
 				kinds := []string{"全部", "表", "视图"}
+				if couchdbEngine {
+					kinds = []string{"全部", "数据库信息", "设计文档"}
+				}
 				if searchEngine {
 					kinds = []string{"全部", "索引", "别名", "数据流"}
 					if s.deps.Engine(a.scope.profile) == "solr" {

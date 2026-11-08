@@ -3,10 +3,13 @@ package sqlworkspace
 import "github.com/nyakang/nyadb/locales"
 
 func (d *Document) restRequests() bool {
-	return d.commandDialect == "elasticsearch" || d.commandDialect == "easysearch" || d.commandDialect == "solr"
+	return d.commandDialect == "elasticsearch" || d.commandDialect == "easysearch" || d.commandDialect == "solr" || d.commandDialect == "couchdb"
 }
 
-func (d *Document) commandText(mongo, redis, elasticsearch, easysearch, solr string) string {
+func (d *Document) commandText(mongo, redis, elasticsearch, easysearch, solr, couchdb string) string {
+	if d.commandDialect == "couchdb" {
+		return locales.Text(couchdb)
+	}
 	if d.commandDialect == "solr" {
 		return locales.Text(solr)
 	}

@@ -306,6 +306,17 @@ func (s *State) toolBar(c *ui.Context) {
 						action.label = "数据流"
 					}
 				}
+				if kind == connections.CouchDB {
+					switch action.label {
+					case "表":
+						action.label = "数据库信息"
+					case "视图":
+						action.label = "设计文档"
+					case "查询":
+					default:
+						continue
+					}
+				}
 				if kind == connections.Solr {
 					if action.label == "函数" || action.label == "用户" || action.label == "其它" {
 						continue
