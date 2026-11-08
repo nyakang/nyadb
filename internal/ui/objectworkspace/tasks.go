@@ -8,10 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/egoist/mygo/ui"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 )
 
 type taskDocument struct {
+	management                                                                                                   taskManagementState
+	selection                                                                                                    ui.Selection[[4]string]
 	lease                                                                                                        contract.TaskDocumentLease
 	generation                                                                                                   uint64
 	query                                                                                                        contract.TaskQuery
@@ -37,6 +41,7 @@ type taskResult struct {
 	page                contract.TaskPage
 	record              contract.TaskRecord
 	err                 error
+	mutation            contract.TaskMutationResult
 }
 
 func taskObject(o contract.ObjectRef) bool {
@@ -182,6 +187,46 @@ func (s *State) RecoverTasks(d *Document) {
 		return
 	}
 	x := d.tasks
+	if x.lease != nil && s.deps.TaskDocumentsFor != nil {
+		provider, err := s.deps.TaskDocumentsFor(d.profileID)
+		if err != nil {
+			d.err = err.Error()
+			return
+		}
+		if recovery, ok := provider.(contract.TaskRecoveryProvider); ok {
+			r, err := recovery.RecoverTaskDocument(d.object, x.lease)
+			if err == nil {
+				x.lease = r.Lease
+				x.generation = s.sessionFor(d.profileID).Generation
+				x.management.receipt = cloneTaskMutationReceipt(r.Receipt)
+				if r.Receipt.Raw != "" {
+					x.management.last.Receipt = cloneTaskMutationReceipt(r.Receipt)
+				}
+				x.management.uncertain = x.management.uncertain || r.Uncertain
+				x.management.preview = false
+				x.management.plan = nil
+				x.lost, x.fresh = false, false
+				x.cursors = []string{""}
+				d.err = "任务连接已恢复；请显式刷新任务或观察原管理任务"
+				return
+			}
+			if !errors.Is(err, contract.ErrUnsupported) || x.management.receipt.Raw != "" || x.management.uncertain {
+				d.err = err.Error()
+				x.lost = true
+				return
+			}
+		}
+		if x.management.receipt.Raw != "" || x.management.uncertain {
+			d.err = "原管理任务证据无法恢复；禁止重放请求"
+			x.lost = true
+			return
+		}
+	}
+	if x.management.receipt.Raw != "" || x.management.uncertain {
+		d.err = "原管理任务证据无法恢复；禁止重放请求"
+		x.lost = true
+		return
+	}
 	if x.lease != nil {
 		_ = x.lease.Close()
 		x.lease = nil
@@ -245,7 +290,9 @@ func (s *State) consumeTasks() {
 				d.cancel()
 				d.cancel = nil
 			}
-			current := s.sessionFor(d.profileID)
+			if s.consumeTaskManagement(d, result, current) {
+				continue
+			}
 			if result.generation != current.Generation || !current.Connected {
 				d.err = "原任务会话已失效，请显式恢复"
 				x.lost = true
@@ -268,6 +315,7 @@ func (s *State) consumeTasks() {
 				x.selected = -1
 				x.detail = nil
 				d.columns.Selection = nil
+				x.selection.Clear()
 				d.columns.Selected = nil
 			} else if result.record.Token != "" {
 				record := result.record
@@ -392,6 +440,8 @@ func (s *State) closeTasks(d *Document) {
 		return
 	}
 	x := d.tasks
+	x.management.next = nil
+	x.management.plan = nil
 	if d.cancel != nil {
 		d.cancel()
 	}

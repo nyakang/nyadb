@@ -36,11 +36,12 @@ func (s *session) ReserveTaskDocument(o contract.ObjectRef) (contract.TaskDocume
 	if err != nil {
 		return nil, err
 	}
-	return &taskDocument{session: s, raw: raw}, nil
+	return &taskDocument{session: s, object: o, raw: raw}, nil
 }
 
 type taskDocument struct {
 	session *session
+	object  contract.ObjectRef
 	raw     contract.TaskDocumentLease
 }
 

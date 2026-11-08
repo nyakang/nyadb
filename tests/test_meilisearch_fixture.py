@@ -11,6 +11,24 @@ SPEC.loader.exec_module(fixture)
 
 
 class MeilisearchFixtureTests(unittest.TestCase):
+    def test_task_management_requires_original_counts_and_no_replay(self):
+        for mode in fixture.MODES:
+            names = fixture.required_passes(mode, task_management=True)
+            self.assertTrue(set(fixture.required_passes(mode, task_panel=True)).issubset(names))
+            self.assertTrue(set(fixture.TASK_MANAGEMENT_REQUIRED).issubset(names))
+            self.assertEqual(fixture.TASK_MANAGEMENT_SCOPED in names, mode != 'anonymous')
+            command = fixture.test_command(mode, True, task_management=True)
+            self.assertIn('./internal/ui/shell', command)
+            complete = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in names)
+            if mode == 'mtls':
+                complete += '\nnative mTLS accepted owned client certificate and rejected its absence'
+            fixture.check_acceptance(complete, mode, task_management=True)
+            for name in fixture.TASK_MANAGEMENT_REQUIRED:
+                with self.assertRaises(RuntimeError):
+                    fixture.check_acceptance(complete.replace('--- PASS: TestMeilisearchNative'+name, '--- SKIP: TestMeilisearchNative'+name), mode, task_management=True)
+        for path in ['internal/db/contract/task_management.go', 'internal/services/dbruntime/task_management.go', 'internal/ui/objectworkspace/task_management.go']:
+            self.assertIn(path, fixture.source_hashes(task_management=True))
+
     def test_settings_require_original_admission_conflicts_and_public_editor(self):
         for mode in fixture.MODES:
             names = fixture.required_passes(mode, settings=True)

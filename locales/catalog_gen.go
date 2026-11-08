@@ -24463,3 +24463,333 @@ func MeilisearchSettingsdd0e9c929d() string { return In(i18n.Locale()).Meilisear
 func (msgs Messages) MeilisearchSettingsdd0e9c929d() string {
 	return Catalog.Format(msgs.locale, "meilisearchSettingsdd0e9c929d", nil)
 }
+
+// TaskManagementPreviewCancel says "预览取消选中任务"
+// in the language the app shows.
+func TaskManagementPreviewCancel() string { return In(i18n.Locale()).TaskManagementPreviewCancel() }
+
+// TaskManagementPreviewCancel says "预览取消选中任务"
+// in the language of msgs.
+func (msgs Messages) TaskManagementPreviewCancel() string {
+	return Catalog.Format(msgs.locale, "taskManagementPreviewCancel", nil)
+}
+
+// TaskManagementPreviewDelete says "预览删除选中任务记录"
+// in the language the app shows.
+func TaskManagementPreviewDelete() string { return In(i18n.Locale()).TaskManagementPreviewDelete() }
+
+// TaskManagementPreviewDelete says "预览删除选中任务记录"
+// in the language of msgs.
+func (msgs Messages) TaskManagementPreviewDelete() string {
+	return Catalog.Format(msgs.locale, "taskManagementPreviewDelete", nil)
+}
+
+// TaskManagementObserve says "观察原管理任务（30 秒）"
+// in the language the app shows.
+func TaskManagementObserve() string { return In(i18n.Locale()).TaskManagementObserve() }
+
+// TaskManagementObserve says "观察原管理任务（30 秒）"
+// in the language of msgs.
+func (msgs Messages) TaskManagementObserve() string {
+	return Catalog.Format(msgs.locale, "taskManagementObserve", nil)
+}
+
+// TaskManagementViewReceipt says "查看管理任务回执和结果"
+// in the language the app shows.
+func TaskManagementViewReceipt() string { return In(i18n.Locale()).TaskManagementViewReceipt() }
+
+// TaskManagementViewReceipt says "查看管理任务回执和结果"
+// in the language of msgs.
+func (msgs Messages) TaskManagementViewReceipt() string {
+	return Catalog.Format(msgs.locale, "taskManagementViewReceipt", nil)
+}
+
+// TaskManagementReceiptTab says "管理回执与结果"
+// in the language the app shows.
+func TaskManagementReceiptTab() string { return In(i18n.Locale()).TaskManagementReceiptTab() }
+
+// TaskManagementReceiptTab says "管理回执与结果"
+// in the language of msgs.
+func (msgs Messages) TaskManagementReceiptTab() string {
+	return Catalog.Format(msgs.locale, "taskManagementReceiptTab", nil)
+}
+
+// TaskManagementAdmissionHelp says "入队回执与完成结果分开确认；本地停止等待不会取消服务器任务。"
+// in the language the app shows.
+func TaskManagementAdmissionHelp() string { return In(i18n.Locale()).TaskManagementAdmissionHelp() }
+
+// TaskManagementAdmissionHelp says "入队回执与完成结果分开确认；本地停止等待不会取消服务器任务。"
+// in the language of msgs.
+func (msgs Messages) TaskManagementAdmissionHelp() string {
+	return Catalog.Format(msgs.locale, "taskManagementAdmissionHelp", nil)
+}
+
+// TaskManagementCounts says "原管理任务匹配 %d 条，实际处理 %d 条"
+// in the language the app shows.
+func TaskManagementCounts() string { return In(i18n.Locale()).TaskManagementCounts() }
+
+// TaskManagementCounts says "原管理任务匹配 %d 条，实际处理 %d 条"
+// in the language of msgs.
+func (msgs Messages) TaskManagementCounts() string {
+	return Catalog.Format(msgs.locale, "taskManagementCounts", nil)
+}
+
+// TaskManagementMissingReceipt says "尚无原管理任务回执；未知提交请检查原服务器任务。"
+// in the language the app shows.
+func TaskManagementMissingReceipt() string { return In(i18n.Locale()).TaskManagementMissingReceipt() }
+
+// TaskManagementMissingReceipt says "尚无原管理任务回执；未知提交请检查原服务器任务。"
+// in the language of msgs.
+func (msgs Messages) TaskManagementMissingReceipt() string {
+	return Catalog.Format(msgs.locale, "taskManagementMissingReceipt", nil)
+}
+
+// TaskManagementEvidence says "原管理任务完整证据预览"
+// in the language the app shows.
+func TaskManagementEvidence() string { return In(i18n.Locale()).TaskManagementEvidence() }
+
+// TaskManagementEvidence says "原管理任务完整证据预览"
+// in the language of msgs.
+func (msgs Messages) TaskManagementEvidence() string {
+	return Catalog.Format(msgs.locale, "taskManagementEvidence", nil)
+}
+
+// TaskManagementCopyRequest says "复制原管理请求"
+// in the language the app shows.
+func TaskManagementCopyRequest() string { return In(i18n.Locale()).TaskManagementCopyRequest() }
+
+// TaskManagementCopyRequest says "复制原管理请求"
+// in the language of msgs.
+func (msgs Messages) TaskManagementCopyRequest() string {
+	return Catalog.Format(msgs.locale, "taskManagementCopyRequest", nil)
+}
+
+// TaskManagementCopyReceipt says "复制原管理入队回执"
+// in the language the app shows.
+func TaskManagementCopyReceipt() string { return In(i18n.Locale()).TaskManagementCopyReceipt() }
+
+// TaskManagementCopyReceipt says "复制原管理入队回执"
+// in the language of msgs.
+func (msgs Messages) TaskManagementCopyReceipt() string {
+	return Catalog.Format(msgs.locale, "taskManagementCopyReceipt", nil)
+}
+
+// TaskManagementCopyResult says "复制原管理任务结果"
+// in the language the app shows.
+func TaskManagementCopyResult() string { return In(i18n.Locale()).TaskManagementCopyResult() }
+
+// TaskManagementCopyResult says "复制原管理任务结果"
+// in the language of msgs.
+func (msgs Messages) TaskManagementCopyResult() string {
+	return Catalog.Format(msgs.locale, "taskManagementCopyResult", nil)
+}
+
+// TaskManagementCancelTitle says "取消原任务预览"
+// in the language the app shows.
+func TaskManagementCancelTitle() string { return In(i18n.Locale()).TaskManagementCancelTitle() }
+
+// TaskManagementCancelTitle says "取消原任务预览"
+// in the language of msgs.
+func (msgs Messages) TaskManagementCancelTitle() string {
+	return Catalog.Format(msgs.locale, "taskManagementCancelTitle", nil)
+}
+
+// TaskManagementCancelConfirm says "确认提交任务取消"
+// in the language the app shows.
+func TaskManagementCancelConfirm() string { return In(i18n.Locale()).TaskManagementCancelConfirm() }
+
+// TaskManagementCancelConfirm says "确认提交任务取消"
+// in the language of msgs.
+func (msgs Messages) TaskManagementCancelConfirm() string {
+	return Catalog.Format(msgs.locale, "taskManagementCancelConfirm", nil)
+}
+
+// TaskManagementDeleteTitle says "删除原任务记录预览"
+// in the language the app shows.
+func TaskManagementDeleteTitle() string { return In(i18n.Locale()).TaskManagementDeleteTitle() }
+
+// TaskManagementDeleteTitle says "删除原任务记录预览"
+// in the language of msgs.
+func (msgs Messages) TaskManagementDeleteTitle() string {
+	return Catalog.Format(msgs.locale, "taskManagementDeleteTitle", nil)
+}
+
+// TaskManagementDeleteConfirm says "确认提交任务记录删除"
+// in the language the app shows.
+func TaskManagementDeleteConfirm() string { return In(i18n.Locale()).TaskManagementDeleteConfirm() }
+
+// TaskManagementDeleteConfirm says "确认提交任务记录删除"
+// in the language of msgs.
+func (msgs Messages) TaskManagementDeleteConfirm() string {
+	return Catalog.Format(msgs.locale, "taskManagementDeleteConfirm", nil)
+}
+
+// TaskManagementSelectedUIDs says "仅操作以下 %d 个原任务 UID"
+// in the language the app shows.
+func TaskManagementSelectedUIDs() string { return In(i18n.Locale()).TaskManagementSelectedUIDs() }
+
+// TaskManagementSelectedUIDs says "仅操作以下 %d 个原任务 UID"
+// in the language of msgs.
+func (msgs Messages) TaskManagementSelectedUIDs() string {
+	return Catalog.Format(msgs.locale, "taskManagementSelectedUIDs", nil)
+}
+
+// TaskManagementActionHelp says "取消只针对未完成任务；删除仅移除已结束的任务记录，保留文档。"
+// in the language the app shows.
+func TaskManagementActionHelp() string { return In(i18n.Locale()).TaskManagementActionHelp() }
+
+// TaskManagementActionHelp says "取消只针对未完成任务；删除仅移除已结束的任务记录，保留文档。"
+// in the language of msgs.
+func (msgs Messages) TaskManagementActionHelp() string {
+	return Catalog.Format(msgs.locale, "taskManagementActionHelp", nil)
+}
+
+// TaskManagementIdentityHelp says "提交前检查原任务；状态可能继续变化。原生 UID 无法原子防护服务器重启或恢复。"
+// in the language the app shows.
+func TaskManagementIdentityHelp() string { return In(i18n.Locale()).TaskManagementIdentityHelp() }
+
+// TaskManagementIdentityHelp says "提交前检查原任务；状态可能继续变化。原生 UID 无法原子防护服务器重启或恢复。"
+// in the language of msgs.
+func (msgs Messages) TaskManagementIdentityHelp() string {
+	return Catalog.Format(msgs.locale, "taskManagementIdentityHelp", nil)
+}
+
+// TaskManagementPreview says "完整任务管理预览"
+// in the language the app shows.
+func TaskManagementPreview() string { return In(i18n.Locale()).TaskManagementPreview() }
+
+// TaskManagementPreview says "完整任务管理预览"
+// in the language of msgs.
+func (msgs Messages) TaskManagementPreview() string {
+	return Catalog.Format(msgs.locale, "taskManagementPreview", nil)
+}
+
+// TaskManagementLeaveTitle says "离开原任务管理页面？"
+// in the language the app shows.
+func TaskManagementLeaveTitle() string { return In(i18n.Locale()).TaskManagementLeaveTitle() }
+
+// TaskManagementLeaveTitle says "离开原任务管理页面？"
+// in the language of msgs.
+func (msgs Messages) TaskManagementLeaveTitle() string {
+	return Catalog.Format(msgs.locale, "taskManagementLeaveTitle", nil)
+}
+
+// TaskManagementLeaveHelp says "关闭页面会丢弃本地管理证据；已提交的服务器任务不会回滚。请先确认原任务结果。"
+// in the language the app shows.
+func TaskManagementLeaveHelp() string { return In(i18n.Locale()).TaskManagementLeaveHelp() }
+
+// TaskManagementLeaveHelp says "关闭页面会丢弃本地管理证据；已提交的服务器任务不会回滚。请先确认原任务结果。"
+// in the language of msgs.
+func (msgs Messages) TaskManagementLeaveHelp() string {
+	return Catalog.Format(msgs.locale, "taskManagementLeaveHelp", nil)
+}
+
+// TaskManagementLeaveContinue says "继续确认原任务"
+// in the language the app shows.
+func TaskManagementLeaveContinue() string { return In(i18n.Locale()).TaskManagementLeaveContinue() }
+
+// TaskManagementLeaveContinue says "继续确认原任务"
+// in the language of msgs.
+func (msgs Messages) TaskManagementLeaveContinue() string {
+	return Catalog.Format(msgs.locale, "taskManagementLeaveContinue", nil)
+}
+
+// TaskManagementLeaveDiscard says "放弃本地证据并离开"
+// in the language the app shows.
+func TaskManagementLeaveDiscard() string { return In(i18n.Locale()).TaskManagementLeaveDiscard() }
+
+// TaskManagementLeaveDiscard says "放弃本地证据并离开"
+// in the language of msgs.
+func (msgs Messages) TaskManagementLeaveDiscard() string {
+	return Catalog.Format(msgs.locale, "taskManagementLeaveDiscard", nil)
+}
+
+// TaskManagementSelectionBounds says "请选择 1–256 个原任务"
+// in the language the app shows.
+func TaskManagementSelectionBounds() string { return In(i18n.Locale()).TaskManagementSelectionBounds() }
+
+// TaskManagementSelectionBounds says "请选择 1–256 个原任务"
+// in the language of msgs.
+func (msgs Messages) TaskManagementSelectionBounds() string {
+	return Catalog.Format(msgs.locale, "taskManagementSelectionBounds", nil)
+}
+
+// TaskManagementSessionLost says "原任务会话已失效；管理回执保留，请显式恢复"
+// in the language the app shows.
+func TaskManagementSessionLost() string { return In(i18n.Locale()).TaskManagementSessionLost() }
+
+// TaskManagementSessionLost says "原任务会话已失效；管理回执保留，请显式恢复"
+// in the language of msgs.
+func (msgs Messages) TaskManagementSessionLost() string {
+	return Catalog.Format(msgs.locale, "taskManagementSessionLost", nil)
+}
+
+// TaskManagementAdmitted says "管理请求已入队；请显式观察原管理任务"
+// in the language the app shows.
+func TaskManagementAdmitted() string { return In(i18n.Locale()).TaskManagementAdmitted() }
+
+// TaskManagementAdmitted says "管理请求已入队；请显式观察原管理任务"
+// in the language of msgs.
+func (msgs Messages) TaskManagementAdmitted() string {
+	return Catalog.Format(msgs.locale, "taskManagementAdmitted", nil)
+}
+
+// TaskManagementFinished says "原管理任务已结束；请显式刷新任务列表"
+// in the language the app shows.
+func TaskManagementFinished() string { return In(i18n.Locale()).TaskManagementFinished() }
+
+// TaskManagementFinished says "原管理任务已结束；请显式刷新任务列表"
+// in the language of msgs.
+func (msgs Messages) TaskManagementFinished() string {
+	return Catalog.Format(msgs.locale, "taskManagementFinished", nil)
+}
+
+// TaskManagementStopped says "已停止等待；原管理任务仍需显式确认"
+// in the language the app shows.
+func TaskManagementStopped() string { return In(i18n.Locale()).TaskManagementStopped() }
+
+// TaskManagementStopped says "已停止等待；原管理任务仍需显式确认"
+// in the language of msgs.
+func (msgs Messages) TaskManagementStopped() string {
+	return Catalog.Format(msgs.locale, "taskManagementStopped", nil)
+}
+
+// TaskManagementUncertain says "管理提交结果未知；证据保留，禁止重放"
+// in the language the app shows.
+func TaskManagementUncertain() string { return In(i18n.Locale()).TaskManagementUncertain() }
+
+// TaskManagementUncertain says "管理提交结果未知；证据保留，禁止重放"
+// in the language of msgs.
+func (msgs Messages) TaskManagementUncertain() string {
+	return Catalog.Format(msgs.locale, "taskManagementUncertain", nil)
+}
+
+// TaskManagementRecovered says "任务连接已恢复；请显式刷新任务或观察原管理任务"
+// in the language the app shows.
+func TaskManagementRecovered() string { return In(i18n.Locale()).TaskManagementRecovered() }
+
+// TaskManagementRecovered says "任务连接已恢复；请显式刷新任务或观察原管理任务"
+// in the language of msgs.
+func (msgs Messages) TaskManagementRecovered() string {
+	return Catalog.Format(msgs.locale, "taskManagementRecovered", nil)
+}
+
+// TaskManagementRecoveryFailed says "原管理任务证据无法恢复；禁止重放请求"
+// in the language the app shows.
+func TaskManagementRecoveryFailed() string { return In(i18n.Locale()).TaskManagementRecoveryFailed() }
+
+// TaskManagementRecoveryFailed says "原管理任务证据无法恢复；禁止重放请求"
+// in the language of msgs.
+func (msgs Messages) TaskManagementRecoveryFailed() string {
+	return Catalog.Format(msgs.locale, "taskManagementRecoveryFailed", nil)
+}
+
+// TaskManagementUnavailable says "原管理任务暂不可见；可能权限不足或记录已删除。入队回执保留，请在原服务器确认"
+// in the language the app shows.
+func TaskManagementUnavailable() string { return In(i18n.Locale()).TaskManagementUnavailable() }
+
+// TaskManagementUnavailable says "原管理任务暂不可见；可能权限不足或记录已删除。入队回执保留，请在原服务器确认"
+// in the language of msgs.
+func (msgs Messages) TaskManagementUnavailable() string {
+	return Catalog.Format(msgs.locale, "taskManagementUnavailable", nil)
+}

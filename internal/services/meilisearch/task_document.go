@@ -18,9 +18,10 @@ import (
 )
 
 type taskDocument struct {
-	bound  *queryLease
-	object contract.ObjectRef
-	key    [32]byte
+	bound      *queryLease
+	object     contract.ObjectRef
+	key        [32]byte
+	management taskMutation
 }
 
 func (s *Session) SupportsTaskDocument(o contract.ObjectRef) bool {
@@ -50,6 +51,7 @@ func (d *taskDocument) Close() error {
 	d.bound.Release()
 	d.bound.ops.Lock()
 	clear(d.key[:])
+	d.management.receipt = contract.TaskMutationReceipt{}
 	d.bound.ops.Unlock()
 	return nil
 }

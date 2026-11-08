@@ -190,7 +190,7 @@ func (s *State) tasksView(c *ui.Context, d *Document) {
 			ui.Text(c, locales.Text(d.err)).Padding(2, 8).SingleLine().TextColor(p.Error).Tooltip(locales.Text(d.err))
 		}
 		if !x.filtersOpen {
-			ui.Tabs(c, &x.tab, locales.Text("任务列表"), locales.Text("任务详情"), locales.Text("任务响应")).FillWidth()
+			ui.Tabs(c, &x.tab, locales.Text("任务列表"), locales.Text("任务详情"), locales.Text("任务响应"), locales.Text("管理回执与结果")).FillWidth()
 			if x.tab == 0 {
 				rows := 0
 				if x.page != nil {
@@ -204,12 +204,12 @@ func (s *State) tasksView(c *ui.Context, d *Document) {
 					theme.EmptyTable(c, &d.columns, taskColumns, message)
 				} else {
 					d.columns.Selected = &x.selected
+					d.columns.Selection = &x.selection
 					d.columns.Key = func(row int) any {
 						if row < 0 || row >= len(x.page.Results) {
 							return nil
 						}
-						record := x.page.Results[row]
-						return [4]string{record.UID, record.Index, record.Type, record.EnqueuedAt}
+						return taskSelectionKey(x.page.Results[row])
 					}
 					old := x.selected
 					theme.Table(c, &d.columns, taskColumns, rows, func(row, col int) {
@@ -220,6 +220,8 @@ func (s *State) tasksView(c *ui.Context, d *Document) {
 						s.SelectTask(d, x.selected)
 					}
 				}
+			} else if x.tab == 3 {
+				s.taskManagementEvidence(c, d)
 			} else {
 				raw, label := "", locales.Text("完整原生任务详情预览")
 				if x.tab == 2 {
@@ -264,6 +266,7 @@ func (s *State) tasksView(c *ui.Context, d *Document) {
 				if ui.Button(c, locales.Text("复制完整任务详情")).Disabled(x.detail == nil).Clicked() {
 					c.WriteClipboard(x.detail.Raw)
 				}
+				s.taskManagementActions(c, d)
 			}).Label(locales.Text("选中任务操作")).Shrink(0).FillWidth().Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 8).Gap(4)
 		} else {
 			x.previewVisible = false
@@ -282,4 +285,5 @@ func (s *State) tasksView(c *ui.Context, d *Document) {
 			}
 		})
 	})
+	s.taskManagementModals(c, d)
 }

@@ -1,0 +1,59 @@
+package contract
+
+import (
+	"context"
+	"errors"
+	"time"
+)
+
+var (
+	ErrTaskMutationUsed        = errors.New("task operation preview changed, replaced, or already submitted")
+	ErrTaskMutationState       = errors.New("selected original tasks are not eligible for this operation")
+	ErrTaskMutationUnavailable = errors.New("original management task unavailable; retain admission and confirm on original server")
+)
+
+// Plans capture a finite set of original observed task records. Request contains
+// the complete native UID/status/index selector, not a live all-task filter.
+type TaskMutationPlan struct {
+	Object                 ObjectRef
+	Action, Request, Token string
+	Records                []TaskRecord
+	Sequence               uint64
+}
+
+// Receipt certifies admission only and binds the original response to its lease.
+type TaskMutationReceipt struct {
+	Object                                    ObjectRef
+	Action, UID, Type, EnqueuedAt, Raw, Token string
+	Targets                                   []string
+}
+type TaskMutationResult struct {
+	State            string
+	Receipt          TaskMutationReceipt
+	TaskRaw, Request string
+	Targets          []string
+	Matched, Changed uint64
+	CountsKnown      bool
+}
+type TaskRecovery struct {
+	Lease     TaskDocumentLease
+	Receipt   TaskMutationReceipt
+	Uncertain bool
+}
+
+// This optional feature keeps task browsing providers read-only unless their
+// captured native lease explicitly supports task mutation. Supports is pure,
+// and does not imply server permission. Prepare performs no I/O. Mutate consumes
+// a one-use plan, rechecks original observations, and never replays a request.
+type TaskManagementLease interface {
+	SupportsTaskManagement() bool
+	PrepareTaskMutation(string, []TaskRecord) (TaskMutationPlan, error)
+	MutateTasks(context.Context, TaskMutationPlan) (TaskMutationResult, error)
+	ObserveTaskMutation(context.Context, TaskMutationReceipt, time.Duration) (TaskMutationResult, error)
+}
+
+// Recovery transfers original proven admission evidence without I/O. It does
+// not transfer previews/cursors or turn an unknown submission into a retry.
+type TaskRecoveryProvider interface {
+	RecoverTaskDocument(ObjectRef, TaskDocumentLease) (TaskRecovery, error)
+}
