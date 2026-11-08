@@ -25,6 +25,16 @@ class QdrantFixtureTests(unittest.TestCase):
                     fixture.remove_owned(identifier, 'owned')
                 run.assert_not_called()
 
+    def test_native_batch_acceptance_cannot_pass_without_completion_and_fault_evidence(self):
+        log = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in fixture.REQUIRED)
+        names = ['PointBatchExactModesNativeFiltersAndMixedOperations',
+                 'PointBatchNormalizationAndNativePartialFailure',
+                 'PointBatchReadOnlyDenial', 'PointBatchLostCanceledAndOriginalCloseNeverReplays']
+        for name in names:
+            self.assertIn(name, fixture.REQUIRED)
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(log.replace('--- PASS: TestQdrantNative'+name, '--- SKIP: TestQdrantNative'+name))
+
     def test_native_command_is_explicit_and_bounded(self):
         command = fixture.native_test_command(True)
         self.assertIn('-race', command)
@@ -155,6 +165,8 @@ class QdrantFixtureTests(unittest.TestCase):
         paths = fixture.source_hashes()
         for name in ['internal/services/qdrant/client.go', 'internal/services/qdrant/native.go',
                      'internal/services/qdrant/native_integration_test.go',
+                     'internal/services/qdrant/point_batch.go', 'internal/services/qdrant/point_batch_test.go',
+                     'internal/services/qdrant/point_batch_native_integration_test.go',
                      'internal/services/connections/qdrant_config.go', 'tests/test_qdrant_fixture.py']:
             self.assertIn(name, paths)
 

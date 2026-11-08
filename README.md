@@ -62,6 +62,8 @@ Grid editing requires a reliable row identity; views, generated fields, and unsu
 
 Qdrant shared point-grid and public REST acceptance is reproducible with [the Qdrant fixture verifier](tools/verify_qdrant_fixture.py), using `--public --data --race` and `--mode anonymous`, `--mode api-key`, `--mode tls` or `--mode mtls`. Each mode verifies the public chooser/URI/storage/navigation and REST recovery together with original data leases, mixed exact point IDs, named/sparse/multi-vectors, signed native cursors, original row fingerprints, independent cancellation, count, filter history and complete exports of 5015 points and a point over 1 MiB. It records 24 profile-form, 16 REST-workbench and 8 shared-grid headless images in Chinese and English at two window sizes. See the [point-grid report](docs/qdrant-data-2026-11-09.md); reports and images remain in ignored local directories.
 
+Qdrant's private native batch foundation also verifies explicit `insert_only`/`update_only`/`upsert` modes, native update filters, mixed point upsert/deletion, exact per-operation receipts and original-executor interruption. A later HTTP failure can follow an earlier applied operation; completion can also skip points under the chosen mode or filter. Shared-grid editing and import remain pending. See the [native point-batch report](docs/qdrant-point-batches-2026-11-09.md).
+
 GaussDB core workbench support has been validated against a disposable native GaussDB Kernel 503.1.0 container. See the [core report](docs/gaussdb-2026-11-07.md).
 
 KingbaseES core workbench support has been validated against a disposable native V8R6 PG-mode container. See the [core report](docs/kingbase-2026-11-07.md) and [transport foundation](docs/kingbase-native-transport-2026-11-07.md).

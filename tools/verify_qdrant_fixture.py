@@ -25,6 +25,10 @@ REQUIRED = (
     'AdmissionCompletionAndNativeFailure',
     'LostResponseNeverReplays',
     'CanceledOriginalReadAndClose',
+    'PointBatchExactModesNativeFiltersAndMixedOperations',
+    'PointBatchNormalizationAndNativePartialFailure',
+    'PointBatchReadOnlyDenial',
+    'PointBatchLostCanceledAndOriginalCloseNeverReplays',
 )
 PROFILE_REQUIRED = (
     'ProfileURIReopenAndOriginalEditorCheck',
