@@ -140,6 +140,7 @@ func (s *State) RestoreDocument(snapshot queries.Document) *Document {
 	d.revision = snapshot.Revision
 	d.namedRevision = snapshot.NamedRevision
 	d.recoveryProfile, d.recoverySchema = snapshot.ProfileID, snapshot.Database
+	s.applyQueryDialect(d, snapshot.ProfileID)
 	d.recoveryCatalog, d.recoveryNamespaceSchema = snapshot.Catalog, snapshot.Schema
 	if snapshot.Catalog == "" && snapshot.Schema == "" {
 		d.recoveryNamespaceSchema = snapshot.Database
@@ -297,6 +298,9 @@ func (s *State) Save(d *Document, asFile bool, next func(ui.Services)) {
 		}
 		path := d.path
 		name := d.Name() + ".sql"
+		if d.cql() {
+			name = d.Name() + ".cql"
+		}
 		d.saving = true
 		s.startIO(d, next, func() ioResult {
 			var e error
@@ -347,6 +351,7 @@ func (s *State) OpenNamed(d *Document, n queries.Named) {
 	d.Editor.Select(0, d.Editor.Buffer.Len())
 	d.Editor.Insert(n.Text)
 	d.name, d.queryID, d.savedText, d.path = n.Name, n.ID, n.Text, ""
+	s.applyQueryDialect(d, n.ProfileID)
 	d.namedRevision = n.Revision
 	if d.profileID != n.ProfileID || d.database != n.Database || d.recoveryNeeded {
 		s.dispose(d)

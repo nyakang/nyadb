@@ -2,6 +2,7 @@ package sqlworkspace
 
 import (
 	"github.com/nyakang/nyadb/internal/db/rediscommand"
+	"github.com/nyakang/nyadb/internal/db/sqltext"
 	"strings"
 )
 
@@ -84,6 +85,9 @@ func sqlAtCaret(source string, cursor int) string {
 }
 
 func (s *State) statementAtCaret(d *Document) string {
+	if d.cql() {
+		return sqltext.CassandraStatementAt(d.Editor.Buffer.String(), d.Editor.Cursor())
+	}
 	if d.commandDialect == "redis" {
 		return rediscommand.StatementAt(d.Editor.Buffer.String(), d.Editor.Cursor())
 	}

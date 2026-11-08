@@ -59,7 +59,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 			commands.Children(func() {
 				ui.Toolbar(c, func() {
 					caption := locales.Text("运行当前语句")
-					runLabel, formatLabel := locales.Text("运行当前或选中 SQL"), locales.Text("格式化 SQL")
+					runLabel, formatLabel := t.queryText("运行当前或选中 SQL"), t.queryText("格式化 SQL")
 					if t.nativeCommands {
 						runLabel = t.commandText("运行 MongoDB 命令", "运行 Redis 命令", "运行 Elasticsearch REST 请求", "运行 Easysearch REST 请求", "运行 Solr REST 请求")
 						formatLabel = locales.Text("格式化 JSON")
@@ -67,7 +67,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 					}
 					width := available
 					if strings.TrimSpace(t.Editor.SelectedText()) != "" {
-						caption = locales.Text("运行选中 SQL")
+						caption = t.queryText("运行选中 SQL")
 						if t.nativeCommands {
 							caption = locales.Text("运行选中请求")
 						}
@@ -80,14 +80,14 @@ func (s *State) View(c *ui.Context, t *Document) {
 						s.Run(c.Services().Invalidate, t)
 					}
 					if !t.nativeCommands {
-						theme.IconButton(c, "", "chevron-down").Label(locales.Text("选择 SQL 执行范围")).Disabled(!connected || t.loading || t.recoveryNeeded).Menu(func(m *ui.Menu) {
+						theme.IconButton(c, "", "chevron-down").Label(t.queryText("选择 SQL 执行范围")).Disabled(!connected || t.loading || t.recoveryNeeded).Menu(func(m *ui.Menu) {
 							if m.Item(locales.Text("运行当前语句")).Chosen() {
 								s.RunCurrent(c.Services().Invalidate, t)
 							}
-							if m.Item(locales.Text("运行选中 SQL")).Disabled(strings.TrimSpace(t.Editor.SelectedText()) == "").Chosen() {
+							if m.Item(t.queryText("运行选中 SQL")).Disabled(strings.TrimSpace(t.Editor.SelectedText()) == "").Chosen() {
 								s.RunSelection(c.Services().Invalidate, t)
 							}
-							if m.Item(locales.Text("运行全部 SQL（F5）")).Chosen() {
+							if m.Item(t.queryText("运行全部 SQL（F5）")).Chosen() {
 								s.RunAll(c.Services().Invalidate, t)
 							}
 						})
@@ -97,12 +97,12 @@ func (s *State) View(c *ui.Context, t *Document) {
 						s.RequestCancel(t)
 					}
 					s.sqlLayoutMenu(c, t)
-					if !t.restRequests() {
+					if !t.restRequests() && !t.cql() {
 						if ui.Button(c, formatLabel).Clicked() {
 							s.Format(t)
 						}
 					}
-					if !t.nativeCommands {
+					if !t.nativeCommands && !t.cql() {
 						if ui.Button(c, "EXPLAIN").Disabled(t.loading || !connected || t.nativeCommands).Clicked() {
 							s.Explain(t)
 						}
@@ -111,11 +111,11 @@ func (s *State) View(c *ui.Context, t *Document) {
 						s.RunExport(t)
 					}
 					if !t.nativeCommands {
-						if ui.Button(c, locales.Text("执行 SQL 文件")).Disabled(t.loading || t.recoveryNeeded || !connected || !fileSupported).Clicked() {
+						if ui.Button(c, t.queryText("执行 SQL 文件")).Disabled(t.loading || t.recoveryNeeded || !connected || !fileSupported).Clicked() {
 							s.RunFile(t)
 						}
 					}
-					openLabel := locales.Text("打开 SQL")
+					openLabel := t.queryText("打开 SQL")
 					if t.nativeCommands {
 						openLabel = locales.Text("打开请求文本")
 					}
@@ -128,12 +128,12 @@ func (s *State) View(c *ui.Context, t *Document) {
 					if ui.Button(c, locales.Text("另存为")).Clicked() {
 						s.Save(t, true, nil)
 					}
-					if !t.nativeCommands {
+					if !t.nativeCommands && !t.cql() {
 						if ui.Button(c, locales.Text("AI SQL")).Label(locales.Text("打开 AI SQL 助手")).Disabled(!s.AIAvailable() || t.loading).Clicked() {
 							s.OpenAI(t)
 						}
 					}
-					historyLabel := locales.Text("SQL 历史")
+					historyLabel := t.queryText("SQL 历史")
 					if t.nativeCommands {
 						historyLabel = locales.Text("请求历史")
 					}
@@ -155,7 +155,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 							}
 						}
 					})
-				}).Label(locales.Text("SQL 执行操作")).Grow(1).MinWidth(0).Padding(0).Gap(5)
+				}).Label(t.queryText("SQL 执行操作")).Grow(1).MinWidth(0).Padding(0).Gap(5)
 				if !contextBelow {
 					drawContext()
 				}
@@ -177,7 +177,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 					id > 0 && s.runtime() != nil && s.connected(id) && s.runtime().IsConnected(id)
 				ui.Row(c).Padding(3, 8).Gap(9).AlignItems(ui.Center).Children(func() {
 					recoveryText := locales.Text("新会话无法恢复事务或临时状态；不会自动执行 SQL")
-					if t.nativeCommands {
+					if t.nativeCommands || t.cql() {
 						recoveryText = locales.Text("请求原文已保留；恢复连接后不会自动执行请求")
 					}
 					ui.Text(c, recoveryText).
@@ -189,7 +189,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 						if t.nativeCommands {
 							return locales.Text("建立新会话（不执行现有请求）")
 						}
-						return locales.Text("建立新物理会话（不执行现有 SQL）")
+						return t.queryText("建立新物理会话（不执行现有 SQL）")
 					}()).
 						Disabled(!canRecover).Clicked() {
 						s.Recover(t)
@@ -210,7 +210,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 				}
 			}
 			theme.ApplySQLAppearance(c, t.Editor)
-			t.Editor.Label = locales.Text("SQL 编辑器")
+			t.Editor.Label = t.queryText("SQL 编辑器")
 			if t.nativeCommands {
 				t.Editor.Label = t.commandText("MongoDB 命令编辑器", "Redis 命令编辑器", "Elasticsearch REST 编辑器", "Easysearch REST 编辑器", "Solr REST 编辑器")
 			}
@@ -308,6 +308,9 @@ func sqlResultSummary(t *Document) string {
 	if len(set.Columns) > 0 {
 		return fmt.Sprintf(locales.Text("%d 行 / %d 列 · %s"), len(set.Rows), len(set.Columns), duration)
 	}
+	if set.AffectedRows < 0 {
+		return fmt.Sprintf(locales.Text("原生执行已确认 · %s"), duration)
+	}
 	return fmt.Sprintf(locales.Text("影响 %d 行 · %s"), set.AffectedRows, duration)
 }
 func (s *State) resultContent(c *ui.Context, t *Document) {
@@ -385,7 +388,11 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 			ui.Text(c, truncationText(set.Truncation)).SingleLine().Tooltip(truncationText(set.Truncation))
 		}
 		if len(set.Columns) == 0 {
-			ui.Text(c, fmt.Sprintf(locales.Text("影响 %d 行"), set.AffectedRows)).
+			ack := fmt.Sprintf(locales.Text("影响 %d 行"), set.AffectedRows)
+			if set.AffectedRows < 0 {
+				ack = locales.Text("原生执行已确认")
+			}
+			ui.Text(c, ack).
 				Padding(10).FontSize(theme.Font(c, 12))
 			ui.Box(c).Grow(1)
 			return

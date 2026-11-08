@@ -61,7 +61,7 @@ func (s *State) aiConfigured() bool {
 }
 func (s *State) OpenAISettings() { s.openAI(nil, true) }
 func (s *State) OpenAI(d *Document) {
-	if d != nil && !d.closed && !d.preview {
+	if d != nil && !d.closed && !d.preview && !d.cql() {
 		s.openAI(d, false)
 	}
 }

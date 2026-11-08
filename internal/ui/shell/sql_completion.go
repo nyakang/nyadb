@@ -86,8 +86,20 @@ func (s *State) sqlCompletionSource(id int64) sqlworkspace.CompletionSource {
 	if err != nil {
 		return sqlworkspace.CompletionSource{}
 	}
+	kinds := map[[2]string]string{}
+	for ns, objects := range s.sessions.CacheFor(id) {
+		for _, o := range objects {
+			if o.Kind == "表" || o.Kind == "视图" {
+				kinds[[2]string{ns, o.Name}] = o.Ref.Kind
+			}
+		}
+	}
 	return sqlworkspace.CompletionSource{Generation: s.runtime.Generation(id), Catalog: namespace.Namespace("").Catalog, Load: func(ctx context.Context, ns, name string) ([]string, error) {
-		object := namespace.Namespace(ns).Object("table", name)
+		kind := kinds[[2]string{ns, name}]
+		if kind == "" {
+			kind = "table"
+		}
+		object := namespace.Namespace(ns).Object(kind, name)
 		table, err := provider.TableMetadata(ctx, object)
 		if err != nil {
 			return nil, err

@@ -12,6 +12,10 @@ import (
 )
 
 func (s *State) Format(d *Document) {
+	if d != nil && d.cql() {
+		d.err = locales.Text("Cassandra 暂不支持 CQL 格式化")
+		return
+	}
 	if d == nil || d.Editor == nil {
 		return
 	}
@@ -72,6 +76,13 @@ func (s *State) completions(d *Document, r editor.CompletionRequest) {
 		return
 	}
 	values := strings.Fields("SELECT FROM WHERE ORDER BY GROUP HAVING LIMIT INSERT INTO VALUES UPDATE SET DELETE JOIN LEFT RIGHT INNER ON NULL IS AND OR AS DISTINCT EXPLAIN")
+	if d.cql() {
+		values = nil
+		result := sqltext.CompleteSQL(d.Editor.Buffer.String(), r.Offset, sqltext.CompletionCatalog{Dialect: "cassandra"})
+		for _, item := range result.Items {
+			values = append(values, item.Name)
+		}
+	}
 	if s.deps.Completions != nil {
 		values = append(values, s.deps.Completions(profile, database)...)
 	}
@@ -87,6 +98,10 @@ func (s *State) completions(d *Document, r editor.CompletionRequest) {
 	d.Editor.ShowCompletions(r.Offset-len(r.Prefix), items)
 }
 func (s *State) Explain(d *Document) {
+	if d != nil && d.cql() {
+		d.err = locales.Text("Cassandra 不支持 EXPLAIN")
+		return
+	}
 	if d != nil && d.nativeCommands {
 		d.err = d.commandText("MongoDB 请使用原生 explain 命令", "Redis 不支持 SQL EXPLAIN", "Elasticsearch 请使用原生 REST API", "Easysearch 请使用原生 REST API", "Solr 请使用原生 REST API")
 		return

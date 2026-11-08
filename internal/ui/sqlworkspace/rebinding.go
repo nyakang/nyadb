@@ -20,6 +20,7 @@ func (s *State) Rebind(d *Document, profile int64) {
 	s.dispose(d)
 	d.profileID, d.catalog, d.namespaceSchema = 0, "", ""
 	d.recoveryProfile = profile
+	s.applyQueryDialect(d, profile)
 	d.recoveryCatalog, d.recoveryNamespaceSchema = "", d.recoverySchema
 	if s.deps.Namespace != nil {
 		n := s.deps.Namespace(profile, d.recoverySchema)

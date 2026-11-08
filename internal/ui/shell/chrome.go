@@ -277,6 +277,14 @@ func (s *State) toolBar(c *ui.Context) {
 					}
 				}
 
+				if kind == connections.Cassandra {
+					if action.label == "用户" || action.label == "其它" {
+						continue
+					}
+					if action.label == "函数" {
+						action.label = "类型"
+					}
+				}
 				if kind == connections.Redis {
 					if action.label == "视图" || action.label == "函数" || action.label == "用户" || action.label == "其它" {
 						continue
@@ -381,6 +389,9 @@ func (s *State) toolbarActionAvailable(action string) bool {
 	switch action {
 	case "连接", "新建查询", "Core", "索引", "别名", "数据流", "键", "集合", "表", "视图", "信息":
 		return true
+	case "类型":
+		w := s.sessions.Current()
+		return w.Kind == connections.Cassandra && w.Status == "已连接" && w.Database != "" && s.sessions.DatabaseOpened(w.ProfileID, w.Database) && s.objectCapabilitiesFor(w.ProfileID).Metadata
 	case "函数":
 		if s.sessions.Current().Kind == connections.TiDB {
 			return false

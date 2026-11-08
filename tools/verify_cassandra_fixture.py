@@ -15,12 +15,13 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 IMAGE = 'cassandra@sha256:b494afb347bfd20765d80817d89d9e6e31ae77a339bfb34e82c6ea868a51c9c1'
+WORKBENCH_TESTS = ['PublicDocumentsCQLAndPublishedGenerations', 'PublicChooserURIGridCQLStructureAndRecovery']
 DATA_TESTS = ['DataPagingRowsAndExport', 'DataUUIDStaticFieldsAndSchema', 'DataCancellationAndOriginalClose', 'SharedGridPagingInspectorParkGenerationAndClose']
 SESSION_TESTS = ['QualifiedSchemaAndIndependentCQL', 'CQLPagingStreamingAndAcknowledgement', 'LeaseLostCounterReplyExplicitRecovery', 'MetadataChangeQueueAndOriginalClose', 'OriginalPreconnectAndMetadataCancellation']
 
 
 
-def source_paths(profile=False, session=False, data=False):
+def source_paths(profile=False, session=False, data=False, workbench=False):
     sources = sorted((ROOT/'internal/services/cassandra').glob('*.go')) + [ROOT/'internal/services/connections/cassandra_config.go', ROOT/'internal/services/connections/cassandra_config_test.go', ROOT/'tools/verify_cassandra_fixture.py', ROOT/'tools/cassandra_fixture_probe/main.go', ROOT/'tests/test_cassandra_fixture.py']
     if session:
         sources += [ROOT/'internal/db/sqltext/cassandra.go', ROOT/'internal/db/sqltext/cassandra_test.go']
@@ -28,6 +29,10 @@ def source_paths(profile=False, session=False, data=False):
         sources += sorted((ROOT/'internal/ui/dataworkspace').glob('*.go')) + [ROOT/'internal/db/contract/data_models.go'] + sorted((ROOT/'locales').glob('*.json')) + [ROOT/'locales/catalog_gen.go']
     if profile:
         sources += sorted((ROOT/'internal/services/connections').glob('*.go')) + sorted((ROOT/'internal/storage/localdb').glob('*.go')) + sorted((ROOT/'internal/ui/connectioneditor').glob('*.go')) + sorted((ROOT/'locales').glob('*.json')) + [ROOT/'locales/catalog_gen.go']
+    if workbench:
+        for package in ['internal/services/dbruntime', 'internal/ui/sqlworkspace', 'internal/ui/shell', 'internal/ui/objectworkspace', 'internal/ui/connectioncatalog', 'internal/ui/navigation', 'internal/ui/sessionbrowser', 'internal/bootstrap']:
+            sources += sorted((ROOT/package).glob('*.go'))
+        sources += sorted((ROOT/'internal/db/sqltext').glob('*.go'))
     return sorted(set(sources))
 
 
@@ -47,7 +52,8 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(plain=False, race=False, profile=False, session=False, data=False):
+def verify(plain=False, race=False, profile=False, session=False, data=False, workbench=False):
+    data, profile = data or workbench, profile or workbench
     session = session or data
     base, output = ROOT/'temp/cassandra', ROOT/'build/cassandra'
     base.mkdir(parents=True, exist_ok=True)
@@ -57,7 +63,7 @@ def verify(plain=False, race=False, profile=False, session=False, data=False):
         raise SystemExit(128+signum)
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
-    evidence = {'image': IMAGE, 'nonce': nonce, 'tls': not plain, 'race': race, 'scope': 'private_native_data_documents' if data else 'private_native_sessions_cql_metadata' if session else 'private_native_profiles_and_editor' if profile else 'private_native_transport_foundation'}
+    evidence = {'image': IMAGE, 'nonce': nonce, 'tls': not plain, 'race': race, 'scope': 'public_native_cql_workbench' if workbench else 'private_native_data_documents' if data else 'private_native_sessions_cql_metadata' if session else 'private_native_profiles_and_editor' if profile else 'private_native_transport_foundation'}
     with tempfile.TemporaryDirectory(prefix='fixture-', dir=base) as temporary:
         folder = Path(temporary)
         folder.chmod(0o700)
@@ -103,7 +109,7 @@ def verify(plain=False, race=False, profile=False, session=False, data=False):
             cfg['fault_cert_file'] = str(folder/'server.crt')
             cfg['fault_key_file'] = str(folder/'server.key')
         config = folder/'config.json'
-        logfile = output/(('data-' if data else 'session-' if session else 'profile-' if profile else '')+('plain-transport.log' if plain else 'race-transport.log' if race else 'tls-transport.log'))
+        logfile = output/(('workbench-' if workbench else 'data-' if data else 'session-' if session else 'profile-' if profile else '')+('plain-transport.log' if plain else 'race-transport.log' if race else 'tls-transport.log'))
         probe = folder/'probe'
         subprocess.run(['go', 'build', '-o', str(probe), './tools/cassandra_fixture_probe'], cwd=ROOT, check=True)
         try:
@@ -145,11 +151,15 @@ def verify(plain=False, race=False, profile=False, session=False, data=False):
                 packages += ['./internal/storage/localdb', './internal/ui/connectioneditor']
                 env['NYADB_CASSANDRA_PROFILE_IT'] = '1'
                 env['NYADB_CASSANDRA_PROFILE_IMAGES'] = str(output/('profile-images-plain' if plain else 'profile-images-race' if race else 'profile-images-tls'))
+            if workbench:
+                env['NYADB_CASSANDRA_WORKBENCH_IT'] = '1'
+                env['NYADB_CASSANDRA_WORKBENCH_IMAGES'] = str(output/('workbench-images-plain' if plain else 'workbench-images-race' if race else 'workbench-images-tls'))
+                packages += ['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/connectioncatalog', './internal/ui/navigation', './internal/ui/sessionbrowser', './internal/ui/objectworkspace', './internal/ui/shell']
             # Profile/editor acceptance also creates and drops keyspaces. Keep
             # packages sequential when sharing the session fixture; the intended
             # in-test concurrent ALTER still proves schema-version rejection.
             command = ['go', 'test', '-count=1', '-timeout=5m', '-v', *(['-p', '1'] if data or session and profile else []), *(['-race'] if race else []), *(['-run', 'Cassandra|^TestData(Native|Identity|Reservation)'] if profile or data else []), *packages]
-            sources = source_paths(profile, session, data)
+            sources = source_paths(profile, session, data, workbench)
             source_before = source_snapshot(sources)
             evidence['command'] = command
             with logfile.open('w') as log:
@@ -163,6 +173,8 @@ def verify(plain=False, race=False, profile=False, session=False, data=False):
                 required += SESSION_TESTS
             if data:
                 required += DATA_TESTS
+            if workbench:
+                required += WORKBENCH_TESTS
             text = logfile.read_text()
             if any('--- PASS: TestCassandraNative'+name not in text for name in required):
                 raise RuntimeError('Missing native Cassandra PASS evidence')
@@ -189,7 +201,14 @@ def verify(plain=False, race=False, profile=False, session=False, data=False):
                 if {path.name for path in images} != expected:
                     raise RuntimeError('Missing localized Cassandra form evidence')
                 evidence['image_sha256'] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in images}
-            source_after = source_snapshot(source_paths(profile, session, data))
+            if workbench:
+                image_folder = Path(env['NYADB_CASSANDRA_WORKBENCH_IMAGES'])
+                expected = {lang+'/'+view+'-'+str(w)+'x'+str(h)+'.png' for lang in ['zh-Hans','en'] for view in ['grid','schema','cql','udt'] for w,h in [(1280,800),(720,520)]}
+                images = sorted(image_folder.glob('*/*.png'))
+                if {str(path.relative_to(image_folder)) for path in images} != expected:
+                    raise RuntimeError('Missing localized public Cassandra workbench evidence')
+                evidence['workbench_image_sha256'] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in images}
+            source_after = source_snapshot(source_paths(profile, session, data, workbench))
             if source_before != source_after:
                 raise RuntimeError('Fixture sources changed during acceptance; rerun finalized sources')
             evidence['source_sha256'] = source_after
@@ -211,5 +230,6 @@ if __name__ == '__main__':
     parser.add_argument('--profile', action='store_true')
     parser.add_argument('--session', action='store_true')
     parser.add_argument('--data', action='store_true')
+    parser.add_argument('--workbench', action='store_true')
     options = parser.parse_args()
-    verify(options.plain, options.race, options.profile, options.session, options.data)
+    verify(options.plain, options.race, options.profile, options.session, options.data, options.workbench)

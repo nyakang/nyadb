@@ -58,6 +58,10 @@ func (s *State) View(c *ui.Context, t *Document) {
 	if t == nil || t.closed {
 		return
 	}
+	if s.cassandraStructure(t) {
+		s.cassandraStructureView(c, t)
+		return
+	}
 	if s.documentStructure(t) {
 		s.documentMappingView(c, t)
 		return

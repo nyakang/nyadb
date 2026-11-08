@@ -11,7 +11,7 @@ func (s *State) nativeSchemaStructure(d *Document) bool {
 }
 
 func (s *State) documentStructure(d *Document) bool {
-	return d != nil && (s.nativeSchemaStructure(d) || d.object.Kind == "index" || d.object.Kind == "alias" || d.object.Kind == "data_stream")
+	return d != nil && (s.cassandraStructure(d) || s.nativeSchemaStructure(d) || d.object.Kind == "index" || d.object.Kind == "alias" || d.object.Kind == "data_stream")
 }
 
 // Document mappings keep native definitions and field paths. They do not

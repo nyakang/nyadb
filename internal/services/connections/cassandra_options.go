@@ -44,8 +44,7 @@ func normalizeCassandraProfile(p Profile) (Profile, error) {
 	return p, nil
 }
 
-// ParseCassandraURI is pure configuration parsing for private editor workflows.
-// Public ParseURI remains gated until the provider and workbench are registered.
+// ParseCassandraURI parses the supported native configuration without I/O.
 func ParseCassandraURI(raw string) (URIImport, error) {
 	fail := func() (URIImport, error) { return URIImport{}, ErrURIOptions }
 	raw = strings.TrimSpace(raw)

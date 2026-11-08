@@ -177,6 +177,12 @@ func (s *State) InspectorView(c *ui.Context, d *Document) {
 	if field, selected := d.SelectedField(); selected {
 		theme.Property(c, "名称", field.Name)
 		theme.Property(c, "类型", field.Type)
+		if s.cassandraStructure(d) {
+			role, position, order := cassandraColumnAttributes(field)
+			theme.Property(c, "列角色", role)
+			theme.Property(c, "键位置", position)
+			theme.Property(c, "聚簇顺序", order)
+		}
 		if s.documentStructure(d) {
 			if field.Extra != "" {
 				theme.Property(c, "附加属性", field.Extra)

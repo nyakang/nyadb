@@ -102,7 +102,7 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 			ui.Column(c).Padding(12, 10).Gap(9).Children(func() {
 				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 					icon := "table"
-					if d.info != nil && d.info.Kind == "VIEW" {
+					if d.info != nil && (d.info.Kind == "VIEW" || d.info.Kind == "view") {
 						icon = "view"
 					}
 					theme.Icon(c, icon, 26, palette.Blue)
@@ -172,7 +172,7 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 				if info.Kind == "COLLECTION" {
 					kind = "集合"
 				}
-				if info.Kind == "VIEW" {
+				if info.Kind == "VIEW" || info.Kind == "view" {
 					kind = "视图"
 				}
 				tableProperty(c, "类型", locales.Text(kind))

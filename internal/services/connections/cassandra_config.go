@@ -10,7 +10,7 @@ import (
 )
 
 // CassandraConfig holds public native transport settings. Credentials are supplied
-// separately; this foundation does not register a public connection product.
+// separately from saved profiles and transport settings.
 type CassandraConfig struct{ Endpoint, Auth, Username, TLSMode, CAFile, ServerName, Keyspace string }
 
 func NormalizeCassandraConfig(c CassandraConfig) (CassandraConfig, error) {

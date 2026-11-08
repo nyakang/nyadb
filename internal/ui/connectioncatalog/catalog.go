@@ -50,9 +50,10 @@ var databaseCatalog = []catalogEntry{
 	{"Trino", "Trino", "", "全部", "database", "#dd5a9b", connections.Trino},
 	{"StarRocks", "StarRocks", "", "全部", "database", "#e65f25", connections.StarRocks},
 	{"Apache Doris", "Apache Doris", "", "全部", "database", "#259aca", connections.Doris},
+	{"Apache Cassandra", "Apache Cassandra", "", "全部", "database", "#1b9aaa", connections.Cassandra},
 }
 
-var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "Apache Doris", "StarRocks", "Trino", "MariaDB", "TiDB", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "达梦", "MongoDB", "Redis", "Elasticsearch", "Easysearch", "Apache Solr", "Snowflake"}
+var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "Apache Doris", "StarRocks", "Trino", "MariaDB", "TiDB", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "达梦", "MongoDB", "Redis", "Elasticsearch", "Easysearch", "Apache Solr", "Apache Cassandra", "Snowflake"}
 var catalogVendors = catalogTreeVendorOrder
 
 func catalogMatch(e catalogEntry, query string, engines, vendors map[string]bool) bool {

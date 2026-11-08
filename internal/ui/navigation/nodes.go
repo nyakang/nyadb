@@ -112,6 +112,8 @@ func (s *State) databaseChildren(key string) []string {
 		categories := mysqlNavigationCategories
 		if s.deps.Engine != nil {
 			switch s.deps.Engine(n.ProfileID) {
+			case connections.Cassandra:
+				categories = []string{"表", "视图", "类型", "查询"}
 			case connections.Solr:
 				categories = []string{"Core", "集合", "别名", "查询"}
 			case connections.Elasticsearch, connections.Easysearch:

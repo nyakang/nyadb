@@ -12,6 +12,8 @@ type Descriptor struct {
 
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
+	case Cassandra:
+		return Descriptor{kind, "Apache Cassandra", "cassandra", "server", "cassandra", 9042, contract.Capabilities{Objects: true, Query: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
 	case Solr:
 		return Descriptor{kind, "Apache Solr", "solr", "server", "solr", 8983, contract.Capabilities{Objects: true, Documents: true, Query: true, Metadata: true, EditableTables: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
 	case Easysearch:

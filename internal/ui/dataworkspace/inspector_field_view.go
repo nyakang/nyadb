@@ -1,8 +1,10 @@
 package dataworkspace
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/services/connections"
 	"strconv"
 	"strings"
 
@@ -18,6 +20,12 @@ func (s *inspectorState) FieldView(c *ui.Context, t *Panel) {
 		return
 	}
 	palette := theme.Colors(c)
+	nativeCQL := t.info.info != nil && t.info.info.Engine == "Cassandra"
+	if s.deps.Profile != nil {
+		if p, ok := s.deps.Profile(t.profileID); ok {
+			nativeCQL = p.Kind == connections.Cassandra
+		}
+	}
 
 	selection := t.Selection()
 	name, cell, selected := selection.Cell()
@@ -74,6 +82,17 @@ func (s *inspectorState) FieldView(c *ui.Context, t *Panel) {
 				theme.Property(c, "类型", field.Type)
 				if !complete {
 					ui.Text(c, locales.Text("仅有基础字段类型，完整元数据尚未加载")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+				} else if nativeCQL {
+					var attrs map[string]struct {
+						Value *string `json:"value"`
+					}
+					if json.Unmarshal([]byte(field.Extra), &attrs) == nil {
+						for _, property := range []struct{ key, label string }{{"kind", "列角色"}, {"position", "键位置"}, {"clustering_order", "聚簇顺序"}} {
+							if value := attrs[property.key].Value; value != nil && *value != "-1" && *value != "none" {
+								theme.Property(c, property.label, *value)
+							}
+						}
+					}
 				} else if t.runtime != nil && t.runtime.Capabilities.Documents {
 					if field.Comment != "" {
 						theme.Property(c, "说明", field.Comment)
@@ -88,7 +107,11 @@ func (s *inspectorState) FieldView(c *ui.Context, t *Panel) {
 				}
 				theme.Property(c, "行号", fmt.Sprintf("%d", selection.Offset+int64(selection.Row)+1))
 				if cell.Null {
-					theme.Property(c, "值状态", "SQL NULL")
+					nullLabel := "SQL NULL"
+					if nativeCQL {
+						nullLabel = locales.Text("原生 NULL")
+					}
+					theme.Property(c, "值状态", nullLabel)
 				} else if cell.Truncated {
 					theme.Property(c, "值状态", locales.Text("已截断的预览"))
 				} else {

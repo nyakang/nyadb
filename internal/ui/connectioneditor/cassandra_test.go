@@ -131,7 +131,7 @@ func TestCassandraEditorVaultFailureRollbackAndLockedAuthChange(t *testing.T) {
 	}
 }
 
-func TestCassandraEditorAuthSwitchRevokesOriginalCheckAndPublicImportStaysGated(t *testing.T) {
+func TestCassandraEditorAuthSwitchRevokesOriginalCheckAndPublicImportValidates(t *testing.T) {
 	started, canceled, finished := make(chan struct{}), make(chan struct{}), make(chan struct{})
 	release := make(chan struct{})
 	s := New(Dependencies{TestConnection: func(ctx context.Context, p connections.Profile, secret string) error {
@@ -152,8 +152,8 @@ func TestCassandraEditorAuthSwitchRevokesOriginalCheckAndPublicImportStaysGated(
 	s.connectionDraft.Username = "reader"
 	s.connectionDraft.Database = "MixedCase"
 	s.connectionSecret = "captured-password"
-	if err := s.ImportURI("cassandra://reader:private@localhost/app"); err == nil || s.connectionSecret != "captured-password" || s.connectionDraft.Name != "captured" {
-		t.Fatal("unregistered public import changed draft")
+	if err := s.ImportURI("cassandra://reader:private@localhost/app?unsupported=true"); err == nil || s.connectionSecret != "captured-password" || s.connectionDraft.Name != "captured" {
+		t.Fatal("invalid public import changed draft")
 	}
 	tt := cassandraEditorTester(s)
 	if err := tt.Click("测试连接"); err != nil {
@@ -179,5 +179,8 @@ func TestCassandraEditorAuthSwitchRevokesOriginalCheckAndPublicImportStaysGated(
 	tt.Frame()
 	if s.connectionTesting || s.connectionTestResults != nil || s.Error() != "" || s.connectionSecret != "" {
 		t.Fatal("late result entered changed draft")
+	}
+	if err := s.ImportURI("cassandra://reader:separate@localhost/MixedCase?sslmode=disable"); err != nil || s.Draft().Kind != connections.Cassandra || s.Draft().Database != "MixedCase" || s.connectionSecret != "separate" {
+		t.Fatal("public import lost native configuration")
 	}
 }

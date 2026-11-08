@@ -38,8 +38,11 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 	}
 	status := s.sessions.StatusFor(p.ID)
 	ui.Column(c).Gap(5).Children(func() {
-		if (p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind.IsRESTSearch() || p.Kind == connections.MongoDB || p.Kind == connections.Redis) && status != "已连接" && !(p.Kind == connections.Solr && p.SolrOptions.Auth == "none") {
+		if (p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind.IsRESTSearch() || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Cassandra && p.CassandraOptions.Auth == "password") && status != "已连接" && !(p.Kind == connections.Solr && p.SolrOptions.Auth == "none") {
 			label := locales.Text("PostgreSQL 会话密码")
+			if p.Kind == connections.Cassandra {
+				label = locales.Text("Cassandra 会话密码")
+			}
 			if p.Kind == connections.CockroachDB {
 				label = locales.Text("CockroachDB 会话密码")
 			}
@@ -122,6 +125,9 @@ func (s *State) objectCapabilitiesFor(id int64) contract.Capabilities {
 }
 func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string {
 	for _, p := range s.navigation.Profiles() {
+		if p.ID == id && p.Kind == connections.Cassandra {
+			return sqltext.CassandraStatementAt(source, cursor)
+		}
 		if p.ID == id && p.Kind == connections.Redis {
 			return rediscommand.StatementAt(source, cursor)
 		}
@@ -157,6 +163,11 @@ func (s *State) sqlStatementAtCaret(id int64, source string, cursor int) string 
 }
 
 func (s *State) sqlFormat(id int64, source string) (string, error) {
+	for _, p := range s.navigation.Profiles() {
+		if p.ID == id && p.Kind == connections.Cassandra {
+			return "", contract.ErrUnsupported
+		}
+	}
 	for _, p := range s.navigation.Profiles() {
 		if p.ID == id && p.Kind.IsRESTSearch() {
 			return source, nil
@@ -201,6 +212,11 @@ func (s *State) sqlFormat(id int64, source string) (string, error) {
 
 func (s *State) sqlValidateExplain(id int64, source string) error {
 	for _, p := range s.navigation.Profiles() {
+		if p.ID == id && p.Kind == connections.Cassandra {
+			return contract.ErrUnsupported
+		}
+	}
+	for _, p := range s.navigation.Profiles() {
 		if p.ID == id && p.Kind == connections.Trino {
 			return sqltext.SingleTrinoStatement(source)
 		}
@@ -234,6 +250,9 @@ func (s *State) sqlPlanEngine(id int64) string {
 	return "mysql"
 }
 func (s *State) sqlBuildExplain(id int64, text string) (string, error) {
+	if s.sqlPlanEngine(id) == "cassandra" {
+		return "", contract.ErrUnsupported
+	}
 	return queryplan.Build(s.sqlPlanEngine(id), text)
 }
 func (s *State) sqlParsePlan(id int64, result contract.SQLResult) (*contract.ExecutionPlan, error) {

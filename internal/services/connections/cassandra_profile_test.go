@@ -4,19 +4,21 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
-func TestCassandraPrivateProfileURIAndExactPrincipal(t *testing.T) {
+func TestCassandraPublicProfileURIAndExactPrincipal(t *testing.T) {
 	p, err := connections.Defaults(connections.Cassandra)
 	if err != nil || p.Port != 9042 || p.TLSMode != "verify-full" || p.CassandraOptions.Version != 1 || p.CassandraOptions.Auth != "none" {
 		t.Fatal("native defaults lost")
 	}
-	if _, ok := connections.Describe(connections.Cassandra); ok {
-		t.Fatal("unverified public workbench registered")
+	d, ok := connections.Describe(connections.Cassandra)
+	if !ok || d.ClientFamily != "cassandra" || d.Dialect != "cassandra" || d.DefaultPort != 9042 || !d.Capabilities.Query || !d.Capabilities.Metadata || !d.Capabilities.Export || d.Capabilities.EditableTables || d.Capabilities.Explain || d.Capabilities.Transactions || d.Capabilities.Import {
+		t.Fatal("public native capability boundary")
 	}
 	for _, raw := range []string{
 		"cassandra://localhost/",
@@ -30,8 +32,8 @@ func TestCassandraPrivateProfileURIAndExactPrincipal(t *testing.T) {
 		if parsed.Profile.Kind != connections.Cassandra || strings.Contains(fmt.Sprint(parsed), "secret") || strings.Contains(fmt.Sprintf("%#v", parsed), "secret") {
 			t.Fatal("native identity or redaction lost")
 		}
-		if _, err := connections.ParseURI(raw); !errors.Is(err, connections.ErrURI) {
-			t.Fatal("public URI exposed before provider")
+		if public, err := connections.ParseURI(raw); err != nil || !reflect.DeepEqual(public, parsed) {
+			t.Fatal("public URI differs from pure native parser")
 		}
 		if strings.Contains(raw, "MixedCase") && (parsed.Profile.Database != "MixedCase" || parsed.Password != "private@secret" || parsed.Profile.Host != "::1") {
 			t.Fatal("qualified case or IPv6 lost")

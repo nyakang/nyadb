@@ -22151,3 +22151,283 @@ func LiveDataCursorWarning() string { return In(i18n.Locale()).LiveDataCursorWar
 func (msgs Messages) LiveDataCursorWarning() string {
 	return Catalog.Format(msgs.locale, "liveDataCursorWarning", nil)
 }
+
+// CassandraSessionPassword says "Cassandra 会话密码"
+// in the language the app shows.
+func CassandraSessionPassword() string { return In(i18n.Locale()).CassandraSessionPassword() }
+
+// CassandraSessionPassword says "Cassandra 会话密码"
+// in the language of msgs.
+func (msgs Messages) CassandraSessionPassword() string {
+	return Catalog.Format(msgs.locale, "cassandraSessionPassword", nil)
+}
+
+// CassandraStructureReadOnly says "Cassandra 结构（只读）"
+// in the language the app shows.
+func CassandraStructureReadOnly() string { return In(i18n.Locale()).CassandraStructureReadOnly() }
+
+// CassandraStructureReadOnly says "Cassandra 结构（只读）"
+// in the language of msgs.
+func (msgs Messages) CassandraStructureReadOnly() string {
+	return Catalog.Format(msgs.locale, "cassandraStructureReadOnly", nil)
+}
+
+// CassandraStructureLoading says "正在读取 Cassandra 结构…"
+// in the language the app shows.
+func CassandraStructureLoading() string { return In(i18n.Locale()).CassandraStructureLoading() }
+
+// CassandraStructureLoading says "正在读取 Cassandra 结构…"
+// in the language of msgs.
+func (msgs Messages) CassandraStructureLoading() string {
+	return Catalog.Format(msgs.locale, "cassandraStructureLoading", nil)
+}
+
+// CassandraColumnRole says "列角色"
+// in the language the app shows.
+func CassandraColumnRole() string { return In(i18n.Locale()).CassandraColumnRole() }
+
+// CassandraColumnRole says "列角色"
+// in the language of msgs.
+func (msgs Messages) CassandraColumnRole() string {
+	return Catalog.Format(msgs.locale, "cassandraColumnRole", nil)
+}
+
+// CassandraKeyPosition says "键位置"
+// in the language the app shows.
+func CassandraKeyPosition() string { return In(i18n.Locale()).CassandraKeyPosition() }
+
+// CassandraKeyPosition says "键位置"
+// in the language of msgs.
+func (msgs Messages) CassandraKeyPosition() string {
+	return Catalog.Format(msgs.locale, "cassandraKeyPosition", nil)
+}
+
+// CassandraClusteringOrder says "聚簇顺序"
+// in the language the app shows.
+func CassandraClusteringOrder() string { return In(i18n.Locale()).CassandraClusteringOrder() }
+
+// CassandraClusteringOrder says "聚簇顺序"
+// in the language of msgs.
+func (msgs Messages) CassandraClusteringOrder() string {
+	return Catalog.Format(msgs.locale, "cassandraClusteringOrder", nil)
+}
+
+// CassandraNoIndexes says "没有已加载的索引"
+// in the language the app shows.
+func CassandraNoIndexes() string { return In(i18n.Locale()).CassandraNoIndexes() }
+
+// CassandraNoIndexes says "没有已加载的索引"
+// in the language of msgs.
+func (msgs Messages) CassandraNoIndexes() string {
+	return Catalog.Format(msgs.locale, "cassandraNoIndexes", nil)
+}
+
+// CassandraNoFields says "没有已加载的字段"
+// in the language the app shows.
+func CassandraNoFields() string { return In(i18n.Locale()).CassandraNoFields() }
+
+// CassandraNoFields says "没有已加载的字段"
+// in the language of msgs.
+func (msgs Messages) CassandraNoFields() string {
+	return Catalog.Format(msgs.locale, "cassandraNoFields", nil)
+}
+
+// CassandraFormatUnsupported says "Cassandra 暂不支持 CQL 格式化"
+// in the language the app shows.
+func CassandraFormatUnsupported() string { return In(i18n.Locale()).CassandraFormatUnsupported() }
+
+// CassandraFormatUnsupported says "Cassandra 暂不支持 CQL 格式化"
+// in the language of msgs.
+func (msgs Messages) CassandraFormatUnsupported() string {
+	return Catalog.Format(msgs.locale, "cassandraFormatUnsupported", nil)
+}
+
+// CassandraExplainUnsupported says "Cassandra 不支持 EXPLAIN"
+// in the language the app shows.
+func CassandraExplainUnsupported() string { return In(i18n.Locale()).CassandraExplainUnsupported() }
+
+// CassandraExplainUnsupported says "Cassandra 不支持 EXPLAIN"
+// in the language of msgs.
+func (msgs Messages) CassandraExplainUnsupported() string {
+	return Catalog.Format(msgs.locale, "cassandraExplainUnsupported", nil)
+}
+
+// CqlPrompt says "请输入 CQL"
+// in the language the app shows.
+func CqlPrompt() string { return In(i18n.Locale()).CqlPrompt() }
+
+// CqlPrompt says "请输入 CQL"
+// in the language of msgs.
+func (msgs Messages) CqlPrompt() string {
+	return Catalog.Format(msgs.locale, "cqlPrompt", nil)
+}
+
+// CqlExecuting says "正在执行 CQL"
+// in the language the app shows.
+func CqlExecuting() string { return In(i18n.Locale()).CqlExecuting() }
+
+// CqlExecuting says "正在执行 CQL"
+// in the language of msgs.
+func (msgs Messages) CqlExecuting() string {
+	return Catalog.Format(msgs.locale, "cqlExecuting", nil)
+}
+
+// CqlDisconnected says "连接已断开；CQL 已保留。请连接原配置，再以新会话继续；不会自动执行 CQL"
+// in the language the app shows.
+func CqlDisconnected() string { return In(i18n.Locale()).CqlDisconnected() }
+
+// CqlDisconnected says "连接已断开；CQL 已保留。请连接原配置，再以新会话继续；不会自动执行 CQL"
+// in the language of msgs.
+func (msgs Messages) CqlDisconnected() string {
+	return Catalog.Format(msgs.locale, "cqlDisconnected", nil)
+}
+
+// CqlCompleted says "CQL 已完成 · %d 行 · %s"
+// in the language the app shows.
+func CqlCompleted() string { return In(i18n.Locale()).CqlCompleted() }
+
+// CqlCompleted says "CQL 已完成 · %d 行 · %s"
+// in the language of msgs.
+func (msgs Messages) CqlCompleted() string {
+	return Catalog.Format(msgs.locale, "cqlCompleted", nil)
+}
+
+// NativeAcknowledged says "原生执行已确认"
+// in the language the app shows.
+func NativeAcknowledged() string { return In(i18n.Locale()).NativeAcknowledged() }
+
+// NativeAcknowledged says "原生执行已确认"
+// in the language of msgs.
+func (msgs Messages) NativeAcknowledged() string {
+	return Catalog.Format(msgs.locale, "nativeAcknowledged", nil)
+}
+
+// NativeAcknowledgedDuration says "原生执行已确认 · %s"
+// in the language the app shows.
+func NativeAcknowledgedDuration() string { return In(i18n.Locale()).NativeAcknowledgedDuration() }
+
+// NativeAcknowledgedDuration says "原生执行已确认 · %s"
+// in the language of msgs.
+func (msgs Messages) NativeAcknowledgedDuration() string {
+	return Catalog.Format(msgs.locale, "nativeAcknowledgedDuration", nil)
+}
+
+// CqlRun says "运行当前或选中 CQL"
+// in the language the app shows.
+func CqlRun() string { return In(i18n.Locale()).CqlRun() }
+
+// CqlRun says "运行当前或选中 CQL"
+// in the language of msgs.
+func (msgs Messages) CqlRun() string {
+	return Catalog.Format(msgs.locale, "cqlRun", nil)
+}
+
+// CqlFormat says "格式化 CQL"
+// in the language the app shows.
+func CqlFormat() string { return In(i18n.Locale()).CqlFormat() }
+
+// CqlFormat says "格式化 CQL"
+// in the language of msgs.
+func (msgs Messages) CqlFormat() string {
+	return Catalog.Format(msgs.locale, "cqlFormat", nil)
+}
+
+// CqlSelection says "运行选中 CQL"
+// in the language the app shows.
+func CqlSelection() string { return In(i18n.Locale()).CqlSelection() }
+
+// CqlSelection says "运行选中 CQL"
+// in the language of msgs.
+func (msgs Messages) CqlSelection() string {
+	return Catalog.Format(msgs.locale, "cqlSelection", nil)
+}
+
+// CqlScope says "选择 CQL 执行范围"
+// in the language the app shows.
+func CqlScope() string { return In(i18n.Locale()).CqlScope() }
+
+// CqlScope says "选择 CQL 执行范围"
+// in the language of msgs.
+func (msgs Messages) CqlScope() string {
+	return Catalog.Format(msgs.locale, "cqlScope", nil)
+}
+
+// CqlAll says "运行全部 CQL（F5）"
+// in the language the app shows.
+func CqlAll() string { return In(i18n.Locale()).CqlAll() }
+
+// CqlAll says "运行全部 CQL（F5）"
+// in the language of msgs.
+func (msgs Messages) CqlAll() string {
+	return Catalog.Format(msgs.locale, "cqlAll", nil)
+}
+
+// CqlFile says "执行 CQL 文件"
+// in the language the app shows.
+func CqlFile() string { return In(i18n.Locale()).CqlFile() }
+
+// CqlFile says "执行 CQL 文件"
+// in the language of msgs.
+func (msgs Messages) CqlFile() string {
+	return Catalog.Format(msgs.locale, "cqlFile", nil)
+}
+
+// CqlOpen says "打开 CQL"
+// in the language the app shows.
+func CqlOpen() string { return In(i18n.Locale()).CqlOpen() }
+
+// CqlOpen says "打开 CQL"
+// in the language of msgs.
+func (msgs Messages) CqlOpen() string {
+	return Catalog.Format(msgs.locale, "cqlOpen", nil)
+}
+
+// CqlHistory says "CQL 历史"
+// in the language the app shows.
+func CqlHistory() string { return In(i18n.Locale()).CqlHistory() }
+
+// CqlHistory says "CQL 历史"
+// in the language of msgs.
+func (msgs Messages) CqlHistory() string {
+	return Catalog.Format(msgs.locale, "cqlHistory", nil)
+}
+
+// CqlOperations says "CQL 执行操作"
+// in the language the app shows.
+func CqlOperations() string { return In(i18n.Locale()).CqlOperations() }
+
+// CqlOperations says "CQL 执行操作"
+// in the language of msgs.
+func (msgs Messages) CqlOperations() string {
+	return Catalog.Format(msgs.locale, "cqlOperations", nil)
+}
+
+// CqlEditor says "CQL 编辑器"
+// in the language the app shows.
+func CqlEditor() string { return In(i18n.Locale()).CqlEditor() }
+
+// CqlEditor says "CQL 编辑器"
+// in the language of msgs.
+func (msgs Messages) CqlEditor() string {
+	return Catalog.Format(msgs.locale, "cqlEditor", nil)
+}
+
+// CqlRecover says "建立新物理会话（不执行现有 CQL）"
+// in the language the app shows.
+func CqlRecover() string { return In(i18n.Locale()).CqlRecover() }
+
+// CqlRecover says "建立新物理会话（不执行现有 CQL）"
+// in the language of msgs.
+func (msgs Messages) CqlRecover() string {
+	return Catalog.Format(msgs.locale, "cqlRecover", nil)
+}
+
+// NativeNull says "原生 NULL"
+// in the language the app shows.
+func NativeNull() string { return In(i18n.Locale()).NativeNull() }
+
+// NativeNull says "原生 NULL"
+// in the language of msgs.
+func (msgs Messages) NativeNull() string {
+	return Catalog.Format(msgs.locale, "nativeNull", nil)
+}

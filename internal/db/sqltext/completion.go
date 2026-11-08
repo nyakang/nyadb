@@ -51,6 +51,9 @@ type completionRelation struct {
 // not acquire columns from an unrelated table. Offsets are UTF-8 byte offsets.
 func CompleteSQL(source string, offset int, catalog CompletionCatalog) CompletionResult {
 	offset = max(0, min(offset, len(source)))
+	if catalog.Dialect == "cassandra" {
+		return completeCassandra(source, offset, catalog)
+	}
 	result := CompletionResult{Start: offset}
 	if len(source) > 256<<10 || offset < len(source) && !utf8.RuneStart(source[offset]) {
 		return result
@@ -498,6 +501,8 @@ func completionRank(kind string) int {
 func completionKeywords(dialect string) []string {
 	base := "SELECT FROM WHERE ORDER BY GROUP HAVING LIMIT OFFSET INSERT INTO VALUES UPDATE SET DELETE JOIN LEFT RIGHT INNER OUTER CROSS ON USING NULL IS AND OR NOT AS DISTINCT EXPLAIN CREATE ALTER DROP TABLE VIEW INDEX PRIMARY KEY FOREIGN REFERENCES UNIQUE DEFAULT CHECK CONSTRAINT BEGIN END WHEN THEN ELSE CASE UNION ALL ASC DESC EXISTS WITH RECURSIVE OVER PARTITION ROWS RANGE BETWEEN EXCEPT INTERSECT"
 	switch dialect {
+	case "cassandra":
+		base = "SELECT FROM WHERE ORDER BY GROUP LIMIT PER PARTITION INSERT INTO VALUES UPDATE SET DELETE USING TTL TIMESTAMP IF EXISTS NOT IN CONTAINS KEY ALLOW FILTERING DISTINCT AS AND NULL IS CREATE ALTER DROP KEYSPACE TABLE MATERIALIZED VIEW INDEX TYPE PRIMARY CLUSTERING WITH STATIC FROZEN LIST MAP TUPLE VECTOR BEGIN UNLOGGED COUNTER BATCH APPLY ASC DESC USE TRUNCATE JSON DEFAULT UNSET"
 	case "trino":
 		base = "SELECT FROM WHERE ORDER BY GROUP HAVING LIMIT OFFSET INSERT INTO VALUES UPDATE SET DELETE MERGE JOIN LEFT RIGHT INNER OUTER CROSS ON USING NULL IS AND OR NOT AS DISTINCT EXPLAIN CREATE ALTER DROP TABLE VIEW SCHEMA CATALOG WHEN THEN ELSE CASE UNION ALL ASC DESC EXISTS WITH OVER PARTITION ROWS RANGE BETWEEN EXCEPT INTERSECT SHOW DESCRIBE CATALOGS SCHEMAS TABLES COLUMNS USE SESSION PREPARE EXECUTE IMMEDIATE DEALLOCATE START TRANSACTION COMMIT ROLLBACK UNNEST ARRAY MAP ROW JSON DECIMAL BIGINT VARBINARY TIMESTAMP MATCH_RECOGNIZE"
 	case "dameng":
@@ -523,7 +528,7 @@ func completionReserved(name string) bool {
 
 var completionReservedWords = func() map[string]bool {
 	words := map[string]bool{}
-	for _, dialect := range []string{"mysql", "postgres", "sqlite", "tsql", "oracle", "duckdb", "dameng"} {
+	for _, dialect := range []string{"mysql", "postgres", "sqlite", "tsql", "oracle", "duckdb", "dameng", "cassandra"} {
 		for _, word := range completionKeywords(dialect) {
 			words[word] = true
 		}
@@ -557,6 +562,11 @@ func completionTokens(source, dialect string) []completionToken {
 				} else {
 					i++
 				}
+			}
+		case dialect == "cassandra" && strings.HasPrefix(source[i:], "//"):
+			t.protected = true
+			for i < len(source) && source[i] != '\n' {
+				i++
 			}
 		case strings.HasPrefix(source[i:], "--") && (!mysql || dialect == "clickhouse" || i+2 == len(source) || source[i+2] <= ' ') || mysql && source[i] == '#':
 			t.protected = true
@@ -610,7 +620,7 @@ func completionTokens(source, dialect string) []completionToken {
 				}
 			}
 		default:
-			if source[i] == '$' && (dialect == "postgres" || dialect == "clickhouse") {
+			if source[i] == '$' && (dialect == "postgres" || dialect == "clickhouse" || dialect == "cassandra") {
 				j := i + 1
 				for j < len(source) && (source[j] == '_' || source[j] >= 'a' && source[j] <= 'z' || source[j] >= 'A' && source[j] <= 'Z' || j > i+1 && source[j] >= '0' && source[j] <= '9') {
 					j++

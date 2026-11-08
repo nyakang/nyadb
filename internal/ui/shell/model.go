@@ -171,8 +171,11 @@ func (s *State) openQuery() {
 	database := ""
 	if s.profileMode {
 		initial = "-- 输入 SQL；点击运行后发送至当前连接\n"
-		if p, ok := s.currentProfile(); ok && (p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind == connections.DuckDB || p.Kind.IsRESTSearch() || p.Kind == connections.MongoDB || p.Kind == connections.Redis) {
+		if p, ok := s.currentProfile(); ok && (p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind == connections.DuckDB || p.Kind.IsRESTSearch() || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Cassandra) {
 			profileID = p.ID
+			if p.Kind == connections.Cassandra {
+				initial = "-- 输入 CQL；点击运行后发送至当前连接\n"
+			}
 			if p.Kind.IsRESTSearch() {
 				initial = "GET /"
 			}
@@ -191,6 +194,9 @@ func (s *State) openQuery() {
 		}
 	}
 	t := &tab{id: s.nextTabID, title: fmt.Sprintf("SQL %d", s.nextTabID-1), kind: tabSQL}
+	if s.sqlPlanEngine(profileID) == "cassandra" {
+		t.title = fmt.Sprintf("CQL %d", s.nextTabID-1)
+	}
 	if s.sessions.EngineKind(profileID).IsRESTSearch() {
 		t.title = fmt.Sprintf("REST %d", s.nextTabID-1)
 	}
@@ -242,7 +248,7 @@ func (s *State) dispatchToolbar(action string, services ui.Services) {
 		s.openConnectionDialog()
 	case "新建查询":
 		s.openQuery()
-	case "Core", "索引", "别名", "数据流", "键", "集合", "表", "视图", "函数", "查询":
+	case "Core", "索引", "别名", "数据流", "键", "集合", "表", "视图", "函数", "类型", "查询":
 		s.showObjects(action)
 	case "用户":
 		w := s.sessions.Current()
