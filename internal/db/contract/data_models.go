@@ -188,6 +188,9 @@ type DataEditOutcome struct {
 }
 
 type DataEditResult struct {
+	// Async preserves native admission separately from completion. Drafts must
+	// remain blocked until Verify explicitly observes this original admission.
+	Async                *DataWriteObservation
 	RefreshRequired      bool // Confirmed/recovered writes require a new provider-owned read snapshot.
 	Applied              int
 	CommitConfirmed      bool
@@ -198,9 +201,14 @@ type DataEditResult struct {
 	CommitUncertain bool
 }
 
+type DataWriteObservation struct {
+	Token, TaskID, Status string
+	ReceiptJSON, TaskJSON string
+}
+
 type DataVerification struct {
 	Recovered *DataEditResult
-	Status    string // applied | not_applied | indeterminate
+	Status    string // applied | not_applied | pending | indeterminate
 	States    []string
 }
 

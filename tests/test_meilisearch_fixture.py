@@ -11,6 +11,23 @@ SPEC.loader.exec_module(fixture)
 
 
 class MeilisearchFixtureTests(unittest.TestCase):
+    def test_data_writes_require_native_admission_readback_lifecycle_permissions_and_public_grid(self):
+        for mode in fixture.MODES:
+            names = fixture.required_passes(mode, data_writes=True)
+            self.assertTrue(set(fixture.required_passes(mode, public=True)).issubset(names))
+            expected = fixture.DATA_WRITES_REQUIRED + ([] if mode == 'anonymous' else [fixture.DATA_WRITES_SCOPED])
+            self.assertTrue(set(expected).issubset(names))
+            self.assertIn('./internal/ui/shell', fixture.test_command(mode, True, data_writes=True))
+            complete = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in names)
+            if mode == 'mtls':
+                complete += '\nnative mTLS accepted owned client certificate and rejected its absence'
+            fixture.check_acceptance(complete, mode, data_writes=True)
+            for name in expected:
+                with self.assertRaises(RuntimeError):
+                    fixture.check_acceptance(complete.replace('--- PASS: TestMeilisearchNative'+name, '--- SKIP: TestMeilisearchNative'+name), mode, data_writes=True)
+        for path in ['internal/services/meilisearch/data_write.go', 'internal/ui/dataworkspace/async_evidence.go', 'internal/ui/shell/meilisearch_data_write_integration_test.go']:
+            self.assertIn(path, fixture.source_hashes(data_writes=True))
+
     def test_public_key_panel_requires_permission_modes_lifecycle_and_native_core(self):
         for mode in fixture.MODES:
             names = fixture.required_passes(mode, key_panel=True)

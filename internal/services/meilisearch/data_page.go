@@ -14,7 +14,7 @@ import (
 type dataBoundary struct{ Epoch, Total uint64 }
 
 func documentColumns() []contract.StructureColumn {
-	return []contract.StructureColumn{{Name: "id", Type: "native_id", DataType: "json", ValueKind: contract.JSON, Key: "document_id", Position: 1, Comment: "Original native primary-key value"}, {Name: "document", Type: "json", DataType: "json", ValueKind: contract.JSON, Position: 2, Comment: "Complete original native JSON"}}
+	return []contract.StructureColumn{{Name: "id", Generated: true, Type: "native_id", DataType: "json", ValueKind: contract.JSON, Key: "document_id", Position: 1, Comment: "Original native primary-key value"}, {Name: "document", Type: "json", DataType: "json", ValueKind: contract.JSON, Position: 2, Comment: "Complete original native JSON"}}
 }
 func validateDataOptions(o contract.DataOptions) error {
 	_, err := dataSearchQuery(o)
@@ -121,7 +121,7 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 	if o.After != nil && total != boundary.Total {
 		return nil, contract.ErrDataConflict
 	}
-	editable := false
+	_, editable := l.primaryKey()
 	page := &contract.DataPage{Object: l.object, Database: db, Table: name, Columns: []string{"id", "document"}, ColumnKinds: []string{"json", "json"}, ColumnMetadata: documentColumns(), Editable: &editable, Offset: o.Offset, Limit: o.Limit, HasMore: more, PagingMode: "offset", LiveRead: true, StableOrder: false, QuerySQL: "GET /indexes/" + db + "/documents"}
 	page.Search = searchInfo
 	if searchInfo != nil {

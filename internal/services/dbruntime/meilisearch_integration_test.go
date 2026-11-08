@@ -49,7 +49,7 @@ func TestMeilisearchNativePublicProviderMetadataAndPublishedGenerations(t *testi
 	}
 	features := first.Capabilities()
 	data := m.Data(p.ID)
-	if !features.Query || features.Objects || !features.Metadata || !features.Documents || !features.Count || !features.FieldChunks || !features.Export || !features.JSONL || features.Keyset || features.EditableTables || data.Saver != nil {
+	if !features.Query || features.Objects || !features.Metadata || !features.Documents || !features.Count || !features.FieldChunks || !features.Export || !features.JSONL || features.Keyset || !features.EditableTables || data.Saver != nil {
 		t.Fatal("public runtime document or management capabilities")
 	}
 	if data.ReserveDocument == nil {
@@ -61,6 +61,9 @@ func TestMeilisearchNativePublicProviderMetadataAndPublishedGenerations(t *testi
 	}
 	defer document.Close()
 	originalData := document.Runtime()
+	if originalData.Saver == nil || originalData.Verify == nil || !originalData.AsyncWrites || !originalData.Capabilities.EditableTables {
+		t.Fatal("public async document binding missing")
+	}
 	if count, err := originalData.Count(ctx, p.ID, uid, "documents"); err != nil || count != 1 {
 		t.Fatal("original public document count", count, err)
 	}
@@ -122,6 +125,12 @@ func TestMeilisearchNativePublicProviderMetadataAndPublishedGenerations(t *testi
 	}
 	if _, err = lease.Replace(); !errors.Is(err, contract.ErrRevoked) {
 		t.Fatal("old replacement rebound", err)
+	}
+	if _, err = originalData.Saver(ctx, p.ID, uid, "documents", nil); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal("old write followed replacement", err)
+	}
+	if _, err = originalData.Verify(ctx, p.ID, uid, "documents", nil); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal("old observation followed replacement", err)
 	}
 	if _, err = originalData.Count(ctx, p.ID, uid, "documents"); !errors.Is(err, contract.ErrRevoked) {
 		t.Fatal("old document runtime rebound", err)

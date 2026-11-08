@@ -70,6 +70,9 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 		}
 	}
 	d.exportFormats = append([]string(nil), s.runtimeFor(d).ExportFormats...)
+	if s.runtimeFor(d).AsyncWrites {
+		d.edit.Batch = true
+	}
 	d.generation = s.sessionFor(d).Generation
 	d.filterModes = append([]string(nil), s.runtimeFor(d).FilterModes...)
 	if len(d.filterModes) > 0 {

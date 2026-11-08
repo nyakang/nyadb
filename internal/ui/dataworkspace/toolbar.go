@@ -49,6 +49,7 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 	disabled := t.closed || t.loading || t.edit.Busy || t.transfer.Busy || t.export.Busy
 	var profilesButton, fillButton, copyButton ui.Element
 	ui.Toolbar(c, func() {
+		s.asyncDataWriteActions(c, t)
 		if !t.portable() && !(t.capabilities.Documents || t.capabilities.KeyValues) {
 			profilesButton = mysqlDataToolbarButton(c, "表配置文件", locales.Text("表配置文件"), "design-table", page == nil).
 				Menu(func(m *ui.Menu) { s.profilesMenu(c, t, m) })

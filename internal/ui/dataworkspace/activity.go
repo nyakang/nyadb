@@ -30,6 +30,10 @@ func dataActivitySQL(entries []mysqlDataHistoryEntry) string {
 
 func dataActivityOutcome(err error, saved *contract.DataEditResult, expected int, pending bool) contract.ActivityResult {
 	out := contract.ActivityOutcome(err)
+	if err == nil && saved != nil && saved.Async != nil && !saved.CommitConfirmed {
+		out.State, out.AffectedRows = "pending", 0
+		return out
+	}
 	uncertain := saved != nil && saved.CommitUncertain
 	incomplete := saved == nil || saved.Incomplete || len(saved.Outcomes) != expected
 	if uncertain {

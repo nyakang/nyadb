@@ -359,7 +359,7 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *contract.DataP
 			if theme.IconButton(c, "", "minus").Label(locales.Text("删除记录")).Tooltip(locales.Text("删除记录")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!ready || !mysqlDataCanDeleteSelection(t, t.selectedRow)).Clicked() {
 				s.deleteMySQLDataRecords(c.Services(), t, t.selectedRow)
 			}
-			if theme.IconButton(c, "", "check").Label(locales.Text("保存数据更改")).Tooltip(locales.Text("保存数据更改")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!ready || !dirty || t.edit.Uncertain != nil).Clicked() {
+			if theme.IconButton(c, "", "check").Label(locales.Text("保存数据更改")).Tooltip(s.dataSaveTooltip(t)).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!ready || !dirty || t.edit.Uncertain != nil).Clicked() {
 				s.saveMySQLData(c.Services(), t)
 			}
 			if theme.IconButton(c, "", "close").Label(locales.Text("取消数据更改")).Tooltip(locales.Text("取消数据更改")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(t.loading || t.edit.Busy || !dirty || t.edit.Uncertain != nil).Clicked() {
@@ -386,7 +386,7 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *contract.DataP
 			if theme.IconButton(c, "", "redo").Label(locales.Text("重做草稿更改")).Tooltip(locales.Text("重做草稿更改")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!s.canDraftUndo(t, true)).Clicked() {
 				s.undoDraft(t, true)
 			}
-			ui.Checkbox(c, &t.edit.Batch, locales.Text("批量编辑")).Disabled(dirty || t.loading || t.edit.Busy || t.edit.Uncertain != nil).FontSize(theme.Font(c, theme.SmallFontSize))
+			ui.Checkbox(c, &t.edit.Batch, locales.Text("批量编辑")).Disabled(s.runtimeFor(t).AsyncWrites || dirty || t.loading || t.edit.Busy || t.edit.Uncertain != nil).FontSize(theme.Font(c, theme.SmallFontSize))
 			s.mysqlDataEditStatus(c, t)
 		})
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Shrink(0).Padding(2, 6).Gap(4).AlignItems(ui.Center).Children(func() {

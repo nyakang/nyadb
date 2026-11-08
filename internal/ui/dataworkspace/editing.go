@@ -57,6 +57,11 @@ type mysqlCellHit struct {
 	Control     ui.Handle
 }
 type mysqlDataEditState struct {
+	LastAsync                 *contract.DataWriteObservation
+	AsyncEvidenceOpen         bool
+	AsyncCloseOpen            bool
+	AsyncCloseApproved        bool
+	AsyncStatusActive         bool
 	Undo, Redo                []draftChange
 	historyGroup              int
 	Drafts                    map[string]*mysqlRowDraft
@@ -454,6 +459,11 @@ func (s *State) saveMySQLData(services ui.Services, t *Document) {
 	db, table := t.database, t.table
 	pending := t.transaction.token != nil
 	history := mysqlDataWriteHistoryRequest(db, table, edits, pending)
+	if runtime := s.runtimeFor(t); runtime.AsyncWrites {
+		for i := range history {
+			history[i].SQL, history[i].Summary = runtime.WriteDescription, true
+		}
+	}
 	complete := s.beginActivity(t, "data_write", dataActivitySQL(history))
 	go func() {
 		started := time.Now()
@@ -584,6 +594,7 @@ func (s *State) consumeEdits(services ui.Services) {
 			t.edit.Cancel = nil
 			t.edit.Results = nil
 			t.edit.Busy = false
+			t.edit.AsyncStatusActive = false
 			if r.Generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected {
 				t.edit.AfterSave = nil
 				t.edit.Err = locales.Text("原数据库会话已失效，请刷新表数据")
@@ -599,6 +610,25 @@ func (s *State) consumeEdits(services ui.Services) {
 					t.edit.Err = locales.Text("提交结果仍不确定，禁止重放；请检查数据库")
 				}
 				continue
+			}
+			if r.Err == nil && r.Saved != nil && r.Saved.Async != nil && !r.Saved.CommitConfirmed {
+				t.edit.AsyncStatusActive = true
+				t.edit.Uncertain = cloneEditResult(r.Saved)
+				observation := *r.Saved.Async
+				t.edit.LastAsync = &observation
+				t.edit.UncertainKeys = append([]string(nil), r.Keys...)
+				t.edit.AfterSave = nil
+				if s.guardDoc == t {
+					s.guardDoc = nil
+				}
+				t.edit.Err = asyncDataWriteStatus(r.Saved)
+				continue
+			}
+			if r.Verification != nil && r.Verification.Recovered != nil && r.Verification.Recovered.Async != nil {
+				t.edit.AsyncStatusActive = r.Err == nil
+				t.edit.Uncertain = cloneEditResult(r.Verification.Recovered)
+				observation := *r.Verification.Recovered.Async
+				t.edit.LastAsync = &observation
 			}
 			if r.Err != nil {
 				if errors.Is(r.Err, contract.ErrDataTransactionLost) {
@@ -647,6 +677,8 @@ func (s *State) consumeEdits(services ui.Services) {
 						s.closeDataTransaction(t)
 					}
 					t.edit.Err = locales.Text("已核验：更改未提交，草稿已保留")
+				} else if t.edit.Uncertain != nil && t.edit.Uncertain.Async != nil {
+					t.edit.Err = asyncDataWriteStatus(t.edit.Uncertain)
 				} else {
 					t.edit.Err = locales.Text("提交结果仍不确定，禁止重放；请检查数据库")
 				}
@@ -734,11 +766,15 @@ func (s *State) verifyMySQLDataSave(services ui.Services, t *Document) {
 // LeavePending is presentation state for a host that suspended its own modal.
 // It does not discard a draft or run a saved continuation.
 func (t *Document) LeavePending() bool {
-	return t != nil && !t.closed && (t.edit.LeaveOpen || t.edit.Busy || t.edit.SaveErrorOpen || t.transaction.leaveOpen || dataTransactionBusy(t) || t.transfer.LeaveOpen || t.transfer.Busy)
+	return t != nil && !t.closed && (t.edit.LeaveOpen || t.edit.AsyncCloseOpen || t.edit.Busy || t.edit.SaveErrorOpen || t.transaction.leaveOpen || dataTransactionBusy(t) || t.transfer.LeaveOpen || t.transfer.Busy)
 }
 
 func (s *State) GuardLeave(t *Document, next func(ui.Services)) bool {
 	if t == nil || t.closed {
+		return false
+	}
+	if t.edit.AsyncCloseApproved && !t.Busy() {
+		t.edit.AsyncCloseApproved = false
 		return false
 	}
 	if t.edit.Busy || t.edit.Uncertain != nil || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain {
@@ -898,6 +934,7 @@ func (s *State) Modals(c *ui.Context) {
 		if t.closed {
 			continue
 		}
+		s.asyncDataEvidenceModal(c, t)
 		s.toolsModals(c, t)
 		s.transferModals(c, t)
 		s.dataFillModal(c, t)
@@ -966,7 +1003,11 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 		ui.Spinner(c).Size(14, 14)
 	}
 	message, color := "", palette.Muted
-	if t.edit.Err != "" {
+	if t.edit.AsyncStatusActive && t.edit.Uncertain != nil {
+		message, color = asyncDataWriteStatus(t.edit.Uncertain), palette.Warning
+	} else if t.edit.AsyncStatusActive && t.edit.LastAsync != nil && !mysqlDataHasDraft(t) {
+		message = locales.Text("已核验：数据更改已提交")
+	} else if t.edit.Err != "" {
 		message, color = t.edit.Err, palette.Error
 	} else if t.transaction.err != "" {
 		message, color = t.transaction.err, palette.Error
@@ -974,6 +1015,8 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 		message = locales.Text("正在处理事务…")
 	} else if t.edit.Busy {
 		message = locales.Text("正在处理表数据…")
+	} else if s.runtimeFor(t).AsyncWrites {
+		message = locales.Text("异步文档写入：JSON 完整替换或删除；提交后请观察任务结果")
 	} else if mysqlDataHasDraft(t) {
 		message, color = locales.Text("有待保存的数据更改"), palette.Warning
 	} else if dataTransactionActive(t) {
@@ -982,9 +1025,22 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 	if message != "" {
 		ui.Text(c, message).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(color).SingleLine().Grow(1).MinWidth(0).Tooltip(message)
 	}
-	if t.edit.Err != "" && t.edit.Uncertain != nil && ui.Button(c, locales.Text("核验提交结果")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(t.edit.Busy).Clicked() {
+	if !s.runtimeFor(t).AsyncWrites && t.edit.Err != "" && t.edit.Uncertain != nil && ui.Button(c, locales.Text("核验提交结果")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(t.edit.Busy).Clicked() {
 		s.verifyMySQLDataSave(c.Services(), t)
 	}
+}
+
+func asyncDataWriteStatus(result *contract.DataEditResult) string {
+	if result == nil || result.Async == nil {
+		return locales.Text("提交结果仍不确定，禁止重放；请检查数据库")
+	}
+	status := locales.Text("任务已受理，尚未确认完成；草稿已保留，禁止重复提交")
+	if result.Async.Status == "failed" || result.Async.Status == "canceled" {
+		status = locales.Text("任务失败或已取消；草稿已保留，禁止重放，请检查任务证据")
+	} else if result.Async.Status == "succeeded" {
+		status = locales.Text("任务成功，但数据回读未能确认；草稿已保留，禁止重放")
+	}
+	return status + " · " + locales.Text("任务编号") + " " + result.Async.TaskID
 }
 
 func mysqlDataCellContains(bounds ui.Rect, x, y float32) bool {

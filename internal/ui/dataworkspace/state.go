@@ -23,6 +23,7 @@ type Verifier func(context.Context, int64, string, string, *contract.DataEditRes
 type Runtime = contract.DataRuntime
 
 type Dependencies struct {
+	CloseDocument     func(ui.Services, *Document)
 	NamespaceLabel    func(contract.NamespaceRef) string
 	EditFocus         *string
 	EditTarget        func(theme.EditTarget)

@@ -44,7 +44,7 @@ func (s *State) Cancel(t *Document) {
 	t.loading = false
 }
 func (s *State) Load(services ui.Services, t *Document, refresh bool) {
-	if t == nil || t.closed || t.transfer.Busy || t.transfer.Uncertain || dataTransactionUnavailable(t) || t.profileID != s.sessionFor(t).ProfileID ||
+	if t == nil || t.closed || t.edit.Busy || t.edit.Uncertain != nil || t.transfer.Busy || t.transfer.Uncertain || dataTransactionUnavailable(t) || t.profileID != s.sessionFor(t).ProfileID ||
 		!s.sessionFor(t).Connected || s.sessionFor(t).ProfileID <= 0 {
 		return
 	}

@@ -85,6 +85,9 @@ type DataSelector struct {
 // DataRuntime contains operation-bound functions. Workers capture this value
 // before starting; adapters must check the original session on every call.
 type DataRuntime struct {
+	// AsyncWrites requires explicit admission observation through Verify.
+	AsyncWrites      bool
+	WriteDescription string
 	ReserveDocument  func(ObjectRef) (DataDocumentLease, error)
 	ExportFormats    []string // nil preserves existing providers' format availability.
 	ImportDialect    string

@@ -68,6 +68,10 @@ func cloneEditResult(result *contract.DataEditResult) *contract.DataEditResult {
 		return nil
 	}
 	out := *result
+	if result.Async != nil {
+		observation := *result.Async
+		out.Async = &observation
+	}
 	out.Saved = cloneEdits(result.Saved)
 	out.Outcomes = append([]contract.DataEditOutcome(nil), result.Outcomes...)
 	for i := range out.Outcomes {

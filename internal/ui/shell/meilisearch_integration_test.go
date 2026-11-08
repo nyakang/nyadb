@@ -195,8 +195,8 @@ func TestMeilisearchNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t
 			t.Fatal("native documents did not open the qualified shared grid")
 		}
 		wait(func() bool { return !data.data.Busy() })
-		if data.data.Error() != "" || data.data.Page() == nil || data.data.Page().Editable == nil || *data.data.Page().Editable || data.data.Page().KeysetAvailable || !data.data.Page().LiveRead {
-			t.Fatal("native readonly OFFSET grid", data.data.Error())
+		if data.data.Error() != "" || data.data.Page() == nil || data.data.Page().Editable == nil || !*data.data.Page().Editable || data.data.Page().KeysetAvailable || !data.data.Page().LiveRead {
+			t.Fatal("native async JSON / OFFSET grid", data.data.Error())
 		}
 		documents = append(documents, data)
 	}
@@ -267,8 +267,8 @@ func TestMeilisearchNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t
 			t.Fatal("export wrapped or rounded original JSON")
 		}
 	}
-	if caps := s.objectCapabilitiesFor(p.ID); caps.EditableTables || caps.Import || caps.Transactions || caps.Keyset {
-		t.Fatal("readonly OFFSET grid inferred unsupported semantics")
+	if caps := s.objectCapabilitiesFor(p.ID); !caps.EditableTables || caps.Import || caps.Transactions || caps.Keyset {
+		t.Fatal("native async JSON binding or unsupported transaction/import semantics")
 	}
 	s.submitNavigation(services, navigation.DatabaseNode(p.ID, indexes[0]))
 	wait(func() bool { return w.Pending == "" })

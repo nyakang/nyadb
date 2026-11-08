@@ -284,6 +284,13 @@ func (s *State) recordDataWriteHistory(t *Document, entries []mysqlDataHistoryEn
 	if len(entries) == 0 {
 		return
 	}
+	if !stale && err == nil && result != nil && result.Async != nil && !result.CommitConfirmed {
+		for _, entry := range entries {
+			entry.Message, entry.Rows, entry.Failed = asyncDataWriteStatus(result), 0, false
+			s.appendDataHistory(t, entry)
+		}
+		return
+	}
 	uncertain := result != nil && result.CommitUncertain
 	incomplete := err == nil && (result == nil || len(result.Outcomes) != len(entries))
 	failed := err != nil || stale || incomplete || uncertain

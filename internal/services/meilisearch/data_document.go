@@ -17,6 +17,8 @@ var ErrDataTargetChanged = errors.New("Meilisearch original index observation ch
 
 type dataLease struct {
 	mu, pageMu      sync.Mutex
+	writeMu         sync.Mutex
+	write           *dataWrite
 	session         *Session
 	object          contract.ObjectRef
 	ctx             context.Context
@@ -36,7 +38,7 @@ type dataLease struct {
 	query           string
 }
 
-// ReserveDataDocument binds a readonly native document range to the original
+// ReserveDataDocument binds a native document range to the original
 // session. Reservation performs no I/O and never chooses a replacement session.
 func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
 	if err := s.checkNamespace(o.Namespace()); err != nil {
@@ -71,14 +73,15 @@ func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 }
 
 func nativeDataCapabilities() contract.Capabilities {
-	return contract.Capabilities{Documents: true, Metadata: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
+	return contract.Capabilities{Documents: true, EditableTables: true, Metadata: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
 }
 
 func (s *Session) DataDocumentCapabilities() contract.Capabilities { return nativeDataCapabilities() }
 func (l *dataLease) Runtime() contract.DataRuntime {
-	return contract.DataRuntime{Capabilities: nativeDataCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
-		Selector:      contract.DataSelector{Dialect: "meilisearch", Column: "document", Mode: "meilisearch_search", Validate: validateSearchSelector},
-		FilterColumns: []string{}, SortColumns: []string{},
+	return contract.DataRuntime{Capabilities: nativeDataCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl, Saver: l.save, Verify: l.verifyWrite, AsyncWrites: true,
+		WriteDescription: "POST /indexes/" + l.object.Catalog + "/documents (JSON replacement) or /documents/delete-batch; asynchronous admission; preflight is not atomic compare-and-swap",
+		Selector:         contract.DataSelector{Dialect: "meilisearch", Column: "document", Mode: "meilisearch_search", Validate: validateSearchSelector},
+		FilterColumns:    []string{}, SortColumns: []string{},
 		ReadDescription: func(o contract.DataOptions) string {
 			if o.FilterMode == "meilisearch_search" {
 				return "POST /indexes/" + l.object.Catalog + "/search"
@@ -171,7 +174,7 @@ func (l *dataLease) markChanged() {
 }
 
 // Index creation and primary-key observations are not atomic incarnation guards.
-// Data stays readonly; unobserved recreation and concurrent mutations remain possible.
+// Unobserved recreation and concurrent mutations remain possible.
 func (l *dataLease) guard(ctx context.Context, c *Client) ([]byte, error) {
 	info, err := readIndex(ctx, c, l.object.Catalog)
 	if err != nil {
@@ -238,6 +241,7 @@ func (l *dataLease) Close() error {
 	l.primary = ""
 	l.total = 0
 	l.query = ""
+	l.write = nil
 	l.mu.Unlock()
 	l.session.mu.Lock()
 	delete(l.session.documents, l)

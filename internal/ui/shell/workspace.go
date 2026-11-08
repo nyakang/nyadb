@@ -252,6 +252,14 @@ func (s *State) dataWorkspaceDependencies() dataworkspace.Dependencies {
 				}
 			}
 		},
+		CloseDocument: func(_ ui.Services, d *dataworkspace.Document) {
+			for _, t := range s.tabs {
+				if t.data == d {
+					s.closeTabID(t.id)
+					return
+				}
+			}
+		},
 	}
 }
 func (s *State) SetDataLayoutPreferences(read func(string) (string, error), write func(string, string) error) {

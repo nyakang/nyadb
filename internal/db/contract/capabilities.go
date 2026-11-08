@@ -4,7 +4,7 @@ package contract
 // no executor. It never reserves another lease or opens a server resource.
 func BoundDataCapabilities(r DataRuntime) Capabilities {
 	c := r.Capabilities
-	c.EditableTables = c.EditableTables && r.Saver != nil
+	c.EditableTables = c.EditableTables && r.Saver != nil && (!r.AsyncWrites || r.Verify != nil)
 	c.Transactions = c.Transactions && r.Transactions.Begin != nil && r.Transactions.Commit != nil && r.Transactions.Rollback != nil
 	c.Keyset = c.Keyset && r.AdvancedLoader != nil
 	c.Count = c.Count && r.Count != nil

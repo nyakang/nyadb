@@ -25465,3 +25465,183 @@ func MeilisearchKeysDeleteConfirmation() string {
 func (msgs Messages) MeilisearchKeysDeleteConfirmation() string {
 	return Catalog.Format(msgs.locale, "meilisearchKeysDeleteConfirmation", nil)
 }
+
+// DataAsyncWritecefd56838b says "异步文档写入：JSON 完整替换或删除；提交后请观察任务结果"
+// in the language the app shows.
+func DataAsyncWritecefd56838b() string { return In(i18n.Locale()).DataAsyncWritecefd56838b() }
+
+// DataAsyncWritecefd56838b says "异步文档写入：JSON 完整替换或删除；提交后请观察任务结果"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWritecefd56838b() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWritecefd56838b", nil)
+}
+
+// DataAsyncWrite432c584743 says "观察任务结果"
+// in the language the app shows.
+func DataAsyncWrite432c584743() string { return In(i18n.Locale()).DataAsyncWrite432c584743() }
+
+// DataAsyncWrite432c584743 says "观察任务结果"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWrite432c584743() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWrite432c584743", nil)
+}
+
+// DataAsyncWrite1e729089f4 says "任务已受理，尚未确认完成；草稿已保留，禁止重复提交"
+// in the language the app shows.
+func DataAsyncWrite1e729089f4() string { return In(i18n.Locale()).DataAsyncWrite1e729089f4() }
+
+// DataAsyncWrite1e729089f4 says "任务已受理，尚未确认完成；草稿已保留，禁止重复提交"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWrite1e729089f4() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWrite1e729089f4", nil)
+}
+
+// DataAsyncWritea845582c07 says "任务失败或已取消；草稿已保留，禁止重放，请检查任务证据"
+// in the language the app shows.
+func DataAsyncWritea845582c07() string { return In(i18n.Locale()).DataAsyncWritea845582c07() }
+
+// DataAsyncWritea845582c07 says "任务失败或已取消；草稿已保留，禁止重放，请检查任务证据"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWritea845582c07() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWritea845582c07", nil)
+}
+
+// DataAsyncWrite73d58b1d06 says "任务成功，但数据回读未能确认；草稿已保留，禁止重放"
+// in the language the app shows.
+func DataAsyncWrite73d58b1d06() string { return In(i18n.Locale()).DataAsyncWrite73d58b1d06() }
+
+// DataAsyncWrite73d58b1d06 says "任务成功，但数据回读未能确认；草稿已保留，禁止重放"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWrite73d58b1d06() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWrite73d58b1d06", nil)
+}
+
+// DataAsyncWrite160691af2a says "任务编号"
+// in the language the app shows.
+func DataAsyncWrite160691af2a() string { return In(i18n.Locale()).DataAsyncWrite160691af2a() }
+
+// DataAsyncWrite160691af2a says "任务编号"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWrite160691af2a() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWrite160691af2a", nil)
+}
+
+// DataAsyncWrited42ffe515c says "写入任务证据"
+// in the language the app shows.
+func DataAsyncWrited42ffe515c() string { return In(i18n.Locale()).DataAsyncWrited42ffe515c() }
+
+// DataAsyncWrited42ffe515c says "写入任务证据"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWrited42ffe515c() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWrited42ffe515c", nil)
+}
+
+// DataAsyncWriteb34e38a11a says "任务证据预览已截断；可复制完整内容"
+// in the language the app shows.
+func DataAsyncWriteb34e38a11a() string { return In(i18n.Locale()).DataAsyncWriteb34e38a11a() }
+
+// DataAsyncWriteb34e38a11a says "任务证据预览已截断；可复制完整内容"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWriteb34e38a11a() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWriteb34e38a11a", nil)
+}
+
+// DataAsyncWritebd9de9b5df says "…"
+// in the language the app shows.
+func DataAsyncWritebd9de9b5df() string { return In(i18n.Locale()).DataAsyncWritebd9de9b5df() }
+
+// DataAsyncWritebd9de9b5df says "…"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWritebd9de9b5df() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWritebd9de9b5df", nil)
+}
+
+// DataAsyncWritecc53343ecd says "原写入任务受理 JSON"
+// in the language the app shows.
+func DataAsyncWritecc53343ecd() string { return In(i18n.Locale()).DataAsyncWritecc53343ecd() }
+
+// DataAsyncWritecc53343ecd says "原写入任务受理 JSON"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWritecc53343ecd() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWritecc53343ecd", nil)
+}
+
+// DataAsyncWritea98b363e75 says "原写入任务观察 JSON"
+// in the language the app shows.
+func DataAsyncWritea98b363e75() string { return In(i18n.Locale()).DataAsyncWritea98b363e75() }
+
+// DataAsyncWritea98b363e75 says "原写入任务观察 JSON"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWritea98b363e75() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWritea98b363e75", nil)
+}
+
+// DataAsyncWritedb96e21eb2 says "复制写入任务受理"
+// in the language the app shows.
+func DataAsyncWritedb96e21eb2() string { return In(i18n.Locale()).DataAsyncWritedb96e21eb2() }
+
+// DataAsyncWritedb96e21eb2 says "复制写入任务受理"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWritedb96e21eb2() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWritedb96e21eb2", nil)
+}
+
+// DataAsyncWrite87d1f9e8fa says "复制写入任务观察"
+// in the language the app shows.
+func DataAsyncWrite87d1f9e8fa() string { return In(i18n.Locale()).DataAsyncWrite87d1f9e8fa() }
+
+// DataAsyncWrite87d1f9e8fa says "复制写入任务观察"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWrite87d1f9e8fa() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWrite87d1f9e8fa", nil)
+}
+
+// DataAsyncWrite54dc33d016 says "关闭待核验文档"
+// in the language the app shows.
+func DataAsyncWrite54dc33d016() string { return In(i18n.Locale()).DataAsyncWrite54dc33d016() }
+
+// DataAsyncWrite54dc33d016 says "关闭待核验文档"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWrite54dc33d016() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWrite54dc33d016", nil)
+}
+
+// DataAsyncWrited1edf40b72 says "关闭原写入文档？"
+// in the language the app shows.
+func DataAsyncWrited1edf40b72() string { return In(i18n.Locale()).DataAsyncWrited1edf40b72() }
+
+// DataAsyncWrited1edf40b72 says "关闭原写入文档？"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWrited1edf40b72() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWrited1edf40b72", nil)
+}
+
+// DataAsyncWrite3dde5f7e5a says "…"
+// in the language the app shows.
+func DataAsyncWrite3dde5f7e5a() string { return In(i18n.Locale()).DataAsyncWrite3dde5f7e5a() }
+
+// DataAsyncWrite3dde5f7e5a says "…"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWrite3dde5f7e5a() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWrite3dde5f7e5a", nil)
+}
+
+// DataAsyncWrite287f22d929 says "关闭并放弃本地草稿与证据"
+// in the language the app shows.
+func DataAsyncWrite287f22d929() string { return In(i18n.Locale()).DataAsyncWrite287f22d929() }
+
+// DataAsyncWrite287f22d929 says "关闭并放弃本地草稿与证据"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWrite287f22d929() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWrite287f22d929", nil)
+}
+
+// DataAsyncWrite2ab684fbf9 says "继续观察"
+// in the language the app shows.
+func DataAsyncWrite2ab684fbf9() string { return In(i18n.Locale()).DataAsyncWrite2ab684fbf9() }
+
+// DataAsyncWrite2ab684fbf9 says "继续观察"
+// in the language of msgs.
+func (msgs Messages) DataAsyncWrite2ab684fbf9() string {
+	return Catalog.Format(msgs.locale, "dataAsyncWrite2ab684fbf9", nil)
+}
