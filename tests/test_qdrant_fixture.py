@@ -158,6 +158,23 @@ class QdrantFixtureTests(unittest.TestCase):
                 with self.assertRaises(RuntimeError):
                     fixture.check_acceptance(changed, session=True)
 
+    def test_public_collection_management_requires_original_runtime_native_evidence(self):
+        name = 'PublicCollectionManagementOriginalGenerationClaimsReceiptAndNoReplay'
+        self.assertIn(name, fixture.PUBLIC_REQUIRED)
+        names = fixture.REQUIRED + fixture.PROFILE_REQUIRED + fixture.SESSION_REQUIRED + fixture.PUBLIC_REQUIRED
+        log = '\n'.join('--- PASS: TestQdrantNative'+case+' (0.1s)' for case in names)
+        fixture.check_acceptance(log, public=True)
+        with self.assertRaises(RuntimeError):
+            fixture.check_acceptance(log.replace('--- PASS: TestQdrantNative'+name, '--- SKIP: TestQdrantNative'+name), public=True)
+        paths = fixture.source_hashes(profile=True)
+        for path in ['internal/db/contract/collection_management.go',
+                     'internal/services/qdrant/collection_management.go',
+                     'internal/services/qdrant/collection_management_test.go',
+                     'internal/services/dbruntime/collection_management.go',
+                     'internal/services/dbruntime/collection_management_test.go',
+                     'internal/services/dbruntime/qdrant_collection_management_integration_test.go']:
+            self.assertIn(path, paths)
+
     def test_session_evidence_covers_original_leases_and_typed_response_completion(self):
         paths = fixture.source_hashes(profile=True)
         for name in ['internal/services/qdrant/session.go', 'internal/services/qdrant/query.go',

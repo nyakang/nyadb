@@ -54,6 +54,7 @@ SESSION_REQUIRED = (
     'SessionTypedPostReadLossIsInterruptedWithoutReplay',
 )
 PUBLIC_REQUIRED = (
+    'PublicCollectionManagementOriginalGenerationClaimsReceiptAndNoReplay',
     'PublicProviderMetadataAndPublishedGenerations',
     'PublicReadOnlyProviderDenialAndOriginalRecovery',
     'RESTLostWriteCancelAndExplicitRecovery',
