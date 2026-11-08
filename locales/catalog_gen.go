@@ -22664,11 +22664,11 @@ func (msgs Messages) CouchdbNativeJSONDefinition() string {
 	return Catalog.Format(msgs.locale, "couchdbNativeJSONDefinition", nil)
 }
 
-// CouchdbURISupport says "支持关系数据库、MongoDB、Redis、Elasticsearch、Easysearch、Solr 和 CouchDB URI…"
+// CouchdbURISupport says "支持关系数据库、MongoDB、Redis、Elasticsearch、Easysearch、Solr、CouchDB 和 Meilisearch URI…"
 // in the language the app shows.
 func CouchdbURISupport() string { return In(i18n.Locale()).CouchdbURISupport() }
 
-// CouchdbURISupport says "支持关系数据库、MongoDB、Redis、Elasticsearch、Easysearch、Solr 和 CouchDB URI…"
+// CouchdbURISupport says "支持关系数据库、MongoDB、Redis、Elasticsearch、Easysearch、Solr、CouchDB 和 Meilisearch URI…"
 // in the language of msgs.
 func (msgs Messages) CouchdbURISupport() string {
 	return Catalog.Format(msgs.locale, "couchdbURISupport", nil)
@@ -22996,4 +22996,180 @@ func MeilisearchKeyInvalid() string { return In(i18n.Locale()).MeilisearchKeyInv
 // in the language of msgs.
 func (msgs Messages) MeilisearchKeyInvalid() string {
 	return Catalog.Format(msgs.locale, "meilisearchKeyInvalid", nil)
+}
+
+// MeilisearchSessionAPIKey says "Meilisearch 会话 API key"
+// in the language the app shows.
+func MeilisearchSessionAPIKey() string { return In(i18n.Locale()).MeilisearchSessionAPIKey() }
+
+// MeilisearchSessionAPIKey says "Meilisearch 会话 API key"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSessionAPIKey() string {
+	return Catalog.Format(msgs.locale, "meilisearchSessionAPIKey", nil)
+}
+
+// MeilisearchRunREST says "运行 Meilisearch REST 请求"
+// in the language the app shows.
+func MeilisearchRunREST() string { return In(i18n.Locale()).MeilisearchRunREST() }
+
+// MeilisearchRunREST says "运行 Meilisearch REST 请求"
+// in the language of msgs.
+func (msgs Messages) MeilisearchRunREST() string {
+	return Catalog.Format(msgs.locale, "meilisearchRunREST", nil)
+}
+
+// MeilisearchRESTEditor says "Meilisearch REST 编辑器"
+// in the language the app shows.
+func MeilisearchRESTEditor() string { return In(i18n.Locale()).MeilisearchRESTEditor() }
+
+// MeilisearchRESTEditor says "Meilisearch REST 编辑器"
+// in the language of msgs.
+func (msgs Messages) MeilisearchRESTEditor() string {
+	return Catalog.Format(msgs.locale, "meilisearchRESTEditor", nil)
+}
+
+// MeilisearchEnterREST says "请输入 Meilisearch REST 请求"
+// in the language the app shows.
+func MeilisearchEnterREST() string { return In(i18n.Locale()).MeilisearchEnterREST() }
+
+// MeilisearchEnterREST says "请输入 Meilisearch REST 请求"
+// in the language of msgs.
+func (msgs Messages) MeilisearchEnterREST() string {
+	return Catalog.Format(msgs.locale, "meilisearchEnterREST", nil)
+}
+
+// MeilisearchExecutingREST says "正在执行 Meilisearch REST 请求"
+// in the language the app shows.
+func MeilisearchExecutingREST() string { return In(i18n.Locale()).MeilisearchExecutingREST() }
+
+// MeilisearchExecutingREST says "正在执行 Meilisearch REST 请求"
+// in the language of msgs.
+func (msgs Messages) MeilisearchExecutingREST() string {
+	return Catalog.Format(msgs.locale, "meilisearchExecutingREST", nil)
+}
+
+// MeilisearchNativeRESTHint says "Meilisearch 请使用原生 REST API"
+// in the language the app shows.
+func MeilisearchNativeRESTHint() string { return In(i18n.Locale()).MeilisearchNativeRESTHint() }
+
+// MeilisearchNativeRESTHint says "Meilisearch 请使用原生 REST API"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNativeRESTHint() string {
+	return Catalog.Format(msgs.locale, "meilisearchNativeRESTHint", nil)
+}
+
+// MeilisearchReadonlyDefinition says "Meilisearch 原生定义（只读）"
+// in the language the app shows.
+func MeilisearchReadonlyDefinition() string { return In(i18n.Locale()).MeilisearchReadonlyDefinition() }
+
+// MeilisearchReadonlyDefinition says "Meilisearch 原生定义（只读）"
+// in the language of msgs.
+func (msgs Messages) MeilisearchReadonlyDefinition() string {
+	return Catalog.Format(msgs.locale, "meilisearchReadonlyDefinition", nil)
+}
+
+// MeilisearchNativeJSONDefinition says "Meilisearch 原生 JSON 定义"
+// in the language the app shows.
+func MeilisearchNativeJSONDefinition() string {
+	return In(i18n.Locale()).MeilisearchNativeJSONDefinition()
+}
+
+// MeilisearchNativeJSONDefinition says "Meilisearch 原生 JSON 定义"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNativeJSONDefinition() string {
+	return Catalog.Format(msgs.locale, "meilisearchNativeJSONDefinition", nil)
+}
+
+// MeilisearchViewDefinition says "查看 Meilisearch 原生定义"
+// in the language the app shows.
+func MeilisearchViewDefinition() string { return In(i18n.Locale()).MeilisearchViewDefinition() }
+
+// MeilisearchViewDefinition says "查看 Meilisearch 原生定义"
+// in the language of msgs.
+func (msgs Messages) MeilisearchViewDefinition() string {
+	return Catalog.Format(msgs.locale, "meilisearchViewDefinition", nil)
+}
+
+// MeilisearchIndexInformation says "索引信息"
+// in the language the app shows.
+func MeilisearchIndexInformation() string { return In(i18n.Locale()).MeilisearchIndexInformation() }
+
+// MeilisearchIndexInformation says "索引信息"
+// in the language of msgs.
+func (msgs Messages) MeilisearchIndexInformation() string {
+	return Catalog.Format(msgs.locale, "meilisearchIndexInformation", nil)
+}
+
+// MeilisearchIndexSettings says "索引设置"
+// in the language the app shows.
+func MeilisearchIndexSettings() string { return In(i18n.Locale()).MeilisearchIndexSettings() }
+
+// MeilisearchIndexSettings says "索引设置"
+// in the language of msgs.
+func (msgs Messages) MeilisearchIndexSettings() string {
+	return Catalog.Format(msgs.locale, "meilisearchIndexSettings", nil)
+}
+
+// MeilisearchIndexStatistics says "索引统计"
+// in the language the app shows.
+func MeilisearchIndexStatistics() string { return In(i18n.Locale()).MeilisearchIndexStatistics() }
+
+// MeilisearchIndexStatistics says "索引统计"
+// in the language of msgs.
+func (msgs Messages) MeilisearchIndexStatistics() string {
+	return Catalog.Format(msgs.locale, "meilisearchIndexStatistics", nil)
+}
+
+// MeilisearchOpenIndexPrompt says "双击打开索引"
+// in the language the app shows.
+func MeilisearchOpenIndexPrompt() string { return In(i18n.Locale()).MeilisearchOpenIndexPrompt() }
+
+// MeilisearchOpenIndexPrompt says "双击打开索引"
+// in the language of msgs.
+func (msgs Messages) MeilisearchOpenIndexPrompt() string {
+	return Catalog.Format(msgs.locale, "meilisearchOpenIndexPrompt", nil)
+}
+
+// MeilisearchDocumentGridUnavailable says "文档网格暂不可用；可在 REST 编辑器中读取文档。"
+// in the language the app shows.
+func MeilisearchDocumentGridUnavailable() string {
+	return In(i18n.Locale()).MeilisearchDocumentGridUnavailable()
+}
+
+// MeilisearchDocumentGridUnavailable says "文档网格暂不可用；可在 REST 编辑器中读取文档。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchDocumentGridUnavailable() string {
+	return Catalog.Format(msgs.locale, "meilisearchDocumentGridUnavailable", nil)
+}
+
+// NativeTaskEnqueuedUnconfirmed says "任务已接收，尚未确认完成"
+// in the language the app shows.
+func NativeTaskEnqueuedUnconfirmed() string { return In(i18n.Locale()).NativeTaskEnqueuedUnconfirmed() }
+
+// NativeTaskEnqueuedUnconfirmed says "任务已接收，尚未确认完成"
+// in the language of msgs.
+func (msgs Messages) NativeTaskEnqueuedUnconfirmed() string {
+	return Catalog.Format(msgs.locale, "nativeTaskEnqueuedUnconfirmed", nil)
+}
+
+// NativeTaskEnqueuedDuration says "任务已接收，尚未确认完成 · %s"
+// in the language the app shows.
+func NativeTaskEnqueuedDuration() string { return In(i18n.Locale()).NativeTaskEnqueuedDuration() }
+
+// NativeTaskEnqueuedDuration says "任务已接收，尚未确认完成 · %s"
+// in the language of msgs.
+func (msgs Messages) NativeTaskEnqueuedDuration() string {
+	return Catalog.Format(msgs.locale, "nativeTaskEnqueuedDuration", nil)
+}
+
+// NativeTaskEnqueuedPresentationFailed says "任务已接收，尚未确认完成；结果显示失败："
+// in the language the app shows.
+func NativeTaskEnqueuedPresentationFailed() string {
+	return In(i18n.Locale()).NativeTaskEnqueuedPresentationFailed()
+}
+
+// NativeTaskEnqueuedPresentationFailed says "任务已接收，尚未确认完成；结果显示失败："
+// in the language of msgs.
+func (msgs Messages) NativeTaskEnqueuedPresentationFailed() string {
+	return Catalog.Format(msgs.locale, "nativeTaskEnqueuedPresentationFailed", nil)
 }

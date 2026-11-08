@@ -196,6 +196,11 @@ func sessionNamespaces(ctx context.Context, s contract.Session) ([]string, error
 	return out, nil
 }
 func (s *State) engineLabel(w *Workspace) string {
+	if w.Kind.IsREST() {
+		if descriptor, ok := connections.Describe(w.Kind); ok {
+			return descriptor.Label
+		}
+	}
 	if w.Kind == connections.Cassandra {
 		return "Apache Cassandra"
 	}

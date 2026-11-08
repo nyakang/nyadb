@@ -8,7 +8,7 @@ import (
 
 func TestNavicatObservedTreeGroupHierarchy(t *testing.T) {
 	s := New()
-	if got := s.catalogTreeDirect(); len(got) != 25 {
+	if got := s.catalogTreeDirect(); len(got) != 26 {
 		t.Fatalf("database rows including CouchDB; got %d", len(got))
 	}
 	groups := s.catalogTreeGroups()
@@ -42,6 +42,8 @@ func TestNavicatObservedTreeExpansionAndSelection(t *testing.T) {
 	if !s.treeOpen["华为"] || s.treeOpen["阿里云"] {
 		t.Fatal("expand toggled wrong vendor")
 	}
+	tt.Scroll(450, 450, 0, 120)
+	tt.Frame()
 	if err := tt.Click("选择 华为云 GaussDB 主备版"); err != nil {
 		t.Fatal(err)
 	}

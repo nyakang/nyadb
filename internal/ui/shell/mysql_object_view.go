@@ -3,9 +3,11 @@ package shell
 import (
 	"github.com/egoist/mygo/ui"
 
+	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
+	"github.com/nyakang/nyadb/locales"
 )
 
 func (s *State) selectMySQLDatabase(services ui.Services, database string) {
@@ -123,6 +125,10 @@ func (s *State) openMySQLProgram(database, name, kind string) {
 
 func (s *State) openMySQLData(services ui.Services, database, table string) {
 	w := s.sessions.Current()
+	if w.Kind == connections.Meilisearch && !s.objectCapabilitiesFor(w.ProfileID).Documents {
+		s.status = locales.Text("文档网格暂不可用；可在 REST 编辑器中读取文档。")
+		return
+	}
 	if w.Status != "已连接" || w.ProfileID <= 0 || !validStructureSelection(database, table) {
 		return
 	}

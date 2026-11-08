@@ -5,6 +5,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/locales"
 
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 )
@@ -137,6 +138,10 @@ func (s *State) openObject(services ui.Services, db, name, kind string) {
 	s.openObjectFor(services, s.session().ProfileID, db, name, kind)
 }
 func (s *State) openObjectFor(services ui.Services, profileID int64, db, name, kind string) {
+	if !s.canOpenObject(profileID, kind) {
+		s.report(locales.Text("文档网格暂不可用；可在 REST 编辑器中读取文档。"))
+		return
+	}
 	if NativeDefinitionKind(kind) {
 		if s.deps.OpenStructure != nil {
 			s.deps.OpenStructure(services, profileID, db, name)
@@ -150,6 +155,10 @@ func (s *State) openObjectFor(services ui.Services, profileID int64, db, name, k
 	} else if s.deps.OpenData != nil {
 		s.deps.OpenData(services, profileID, db, name)
 	}
+}
+
+func (s *State) canOpenObject(profileID int64, kind string) bool {
+	return s.deps.Engine == nil || s.deps.Engine(profileID) != "meilisearch" || kind != "文档" || s.capabilities(profileID).Documents
 }
 func (s *State) openData(services ui.Services, db, name string) {
 	if s.deps.OpenData != nil {

@@ -56,7 +56,7 @@ func (k Kind) IsGaussFamily() bool { return k == OpenGauss || k == GaussDB }
 func (k Kind) IsRESTSearch() bool { return k == Elasticsearch || k == Easysearch || k == Solr }
 
 // IsREST selects native request presentation while preserving product families.
-func (k Kind) IsREST() bool { return k.IsRESTSearch() || k == CouchDB }
+func (k Kind) IsREST() bool { return k.IsRESTSearch() || k == CouchDB || k == Meilisearch }
 
 var (
 	ErrNotFound = errors.New("connection profile not found")

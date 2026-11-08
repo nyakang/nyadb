@@ -60,7 +60,7 @@ func (s *State) OpenObjectSearch(profile int64) {
 		s.search = &objectSearchState{profile: profile, generation: s.sessionFor(profile).Generation, kind: "全部", scope: "", mode: "contains", row: -1}
 	}
 	runtime, _ := s.deps.SearchRuntime(profile)
-	s.search.canFields = runtime.TableMetadata != nil
+	s.search.canFields = runtime.TableMetadata != nil && (s.deps.Engine == nil || s.deps.Engine(profile) != "meilisearch")
 	if !s.search.canFields {
 		s.search.fields = false
 	}
@@ -210,6 +210,16 @@ func runObjectSearch(ctx context.Context, runtime ObjectSearchRuntime, request o
 				continue
 			}
 			object.Ref = ref
+			if request.definitions && object.Definition == "" && (kind == "settings" || kind == "statistics") && runtime.TableMetadata != nil {
+				metadata, e := runtime.TableMetadata(ctx, ref)
+				if e != nil {
+					issue(e)
+				} else if metadata != nil && metadata.Object != (contract.ObjectRef{}) && metadata.Object != ref {
+					issue(contract.ErrRevoked)
+				} else if metadata != nil {
+					object.Definition = metadata.Definition
+				}
+			}
 			add := func(field, match string) {
 				if limited {
 					return
@@ -284,6 +294,12 @@ func searchObjectKind(kind string) string {
 	switch kind {
 	case "文档":
 		return "documents"
+	case "索引信息":
+		return "index"
+	case "索引设置":
+		return "settings"
+	case "索引统计":
+		return "statistics"
 	case "数据库信息":
 		return "database"
 	case "设计文档":

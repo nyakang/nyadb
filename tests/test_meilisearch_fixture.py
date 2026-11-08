@@ -11,6 +11,19 @@ SPEC.loader.exec_module(fixture)
 
 
 class MeilisearchFixtureTests(unittest.TestCase):
+    def test_public_acceptance_requires_all_native_layers_and_scoped_ui(self):
+        for mode in fixture.MODES:
+            names = fixture.required_passes(mode, public=True)
+            for name in fixture.PROFILE_REQUIRED + fixture.SESSION_REQUIRED + fixture.PUBLIC_REQUIRED:
+                self.assertIn(name, names)
+            self.assertEqual(fixture.PUBLIC_SCOPED in names, mode != 'anonymous')
+            command = fixture.test_command(mode, True, public=True)
+            for package in ['./internal/ui/connectioneditor', './internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell']:
+                self.assertIn(package, command)
+            log = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in fixture.required_passes(mode, True, True))
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(log, mode, public=True)
+
     def test_session_acceptance_requires_original_lifecycle_and_native_permissions(self):
         for mode in fixture.MODES:
             names = fixture.required_passes(mode, session=True)

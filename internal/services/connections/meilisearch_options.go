@@ -69,8 +69,8 @@ func MeilisearchProfileConfig(p Profile) (MeilisearchConfig, error) {
 	return NormalizeMeilisearchConfig(MeilisearchConfig{Endpoint: scheme + "://" + net.JoinHostPort(p.Host, strconv.Itoa(int(p.Port))) + o.ContextPath, Auth: o.Auth, IndexUID: o.IndexUID, CAFile: o.CAFile, ServerName: o.ServerName, ClientCertFile: o.ClientCertFile, ClientKeyFile: o.ClientKeyFile, ConnectTimeoutSeconds: o.ConnectTimeoutSeconds, RequestTimeoutSeconds: o.RequestTimeoutSeconds})
 }
 
-// ParseMeilisearchURI is private until public provider acceptance. It performs
-// no network, file or vault operations. API keys remain temporary credentials.
+// ParseMeilisearchURI performs no network, file or vault operations. API keys
+// remain temporary credentials outside the public profile.
 func ParseMeilisearchURI(raw string) (URIImport, error) {
 	fail := func() (URIImport, error) { return URIImport{}, ErrURIOptions }
 	raw = strings.TrimSpace(raw)

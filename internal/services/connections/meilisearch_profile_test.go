@@ -11,13 +11,13 @@ import (
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
-func TestMeilisearchPrivateProfileScopeTLSDeadlinesAndFamily(t *testing.T) {
+func TestMeilisearchPublicProfileScopeTLSDeadlinesAndFamily(t *testing.T) {
 	p, err := connections.Defaults(connections.Meilisearch)
-	if err != nil || p.Port != 7700 || p.TLSMode != "disable" || p.MeilisearchOptions.Auth != "none" || p.Username != "" || p.Database != "" || p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind.IsREST() {
+	if err != nil || p.Port != 7700 || p.TLSMode != "disable" || p.MeilisearchOptions.Auth != "none" || p.Username != "" || p.Database != "" || p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || !p.Kind.IsREST() || p.Kind.IsRESTSearch() {
 		t.Fatal("private defaults/family inflated", err)
 	}
-	if _, registered := connections.Describe(p.Kind); registered {
-		t.Fatal("private foundation published product before provider")
+	if d, registered := connections.Describe(p.Kind); !registered || d.Dialect != "meilisearch" || d.ClientFamily != "meilisearch" || !d.Capabilities.Query || !d.Capabilities.Metadata || !d.Capabilities.Objects || d.Capabilities.Documents || d.Capabilities.EditableTables || d.Capabilities.Export {
+		t.Fatal("public Meilisearch capabilities differ from verified provider")
 	}
 	p.Name, p.Host, p.TLSMode = "native", "::1", "verify-full"
 	o := &p.MeilisearchOptions
@@ -49,7 +49,7 @@ func TestMeilisearchPrivateProfileScopeTLSDeadlinesAndFamily(t *testing.T) {
 	}
 }
 
-func TestMeilisearchPrivateURISeparatesBearerAndRejectsAmbiguity(t *testing.T) {
+func TestMeilisearchPublicURISeparatesBearerAndRejectsAmbiguity(t *testing.T) {
 	for _, tc := range []struct{ uri, key, auth, index, endpoint string }{
 		{"meilisearch://localhost", "", "none", "", "http://localhost:7700"},
 		{"meilisearch://:owned%2Bkey%3D%3D@[::1]:7790/gateway/meili/?sslmode=verify-full&index_uid=owned", "owned+key==", "bearer", "owned", "https://[::1]:7790/gateway/meili"},
@@ -68,8 +68,8 @@ func TestMeilisearchPrivateURISeparatesBearerAndRejectsAmbiguity(t *testing.T) {
 		if tc.key != "" && (strings.Contains(string(public), tc.key) || strings.Contains(fmt.Sprintf("%+v %#v", parsed, parsed), tc.key)) {
 			t.Fatal("URI temporary key leaked")
 		}
-		if _, err := connections.ParseURI(tc.uri); err == nil {
-			t.Fatal("public importer enabled before provider")
+		if imported, err := connections.ParseURI(tc.uri); err != nil || imported.Profile.Kind != parsed.Profile.Kind || imported.Profile.MeilisearchOptions != parsed.Profile.MeilisearchOptions || imported.Password != parsed.Password {
+			t.Fatal("public importer changed original Meilisearch configuration or secret")
 		}
 	}
 	for _, uri := range []string{

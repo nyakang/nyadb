@@ -18,7 +18,7 @@ const (
 
 var catalogTreeDirectEngines = []string{
 	"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "Apache Doris", "StarRocks", "Trino",
-	"MariaDB", "TiDB", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "MongoDB", "Redis", "Elasticsearch", "Easysearch", "Apache Solr", "Apache Cassandra", "Apache CouchDB", "Snowflake",
+	"MariaDB", "TiDB", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "MongoDB", "Redis", "Elasticsearch", "Easysearch", "Apache Solr", "Apache Cassandra", "Apache CouchDB", "Meilisearch", "Snowflake",
 }
 
 // This ordering was observed in the native chooser. The displayed vendor

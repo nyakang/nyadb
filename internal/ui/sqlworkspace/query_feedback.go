@@ -11,6 +11,15 @@ import (
 	"unicode/utf8"
 )
 
+func hasEnqueued(result contract.SQLResult) bool {
+	for _, step := range result.Steps {
+		if step.State == contract.StatementEnqueued {
+			return true
+		}
+	}
+	return false
+}
+
 func executionOrigin(d *Document, statement string) int {
 	source := d.Editor.Buffer.String()
 	selection := d.Editor.Selection()

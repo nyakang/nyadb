@@ -182,6 +182,12 @@ func (s *State) openQuery() {
 			if p.Kind == connections.Solr {
 				initial = "GET /admin/info/system?wt=json"
 			}
+			if p.Kind == connections.Meilisearch {
+				initial = "GET /version"
+				if p.MeilisearchOptions.IndexUID != "" {
+					initial = "GET /indexes/" + p.MeilisearchOptions.IndexUID
+				}
+			}
 			if p.Kind == connections.Redis {
 				initial = "[\"PING\"]"
 			}
@@ -248,7 +254,7 @@ func (s *State) dispatchToolbar(action string, services ui.Services) {
 		s.openConnectionDialog()
 	case "新建查询":
 		s.openQuery()
-	case "Core", "索引", "别名", "数据流", "键", "集合", "表", "视图", "函数", "类型", "查询":
+	case "文档", "索引信息", "索引设置", "索引统计", "数据库信息", "设计文档", "Core", "索引", "别名", "数据流", "键", "集合", "表", "视图", "函数", "类型", "查询":
 		s.showObjects(action)
 	case "用户":
 		w := s.sessions.Current()

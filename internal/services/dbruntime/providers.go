@@ -13,6 +13,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/easysearch"
 	"github.com/nyakang/nyadb/internal/services/elasticsearch"
 	"github.com/nyakang/nyadb/internal/services/engines"
+	"github.com/nyakang/nyadb/internal/services/meilisearch"
 	mongosvc "github.com/nyakang/nyadb/internal/services/mongodb"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	oraclesvc "github.com/nyakang/nyadb/internal/services/oracle"
@@ -24,6 +25,7 @@ import (
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.Meilisearch, ProviderFunc(meilisearch.OpenSession))
 	m.Register(connections.CouchDB, ProviderFunc(couchdb.OpenSession))
 	m.Register(connections.Cassandra, ProviderFunc(cassandra.OpenSession))
 	m.Register(connections.Solr, ProviderFunc(solr.OpenSession))

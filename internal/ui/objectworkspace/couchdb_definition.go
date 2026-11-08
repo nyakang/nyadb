@@ -8,20 +8,24 @@ import (
 
 // NativeDefinitionKind selects server metadata that has no relational grid.
 func NativeDefinitionKind(kind string) bool {
-	return kind == "数据库信息" || kind == "设计文档"
+	return kind == "数据库信息" || kind == "设计文档" || kind == "索引信息" || kind == "索引设置" || kind == "索引统计"
 }
-func (s *State) couchdbDefinition(d *Document) bool {
-	return d != nil && (d.object.Kind == "design_document" || d.object.Kind == "database" && NativeDefinitionKind(d.objectKind))
+func (s *State) nativeDefinition(d *Document) bool {
+	return d != nil && (d.object.Kind == "design_document" || (d.object.Kind == "database" || d.object.Kind == "index" || d.object.Kind == "settings" || d.object.Kind == "statistics") && NativeDefinitionKind(d.objectKind))
 }
 
-// CouchDB definitions retain native JSON; no SQL fields or editing tools are inferred.
-func (s *State) couchdbDefinitionView(c *ui.Context, d *Document) {
+// Native definitions retain full JSON; no SQL fields or editing tools are inferred.
+func (s *State) nativeDefinitionView(c *ui.Context, d *Document) {
 	p := theme.Colors(c)
 	snapshot := s.sessionFor(d.profileID)
 	ready := snapshot.Connected && snapshot.ProfileID == d.profileID && !d.loading
+	title, jsonLabel := locales.Text("CouchDB 原生定义（只读）"), locales.Text("CouchDB 原生 JSON 定义")
+	if d.object.Kind == "index" || d.object.Kind == "settings" || d.object.Kind == "statistics" {
+		title, jsonLabel = locales.Text("Meilisearch 原生定义（只读）"), locales.Text("Meilisearch 原生 JSON 定义")
+	}
 	ui.Column(c).Fill().Children(func() {
 		ui.Row(c).Padding(3, 8).Gap(8).AlignItems(ui.Center).Children(func() {
-			ui.Text(c, d.database+" / "+d.table+" · "+locales.Text("CouchDB 原生定义（只读）")).Grow(1).MinWidth(0).SingleLine()
+			ui.Text(c, d.database+" / "+d.table+" · "+title).Grow(1).MinWidth(0).SingleLine()
 			if ui.Button(c, locales.Text("刷新")).Label(locales.Text("刷新原生定义")).Disabled(!ready).Clicked() {
 				s.Load(d, c.Services().Invalidate, true)
 			}
@@ -49,6 +53,12 @@ func (s *State) couchdbDefinitionView(c *ui.Context, d *Document) {
 			for i, v := range definitions {
 				kind := v.Kind
 				switch kind {
+				case "index":
+					kind = locales.Text("索引信息")
+				case "settings":
+					kind = locales.Text("索引设置")
+				case "statistics":
+					kind = locales.Text("索引统计")
 				case "database":
 					kind = locales.Text("数据库信息")
 				case "design_document":
@@ -73,6 +83,6 @@ func (s *State) couchdbDefinitionView(c *ui.Context, d *Document) {
 				}
 			}
 		}
-		ui.TextArea(c, &text).ReadOnly(true).Label(locales.Text("CouchDB 原生 JSON 定义")).Fill()
+		ui.TextArea(c, &text).ReadOnly(true).Label(jsonLabel).Fill()
 	})
 }

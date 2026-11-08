@@ -144,6 +144,8 @@ func connectionKindName(kind connections.Kind) string {
 		return "Easysearch"
 	case connections.Cassandra:
 		return "Apache Cassandra"
+	case connections.Meilisearch:
+		return "Meilisearch"
 	case connections.CouchDB:
 		return "Apache CouchDB"
 	case connections.Solr:

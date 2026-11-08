@@ -49,7 +49,7 @@ func (s *State) Run(invalidate func(), t *Document) {
 		if t.cql() {
 			t.err = locales.Text("请输入 CQL")
 		} else if t.nativeCommands {
-			t.err = t.commandText("请输入 MongoDB 命令", "请输入 Redis 命令", "请输入 Elasticsearch REST 请求", "请输入 Easysearch REST 请求", "请输入 Solr REST 请求", "请输入 CouchDB REST 请求")
+			t.err = t.commandText("请输入 MongoDB 命令", "请输入 Redis 命令", "请输入 Elasticsearch REST 请求", "请输入 Easysearch REST 请求", "请输入 Solr REST 请求", "请输入 CouchDB REST 请求", "请输入 Meilisearch REST 请求")
 		}
 		s.report(t.err)
 		return
@@ -114,7 +114,7 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 	if t.cql() {
 		s.report(locales.Text("正在执行 CQL"))
 	} else if t.nativeCommands {
-		s.report(t.commandText("正在执行 MongoDB 命令", "正在执行 Redis 命令", "正在执行 Elasticsearch REST 请求", "正在执行 Easysearch REST 请求", "正在执行 Solr REST 请求", "正在执行 CouchDB REST 请求"))
+		s.report(t.commandText("正在执行 MongoDB 命令", "正在执行 Redis 命令", "正在执行 Elasticsearch REST 请求", "正在执行 Easysearch REST 请求", "正在执行 Solr REST 请求", "正在执行 CouchDB REST 请求", "正在执行 Meilisearch REST 请求"))
 	}
 	source := "query"
 	if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(statement)), "EXPLAIN ") {
@@ -213,7 +213,7 @@ func (s *State) DisconnectProfile(profileID int64) {
 			if t.cql() {
 				t.err = locales.Text("连接已断开；CQL 已保留。请连接原配置，再以新会话继续；不会自动执行 CQL")
 			} else if t.nativeCommands {
-				t.err = t.commandText("连接已断开；MongoDB 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；Redis 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求")
+				t.err = t.commandText("连接已断开；MongoDB 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；Redis 命令已保留。请连接原配置，再以新会话继续；不会自动执行命令", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求", "连接已断开；REST 请求已保留。请连接原配置，再以新会话继续；不会自动执行请求")
 			}
 		}
 	}
@@ -320,7 +320,11 @@ func (s *State) Consume() {
 				}
 				if s.active(t) {
 					if t.nativeCommands || t.cql() {
-						s.report("请求执行失败：" + t.err)
+						if hasEnqueued(r.data) {
+							s.report(locales.Text("任务已接收，尚未确认完成；结果显示失败：") + t.err)
+						} else {
+							s.report("请求执行失败：" + t.err)
+						}
 					} else {
 						s.report("SQL 执行失败：" + t.err)
 					}
@@ -346,7 +350,11 @@ func (s *State) Consume() {
 						s.report(fmt.Sprintf(locales.Text("原生执行已确认 · %s"), result.Duration))
 					}
 				} else if t.nativeCommands {
-					s.report(fmt.Sprintf(locales.Text("原生请求已完成 · %d 条响应 · %s"), len(result.Rows), result.Duration))
+					if hasEnqueued(result) {
+						s.report(fmt.Sprintf(locales.Text("任务已接收，尚未确认完成 · %s"), result.Duration))
+					} else {
+						s.report(fmt.Sprintf(locales.Text("原生请求已完成 · %d 条响应 · %s"), len(result.Rows), result.Duration))
+					}
 				} else if len(result.Columns) > 0 {
 					s.report(fmt.Sprintf(locales.Text("SQL 已完成 · %d 行 · %s"), len(result.Rows), result.Duration))
 				} else {

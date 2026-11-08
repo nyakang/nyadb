@@ -91,7 +91,11 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 	}
 	if !b.Opened {
 		ui.Column(c).Grow(1).Children(func() {
-			ui.Text(c, locales.Text("双击打开数据库")).Padding(8).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Muted)
+			label := locales.Text("双击打开数据库")
+			if s.deps.Engine != nil && s.deps.Engine(b.ProfileID) == "meilisearch" {
+				label = locales.Text("双击打开索引")
+			}
+			ui.Text(c, label).Padding(8).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Muted)
 		})
 		return
 	}
@@ -202,6 +206,7 @@ func (s *State) BrowserView(c *ui.Context) {
 	searchEngine := s.deps.Engine != nil && (s.deps.Engine(a.scope.profile) == "elasticsearch" || s.deps.Engine(a.scope.profile) == "easysearch" || s.deps.Engine(a.scope.profile) == "solr")
 	documentEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "mongodb"
 	couchdbEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "couchdb"
+	meilisearchEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "meilisearch"
 	canOpen, canProgram := a.canOpen, a.canProgram
 	ui.Column(c).Fill().Children(func() {
 		ui.Row(c).Height(theme.RowHeight(c, 30)).Gap(3).Padding(1, 4).AlignItems(ui.Center).Background(palette.Header).Children(func() {
@@ -211,6 +216,16 @@ func (s *State) BrowserView(c *ui.Context) {
 					{"打开表", "open-table", "打开选中表数据"}, {"设计表", "design-table", "设计选中表"}, {"查看结构", "design-table", "打开选中表结构"},
 				} {
 					item := action
+					if meilisearchEngine {
+						if action.label == "设计表" {
+							continue
+						}
+						if action.label == "打开表" {
+							item.label, item.accessible = "打开文档", "打开选中对象文档"
+						} else {
+							item.label, item.accessible = "查看定义（只读）", "查看 Meilisearch 原生定义"
+						}
+					}
 					if couchdbEngine {
 						if action.label == "设计表" {
 							continue
@@ -261,6 +276,9 @@ func (s *State) BrowserView(c *ui.Context) {
 						}
 					}
 					canAction := canOpen
+					if meilisearchEngine && action.label == "打开表" {
+						canAction = canOpen && items[a.frame.Row].Kind == "文档" && s.capabilities(a.scope.profile).Documents
+					}
 					if couchdbEngine && action.label == "打开表" {
 						canAction = canOpen && items[a.frame.Row].Kind == "文档"
 					}
@@ -281,7 +299,7 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 				}
 				canCreate := a.canCreate
-				if !documentEngine && !redisEngine && !searchEngine && !couchdbEngine {
+				if !documentEngine && !redisEngine && !searchEngine && !couchdbEngine && !meilisearchEngine {
 					if ui.Button(c, "").Label(locales.Text("新建表")).Tooltip(locales.Text("新建表")).
 						Disabled(!canCreate).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
 						ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
@@ -302,6 +320,9 @@ func (s *State) BrowserView(c *ui.Context) {
 				kinds := []string{"全部", "表", "视图"}
 				if couchdbEngine {
 					kinds = []string{"全部", "文档", "数据库信息", "设计文档"}
+				}
+				if meilisearchEngine {
+					kinds = []string{"全部", "索引信息", "文档", "索引设置", "索引统计"}
 				}
 				if searchEngine {
 					kinds = []string{"全部", "索引", "别名", "数据流"}

@@ -896,6 +896,12 @@ func neutralObjectKind(kind string) string {
 	switch kind {
 	case "文档":
 		return "documents"
+	case "索引信息":
+		return "index"
+	case "索引设置":
+		return "settings"
+	case "索引统计":
+		return "statistics"
 	case "数据库信息":
 		return "database"
 	case "设计文档":

@@ -95,8 +95,8 @@ func meilisearchNativeProfile(t *testing.T, cfg connections.MeilisearchConfig, s
 	if err != nil || normalizeErr != nil || config != normalized {
 		t.Fatal("native URI changed original endpoint/TLS context", err)
 	}
-	if _, err := connections.ParseURI(uri.String()); err == nil {
-		t.Fatal("private Meilisearch URI published before provider")
+	if public, err := connections.ParseURI(uri.String()); err != nil || public.Profile.Kind != connections.Meilisearch || public.Password != secret {
+		t.Fatal("public Meilisearch URI changed configuration or secret")
 	}
 	return parsed
 }

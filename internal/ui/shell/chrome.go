@@ -306,6 +306,20 @@ func (s *State) toolBar(c *ui.Context) {
 						action.label = "数据流"
 					}
 				}
+				if kind == connections.Meilisearch {
+					switch action.label {
+					case "表":
+						action.label = "索引信息"
+					case "视图":
+						action.label = "索引设置"
+					case "函数":
+						action.label = "索引统计"
+					case "其它":
+						action.label = "文档"
+					case "用户":
+						continue
+					}
+				}
 				if kind == connections.CouchDB {
 					switch action.label {
 					case "表":
@@ -400,6 +414,9 @@ func (s *State) toolBar(c *ui.Context) {
 // menu, but never announce a successful operation for an unsupported feature.
 func (s *State) toolbarActionAvailable(action string) bool {
 	switch action {
+	case "文档", "索引信息", "索引设置", "索引统计", "数据库信息", "设计文档":
+		w := s.sessions.Current()
+		return w.Status == "已连接" && w.Database != "" && s.sessions.DatabaseOpened(w.ProfileID, w.Database) && s.objectCapabilitiesFor(w.ProfileID).Metadata
 	case "连接", "新建查询", "Core", "索引", "别名", "数据流", "键", "集合", "表", "视图", "信息":
 		return true
 	case "类型":

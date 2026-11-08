@@ -15,6 +15,9 @@ func (s *State) objectColumns(profile int64) []ui.TableColumn {
 		engine = s.deps.Engine(profile)
 	}
 	columns := append([]ui.TableColumn(nil), mysqlObjectColumns...)
+	if engine == "meilisearch" {
+		columns = []ui.TableColumn{{ID: "name", Title: "名称", Width: 265}, {ID: "kind", Title: "类型", Width: 100}, {ID: "created", Title: "创建时间", Width: 200}, {ID: "updated", Title: "修改时间", Width: 200}}
+	}
 	if engine == "mongodb" || engine == "redis" || (engine == "elasticsearch" || engine == "easysearch" || engine == "solr") {
 		columns = []ui.TableColumn{{ID: "name", Title: "名称", Width: 265}, {ID: "kind", Title: "类型", Width: 100}}
 	}
@@ -36,6 +39,19 @@ func (s *State) objectCell(profile int64, obj contract.DBObject, col int) string
 	engine := "mysql"
 	if s.deps.Engine != nil {
 		engine = s.deps.Engine(profile)
+	}
+	if engine == "meilisearch" {
+		switch col {
+		case 0:
+			return obj.Name
+		case 1:
+			return locales.Text(obj.Kind)
+		case 2:
+			return obj.CreatedAt
+		case 3:
+			return obj.ModifiedAt
+		}
+		return ""
 	}
 	if engine == "mongodb" || engine == "redis" || (engine == "elasticsearch" || engine == "easysearch" || engine == "solr") {
 		if col == 0 {
