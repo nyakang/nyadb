@@ -84,6 +84,26 @@ class CouchDBFixtureTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 FIXTURE.check_acceptance(complete.replace('--- PASS: TestCouchDBNative'+name, '--- FAIL: TestCouchDBNative'+name))
 
+    def test_data_shared_grid_requires_native_ui_pass_and_package(self):
+        base = '\n'.join('--- PASS: TestCouchDBNative'+name+' (0.03s)' for name in FIXTURE.REQUIRED)
+        with self.assertRaises(RuntimeError):
+            FIXTURE.check_acceptance(base, data=True)
+        complete = base+'\n'+'\n'.join('--- PASS: TestCouchDBNative'+name+' (0.03s)' for name in FIXTURE.DATA_REQUIRED)
+        FIXTURE.check_acceptance(complete, data=True)
+        for name in FIXTURE.DATA_REQUIRED:
+            with self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(complete.replace('--- PASS: TestCouchDBNative'+name, '--- SKIP: TestCouchDBNative'+name), data=True)
+        command = FIXTURE.native_test_command(data=True, race=True)
+        self.assertIn('./internal/ui/dataworkspace', command)
+        self.assertIn('-race', command)
+
+    def test_data_leases_require_native_paging_complete_export_and_cancellation(self):
+        complete = '\n'.join('--- PASS: TestCouchDBNative'+name+' (0.03s)' for name in FIXTURE.REQUIRED)
+        for name in ['DataPagingOriginalRowsFieldsAndCompleteExport', 'DataCanceledOriginalPageKeepsIndependentCountAndLease']:
+            self.assertIn(name, FIXTURE.REQUIRED)
+            with self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(complete.replace('--- PASS: TestCouchDBNative'+name, '--- SKIP: TestCouchDBNative'+name))
+
 
 if __name__ == '__main__':
     unittest.main()

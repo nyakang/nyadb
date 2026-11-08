@@ -64,20 +64,27 @@ func nativeDocumentJSON(database string, raw []byte) (NativeDocument, error) {
 	if err := decodeJSON(raw, &fields); err != nil {
 		return NativeDocument{}, err
 	}
-	generation, hash, ok := strings.Cut(fields.Revision, "-")
-	n, err := strconv.ParseUint(generation, 10, 64)
-	if !ok || err != nil || n == 0 || strconv.FormatUint(n, 10) != generation || len(hash) != 32 || fields.Deleted {
+	if !validRevision(fields.Revision) || fields.Deleted {
 		return NativeDocument{}, ErrProtocol
-	}
-	for _, ch := range hash {
-		if !(ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f') {
-			return NativeDocument{}, ErrProtocol
-		}
 	}
 	if _, err := documentPath(database, fields.ID); err != nil {
 		return NativeDocument{}, ErrProtocol
 	}
 	return NativeDocument{ID: fields.ID, Revision: fields.Revision, JSON: bytes.Clone(raw)}, nil
+}
+
+func validRevision(revision string) bool {
+	generation, hash, ok := strings.Cut(revision, "-")
+	n, err := strconv.ParseUint(generation, 10, 64)
+	if !ok || err != nil || n == 0 || strconv.FormatUint(n, 10) != generation || len(hash) != 32 {
+		return false
+	}
+	for _, ch := range hash {
+		if !(ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f') {
+			return false
+		}
+	}
+	return true
 }
 
 // AllDocuments uses inclusive startkey and removes the old boundary only when
