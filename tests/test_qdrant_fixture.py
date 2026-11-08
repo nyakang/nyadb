@@ -11,6 +11,25 @@ spec.loader.exec_module(fixture)
 
 
 class QdrantFixtureTests(unittest.TestCase):
+    def test_snapshot_sessions_require_original_claims_transfers_and_readback_faults(self):
+        names = ['SnapshotSessionOriginalScopesArchivesTransfersAndRecovery',
+                 'SnapshotSessionPreflightPermissionsAndFailedRecoveryEvidence',
+                 'SnapshotSessionLostCanceledTransfersAndOriginalCloseNoReplay',
+                 'SnapshotSessionReadbackFaultsKeepOriginalReceiptAndNoReplay']
+        log = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in fixture.REQUIRED)
+        for name in names:
+            self.assertIn(name, fixture.REQUIRED)
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(log.replace('--- PASS: TestQdrantNative'+name,
+                                                     '--- SKIP: TestQdrantNative'+name))
+        hashes = fixture.source_hashes()
+        for path in ['internal/services/qdrant/snapshot_document.go',
+                     'internal/services/qdrant/snapshot_prepare.go',
+                     'internal/services/qdrant/snapshot_execute.go',
+                     'internal/services/qdrant/snapshot_document_test.go',
+                     'internal/services/qdrant/snapshot_document_native_integration_test.go']:
+            self.assertIn(path, hashes)
+
     def test_snapshots_require_native_scopes_large_streams_and_failure_evidence(self):
         names = ['SnapshotCollectionShardStorageCRUDAndRecovery',
                  'SnapshotLargeStreamingDownloadUploadAndURLRecovery',

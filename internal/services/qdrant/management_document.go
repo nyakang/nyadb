@@ -113,6 +113,12 @@ func (s *Session) ReserveManagementDocument(document uint64) (*ManagementLease, 
 			return nil, ErrInvalid
 		}
 	}
+	for snapshot := range s.snapshots {
+		if snapshot.document == document {
+			l.cancel()
+			return nil, ErrInvalid
+		}
+	}
 	if s.managers == nil {
 		s.managers = map[*ManagementLease]bool{}
 	}

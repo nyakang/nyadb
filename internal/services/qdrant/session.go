@@ -25,9 +25,14 @@ type Session struct {
 	documents          map[*dataLease]bool
 	dataSlots          chan struct{}
 	managers           map[*ManagementLease]bool
-	namespaceOwner     *ManagementLease
+	snapshots          map[*SnapshotLease]bool
+	namespaceOwner     namespaceClaimOwner
 	claimedCollections map[string]bool
 }
+
+type namespaceClaimOwner interface{ namespaceClaim() }
+
+func (*ManagementLease) namespaceClaim() {}
 
 func OpenSession(ctx context.Context, p connections.Profile, secret string) (contract.Session, error) {
 	p, err := connections.NormalizeProfile(p)
@@ -157,7 +162,14 @@ func (s *Session) Close() error {
 	for m := range s.managers {
 		managers = append(managers, m)
 	}
+	snapshots := make([]*SnapshotLease, 0, len(s.snapshots))
+	for l := range s.snapshots {
+		snapshots = append(snapshots, l)
+	}
 	s.mu.Unlock()
+	for _, l := range snapshots {
+		l.Close()
+	}
 	for _, m := range managers {
 		m.Close()
 	}
