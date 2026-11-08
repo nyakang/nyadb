@@ -297,7 +297,7 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 					canAction := canOpen
 					if qdrantEngine && action.label == "打开表" {
-						canAction = canOpen && items[a.frame.Row].Kind == "向量点" && s.capabilities(a.scope.profile).Query
+						canAction = canOpen && items[a.frame.Row].Kind == "向量点" && s.capabilities(a.scope.profile).Documents
 					}
 					if meilisearchEngine && action.label == "打开表" {
 						canAction = canOpen && items[a.frame.Row].Kind == "文档" && s.capabilities(a.scope.profile).Documents

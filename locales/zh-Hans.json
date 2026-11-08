@@ -2622,5 +2622,14 @@
   "qdrantDoubleClickCollection": "双击打开集合",
   "qdrantRequestEnqueuedUnconfirmed": "请求已受理，尚未确认完成",
   "qdrantRequestEnqueuedDuration": "请求已受理，尚未确认完成 · %s",
-  "qdrantRequestEnqueuedPresentationFailed": "请求已受理，尚未确认完成；结果显示失败："
+  "qdrantRequestEnqueuedPresentationFailed": "请求已受理，尚未确认完成；结果显示失败：",
+  "qdrantDataFilter": "Qdrant 过滤",
+  "qdrantDataFilterJSON": "Qdrant filter JSON",
+  "qdrantDataFilterHint": "输入原生 filter 对象；使用 ID 游标翻页。计数和完整 JSONL 导出覆盖整个集合，表格导出使用当前过滤。",
+  "qdrantDataFilterApply": "应用 Qdrant 过滤",
+  "qdrantDataFilterClear": "清除 Qdrant 过滤",
+  "qdrantDataFilterCollapse": "收起 Qdrant 过滤",
+  "qdrantDataFilterInvalid": "请输入有效的 Qdrant filter JSON 对象",
+  "qdrantDataFilterRestored": "Qdrant 过滤已恢复；请点击应用 Qdrant 过滤执行",
+  "qdrantDataFilterApplied": "Qdrant 过滤已应用"
 }

@@ -29,6 +29,8 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 		kind = "视图"
 	}
 	switch o.Kind {
+	case "points":
+		kind = "向量点"
 	case "documents":
 		kind = "文档"
 	case "core":

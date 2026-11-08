@@ -2622,5 +2622,14 @@
   "qdrantDoubleClickCollection": "Double-click to open the collection",
   "qdrantRequestEnqueuedUnconfirmed": "Request accepted; completion is not confirmed",
   "qdrantRequestEnqueuedDuration": "Request accepted; completion is not confirmed · %s",
-  "qdrantRequestEnqueuedPresentationFailed": "Request accepted; completion is not confirmed; result display failed: "
+  "qdrantRequestEnqueuedPresentationFailed": "Request accepted; completion is not confirmed; result display failed: ",
+  "qdrantDataFilter": "Qdrant filter",
+  "qdrantDataFilterJSON": "Qdrant filter JSON",
+  "qdrantDataFilterHint": "Enter a native filter object; page using ID cursors. Count and complete JSONL export cover the entire collection; tabular export uses the current filter.",
+  "qdrantDataFilterApply": "Apply Qdrant filter",
+  "qdrantDataFilterClear": "Clear Qdrant filter",
+  "qdrantDataFilterCollapse": "Collapse Qdrant filter",
+  "qdrantDataFilterInvalid": "Enter a valid Qdrant filter JSON object",
+  "qdrantDataFilterRestored": "Qdrant filter restored; click Apply Qdrant filter to execute",
+  "qdrantDataFilterApplied": "Qdrant filter applied"
 }

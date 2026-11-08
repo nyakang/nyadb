@@ -48,6 +48,16 @@ PUBLIC_REQUIRED = (
     'PublicChooserURINavigationDefinitionsRESTAndRecovery',
 )
 
+DATA_REQUIRED = (
+    'DataExactTypedPointsCursorFilterAndOriginalFields',
+    'DataCompleteExportBeyondUIPageLimit',
+    'DataLargePointsExplicitBoundsAndFullExport',
+    'DataDeletedCursorBoundaryAndObservationChanges',
+    'DataReadPermissionsAndUnsupportedWrites',
+    'DataLostCanceledReadAndOriginalClose',
+    'DataSharedGridPagingSelectorInspectorParkGenerationAndClose',
+)
+
 
 def remove_owned(identifier, nonce):
     if not isinstance(identifier, str) or not re.fullmatch('[0-9a-f]{64}', identifier):
@@ -76,27 +86,30 @@ def source_hashes(profile=False):
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 
 
-def check_acceptance(log, profile=False, session=False, public=False):
-    session = session or public
-    for name in REQUIRED + (PROFILE_REQUIRED if profile or session else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()):
+def check_acceptance(log, profile=False, session=False, public=False, data=False):
+    session = session or public or data
+    for name in REQUIRED + (PROFILE_REQUIRED if profile or session else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()):
         if not re.search(r'^--- PASS: TestQdrantNative'+name+r' \(', log, re.M):
             raise RuntimeError('Missing required native PASS: '+name)
     if re.search(r'^\s*--- (SKIP|FAIL):', log, re.M) or 'WARNING: DATA RACE' in log:
         raise RuntimeError('Unexpected skipped, failed or racing native test')
 
 
-def native_test_command(race, profile=False, session=False, public=False):
-    session = session or public
+def native_test_command(race, profile=False, session=False, public=False, data=False):
+    session = session or public or data
     profile = profile or session
+    exclusions = [name for name, enabled in [('Session',session),('Public',public),('Data',data)] if not enabled]
+    skip = '^TestQdrantNative'+(exclusions[0] if len(exclusions)==1 else '('+'|'.join(exclusions)+')') if exclusions else None
     return ['go', 'test', '-count=1', '-timeout=5m', '-v', *(['-race'] if race else []),
-            *(['-skip', '^TestQdrantNative(Session|Public)'] if not session else ['-skip', '^TestQdrantNativePublic'] if not public else []),
+            *(['-skip', skip] if skip else []),
             '-run', '^TestQdrant' if profile else '^TestQdrantNative', './internal/services/qdrant',
             *(['./internal/services/connections', './internal/storage/localdb', './internal/ui/connectioneditor'] if profile else []),
-            *(['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell'] if public else [])]
+            *(['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell'] if public else []),
+            *(['./internal/ui/dataworkspace'] if data else [])]
 
 
-def verify(mode='tls', race=False, profile=False, session=False, public=False):
-    session = session or public
+def verify(mode='tls', race=False, profile=False, session=False, public=False, data=False):
+    session = session or public or data
     profile = profile or session
     if mode not in MODES:
         raise ValueError('Invalid native fixture mode')
@@ -106,7 +119,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False):
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
     evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode,
-                    scope='public_chooser_uri_original_sessions_collections_definitions_rest_typed_points_and_recovery' if public else 'private_original_session_metadata_rest_leases_and_typed_native_point_results' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_transport_and_collection_point_codecs',
+                    scope='original_shared_point_grid_cursor_filter_count_bounded_fields_and_complete_export' if data else 'public_chooser_uri_original_sessions_collections_definitions_rest_typed_points_and_recovery' if public else 'private_original_session_metadata_rest_leases_and_typed_native_point_results' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_transport_and_collection_point_codecs',
                     status='failed', fixture_cleaned=False, private_files_cleaned=False)
     try:
         with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
@@ -212,16 +225,18 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False):
                     env['NYADB_QDRANT_SESSION_IT'] = '1'
                 if public:
                     env.update(NYADB_QDRANT_PUBLIC_IT='1', NYADB_QDRANT_PUBLIC_IMAGES=str(output/('public-images-'+nonce)))
+                if data:
+                    env.update(NYADB_QDRANT_DATA_IT='1', NYADB_QDRANT_DATA_IMAGES=str(output/('data-images-'+nonce)))
                 hashes = source_hashes(profile)
                 logfile = output/('native-'+nonce+'.log')
-                command = native_test_command(race, profile, session, public)
+                command = native_test_command(race, profile, session, public, data)
                 with logfile.open('w') as log:
                     result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=330)
                 if hashes != source_hashes(profile):
                     raise RuntimeError('Acceptance sources changed during verification')
                 if result.returncode:
                     raise RuntimeError('Native Qdrant acceptance failed; inspect '+str(logfile.relative_to(ROOT)))
-                check_acceptance(logfile.read_text(), profile, session, public)
+                check_acceptance(logfile.read_text(), profile, session, public, data)
                 if profile:
                     image_root = Path(env['NYADB_QDRANT_PROFILE_IMAGES'])
                     images = sorted(image_root.glob('*.png'))
@@ -239,8 +254,17 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False):
                     if {str(p.relative_to(image_root)) for p in images} != expected:
                         raise RuntimeError('Missing localized native Qdrant workbench evidence')
                     evidence['headless_workbench_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
+                if data:
+                    image_root = Path(env['NYADB_QDRANT_DATA_IMAGES'])
+                    images = sorted(image_root.glob('*.png'))
+                    expected = {language+'-'+str(width)+'x'+str(height)+'-'+panel+'.png'
+                                for language in ['zh-Hans','en'] for width,height in [(1280,800),(720,520)]
+                                for panel in ['grid','filter']}
+                    if {p.name for p in images} != expected:
+                        raise RuntimeError('Missing localized original Qdrant shared point grid evidence')
+                    evidence['headless_data_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
                 evidence.update(status='passed_with_race' if race else 'passed', source_hashes=hashes,
-                                required_passes=list(REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ())), command=command, log=str(logfile.relative_to(ROOT)),
+                                required_passes=list(REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ())), command=command, log=str(logfile.relative_to(ROOT)),
                                 log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest())
             finally:
                 logs = subprocess.run(['docker', 'logs', identifier], capture_output=True, text=True)
@@ -264,5 +288,6 @@ if __name__ == '__main__':
     parser.add_argument('--profile', action='store_true', help='Verify URI, SQLite reopen, separate vault, native connection checks and localized editor forms')
     parser.add_argument('--session', action='store_true', help='Verify original session, physical collection metadata and REST lease outcomes/cancellation/recovery; includes profile acceptance')
     parser.add_argument('--public', action='store_true', help='Verify public chooser/URI, original runtime generations, qualified navigation/definitions and REST workbench/recovery; includes sessions/profiles')
+    parser.add_argument('--data', action='store_true', help='Verify original shared point data lease, cursor/filter/count/bounded fields/complete export and localized grid; includes sessions/profiles')
     options = parser.parse_args()
-    verify(options.mode, options.race, options.profile, options.session, options.public)
+    verify(options.mode, options.race, options.profile, options.session, options.public, options.data)

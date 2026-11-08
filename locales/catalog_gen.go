@@ -26689,3 +26689,93 @@ func QdrantRequestEnqueuedPresentationFailed() string {
 func (msgs Messages) QdrantRequestEnqueuedPresentationFailed() string {
 	return Catalog.Format(msgs.locale, "qdrantRequestEnqueuedPresentationFailed", nil)
 }
+
+// QdrantDataFilter says "Qdrant 过滤"
+// in the language the app shows.
+func QdrantDataFilter() string { return In(i18n.Locale()).QdrantDataFilter() }
+
+// QdrantDataFilter says "Qdrant 过滤"
+// in the language of msgs.
+func (msgs Messages) QdrantDataFilter() string {
+	return Catalog.Format(msgs.locale, "qdrantDataFilter", nil)
+}
+
+// QdrantDataFilterJSON says "Qdrant filter JSON"
+// in the language the app shows.
+func QdrantDataFilterJSON() string { return In(i18n.Locale()).QdrantDataFilterJSON() }
+
+// QdrantDataFilterJSON says "Qdrant filter JSON"
+// in the language of msgs.
+func (msgs Messages) QdrantDataFilterJSON() string {
+	return Catalog.Format(msgs.locale, "qdrantDataFilterJSON", nil)
+}
+
+// QdrantDataFilterHint says "输入原生 filter 对象；使用 ID 游标翻页。计数和完整 JSONL …"
+// in the language the app shows.
+func QdrantDataFilterHint() string { return In(i18n.Locale()).QdrantDataFilterHint() }
+
+// QdrantDataFilterHint says "输入原生 filter 对象；使用 ID 游标翻页。计数和完整 JSONL …"
+// in the language of msgs.
+func (msgs Messages) QdrantDataFilterHint() string {
+	return Catalog.Format(msgs.locale, "qdrantDataFilterHint", nil)
+}
+
+// QdrantDataFilterApply says "应用 Qdrant 过滤"
+// in the language the app shows.
+func QdrantDataFilterApply() string { return In(i18n.Locale()).QdrantDataFilterApply() }
+
+// QdrantDataFilterApply says "应用 Qdrant 过滤"
+// in the language of msgs.
+func (msgs Messages) QdrantDataFilterApply() string {
+	return Catalog.Format(msgs.locale, "qdrantDataFilterApply", nil)
+}
+
+// QdrantDataFilterClear says "清除 Qdrant 过滤"
+// in the language the app shows.
+func QdrantDataFilterClear() string { return In(i18n.Locale()).QdrantDataFilterClear() }
+
+// QdrantDataFilterClear says "清除 Qdrant 过滤"
+// in the language of msgs.
+func (msgs Messages) QdrantDataFilterClear() string {
+	return Catalog.Format(msgs.locale, "qdrantDataFilterClear", nil)
+}
+
+// QdrantDataFilterCollapse says "收起 Qdrant 过滤"
+// in the language the app shows.
+func QdrantDataFilterCollapse() string { return In(i18n.Locale()).QdrantDataFilterCollapse() }
+
+// QdrantDataFilterCollapse says "收起 Qdrant 过滤"
+// in the language of msgs.
+func (msgs Messages) QdrantDataFilterCollapse() string {
+	return Catalog.Format(msgs.locale, "qdrantDataFilterCollapse", nil)
+}
+
+// QdrantDataFilterInvalid says "请输入有效的 Qdrant filter JSON 对象"
+// in the language the app shows.
+func QdrantDataFilterInvalid() string { return In(i18n.Locale()).QdrantDataFilterInvalid() }
+
+// QdrantDataFilterInvalid says "请输入有效的 Qdrant filter JSON 对象"
+// in the language of msgs.
+func (msgs Messages) QdrantDataFilterInvalid() string {
+	return Catalog.Format(msgs.locale, "qdrantDataFilterInvalid", nil)
+}
+
+// QdrantDataFilterRestored says "Qdrant 过滤已恢复；请点击应用 Qdrant 过滤执行"
+// in the language the app shows.
+func QdrantDataFilterRestored() string { return In(i18n.Locale()).QdrantDataFilterRestored() }
+
+// QdrantDataFilterRestored says "Qdrant 过滤已恢复；请点击应用 Qdrant 过滤执行"
+// in the language of msgs.
+func (msgs Messages) QdrantDataFilterRestored() string {
+	return Catalog.Format(msgs.locale, "qdrantDataFilterRestored", nil)
+}
+
+// QdrantDataFilterApplied says "Qdrant 过滤已应用"
+// in the language the app shows.
+func QdrantDataFilterApplied() string { return In(i18n.Locale()).QdrantDataFilterApplied() }
+
+// QdrantDataFilterApplied says "Qdrant 过滤已应用"
+// in the language of msgs.
+func (msgs Messages) QdrantDataFilterApplied() string {
+	return Catalog.Format(msgs.locale, "qdrantDataFilterApplied", nil)
+}

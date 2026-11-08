@@ -17,6 +17,8 @@ type nativeSelectorLabels struct {
 
 func selectorLabels(dialect string) (nativeSelectorLabels, bool) {
 	switch dialect {
+	case "qdrant":
+		return nativeSelectorLabels{"Qdrant", "Qdrant 过滤", "Qdrant filter JSON", "输入原生 filter 对象；使用 ID 游标翻页。计数和完整 JSONL 导出覆盖整个集合，表格导出使用当前过滤。", "应用 Qdrant 过滤", "清除 Qdrant 过滤", "收起 Qdrant 过滤", "请输入有效的 Qdrant filter JSON 对象", "Qdrant 过滤已恢复；请点击应用 Qdrant 过滤执行"}, true
 	case "mango":
 		return nativeSelectorLabels{"Mango", "Mango 查询", "Mango selector JSON", "输入 selector 对象；查询排除设计文档，文档总数包含设计文档。", "应用 Mango 查询", "清除 Mango 查询", "收起 Mango 查询", "请输入有效的 Mango selector JSON 对象", "Mango 查询已恢复；请点击应用 Mango 查询执行"}, true
 	case "meilisearch":
@@ -60,10 +62,10 @@ func (s *State) applyDataSelector(services ui.Services, d *Document) {
 	d.mainFilterDisabled = false
 	d.filterColumnDraft, d.filterValueDraft, d.ruleError = "选择字段", "", ""
 	d.filterColumn, d.filterMode, d.filterValue = f.Column, f.Mode, raw
-	if f.Dialect == "meilisearch" {
+	if f.Dialect == "meilisearch" || f.Dialect == "qdrant" {
 		d.sortColumn, d.sortDescending, d.sortRules, d.sortDraft, d.sort = "", false, nil, nil, ui.SortOrder{}
 	}
-	if d.selectorHistory && f.Dialect != "meilisearch" {
+	if d.selectorHistory && f.Dialect != "meilisearch" && f.Dialect != "qdrant" {
 		d.sortColumn, d.sortDescending = "", false
 		d.sortRules = slices.Clone(d.selectorHistorySorts)
 		d.sort = ui.SortOrder{}

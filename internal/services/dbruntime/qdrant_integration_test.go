@@ -48,7 +48,7 @@ func TestQdrantNativePublicProviderMetadataAndPublishedGenerations(t *testing.T)
 		t.Fatal(err)
 	}
 	caps := first.Capabilities()
-	if !caps.Query || !caps.Metadata || caps.Objects || caps.Documents || caps.Count || caps.EditableTables || caps.Backup || caps.Export {
+	if !caps.Query || !caps.Metadata || caps.Objects || !caps.Documents || !caps.Count || !caps.FieldChunks || !caps.Keyset || !caps.JSONL || caps.EditableTables || caps.Backup || !caps.Export {
 		t.Fatal("unverified data/management tools exposed", caps)
 	}
 	meta, err := contract.Require[contract.MetadataProvider](first)
@@ -96,6 +96,24 @@ func TestQdrantNativePublicProviderMetadataAndPublishedGenerations(t *testing.T)
 	if err != nil || len(result.Sets) != 2 || result.Sets[0].Rows[0][0].Kind != contract.Integer || result.Sets[0].Rows[0][0].Text != "18446744073709551615" || !strings.Contains(result.Sets[1].Rows[0][1].Text, "9007199254740993") {
 		t.Fatal("public point query lost precision or original response", result, err)
 	}
+	data := m.Data(p.ID)
+	if data.ReserveDocument == nil || data.Saver != nil || data.Importer != nil {
+		t.Fatal("public point document contract unavailable or writable")
+	}
+	document, err := data.ReserveDocument(m.Namespace(p.ID, name).Object("points", "points"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer document.Close()
+	bound := document.Runtime()
+	options := contract.DataOptions{Object: m.Namespace(p.ID, name).Object("points", "points"), Limit: 1}
+	page, err := bound.AdvancedLoader(ctx, p.ID, name, "points", options)
+	if err != nil || page.Object != options.Object || page.Rows[0][0].Text != "18446744073709551615" || page.Editable == nil || *page.Editable {
+		t.Fatal("public original point document", err)
+	}
+	if _, err = bound.RowReader(ctx, p.ID, name, "points", *page.RowRefs[0]); err != nil {
+		t.Fatal("public original point read", err)
+	}
 	second, err := m.ConnectSession(ctx, p, parsed.Password)
 	if err != nil || second.Generation() <= first.Generation() {
 		t.Fatal("public generations not monotonic", err)
@@ -109,6 +127,10 @@ func TestQdrantNativePublicProviderMetadataAndPublishedGenerations(t *testing.T)
 	if _, err := lease.Replace(); !errors.Is(err, contract.ErrRevoked) {
 		t.Fatal("old lease replacement rebound", err)
 	}
+	if _, err = bound.AdvancedLoader(ctx, p.ID, name, "points", options); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal("old point grid rebound to replacement", err)
+	}
+	document.Close()
 	first.Close()
 	lease.Release()
 	if !m.IsConnected(p.ID) {

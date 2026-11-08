@@ -146,7 +146,7 @@ func TestQdrantNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t *tes
 			t.Fatal("alias became physical namespace")
 		}
 	}
-	var definitions, aliases, pointQueries []*tab
+	var definitions, aliases, pointQueries, pointData []*tab
 	for _, name := range names {
 		s.submitNavigation(services, navigation.DatabaseNode(p.ID, name))
 		wait(func() bool { return w.Pending == "" && w.Cache[name] != nil })
@@ -181,6 +181,16 @@ func TestQdrantNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t *tes
 		}
 		aliases = append(aliases, view)
 		s.submitNavigation(services, navigation.Node{Kind: "object", ProfileID: p.ID, Database: name, Category: "向量点", Object: "points"})
+		dataTab := s.currentTab()
+		if dataTab.data == nil || dataTab.query != nil || dataTab.data.Object() != s.runtime.Namespace(p.ID, name).Object("points", "points") {
+			t.Fatal("public point entry lost shared original data document")
+		}
+		wait(func() bool { return !dataTab.data.Busy() })
+		if dataTab.data.Error() != "" || dataTab.data.Page() == nil || len(dataTab.data.Page().Columns) != 4 || dataTab.data.Page().Rows[0][0].Text != "18446744073709551615" {
+			t.Fatal("public point grid lost exact native result", dataTab.data.Error())
+		}
+		pointData = append(pointData, dataTab)
+		s.openQdrantPoints(p.ID, name)
 		query := s.currentTab()
 		if query.query == nil || query.data != nil || query.query.Namespace() != s.runtime.Namespace(p.ID, name) || query.query.Loading() || !strings.Contains(query.query.Editor.Buffer.String(), name+"/points/scroll") {
 			t.Fatal("point entry did not open an original explicit REST read")
@@ -199,7 +209,7 @@ func TestQdrantNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t *tes
 		}
 		pointQueries = append(pointQueries, query)
 	}
-	if definitions[0].object.Object() == definitions[1].object.Object() || aliases[0].object.Object() == aliases[1].object.Object() || pointQueries[0].query.Namespace() == pointQueries[1].query.Namespace() {
+	if pointData[0].data.Object() == pointData[1].data.Object() || definitions[0].object.Object() == definitions[1].object.Object() || aliases[0].object.Object() == aliases[1].object.Object() || pointQueries[0].query.Namespace() == pointQueries[1].query.Namespace() {
 		t.Fatal("same-name original objects aliased")
 	}
 	query := pointQueries[0]
@@ -265,6 +275,11 @@ func TestQdrantNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t *tes
 	query.query.Editor.Buffer.Set(request)
 	tt.Frame()
 	s.disconnectMySQLProfile(p.ID)
+	for _, d := range pointData {
+		if d.data != nil && d.data.Page() != nil {
+			t.Fatal("disconnect retained scoped point data")
+		}
+	}
 	tt.Frame()
 	if !query.query.NeedsRecovery() || query.query.Editor.Buffer.String() != request {
 		t.Fatal("disconnect lost native text")

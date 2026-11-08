@@ -22,6 +22,8 @@ type Session struct {
 	closeDone       chan struct{}
 	work            sync.WaitGroup
 	leases          map[*queryLease]bool
+	documents       map[*dataLease]bool
+	dataSlots       chan struct{}
 }
 
 func OpenSession(ctx context.Context, p connections.Profile, secret string) (contract.Session, error) {
@@ -54,7 +56,10 @@ func (s *Session) ProfileID() int64 { return s.profileID }
 // Public generations are assigned only by dbruntime.
 func (s *Session) Generation() uint64 { return 1 }
 func (s *Session) Capabilities() contract.Capabilities {
-	return contract.Capabilities{Query: true, Objects: true, Metadata: true}
+	c := nativeDataCapabilities()
+	c.Query = true
+	c.Objects = true
+	return c
 }
 func (s *Session) Identity() Identity { return s.identity }
 func (s *Session) Alive() bool        { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed && !s.revoked }
@@ -141,7 +146,14 @@ func (s *Session) Close() error {
 	for l := range s.leases {
 		leases = append(leases, l)
 	}
+	documents := make([]*dataLease, 0, len(s.documents))
+	for d := range s.documents {
+		documents = append(documents, d)
+	}
 	s.mu.Unlock()
+	for _, d := range documents {
+		d.Close()
+	}
 	for _, l := range leases {
 		l.Release()
 	}

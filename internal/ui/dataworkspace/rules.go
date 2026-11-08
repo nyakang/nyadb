@@ -135,6 +135,9 @@ func mysqlDataFilterStatus(t *Document) string {
 	if t.filterMode == "" {
 		return ""
 	}
+	if t.filterMode == "qdrant_filter" {
+		return locales.Text("Qdrant 过滤已应用")
+	}
 	if t.filterMode == "meilisearch_search" {
 		return locales.Text("Meilisearch 搜索已应用")
 	}
@@ -691,6 +694,8 @@ func (s *State) applyMySQLDataCellFilter(services ui.Services, t *Document, name
 
 func mysqlDataFilterModeLabel(mode string) string {
 	switch mode {
+	case "qdrant_filter":
+		return "Qdrant 过滤"
 	case "meilisearch_search":
 		return "Meilisearch 搜索"
 	case "mango":

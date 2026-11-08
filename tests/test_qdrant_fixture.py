@@ -44,17 +44,17 @@ class QdrantFixtureTests(unittest.TestCase):
     def test_session_command_includes_profiles_without_excluding_required_native_tests(self):
         command = fixture.native_test_command(True, session=True)
         self.assertIn('-race', command)
-        self.assertEqual(command[command.index('-skip')+1], '^TestQdrantNativePublic')
+        self.assertEqual(command[command.index('-skip')+1], '^TestQdrantNative(Public|Data)')
         self.assertEqual(command[command.index('-run')+1], '^TestQdrant')
         self.assertEqual(command[-4:], ['./internal/services/qdrant', './internal/services/connections',
                                         './internal/storage/localdb', './internal/ui/connectioneditor'])
         for profile in [False, True]:
             old = fixture.native_test_command(True, profile=profile)
-            self.assertEqual(old[old.index('-skip')+1], '^TestQdrantNative(Session|Public)')
+            self.assertEqual(old[old.index('-skip')+1], '^TestQdrantNative(Session|Public|Data)')
 
     def test_public_command_checks_original_runtime_workspace_and_every_required_pass(self):
         command = fixture.native_test_command(True, public=True)
-        self.assertNotIn('-skip', command)
+        self.assertEqual(command[command.index('-skip')+1], '^TestQdrantNativeData')
         self.assertIn('-race', command)
         self.assertEqual(command[-3:], ['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell'])
         names = fixture.REQUIRED + fixture.PROFILE_REQUIRED + fixture.SESSION_REQUIRED + fixture.PUBLIC_REQUIRED
@@ -63,6 +63,27 @@ class QdrantFixtureTests(unittest.TestCase):
         for name in fixture.PUBLIC_REQUIRED:
             with self.assertRaises(RuntimeError):
                 fixture.check_acceptance(log.replace('--- PASS: TestQdrantNative'+name, '--- SKIP: TestQdrantNative'+name), public=True)
+
+    def test_data_acceptance_requires_original_native_operations_and_shared_grid(self):
+        command = fixture.native_test_command(True, public=True, data=True)
+        self.assertNotIn('-skip', command)
+        self.assertEqual(command[-1], './internal/ui/dataworkspace')
+        private = fixture.native_test_command(True, data=True)
+        self.assertEqual(private[private.index('-skip')+1], '^TestQdrantNativePublic')
+        names = fixture.REQUIRED + fixture.PROFILE_REQUIRED + fixture.SESSION_REQUIRED + fixture.PUBLIC_REQUIRED + fixture.DATA_REQUIRED
+        log = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in names)
+        fixture.check_acceptance(log, public=True, data=True)
+        for name in fixture.DATA_REQUIRED:
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(log.replace('--- PASS: TestQdrantNative'+name,'--- SKIP: TestQdrantNative'+name),public=True,data=True)
+
+    def test_data_evidence_hashes_original_lease_page_rows_export_and_ui(self):
+        paths = fixture.source_hashes(profile=True)
+        for name in ['internal/services/qdrant/data_document.go','internal/services/qdrant/data_page.go',
+                     'internal/services/qdrant/data_row.go','internal/services/qdrant/data_reads.go',
+                     'internal/services/qdrant/data_test.go','internal/services/qdrant/data_native_integration_test.go',
+                     'internal/ui/dataworkspace/qdrant_integration_test.go','internal/ui/dataworkspace/native_selector.go']:
+            self.assertIn(name,paths)
 
     def test_public_evidence_covers_provider_navigation_original_rest_and_translations(self):
         paths = fixture.source_hashes(profile=True)
