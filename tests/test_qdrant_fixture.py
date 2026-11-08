@@ -11,6 +11,24 @@ spec.loader.exec_module(fixture)
 
 
 class QdrantFixtureTests(unittest.TestCase):
+    def test_snapshots_require_native_scopes_large_streams_and_failure_evidence(self):
+        names = ['SnapshotCollectionShardStorageCRUDAndRecovery',
+                 'SnapshotLargeStreamingDownloadUploadAndURLRecovery',
+                 'SnapshotPermissionsFailureAndOriginalMutationNoReplay',
+                 'SnapshotLostCanceledTransfersAndOriginalClose']
+        log = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in fixture.REQUIRED)
+        for name in names:
+            self.assertIn(name, fixture.REQUIRED)
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(log.replace('--- PASS: TestQdrantNative'+name,
+                                                     '--- SKIP: TestQdrantNative'+name))
+        hashes = fixture.source_hashes()
+        for path in ['internal/services/qdrant/snapshots.go',
+                     'internal/services/qdrant/snapshot_transfer.go',
+                     'internal/services/qdrant/snapshots_test.go',
+                     'internal/services/qdrant/snapshots_native_integration_test.go']:
+            self.assertIn(path, hashes)
+
     def test_exact_required_passes_and_race(self):
         log = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in fixture.REQUIRED)
         fixture.check_acceptance(log)

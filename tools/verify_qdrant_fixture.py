@@ -37,6 +37,10 @@ REQUIRED = (
     'ManagementSessionPreflightChangesActiveDocumentsAndDeniedReceipt',
     'ManagementSessionLostCanceledLeaseAndSessionCloseRetainOriginalOutcome',
     'ManagementSessionReadbackInterruptionRetainsReceiptAndNeverMutates',
+    'SnapshotCollectionShardStorageCRUDAndRecovery',
+    'SnapshotLargeStreamingDownloadUploadAndURLRecovery',
+    'SnapshotPermissionsFailureAndOriginalMutationNoReplay',
+    'SnapshotLostCanceledTransfersAndOriginalClose',
 )
 PROFILE_REQUIRED = (
     'ProfileURIReopenAndOriginalEditorCheck',
@@ -143,6 +147,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
     evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode,
+                    snapshot_scope='native_collection_shard_storage_crud_streaming_sha256_collection_and_shard_upload_url_recovery_original_receipts_no_replay',
                     scope='original_shared_point_grid_crud_json_jsonl_import_explicit_native_modes_signed_snapshots_receipts_bounded_all_source_readback_no_replay_cursor_filter_count_fields_and_export' if data else 'public_chooser_uri_original_sessions_collections_definitions_rest_typed_points_and_recovery' if public else 'private_original_session_metadata_rest_typed_points_and_management_leases_namespace_claims_native_boolean_receipts_complete_readback_no_replay' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_point_and_collection_alias_management_original_session_claims_receipts_and_no_replay',
                     status='failed', fixture_cleaned=False, private_files_cleaned=False)
     try:
@@ -226,7 +231,10 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                     seed('PUT', '/collections/'+collection+'/points?wait=true',
                          {'points': [{'id': 9007199254740993, 'vector': [1, 0],
                                       'payload': {'integer': 9007199254740993, 'text': '原生配置🐱'}}]})
-                probe = dict(endpoint=endpoint, auth='none' if mode == 'anonymous' else 'api_key',
+                networks = list(inspected['NetworkSettings']['Networks'].values())
+                if len(networks) != 1 or not networks[0].get('Gateway'):
+                    raise RuntimeError('Fixture has no unambiguous owned network gateway')
+                probe = dict(host_gateway=networks[0]['Gateway'], endpoint=endpoint, auth='none' if mode == 'anonymous' else 'api_key',
                              key_file='' if mode == 'anonymous' else str(folder/'admin-key'),
                              readonly_key_file='' if mode == 'anonymous' else str(folder/'readonly-key'),
                              ca_file=str(folder/'ca.crt') if tls else '', server_name='localhost' if tls else '',
