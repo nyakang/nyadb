@@ -31,6 +31,8 @@ SESSION_REQUIRED = ['SessionQualifiedPaginationAndDefinitions', 'SessionRESTAdmi
 SESSION_SCOPED = 'SessionScopedPermissionsAndRevocation'
 PUBLIC_REQUIRED = ['PublicProviderMetadataAndPublishedGenerations', 'RESTLostWriteCancelAndExplicitRecovery', 'PublicChooserURINavigationDefinitionsRESTAndRecovery']
 PUBLIC_SCOPED = 'PublicScopedWorkbenchPermissions'
+DOCUMENT_REQUIRED = ['DocumentsEnumerationBeyondSearchLimitAndExactIDs', 'DocumentsReadInterruptionsCancelCloseAndNoReplay']
+DOCUMENT_SCOPED = 'DocumentsScopedKeyPermissions'
 MODES = ('anonymous', 'bearer', 'tls', 'mtls')
 
 
@@ -50,27 +52,27 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def source_hashes(profile=False, session=False, public=False):
+def source_hashes(profile=False, session=False, public=False, documents=False):
     paths = sorted((ROOT/'internal/services/meilisearch').glob('*.go')) + sorted((ROOT/'internal/services/connections').glob('*.go')) + [ROOT/'go.mod', ROOT/'go.sum', Path(__file__).resolve(), ROOT/'tests/test_meilisearch_fixture.py']
     if profile or session or public:
         paths = sorted((ROOT/'internal').rglob('*.go')) + sorted((ROOT/'locales').glob('*.go')) + sorted((ROOT/'locales').glob('*.json')) + [ROOT/'go.mod', ROOT/'go.sum', Path(__file__).resolve(), ROOT/'tests/test_meilisearch_fixture.py']
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 
-def required_passes(mode, profile=False, session=False, public=False):
+def required_passes(mode, profile=False, session=False, public=False, documents=False):
     if mode not in MODES:
         raise ValueError('Invalid native fixture mode')
     profile, session = profile or public, session or public
-    return REQUIRED + ([] if mode == 'anonymous' else [SCOPED]) + (PROFILE_REQUIRED if profile else []) + ((SESSION_REQUIRED + ([] if mode == 'anonymous' else [SESSION_SCOPED])) if session else []) + ((PUBLIC_REQUIRED + ([] if mode == 'anonymous' else [PUBLIC_SCOPED])) if public else [])
+    return REQUIRED + ([] if mode == 'anonymous' else [SCOPED]) + (PROFILE_REQUIRED if profile else []) + ((SESSION_REQUIRED + ([] if mode == 'anonymous' else [SESSION_SCOPED])) if session else []) + ((PUBLIC_REQUIRED + ([] if mode == 'anonymous' else [PUBLIC_SCOPED])) if public else []) + ((DOCUMENT_REQUIRED + ([] if mode == 'anonymous' else [DOCUMENT_SCOPED])) if documents else [])
 
 
-def test_command(mode, race, profile=False, session=False, public=False):
-    selected = '^TestMeilisearchNative(' + '|'.join(required_passes(mode, profile, session, public)) + ')$'
+def test_command(mode, race, profile=False, session=False, public=False, documents=False):
+    selected = '^TestMeilisearchNative(' + '|'.join(required_passes(mode, profile, session, public, documents)) + ')$'
     return ['go', 'test', '-count=1', '-timeout=10m', '-v', *(['-race'] if race else []), '-run', selected, './internal/services/meilisearch', *(['./internal/ui/connectioneditor'] if profile or public else []), *(['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell'] if public else [])]
 
 
-def check_acceptance(log, mode, profile=False, session=False, public=False):
-    for name in required_passes(mode, profile, session, public):
+def check_acceptance(log, mode, profile=False, session=False, public=False, documents=False):
+    for name in required_passes(mode, profile, session, public, documents):
         if not re.search(r'^--- PASS: TestMeilisearchNative'+name+r' \(', log, re.M):
             raise RuntimeError('Missing required native PASS: '+name)
     if re.search(r'^\s*--- (SKIP|FAIL):', log, re.M) or 'WARNING: DATA RACE' in log:
@@ -104,15 +106,15 @@ def certificates(folder, mutual):
         path.chmod(0o600)
 
 
-def verify(mode='tls', race=False, profile=False, session=False, public=False):
+def verify(mode='tls', race=False, profile=False, session=False, public=False, documents=False):
     profile, session = profile or public, session or public
-    required_passes(mode, profile, session, public)
+    required_passes(mode, profile, session, public, documents)
     output = ROOT/'build/meilisearch'
     output.mkdir(parents=True, exist_ok=True)
     nonce = uuid.uuid4().hex
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
-    evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode, scope='public_chooser_uri_sessions_indexes_definitions_rest_recovery' if public else 'private_original_session_metadata_rest_leases' if session else ('private_profile_uri_vault_editor' if profile else 'private_native_transport_tasks_search'), status='failed', fixture_cleaned=False, private_files_cleaned=False)
+    evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode, scope='public_workbench_and_private_document_read_codecs' if public and documents else 'private_native_document_listing_and_id_reads' if documents else 'public_chooser_uri_sessions_indexes_definitions_rest_recovery' if public else 'private_original_session_metadata_rest_leases' if session else ('private_profile_uri_vault_editor' if profile else 'private_native_transport_tasks_search'), status='failed', fixture_cleaned=False, private_files_cleaned=False)
     try:
         with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
             folder = Path(private)
@@ -198,16 +200,18 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False):
                     env['NYADB_MEILISEARCH_SESSION_IT'] = '1'
                 if public:
                     env.update(NYADB_MEILISEARCH_PUBLIC_IT='1', NYADB_MEILISEARCH_PUBLIC_IMAGES=str(output/('public-images-'+nonce)))
-                hashes = source_hashes(profile, session, public)
+                if documents:
+                    env['NYADB_MEILISEARCH_DOCUMENT_IT'] = '1'
+                hashes = source_hashes(profile, session, public, documents)
                 logfile = output/('native-'+nonce+'.log')
-                command = test_command(mode, race, profile, session, public)
+                command = test_command(mode, race, profile, session, public, documents)
                 with logfile.open('w') as log:
                     result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=630)
-                if hashes != source_hashes(profile, session, public):
+                if hashes != source_hashes(profile, session, public, documents):
                     raise RuntimeError('Verification sources changed during acceptance; rerun on stable sources')
                 if result.returncode:
                     raise RuntimeError('Native acceptance failed; inspect '+str(logfile.relative_to(ROOT)))
-                check_acceptance(logfile.read_text(), mode, profile, session, public)
+                check_acceptance(logfile.read_text(), mode, profile, session, public, documents)
                 if profile:
                     images = sorted(Path(env['NYADB_MEILISEARCH_PROFILE_IMAGES']).glob('*.png'))
                     expected = {language+'-'+str(width)+'-'+auth+'-'+tab+'.png' for language in ['zh-Hans','en'] for width in [900,720] for auth in ['none','bearer'] for tab in ['general','advanced','ssl']}
@@ -220,7 +224,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False):
                     if {str(p.relative_to(Path(env['NYADB_MEILISEARCH_PUBLIC_IMAGES']))) for p in images} != expected:
                         raise RuntimeError('Missing localized native public workbench images')
                     evidence['headless_workbench_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
-                evidence.update(status='passed_with_race' if race else 'passed', observed_identity=identity, source_hashes=hashes, command=command, log=str(logfile.relative_to(ROOT)), log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest(), required_passes=required_passes(mode, profile, session, public))
+                evidence.update(status='passed_with_race' if race else 'passed', observed_identity=identity, source_hashes=hashes, command=command, log=str(logfile.relative_to(ROOT)), log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest(), required_passes=required_passes(mode, profile, session, public, documents))
             finally:
                 if identifier:
                     logs = subprocess.run(['docker', 'logs', identifier], capture_output=True, text=True)
@@ -244,5 +248,6 @@ if __name__ == '__main__':
     parser.add_argument('--profile', action='store_true', help='Verify private URI/options/vault/editor/reopen and original checks')
     parser.add_argument('--session', action='store_true', help='Verify original sessions, bounded index metadata, REST admission, cancellation and explicit recovery')
     parser.add_argument('--public', action='store_true', help='Verify public chooser, saved profiles, qualified metadata, REST admission and explicit recovery; implies profile and session')
+    parser.add_argument('--documents', action='store_true', help='Verify bounded native document enumeration, exact IDs, readonly errors and original read cancellation/recovery; no public grid claims')
     options = parser.parse_args()
-    verify(options.mode, options.race, options.profile, options.session, options.public)
+    verify(options.mode, options.race, options.profile, options.session, options.public, options.documents)

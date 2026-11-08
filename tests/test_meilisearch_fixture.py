@@ -11,6 +11,18 @@ SPEC.loader.exec_module(fixture)
 
 
 class MeilisearchFixtureTests(unittest.TestCase):
+    def test_documents_acceptance_requires_complete_enumeration_and_native_read_lifecycle(self):
+        for mode in fixture.MODES:
+            names = fixture.required_passes(mode, documents=True)
+            self.assertTrue(set(fixture.DOCUMENT_REQUIRED).issubset(names))
+            self.assertEqual(fixture.DOCUMENT_SCOPED in names, mode != 'anonymous')
+            command = fixture.test_command(mode, True, documents=True)
+            self.assertIn('-race', command)
+            self.assertIn('DocumentsEnumerationBeyondSearchLimitAndExactIDs', command[-2])
+            log = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in fixture.required_passes(mode))
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(log, mode, documents=True)
+
     def test_public_acceptance_requires_all_native_layers_and_scoped_ui(self):
         for mode in fixture.MODES:
             names = fixture.required_passes(mode, public=True)
