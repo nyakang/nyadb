@@ -11,6 +11,25 @@ SPEC.loader.exec_module(fixture)
 
 
 class MeilisearchFixtureTests(unittest.TestCase):
+    def test_tasks_acceptance_requires_native_mutation_counts_and_original_observers(self):
+        for mode in fixture.MODES:
+            names = fixture.required_passes(mode, tasks=True)
+            self.assertTrue(set(fixture.TASK_REQUIRED).issubset(names))
+            self.assertEqual(fixture.TASK_SCOPED in names, mode != 'anonymous')
+            command = fixture.test_command(mode, True, tasks=True)
+            self.assertIn('-race', command)
+            self.assertNotIn('./internal/ui/shell', command)
+            complete = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in names)
+            if mode == 'mtls':
+                complete += '\nnative mTLS accepted owned client certificate and rejected its absence'
+            fixture.check_acceptance(complete, mode, tasks=True)
+            for name in fixture.TASK_REQUIRED + ([] if mode == 'anonymous' else [fixture.TASK_SCOPED]):
+                with self.assertRaises(RuntimeError):
+                    fixture.check_acceptance(complete.replace('--- PASS: TestMeilisearchNative'+name, '--- SKIP: TestMeilisearchNative'+name), mode, tasks=True)
+        hashes = fixture.source_hashes(tasks=True)
+        self.assertIn('internal/services/meilisearch/task_catalog.go', hashes)
+        self.assertIn('internal/services/meilisearch/query.go', hashes)
+
     def test_search_acceptance_requires_native_sources_scopes_and_public_ui(self):
         for mode in fixture.MODES:
             names = fixture.required_passes(mode, search=True)

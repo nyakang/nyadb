@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -127,8 +128,36 @@ func originalReceipt(r Receipt) (Receipt, error) {
 	return original, nil
 }
 
-// Submit expects native asynchronous admission. Synchronous endpoints (e.g.
-// keys) use Do; a 202 never reports committed documents or completed settings.
+// taskManagementKind identifies native task endpoints whose asynchronous
+// admission uses HTTP 200. Other HTTP 200 endpoints remain synchronous.
+func taskManagementKind(request Request) string {
+	u, err := url.Parse(request.Path)
+	if err != nil {
+		return ""
+	}
+	if request.Method == "POST" && u.Path == "/tasks/cancel" {
+		return "taskCancelation"
+	}
+	if request.Method == "DELETE" && u.Path == "/tasks" {
+		return "taskDeletion"
+	}
+	return ""
+}
+func validateAdmission(request Request, response Response) (Receipt, error) {
+	expected, kind := 202, taskManagementKind(request)
+	if kind != "" {
+		expected = 200
+	}
+	receipt, err := parseReceipt(response.Body)
+	if err != nil || readOnly(request) || response.Status != expected || kind != "" && (receipt.Type != kind || receipt.IndexUID != nil) {
+		return Receipt{}, ErrProtocol
+	}
+	return receipt, nil
+}
+
+// Submit expects native asynchronous admission: normally HTTP 202, or HTTP
+// 200 on the native task cancel/delete endpoints. Neither status proves task
+// completion. Synchronous endpoints (e.g. keys) use Do.
 func (c *Client) Submit(ctx context.Context, request Request) (Receipt, Response, error) {
 	if readOnly(request) {
 		return Receipt{}, Response{}, ErrInvalid
@@ -137,8 +166,8 @@ func (c *Client) Submit(ctx context.Context, request Request) (Receipt, Response
 	if err != nil {
 		return Receipt{}, response, err
 	}
-	r, err := parseReceipt(response.Body)
-	if response.Status != 202 || err != nil {
+	r, err := validateAdmission(request, response)
+	if err != nil {
 		c.retire()
 		return Receipt{}, response, &Interrupted{WriteOutcomeUnknown: true, Cause: ErrProtocol}
 	}
@@ -163,9 +192,7 @@ func (c *Client) ReadTask(ctx context.Context, receipt Receipt) (Task, error) {
 		c.retire()
 		return task, ErrTaskChanged
 	}
-	switch status {
-	case "enqueued", "processing", "succeeded", "failed", "canceled":
-	default:
+	if !validTaskStatus(status) {
 		return task, ErrProtocol
 	}
 	return task, nil

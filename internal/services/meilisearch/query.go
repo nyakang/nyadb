@@ -154,8 +154,8 @@ func (l *queryLease) ExecuteStream(ctx context.Context, namespace, text string, 
 	defer func() { result.Duration = time.Since(start); result.SetLegacyView() }()
 	response, err := l.client.Do(ctx, r)
 	state := "completed"
-	if err == nil && response.Status == 202 {
-		if _, receiptErr := parseReceipt(response.Body); receiptErr != nil || readOnly(r) {
+	if err == nil && (response.Status == 202 || taskManagementKind(r) != "") {
+		if _, receiptErr := validateAdmission(r, response); receiptErr != nil {
 			l.client.retire()
 			err = &Interrupted{WriteOutcomeUnknown: !readOnly(r), Cause: ErrProtocol}
 		} else {
