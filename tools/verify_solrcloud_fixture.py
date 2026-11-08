@@ -35,12 +35,12 @@ def remove_owned_network(identifier, nonce):
     subprocess.run(['docker', 'network', 'rm', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(race=False, data_scope=False):
+def verify(race=False, data_scope=False, document_scope=False):
     base, output = ROOT/'temp/solr', ROOT/'build/solr'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
     nonce, ids, network = uuid.uuid4().hex, [], None
-    record = {'nonce': nonce, 'scope': 'private_solrcloud_data_documents' if data_scope else 'private_solrcloud_sessions_metadata_rest', 'solr_image': IMAGE, 'zk_image': ZK_IMAGE,
+    record = {'nonce': nonce, 'scope': 'private_native_solrcloud_single_document_codec' if document_scope else ('private_solrcloud_data_documents' if data_scope else 'private_solrcloud_sessions_metadata_rest'), 'solr_image': IMAGE, 'zk_image': ZK_IMAGE,
               'deployment': 'one node; two primary shards; RF=1; HTTP none; default open ZK ACL; private mounts/isolated network'}
 
     def shutdown(signum, _frame):
@@ -115,7 +115,10 @@ def verify(race=False, data_scope=False):
             record['source_sha256'] = hashes
             env = os.environ.copy()
             env.pop('NYADB_SOLR_IT', None)
+            env.pop('NYADB_SOLR_DOCUMENT_IT', None)
             env.update({'NYADB_SOLR_CLOUD_IT': '1', 'NYADB_SOLR_CONFIG': str(probe)})
+            if document_scope:
+                env['NYADB_SOLR_DOCUMENT_IT'] = '1'
             if data_scope:
                 env['NYADB_SOLR_DATA_IT'] = '1'
             logfile = output/('cloud-acceptance-'+nonce+'.log')
@@ -126,6 +129,8 @@ def verify(race=False, data_scope=False):
             text = logfile.read_text()
             if result.returncode or '--- PASS: TestSolrNativeCloudSessionAliasesSchemasAndREST' not in text or (data_scope and '--- PASS: TestSolrNativeCloudDataMemberShardDuplicateIdentityAndAliasRevocation' not in text):
                 raise RuntimeError('Cloud native acceptance failed; inspect captured log')
+            if document_scope and '--- PASS: TestSolrNativeCloudDocumentCRUDCodecImplicitAndCompositeRouting' not in text:
+                raise RuntimeError('Cloud native document codec acceptance was not verified')
             if any(hashlib.sha256((ROOT/p).read_bytes()).hexdigest() != digest for p, digest in hashes.items()):
                 raise RuntimeError('Sources changed during cloud acceptance; rerun on stable sources')
             record.update({'status': 'passed_with_race' if race else 'passed', 'log': str(logfile.relative_to(ROOT)), 'log_sha256': hashlib.sha256(logfile.read_bytes()).hexdigest()})
@@ -145,6 +150,8 @@ def verify(race=False, data_scope=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--race', action='store_true')
-    parser.add_argument('--data', action='store_true')
+    scopes = parser.add_mutually_exclusive_group()
+    scopes.add_argument('--data', action='store_true')
+    scopes.add_argument('--documents', action='store_true', help='Verify bounded native single-document CRUD codec and RTG')
     args = parser.parse_args()
-    verify(args.race, args.data)
+    verify(args.race, args.data, args.documents)

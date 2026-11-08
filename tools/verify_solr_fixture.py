@@ -34,12 +34,13 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(plain=False, race=False, profile=False, session=False, data_scope=False):
+def verify(plain=False, race=False, profile=False, session=False, data_scope=False, document_scope=False):
     base, output = ROOT/'temp/solr', ROOT/'build/solr'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
     nonce, identifier = uuid.uuid4().hex, None
-    evidence = {'nonce': nonce, 'image': IMAGE, 'tls': not plain, 'scope': 'private_solr_shared_data_documents' if data_scope else ('private_solr_sessions_metadata_rest' if session else ('private_solr_profile_editor' if profile else 'private_native_solr_transport_foundation')), 'storage': 'owned_private_bind_mount'}
+    evidence = {'nonce': nonce, 'image': IMAGE, 'tls': not plain, 'scope': 'private_native_solr_single_document_codec' if document_scope else ('private_solr_shared_data_documents' if data_scope else ('private_solr_sessions_metadata_rest' if session else ('private_solr_profile_editor' if profile else 'private_native_solr_transport_foundation'))), 'storage': 'owned_private_bind_mount'}
+    session = session or document_scope
     def shutdown(signum, _frame):
         raise SystemExit(128+signum)
     signal.signal(signal.SIGTERM, shutdown)
@@ -166,7 +167,11 @@ def verify(plain=False, race=False, profile=False, session=False, data_scope=Fal
             source_hashes = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources}
             evidence['source_sha256'] = source_hashes
             env = os.environ.copy()
+            env.pop('NYADB_SOLR_DOCUMENT_IT', None)
+            env.pop('NYADB_SOLR_CLOUD_IT', None)
             env.update({'NYADB_SOLR_IT': '1', 'NYADB_SOLR_CONFIG': str(probe)})
+            if document_scope:
+                env['NYADB_SOLR_DOCUMENT_IT'] = '1'
             if session or data_scope:
                 env['NYADB_SOLR_SESSION_IT'] = '1'
             if data_scope:
@@ -188,6 +193,8 @@ def verify(plain=False, race=False, profile=False, session=False, data_scope=Fal
                 required += ['SessionMetadataRESTAndChangedBindings']
             if data_scope:
                 required += ['DataProjectionLivePagingLargeFieldsAndCompleteExport', 'DataLateChangeCancellationAndPartialReceipt', 'SharedGridPagingInspectorParkGenerationAndClose']
+            if document_scope:
+                required += ['DocumentCRUDCodecExactRTGAndConflict', 'DocumentLostReceiptKeepsOriginalMutationWithoutReplay']
             if profile:
                 required += ['ProfileURIReopenAndOriginalEditorCheck', 'ProfileProxyContextAndCanceledOriginalCheck', 'EditorLocalizedFormEvidence']
             if any(hashlib.sha256((ROOT/path).read_bytes()).hexdigest() != digest for path, digest in source_hashes.items()):
@@ -227,8 +234,9 @@ if __name__ == '__main__':
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--race', action='store_true')
     scopes = parser.add_mutually_exclusive_group()
+    scopes.add_argument('--documents', action='store_true', help='Verify bounded native single-document CRUD codec and RTG, not grid editing')
     scopes.add_argument('--data', action='store_true', help='Verify private shared data documents, native projection and grid')
     scopes.add_argument('--session', action='store_true', help='Verify private sessions, native metadata and original REST leases')
     scopes.add_argument('--profile', action='store_true', help='Verify private profiles, storage, credentials and localized forms')
     args = parser.parse_args()
-    verify(args.plain, args.race, args.profile, args.session, args.data)
+    verify(args.plain, args.race, args.profile, args.session, args.data, args.documents)
