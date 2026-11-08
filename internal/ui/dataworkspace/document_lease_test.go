@@ -2,6 +2,9 @@ package dataworkspace
 
 import (
 	"context"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -10,6 +13,74 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
 )
+
+func TestDocumentLeaseOwnsTabularExportObjectAndParkedCompletion(t *testing.T) {
+	active := Session{ProfileID: 12, Generation: 1, Connected: true}
+	object := contract.NamespaceRef{ProfileID: 12, Catalog: "original"}.Object("documents", "documents")
+	_, cancel := context.WithCancel(context.Background())
+	lease := &testDocumentLease{cancel: cancel}
+	entered, release := make(chan struct{}), make(chan struct{})
+	defer func() {
+		select {
+		case <-release:
+		default:
+			close(release)
+		}
+	}()
+	var calls atomic.Int32
+	query := `{"q":"猫","filter":"n = 9007199254740993"}`
+	lease.runtime = Runtime{Capabilities: contract.Capabilities{Documents: true, Export: true}, Exporter: func(ctx context.Context, id int64, db, name string, o contract.DataOptions, fields []string, emit func([]contract.DataValue) error) error {
+		calls.Add(1)
+		close(entered)
+		<-release
+		if id != 12 || db != "original" || name != "documents" || o.Object != object || o.FilterValue != query || o.FilterMode != "meilisearch_search" || len(fields) != 1 || fields[0] != "document" {
+			return contract.ErrDataConflict
+		}
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		return emit([]contract.DataValue{{Kind: contract.JSON, Text: `{"n":9007199254740993,"text":"原始🐱"}`}})
+	}}
+	parent := Runtime{ReserveDocument: func(contract.ObjectRef) (contract.DataDocumentLease, error) { return lease, nil }, Exporter: func(context.Context, int64, string, string, contract.DataOptions, []string, func([]contract.DataValue) error) error {
+		t.Error("document export used parent runtime")
+		return contract.ErrUnsupported
+	}}
+	s := New(Dependencies{Session: func() Session { return active }, Runtime: func() Runtime { return parent }})
+	d := s.OpenObject(1, object, lease.runtime.Capabilities)
+	defer s.Close(d)
+	d.page = &contract.DataPage{Object: object, Columns: []string{"document"}, ColumnKinds: []string{"json"}, Rows: [][]contract.DataCell{{{Text: "preview"}}}}
+	d.filterColumn, d.filterMode, d.filterValue = "document", "meilisearch_search", query
+	s.openDataExport(d)
+	d.transfer.Scope, d.transfer.ExportPath = "all", filepath.Join(t.TempDir(), "original.csv")
+	path := d.transfer.ExportPath
+	s.startDataExport(ui.Services{}, d)
+	select {
+	case <-entered:
+	case <-time.After(time.Second):
+		t.Fatal("bound export did not start")
+	}
+	active.ProfileID = 13
+	d.filterValue = `{"q":"changed after dispatch"}`
+	close(release)
+	select {
+	case result := <-d.transfer.Results:
+		out := make(chan mysqlDataTransferResult, 1)
+		out <- result
+		d.transfer.Results = out
+	case <-time.After(time.Second):
+		t.Fatal("original export did not settle")
+	}
+	s.Consume(ui.Services{})
+	if !d.transfer.Busy || d.transfer.Completed || active.ProfileID != 13 {
+		t.Fatal("parked export rebound active profile")
+	}
+	active.ProfileID = 12
+	s.Consume(ui.Services{})
+	raw, err := os.ReadFile(path)
+	if err != nil || !d.transfer.Completed || d.transfer.Busy || d.transfer.Err != "" || calls.Load() != 1 || !strings.Contains(string(raw), "9007199254740993") || !strings.Contains(string(raw), "原始🐱") {
+		t.Fatal("original bound export lost values or replayed", err, d.transfer.Err)
+	}
+}
 
 type testDocumentLease struct {
 	runtime   Runtime

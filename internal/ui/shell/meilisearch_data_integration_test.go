@@ -22,6 +22,12 @@ import (
 )
 
 func TestMeilisearchNativePublicOriginalDocumentParkedReadAndClose(t *testing.T) {
+	for _, mode := range []string{"documents", "search"} {
+		t.Run(mode, func(t *testing.T) { testMeilisearchOriginalDocumentParkedReadAndClose(t, mode == "search") })
+	}
+}
+
+func testMeilisearchOriginalDocumentParkedReadAndClose(t *testing.T, search bool) {
 	parsed := meilisearchPublicFixture(t, "NYADB_MEILISEARCH_CONFIG")
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
@@ -55,7 +61,7 @@ func TestMeilisearchNativePublicOriginalDocumentParkedReadAndClose(t *testing.T)
 			w.WriteHeader(502)
 			return
 		}
-		if strings.HasSuffix(r.URL.Path, "/documents") && r.URL.Query().Get("limit") == "100" {
+		if search && strings.HasSuffix(r.URL.Path, "/search") || !search && strings.HasSuffix(r.URL.Path, "/documents") && r.URL.Query().Get("limit") == "100" {
 			switch attempts.Add(1) {
 			case 1:
 				close(entered)
@@ -133,6 +139,15 @@ func TestMeilisearchNativePublicOriginalDocumentParkedReadAndClose(t *testing.T)
 	doc := s.currentTab()
 	if doc.data == nil {
 		t.Fatal("qualified original document missing")
+	}
+	if search {
+		wait(func() bool { return !doc.data.Busy() })
+		if err = clickMySQLDataToolbar(tt, "Meilisearch 搜索"); err != nil {
+			t.Fatal(err)
+		}
+		if err = tt.Click("应用 Meilisearch 搜索"); err != nil {
+			t.Fatal(err)
+		}
 	}
 	select {
 	case <-entered:

@@ -23183,3 +23183,153 @@ func LiveDataOffsetWarning() string { return In(i18n.Locale()).LiveDataOffsetWar
 func (msgs Messages) LiveDataOffsetWarning() string {
 	return Catalog.Format(msgs.locale, "liveDataOffsetWarning", nil)
 }
+
+// MeilisearchSearchToolbar says "Meilisearch 搜索"
+// in the language the app shows.
+func MeilisearchSearchToolbar() string { return In(i18n.Locale()).MeilisearchSearchToolbar() }
+
+// MeilisearchSearchToolbar says "Meilisearch 搜索"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSearchToolbar() string {
+	return Catalog.Format(msgs.locale, "meilisearchSearchToolbar", nil)
+}
+
+// MeilisearchSearchInput says "Meilisearch 搜索 JSON"
+// in the language the app shows.
+func MeilisearchSearchInput() string { return In(i18n.Locale()).MeilisearchSearchInput() }
+
+// MeilisearchSearchInput says "Meilisearch 搜索 JSON"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSearchInput() string {
+	return Catalog.Format(msgs.locale, "meilisearchSearchInput", nil)
+}
+
+// MeilisearchSearchHint says "输入 q、filter、sort、facets …"
+// in the language the app shows.
+func MeilisearchSearchHint() string { return In(i18n.Locale()).MeilisearchSearchHint() }
+
+// MeilisearchSearchHint says "输入 q、filter、sort、facets …"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSearchHint() string {
+	return Catalog.Format(msgs.locale, "meilisearchSearchHint", nil)
+}
+
+// MeilisearchSearchApply says "应用 Meilisearch 搜索"
+// in the language the app shows.
+func MeilisearchSearchApply() string { return In(i18n.Locale()).MeilisearchSearchApply() }
+
+// MeilisearchSearchApply says "应用 Meilisearch 搜索"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSearchApply() string {
+	return Catalog.Format(msgs.locale, "meilisearchSearchApply", nil)
+}
+
+// MeilisearchSearchClear says "清除 Meilisearch 搜索"
+// in the language the app shows.
+func MeilisearchSearchClear() string { return In(i18n.Locale()).MeilisearchSearchClear() }
+
+// MeilisearchSearchClear says "清除 Meilisearch 搜索"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSearchClear() string {
+	return Catalog.Format(msgs.locale, "meilisearchSearchClear", nil)
+}
+
+// MeilisearchSearchCollapse says "收起 Meilisearch 搜索"
+// in the language the app shows.
+func MeilisearchSearchCollapse() string { return In(i18n.Locale()).MeilisearchSearchCollapse() }
+
+// MeilisearchSearchCollapse says "收起 Meilisearch 搜索"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSearchCollapse() string {
+	return Catalog.Format(msgs.locale, "meilisearchSearchCollapse", nil)
+}
+
+// MeilisearchSearchInvalid says "搜索 JSON 必须为有效对象，且不能包含 offset、limit、page 或 hitsPerPage"
+// in the language the app shows.
+func MeilisearchSearchInvalid() string { return In(i18n.Locale()).MeilisearchSearchInvalid() }
+
+// MeilisearchSearchInvalid says "搜索 JSON 必须为有效对象，且不能包含 offset、limit、page 或 hitsPerPage"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSearchInvalid() string {
+	return Catalog.Format(msgs.locale, "meilisearchSearchInvalid", nil)
+}
+
+// MeilisearchSearchRestored says "Meilisearch 搜索已恢复；请点击应用 Meilisearch 搜索执行"
+// in the language the app shows.
+func MeilisearchSearchRestored() string { return In(i18n.Locale()).MeilisearchSearchRestored() }
+
+// MeilisearchSearchRestored says "Meilisearch 搜索已恢复；请点击应用 Meilisearch 搜索执行"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSearchRestored() string {
+	return Catalog.Format(msgs.locale, "meilisearchSearchRestored", nil)
+}
+
+// MeilisearchSearchApplied says "Meilisearch 搜索已应用"
+// in the language the app shows.
+func MeilisearchSearchApplied() string { return In(i18n.Locale()).MeilisearchSearchApplied() }
+
+// MeilisearchSearchApplied says "Meilisearch 搜索已应用"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSearchApplied() string {
+	return Catalog.Format(msgs.locale, "meilisearchSearchApplied", nil)
+}
+
+// NativeSearchResponsePreview says "原生搜索响应预览"
+// in the language the app shows.
+func NativeSearchResponsePreview() string { return In(i18n.Locale()).NativeSearchResponsePreview() }
+
+// NativeSearchResponsePreview says "原生搜索响应预览"
+// in the language of msgs.
+func (msgs Messages) NativeSearchResponsePreview() string {
+	return Catalog.Format(msgs.locale, "nativeSearchResponsePreview", nil)
+}
+
+// NativeSearchResponseTruncated says "响应预览已截断；可复制完整搜索响应。"
+// in the language the app shows.
+func NativeSearchResponseTruncated() string { return In(i18n.Locale()).NativeSearchResponseTruncated() }
+
+// NativeSearchResponseTruncated says "响应预览已截断；可复制完整搜索响应。"
+// in the language of msgs.
+func (msgs Messages) NativeSearchResponseTruncated() string {
+	return Catalog.Format(msgs.locale, "nativeSearchResponseTruncated", nil)
+}
+
+// NativeSearchResponse says "搜索响应"
+// in the language the app shows.
+func NativeSearchResponse() string { return In(i18n.Locale()).NativeSearchResponse() }
+
+// NativeSearchResponse says "搜索响应"
+// in the language of msgs.
+func (msgs Messages) NativeSearchResponse() string {
+	return Catalog.Format(msgs.locale, "nativeSearchResponse", nil)
+}
+
+// NativeSearchResponseView says "查看原生搜索响应"
+// in the language the app shows.
+func NativeSearchResponseView() string { return In(i18n.Locale()).NativeSearchResponseView() }
+
+// NativeSearchResponseView says "查看原生搜索响应"
+// in the language of msgs.
+func (msgs Messages) NativeSearchResponseView() string {
+	return Catalog.Format(msgs.locale, "nativeSearchResponseView", nil)
+}
+
+// NativeSearchResponseCopy says "复制完整搜索响应"
+// in the language the app shows.
+func NativeSearchResponseCopy() string { return In(i18n.Locale()).NativeSearchResponseCopy() }
+
+// NativeSearchResponseCopy says "复制完整搜索响应"
+// in the language of msgs.
+func (msgs Messages) NativeSearchResponseCopy() string {
+	return Catalog.Format(msgs.locale, "nativeSearchResponseCopy", nil)
+}
+
+// NativeSearchResultSummary says "估算命中：%d · 服务端搜索：%d ms"
+// in the language the app shows.
+func NativeSearchResultSummary() string { return In(i18n.Locale()).NativeSearchResultSummary() }
+
+// NativeSearchResultSummary says "估算命中：%d · 服务端搜索：%d ms"
+// in the language of msgs.
+func (msgs Messages) NativeSearchResultSummary() string {
+	return Catalog.Format(msgs.locale, "nativeSearchResultSummary", nil)
+}

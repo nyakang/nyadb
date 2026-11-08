@@ -39,6 +39,7 @@ func (s *State) clearMySQLDataFilter(services ui.Services, t *Document) {
 	t.filterMode = ""
 	t.filterValue = ""
 	t.selectorDraft, t.selectorError = "", ""
+	t.selectorResponseOpen = false
 	t.selectorHistory, t.selectorHistorySorts = false, nil
 	t.filterRules = nil
 	t.filterCondition, t.groupDraft = nil, nil
@@ -133,6 +134,9 @@ func mysqlDataFilterStatus(t *Document) string {
 	}
 	if t.filterMode == "" {
 		return ""
+	}
+	if t.filterMode == "meilisearch_search" {
+		return locales.Text("Meilisearch 搜索已应用")
 	}
 	if t.filterMode == "mango" {
 		return locales.Text("Mango 查询已应用")
@@ -687,6 +691,10 @@ func (s *State) applyMySQLDataCellFilter(services ui.Services, t *Document, name
 
 func mysqlDataFilterModeLabel(mode string) string {
 	switch mode {
+	case "meilisearch_search":
+		return "Meilisearch 搜索"
+	case "mango":
+		return "Mango 查询"
 	case "less_equal":
 		return "小于或等于"
 	case "greater_equal":

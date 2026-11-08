@@ -11,6 +11,29 @@ SPEC.loader.exec_module(fixture)
 
 
 class MeilisearchFixtureTests(unittest.TestCase):
+    def test_search_acceptance_requires_native_sources_scopes_and_public_ui(self):
+        for mode in fixture.MODES:
+            names = fixture.required_passes(mode, search=True)
+            self.assertTrue(set(fixture.required_passes(mode, public=True)).issubset(names))
+            self.assertTrue(set(fixture.SEARCH_REQUIRED).issubset(names))
+            self.assertEqual(fixture.SEARCH_SCOPED in names, mode != 'anonymous')
+            command = fixture.test_command(mode, True, search=True)
+            self.assertIn('-race', command)
+            self.assertIn('./internal/ui/shell', command)
+            complete = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in names)
+            if mode == 'mtls':
+                complete += '\nnative mTLS accepted owned client certificate and rejected its absence'
+            fixture.check_acceptance(complete, mode, search=True)
+            for name in fixture.SEARCH_REQUIRED:
+                with self.assertRaises(RuntimeError):
+                    fixture.check_acceptance(complete.replace('--- PASS: TestMeilisearchNative'+name, '--- SKIP: TestMeilisearchNative'+name), mode, search=True)
+            public = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in fixture.required_passes(mode, public=True))
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(public, mode, search=True)
+        hashes = fixture.source_hashes(search=True)
+        for path in ['internal/ui/dataworkspace/native_selector.go', 'internal/ui/shell/meilisearch_search_integration_test.go', 'locales/en.json', 'locales/zh-Hans.json']:
+            self.assertIn(path, hashes)
+
     def test_data_acceptance_requires_original_leases_and_complete_export(self):
         for mode in fixture.MODES:
             names = fixture.required_passes(mode, data=True)

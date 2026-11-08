@@ -70,7 +70,8 @@ func (l *dataLease) stream(ctx context.Context, id int64, db, name string, o con
 	if o.Object != l.object || o.Offset != 0 || o.After != nil || sink == nil {
 		return contract.ErrUnsupported
 	}
-	if err := validateDataOptions(o); err != nil {
+	query, err := dataSearchQuery(o)
+	if err != nil {
 		return err
 	}
 	ctx, done, err := l.begin(ctx)
@@ -85,6 +86,9 @@ func (l *dataLease) stream(ctx context.Context, id int64, db, name string, o con
 	defer closeClient()
 	if _, err = l.guard(ctx, c); err != nil {
 		return err
+	}
+	if query != "" {
+		return l.streamSearch(ctx, c, query, sink)
 	}
 	initial, _, err := c.ListDocuments(ctx, db, DocumentsRequest{Limit: 0})
 	if err != nil {

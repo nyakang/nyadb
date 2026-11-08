@@ -88,7 +88,7 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 		if dataToolbarToggle(c, "筛选 & 排序", "catalog-filter", t.rulesExpanded, false).Clicked() {
 			t.rulesExpanded = !t.rulesExpanded
 		}
-		if s.selectorFor(t).Dialect == "mango" && dataToolbarToggle(c, "Mango 查询", "catalog-filter", t.selectorOpen, false).Clicked() {
+		if labels, supported := selectorLabels(s.selectorFor(t).Dialect); supported && dataToolbarToggle(c, labels.toolbar, "catalog-filter", t.selectorOpen, false).Clicked() {
 			t.selectorOpen = !t.selectorOpen
 			if t.selectorOpen && t.selectorDraft == "" {
 				t.selectorDraft = "{}"

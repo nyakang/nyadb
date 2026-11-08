@@ -2280,5 +2280,20 @@
   "nativeTaskEnqueuedUnconfirmed": "Task admitted; completion has not been confirmed",
   "nativeTaskEnqueuedDuration": "Task admitted; completion has not been confirmed · %s",
   "nativeTaskEnqueuedPresentationFailed": "Task admitted; completion has not been confirmed. Result display failed: ",
-  "liveDataOffsetWarning": "OFFSET reads live data; changes while paging or rereading may repeat or omit rows."
+  "liveDataOffsetWarning": "OFFSET reads live data; changes while paging or rereading may repeat or omit rows.",
+  "meilisearchSearchToolbar": "Meilisearch search",
+  "meilisearchSearchInput": "Meilisearch search JSON",
+  "meilisearchSearchHint": "Enter native q, filter, sort, facets and other search options; use the grid to change pages. Search hits and tabular exports follow server limits. Complete JSONL ignores search.",
+  "meilisearchSearchApply": "Apply Meilisearch search",
+  "meilisearchSearchClear": "Clear Meilisearch search",
+  "meilisearchSearchCollapse": "Collapse Meilisearch search",
+  "meilisearchSearchInvalid": "Search JSON must be an object without offset, limit, page or hitsPerPage",
+  "meilisearchSearchRestored": "Search restored; click Apply Meilisearch search to run it",
+  "meilisearchSearchApplied": "Meilisearch search applied",
+  "nativeSearchResponsePreview": "Native search response preview",
+  "nativeSearchResponseTruncated": "Response preview truncated; copy the complete search response.",
+  "nativeSearchResponse": "Search response",
+  "nativeSearchResponseView": "View native search response",
+  "nativeSearchResponseCopy": "Copy complete search response",
+  "nativeSearchResultSummary": "Estimated hits: %d · Server search: %d ms"
 }

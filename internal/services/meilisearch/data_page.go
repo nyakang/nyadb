@@ -17,10 +17,8 @@ func documentColumns() []contract.StructureColumn {
 	return []contract.StructureColumn{{Name: "id", Type: "native_id", DataType: "json", ValueKind: contract.JSON, Key: "document_id", Position: 1, Comment: "Original native primary-key value"}, {Name: "document", Type: "json", DataType: "json", ValueKind: contract.JSON, Position: 2, Comment: "Complete original native JSON"}}
 }
 func validateDataOptions(o contract.DataOptions) error {
-	if o.Condition != nil || len(o.Filters) != 0 || len(o.Sorts) != 0 || o.FilterColumn != "" || o.FilterValue != "" || o.FilterMode != "" || o.SortColumn != "" || o.SortDescending || o.UseKeyset {
-		return contract.ErrUnsupported
-	}
-	return nil
+	_, err := dataSearchQuery(o)
+	return err
 }
 func (l *dataLease) cursor(offset int64, limit int, epoch, total uint64) *contract.DataCursor {
 	raw, _ := json.Marshal(dataBoundary{epoch, total})
@@ -29,13 +27,14 @@ func (l *dataLease) cursor(offset int64, limit int, epoch, total uint64) *contra
 		Cursor  *contract.DataCursor
 		Object  contract.ObjectRef
 		Binding string
+		Query   string
 		Limit   int
-	}{c, l.object, l.binding(), limit})
+	}{c, l.object, l.binding(), l.query, limit})
 	return c
 }
-func (l *dataLease) decodeCursor(o contract.DataOptions) (dataBoundary, error) {
+func (l *dataLease) decodeCursor(o contract.DataOptions, query string) (dataBoundary, error) {
 	c := o.After
-	if c == nil || c.Database != l.object.Catalog || c.Table != l.object.Name || c.Offset != o.Offset || o.Limit != l.limit || !slices.Equal(c.Columns, []string{"_meilisearch_offset"}) || len(c.Descending) != 0 || len(c.Values) != 1 || len(c.Values[0]) > 4096 || c.FilterColumn != "" || c.FilterMode != "" || c.FilterValue != "" || c.SortColumn != "" || c.SortDescending {
+	if c == nil || c.Database != l.object.Catalog || c.Table != l.object.Name || c.Offset != o.Offset || o.Limit != l.limit || query != l.query || !slices.Equal(c.Columns, []string{"_meilisearch_offset"}) || len(c.Descending) != 0 || len(c.Values) != 1 || len(c.Values[0]) > 4096 || c.FilterColumn != "" || c.FilterMode != "" || c.FilterValue != "" || c.SortColumn != "" || c.SortDescending {
 		return dataBoundary{}, ErrInvalid
 	}
 	copy := *c
@@ -44,8 +43,9 @@ func (l *dataLease) decodeCursor(o contract.DataOptions) (dataBoundary, error) {
 		Cursor  *contract.DataCursor
 		Object  contract.ObjectRef
 		Binding string
+		Query   string
 		Limit   int
-	}{&copy, l.object, l.binding(), o.Limit})
+	}{&copy, l.object, l.binding(), query, o.Limit})
 	var boundary dataBoundary
 	if !hmac.Equal([]byte(c.RuleSignature), []byte(expected)) || decodeJSON(c.Values[0], &boundary) != nil || boundary.Epoch != l.epoch || boundary.Total != l.total {
 		return boundary, ErrInvalid
@@ -59,7 +59,8 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 	if o.Object != l.object || o.Offset < 0 || o.Limit < 1 || o.Limit > documentPageLimit {
 		return nil, ErrInvalid
 	}
-	if err := validateDataOptions(o); err != nil {
+	query, err := dataSearchQuery(o)
+	if err != nil {
 		return nil, err
 	}
 	if o.After != nil {
@@ -85,7 +86,7 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 	}
 	var boundary dataBoundary
 	if o.After != nil {
-		boundary, err = l.decodeCursor(o)
+		boundary, err = l.decodeCursor(o, query)
 		if err != nil {
 			return nil, err
 		}
@@ -99,18 +100,36 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 		return nil, err
 	}
 	start := time.Now()
-	native, _, err := c.ListDocuments(ctx, db, DocumentsRequest{Offset: uint64(o.Offset), Limit: o.Limit})
-	if err != nil {
-		return nil, err
+	var documents []json.RawMessage
+	var total uint64
+	var more bool
+	var searchInfo *contract.DataSearchResult
+	if query == "" {
+		native, _, err := c.ListDocuments(ctx, db, DocumentsRequest{Offset: uint64(o.Offset), Limit: o.Limit})
+		if err != nil {
+			return nil, err
+		}
+		documents, total = native.Documents, native.Total
+		more = uint64(o.Offset)+uint64(len(documents)) < total
+	} else {
+		native, err := l.searchDocuments(ctx, c, query, o.Offset, o.Limit)
+		if err != nil {
+			return nil, err
+		}
+		documents, total, more, searchInfo = native.documents, native.total, native.hasMore, native.info
 	}
-	if o.After != nil && native.Total != boundary.Total {
+	if o.After != nil && total != boundary.Total {
 		return nil, contract.ErrDataConflict
 	}
 	editable := false
-	page := &contract.DataPage{Object: l.object, Database: db, Table: name, Columns: []string{"id", "document"}, ColumnKinds: []string{"json", "json"}, ColumnMetadata: documentColumns(), Editable: &editable, Offset: o.Offset, Limit: o.Limit, HasMore: uint64(o.Offset)+uint64(len(native.Documents)) < native.Total, PagingMode: "offset", LiveRead: true, StableOrder: false, QuerySQL: "GET /indexes/" + db + "/documents"}
+	page := &contract.DataPage{Object: l.object, Database: db, Table: name, Columns: []string{"id", "document"}, ColumnKinds: []string{"json", "json"}, ColumnMetadata: documentColumns(), Editable: &editable, Offset: o.Offset, Limit: o.Limit, HasMore: more, PagingMode: "offset", LiveRead: true, StableOrder: false, QuerySQL: "GET /indexes/" + db + "/documents"}
+	page.Search = searchInfo
+	if searchInfo != nil {
+		page.QuerySQL = "POST /indexes/" + db + "/search"
+	}
 	budget := 16 << 20
 	seen := map[string]bool{}
-	for _, raw := range native.Documents {
+	for _, raw := range documents {
 		doc, err := l.document(raw)
 		if err != nil {
 			return nil, err
@@ -143,11 +162,12 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 	if o.After == nil {
 		l.epoch++
 		l.limit = o.Limit
-		l.total = native.Total
+		l.total = total
+		l.query = query
 	}
-	page.CurrentCursor = l.cursor(o.Offset, o.Limit, l.epoch, native.Total)
+	page.CurrentCursor = l.cursor(o.Offset, o.Limit, l.epoch, total)
 	if page.HasMore {
-		page.NextCursor = l.cursor(o.Offset+int64(len(page.Rows)), o.Limit, l.epoch, native.Total)
+		page.NextCursor = l.cursor(o.Offset+int64(len(page.Rows)), o.Limit, l.epoch, total)
 	}
 	page.CompletedAt = time.Now()
 	page.Duration = time.Since(start)

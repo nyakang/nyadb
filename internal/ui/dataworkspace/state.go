@@ -43,6 +43,7 @@ type Dependencies struct {
 // state belongs to this module and is accessed only on the UI thread.
 type Document struct {
 	selectorOpen                     bool
+	selectorResponseOpen             bool
 	selectorDraft, selectorError     string
 	selectorHistory                  bool
 	selectorHistorySorts             []contract.DataSortRule

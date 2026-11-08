@@ -7,6 +7,7 @@ import (
 	"github.com/nyakang/nyadb/locales"
 	"io"
 	"slices"
+	"strings"
 )
 
 func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilities) *Document {
@@ -165,7 +166,7 @@ func (d *Document) supportsExportFormat(format string) bool {
 		return true
 	}
 	for _, allowed := range d.exportFormats {
-		if format == allowed {
+		if strings.EqualFold(format, allowed) {
 			return true
 		}
 	}

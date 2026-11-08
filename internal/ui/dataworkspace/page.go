@@ -290,6 +290,7 @@ func (s *State) Close(t *Document) {
 	t.filterCondition, t.groupDraft = nil, nil
 	t.selectorDraft, t.selectorError, t.selectorOpen = "", "", false
 	t.selectorHistory, t.selectorHistorySorts = false, nil
+	t.selectorResponseOpen = false
 	t.disabledGroupRules = nil
 	t.selection.Clear()
 	t.grid = ui.ListState{}

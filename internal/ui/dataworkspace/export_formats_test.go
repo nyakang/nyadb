@@ -7,7 +7,7 @@ import (
 )
 
 func TestExplicitExportFormatsRejectUnverifiedSQLBeforeOpeningDestination(t *testing.T) {
-	d := &Document{exportFormats: []string{"CSV", "JSON"}}
+	d := &Document{exportFormats: []string{"csv", "json"}}
 	d.transfer.Format = "SQL"
 	s := &State{}
 	s.startDataExport(ui.Services{}, d)

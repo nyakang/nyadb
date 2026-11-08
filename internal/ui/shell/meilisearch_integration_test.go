@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -395,6 +396,7 @@ func TestMeilisearchNativePublicScopedWorkbenchPermissions(t *testing.T) {
 		t.Fatal("scoped key inferred global version")
 	}
 	var globals atomic.Int32
+	var relayRequests sync.Mutex
 	relay := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/version" || r.URL.Path == "/indexes" {
 			globals.Add(1)
@@ -404,7 +406,9 @@ func TestMeilisearchNativePublicScopedWorkbenchPermissions(t *testing.T) {
 			w.WriteHeader(502)
 			return
 		}
+		relayRequests.Lock()
 		response, err := original.Do(r.Context(), meilisearch.Request{Method: r.Method, Path: r.URL.RequestURI(), Body: body})
+		relayRequests.Unlock()
 		if err != nil && response.Status == 0 {
 			w.WriteHeader(502)
 			return

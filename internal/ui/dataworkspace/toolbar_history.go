@@ -370,10 +370,13 @@ func (s *State) restoreDataHistory(t *Document, entry mysqlDataHistoryEntry) {
 			return
 		}
 		t.selectorDraft, t.selectorError, t.selectorOpen = entry.Filters[0].Value, "", true
+		t.selectorResponseOpen = false
 		t.selectorHistory, t.selectorHistorySorts = true, slices.Clone(entry.Sorts)
 		mysqlDataRestoreRuleDrafts(t, nil, entry.Sorts)
 		t.tools.historyOpen = false
-		s.setStatus(locales.Text("Mango 查询已恢复；请点击应用 Mango 查询执行"))
+		if labels, ok := selectorLabels(selector.Dialect); ok {
+			s.setStatus(locales.Text(labels.restored))
+		}
 		return
 	}
 	if t == nil || t.closed || t.page == nil || !mysqlDataRulesAvailable(t, entry.Filters, entry.Sorts) {

@@ -33,6 +33,7 @@ type dataLease struct {
 	epoch           uint64
 	limit           int
 	total           uint64
+	query           string
 }
 
 // ReserveDataDocument binds a readonly native document range to the original
@@ -76,8 +77,14 @@ func nativeDataCapabilities() contract.Capabilities {
 func (s *Session) DataDocumentCapabilities() contract.Capabilities { return nativeDataCapabilities() }
 func (l *dataLease) Runtime() contract.DataRuntime {
 	return contract.DataRuntime{Capabilities: nativeDataCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
+		Selector:      contract.DataSelector{Dialect: "meilisearch", Column: "document", Mode: "meilisearch_search", Validate: validateSearchSelector},
 		FilterColumns: []string{}, SortColumns: []string{},
-		ReadDescription: func(contract.DataOptions) string { return "GET /indexes/" + l.object.Catalog + "/documents" }, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
+		ReadDescription: func(o contract.DataOptions) string {
+			if o.FilterMode == "meilisearch_search" {
+				return "POST /indexes/" + l.object.Catalog + "/search"
+			}
+			return "GET /indexes/" + l.object.Catalog + "/documents"
+		}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
 }
 func (l *dataLease) identity(id int64, db, name string) error {
 	if id != l.object.ProfileID || db != l.object.Catalog || name != l.object.Name {
@@ -230,6 +237,7 @@ func (l *dataLease) Close() error {
 	l.observation = ""
 	l.primary = ""
 	l.total = 0
+	l.query = ""
 	l.mu.Unlock()
 	l.session.mu.Lock()
 	delete(l.session.documents, l)

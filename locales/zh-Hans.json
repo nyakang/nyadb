@@ -2280,5 +2280,20 @@
   "nativeTaskEnqueuedUnconfirmed": "任务已接收，尚未确认完成",
   "nativeTaskEnqueuedDuration": "任务已接收，尚未确认完成 · %s",
   "nativeTaskEnqueuedPresentationFailed": "任务已接收，尚未确认完成；结果显示失败：",
-  "liveDataOffsetWarning": "OFFSET 读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。"
+  "liveDataOffsetWarning": "OFFSET 读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。",
+  "meilisearchSearchToolbar": "Meilisearch 搜索",
+  "meilisearchSearchInput": "Meilisearch 搜索 JSON",
+  "meilisearchSearchHint": "输入 q、filter、sort、facets 等原生搜索参数；使用网格翻页。搜索命中及表格导出受服务器上限限制，完整 JSONL 导出忽略搜索。",
+  "meilisearchSearchApply": "应用 Meilisearch 搜索",
+  "meilisearchSearchClear": "清除 Meilisearch 搜索",
+  "meilisearchSearchCollapse": "收起 Meilisearch 搜索",
+  "meilisearchSearchInvalid": "搜索 JSON 必须为有效对象，且不能包含 offset、limit、page 或 hitsPerPage",
+  "meilisearchSearchRestored": "Meilisearch 搜索已恢复；请点击应用 Meilisearch 搜索执行",
+  "meilisearchSearchApplied": "Meilisearch 搜索已应用",
+  "nativeSearchResponsePreview": "原生搜索响应预览",
+  "nativeSearchResponseTruncated": "响应预览已截断；可复制完整搜索响应。",
+  "nativeSearchResponse": "搜索响应",
+  "nativeSearchResponseView": "查看原生搜索响应",
+  "nativeSearchResponseCopy": "复制完整搜索响应",
+  "nativeSearchResultSummary": "估算命中：%d · 服务端搜索：%d ms"
 }

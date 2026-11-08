@@ -212,6 +212,14 @@ type DataCell struct {
 	Truncated bool
 }
 
+// DataSearchResult preserves an observed native search response separately from
+// the original documents shown by a data page. Estimates are never row counts.
+type DataSearchResult struct {
+	EstimatedTotalHits uint64
+	ProcessingTimeMS   uint64
+	RawJSON            string
+}
+
 type DataPage struct {
 	Object   ObjectRef
 	Editable *bool
@@ -232,6 +240,7 @@ type DataPage struct {
 	CurrentCursor   *DataCursor // Optional original start boundary for repeat/back reads.
 	RowRefs         []*RowRef
 	RowSnapshots    []*RowSnapshot
+	Search          *DataSearchResult
 	// QuerySQL is the executed parameterized statement, without bound values.
 	QuerySQL    string
 	CompletedAt time.Time
