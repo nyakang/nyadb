@@ -69,3 +69,5 @@ debug
 # MyGo 开发态和 go build 默认输出
 /.mygo/
 /nyadb
+
+/docs
