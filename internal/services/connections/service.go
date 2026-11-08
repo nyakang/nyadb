@@ -51,6 +51,8 @@ func (s *Service) Duplicate(ctx context.Context, id int64, name string) (Profile
 // Defaults are UI-independent initial values, not connection attempts.
 func Defaults(kind Kind) (Profile, error) {
 	switch kind {
+	case CouchDB:
+		return Profile{Kind: CouchDB, Host: "localhost", Port: 5984, TLSMode: "disable", CouchDBOptions: DefaultCouchDBOptions()}, nil
 	case Cassandra:
 		return Profile{Kind: Cassandra, Host: "localhost", Port: 9042, TLSMode: "verify-full", CassandraOptions: DefaultCassandraOptions()}, nil
 	case Solr:

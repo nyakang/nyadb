@@ -2206,5 +2206,13 @@
   "cqlOperations": "CQL 执行操作",
   "cqlEditor": "CQL 编辑器",
   "cqlRecover": "建立新物理会话（不执行现有 CQL）",
-  "nativeNull": "原生 NULL"
+  "nativeNull": "原生 NULL",
+  "couchdbServicePath": "CouchDB 服务路径",
+  "couchdbAuthentication": "CouchDB 认证方式",
+  "couchdbTLSMode": "CouchDB TLS 模式",
+  "couchdbCACertificate": "CouchDB CA 证书",
+  "couchdbDefaultsHint": "CouchDB 默认端口 5984，服务路径留空表示服务器根路径。",
+  "couchdbSettingsInvalid": "请检查 CouchDB 服务路径、认证方式和证书设置",
+  "couchdbPasswordInvalid": "请检查 CouchDB 密码",
+  "couchdbProductName": "Apache CouchDB"
 }

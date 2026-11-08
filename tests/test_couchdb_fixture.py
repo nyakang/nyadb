@@ -44,6 +44,17 @@ class CouchDBFixtureTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 FIXTURE.check_acceptance(bad)
 
+    def test_profile_acceptance_requires_native_ui_passes_and_correct_package_filter(self):
+        base = '\n'.join('--- PASS: TestCouchDBNative'+name+' (0.03s)' for name in FIXTURE.REQUIRED)
+        with self.assertRaises(RuntimeError):
+            FIXTURE.check_acceptance(base, profile=True)
+        complete = base+'\n'+'\n'.join('--- PASS: TestCouchDBNative'+name+' (0.03s)' for name in FIXTURE.PROFILE_REQUIRED)
+        FIXTURE.check_acceptance(complete, profile=True)
+        command = FIXTURE.native_test_command(profile=True, race=True)
+        self.assertIn('-race', command)
+        self.assertLess(command.index('-run'), command.index('./internal/storage/localdb'))
+        self.assertIn('./internal/ui/connectioneditor', command)
+
 
 if __name__ == '__main__':
     unittest.main()

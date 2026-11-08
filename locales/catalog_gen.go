@@ -22431,3 +22431,83 @@ func NativeNull() string { return In(i18n.Locale()).NativeNull() }
 func (msgs Messages) NativeNull() string {
 	return Catalog.Format(msgs.locale, "nativeNull", nil)
 }
+
+// CouchdbServicePath says "CouchDB 服务路径"
+// in the language the app shows.
+func CouchdbServicePath() string { return In(i18n.Locale()).CouchdbServicePath() }
+
+// CouchdbServicePath says "CouchDB 服务路径"
+// in the language of msgs.
+func (msgs Messages) CouchdbServicePath() string {
+	return Catalog.Format(msgs.locale, "couchdbServicePath", nil)
+}
+
+// CouchdbAuthentication says "CouchDB 认证方式"
+// in the language the app shows.
+func CouchdbAuthentication() string { return In(i18n.Locale()).CouchdbAuthentication() }
+
+// CouchdbAuthentication says "CouchDB 认证方式"
+// in the language of msgs.
+func (msgs Messages) CouchdbAuthentication() string {
+	return Catalog.Format(msgs.locale, "couchdbAuthentication", nil)
+}
+
+// CouchdbTLSMode says "CouchDB TLS 模式"
+// in the language the app shows.
+func CouchdbTLSMode() string { return In(i18n.Locale()).CouchdbTLSMode() }
+
+// CouchdbTLSMode says "CouchDB TLS 模式"
+// in the language of msgs.
+func (msgs Messages) CouchdbTLSMode() string {
+	return Catalog.Format(msgs.locale, "couchdbTLSMode", nil)
+}
+
+// CouchdbCACertificate says "CouchDB CA 证书"
+// in the language the app shows.
+func CouchdbCACertificate() string { return In(i18n.Locale()).CouchdbCACertificate() }
+
+// CouchdbCACertificate says "CouchDB CA 证书"
+// in the language of msgs.
+func (msgs Messages) CouchdbCACertificate() string {
+	return Catalog.Format(msgs.locale, "couchdbCACertificate", nil)
+}
+
+// CouchdbDefaultsHint says "CouchDB 默认端口 5984，服务路径留空表示服务器根路径。"
+// in the language the app shows.
+func CouchdbDefaultsHint() string { return In(i18n.Locale()).CouchdbDefaultsHint() }
+
+// CouchdbDefaultsHint says "CouchDB 默认端口 5984，服务路径留空表示服务器根路径。"
+// in the language of msgs.
+func (msgs Messages) CouchdbDefaultsHint() string {
+	return Catalog.Format(msgs.locale, "couchdbDefaultsHint", nil)
+}
+
+// CouchdbSettingsInvalid says "请检查 CouchDB 服务路径、认证方式和证书设置"
+// in the language the app shows.
+func CouchdbSettingsInvalid() string { return In(i18n.Locale()).CouchdbSettingsInvalid() }
+
+// CouchdbSettingsInvalid says "请检查 CouchDB 服务路径、认证方式和证书设置"
+// in the language of msgs.
+func (msgs Messages) CouchdbSettingsInvalid() string {
+	return Catalog.Format(msgs.locale, "couchdbSettingsInvalid", nil)
+}
+
+// CouchdbPasswordInvalid says "请检查 CouchDB 密码"
+// in the language the app shows.
+func CouchdbPasswordInvalid() string { return In(i18n.Locale()).CouchdbPasswordInvalid() }
+
+// CouchdbPasswordInvalid says "请检查 CouchDB 密码"
+// in the language of msgs.
+func (msgs Messages) CouchdbPasswordInvalid() string {
+	return Catalog.Format(msgs.locale, "couchdbPasswordInvalid", nil)
+}
+
+// CouchdbProductName says "Apache CouchDB"
+// in the language the app shows.
+func CouchdbProductName() string { return In(i18n.Locale()).CouchdbProductName() }
+
+// CouchdbProductName says "Apache CouchDB"
+// in the language of msgs.
+func (msgs Messages) CouchdbProductName() string {
+	return Catalog.Format(msgs.locale, "couchdbProductName", nil)
+}

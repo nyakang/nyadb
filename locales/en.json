@@ -2206,5 +2206,13 @@
   "cqlOperations": "CQL actions",
   "cqlEditor": "CQL editor",
   "cqlRecover": "Create a new physical session (without executing existing CQL)",
-  "nativeNull": "Native NULL"
+  "nativeNull": "Native NULL",
+  "couchdbServicePath": "CouchDB service path",
+  "couchdbAuthentication": "CouchDB authentication",
+  "couchdbTLSMode": "CouchDB TLS mode",
+  "couchdbCACertificate": "CouchDB CA certificate",
+  "couchdbDefaultsHint": "CouchDB uses port 5984 by default. Leave the service path empty for the server root.",
+  "couchdbSettingsInvalid": "Check the CouchDB service path, authentication and certificate settings",
+  "couchdbPasswordInvalid": "Check the CouchDB password",
+  "couchdbProductName": "Apache CouchDB"
 }

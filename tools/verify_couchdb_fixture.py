@@ -28,6 +28,7 @@ REQUIRED = [
     'LostWriteResponseNeverReplays',
     'CancellationSettlesOriginalWorker',
 ]
+PROFILE_REQUIRED = ['ProfileURIReopenAndOriginalEditorCheck', 'ProfileProxyContextAndCanceledOriginalCheck', 'EditorLocalizedFormEvidence']
 
 
 def remove_owned(identifier, nonce):
@@ -47,25 +48,32 @@ def remove_owned(identifier, nonce):
 
 
 def source_hashes():
-    paths = sorted((ROOT/'internal').rglob('*.go')) + [ROOT/'go.mod', ROOT/'go.sum', ROOT/'tools/verify_couchdb_fixture.py', ROOT/'tests/test_couchdb_fixture.py']
+    paths = sorted((ROOT/'internal').rglob('*.go')) + sorted((ROOT/'locales').glob('*.go')) + sorted((ROOT/'locales').glob('*.json')) + [ROOT/'go.mod', ROOT/'go.sum', ROOT/'tools/verify_couchdb_fixture.py', ROOT/'tests/test_couchdb_fixture.py']
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 
-def check_acceptance(log):
-    for name in REQUIRED:
+def check_acceptance(log, profile=False):
+    for name in REQUIRED + (PROFILE_REQUIRED if profile else []):
         if not re.search(r'^--- PASS: TestCouchDBNative'+name+r' \(', log, re.M):
             raise RuntimeError('Missing required native PASS: '+name)
     if re.search(r'^\s*--- SKIP:', log, re.M):
         raise RuntimeError('Unexpected skipped test in native acceptance')
 
 
-def verify(plain=False, race=False):
+def native_test_command(profile=False, race=False):
+    packages = ['./internal/services/connections', './internal/services/couchdb']
+    if profile:
+        packages += ['./internal/storage/localdb', './internal/ui/connectioneditor']
+    return ['go', 'test', '-count=1', '-timeout=10m', '-v', *(['-race'] if race else []), '-run', '^TestCouchDB', *packages]
+
+
+def verify(plain=False, race=False, profile=False):
     output = ROOT/'build/couchdb'
     output.mkdir(parents=True, exist_ok=True)
     nonce = uuid.uuid4().hex
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
-    evidence = {'nonce': nonce, 'image': IMAGE, 'requested_version': VERSION, 'mode': 'plain-none' if plain else 'tls-basic', 'status': 'failed', 'fixture_cleaned': False}
+    evidence = {'nonce': nonce, 'image': IMAGE, 'requested_version': VERSION, 'mode': 'plain-none' if plain else 'tls-basic', 'scope': 'private_profile' if profile else 'private_native_transport', 'status': 'failed', 'fixture_cleaned': False}
     with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
         folder = Path(private)
         # Directory traversal for the native CouchDB UID; secrets stay mode 600
@@ -150,17 +158,25 @@ def verify(plain=False, race=False):
                 path.write_text(json.dumps(value)+'\n')
                 path.chmod(0o600)
             env = dict(os.environ, NYADB_COUCHDB_IT='1', NYADB_COUCHDB_CONFIG=str(folder/'probe.json'), NYADB_COUCHDB_ADMIN_CONFIG=str(folder/'admin.json'), NYADB_COUCHDB_PADDED_CONFIG=str(folder/'padded.json'))
+            if profile:
+                env.update(NYADB_COUCHDB_PROFILE_IT='1', NYADB_COUCHDB_PROFILE_IMAGES=str(output/('profile-images-'+nonce)))
             hashes = source_hashes()
             logfile = output/('native-'+nonce+'.log')
-            command = ['go', 'test', '-count=1', '-timeout=5m', '-v', *(['-race'] if race else []), '-run', '^TestCouchDB', './internal/services/connections', './internal/services/couchdb']
+            command = native_test_command(profile, race)
             with logfile.open('w') as log:
-                result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=360)
+                result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=660)
             if hashes != source_hashes():
                 raise RuntimeError('Verification sources changed during acceptance; rerun on stable sources')
             if result.returncode:
                 raise RuntimeError('Native CouchDB acceptance failed; inspect '+str(logfile.relative_to(ROOT)))
-            check_acceptance(logfile.read_text())
-            evidence.update(status='passed_with_race' if race else 'passed', observed_identity=identity, source_hashes=hashes, log=str(logfile.relative_to(ROOT)), log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest(), required_passes=REQUIRED)
+            check_acceptance(logfile.read_text(), profile)
+            if profile:
+                images = sorted(Path(env['NYADB_COUCHDB_PROFILE_IMAGES']).glob('*.png'))
+                expected = {language+'-'+str(width)+'-'+auth+'-'+page+'.png' for language in ['zh-Hans', 'en'] for width in [900, 720] for auth in ['none', 'basic'] for page in ['general', 'ssl']}
+                if {p.name for p in images} != expected:
+                    raise RuntimeError('Expected all 16 localized connection form images')
+                evidence['headless_form_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
+            evidence.update(status='passed_with_race' if race else 'passed', observed_identity=identity, source_hashes=hashes, log=str(logfile.relative_to(ROOT)), log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest(), required_passes=REQUIRED+(PROFILE_REQUIRED if profile else []))
             print('Native CouchDB '+VERSION+' '+evidence['mode']+' acceptance passed', flush=True)
         finally:
             if identifier:
@@ -179,5 +195,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--race', action='store_true')
+    parser.add_argument('--profile', action='store_true', help='Verify private URI/storage/vault/editor and native original checks')
     options = parser.parse_args()
-    verify(options.plain, options.race)
+    verify(options.plain, options.race, options.profile)

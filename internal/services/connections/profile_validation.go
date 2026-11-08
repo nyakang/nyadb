@@ -9,6 +9,9 @@ import (
 // NormalizeProfile validates public settings and applies their canonical values.
 // Variants are normalized in place; callers retaining them must clone the slice.
 func NormalizeProfile(p Profile) (Profile, error) {
+	if p.Kind != CouchDB && p.CouchDBOptions != (CouchDBOptions{}) {
+		return p, fmt.Errorf("%w: CouchDB options on another engine", ErrInvalid)
+	}
 	if p.Kind != Cassandra && p.CassandraOptions != (CassandraOptions{}) {
 		return p, fmt.Errorf("%w: Cassandra options on another engine", ErrInvalid)
 	}
@@ -121,7 +124,7 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		if p.Kind != Cassandra {
 			p.Database = strings.TrimSpace(p.Database)
 		}
-		if p.Kind != Solr && p.Kind != Cassandra {
+		if p.Kind != CouchDB && p.Kind != Solr && p.Kind != Cassandra {
 			p.Username = strings.TrimSpace(p.Username)
 		}
 	}
@@ -139,6 +142,8 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	switch p.Kind {
+	case CouchDB:
+		return normalizeCouchDBProfile(p)
 	case Cassandra:
 		return normalizeCassandraProfile(p)
 	case Solr:

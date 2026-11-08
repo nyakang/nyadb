@@ -29,6 +29,7 @@ const (
 	Easysearch    Kind = "easysearch"
 	Solr          Kind = "solr"
 	Cassandra     Kind = "cassandra"
+	CouchDB       Kind = "couchdb"
 	SQLServer     Kind = "sqlserver"
 	DuckDB        Kind = "duckdb"
 	Oracle        Kind = "oracle"
@@ -73,6 +74,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	CouchDBOptions       CouchDBOptions
 	CassandraOptions     CassandraOptions
 	SolrOptions          SolrOptions
 	EasysearchOptions    EasysearchOptions
