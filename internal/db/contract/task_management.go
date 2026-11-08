@@ -12,8 +12,9 @@ var (
 	ErrTaskMutationUnavailable = errors.New("original management task unavailable; retain admission and confirm on original server")
 )
 
-// Plans capture a finite set of original observed task records. Request contains
-// the complete native UID/status/index selector, not a live all-task filter.
+// Plans capture a finite set of original observed task records, or one global
+// server backup creation. Request preserves the complete native operation;
+// backup plans have no target task records or local output path.
 type TaskMutationPlan struct {
 	Object                 ObjectRef
 	Action, Request, Token string
@@ -27,6 +28,14 @@ type TaskMutationReceipt struct {
 	Action, UID, Type, EnqueuedAt, Raw, Token string
 	Targets                                   []string
 }
+
+// TaskServerArtifact identifies a server-managed artifact reported by a completed
+// task. It certifies neither file availability, download nor restore. UID may be
+// absent for native snapshots. Server directories are outside this contract.
+type TaskServerArtifact struct {
+	Kind, UID string
+}
+
 type TaskMutationResult struct {
 	State            string
 	Receipt          TaskMutationReceipt
@@ -34,6 +43,7 @@ type TaskMutationResult struct {
 	Targets          []string
 	Matched, Changed uint64
 	CountsKnown      bool
+	Artifact         TaskServerArtifact
 }
 type TaskRecovery struct {
 	Lease     TaskDocumentLease
@@ -56,4 +66,13 @@ type TaskManagementLease interface {
 // not transfer previews/cursors or turn an unknown submission into a retry.
 type TaskRecoveryProvider interface {
 	RecoverTaskDocument(ObjectRef, TaskDocumentLease) (TaskRecovery, error)
+}
+
+// ServerBackupLease is optional on the original task lease. Prepare is pure and
+// shares the one-use management plan/receipt lifecycle. Only an unscoped global
+// document may create a server artifact. Permission remains server-enforced.
+// Submit and observe use TaskManagementLease; recovery never repeats creation.
+type ServerBackupLease interface {
+	SupportsServerBackup(string) bool
+	PrepareServerBackup(string) (TaskMutationPlan, error)
 }

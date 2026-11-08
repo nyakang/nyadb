@@ -148,6 +148,9 @@ func validateAdmission(request Request, response Response) (Receipt, error) {
 	if kind != "" {
 		expected = 200
 	}
+	if backupKind := serverBackupKind(request); backupKind != "" {
+		kind = backupKind
+	}
 	receipt, err := parseReceipt(response.Body)
 	if err != nil || readOnly(request) || response.Status != expected || kind != "" && (receipt.Type != kind || receipt.IndexUID != nil) {
 		return Receipt{}, ErrProtocol

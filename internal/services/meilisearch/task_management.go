@@ -74,6 +74,12 @@ func taskEligible(action, status string) bool {
 	return false
 }
 func (d *taskDocument) mutationRequest(action string, records []contract.TaskRecord) (Request, error) {
+	if serverBackupAction(action) {
+		if !d.SupportsServerBackup(action) || len(records) != 0 {
+			return Request{}, contract.ErrUnsupported
+		}
+		return serverBackupRequest(action), nil
+	}
 	values := url.Values{}
 	ids := make([]string, len(records))
 	for i, r := range records {
@@ -229,19 +235,30 @@ func (d *taskDocument) ObserveTaskMutation(ctx context.Context, r contract.TaskM
 		}
 		result.State = task.Status
 		if task.Status == "succeeded" || task.Status == "failed" || task.Status == "canceled" {
-			fields, e := nativeObject(task.Raw)
-			details, e2 := nativeObject(fields["details"])
-			key := "deletedTasks"
-			if r.Action == "cancel" {
-				key = "canceledTasks"
-			}
-			matched, e3 := nativeUint(details["matchedTasks"], 64)
-			changed, e4 := nativeUint(details[key], 64)
-			if e == nil && e2 == nil && e3 == nil && e4 == nil && changed <= matched && matched <= uint64(len(r.Targets)) {
-				result.Matched, result.Changed, result.CountsKnown = matched, changed, true
-			} else if task.Status == "succeeded" {
-				d.bound.client.retire()
-				return result, &contract.TaskRequestError{Raw: result.TaskRaw, Cause: d.taskError(errors.Join(ErrRetired, ErrProtocol))}
+			if serverBackupAction(r.Action) {
+				if task.Status == "succeeded" {
+					artifact, err := serverBackupArtifact(r.Action, task.Raw)
+					if err != nil {
+						d.bound.client.retire()
+						return result, &contract.TaskRequestError{Raw: result.TaskRaw, Cause: d.taskError(errors.Join(ErrRetired, err))}
+					}
+					result.Artifact = artifact
+				}
+			} else {
+				fields, e := nativeObject(task.Raw)
+				details, e2 := nativeObject(fields["details"])
+				key := "deletedTasks"
+				if r.Action == "cancel" {
+					key = "canceledTasks"
+				}
+				matched, e3 := nativeUint(details["matchedTasks"], 64)
+				changed, e4 := nativeUint(details[key], 64)
+				if e == nil && e2 == nil && e3 == nil && e4 == nil && changed <= matched && matched <= uint64(len(r.Targets)) {
+					result.Matched, result.Changed, result.CountsKnown = matched, changed, true
+				} else if task.Status == "succeeded" {
+					d.bound.client.retire()
+					return result, &contract.TaskRequestError{Raw: result.TaskRaw, Cause: d.taskError(errors.Join(ErrRetired, ErrProtocol))}
+				}
 			}
 			d.management.receipt = contract.TaskMutationReceipt{}
 			return result, nil

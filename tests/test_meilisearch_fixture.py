@@ -286,3 +286,22 @@ class MeilisearchFixtureTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class ServerBackupAcceptanceTests(unittest.TestCase):
+    def test_backup_scope_requires_original_management_native_ui_and_restore_sources(self):
+        names = fixture.required_passes('bearer', server_backups=True)
+        for name in fixture.SERVER_BACKUP_REQUIRED + [fixture.SERVER_BACKUP_SCOPED] + fixture.TASK_MANAGEMENT_REQUIRED:
+            self.assertIn(name, names)
+        command = fixture.test_command('bearer', True, server_backups=True)
+        self.assertIn('./internal/ui/shell', command)
+        hashes = fixture.source_hashes(server_backups=True)
+        for path in ['tools/verify_meilisearch_backup_restore.py', 'internal/services/meilisearch/server_backup.go', 'internal/services/dbruntime/server_backup.go', 'internal/ui/objectworkspace/server_backup.go', 'internal/ui/shell/meilisearch_server_backup_integration_test.go']:
+            self.assertIn(path, hashes)
+
+    def test_backup_acceptance_rejects_missing_native_and_public_evidence(self):
+        names = fixture.required_passes('anonymous', server_backups=True)
+        log = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in names)
+        fixture.check_acceptance(log, 'anonymous', server_backups=True)
+        for name in fixture.SERVER_BACKUP_REQUIRED:
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(log.replace('--- PASS: TestMeilisearchNative'+name+' ', '--- SKIP: TestMeilisearchNative'+name+' '), 'anonymous', server_backups=True)

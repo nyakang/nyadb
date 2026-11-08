@@ -54,6 +54,8 @@ KEY_PANEL_ANONYMOUS = ['PublicKeysAnonymousRefusalAndScope']
 KEY_PANEL_AUTHENTICATED = ['PublicKeysSynchronousCRUDSecretAndSnapshot', 'PublicKeysUnknownWriteParkingCancelAndRecovery', 'PublicKeysDelegatedPermissionsAndConfiguredScope']
 DATA_WRITES_REQUIRED = ['DataWritesAdmissionExactReplacementAndDeletion', 'DataWritesTaskFailureRetainsOriginalReceipt', 'DataWritesLostCancelCloseNoReplay', 'DataWritesObservationCancelAndOriginalClose', 'PublicDataWriteGridAdmissionObservationAndEvidence', 'DocumentImportLargeReplacementMergeAndExactJSON', 'DocumentImportTaskFailureRetainsOriginalReceipt', 'DocumentImportLostCancelCloseNoReplay', 'PublicDocumentImportWizardJSONJSONLObservationAndEvidence']
 DATA_WRITES_SCOPED = 'DataWritesScopedPermissionsAndObservation'
+SERVER_BACKUP_REQUIRED = ['ServerBackupAdmissionArtifactsAndRecovery', 'ServerBackupLostCancelCloseNoReplay', 'PublicServerBackupPreviewAdmissionAndArtifactEvidence']
+SERVER_BACKUP_SCOPED = 'ServerBackupScopedPermissions'
 MODES = ('anonymous', 'bearer', 'tls', 'mtls')
 
 
@@ -73,40 +75,43 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def source_hashes(profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False, task_management=False, keys=False, key_panel=False, data_writes=False):
+def source_hashes(profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False, task_management=False, keys=False, key_panel=False, data_writes=False, server_backups=False):
+    task_management = task_management or server_backups
     keys = keys or key_panel
     task_panel = task_panel or task_management
     public = public or search or task_panel or settings or key_panel or data_writes
     tasks = tasks or task_panel or settings
-    paths = sorted((ROOT/'internal/services/meilisearch').glob('*.go')) + sorted((ROOT/'internal/services/connections').glob('*.go')) + [ROOT/'go.mod', ROOT/'go.sum', Path(__file__).resolve(), ROOT/'tests/test_meilisearch_fixture.py']
+    paths = sorted((ROOT/'internal/services/meilisearch').glob('*.go')) + sorted((ROOT/'internal/services/connections').glob('*.go')) + [ROOT/'go.mod', ROOT/'go.sum', Path(__file__).resolve(), ROOT/'tests/test_meilisearch_fixture.py', ROOT/'tools/verify_meilisearch_backup_restore.py']
     if profile or session or public or keys:
-        paths = sorted((ROOT/'internal').rglob('*.go')) + sorted((ROOT/'locales').glob('*.go')) + sorted((ROOT/'locales').glob('*.json')) + [ROOT/'go.mod', ROOT/'go.sum', Path(__file__).resolve(), ROOT/'tests/test_meilisearch_fixture.py']
+        paths = sorted((ROOT/'internal').rglob('*.go')) + sorted((ROOT/'locales').glob('*.go')) + sorted((ROOT/'locales').glob('*.json')) + [ROOT/'go.mod', ROOT/'go.sum', Path(__file__).resolve(), ROOT/'tests/test_meilisearch_fixture.py', ROOT/'tools/verify_meilisearch_backup_restore.py']
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 
-def required_passes(mode, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False, task_management=False, keys=False, key_panel=False, data_writes=False):
+def required_passes(mode, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False, task_management=False, keys=False, key_panel=False, data_writes=False, server_backups=False):
     if mode not in MODES:
         raise ValueError('Invalid native fixture mode')
+    task_management = task_management or server_backups
     keys = keys or key_panel
     task_panel = task_panel or task_management
     public = public or search or task_panel or settings or key_panel or data_writes
     tasks = tasks or task_panel or settings
     data = data or public
     profile, session, documents = profile or public, session or public or data, documents or data
-    return REQUIRED + ([] if mode == 'anonymous' else [SCOPED]) + (PROFILE_REQUIRED if profile else []) + ((SESSION_REQUIRED + ([] if mode == 'anonymous' else [SESSION_SCOPED])) if session else []) + ((PUBLIC_REQUIRED + ([] if mode == 'anonymous' else [PUBLIC_SCOPED])) if public else []) + ((DOCUMENT_REQUIRED + ([] if mode == 'anonymous' else [DOCUMENT_SCOPED])) if documents else []) + ((DATA_REQUIRED + ([] if mode == 'anonymous' else [DATA_SCOPED])) if data else []) + ((SEARCH_REQUIRED + ([] if mode == 'anonymous' else [SEARCH_SCOPED])) if search else []) + ((TASK_REQUIRED + ([] if mode == 'anonymous' else [TASK_SCOPED])) if tasks else []) + ((TASK_PANEL_REQUIRED + ([] if mode == 'anonymous' else [TASK_PANEL_SCOPED])) if task_panel else []) + ((SETTINGS_REQUIRED + ([] if mode == 'anonymous' else SETTINGS_SCOPED)) if settings else []) + ((TASK_MANAGEMENT_REQUIRED + ([] if mode == 'anonymous' else [TASK_MANAGEMENT_SCOPED])) if task_management else []) + ((KEYS_COMMON + (KEYS_ANONYMOUS if mode == 'anonymous' else KEYS_AUTHENTICATED)) if keys else []) + ((KEY_PANEL_COMMON + (KEY_PANEL_ANONYMOUS if mode == 'anonymous' else KEY_PANEL_AUTHENTICATED)) if key_panel else []) + ((DATA_WRITES_REQUIRED + ([] if mode == 'anonymous' else [DATA_WRITES_SCOPED, 'DocumentImportScopedPermissionsAndObservation'])) if data_writes else [])
+    return REQUIRED + ([] if mode == 'anonymous' else [SCOPED]) + (PROFILE_REQUIRED if profile else []) + ((SESSION_REQUIRED + ([] if mode == 'anonymous' else [SESSION_SCOPED])) if session else []) + ((PUBLIC_REQUIRED + ([] if mode == 'anonymous' else [PUBLIC_SCOPED])) if public else []) + ((DOCUMENT_REQUIRED + ([] if mode == 'anonymous' else [DOCUMENT_SCOPED])) if documents else []) + ((DATA_REQUIRED + ([] if mode == 'anonymous' else [DATA_SCOPED])) if data else []) + ((SEARCH_REQUIRED + ([] if mode == 'anonymous' else [SEARCH_SCOPED])) if search else []) + ((TASK_REQUIRED + ([] if mode == 'anonymous' else [TASK_SCOPED])) if tasks else []) + ((TASK_PANEL_REQUIRED + ([] if mode == 'anonymous' else [TASK_PANEL_SCOPED])) if task_panel else []) + ((SETTINGS_REQUIRED + ([] if mode == 'anonymous' else SETTINGS_SCOPED)) if settings else []) + ((TASK_MANAGEMENT_REQUIRED + ([] if mode == 'anonymous' else [TASK_MANAGEMENT_SCOPED])) if task_management else []) + ((KEYS_COMMON + (KEYS_ANONYMOUS if mode == 'anonymous' else KEYS_AUTHENTICATED)) if keys else []) + ((KEY_PANEL_COMMON + (KEY_PANEL_ANONYMOUS if mode == 'anonymous' else KEY_PANEL_AUTHENTICATED)) if key_panel else []) + ((DATA_WRITES_REQUIRED + ([] if mode == 'anonymous' else [DATA_WRITES_SCOPED, 'DocumentImportScopedPermissionsAndObservation'])) if data_writes else []) + ((SERVER_BACKUP_REQUIRED + ([] if mode == 'anonymous' else [SERVER_BACKUP_SCOPED])) if server_backups else [])
 
 
-def test_command(mode, race, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False, task_management=False, keys=False, key_panel=False, data_writes=False):
+def test_command(mode, race, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False, task_management=False, keys=False, key_panel=False, data_writes=False, server_backups=False):
+    task_management = task_management or server_backups
     keys = keys or key_panel
     task_panel = task_panel or task_management
     public = public or search or task_panel or settings or key_panel or data_writes
     tasks = tasks or task_panel or settings
-    selected = '^TestMeilisearchNative(' + '|'.join(required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes)) + ')$'
+    selected = '^TestMeilisearchNative(' + '|'.join(required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes, server_backups)) + ')$'
     return ['go', 'test', '-count=1', '-timeout=10m', '-v', *(['-race'] if race else []), '-run', selected, './internal/services/meilisearch', *(['./internal/ui/connectioneditor'] if profile or public else []), *(['./internal/ui/dataworkspace'] if data_writes else []), *(['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell'] if public else ['./internal/services/dbruntime'] if keys else [])]
 
 
-def check_acceptance(log, mode, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False, task_management=False, keys=False, key_panel=False, data_writes=False):
-    for name in required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes):
+def check_acceptance(log, mode, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False, task_management=False, keys=False, key_panel=False, data_writes=False, server_backups=False):
+    for name in required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes, server_backups):
         if not re.search(r'^--- PASS: TestMeilisearchNative'+name+r' \(', log, re.M):
             raise RuntimeError('Missing required native PASS: '+name)
     if re.search(r'^\s*--- (SKIP|FAIL):', log, re.M) or 'WARNING: DATA RACE' in log:
@@ -140,25 +145,28 @@ def certificates(folder, mutual):
         path.chmod(0o600)
 
 
-def verify(mode='tls', race=False, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False, task_management=False, keys=False, key_panel=False, data_writes=False):
+def verify(mode='tls', race=False, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False, task_management=False, keys=False, key_panel=False, data_writes=False, server_backups=False):
+    task_management = task_management or server_backups
     keys = keys or key_panel
     task_panel = task_panel or task_management
     public = public or search or task_panel or settings or key_panel or data_writes
     tasks = tasks or task_panel or settings
     data = data or public
     profile, session, documents = profile or public, session or public or data, documents or data
-    required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes)
+    required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes, server_backups)
     output = ROOT/'build/meilisearch'
     output.mkdir(parents=True, exist_ok=True)
     nonce = uuid.uuid4().hex
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
-    evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode, scope='public_original_shared_grid_native_async_admission_explicit_observation_actual_readback_and_no_replay' if data_writes else 'public_original_keys_pages_synchronous_crud_temporary_secrets_permissions_parked_results_and_recovery' if key_panel else 'private_native_keys_original_synchronous_receipts_permissions_secret_redaction_and_recovery' if keys else 'public_selected_original_uid_task_management_preview_admission_explicit_observation_and_recovery' if task_management else 'public_native_settings_delta_preview_original_admission_observation_and_reset' if settings else 'public_native_task_documents_pages_details_observation_and_original_recovery' if task_panel else 'private_native_task_catalog_original_observations_and_explicit_uid_admission' if tasks else 'public_native_search_original_documents_bounded_tabular_and_complete_jsonl' if search else 'public_readonly_document_grid_and_complete_export' if public else 'private_readonly_data_document_leases_and_complete_export' if data else 'public_workbench_and_private_document_read_codecs' if public and documents else 'private_native_document_listing_and_id_reads' if documents else 'public_chooser_uri_sessions_indexes_definitions_rest_recovery' if public else 'private_original_session_metadata_rest_leases' if session else ('private_profile_uri_vault_editor' if profile else 'private_native_transport_tasks_search'), status='failed', fixture_cleaned=False, private_files_cleaned=False)
+    evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode, scope='public_global_server_backup_tasks_and_real_offline_restores' if server_backups else 'public_original_shared_grid_native_async_admission_explicit_observation_actual_readback_and_no_replay' if data_writes else 'public_original_keys_pages_synchronous_crud_temporary_secrets_permissions_parked_results_and_recovery' if key_panel else 'private_native_keys_original_synchronous_receipts_permissions_secret_redaction_and_recovery' if keys else 'public_selected_original_uid_task_management_preview_admission_explicit_observation_and_recovery' if task_management else 'public_native_settings_delta_preview_original_admission_observation_and_reset' if settings else 'public_native_task_documents_pages_details_observation_and_original_recovery' if task_panel else 'private_native_task_catalog_original_observations_and_explicit_uid_admission' if tasks else 'public_native_search_original_documents_bounded_tabular_and_complete_jsonl' if search else 'public_readonly_document_grid_and_complete_export' if public else 'private_readonly_data_document_leases_and_complete_export' if data else 'public_workbench_and_private_document_read_codecs' if public and documents else 'private_native_document_listing_and_id_reads' if documents else 'public_chooser_uri_sessions_indexes_definitions_rest_recovery' if public else 'private_original_session_metadata_rest_leases' if session else ('private_profile_uri_vault_editor' if profile else 'private_native_transport_tasks_search'), status='failed', fixture_cleaned=False, private_files_cleaned=False)
     try:
         with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
             folder = Path(private)
             key = '' if mode == 'anonymous' else secrets.token_hex(32)
             config = ['env = '+json.dumps('development' if mode == 'anonymous' else 'production'), 'http_addr = "0.0.0.0:7700"', 'no_analytics = true']
+            if server_backups:
+                config += ['dump_dir = "/meili_data/owned-backups/dumps"', 'snapshot_dir = "/meili_data/owned-backups/snapshots"']
             if key:
                 config += ['master_key = '+json.dumps(key)]
                 private_write(folder/'api-key', key)
@@ -243,8 +251,20 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                             raise RuntimeError('Seed index-scoped API key failed')
                         private_write(folder/'scoped-api-key', scoped_key['key'])
                         private_write(folder/'scoped-probe.json', json.dumps(dict(probe, key_file=str(folder/'scoped-api-key'), index_uid=index_uid))+'\n')
+                if server_backups:
+                    backup_settings = {'displayedAttributes':['id','text','integer'], 'searchableAttributes':['text'], 'stopWords':['owned_backup']}
+                    status, receipt = request('PATCH', '/indexes/'+index_uid+'/settings', backup_settings)
+                    if status != 202:
+                        raise RuntimeError('Backup seed settings admission failed')
+                    wait(receipt)
+                    backup_expected = dict(identity=identity, index=index_uid, documents=[{'id':'one','integer':9007199254740993,'text':'原生🐱'}], settings=backup_settings, task_uid=receipt['taskUid'])
+                    if key:
+                        backup_expected.update(key_uid=scoped_key['uid'], key_actions=['indexes.get','documents.get','search','tasks.get'])
                 private_write(folder/'probe.json', json.dumps(probe)+'\n')
                 env = dict(os.environ, NYADB_MEILISEARCH_IT='1', NYADB_MEILISEARCH_CONFIG=str(folder/'probe.json'))
+                if server_backups:
+                    env['NYADB_MEILISEARCH_BACKUP_MANIFEST'] = str(folder/'backup-manifest.json')
+                    env['NYADB_MEILISEARCH_BACKUP_IMAGES'] = str(output/('server-backup-images-'+nonce))
                 if data_writes:
                     env['NYADB_MEILISEARCH_WRITE_IMAGES'] = str(output/('data-write-images-'+nonce))
                     env['NYADB_MEILISEARCH_IMPORT_IMAGES'] = str(output/('document-import-images-'+nonce))
@@ -270,16 +290,28 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                     env['NYADB_MEILISEARCH_SETTINGS_IMAGES'] = str(output/('settings-images-'+nonce))
                 if search:
                     env['NYADB_MEILISEARCH_SEARCH_IMAGES'] = str(output/('search-images-'+nonce))
-                hashes = source_hashes(profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes)
+                hashes = source_hashes(profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes, server_backups)
                 logfile = output/('native-'+nonce+'.log')
-                command = test_command(mode, race, profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes)
+                command = test_command(mode, race, profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes, server_backups)
                 with logfile.open('w') as log:
                     result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=630)
-                if hashes != source_hashes(profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes):
+                if hashes != source_hashes(profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes, server_backups):
                     raise RuntimeError('Verification sources changed during acceptance; rerun on stable sources')
                 if result.returncode:
                     raise RuntimeError('Native acceptance failed; inspect '+str(logfile.relative_to(ROOT)))
-                check_acceptance(logfile.read_text(), mode, profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes)
+                check_acceptance(logfile.read_text(), mode, profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes, server_backups)
+                if server_backups:
+                    from verify_meilisearch_backup_restore import verify_restores
+                    evidence['offline_restores'] = []
+                    verify_restores(identifier, nonce, folder, IMAGE, context, headers, backup_expected, remove_owned, evidence['offline_restores'])
+                    if hashes != source_hashes(profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes, server_backups):
+                        raise RuntimeError('Sources changed during offline restore acceptance')
+                    image_root = Path(env['NYADB_MEILISEARCH_BACKUP_IMAGES'])
+                    images = sorted(image_root.rglob('*.png'))
+                    expected_images = {language+'/server-backup-'+kind+'-'+phase+'-'+str(width)+'x'+str(height)+'.png' for language in ['zh-Hans','en'] for width,height in [(1280,800),(720,520)] for kind in ['dump','snapshot'] for phase in ['preview','receipt','result']}
+                    if {str(p.relative_to(image_root)) for p in images} != expected_images:
+                        raise RuntimeError('Missing localized server backup previews/receipts/artifacts')
+                    evidence['headless_server_backup_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
                 if profile:
                     images = sorted(Path(env['NYADB_MEILISEARCH_PROFILE_IMAGES']).glob('*.png'))
                     expected = {language+'-'+str(width)+'-'+auth+'-'+tab+'.png' for language in ['zh-Hans','en'] for width in [900,720] for auth in ['none','bearer'] for tab in ['general','advanced','ssl']}
@@ -341,7 +373,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                     if {str(p.relative_to(image_root)) for p in images} != expected:
                         raise RuntimeError('Missing localized native JSON/JSONL import wizard evidence')
                     evidence['headless_document_import_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
-                evidence.update(status='passed_with_race' if race else 'passed', observed_identity=identity, source_hashes=hashes, command=command, log=str(logfile.relative_to(ROOT)), log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest(), required_passes=required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes))
+                evidence.update(status='passed_with_race' if race else 'passed', observed_identity=identity, source_hashes=hashes, command=command, log=str(logfile.relative_to(ROOT)), log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest(), required_passes=required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes, server_backups))
             finally:
                 if identifier:
                     logs = subprocess.run(['docker', 'logs', identifier], capture_output=True, text=True)
@@ -375,5 +407,6 @@ if __name__ == '__main__':
     parser.add_argument('--keys', action='store_true', help='Verify private native key pagination/redaction, global scope, original synchronous CRUD/permissions and recovery without replay; no public key panel claims')
     parser.add_argument('--key-panel', action='store_true', help='Verify public global key pages, native synchronous CRUD, original UID previews, temporary secrets, permission refusals, parked results and explicit recovery; implies keys and public')
     parser.add_argument('--data-writes', action='store_true', help='Verify shared-grid native async write admission, explicit task observation/readback, original snapshots, scoped permissions and lost/canceled writes; implies public')
+    parser.add_argument('--server-backups', action='store_true', help='Verify global native dump/snapshot tasks, permission refusal, original admission/recovery and real offline restore on owned new instances; implies task management')
     options = parser.parse_args()
-    verify(options.mode, options.race, options.profile, options.session, options.public, options.documents, options.data, options.search, options.tasks, options.task_panel, options.settings, options.task_management, options.keys, options.key_panel, options.data_writes)
+    verify(options.mode, options.race, options.profile, options.session, options.public, options.documents, options.data, options.search, options.tasks, options.task_panel, options.settings, options.task_management, options.keys, options.key_panel, options.data_writes, options.server_backups)

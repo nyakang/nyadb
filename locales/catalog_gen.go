@@ -25805,3 +25805,115 @@ func DataDocumentImport90f9f305f2() string { return In(i18n.Locale()).DataDocume
 func (msgs Messages) DataDocumentImport90f9f305f2() string {
 	return Catalog.Format(msgs.locale, "dataDocumentImport90f9f305f2", nil)
 }
+
+// ServerBackupDump says "创建服务器 dump"
+// in the language the app shows.
+func ServerBackupDump() string { return In(i18n.Locale()).ServerBackupDump() }
+
+// ServerBackupDump says "创建服务器 dump"
+// in the language of msgs.
+func (msgs Messages) ServerBackupDump() string {
+	return Catalog.Format(msgs.locale, "serverBackupDump", nil)
+}
+
+// ServerBackupSnapshot says "创建服务器 snapshot"
+// in the language the app shows.
+func ServerBackupSnapshot() string { return In(i18n.Locale()).ServerBackupSnapshot() }
+
+// ServerBackupSnapshot says "创建服务器 snapshot"
+// in the language of msgs.
+func (msgs Messages) ServerBackupSnapshot() string {
+	return Catalog.Format(msgs.locale, "serverBackupSnapshot", nil)
+}
+
+// ServerBackupDumpPreview says "创建服务器 dump 预览"
+// in the language the app shows.
+func ServerBackupDumpPreview() string { return In(i18n.Locale()).ServerBackupDumpPreview() }
+
+// ServerBackupDumpPreview says "创建服务器 dump 预览"
+// in the language of msgs.
+func (msgs Messages) ServerBackupDumpPreview() string {
+	return Catalog.Format(msgs.locale, "serverBackupDumpPreview", nil)
+}
+
+// ServerBackupSnapshotPreview says "创建服务器 snapshot 预览"
+// in the language the app shows.
+func ServerBackupSnapshotPreview() string { return In(i18n.Locale()).ServerBackupSnapshotPreview() }
+
+// ServerBackupSnapshotPreview says "创建服务器 snapshot 预览"
+// in the language of msgs.
+func (msgs Messages) ServerBackupSnapshotPreview() string {
+	return Catalog.Format(msgs.locale, "serverBackupSnapshotPreview", nil)
+}
+
+// ServerBackupDumpConfirm says "确认创建服务器 dump"
+// in the language the app shows.
+func ServerBackupDumpConfirm() string { return In(i18n.Locale()).ServerBackupDumpConfirm() }
+
+// ServerBackupDumpConfirm says "确认创建服务器 dump"
+// in the language of msgs.
+func (msgs Messages) ServerBackupDumpConfirm() string {
+	return Catalog.Format(msgs.locale, "serverBackupDumpConfirm", nil)
+}
+
+// ServerBackupSnapshotConfirm says "确认创建服务器 snapshot"
+// in the language the app shows.
+func ServerBackupSnapshotConfirm() string { return In(i18n.Locale()).ServerBackupSnapshotConfirm() }
+
+// ServerBackupSnapshotConfirm says "确认创建服务器 snapshot"
+// in the language of msgs.
+func (msgs Messages) ServerBackupSnapshotConfirm() string {
+	return Catalog.Format(msgs.locale, "serverBackupSnapshotConfirm", nil)
+}
+
+// ServerBackupScope says "范围：原连接服务器的全部索引、设置与密钥"
+// in the language the app shows.
+func ServerBackupScope() string { return In(i18n.Locale()).ServerBackupScope() }
+
+// ServerBackupScope says "范围：原连接服务器的全部索引、设置与密钥"
+// in the language of msgs.
+func (msgs Messages) ServerBackupScope() string {
+	return Catalog.Format(msgs.locale, "serverBackupScope", nil)
+}
+
+// ServerBackupLocation says "文件写入服务器配置的 dump/snapshot 目录；入队不代表完成，HTTP 不提供文件下载。"
+// in the language the app shows.
+func ServerBackupLocation() string { return In(i18n.Locale()).ServerBackupLocation() }
+
+// ServerBackupLocation says "文件写入服务器配置的 dump/snapshot 目录；入队不代表完成，HTTP 不提供文件下载。"
+// in the language of msgs.
+func (msgs Messages) ServerBackupLocation() string {
+	return Catalog.Format(msgs.locale, "serverBackupLocation", nil)
+}
+
+// ServerBackupRestore says "dump 用 --import-dump，snapshot 用 --import-snapshot…"
+// in the language the app shows.
+func ServerBackupRestore() string { return In(i18n.Locale()).ServerBackupRestore() }
+
+// ServerBackupRestore says "dump 用 --import-dump，snapshot 用 --import-snapshot…"
+// in the language of msgs.
+func (msgs Messages) ServerBackupRestore() string {
+	return Catalog.Format(msgs.locale, "serverBackupRestore", nil)
+}
+
+// ServerBackupCompleted says "服务器备份任务已完成；文件仍需在服务器目录确认。HTTP …"
+// in the language the app shows.
+func ServerBackupCompleted() string { return In(i18n.Locale()).ServerBackupCompleted() }
+
+// ServerBackupCompleted says "服务器备份任务已完成；文件仍需在服务器目录确认。HTTP …"
+// in the language of msgs.
+func (msgs Messages) ServerBackupCompleted() string {
+	return Catalog.Format(msgs.locale, "serverBackupCompleted", nil)
+}
+
+// ServerBackupSnapshotReplacement says "snapshot …"
+// in the language the app shows.
+func ServerBackupSnapshotReplacement() string {
+	return In(i18n.Locale()).ServerBackupSnapshotReplacement()
+}
+
+// ServerBackupSnapshotReplacement says "snapshot …"
+// in the language of msgs.
+func (msgs Messages) ServerBackupSnapshotReplacement() string {
+	return Catalog.Format(msgs.locale, "serverBackupSnapshotReplacement", nil)
+}

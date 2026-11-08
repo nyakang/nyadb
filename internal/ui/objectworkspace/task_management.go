@@ -114,7 +114,7 @@ func (s *State) runTaskManagement(d *Document, invalidate func(), operation stri
 	}()
 }
 func (s *State) SubmitTaskManagement(d *Document, invalidate func()) {
-	if !s.CanManageTasks(d) || d.tasks.management.plan == nil || !d.tasks.management.preview {
+	if !s.canSubmitTaskPlan(d) || !d.tasks.management.preview {
 		return
 	}
 	p := *d.tasks.management.plan

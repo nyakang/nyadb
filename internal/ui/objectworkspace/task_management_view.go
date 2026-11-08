@@ -12,6 +12,14 @@ import (
 func (s *State) taskManagementActions(c *ui.Context, d *Document) {
 	m := &d.tasks.management
 	selected := len(s.TaskSelectionRows(d)) > 0
+	if d.object.Catalog == "" {
+		if ui.Button(c, locales.Text("创建服务器 dump")).Disabled(!s.CanCreateServerBackup(d, "dump")).Clicked() {
+			_ = s.PrepareServerBackup(d, "dump")
+		}
+		if ui.Button(c, locales.Text("创建服务器 snapshot")).Disabled(!s.CanCreateServerBackup(d, "snapshot")).Clicked() {
+			_ = s.PrepareServerBackup(d, "snapshot")
+		}
+	}
 	if ui.Button(c, locales.Text("预览取消选中任务")).Disabled(!selected || !s.CanManageTasks(d)).Clicked() {
 		_ = s.PrepareTaskManagement(d, "cancel", nil)
 	}
@@ -45,6 +53,12 @@ func (s *State) taskManagementEvidence(c *ui.Context, d *Document) {
 	ui.Text(c, state).Padding(2, 8).Shrink(0)
 	if m.last.CountsKnown {
 		ui.Text(c, fmt.Sprintf(locales.Text("原管理任务匹配 %d 条，实际处理 %d 条"), m.last.Matched, m.last.Changed)).Padding(2, 8).Shrink(0)
+	}
+	if m.last.Artifact.Kind != "" {
+		ui.Text(c, locales.Text("服务器备份任务已完成；文件仍需在服务器目录确认。HTTP 不提供下载，恢复须离线启动新实例。")).SingleLine().Tooltip(locales.Text("服务器备份任务已完成；文件仍需在服务器目录确认。HTTP 不提供下载，恢复须离线启动新实例。")).Padding(2, 8).Shrink(0)
+		if m.last.Artifact.UID != "" {
+			ui.Text(c, "dumpUid: "+m.last.Artifact.UID).SingleLine().Tooltip(m.last.Artifact.UID).Padding(2, 8).Shrink(0)
+		}
 	}
 	raw := m.last.Request
 	if m.last.Receipt.Raw != "" {
@@ -90,6 +104,13 @@ func (s *State) taskManagementModals(c *ui.Context, d *Document) {
 				if m.plan.Action == "delete" {
 					title, label = "删除原任务记录预览", "确认提交任务记录删除"
 				}
+				backup := serverBackupAction(m.plan.Action)
+				if m.plan.Action == "dump" {
+					title, label = "创建服务器 dump 预览", "确认创建服务器 dump"
+				}
+				if m.plan.Action == "snapshot" {
+					title, label = "创建服务器 snapshot 预览", "确认创建服务器 snapshot"
+				}
 				ui.Text(c, locales.Text(title)).Bold()
 				profile := d.object.Catalog
 				if s.deps.ProfileName != nil {
@@ -100,9 +121,19 @@ func (s *State) taskManagementModals(c *ui.Context, d *Document) {
 				for _, r := range m.plan.Records {
 					ids = append(ids, r.UID)
 				}
-				ui.Text(c, fmt.Sprintf(locales.Text("仅操作以下 %d 个原任务 UID"), len(ids))).Shrink(0)
-				ui.Text(c, locales.Text("取消只针对未完成任务；删除仅移除已结束的任务记录，保留文档。")).TextColor(theme.Colors(c).Muted)
-				ui.Text(c, locales.Text("提交前检查原任务；状态可能继续变化。原生 UID 无法原子防护服务器重启或恢复。")).TextColor(theme.Colors(c).Muted)
+				if backup {
+					ui.Text(c, locales.Text("范围：原连接服务器的全部索引、设置与密钥")).Shrink(0)
+					location := "文件写入服务器配置的 dump/snapshot 目录；入队不代表完成，HTTP 不提供文件下载。"
+					if m.plan.Action == "snapshot" {
+						location = "snapshot 会替换服务器现有快照文件；保留旧文件须先归档。文件留在服务器配置的目录，HTTP 不提供下载。"
+					}
+					ui.Text(c, locales.Text(location)).TextColor(theme.Colors(c).Muted)
+					ui.Text(c, locales.Text("dump 用 --import-dump，snapshot 用 --import-snapshot，在兼容版本的新空数据目录离线恢复；备份文件可能包含密钥。")).TextColor(theme.Colors(c).Muted)
+				} else {
+					ui.Text(c, fmt.Sprintf(locales.Text("仅操作以下 %d 个原任务 UID"), len(ids))).Shrink(0)
+					ui.Text(c, locales.Text("取消只针对未完成任务；删除仅移除已结束的任务记录，保留文档。")).TextColor(theme.Colors(c).Muted)
+					ui.Text(c, locales.Text("提交前检查原任务；状态可能继续变化。原生 UID 无法原子防护服务器重启或恢复。")).TextColor(theme.Colors(c).Muted)
+				}
 				raw := strings.Join(ids, ", ") + "\n\n" + m.plan.Request
 				ui.TextArea(c.Key(fmt.Sprintf("task-management-plan/%d/%d", d.id, m.plan.Sequence)), &raw).ReadOnly(true).Label(locales.Text("完整任务管理预览")).Height(min(float32(250), height-310)).MinHeight(40)
 				ui.Row(c).Justify(ui.End).Shrink(0).Gap(8).Children(func() {
@@ -110,7 +141,7 @@ func (s *State) taskManagementModals(c *ui.Context, d *Document) {
 						m.preview = false
 						m.plan = nil
 					}
-					if ui.PrimaryButton(c, locales.Text(label)).Disabled(!s.CanManageTasks(d)).Clicked() {
+					if ui.PrimaryButton(c, locales.Text(label)).Disabled(!s.canSubmitTaskPlan(d)).Clicked() {
 						s.SubmitTaskManagement(d, c.Services().Invalidate)
 					}
 				})

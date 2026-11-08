@@ -2542,5 +2542,16 @@
   "dataDocumentImport2bf7d3fde7": "观察成功任务后将逐份读取全部导入文档；失败或结果不符保留待核验状态，禁止重放。",
   "dataDocumentImporte119731ffe": "导入任务已受理，源文档与证据已保留；尚未确认完成，禁止重放",
   "dataDocumentImport0822d6b868": "导入任务失败或已取消；源文档与证据已保留，禁止重放",
-  "dataDocumentImport90f9f305f2": "导入任务成功，但完整读回未能确认；源文档与证据已保留，禁止重放"
+  "dataDocumentImport90f9f305f2": "导入任务成功，但完整读回未能确认；源文档与证据已保留，禁止重放",
+  "serverBackupDump": "创建服务器 dump",
+  "serverBackupSnapshot": "创建服务器 snapshot",
+  "serverBackupDumpPreview": "创建服务器 dump 预览",
+  "serverBackupSnapshotPreview": "创建服务器 snapshot 预览",
+  "serverBackupDumpConfirm": "确认创建服务器 dump",
+  "serverBackupSnapshotConfirm": "确认创建服务器 snapshot",
+  "serverBackupScope": "范围：原连接服务器的全部索引、设置与密钥",
+  "serverBackupLocation": "文件写入服务器配置的 dump/snapshot 目录；入队不代表完成，HTTP 不提供文件下载。",
+  "serverBackupRestore": "dump 用 --import-dump，snapshot 用 --import-snapshot，在兼容版本的新空数据目录离线恢复；备份文件可能包含密钥。",
+  "serverBackupCompleted": "服务器备份任务已完成；文件仍需在服务器目录确认。HTTP 不提供下载，恢复须离线启动新实例。",
+  "serverBackupSnapshotReplacement": "snapshot 会替换服务器现有快照文件；保留旧文件须先归档。文件留在服务器配置的目录，HTTP 不提供下载。"
 }

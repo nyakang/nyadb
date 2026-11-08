@@ -103,3 +103,48 @@ func TestTaskManagementPublishedGenerationRecoveryAndOriginalLease(t *testing.T)
 		t.Fatal("old close damaged recovered session")
 	}
 }
+
+func (l *managedTasksLease) SupportsServerBackup(a string) bool {
+	return a == "dump" || a == "snapshot"
+}
+func (l *managedTasksLease) PrepareServerBackup(a string) (contract.TaskMutationPlan, error) {
+	return contract.TaskMutationPlan{Action: a, Request: "POST /dumps"}, nil
+}
+func TestServerBackupOptionalRuntimeFeatureAndPublishedGeneration(t *testing.T) {
+	m := dbruntime.New()
+	defer m.Close()
+	var raw *managedTasksLease
+	m.Register(connections.SQLite, dbruntime.ProviderFunc(func(_ context.Context, p connections.Profile, _ string) (contract.Session, error) {
+		raw = &managedTasksLease{}
+		return &managedTasksHandle{tasksHandle: tasksHandle{handle: handle{id: p.ID, caps: contract.Capabilities{Metadata: true}}}, managementLease: raw}, nil
+	}))
+	if _, err := m.ConnectSession(context.Background(), profile(1), ""); err != nil {
+		t.Fatal(err)
+	}
+	provider, err := m.TaskDocuments(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lease, err := provider.ReserveTaskDocument(contract.ObjectRef{ProfileID: 1, Kind: "tasks", Name: "tasks"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	backup := lease.(contract.ServerBackupLease)
+	plan, err := backup.PrepareServerBackup("dump")
+	if err != nil || !backup.SupportsServerBackup("dump") || plan.Action != "dump" || raw.writes != 0 {
+		t.Fatal("optional backup not forwarded purely", err)
+	}
+	old := raw
+	if _, err = m.ConnectSession(context.Background(), profile(1), ""); err != nil {
+		t.Fatal(err)
+	}
+	if backup.SupportsServerBackup("dump") {
+		t.Fatal("backup capability followed replacement")
+	}
+	if _, err = backup.PrepareServerBackup("dump"); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal("old backup rebound", err)
+	}
+	if _, err = lease.(contract.TaskManagementLease).MutateTasks(context.Background(), plan); !errors.Is(err, contract.ErrRevoked) || old.writes != 0 || raw.writes != 0 {
+		t.Fatal("old server backup dispatched", err)
+	}
+}

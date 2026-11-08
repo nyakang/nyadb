@@ -2542,5 +2542,16 @@
   "dataDocumentImport2bf7d3fde7": "After observing a successful task, every imported document is read back. Failure or conflicting results remain unverified and block replay.",
   "dataDocumentImporte119731ffe": "Import task admitted; source documents and evidence retained. Completion is unconfirmed; replay blocked",
   "dataDocumentImport0822d6b868": "Import task failed or canceled; source documents and evidence retained. Replay blocked",
-  "dataDocumentImport90f9f305f2": "Import task succeeded but complete readback is unconfirmed; source documents and evidence retained. Replay blocked"
+  "dataDocumentImport90f9f305f2": "Import task succeeded but complete readback is unconfirmed; source documents and evidence retained. Replay blocked",
+  "serverBackupDump": "Create server dump",
+  "serverBackupSnapshot": "Create server snapshot",
+  "serverBackupDumpPreview": "Preview server dump creation",
+  "serverBackupSnapshotPreview": "Preview server snapshot creation",
+  "serverBackupDumpConfirm": "Confirm server dump creation",
+  "serverBackupSnapshotConfirm": "Confirm server snapshot creation",
+  "serverBackupScope": "Scope: all indexes, settings and keys on the original server",
+  "serverBackupLocation": "Files use the configured server dump/snapshot directory. Admission does not confirm completion; HTTP provides no file download.",
+  "serverBackupRestore": "Restore offline with --import-dump or --import-snapshot into a new empty data directory on a compatible version. Backup files may contain keys.",
+  "serverBackupCompleted": "Server backup task completed. Confirm the file in the server directory; HTTP provides no download. Restore by starting a new instance offline.",
+  "serverBackupSnapshotReplacement": "Snapshot replaces the existing server snapshot file. Archive the old file first to retain it. Files stay in the configured server directory; HTTP provides no download."
 }
