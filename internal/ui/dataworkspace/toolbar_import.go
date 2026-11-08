@@ -53,6 +53,9 @@ func mysqlDataImportNeedsMatch(mode string) bool {
 }
 
 func mysqlDataImportConfirmed(t *Document) bool {
+	if t.transfer.DocumentImport {
+		return t.transfer.Confirmation == t.database
+	}
 	return t.transfer.Confirmation == mysqlDataImportDestination(t) &&
 		(mysqlDataImportMode(t) != "replace" || t.transfer.DestructiveConfirmation == mysqlDataImportDestination(t))
 }

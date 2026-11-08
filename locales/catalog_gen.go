@@ -25645,3 +25645,163 @@ func DataAsyncWrite2ab684fbf9() string { return In(i18n.Locale()).DataAsyncWrite
 func (msgs Messages) DataAsyncWrite2ab684fbf9() string {
 	return Catalog.Format(msgs.locale, "dataAsyncWrite2ab684fbf9", nil)
 }
+
+// DataDocumentImportd7925c05ee says "已核验导入 %d 份文档"
+// in the language the app shows.
+func DataDocumentImportd7925c05ee() string { return In(i18n.Locale()).DataDocumentImportd7925c05ee() }
+
+// DataDocumentImportd7925c05ee says "已核验导入 %d 份文档"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImportd7925c05ee() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImportd7925c05ee", nil)
+}
+
+// DataDocumentImportdef63d2b3b says "合并同 ID 字段"
+// in the language the app shows.
+func DataDocumentImportdef63d2b3b() string { return In(i18n.Locale()).DataDocumentImportdef63d2b3b() }
+
+// DataDocumentImportdef63d2b3b says "合并同 ID 字段"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImportdef63d2b3b() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImportdef63d2b3b", nil)
+}
+
+// DataDocumentImportd3ed4f66f4 says "完整替换同 ID 文档"
+// in the language the app shows.
+func DataDocumentImportd3ed4f66f4() string { return In(i18n.Locale()).DataDocumentImportd3ed4f66f4() }
+
+// DataDocumentImportd3ed4f66f4 says "完整替换同 ID 文档"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImportd3ed4f66f4() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImportd3ed4f66f4", nil)
+}
+
+// DataDocumentImportb93a17bd4b says "源文件"
+// in the language the app shows.
+func DataDocumentImportb93a17bd4b() string { return In(i18n.Locale()).DataDocumentImportb93a17bd4b() }
+
+// DataDocumentImportb93a17bd4b says "源文件"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImportb93a17bd4b() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImportb93a17bd4b", nil)
+}
+
+// DataDocumentImport8128ece475 says "JSON 接受对象或对象数组；JSONL 每个非空行一份对象。保留嵌套字段与精确数字。"
+// in the language the app shows.
+func DataDocumentImport8128ece475() string { return In(i18n.Locale()).DataDocumentImport8128ece475() }
+
+// DataDocumentImport8128ece475 says "JSON 接受对象或对象数组；JSONL 每个非空行一份对象。保留嵌套字段与精确数字。"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImport8128ece475() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImport8128ece475", nil)
+}
+
+// DataDocumentImport21c5530b52 says "单次最多 10000 份文档、8 MiB，每份最多 1 MiB；一次提交一个任务，不自动分批或重试。"
+// in the language the app shows.
+func DataDocumentImport21c5530b52() string { return In(i18n.Locale()).DataDocumentImport21c5530b52() }
+
+// DataDocumentImport21c5530b52 says "单次最多 10000 份文档、8 MiB，每份最多 1 MiB；一次提交一个任务，不自动分批或重试。"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImport21c5530b52() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImport21c5530b52", nil)
+}
+
+// DataDocumentImport70cc1520d9 says "已读取 %d 份文档"
+// in the language the app shows.
+func DataDocumentImport70cc1520d9() string { return In(i18n.Locale()).DataDocumentImport70cc1520d9() }
+
+// DataDocumentImport70cc1520d9 says "已读取 %d 份文档"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImport70cc1520d9() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImport70cc1520d9", nil)
+}
+
+// DataDocumentImport45f4f28316 says "完整替换会删除同 ID …"
+// in the language the app shows.
+func DataDocumentImport45f4f28316() string { return In(i18n.Locale()).DataDocumentImport45f4f28316() }
+
+// DataDocumentImport45f4f28316 says "完整替换会删除同 ID …"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImport45f4f28316() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImport45f4f28316", nil)
+}
+
+// DataDocumentImport45cf2a2713 says "合并前读取原文档以核对结果；并发变化可能导致核验不通过，不能保证原子比较与交换。"
+// in the language the app shows.
+func DataDocumentImport45cf2a2713() string { return In(i18n.Locale()).DataDocumentImport45cf2a2713() }
+
+// DataDocumentImport45cf2a2713 says "合并前读取原文档以核对结果；并发变化可能导致核验不通过，不能保证原子比较与交换。"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImport45cf2a2713() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImport45cf2a2713", nil)
+}
+
+// DataDocumentImport3a56b706cb says "目标 %s · %s · %d 份文档"
+// in the language the app shows.
+func DataDocumentImport3a56b706cb() string { return In(i18n.Locale()).DataDocumentImport3a56b706cb() }
+
+// DataDocumentImport3a56b706cb says "目标 %s · %s · %d 份文档"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImport3a56b706cb() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImport3a56b706cb", nil)
+}
+
+// DataDocumentImport28d5e9a14f says "目标索引必须已存在并设置主键；缺失或重复 ID、非法 JSON 和超限请求会拒绝。"
+// in the language the app shows.
+func DataDocumentImport28d5e9a14f() string { return In(i18n.Locale()).DataDocumentImport28d5e9a14f() }
+
+// DataDocumentImport28d5e9a14f says "目标索引必须已存在并设置主键；缺失或重复 ID、非法 JSON 和超限请求会拒绝。"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImport28d5e9a14f() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImport28d5e9a14f", nil)
+}
+
+// DataDocumentImporta10f2a6685 says "输入目标名称以确认导入"
+// in the language the app shows.
+func DataDocumentImporta10f2a6685() string { return In(i18n.Locale()).DataDocumentImporta10f2a6685() }
+
+// DataDocumentImporta10f2a6685 says "输入目标名称以确认导入"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImporta10f2a6685() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImporta10f2a6685", nil)
+}
+
+// DataDocumentImport2bf7d3fde7 says "观察成功任务后将逐份读取全部导入文档；失败或结果不符保留待核验状态，禁止重放。"
+// in the language the app shows.
+func DataDocumentImport2bf7d3fde7() string { return In(i18n.Locale()).DataDocumentImport2bf7d3fde7() }
+
+// DataDocumentImport2bf7d3fde7 says "观察成功任务后将逐份读取全部导入文档；失败或结果不符保留待核验状态，禁止重放。"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImport2bf7d3fde7() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImport2bf7d3fde7", nil)
+}
+
+// DataDocumentImporte119731ffe says "导入任务已受理，源文档与证据已保留；尚未确认完成，禁止重放"
+// in the language the app shows.
+func DataDocumentImporte119731ffe() string { return In(i18n.Locale()).DataDocumentImporte119731ffe() }
+
+// DataDocumentImporte119731ffe says "导入任务已受理，源文档与证据已保留；尚未确认完成，禁止重放"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImporte119731ffe() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImporte119731ffe", nil)
+}
+
+// DataDocumentImport0822d6b868 says "导入任务失败或已取消；源文档与证据已保留，禁止重放"
+// in the language the app shows.
+func DataDocumentImport0822d6b868() string { return In(i18n.Locale()).DataDocumentImport0822d6b868() }
+
+// DataDocumentImport0822d6b868 says "导入任务失败或已取消；源文档与证据已保留，禁止重放"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImport0822d6b868() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImport0822d6b868", nil)
+}
+
+// DataDocumentImport90f9f305f2 says "导入任务成功，但完整读回未能确认；源文档与证据已保留，禁止重放"
+// in the language the app shows.
+func DataDocumentImport90f9f305f2() string { return In(i18n.Locale()).DataDocumentImport90f9f305f2() }
+
+// DataDocumentImport90f9f305f2 says "导入任务成功，但完整读回未能确认；源文档与证据已保留，禁止重放"
+// in the language of msgs.
+func (msgs Messages) DataDocumentImport90f9f305f2() string {
+	return Catalog.Format(msgs.locale, "dataDocumentImport90f9f305f2", nil)
+}

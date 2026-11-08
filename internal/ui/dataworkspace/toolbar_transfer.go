@@ -37,6 +37,7 @@ type mysqlDataNewTableImporter func(context.Context, int64, string, string, []co
 type mysqlDataImporter func(context.Context, int64, string, string, contract.DataImportRequest) (*contract.DataImportResult, error)
 
 type mysqlDataTransferState struct {
+	DocumentImport                               bool
 	Batch                                        []mysqlDataBatchReceipt
 	Sources                                      []mysqlDataWizardSource
 	ActiveSource                                 int
@@ -93,6 +94,7 @@ type mysqlDataTransferState struct {
 	Request, Generation                          uint64
 }
 type mysqlDataTransferResult struct {
+	DocumentVerification                 *contract.DataVerification
 	Batch                                []mysqlDataBatchReceipt
 	SourceTables                         []datasources.Table
 	Capabilities                         []datasources.Capability
@@ -127,7 +129,7 @@ type mysqlDataImportInput struct {
 func (s *State) openDataImport(t *Document) { s.openDataTransfer(t, "import") }
 func (s *State) openDataExport(t *Document) { s.openDataTransfer(t, "export") }
 func (s *State) openDataTransfer(t *Document, kind string) {
-	if t != nil && (t.capabilities.Documents || t.capabilities.KeyValues) && kind == "import" {
+	if t != nil && (t.capabilities.Documents || t.capabilities.KeyValues) && kind == "import" && !s.runtimeFor(t).DocumentImport {
 		return
 	}
 	if t == nil || t.closed || t.page == nil && !t.importOnly || t.importOnly && kind != "import" || t.loading || t.edit.Busy || t.edit.Uncertain != nil || t.transfer.Busy || t.transfer.Uncertain || dataTransactionActive(t) || dataTransactionBusy(t) {
@@ -159,6 +161,11 @@ func (s *State) openDataTransfer(t *Document, kind string) {
 	if kind == "import" {
 		tr.Sources = []mysqlDataWizardSource{{Name: "来源 1"}}
 	}
+	if kind == "import" && s.runtimeFor(t).DocumentImport {
+		tr.DocumentImport = true
+		tr.Format, tr.Mode, tr.ContinueOnError = "JSON", "document_replace", false
+		tr.Sources = nil
+	}
 	t.transfer = tr
 }
 func (s *State) closeDataTransfer(t *Document) {
@@ -189,6 +196,8 @@ func (s *State) stopDataTransfer(t *Document) {
 			t.transfer.Cancel()
 		}
 		t.transfer.Canceling = true
+	} else if t.transfer.DocumentImport && t.transfer.Uncertain {
+		t.transfer.Open = false
 	} else {
 		s.closeDataTransfer(t)
 	}
@@ -213,7 +222,9 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 		tr.Open = true
 	}
 	if !tr.Open {
-		if tr.Busy {
+		// An admitted document import can be observed from the grid toolbar
+		// after hiding its wizard. Modal visibility must not cancel that read.
+		if tr.Busy && !(tr.DocumentImport && tr.Uncertain) {
 			s.stopDataTransfer(t)
 		}
 		return
@@ -399,6 +410,7 @@ func (s *State) chooseDataImportFile(services ui.Services, t *Document) {
 	format, profile := t.transfer.Format, t.profileID
 	openDialog := t.transfer.OpenDialog
 	options, wizard, assets := t.transfer.Options, t.transfer.Wizard, t.transfer.Assets
+	documentImport := t.transfer.DocumentImport
 	if openDialog == nil {
 		openDialog = mygo.Dialog.Open
 	}
@@ -415,7 +427,9 @@ func (s *State) chooseDataImportFile(services ui.Services, t *Document) {
 			var f *os.File
 			f, err = os.Open(path)
 			if err == nil {
-				if wizard {
+				if documentImport {
+					input, err = parseDocumentImport(f, format)
+				} else if wizard {
 					spool, input, inferred, err = mysqlDataReadSpool(ctx, f, format, options, assets)
 				} else {
 					input, err = mysqlDataParseImport(f, format)
@@ -444,6 +458,10 @@ func (s *State) beginDataTransfer(t *Document) (context.Context, chan mysqlDataT
 	return ctx, out, t.transfer.Request, s.session().Generation
 }
 func (s *State) startDataImport(services ui.Services, t *Document) {
+	if t != nil && t.transfer.DocumentImport {
+		s.startDocumentImport(services, t)
+		return
+	}
 	tr := &t.transfer
 	if t.closed || dataTransactionActive(t) || dataTransactionBusy(t) || tr.Busy || tr.Submitted || tr.Input == nil || !mysqlDataImportConfirmed(t) || t.edit.Busy || t.edit.Uncertain != nil || mysqlDataHasDraft(t) || !s.session().Connected || s.session().ProfileID != t.profileID || s.session().Generation != tr.Generation {
 		return
@@ -709,6 +727,10 @@ func (s *State) consumeDataTransfers(services ui.Services) {
 				tr.Capabilities = result.Capabilities
 			}
 			if result.Write {
+				if tr.DocumentImport {
+					s.consumeDocumentImport(services, t, result, stale)
+					continue
+				}
 				if result.Streamed != nil {
 					s.consumeStreamedDataImport(services, t, result, stale)
 					continue
@@ -804,6 +826,9 @@ func (s *State) consumeDataTransfers(services ui.Services) {
 					tr.TotalRows = result.RawSpool.rows
 				}
 				tr.Input = result.Input
+				if tr.DocumentImport {
+					tr.TotalRows = int64(len(result.Input.Rows))
+				}
 				tr.NewColumns = mysqlDataInferImportColumns(result.Input)
 				if result.Inferred != nil {
 					tr.NewColumns = result.Inferred

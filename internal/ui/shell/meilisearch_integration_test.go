@@ -267,8 +267,13 @@ func TestMeilisearchNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t
 			t.Fatal("export wrapped or rounded original JSON")
 		}
 	}
-	if caps := s.objectCapabilitiesFor(p.ID); !caps.EditableTables || caps.Import || caps.Transactions || caps.Keyset {
-		t.Fatal("native async JSON binding or unsupported transaction/import semantics")
+	if caps := s.objectCapabilitiesFor(p.ID); !caps.EditableTables || !caps.Import || caps.Transactions || caps.Keyset {
+		t.Fatal("native async JSON editing/import binding or unsupported transaction semantics")
+	}
+	beforeImport := len(s.tabs)
+	s.openDatabaseImport(p.ID, indexes[0])
+	if len(s.tabs) != beforeImport {
+		t.Fatal("document capability enabled relational new-table import")
 	}
 	s.submitNavigation(services, navigation.DatabaseNode(p.ID, indexes[0]))
 	wait(func() bool { return w.Pending == "" })

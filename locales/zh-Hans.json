@@ -2526,5 +2526,21 @@
   "dataAsyncWrited1edf40b72": "关闭原写入文档？",
   "dataAsyncWrite3dde5f7e5a": "关闭会丢弃本地草稿与任务证据；服务器任务不会取消或回滚，原请求不会重发。请先复制所需证据。",
   "dataAsyncWrite287f22d929": "关闭并放弃本地草稿与证据",
-  "dataAsyncWrite2ab684fbf9": "继续观察"
+  "dataAsyncWrite2ab684fbf9": "继续观察",
+  "dataDocumentImportd7925c05ee": "已核验导入 %d 份文档",
+  "dataDocumentImportdef63d2b3b": "合并同 ID 字段",
+  "dataDocumentImportd3ed4f66f4": "完整替换同 ID 文档",
+  "dataDocumentImportb93a17bd4b": "源文件",
+  "dataDocumentImport8128ece475": "JSON 接受对象或对象数组；JSONL 每个非空行一份对象。保留嵌套字段与精确数字。",
+  "dataDocumentImport21c5530b52": "单次最多 10000 份文档、8 MiB，每份最多 1 MiB；一次提交一个任务，不自动分批或重试。",
+  "dataDocumentImport70cc1520d9": "已读取 %d 份文档",
+  "dataDocumentImport45f4f28316": "完整替换会删除同 ID 文档中未提供的字段；合并保留未提供字段，嵌套对象作为整个字段替换。两种模式均可创建新 ID，不清空索引。",
+  "dataDocumentImport45cf2a2713": "合并前读取原文档以核对结果；并发变化可能导致核验不通过，不能保证原子比较与交换。",
+  "dataDocumentImport3a56b706cb": "目标 %s · %s · %d 份文档",
+  "dataDocumentImport28d5e9a14f": "目标索引必须已存在并设置主键；缺失或重复 ID、非法 JSON 和超限请求会拒绝。",
+  "dataDocumentImporta10f2a6685": "输入目标名称以确认导入",
+  "dataDocumentImport2bf7d3fde7": "观察成功任务后将逐份读取全部导入文档；失败或结果不符保留待核验状态，禁止重放。",
+  "dataDocumentImporte119731ffe": "导入任务已受理，源文档与证据已保留；尚未确认完成，禁止重放",
+  "dataDocumentImport0822d6b868": "导入任务失败或已取消；源文档与证据已保留，禁止重放",
+  "dataDocumentImport90f9f305f2": "导入任务成功，但完整读回未能确认；源文档与证据已保留，禁止重放"
 }

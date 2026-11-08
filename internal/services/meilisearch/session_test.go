@@ -133,7 +133,7 @@ func TestMeilisearchSessionQualifiedIndexesAndIndependentDefinitions(t *testing.
 	if calls.Load() != before {
 		t.Fatal("invalid identity dispatched")
 	}
-	if s.Capabilities() != (contract.Capabilities{EditableTables: true, Query: true, Metadata: true, Objects: true, Documents: true, Count: true, FieldChunks: true, Export: true, JSONL: true}) {
+	if s.Capabilities() != (contract.Capabilities{EditableTables: true, Query: true, Metadata: true, Objects: true, Documents: true, Count: true, FieldChunks: true, Export: true, JSONL: true, Import: true}) {
 		t.Fatal(s.Capabilities())
 	}
 	if _, err := contract.Require[contract.DataDocumentsProvider](s); err != nil {

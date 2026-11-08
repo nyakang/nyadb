@@ -10,7 +10,7 @@ func BoundDataCapabilities(r DataRuntime) Capabilities {
 	c.Count = c.Count && r.Count != nil
 	c.FieldChunks = c.FieldChunks && r.Chunk != nil
 	c.Analysis = c.Analysis && r.Analyzer != nil
-	c.Import = c.Import && (r.Importer != nil || r.StreamImporter != nil)
+	c.Import = c.Import && (r.Importer != nil || r.StreamImporter != nil) && (!r.DocumentImport || r.Importer != nil && r.AsyncWrites && r.Verify != nil)
 	c.JSONL = c.JSONL && r.JSONL != nil
 	c.Export = c.Export && (r.Exporter != nil || r.JSONL != nil)
 	return c

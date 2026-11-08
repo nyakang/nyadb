@@ -2526,5 +2526,21 @@
   "dataAsyncWrited1edf40b72": "Close original write document?",
   "dataAsyncWrite3dde5f7e5a": "Closing discards local drafts and task evidence. Server tasks are not canceled or rolled back, and the original request is not resent. Copy required evidence first.",
   "dataAsyncWrite287f22d929": "Close and discard local drafts and evidence",
-  "dataAsyncWrite2ab684fbf9": "Continue observing"
+  "dataAsyncWrite2ab684fbf9": "Continue observing",
+  "dataDocumentImportd7925c05ee": "Verified import of %d documents",
+  "dataDocumentImportdef63d2b3b": "Merge fields for matching IDs",
+  "dataDocumentImportd3ed4f66f4": "Replace documents for matching IDs",
+  "dataDocumentImportb93a17bd4b": "Source file",
+  "dataDocumentImport8128ece475": "JSON accepts an object or object array; JSONL accepts one object per nonempty line. Nested fields and exact numbers are preserved.",
+  "dataDocumentImport21c5530b52": "Up to 10000 documents and 8 MiB per import, 1 MiB per document. One task is submitted; no automatic batching or retries.",
+  "dataDocumentImport70cc1520d9": "Read %d documents",
+  "dataDocumentImport45f4f28316": "Replacement removes omitted fields from matching documents. Merge retains omitted fields and replaces nested objects as whole fields. Both modes create new IDs and preserve the rest of the index.",
+  "dataDocumentImport45cf2a2713": "Original documents are read before merging to verify the result. Concurrent changes may prevent verification; atomic compare and swap is not guaranteed.",
+  "dataDocumentImport3a56b706cb": "Target %s · %s · %d documents",
+  "dataDocumentImport28d5e9a14f": "The index must exist and have a primary key. Missing or duplicate IDs, invalid JSON and oversized requests are rejected.",
+  "dataDocumentImporta10f2a6685": "Enter the target name to confirm import",
+  "dataDocumentImport2bf7d3fde7": "After observing a successful task, every imported document is read back. Failure or conflicting results remain unverified and block replay.",
+  "dataDocumentImporte119731ffe": "Import task admitted; source documents and evidence retained. Completion is unconfirmed; replay blocked",
+  "dataDocumentImport0822d6b868": "Import task failed or canceled; source documents and evidence retained. Replay blocked",
+  "dataDocumentImport90f9f305f2": "Import task succeeded but complete readback is unconfirmed; source documents and evidence retained. Replay blocked"
 }

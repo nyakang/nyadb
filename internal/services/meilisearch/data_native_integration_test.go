@@ -124,7 +124,7 @@ func TestMeilisearchNativeDataQualifiedOffsetPagingFingerprintsAndCompleteExport
 	if _, err = runtime.RowReader(context.Background(), s.ProfileID(), uid, "documents", ref); !errors.Is(err, contract.ErrDataConflict) {
 		t.Fatal("stale original source accepted", err)
 	}
-	if !runtime.Capabilities.EditableTables || runtime.Saver == nil || runtime.Verify == nil || !runtime.AsyncWrites || runtime.Importer != nil || runtime.Transactions.Begin != nil {
+	if !runtime.Capabilities.EditableTables || runtime.Saver == nil || runtime.Verify == nil || !runtime.AsyncWrites || runtime.Importer == nil || !runtime.DocumentImport || !runtime.Capabilities.Import || runtime.Transactions.Begin != nil {
 		t.Fatal("native async write binding or unsupported transaction/import semantics")
 	}
 	t.Log("native readonly original leases, offset cursor/sibling isolation, bounded Unicode fields, full-row limits, typed fingerprint/value rows and exact5015document JSONL/tabular export verified beyond search1000 with1400000byte source intact")

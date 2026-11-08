@@ -105,7 +105,7 @@ func TestMeilisearchDataOriginalPagingFingerprintsValuesAndCursorIsolation(t *te
 		t.Fatal("public document provider unavailable")
 	}
 	runtime := l.Runtime()
-	if !runtime.Capabilities.Documents || !runtime.Capabilities.EditableTables || runtime.Capabilities.Keyset || runtime.Saver == nil || runtime.Verify == nil || !runtime.AsyncWrites || runtime.Importer != nil {
+	if !runtime.Capabilities.Documents || !runtime.Capabilities.EditableTables || runtime.Capabilities.Keyset || runtime.Saver == nil || runtime.Verify == nil || !runtime.AsyncWrites || runtime.Importer == nil || !runtime.DocumentImport || !runtime.Capabilities.Import {
 		t.Fatal("native asynchronous edit and OFFSET capabilities")
 	}
 	p, err := runtime.AdvancedLoader(context.Background(), s.ProfileID(), "owned", "documents", dataOptions(l, 1))

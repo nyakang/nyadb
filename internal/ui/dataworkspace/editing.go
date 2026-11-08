@@ -744,6 +744,10 @@ func (s *State) refreshDataAfterWrite(services ui.Services, t *Document) {
 	s.Load(services, t, true)
 }
 func (s *State) verifyMySQLDataSave(services ui.Services, t *Document) {
+	if t != nil && t.transfer.DocumentImport && t.transfer.Uncertain {
+		s.observeDocumentImport(services, t)
+		return
+	}
 	if !s.canUseSession(t) || (dataTransactionActive(t) && !t.transaction.uncertain) || t.edit.Uncertain == nil || t.edit.Busy || s.verifierFor(t) == nil {
 		return
 	}
@@ -1003,7 +1007,9 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 		ui.Spinner(c).Size(14, 14)
 	}
 	message, color := "", palette.Muted
-	if t.edit.AsyncStatusActive && t.edit.Uncertain != nil {
+	if t.transfer.DocumentImport && t.edit.AsyncStatusActive {
+		message = documentImportStatus(t)
+	} else if t.edit.AsyncStatusActive && t.edit.Uncertain != nil {
 		message, color = asyncDataWriteStatus(t.edit.Uncertain), palette.Warning
 	} else if t.edit.AsyncStatusActive && t.edit.LastAsync != nil && !mysqlDataHasDraft(t) {
 		message = locales.Text("已核验：数据更改已提交")

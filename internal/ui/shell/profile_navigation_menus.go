@@ -257,7 +257,8 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 		m.Separator()
 	}
 	if n.Kind == "database" || n.Kind == "category" && n.Category == "表" {
-		if m.Item(locales.Text("导入向导…")).Disabled(s.sessions.StatusFor(n.ProfileID) != "已连接" || !s.objectCapabilitiesFor(n.ProfileID).Import).Chosen() {
+		caps := s.objectCapabilitiesFor(n.ProfileID)
+		if m.Item(locales.Text("导入向导…")).Disabled(s.sessions.StatusFor(n.ProfileID) != "已连接" || !caps.Import || caps.Documents).Chosen() {
 			s.openDatabaseImport(n.ProfileID, n.Database)
 		}
 		if m.Item(locales.Text("新建表")).Shortcut(ui.Ctrl, ui.KeyN).

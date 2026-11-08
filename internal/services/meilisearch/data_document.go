@@ -73,12 +73,12 @@ func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 }
 
 func nativeDataCapabilities() contract.Capabilities {
-	return contract.Capabilities{Documents: true, EditableTables: true, Metadata: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
+	return contract.Capabilities{Documents: true, EditableTables: true, Metadata: true, Count: true, FieldChunks: true, Export: true, JSONL: true, Import: true}
 }
 
 func (s *Session) DataDocumentCapabilities() contract.Capabilities { return nativeDataCapabilities() }
 func (l *dataLease) Runtime() contract.DataRuntime {
-	return contract.DataRuntime{Capabilities: nativeDataCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl, Saver: l.save, Verify: l.verifyWrite, AsyncWrites: true,
+	return contract.DataRuntime{Capabilities: nativeDataCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl, Saver: l.save, Importer: l.importDocuments, DocumentImport: true, Verify: l.verifyWrite, AsyncWrites: true,
 		WriteDescription: "POST /indexes/" + l.object.Catalog + "/documents (JSON replacement) or /documents/delete-batch; asynchronous admission; preflight is not atomic compare-and-swap",
 		Selector:         contract.DataSelector{Dialect: "meilisearch", Column: "document", Mode: "meilisearch_search", Validate: validateSearchSelector},
 		FilterColumns:    []string{}, SortColumns: []string{},

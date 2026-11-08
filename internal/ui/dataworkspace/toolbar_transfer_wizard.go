@@ -19,6 +19,10 @@ func mysqlDataWizardSteps(kind string) []string {
 }
 
 func (s *State) dataTransferWizard(c *ui.Context, t *Document, available bool, title string) {
+	if t.transfer.DocumentImport {
+		s.documentImportWizard(c, t, available, title)
+		return
+	}
 	tr := &t.transfer
 	steps := mysqlDataWizardSteps(tr.Kind)
 	tr.Step = max(0, min(tr.Step, len(steps)-1))

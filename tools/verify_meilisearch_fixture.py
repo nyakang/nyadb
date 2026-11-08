@@ -52,7 +52,7 @@ KEYS_AUTHENTICATED = ['KeysPagingRedactionAndSynchronousCRUD', 'KeysNativePolicy
 KEY_PANEL_COMMON = ['PublicKeysReadParkingCancelAndRecovery', 'PublicKeysWorkspaceRestorationIsExplicit']
 KEY_PANEL_ANONYMOUS = ['PublicKeysAnonymousRefusalAndScope']
 KEY_PANEL_AUTHENTICATED = ['PublicKeysSynchronousCRUDSecretAndSnapshot', 'PublicKeysUnknownWriteParkingCancelAndRecovery', 'PublicKeysDelegatedPermissionsAndConfiguredScope']
-DATA_WRITES_REQUIRED = ['DataWritesAdmissionExactReplacementAndDeletion', 'DataWritesTaskFailureRetainsOriginalReceipt', 'DataWritesLostCancelCloseNoReplay', 'DataWritesObservationCancelAndOriginalClose', 'PublicDataWriteGridAdmissionObservationAndEvidence']
+DATA_WRITES_REQUIRED = ['DataWritesAdmissionExactReplacementAndDeletion', 'DataWritesTaskFailureRetainsOriginalReceipt', 'DataWritesLostCancelCloseNoReplay', 'DataWritesObservationCancelAndOriginalClose', 'PublicDataWriteGridAdmissionObservationAndEvidence', 'DocumentImportLargeReplacementMergeAndExactJSON', 'DocumentImportTaskFailureRetainsOriginalReceipt', 'DocumentImportLostCancelCloseNoReplay', 'PublicDocumentImportWizardJSONJSONLObservationAndEvidence']
 DATA_WRITES_SCOPED = 'DataWritesScopedPermissionsAndObservation'
 MODES = ('anonymous', 'bearer', 'tls', 'mtls')
 
@@ -93,7 +93,7 @@ def required_passes(mode, profile=False, session=False, public=False, documents=
     tasks = tasks or task_panel or settings
     data = data or public
     profile, session, documents = profile or public, session or public or data, documents or data
-    return REQUIRED + ([] if mode == 'anonymous' else [SCOPED]) + (PROFILE_REQUIRED if profile else []) + ((SESSION_REQUIRED + ([] if mode == 'anonymous' else [SESSION_SCOPED])) if session else []) + ((PUBLIC_REQUIRED + ([] if mode == 'anonymous' else [PUBLIC_SCOPED])) if public else []) + ((DOCUMENT_REQUIRED + ([] if mode == 'anonymous' else [DOCUMENT_SCOPED])) if documents else []) + ((DATA_REQUIRED + ([] if mode == 'anonymous' else [DATA_SCOPED])) if data else []) + ((SEARCH_REQUIRED + ([] if mode == 'anonymous' else [SEARCH_SCOPED])) if search else []) + ((TASK_REQUIRED + ([] if mode == 'anonymous' else [TASK_SCOPED])) if tasks else []) + ((TASK_PANEL_REQUIRED + ([] if mode == 'anonymous' else [TASK_PANEL_SCOPED])) if task_panel else []) + ((SETTINGS_REQUIRED + ([] if mode == 'anonymous' else SETTINGS_SCOPED)) if settings else []) + ((TASK_MANAGEMENT_REQUIRED + ([] if mode == 'anonymous' else [TASK_MANAGEMENT_SCOPED])) if task_management else []) + ((KEYS_COMMON + (KEYS_ANONYMOUS if mode == 'anonymous' else KEYS_AUTHENTICATED)) if keys else []) + ((KEY_PANEL_COMMON + (KEY_PANEL_ANONYMOUS if mode == 'anonymous' else KEY_PANEL_AUTHENTICATED)) if key_panel else []) + ((DATA_WRITES_REQUIRED + ([] if mode == 'anonymous' else [DATA_WRITES_SCOPED])) if data_writes else [])
+    return REQUIRED + ([] if mode == 'anonymous' else [SCOPED]) + (PROFILE_REQUIRED if profile else []) + ((SESSION_REQUIRED + ([] if mode == 'anonymous' else [SESSION_SCOPED])) if session else []) + ((PUBLIC_REQUIRED + ([] if mode == 'anonymous' else [PUBLIC_SCOPED])) if public else []) + ((DOCUMENT_REQUIRED + ([] if mode == 'anonymous' else [DOCUMENT_SCOPED])) if documents else []) + ((DATA_REQUIRED + ([] if mode == 'anonymous' else [DATA_SCOPED])) if data else []) + ((SEARCH_REQUIRED + ([] if mode == 'anonymous' else [SEARCH_SCOPED])) if search else []) + ((TASK_REQUIRED + ([] if mode == 'anonymous' else [TASK_SCOPED])) if tasks else []) + ((TASK_PANEL_REQUIRED + ([] if mode == 'anonymous' else [TASK_PANEL_SCOPED])) if task_panel else []) + ((SETTINGS_REQUIRED + ([] if mode == 'anonymous' else SETTINGS_SCOPED)) if settings else []) + ((TASK_MANAGEMENT_REQUIRED + ([] if mode == 'anonymous' else [TASK_MANAGEMENT_SCOPED])) if task_management else []) + ((KEYS_COMMON + (KEYS_ANONYMOUS if mode == 'anonymous' else KEYS_AUTHENTICATED)) if keys else []) + ((KEY_PANEL_COMMON + (KEY_PANEL_ANONYMOUS if mode == 'anonymous' else KEY_PANEL_AUTHENTICATED)) if key_panel else []) + ((DATA_WRITES_REQUIRED + ([] if mode == 'anonymous' else [DATA_WRITES_SCOPED, 'DocumentImportScopedPermissionsAndObservation'])) if data_writes else [])
 
 
 def test_command(mode, race, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False, task_management=False, keys=False, key_panel=False, data_writes=False):
@@ -102,7 +102,7 @@ def test_command(mode, race, profile=False, session=False, public=False, documen
     public = public or search or task_panel or settings or key_panel or data_writes
     tasks = tasks or task_panel or settings
     selected = '^TestMeilisearchNative(' + '|'.join(required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes)) + ')$'
-    return ['go', 'test', '-count=1', '-timeout=10m', '-v', *(['-race'] if race else []), '-run', selected, './internal/services/meilisearch', *(['./internal/ui/connectioneditor'] if profile or public else []), *(['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell'] if public else ['./internal/services/dbruntime'] if keys else [])]
+    return ['go', 'test', '-count=1', '-timeout=10m', '-v', *(['-race'] if race else []), '-run', selected, './internal/services/meilisearch', *(['./internal/ui/connectioneditor'] if profile or public else []), *(['./internal/ui/dataworkspace'] if data_writes else []), *(['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell'] if public else ['./internal/services/dbruntime'] if keys else [])]
 
 
 def check_acceptance(log, mode, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False, task_management=False, keys=False, key_panel=False, data_writes=False):
@@ -247,6 +247,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                 env = dict(os.environ, NYADB_MEILISEARCH_IT='1', NYADB_MEILISEARCH_CONFIG=str(folder/'probe.json'))
                 if data_writes:
                     env['NYADB_MEILISEARCH_WRITE_IMAGES'] = str(output/('data-write-images-'+nonce))
+                    env['NYADB_MEILISEARCH_IMPORT_IMAGES'] = str(output/('document-import-images-'+nonce))
                 if keys:
                     env['NYADB_MEILISEARCH_KEYS_IT'] = '1'
                 if key_panel:
@@ -334,6 +335,12 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                     if {str(p.relative_to(image_root)) for p in images} != expected:
                         raise RuntimeError('Missing localized shared-grid async write evidence')
                     evidence['headless_data_write_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
+                    image_root = Path(env['NYADB_MEILISEARCH_IMPORT_IMAGES'])
+                    images = sorted(image_root.rglob('*.png'))
+                    expected = {language+'/document-import-'+phase+'-'+str(width)+'x'+str(height)+'.png' for language in ['zh-Hans','en'] for width,height in [(1280,800),(720,520)] for phase in ['source','mode','review','admitted','evidence','saved']}
+                    if {str(p.relative_to(image_root)) for p in images} != expected:
+                        raise RuntimeError('Missing localized native JSON/JSONL import wizard evidence')
+                    evidence['headless_document_import_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
                 evidence.update(status='passed_with_race' if race else 'passed', observed_identity=identity, source_hashes=hashes, command=command, log=str(logfile.relative_to(ROOT)), log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest(), required_passes=required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel, settings, task_management, keys, key_panel, data_writes))
             finally:
                 if identifier:

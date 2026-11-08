@@ -15,14 +15,19 @@ import (
 // One lease owns one unresolved native batch. Admission, task observation and
 // readback are distinct; neither cancellation nor a lost response permits replay.
 type dataWrite struct {
-	edits   []contract.DataEdit
-	docs    []dataDocument
-	receipt Receipt
-	result  contract.DataEditResult
+	importing bool
+	edits     []contract.DataEdit
+	docs      []dataDocument
+	receipt   Receipt
+	result    contract.DataEditResult
 }
 
 func copyDataEdits(edits []contract.DataEdit) ([]contract.DataEdit, error) {
-	if len(edits) < 1 || len(edits) > contract.DataMaxPageSize {
+	return copyDataEditsLimit(edits, contract.DataMaxPageSize)
+}
+
+func copyDataEditsLimit(edits []contract.DataEdit, limit int) ([]contract.DataEdit, error) {
+	if len(edits) < 1 || len(edits) > limit {
 		return nil, ErrBounds
 	}
 	raw, err := json.Marshal(edits)
@@ -223,6 +228,11 @@ func (l *dataLease) save(ctx context.Context, id int64, db, name string, edits [
 	if err != nil || len(request.Body) > requestLimit {
 		return nil, ErrBounds
 	}
+	return l.submitWrite(ctx, c, w, request)
+}
+
+func (l *dataLease) submitWrite(ctx context.Context, c *Client, w *dataWrite, request Request) (*contract.DataEditResult, error) {
+	var err error
 	if _, err = l.guard(ctx, c); err != nil {
 		return nil, err
 	}
@@ -241,10 +251,10 @@ func (l *dataLease) save(ctx context.Context, id int64, db, name string, edits [
 		return copyWriteResult(w.result), err
 	}
 	kind := "documentAdditionOrUpdate"
-	if edits[0].Kind == "delete" {
+	if w.edits[0].Kind == "delete" {
 		kind = "documentDeletion"
 	}
-	if receipt.IndexUID == nil || *receipt.IndexUID != db || receipt.Type != kind {
+	if receipt.IndexUID == nil || *receipt.IndexUID != l.object.Catalog || receipt.Type != kind {
 		return copyWriteResult(w.result), ErrProtocol
 	}
 	w.receipt = receipt
@@ -306,6 +316,7 @@ func (l *dataLease) verifyWrite(ctx context.Context, id int64, db, name string, 
 	}
 	saved := contract.DataEditResult{CommitConfirmed: true, Verified: true, RefreshRequired: true, Applied: len(w.edits), Async: w.result.Async}
 	budget := responseLimit
+	readBytes := 0
 	for i, expected := range w.docs {
 		outcome := contract.DataEditOutcome{Kind: w.edits[i].Kind, Original: w.edits[i].Original}
 		raw, response, err := c.ReadDocument(ctx, db, expected.ID)
@@ -317,6 +328,10 @@ func (l *dataLease) verifyWrite(ctx context.Context, id int64, db, name string, 
 			if err != nil {
 				return out, err
 			}
+			readBytes += len(raw)
+			if readBytes > responseLimit {
+				return out, ErrBounds
+			}
 			actual, err := l.document(raw)
 			if err != nil {
 				return out, err
@@ -325,6 +340,9 @@ func (l *dataLease) verifyWrite(ctx context.Context, id int64, db, name string, 
 			b, e2 := documentFingerprints(expected)
 			if e1 != nil || e2 != nil || !slices.Equal(a, b) {
 				return out, nil
+			}
+			if w.importing {
+				continue
 			}
 			previews, snapshot, err := l.preview(actual, &budget)
 			if err != nil {

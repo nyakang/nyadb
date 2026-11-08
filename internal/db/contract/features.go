@@ -86,7 +86,9 @@ type DataSelector struct {
 // before starting; adapters must check the original session on every call.
 type DataRuntime struct {
 	// AsyncWrites requires explicit admission observation through Verify.
-	AsyncWrites      bool
+	AsyncWrites bool
+	// DocumentImport accepts whole JSON documents through Importer; requires Verify.
+	DocumentImport   bool
 	WriteDescription string
 	ReserveDocument  func(ObjectRef) (DataDocumentLease, error)
 	ExportFormats    []string // nil preserves existing providers' format availability.
