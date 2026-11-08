@@ -2279,5 +2279,6 @@
   "meilisearchDocumentGridUnavailable": "The document grid is unavailable. Read documents in the REST editor.",
   "nativeTaskEnqueuedUnconfirmed": "Task admitted; completion has not been confirmed",
   "nativeTaskEnqueuedDuration": "Task admitted; completion has not been confirmed · %s",
-  "nativeTaskEnqueuedPresentationFailed": "Task admitted; completion has not been confirmed. Result display failed: "
+  "nativeTaskEnqueuedPresentationFailed": "Task admitted; completion has not been confirmed. Result display failed: ",
+  "liveDataOffsetWarning": "OFFSET reads live data; changes while paging or rereading may repeat or omit rows."
 }

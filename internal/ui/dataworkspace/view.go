@@ -98,7 +98,9 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *contract.DataPag
 		} else {
 			if !page.StableOrder || page.LiveRead {
 				warning := locales.Text("此对象没有完整非空唯一键，OFFSET 分页期间数据变化可能导致行重复或遗漏")
-				if page.LiveRead {
+				if page.LiveRead && page.PagingMode == "offset" {
+					warning = locales.Text("OFFSET 读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。")
+				} else if page.LiveRead {
 					warning = locales.Text("原生游标读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。")
 				} else if t.capabilities.KeyValues {
 					warning = locales.Text("SCAN 不提供稳定快照；扫描期间键变化可能导致重复或遗漏。键和值中的字节使用 base64。")

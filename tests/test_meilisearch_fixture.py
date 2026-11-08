@@ -11,6 +11,23 @@ SPEC.loader.exec_module(fixture)
 
 
 class MeilisearchFixtureTests(unittest.TestCase):
+    def test_data_acceptance_requires_original_leases_and_complete_export(self):
+        for mode in fixture.MODES:
+            names = fixture.required_passes(mode, data=True)
+            for name in fixture.DATA_REQUIRED + fixture.DOCUMENT_REQUIRED + fixture.SESSION_REQUIRED:
+                self.assertIn(name, names)
+            self.assertEqual(fixture.DATA_SCOPED in names, mode != 'anonymous')
+            command = fixture.test_command(mode, True, data=True)
+            self.assertIn('-race', command)
+            self.assertIn('DataQualifiedOffsetPagingFingerprintsAndCompleteExport', command[-2])
+            ordinary = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in fixture.required_passes(mode, session=True, documents=True))
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(ordinary, mode, data=True)
+            complete = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in names)
+            if mode == 'mtls':
+                complete += '\nnative mTLS accepted owned client certificate and rejected its absence'
+            fixture.check_acceptance(complete, mode, data=True)
+
     def test_documents_acceptance_requires_complete_enumeration_and_native_read_lifecycle(self):
         for mode in fixture.MODES:
             names = fixture.required_passes(mode, documents=True)

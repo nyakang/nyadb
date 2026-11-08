@@ -22,6 +22,8 @@ type Session struct {
 	closeDone       chan struct{}
 	work            sync.WaitGroup
 	leases          map[*queryLease]bool
+	documents       map[*dataLease]bool
+	dataSlots       chan struct{}
 }
 
 func OpenSession(ctx context.Context, p connections.Profile, secret string) (contract.Session, error) {
@@ -143,7 +145,14 @@ func (s *Session) Close() error {
 	for l := range s.leases {
 		leases = append(leases, l)
 	}
+	documents := make([]*dataLease, 0, len(s.documents))
+	for d := range s.documents {
+		documents = append(documents, d)
+	}
 	s.mu.Unlock()
+	for _, d := range documents {
+		_ = d.Close()
+	}
 	for _, l := range leases {
 		l.Release()
 	}

@@ -2279,5 +2279,6 @@
   "meilisearchDocumentGridUnavailable": "文档网格暂不可用；可在 REST 编辑器中读取文档。",
   "nativeTaskEnqueuedUnconfirmed": "任务已接收，尚未确认完成",
   "nativeTaskEnqueuedDuration": "任务已接收，尚未确认完成 · %s",
-  "nativeTaskEnqueuedPresentationFailed": "任务已接收，尚未确认完成；结果显示失败："
+  "nativeTaskEnqueuedPresentationFailed": "任务已接收，尚未确认完成；结果显示失败：",
+  "liveDataOffsetWarning": "OFFSET 读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。"
 }

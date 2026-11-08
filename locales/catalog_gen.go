@@ -23173,3 +23173,13 @@ func NativeTaskEnqueuedPresentationFailed() string {
 func (msgs Messages) NativeTaskEnqueuedPresentationFailed() string {
 	return Catalog.Format(msgs.locale, "nativeTaskEnqueuedPresentationFailed", nil)
 }
+
+// LiveDataOffsetWarning says "OFFSET 读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。"
+// in the language the app shows.
+func LiveDataOffsetWarning() string { return In(i18n.Locale()).LiveDataOffsetWarning() }
+
+// LiveDataOffsetWarning says "OFFSET 读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。"
+// in the language of msgs.
+func (msgs Messages) LiveDataOffsetWarning() string {
+	return Catalog.Format(msgs.locale, "liveDataOffsetWarning", nil)
+}
