@@ -18,6 +18,19 @@ func (s *State) workspaceTabCaption(t *tab) string {
 		return name
 	}
 	key := t.identity()
+	if key.name == "collection_management" && key.objectKind == "集合与别名管理" {
+		caption := locales.Text("集合与别名管理")
+		for _, other := range s.tabs {
+			if other != t && other.identity().name == key.name && other.profileID() != key.profileID {
+				caption = s.profileName(key.profileID) + " / " + caption
+				break
+			}
+		}
+		if t.object != nil && t.object.DesignDirty() {
+			caption += " *"
+		}
+		return caption
+	}
 	suffix := ""
 	if t.kind == tabStructure {
 		suffix = " · " + locales.Text("设计")

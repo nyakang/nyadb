@@ -39,6 +39,9 @@ func (s *State) RestoreWorkspace(data json.RawMessage) error {
 	return nil
 }
 func (s *State) DocumentSnapshot(d *Document) json.RawMessage {
+	if d.CollectionManagementMode() {
+		return json.RawMessage(`{"Collections":true}`)
+	}
 	if d.KeysMode() {
 		b, _ := json.Marshal(struct {
 			Keys    int
@@ -67,6 +70,10 @@ func (s *State) DocumentSnapshot(d *Document) json.RawMessage {
 }
 func (s *State) RestoreDocumentPresentation(d *Document, b json.RawMessage) {
 	if d == nil || d.closed {
+		return
+	}
+	if d.CollectionManagementMode() {
+		d.collections.tab = 0
 		return
 	}
 	if d.KeysMode() {

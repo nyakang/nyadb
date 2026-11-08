@@ -94,6 +94,8 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 			}
 		}
 	case "工具":
+		collections := contract.ObjectRef{ProfileID: session.ProfileID, Kind: "collection_management", Name: "collection_management"}
+		item("管理集合与别名…", "collections", s.objectWorkspace.CollectionManagementSupported(collections), 0, 0)
 		target := contract.ObjectRef{ProfileID: session.ProfileID, Kind: "keys", Name: "keys"}
 		item("管理 API 密钥…", "keys", s.objectWorkspace.KeysScopeSupported(target), 0, 0)
 		index := ""
@@ -122,6 +124,8 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 		return
 	}
 	switch selected {
+	case "collections":
+		s.openCollectionManagement(s.editServices, original.profile)
 	case "namespace_management":
 		index := ""
 		for _, profile := range s.navigation.Profiles() {

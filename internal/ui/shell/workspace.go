@@ -343,7 +343,7 @@ func (s *State) clearMySQLTabsFor(profileID int64) {
 }
 func (s *State) pruneMySQLTabsFor(id int64, known map[string]bool) {
 	s.removeTabs(func(t *tab) bool {
-		global := t.object != nil && t.object.Object().Catalog == "" && (t.object.Object().Kind == "tasks" || t.object.KeysMode())
+		global := t.object != nil && t.object.Object().Catalog == "" && (t.object.Object().Kind == "tasks" || t.object.KeysMode() || t.object.CollectionManagementMode())
 		return (t.data != nil || t.object != nil) && t.profileID() == id && !global && !known[t.database()]
 	})
 }
@@ -665,6 +665,14 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 		},
 		Loader:      func() objectworkspace.Loader { return s.runtime.Data(s.sessions.Current().ProfileID).TableMetadata },
 		MetadataFor: func(id int64) (contract.MetadataProvider, error) { return s.runtime.Metadata(id) },
+		CollectionManagementFor: func(id int64) (contract.CollectionManagementProvider, error) {
+			if s.runtime == nil {
+				return nil, contract.ErrUnsupported
+			}
+			return s.runtime.CollectionManagement(id)
+		},
+		BeforeCollections:  s.guardCollectionManagement,
+		CollectionsChanged: s.collectionsChanged,
 		SettingsDocumentsFor: func(id int64) (contract.SettingsDocumentsProvider, error) {
 			if s.runtime == nil {
 				return nil, contract.ErrUnsupported
@@ -935,6 +943,8 @@ func neutralObjectKind(kind string) string {
 		return "points"
 	case "API 密钥":
 		return "keys"
+	case "集合与别名管理":
+		return "collection_management"
 	case "任务":
 		return "tasks"
 	case "文档":

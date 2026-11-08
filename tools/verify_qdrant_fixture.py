@@ -59,6 +59,8 @@ PUBLIC_REQUIRED = (
     'PublicReadOnlyProviderDenialAndOriginalRecovery',
     'RESTLostWriteCancelAndExplicitRecovery',
     'PublicChooserURINavigationDefinitionsRESTAndRecovery',
+    'PublicCollectionManagementGraphicalActionsGuardsAndParkedEvidence',
+    'PublicCollectionManagementGraphicalFaultsOriginalGenerationAndNoReplay',
 )
 
 DATA_REQUIRED = (
@@ -246,7 +248,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                 if session:
                     env['NYADB_QDRANT_SESSION_IT'] = '1'
                 if public:
-                    env.update(NYADB_QDRANT_PUBLIC_IT='1', NYADB_QDRANT_PUBLIC_IMAGES=str(output/('public-images-'+nonce)))
+                    env.update(NYADB_QDRANT_PUBLIC_IT='1', NYADB_QDRANT_PUBLIC_IMAGES=str(output/('public-images-'+nonce)), NYADB_QDRANT_MANAGEMENT_IMAGES=str(output/('management-images-'+nonce)))
                 if data:
                     env.update(NYADB_QDRANT_DATA_IT='1', NYADB_QDRANT_DATA_IMAGES=str(output/('data-images-'+nonce)), NYADB_QDRANT_IMPORT_IMAGES=str(output/('import-images-'+nonce)))
                 hashes = source_hashes(profile)
@@ -276,6 +278,15 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                     if {str(p.relative_to(image_root)) for p in images} != expected:
                         raise RuntimeError('Missing localized native Qdrant workbench evidence')
                     evidence['headless_workbench_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
+                if public:
+                    image_root = Path(env['NYADB_QDRANT_MANAGEMENT_IMAGES'])
+                    images = sorted(image_root.rglob('*.png'))
+                    expected = {language+'/'+panel+'-'+str(width)+'x'+str(height)+'.png'
+                                for language in ['zh-Hans', 'en'] for width,height in [(1280,800),(720,520)]
+                                for panel in ['form','read','preview','receipt','verified','unresolved']}
+                    if {str(p.relative_to(image_root)) for p in images} != expected:
+                        raise RuntimeError('Missing localized original collection/alias management evidence')
+                    evidence['headless_management_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
                 if data:
                     image_root = Path(env['NYADB_QDRANT_DATA_IMAGES'])
                     images = sorted(image_root.glob('*.png'))

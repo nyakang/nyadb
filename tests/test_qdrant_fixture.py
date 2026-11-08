@@ -175,6 +175,24 @@ class QdrantFixtureTests(unittest.TestCase):
                      'internal/services/dbruntime/qdrant_collection_management_integration_test.go']:
             self.assertIn(path, paths)
 
+    def test_graphical_management_requires_native_actions_faults_and_original_shell(self):
+        names = ['PublicCollectionManagementGraphicalActionsGuardsAndParkedEvidence',
+                 'PublicCollectionManagementGraphicalFaultsOriginalGenerationAndNoReplay']
+        required = fixture.REQUIRED + fixture.PROFILE_REQUIRED + fixture.SESSION_REQUIRED + fixture.PUBLIC_REQUIRED
+        log = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in required)
+        for name in names:
+            self.assertIn(name, fixture.PUBLIC_REQUIRED)
+            for replacement in ['--- SKIP: TestQdrantNative'+name, '--- PASS: TestQdrantNative'+name+'Other']:
+                with self.assertRaises(RuntimeError):
+                    fixture.check_acceptance(log.replace('--- PASS: TestQdrantNative'+name, replacement), public=True)
+        paths = fixture.source_hashes(profile=True)
+        for name in ['internal/ui/objectworkspace/collection_management.go',
+                     'internal/ui/objectworkspace/collection_management_view.go',
+                     'internal/ui/objectworkspace/collection_management_test.go',
+                     'internal/ui/shell/collection_management.go',
+                     'internal/ui/shell/qdrant_collection_management_integration_test.go']:
+            self.assertIn(name, paths)
+
     def test_session_evidence_covers_original_leases_and_typed_response_completion(self):
         paths = fixture.source_hashes(profile=True)
         for name in ['internal/services/qdrant/session.go', 'internal/services/qdrant/query.go',

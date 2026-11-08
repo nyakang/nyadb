@@ -94,6 +94,12 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 			s.startMySQLSession(services)
 		}
 	}
+	if profile.Kind == connections.Qdrant {
+		target := contract.ObjectRef{ProfileID: profile.ID, Kind: "collection_management", Name: "collection_management"}
+		if m.Item(locales.Text("管理集合与别名…")).Disabled(!connected || !s.objectWorkspace.CollectionManagementSupported(target)).Chosen() {
+			s.openCollectionManagement(services, profile.ID)
+		}
+	}
 	if profile.Kind == connections.Meilisearch {
 		keys := contract.ObjectRef{ProfileID: profile.ID, Kind: "keys", Name: "keys"}
 		if m.Item(locales.Text("管理 API 密钥…")).Disabled(!connected || !s.objectWorkspace.KeysScopeSupported(keys)).Chosen() {

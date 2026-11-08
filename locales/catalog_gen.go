@@ -27017,3 +27017,655 @@ func QdrantImportVerifiedCount() string { return In(i18n.Locale()).QdrantImportV
 func (msgs Messages) QdrantImportVerifiedCount() string {
 	return Catalog.Format(msgs.locale, "qdrantImportVerifiedCount", nil)
 }
+
+// QdrantManagementTitle says "集合与别名管理"
+// in the language the app shows.
+func QdrantManagementTitle() string { return In(i18n.Locale()).QdrantManagementTitle() }
+
+// QdrantManagementTitle says "集合与别名管理"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementTitle() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementTitle", nil)
+}
+
+// QdrantManagementOpen says "管理集合与别名…"
+// in the language the app shows.
+func QdrantManagementOpen() string { return In(i18n.Locale()).QdrantManagementOpen() }
+
+// QdrantManagementOpen says "管理集合与别名…"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementOpen() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementOpen", nil)
+}
+
+// QdrantManagementCreateCollection says "创建集合"
+// in the language the app shows.
+func QdrantManagementCreateCollection() string {
+	return In(i18n.Locale()).QdrantManagementCreateCollection()
+}
+
+// QdrantManagementCreateCollection says "创建集合"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementCreateCollection() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementCreateCollection", nil)
+}
+
+// QdrantManagementUpdateCollection says "修改集合配置"
+// in the language the app shows.
+func QdrantManagementUpdateCollection() string {
+	return In(i18n.Locale()).QdrantManagementUpdateCollection()
+}
+
+// QdrantManagementUpdateCollection says "修改集合配置"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementUpdateCollection() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementUpdateCollection", nil)
+}
+
+// QdrantManagementDeleteCollection says "删除集合"
+// in the language the app shows.
+func QdrantManagementDeleteCollection() string {
+	return In(i18n.Locale()).QdrantManagementDeleteCollection()
+}
+
+// QdrantManagementDeleteCollection says "删除集合"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementDeleteCollection() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementDeleteCollection", nil)
+}
+
+// QdrantManagementCreateAlias says "创建别名"
+// in the language the app shows.
+func QdrantManagementCreateAlias() string { return In(i18n.Locale()).QdrantManagementCreateAlias() }
+
+// QdrantManagementCreateAlias says "创建别名"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementCreateAlias() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementCreateAlias", nil)
+}
+
+// QdrantManagementDeleteAlias says "删除别名"
+// in the language the app shows.
+func QdrantManagementDeleteAlias() string { return In(i18n.Locale()).QdrantManagementDeleteAlias() }
+
+// QdrantManagementDeleteAlias says "删除别名"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementDeleteAlias() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementDeleteAlias", nil)
+}
+
+// QdrantManagementRenameAlias says "重命名别名"
+// in the language the app shows.
+func QdrantManagementRenameAlias() string { return In(i18n.Locale()).QdrantManagementRenameAlias() }
+
+// QdrantManagementRenameAlias says "重命名别名"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementRenameAlias() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementRenameAlias", nil)
+}
+
+// QdrantManagementRetargetAlias says "重定向别名"
+// in the language the app shows.
+func QdrantManagementRetargetAlias() string { return In(i18n.Locale()).QdrantManagementRetargetAlias() }
+
+// QdrantManagementRetargetAlias says "重定向别名"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementRetargetAlias() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementRetargetAlias", nil)
+}
+
+// QdrantManagementRead says "读取原集合信息"
+// in the language the app shows.
+func QdrantManagementRead() string { return In(i18n.Locale()).QdrantManagementRead() }
+
+// QdrantManagementRead says "读取原集合信息"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementRead() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementRead", nil)
+}
+
+// QdrantManagementPreview says "预览集合操作"
+// in the language the app shows.
+func QdrantManagementPreview() string { return In(i18n.Locale()).QdrantManagementPreview() }
+
+// QdrantManagementPreview says "预览集合操作"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementPreview() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementPreview", nil)
+}
+
+// QdrantManagementVerify says "核验原集合操作"
+// in the language the app shows.
+func QdrantManagementVerify() string { return In(i18n.Locale()).QdrantManagementVerify() }
+
+// QdrantManagementVerify says "核验原集合操作"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementVerify() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementVerify", nil)
+}
+
+// QdrantManagementCancel says "停止管理等待"
+// in the language the app shows.
+func QdrantManagementCancel() string { return In(i18n.Locale()).QdrantManagementCancel() }
+
+// QdrantManagementCancel says "停止管理等待"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementCancel() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementCancel", nil)
+}
+
+// QdrantManagementToolbar says "集合管理操作"
+// in the language the app shows.
+func QdrantManagementToolbar() string { return In(i18n.Locale()).QdrantManagementToolbar() }
+
+// QdrantManagementToolbar says "集合管理操作"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementToolbar() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementToolbar", nil)
+}
+
+// QdrantManagementWaiting says "正在等待原集合管理请求…"
+// in the language the app shows.
+func QdrantManagementWaiting() string { return In(i18n.Locale()).QdrantManagementWaiting() }
+
+// QdrantManagementWaiting says "正在等待原集合管理请求…"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementWaiting() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementWaiting", nil)
+}
+
+// QdrantManagementCancelling says "正在等待原集合管理请求停止…"
+// in the language the app shows.
+func QdrantManagementCancelling() string { return In(i18n.Locale()).QdrantManagementCancelling() }
+
+// QdrantManagementCancelling says "正在等待原集合管理请求停止…"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementCancelling() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementCancelling", nil)
+}
+
+// QdrantManagementGuardWaiting says "请先处理原连接的相关文档；原操作尚未提交"
+// in the language the app shows.
+func QdrantManagementGuardWaiting() string { return In(i18n.Locale()).QdrantManagementGuardWaiting() }
+
+// QdrantManagementGuardWaiting says "请先处理原连接的相关文档；原操作尚未提交"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementGuardWaiting() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementGuardWaiting", nil)
+}
+
+// QdrantManagementAbandoned says "此原操作已放弃，仅供查看；请关闭此页后重新管理"
+// in the language the app shows.
+func QdrantManagementAbandoned() string { return In(i18n.Locale()).QdrantManagementAbandoned() }
+
+// QdrantManagementAbandoned says "此原操作已放弃，仅供查看；请关闭此页后重新管理"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementAbandoned() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementAbandoned", nil)
+}
+
+// QdrantManagementPending says "原操作尚未核验；保留草稿与回执，不可重放。核验只读取原会话。"
+// in the language the app shows.
+func QdrantManagementPending() string { return In(i18n.Locale()).QdrantManagementPending() }
+
+// QdrantManagementPending says "原操作尚未核验；保留草稿与回执，不可重放。核验只读取原会话。"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementPending() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementPending", nil)
+}
+
+// QdrantManagementDraft says "管理草稿"
+// in the language the app shows.
+func QdrantManagementDraft() string { return In(i18n.Locale()).QdrantManagementDraft() }
+
+// QdrantManagementDraft says "管理草稿"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementDraft() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementDraft", nil)
+}
+
+// QdrantManagementOriginal says "原集合与别名"
+// in the language the app shows.
+func QdrantManagementOriginal() string { return In(i18n.Locale()).QdrantManagementOriginal() }
+
+// QdrantManagementOriginal says "原集合与别名"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementOriginal() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementOriginal", nil)
+}
+
+// QdrantManagementEvidence says "原请求与核验证据"
+// in the language the app shows.
+func QdrantManagementEvidence() string { return In(i18n.Locale()).QdrantManagementEvidence() }
+
+// QdrantManagementEvidence says "原请求与核验证据"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementEvidence() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementEvidence", nil)
+}
+
+// QdrantManagementOriginalPreview says "原集合与别名信息预览"
+// in the language the app shows.
+func QdrantManagementOriginalPreview() string {
+	return In(i18n.Locale()).QdrantManagementOriginalPreview()
+}
+
+// QdrantManagementOriginalPreview says "原集合与别名信息预览"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementOriginalPreview() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementOriginalPreview", nil)
+}
+
+// QdrantManagementResponse says "收到原生回执，等待核验"
+// in the language the app shows.
+func QdrantManagementResponse() string { return In(i18n.Locale()).QdrantManagementResponse() }
+
+// QdrantManagementResponse says "收到原生回执，等待核验"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementResponse() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementResponse", nil)
+}
+
+// QdrantManagementIndeterminate says "核验未完成"
+// in the language the app shows.
+func QdrantManagementIndeterminate() string { return In(i18n.Locale()).QdrantManagementIndeterminate() }
+
+// QdrantManagementIndeterminate says "核验未完成"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementIndeterminate() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementIndeterminate", nil)
+}
+
+// QdrantManagementApplied says "已核验操作生效"
+// in the language the app shows.
+func QdrantManagementApplied() string { return In(i18n.Locale()).QdrantManagementApplied() }
+
+// QdrantManagementApplied says "已核验操作生效"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementApplied() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementApplied", nil)
+}
+
+// QdrantManagementUnchanged says "已核验，原生回执为 false"
+// in the language the app shows.
+func QdrantManagementUnchanged() string { return In(i18n.Locale()).QdrantManagementUnchanged() }
+
+// QdrantManagementUnchanged says "已核验，原生回执为 false"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementUnchanged() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementUnchanged", nil)
+}
+
+// QdrantManagementRequestPreview says "原集合请求与回执预览"
+// in the language the app shows.
+func QdrantManagementRequestPreview() string {
+	return In(i18n.Locale()).QdrantManagementRequestPreview()
+}
+
+// QdrantManagementRequestPreview says "原集合请求与回执预览"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementRequestPreview() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementRequestPreview", nil)
+}
+
+// QdrantManagementCopyRequest says "复制完整集合请求"
+// in the language the app shows.
+func QdrantManagementCopyRequest() string { return In(i18n.Locale()).QdrantManagementCopyRequest() }
+
+// QdrantManagementCopyRequest says "复制完整集合请求"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementCopyRequest() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementCopyRequest", nil)
+}
+
+// QdrantManagementCopyReceipt says "复制原集合回执"
+// in the language the app shows.
+func QdrantManagementCopyReceipt() string { return In(i18n.Locale()).QdrantManagementCopyReceipt() }
+
+// QdrantManagementCopyReceipt says "复制原集合回执"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementCopyReceipt() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementCopyReceipt", nil)
+}
+
+// QdrantManagementCopyEvidence says "复制完整核验证据"
+// in the language the app shows.
+func QdrantManagementCopyEvidence() string { return In(i18n.Locale()).QdrantManagementCopyEvidence() }
+
+// QdrantManagementCopyEvidence says "复制完整核验证据"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementCopyEvidence() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementCopyEvidence", nil)
+}
+
+// QdrantManagementEvidenceToolbar says "集合证据操作"
+// in the language the app shows.
+func QdrantManagementEvidenceToolbar() string {
+	return In(i18n.Locale()).QdrantManagementEvidenceToolbar()
+}
+
+// QdrantManagementEvidenceToolbar says "集合证据操作"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementEvidenceToolbar() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementEvidenceToolbar", nil)
+}
+
+// QdrantManagementAction says "管理操作"
+// in the language the app shows.
+func QdrantManagementAction() string { return In(i18n.Locale()).QdrantManagementAction() }
+
+// QdrantManagementAction says "管理操作"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementAction() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementAction", nil)
+}
+
+// QdrantManagementCollection says "物理集合名称"
+// in the language the app shows.
+func QdrantManagementCollection() string { return In(i18n.Locale()).QdrantManagementCollection() }
+
+// QdrantManagementCollection says "物理集合名称"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementCollection() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementCollection", nil)
+}
+
+// QdrantManagementTimeout says "服务器提交超时（秒）"
+// in the language the app shows.
+func QdrantManagementTimeout() string { return In(i18n.Locale()).QdrantManagementTimeout() }
+
+// QdrantManagementTimeout says "服务器提交超时（秒）"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementTimeout() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementTimeout", nil)
+}
+
+// QdrantManagementAlias says "原别名"
+// in the language the app shows.
+func QdrantManagementAlias() string { return In(i18n.Locale()).QdrantManagementAlias() }
+
+// QdrantManagementAlias says "原别名"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementAlias() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementAlias", nil)
+}
+
+// QdrantManagementDestinationCollection says "目标物理集合名称"
+// in the language the app shows.
+func QdrantManagementDestinationCollection() string {
+	return In(i18n.Locale()).QdrantManagementDestinationCollection()
+}
+
+// QdrantManagementDestinationCollection says "目标物理集合名称"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementDestinationCollection() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementDestinationCollection", nil)
+}
+
+// QdrantManagementDestinationAlias says "目标别名"
+// in the language the app shows.
+func QdrantManagementDestinationAlias() string {
+	return In(i18n.Locale()).QdrantManagementDestinationAlias()
+}
+
+// QdrantManagementDestinationAlias says "目标别名"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementDestinationAlias() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementDestinationAlias", nil)
+}
+
+// QdrantManagementConfigurationHint says "原生配置 JSON；创建时填写向量配置，更新只填写要修改的字段。"
+// in the language the app shows.
+func QdrantManagementConfigurationHint() string {
+	return In(i18n.Locale()).QdrantManagementConfigurationHint()
+}
+
+// QdrantManagementConfigurationHint says "原生配置 JSON；创建时填写向量配置，更新只填写要修改的字段。"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementConfigurationHint() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementConfigurationHint", nil)
+}
+
+// QdrantManagementConfiguration says "原生集合配置 JSON"
+// in the language the app shows.
+func QdrantManagementConfiguration() string { return In(i18n.Locale()).QdrantManagementConfiguration() }
+
+// QdrantManagementConfiguration says "原生集合配置 JSON"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementConfiguration() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementConfiguration", nil)
+}
+
+// QdrantManagementMetadataHint says "metadata 更新按顶层键合并，null 删除键，嵌套对象整体替换；首次设置保留 null 键。"
+// in the language the app shows.
+func QdrantManagementMetadataHint() string { return In(i18n.Locale()).QdrantManagementMetadataHint() }
+
+// QdrantManagementMetadataHint says "metadata 更新按顶层键合并，null 删除键，嵌套对象整体替换；首次设置保留 null 键。"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementMetadataHint() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementMetadataHint", nil)
+}
+
+// QdrantManagementRetargetHint says "重定向在一次原生请求中按顺序删除并重建别名。"
+// in the language the app shows.
+func QdrantManagementRetargetHint() string { return In(i18n.Locale()).QdrantManagementRetargetHint() }
+
+// QdrantManagementRetargetHint says "重定向在一次原生请求中按顺序删除并重建别名。"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementRetargetHint() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementRetargetHint", nil)
+}
+
+// QdrantManagementSnapshotTruncated says "集合信息预览已截断，可复制完整内容。"
+// in the language the app shows.
+func QdrantManagementSnapshotTruncated() string {
+	return In(i18n.Locale()).QdrantManagementSnapshotTruncated()
+}
+
+// QdrantManagementSnapshotTruncated says "集合信息预览已截断，可复制完整内容。"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementSnapshotTruncated() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementSnapshotTruncated", nil)
+}
+
+// QdrantManagementOperationPreview says "集合操作预览"
+// in the language the app shows.
+func QdrantManagementOperationPreview() string {
+	return In(i18n.Locale()).QdrantManagementOperationPreview()
+}
+
+// QdrantManagementOperationPreview says "集合操作预览"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementOperationPreview() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementOperationPreview", nil)
+}
+
+// QdrantManagementGuardHint says "提交前会关闭原 REST 及相关数据文档，并重新核对原信息；并发修改仍可能发生。"
+// in the language the app shows.
+func QdrantManagementGuardHint() string { return In(i18n.Locale()).QdrantManagementGuardHint() }
+
+// QdrantManagementGuardHint says "提交前会关闭原 REST 及相关数据文档，并重新核对原信息；并发修改仍可能发生。"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementGuardHint() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementGuardHint", nil)
+}
+
+// QdrantManagementRequest says "将提交的集合请求"
+// in the language the app shows.
+func QdrantManagementRequest() string { return In(i18n.Locale()).QdrantManagementRequest() }
+
+// QdrantManagementRequest says "将提交的集合请求"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementRequest() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementRequest", nil)
+}
+
+// QdrantManagementRequestReviewed says "已复制并检查完整集合请求"
+// in the language the app shows.
+func QdrantManagementRequestReviewed() string {
+	return In(i18n.Locale()).QdrantManagementRequestReviewed()
+}
+
+// QdrantManagementRequestReviewed says "已复制并检查完整集合请求"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementRequestReviewed() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementRequestReviewed", nil)
+}
+
+// QdrantManagementConfirmName says "输入原名称确认操作"
+// in the language the app shows.
+func QdrantManagementConfirmName() string { return In(i18n.Locale()).QdrantManagementConfirmName() }
+
+// QdrantManagementConfirmName says "输入原名称确认操作"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementConfirmName() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementConfirmName", nil)
+}
+
+// QdrantManagementSubmit says "确认提交集合操作"
+// in the language the app shows.
+func QdrantManagementSubmit() string { return In(i18n.Locale()).QdrantManagementSubmit() }
+
+// QdrantManagementSubmit says "确认提交集合操作"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementSubmit() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementSubmit", nil)
+}
+
+// QdrantManagementLeaveTitle says "保留原集合草稿与证据？"
+// in the language the app shows.
+func QdrantManagementLeaveTitle() string { return In(i18n.Locale()).QdrantManagementLeaveTitle() }
+
+// QdrantManagementLeaveTitle says "保留原集合草稿与证据？"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementLeaveTitle() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementLeaveTitle", nil)
+}
+
+// QdrantManagementLeaveHint says "离开将放弃本地草稿与证据。已发送操作不会回滚，结果未知的原请求不能重放。"
+// in the language the app shows.
+func QdrantManagementLeaveHint() string { return In(i18n.Locale()).QdrantManagementLeaveHint() }
+
+// QdrantManagementLeaveHint says "离开将放弃本地草稿与证据。已发送操作不会回滚，结果未知的原请求不能重放。"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementLeaveHint() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementLeaveHint", nil)
+}
+
+// QdrantManagementStay says "继续处理集合操作"
+// in the language the app shows.
+func QdrantManagementStay() string { return In(i18n.Locale()).QdrantManagementStay() }
+
+// QdrantManagementStay says "继续处理集合操作"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementStay() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementStay", nil)
+}
+
+// QdrantManagementDiscard says "放弃原集合草稿并离开"
+// in the language the app shows.
+func QdrantManagementDiscard() string { return In(i18n.Locale()).QdrantManagementDiscard() }
+
+// QdrantManagementDiscard says "放弃原集合草稿并离开"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementDiscard() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementDiscard", nil)
+}
+
+// QdrantManagementRequiredCollection says "请输入原物理集合名称"
+// in the language the app shows.
+func QdrantManagementRequiredCollection() string {
+	return In(i18n.Locale()).QdrantManagementRequiredCollection()
+}
+
+// QdrantManagementRequiredCollection says "请输入原物理集合名称"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementRequiredCollection() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementRequiredCollection", nil)
+}
+
+// QdrantManagementRequiredDestination says "请输入目标物理集合名称"
+// in the language the app shows.
+func QdrantManagementRequiredDestination() string {
+	return In(i18n.Locale()).QdrantManagementRequiredDestination()
+}
+
+// QdrantManagementRequiredDestination says "请输入目标物理集合名称"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementRequiredDestination() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementRequiredDestination", nil)
+}
+
+// QdrantManagementInvalidTimeout says "集合提交超时必须为 1–300 秒"
+// in the language the app shows.
+func QdrantManagementInvalidTimeout() string {
+	return In(i18n.Locale()).QdrantManagementInvalidTimeout()
+}
+
+// QdrantManagementInvalidTimeout says "集合提交超时必须为 1–300 秒"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementInvalidTimeout() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementInvalidTimeout", nil)
+}
+
+// QdrantManagementConfigurationTooLarge says "集合配置 JSON 不得超过 8 MiB"
+// in the language the app shows.
+func QdrantManagementConfigurationTooLarge() string {
+	return In(i18n.Locale()).QdrantManagementConfigurationTooLarge()
+}
+
+// QdrantManagementConfigurationTooLarge says "集合配置 JSON 不得超过 8 MiB"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementConfigurationTooLarge() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementConfigurationTooLarge", nil)
+}
+
+// QdrantManagementRequiredAlias says "请输入原别名"
+// in the language the app shows.
+func QdrantManagementRequiredAlias() string { return In(i18n.Locale()).QdrantManagementRequiredAlias() }
+
+// QdrantManagementRequiredAlias says "请输入原别名"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementRequiredAlias() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementRequiredAlias", nil)
+}
+
+// QdrantManagementAliasMismatch says "原别名与物理集合不匹配，请重新读取"
+// in the language the app shows.
+func QdrantManagementAliasMismatch() string { return In(i18n.Locale()).QdrantManagementAliasMismatch() }
+
+// QdrantManagementAliasMismatch says "原别名与物理集合不匹配，请重新读取"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementAliasMismatch() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementAliasMismatch", nil)
+}
+
+// QdrantManagementFormChanged says "集合表单已变化，请重新读取原信息"
+// in the language the app shows.
+func QdrantManagementFormChanged() string { return In(i18n.Locale()).QdrantManagementFormChanged() }
+
+// QdrantManagementFormChanged says "集合表单已变化，请重新读取原信息"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementFormChanged() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementFormChanged", nil)
+}
+
+// QdrantManagementCannotSubmit says "原集合会话或表单已变化，不能提交"
+// in the language the app shows.
+func QdrantManagementCannotSubmit() string { return In(i18n.Locale()).QdrantManagementCannotSubmit() }
+
+// QdrantManagementCannotSubmit says "原集合会话或表单已变化，不能提交"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementCannotSubmit() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementCannotSubmit", nil)
+}
+
+// QdrantManagementSessionLost says "原集合管理会话已失效，原草稿与证据保留"
+// in the language the app shows.
+func QdrantManagementSessionLost() string { return In(i18n.Locale()).QdrantManagementSessionLost() }
+
+// QdrantManagementSessionLost says "原集合管理会话已失效，原草稿与证据保留"
+// in the language of msgs.
+func (msgs Messages) QdrantManagementSessionLost() string {
+	return Catalog.Format(msgs.locale, "qdrantManagementSessionLost", nil)
+}
