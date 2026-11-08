@@ -111,10 +111,16 @@ func (c *Client) selectProjection(ctx context.Context, target string, u readUnit
 			Duplicates *struct{ Buckets []json.RawMessage } `json:"nyadb_duplicates"`
 		} `json:"facets"`
 	}
-	if decodeJSON(response.Body, &receipt) != nil || receipt.Header == nil || receipt.Header.Status == nil || *receipt.Header.Status != 0 || len(receipt.Header.Partial) > 0 && !bytes.Equal(receipt.Header.Partial, []byte("false")) || receipt.Response == nil || receipt.Response.Total == nil || *receipt.Response.Total < 0 || receipt.Response.Exact == nil || !*receipt.Response.Exact || receipt.Response.Start == nil || *receipt.Response.Start != 0 || receipt.Response.Docs == nil || len(receipt.Response.Docs) > limit || receipt.Facets == nil || receipt.Facets.Count == nil || *receipt.Facets.Count != *receipt.Response.Total || receipt.Facets.Duplicates == nil || receipt.Facets.Duplicates.Buckets == nil {
+	if decodeJSON(response.Body, &receipt) != nil || receipt.Header == nil || receipt.Header.Status == nil || *receipt.Header.Status != 0 || len(receipt.Header.Partial) > 0 && !bytes.Equal(receipt.Header.Partial, []byte("false")) || receipt.Response == nil || receipt.Response.Total == nil || *receipt.Response.Total < 0 || receipt.Response.Exact == nil || !*receipt.Response.Exact || receipt.Response.Start == nil || *receipt.Response.Start != 0 || receipt.Response.Docs == nil || len(receipt.Response.Docs) > limit || int64(len(receipt.Response.Docs)) > *receipt.Response.Total || receipt.Facets == nil || receipt.Facets.Count == nil || *receipt.Facets.Count != *receipt.Response.Total {
 		return projectionBatch{}, ErrProtocol
 	}
-	if len(receipt.Facets.Duplicates.Buckets) > 0 && limit > 0 {
+	// Native JSON facets omit child facets for an exact empty query. No
+	// duplicate key can exist in that scope; positive counts still require
+	// the complete duplicate-key observation.
+	if receipt.Facets.Duplicates == nil && *receipt.Response.Total > 0 || receipt.Facets.Duplicates != nil && receipt.Facets.Duplicates.Buckets == nil {
+		return projectionBatch{}, ErrProtocol
+	}
+	if receipt.Facets.Duplicates != nil && len(receipt.Facets.Duplicates.Buckets) > 0 && limit > 0 {
 		return projectionBatch{}, ErrDuplicateKey
 	}
 	if mark != "" && (receipt.Mark == "" || len(receipt.Mark) > 8192 || receipt.Mark == mark && len(receipt.Response.Docs) != 0 || receipt.Mark != mark && len(receipt.Response.Docs) == 0) {

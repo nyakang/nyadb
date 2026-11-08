@@ -149,6 +149,12 @@ func (m *dataMock) serve(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{"responseHeader":{"status":0},"status":{"owned":`+mockCore("owned", "/owned", time.UnixMilli(m.core.Load()).UTC().Format(time.RFC3339Nano))+`}}`)
 	case "/solr/owned/schema":
 		fmt.Fprint(w, `{"responseHeader":{"status":0},"schema":`+m.schema+`}`)
+	case "/solr/owned/schema/fields":
+		fmt.Fprint(w, `{"responseHeader":{"status":0},"fields":[]}`)
+	case "/solr/owned/schema/dynamicfields":
+		fmt.Fprint(w, `{"responseHeader":{"status":0},"dynamicFields":[]}`)
+	case "/solr/owned/config/params":
+		fmt.Fprint(w, `{"responseHeader":{"status":0},"response":{"znodeVersion":-1}}`)
 	case "/solr/owned/config":
 		fmt.Fprint(w, `{"responseHeader":{"status":0},"config":`+m.config+`}`)
 	default:

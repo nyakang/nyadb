@@ -261,9 +261,19 @@ func (c *Client) nativeMutationRequest(m NativeDocumentMutation) (Request, error
 // Schema recovery, copy/nested fields, handler/processor binding, original
 // target validation and readback belong to the owning feature, not this codec.
 func (c *Client) MutateNativeDocument(ctx context.Context, m NativeDocumentMutation) (*NativeDocumentReceipt, error) {
+	return c.mutateNativeDocument(ctx, m, "")
+}
+
+func (c *Client) mutateNativeDocument(ctx context.Context, m NativeDocumentMutation, chain string) (*NativeDocumentReceipt, error) {
 	request, err := c.nativeMutationRequest(m)
 	if err != nil {
 		return nil, err
+	}
+	if chain != "" {
+		if !nativeFieldName.MatchString(chain) {
+			return nil, ErrInvalid
+		}
+		request.Path += "&update.chain=" + url.QueryEscape(chain)
 	}
 	r, err := c.Do(ctx, request)
 	if err != nil {

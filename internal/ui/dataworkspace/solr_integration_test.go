@@ -177,3 +177,139 @@ func TestSolrNativeSharedGridPagingInspectorParkGenerationAndClose(t *testing.T)
 		t.Fatal("original document followed new generation")
 	}
 }
+
+func TestSolrNativeSharedGridEditingOriginalParkedSaveAndClose(t *testing.T) {
+	if os.Getenv("NYADB_SOLR_EDIT_IT") != "1" || os.Getenv("NYADB_SOLR_IT") != "1" {
+		t.Skip("requires owned native Solr shared-grid fixture")
+	}
+	raw, err := os.ReadFile(os.Getenv("NYADB_SOLR_CONFIG"))
+	if err != nil {
+		t.Fatal("private probe unavailable")
+	}
+	var probe struct {
+		Endpoint, Username, Auth string
+		CAFile                   string `json:"ca_file"`
+		ServerName               string `json:"server_name"`
+		PasswordFile             string `json:"password_file"`
+	}
+	if json.Unmarshal(raw, &probe) != nil {
+		t.Fatal("invalid private probe")
+	}
+	secret, err := os.ReadFile(probe.PasswordFile)
+	if err != nil {
+		t.Fatal("private secret unavailable")
+	}
+	endpoint, _ := url.Parse(probe.Endpoint)
+	port, err := strconv.Atoi(endpoint.Port())
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, _ := connections.Defaults(connections.Solr)
+	p.ID, p.Name, p.Host, p.Port = 73, "Solr shared grid", endpoint.Hostname(), uint16(port)
+	p.Username = probe.Username
+	p.SolrOptions = connections.SolrOptions{Version: 1, Auth: probe.Auth, ContextPath: endpoint.Path, CAFile: probe.CAFile, ServerName: probe.ServerName}
+	if endpoint.Scheme == "http" {
+		p.TLSMode = "disable"
+	}
+	ctx, stop := context.WithTimeout(context.Background(), 180*time.Second)
+	defer stop()
+	handle, err := solr.OpenSession(ctx, p, string(secret))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer handle.Close()
+	provider, err := contract.Require[contract.MetadataProvider](handle)
+	if err != nil {
+		t.Fatal(err)
+	}
+	namespaces, err := provider.Namespaces(ctx)
+	if err != nil || len(namespaces) != 1 {
+		t.Fatal(err)
+	}
+	object := namespaces[0].Ref.Object("core", "nyadb_ui_edit")
+	active := Session{ProfileID: p.ID, Generation: handle.Generation(), Connected: true}
+	runtime := contract.ComposeData(handle)
+	s := New(Dependencies{Session: func() Session { return active }, SessionFor: func(id int64) Session { return Session{ProfileID: id, Generation: active.Generation, Connected: true} }, RuntimeFor: func(id int64) Runtime { return runtime }, Inspector: InspectorDependencies{Session: func() Session { return active }}})
+	defer s.CloseAll()
+	a, b := s.OpenObject(1, object, handle.Capabilities()), s.OpenObject(2, object, handle.Capabilities())
+	a.limit, b.limit = 1, 1
+	wait := func(d *Document) {
+		t.Helper()
+		end := time.Now().Add(30 * time.Second)
+		for d.Busy() && time.Now().Before(end) {
+			s.Consume(ui.Services{})
+			time.Sleep(time.Millisecond)
+		}
+		if d.Busy() || d.err != "" {
+			t.Fatal("native shared grid operation", d.err)
+		}
+	}
+	s.Load(ui.Services{}, a, false)
+	wait(a)
+	s.Load(ui.Services{}, b, false)
+	wait(b)
+	if !a.editable() || !mysqlDataCanEdit(a, 0, 4) || mysqlDataCanEdit(a, 0, 3) {
+		t.Fatal("qualified grid editing/identity tools")
+	}
+	original := a.page
+	snapshot := cloneSnapshot(a.page.RowSnapshots[0])
+	text := a.page.Rows[0][4].Value.Text
+	desired := strings.Replace(text, `"before"`, `"shared-grid-after🐱"`, 1)
+	key := mysqlDataRowKey(a, 0)
+	a.edit.Drafts = map[string]*mysqlRowDraft{key: {Key: key, Row: 0, Kind: "update", Original: snapshot, Values: map[string]contract.DataValue{"document": {Kind: contract.JSON, Text: desired}}}}
+	s.saveMySQLData(ui.Services{}, a)
+	if !a.edit.Busy {
+		t.Fatal("shared save did not dispatch")
+	}
+	active.ProfileID = 99
+	var result mysqlEditResult
+	select {
+	case result = <-a.edit.Results:
+	case <-time.After(30 * time.Second):
+		t.Fatal("parked native save stalled")
+	}
+	ready := make(chan mysqlEditResult, 1)
+	ready <- result
+	a.edit.Results = ready
+	// Workers own copies captured on the UI thread; caller mutation after the
+	// dispatch must neither change the sent JSON nor invalidate its receipt.
+	a.edit.Drafts[key].Values["document"] = contract.DataValue{Kind: contract.JSON, Text: `{"id":"foreign"}`}
+	s.Consume(ui.Services{})
+	if !a.edit.Busy || len(a.edit.Drafts) != 1 || a.page != original {
+		t.Fatal("parked save consumed into other profile")
+	}
+	active.ProfileID = p.ID
+	end := time.Now().Add(30 * time.Second)
+	for (a.edit.Busy || a.loading) && time.Now().Before(end) {
+		s.Consume(ui.Services{})
+		time.Sleep(time.Millisecond)
+	}
+	if a.edit.Busy || a.edit.Err != "" || len(a.edit.Drafts) != 0 {
+		t.Fatal("shared native saved drafts did not settle", a.edit.Err)
+	}
+	if !strings.Contains(a.page.Rows[0][4].Value.Text, "shared-grid-after") {
+		t.Fatal("refresh lost confirmed native write visibility")
+	}
+	if b.page == nil || b.page.Rows[0][2].Text != "ui-edit" {
+		t.Fatal("sibling grid was replaced")
+	}
+	if folder := os.Getenv("NYADB_SOLR_DATA_IMAGES"); folder != "" {
+		tester := ui.NewTester(func(c *ui.Context) { theme.Apply(c); s.Consume(c.Services()); s.View(c, a) }, 1200, 720)
+		tester.Frame()
+		file, e := os.Create(filepath.Join(folder, "native-qualified-grid-editing.png"))
+		if e != nil {
+			t.Fatal(e)
+		}
+		e = png.Encode(file, tester.Image())
+		_ = file.Close()
+		if e != nil {
+			t.Fatal(e)
+		}
+	}
+	s.Close(a)
+	s.Load(ui.Services{}, b, true)
+	wait(b)
+	if !b.editable() {
+		t.Fatal("closing sibling revoked independent qualified lease")
+	}
+}

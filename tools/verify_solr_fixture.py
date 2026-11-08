@@ -34,12 +34,28 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(plain=False, race=False, profile=False, session=False, data_scope=False, document_scope=False):
+def prepare_edit_config(identifier, folder):
+    """Install a fixed recoverable schema and pure chain in this owned fixture."""
+    config_path = '/var/solr/data/nyadb_edit_config'
+    subprocess.run(['docker', 'exec', identifier, 'cp', '-r', '/opt/solr/server/solr/configsets/_default/conf', config_path], check=True)
+    chain = '<updateRequestProcessorChain name="nyadb_verified"><processor class="solr.LogUpdateProcessorFactory"/><processor class="solr.DistributedUpdateProcessorFactory"/><processor class="solr.RunUpdateProcessorFactory"/></updateRequestProcessorChain>'
+    xml = '<config><luceneMatchVersion>9.12</luceneMatchVersion><schemaFactory class="ManagedIndexSchemaFactory"/><updateHandler class="solr.DirectUpdateHandler2"><updateLog/><autoCommit><maxTime>15000</maxTime><openSearcher>false</openSearcher></autoCommit><autoSoftCommit><maxTime>100</maxTime></autoSoftCommit></updateHandler><requestHandler name="/select" class="solr.SearchHandler"/><requestHandler name="/get" class="solr.RealTimeGetHandler"><lst name="defaults"><bool name="omitHeader">true</bool></lst></requestHandler><requestHandler name="/update" class="solr.UpdateRequestHandler"/>'+chain+'</config>'
+    schema = '<schema name="nyadb-recoverable" version="1.7"><uniqueKey>id</uniqueKey><fieldType name="string" class="solr.StrField"/><fieldType name="plong" class="solr.LongPointField"/><field name="id" type="string" indexed="true" stored="true" required="true"/><field name="_version_" type="plong" indexed="false" stored="false" docValues="true"/><field name="exact_l" type="plong" indexed="true" stored="true" docValues="true"/><field name="text_s" type="string" indexed="true" stored="true"/><field name="route_s" type="string" indexed="true" stored="true"/><field name="tags" type="string" indexed="true" stored="true" multiValued="true"/><dynamicField name="*_s" type="string" indexed="true" stored="true"/></schema>'
+    for name, content in [('solrconfig.xml', xml), ('managed-schema.xml', schema)]:
+        path = folder/name
+        path.write_text(content)
+        path.chmod(0o444)
+        subprocess.run(['docker', 'cp', str(path), identifier+':'+config_path+'/'+name], check=True)
+    return config_path
+
+
+def verify(plain=False, race=False, profile=False, session=False, data_scope=False, document_scope=False, edit_scope=False):
     base, output = ROOT/'temp/solr', ROOT/'build/solr'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
     nonce, identifier = uuid.uuid4().hex, None
-    evidence = {'nonce': nonce, 'image': IMAGE, 'tls': not plain, 'scope': 'private_native_solr_single_document_codec' if document_scope else ('private_solr_shared_data_documents' if data_scope else ('private_solr_sessions_metadata_rest' if session else ('private_solr_profile_editor' if profile else 'private_native_solr_transport_foundation'))), 'storage': 'owned_private_bind_mount'}
+    data_scope = data_scope or edit_scope
+    evidence = {'nonce': nonce, 'image': IMAGE, 'tls': not plain, 'scope': 'private_solr_qualified_shared_grid_edits' if edit_scope else ('private_native_solr_single_document_codec' if document_scope else ('private_solr_shared_data_documents' if data_scope else ('private_solr_sessions_metadata_rest' if session else ('private_solr_profile_editor' if profile else 'private_native_solr_transport_foundation')))), 'storage': 'owned_private_bind_mount'}
     session = session or document_scope
     def shutdown(signum, _frame):
         raise SystemExit(128+signum)
@@ -146,6 +162,13 @@ def verify(plain=False, race=False, profile=False, session=False, data_scope=Fal
                                 raise RuntimeError('Data core read readiness failed')
                             time.sleep(1)
                 mutate('/nyadb_ui_data/update?commit=true&wt=json', [{'id': key, 'exact_l': 9007199254740993, 'text_s': '原生共享网格🐱'*500} for key in ['a', 'b', 'c']])
+            if edit_scope:
+                config = prepare_edit_config(identifier, folder)
+                subprocess.run(['docker', 'exec', identifier, 'mkdir', '-p', '/var/solr/data/configsets/nyadb_edit'], check=True)
+                subprocess.run(['docker', 'exec', identifier, 'cp', '-r', config, '/var/solr/data/configsets/nyadb_edit/conf'], check=True)
+                for edit_core in ['nyadb_edit', 'nyadb_ui_edit']:
+                    mutate('/admin/cores?action=CREATE&name='+edit_core+'&configSet=nyadb_edit&wt=json')
+                    mutate('/'+edit_core+'/update?commit=true&wt=json', [{'id':'ui-edit', 'exact_l':9007199254740993, 'text_s':'before'}])
             (output/('identity-'+nonce+'.json')).write_text(json.dumps({'mode': identity['mode'], 'lucene': identity['lucene']}, indent=2)+'\n')
             probe = folder/'probe.json'
             probe.write_text(json.dumps({'endpoint': endpoint, 'auth': 'none' if plain else 'basic', 'username': '' if plain else 'native-admin', 'password_file': str(password_file), 'ca_file': '' if plain else str(tls/'ca.crt'), 'server_name': ''}))
@@ -167,9 +190,12 @@ def verify(plain=False, race=False, profile=False, session=False, data_scope=Fal
             source_hashes = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources}
             evidence['source_sha256'] = source_hashes
             env = os.environ.copy()
+            env.pop('NYADB_SOLR_EDIT_IT', None)
             env.pop('NYADB_SOLR_DOCUMENT_IT', None)
             env.pop('NYADB_SOLR_CLOUD_IT', None)
             env.update({'NYADB_SOLR_IT': '1', 'NYADB_SOLR_CONFIG': str(probe)})
+            if edit_scope:
+                env['NYADB_SOLR_EDIT_IT'] = '1'
             if document_scope:
                 env['NYADB_SOLR_DOCUMENT_IT'] = '1'
             if session or data_scope:
@@ -180,19 +206,21 @@ def verify(plain=False, race=False, profile=False, session=False, data_scope=Fal
             if profile:
                 env['NYADB_SOLR_PROFILE_IMAGES'] = str(output/('profile-images-'+nonce))
             logfile = output/('acceptance-'+nonce+'.log')
-            command = ['go', 'test', '-count=1', '-v', *(['-race'] if race else []), './internal/services/connections', './internal/services/solr']
+            command = ['go', 'test', '-count=1', '-timeout=15m', '-v', *(['-race'] if race else []), './internal/services/connections', './internal/services/solr']
             if profile:
                 command += ['./internal/storage/localdb', './internal/ui/connectioneditor', '-run', 'Solr']
             if data_scope:
                 command += ['./internal/ui/dataworkspace', '-run', 'Solr']
             with logfile.open('w') as log:
-                result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=600)
+                result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=900 if edit_scope else 600)
             text = logfile.read_text()
             required = ['TransportAuthenticationIdentityAndExactDocuments', 'LostPostAndGETCoreMutationsNeverReplay', 'CancelSettlesOriginalWorkerAndKeepsOtherClient', 'ConflictCanApplyPrefixWithoutReplay']
             if session or data_scope:
                 required += ['SessionMetadataRESTAndChangedBindings']
             if data_scope:
                 required += ['DataProjectionLivePagingLargeFieldsAndCompleteExport', 'DataLateChangeCancellationAndPartialReceipt', 'SharedGridPagingInspectorParkGenerationAndClose']
+            if edit_scope:
+                required += ['SharedEditsQualifiedCRUDSnapshotsAndRevocation', 'SharedEditsLostResponseVerificationWithoutReplay', 'SharedGridEditingOriginalParkedSaveAndClose']
             if document_scope:
                 required += ['DocumentCRUDCodecExactRTGAndConflict', 'DocumentLostReceiptKeepsOriginalMutationWithoutReplay']
             if profile:
@@ -206,8 +234,11 @@ def verify(plain=False, race=False, profile=False, session=False, data_scope=Fal
             evidence.update({'status': 'passed_with_race' if race else 'passed', 'log': str(logfile.relative_to(ROOT)), 'log_sha256': hashlib.sha256(logfile.read_bytes()).hexdigest()})
             if data_scope:
                 images = sorted(Path(env['NYADB_SOLR_DATA_IMAGES']).glob('*.png'))
-                if len(images) != 1:
-                    raise RuntimeError('Expected representative real shared-grid image')
+                expected = {'native-shared-grid.png'}
+                if edit_scope:
+                    expected.add('native-qualified-grid-editing.png')
+                if {path.name for path in images} != expected:
+                    raise RuntimeError('Expected representative real shared-grid images for the verified scope')
                 evidence['headless_grid_images'] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in images}
             if profile:
                 images = sorted(Path(env['NYADB_SOLR_PROFILE_IMAGES']).glob('*.png'))
@@ -234,9 +265,10 @@ if __name__ == '__main__':
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--race', action='store_true')
     scopes = parser.add_mutually_exclusive_group()
+    scopes.add_argument('--edit', action='store_true', help='Verify qualified original shared-grid document editing and read-only schema gates')
     scopes.add_argument('--documents', action='store_true', help='Verify bounded native single-document CRUD codec and RTG, not grid editing')
     scopes.add_argument('--data', action='store_true', help='Verify private shared data documents, native projection and grid')
     scopes.add_argument('--session', action='store_true', help='Verify private sessions, native metadata and original REST leases')
     scopes.add_argument('--profile', action='store_true', help='Verify private profiles, storage, credentials and localized forms')
     args = parser.parse_args()
-    verify(args.plain, args.race, args.profile, args.session, args.data, args.documents)
+    verify(args.plain, args.race, args.profile, args.session, args.data, args.documents, args.edit)

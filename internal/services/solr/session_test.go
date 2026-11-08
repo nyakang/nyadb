@@ -118,7 +118,7 @@ func TestSolrSessionNamespaceBindingAndReadOnlyCompleteSchema(t *testing.T) {
 		t.Fatal("incomplete or editable schema", m, err)
 	}
 	c := s.Capabilities()
-	if !c.Query || !c.Metadata || !c.Objects || !c.Documents || c.EditableTables {
+	if !c.Query || !c.Metadata || !c.Objects || !c.Documents || !c.EditableTables {
 		t.Fatal("unverified capabilities", c)
 	}
 }

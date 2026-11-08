@@ -18,20 +18,22 @@ import (
 )
 
 type dataLease struct {
-	mu, pageMu      sync.Mutex
-	session         *Session
-	object          contract.ObjectRef
-	ctx             context.Context
-	cancel          context.CancelFunc
-	work            sync.WaitGroup
-	closed, changed bool
-	done            chan struct{}
-	key             [32]byte
-	binding         *dataBinding
-	epoch           uint64
-	expression      *contract.FilterExpression[contract.DataFilterRule]
-	rules           []byte
-	limit           int
+	mu, pageMu, editMu sync.Mutex
+	session            *Session
+	object             contract.ObjectRef
+	ctx                context.Context
+	cancel             context.CancelFunc
+	work               sync.WaitGroup
+	closed, changed    bool
+	done               chan struct{}
+	key                [32]byte
+	binding            *dataBinding
+	writeBinding       *writeBinding
+	pending            *pendingSolrBatch
+	epoch              uint64
+	expression         *contract.FilterExpression[contract.DataFilterRule]
+	rules              []byte
+	limit              int
 }
 
 func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
@@ -90,6 +92,7 @@ func (l *dataLease) Close() error {
 	l.mu.Unlock()
 	l.work.Wait()
 	l.binding, l.expression, l.rules = nil, nil, nil
+	l.writeBinding, l.pending = nil, nil
 	clear(l.key[:])
 	l.session.mu.Lock()
 	delete(l.session.datas, l)
@@ -104,10 +107,10 @@ func (l *dataLease) identity(id int64, db, name string) error {
 	return l.session.checkObject(l.object)
 }
 func (l *dataLease) Runtime() contract.DataRuntime {
-	return contract.DataRuntime{Capabilities: l.session.DataDocumentCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, Exporter: l.exportRows, JSONL: l.jsonl, TableMetadata: l.metadata, TableInfo: l.info, FilterModes: []string{"equal", "not_equal"}, FilterColumns: []string{"_key"}, SortColumns: []string{}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
+	return contract.DataRuntime{Capabilities: l.session.DataDocumentCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, Saver: l.save, Verify: l.verify, Exporter: l.exportRows, JSONL: l.jsonl, TableMetadata: l.metadata, TableInfo: l.info, FilterModes: []string{"equal", "not_equal"}, FilterColumns: []string{"_key"}, SortColumns: []string{}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
 }
 func (*Session) DataDocumentCapabilities() contract.Capabilities {
-	return contract.Capabilities{Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
+	return contract.Capabilities{Documents: true, EditableTables: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
 }
 func (l *dataLease) sign(v any) string {
 	raw, _ := json.Marshal(v)
@@ -248,8 +251,15 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 	if _, err = l.guard(ctx, c); err != nil {
 		return nil, err
 	}
-	editable := false
+	w, err := l.writeGuard(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+	editable := w.eligible
 	out := &contract.DataPage{Object: l.object, Database: db, Table: name, Columns: dataFields(), ColumnKinds: []string{"text", "text", "native key", "integer", "json"}, ColumnMetadata: dataColumns(), Offset: o.Offset, Limit: o.Limit, HasMore: more, StableOrder: true, KeysetAvailable: true, Editable: &editable, QuerySQL: "Solr native stored/docValues projection; live cursorMark per original member/shard, not PIT"}
+	if editable {
+		out.ColumnMetadata = writableDataColumns()
+	}
 	out.CurrentCursor = l.boundary(db, o.Offset, p)
 	if more {
 		out.NextCursor = l.boundary(db, o.Offset+int64(len(documents)), next)
@@ -310,6 +320,7 @@ func (l *dataLease) snapshot(db string, v unitProjection) *contract.RowSnapshot 
 		value := fingerprint([]byte(cell.Text))
 		snapshot.Fingerprints = append(snapshot.Fingerprints, &value)
 	}
+	l.sealEditSnapshot(snapshot)
 	return snapshot
 }
 func (l *dataLease) ref(db string, r contract.RowRef) (projectionIdentity, error) {
@@ -377,7 +388,14 @@ func (l *dataLease) readRow(ctx context.Context, id int64, db, name string, r co
 	snapshot.Mode = "values"
 	snapshot.Fingerprints = nil
 	snapshot.Original = projectionCells(v)
-	out := &contract.DataRow{Columns: dataColumns(), Snapshot: snapshot, Values: map[string]contract.DataValue{}}
+	l.sealEditSnapshot(snapshot)
+	columns := dataColumns()
+	l.mu.Lock()
+	if l.writeBinding != nil && l.writeBinding.eligible {
+		columns = writableDataColumns()
+	}
+	l.mu.Unlock()
+	out := &contract.DataRow{Columns: columns, Snapshot: snapshot, Values: map[string]contract.DataValue{}}
 	for i, cell := range snapshot.Original {
 		out.Values[dataFields()[i]] = contract.DataValue{Kind: cell.Kind, Text: cell.Text}
 	}
@@ -448,7 +466,15 @@ func (l *dataLease) metadata(ctx context.Context, id int64, db, name string) (*c
 	if err != nil {
 		return nil, err
 	}
-	out := &contract.TableStructure{Object: l.object, Database: db, Name: name, Kind: l.object.Kind, Engine: "Solr", Columns: dataColumns(), Definition: string(b.Metadata.Target.Definition), Comment: "Read-only native stored/docValues projection; live member/shard cursor, not source/PIT"}
+	w, err := l.writeGuard(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+	columns := dataColumns()
+	if w.eligible {
+		columns = writableDataColumns()
+	}
+	out := &contract.TableStructure{Object: l.object, Database: db, Name: name, Kind: l.object.Kind, Engine: "Solr", Editable: w.eligible, Columns: columns, Definition: string(b.Metadata.Target.Definition), Comment: "Native stored/docValues projection; qualified atomic field edits; live member/shard cursor, not source/PIT"}
 	for _, member := range b.Metadata.Members {
 		out.Definitions = append(out.Definitions, contract.Definition{Name: member.Name, Kind: "schema", SQL: string(member.Schema)}, contract.Definition{Name: member.Name, Kind: "config", SQL: string(member.Config)})
 	}

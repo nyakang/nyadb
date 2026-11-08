@@ -17,7 +17,7 @@ import time
 import urllib.request
 import uuid
 
-from verify_solr_fixture import IMAGE, ROOT, remove_owned
+from verify_solr_fixture import IMAGE, ROOT, remove_owned, prepare_edit_config
 
 ZK_IMAGE = 'zookeeper@sha256:dfa9ba46d14bd52bcb3c1dac3ba91f179cf4cebf7ee576e1c2df09c68fc1d30d'
 
@@ -35,12 +35,13 @@ def remove_owned_network(identifier, nonce):
     subprocess.run(['docker', 'network', 'rm', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(race=False, data_scope=False, document_scope=False):
+def verify(race=False, data_scope=False, document_scope=False, edit_scope=False):
     base, output = ROOT/'temp/solr', ROOT/'build/solr'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
     nonce, ids, network = uuid.uuid4().hex, [], None
-    record = {'nonce': nonce, 'scope': 'private_native_solrcloud_single_document_codec' if document_scope else ('private_solrcloud_data_documents' if data_scope else 'private_solrcloud_sessions_metadata_rest'), 'solr_image': IMAGE, 'zk_image': ZK_IMAGE,
+    data_scope = data_scope or edit_scope
+    record = {'nonce': nonce, 'scope': 'private_solrcloud_qualified_document_edits' if edit_scope else ('private_native_solrcloud_single_document_codec' if document_scope else ('private_solrcloud_data_documents' if data_scope else 'private_solrcloud_sessions_metadata_rest')), 'solr_image': IMAGE, 'zk_image': ZK_IMAGE,
               'deployment': 'one node; two primary shards; RF=1; HTTP none; default open ZK ACL; private mounts/isolated network'}
 
     def shutdown(signum, _frame):
@@ -107,6 +108,9 @@ def verify(race=False, data_scope=False, document_scope=False):
             password = folder/'password'
             password.write_text('')
             password.chmod(0o600)
+            if edit_scope:
+                config = prepare_edit_config(solr, folder)
+                docker('exec', solr, '/opt/solr/bin/solr', 'zk', 'upconfig', '-z', 'owned-zookeeper:2181', '-n', 'nyadb_edit', '-d', config)
             probe = folder/'probe.json'
             probe.write_text(json.dumps({'endpoint': endpoint, 'auth': 'none', 'password_file': str(password)}))
             probe.chmod(0o600)
@@ -115,20 +119,25 @@ def verify(race=False, data_scope=False, document_scope=False):
             record['source_sha256'] = hashes
             env = os.environ.copy()
             env.pop('NYADB_SOLR_IT', None)
+            env.pop('NYADB_SOLR_EDIT_IT', None)
             env.pop('NYADB_SOLR_DOCUMENT_IT', None)
             env.update({'NYADB_SOLR_CLOUD_IT': '1', 'NYADB_SOLR_CONFIG': str(probe)})
+            if edit_scope:
+                env['NYADB_SOLR_EDIT_IT'] = '1'
             if document_scope:
                 env['NYADB_SOLR_DOCUMENT_IT'] = '1'
             if data_scope:
                 env['NYADB_SOLR_DATA_IT'] = '1'
             logfile = output/('cloud-acceptance-'+nonce+'.log')
-            command = ['go', 'test', '-count=1', '-v', *(['-race'] if race else []), './internal/services/solr']
+            command = ['go', 'test', '-count=1', '-timeout=20m' if edit_scope else '-timeout=15m', '-v', *(['-race'] if race else []), './internal/services/solr']
             print('Native SolrCloud ready; fixture nonce: '+nonce, flush=True)
             with logfile.open('w') as log:
-                result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=600)
+                result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=1200 if edit_scope else 600)
             text = logfile.read_text()
             if result.returncode or '--- PASS: TestSolrNativeCloudSessionAliasesSchemasAndREST' not in text or (data_scope and '--- PASS: TestSolrNativeCloudDataMemberShardDuplicateIdentityAndAliasRevocation' not in text):
                 raise RuntimeError('Cloud native acceptance failed; inspect captured log')
+            if edit_scope and '--- PASS: TestSolrNativeCloudSharedEditsNaturalRoutingAndExplicitMembers' not in text:
+                raise RuntimeError('Qualified Cloud editing acceptance was not verified')
             if document_scope and '--- PASS: TestSolrNativeCloudDocumentCRUDCodecImplicitAndCompositeRouting' not in text:
                 raise RuntimeError('Cloud native document codec acceptance was not verified')
             if any(hashlib.sha256((ROOT/p).read_bytes()).hexdigest() != digest for p, digest in hashes.items()):
@@ -152,6 +161,7 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     scopes = parser.add_mutually_exclusive_group()
     scopes.add_argument('--data', action='store_true')
+    scopes.add_argument('--edit', action='store_true')
     scopes.add_argument('--documents', action='store_true', help='Verify bounded native single-document CRUD codec and RTG')
     args = parser.parse_args()
-    verify(args.race, args.data, args.documents)
+    verify(args.race, args.data, args.documents, args.edit)
