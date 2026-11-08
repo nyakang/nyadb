@@ -2644,5 +2644,15 @@
   "qdrantPointBatchWriteTooltip": "Point batch writes: replace complete point JSON or delete; verify the original points after submission",
   "qdrantBatchUnverifiedStatus": "Batch remains unverified; drafts retained, resubmission prohibited",
   "qdrantBatchCompletedStatus": "Batch completed; awaiting original point verification. Drafts retained, resubmission prohibited",
-  "qdrantOperationIDs": "Operation IDs"
+  "qdrantOperationIDs": "Operation IDs",
+  "qdrantImportInsertOnly": "Insert only new point IDs",
+  "qdrantImportUpdateOnly": "Replace only existing point IDs",
+  "qdrantImportUpsert": "Insert or fully replace point IDs",
+  "qdrantImportSourceLimit": "At most 10000 points and 8 MiB per import, with 1 MiB per point. One native batch is submitted, without automatic splitting or retry.",
+  "qdrantImportModesHint": "Insert mode requires absent IDs; update mode requires existing IDs; upsert can create or fully replace points. Omitted payload or named vectors are cleared for the same ID. The collection is never cleared.",
+  "qdrantImportTargetHint": "The target must be an existing physical collection. Supply a uint64 or UUID ID and vector. Duplicate IDs, invalid JSON, incompatible dimensions or types, and excessive requests are rejected.",
+  "qdrantImportReadbackHint": "Verification reads all original points in bounded groups. Incomplete batches, missing points or mismatches retain the source file and evidence, and prohibit resubmission.",
+  "qdrantImportTargetSummary": "Target %s · %s · %d points",
+  "qdrantImportReadCount": "Read %d points",
+  "qdrantImportVerifiedCount": "Verified import of %d points"
 }

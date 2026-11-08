@@ -171,3 +171,33 @@ func TestDocumentImportLostReceiptAndStaleSuccessNeverReplay(t *testing.T) {
 		})
 	}
 }
+
+func TestPointImportUsesInjectedColumnModesAndOriginalDescription(t *testing.T) {
+	s, d, _, _ := documentImportTestState(t)
+	d.boundRuntime.DocumentImportColumn = "point"
+	d.boundRuntime.DocumentImportModes = []string{"insert_only", "update_only", "upsert"}
+	d.boundRuntime.Selector.Dialect = "qdrant"
+	d.boundRuntime.ImportDescription = func(mode string) string { return "POST /collections/owned/points/batch (" + mode + ")" }
+	s.openDataImport(d)
+	d.transfer.Input, _ = parseDocumentImport(strings.NewReader(`{"id":9007199254740993,"vector":[1,0]}`), "JSON")
+	d.transfer.TotalRows = 1
+	if d.transfer.Mode != "insert_only" {
+		t.Fatal("native import chose implicit overwrite")
+	}
+	r, err := s.documentImportRequest(d)
+	if err != nil || r.Edits[0].Values["point"].Kind != contract.JSON || len(r.Edits[0].Values) != 1 {
+		t.Fatal("injected point column lost", err)
+	}
+	d.transfer.Mode = "document_merge"
+	if _, err = s.documentImportRequest(d); !errors.Is(err, contract.ErrUnsupported) {
+		t.Fatal("native import accepted foreign merge", err)
+	}
+	modes := s.documentImportModes(d)
+	modes[0] = "changed"
+	if d.boundRuntime.DocumentImportModes[0] != "insert_only" {
+		t.Fatal("mode snapshot escaped")
+	}
+	if !strings.Contains(s.documentImportDescription(d, "upsert"), "points/batch (upsert)") {
+		t.Fatal("history fabricated Meilisearch endpoint")
+	}
+}

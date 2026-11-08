@@ -70,12 +70,14 @@ func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 }
 
 func nativeDataCapabilities() contract.Capabilities {
-	return contract.Capabilities{Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true, EditableTables: true}
+	return contract.Capabilities{Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true, EditableTables: true, Import: true}
 }
 func (s *Session) DataDocumentCapabilities() contract.Capabilities { return nativeDataCapabilities() }
 func (l *dataLease) Runtime() contract.DataRuntime {
 	path, _ := collectionPath(l.object.Catalog)
-	return contract.DataRuntime{Capabilities: nativeDataCapabilities(), AdvancedLoader: l.page, RowReader: l.editRow, Saver: l.save, Verify: l.verifyWrite, AsyncWrites: true, Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
+	return contract.DataRuntime{Capabilities: nativeDataCapabilities(), AdvancedLoader: l.page, RowReader: l.editRow, Saver: l.save, Verify: l.verifyWrite, AsyncWrites: true, DocumentImport: true, DocumentImportColumn: "point", DocumentImportModes: []string{"insert_only", "update_only", "upsert"}, Importer: l.importPoints, ImportDescription: func(mode string) string {
+		return "POST " + path + "/points/batch?wait=true&ordering=strong (" + mode + ")"
+	}, Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
 		Selector: contract.DataSelector{Dialect: "qdrant", Column: "point", Mode: "qdrant_filter", Validate: validatePointFilter},
 		ReadDescription: func(contract.DataOptions) string {
 			path, _ := collectionPath(l.object.Catalog)

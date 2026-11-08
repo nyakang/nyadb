@@ -3,6 +3,7 @@ package dataworkspace
 import (
 	"fmt"
 	"io"
+	"slices"
 	"time"
 
 	"github.com/egoist/mygo/ui"
@@ -24,9 +25,9 @@ func parseDocumentImport(r io.Reader, format string) (*mysqlDataImportInput, err
 	return input, nil
 }
 
-func documentImportRequest(t *Document) (contract.DataImportRequest, error) {
+func (s *State) documentImportRequest(t *Document) (contract.DataImportRequest, error) {
 	tr := &t.transfer
-	if !tr.DocumentImport || tr.Target != "existing" || tr.TargetTable != "" || tr.Mode != "document_replace" && tr.Mode != "document_merge" || tr.Input == nil || len(tr.Input.Rows) == 0 || len(tr.Input.Rows) > contract.MaxDataImportRows {
+	if !tr.DocumentImport || tr.Target != "existing" || tr.TargetTable != "" || !slices.Contains(s.documentImportModes(t), tr.Mode) || tr.Input == nil || len(tr.Input.Rows) == 0 || len(tr.Input.Rows) > contract.MaxDataImportRows {
 		return contract.DataImportRequest{}, contract.ErrUnsupported
 	}
 	r := contract.DataImportRequest{Mode: tr.Mode}
@@ -34,12 +35,15 @@ func documentImportRequest(t *Document) (contract.DataImportRequest, error) {
 		if len(row) != 1 || row[0].Kind != contract.JSON || row[0].Null || row[0].Default || row[0].Binary || len(row[0].Bytes) != 0 {
 			return r, contract.ErrDataPage
 		}
-		r.Edits = append(r.Edits, contract.DataEdit{Kind: "insert", Values: map[string]contract.DataValue{"document": row[0]}})
+		r.Edits = append(r.Edits, contract.DataEdit{Kind: "insert", Values: map[string]contract.DataValue{s.documentImportColumn(t): row[0]}})
 	}
 	return r, nil
 }
 
-func documentImportDescription(d *Document, mode string) string {
+func (s *State) documentImportDescription(d *Document, mode string) string {
+	if description := s.runtimeFor(d).ImportDescription; description != nil {
+		return description(mode)
+	}
 	method := "POST"
 	if mode == "document_merge" {
 		method = "PUT"
@@ -53,7 +57,7 @@ func (s *State) startDocumentImport(services ui.Services, t *Document) {
 	if !s.canUseSession(t) || s.sessionFor(t).Generation != tr.Generation || t.closed || t.loading || t.edit.Busy || t.edit.Uncertain != nil || mysqlDataHasDraft(t) || tr.Busy || tr.Submitted || tr.Uncertain || importer == nil || !mysqlDataImportConfirmed(t) {
 		return
 	}
-	r, err := documentImportRequest(t)
+	r, err := s.documentImportRequest(t)
 	if err != nil {
 		tr.Err = err.Error()
 		return
@@ -61,7 +65,7 @@ func (s *State) startDocumentImport(services ui.Services, t *Document) {
 	tr.Submitted, tr.Step = true, 3
 	ctx, out, request, gen := s.beginDataTransfer(t)
 	profile, db, table := t.profileID, t.database, t.table
-	description := documentImportDescription(t, r.Mode)
+	description := s.documentImportDescription(t, r.Mode)
 	complete := s.beginActivity(t, "import", description)
 	go func() {
 		started := time.Now()
@@ -113,9 +117,9 @@ func (s *State) consumeDocumentImport(services ui.Services, t *Document, r mysql
 		tr.Completed, tr.Uncertain = true, false
 		t.edit.Uncertain = nil
 		t.edit.AsyncStatusActive = true
-		tr.Err = fmt.Sprintf(locales.Text("已核验导入 %d 份文档"), tr.TotalRows)
+		tr.Err = s.importedRecordsMessage(t, "done")
 		t.edit.Err = tr.Err
-		s.appendDataHistory(t, mysqlDataHistoryEntry{Kind: "IMPORT", SQL: documentImportDescription(t, tr.Mode), Summary: true, At: time.Now(), Rows: saved.Applied, Message: locales.Text("已核验：数据更改已提交")})
+		s.appendDataHistory(t, mysqlDataHistoryEntry{Kind: "IMPORT", SQL: s.documentImportDescription(t, tr.Mode), Summary: true, At: time.Now(), Rows: saved.Applied, Message: locales.Text("已核验：数据更改已提交")})
 		s.Load(services, t, true)
 		return
 	}
@@ -143,6 +147,15 @@ func (s *State) consumeDocumentImport(services ui.Services, t *Document, r mysql
 }
 
 func documentImportModeLabel(mode string) string {
+	switch mode {
+	case "insert_only":
+		return locales.Text("仅插入新 ID 的点")
+	case "update_only":
+		return locales.Text("仅完整替换已有 ID 的点")
+	case "upsert":
+		return locales.Text("插入或完整替换同 ID 的点")
+	}
+
 	if mode == "document_merge" {
 		return locales.Text("合并同 ID 字段")
 	}
@@ -169,22 +182,42 @@ func (s *State) documentImportWizard(c *ui.Context, t *Document, available bool,
 					case 0:
 						mysqlDataWizardSelect(c, locales.Text("文件格式"), &tr.Format, []string{"JSON", "JSONL"}, func(x string) string { return x }).Width(160).Disabled(tr.Busy || tr.Input != nil)
 						ui.Text(c, locales.Text("JSON 接受对象或对象数组；JSONL 每个非空行一份对象。保留嵌套字段与精确数字。"))
-						ui.Text(c, locales.Text("单次最多 10000 份文档、8 MiB，每份最多 1 MiB；一次提交一个任务，不自动分批或重试。"))
+						if s.pointImport(t) {
+							ui.Text(c, locales.Text("单次最多 10000 个点、8 MiB，每个点最多 1 MiB；只提交一个原生批次，不自动分批或重试。"))
+						} else {
+							ui.Text(c, locales.Text("单次最多 10000 份文档、8 MiB，每份最多 1 MiB；一次提交一个任务，不自动分批或重试。"))
+						}
 						ui.Text(c, tr.Path).SingleLine()
 						if ui.Button(c, locales.Text("选择文件")).Disabled(tr.Busy).Clicked() {
 							s.chooseDataImportFile(c.Services(), t)
 						}
 						if tr.Input != nil {
-							ui.Text(c, fmt.Sprintf(locales.Text("已读取 %d 份文档"), tr.TotalRows))
+							ui.Text(c, s.importedRecordsMessage(t, "read"))
 						}
 					case 1:
-						mysqlDataWizardSelect(c, locales.Text("导入模式"), &tr.Mode, []string{"document_replace", "document_merge"}, documentImportModeLabel).Width(260)
-						ui.Text(c, locales.Text("完整替换会删除同 ID 文档中未提供的字段；合并保留未提供字段，嵌套对象作为整个字段替换。两种模式均可创建新 ID，不清空索引。"))
-						ui.Text(c, locales.Text("合并前读取原文档以核对结果；并发变化可能导致核验不通过，不能保证原子比较与交换。"))
+						mysqlDataWizardSelect(c, locales.Text("导入模式"), &tr.Mode, s.documentImportModes(t), documentImportModeLabel).Width(260)
+						if s.pointImport(t) {
+							ui.Text(c, locales.Text("插入模式要求 ID 尚不存在；更新模式要求 ID 已存在；upsert 可创建或完整替换。同 ID 点中未提供的 payload 或命名向量会被清除，不清空集合。"))
+						} else {
+							ui.Text(c, locales.Text("完整替换会删除同 ID 文档中未提供的字段；合并保留未提供字段，嵌套对象作为整个字段替换。两种模式均可创建新 ID，不清空索引。"))
+						}
+						if s.pointImport(t) {
+							ui.Text(c, locales.Text(s.asyncWriteLabels(t).hint))
+						} else {
+							ui.Text(c, locales.Text("合并前读取原文档以核对结果；并发变化可能导致核验不通过，不能保证原子比较与交换。"))
+						}
 					case 2:
-						ui.Text(c, fmt.Sprintf(locales.Text("目标 %s · %s · %d 份文档"), t.database, documentImportModeLabel(tr.Mode), tr.TotalRows)).Bold()
-						ui.Text(c, locales.Text("目标索引必须已存在并设置主键；缺失或重复 ID、非法 JSON 和超限请求会拒绝。"))
-						ui.Text(c, locales.Text("任务受理不代表执行成功；观察只读取原任务，不会重复发送写入。提交前的记录检查不是原子比较与交换。"))
+						target := locales.Text("目标 %s · %s · %d 份文档")
+						if s.pointImport(t) {
+							target = locales.Text("目标 %s · %s · %d 个点")
+						}
+						ui.Text(c, fmt.Sprintf(target, t.database, documentImportModeLabel(tr.Mode), tr.TotalRows)).Bold()
+						if s.pointImport(t) {
+							ui.Text(c, locales.Text("目标必须是已存在的物理集合；必须提供 uint64 或 UUID ID 和 vector；重复 ID、非法 JSON、维度或类型不符及超限请求会拒绝。"))
+						} else {
+							ui.Text(c, locales.Text("目标索引必须已存在并设置主键；缺失或重复 ID、非法 JSON 和超限请求会拒绝。"))
+						}
+						ui.Text(c, locales.Text(s.asyncWriteLabels(t).hint))
 						if tr.Input != nil {
 							for i, row := range tr.Input.Rows[:min(3, len(tr.Input.Rows))] {
 								ui.Text(c, fmt.Sprintf("%d · %s", i+1, documentImportPreview(row[0].Text))).SingleLine()
@@ -196,9 +229,13 @@ func (s *State) documentImportWizard(c *ui.Context, t *Document, available bool,
 							ui.Text(c, documentImportStatus(t))
 						}
 						if tr.Completed {
-							ui.Text(c, fmt.Sprintf(locales.Text("已核验导入 %d 份文档"), tr.TotalRows))
+							ui.Text(c, s.importedRecordsMessage(t, "done"))
 						}
-						ui.Text(c, locales.Text("观察成功任务后将逐份读取全部导入文档；失败或结果不符保留待核验状态，禁止重放。"))
+						if s.pointImport(t) {
+							ui.Text(c, locales.Text("核验会分段读取全部原点；批次未完成、点缺失或结果不符会保留源文件与证据，禁止重发。"))
+						} else {
+							ui.Text(c, locales.Text("观察成功任务后将逐份读取全部导入文档；失败或结果不符保留待核验状态，禁止重放。"))
+						}
 					}
 					if tr.Err != "" && !tr.Completed && !t.edit.AsyncStatusActive {
 						ui.Text(c, tr.Err).TextColor(theme.Colors(c).Error)
@@ -216,10 +253,10 @@ func (s *State) documentImportWizard(c *ui.Context, t *Document, available bool,
 					tr.Step--
 				}
 				if tr.Uncertain {
-					if ui.Button(c, locales.Text("观察任务结果")).Disabled(!available || tr.Busy || t.edit.Busy).Clicked() {
+					if ui.Button(c, locales.Text(s.asyncWriteLabels(t).verify)).Disabled(!available || tr.Busy || t.edit.Busy).Clicked() {
 						s.observeDocumentImport(c.Services(), t)
 					}
-					if ui.Button(c, locales.Text("写入任务证据")).Disabled(t.edit.LastAsync == nil).Clicked() {
+					if ui.Button(c, locales.Text(s.asyncWriteLabels(t).evidence)).Disabled(t.edit.LastAsync == nil).Clicked() {
 						t.edit.AsyncEvidenceOpen = true
 						tr.Open = false
 					}
@@ -262,6 +299,12 @@ func documentImportPreview(raw string) string {
 }
 
 func documentImportStatus(t *Document) string {
+	if t.transfer.Mode == "insert_only" || t.transfer.Mode == "update_only" || t.transfer.Mode == "upsert" {
+		if t.transfer.Completed {
+			return fmt.Sprintf(locales.Text("已核验导入 %d 个点"), t.transfer.TotalRows)
+		}
+		return asyncDataWriteStatus(t.edit.Uncertain)
+	}
 	if t.transfer.Completed {
 		return fmt.Sprintf(locales.Text("已核验导入 %d 份文档"), t.transfer.TotalRows)
 	}
@@ -276,4 +319,38 @@ func documentImportStatus(t *Document) string {
 		status = locales.Text("导入任务成功，但完整读回未能确认；源文档与证据已保留，禁止重放")
 	}
 	return status + " · " + locales.Text("任务编号") + " " + r.Async.TaskID
+}
+
+func (s *State) documentImportModes(t *Document) []string {
+	modes := s.runtimeFor(t).DocumentImportModes
+	if modes == nil {
+		return []string{"document_replace", "document_merge"}
+	}
+	return slices.Clone(modes)
+}
+func (s *State) documentImportColumn(t *Document) string {
+	column := s.runtimeFor(t).DocumentImportColumn
+	if column == "" {
+		column = "document"
+	}
+	return column
+}
+func (s *State) pointImport(t *Document) bool { return s.runtimeFor(t).Selector.Dialect == "qdrant" }
+func (s *State) importedRecordsMessage(t *Document, key string) string {
+	if s.pointImport(t) {
+		switch key {
+		case "read":
+			key = "已读取 %d 个点"
+		case "done":
+			key = "已核验导入 %d 个点"
+		}
+	} else {
+		switch key {
+		case "read":
+			key = "已读取 %d 份文档"
+		case "done":
+			key = "已核验导入 %d 份文档"
+		}
+	}
+	return fmt.Sprintf(locales.Text(key), t.transfer.TotalRows)
 }

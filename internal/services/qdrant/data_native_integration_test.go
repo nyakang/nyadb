@@ -257,8 +257,8 @@ func TestQdrantNativeDataReadPermissionsAndDeniedWrites(t *testing.T) {
 	dataSeed(t, admin, name, []any{map[string]any{"id": 1, "vector": []float64{1, 0}, "payload": map[string]any{"n": json.Number("9007199254740993")}}})
 	l := reservePointData(t, s, name)
 	r := l.Runtime()
-	if r.Saver == nil || r.Verify == nil || r.Importer != nil || r.Transactions.Begin != nil || !r.Capabilities.EditableTables || r.Capabilities.Import {
-		t.Fatal("point runtime lacks writes or exposes import/transactions")
+	if r.Saver == nil || r.Verify == nil || r.Importer == nil || r.Transactions.Begin != nil || !r.Capabilities.EditableTables || !r.Capabilities.Import {
+		t.Fatal("point runtime lacks verified writes/import or exposes transactions")
 	}
 	p, err := l.page(context.Background(), s.ProfileID(), name, "points", dataOptions(l))
 	if err != nil || len(p.Rows) != 1 {

@@ -88,33 +88,36 @@ type DataRuntime struct {
 	// AsyncWrites requires explicit admission observation through Verify.
 	AsyncWrites bool
 	// DocumentImport accepts whole JSON documents through Importer; requires Verify.
-	DocumentImport   bool
-	WriteDescription string
-	ReserveDocument  func(ObjectRef) (DataDocumentLease, error)
-	ExportFormats    []string // nil preserves existing providers' format availability.
-	ImportDialect    string
-	Selector         DataSelector
-	ReadDescription  func(DataOptions) string // pure, parameter-free native request information.
-	Loader           func(context.Context, int64, string, string, int64, int) (*DataPage, error)
-	AdvancedLoader   func(context.Context, int64, string, string, DataOptions) (*DataPage, error)
-	Saver            func(context.Context, int64, string, string, []DataEdit) (*DataEditResult, error)
-	RowReader        func(context.Context, int64, string, string, RowRef) (*DataRow, error)
-	Verify           func(context.Context, int64, string, string, *DataEditResult) (*DataVerification, error)
-	Exporter         func(context.Context, int64, string, string, DataOptions, []string, func([]DataValue) error) error
-	Analyzer         func(context.Context, int64, string, string, DataOptions, []string) (*DataAnalysis, error)
-	Transactions     DataTransactions
-	NewTableImporter func(context.Context, int64, string, string, []DataImportColumn, []DataEdit) (*DataNewTableImportResult, error)
-	Importer         func(context.Context, int64, string, string, DataImportRequest) (*DataImportResult, error)
-	StreamImporter   func(context.Context, int64, string, string, DataImportStreamRequest) (*DataImportStreamResult, error)
-	TableMetadata    func(context.Context, int64, string, string) (*TableStructure, error)
-	TableInfo        func(context.Context, int64, string, string) (*TableInfo, error)
-	Count            func(context.Context, int64, string, string) (int64, error)
-	Chunk            func(context.Context, int64, string, string, string, RowRef, int64, int) (*FieldChunk, error)
-	JSONL            func(context.Context, ObjectRef, io.Writer) error
-	Capabilities     Capabilities
-	FilterModes      []string
-	FilterColumns    []string // nil permits all fields; empty permits none.
-	SortColumns      []string // nil preserves metadata defaults; empty disables sorting.
+	DocumentImport       bool
+	DocumentImportColumn string              // Empty preserves whole-document imports using document.
+	DocumentImportModes  []string            // Nil preserves document_replace/document_merge.
+	ImportDescription    func(string) string // Pure native request information for the captured mode.
+	WriteDescription     string
+	ReserveDocument      func(ObjectRef) (DataDocumentLease, error)
+	ExportFormats        []string // nil preserves existing providers' format availability.
+	ImportDialect        string
+	Selector             DataSelector
+	ReadDescription      func(DataOptions) string // pure, parameter-free native request information.
+	Loader               func(context.Context, int64, string, string, int64, int) (*DataPage, error)
+	AdvancedLoader       func(context.Context, int64, string, string, DataOptions) (*DataPage, error)
+	Saver                func(context.Context, int64, string, string, []DataEdit) (*DataEditResult, error)
+	RowReader            func(context.Context, int64, string, string, RowRef) (*DataRow, error)
+	Verify               func(context.Context, int64, string, string, *DataEditResult) (*DataVerification, error)
+	Exporter             func(context.Context, int64, string, string, DataOptions, []string, func([]DataValue) error) error
+	Analyzer             func(context.Context, int64, string, string, DataOptions, []string) (*DataAnalysis, error)
+	Transactions         DataTransactions
+	NewTableImporter     func(context.Context, int64, string, string, []DataImportColumn, []DataEdit) (*DataNewTableImportResult, error)
+	Importer             func(context.Context, int64, string, string, DataImportRequest) (*DataImportResult, error)
+	StreamImporter       func(context.Context, int64, string, string, DataImportStreamRequest) (*DataImportStreamResult, error)
+	TableMetadata        func(context.Context, int64, string, string) (*TableStructure, error)
+	TableInfo            func(context.Context, int64, string, string) (*TableInfo, error)
+	Count                func(context.Context, int64, string, string) (int64, error)
+	Chunk                func(context.Context, int64, string, string, string, RowRef, int64, int) (*FieldChunk, error)
+	JSONL                func(context.Context, ObjectRef, io.Writer) error
+	Capabilities         Capabilities
+	FilterModes          []string
+	FilterColumns        []string // nil permits all fields; empty permits none.
+	SortColumns          []string // nil preserves metadata defaults; empty disables sorting.
 }
 
 // Require traverses a generation wrapper without exposing drivers to callers.

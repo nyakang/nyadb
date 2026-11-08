@@ -65,6 +65,10 @@ DATA_REQUIRED = (
     'DataLostCanceledReadAndOriginalClose',
     'DataSharedGridPagingSelectorInspectorParkGenerationAndClose',
     'DataSharedGridFullPointCRUDParkedSaveVerificationEvidenceAndGeneration',
+    'DataImportExactModesLargeSourceNativeRetrievalAndReplacement',
+    'DataImportRacedModeSkipAndReadOnlyRetainOriginalEvidence',
+    'DataImportLostCanceledCloseAndReadbackFaultsNeverReplay',
+    'DataPublicPointImportWizardJSONJSONLModesEvidenceParkAndGeneration',
 )
 
 
@@ -128,7 +132,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
     evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode,
-                    scope='original_shared_point_grid_crud_signed_snapshots_native_receipts_explicit_readback_no_replay_cursor_filter_count_fields_and_export' if data else 'public_chooser_uri_original_sessions_collections_definitions_rest_typed_points_and_recovery' if public else 'private_original_session_metadata_rest_leases_and_typed_native_point_results' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_transport_and_collection_point_codecs',
+                    scope='original_shared_point_grid_crud_json_jsonl_import_explicit_native_modes_signed_snapshots_receipts_bounded_all_source_readback_no_replay_cursor_filter_count_fields_and_export' if data else 'public_chooser_uri_original_sessions_collections_definitions_rest_typed_points_and_recovery' if public else 'private_original_session_metadata_rest_leases_and_typed_native_point_results' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_transport_and_collection_point_codecs',
                     status='failed', fixture_cleaned=False, private_files_cleaned=False)
     try:
         with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
@@ -235,7 +239,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                 if public:
                     env.update(NYADB_QDRANT_PUBLIC_IT='1', NYADB_QDRANT_PUBLIC_IMAGES=str(output/('public-images-'+nonce)))
                 if data:
-                    env.update(NYADB_QDRANT_DATA_IT='1', NYADB_QDRANT_DATA_IMAGES=str(output/('data-images-'+nonce)))
+                    env.update(NYADB_QDRANT_DATA_IT='1', NYADB_QDRANT_DATA_IMAGES=str(output/('data-images-'+nonce)), NYADB_QDRANT_IMPORT_IMAGES=str(output/('import-images-'+nonce)))
                 hashes = source_hashes(profile)
                 logfile = output/('native-'+nonce+'.log')
                 command = native_test_command(race, profile, session, public, data)
@@ -272,6 +276,12 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                     if {p.name for p in images} != expected:
                         raise RuntimeError('Missing localized original Qdrant shared point grid evidence')
                     evidence['headless_data_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
+                    imports=sorted(Path(env['NYADB_QDRANT_IMPORT_IMAGES']).glob('*.png'))
+                    expected_imports={language+'-'+str(width)+'x'+str(height)+'-import-'+phase+'.png' for language in ['zh-Hans','en'] for width,height in [(1280,800),(720,520)] for phase in ['source','mode','review','receipt','evidence','verified']}
+                    if {p.name for p in imports} != expected_imports:
+                        raise RuntimeError('Missing localized original point-import wizard evidence')
+                    evidence['headless_import_images']={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in imports}
+
                 evidence.update(status='passed_with_race' if race else 'passed', source_hashes=hashes,
                                 required_passes=list(REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ())), command=command, log=str(logfile.relative_to(ROOT)),
                                 log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest())

@@ -65,6 +65,7 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 			d.runtimeLease = lease
 			bound := lease.Runtime()
 			bound.ReserveDocument = nil
+			bound.DocumentImportModes = slices.Clone(bound.DocumentImportModes)
 			bound.Capabilities = contract.BoundDataCapabilities(bound)
 			d.capabilities = contract.IntersectCapabilities(c, bound.Capabilities)
 			bound.Capabilities = d.capabilities

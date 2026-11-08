@@ -35,7 +35,7 @@ type DataImportStreamResult struct {
 }
 
 type DataImportRequest struct {
-	Mode            string // append | update | upsert | insert_missing | delete | replace; empty means append; document_replace | document_merge for DocumentImport
+	Mode            string // append | update | upsert | insert_missing | delete | replace; empty means append; provider-defined native modes for DocumentImport
 	MatchColumns    []string
 	ContinueOnError bool
 	NewTable        bool

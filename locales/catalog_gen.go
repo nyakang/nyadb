@@ -26917,3 +26917,103 @@ func QdrantOperationIDs() string { return In(i18n.Locale()).QdrantOperationIDs()
 func (msgs Messages) QdrantOperationIDs() string {
 	return Catalog.Format(msgs.locale, "qdrantOperationIDs", nil)
 }
+
+// QdrantImportInsertOnly says "仅插入新 ID 的点"
+// in the language the app shows.
+func QdrantImportInsertOnly() string { return In(i18n.Locale()).QdrantImportInsertOnly() }
+
+// QdrantImportInsertOnly says "仅插入新 ID 的点"
+// in the language of msgs.
+func (msgs Messages) QdrantImportInsertOnly() string {
+	return Catalog.Format(msgs.locale, "qdrantImportInsertOnly", nil)
+}
+
+// QdrantImportUpdateOnly says "仅完整替换已有 ID 的点"
+// in the language the app shows.
+func QdrantImportUpdateOnly() string { return In(i18n.Locale()).QdrantImportUpdateOnly() }
+
+// QdrantImportUpdateOnly says "仅完整替换已有 ID 的点"
+// in the language of msgs.
+func (msgs Messages) QdrantImportUpdateOnly() string {
+	return Catalog.Format(msgs.locale, "qdrantImportUpdateOnly", nil)
+}
+
+// QdrantImportUpsert says "插入或完整替换同 ID 的点"
+// in the language the app shows.
+func QdrantImportUpsert() string { return In(i18n.Locale()).QdrantImportUpsert() }
+
+// QdrantImportUpsert says "插入或完整替换同 ID 的点"
+// in the language of msgs.
+func (msgs Messages) QdrantImportUpsert() string {
+	return Catalog.Format(msgs.locale, "qdrantImportUpsert", nil)
+}
+
+// QdrantImportSourceLimit says "单次最多 10000 个点、8 MiB，每个点最多 1 MiB；只提交一个原生批次，不自动分批或重试。"
+// in the language the app shows.
+func QdrantImportSourceLimit() string { return In(i18n.Locale()).QdrantImportSourceLimit() }
+
+// QdrantImportSourceLimit says "单次最多 10000 个点、8 MiB，每个点最多 1 MiB；只提交一个原生批次，不自动分批或重试。"
+// in the language of msgs.
+func (msgs Messages) QdrantImportSourceLimit() string {
+	return Catalog.Format(msgs.locale, "qdrantImportSourceLimit", nil)
+}
+
+// QdrantImportModesHint says "插入模式要求 ID 尚不存在；更新模式要求 ID 已存在；upsert 可创建或完整替换。同 ID …"
+// in the language the app shows.
+func QdrantImportModesHint() string { return In(i18n.Locale()).QdrantImportModesHint() }
+
+// QdrantImportModesHint says "插入模式要求 ID 尚不存在；更新模式要求 ID 已存在；upsert 可创建或完整替换。同 ID …"
+// in the language of msgs.
+func (msgs Messages) QdrantImportModesHint() string {
+	return Catalog.Format(msgs.locale, "qdrantImportModesHint", nil)
+}
+
+// QdrantImportTargetHint says "目标必须是已存在的物理集合；必须提供 uint64 或 UUID ID 和 vector；重复 ID、非法 JSON…"
+// in the language the app shows.
+func QdrantImportTargetHint() string { return In(i18n.Locale()).QdrantImportTargetHint() }
+
+// QdrantImportTargetHint says "目标必须是已存在的物理集合；必须提供 uint64 或 UUID ID 和 vector；重复 ID、非法 JSON…"
+// in the language of msgs.
+func (msgs Messages) QdrantImportTargetHint() string {
+	return Catalog.Format(msgs.locale, "qdrantImportTargetHint", nil)
+}
+
+// QdrantImportReadbackHint says "…"
+// in the language the app shows.
+func QdrantImportReadbackHint() string { return In(i18n.Locale()).QdrantImportReadbackHint() }
+
+// QdrantImportReadbackHint says "…"
+// in the language of msgs.
+func (msgs Messages) QdrantImportReadbackHint() string {
+	return Catalog.Format(msgs.locale, "qdrantImportReadbackHint", nil)
+}
+
+// QdrantImportTargetSummary says "目标 %s · %s · %d 个点"
+// in the language the app shows.
+func QdrantImportTargetSummary() string { return In(i18n.Locale()).QdrantImportTargetSummary() }
+
+// QdrantImportTargetSummary says "目标 %s · %s · %d 个点"
+// in the language of msgs.
+func (msgs Messages) QdrantImportTargetSummary() string {
+	return Catalog.Format(msgs.locale, "qdrantImportTargetSummary", nil)
+}
+
+// QdrantImportReadCount says "已读取 %d 个点"
+// in the language the app shows.
+func QdrantImportReadCount() string { return In(i18n.Locale()).QdrantImportReadCount() }
+
+// QdrantImportReadCount says "已读取 %d 个点"
+// in the language of msgs.
+func (msgs Messages) QdrantImportReadCount() string {
+	return Catalog.Format(msgs.locale, "qdrantImportReadCount", nil)
+}
+
+// QdrantImportVerifiedCount says "已核验导入 %d 个点"
+// in the language the app shows.
+func QdrantImportVerifiedCount() string { return In(i18n.Locale()).QdrantImportVerifiedCount() }
+
+// QdrantImportVerifiedCount says "已核验导入 %d 个点"
+// in the language of msgs.
+func (msgs Messages) QdrantImportVerifiedCount() string {
+	return Catalog.Format(msgs.locale, "qdrantImportVerifiedCount", nil)
+}

@@ -83,7 +83,7 @@ func TestQdrantDataExactStableProjectionFingerprintsAndOriginalReads(t *testing.
 	if err != nil || len(metadata.Columns) != 4 || !strings.Contains(metadata.Definition, "sparse_vectors") {
 		t.Fatal("original collection metadata", err)
 	}
-	if l.Runtime().Saver == nil || !l.Runtime().Capabilities.EditableTables || l.Runtime().Capabilities.Import {
+	if l.Runtime().Saver == nil || !l.Runtime().Capabilities.EditableTables || !l.Runtime().Capabilities.Import {
 		t.Fatal("unverified write exposed")
 	}
 	foreign := ref

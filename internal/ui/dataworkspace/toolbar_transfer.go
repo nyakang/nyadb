@@ -164,6 +164,10 @@ func (s *State) openDataTransfer(t *Document, kind string) {
 	if kind == "import" && s.runtimeFor(t).DocumentImport {
 		tr.DocumentImport = true
 		tr.Format, tr.Mode, tr.ContinueOnError = "JSON", "document_replace", false
+		modes := s.documentImportModes(t)
+		if len(modes) > 0 {
+			tr.Mode = modes[0]
+		}
 		tr.Sources = nil
 	}
 	t.transfer = tr
@@ -411,6 +415,7 @@ func (s *State) chooseDataImportFile(services ui.Services, t *Document) {
 	openDialog := t.transfer.OpenDialog
 	options, wizard, assets := t.transfer.Options, t.transfer.Wizard, t.transfer.Assets
 	documentImport := t.transfer.DocumentImport
+	importColumn := s.documentImportColumn(t)
 	if openDialog == nil {
 		openDialog = mygo.Dialog.Open
 	}
@@ -429,6 +434,9 @@ func (s *State) chooseDataImportFile(services ui.Services, t *Document) {
 			if err == nil {
 				if documentImport {
 					input, err = parseDocumentImport(f, format)
+					if input != nil {
+						input.Fields = []string{importColumn}
+					}
 				} else if wizard {
 					spool, input, inferred, err = mysqlDataReadSpool(ctx, f, format, options, assets)
 				} else {

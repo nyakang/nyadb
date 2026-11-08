@@ -27,6 +27,7 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			return &dataDocumentLease{session: s, raw: l}, nil
 		}
 	}
+	out.DocumentImportModes = cloneColumns(r.DocumentImportModes)
 	out.ExportFormats = append([]string(nil), r.ExportFormats...)
 	out.FilterColumns = cloneColumns(r.FilterColumns)
 	out.SortColumns = cloneColumns(r.SortColumns)

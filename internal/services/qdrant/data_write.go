@@ -19,16 +19,21 @@ import (
 // A lease retains one unresolved original batch, including unsuccessful HTTP
 // receipts. Native batches are not atomic; no outcome permits automatic replay.
 type dataWrite struct {
-	edits   []contract.DataEdit
-	points  []Point
-	vectors []map[string]writeVector
-	specs   map[string]vectorWriteSpec
-	receipt PointBatchReceipt
-	result  contract.DataEditResult
+	importing bool
+	edits     []contract.DataEdit
+	points    []Point
+	vectors   []map[string]writeVector
+	specs     map[string]vectorWriteSpec
+	receipt   PointBatchReceipt
+	result    contract.DataEditResult
 }
 
 func copyDataEdits(edits []contract.DataEdit) ([]contract.DataEdit, error) {
-	if len(edits) == 0 || len(edits) > contract.DataMaxPageSize {
+	return copyPointEdits(edits, contract.DataMaxPageSize)
+}
+
+func copyPointEdits(edits []contract.DataEdit, limit int) ([]contract.DataEdit, error) {
+	if len(edits) == 0 || len(edits) > limit {
 		return nil, ErrBounds
 	}
 	// Bound every variable-sized member before serializing the deep copy.
@@ -300,6 +305,11 @@ func (l *dataLease) save(ctx context.Context, id int64, db, name string, edits [
 	if err != nil {
 		return nil, err
 	}
+	return l.submitWrite(ctx, c, w, batch)
+}
+
+func (l *dataLease) submitWrite(ctx context.Context, c *Client, w *dataWrite, batch PointBatch) (*contract.DataEditResult, error) {
+	var err error
 	if _, err = l.guard(ctx, c); err != nil {
 		return nil, err
 	}
@@ -368,8 +378,10 @@ func (l *dataLease) verifyWrite(ctx context.Context, id int64, db, name string, 
 	evidence := []observedPoint{}
 	evidenceBytes := 0
 	defer func() {
-		raw, _ := json.Marshal(evidence)
-		w.result.Async.TaskJSON = string(raw)
+		if !w.importing {
+			raw, _ := json.Marshal(evidence)
+			w.result.Async.TaskJSON = string(raw)
+		}
 		out.Recovered = copyWriteResult(w.result)
 		if out.Status == "applied" {
 			out.Recovered.CommitUncertain = false
@@ -385,6 +397,30 @@ func (l *dataLease) verifyWrite(ctx context.Context, id int64, db, name string, 
 	defer closeClient()
 	if _, err = l.guard(ctx, c); err != nil {
 		return out, err
+	}
+	if w.importing {
+		// Import reads use bounded native multi-ID retrieval, never per-point
+		// grid previews or a second mutation. Their evidence is retained below.
+		matched, readErr := l.verifyImportedPoints(ctx, c, w, out)
+		if readErr != nil {
+			return out, readErr
+		}
+		if _, err = l.guard(ctx, c); err != nil {
+			return out, err
+		}
+		if err = ctx.Err(); err != nil {
+			return out, err
+		}
+		if !matched || !w.receipt.Completed {
+			return out, nil
+		}
+		w.result.Applied = len(w.points)
+		l.pageMu.Lock()
+		l.epoch++
+		l.pageMu.Unlock()
+		l.write = nil
+		out.Status = "applied"
+		return out, nil
 	}
 	budget := responseLimit
 	matches := true
