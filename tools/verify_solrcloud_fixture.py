@@ -35,12 +35,12 @@ def remove_owned_network(identifier, nonce):
     subprocess.run(['docker', 'network', 'rm', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(race=False):
+def verify(race=False, data_scope=False):
     base, output = ROOT/'temp/solr', ROOT/'build/solr'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
     nonce, ids, network = uuid.uuid4().hex, [], None
-    record = {'nonce': nonce, 'scope': 'private_solrcloud_sessions_metadata_rest', 'solr_image': IMAGE, 'zk_image': ZK_IMAGE,
+    record = {'nonce': nonce, 'scope': 'private_solrcloud_data_documents' if data_scope else 'private_solrcloud_sessions_metadata_rest', 'solr_image': IMAGE, 'zk_image': ZK_IMAGE,
               'deployment': 'one node; two primary shards; RF=1; HTTP none; default open ZK ACL; private mounts/isolated network'}
 
     def shutdown(signum, _frame):
@@ -116,13 +116,15 @@ def verify(race=False):
             env = os.environ.copy()
             env.pop('NYADB_SOLR_IT', None)
             env.update({'NYADB_SOLR_CLOUD_IT': '1', 'NYADB_SOLR_CONFIG': str(probe)})
+            if data_scope:
+                env['NYADB_SOLR_DATA_IT'] = '1'
             logfile = output/('cloud-acceptance-'+nonce+'.log')
             command = ['go', 'test', '-count=1', '-v', *(['-race'] if race else []), './internal/services/solr']
             print('Native SolrCloud ready; fixture nonce: '+nonce, flush=True)
             with logfile.open('w') as log:
                 result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=600)
             text = logfile.read_text()
-            if result.returncode or '--- PASS: TestSolrNativeCloudSessionAliasesSchemasAndREST' not in text:
+            if result.returncode or '--- PASS: TestSolrNativeCloudSessionAliasesSchemasAndREST' not in text or (data_scope and '--- PASS: TestSolrNativeCloudDataMemberShardDuplicateIdentityAndAliasRevocation' not in text):
                 raise RuntimeError('Cloud native acceptance failed; inspect captured log')
             if any(hashlib.sha256((ROOT/p).read_bytes()).hexdigest() != digest for p, digest in hashes.items()):
                 raise RuntimeError('Sources changed during cloud acceptance; rerun on stable sources')
@@ -143,4 +145,6 @@ def verify(race=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--race', action='store_true')
-    verify(parser.parse_args().race)
+    parser.add_argument('--data', action='store_true')
+    args = parser.parse_args()
+    verify(args.race, args.data)

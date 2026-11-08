@@ -26,6 +26,7 @@ type Session struct {
 	closeDone       chan struct{}
 	work            sync.WaitGroup
 	leases          map[*queryLease]bool
+	datas           map[*dataLease]bool
 }
 
 func OpenSession(ctx context.Context, p connections.Profile, secret string) (contract.Session, error) {
@@ -59,7 +60,9 @@ func OpenSession(ctx context.Context, p connections.Profile, secret string) (con
 func (s *Session) ProfileID() int64   { return s.profile.ID }
 func (s *Session) Generation() uint64 { return 1 }
 func (s *Session) Capabilities() contract.Capabilities {
-	return contract.Capabilities{Objects: true, Metadata: true, Query: true}
+	c := s.DataDocumentCapabilities()
+	c.Objects, c.Query = true, true
+	return c
 }
 func validObservation(i Identity) bool {
 	started, err := time.Parse(time.RFC3339Nano, i.JVM.JMX.StartTime)
@@ -159,9 +162,16 @@ func (s *Session) Close() error {
 	for l := range s.leases {
 		leases = append(leases, l)
 	}
+	datas := make([]*dataLease, 0, len(s.datas))
+	for l := range s.datas {
+		datas = append(datas, l)
+	}
 	s.mu.Unlock()
 	for _, l := range leases {
 		l.Release()
+	}
+	for _, l := range datas {
+		_ = l.Close()
 	}
 	s.work.Wait()
 	close(s.closeDone)

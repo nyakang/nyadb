@@ -34,12 +34,12 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(plain=False, race=False, profile=False, session=False):
+def verify(plain=False, race=False, profile=False, session=False, data_scope=False):
     base, output = ROOT/'temp/solr', ROOT/'build/solr'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
     nonce, identifier = uuid.uuid4().hex, None
-    evidence = {'nonce': nonce, 'image': IMAGE, 'tls': not plain, 'scope': 'private_solr_sessions_metadata_rest' if session else ('private_solr_profile_editor' if profile else 'private_native_solr_transport_foundation'), 'storage': 'owned_private_bind_mount'}
+    evidence = {'nonce': nonce, 'image': IMAGE, 'tls': not plain, 'scope': 'private_solr_shared_data_documents' if data_scope else ('private_solr_sessions_metadata_rest' if session else ('private_solr_profile_editor' if profile else 'private_native_solr_transport_foundation')), 'storage': 'owned_private_bind_mount'}
     def shutdown(signum, _frame):
         raise SystemExit(128+signum)
     signal.signal(signal.SIGTERM, shutdown)
@@ -117,7 +117,7 @@ def verify(plain=False, race=False, profile=False, session=False):
                 try:
                     identity = get('/admin/info/system?wt=json')
                     cores = get('/admin/cores?action=STATUS&wt=json')
-                    if session:
+                    if session or data_scope:
                         get('/nyadb_fixture/schema?wt=json')
                         get('/nyadb_fixture/config?wt=json')
                     if identity.get('mode') == 'std' and identity.get('lucene', {}).get('solr-spec-version') == '9.9.0' and BUILD in identity['lucene']['solr-impl-version'] and 'nyadb_fixture' in cores.get('status', {}):
@@ -127,6 +127,24 @@ def verify(plain=False, race=False, profile=False, session=False):
                 if time.monotonic() >= end:
                     raise RuntimeError('Native Solr readiness failed')
                 time.sleep(1)
+            if data_scope:
+                def mutate(path, body=None):
+                    payload = None if body is None else json.dumps(body, ensure_ascii=False).encode()
+                    with urllib.request.urlopen(urllib.request.Request(endpoint+path, data=payload, headers={**headers, 'Content-Type': 'application/json'}), context=context, timeout=30) as response:
+                        return json.load(response)
+                for name in ['nyadb_data', 'nyadb_ui_data']:
+                    mutate('/admin/cores?action=CREATE&name='+name+'&configSet=_default&wt=json')
+                    end = time.monotonic()+60
+                    while True:
+                        try:
+                            get('/'+name+'/schema?wt=json')
+                            get('/'+name+'/config?wt=json')
+                            break
+                        except Exception:
+                            if time.monotonic() >= end:
+                                raise RuntimeError('Data core read readiness failed')
+                            time.sleep(1)
+                mutate('/nyadb_ui_data/update?commit=true&wt=json', [{'id': key, 'exact_l': 9007199254740993, 'text_s': '原生共享网格🐱'*500} for key in ['a', 'b', 'c']])
             (output/('identity-'+nonce+'.json')).write_text(json.dumps({'mode': identity['mode'], 'lucene': identity['lucene']}, indent=2)+'\n')
             probe = folder/'probe.json'
             probe.write_text(json.dumps({'endpoint': endpoint, 'auth': 'none' if plain else 'basic', 'username': '' if plain else 'native-admin', 'password_file': str(password_file), 'ca_file': '' if plain else str(tls/'ca.crt'), 'server_name': ''}))
@@ -138,27 +156,38 @@ def verify(plain=False, race=False, profile=False, session=False):
                     sources += sorted((ROOT/'internal'/package).glob('*.go'))
                 sources += sorted((ROOT/'locales').glob('*.go'))+sorted((ROOT/'locales').glob('*.json'))
                 sources += [ROOT/'tests/test_solr_fixture.py']
-            if session:
+            if session or data_scope:
                 sources += sorted((ROOT/'internal/db/contract').glob('*.go'))
                 sources += [ROOT/'tests/test_solr_fixture.py']
+            if data_scope:
+                sources += sorted((ROOT/'internal/services/connections').glob('*.go'))
+                sources += sorted((ROOT/'internal/ui/dataworkspace').glob('*.go'))
+                sources += sorted((ROOT/'internal/ui/theme').glob('*.go'))
             source_hashes = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources}
             evidence['source_sha256'] = source_hashes
             env = os.environ.copy()
             env.update({'NYADB_SOLR_IT': '1', 'NYADB_SOLR_CONFIG': str(probe)})
-            if session:
+            if session or data_scope:
                 env['NYADB_SOLR_SESSION_IT'] = '1'
+            if data_scope:
+                env['NYADB_SOLR_DATA_IT'] = '1'
+                env['NYADB_SOLR_DATA_IMAGES'] = str(output/('data-images-'+nonce))
             if profile:
                 env['NYADB_SOLR_PROFILE_IMAGES'] = str(output/('profile-images-'+nonce))
             logfile = output/('acceptance-'+nonce+'.log')
             command = ['go', 'test', '-count=1', '-v', *(['-race'] if race else []), './internal/services/connections', './internal/services/solr']
             if profile:
                 command += ['./internal/storage/localdb', './internal/ui/connectioneditor', '-run', 'Solr']
+            if data_scope:
+                command += ['./internal/ui/dataworkspace', '-run', 'Solr']
             with logfile.open('w') as log:
                 result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=600)
             text = logfile.read_text()
             required = ['TransportAuthenticationIdentityAndExactDocuments', 'LostPostAndGETCoreMutationsNeverReplay', 'CancelSettlesOriginalWorkerAndKeepsOtherClient', 'ConflictCanApplyPrefixWithoutReplay']
-            if session:
+            if session or data_scope:
                 required += ['SessionMetadataRESTAndChangedBindings']
+            if data_scope:
+                required += ['DataProjectionLivePagingLargeFieldsAndCompleteExport', 'DataLateChangeCancellationAndPartialReceipt', 'SharedGridPagingInspectorParkGenerationAndClose']
             if profile:
                 required += ['ProfileURIReopenAndOriginalEditorCheck', 'ProfileProxyContextAndCanceledOriginalCheck', 'EditorLocalizedFormEvidence']
             if any(hashlib.sha256((ROOT/path).read_bytes()).hexdigest() != digest for path, digest in source_hashes.items()):
@@ -168,6 +197,11 @@ def verify(plain=False, race=False, profile=False, session=False):
             if profile and not plain and any('--- PASS: TestSolrNativeProfileURIReopenAndOriginalEditorCheck/'+name not in text for name in ['raw_native_padding_and_local_rejection', 'exact_unicode_principal']):
                 raise RuntimeError('Native Basic principal semantics were not verified')
             evidence.update({'status': 'passed_with_race' if race else 'passed', 'log': str(logfile.relative_to(ROOT)), 'log_sha256': hashlib.sha256(logfile.read_bytes()).hexdigest()})
+            if data_scope:
+                images = sorted(Path(env['NYADB_SOLR_DATA_IMAGES']).glob('*.png'))
+                if len(images) != 1:
+                    raise RuntimeError('Expected representative real shared-grid image')
+                evidence['headless_grid_images'] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in images}
             if profile:
                 images = sorted(Path(env['NYADB_SOLR_PROFILE_IMAGES']).glob('*.png'))
                 if len(images) != 16:
@@ -193,7 +227,8 @@ if __name__ == '__main__':
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--race', action='store_true')
     scopes = parser.add_mutually_exclusive_group()
+    scopes.add_argument('--data', action='store_true', help='Verify private shared data documents, native projection and grid')
     scopes.add_argument('--session', action='store_true', help='Verify private sessions, native metadata and original REST leases')
     scopes.add_argument('--profile', action='store_true', help='Verify private profiles, storage, credentials and localized forms')
     args = parser.parse_args()
-    verify(args.plain, args.race, args.profile, args.session)
+    verify(args.plain, args.race, args.profile, args.session, args.data)
