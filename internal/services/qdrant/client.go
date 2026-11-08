@@ -48,6 +48,7 @@ type Response struct {
 	Status      int
 	ContentType string
 	Body        []byte
+	Incomplete  bool
 }
 type HTTPError struct{ Status int }
 
@@ -231,10 +232,15 @@ func (c *Client) do(ctx context.Context, r Request, read bool) (Response, error)
 	result.Body, err = io.ReadAll(io.LimitReader(response.Body, responseLimit+1))
 	if err != nil {
 		// Partial bytes remain original evidence, never a success payload.
+		result.Incomplete = true
+		if child.Err() != nil {
+			return interrupted(child.Err())
+		}
 		return interrupted(errors.New("Qdrant response truncated"))
 	}
 	if len(result.Body) > responseLimit {
 		result.Body = result.Body[:responseLimit]
+		result.Incomplete = true
 		return interrupted(ErrBounds)
 	}
 	if err := child.Err(); err != nil {

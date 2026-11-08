@@ -273,6 +273,7 @@ func nativeFaultProxy(t *testing.T, upstream *Client, match func(*http.Request) 
 			w.WriteHeader(502)
 			return
 		}
+		w.Header().Set("Content-Type", response.ContentType)
 		if match(r) {
 			calls.Add(1)
 			fault(w, r, response)

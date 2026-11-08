@@ -41,6 +41,35 @@ class QdrantFixtureTests(unittest.TestCase):
         self.assertEqual(command[-4:], ['./internal/services/qdrant', './internal/services/connections',
                                         './internal/storage/localdb', './internal/ui/connectioneditor'])
 
+    def test_session_command_includes_profiles_without_excluding_required_native_tests(self):
+        command = fixture.native_test_command(True, session=True)
+        self.assertIn('-race', command)
+        self.assertNotIn('-skip', command)
+        self.assertEqual(command[command.index('-run')+1], '^TestQdrant')
+        self.assertEqual(command[-4:], ['./internal/services/qdrant', './internal/services/connections',
+                                        './internal/storage/localdb', './internal/ui/connectioneditor'])
+        for profile in [False, True]:
+            old = fixture.native_test_command(True, profile=profile)
+            self.assertEqual(old[old.index('-skip')+1], '^TestQdrantNativeSession')
+
+    def test_session_acceptance_requires_original_metadata_and_executor_recovery(self):
+        all_names = fixture.REQUIRED + fixture.PROFILE_REQUIRED + fixture.SESSION_REQUIRED
+        log = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in all_names)
+        fixture.check_acceptance(log, session=True)
+        for name in fixture.SESSION_REQUIRED:
+            for changed in [log.replace('--- PASS: TestQdrantNative'+name, '--- SKIP: TestQdrantNative'+name),
+                            log.replace('--- PASS: TestQdrantNative'+name, '--- PASS: TestQdrantNative'+name+'Other')]:
+                with self.assertRaises(RuntimeError):
+                    fixture.check_acceptance(changed, session=True)
+
+    def test_session_evidence_covers_original_leases_and_typed_response_completion(self):
+        paths = fixture.source_hashes(profile=True)
+        for name in ['internal/services/qdrant/session.go', 'internal/services/qdrant/query.go',
+                     'internal/services/qdrant/metadata.go', 'internal/services/qdrant/session_test.go',
+                     'internal/services/qdrant/session_native_integration_test.go',
+                     'internal/db/contract/features.go', 'internal/services/qdrant/client.go']:
+            self.assertIn(name, paths)
+
     def test_profile_acceptance_requires_original_checks_and_localized_forms(self):
         native = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in fixture.REQUIRED)
         profile = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in fixture.PROFILE_REQUIRED)

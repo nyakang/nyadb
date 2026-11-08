@@ -31,6 +31,14 @@ PROFILE_REQUIRED = (
     'ProfileProxyContextAndCanceledOriginalCheck',
     'EditorLocalizedFormEvidence',
 )
+SESSION_REQUIRED = (
+    'SessionMetadataAndDefinitions',
+    'SessionRequestOutcomesAndExactResponse',
+    'SessionLostResponseExplicitLeaseRecovery',
+    'SessionCanceledOriginalLeaseAndSessionClose',
+    'SessionBinaryObservationDriftRejectsDispatch',
+    'SessionNonJSONAndSinkFailureDoNotReplay',
+)
 
 
 def remove_owned(identifier, nonce):
@@ -60,20 +68,24 @@ def source_hashes(profile=False):
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 
 
-def check_acceptance(log, profile=False):
-    for name in REQUIRED + (PROFILE_REQUIRED if profile else ()):
+def check_acceptance(log, profile=False, session=False):
+    for name in REQUIRED + (PROFILE_REQUIRED if profile or session else ()) + (SESSION_REQUIRED if session else ()):
         if not re.search(r'^--- PASS: TestQdrantNative'+name+r' \(', log, re.M):
             raise RuntimeError('Missing required native PASS: '+name)
     if re.search(r'^\s*--- (SKIP|FAIL):', log, re.M) or 'WARNING: DATA RACE' in log:
         raise RuntimeError('Unexpected skipped, failed or racing native test')
 
 
-def native_test_command(race, profile=False):
-    return ['go', 'test', '-count=1', '-timeout=5m', '-v', *(['-race'] if race else []), '-run', '^TestQdrant' if profile else '^TestQdrantNative', './internal/services/qdrant',
+def native_test_command(race, profile=False, session=False):
+    profile = profile or session
+    return ['go', 'test', '-count=1', '-timeout=5m', '-v', *(['-race'] if race else []),
+            *(['-skip', '^TestQdrantNativeSession'] if not session else []),
+            '-run', '^TestQdrant' if profile else '^TestQdrantNative', './internal/services/qdrant',
             *(['./internal/services/connections', './internal/storage/localdb', './internal/ui/connectioneditor'] if profile else [])]
 
 
-def verify(mode='tls', race=False, profile=False):
+def verify(mode='tls', race=False, profile=False, session=False):
+    profile = profile or session
     if mode not in MODES:
         raise ValueError('Invalid native fixture mode')
     output = ROOT/'build/qdrant'
@@ -82,7 +94,7 @@ def verify(mode='tls', race=False, profile=False):
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
     evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode,
-                    scope='private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_transport_and_collection_point_codecs',
+                    scope='private_original_session_qualified_metadata_and_native_rest_query_leases' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_transport_and_collection_point_codecs',
                     status='failed', fixture_cleaned=False, private_files_cleaned=False)
     try:
         with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
@@ -184,16 +196,18 @@ def verify(mode='tls', race=False, profile=False):
                     readonly_path.write_text(json.dumps(readonly_probe)+'\n')
                     readonly_path.chmod(0o600)
                     env['NYADB_QDRANT_READONLY_CONFIG'] = str(readonly_path)
+                if session:
+                    env['NYADB_QDRANT_SESSION_IT'] = '1'
                 hashes = source_hashes(profile)
                 logfile = output/('native-'+nonce+'.log')
-                command = native_test_command(race, profile)
+                command = native_test_command(race, profile, session)
                 with logfile.open('w') as log:
                     result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=330)
                 if hashes != source_hashes(profile):
                     raise RuntimeError('Acceptance sources changed during verification')
                 if result.returncode:
                     raise RuntimeError('Native Qdrant acceptance failed; inspect '+str(logfile.relative_to(ROOT)))
-                check_acceptance(logfile.read_text(), profile)
+                check_acceptance(logfile.read_text(), profile, session)
                 if profile:
                     image_root = Path(env['NYADB_QDRANT_PROFILE_IMAGES'])
                     images = sorted(image_root.glob('*.png'))
@@ -203,7 +217,7 @@ def verify(mode='tls', race=False, profile=False):
                         raise RuntimeError('Missing localized native Qdrant profile form evidence')
                     evidence['headless_profile_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
                 evidence.update(status='passed_with_race' if race else 'passed', source_hashes=hashes,
-                                required_passes=list(REQUIRED + (PROFILE_REQUIRED if profile else ())), command=command, log=str(logfile.relative_to(ROOT)),
+                                required_passes=list(REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ())), command=command, log=str(logfile.relative_to(ROOT)),
                                 log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest())
             finally:
                 logs = subprocess.run(['docker', 'logs', identifier], capture_output=True, text=True)
@@ -225,5 +239,6 @@ if __name__ == '__main__':
     parser.add_argument('--mode', choices=MODES, default='tls')
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--profile', action='store_true', help='Verify URI, SQLite reopen, separate vault, native connection checks and localized editor forms')
+    parser.add_argument('--session', action='store_true', help='Verify original session, physical collection metadata and REST lease outcomes/cancellation/recovery; includes profile acceptance')
     options = parser.parse_args()
-    verify(options.mode, options.race, options.profile)
+    verify(options.mode, options.race, options.profile, options.session)
