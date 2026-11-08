@@ -9,6 +9,9 @@ import (
 // NormalizeProfile validates public settings and applies their canonical values.
 // Variants are normalized in place; callers retaining them must clone the slice.
 func NormalizeProfile(p Profile) (Profile, error) {
+	if p.Kind != Qdrant && p.QdrantOptions != (QdrantOptions{}) {
+		return p, fmt.Errorf("%w: Qdrant options on another engine", ErrInvalid)
+	}
 	if p.Kind != Meilisearch && p.MeilisearchOptions != (MeilisearchOptions{}) {
 		return p, fmt.Errorf("%w: Meilisearch options on another engine", ErrInvalid)
 	}
@@ -124,10 +127,10 @@ func NormalizeProfile(p Profile) (Profile, error) {
 	}
 	p.Host = strings.TrimSpace(p.Host)
 	if p.Kind != Dameng {
-		if p.Kind != Cassandra {
+		if p.Kind != Cassandra && p.Kind != Qdrant {
 			p.Database = strings.TrimSpace(p.Database)
 		}
-		if p.Kind != Meilisearch && p.Kind != CouchDB && p.Kind != Solr && p.Kind != Cassandra {
+		if p.Kind != Qdrant && p.Kind != Meilisearch && p.Kind != CouchDB && p.Kind != Solr && p.Kind != Cassandra {
 			p.Username = strings.TrimSpace(p.Username)
 		}
 	}
@@ -145,6 +148,8 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		}
 	}
 	switch p.Kind {
+	case Qdrant:
+		return normalizeQdrantProfile(p)
 	case Meilisearch:
 		return normalizeMeilisearchProfile(p)
 	case CouchDB:

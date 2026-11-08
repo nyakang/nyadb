@@ -26373,3 +26373,143 @@ func MeilisearchNamespaceTaskTerminated() string {
 func (msgs Messages) MeilisearchNamespaceTaskTerminated() string {
 	return Catalog.Format(msgs.locale, "meilisearchNamespaceTaskTerminated", nil)
 }
+
+// QdrantServicePath says "Qdrant 服务路径"
+// in the language the app shows.
+func QdrantServicePath() string { return In(i18n.Locale()).QdrantServicePath() }
+
+// QdrantServicePath says "Qdrant 服务路径"
+// in the language of msgs.
+func (msgs Messages) QdrantServicePath() string {
+	return Catalog.Format(msgs.locale, "qdrantServicePath", nil)
+}
+
+// QdrantAuth says "Qdrant 认证方式"
+// in the language the app shows.
+func QdrantAuth() string { return In(i18n.Locale()).QdrantAuth() }
+
+// QdrantAuth says "Qdrant 认证方式"
+// in the language of msgs.
+func (msgs Messages) QdrantAuth() string {
+	return Catalog.Format(msgs.locale, "qdrantAuth", nil)
+}
+
+// QdrantAPIKey says "Qdrant API key"
+// in the language the app shows.
+func QdrantAPIKey() string { return In(i18n.Locale()).QdrantAPIKey() }
+
+// QdrantAPIKey says "Qdrant API key"
+// in the language of msgs.
+func (msgs Messages) QdrantAPIKey() string {
+	return Catalog.Format(msgs.locale, "qdrantAPIKey", nil)
+}
+
+// QdrantConnectTimeout says "Qdrant 连接超时"
+// in the language the app shows.
+func QdrantConnectTimeout() string { return In(i18n.Locale()).QdrantConnectTimeout() }
+
+// QdrantConnectTimeout says "Qdrant 连接超时"
+// in the language of msgs.
+func (msgs Messages) QdrantConnectTimeout() string {
+	return Catalog.Format(msgs.locale, "qdrantConnectTimeout", nil)
+}
+
+// QdrantRequestTimeout says "Qdrant 请求超时"
+// in the language the app shows.
+func QdrantRequestTimeout() string { return In(i18n.Locale()).QdrantRequestTimeout() }
+
+// QdrantRequestTimeout says "Qdrant 请求超时"
+// in the language of msgs.
+func (msgs Messages) QdrantRequestTimeout() string {
+	return Catalog.Format(msgs.locale, "qdrantRequestTimeout", nil)
+}
+
+// QdrantTimeoutInvalid says "请检查 Qdrant 超时设置"
+// in the language the app shows.
+func QdrantTimeoutInvalid() string { return In(i18n.Locale()).QdrantTimeoutInvalid() }
+
+// QdrantTimeoutInvalid says "请检查 Qdrant 超时设置"
+// in the language of msgs.
+func (msgs Messages) QdrantTimeoutInvalid() string {
+	return Catalog.Format(msgs.locale, "qdrantTimeoutInvalid", nil)
+}
+
+// QdrantDefaultsHint says "Qdrant REST 默认端口 6333，服务路径留空表示服务器根路径。"
+// in the language the app shows.
+func QdrantDefaultsHint() string { return In(i18n.Locale()).QdrantDefaultsHint() }
+
+// QdrantDefaultsHint says "Qdrant REST 默认端口 6333，服务路径留空表示服务器根路径。"
+// in the language of msgs.
+func (msgs Messages) QdrantDefaultsHint() string {
+	return Catalog.Format(msgs.locale, "qdrantDefaultsHint", nil)
+}
+
+// QdrantTLSMode says "Qdrant TLS 模式"
+// in the language the app shows.
+func QdrantTLSMode() string { return In(i18n.Locale()).QdrantTLSMode() }
+
+// QdrantTLSMode says "Qdrant TLS 模式"
+// in the language of msgs.
+func (msgs Messages) QdrantTLSMode() string {
+	return Catalog.Format(msgs.locale, "qdrantTLSMode", nil)
+}
+
+// QdrantCA says "Qdrant CA 证书"
+// in the language the app shows.
+func QdrantCA() string { return In(i18n.Locale()).QdrantCA() }
+
+// QdrantCA says "Qdrant CA 证书"
+// in the language of msgs.
+func (msgs Messages) QdrantCA() string {
+	return Catalog.Format(msgs.locale, "qdrantCA", nil)
+}
+
+// QdrantClientCert says "Qdrant 客户端证书"
+// in the language the app shows.
+func QdrantClientCert() string { return In(i18n.Locale()).QdrantClientCert() }
+
+// QdrantClientCert says "Qdrant 客户端证书"
+// in the language of msgs.
+func (msgs Messages) QdrantClientCert() string {
+	return Catalog.Format(msgs.locale, "qdrantClientCert", nil)
+}
+
+// QdrantClientKey says "Qdrant 客户端私钥"
+// in the language the app shows.
+func QdrantClientKey() string { return In(i18n.Locale()).QdrantClientKey() }
+
+// QdrantClientKey says "Qdrant 客户端私钥"
+// in the language of msgs.
+func (msgs Messages) QdrantClientKey() string {
+	return Catalog.Format(msgs.locale, "qdrantClientKey", nil)
+}
+
+// QdrantSettingsInvalid says "请检查 Qdrant 服务路径和认证设置"
+// in the language the app shows.
+func QdrantSettingsInvalid() string { return In(i18n.Locale()).QdrantSettingsInvalid() }
+
+// QdrantSettingsInvalid says "请检查 Qdrant 服务路径和认证设置"
+// in the language of msgs.
+func (msgs Messages) QdrantSettingsInvalid() string {
+	return Catalog.Format(msgs.locale, "qdrantSettingsInvalid", nil)
+}
+
+// QdrantTLSInvalid says "请检查 Qdrant TLS 和客户端证书设置"
+// in the language the app shows.
+func QdrantTLSInvalid() string { return In(i18n.Locale()).QdrantTLSInvalid() }
+
+// QdrantTLSInvalid says "请检查 Qdrant TLS 和客户端证书设置"
+// in the language of msgs.
+func (msgs Messages) QdrantTLSInvalid() string {
+	return Catalog.Format(msgs.locale, "qdrantTLSInvalid", nil)
+}
+
+// QdrantKeyInvalid says "请检查 Qdrant API key"
+// in the language the app shows.
+func QdrantKeyInvalid() string { return In(i18n.Locale()).QdrantKeyInvalid() }
+
+// QdrantKeyInvalid says "请检查 Qdrant API key"
+// in the language of msgs.
+func (msgs Messages) QdrantKeyInvalid() string {
+	return Catalog.Format(msgs.locale, "qdrantKeyInvalid", nil)
+}

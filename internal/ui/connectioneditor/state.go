@@ -40,6 +40,7 @@ type Dependencies struct {
 // State is owned by the UI thread. Background tests return immutable results;
 // native picker completions are guarded by the editing session's version.
 type State struct {
+	qdrantAuthChoice            string
 	meilisearchAuthChoice       string
 	elasticsearchAuthChoice     string
 	easysearchAuthChoice        string
@@ -181,12 +182,15 @@ func (s *State) OpenProfile(profile connections.Profile) {
 	if profile.Kind.IsMySQLFamily() {
 		s.loadSavedConnectionPasswords()
 		s.loadTunnelSecrets()
-	} else if profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.Meilisearch || profile.Kind == connections.CouchDB || profile.Kind == connections.Cassandra || profile.Kind == connections.Solr || profile.Kind == connections.Elasticsearch || profile.Kind == connections.Easysearch || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis {
+	} else if profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.Qdrant || profile.Kind == connections.Meilisearch || profile.Kind == connections.CouchDB || profile.Kind == connections.Cassandra || profile.Kind == connections.Solr || profile.Kind == connections.Elasticsearch || profile.Kind == connections.Easysearch || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis {
 		s.loadSavedConnectionPasswords()
 	}
 }
 
 func (s *State) initializeInputs() {
+	if s.connectionDraft.Kind == connections.Qdrant {
+		s.qdrantAuthChoice = qdrantAuthCaption(s.connectionDraft.QdrantOptions.Auth)
+	}
 	if s.connectionDraft.Kind == connections.Meilisearch {
 		s.meilisearchAuthChoice = meilisearchAuthCaption(s.connectionDraft.MeilisearchOptions.Auth)
 	}
@@ -220,6 +224,7 @@ func (s *State) initializeInputs() {
 // Close discards configuration drafts and secrets and invalidates async work.
 // The non-secret profile remains readable until the next Open call.
 func (s *State) Close() {
+	s.qdrantAuthChoice = ""
 	s.meilisearchAuthChoice = ""
 	s.couchdbAuthChoice = ""
 	s.cassandraAuthChoice = ""
@@ -298,6 +303,8 @@ func (s *State) Title() string {
 
 func connectionKindName(kind connections.Kind) string {
 	switch kind {
+	case connections.Qdrant:
+		return "Qdrant"
 	case connections.Meilisearch:
 		return "Meilisearch"
 	case connections.CouchDB:

@@ -32,6 +32,27 @@ class QdrantFixtureTests(unittest.TestCase):
         self.assertIn('^TestQdrantNative', command)
         self.assertEqual(command[-1], './internal/services/qdrant')
 
+    def test_profile_command_checks_native_config_storage_and_editor(self):
+        command = fixture.native_test_command(True, profile=True)
+        self.assertIn('-race', command)
+        self.assertIn('-count=1', command)
+        self.assertIn('-timeout=5m', command)
+        self.assertEqual(command[command.index('-run')+1], '^TestQdrant')
+        self.assertEqual(command[-4:], ['./internal/services/qdrant', './internal/services/connections',
+                                        './internal/storage/localdb', './internal/ui/connectioneditor'])
+
+    def test_profile_acceptance_requires_original_checks_and_localized_forms(self):
+        native = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in fixture.REQUIRED)
+        profile = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in fixture.PROFILE_REQUIRED)
+        fixture.check_acceptance(native+'\n'+profile, profile=True)
+        for name in fixture.PROFILE_REQUIRED:
+            for replacement in ['--- SKIP: TestQdrantNative'+name, '--- PASS: TestQdrantNative'+name+'Other']:
+                changed = profile.replace('--- PASS: TestQdrantNative'+name, replacement)
+                with self.assertRaises(RuntimeError):
+                    fixture.check_acceptance(native+'\n'+changed, profile=True)
+        with self.assertRaises(RuntimeError):
+            fixture.check_acceptance(native, profile=True)
+
     def test_cleanup_requires_nonce_product_and_immutable_id(self):
         identifier = 'a'*64
         own = {'Id': identifier, 'Config': {'Labels': {'nyadb.fixture': 'qdrant', 'nyadb.fixture.nonce': 'owned'}}}
@@ -61,6 +82,19 @@ class QdrantFixtureTests(unittest.TestCase):
         for name in ['internal/services/qdrant/client.go', 'internal/services/qdrant/native.go',
                      'internal/services/qdrant/native_integration_test.go',
                      'internal/services/connections/qdrant_config.go', 'tests/test_qdrant_fixture.py']:
+            self.assertIn(name, paths)
+
+    def test_profile_evidence_covers_original_vault_storage_and_translations(self):
+        paths = fixture.source_hashes(profile=True)
+        for name in ['internal/services/connections/profiles.go',
+                     'internal/services/connections/profile_validation.go',
+                     'internal/services/connections/uri.go',
+                     'internal/storage/localdb/engine_options.go',
+                     'internal/storage/localdb/qdrant_options_json.go',
+                     'internal/ui/connectioneditor/state.go',
+                     'internal/ui/connectioneditor/save.go',
+                     'internal/ui/connectioneditor/qdrant_native_integration_test.go',
+                     'locales/zh-Hans.json', 'locales/en.json', 'locales/catalog_gen.go']:
             self.assertIn(name, paths)
 
 

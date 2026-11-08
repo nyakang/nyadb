@@ -2591,5 +2591,19 @@
   "meilisearchNamespace111e6952af": "Atomically swap two indexes preview",
   "meilisearchNamespace88b6b6415b": "Clear index documents preview",
   "meilisearchNamespacebea4501138": "Delete index preview",
-  "meilisearchNamespaceTaskTerminated": "The original index task failed or was canceled. Inspect the complete native result."
+  "meilisearchNamespaceTaskTerminated": "The original index task failed or was canceled. Inspect the complete native result.",
+  "qdrantServicePath": "Qdrant service path",
+  "qdrantAuth": "Qdrant authentication",
+  "qdrantAPIKey": "Qdrant API key",
+  "qdrantConnectTimeout": "Qdrant connection timeout",
+  "qdrantRequestTimeout": "Qdrant request timeout",
+  "qdrantTimeoutInvalid": "Check the Qdrant timeout settings",
+  "qdrantDefaultsHint": "Qdrant REST uses port 6333 by default. Leave the service path empty for the server root.",
+  "qdrantTLSMode": "Qdrant TLS mode",
+  "qdrantCA": "Qdrant CA certificate",
+  "qdrantClientCert": "Qdrant client certificate",
+  "qdrantClientKey": "Qdrant client private key",
+  "qdrantSettingsInvalid": "Check the Qdrant service path and authentication settings",
+  "qdrantTLSInvalid": "Check the Qdrant TLS and client certificate settings",
+  "qdrantKeyInvalid": "Check the Qdrant API key"
 }

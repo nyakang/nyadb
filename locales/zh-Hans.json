@@ -2591,5 +2591,19 @@
   "meilisearchNamespace111e6952af": "原子交换两个索引预览",
   "meilisearchNamespace88b6b6415b": "清空索引文档预览",
   "meilisearchNamespacebea4501138": "删除索引预览",
-  "meilisearchNamespaceTaskTerminated": "原索引任务失败或取消；请查看完整原生结果。"
+  "meilisearchNamespaceTaskTerminated": "原索引任务失败或取消；请查看完整原生结果。",
+  "qdrantServicePath": "Qdrant 服务路径",
+  "qdrantAuth": "Qdrant 认证方式",
+  "qdrantAPIKey": "Qdrant API key",
+  "qdrantConnectTimeout": "Qdrant 连接超时",
+  "qdrantRequestTimeout": "Qdrant 请求超时",
+  "qdrantTimeoutInvalid": "请检查 Qdrant 超时设置",
+  "qdrantDefaultsHint": "Qdrant REST 默认端口 6333，服务路径留空表示服务器根路径。",
+  "qdrantTLSMode": "Qdrant TLS 模式",
+  "qdrantCA": "Qdrant CA 证书",
+  "qdrantClientCert": "Qdrant 客户端证书",
+  "qdrantClientKey": "Qdrant 客户端私钥",
+  "qdrantSettingsInvalid": "请检查 Qdrant 服务路径和认证设置",
+  "qdrantTLSInvalid": "请检查 Qdrant TLS 和客户端证书设置",
+  "qdrantKeyInvalid": "请检查 Qdrant API key"
 }

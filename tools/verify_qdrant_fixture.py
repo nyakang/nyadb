@@ -26,6 +26,11 @@ REQUIRED = (
     'LostResponseNeverReplays',
     'CanceledOriginalReadAndClose',
 )
+PROFILE_REQUIRED = (
+    'ProfileURIReopenAndOriginalEditorCheck',
+    'ProfileProxyContextAndCanceledOriginalCheck',
+    'EditorLocalizedFormEvidence',
+)
 
 
 def remove_owned(identifier, nonce):
@@ -44,27 +49,31 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def source_hashes():
+def source_hashes(profile=False):
     paths = list((ROOT/'internal/services/qdrant').glob('*.go'))
     paths += list((ROOT/'internal/db/jsondocument').glob('*.go'))
     paths += list((ROOT/'internal/services/connections').glob('qdrant*.go'))
     paths += [ROOT/'go.mod', ROOT/'go.sum', ROOT/'tools/verify_qdrant_fixture.py', ROOT/'tests/test_qdrant_fixture.py']
+    if profile:
+        paths += list((ROOT/'internal').rglob('*.go'))
+        paths += list((ROOT/'locales').glob('*.go')) + list((ROOT/'locales').glob('*.json'))
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 
 
-def check_acceptance(log):
-    for name in REQUIRED:
+def check_acceptance(log, profile=False):
+    for name in REQUIRED + (PROFILE_REQUIRED if profile else ()):
         if not re.search(r'^--- PASS: TestQdrantNative'+name+r' \(', log, re.M):
             raise RuntimeError('Missing required native PASS: '+name)
     if re.search(r'^\s*--- (SKIP|FAIL):', log, re.M) or 'WARNING: DATA RACE' in log:
         raise RuntimeError('Unexpected skipped, failed or racing native test')
 
 
-def native_test_command(race):
-    return ['go', 'test', '-count=1', '-timeout=5m', '-v', *(['-race'] if race else []), '-run', '^TestQdrantNative', './internal/services/qdrant']
+def native_test_command(race, profile=False):
+    return ['go', 'test', '-count=1', '-timeout=5m', '-v', *(['-race'] if race else []), '-run', '^TestQdrant' if profile else '^TestQdrantNative', './internal/services/qdrant',
+            *(['./internal/services/connections', './internal/storage/localdb', './internal/ui/connectioneditor'] if profile else [])]
 
 
-def verify(mode='tls', race=False):
+def verify(mode='tls', race=False, profile=False):
     if mode not in MODES:
         raise ValueError('Invalid native fixture mode')
     output = ROOT/'build/qdrant'
@@ -73,7 +82,7 @@ def verify(mode='tls', race=False):
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
     evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode,
-                    scope='private_native_rest_transport_and_collection_point_codecs',
+                    scope='private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_transport_and_collection_point_codecs',
                     status='failed', fixture_cleaned=False, private_files_cleaned=False)
     try:
         with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
@@ -142,28 +151,59 @@ def verify(mode='tls', race=False):
                         raise RuntimeError('Native Qdrant readiness failed; inspect captured server log')
                     time.sleep(0.5)
                 evidence['observed_identity'] = identity
+                if profile:
+                    def seed(method, path, body):
+                        raw = json.dumps(body, ensure_ascii=False).encode()
+                        request = urllib.request.Request(endpoint+path, data=raw, method=method,
+                                                         headers=dict(headers, **{'Content-Type': 'application/json'}))
+                        with urllib.request.urlopen(request, context=context, timeout=10) as response:
+                            result = json.load(response)
+                        if result.get('status') != 'ok':
+                            raise RuntimeError('Native profile seed did not complete')
+                    collection = 'owned_profile_'+nonce[:12]
+                    seed('PUT', '/collections/'+collection, {'vectors': {'size': 2, 'distance': 'Dot'}})
+                    seed('PUT', '/collections/'+collection+'/points?wait=true',
+                         {'points': [{'id': 9007199254740993, 'vector': [1, 0],
+                                      'payload': {'integer': 9007199254740993, 'text': '原生配置🐱'}}]})
                 probe = dict(endpoint=endpoint, auth='none' if mode == 'anonymous' else 'api_key',
                              key_file='' if mode == 'anonymous' else str(folder/'admin-key'),
                              readonly_key_file='' if mode == 'anonymous' else str(folder/'readonly-key'),
                              ca_file=str(folder/'ca.crt') if tls else '', server_name='localhost' if tls else '',
                              client_cert_file=str(folder/'client.crt') if mode == 'mtls' else '',
                              client_key_file=str(folder/'client.key') if mode == 'mtls' else '')
+                if profile:
+                    probe.update(fixture_collection=collection, connect_timeout_seconds=12, request_timeout_seconds=45)
                 probe_path = folder/'probe.json'
                 probe_path.write_text(json.dumps(probe)+'\n')
                 probe_path.chmod(0o600)
                 env = dict(os.environ, NYADB_QDRANT_IT='1', NYADB_QDRANT_CONFIG=str(probe_path), CGO_ENABLED='1' if race else '0')
-                hashes = source_hashes()
+                if profile:
+                    env.update(NYADB_QDRANT_PROFILE_IT='1', NYADB_QDRANT_PROFILE_IMAGES=str(output/('profile-images-'+nonce)))
+                    readonly_probe = dict(probe, key_file=str(folder/'readonly-key'))
+                    readonly_path = folder/'readonly-probe.json'
+                    readonly_path.write_text(json.dumps(readonly_probe)+'\n')
+                    readonly_path.chmod(0o600)
+                    env['NYADB_QDRANT_READONLY_CONFIG'] = str(readonly_path)
+                hashes = source_hashes(profile)
                 logfile = output/('native-'+nonce+'.log')
-                command = native_test_command(race)
+                command = native_test_command(race, profile)
                 with logfile.open('w') as log:
                     result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=330)
-                if hashes != source_hashes():
+                if hashes != source_hashes(profile):
                     raise RuntimeError('Acceptance sources changed during verification')
                 if result.returncode:
                     raise RuntimeError('Native Qdrant acceptance failed; inspect '+str(logfile.relative_to(ROOT)))
-                check_acceptance(logfile.read_text())
+                check_acceptance(logfile.read_text(), profile)
+                if profile:
+                    image_root = Path(env['NYADB_QDRANT_PROFILE_IMAGES'])
+                    images = sorted(image_root.glob('*.png'))
+                    expected = {language+'-'+str(width)+'-'+auth+'-'+page+'.png' for language in ['zh-Hans', 'en']
+                                for width in [900, 720] for auth in ['none', 'api_key'] for page in ['general', 'advanced', 'ssl']}
+                    if {p.name for p in images} != expected:
+                        raise RuntimeError('Missing localized native Qdrant profile form evidence')
+                    evidence['headless_profile_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
                 evidence.update(status='passed_with_race' if race else 'passed', source_hashes=hashes,
-                                required_passes=list(REQUIRED), command=command, log=str(logfile.relative_to(ROOT)),
+                                required_passes=list(REQUIRED + (PROFILE_REQUIRED if profile else ())), command=command, log=str(logfile.relative_to(ROOT)),
                                 log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest())
             finally:
                 logs = subprocess.run(['docker', 'logs', identifier], capture_output=True, text=True)
@@ -184,5 +224,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--mode', choices=MODES, default='tls')
     parser.add_argument('--race', action='store_true')
+    parser.add_argument('--profile', action='store_true', help='Verify URI, SQLite reopen, separate vault, native connection checks and localized editor forms')
     options = parser.parse_args()
-    verify(options.mode, options.race)
+    verify(options.mode, options.race, options.profile)

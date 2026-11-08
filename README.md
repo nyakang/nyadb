@@ -59,7 +59,7 @@ This image is a historical headless UI preview. For recent native-window verific
 
 Grid editing requires a reliable row identity; views, generated fields, and unsupported objects remain read-only. Availability is checked against the engine, adapter, server permissions, and selected object. Unsupported operations are disabled or rejected explicitly.
 
-Qdrant native REST transport and collection/point codecs have been verified on official 1.20.0 Docker over anonymous HTTP, API-key HTTP, native HTTPS and required-client-certificate mTLS. This is a private foundation; Qdrant profiles, navigation and workbench request sessions are still pending. Reproduce the native checks with [the Qdrant fixture verifier](tools/verify_qdrant_fixture.py), using `--mode anonymous`, `--mode api-key`, `--mode tls` or `--mode mtls` and `--race`.
+Qdrant native REST transport, collection/point codecs, versioned profiles, a pure URI parser, SQLite reopen, separate credentials and the connection editor have been verified on official 1.20.0 Docker over anonymous HTTP, API-key HTTP, native HTTPS and required-client-certificate mTLS. This is a private integration; the public provider, connection chooser and URI import, navigation and workbench request sessions are still pending. Reproduce profile and original connection-check acceptance with [the Qdrant fixture verifier](tools/verify_qdrant_fixture.py), using `--profile --race` and `--mode anonymous`, `--mode api-key`, `--mode tls` or `--mode mtls`. The verifier also records localized headless form images. Reports and images remain in ignored local directories.
 
 GaussDB core workbench support has been validated against a disposable native GaussDB Kernel 503.1.0 container. See the [core report](docs/gaussdb-2026-11-07.md).
 
