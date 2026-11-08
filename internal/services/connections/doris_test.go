@@ -1,9 +1,12 @@
 package connections_test
 
 import (
+	"net/url"
+	"path/filepath"
+	"testing"
+
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
-	"testing"
 )
 
 func TestDorisNativeProfileAndIndependentCapabilities(t *testing.T) {
@@ -38,7 +41,7 @@ func TestDorisNativeProfileAndIndependentCapabilities(t *testing.T) {
 	}
 	bad = p
 	bad.TLSMode = "disable"
-	bad.DorisOptions.CAFile = "/tmp/ca.pem"
+	bad.DorisOptions.CAFile = filepath.Join(t.TempDir(), "ca.pem")
 	if _, err = connections.NormalizeProfile(bad); err == nil {
 		t.Fatal("certificate silently ignored")
 	}
@@ -52,11 +55,12 @@ func TestDorisNativeProfileAndIndependentCapabilities(t *testing.T) {
 	}
 }
 func TestDorisURIAndTemporarySecret(t *testing.T) {
-	r, err := connections.ParseURI("doris://reader:temporary@localhost/data?catalog=internal&sslmode=verify-full&ca_file=%2Ftmp%2Fca.pem&server_name=localhost")
-	if err != nil || r.Profile.Kind != connections.Doris || r.Profile.Port != 9030 || r.Password != "temporary" || r.Profile.DorisOptions.CAFile != "/tmp/ca.pem" {
+	caFile := filepath.Join(t.TempDir(), "ca with spaces.pem")
+	r, err := connections.ParseURI("doris://reader:temporary@localhost/data?catalog=internal&sslmode=verify-full&ca_file=" + url.QueryEscape(caFile) + "&server_name=localhost")
+	if err != nil || r.Profile.Kind != connections.Doris || r.Profile.Port != 9030 || r.Password != "temporary" || r.Profile.DorisOptions.CAFile != caFile {
 		t.Fatal("native URI did not preserve settings and temporary secret")
 	}
-	for _, uri := range []string{"doris://localhost?catalog=hive", "doris://localhost?sslmode=require", "doris://localhost?sslmode=disable&ca_file=%2Ftmp%2Fca.pem", "doris://localhost?catalog=internal&catalog=internal", "doris://localhost?password=private", "doris://localhost?ca_file=relative.pem"} {
+	for _, uri := range []string{"doris://localhost?catalog=hive", "doris://localhost?sslmode=require", "doris://localhost?sslmode=disable&ca_file=" + url.QueryEscape(caFile), "doris://localhost?catalog=internal&catalog=internal", "doris://localhost?password=private", "doris://localhost?ca_file=relative.pem"} {
 		if _, err = connections.ParseURI(uri); err == nil {
 			t.Fatal("unsupported URI accepted")
 		}

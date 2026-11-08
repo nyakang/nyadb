@@ -1,6 +1,8 @@
 package connections_test
 
 import (
+	"net/url"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -20,8 +22,9 @@ func TestTrinoProfileURIAndIndependentCapabilities(t *testing.T) {
 	if !ok || d.Dialect != "trino" || d.ClientFamily != "trino" || !d.Capabilities.Query || !d.Capabilities.Metadata || !d.Capabilities.Export || d.Capabilities.EditableTables || d.Capabilities.Transactions || d.Capabilities.Import || d.Capabilities.Accounts || d.Capabilities.Backup {
 		t.Fatal("unverified connector capabilities advertised")
 	}
-	u, err := connections.ParseURI("trino://reader:temporary@[::1]:8443/memory/default?sslmode=verify-full&ca_file=%2Ftmp%2Fca.pem&server_name=localhost")
-	if err != nil || u.Password != "temporary" || u.Profile.Kind != p.Kind || u.Profile.Host != "::1" || u.Profile.Database != "memory" || u.Profile.TrinoOptions.DefaultSchema != "default" || u.Profile.TrinoOptions.CAFile != "/tmp/ca.pem" {
+	caFile := filepath.Join(t.TempDir(), "ca with spaces.pem")
+	u, err := connections.ParseURI("trino://reader:temporary@[::1]:8443/memory/default?sslmode=verify-full&ca_file=" + url.QueryEscape(caFile) + "&server_name=localhost")
+	if err != nil || u.Password != "temporary" || u.Profile.Kind != p.Kind || u.Profile.Host != "::1" || u.Profile.Database != "memory" || u.Profile.TrinoOptions.DefaultSchema != "default" || u.Profile.TrinoOptions.CAFile != caFile {
 		t.Fatal("qualified URI or temporary secret lost", err)
 	}
 	for _, uri := range []string{

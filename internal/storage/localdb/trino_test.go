@@ -2,6 +2,7 @@ package localdb
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -20,7 +21,7 @@ func TestTrinoProfileRestoresWithoutSchemaMigrationOrForeignEngineOptions(t *tes
 	p.Port = 8080
 	p.Database = "nyadb"
 	p.TrinoOptions.DefaultSchema = "default"
-	p.TrinoOptions.CAFile = "/tmp/ca.pem"
+	p.TrinoOptions.CAFile = filepath.Join(t.TempDir(), "ca.pem")
 	p.TrinoOptions.ServerName = "server"
 	saved, err := store.Create(ctx, p)
 	if err != nil {

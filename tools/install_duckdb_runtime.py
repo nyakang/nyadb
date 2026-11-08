@@ -2,17 +2,39 @@
 """Install the verified DuckDB library in NyaDB's cache or a package directory."""
 import argparse
 import hashlib
+import http.client
 import io
 import json
 import os
 from pathlib import Path
 import platform
 import tempfile
+import time
+import urllib.error
 import urllib.request
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = json.loads((ROOT / "resources/duckdb/runtime_manifest.json").read_text())
+DOWNLOAD_ATTEMPTS = 4
+RETRYABLE_HTTP_STATUS = {408, 429, 500, 502, 503, 504}
+
+def download_archive(url):
+    request = urllib.request.Request(url, headers={"User-Agent": "NyaDB-DuckDB-runtime"})
+    for attempt in range(DOWNLOAD_ATTEMPTS):
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                return response.read(100 * 1024 * 1024 + 1)
+        except urllib.error.HTTPError as error:
+            error.close()
+            if error.code not in RETRYABLE_HTTP_STATUS or attempt == DOWNLOAD_ATTEMPTS - 1:
+                raise
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.IncompleteRead):
+            if attempt == DOWNLOAD_ATTEMPTS - 1:
+                raise
+        delay = 2 ** attempt
+        print(f"DuckDB download attempt {attempt + 1} failed; retrying in {delay}s", flush=True)
+        time.sleep(delay)
 
 def host_target():
     system = {"Linux": "linux", "Darwin": "darwin", "Windows": "windows"}.get(platform.system())
@@ -54,9 +76,7 @@ def install(target, output):
         atomic_write(output / "DuckDB-LICENSE.txt", (ROOT / "resources/duckdb/LICENSE.txt").read_bytes())
         print(f"{target}: verified existing {path.resolve()}", flush=True)
         return path
-    request = urllib.request.Request(url, headers={"User-Agent": "NyaDB-DuckDB-runtime"})
-    with urllib.request.urlopen(request, timeout=60) as response:
-        archive = response.read(100 * 1024 * 1024 + 1)
+    archive = download_archive(url)
     if len(archive) > 100 * 1024 * 1024 or hashlib.sha256(archive).hexdigest() != entry["sha256"]:
         raise RuntimeError("DuckDB archive integrity check failed")
     with zipfile.ZipFile(io.BytesIO(archive)) as z:

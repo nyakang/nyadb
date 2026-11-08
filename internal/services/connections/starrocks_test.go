@@ -1,6 +1,8 @@
 package connections_test
 
 import (
+	"net/url"
+	"path/filepath"
 	"testing"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -38,7 +40,7 @@ func TestStarRocksNativeProfileAndIndependentCapabilities(t *testing.T) {
 	}
 	bad = p
 	bad.TLSMode = "disable"
-	bad.StarRocksOptions.CAFile = "/tmp/ca.pem"
+	bad.StarRocksOptions.CAFile = filepath.Join(t.TempDir(), "ca.pem")
 	if _, err = connections.NormalizeProfile(bad); err == nil {
 		t.Fatal("certificate silently ignored")
 	}
@@ -52,11 +54,12 @@ func TestStarRocksNativeProfileAndIndependentCapabilities(t *testing.T) {
 	}
 }
 func TestStarRocksURIAndTemporarySecret(t *testing.T) {
-	r, err := connections.ParseURI("starrocks://reader:temporary@localhost/data?catalog=default_catalog&sslmode=verify-full&ca_file=%2Ftmp%2Fca.pem&server_name=localhost")
-	if err != nil || r.Profile.Kind != connections.StarRocks || r.Profile.Port != 9030 || r.Password != "temporary" || r.Profile.StarRocksOptions.CAFile != "/tmp/ca.pem" {
+	caFile := filepath.Join(t.TempDir(), "ca with spaces.pem")
+	r, err := connections.ParseURI("starrocks://reader:temporary@localhost/data?catalog=default_catalog&sslmode=verify-full&ca_file=" + url.QueryEscape(caFile) + "&server_name=localhost")
+	if err != nil || r.Profile.Kind != connections.StarRocks || r.Profile.Port != 9030 || r.Password != "temporary" || r.Profile.StarRocksOptions.CAFile != caFile {
 		t.Fatal("native URI did not preserve settings and temporary secret")
 	}
-	for _, uri := range []string{"starrocks://localhost?catalog=hive", "starrocks://localhost?sslmode=require", "starrocks://localhost?sslmode=disable&ca_file=%2Ftmp%2Fca.pem", "starrocks://localhost?catalog=default_catalog&catalog=default_catalog", "starrocks://localhost?password=private", "starrocks://localhost?ca_file=relative.pem"} {
+	for _, uri := range []string{"starrocks://localhost?catalog=hive", "starrocks://localhost?sslmode=require", "starrocks://localhost?sslmode=disable&ca_file=" + url.QueryEscape(caFile), "starrocks://localhost?catalog=default_catalog&catalog=default_catalog", "starrocks://localhost?password=private", "starrocks://localhost?ca_file=relative.pem"} {
 		if _, err = connections.ParseURI(uri); err == nil {
 			t.Fatal("unsupported URI accepted")
 		}

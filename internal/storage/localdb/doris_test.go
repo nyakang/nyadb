@@ -2,6 +2,7 @@ package localdb
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -19,7 +20,7 @@ func TestDorisProfileRestoresWithoutSchemaMigrationOrForeignEngineOptions(t *tes
 	p.TLSMode = "verify-full"
 	p.Port = 9030
 	p.Database = "nyadb"
-	p.DorisOptions.CAFile = "/tmp/ca.pem"
+	p.DorisOptions.CAFile = filepath.Join(t.TempDir(), "ca.pem")
 	p.DorisOptions.ServerName = "server"
 	saved, err := store.Create(ctx, p)
 	if err != nil {

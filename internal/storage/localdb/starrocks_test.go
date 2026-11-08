@@ -2,6 +2,7 @@ package localdb
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -19,7 +20,7 @@ func TestStarRocksProfileRestoresWithoutSchemaMigrationOrForeignEngineOptions(t 
 	p.TLSMode = "verify-full"
 	p.Port = 9030
 	p.Database = "nyadb"
-	p.StarRocksOptions.CAFile = "/tmp/ca.pem"
+	p.StarRocksOptions.CAFile = filepath.Join(t.TempDir(), "ca.pem")
 	p.StarRocksOptions.ServerName = "server"
 	saved, err := store.Create(ctx, p)
 	if err != nil {

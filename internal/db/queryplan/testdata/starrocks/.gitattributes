@@ -1,2 +1,3 @@
 # Preserve native COSTS serializer padding and empty branch-detail lines.
-*.txt whitespace=-blank-at-eol
+# Each fixture line represents one result cell; CRLF checkout adds invalid CRs.
+*.txt text eol=lf whitespace=-blank-at-eol
