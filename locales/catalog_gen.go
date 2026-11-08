@@ -23333,3 +23333,663 @@ func NativeSearchResultSummary() string { return In(i18n.Locale()).NativeSearchR
 func (msgs Messages) NativeSearchResultSummary() string {
 	return Catalog.Format(msgs.locale, "nativeSearchResultSummary", nil)
 }
+
+// TaskUID says "任务 UID"
+// in the language the app shows.
+func TaskUID() string { return In(i18n.Locale()).TaskUID() }
+
+// TaskUID says "任务 UID"
+// in the language of msgs.
+func (msgs Messages) TaskUID() string {
+	return Catalog.Format(msgs.locale, "taskUID", nil)
+}
+
+// TaskType says "任务类型"
+// in the language the app shows.
+func TaskType() string { return In(i18n.Locale()).TaskType() }
+
+// TaskType says "任务类型"
+// in the language of msgs.
+func (msgs Messages) TaskType() string {
+	return Catalog.Format(msgs.locale, "taskType", nil)
+}
+
+// TaskState says "任务状态"
+// in the language the app shows.
+func TaskState() string { return In(i18n.Locale()).TaskState() }
+
+// TaskState says "任务状态"
+// in the language of msgs.
+func (msgs Messages) TaskState() string {
+	return Catalog.Format(msgs.locale, "taskState", nil)
+}
+
+// TaskEnqueuedAt says "入队时间"
+// in the language the app shows.
+func TaskEnqueuedAt() string { return In(i18n.Locale()).TaskEnqueuedAt() }
+
+// TaskEnqueuedAt says "入队时间"
+// in the language of msgs.
+func (msgs Messages) TaskEnqueuedAt() string {
+	return Catalog.Format(msgs.locale, "taskEnqueuedAt", nil)
+}
+
+// TaskStartedAt says "开始时间"
+// in the language the app shows.
+func TaskStartedAt() string { return In(i18n.Locale()).TaskStartedAt() }
+
+// TaskStartedAt says "开始时间"
+// in the language of msgs.
+func (msgs Messages) TaskStartedAt() string {
+	return Catalog.Format(msgs.locale, "taskStartedAt", nil)
+}
+
+// TaskFinishedAt says "完成时间"
+// in the language the app shows.
+func TaskFinishedAt() string { return In(i18n.Locale()).TaskFinishedAt() }
+
+// TaskFinishedAt says "完成时间"
+// in the language of msgs.
+func (msgs Messages) TaskFinishedAt() string {
+	return Catalog.Format(msgs.locale, "taskFinishedAt", nil)
+}
+
+// TaskNativeDuration says "原生耗时"
+// in the language the app shows.
+func TaskNativeDuration() string { return In(i18n.Locale()).TaskNativeDuration() }
+
+// TaskNativeDuration says "原生耗时"
+// in the language of msgs.
+func (msgs Messages) TaskNativeDuration() string {
+	return Catalog.Format(msgs.locale, "taskNativeDuration", nil)
+}
+
+// TaskDetails says "任务详情"
+// in the language the app shows.
+func TaskDetails() string { return In(i18n.Locale()).TaskDetails() }
+
+// TaskDetails says "任务详情"
+// in the language of msgs.
+func (msgs Messages) TaskDetails() string {
+	return Catalog.Format(msgs.locale, "taskDetails", nil)
+}
+
+// TaskAllIndexes says "全部索引"
+// in the language the app shows.
+func TaskAllIndexes() string { return In(i18n.Locale()).TaskAllIndexes() }
+
+// TaskAllIndexes says "全部索引"
+// in the language of msgs.
+func (msgs Messages) TaskAllIndexes() string {
+	return Catalog.Format(msgs.locale, "taskAllIndexes", nil)
+}
+
+// TaskRefresh says "刷新任务"
+// in the language the app shows.
+func TaskRefresh() string { return In(i18n.Locale()).TaskRefresh() }
+
+// TaskRefresh says "刷新任务"
+// in the language of msgs.
+func (msgs Messages) TaskRefresh() string {
+	return Catalog.Format(msgs.locale, "taskRefresh", nil)
+}
+
+// TaskAdvancedFilters says "高级任务筛选"
+// in the language the app shows.
+func TaskAdvancedFilters() string { return In(i18n.Locale()).TaskAdvancedFilters() }
+
+// TaskAdvancedFilters says "高级任务筛选"
+// in the language of msgs.
+func (msgs Messages) TaskAdvancedFilters() string {
+	return Catalog.Format(msgs.locale, "taskAdvancedFilters", nil)
+}
+
+// TaskRecover says "恢复任务连接"
+// in the language the app shows.
+func TaskRecover() string { return In(i18n.Locale()).TaskRecover() }
+
+// TaskRecover says "恢复任务连接"
+// in the language of msgs.
+func (msgs Messages) TaskRecover() string {
+	return Catalog.Format(msgs.locale, "taskRecover", nil)
+}
+
+// TaskCopyResponse says "复制完整任务响应"
+// in the language the app shows.
+func TaskCopyResponse() string { return In(i18n.Locale()).TaskCopyResponse() }
+
+// TaskCopyResponse says "复制完整任务响应"
+// in the language of msgs.
+func (msgs Messages) TaskCopyResponse() string {
+	return Catalog.Format(msgs.locale, "taskCopyResponse", nil)
+}
+
+// TaskStop says "停止任务观察"
+// in the language the app shows.
+func TaskStop() string { return In(i18n.Locale()).TaskStop() }
+
+// TaskStop says "停止任务观察"
+// in the language of msgs.
+func (msgs Messages) TaskStop() string {
+	return Catalog.Format(msgs.locale, "taskStop", nil)
+}
+
+// TaskOperations says "任务操作"
+// in the language the app shows.
+func TaskOperations() string { return In(i18n.Locale()).TaskOperations() }
+
+// TaskOperations says "任务操作"
+// in the language of msgs.
+func (msgs Messages) TaskOperations() string {
+	return Catalog.Format(msgs.locale, "taskOperations", nil)
+}
+
+// TaskUIDFilter says "任务 UID 筛选"
+// in the language the app shows.
+func TaskUIDFilter() string { return In(i18n.Locale()).TaskUIDFilter() }
+
+// TaskUIDFilter says "任务 UID 筛选"
+// in the language of msgs.
+func (msgs Messages) TaskUIDFilter() string {
+	return Catalog.Format(msgs.locale, "taskUIDFilter", nil)
+}
+
+// TaskStateFilter says "任务状态筛选"
+// in the language the app shows.
+func TaskStateFilter() string { return In(i18n.Locale()).TaskStateFilter() }
+
+// TaskStateFilter says "任务状态筛选"
+// in the language of msgs.
+func (msgs Messages) TaskStateFilter() string {
+	return Catalog.Format(msgs.locale, "taskStateFilter", nil)
+}
+
+// TaskApplyFilters says "应用任务筛选"
+// in the language the app shows.
+func TaskApplyFilters() string { return In(i18n.Locale()).TaskApplyFilters() }
+
+// TaskApplyFilters says "应用任务筛选"
+// in the language of msgs.
+func (msgs Messages) TaskApplyFilters() string {
+	return Catalog.Format(msgs.locale, "taskApplyFilters", nil)
+}
+
+// TaskResetFilters says "重置任务筛选"
+// in the language the app shows.
+func TaskResetFilters() string { return In(i18n.Locale()).TaskResetFilters() }
+
+// TaskResetFilters says "重置任务筛选"
+// in the language of msgs.
+func (msgs Messages) TaskResetFilters() string {
+	return Catalog.Format(msgs.locale, "taskResetFilters", nil)
+}
+
+// TaskOrdering says "任务顺序"
+// in the language the app shows.
+func TaskOrdering() string { return In(i18n.Locale()).TaskOrdering() }
+
+// TaskOrdering says "任务顺序"
+// in the language of msgs.
+func (msgs Messages) TaskOrdering() string {
+	return Catalog.Format(msgs.locale, "taskOrdering", nil)
+}
+
+// TaskLatestFirst says "最新任务优先"
+// in the language the app shows.
+func TaskLatestFirst() string { return In(i18n.Locale()).TaskLatestFirst() }
+
+// TaskLatestFirst says "最新任务优先"
+// in the language of msgs.
+func (msgs Messages) TaskLatestFirst() string {
+	return Catalog.Format(msgs.locale, "taskLatestFirst", nil)
+}
+
+// TaskEarliestFirst says "最早任务优先"
+// in the language the app shows.
+func TaskEarliestFirst() string { return In(i18n.Locale()).TaskEarliestFirst() }
+
+// TaskEarliestFirst says "最早任务优先"
+// in the language of msgs.
+func (msgs Messages) TaskEarliestFirst() string {
+	return Catalog.Format(msgs.locale, "taskEarliestFirst", nil)
+}
+
+// TaskPageLimit says "任务页大小"
+// in the language the app shows.
+func TaskPageLimit() string { return In(i18n.Locale()).TaskPageLimit() }
+
+// TaskPageLimit says "任务页大小"
+// in the language of msgs.
+func (msgs Messages) TaskPageLimit() string {
+	return Catalog.Format(msgs.locale, "taskPageLimit", nil)
+}
+
+// TaskLivePages says "任务分页为实时读取；刷新可能改变任务状态与总数。"
+// in the language the app shows.
+func TaskLivePages() string { return In(i18n.Locale()).TaskLivePages() }
+
+// TaskLivePages says "任务分页为实时读取；刷新可能改变任务状态与总数。"
+// in the language of msgs.
+func (msgs Messages) TaskLivePages() string {
+	return Catalog.Format(msgs.locale, "taskLivePages", nil)
+}
+
+// TaskIndexFilter says "索引 UID 筛选"
+// in the language the app shows.
+func TaskIndexFilter() string { return In(i18n.Locale()).TaskIndexFilter() }
+
+// TaskIndexFilter says "索引 UID 筛选"
+// in the language of msgs.
+func (msgs Messages) TaskIndexFilter() string {
+	return Catalog.Format(msgs.locale, "taskIndexFilter", nil)
+}
+
+// TaskTypeFilter says "任务类型筛选"
+// in the language the app shows.
+func TaskTypeFilter() string { return In(i18n.Locale()).TaskTypeFilter() }
+
+// TaskTypeFilter says "任务类型筛选"
+// in the language of msgs.
+func (msgs Messages) TaskTypeFilter() string {
+	return Catalog.Format(msgs.locale, "taskTypeFilter", nil)
+}
+
+// TaskBatchFilter says "Batch UID 筛选"
+// in the language the app shows.
+func TaskBatchFilter() string { return In(i18n.Locale()).TaskBatchFilter() }
+
+// TaskBatchFilter says "Batch UID 筛选"
+// in the language of msgs.
+func (msgs Messages) TaskBatchFilter() string {
+	return Catalog.Format(msgs.locale, "taskBatchFilter", nil)
+}
+
+// TaskCanceledByFilter says "取消任务 UID 筛选"
+// in the language the app shows.
+func TaskCanceledByFilter() string { return In(i18n.Locale()).TaskCanceledByFilter() }
+
+// TaskCanceledByFilter says "取消任务 UID 筛选"
+// in the language of msgs.
+func (msgs Messages) TaskCanceledByFilter() string {
+	return Catalog.Format(msgs.locale, "taskCanceledByFilter", nil)
+}
+
+// TaskBeforeEnqueued says "入队时间早于"
+// in the language the app shows.
+func TaskBeforeEnqueued() string { return In(i18n.Locale()).TaskBeforeEnqueued() }
+
+// TaskBeforeEnqueued says "入队时间早于"
+// in the language of msgs.
+func (msgs Messages) TaskBeforeEnqueued() string {
+	return Catalog.Format(msgs.locale, "taskBeforeEnqueued", nil)
+}
+
+// TaskAfterEnqueued says "入队时间晚于"
+// in the language the app shows.
+func TaskAfterEnqueued() string { return In(i18n.Locale()).TaskAfterEnqueued() }
+
+// TaskAfterEnqueued says "入队时间晚于"
+// in the language of msgs.
+func (msgs Messages) TaskAfterEnqueued() string {
+	return Catalog.Format(msgs.locale, "taskAfterEnqueued", nil)
+}
+
+// TaskBeforeStarted says "开始时间早于"
+// in the language the app shows.
+func TaskBeforeStarted() string { return In(i18n.Locale()).TaskBeforeStarted() }
+
+// TaskBeforeStarted says "开始时间早于"
+// in the language of msgs.
+func (msgs Messages) TaskBeforeStarted() string {
+	return Catalog.Format(msgs.locale, "taskBeforeStarted", nil)
+}
+
+// TaskAfterStarted says "开始时间晚于"
+// in the language the app shows.
+func TaskAfterStarted() string { return In(i18n.Locale()).TaskAfterStarted() }
+
+// TaskAfterStarted says "开始时间晚于"
+// in the language of msgs.
+func (msgs Messages) TaskAfterStarted() string {
+	return Catalog.Format(msgs.locale, "taskAfterStarted", nil)
+}
+
+// TaskBeforeFinished says "完成时间早于"
+// in the language the app shows.
+func TaskBeforeFinished() string { return In(i18n.Locale()).TaskBeforeFinished() }
+
+// TaskBeforeFinished says "完成时间早于"
+// in the language of msgs.
+func (msgs Messages) TaskBeforeFinished() string {
+	return Catalog.Format(msgs.locale, "taskBeforeFinished", nil)
+}
+
+// TaskAfterFinished says "完成时间晚于"
+// in the language the app shows.
+func TaskAfterFinished() string { return In(i18n.Locale()).TaskAfterFinished() }
+
+// TaskAfterFinished says "完成时间晚于"
+// in the language of msgs.
+func (msgs Messages) TaskAfterFinished() string {
+	return Catalog.Format(msgs.locale, "taskAfterFinished", nil)
+}
+
+// TaskFilterFormat says "多个值用逗号分隔；时间使用带时区的 RFC3339 格式。"
+// in the language the app shows.
+func TaskFilterFormat() string { return In(i18n.Locale()).TaskFilterFormat() }
+
+// TaskFilterFormat says "多个值用逗号分隔；时间使用带时区的 RFC3339 格式。"
+// in the language of msgs.
+func (msgs Messages) TaskFilterFormat() string {
+	return Catalog.Format(msgs.locale, "taskFilterFormat", nil)
+}
+
+// TaskReading says "正在读取原连接任务…"
+// in the language the app shows.
+func TaskReading() string { return In(i18n.Locale()).TaskReading() }
+
+// TaskReading says "正在读取原连接任务…"
+// in the language of msgs.
+func (msgs Messages) TaskReading() string {
+	return Catalog.Format(msgs.locale, "taskReading", nil)
+}
+
+// TaskStopping says "正在等待原任务请求停止…"
+// in the language the app shows.
+func TaskStopping() string { return In(i18n.Locale()).TaskStopping() }
+
+// TaskStopping says "正在等待原任务请求停止…"
+// in the language of msgs.
+func (msgs Messages) TaskStopping() string {
+	return Catalog.Format(msgs.locale, "taskStopping", nil)
+}
+
+// TaskList says "任务列表"
+// in the language the app shows.
+func TaskList() string { return In(i18n.Locale()).TaskList() }
+
+// TaskList says "任务列表"
+// in the language of msgs.
+func (msgs Messages) TaskList() string {
+	return Catalog.Format(msgs.locale, "taskList", nil)
+}
+
+// TaskResponse says "任务响应"
+// in the language the app shows.
+func TaskResponse() string { return In(i18n.Locale()).TaskResponse() }
+
+// TaskResponse says "任务响应"
+// in the language of msgs.
+func (msgs Messages) TaskResponse() string {
+	return Catalog.Format(msgs.locale, "taskResponse", nil)
+}
+
+// TaskNoneLoaded says "没有已加载的任务"
+// in the language the app shows.
+func TaskNoneLoaded() string { return In(i18n.Locale()).TaskNoneLoaded() }
+
+// TaskNoneLoaded says "没有已加载的任务"
+// in the language of msgs.
+func (msgs Messages) TaskNoneLoaded() string {
+	return Catalog.Format(msgs.locale, "taskNoneLoaded", nil)
+}
+
+// TaskNoneMatching says "当前筛选下没有任务"
+// in the language the app shows.
+func TaskNoneMatching() string { return In(i18n.Locale()).TaskNoneMatching() }
+
+// TaskNoneMatching says "当前筛选下没有任务"
+// in the language of msgs.
+func (msgs Messages) TaskNoneMatching() string {
+	return Catalog.Format(msgs.locale, "taskNoneMatching", nil)
+}
+
+// TaskGrid says "原连接任务表格"
+// in the language the app shows.
+func TaskGrid() string { return In(i18n.Locale()).TaskGrid() }
+
+// TaskGrid says "原连接任务表格"
+// in the language of msgs.
+func (msgs Messages) TaskGrid() string {
+	return Catalog.Format(msgs.locale, "taskGrid", nil)
+}
+
+// TaskDetailsPreview says "完整原生任务详情预览"
+// in the language the app shows.
+func TaskDetailsPreview() string { return In(i18n.Locale()).TaskDetailsPreview() }
+
+// TaskDetailsPreview says "完整原生任务详情预览"
+// in the language of msgs.
+func (msgs Messages) TaskDetailsPreview() string {
+	return Catalog.Format(msgs.locale, "taskDetailsPreview", nil)
+}
+
+// TaskResponsePreview says "原生任务响应预览"
+// in the language the app shows.
+func TaskResponsePreview() string { return In(i18n.Locale()).TaskResponsePreview() }
+
+// TaskResponsePreview says "原生任务响应预览"
+// in the language of msgs.
+func (msgs Messages) TaskResponsePreview() string {
+	return Catalog.Format(msgs.locale, "taskResponsePreview", nil)
+}
+
+// TaskSelectPrompt says "请选择任务查看原生详情"
+// in the language the app shows.
+func TaskSelectPrompt() string { return In(i18n.Locale()).TaskSelectPrompt() }
+
+// TaskSelectPrompt says "请选择任务查看原生详情"
+// in the language of msgs.
+func (msgs Messages) TaskSelectPrompt() string {
+	return Catalog.Format(msgs.locale, "taskSelectPrompt", nil)
+}
+
+// TaskPreviewTruncated says "任务 JSON 预览已截断；可复制完整内容。"
+// in the language the app shows.
+func TaskPreviewTruncated() string { return In(i18n.Locale()).TaskPreviewTruncated() }
+
+// TaskPreviewTruncated says "任务 JSON 预览已截断；可复制完整内容。"
+// in the language of msgs.
+func (msgs Messages) TaskPreviewTruncated() string {
+	return Catalog.Format(msgs.locale, "taskPreviewTruncated", nil)
+}
+
+// TaskViewDetails says "查看任务详情"
+// in the language the app shows.
+func TaskViewDetails() string { return In(i18n.Locale()).TaskViewDetails() }
+
+// TaskViewDetails says "查看任务详情"
+// in the language of msgs.
+func (msgs Messages) TaskViewDetails() string {
+	return Catalog.Format(msgs.locale, "taskViewDetails", nil)
+}
+
+// TaskRefreshSelected says "刷新选中任务"
+// in the language the app shows.
+func TaskRefreshSelected() string { return In(i18n.Locale()).TaskRefreshSelected() }
+
+// TaskRefreshSelected says "刷新选中任务"
+// in the language of msgs.
+func (msgs Messages) TaskRefreshSelected() string {
+	return Catalog.Format(msgs.locale, "taskRefreshSelected", nil)
+}
+
+// TaskObserveSelected says "观察选中任务（30 秒）"
+// in the language the app shows.
+func TaskObserveSelected() string { return In(i18n.Locale()).TaskObserveSelected() }
+
+// TaskObserveSelected says "观察选中任务（30 秒）"
+// in the language of msgs.
+func (msgs Messages) TaskObserveSelected() string {
+	return Catalog.Format(msgs.locale, "taskObserveSelected", nil)
+}
+
+// TaskCopyDetails says "复制完整任务详情"
+// in the language the app shows.
+func TaskCopyDetails() string { return In(i18n.Locale()).TaskCopyDetails() }
+
+// TaskCopyDetails says "复制完整任务详情"
+// in the language of msgs.
+func (msgs Messages) TaskCopyDetails() string {
+	return Catalog.Format(msgs.locale, "taskCopyDetails", nil)
+}
+
+// TaskSelectionActions says "选中任务操作"
+// in the language the app shows.
+func TaskSelectionActions() string { return In(i18n.Locale()).TaskSelectionActions() }
+
+// TaskSelectionActions says "选中任务操作"
+// in the language of msgs.
+func (msgs Messages) TaskSelectionActions() string {
+	return Catalog.Format(msgs.locale, "taskSelectionActions", nil)
+}
+
+// TaskSummary says "任务总数：%s · 第 %d 页"
+// in the language the app shows.
+func TaskSummary() string { return In(i18n.Locale()).TaskSummary() }
+
+// TaskSummary says "任务总数：%s · 第 %d 页"
+// in the language of msgs.
+func (msgs Messages) TaskSummary() string {
+	return Catalog.Format(msgs.locale, "taskSummary", nil)
+}
+
+// TaskPrevious says "上一页任务"
+// in the language the app shows.
+func TaskPrevious() string { return In(i18n.Locale()).TaskPrevious() }
+
+// TaskPrevious says "上一页任务"
+// in the language of msgs.
+func (msgs Messages) TaskPrevious() string {
+	return Catalog.Format(msgs.locale, "taskPrevious", nil)
+}
+
+// TaskNext says "下一页任务"
+// in the language the app shows.
+func TaskNext() string { return In(i18n.Locale()).TaskNext() }
+
+// TaskNext says "下一页任务"
+// in the language of msgs.
+func (msgs Messages) TaskNext() string {
+	return Catalog.Format(msgs.locale, "taskNext", nil)
+}
+
+// TaskView says "查看任务"
+// in the language the app shows.
+func TaskView() string { return In(i18n.Locale()).TaskView() }
+
+// TaskView says "查看任务"
+// in the language of msgs.
+func (msgs Messages) TaskView() string {
+	return Catalog.Format(msgs.locale, "taskView", nil)
+}
+
+// TaskViewMenu says "查看任务…"
+// in the language the app shows.
+func TaskViewMenu() string { return In(i18n.Locale()).TaskViewMenu() }
+
+// TaskViewMenu says "查看任务…"
+// in the language of msgs.
+func (msgs Messages) TaskViewMenu() string {
+	return Catalog.Format(msgs.locale, "taskViewMenu", nil)
+}
+
+// TaskRecovered says "任务连接已恢复；请显式刷新任务"
+// in the language the app shows.
+func TaskRecovered() string { return In(i18n.Locale()).TaskRecovered() }
+
+// TaskRecovered says "任务连接已恢复；请显式刷新任务"
+// in the language of msgs.
+func (msgs Messages) TaskRecovered() string {
+	return Catalog.Format(msgs.locale, "taskRecovered", nil)
+}
+
+// TaskSessionLost says "原任务会话已失效，请显式恢复"
+// in the language the app shows.
+func TaskSessionLost() string { return In(i18n.Locale()).TaskSessionLost() }
+
+// TaskSessionLost says "原任务会话已失效，请显式恢复"
+// in the language of msgs.
+func (msgs Messages) TaskSessionLost() string {
+	return Catalog.Format(msgs.locale, "taskSessionLost", nil)
+}
+
+// TaskObservationStopped says "任务观察已停止；服务器任务状态需显式读取"
+// in the language the app shows.
+func TaskObservationStopped() string { return In(i18n.Locale()).TaskObservationStopped() }
+
+// TaskObservationStopped says "任务观察已停止；服务器任务状态需显式读取"
+// in the language of msgs.
+func (msgs Messages) TaskObservationStopped() string {
+	return Catalog.Format(msgs.locale, "taskObservationStopped", nil)
+}
+
+// TaskObservationTimeout says "任务观察超时；服务器任务可能仍在执行"
+// in the language the app shows.
+func TaskObservationTimeout() string { return In(i18n.Locale()).TaskObservationTimeout() }
+
+// TaskObservationTimeout says "任务观察超时；服务器任务可能仍在执行"
+// in the language of msgs.
+func (msgs Messages) TaskObservationTimeout() string {
+	return Catalog.Format(msgs.locale, "taskObservationTimeout", nil)
+}
+
+// TaskFiltersRestored says "任务筛选已恢复；请显式应用筛选"
+// in the language the app shows.
+func TaskFiltersRestored() string { return In(i18n.Locale()).TaskFiltersRestored() }
+
+// TaskFiltersRestored says "任务筛选已恢复；请显式应用筛选"
+// in the language of msgs.
+func (msgs Messages) TaskFiltersRestored() string {
+	return Catalog.Format(msgs.locale, "taskFiltersRestored", nil)
+}
+
+// TaskFilterBound says "任务筛选最多允许 256 个值"
+// in the language the app shows.
+func TaskFilterBound() string { return In(i18n.Locale()).TaskFilterBound() }
+
+// TaskFilterBound says "任务筛选最多允许 256 个值"
+// in the language of msgs.
+func (msgs Messages) TaskFilterBound() string {
+	return Catalog.Format(msgs.locale, "taskFilterBound", nil)
+}
+
+// TaskFilterValues says "任务筛选不能包含空值或重复值"
+// in the language the app shows.
+func TaskFilterValues() string { return In(i18n.Locale()).TaskFilterValues() }
+
+// TaskFilterValues says "任务筛选不能包含空值或重复值"
+// in the language of msgs.
+func (msgs Messages) TaskFilterValues() string {
+	return Catalog.Format(msgs.locale, "taskFilterValues", nil)
+}
+
+// TaskUIDInvalid says "任务 UID 必须为精确的非负整数"
+// in the language the app shows.
+func TaskUIDInvalid() string { return In(i18n.Locale()).TaskUIDInvalid() }
+
+// TaskUIDInvalid says "任务 UID 必须为精确的非负整数"
+// in the language of msgs.
+func (msgs Messages) TaskUIDInvalid() string {
+	return Catalog.Format(msgs.locale, "taskUIDInvalid", nil)
+}
+
+// TaskLimitInvalid says "任务页大小必须为 1–1000"
+// in the language the app shows.
+func TaskLimitInvalid() string { return In(i18n.Locale()).TaskLimitInvalid() }
+
+// TaskLimitInvalid says "任务页大小必须为 1–1000"
+// in the language of msgs.
+func (msgs Messages) TaskLimitInvalid() string {
+	return Catalog.Format(msgs.locale, "taskLimitInvalid", nil)
+}
+
+// MeilisearchTasksLabel says "任务"
+// in the language the app shows.
+func MeilisearchTasksLabel() string { return In(i18n.Locale()).MeilisearchTasksLabel() }
+
+// MeilisearchTasksLabel says "任务"
+// in the language of msgs.
+func (msgs Messages) MeilisearchTasksLabel() string {
+	return Catalog.Format(msgs.locale, "meilisearchTasksLabel", nil)
+}

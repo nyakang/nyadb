@@ -56,7 +56,7 @@ var postgresNavigationCategories = []string{"表", "视图", "函数", "存储�
 
 func SupportedCategory(category string) bool {
 	switch category {
-	case "索引信息", "索引设置", "索引统计", "文档", "数据库信息", "设计文档", "Core", "索引", "别名", "数据流", "键", "集合", "表", "视图", "函数", "存储过程", "事件", "序列", "查询", "包", "触发器", "类型":
+	case "任务", "索引信息", "索引设置", "索引统计", "文档", "数据库信息", "设计文档", "Core", "索引", "别名", "数据流", "键", "集合", "表", "视图", "函数", "存储过程", "事件", "序列", "查询", "包", "触发器", "类型":
 		return true
 	}
 	return false
@@ -113,7 +113,7 @@ func (s *State) databaseChildren(key string) []string {
 		if s.deps.Engine != nil {
 			switch s.deps.Engine(n.ProfileID) {
 			case connections.Meilisearch:
-				categories = []string{"索引信息", "文档", "索引设置", "索引统计", "查询"}
+				categories = []string{"索引信息", "文档", "索引设置", "索引统计", "任务", "查询"}
 			case connections.CouchDB:
 				categories = []string{"文档", "数据库信息", "设计文档", "查询"}
 			case connections.Cassandra:

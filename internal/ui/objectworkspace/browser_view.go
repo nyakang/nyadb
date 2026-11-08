@@ -54,6 +54,9 @@ func mysqlObjectCellText(obj contract.DBObject, col int) string {
 }
 
 func mysqlObjectActionLabels(kind string) (open, design string) {
+	if kind == "任务" {
+		return "查看任务", "查看任务"
+	}
 	if Supports(kind) {
 		return "查看定义（只读）", "查看结构（不适用）"
 	}

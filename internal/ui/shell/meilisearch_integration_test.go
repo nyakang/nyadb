@@ -164,10 +164,10 @@ func TestMeilisearchNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t
 		s.submitNavigation(services, navigation.DatabaseNode(p.ID, uid))
 		wait(func() bool { return w.Pending == "" && w.Cache[uid] != nil })
 		categories := s.navigation.Children(navigation.DatabaseNode(p.ID, uid).Key())
-		if len(categories) != 5 {
+		if len(categories) != 6 {
 			t.Fatal("native categories", categories)
 		}
-		for i, kind := range []string{"索引信息", "文档", "索引设置", "索引统计", "查询"} {
+		for i, kind := range []string{"索引信息", "文档", "索引设置", "索引统计", "任务", "查询"} {
 			if navigation.Parse(categories[i]).Category != kind {
 				t.Fatal("wrong native category", categories)
 			}

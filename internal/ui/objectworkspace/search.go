@@ -292,6 +292,8 @@ func runObjectSearch(ctx context.Context, runtime ObjectSearchRuntime, request o
 
 func searchObjectKind(kind string) string {
 	switch kind {
+	case "任务":
+		return "tasks"
 	case "文档":
 		return "documents"
 	case "索引信息":

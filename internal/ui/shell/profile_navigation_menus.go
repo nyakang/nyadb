@@ -3,6 +3,7 @@ package shell
 import (
 	"github.com/egoist/mygo/ui"
 
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
@@ -91,6 +92,16 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 			s.disconnectMySQLSession()
 		} else {
 			s.startMySQLSession(services)
+		}
+	}
+	if profile.Kind == connections.Meilisearch {
+		scope := ""
+		if profile.MeilisearchOptions.IndexUID != "" {
+			scope = profile.MeilisearchOptions.IndexUID
+		}
+		target := contract.ObjectRef{ProfileID: profile.ID, Catalog: scope, Kind: "tasks", Name: "tasks"}
+		if m.Item(locales.Text("查看任务…")).Disabled(!connected || !s.objectWorkspace.TaskScopeSupported(target)).Chosen() {
+			s.openTasks(services, profile.ID, scope)
 		}
 	}
 	canSwitch := canMySQL && !connected && !connecting

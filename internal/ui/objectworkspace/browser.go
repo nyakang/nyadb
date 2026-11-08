@@ -142,7 +142,7 @@ func (s *State) openObjectFor(services ui.Services, profileID int64, db, name, k
 		s.report(locales.Text("文档网格暂不可用；可在 REST 编辑器中读取文档。"))
 		return
 	}
-	if NativeDefinitionKind(kind) {
+	if kind == "任务" || NativeDefinitionKind(kind) {
 		if s.deps.OpenStructure != nil {
 			s.deps.OpenStructure(services, profileID, db, name)
 		}

@@ -23,6 +23,7 @@ type Session struct {
 }
 
 type Dependencies struct {
+	TaskDocumentsFor    func(int64) (contract.TaskDocumentsProvider, error)
 	MetadataFor         func(int64) (contract.MetadataProvider, error)
 	NamespaceLabel      func(contract.NamespaceRef) string
 	ProfileName         func(int64) string
@@ -107,6 +108,7 @@ type Dependencies struct {
 // Document owns its immutable object identity and mutable presentation state.
 // Only the UI thread changes it; workers publish to private buffered channels.
 type Document struct {
+	tasks                         *taskDocument
 	formFocusHandle               ui.Handle
 	formFocusTarget               *string
 	formFocusPending              bool
@@ -274,6 +276,10 @@ func (s *State) OpenStructure(id uint64, profileID int64, database, table string
 // prior worker before starting another. It never executes user-authored SQL or
 // modifies a table.
 func (s *State) Load(d *Document, invalidate func(), refresh bool) {
+	if d != nil && d.tasks != nil {
+		s.LoadTasks(d, invalidate, refresh)
+		return
+	}
 	session := s.session()
 	if d == nil || d.closed || d.program != nil || d.profileID <= 0 || d.profileID != session.ProfileID || !session.Connected || d.database == "" || d.table == "" {
 		return
@@ -329,6 +335,10 @@ func (s *State) cancel(d *Document) {
 
 // Cancel preserves the existing read-only cache while revoking pending work.
 func (s *State) Cancel(d *Document) {
+	if d != nil && d.tasks != nil {
+		s.CancelTasks(d)
+		return
+	}
 	if d == nil || d.closed {
 		return
 	}
@@ -339,6 +349,7 @@ func (s *State) Close(d *Document) {
 	if d == nil || d.closed {
 		return
 	}
+	s.closeTasks(d)
 	s.cancel(d)
 	s.closeDesign(d)
 	d.formFocusHandle.CancelFocus()
@@ -405,6 +416,7 @@ func (s *State) CloseAll() {
 // Consume runs on the UI thread. Generation changes invalidate completed work
 // without leaving a document stuck loading or automatically retrying it.
 func (s *State) Consume(services ui.Services) {
+	s.consumeTasks()
 	s.consumeMaintenance(services)
 	s.consumePortableBackup(services)
 	s.consumeView(services)
@@ -491,6 +503,9 @@ func (d *Document) ObjectKind() string {
 
 func (d *Document) Object() contract.ObjectRef { return d.object }
 func (s *State) OpenQualifiedStructure(id uint64, o contract.ObjectRef, kind string) *Document {
+	if o.Kind == "tasks" {
+		return s.OpenTasks(id, o)
+	}
 	namespace := o.Schema
 	if namespace == "" {
 		namespace = o.Catalog

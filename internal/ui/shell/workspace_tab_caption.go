@@ -21,6 +21,9 @@ func (s *State) workspaceTabCaption(t *tab) string {
 	suffix := ""
 	if t.kind == tabStructure {
 		suffix = " · " + locales.Text("设计")
+		if t.object != nil && t.object.ObjectKind() == "任务" {
+			suffix = " · " + locales.Text("任务")
+		}
 		if t.object != nil && t.object.DesignDirty() {
 			suffix += " *"
 		}

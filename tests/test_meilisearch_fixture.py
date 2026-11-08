@@ -11,6 +11,28 @@ SPEC.loader.exec_module(fixture)
 
 
 class MeilisearchFixtureTests(unittest.TestCase):
+    def test_task_panel_requires_public_layers_native_task_leases_and_ui(self):
+        for mode in fixture.MODES:
+            names = fixture.required_passes(mode, task_panel=True)
+            self.assertTrue(set(fixture.required_passes(mode, public=True, tasks=True)).issubset(names))
+            self.assertTrue(set(fixture.TASK_PANEL_REQUIRED).issubset(names))
+            self.assertEqual(fixture.TASK_PANEL_SCOPED in names, mode != 'anonymous')
+            command = fixture.test_command(mode, True, task_panel=True)
+            self.assertIn('./internal/ui/shell', command)
+            self.assertIn('-race', command)
+            complete = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in names)
+            if mode == 'mtls':
+                complete += '\nnative mTLS accepted owned client certificate and rejected its absence'
+            fixture.check_acceptance(complete, mode, task_panel=True)
+            for name in fixture.TASK_PANEL_REQUIRED:
+                with self.assertRaises(RuntimeError):
+                    fixture.check_acceptance(complete.replace('--- PASS: TestMeilisearchNative'+name, '--- SKIP: TestMeilisearchNative'+name), mode, task_panel=True)
+        hashes = fixture.source_hashes(task_panel=True)
+        self.assertIn('internal/db/contract/tasks.go', hashes)
+        self.assertIn('internal/services/dbruntime/tasks.go', hashes)
+        self.assertIn('internal/ui/objectworkspace/tasks.go', hashes)
+        self.assertIn('internal/ui/shell/meilisearch_tasks_integration_test.go', hashes)
+
     def test_tasks_acceptance_requires_native_mutation_counts_and_original_observers(self):
         for mode in fixture.MODES:
             names = fixture.required_passes(mode, tasks=True)

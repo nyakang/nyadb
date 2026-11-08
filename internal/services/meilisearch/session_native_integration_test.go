@@ -61,7 +61,7 @@ func TestMeilisearchNativeSessionQualifiedPaginationAndDefinitions(t *testing.T)
 		uid := fmt.Sprintf("%s_%03d", prefix, i)
 		nativeWait(t, c, nativeSubmit(t, c, Request{Method: "PATCH", Path: "/indexes/" + uid + "/settings", Body: []byte(`{"searchableAttributes":["text"],"filterableAttributes":["integer"],"sortableAttributes":["integer"],"stopWords":["原生"],"synonyms":{"猫":["cat"]}}`)}))
 		list, err := s.Browse(context.Background(), s.Namespace(uid))
-		if err != nil || len(list) != 4 || list[0].CreatedAt == "" || list[0].ModifiedAt == "" {
+		if err != nil || len(list) != 5 || list[0].CreatedAt == "" || list[0].ModifiedAt == "" {
 			t.Fatal("native qualified objects", err)
 		}
 		info, err := parseIndex([]byte(list[0].Definition), uid)
@@ -333,7 +333,7 @@ func TestMeilisearchNativeSessionScopedPermissionsAndRevocation(t *testing.T) {
 		t.Fatal("native scoped enumeration escaped", err)
 	}
 	list, err := s.Browse(context.Background(), ns[0].Ref)
-	if err != nil || len(list) != 4 {
+	if err != nil || len(list) != 5 {
 		t.Fatal("native scoped allowed index hidden", err)
 	}
 	for _, i := range []int{2, 3} {

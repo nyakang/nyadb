@@ -77,6 +77,10 @@ func (s *State) loadMySQLObjects(services ui.Services, database string, force bo
 }
 
 func (s *State) openMySQLObject(services ui.Services, database, name, kind string) {
+	if kind == "任务" {
+		s.openTasks(services, s.sessions.Current().ProfileID, database)
+		return
+	}
 	if objectworkspace.NativeDefinitionKind(kind) {
 		s.openMySQLStructure(services, database, name)
 		return

@@ -297,6 +297,10 @@ func (s *State) openMySQLStructure(services ui.Services, database, table string,
 		return
 	}
 	kind := s.objectKindFor(profileID, database, table)
+	if kind == "任务" {
+		s.openTasks(services, profileID, database)
+		return
+	}
 	if t := s.findDocument(tabStructure, profileID, database, kind, table); t != nil {
 		if len(design) > 0 && design[0] && s.objectWorkspace.CanEditDesign(t.object) {
 			if !t.object.DesignMode() {
@@ -331,7 +335,7 @@ func (s *State) clearMySQLTabsFor(profileID int64) {
 }
 func (s *State) pruneMySQLTabsFor(id int64, known map[string]bool) {
 	s.removeTabs(func(t *tab) bool {
-		return (t.data != nil || t.object != nil) && t.profileID() == id && !known[t.database()]
+		return (t.data != nil || t.object != nil) && t.profileID() == id && !(t.object != nil && t.object.Object().Kind == "tasks" && t.object.Object().Catalog == "") && !known[t.database()]
 	})
 }
 
@@ -652,6 +656,12 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 		},
 		Loader:      func() objectworkspace.Loader { return s.runtime.Data(s.sessions.Current().ProfileID).TableMetadata },
 		MetadataFor: func(id int64) (contract.MetadataProvider, error) { return s.runtime.Metadata(id) },
+		TaskDocumentsFor: func(id int64) (contract.TaskDocumentsProvider, error) {
+			if s.runtime == nil {
+				return nil, contract.ErrUnsupported
+			}
+			return s.runtime.TaskDocuments(id)
+		},
 		Runner: func() objectworkspace.TableRunner {
 			admin := s.runtime.Administration(s.sessions.Current().ProfileID)
 			if admin == nil {
@@ -860,7 +870,7 @@ func (s *State) findDocument(view tabKind, profileID int64, database, objectKind
 }
 func (s *State) objectKindFor(id int64, database, name string) string {
 	for _, obj := range s.sessions.CacheFor(id)[database] {
-		if obj.Name == name && (obj.Kind == "文档" || obj.Kind == "Core" || obj.Kind == "表" || obj.Kind == "视图" || obj.Kind == "集合" || obj.Kind == "键" || obj.Kind == "索引" || obj.Kind == "别名" || obj.Kind == "数据流" || objectworkspace.NativeDefinitionKind(obj.Kind)) {
+		if obj.Name == name && (obj.Kind == "文档" || obj.Kind == "Core" || obj.Kind == "表" || obj.Kind == "视图" || obj.Kind == "集合" || obj.Kind == "键" || obj.Kind == "索引" || obj.Kind == "别名" || obj.Kind == "数据流" || obj.Kind == "任务" || objectworkspace.NativeDefinitionKind(obj.Kind)) {
 			return obj.Kind
 		}
 	}
@@ -894,6 +904,8 @@ func (s *State) SetDataSources(open func(context.Context, datasources.Config) (d
 
 func neutralObjectKind(kind string) string {
 	switch kind {
+	case "任务":
+		return "tasks"
 	case "文档":
 		return "documents"
 	case "索引信息":

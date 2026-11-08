@@ -157,6 +157,7 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 		{Ref: n.Object("documents", "documents"), Name: "documents", Kind: "文档", Engine: "Meilisearch"},
 		{Ref: n.Object("settings", "settings"), Name: "settings", Kind: "索引设置", Engine: "Meilisearch"},
 		{Ref: n.Object("statistics", "stats"), Name: "stats", Kind: "索引统计", Engine: "Meilisearch"},
+		{Ref: n.Object("tasks", "tasks"), Name: "tasks", Kind: "任务", Engine: "Meilisearch"},
 	}, nil
 }
 func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*contract.TableStructure, error) {

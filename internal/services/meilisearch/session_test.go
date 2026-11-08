@@ -106,7 +106,7 @@ func TestMeilisearchSessionQualifiedIndexesAndIndependentDefinitions(t *testing.
 	var refs []contract.ObjectRef
 	for _, name := range []string{"owned", "other"} {
 		list, err := s.Browse(context.Background(), s.Namespace(name))
-		if err != nil || len(list) != 4 || list[0].CreatedAt != "2026-11-08T08:00:00.123456789Z" || !strings.Contains(list[0].Definition, `"primaryKey":"id"`) {
+		if err != nil || len(list) != 5 || list[0].CreatedAt != "2026-11-08T08:00:00.123456789Z" || !strings.Contains(list[0].Definition, `"primaryKey":"id"`) {
 			t.Fatal(list, err)
 		}
 		m, err := s.TableMetadata(context.Background(), list[2].Ref)
@@ -214,7 +214,7 @@ func TestMeilisearchScopedMetadataPermissionFailureDoesNotRevokeAllowedReads(t *
 		t.Fatal(ns, err)
 	}
 	list, err := s.Browse(context.Background(), ns[0].Ref)
-	if err != nil || len(list) != 4 {
+	if err != nil || len(list) != 5 {
 		t.Fatal(list, err)
 	}
 	for _, i := range []int{2, 3} {

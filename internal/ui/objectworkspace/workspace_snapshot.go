@@ -39,6 +39,9 @@ func (s *State) RestoreWorkspace(data json.RawMessage) error {
 	return nil
 }
 func (s *State) DocumentSnapshot(d *Document) json.RawMessage {
+	if d != nil && d.tasks != nil {
+		return snapshotTasks(d)
+	}
 	page := 0
 	if d.schemaDesign != nil {
 		page = d.schemaDesign.page
@@ -52,6 +55,10 @@ func (s *State) DocumentSnapshot(d *Document) json.RawMessage {
 	return b
 }
 func (s *State) RestoreDocumentPresentation(d *Document, b json.RawMessage) {
+	if d != nil && d.tasks != nil {
+		restoreTasks(d, b)
+		return
+	}
 	var v struct {
 		Page   int
 		Design bool

@@ -82,7 +82,7 @@ func TestMeilisearchNativePublicProviderMetadataAndPublishedGenerations(t *testi
 		t.Fatal("qualified index missing")
 	}
 	objects, err := meta.Browse(ctx, m.Namespace(p.ID, uid))
-	if err != nil || len(objects) != 4 {
+	if err != nil || len(objects) != 5 {
 		t.Fatal(objects, err)
 	}
 	for i, kind := range []string{"index", "documents", "settings", "statistics"} {

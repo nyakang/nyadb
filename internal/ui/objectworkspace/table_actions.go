@@ -72,6 +72,12 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 	if m.Item(locales.Text("添加到收藏夹…")).Disabled(s.deps.Favorite == nil || s.deps.CanFavorite == nil || !s.deps.CanFavorite()).Chosen() && s.contextEntryValid(entryScope, profileID, database, name) {
 		s.deps.Favorite(services, profileID, database, name, kind)
 	}
+	if kind == "任务" {
+		if m.Item(locales.Text("查看任务")).Shortcut(0, ui.KeyEnter).Chosen() {
+			s.openObjectFor(services, profileID, database, name, kind)
+		}
+		return
+	}
 	if NativeDefinitionKind(kind) {
 		if m.Item(locales.Text("查看定义（只读）")).Shortcut(0, ui.KeyEnter).Chosen() {
 			s.openObjectFor(services, profileID, database, name, kind)

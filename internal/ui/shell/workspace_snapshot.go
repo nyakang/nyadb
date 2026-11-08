@@ -241,14 +241,21 @@ func (s *State) materializeRestored(services ui.Services, t *tab) {
 		s.dataWorkspace.Load(services, t.data, false)
 	} else if t.kind == tabStructure {
 		t.object = s.objectWorkspace.OpenQualifiedStructure(t.id, o, v.ObjectKind)
-		var p struct{ Design bool }
-		_ = json.Unmarshal(v.Presentation, &p)
-		if p.Design && s.objectWorkspace.CanEditDesign(t.object) {
-			s.objectWorkspace.BeginDesign(t.object, services)
+		if o.Kind == "tasks" {
+			s.objectWorkspace.RestoreDocumentPresentation(t.object, v.Presentation)
+			if len(v.Presentation) == 0 {
+				s.objectWorkspace.LoadTasks(t.object, services.Invalidate, false)
+			}
 		} else {
-			s.objectWorkspace.Load(t.object, services.Invalidate, false)
+			var p struct{ Design bool }
+			_ = json.Unmarshal(v.Presentation, &p)
+			if p.Design && s.objectWorkspace.CanEditDesign(t.object) {
+				s.objectWorkspace.BeginDesign(t.object, services)
+			} else {
+				s.objectWorkspace.Load(t.object, services.Invalidate, false)
+			}
+			s.objectWorkspace.RestoreDocumentPresentation(t.object, v.Presentation)
 		}
-		s.objectWorkspace.RestoreDocumentPresentation(t.object, v.Presentation)
 	} else {
 		w := s.sessions.Workspace(v.ProfileID)
 		objects, loaded := w.Cache[v.Database]
