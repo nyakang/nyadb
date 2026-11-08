@@ -15,6 +15,7 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 IMAGE = 'cassandra@sha256:b494afb347bfd20765d80817d89d9e6e31ae77a339bfb34e82c6ea868a51c9c1'
+SESSION_TESTS = ['QualifiedSchemaAndIndependentCQL', 'CQLPagingStreamingAndAcknowledgement', 'LeaseLostCounterReplyExplicitRecovery', 'MetadataChangeQueueAndOriginalClose', 'OriginalPreconnectAndMetadataCancellation']
 
 
 def remove_owned(identifier, nonce):
@@ -30,7 +31,7 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(plain=False, race=False, profile=False):
+def verify(plain=False, race=False, profile=False, session=False):
     base, output = ROOT/'temp/cassandra', ROOT/'build/cassandra'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
@@ -39,7 +40,7 @@ def verify(plain=False, race=False, profile=False):
         raise SystemExit(128+signum)
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
-    evidence = {'image': IMAGE, 'nonce': nonce, 'tls': not plain, 'race': race, 'scope': 'private_native_profiles_and_editor' if profile else 'private_native_transport_foundation'}
+    evidence = {'image': IMAGE, 'nonce': nonce, 'tls': not plain, 'race': race, 'scope': 'private_native_sessions_cql_metadata' if session else 'private_native_profiles_and_editor' if profile else 'private_native_transport_foundation'}
     with tempfile.TemporaryDirectory(prefix='fixture-', dir=base) as temporary:
         folder = Path(temporary)
         folder.chmod(0o700)
@@ -53,6 +54,11 @@ def verify(plain=False, race=False, profile=False):
         bootstrap_password.chmod(0o600)
         yaml = subprocess.check_output(['docker', 'run', '--rm', '--entrypoint', 'cat', IMAGE, '/etc/cassandra/cassandra.yaml'], text=True)
         yaml = yaml.replace('cluster_name: \'Test Cluster\'', 'cluster_name: \'NyaDB owned Cassandra '+nonce+'\'')
+        if session:
+            # Official 5.0.6 disables MV creation by default. Enable the native
+            # feature only in this disposable metadata acceptance fixture.
+            yaml = yaml.replace('materialized_views_enabled: false', 'materialized_views_enabled: true')
+            evidence['materialized_views_enabled'] = True
         args = ['--memory=3g', '--cpus=3', '-e', 'MAX_HEAP_SIZE=768M', '-e', 'HEAP_NEWSIZE=128M']
         if not plain:
             yaml = yaml.replace('authenticator: AllowAllAuthenticator', 'authenticator: PasswordAuthenticator')
@@ -77,7 +83,7 @@ def verify(plain=False, race=False, profile=False):
         args += ['--mount', 'type=bind,src='+str(server)+',dst=/owned,readonly', '--entrypoint', '/bin/bash']
         cfg = {'Auth': 'none' if plain else 'password', 'Username': '' if plain else 'cassandra', 'TLSMode': 'disable' if plain else 'verify-full', 'ca_file': '' if plain else str(folder/'ca.crt'), 'password_file': str(bootstrap_password)}
         config = folder/'config.json'
-        logfile = output/(('profile-' if profile else '')+('plain-transport.log' if plain else 'race-transport.log' if race else 'tls-transport.log'))
+        logfile = output/(('session-' if session else 'profile-' if profile else '')+('plain-transport.log' if plain else 'race-transport.log' if race else 'tls-transport.log'))
         probe = folder/'probe'
         subprocess.run(['go', 'build', '-o', str(probe), './tools/cassandra_fixture_probe'], cwd=ROOT, check=True)
         try:
@@ -108,11 +114,17 @@ def verify(plain=False, race=False, profile=False):
             subprocess.run([str(probe), '-config', str(config)], check=True, stdout=subprocess.DEVNULL)
             env = dict(os.environ, NYADB_CASSANDRA_IT='1', NYADB_CASSANDRA_CONFIG=str(config))
             packages = ['./internal/services/cassandra', './internal/services/connections']
+            if session:
+                env['NYADB_CASSANDRA_SESSION_IT'] = '1'
+                packages += ['./internal/db/sqltext']
             if profile:
                 packages += ['./internal/storage/localdb', './internal/ui/connectioneditor']
                 env['NYADB_CASSANDRA_PROFILE_IT'] = '1'
                 env['NYADB_CASSANDRA_PROFILE_IMAGES'] = str(output/('profile-images-plain' if plain else 'profile-images-race' if race else 'profile-images-tls'))
-            command = ['go', 'test', '-count=1', '-timeout=5m', '-v', *(['-race'] if race else []), *(['-run', 'Cassandra'] if profile else []), *packages]
+            # Profile/editor acceptance also creates and drops keyspaces. Keep
+            # packages sequential when sharing the session fixture; the intended
+            # in-test concurrent ALTER still proves schema-version rejection.
+            command = ['go', 'test', '-count=1', '-timeout=5m', '-v', *(['-p', '1'] if session and profile else []), *(['-race'] if race else []), *(['-run', 'Cassandra'] if profile else []), *packages]
             with logfile.open('w') as log:
                 result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=360)
             if result.returncode:
@@ -120,13 +132,21 @@ def verify(plain=False, race=False, profile=False):
             required = ['IdentityTypesAndParameters', 'PagingBoundToPhysicalRequest', 'AuthenticationAndTLS', 'LostCounterReplyAndCancellation']
             if profile:
                 required += ['ProfileURIReopenAndOriginalEditorCheck', 'EditorCanceledOriginalHandshake', 'EditorLocalizedFormEvidence']
+            if session:
+                required += SESSION_TESTS
             text = logfile.read_text()
-            if any('--- PASS: TestCassandraNative'+name not in text for name in required) or '--- SKIP:' in text:
+            if any('--- PASS: TestCassandraNative'+name not in text for name in required):
                 raise RuntimeError('Missing native Cassandra PASS evidence')
+            allowed_skips = set() if session else {'TestCassandraNative'+name for name in SESSION_TESTS}
+            skipped = set(re.findall(r'--- SKIP: (\S+)', text))
+            if skipped - allowed_skips:
+                raise RuntimeError('Unexpected native Cassandra SKIP evidence')
             evidence['version'] = '5.0.6'
             evidence['required_tests'] = required
             evidence['log_sha256'] = hashlib.sha256(logfile.read_bytes()).hexdigest()
             sources = sorted((ROOT/'internal/services/cassandra').glob('*.go')) + [ROOT/'internal/services/connections/cassandra_config.go', ROOT/'internal/services/connections/cassandra_config_test.go', ROOT/'tools/verify_cassandra_fixture.py', ROOT/'tools/cassandra_fixture_probe/main.go', ROOT/'tests/test_cassandra_fixture.py']
+            if session:
+                sources += [ROOT/'internal/db/sqltext/cassandra.go', ROOT/'internal/db/sqltext/cassandra_test.go']
             if profile:
                 sources += sorted((ROOT/'internal/services/connections').glob('*.go')) + sorted((ROOT/'internal/storage/localdb').glob('*.go')) + sorted((ROOT/'internal/ui/connectioneditor').glob('*.go')) + sorted((ROOT/'locales').glob('*.json')) + [ROOT/'locales/catalog_gen.go']
                 image_folder = Path(env['NYADB_CASSANDRA_PROFILE_IMAGES'])
@@ -151,5 +171,6 @@ if __name__ == '__main__':
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--profile', action='store_true')
+    parser.add_argument('--session', action='store_true')
     options = parser.parse_args()
-    verify(options.plain, options.race, options.profile)
+    verify(options.plain, options.race, options.profile, options.session)

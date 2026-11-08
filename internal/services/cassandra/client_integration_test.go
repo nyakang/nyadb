@@ -15,6 +15,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -281,22 +283,40 @@ func TestCassandraNativeAuthenticationAndTLS(t *testing.T) {
 }
 
 func nativeFaultProxy(t *testing.T, cfg connections.CassandraConfig, match string, park bool) (connections.CassandraConfig, <-chan bool) {
+	seen := make(chan bool, 1)
+	var fired atomic.Bool
+	v := nativeFrameProxy(t, cfg, func(op byte, body []byte, response frame, front net.Conn) bool {
+		if op != 7 || !bytes.Contains(body, []byte(match)) || !fired.CompareAndSwap(false, true) {
+			return false
+		}
+		seen <- response.opcode == 8 && len(response.body) >= 4 && binary.BigEndian.Uint32(response.body[:4]) == 1
+		if park {
+			_, _ = io.Copy(io.Discard, front)
+		}
+		return true
+	})
+	return v, seen
+}
+
+// Multiple physical clients share only the fixture endpoint. Every intercepted
+// frame has already received its actual upstream response; recovery opens a new
+// socket without replaying the interrupted statement.
+func nativeFrameProxy(t *testing.T, cfg connections.CassandraConfig, intercept func(byte, []byte, frame, net.Conn) bool) connections.CassandraConfig {
 	t.Helper()
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
-	seen := make(chan bool, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		front, err := listener.Accept()
-		if err != nil {
-			return
-		}
+	var workers sync.WaitGroup
+	handle := func(front net.Conn) {
+		defer workers.Done()
 		defer front.Close()
+		stopFront := context.AfterFunc(ctx, func() { front.Close() })
+		defer stopFront()
 		var back net.Conn
+		var err error
 		if cfg.TLSMode == "disable" {
 			back, err = (&net.Dialer{}).DialContext(ctx, "tcp", cfg.Endpoint)
 		} else {
@@ -341,11 +361,7 @@ func nativeFaultProxy(t *testing.T, cfg connections.CassandraConfig, match strin
 			if e != nil {
 				return
 			}
-			if header[4] == 7 && bytes.Contains(body, []byte(match)) {
-				seen <- response.opcode == 8 && len(response.body) >= 4 && binary.BigEndian.Uint32(response.body[:4]) == 1
-				if park {
-					_, _ = io.Copy(io.Discard, front)
-				}
+			if intercept(header[4], body, response, front) {
 				return
 			}
 			header[0] = 0x84
@@ -358,6 +374,18 @@ func nativeFaultProxy(t *testing.T, cfg connections.CassandraConfig, match strin
 			if _, err = front.Write(response.body); err != nil {
 				return
 			}
+		}
+	}
+	go func() {
+		defer close(done)
+		defer workers.Wait()
+		for {
+			front, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			workers.Add(1)
+			go handle(front)
 		}
 	}()
 	t.Cleanup(func() {
@@ -374,7 +402,7 @@ func nativeFaultProxy(t *testing.T, cfg connections.CassandraConfig, match strin
 	v.TLSMode = "disable"
 	v.CAFile = ""
 	v.ServerName = ""
-	return v, seen
+	return v
 }
 
 func TestCassandraNativeLostCounterReplyAndCancellation(t *testing.T) {
