@@ -1,0 +1,188 @@
+#!/usr/bin/env python3
+"""Verify Qdrant REST on a uniquely owned official Docker node, with native TLS."""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import secrets
+import ssl
+import subprocess
+import tempfile
+import time
+import urllib.request
+import uuid
+
+ROOT = Path(__file__).resolve().parents[1]
+IMAGE = 'qdrant/qdrant@sha256:9bfc89f9914fc14876a88c05270685921a55b8877b254a98bcc1cc2f0a424cd2'
+VERSION = '1.20.0'
+MODES = ('anonymous', 'api-key', 'tls', 'mtls')
+REQUIRED = (
+    'AuthenticationVersionAndPermissions',
+    'NamedSparseMultiVectorAndAliases',
+    'ExactIDsScrollQueryCountAndCursor',
+    'AdmissionCompletionAndNativeFailure',
+    'LostResponseNeverReplays',
+    'CanceledOriginalReadAndClose',
+)
+
+
+def remove_owned(identifier, nonce):
+    if not isinstance(identifier, str) or not re.fullmatch('[0-9a-f]{64}', identifier):
+        raise RuntimeError('Invalid immutable fixture ID')
+    result = subprocess.run(['docker', 'inspect', identifier], capture_output=True, text=True)
+    if result.returncode:
+        raise RuntimeError('Cannot inspect owned Qdrant fixture')
+    records = json.loads(result.stdout)
+    if len(records) != 1:
+        raise RuntimeError('Ambiguous fixture inspection')
+    record = records[0]
+    labels = record['Config'].get('Labels') or {}
+    if record['Id'] != identifier or labels.get('nyadb.fixture') != 'qdrant' or labels.get('nyadb.fixture.nonce') != nonce:
+        raise RuntimeError('Fixture ownership changed; refuse cleanup')
+    subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
+
+
+def source_hashes():
+    paths = list((ROOT/'internal/services/qdrant').glob('*.go'))
+    paths += list((ROOT/'internal/db/jsondocument').glob('*.go'))
+    paths += list((ROOT/'internal/services/connections').glob('qdrant*.go'))
+    paths += [ROOT/'go.mod', ROOT/'go.sum', ROOT/'tools/verify_qdrant_fixture.py', ROOT/'tests/test_qdrant_fixture.py']
+    return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
+
+
+def check_acceptance(log):
+    for name in REQUIRED:
+        if not re.search(r'^--- PASS: TestQdrantNative'+name+r' \(', log, re.M):
+            raise RuntimeError('Missing required native PASS: '+name)
+    if re.search(r'^\s*--- (SKIP|FAIL):', log, re.M) or 'WARNING: DATA RACE' in log:
+        raise RuntimeError('Unexpected skipped, failed or racing native test')
+
+
+def native_test_command(race):
+    return ['go', 'test', '-count=1', '-timeout=5m', '-v', *(['-race'] if race else []), '-run', '^TestQdrantNative', './internal/services/qdrant']
+
+
+def verify(mode='tls', race=False):
+    if mode not in MODES:
+        raise ValueError('Invalid native fixture mode')
+    output = ROOT/'build/qdrant'
+    output.mkdir(parents=True, exist_ok=True)
+    nonce = uuid.uuid4().hex
+    identifier = None
+    evidence_path = output/('owned-fixture-'+nonce+'.json')
+    evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode,
+                    scope='private_native_rest_transport_and_collection_point_codecs',
+                    status='failed', fixture_cleaned=False, private_files_cleaned=False)
+    try:
+        with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
+            folder = Path(private)
+            tls = mode in ('tls', 'mtls')
+            admin_key, readonly_key = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+            for name, value in [('admin-key', admin_key), ('readonly-key', readonly_key)]:
+                path = folder/name
+                path.write_text(value)
+                path.chmod(0o600)
+            server = dict(telemetry_disabled=True, service=dict(host='0.0.0.0', http_port=6333,
+                          grpc_port=None, enable_tls=tls, verify_https_client_certificate=mode == 'mtls'))
+            if mode != 'anonymous':
+                server['service'].update(api_key=admin_key, read_only_api_key=readonly_key)
+            if tls:
+                def openssl(*args):
+                    subprocess.run(['openssl', *args], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                openssl('req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', str(folder/'ca.key'),
+                        '-out', str(folder/'ca.crt'), '-days', '2', '-subj', '/CN=NyaDB owned Qdrant CA',
+                        '-addext', 'basicConstraints=critical,CA:TRUE', '-addext', 'keyUsage=critical,keyCertSign,cRLSign')
+                for name, usage in [('server', 'serverAuth'), ('client', 'clientAuth')]:
+                    openssl('req', '-newkey', 'rsa:2048', '-nodes', '-keyout', str(folder/(name+'.key')),
+                            '-out', str(folder/(name+'.csr')), '-subj', '/CN='+('localhost' if name == 'server' else 'owned-client'))
+                    extension = folder/(name+'.ext')
+                    extension.write_text('basicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature,keyEncipherment\n'
+                                         'extendedKeyUsage='+usage+'\n'+('subjectAltName=DNS:localhost,IP:127.0.0.1\n' if name == 'server' else ''))
+                    openssl('x509', '-req', '-in', str(folder/(name+'.csr')), '-CA', str(folder/'ca.crt'),
+                            '-CAkey', str(folder/'ca.key'), '-CAcreateserial', '-CAserial', str(folder/'ca.srl'),
+                            '-days', '2', '-sha256', '-extfile', str(extension), '-out', str(folder/(name+'.crt')))
+                server['tls'] = dict(cert='/owned/server.crt', key='/owned/server.key', ca_cert='/owned/ca.crt')
+            # JSON is valid YAML. Mount private configuration read-only; secrets
+            # are never command-line/environment arguments or application profiles.
+            config_path = folder/'server.yaml'
+            config_path.write_text(json.dumps(server)+'\n')
+            for path in folder.iterdir():
+                path.chmod(0o600)
+            subprocess.run(['docker', 'image', 'inspect', IMAGE], check=True, stdout=subprocess.DEVNULL)
+            identifier = subprocess.check_output([
+                'docker', 'create', '--name', 'nyadb-qdrant-it-'+nonce[:12],
+                '--label', 'nyadb.fixture=qdrant', '--label', 'nyadb.fixture.nonce='+nonce,
+                '-p', '127.0.0.1::6333', '--mount', 'type=bind,src='+str(folder)+',dst=/owned,readonly',
+                IMAGE, './qdrant', '--config-path', '/owned/server.yaml'], text=True).strip()
+            evidence['id'] = identifier
+            try:
+                subprocess.run(['docker', 'start', identifier], check=True, stdout=subprocess.DEVNULL)
+                inspected = json.loads(subprocess.check_output(['docker', 'inspect', identifier], text=True))[0]
+                bindings = inspected['NetworkSettings']['Ports']['6333/tcp']
+                if not inspected['State']['Running'] or len(bindings) != 1 or bindings[0]['HostIp'] != '127.0.0.1':
+                    raise RuntimeError('Fixture did not publish one loopback port')
+                endpoint = ('https' if tls else 'http')+'://127.0.0.1:'+bindings[0]['HostPort']
+                context = ssl.create_default_context(cafile=str(folder/'ca.crt')) if tls else None
+                if mode == 'mtls':
+                    context.load_cert_chain(str(folder/'client.crt'), str(folder/'client.key'))
+                headers = {} if mode == 'anonymous' else {'api-key': admin_key}
+                deadline = time.monotonic()+90
+                while True:
+                    try:
+                        request = urllib.request.Request(endpoint+'/', headers=headers)
+                        with urllib.request.urlopen(request, context=context, timeout=5) as response:
+                            identity = json.load(response)
+                        if identity.get('version') == VERSION:
+                            break
+                    except Exception:
+                        pass
+                    if time.monotonic() >= deadline:
+                        raise RuntimeError('Native Qdrant readiness failed; inspect captured server log')
+                    time.sleep(0.5)
+                evidence['observed_identity'] = identity
+                probe = dict(endpoint=endpoint, auth='none' if mode == 'anonymous' else 'api_key',
+                             key_file='' if mode == 'anonymous' else str(folder/'admin-key'),
+                             readonly_key_file='' if mode == 'anonymous' else str(folder/'readonly-key'),
+                             ca_file=str(folder/'ca.crt') if tls else '', server_name='localhost' if tls else '',
+                             client_cert_file=str(folder/'client.crt') if mode == 'mtls' else '',
+                             client_key_file=str(folder/'client.key') if mode == 'mtls' else '')
+                probe_path = folder/'probe.json'
+                probe_path.write_text(json.dumps(probe)+'\n')
+                probe_path.chmod(0o600)
+                env = dict(os.environ, NYADB_QDRANT_IT='1', NYADB_QDRANT_CONFIG=str(probe_path), CGO_ENABLED='1' if race else '0')
+                hashes = source_hashes()
+                logfile = output/('native-'+nonce+'.log')
+                command = native_test_command(race)
+                with logfile.open('w') as log:
+                    result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=330)
+                if hashes != source_hashes():
+                    raise RuntimeError('Acceptance sources changed during verification')
+                if result.returncode:
+                    raise RuntimeError('Native Qdrant acceptance failed; inspect '+str(logfile.relative_to(ROOT)))
+                check_acceptance(logfile.read_text())
+                evidence.update(status='passed_with_race' if race else 'passed', source_hashes=hashes,
+                                required_passes=list(REQUIRED), command=command, log=str(logfile.relative_to(ROOT)),
+                                log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest())
+            finally:
+                logs = subprocess.run(['docker', 'logs', identifier], capture_output=True, text=True)
+                # Configured keys and private file paths are not public diagnostics.
+                text = (logs.stdout+logs.stderr).replace(admin_key, '[redacted]').replace(readonly_key, '[redacted]').replace(str(folder), '[private]')
+                (output/('server-'+nonce+'.log')).write_text(text)
+                remove_owned(identifier, nonce)
+                evidence['fixture_cleaned'] = True
+        evidence['private_files_cleaned'] = True
+    finally:
+        evidence['private_files_cleaned'] = not ('folder' in locals() and folder.exists())
+        evidence_path.write_text(json.dumps(evidence, ensure_ascii=False, indent=2)+'\n')
+    print(json.dumps(dict(report=str(evidence_path.relative_to(ROOT)), status=evidence['status'], mode=mode)))
+    return evidence_path
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--mode', choices=MODES, default='tls')
+    parser.add_argument('--race', action='store_true')
+    options = parser.parse_args()
+    verify(options.mode, options.race)
