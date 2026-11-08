@@ -74,6 +74,10 @@ type SQLResult struct {
 	Truncated    bool
 }
 
+// StatementEnqueued describes native asynchronous admission only. A successful
+// HTTP receipt does not confirm completion or contribute affected SQL rows.
+const StatementEnqueued = "enqueued"
+
 type StatementOutcome struct {
 	SQL, State, Error string
 	AffectedRows      int64

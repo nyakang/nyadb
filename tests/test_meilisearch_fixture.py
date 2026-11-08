@@ -11,6 +11,25 @@ SPEC.loader.exec_module(fixture)
 
 
 class MeilisearchFixtureTests(unittest.TestCase):
+    def test_session_acceptance_requires_original_lifecycle_and_native_permissions(self):
+        for mode in fixture.MODES:
+            names = fixture.required_passes(mode, session=True)
+            for name in fixture.SESSION_REQUIRED:
+                self.assertIn(name, names)
+            self.assertEqual(fixture.SESSION_SCOPED in names, mode != 'anonymous')
+            command = fixture.test_command(mode, True, session=True)
+            self.assertIn('-race', command)
+            self.assertIn('SessionLostCancelReleaseCloseAndRecovery', command[-2])
+            log = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in fixture.required_passes(mode))
+            if mode == 'mtls':
+                log += '\nnative mTLS accepted owned client certificate and rejected its absence'
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(log, mode, session=True)
+            complete = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in names)
+            if mode == 'mtls':
+                complete += '\nnative mTLS accepted owned client certificate and rejected its absence'
+            fixture.check_acceptance(complete, mode, session=True)
+
     def test_profile_acceptance_requires_native_reopen_cancel_and_localized_forms(self):
         command = fixture.test_command('tls', True, True)
         self.assertIn('./internal/ui/connectioneditor', command)
