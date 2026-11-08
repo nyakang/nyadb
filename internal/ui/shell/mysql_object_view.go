@@ -137,6 +137,14 @@ func (s *State) openMySQLData(services ui.Services, database, table string) {
 		return
 	}
 	kind := s.objectKindFor(w.ProfileID, database, table)
+	if w.Kind == connections.Qdrant {
+		if kind == "向量点" {
+			s.openQdrantPoints(w.ProfileID, database)
+		} else if objectworkspace.NativeDefinitionKind(kind) {
+			s.openMySQLStructure(services, database, table)
+		}
+		return
+	}
 	if t := s.findDocument(tabMySQLData, w.ProfileID, database, kind, table); t != nil {
 		s.dataWorkspace.Load(services, t.data, false)
 		return

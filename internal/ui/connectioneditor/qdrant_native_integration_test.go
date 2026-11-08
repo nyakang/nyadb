@@ -94,8 +94,8 @@ func qdrantNativeProfile(t *testing.T, cfg connections.QdrantConfig, secret stri
 	if err != nil || normalizeErr != nil || config != normalized {
 		t.Fatal("native URI changed original endpoint/TLS context", err)
 	}
-	if public, err := connections.ParseURI(uri.String()); err == nil || public.Profile.Kind != "" || public.Password != "" {
-		t.Fatal("private Qdrant URI exposed before public provider registration")
+	if public, err := connections.ParseURI(uri.String()); err != nil || public.Profile.QdrantOptions != parsed.Profile.QdrantOptions || public.Profile.Kind != connections.Qdrant || public.Password != secret {
+		t.Fatal("public Qdrant URI changed original configuration or key")
 	}
 	return parsed
 }

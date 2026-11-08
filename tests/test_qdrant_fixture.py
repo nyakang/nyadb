@@ -44,13 +44,35 @@ class QdrantFixtureTests(unittest.TestCase):
     def test_session_command_includes_profiles_without_excluding_required_native_tests(self):
         command = fixture.native_test_command(True, session=True)
         self.assertIn('-race', command)
-        self.assertNotIn('-skip', command)
+        self.assertEqual(command[command.index('-skip')+1], '^TestQdrantNativePublic')
         self.assertEqual(command[command.index('-run')+1], '^TestQdrant')
         self.assertEqual(command[-4:], ['./internal/services/qdrant', './internal/services/connections',
                                         './internal/storage/localdb', './internal/ui/connectioneditor'])
         for profile in [False, True]:
             old = fixture.native_test_command(True, profile=profile)
-            self.assertEqual(old[old.index('-skip')+1], '^TestQdrantNativeSession')
+            self.assertEqual(old[old.index('-skip')+1], '^TestQdrantNative(Session|Public)')
+
+    def test_public_command_checks_original_runtime_workspace_and_every_required_pass(self):
+        command = fixture.native_test_command(True, public=True)
+        self.assertNotIn('-skip', command)
+        self.assertIn('-race', command)
+        self.assertEqual(command[-3:], ['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell'])
+        names = fixture.REQUIRED + fixture.PROFILE_REQUIRED + fixture.SESSION_REQUIRED + fixture.PUBLIC_REQUIRED
+        log = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in names)
+        fixture.check_acceptance(log, public=True)
+        for name in fixture.PUBLIC_REQUIRED:
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(log.replace('--- PASS: TestQdrantNative'+name, '--- SKIP: TestQdrantNative'+name), public=True)
+
+    def test_public_evidence_covers_provider_navigation_original_rest_and_translations(self):
+        paths = fixture.source_hashes(profile=True)
+        for name in ['internal/services/dbruntime/qdrant_integration_test.go',
+                     'internal/ui/shell/qdrant_integration_test.go',
+                     'internal/ui/sqlworkspace/qdrant_integration_test.go',
+                     'internal/ui/navigation/qdrant_test.go',
+                     'internal/ui/connectioncatalog/qdrant_test.go',
+                     'internal/services/connections/descriptors.go', 'locales/en.json']:
+            self.assertIn(name, paths)
 
     def test_session_acceptance_requires_original_metadata_and_executor_recovery(self):
         all_names = fixture.REQUIRED + fixture.PROFILE_REQUIRED + fixture.SESSION_REQUIRED

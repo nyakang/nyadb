@@ -17,6 +17,7 @@ import (
 	mongosvc "github.com/nyakang/nyadb/internal/services/mongodb"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
 	oraclesvc "github.com/nyakang/nyadb/internal/services/oracle"
+	"github.com/nyakang/nyadb/internal/services/qdrant"
 	redissvc "github.com/nyakang/nyadb/internal/services/redis"
 	"github.com/nyakang/nyadb/internal/services/solr"
 	"github.com/nyakang/nyadb/internal/services/sqlserver"
@@ -25,6 +26,7 @@ import (
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.Qdrant, ProviderFunc(qdrant.OpenSession))
 	m.Register(connections.Meilisearch, ProviderFunc(meilisearch.OpenSession))
 	m.Register(connections.CouchDB, ProviderFunc(couchdb.OpenSession))
 	m.Register(connections.Cassandra, ProviderFunc(cassandra.OpenSession))

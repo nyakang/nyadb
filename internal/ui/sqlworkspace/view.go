@@ -61,7 +61,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 					caption := locales.Text("运行当前语句")
 					runLabel, formatLabel := t.queryText("运行当前或选中 SQL"), t.queryText("格式化 SQL")
 					if t.nativeCommands {
-						runLabel = t.commandText("运行 MongoDB 命令", "运行 Redis 命令", "运行 Elasticsearch REST 请求", "运行 Easysearch REST 请求", "运行 Solr REST 请求", "运行 CouchDB REST 请求", "运行 Meilisearch REST 请求")
+						runLabel = t.commandText("运行 MongoDB 命令", "运行 Redis 命令", "运行 Elasticsearch REST 请求", "运行 Easysearch REST 请求", "运行 Solr REST 请求", "运行 CouchDB REST 请求", "运行 Meilisearch REST 请求", "运行 Qdrant REST 请求")
 						formatLabel = locales.Text("格式化 JSON")
 						caption = locales.Text("运行请求")
 					}
@@ -212,7 +212,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 			theme.ApplySQLAppearance(c, t.Editor)
 			t.Editor.Label = t.queryText("SQL 编辑器")
 			if t.nativeCommands {
-				t.Editor.Label = t.commandText("MongoDB 命令编辑器", "Redis 命令编辑器", "Elasticsearch REST 编辑器", "Easysearch REST 编辑器", "Solr REST 编辑器", "CouchDB REST 编辑器", "Meilisearch REST 编辑器")
+				t.Editor.Label = t.commandText("MongoDB 命令编辑器", "Redis 命令编辑器", "Elasticsearch REST 编辑器", "Easysearch REST 编辑器", "Solr REST 编辑器", "CouchDB REST 编辑器", "Meilisearch REST 编辑器", "Qdrant REST 编辑器")
 			}
 			ed := editor.View(c, t.Editor).Grow(1).FillWidth()
 			if s.deps.EditFocus != nil {
@@ -331,7 +331,7 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 		}
 		r := t.result
 		if hasEnqueued(*r) {
-			ui.Text(c, locales.Text("任务已接收，尚未确认完成")).Padding(3, 8)
+			ui.Text(c, t.admissionText("任务已接收，尚未确认完成", "请求已受理，尚未确认完成")).Padding(3, 8)
 		}
 		set := selectedResult(t)
 		sets := r.ResultSets()
@@ -371,7 +371,7 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 						state := step.State
 						switch state {
 						case contract.StatementEnqueued:
-							state = locales.Text("任务已接收，尚未确认完成")
+							state = t.admissionText("任务已接收，尚未确认完成", "请求已受理，尚未确认完成")
 						case "executed":
 							state = locales.Text("已执行")
 						case "not_executed":

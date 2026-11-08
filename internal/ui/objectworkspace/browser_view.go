@@ -54,6 +54,9 @@ func mysqlObjectCellText(obj contract.DBObject, col int) string {
 }
 
 func mysqlObjectActionLabels(kind string) (open, design string) {
+	if kind == "向量点" {
+		return "浏览向量点", "查看定义（只读）"
+	}
 	if kind == "任务" {
 		return "查看任务", "查看任务"
 	}
@@ -95,6 +98,9 @@ func (s *State) mysqlObjectWorkspace(c *ui.Context) {
 	if !b.Opened {
 		ui.Column(c).Grow(1).Children(func() {
 			label := locales.Text("双击打开数据库")
+			if s.deps.Engine != nil && s.deps.Engine(b.ProfileID) == "qdrant" {
+				label = locales.Text("双击打开集合")
+			}
 			if s.deps.Engine != nil && s.deps.Engine(b.ProfileID) == "meilisearch" {
 				label = locales.Text("双击打开索引")
 			}
@@ -209,6 +215,7 @@ func (s *State) BrowserView(c *ui.Context) {
 	searchEngine := s.deps.Engine != nil && (s.deps.Engine(a.scope.profile) == "elasticsearch" || s.deps.Engine(a.scope.profile) == "easysearch" || s.deps.Engine(a.scope.profile) == "solr")
 	documentEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "mongodb"
 	couchdbEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "couchdb"
+	qdrantEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "qdrant"
 	meilisearchEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "meilisearch"
 	canOpen, canProgram := a.canOpen, a.canProgram
 	ui.Column(c).Fill().Children(func() {
@@ -219,6 +226,16 @@ func (s *State) BrowserView(c *ui.Context) {
 					{"打开表", "open-table", "打开选中表数据"}, {"设计表", "design-table", "设计选中表"}, {"查看结构", "design-table", "打开选中表结构"},
 				} {
 					item := action
+					if qdrantEngine {
+						if action.label == "设计表" {
+							continue
+						}
+						if action.label == "打开表" {
+							item.label, item.accessible = "浏览向量点", "浏览选中 Qdrant 向量点"
+						} else {
+							item.label, item.accessible = "查看定义（只读）", "查看 Qdrant 原生定义"
+						}
+					}
 					if meilisearchEngine {
 						if action.label == "设计表" {
 							continue
@@ -279,6 +296,9 @@ func (s *State) BrowserView(c *ui.Context) {
 						}
 					}
 					canAction := canOpen
+					if qdrantEngine && action.label == "打开表" {
+						canAction = canOpen && items[a.frame.Row].Kind == "向量点" && s.capabilities(a.scope.profile).Query
+					}
 					if meilisearchEngine && action.label == "打开表" {
 						canAction = canOpen && items[a.frame.Row].Kind == "文档" && s.capabilities(a.scope.profile).Documents
 					}
@@ -292,7 +312,7 @@ func (s *State) BrowserView(c *ui.Context) {
 						})
 					}).Clicked() {
 						obj := items[a.frame.Row]
-						if (item.label == "打开表" || item.label == "打开集合" || item.label == "打开键" || item.label == "打开文档") && s.deps.OpenData != nil {
+						if (item.label == "打开表" || item.label == "打开集合" || item.label == "打开键" || item.label == "打开文档" || item.label == "浏览向量点") && s.deps.OpenData != nil {
 							s.deps.OpenData(c.Services(), a.scope.profile, database, obj.Name)
 						} else if action.label == "查看结构" {
 							s.openStructure(c.Services(), database, obj.Name)
@@ -302,7 +322,7 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 				}
 				canCreate := a.canCreate
-				if !documentEngine && !redisEngine && !searchEngine && !couchdbEngine && !meilisearchEngine {
+				if !documentEngine && !redisEngine && !searchEngine && !couchdbEngine && !meilisearchEngine && !qdrantEngine {
 					if ui.Button(c, "").Label(locales.Text("新建表")).Tooltip(locales.Text("新建表")).
 						Disabled(!canCreate).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
 						ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
@@ -321,6 +341,9 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 				}
 				kinds := []string{"全部", "表", "视图"}
+				if qdrantEngine {
+					kinds = []string{"全部", "集合信息", "向量点", "集合别名"}
+				}
 				if couchdbEngine {
 					kinds = []string{"全部", "文档", "数据库信息", "设计文档"}
 				}

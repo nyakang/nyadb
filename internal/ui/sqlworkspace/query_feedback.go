@@ -20,6 +20,13 @@ func hasEnqueued(result contract.SQLResult) bool {
 	return false
 }
 
+func (d *Document) admissionText(task, request string) string {
+	if d.commandDialect == "qdrant" {
+		return locales.Text(request)
+	}
+	return locales.Text(task)
+}
+
 func executionOrigin(d *Document, statement string) int {
 	source := d.Editor.Buffer.String()
 	selection := d.Editor.Selection()

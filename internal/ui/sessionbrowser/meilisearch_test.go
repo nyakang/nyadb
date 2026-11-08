@@ -9,7 +9,7 @@ import (
 func TestRESTSessionStatusUsesOriginalProductLabel(t *testing.T) {
 	s := New(Dependencies{})
 	defer s.Close()
-	for _, kind := range []connections.Kind{connections.Meilisearch, connections.CouchDB, connections.Elasticsearch, connections.Easysearch, connections.Solr} {
+	for _, kind := range []connections.Kind{connections.Qdrant, connections.Meilisearch, connections.CouchDB, connections.Elasticsearch, connections.Easysearch, connections.Solr} {
 		d, _ := connections.Describe(kind)
 		if label := s.engineLabel(&Workspace{Kind: kind}); label != d.Label {
 			t.Fatal(kind, label)

@@ -168,9 +168,9 @@ func TestQdrantEditorAuthSwitchRevokesCapturedCheckAndInvalidImport(t *testing.T
 	s.setQdrantAuth("api_key")
 	s.connectionDraft.QdrantOptions.ContextPath = "/gateway/qdrant"
 	s.connectionSecret = "captured-password"
-	for _, uri := range []string{"qdrant://reader:private@localhost?auth=api_key", "qdrant://localhost?auth=api_key"} {
+	for _, uri := range []string{"qdrant://reader:private@localhost?auth=api_key", "qdrant://localhost?auth=bearer"} {
 		if err := s.ImportURI(uri); err == nil || s.connectionSecret != "captured-password" || s.connectionDraft.Name != "captured check" {
-			t.Fatal("private public import changed parked draft")
+			t.Fatal("invalid public import changed parked draft")
 		}
 	}
 	tt := qdrantEditorTester(s)

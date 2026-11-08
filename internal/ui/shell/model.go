@@ -254,7 +254,7 @@ func (s *State) dispatchToolbar(action string, services ui.Services) {
 		s.openConnectionDialog()
 	case "新建查询":
 		s.openQuery()
-	case "文档", "索引信息", "索引设置", "索引统计", "数据库信息", "设计文档", "Core", "索引", "别名", "数据流", "键", "集合", "表", "视图", "函数", "类型", "查询":
+	case "集合信息", "向量点", "集合别名", "文档", "索引信息", "索引设置", "索引统计", "数据库信息", "设计文档", "Core", "索引", "别名", "数据流", "键", "集合", "表", "视图", "函数", "类型", "查询":
 		s.showObjects(action)
 	case "用户":
 		w := s.sessions.Current()

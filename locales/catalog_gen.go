@@ -22664,11 +22664,11 @@ func (msgs Messages) CouchdbNativeJSONDefinition() string {
 	return Catalog.Format(msgs.locale, "couchdbNativeJSONDefinition", nil)
 }
 
-// CouchdbURISupport says "支持关系数据库、MongoDB、Redis、Elasticsearch、Easysearch、Solr、CouchDB 和 Meilisearch URI…"
+// CouchdbURISupport says "支持关系数据库、MongoDB、Redis、Elasticsearch、Easysearch、Solr、CouchDB、Meilisearch 和 Qdrant URI…"
 // in the language the app shows.
 func CouchdbURISupport() string { return In(i18n.Locale()).CouchdbURISupport() }
 
-// CouchdbURISupport says "支持关系数据库、MongoDB、Redis、Elasticsearch、Easysearch、Solr、CouchDB 和 Meilisearch URI…"
+// CouchdbURISupport says "支持关系数据库、MongoDB、Redis、Elasticsearch、Easysearch、Solr、CouchDB、Meilisearch 和 Qdrant URI…"
 // in the language of msgs.
 func (msgs Messages) CouchdbURISupport() string {
 	return Catalog.Format(msgs.locale, "couchdbURISupport", nil)
@@ -26512,4 +26512,180 @@ func QdrantKeyInvalid() string { return In(i18n.Locale()).QdrantKeyInvalid() }
 // in the language of msgs.
 func (msgs Messages) QdrantKeyInvalid() string {
 	return Catalog.Format(msgs.locale, "qdrantKeyInvalid", nil)
+}
+
+// QdrantRunRequest says "运行 Qdrant REST 请求"
+// in the language the app shows.
+func QdrantRunRequest() string { return In(i18n.Locale()).QdrantRunRequest() }
+
+// QdrantRunRequest says "运行 Qdrant REST 请求"
+// in the language of msgs.
+func (msgs Messages) QdrantRunRequest() string {
+	return Catalog.Format(msgs.locale, "qdrantRunRequest", nil)
+}
+
+// QdrantRequestEditor says "Qdrant REST 编辑器"
+// in the language the app shows.
+func QdrantRequestEditor() string { return In(i18n.Locale()).QdrantRequestEditor() }
+
+// QdrantRequestEditor says "Qdrant REST 编辑器"
+// in the language of msgs.
+func (msgs Messages) QdrantRequestEditor() string {
+	return Catalog.Format(msgs.locale, "qdrantRequestEditor", nil)
+}
+
+// QdrantEnterRequest says "请输入 Qdrant REST 请求"
+// in the language the app shows.
+func QdrantEnterRequest() string { return In(i18n.Locale()).QdrantEnterRequest() }
+
+// QdrantEnterRequest says "请输入 Qdrant REST 请求"
+// in the language of msgs.
+func (msgs Messages) QdrantEnterRequest() string {
+	return Catalog.Format(msgs.locale, "qdrantEnterRequest", nil)
+}
+
+// QdrantExecutingRequest says "正在执行 Qdrant REST 请求"
+// in the language the app shows.
+func QdrantExecutingRequest() string { return In(i18n.Locale()).QdrantExecutingRequest() }
+
+// QdrantExecutingRequest says "正在执行 Qdrant REST 请求"
+// in the language of msgs.
+func (msgs Messages) QdrantExecutingRequest() string {
+	return Catalog.Format(msgs.locale, "qdrantExecutingRequest", nil)
+}
+
+// QdrantUseNativeAPI says "Qdrant 请使用原生 REST API"
+// in the language the app shows.
+func QdrantUseNativeAPI() string { return In(i18n.Locale()).QdrantUseNativeAPI() }
+
+// QdrantUseNativeAPI says "Qdrant 请使用原生 REST API"
+// in the language of msgs.
+func (msgs Messages) QdrantUseNativeAPI() string {
+	return Catalog.Format(msgs.locale, "qdrantUseNativeAPI", nil)
+}
+
+// QdrantSessionAPIKey says "Qdrant 会话 API key"
+// in the language the app shows.
+func QdrantSessionAPIKey() string { return In(i18n.Locale()).QdrantSessionAPIKey() }
+
+// QdrantSessionAPIKey says "Qdrant 会话 API key"
+// in the language of msgs.
+func (msgs Messages) QdrantSessionAPIKey() string {
+	return Catalog.Format(msgs.locale, "qdrantSessionAPIKey", nil)
+}
+
+// QdrantVectorPoints says "向量点"
+// in the language the app shows.
+func QdrantVectorPoints() string { return In(i18n.Locale()).QdrantVectorPoints() }
+
+// QdrantVectorPoints says "向量点"
+// in the language of msgs.
+func (msgs Messages) QdrantVectorPoints() string {
+	return Catalog.Format(msgs.locale, "qdrantVectorPoints", nil)
+}
+
+// QdrantCollectionAliases says "集合别名"
+// in the language the app shows.
+func QdrantCollectionAliases() string { return In(i18n.Locale()).QdrantCollectionAliases() }
+
+// QdrantCollectionAliases says "集合别名"
+// in the language of msgs.
+func (msgs Messages) QdrantCollectionAliases() string {
+	return Catalog.Format(msgs.locale, "qdrantCollectionAliases", nil)
+}
+
+// QdrantBrowsePoints says "浏览向量点"
+// in the language the app shows.
+func QdrantBrowsePoints() string { return In(i18n.Locale()).QdrantBrowsePoints() }
+
+// QdrantBrowsePoints says "浏览向量点"
+// in the language of msgs.
+func (msgs Messages) QdrantBrowsePoints() string {
+	return Catalog.Format(msgs.locale, "qdrantBrowsePoints", nil)
+}
+
+// QdrantBrowseSelectedPoints says "浏览选中 Qdrant 向量点"
+// in the language the app shows.
+func QdrantBrowseSelectedPoints() string { return In(i18n.Locale()).QdrantBrowseSelectedPoints() }
+
+// QdrantBrowseSelectedPoints says "浏览选中 Qdrant 向量点"
+// in the language of msgs.
+func (msgs Messages) QdrantBrowseSelectedPoints() string {
+	return Catalog.Format(msgs.locale, "qdrantBrowseSelectedPoints", nil)
+}
+
+// QdrantViewNativeDefinition says "查看 Qdrant 原生定义"
+// in the language the app shows.
+func QdrantViewNativeDefinition() string { return In(i18n.Locale()).QdrantViewNativeDefinition() }
+
+// QdrantViewNativeDefinition says "查看 Qdrant 原生定义"
+// in the language of msgs.
+func (msgs Messages) QdrantViewNativeDefinition() string {
+	return Catalog.Format(msgs.locale, "qdrantViewNativeDefinition", nil)
+}
+
+// QdrantNativeDefinitionReadOnly says "Qdrant 原生定义（只读）"
+// in the language the app shows.
+func QdrantNativeDefinitionReadOnly() string {
+	return In(i18n.Locale()).QdrantNativeDefinitionReadOnly()
+}
+
+// QdrantNativeDefinitionReadOnly says "Qdrant 原生定义（只读）"
+// in the language of msgs.
+func (msgs Messages) QdrantNativeDefinitionReadOnly() string {
+	return Catalog.Format(msgs.locale, "qdrantNativeDefinitionReadOnly", nil)
+}
+
+// QdrantNativeJSONDefinition says "Qdrant 原生 JSON 定义"
+// in the language the app shows.
+func QdrantNativeJSONDefinition() string { return In(i18n.Locale()).QdrantNativeJSONDefinition() }
+
+// QdrantNativeJSONDefinition says "Qdrant 原生 JSON 定义"
+// in the language of msgs.
+func (msgs Messages) QdrantNativeJSONDefinition() string {
+	return Catalog.Format(msgs.locale, "qdrantNativeJSONDefinition", nil)
+}
+
+// QdrantDoubleClickCollection says "双击打开集合"
+// in the language the app shows.
+func QdrantDoubleClickCollection() string { return In(i18n.Locale()).QdrantDoubleClickCollection() }
+
+// QdrantDoubleClickCollection says "双击打开集合"
+// in the language of msgs.
+func (msgs Messages) QdrantDoubleClickCollection() string {
+	return Catalog.Format(msgs.locale, "qdrantDoubleClickCollection", nil)
+}
+
+// QdrantRequestEnqueuedUnconfirmed says "请求已受理，尚未确认完成"
+// in the language the app shows.
+func QdrantRequestEnqueuedUnconfirmed() string {
+	return In(i18n.Locale()).QdrantRequestEnqueuedUnconfirmed()
+}
+
+// QdrantRequestEnqueuedUnconfirmed says "请求已受理，尚未确认完成"
+// in the language of msgs.
+func (msgs Messages) QdrantRequestEnqueuedUnconfirmed() string {
+	return Catalog.Format(msgs.locale, "qdrantRequestEnqueuedUnconfirmed", nil)
+}
+
+// QdrantRequestEnqueuedDuration says "请求已受理，尚未确认完成 · %s"
+// in the language the app shows.
+func QdrantRequestEnqueuedDuration() string { return In(i18n.Locale()).QdrantRequestEnqueuedDuration() }
+
+// QdrantRequestEnqueuedDuration says "请求已受理，尚未确认完成 · %s"
+// in the language of msgs.
+func (msgs Messages) QdrantRequestEnqueuedDuration() string {
+	return Catalog.Format(msgs.locale, "qdrantRequestEnqueuedDuration", nil)
+}
+
+// QdrantRequestEnqueuedPresentationFailed says "请求已受理，尚未确认完成；结果显示失败："
+// in the language the app shows.
+func QdrantRequestEnqueuedPresentationFailed() string {
+	return In(i18n.Locale()).QdrantRequestEnqueuedPresentationFailed()
+}
+
+// QdrantRequestEnqueuedPresentationFailed says "请求已受理，尚未确认完成；结果显示失败："
+// in the language of msgs.
+func (msgs Messages) QdrantRequestEnqueuedPresentationFailed() string {
+	return Catalog.Format(msgs.locale, "qdrantRequestEnqueuedPresentationFailed", nil)
 }

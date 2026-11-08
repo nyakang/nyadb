@@ -8,10 +8,10 @@ import (
 
 // NativeDefinitionKind selects server metadata that has no relational grid.
 func NativeDefinitionKind(kind string) bool {
-	return kind == "数据库信息" || kind == "设计文档" || kind == "索引信息" || kind == "索引设置" || kind == "索引统计"
+	return kind == "集合信息" || kind == "集合别名" || kind == "数据库信息" || kind == "设计文档" || kind == "索引信息" || kind == "索引设置" || kind == "索引统计"
 }
 func (s *State) nativeDefinition(d *Document) bool {
-	return d != nil && (d.object.Kind == "design_document" || (d.object.Kind == "database" || d.object.Kind == "index" || d.object.Kind == "settings" || d.object.Kind == "statistics") && NativeDefinitionKind(d.objectKind))
+	return d != nil && (d.object.Kind == "points" && d.objectKind == "向量点" || d.object.Kind == "design_document" || (d.object.Kind == "collection" || d.object.Kind == "aliases" || d.object.Kind == "database" || d.object.Kind == "index" || d.object.Kind == "settings" || d.object.Kind == "statistics") && NativeDefinitionKind(d.objectKind))
 }
 
 // Native definitions retain full JSON; no SQL fields or editing tools are inferred.
@@ -22,6 +22,9 @@ func (s *State) nativeDefinitionView(c *ui.Context, d *Document) {
 	title, jsonLabel := locales.Text("CouchDB 原生定义（只读）"), locales.Text("CouchDB 原生 JSON 定义")
 	if d.object.Kind == "index" || d.object.Kind == "settings" || d.object.Kind == "statistics" {
 		title, jsonLabel = locales.Text("Meilisearch 原生定义（只读）"), locales.Text("Meilisearch 原生 JSON 定义")
+	}
+	if d.object.Kind == "collection" || d.object.Kind == "aliases" || d.object.Kind == "points" {
+		title, jsonLabel = locales.Text("Qdrant 原生定义（只读）"), locales.Text("Qdrant 原生 JSON 定义")
 	}
 	ui.Column(c).Fill().Children(func() {
 		ui.Row(c).Padding(3, 8).Gap(8).AlignItems(ui.Center).Children(func() {
@@ -53,6 +56,12 @@ func (s *State) nativeDefinitionView(c *ui.Context, d *Document) {
 			for i, v := range definitions {
 				kind := v.Kind
 				switch kind {
+				case "points":
+					kind = locales.Text("向量点")
+				case "collection":
+					kind = locales.Text("集合信息")
+				case "aliases":
+					kind = locales.Text("集合别名")
 				case "index":
 					kind = locales.Text("索引信息")
 				case "settings":

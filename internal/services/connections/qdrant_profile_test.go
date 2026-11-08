@@ -75,8 +75,8 @@ func TestQdrantURISeparatesAPIKeyAndRejectsAmbiguity(t *testing.T) {
 		if tc.key != "" && (strings.Contains(string(public), tc.key) || strings.Contains(fmt.Sprintf("%+v %#v", parsed, parsed), tc.key)) {
 			t.Fatal("temporary URI key exposed")
 		}
-		if imported, err := connections.ParseURI(tc.uri); err == nil || imported.Profile.Kind != "" || imported.Password != "" {
-			t.Fatal("private Qdrant URI exposed before public provider registration")
+		if imported, err := connections.ParseURI(tc.uri); err != nil || imported.Profile.QdrantOptions != parsed.Profile.QdrantOptions || imported.Profile.Kind != connections.Qdrant || imported.Password != parsed.Password {
+			t.Fatal("public Qdrant URI changed original configuration or key")
 		}
 	}
 	for _, uri := range []string{
