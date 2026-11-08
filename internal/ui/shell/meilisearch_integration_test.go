@@ -185,7 +185,7 @@ func TestMeilisearchNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t
 			t.Fatal("settings not native definition")
 		}
 		wait(func() bool { return !view.object.Loading() })
-		if view.object.Error() != "" || view.object.Data() == nil || !strings.Contains(view.object.Data().Definition, "原生🐱") || !tt.HasText("Meilisearch 原生定义（只读）") || tt.HasText("外键") {
+		if view.object.Error() != "" || !view.object.SettingsMode() || !strings.Contains(s.objectWorkspace.SettingsSnapshot(view.object).Raw, "原生🐱") || !tt.HasText("当前设置") || tt.HasText("外键") {
 			t.Fatal("full native definition", view.object.Error())
 		}
 		definitions = append(definitions, view)
@@ -337,7 +337,7 @@ func TestMeilisearchNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t
 					writeDomainCapture(t, folder, fmt.Sprintf("%s-%dx%d", view.name, size[0], size[1]), capture)
 					control := "运行 Meilisearch REST 请求"
 					if view.name == "definition" {
-						control = "刷新原生定义"
+						control = "读取当前设置"
 					} else if view.name == "documents" {
 						control = "下一页数据"
 					}

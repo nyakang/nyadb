@@ -11,6 +11,26 @@ SPEC.loader.exec_module(fixture)
 
 
 class MeilisearchFixtureTests(unittest.TestCase):
+    def test_settings_require_original_admission_conflicts_and_public_editor(self):
+        for mode in fixture.MODES:
+            names = fixture.required_passes(mode, settings=True)
+            self.assertTrue(set(fixture.required_passes(mode, public=True, tasks=True)).issubset(names))
+            self.assertTrue(set(fixture.SETTINGS_REQUIRED).issubset(names))
+            self.assertEqual(set(fixture.SETTINGS_SCOPED).issubset(names), mode != 'anonymous')
+            command = fixture.test_command(mode, True, settings=True)
+            self.assertIn('./internal/ui/shell', command)
+            self.assertIn('-race', command)
+            complete = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in names)
+            if mode == 'mtls':
+                complete += '\nnative mTLS accepted owned client certificate and rejected its absence'
+            fixture.check_acceptance(complete, mode, settings=True)
+            for name in fixture.SETTINGS_REQUIRED:
+                with self.assertRaises(RuntimeError):
+                    fixture.check_acceptance(complete.replace('--- PASS: TestMeilisearchNative'+name, '--- SKIP: TestMeilisearchNative'+name), mode, settings=True)
+        hashes = fixture.source_hashes(settings=True)
+        for path in ['internal/db/contract/settings.go', 'internal/services/dbruntime/settings.go', 'internal/ui/objectworkspace/settings.go', 'internal/ui/shell/meilisearch_settings_integration_test.go']:
+            self.assertIn(path, hashes)
+
     def test_task_panel_requires_public_layers_native_task_leases_and_ui(self):
         for mode in fixture.MODES:
             names = fixture.required_passes(mode, task_panel=True)

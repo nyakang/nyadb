@@ -23,47 +23,49 @@ type Session struct {
 }
 
 type Dependencies struct {
-	TaskDocumentsFor    func(int64) (contract.TaskDocumentsProvider, error)
-	MetadataFor         func(int64) (contract.MetadataProvider, error)
-	NamespaceLabel      func(contract.NamespaceRef) string
-	ProfileName         func(int64) string
-	EditFocus           *string
-	EditTarget          func(theme.EditTarget)
-	Engine              func(int64) string
-	FieldTypes          func(int64) []string
-	OpenDesign          func(ui.Services, int64, string, string)
-	BackupsFor          func(int64) contract.BackupOperations
-	BeforeRestore       func(ui.Services, contract.BackupPlan, func(ui.Services)) bool
-	RestoreGuardPending func(contract.BackupPlan) bool
-	BackupCompleted     func(ui.Services, BackupEvent)
-	MaintenanceFor      func(int64) contract.MaintenanceOperations
-	Maintained          func(ui.Services, MaintenanceEvent)
-	Availability        func(int64, string, contract.SchemaDesignTarget) contract.Availability
-	Namespace           func(int64, string) contract.NamespaceRef
-	SchemaDesignFor     func(int64) contract.SchemaDesignOperations
-	SchemaTarget        func(int64, string, string) contract.SchemaDesignTarget
-	SchemaDesigned      func(ui.Services, SchemaDesignEvent)
-	SchemaDropped       func(ui.Services, SchemaDropEvent)
-	SchemaCopied        func(ui.Services, SchemaCopyEvent)
-	SchemaRenamed       func(ui.Services, SchemaRenameEvent)
-	BeforeDrop          func(ui.Services, int64, string, string, func(ui.Services)) bool
-	BeforeCopy          func(ui.Services, int64, string, string, func(ui.Services)) bool
-	BeforeRename        func(ui.Services, int64, string, string, func(ui.Services)) bool
-	TableGuardPending   func(int64, string, string) bool
-	ViewDesignFor       func(int64) contract.ViewDesignOperations
-	ViewTarget          func(int64, string, string) contract.SchemaDesignTarget
-	ViewChanged         func(ui.Services, ViewEvent)
-	RenameSchema        func(ui.Services, int64, string, string, string)
-	Favorite            func(ui.Services, int64, string, string, string)
-	CanFavorite         func() bool
-	SearchRuntime       func(int64) (ObjectSearchRuntime, error)
-	OpenSearchObject    func(ui.Services, int64, uint64, ObjectSearchEntry)
-	RecordActivity      contract.ActivityRecorder
-	TableProfiles       func(int64, string, string) ([]TableProfile, error)
-	OpenTableProfile    func(ui.Services, int64, string, string, string)
-	AdministrationFor   func(int64) mysqlsvc.Administration
-	LoadObjectGroups    func(int64, string) map[string]string
-	SaveObjectGroups    func(int64, string, map[string]string)
+	SettingsDocumentsFor func(int64) (contract.SettingsDocumentsProvider, error)
+	SettingsChanged      func(ui.Services, SettingsEvent)
+	TaskDocumentsFor     func(int64) (contract.TaskDocumentsProvider, error)
+	MetadataFor          func(int64) (contract.MetadataProvider, error)
+	NamespaceLabel       func(contract.NamespaceRef) string
+	ProfileName          func(int64) string
+	EditFocus            *string
+	EditTarget           func(theme.EditTarget)
+	Engine               func(int64) string
+	FieldTypes           func(int64) []string
+	OpenDesign           func(ui.Services, int64, string, string)
+	BackupsFor           func(int64) contract.BackupOperations
+	BeforeRestore        func(ui.Services, contract.BackupPlan, func(ui.Services)) bool
+	RestoreGuardPending  func(contract.BackupPlan) bool
+	BackupCompleted      func(ui.Services, BackupEvent)
+	MaintenanceFor       func(int64) contract.MaintenanceOperations
+	Maintained           func(ui.Services, MaintenanceEvent)
+	Availability         func(int64, string, contract.SchemaDesignTarget) contract.Availability
+	Namespace            func(int64, string) contract.NamespaceRef
+	SchemaDesignFor      func(int64) contract.SchemaDesignOperations
+	SchemaTarget         func(int64, string, string) contract.SchemaDesignTarget
+	SchemaDesigned       func(ui.Services, SchemaDesignEvent)
+	SchemaDropped        func(ui.Services, SchemaDropEvent)
+	SchemaCopied         func(ui.Services, SchemaCopyEvent)
+	SchemaRenamed        func(ui.Services, SchemaRenameEvent)
+	BeforeDrop           func(ui.Services, int64, string, string, func(ui.Services)) bool
+	BeforeCopy           func(ui.Services, int64, string, string, func(ui.Services)) bool
+	BeforeRename         func(ui.Services, int64, string, string, func(ui.Services)) bool
+	TableGuardPending    func(int64, string, string) bool
+	ViewDesignFor        func(int64) contract.ViewDesignOperations
+	ViewTarget           func(int64, string, string) contract.SchemaDesignTarget
+	ViewChanged          func(ui.Services, ViewEvent)
+	RenameSchema         func(ui.Services, int64, string, string, string)
+	Favorite             func(ui.Services, int64, string, string, string)
+	CanFavorite          func() bool
+	SearchRuntime        func(int64) (ObjectSearchRuntime, error)
+	OpenSearchObject     func(ui.Services, int64, uint64, ObjectSearchEntry)
+	RecordActivity       contract.ActivityRecorder
+	TableProfiles        func(int64, string, string) ([]TableProfile, error)
+	OpenTableProfile     func(ui.Services, int64, string, string, string)
+	AdministrationFor    func(int64) mysqlsvc.Administration
+	LoadObjectGroups     func(int64, string) map[string]string
+	SaveObjectGroups     func(int64, string, map[string]string)
 
 	Capabilities  func(int64) contract.Capabilities
 	BatchExecutor func(context.Context, int64, uint64, []mysqlsvc.ObjectBatchItem) []mysqlsvc.ObjectBatchResult
@@ -108,6 +110,7 @@ type Dependencies struct {
 // Document owns its immutable object identity and mutable presentation state.
 // Only the UI thread changes it; workers publish to private buffered channels.
 type Document struct {
+	settings                      *settingsDocument
 	tasks                         *taskDocument
 	formFocusHandle               ui.Handle
 	formFocusTarget               *string
@@ -276,6 +279,10 @@ func (s *State) OpenStructure(id uint64, profileID int64, database, table string
 // prior worker before starting another. It never executes user-authored SQL or
 // modifies a table.
 func (s *State) Load(d *Document, invalidate func(), refresh bool) {
+	if d.SettingsMode() {
+		s.LoadSettings(d, invalidate, refresh)
+		return
+	}
 	if d != nil && d.tasks != nil {
 		s.LoadTasks(d, invalidate, refresh)
 		return
@@ -349,6 +356,7 @@ func (s *State) Close(d *Document) {
 	if d == nil || d.closed {
 		return
 	}
+	s.closeSettings(d)
 	s.closeTasks(d)
 	s.cancel(d)
 	s.closeDesign(d)
@@ -416,6 +424,7 @@ func (s *State) CloseAll() {
 // Consume runs on the UI thread. Generation changes invalidate completed work
 // without leaving a document stuck loading or automatically retrying it.
 func (s *State) Consume(services ui.Services) {
+	s.consumeSettings(services)
 	s.consumeTasks()
 	s.consumeMaintenance(services)
 	s.consumePortableBackup(services)
@@ -503,6 +512,9 @@ func (d *Document) ObjectKind() string {
 
 func (d *Document) Object() contract.ObjectRef { return d.object }
 func (s *State) OpenQualifiedStructure(id uint64, o contract.ObjectRef, kind string) *Document {
+	if o.Kind == "settings" && s.SettingsScopeSupported(o) {
+		return s.OpenSettings(id, o)
+	}
 	if o.Kind == "tasks" {
 		return s.OpenTasks(id, o)
 	}

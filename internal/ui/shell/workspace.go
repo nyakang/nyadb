@@ -656,6 +656,13 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 		},
 		Loader:      func() objectworkspace.Loader { return s.runtime.Data(s.sessions.Current().ProfileID).TableMetadata },
 		MetadataFor: func(id int64) (contract.MetadataProvider, error) { return s.runtime.Metadata(id) },
+		SettingsDocumentsFor: func(id int64) (contract.SettingsDocumentsProvider, error) {
+			if s.runtime == nil {
+				return nil, contract.ErrUnsupported
+			}
+			return s.runtime.SettingsDocuments(id)
+		},
+		SettingsChanged: s.settingsChanged,
 		TaskDocumentsFor: func(id int64) (contract.TaskDocumentsProvider, error) {
 			if s.runtime == nil {
 				return nil, contract.ErrUnsupported

@@ -39,6 +39,9 @@ func (s *State) RestoreWorkspace(data json.RawMessage) error {
 	return nil
 }
 func (s *State) DocumentSnapshot(d *Document) json.RawMessage {
+	if d.SettingsMode() {
+		return json.RawMessage(`{"Settings":true}`)
+	}
 	if d != nil && d.tasks != nil {
 		return snapshotTasks(d)
 	}
@@ -55,6 +58,10 @@ func (s *State) DocumentSnapshot(d *Document) json.RawMessage {
 	return b
 }
 func (s *State) RestoreDocumentPresentation(d *Document, b json.RawMessage) {
+	if d.SettingsMode() {
+		d.settings.tab = 0
+		return
+	}
 	if d != nil && d.tasks != nil {
 		restoreTasks(d, b)
 		return

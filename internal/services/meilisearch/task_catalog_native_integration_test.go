@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -281,6 +282,9 @@ func TestMeilisearchNativeTaskCatalogReadCancelCloseAndMutationNoReplay(t *testi
 		for _, fault := range []string{"lost", "canceled", "closed"} {
 			var calls atomic.Int32
 			admitted := make(chan Receipt, 1)
+			release := make(chan struct{})
+			var released sync.Once
+			unblock := func() { released.Do(func() { close(release) }) }
 			c := nativeRelay(t, upstream, func(w http.ResponseWriter, r *http.Request, response Response) bool {
 				if r.Method != "POST" && r.Method != "DELETE" {
 					return false
@@ -294,6 +298,9 @@ func TestMeilisearchNativeTaskCatalogReadCancelCloseAndMutationNoReplay(t *testi
 				admitted <- receipt
 				if fault != "lost" {
 					<-r.Context().Done()
+					// Keep net/http from synthesizing a successful response
+					// until the original canceled executor is acknowledged.
+					<-release
 					return true
 				}
 				conn, _, err := w.(http.Hijacker).Hijack()
@@ -302,6 +309,7 @@ func TestMeilisearchNativeTaskCatalogReadCancelCloseAndMutationNoReplay(t *testi
 				}
 				return true
 			})
+			t.Cleanup(unblock)
 			ctx, cancel := context.WithCancel(context.Background())
 			type completion struct {
 				response Response
@@ -338,6 +346,7 @@ func TestMeilisearchNativeTaskCatalogReadCancelCloseAndMutationNoReplay(t *testi
 				cancel()
 				t.Fatal("original native mutation executor not acknowledged")
 			}
+			unblock()
 			cancel()
 			if _, _, err := c.ChangeTasks(context.Background(), action, []uint32{target.UID}); !errors.Is(err, ErrRetired) || calls.Load() != 1 {
 				t.Fatal("task cancellation/deletion replayed")

@@ -23993,3 +23993,473 @@ func MeilisearchTasksLabel() string { return In(i18n.Locale()).MeilisearchTasksL
 func (msgs Messages) MeilisearchTasksLabel() string {
 	return Catalog.Format(msgs.locale, "meilisearchTasksLabel", nil)
 }
+
+// MeilisearchSettingsac6257fd7b says "读取当前设置"
+// in the language the app shows.
+func MeilisearchSettingsac6257fd7b() string { return In(i18n.Locale()).MeilisearchSettingsac6257fd7b() }
+
+// MeilisearchSettingsac6257fd7b says "读取当前设置"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsac6257fd7b() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsac6257fd7b", nil)
+}
+
+// MeilisearchSettingsab16155188 says "编辑设置 JSON"
+// in the language the app shows.
+func MeilisearchSettingsab16155188() string { return In(i18n.Locale()).MeilisearchSettingsab16155188() }
+
+// MeilisearchSettingsab16155188 says "编辑设置 JSON"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsab16155188() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsab16155188", nil)
+}
+
+// MeilisearchSettings3a66c49614 says "预览设置更改"
+// in the language the app shows.
+func MeilisearchSettings3a66c49614() string { return In(i18n.Locale()).MeilisearchSettings3a66c49614() }
+
+// MeilisearchSettings3a66c49614 says "预览设置更改"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings3a66c49614() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings3a66c49614", nil)
+}
+
+// MeilisearchSettingsd7b83f28cc says "预览重置设置"
+// in the language the app shows.
+func MeilisearchSettingsd7b83f28cc() string { return In(i18n.Locale()).MeilisearchSettingsd7b83f28cc() }
+
+// MeilisearchSettingsd7b83f28cc says "预览重置设置"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsd7b83f28cc() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsd7b83f28cc", nil)
+}
+
+// MeilisearchSettingsc560f50fa1 says "放弃设置草稿"
+// in the language the app shows.
+func MeilisearchSettingsc560f50fa1() string { return In(i18n.Locale()).MeilisearchSettingsc560f50fa1() }
+
+// MeilisearchSettingsc560f50fa1 says "放弃设置草稿"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsc560f50fa1() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsc560f50fa1", nil)
+}
+
+// MeilisearchSettingscc39f37dcf says "恢复设置连接"
+// in the language the app shows.
+func MeilisearchSettingscc39f37dcf() string { return In(i18n.Locale()).MeilisearchSettingscc39f37dcf() }
+
+// MeilisearchSettingscc39f37dcf says "恢复设置连接"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingscc39f37dcf() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingscc39f37dcf", nil)
+}
+
+// MeilisearchSettings79f94dba2b says "停止设置等待"
+// in the language the app shows.
+func MeilisearchSettings79f94dba2b() string { return In(i18n.Locale()).MeilisearchSettings79f94dba2b() }
+
+// MeilisearchSettings79f94dba2b says "停止设置等待"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings79f94dba2b() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings79f94dba2b", nil)
+}
+
+// MeilisearchSettingsb3d2cab63a says "复制当前完整设置"
+// in the language the app shows.
+func MeilisearchSettingsb3d2cab63a() string { return In(i18n.Locale()).MeilisearchSettingsb3d2cab63a() }
+
+// MeilisearchSettingsb3d2cab63a says "复制当前完整设置"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsb3d2cab63a() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsb3d2cab63a", nil)
+}
+
+// MeilisearchSettingsb1e7a63707 says "索引设置操作"
+// in the language the app shows.
+func MeilisearchSettingsb1e7a63707() string { return In(i18n.Locale()).MeilisearchSettingsb1e7a63707() }
+
+// MeilisearchSettingsb1e7a63707 says "索引设置操作"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsb1e7a63707() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsb1e7a63707", nil)
+}
+
+// MeilisearchSettings839dcb34b5 says "正在处理原设置请求…"
+// in the language the app shows.
+func MeilisearchSettings839dcb34b5() string { return In(i18n.Locale()).MeilisearchSettings839dcb34b5() }
+
+// MeilisearchSettings839dcb34b5 says "正在处理原设置请求…"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings839dcb34b5() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings839dcb34b5", nil)
+}
+
+// MeilisearchSettingsf8b3417b1f says "正在等待原设置请求停止…"
+// in the language the app shows.
+func MeilisearchSettingsf8b3417b1f() string { return In(i18n.Locale()).MeilisearchSettingsf8b3417b1f() }
+
+// MeilisearchSettingsf8b3417b1f says "正在等待原设置请求停止…"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsf8b3417b1f() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsf8b3417b1f", nil)
+}
+
+// MeilisearchSettings3fb3933100 says "设置提交结果未知；草稿和证据保留，不能重放。请检查原服务器任务。"
+// in the language the app shows.
+func MeilisearchSettings3fb3933100() string { return In(i18n.Locale()).MeilisearchSettings3fb3933100() }
+
+// MeilisearchSettings3fb3933100 says "设置提交结果未知；草稿和证据保留，不能重放。请检查原服务器任务。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings3fb3933100() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings3fb3933100", nil)
+}
+
+// MeilisearchSettingsa99f56d814 says "当前设置"
+// in the language the app shows.
+func MeilisearchSettingsa99f56d814() string { return In(i18n.Locale()).MeilisearchSettingsa99f56d814() }
+
+// MeilisearchSettingsa99f56d814 says "当前设置"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsa99f56d814() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsa99f56d814", nil)
+}
+
+// MeilisearchSettingsb8fa3801b5 says "设置草稿"
+// in the language the app shows.
+func MeilisearchSettingsb8fa3801b5() string { return In(i18n.Locale()).MeilisearchSettingsb8fa3801b5() }
+
+// MeilisearchSettingsb8fa3801b5 says "设置草稿"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsb8fa3801b5() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsb8fa3801b5", nil)
+}
+
+// MeilisearchSettingse219405637 says "设置任务与响应"
+// in the language the app shows.
+func MeilisearchSettingse219405637() string { return In(i18n.Locale()).MeilisearchSettingse219405637() }
+
+// MeilisearchSettingse219405637 says "设置任务与响应"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingse219405637() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingse219405637", nil)
+}
+
+// MeilisearchSettingsfb8cebb021 says "草稿最多 1 MiB；只提交变化的字段，删除字段会提交 null 重置。请检查嵌套设置预览。"
+// in the language the app shows.
+func MeilisearchSettingsfb8cebb021() string { return In(i18n.Locale()).MeilisearchSettingsfb8cebb021() }
+
+// MeilisearchSettingsfb8cebb021 says "草稿最多 1 MiB；只提交变化的字段，删除字段会提交 null 重置。请检查嵌套设置预览。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsfb8cebb021() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsfb8cebb021", nil)
+}
+
+// MeilisearchSettingsc0a01f25a3 says "完整设置草稿"
+// in the language the app shows.
+func MeilisearchSettingsc0a01f25a3() string { return In(i18n.Locale()).MeilisearchSettingsc0a01f25a3() }
+
+// MeilisearchSettingsc0a01f25a3 says "完整设置草稿"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsc0a01f25a3() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsc0a01f25a3", nil)
+}
+
+// MeilisearchSettings43f965ff1c says "原生当前设置预览"
+// in the language the app shows.
+func MeilisearchSettings43f965ff1c() string { return In(i18n.Locale()).MeilisearchSettings43f965ff1c() }
+
+// MeilisearchSettings43f965ff1c says "原生当前设置预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings43f965ff1c() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings43f965ff1c", nil)
+}
+
+// MeilisearchSettingsa760ac966d says "原始设置任务证据预览"
+// in the language the app shows.
+func MeilisearchSettingsa760ac966d() string { return In(i18n.Locale()).MeilisearchSettingsa760ac966d() }
+
+// MeilisearchSettingsa760ac966d says "原始设置任务证据预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsa760ac966d() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsa760ac966d", nil)
+}
+
+// MeilisearchSettings1718b6c98b says "请显式读取原索引设置或提交设置预览"
+// in the language the app shows.
+func MeilisearchSettings1718b6c98b() string { return In(i18n.Locale()).MeilisearchSettings1718b6c98b() }
+
+// MeilisearchSettings1718b6c98b says "请显式读取原索引设置或提交设置预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings1718b6c98b() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings1718b6c98b", nil)
+}
+
+// MeilisearchSettings9629744b82 says "设置 JSON 预览已截断；可复制完整内容。"
+// in the language the app shows.
+func MeilisearchSettings9629744b82() string { return In(i18n.Locale()).MeilisearchSettings9629744b82() }
+
+// MeilisearchSettings9629744b82 says "设置 JSON 预览已截断；可复制完整内容。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings9629744b82() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings9629744b82", nil)
+}
+
+// MeilisearchSettings548ada146f says "观察原设置任务（30 秒）"
+// in the language the app shows.
+func MeilisearchSettings548ada146f() string { return In(i18n.Locale()).MeilisearchSettings548ada146f() }
+
+// MeilisearchSettings548ada146f says "观察原设置任务（30 秒）"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings548ada146f() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings548ada146f", nil)
+}
+
+// MeilisearchSettingsdf948a0759 says "复制完整设置回执"
+// in the language the app shows.
+func MeilisearchSettingsdf948a0759() string { return In(i18n.Locale()).MeilisearchSettingsdf948a0759() }
+
+// MeilisearchSettingsdf948a0759 says "复制完整设置回执"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsdf948a0759() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsdf948a0759", nil)
+}
+
+// MeilisearchSettingsa044d4fba8 says "复制完整设置任务响应"
+// in the language the app shows.
+func MeilisearchSettingsa044d4fba8() string { return In(i18n.Locale()).MeilisearchSettingsa044d4fba8() }
+
+// MeilisearchSettingsa044d4fba8 says "复制完整设置任务响应"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsa044d4fba8() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsa044d4fba8", nil)
+}
+
+// MeilisearchSettings3b26939a63 says "原设置任务操作"
+// in the language the app shows.
+func MeilisearchSettings3b26939a63() string { return In(i18n.Locale()).MeilisearchSettings3b26939a63() }
+
+// MeilisearchSettings3b26939a63 says "原设置任务操作"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings3b26939a63() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings3b26939a63", nil)
+}
+
+// MeilisearchSettings4f7f32ba12 says "设置更改预览"
+// in the language the app shows.
+func MeilisearchSettings4f7f32ba12() string { return In(i18n.Locale()).MeilisearchSettings4f7f32ba12() }
+
+// MeilisearchSettings4f7f32ba12 says "设置更改预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings4f7f32ba12() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings4f7f32ba12", nil)
+}
+
+// MeilisearchSettings4bb0d0d85e says "重置全部索引设置预览"
+// in the language the app shows.
+func MeilisearchSettings4bb0d0d85e() string { return In(i18n.Locale()).MeilisearchSettings4bb0d0d85e() }
+
+// MeilisearchSettings4bb0d0d85e says "重置全部索引设置预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings4bb0d0d85e() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings4bb0d0d85e", nil)
+}
+
+// MeilisearchSettingsafe8e5b692 says "提交前会检查当前设置；同时编辑仍可能覆盖。设置任务可能重新索引文档。"
+// in the language the app shows.
+func MeilisearchSettingsafe8e5b692() string { return In(i18n.Locale()).MeilisearchSettingsafe8e5b692() }
+
+// MeilisearchSettingsafe8e5b692 says "提交前会检查当前设置；同时编辑仍可能覆盖。设置任务可能重新索引文档。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsafe8e5b692() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsafe8e5b692", nil)
+}
+
+// MeilisearchSettingsf4b1790e48 says "由服务器重置全部索引设置，保留索引和文档。"
+// in the language the app shows.
+func MeilisearchSettingsf4b1790e48() string { return In(i18n.Locale()).MeilisearchSettingsf4b1790e48() }
+
+// MeilisearchSettingsf4b1790e48 says "由服务器重置全部索引设置，保留索引和文档。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsf4b1790e48() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsf4b1790e48", nil)
+}
+
+// MeilisearchSettings8d2633bdf1 says "将提交的完整设置变更"
+// in the language the app shows.
+func MeilisearchSettings8d2633bdf1() string { return In(i18n.Locale()).MeilisearchSettings8d2633bdf1() }
+
+// MeilisearchSettings8d2633bdf1 says "将提交的完整设置变更"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings8d2633bdf1() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings8d2633bdf1", nil)
+}
+
+// MeilisearchSettings186b79cf38 says "确认提交设置更改"
+// in the language the app shows.
+func MeilisearchSettings186b79cf38() string { return In(i18n.Locale()).MeilisearchSettings186b79cf38() }
+
+// MeilisearchSettings186b79cf38 says "确认提交设置更改"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings186b79cf38() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings186b79cf38", nil)
+}
+
+// MeilisearchSettings4bb9f8d2d2 says "确认提交设置重置"
+// in the language the app shows.
+func MeilisearchSettings4bb9f8d2d2() string { return In(i18n.Locale()).MeilisearchSettings4bb9f8d2d2() }
+
+// MeilisearchSettings4bb9f8d2d2 says "确认提交设置重置"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings4bb9f8d2d2() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings4bb9f8d2d2", nil)
+}
+
+// MeilisearchSettings7f8b29d99f says "保留原索引设置草稿？"
+// in the language the app shows.
+func MeilisearchSettings7f8b29d99f() string { return In(i18n.Locale()).MeilisearchSettings7f8b29d99f() }
+
+// MeilisearchSettings7f8b29d99f says "保留原索引设置草稿？"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings7f8b29d99f() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings7f8b29d99f", nil)
+}
+
+// MeilisearchSettingsffddf42bcc says "离开将放弃本地草稿。已提交请求不会回滚，原服务器任务可能仍在执行。"
+// in the language the app shows.
+func MeilisearchSettingsffddf42bcc() string { return In(i18n.Locale()).MeilisearchSettingsffddf42bcc() }
+
+// MeilisearchSettingsffddf42bcc says "离开将放弃本地草稿。已提交请求不会回滚，原服务器任务可能仍在执行。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsffddf42bcc() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsffddf42bcc", nil)
+}
+
+// MeilisearchSettingsd364238e59 says "放弃本地草稿并离开"
+// in the language the app shows.
+func MeilisearchSettingsd364238e59() string { return In(i18n.Locale()).MeilisearchSettingsd364238e59() }
+
+// MeilisearchSettingsd364238e59 says "放弃本地草稿并离开"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsd364238e59() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsd364238e59", nil)
+}
+
+// MeilisearchSettingsd39269b381 says "设置草稿在预览后已改变，请重新预览"
+// in the language the app shows.
+func MeilisearchSettingsd39269b381() string { return In(i18n.Locale()).MeilisearchSettingsd39269b381() }
+
+// MeilisearchSettingsd39269b381 says "设置草稿在预览后已改变，请重新预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsd39269b381() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsd39269b381", nil)
+}
+
+// MeilisearchSettings9d286e4cab says "设置连接已恢复；请显式读取设置或观察原任务"
+// in the language the app shows.
+func MeilisearchSettings9d286e4cab() string { return In(i18n.Locale()).MeilisearchSettings9d286e4cab() }
+
+// MeilisearchSettings9d286e4cab says "设置连接已恢复；请显式读取设置或观察原任务"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings9d286e4cab() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings9d286e4cab", nil)
+}
+
+// MeilisearchSettings0d5969c575 says "原设置会话已失效，请显式恢复"
+// in the language the app shows.
+func MeilisearchSettings0d5969c575() string { return In(i18n.Locale()).MeilisearchSettings0d5969c575() }
+
+// MeilisearchSettings0d5969c575 says "原设置会话已失效，请显式恢复"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings0d5969c575() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings0d5969c575", nil)
+}
+
+// MeilisearchSettings5bb47f42b1 says "当前设置已读取；草稿保留，请合并后重新预览"
+// in the language the app shows.
+func MeilisearchSettings5bb47f42b1() string { return In(i18n.Locale()).MeilisearchSettings5bb47f42b1() }
+
+// MeilisearchSettings5bb47f42b1 says "当前设置已读取；草稿保留，请合并后重新预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings5bb47f42b1() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings5bb47f42b1", nil)
+}
+
+// MeilisearchSettings2aff91ccfa says "已停止等待；原服务器设置任务仍需显式确认"
+// in the language the app shows.
+func MeilisearchSettings2aff91ccfa() string { return In(i18n.Locale()).MeilisearchSettings2aff91ccfa() }
+
+// MeilisearchSettings2aff91ccfa says "已停止等待；原服务器设置任务仍需显式确认"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings2aff91ccfa() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings2aff91ccfa", nil)
+}
+
+// MeilisearchSettingsa644a5fb24 says "设置请求已入队；请显式观察原任务确认结果"
+// in the language the app shows.
+func MeilisearchSettingsa644a5fb24() string { return In(i18n.Locale()).MeilisearchSettingsa644a5fb24() }
+
+// MeilisearchSettingsa644a5fb24 says "设置请求已入队；请显式观察原任务确认结果"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsa644a5fb24() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsa644a5fb24", nil)
+}
+
+// MeilisearchSettings5dba6a7aa6 says "设置任务成功；已读取当前原索引设置"
+// in the language the app shows.
+func MeilisearchSettings5dba6a7aa6() string { return In(i18n.Locale()).MeilisearchSettings5dba6a7aa6() }
+
+// MeilisearchSettings5dba6a7aa6 says "设置任务成功；已读取当前原索引设置"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings5dba6a7aa6() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings5dba6a7aa6", nil)
+}
+
+// MeilisearchSettings89f3edebaf says "原设置任务未成功；完整诊断和草稿已保留"
+// in the language the app shows.
+func MeilisearchSettings89f3edebaf() string { return In(i18n.Locale()).MeilisearchSettings89f3edebaf() }
+
+// MeilisearchSettings89f3edebaf says "原设置任务未成功；完整诊断和草稿已保留"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings89f3edebaf() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings89f3edebaf", nil)
+}
+
+// MeilisearchSettingsfb7e71452c says "结果未知"
+// in the language the app shows.
+func MeilisearchSettingsfb7e71452c() string { return In(i18n.Locale()).MeilisearchSettingsfb7e71452c() }
+
+// MeilisearchSettingsfb7e71452c says "结果未知"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsfb7e71452c() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsfb7e71452c", nil)
+}
+
+// MeilisearchSettings8032af4a59 says "未提交"
+// in the language the app shows.
+func MeilisearchSettings8032af4a59() string { return In(i18n.Locale()).MeilisearchSettings8032af4a59() }
+
+// MeilisearchSettings8032af4a59 says "未提交"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings8032af4a59() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings8032af4a59", nil)
+}
+
+// MeilisearchSettings3d6b936393 says "请求被拒绝"
+// in the language the app shows.
+func MeilisearchSettings3d6b936393() string { return In(i18n.Locale()).MeilisearchSettings3d6b936393() }
+
+// MeilisearchSettings3d6b936393 says "请求被拒绝"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettings3d6b936393() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettings3d6b936393", nil)
+}
+
+// MeilisearchSettingsdd0e9c929d says "原服务器拒绝设置请求；草稿和诊断保留，请恢复后重新读取设置"
+// in the language the app shows.
+func MeilisearchSettingsdd0e9c929d() string { return In(i18n.Locale()).MeilisearchSettingsdd0e9c929d() }
+
+// MeilisearchSettingsdd0e9c929d says "原服务器拒绝设置请求；草稿和诊断保留，请恢复后重新读取设置"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsdd0e9c929d() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsdd0e9c929d", nil)
+}

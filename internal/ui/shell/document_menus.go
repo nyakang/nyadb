@@ -56,6 +56,8 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 		m.Separator()
 		if current.data != nil {
 			item("保存数据更改", "save_data", s.dataWorkspace.CanSave(current.data), mod, ui.KeyS)
+		} else if current.object != nil && current.object.SettingsMode() {
+			item("预览设置更改", "save_design", s.objectWorkspace.CanPrepareSettings(current.object) && current.object.DesignDirty(), mod, ui.KeyS)
 		} else if current.object != nil {
 			item("保存表设计", "save_design", current.object.DesignDirty() && !current.object.DesignBusy() && s.objectWorkspace.CanEditDesign(current.object), mod, ui.KeyS)
 		} else {

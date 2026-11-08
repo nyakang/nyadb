@@ -42,6 +42,10 @@ func (s *State) View(c *ui.Context, t *Document) {
 	if t == nil || t.closed {
 		return
 	}
+	if t.settings != nil {
+		s.settingsView(c, t)
+		return
+	}
 	if t.tasks != nil {
 		s.tasksView(c, t)
 		return

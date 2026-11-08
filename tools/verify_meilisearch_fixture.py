@@ -2,6 +2,7 @@
 """Verify Meilisearch native task/search transport on a unique owned Docker node."""
 import argparse
 import hashlib
+import ipaddress
 import json
 import os
 from pathlib import Path
@@ -41,6 +42,8 @@ TASK_REQUIRED = ['TaskCatalogPagingFiltersAndOriginalEvidence', 'TaskManagement2
 TASK_SCOPED = 'TaskCatalogScopedPermissionsAndRevocation'
 TASK_PANEL_REQUIRED = ['TaskDocumentLeasesCursorsOriginalRecordsAndSessionClose', 'TaskDocumentReadInterruptionsAndNoReplay', 'PublicTaskPanelNavigationFiltersJSONAndWorkspace', 'PublicTaskPanelParkedReadsCancelCloseAndRecovery']
 TASK_PANEL_SCOPED = 'PublicTaskPanelScopedPermissions'
+SETTINGS_REQUIRED = ['SettingsDeltaAdmissionObserveResetAndRecovery', 'SettingsConflictFailureAndIndexReplacement', 'SettingsLostCancelCloseNoReplay', 'PublicSettingsEditingPreviewAdmissionResetAndWorkspace', 'PublicSettingsParkedCancellationAndRecovery']
+SETTINGS_SCOPED = ['SettingsScopedPermissions', 'PublicSettingsScopedPermissions']
 MODES = ('anonymous', 'bearer', 'tls', 'mtls')
 
 
@@ -60,34 +63,34 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def source_hashes(profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False):
-    public = public or search or task_panel
-    tasks = tasks or task_panel
+def source_hashes(profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False):
+    public = public or search or task_panel or settings
+    tasks = tasks or task_panel or settings
     paths = sorted((ROOT/'internal/services/meilisearch').glob('*.go')) + sorted((ROOT/'internal/services/connections').glob('*.go')) + [ROOT/'go.mod', ROOT/'go.sum', Path(__file__).resolve(), ROOT/'tests/test_meilisearch_fixture.py']
     if profile or session or public:
         paths = sorted((ROOT/'internal').rglob('*.go')) + sorted((ROOT/'locales').glob('*.go')) + sorted((ROOT/'locales').glob('*.json')) + [ROOT/'go.mod', ROOT/'go.sum', Path(__file__).resolve(), ROOT/'tests/test_meilisearch_fixture.py']
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 
-def required_passes(mode, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False):
+def required_passes(mode, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False):
     if mode not in MODES:
         raise ValueError('Invalid native fixture mode')
-    public = public or search or task_panel
-    tasks = tasks or task_panel
+    public = public or search or task_panel or settings
+    tasks = tasks or task_panel or settings
     data = data or public
     profile, session, documents = profile or public, session or public or data, documents or data
-    return REQUIRED + ([] if mode == 'anonymous' else [SCOPED]) + (PROFILE_REQUIRED if profile else []) + ((SESSION_REQUIRED + ([] if mode == 'anonymous' else [SESSION_SCOPED])) if session else []) + ((PUBLIC_REQUIRED + ([] if mode == 'anonymous' else [PUBLIC_SCOPED])) if public else []) + ((DOCUMENT_REQUIRED + ([] if mode == 'anonymous' else [DOCUMENT_SCOPED])) if documents else []) + ((DATA_REQUIRED + ([] if mode == 'anonymous' else [DATA_SCOPED])) if data else []) + ((SEARCH_REQUIRED + ([] if mode == 'anonymous' else [SEARCH_SCOPED])) if search else []) + ((TASK_REQUIRED + ([] if mode == 'anonymous' else [TASK_SCOPED])) if tasks else []) + ((TASK_PANEL_REQUIRED + ([] if mode == 'anonymous' else [TASK_PANEL_SCOPED])) if task_panel else [])
+    return REQUIRED + ([] if mode == 'anonymous' else [SCOPED]) + (PROFILE_REQUIRED if profile else []) + ((SESSION_REQUIRED + ([] if mode == 'anonymous' else [SESSION_SCOPED])) if session else []) + ((PUBLIC_REQUIRED + ([] if mode == 'anonymous' else [PUBLIC_SCOPED])) if public else []) + ((DOCUMENT_REQUIRED + ([] if mode == 'anonymous' else [DOCUMENT_SCOPED])) if documents else []) + ((DATA_REQUIRED + ([] if mode == 'anonymous' else [DATA_SCOPED])) if data else []) + ((SEARCH_REQUIRED + ([] if mode == 'anonymous' else [SEARCH_SCOPED])) if search else []) + ((TASK_REQUIRED + ([] if mode == 'anonymous' else [TASK_SCOPED])) if tasks else []) + ((TASK_PANEL_REQUIRED + ([] if mode == 'anonymous' else [TASK_PANEL_SCOPED])) if task_panel else []) + ((SETTINGS_REQUIRED + ([] if mode == 'anonymous' else SETTINGS_SCOPED)) if settings else [])
 
 
-def test_command(mode, race, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False):
-    public = public or search or task_panel
-    tasks = tasks or task_panel
-    selected = '^TestMeilisearchNative(' + '|'.join(required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel)) + ')$'
+def test_command(mode, race, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False):
+    public = public or search or task_panel or settings
+    tasks = tasks or task_panel or settings
+    selected = '^TestMeilisearchNative(' + '|'.join(required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel, settings)) + ')$'
     return ['go', 'test', '-count=1', '-timeout=10m', '-v', *(['-race'] if race else []), '-run', selected, './internal/services/meilisearch', *(['./internal/ui/connectioneditor'] if profile or public else []), *(['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell'] if public else [])]
 
 
-def check_acceptance(log, mode, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False):
-    for name in required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel):
+def check_acceptance(log, mode, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False):
+    for name in required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel, settings):
         if not re.search(r'^--- PASS: TestMeilisearchNative'+name+r' \(', log, re.M):
             raise RuntimeError('Missing required native PASS: '+name)
     if re.search(r'^\s*--- (SKIP|FAIL):', log, re.M) or 'WARNING: DATA RACE' in log:
@@ -121,18 +124,18 @@ def certificates(folder, mutual):
         path.chmod(0o600)
 
 
-def verify(mode='tls', race=False, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False):
-    public = public or search or task_panel
-    tasks = tasks or task_panel
+def verify(mode='tls', race=False, profile=False, session=False, public=False, documents=False, data=False, search=False, tasks=False, task_panel=False, settings=False):
+    public = public or search or task_panel or settings
+    tasks = tasks or task_panel or settings
     data = data or public
     profile, session, documents = profile or public, session or public or data, documents or data
-    required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel)
+    required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel, settings)
     output = ROOT/'build/meilisearch'
     output.mkdir(parents=True, exist_ok=True)
     nonce = uuid.uuid4().hex
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
-    evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode, scope='public_native_task_documents_pages_details_observation_and_original_recovery' if task_panel else 'private_native_task_catalog_original_observations_and_explicit_uid_admission' if tasks else 'public_native_search_original_documents_bounded_tabular_and_complete_jsonl' if search else 'public_readonly_document_grid_and_complete_export' if public else 'private_readonly_data_document_leases_and_complete_export' if data else 'public_workbench_and_private_document_read_codecs' if public and documents else 'private_native_document_listing_and_id_reads' if documents else 'public_chooser_uri_sessions_indexes_definitions_rest_recovery' if public else 'private_original_session_metadata_rest_leases' if session else ('private_profile_uri_vault_editor' if profile else 'private_native_transport_tasks_search'), status='failed', fixture_cleaned=False, private_files_cleaned=False)
+    evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode, scope='public_native_settings_delta_preview_original_admission_observation_and_reset' if settings else 'public_native_task_documents_pages_details_observation_and_original_recovery' if task_panel else 'private_native_task_catalog_original_observations_and_explicit_uid_admission' if tasks else 'public_native_search_original_documents_bounded_tabular_and_complete_jsonl' if search else 'public_readonly_document_grid_and_complete_export' if public else 'private_readonly_data_document_leases_and_complete_export' if data else 'public_workbench_and_private_document_read_codecs' if public and documents else 'private_native_document_listing_and_id_reads' if documents else 'public_chooser_uri_sessions_indexes_definitions_rest_recovery' if public else 'private_original_session_metadata_rest_leases' if session else ('private_profile_uri_vault_editor' if profile else 'private_native_transport_tasks_search'), status='failed', fixture_cleaned=False, private_files_cleaned=False)
     try:
         with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
             folder = Path(private)
@@ -149,7 +152,15 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
             private_write(folder/'config.toml', '\n'.join(config)+'\n')
             try:
                 subprocess.run(['docker', 'image', 'inspect', IMAGE], check=True, stdout=subprocess.DEVNULL)
-                identifier = subprocess.check_output(['docker', 'create', '--name', 'nyadb-meili-it-'+nonce[:12], '--label', 'nyadb.fixture=meilisearch', '--label', 'nyadb.fixture.nonce='+nonce, '-p', '127.0.0.1::7700', '--mount', 'type=bind,src='+str(folder)+',dst=/owned,readonly', IMAGE, '/bin/meilisearch', '--config-file-path', '/owned/config.toml'], text=True).strip()
+                settings_options = []
+                if settings:
+                    network = json.loads(subprocess.check_output(['docker', 'network', 'inspect', 'bridge'], text=True))
+                    if len(network) != 1 or len(network[0]['IPAM']['Config']) != 1:
+                        raise RuntimeError('Owned model fixture requires a unique bridge gateway')
+                    gateway = ipaddress.IPv4Address(network[0]['IPAM']['Config'][0]['Gateway'])
+                    settings_options = ['--experimental-allowed-ip-networks', str(gateway)+'/32']
+                    evidence['owned_model_allowed_network'] = str(gateway)+'/32'
+                identifier = subprocess.check_output(['docker', 'create', '--name', 'nyadb-meili-it-'+nonce[:12], '--label', 'nyadb.fixture=meilisearch', '--label', 'nyadb.fixture.nonce='+nonce, '-p', '127.0.0.1::7700', '--mount', 'type=bind,src='+str(folder)+',dst=/owned,readonly', IMAGE, '/bin/meilisearch', '--config-file-path', '/owned/config.toml', *settings_options], text=True).strip()
                 evidence['id'] = identifier
                 subprocess.run(['docker', 'start', identifier], check=True, stdout=subprocess.DEVNULL)
                 inspected = json.loads(subprocess.check_output(['docker', 'inspect', identifier], text=True))[0]
@@ -176,6 +187,10 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                         raise RuntimeError('Native readiness failed; inspect redacted owned server log')
                     time.sleep(0.5)
                 probe = dict(endpoint=endpoint, auth='none' if mode == 'anonymous' else 'bearer', key_file='' if not key else str(folder/'api-key'), ca_file=str(folder/'ca.crt') if context else '', server_name='localhost' if context else '', client_cert_file=str(folder/'client.crt') if mode == 'mtls' else '', client_key_file=str(folder/'client.key') if mode == 'mtls' else '')
+                fixture_networks = list(inspected['NetworkSettings']['Networks'].values())
+                if len(fixture_networks) != 1 or not fixture_networks[0].get('Gateway'):
+                    raise RuntimeError('Owned fixture has no unique Docker bridge gateway')
+                probe['fixture_gateway'] = fixture_networks[0]['Gateway']
                 if profile:
                     probe.update(connect_timeout_seconds=12, request_timeout_seconds=45)
                     def request(method, path, body=None):
@@ -224,18 +239,20 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                     env['NYADB_MEILISEARCH_DATA_IT'] = '1'
                 if task_panel:
                     env['NYADB_MEILISEARCH_TASK_IMAGES'] = str(output/('task-images-'+nonce))
+                if settings:
+                    env['NYADB_MEILISEARCH_SETTINGS_IMAGES'] = str(output/('settings-images-'+nonce))
                 if search:
                     env['NYADB_MEILISEARCH_SEARCH_IMAGES'] = str(output/('search-images-'+nonce))
-                hashes = source_hashes(profile, session, public, documents, data, search, tasks, task_panel)
+                hashes = source_hashes(profile, session, public, documents, data, search, tasks, task_panel, settings)
                 logfile = output/('native-'+nonce+'.log')
-                command = test_command(mode, race, profile, session, public, documents, data, search, tasks, task_panel)
+                command = test_command(mode, race, profile, session, public, documents, data, search, tasks, task_panel, settings)
                 with logfile.open('w') as log:
                     result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=630)
-                if hashes != source_hashes(profile, session, public, documents, data, search, tasks, task_panel):
+                if hashes != source_hashes(profile, session, public, documents, data, search, tasks, task_panel, settings):
                     raise RuntimeError('Verification sources changed during acceptance; rerun on stable sources')
                 if result.returncode:
                     raise RuntimeError('Native acceptance failed; inspect '+str(logfile.relative_to(ROOT)))
-                check_acceptance(logfile.read_text(), mode, profile, session, public, documents, data, search, tasks, task_panel)
+                check_acceptance(logfile.read_text(), mode, profile, session, public, documents, data, search, tasks, task_panel, settings)
                 if profile:
                     images = sorted(Path(env['NYADB_MEILISEARCH_PROFILE_IMAGES']).glob('*.png'))
                     expected = {language+'-'+str(width)+'-'+auth+'-'+tab+'.png' for language in ['zh-Hans','en'] for width in [900,720] for auth in ['none','bearer'] for tab in ['general','advanced','ssl']}
@@ -260,7 +277,14 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                     if {str(p.relative_to(Path(env['NYADB_MEILISEARCH_TASK_IMAGES']))) for p in images} != expected:
                         raise RuntimeError('Missing localized native task panel evidence')
                     evidence['headless_task_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
-                evidence.update(status='passed_with_race' if race else 'passed', observed_identity=identity, source_hashes=hashes, command=command, log=str(logfile.relative_to(ROOT)), log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest(), required_passes=required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel))
+                if settings:
+                    image_root = Path(env['NYADB_MEILISEARCH_SETTINGS_IMAGES'])
+                    images = sorted(image_root.rglob('*.png'))
+                    expected = {language+'/'+view+'-'+str(width)+'x'+str(height)+'.png' for language in ['zh-Hans','en'] for width,height in [(1280,800),(720,520)] for view in ['settings-current','settings-draft','settings-preview','settings-receipt','settings-reset']}
+                    if {str(p.relative_to(image_root)) for p in images} != expected:
+                        raise RuntimeError('Missing localized native settings preview/receipt/reset evidence')
+                    evidence['headless_settings_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
+                evidence.update(status='passed_with_race' if race else 'passed', observed_identity=identity, source_hashes=hashes, command=command, log=str(logfile.relative_to(ROOT)), log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest(), required_passes=required_passes(mode, profile, session, public, documents, data, search, tasks, task_panel, settings))
             finally:
                 if identifier:
                     logs = subprocess.run(['docker', 'logs', identifier], capture_output=True, text=True)
@@ -289,5 +313,6 @@ if __name__ == '__main__':
     parser.add_argument('--data', action='store_true', help='Verify private readonly document leases, signed original offsets/rows, independent reads and complete export; implies documents and session')
     parser.add_argument('--tasks', action='store_true', help='Verify native live task pages, complete original observations, HTTP200 cancellation/deletion admission, permissions and no replay; no public management panel claims')
     parser.add_argument('--task-panel', action='store_true', help='Verify public qualified/global task panel, full JSON, native cursors, explicit observation/recovery and localized views; implies public and tasks')
+    parser.add_argument('--settings', action='store_true', help='Verify public native settings JSON editing, recursive previews, original task admission/observation, conflict, reset and explicit recovery; implies public and tasks')
     options = parser.parse_args()
-    verify(options.mode, options.race, options.profile, options.session, options.public, options.documents, options.data, options.search, options.tasks, options.task_panel)
+    verify(options.mode, options.race, options.profile, options.session, options.public, options.documents, options.data, options.search, options.tasks, options.task_panel, options.settings)
