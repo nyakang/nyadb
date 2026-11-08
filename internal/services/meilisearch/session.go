@@ -56,7 +56,9 @@ func (s *Session) ProfileID() int64 { return s.profileID }
 // Published generations belong exclusively to dbruntime.
 func (s *Session) Generation() uint64 { return 1 }
 func (s *Session) Capabilities() contract.Capabilities {
-	return contract.Capabilities{Query: true, Metadata: true, Objects: true}
+	c := nativeDataCapabilities()
+	c.Query, c.Objects = true, true
+	return c
 }
 func (s *Session) Identity() Identity { return s.identity }
 func (s *Session) Alive() bool        { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed && !s.revoked }

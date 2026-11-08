@@ -49,13 +49,20 @@ func TestMeilisearchNativePublicProviderMetadataAndPublishedGenerations(t *testi
 	}
 	features := first.Capabilities()
 	data := m.Data(p.ID)
-	if !features.Query || features.Objects || !features.Metadata || features.Documents || features.EditableTables || data.Saver != nil {
-		t.Fatal("public runtime inferred unsupported grid or management")
+	if !features.Query || features.Objects || !features.Metadata || !features.Documents || !features.Count || !features.FieldChunks || !features.Export || !features.JSONL || features.Keyset || features.EditableTables || data.Saver != nil {
+		t.Fatal("public runtime document or management capabilities")
 	}
-	if data.ReserveDocument != nil {
-		if _, err = data.ReserveDocument(m.Namespace(p.ID, uid).Object("documents", "documents")); !errors.Is(err, contract.ErrUnsupported) {
-			t.Fatal("unsupported grid reservation accepted", err)
-		}
+	if data.ReserveDocument == nil {
+		t.Fatal("public document provider not composed")
+	}
+	document, err := data.ReserveDocument(m.Namespace(p.ID, uid).Object("documents", "documents"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer document.Close()
+	originalData := document.Runtime()
+	if count, err := originalData.Count(ctx, p.ID, uid, "documents"); err != nil || count != 1 {
+		t.Fatal("original public document count", count, err)
 	}
 	meta, err := contract.Require[contract.MetadataProvider](first)
 	if err != nil {
@@ -116,10 +123,25 @@ func TestMeilisearchNativePublicProviderMetadataAndPublishedGenerations(t *testi
 	if _, err = lease.Replace(); !errors.Is(err, contract.ErrRevoked) {
 		t.Fatal("old replacement rebound", err)
 	}
+	if _, err = originalData.Count(ctx, p.ID, uid, "documents"); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal("old document runtime rebound", err)
+	}
+	if _, err = data.ReserveDocument(m.Namespace(p.ID, uid).Object("documents", "documents")); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal("old document reservation rebound", err)
+	}
+	_ = document.Close()
 	_ = first.Close()
 	lease.Release()
 	if !m.IsConnected(p.ID) {
 		t.Fatal("old close killed new session")
+	}
+	freshDocument, err := m.Data(p.ID).ReserveDocument(m.Namespace(p.ID, uid).Object("documents", "documents"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer freshDocument.Close()
+	if count, err := freshDocument.Runtime().Count(ctx, p.ID, uid, "documents"); err != nil || count != 1 {
+		t.Fatal("old close killed new original document", count, err)
 	}
 	fresh, err := contract.Require[contract.QueryProvider](second)
 	if err != nil {

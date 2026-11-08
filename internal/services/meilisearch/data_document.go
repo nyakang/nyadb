@@ -35,9 +35,9 @@ type dataLease struct {
 	total           uint64
 }
 
-// ReserveDocumentReads binds a readonly native document range to the original
+// ReserveDataDocument binds a readonly native document range to the original
 // session. Reservation performs no I/O and never chooses a replacement session.
-func (s *Session) ReserveDocumentReads(o contract.ObjectRef) (contract.DataDocumentLease, error) {
+func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
 	if err := s.checkNamespace(o.Namespace()); err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func nativeDataCapabilities() contract.Capabilities {
 	return contract.Capabilities{Documents: true, Metadata: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
 }
 
-// This private binding is not a DataDocumentsProvider until public grid admission.
+func (s *Session) DataDocumentCapabilities() contract.Capabilities { return nativeDataCapabilities() }
 func (l *dataLease) Runtime() contract.DataRuntime {
 	return contract.DataRuntime{Capabilities: nativeDataCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
 		FilterColumns: []string{}, SortColumns: []string{},
@@ -239,3 +239,5 @@ func (l *dataLease) Close() error {
 }
 
 var _ contract.DataDocumentLease = (*dataLease)(nil)
+
+var _ contract.DataDocumentsProvider = (*Session)(nil)

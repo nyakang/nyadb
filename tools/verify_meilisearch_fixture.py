@@ -29,7 +29,7 @@ SCOPED = 'ScopedKeyPermissionsAndRevocation'
 PROFILE_REQUIRED = ['ProfileURIReopenAndOriginalEditorCheck', 'ProfileProxyContextAndCanceledOriginalCheck', 'EditorLocalizedFormEvidence']
 SESSION_REQUIRED = ['SessionQualifiedPaginationAndDefinitions', 'SessionRESTAdmissionFailureAndSynchronous', 'SessionLostCancelReleaseCloseAndRecovery', 'SessionMetadataCloseAcknowledged']
 SESSION_SCOPED = 'SessionScopedPermissionsAndRevocation'
-PUBLIC_REQUIRED = ['PublicProviderMetadataAndPublishedGenerations', 'RESTLostWriteCancelAndExplicitRecovery', 'PublicChooserURINavigationDefinitionsRESTAndRecovery']
+PUBLIC_REQUIRED = ['PublicProviderMetadataAndPublishedGenerations', 'RESTLostWriteCancelAndExplicitRecovery', 'PublicChooserURINavigationDefinitionsRESTAndRecovery', 'PublicOriginalDocumentParkedReadAndClose']
 PUBLIC_SCOPED = 'PublicScopedWorkbenchPermissions'
 DOCUMENT_REQUIRED = ['DocumentsEnumerationBeyondSearchLimitAndExactIDs', 'DocumentsReadInterruptionsCancelCloseAndNoReplay']
 DOCUMENT_SCOPED = 'DocumentsScopedKeyPermissions'
@@ -64,6 +64,7 @@ def source_hashes(profile=False, session=False, public=False, documents=False, d
 def required_passes(mode, profile=False, session=False, public=False, documents=False, data=False):
     if mode not in MODES:
         raise ValueError('Invalid native fixture mode')
+    data = data or public
     profile, session, documents = profile or public, session or public or data, documents or data
     return REQUIRED + ([] if mode == 'anonymous' else [SCOPED]) + (PROFILE_REQUIRED if profile else []) + ((SESSION_REQUIRED + ([] if mode == 'anonymous' else [SESSION_SCOPED])) if session else []) + ((PUBLIC_REQUIRED + ([] if mode == 'anonymous' else [PUBLIC_SCOPED])) if public else []) + ((DOCUMENT_REQUIRED + ([] if mode == 'anonymous' else [DOCUMENT_SCOPED])) if documents else []) + ((DATA_REQUIRED + ([] if mode == 'anonymous' else [DATA_SCOPED])) if data else [])
 
@@ -109,6 +110,7 @@ def certificates(folder, mutual):
 
 
 def verify(mode='tls', race=False, profile=False, session=False, public=False, documents=False, data=False):
+    data = data or public
     profile, session, documents = profile or public, session or public or data, documents or data
     required_passes(mode, profile, session, public, documents, data)
     output = ROOT/'build/meilisearch'
@@ -116,7 +118,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
     nonce = uuid.uuid4().hex
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
-    evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode, scope='private_readonly_data_document_leases_and_complete_export' if data else 'public_workbench_and_private_document_read_codecs' if public and documents else 'private_native_document_listing_and_id_reads' if documents else 'public_chooser_uri_sessions_indexes_definitions_rest_recovery' if public else 'private_original_session_metadata_rest_leases' if session else ('private_profile_uri_vault_editor' if profile else 'private_native_transport_tasks_search'), status='failed', fixture_cleaned=False, private_files_cleaned=False)
+    evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode, scope='public_readonly_document_grid_and_complete_export' if public else 'private_readonly_data_document_leases_and_complete_export' if data else 'public_workbench_and_private_document_read_codecs' if public and documents else 'private_native_document_listing_and_id_reads' if documents else 'public_chooser_uri_sessions_indexes_definitions_rest_recovery' if public else 'private_original_session_metadata_rest_leases' if session else ('private_profile_uri_vault_editor' if profile else 'private_native_transport_tasks_search'), status='failed', fixture_cleaned=False, private_files_cleaned=False)
     try:
         with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
             folder = Path(private)
@@ -224,7 +226,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                     evidence['headless_form_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
                 if public:
                     images = sorted(Path(env['NYADB_MEILISEARCH_PUBLIC_IMAGES']).rglob('*.png'))
-                    expected = {language+'/'+view+'-'+str(width)+'x'+str(height)+'.png' for language in ['zh-Hans','en'] for width,height in [(1280,800),(720,520)] for view in ['definition','rest-admission']}
+                    expected = {language+'/'+view+'-'+str(width)+'x'+str(height)+'.png' for language in ['zh-Hans','en'] for width,height in [(1280,800),(720,520)] for view in ['definition','rest-admission','documents']}
                     if {str(p.relative_to(Path(env['NYADB_MEILISEARCH_PUBLIC_IMAGES']))) for p in images} != expected:
                         raise RuntimeError('Missing localized native public workbench images')
                     evidence['headless_workbench_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
@@ -251,7 +253,7 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--profile', action='store_true', help='Verify private URI/options/vault/editor/reopen and original checks')
     parser.add_argument('--session', action='store_true', help='Verify original sessions, bounded index metadata, REST admission, cancellation and explicit recovery')
-    parser.add_argument('--public', action='store_true', help='Verify public chooser, saved profiles, qualified metadata, REST admission and explicit recovery; implies profile and session')
+    parser.add_argument('--public', action='store_true', help='Verify public chooser, saved profiles, qualified metadata, REST admission and explicit recovery; implies profile, session and data')
     parser.add_argument('--documents', action='store_true', help='Verify bounded native document enumeration, exact IDs, readonly errors and original read cancellation/recovery; no public grid claims')
     parser.add_argument('--data', action='store_true', help='Verify private readonly document leases, signed original offsets/rows, independent reads and complete export; implies documents and session')
     options = parser.parse_args()

@@ -133,11 +133,11 @@ func TestMeilisearchSessionQualifiedIndexesAndIndependentDefinitions(t *testing.
 	if calls.Load() != before {
 		t.Fatal("invalid identity dispatched")
 	}
-	if s.Capabilities() != (contract.Capabilities{Query: true, Metadata: true, Objects: true}) {
+	if s.Capabilities() != (contract.Capabilities{Query: true, Metadata: true, Objects: true, Documents: true, Count: true, FieldChunks: true, Export: true, JSONL: true}) {
 		t.Fatal(s.Capabilities())
 	}
-	if _, err := contract.Require[contract.DataDocumentsProvider](s); !errors.Is(err, contract.ErrUnsupported) {
-		t.Fatal("premature data provider", err)
+	if _, err := contract.Require[contract.DataDocumentsProvider](s); err != nil {
+		t.Fatal("public document provider unavailable", err)
 	}
 }
 func TestMeilisearchIndexPaginationCompletenessAndChangingPages(t *testing.T) {

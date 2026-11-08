@@ -130,8 +130,8 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *Document, offset in
 	if t == nil || t.closed || offset < 0 || t.loading {
 		return
 	}
-	// Full unique-key results advance by a seek cursor; other tables retain
-	// the legacy OFFSET fallback and its explicit UI warning.
+	// Providers may attach original document boundaries to OFFSET pages as well
+	// as seek pages. A boundary does not imply keyset or snapshot semantics.
 	if previous, ok := t.cursorHistory[offset]; ok && offset == 0 {
 		t.useKeyset = t.keysetEnabled()
 		t.after = previous
@@ -139,7 +139,7 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *Document, offset in
 		t.useKeyset = t.keysetEnabled()
 		t.after = nil
 	} else if offset == t.offset+int64(t.limit) && t.page != nil &&
-		t.page.KeysetAvailable && t.page.NextCursor != nil {
+		t.page.NextCursor != nil && (t.page.KeysetAvailable || t.runtimeLease != nil && t.page.NextCursor.Offset == offset) {
 		if t.cursorHistory == nil {
 			t.cursorHistory = map[int64]*contract.DataCursor{}
 		}
@@ -152,6 +152,9 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *Document, offset in
 	} else {
 		t.useKeyset = false
 		t.after = nil
+		if t.runtimeLease != nil {
+			t.cursorHistory = nil
+		}
 	}
 	clearDraftHistory(t)
 	t.offset = offset

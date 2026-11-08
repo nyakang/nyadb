@@ -38,12 +38,12 @@ func TestMeilisearchNativeDataQualifiedOffsetPagingFingerprintsAndCompleteExport
 	raw, _ := json.Marshal(documents)
 	nativeWait(t, admin, nativeSubmit(t, admin, Request{Method: "POST", Path: "/indexes/" + uid + "/documents", Body: raw}))
 	object := s.Namespace(uid).Object("documents", "documents")
-	first, err := s.ReserveDocumentReads(object)
+	first, err := s.ReserveDataDocument(object)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer first.Close()
-	second, err := s.ReserveDocumentReads(object)
+	second, err := s.ReserveDataDocument(object)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,12 +154,12 @@ func TestMeilisearchNativeDataReadCancelCloseIndependentSlotsAndSessionLifecycle
 			_, secret := nativeFixture(t)
 			s := testSession(t, relay.config, secret)
 			object := s.Namespace(uid).Object("documents", "documents")
-			a, err := s.ReserveDocumentReads(object)
+			a, err := s.ReserveDataDocument(object)
 			if err != nil {
 				t.Fatal(err)
 			}
 			defer a.Close()
-			b, err := s.ReserveDocumentReads(object)
+			b, err := s.ReserveDataDocument(object)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -216,7 +216,7 @@ func TestMeilisearchNativeDataReadCancelCloseIndependentSlotsAndSessionLifecycle
 				}
 			}
 			fresh := testSession(t, relay.config, secret)
-			freshLease, err := fresh.ReserveDocumentReads(fresh.Namespace(uid).Object("documents", "documents"))
+			freshLease, err := fresh.ReserveDataDocument(fresh.Namespace(uid).Object("documents", "documents"))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -247,7 +247,7 @@ func TestMeilisearchNativeDataScopedPermissionsAndIndexObservationChanges(t *tes
 		t.Fatal("scoped data fabricated global observation")
 	}
 	object := s.Namespace(uid).Object("documents", "documents")
-	lease, err := s.ReserveDocumentReads(object)
+	lease, err := s.ReserveDataDocument(object)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,7 +274,7 @@ func TestMeilisearchNativeDataScopedPermissionsAndIndexObservationChanges(t *tes
 	if _, err = lease.Runtime().Count(context.Background(), s.ProfileID(), uid, "documents"); !errors.Is(err, ErrDataTargetChanged) {
 		t.Fatal("observed original index recreation accepted", err)
 	}
-	fresh, err := s.ReserveDocumentReads(object)
+	fresh, err := s.ReserveDataDocument(object)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -287,7 +287,7 @@ func TestMeilisearchNativeDataScopedPermissionsAndIndexObservationChanges(t *tes
 	if !errors.As(err, &status) || status.Status != 403 {
 		t.Fatal("revoked original data key rebound", err)
 	}
-	if _, err = s.ReserveDocumentReads((contract.NamespaceRef{ProfileID: s.ProfileID() + 1, Catalog: uid}).Object("documents", "documents")); err == nil {
+	if _, err = s.ReserveDataDocument((contract.NamespaceRef{ProfileID: s.ProfileID() + 1, Catalog: uid}).Object("documents", "documents")); err == nil {
 		t.Fatal("foreign profile admitted")
 	}
 	t.Log("native scoped data/index observations, independent denied settings and key revocation verified; timestamp and task observations are not atomic incarnation/CAS")
@@ -343,7 +343,7 @@ func TestMeilisearchNativeDataExportInterruptionsAndObservedConcurrentChanges(t 
 			})
 			_, secret := nativeFixture(t)
 			s := testSession(t, relay.config, secret)
-			lease, err := s.ReserveDocumentReads(s.Namespace(uid).Object("documents", "documents"))
+			lease, err := s.ReserveDataDocument(s.Namespace(uid).Object("documents", "documents"))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -396,7 +396,7 @@ func TestMeilisearchNativeDataExportInterruptionsAndObservedConcurrentChanges(t 
 				}
 			}
 			fresh := testSession(t, relay.config, secret)
-			newLease, err := fresh.ReserveDocumentReads(fresh.Namespace(uid).Object("documents", "documents"))
+			newLease, err := fresh.ReserveDataDocument(fresh.Namespace(uid).Object("documents", "documents"))
 			if err != nil {
 				t.Fatal(err)
 			}

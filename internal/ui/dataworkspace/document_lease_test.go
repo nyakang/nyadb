@@ -113,63 +113,76 @@ func TestDocumentLeaseFailureCannotFallBackToParentRuntime(t *testing.T) {
 }
 
 func TestDocumentLeasePageNavigationKeepsFirstBoundaryAndRefreshClearsIt(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	l := &testDocumentLease{cancel: cancel}
-	l.runtime.Capabilities = contract.Capabilities{Documents: true, Keyset: true, Metadata: true, Count: true, FieldChunks: true, EditableTables: true}
-	requests := make(chan contract.DataOptions, 8)
-	l.runtime.AdvancedLoader = func(_ context.Context, _ int64, _, _ string, o contract.DataOptions) (*contract.DataPage, error) {
-		if err := ctx.Err(); err != nil {
-			return nil, err
-		}
-		requests <- o
-		return &contract.DataPage{Columns: []string{"document"}, Offset: o.Offset, Limit: o.Limit, KeysetAvailable: true, HasMore: true, CurrentCursor: &contract.DataCursor{Offset: o.Offset, Values: [][]byte{[]byte("original-start")}}, NextCursor: &contract.DataCursor{Offset: o.Offset + int64(o.Limit), Values: [][]byte{[]byte("original-next")}}}, nil
-	}
-	r := Runtime{ReserveDocument: func(contract.ObjectRef) (contract.DataDocumentLease, error) { return l, nil }}
-	s := New(Dependencies{Session: func() Session { return Session{ProfileID: 12, Generation: 1, Connected: true} }, Runtime: func() Runtime { return r }})
-	d := s.OpenObject(1, contract.NamespaceRef{ProfileID: 12, Catalog: "cluster"}.Object("index", "docs"), contract.Capabilities{Keyset: true})
-	defer s.Close(d)
-	consume := func() {
-		t.Helper()
-		select {
-		case result := <-d.results:
-			out := make(chan mysqlDataResult, 1)
-			out <- result
-			d.results = out
-		case <-time.After(time.Second):
-			t.Fatal("read stalled")
-		}
-		s.Consume(ui.Services{})
-		if d.page == nil || d.loading || d.err != "" {
-			t.Fatal("page not applied", d.err)
-		}
-	}
-	s.Load(ui.Services{}, d, false)
-	consume()
-	first := <-requests
-	if first.After != nil {
-		t.Fatal("first page had a foreign boundary")
-	}
-	s.changeMySQLDataPage(ui.Services{}, d, int64(d.limit))
-	consume()
-	next := <-requests
-	if next.After == nil || string(next.After.Values[0]) != "original-next" {
-		t.Fatal("next page lost original boundary")
-	}
-	s.changeMySQLDataPage(ui.Services{}, d, 0)
-	consume()
-	back := <-requests
-	if back.After == nil || string(back.After.Values[0]) != "original-start" {
-		t.Fatal("back to first page created a new snapshot")
-	}
-	s.Load(ui.Services{}, d, true)
-	consume()
-	refresh := <-requests
-	if refresh.After != nil || refresh.Offset != 0 {
-		t.Fatal("explicit refresh reused stale boundary")
-	}
-	if ctx.Err() != nil {
-		t.Fatal("navigation canceled document lease")
+	for _, keyset := range []bool{true, false} {
+		t.Run(map[bool]string{true: "keyset", false: "offset"}[keyset], func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			l := &testDocumentLease{cancel: cancel}
+			l.runtime.Capabilities = contract.Capabilities{Documents: true, Keyset: keyset, Metadata: true, Count: true, FieldChunks: true, EditableTables: true}
+			requests := make(chan contract.DataOptions, 8)
+			l.runtime.AdvancedLoader = func(_ context.Context, _ int64, _, _ string, o contract.DataOptions) (*contract.DataPage, error) {
+				if err := ctx.Err(); err != nil {
+					return nil, err
+				}
+				requests <- o
+				return &contract.DataPage{Columns: []string{"document"}, Offset: o.Offset, Limit: o.Limit, KeysetAvailable: keyset, HasMore: true, CurrentCursor: &contract.DataCursor{Offset: o.Offset, Values: [][]byte{[]byte("original-start")}}, NextCursor: &contract.DataCursor{Offset: o.Offset + int64(o.Limit), Values: [][]byte{[]byte("original-next")}}}, nil
+			}
+			r := Runtime{ReserveDocument: func(contract.ObjectRef) (contract.DataDocumentLease, error) { return l, nil }}
+			s := New(Dependencies{Session: func() Session { return Session{ProfileID: 12, Generation: 1, Connected: true} }, Runtime: func() Runtime { return r }})
+			d := s.OpenObject(1, contract.NamespaceRef{ProfileID: 12, Catalog: "cluster"}.Object("index", "docs"), contract.Capabilities{Keyset: keyset})
+			defer s.Close(d)
+			consume := func() {
+				t.Helper()
+				select {
+				case result := <-d.results:
+					out := make(chan mysqlDataResult, 1)
+					out <- result
+					d.results = out
+				case <-time.After(time.Second):
+					t.Fatal("read stalled")
+				}
+				s.Consume(ui.Services{})
+				if d.page == nil || d.loading || d.err != "" {
+					t.Fatal("page not applied", d.err)
+				}
+			}
+			s.Load(ui.Services{}, d, false)
+			consume()
+			first := <-requests
+			if first.After != nil {
+				t.Fatal("first page had a foreign boundary")
+			}
+			s.changeMySQLDataPage(ui.Services{}, d, int64(d.limit))
+			consume()
+			next := <-requests
+			if next.UseKeyset != keyset || next.After == nil || string(next.After.Values[0]) != "original-next" {
+				t.Fatal("next page lost original boundary")
+			}
+			s.changeMySQLDataPage(ui.Services{}, d, 0)
+			consume()
+			back := <-requests
+			if back.After == nil || string(back.After.Values[0]) != "original-start" {
+				t.Fatal("back to first page created a new snapshot")
+			}
+			s.Load(ui.Services{}, d, true)
+			consume()
+			refresh := <-requests
+			if refresh.After != nil || refresh.Offset != 0 {
+				t.Fatal("explicit refresh reused stale boundary")
+			}
+			if ctx.Err() != nil {
+				t.Fatal("navigation canceled document lease")
+			}
+
+			if !keyset {
+				s.changeMySQLDataPage(ui.Services{}, d, 3*int64(d.limit))
+				consume()
+				jump := <-requests
+				if jump.After != nil || jump.UseKeyset || len(d.cursorHistory) != 1 {
+					t.Fatal("new offset traversal retained previous boundaries")
+				}
+			}
+		})
 	}
 }
 

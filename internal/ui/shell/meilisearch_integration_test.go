@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"encoding/pem"
@@ -71,6 +72,14 @@ func TestMeilisearchNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t
 		submit("PATCH", "/indexes/"+uid+"/settings", `{"searchableAttributes":["text"],"filterableAttributes":["integer"],"synonyms":{"猫":["cat","原生🐱"]}}`)
 	}
 	submit("POST", "/indexes/"+indexes[0]+"/documents", `[{"id":"original","integer":9007199254740993,"text":"原始;文档🐱"}]`)
+	rows := make([]map[string]any, 1016)
+	for i := range rows {
+		rows[i] = map[string]any{"id": fmt.Sprintf("row_%04d", i), "integer": json.Number("9007199254740993")}
+	}
+	rows[0]["memo"] = strings.Repeat("猫🐱", 1500)
+	seed, _ := json.Marshal(rows)
+	submit("POST", "/indexes/"+indexes[0]+"/documents", string(seed))
+	submit("POST", "/indexes/"+indexes[1]+"/documents", `[{"id":"sibling","integer":9007199254740993}]`)
 	s, _, profiles, path := profileTestState(t)
 	vault := &memoryCredentialVault{secrets: map[string]string{}}
 	s.SetCredentialVault(vault)
@@ -149,7 +158,7 @@ func TestMeilisearchNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t
 	if w.Status != "已连接" {
 		t.Fatal(w.Error)
 	}
-	var definitions []*tab
+	var definitions, documents []*tab
 	for _, uid := range indexes {
 		s.submitNavigation(services, navigation.DatabaseNode(p.ID, uid))
 		wait(func() bool { return w.Pending == "" && w.Cache[uid] != nil })
@@ -179,15 +188,86 @@ func TestMeilisearchNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t
 			t.Fatal("full native definition", view.object.Error())
 		}
 		definitions = append(definitions, view)
-		count := len(s.tabs)
 		s.submitNavigation(services, navigation.Node{Kind: "object", ProfileID: p.ID, Database: uid, Category: "文档", Object: "documents"})
-		tt.Frame()
-		if len(s.tabs) != count || !strings.Contains(s.status, "文档网格暂不可用") {
-			t.Fatal("unavailable grid claimed", s.status)
+		data := s.currentTab()
+		if data.data == nil || data.data.Object() != s.runtime.Namespace(p.ID, uid).Object("documents", "documents") {
+			t.Fatal("native documents did not open the qualified shared grid")
 		}
+		wait(func() bool { return !data.data.Busy() })
+		if data.data.Error() != "" || data.data.Page() == nil || data.data.Page().Editable == nil || *data.data.Page().Editable || data.data.Page().KeysetAvailable || !data.data.Page().LiveRead {
+			t.Fatal("native readonly OFFSET grid", data.data.Error())
+		}
+		documents = append(documents, data)
 	}
 	if definitions[0].id == definitions[1].id || definitions[0].object.Object() == definitions[1].object.Object() {
 		t.Fatal("same-name settings aliased")
+	}
+	if documents[0].id == documents[1].id || documents[0].data.Object() == documents[1].data.Object() {
+		t.Fatal("same-name original document ranges aliased")
+	}
+	s.submitNavigation(services, navigation.Node{Kind: "object", ProfileID: p.ID, Database: indexes[0], Category: "文档", Object: "documents"})
+	data := documents[0].data
+	first := data.Page().Rows[0][0].Text
+	if err = tt.Click("下一页数据"); err != nil {
+		t.Fatal(err)
+	}
+	wait(func() bool { return !data.Busy() })
+	if data.Error() != "" || data.Offset() != 100 || data.Page().Rows[0][0].Text == first || documents[1].data.Page().Rows[0][0].Text != "sibling" {
+		t.Fatal("original offset continuation or sibling changed", data.Error())
+	}
+	if err = tt.Click("上一页数据"); err != nil {
+		t.Fatal(err)
+	}
+	wait(func() bool { return !data.Busy() })
+	if data.Error() != "" || data.Offset() != 0 || data.Page().Rows[0][0].Text != first {
+		t.Fatal("original offset back boundary", data.Error())
+	}
+	panel := data.Inspector()
+	wait(func() bool { return !panel.InfoLoading() })
+	if err = tt.Click("获取整表行数"); err != nil {
+		t.Fatal(err)
+	}
+	wait(func() bool { return !panel.CountLoading() })
+	if panel.CountError() != "" || panel.Count() == nil || *panel.Count() != 1017 {
+		t.Fatal("native explicit total", panel.CountError())
+	}
+	// Selecting an actual JSON cell uses the existing grid and field inspector.
+	if err = tt.Click(data.Page().Rows[1][1].Text); err != nil {
+		t.Fatal("native JSON cell selection", err)
+	}
+	s.dataWorkspace.ShowField(data)
+	tt.Frame()
+	if err = tt.Click("读取所选字段下一段"); err != nil {
+		t.Fatal(err)
+	}
+	wait(func() bool { return !panel.ChunkLoading() })
+	if panel.ChunkError() != "" || len([]rune(panel.ChunkText())) != 1024 || panel.ChunkNext() != 1024 || panel.ChunkTotal() <= 1024 {
+		t.Fatal("native bounded field tool", panel.ChunkError())
+	}
+	var exported bytes.Buffer
+	s.SetEngineFiles(func(name string) (string, error) { return name, nil }, func(_ string, write func(io.Writer) error) error { return write(&exported) })
+	if err = clickMySQLDataToolbar(tt, "导出选项"); err != nil {
+		t.Fatal(err)
+	}
+	if err = tt.ChooseMenuItem("整表导出为 JSONL（忽略当前筛选）"); err != nil {
+		t.Fatal(err)
+	}
+	wait(func() bool { return !data.Busy() })
+	lines := bytes.Split(bytes.TrimSpace(exported.Bytes()), []byte{'\n'})
+	if data.Error() != "" || len(lines) != 1017 {
+		t.Fatal("complete native export was bounded by page/search", len(lines), data.Error())
+	}
+	for _, line := range lines {
+		var doc struct {
+			ID      string
+			Integer json.Number
+		}
+		if json.Unmarshal(line, &doc) != nil || doc.ID == "" || doc.Integer.String() != "9007199254740993" {
+			t.Fatal("export wrapped or rounded original JSON")
+		}
+	}
+	if caps := s.objectCapabilitiesFor(p.ID); caps.EditableTables || caps.Import || caps.Transactions || caps.Keyset {
+		t.Fatal("readonly OFFSET grid inferred unsupported semantics")
 	}
 	s.submitNavigation(services, navigation.DatabaseNode(p.ID, indexes[0]))
 	wait(func() bool { return w.Pending == "" })
@@ -245,7 +325,7 @@ func TestMeilisearchNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t
 				for _, view := range []struct {
 					name string
 					tab  *tab
-				}{{"definition", definitions[0]}, {"rest-admission", query}} {
+				}{{"definition", definitions[0]}, {"rest-admission", query}, {"documents", documents[0]}} {
 					for i, candidate := range s.tabs {
 						if candidate.id == view.tab.id {
 							s.activeTab = i
@@ -257,6 +337,8 @@ func TestMeilisearchNativePublicChooserURINavigationDefinitionsRESTAndRecovery(t
 					control := "运行 Meilisearch REST 请求"
 					if view.name == "definition" {
 						control = "刷新原生定义"
+					} else if view.name == "documents" {
+						control = "下一页数据"
 					}
 					rect, ok := capture.Find(locales.Text(control))
 					if !ok || rect.W <= 0 || rect.H <= 0 || rect.X < 0 || rect.Y < 0 || rect.X+rect.W > float32(size[0])+1 || rect.Y+rect.H > float32(size[1])+1 {
@@ -394,6 +476,15 @@ func TestMeilisearchNativePublicScopedWorkbenchPermissions(t *testing.T) {
 		if view.object.Error() == "" || view.object.Data() != nil {
 			t.Fatal("denied native read became empty success")
 		}
+	}
+	s.submitNavigation(services, navigation.Node{Kind: "object", ProfileID: p.ID, Database: uid, Category: "文档", Object: "documents"})
+	data := s.currentTab().data
+	if data == nil {
+		t.Fatal("scoped shared document grid missing")
+	}
+	wait(func() bool { return !data.Busy() })
+	if data.Error() != "" || len(data.Page().Rows) != 1 || !strings.Contains(data.Page().Rows[0][1].Text, "9007199254740993") || globals.Load() != 0 {
+		t.Fatal("scoped documents changed original key or scope", data.Error())
 	}
 	s.openQuery()
 	query := s.currentTab()

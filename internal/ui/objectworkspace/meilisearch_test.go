@@ -9,10 +9,11 @@ import (
 	"testing"
 )
 
-func TestMeilisearchReadonlyDefinitionsAndUnavailableDocumentGrid(t *testing.T) {
+func TestMeilisearchReadonlyDefinitionsAndCapabilityBoundDocumentGrid(t *testing.T) {
 	var opened int
+	var documents bool
 	s := New(Dependencies{Engine: func(int64) string { return "meilisearch" }, Session: func() Session { return Session{ProfileID: 7, Generation: 8, Connected: true} }, Capabilities: func(int64) contract.Capabilities {
-		return contract.Capabilities{Query: true, Metadata: true, Objects: true}
+		return contract.Capabilities{Query: true, Metadata: true, Objects: true, Documents: documents}
 	}, OpenData: func(ui.Services, int64, string, string) { opened++ }})
 	defer s.CloseAll()
 	source := `{"rankingRules":["words"],"future":{"exact":9007199254740993,"text":"原生🐱"}}`
@@ -33,6 +34,11 @@ func TestMeilisearchReadonlyDefinitionsAndUnavailableDocumentGrid(t *testing.T) 
 	s.openObjectFor(ui.Services{}, 7, "owned", "documents", "文档")
 	if opened != 0 || s.canOpenObject(7, "文档") {
 		t.Fatal("unavailable document grid dispatched")
+	}
+	documents = true
+	s.openObjectFor(ui.Services{}, 7, "owned", "documents", "文档")
+	if opened != 1 || !s.canOpenObject(7, "文档") {
+		t.Fatal("verified document grid did not dispatch")
 	}
 	cols := s.objectColumns(7)
 	if len(cols) != 4 || cols[1].ID != "kind" || s.objectCell(7, contract.DBObject{CreatedAt: "original-time"}, 2) != "original-time" {

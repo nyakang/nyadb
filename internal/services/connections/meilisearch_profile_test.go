@@ -16,7 +16,7 @@ func TestMeilisearchPublicProfileScopeTLSDeadlinesAndFamily(t *testing.T) {
 	if err != nil || p.Port != 7700 || p.TLSMode != "disable" || p.MeilisearchOptions.Auth != "none" || p.Username != "" || p.Database != "" || p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || !p.Kind.IsREST() || p.Kind.IsRESTSearch() {
 		t.Fatal("private defaults/family inflated", err)
 	}
-	if d, registered := connections.Describe(p.Kind); !registered || d.Dialect != "meilisearch" || d.ClientFamily != "meilisearch" || !d.Capabilities.Query || !d.Capabilities.Metadata || !d.Capabilities.Objects || d.Capabilities.Documents || d.Capabilities.EditableTables || d.Capabilities.Export {
+	if d, registered := connections.Describe(p.Kind); !registered || d.Dialect != "meilisearch" || d.ClientFamily != "meilisearch" || !d.Capabilities.Query || !d.Capabilities.Metadata || !d.Capabilities.Objects || !d.Capabilities.Documents || d.Capabilities.EditableTables || !d.Capabilities.Export || !d.Capabilities.Count || !d.Capabilities.FieldChunks || !d.Capabilities.JSONL || d.Capabilities.Keyset {
 		t.Fatal("public Meilisearch capabilities differ from verified provider")
 	}
 	p.Name, p.Host, p.TLSMode = "native", "::1", "verify-full"

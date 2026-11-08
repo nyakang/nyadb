@@ -73,7 +73,7 @@ func mockData(t *testing.T, docs ...string) (*Session, *dataFixture) {
 }
 func reserveData(t *testing.T, s *Session) *dataLease {
 	t.Helper()
-	raw, err := s.ReserveDocumentReads(s.Namespace("owned").Object("documents", "documents"))
+	raw, err := s.ReserveDataDocument(s.Namespace("owned").Object("documents", "documents"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,8 +101,8 @@ func TestMeilisearchDataOriginalPagingFingerprintsValuesAndCursorIsolation(t *te
 	source := `{"id":9007199254740993,"n":9007199254740993,"future":"原生🐱","memo":"` + strings.Repeat("猫", 2000) + `"}`
 	s, _ := mockData(t, source, `{"id":"two","n":2}`, `{"id":-1,"n":3}`)
 	l, b := reserveData(t, s), reserveData(t, s)
-	if _, err := contract.Require[contract.DataDocumentsProvider](s); !errors.Is(err, contract.ErrUnsupported) {
-		t.Fatal("private data binding registered public provider")
+	if _, err := contract.Require[contract.DataDocumentsProvider](s); err != nil {
+		t.Fatal("public document provider unavailable")
 	}
 	runtime := l.Runtime()
 	if !runtime.Capabilities.Documents || runtime.Capabilities.EditableTables || runtime.Capabilities.Keyset || runtime.Saver != nil || runtime.Importer != nil {
@@ -280,13 +280,13 @@ func TestMeilisearchDataReservationsAndSessionCloseAcknowledgeOriginalWorkers(t 
 	s := testSession(t, connections.MeilisearchConfig{Endpoint: server.URL}, "")
 	l := reserveData(t, s)
 	for i := 1; i < 32; i++ {
-		raw, err := s.ReserveDocumentReads(l.object)
+		raw, err := s.ReserveDataDocument(l.object)
 		if err != nil {
 			t.Fatal(err)
 		}
 		defer raw.Close()
 	}
-	if _, err := s.ReserveDocumentReads(l.object); !errors.Is(err, ErrBounds) {
+	if _, err := s.ReserveDataDocument(l.object); !errors.Is(err, ErrBounds) {
 		t.Fatal("document reservation bound", err)
 	}
 	blocked.Store(true)
