@@ -260,71 +260,26 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*con
 	if err := s.checkObject(o); err != nil {
 		return nil, err
 	}
-	out := &contract.TableStructure{Object: o, Database: o.Catalog, Name: o.Name, Kind: o.Kind, Engine: "Cassandra"}
+	var out *contract.TableStructure
 	err := s.withMetadata(ctx, func(ctx context.Context, c *Client) error {
 		row, err := readObject(ctx, c, o)
 		if err != nil {
 			return err
 		}
-		out.Definition, err = rowDefinition(row)
+		var columns, indexes []schemaRow
+		if o.Kind != "type" {
+			columns, err = schemaRows(ctx, c, "SELECT * FROM system_schema.columns WHERE keyspace_name = ? AND table_name = ?", o.Catalog, o.Name)
+			if err != nil {
+				return err
+			}
+			indexes, err = schemaRows(ctx, c, "SELECT * FROM system_schema.indexes WHERE keyspace_name = ? AND table_name = ?", o.Catalog, o.Name)
+			if err != nil {
+				return err
+			}
+		}
+		out, err = schemaStructure(o, row, columns, indexes, s.identity)
 		if err != nil {
 			return err
-		}
-		budget := (16 << 20) - len(out.Definition)
-		add := func(name, kind string, row schemaRow) error {
-			raw, err := rowDefinition(row)
-			if err != nil {
-				return err
-			}
-			budget -= len(raw) + 128
-			if budget < 0 {
-				return ErrBounds
-			}
-			out.Definitions = append(out.Definitions, contract.Definition{Name: name, Kind: kind, SQL: raw})
-			return nil
-		}
-		if comment, ok := row["comment"]; ok && !comment.Null {
-			out.Comment = comment.Text
-		}
-		if o.Kind == "type" {
-			out.Columns, err = typeColumns(row)
-			if err != nil {
-				return err
-			}
-		} else {
-			columns, err := schemaRows(ctx, c, "SELECT * FROM system_schema.columns WHERE keyspace_name = ? AND table_name = ?", o.Catalog, o.Name)
-			if err != nil {
-				return err
-			}
-			out.Columns, out.Indexes, err = tableColumns(columns, o)
-			if err != nil {
-				return err
-			}
-			for _, col := range columns {
-				name, _ := schemaText(col, "column_name")
-				if err = add(name, "column", col); err != nil {
-					return err
-				}
-			}
-			indexes, err := schemaRows(ctx, c, "SELECT * FROM system_schema.indexes WHERE keyspace_name = ? AND table_name = ?", o.Catalog, o.Name)
-			if err != nil {
-				return err
-			}
-			seen := map[string]bool{}
-			for _, index := range indexes {
-				ks, e := schemaText(index, "keyspace_name")
-				table, e2 := schemaText(index, "table_name")
-				name, e3 := schemaName(index, "index_name")
-				kind, e4 := schemaText(index, "kind")
-				if e != nil || e2 != nil || e3 != nil || e4 != nil || ks != o.Catalog || table != o.Name || seen[name] {
-					return ErrProtocol
-				}
-				seen[name] = true
-				out.Indexes = append(out.Indexes, contract.StructureIndex{Name: name, Type: kind})
-				if err = add(name, "index", index); err != nil {
-					return err
-				}
-			}
 		}
 		again, err := readObject(ctx, c, o)
 		if err != nil {
@@ -333,13 +288,70 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*con
 		if !reflect.DeepEqual(row, again) {
 			return ErrMetadataChanged
 		}
-		raw, _ := json.Marshal(s.identity)
-		out.Definitions = append(out.Definitions, contract.Definition{Name: o.Name, Kind: "original-node-observation", SQL: string(raw)})
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+	return out, nil
+}
+func schemaStructure(o contract.ObjectRef, row schemaRow, columns, indexes []schemaRow, identity Identity) (*contract.TableStructure, error) {
+	out := &contract.TableStructure{Object: o, Database: o.Catalog, Name: o.Name, Kind: o.Kind, Engine: "Cassandra"}
+	var err error
+	out.Definition, err = rowDefinition(row)
+	if err != nil {
+		return nil, err
+	}
+	budget := (16 << 20) - len(out.Definition)
+	add := func(name, kind string, row schemaRow) error {
+		raw, err := rowDefinition(row)
+		if err != nil {
+			return err
+		}
+		budget -= len(raw) + 128
+		if budget < 0 {
+			return ErrBounds
+		}
+		out.Definitions = append(out.Definitions, contract.Definition{Name: name, Kind: kind, SQL: raw})
+		return nil
+	}
+	if comment, ok := row["comment"]; ok && !comment.Null {
+		out.Comment = comment.Text
+	}
+	if o.Kind == "type" {
+		out.Columns, err = typeColumns(row)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		out.Columns, out.Indexes, err = tableColumns(columns, o)
+		if err != nil {
+			return nil, err
+		}
+		for _, col := range columns {
+			name, _ := schemaText(col, "column_name")
+			if err = add(name, "column", col); err != nil {
+				return nil, err
+			}
+		}
+		seen := map[string]bool{}
+		for _, index := range indexes {
+			ks, e := schemaText(index, "keyspace_name")
+			table, e2 := schemaText(index, "table_name")
+			name, e3 := schemaName(index, "index_name")
+			kind, e4 := schemaText(index, "kind")
+			if e != nil || e2 != nil || e3 != nil || e4 != nil || ks != o.Catalog || table != o.Name || seen[name] {
+				return nil, ErrProtocol
+			}
+			seen[name] = true
+			out.Indexes = append(out.Indexes, contract.StructureIndex{Name: name, Type: kind})
+			if err = add(name, "index", index); err != nil {
+				return nil, err
+			}
+		}
+	}
+	raw, _ := json.Marshal(identity)
+	out.Definitions = append(out.Definitions, contract.Definition{Name: o.Name, Kind: "original-node-observation", SQL: string(raw)})
 	return out, nil
 }
 

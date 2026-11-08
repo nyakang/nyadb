@@ -22131,3 +22131,23 @@ func CassandraProductName() string { return In(i18n.Locale()).CassandraProductNa
 func (msgs Messages) CassandraProductName() string {
 	return Catalog.Format(msgs.locale, "cassandraProductName", nil)
 }
+
+// NativeDataCursor says "原生游标"
+// in the language the app shows.
+func NativeDataCursor() string { return In(i18n.Locale()).NativeDataCursor() }
+
+// NativeDataCursor says "原生游标"
+// in the language of msgs.
+func (msgs Messages) NativeDataCursor() string {
+	return Catalog.Format(msgs.locale, "nativeDataCursor", nil)
+}
+
+// LiveDataCursorWarning says "原生游标读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。"
+// in the language the app shows.
+func LiveDataCursorWarning() string { return In(i18n.Locale()).LiveDataCursorWarning() }
+
+// LiveDataCursorWarning says "原生游标读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。"
+// in the language of msgs.
+func (msgs Messages) LiveDataCursorWarning() string {
+	return Catalog.Format(msgs.locale, "liveDataCursorWarning", nil)
+}

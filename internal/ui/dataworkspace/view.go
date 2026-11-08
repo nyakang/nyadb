@@ -95,9 +95,11 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *contract.DataPag
 			mysqlDataSuspendGridActions(t)
 			theme.EmptyTable(c, &t.grid, nil, locales.Text("此对象没有可见字段"))
 		} else {
-			if !page.StableOrder {
+			if !page.StableOrder || page.LiveRead {
 				warning := locales.Text("此对象没有完整非空唯一键，OFFSET 分页期间数据变化可能导致行重复或遗漏")
-				if t.capabilities.KeyValues {
+				if page.LiveRead {
+					warning = locales.Text("原生游标读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。")
+				} else if t.capabilities.KeyValues {
 					warning = locales.Text("SCAN 不提供稳定快照；扫描期间键变化可能导致重复或遗漏。键和值中的字节使用 base64。")
 				}
 				ui.Text(c, warning).Padding(2, 6).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(palette.Warning).SingleLine().Tooltip(warning)
@@ -477,6 +479,9 @@ func mysqlDataPendingRecordCount(t *Document) int {
 }
 
 func mysqlDataPageMethod(page *contract.DataPage) string {
+	if page.PagingMode == "cursor" {
+		return locales.Text("原生游标")
+	}
 	if page.Object.Kind == "keyspace" {
 		return "SCAN"
 	}

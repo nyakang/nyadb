@@ -25,6 +25,8 @@ type Session struct {
 	closeDone       chan struct{}
 	work            sync.WaitGroup
 	leases          map[*queryLease]bool
+	datas           map[*dataLease]bool
+	dataSlots       chan struct{}
 	metadata        chan struct{}
 	metadataQueue   chan struct{}
 }
@@ -50,12 +52,14 @@ func OpenSession(ctx context.Context, p connections.Profile, secret string) (con
 		return nil, err
 	}
 	root, cancel := context.WithCancel(context.Background())
-	return &Session{profile: p, secret: secret, identity: c.Identity(), client: c, ctx: root, cancel: cancel, closeDone: make(chan struct{}), leases: map[*queryLease]bool{}, metadata: make(chan struct{}, 1), metadataQueue: make(chan struct{}, 4)}, nil
+	return &Session{profile: p, secret: secret, identity: c.Identity(), client: c, ctx: root, cancel: cancel, closeDone: make(chan struct{}), leases: map[*queryLease]bool{}, datas: map[*dataLease]bool{}, dataSlots: make(chan struct{}, 4), metadata: make(chan struct{}, 1), metadataQueue: make(chan struct{}, 4)}, nil
 }
 func (s *Session) ProfileID() int64   { return s.profile.ID }
 func (s *Session) Generation() uint64 { return 1 }
 func (s *Session) Capabilities() contract.Capabilities {
-	return contract.Capabilities{Query: true, Metadata: true, Objects: true}
+	v := s.DataDocumentCapabilities()
+	v.Query, v.Objects = true, true
+	return v
 }
 func (s *Session) Alive() bool        { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed && !s.revoked }
 func (s *Session) Identity() Identity { return s.identity }
@@ -187,10 +191,17 @@ func (s *Session) Close() error {
 	for l := range s.leases {
 		leases = append(leases, l)
 	}
+	datas := make([]*dataLease, 0, len(s.datas))
+	for l := range s.datas {
+		datas = append(datas, l)
+	}
 	s.mu.Unlock()
 	s.client.Close()
 	for _, l := range leases {
 		l.Release()
+	}
+	for _, l := range datas {
+		l.Close()
 	}
 	s.work.Wait()
 	close(s.closeDone)

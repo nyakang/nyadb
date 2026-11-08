@@ -307,6 +307,23 @@ func nativeFrameProxy(t *testing.T, cfg connections.CassandraConfig, intercept f
 	if err != nil {
 		t.Fatal(err)
 	}
+	if cfg.TLSMode != "disable" {
+		raw, e := os.ReadFile(os.Getenv("NYADB_CASSANDRA_CONFIG"))
+		var front struct {
+			CertFile string `json:"fault_cert_file"`
+			KeyFile  string `json:"fault_key_file"`
+		}
+		if e != nil || json.Unmarshal(raw, &front) != nil {
+			listener.Close()
+			t.Fatal("private TLS fault config unavailable")
+		}
+		cert, e := tls.LoadX509KeyPair(front.CertFile, front.KeyFile)
+		if e != nil {
+			listener.Close()
+			t.Fatal("private TLS fault certificate unavailable")
+		}
+		listener = tls.NewListener(listener, &tls.Config{Certificates: []tls.Certificate{cert}, MinVersion: tls.VersionTLS12})
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	done := make(chan struct{})
 	var workers sync.WaitGroup
@@ -399,9 +416,6 @@ func nativeFrameProxy(t *testing.T, cfg connections.CassandraConfig, intercept f
 	})
 	v := cfg
 	v.Endpoint = listener.Addr().String()
-	v.TLSMode = "disable"
-	v.CAFile = ""
-	v.ServerName = ""
 	return v
 }
 

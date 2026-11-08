@@ -2176,5 +2176,7 @@
   "cassandraDefaultsHint": "Cassandra 默认端口 9042；初始 Keyspace 可留空。",
   "cassandraSettingsInvalid": "请检查 Cassandra 主机、Keyspace、认证方式和证书设置",
   "cassandraPasswordInvalid": "请检查 Cassandra 密码",
-  "cassandraProductName": "Apache Cassandra"
+  "cassandraProductName": "Apache Cassandra",
+  "nativeDataCursor": "原生游标",
+  "liveDataCursorWarning": "原生游标读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。"
 }

@@ -2176,5 +2176,7 @@
   "cassandraDefaultsHint": "Cassandra uses port 9042 by default. The initial Keyspace is optional.",
   "cassandraSettingsInvalid": "Check the Cassandra host, Keyspace, authentication and certificate settings",
   "cassandraPasswordInvalid": "Check the Cassandra password",
-  "cassandraProductName": "Apache Cassandra"
+  "cassandraProductName": "Apache Cassandra",
+  "nativeDataCursor": "Native cursor",
+  "liveDataCursorWarning": "Native cursors read live data; changes during paging or repeated reads may cause duplicate or missing rows."
 }

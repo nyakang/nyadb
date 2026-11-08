@@ -224,7 +224,9 @@ type DataPage struct {
 	Offset          int64
 	Limit           int
 	HasMore         bool
-	StableOrder     bool // true when a complete non-null unique index orders rows.
+	PagingMode      string // Optional native method: "cursor"; empty preserves SQL/SCAN presentation.
+	LiveRead        bool   // Reads are value observations, with no consistent snapshot across pages.
+	StableOrder     bool   // true when a complete non-null unique index orders rows.
 	KeysetAvailable bool
 	NextCursor      *DataCursor
 	CurrentCursor   *DataCursor // Optional original start boundary for repeat/back reads.
