@@ -86,6 +86,12 @@ func Open(ctx context.Context, cfg connections.CassandraConfig, secret string) (
 		if e == nil {
 			c.identity, e = readIdentity(result)
 		}
+		if e == nil && cfg.Keyspace != "" {
+			result, e = c.execute(ctx, Request{Statement: "USE \"" + cfg.Keyspace + "\""}, true)
+			if e == nil && (result.Kind != 3 || result.Keyspace != cfg.Keyspace) {
+				e = ErrProtocol
+			}
+		}
 	}
 	if e != nil {
 		if ce := ctx.Err(); ce != nil {

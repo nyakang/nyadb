@@ -12,6 +12,7 @@ import (
 // Keep the existing column and MySQL JSON format. Other engines use an
 // explicit versioned envelope; older empty records receive engine defaults.
 type engineOptionsEnvelope struct {
+	Cassandra     *connections.CassandraOptions     `json:"cassandra,omitempty"`
 	Solr          *connections.SolrOptions          `json:"solr,omitempty"`
 	Easysearch    *connections.EasysearchOptions    `json:"easysearch,omitempty"`
 	Elasticsearch *connections.ElasticsearchOptions `json:"elasticsearch,omitempty"`
@@ -34,6 +35,8 @@ type engineOptionsEnvelope struct {
 func encodeProfileOptions(p connections.Profile) (string, error) {
 	var value any
 	switch p.Kind {
+	case connections.Cassandra:
+		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Cassandra: &p.CassandraOptions}
 	case connections.Solr:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Solr: &p.SolrOptions}
 	case connections.Easysearch:
@@ -76,6 +79,9 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 }
 func decodeEngineOptions(p *connections.Profile, raw string) error {
 	if raw == "" {
+		if p.Kind == connections.Cassandra {
+			return connections.ErrInvalid
+		}
 		if p.Kind == connections.Solr {
 			return connections.ErrInvalid
 		}
@@ -123,13 +129,25 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 		return nil
 	}
 	var envelope engineOptionsEnvelope
-	if (p.Kind == connections.Solr || p.Kind == connections.Elasticsearch || p.Kind == connections.Easysearch) && !uniqueNativeAuthOptionsJSON(raw) {
+	if (p.Kind == connections.Cassandra || p.Kind == connections.Solr || p.Kind == connections.Elasticsearch || p.Kind == connections.Easysearch) && !uniqueNativeAuthOptionsJSON(raw) {
 		return connections.ErrInvalid
 	}
 	decoder := json.NewDecoder(strings.NewReader(raw))
 	decoder.DisallowUnknownFields()
 	if len(raw) > 128<<10 || decoder.Decode(&envelope) != nil || decoder.Decode(new(any)) != io.EOF || envelope.Version != 1 || envelope.Kind != p.Kind {
 		return fmt.Errorf("invalid saved engine options")
+	}
+	if p.Kind == connections.Cassandra {
+		if envelope.Cassandra == nil || envelope.Cassandra.Version != 1 || envelope.Cassandra.Auth == "" || envelope.Solr != nil || envelope.Easysearch != nil || envelope.Elasticsearch != nil || envelope.Trino != nil || envelope.StarRocks != nil || envelope.Doris != nil || envelope.Dameng != nil || envelope.GaussDB != nil || envelope.Redis != nil || envelope.MongoDB != nil || envelope.Oracle != nil || envelope.DuckDB != nil || envelope.SQLServer != nil || envelope.SQLite != nil || envelope.PostgreSQL != nil {
+			return connections.ErrInvalid
+		}
+		p.CassandraOptions = *envelope.Cassandra
+		checked, err := connections.NormalizeProfile(*p)
+		*p = checked
+		return err
+	}
+	if envelope.Cassandra != nil {
+		return connections.ErrInvalid
 	}
 	if p.Kind == connections.Solr {
 		if envelope.Solr == nil || envelope.Solr.Version != 1 || envelope.Solr.ContextPath == "" || envelope.Easysearch != nil || envelope.Elasticsearch != nil || envelope.Trino != nil || envelope.StarRocks != nil || envelope.Doris != nil || envelope.Dameng != nil || envelope.GaussDB != nil || envelope.Redis != nil || envelope.MongoDB != nil || envelope.Oracle != nil || envelope.DuckDB != nil || envelope.SQLServer != nil || envelope.SQLite != nil || envelope.PostgreSQL != nil {

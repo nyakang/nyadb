@@ -30,7 +30,7 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def verify(plain=False, race=False):
+def verify(plain=False, race=False, profile=False):
     base, output = ROOT/'temp/cassandra', ROOT/'build/cassandra'
     base.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
@@ -39,7 +39,7 @@ def verify(plain=False, race=False):
         raise SystemExit(128+signum)
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
-    evidence = {'image': IMAGE, 'nonce': nonce, 'tls': not plain, 'race': race, 'scope': 'private_native_transport_foundation'}
+    evidence = {'image': IMAGE, 'nonce': nonce, 'tls': not plain, 'race': race, 'scope': 'private_native_profiles_and_editor' if profile else 'private_native_transport_foundation'}
     with tempfile.TemporaryDirectory(prefix='fixture-', dir=base) as temporary:
         folder = Path(temporary)
         folder.chmod(0o700)
@@ -77,7 +77,7 @@ def verify(plain=False, race=False):
         args += ['--mount', 'type=bind,src='+str(server)+',dst=/owned,readonly', '--entrypoint', '/bin/bash']
         cfg = {'Auth': 'none' if plain else 'password', 'Username': '' if plain else 'cassandra', 'TLSMode': 'disable' if plain else 'verify-full', 'ca_file': '' if plain else str(folder/'ca.crt'), 'password_file': str(bootstrap_password)}
         config = folder/'config.json'
-        logfile = output/('plain-transport.log' if plain else 'race-transport.log' if race else 'tls-transport.log')
+        logfile = output/(('profile-' if profile else '')+('plain-transport.log' if plain else 'race-transport.log' if race else 'tls-transport.log'))
         probe = folder/'probe'
         subprocess.run(['go', 'build', '-o', str(probe), './tools/cassandra_fixture_probe'], cwd=ROOT, check=True)
         try:
@@ -107,12 +107,19 @@ def verify(plain=False, race=False):
             time.sleep(3)
             subprocess.run([str(probe), '-config', str(config)], check=True, stdout=subprocess.DEVNULL)
             env = dict(os.environ, NYADB_CASSANDRA_IT='1', NYADB_CASSANDRA_CONFIG=str(config))
-            command = ['go', 'test', '-count=1', '-timeout=5m', '-v', *(['-race'] if race else []), './internal/services/cassandra', './internal/services/connections']
+            packages = ['./internal/services/cassandra', './internal/services/connections']
+            if profile:
+                packages += ['./internal/storage/localdb', './internal/ui/connectioneditor']
+                env['NYADB_CASSANDRA_PROFILE_IT'] = '1'
+                env['NYADB_CASSANDRA_PROFILE_IMAGES'] = str(output/('profile-images-plain' if plain else 'profile-images-race' if race else 'profile-images-tls'))
+            command = ['go', 'test', '-count=1', '-timeout=5m', '-v', *(['-race'] if race else []), *(['-run', 'Cassandra'] if profile else []), *packages]
             with logfile.open('w') as log:
                 result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=360)
             if result.returncode:
                 raise RuntimeError('Native Cassandra acceptance failed; inspect '+str(logfile))
             required = ['IdentityTypesAndParameters', 'PagingBoundToPhysicalRequest', 'AuthenticationAndTLS', 'LostCounterReplyAndCancellation']
+            if profile:
+                required += ['ProfileURIReopenAndOriginalEditorCheck', 'EditorCanceledOriginalHandshake', 'EditorLocalizedFormEvidence']
             text = logfile.read_text()
             if any('--- PASS: TestCassandraNative'+name not in text for name in required) or '--- SKIP:' in text:
                 raise RuntimeError('Missing native Cassandra PASS evidence')
@@ -120,6 +127,14 @@ def verify(plain=False, race=False):
             evidence['required_tests'] = required
             evidence['log_sha256'] = hashlib.sha256(logfile.read_bytes()).hexdigest()
             sources = sorted((ROOT/'internal/services/cassandra').glob('*.go')) + [ROOT/'internal/services/connections/cassandra_config.go', ROOT/'internal/services/connections/cassandra_config_test.go', ROOT/'tools/verify_cassandra_fixture.py', ROOT/'tools/cassandra_fixture_probe/main.go', ROOT/'tests/test_cassandra_fixture.py']
+            if profile:
+                sources += sorted((ROOT/'internal/services/connections').glob('*.go')) + sorted((ROOT/'internal/storage/localdb').glob('*.go')) + sorted((ROOT/'internal/ui/connectioneditor').glob('*.go')) + sorted((ROOT/'locales').glob('*.json')) + [ROOT/'locales/catalog_gen.go']
+                image_folder = Path(env['NYADB_CASSANDRA_PROFILE_IMAGES'])
+                expected = {language+'-'+str(width)+'-'+auth+'-'+page+'.png' for language in ['zh-Hans','en'] for width in [900,720] for auth in ['none','password'] for page in ['general','ssl']}
+                images = sorted(image_folder.glob('*.png'))
+                if {path.name for path in images} != expected:
+                    raise RuntimeError('Missing localized Cassandra form evidence')
+                evidence['image_sha256'] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in images}
             evidence['source_sha256'] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources}
             print('Cassandra 5.0.6 '+('plain' if plain else 'TLS/password')+' native acceptance passed')
         finally:
@@ -135,5 +150,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--plain', action='store_true')
     parser.add_argument('--race', action='store_true')
+    parser.add_argument('--profile', action='store_true')
     options = parser.parse_args()
-    verify(options.plain, options.race)
+    verify(options.plain, options.race, options.profile)

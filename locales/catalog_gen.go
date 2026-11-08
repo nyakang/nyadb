@@ -22039,3 +22039,95 @@ func SolrNoSchemaFields() string { return In(i18n.Locale()).SolrNoSchemaFields()
 func (msgs Messages) SolrNoSchemaFields() string {
 	return Catalog.Format(msgs.locale, "solrNoSchemaFields", nil)
 }
+
+// CassandraInitialKeyspaceCaption says "初始 Keyspace："
+// in the language the app shows.
+func CassandraInitialKeyspaceCaption() string {
+	return In(i18n.Locale()).CassandraInitialKeyspaceCaption()
+}
+
+// CassandraInitialKeyspaceCaption says "初始 Keyspace："
+// in the language of msgs.
+func (msgs Messages) CassandraInitialKeyspaceCaption() string {
+	return Catalog.Format(msgs.locale, "cassandraInitialKeyspaceCaption", nil)
+}
+
+// CassandraInitialKeyspace says "Cassandra 初始 Keyspace"
+// in the language the app shows.
+func CassandraInitialKeyspace() string { return In(i18n.Locale()).CassandraInitialKeyspace() }
+
+// CassandraInitialKeyspace says "Cassandra 初始 Keyspace"
+// in the language of msgs.
+func (msgs Messages) CassandraInitialKeyspace() string {
+	return Catalog.Format(msgs.locale, "cassandraInitialKeyspace", nil)
+}
+
+// CassandraAuthentication says "Cassandra 认证方式"
+// in the language the app shows.
+func CassandraAuthentication() string { return In(i18n.Locale()).CassandraAuthentication() }
+
+// CassandraAuthentication says "Cassandra 认证方式"
+// in the language of msgs.
+func (msgs Messages) CassandraAuthentication() string {
+	return Catalog.Format(msgs.locale, "cassandraAuthentication", nil)
+}
+
+// CassandraTLSMode says "Cassandra TLS 模式"
+// in the language the app shows.
+func CassandraTLSMode() string { return In(i18n.Locale()).CassandraTLSMode() }
+
+// CassandraTLSMode says "Cassandra TLS 模式"
+// in the language of msgs.
+func (msgs Messages) CassandraTLSMode() string {
+	return Catalog.Format(msgs.locale, "cassandraTLSMode", nil)
+}
+
+// CassandraCACertificate says "Cassandra CA 证书"
+// in the language the app shows.
+func CassandraCACertificate() string { return In(i18n.Locale()).CassandraCACertificate() }
+
+// CassandraCACertificate says "Cassandra CA 证书"
+// in the language of msgs.
+func (msgs Messages) CassandraCACertificate() string {
+	return Catalog.Format(msgs.locale, "cassandraCACertificate", nil)
+}
+
+// CassandraDefaultsHint says "Cassandra 默认端口 9042；初始 Keyspace 可留空。"
+// in the language the app shows.
+func CassandraDefaultsHint() string { return In(i18n.Locale()).CassandraDefaultsHint() }
+
+// CassandraDefaultsHint says "Cassandra 默认端口 9042；初始 Keyspace 可留空。"
+// in the language of msgs.
+func (msgs Messages) CassandraDefaultsHint() string {
+	return Catalog.Format(msgs.locale, "cassandraDefaultsHint", nil)
+}
+
+// CassandraSettingsInvalid says "请检查 Cassandra 主机、Keyspace、认证方式和证书设置"
+// in the language the app shows.
+func CassandraSettingsInvalid() string { return In(i18n.Locale()).CassandraSettingsInvalid() }
+
+// CassandraSettingsInvalid says "请检查 Cassandra 主机、Keyspace、认证方式和证书设置"
+// in the language of msgs.
+func (msgs Messages) CassandraSettingsInvalid() string {
+	return Catalog.Format(msgs.locale, "cassandraSettingsInvalid", nil)
+}
+
+// CassandraPasswordInvalid says "请检查 Cassandra 密码"
+// in the language the app shows.
+func CassandraPasswordInvalid() string { return In(i18n.Locale()).CassandraPasswordInvalid() }
+
+// CassandraPasswordInvalid says "请检查 Cassandra 密码"
+// in the language of msgs.
+func (msgs Messages) CassandraPasswordInvalid() string {
+	return Catalog.Format(msgs.locale, "cassandraPasswordInvalid", nil)
+}
+
+// CassandraProductName says "Apache Cassandra"
+// in the language the app shows.
+func CassandraProductName() string { return In(i18n.Locale()).CassandraProductName() }
+
+// CassandraProductName says "Apache Cassandra"
+// in the language of msgs.
+func (msgs Messages) CassandraProductName() string {
+	return Catalog.Format(msgs.locale, "cassandraProductName", nil)
+}

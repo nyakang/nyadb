@@ -11,10 +11,10 @@ import (
 
 // CassandraConfig holds public native transport settings. Credentials are supplied
 // separately; this foundation does not register a public connection product.
-type CassandraConfig struct{ Endpoint, Auth, Username, TLSMode, CAFile, ServerName string }
+type CassandraConfig struct{ Endpoint, Auth, Username, TLSMode, CAFile, ServerName, Keyspace string }
 
 func NormalizeCassandraConfig(c CassandraConfig) (CassandraConfig, error) {
-	for _, s := range []string{c.Endpoint, c.Auth, c.Username, c.TLSMode, c.CAFile, c.ServerName} {
+	for _, s := range []string{c.Endpoint, c.Auth, c.Username, c.TLSMode, c.CAFile, c.ServerName, c.Keyspace} {
 		if len(s) > 4096 || !utf8.ValidString(s) || strings.IndexFunc(s, unicode.IsControl) >= 0 {
 			return c, ErrInvalid
 		}
@@ -25,6 +25,11 @@ func NormalizeCassandraConfig(c CassandraConfig) (CassandraConfig, error) {
 		return c, ErrInvalid
 	}
 	c.Endpoint = net.JoinHostPort(host, strconv.Itoa(n))
+	if len(c.Keyspace) > 48 || strings.IndexFunc(c.Keyspace, func(r rune) bool {
+		return !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_')
+	}) >= 0 {
+		return c, ErrInvalid
+	}
 	if c.Auth == "" {
 		c.Auth = "none"
 	}

@@ -2167,5 +2167,14 @@
   "solrViewSchema": "查看 Schema（只读）",
   "solrReadingSchema": "正在读取 Schema…",
   "solrSchemaFieldType": "Schema 字段类型",
-  "solrNoSchemaFields": "没有已加载的 Schema 字段"
+  "solrNoSchemaFields": "没有已加载的 Schema 字段",
+  "cassandraInitialKeyspaceCaption": "初始 Keyspace：",
+  "cassandraInitialKeyspace": "Cassandra 初始 Keyspace",
+  "cassandraAuthentication": "Cassandra 认证方式",
+  "cassandraTLSMode": "Cassandra TLS 模式",
+  "cassandraCACertificate": "Cassandra CA 证书",
+  "cassandraDefaultsHint": "Cassandra 默认端口 9042；初始 Keyspace 可留空。",
+  "cassandraSettingsInvalid": "请检查 Cassandra 主机、Keyspace、认证方式和证书设置",
+  "cassandraPasswordInvalid": "请检查 Cassandra 密码",
+  "cassandraProductName": "Apache Cassandra"
 }

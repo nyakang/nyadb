@@ -2167,5 +2167,14 @@
   "solrViewSchema": "View schema (read-only)",
   "solrReadingSchema": "Loading schema…",
   "solrSchemaFieldType": "Schema field type",
-  "solrNoSchemaFields": "No schema fields loaded"
+  "solrNoSchemaFields": "No schema fields loaded",
+  "cassandraInitialKeyspaceCaption": "Initial Keyspace:",
+  "cassandraInitialKeyspace": "Cassandra initial Keyspace",
+  "cassandraAuthentication": "Cassandra authentication",
+  "cassandraTLSMode": "Cassandra TLS mode",
+  "cassandraCACertificate": "Cassandra CA certificate",
+  "cassandraDefaultsHint": "Cassandra uses port 9042 by default. The initial Keyspace is optional.",
+  "cassandraSettingsInvalid": "Check the Cassandra host, Keyspace, authentication and certificate settings",
+  "cassandraPasswordInvalid": "Check the Cassandra password",
+  "cassandraProductName": "Apache Cassandra"
 }
