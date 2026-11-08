@@ -11,6 +11,31 @@ SPEC.loader.exec_module(fixture)
 
 
 class MeilisearchFixtureTests(unittest.TestCase):
+    def test_keys_require_native_anonymous_refusal_or_authenticated_crud(self):
+        for mode in fixture.MODES:
+            names = fixture.required_passes(mode, keys=True)
+            expected = fixture.KEYS_COMMON + (fixture.KEYS_ANONYMOUS if mode == 'anonymous' else fixture.KEYS_AUTHENTICATED)
+            self.assertTrue(set(expected).issubset(names))
+            self.assertEqual(bool(set(fixture.KEYS_ANONYMOUS).intersection(names)), mode == 'anonymous')
+            self.assertEqual(bool(set(fixture.KEYS_AUTHENTICATED).intersection(names)), mode != 'anonymous')
+            command = fixture.test_command(mode, True, keys=True)
+            self.assertIn('./internal/services/dbruntime', command)
+            self.assertNotIn('./internal/ui/shell', command)
+            complete = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in names)
+            if mode == 'mtls':
+                complete += '\nnative mTLS accepted owned client certificate and rejected its absence'
+            fixture.check_acceptance(complete, mode, keys=True)
+            for name in expected:
+                with self.assertRaises(RuntimeError):
+                    fixture.check_acceptance(complete.replace('--- PASS: TestMeilisearchNative'+name, '--- SKIP: TestMeilisearchNative'+name), mode, keys=True)
+        hashes = fixture.source_hashes(keys=True)
+        for path in ['internal/db/contract/keys.go', 'internal/services/dbruntime/keys.go', 'internal/services/meilisearch/keys_document.go']:
+            self.assertIn(path, hashes)
+        # Private key evidence adds to earlier accepted scopes when requested.
+        for flag in ['task_management', 'settings', 'search']:
+            names = fixture.required_passes('tls', keys=True, **{flag: True})
+            self.assertTrue(set(fixture.required_passes('tls', **{flag: True})).issubset(names))
+
     def test_task_management_requires_original_counts_and_no_replay(self):
         for mode in fixture.MODES:
             names = fixture.required_passes(mode, task_management=True)

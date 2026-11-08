@@ -11,7 +11,7 @@ import (
 
 func meilisearchPublicFixture(t *testing.T, configName string) connections.URIImport {
 	t.Helper()
-	if os.Getenv("NYADB_MEILISEARCH_PUBLIC_IT") != "1" {
+	if os.Getenv("NYADB_MEILISEARCH_PUBLIC_IT") != "1" && os.Getenv("NYADB_MEILISEARCH_KEYS_IT") != "1" {
 		t.Skip("requires owned native Meilisearch public workbench fixture")
 	}
 	raw, err := os.ReadFile(os.Getenv(configName))
