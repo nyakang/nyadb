@@ -180,8 +180,8 @@ func (c *Client) Do(ctx context.Context, r Request) (Response, error) {
 	return c.do(ctx, r, readOnly(r))
 }
 
-// Only constructed native codecs certify a POST read. Arbitrary REST requests
-// conservatively retain unknown write outcome on interruption.
+// Constructed native codecs and exact native point-query routes certify POST
+// reads. Arbitrary REST requests retain unknown write outcome on interruption.
 func (c *Client) do(ctx context.Context, r Request, read bool) (Response, error) {
 	if err := validateRequest(r); err != nil {
 		return Response{}, err

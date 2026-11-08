@@ -178,7 +178,7 @@ func requestOutcome(r Request, response Response) (string, error) {
 	if asynchronousSnapshot(r) {
 		state = contract.StatementEnqueued
 	}
-	if readOnly(r) {
+	if queryReadOnly(r) {
 		return state, nil
 	}
 	result, err := NativeResult(response.Body)
@@ -248,12 +248,12 @@ func (l *queryLease) ExecuteStream(ctx context.Context, namespace, source string
 	}
 	start := time.Now()
 	defer func() { result.Duration = time.Since(start); result.SetLegacyView() }()
-	response, err := l.client.Do(ctx, r)
+	response, err := l.client.do(ctx, r, queryReadOnly(r))
 	state := "completed"
 	if err == nil {
 		if state, err = requestOutcome(r, response); err != nil {
 			l.client.retire()
-			err = &Interrupted{WriteOutcomeUnknown: !readOnly(r), Cause: ErrProtocol}
+			err = &Interrupted{WriteOutcomeUnknown: !queryReadOnly(r), Cause: ErrProtocol}
 		}
 	}
 	step := contract.StatementOutcome{SQL: r.Method + " " + r.Path, State: state}
@@ -289,14 +289,31 @@ func (l *queryLease) ExecuteStream(ctx context.Context, namespace, source string
 		if response.Incomplete {
 			result.Sets[0].Truncation = []string{"incomplete native HTTP response"}
 		}
+		if err == nil && state == "completed" {
+			points, projectionErr := typedPointResult(r, response)
+			if projectionErr != nil {
+				// The complete native read has settled; invalid or excessive
+				// projection is neither a lost response nor an uncertain write.
+				err = projectionErr
+				result.Steps[0].State, result.Steps[0].Error = "failed", err.Error()
+			} else if points != nil {
+				result.Sets = append([]contract.ResultSet{*points}, result.Sets...)
+			}
+		}
 		// A presentation failure cannot change a settled native receipt or
 		// dispatch another request. Complete native evidence stays in result.
 		if err == nil && sink != nil {
-			copy := make([]contract.Cell, len(row))
-			for i, cell := range row {
-				copy[i] = cell.Clone()
+			for index, set := range result.Sets {
+				for _, row := range set.Rows {
+					copy := make([]contract.Cell, len(row))
+					for i, cell := range row {
+						copy[i] = cell.Clone()
+					}
+					if err = sink(index, append([]contract.Column(nil), set.Columns...), copy); err != nil {
+						return result, err
+					}
+				}
 			}
-			err = sink(0, append([]contract.Column(nil), columns...), copy)
 		}
 	}
 	return result, err

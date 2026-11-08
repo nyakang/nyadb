@@ -38,6 +38,8 @@ SESSION_REQUIRED = (
     'SessionCanceledOriginalLeaseAndSessionClose',
     'SessionBinaryObservationDriftRejectsDispatch',
     'SessionNonJSONAndSinkFailureDoNotReplay',
+    'SessionTypedPointsAndExactRawEnvelopes',
+    'SessionTypedPostReadLossIsInterruptedWithoutReplay',
 )
 
 
@@ -94,7 +96,7 @@ def verify(mode='tls', race=False, profile=False, session=False):
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
     evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode,
-                    scope='private_original_session_qualified_metadata_and_native_rest_query_leases' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_transport_and_collection_point_codecs',
+                    scope='private_original_session_metadata_rest_leases_and_typed_native_point_results' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_transport_and_collection_point_codecs',
                     status='failed', fixture_cleaned=False, private_files_cleaned=False)
     try:
         with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:

@@ -66,6 +66,8 @@ class QdrantFixtureTests(unittest.TestCase):
         paths = fixture.source_hashes(profile=True)
         for name in ['internal/services/qdrant/session.go', 'internal/services/qdrant/query.go',
                      'internal/services/qdrant/metadata.go', 'internal/services/qdrant/session_test.go',
+                     'internal/services/qdrant/resultsets.go', 'internal/services/qdrant/resultsets_test.go',
+                     'internal/services/qdrant/resultsets_native_integration_test.go',
                      'internal/services/qdrant/session_native_integration_test.go',
                      'internal/db/contract/features.go', 'internal/services/qdrant/client.go']:
             self.assertIn(name, paths)

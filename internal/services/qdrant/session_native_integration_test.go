@@ -96,7 +96,7 @@ func TestQdrantNativeSessionRequestOutcomesAndExactResponse(t *testing.T) {
 	}
 	result, err := l.Execute(context.Background(), name, "POST /collections/"+name+`/points/query
 {"query":[1,0],"with_payload":true,"with_vector":true,"limit":1}`)
-	if err != nil || !strings.Contains(result.Sets[0].Rows[0][1].Text, "9007199254740993") || !strings.Contains(result.Sets[0].Rows[0][1].Text, "会话🐱") || result.Steps[0].State != "completed" {
+	if err != nil || len(result.Sets) != 2 || !strings.Contains(result.Sets[1].Rows[0][1].Text, "9007199254740993") || !strings.Contains(result.Sets[1].Rows[0][1].Text, "会话🐱") || result.Steps[0].State != "completed" {
 		t.Fatal("native response lost exact point/payload", err)
 	}
 	result, err = l.Execute(context.Background(), "", "GET /collections/owned_absent_"+name)
