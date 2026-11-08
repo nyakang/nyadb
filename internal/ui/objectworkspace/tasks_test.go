@@ -4,13 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/locales"
 )
 
 type taskTestProvider struct {
@@ -250,26 +253,51 @@ func TestTaskIdleGenerationLossKeepsCacheUntilExplicitRecovery(t *testing.T) {
 }
 
 func TestTaskSmallViewportPreservesFiltersFooterAndStableSelection(t *testing.T) {
-	lease := &taskTestLease{list: func(context.Context, contract.TaskQuery) (contract.TaskPage, error) {
-		return contract.TaskPage{Results: []contract.TaskRecord{testTaskRecord("1")}, Total: 1}, nil
-	}}
-	s, _, d := taskTestState(t, lease)
-	s.LoadTasks(d, nil, false)
-	waitTasks(t, s, d)
-	tt := ui.NewTester(func(c *ui.Context) { s.View(c, d) }, 720, 520)
-	originalKey := d.columns.Key(0)
-	d.tasks.page.Results[0].Status = "succeeded"
-	d.tasks.page.Results[0].Token = "new-native-body-proof"
-	if d.columns.Key(0) != originalKey {
-		t.Fatal("native observation changed task row identity")
-	}
-	if err := tt.Click("高级任务筛选"); err != nil {
-		t.Fatal(err)
-	}
-	for _, label := range []string{"Batch UID 筛选", "应用任务筛选", "下一页任务"} {
-		r, ok := tt.Find(label)
-		if !ok || r.W <= 0 || r.H <= 0 || r.Y < 0 || r.Y+r.H > 520 {
-			t.Fatal("advanced task filters displaced usable controls", label, r)
+	defer i18n.SetLocaleFunc(nil)
+	for _, language := range []string{"zh-Hans", "en"} {
+		for _, width := range []int{720, 480} {
+			t.Run(fmt.Sprintf("%s/%d", language, width), func(t *testing.T) {
+				i18n.SetLocaleFunc(func() string { return language })
+				lease := &taskTestLease{list: func(context.Context, contract.TaskQuery) (contract.TaskPage, error) {
+					return contract.TaskPage{Results: []contract.TaskRecord{testTaskRecord("1")}, Total: 1}, nil
+				}}
+				s, _, d := taskTestState(t, lease)
+				s.LoadTasks(d, nil, false)
+				waitTasks(t, s, d)
+				tt := ui.NewTester(func(c *ui.Context) { s.View(c, d) }, width, 520)
+				tt.SetLocale(language)
+				originalKey := d.columns.Key(0)
+				d.tasks.page.Results[0].Status = "succeeded"
+				d.tasks.page.Results[0].Token = "new-native-body-proof"
+				if d.columns.Key(0) != originalKey {
+					t.Fatal("native observation changed task row identity")
+				}
+				label := locales.Text("高级任务筛选")
+				// Font metrics and translated labels can move this command
+				// into the native toolbar's overflow menu.
+				if _, visible := tt.Find(label); visible {
+					if err := tt.Click(label); err != nil {
+						t.Fatal(err)
+					}
+				} else {
+					more := "更多"
+					if language == "en" {
+						more = "More"
+					}
+					if err := tt.Click(more); err != nil {
+						t.Fatal(err)
+					}
+					if err := tt.ChooseMenuItem(label); err != nil {
+						t.Fatal(err)
+					}
+				}
+				for _, label := range []string{"Batch UID 筛选", "应用任务筛选", "下一页任务"} {
+					r, ok := tt.Find(locales.Text(label))
+					if !ok || r.W <= 0 || r.H <= 0 || r.Y < 0 || r.Y+r.H > 520 {
+						t.Fatal("advanced task filters displaced usable controls", label, r)
+					}
+				}
+			})
 		}
 	}
 }
