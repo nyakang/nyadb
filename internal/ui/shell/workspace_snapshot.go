@@ -241,10 +241,14 @@ func (s *State) materializeRestored(services ui.Services, t *tab) {
 		s.dataWorkspace.Load(services, t.data, false)
 	} else if t.kind == tabStructure {
 		t.object = s.objectWorkspace.OpenQualifiedStructure(t.id, o, v.ObjectKind)
-		if o.Kind == "tasks" {
+		if t.object == nil {
+			s.status = locales.Text("当前引擎不支持此操作")
+			return
+		}
+		if o.Kind == "tasks" || o.Kind == "keys" {
 			s.objectWorkspace.RestoreDocumentPresentation(t.object, v.Presentation)
 			if len(v.Presentation) == 0 {
-				s.objectWorkspace.LoadTasks(t.object, services.Invalidate, false)
+				s.objectWorkspace.Load(t.object, services.Invalidate, false)
 			}
 		} else {
 			var p struct{ Design bool }

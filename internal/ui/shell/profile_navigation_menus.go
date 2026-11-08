@@ -95,6 +95,10 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 		}
 	}
 	if profile.Kind == connections.Meilisearch {
+		keys := contract.ObjectRef{ProfileID: profile.ID, Kind: "keys", Name: "keys"}
+		if m.Item(locales.Text("管理 API 密钥…")).Disabled(!connected || !s.objectWorkspace.KeysScopeSupported(keys)).Chosen() {
+			s.openKeys(services, profile.ID)
+		}
 		scope := ""
 		if profile.MeilisearchOptions.IndexUID != "" {
 			scope = profile.MeilisearchOptions.IndexUID

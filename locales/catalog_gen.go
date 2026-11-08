@@ -24793,3 +24793,675 @@ func TaskManagementUnavailable() string { return In(i18n.Locale()).TaskManagemen
 func (msgs Messages) TaskManagementUnavailable() string {
 	return Catalog.Format(msgs.locale, "taskManagementUnavailable", nil)
 }
+
+// MeilisearchKeys5f600b307b says "API 密钥"
+// in the language the app shows.
+func MeilisearchKeys5f600b307b() string { return In(i18n.Locale()).MeilisearchKeys5f600b307b() }
+
+// MeilisearchKeys5f600b307b says "API 密钥"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys5f600b307b() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys5f600b307b", nil)
+}
+
+// MeilisearchKeys75b1e62b48 says "管理 API 密钥…"
+// in the language the app shows.
+func MeilisearchKeys75b1e62b48() string { return In(i18n.Locale()).MeilisearchKeys75b1e62b48() }
+
+// MeilisearchKeys75b1e62b48 says "管理 API 密钥…"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys75b1e62b48() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys75b1e62b48", nil)
+}
+
+// MeilisearchKeys8b217f4aa1 says "密钥名称"
+// in the language the app shows.
+func MeilisearchKeys8b217f4aa1() string { return In(i18n.Locale()).MeilisearchKeys8b217f4aa1() }
+
+// MeilisearchKeys8b217f4aa1 says "密钥名称"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys8b217f4aa1() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys8b217f4aa1", nil)
+}
+
+// MeilisearchKeys34a5599c6f says "密钥 UID"
+// in the language the app shows.
+func MeilisearchKeys34a5599c6f() string { return In(i18n.Locale()).MeilisearchKeys34a5599c6f() }
+
+// MeilisearchKeys34a5599c6f says "密钥 UID"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys34a5599c6f() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys34a5599c6f", nil)
+}
+
+// MeilisearchKeys3dfe559bf9 says "密钥权限"
+// in the language the app shows.
+func MeilisearchKeys3dfe559bf9() string { return In(i18n.Locale()).MeilisearchKeys3dfe559bf9() }
+
+// MeilisearchKeys3dfe559bf9 says "密钥权限"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys3dfe559bf9() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys3dfe559bf9", nil)
+}
+
+// MeilisearchKeys28778e0d71 says "索引范围"
+// in the language the app shows.
+func MeilisearchKeys28778e0d71() string { return In(i18n.Locale()).MeilisearchKeys28778e0d71() }
+
+// MeilisearchKeys28778e0d71 says "索引范围"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys28778e0d71() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys28778e0d71", nil)
+}
+
+// MeilisearchKeys9ca4b75d03 says "到期时间"
+// in the language the app shows.
+func MeilisearchKeys9ca4b75d03() string { return In(i18n.Locale()).MeilisearchKeys9ca4b75d03() }
+
+// MeilisearchKeys9ca4b75d03 says "到期时间"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys9ca4b75d03() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys9ca4b75d03", nil)
+}
+
+// MeilisearchKeysf0be406ac9 says "密钥描述"
+// in the language the app shows.
+func MeilisearchKeysf0be406ac9() string { return In(i18n.Locale()).MeilisearchKeysf0be406ac9() }
+
+// MeilisearchKeysf0be406ac9 says "密钥描述"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysf0be406ac9() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysf0be406ac9", nil)
+}
+
+// MeilisearchKeys2c60316d5e says "永不过期"
+// in the language the app shows.
+func MeilisearchKeys2c60316d5e() string { return In(i18n.Locale()).MeilisearchKeys2c60316d5e() }
+
+// MeilisearchKeys2c60316d5e says "永不过期"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys2c60316d5e() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys2c60316d5e", nil)
+}
+
+// MeilisearchKeys31fe165b6d says "刷新密钥列表"
+// in the language the app shows.
+func MeilisearchKeys31fe165b6d() string { return In(i18n.Locale()).MeilisearchKeys31fe165b6d() }
+
+// MeilisearchKeys31fe165b6d says "刷新密钥列表"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys31fe165b6d() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys31fe165b6d", nil)
+}
+
+// MeilisearchKeys6a5c7ab7cf says "新建 API 密钥"
+// in the language the app shows.
+func MeilisearchKeys6a5c7ab7cf() string { return In(i18n.Locale()).MeilisearchKeys6a5c7ab7cf() }
+
+// MeilisearchKeys6a5c7ab7cf says "新建 API 密钥"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys6a5c7ab7cf() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys6a5c7ab7cf", nil)
+}
+
+// MeilisearchKeys13dab6e510 says "编辑密钥元数据"
+// in the language the app shows.
+func MeilisearchKeys13dab6e510() string { return In(i18n.Locale()).MeilisearchKeys13dab6e510() }
+
+// MeilisearchKeys13dab6e510 says "编辑密钥元数据"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys13dab6e510() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys13dab6e510", nil)
+}
+
+// MeilisearchKeys7047891d5f says "预览删除密钥"
+// in the language the app shows.
+func MeilisearchKeys7047891d5f() string { return In(i18n.Locale()).MeilisearchKeys7047891d5f() }
+
+// MeilisearchKeys7047891d5f says "预览删除密钥"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys7047891d5f() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys7047891d5f", nil)
+}
+
+// MeilisearchKeysff0138bb0c says "读取选中密钥"
+// in the language the app shows.
+func MeilisearchKeysff0138bb0c() string { return In(i18n.Locale()).MeilisearchKeysff0138bb0c() }
+
+// MeilisearchKeysff0138bb0c says "读取选中密钥"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysff0138bb0c() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysff0138bb0c", nil)
+}
+
+// MeilisearchKeysfa95fc9e13 says "恢复密钥连接"
+// in the language the app shows.
+func MeilisearchKeysfa95fc9e13() string { return In(i18n.Locale()).MeilisearchKeysfa95fc9e13() }
+
+// MeilisearchKeysfa95fc9e13 says "恢复密钥连接"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysfa95fc9e13() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysfa95fc9e13", nil)
+}
+
+// MeilisearchKeysee73af421f says "停止密钥等待"
+// in the language the app shows.
+func MeilisearchKeysee73af421f() string { return In(i18n.Locale()).MeilisearchKeysee73af421f() }
+
+// MeilisearchKeysee73af421f says "停止密钥等待"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysee73af421f() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysee73af421f", nil)
+}
+
+// MeilisearchKeys12c11d74a4 says "密钥操作"
+// in the language the app shows.
+func MeilisearchKeys12c11d74a4() string { return In(i18n.Locale()).MeilisearchKeys12c11d74a4() }
+
+// MeilisearchKeys12c11d74a4 says "密钥操作"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys12c11d74a4() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys12c11d74a4", nil)
+}
+
+// MeilisearchKeys31efaf0929 says "正在处理原密钥请求…"
+// in the language the app shows.
+func MeilisearchKeys31efaf0929() string { return In(i18n.Locale()).MeilisearchKeys31efaf0929() }
+
+// MeilisearchKeys31efaf0929 says "正在处理原密钥请求…"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys31efaf0929() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys31efaf0929", nil)
+}
+
+// MeilisearchKeys22df3e3a7a says "正在等待原密钥请求停止…"
+// in the language the app shows.
+func MeilisearchKeys22df3e3a7a() string { return In(i18n.Locale()).MeilisearchKeys22df3e3a7a() }
+
+// MeilisearchKeys22df3e3a7a says "正在等待原密钥请求停止…"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys22df3e3a7a() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys22df3e3a7a", nil)
+}
+
+// MeilisearchKeyscd6869b55f says "密钥提交结果未知；原请求和草稿保留，不能重放。请检查原服务器密钥。"
+// in the language the app shows.
+func MeilisearchKeyscd6869b55f() string { return In(i18n.Locale()).MeilisearchKeyscd6869b55f() }
+
+// MeilisearchKeyscd6869b55f says "密钥提交结果未知；原请求和草稿保留，不能重放。请检查原服务器密钥。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeyscd6869b55f() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeyscd6869b55f", nil)
+}
+
+// MeilisearchKeys21ef7c98e7 says "密钥列表"
+// in the language the app shows.
+func MeilisearchKeys21ef7c98e7() string { return In(i18n.Locale()).MeilisearchKeys21ef7c98e7() }
+
+// MeilisearchKeys21ef7c98e7 says "密钥列表"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys21ef7c98e7() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys21ef7c98e7", nil)
+}
+
+// MeilisearchKeys81e7d77d9d says "密钥详情"
+// in the language the app shows.
+func MeilisearchKeys81e7d77d9d() string { return In(i18n.Locale()).MeilisearchKeys81e7d77d9d() }
+
+// MeilisearchKeys81e7d77d9d says "密钥详情"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys81e7d77d9d() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys81e7d77d9d", nil)
+}
+
+// MeilisearchKeys4afb501ec0 says "密钥草稿"
+// in the language the app shows.
+func MeilisearchKeys4afb501ec0() string { return In(i18n.Locale()).MeilisearchKeys4afb501ec0() }
+
+// MeilisearchKeys4afb501ec0 says "密钥草稿"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys4afb501ec0() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys4afb501ec0", nil)
+}
+
+// MeilisearchKeysbec41d7608 says "密钥请求与响应"
+// in the language the app shows.
+func MeilisearchKeysbec41d7608() string { return In(i18n.Locale()).MeilisearchKeysbec41d7608() }
+
+// MeilisearchKeysbec41d7608 says "密钥请求与响应"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysbec41d7608() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysbec41d7608", nil)
+}
+
+// MeilisearchKeys678b02618e says "同步完成"
+// in the language the app shows.
+func MeilisearchKeys678b02618e() string { return In(i18n.Locale()).MeilisearchKeys678b02618e() }
+
+// MeilisearchKeys678b02618e says "同步完成"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys678b02618e() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys678b02618e", nil)
+}
+
+// MeilisearchKeys562b0b8cef says "原始密钥详情预览"
+// in the language the app shows.
+func MeilisearchKeys562b0b8cef() string { return In(i18n.Locale()).MeilisearchKeys562b0b8cef() }
+
+// MeilisearchKeys562b0b8cef says "原始密钥详情预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys562b0b8cef() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys562b0b8cef", nil)
+}
+
+// MeilisearchKeys16f154674c says "原始密钥请求与脱敏响应预览"
+// in the language the app shows.
+func MeilisearchKeys16f154674c() string { return In(i18n.Locale()).MeilisearchKeys16f154674c() }
+
+// MeilisearchKeys16f154674c says "原始密钥请求与脱敏响应预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys16f154674c() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys16f154674c", nil)
+}
+
+// MeilisearchKeys0d00660b89 says "查看原始密钥"
+// in the language the app shows.
+func MeilisearchKeys0d00660b89() string { return In(i18n.Locale()).MeilisearchKeys0d00660b89() }
+
+// MeilisearchKeys0d00660b89 says "查看原始密钥"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys0d00660b89() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys0d00660b89", nil)
+}
+
+// MeilisearchKeysf6fa58c8a7 says "复制原始密钥"
+// in the language the app shows.
+func MeilisearchKeysf6fa58c8a7() string { return In(i18n.Locale()).MeilisearchKeysf6fa58c8a7() }
+
+// MeilisearchKeysf6fa58c8a7 says "复制原始密钥"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysf6fa58c8a7() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysf6fa58c8a7", nil)
+}
+
+// MeilisearchKeys41235200c3 says "复制脱敏密钥详情"
+// in the language the app shows.
+func MeilisearchKeys41235200c3() string { return In(i18n.Locale()).MeilisearchKeys41235200c3() }
+
+// MeilisearchKeys41235200c3 says "复制脱敏密钥详情"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys41235200c3() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys41235200c3", nil)
+}
+
+// MeilisearchKeys485e965a4e says "复制密钥请求"
+// in the language the app shows.
+func MeilisearchKeys485e965a4e() string { return In(i18n.Locale()).MeilisearchKeys485e965a4e() }
+
+// MeilisearchKeys485e965a4e says "复制密钥请求"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys485e965a4e() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys485e965a4e", nil)
+}
+
+// MeilisearchKeys0d61f08f17 says "复制脱敏密钥响应"
+// in the language the app shows.
+func MeilisearchKeys0d61f08f17() string { return In(i18n.Locale()).MeilisearchKeys0d61f08f17() }
+
+// MeilisearchKeys0d61f08f17 says "复制脱敏密钥响应"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys0d61f08f17() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys0d61f08f17", nil)
+}
+
+// MeilisearchKeysf684a06ac9 says "密钥证据操作"
+// in the language the app shows.
+func MeilisearchKeysf684a06ac9() string { return In(i18n.Locale()).MeilisearchKeysf684a06ac9() }
+
+// MeilisearchKeysf684a06ac9 says "密钥证据操作"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysf684a06ac9() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysf684a06ac9", nil)
+}
+
+// MeilisearchKeys1ec0f1e3bf says "没有已加载的密钥"
+// in the language the app shows.
+func MeilisearchKeys1ec0f1e3bf() string { return In(i18n.Locale()).MeilisearchKeys1ec0f1e3bf() }
+
+// MeilisearchKeys1ec0f1e3bf says "没有已加载的密钥"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys1ec0f1e3bf() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys1ec0f1e3bf", nil)
+}
+
+// MeilisearchKeys6f7a0620d3 says "原连接密钥表格"
+// in the language the app shows.
+func MeilisearchKeys6f7a0620d3() string { return In(i18n.Locale()).MeilisearchKeys6f7a0620d3() }
+
+// MeilisearchKeys6f7a0620d3 says "原连接密钥表格"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys6f7a0620d3() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys6f7a0620d3", nil)
+}
+
+// MeilisearchKeysff8db17d31 says "实时分页；总数来自最近一次列表读取。"
+// in the language the app shows.
+func MeilisearchKeysff8db17d31() string { return In(i18n.Locale()).MeilisearchKeysff8db17d31() }
+
+// MeilisearchKeysff8db17d31 says "实时分页；总数来自最近一次列表读取。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysff8db17d31() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysff8db17d31", nil)
+}
+
+// MeilisearchKeys01f612f1f9 says "密钥页大小"
+// in the language the app shows.
+func MeilisearchKeys01f612f1f9() string { return In(i18n.Locale()).MeilisearchKeys01f612f1f9() }
+
+// MeilisearchKeys01f612f1f9 says "密钥页大小"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys01f612f1f9() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys01f612f1f9", nil)
+}
+
+// MeilisearchKeys17725f9b5d says "上一页密钥"
+// in the language the app shows.
+func MeilisearchKeys17725f9b5d() string { return In(i18n.Locale()).MeilisearchKeys17725f9b5d() }
+
+// MeilisearchKeys17725f9b5d says "上一页密钥"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys17725f9b5d() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys17725f9b5d", nil)
+}
+
+// MeilisearchKeysaeb29ecf1f says "下一页密钥"
+// in the language the app shows.
+func MeilisearchKeysaeb29ecf1f() string { return In(i18n.Locale()).MeilisearchKeysaeb29ecf1f() }
+
+// MeilisearchKeysaeb29ecf1f says "下一页密钥"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysaeb29ecf1f() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysaeb29ecf1f", nil)
+}
+
+// MeilisearchKeysc12b9aaaca says "密钥 JSON 预览已截断；可复制完整脱敏内容。"
+// in the language the app shows.
+func MeilisearchKeysc12b9aaaca() string { return In(i18n.Locale()).MeilisearchKeysc12b9aaaca() }
+
+// MeilisearchKeysc12b9aaaca says "密钥 JSON 预览已截断；可复制完整脱敏内容。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysc12b9aaaca() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysc12b9aaaca", nil)
+}
+
+// MeilisearchKeys507ba21b5b says "密钥 UID（新建时可留空）"
+// in the language the app shows.
+func MeilisearchKeys507ba21b5b() string { return In(i18n.Locale()).MeilisearchKeys507ba21b5b() }
+
+// MeilisearchKeys507ba21b5b says "密钥 UID（新建时可留空）"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys507ba21b5b() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys507ba21b5b", nil)
+}
+
+// MeilisearchKeys50cb0cc133 says "密钥权限（逗号分隔）"
+// in the language the app shows.
+func MeilisearchKeys50cb0cc133() string { return In(i18n.Locale()).MeilisearchKeys50cb0cc133() }
+
+// MeilisearchKeys50cb0cc133 says "密钥权限（逗号分隔）"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys50cb0cc133() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys50cb0cc133", nil)
+}
+
+// MeilisearchKeys439c4147df says "索引范围（逗号分隔）"
+// in the language the app shows.
+func MeilisearchKeys439c4147df() string { return In(i18n.Locale()).MeilisearchKeys439c4147df() }
+
+// MeilisearchKeys439c4147df says "索引范围（逗号分隔）"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys439c4147df() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys439c4147df", nil)
+}
+
+// MeilisearchKeys25849d666d says "到期时间（RFC3339，可留空）"
+// in the language the app shows.
+func MeilisearchKeys25849d666d() string { return In(i18n.Locale()).MeilisearchKeys25849d666d() }
+
+// MeilisearchKeys25849d666d says "到期时间（RFC3339，可留空）"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys25849d666d() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys25849d666d", nil)
+}
+
+// MeilisearchKeys69677e17ad says "权限与索引支持原生通配符；修改只允许名称和描述，到期时间留空表示永不过期。"
+// in the language the app shows.
+func MeilisearchKeys69677e17ad() string { return In(i18n.Locale()).MeilisearchKeys69677e17ad() }
+
+// MeilisearchKeys69677e17ad says "权限与索引支持原生通配符；修改只允许名称和描述，到期时间留空表示永不过期。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys69677e17ad() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys69677e17ad", nil)
+}
+
+// MeilisearchKeysdef5db5598 says "放弃密钥草稿"
+// in the language the app shows.
+func MeilisearchKeysdef5db5598() string { return In(i18n.Locale()).MeilisearchKeysdef5db5598() }
+
+// MeilisearchKeysdef5db5598 says "放弃密钥草稿"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysdef5db5598() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysdef5db5598", nil)
+}
+
+// MeilisearchKeys3e7e525d0f says "预览密钥更改"
+// in the language the app shows.
+func MeilisearchKeys3e7e525d0f() string { return In(i18n.Locale()).MeilisearchKeys3e7e525d0f() }
+
+// MeilisearchKeys3e7e525d0f says "预览密钥更改"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys3e7e525d0f() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys3e7e525d0f", nil)
+}
+
+// MeilisearchKeysc66d0b200d says "密钥操作预览"
+// in the language the app shows.
+func MeilisearchKeysc66d0b200d() string { return In(i18n.Locale()).MeilisearchKeysc66d0b200d() }
+
+// MeilisearchKeysc66d0b200d says "密钥操作预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysc66d0b200d() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysc66d0b200d", nil)
+}
+
+// MeilisearchKeyse2a255b32a says "…"
+// in the language the app shows.
+func MeilisearchKeyse2a255b32a() string { return In(i18n.Locale()).MeilisearchKeyse2a255b32a() }
+
+// MeilisearchKeyse2a255b32a says "…"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeyse2a255b32a() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeyse2a255b32a", nil)
+}
+
+// MeilisearchKeys274d3bf22c says "密钥请求预览已截断；请先复制完整请求检查。"
+// in the language the app shows.
+func MeilisearchKeys274d3bf22c() string { return In(i18n.Locale()).MeilisearchKeys274d3bf22c() }
+
+// MeilisearchKeys274d3bf22c says "密钥请求预览已截断；请先复制完整请求检查。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys274d3bf22c() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys274d3bf22c", nil)
+}
+
+// MeilisearchKeysdbba9cc066 says "将提交的密钥请求"
+// in the language the app shows.
+func MeilisearchKeysdbba9cc066() string { return In(i18n.Locale()).MeilisearchKeysdbba9cc066() }
+
+// MeilisearchKeysdbba9cc066 says "将提交的密钥请求"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysdbba9cc066() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysdbba9cc066", nil)
+}
+
+// MeilisearchKeysc6bfc160b5 says "复制密钥预览请求"
+// in the language the app shows.
+func MeilisearchKeysc6bfc160b5() string { return In(i18n.Locale()).MeilisearchKeysc6bfc160b5() }
+
+// MeilisearchKeysc6bfc160b5 says "复制密钥预览请求"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysc6bfc160b5() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysc6bfc160b5", nil)
+}
+
+// MeilisearchKeys7a695e9f11 says "确认提交密钥操作"
+// in the language the app shows.
+func MeilisearchKeys7a695e9f11() string { return In(i18n.Locale()).MeilisearchKeys7a695e9f11() }
+
+// MeilisearchKeys7a695e9f11 says "确认提交密钥操作"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys7a695e9f11() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys7a695e9f11", nil)
+}
+
+// MeilisearchKeys3eb4f0228f says "原始密钥临时显示"
+// in the language the app shows.
+func MeilisearchKeys3eb4f0228f() string { return In(i18n.Locale()).MeilisearchKeys3eb4f0228f() }
+
+// MeilisearchKeys3eb4f0228f says "原始密钥临时显示"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys3eb4f0228f() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys3eb4f0228f", nil)
+}
+
+// MeilisearchKeys7bc0eec438 says "这是原观察的临时密钥；不代表当前仍有效，关闭窗口即隐藏。"
+// in the language the app shows.
+func MeilisearchKeys7bc0eec438() string { return In(i18n.Locale()).MeilisearchKeys7bc0eec438() }
+
+// MeilisearchKeys7bc0eec438 says "这是原观察的临时密钥；不代表当前仍有效，关闭窗口即隐藏。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys7bc0eec438() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys7bc0eec438", nil)
+}
+
+// MeilisearchKeys1265191535 says "隐藏密钥"
+// in the language the app shows.
+func MeilisearchKeys1265191535() string { return In(i18n.Locale()).MeilisearchKeys1265191535() }
+
+// MeilisearchKeys1265191535 says "隐藏密钥"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys1265191535() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys1265191535", nil)
+}
+
+// MeilisearchKeysb877b3d37d says "保留原密钥草稿与证据？"
+// in the language the app shows.
+func MeilisearchKeysb877b3d37d() string { return In(i18n.Locale()).MeilisearchKeysb877b3d37d() }
+
+// MeilisearchKeysb877b3d37d says "保留原密钥草稿与证据？"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysb877b3d37d() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysb877b3d37d", nil)
+}
+
+// MeilisearchKeys4dab1d8aa9 says "离开将放弃本地草稿与证据。已发送的密钥操作不会回滚；结果未知的请求不能重放。"
+// in the language the app shows.
+func MeilisearchKeys4dab1d8aa9() string { return In(i18n.Locale()).MeilisearchKeys4dab1d8aa9() }
+
+// MeilisearchKeys4dab1d8aa9 says "离开将放弃本地草稿与证据。已发送的密钥操作不会回滚；结果未知的请求不能重放。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys4dab1d8aa9() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys4dab1d8aa9", nil)
+}
+
+// MeilisearchKeys3d3cb57676 says "继续处理密钥"
+// in the language the app shows.
+func MeilisearchKeys3d3cb57676() string { return In(i18n.Locale()).MeilisearchKeys3d3cb57676() }
+
+// MeilisearchKeys3d3cb57676 says "继续处理密钥"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys3d3cb57676() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys3d3cb57676", nil)
+}
+
+// MeilisearchKeys5446fa98e9 says "放弃本地密钥草稿并离开"
+// in the language the app shows.
+func MeilisearchKeys5446fa98e9() string { return In(i18n.Locale()).MeilisearchKeys5446fa98e9() }
+
+// MeilisearchKeys5446fa98e9 says "放弃本地密钥草稿并离开"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys5446fa98e9() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys5446fa98e9", nil)
+}
+
+// MeilisearchKeys94d52a55f0 says "密钥草稿或选择已改变，请重新预览"
+// in the language the app shows.
+func MeilisearchKeys94d52a55f0() string { return In(i18n.Locale()).MeilisearchKeys94d52a55f0() }
+
+// MeilisearchKeys94d52a55f0 says "密钥草稿或选择已改变，请重新预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys94d52a55f0() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys94d52a55f0", nil)
+}
+
+// MeilisearchKeyseb8b44509e says "密钥连接已恢复；请显式读取当前密钥，原请求不会重发"
+// in the language the app shows.
+func MeilisearchKeyseb8b44509e() string { return In(i18n.Locale()).MeilisearchKeyseb8b44509e() }
+
+// MeilisearchKeyseb8b44509e says "密钥连接已恢复；请显式读取当前密钥，原请求不会重发"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeyseb8b44509e() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeyseb8b44509e", nil)
+}
+
+// MeilisearchKeys865749099c says "原密钥会话已失效，请显式恢复"
+// in the language the app shows.
+func MeilisearchKeys865749099c() string { return In(i18n.Locale()).MeilisearchKeys865749099c() }
+
+// MeilisearchKeys865749099c says "原密钥会话已失效，请显式恢复"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys865749099c() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys865749099c", nil)
+}
+
+// MeilisearchKeys5fddd30790 says "当前密钥已读取；草稿保留，请合并后重新预览"
+// in the language the app shows.
+func MeilisearchKeys5fddd30790() string { return In(i18n.Locale()).MeilisearchKeys5fddd30790() }
+
+// MeilisearchKeys5fddd30790 says "当前密钥已读取；草稿保留，请合并后重新预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys5fddd30790() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys5fddd30790", nil)
+}
+
+// MeilisearchKeys0940da60ba says "密钥操作已同步完成；请显式刷新列表"
+// in the language the app shows.
+func MeilisearchKeys0940da60ba() string { return In(i18n.Locale()).MeilisearchKeys0940da60ba() }
+
+// MeilisearchKeys0940da60ba says "密钥操作已同步完成；请显式刷新列表"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys0940da60ba() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys0940da60ba", nil)
+}
+
+// MeilisearchKeys95a5916533 says "密钥页面已恢复；请显式读取列表"
+// in the language the app shows.
+func MeilisearchKeys95a5916533() string { return In(i18n.Locale()).MeilisearchKeys95a5916533() }
+
+// MeilisearchKeys95a5916533 says "密钥页面已恢复；请显式读取列表"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeys95a5916533() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeys95a5916533", nil)
+}
+
+// MeilisearchKeysDeleteConfirmation says "输入原密钥 UID 确认删除"
+// in the language the app shows.
+func MeilisearchKeysDeleteConfirmation() string {
+	return In(i18n.Locale()).MeilisearchKeysDeleteConfirmation()
+}
+
+// MeilisearchKeysDeleteConfirmation says "输入原密钥 UID 确认删除"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeysDeleteConfirmation() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeysDeleteConfirmation", nil)
+}

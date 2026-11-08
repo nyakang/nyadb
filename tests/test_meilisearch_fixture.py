@@ -11,6 +11,25 @@ SPEC.loader.exec_module(fixture)
 
 
 class MeilisearchFixtureTests(unittest.TestCase):
+    def test_public_key_panel_requires_permission_modes_lifecycle_and_native_core(self):
+        for mode in fixture.MODES:
+            names = fixture.required_passes(mode, key_panel=True)
+            expected = fixture.KEY_PANEL_COMMON + (fixture.KEY_PANEL_ANONYMOUS if mode == 'anonymous' else fixture.KEY_PANEL_AUTHENTICATED)
+            self.assertTrue(set(fixture.required_passes(mode, public=True, keys=True)).issubset(names))
+            self.assertTrue(set(expected).issubset(names))
+            self.assertEqual(bool(set(fixture.KEY_PANEL_ANONYMOUS).intersection(names)), mode == 'anonymous')
+            self.assertEqual(bool(set(fixture.KEY_PANEL_AUTHENTICATED).intersection(names)), mode != 'anonymous')
+            self.assertIn('./internal/ui/shell', fixture.test_command(mode, True, key_panel=True))
+            complete = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in names)
+            if mode == 'mtls':
+                complete += '\nnative mTLS accepted owned client certificate and rejected its absence'
+            fixture.check_acceptance(complete, mode, key_panel=True)
+            for name in expected:
+                with self.assertRaises(RuntimeError):
+                    fixture.check_acceptance(complete.replace('--- PASS: TestMeilisearchNative'+name, '--- SKIP: TestMeilisearchNative'+name), mode, key_panel=True)
+        for path in ['internal/ui/objectworkspace/keys.go', 'internal/ui/shell/keys.go', 'internal/ui/shell/meilisearch_keys_integration_test.go']:
+            self.assertIn(path, fixture.source_hashes(key_panel=True))
+
     def test_keys_require_native_anonymous_refusal_or_authenticated_crud(self):
         for mode in fixture.MODES:
             names = fixture.required_passes(mode, keys=True)

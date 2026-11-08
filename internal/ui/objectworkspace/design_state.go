@@ -55,6 +55,9 @@ type designDocument struct {
 
 func designSignature(draft mysqlddl.Draft) string { b, _ := json.Marshal(draft); return string(b) }
 func (d *Document) DesignDirty() bool {
+	if d.KeysMode() {
+		return d.keys.dirty()
+	}
 	if d.SettingsMode() {
 		return d.settings.dirty()
 	}
@@ -67,7 +70,7 @@ func (d *Document) DesignDirty() bool {
 	return d != nil && d.design != nil && d.design.loaded && (designSignature(d.design.draft) != d.design.baseline || !reflect.DeepEqual(d.design.form, d.design.formBase) || d.design.constraint.dirty() || d.design.optionValue != d.design.optionBase)
 }
 func (d *Document) DesignBusy() bool {
-	return d != nil && (d.SettingsMode() && d.loading || d.tasks != nil && d.tasks.management.busy || d.design != nil && d.design.busy || d.schemaDesign != nil && d.schemaDesign.busy)
+	return d != nil && (d.KeysMode() && d.loading || d.SettingsMode() && d.loading || d.tasks != nil && d.tasks.management.busy || d.design != nil && d.design.busy || d.schemaDesign != nil && d.schemaDesign.busy)
 }
 func (s *State) BeginDesign(d *Document, services ui.Services) {
 	if d != nil && s.canSchemaDesign(d.profileID, d.database, d.table) {
@@ -216,6 +219,9 @@ func (s *State) consumeDesign(services ui.Services) {
 	}
 }
 func (s *State) PrepareDesign(d *Document) error {
+	if d.KeysMode() {
+		return s.PrepareKey(d, false)
+	}
 	if d.SettingsMode() {
 		return s.PrepareSettings(d, false)
 	}
@@ -311,6 +317,9 @@ func (d *Document) DesignLeavePending() bool {
 	if d == nil || d.closed {
 		return false
 	}
+	if x := d.keys; x != nil {
+		return x.guard || x.preview || d.loading || x.uncertain || x.dirty()
+	}
 	if x := d.settings; x != nil {
 		return x.guard || x.preview || d.loading
 	}
@@ -327,6 +336,9 @@ func (d *Document) DesignLeavePending() bool {
 }
 
 func (s *State) GuardDesignLeave(d *Document, next func(ui.Services)) bool {
+	if d.KeysMode() {
+		return s.guardKeysLeave(d, next)
+	}
 	if d != nil && d.tasks != nil {
 		return s.guardTaskManagementLeave(d, next)
 	}

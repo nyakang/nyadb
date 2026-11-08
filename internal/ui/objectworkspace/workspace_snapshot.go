@@ -39,6 +39,14 @@ func (s *State) RestoreWorkspace(data json.RawMessage) error {
 	return nil
 }
 func (s *State) DocumentSnapshot(d *Document) json.RawMessage {
+	if d.KeysMode() {
+		b, _ := json.Marshal(struct {
+			Keys    int
+			Columns ui.TableLayout
+			Limit   uint64
+		}{1, d.columns.Columns, d.keys.limit})
+		return b
+	}
 	if d.SettingsMode() {
 		return json.RawMessage(`{"Settings":true}`)
 	}
@@ -58,6 +66,25 @@ func (s *State) DocumentSnapshot(d *Document) json.RawMessage {
 	return b
 }
 func (s *State) RestoreDocumentPresentation(d *Document, b json.RawMessage) {
+	if d == nil || d.closed {
+		return
+	}
+	if d.KeysMode() {
+		var p struct {
+			Keys    int
+			Columns ui.TableLayout
+			Limit   uint64
+		}
+		if len(b) <= 65536 && json.Unmarshal(b, &p) == nil && p.Keys == 1 {
+			d.columns.Columns = p.Columns
+			if p.Limit == 20 || p.Limit == 50 || p.Limit == 100 {
+				d.keys.limit = p.Limit
+			}
+		}
+		d.keys.tab = 0
+		d.err = "密钥页面已恢复；请显式读取列表"
+		return
+	}
 	if d.SettingsMode() {
 		d.settings.tab = 0
 		return

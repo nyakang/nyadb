@@ -335,7 +335,8 @@ func (s *State) clearMySQLTabsFor(profileID int64) {
 }
 func (s *State) pruneMySQLTabsFor(id int64, known map[string]bool) {
 	s.removeTabs(func(t *tab) bool {
-		return (t.data != nil || t.object != nil) && t.profileID() == id && !(t.object != nil && t.object.Object().Kind == "tasks" && t.object.Object().Catalog == "") && !known[t.database()]
+		global := t.object != nil && t.object.Object().Catalog == "" && (t.object.Object().Kind == "tasks" || t.object.KeysMode())
+		return (t.data != nil || t.object != nil) && t.profileID() == id && !global && !known[t.database()]
 	})
 }
 
@@ -663,6 +664,13 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 			return s.runtime.SettingsDocuments(id)
 		},
 		SettingsChanged: s.settingsChanged,
+		KeysDocumentsFor: func(id int64) (contract.KeysDocumentsProvider, error) {
+			if s.runtime == nil {
+				return nil, contract.ErrUnsupported
+			}
+			return s.runtime.KeysDocuments(id)
+		},
+		DocumentActive: func(id uint64) bool { return s.currentTab().id == id },
 		TaskDocumentsFor: func(id int64) (contract.TaskDocumentsProvider, error) {
 			if s.runtime == nil {
 				return nil, contract.ErrUnsupported
@@ -911,6 +919,8 @@ func (s *State) SetDataSources(open func(context.Context, datasources.Config) (d
 
 func neutralObjectKind(kind string) string {
 	switch kind {
+	case "API 密钥":
+		return "keys"
 	case "任务":
 		return "tasks"
 	case "文档":

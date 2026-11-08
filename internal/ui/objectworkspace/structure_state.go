@@ -23,6 +23,8 @@ type Session struct {
 }
 
 type Dependencies struct {
+	KeysDocumentsFor     func(int64) (contract.KeysDocumentsProvider, error)
+	DocumentActive       func(uint64) bool
 	SettingsDocumentsFor func(int64) (contract.SettingsDocumentsProvider, error)
 	SettingsChanged      func(ui.Services, SettingsEvent)
 	TaskDocumentsFor     func(int64) (contract.TaskDocumentsProvider, error)
@@ -110,6 +112,7 @@ type Dependencies struct {
 // Document owns its immutable object identity and mutable presentation state.
 // Only the UI thread changes it; workers publish to private buffered channels.
 type Document struct {
+	keys                          *keysDocument
 	settings                      *settingsDocument
 	tasks                         *taskDocument
 	formFocusHandle               ui.Handle
@@ -279,6 +282,10 @@ func (s *State) OpenStructure(id uint64, profileID int64, database, table string
 // prior worker before starting another. It never executes user-authored SQL or
 // modifies a table.
 func (s *State) Load(d *Document, invalidate func(), refresh bool) {
+	if d.KeysMode() {
+		s.LoadKeys(d, invalidate, refresh)
+		return
+	}
 	if d.SettingsMode() {
 		s.LoadSettings(d, invalidate, refresh)
 		return
@@ -342,6 +349,10 @@ func (s *State) cancel(d *Document) {
 
 // Cancel preserves the existing read-only cache while revoking pending work.
 func (s *State) Cancel(d *Document) {
+	if d.KeysMode() {
+		s.CancelKeys(d)
+		return
+	}
 	if d != nil && d.tasks != nil {
 		s.CancelTasks(d)
 		return
@@ -357,6 +368,7 @@ func (s *State) Close(d *Document) {
 		return
 	}
 	s.closeSettings(d)
+	s.closeKeys(d)
 	s.closeTasks(d)
 	s.cancel(d)
 	s.closeDesign(d)
@@ -424,6 +436,7 @@ func (s *State) CloseAll() {
 // Consume runs on the UI thread. Generation changes invalidate completed work
 // without leaving a document stuck loading or automatically retrying it.
 func (s *State) Consume(services ui.Services) {
+	s.consumeKeys()
 	s.consumeSettings(services)
 	s.consumeTasks()
 	s.consumeMaintenance(services)
@@ -512,6 +525,9 @@ func (d *Document) ObjectKind() string {
 
 func (d *Document) Object() contract.ObjectRef { return d.object }
 func (s *State) OpenQualifiedStructure(id uint64, o contract.ObjectRef, kind string) *Document {
+	if o.Kind == "keys" {
+		return s.OpenKeys(id, o)
+	}
 	if o.Kind == "settings" && s.SettingsScopeSupported(o) {
 		return s.OpenSettings(id, o)
 	}

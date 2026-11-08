@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -56,6 +57,8 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 		m.Separator()
 		if current.data != nil {
 			item("保存数据更改", "save_data", s.dataWorkspace.CanSave(current.data), mod, ui.KeyS)
+		} else if current.object != nil && current.object.KeysMode() {
+			item("预览密钥更改", "save_design", s.objectWorkspace.CanCreateKey(current.object) && current.object.DesignDirty(), mod, ui.KeyS)
 		} else if current.object != nil && current.object.SettingsMode() {
 			item("预览设置更改", "save_design", s.objectWorkspace.CanPrepareSettings(current.object) && current.object.DesignDirty(), mod, ui.KeyS)
 		} else if current.object != nil {
@@ -90,6 +93,9 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 				selected = fmt.Sprintf("tab/%d", t.id)
 			}
 		}
+	case "工具":
+		target := contract.ObjectRef{ProfileID: session.ProfileID, Kind: "keys", Name: "keys"}
+		item("管理 API 密钥…", "keys", s.objectWorkspace.KeysScopeSupported(target), 0, 0)
 	}
 	if s.documentMenus == nil {
 		s.documentMenus = map[string]documentMenuScope{}
@@ -104,6 +110,8 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 		return
 	}
 	switch selected {
+	case "keys":
+		s.openKeys(s.editServices, original.profile)
 	case "workspaces":
 		s.openWorkspaces()
 	case "new_connection":

@@ -183,6 +183,7 @@ func (s *State) menuCommands(section string, m *ui.Menu) {
 			}
 		})
 	case "工具":
+		s.documentMenuCommands(section, m)
 		s.aiMenuCommands(m)
 		m.Separator()
 		// Preserve the observed compact Navicat menu hierarchy without
