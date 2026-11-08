@@ -91,6 +91,9 @@ class QdrantFixtureTests(unittest.TestCase):
         paths = fixture.source_hashes(profile=True)
         for name in ['internal/services/qdrant/data_document.go','internal/services/qdrant/data_page.go',
                      'internal/services/qdrant/data_row.go','internal/services/qdrant/data_reads.go',
+                     'internal/services/qdrant/data_write.go','internal/services/qdrant/data_write_vectors.go',
+                     'internal/services/qdrant/data_write_native_integration_test.go',
+                     'internal/ui/dataworkspace/qdrant_write_integration_test.go',
                      'internal/services/qdrant/data_test.go','internal/services/qdrant/data_native_integration_test.go',
                      'internal/ui/dataworkspace/qdrant_integration_test.go','internal/ui/dataworkspace/native_selector.go']:
             self.assertIn(name,paths)

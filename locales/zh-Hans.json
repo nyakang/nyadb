@@ -2631,5 +2631,18 @@
   "qdrantDataFilterCollapse": "收起 Qdrant 过滤",
   "qdrantDataFilterInvalid": "请输入有效的 Qdrant filter JSON 对象",
   "qdrantDataFilterRestored": "Qdrant 过滤已恢复；请点击应用 Qdrant 过滤执行",
-  "qdrantDataFilterApplied": "Qdrant 过滤已应用"
+  "qdrantDataFilterApplied": "Qdrant 过滤已应用",
+  "qdrantVerifyOriginalPoints": "核验原点结果",
+  "qdrantBatchEvidence": "批次写入证据",
+  "qdrantBatchVerificationBoundary": "批次完成不代表每个点都已更改；核验只读取原点，不会重发。提交前检查不是原子比较与交换，批次不支持回滚。",
+  "qdrantOriginalBatchReceiptJSON": "原批次写入回执 JSON",
+  "qdrantOriginalPointVerificationJSON": "原点回读核验 JSON",
+  "qdrantCopyBatchReceipt": "复制批次写入回执",
+  "qdrantCopyPointVerification": "复制原点回读核验",
+  "qdrantCloseBatchEvidenceWarning": "关闭会丢弃本地草稿与批次证据；服务器写入不会取消或回滚，原请求不会重发。请先复制所需证据。",
+  "qdrantContinueVerification": "继续核验",
+  "qdrantPointBatchWriteTooltip": "点批次写入：完整 point JSON 替换或删除；提交后请核验原点结果",
+  "qdrantBatchUnverifiedStatus": "批次尚未核验；草稿已保留，禁止重发",
+  "qdrantBatchCompletedStatus": "批次已完成，等待原点回读核验；草稿已保留，禁止重发",
+  "qdrantOperationIDs": "操作编号"
 }

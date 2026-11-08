@@ -2631,5 +2631,18 @@
   "qdrantDataFilterCollapse": "Collapse Qdrant filter",
   "qdrantDataFilterInvalid": "Enter a valid Qdrant filter JSON object",
   "qdrantDataFilterRestored": "Qdrant filter restored; click Apply Qdrant filter to execute",
-  "qdrantDataFilterApplied": "Qdrant filter applied"
+  "qdrantDataFilterApplied": "Qdrant filter applied",
+  "qdrantVerifyOriginalPoints": "Verify original points",
+  "qdrantBatchEvidence": "Batch write evidence",
+  "qdrantBatchVerificationBoundary": "Batch completion does not prove that every point changed. Verification reads only the original points and never resends. Preflight checks are not atomic compare-and-swap, and batches cannot roll back.",
+  "qdrantOriginalBatchReceiptJSON": "Original batch receipt JSON",
+  "qdrantOriginalPointVerificationJSON": "Original point verification JSON",
+  "qdrantCopyBatchReceipt": "Copy batch receipt",
+  "qdrantCopyPointVerification": "Copy point verification",
+  "qdrantCloseBatchEvidenceWarning": "Closing discards local drafts and batch evidence. Server writes are not canceled or rolled back, and the original request is never resent. Copy any evidence you need first.",
+  "qdrantContinueVerification": "Continue verification",
+  "qdrantPointBatchWriteTooltip": "Point batch writes: replace complete point JSON or delete; verify the original points after submission",
+  "qdrantBatchUnverifiedStatus": "Batch remains unverified; drafts retained, resubmission prohibited",
+  "qdrantBatchCompletedStatus": "Batch completed; awaiting original point verification. Drafts retained, resubmission prohibited",
+  "qdrantOperationIDs": "Operation IDs"
 }

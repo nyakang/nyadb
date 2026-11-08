@@ -48,7 +48,7 @@ func TestQdrantNativePublicProviderMetadataAndPublishedGenerations(t *testing.T)
 		t.Fatal(err)
 	}
 	caps := first.Capabilities()
-	if !caps.Query || !caps.Metadata || caps.Objects || !caps.Documents || !caps.Count || !caps.FieldChunks || !caps.Keyset || !caps.JSONL || caps.EditableTables || caps.Backup || !caps.Export {
+	if !caps.Query || !caps.Metadata || caps.Objects || !caps.Documents || !caps.Count || !caps.FieldChunks || !caps.Keyset || !caps.JSONL || !caps.EditableTables || caps.Backup || !caps.Export {
 		t.Fatal("unverified data/management tools exposed", caps)
 	}
 	meta, err := contract.Require[contract.MetadataProvider](first)
@@ -108,11 +108,19 @@ func TestQdrantNativePublicProviderMetadataAndPublishedGenerations(t *testing.T)
 	bound := document.Runtime()
 	options := contract.DataOptions{Object: m.Namespace(p.ID, name).Object("points", "points"), Limit: 1}
 	page, err := bound.AdvancedLoader(ctx, p.ID, name, "points", options)
-	if err != nil || page.Object != options.Object || page.Rows[0][0].Text != "18446744073709551615" || page.Editable == nil || *page.Editable {
+	if err != nil || page.Object != options.Object || page.Rows[0][0].Text != "18446744073709551615" || page.Editable == nil || !*page.Editable {
 		t.Fatal("public original point document", err)
 	}
 	if _, err = bound.RowReader(ctx, p.ID, name, "points", *page.RowRefs[0]); err != nil {
 		t.Fatal("public original point read", err)
+	}
+	saved, err := bound.Saver(ctx, p.ID, name, "points", []contract.DataEdit{{Kind: "update", Original: page.RowSnapshots[0], Values: map[string]contract.DataValue{"point": {Kind: contract.JSON, Text: `{"id":18446744073709551615,"vector":[0,1],"payload":{"integer":9007199254740993}}`}}}})
+	if err != nil || saved.Async == nil || saved.CommitConfirmed {
+		t.Fatal("public bound point writer", err)
+	}
+	verified, err := bound.Verify(ctx, p.ID, name, "points", saved)
+	if err != nil || verified.Status != "applied" || !verified.Recovered.Verified {
+		t.Fatal("public original point readback", err)
 	}
 	second, err := m.ConnectSession(ctx, p, parsed.Password)
 	if err != nil || second.Generation() <= first.Generation() {
@@ -129,6 +137,12 @@ func TestQdrantNativePublicProviderMetadataAndPublishedGenerations(t *testing.T)
 	}
 	if _, err = bound.AdvancedLoader(ctx, p.ID, name, "points", options); !errors.Is(err, contract.ErrRevoked) {
 		t.Fatal("old point grid rebound to replacement", err)
+	}
+	if _, err = bound.Saver(ctx, p.ID, name, "points", []contract.DataEdit{{Kind: "delete", Original: verified.Recovered.Outcomes[0].Saved}}); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal("old point writer rebound", err)
+	}
+	if _, err = bound.Verify(ctx, p.ID, name, "points", saved); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal("old verification rebound", err)
 	}
 	document.Close()
 	first.Close()

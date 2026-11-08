@@ -246,7 +246,7 @@ func TestQdrantNativeDataDeletedCursorBoundaryAndObservationChanges(t *testing.T
 		t.Fatal("explicit new data reservation", err)
 	}
 }
-func TestQdrantNativeDataReadPermissionsAndUnsupportedWrites(t *testing.T) {
+func TestQdrantNativeDataReadPermissionsAndDeniedWrites(t *testing.T) {
 	s, admin := nativeData(t)
 	cfg, key, readonly := nativeFixture(t)
 	if cfg.Auth == "api_key" {
@@ -257,8 +257,8 @@ func TestQdrantNativeDataReadPermissionsAndUnsupportedWrites(t *testing.T) {
 	dataSeed(t, admin, name, []any{map[string]any{"id": 1, "vector": []float64{1, 0}, "payload": map[string]any{"n": json.Number("9007199254740993")}}})
 	l := reservePointData(t, s, name)
 	r := l.Runtime()
-	if r.Saver != nil || r.Verify != nil || r.Importer != nil || r.Transactions.Begin != nil || r.Capabilities.EditableTables || r.Capabilities.Import {
-		t.Fatal("read-only point grid advertises writes")
+	if r.Saver == nil || r.Verify == nil || r.Importer != nil || r.Transactions.Begin != nil || !r.Capabilities.EditableTables || r.Capabilities.Import {
+		t.Fatal("point runtime lacks writes or exposes import/transactions")
 	}
 	p, err := l.page(context.Background(), s.ProfileID(), name, "points", dataOptions(l))
 	if err != nil || len(p.Rows) != 1 {
@@ -273,6 +273,16 @@ func TestQdrantNativeDataReadPermissionsAndUnsupportedWrites(t *testing.T) {
 	var out bytes.Buffer
 	if err = l.jsonl(context.Background(), l.object, &out); err != nil || out.Len() == 0 {
 		t.Fatal("readonly key cannot export", err)
+	}
+	if cfg.Auth == "api_key" {
+		result, writeErr := r.Saver(context.Background(), s.ProfileID(), name, "points", []contract.DataEdit{{Kind: "delete", Original: p.RowSnapshots[0]}})
+		if writeErr == nil || result == nil || result.Async == nil || !result.CommitUncertain || result.Async.ReceiptJSON == "" {
+			t.Fatal("readonly grid denial discarded original receipt", writeErr)
+		}
+		v, verifyErr := r.Verify(context.Background(), s.ProfileID(), name, "points", result)
+		if verifyErr != nil || v.Status != "indeterminate" || v.Recovered.CommitConfirmed {
+			t.Fatal("readonly denied write claimed commit", verifyErr)
+		}
 	}
 	if cfg.Auth == "api_key" {
 		c, err := Open(context.Background(), cfg, key)

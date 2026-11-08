@@ -17,24 +17,25 @@ import (
 var ErrDataTargetChanged = errors.New("Qdrant original physical collection observation changed; reopen the document explicitly")
 
 type dataLease struct {
-	mu, pageMu      sync.Mutex
-	session         *Session
-	object          contract.ObjectRef
-	ctx             context.Context
-	cancel          context.CancelFunc
-	closed, changed bool
-	done            chan struct{}
-	work            sync.WaitGroup
-	active          int
-	queue           chan struct{}
-	key             [32]byte
-	observation     string
-	epoch           uint64
-	limit           int
-	query           string
+	mu, pageMu, writeMu sync.Mutex
+	session             *Session
+	object              contract.ObjectRef
+	ctx                 context.Context
+	cancel              context.CancelFunc
+	closed, changed     bool
+	done                chan struct{}
+	work                sync.WaitGroup
+	active              int
+	queue               chan struct{}
+	key                 [32]byte
+	observation         string
+	epoch               uint64
+	limit               int
+	query               string
+	write               *dataWrite
 }
 
-// ReserveDataDocument binds a readonly native document range to the original
+// ReserveDataDocument binds a native document range to the original
 // session. Reservation performs no I/O and never chooses a replacement session.
 func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
 	if err := s.checkNamespace(o.Namespace()); err != nil {
@@ -69,17 +70,19 @@ func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 }
 
 func nativeDataCapabilities() contract.Capabilities {
-	return contract.Capabilities{Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
+	return contract.Capabilities{Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true, EditableTables: true}
 }
 func (s *Session) DataDocumentCapabilities() contract.Capabilities { return nativeDataCapabilities() }
 func (l *dataLease) Runtime() contract.DataRuntime {
-	return contract.DataRuntime{Capabilities: nativeDataCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
+	path, _ := collectionPath(l.object.Catalog)
+	return contract.DataRuntime{Capabilities: nativeDataCapabilities(), AdvancedLoader: l.page, RowReader: l.editRow, Saver: l.save, Verify: l.verifyWrite, AsyncWrites: true, Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
 		Selector: contract.DataSelector{Dialect: "qdrant", Column: "point", Mode: "qdrant_filter", Validate: validatePointFilter},
 		ReadDescription: func(contract.DataOptions) string {
 			path, _ := collectionPath(l.object.Catalog)
 			return "POST " + path + "/points/scroll"
 		},
-		FilterColumns: []string{}, SortColumns: []string{}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
+		WriteDescription: "POST " + path + "/points/batch?wait=true&ordering=strong",
+		FilterColumns:    []string{}, SortColumns: []string{}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
 }
 func (l *dataLease) identity(id int64, db, name string) error {
 	if id != l.object.ProfileID || db != l.object.Catalog || name != l.object.Name {
@@ -163,7 +166,7 @@ func (l *dataLease) markChanged() {
 }
 
 // Configuration is a live observation, not an incarnation or atomic guard.
-// Identical delete/recreation can alias it; this document remains read-only.
+// Identical delete/recreation can alias it; this is never a conditional write guard.
 func (l *dataLease) guard(ctx context.Context, c *Client) ([]byte, error) {
 	names, _, err := c.Collections(ctx)
 	if err != nil {
@@ -226,6 +229,9 @@ func (l *dataLease) Close() error {
 	l.cancel()
 	l.mu.Unlock()
 	l.work.Wait()
+	l.writeMu.Lock()
+	l.write = nil
+	l.writeMu.Unlock()
 	l.mu.Lock()
 	clear(l.key[:])
 	l.observation = ""

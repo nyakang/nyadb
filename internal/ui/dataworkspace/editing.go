@@ -271,6 +271,9 @@ func (s *State) beginMySQLCellEdit(services ui.Services, t *Document, row, sourc
 			hasFullDraft = true
 		} else if d.Kind == "insert" {
 			v = contract.DataValue{Default: true}
+			if s.runtimeFor(t).Selector.Dialect == "qdrant" {
+				v.Kind = t.page.ColumnMetadata[source].ValueKind
+			}
 		}
 	}
 	kind := strings.ToLower(t.page.ColumnMetadata[source].DataType)
@@ -595,6 +598,10 @@ func (s *State) consumeEdits(services ui.Services) {
 			t.edit.Results = nil
 			t.edit.Busy = false
 			t.edit.AsyncStatusActive = false
+			if r.Saved != nil && r.Saved.Async != nil {
+				observation := *r.Saved.Async
+				t.edit.LastAsync = &observation
+			}
 			if r.Generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected {
 				t.edit.AfterSave = nil
 				t.edit.Err = locales.Text("原数据库会话已失效，请刷新表数据")
@@ -1023,6 +1030,9 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 		message = locales.Text("正在处理表数据…")
 	} else if s.runtimeFor(t).AsyncWrites {
 		message = locales.Text("异步文档写入：JSON 完整替换或删除；提交后请观察任务结果")
+		if s.runtimeFor(t).Selector.Dialect == "qdrant" {
+			message = locales.Text("点批次写入：完整 point JSON 替换或删除；提交后请核验原点结果")
+		}
 	} else if mysqlDataHasDraft(t) {
 		message, color = locales.Text("有待保存的数据更改"), palette.Warning
 	} else if dataTransactionActive(t) {
@@ -1039,6 +1049,13 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 func asyncDataWriteStatus(result *contract.DataEditResult) string {
 	if result == nil || result.Async == nil {
 		return locales.Text("提交结果仍不确定，禁止重放；请检查数据库")
+	}
+	if result.Async.Status == "completed" || result.Async.Status == "acknowledged" || result.Async.Status == "interrupted" {
+		status := locales.Text("批次尚未核验；草稿已保留，禁止重发")
+		if result.Async.Status == "completed" {
+			status = locales.Text("批次已完成，等待原点回读核验；草稿已保留，禁止重发")
+		}
+		return status + " · " + locales.Text("操作编号") + " " + result.Async.TaskID
 	}
 	status := locales.Text("任务已受理，尚未确认完成；草稿已保留，禁止重复提交")
 	if result.Async.Status == "failed" || result.Async.Status == "canceled" {

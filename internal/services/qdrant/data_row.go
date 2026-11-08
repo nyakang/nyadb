@@ -143,7 +143,7 @@ func (c *Client) ReadPoint(ctx context.Context, collection string, id json.RawMe
 		return Point{}, r, err
 	}
 	points, err := parsePoints(append(append([]byte{'['}, result...), ']'), 1)
-	if err != nil || len(points) != 1 || !bytes.Equal(points[0].ID, id) {
+	if err != nil || len(points) != 1 || !samePointID(points[0].ID, id) {
 		return Point{}, r, ErrProtocol
 	}
 	return points[0], r, nil
@@ -176,6 +176,12 @@ func (l *dataLease) originalPoint(ctx context.Context, c *Client, identity dataI
 	return p, nil
 }
 func (l *dataLease) row(ctx context.Context, id int64, db, name string, r contract.RowRef) (*contract.DataRow, error) {
+	return l.readRow(ctx, id, db, name, r, false)
+}
+func (l *dataLease) editRow(ctx context.Context, id int64, db, name string, r contract.RowRef) (*contract.DataRow, error) {
+	return l.readRow(ctx, id, db, name, r, true)
+}
+func (l *dataLease) readRow(ctx context.Context, id int64, db, name string, r contract.RowRef, editing bool) (*contract.DataRow, error) {
 	if err := l.identity(id, db, name); err != nil {
 		return nil, err
 	}
@@ -204,11 +210,14 @@ func (l *dataLease) row(ctx context.Context, id int64, db, name string, r contra
 	if err != nil {
 		return nil, err
 	}
-	snapshot.Mode = "values"
-	snapshot.Fingerprints = nil
-	snapshot.Original = pointValues(p)
+	values := pointValues(p)
+	if !editing {
+		snapshot.Mode = "values"
+		snapshot.Fingerprints = nil
+		snapshot.Original = values
+	}
 	out := &contract.DataRow{Columns: pointColumns(), Snapshot: snapshot, Values: map[string]contract.DataValue{}}
-	for i, v := range snapshot.Original {
+	for i, v := range values {
 		out.Values[snapshot.Columns[i]] = contract.DataValue{Kind: v.Kind, Text: v.Text, Null: v.Kind == contract.Null}
 	}
 	return out, ctx.Err()

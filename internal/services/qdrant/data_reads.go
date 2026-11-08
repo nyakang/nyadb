@@ -58,7 +58,11 @@ func (l *dataLease) metadata(ctx context.Context, id int64, db, name string) (*c
 	if err != nil {
 		return nil, err
 	}
-	return &contract.TableStructure{Object: l.object, Database: db, Name: name, Kind: "points", Engine: "Qdrant", Columns: pointColumns(), Definition: string(raw), Comment: "Native live points; count and full JSONL cover the entire physical collection; point version is not CAS"}, ctx.Err()
+	columns := pointColumns()
+	if _, err := vectorWriteSchema(raw); err != nil {
+		columns[3].Generated = true
+	}
+	return &contract.TableStructure{Object: l.object, Database: db, Name: name, Kind: "points", Engine: "Qdrant", Columns: columns, Definition: string(raw), Comment: "Native live points; count and full JSONL cover the entire physical collection; point version is not CAS"}, ctx.Err()
 }
 func (l *dataLease) info(ctx context.Context, id int64, db, name string) (*contract.TableInfo, error) {
 	m, err := l.metadata(ctx, id, db, name)

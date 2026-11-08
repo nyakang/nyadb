@@ -61,7 +61,7 @@ func TestQdrantDataExactStableProjectionFingerprintsAndOriginalReads(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !page.LiveRead || !page.StableOrder || page.PagingMode != "cursor" || page.Editable == nil || *page.Editable || len(page.Rows) != 1 || len(page.Columns) != 4 || page.Rows[0][0].Value.Kind != contract.Integer || page.Rows[0][0].Text != "18446744073709551615" || !strings.Contains(page.Rows[0][2].Text, "9007199254740993") {
+	if !page.LiveRead || !page.StableOrder || page.PagingMode != "cursor" || page.Editable == nil || !*page.Editable || len(page.Rows) != 1 || len(page.Columns) != 4 || page.Rows[0][0].Value.Kind != contract.Integer || page.Rows[0][0].Text != "18446744073709551615" || !strings.Contains(page.Rows[0][2].Text, "9007199254740993") {
 		t.Fatal("native projection/precision", page)
 	}
 	ref := *page.RowRefs[0]
@@ -83,7 +83,7 @@ func TestQdrantDataExactStableProjectionFingerprintsAndOriginalReads(t *testing.
 	if err != nil || len(metadata.Columns) != 4 || !strings.Contains(metadata.Definition, "sparse_vectors") {
 		t.Fatal("original collection metadata", err)
 	}
-	if l.Runtime().Saver != nil || l.Runtime().Capabilities.EditableTables || l.Runtime().Capabilities.Import {
+	if l.Runtime().Saver == nil || !l.Runtime().Capabilities.EditableTables || l.Runtime().Capabilities.Import {
 		t.Fatal("unverified write exposed")
 	}
 	foreign := ref

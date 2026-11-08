@@ -26779,3 +26779,141 @@ func QdrantDataFilterApplied() string { return In(i18n.Locale()).QdrantDataFilte
 func (msgs Messages) QdrantDataFilterApplied() string {
 	return Catalog.Format(msgs.locale, "qdrantDataFilterApplied", nil)
 }
+
+// QdrantVerifyOriginalPoints says "核验原点结果"
+// in the language the app shows.
+func QdrantVerifyOriginalPoints() string { return In(i18n.Locale()).QdrantVerifyOriginalPoints() }
+
+// QdrantVerifyOriginalPoints says "核验原点结果"
+// in the language of msgs.
+func (msgs Messages) QdrantVerifyOriginalPoints() string {
+	return Catalog.Format(msgs.locale, "qdrantVerifyOriginalPoints", nil)
+}
+
+// QdrantBatchEvidence says "批次写入证据"
+// in the language the app shows.
+func QdrantBatchEvidence() string { return In(i18n.Locale()).QdrantBatchEvidence() }
+
+// QdrantBatchEvidence says "批次写入证据"
+// in the language of msgs.
+func (msgs Messages) QdrantBatchEvidence() string {
+	return Catalog.Format(msgs.locale, "qdrantBatchEvidence", nil)
+}
+
+// QdrantBatchVerificationBoundary says "…"
+// in the language the app shows.
+func QdrantBatchVerificationBoundary() string {
+	return In(i18n.Locale()).QdrantBatchVerificationBoundary()
+}
+
+// QdrantBatchVerificationBoundary says "…"
+// in the language of msgs.
+func (msgs Messages) QdrantBatchVerificationBoundary() string {
+	return Catalog.Format(msgs.locale, "qdrantBatchVerificationBoundary", nil)
+}
+
+// QdrantOriginalBatchReceiptJSON says "原批次写入回执 JSON"
+// in the language the app shows.
+func QdrantOriginalBatchReceiptJSON() string {
+	return In(i18n.Locale()).QdrantOriginalBatchReceiptJSON()
+}
+
+// QdrantOriginalBatchReceiptJSON says "原批次写入回执 JSON"
+// in the language of msgs.
+func (msgs Messages) QdrantOriginalBatchReceiptJSON() string {
+	return Catalog.Format(msgs.locale, "qdrantOriginalBatchReceiptJSON", nil)
+}
+
+// QdrantOriginalPointVerificationJSON says "原点回读核验 JSON"
+// in the language the app shows.
+func QdrantOriginalPointVerificationJSON() string {
+	return In(i18n.Locale()).QdrantOriginalPointVerificationJSON()
+}
+
+// QdrantOriginalPointVerificationJSON says "原点回读核验 JSON"
+// in the language of msgs.
+func (msgs Messages) QdrantOriginalPointVerificationJSON() string {
+	return Catalog.Format(msgs.locale, "qdrantOriginalPointVerificationJSON", nil)
+}
+
+// QdrantCopyBatchReceipt says "复制批次写入回执"
+// in the language the app shows.
+func QdrantCopyBatchReceipt() string { return In(i18n.Locale()).QdrantCopyBatchReceipt() }
+
+// QdrantCopyBatchReceipt says "复制批次写入回执"
+// in the language of msgs.
+func (msgs Messages) QdrantCopyBatchReceipt() string {
+	return Catalog.Format(msgs.locale, "qdrantCopyBatchReceipt", nil)
+}
+
+// QdrantCopyPointVerification says "复制原点回读核验"
+// in the language the app shows.
+func QdrantCopyPointVerification() string { return In(i18n.Locale()).QdrantCopyPointVerification() }
+
+// QdrantCopyPointVerification says "复制原点回读核验"
+// in the language of msgs.
+func (msgs Messages) QdrantCopyPointVerification() string {
+	return Catalog.Format(msgs.locale, "qdrantCopyPointVerification", nil)
+}
+
+// QdrantCloseBatchEvidenceWarning says "…"
+// in the language the app shows.
+func QdrantCloseBatchEvidenceWarning() string {
+	return In(i18n.Locale()).QdrantCloseBatchEvidenceWarning()
+}
+
+// QdrantCloseBatchEvidenceWarning says "…"
+// in the language of msgs.
+func (msgs Messages) QdrantCloseBatchEvidenceWarning() string {
+	return Catalog.Format(msgs.locale, "qdrantCloseBatchEvidenceWarning", nil)
+}
+
+// QdrantContinueVerification says "继续核验"
+// in the language the app shows.
+func QdrantContinueVerification() string { return In(i18n.Locale()).QdrantContinueVerification() }
+
+// QdrantContinueVerification says "继续核验"
+// in the language of msgs.
+func (msgs Messages) QdrantContinueVerification() string {
+	return Catalog.Format(msgs.locale, "qdrantContinueVerification", nil)
+}
+
+// QdrantPointBatchWriteTooltip says "点批次写入：完整 point JSON 替换或删除；提交后请核验原点结果"
+// in the language the app shows.
+func QdrantPointBatchWriteTooltip() string { return In(i18n.Locale()).QdrantPointBatchWriteTooltip() }
+
+// QdrantPointBatchWriteTooltip says "点批次写入：完整 point JSON 替换或删除；提交后请核验原点结果"
+// in the language of msgs.
+func (msgs Messages) QdrantPointBatchWriteTooltip() string {
+	return Catalog.Format(msgs.locale, "qdrantPointBatchWriteTooltip", nil)
+}
+
+// QdrantBatchUnverifiedStatus says "批次尚未核验；草稿已保留，禁止重发"
+// in the language the app shows.
+func QdrantBatchUnverifiedStatus() string { return In(i18n.Locale()).QdrantBatchUnverifiedStatus() }
+
+// QdrantBatchUnverifiedStatus says "批次尚未核验；草稿已保留，禁止重发"
+// in the language of msgs.
+func (msgs Messages) QdrantBatchUnverifiedStatus() string {
+	return Catalog.Format(msgs.locale, "qdrantBatchUnverifiedStatus", nil)
+}
+
+// QdrantBatchCompletedStatus says "批次已完成，等待原点回读核验；草稿已保留，禁止重发"
+// in the language the app shows.
+func QdrantBatchCompletedStatus() string { return In(i18n.Locale()).QdrantBatchCompletedStatus() }
+
+// QdrantBatchCompletedStatus says "批次已完成，等待原点回读核验；草稿已保留，禁止重发"
+// in the language of msgs.
+func (msgs Messages) QdrantBatchCompletedStatus() string {
+	return Catalog.Format(msgs.locale, "qdrantBatchCompletedStatus", nil)
+}
+
+// QdrantOperationIDs says "操作编号"
+// in the language the app shows.
+func QdrantOperationIDs() string { return In(i18n.Locale()).QdrantOperationIDs() }
+
+// QdrantOperationIDs says "操作编号"
+// in the language of msgs.
+func (msgs Messages) QdrantOperationIDs() string {
+	return Catalog.Format(msgs.locale, "qdrantOperationIDs", nil)
+}

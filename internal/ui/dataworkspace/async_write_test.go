@@ -149,7 +149,7 @@ func TestAsyncDataWriteUnknownReceiptAndGenerationNeverReplay(t *testing.T) {
 			r := Runtime{Capabilities: contract.Capabilities{EditableTables: true, Documents: true}, AsyncWrites: true, Saver: func(context.Context, int64, string, string, []contract.DataEdit) (*contract.DataEditResult, error) {
 				saves.Add(1)
 				if mode == "unknown" {
-					return &contract.DataEditResult{CommitUncertain: true}, errors.New("acknowledgment lost")
+					return &contract.DataEditResult{CommitUncertain: true, Async: &contract.DataWriteObservation{TaskID: "42", Status: "interrupted", ReceiptJSON: `{"status":{"error":"original failure"}}`}}, errors.New("acknowledgment lost")
 				}
 				return &contract.DataEditResult{Async: &contract.DataWriteObservation{TaskID: "42", Status: "enqueued"}}, nil
 			}}
@@ -173,6 +173,9 @@ func TestAsyncDataWriteUnknownReceiptAndGenerationNeverReplay(t *testing.T) {
 			s.Consume(ui.Services{})
 			if d.edit.Busy || d.edit.Uncertain == nil || !d.edit.Uncertain.CommitUncertain || !d.HasDraft() {
 				t.Fatal("unknown/stale write not settled and retained")
+			}
+			if d.edit.LastAsync == nil || mode == "unknown" && !strings.Contains(d.edit.LastAsync.ReceiptJSON, "original failure") {
+				t.Fatal("failed/stale receipt evidence hidden")
 			}
 			s.Save(ui.Services{}, d)
 			s.Load(ui.Services{}, d, true)

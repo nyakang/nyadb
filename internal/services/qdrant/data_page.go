@@ -107,9 +107,9 @@ func pointDataQuery(o contract.DataOptions) (dataQuery, error) {
 func (q dataQuery) signature() string { return string(q.Filter) }
 func pointColumns() []contract.StructureColumn {
 	return []contract.StructureColumn{
-		{Name: "id", Type: "point_id", DataType: "uint64_or_uuid", Key: "point_id", Position: 1, Comment: "Exact native uint64 or UUID point ID"},
-		{Name: "vector", Type: "json", DataType: "json", ValueKind: contract.JSON, Position: 2, Comment: "Original unnamed, named, sparse or multi-vector JSON"},
-		{Name: "payload", Type: "json", DataType: "json", ValueKind: contract.JSON, Position: 3, Comment: "Original payload JSON; no field flattening"},
+		{Name: "id", Type: "point_id", DataType: "uint64_or_uuid", Key: "point_id", Position: 1, Generated: true, Comment: "Exact native uint64 or UUID point ID"},
+		{Name: "vector", Type: "json", DataType: "json", ValueKind: contract.JSON, Position: 2, Generated: true, Comment: "Original unnamed, named, sparse or multi-vector JSON"},
+		{Name: "payload", Type: "json", DataType: "json", ValueKind: contract.JSON, Position: 3, Generated: true, Comment: "Original payload JSON; no field flattening"},
 		{Name: "point", Type: "json", DataType: "json", ValueKind: contract.JSON, Position: 4, Comment: "Complete original native point JSON; version is not CAS"},
 	}
 }
@@ -187,7 +187,8 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 		return nil, err
 	}
 	defer closeClient()
-	if _, err = l.guard(ctx, c); err != nil {
+	info, err := l.guard(ctx, c)
+	if err != nil {
 		return nil, err
 	}
 	start := time.Now()
@@ -195,7 +196,8 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 	if err != nil {
 		return nil, err
 	}
-	editable := false
+	_, schemaErr := vectorWriteSchema(info)
+	editable := schemaErr == nil
 	path, _ := collectionPath(db)
 	page := &contract.DataPage{Object: l.object, Database: db, Table: name, Columns: []string{"id", "vector", "payload", "point"}, ColumnKinds: []string{"point_id", "json", "json", "json"}, ColumnMetadata: pointColumns(), Editable: &editable, Offset: o.Offset, Limit: o.Limit, HasMore: len(points.NextOffset) > 0, PagingMode: "cursor", LiveRead: true, StableOrder: true, KeysetAvailable: true, QuerySQL: "POST " + path + "/points/scroll"}
 	budget := responseLimit

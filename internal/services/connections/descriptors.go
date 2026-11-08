@@ -13,7 +13,7 @@ type Descriptor struct {
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
 	case Qdrant:
-		return Descriptor{kind, "Qdrant", "qdrant", "server", "qdrant", 6333, contract.Capabilities{Query: true, Metadata: true, Documents: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
+		return Descriptor{kind, "Qdrant", "qdrant", "server", "qdrant", 6333, contract.Capabilities{EditableTables: true, Query: true, Metadata: true, Documents: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
 	case Meilisearch:
 		return Descriptor{kind, "Meilisearch", "meilisearch", "server", "meilisearch", 7700, contract.Capabilities{EditableTables: true, Objects: true, Documents: true, Query: true, Metadata: true, Count: true, FieldChunks: true, Export: true, JSONL: true, Import: true}}, true
 	case CouchDB:

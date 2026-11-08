@@ -135,7 +135,7 @@ func TestQdrantSessionQualifiedCollectionsAndFullIndependentDefinitions(t *testi
 		t.Fatal("alias became a physical namespace", err)
 	}
 	c := s.Capabilities()
-	if !c.Query || !c.Metadata || !c.Objects || c.EditableTables || c.Transactions || !c.Count || !c.Documents || !c.Export || !c.FieldChunks || !c.JSONL {
+	if !c.Query || !c.Metadata || !c.Objects || !c.EditableTables || c.Transactions || !c.Count || !c.Documents || !c.Export || !c.FieldChunks || !c.JSONL {
 		t.Fatal("unsupported data/SQL capabilities", c)
 	}
 }

@@ -82,7 +82,7 @@ func TestQdrantNativeDataSharedGridPagingSelectorInspectorParkGenerationAndClose
 	wait(a)
 	s.Load(ui.Services{}, b, false)
 	wait(b)
-	if a.objectKind != "向量点" || a.page.Rows[0][0].Text != "0" || len(a.columns) != 4 || a.page.Rows[0][0].Value.Kind != contract.Integer || a.page.Editable == nil || *a.page.Editable || !a.page.LiveRead || a.page.PagingMode != "cursor" {
+	if a.objectKind != "向量点" || a.page.Rows[0][0].Text != "0" || len(a.columns) != 4 || a.page.Rows[0][0].Value.Kind != contract.Integer || a.page.Editable == nil || !*a.page.Editable || !a.page.LiveRead || a.page.PagingMode != "cursor" {
 		t.Fatal("shared point projection wrong")
 	}
 	for _, column := range a.columns {
@@ -90,7 +90,7 @@ func TestQdrantNativeDataSharedGridPagingSelectorInspectorParkGenerationAndClose
 			t.Fatal("unsupported point sort exposed")
 		}
 	}
-	if len(s.filterColumns(a, a.page.Columns)) != 0 || slices.Contains(a.exportFormats, "sql") || a.capabilities.Import || a.capabilities.EditableTables {
+	if len(s.filterColumns(a, a.page.Columns)) != 0 || slices.Contains(a.exportFormats, "sql") || a.capabilities.Import || !a.capabilities.EditableTables {
 		t.Fatal("unsupported relational tools exposed")
 	}
 	if _, err = mysqlDataSQLSelection(a, false); !errors.Is(err, contract.ErrUnsupported) {

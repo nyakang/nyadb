@@ -57,9 +57,14 @@ DATA_REQUIRED = (
     'DataCompleteExportBeyondUIPageLimit',
     'DataLargePointsExplicitBoundsAndFullExport',
     'DataDeletedCursorBoundaryAndObservationChanges',
-    'DataReadPermissionsAndUnsupportedWrites',
+    'DataReadPermissionsAndDeniedWrites',
+    'DataWritesExactMixedReplacementDeletionAndSnapshots',
+    'DataWritesVectorDatatypesNormalizationAndPayloadClearing',
+    'DataWritesCompletedBatchSkippedUpdateRetainsDrafts',
+    'DataWritesLostCanceledAndCloseNeverReplays',
     'DataLostCanceledReadAndOriginalClose',
     'DataSharedGridPagingSelectorInspectorParkGenerationAndClose',
+    'DataSharedGridFullPointCRUDParkedSaveVerificationEvidenceAndGeneration',
 )
 
 
@@ -123,7 +128,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
     evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode,
-                    scope='original_shared_point_grid_cursor_filter_count_bounded_fields_and_complete_export' if data else 'public_chooser_uri_original_sessions_collections_definitions_rest_typed_points_and_recovery' if public else 'private_original_session_metadata_rest_leases_and_typed_native_point_results' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_transport_and_collection_point_codecs',
+                    scope='original_shared_point_grid_crud_signed_snapshots_native_receipts_explicit_readback_no_replay_cursor_filter_count_fields_and_export' if data else 'public_chooser_uri_original_sessions_collections_definitions_rest_typed_points_and_recovery' if public else 'private_original_session_metadata_rest_leases_and_typed_native_point_results' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_transport_and_collection_point_codecs',
                     status='failed', fixture_cleaned=False, private_files_cleaned=False)
     try:
         with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
@@ -263,7 +268,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                     images = sorted(image_root.glob('*.png'))
                     expected = {language+'-'+str(width)+'x'+str(height)+'-'+panel+'.png'
                                 for language in ['zh-Hans','en'] for width,height in [(1280,800),(720,520)]
-                                for panel in ['grid','filter']}
+                                for panel in ['grid','filter','write','write-evidence']}
                     if {p.name for p in images} != expected:
                         raise RuntimeError('Missing localized original Qdrant shared point grid evidence')
                     evidence['headless_data_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}

@@ -225,7 +225,7 @@ func (s *State) consumePages() {
 				t.columns[i] = ui.TableColumn{Title: name, ID: name, Width: 155, MinWidth: 65, Sortable: sortable && s.sortable(t, name)}
 				if t.capabilities.Documents || t.capabilities.KeyValues {
 					t.columns[i].Width = 240
-					if name == "document" || t.capabilities.KeyValues && name == "value" {
+					if name == "document" || name == "point" || t.capabilities.KeyValues && name == "value" {
 						t.columns[i].Width = 500
 						t.columns[i].Sortable = false
 					}
