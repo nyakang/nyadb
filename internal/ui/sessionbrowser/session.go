@@ -114,11 +114,32 @@ func (s *State) consumeSession(id int64, w *Workspace, active bool) {
 	}
 }
 func (s *State) RefreshDatabases(invalidate func()) {
+	s.refreshDatabases(invalidate, true)
+}
+
+// RefreshNamespaces replaces only the original profile's namespace list read.
+// A sibling object read is reconciled on removal, independently of selection.
+func (s *State) RefreshNamespaces(profileID int64, generation uint64, invalidate func()) bool {
+	w := s.current
+	if w.ProfileID != profileID || w.Generation != generation || w.Status != "已连接" {
+		return false
+	}
+	if w.refreshCancel != nil {
+		w.refreshCancel()
+		w.refreshCancel = nil
+	}
+	w.sessionResults = nil
+	s.refreshDatabases(invalidate, false)
+	return true
+}
+func (s *State) refreshDatabases(invalidate func(), cancelObjects bool) {
 	w := s.current
 	if w.ProfileID == 0 || w.Status != "已连接" || s.engines.Session == nil || w.Refreshing() {
 		return
 	}
-	s.CancelObjects()
+	if cancelObjects {
+		s.CancelObjects()
+	}
 	id, generation := w.ProfileID, w.Generation
 	lister := s.DatabaseLister
 	var metadata contract.MetadataProvider

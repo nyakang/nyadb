@@ -14,6 +14,7 @@ import (
 )
 
 type taskDocument struct {
+	namespace                                                                                                    namespaceManagementState
 	management                                                                                                   taskManagementState
 	selection                                                                                                    ui.Selection[[4]string]
 	lease                                                                                                        contract.TaskDocumentLease
@@ -42,6 +43,9 @@ type taskResult struct {
 	record              contract.TaskRecord
 	err                 error
 	mutation            contract.TaskMutationResult
+	namespaceDraft      contract.NamespaceDraft
+	namespaceAction     string
+	namespaces          []contract.NamespaceRecord
 }
 
 func taskObject(o contract.ObjectRef) bool {
@@ -202,6 +206,10 @@ func (s *State) RecoverTasks(d *Document) {
 				if r.Receipt.Raw != "" {
 					x.management.last.Receipt = cloneTaskMutationReceipt(r.Receipt)
 				}
+				if r.Namespace != nil {
+					x.management.last.Namespace = contract.CloneNamespaceMutation(r.Namespace)
+				}
+				x.namespace.records = nil
 				x.management.uncertain = x.management.uncertain || r.Uncertain
 				x.management.preview = false
 				x.management.plan = nil
@@ -261,7 +269,7 @@ func (s *State) TaskCancelRequested(d *Document) bool {
 func (s *State) TaskConnectionLost(d *Document) bool {
 	return d != nil && d.tasks != nil && d.tasks.lost
 }
-func (s *State) consumeTasks() {
+func (s *State) consumeTasks(services ui.Services) {
 	active := s.session()
 	for _, d := range s.documents {
 		if d.closed || d.tasks == nil || d.profileID != active.ProfileID {
@@ -290,7 +298,7 @@ func (s *State) consumeTasks() {
 				d.cancel()
 				d.cancel = nil
 			}
-			if s.consumeTaskManagement(d, result, current) {
+			if s.consumeTaskManagement(d, result, current, services) {
 				continue
 			}
 			if result.generation != current.Generation || !current.Connected {
@@ -302,6 +310,9 @@ func (s *State) consumeTasks() {
 			if errors.Is(result.err, contract.ErrTaskLeaseLost) || errors.Is(result.err, contract.ErrRevoked) {
 				x.lost = true
 				x.fresh = false
+			}
+			if s.consumeNamespaceRead(d, result) {
+				continue
 			}
 			if x.cancelRequested {
 				x.cancelRequested = false

@@ -358,7 +358,7 @@ func restoreIncludesProfile(plan contract.BackupPlan, profile int64) bool {
 }
 
 func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
-	return objectworkspace.Dependencies{NamespaceLabel: func(n contract.NamespaceRef) string { return s.sessions.NamespaceLabel(n) }, ProfileName: s.profileName, EditFocus: &s.editFocus, EditTarget: s.registerEditTarget, Engine: func(id int64) string {
+	return objectworkspace.Dependencies{BeforeNamespace: s.guardNamespaceManagement, NamespaceChanged: s.namespaceChanged, NamespaceLabel: func(n contract.NamespaceRef) string { return s.sessions.NamespaceLabel(n) }, ProfileName: s.profileName, EditFocus: &s.editFocus, EditTarget: s.registerEditTarget, Engine: func(id int64) string {
 		for _, p := range s.navigation.Profiles() {
 			if p.ID == id {
 				return string(p.Kind)

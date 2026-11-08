@@ -35,7 +35,7 @@ func taskPanelAction(tt *ui.Tester, label, anchor string) error {
 	if !ok {
 		return fmt.Errorf("missing task action bar anchor")
 	}
-	for _, candidate := range []string{"刷新任务", "重置任务筛选", "高级任务筛选", "恢复任务连接", "复制完整任务响应", "停止任务观察", "返回", "查看任务详情", "刷新选中任务", "观察选中任务（30 秒）", "复制完整任务详情", "预览取消选中任务", "预览删除选中任务记录", "观察原管理任务（30 秒）", "查看管理任务回执和结果", "复制原管理请求", "复制原管理入队回执", "复制原管理任务结果", "创建服务器 dump", "创建服务器 snapshot"} {
+	for _, candidate := range []string{"刷新任务", "重置任务筛选", "高级任务筛选", "恢复任务连接", "复制完整任务响应", "停止任务观察", "返回", "查看任务详情", "刷新选中任务", "观察选中任务（30 秒）", "复制完整任务详情", "预览取消选中任务", "预览删除选中任务记录", "观察原管理任务（30 秒）", "查看管理任务回执和结果", "复制原管理请求", "复制原管理入队回执", "复制原管理任务结果", "创建服务器 dump", "创建服务器 snapshot", "管理索引…", "复制索引操作完整证据"} {
 		if r, found := tt.Find(locales.Text(candidate)); found && r.Y+r.H/2 == rect.Y+rect.H/2 && r.X+r.W > rect.X+rect.W {
 			rect = r
 		}

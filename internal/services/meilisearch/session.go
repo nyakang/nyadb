@@ -24,6 +24,7 @@ type Session struct {
 	leases          map[*queryLease]bool
 	documents       map[*dataLease]bool
 	dataSlots       chan struct{}
+	namespaceScopes map[string]namespaceScope
 }
 
 func OpenSession(ctx context.Context, p connections.Profile, secret string) (contract.Session, error) {

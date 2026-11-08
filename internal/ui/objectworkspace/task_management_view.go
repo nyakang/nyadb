@@ -12,6 +12,13 @@ import (
 func (s *State) taskManagementActions(c *ui.Context, d *Document) {
 	m := &d.tasks.management
 	selected := len(s.TaskSelectionRows(d)) > 0
+	action := "namespace_create"
+	if d.object.Catalog != "" {
+		action = "namespace_primary_key"
+	}
+	if s.NamespaceManagementSupported(d.object, action) && ui.Button(c, locales.Text("管理索引…")).Disabled(!s.taskReady(d) || m.uncertain || m.receipt.Raw != "").Clicked() {
+		s.OpenNamespaceManagement(d)
+	}
 	if d.object.Catalog == "" {
 		if ui.Button(c, locales.Text("创建服务器 dump")).Disabled(!s.CanCreateServerBackup(d, "dump")).Clicked() {
 			_ = s.PrepareServerBackup(d, "dump")
@@ -60,13 +67,17 @@ func (s *State) taskManagementEvidence(c *ui.Context, d *Document) {
 			ui.Text(c, "dumpUid: "+m.last.Artifact.UID).SingleLine().Tooltip(m.last.Artifact.UID).Padding(2, 8).Shrink(0)
 		}
 	}
-	raw := m.last.Request
-	if m.last.Receipt.Raw != "" {
-		raw += "\n\n" + m.last.Receipt.Raw
+	if m.last.Namespace != nil && m.last.Receipt.Raw != "" {
+		text := "索引任务与元数据尚未共同确认；回执保留，禁止重放。"
+		if m.last.NamespaceVerified {
+			text = "原索引任务已完成，元数据与文档数验证通过。"
+		}
+		if m.last.State == "failed" || m.last.State == "canceled" {
+			text = "原索引任务失败或取消；请查看完整原生结果。"
+		}
+		ui.Text(c, locales.Text(text)).SingleLine().Tooltip(locales.Text(text)).Padding(2, 8).Shrink(0)
 	}
-	if m.last.TaskRaw != "" {
-		raw += "\n\n" + m.last.TaskRaw
-	}
+	raw := taskMutationEvidence(m.last)
 	if raw == "" {
 		ui.Text(c, locales.Text("尚无原管理任务回执；未知提交请检查原服务器任务。")).Padding(8)
 		ui.Box(c).Grow(1)
@@ -92,10 +103,14 @@ func (s *State) taskManagementEvidence(c *ui.Context, d *Document) {
 		if ui.Button(c, locales.Text("复制原管理任务结果")).Disabled(m.last.TaskRaw == "").Clicked() {
 			c.WriteClipboard(m.last.TaskRaw)
 		}
+		if m.last.Namespace != nil && ui.Button(c, locales.Text("复制索引操作完整证据")).Clicked() {
+			c.WriteClipboard(taskMutationEvidence(m.last))
+		}
 	}).FillWidth().Shrink(0).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 8).Gap(4)
 }
 func (s *State) taskManagementModals(c *ui.Context, d *Document) {
 	m := &d.tasks.management
+	s.namespaceManagementModal(c, d)
 	if m.preview && m.plan != nil {
 		theme.Modal(c, &m.preview, func() {
 			width, height := c.Size()
@@ -110,6 +125,10 @@ func (s *State) taskManagementModals(c *ui.Context, d *Document) {
 				}
 				if m.plan.Action == "snapshot" {
 					title, label = "创建服务器 snapshot 预览", "确认创建服务器 snapshot"
+				}
+				namespace := namespaceAction(m.plan.Action)
+				if namespace {
+					title, label = namespaceActionText(m.plan.Action)+"预览", "确认提交索引操作"
 				}
 				ui.Text(c, locales.Text(title)).Bold()
 				profile := d.object.Catalog
@@ -129,20 +148,37 @@ func (s *State) taskManagementModals(c *ui.Context, d *Document) {
 					}
 					ui.Text(c, locales.Text(location)).TextColor(theme.Colors(c).Muted)
 					ui.Text(c, locales.Text("dump 用 --import-dump，snapshot 用 --import-snapshot，在兼容版本的新空数据目录离线恢复；备份文件可能包含密钥。")).TextColor(theme.Colors(c).Muted)
+				} else if namespace {
+					ui.Text(c, locales.Text("提交前会检查并关闭相关数据、设置和任务页面；未保存草稿须先处理。")).TextColor(theme.Colors(c).Muted)
+					ui.Text(c, locales.Text("元数据与文档数验证不能替代完整内容比较；其他客户端仍可并发修改索引。")).TextColor(theme.Colors(c).Muted)
 				} else {
 					ui.Text(c, fmt.Sprintf(locales.Text("仅操作以下 %d 个原任务 UID"), len(ids))).Shrink(0)
 					ui.Text(c, locales.Text("取消只针对未完成任务；删除仅移除已结束的任务记录，保留文档。")).TextColor(theme.Colors(c).Muted)
 					ui.Text(c, locales.Text("提交前检查原任务；状态可能继续变化。原生 UID 无法原子防护服务器重启或恢复。")).TextColor(theme.Colors(c).Muted)
 				}
 				raw := strings.Join(ids, ", ") + "\n\n" + m.plan.Request
-				ui.TextArea(c.Key(fmt.Sprintf("task-management-plan/%d/%d", d.id, m.plan.Sequence)), &raw).ReadOnly(true).Label(locales.Text("完整任务管理预览")).Height(min(float32(250), height-310)).MinHeight(40)
+				if namespace {
+					raw = m.plan.Request + "\n\n" + namespacePreview(m.plan.Namespace)
+				}
+				area := ui.TextArea(c.Key(fmt.Sprintf("task-management-plan/%d/%d", d.id, m.plan.Sequence)), &raw).ReadOnly(true).Label(locales.Text("完整任务管理预览")).Height(min(float32(250), height-310)).MinHeight(40)
+				if namespace {
+					seen := ui.Local(area, "namespace-preview-origin", func() bool { return false })
+					if !*seen {
+						area.SetTextSelection(0, 0)
+						*seen = true
+					}
+				}
+				if namespace {
+					ui.Text(c, locales.Text("输入以下索引 UID 确认：")+namespaceConfirmation(*m.plan)).SingleLine()
+					ui.TextInput(c.Key(fmt.Sprintf("namespace-confirmation/%d/%d", d.id, m.plan.Sequence)), &d.tasks.namespace.confirmation).Label(locales.Text("索引操作确认")).FillWidth()
+				}
 				ui.Row(c).Justify(ui.End).Shrink(0).Gap(8).Children(func() {
 					if ui.Button(c, locales.Text("返回")).Clicked() {
 						m.preview = false
 						m.plan = nil
 					}
 					if ui.PrimaryButton(c, locales.Text(label)).Disabled(!s.canSubmitTaskPlan(d)).Clicked() {
-						s.SubmitTaskManagement(d, c.Services().Invalidate)
+						s.SubmitTaskManagement(d, c.Services().Invalidate, c.Services())
 					}
 				})
 			})

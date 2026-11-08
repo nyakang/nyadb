@@ -18,6 +18,8 @@ type taskMutation struct {
 	sequence, used uint64
 	receipt        contract.TaskMutationReceipt
 	uncertain      bool
+	namespace      *contract.NamespaceMutation
+	owner          string
 }
 
 func (d *taskDocument) SupportsTaskManagement() bool {
@@ -26,31 +28,40 @@ func (d *taskDocument) SupportsTaskManagement() bool {
 	return !d.bound.released && !d.bound.lost && d.bound.s.Alive()
 }
 func cloneTaskReceipt(r contract.TaskMutationReceipt) contract.TaskMutationReceipt {
-	r.Targets = slices.Clone(r.Targets)
-	return r
+	return contract.CloneTaskMutationReceipt(r)
 }
 func (s *Session) RecoverTaskDocument(o contract.ObjectRef, previous contract.TaskDocumentLease) (contract.TaskRecovery, error) {
 	old, ok := previous.(*taskDocument)
 	if !ok || old.object != o || old.bound.s.profileID != s.profileID || old.bound.s.config.Endpoint != s.config.Endpoint || old.bound.s.config.IndexUID != s.config.IndexUID {
 		return contract.TaskRecovery{}, ErrInvalid
 	}
-	reserved, err := s.ReserveTaskDocument(o)
+	// Stop the original executor and wait for acknowledgement before reading
+	// settled admission/uncertainty or transferring its namespace claim.
+	old.bound.Release()
+	old.bound.ops.Lock()
+	defer old.bound.ops.Unlock()
+	reserved, err := s.reserveTaskDocument(o, old.management.owner)
 	if err != nil {
 		return contract.TaskRecovery{}, err
 	}
 	next := reserved.(*taskDocument)
-	// Revoke the original executor before transferring settled evidence, so
-	// no old preview can race recovery and submit after the transfer.
-	old.bound.Release()
-	old.bound.ops.Lock()
 	next.management.receipt = cloneTaskReceipt(old.management.receipt)
 	next.management.uncertain = old.management.uncertain
-	old.bound.ops.Unlock()
+	next.management.namespace = contract.CloneNamespaceMutation(old.management.namespace)
+	if next.management.namespace != nil {
+		next.management.owner = next.sign("namespace-recovered-owner", []byte(old.management.owner))
+		if err = s.claimNamespace(next.management.owner, next.management.namespace, next.bound, old.management.owner, true); err != nil {
+			_ = next.Close()
+			return contract.TaskRecovery{}, err
+		}
+	}
 	if next.management.receipt.Raw != "" {
 		next.management.receipt.Token = next.mutationReceiptProof(next.management.receipt)
 	}
-	_ = old.Close()
-	return contract.TaskRecovery{Lease: next, Receipt: cloneTaskReceipt(next.management.receipt), Uncertain: next.management.uncertain}, nil
+	old.bound.s.releaseNamespace(old.management.owner)
+	clear(old.key[:])
+	old.management = taskMutation{}
+	return contract.TaskRecovery{Lease: next, Receipt: cloneTaskReceipt(next.management.receipt), Uncertain: next.management.uncertain, Namespace: contract.CloneNamespaceMutation(next.management.namespace)}, nil
 }
 func (d *taskDocument) mutationPlanProof(p contract.TaskMutationPlan) string {
 	p.Token = ""
@@ -154,6 +165,7 @@ func (d *taskDocument) MutateTasks(ctx context.Context, p contract.TaskMutationP
 	}
 	d.management.used = p.Sequence
 	result.Request = p.Request
+	result.Namespace = contract.CloneNamespaceMutation(p.Namespace)
 	for _, target := range p.Records {
 		result.Targets = append(result.Targets, target.UID)
 	}
@@ -162,6 +174,13 @@ func (d *taskDocument) MutateTasks(ctx context.Context, p contract.TaskMutationP
 		return result, err
 	}
 	defer done()
+	// Known preflight failures release only this claim. Once dispatch can have
+	// occurred, retain it alongside the original receipt or uncertainty.
+	defer func() {
+		if !d.management.uncertain && d.management.receipt.Raw == "" {
+			d.clearNamespaceClaim()
+		}
+	}()
 	for _, original := range p.Records {
 		current, err := d.read(ctx, original)
 		if err != nil {
@@ -174,11 +193,23 @@ func (d *taskDocument) MutateTasks(ctx context.Context, p contract.TaskMutationP
 	if err = ctx.Err(); err != nil {
 		return result, err
 	}
-	request, err := d.mutationRequest(p.Action, p.Records)
+	var request Request
+	if namespaceAction(p.Action) {
+		request, err = d.prepareNamespaceDispatch(ctx, p)
+	} else {
+		request, err = d.mutationRequest(p.Action, p.Records)
+	}
 	if err != nil {
 		return result, err
 	}
 	native, response, err := d.bound.client.Submit(ctx, request)
+	if err == nil && namespaceAction(p.Action) {
+		_, kind, index, _ := namespaceRequest(p.Action, p.Namespace.Draft)
+		if native.Type != kind || (index == "" && native.IndexUID != nil) || (index != "" && (native.IndexUID == nil || *native.IndexUID != index)) {
+			d.bound.client.retire()
+			err = &Interrupted{WriteOutcomeUnknown: true, Cause: ErrProtocol}
+		}
+	}
 	if err != nil {
 		result.TaskRaw = string(response.Body)
 		var interrupted *Interrupted
@@ -190,7 +221,7 @@ func (d *taskDocument) MutateTasks(ctx context.Context, p contract.TaskMutationP
 		}
 		return result, &contract.TaskRequestError{Raw: result.TaskRaw, Cause: d.taskError(err)}
 	}
-	r := contract.TaskMutationReceipt{Object: d.object, Action: p.Action, UID: strconv.FormatUint(uint64(native.UID), 10), Type: native.Type, EnqueuedAt: native.EnqueuedAt, Raw: string(native.Raw)}
+	r := contract.TaskMutationReceipt{Object: d.object, Action: p.Action, UID: strconv.FormatUint(uint64(native.UID), 10), Type: native.Type, EnqueuedAt: native.EnqueuedAt, Raw: string(native.Raw), Namespace: contract.CloneNamespaceMutation(p.Namespace)}
 	for _, target := range p.Records {
 		r.Targets = append(r.Targets, target.UID)
 	}
@@ -202,7 +233,7 @@ func (d *taskDocument) MutateTasks(ctx context.Context, p contract.TaskMutationP
 func (d *taskDocument) ObserveTaskMutation(ctx context.Context, r contract.TaskMutationReceipt, bound time.Duration) (contract.TaskMutationResult, error) {
 	d.bound.ops.Lock()
 	defer d.bound.ops.Unlock()
-	result := contract.TaskMutationResult{State: "enqueued", Receipt: cloneTaskReceipt(r), Targets: slices.Clone(r.Targets)}
+	result := contract.TaskMutationResult{State: "enqueued", Receipt: cloneTaskReceipt(r), Targets: slices.Clone(r.Targets), Namespace: contract.CloneNamespaceMutation(r.Namespace)}
 	if bound <= 0 || bound > 10*time.Minute || r.Token == "" || r.Object != d.object || r.Token != d.mutationReceiptProof(r) || r.Token != d.management.receipt.Token {
 		return result, ErrInvalid
 	}
@@ -210,9 +241,18 @@ func (d *taskDocument) ObserveTaskMutation(ctx context.Context, r contract.TaskM
 	if err != nil {
 		return result, ErrInvalid
 	}
-	native, err := originalReceipt(Receipt{UID: uint32(uid), Type: r.Type, EnqueuedAt: r.EnqueuedAt, Raw: []byte(r.Raw)})
-	if err != nil {
-		return result, err
+	native, err := parseReceipt([]byte(r.Raw))
+	if err != nil || native.UID != uint32(uid) || native.Type != r.Type || native.EnqueuedAt != r.EnqueuedAt {
+		return result, ErrInvalid
+	}
+	if namespaceAction(r.Action) {
+		if r.Namespace == nil {
+			return result, ErrInvalid
+		}
+		_, kind, index, e := namespaceRequest(r.Action, r.Namespace.Draft)
+		if e != nil || native.Type != kind || index == "" && native.IndexUID != nil || index != "" && (native.IndexUID == nil || *native.IndexUID != index) {
+			return result, ErrInvalid
+		}
 	}
 	ctx, done, err := d.request(ctx)
 	if err != nil {
@@ -235,7 +275,14 @@ func (d *taskDocument) ObserveTaskMutation(ctx context.Context, r contract.TaskM
 		}
 		result.State = task.Status
 		if task.Status == "succeeded" || task.Status == "failed" || task.Status == "canceled" {
-			if serverBackupAction(r.Action) {
+			if namespaceAction(r.Action) {
+				if task.Status == "succeeded" {
+					if err := d.verifyNamespaceMutation(ctx, r, task, &result); err != nil {
+						return result, err
+					}
+				}
+				d.clearNamespaceClaim()
+			} else if serverBackupAction(r.Action) {
 				if task.Status == "succeeded" {
 					artifact, err := serverBackupArtifact(r.Action, task.Raw)
 					if err != nil {

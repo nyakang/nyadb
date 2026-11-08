@@ -96,6 +96,18 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 	case "工具":
 		target := contract.ObjectRef{ProfileID: session.ProfileID, Kind: "keys", Name: "keys"}
 		item("管理 API 密钥…", "keys", s.objectWorkspace.KeysScopeSupported(target), 0, 0)
+		index := ""
+		for _, profile := range s.navigation.Profiles() {
+			if profile.ID == session.ProfileID {
+				index = profile.MeilisearchOptions.IndexUID
+			}
+		}
+		tasks := contract.ObjectRef{ProfileID: session.ProfileID, Catalog: index, Kind: "tasks", Name: "tasks"}
+		action := "namespace_create"
+		if index != "" {
+			action = "namespace_primary_key"
+		}
+		item("管理索引…", "namespace_management", s.objectWorkspace.NamespaceManagementSupported(tasks, action), 0, 0)
 	}
 	if s.documentMenus == nil {
 		s.documentMenus = map[string]documentMenuScope{}
@@ -110,6 +122,17 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 		return
 	}
 	switch selected {
+	case "namespace_management":
+		index := ""
+		for _, profile := range s.navigation.Profiles() {
+			if profile.ID == original.profile {
+				index = profile.MeilisearchOptions.IndexUID
+			}
+		}
+		s.openTasks(s.editServices, original.profile, index)
+		if t := s.currentTab(); t != nil && t.object != nil && t.object.Object() == (contract.ObjectRef{ProfileID: original.profile, Catalog: index, Kind: "tasks", Name: "tasks"}) {
+			s.objectWorkspace.OpenNamespaceManagement(t.object)
+		}
 	case "keys":
 		s.openKeys(s.editServices, original.profile)
 	case "workspaces":

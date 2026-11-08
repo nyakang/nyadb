@@ -22,6 +22,7 @@ type queryLease struct {
 	cancel         context.CancelFunc
 	client         *Client
 	released, lost bool
+	namespace      string // guarded by the owning session mutex
 }
 
 func (s *Session) ReserveQuery(document uint64) (contract.QueryLease, error) {

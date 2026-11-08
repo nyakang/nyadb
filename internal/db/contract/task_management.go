@@ -13,13 +13,14 @@ var (
 )
 
 // Plans capture a finite set of original observed task records, or one global
-// server backup creation. Request preserves the complete native operation;
+// server backup or namespace operation. Request preserves the complete native operation;
 // backup plans have no target task records or local output path.
 type TaskMutationPlan struct {
 	Object                 ObjectRef
 	Action, Request, Token string
 	Records                []TaskRecord
 	Sequence               uint64
+	Namespace              *NamespaceMutation
 }
 
 // Receipt certifies admission only and binds the original response to its lease.
@@ -27,6 +28,7 @@ type TaskMutationReceipt struct {
 	Object                                    ObjectRef
 	Action, UID, Type, EnqueuedAt, Raw, Token string
 	Targets                                   []string
+	Namespace                                 *NamespaceMutation
 }
 
 // TaskServerArtifact identifies a server-managed artifact reported by a completed
@@ -37,18 +39,22 @@ type TaskServerArtifact struct {
 }
 
 type TaskMutationResult struct {
-	State            string
-	Receipt          TaskMutationReceipt
-	TaskRaw, Request string
-	Targets          []string
-	Matched, Changed uint64
-	CountsKnown      bool
-	Artifact         TaskServerArtifact
+	State             string
+	Receipt           TaskMutationReceipt
+	TaskRaw, Request  string
+	Targets           []string
+	Matched, Changed  uint64
+	CountsKnown       bool
+	Artifact          TaskServerArtifact
+	Namespace         *NamespaceMutation
+	Namespaces        []NamespaceRecord
+	NamespaceVerified bool
 }
 type TaskRecovery struct {
 	Lease     TaskDocumentLease
 	Receipt   TaskMutationReceipt
 	Uncertain bool
+	Namespace *NamespaceMutation
 }
 
 // This optional feature keeps task browsing providers read-only unless their

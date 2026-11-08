@@ -58,6 +58,10 @@ func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 		l.cancel()
 		return nil, contract.ErrRevoked
 	}
+	if scope := s.namespaceScopes[o.Catalog]; scope.owner != "" {
+		l.cancel()
+		return nil, contract.ErrNamespaceBusy
+	}
 	if len(s.documents) >= 32 {
 		l.cancel()
 		return nil, ErrBounds

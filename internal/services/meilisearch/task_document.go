@@ -28,6 +28,9 @@ func (s *Session) SupportsTaskDocument(o contract.ObjectRef) bool {
 	return s.Alive() && o.ProfileID == s.profileID && o.Kind == "tasks" && o.Name == "tasks" && o.Schema == "" && (o.Catalog == "" && s.config.IndexUID == "" || validIndex(o.Catalog) && (s.config.IndexUID == "" || s.config.IndexUID == o.Catalog))
 }
 func (s *Session) ReserveTaskDocument(o contract.ObjectRef) (contract.TaskDocumentLease, error) {
+	return s.reserveTaskDocument(o, "")
+}
+func (s *Session) reserveTaskDocument(o contract.ObjectRef, allowedOwner string) (contract.TaskDocumentLease, error) {
 	if !s.Alive() {
 		return nil, contract.ErrRevoked
 	}
@@ -41,6 +44,10 @@ func (s *Session) ReserveTaskDocument(o contract.ObjectRef) (contract.TaskDocume
 		return nil, err
 	}
 	d := &taskDocument{bound: reserved.(*queryLease), object: o}
+	if err = s.bindNamespaceLease(d.bound, o.Catalog, allowedOwner); err != nil {
+		reserved.Release()
+		return nil, err
+	}
 	if _, err = rand.Read(d.key[:]); err != nil {
 		reserved.Release()
 		return nil, ErrInvalid
@@ -50,8 +57,9 @@ func (s *Session) ReserveTaskDocument(o contract.ObjectRef) (contract.TaskDocume
 func (d *taskDocument) Close() error {
 	d.bound.Release()
 	d.bound.ops.Lock()
+	d.bound.s.releaseNamespace(d.management.owner)
 	clear(d.key[:])
-	d.management.receipt = contract.TaskMutationReceipt{}
+	d.management = taskMutation{}
 	d.bound.ops.Unlock()
 	return nil
 }

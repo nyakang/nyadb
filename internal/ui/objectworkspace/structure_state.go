@@ -28,6 +28,8 @@ type Dependencies struct {
 	SettingsDocumentsFor func(int64) (contract.SettingsDocumentsProvider, error)
 	SettingsChanged      func(ui.Services, SettingsEvent)
 	TaskDocumentsFor     func(int64) (contract.TaskDocumentsProvider, error)
+	BeforeNamespace      func(ui.Services, uint64, contract.TaskMutationPlan, func(ui.Services)) bool
+	NamespaceChanged     func(ui.Services, NamespaceEvent)
 	MetadataFor          func(int64) (contract.MetadataProvider, error)
 	NamespaceLabel       func(contract.NamespaceRef) string
 	ProfileName          func(int64) string
@@ -438,7 +440,7 @@ func (s *State) CloseAll() {
 func (s *State) Consume(services ui.Services) {
 	s.consumeKeys()
 	s.consumeSettings(services)
-	s.consumeTasks()
+	s.consumeTasks(services)
 	s.consumeMaintenance(services)
 	s.consumePortableBackup(services)
 	s.consumeView(services)

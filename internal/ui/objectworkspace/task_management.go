@@ -19,13 +19,10 @@ type taskManagementState struct {
 }
 
 func cloneTaskMutationReceipt(r contract.TaskMutationReceipt) contract.TaskMutationReceipt {
-	r.Targets = slices.Clone(r.Targets)
-	return r
+	return contract.CloneTaskMutationReceipt(r)
 }
 func cloneTaskMutationResult(r contract.TaskMutationResult) contract.TaskMutationResult {
-	r.Receipt = cloneTaskMutationReceipt(r.Receipt)
-	r.Targets = slices.Clone(r.Targets)
-	return r
+	return contract.CloneTaskMutationResult(r)
 }
 func taskSelectionKey(r contract.TaskRecord) [4]string {
 	return [4]string{r.UID, r.Index, r.Type, r.EnqueuedAt}
@@ -113,12 +110,29 @@ func (s *State) runTaskManagement(d *Document, invalidate func(), operation stri
 		}
 	}()
 }
-func (s *State) SubmitTaskManagement(d *Document, invalidate func()) {
+func (s *State) SubmitTaskManagement(d *Document, invalidate func(), services ...ui.Services) {
 	if !s.canSubmitTaskPlan(d) || !d.tasks.management.preview {
 		return
 	}
-	p := *d.tasks.management.plan
-	p.Records = slices.Clone(p.Records)
+	if namespaceAction(d.tasks.management.plan.Action) && s.deps.BeforeNamespace != nil {
+		if len(services) == 0 {
+			return
+		}
+		token := d.tasks.management.plan.Token
+		finish := func(ui.Services) {
+			if s.canSubmitTaskPlan(d) && d.tasks.management.plan.Token == token {
+				s.submitTaskPlan(d, invalidate)
+			}
+		}
+		if !s.deps.BeforeNamespace(services[0], d.id, contract.CloneTaskMutationPlan(*d.tasks.management.plan), finish) {
+			finish(services[0])
+		}
+		return
+	}
+	s.submitTaskPlan(d, invalidate)
+}
+func (s *State) submitTaskPlan(d *Document, invalidate func()) {
+	p := contract.CloneTaskMutationPlan(*d.tasks.management.plan)
 	d.tasks.management.plan = nil
 	d.tasks.management.preview = false
 	d.tasks.fresh = false
@@ -144,7 +158,7 @@ func (s *State) TaskManagementResult(d *Document) contract.TaskMutationResult {
 func (s *State) TaskManagementUncertain(d *Document) bool {
 	return d != nil && !d.closed && d.tasks != nil && d.tasks.management.uncertain
 }
-func (s *State) consumeTaskManagement(d *Document, reply taskResult, current Session) bool {
+func (s *State) consumeTaskManagement(d *Document, reply taskResult, current Session, services ui.Services) bool {
 	if reply.operation != "mutate" && reply.operation != "manage-observe" {
 		return false
 	}
@@ -172,6 +186,9 @@ func (s *State) consumeTaskManagement(d *Document, reply taskResult, current Ses
 		x.lost, x.fresh = true, false
 		d.err = "原任务会话已失效；管理回执保留，请显式恢复"
 		return true
+	}
+	if result.Namespace != nil && (result.State == "enqueued" || result.State == "uncertain" || result.State == "succeeded" || result.State == "failed" || result.State == "canceled") && s.deps.NamespaceChanged != nil {
+		s.deps.NamespaceChanged(services, NamespaceEvent{Object: d.object, Generation: reply.generation, Result: cloneTaskMutationResult(result)})
 	}
 	if errors.Is(reply.err, contract.ErrTaskLeaseLost) || errors.Is(reply.err, contract.ErrRevoked) {
 		x.lost, x.fresh = true, false
@@ -201,7 +218,7 @@ func taskManagementPending(d *Document) bool {
 		return false
 	}
 	m := &d.tasks.management
-	return m.preview || m.guard || m.busy || m.receipt.Raw != "" || m.uncertain
+	return d.tasks.namespace.open || m.preview || m.guard || m.busy || m.receipt.Raw != "" || m.uncertain
 }
 func (s *State) guardTaskManagementLeave(d *Document, next func(ui.Services)) bool {
 	if !taskManagementPending(d) || d.tasks.management.acknowledged && !d.loading {

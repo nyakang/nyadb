@@ -43,6 +43,10 @@ func (s *Session) ReserveSettingsDocument(o contract.ObjectRef) (contract.Settin
 		return nil, err
 	}
 	bound := reserved.(*queryLease)
+	if err = s.bindNamespaceLease(bound, o.Catalog, ""); err != nil {
+		bound.Release()
+		return nil, err
+	}
 	proof := &taskDocument{bound: bound, object: o.Namespace().Object("tasks", "tasks")}
 	if _, err = rand.Read(proof.key[:]); err != nil {
 		reserved.Release()

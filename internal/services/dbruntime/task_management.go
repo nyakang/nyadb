@@ -40,7 +40,7 @@ func (d *taskDocument) MutateTasks(ctx context.Context, plan contract.TaskMutati
 	if err != nil {
 		return contract.TaskMutationResult{State: "not_submitted"}, err
 	}
-	plan.Records = slices.Clone(plan.Records)
+	plan = contract.CloneTaskMutationPlan(plan)
 	return p.MutateTasks(ctx, plan)
 }
 func (d *taskDocument) ObserveTaskMutation(ctx context.Context, receipt contract.TaskMutationReceipt, bound time.Duration) (contract.TaskMutationResult, error) {
@@ -51,7 +51,7 @@ func (d *taskDocument) ObserveTaskMutation(ctx context.Context, receipt contract
 	if err != nil {
 		return contract.TaskMutationResult{Receipt: receipt}, err
 	}
-	receipt.Targets = slices.Clone(receipt.Targets)
+	receipt = contract.CloneTaskMutationReceipt(receipt)
 	return p.ObserveTaskMutation(ctx, receipt, bound)
 }
 func (s *session) RecoverTaskDocument(o contract.ObjectRef, previous contract.TaskDocumentLease) (contract.TaskRecovery, error) {
@@ -71,6 +71,7 @@ func (s *session) RecoverTaskDocument(o contract.ObjectRef, previous contract.Ta
 		return r, err
 	}
 	r.Lease = &taskDocument{session: s, object: o, raw: r.Lease}
-	r.Receipt.Targets = slices.Clone(r.Receipt.Targets)
+	r.Receipt = contract.CloneTaskMutationReceipt(r.Receipt)
+	r.Namespace = contract.CloneNamespaceMutation(r.Namespace)
 	return r, nil
 }

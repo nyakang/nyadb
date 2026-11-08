@@ -33,5 +33,8 @@ func (s *State) canSubmitTaskPlan(d *Document) bool {
 	if serverBackupAction(d.tasks.management.plan.Action) {
 		return s.CanCreateServerBackup(d, d.tasks.management.plan.Action)
 	}
+	if namespaceAction(d.tasks.management.plan.Action) {
+		return s.CanManageNamespace(d, d.tasks.management.plan.Action) && d.tasks.namespace.confirmation == namespaceConfirmation(*d.tasks.management.plan)
+	}
 	return s.CanManageTasks(d)
 }

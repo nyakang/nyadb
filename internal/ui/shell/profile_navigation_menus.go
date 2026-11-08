@@ -107,6 +107,16 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 		if m.Item(locales.Text("查看任务…")).Disabled(!connected || !s.objectWorkspace.TaskScopeSupported(target)).Chosen() {
 			s.openTasks(services, profile.ID, scope)
 		}
+		action := "namespace_create"
+		if scope != "" {
+			action = "namespace_primary_key"
+		}
+		if m.Item(locales.Text("管理索引…")).Disabled(!connected || !s.objectWorkspace.NamespaceManagementSupported(target, action)).Chosen() {
+			s.openTasks(services, profile.ID, scope)
+			if t := s.currentTab(); t != nil && t.object != nil && t.object.Object() == target {
+				s.objectWorkspace.OpenNamespaceManagement(t.object)
+			}
+		}
 	}
 	canSwitch := canMySQL && !connected && !connecting
 	m.Submenu(locales.Text("切换连接配置文件"), func(sub *ui.Menu) {

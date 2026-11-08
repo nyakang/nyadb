@@ -11,6 +11,23 @@ SPEC.loader.exec_module(fixture)
 
 
 class MeilisearchFixtureTests(unittest.TestCase):
+    def test_namespace_management_requires_native_operations_permissions_public_forms_and_hashes(self):
+        for mode in fixture.MODES:
+            names = fixture.required_passes(mode, namespace_management=True)
+            self.assertTrue(set(fixture.required_passes(mode, task_management=True)).issubset(names))
+            expected = fixture.NAMESPACE_REQUIRED + ([] if mode == 'anonymous' else [fixture.NAMESPACE_SCOPED])
+            self.assertTrue(set(expected).issubset(names))
+            self.assertIn('./internal/ui/shell', fixture.test_command(mode, True, namespace_management=True))
+            complete = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in names)
+            if mode == 'mtls':
+                complete += '\nnative mTLS accepted owned client certificate and rejected its absence'
+            fixture.check_acceptance(complete, mode, namespace_management=True)
+            for name in expected:
+                with self.assertRaises(RuntimeError):
+                    fixture.check_acceptance(complete.replace('--- PASS: TestMeilisearchNative'+name, '--- SKIP: TestMeilisearchNative'+name), mode, namespace_management=True)
+        for path in ['internal/services/meilisearch/namespace_management.go', 'internal/services/meilisearch/namespace_scope.go', 'internal/ui/objectworkspace/namespace_management.go', 'internal/ui/shell/namespace_management.go']:
+            self.assertIn(path, fixture.source_hashes(namespace_management=True))
+
     def test_data_writes_require_native_admission_readback_lifecycle_permissions_and_public_grid(self):
         for mode in fixture.MODES:
             names = fixture.required_passes(mode, data_writes=True)

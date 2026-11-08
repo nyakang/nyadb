@@ -25917,3 +25917,459 @@ func ServerBackupSnapshotReplacement() string {
 func (msgs Messages) ServerBackupSnapshotReplacement() string {
 	return Catalog.Format(msgs.locale, "serverBackupSnapshotReplacement", nil)
 }
+
+// MeilisearchNamespace15a021aec5 says "管理索引"
+// in the language the app shows.
+func MeilisearchNamespace15a021aec5() string {
+	return In(i18n.Locale()).MeilisearchNamespace15a021aec5()
+}
+
+// MeilisearchNamespace15a021aec5 says "管理索引"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace15a021aec5() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace15a021aec5", nil)
+}
+
+// MeilisearchNamespace7275bcc933 says "管理索引…"
+// in the language the app shows.
+func MeilisearchNamespace7275bcc933() string {
+	return In(i18n.Locale()).MeilisearchNamespace7275bcc933()
+}
+
+// MeilisearchNamespace7275bcc933 says "管理索引…"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace7275bcc933() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace7275bcc933", nil)
+}
+
+// MeilisearchNamespacef4f1072238 says "创建索引"
+// in the language the app shows.
+func MeilisearchNamespacef4f1072238() string {
+	return In(i18n.Locale()).MeilisearchNamespacef4f1072238()
+}
+
+// MeilisearchNamespacef4f1072238 says "创建索引"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespacef4f1072238() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespacef4f1072238", nil)
+}
+
+// MeilisearchNamespacebf2680144b says "修改索引主键"
+// in the language the app shows.
+func MeilisearchNamespacebf2680144b() string {
+	return In(i18n.Locale()).MeilisearchNamespacebf2680144b()
+}
+
+// MeilisearchNamespacebf2680144b says "修改索引主键"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespacebf2680144b() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespacebf2680144b", nil)
+}
+
+// MeilisearchNamespacecbc7997ef4 says "重命名索引"
+// in the language the app shows.
+func MeilisearchNamespacecbc7997ef4() string {
+	return In(i18n.Locale()).MeilisearchNamespacecbc7997ef4()
+}
+
+// MeilisearchNamespacecbc7997ef4 says "重命名索引"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespacecbc7997ef4() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespacecbc7997ef4", nil)
+}
+
+// MeilisearchNamespace5cce6a5ca7 says "原子交换两个索引"
+// in the language the app shows.
+func MeilisearchNamespace5cce6a5ca7() string {
+	return In(i18n.Locale()).MeilisearchNamespace5cce6a5ca7()
+}
+
+// MeilisearchNamespace5cce6a5ca7 says "原子交换两个索引"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace5cce6a5ca7() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace5cce6a5ca7", nil)
+}
+
+// MeilisearchNamespacebd54869c8b says "清空索引文档"
+// in the language the app shows.
+func MeilisearchNamespacebd54869c8b() string {
+	return In(i18n.Locale()).MeilisearchNamespacebd54869c8b()
+}
+
+// MeilisearchNamespacebd54869c8b says "清空索引文档"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespacebd54869c8b() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespacebd54869c8b", nil)
+}
+
+// MeilisearchNamespacec41ceba458 says "删除索引"
+// in the language the app shows.
+func MeilisearchNamespacec41ceba458() string {
+	return In(i18n.Locale()).MeilisearchNamespacec41ceba458()
+}
+
+// MeilisearchNamespacec41ceba458 says "删除索引"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespacec41ceba458() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespacec41ceba458", nil)
+}
+
+// MeilisearchNamespace63e73d83ea says "索引操作"
+// in the language the app shows.
+func MeilisearchNamespace63e73d83ea() string {
+	return In(i18n.Locale()).MeilisearchNamespace63e73d83ea()
+}
+
+// MeilisearchNamespace63e73d83ea says "索引操作"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace63e73d83ea() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace63e73d83ea", nil)
+}
+
+// MeilisearchNamespaced78adcedb5 says "索引 UID"
+// in the language the app shows.
+func MeilisearchNamespaced78adcedb5() string {
+	return In(i18n.Locale()).MeilisearchNamespaced78adcedb5()
+}
+
+// MeilisearchNamespaced78adcedb5 says "索引 UID"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespaced78adcedb5() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespaced78adcedb5", nil)
+}
+
+// MeilisearchNamespaceb652b31972 says "目标索引 UID"
+// in the language the app shows.
+func MeilisearchNamespaceb652b31972() string {
+	return In(i18n.Locale()).MeilisearchNamespaceb652b31972()
+}
+
+// MeilisearchNamespaceb652b31972 says "目标索引 UID"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespaceb652b31972() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespaceb652b31972", nil)
+}
+
+// MeilisearchNamespaced00654a616 says "主键字段（创建时可留空）"
+// in the language the app shows.
+func MeilisearchNamespaced00654a616() string {
+	return In(i18n.Locale()).MeilisearchNamespaced00654a616()
+}
+
+// MeilisearchNamespaced00654a616 says "主键字段（创建时可留空）"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespaced00654a616() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespaced00654a616", nil)
+}
+
+// MeilisearchNamespace5169f2f879 says "先读取原索引信息，再预览并确认提交；操作通过原服务器任务完成。"
+// in the language the app shows.
+func MeilisearchNamespace5169f2f879() string {
+	return In(i18n.Locale()).MeilisearchNamespace5169f2f879()
+}
+
+// MeilisearchNamespace5169f2f879 says "先读取原索引信息，再预览并确认提交；操作通过原服务器任务完成。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace5169f2f879() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace5169f2f879", nil)
+}
+
+// MeilisearchNamespace7e0da8b061 says "修改主键要求索引为空；不支持移除已有主键。"
+// in the language the app shows.
+func MeilisearchNamespace7e0da8b061() string {
+	return In(i18n.Locale()).MeilisearchNamespace7e0da8b061()
+}
+
+// MeilisearchNamespace7e0da8b061 says "修改主键要求索引为空；不支持移除已有主键。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace7e0da8b061() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace7e0da8b061", nil)
+}
+
+// MeilisearchNamespace3e807faa21 says "清空会删除全部文档并保留设置；删除索引会同时删除文档与设置。"
+// in the language the app shows.
+func MeilisearchNamespace3e807faa21() string {
+	return In(i18n.Locale()).MeilisearchNamespace3e807faa21()
+}
+
+// MeilisearchNamespace3e807faa21 says "清空会删除全部文档并保留设置；删除索引会同时删除文档与设置。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace3e807faa21() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace3e807faa21", nil)
+}
+
+// MeilisearchNamespaceb0f8bcd98a says "交换会原子交换文档、设置与主键，索引 UID 保持不变；历史任务的索引归属也会交换。"
+// in the language the app shows.
+func MeilisearchNamespaceb0f8bcd98a() string {
+	return In(i18n.Locale()).MeilisearchNamespaceb0f8bcd98a()
+}
+
+// MeilisearchNamespaceb0f8bcd98a says "交换会原子交换文档、设置与主键，索引 UID 保持不变；历史任务的索引归属也会交换。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespaceb0f8bcd98a() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespaceb0f8bcd98a", nil)
+}
+
+// MeilisearchNamespacec929476686 says "%s · 文档数 %d · 主键 %s"
+// in the language the app shows.
+func MeilisearchNamespacec929476686() string {
+	return In(i18n.Locale()).MeilisearchNamespacec929476686()
+}
+
+// MeilisearchNamespacec929476686 says "%s · 文档数 %d · 主键 %s"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespacec929476686() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespacec929476686", nil)
+}
+
+// MeilisearchNamespace7787b589c5 says "索引不存在"
+// in the language the app shows.
+func MeilisearchNamespace7787b589c5() string {
+	return In(i18n.Locale()).MeilisearchNamespace7787b589c5()
+}
+
+// MeilisearchNamespace7787b589c5 says "索引不存在"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace7787b589c5() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace7787b589c5", nil)
+}
+
+// MeilisearchNamespace27ff8ad977 says "停止索引信息读取"
+// in the language the app shows.
+func MeilisearchNamespace27ff8ad977() string {
+	return In(i18n.Locale()).MeilisearchNamespace27ff8ad977()
+}
+
+// MeilisearchNamespace27ff8ad977 says "停止索引信息读取"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace27ff8ad977() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace27ff8ad977", nil)
+}
+
+// MeilisearchNamespaceae1734bb15 says "读取原索引信息"
+// in the language the app shows.
+func MeilisearchNamespaceae1734bb15() string {
+	return In(i18n.Locale()).MeilisearchNamespaceae1734bb15()
+}
+
+// MeilisearchNamespaceae1734bb15 says "读取原索引信息"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespaceae1734bb15() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespaceae1734bb15", nil)
+}
+
+// MeilisearchNamespace23cc6cccf3 says "预览索引操作"
+// in the language the app shows.
+func MeilisearchNamespace23cc6cccf3() string {
+	return In(i18n.Locale()).MeilisearchNamespace23cc6cccf3()
+}
+
+// MeilisearchNamespace23cc6cccf3 says "预览索引操作"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace23cc6cccf3() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace23cc6cccf3", nil)
+}
+
+// MeilisearchNamespace86ced03c01 says "确认提交索引操作"
+// in the language the app shows.
+func MeilisearchNamespace86ced03c01() string {
+	return In(i18n.Locale()).MeilisearchNamespace86ced03c01()
+}
+
+// MeilisearchNamespace86ced03c01 says "确认提交索引操作"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace86ced03c01() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace86ced03c01", nil)
+}
+
+// MeilisearchNamespace70f0f3f23c says "提交前会检查并关闭相关数据、设置和任务页面；未保存草稿须先处理。"
+// in the language the app shows.
+func MeilisearchNamespace70f0f3f23c() string {
+	return In(i18n.Locale()).MeilisearchNamespace70f0f3f23c()
+}
+
+// MeilisearchNamespace70f0f3f23c says "提交前会检查并关闭相关数据、设置和任务页面；未保存草稿须先处理。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace70f0f3f23c() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace70f0f3f23c", nil)
+}
+
+// MeilisearchNamespaceaa714e31f7 says "元数据与文档数验证不能替代完整内容比较；其他客户端仍可并发修改索引。"
+// in the language the app shows.
+func MeilisearchNamespaceaa714e31f7() string {
+	return In(i18n.Locale()).MeilisearchNamespaceaa714e31f7()
+}
+
+// MeilisearchNamespaceaa714e31f7 says "元数据与文档数验证不能替代完整内容比较；其他客户端仍可并发修改索引。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespaceaa714e31f7() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespaceaa714e31f7", nil)
+}
+
+// MeilisearchNamespace1bee4e17ba says "输入以下索引 UID 确认："
+// in the language the app shows.
+func MeilisearchNamespace1bee4e17ba() string {
+	return In(i18n.Locale()).MeilisearchNamespace1bee4e17ba()
+}
+
+// MeilisearchNamespace1bee4e17ba says "输入以下索引 UID 确认："
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace1bee4e17ba() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace1bee4e17ba", nil)
+}
+
+// MeilisearchNamespace6363281faf says "索引操作确认"
+// in the language the app shows.
+func MeilisearchNamespace6363281faf() string {
+	return In(i18n.Locale()).MeilisearchNamespace6363281faf()
+}
+
+// MeilisearchNamespace6363281faf says "索引操作确认"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace6363281faf() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace6363281faf", nil)
+}
+
+// MeilisearchNamespace9861d687e6 says "复制索引操作完整证据"
+// in the language the app shows.
+func MeilisearchNamespace9861d687e6() string {
+	return In(i18n.Locale()).MeilisearchNamespace9861d687e6()
+}
+
+// MeilisearchNamespace9861d687e6 says "复制索引操作完整证据"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace9861d687e6() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace9861d687e6", nil)
+}
+
+// MeilisearchNamespace597aa085b5 says "索引任务与元数据尚未共同确认；回执保留，禁止重放。"
+// in the language the app shows.
+func MeilisearchNamespace597aa085b5() string {
+	return In(i18n.Locale()).MeilisearchNamespace597aa085b5()
+}
+
+// MeilisearchNamespace597aa085b5 says "索引任务与元数据尚未共同确认；回执保留，禁止重放。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace597aa085b5() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace597aa085b5", nil)
+}
+
+// MeilisearchNamespace2bf417bd7f says "原索引任务已完成，元数据与文档数验证通过。"
+// in the language the app shows.
+func MeilisearchNamespace2bf417bd7f() string {
+	return In(i18n.Locale()).MeilisearchNamespace2bf417bd7f()
+}
+
+// MeilisearchNamespace2bf417bd7f says "原索引任务已完成，元数据与文档数验证通过。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace2bf417bd7f() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace2bf417bd7f", nil)
+}
+
+// MeilisearchNamespacef55af1d171 says "索引信息读取已停止"
+// in the language the app shows.
+func MeilisearchNamespacef55af1d171() string {
+	return In(i18n.Locale()).MeilisearchNamespacef55af1d171()
+}
+
+// MeilisearchNamespacef55af1d171 says "索引信息读取已停止"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespacef55af1d171() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespacef55af1d171", nil)
+}
+
+// MeilisearchNamespace005d69fb9f says "索引表单已变化；请重新读取原索引信息"
+// in the language the app shows.
+func MeilisearchNamespace005d69fb9f() string {
+	return In(i18n.Locale()).MeilisearchNamespace005d69fb9f()
+}
+
+// MeilisearchNamespace005d69fb9f says "索引表单已变化；请重新读取原索引信息"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace005d69fb9f() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace005d69fb9f", nil)
+}
+
+// MeilisearchNamespace2136613925 says "创建索引预览"
+// in the language the app shows.
+func MeilisearchNamespace2136613925() string {
+	return In(i18n.Locale()).MeilisearchNamespace2136613925()
+}
+
+// MeilisearchNamespace2136613925 says "创建索引预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace2136613925() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace2136613925", nil)
+}
+
+// MeilisearchNamespaced2a1115771 says "修改索引主键预览"
+// in the language the app shows.
+func MeilisearchNamespaced2a1115771() string {
+	return In(i18n.Locale()).MeilisearchNamespaced2a1115771()
+}
+
+// MeilisearchNamespaced2a1115771 says "修改索引主键预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespaced2a1115771() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespaced2a1115771", nil)
+}
+
+// MeilisearchNamespacee97ba8072d says "重命名索引预览"
+// in the language the app shows.
+func MeilisearchNamespacee97ba8072d() string {
+	return In(i18n.Locale()).MeilisearchNamespacee97ba8072d()
+}
+
+// MeilisearchNamespacee97ba8072d says "重命名索引预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespacee97ba8072d() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespacee97ba8072d", nil)
+}
+
+// MeilisearchNamespace111e6952af says "原子交换两个索引预览"
+// in the language the app shows.
+func MeilisearchNamespace111e6952af() string {
+	return In(i18n.Locale()).MeilisearchNamespace111e6952af()
+}
+
+// MeilisearchNamespace111e6952af says "原子交换两个索引预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace111e6952af() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace111e6952af", nil)
+}
+
+// MeilisearchNamespace88b6b6415b says "清空索引文档预览"
+// in the language the app shows.
+func MeilisearchNamespace88b6b6415b() string {
+	return In(i18n.Locale()).MeilisearchNamespace88b6b6415b()
+}
+
+// MeilisearchNamespace88b6b6415b says "清空索引文档预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespace88b6b6415b() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespace88b6b6415b", nil)
+}
+
+// MeilisearchNamespacebea4501138 says "删除索引预览"
+// in the language the app shows.
+func MeilisearchNamespacebea4501138() string {
+	return In(i18n.Locale()).MeilisearchNamespacebea4501138()
+}
+
+// MeilisearchNamespacebea4501138 says "删除索引预览"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespacebea4501138() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespacebea4501138", nil)
+}
+
+// MeilisearchNamespaceTaskTerminated says "原索引任务失败或取消；请查看完整原生结果。"
+// in the language the app shows.
+func MeilisearchNamespaceTaskTerminated() string {
+	return In(i18n.Locale()).MeilisearchNamespaceTaskTerminated()
+}
+
+// MeilisearchNamespaceTaskTerminated says "原索引任务失败或取消；请查看完整原生结果。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchNamespaceTaskTerminated() string {
+	return Catalog.Format(msgs.locale, "meilisearchNamespaceTaskTerminated", nil)
+}
