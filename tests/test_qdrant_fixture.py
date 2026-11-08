@@ -42,6 +42,23 @@ class QdrantFixtureTests(unittest.TestCase):
         self.assertIn('^TestQdrantNative', command)
         self.assertEqual(command[-1], './internal/services/qdrant')
 
+    def test_management_acceptance_requires_exact_native_configuration_alias_faults_and_no_replay(self):
+        names = ['ManagementCollectionConfigurationExactReadbackAndDelete',
+                 'ManagementAliasRetargetRenameAndFailedBatchEvidence',
+                 'ManagementPermissionsAndNativeSchemaFailure',
+                 'ManagementLostCanceledAndOriginalCloseNeverReplay']
+        log = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in fixture.REQUIRED)
+        for name in names:
+            self.assertIn(name, fixture.REQUIRED)
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(log.replace('--- PASS: TestQdrantNative'+name,
+                                                     '--- SKIP: TestQdrantNative'+name))
+        hashes = fixture.source_hashes()
+        for path in ['internal/services/qdrant/management_native.go',
+                     'internal/services/qdrant/management_native_test.go',
+                     'internal/services/qdrant/management_native_integration_test.go']:
+            self.assertIn(path, hashes)
+
     def test_profile_command_checks_native_config_storage_and_editor(self):
         command = fixture.native_test_command(True, profile=True)
         self.assertIn('-race', command)

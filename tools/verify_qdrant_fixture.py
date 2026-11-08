@@ -29,6 +29,10 @@ REQUIRED = (
     'PointBatchNormalizationAndNativePartialFailure',
     'PointBatchReadOnlyDenial',
     'PointBatchLostCanceledAndOriginalCloseNeverReplays',
+    'ManagementCollectionConfigurationExactReadbackAndDelete',
+    'ManagementAliasRetargetRenameAndFailedBatchEvidence',
+    'ManagementPermissionsAndNativeSchemaFailure',
+    'ManagementLostCanceledAndOriginalCloseNeverReplay',
 )
 PROFILE_REQUIRED = (
     'ProfileURIReopenAndOriginalEditorCheck',
@@ -132,7 +136,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
     evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode,
-                    scope='original_shared_point_grid_crud_json_jsonl_import_explicit_native_modes_signed_snapshots_receipts_bounded_all_source_readback_no_replay_cursor_filter_count_fields_and_export' if data else 'public_chooser_uri_original_sessions_collections_definitions_rest_typed_points_and_recovery' if public else 'private_original_session_metadata_rest_leases_and_typed_native_point_results' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_transport_and_collection_point_codecs',
+                    scope='original_shared_point_grid_crud_json_jsonl_import_explicit_native_modes_signed_snapshots_receipts_bounded_all_source_readback_no_replay_cursor_filter_count_fields_and_export' if data else 'public_chooser_uri_original_sessions_collections_definitions_rest_typed_points_and_recovery' if public else 'private_original_session_metadata_rest_leases_and_typed_native_point_results' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_point_and_collection_alias_management_codecs_original_receipts_and_no_replay',
                     status='failed', fixture_cleaned=False, private_files_cleaned=False)
     try:
         with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
