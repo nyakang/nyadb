@@ -59,6 +59,26 @@ class QdrantFixtureTests(unittest.TestCase):
                      'internal/services/qdrant/management_native_integration_test.go']:
             self.assertIn(path, hashes)
 
+    def test_management_session_acceptance_requires_owned_claims_receipts_close_and_readback(self):
+        names = ['ManagementSessionOriginalClaimsOneUseAndCompleteReadback',
+                 'ManagementSessionPreflightChangesActiveDocumentsAndDeniedReceipt',
+                 'ManagementSessionLostCanceledLeaseAndSessionCloseRetainOriginalOutcome',
+                 'ManagementSessionReadbackInterruptionRetainsReceiptAndNeverMutates']
+        log = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in fixture.REQUIRED)
+        for name in names:
+            self.assertIn(name, fixture.REQUIRED)
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(log.replace('--- PASS: TestQdrantNative'+name,
+                                                     '--- SKIP: TestQdrantNative'+name))
+        hashes = fixture.source_hashes()
+        for path in ['internal/services/qdrant/management_document.go',
+                     'internal/services/qdrant/management_prepare.go',
+                     'internal/services/qdrant/management_submit.go',
+                     'internal/services/qdrant/management_config.go',
+                     'internal/services/qdrant/management_document_test.go',
+                     'internal/services/qdrant/management_document_native_integration_test.go']:
+            self.assertIn(path, hashes)
+
     def test_profile_command_checks_native_config_storage_and_editor(self):
         command = fixture.native_test_command(True, profile=True)
         self.assertIn('-race', command)

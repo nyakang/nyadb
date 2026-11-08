@@ -43,6 +43,9 @@ func (s *Session) ReserveQuery(document uint64) (contract.QueryLease, error) {
 	if s.closed || s.revoked {
 		return nil, contract.ErrRevoked
 	}
+	if s.namespaceOwner != nil {
+		return nil, contract.ErrNamespaceBusy
+	}
 	if document == 0 || len(s.leases) >= 32 {
 		return nil, contract.ErrSQLSessionLimit
 	}

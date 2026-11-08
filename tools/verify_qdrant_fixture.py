@@ -33,6 +33,10 @@ REQUIRED = (
     'ManagementAliasRetargetRenameAndFailedBatchEvidence',
     'ManagementPermissionsAndNativeSchemaFailure',
     'ManagementLostCanceledAndOriginalCloseNeverReplay',
+    'ManagementSessionOriginalClaimsOneUseAndCompleteReadback',
+    'ManagementSessionPreflightChangesActiveDocumentsAndDeniedReceipt',
+    'ManagementSessionLostCanceledLeaseAndSessionCloseRetainOriginalOutcome',
+    'ManagementSessionReadbackInterruptionRetainsReceiptAndNeverMutates',
 )
 PROFILE_REQUIRED = (
     'ProfileURIReopenAndOriginalEditorCheck',
@@ -136,7 +140,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
     evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode,
-                    scope='original_shared_point_grid_crud_json_jsonl_import_explicit_native_modes_signed_snapshots_receipts_bounded_all_source_readback_no_replay_cursor_filter_count_fields_and_export' if data else 'public_chooser_uri_original_sessions_collections_definitions_rest_typed_points_and_recovery' if public else 'private_original_session_metadata_rest_leases_and_typed_native_point_results' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_point_and_collection_alias_management_codecs_original_receipts_and_no_replay',
+                    scope='original_shared_point_grid_crud_json_jsonl_import_explicit_native_modes_signed_snapshots_receipts_bounded_all_source_readback_no_replay_cursor_filter_count_fields_and_export' if data else 'public_chooser_uri_original_sessions_collections_definitions_rest_typed_points_and_recovery' if public else 'private_original_session_metadata_rest_typed_points_and_management_leases_namespace_claims_native_boolean_receipts_complete_readback_no_replay' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_point_and_collection_alias_management_original_session_claims_receipts_and_no_replay',
                     status='failed', fixture_cleaned=False, private_files_cleaned=False)
     try:
         with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
@@ -309,7 +313,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', choices=MODES, default='tls')
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--profile', action='store_true', help='Verify URI, SQLite reopen, separate vault, native connection checks and localized editor forms')
-    parser.add_argument('--session', action='store_true', help='Verify original session, physical collection metadata and REST lease outcomes/cancellation/recovery; includes profile acceptance')
+    parser.add_argument('--session', action='store_true', help='Verify original session, collection metadata, REST/management leases, claims, receipts, readback and cancellation/recovery; includes profile acceptance')
     parser.add_argument('--public', action='store_true', help='Verify public chooser/URI, original runtime generations, qualified navigation/definitions and REST workbench/recovery; includes sessions/profiles')
     parser.add_argument('--data', action='store_true', help='Verify original shared point data lease, cursor/filter/count/bounded fields/complete export and localized grid; includes sessions/profiles')
     options = parser.parse_args()

@@ -11,19 +11,22 @@ import (
 // Session retains the original profile, endpoint and key. Binary observations
 // do not identify a cluster, server or collection incarnation.
 type Session struct {
-	mu              sync.Mutex
-	profileID       int64
-	config          connections.QdrantConfig
-	secret          string
-	identity        Identity
-	ctx             context.Context
-	cancel          context.CancelFunc
-	closed, revoked bool
-	closeDone       chan struct{}
-	work            sync.WaitGroup
-	leases          map[*queryLease]bool
-	documents       map[*dataLease]bool
-	dataSlots       chan struct{}
+	mu                 sync.Mutex
+	profileID          int64
+	config             connections.QdrantConfig
+	secret             string
+	identity           Identity
+	ctx                context.Context
+	cancel             context.CancelFunc
+	closed, revoked    bool
+	closeDone          chan struct{}
+	work               sync.WaitGroup
+	leases             map[*queryLease]bool
+	documents          map[*dataLease]bool
+	dataSlots          chan struct{}
+	managers           map[*ManagementLease]bool
+	namespaceOwner     *ManagementLease
+	claimedCollections map[string]bool
 }
 
 func OpenSession(ctx context.Context, p connections.Profile, secret string) (contract.Session, error) {
@@ -150,7 +153,14 @@ func (s *Session) Close() error {
 	for d := range s.documents {
 		documents = append(documents, d)
 	}
+	managers := make([]*ManagementLease, 0, len(s.managers))
+	for m := range s.managers {
+		managers = append(managers, m)
+	}
 	s.mu.Unlock()
+	for _, m := range managers {
+		m.Close()
+	}
 	for _, d := range documents {
 		d.Close()
 	}
