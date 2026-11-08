@@ -67,6 +67,8 @@ func (s *State) View(c *ui.Context, width, height float32) {
 
 func connectionEditorTabNames(kind connections.Kind) []string {
 	switch kind {
+	case connections.Meilisearch:
+		return []string{"常规", "高级", "SSL", "备注"}
 	case connections.DuckDB:
 		return []string{"常规", "高级", "备注"}
 	case connections.SQLite:
@@ -192,6 +194,10 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 		}
 		s.editorInputRow(c, "主机：", "主机", &p.Host, labelWidth, fieldWidth)
 		s.editorInputRow(c, "端口：", "端口", &s.connectionPort, labelWidth, min(fieldWidth, float32(80)))
+		if p.Kind == connections.Meilisearch {
+			s.editorMeilisearchFields(c, labelWidth, fieldWidth)
+			return
+		}
 		if p.Kind == connections.CouchDB {
 			s.editorCouchDBFields(c, labelWidth, fieldWidth)
 			return

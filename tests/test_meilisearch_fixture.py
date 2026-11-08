@@ -11,6 +11,16 @@ SPEC.loader.exec_module(fixture)
 
 
 class MeilisearchFixtureTests(unittest.TestCase):
+    def test_profile_acceptance_requires_native_reopen_cancel_and_localized_forms(self):
+        command = fixture.test_command('tls', True, True)
+        self.assertIn('./internal/ui/connectioneditor', command)
+        for name in fixture.PROFILE_REQUIRED:
+            self.assertIn(name, command[-3])
+        ordinary = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in fixture.required_passes('tls'))
+        with self.assertRaises(RuntimeError):
+            fixture.check_acceptance(ordinary, 'tls', True)
+        complete = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in fixture.required_passes('tls', True))
+        fixture.check_acceptance(complete, 'tls', True)
     def test_required_passes_reject_missing_skip_failure_and_false_mtls(self):
         for mode in fixture.MODES:
             log = '\n'.join('--- PASS: TestMeilisearchNative'+name+' (0.01s)' for name in fixture.required_passes(mode))

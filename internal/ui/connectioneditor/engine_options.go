@@ -104,6 +104,10 @@ func (s *State) EngineFilePickerError(version uint64) {
 }
 
 func (s *State) initEngineOptionsInputs() {
+	if s.connectionDraft.Kind == connections.Meilisearch {
+		a := s.connectionDraft.MeilisearchOptions
+		s.engineNumbers[0], s.engineNumbers[1] = strconv.Itoa(a.ConnectTimeoutSeconds), strconv.Itoa(a.RequestTimeoutSeconds)
+	}
 	if s.connectionDraft.Kind == connections.Dameng {
 		a := s.connectionDraft.DamengOptions
 		s.engineNumbers[0], s.engineNumbers[1], s.engineNumbers[2] = strconv.Itoa(a.ConnectTimeoutSeconds), strconv.Itoa(a.MaxConnections), strconv.Itoa(a.OperationTimeoutSeconds)
@@ -169,6 +173,9 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.Meilisearch {
+		return s.advanceMeilisearchOptions(p)
+	}
 	if p.Kind == connections.Dameng {
 		return s.advanceDamengOptions(p)
 	}
@@ -287,6 +294,8 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.Meilisearch:
+		return s.meilisearchOptions(c, width, tab)
 	case connections.CouchDB:
 		return s.couchdbSSL(c, width, tab)
 	case connections.Cassandra:

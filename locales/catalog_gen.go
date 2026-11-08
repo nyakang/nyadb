@@ -22795,3 +22795,205 @@ func CouchdbNativeReadHistoryCounts() string {
 func (msgs Messages) CouchdbNativeReadHistoryCounts() string {
 	return Catalog.Format(msgs.locale, "couchdbNativeReadHistoryCounts", nil)
 }
+
+// MeilisearchServicePath says "Meilisearch 服务路径"
+// in the language the app shows.
+func MeilisearchServicePath() string { return In(i18n.Locale()).MeilisearchServicePath() }
+
+// MeilisearchServicePath says "Meilisearch 服务路径"
+// in the language of msgs.
+func (msgs Messages) MeilisearchServicePath() string {
+	return Catalog.Format(msgs.locale, "meilisearchServicePath", nil)
+}
+
+// MeilisearchIndexScope says "Meilisearch 索引范围"
+// in the language the app shows.
+func MeilisearchIndexScope() string { return In(i18n.Locale()).MeilisearchIndexScope() }
+
+// MeilisearchIndexScope says "Meilisearch 索引范围"
+// in the language of msgs.
+func (msgs Messages) MeilisearchIndexScope() string {
+	return Catalog.Format(msgs.locale, "meilisearchIndexScope", nil)
+}
+
+// MeilisearchIndexScopeCaption says "索引范围："
+// in the language the app shows.
+func MeilisearchIndexScopeCaption() string { return In(i18n.Locale()).MeilisearchIndexScopeCaption() }
+
+// MeilisearchIndexScopeCaption says "索引范围："
+// in the language of msgs.
+func (msgs Messages) MeilisearchIndexScopeCaption() string {
+	return Catalog.Format(msgs.locale, "meilisearchIndexScopeCaption", nil)
+}
+
+// MeilisearchAuth says "Meilisearch 认证方式"
+// in the language the app shows.
+func MeilisearchAuth() string { return In(i18n.Locale()).MeilisearchAuth() }
+
+// MeilisearchAuth says "Meilisearch 认证方式"
+// in the language of msgs.
+func (msgs Messages) MeilisearchAuth() string {
+	return Catalog.Format(msgs.locale, "meilisearchAuth", nil)
+}
+
+// MeilisearchBearer says "Bearer API key"
+// in the language the app shows.
+func MeilisearchBearer() string { return In(i18n.Locale()).MeilisearchBearer() }
+
+// MeilisearchBearer says "Bearer API key"
+// in the language of msgs.
+func (msgs Messages) MeilisearchBearer() string {
+	return Catalog.Format(msgs.locale, "meilisearchBearer", nil)
+}
+
+// MeilisearchAPIKey says "Meilisearch API key"
+// in the language the app shows.
+func MeilisearchAPIKey() string { return In(i18n.Locale()).MeilisearchAPIKey() }
+
+// MeilisearchAPIKey says "Meilisearch API key"
+// in the language of msgs.
+func (msgs Messages) MeilisearchAPIKey() string {
+	return Catalog.Format(msgs.locale, "meilisearchAPIKey", nil)
+}
+
+// MeilisearchScopedKeyHint says "单索引 API key 请填写索引范围。"
+// in the language the app shows.
+func MeilisearchScopedKeyHint() string { return In(i18n.Locale()).MeilisearchScopedKeyHint() }
+
+// MeilisearchScopedKeyHint says "单索引 API key 请填写索引范围。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchScopedKeyHint() string {
+	return Catalog.Format(msgs.locale, "meilisearchScopedKeyHint", nil)
+}
+
+// MeilisearchConnectTimeout says "Meilisearch 连接超时"
+// in the language the app shows.
+func MeilisearchConnectTimeout() string { return In(i18n.Locale()).MeilisearchConnectTimeout() }
+
+// MeilisearchConnectTimeout says "Meilisearch 连接超时"
+// in the language of msgs.
+func (msgs Messages) MeilisearchConnectTimeout() string {
+	return Catalog.Format(msgs.locale, "meilisearchConnectTimeout", nil)
+}
+
+// MeilisearchRequestTimeout says "Meilisearch 请求超时"
+// in the language the app shows.
+func MeilisearchRequestTimeout() string { return In(i18n.Locale()).MeilisearchRequestTimeout() }
+
+// MeilisearchRequestTimeout says "Meilisearch 请求超时"
+// in the language of msgs.
+func (msgs Messages) MeilisearchRequestTimeout() string {
+	return Catalog.Format(msgs.locale, "meilisearchRequestTimeout", nil)
+}
+
+// MeilisearchRequestTimeoutCaption says "请求超时（秒）"
+// in the language the app shows.
+func MeilisearchRequestTimeoutCaption() string {
+	return In(i18n.Locale()).MeilisearchRequestTimeoutCaption()
+}
+
+// MeilisearchRequestTimeoutCaption says "请求超时（秒）"
+// in the language of msgs.
+func (msgs Messages) MeilisearchRequestTimeoutCaption() string {
+	return Catalog.Format(msgs.locale, "meilisearchRequestTimeoutCaption", nil)
+}
+
+// MeilisearchTimeoutInvalid says "请检查 Meilisearch 超时设置"
+// in the language the app shows.
+func MeilisearchTimeoutInvalid() string { return In(i18n.Locale()).MeilisearchTimeoutInvalid() }
+
+// MeilisearchTimeoutInvalid says "请检查 Meilisearch 超时设置"
+// in the language of msgs.
+func (msgs Messages) MeilisearchTimeoutInvalid() string {
+	return Catalog.Format(msgs.locale, "meilisearchTimeoutInvalid", nil)
+}
+
+// MeilisearchDefaultsHint says "Meilisearch 默认端口 7700，服务路径留空表示服务器根路径。"
+// in the language the app shows.
+func MeilisearchDefaultsHint() string { return In(i18n.Locale()).MeilisearchDefaultsHint() }
+
+// MeilisearchDefaultsHint says "Meilisearch 默认端口 7700，服务路径留空表示服务器根路径。"
+// in the language of msgs.
+func (msgs Messages) MeilisearchDefaultsHint() string {
+	return Catalog.Format(msgs.locale, "meilisearchDefaultsHint", nil)
+}
+
+// MeilisearchTLSMode says "Meilisearch TLS 模式"
+// in the language the app shows.
+func MeilisearchTLSMode() string { return In(i18n.Locale()).MeilisearchTLSMode() }
+
+// MeilisearchTLSMode says "Meilisearch TLS 模式"
+// in the language of msgs.
+func (msgs Messages) MeilisearchTLSMode() string {
+	return Catalog.Format(msgs.locale, "meilisearchTLSMode", nil)
+}
+
+// MeilisearchCA says "Meilisearch CA 证书"
+// in the language the app shows.
+func MeilisearchCA() string { return In(i18n.Locale()).MeilisearchCA() }
+
+// MeilisearchCA says "Meilisearch CA 证书"
+// in the language of msgs.
+func (msgs Messages) MeilisearchCA() string {
+	return Catalog.Format(msgs.locale, "meilisearchCA", nil)
+}
+
+// MeilisearchClientCert says "Meilisearch 客户端证书"
+// in the language the app shows.
+func MeilisearchClientCert() string { return In(i18n.Locale()).MeilisearchClientCert() }
+
+// MeilisearchClientCert says "Meilisearch 客户端证书"
+// in the language of msgs.
+func (msgs Messages) MeilisearchClientCert() string {
+	return Catalog.Format(msgs.locale, "meilisearchClientCert", nil)
+}
+
+// MeilisearchClientKey says "Meilisearch 客户端私钥"
+// in the language the app shows.
+func MeilisearchClientKey() string { return In(i18n.Locale()).MeilisearchClientKey() }
+
+// MeilisearchClientKey says "Meilisearch 客户端私钥"
+// in the language of msgs.
+func (msgs Messages) MeilisearchClientKey() string {
+	return Catalog.Format(msgs.locale, "meilisearchClientKey", nil)
+}
+
+// MeilisearchClientKeyCaption says "客户端私钥"
+// in the language the app shows.
+func MeilisearchClientKeyCaption() string { return In(i18n.Locale()).MeilisearchClientKeyCaption() }
+
+// MeilisearchClientKeyCaption says "客户端私钥"
+// in the language of msgs.
+func (msgs Messages) MeilisearchClientKeyCaption() string {
+	return Catalog.Format(msgs.locale, "meilisearchClientKeyCaption", nil)
+}
+
+// MeilisearchSettingsInvalid says "请检查 Meilisearch 服务路径、索引范围和认证设置"
+// in the language the app shows.
+func MeilisearchSettingsInvalid() string { return In(i18n.Locale()).MeilisearchSettingsInvalid() }
+
+// MeilisearchSettingsInvalid says "请检查 Meilisearch 服务路径、索引范围和认证设置"
+// in the language of msgs.
+func (msgs Messages) MeilisearchSettingsInvalid() string {
+	return Catalog.Format(msgs.locale, "meilisearchSettingsInvalid", nil)
+}
+
+// MeilisearchTLSInvalid says "请检查 Meilisearch TLS 和客户端证书设置"
+// in the language the app shows.
+func MeilisearchTLSInvalid() string { return In(i18n.Locale()).MeilisearchTLSInvalid() }
+
+// MeilisearchTLSInvalid says "请检查 Meilisearch TLS 和客户端证书设置"
+// in the language of msgs.
+func (msgs Messages) MeilisearchTLSInvalid() string {
+	return Catalog.Format(msgs.locale, "meilisearchTLSInvalid", nil)
+}
+
+// MeilisearchKeyInvalid says "请检查 Meilisearch API key"
+// in the language the app shows.
+func MeilisearchKeyInvalid() string { return In(i18n.Locale()).MeilisearchKeyInvalid() }
+
+// MeilisearchKeyInvalid says "请检查 Meilisearch API key"
+// in the language of msgs.
+func (msgs Messages) MeilisearchKeyInvalid() string {
+	return Catalog.Format(msgs.locale, "meilisearchKeyInvalid", nil)
+}

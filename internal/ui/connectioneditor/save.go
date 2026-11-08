@@ -71,6 +71,11 @@ func (s *State) draftProfile() (connections.Profile, error) {
 		return p, fieldError("端口", "常规", "端口必须是 1–65535 之间的数字")
 	}
 	p.Port = uint16(port)
+	if p.Kind == connections.Meilisearch {
+		if err := s.validateMeilisearchDraft(p); err != nil {
+			return p, err
+		}
+	}
 	if p.Kind == connections.CouchDB {
 		if err := s.validateCouchDBDraft(p); err != nil {
 			return p, err
@@ -131,6 +136,10 @@ func (s *State) Save() {
 		}
 		if p.Kind == connections.CouchDB && before.CouchDBOptions.Auth != p.CouchDBOptions.Auth && s.connectionPasswordLoadFailed {
 			s.validationError(fieldError("CouchDB 认证方式", "常规", "更改认证方式前请先解锁凭据存储"))
+			return
+		}
+		if p.Kind == connections.Meilisearch && before.MeilisearchOptions.Auth != p.MeilisearchOptions.Auth && s.connectionPasswordLoadFailed {
+			s.validationError(fieldError("Meilisearch 认证方式", "常规", "更改认证方式前请先解锁凭据存储"))
 			return
 		}
 		if p.Kind == connections.Solr && before.SolrOptions.Auth != p.SolrOptions.Auth && s.connectionPasswordLoadFailed {
@@ -219,7 +228,7 @@ func (s *State) Save() {
 			return
 		}
 	}
-	if saved.Kind.IsPostgreSQLFamily() || saved.Kind == connections.CouchDB || saved.Kind == connections.Cassandra || saved.Kind == connections.Solr || saved.Kind == connections.Elasticsearch || saved.Kind == connections.Easysearch || saved.Kind == connections.ClickHouse || saved.Kind == connections.Doris || saved.Kind == connections.StarRocks || saved.Kind == connections.Trino || saved.Kind == connections.SQLServer || saved.Kind == connections.Oracle || saved.Kind == connections.Dameng || saved.Kind == connections.MongoDB || saved.Kind == connections.Redis {
+	if saved.Kind.IsPostgreSQLFamily() || saved.Kind == connections.Meilisearch || saved.Kind == connections.CouchDB || saved.Kind == connections.Cassandra || saved.Kind == connections.Solr || saved.Kind == connections.Elasticsearch || saved.Kind == connections.Easysearch || saved.Kind == connections.ClickHouse || saved.Kind == connections.Doris || saved.Kind == connections.StarRocks || saved.Kind == connections.Trino || saved.Kind == connections.SQLServer || saved.Kind == connections.Oracle || saved.Kind == connections.Dameng || saved.Kind == connections.MongoDB || saved.Kind == connections.Redis {
 		s.connectionMainConfig = s.currentConnectionSnapshot()
 		if err := s.persistConnectionPasswords(saved, before); err != nil {
 			if p.ID == 0 {

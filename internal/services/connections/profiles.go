@@ -30,6 +30,7 @@ const (
 	Solr          Kind = "solr"
 	Cassandra     Kind = "cassandra"
 	CouchDB       Kind = "couchdb"
+	Meilisearch   Kind = "meilisearch"
 	SQLServer     Kind = "sqlserver"
 	DuckDB        Kind = "duckdb"
 	Oracle        Kind = "oracle"
@@ -77,6 +78,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	MeilisearchOptions   MeilisearchOptions
 	CouchDBOptions       CouchDBOptions
 	CassandraOptions     CassandraOptions
 	SolrOptions          SolrOptions

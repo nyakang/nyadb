@@ -11,7 +11,7 @@ import (
 // an omitted/null auth must not fall back to anonymous with a saved password.
 // An empty context_path is valid for the native server root, but must be present.
 func canonicalCouchDBSavedOptions(raw string) bool {
-	if !utf8.ValidString(raw) || !validCouchDBSavedUnicode(raw) {
+	if !utf8.ValidString(raw) || !validNativeSavedUnicode(raw) {
 		return false
 	}
 	var envelope map[string]json.RawMessage
@@ -46,8 +46,8 @@ func canonicalCouchDBSavedOptions(raw string) bool {
 }
 
 // encoding/json silently replaces unpaired escaped UTF-16 surrogates. New
-// CouchDB routing/certificate paths must not change while reading saved JSON.
-func validCouchDBSavedUnicode(raw string) bool {
+// Native routing/certificate paths must not change while reading saved JSON.
+func validNativeSavedUnicode(raw string) bool {
 	for i := 0; i < len(raw); i++ {
 		if raw[i] != '\\' {
 			continue

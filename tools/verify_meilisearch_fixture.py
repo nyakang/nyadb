@@ -26,6 +26,7 @@ REQUIRED = [
     'CanceledOriginalSearchAndWaitClose',
 ]
 SCOPED = 'ScopedKeyPermissionsAndRevocation'
+PROFILE_REQUIRED = ['ProfileURIReopenAndOriginalEditorCheck', 'ProfileProxyContextAndCanceledOriginalCheck', 'EditorLocalizedFormEvidence']
 MODES = ('anonymous', 'bearer', 'tls', 'mtls')
 
 
@@ -45,24 +46,26 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def source_hashes():
+def source_hashes(profile=False):
     paths = sorted((ROOT/'internal/services/meilisearch').glob('*.go')) + sorted((ROOT/'internal/services/connections').glob('*.go')) + [ROOT/'go.mod', ROOT/'go.sum', Path(__file__).resolve(), ROOT/'tests/test_meilisearch_fixture.py']
+    if profile:
+        paths = sorted((ROOT/'internal').rglob('*.go')) + sorted((ROOT/'locales').glob('*.go')) + sorted((ROOT/'locales').glob('*.json')) + [ROOT/'go.mod', ROOT/'go.sum', Path(__file__).resolve(), ROOT/'tests/test_meilisearch_fixture.py']
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 
-def required_passes(mode):
+def required_passes(mode, profile=False):
     if mode not in MODES:
         raise ValueError('Invalid native fixture mode')
-    return REQUIRED + ([] if mode == 'anonymous' else [SCOPED])
+    return REQUIRED + ([] if mode == 'anonymous' else [SCOPED]) + (PROFILE_REQUIRED if profile else [])
 
 
-def test_command(mode, race):
-    selected = '^TestMeilisearchNative(' + '|'.join(required_passes(mode)) + ')$'
-    return ['go', 'test', '-count=1', '-timeout=5m', '-v', *(['-race'] if race else []), '-run', selected, './internal/services/meilisearch']
+def test_command(mode, race, profile=False):
+    selected = '^TestMeilisearchNative(' + '|'.join(required_passes(mode, profile)) + ')$'
+    return ['go', 'test', '-count=1', '-timeout=10m', '-v', *(['-race'] if race else []), '-run', selected, './internal/services/meilisearch', *(['./internal/ui/connectioneditor'] if profile else [])]
 
 
-def check_acceptance(log, mode):
-    for name in required_passes(mode):
+def check_acceptance(log, mode, profile=False):
+    for name in required_passes(mode, profile):
         if not re.search(r'^--- PASS: TestMeilisearchNative'+name+r' \(', log, re.M):
             raise RuntimeError('Missing required native PASS: '+name)
     if re.search(r'^\s*--- (SKIP|FAIL):', log, re.M) or 'WARNING: DATA RACE' in log:
@@ -96,14 +99,14 @@ def certificates(folder, mutual):
         path.chmod(0o600)
 
 
-def verify(mode='tls', race=False):
-    required_passes(mode)
+def verify(mode='tls', race=False, profile=False):
+    required_passes(mode, profile)
     output = ROOT/'build/meilisearch'
     output.mkdir(parents=True, exist_ok=True)
     nonce = uuid.uuid4().hex
     identifier = None
     evidence_path = output/('owned-fixture-'+nonce+'.json')
-    evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode, scope='private_native_transport_tasks_search', status='failed', fixture_cleaned=False, private_files_cleaned=False)
+    evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode, scope='private_profile_uri_vault_editor' if profile else 'private_native_transport_tasks_search', status='failed', fixture_cleaned=False, private_files_cleaned=False)
     try:
         with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
             folder = Path(private)
@@ -147,19 +150,61 @@ def verify(mode='tls', race=False):
                         raise RuntimeError('Native readiness failed; inspect redacted owned server log')
                     time.sleep(0.5)
                 probe = dict(endpoint=endpoint, auth='none' if mode == 'anonymous' else 'bearer', key_file='' if not key else str(folder/'api-key'), ca_file=str(folder/'ca.crt') if context else '', server_name='localhost' if context else '', client_cert_file=str(folder/'client.crt') if mode == 'mtls' else '', client_key_file=str(folder/'client.key') if mode == 'mtls' else '')
+                if profile:
+                    probe.update(connect_timeout_seconds=12, request_timeout_seconds=45)
+                    def request(method, path, body=None):
+                        data = None if body is None else json.dumps(body, ensure_ascii=False).encode()
+                        with urllib.request.urlopen(urllib.request.Request(endpoint+path, data=data, method=method, headers=headers), context=context, timeout=10) as response:
+                            return response.status, json.load(response)
+                    def wait(receipt):
+                        deadline = time.monotonic()+30
+                        while time.monotonic() < deadline:
+                            status, task = request('GET', '/tasks/'+str(receipt['taskUid']))
+                            if status != 200 or task['uid'] != receipt['taskUid']:
+                                raise RuntimeError('Seed task observation changed')
+                            if task['status'] == 'succeeded':
+                                return
+                            if task['status'] in ('failed', 'canceled'):
+                                raise RuntimeError('Seed native task failed')
+                            time.sleep(0.05)
+                        raise RuntimeError('Seed task did not settle')
+                    index_uid = 'owned_profile_'+nonce
+                    status, receipt = request('POST', '/indexes', {'uid':index_uid, 'primaryKey':'id'})
+                    if status != 202:
+                        raise RuntimeError('Seed index admission failed')
+                    wait(receipt)
+                    status, receipt = request('POST', '/indexes/'+index_uid+'/documents', [{'id':'one', 'integer':9007199254740993, 'text':'原生🐱'}])
+                    if status != 202:
+                        raise RuntimeError('Seed document admission failed')
+                    wait(receipt)
+                    probe['fixture_index_uid'] = index_uid
+                    if key:
+                        status, scoped_key = request('POST', '/keys', {'name':'owned-profile-scope', 'actions':['indexes.get','documents.get','search','tasks.get'], 'indexes':[index_uid], 'expiresAt':None})
+                        if status != 201 or not isinstance(scoped_key.get('key'), str):
+                            raise RuntimeError('Seed index-scoped API key failed')
+                        private_write(folder/'scoped-api-key', scoped_key['key'])
+                        private_write(folder/'scoped-probe.json', json.dumps(dict(probe, key_file=str(folder/'scoped-api-key'), index_uid=index_uid))+'\n')
                 private_write(folder/'probe.json', json.dumps(probe)+'\n')
                 env = dict(os.environ, NYADB_MEILISEARCH_IT='1', NYADB_MEILISEARCH_CONFIG=str(folder/'probe.json'))
-                hashes = source_hashes()
+                if profile:
+                    env.update(NYADB_MEILISEARCH_PROFILE_IT='1', NYADB_MEILISEARCH_SCOPED_CONFIG=str(folder/'scoped-probe.json') if key else '', NYADB_MEILISEARCH_PROFILE_IMAGES=str(output/('profile-images-'+nonce)))
+                hashes = source_hashes(profile)
                 logfile = output/('native-'+nonce+'.log')
-                command = test_command(mode, race)
+                command = test_command(mode, race, profile)
                 with logfile.open('w') as log:
-                    result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=330)
-                if hashes != source_hashes():
+                    result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=630)
+                if hashes != source_hashes(profile):
                     raise RuntimeError('Verification sources changed during acceptance; rerun on stable sources')
                 if result.returncode:
                     raise RuntimeError('Native acceptance failed; inspect '+str(logfile.relative_to(ROOT)))
-                check_acceptance(logfile.read_text(), mode)
-                evidence.update(status='passed_with_race' if race else 'passed', observed_identity=identity, source_hashes=hashes, command=command, log=str(logfile.relative_to(ROOT)), log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest(), required_passes=required_passes(mode))
+                check_acceptance(logfile.read_text(), mode, profile)
+                if profile:
+                    images = sorted(Path(env['NYADB_MEILISEARCH_PROFILE_IMAGES']).glob('*.png'))
+                    expected = {language+'-'+str(width)+'-'+auth+'-'+tab+'.png' for language in ['zh-Hans','en'] for width in [900,720] for auth in ['none','bearer'] for tab in ['general','advanced','ssl']}
+                    if {p.name for p in images} != expected:
+                        raise RuntimeError('Missing localized general/advanced/SSL form evidence')
+                    evidence['headless_form_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
+                evidence.update(status='passed_with_race' if race else 'passed', observed_identity=identity, source_hashes=hashes, command=command, log=str(logfile.relative_to(ROOT)), log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest(), required_passes=required_passes(mode, profile))
             finally:
                 if identifier:
                     logs = subprocess.run(['docker', 'logs', identifier], capture_output=True, text=True)
@@ -180,5 +225,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--mode', choices=MODES, default='tls')
     parser.add_argument('--race', action='store_true')
+    parser.add_argument('--profile', action='store_true', help='Verify private URI/options/vault/editor/reopen and original checks')
     options = parser.parse_args()
-    verify(options.mode, options.race)
+    verify(options.mode, options.race, options.profile)

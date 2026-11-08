@@ -12,6 +12,7 @@ import (
 // Keep the existing column and MySQL JSON format. Other engines use an
 // explicit versioned envelope; older empty records receive engine defaults.
 type engineOptionsEnvelope struct {
+	Meilisearch   *connections.MeilisearchOptions   `json:"meilisearch,omitempty"`
 	CouchDB       *connections.CouchDBOptions       `json:"couchdb,omitempty"`
 	Cassandra     *connections.CassandraOptions     `json:"cassandra,omitempty"`
 	Solr          *connections.SolrOptions          `json:"solr,omitempty"`
@@ -36,6 +37,8 @@ type engineOptionsEnvelope struct {
 func encodeProfileOptions(p connections.Profile) (string, error) {
 	var value any
 	switch p.Kind {
+	case connections.Meilisearch:
+		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Meilisearch: &p.MeilisearchOptions}
 	case connections.CouchDB:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, CouchDB: &p.CouchDBOptions}
 	case connections.Cassandra:
@@ -82,6 +85,9 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 }
 func decodeEngineOptions(p *connections.Profile, raw string) error {
 	if raw == "" {
+		if p.Kind == connections.Meilisearch {
+			return connections.ErrInvalid
+		}
 		if p.Kind == connections.CouchDB {
 			return connections.ErrInvalid
 		}
@@ -135,13 +141,25 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 		return nil
 	}
 	var envelope engineOptionsEnvelope
-	if (p.Kind == connections.CouchDB || p.Kind == connections.Cassandra || p.Kind == connections.Solr || p.Kind == connections.Elasticsearch || p.Kind == connections.Easysearch) && !uniqueNativeAuthOptionsJSON(raw) {
+	if (p.Kind == connections.Meilisearch || p.Kind == connections.CouchDB || p.Kind == connections.Cassandra || p.Kind == connections.Solr || p.Kind == connections.Elasticsearch || p.Kind == connections.Easysearch) && !uniqueNativeAuthOptionsJSON(raw) {
 		return connections.ErrInvalid
 	}
 	decoder := json.NewDecoder(strings.NewReader(raw))
 	decoder.DisallowUnknownFields()
 	if len(raw) > 128<<10 || decoder.Decode(&envelope) != nil || decoder.Decode(new(any)) != io.EOF || envelope.Version != 1 || envelope.Kind != p.Kind {
 		return fmt.Errorf("invalid saved engine options")
+	}
+	if p.Kind == connections.Meilisearch {
+		if !canonicalMeilisearchSavedOptions(raw) || envelope.Meilisearch == nil || envelope.Meilisearch.Version != 1 {
+			return connections.ErrInvalid
+		}
+		p.MeilisearchOptions = *envelope.Meilisearch
+		checked, err := connections.NormalizeProfile(*p)
+		*p = checked
+		return err
+	}
+	if envelope.Meilisearch != nil {
+		return connections.ErrInvalid
 	}
 	if p.Kind == connections.CouchDB {
 		if !canonicalCouchDBSavedOptions(raw) || envelope.CouchDB == nil || envelope.CouchDB.Version != 1 || envelope.CouchDB.Auth == "" {
