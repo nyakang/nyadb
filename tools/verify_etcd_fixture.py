@@ -65,7 +65,7 @@ def certificates(folder):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False):
+def verify(mode, race, version, profile=False, session=False):
     image = IMAGES[version]
     nonce = uuid.uuid4().hex
     build = ROOT/'build/etcd'
@@ -76,8 +76,10 @@ def verify(mode, race, version, profile=False):
     if profile:
         sources += [p for folder in ('internal/services/connections', 'internal/storage/localdb', 'internal/ui/connectioneditor', 'locales') for p in (ROOT/folder).glob('*.go')]
         sources += [ROOT/'locales/en.json', ROOT/'locales/zh-Hans.json', ROOT/'internal/ui/shell/connection_engine_files.go', ROOT/'internal/services/dbruntime/providers.go', ROOT/'internal/services/dbruntime/runtime.go', ROOT/'internal/ui/connectioncatalog/catalog.go', ROOT/'internal/services/connections/uri.go']
+    if session:
+        sources += [p for folder in ('internal/db/contract', 'internal/services/dbruntime', 'internal/services/connections') for p in (ROOT/folder).glob('*.go')]
     sources = sorted(set(sources))
-    report = dict(nonce=nonce, scope='private-profile-editor' if profile else 'private-native-v3-foundation', mode=mode, version=version,
+    report = dict(nonce=nonce, scope='private-kv-session-runtime' if session else ('private-profile-editor' if profile else 'private-native-v3-foundation'), mode=mode, version=version,
                   image=image, race=race, passed=False,
                   source_hashes={str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources})
     identifier = None
@@ -151,9 +153,12 @@ def verify(mode, race, version, profile=False):
             if profile:
                 packages.append('./internal/ui/connectioneditor')
                 environment.update(NYADB_ETCD_PROFILE_IT='1', NYADB_ETCD_PROFILE_IMAGES=str(report_path.with_suffix(''))+'-images')
+            if session:
+                packages.append('./internal/services/dbruntime')
+                environment['NYADB_ETCD_SESSION_IT'] = '1'
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
-            command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^TestEtcdNative', '-count=1', '-v', '-timeout=300s']
+            command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^TestEtcdNative', '-count=1', '-v', '-timeout=600s']
             with log_path.open('w') as out:
                 result = subprocess.run(command, cwd=ROOT, env=environment, stdout=out, stderr=subprocess.STDOUT)
             log = log_path.read_text()
@@ -161,6 +166,8 @@ def verify(mode, race, version, profile=False):
                 raise RuntimeError('Native acceptance failed; inspect '+str(log_path.relative_to(ROOT)))
             accepted = re.findall(r'^--- PASS: TestEtcdNative(\w+) \(', log, re.M)
             required = REQUIRED + (('ProfileURIReopenAndOriginalEditorCheck', 'ProfileVaultFailurePreservesOriginalConnection', 'ProfileOriginalCanceledHandshakeAndLateCheck', 'ProfileParkedSuccessDoesNotEnterReplacementDraft', 'EditorLocalizedFormEvidence') if profile else ())
+            if session:
+                required += ('SessionOriginalScopePurePlansAndExactReplies', 'SessionMVCCAndNativePermissionBoundary', 'SessionActualProcessedReplyFaultsAndRecovery', 'SessionOriginalReadBusyCancellationAndClose', 'SessionLateHandshakeClosesOnlyOriginalHandle', 'SessionLeaseLimitsAndRevokedTokenRecovery', 'RuntimeOriginalPublicationSnapshotsAndExplicitRecovery', 'RuntimeActualProcessedPutFaultAndGenerationReplacement', 'RuntimeLateOriginalHandshakeCannotCloseReplacement')
             if sorted(accepted) != sorted(required):
                 raise RuntimeError('Native acceptance has missing or unexpected cases')
             for name, expected in report['source_hashes'].items():
@@ -188,7 +195,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=('anonymous', 'basic', 'tls', 'mtls'), default='basic')
     parser.add_argument('--profile', action='store_true')
+    parser.add_argument('--session', action='store_true')
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile)
+    verify(args.mode, args.race, args.version, args.profile, args.session)
