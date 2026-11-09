@@ -49,6 +49,8 @@ func (fakeSummary) QueryType() nd.QueryType             { return nd.QueryTypeRea
 func (fakeSummary) Counters() nd.Counters               { return fakeCounters{} }
 func (fakeSummary) ResultAvailableAfter() time.Duration { return 3 * time.Millisecond }
 func (fakeSummary) ResultConsumedAfter() time.Duration  { return 7 * time.Millisecond }
+func (fakeSummary) Plan() nd.Plan                       { return nil }
+func (fakeSummary) QueryProfile() nd.QueryProfile       { return nil }
 
 type fakeResult struct {
 	nd.Result

@@ -222,6 +222,14 @@ func (r *neo4jRelay) Close() {
 }
 
 func TestNeo4jNativePublicCypherLostCanceledAndOriginalCloseNeverReplay(t *testing.T) {
+	testNeo4jPublicCypherFaults(t, false)
+}
+
+func TestNeo4jNativePublicStructuredPlansLostCanceledOriginalCloseAndRecoveryNeverReplay(t *testing.T) {
+	testNeo4jPublicCypherFaults(t, true)
+}
+
+func testNeo4jPublicCypherFaults(t *testing.T, profile bool) {
 	f := neo4jWorkbenchFixtureTest(t)
 	admin, e := neo4j.Open(context.Background(), f.Config, f.Secret)
 	if e != nil {
@@ -232,6 +240,9 @@ func TestNeo4jNativePublicCypherLostCanceledAndOriginalCloseNeverReplay(t *testi
 		t.Run(fault, func(t *testing.T) {
 			marker := "nya_" + f.Nonce + "_public_" + fault
 			query := "CREATE (n:NyaFoundation {marker:'" + marker + "',exact:$exact}) RETURN n"
+			if profile {
+				query = "PROFILE " + query
+			}
 			defer neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n:NyaFoundation {marker:$marker}) DETACH DELETE n", Parameters: map[string]any{"marker": marker}})
 			relay := newNeo4jRelay(t, f, query)
 			original := f

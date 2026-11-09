@@ -11,16 +11,18 @@ import (
 )
 
 type executionResult struct {
-	statement string
-	version   uint64
-	origin    int
-	explain   bool
-	plan      *contract.ExecutionPlan
-	planError string
-	request   uint64
-	profileID int64
-	data      contract.SQLResult
-	err       error
+	statement  string
+	version    uint64
+	origin     int
+	explain    bool
+	nativePlan bool
+	plan       *contract.ExecutionPlan
+	planError  string
+	request    uint64
+	profileID  int64
+	lease      Lease
+	data       contract.SQLResult
+	err        error
 }
 
 func (s *State) Run(invalidate func(), t *Document) {
@@ -114,6 +116,7 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 	}
 	t.showOrdinary = false
 	t.planVisible = false
+	t.graphPlanNative, t.graphPlanJSON = false, ""
 	if t.result == nil && len(t.snapshots) == 0 && t.layoutMode == "" {
 		t.focusEditor = true
 	}
@@ -122,6 +125,10 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 	t.result = nil
 	t.err = ""
 	profileID, database := t.profileID, t.database
+	var originalLease Lease
+	if t.cypher() && s.Executor == nil {
+		originalLease = t.lease
+	}
 	resultChan := make(chan executionResult, 1)
 	t.results = resultChan
 	s.report("正在执行 SQL")
@@ -150,14 +157,17 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 		completeHistory(history, result, err, true)
 		var plan *contract.ExecutionPlan
 		planError := ""
-		if explaining && err == nil && parse != nil {
+		nativePlan := result.Graph != nil && (result.Graph.Summary.Plan != nil || result.Graph.Summary.PlanCaptureError != "")
+		if nativePlan && result.Graph.Summary.PlanCaptureError != "" {
+			planError = result.Graph.Summary.PlanCaptureError
+		} else if (explaining && err == nil || nativePlan && result.Graph.Completed) && parse != nil {
 			var e error
 			plan, e = parse(result)
 			if e != nil {
 				planError = e.Error()
 			}
 		}
-		resultChan <- executionResult{statement: statement, version: version, origin: origin, explain: explaining, plan: plan, planError: planError, request: request, profileID: profileID, data: result, err: err}
+		resultChan <- executionResult{statement: statement, version: version, origin: origin, explain: explaining, nativePlan: nativePlan, plan: plan, planError: planError, request: request, profileID: profileID, lease: originalLease, data: result, err: err}
 		if invalidate != nil {
 			invalidate()
 		}
@@ -196,6 +206,7 @@ func (s *State) dispose(t *Document) {
 	s.cancelGraphProperty(t)
 	t.stopGraphExpansion()
 	t.graphJSON = ""
+	t.graphPlanJSON, t.graphPlanNative = "", false
 	if t.graphVisual != nil {
 		t.graphVisual.release()
 	}
@@ -290,10 +301,27 @@ func (s *State) Consume() {
 		if t.results == nil {
 			continue
 		}
+		if t.cypher() && !s.active(t) {
+			continue
+		}
 		select {
 		case r := <-t.results:
 			if r.request != t.request || r.profileID != t.profileID {
 				continue
+			}
+			if r.lease != nil {
+				var stale error
+				if t.lease != r.lease {
+					stale = contract.ErrRevoked
+				} else if status, ok := r.lease.(contract.QueryLeaseStatus); ok {
+					stale = status.CheckQueryLease()
+				}
+				if stale != nil {
+					// Keep the original completion, including confirmed PROFILE
+					// writes. It does not establish a usable replacement lease.
+					r.err = errors.Join(r.err, stale)
+					r.plan, r.planError = nil, stale.Error()
+				}
 			}
 			if t.cancel != nil {
 				t.cancel()
@@ -304,7 +332,7 @@ func (s *State) Consume() {
 			canceled := t.cancelRequested
 			t.cancelRequested = false
 			s.acceptQueryDiagnostic(t, r)
-			if r.explain {
+			if r.explain || r.nativePlan {
 				if r.err != nil {
 					t.planError = r.err.Error()
 					t.explainReading = &resultReading{Views: map[int]*resultView{}}

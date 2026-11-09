@@ -325,6 +325,10 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 		ui.Text(c, locales.Text(t.err)).TextColor(theme.Colors(c).Error).SingleLine().Tooltip(locales.Text(t.err))
 	}
 	s.planNavigation(c, t)
+	if t.graphPlanNative {
+		s.graphPlanNativeView(c, t)
+		return
+	}
 	if t.planVisible && t.plan != nil && !t.showOrdinary {
 		s.planView(c, t)
 		return

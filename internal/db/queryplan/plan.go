@@ -83,6 +83,9 @@ func numeric(v any) *float64 {
 	return &n
 }
 func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, error) {
+	if engine == "neo4j" {
+		return parseNeo4j(result)
+	}
 	if engine == "trino" {
 		return parseTrino(result)
 	}

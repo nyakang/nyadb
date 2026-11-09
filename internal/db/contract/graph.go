@@ -48,6 +48,8 @@ type GraphQueryRequest struct {
 	MaxRows, MaxBytes, FetchSize, TimeoutSeconds int
 }
 type GraphSummary struct {
+	Plan                          *GraphExecutionPlan
+	PlanCaptureError              string
 	Server                        GraphServer
 	Database, QueryType           string
 	Counters                      map[string]int64
@@ -124,6 +126,7 @@ func (r GraphResult) Clone() GraphResult {
 	}
 	r.Summary.Counters = counters
 	r.Summary.Bookmarks = slices.Clone(r.Summary.Bookmarks)
+	r.Summary.Plan = r.Summary.Plan.Clone()
 	return r
 }
 

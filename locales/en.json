@@ -3058,5 +3058,19 @@
   "graphExchangeNamespaceExpired": "The original database session has expired; close and reopen this document",
   "graphExchangeSourcePath": "Source file path",
   "graphExchangeReadSource": "Read graph exchange file",
-  "graphExchangeExportWizard": "Export Wizard…"
+  "graphExchangeExportWizard": "Export Wizard…",
+  "graphPlanNative": "Native plan",
+  "graphPlanCopy": "Copy complete native plan",
+  "graphPlanExport": "Export complete native plan",
+  "graphPlanJSON": "Native plan JSON",
+  "graphPlanBound": "Native plan export exceeds the 16 MiB limit",
+  "graphPlanCaptureFailed": "The native plan cannot be fully displayed; the original completion receipt and query results are retained",
+  "graphPlanSourceHint": "The plan retains the original query, parameters and completion receipt; viewing, copying or exporting does not execute the query.",
+  "graphPlanPreviewBound": "Display is limited to 256 KiB; copy or export retains the complete native plan",
+  "graphPlanActualRows": "Actual rows",
+  "graphPlanDbHits": "DB hits",
+  "graphPlanCacheHits": "Page cache hits",
+  "graphPlanCacheMisses": "Page cache misses",
+  "graphPlanCacheRatio": "Page cache hit ratio",
+  "graphPlanTime": "Native time"
 }

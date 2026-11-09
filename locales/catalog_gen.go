@@ -31227,3 +31227,143 @@ func GraphExchangeExportWizard() string { return In(i18n.Locale()).GraphExchange
 func (msgs Messages) GraphExchangeExportWizard() string {
 	return Catalog.Format(msgs.locale, "graphExchangeExportWizard", nil)
 }
+
+// GraphPlanNative says "原生计划"
+// in the language the app shows.
+func GraphPlanNative() string { return In(i18n.Locale()).GraphPlanNative() }
+
+// GraphPlanNative says "原生计划"
+// in the language of msgs.
+func (msgs Messages) GraphPlanNative() string {
+	return Catalog.Format(msgs.locale, "graphPlanNative", nil)
+}
+
+// GraphPlanCopy says "复制完整原生计划"
+// in the language the app shows.
+func GraphPlanCopy() string { return In(i18n.Locale()).GraphPlanCopy() }
+
+// GraphPlanCopy says "复制完整原生计划"
+// in the language of msgs.
+func (msgs Messages) GraphPlanCopy() string {
+	return Catalog.Format(msgs.locale, "graphPlanCopy", nil)
+}
+
+// GraphPlanExport says "导出完整原生计划"
+// in the language the app shows.
+func GraphPlanExport() string { return In(i18n.Locale()).GraphPlanExport() }
+
+// GraphPlanExport says "导出完整原生计划"
+// in the language of msgs.
+func (msgs Messages) GraphPlanExport() string {
+	return Catalog.Format(msgs.locale, "graphPlanExport", nil)
+}
+
+// GraphPlanJSON says "原生计划 JSON"
+// in the language the app shows.
+func GraphPlanJSON() string { return In(i18n.Locale()).GraphPlanJSON() }
+
+// GraphPlanJSON says "原生计划 JSON"
+// in the language of msgs.
+func (msgs Messages) GraphPlanJSON() string {
+	return Catalog.Format(msgs.locale, "graphPlanJSON", nil)
+}
+
+// GraphPlanBound says "原生计划导出超过 16 MiB 限制"
+// in the language the app shows.
+func GraphPlanBound() string { return In(i18n.Locale()).GraphPlanBound() }
+
+// GraphPlanBound says "原生计划导出超过 16 MiB 限制"
+// in the language of msgs.
+func (msgs Messages) GraphPlanBound() string {
+	return Catalog.Format(msgs.locale, "graphPlanBound", nil)
+}
+
+// GraphPlanCaptureFailed says "原生计划无法完整显示；原执行回执和查询结果仍保留"
+// in the language the app shows.
+func GraphPlanCaptureFailed() string { return In(i18n.Locale()).GraphPlanCaptureFailed() }
+
+// GraphPlanCaptureFailed says "原生计划无法完整显示；原执行回执和查询结果仍保留"
+// in the language of msgs.
+func (msgs Messages) GraphPlanCaptureFailed() string {
+	return Catalog.Format(msgs.locale, "graphPlanCaptureFailed", nil)
+}
+
+// GraphPlanSourceHint says "计划保留原执行的查询、参数和回执；查看、复制或导出不会执行查询。"
+// in the language the app shows.
+func GraphPlanSourceHint() string { return In(i18n.Locale()).GraphPlanSourceHint() }
+
+// GraphPlanSourceHint says "计划保留原执行的查询、参数和回执；查看、复制或导出不会执行查询。"
+// in the language of msgs.
+func (msgs Messages) GraphPlanSourceHint() string {
+	return Catalog.Format(msgs.locale, "graphPlanSourceHint", nil)
+}
+
+// GraphPlanPreviewBound says "展示限制 256 KiB；复制或导出保留完整原生计划"
+// in the language the app shows.
+func GraphPlanPreviewBound() string { return In(i18n.Locale()).GraphPlanPreviewBound() }
+
+// GraphPlanPreviewBound says "展示限制 256 KiB；复制或导出保留完整原生计划"
+// in the language of msgs.
+func (msgs Messages) GraphPlanPreviewBound() string {
+	return Catalog.Format(msgs.locale, "graphPlanPreviewBound", nil)
+}
+
+// GraphPlanActualRows says "实际行数"
+// in the language the app shows.
+func GraphPlanActualRows() string { return In(i18n.Locale()).GraphPlanActualRows() }
+
+// GraphPlanActualRows says "实际行数"
+// in the language of msgs.
+func (msgs Messages) GraphPlanActualRows() string {
+	return Catalog.Format(msgs.locale, "graphPlanActualRows", nil)
+}
+
+// GraphPlanDbHits says "数据库命中"
+// in the language the app shows.
+func GraphPlanDbHits() string { return In(i18n.Locale()).GraphPlanDbHits() }
+
+// GraphPlanDbHits says "数据库命中"
+// in the language of msgs.
+func (msgs Messages) GraphPlanDbHits() string {
+	return Catalog.Format(msgs.locale, "graphPlanDbHits", nil)
+}
+
+// GraphPlanCacheHits says "页缓存命中"
+// in the language the app shows.
+func GraphPlanCacheHits() string { return In(i18n.Locale()).GraphPlanCacheHits() }
+
+// GraphPlanCacheHits says "页缓存命中"
+// in the language of msgs.
+func (msgs Messages) GraphPlanCacheHits() string {
+	return Catalog.Format(msgs.locale, "graphPlanCacheHits", nil)
+}
+
+// GraphPlanCacheMisses says "页缓存未命中"
+// in the language the app shows.
+func GraphPlanCacheMisses() string { return In(i18n.Locale()).GraphPlanCacheMisses() }
+
+// GraphPlanCacheMisses says "页缓存未命中"
+// in the language of msgs.
+func (msgs Messages) GraphPlanCacheMisses() string {
+	return Catalog.Format(msgs.locale, "graphPlanCacheMisses", nil)
+}
+
+// GraphPlanCacheRatio says "页缓存命中率"
+// in the language the app shows.
+func GraphPlanCacheRatio() string { return In(i18n.Locale()).GraphPlanCacheRatio() }
+
+// GraphPlanCacheRatio says "页缓存命中率"
+// in the language of msgs.
+func (msgs Messages) GraphPlanCacheRatio() string {
+	return Catalog.Format(msgs.locale, "graphPlanCacheRatio", nil)
+}
+
+// GraphPlanTime says "原生耗时"
+// in the language the app shows.
+func GraphPlanTime() string { return In(i18n.Locale()).GraphPlanTime() }
+
+// GraphPlanTime says "原生耗时"
+// in the language of msgs.
+func (msgs Messages) GraphPlanTime() string {
+	return Catalog.Format(msgs.locale, "graphPlanTime", nil)
+}

@@ -293,7 +293,7 @@ checks immutable container ID and nonce labels. Evidence and sanitized logs stay
 under ignored `build/neo4j/`.
 
 Relationship creation, graph import, extended-type lists,
-structured Cypher plans, administration/RBAC, Enterprise/cluster validation and
+administration/RBAC, Enterprise/cluster validation and
 full database archives and other versions remain future work. Their capabilities are not inferred from a
 successful Community connection or the ability to execute arbitrary Cypher.
 
@@ -458,7 +458,7 @@ and English endpoint inputs, observations, draft/preview/receipt and close contr
 are captured at 1280x800 and 720x520. See the public relationship report for final
 source hashes, test results and screenshots.
 
-Full archives, plans, RBAC and other
+Full archives, RBAC and other
 version, Enterprise/cluster and full reference scope remain pending.
 
 
@@ -546,3 +546,30 @@ Run `python3 tools/verify_neo4j_fixture.py --graph-namespace --race --mode MODE`
 prior complete graph import/grid regression. Each fresh owned empty-database
 parent runs before later graph fixtures, without clearing arbitrary existing data.
 See [database namespace acceptance](../../../docs/neo4j-graph-namespace-2026-11-10.md).
+
+
+Native EXPLAIN/PROFILE summaries now carry an immutable neutral graph plan with
+original query/typed parameters, operator arguments/identifiers/child order and
+optional recorded metrics. The shared SQL plan view projects native structure;
+exact int64 rows/hits/cache/time remain separate from floating-point estimates
+and optimizer cost. Nil metrics remain unrecorded, while recorded zero remains
+zero. Driver profile Time is retained in nanoseconds. No later execution is used
+to populate the plan. The optimizer's own parameterization/branch order is kept.
+
+PROFILE executes the source query once; EXPLAIN does not execute its underlying
+write. Display, original JSON copy/export and independent snapshots read captured
+values only. Plan bounds/projection errors preserve confirmed completion,
+counters/bookmarks and retained query rows. Row truncation is independent of a
+complete plan. Capture shares the query's default 16 MiB budget, with 4096 nodes
+and depth 64; native JSON display is capped at 256 KiB. Snapshot budgets include
+both the raw plan and the projected tree. Parked completions wait for activation;
+UI publication checks the original query lease and retains confirmed old evidence
+without admitting a replacement lease. Cancel waits for original acknowledgement,
+and close/recovery never replay PROFILE or replace its completion receipt.
+
+Use `python3 tools/verify_neo4j_fixture.py --structured-plans --race --mode MODE`
+for six mandatory native parents and 32 localized wide/narrow plan/workbench
+images per anonymous/basic/TLS/mTLS mode, including original SUMMARY observation,
+real PROFILE write bounds, truncated rows, actual reply loss, cancellation,
+original close/recovery and parked generation replacement.
+See [native structured plans](../../../docs/neo4j-structured-plans-2026-11-10.md).

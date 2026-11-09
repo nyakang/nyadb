@@ -68,6 +68,8 @@ type ProfileChoice struct {
 type Document struct {
 	graphParameters               string
 	graphOptionsOpen, graphNative bool
+	graphPlanNative               bool
+	graphPlanJSON                 string
 	graphJSON                     string
 	graphVisualOpen               bool
 	graphVisual                   *graphVisualState

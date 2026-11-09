@@ -44,6 +44,10 @@ func (d *Document) showOrdinaryResult(show bool) {
 	d.showOrdinary = show
 }
 func (s *State) planNavigation(c *ui.Context, d *Document) {
+	if d.cypher() {
+		s.graphPlanNavigation(c, d)
+		return
+	}
 	if d.explainReading == nil && d.plan == nil && d.planError == "" {
 		return
 	}
@@ -78,7 +82,14 @@ func (s *State) planView(c *ui.Context, d *Document) {
 				if node.Cost != nil {
 					cost = fmt.Sprintf("%g", *node.Cost)
 				}
-				ui.Text(c, locales.Text("估算行数")+": "+rows+" · "+locales.Text("成本")+": "+cost).TextColor(theme.Colors(c).Muted)
+				text := locales.Text("估算行数") + ": " + rows
+				if d.plan.Engine != "neo4j" {
+					text += " · " + locales.Text("成本") + ": " + cost
+				}
+				ui.Text(c, text).TextColor(theme.Colors(c).Muted)
+				for _, metric := range node.Metrics {
+					ui.Text(c, nativeMetricLabel(metric.Name)+": "+nativeMetricText(metric)).TextColor(theme.Colors(c).Muted)
+				}
 				if node.Detail != "" {
 					ui.Text(c, node.Detail)
 				}

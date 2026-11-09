@@ -3058,5 +3058,19 @@
   "graphExchangeNamespaceExpired": "原数据库会话已失效，请关闭文档后重新打开",
   "graphExchangeSourcePath": "源文件路径",
   "graphExchangeReadSource": "读取图交换文件",
-  "graphExchangeExportWizard": "导出向导…"
+  "graphExchangeExportWizard": "导出向导…",
+  "graphPlanNative": "原生计划",
+  "graphPlanCopy": "复制完整原生计划",
+  "graphPlanExport": "导出完整原生计划",
+  "graphPlanJSON": "原生计划 JSON",
+  "graphPlanBound": "原生计划导出超过 16 MiB 限制",
+  "graphPlanCaptureFailed": "原生计划无法完整显示；原执行回执和查询结果仍保留",
+  "graphPlanSourceHint": "计划保留原执行的查询、参数和回执；查看、复制或导出不会执行查询。",
+  "graphPlanPreviewBound": "展示限制 256 KiB；复制或导出保留完整原生计划",
+  "graphPlanActualRows": "实际行数",
+  "graphPlanDbHits": "数据库命中",
+  "graphPlanCacheHits": "页缓存命中",
+  "graphPlanCacheMisses": "页缓存未命中",
+  "graphPlanCacheRatio": "页缓存命中率",
+  "graphPlanTime": "原生耗时"
 }

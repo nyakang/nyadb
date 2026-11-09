@@ -11,6 +11,21 @@ SPEC.loader.exec_module(FIXTURE)
 
 
 class Neo4jFixtureOwnershipTests(unittest.TestCase):
+    def test_structured_plans_require_native_completion_public_lifecycle_and_each_localized_view(self):
+        names = FIXTURE.STRUCTURED_PLAN_REQUIRED
+        self.assertEqual(len(names), 6)
+        self.assertEqual(len(names), len(set(names)))
+        passed = '\n'.join('--- PASS: TestNeo4jNative'+name+' (0.01s)' for name in names)
+        FIXTURE.check_acceptance(passed, structured_plans=True)
+        for name in names:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), structured_plans=True)
+        pictures = [Path(language+'-'+size+'-'+stage+'.png') for language in ('zh-Hans', 'en') for size in ('1280x800', '720x520') for stage in FIXTURE.STRUCTURED_PLAN_STAGES]
+        FIXTURE.check_stage_images(pictures, FIXTURE.STRUCTURED_PLAN_STAGES)
+        for index in range(len(pictures)):
+            with self.subTest(missing=pictures[index]), self.assertRaises(RuntimeError):
+                FIXTURE.check_stage_images(pictures[:index]+pictures[index+1:], FIXTURE.STRUCTURED_PLAN_STAGES)
+
     def test_graph_namespace_requires_fresh_empty_database_entry_full_graph_and_lifecycle(self):
         names = FIXTURE.GRAPH_NAMESPACE_REQUIRED
         self.assertEqual(len(names), 19)

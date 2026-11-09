@@ -52,6 +52,8 @@ func (s *State) pinResult(d *Document) bool {
 		return false
 	}
 	n := resultSnapshotSize(d.result) + int64(len(d.executedSQL))
+	planBytes, _ := json.Marshal(d.plan)
+	n += int64(len(planBytes))
 	n += int64(d.graphPropertyBytes)
 	if d.graphVisual != nil {
 		n += int64(d.graphVisual.observationBytes)
@@ -73,6 +75,8 @@ func (s *State) pinResult(d *Document) bool {
 	}
 	x := &Document{commandDialect: d.commandDialect, snapshotOwner: d, id: d.id, name: d.Name(), profileID: d.profileID, database: d.database, catalog: d.catalog, namespaceSchema: d.namespaceSchema}
 	x.setResult(r)
+	x.plan, x.planError, x.planVisible = d.plan.Clone(), d.planError, d.planVisible
+	x.graphPlanNative = d.graphPlanNative
 	if d.graphVisual != nil {
 		x.graphVisualState().cloneReading(d.graphVisual)
 	}
@@ -84,6 +88,7 @@ func (s *State) pinResult(d *Document) bool {
 	d.nextSnapshot++
 	x.name = fmt.Sprintf("%s-%d", d.Name(), d.nextSnapshot)
 	bytes := resultSnapshotSize(r) + int64(len(d.executedSQL))
+	bytes += int64(len(planBytes))
 	bytes += int64(x.graphPropertyBytes)
 	if x.graphVisual != nil {
 		bytes += int64(x.graphVisual.observationBytes)
@@ -110,6 +115,7 @@ func (d *Document) removeSnapshot(index int) {
 	x.selection.Clear()
 	x.hiddenResultColumns = nil
 	x.result = nil
+	x.plan, x.graphPlanJSON = nil, ""
 	x.resultViews = nil
 	x.grid = ui.ListState{}
 	d.snapshots = append(d.snapshots[:index], d.snapshots[index+1:]...)

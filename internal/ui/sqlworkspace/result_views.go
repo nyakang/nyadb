@@ -90,6 +90,7 @@ func (d *Document) setResult(result *contract.SQLResult) {
 	d.rememberResultLayouts()
 	d.stopGraphExpansion()
 	d.graphJSON = ""
+	d.graphPlanJSON, d.graphPlanNative = "", false
 	if d.graphVisual != nil {
 		d.graphVisual.release()
 	}

@@ -382,6 +382,11 @@ func (c *Client) Execute(parent context.Context, p Plan) (response Response, err
 	if db := summary.Database(); db != nil {
 		response.Summary.Database = db.Name()
 	}
+	response.Summary.Plan, e = captureNativePlan(summary, &budget, retained, p)
+	if e != nil {
+		response.Summary.PlanCaptureError = e.Error()
+		captureErr = errors.Join(captureErr, e)
+	}
 	c.mu.Lock()
 	c.bookmarks = slices.Clone(response.Summary.Bookmarks)
 	c.mu.Unlock()
