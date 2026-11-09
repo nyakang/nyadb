@@ -30,7 +30,7 @@ SESSION_REQUIRED = ('SessionQualifiedMetadataAndOriginalDatabase', 'SessionTyped
 
 PUBLIC_REQUIRED = ("PublicRuntimeQualifiedGraphAndGeneration", "PublicCypherLostCanceledAndOriginalCloseNeverReplay", "PublicChooserReopenNavigationCypherAndLocalizedResults")
 DATA_REQUIRED = ('DataQualifiedNodesRelationshipsAndCursor', 'DataOriginalFingerprintsFieldsAndExport', 'DataCancellationOriginalCloseAndNoReplay')
-GRID_REQUIRED = ('PublicDataSharedGridPagingInspectorExportParkGenerationAndClose', 'PublicDataLostCanceledOriginalCloseAndExplicitReopen')
+GRID_REQUIRED = ('PublicDataSharedGridPagingInspectorExportParkGenerationAndClose', 'PublicDataLostCanceledOriginalCloseAndExplicitReopen', 'PublicDataPropertyColumnsAndOriginalFields')
 
 def remove_owned(identifier, nonce):
     if not re.fullmatch('[0-9a-f]{64}', identifier):
@@ -217,7 +217,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
                     raise RuntimeError('Missing localized Neo4j workbench screenshots')
                 report['public_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             if grid:
-                for field, variable, count in [('grid_images', 'NYADB_NEO4J_GRID_IMAGES', 12), ('shell_grid_images', 'NYADB_NEO4J_SHELL_GRID_IMAGES', 8)]:
+                for field, variable, count in [('grid_images', 'NYADB_NEO4J_GRID_IMAGES', 24), ('shell_grid_images', 'NYADB_NEO4J_SHELL_GRID_IMAGES', 8)]:
                     pictures = sorted(Path(env[variable]).rglob('*.png'))
                     if len(pictures) != count:
                         raise RuntimeError('Missing localized public graph data screenshots: '+field)

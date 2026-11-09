@@ -2854,5 +2854,6 @@
   "neo4jLastDataCypher": "上次成功 Cypher（参数化）：",
   "neo4jDataCypher": "参数化 Cypher：",
   "neo4jRangeJSONL": "限定图数据导出为 JSONL（忽略当前页）",
-  "nativeCursorKnownPageOnly": "原生游标仅支持已读取页或下一页"
+  "nativeCursorKnownPageOnly": "原生游标仅支持已读取页或下一页",
+  "missingGraphProperty": "属性不存在"
 }

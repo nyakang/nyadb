@@ -43,7 +43,8 @@ func (s *State) recordForm(c *ui.Context, t *Document) {
 		}
 		ui.Scroll(c).Grow(1).MinHeight(0).Children(func() {
 			ui.Column(c).Padding(8).Gap(8).Children(func() {
-				for source, name := range t.page.Columns {
+				for _, source := range recordFormColumnOrder(t) {
+					name := t.page.Columns[source]
 					if source >= len(t.page.Rows[row]) {
 						continue
 					}
@@ -84,7 +85,7 @@ func (s *State) recordForm(c *ui.Context, t *Document) {
 							if cell.Null {
 								text = "NULL"
 							}
-							ui.Text(c, text).MaxHeight(70).Tooltip(text)
+							ui.Text(c, text).MaxLines(4).MaxHeight(70).Clip().Tooltip(text)
 							if cell.Truncated {
 								ui.Text(c, locales.Text("此处是字段预览；编辑时读取完整字段")).TextColor(p.Muted)
 							}
@@ -97,4 +98,25 @@ func (s *State) recordForm(c *ui.Context, t *Document) {
 			ui.Text(c, t.edit.Err).TextColor(p.Error)
 		}
 	})
+}
+
+func recordFormColumnOrder(t *Document) []int {
+	byName := make(map[string]int, len(t.page.Columns))
+	for index, name := range t.page.Columns {
+		byName[name] = index
+	}
+	indices := make([]int, 0, len(t.page.Columns))
+	for _, name := range t.grid.Columns.Order {
+		if index, exists := byName[name]; exists {
+			indices = append(indices, index)
+			delete(byName, name)
+		}
+	}
+	for index, name := range t.page.Columns {
+		if _, exists := byName[name]; exists {
+			indices = append(indices, index)
+			delete(byName, name)
+		}
+	}
+	return indices
 }

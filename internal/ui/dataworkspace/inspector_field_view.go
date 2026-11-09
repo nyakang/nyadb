@@ -111,6 +111,9 @@ func (s *inspectorState) FieldView(c *ui.Context, t *Panel) {
 					if nativeCQL {
 						nullLabel = locales.Text("原生 NULL")
 					}
+					if selection.Page.Object.Kind == "label" || selection.Page.Object.Kind == "relationship" {
+						nullLabel = locales.Text("属性不存在")
+					}
 					theme.Property(c, "值状态", nullLabel)
 				} else if cell.Truncated {
 					theme.Property(c, "值状态", locales.Text("已截断的预览"))

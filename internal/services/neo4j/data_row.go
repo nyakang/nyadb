@@ -15,6 +15,7 @@ import (
 type graphDataIdentity struct {
 	Object                            contract.ObjectRef
 	ElementID, Fingerprint, Signature string
+	Properties                        []graphPropertyColumn
 }
 
 func cloneRowRef(r contract.RowRef) contract.RowRef {
@@ -34,7 +35,7 @@ func fingerprint(v any) string {
 	h := sha256.Sum256(raw)
 	return hex.EncodeToString(h[:])
 }
-func (l *dataLease) project(v Value) ([]contract.Cell, error) {
+func (l *dataLease) project(v Value, projection []graphPropertyColumn) ([]contract.Cell, error) {
 	id, e := l.entityID(v)
 	if e != nil {
 		return nil, e
@@ -66,58 +67,90 @@ func (l *dataLease) project(v Value) ([]contract.Cell, error) {
 	if e != nil {
 		return nil, e
 	}
-	return append(out, x), nil
+	out = append(out, x)
+	byName := make(map[string]Value, len(properties))
+	for _, property := range properties {
+		byName[property.Name] = property.Value
+	}
+	for _, property := range projection {
+		value, exists := byName[property.Key]
+		if !exists {
+			out = append(out, contract.Cell{Kind: contract.Null})
+			continue
+		}
+		cell, err := nativePropertyCell(value)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, cell)
+	}
+	return out, nil
 }
-func (l *dataLease) snapshot(v Value, cells []contract.Cell) (*contract.RowSnapshot, error) {
+func (l *dataLease) snapshot(v Value, projection []graphPropertyColumn, cells []contract.Cell) (*contract.RowSnapshot, error) {
 	id, e := l.entityID(v)
 	if e != nil {
 		return nil, e
 	}
-	i := graphDataIdentity{Object: l.object, ElementID: id, Fingerprint: fingerprint(v)}
+	i := graphDataIdentity{Object: l.object, ElementID: id, Fingerprint: fingerprint(v), Properties: cloneGraphProjection(projection)}
 	i.Signature = l.sign(i)
 	raw, e := json.Marshal(i)
 	if e != nil {
 		return nil, e
 	}
 	s := &contract.RowSnapshot{Mode: "fingerprints", Metadata: i.Signature, Ref: contract.RowRef{Object: l.object, Database: l.object.Catalog, Table: l.object.Name, Columns: []string{"_neo4j_entity_identity"}, Values: [][]byte{raw}, TypedValues: []contract.Cell{{Kind: contract.Text, Text: id}}}}
-	for n, c := range l.columns() {
+	for n, c := range graphColumns(l.object.Kind, projection) {
 		s.Columns = append(s.Columns, c.Name)
+		if cells[n].Kind == contract.Null {
+			s.Fingerprints = append(s.Fingerprints, nil)
+			continue
+		}
 		f := fingerprint(cells[n])
 		s.Fingerprints = append(s.Fingerprints, &f)
 	}
 	return s, nil
 }
-func (l *dataLease) preview(v Value, budget *int) ([]contract.DataCell, *contract.RowSnapshot, error) {
-	cells, e := l.project(v)
+func (l *dataLease) preview(v Value, projection []graphPropertyColumn, budget *int) ([]contract.DataCell, *contract.RowSnapshot, error) {
+	cells, e := l.project(v, projection)
 	if e != nil {
 		return nil, nil, e
 	}
-	s, e := l.snapshot(v, cells)
+	s, e := l.snapshot(v, projection, cells)
 	if e != nil {
 		return nil, nil, e
 	}
 	*budget -= len(s.Ref.Values[0])*2 + len(s.Fingerprints)*128 + 256
 	out := make([]contract.DataCell, len(cells))
 	for i, c := range cells {
-		runes := []rune(c.Text)
-		if len(runes) > 1024 {
-			c.Text = string(runes[:1024])
-			c.Truncated = true
+		if c.Kind == contract.Binary {
+			if len(c.Bytes) > 1024 {
+				c.Bytes = bytes.Clone(c.Bytes[:1024])
+				c.Truncated = true
+			}
+		} else {
+			runes := []rune(c.Text)
+			if len(runes) > 1024 {
+				c.Text = string(runes[:1024])
+				c.Truncated = true
+			}
 		}
-		*budget -= len(c.Text)*2 + 256
+		text := c.Text
+		if c.Kind == contract.Binary {
+			text = hex.EncodeToString(c.Bytes)
+		}
+		*budget -= len(text) + len(c.Text) + len(c.Bytes) + 256
 		if *budget < 0 {
 			return nil, nil, ErrBounds
 		}
-		out[i] = contract.DataCell{Text: c.Text, Value: &c, Truncated: c.Truncated}
+		out[i] = contract.DataCell{Text: text, Value: &c, Truncated: c.Truncated, Null: c.Kind == contract.Null}
 	}
 	return out, s, nil
 }
 func (l *dataLease) decodeRef(r contract.RowRef) (graphDataIdentity, error) {
 	var i graphDataIdentity
-	if r.Object != l.object || r.Database != l.object.Catalog || r.Table != l.object.Name || !slices.Equal(r.Columns, []string{"_neo4j_entity_identity"}) || len(r.Values) != 1 || len(r.Values[0]) > 16384 || len(r.TypedValues) != 1 {
+	if r.Object != l.object || r.Database != l.object.Catalog || r.Table != l.object.Name || !slices.Equal(r.Columns, []string{"_neo4j_entity_identity"}) || len(r.Values) != 1 || len(r.Values[0]) > (128<<10) || len(r.TypedValues) != 1 {
 		return i, ErrInvalid
 	}
-	if json.Unmarshal(r.Values[0], &i) != nil || i.Object != l.object || !validDatabase(i.ElementID) || len(i.Fingerprint) != 64 {
+	if json.Unmarshal(r.Values[0], &i) != nil || i.Object != l.object || !validDatabase(i.ElementID) || len(i.Fingerprint) != 64 || !graphProjectionValid(i.Properties, len(graphColumns(l.object.Kind, nil))) {
 		return i, ErrInvalid
 	}
 	sig := i.Signature
@@ -167,7 +200,8 @@ func (l *dataLease) readRow(ctx context.Context, id int64, db, name string, r co
 	}
 	defer done()
 	// Reject forged/foreign identities before opening any original client.
-	if _, e = l.decodeRef(r); e != nil {
+	i, e := l.decodeRef(r)
+	if e != nil {
 		return nil, e
 	}
 	c, closeClient, e := l.client(ctx)
@@ -179,17 +213,17 @@ func (l *dataLease) readRow(ctx context.Context, id int64, db, name string, r co
 	if e != nil {
 		return nil, e
 	}
-	cells, e := l.project(v)
+	cells, e := l.project(v, i.Properties)
 	if e != nil {
 		return nil, e
 	}
-	s, e := l.snapshot(v, cells)
+	s, e := l.snapshot(v, i.Properties, cells)
 	if e != nil {
 		return nil, e
 	}
 	s.Mode = "values"
 	s.Fingerprints = nil
-	out := &contract.DataRow{Columns: l.columns(), Values: map[string]contract.DataValue{}, Snapshot: s}
+	out := &contract.DataRow{Columns: graphColumns(l.object.Kind, i.Properties), Values: map[string]contract.DataValue{}, Snapshot: s}
 	budget := 16 << 20
 	for i, c := range cells {
 		if !large && len(c.Text)+len(c.Bytes) > 1<<20 {
@@ -199,7 +233,7 @@ func (l *dataLease) readRow(ctx context.Context, id int64, db, name string, r co
 		if budget < 0 {
 			return nil, ErrBounds
 		}
-		out.Values[out.Columns[i].Name] = contract.DataValue{Kind: c.Kind, Text: c.Text, Bytes: bytes.Clone(c.Bytes)}
+		out.Values[out.Columns[i].Name] = contract.DataValue{Kind: c.Kind, Text: c.Text, Bytes: bytes.Clone(c.Bytes), Null: c.Kind == contract.Null, Binary: c.Kind == contract.Binary}
 		s.Original = append(s.Original, c.Clone())
 	}
 	return out, ctx.Err()
@@ -212,10 +246,15 @@ func (l *dataLease) row(ctx context.Context, id int64, db, name string, r contra
 // original entity fingerprint. The explicit presentation chunk is at most 1024
 // characters; this does not promise a bounded driver allocation or atomic CAS.
 func (l *dataLease) chunk(ctx context.Context, id int64, db, name, field string, r contract.RowRef, offset int64, units int) (*contract.FieldChunk, error) {
+	r = cloneRowRef(r)
 	if offset < 0 || units < 1 || units > 1024 {
 		return nil, ErrBounds
 	}
-	if !slices.ContainsFunc(l.columns(), func(c contract.StructureColumn) bool { return c.Name == field }) {
+	identity, e := l.decodeRef(r)
+	if e != nil {
+		return nil, e
+	}
+	if !slices.ContainsFunc(graphColumns(l.object.Kind, identity.Properties), func(c contract.StructureColumn) bool { return c.Name == field }) {
 		return nil, contract.ErrUnsupported
 	}
 	row, e := l.readRow(ctx, id, db, name, r, true)
@@ -223,9 +262,22 @@ func (l *dataLease) chunk(ctx context.Context, id int64, db, name, field string,
 		return nil, e
 	}
 	v := row.Values[field]
+	out := &contract.FieldChunk{Offset: offset, Null: v.Null, Binary: v.Binary}
+	if v.Null {
+		return out, nil
+	}
+	if v.Binary {
+		out.TotalUnits = int64(len(v.Bytes))
+		start := min(offset, out.TotalUnits)
+		end := min(start+int64(units), out.TotalUnits)
+		out.Text = hex.EncodeToString(v.Bytes[start:end])
+		out.NextOffset, out.HasMore = end, end < out.TotalUnits
+		return out, nil
+	}
 	runes := []rune(v.Text)
 	total := int64(len(runes))
 	start := min(offset, total)
 	end := min(start+int64(units), total)
-	return &contract.FieldChunk{Text: string(runes[start:end]), Offset: offset, NextOffset: end, TotalUnits: total, HasMore: end < total}, nil
+	out.Text, out.NextOffset, out.TotalUnits, out.HasMore = string(runes[start:end]), end, total, end < total
+	return out, nil
 }

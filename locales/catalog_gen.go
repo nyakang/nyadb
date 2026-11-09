@@ -29173,3 +29173,13 @@ func NativeCursorKnownPageOnly() string { return In(i18n.Locale()).NativeCursorK
 func (msgs Messages) NativeCursorKnownPageOnly() string {
 	return Catalog.Format(msgs.locale, "nativeCursorKnownPageOnly", nil)
 }
+
+// MissingGraphProperty says "属性不存在"
+// in the language the app shows.
+func MissingGraphProperty() string { return In(i18n.Locale()).MissingGraphProperty() }
+
+// MissingGraphProperty says "属性不存在"
+// in the language of msgs.
+func (msgs Messages) MissingGraphProperty() string {
+	return Catalog.Format(msgs.locale, "missingGraphProperty", nil)
+}

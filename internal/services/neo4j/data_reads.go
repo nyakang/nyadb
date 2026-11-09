@@ -74,27 +74,36 @@ func (l *dataLease) stream(ctx context.Context, id int64, db, name string, o con
 		return e
 	}
 	defer done()
-	columns := l.columns()
-	if len(fields) == 0 {
-		for _, c := range columns {
-			fields = append(fields, c.Name)
+	projection := l.propertyProjection()
+	columns := graphColumns(l.object.Kind, projection)
+	var indices []int
+	if len(fields) > 0 {
+		indices, e = graphExportIndices(columns, fields)
+		if e != nil {
+			return e
 		}
-	}
-	indices := make([]int, len(fields))
-	seen := map[string]bool{}
-	for i, f := range fields {
-		j := slices.IndexFunc(columns, func(c contract.StructureColumn) bool { return c.Name == f })
-		if j < 0 || seen[f] {
-			return contract.ErrUnsupported
-		}
-		seen[f] = true
-		indices[i] = j
 	}
 	c, closeClient, e := l.client(ctx)
 	if e != nil {
 		return e
 	}
 	defer closeClient()
+	if len(fields) == 0 {
+		projection, e = l.discoverProperties(ctx, c)
+		if e != nil {
+			return e
+		}
+		columns = graphColumns(l.object.Kind, projection)
+		for _, c := range columns {
+			fields = append(fields, c.Name)
+		}
+	}
+	if indices == nil {
+		indices, e = graphExportIndices(columns, fields)
+		if e != nil {
+			return e
+		}
+	}
 	after := ""
 	for {
 		values, _, e := l.entities(ctx, c, after, 100)
@@ -105,7 +114,7 @@ func (l *dataLease) stream(ctx context.Context, id int64, db, name string, o con
 			if e = ctx.Err(); e != nil {
 				return e
 			}
-			cells, e := l.project(v)
+			cells, e := l.project(v, projection)
 			if e != nil {
 				return e
 			}
@@ -126,6 +135,18 @@ func (l *dataLease) stream(ctx context.Context, id int64, db, name string, o con
 		}
 	}
 }
+func graphExportIndices(columns []contract.StructureColumn, fields []string) ([]int, error) {
+	indices := make([]int, len(fields))
+	seen := map[string]bool{}
+	for i, field := range fields {
+		index := slices.IndexFunc(columns, func(c contract.StructureColumn) bool { return c.Name == field })
+		if index < 0 || seen[field] {
+			return nil, contract.ErrUnsupported
+		}
+		seen[field], indices[i] = true, index
+	}
+	return indices, nil
+}
 func (l *dataLease) exportRows(ctx context.Context, id int64, db, name string, o contract.DataOptions, fields []string, sink func([]contract.DataValue) error) error {
 	if sink == nil {
 		return ErrInvalid
@@ -133,7 +154,7 @@ func (l *dataLease) exportRows(ctx context.Context, id int64, db, name string, o
 	return l.stream(ctx, id, db, name, o, fields, func(_ Value, cells []contract.Cell) error {
 		out := make([]contract.DataValue, len(cells))
 		for i, c := range cells {
-			out[i] = contract.DataValue{Kind: c.Kind, Text: c.Text, Bytes: slices.Clone(c.Bytes)}
+			out[i] = contract.DataValue{Kind: c.Kind, Text: c.Text, Bytes: slices.Clone(c.Bytes), Null: c.Kind == contract.Null, Binary: c.Kind == contract.Binary}
 		}
 		return sink(out)
 	})

@@ -2854,5 +2854,6 @@
   "neo4jLastDataCypher": "Last successful Cypher (parameterized): ",
   "neo4jDataCypher": "Parameterized Cypher: ",
   "neo4jRangeJSONL": "Export this graph range as JSONL (ignore current page)",
-  "nativeCursorKnownPageOnly": "Native cursors support previously read pages and the next page."
+  "nativeCursorKnownPageOnly": "Native cursors support previously read pages and the next page.",
+  "missingGraphProperty": "Property is absent"
 }

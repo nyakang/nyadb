@@ -105,7 +105,7 @@ func parkNeo4jData(t *testing.T, d *Document) {
 		t.Fatal("original graph page stalled")
 	}
 }
-func captureNeo4jData(t *testing.T, s *State, d *Document, name string) {
+func captureNeo4jData(t *testing.T, s *State, d *Document, name string, render ...func(*ui.Context)) {
 	t.Helper()
 	output := os.Getenv("NYADB_NEO4J_GRID_IMAGES")
 	if output == "" {
@@ -118,13 +118,27 @@ func captureNeo4jData(t *testing.T, s *State, d *Document, name string) {
 	for _, language := range []string{"zh-Hans", "en"} {
 		i18n.SetLocaleFunc(func() string { return language })
 		for _, size := range [][2]int{{1280, 800}, {720, 520}} {
-			tt := ui.NewTester(func(c *ui.Context) { theme.Apply(c); s.Consume(c.Services()); s.View(c, d) }, size[0], size[1])
+			tt := ui.NewTester(func(c *ui.Context) {
+				theme.Apply(c)
+				s.Consume(c.Services())
+				if len(render) == 1 {
+					render[0](c)
+				} else {
+					s.View(c, d)
+				}
+			}, size[0], size[1])
 			tt.Frame()
+			if strings.HasPrefix(name, "property-fields") && !tt.HasText(locales.Text("属性不存在")) {
+				t.Fatal("graph field inspector misrepresented absent property", language)
+			}
 			if tt.HasText(locales.Text("批量编辑")) {
 				t.Fatal("read-only graph grid exposed batch editing")
 			}
-			if !d.readRetired && !tt.HasText(locales.Text("原生游标读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。")) {
+			if !d.readRetired && !d.recordFormMode && !tt.HasText(locales.Text("原生游标读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。")) {
 				t.Fatal("live graph cursor notice missing", language)
+			}
+			if name == "property-record-form" && (!tt.HasText("property.a_exact") || !tt.HasText("9223372036854775807")) {
+				t.Fatal("record form did not display the exact native property", language)
 			}
 			if d.readRetired {
 				rect, ok := tt.Find(locales.Text("重新打开数据"))
@@ -182,7 +196,7 @@ func TestNeo4jNativePublicDataSharedGridPagingInspectorExportParkGenerationAndCl
 	if a.Kind() != "图标签" || b.Kind() != "关系类型" || len(a.page.Rows) != 1000 || !a.page.HasMore || len(b.page.Rows) != 1 || !a.capabilities.Documents || !a.capabilities.JSONL || a.capabilities.EditableTables || a.capabilities.Import || a.capabilities.Transactions || !a.boundRuntime.PageFailureRequiresReopen {
 		t.Fatal("public graph projection/capabilities wrong")
 	}
-	if !slices.Equal(b.page.Columns, []string{"element_id", "type", "start_element_id", "end_element_id", "properties", "relationship"}) || b.page.Rows[0][1].Text != name || b.page.Rows[0][2].Text == "" || b.page.Rows[0][3].Text == "" {
+	if !slices.Equal(b.page.Columns, []string{"element_id", "type", "start_element_id", "end_element_id", "properties", "relationship", "property.exact"}) || b.page.Rows[0][1].Text != name || b.page.Rows[0][2].Text == "" || b.page.Rows[0][3].Text == "" {
 		t.Fatal("relationship lost type or endpoints")
 	}
 	for _, d := range []*Document{a, b} {

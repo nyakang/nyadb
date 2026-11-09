@@ -133,6 +133,9 @@ func (s *State) restoreMySQLDataLayout(t *Document) {
 	}
 	if !t.layout.restored {
 		t.layout.restored = true
+		if len(t.grid.Columns.Order) == 0 {
+			t.grid.Columns.Order = append([]string(nil), t.page.DefaultColumnOrder...)
+		}
 		if read := s.dataLayoutPreferences.read; read != nil {
 			value, err := read(mysqlDataLayoutKey(t))
 			if err != nil {

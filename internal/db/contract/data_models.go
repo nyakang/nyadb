@@ -234,21 +234,24 @@ type DataPage struct {
 
 	Database, Table string
 	Columns         []string
-	ColumnKinds     []string          // original server DATA_TYPE per displayed column
-	ColumnMetadata  []StructureColumn // full server field attributes, in Columns order
-	Rows            [][]DataCell
-	Offset          int64
-	Limit           int
-	HasMore         bool
-	PagingMode      string // Optional native method: "cursor"; empty preserves SQL/SCAN presentation.
-	LiveRead        bool   // Reads are value observations, with no consistent snapshot across pages.
-	StableOrder     bool   // true when a complete non-null unique index orders rows.
-	KeysetAvailable bool
-	NextCursor      *DataCursor
-	CurrentCursor   *DataCursor // Optional original start boundary for repeat/back reads.
-	RowRefs         []*RowRef
-	RowSnapshots    []*RowSnapshot
-	Search          *DataSearchResult
+	// DefaultColumnOrder is a provider presentation hint. Saved user layouts
+	// override it; row and column metadata ordinals remain unchanged.
+	DefaultColumnOrder []string
+	ColumnKinds        []string          // original server DATA_TYPE per displayed column
+	ColumnMetadata     []StructureColumn // full server field attributes, in Columns order
+	Rows               [][]DataCell
+	Offset             int64
+	Limit              int
+	HasMore            bool
+	PagingMode         string // Optional native method: "cursor"; empty preserves SQL/SCAN presentation.
+	LiveRead           bool   // Reads are value observations, with no consistent snapshot across pages.
+	StableOrder        bool   // true when a complete non-null unique index orders rows.
+	KeysetAvailable    bool
+	NextCursor         *DataCursor
+	CurrentCursor      *DataCursor // Optional original start boundary for repeat/back reads.
+	RowRefs            []*RowRef
+	RowSnapshots       []*RowSnapshot
+	Search             *DataSearchResult
 	// QuerySQL is the executed parameterized statement, without bound values.
 	QuerySQL    string
 	CompletedAt time.Time

@@ -28,6 +28,7 @@ type dataLease struct {
 	key          [32]byte
 	epoch        uint64
 	limit        int
+	properties   []graphPropertyColumn
 }
 
 func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
@@ -163,7 +164,12 @@ func (l *dataLease) read(ctx context.Context, c *Client, q string, p map[string]
 }
 func (l *dataLease) sign(v any) string {
 	raw, _ := json.Marshal(v)
-	h := hmac.New(sha256.New, l.key[:])
+	// Field validation can precede request registration. Capture the key under
+	// the same lock as close, which clears it after registered work settles.
+	l.mu.Lock()
+	key := l.key
+	l.mu.Unlock()
+	h := hmac.New(sha256.New, key[:])
 	_, _ = h.Write(raw)
 	return hex.EncodeToString(h.Sum(nil))
 }
@@ -178,7 +184,10 @@ func (l *dataLease) Close() error {
 	l.cancel()
 	l.mu.Unlock()
 	l.work.Wait()
+	l.mu.Lock()
+	l.properties = nil
 	clear(l.key[:])
+	l.mu.Unlock()
 	l.session.mu.Lock()
 	delete(l.session.dataLeases, l)
 	l.session.mu.Unlock()

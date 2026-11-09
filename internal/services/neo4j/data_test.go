@@ -36,7 +36,7 @@ func dataResultTest(keys []string, rows ...[]any) *fakeResult {
 	}
 	return r
 }
-func dataFakeOpenTest(t *testing.T, s *Session, run func(context.Context, string, map[string]any) (nd.Result, error)) *atomic.Int32 {
+func dataFakeOpenTest(t *testing.T, s *Session, run func(context.Context, string, map[string]any) (nd.Result, error), inventory ...func() nd.Result) *atomic.Int32 {
 	t.Helper()
 	opens := &atomic.Int32{}
 	s.openClient = func(_ context.Context, cfg connections.Neo4jConfig, secret string) (*Client, error) {
@@ -46,6 +46,14 @@ func dataFakeOpenTest(t *testing.T, s *Session, run func(context.Context, string
 		opens.Add(1)
 		c, d := fakeClient(t, dataResultTest([]string{"entity"}))
 		d.session.run = func(ctx context.Context, q string, p map[string]any, _ ...func(*nd.TransactionConfig)) (nd.Result, error) {
+			if strings.Contains(q, "UNWIND keys(entity)") {
+				if len(inventory) == 1 {
+					return inventory[0](), nil
+				}
+				// These foundation cases model an empty property inventory observed
+				// before the entity read. Dedicated cases exercise populated schemas.
+				return dataResultTest([]string{"property", "types"}), nil
+			}
 			return run(ctx, q, p)
 		}
 		return c, nil

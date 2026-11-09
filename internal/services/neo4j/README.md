@@ -54,6 +54,31 @@ constraints, procedures and functions open those snapshots directly. Schema rete
 these are live observations, not atomic or relational schemas. Native node/
 relationship objects are not accepted as request parameters.
 
+The data grid includes alias-qualified `property.<key>` columns alongside the
+complete native entity and property-map columns. An initial or explicit refresh
+reads the complete qualified key inventory and native `valueType()` observations
+on its original driver; cursor pages reuse that inventory. Property keys are
+returned as native data and never interpolated into Cypher. Distinct observed
+types are hints, not constraints. Newly introduced keys remain in the full native
+JSON and appear as independent columns after another explicit refresh.
+
+Missing properties remain NULL and differ from empty strings, empty lists and
+empty bytes. Integers/floats/booleans/strings preserve their native cell kinds;
+bytes remain binary, with bounded hex previews and chunks counted in bytes.
+Temporal, spatial, duration and list columns keep complete typed native JSON.
+Original signed row identities capture their property inventory, so a field
+request cannot adopt a later page's column meanings. Complete entity fingerprints
+still reject changed values. The inventory admits at most 1024 total columns,
+4096 bytes per key, 16 observed types per key and 64 KiB of encoded descriptors;
+signed row references admit at most 128 KiB and share the existing 16 MiB retained
+page budget. Wide inventories can require a smaller page size. Inventory scans
+and entity reads observe live data without a common atomic snapshot.
+
+Default layouts present the entity ID and independent properties before the
+full JSON columns. Saved user layouts override this order; source ordinals and
+existing layout keys/formats remain unchanged. The shared record form follows
+column order while retaining all fields, including hidden grid fields.
+
 The graph data binding reserves an immutable label or relationship-type
 range through the shared `DataDocumentLease` contract. Reservation performs no
 I/O; each read captures its own original driver. Pages use ordered native
@@ -84,8 +109,9 @@ The public engine advertises Query, Metadata, Documents, Keyset, Count,
 FieldChunks, Export and JSONL. Editing, transactions, import, relational filters,
 arbitrary sorting and SQL export are unavailable. `--grid` requires the public
 grid cases, original read failure/cancellation/close, explicit reopen, full range
-exports, and Chinese/English grid images at 1280x800 and 720x520, together with
-all foundation/profile/session/Cypher cases. `--data` continues to select the
+exports, independent property columns/original fields and Chinese/English grid
+images at 1280x800 and 720x520, together with all foundation/profile/session/
+Cypher cases. `--data` continues to select the
 adapter read foundation separately from the public grid tests.
 
 TLS uses the URI hostname, custom CA roots and optional client certificates.

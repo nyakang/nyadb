@@ -115,6 +115,38 @@ func TestMySQLDataLayoutWaitsForMetadataAndKeepsRowSelectionColumn(t *testing.T)
 	}
 }
 
+func TestProviderColumnOrderPreservesOrdinalsAndYieldsToSavedLayout(t *testing.T) {
+	for _, saved := range []string{"", `{"version":1,"order":["id","label"]}`} {
+		s := New(Dependencies{})
+		doc := layoutTestTab()
+		doc.page.DefaultColumnOrder = []string{"label", "removed", "id", "label"}
+		memoryLayoutPreferences(s, map[string]string{mysqlDataLayoutKey(doc): saved})
+		s.restoreMySQLDataLayout(doc)
+		want := []string{"label", "id"}
+		if saved != "" {
+			want = []string{"id", "label"}
+		}
+		if !reflect.DeepEqual(doc.grid.Columns.Order, want) || !reflect.DeepEqual(doc.page.Columns, []string{"id", "label"}) {
+			t.Fatal("provider column order changed source ordinals or retained unknown fields")
+		}
+		doc.grid.Columns.Order = []string{"id", "label"}
+		doc.page.DefaultColumnOrder = []string{"label", "id"}
+		s.restoreMySQLDataLayout(doc)
+		if !reflect.DeepEqual(doc.grid.Columns.Order, []string{"id", "label"}) {
+			t.Fatal("later page reordered user layout")
+		}
+	}
+}
+
+func TestRecordFormColumnOrderKeepsSourceValuesAndIncludesHiddenFields(t *testing.T) {
+	doc := layoutTestTab()
+	doc.grid.Columns.Order = []string{"removed", "label", "label"}
+	doc.hiddenColumns = map[string]bool{"label": true}
+	if !reflect.DeepEqual(recordFormColumnOrder(doc), []int{1, 0}) || doc.page.Rows[0][recordFormColumnOrder(doc)[0]].Text != doc.page.Rows[0][1].Text {
+		t.Fatal("record form changed source ordinals, repeated a field or lost hidden fields")
+	}
+}
+
 func TestMySQLDataLayoutDebouncesNativeColumnResize(t *testing.T) {
 	s := New(Dependencies{})
 	doc := layoutTestTab()

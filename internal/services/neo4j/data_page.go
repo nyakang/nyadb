@@ -107,23 +107,6 @@ func (l *dataLease) entityID(v Value) (string, error) {
 	}
 	return v.Relationship.ElementID, nil
 }
-func (l *dataLease) columns() []contract.StructureColumn {
-	names := []string{"element_id", "labels", "properties", "node"}
-	if l.object.Kind == "relationship" {
-		names = []string{"element_id", "type", "start_element_id", "end_element_id", "properties", "relationship"}
-	}
-	out := make([]contract.StructureColumn, len(names))
-	for i, n := range names {
-		kind := contract.Text
-		typ := "string"
-		if n == "properties" || n == "labels" || n == "node" || n == "relationship" {
-			kind = contract.JSON
-			typ = "Neo4j native " + n
-		}
-		out[i] = contract.StructureColumn{Name: n, Position: int64(i + 1), Type: typ, DataType: typ, ValueKind: kind, Nullable: false}
-	}
-	return out
-}
 func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contract.DataOptions) (*contract.DataPage, error) {
 	o = cloneDataOptions(o)
 	if e := l.identity(id, db, name); e != nil {
@@ -166,19 +149,31 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 	}
 	defer closeClient()
 	start := time.Now()
+	properties := l.propertyProjection()
+	if o.After == nil {
+		properties, e = l.discoverProperties(ctx, c)
+		if e != nil {
+			return nil, l.pageFailure(e)
+		}
+	}
 	values, q, e := l.entities(ctx, c, after, o.Limit+1)
 	if e != nil {
 		return nil, l.pageFailure(e)
 	}
 	editable := false
-	p := &contract.DataPage{Object: l.object, Editable: &editable, Database: db, Table: name, Offset: o.Offset, Limit: o.Limit, HasMore: len(values) > o.Limit, PagingMode: "cursor", LiveRead: true, KeysetAvailable: true, QuerySQL: q, ColumnMetadata: l.columns(), CurrentCursor: l.cursor(o.Offset, after)}
+	p := &contract.DataPage{Object: l.object, Editable: &editable, Database: db, Table: name, Offset: o.Offset, Limit: o.Limit, HasMore: len(values) > o.Limit, PagingMode: "cursor", LiveRead: true, KeysetAvailable: true, QuerySQL: q, ColumnMetadata: graphColumns(l.object.Kind, properties), CurrentCursor: l.cursor(o.Offset, after)}
 	for _, col := range p.ColumnMetadata {
 		p.Columns = append(p.Columns, col.Name)
 		p.ColumnKinds = append(p.ColumnKinds, col.Type)
 	}
+	p.DefaultColumnOrder = []string{"element_id"}
+	for _, property := range properties {
+		p.DefaultColumnOrder = append(p.DefaultColumnOrder, graphPropertyPrefix+property.Key)
+	}
+	p.DefaultColumnOrder = append(p.DefaultColumnOrder, p.Columns[1:len(graphColumns(l.object.Kind, nil))]...)
 	budget := 16 << 20
 	for _, v := range values[:min(len(values), o.Limit)] {
-		cells, snapshot, e := l.preview(v, &budget)
+		cells, snapshot, e := l.preview(v, properties, &budget)
 		if e != nil {
 			return nil, e
 		}
@@ -196,6 +191,13 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 	if e = ctx.Err(); e != nil {
 		return nil, e
 	}
+	l.mu.Lock()
+	if l.closed || l.lost {
+		l.mu.Unlock()
+		return nil, contract.ErrRevoked
+	}
+	l.properties = cloneGraphProjection(properties)
+	l.mu.Unlock()
 	return p, nil
 }
 func graphJSON(v any) (contract.Cell, error) {

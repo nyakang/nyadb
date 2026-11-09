@@ -1,6 +1,7 @@
 package dataworkspace
 
 import (
+	"bytes"
 	"context"
 	"strings"
 	"testing"
@@ -160,6 +161,25 @@ func TestRecordFormReadsCompleteFieldAndSharesGridDraft(t *testing.T) {
 	tt.Frame()
 	if !s.undoDraft(d, false) || mysqlDataHasDraft(d) {
 		t.Fatal("form edits did not share undo history")
+	}
+}
+
+func TestRecordFormLongPreviewsDoNotPaintOverOtherFields(t *testing.T) {
+	s, d, _, _ := editingTestWorkspace(t)
+	d.recordFormMode = true
+	d.selectedRow = 0
+	common := strings.Repeat("preview ", 75)
+	d.page.Rows[0][1].Text = common + strings.Repeat("A", 600)
+	tt := ui.NewTester(func(c *ui.Context) { theme.Apply(c); s.recordForm(c, d) }, 720, 520)
+	tt.Frame()
+	before := bytes.Clone(tt.Image().Pix)
+	d.page.Rows[0][1].Text = common + strings.Repeat("B", 600)
+	tt.Frame()
+	if !bytes.Equal(before, tt.Image().Pix) {
+		t.Fatal("text beyond the form preview painted over following fields")
+	}
+	if !tt.HasText("extra") {
+		t.Fatal("long form preview hid the next field")
 	}
 }
 func TestDisabledFilterRowsStayEditableWithoutReachingQuery(t *testing.T) {
