@@ -28,6 +28,9 @@ const (
 	DamengCAFile
 	DamengCertificateFile
 	DamengKeyFile
+	Neo4jCAFile
+	Neo4jCertificateFile
+	Neo4jKeyFile
 )
 
 func (s *State) SetEngineFilePicker(pick func(EngineFile, int, uint64)) { s.engineFilePicker = pick }
@@ -36,6 +39,23 @@ func (s *State) EngineFileVersion() uint64 { return s.engineFileVersion }
 
 func (s *State) SelectEngineFile(kind EngineFile, row int, version uint64, path string) {
 	if !s.active || version != s.engineFileVersion || path == "" {
+		return
+	}
+	if kind >= Neo4jCAFile && kind <= Neo4jKeyFile {
+		if s.connectionDraft.Kind != connections.Neo4j {
+			return
+		}
+		o := &s.connectionDraft.Neo4jOptions
+		switch kind {
+		case Neo4jCAFile:
+			o.CAFile = path
+		case Neo4jCertificateFile:
+			o.ClientCertFile = path
+		case Neo4jKeyFile:
+			o.ClientKeyFile = path
+		}
+		s.cancelMySQLConnectionTest()
+		s.connectionError = ""
 		return
 	}
 	if kind >= DamengLibraryFile && kind <= DamengKeyFile {
@@ -104,6 +124,10 @@ func (s *State) EngineFilePickerError(version uint64) {
 }
 
 func (s *State) initEngineOptionsInputs() {
+	if s.connectionDraft.Kind == connections.Neo4j {
+		a := s.connectionDraft.Neo4jOptions
+		s.engineNumbers[0], s.engineNumbers[1] = strconv.Itoa(a.ConnectTimeoutSeconds), strconv.Itoa(a.RequestTimeoutSeconds)
+	}
 	if s.connectionDraft.Kind == connections.Qdrant {
 		a := s.connectionDraft.QdrantOptions
 		s.engineNumbers[0], s.engineNumbers[1] = strconv.Itoa(a.ConnectTimeoutSeconds), strconv.Itoa(a.RequestTimeoutSeconds)
@@ -177,6 +201,9 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.Neo4j {
+		return s.advanceNeo4jOptions(p)
+	}
 	if p.Kind == connections.Qdrant {
 		return s.advanceQdrantOptions(p)
 	}
@@ -303,6 +330,8 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	switch s.connectionDraft.Kind {
 	case connections.Qdrant:
 		return s.qdrantOptions(c, width, tab)
+	case connections.Neo4j:
+		return s.neo4jOptions(c, width, tab)
 	case connections.Meilisearch:
 		return s.meilisearchOptions(c, width, tab)
 	case connections.CouchDB:

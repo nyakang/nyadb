@@ -32,6 +32,7 @@ const (
 	CouchDB       Kind = "couchdb"
 	Meilisearch   Kind = "meilisearch"
 	Qdrant        Kind = "qdrant"
+	Neo4j         Kind = "neo4j"
 	SQLServer     Kind = "sqlserver"
 	DuckDB        Kind = "duckdb"
 	Oracle        Kind = "oracle"
@@ -81,6 +82,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	Neo4jOptions         Neo4jOptions
 	QdrantOptions        QdrantOptions
 	MeilisearchOptions   MeilisearchOptions
 	CouchDBOptions       CouchDBOptions

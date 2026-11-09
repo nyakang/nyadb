@@ -44,7 +44,7 @@ func NormalizeNeo4jConfig(c Neo4jConfig) (Neo4jConfig, error) {
 		return c, ErrInvalid
 	}
 	for k, v := range q {
-		if k == "" || len(k) > 128 || len(v) != 1 || len(v[0]) > 512 || k == "address" || strings.IndexFunc(k+v[0], unicode.IsControl) >= 0 {
+		if k == "" || len(k) > 128 || len(v) != 1 || len(v[0]) > 512 || k == "address" || !utf8.ValidString(k+v[0]) || strings.IndexFunc(k+v[0], unicode.IsControl) >= 0 {
 			return c, ErrInvalid
 		}
 		for _, s := range []string{"password", "secret", "token", "credential"} {
@@ -90,7 +90,17 @@ func NormalizeNeo4jConfig(c Neo4jConfig) (Neo4jConfig, error) {
 }
 
 func ValidateNeo4jCredential(c Neo4jConfig, secret string) error {
-	if c.Auth != "basic" && c.Auth != "none" || c.Auth == "none" && secret != "" || c.Auth == "basic" && secret == "" || len(secret) > 4096 || !utf8.ValidString(secret) || strings.ContainsRune(secret, 0) {
+	return validateNeo4jCredential(c, secret, true)
+}
+
+// Empty basic credentials may be saved/imported for an explicit later prompt.
+// A connection attempt still requires ValidateNeo4jCredential.
+func ValidateNeo4jDraftCredential(c Neo4jConfig, secret string) error {
+	return validateNeo4jCredential(c, secret, false)
+}
+
+func validateNeo4jCredential(c Neo4jConfig, secret string, required bool) error {
+	if c.Auth != "basic" && c.Auth != "none" || c.Auth == "none" && secret != "" || required && c.Auth == "basic" && secret == "" || len(secret) > 4096 || !utf8.ValidString(secret) || strings.ContainsRune(secret, 0) {
 		return ErrInvalid
 	}
 	return nil

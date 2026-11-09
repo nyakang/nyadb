@@ -43,6 +43,8 @@ func ParseURI(raw string) (URIImport, error) {
 	}
 	var kind Kind
 	switch strings.ToLower(u.Scheme) {
+	case "bolt", "bolt+s", "bolt+ssc", "neo4j", "neo4j+s", "neo4j+ssc":
+		return ParseNeo4jURI(raw)
 	case "qdrant":
 		return ParseQdrantURI(raw)
 	case "meilisearch":

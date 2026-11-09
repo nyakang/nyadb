@@ -45,3 +45,12 @@ class Neo4jFixtureOwnershipTests(unittest.TestCase):
         for log in [passed.replace('--- PASS:', '--- SKIP:', 1), passed+'\n    --- SKIP: child (0.0s)', passed+'\nWARNING: DATA RACE', passed+'\n--- FAIL: child (0.0s)']:
             with self.subTest(log=log), self.assertRaises(RuntimeError):
                 FIXTURE.check_acceptance(log)
+
+    def test_profile_acceptance_requires_real_reopen_canceled_handshake_and_form_evidence(self):
+        native = '\n'.join('--- PASS: TestNeo4jNative'+name+' (0.01s)' for name in FIXTURE.REQUIRED)
+        with self.assertRaises(RuntimeError):
+            FIXTURE.check_acceptance(native, profile=True)
+        profile = '\n'.join('--- PASS: TestNeo4jNative'+name+' (0.01s)' for name in FIXTURE.PROFILE_REQUIRED)
+        FIXTURE.check_acceptance(native+'\n'+profile, profile=True)
+        with self.assertRaises(RuntimeError):
+            FIXTURE.check_acceptance(native+'\n'+profile.replace('--- PASS:', '--- SKIP:', 1), profile=True)

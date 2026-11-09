@@ -16,6 +16,9 @@ const (
 	DamengCAFile              = connectioneditor.DamengCAFile
 	DamengCertificateFile     = connectioneditor.DamengCertificateFile
 	DamengKeyFile             = connectioneditor.DamengKeyFile
+	Neo4jCAFile               = connectioneditor.Neo4jCAFile
+	Neo4jCertificateFile      = connectioneditor.Neo4jCertificateFile
+	Neo4jKeyFile              = connectioneditor.Neo4jKeyFile
 )
 
 func (s *State) SetEngineFilePicker(pick func(EngineFile, int, uint64)) {

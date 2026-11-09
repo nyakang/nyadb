@@ -25,6 +25,7 @@ REQUIRED = (
     'LostCanceledAndOriginalCloseNeverReplay',
     'BlockedCancellationTerminationAndCleanup',
 )
+PROFILE_REQUIRED = ('ProfileURIReopenAndOriginalEditorCheck', 'ProfileOriginalCanceledHandshake', 'EditorLocalizedFormEvidence')
 
 
 def remove_owned(identifier, nonce):
@@ -43,8 +44,8 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def check_acceptance(log):
-    for name in REQUIRED:
+def check_acceptance(log, profile=False):
+    for name in REQUIRED + (PROFILE_REQUIRED if profile else ()):
         if not re.search(r'^--- PASS: TestNeo4jNative' + name + r' \(', log, re.M):
             raise RuntimeError('Missing native acceptance: ' + name)
     if re.search(r'^\s*--- (SKIP|FAIL):', log, re.M) or 'WARNING: DATA RACE' in log:
@@ -66,21 +67,28 @@ def certificates(folder):
     openssl('req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', 'wrong.key', '-out', 'wrong.crt', '-days', '2', '-subj', '/CN=Untrusted CA', cwd=folder)
 
 
-def verify(mode, race):
+def verify(mode, race, profile=False):
     nonce = uuid.uuid4().hex
     build = ROOT/'build/neo4j'
     build.mkdir(parents=True, exist_ok=True)
     report_path = build/('owned-fixture-'+nonce+'.json')
     log_path = build/('owned-fixture-'+nonce+'.log')
+    sources = list((ROOT/'internal/services/neo4j').glob('*.go')) + list((ROOT/'internal/services/connections').glob('neo4j*.go')) + [ROOT/'go.mod', ROOT/'go.sum', ROOT/'tests/test_neo4j_fixture.py', Path(__file__).resolve()]
+    if profile:
+        sources += list((ROOT/'internal/services/connections').glob('*.go')) + list((ROOT/'internal/storage/localdb').glob('*.go')) + list((ROOT/'internal/ui/connectioneditor').glob('*.go'))
+        sources += list((ROOT/'locales').glob('*.go')) + list((ROOT/'locales').glob('*.json')) + [ROOT/'internal/ui/shell/connection_engine_files.go']
     report = {'nonce': nonce, 'mode': mode, 'version': VERSION, 'image': IMAGE,
-              'scope': 'private-native-foundation', 'race': race, 'passed': False,
-              'source_hashes': {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
-                  for p in sorted(list((ROOT/'internal/services/neo4j').glob('*.go')) + list((ROOT/'internal/services/connections').glob('neo4j*.go')) + [ROOT/'go.mod', ROOT/'go.sum', ROOT/'tests/test_neo4j_fixture.py', Path(__file__).resolve()])}}
+              'scope': 'private-native-profile-and-editor' if profile else 'private-native-foundation', 'race': race, 'passed': False,
+              'source_hashes': {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(sources))}}
     identifier = None
     try:
         with tempfile.TemporaryDirectory(prefix='nyadb-neo4j-'+nonce+'-', dir=build) as raw:
             private = Path(raw)
             secret = 'Nya_'+secrets.token_urlsafe(24)
+            if profile:
+                # Keep whitespace inside the env-file value so Docker preserves
+                # it; native Bolt authentication must receive these exact bytes.
+                secret += '_ 原始密码🐱\t _end'
             envfile = private/'docker.env'
             envfile.write_text('NEO4J_AUTH='+('none' if mode == 'anonymous' else 'neo4j/'+secret)+'\n')
             envfile.chmod(0o600)
@@ -147,8 +155,12 @@ def verify(mode, race):
             env = os.environ.copy()
             env['NYADB_NEO4J_IT'] = '1'
             env['NYADB_NEO4J_CONFIG_FILE'] = str(fixture)
+            if profile:
+                env['NYADB_NEO4J_PROFILE_IT'] = '1'
+                env['NYADB_NEO4J_PROFILE_IMAGES'] = str(build/('owned-fixture-'+nonce+'-profile-images'))
             env['CGO_ENABLED'] = '1' if race else '0'
-            command = ['go', 'test'] + (['-race'] if race else []) + ['./internal/services/neo4j', '-run', '^TestNeo4jNative', '-count=1', '-timeout=8m', '-v']
+            packages = ['./internal/services/neo4j'] + (['./internal/ui/connectioneditor'] if profile else [])
+            command = ['go', 'test'] + (['-race'] if race else []) + packages + ['-run', '^TestNeo4jNative', '-count=1', '-timeout=8m', '-v']
             result = subprocess.run(command, cwd=ROOT, env=env, capture_output=True, text=True)
             log = result.stdout+result.stderr
             # Preserve evidence without ever retaining generated credentials.
@@ -156,9 +168,14 @@ def verify(mode, race):
             log_path.write_text(log)
             if result.returncode:
                 raise RuntimeError('Native Neo4j verification failed; see '+str(log_path.relative_to(ROOT)))
-            check_acceptance(log)
+            check_acceptance(log, profile)
+            if profile:
+                pictures = sorted(Path(env['NYADB_NEO4J_PROFILE_IMAGES']).glob('*.png'))
+                if len(pictures) != 48:
+                    raise RuntimeError('Missing localized Neo4j profile screenshots')
+                report['images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             report['passed'] = True
-            report['accepted'] = list(REQUIRED)
+            report['accepted'] = list(REQUIRED + (PROFILE_REQUIRED if profile else ()))
     finally:
         if identifier:
             startup = subprocess.run(['docker', 'logs', identifier], capture_output=True, text=True)
@@ -175,8 +192,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--mode', choices=MODES, default='basic')
     parser.add_argument('--race', action='store_true')
+    parser.add_argument('--profile', action='store_true', help='Include private profiles, native editor checks and localized forms')
     args = parser.parse_args()
-    verify(args.mode, args.race)
+    verify(args.mode, args.race, args.profile)
 
 
 if __name__ == '__main__':

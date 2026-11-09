@@ -28473,3 +28473,273 @@ func SnapshotWorkspaceArchiveExceedsTheSizeLimitOrIsNot() string {
 func (msgs Messages) SnapshotWorkspaceArchiveExceedsTheSizeLimitOrIsNot() string {
 	return Catalog.Format(msgs.locale, "snapshotWorkspaceArchiveExceedsTheSizeLimitOrIsNot", nil)
 }
+
+// Neo4jModeCaption says "连接方式："
+// in the language the app shows.
+func Neo4jModeCaption() string { return In(i18n.Locale()).Neo4jModeCaption() }
+
+// Neo4jModeCaption says "连接方式："
+// in the language of msgs.
+func (msgs Messages) Neo4jModeCaption() string {
+	return Catalog.Format(msgs.locale, "neo4jModeCaption", nil)
+}
+
+// Neo4jDirect says "Bolt 直连"
+// in the language the app shows.
+func Neo4jDirect() string { return In(i18n.Locale()).Neo4jDirect() }
+
+// Neo4jDirect says "Bolt 直连"
+// in the language of msgs.
+func (msgs Messages) Neo4jDirect() string {
+	return Catalog.Format(msgs.locale, "neo4jDirect", nil)
+}
+
+// Neo4jRouting says "Neo4j 路由"
+// in the language the app shows.
+func Neo4jRouting() string { return In(i18n.Locale()).Neo4jRouting() }
+
+// Neo4jRouting says "Neo4j 路由"
+// in the language of msgs.
+func (msgs Messages) Neo4jRouting() string {
+	return Catalog.Format(msgs.locale, "neo4jRouting", nil)
+}
+
+// Neo4jModeLabel says "Neo4j 连接方式"
+// in the language the app shows.
+func Neo4jModeLabel() string { return In(i18n.Locale()).Neo4jModeLabel() }
+
+// Neo4jModeLabel says "Neo4j 连接方式"
+// in the language of msgs.
+func (msgs Messages) Neo4jModeLabel() string {
+	return Catalog.Format(msgs.locale, "neo4jModeLabel", nil)
+}
+
+// Neo4jDatabaseLabel says "Neo4j 初始数据库"
+// in the language the app shows.
+func Neo4jDatabaseLabel() string { return In(i18n.Locale()).Neo4jDatabaseLabel() }
+
+// Neo4jDatabaseLabel says "Neo4j 初始数据库"
+// in the language of msgs.
+func (msgs Messages) Neo4jDatabaseLabel() string {
+	return Catalog.Format(msgs.locale, "neo4jDatabaseLabel", nil)
+}
+
+// Neo4jAuthLabel says "Neo4j 认证方式"
+// in the language the app shows.
+func Neo4jAuthLabel() string { return In(i18n.Locale()).Neo4jAuthLabel() }
+
+// Neo4jAuthLabel says "Neo4j 认证方式"
+// in the language of msgs.
+func (msgs Messages) Neo4jAuthLabel() string {
+	return Catalog.Format(msgs.locale, "neo4jAuthLabel", nil)
+}
+
+// Neo4jTLSDisabled says "禁用 TLS"
+// in the language the app shows.
+func Neo4jTLSDisabled() string { return In(i18n.Locale()).Neo4jTLSDisabled() }
+
+// Neo4jTLSDisabled says "禁用 TLS"
+// in the language of msgs.
+func (msgs Messages) Neo4jTLSDisabled() string {
+	return Catalog.Format(msgs.locale, "neo4jTLSDisabled", nil)
+}
+
+// Neo4jTLSVerified says "验证服务器证书"
+// in the language the app shows.
+func Neo4jTLSVerified() string { return In(i18n.Locale()).Neo4jTLSVerified() }
+
+// Neo4jTLSVerified says "验证服务器证书"
+// in the language of msgs.
+func (msgs Messages) Neo4jTLSVerified() string {
+	return Catalog.Format(msgs.locale, "neo4jTLSVerified", nil)
+}
+
+// Neo4jTLSSelfSigned says "接受自签名证书"
+// in the language the app shows.
+func Neo4jTLSSelfSigned() string { return In(i18n.Locale()).Neo4jTLSSelfSigned() }
+
+// Neo4jTLSSelfSigned says "接受自签名证书"
+// in the language of msgs.
+func (msgs Messages) Neo4jTLSSelfSigned() string {
+	return Catalog.Format(msgs.locale, "neo4jTLSSelfSigned", nil)
+}
+
+// Neo4jTLSLabel says "Neo4j TLS 模式"
+// in the language the app shows.
+func Neo4jTLSLabel() string { return In(i18n.Locale()).Neo4jTLSLabel() }
+
+// Neo4jTLSLabel says "Neo4j TLS 模式"
+// in the language of msgs.
+func (msgs Messages) Neo4jTLSLabel() string {
+	return Catalog.Format(msgs.locale, "neo4jTLSLabel", nil)
+}
+
+// Neo4jCALabel says "Neo4j CA 证书"
+// in the language the app shows.
+func Neo4jCALabel() string { return In(i18n.Locale()).Neo4jCALabel() }
+
+// Neo4jCALabel says "Neo4j CA 证书"
+// in the language of msgs.
+func (msgs Messages) Neo4jCALabel() string {
+	return Catalog.Format(msgs.locale, "neo4jCALabel", nil)
+}
+
+// Neo4jClientCertificateLabel says "Neo4j 客户端证书"
+// in the language the app shows.
+func Neo4jClientCertificateLabel() string { return In(i18n.Locale()).Neo4jClientCertificateLabel() }
+
+// Neo4jClientCertificateLabel says "Neo4j 客户端证书"
+// in the language of msgs.
+func (msgs Messages) Neo4jClientCertificateLabel() string {
+	return Catalog.Format(msgs.locale, "neo4jClientCertificateLabel", nil)
+}
+
+// Neo4jClientKeyLabel says "Neo4j 客户端私钥"
+// in the language the app shows.
+func Neo4jClientKeyLabel() string { return In(i18n.Locale()).Neo4jClientKeyLabel() }
+
+// Neo4jClientKeyLabel says "Neo4j 客户端私钥"
+// in the language of msgs.
+func (msgs Messages) Neo4jClientKeyLabel() string {
+	return Catalog.Format(msgs.locale, "neo4jClientKeyLabel", nil)
+}
+
+// Neo4jCertificatePolicy says "证书名称须与主机匹配；接受自签名证书会跳过服务器身份验证。"
+// in the language the app shows.
+func Neo4jCertificatePolicy() string { return In(i18n.Locale()).Neo4jCertificatePolicy() }
+
+// Neo4jCertificatePolicy says "证书名称须与主机匹配；接受自签名证书会跳过服务器身份验证。"
+// in the language of msgs.
+func (msgs Messages) Neo4jCertificatePolicy() string {
+	return Catalog.Format(msgs.locale, "neo4jCertificatePolicy", nil)
+}
+
+// Neo4jConnectTimeoutLabel says "Neo4j 连接超时"
+// in the language the app shows.
+func Neo4jConnectTimeoutLabel() string { return In(i18n.Locale()).Neo4jConnectTimeoutLabel() }
+
+// Neo4jConnectTimeoutLabel says "Neo4j 连接超时"
+// in the language of msgs.
+func (msgs Messages) Neo4jConnectTimeoutLabel() string {
+	return Catalog.Format(msgs.locale, "neo4jConnectTimeoutLabel", nil)
+}
+
+// Neo4jRequestTimeoutLabel says "Neo4j 请求超时"
+// in the language the app shows.
+func Neo4jRequestTimeoutLabel() string { return In(i18n.Locale()).Neo4jRequestTimeoutLabel() }
+
+// Neo4jRequestTimeoutLabel says "Neo4j 请求超时"
+// in the language of msgs.
+func (msgs Messages) Neo4jRequestTimeoutLabel() string {
+	return Catalog.Format(msgs.locale, "neo4jRequestTimeoutLabel", nil)
+}
+
+// Neo4jRoutingContextCaption says "路由参数："
+// in the language the app shows.
+func Neo4jRoutingContextCaption() string { return In(i18n.Locale()).Neo4jRoutingContextCaption() }
+
+// Neo4jRoutingContextCaption says "路由参数："
+// in the language of msgs.
+func (msgs Messages) Neo4jRoutingContextCaption() string {
+	return Catalog.Format(msgs.locale, "neo4jRoutingContextCaption", nil)
+}
+
+// Neo4jRoutingContextLabel says "Neo4j 路由参数"
+// in the language the app shows.
+func Neo4jRoutingContextLabel() string { return In(i18n.Locale()).Neo4jRoutingContextLabel() }
+
+// Neo4jRoutingContextLabel says "Neo4j 路由参数"
+// in the language of msgs.
+func (msgs Messages) Neo4jRoutingContextLabel() string {
+	return Catalog.Format(msgs.locale, "neo4jRoutingContextLabel", nil)
+}
+
+// Neo4jInvalidTimeouts says "请检查 Neo4j 超时设置"
+// in the language the app shows.
+func Neo4jInvalidTimeouts() string { return In(i18n.Locale()).Neo4jInvalidTimeouts() }
+
+// Neo4jInvalidTimeouts says "请检查 Neo4j 超时设置"
+// in the language of msgs.
+func (msgs Messages) Neo4jInvalidTimeouts() string {
+	return Catalog.Format(msgs.locale, "neo4jInvalidTimeouts", nil)
+}
+
+// Neo4jInvalidNativeOptions says "请检查 Neo4j 连接方式、路由参数和证书设置"
+// in the language the app shows.
+func Neo4jInvalidNativeOptions() string { return In(i18n.Locale()).Neo4jInvalidNativeOptions() }
+
+// Neo4jInvalidNativeOptions says "请检查 Neo4j 连接方式、路由参数和证书设置"
+// in the language of msgs.
+func (msgs Messages) Neo4jInvalidNativeOptions() string {
+	return Catalog.Format(msgs.locale, "neo4jInvalidNativeOptions", nil)
+}
+
+// Neo4jInvalidConfig says "请检查 Neo4j 主机、数据库、认证和 TLS 设置"
+// in the language the app shows.
+func Neo4jInvalidConfig() string { return In(i18n.Locale()).Neo4jInvalidConfig() }
+
+// Neo4jInvalidConfig says "请检查 Neo4j 主机、数据库、认证和 TLS 设置"
+// in the language of msgs.
+func (msgs Messages) Neo4jInvalidConfig() string {
+	return Catalog.Format(msgs.locale, "neo4jInvalidConfig", nil)
+}
+
+// Neo4jInvalidPassword says "请检查 Neo4j 密码"
+// in the language the app shows.
+func Neo4jInvalidPassword() string { return In(i18n.Locale()).Neo4jInvalidPassword() }
+
+// Neo4jInvalidPassword says "请检查 Neo4j 密码"
+// in the language of msgs.
+func (msgs Messages) Neo4jInvalidPassword() string {
+	return Catalog.Format(msgs.locale, "neo4jInvalidPassword", nil)
+}
+
+// Neo4jBrowseCA says "选择 Neo4j CA 证书"
+// in the language the app shows.
+func Neo4jBrowseCA() string { return In(i18n.Locale()).Neo4jBrowseCA() }
+
+// Neo4jBrowseCA says "选择 Neo4j CA 证书"
+// in the language of msgs.
+func (msgs Messages) Neo4jBrowseCA() string {
+	return Catalog.Format(msgs.locale, "neo4jBrowseCA", nil)
+}
+
+// Neo4jBrowseCertificate says "选择 Neo4j 客户端证书"
+// in the language the app shows.
+func Neo4jBrowseCertificate() string { return In(i18n.Locale()).Neo4jBrowseCertificate() }
+
+// Neo4jBrowseCertificate says "选择 Neo4j 客户端证书"
+// in the language of msgs.
+func (msgs Messages) Neo4jBrowseCertificate() string {
+	return Catalog.Format(msgs.locale, "neo4jBrowseCertificate", nil)
+}
+
+// Neo4jBrowseKey says "选择 Neo4j 客户端私钥"
+// in the language the app shows.
+func Neo4jBrowseKey() string { return In(i18n.Locale()).Neo4jBrowseKey() }
+
+// Neo4jBrowseKey says "选择 Neo4j 客户端私钥"
+// in the language of msgs.
+func (msgs Messages) Neo4jBrowseKey() string {
+	return Catalog.Format(msgs.locale, "neo4jBrowseKey", nil)
+}
+
+// Neo4jUsernameRequired says "请输入 Neo4j 用户名"
+// in the language the app shows.
+func Neo4jUsernameRequired() string { return In(i18n.Locale()).Neo4jUsernameRequired() }
+
+// Neo4jUsernameRequired says "请输入 Neo4j 用户名"
+// in the language of msgs.
+func (msgs Messages) Neo4jUsernameRequired() string {
+	return Catalog.Format(msgs.locale, "neo4jUsernameRequired", nil)
+}
+
+// Neo4jPasswordRequired says "请输入 Neo4j 密码"
+// in the language the app shows.
+func Neo4jPasswordRequired() string { return In(i18n.Locale()).Neo4jPasswordRequired() }
+
+// Neo4jPasswordRequired says "请输入 Neo4j 密码"
+// in the language of msgs.
+func (msgs Messages) Neo4jPasswordRequired() string {
+	return Catalog.Format(msgs.locale, "neo4jPasswordRequired", nil)
+}

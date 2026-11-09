@@ -56,3 +56,11 @@ committed writes with lost/canceled responses, blocked transactions, original
 close/termination, cleanup and replacement survival. It does not establish
 support for other Neo4j versions, Enterprise/cluster administration, graph UI,
 data editing or public connection/profile/session integration.
+
+The private profile/editor stage lives in `connections`, `localdb` and
+`connectioneditor`. Add `--profile` to the verifier to exercise versioned native
+settings, pure URI import, SQLite restart/copy, injected credential-vault save,
+closed original connection checks, canceled real handshakes, and 48 localized
+form screenshots per mode. It retains a private Kind without registering a
+descriptor or runtime provider. Password-free basic profiles may be saved for
+an explicit later prompt; the editor requires a password before testing.
