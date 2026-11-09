@@ -61,6 +61,10 @@ func (g *graphVisualState) cloneReading(other *graphVisualState) {
 		g.observations = append(g.observations, observation)
 	}
 	g.observationBytes, g.observationIndex = other.observationBytes, other.observationIndex
+	g.propertyEntities = make(map[string]contract.GraphValue, len(other.propertyEntities))
+	for key, value := range other.propertyEntities {
+		g.propertyEntities[key] = value.Clone()
+	}
 	g.expansionError = other.expansionError
 	g.rebuildObservations()
 	g.positions = maps.Clone(other.positions)
@@ -158,6 +162,7 @@ func (s *State) graphVisualView(c *ui.Context, d *Document) bool {
 					g.resetHidden()
 				}
 				s.graphExpansionControls(c, d, g)
+				s.graphPropertyControls(c, d)
 				ui.Button(c, locales.Text("导出图像")).Menu(func(m *ui.Menu) {
 					for _, format := range []string{"PNG", "SVG"} {
 						if m.Item(format).Disabled(len(g.topology.Nodes) == 0 || s.persistence.files.SavePath == nil || s.persistence.files.WriteStream == nil).Chosen() {
@@ -174,6 +179,11 @@ func (s *State) graphVisualView(c *ui.Context, d *Document) bool {
 		if g.topology.Unidentified {
 			ui.Text(c, locales.Text("部分图元缺少完整身份；请查看原生结果")).SingleLine().TextColor(palette.Warning)
 		}
+		ui.Row(c).FillWidth().Height(theme.RowHeight(c, 20)).Children(func() {
+			if len(g.propertyEntities) > 0 {
+				ui.Text(c, locales.Text("图中包含保存或核对时的原生观察；原始查询记录保持不变")).SingleLine().Tooltip(locales.Text("图中包含保存或核对时的原生观察；原始查询记录保持不变")).TextColor(palette.Muted)
+			}
+		})
 		ui.Row(c).FillWidth().Grow(1).MinHeight(0).Gap(1).Children(func() {
 			canvas := ui.Box(c.Key("graph-canvas")).Label(locales.Text("Neo4j 图画布")).FillHeight().Grow(1).MinWidth(150).MinHeight(0).Focusable().HandleInput(g.input)
 			if x, y, over := canvas.PointerPosition(); over {
@@ -206,7 +216,7 @@ func (s *State) graphVisualView(c *ui.Context, d *Document) bool {
 func (s *State) graphInspector(c *ui.Context, d *Document, g *graphVisualState) {
 	palette := theme.Colors(c)
 	if g.inspectorMode == "expansion" {
-		s.graphPropertiesInspector(c, g)
+		s.graphPropertiesInspector(c, d, g)
 		return
 	}
 	if g.selected == "" {
@@ -270,7 +280,7 @@ func (s *State) graphInspector(c *ui.Context, d *Document, g *graphVisualState) 
 	if conflict {
 		ui.Text(c, locales.Text("同一图元存在不同观察值；显示首次观察，请定位原始记录")).SingleLine().Tooltip(locales.Text("同一图元存在不同观察值；显示首次观察，请定位原始记录")).TextColor(palette.Warning)
 	}
-	s.graphPropertiesInspector(c, g)
+	s.graphPropertiesInspector(c, d, g)
 	refs := g.cells()
 	ui.Button(c, locales.Text("定位原始记录")).Disabled(len(refs) == 0).Menu(func(m *ui.Menu) {
 		for _, ref := range refs[:min(50, len(refs))] {
@@ -457,7 +467,7 @@ func boundedGraphJSON(value any) string {
 	}
 	return string(raw)
 }
-func (s *State) graphPropertiesInspector(c *ui.Context, g *graphVisualState) {
+func (s *State) graphPropertiesInspector(c *ui.Context, d *Document, g *graphVisualState) {
 	if g.inspectorMode != "" {
 		if ui.Button(c, locales.Text("返回图属性")).Clicked() {
 			g.inspectorMode = ""
@@ -514,6 +524,9 @@ func (s *State) graphPropertiesInspector(c *ui.Context, g *graphVisualState) {
 						g.fieldJSON = ""
 						g.inspectorMode = "field"
 						c.AnimationFrame()
+					}
+					if ui.Button(c, locales.Text("编辑图属性")).Label(p.Name + " " + locales.Text("编辑图属性")).Tooltip(locales.Text("仅支持已有字符串、布尔值、整数和有限浮点属性；失效会话、冲突观察和快照不可编辑")).Disabled(!s.canEditGraphProperty(d, g, p)).Clicked() {
+						s.openGraphPropertyDraft(d, g, p)
 					}
 				})
 			}

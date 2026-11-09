@@ -79,7 +79,7 @@ release derived caches and pending interaction state.
 PNG (2560x1600) and SVG (1280x800) exports capture independent display geometry
 before the file picker/writer, fit visible entities and escape labels. They issue
 no Cypher and do not borrow later camera/hidden state. Native graph/result export
-continues to preserve all retained typed values. This view is read-only. Explicit neighbor expansion runs one fixed parameterized
+continues to preserve all retained typed values. Explicit neighbor expansion runs one fixed parameterized
 read on the original document lease/database, up to 200 rows and 4 MiB (reduced
 when the remaining observation budget is smaller). The query limit is a live
 bounded observation, not complete adjacency or an atomic snapshot. Each native
@@ -96,7 +96,36 @@ while all old positions, pins, hidden state and camera remain unchanged. Result
 snapshots include owned neighbor values and receipts in their 16 MiB budget, and
 provide read-only neighbor JSON and image export without live expansion. Original
 query/result JSON continues to contain only original records; separate expansion
-JSON retains the complete bounded observations. Property writes remain pending.
+JSON retains the complete bounded observations. Existing string, boolean, int64 and finite float properties can be edited from the
+node/relationship inspector. A draft captures the original lease, namespace,
+qualified target and typed old value, then requires a complete immutable request
+preview before one native save. The fixed parameterized query performs a dependent
+self-assignment to obtain the entity lock before comparing the selected property
+value/type and exact node label set or directed relationship type/endpoints.
+Other properties are not compared. Native numeric equality applies to floats,
+including signed zero; this is not complete entity or incarnation concurrency.
+
+The save retains its entire native result, counters, bookmarks, request and error
+separately. A completed zero-row result means the requested replacement was not
+admitted; the lock-acquiring self-assignment remains in counters. Success displays
+the returned complete native entity without rewriting the original SQLResult,
+Cypher text or table. Separate JSON exports and read-only snapshots own receipts
+and display observations. Existing topology bounds still apply. Old/new parameter
+capture shares 1 MiB; complete semantic request JSON is also bounded to 1 MiB.
+Responses are bounded to two rows/2 MiB, and at most 1000 operation records share
+8 MiB with reserved capacity before dispatch. Records count toward snapshot limits.
+
+Conflicts retain drafts without resubmitting. Known failures before native dispatch
+remain editable and require a new explicit preview; they are not uncertain commits. Cancellation waits for the original
+executor; uncertainty and stale publication retain evidence and require explicit
+original-profile recovery. Attempted drafts cannot replay, including after recovery.
+Disconnect preserves original qualified property drafts and receipts; terminal close
+releases them after executor cancellation/acknowledgement. Explicit verification
+issues a separate bounded entity read, retains its original native response, and
+does not provide missing write confirmation even when values match. Leaving or
+closing the workspace guards every unprocessed property draft/operation. Graph-grid
+editing, property creation/removal, non-scalar property editing and graph import
+remain pending; Community fixtures do not validate Enterprise RBAC permissions.
 
 Cypher JSON parameters are temporary per-document drafts. They are not saved in
 query text, history or restored workspaces. Duplicate keys, invalid JSON,
@@ -197,10 +226,10 @@ acceptance includes saved-profile reopening, native typed values/metadata,
 published generations, committed writes with lost/canceled responses, explicit
 recovery, original close/termination, retained-node property expansion, original
 node visibility, native snapshots/exports, bounded fallback and localized
-workbench/form images. Four grid modes require 104 native groups and 624 images, including retained
+workbench/form images. Four grid modes require 116 native groups and 736 images, including retained
 graph paths, parallel/reverse/self-loop relationships, missing endpoints, original
 record links, full property JSON, snapshots, image export and 1001-node display
-bounds, explicit one/second-hop reads, 200-row neighbor limits, separate record
+bounds, explicit one/second-hop reads, 200-row neighbor limits, scalar property saves and lock-blocked typed conflicts, committed-write response loss, independent verification, separate record
 links/exports, conflict observations, parked generation rejection and native
 response-loss/cancellation/original-close recovery without replay. Cleanup
 checks immutable container ID and nonce labels. Evidence and sanitized logs stay

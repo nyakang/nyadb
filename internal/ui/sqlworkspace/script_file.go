@@ -14,7 +14,7 @@ type fileLease interface {
 // RunFile is an explicit operation; it never replaces the document text or
 // acquires a replacement physical session. Cancellation waits for its receipt.
 func (s *State) RunFile(d *Document) {
-	if d == nil || d.closed || d.Loading() || d.recoveryNeeded || !s.connected(d.profileID) {
+	if d == nil || d.closed || d.queryBusy() || d.recoveryNeeded || !s.connected(d.profileID) {
 		return
 	}
 	lease, ok := d.lease.(fileLease)

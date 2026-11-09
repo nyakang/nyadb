@@ -72,6 +72,12 @@ type Document struct {
 	graphVisualOpen               bool
 	graphVisual                   *graphVisualState
 	graphExpansion                *graphExpansionRequest
+	graphPropertyDraft            *graphPropertyDraft
+	graphPropertyPending          *graphPropertyPending
+	graphPropertyRecords          []graphPropertyRecord
+	graphPropertyBytes            int
+	graphPropertyOpen             bool
+	graphPropertyRecord           int
 	nativeCommands                bool
 	commandDialect                string
 	snapshotOwner                 *Document
@@ -133,9 +139,12 @@ type Document struct {
 func (d *Document) ProfileID() int64 { return d.profileID }
 func (d *Document) Database() string { return d.database }
 func (d *Document) QueryID() string  { return d.queryID }
-func (d *Document) Loading() bool    { return d.loading || d.graphExpansion != nil }
+func (d *Document) Loading() bool {
+	return d.loading || d.graphExpansion != nil || d.graphPropertyPending != nil
+}
+func (d *Document) queryBusy() bool { return d.Loading() || d.graphPropertyDraft != nil }
 func (d *Document) CancelRequested() bool {
-	return d.cancelRequested || d.graphExpansion != nil && d.graphExpansion.canceled
+	return d.cancelRequested || d.graphExpansion != nil && d.graphExpansion.canceled || d.graphPropertyPending != nil && d.graphPropertyPending.canceled
 }
 func (d *Document) Error() string               { return d.err }
 func (d *Document) Result() *contract.SQLResult { return d.result }
@@ -262,6 +271,9 @@ func (s *State) Close(d *Document) {
 	if p.guardDoc == d {
 		p.guardDoc, p.guardNext = nil, nil
 	}
+	if p.graphLeaveDoc == d {
+		p.graphLeaveDoc, p.graphLeaveNext = nil, nil
+	}
 	if p.nameDoc == d {
 		p.nameDoc, p.nameOpen = nil, false
 	}
@@ -277,6 +289,10 @@ func (s *State) Close(d *Document) {
 		d.removeSnapshot(0)
 	}
 	d.graphParameters, d.graphJSON = "", ""
+	d.graphPropertyDraft, d.graphPropertyPending = nil, nil
+	d.graphPropertyRecords = nil
+	d.graphPropertyBytes, d.graphPropertyRecord = 0, 0
+	d.graphPropertyOpen = false
 	if d.graphVisual != nil {
 		d.graphVisual.release()
 	}
@@ -307,6 +323,7 @@ func (s *State) CloseAll() {
 	s.persistence.lastWorkspace = queries.Workspace{}
 	s.persistence.flushNext, s.persistence.awaitClose, s.persistence.guardNext, s.persistence.exitNext = nil, nil, nil, nil
 	s.persistence.nameDoc, s.persistence.guardDoc, s.persistence.explainDoc = nil, nil, nil
+	s.persistence.graphLeaveDoc, s.persistence.graphLeaveNext = nil, nil
 	s.persistence.assetDialog, s.persistence.assetMenu = nil, nil
 	s.persistence.assetGroupMenu = nil
 	s.persistence.assets, s.persistence.catalogs, s.persistence.assetBusy, s.persistence.catalogBusy = nil, nil, nil, nil

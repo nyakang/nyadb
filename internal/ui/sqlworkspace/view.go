@@ -76,11 +76,11 @@ func (s *State) View(c *ui.Context, t *Document) {
 						caption = locales.Text("运行")
 					}
 					if ui.Button(c, caption).Tooltip(runLabel + " · Ctrl+Enter").Label(runLabel).
-						Disabled(!connected || t.Loading() || t.recoveryNeeded).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
+						Disabled(!connected || t.queryBusy() || t.recoveryNeeded).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
 						s.Run(c.Services().Invalidate, t)
 					}
 					if !t.nativeCommands {
-						theme.IconButton(c, "", "chevron-down").Label(t.queryText("选择 SQL 执行范围")).Disabled(!connected || t.Loading() || t.recoveryNeeded).Menu(func(m *ui.Menu) {
+						theme.IconButton(c, "", "chevron-down").Label(t.queryText("选择 SQL 执行范围")).Disabled(!connected || t.queryBusy() || t.recoveryNeeded).Menu(func(m *ui.Menu) {
 							if m.Item(locales.Text("运行当前语句")).Chosen() {
 								s.RunCurrent(c.Services().Invalidate, t)
 							}
@@ -98,6 +98,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 					}
 					s.sqlLayoutMenu(c, t)
 					s.graphOptionsView(c, t)
+					s.graphPropertyControls(c, t)
 					if !t.restRequests() && !t.cql() && !t.cypher() {
 						if ui.Button(c, formatLabel).Clicked() {
 							s.Format(t)
@@ -108,11 +109,11 @@ func (s *State) View(c *ui.Context, t *Document) {
 							s.Explain(t)
 						}
 					}
-					if ui.Button(c, locales.Text("运行并导出")).Disabled(t.Loading() || t.recoveryNeeded || !connected).Clicked() {
+					if ui.Button(c, locales.Text("运行并导出")).Disabled(t.queryBusy() || t.recoveryNeeded || !connected).Clicked() {
 						s.RunExport(t)
 					}
 					if !t.nativeCommands {
-						if ui.Button(c, t.queryText("执行 SQL 文件")).Disabled(t.Loading() || t.recoveryNeeded || !connected || !fileSupported).Clicked() {
+						if ui.Button(c, t.queryText("执行 SQL 文件")).Disabled(t.queryBusy() || t.recoveryNeeded || !connected || !fileSupported).Clicked() {
 							s.RunFile(t)
 						}
 					}
@@ -166,8 +167,8 @@ func (s *State) View(c *ui.Context, t *Document) {
 			}
 			s.queryDiagnosticView(c, t)
 			if t.err != "" {
-				ui.Text(c, t.err).Padding(3, 8).FontSize(theme.Font(c, 11)).
-					TextColor(p.Error).SingleLine().Tooltip(t.err)
+				ui.Text(c, locales.Text(t.err)).Padding(3, 8).FontSize(theme.Font(c, 11)).
+					TextColor(p.Error).SingleLine().Tooltip(locales.Text(t.err))
 			} else if !connected && !t.recoveryNeeded {
 				ui.Text(c, locales.Text("请连接数据库后新建查询")).Padding(3, 8).
 					TextColor(p.Muted).FontSize(theme.Font(c, 11))
@@ -321,7 +322,7 @@ func sqlResultSummary(t *Document) string {
 func (s *State) resultContent(c *ui.Context, t *Document) {
 	s.cachedExportView(c, t)
 	if t.err != "" && (t.snapshotOwner != nil || t.layoutMode == "result") {
-		ui.Text(c, t.err).TextColor(theme.Colors(c).Error).SingleLine().Tooltip(t.err)
+		ui.Text(c, locales.Text(t.err)).TextColor(theme.Colors(c).Error).SingleLine().Tooltip(locales.Text(t.err))
 	}
 	s.planNavigation(c, t)
 	if t.planVisible && t.plan != nil && !t.showOrdinary {

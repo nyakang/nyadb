@@ -44,7 +44,7 @@ type graphExpansionRequest struct {
 }
 
 func (s *State) canExpandGraph(d *Document) bool {
-	if d == nil || d.closed || d.preview || d.snapshotOwner != nil || !d.cypher() || d.Loading() || d.recoveryNeeded || d.prepareResults != nil || d.profileID <= 0 || !s.connected(d.profileID) || d.result == nil || d.result.Graph == nil || !d.result.Graph.Completed || d.result.Graph.Uncertain {
+	if d == nil || d.closed || d.preview || d.snapshotOwner != nil || !d.cypher() || d.queryBusy() || d.recoveryNeeded || d.prepareResults != nil || d.profileID <= 0 || !s.connected(d.profileID) || d.result == nil || d.result.Graph == nil || !d.result.Graph.Completed || d.result.Graph.Uncertain {
 		return false
 	}
 	g := d.graphVisualState()
@@ -183,6 +183,7 @@ func (g *graphVisualState) rebuildObservations() {
 		}
 	}
 	g.topology = graphresult.ExtractTopologyObservations(*g.base, sources)
+	g.applyGraphPropertyEntities()
 	fixed := make(map[string]bool, len(g.positions))
 	for key := range g.positions {
 		fixed[key] = true

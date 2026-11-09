@@ -82,3 +82,18 @@ func (l *engineLease) ExecuteGraph(ctx context.Context, r contract.GraphQueryReq
 	}
 	return p.ExecuteGraph(ctx, r)
 }
+
+func (l *engineLease) SupportsGraphPropertyWrites() bool {
+	if p, ok := l.QueryLease.(interface{ SupportsGraphPropertyWrites() bool }); ok {
+		return p.SupportsGraphPropertyWrites()
+	}
+	_, ok := l.QueryLease.(contract.GraphPropertyWriteLease)
+	return ok
+}
+func (l *engineLease) WriteGraphProperty(ctx context.Context, r contract.GraphPropertyWriteRequest) (contract.GraphPropertyWriteReceipt, error) {
+	p, ok := l.QueryLease.(contract.GraphPropertyWriteLease)
+	if !ok {
+		return contract.GraphPropertyWriteReceipt{}, contract.ErrUnsupported
+	}
+	return p.WriteGraphProperty(ctx, r.Clone())
+}

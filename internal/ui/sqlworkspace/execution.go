@@ -24,7 +24,7 @@ type executionResult struct {
 }
 
 func (s *State) Run(invalidate func(), t *Document) {
-	if t == nil || t.closed || t.preview || t.Editor == nil || t.Loading() {
+	if t == nil || t.closed || t.preview || t.Editor == nil || t.queryBusy() {
 		return
 	}
 	if t.recoveryNeeded {
@@ -59,7 +59,7 @@ func (s *State) Run(invalidate func(), t *Document) {
 	s.runStatement(invalidate, t, statement)
 }
 func (s *State) runStatement(invalidate func(), t *Document, statement string) {
-	if t == nil || t.closed || t.Loading() || t.recoveryNeeded || !s.connected(t.profileID) {
+	if t == nil || t.closed || t.queryBusy() || t.recoveryNeeded || !s.connected(t.profileID) {
 		return
 	}
 	execute := s.Executor
@@ -168,6 +168,9 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 // canceled context. In particular, a submitted DML statement might have
 // already committed; cancellation is never described as a rollback.
 func (s *State) RequestCancel(t *Document) {
+	if s.cancelGraphProperty(t) {
+		return
+	}
 	if s.cancelGraphExpansion(t) {
 		return
 	}
@@ -190,6 +193,7 @@ func (s *State) dispose(t *Document) {
 	if t == nil {
 		return
 	}
+	s.cancelGraphProperty(t)
 	t.stopGraphExpansion()
 	t.graphJSON = ""
 	if t.graphVisual != nil {
@@ -249,6 +253,7 @@ func (s *State) DisconnectProfile(profileID int64) {
 func (s *State) Consume() {
 	s.consumeHistory()
 	for _, t := range s.documents {
+		s.consumeGraphProperty(t)
 		s.consumeGraphExpansion(t)
 		s.consumeCompletionMetadata(t)
 		if t.prepareResults != nil {

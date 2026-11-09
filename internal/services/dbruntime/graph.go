@@ -40,3 +40,22 @@ func (l *queryLease) ExecuteGraph(ctx context.Context, r contract.GraphQueryRequ
 	// Revocation closes and waits for this original executor at the adapter.
 	return p.ExecuteGraph(ctx, r)
 }
+
+func (l *queryLease) SupportsGraphPropertyWrites() bool {
+	_, ok := l.raw.(contract.GraphPropertyWriteLease)
+	return ok
+}
+
+func (l *queryLease) WriteGraphProperty(ctx context.Context, r contract.GraphPropertyWriteRequest) (contract.GraphPropertyWriteReceipt, error) {
+	if e := l.CheckQueryLease(); e != nil {
+		return contract.GraphPropertyWriteReceipt{}, e
+	}
+	if r.Namespace.ProfileID != l.session.id {
+		return contract.GraphPropertyWriteReceipt{}, contract.ErrRevoked
+	}
+	p, ok := l.raw.(contract.GraphPropertyWriteLease)
+	if !ok {
+		return contract.GraphPropertyWriteReceipt{}, contract.ErrUnsupported
+	}
+	return p.WriteGraphProperty(ctx, r.Clone())
+}

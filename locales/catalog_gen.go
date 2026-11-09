@@ -29645,3 +29645,357 @@ func GraphNeighborJSON() string { return In(i18n.Locale()).GraphNeighborJSON() }
 func (msgs Messages) GraphNeighborJSON() string {
 	return Catalog.Format(msgs.locale, "graphNeighborJSON", nil)
 }
+
+// GraphPropertyInvalid says "图属性值类型或范围不受支持"
+// in the language the app shows.
+func GraphPropertyInvalid() string { return In(i18n.Locale()).GraphPropertyInvalid() }
+
+// GraphPropertyInvalid says "图属性值类型或范围不受支持"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyInvalid() string {
+	return Catalog.Format(msgs.locale, "graphPropertyInvalid", nil)
+}
+
+// GraphPropertyUnchanged says "属性值未更改"
+// in the language the app shows.
+func GraphPropertyUnchanged() string { return In(i18n.Locale()).GraphPropertyUnchanged() }
+
+// GraphPropertyUnchanged says "属性值未更改"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyUnchanged() string {
+	return Catalog.Format(msgs.locale, "graphPropertyUnchanged", nil)
+}
+
+// GraphPropertyParametersBound says "原值和新值的参数总量超过 1 MiB"
+// in the language the app shows.
+func GraphPropertyParametersBound() string { return In(i18n.Locale()).GraphPropertyParametersBound() }
+
+// GraphPropertyParametersBound says "原值和新值的参数总量超过 1 MiB"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyParametersBound() string {
+	return Catalog.Format(msgs.locale, "graphPropertyParametersBound", nil)
+}
+
+// GraphPropertyOriginalDraft says "属性草稿属于此前会话或结果；不会自动提交"
+// in the language the app shows.
+func GraphPropertyOriginalDraft() string { return In(i18n.Locale()).GraphPropertyOriginalDraft() }
+
+// GraphPropertyOriginalDraft says "属性草稿属于此前会话或结果；不会自动提交"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyOriginalDraft() string {
+	return Catalog.Format(msgs.locale, "graphPropertyOriginalDraft", nil)
+}
+
+// GraphPropertyConflict says "属性或图元已变化；未替换目标值，请显式核对当前图元"
+// in the language the app shows.
+func GraphPropertyConflict() string { return In(i18n.Locale()).GraphPropertyConflict() }
+
+// GraphPropertyConflict says "属性或图元已变化；未替换目标值，请显式核对当前图元"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyConflict() string {
+	return Catalog.Format(msgs.locale, "graphPropertyConflict", nil)
+}
+
+// GraphPropertyUncertain says "图属性操作缺少当前原会话确认；保留草稿和回执，不会重放"
+// in the language the app shows.
+func GraphPropertyUncertain() string { return In(i18n.Locale()).GraphPropertyUncertain() }
+
+// GraphPropertyUncertain says "图属性操作缺少当前原会话确认；保留草稿和回执，不会重放"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyUncertain() string {
+	return Catalog.Format(msgs.locale, "graphPropertyUncertain", nil)
+}
+
+// GraphPropertyDraft says "图属性草稿"
+// in the language the app shows.
+func GraphPropertyDraft() string { return In(i18n.Locale()).GraphPropertyDraft() }
+
+// GraphPropertyDraft says "图属性草稿"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyDraft() string {
+	return Catalog.Format(msgs.locale, "graphPropertyDraft", nil)
+}
+
+// GraphPropertyRecords says "属性操作记录 · %d"
+// in the language the app shows.
+func GraphPropertyRecords() string { return In(i18n.Locale()).GraphPropertyRecords() }
+
+// GraphPropertyRecords says "属性操作记录 · %d"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyRecords() string {
+	return Catalog.Format(msgs.locale, "graphPropertyRecords", nil)
+}
+
+// GraphPropertyCancel says "取消图属性操作"
+// in the language the app shows.
+func GraphPropertyCancel() string { return In(i18n.Locale()).GraphPropertyCancel() }
+
+// GraphPropertyCancel says "取消图属性操作"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyCancel() string {
+	return Catalog.Format(msgs.locale, "graphPropertyCancel", nil)
+}
+
+// GraphPropertyExport says "导出属性操作 JSON"
+// in the language the app shows.
+func GraphPropertyExport() string { return In(i18n.Locale()).GraphPropertyExport() }
+
+// GraphPropertyExport says "导出属性操作 JSON"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyExport() string {
+	return Catalog.Format(msgs.locale, "graphPropertyExport", nil)
+}
+
+// GraphPropertyWaiting says "等待原执行器确认；不会自动重试或重放"
+// in the language the app shows.
+func GraphPropertyWaiting() string { return In(i18n.Locale()).GraphPropertyWaiting() }
+
+// GraphPropertyWaiting says "等待原执行器确认；不会自动重试或重放"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyWaiting() string {
+	return Catalog.Format(msgs.locale, "graphPropertyWaiting", nil)
+}
+
+// GraphPropertyEdit says "编辑图属性"
+// in the language the app shows.
+func GraphPropertyEdit() string { return In(i18n.Locale()).GraphPropertyEdit() }
+
+// GraphPropertyEdit says "编辑图属性"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyEdit() string {
+	return Catalog.Format(msgs.locale, "graphPropertyEdit", nil)
+}
+
+// GraphPropertyCompare says "保存会锁定目标并比较属性旧值和类型；其他属性不参与比较"
+// in the language the app shows.
+func GraphPropertyCompare() string { return In(i18n.Locale()).GraphPropertyCompare() }
+
+// GraphPropertyCompare says "保存会锁定目标并比较属性旧值和类型；其他属性不参与比较"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyCompare() string {
+	return Catalog.Format(msgs.locale, "graphPropertyCompare", nil)
+}
+
+// GraphPropertyNewValue says "属性新值"
+// in the language the app shows.
+func GraphPropertyNewValue() string { return In(i18n.Locale()).GraphPropertyNewValue() }
+
+// GraphPropertyNewValue says "属性新值"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyNewValue() string {
+	return Catalog.Format(msgs.locale, "graphPropertyNewValue", nil)
+}
+
+// GraphPropertyPreview says "预览属性保存"
+// in the language the app shows.
+func GraphPropertyPreview() string { return In(i18n.Locale()).GraphPropertyPreview() }
+
+// GraphPropertyPreview says "预览属性保存"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyPreview() string {
+	return Catalog.Format(msgs.locale, "graphPropertyPreview", nil)
+}
+
+// GraphPropertySave says "确认保存图属性"
+// in the language the app shows.
+func GraphPropertySave() string { return In(i18n.Locale()).GraphPropertySave() }
+
+// GraphPropertySave says "确认保存图属性"
+// in the language of msgs.
+func (msgs Messages) GraphPropertySave() string {
+	return Catalog.Format(msgs.locale, "graphPropertySave", nil)
+}
+
+// GraphPropertyDiscard says "放弃属性草稿"
+// in the language the app shows.
+func GraphPropertyDiscard() string { return In(i18n.Locale()).GraphPropertyDiscard() }
+
+// GraphPropertyDiscard says "放弃属性草稿"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyDiscard() string {
+	return Catalog.Format(msgs.locale, "graphPropertyDiscard", nil)
+}
+
+// GraphPropertyFullRequest says "完整图属性保存请求 JSON"
+// in the language the app shows.
+func GraphPropertyFullRequest() string { return In(i18n.Locale()).GraphPropertyFullRequest() }
+
+// GraphPropertyFullRequest says "完整图属性保存请求 JSON"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyFullRequest() string {
+	return Catalog.Format(msgs.locale, "graphPropertyFullRequest", nil)
+}
+
+// GraphPropertyViewReceipt says "查看属性操作回执"
+// in the language the app shows.
+func GraphPropertyViewReceipt() string { return In(i18n.Locale()).GraphPropertyViewReceipt() }
+
+// GraphPropertyViewReceipt says "查看属性操作回执"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyViewReceipt() string {
+	return Catalog.Format(msgs.locale, "graphPropertyViewReceipt", nil)
+}
+
+// GraphPropertyReceipt says "属性操作原生回执"
+// in the language the app shows.
+func GraphPropertyReceipt() string { return In(i18n.Locale()).GraphPropertyReceipt() }
+
+// GraphPropertyReceipt says "属性操作原生回执"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyReceipt() string {
+	return Catalog.Format(msgs.locale, "graphPropertyReceipt", nil)
+}
+
+// GraphPropertyFullRecord says "完整图属性操作记录 JSON"
+// in the language the app shows.
+func GraphPropertyFullRecord() string { return In(i18n.Locale()).GraphPropertyFullRecord() }
+
+// GraphPropertyFullRecord says "完整图属性操作记录 JSON"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyFullRecord() string {
+	return Catalog.Format(msgs.locale, "graphPropertyFullRecord", nil)
+}
+
+// GraphPropertyReadbackObservation says "读回只代表该次新观察；匹配值不能补充缺失的写入确认"
+// in the language the app shows.
+func GraphPropertyReadbackObservation() string {
+	return In(i18n.Locale()).GraphPropertyReadbackObservation()
+}
+
+// GraphPropertyReadbackObservation says "读回只代表该次新观察；匹配值不能补充缺失的写入确认"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyReadbackObservation() string {
+	return Catalog.Format(msgs.locale, "graphPropertyReadbackObservation", nil)
+}
+
+// GraphPropertyVerify says "核对当前图元"
+// in the language the app shows.
+func GraphPropertyVerify() string { return In(i18n.Locale()).GraphPropertyVerify() }
+
+// GraphPropertyVerify says "核对当前图元"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyVerify() string {
+	return Catalog.Format(msgs.locale, "graphPropertyVerify", nil)
+}
+
+// GraphPropertyBackDraft says "返回属性草稿"
+// in the language the app shows.
+func GraphPropertyBackDraft() string { return In(i18n.Locale()).GraphPropertyBackDraft() }
+
+// GraphPropertyBackDraft says "返回属性草稿"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyBackDraft() string {
+	return Catalog.Format(msgs.locale, "graphPropertyBackDraft", nil)
+}
+
+// GraphPropertyUnprocessed says "图属性草稿或操作尚未处理"
+// in the language the app shows.
+func GraphPropertyUnprocessed() string { return In(i18n.Locale()).GraphPropertyUnprocessed() }
+
+// GraphPropertyUnprocessed says "图属性草稿或操作尚未处理"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyUnprocessed() string {
+	return Catalog.Format(msgs.locale, "graphPropertyUnprocessed", nil)
+}
+
+// GraphPropertyDiscardOutcome says "放弃草稿不会证明服务器端写入已回滚；原生回执可独立导出"
+// in the language the app shows.
+func GraphPropertyDiscardOutcome() string { return In(i18n.Locale()).GraphPropertyDiscardOutcome() }
+
+// GraphPropertyDiscardOutcome says "放弃草稿不会证明服务器端写入已回滚；原生回执可独立导出"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyDiscardOutcome() string {
+	return Catalog.Format(msgs.locale, "graphPropertyDiscardOutcome", nil)
+}
+
+// GraphPropertyNativeObservation says "图中包含保存或核对时的原生观察；原始查询记录保持不变"
+// in the language the app shows.
+func GraphPropertyNativeObservation() string {
+	return In(i18n.Locale()).GraphPropertyNativeObservation()
+}
+
+// GraphPropertyNativeObservation says "图中包含保存或核对时的原生观察；原始查询记录保持不变"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyNativeObservation() string {
+	return Catalog.Format(msgs.locale, "graphPropertyNativeObservation", nil)
+}
+
+// GraphPropertyRetainedValue says "保留原值：%s"
+// in the language the app shows.
+func GraphPropertyRetainedValue() string { return In(i18n.Locale()).GraphPropertyRetainedValue() }
+
+// GraphPropertyRetainedValue says "保留原值：%s"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyRetainedValue() string {
+	return Catalog.Format(msgs.locale, "graphPropertyRetainedValue", nil)
+}
+
+// GraphPropertyUnconfirmed says "原生回执未确认属性替换"
+// in the language the app shows.
+func GraphPropertyUnconfirmed() string { return In(i18n.Locale()).GraphPropertyUnconfirmed() }
+
+// GraphPropertyUnconfirmed says "原生回执未确认属性替换"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyUnconfirmed() string {
+	return Catalog.Format(msgs.locale, "graphPropertyUnconfirmed", nil)
+}
+
+// GraphPropertyApplied says "原生回执确认属性已替换"
+// in the language the app shows.
+func GraphPropertyApplied() string { return In(i18n.Locale()).GraphPropertyApplied() }
+
+// GraphPropertyApplied says "原生回执确认属性已替换"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyApplied() string {
+	return Catalog.Format(msgs.locale, "graphPropertyApplied", nil)
+}
+
+// GraphPropertyVerified says "已保留独立图元核对结果"
+// in the language the app shows.
+func GraphPropertyVerified() string { return In(i18n.Locale()).GraphPropertyVerified() }
+
+// GraphPropertyVerified says "已保留独立图元核对结果"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyVerified() string {
+	return Catalog.Format(msgs.locale, "graphPropertyVerified", nil)
+}
+
+// GraphPropertyVerifyIncomplete says "图元核对未获得完整原生确认"
+// in the language the app shows.
+func GraphPropertyVerifyIncomplete() string { return In(i18n.Locale()).GraphPropertyVerifyIncomplete() }
+
+// GraphPropertyVerifyIncomplete says "图元核对未获得完整原生确认"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyVerifyIncomplete() string {
+	return Catalog.Format(msgs.locale, "graphPropertyVerifyIncomplete", nil)
+}
+
+// GraphPropertyVerifyAbsent says "该次核对未返回图元；此前图形仍是旧观察"
+// in the language the app shows.
+func GraphPropertyVerifyAbsent() string { return In(i18n.Locale()).GraphPropertyVerifyAbsent() }
+
+// GraphPropertyVerifyAbsent says "该次核对未返回图元；此前图形仍是旧观察"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyVerifyAbsent() string {
+	return Catalog.Format(msgs.locale, "graphPropertyVerifyAbsent", nil)
+}
+
+// GraphPropertySupported says "仅支持已有字符串、布尔值、整数和有限浮点属性；失效会话、冲突观察和快照不可编辑"
+// in the language the app shows.
+func GraphPropertySupported() string { return In(i18n.Locale()).GraphPropertySupported() }
+
+// GraphPropertySupported says "仅支持已有字符串、布尔值、整数和有限浮点属性；失效会话、冲突观察和快照不可编辑"
+// in the language of msgs.
+func (msgs Messages) GraphPropertySupported() string {
+	return Catalog.Format(msgs.locale, "graphPropertySupported", nil)
+}
+
+// GraphPropertyRecordCapacity says "属性操作记录预算不足；已有记录可继续查看和导出"
+// in the language the app shows.
+func GraphPropertyRecordCapacity() string { return In(i18n.Locale()).GraphPropertyRecordCapacity() }
+
+// GraphPropertyRecordCapacity says "属性操作记录预算不足；已有记录可继续查看和导出"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyRecordCapacity() string {
+	return Catalog.Format(msgs.locale, "graphPropertyRecordCapacity", nil)
+}

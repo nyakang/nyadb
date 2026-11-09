@@ -17,7 +17,7 @@ type streamLease interface {
 }
 
 func (s *State) RunExport(d *Document) {
-	if d == nil || d.Loading() || d.recoveryNeeded || !s.connected(d.profileID) {
+	if d == nil || d.queryBusy() || d.recoveryNeeded || !s.connected(d.profileID) {
 		return
 	}
 	lease, ok := d.lease.(streamLease)

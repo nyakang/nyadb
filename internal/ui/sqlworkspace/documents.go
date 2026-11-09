@@ -55,6 +55,8 @@ type ioJob struct {
 	next func(ui.Services)
 }
 type persistence struct {
+	graphLeaveDoc     *Document
+	graphLeaveNext    func(ui.Services)
 	closed            bool
 	timer             *time.Timer
 	savedRevision     uint64
@@ -499,6 +501,9 @@ func (s *State) consumeIO(services ui.Services) {
 	p.jobs = append(kept, p.jobs...)
 }
 func (s *State) GuardLeave(d *Document, next func(ui.Services)) bool {
+	if s.guardGraphPropertyLeave(d, next) {
+		return true
+	}
 	if d == nil || !d.Dirty() {
 		return false
 	}
@@ -506,6 +511,15 @@ func (s *State) GuardLeave(d *Document, next func(ui.Services)) bool {
 	return true
 }
 func (s *State) GuardWorkspaceClose(next func(ui.Services)) bool {
+	for _, d := range s.documents {
+		if s.guardGraphPropertyLeave(d, func(services ui.Services) {
+			if !s.GuardWorkspaceClose(next) && next != nil {
+				next(services)
+			}
+		}) {
+			return true
+		}
+	}
 	if s.guardHistoryClose(next) {
 		return true
 	}
@@ -530,6 +544,7 @@ func (s *State) GuardWorkspaceClose(next func(ui.Services)) bool {
 	return false
 }
 func (s *State) Modals(c *ui.Context) {
+	s.graphPropertyModals(c)
 	s.aiModal(c)
 	s.historyModals(c)
 	s.assetModals(c)

@@ -52,6 +52,7 @@ func (s *State) pinResult(d *Document) bool {
 		return false
 	}
 	n := resultSnapshotSize(d.result) + int64(len(d.executedSQL))
+	n += int64(d.graphPropertyBytes)
 	if d.graphVisual != nil {
 		n += int64(d.graphVisual.observationBytes)
 	}
@@ -76,9 +77,14 @@ func (s *State) pinResult(d *Document) bool {
 		x.graphVisualState().cloneReading(d.graphVisual)
 	}
 	x.graphVisualOpen = d.graphVisualOpen
+	for _, record := range d.graphPropertyRecords {
+		x.graphPropertyRecords = append(x.graphPropertyRecords, record.clone())
+	}
+	x.graphPropertyBytes = d.graphPropertyBytes
 	d.nextSnapshot++
 	x.name = fmt.Sprintf("%s-%d", d.Name(), d.nextSnapshot)
 	bytes := resultSnapshotSize(r) + int64(len(d.executedSQL))
+	bytes += int64(x.graphPropertyBytes)
 	if x.graphVisual != nil {
 		bytes += int64(x.graphVisual.observationBytes)
 	}
@@ -96,6 +102,9 @@ func (d *Document) removeSnapshot(index int) {
 	}
 	x.graphVisual, x.graphVisualOpen = nil, false
 	x.graphJSON = ""
+	x.graphPropertyRecords = nil
+	x.graphPropertyBytes = 0
+	x.graphPropertyOpen = false
 	x.closed = true
 	x.snapshotOwner = nil
 	x.selection.Clear()
