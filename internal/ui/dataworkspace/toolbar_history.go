@@ -190,6 +190,10 @@ func mysqlDataWriteHistoryRequest(database, table string, edits []contract.DataE
 	entries := make([]mysqlDataHistoryEntry, 0, len(edits))
 	for _, edit := range edits {
 		kind := strings.ToUpper(edit.Kind)
+		if kind == "DETACH_DELETE" {
+			entries = append(entries, mysqlDataHistoryEntry{At: time.Now(), Kind: "DETACH_DELETE", SQL: "DETACH_DELETE " + mysqlDataHistoryTable(database, table), Summary: true, Pending: pending, Rows: 1})
+			continue
+		}
 		if kind != "INSERT" && kind != "UPDATE" && kind != "DELETE" {
 			continue
 		}

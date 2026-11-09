@@ -50,6 +50,7 @@ type mysqlEditResult struct {
 	Dedicated           bool
 	Err                 error
 	Verification        *contract.DataVerification
+	MutationEdits       []contract.DataEdit
 }
 type mysqlCellHit struct {
 	Row, Source int
@@ -110,7 +111,7 @@ func mysqlDataCanEdit(t *Document, row, source int) bool {
 		return false
 	}
 	if d := mysqlDataDraftForRow(t, row); d != nil {
-		return d.Kind != "delete" && t.allowsDataEdit(d.Kind)
+		return !dataEditDeletesRow(d.Kind) && t.allowsDataEdit(d.Kind)
 	}
 	return t.allowsDataEdit("update") && row < len(t.page.RowSnapshots) && t.page.RowSnapshots[row] != nil && mysqlDataRowKey(t, row) != ""
 }
@@ -229,7 +230,7 @@ func (s *State) finishMySQLCellEdit(t *Document, accept bool) {
 		return
 	}
 	d := s.mysqlRowDraft(t, e.Row)
-	if d == nil || d.Kind == "delete" {
+	if d == nil || dataEditDeletesRow(d.Kind) {
 		return
 	}
 	stageMySQLDataValue(t, d, source, v)
@@ -251,7 +252,7 @@ func (s *State) beginMySQLCellEdit(services ui.Services, t *Document, row, sourc
 	}
 	if !t.edit.Batch {
 		for _, d := range t.edit.Drafts {
-			if d.Row != row && d.Kind != "delete" {
+			if d.Row != row && !dataEditDeletesRow(d.Kind) {
 				previous = d.Row
 				break
 			}
@@ -450,6 +451,10 @@ func (s *State) saveMySQLData(services ui.Services, t *Document) {
 	if len(edits) == 0 {
 		return
 	}
+	if runtime := s.runtimeFor(t); requiresDataMutationPreview(runtime, edits) {
+		s.previewDataMutation(services, t, runtime, keys, edits)
+		return
+	}
 	saver := s.saverFor(t)
 	if saver == nil {
 		t.edit.Err = locales.Text("数据编辑服务不可用")
@@ -488,6 +493,7 @@ func (s *State) stopMySQLDataEdit(t *Document) {
 	if t.edit.Cancel != nil {
 		t.edit.Cancel()
 	}
+	s.cancelDataMutation(t)
 	t.edit.AfterSave = nil
 }
 func (s *State) cancelMySQLDataEdit(t *Document) {
@@ -552,7 +558,7 @@ func (s *State) acceptMySQLDataSaved(t *Document, keys []string, saved *contract
 			continue
 		}
 		outcome := saved.Outcomes[i]
-		if d.Kind != "delete" && outcome.Saved != nil {
+		if !dataEditDeletesRow(d.Kind) && outcome.Saved != nil {
 			for j, name := range t.page.Columns {
 				idx := slices.Index(outcome.PreviewColumns, name)
 				if idx >= 0 && idx < len(outcome.Previews) {
@@ -578,7 +584,7 @@ func (s *State) acceptMySQLDataSaved(t *Document, keys []string, saved *contract
 			}
 		}
 	}
-	s.removeMySQLDataDraftRows(t, func(d *mysqlRowDraft) bool { return d.Kind == "delete" })
+	s.removeMySQLDataDraftRows(t, func(d *mysqlRowDraft) bool { return dataEditDeletesRow(d.Kind) })
 	for _, key := range keys {
 		delete(t.edit.Drafts, key)
 	}
@@ -587,6 +593,9 @@ func (s *State) acceptMySQLDataSaved(t *Document, keys []string, saved *contract
 }
 func (s *State) consumeEdits(services ui.Services) {
 	for _, t := range s.documents {
+		if !t.closed && s.consumeFor(t) {
+			s.consumeDataMutation(t)
+		}
 		if !t.closed && s.consumeFor(t) {
 			s.consumeNativeWriteReceipt(t)
 		}
@@ -601,7 +610,11 @@ func (s *State) consumeEdits(services ui.Services) {
 			if r.Saved != nil && r.Saved.NativeJSON != "" {
 				t.nativeReceipt.JSON = r.Saved.NativeJSON
 			}
-			s.recordDataWriteHistory(t, r.History, r.Saved, r.Err, r.Generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected)
+			historyErr := r.Err
+			if historyErr == nil && len(r.MutationEdits) > 0 && !dataMutationReceiptComplete(t.object, r.MutationEdits, r.Saved) {
+				historyErr = errors.New(locales.Text("提交结果不完整，请核验数据库"))
+			}
+			s.recordDataWriteHistory(t, r.History, r.Saved, historyErr, r.Generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected)
 			if t.edit.Cancel != nil {
 				t.edit.Cancel()
 			}
@@ -726,7 +739,7 @@ func (s *State) consumeEdits(services ui.Services) {
 				s.openMySQLCellEditor(services, t, row, source, v, r.Dedicated)
 				continue
 			}
-			if r.Saved == nil || r.Saved.CommitUncertain || r.Saved.Incomplete || len(r.Saved.Outcomes) != len(r.Keys) {
+			if r.Saved == nil || r.Saved.CommitUncertain || r.Saved.Incomplete || len(r.Saved.Outcomes) != len(r.Keys) || len(r.MutationEdits) > 0 && !dataMutationCommitted(t, r.Keys, r.MutationEdits, r.Saved) {
 				t.edit.Uncertain = cloneEditResult(r.Saved)
 				if t.edit.Uncertain == nil {
 					t.edit.Uncertain = &contract.DataEditResult{}
@@ -962,6 +975,7 @@ func (s *State) Modals(c *ui.Context) {
 		}
 		s.asyncDataEvidenceModal(c, t)
 		s.nativeWriteReceiptModal(c, t)
+		s.dataMutationModal(c, t)
 		s.toolsModals(c, t)
 		s.transferModals(c, t)
 		s.dataFillModal(c, t)
@@ -1026,7 +1040,7 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 	// Use the footer's existing fixed-height command row. Inserting a status
 	// row above the grid moves every cell while a read is pending or fails.
 	palette := theme.Colors(c)
-	if t.edit.Busy || dataTransactionBusy(t) {
+	if t.edit.Busy && !t.mutation.open || dataTransactionBusy(t) {
 		ui.Spinner(c).Size(14, 14)
 	}
 	message, color := "", palette.Muted
@@ -1042,6 +1056,8 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 		message, color = t.transaction.err, palette.Error
 	} else if dataTransactionBusy(t) {
 		message = locales.Text("正在处理事务…")
+	} else if t.mutation.open {
+		message = locales.Text("等待确认实体更改")
 	} else if t.edit.Busy {
 		message = locales.Text("正在处理表数据…")
 	} else if s.runtimeFor(t).AsyncWrites {

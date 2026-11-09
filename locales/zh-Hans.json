@@ -2982,5 +2982,20 @@
   "nativeDataWriteReceiptCopy": "复制完整回执",
   "nativeDataWriteReceiptExport": "导出完整回执",
   "nativeDataWriteClose": "关闭原写入文档",
-  "nativeDataWriteCloseHint": "关闭会丢弃本地草稿与原生回执；不会重新发送写入，也不会确认或回滚原事务。请先复制或导出所需回执。"
+  "nativeDataWriteCloseHint": "关闭会丢弃本地草稿与原生回执；不会重新发送写入，也不会确认或回滚原事务。请先复制或导出所需回执。",
+  "dataMutationConfirmation": "确认实体更改",
+  "dataMutationConfirmationHint": "请检查原始实体、关联关系和属性；确认后将提交此批次更改。",
+  "dataMutationBlocked": "普通删除包含有关联关系的节点。请取消后选择删除方式。此批次尚未写入。",
+  "dataMutationFullPreview": "实体更改完整预览",
+  "dataMutationCopyPreview": "复制完整预览",
+  "dataMutationSubmit": "确认并提交更改",
+  "dataMutationWrite": "已确认的原生实体更改",
+  "dataMutationAwaiting": "等待确认实体更改",
+  "dataMutationPreviewTruncated": "预览已截断；可复制完整内容",
+  "dataMutationInsert": "创建实体",
+  "dataMutationDelete": "删除实体",
+  "dataMutationDetachDelete": "删除实体及关联关系",
+  "dataMutationUpdate": "更新属性",
+  "dataMutationGeneratedIdentity": "待生成",
+  "dataMutationRelationships": "关联关系"
 }

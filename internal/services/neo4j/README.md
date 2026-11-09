@@ -371,5 +371,22 @@ transaction cases, four entity foundation cases and four preview cases. The
 preview cases include six original node/edge/adjacency changes, bounds, read
 cancellation/close and 16 actual COMMIT response-fault combinations per mode.
 This focused scope does not rerun the complete profile/Cypher/workbench image
-matrix. The public Runtime still exposes only property update: preview confirmation,
-entity drafts, affected-edge presentation and public function binding are next.
+matrix. The public Runtime still exposes only property update.
+
+The sole shared data workspace now has a capability-gated original-plan
+confirmation path. Its separate publication/revocation ticket closes unconsumed
+and late preview handles, parks original-profile notifications, and waits for
+preview cancellation acknowledgement. Confirmation checks the captured drafts,
+object, public generation and complete observations; cancellation preserves drafts
+and clears leave continuations. Generated identities and row removal require
+actual COMMIT confirmation with completely corresponding original outcomes.
+Delete and detach-delete drafts are both protected from editing and included in
+history/removal. The UI owns a deep copy of evidence after the one-attempt handle
+has been consumed. English/Chinese confirmation controls fit wide/narrow windows.
+
+This shared path is covered by injected provider/lifecycle tests and eight local
+confirmation images. It is not yet bound by this adapter's public Runtime.
+Native node insertion defaults, explicit deletion choices and end-to-end entity
+acceptance must be delivered together before label insert/delete/detach-delete
+and relationship delete become publicly available. Relationship creation still
+requires a qualified endpoint model.

@@ -317,8 +317,8 @@ func (s *State) rememberDataTransactionSave(t *Document, keys []string, result *
 			for name, value := range draft.Values {
 				old.Values[name] = value
 			}
-			if draft.Kind == "delete" {
-				old.Kind = "delete"
+			if dataEditDeletesRow(draft.Kind) {
+				old.Kind = draft.Kind
 			}
 		}
 	}

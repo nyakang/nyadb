@@ -30467,3 +30467,153 @@ func NativeDataWriteCloseHint() string { return In(i18n.Locale()).NativeDataWrit
 func (msgs Messages) NativeDataWriteCloseHint() string {
 	return Catalog.Format(msgs.locale, "nativeDataWriteCloseHint", nil)
 }
+
+// DataMutationConfirmation says "确认实体更改"
+// in the language the app shows.
+func DataMutationConfirmation() string { return In(i18n.Locale()).DataMutationConfirmation() }
+
+// DataMutationConfirmation says "确认实体更改"
+// in the language of msgs.
+func (msgs Messages) DataMutationConfirmation() string {
+	return Catalog.Format(msgs.locale, "dataMutationConfirmation", nil)
+}
+
+// DataMutationConfirmationHint says "请检查原始实体、关联关系和属性；确认后将提交此批次更改。"
+// in the language the app shows.
+func DataMutationConfirmationHint() string { return In(i18n.Locale()).DataMutationConfirmationHint() }
+
+// DataMutationConfirmationHint says "请检查原始实体、关联关系和属性；确认后将提交此批次更改。"
+// in the language of msgs.
+func (msgs Messages) DataMutationConfirmationHint() string {
+	return Catalog.Format(msgs.locale, "dataMutationConfirmationHint", nil)
+}
+
+// DataMutationBlocked says "普通删除包含有关联关系的节点。请取消后选择删除方式。此批次尚未写入。"
+// in the language the app shows.
+func DataMutationBlocked() string { return In(i18n.Locale()).DataMutationBlocked() }
+
+// DataMutationBlocked says "普通删除包含有关联关系的节点。请取消后选择删除方式。此批次尚未写入。"
+// in the language of msgs.
+func (msgs Messages) DataMutationBlocked() string {
+	return Catalog.Format(msgs.locale, "dataMutationBlocked", nil)
+}
+
+// DataMutationFullPreview says "实体更改完整预览"
+// in the language the app shows.
+func DataMutationFullPreview() string { return In(i18n.Locale()).DataMutationFullPreview() }
+
+// DataMutationFullPreview says "实体更改完整预览"
+// in the language of msgs.
+func (msgs Messages) DataMutationFullPreview() string {
+	return Catalog.Format(msgs.locale, "dataMutationFullPreview", nil)
+}
+
+// DataMutationCopyPreview says "复制完整预览"
+// in the language the app shows.
+func DataMutationCopyPreview() string { return In(i18n.Locale()).DataMutationCopyPreview() }
+
+// DataMutationCopyPreview says "复制完整预览"
+// in the language of msgs.
+func (msgs Messages) DataMutationCopyPreview() string {
+	return Catalog.Format(msgs.locale, "dataMutationCopyPreview", nil)
+}
+
+// DataMutationSubmit says "确认并提交更改"
+// in the language the app shows.
+func DataMutationSubmit() string { return In(i18n.Locale()).DataMutationSubmit() }
+
+// DataMutationSubmit says "确认并提交更改"
+// in the language of msgs.
+func (msgs Messages) DataMutationSubmit() string {
+	return Catalog.Format(msgs.locale, "dataMutationSubmit", nil)
+}
+
+// DataMutationWrite says "已确认的原生实体更改"
+// in the language the app shows.
+func DataMutationWrite() string { return In(i18n.Locale()).DataMutationWrite() }
+
+// DataMutationWrite says "已确认的原生实体更改"
+// in the language of msgs.
+func (msgs Messages) DataMutationWrite() string {
+	return Catalog.Format(msgs.locale, "dataMutationWrite", nil)
+}
+
+// DataMutationAwaiting says "等待确认实体更改"
+// in the language the app shows.
+func DataMutationAwaiting() string { return In(i18n.Locale()).DataMutationAwaiting() }
+
+// DataMutationAwaiting says "等待确认实体更改"
+// in the language of msgs.
+func (msgs Messages) DataMutationAwaiting() string {
+	return Catalog.Format(msgs.locale, "dataMutationAwaiting", nil)
+}
+
+// DataMutationPreviewTruncated says "预览已截断；可复制完整内容"
+// in the language the app shows.
+func DataMutationPreviewTruncated() string { return In(i18n.Locale()).DataMutationPreviewTruncated() }
+
+// DataMutationPreviewTruncated says "预览已截断；可复制完整内容"
+// in the language of msgs.
+func (msgs Messages) DataMutationPreviewTruncated() string {
+	return Catalog.Format(msgs.locale, "dataMutationPreviewTruncated", nil)
+}
+
+// DataMutationInsert says "创建实体"
+// in the language the app shows.
+func DataMutationInsert() string { return In(i18n.Locale()).DataMutationInsert() }
+
+// DataMutationInsert says "创建实体"
+// in the language of msgs.
+func (msgs Messages) DataMutationInsert() string {
+	return Catalog.Format(msgs.locale, "dataMutationInsert", nil)
+}
+
+// DataMutationDelete says "删除实体"
+// in the language the app shows.
+func DataMutationDelete() string { return In(i18n.Locale()).DataMutationDelete() }
+
+// DataMutationDelete says "删除实体"
+// in the language of msgs.
+func (msgs Messages) DataMutationDelete() string {
+	return Catalog.Format(msgs.locale, "dataMutationDelete", nil)
+}
+
+// DataMutationDetachDelete says "删除实体及关联关系"
+// in the language the app shows.
+func DataMutationDetachDelete() string { return In(i18n.Locale()).DataMutationDetachDelete() }
+
+// DataMutationDetachDelete says "删除实体及关联关系"
+// in the language of msgs.
+func (msgs Messages) DataMutationDetachDelete() string {
+	return Catalog.Format(msgs.locale, "dataMutationDetachDelete", nil)
+}
+
+// DataMutationUpdate says "更新属性"
+// in the language the app shows.
+func DataMutationUpdate() string { return In(i18n.Locale()).DataMutationUpdate() }
+
+// DataMutationUpdate says "更新属性"
+// in the language of msgs.
+func (msgs Messages) DataMutationUpdate() string {
+	return Catalog.Format(msgs.locale, "dataMutationUpdate", nil)
+}
+
+// DataMutationGeneratedIdentity says "待生成"
+// in the language the app shows.
+func DataMutationGeneratedIdentity() string { return In(i18n.Locale()).DataMutationGeneratedIdentity() }
+
+// DataMutationGeneratedIdentity says "待生成"
+// in the language of msgs.
+func (msgs Messages) DataMutationGeneratedIdentity() string {
+	return Catalog.Format(msgs.locale, "dataMutationGeneratedIdentity", nil)
+}
+
+// DataMutationRelationships says "关联关系"
+// in the language the app shows.
+func DataMutationRelationships() string { return In(i18n.Locale()).DataMutationRelationships() }
+
+// DataMutationRelationships says "关联关系"
+// in the language of msgs.
+func (msgs Messages) DataMutationRelationships() string {
+	return Catalog.Format(msgs.locale, "dataMutationRelationships", nil)
+}

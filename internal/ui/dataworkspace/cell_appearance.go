@@ -25,7 +25,7 @@ func mysqlDataDraftMarker(c *ui.Context, t *Document, row int) (string, ui.Color
 		switch draft.Kind {
 		case "insert":
 			return "+ ", p.GridInsertedMark
-		case "delete":
+		case "delete", "detach_delete":
 			return "− ", p.GridDeletedMark
 		default:
 			return "* ", p.GridModifiedMark

@@ -773,7 +773,7 @@ func mysqlDataCanDeleteSelection(t *Document, clicked int) bool {
 			if d := mysqlDataDraftForRow(t, row); d != nil && d.Kind == "insert" {
 				continue
 			}
-			if d := mysqlDataDraftForRow(t, row); d != nil && d.Kind == "delete" {
+			if d := mysqlDataDraftForRow(t, row); d != nil && dataEditDeletesRow(d.Kind) {
 				return false
 			}
 			if row >= len(t.page.RowRefs) || t.page.RowRefs[row] == nil || row >= len(t.page.RowSnapshots) || t.page.RowSnapshots[row] == nil {

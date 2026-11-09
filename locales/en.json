@@ -2982,5 +2982,20 @@
   "nativeDataWriteReceiptCopy": "Copy complete receipt",
   "nativeDataWriteReceiptExport": "Export complete receipt",
   "nativeDataWriteClose": "Close original write document",
-  "nativeDataWriteCloseHint": "Closing discards local drafts and native receipts. It does not resend the write or confirm or roll back the original transaction. Copy or export the receipts you need first."
+  "nativeDataWriteCloseHint": "Closing discards local drafts and native receipts. It does not resend the write or confirm or roll back the original transaction. Copy or export the receipts you need first.",
+  "dataMutationConfirmation": "Confirm entity changes",
+  "dataMutationConfirmationHint": "Review the original entities, relationships and properties before submitting this batch.",
+  "dataMutationBlocked": "This batch includes nodes with relationships. Cancel and choose how to delete them. No changes have been written.",
+  "dataMutationFullPreview": "Full entity change preview",
+  "dataMutationCopyPreview": "Copy full preview",
+  "dataMutationSubmit": "Confirm and submit changes",
+  "dataMutationWrite": "Confirmed native entity changes",
+  "dataMutationAwaiting": "Awaiting entity change confirmation",
+  "dataMutationPreviewTruncated": "Preview truncated; copy the full content",
+  "dataMutationInsert": "Create entity",
+  "dataMutationDelete": "Delete entity",
+  "dataMutationDetachDelete": "Delete entity and relationships",
+  "dataMutationUpdate": "Update properties",
+  "dataMutationGeneratedIdentity": "To be generated",
+  "dataMutationRelationships": "Relationships"
 }

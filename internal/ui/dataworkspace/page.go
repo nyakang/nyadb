@@ -333,6 +333,7 @@ func (s *State) Close(t *Document) {
 	t.closed = true
 	t.page, t.panel, t.columns = nil, nil, nil
 	t.edit = mysqlDataEditState{}
+	t.mutation = dataMutationState{}
 	t.export = mysqlDataExportState{}
 	t.cursorHistory, t.after = nil, nil
 	t.hiddenColumns = nil
