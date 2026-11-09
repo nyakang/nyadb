@@ -1,6 +1,7 @@
 package connections_test
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -17,15 +18,18 @@ func TestNeo4jFoundationConfigPreservesRoutingTLSAndSeparateCredentials(t *testi
 			t.Fatal("native credential bytes were narrowed", err)
 		}
 	}
-	c, err := connections.NormalizeNeo4jConfig(connections.Neo4jConfig{URI: "neo4j+s://cluster:7687?region=local&policy=reader", Username: "reader", CAFile: "/owned/ca.pem", ServerName: "cluster"})
-	if err != nil || c.URI != "neo4j+s://cluster:7687?policy=reader&region=local" {
+	tlsDir := t.TempDir()
+	caFile := filepath.Join(tlsDir, "ca.pem")
+	clientCertFile := filepath.Join(tlsDir, "client.pem")
+	c, err := connections.NormalizeNeo4jConfig(connections.Neo4jConfig{URI: "neo4j+s://cluster:7687?region=local&policy=reader", Username: "reader", CAFile: caFile, ServerName: "cluster"})
+	if err != nil || c.URI != "neo4j+s://cluster:7687?policy=reader&region=local" || c.CAFile != caFile {
 		t.Fatal(c, err)
 	}
 	for _, c := range []connections.Neo4jConfig{
 		{URI: "bolt://user:secret@host:7687", Username: "neo4j"}, {URI: "bolt://host:0", Username: "neo4j"},
 		{URI: "neo4j://host?password=private", Username: "neo4j"}, {URI: "bolt://host?region=local", Username: "neo4j"},
-		{URI: "bolt://host", Username: "neo4j", CAFile: "/owned/ca.pem"}, {URI: "neo4j+s://host", Username: "neo4j", ClientCertFile: "/owned/client.pem"},
-		{URI: "neo4j+ssc://host", Username: "neo4j", CAFile: "/owned/ca.pem"}, {URI: "neo4j+s://host", Username: "neo4j", CAFile: "relative.pem"},
+		{URI: "bolt://host", Username: "neo4j", CAFile: caFile}, {URI: "neo4j+s://host", Username: "neo4j", ClientCertFile: clientCertFile},
+		{URI: "neo4j+ssc://host", Username: "neo4j", CAFile: caFile}, {URI: "neo4j+s://host", Username: "neo4j", CAFile: "relative.pem"},
 		{URI: "neo4j://host/db", Username: "neo4j"}, {URI: "neo4j://host?address=other", Username: "neo4j"},
 	} {
 		if _, err := connections.NormalizeNeo4jConfig(c); err == nil {

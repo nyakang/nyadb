@@ -1,16 +1,21 @@
 package connections_test
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
 func TestQdrantConfigNativeEndpointAndSeparatedSecrets(t *testing.T) {
-	base := connections.QdrantConfig{Endpoint: "https://[::1]:6333/proxy/", Auth: "api_key", CAFile: "/private/ca.crt", ServerName: "localhost", ClientCertFile: "/private/client.crt", ClientKeyFile: "/private/client.key"}
+	tlsDir := t.TempDir()
+	base := connections.QdrantConfig{Endpoint: "https://[::1]:6333/proxy/", Auth: "api_key", CAFile: filepath.Join(tlsDir, "ca.crt"), ServerName: "localhost", ClientCertFile: filepath.Join(tlsDir, "client.crt"), ClientKeyFile: filepath.Join(tlsDir, "client.key")}
 	c, err := connections.NormalizeQdrantConfig(base)
 	if err != nil || c.Endpoint != "https://[::1]:6333/proxy" || c.ConnectTimeoutSeconds != 10 || c.RequestTimeoutSeconds != 40 {
 		t.Fatal("native public settings", err)
+	}
+	if c.CAFile != base.CAFile || c.ClientCertFile != base.ClientCertFile || c.ClientKeyFile != base.ClientKeyFile {
+		t.Fatal("native TLS paths changed during normalization")
 	}
 	for _, key := range []string{"exact-header-key", "token_1.~+/=", ""} {
 		if err := connections.ValidateQdrantCredential(c, key, key != ""); err != nil {
@@ -29,6 +34,9 @@ func TestQdrantConfigNativeEndpointAndSeparatedSecrets(t *testing.T) {
 
 func TestQdrantConfigRejectsAmbiguousAddressAndTLS(t *testing.T) {
 	base := connections.QdrantConfig{Endpoint: "http://localhost:6333", Auth: "none"}
+	tlsDir := t.TempDir()
+	caFile := filepath.Join(tlsDir, "ca.crt")
+	clientCertFile := filepath.Join(tlsDir, "client.crt")
 	mutations := []func(*connections.QdrantConfig){
 		func(c *connections.QdrantConfig) { c.Endpoint = "http://user:secret@localhost:6333" },
 		func(c *connections.QdrantConfig) { c.Endpoint = "https://localhost:6333?api-key=secret" },
@@ -41,9 +49,9 @@ func TestQdrantConfigRejectsAmbiguousAddressAndTLS(t *testing.T) {
 		func(c *connections.QdrantConfig) { c.Endpoint = "https://localhost/%2f" },
 		func(c *connections.QdrantConfig) { c.Endpoint = "https://localhost/ prefix" },
 		func(c *connections.QdrantConfig) { c.Auth = "basic" },
-		func(c *connections.QdrantConfig) { c.CAFile = "/private/ca" },
+		func(c *connections.QdrantConfig) { c.CAFile = caFile },
 		func(c *connections.QdrantConfig) { c.Endpoint = "https://localhost"; c.CAFile = "relative/ca" },
-		func(c *connections.QdrantConfig) { c.Endpoint = "https://localhost"; c.ClientCertFile = "/cert" },
+		func(c *connections.QdrantConfig) { c.Endpoint = "https://localhost"; c.ClientCertFile = clientCertFile },
 		func(c *connections.QdrantConfig) { c.ConnectTimeoutSeconds = 121 },
 		func(c *connections.QdrantConfig) { c.RequestTimeoutSeconds = -1 },
 	}
