@@ -278,7 +278,7 @@ acceptance includes saved-profile reopening, native typed values/metadata,
 published generations, committed writes with lost/canceled responses, explicit
 recovery, original close/termination, retained-node property expansion, original
 node visibility, native snapshots/exports, bounded fallback and localized
-workbench/form images. Four grid modes require 192 native groups and 1376 images, including retained
+workbench/form images. Four grid modes require 208 native groups and 1376 images, including retained
 graph paths, parallel/reverse/self-loop relationships, missing endpoints, original
 record links, full property JSON, snapshots, image export and 1001-node display
 bounds, explicit one/second-hop reads, 200-row neighbor limits, scalar property saves and lock-blocked typed conflicts, committed-write response loss, independent verification, separate record
@@ -335,3 +335,41 @@ data grid still expose update-only property editing: entity draft decisions,
 affected-edge previews and shared-grid/runtime publication remain the next step.
 Relationship creation requires separately qualified endpoint input and remains
 pending alongside graph import, archives, administration and other full scope.
+
+Private original-document entity previews now retain complete captured edits,
+native read parameters and typed node/incident-edge observations. Their neutral
+DataMutationPlan accessor returns deep copies, independently of executor values.
+Each original lease owns at most one preview (8 MiB native evidence, 1 MiB edits,
+2 MiB per read). New reads replace the previous preview; Close releases it.
+The original write queue claims a preview once before native dispatch. Caller
+implementations, other document/profile/generation handles, replaced previews
+and repeated submissions cannot authorize a mutation. Runtime wrappers reject
+late previews after publication replacement and close the captured raw handle.
+
+Plain connected-node deletion is blocked by its preview before a native write.
+For detached deletion, Submit locks and compares the original complete node and
+each distinct directed/self-loop/parallel relationship, including typed properties
+and endpoints. It deletes only the explicitly previewed edges, followed by plain
+node DELETE. A changed edge set or value rolls back earlier provisional rows;
+an unobserved concurrent edge cannot be implicitly detached. Element IDs still
+represent live observations, not incarnation or a complete database snapshot.
+Adjacent selected nodes can share edges: later rows exclude only this batch's
+confirmed provisional edge deletions, without changing the original preview or
+accepting external changes. Shared/reverse/parallel/self-loop edges are deleted
+once, while unselected endpoints remain intact.
+
+External writers can use an inverted endpoint/relationship lock order and cause
+a native deadlock. The exact server failure and missing rollback acknowledgement
+are retained without retries; independent checks verify preserved entities and
+the committed concurrent edge value. Missing COMMIT responses keep the original
+write scope blocked, including queued previews. Independent reads remain usable.
+Signed edit capture is registered before validation, so original Close waits
+for preparation and cannot clear its signature key before acknowledgement.
+
+`--entity-preview --race --mode MODE` requires 11 native cases: three property
+transaction cases, four entity foundation cases and four preview cases. The
+preview cases include six original node/edge/adjacency changes, bounds, read
+cancellation/close and 16 actual COMMIT response-fault combinations per mode.
+This focused scope does not rerun the complete profile/Cypher/workbench image
+matrix. The public Runtime still exposes only property update: preview confirmation,
+entity drafts, affected-edge presentation and public function binding are next.

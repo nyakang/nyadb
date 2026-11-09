@@ -35,29 +35,56 @@ func (l *dataLease) save(ctx context.Context, id int64, db, name string, edits [
 	if err := l.identity(id, db, name); err != nil {
 		return nil, err
 	}
-	prepared, err := l.prepareDataEdits(edits)
-	if err != nil {
-		return nil, err
-	}
-	return l.savePreparedEdits(ctx, prepared)
+	return l.prepareAndSaveEdits(ctx, func() ([]preparedDataEdit, error) { return l.prepareDataEdits(edits) })
 }
 
-func (l *dataLease) savePreparedEdits(ctx context.Context, prepared []preparedDataEdit) (*contract.DataEditResult, error) {
+// Register before decoding signed originals so Close cannot clear their key
+// between validation and queue registration. Capture values before write waits.
+func (l *dataLease) prepareAndSaveEdits(ctx context.Context, prepare func() ([]preparedDataEdit, error)) (*contract.DataEditResult, error) {
 	ctx, done, err := l.request(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer done()
+	l.mu.Lock()
+	revoked := l.closed || l.lost || l.writeLost
+	l.mu.Unlock()
+	if revoked {
+		return nil, contract.ErrRevoked
+	}
+	prepared, err := prepare()
+	if err != nil {
+		return nil, err
+	}
+	return l.saveRegisteredEdits(ctx, func() ([]preparedDataEdit, error) { return prepared, nil })
+}
+
+// Captured requests are already immutable. A preview claim is made only after
+// entering the original write queue, and is consumed before native dispatch.
+func (l *dataLease) saveCapturedEdits(ctx context.Context, claim func() ([]preparedDataEdit, error)) (*contract.DataEditResult, error) {
+	ctx, done, err := l.request(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer done()
+	return l.saveRegisteredEdits(ctx, claim)
+}
+
+func (l *dataLease) saveRegisteredEdits(ctx context.Context, claim func() ([]preparedDataEdit, error)) (*contract.DataEditResult, error) {
 	l.writeMu.Lock()
 	defer l.writeMu.Unlock()
-	if err = ctx.Err(); err != nil {
+	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 	l.mu.Lock()
-	writeLost := l.writeLost
+	revoked := l.closed || l.lost || l.writeLost
 	l.mu.Unlock()
-	if writeLost {
+	if revoked {
 		return nil, contract.ErrRevoked
+	}
+	prepared, err := claim()
+	if err != nil {
+		return nil, err
 	}
 	c, closeClient, err := l.client(ctx)
 	if err != nil {
@@ -166,15 +193,29 @@ func (l *dataLease) saveTransaction(parent context.Context, c *Client, prepared 
 	})
 	out.Outcomes = make([]contract.DataEditOutcome, len(prepared))
 	previewBudget := dataWriteReceiptBytes
+	removedRelationships := map[string]bool{}
 	for _, index := range order {
 		p := prepared[index]
 		if p.edit.Kind != "update" {
+			if p.previewEdges != nil && len(removedRelationships) != 0 {
+				// A prior selected node can own the same incident relationship.
+				// Exclude only this transaction's confirmed provisional deletions,
+				// preserving the original immutable preview and external conflicts.
+				edges := p.previewEdges.Clone()
+				edges.Values = slices.DeleteFunc(edges.Values, func(edge Value) bool { return removedRelationships[graphRelationshipID(edge)] })
+				p.previewEdges = &edges
+			}
 			outcome, runErr := l.runEntityEdit(ctx, c, tx, &receipt, p, &previewBudget)
 			if runErr != nil {
 				transactionFailed = !localDataWriteError(runErr)
 				return out, runErr
 			}
 			out.Outcomes[index] = outcome
+			if p.previewEdges != nil {
+				for _, edge := range p.previewEdges.Values {
+					removedRelationships[graphRelationshipID(edge)] = true
+				}
+			}
 			continue
 		}
 		lockQuery := l.match() + " AND elementId(entity)=$element_id SET entity[$lock_key]=entity[$lock_key] RETURN entity LIMIT 2"

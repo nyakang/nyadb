@@ -12,6 +12,14 @@ import (
 )
 
 func TestNeo4jNativeDataEntityLostCanceledOriginalCloseNeverReplay(t *testing.T) {
+	testNativeEntityFaults(t, false)
+}
+
+func TestNeo4jNativeDataEntityPreviewLostCanceledOriginalCloseNeverReplay(t *testing.T) {
+	testNativeEntityFaults(t, true)
+}
+
+func testNativeEntityFaults(t *testing.T, preview bool) {
 	f := dataFixtureTest(t)
 	admin := nativeOpenTest(t, f)
 	for _, kind := range []string{"insert", "delete", "detach_delete", "relationship_delete"} {
@@ -39,6 +47,21 @@ func TestNeo4jNativeDataEntityLostCanceledOriginalCloseNeverReplay(t *testing.T)
 				if kind != "insert" {
 					edit.Original = entitySnapshotTest(t, l, identity)
 				}
+				var plan contract.DataMutationPlan
+				if preview {
+					var err error
+					plan, err = l.previewEntityEdits(context.Background(), 42, "neo4j", objectName, []contract.DataEdit{edit})
+					if err != nil {
+						t.Fatal("original entity preview failed", err)
+					}
+					defer plan.Close()
+				}
+				save := func(ctx context.Context) (*contract.DataEditResult, error) {
+					if preview {
+						return l.submitEntityPlan(ctx, 42, "neo4j", objectName, plan)
+					}
+					return l.saveEntityEdits(ctx, 42, "neo4j", objectName, []contract.DataEdit{edit})
+				}
 				// An exact Bolt COMMIT frame, with no binary input containing it.
 				relay := newNativeRelay(t, f, string([]byte{0, 2, 0xb0, 0x12, 0, 0}))
 				relayDataOpenTest(s, f, relay)
@@ -50,7 +73,7 @@ func TestNeo4jNativeDataEntityLostCanceledOriginalCloseNeverReplay(t *testing.T)
 				}
 				done := make(chan completion, 1)
 				go func() {
-					r, e := l.saveEntityEdits(ctx, 42, "neo4j", objectName, []contract.DataEdit{edit})
+					r, e := save(ctx)
 					done <- completion{r, e}
 				}()
 				select {
@@ -88,7 +111,7 @@ func TestNeo4jNativeDataEntityLostCanceledOriginalCloseNeverReplay(t *testing.T)
 				nativeRunTest(t, admin, Request{Query: "MATCH (n) WHERE $label IN labels(n) SET n.guard=-789", Parameters: map[string]any{"label": label}})
 				queued := make(chan error, 1)
 				go func() {
-					_, e := l.saveEntityEdits(context.Background(), 42, "neo4j", objectName, []contract.DataEdit{edit})
+					_, e := save(context.Background())
 					queued <- e
 				}()
 				closed := make(chan struct{})
@@ -131,7 +154,7 @@ func TestNeo4jNativeDataEntityLostCanceledOriginalCloseNeverReplay(t *testing.T)
 				case <-time.After(15 * time.Second):
 					t.Fatal("queued entity executor did not settle")
 				}
-				if _, err := l.saveEntityEdits(context.Background(), 42, "neo4j", objectName, []contract.DataEdit{edit}); !errors.Is(err, contract.ErrRevoked) {
+				if _, err := save(context.Background()); !errors.Is(err, contract.ErrRevoked) {
 					t.Fatal("uncertain entity mutation admitted explicit replay", err)
 				}
 				if fault == "lost" || fault == "cancel" {

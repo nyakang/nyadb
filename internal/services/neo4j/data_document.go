@@ -31,6 +31,8 @@ type dataLease struct {
 	epoch        uint64
 	limit        int
 	properties   []graphPropertyColumn
+	entityPlan   *entityDataPlan
+	previewEpoch uint64
 }
 
 func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
@@ -188,6 +190,9 @@ func (l *dataLease) Close() error {
 	l.work.Wait()
 	l.mu.Lock()
 	l.properties = nil
+	if l.entityPlan != nil {
+		l.entityPlan.releaseLocked()
+	}
 	clear(l.key[:])
 	l.mu.Unlock()
 	l.session.mu.Lock()

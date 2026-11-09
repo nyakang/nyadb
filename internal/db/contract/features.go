@@ -114,23 +114,28 @@ type DataRuntime struct {
 	Loader               func(context.Context, int64, string, string, int64, int) (*DataPage, error)
 	AdvancedLoader       func(context.Context, int64, string, string, DataOptions) (*DataPage, error)
 	Saver                func(context.Context, int64, string, string, []DataEdit) (*DataEditResult, error)
-	RowReader            func(context.Context, int64, string, string, RowRef) (*DataRow, error)
-	Verify               func(context.Context, int64, string, string, *DataEditResult) (*DataVerification, error)
-	Exporter             func(context.Context, int64, string, string, DataOptions, []string, func([]DataValue) error) error
-	Analyzer             func(context.Context, int64, string, string, DataOptions, []string) (*DataAnalysis, error)
-	Transactions         DataTransactions
-	NewTableImporter     func(context.Context, int64, string, string, []DataImportColumn, []DataEdit) (*DataNewTableImportResult, error)
-	Importer             func(context.Context, int64, string, string, DataImportRequest) (*DataImportResult, error)
-	StreamImporter       func(context.Context, int64, string, string, DataImportStreamRequest) (*DataImportStreamResult, error)
-	TableMetadata        func(context.Context, int64, string, string) (*TableStructure, error)
-	TableInfo            func(context.Context, int64, string, string) (*TableInfo, error)
-	Count                func(context.Context, int64, string, string) (int64, error)
-	Chunk                func(context.Context, int64, string, string, string, RowRef, int64, int) (*FieldChunk, error)
-	JSONL                func(context.Context, ObjectRef, io.Writer) error
-	Capabilities         Capabilities
-	FilterModes          []string
-	FilterColumns        []string // nil permits all fields; empty permits none.
-	SortColumns          []string // nil preserves metadata defaults; empty disables sorting.
+	// Preview/Submit are an optional original-document mutation path. The UI
+	// must obtain explicit approval of the immutable preview before Submit.
+	PreviewEditKinds []string
+	PreviewEdits     func(context.Context, int64, string, string, []DataEdit) (DataMutationPlan, error)
+	SubmitEdits      func(context.Context, int64, string, string, DataMutationPlan) (*DataEditResult, error)
+	RowReader        func(context.Context, int64, string, string, RowRef) (*DataRow, error)
+	Verify           func(context.Context, int64, string, string, *DataEditResult) (*DataVerification, error)
+	Exporter         func(context.Context, int64, string, string, DataOptions, []string, func([]DataValue) error) error
+	Analyzer         func(context.Context, int64, string, string, DataOptions, []string) (*DataAnalysis, error)
+	Transactions     DataTransactions
+	NewTableImporter func(context.Context, int64, string, string, []DataImportColumn, []DataEdit) (*DataNewTableImportResult, error)
+	Importer         func(context.Context, int64, string, string, DataImportRequest) (*DataImportResult, error)
+	StreamImporter   func(context.Context, int64, string, string, DataImportStreamRequest) (*DataImportStreamResult, error)
+	TableMetadata    func(context.Context, int64, string, string) (*TableStructure, error)
+	TableInfo        func(context.Context, int64, string, string) (*TableInfo, error)
+	Count            func(context.Context, int64, string, string) (int64, error)
+	Chunk            func(context.Context, int64, string, string, string, RowRef, int64, int) (*FieldChunk, error)
+	JSONL            func(context.Context, ObjectRef, io.Writer) error
+	Capabilities     Capabilities
+	FilterModes      []string
+	FilterColumns    []string // nil permits all fields; empty permits none.
+	SortColumns      []string // nil preserves metadata defaults; empty disables sorting.
 }
 
 // Require traverses a generation wrapper without exposing drivers to callers.

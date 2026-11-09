@@ -11,7 +11,7 @@ import (
 
 func TestBoundDataEditKindsOwnsProviderModeSnapshot(t *testing.T) {
 	_, cancel := context.WithCancel(context.Background())
-	lease := &testDocumentLease{cancel: cancel, runtime: Runtime{NativeReceipts: true, EditKinds: []string{"update"}, EditValueKinds: []contract.CellKind{contract.Integer}, Capabilities: contract.Capabilities{Documents: true, EditableTables: true}}}
+	lease := &testDocumentLease{cancel: cancel, runtime: Runtime{NativeReceipts: true, EditKinds: []string{"update"}, PreviewEditKinds: []string{"delete"}, EditValueKinds: []contract.CellKind{contract.Integer}, Capabilities: contract.Capabilities{Documents: true, EditableTables: true}}}
 	lease.runtime.Saver = func(context.Context, int64, string, string, []contract.DataEdit) (*contract.DataEditResult, error) {
 		return nil, nil
 	}
@@ -22,6 +22,10 @@ func TestBoundDataEditKindsOwnsProviderModeSnapshot(t *testing.T) {
 	object := contract.NamespaceRef{ProfileID: 12, Catalog: "original"}.Object("label", "owned")
 	d := s.OpenObject(1, object, lease.runtime.Capabilities)
 	lease.runtime.EditKinds[0] = "delete"
+	lease.runtime.PreviewEditKinds[0] = "changed"
+	if d.boundRuntime.PreviewEditKinds[0] != "delete" {
+		t.Fatal("document retained provider-owned preview kinds")
+	}
 	lease.runtime.NativeReceipts = false
 	if !d.boundRuntime.NativeReceipts {
 		t.Fatal("native receipt mode followed a later provider")

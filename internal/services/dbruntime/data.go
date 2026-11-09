@@ -30,6 +30,7 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 	}
 	out.DocumentImportModes = cloneColumns(r.DocumentImportModes)
 	out.EditKinds = cloneColumns(r.EditKinds)
+	out.PreviewEditKinds = cloneColumns(r.PreviewEditKinds)
 	out.EditValueKinds = slices.Clone(r.EditValueKinds)
 	out.ExportFormats = append([]string(nil), r.ExportFormats...)
 	out.FilterColumns = cloneColumns(r.FilterColumns)
@@ -67,6 +68,61 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 				}
 			}
 			return r.Saver(ctx, id, s.dataDatabase(db), table, edits)
+		}
+	}
+	if r.PreviewEdits != nil {
+		out.PreviewEdits = func(ctx context.Context, id int64, db, table string, edits []contract.DataEdit) (contract.DataMutationPlan, error) {
+			if e := s.require(r.Capabilities.EditableTables, id); e != nil {
+				return nil, e
+			}
+			for _, edit := range edits {
+				if edit.Original != nil {
+					if e := s.dataObject(id, db, table, edit.Original.Ref.Object); e != nil {
+						return nil, e
+					}
+				}
+			}
+			plan, err := r.PreviewEdits(ctx, id, s.dataDatabase(db), table, edits)
+			if err == nil {
+				err = s.require(r.Capabilities.EditableTables, id)
+			}
+			if err == nil && plan == nil {
+				err = contract.ErrUnsupported
+			}
+			var object contract.ObjectRef
+			if err == nil {
+				object = plan.Snapshot().Object
+				if object.ProfileID != id {
+					err = connections.ErrInvalid
+				} else {
+					err = s.dataObject(id, db, table, object)
+				}
+			}
+			if err == nil {
+				err = s.require(r.Capabilities.EditableTables, id)
+			}
+			if err != nil {
+				if plan != nil {
+					_ = plan.Close()
+				}
+				return nil, err
+			}
+			return &dataMutationPlan{session: s, object: object, raw: plan}, nil
+		}
+	}
+	if r.SubmitEdits != nil {
+		out.SubmitEdits = func(ctx context.Context, id int64, db, table string, plan contract.DataMutationPlan) (*contract.DataEditResult, error) {
+			if e := s.require(r.Capabilities.EditableTables, id); e != nil {
+				return nil, e
+			}
+			bound, ok := plan.(*dataMutationPlan)
+			if !ok || bound == nil || bound.session != s {
+				return nil, connections.ErrInvalid
+			}
+			if err := s.dataObject(id, db, table, bound.object); err != nil {
+				return nil, err
+			}
+			return r.SubmitEdits(ctx, id, s.dataDatabase(db), table, bound.raw)
 		}
 	}
 	if r.RowReader != nil {
@@ -202,6 +258,17 @@ type dataDocumentLease struct {
 	session *session
 	raw     contract.DataDocumentLease
 }
+
+type dataMutationPlan struct {
+	session *session
+	object  contract.ObjectRef
+	raw     contract.DataMutationPlan
+}
+
+func (p *dataMutationPlan) Snapshot() contract.DataMutationSnapshot {
+	return contract.CloneDataMutationSnapshot(p.raw.Snapshot())
+}
+func (p *dataMutationPlan) Close() error { return p.raw.Close() }
 
 // Workbench labels resolve through the owning session. Solr's native data
 // leases retain the observed endpoint catalog as their immutable identity.

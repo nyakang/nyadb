@@ -20,6 +20,8 @@ type preparedDataEdit struct {
 	keys     []string
 	after    map[string]Value
 	params   map[string]any
+	// Non-nil binds detached deletion to the preview's complete distinct edges.
+	previewEdges *Value
 }
 
 // Editing reads retain the original fingerprints alongside complete values for

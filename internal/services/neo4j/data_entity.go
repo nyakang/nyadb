@@ -23,17 +23,7 @@ func (l *dataLease) saveEntityEdits(ctx context.Context, id int64, db, name stri
 	if err := l.identity(id, db, name); err != nil {
 		return nil, err
 	}
-	l.mu.Lock()
-	revoked := l.closed || l.lost || l.writeLost
-	l.mu.Unlock()
-	if revoked {
-		return nil, contract.ErrRevoked
-	}
-	prepared, err := l.prepareEntityEdits(edits)
-	if err != nil {
-		return nil, err
-	}
-	return l.savePreparedEdits(ctx, prepared)
+	return l.prepareAndSaveEdits(ctx, func() ([]preparedDataEdit, error) { return l.prepareEntityEdits(edits) })
 }
 
 func (l *dataLease) prepareEntityEdits(edits []contract.DataEdit) ([]preparedDataEdit, error) {
@@ -151,6 +141,9 @@ func (l *dataLease) runEntityEdit(ctx context.Context, c *Client, tx nd.Explicit
 	}
 	if err = l.validateLockedDataEdit(p, locked); err != nil {
 		return out, err
+	}
+	if p.previewEdges != nil {
+		return l.runPreviewedDeletion(ctx, c, tx, receipt, p)
 	}
 	query := l.match() + " AND elementId(entity)=$element_id DELETE entity RETURN $element_id AS element_id"
 	columns := []string{"element_id"}
