@@ -181,7 +181,7 @@ func TestGraphPropertySnapshotsReadbackAndJSONOwnIndependentNativeValues(t *test
 		t.Fatal("snapshot lost independent write receipt or display observation")
 	}
 	g := d.graphVisualState()
-	g.propertyEntities["n:a"].Node.Properties[0].Value.Text = "mutated after pin"
+	g.propertyEntities["n:a"].Value.Node.Properties[0].Value.Text = "mutated after pin"
 	d.graphPropertyRecords[0].Receipt.Result.Rows[0][3].Node.Properties[0].Value.Text = "mutated receipt"
 	if snap.graphVisualState().node("n:a").Value.Properties[0].Value.Text != "confirmed" || snap.graphPropertyRecords[0].Receipt.Result.Rows[0][3].Node.Properties[0].Value.Text != "confirmed" {
 		t.Fatal("snapshot aliases live receipt")

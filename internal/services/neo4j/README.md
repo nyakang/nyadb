@@ -115,6 +115,16 @@ capture shares 1 MiB; complete semantic request JSON is also bounded to 1 MiB.
 Responses are bounded to two rows/2 MiB, and at most 1000 operation records share
 8 MiB with reserved capacity before dispatch. Records count toward snapshot limits.
 
+Each complete saved or verified entity records how many neighbor receipts preceded
+it. Rebuilding inserts that entity at this position, retains all earlier source
+links and compares subsequent neighbor entities against it. Saving then expanding
+neighbors can continue editing without treating the original value as a new
+conflict. Later external changes still mark conflicts and block editing until an
+explicit full verification of that entity. Node verification cannot reconcile a
+relationship or another node. This sequence describes workbench operation order,
+not server timestamps or incarnation guarantees; incomplete/truncated verification
+never replaces a baseline. Snapshots independently retain both entities and order.
+
 Conflicts retain drafts without resubmitting. Known failures before native dispatch
 remain editable and require a new explicit preview; they are not uncertain commits. Cancellation waits for the original
 executor; uncertainty and stale publication retain evidence and require explicit
@@ -226,12 +236,14 @@ acceptance includes saved-profile reopening, native typed values/metadata,
 published generations, committed writes with lost/canceled responses, explicit
 recovery, original close/termination, retained-node property expansion, original
 node visibility, native snapshots/exports, bounded fallback and localized
-workbench/form images. Four grid modes require 116 native groups and 736 images, including retained
+workbench/form images. Four grid modes require 120 native groups and 800 images, including retained
 graph paths, parallel/reverse/self-loop relationships, missing endpoints, original
 record links, full property JSON, snapshots, image export and 1001-node display
 bounds, explicit one/second-hop reads, 200-row neighbor limits, scalar property saves and lock-blocked typed conflicts, committed-write response loss, independent verification, separate record
 links/exports, conflict observations, parked generation rejection and native
-response-loss/cancellation/original-close recovery without replay. Cleanup
+response-loss/cancellation/original-close recovery without replay. Save/expand/verify/edit
+combinations cover nodes and directed relationships, preserve later external conflicts,
+reconcile only the explicitly verified entity and retain independent snapshots. Cleanup
 checks immutable container ID and nonce labels. Evidence and sanitized logs stay
 under ignored `build/neo4j/`.
 

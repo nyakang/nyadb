@@ -182,8 +182,7 @@ func (g *graphVisualState) rebuildObservations() {
 			sources[index] = o.Result
 		}
 	}
-	g.topology = graphresult.ExtractTopologyObservations(*g.base, sources)
-	g.applyGraphPropertyEntities()
+	g.topology = graphresult.ExtractTopologyWithEntityObservations(*g.base, sources, g.propertyEntities)
 	fixed := make(map[string]bool, len(g.positions))
 	for key := range g.positions {
 		fixed[key] = true

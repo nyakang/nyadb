@@ -24,6 +24,7 @@ type TopologyNode struct {
 	Key                  string
 	Value                contract.GraphNode
 	Missing, Conflicting bool
+	EntityObserved       bool
 	Cells                []CellRef
 	Observations         []ObservationRef
 }
@@ -31,8 +32,17 @@ type TopologyEdge struct {
 	Key, Source, Target string
 	Value               contract.GraphRelationship
 	Conflicting         bool
+	EntityObserved      bool
 	Cells               []CellRef
 	Observations        []ObservationRef
+}
+
+// EntityObservation is the latest complete native entity from an acknowledged
+// write or explicit verification. AfterObservations counts preceding neighbor
+// receipts, not server timestamps. Historical source links remain independent.
+type EntityObservation struct {
+	AfterObservations int
+	Value             contract.GraphValue
 }
 
 const TopologyMaxNodes = 1000
@@ -48,6 +58,14 @@ func ExtractTopology(r contract.GraphResult) Topology {
 // ExtractTopologyObservations admits original values first, with separate links
 // for later live reads. All sources share one topology/traversal/link budget.
 func ExtractTopologyObservations(r contract.GraphResult, observations []contract.GraphResult) Topology {
+	return ExtractTopologyWithEntityObservations(r, observations, nil)
+}
+
+// ExtractTopologyWithEntityObservations inserts each explicit entity baseline
+// at its position between neighbor receipts. Only subsequent complete entity
+// observations contribute conflicts against that baseline. Entities update
+// existing topology identities and never manufacture source cell references.
+func ExtractTopologyWithEntityObservations(r contract.GraphResult, observations []contract.GraphResult, entities map[string]EntityObservation) Topology {
 	t := Topology{}
 	nodes, edges := map[string]int{}, map[string]int{}
 	nodeHashes, edgeHashes := map[string][32]byte{}, map[string][32]byte{}
@@ -171,6 +189,66 @@ func ExtractTopologyObservations(r contract.GraphResult, observations []contract
 		item := &t.Edges[len(t.Edges)-1]
 		addRef(&item.Cells, &item.Observations, cell)
 	}
+	entityKeys := make(map[int][]string)
+	if len(entities) > TopologyMaxNodes+TopologyMaxEdges {
+		t.Bounded = true
+	} else {
+		for key, entity := range entities {
+			v := entity.Value
+			valid := v.Kind == "node" && v.Node != nil && v.Node.ElementID != "" && key == "n:"+v.Node.ElementID || v.Kind == "relationship" && v.Relationship != nil && v.Relationship.ElementID != "" && v.Relationship.StartElementID != "" && v.Relationship.EndElementID != "" && key == "r:"+v.Relationship.ElementID
+			if !valid || entity.AfterObservations < 0 || entity.AfterObservations > len(observations) {
+				t.Unidentified = true
+				continue
+			}
+			entityKeys[entity.AfterObservations] = append(entityKeys[entity.AfterObservations], key)
+		}
+	}
+	applyEntities := func(after int) {
+		keys := entityKeys[after]
+		slices.Sort(keys)
+		for _, key := range keys {
+			if visits >= topologyMaxVisits {
+				t.Bounded = true
+				break
+			}
+			visits++
+			v := entities[key].Value
+			if index, ok := nodes[key]; ok && v.Node != nil {
+				item := &t.Nodes[index]
+				raw, err := json.Marshal(v.Node)
+				old, _ := json.Marshal(item.Value)
+				if err != nil {
+					t.Unidentified = true
+					continue
+				}
+				if !charge(max(0, len(raw)-len(old))) {
+					continue
+				}
+				item.Value, item.Missing, item.Conflicting = v.Node.Clone(), false, false
+				item.EntityObserved = true
+				nodeHashes[key] = sha256.Sum256(raw)
+			}
+			if index, ok := edges[key]; ok && v.Relationship != nil {
+				item := &t.Edges[index]
+				if item.Value.StartElementID != v.Relationship.StartElementID || item.Value.EndElementID != v.Relationship.EndElementID {
+					item.Conflicting = true
+					continue
+				}
+				raw, err := json.Marshal(v.Relationship)
+				old, _ := json.Marshal(item.Value)
+				if err != nil {
+					t.Unidentified = true
+					continue
+				}
+				if !charge(max(0, len(raw)-len(old))) {
+					continue
+				}
+				item.Value, item.Conflicting = v.Relationship.Clone(), false
+				item.EntityObserved = true
+				edgeHashes[key] = sha256.Sum256(raw)
+			}
+		}
+	}
 	var visit func(contract.GraphValue, topologyCell, int)
 	visit = func(v contract.GraphValue, cell topologyCell, depth int) {
 		if visits >= topologyMaxVisits || depth > 32 {
@@ -239,6 +317,7 @@ func ExtractTopologyObservations(r contract.GraphResult, observations []contract
 				break
 			}
 		}
+		applyEntities(observation)
 		if visits >= topologyMaxVisits {
 			break
 		}

@@ -41,6 +41,9 @@ func captureGraphVisual(t *testing.T, s *State, d *Document, state string) {
 			if state == "graph-bound" && !tt.HasText(locales.Text("图形展示达到上限；完整保留结果仍可查看和导出")) {
 				t.Fatal("graph bound silent", language)
 			}
+			if state == "property-neighbors-conflict" && !tt.HasText(locales.Text("后续邻居读取与保存或核对时的图元不同；显示保存或核对时的观察")) {
+				t.Fatal("later neighbor conflict did not identify the displayed native observation", language)
+			}
 			if state == "graph-missing-endpoint" && !tt.HasText(locales.Text("端点节点未包含在保留结果中")) {
 				t.Fatal("missing endpoint represented as returned native node")
 			}

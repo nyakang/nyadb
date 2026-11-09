@@ -24,7 +24,7 @@ type graphVisualState struct {
 	observationBytes                 int
 	observationIndex                 int
 	expansionError                   string
-	propertyEntities                 map[string]contract.GraphValue
+	propertyEntities                 map[string]graphresult.EntityObservation
 	positions                        map[string]ui.Point
 	hidden, pinned                   map[string]bool
 	selected, query, detail          string

@@ -2936,5 +2936,6 @@
   "graphPropertyVerifyIncomplete": "图元核对未获得完整原生确认",
   "graphPropertyVerifyAbsent": "该次核对未返回图元；此前图形仍是旧观察",
   "graphPropertySupported": "仅支持已有字符串、布尔值、整数和有限浮点属性；失效会话、冲突观察和快照不可编辑",
-  "graphPropertyRecordCapacity": "属性操作记录预算不足；已有记录可继续查看和导出"
+  "graphPropertyRecordCapacity": "属性操作记录预算不足；已有记录可继续查看和导出",
+  "graphPropertyLaterNeighborConflict": "后续邻居读取与保存或核对时的图元不同；显示保存或核对时的观察"
 }

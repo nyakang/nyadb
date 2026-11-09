@@ -61,9 +61,10 @@ func (g *graphVisualState) cloneReading(other *graphVisualState) {
 		g.observations = append(g.observations, observation)
 	}
 	g.observationBytes, g.observationIndex = other.observationBytes, other.observationIndex
-	g.propertyEntities = make(map[string]contract.GraphValue, len(other.propertyEntities))
+	g.propertyEntities = make(map[string]graphresult.EntityObservation, len(other.propertyEntities))
 	for key, value := range other.propertyEntities {
-		g.propertyEntities[key] = value.Clone()
+		value.Value = value.Value.Clone()
+		g.propertyEntities[key] = value
 	}
 	g.expansionError = other.expansionError
 	g.rebuildObservations()
@@ -252,13 +253,15 @@ func (s *State) graphInspector(c *ui.Context, d *Document, g *graphVisualState) 
 		return
 	}
 	title := g.selected
-	missing, conflict := false, false
+	missing, conflict, observed := false, false, false
 	if n := g.node(g.selected); n != nil {
 		title = graphTitle(*n)
 		missing, conflict = n.Missing, n.Conflicting
+		observed = n.EntityObserved
 	} else if e := g.edge(g.selected); e != nil {
 		title = graphLabel(e.Value.Type, 48)
 		conflict = e.Conflicting
+		observed = e.EntityObserved
 	}
 	ui.Row(c).Padding(4).Gap(3).Children(func() {
 		ui.Text(c, title).Bold().SingleLine().Tooltip(g.selected).Grow(1).MinWidth(0)
@@ -278,7 +281,11 @@ func (s *State) graphInspector(c *ui.Context, d *Document, g *graphVisualState) 
 		ui.Text(c, locales.Text("端点节点未包含在保留结果中")).SingleLine().Tooltip(locales.Text("端点节点未包含在保留结果中")).TextColor(palette.Warning)
 	}
 	if conflict {
-		ui.Text(c, locales.Text("同一图元存在不同观察值；显示首次观察，请定位原始记录")).SingleLine().Tooltip(locales.Text("同一图元存在不同观察值；显示首次观察，请定位原始记录")).TextColor(palette.Warning)
+		message := "同一图元存在不同观察值；显示首次观察，请定位原始记录"
+		if observed {
+			message = "后续邻居读取与保存或核对时的图元不同；显示保存或核对时的观察"
+		}
+		ui.Text(c, locales.Text(message)).SingleLine().Tooltip(locales.Text(message)).TextColor(palette.Warning)
 	}
 	s.graphPropertiesInspector(c, d, g)
 	refs := g.cells()

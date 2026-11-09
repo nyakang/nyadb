@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/graphresult"
 )
 
 const graphPropertyRecordBudget = 8 << 20
@@ -280,32 +281,12 @@ func (g *graphVisualState) applyGraphPropertyEntity(target contract.GraphPropert
 		return
 	}
 	if g.propertyEntities == nil {
-		g.propertyEntities = map[string]contract.GraphValue{}
+		g.propertyEntities = map[string]graphresult.EntityObservation{}
 	}
-	g.propertyEntities[key] = entity.Clone()
-	g.applyGraphPropertyEntities()
+	g.propertyEntities[key] = graphresult.EntityObservation{AfterObservations: len(g.observations), Value: entity.Clone()}
+	g.rebuildObservations()
 	g.fieldJSON, g.detail = "", ""
 	g.matchQuery, g.matchKeys = "", nil
-}
-func (g *graphVisualState) applyGraphPropertyEntities() {
-	for key, v := range g.propertyEntities {
-		if n := g.node(key); n != nil && v.Node != nil {
-			old := n.Value
-			n.Value = v.Node.Clone()
-			if graphPropertySize(g.topology) > 8<<20 {
-				n.Value = old
-				g.topology.Bounded = true
-			}
-		}
-		if e := g.edge(key); e != nil && v.Relationship != nil {
-			old := e.Value
-			e.Value = v.Relationship.Clone()
-			if graphPropertySize(g.topology) > 8<<20 {
-				e.Value = old
-				g.topology.Bounded = true
-			}
-		}
-	}
 }
 func (s *State) exportGraphPropertyRecords(d *Document) {
 	if d == nil || d.closed || len(d.graphPropertyRecords) == 0 {

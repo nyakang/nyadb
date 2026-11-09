@@ -29999,3 +29999,15 @@ func GraphPropertyRecordCapacity() string { return In(i18n.Locale()).GraphProper
 func (msgs Messages) GraphPropertyRecordCapacity() string {
 	return Catalog.Format(msgs.locale, "graphPropertyRecordCapacity", nil)
 }
+
+// GraphPropertyLaterNeighborConflict says "后续邻居读取与保存或核对时的图元不同；显示保存或核对时的观察"
+// in the language the app shows.
+func GraphPropertyLaterNeighborConflict() string {
+	return In(i18n.Locale()).GraphPropertyLaterNeighborConflict()
+}
+
+// GraphPropertyLaterNeighborConflict says "后续邻居读取与保存或核对时的图元不同；显示保存或核对时的观察"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyLaterNeighborConflict() string {
+	return Catalog.Format(msgs.locale, "graphPropertyLaterNeighborConflict", nil)
+}
