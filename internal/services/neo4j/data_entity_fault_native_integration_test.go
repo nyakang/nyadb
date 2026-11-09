@@ -19,10 +19,17 @@ func TestNeo4jNativeDataEntityPreviewLostCanceledOriginalCloseNeverReplay(t *tes
 	testNativeEntityFaults(t, true)
 }
 
-func testNativeEntityFaults(t *testing.T, preview bool) {
+func TestNeo4jNativeDataRelationshipCreationLostCanceledOriginalCloseNeverReplay(t *testing.T) {
+	testNativeEntityFaults(t, true, "relationship_insert")
+}
+
+func testNativeEntityFaults(t *testing.T, preview bool, kinds ...string) {
 	f := dataFixtureTest(t)
 	admin := nativeOpenTest(t, f)
-	for _, kind := range []string{"insert", "delete", "detach_delete", "relationship_delete"} {
+	if len(kinds) == 0 {
+		kinds = []string{"insert", "delete", "detach_delete", "relationship_delete"}
+	}
+	for _, kind := range kinds {
 		for _, fault := range []string{"lost", "cancel", "close", "session_close"} {
 			t.Run(kind+"/"+fault, func(t *testing.T) {
 				label := "NyaEntityFault_" + f.Nonce + "_" + kind + "_" + fault
@@ -31,11 +38,17 @@ func testNativeEntityFaults(t *testing.T, preview bool) {
 				objectKind, objectName := "label", label
 				edit := contract.DataEdit{Kind: kind}
 				identity := ""
+				source, target := "", ""
 				if kind == "insert" {
 					edit.Values = map[string]contract.DataValue{"property.guard": {Kind: contract.Integer, Text: "1"}}
 				} else {
 					seed := nativeRunTest(t, admin, Request{Query: "CREATE (a:$($label) {guard:1}),(b:$($label) {guard:2}) RETURN a,b", Parameters: map[string]any{"label": label}})
 					identity = seed.Rows[0][0].Node.ElementID
+					if kind == "relationship_insert" {
+						objectKind, edit.Kind = "relationship", "insert"
+						source, target = identity, seed.Rows[0][1].Node.ElementID
+						edit.Values = map[string]contract.DataValue{"property.guard": {Kind: contract.Integer, Text: "1"}}
+					}
 					if kind == "detach_delete" || kind == "relationship_delete" {
 						edge := nativeRunTest(t, admin, Request{Query: "MATCH (a),(b) WHERE elementId(a)=$a AND elementId(b)=$b CREATE (a)-[r:$($label) {guard:1}]->(b) RETURN r", Parameters: map[string]any{"a": identity, "b": seed.Rows[0][1].Node.ElementID, "label": label}})
 						if kind == "relationship_delete" {
@@ -44,7 +57,9 @@ func testNativeEntityFaults(t *testing.T, preview bool) {
 					}
 				}
 				l := dataLeaseTest(t, s, objectKind, objectName)
-				if kind != "insert" {
+				if kind == "relationship_insert" {
+					edit.GraphEndpoints = relationshipEndpointsTest(t, l, source, target)
+				} else if kind != "insert" {
 					edit.Original = entitySnapshotTest(t, l, identity)
 				}
 				var plan contract.DataMutationPlan
@@ -85,14 +100,16 @@ func testNativeEntityFaults(t *testing.T, preview bool) {
 				deadline := time.Now().Add(15 * time.Second)
 				for time.Now().Before(deadline) {
 					query := "MATCH (n) WHERE $label IN labels(n) AND n.guard=1 RETURN count(n)"
-					if kind == "relationship_delete" {
+					if kind == "relationship_insert" {
+						query = "MATCH ()-[n]->() WHERE type(n)=$label AND n.guard=1 RETURN count(n)"
+					} else if kind == "relationship_delete" {
 						query = "MATCH ()-[n]->() WHERE elementId(n)=$identity RETURN count(n)"
 					} else if kind != "insert" {
 						query = "MATCH (n) WHERE elementId(n)=$identity RETURN count(n)"
 					}
 					read := nativeRunTest(t, admin, Request{Query: query, Parameters: map[string]any{"label": label, "identity": identity}, Mode: "read"})
 					wanted := "0"
-					if kind == "insert" {
+					if kind == "insert" || kind == "relationship_insert" {
 						wanted = "1"
 					}
 					if read.Rows[0][0].Text == wanted {
@@ -109,6 +126,9 @@ func testNativeEntityFaults(t *testing.T, preview bool) {
 				}
 				// A distinctive later write makes accidental replays observable.
 				nativeRunTest(t, admin, Request{Query: "MATCH (n) WHERE $label IN labels(n) SET n.guard=-789", Parameters: map[string]any{"label": label}})
+				if kind == "relationship_insert" {
+					nativeRunTest(t, admin, Request{Query: "MATCH ()-[r]->() WHERE type(r)=$label SET r.guard=-789", Parameters: map[string]any{"label": label}})
+				}
 				queued := make(chan error, 1)
 				go func() {
 					_, e := save(context.Background())
@@ -171,8 +191,18 @@ func testNativeEntityFaults(t *testing.T, preview bool) {
 						t.Fatal("entity mutation replayed over distinctive subsequent value")
 					}
 				}
-				if len(read.Rows) != 1 && kind != "relationship_delete" || kind == "relationship_delete" && len(read.Rows) != 2 || relay.dispatches.Load() != 1 || !replacement.Alive() {
+				wantedNodes := 1
+				if kind == "relationship_delete" || kind == "relationship_insert" {
+					wantedNodes = 2
+				}
+				if len(read.Rows) != wantedNodes || relay.dispatches.Load() != 1 || !replacement.Alive() {
 					t.Fatal("original entity cleanup/replay damaged replacement or changed node count")
+				}
+				if kind == "relationship_insert" {
+					read := nativeRunTest(t, replacement, Request{Query: "MATCH ()-[r]->() WHERE type(r)=$label RETURN r.guard", Parameters: map[string]any{"label": label}})
+					if len(read.Rows) != 1 || read.Rows[0][0].Text != "-789" {
+						t.Fatal("unknown relationship creation replayed over a distinctive later edge")
+					}
 				}
 			})
 		}

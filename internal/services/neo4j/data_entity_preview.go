@@ -90,7 +90,20 @@ func (l *dataLease) previewEntityEdits(ctx context.Context, id int64, db, name s
 		observation := entityPreviewObservation{Kind: p.edit.Kind}
 		if p.edit.Kind == "insert" {
 			observation.Query = "CREATE (entity:$($name)) SET entity=$properties RETURN entity"
-			r, err := c.Prepare(Request{Database: l.object.Catalog, Query: observation.Query, Mode: "write", Parameters: map[string]any{"name": l.object.Name, "properties": p.params}, MaxRows: 2, MaxBytes: 2 << 20})
+			parameters := map[string]any{"name": l.object.Name, "properties": p.params}
+			if e := p.edit.GraphEndpoints; e != nil {
+				observed, err := l.readEndpointResponse(ctx, c, e.Source.ElementID, e.Target.ElementID)
+				if err != nil {
+					return nil, err
+				}
+				if !reflect.DeepEqual(*observed.Rows[0][0].Node, e.Source) || !reflect.DeepEqual(*observed.Rows[0][1].Node, e.Target) {
+					return nil, contract.ErrDataConflict
+				}
+				observation.Read = &observed
+				observation.Query = relationshipCreateQuery
+				parameters["source"], parameters["target"] = e.Source.ElementID, e.Target.ElementID
+			}
+			r, err := c.Prepare(Request{Database: l.object.Catalog, Query: observation.Query, Mode: "write", Parameters: parameters, MaxRows: 2, MaxBytes: 2 << 20})
 			if err != nil {
 				return nil, err
 			}

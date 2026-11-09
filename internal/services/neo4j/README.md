@@ -343,7 +343,7 @@ Private original-document entity previews now retain complete captured edits,
 native read parameters and typed node/incident-edge observations. Their neutral
 DataMutationPlan accessor returns deep copies, independently of executor values.
 Each original lease owns at most one preview (8 MiB native evidence, 1 MiB edits,
-2 MiB per read). New reads replace the previous preview; Close releases it.
+2 MiB per read). New previews replace the previous preview; Close releases it.
 The original write queue claims a preview once before native dispatch. Caller
 implementations, other document/profile/generation handles, replaced previews
 and repeated submissions cannot authorize a mutation. Runtime wrappers reject
@@ -412,3 +412,26 @@ remain live observations; successful entity writes refresh the original page,
 and later selection or sorting cannot redirect a captured deletion or generated
 identity. A retired original read range requires explicitly reopening its document
 before further property/entity editing.
+
+Private qualified relationship creation now has a separate endpoint observation
+contract. The original relationship document reads complete source/target nodes,
+including typed properties, labels and native completion, and signs that evidence
+with its own key and a purpose distinct from row tokens. Endpoint input is deeply
+captured inside the existing 200-row/1 MiB edit budget. The preview rereads both
+nodes and rejects changed observations. Submit locks every unique endpoint in
+sorted element-ID order before any batch mutation, compares complete content,
+then uses directed CREATE. Parallel, reverse and self-loop requests stay distinct.
+Generated identities require exact creation counters, typed properties/endpoints
+and actual COMMIT acknowledgement. A later row conflict rolls back provisional
+creation; canceled or uncertain requests cannot reuse the original plan.
+
+`--relationship-native --race --mode MODE` requires 15 native cases: four
+relationship cases plus the existing three property, four entity and four preview
+cases. All four modes passed against Neo4j 5.26.21 Community, including actual
+COMMIT-response withholding, blocked endpoint locks and original read/close
+cancellation. This is private transaction groundwork. Public Runtime still omits
+ReadGraphEndpoints and relationship insert; the shared grid still needs explicit
+endpoint input, owned draft/history/confirmation integration and public lifecycle
+and localized UI acceptance before relationship creation is enabled. Graph import,
+full archives, extended temporal/spatial lists, plans, RBAC and other version,
+Enterprise/cluster and full reference scope remain pending.

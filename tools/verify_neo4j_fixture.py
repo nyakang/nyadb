@@ -42,6 +42,8 @@ GRID_REQUIRED = ('PublicDataSharedGridPagingInspectorExportParkGenerationAndClos
 ENTITY_GRID_REQUIRED = ('PublicDataEntityCreationTypedOmittedAndPropertylessConfirmedIdentity', 'PublicDataEntityDeleteChoiceBlockedAndAdjacentBatchConfirmed', 'PublicDataEntityPreviewChangedObservationRollsBackOriginalBatch', 'PublicDataEntityCommitReplyLostCanceledOriginalCloseNeverReplay', 'PublicDataEntityPreviewParkGenerationCancelAndOriginalClose')
 ENTITY_GRID_IMAGE_STAGES = ('entity-create-typed-draft', 'entity-create-typed-preview', 'entity-create-continued-receipt', 'entity-create-propertyless-draft', 'entity-delete-choice', 'entity-delete-plain-blocked', 'entity-delete-detach-preview', 'entity-delete-detach-receipt', 'entity-preview-conflict', 'entity-commit-unknown', 'entity-commit-unknown-close', 'entity-preview-parked')
 
+RELATIONSHIP_REQUIRED = ('DataRelationshipCreationTypedDirectedParallelAndSelfLoop', 'DataRelationshipEndpointChangesBoundsAndAtomicRollback', 'DataRelationshipCreationLostCanceledOriginalCloseNeverReplay', 'DataRelationshipEndpointReadAndLockCancellationOriginalClose')
+
 def remove_owned(identifier, nonce):
     if not re.fullmatch('[0-9a-f]{64}', identifier):
         raise RuntimeError('Invalid immutable fixture ID')
@@ -58,12 +60,12 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def check_acceptance(log, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False):
+def check_acceptance(log, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False, relationship_native=False):
     public = public or grid
     data = data or grid
     session = session or public or data
     profile = profile or session
-    names = WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED + GRID_REQUIRED + ENTITY_GRID_REQUIRED if entity_grid else WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if entity_preview else ENTITY_REQUIRED if entity_native else WRITE_REQUIRED + GRID_REQUIRED if grid_writes else REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ())
+    names = RELATIONSHIP_REQUIRED + WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if relationship_native else WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED + GRID_REQUIRED + ENTITY_GRID_REQUIRED if entity_grid else WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if entity_preview else ENTITY_REQUIRED if entity_native else WRITE_REQUIRED + GRID_REQUIRED if grid_writes else REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ())
     for name in names:
         if not re.search(r'^--- PASS: TestNeo4jNative' + name + r' \(', log, re.M):
             raise RuntimeError('Missing native acceptance: ' + name)
@@ -86,10 +88,12 @@ def certificates(folder):
     openssl('req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', 'wrong.key', '-out', 'wrong.crt', '-days', '2', '-subj', '/CN=Untrusted CA', cwd=folder)
 
 
-def verify(mode, race, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False):
+def verify(mode, race, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False, relationship_native=False):
     if entity_grid:
         grid_writes = True
-    if entity_native or entity_preview:
+    if relationship_native:
+        profile, session, public, data, grid, grid_writes = False, True, False, True, False, False
+    elif entity_native or entity_preview:
         profile, session, public, data, grid = False, True, False, True, False
     elif grid_writes:
         profile, session, public, data, grid = False, True, False, True, True
@@ -109,6 +113,8 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
         sources += list((ROOT/'locales').glob('*.go')) + list((ROOT/'locales').glob('*.json')) + [ROOT/'internal/ui/shell/connection_engine_files.go']
     if session:
         sources += list((ROOT/'internal/db/contract').glob('*.go'))
+    if relationship_native:
+        sources += list((ROOT/'internal/services/dbruntime').glob('*.go'))
     if public or grid_writes:
         for package in ('internal/db/graphresult', 'internal/services/dbruntime', 'internal/ui/shell', 'internal/ui/navigation', 'internal/ui/connectioncatalog', 'internal/ui/sqlworkspace', 'internal/ui/objectworkspace', 'internal/ui/sessionbrowser'):
             sources += list((ROOT/package).glob('*.go'))
@@ -116,7 +122,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
         for package in ('internal/ui/dataworkspace', 'internal/ui/gridview', 'internal/ui/theme'):
             sources += list((ROOT/package).glob('*.go'))
     report = {'nonce': nonce, 'mode': mode, 'version': VERSION, 'image': IMAGE,
-              'scope': 'public-shared-graph-entity-confirmations' if entity_grid else 'private-native-entity-previews-and-property-transactions' if entity_preview else 'private-native-entity-mutations' if entity_native else 'public-shared-graph-property-write-and-close-followup' if grid_writes else 'public-shared-graph-data-and-workbench' if grid else 'public-workbench-and-private-graph-data' if public and data else 'private-original-graph-data' if data else 'public-native-workbench' if public else 'private-native-session-and-graph-contract' if session else ('private-native-profile-and-editor' if profile else 'private-native-foundation'), 'race': race, 'passed': False,
+              'scope': 'private-native-qualified-relationship-creation' if relationship_native else 'public-shared-graph-entity-confirmations' if entity_grid else 'private-native-entity-previews-and-property-transactions' if entity_preview else 'private-native-entity-mutations' if entity_native else 'public-shared-graph-property-write-and-close-followup' if grid_writes else 'public-shared-graph-data-and-workbench' if grid else 'public-workbench-and-private-graph-data' if public and data else 'private-original-graph-data' if data else 'public-native-workbench' if public else 'private-native-session-and-graph-contract' if session else ('private-native-profile-and-editor' if profile else 'private-native-foundation'), 'race': race, 'passed': False,
               'source_hashes': {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(sources))}}
     identifier = None
     try:
@@ -213,7 +219,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
                 packages += ['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell']
             if grid:
                 packages += ['./internal/ui/dataworkspace']
-            accepted = WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED + GRID_REQUIRED + ENTITY_GRID_REQUIRED if entity_grid else WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if entity_preview else ENTITY_REQUIRED if entity_native else WRITE_REQUIRED + GRID_REQUIRED if grid_writes else REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ())
+            accepted = RELATIONSHIP_REQUIRED + WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if relationship_native else WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED + GRID_REQUIRED + ENTITY_GRID_REQUIRED if entity_grid else WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if entity_preview else ENTITY_REQUIRED if entity_native else WRITE_REQUIRED + GRID_REQUIRED if grid_writes else REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ())
             pattern = '^TestNeo4jNative(' + '|'.join(accepted) + ')$'
             command = ['go', 'test'] + (['-race'] if race else []) + packages + ['-run', pattern, '-count=1', '-timeout=8m', '-v']
             result = subprocess.run(command, cwd=ROOT, env=env, capture_output=True, text=True)
@@ -223,7 +229,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
             log_path.write_text(log)
             if result.returncode:
                 raise RuntimeError('Native Neo4j verification failed; see '+str(log_path.relative_to(ROOT)))
-            check_acceptance(log, profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid)
+            check_acceptance(log, profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid, relationship_native)
             if profile:
                 pictures = sorted(Path(env['NYADB_NEO4J_PROFILE_IMAGES']).glob('*.png'))
                 if len(pictures) != 48:
@@ -271,8 +277,9 @@ def main():
     parser.add_argument('--entity-native', action='store_true', help='Probe private native entity creation/deletion, bounded detach and original transactions')
     parser.add_argument('--entity-preview', action='store_true', help='Probe private one-attempt previews, exact affected-edge comparisons and original property transactions')
     parser.add_argument('--entity-grid', action='store_true', help='Probe public node creation, explicit deletion decisions, original previews and entity commit safety')
+    parser.add_argument('--relationship-native', action='store_true', help='Probe private qualified endpoint reads, directed relationship creation, original locks and commit faults')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.profile, args.session, args.public, args.data, args.grid, args.grid_writes, args.entity_native, args.entity_preview, args.entity_grid)
+    verify(args.mode, args.race, args.profile, args.session, args.public, args.data, args.grid, args.grid_writes, args.entity_native, args.entity_preview, args.entity_grid, args.relationship_native)
 
 
 if __name__ == '__main__':

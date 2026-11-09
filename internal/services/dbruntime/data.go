@@ -61,6 +61,9 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 				return nil, e
 			}
 			for _, edit := range edits {
+				if edit.GraphEndpoints != nil {
+					return nil, contract.ErrUnsupported
+				}
 				if edit.Original != nil {
 					if e := s.dataObject(id, db, table, edit.Original.Ref.Object); e != nil {
 						return nil, e
@@ -75,14 +78,26 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			if e := s.require(r.Capabilities.EditableTables, id); e != nil {
 				return nil, e
 			}
-			for _, edit := range edits {
+			captured := contract.CloneDataMutationSnapshot(contract.DataMutationSnapshot{Edits: edits}).Edits
+			for _, edit := range captured {
+				if endpoint := edit.GraphEndpoints; endpoint != nil {
+					if r.ReadGraphEndpoints == nil || edit.Kind != "insert" {
+						return nil, contract.ErrUnsupported
+					}
+					if endpoint.Object.ProfileID != id || endpoint.Object.Kind != "relationship" {
+						return nil, connections.ErrInvalid
+					}
+					if err := s.dataObject(id, db, table, endpoint.Object); err != nil {
+						return nil, err
+					}
+				}
 				if edit.Original != nil {
 					if e := s.dataObject(id, db, table, edit.Original.Ref.Object); e != nil {
 						return nil, e
 					}
 				}
 			}
-			plan, err := r.PreviewEdits(ctx, id, s.dataDatabase(db), table, edits)
+			plan, err := r.PreviewEdits(ctx, id, s.dataDatabase(db), table, captured)
 			if err == nil {
 				err = s.require(r.Capabilities.EditableTables, id)
 			}
@@ -108,6 +123,33 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 				return nil, err
 			}
 			return &dataMutationPlan{session: s, object: object, raw: plan}, nil
+		}
+	}
+	if r.ReadGraphEndpoints != nil {
+		out.ReadGraphEndpoints = func(ctx context.Context, id int64, db, table, source, target string) (*contract.DataGraphEndpoints, error) {
+			if err := s.require(r.Capabilities.EditableTables, id); err != nil {
+				return nil, err
+			}
+			endpoints, err := r.ReadGraphEndpoints(ctx, id, s.dataDatabase(db), table, source, target)
+			if err != nil {
+				return nil, err
+			}
+			if err := s.require(r.Capabilities.EditableTables, id); err != nil {
+				return nil, err
+			}
+			if endpoints == nil || endpoints.Object.ProfileID != id || endpoints.Object.Kind != "relationship" || endpoints.Source.ElementID != source || endpoints.Target.ElementID != target {
+				return nil, connections.ErrInvalid
+			}
+			if err := s.dataObject(id, db, table, endpoints.Object); err != nil {
+				return nil, err
+			}
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+			if err := s.require(r.Capabilities.EditableTables, id); err != nil {
+				return nil, err
+			}
+			return contract.CloneDataGraphEndpoints(endpoints), nil
 		}
 	}
 	if r.SubmitEdits != nil {

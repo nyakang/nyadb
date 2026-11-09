@@ -138,3 +138,18 @@ class Neo4jFixtureOwnershipTests(unittest.TestCase):
         for name in names:
             with self.subTest(name=name), self.assertRaises(RuntimeError):
                 FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), entity_preview=True)
+
+    def test_relationship_acceptance_requires_endpoints_atomic_creation_and_original_faults(self):
+        self.assertEqual(len(FIXTURE.RELATIONSHIP_REQUIRED), 4)
+        names = FIXTURE.RELATIONSHIP_REQUIRED + FIXTURE.WRITE_REQUIRED + FIXTURE.ENTITY_REQUIRED + FIXTURE.ENTITY_PREVIEW_REQUIRED
+        self.assertEqual(len(set(names)), 15)
+        passed = '\n'.join('--- PASS: TestNeo4jNative'+name+' (0.01s)' for name in names)
+        FIXTURE.check_acceptance(passed, relationship_native=True)
+        for name in names:
+            line = '--- PASS: TestNeo4jNative'+name+' (0.01s)'
+            for log in (passed.replace(line, ''), passed.replace(line, line.replace('PASS', 'SKIP'))):
+                with self.subTest(name=name, log=log), self.assertRaises(RuntimeError):
+                    FIXTURE.check_acceptance(log, relationship_native=True)
+        for suffix in ('\n    --- SKIP: child (0.0s)', '\n--- FAIL: child (0.0s)', '\nWARNING: DATA RACE'):
+            with self.subTest(suffix=suffix), self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(passed+suffix, relationship_native=True)

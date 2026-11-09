@@ -208,7 +208,7 @@ func (l *dataLease) prepareDataEdits(edits []contract.DataEdit) ([]preparedDataE
 	seen := map[string]bool{}
 	total := 0
 	for index, edit := range edits {
-		if edit.Kind != "update" || len(edit.Values) == 0 {
+		if edit.Kind != "update" || len(edit.Values) == 0 || edit.GraphEndpoints != nil {
 			return nil, contract.ErrUnsupported
 		}
 		edit.Original = cloneDataSnapshot(edit.Original)

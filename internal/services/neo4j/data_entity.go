@@ -36,6 +36,9 @@ func (l *dataLease) prepareEntityEdits(edits []contract.DataEdit) ([]preparedDat
 	total := 0
 	projection := l.propertyProjection()
 	for _, edit := range edits {
+		if edit.GraphEndpoints != nil && (edit.Kind != "insert" || l.object.Kind != "relationship") {
+			return nil, contract.ErrUnsupported
+		}
 		var p preparedDataEdit
 		if edit.Kind == "update" {
 			updates, err := l.prepareDataEdits([]contract.DataEdit{edit})
@@ -45,6 +48,7 @@ func (l *dataLease) prepareEntityEdits(edits []contract.DataEdit) ([]preparedDat
 			p = updates[0]
 		} else {
 			edit.Original = cloneDataSnapshot(edit.Original)
+			edit.GraphEndpoints = contract.CloneDataGraphEndpoints(edit.GraphEndpoints)
 			values := make(map[string]contract.DataValue, len(edit.Values))
 			for key, value := range edit.Values {
 				value.Bytes = bytes.Clone(value.Bytes)
@@ -54,8 +58,16 @@ func (l *dataLease) prepareEntityEdits(edits []contract.DataEdit) ([]preparedDat
 			p = preparedDataEdit{edit: edit, after: map[string]Value{}, params: map[string]any{}}
 			switch edit.Kind {
 			case "insert":
-				if l.object.Kind != "label" || edit.Original != nil {
+				if edit.Original != nil || l.object.Kind != "label" && l.object.Kind != "relationship" {
 					return nil, contract.ErrUnsupported
+				}
+				if l.object.Kind == "relationship" {
+					if edit.GraphEndpoints == nil {
+						return nil, contract.ErrUnsupported
+					}
+					if err := l.validateGraphEndpoints(edit.GraphEndpoints); err != nil {
+						return nil, err
+					}
 				}
 				p.identity.Properties = cloneGraphProjection(projection)
 				for field, value := range edit.Values {
@@ -115,15 +127,26 @@ func (l *dataLease) runEntityEdit(ctx context.Context, c *Client, tx nd.Explicit
 	out := contract.DataEditOutcome{Kind: p.edit.Kind, Original: p.edit.Original}
 	if p.edit.Kind == "insert" {
 		query := "CREATE (entity:$($name)) SET entity=$properties RETURN entity"
-		r, err := l.runDataStatement(ctx, c, tx, receipt, query, map[string]any{"name": l.object.Name, "properties": p.params}, []string{"entity"})
+		parameters := map[string]any{"name": l.object.Name, "properties": p.params}
+		if e := p.edit.GraphEndpoints; e != nil {
+			query = relationshipCreateQuery
+			parameters["source"], parameters["target"] = e.Source.ElementID, e.Target.ElementID
+		}
+		r, err := l.runDataStatement(ctx, c, tx, receipt, query, parameters, []string{"entity"})
 		if err != nil {
 			return out, err
 		}
 		entity := r.Rows[0][0]
-		if _, err = l.entityID(entity); err != nil || !slices.Equal(entity.Node.Labels, []string{l.object.Name}) || !entityPropertiesEqual(entity.Node.Properties, p.after) {
+		wanted := map[string]int64{"nodes_created": 1, "labels_added": 1, "properties_set": int64(len(p.params))}
+		if p.edit.GraphEndpoints != nil {
+			if err = l.validateCreatedRelationship(entity, p); err != nil {
+				return out, err
+			}
+			wanted = map[string]int64{"relationships_created": 1, "properties_set": int64(len(p.params))}
+		} else if _, err = l.entityID(entity); err != nil || entity.Node == nil || !slices.Equal(entity.Node.Labels, []string{l.object.Name}) || !entityPropertiesEqual(entity.Node.Properties, p.after) {
 			return out, ErrProtocol
 		}
-		if !entityCounters(r, map[string]int64{"nodes_created": 1, "labels_added": 1, "properties_set": int64(len(p.params))}) {
+		if !entityCounters(r, wanted) {
 			return out, ErrProtocol
 		}
 		previews, saved, err := l.preview(entity, p.identity.Properties, budget)
@@ -216,6 +239,11 @@ func entityPropertiesEqual(properties []Property, expected map[string]Value) boo
 }
 
 func entityCounters(r *Response, expected map[string]int64) bool {
+	for name, wanted := range expected {
+		if r.Summary.Counters[name] != wanted {
+			return false
+		}
+	}
 	for name, actual := range r.Summary.Counters {
 		if actual != expected[name] {
 			return false

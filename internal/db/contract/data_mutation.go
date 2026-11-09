@@ -31,6 +31,7 @@ func CloneDataMutationSnapshot(s DataMutationSnapshot) DataMutationSnapshot {
 	s.Items = slices.Clone(s.Items)
 	s.Edits = slices.Clone(s.Edits)
 	for i, e := range s.Edits {
+		s.Edits[i].GraphEndpoints = CloneDataGraphEndpoints(e.GraphEndpoints)
 		values := make(map[string]DataValue, len(e.Values))
 		for k, v := range e.Values {
 			v.Bytes = bytes.Clone(v.Bytes)

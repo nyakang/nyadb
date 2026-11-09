@@ -174,9 +174,12 @@ type DataRow struct {
 }
 
 type DataEdit struct {
-	Kind     string // insert | update | delete
-	Original *RowSnapshot
-	Values   map[string]DataValue
+	// GraphEndpoints is only for explicit graph relationship insertion through
+	// an owning preview. Ordinary savers and unsupported providers reject it.
+	GraphEndpoints *DataGraphEndpoints `json:",omitempty"`
+	Kind           string              // insert | update | delete
+	Original       *RowSnapshot
+	Values         map[string]DataValue
 }
 
 type DataEditOutcome struct {

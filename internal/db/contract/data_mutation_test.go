@@ -24,3 +24,25 @@ func TestDataMutationSnapshotCopiesAllOriginalEditAndIdentityEvidence(t *testing
 		t.Fatal("immutable preview followed mutable request values or original evidence")
 	}
 }
+
+func TestDataMutationCopiesCompleteDirectedEndpointEvidenceIndependently(t *testing.T) {
+	e := &DataGraphEndpoints{Object: ObjectRef{ProfileID: 42, Catalog: "original", Kind: "relationship", Name: "owns"},
+		Source: GraphNode{ElementID: "source", Labels: []string{"original"}, Properties: []GraphProperty{{Name: "nested", Value: GraphValue{Kind: "list", Values: []GraphValue{{Kind: "integer", Text: "9223372036854775807"}}}}}},
+		Target: GraphNode{ElementID: "target", Labels: []string{"target"}}, NativeJSON: "original", Token: "original"}
+	s := CloneDataMutationSnapshot(DataMutationSnapshot{Edits: []DataEdit{{Kind: "insert", GraphEndpoints: e}}})
+	want, _ := json.Marshal(s)
+	e.Object.Catalog = "other"
+	e.Source.Labels[0] = "other"
+	e.Source.Properties[0].Value.Values[0].Text = "0"
+	e.Target.Labels[0] = "other"
+	e.Token = "other"
+	got, _ := json.Marshal(s)
+	if string(got) != string(want) {
+		t.Fatal("relationship confirmation followed mutable endpoint content")
+	}
+	copy := CloneDataMutationSnapshot(s)
+	copy.Edits[0].GraphEndpoints.Source.Labels[0] = "executor-only"
+	if s.Edits[0].GraphEndpoints.Source.Labels[0] != "original" {
+		t.Fatal("executor and UI shared endpoint evidence")
+	}
+}

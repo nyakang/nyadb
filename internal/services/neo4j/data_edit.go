@@ -175,6 +175,11 @@ func (l *dataLease) saveTransaction(parent context.Context, c *Client, prepared 
 		}
 	}()
 
+	if err = l.lockRelationshipEndpoints(ctx, c, tx, &receipt, prepared); err != nil {
+		transactionFailed = !localDataWriteError(err)
+		return out, err
+	}
+
 	// Sorting lock acquisition avoids avoidable inverted-lock deadlocks. Native
 	// deadlock errors are still retained and never retried. Outcomes stay in the
 	// caller's original row order.
