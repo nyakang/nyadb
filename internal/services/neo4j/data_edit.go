@@ -39,6 +39,10 @@ func (l *dataLease) save(ctx context.Context, id int64, db, name string, edits [
 	if err != nil {
 		return nil, err
 	}
+	return l.savePreparedEdits(ctx, prepared)
+}
+
+func (l *dataLease) savePreparedEdits(ctx context.Context, prepared []preparedDataEdit) (*contract.DataEditResult, error) {
 	ctx, done, err := l.request(ctx)
 	if err != nil {
 		return nil, err
@@ -164,6 +168,15 @@ func (l *dataLease) saveTransaction(parent context.Context, c *Client, prepared 
 	previewBudget := dataWriteReceiptBytes
 	for _, index := range order {
 		p := prepared[index]
+		if p.edit.Kind != "update" {
+			outcome, runErr := l.runEntityEdit(ctx, c, tx, &receipt, p, &previewBudget)
+			if runErr != nil {
+				transactionFailed = !localDataWriteError(runErr)
+				return out, runErr
+			}
+			out.Outcomes[index] = outcome
+			continue
+		}
 		lockQuery := l.match() + " AND elementId(entity)=$element_id SET entity[$lock_key]=entity[$lock_key] RETURN entity LIMIT 2"
 		locked, runErr := l.runDataWrite(ctx, c, tx, &receipt, lockQuery, map[string]any{"name": l.object.Name, "element_id": p.identity.ElementID, "lock_key": p.keys[0]})
 		if runErr != nil {
@@ -204,6 +217,9 @@ func (l *dataLease) saveTransaction(parent context.Context, c *Client, prepared 
 		return out, ErrProtocol
 	}
 	out.Applied, out.CommitConfirmed = len(prepared), true
+	for _, p := range prepared {
+		out.RefreshRequired = out.RefreshRequired || p.edit.Kind != "update"
+	}
 	return out, nil
 }
 
@@ -212,17 +228,32 @@ func localDataWriteError(err error) bool {
 }
 
 func (l *dataLease) runDataWrite(ctx context.Context, c *Client, tx nd.ExplicitTransaction, receipt *dataWriteReceipt, query string, params map[string]any) (Value, error) {
+	response, err := l.runDataStatement(ctx, c, tx, receipt, query, params, []string{"entity"})
+	if err != nil {
+		return Value{}, err
+	}
+	for name, count := range response.Summary.Counters {
+		if name != "properties_set" && count != 0 {
+			return Value{}, ErrProtocol
+		}
+	}
+	return response.Rows[0][0].Clone(), nil
+}
+
+// Statement capture owns the original typed response, independently of both
+// enclosing COMMIT and the mutation-specific identity/counter validation.
+func (l *dataLease) runDataStatement(ctx context.Context, c *Client, tx nd.ExplicitTransaction, receipt *dataWriteReceipt, query string, params map[string]any, columns []string) (*Response, error) {
 	raw, err := json.Marshal(receipt)
 	if err != nil {
-		return Value{}, ErrInvalid
+		return nil, ErrInvalid
 	}
 	remaining := dataWriteReceiptBytes - len(raw) - 4096
 	if remaining < 4096 {
-		return Value{}, ErrBounds
+		return nil, ErrBounds
 	}
 	plan, err := c.Prepare(Request{Database: l.object.Catalog, Query: query, Mode: "write", Parameters: params, MaxRows: 2, MaxBytes: min(2<<20, remaining), FetchSize: 2})
 	if err != nil {
-		return Value{}, err
+		return nil, err
 	}
 	statement := dataWriteStatement{Query: query, Parameters: plan.Parameters()}
 	receipt.Statements = append(receipt.Statements, statement)
@@ -232,71 +263,73 @@ func (l *dataLease) runDataWrite(ctx context.Context, c *Client, tx nd.ExplicitT
 	result, err := tx.Run(ctx, query, plan.request.Parameters)
 	if err != nil {
 		response.Uncertain = true
-		return Value{}, err
+		return nil, err
 	}
 	keys, err := result.Keys()
 	if err != nil {
-		return Value{}, err
+		return nil, err
 	}
 	response.Columns = slices.Clone(keys)
-	if !slices.Equal(keys, []string{"entity"}) {
+	if !slices.Equal(keys, columns) {
 		_, _ = result.Consume(ctx)
-		return Value{}, ErrProtocol
+		return nil, ErrProtocol
 	}
 	budget := valueBudget{limit: plan.request.MaxBytes}
 	var captureErr error
 	for result.Next(ctx) {
 		record := result.Record()
-		if record == nil || len(record.Values) != 1 || len(response.Rows) >= 2 {
+		if record == nil || len(record.Values) != len(columns) || len(response.Rows) >= 2 {
 			captureErr = ErrProtocol
 			break
 		}
-		value, _, valueErr := budget.capture(record.Values[0], true, 0)
-		if valueErr != nil {
-			captureErr = valueErr
-			response.Truncated = true
+		row := make([]Value, 0, len(columns))
+		for _, native := range record.Values {
+			value, _, valueErr := budget.capture(native, true, 0)
+			if valueErr != nil {
+				captureErr = valueErr
+				response.Truncated = true
+				break
+			}
+			row = append(row, value)
+		}
+		if captureErr != nil {
 			break
 		}
-		response.Rows = append(response.Rows, []Value{value})
+		response.Rows = append(response.Rows, row)
 	}
 	if err = result.Err(); err != nil {
 		response.Uncertain = true
-		return Value{}, err
+		return nil, err
 	}
 	summary, err := result.Consume(ctx)
 	if err != nil {
 		response.Uncertain = true
-		return Value{}, err
+		return nil, err
 	}
 	if summary == nil || summary.Server() == nil || summary.Counters() == nil || summary.Database() == nil {
-		return Value{}, ErrProtocol
+		return nil, ErrProtocol
 	}
 	observed := identity(summary.Server())
 	if observed.Agent != c.identity.Agent || observed.ProtocolMajor != c.identity.ProtocolMajor || observed.ProtocolMinor != c.identity.ProtocolMinor || summary.Database().Name() != l.object.Catalog {
-		return Value{}, ErrProtocol
+		return nil, ErrProtocol
 	}
 	counters := summary.Counters()
 	response.Summary = Summary{Server: observed, Database: summary.Database().Name(), QueryType: summary.QueryType().String(), AvailableAfter: summary.ResultAvailableAfter(), ConsumedAfter: summary.ResultConsumedAfter(), Counters: map[string]int64{
 		"nodes_created": int64(counters.NodesCreated()), "nodes_deleted": int64(counters.NodesDeleted()), "relationships_created": int64(counters.RelationshipsCreated()), "relationships_deleted": int64(counters.RelationshipsDeleted()), "properties_set": int64(counters.PropertiesSet()), "labels_added": int64(counters.LabelsAdded()), "labels_removed": int64(counters.LabelsRemoved()), "indexes_added": int64(counters.IndexesAdded()), "indexes_removed": int64(counters.IndexesRemoved()), "constraints_added": int64(counters.ConstraintsAdded()), "constraints_removed": int64(counters.ConstraintsRemoved()), "system_updates": int64(counters.SystemUpdates())}}
 	response.Completed = true // Native statement only; enclosing Commit is separate.
-	for name, count := range response.Summary.Counters {
-		if name != "properties_set" && count != 0 {
-			return Value{}, ErrProtocol
-		}
-	}
 	if captureErr != nil {
-		return Value{}, captureErr
+		return nil, captureErr
 	}
 	if len(response.Rows) != 1 {
-		return Value{}, contract.ErrDataConflict
+		return nil, contract.ErrDataConflict
 	}
 	raw, err = json.Marshal(receipt)
 	if err != nil || len(raw) > dataWriteReceiptBytes-4096 {
 		response.Rows = nil
 		response.Truncated = true
-		return Value{}, ErrBounds
+		return nil, ErrBounds
 	}
-	return response.Rows[0][0].Clone(), nil
+	return response, nil
 }
 
 func (l *dataLease) validateSavedDataEdit(p preparedDataEdit, before, after Value) error {

@@ -278,7 +278,7 @@ acceptance includes saved-profile reopening, native typed values/metadata,
 published generations, committed writes with lost/canceled responses, explicit
 recovery, original close/termination, retained-node property expansion, original
 node visibility, native snapshots/exports, bounded fallback and localized
-workbench/form images. Four grid modes require 176 native groups and 1376 images, including retained
+workbench/form images. Four grid modes require 192 native groups and 1376 images, including retained
 graph paths, parallel/reverse/self-loop relationships, missing endpoints, original
 record links, full property JSON, snapshots, image export and 1001-node display
 bounds, explicit one/second-hop reads, 200-row neighbor limits, scalar property saves and lock-blocked typed conflicts, committed-write response loss, independent verification, separate record
@@ -289,7 +289,7 @@ reconcile only the explicitly verified entity and retain independent snapshots. 
 checks immutable container ID and nonce labels. Evidence and sanitized logs stay
 under ignored `build/neo4j/`.
 
-Whole-entity graph mutations/import, extended-type lists,
+Public whole-entity graph mutations/import, extended-type lists,
 structured Cypher plans, administration/RBAC, Enterprise/cluster validation and
 full database archives and other versions remain future work. Their capabilities are not inferred from a
 successful Community connection or the ability to execute arbitrary Cypher.
@@ -299,3 +299,39 @@ matrix, run `python3 tools/verify_neo4j_fixture.py --grid-writes --race --mode M
 This scope requires three native transaction cases and all five shared-grid
 read/write/close cases, with 64 localized grid images per mode. It does not claim
 the complete foundation/profile/Cypher matrix was rerun by this focused command.
+
+The private entity foundation shares the same original data lease, captured edit
+values, cancellation and explicit native transaction executor. It creates
+label-qualified nodes (including propertyless nodes), deletes nodes without
+implicitly detaching, deletes directed relationships, and separately performs
+bounded detached node deletion. Creation retains exact supported scalar, bytes,
+homogeneous scalar-list and eight temporal/spatial scalar kinds; labels and
+property keys are bound native data. New complete signed identities are admitted
+only after actual COMMIT confirmation and its final bookmark. A later conflict
+rolls back both provisional creation and deletion without recreating identities.
+
+Deletion locks and validates the original complete entity and either values or
+fingerprints payload. Detach collects at most 2001 distinct incident edges,
+rejects more than 2000, locks them in element-ID order and materializes complete
+typed identity/endpoints/properties before deleting. Reverse/parallel edges and
+self-loops are retained distinctly. A missing lock key still acquires the native
+lock but reports zero property updates; an existing key reports one. Oversized
+edge evidence rolls back the entire provisional deletion. This is bounded live
+evidence, not complete database/incarnation concurrency or an unlimited archive.
+
+Original transaction receipts remain within 8 MiB; captured edits remain within
+1 MiB/200 rows and each statement response within 2 MiB. Failed native statement
+rollback no-ops cannot acknowledge a server rollback. Missing COMMIT responses
+poison original queued/future mutations, keep the original evidence and wait for
+executor cancellation/close acknowledgement. Independent original reads remain
+usable. Native acceptance independently confirms actual creation/deletion, then
+changes remaining values before introducing response loss/cancellation/close;
+old operations must not replay or damage a replacement client.
+
+`--entity-native --race --mode MODE` selects four private entity cases, including
+16 original COMMIT-fault combinations and original node/edge lock comparisons.
+The complete `--grid` matrix also requires those cases. The public engine and
+data grid still expose update-only property editing: entity draft decisions,
+affected-edge previews and shared-grid/runtime publication remain the next step.
+Relationship creation requires separately qualified endpoint input and remains
+pending alongside graph import, archives, administration and other full scope.

@@ -106,3 +106,12 @@ class Neo4jFixtureOwnershipTests(unittest.TestCase):
         for name in names:
             with self.subTest(name=name), self.assertRaises(RuntimeError):
                 FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), grid_writes=True)
+
+    def test_entity_foundation_requires_actual_native_mutations_and_faults(self):
+        self.assertEqual(len(FIXTURE.ENTITY_REQUIRED), 4)
+        self.assertTrue(set(FIXTURE.ENTITY_REQUIRED).issubset(FIXTURE.DATA_REQUIRED))
+        passed = '\n'.join('--- PASS: TestNeo4jNative'+name+' (0.01s)' for name in FIXTURE.ENTITY_REQUIRED)
+        FIXTURE.check_acceptance(passed, entity_native=True)
+        for name in FIXTURE.ENTITY_REQUIRED:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), entity_native=True)
