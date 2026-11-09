@@ -10,6 +10,7 @@ import (
 type Kind string
 
 const (
+	Etcd          Kind = "etcd"
 	MySQL         Kind = "mysql"
 	MariaDB       Kind = "mariadb"
 	TiDB          Kind = "tidb"
@@ -82,6 +83,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	EtcdOptions          EtcdOptions
 	Neo4jOptions         Neo4jOptions
 	QdrantOptions        QdrantOptions
 	MeilisearchOptions   MeilisearchOptions

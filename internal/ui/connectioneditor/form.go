@@ -47,6 +47,10 @@ func connectionFormTextInput(c *ui.Context, target *string, name string, width f
 
 func (s *State) formTextInput(c *ui.Context, target *string, name string, width float32, disabled, secret bool) ui.Element {
 	field := connectionFormTextInput(c, target, name, width, disabled, secret)
+	if field.Changed() && s.connectionDraft.Kind == connections.Etcd {
+		s.cancelMySQLConnectionTest()
+		s.engineFileVersion++
+	}
 	if field.Changed() && s.validationErrorField == name {
 		s.validationErrorField = ""
 	}

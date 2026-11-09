@@ -54,6 +54,13 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 		s.connectionError = err.Error()
 		return
 	}
+	if p.Kind == connections.Etcd {
+		cfg, e := connections.EtcdProfileConfig(p)
+		if e != nil || connections.ValidateEtcdCredential(cfg, s.connectionSecret, true) != nil {
+			s.validationError(fieldError("密码", "常规", "请输入 etcd 密码"))
+			return
+		}
+	}
 	if p.Kind == connections.Neo4j {
 		cfg, e := connections.Neo4jProfileConfig(p)
 		if e != nil || connections.ValidateNeo4jCredential(cfg, s.connectionSecret) != nil {

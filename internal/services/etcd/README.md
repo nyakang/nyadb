@@ -1,7 +1,8 @@
 # Native etcd v3 foundation
 
 This package is private transport work. It is not registered as a public
-connection, and does not yet provide persisted profiles or a workbench page.
+connection. Its private profile/editor phase supports persisted configuration
+and injected native checks; the public workbench remains pending.
 
 `Open` owns one gRPC channel to an explicit HTTP/HTTPS endpoint. Credentials
 are passed separately. Native Status and an explicitly readable probe key
@@ -45,6 +46,20 @@ official digest-pinned Docker node. Modes are anonymous/basic/tls/mtls;
 acceptance covers 3.7.3 in all four modes and 3.5.35 basic on Linux. The fixture
 checks immutable ID and ownership labels before removing only its resources.
 
-Profile/URI/vault/editor, neutral runtime leases and generation binding, KV
+`OpenProfile` accepts the pure version-1 etcd profile and a separate temporary
+secret. The editor and SQLite storage keep exact text/Base64 key prefixes,
+none/basic/certificate authentication, strict TLS and 1..300/1..600 second
+connect/request timeouts. Username spaces are retained. Basic with mTLS may
+use a certificate CN for native KV permission checks. Empty prefixes probe
+one zero-byte key; a successful check cannot prove access to all prefix keys.
+The product-specific `ParseEtcdURI` accepts etcd/etcds schemes and a root path;
+generic URI routing, chooser publication and provider registration are absent.
+
+Run `python3 tools/verify_etcd_fixture.py --profile --race --mode basic` for
+native profile save/reopen/duplicate, original check closure, vault rollback,
+actual upstream handshake cancellation, parked success isolation and 72
+bilingual wide/small form images alongside the native foundation cases.
+
+Neutral runtime leases and generation binding, KV
 workbench/permissions/confirmation flows, Watch/history, maintenance/auth
 management, etcd v2, additional versions and cluster operation remain pending.

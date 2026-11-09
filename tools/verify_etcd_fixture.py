@@ -65,7 +65,7 @@ def certificates(folder):
         path.chmod(0o644)
 
 
-def verify(mode, race, version):
+def verify(mode, race, version, profile=False):
     image = IMAGES[version]
     nonce = uuid.uuid4().hex
     build = ROOT/'build/etcd'
@@ -73,7 +73,11 @@ def verify(mode, race, version):
     report_path = build/('owned-fixture-'+nonce+'.json')
     log_path = report_path.with_suffix('.log')
     sources = sorted((ROOT/'internal/services/etcd').glob('*.go')) + [ROOT/'go.mod', ROOT/'go.sum', Path(__file__).resolve(), ROOT/'tests/test_etcd_fixture.py']
-    report = dict(nonce=nonce, scope='private-native-v3-foundation', mode=mode, version=version,
+    if profile:
+        sources += [p for folder in ('internal/services/connections', 'internal/storage/localdb', 'internal/ui/connectioneditor', 'locales') for p in (ROOT/folder).glob('*.go')]
+        sources += [ROOT/'locales/en.json', ROOT/'locales/zh-Hans.json', ROOT/'internal/ui/shell/connection_engine_files.go', ROOT/'internal/services/dbruntime/providers.go', ROOT/'internal/services/dbruntime/runtime.go', ROOT/'internal/ui/connectioncatalog/catalog.go', ROOT/'internal/services/connections/uri.go']
+    sources = sorted(set(sources))
+    report = dict(nonce=nonce, scope='private-profile-editor' if profile else 'private-native-v3-foundation', mode=mode, version=version,
                   image=image, race=race, passed=False,
                   source_hashes={str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources})
     identifier = None
@@ -143,18 +147,30 @@ def verify(mode, race, version):
                 environment['NYADB_ETCD_CA'] = str(private/'ca.crt')
             if mode == 'mtls':
                 environment.update(NYADB_ETCD_CERT=str(private/'client.crt'), NYADB_ETCD_KEY=str(private/'client.key'))
-            command = ['go', 'test']+(['-race'] if race else [])+['./internal/services/etcd', '-run', '^TestEtcdNative', '-count=1', '-v', '-timeout=180s']
+            packages = ['./internal/services/etcd']
+            if profile:
+                packages.append('./internal/ui/connectioneditor')
+                environment.update(NYADB_ETCD_PROFILE_IT='1', NYADB_ETCD_PROFILE_IMAGES=str(report_path.with_suffix(''))+'-images')
+            # Foundation cases revoke authentication on this same owned node.
+            # Package acceptance therefore runs sequentially.
+            command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^TestEtcdNative', '-count=1', '-v', '-timeout=300s']
             with log_path.open('w') as out:
                 result = subprocess.run(command, cwd=ROOT, env=environment, stdout=out, stderr=subprocess.STDOUT)
             log = log_path.read_text()
             if result.returncode or re.search(r'^\s*--- (FAIL|SKIP):|WARNING: DATA RACE', log, re.M):
                 raise RuntimeError('Native acceptance failed; inspect '+str(log_path.relative_to(ROOT)))
             accepted = re.findall(r'^--- PASS: TestEtcdNative(\w+) \(', log, re.M)
-            if sorted(accepted) != sorted(REQUIRED):
+            required = REQUIRED + (('ProfileURIReopenAndOriginalEditorCheck', 'ProfileVaultFailurePreservesOriginalConnection', 'ProfileOriginalCanceledHandshakeAndLateCheck', 'ProfileParkedSuccessDoesNotEnterReplacementDraft', 'EditorLocalizedFormEvidence') if profile else ())
+            if sorted(accepted) != sorted(required):
                 raise RuntimeError('Native acceptance has missing or unexpected cases')
             for name, expected in report['source_hashes'].items():
                 if hashlib.sha256((ROOT/name).read_bytes()).hexdigest() != expected:
                     raise RuntimeError('Native source changed during acceptance')
+            if profile:
+                pictures = sorted(Path(environment['NYADB_ETCD_PROFILE_IMAGES']).glob('*.png'))
+                if len(pictures) != 72:
+                    raise RuntimeError('Native profile acceptance is missing localized images')
+                report['profile_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             report.update(passed=True, accepted=accepted, log_sha256=hashlib.sha256(log_path.read_bytes()).hexdigest())
     finally:
         try:
@@ -171,7 +187,8 @@ def verify(mode, race, version):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=('anonymous', 'basic', 'tls', 'mtls'), default='basic')
+    parser.add_argument('--profile', action='store_true')
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version)
+    verify(args.mode, args.race, args.version, args.profile)

@@ -31717,3 +31717,263 @@ func GraphSchemaSessionExpired() string { return In(i18n.Locale()).GraphSchemaSe
 func (msgs Messages) GraphSchemaSessionExpired() string {
 	return Catalog.Format(msgs.locale, "graphSchemaSessionExpired", nil)
 }
+
+// EtcdAuthCertificate says "客户端证书认证"
+// in the language the app shows.
+func EtcdAuthCertificate() string { return In(i18n.Locale()).EtcdAuthCertificate() }
+
+// EtcdAuthCertificate says "客户端证书认证"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthCertificate() string {
+	return Catalog.Format(msgs.locale, "etcdAuthCertificate", nil)
+}
+
+// EtcdPrefixBase64 says "Base64"
+// in the language the app shows.
+func EtcdPrefixBase64() string { return In(i18n.Locale()).EtcdPrefixBase64() }
+
+// EtcdPrefixBase64 says "Base64"
+// in the language of msgs.
+func (msgs Messages) EtcdPrefixBase64() string {
+	return Catalog.Format(msgs.locale, "etcdPrefixBase64", nil)
+}
+
+// EtcdPrefixEncodingCaption says "前缀编码："
+// in the language the app shows.
+func EtcdPrefixEncodingCaption() string { return In(i18n.Locale()).EtcdPrefixEncodingCaption() }
+
+// EtcdPrefixEncodingCaption says "前缀编码："
+// in the language of msgs.
+func (msgs Messages) EtcdPrefixEncodingCaption() string {
+	return Catalog.Format(msgs.locale, "etcdPrefixEncodingCaption", nil)
+}
+
+// EtcdPrefixCaption says "键前缀："
+// in the language the app shows.
+func EtcdPrefixCaption() string { return In(i18n.Locale()).EtcdPrefixCaption() }
+
+// EtcdPrefixCaption says "键前缀："
+// in the language of msgs.
+func (msgs Messages) EtcdPrefixCaption() string {
+	return Catalog.Format(msgs.locale, "etcdPrefixCaption", nil)
+}
+
+// EtcdPrefixEncodingControl says "etcd 前缀编码"
+// in the language the app shows.
+func EtcdPrefixEncodingControl() string { return In(i18n.Locale()).EtcdPrefixEncodingControl() }
+
+// EtcdPrefixEncodingControl says "etcd 前缀编码"
+// in the language of msgs.
+func (msgs Messages) EtcdPrefixEncodingControl() string {
+	return Catalog.Format(msgs.locale, "etcdPrefixEncodingControl", nil)
+}
+
+// EtcdPrefixControl says "etcd 键前缀"
+// in the language the app shows.
+func EtcdPrefixControl() string { return In(i18n.Locale()).EtcdPrefixControl() }
+
+// EtcdPrefixControl says "etcd 键前缀"
+// in the language of msgs.
+func (msgs Messages) EtcdPrefixControl() string {
+	return Catalog.Format(msgs.locale, "etcdPrefixControl", nil)
+}
+
+// EtcdAuthControl says "etcd 认证方式"
+// in the language the app shows.
+func EtcdAuthControl() string { return In(i18n.Locale()).EtcdAuthControl() }
+
+// EtcdAuthControl says "etcd 认证方式"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthControl() string {
+	return Catalog.Format(msgs.locale, "etcdAuthControl", nil)
+}
+
+// EtcdPrefixError says "此键前缀不能使用所选编码，请检查文本或 Base64"
+// in the language the app shows.
+func EtcdPrefixError() string { return In(i18n.Locale()).EtcdPrefixError() }
+
+// EtcdPrefixError says "此键前缀不能使用所选编码，请检查文本或 Base64"
+// in the language of msgs.
+func (msgs Messages) EtcdPrefixError() string {
+	return Catalog.Format(msgs.locale, "etcdPrefixError", nil)
+}
+
+// EtcdCertificateHint says "请在 SSL 页启用证书验证，并选择客户端证书和私钥。"
+// in the language the app shows.
+func EtcdCertificateHint() string { return In(i18n.Locale()).EtcdCertificateHint() }
+
+// EtcdCertificateHint says "请在 SSL 页启用证书验证，并选择客户端证书和私钥。"
+// in the language of msgs.
+func (msgs Messages) EtcdCertificateHint() string {
+	return Catalog.Format(msgs.locale, "etcdCertificateHint", nil)
+}
+
+// EtcdPrefixHint says "空前缀表示全部键；前缀保留空格，二进制键请使用 Base64。"
+// in the language the app shows.
+func EtcdPrefixHint() string { return In(i18n.Locale()).EtcdPrefixHint() }
+
+// EtcdPrefixHint says "空前缀表示全部键；前缀保留空格，二进制键请使用 Base64。"
+// in the language of msgs.
+func (msgs Messages) EtcdPrefixHint() string {
+	return Catalog.Format(msgs.locale, "etcdPrefixHint", nil)
+}
+
+// EtcdConnectTimeout says "etcd 连接超时"
+// in the language the app shows.
+func EtcdConnectTimeout() string { return In(i18n.Locale()).EtcdConnectTimeout() }
+
+// EtcdConnectTimeout says "etcd 连接超时"
+// in the language of msgs.
+func (msgs Messages) EtcdConnectTimeout() string {
+	return Catalog.Format(msgs.locale, "etcdConnectTimeout", nil)
+}
+
+// EtcdRequestTimeout says "etcd 请求超时"
+// in the language the app shows.
+func EtcdRequestTimeout() string { return In(i18n.Locale()).EtcdRequestTimeout() }
+
+// EtcdRequestTimeout says "etcd 请求超时"
+// in the language of msgs.
+func (msgs Messages) EtcdRequestTimeout() string {
+	return Catalog.Format(msgs.locale, "etcdRequestTimeout", nil)
+}
+
+// EtcdTLSMode says "etcd TLS 模式"
+// in the language the app shows.
+func EtcdTLSMode() string { return In(i18n.Locale()).EtcdTLSMode() }
+
+// EtcdTLSMode says "etcd TLS 模式"
+// in the language of msgs.
+func (msgs Messages) EtcdTLSMode() string {
+	return Catalog.Format(msgs.locale, "etcdTLSMode", nil)
+}
+
+// EtcdCA says "etcd CA 证书"
+// in the language the app shows.
+func EtcdCA() string { return In(i18n.Locale()).EtcdCA() }
+
+// EtcdCA says "etcd CA 证书"
+// in the language of msgs.
+func (msgs Messages) EtcdCA() string {
+	return Catalog.Format(msgs.locale, "etcdCA", nil)
+}
+
+// EtcdServerName says "etcd 证书服务器名"
+// in the language the app shows.
+func EtcdServerName() string { return In(i18n.Locale()).EtcdServerName() }
+
+// EtcdServerName says "etcd 证书服务器名"
+// in the language of msgs.
+func (msgs Messages) EtcdServerName() string {
+	return Catalog.Format(msgs.locale, "etcdServerName", nil)
+}
+
+// EtcdCertificate says "etcd 客户端证书"
+// in the language the app shows.
+func EtcdCertificate() string { return In(i18n.Locale()).EtcdCertificate() }
+
+// EtcdCertificate says "etcd 客户端证书"
+// in the language of msgs.
+func (msgs Messages) EtcdCertificate() string {
+	return Catalog.Format(msgs.locale, "etcdCertificate", nil)
+}
+
+// EtcdKey says "etcd 客户端私钥"
+// in the language the app shows.
+func EtcdKey() string { return In(i18n.Locale()).EtcdKey() }
+
+// EtcdKey says "etcd 客户端私钥"
+// in the language of msgs.
+func (msgs Messages) EtcdKey() string {
+	return Catalog.Format(msgs.locale, "etcdKey", nil)
+}
+
+// EtcdBrowseCA says "选择 etcd CA 证书"
+// in the language the app shows.
+func EtcdBrowseCA() string { return In(i18n.Locale()).EtcdBrowseCA() }
+
+// EtcdBrowseCA says "选择 etcd CA 证书"
+// in the language of msgs.
+func (msgs Messages) EtcdBrowseCA() string {
+	return Catalog.Format(msgs.locale, "etcdBrowseCA", nil)
+}
+
+// EtcdBrowseCertificate says "选择 etcd 客户端证书"
+// in the language the app shows.
+func EtcdBrowseCertificate() string { return In(i18n.Locale()).EtcdBrowseCertificate() }
+
+// EtcdBrowseCertificate says "选择 etcd 客户端证书"
+// in the language of msgs.
+func (msgs Messages) EtcdBrowseCertificate() string {
+	return Catalog.Format(msgs.locale, "etcdBrowseCertificate", nil)
+}
+
+// EtcdBrowseKey says "选择 etcd 客户端私钥"
+// in the language the app shows.
+func EtcdBrowseKey() string { return In(i18n.Locale()).EtcdBrowseKey() }
+
+// EtcdBrowseKey says "选择 etcd 客户端私钥"
+// in the language of msgs.
+func (msgs Messages) EtcdBrowseKey() string {
+	return Catalog.Format(msgs.locale, "etcdBrowseKey", nil)
+}
+
+// EtcdTLSHint says "TLS 验证证书链和服务器名称；客户端证书身份可能决定键权限。"
+// in the language the app shows.
+func EtcdTLSHint() string { return In(i18n.Locale()).EtcdTLSHint() }
+
+// EtcdTLSHint says "TLS 验证证书链和服务器名称；客户端证书身份可能决定键权限。"
+// in the language of msgs.
+func (msgs Messages) EtcdTLSHint() string {
+	return Catalog.Format(msgs.locale, "etcdTLSHint", nil)
+}
+
+// EtcdTimeoutError says "请检查 etcd 超时设置"
+// in the language the app shows.
+func EtcdTimeoutError() string { return In(i18n.Locale()).EtcdTimeoutError() }
+
+// EtcdTimeoutError says "请检查 etcd 超时设置"
+// in the language of msgs.
+func (msgs Messages) EtcdTimeoutError() string {
+	return Catalog.Format(msgs.locale, "etcdTimeoutError", nil)
+}
+
+// EtcdUsernameRequired says "请输入 etcd 用户名"
+// in the language the app shows.
+func EtcdUsernameRequired() string { return In(i18n.Locale()).EtcdUsernameRequired() }
+
+// EtcdUsernameRequired says "请输入 etcd 用户名"
+// in the language of msgs.
+func (msgs Messages) EtcdUsernameRequired() string {
+	return Catalog.Format(msgs.locale, "etcdUsernameRequired", nil)
+}
+
+// EtcdConfigError says "请检查 etcd 主机、认证和 TLS 证书设置"
+// in the language the app shows.
+func EtcdConfigError() string { return In(i18n.Locale()).EtcdConfigError() }
+
+// EtcdConfigError says "请检查 etcd 主机、认证和 TLS 证书设置"
+// in the language of msgs.
+func (msgs Messages) EtcdConfigError() string {
+	return Catalog.Format(msgs.locale, "etcdConfigError", nil)
+}
+
+// EtcdPasswordError says "请检查 etcd 密码"
+// in the language the app shows.
+func EtcdPasswordError() string { return In(i18n.Locale()).EtcdPasswordError() }
+
+// EtcdPasswordError says "请检查 etcd 密码"
+// in the language of msgs.
+func (msgs Messages) EtcdPasswordError() string {
+	return Catalog.Format(msgs.locale, "etcdPasswordError", nil)
+}
+
+// EtcdPasswordRequired says "请输入 etcd 密码"
+// in the language the app shows.
+func EtcdPasswordRequired() string { return In(i18n.Locale()).EtcdPasswordRequired() }
+
+// EtcdPasswordRequired says "请输入 etcd 密码"
+// in the language of msgs.
+func (msgs Messages) EtcdPasswordRequired() string {
+	return Catalog.Format(msgs.locale, "etcdPasswordRequired", nil)
+}

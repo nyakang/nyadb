@@ -16,6 +16,9 @@ const (
 	DamengCAFile              = connectioneditor.DamengCAFile
 	DamengCertificateFile     = connectioneditor.DamengCertificateFile
 	DamengKeyFile             = connectioneditor.DamengKeyFile
+	EtcdCAFile                = connectioneditor.EtcdCAFile
+	EtcdCertificateFile       = connectioneditor.EtcdCertificateFile
+	EtcdKeyFile               = connectioneditor.EtcdKeyFile
 	Neo4jCAFile               = connectioneditor.Neo4jCAFile
 	Neo4jCertificateFile      = connectioneditor.Neo4jCertificateFile
 	Neo4jKeyFile              = connectioneditor.Neo4jKeyFile

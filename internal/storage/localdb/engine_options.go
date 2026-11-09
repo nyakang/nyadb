@@ -12,6 +12,7 @@ import (
 // Keep the existing column and MySQL JSON format. Other engines use an
 // explicit versioned envelope; older empty records receive engine defaults.
 type engineOptionsEnvelope struct {
+	Etcd          *connections.EtcdOptions          `json:"etcd,omitempty"`
 	Neo4j         *connections.Neo4jOptions         `json:"neo4j,omitempty"`
 	Qdrant        *connections.QdrantOptions        `json:"qdrant,omitempty"`
 	Meilisearch   *connections.MeilisearchOptions   `json:"meilisearch,omitempty"`
@@ -39,6 +40,8 @@ type engineOptionsEnvelope struct {
 func encodeProfileOptions(p connections.Profile) (string, error) {
 	var value any
 	switch p.Kind {
+	case connections.Etcd:
+		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Etcd: &p.EtcdOptions}
 	case connections.Neo4j:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Neo4j: &p.Neo4jOptions}
 	case connections.Qdrant:
@@ -91,6 +94,9 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 }
 func decodeEngineOptions(p *connections.Profile, raw string) error {
 	if raw == "" {
+		if p.Kind == connections.Etcd {
+			return connections.ErrInvalid
+		}
 		if p.Kind == connections.Neo4j {
 			return connections.ErrInvalid
 		}
@@ -153,6 +159,9 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 		return nil
 	}
 	var envelope engineOptionsEnvelope
+	if p.Kind == connections.Etcd && (len(raw) > 128<<10 || !canonicalEtcdSavedOptions(raw)) {
+		return connections.ErrInvalid
+	}
 	if p.Kind == connections.Neo4j && !uniqueNativeAuthOptionsJSON(raw) {
 		return connections.ErrInvalid
 	}
@@ -163,6 +172,18 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 	decoder.DisallowUnknownFields()
 	if len(raw) > 128<<10 || decoder.Decode(&envelope) != nil || decoder.Decode(new(any)) != io.EOF || envelope.Version != 1 || envelope.Kind != p.Kind {
 		return fmt.Errorf("invalid saved engine options")
+	}
+	if p.Kind == connections.Etcd {
+		if envelope.Etcd == nil || envelope.Etcd.Version != 1 {
+			return connections.ErrInvalid
+		}
+		p.EtcdOptions = *envelope.Etcd
+		checked, e := connections.NormalizeProfile(*p)
+		*p = checked
+		return e
+	}
+	if envelope.Etcd != nil {
+		return connections.ErrInvalid
 	}
 	if p.Kind == connections.Neo4j {
 		if !canonicalNeo4jSavedOptions(raw) || envelope.Neo4j == nil || envelope.Neo4j.Version != 1 {

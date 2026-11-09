@@ -67,7 +67,7 @@ func (s *State) View(c *ui.Context, width, height float32) {
 
 func connectionEditorTabNames(kind connections.Kind) []string {
 	switch kind {
-	case connections.Neo4j, connections.Qdrant, connections.Meilisearch:
+	case connections.Etcd, connections.Neo4j, connections.Qdrant, connections.Meilisearch:
 		return []string{"常规", "高级", "SSL", "备注"}
 	case connections.DuckDB:
 		return []string{"常规", "高级", "备注"}
@@ -194,6 +194,10 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 		}
 		s.editorInputRow(c, "主机：", "主机", &p.Host, labelWidth, fieldWidth)
 		s.editorInputRow(c, "端口：", "端口", &s.connectionPort, labelWidth, min(fieldWidth, float32(80)))
+		if p.Kind == connections.Etcd {
+			s.editorEtcdFields(c, labelWidth, fieldWidth)
+			return
+		}
 		if p.Kind == connections.Neo4j {
 			s.editorNeo4jFields(c, labelWidth, fieldWidth)
 			return

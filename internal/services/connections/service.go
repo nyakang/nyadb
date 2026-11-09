@@ -51,6 +51,8 @@ func (s *Service) Duplicate(ctx context.Context, id int64, name string) (Profile
 // Defaults are UI-independent initial values, not connection attempts.
 func Defaults(kind Kind) (Profile, error) {
 	switch kind {
+	case Etcd:
+		return Profile{Kind: Etcd, Host: "localhost", Port: 2379, TLSMode: "disable", EtcdOptions: DefaultEtcdOptions()}, nil
 	case Neo4j:
 		return Profile{Kind: Neo4j, Host: "localhost", Port: 7687, Database: "neo4j", Username: "neo4j", TLSMode: "disable", Neo4jOptions: DefaultNeo4jOptions()}, nil
 	case Qdrant:

@@ -31,6 +31,9 @@ const (
 	Neo4jCAFile
 	Neo4jCertificateFile
 	Neo4jKeyFile
+	EtcdCAFile
+	EtcdCertificateFile
+	EtcdKeyFile
 )
 
 func (s *State) SetEngineFilePicker(pick func(EngineFile, int, uint64)) { s.engineFilePicker = pick }
@@ -39,6 +42,29 @@ func (s *State) EngineFileVersion() uint64 { return s.engineFileVersion }
 
 func (s *State) SelectEngineFile(kind EngineFile, row int, version uint64, path string) {
 	if !s.active || version != s.engineFileVersion || path == "" {
+		return
+	}
+	if kind >= EtcdCAFile && kind <= EtcdKeyFile {
+		if s.connectionDraft.Kind != connections.Etcd || s.connectionDraft.TLSMode != "verify-full" {
+			return
+		}
+		o := &s.connectionDraft.EtcdOptions
+		switch kind {
+		case EtcdCAFile:
+			o.CAFile = path
+		case EtcdCertificateFile:
+			if o.Auth == "none" {
+				return
+			}
+			o.ClientCertFile = path
+		case EtcdKeyFile:
+			if o.Auth == "none" {
+				return
+			}
+			o.ClientKeyFile = path
+		}
+		s.cancelMySQLConnectionTest()
+		s.connectionError = ""
 		return
 	}
 	if kind >= Neo4jCAFile && kind <= Neo4jKeyFile {
@@ -124,6 +150,10 @@ func (s *State) EngineFilePickerError(version uint64) {
 }
 
 func (s *State) initEngineOptionsInputs() {
+	if s.connectionDraft.Kind == connections.Etcd {
+		a := s.connectionDraft.EtcdOptions
+		s.engineNumbers[0], s.engineNumbers[1] = strconv.Itoa(a.ConnectTimeoutSeconds), strconv.Itoa(a.RequestTimeoutSeconds)
+	}
 	if s.connectionDraft.Kind == connections.Neo4j {
 		a := s.connectionDraft.Neo4jOptions
 		s.engineNumbers[0], s.engineNumbers[1] = strconv.Itoa(a.ConnectTimeoutSeconds), strconv.Itoa(a.RequestTimeoutSeconds)
@@ -201,6 +231,9 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.Etcd {
+		return s.advanceEtcdOptions(p)
+	}
 	if p.Kind == connections.Neo4j {
 		return s.advanceNeo4jOptions(p)
 	}
@@ -328,6 +361,8 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.Etcd:
+		return s.etcdOptions(c, width, tab)
 	case connections.Qdrant:
 		return s.qdrantOptions(c, width, tab)
 	case connections.Neo4j:
