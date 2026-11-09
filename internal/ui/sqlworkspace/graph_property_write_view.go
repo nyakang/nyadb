@@ -50,12 +50,17 @@ func (s *State) graphPropertyModals(c *ui.Context) {
 func (s *State) graphPropertyDialog(c *ui.Context, d *Document) {
 	if d.graphPropertyOpen {
 		theme.Modal(c.Key(fmt.Sprintf("graph-property-%d", d.id)), &d.graphPropertyOpen, func() {
+			_, height := c.Size()
 			ui.Column(c).Width(560).Gap(7).Padding(10).Children(func() {
-				if d.graphPropertyDraft != nil && d.graphPropertyRecord < 0 {
-					s.graphPropertyDraftView(c, d)
-				} else {
-					s.graphPropertyRecordView(c, d)
-				}
+				ui.Scroll(c).FillWidth().MinHeight(0).MaxHeight(max(float32(120), height-160)).Children(func() {
+					ui.Column(c).Gap(7).Children(func() {
+						if d.graphPropertyDraft != nil && d.graphPropertyRecord < 0 {
+							s.graphPropertyDraftView(c, d)
+						} else {
+							s.graphPropertyRecordView(c, d)
+						}
+					})
+				})
 				ui.Row(c).Gap(6).Children(func() {
 					if d.graphPropertyPending != nil && ui.Button(c, locales.Text("取消图属性操作")).Disabled(d.graphPropertyPending.canceled).Clicked() {
 						s.cancelGraphProperty(d)
@@ -80,19 +85,55 @@ func (s *State) graphPropertyDraftView(c *ui.Context, d *Document) {
 	if d.graphPropertyBytes >= graphPropertyRecordBudget-(4<<20) || len(d.graphPropertyRecords) >= 1000 {
 		ui.Text(c, locales.Text("属性操作记录预算不足；已有记录可继续查看和导出")).SingleLine().TextColor(theme.Colors(c).Warning)
 	}
-	ui.Text(c, locales.Text("编辑图属性")).Bold()
-	ui.Text(c, p.request.Target.Kind+" · "+p.request.Property+" · "+p.request.Before.Kind).SingleLine().Tooltip(p.request.Target.ElementID)
-	ui.Text(c, fmt.Sprintf(locales.Text("保留原值：%s"), graphPropertyPreview(p.request.Before))).SingleLine()
+	caption, confirm := "编辑图属性", "确认保存图属性"
+	if p.create {
+		caption, confirm = "新增图属性", "确认新增图属性"
+	}
+	if p.remove {
+		caption, confirm = "移除图属性", "确认移除图属性"
+	}
+	ui.Text(c, locales.Text(caption)).Bold()
+	ui.Text(c, p.request.Target.Kind+" · "+p.name+" · "+p.kind).SingleLine().Tooltip(p.request.Target.ElementID)
+	if p.create {
+		ui.Text(c, locales.Text("仅当该属性仍不存在时新增；空字符串也是一个已存在的属性值")).SingleLine().Tooltip(locales.Text("仅当该属性仍不存在时新增；空字符串也是一个已存在的属性值"))
+	} else {
+		ui.Text(c, fmt.Sprintf(locales.Text("保留原值：%s"), graphPropertyPreview(p.request.Before))).SingleLine()
+	}
+	if p.remove {
+		ui.Text(c, locales.Text("确认后图元将不再包含此属性；其他属性保留")).SingleLine().Tooltip(locales.Text("确认后图元将不再包含此属性；其他属性保留"))
+	}
 	ui.Text(c, locales.Text("保存会锁定目标并比较属性旧值和类型；其他属性不参与比较")).SingleLine().Tooltip(locales.Text("保存会锁定目标并比较属性旧值和类型；其他属性不参与比较"))
 	changed := false
-	if p.request.Before.Kind == "boolean" {
+	if p.create {
+		changed = ui.TextInput(c, &p.name).Label(locales.Text("图属性名称")).MaxLength(4096).Disabled(p.attempted || d.Loading()).Changed()
+		kinds := []string{"string", "boolean", "integer", "float"}
+		labels := []string{locales.Text("字符串"), locales.Text("布尔值"), locales.Text("整数"), locales.Text("浮点数")}
+		choice := labels[0]
+		for i, kind := range kinds {
+			if p.kind == kind {
+				choice = labels[i]
+			}
+		}
+		if ui.Select(c, &choice, labels).Label(locales.Text("图属性类型")).Disabled(p.attempted || d.Loading()).Changed() {
+			for i, label := range labels {
+				if choice == label {
+					p.kind = kinds[i]
+				}
+			}
+			if p.kind == "boolean" && p.text != "true" && p.text != "false" {
+				p.text = "false"
+			}
+			changed = true
+		}
+	}
+	if !p.remove && p.kind == "boolean" {
 		value := p.text == "true"
 		if ui.Checkbox(c, &value, locales.Text("属性新值")).Disabled(p.attempted || d.Loading()).Changed() {
 			p.text = strconv.FormatBool(value)
 			changed = true
 		}
-	} else {
-		changed = ui.TextArea(c, &p.text).Label(locales.Text("属性新值")).MaxLength(1 << 20).ReadOnly(p.attempted || d.Loading()).Height(80).Changed()
+	} else if !p.remove {
+		changed = ui.TextArea(c, &p.text).Label(locales.Text("属性新值")).MaxLength(1<<20).ReadOnly(p.attempted || d.Loading()).Height(80).Changed() || changed
 	}
 	if changed {
 		p.preview = nil
@@ -103,7 +144,7 @@ func (s *State) graphPropertyDraftView(c *ui.Context, d *Document) {
 		if ui.Button(c, locales.Text("预览属性保存")).Disabled(p.attempted || d.Loading()).Clicked() {
 			s.previewGraphProperty(d)
 		}
-		if ui.PrimaryButton(c, locales.Text("确认保存图属性")).Disabled(p.preview == nil || p.attempted || !s.graphPropertyLeaseReady(d)).Clicked() {
+		if ui.PrimaryButton(c, locales.Text(confirm)).Disabled(p.preview == nil || p.attempted || !s.graphPropertyLeaseReady(d)).Clicked() {
 			s.saveGraphProperty(d)
 		}
 		if ui.Button(c, locales.Text("放弃属性草稿")).Disabled(d.graphPropertyPending != nil).Clicked() {
@@ -146,11 +187,26 @@ func (s *State) graphPropertyRecordView(c *ui.Context, d *Document) {
 	}
 	r := d.graphPropertyRecords[index]
 	status := "原生回执未确认属性替换"
+	if r.Request.Before.Kind == "null" {
+		status = "原生回执未确认属性新增"
+	}
+	if r.Request.After.Kind == "null" {
+		status = "原生回执未确认属性移除"
+	}
 	if r.Receipt.Applied {
 		status = "原生回执确认属性已替换"
+		if r.Request.Before.Kind == "null" {
+			status = "原生回执确认属性已新增"
+		}
+		if r.Request.After.Kind == "null" {
+			status = "原生回执确认属性已移除"
+		}
 	}
 	if r.Receipt.Conflict {
 		status = "属性或图元已变化；未替换目标值，请显式核对当前图元"
+		if r.Request.Before.Kind == "null" || r.Request.After.Kind == "null" {
+			status = "属性或图元已变化；本次新增或移除未被接纳，请显式核对当前图元"
+		}
 	}
 	if r.Verification {
 		status = "已保留独立图元核对结果"

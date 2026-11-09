@@ -39,6 +39,9 @@ func propertyDocumentTest(t *testing.T, write func(context.Context, contract.Gra
 func propertyReceiptTest(r contract.GraphPropertyWriteRequest) contract.GraphPropertyWriteReceipt {
 	entity := contract.GraphValue{Kind: r.Target.Kind}
 	p := []contract.GraphProperty{{Name: r.Property, Value: r.After.Clone()}}
+	if r.After.Kind == "null" {
+		p = nil
+	}
 	if r.Target.Kind == "node" {
 		entity.Node = &contract.GraphNode{ElementID: r.Target.ElementID, Labels: append([]string(nil), r.Target.Labels...), Properties: p}
 	} else {

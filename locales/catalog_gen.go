@@ -30011,3 +30011,187 @@ func GraphPropertyLaterNeighborConflict() string {
 func (msgs Messages) GraphPropertyLaterNeighborConflict() string {
 	return Catalog.Format(msgs.locale, "graphPropertyLaterNeighborConflict", nil)
 }
+
+// GraphPropertyAdd says "新增图属性"
+// in the language the app shows.
+func GraphPropertyAdd() string { return In(i18n.Locale()).GraphPropertyAdd() }
+
+// GraphPropertyAdd says "新增图属性"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyAdd() string {
+	return Catalog.Format(msgs.locale, "graphPropertyAdd", nil)
+}
+
+// GraphPropertyRemove says "移除图属性"
+// in the language the app shows.
+func GraphPropertyRemove() string { return In(i18n.Locale()).GraphPropertyRemove() }
+
+// GraphPropertyRemove says "移除图属性"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyRemove() string {
+	return Catalog.Format(msgs.locale, "graphPropertyRemove", nil)
+}
+
+// GraphPropertyConfirmAdd says "确认新增图属性"
+// in the language the app shows.
+func GraphPropertyConfirmAdd() string { return In(i18n.Locale()).GraphPropertyConfirmAdd() }
+
+// GraphPropertyConfirmAdd says "确认新增图属性"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyConfirmAdd() string {
+	return Catalog.Format(msgs.locale, "graphPropertyConfirmAdd", nil)
+}
+
+// GraphPropertyConfirmRemove says "确认移除图属性"
+// in the language the app shows.
+func GraphPropertyConfirmRemove() string { return In(i18n.Locale()).GraphPropertyConfirmRemove() }
+
+// GraphPropertyConfirmRemove says "确认移除图属性"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyConfirmRemove() string {
+	return Catalog.Format(msgs.locale, "graphPropertyConfirmRemove", nil)
+}
+
+// GraphPropertyName says "图属性名称"
+// in the language the app shows.
+func GraphPropertyName() string { return In(i18n.Locale()).GraphPropertyName() }
+
+// GraphPropertyName says "图属性名称"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyName() string {
+	return Catalog.Format(msgs.locale, "graphPropertyName", nil)
+}
+
+// GraphPropertyKind says "图属性类型"
+// in the language the app shows.
+func GraphPropertyKind() string { return In(i18n.Locale()).GraphPropertyKind() }
+
+// GraphPropertyKind says "图属性类型"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyKind() string {
+	return Catalog.Format(msgs.locale, "graphPropertyKind", nil)
+}
+
+// GraphPropertyAbsentCompare says "仅当该属性仍不存在时新增；空字符串也是一个已存在的属性值"
+// in the language the app shows.
+func GraphPropertyAbsentCompare() string { return In(i18n.Locale()).GraphPropertyAbsentCompare() }
+
+// GraphPropertyAbsentCompare says "仅当该属性仍不存在时新增；空字符串也是一个已存在的属性值"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyAbsentCompare() string {
+	return Catalog.Format(msgs.locale, "graphPropertyAbsentCompare", nil)
+}
+
+// GraphPropertyRemoveMeaning says "确认后图元将不再包含此属性；其他属性保留"
+// in the language the app shows.
+func GraphPropertyRemoveMeaning() string { return In(i18n.Locale()).GraphPropertyRemoveMeaning() }
+
+// GraphPropertyRemoveMeaning says "确认后图元将不再包含此属性；其他属性保留"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyRemoveMeaning() string {
+	return Catalog.Format(msgs.locale, "graphPropertyRemoveMeaning", nil)
+}
+
+// GraphPropertyNameInvalid says "图属性名称须为非空有效文本且不超过 4096 字节"
+// in the language the app shows.
+func GraphPropertyNameInvalid() string { return In(i18n.Locale()).GraphPropertyNameInvalid() }
+
+// GraphPropertyNameInvalid says "图属性名称须为非空有效文本且不超过 4096 字节"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyNameInvalid() string {
+	return Catalog.Format(msgs.locale, "graphPropertyNameInvalid", nil)
+}
+
+// GraphPropertyAlreadyObserved says "该次图元观察已包含此属性；请编辑已有属性"
+// in the language the app shows.
+func GraphPropertyAlreadyObserved() string { return In(i18n.Locale()).GraphPropertyAlreadyObserved() }
+
+// GraphPropertyAlreadyObserved says "该次图元观察已包含此属性；请编辑已有属性"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyAlreadyObserved() string {
+	return Catalog.Format(msgs.locale, "graphPropertyAlreadyObserved", nil)
+}
+
+// GraphPropertyPresenceConflict says "属性或图元已变化；本次新增或移除未被接纳，请显式核对当前图元"
+// in the language the app shows.
+func GraphPropertyPresenceConflict() string { return In(i18n.Locale()).GraphPropertyPresenceConflict() }
+
+// GraphPropertyPresenceConflict says "属性或图元已变化；本次新增或移除未被接纳，请显式核对当前图元"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyPresenceConflict() string {
+	return Catalog.Format(msgs.locale, "graphPropertyPresenceConflict", nil)
+}
+
+// GraphPropertyAdditionUnconfirmed says "原生回执未确认属性新增"
+// in the language the app shows.
+func GraphPropertyAdditionUnconfirmed() string {
+	return In(i18n.Locale()).GraphPropertyAdditionUnconfirmed()
+}
+
+// GraphPropertyAdditionUnconfirmed says "原生回执未确认属性新增"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyAdditionUnconfirmed() string {
+	return Catalog.Format(msgs.locale, "graphPropertyAdditionUnconfirmed", nil)
+}
+
+// GraphPropertyRemovalUnconfirmed says "原生回执未确认属性移除"
+// in the language the app shows.
+func GraphPropertyRemovalUnconfirmed() string {
+	return In(i18n.Locale()).GraphPropertyRemovalUnconfirmed()
+}
+
+// GraphPropertyRemovalUnconfirmed says "原生回执未确认属性移除"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyRemovalUnconfirmed() string {
+	return Catalog.Format(msgs.locale, "graphPropertyRemovalUnconfirmed", nil)
+}
+
+// GraphPropertyAdditionApplied says "原生回执确认属性已新增"
+// in the language the app shows.
+func GraphPropertyAdditionApplied() string { return In(i18n.Locale()).GraphPropertyAdditionApplied() }
+
+// GraphPropertyAdditionApplied says "原生回执确认属性已新增"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyAdditionApplied() string {
+	return Catalog.Format(msgs.locale, "graphPropertyAdditionApplied", nil)
+}
+
+// GraphPropertyRemovalApplied says "原生回执确认属性已移除"
+// in the language the app shows.
+func GraphPropertyRemovalApplied() string { return In(i18n.Locale()).GraphPropertyRemovalApplied() }
+
+// GraphPropertyRemovalApplied says "原生回执确认属性已移除"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyRemovalApplied() string {
+	return Catalog.Format(msgs.locale, "graphPropertyRemovalApplied", nil)
+}
+
+// GraphPropertyString says "字符串"
+// in the language the app shows.
+func GraphPropertyString() string { return In(i18n.Locale()).GraphPropertyString() }
+
+// GraphPropertyString says "字符串"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyString() string {
+	return Catalog.Format(msgs.locale, "graphPropertyString", nil)
+}
+
+// GraphPropertyBoolean says "布尔值"
+// in the language the app shows.
+func GraphPropertyBoolean() string { return In(i18n.Locale()).GraphPropertyBoolean() }
+
+// GraphPropertyBoolean says "布尔值"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyBoolean() string {
+	return Catalog.Format(msgs.locale, "graphPropertyBoolean", nil)
+}
+
+// GraphPropertyFloat says "浮点数"
+// in the language the app shows.
+func GraphPropertyFloat() string { return In(i18n.Locale()).GraphPropertyFloat() }
+
+// GraphPropertyFloat says "浮点数"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyFloat() string {
+	return Catalog.Format(msgs.locale, "graphPropertyFloat", nil)
+}

@@ -34,11 +34,23 @@ func captureGraphProperty(t *testing.T, s *State, d *Document, state string) {
 			tt := ui.NewTester(func(c *ui.Context) { theme.Apply(c); s.View(c, d); s.Modals(c) }, size[0], size[1])
 			tt.Frame()
 			label := locales.Text("编辑图属性")
-			if state == "property-receipt" || state == "property-verification" {
+			if d.graphPropertyDraft != nil && d.graphPropertyRecord < 0 {
+				if d.graphPropertyDraft.create {
+					label = locales.Text("新增图属性")
+				}
+				if d.graphPropertyDraft.remove {
+					label = locales.Text("移除图属性")
+				}
+			} else if d.graphPropertyOpen {
 				label = locales.Text("属性操作原生回执")
 			}
-			if state != "property-saved" && !tt.HasText(label) {
+			if state != "property-saved" && state != "presence-added" && !tt.HasText(label) {
 				t.Fatal("native graph property flow not visible", state, language)
+			}
+			if d.graphPropertyOpen {
+				if rect, ok := tt.Find(locales.Text("关闭")); !ok || rect.H < 10 || rect.Y+rect.H > float32(size[1])-10 {
+					t.Fatal("native property dialog close button outside the window", state, language, rect)
+				}
 			}
 			folder := filepath.Join(root, "graph-property", language)
 			if e := os.MkdirAll(folder, 0700); e != nil {
@@ -255,8 +267,9 @@ func TestNeo4jNativePublicGraphPropertyLostCanceledOriginalCloseAndRecoveryNever
 	defer admin.Close()
 	label := "NyaPropertyFault_" + f.Nonce
 	defer neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE $label IN labels(n) DETACH DELETE n", Parameters: map[string]any{"label": label}})
-	for _, fault := range []string{"lost", "cancel", "close"} {
-		t.Run(fault, func(t *testing.T) {
+	for _, scenario := range []struct{ operation, fault string }{{"edit", "lost"}, {"edit", "cancel"}, {"edit", "close"}, {"add", "lost"}, {"add", "cancel"}, {"add", "close"}, {"remove", "lost"}, {"remove", "cancel"}, {"remove", "close"}} {
+		fault := scenario.fault
+		t.Run(scenario.operation+"/"+fault, func(t *testing.T) {
 			created := neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "CREATE (n:$($label) {name:'Before'}) RETURN n", Parameters: map[string]any{"label": label}})
 			root := created.Rows[0][0].Node.ElementID
 			relay := newNeo4jRelay(t, f, "SET e[$key]=e[$key]")
@@ -289,7 +302,28 @@ func TestNeo4jNativePublicGraphPropertyLostCanceledOriginalCloseAndRecoveryNever
 			}
 			d.graphVisualOpen = true
 			before, _ := json.Marshal(d.result)
-			nativeGraphPropertyStart(t, s, d, "n:"+root, "Committed "+fault)
+			property := "name"
+			g := d.graphVisualState()
+			g.focus("n:" + root)
+			switch scenario.operation {
+			case "edit":
+				nativeGraphPropertyStart(t, s, d, "n:"+root, "Committed "+fault)
+			case "add":
+				property = "new key"
+				s.openGraphPropertyCreation(d, g)
+				d.graphPropertyDraft.name, d.graphPropertyDraft.text = property, "Committed "+fault
+			case "remove":
+				for _, p := range g.properties() {
+					if p.Name == property {
+						s.openGraphPropertyRemoval(d, g, p)
+						break
+					}
+				}
+			}
+			s.previewGraphProperty(d)
+			if d.graphPropertyDraft.preview == nil {
+				t.Fatal("native presence fault request was not previewed")
+			}
 			s.saveGraphProperty(d)
 			select {
 			case <-relay.observed:
@@ -305,8 +339,8 @@ func TestNeo4jNativePublicGraphPropertyLostCanceledOriginalCloseAndRecoveryNever
 			committed := false
 			deadline := time.Now().Add(10 * time.Second)
 			for time.Now().Before(deadline) {
-				r := neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE elementId(n)=$id RETURN n.name AS name", Mode: "read", Parameters: map[string]any{"id": root}})
-				if len(r.Rows) == 1 && r.Rows[0][0].Text == "Committed "+fault {
+				r := neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE elementId(n)=$id RETURN n[$key] AS value", Mode: "read", Parameters: map[string]any{"id": root, "key": property}})
+				if len(r.Rows) == 1 && (scenario.operation == "remove" && r.Rows[0][0].Kind == "null" || scenario.operation != "remove" && r.Rows[0][0].Text == "Committed "+fault) {
 					committed = true
 					break
 				}
@@ -332,7 +366,7 @@ func TestNeo4jNativePublicGraphPropertyLostCanceledOriginalCloseAndRecoveryNever
 				if !d.NeedsRecovery() || !bytes.Equal(before, after) || d.graphPropertyDraft == nil || !d.graphPropertyDraft.unresolved || len(d.graphPropertyRecords) != 1 || d.graphPropertyRecords[0].Receipt.Applied || !d.graphPropertyRecords[0].Receipt.Result.Uncertain || d.graphPropertyRecords[0].Receipt.Result.Completed {
 					t.Fatal("lost original property response discarded evidence or fabricated rollback", d.Error())
 				}
-				if fault == "cancel" {
+				if fault == "cancel" && scenario.operation == "edit" {
 					d.graphPropertyRecord = -1
 					captureGraphProperty(t, s, d, "property-retired")
 				}
@@ -342,7 +376,7 @@ func TestNeo4jNativePublicGraphPropertyLostCanceledOriginalCloseAndRecoveryNever
 					t.Fatal("uncertain property operation replayed")
 				}
 			}
-			neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE elementId(n)=$id SET n.name='Distinct after fault'", Parameters: map[string]any{"id": root}})
+			neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE elementId(n)=$id SET n[$key]='Distinct after fault'", Parameters: map[string]any{"id": root, "key": property}})
 			freshProfile := neo4jWorkbenchProfile(t, f)
 			fresh, e := m.ConnectSession(context.Background(), freshProfile, f.Secret)
 			if e != nil {
@@ -361,7 +395,7 @@ func TestNeo4jNativePublicGraphPropertyLostCanceledOriginalCloseAndRecoveryNever
 				}
 				s.Close(d)
 			}
-			read := neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE elementId(n)=$id RETURN n.name AS name", Mode: "read", Parameters: map[string]any{"id": root}})
+			read := neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE elementId(n)=$id RETURN n[$key] AS value", Mode: "read", Parameters: map[string]any{"id": root, "key": property}})
 			if read.Rows[0][0].Text != "Distinct after fault" || relay.dispatches.Load() != 1 || !m.IsConnected(p.ID) || m.Generation(p.ID) != fresh.Generation() {
 				t.Fatal("native property recovery/old close replayed or reached replacement")
 			}

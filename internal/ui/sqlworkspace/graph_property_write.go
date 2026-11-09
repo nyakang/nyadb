@@ -18,6 +18,9 @@ const graphPropertyRecordBudget = 8 << 20
 
 type graphPropertyDraft struct {
 	request               contract.GraphPropertyWriteRequest
+	name, kind            string
+	create, remove        bool
+	existingNames         map[string]bool
 	text, error           string
 	notice                string
 	preview               *contract.GraphPropertyWriteRequest
@@ -83,7 +86,7 @@ func (s *State) graphPropertyLeaseReady(d *Document) bool {
 	status, ok := d.lease.(contract.QueryLeaseStatus)
 	return ok && status.CheckQueryLease() == nil
 }
-func (s *State) canEditGraphProperty(d *Document, g *graphVisualState, p contract.GraphProperty) bool {
+func (s *State) canTargetGraphProperty(d *Document, g *graphVisualState) bool {
 	if !s.graphPropertyLeaseReady(d) || g == nil || g.closed || d.graphPropertyDraft != nil || d.result == nil || d.result.Graph == nil || !d.result.Graph.Completed || d.result.Graph.Uncertain {
 		return false
 	}
@@ -91,9 +94,6 @@ func (s *State) canEditGraphProperty(d *Document, g *graphVisualState, p contrac
 		return false
 	}
 	if capability, ok := d.lease.(interface{ SupportsGraphPropertyWrites() bool }); ok && !capability.SupportsGraphPropertyWrites() {
-		return false
-	}
-	if _, e := graphPropertyValue(p.Value.Kind, p.Value.Text); e != nil {
 		return false
 	}
 	if node := g.node(g.selected); node != nil {
@@ -104,36 +104,83 @@ func (s *State) canEditGraphProperty(d *Document, g *graphVisualState, p contrac
 	}
 	return false
 }
+
+func (s *State) canEditGraphProperty(d *Document, g *graphVisualState, p contract.GraphProperty) bool {
+	_, err := graphPropertyValue(p.Value.Kind, p.Value.Text)
+	return err == nil && s.canTargetGraphProperty(d, g)
+}
+
+func graphPropertyTarget(g *graphVisualState) contract.GraphPropertyTarget {
+	if node := g.node(g.selected); node != nil {
+		return contract.GraphPropertyTarget{Kind: "node", ElementID: node.Value.ElementID, Labels: append([]string(nil), node.Value.Labels...)}
+	}
+	if edge := g.edge(g.selected); edge != nil {
+		return contract.GraphPropertyTarget{Kind: "relationship", ElementID: edge.Value.ElementID, SourceID: edge.Value.StartElementID, TargetID: edge.Value.EndElementID, RelationshipType: edge.Value.Type}
+	}
+	return contract.GraphPropertyTarget{}
+}
 func (s *State) openGraphPropertyDraft(d *Document, g *graphVisualState, p contract.GraphProperty) {
 	if !s.canEditGraphProperty(d, g, p) {
 		return
 	}
-	target := contract.GraphPropertyTarget{}
-	if node := g.node(g.selected); node != nil {
-		target = contract.GraphPropertyTarget{Kind: "node", ElementID: node.Value.ElementID, Labels: append([]string(nil), node.Value.Labels...)}
-	}
-	if edge := g.edge(g.selected); edge != nil {
-		target = contract.GraphPropertyTarget{Kind: "relationship", ElementID: edge.Value.ElementID, SourceID: edge.Value.StartElementID, TargetID: edge.Value.EndElementID, RelationshipType: edge.Value.Type}
-	}
-	r := contract.GraphPropertyWriteRequest{Namespace: d.Namespace(), Target: target, Property: p.Name, Before: p.Value.Clone(), After: p.Value.Clone()}
-	d.graphPropertyDraft = &graphPropertyDraft{request: r, text: p.Value.Text, owner: g, lease: d.lease}
+	r := contract.GraphPropertyWriteRequest{Namespace: d.Namespace(), Target: graphPropertyTarget(g), Property: p.Name, Before: p.Value.Clone(), After: p.Value.Clone()}
+	d.graphPropertyDraft = &graphPropertyDraft{request: r, name: p.Name, kind: p.Value.Kind, text: p.Value.Text, owner: g, lease: d.lease}
 	d.graphPropertyOpen = true
 	d.graphPropertyRecord = -1
+}
+
+func (s *State) openGraphPropertyCreation(d *Document, g *graphVisualState) {
+	if !s.canTargetGraphProperty(d, g) {
+		return
+	}
+	names := make(map[string]bool, len(g.properties()))
+	for _, p := range g.properties() {
+		names[p.Name] = true
+	}
+	r := contract.GraphPropertyWriteRequest{Namespace: d.Namespace(), Target: graphPropertyTarget(g), Before: contract.GraphValue{Kind: "null"}, After: contract.GraphValue{Kind: "string"}}
+	d.graphPropertyDraft = &graphPropertyDraft{request: r, kind: "string", create: true, existingNames: names, owner: g, lease: d.lease}
+	d.graphPropertyOpen, d.graphPropertyRecord = true, -1
+}
+
+func (s *State) openGraphPropertyRemoval(d *Document, g *graphVisualState, p contract.GraphProperty) {
+	if !s.canEditGraphProperty(d, g, p) {
+		return
+	}
+	s.openGraphPropertyDraft(d, g, p)
+	d.graphPropertyDraft.remove = true
 }
 func (s *State) previewGraphProperty(d *Document) {
 	p := d.graphPropertyDraft
 	if p == nil || p.attempted {
 		return
 	}
-	v, e := graphPropertyValue(p.request.Before.Kind, p.text)
 	p.error = ""
 	p.notice = ""
 	p.preview = nil
+	r := p.request.Clone()
+	if p.create {
+		if p.name == "" || !utf8.ValidString(p.name) || len(p.name) > 4096 {
+			p.error = "图属性名称须为非空有效文本且不超过 4096 字节"
+			return
+		}
+		if p.existingNames[p.name] {
+			p.error = "该次图元观察已包含此属性；请编辑已有属性"
+			return
+		}
+		r.Property = p.name
+	}
+	kind := p.request.Before.Kind
+	if p.create {
+		kind = p.kind
+	}
+	v, e := graphPropertyValue(kind, p.text)
+	if p.remove {
+		v, e = contract.GraphValue{Kind: "null"}, nil
+	}
 	if e != nil {
 		p.error = e.Error()
 		return
 	}
-	r := p.request.Clone()
 	r.After = v
 	if r.Before.Kind == r.After.Kind && r.Before.Text == r.After.Text {
 		p.error = "属性值未更改"
@@ -233,6 +280,9 @@ func (s *State) consumeGraphProperty(d *Document) {
 		notice := ""
 		if result.receipt.Conflict {
 			notice = "属性或图元已变化；未替换目标值，请显式核对当前图元"
+			if n.request.Before.Kind == "null" || n.request.After.Kind == "null" {
+				notice = "属性或图元已变化；本次新增或移除未被接纳，请显式核对当前图元"
+			}
 		}
 		if lost {
 			notice = "图属性操作缺少当前原会话确认；保留草稿和回执，不会重放"

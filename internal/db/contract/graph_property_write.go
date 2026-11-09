@@ -9,6 +9,8 @@ type GraphPropertyTarget struct {
 	Labels                                                []string
 }
 type GraphPropertyWriteRequest struct {
+	// Before=null means absent. After=null removes the property. Stored Neo4j
+	// properties cannot contain null; empty strings are ordinary present values.
 	Namespace     NamespaceRef
 	Target        GraphPropertyTarget
 	Property      string

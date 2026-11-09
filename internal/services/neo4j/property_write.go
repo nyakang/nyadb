@@ -12,14 +12,18 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 )
 
-const nodePropertyWriteQuery = "MATCH (e) WHERE elementId(e)=$id SET e[$key]=e[$key] WITH e WHERE size(labels(e))=size($labels) AND all(label IN labels(e) WHERE label IN $labels) AND valueType(e[$key])=$type AND e[$key]=$before SET e[$key]=$after RETURN elementId(e) AS identity, valueType(e[$key]) AS kind, e[$key] AS value, e AS entity"
-const relationshipPropertyWriteQuery = "MATCH (s)-[e]->(t) WHERE elementId(e)=$id SET e[$key]=e[$key] WITH s,e,t WHERE type(e)=$relationship AND elementId(s)=$source AND elementId(t)=$target AND valueType(e[$key])=$type AND e[$key]=$before SET e[$key]=$after RETURN elementId(e) AS identity, valueType(e[$key]) AS kind, e[$key] AS value, e AS entity"
+const nodePropertyWriteQuery = "MATCH (e) WHERE elementId(e)=$id SET e[$key]=e[$key] WITH e WHERE size(labels(e))=size($labels) AND all(label IN labels(e) WHERE label IN $labels) AND valueType(e[$key])=$type AND (($before IS NULL AND e[$key] IS NULL) OR e[$key]=$before) SET e[$key]=$after RETURN elementId(e) AS identity, valueType(e[$key]) AS kind, e[$key] AS value, e AS entity"
+const relationshipPropertyWriteQuery = "MATCH (s)-[e]->(t) WHERE elementId(e)=$id SET e[$key]=e[$key] WITH s,e,t WHERE type(e)=$relationship AND elementId(s)=$source AND elementId(t)=$target AND valueType(e[$key])=$type AND (($before IS NULL AND e[$key] IS NULL) OR e[$key]=$before) SET e[$key]=$after RETURN elementId(e) AS identity, valueType(e[$key]) AS kind, e[$key] AS value, e AS entity"
 
 func propertyScalar(v contract.GraphValue) (any, string, error) {
 	if len(v.Values) != 0 || len(v.Properties) != 0 || v.Node != nil || v.Relationship != nil || v.Path != nil || !utf8.ValidString(v.Text) || len(v.Text) > 1<<20 {
 		return nil, "", ErrInvalid
 	}
 	switch v.Kind {
+	case "null":
+		if v.Text == "" {
+			return nil, "NULL", nil
+		}
 	case "string":
 		return v.Text, "STRING NOT NULL", nil
 	case "boolean":
@@ -47,7 +51,7 @@ func propertyWriteQuery(r contract.GraphPropertyWriteRequest) (Request, error) {
 		return Request{}, e
 	}
 	after, newKind, e := propertyScalar(r.After)
-	if e != nil || newKind != kind || !propertyIdentity(r.Property) || !propertyIdentity(r.Target.ElementID) {
+	if e != nil || (kind == "NULL" && newKind == "NULL") || (newKind != kind && kind != "NULL" && newKind != "NULL") || !propertyIdentity(r.Property) || !propertyIdentity(r.Target.ElementID) {
 		return Request{}, ErrInvalid
 	}
 	params := map[string]any{"id": r.Target.ElementID, "key": r.Property, "type": kind, "before": before, "after": after}
@@ -153,8 +157,8 @@ func propertyReceiptEntity(v contract.GraphValue, target contract.GraphPropertyT
 	}
 	for _, p := range props {
 		if p.Name == key {
-			return reflect.DeepEqual(p.Value, value)
+			return value.Kind != "null" && reflect.DeepEqual(p.Value, value)
 		}
 	}
-	return false
+	return value.Kind == "null" && value.Text == ""
 }

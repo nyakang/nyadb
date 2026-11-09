@@ -516,6 +516,9 @@ func (s *State) graphPropertiesInspector(c *ui.Context, d *Document, g *graphVis
 			g.propertyPage++
 		}
 	})
+	if ui.Button(c, locales.Text("新增图属性")).Disabled(!s.canTargetGraphProperty(d, g)).Clicked() {
+		s.openGraphPropertyCreation(d, g)
+	}
 	ui.Scroll(c).Grow(1).MinHeight(0).Children(func() {
 		ui.Column(c).FillWidth().Padding(4).Gap(4).Children(func() {
 			for index := g.propertyPage * 25; index < min(len(props), (g.propertyPage+1)*25); index++ {
@@ -532,9 +535,14 @@ func (s *State) graphPropertiesInspector(c *ui.Context, d *Document, g *graphVis
 						g.inspectorMode = "field"
 						c.AnimationFrame()
 					}
-					if ui.Button(c, locales.Text("编辑图属性")).Label(p.Name + " " + locales.Text("编辑图属性")).Tooltip(locales.Text("仅支持已有字符串、布尔值、整数和有限浮点属性；失效会话、冲突观察和快照不可编辑")).Disabled(!s.canEditGraphProperty(d, g, p)).Clicked() {
-						s.openGraphPropertyDraft(d, g, p)
-					}
+					ui.Row(c).Gap(3).Children(func() {
+						if ui.Button(c, locales.Text("编辑图属性")).Grow(1).MinWidth(0).Label(p.Name + " " + locales.Text("编辑图属性")).Tooltip(locales.Text("仅支持已有字符串、布尔值、整数和有限浮点属性；失效会话、冲突观察和快照不可编辑")).Disabled(!s.canEditGraphProperty(d, g, p)).Clicked() {
+							s.openGraphPropertyDraft(d, g, p)
+						}
+						if ui.Button(c, locales.Text("移除图属性")).Grow(1).MinWidth(0).Label(p.Name + " " + locales.Text("移除图属性")).Tooltip(locales.Text("仅支持已有字符串、布尔值、整数和有限浮点属性；失效会话、冲突观察和快照不可编辑")).Disabled(!s.canEditGraphProperty(d, g, p)).Clicked() {
+							s.openGraphPropertyRemoval(d, g, p)
+						}
+					})
 				})
 			}
 		})
