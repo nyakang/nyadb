@@ -59,3 +59,16 @@ func (l *queryLease) WriteGraphProperty(ctx context.Context, r contract.GraphPro
 	}
 	return p.WriteGraphProperty(ctx, r.Clone())
 }
+
+func (l *queryLease) ValidateGraphPropertyWrite(r contract.GraphPropertyWriteRequest) error {
+	if err := l.CheckQueryLease(); err != nil {
+		return err
+	}
+	if r.Namespace.ProfileID != l.session.id {
+		return contract.ErrRevoked
+	}
+	if p, ok := l.raw.(contract.GraphPropertyWriteValidator); ok {
+		return p.ValidateGraphPropertyWrite(r.Clone())
+	}
+	return nil
+}

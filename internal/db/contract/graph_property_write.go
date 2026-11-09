@@ -40,3 +40,9 @@ func (r GraphPropertyWriteReceipt) Clone() GraphPropertyWriteReceipt {
 type GraphPropertyWriteLease interface {
 	WriteGraphProperty(context.Context, GraphPropertyWriteRequest) (GraphPropertyWriteReceipt, error)
 }
+
+// Optional preview validation is synchronous and performs no I/O. A bound
+// provider can reject its own unsupported components/ranges before dispatch.
+type GraphPropertyWriteValidator interface {
+	ValidateGraphPropertyWrite(GraphPropertyWriteRequest) error
+}

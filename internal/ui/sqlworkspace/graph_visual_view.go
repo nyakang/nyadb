@@ -536,10 +536,10 @@ func (s *State) graphPropertiesInspector(c *ui.Context, d *Document, g *graphVis
 						c.AnimationFrame()
 					}
 					ui.Row(c).Gap(3).Children(func() {
-						if ui.Button(c, locales.Text("编辑图属性")).Grow(1).MinWidth(0).Label(p.Name + " " + locales.Text("编辑图属性")).Tooltip(locales.Text("支持字符串、布尔值、整数、有限浮点数及其同类型列表；失效会话、冲突观察和快照不可编辑")).Disabled(!s.canEditGraphProperty(d, g, p)).Clicked() {
+						if ui.Button(c, locales.Text("编辑图属性")).Grow(1).MinWidth(0).Label(p.Name + " " + locales.Text("编辑图属性")).Tooltip(locales.Text("支持字符串、布尔值、整数、有限浮点数及其同类型列表，也支持时间和空间属性；失效会话、冲突观察和快照不可编辑")).Disabled(!s.canEditGraphProperty(d, g, p)).Clicked() {
 							s.openGraphPropertyDraft(d, g, p)
 						}
-						if ui.Button(c, locales.Text("移除图属性")).Grow(1).MinWidth(0).Label(p.Name + " " + locales.Text("移除图属性")).Tooltip(locales.Text("支持字符串、布尔值、整数、有限浮点数及其同类型列表；失效会话、冲突观察和快照不可编辑")).Disabled(!s.canEditGraphProperty(d, g, p)).Clicked() {
+						if ui.Button(c, locales.Text("移除图属性")).Grow(1).MinWidth(0).Label(p.Name + " " + locales.Text("移除图属性")).Tooltip(locales.Text("支持字符串、布尔值、整数、有限浮点数及其同类型列表，也支持时间和空间属性；失效会话、冲突观察和快照不可编辑")).Disabled(!s.canEditGraphProperty(d, g, p)).Clicked() {
 							s.openGraphPropertyRemoval(d, g, p)
 						}
 					})

@@ -97,3 +97,10 @@ func (l *engineLease) WriteGraphProperty(ctx context.Context, r contract.GraphPr
 	}
 	return p.WriteGraphProperty(ctx, r.Clone())
 }
+
+func (l *engineLease) ValidateGraphPropertyWrite(r contract.GraphPropertyWriteRequest) error {
+	if p, ok := l.QueryLease.(contract.GraphPropertyWriteValidator); ok {
+		return p.ValidateGraphPropertyWrite(r.Clone())
+	}
+	return nil
+}

@@ -16,7 +16,7 @@ const relationshipPropertyWriteQuery = "MATCH (s)-[e]->(t) WHERE elementId(e)=$i
 func propertyScalar(v contract.GraphValue) (any, string, error) {
 	value, err := contract.GraphPropertyScalarValue(v)
 	if err != nil {
-		return nil, "", ErrInvalid
+		return propertyExtended(v)
 	}
 	if v.Kind == "null" {
 		return nil, "NULL", nil
@@ -50,7 +50,7 @@ func propertyWriteQuery(r contract.GraphPropertyWriteRequest) (Request, error) {
 	}
 	after, newKind, e := propertyValue(r.After)
 	emptyListTransition := r.Before.Kind == "list" && r.After.Kind == "list" && (len(r.Before.Values) == 0 || len(r.After.Values) == 0)
-	if e != nil || (kind == "NULL" && newKind == "NULL") || (newKind != kind && kind != "NULL" && newKind != "NULL" && !emptyListTransition) || !propertyIdentity(r.Property) || !propertyIdentity(r.Target.ElementID) {
+	if e != nil || (kind == "NULL" && newKind == "NULL") || (kind != "NULL" && newKind != "NULL" && (r.Before.Kind != r.After.Kind || newKind != kind && !emptyListTransition)) || !propertyIdentity(r.Property) || !propertyIdentity(r.Target.ElementID) {
 		return Request{}, ErrInvalid
 	}
 	params := map[string]any{"id": r.Target.ElementID, "key": r.Property, "type": kind, "before": before, "after": after}
@@ -131,6 +131,15 @@ func (l *queryLease) markPropertyProtocolLost() error {
 }
 
 var _ contract.GraphPropertyWriteLease = (*queryLease)(nil)
+var _ contract.GraphPropertyWriteValidator = (*queryLease)(nil)
+
+func (l *queryLease) ValidateGraphPropertyWrite(r contract.GraphPropertyWriteRequest) error {
+	if err := l.s.checkNamespace(r.Namespace); err != nil {
+		return err
+	}
+	_, err := propertyWriteQuery(r)
+	return err
+}
 
 func propertyReceiptEntity(v contract.GraphValue, target contract.GraphPropertyTarget, key string, value contract.GraphValue) bool {
 	var props []contract.GraphProperty

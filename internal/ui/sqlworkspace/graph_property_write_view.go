@@ -114,6 +114,8 @@ func (s *State) graphPropertyDraftView(c *ui.Context, d *Document) {
 		if p.create {
 			kinds = append([]string{"string", "boolean", "integer", "float"}, kinds...)
 			labels = append([]string{locales.Text("字符串"), locales.Text("布尔值"), locales.Text("整数"), locales.Text("浮点数")}, labels...)
+			kinds = append(kinds, "date", "local_time", "local_datetime", "time", "datetime", "duration", "point2d", "point3d")
+			labels = append(labels, locales.Text("日期"), locales.Text("本地时间"), locales.Text("本地日期时间"), locales.Text("带偏移时间"), locales.Text("带时区日期时间"), locales.Text("时长"), locales.Text("二维空间点"), locales.Text("三维空间点"))
 		}
 		choice := labels[0]
 		for i, kind := range kinds {
@@ -134,11 +136,30 @@ func (s *State) graphPropertyDraftView(c *ui.Context, d *Document) {
 			if strings.HasPrefix(p.kind, "list:") && !strings.HasPrefix(oldKind, "list:") {
 				p.text = "[]"
 			}
+			if text, ok := graphPropertyExtendedDefault(p.kind); ok && oldKind != p.kind {
+				p.text = text
+			}
 			changed = true
 		}
 	}
 	if !p.remove && strings.HasPrefix(p.kind, "list:") {
 		ui.Text(c, locales.Text("列表以 JSON 数组输入；元素须符合所选类型，空列表使用 []")).SingleLine().Tooltip(locales.Text("列表以 JSON 数组输入；元素须符合所选类型，空列表使用 []"))
+	}
+	if !p.remove {
+		hint := ""
+		switch p.kind {
+		case "date", "local_time", "local_datetime":
+			hint = "使用 ISO 日期或本地时间格式；小数秒最多 9 位，不包含时区"
+		case "time", "datetime":
+			hint = "JSON 包含 value 和 offset_seconds；日期时间还须包含 zone，Offset 表示固定偏移"
+		case "duration":
+			hint = "JSON 包含 months、days、seconds、nanoseconds；预览显示规范化后的纳秒分量"
+		case "point2d", "point3d":
+			hint = "JSON 包含 srid、x、y；三维点还须包含 z，预览显示规范化后的经度"
+		}
+		if hint != "" {
+			ui.Text(c, locales.Text(hint)).SingleLine().Tooltip(locales.Text(hint))
+		}
 	}
 	if !p.remove && p.kind == "boolean" {
 		value := p.text == "true"

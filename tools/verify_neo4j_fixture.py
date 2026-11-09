@@ -25,11 +25,12 @@ REQUIRED = (
     'LostCanceledAndOriginalCloseNeverReplay',
     'BlockedCancellationTerminationAndCleanup',
     'PropertyListsStorageTypesAndNativeComparison',
+    'PropertyExtendedStorageTypesAndNativeComparison',
 )
 PROFILE_REQUIRED = ('ProfileURIReopenAndOriginalEditorCheck', 'ProfileOriginalCanceledHandshake', 'EditorLocalizedFormEvidence')
-SESSION_REQUIRED = ('SessionQualifiedMetadataAndOriginalDatabase', 'SessionTypedQueriesCompletionAndExplicitRecovery', 'SessionLostCanceledAndCloseNeverReplay', 'SessionBlockedCancellationAcknowledgesOriginalExecutor', 'PropertyWritesTypedLocksConflictsAndNativeReceipts', 'PropertyPresenceWritesAbsentLocksTypedAdditionAndRemoval', 'PropertyListsTypedLocksReceiptsAndEmptyPresence')
+SESSION_REQUIRED = ('SessionQualifiedMetadataAndOriginalDatabase', 'SessionTypedQueriesCompletionAndExplicitRecovery', 'SessionLostCanceledAndCloseNeverReplay', 'SessionBlockedCancellationAcknowledgesOriginalExecutor', 'PropertyWritesTypedLocksConflictsAndNativeReceipts', 'PropertyPresenceWritesAbsentLocksTypedAdditionAndRemoval', 'PropertyListsTypedLocksReceiptsAndEmptyPresence', 'PropertyExtendedTypedLocksReceiptsAndComponents')
 
-PUBLIC_REQUIRED = ("PublicRuntimeQualifiedGraphAndGeneration", "PublicCypherLostCanceledAndOriginalCloseNeverReplay", "PublicChooserReopenNavigationCypherAndLocalizedResults", "PublicCypherNodePropertiesOriginalRowsSnapshotsAndExport", "PublicCypherGraphViewOriginalRecordsSnapshotsImagesAndCleanup", "PublicGraphNeighborsOriginalRecordsSnapshotsBoundsAndGeneration", "PublicGraphNeighborsLostCanceledOriginalCloseNeverReplay", "PublicGraphPropertyWritesOriginalRecordsSnapshotsConflictsAndVerification", "PublicGraphPropertyLostCanceledOriginalCloseAndRecoveryNeverReplay", "PublicGraphPropertyNeighborObservationOrderAndContinuedEditing", "PublicGraphPropertyPresenceOriginalUIConflictsSnapshotsAndGeneration", "PublicGraphPropertyListsOriginalUIReceiptsSnapshotsAndGeneration")
+PUBLIC_REQUIRED = ("PublicRuntimeQualifiedGraphAndGeneration", "PublicCypherLostCanceledAndOriginalCloseNeverReplay", "PublicChooserReopenNavigationCypherAndLocalizedResults", "PublicCypherNodePropertiesOriginalRowsSnapshotsAndExport", "PublicCypherGraphViewOriginalRecordsSnapshotsImagesAndCleanup", "PublicGraphNeighborsOriginalRecordsSnapshotsBoundsAndGeneration", "PublicGraphNeighborsLostCanceledOriginalCloseNeverReplay", "PublicGraphPropertyWritesOriginalRecordsSnapshotsConflictsAndVerification", "PublicGraphPropertyLostCanceledOriginalCloseAndRecoveryNeverReplay", "PublicGraphPropertyNeighborObservationOrderAndContinuedEditing", "PublicGraphPropertyPresenceOriginalUIConflictsSnapshotsAndGeneration", "PublicGraphPropertyListsOriginalUIReceiptsSnapshotsAndGeneration", "PublicGraphPropertyExtendedOriginalUIComponentsSnapshotsAndGeneration", "PublicGraphPropertyExtendedLostCanceledOriginalCloseAndRecoveryNeverReplay")
 DATA_REQUIRED = ('DataQualifiedNodesRelationshipsAndCursor', 'DataOriginalFingerprintsFieldsAndExport', 'DataCancellationOriginalCloseAndNoReplay')
 GRID_REQUIRED = ('PublicDataSharedGridPagingInspectorExportParkGenerationAndClose', 'PublicDataLostCanceledOriginalCloseAndExplicitReopen', 'PublicDataPropertyColumnsAndOriginalFields')
 
@@ -214,7 +215,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
                 report['images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             if public:
                 pictures = sorted(Path(env['NYADB_NEO4J_PUBLIC_IMAGES']).rglob('*.png'))
-                if len(pictures) != 184:
+                if len(pictures) != 224:
                     raise RuntimeError('Missing localized Neo4j workbench screenshots')
                 report['public_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             if grid:

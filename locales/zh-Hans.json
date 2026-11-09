@@ -2935,7 +2935,7 @@
   "graphPropertyVerified": "已保留独立图元核对结果",
   "graphPropertyVerifyIncomplete": "图元核对未获得完整原生确认",
   "graphPropertyVerifyAbsent": "该次核对未返回图元；此前图形仍是旧观察",
-  "graphPropertySupported": "支持字符串、布尔值、整数、有限浮点数及其同类型列表；失效会话、冲突观察和快照不可编辑",
+  "graphPropertySupported": "支持字符串、布尔值、整数、有限浮点数及其同类型列表，也支持时间和空间属性；失效会话、冲突观察和快照不可编辑",
   "graphPropertyRecordCapacity": "属性操作记录预算不足；已有记录可继续查看和导出",
   "graphPropertyLaterNeighborConflict": "后续邻居读取与保存或核对时的图元不同；显示保存或核对时的观察",
   "graphPropertyAdd": "新增图属性",
@@ -2961,5 +2961,18 @@
   "graphPropertyIntegerList": "整数列表",
   "graphPropertyFloatList": "浮点数列表",
   "graphPropertyListInput": "列表以 JSON 数组输入；元素须符合所选类型，空列表使用 []",
-  "graphPropertyListInvalid": "列表须为所选元素类型的 JSON 数组；不支持 null、嵌套或混合类型"
+  "graphPropertyListInvalid": "列表须为所选元素类型的 JSON 数组；不支持 null、嵌套或混合类型",
+  "graphPropertyDate": "日期",
+  "graphPropertyLocalTime": "本地时间",
+  "graphPropertyLocalDateTime": "本地日期时间",
+  "graphPropertyOffsetTime": "带偏移时间",
+  "graphPropertyZonedDateTime": "带时区日期时间",
+  "graphPropertyDuration": "时长",
+  "graphPropertyPoint2D": "二维空间点",
+  "graphPropertyPoint3D": "三维空间点",
+  "graphPropertyCivilHint": "使用 ISO 日期或本地时间格式；小数秒最多 9 位，不包含时区",
+  "graphPropertyZonedHint": "JSON 包含 value 和 offset_seconds；日期时间还须包含 zone，Offset 表示固定偏移",
+  "graphPropertyDurationHint": "JSON 包含 months、days、seconds、nanoseconds；预览显示规范化后的纳秒分量",
+  "graphPropertyPointHint": "JSON 包含 srid、x、y；三维点还须包含 z，预览显示规范化后的经度",
+  "graphPropertyExtendedInvalid": "时间或空间属性的格式、分量或范围无效"
 }

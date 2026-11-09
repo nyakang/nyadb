@@ -30255,3 +30255,133 @@ func GraphPropertyListInvalid() string { return In(i18n.Locale()).GraphPropertyL
 func (msgs Messages) GraphPropertyListInvalid() string {
 	return Catalog.Format(msgs.locale, "graphPropertyListInvalid", nil)
 }
+
+// GraphPropertyDate says "日期"
+// in the language the app shows.
+func GraphPropertyDate() string { return In(i18n.Locale()).GraphPropertyDate() }
+
+// GraphPropertyDate says "日期"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyDate() string {
+	return Catalog.Format(msgs.locale, "graphPropertyDate", nil)
+}
+
+// GraphPropertyLocalTime says "本地时间"
+// in the language the app shows.
+func GraphPropertyLocalTime() string { return In(i18n.Locale()).GraphPropertyLocalTime() }
+
+// GraphPropertyLocalTime says "本地时间"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyLocalTime() string {
+	return Catalog.Format(msgs.locale, "graphPropertyLocalTime", nil)
+}
+
+// GraphPropertyLocalDateTime says "本地日期时间"
+// in the language the app shows.
+func GraphPropertyLocalDateTime() string { return In(i18n.Locale()).GraphPropertyLocalDateTime() }
+
+// GraphPropertyLocalDateTime says "本地日期时间"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyLocalDateTime() string {
+	return Catalog.Format(msgs.locale, "graphPropertyLocalDateTime", nil)
+}
+
+// GraphPropertyOffsetTime says "带偏移时间"
+// in the language the app shows.
+func GraphPropertyOffsetTime() string { return In(i18n.Locale()).GraphPropertyOffsetTime() }
+
+// GraphPropertyOffsetTime says "带偏移时间"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyOffsetTime() string {
+	return Catalog.Format(msgs.locale, "graphPropertyOffsetTime", nil)
+}
+
+// GraphPropertyZonedDateTime says "带时区日期时间"
+// in the language the app shows.
+func GraphPropertyZonedDateTime() string { return In(i18n.Locale()).GraphPropertyZonedDateTime() }
+
+// GraphPropertyZonedDateTime says "带时区日期时间"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyZonedDateTime() string {
+	return Catalog.Format(msgs.locale, "graphPropertyZonedDateTime", nil)
+}
+
+// GraphPropertyDuration says "时长"
+// in the language the app shows.
+func GraphPropertyDuration() string { return In(i18n.Locale()).GraphPropertyDuration() }
+
+// GraphPropertyDuration says "时长"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyDuration() string {
+	return Catalog.Format(msgs.locale, "graphPropertyDuration", nil)
+}
+
+// GraphPropertyPoint2D says "二维空间点"
+// in the language the app shows.
+func GraphPropertyPoint2D() string { return In(i18n.Locale()).GraphPropertyPoint2D() }
+
+// GraphPropertyPoint2D says "二维空间点"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyPoint2D() string {
+	return Catalog.Format(msgs.locale, "graphPropertyPoint2D", nil)
+}
+
+// GraphPropertyPoint3D says "三维空间点"
+// in the language the app shows.
+func GraphPropertyPoint3D() string { return In(i18n.Locale()).GraphPropertyPoint3D() }
+
+// GraphPropertyPoint3D says "三维空间点"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyPoint3D() string {
+	return Catalog.Format(msgs.locale, "graphPropertyPoint3D", nil)
+}
+
+// GraphPropertyCivilHint says "使用 ISO 日期或本地时间格式；小数秒最多 9 位，不包含时区"
+// in the language the app shows.
+func GraphPropertyCivilHint() string { return In(i18n.Locale()).GraphPropertyCivilHint() }
+
+// GraphPropertyCivilHint says "使用 ISO 日期或本地时间格式；小数秒最多 9 位，不包含时区"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyCivilHint() string {
+	return Catalog.Format(msgs.locale, "graphPropertyCivilHint", nil)
+}
+
+// GraphPropertyZonedHint says "JSON 包含 value 和 offset_seconds；日期时间还须包含 zone，Offset 表示固定偏移"
+// in the language the app shows.
+func GraphPropertyZonedHint() string { return In(i18n.Locale()).GraphPropertyZonedHint() }
+
+// GraphPropertyZonedHint says "JSON 包含 value 和 offset_seconds；日期时间还须包含 zone，Offset 表示固定偏移"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyZonedHint() string {
+	return Catalog.Format(msgs.locale, "graphPropertyZonedHint", nil)
+}
+
+// GraphPropertyDurationHint says "JSON 包含 months、days、seconds、nanoseconds；预览显示规范化后的纳秒分量"
+// in the language the app shows.
+func GraphPropertyDurationHint() string { return In(i18n.Locale()).GraphPropertyDurationHint() }
+
+// GraphPropertyDurationHint says "JSON 包含 months、days、seconds、nanoseconds；预览显示规范化后的纳秒分量"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyDurationHint() string {
+	return Catalog.Format(msgs.locale, "graphPropertyDurationHint", nil)
+}
+
+// GraphPropertyPointHint says "JSON 包含 srid、x、y；三维点还须包含 z，预览显示规范化后的经度"
+// in the language the app shows.
+func GraphPropertyPointHint() string { return In(i18n.Locale()).GraphPropertyPointHint() }
+
+// GraphPropertyPointHint says "JSON 包含 srid、x、y；三维点还须包含 z，预览显示规范化后的经度"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyPointHint() string {
+	return Catalog.Format(msgs.locale, "graphPropertyPointHint", nil)
+}
+
+// GraphPropertyExtendedInvalid says "时间或空间属性的格式、分量或范围无效"
+// in the language the app shows.
+func GraphPropertyExtendedInvalid() string { return In(i18n.Locale()).GraphPropertyExtendedInvalid() }
+
+// GraphPropertyExtendedInvalid says "时间或空间属性的格式、分量或范围无效"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyExtendedInvalid() string {
+	return Catalog.Format(msgs.locale, "graphPropertyExtendedInvalid", nil)
+}

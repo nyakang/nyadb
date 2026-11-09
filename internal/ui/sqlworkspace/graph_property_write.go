@@ -65,6 +65,13 @@ func graphPropertyValue(kind, text string) (contract.GraphValue, error) {
 		}
 		return value, nil
 	}
+	if _, ok := graphPropertyExtendedDefault(kind); ok {
+		value, err := contract.ParseGraphPropertyExtended(kind, text)
+		if err != nil {
+			return contract.GraphValue{}, errors.New("时间或空间属性的格式、分量或范围无效")
+		}
+		return value, nil
+	}
 	v := contract.GraphValue{Kind: kind, Text: text}
 	if _, err := contract.GraphPropertyScalarValue(v); err != nil || kind == "null" {
 		return v, errors.New("图属性值类型或范围不受支持")
@@ -83,6 +90,10 @@ func graphPropertyEditingValue(v contract.GraphValue) (kind, text string, err er
 			element = "string"
 		}
 		return "list:" + element, text, err
+	}
+	if _, ok := graphPropertyExtendedDefault(v.Kind); ok {
+		text, err := contract.GraphPropertyExtendedText(v)
+		return v.Kind, text, err
 	}
 	if _, err := contract.GraphPropertyScalarValue(v); err != nil || v.Kind == "null" {
 		return "", "", contract.ErrUnsupported
@@ -198,6 +209,12 @@ func (s *State) previewGraphProperty(d *Document) {
 	if graphPropertySize(r) > 1<<20 {
 		p.error = "原值和新值的参数总量超过 1 MiB"
 		return
+	}
+	if validator, ok := p.lease.(contract.GraphPropertyWriteValidator); ok {
+		if err := validator.ValidateGraphPropertyWrite(r.Clone()); err != nil {
+			p.error = "图属性值类型或范围不受支持"
+			return
+		}
 	}
 	p.preview = &r
 }
