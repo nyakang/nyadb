@@ -23,12 +23,13 @@ import (
 type mysqlDataSaver func(context.Context, int64, string, string, []contract.DataEdit) (*contract.DataEditResult, error)
 type mysqlDataRowReader func(context.Context, int64, string, string, contract.RowRef) (*contract.DataRow, error)
 type mysqlRowDraft struct {
-	Key      string
-	Row      int
-	Kind     string
-	Original *contract.RowSnapshot
-	Before   []contract.DataCell
-	Values   map[string]contract.DataValue
+	GraphEndpoints *contract.DataGraphEndpoints
+	Key            string
+	Row            int
+	Kind           string
+	Original       *contract.RowSnapshot
+	Before         []contract.DataCell
+	Values         map[string]contract.DataValue
 }
 type mysqlCellEditor struct {
 	Kind, InitialKind                             string
@@ -364,6 +365,14 @@ func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
 	if t.edit.Editor != nil {
 		return
 	}
+	if s.runtimeFor(t).ReadGraphEndpoints != nil {
+		s.beginDataGraphEndpoints(t)
+		return
+	}
+	s.stageMySQLDataRecord(services, t, nil)
+}
+
+func (s *State) stageMySQLDataRecord(services ui.Services, t *Document, endpoints *contract.DataGraphEndpoints) {
 	done := beginDraftChange(t)
 	defer done()
 	row := len(t.page.Rows)
@@ -376,6 +385,16 @@ func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
 				values[i].Text = "提交后生成"
 			}
 		}
+		if endpoints != nil {
+			switch t.page.Columns[i] {
+			case "start_element_id":
+				values[i].Text = endpoints.Source.ElementID
+			case "end_element_id":
+				values[i].Text = endpoints.Target.ElementID
+			case "type":
+				values[i].Text = endpoints.Object.Name
+			}
+		}
 	}
 	t.page.Rows = append(t.page.Rows, values)
 	t.page.RowRefs = append(t.page.RowRefs, nil)
@@ -384,7 +403,7 @@ func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
 		t.edit.Drafts = map[string]*mysqlRowDraft{}
 	}
 	key := fmt.Sprintf("new:%d:%d", t.id, row)
-	t.edit.Drafts[key] = &mysqlRowDraft{Key: key, Row: row, Kind: "insert", Values: map[string]contract.DataValue{}}
+	t.edit.Drafts[key] = &mysqlRowDraft{Key: key, Row: row, Kind: "insert", Values: map[string]contract.DataValue{}, GraphEndpoints: contract.CloneDataGraphEndpoints(endpoints)}
 	t.selectedRow = row
 	t.selection.Clear()
 	t.selection.Add(row)
@@ -476,7 +495,7 @@ func (s *State) saveMySQLData(services ui.Services, t *Document) {
 	edits := []contract.DataEdit{}
 	for _, key := range keys {
 		d := t.edit.Drafts[key]
-		edits = append(edits, contract.DataEdit{Kind: d.Kind, Original: cloneSnapshot(d.Original), Values: cloneValues(d.Values)})
+		edits = append(edits, dataDraftEdit(d))
 	}
 	if len(edits) == 0 {
 		return
@@ -520,6 +539,7 @@ func (s *State) saveMySQLData(services ui.Services, t *Document) {
 	}()
 }
 func (s *State) stopMySQLDataEdit(t *Document) {
+	s.cancelDataGraphEndpoints(t)
 	s.cancelDataDeleteChoice(t)
 	if t.edit.Cancel != nil {
 		t.edit.Cancel()
@@ -625,6 +645,7 @@ func (s *State) acceptMySQLDataSaved(t *Document, keys []string, saved *contract
 func (s *State) consumeEdits(services ui.Services) {
 	for _, t := range s.documents {
 		if !t.closed && s.consumeFor(t) {
+			s.consumeDataGraphEndpoints(t)
 			s.consumeDataDeleteChoice(t)
 			s.consumeDataMutation(t)
 		}
@@ -1009,6 +1030,7 @@ func (s *State) Modals(c *ui.Context) {
 		s.nativeWriteReceiptModal(c, t)
 		s.dataMutationModal(c, t)
 		s.dataDeleteChoiceModal(c, t)
+		s.dataGraphEndpointsModal(c, t)
 		s.toolsModals(c, t)
 		s.transferModals(c, t)
 		s.dataFillModal(c, t)

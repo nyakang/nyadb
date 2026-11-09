@@ -3007,5 +3007,17 @@
   "dataNodeDeletePlain": "只删除节点",
   "dataNodeDeleteDetach": "删除节点和关联关系",
   "dataNodeDeleteChanged": "原记录或数据库会话已变化，请重新选择删除记录",
-  "dataNodeDeleteAwaiting": "等待选择节点删除方式"
+  "dataNodeDeleteAwaiting": "等待选择节点删除方式",
+  "dataGraphEndpointChoice": "创建关系：选择端点",
+  "dataGraphEndpointHint": "输入源和目标节点的 element ID，读取完整端点后添加草稿。保存时会再次预览并确认。",
+  "dataGraphEndpointSource": "源节点 element ID",
+  "dataGraphEndpointTarget": "目标节点 element ID",
+  "dataGraphEndpointRead": "读取端点",
+  "dataGraphEndpointCopy": "复制完整端点观察",
+  "dataGraphEndpointObservation": "完整端点观察",
+  "dataGraphEndpointAdd": "添加关系草稿",
+  "dataGraphEndpointIDsRequired": "请输入完整的源和目标 element ID",
+  "dataGraphEndpointChanged": "原记录或数据库会话已变化，请重新读取端点",
+  "dataGraphEndpointSourceInput": "输入源节点 element ID",
+  "dataGraphEndpointTargetInput": "输入目标节点 element ID"
 }

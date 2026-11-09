@@ -21,6 +21,12 @@ func (s *State) dataCellPreview(t *Document, page *contract.DataPage, row, sourc
 	if _, explicit := draft.Values[page.Columns[source]]; explicit {
 		return cell
 	}
+	if draft.GraphEndpoints != nil {
+		switch page.Columns[source] {
+		case "start_element_id", "end_element_id", "type":
+			return cell // Explicit endpoint/type observations are already known.
+		}
+	}
 	cell.Text = locales.Text("未设置")
 	if source < len(page.ColumnMetadata) {
 		column := page.ColumnMetadata[source]

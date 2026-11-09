@@ -150,7 +150,7 @@ func captureNeo4jData(t *testing.T, s *State, d *Document, name string, render .
 				}
 			}
 
-			if name == "write-uncertain-close" || name == "entity-commit-unknown-close" {
+			if name == "write-uncertain-close" || name == "entity-commit-unknown-close" || name == "relationship-commit-unknown-close" {
 				for _, label := range []string{"关闭原写入文档？", "取消", "关闭并放弃本地草稿与证据"} {
 					rect, ok := tt.Find(locales.Text(label))
 					if !ok || rect.X < 0 || rect.Y < 0 || rect.X+rect.W > float32(size[0])+1 || rect.Y+rect.H > float32(size[1])+1 {
@@ -160,6 +160,10 @@ func captureNeo4jData(t *testing.T, s *State, d *Document, name string, render .
 			}
 
 			labels := []string{}
+			if strings.HasPrefix(name, "relationship-endpoint-") && name != "relationship-endpoint-conflict" {
+				labels = []string{"创建关系：选择端点", "源节点 element ID", "目标节点 element ID", "读取端点", "复制完整端点观察", "添加关系草稿", "取消"}
+			}
+
 			if name == "entity-delete-choice" {
 				labels = []string{"选择节点删除方式", "只删除节点", "删除节点和关联关系", "取消"}
 			}

@@ -72,13 +72,17 @@ func (*Session) DataDocumentCapabilities() contract.Capabilities {
 	return contract.Capabilities{EditableTables: true, Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
 }
 func (l *dataLease) Runtime() contract.DataRuntime {
-	kinds, preview := []string{"update", "delete"}, []string{"delete"}
+	kinds, preview := []string{"update", "insert", "delete"}, []string{"insert", "delete"}
 	if l.object.Kind == "label" {
 		kinds, preview = []string{"update", "insert", "delete", "detach_delete"}, []string{"insert", "delete", "detach_delete"}
 	}
-	return contract.DataRuntime{PageFailureRequiresReopen: true, NativeReceipts: true, InsertOmittedValues: l.object.Kind == "label", PreviewEdits: l.previewEntityEdits, SubmitEdits: l.submitEntityPlan, PreviewEditKinds: preview, Capabilities: l.session.DataDocumentCapabilities(), AdvancedLoader: l.page, RowReader: l.editRow, Saver: l.save, EditKinds: kinds, EditValueKinds: []contract.CellKind{contract.Null, contract.Text, contract.Integer, contract.Floating, contract.Boolean, contract.Binary, contract.JSON}, WriteDescription: "SET · locked native graph property transaction", Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
+	out := contract.DataRuntime{PageFailureRequiresReopen: true, NativeReceipts: true, InsertOmittedValues: true, PreviewEdits: l.previewEntityEdits, SubmitEdits: l.submitEntityPlan, PreviewEditKinds: preview, Capabilities: l.session.DataDocumentCapabilities(), AdvancedLoader: l.page, RowReader: l.editRow, Saver: l.save, EditKinds: kinds, EditValueKinds: []contract.CellKind{contract.Null, contract.Text, contract.Integer, contract.Floating, contract.Boolean, contract.Binary, contract.JSON}, WriteDescription: "SET · locked native graph property transaction", Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
 		ReadDescription: func(contract.DataOptions) string { return "MATCH · elementId ordered native graph read" },
 		FilterColumns:   []string{}, SortColumns: []string{}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
+	if l.object.Kind == "relationship" {
+		out.ReadGraphEndpoints = l.readGraphEndpoints
+	}
+	return out
 }
 func (l *dataLease) identity(id int64, db, name string) error {
 	if id != l.object.ProfileID || db != l.object.Catalog || name != l.object.Name {

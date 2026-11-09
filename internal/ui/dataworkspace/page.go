@@ -335,6 +335,7 @@ func (s *State) Close(t *Document) {
 	t.edit = mysqlDataEditState{}
 	t.mutation = dataMutationState{}
 	t.deleteChoice = nil
+	t.graphEndpoints = nil
 	t.export = mysqlDataExportState{}
 	t.cursorHistory, t.after = nil, nil
 	t.hiddenColumns = nil

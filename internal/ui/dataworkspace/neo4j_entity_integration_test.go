@@ -231,18 +231,19 @@ func TestNeo4jNativePublicDataEntityDeleteChoiceBlockedAndAdjacentBatchConfirmed
 	d.nativeReceipt.Open = true
 	captureNeo4jData(t, s, d, "entity-delete-detach-receipt", func(c *ui.Context) { s.nativeWriteReceiptModal(c, d) })
 	d.nativeReceipt.Open = false
-	// Relationship deletion cannot invent an endpoint choice or allow insertion.
+	// Deletion still operates on the original relationship, independently of
+	// the explicit endpoint reader now available for a new relationship draft.
 	neo4jDataRun(t, admin, "CREATE (a:$($label)),(b:$($label)) CREATE (a)-[:$($rel) {n:7}]->(b)", map[string]any{"label": label, "rel": rel})
 	r := s.OpenObject(2, manager.Namespace(active.ProfileID, "neo4j").Object("relationship", rel), caps)
 	s.Load(ui.Services{}, r, false)
 	waitNeo4jData(t, s, r)
-	if r.allowsDataEdit("insert") || r.allowsDataEdit("detach_delete") {
-		t.Fatal("relationship endpoints invented")
+	if !r.allowsDataEdit("insert") || r.allowsDataEdit("detach_delete") || s.runtimeFor(r).ReadGraphEndpoints == nil {
+		t.Fatal("relationship mutation capabilities lost qualified endpoint semantics")
 	}
 	r.selectedRow = 0
 	r.selection.Add(0)
 	entityTestClick(t, s, r, "删除记录")
-	if r.deleteChoice != nil {
+	if r.deleteChoice != nil || r.graphEndpoints != nil {
 		t.Fatal("relationship delete used node decision")
 	}
 	s.Save(ui.Services{}, r)

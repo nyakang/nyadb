@@ -159,11 +159,15 @@ func dataMutationDraftsMatch(d *Document, keys []string, edits []contract.DataEd
 	for i, key := range keys {
 		draft := d.edit.Drafts[key]
 		if draft == nil || mysqlDataRowKey(d, draft.Row) != key || !reflect.DeepEqual(
-			contract.DataEdit{Kind: draft.Kind, Original: cloneSnapshot(draft.Original), Values: cloneValues(draft.Values)}, edits[i]) {
+			dataDraftEdit(draft), edits[i]) {
 			return false
 		}
 	}
 	return true
+}
+
+func dataDraftEdit(draft *mysqlRowDraft) contract.DataEdit {
+	return contract.DataEdit{Kind: draft.Kind, Original: cloneSnapshot(draft.Original), Values: cloneValues(draft.Values), GraphEndpoints: contract.CloneDataGraphEndpoints(draft.GraphEndpoints)}
 }
 func (s *State) validDataMutation(d *Document) bool {
 	m := &d.mutation

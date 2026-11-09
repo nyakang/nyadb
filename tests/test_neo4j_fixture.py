@@ -153,3 +153,16 @@ class Neo4jFixtureOwnershipTests(unittest.TestCase):
         for suffix in ('\n    --- SKIP: child (0.0s)', '\n--- FAIL: child (0.0s)', '\nWARNING: DATA RACE'):
             with self.subTest(suffix=suffix), self.assertRaises(RuntimeError):
                 FIXTURE.check_acceptance(passed+suffix, relationship_native=True)
+
+    def test_relationship_grid_requires_public_inputs_original_confirmations_and_every_native_case(self):
+        names = FIXTURE.RELATIONSHIP_REQUIRED + FIXTURE.WRITE_REQUIRED + FIXTURE.ENTITY_REQUIRED + FIXTURE.ENTITY_PREVIEW_REQUIRED + FIXTURE.GRID_REQUIRED + FIXTURE.ENTITY_GRID_REQUIRED + FIXTURE.RELATIONSHIP_GRID_REQUIRED
+        self.assertEqual(len(set(names)), 29)
+        passed = '\n'.join('--- PASS: TestNeo4jNative'+name+' (0.01s)' for name in names)
+        FIXTURE.check_acceptance(passed, relationship_grid=True)
+        for name in names:
+            line = '--- PASS: TestNeo4jNative'+name+' (0.01s)'
+            for log in (passed.replace(line, ''), passed.replace(line, line.replace('PASS', 'SKIP'))):
+                with self.subTest(name=name, log=log), self.assertRaises(RuntimeError):
+                    FIXTURE.check_acceptance(log, relationship_grid=True)
+        self.assertEqual(len(FIXTURE.RELATIONSHIP_GRID_IMAGE_STAGES), 10)
+        self.assertTrue({'relationship-endpoint-input', 'relationship-endpoint-observed', 'relationship-typed-preview', 'relationship-commit-unknown-close', 'relationship-endpoint-parked'}.issubset(FIXTURE.RELATIONSHIP_GRID_IMAGE_STAGES))

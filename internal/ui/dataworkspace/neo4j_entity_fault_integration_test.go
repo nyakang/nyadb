@@ -13,19 +13,32 @@ import (
 )
 
 func TestNeo4jNativePublicDataEntityCommitReplyLostCanceledOriginalCloseNeverReplay(t *testing.T) {
+	testPublicEntityCommitFaults(t)
+}
+func TestNeo4jNativePublicDataRelationshipCommitReplyLostCanceledOriginalCloseNeverReplay(t *testing.T) {
+	testPublicEntityCommitFaults(t, "relationship_insert")
+}
+func testPublicEntityCommitFaults(t *testing.T, operations ...string) {
 	f := neo4jDataFixtureTest(t)
 	admin, err := neo4j.Open(context.Background(), f.Config, f.Secret)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer admin.Close()
-	for _, operation := range []string{"insert", "delete", "detach_delete", "relationship_delete"} {
-		for _, fault := range []string{"lost", "cancel", "close", "user-close"} {
+	if len(operations) == 0 {
+		operations = []string{"insert", "delete", "detach_delete", "relationship_delete"}
+	}
+	for _, operation := range operations {
+		faults := []string{"lost", "cancel", "close", "user-close"}
+		if operation == "relationship_insert" {
+			faults = append(faults, "session-close")
+		}
+		for _, fault := range faults {
 			t.Run(operation+"/"+fault, func(t *testing.T) {
 				label := "NyaPublicEntityCommit_" + f.Nonce + "_" + operation + "_" + strings.ReplaceAll(fault, "-", "_")
 				outside, rel := label+"_outside", label+"_rel"
 				defer neo4jDataRun(t, admin, "MATCH (n) WHERE $label IN labels(n) OR $outside IN labels(n) DETACH DELETE n", map[string]any{"label": label, "outside": outside})
-				if operation == "relationship_delete" {
+				if operation == "relationship_delete" || operation == "relationship_insert" {
 					neo4jDataRun(t, admin, "CREATE (a:$($label) {n:1}),(b:$($label) {n:2}) CREATE (a)-[:$($rel) {n:1}]->(b)", map[string]any{"label": label, "rel": rel})
 				} else if operation == "detach_delete" {
 					neo4jDataRun(t, admin, "CREATE (a:$($label) {n:1}),(b:$($outside) {n:2}) CREATE (a)-[:$($rel) {n:1}]->(b)", map[string]any{"label": label, "outside": outside, "rel": rel})
@@ -38,14 +51,18 @@ func TestNeo4jNativePublicDataEntityCommitReplyLostCanceledOriginalCloseNeverRep
 				original.Config.CAFile, original.Config.ClientCertFile, original.Config.ClientKeyFile = "", "", ""
 				_, manager, s, active, caps := openNeo4jEntityWorkbench(t, original)
 				kind, name := "label", label
-				if operation == "relationship_delete" {
+				if operation == "relationship_delete" || operation == "relationship_insert" {
 					kind, name = "relationship", rel
 				}
 				object := manager.Namespace(active.ProfileID, "neo4j").Object(kind, name)
 				d := s.OpenObject(1, object, caps)
 				s.Load(ui.Services{}, d, false)
 				waitNeo4jData(t, s, d)
-				if operation == "insert" {
+				if operation == "relationship_insert" {
+					endpoints := neo4jDataRun(t, admin, "MATCH (a),(b) WHERE $label IN labels(a) AND $label IN labels(b) AND a.n=1 AND b.n=2 RETURN a,b", map[string]any{"label": label})
+					row := publicRelationshipDraft(t, s, d, endpoints.Rows[0][0].Node.ElementID, endpoints.Rows[0][1].Node.ElementID)
+					s.EditCell(ui.Services{}, d, row, "property.n", contract.Cell{Kind: contract.Integer, Text: "999"})
+				} else if operation == "insert" {
 					s.addMySQLDataRecord(ui.Services{}, d)
 					s.finishMySQLCellEdit(d, false)
 					s.EditCell(ui.Services{}, d, len(d.page.Rows)-1, "property.n", contract.Cell{Kind: contract.Integer, Text: "999"})
@@ -76,7 +93,13 @@ func TestNeo4jNativePublicDataEntityCommitReplyLostCanceledOriginalCloseNeverRep
 				}
 				// Independent observations prove actual COMMIT, then establish a distinct
 				// later state which any unintended replay would overwrite or remove.
-				if operation == "insert" {
+				if operation == "relationship_insert" {
+					observed := neo4jDataRun(t, admin, "MATCH ()-[r]->() WHERE type(r)=$rel AND r.n=999 RETURN count(r)", map[string]any{"rel": rel})
+					if observed.Rows[0][0].Text != "1" {
+						t.Fatal("withheld public relationship reply lacked actual creation")
+					}
+					neo4jDataRun(t, admin, "MATCH ()-[r]->() WHERE type(r)=$rel AND r.n=999 SET r.n=-789", map[string]any{"rel": rel})
+				} else if operation == "insert" {
 					observed := neo4jDataRun(t, admin, "MATCH (n) WHERE $label IN labels(n) AND n.n=999 RETURN count(n)", map[string]any{"label": label})
 					if observed.Rows[0][0].Text != "1" {
 						t.Fatal("withheld entity reply lacked actual node creation")
@@ -112,13 +135,17 @@ func TestNeo4jNativePublicDataEntityCommitReplyLostCanceledOriginalCloseNeverRep
 					}
 				case "close":
 					s.Close(d)
+				case "session-close":
+					if err := manager.Disconnect(profile); err != nil {
+						t.Fatal(err)
+					}
 				}
 				if fault != "close" {
 					waitNeo4jData(t, s, d)
 					if d.page != cached || !d.HasDraft() || d.edit.Uncertain == nil || !d.edit.Uncertain.CommitUncertain || !strings.Contains(d.nativeReceipt.JSON, `"CommitAttempted":true`) || !strings.Contains(d.nativeReceipt.JSON, `"CommitConfirmed":false`) {
 						t.Fatal("unknown entity commit lost drafts/evidence or accepted provisional rows", d.edit.Err)
 					}
-					if operation == "insert" && d.page.RowRefs[len(d.page.Rows)-1] != nil {
+					if (operation == "insert" || operation == "relationship_insert") && d.page.RowRefs[len(d.page.Rows)-1] != nil {
 						t.Fatal("unknown entity creation accepted provisional generated identity")
 					}
 					s.Save(ui.Services{}, d)
@@ -126,8 +153,13 @@ func TestNeo4jNativePublicDataEntityCommitReplyLostCanceledOriginalCloseNeverRep
 					if d.edit.Busy {
 						t.Fatal("unknown entity commit admitted replay/readback recovery")
 					}
-					if operation == "insert" && fault == "cancel" {
-						captureNeo4jData(t, s, d, "entity-commit-unknown")
+					if fault == "cancel" {
+						if operation == "insert" {
+							captureNeo4jData(t, s, d, "entity-commit-unknown")
+						}
+						if operation == "relationship_insert" {
+							captureNeo4jData(t, s, d, "relationship-commit-unknown")
+						}
 					}
 				}
 				select {
@@ -143,9 +175,20 @@ func TestNeo4jNativePublicDataEntityCommitReplyLostCanceledOriginalCloseNeverRep
 				if relay.dispatches.Load() != 1 {
 					t.Fatal("native entity COMMIT replayed")
 				}
-				if operation == "relationship_delete" {
+				if operation == "relationship_delete" || operation == "relationship_insert" {
 					observed := neo4jDataRun(t, admin, "MATCH ()-[r]->() WHERE type(r)=$rel RETURN r.n", map[string]any{"rel": rel})
-					if len(observed.Rows) != 1 || observed.Rows[0][0].Text != "-789" {
+					wanted, distinctive := 1, 0
+					if operation == "relationship_insert" {
+						wanted = 2
+					}
+					for _, row := range observed.Rows {
+						if row[0].Text == "-789" {
+							distinctive++
+						} else if operation != "relationship_insert" || row[0].Text != "1" {
+							t.Fatal("unexpected later relationship value")
+						}
+					}
+					if len(observed.Rows) != wanted || distinctive != 1 {
 						t.Fatal("queued entity operation changed distinctive later relationship")
 					}
 				} else {
@@ -166,6 +209,9 @@ func TestNeo4jNativePublicDataEntityCommitReplyLostCanceledOriginalCloseNeverRep
 					entityTestClick(t, s, d, "关闭原写入文档")
 					if operation == "insert" {
 						captureNeo4jData(t, s, d, "entity-commit-unknown-close", func(c *ui.Context) { s.nativeWriteReceiptModal(c, d) })
+					}
+					if operation == "relationship_insert" {
+						captureNeo4jData(t, s, d, "relationship-commit-unknown-close", func(c *ui.Context) { s.nativeWriteReceiptModal(c, d) })
 					}
 					entityTestClick(t, s, d, "取消")
 					if closed != 0 || !d.HasDraft() {

@@ -30717,3 +30717,123 @@ func DataNodeDeleteAwaiting() string { return In(i18n.Locale()).DataNodeDeleteAw
 func (msgs Messages) DataNodeDeleteAwaiting() string {
 	return Catalog.Format(msgs.locale, "dataNodeDeleteAwaiting", nil)
 }
+
+// DataGraphEndpointChoice says "创建关系：选择端点"
+// in the language the app shows.
+func DataGraphEndpointChoice() string { return In(i18n.Locale()).DataGraphEndpointChoice() }
+
+// DataGraphEndpointChoice says "创建关系：选择端点"
+// in the language of msgs.
+func (msgs Messages) DataGraphEndpointChoice() string {
+	return Catalog.Format(msgs.locale, "dataGraphEndpointChoice", nil)
+}
+
+// DataGraphEndpointHint says "输入源和目标节点的 element ID，读取完整端点后添加草稿。保存时会再次预览并确认。"
+// in the language the app shows.
+func DataGraphEndpointHint() string { return In(i18n.Locale()).DataGraphEndpointHint() }
+
+// DataGraphEndpointHint says "输入源和目标节点的 element ID，读取完整端点后添加草稿。保存时会再次预览并确认。"
+// in the language of msgs.
+func (msgs Messages) DataGraphEndpointHint() string {
+	return Catalog.Format(msgs.locale, "dataGraphEndpointHint", nil)
+}
+
+// DataGraphEndpointSource says "源节点 element ID"
+// in the language the app shows.
+func DataGraphEndpointSource() string { return In(i18n.Locale()).DataGraphEndpointSource() }
+
+// DataGraphEndpointSource says "源节点 element ID"
+// in the language of msgs.
+func (msgs Messages) DataGraphEndpointSource() string {
+	return Catalog.Format(msgs.locale, "dataGraphEndpointSource", nil)
+}
+
+// DataGraphEndpointTarget says "目标节点 element ID"
+// in the language the app shows.
+func DataGraphEndpointTarget() string { return In(i18n.Locale()).DataGraphEndpointTarget() }
+
+// DataGraphEndpointTarget says "目标节点 element ID"
+// in the language of msgs.
+func (msgs Messages) DataGraphEndpointTarget() string {
+	return Catalog.Format(msgs.locale, "dataGraphEndpointTarget", nil)
+}
+
+// DataGraphEndpointRead says "读取端点"
+// in the language the app shows.
+func DataGraphEndpointRead() string { return In(i18n.Locale()).DataGraphEndpointRead() }
+
+// DataGraphEndpointRead says "读取端点"
+// in the language of msgs.
+func (msgs Messages) DataGraphEndpointRead() string {
+	return Catalog.Format(msgs.locale, "dataGraphEndpointRead", nil)
+}
+
+// DataGraphEndpointCopy says "复制完整端点观察"
+// in the language the app shows.
+func DataGraphEndpointCopy() string { return In(i18n.Locale()).DataGraphEndpointCopy() }
+
+// DataGraphEndpointCopy says "复制完整端点观察"
+// in the language of msgs.
+func (msgs Messages) DataGraphEndpointCopy() string {
+	return Catalog.Format(msgs.locale, "dataGraphEndpointCopy", nil)
+}
+
+// DataGraphEndpointObservation says "完整端点观察"
+// in the language the app shows.
+func DataGraphEndpointObservation() string { return In(i18n.Locale()).DataGraphEndpointObservation() }
+
+// DataGraphEndpointObservation says "完整端点观察"
+// in the language of msgs.
+func (msgs Messages) DataGraphEndpointObservation() string {
+	return Catalog.Format(msgs.locale, "dataGraphEndpointObservation", nil)
+}
+
+// DataGraphEndpointAdd says "添加关系草稿"
+// in the language the app shows.
+func DataGraphEndpointAdd() string { return In(i18n.Locale()).DataGraphEndpointAdd() }
+
+// DataGraphEndpointAdd says "添加关系草稿"
+// in the language of msgs.
+func (msgs Messages) DataGraphEndpointAdd() string {
+	return Catalog.Format(msgs.locale, "dataGraphEndpointAdd", nil)
+}
+
+// DataGraphEndpointIDsRequired says "请输入完整的源和目标 element ID"
+// in the language the app shows.
+func DataGraphEndpointIDsRequired() string { return In(i18n.Locale()).DataGraphEndpointIDsRequired() }
+
+// DataGraphEndpointIDsRequired says "请输入完整的源和目标 element ID"
+// in the language of msgs.
+func (msgs Messages) DataGraphEndpointIDsRequired() string {
+	return Catalog.Format(msgs.locale, "dataGraphEndpointIDsRequired", nil)
+}
+
+// DataGraphEndpointChanged says "原记录或数据库会话已变化，请重新读取端点"
+// in the language the app shows.
+func DataGraphEndpointChanged() string { return In(i18n.Locale()).DataGraphEndpointChanged() }
+
+// DataGraphEndpointChanged says "原记录或数据库会话已变化，请重新读取端点"
+// in the language of msgs.
+func (msgs Messages) DataGraphEndpointChanged() string {
+	return Catalog.Format(msgs.locale, "dataGraphEndpointChanged", nil)
+}
+
+// DataGraphEndpointSourceInput says "输入源节点 element ID"
+// in the language the app shows.
+func DataGraphEndpointSourceInput() string { return In(i18n.Locale()).DataGraphEndpointSourceInput() }
+
+// DataGraphEndpointSourceInput says "输入源节点 element ID"
+// in the language of msgs.
+func (msgs Messages) DataGraphEndpointSourceInput() string {
+	return Catalog.Format(msgs.locale, "dataGraphEndpointSourceInput", nil)
+}
+
+// DataGraphEndpointTargetInput says "输入目标节点 element ID"
+// in the language the app shows.
+func DataGraphEndpointTargetInput() string { return In(i18n.Locale()).DataGraphEndpointTargetInput() }
+
+// DataGraphEndpointTargetInput says "输入目标节点 element ID"
+// in the language of msgs.
+func (msgs Messages) DataGraphEndpointTargetInput() string {
+	return Catalog.Format(msgs.locale, "dataGraphEndpointTargetInput", nil)
+}

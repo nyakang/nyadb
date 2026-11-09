@@ -389,7 +389,7 @@ history/removal. The UI owns a deep copy of evidence after the one-attempt handl
 has been consumed. English/Chinese confirmation controls fit wide/narrow windows.
 
 The public Runtime binds label update/insert/delete/detach-delete and relationship
-update/delete. Entity mutations use original previews and explicit confirmation;
+update/insert/delete with explicit original endpoint observations. Entity mutations use original previews and explicit confirmation;
 direct Saver remains update-only. New nodes omit untouched inventory properties,
 show derived fields as generated, and distinguish explicit empty strings and NULL.
 Labels without properties can create propertyless nodes. Node deletion captures
@@ -413,7 +413,7 @@ and later selection or sorting cannot redirect a captured deletion or generated
 identity. A retired original read range requires explicitly reopening its document
 before further property/entity editing.
 
-Private qualified relationship creation now has a separate endpoint observation
+Qualified relationship creation has a separate endpoint observation
 contract. The original relationship document reads complete source/target nodes,
 including typed properties, labels and native completion, and signs that evidence
 with its own key and a purpose distinct from row tokens. Endpoint input is deeply
@@ -429,9 +429,34 @@ creation; canceled or uncertain requests cannot reuse the original plan.
 relationship cases plus the existing three property, four entity and four preview
 cases. All four modes passed against Neo4j 5.26.21 Community, including actual
 COMMIT-response withholding, blocked endpoint locks and original read/close
-cancellation. This is private transaction groundwork. Public Runtime still omits
-ReadGraphEndpoints and relationship insert; the shared grid still needs explicit
-endpoint input, owned draft/history/confirmation integration and public lifecycle
-and localized UI acceptance before relationship creation is enabled. Graph import,
-full archives, extended temporal/spatial lists, plans, RBAC and other version,
-Enterprise/cluster and full reference scope remain pending.
+cancellation. The private stage is recorded separately in the relationship
+foundation report.
+
+The public shared grid now binds ReadGraphEndpoints and relationship insert.
+Adding a relationship opens explicit source/target element-ID input with permanent
+direction captions. A separate private buffered read captures the original profile,
+object, generation and complete draft state. Its completion parks for the original
+profile, rejects stale/closed publications, and waits for cancellation acknowledgement.
+The modal retains complete bounded typed endpoint observations and their native
+receipt for full copy; staging preserves read-only direction/type columns and omits
+untouched properties. Propertyless relationships use the same document and grid.
+Owned endpoint evidence is cloned through draft history, undo/redo, save collection
+and exact confirmation matching. Later input, provider or display changes cannot
+redirect a captured relationship. Saving requires the existing immutable preview
+and a separate explicit one-attempt confirmation. Unknown COMMIT outcomes keep
+the original drafts, endpoints and receipt, prohibit replay, and offer the existing
+explicit original-document close guard after executor acknowledgement.
+
+`--relationship-grid --race --mode MODE` requires 29 native cases and 152 images
+per mode. It includes all 15 private relationship/property/entity/preview cases,
+five public grid regressions, five entity regressions and four public relationship
+cases. It verifies typed/propertyless creation, directed/reverse/parallel/self-loop
+batches, generated identities followed by property editing, endpoint conflicts and
+later-row atomic rollback, actual COMMIT response withholding/cancel/original close,
+read/preview parking, generation replacement and late/unconsumed close. Chinese
+and English endpoint inputs, observations, draft/preview/receipt and close controls
+are captured at 1280x800 and 720x520. See the public relationship report for final
+source hashes, test results and screenshots.
+
+Graph import, full archives, extended temporal/spatial lists, plans, RBAC and other
+version, Enterprise/cluster and full reference scope remain pending.

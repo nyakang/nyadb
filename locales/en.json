@@ -3007,5 +3007,17 @@
   "dataNodeDeletePlain": "Delete only nodes",
   "dataNodeDeleteDetach": "Delete nodes and relationships",
   "dataNodeDeleteChanged": "The original rows or database session changed. Select the rows to delete again.",
-  "dataNodeDeleteAwaiting": "Awaiting node deletion choice"
+  "dataNodeDeleteAwaiting": "Awaiting node deletion choice",
+  "dataGraphEndpointChoice": "Create relationship: choose endpoints",
+  "dataGraphEndpointHint": "Enter the source and target node element IDs. Read the complete endpoints before adding a draft. Saving requires another preview and confirmation.",
+  "dataGraphEndpointSource": "Source node element ID",
+  "dataGraphEndpointTarget": "Target node element ID",
+  "dataGraphEndpointRead": "Read endpoints",
+  "dataGraphEndpointCopy": "Copy complete endpoint observations",
+  "dataGraphEndpointObservation": "Complete endpoint observations",
+  "dataGraphEndpointAdd": "Add relationship draft",
+  "dataGraphEndpointIDsRequired": "Enter the complete source and target element IDs",
+  "dataGraphEndpointChanged": "The original rows or database session changed. Read the endpoints again.",
+  "dataGraphEndpointSourceInput": "Source node element ID input",
+  "dataGraphEndpointTargetInput": "Target node element ID input"
 }

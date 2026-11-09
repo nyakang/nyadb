@@ -93,6 +93,7 @@ type Document struct {
 	edit                        mysqlDataEditState
 	mutation                    dataMutationState
 	deleteChoice                *dataDeleteChoice
+	graphEndpoints              *dataGraphEndpointChoice
 	nativeReceipt               nativeWriteReceiptState
 	transaction                 dataTransactionState
 	export                      mysqlDataExportState

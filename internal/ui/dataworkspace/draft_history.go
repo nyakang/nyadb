@@ -26,6 +26,7 @@ func captureDraft(t *Document) draftSnapshot {
 			continue
 		}
 		c := *d
+		c.GraphEndpoints = contract.CloneDataGraphEndpoints(d.GraphEndpoints)
 		c.Original = cloneSnapshot(d.Original)
 		c.Before = clonePreviews(d.Before)
 		c.Values = cloneValues(d.Values)
