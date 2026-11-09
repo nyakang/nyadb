@@ -573,3 +573,41 @@ images per anonymous/basic/TLS/mTLS mode, including original SUMMARY observation
 real PROFILE write bounds, truncated rows, actual reply loss, cancellation,
 original close/recovery and parked generation replacement.
 See [native structured plans](../../../docs/neo4j-structured-plans-2026-11-10.md).
+
+The optional graph schema preparation provider now reserves up to eight original
+namespace/document leases on the verified Neo4j 5.26.21 server. Reservation and
+preparation perform no I/O. Explicit Read opens an independently owned original
+client and captures full `SHOW INDEXES YIELD * RETURN *` and `SHOW CONSTRAINTS
+YIELD * RETURN *` results within 8192 definitions/16 MiB. Definition parsing
+retains native options/providers/creation statements/backing ownership and LOOKUP
+nulls; operational state and statistics remain in the original catalog. The
+reads are sequential observations. Neither their local sequence nor native IDs
+and names prove a server revision, incarnation or atomic catalog.
+
+Immutable previews support node/relationship RANGE, TEXT, POINT, FULLTEXT and
+VECTOR indexes, composite RANGE and UNIQUE constraints. FULLTEXT/VECTOR settings
+stay typed parameters. Unknown semantics, invalid identifiers/Unicode-escape
+injection and observed name conflicts are rejected. DROP INDEX rejects
+constraint-owned backing indexes; DROP CONSTRAINT includes its observed backing
+index and rejects an unpaired catalog. DROP previews explicitly carry the absent
+atomic compare guarantee. Native research confirmed that an open transaction's
+SHOW allows external same-name replacement, and its later DROP removes the
+replacement. A preflight read therefore cannot guarantee observed-definition
+protection. Equality ignores operational fields/ID and native map order, while
+preserving ordered definition fields; it never proves execution completion.
+
+Observation handles belong to their original lease and latest complete read.
+Refresh failure revokes preparation authorization, and callers receive deep
+copies of catalogs, drafts, parameters and previews. Runtime wrappers translate
+only the original public generation, reject late/replaced reads and retain
+independent original evidence. Interrupted clients require a new explicit lease;
+cancel and close wait for the original executor, and cleanup never closes a newer
+session. This preparatory feature has no Submit or Verify and no graphical
+management entry. Acceptance executes previews only through a separate native
+fixture client to validate their syntax and actual native DDL completion.
+
+Use `python3 tools/verify_neo4j_fixture.py --schema-preparation --race --mode MODE`
+for five mandatory native parents in anonymous/basic/TLS/mTLS mode, including
+sixteen original creation/drop pairs, exact typed options, ownership, original
+read interruption and public generation replacement. See
+[schema preparation acceptance](../../../docs/neo4j-schema-preparation-2026-11-10.md).

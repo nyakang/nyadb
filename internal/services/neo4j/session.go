@@ -28,6 +28,7 @@ type Session struct {
 	work                    sync.WaitGroup
 	leases                  map[*queryLease]bool
 	dataLeases              map[*dataLease]bool
+	schemaLeases            map[*schemaPreparationLease]bool
 	dataSlots               chan struct{}
 	metadata, metadataQueue chan struct{}
 }
@@ -70,7 +71,7 @@ func OpenSession(ctx context.Context, p connections.Profile, secret string) (con
 }
 func newSession(profileID int64, cfg connections.Neo4jConfig, secret string, c *Client) *Session {
 	ctx, cancel := context.WithCancel(context.Background())
-	return &Session{profileID: profileID, database: cfg.Database, config: cfg, secret: secret, identity: c.Identity(), client: c, openClient: Open, ctx: ctx, cancel: cancel, closeDone: make(chan struct{}), leases: map[*queryLease]bool{}, metadata: make(chan struct{}, 1), metadataQueue: make(chan struct{}, 4)}
+	return &Session{profileID: profileID, database: cfg.Database, config: cfg, secret: secret, identity: c.Identity(), client: c, openClient: Open, ctx: ctx, cancel: cancel, closeDone: make(chan struct{}), leases: map[*queryLease]bool{}, schemaLeases: map[*schemaPreparationLease]bool{}, metadata: make(chan struct{}, 1), metadataQueue: make(chan struct{}, 4)}
 }
 func (s *Session) ProfileID() int64 { return s.profileID }
 
@@ -189,12 +190,19 @@ func (s *Session) Close() error {
 	for l := range s.dataLeases {
 		datas = append(datas, l)
 	}
+	schemas := make([]*schemaPreparationLease, 0, len(s.schemaLeases))
+	for l := range s.schemaLeases {
+		schemas = append(schemas, l)
+	}
 	s.mu.Unlock()
 	closeErr := s.client.Close()
 	for _, l := range leases {
 		l.Release()
 	}
 	for _, l := range datas {
+		closeErr = errors.Join(closeErr, l.Close())
+	}
+	for _, l := range schemas {
 		closeErr = errors.Join(closeErr, l.Close())
 	}
 	s.work.Wait()

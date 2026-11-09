@@ -11,6 +11,22 @@ SPEC.loader.exec_module(FIXTURE)
 
 
 class Neo4jFixtureOwnershipTests(unittest.TestCase):
+    def test_schema_preparation_requires_complete_native_ddl_ownership_and_cancellation(self):
+        names = FIXTURE.SCHEMA_PREPARATION_REQUIRED
+        self.assertEqual(len(names), 5)
+        self.assertEqual(len(names), len(set(names)))
+        passed = '\n'.join('--- PASS: TestNeo4jNative'+name+' (0.01s)' for name in names)
+        FIXTURE.check_acceptance(passed, schema_preparation=True)
+        for name in names:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), schema_preparation=True)
+
+    def test_schema_preparation_rejects_mixed_acceptance_before_creating_resources(self):
+        with patch.object(FIXTURE.subprocess, 'run') as run:
+            with self.assertRaises(ValueError):
+                FIXTURE.verify('basic', True, public=True, schema_preparation=True)
+            run.assert_not_called()
+
     def test_structured_plans_require_native_completion_public_lifecycle_and_each_localized_view(self):
         names = FIXTURE.STRUCTURED_PLAN_REQUIRED
         self.assertEqual(len(names), 6)
