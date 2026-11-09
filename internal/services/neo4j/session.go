@@ -27,6 +27,8 @@ type Session struct {
 	closeErr                error
 	work                    sync.WaitGroup
 	leases                  map[*queryLease]bool
+	dataLeases              map[*dataLease]bool
+	dataSlots               chan struct{}
 	metadata, metadataQueue chan struct{}
 }
 
@@ -181,10 +183,17 @@ func (s *Session) Close() error {
 	for l := range s.leases {
 		leases = append(leases, l)
 	}
+	datas := make([]*dataLease, 0, len(s.dataLeases))
+	for l := range s.dataLeases {
+		datas = append(datas, l)
+	}
 	s.mu.Unlock()
 	closeErr := s.client.Close()
 	for _, l := range leases {
 		l.Release()
+	}
+	for _, l := range datas {
+		closeErr = errors.Join(closeErr, l.Close())
 	}
 	s.work.Wait()
 	s.closeErr = closeErr

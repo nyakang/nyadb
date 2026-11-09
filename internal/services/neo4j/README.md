@@ -52,6 +52,30 @@ structures or implicit data queries. Schema retention shares a 16 MiB budget;
 these are live observations, not atomic or relational schemas. Native node/
 relationship objects are not accepted as request parameters.
 
+The private graph data binding reserves an immutable label or relationship-type
+range through the shared `DataDocumentLease` contract. Reservation performs no
+I/O; each read captures its own original driver. Pages use ordered native
+`elementId()` boundaries signed for that document and refresh epoch. Node rows
+retain element IDs, labels, complete typed properties and the native node;
+relationship rows also retain their type and both endpoint identities. Preview
+cells contain at most 1024 characters, complete fields at most 1 MiB and native
+responses at most 16 MiB. Count and explicit field reads have independent
+cancellation scopes. Complete row/field reads compare the original entity
+fingerprint; changed or missing entities require another explicit page read.
+These fingerprints and label/type identities are value observations, with no
+incarnation or atomic CAS guarantee. Complete native JSONL and typed tabular
+export scan the full qualified range in bounded native reads without restarting
+after a failed read or writer. A canceled or lost page request revokes that
+original range; explicit reopening never replays it. Session/document close
+waits for captured executors and late opens to acknowledge cancellation.
+
+This binding does not yet enable public graph data tools. Shared grid UI,
+property editing and graph visualization require their own subsequent acceptance;
+the public engine continues to advertise only Query/Metadata. Add `--data` to
+the verifier commands below to check the private reads together with the public
+Cypher workbench. This records existing form/Cypher images, not graph data-grid
+screenshots.
+
 TLS uses the URI hostname, custom CA roots and optional client certificates.
 The driver derives TLS ServerName from the URI, so a conflicting SNI override is
 rejected. `+ssc` explicitly bypasses server certificate verification and cannot
