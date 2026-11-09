@@ -18,6 +18,19 @@ func (s *State) workspaceTabCaption(t *tab) string {
 		return name
 	}
 	key := t.identity()
+	if t.object != nil && t.object.GraphSchemaManagementMode() {
+		caption := key.catalog + " · " + locales.Text("图索引与约束管理")
+		for _, other := range s.tabs {
+			if other != t && other.object != nil && other.object.GraphSchemaManagementMode() && other.profileID() != key.profileID {
+				caption = s.profileName(key.profileID) + " / " + caption
+				break
+			}
+		}
+		if t.object.DesignDirty() {
+			caption += " *"
+		}
+		return caption
+	}
 	if key.name == "collection_management" && key.objectKind == "集合与别名管理" || key.name == "snapshot_management" && key.objectKind == "快照管理" {
 		caption := locales.Text(key.objectKind)
 		for _, other := range s.tabs {

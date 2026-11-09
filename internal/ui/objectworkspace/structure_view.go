@@ -46,6 +46,10 @@ func (s *State) View(c *ui.Context, t *Document) {
 		s.snapshotsView(c, t)
 		return
 	}
+	if t.schemaManagement != nil {
+		s.graphSchemaView(c, t)
+		return
+	}
 	if t.collections != nil {
 		s.collectionsView(c, t)
 		return

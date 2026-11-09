@@ -673,6 +673,13 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 		},
 		BeforeSnapshots:  s.guardSnapshotManagement,
 		SnapshotsChanged: s.snapshotsChanged,
+		GraphSchemaManagementFor: func(id int64) (contract.GraphSchemaManagementProvider, error) {
+			if s.runtime == nil {
+				return nil, contract.ErrUnsupported
+			}
+			return s.runtime.GraphSchemaManagement(id)
+		},
+		GraphSchemaChanged: s.graphSchemaChanged,
 		CollectionManagementFor: func(id int64) (contract.CollectionManagementProvider, error) {
 			if s.runtime == nil {
 				return nil, contract.ErrUnsupported
@@ -944,6 +951,8 @@ func (s *State) SetDataSources(open func(context.Context, datasources.Config) (d
 
 func neutralObjectKind(kind string) string {
 	switch kind {
+	case "图索引与约束管理":
+		return "graph_schema"
 	case "图交换":
 		return contract.GraphNamespaceKind
 	case "图标签":

@@ -76,12 +76,20 @@ GRAPH_NAMESPACE_SHELL_STAGES = ('namespace-entry', 'namespace-empty-export', 'na
 
 
 STRUCTURED_PLAN_REQUIRED = ('AuthenticationIdentityAndTransport', 'StructuredPlansExplainProfileArgumentsAndOriginalReceipt', 'StructuredPlansBoundsAndCompletionOwnership', 'PublicStructuredPlansLostCanceledOriginalCloseAndRecoveryNeverReplay', 'PublicStructuredPlansOriginalUIRowsSnapshotsExportAndGeneration', 'PublicStructuredPlansWorkbenchEntryAndLocalizedViews')
+SCHEMA_MANAGEMENT_NATIVE_REQUIRED = ('AuthenticationIdentityAndTransport', 'SchemaManagementOriginalReceiptsAndExplicitCatalogVerification', 'SchemaManagementChangedPreflightAndRejectedNativeDDL', 'SchemaManagementActualDDLReplyLostCanceledAndOriginalClose', 'SchemaManagementShowTransactionAllowsSameNameReplacement', 'PublicSchemaManagementOriginalGenerationAndReceipts')
 SCHEMA_PREPARATION_REQUIRED = ('AuthenticationIdentityAndTransport', 'SchemaCompleteCatalogAndTypedDDLPreviews', 'SchemaOriginalPreparationOwnershipAndRefresh', 'SchemaPreparationCancellationAndOriginalClose', 'PublicSchemaPreparationOriginalGeneration')
 
 STRUCTURED_PLAN_STAGES = ('plan-explain', 'plan-profile', 'plan-native', 'plan-query-results', 'plan-snapshot', 'plan-stale', 'plan-workbench', 'plan-workbench-native')
 
 
-def required_cases(profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False, relationship_native=False, relationship_grid=False, extended_lists=False, graph_import_native=False, graph_import=False, graph_namespace=False, structured_plans=False, schema_preparation=False):
+SCHEMA_MANAGEMENT_REQUIRED = SCHEMA_MANAGEMENT_NATIVE_REQUIRED + ('PublicSchemaManagementMenusTypedPreviewReceiptsAndLocalizedViews',)
+SCHEMA_MANAGEMENT_STAGES = ('schema-entry', 'schema-catalog', 'schema-draft', 'schema-preview', 'schema-receipt', 'schema-drop-preview', 'schema-drop-verified', 'schema-original-expired')
+
+def required_cases(profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False, relationship_native=False, relationship_grid=False, extended_lists=False, graph_import_native=False, graph_import=False, graph_namespace=False, structured_plans=False, schema_preparation=False, schema_management_native=False, schema_management=False):
+    if schema_management:
+        return SCHEMA_MANAGEMENT_REQUIRED
+    if schema_management_native:
+        return SCHEMA_MANAGEMENT_NATIVE_REQUIRED
     if schema_preparation:
         return SCHEMA_PREPARATION_REQUIRED
     if structured_plans:
@@ -127,12 +135,12 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def check_acceptance(log, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False, relationship_native=False, relationship_grid=False, extended_lists=False, graph_import_native=False, graph_import=False, graph_namespace=False, structured_plans=False, schema_preparation=False):
+def check_acceptance(log, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False, relationship_native=False, relationship_grid=False, extended_lists=False, graph_import_native=False, graph_import=False, graph_namespace=False, structured_plans=False, schema_preparation=False, schema_management_native=False, schema_management=False):
     public = public or grid
     data = data or grid
     session = session or public or data
     profile = profile or session
-    names = required_cases(profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid, relationship_native, relationship_grid, extended_lists, graph_import_native, graph_import, graph_namespace, structured_plans, schema_preparation)
+    names = required_cases(profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid, relationship_native, relationship_grid, extended_lists, graph_import_native, graph_import, graph_namespace, structured_plans, schema_preparation, schema_management_native, schema_management)
     for name in names:
         if not re.search(r'^--- PASS: TestNeo4jNative' + name + r' \(', log, re.M):
             raise RuntimeError('Missing native acceptance: ' + name)
@@ -155,9 +163,13 @@ def certificates(folder):
     openssl('req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', 'wrong.key', '-out', 'wrong.crt', '-days', '2', '-subj', '/CN=Untrusted CA', cwd=folder)
 
 
-def verify(mode, race, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False, relationship_native=False, relationship_grid=False, extended_lists=False, graph_import_native=False, graph_import=False, graph_namespace=False, structured_plans=False, schema_preparation=False):
+def verify(mode, race, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False, relationship_native=False, relationship_grid=False, extended_lists=False, graph_import_native=False, graph_import=False, graph_namespace=False, structured_plans=False, schema_preparation=False, schema_management_native=False, schema_management=False):
+    if schema_management and any((profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid, relationship_native, relationship_grid, extended_lists, graph_import_native, graph_import, graph_namespace, structured_plans, schema_preparation, schema_management_native)):
+        raise ValueError('Public schema management acceptance must run as its own scope')
     if schema_preparation and any((profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid, relationship_native, relationship_grid, extended_lists, graph_import_native, graph_import, graph_namespace, structured_plans)):
         raise ValueError('Schema preparation acceptance must run as its own scope')
+    if schema_management_native and any((profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid, relationship_native, relationship_grid, extended_lists, graph_import_native, graph_import, graph_namespace, structured_plans, schema_preparation)):
+        raise ValueError('Native schema management acceptance must run as its own scope')
     if extended_lists:
         profile, session, public, data, grid, grid_writes = False, True, True, True, True, True
         entity_native, entity_preview, entity_grid, relationship_native, relationship_grid = (False,)*5
@@ -185,8 +197,10 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
         profile, session, public, data, grid, grid_writes = False, True, True, True, True, True
     if structured_plans:
         profile, session, public, data, grid, grid_writes = False, True, True, False, False, False
-    if schema_preparation:
+    if schema_preparation or schema_management_native or schema_management:
         profile, session, public, data, grid, grid_writes = False, True, False, False, False, False
+    if schema_management:
+        profile, session, public, data, grid, grid_writes = False, True, True, False, False, False
     nonce = uuid.uuid4().hex
     build = ROOT/'build/neo4j'
     build.mkdir(parents=True, exist_ok=True)
@@ -200,8 +214,10 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
         sources += list((ROOT/'internal/db/graphimport').glob('*.go'))
     if structured_plans:
         sources += list((ROOT/'internal/db/queryplan').glob('*.go')) + list((ROOT/'locales').glob('*.go')) + list((ROOT/'locales').glob('*.json'))
-    if schema_preparation:
+    if schema_preparation or schema_management_native or schema_management:
         sources += list((ROOT/'internal/db/graphschema').glob('*.go')) + list((ROOT/'internal/services/dbruntime').glob('*.go'))
+    if schema_management:
+        sources += list((ROOT/'locales').glob('*.go')) + list((ROOT/'locales').glob('*.json')) + list((ROOT/'internal/ui/theme').glob('*.go'))
     if session:
         sources += list((ROOT/'internal/db/contract').glob('*.go'))
     if relationship_native:
@@ -213,7 +229,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
         for package in ('internal/ui/dataworkspace', 'internal/ui/gridview', 'internal/ui/theme'):
             sources += list((ROOT/package).glob('*.go'))
     report = {'nonce': nonce, 'mode': mode, 'version': VERSION, 'image': IMAGE,
-              'scope': 'original-native-schema-catalog-and-pure-preparation' if schema_preparation else 'public-original-native-structured-plans' if structured_plans else 'public-empty-database-graph-namespace-exchange' if graph_namespace else 'public-complete-graph-exchange-and-import' if graph_import else 'private-native-complete-graph-import' if graph_import_native else 'public-temporal-spatial-property-lists' if extended_lists else 'public-shared-qualified-relationship-creation' if relationship_grid else 'private-native-qualified-relationship-creation' if relationship_native else 'public-shared-graph-entity-confirmations' if entity_grid else 'private-native-entity-previews-and-property-transactions' if entity_preview else 'private-native-entity-mutations' if entity_native else 'public-shared-graph-property-write-and-close-followup' if grid_writes else 'public-shared-graph-data-and-workbench' if grid else 'public-workbench-and-private-graph-data' if public and data else 'private-original-graph-data' if data else 'public-native-workbench' if public else 'private-native-session-and-graph-contract' if session else ('private-native-profile-and-editor' if profile else 'private-native-foundation'), 'race': race, 'passed': False,
+              'scope': 'public-original-schema-management-and-explicit-verification' if schema_management else 'original-native-schema-single-submission-and-explicit-verification' if schema_management_native else 'original-native-schema-catalog-and-pure-preparation' if schema_preparation else 'public-original-native-structured-plans' if structured_plans else 'public-empty-database-graph-namespace-exchange' if graph_namespace else 'public-complete-graph-exchange-and-import' if graph_import else 'private-native-complete-graph-import' if graph_import_native else 'public-temporal-spatial-property-lists' if extended_lists else 'public-shared-qualified-relationship-creation' if relationship_grid else 'private-native-qualified-relationship-creation' if relationship_native else 'public-shared-graph-entity-confirmations' if entity_grid else 'private-native-entity-previews-and-property-transactions' if entity_preview else 'private-native-entity-mutations' if entity_native else 'public-shared-graph-property-write-and-close-followup' if grid_writes else 'public-shared-graph-data-and-workbench' if grid else 'public-workbench-and-private-graph-data' if public and data else 'private-original-graph-data' if data else 'public-native-workbench' if public else 'private-native-session-and-graph-contract' if session else ('private-native-profile-and-editor' if profile else 'private-native-foundation'), 'race': race, 'passed': False,
               'source_hashes': {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(sources))}}
     identifier = None
     try:
@@ -306,19 +322,24 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
                 env['NYADB_NEO4J_SHELL_GRID_IMAGES'] = str(build/('owned-fixture-'+nonce+'-shell-grid-images'))
             if schema_preparation:
                 env['NYADB_NEO4J_SCHEMA_PREPARATION_IT'] = '1'
+            if schema_management_native or schema_management:
+                env['NYADB_NEO4J_SCHEMA_MANAGEMENT_IT'] = '1'
+            if schema_management:
+                env['NYADB_NEO4J_SCHEMA_UI_IT'] = '1'
+                env['NYADB_NEO4J_SCHEMA_IMAGES'] = str(build/('owned-fixture-'+nonce+'-schema-images'))
             if structured_plans:
                 env['NYADB_NEO4J_PLAN_IMAGES'] = str(build/('owned-fixture-'+nonce+'-plan-images'))
             if graph_namespace:
                 env['NYADB_NEO4J_NAMESPACE_IMAGES'] = str(build/('owned-fixture-'+nonce+'-namespace-images'))
             env['CGO_ENABLED'] = '1' if race else '0'
             packages = ['./internal/services/neo4j'] + (['./internal/ui/connectioneditor'] if profile else [])
-            if schema_preparation:
+            if schema_preparation or schema_management_native or schema_management:
                 packages += ['./internal/services/dbruntime']
             if public:
-                packages += ['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell']
+                packages += ['./internal/ui/shell'] if schema_management else ['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell']
             if grid:
                 packages += ['./internal/ui/dataworkspace']
-            accepted = required_cases(profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid, relationship_native, relationship_grid, extended_lists, graph_import_native, graph_import, graph_namespace, structured_plans, schema_preparation)
+            accepted = required_cases(profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid, relationship_native, relationship_grid, extended_lists, graph_import_native, graph_import, graph_namespace, structured_plans, schema_preparation, schema_management_native, schema_management)
             pattern = '^TestNeo4jNative(' + '|'.join(accepted) + ')$'
             command = ['go', 'test'] + (['-race'] if race else []) + (['-p=1'] if graph_import or graph_import_native else []) + packages + ['-run', pattern, '-count=1', '-timeout=8m', '-v']
             commands = [command]
@@ -342,13 +363,17 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
             log_path.write_text(log)
             if result.returncode:
                 raise RuntimeError('Native Neo4j verification failed; see '+str(log_path.relative_to(ROOT)))
-            check_acceptance(log, profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid, relationship_native, relationship_grid, extended_lists, graph_import_native, graph_import, graph_namespace, structured_plans, schema_preparation)
+            check_acceptance(log, profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid, relationship_native, relationship_grid, extended_lists, graph_import_native, graph_import, graph_namespace, structured_plans, schema_preparation, schema_management_native, schema_management)
+            if schema_management:
+                pictures = sorted(Path(env['NYADB_NEO4J_SCHEMA_IMAGES']).glob('*.png'))
+                check_stage_images(pictures, SCHEMA_MANAGEMENT_STAGES)
+                report['schema_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             if profile:
                 pictures = sorted(Path(env['NYADB_NEO4J_PROFILE_IMAGES']).glob('*.png'))
                 if len(pictures) != 48:
                     raise RuntimeError('Missing localized Neo4j profile screenshots')
                 report['images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
-            if public and not graph_import and not structured_plans:
+            if public and not graph_import and not structured_plans and not schema_management:
                 pictures = sorted(Path(env['NYADB_NEO4J_PUBLIC_IMAGES']).rglob('*.png'))
                 if len(pictures) != (4*len(EXTENDED_LIST_PUBLIC_STAGES) if extended_lists else 224):
                     raise RuntimeError('Missing localized Neo4j workbench screenshots')
@@ -416,8 +441,10 @@ def main():
     parser.add_argument('--graph-namespace', action='store_true', help='Verify the complete original database graph exchange/import entry, including truly empty databases, namespace identity and original lifecycle')
     parser.add_argument('--structured-plans', action='store_true', help='Verify original native EXPLAIN/PROFILE trees, exact metrics, receipts, shared views, snapshots, export and generation/cancel/close safety')
     parser.add_argument('--schema-preparation', action='store_true', help='Verify complete native catalogs, typed pure DDL previews, original leases and public generations without exposing management writes')
+    parser.add_argument('--schema-management-native', action='store_true', help='Verify original one-attempt schema DDL, explicit catalog verification, native same-name concurrency and actual lost/canceled completions')
+    parser.add_argument('--schema-management', action='store_true', help='verify shared native schema management and localized original receipts')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.profile, args.session, args.public, args.data, args.grid, args.grid_writes, args.entity_native, args.entity_preview, args.entity_grid, args.relationship_native, args.relationship_grid, args.extended_lists, args.graph_import_native, args.graph_import, args.graph_namespace, args.structured_plans, args.schema_preparation)
+    verify(args.mode, args.race, args.profile, args.session, args.public, args.data, args.grid, args.grid_writes, args.entity_native, args.entity_preview, args.entity_grid, args.relationship_native, args.relationship_grid, args.extended_lists, args.graph_import_native, args.graph_import, args.graph_namespace, args.structured_plans, args.schema_preparation, args.schema_management_native, args.schema_management)
 
 
 if __name__ == '__main__':

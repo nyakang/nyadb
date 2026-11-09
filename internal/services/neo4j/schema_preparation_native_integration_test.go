@@ -48,11 +48,7 @@ func executeSchemaPreviewTest(t *testing.T, c *Client, p contract.GraphSchemaPre
 	// Native compiler acceptance only: production preparation has no Submit.
 	return nativeRunTest(t, c, Request{Query: p.Request.Query, Database: p.Request.Database, Parameters: params})
 }
-func TestNeo4jNativeSchemaCompleteCatalogAndTypedDDLPreviews(t *testing.T) {
-	f := sessionFixtureTest(t)
-	s := nativeSessionTest(t, f)
-	admin := nativeOpenTest(t, f)
-	l := nativeSchemaLeaseTest(t, s, 1)
+func nativeSchemaDraftsTest(f nativeFixture) []contract.GraphSchemaDraft {
 	label := "NyaSchema_" + f.Nonce + "`猫"
 	var drafts []contract.GraphSchemaDraft
 	for _, entity := range []string{"NODE", "RELATIONSHIP"} {
@@ -82,6 +78,15 @@ func TestNeo4jNativeSchemaCompleteCatalogAndTypedDDLPreviews(t *testing.T) {
 		}
 		drafts = append(drafts, contract.GraphSchemaDraft{Action: "create_constraint", Name: markerTest(f, strings.ToLower(entity+"_unique")), Type: "UNIQUE", EntityType: entity, LabelsOrTypes: []string{label}, Properties: []string{"unique"}})
 	}
+	return drafts
+}
+
+func TestNeo4jNativeSchemaCompleteCatalogAndTypedDDLPreviews(t *testing.T) {
+	f := sessionFixtureTest(t)
+	s := nativeSessionTest(t, f)
+	admin := nativeOpenTest(t, f)
+	l := nativeSchemaLeaseTest(t, s, 1)
+	drafts := nativeSchemaDraftsTest(f)
 	for _, draft := range drafts {
 		t.Run(strings.ToLower(draft.EntityType+"_"+draft.Type+"_"+fmt.Sprint(len(draft.Properties))), func(t *testing.T) {
 			before := nativeSchemaReadTest(t, l)

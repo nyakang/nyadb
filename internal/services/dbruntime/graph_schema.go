@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/graphschema"
 )
 
 func (m *Manager) GraphSchemaPreparation(id int64) (contract.GraphSchemaPreparationProvider, error) {
@@ -64,7 +65,11 @@ type graphSchemaObservation struct {
 	raw      contract.GraphSchemaObservation
 	snapshot contract.GraphSchemaCatalog
 }
-type graphSchemaPreparation struct{ preview contract.GraphSchemaPreview }
+type graphSchemaPreparation struct {
+	preview contract.GraphSchemaPreview
+	owner   *graphSchemaPreparationLease
+	raw     contract.GraphSchemaPreparation
+}
 
 func (d *graphSchemaPreparationLease) Object() contract.ObjectRef { return d.object }
 func (d *graphSchemaPreparationLease) Generation() uint64         { return d.session.generation }
@@ -107,6 +112,9 @@ func (d *graphSchemaPreparationLease) Prepare(before contract.GraphSchemaObserva
 	if !ok || o == nil || o.owner != d {
 		return nil, contract.ErrGraphSchemaChanged
 	}
+	if e := graphschema.ValidateDraftBounds(draft); e != nil {
+		return nil, e
+	}
 	p, e := d.raw.Prepare(o.raw, draft.Clone())
 	if e != nil {
 		return nil, e
@@ -121,7 +129,7 @@ func (d *graphSchemaPreparationLease) Prepare(before contract.GraphSchemaObserva
 	if e = d.check(); e != nil {
 		return nil, e
 	}
-	return &graphSchemaPreparation{preview: preview}, nil
+	return &graphSchemaPreparation{preview: preview, owner: d, raw: p}, nil
 }
 func (d *graphSchemaPreparationLease) Close() error {
 	d.closeOnce.Do(func() { d.closed.Store(true); d.closeErr = d.raw.Close() })

@@ -602,12 +602,46 @@ copies of catalogs, drafts, parameters and previews. Runtime wrappers translate
 only the original public generation, reject late/replaced reads and retain
 independent original evidence. Interrupted clients require a new explicit lease;
 cancel and close wait for the original executor, and cleanup never closes a newer
-session. This preparatory feature has no Submit or Verify and no graphical
-management entry. Acceptance executes previews only through a separate native
-fixture client to validate their syntax and actual native DDL completion.
+session. The preparation interface remains available separately. The optional
+management extension now submits one original native plan and retains the actual
+completion receipt independently of later explicit catalog verification. A failed
+or incomplete receipt never becomes confirmed merely because the catalog matches.
 
 Use `python3 tools/verify_neo4j_fixture.py --schema-preparation --race --mode MODE`
 for five mandatory native parents in anonymous/basic/TLS/mTLS mode, including
 sixteen original creation/drop pairs, exact typed options, ownership, original
 read interruption and public generation replacement. See
 [schema preparation acceptance](../../../docs/neo4j-schema-preparation-2026-11-10.md).
+
+Graph indexes and constraints can be managed from the original database menu or
+Tools menu in the shared object workspace, including empty databases. The form
+uses ordered JSON identifier arrays and bounded native JSON options without
+rounding integers. Every operation requires a complete original catalog and an
+immutable preview. DROP requires the exact original name and explicit acceptance
+of deletion by the current name, including an external same-name replacement.
+Preflight rejects changed observed definitions/IDs but cannot close the native
+concurrency window. Constraint-owned backing indexes must be dropped through their
+constraint. CREATE completion does not imply ONLINE; full catalog state and
+population progress remain visible separately.
+
+Submit consumes its original opaque plan once, preflights on the same owned
+client, and calls native Execute once with retries disabled. Verify is a separate
+read action and never replays DDL. If an attempted write retires its client,
+explicit verification may open a separate read client belonging to that original
+session. Matching catalog state with a missing completion stays unconfirmed;
+unresolved drafts and original receipts cannot be overwritten by another write.
+Cancellation waits for the original executor. Parked replies await their original
+profile; replaced generations retain original receipts without updating new
+metadata. Closing releases leases and caches, while exported evidence stays owned
+by its caller. Restored pages require explicit reopening and never restore write
+authorization.
+
+Use `python3 tools/verify_neo4j_fixture.py --schema-management --race --mode MODE`
+for seven mandatory native parents and 32 localized wide/narrow images per
+anonymous/basic/TLS/mTLS mode. It covers sixteen native create/drop pairs,
+original completion/explicit verification, changed preflight, native UNIQUE
+failure, actual committed DDL reply loss/cancellation/close, native same-name
+replacement during SHOW transactions, published-generation ownership and the
+real shared workbench menus and confirmation controls. The smaller
+`--schema-management-native` scope keeps the six backend parents. See
+[schema management acceptance](../../../docs/neo4j-schema-management-2026-11-10.md).

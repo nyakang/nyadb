@@ -14,10 +14,8 @@ import (
 	"github.com/nyakang/nyadb/internal/services/dbruntime"
 )
 
-func TestNeo4jNativePublicSchemaPreparationOriginalGeneration(t *testing.T) {
-	if os.Getenv("NYADB_NEO4J_SCHEMA_PREPARATION_IT") != "1" {
-		t.Skip("requires owned Neo4j schema preparation fixture")
-	}
+func graphSchemaNativeProfileTest(t *testing.T) (connections.Profile, string, string) {
+	t.Helper()
 	raw, e := os.ReadFile(os.Getenv("NYADB_NEO4J_CONFIG_FILE"))
 	if e != nil {
 		t.Fatal("cannot read owned private fixture")
@@ -47,12 +45,20 @@ func TestNeo4jNativePublicSchemaPreparationOriginalGeneration(t *testing.T) {
 	}
 	p := parsed.Profile
 	p.ID, p.Name = 84, "Owned schema preparation"
+	return p, f.Secret, f.Nonce
+}
+
+func TestNeo4jNativePublicSchemaPreparationOriginalGeneration(t *testing.T) {
+	if os.Getenv("NYADB_NEO4J_SCHEMA_PREPARATION_IT") != "1" {
+		t.Skip("requires owned Neo4j schema preparation fixture")
+	}
+	p, secret, nonce := graphSchemaNativeProfileTest(t)
 	m := dbruntime.New()
 	dbruntime.RegisterBuiltins(m, nil)
 	defer m.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
-	first, e := m.ConnectSession(ctx, p, f.Secret)
+	first, e := m.ConnectSession(ctx, p, secret)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -79,7 +85,7 @@ func TestNeo4jNativePublicSchemaPreparationOriginalGeneration(t *testing.T) {
 	if len(before.Snapshot().Indexes.Columns) < 16 || len(before.Snapshot().Constraints.Columns) < 10 {
 		t.Fatal("public native catalog became concise SHOW")
 	}
-	draft := contract.GraphSchemaDraft{Action: "create_index", Name: "nya_" + f.Nonce + "_public_preview", Type: "RANGE", EntityType: "NODE", LabelsOrTypes: []string{"NyaSchema"}, Properties: []string{"name"}}
+	draft := contract.GraphSchemaDraft{Action: "create_index", Name: "nya_" + nonce + "_public_preview", Type: "RANGE", EntityType: "NODE", LabelsOrTypes: []string{"NyaSchema"}, Properties: []string{"name"}}
 	plan, e := l.Prepare(before, draft)
 	if e != nil {
 		t.Fatal(e)
@@ -97,7 +103,7 @@ func TestNeo4jNativePublicSchemaPreparationOriginalGeneration(t *testing.T) {
 	if _, e := foreign.Prepare(before, draft); !errors.Is(e, contract.ErrGraphSchemaChanged) {
 		t.Fatal("different public original lease accepted observation", e)
 	}
-	second, e := m.ConnectSession(ctx, p, f.Secret)
+	second, e := m.ConnectSession(ctx, p, secret)
 	if e != nil || second.Generation() <= first.Generation() {
 		t.Fatal(e)
 	}

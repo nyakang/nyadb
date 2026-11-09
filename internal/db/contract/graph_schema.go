@@ -10,6 +10,9 @@ var (
 	ErrGraphSchemaChanged      = errors.New("original graph schema observation changed; read it again")
 	ErrGraphSchemaExists       = errors.New("graph index or constraint name already exists")
 	ErrGraphSchemaBackingIndex = errors.New("constraint-owned index must be managed through its original constraint")
+	ErrGraphSchemaBusy         = errors.New("original schema operation is unresolved; retain its receipt and verify explicitly")
+	ErrGraphSchemaConfirmation = errors.New("confirm the exact schema name and acknowledge native DROP by name without atomic comparison")
+	ErrGraphSchemaReceipt      = errors.New("original native schema completion is incomplete; retain evidence without replay")
 )
 
 // A catalog retains complete native SHOW rows, including operational fields.
@@ -41,9 +44,8 @@ type GraphSchemaRequest struct {
 	Parameters      []GraphProperty
 }
 
-// These are preparations only. No native write is submitted through this
-// feature. A DROP preview expressly records the absent atomic compare primitive;
-// a later executor must not equate a preflight read with schema-lock protection.
+// A DROP preview expressly records the absent atomic compare primitive. Neither
+// native SHOW nor a preflight read protects an original schema incarnation.
 type GraphSchemaPreview struct {
 	Draft         GraphSchemaDraft
 	Request       GraphSchemaRequest
@@ -62,6 +64,37 @@ type GraphSchemaPreparationLease interface {
 type GraphSchemaPreparationProvider interface {
 	SupportsGraphSchemaPreparation(ObjectRef) bool
 	ReserveGraphSchemaPreparation(ObjectRef, uint64) (GraphSchemaPreparationLease, error)
+}
+
+// Management is an optional extension; preparation-only providers cannot write.
+// DROP acknowledgement refers to the current native name, including possible
+// replacement after preflight. It is never a promise of compare-and-drop.
+type GraphSchemaConfirmation struct {
+	Name                string
+	AcceptNonAtomicDrop bool
+}
+type GraphSchemaManagementLease interface {
+	GraphSchemaPreparationLease
+	Submit(context.Context, GraphSchemaPreparation, GraphSchemaConfirmation) (GraphSchemaManagementResult, error)
+	Verify(context.Context) (GraphSchemaManagementResult, error)
+}
+type GraphSchemaManagementProvider interface {
+	SupportsGraphSchemaManagement(ObjectRef) bool
+	ReserveGraphSchemaManagement(ObjectRef, uint64) (GraphSchemaManagementLease, error)
+}
+type GraphSchemaManagementResult struct {
+	State                                  string
+	Preview                                GraphSchemaPreview
+	Before, Preflight, Verification        GraphSchemaCatalog
+	Receipt                                GraphResult
+	ReceiptValid, HasVerification, Matched bool
+}
+
+func (r GraphSchemaManagementResult) Clone() GraphSchemaManagementResult {
+	r.Preview = r.Preview.Clone()
+	r.Before, r.Preflight, r.Verification = r.Before.Clone(), r.Preflight.Clone(), r.Verification.Clone()
+	r.Receipt = r.Receipt.Clone()
+	return r
 }
 
 func (c GraphSchemaCatalog) Clone() GraphSchemaCatalog {

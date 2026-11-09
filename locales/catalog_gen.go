@@ -31367,3 +31367,353 @@ func GraphPlanTime() string { return In(i18n.Locale()).GraphPlanTime() }
 func (msgs Messages) GraphPlanTime() string {
 	return Catalog.Format(msgs.locale, "graphPlanTime", nil)
 }
+
+// GraphSchemaTitle says "图索引与约束管理"
+// in the language the app shows.
+func GraphSchemaTitle() string { return In(i18n.Locale()).GraphSchemaTitle() }
+
+// GraphSchemaTitle says "图索引与约束管理"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaTitle() string {
+	return Catalog.Format(msgs.locale, "graphSchemaTitle", nil)
+}
+
+// GraphSchemaCreateIndex says "创建图索引"
+// in the language the app shows.
+func GraphSchemaCreateIndex() string { return In(i18n.Locale()).GraphSchemaCreateIndex() }
+
+// GraphSchemaCreateIndex says "创建图索引"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaCreateIndex() string {
+	return Catalog.Format(msgs.locale, "graphSchemaCreateIndex", nil)
+}
+
+// GraphSchemaCreateUnique says "创建唯一约束"
+// in the language the app shows.
+func GraphSchemaCreateUnique() string { return In(i18n.Locale()).GraphSchemaCreateUnique() }
+
+// GraphSchemaCreateUnique says "创建唯一约束"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaCreateUnique() string {
+	return Catalog.Format(msgs.locale, "graphSchemaCreateUnique", nil)
+}
+
+// GraphSchemaDropIndex says "删除图索引"
+// in the language the app shows.
+func GraphSchemaDropIndex() string { return In(i18n.Locale()).GraphSchemaDropIndex() }
+
+// GraphSchemaDropIndex says "删除图索引"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaDropIndex() string {
+	return Catalog.Format(msgs.locale, "graphSchemaDropIndex", nil)
+}
+
+// GraphSchemaDropConstraint says "删除图约束"
+// in the language the app shows.
+func GraphSchemaDropConstraint() string { return In(i18n.Locale()).GraphSchemaDropConstraint() }
+
+// GraphSchemaDropConstraint says "删除图约束"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaDropConstraint() string {
+	return Catalog.Format(msgs.locale, "graphSchemaDropConstraint", nil)
+}
+
+// GraphSchemaReadCatalog says "读取完整图结构目录"
+// in the language the app shows.
+func GraphSchemaReadCatalog() string { return In(i18n.Locale()).GraphSchemaReadCatalog() }
+
+// GraphSchemaReadCatalog says "读取完整图结构目录"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaReadCatalog() string {
+	return Catalog.Format(msgs.locale, "graphSchemaReadCatalog", nil)
+}
+
+// GraphSchemaPreviewOperation says "预览图结构操作"
+// in the language the app shows.
+func GraphSchemaPreviewOperation() string { return In(i18n.Locale()).GraphSchemaPreviewOperation() }
+
+// GraphSchemaPreviewOperation says "预览图结构操作"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaPreviewOperation() string {
+	return Catalog.Format(msgs.locale, "graphSchemaPreviewOperation", nil)
+}
+
+// GraphSchemaVerifyOperation says "核验原图结构操作"
+// in the language the app shows.
+func GraphSchemaVerifyOperation() string { return In(i18n.Locale()).GraphSchemaVerifyOperation() }
+
+// GraphSchemaVerifyOperation says "核验原图结构操作"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaVerifyOperation() string {
+	return Catalog.Format(msgs.locale, "graphSchemaVerifyOperation", nil)
+}
+
+// GraphSchemaWaiting says "正在等待原图结构管理请求…"
+// in the language the app shows.
+func GraphSchemaWaiting() string { return In(i18n.Locale()).GraphSchemaWaiting() }
+
+// GraphSchemaWaiting says "正在等待原图结构管理请求…"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaWaiting() string {
+	return Catalog.Format(msgs.locale, "graphSchemaWaiting", nil)
+}
+
+// GraphSchemaCancelWaiting says "正在等待原图结构管理请求停止…"
+// in the language the app shows.
+func GraphSchemaCancelWaiting() string { return In(i18n.Locale()).GraphSchemaCancelWaiting() }
+
+// GraphSchemaCancelWaiting says "正在等待原图结构管理请求停止…"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaCancelWaiting() string {
+	return Catalog.Format(msgs.locale, "graphSchemaCancelWaiting", nil)
+}
+
+// GraphSchemaCatalog says "完整图结构目录"
+// in the language the app shows.
+func GraphSchemaCatalog() string { return In(i18n.Locale()).GraphSchemaCatalog() }
+
+// GraphSchemaCatalog says "完整图结构目录"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaCatalog() string {
+	return Catalog.Format(msgs.locale, "graphSchemaCatalog", nil)
+}
+
+// GraphSchemaVerified says "原生完成回执与当前目录已核验"
+// in the language the app shows.
+func GraphSchemaVerified() string { return In(i18n.Locale()).GraphSchemaVerified() }
+
+// GraphSchemaVerified says "原生完成回执与当前目录已核验"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaVerified() string {
+	return Catalog.Format(msgs.locale, "graphSchemaVerified", nil)
+}
+
+// GraphSchemaDiverged says "原生操作已完成，当前目录与请求不一致"
+// in the language the app shows.
+func GraphSchemaDiverged() string { return In(i18n.Locale()).GraphSchemaDiverged() }
+
+// GraphSchemaDiverged says "原生操作已完成，当前目录与请求不一致"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaDiverged() string {
+	return Catalog.Format(msgs.locale, "graphSchemaDiverged", nil)
+}
+
+// GraphSchemaReceiptUnknown says "完成回执未确认，目录匹配也不能证明原操作完成"
+// in the language the app shows.
+func GraphSchemaReceiptUnknown() string { return In(i18n.Locale()).GraphSchemaReceiptUnknown() }
+
+// GraphSchemaReceiptUnknown says "完成回执未确认，目录匹配也不能证明原操作完成"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaReceiptUnknown() string {
+	return Catalog.Format(msgs.locale, "graphSchemaReceiptUnknown", nil)
+}
+
+// GraphSchemaPopulationHint says "CREATE 完成不代表索引 ONLINE；请查看目录中的状态与填充进度。"
+// in the language the app shows.
+func GraphSchemaPopulationHint() string { return In(i18n.Locale()).GraphSchemaPopulationHint() }
+
+// GraphSchemaPopulationHint says "CREATE 完成不代表索引 ONLINE；请查看目录中的状态与填充进度。"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaPopulationHint() string {
+	return Catalog.Format(msgs.locale, "graphSchemaPopulationHint", nil)
+}
+
+// GraphSchemaCopyPreview says "复制完整图结构预览"
+// in the language the app shows.
+func GraphSchemaCopyPreview() string { return In(i18n.Locale()).GraphSchemaCopyPreview() }
+
+// GraphSchemaCopyPreview says "复制完整图结构预览"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaCopyPreview() string {
+	return Catalog.Format(msgs.locale, "graphSchemaCopyPreview", nil)
+}
+
+// GraphSchemaEvidenceActions says "图结构证据操作"
+// in the language the app shows.
+func GraphSchemaEvidenceActions() string { return In(i18n.Locale()).GraphSchemaEvidenceActions() }
+
+// GraphSchemaEvidenceActions says "图结构证据操作"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaEvidenceActions() string {
+	return Catalog.Format(msgs.locale, "graphSchemaEvidenceActions", nil)
+}
+
+// GraphSchemaName says "图结构名称"
+// in the language the app shows.
+func GraphSchemaName() string { return In(i18n.Locale()).GraphSchemaName() }
+
+// GraphSchemaName says "图结构名称"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaName() string {
+	return Catalog.Format(msgs.locale, "graphSchemaName", nil)
+}
+
+// GraphSchemaType says "索引或约束类型"
+// in the language the app shows.
+func GraphSchemaType() string { return In(i18n.Locale()).GraphSchemaType() }
+
+// GraphSchemaType says "索引或约束类型"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaType() string {
+	return Catalog.Format(msgs.locale, "graphSchemaType", nil)
+}
+
+// GraphSchemaEntityType says "图实体类型"
+// in the language the app shows.
+func GraphSchemaEntityType() string { return In(i18n.Locale()).GraphSchemaEntityType() }
+
+// GraphSchemaEntityType says "图实体类型"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaEntityType() string {
+	return Catalog.Format(msgs.locale, "graphSchemaEntityType", nil)
+}
+
+// GraphSchemaLabelsJSON says "标签或关系类型 JSON 数组"
+// in the language the app shows.
+func GraphSchemaLabelsJSON() string { return In(i18n.Locale()).GraphSchemaLabelsJSON() }
+
+// GraphSchemaLabelsJSON says "标签或关系类型 JSON 数组"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaLabelsJSON() string {
+	return Catalog.Format(msgs.locale, "graphSchemaLabelsJSON", nil)
+}
+
+// GraphSchemaPropertiesJSON says "有序属性 JSON 数组"
+// in the language the app shows.
+func GraphSchemaPropertiesJSON() string { return In(i18n.Locale()).GraphSchemaPropertiesJSON() }
+
+// GraphSchemaPropertiesJSON says "有序属性 JSON 数组"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaPropertiesJSON() string {
+	return Catalog.Format(msgs.locale, "graphSchemaPropertiesJSON", nil)
+}
+
+// GraphSchemaOptionsJSON says "索引选项 JSON"
+// in the language the app shows.
+func GraphSchemaOptionsJSON() string { return In(i18n.Locale()).GraphSchemaOptionsJSON() }
+
+// GraphSchemaOptionsJSON says "索引选项 JSON"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaOptionsJSON() string {
+	return Catalog.Format(msgs.locale, "graphSchemaOptionsJSON", nil)
+}
+
+// GraphSchemaFormHint says "标识符请填写 JSON 字符串数组；选项使用原生 JSON，空白表示服务器默认值。"
+// in the language the app shows.
+func GraphSchemaFormHint() string { return In(i18n.Locale()).GraphSchemaFormHint() }
+
+// GraphSchemaFormHint says "标识符请填写 JSON 字符串数组；选项使用原生 JSON，空白表示服务器默认值。"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaFormHint() string {
+	return Catalog.Format(msgs.locale, "graphSchemaFormHint", nil)
+}
+
+// GraphSchemaTruncated says "图结构预览已截断，可复制完整内容。"
+// in the language the app shows.
+func GraphSchemaTruncated() string { return In(i18n.Locale()).GraphSchemaTruncated() }
+
+// GraphSchemaTruncated says "图结构预览已截断，可复制完整内容。"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaTruncated() string {
+	return Catalog.Format(msgs.locale, "graphSchemaTruncated", nil)
+}
+
+// GraphSchemaPreviewTitle says "图结构操作预览"
+// in the language the app shows.
+func GraphSchemaPreviewTitle() string { return In(i18n.Locale()).GraphSchemaPreviewTitle() }
+
+// GraphSchemaPreviewTitle says "图结构操作预览"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaPreviewTitle() string {
+	return Catalog.Format(msgs.locale, "graphSchemaPreviewTitle", nil)
+}
+
+// GraphSchemaRequest says "将提交的图结构请求"
+// in the language the app shows.
+func GraphSchemaRequest() string { return In(i18n.Locale()).GraphSchemaRequest() }
+
+// GraphSchemaRequest says "将提交的图结构请求"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaRequest() string {
+	return Catalog.Format(msgs.locale, "graphSchemaRequest", nil)
+}
+
+// GraphSchemaFullReview says "已复制并检查完整图结构预览"
+// in the language the app shows.
+func GraphSchemaFullReview() string { return In(i18n.Locale()).GraphSchemaFullReview() }
+
+// GraphSchemaFullReview says "已复制并检查完整图结构预览"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaFullReview() string {
+	return Catalog.Format(msgs.locale, "graphSchemaFullReview", nil)
+}
+
+// GraphSchemaDropRisk says "删除按当前名称执行；外部同名替换可能被删除。预检和事务均不能原子保护原定义。"
+// in the language the app shows.
+func GraphSchemaDropRisk() string { return In(i18n.Locale()).GraphSchemaDropRisk() }
+
+// GraphSchemaDropRisk says "删除按当前名称执行；外部同名替换可能被删除。预检和事务均不能原子保护原定义。"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaDropRisk() string {
+	return Catalog.Format(msgs.locale, "graphSchemaDropRisk", nil)
+}
+
+// GraphSchemaAcceptDropRisk says "接受按当前名称删除及同名替换风险"
+// in the language the app shows.
+func GraphSchemaAcceptDropRisk() string { return In(i18n.Locale()).GraphSchemaAcceptDropRisk() }
+
+// GraphSchemaAcceptDropRisk says "接受按当前名称删除及同名替换风险"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaAcceptDropRisk() string {
+	return Catalog.Format(msgs.locale, "graphSchemaAcceptDropRisk", nil)
+}
+
+// GraphSchemaSubmit says "确认提交图结构操作"
+// in the language the app shows.
+func GraphSchemaSubmit() string { return In(i18n.Locale()).GraphSchemaSubmit() }
+
+// GraphSchemaSubmit says "确认提交图结构操作"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaSubmit() string {
+	return Catalog.Format(msgs.locale, "graphSchemaSubmit", nil)
+}
+
+// GraphSchemaLeaveTitle says "保留原图结构草稿与证据？"
+// in the language the app shows.
+func GraphSchemaLeaveTitle() string { return In(i18n.Locale()).GraphSchemaLeaveTitle() }
+
+// GraphSchemaLeaveTitle says "保留原图结构草稿与证据？"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaLeaveTitle() string {
+	return Catalog.Format(msgs.locale, "graphSchemaLeaveTitle", nil)
+}
+
+// GraphSchemaContinue says "继续处理图结构操作"
+// in the language the app shows.
+func GraphSchemaContinue() string { return In(i18n.Locale()).GraphSchemaContinue() }
+
+// GraphSchemaContinue says "继续处理图结构操作"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaContinue() string {
+	return Catalog.Format(msgs.locale, "graphSchemaContinue", nil)
+}
+
+// GraphSchemaDiscard says "放弃原图结构草稿并离开"
+// in the language the app shows.
+func GraphSchemaDiscard() string { return In(i18n.Locale()).GraphSchemaDiscard() }
+
+// GraphSchemaDiscard says "放弃原图结构草稿并离开"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaDiscard() string {
+	return Catalog.Format(msgs.locale, "graphSchemaDiscard", nil)
+}
+
+// GraphSchemaSessionExpired says "原图结构管理会话已失效，草稿与回执保留"
+// in the language the app shows.
+func GraphSchemaSessionExpired() string { return In(i18n.Locale()).GraphSchemaSessionExpired() }
+
+// GraphSchemaSessionExpired says "原图结构管理会话已失效，草稿与回执保留"
+// in the language of msgs.
+func (msgs Messages) GraphSchemaSessionExpired() string {
+	return Catalog.Format(msgs.locale, "graphSchemaSessionExpired", nil)
+}

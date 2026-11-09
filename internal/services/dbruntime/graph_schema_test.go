@@ -38,6 +38,10 @@ func (h *graphSchemaTestHandle) Close() error {
 
 type graphSchemaTestLease struct {
 	object                  contract.ObjectRef
+	submits, verifies       atomic.Int32
+	plan                    contract.GraphSchemaPreparation
+	submit                  func(context.Context, contract.GraphSchemaPreparation) (contract.GraphSchemaManagementResult, error)
+	verify                  func(context.Context) (contract.GraphSchemaManagementResult, error)
 	reads, prepares, closes atomic.Int32
 	closeOnce               sync.Once
 	started, release        chan struct{}
@@ -61,7 +65,8 @@ func (l *graphSchemaTestLease) Read(context.Context) (contract.GraphSchemaObserv
 }
 func (l *graphSchemaTestLease) Prepare(_ contract.GraphSchemaObservation, d contract.GraphSchemaDraft) (contract.GraphSchemaPreparation, error) {
 	l.prepares.Add(1)
-	return &graphSchemaTestPlan{preview: contract.GraphSchemaPreview{Draft: d, Request: contract.GraphSchemaRequest{Database: l.object.Catalog, Query: "CREATE INDEX `owned`", Parameters: []contract.GraphProperty{{Name: "options", Value: contract.GraphValue{Kind: "map", Properties: []contract.GraphProperty{{Name: "x", Value: contract.GraphValue{Kind: "string", Text: "original"}}}}}}}}}, nil
+	l.plan = &graphSchemaTestPlan{preview: contract.GraphSchemaPreview{Draft: d, Request: contract.GraphSchemaRequest{Database: l.object.Catalog, Query: "CREATE INDEX `owned`", Parameters: []contract.GraphProperty{{Name: "options", Value: contract.GraphValue{Kind: "map", Properties: []contract.GraphProperty{{Name: "x", Value: contract.GraphValue{Kind: "string", Text: "original"}}}}}}}}}
+	return l.plan, nil
 }
 func (l *graphSchemaTestLease) Close() error { l.closeOnce.Do(func() { l.closes.Add(1) }); return nil }
 func newGraphSchemaTestHandle(id int64) *graphSchemaTestHandle {

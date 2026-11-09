@@ -12,25 +12,8 @@ func Prepare(c contract.GraphSchemaCatalog, draft contract.GraphSchemaDraft) (co
 	if e != nil {
 		return contract.GraphSchemaPreview{}, e
 	}
-	if len(draft.LabelsOrTypes) > 16 || len(draft.Properties) > 16 {
-		return contract.GraphSchemaPreview{}, ErrBounds
-	}
-	b := budget{remaining: 1 << 20}
-	if e := b.value(draft.Options, 0); e != nil {
+	if e := ValidateDraftBounds(draft); e != nil {
 		return contract.GraphSchemaPreview{}, e
-	}
-	if draft.Options.Kind == "" && (draft.Options.Text != "" || len(draft.Options.Values) != 0 || len(draft.Options.Properties) != 0 || draft.Options.Node != nil || draft.Options.Relationship != nil || draft.Options.Path != nil) {
-		return contract.GraphSchemaPreview{}, ErrInvalid
-	}
-	if _, e := parameter(draft.Options, 0); draft.Options.Kind != "" && e != nil {
-		return contract.GraphSchemaPreview{}, e
-	}
-	raw, e := json.Marshal(draft)
-	if e != nil {
-		return contract.GraphSchemaPreview{}, ErrInvalid
-	}
-	if len(raw) > 1<<20 {
-		return contract.GraphSchemaPreview{}, ErrBounds
 	}
 	name, e := identifier(draft.Name)
 	if e != nil {
@@ -199,6 +182,41 @@ func validateOptions(kind string, v contract.GraphValue) error {
 		default:
 			return contract.ErrUnsupported
 		}
+	}
+	return nil
+}
+
+// ValidateDraftBounds checks the value tree before callers clone untrusted input.
+func ValidateDraftBounds(draft contract.GraphSchemaDraft) error {
+	if len(draft.LabelsOrTypes) > 16 || len(draft.Properties) > 16 {
+		return ErrBounds
+	}
+	b := budget{remaining: 1 << 20}
+	b.remaining -= len(draft.Action) + len(draft.Name) + len(draft.Type) + len(draft.EntityType)
+	for _, name := range draft.LabelsOrTypes {
+		b.remaining -= len(name) + 16
+	}
+	for _, name := range draft.Properties {
+		b.remaining -= len(name) + 16
+	}
+	if b.remaining < 0 {
+		return ErrBounds
+	}
+	if e := b.value(draft.Options, 0); e != nil {
+		return e
+	}
+	if draft.Options.Kind == "" && (draft.Options.Text != "" || len(draft.Options.Values) != 0 || len(draft.Options.Properties) != 0 || draft.Options.Node != nil || draft.Options.Relationship != nil || draft.Options.Path != nil) {
+		return ErrInvalid
+	}
+	if _, e := parameter(draft.Options, 0); draft.Options.Kind != "" && e != nil {
+		return e
+	}
+	raw, e := json.Marshal(draft)
+	if e != nil {
+		return ErrInvalid
+	}
+	if len(raw) > 1<<20 {
+		return ErrBounds
 	}
 	return nil
 }

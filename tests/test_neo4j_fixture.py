@@ -11,6 +11,42 @@ SPEC.loader.exec_module(FIXTURE)
 
 
 class Neo4jFixtureOwnershipTests(unittest.TestCase):
+    def test_public_schema_management_requires_native_receipts_and_every_localized_stage(self):
+        names = FIXTURE.SCHEMA_MANAGEMENT_REQUIRED
+        self.assertEqual(len(names), 7)
+        self.assertTrue(set(FIXTURE.SCHEMA_MANAGEMENT_NATIVE_REQUIRED).issubset(names))
+        passed = '\n'.join('--- PASS: TestNeo4jNative'+name+' (0.01s)' for name in names)
+        FIXTURE.check_acceptance(passed, schema_management=True)
+        for name in names:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), schema_management=True)
+        pictures = [Path(language+'-'+size+'-'+stage+'.png') for language in ('zh-Hans','en') for size in ('1280x800','720x520') for stage in FIXTURE.SCHEMA_MANAGEMENT_STAGES]
+        FIXTURE.check_stage_images(pictures, FIXTURE.SCHEMA_MANAGEMENT_STAGES)
+        for i in range(len(pictures)):
+            with self.subTest(missing=pictures[i]), self.assertRaises(RuntimeError):
+                FIXTURE.check_stage_images(pictures[:i]+pictures[i+1:], FIXTURE.SCHEMA_MANAGEMENT_STAGES)
+        with patch.object(FIXTURE.subprocess, 'run') as run:
+            with self.assertRaises(ValueError):
+                FIXTURE.verify('basic', True, schema_management=True, schema_management_native=True)
+            run.assert_not_called()
+
+    def test_schema_management_requires_original_receipts_explicit_verification_and_native_races(self):
+        names = FIXTURE.SCHEMA_MANAGEMENT_NATIVE_REQUIRED
+        self.assertEqual(len(names), 6)
+        self.assertEqual(len(names), len(set(names)))
+        passed = '\n'.join('--- PASS: TestNeo4jNative'+name+' (0.01s)' for name in names)
+        FIXTURE.check_acceptance(passed, schema_management_native=True)
+        for name in names:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), schema_management_native=True)
+
+    def test_schema_management_rejects_mixed_scope_before_creating_resources(self):
+        for flag in ('public', 'schema_preparation', 'grid'):
+            with self.subTest(flag=flag), patch.object(FIXTURE.subprocess, 'run') as run:
+                with self.assertRaises(ValueError):
+                    FIXTURE.verify('basic', True, schema_management_native=True, **{flag: True})
+                run.assert_not_called()
+
     def test_schema_preparation_requires_complete_native_ddl_ownership_and_cancellation(self):
         names = FIXTURE.SCHEMA_PREPARATION_REQUIRED
         self.assertEqual(len(names), 5)

@@ -13,11 +13,12 @@ import (
 )
 
 type documentMenuScope struct {
-	edit       theme.EditTarget
-	tab        uint64
-	profile    int64
-	generation uint64
-	tabs       map[uint64]bool
+	schemaDatabase string
+	edit           theme.EditTarget
+	tab            uint64
+	profile        int64
+	generation     uint64
+	tabs           map[uint64]bool
 }
 
 func primaryModifier() ui.Modifiers {
@@ -34,6 +35,10 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 	scope := documentMenuScope{edit: s.editTarget, tab: current.id, profile: session.ProfileID, generation: session.Generation, tabs: map[uint64]bool{}}
 	for _, t := range s.tabs {
 		scope.tabs[t.id] = true
+	}
+	scope.schemaDatabase = session.Database
+	if current.profileID() == session.ProfileID && current.database() != "" {
+		scope.schemaDatabase = current.database()
 	}
 	mod, selected := primaryModifier(), ""
 	doc := current.query
@@ -57,6 +62,8 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 		m.Separator()
 		if current.data != nil {
 			item("保存数据更改", "save_data", s.dataWorkspace.CanSave(current.data), mod, ui.KeyS)
+		} else if current.object != nil && current.object.GraphSchemaManagementMode() {
+			item("预览图结构操作", "save_design", s.objectWorkspace.CanEditDesign(current.object), mod, ui.KeyS)
 		} else if current.object != nil && current.object.KeysMode() {
 			item("预览密钥更改", "save_design", s.objectWorkspace.CanCreateKey(current.object) && current.object.DesignDirty(), mod, ui.KeyS)
 		} else if current.object != nil && current.object.SettingsMode() {
@@ -94,6 +101,7 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 			}
 		}
 	case "工具":
+		item("图索引与约束管理", "graph_schema_management", s.canOpenGraphSchema(scope.profile, scope.generation, scope.schemaDatabase), 0, 0)
 		snapshots := contract.ObjectRef{ProfileID: session.ProfileID, Kind: "snapshot_management", Name: "snapshot_management"}
 		item("管理快照…", "snapshots", s.objectWorkspace.SnapshotManagementSupported(snapshots), 0, 0)
 		collections := contract.ObjectRef{ProfileID: session.ProfileID, Kind: "collection_management", Name: "collection_management"}
@@ -122,10 +130,12 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 	}
 	original, exists := s.documentMenus[section]
 	delete(s.documentMenus, section)
-	if !exists || original.tab != scope.tab || original.profile != scope.profile || original.generation != scope.generation {
+	if !exists || original.tab != scope.tab || original.profile != scope.profile || original.generation != scope.generation || selected == "graph_schema_management" && original.schemaDatabase != scope.schemaDatabase {
 		return
 	}
 	switch selected {
+	case "graph_schema_management":
+		s.openGraphSchemaManagement(s.editServices, original.profile, original.generation, original.schemaDatabase)
 	case "snapshots":
 		s.openSnapshotManagement(s.editServices, original.profile)
 	case "collections":

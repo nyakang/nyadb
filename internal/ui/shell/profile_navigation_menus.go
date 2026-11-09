@@ -257,6 +257,11 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 	s.selectNavigationNode(services, key)
 	s.navigation.Row = -1
 	if n.Kind == "database" {
+		if s.objectWorkspace.GraphSchemaManagementSupported(s.graphSchemaTarget(n.ProfileID, n.Database)) {
+			if m.Item(locales.Text("图索引与约束管理")).Disabled(!s.canOpenGraphSchema(n.ProfileID, s.runtime.Generation(n.ProfileID), n.Database)).Chosen() {
+				s.openGraphSchemaManagement(services, n.ProfileID, s.runtime.Generation(n.ProfileID), n.Database)
+			}
+		}
 		if s.objectCapabilitiesFor(n.ProfileID).GraphExchange {
 			if m.Item(locales.Text("完整图交换")).Disabled(!s.canOpenGraphExchange(n.ProfileID, s.runtime.Generation(n.ProfileID), n.Database)).Chosen() {
 				s.openGraphExchange(services, n.ProfileID, n.Database, "")
