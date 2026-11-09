@@ -115,6 +115,8 @@ github.com/microsoft/go-mssqldb v1.11.2 h1:FCgeBIK8um2+X4tbun6Q71N1KsfyCDPKY41e1
 github.com/microsoft/go-mssqldb v1.11.2/go.mod h1:CYgwG5AMXFojbjTg+GNP5G/y6uz1BhTyZaPqQWzkGnQ=
 github.com/ncruces/go-strftime v1.1.0 h1:vtPmPWMkb539RGV9WpWT9EwJGvrOCKvMNI4obWL47Hk=
 github.com/ncruces/go-strftime v1.1.0/go.mod h1:yVaq7iwCN09vHRrKBrrflXT0M9tTMG2KmZ9Fj7xeG/g=
+github.com/neo4j/neo4j-go-driver/v6 v6.4.0 h1:ffYRs1oVWvFDN51qu6ucUwsuPN2eWDls4q7j0PV3zBM=
+github.com/neo4j/neo4j-go-driver/v6 v6.4.0/go.mod h1:hzSTfNfM31p1uRSzL1F/BAYOgaiTarE6OAQBajfsm+I=
 github.com/nyakang/mygo v0.8.1-nyadb.1 h1:4IMPg7hkm0mnWMkKrI+qzyDVBQvujQlYOeUAXwGcmAA=
 github.com/nyakang/mygo v0.8.1-nyadb.1/go.mod h1:dVav53PwF2xEotjf4oA5lTY2Jp2exgzyjLhbSXhbMwE=
 github.com/parquet-go/bitpack v1.1.0 h1:b80hfKZwIJ3Ku684xJSEj/9G0tywQPKOtmTV8si30mo=

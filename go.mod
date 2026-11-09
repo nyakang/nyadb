@@ -13,6 +13,7 @@ require (
 	github.com/golang-sql/sqlexp v0.1.0
 	github.com/jackc/pgx/v5 v5.12.0
 	github.com/microsoft/go-mssqldb v1.11.2
+	github.com/neo4j/neo4j-go-driver/v6 v6.4.0
 	github.com/parquet-go/parquet-go v0.32.0
 	github.com/redis/go-redis/v9 v9.23.0
 	github.com/shopspring/decimal v1.6.0
