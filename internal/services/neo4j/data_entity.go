@@ -16,9 +16,10 @@ import (
 const graphDetachMaxRelationships = 2000
 const graphEntityLockKey = "__nyadb_entity_lock__"
 
-// Entity mutations remain private until their shared-grid decisions and
-// previews are wired. The public data saver still admits property updates only.
-// Both paths share the original document, cancellation and explicit transaction.
+// This direct entity path is retained for native fixture verification. Public
+// entity mutations require the owning preview and one-attempt submission plan;
+// the ordinary Saver continues to admit property updates only. Both paths share
+// the original document, cancellation and explicit transaction.
 func (l *dataLease) saveEntityEdits(ctx context.Context, id int64, db, name string, edits []contract.DataEdit) (*contract.DataEditResult, error) {
 	if err := l.identity(id, db, name); err != nil {
 		return nil, err

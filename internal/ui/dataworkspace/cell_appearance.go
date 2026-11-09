@@ -2,8 +2,34 @@ package dataworkspace
 
 import (
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
+	"github.com/nyakang/nyadb/locales"
 )
+
+// Translate insert placeholders when displaying them, leaving actual values
+// and the original draft/page evidence untouched when the locale changes.
+func (s *State) dataCellPreview(t *Document, page *contract.DataPage, row, source int) contract.DataCell {
+	cell := page.Rows[row][source]
+	if t.page != page || !s.runtimeFor(t).InsertOmittedValues {
+		return cell
+	}
+	draft := mysqlDataDraftForRow(t, row)
+	if draft == nil || draft.Kind != "insert" {
+		return cell
+	}
+	if _, explicit := draft.Values[page.Columns[source]]; explicit {
+		return cell
+	}
+	cell.Text = locales.Text("未设置")
+	if source < len(page.ColumnMetadata) {
+		column := page.ColumnMetadata[source]
+		if column.Generated || contract.DataColumnGenerated(column) {
+			cell.Text = locales.Text("提交后生成")
+		}
+	}
+	return cell
+}
 
 // Only draft values for this source column mark a changed cell. A moved or
 // hidden column never borrows the state of its former visual neighbour.

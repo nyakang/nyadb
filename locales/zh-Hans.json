@@ -2997,5 +2997,15 @@
   "dataMutationDetachDelete": "删除实体及关联关系",
   "dataMutationUpdate": "更新属性",
   "dataMutationGeneratedIdentity": "待生成",
-  "dataMutationRelationships": "关联关系"
+  "dataMutationRelationships": "关联关系",
+  "dataInsertOmitted": "未设置",
+  "dataInsertGenerated": "提交后生成",
+  "dataNodeDeleteChoice": "选择节点删除方式",
+  "dataNodeDeleteCounts": "%d 个节点，%d 个未提交的新节点",
+  "dataNodeDeleteChoiceHint": "只删除节点会保留关联关系，有关联关系时将阻止提交。删除节点和关联关系会先预览全部受影响的关系，再等待确认。",
+  "dataNodeDeleteLocalHint": "未提交的新节点只会从本地草稿移除；取消将保留全部草稿。",
+  "dataNodeDeletePlain": "只删除节点",
+  "dataNodeDeleteDetach": "删除节点和关联关系",
+  "dataNodeDeleteChanged": "原记录或数据库会话已变化，请重新选择删除记录",
+  "dataNodeDeleteAwaiting": "等待选择节点删除方式"
 }

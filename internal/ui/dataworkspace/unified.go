@@ -80,7 +80,7 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 		}
 	}
 	d.exportFormats = append([]string(nil), s.runtimeFor(d).ExportFormats...)
-	if s.runtimeFor(d).AsyncWrites {
+	if runtime := s.runtimeFor(d); runtime.AsyncWrites || len(runtime.PreviewEditKinds) > 0 {
 		d.edit.Batch = true
 	}
 	d.generation = s.sessionFor(d).Generation
@@ -187,11 +187,14 @@ func (d *Document) supportsExportFormat(format string) bool {
 }
 func (d *Document) keysetEnabled() bool { return d.object.ProfileID == 0 || d.capabilities.Keyset }
 func (d *Document) editable() bool {
-	return d.objectKind != "视图" && d.page != nil && (d.page.Editable == nil || *d.page.Editable) && (d.object.ProfileID == 0 || d.capabilities.EditableTables)
+	return !d.readRetired && d.objectKind != "视图" && d.page != nil && (d.page.Editable == nil || *d.page.Editable) && (d.object.ProfileID == 0 || d.capabilities.EditableTables)
 }
 
 func (d *Document) allowsDataEdit(kind string) bool {
-	return d.boundRuntime == nil || d.boundRuntime.EditKinds == nil || slices.Contains(d.boundRuntime.EditKinds, kind)
+	if d.boundRuntime == nil || d.boundRuntime.EditKinds == nil {
+		return kind == "insert" || kind == "update" || kind == "delete"
+	}
+	return slices.Contains(d.boundRuntime.EditKinds, kind)
 }
 func (d *Document) filterChoices() []string {
 	if len(d.filterModes) == 0 {

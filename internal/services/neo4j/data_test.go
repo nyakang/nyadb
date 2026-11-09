@@ -92,7 +92,7 @@ func TestNeo4jDataOriginalReservationsAndPublicCapabilityBoundary(t *testing.T) 
 	}
 	l := dataLeaseTestAfterRelease(t, s)
 	r := l.Runtime()
-	if !r.PageFailureRequiresReopen || !contract.BoundDataCapabilities(r).JSONL || r.Saver == nil || len(r.EditKinds) != 1 || r.EditKinds[0] != "update" || r.Importer != nil || r.Transactions.Begin != nil {
+	if !r.PageFailureRequiresReopen || !contract.BoundDataCapabilities(r).JSONL || r.Saver == nil || len(r.EditKinds) != 2 || r.EditKinds[0] != "update" || r.PreviewEdits == nil || r.SubmitEdits == nil || r.InsertOmittedValues || r.Importer != nil || r.Transactions.Begin != nil {
 		t.Fatal("native reading confused with graph editing/SQL transactions")
 	}
 	_ = s.Close()

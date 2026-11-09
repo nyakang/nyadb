@@ -72,7 +72,11 @@ func (*Session) DataDocumentCapabilities() contract.Capabilities {
 	return contract.Capabilities{EditableTables: true, Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
 }
 func (l *dataLease) Runtime() contract.DataRuntime {
-	return contract.DataRuntime{PageFailureRequiresReopen: true, NativeReceipts: true, Capabilities: l.session.DataDocumentCapabilities(), AdvancedLoader: l.page, RowReader: l.editRow, Saver: l.save, EditKinds: []string{"update"}, EditValueKinds: []contract.CellKind{contract.Null, contract.Text, contract.Integer, contract.Floating, contract.Boolean, contract.Binary, contract.JSON}, WriteDescription: "SET · locked native graph property transaction", Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
+	kinds, preview := []string{"update", "delete"}, []string{"delete"}
+	if l.object.Kind == "label" {
+		kinds, preview = []string{"update", "insert", "delete", "detach_delete"}, []string{"insert", "delete", "detach_delete"}
+	}
+	return contract.DataRuntime{PageFailureRequiresReopen: true, NativeReceipts: true, InsertOmittedValues: l.object.Kind == "label", PreviewEdits: l.previewEntityEdits, SubmitEdits: l.submitEntityPlan, PreviewEditKinds: preview, Capabilities: l.session.DataDocumentCapabilities(), AdvancedLoader: l.page, RowReader: l.editRow, Saver: l.save, EditKinds: kinds, EditValueKinds: []contract.CellKind{contract.Null, contract.Text, contract.Integer, contract.Floating, contract.Boolean, contract.Binary, contract.JSON}, WriteDescription: "SET · locked native graph property transaction", Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
 		ReadDescription: func(contract.DataOptions) string { return "MATCH · elementId ordered native graph read" },
 		FilterColumns:   []string{}, SortColumns: []string{}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
 }

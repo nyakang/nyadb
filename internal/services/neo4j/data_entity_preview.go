@@ -51,8 +51,8 @@ type entityPreviewObservation struct {
 	Read        *Response
 }
 
-// This path remains private until the shared grid's draft and confirmation
-// flow is wired. Read observations are live; Submit compares them under locks.
+// The shared grid confirms these original native observations before handing
+// back the owning plan. Read observations are live; Submit compares them under locks.
 func (l *dataLease) previewEntityEdits(ctx context.Context, id int64, db, name string, edits []contract.DataEdit) (contract.DataMutationPlan, error) {
 	if err := l.identity(id, db, name); err != nil {
 		return nil, err

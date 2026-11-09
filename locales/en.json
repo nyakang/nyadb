@@ -2997,5 +2997,15 @@
   "dataMutationDetachDelete": "Delete entity and relationships",
   "dataMutationUpdate": "Update properties",
   "dataMutationGeneratedIdentity": "To be generated",
-  "dataMutationRelationships": "Relationships"
+  "dataMutationRelationships": "Relationships",
+  "dataInsertOmitted": "Not set",
+  "dataInsertGenerated": "Generated after commit",
+  "dataNodeDeleteChoice": "Choose how to delete nodes",
+  "dataNodeDeleteCounts": "%d nodes and %d uncommitted new nodes",
+  "dataNodeDeleteChoiceHint": "Deleting only nodes preserves relationships and blocks submission when relationships exist. Deleting nodes and relationships previews every affected relationship before confirmation.",
+  "dataNodeDeleteLocalHint": "Uncommitted new nodes are removed only from local drafts. Cancel keeps every draft.",
+  "dataNodeDeletePlain": "Delete only nodes",
+  "dataNodeDeleteDetach": "Delete nodes and relationships",
+  "dataNodeDeleteChanged": "The original rows or database session changed. Select the rows to delete again.",
+  "dataNodeDeleteAwaiting": "Awaiting node deletion choice"
 }

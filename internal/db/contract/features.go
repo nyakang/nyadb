@@ -106,14 +106,17 @@ type DataRuntime struct {
 	NativeReceipts       bool       // Synchronous native transaction evidence, including unknown outcomes.
 	EditKinds            []string   // Nil permits insert/update/delete; an explicit list limits native mutations.
 	EditValueKinds       []CellKind // Optional native editor kinds; nil retains the existing editor choices.
-	ReserveDocument      func(ObjectRef) (DataDocumentLease, error)
-	ExportFormats        []string // nil preserves existing providers' format availability.
-	ImportDialect        string
-	Selector             DataSelector
-	ReadDescription      func(DataOptions) string // pure, parameter-free native request information.
-	Loader               func(context.Context, int64, string, string, int64, int) (*DataPage, error)
-	AdvancedLoader       func(context.Context, int64, string, string, DataOptions) (*DataPage, error)
-	Saver                func(context.Context, int64, string, string, []DataEdit) (*DataEditResult, error)
+	// InsertOmittedValues starts new rows with omitted fields rather than SQL
+	// DEFAULT. Generated fields remain read-only; only explicit values are sent.
+	InsertOmittedValues bool
+	ReserveDocument     func(ObjectRef) (DataDocumentLease, error)
+	ExportFormats       []string // nil preserves existing providers' format availability.
+	ImportDialect       string
+	Selector            DataSelector
+	ReadDescription     func(DataOptions) string // pure, parameter-free native request information.
+	Loader              func(context.Context, int64, string, string, int64, int) (*DataPage, error)
+	AdvancedLoader      func(context.Context, int64, string, string, DataOptions) (*DataPage, error)
+	Saver               func(context.Context, int64, string, string, []DataEdit) (*DataEditResult, error)
 	// Preview/Submit are an optional original-document mutation path. The UI
 	// must obtain explicit approval of the immutable preview before Submit.
 	PreviewEditKinds []string

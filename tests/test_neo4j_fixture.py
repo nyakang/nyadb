@@ -116,6 +116,18 @@ class Neo4jFixtureOwnershipTests(unittest.TestCase):
             with self.subTest(name=name), self.assertRaises(RuntimeError):
                 FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), entity_native=True)
 
+    def test_entity_grid_requires_public_decisions_commit_faults_and_lifecycle(self):
+        names = FIXTURE.WRITE_REQUIRED + FIXTURE.ENTITY_REQUIRED + FIXTURE.ENTITY_PREVIEW_REQUIRED + FIXTURE.GRID_REQUIRED + FIXTURE.ENTITY_GRID_REQUIRED
+        required = {'PublicDataEntityCreationTypedOmittedAndPropertylessConfirmedIdentity', 'PublicDataEntityDeleteChoiceBlockedAndAdjacentBatchConfirmed', 'PublicDataEntityPreviewChangedObservationRollsBackOriginalBatch', 'PublicDataEntityCommitReplyLostCanceledOriginalCloseNeverReplay', 'PublicDataEntityPreviewParkGenerationCancelAndOriginalClose'}
+        self.assertEqual(set(FIXTURE.ENTITY_GRID_REQUIRED), required)
+        passed = ''.join('--- PASS: TestNeo4jNative'+name+' (0.01s)\n' for name in names)
+        FIXTURE.check_acceptance(passed, entity_grid=True)
+        for name in names:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), entity_grid=True)
+        self.assertEqual(len(FIXTURE.ENTITY_GRID_IMAGE_STAGES), 12)
+        self.assertTrue({'entity-delete-choice', 'entity-delete-plain-blocked', 'entity-delete-detach-preview', 'entity-commit-unknown-close', 'entity-preview-parked'}.issubset(FIXTURE.ENTITY_GRID_IMAGE_STAGES))
+
     def test_entity_preview_requires_native_edges_one_attempt_and_original_faults(self):
         self.assertEqual(len(FIXTURE.ENTITY_PREVIEW_REQUIRED), 4)
         self.assertTrue(set(FIXTURE.ENTITY_PREVIEW_REQUIRED).issubset(FIXTURE.DATA_REQUIRED))

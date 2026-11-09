@@ -30617,3 +30617,103 @@ func DataMutationRelationships() string { return In(i18n.Locale()).DataMutationR
 func (msgs Messages) DataMutationRelationships() string {
 	return Catalog.Format(msgs.locale, "dataMutationRelationships", nil)
 }
+
+// DataInsertOmitted says "未设置"
+// in the language the app shows.
+func DataInsertOmitted() string { return In(i18n.Locale()).DataInsertOmitted() }
+
+// DataInsertOmitted says "未设置"
+// in the language of msgs.
+func (msgs Messages) DataInsertOmitted() string {
+	return Catalog.Format(msgs.locale, "dataInsertOmitted", nil)
+}
+
+// DataInsertGenerated says "提交后生成"
+// in the language the app shows.
+func DataInsertGenerated() string { return In(i18n.Locale()).DataInsertGenerated() }
+
+// DataInsertGenerated says "提交后生成"
+// in the language of msgs.
+func (msgs Messages) DataInsertGenerated() string {
+	return Catalog.Format(msgs.locale, "dataInsertGenerated", nil)
+}
+
+// DataNodeDeleteChoice says "选择节点删除方式"
+// in the language the app shows.
+func DataNodeDeleteChoice() string { return In(i18n.Locale()).DataNodeDeleteChoice() }
+
+// DataNodeDeleteChoice says "选择节点删除方式"
+// in the language of msgs.
+func (msgs Messages) DataNodeDeleteChoice() string {
+	return Catalog.Format(msgs.locale, "dataNodeDeleteChoice", nil)
+}
+
+// DataNodeDeleteCounts says "%d 个节点，%d 个未提交的新节点"
+// in the language the app shows.
+func DataNodeDeleteCounts() string { return In(i18n.Locale()).DataNodeDeleteCounts() }
+
+// DataNodeDeleteCounts says "%d 个节点，%d 个未提交的新节点"
+// in the language of msgs.
+func (msgs Messages) DataNodeDeleteCounts() string {
+	return Catalog.Format(msgs.locale, "dataNodeDeleteCounts", nil)
+}
+
+// DataNodeDeleteChoiceHint says "…"
+// in the language the app shows.
+func DataNodeDeleteChoiceHint() string { return In(i18n.Locale()).DataNodeDeleteChoiceHint() }
+
+// DataNodeDeleteChoiceHint says "…"
+// in the language of msgs.
+func (msgs Messages) DataNodeDeleteChoiceHint() string {
+	return Catalog.Format(msgs.locale, "dataNodeDeleteChoiceHint", nil)
+}
+
+// DataNodeDeleteLocalHint says "未提交的新节点只会从本地草稿移除；取消将保留全部草稿。"
+// in the language the app shows.
+func DataNodeDeleteLocalHint() string { return In(i18n.Locale()).DataNodeDeleteLocalHint() }
+
+// DataNodeDeleteLocalHint says "未提交的新节点只会从本地草稿移除；取消将保留全部草稿。"
+// in the language of msgs.
+func (msgs Messages) DataNodeDeleteLocalHint() string {
+	return Catalog.Format(msgs.locale, "dataNodeDeleteLocalHint", nil)
+}
+
+// DataNodeDeletePlain says "只删除节点"
+// in the language the app shows.
+func DataNodeDeletePlain() string { return In(i18n.Locale()).DataNodeDeletePlain() }
+
+// DataNodeDeletePlain says "只删除节点"
+// in the language of msgs.
+func (msgs Messages) DataNodeDeletePlain() string {
+	return Catalog.Format(msgs.locale, "dataNodeDeletePlain", nil)
+}
+
+// DataNodeDeleteDetach says "删除节点和关联关系"
+// in the language the app shows.
+func DataNodeDeleteDetach() string { return In(i18n.Locale()).DataNodeDeleteDetach() }
+
+// DataNodeDeleteDetach says "删除节点和关联关系"
+// in the language of msgs.
+func (msgs Messages) DataNodeDeleteDetach() string {
+	return Catalog.Format(msgs.locale, "dataNodeDeleteDetach", nil)
+}
+
+// DataNodeDeleteChanged says "原记录或数据库会话已变化，请重新选择删除记录"
+// in the language the app shows.
+func DataNodeDeleteChanged() string { return In(i18n.Locale()).DataNodeDeleteChanged() }
+
+// DataNodeDeleteChanged says "原记录或数据库会话已变化，请重新选择删除记录"
+// in the language of msgs.
+func (msgs Messages) DataNodeDeleteChanged() string {
+	return Catalog.Format(msgs.locale, "dataNodeDeleteChanged", nil)
+}
+
+// DataNodeDeleteAwaiting says "等待选择节点删除方式"
+// in the language the app shows.
+func DataNodeDeleteAwaiting() string { return In(i18n.Locale()).DataNodeDeleteAwaiting() }
+
+// DataNodeDeleteAwaiting says "等待选择节点删除方式"
+// in the language of msgs.
+func (msgs Messages) DataNodeDeleteAwaiting() string {
+	return Catalog.Format(msgs.locale, "dataNodeDeleteAwaiting", nil)
+}

@@ -39,6 +39,9 @@ DATA_REQUIRED += ENTITY_PREVIEW_REQUIRED
 WRITE_REQUIRED = ('DataWriteExplicitTransactionsLockComparisonRollbackAndCommit', 'DataWritePropertiesTypedAtomicReceiptsAndOldRows', 'DataWriteBlockedOriginalComparisonCancellationAndErrors')
 GRID_REQUIRED = ('PublicDataSharedGridPagingInspectorExportParkGenerationAndClose', 'PublicDataLostCanceledOriginalCloseAndExplicitReopen', 'PublicDataPropertyColumnsAndOriginalFields', 'PublicDataPropertyEditingTypedReceiptsParkConflictsAndContinuedEdits', 'PublicDataCommitReplyLostCanceledOriginalCloseNeverReplay')
 
+ENTITY_GRID_REQUIRED = ('PublicDataEntityCreationTypedOmittedAndPropertylessConfirmedIdentity', 'PublicDataEntityDeleteChoiceBlockedAndAdjacentBatchConfirmed', 'PublicDataEntityPreviewChangedObservationRollsBackOriginalBatch', 'PublicDataEntityCommitReplyLostCanceledOriginalCloseNeverReplay', 'PublicDataEntityPreviewParkGenerationCancelAndOriginalClose')
+ENTITY_GRID_IMAGE_STAGES = ('entity-create-typed-draft', 'entity-create-typed-preview', 'entity-create-continued-receipt', 'entity-create-propertyless-draft', 'entity-delete-choice', 'entity-delete-plain-blocked', 'entity-delete-detach-preview', 'entity-delete-detach-receipt', 'entity-preview-conflict', 'entity-commit-unknown', 'entity-commit-unknown-close', 'entity-preview-parked')
+
 def remove_owned(identifier, nonce):
     if not re.fullmatch('[0-9a-f]{64}', identifier):
         raise RuntimeError('Invalid immutable fixture ID')
@@ -55,12 +58,12 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def check_acceptance(log, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False):
+def check_acceptance(log, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False):
     public = public or grid
     data = data or grid
     session = session or public or data
     profile = profile or session
-    names = WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if entity_preview else ENTITY_REQUIRED if entity_native else WRITE_REQUIRED + GRID_REQUIRED if grid_writes else REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ())
+    names = WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED + GRID_REQUIRED + ENTITY_GRID_REQUIRED if entity_grid else WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if entity_preview else ENTITY_REQUIRED if entity_native else WRITE_REQUIRED + GRID_REQUIRED if grid_writes else REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ())
     for name in names:
         if not re.search(r'^--- PASS: TestNeo4jNative' + name + r' \(', log, re.M):
             raise RuntimeError('Missing native acceptance: ' + name)
@@ -83,7 +86,9 @@ def certificates(folder):
     openssl('req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', 'wrong.key', '-out', 'wrong.crt', '-days', '2', '-subj', '/CN=Untrusted CA', cwd=folder)
 
 
-def verify(mode, race, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False):
+def verify(mode, race, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False):
+    if entity_grid:
+        grid_writes = True
     if entity_native or entity_preview:
         profile, session, public, data, grid = False, True, False, True, False
     elif grid_writes:
@@ -111,7 +116,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
         for package in ('internal/ui/dataworkspace', 'internal/ui/gridview', 'internal/ui/theme'):
             sources += list((ROOT/package).glob('*.go'))
     report = {'nonce': nonce, 'mode': mode, 'version': VERSION, 'image': IMAGE,
-              'scope': 'private-native-entity-previews-and-property-transactions' if entity_preview else 'private-native-entity-mutations' if entity_native else 'public-shared-graph-property-write-and-close-followup' if grid_writes else 'public-shared-graph-data-and-workbench' if grid else 'public-workbench-and-private-graph-data' if public and data else 'private-original-graph-data' if data else 'public-native-workbench' if public else 'private-native-session-and-graph-contract' if session else ('private-native-profile-and-editor' if profile else 'private-native-foundation'), 'race': race, 'passed': False,
+              'scope': 'public-shared-graph-entity-confirmations' if entity_grid else 'private-native-entity-previews-and-property-transactions' if entity_preview else 'private-native-entity-mutations' if entity_native else 'public-shared-graph-property-write-and-close-followup' if grid_writes else 'public-shared-graph-data-and-workbench' if grid else 'public-workbench-and-private-graph-data' if public and data else 'private-original-graph-data' if data else 'public-native-workbench' if public else 'private-native-session-and-graph-contract' if session else ('private-native-profile-and-editor' if profile else 'private-native-foundation'), 'race': race, 'passed': False,
               'source_hashes': {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(sources))}}
     identifier = None
     try:
@@ -208,7 +213,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
                 packages += ['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell']
             if grid:
                 packages += ['./internal/ui/dataworkspace']
-            accepted = WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if entity_preview else ENTITY_REQUIRED if entity_native else WRITE_REQUIRED + GRID_REQUIRED if grid_writes else REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ())
+            accepted = WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED + GRID_REQUIRED + ENTITY_GRID_REQUIRED if entity_grid else WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if entity_preview else ENTITY_REQUIRED if entity_native else WRITE_REQUIRED + GRID_REQUIRED if grid_writes else REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ())
             pattern = '^TestNeo4jNative(' + '|'.join(accepted) + ')$'
             command = ['go', 'test'] + (['-race'] if race else []) + packages + ['-run', pattern, '-count=1', '-timeout=8m', '-v']
             result = subprocess.run(command, cwd=ROOT, env=env, capture_output=True, text=True)
@@ -218,7 +223,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
             log_path.write_text(log)
             if result.returncode:
                 raise RuntimeError('Native Neo4j verification failed; see '+str(log_path.relative_to(ROOT)))
-            check_acceptance(log, profile, session, public, data, grid, grid_writes, entity_native, entity_preview)
+            check_acceptance(log, profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid)
             if profile:
                 pictures = sorted(Path(env['NYADB_NEO4J_PROFILE_IMAGES']).glob('*.png'))
                 if len(pictures) != 48:
@@ -230,10 +235,14 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
                     raise RuntimeError('Missing localized Neo4j workbench screenshots')
                 report['public_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             if grid:
-                for field, variable, count in [('grid_images', 'NYADB_NEO4J_GRID_IMAGES', 64)] + ([] if grid_writes else [('shell_grid_images', 'NYADB_NEO4J_SHELL_GRID_IMAGES', 8)]):
+                for field, variable, count in [('grid_images', 'NYADB_NEO4J_GRID_IMAGES', 64 + 4*len(ENTITY_GRID_IMAGE_STAGES) if entity_grid else 64)] + ([] if grid_writes else [('shell_grid_images', 'NYADB_NEO4J_SHELL_GRID_IMAGES', 8)]):
                     pictures = sorted(Path(env[variable]).rglob('*.png'))
                     if len(pictures) != count:
                         raise RuntimeError('Missing localized public graph data screenshots: '+field)
+                    if entity_grid and field == 'grid_images':
+                        required_names = {language+'-'+size+'-'+stage+'.png' for language in ('zh-Hans', 'en') for size in ('1280x800', '720x520') for stage in ENTITY_GRID_IMAGE_STAGES}
+                        if not required_names.issubset({p.name for p in pictures}):
+                            raise RuntimeError('Missing required public entity creation/deletion/preview/receipt/lifecycle images')
                     report[field] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             report['passed'] = True
             report['accepted'] = list(accepted)
@@ -261,8 +270,9 @@ def main():
     parser.add_argument('--grid-writes', action='store_true', help='Run native property transactions and public grid read/write/close regression cases')
     parser.add_argument('--entity-native', action='store_true', help='Probe private native entity creation/deletion, bounded detach and original transactions')
     parser.add_argument('--entity-preview', action='store_true', help='Probe private one-attempt previews, exact affected-edge comparisons and original property transactions')
+    parser.add_argument('--entity-grid', action='store_true', help='Probe public node creation, explicit deletion decisions, original previews and entity commit safety')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.profile, args.session, args.public, args.data, args.grid, args.grid_writes, args.entity_native, args.entity_preview)
+    verify(args.mode, args.race, args.profile, args.session, args.public, args.data, args.grid, args.grid_writes, args.entity_native, args.entity_preview, args.entity_grid)
 
 
 if __name__ == '__main__':

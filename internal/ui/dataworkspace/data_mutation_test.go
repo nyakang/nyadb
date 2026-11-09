@@ -94,7 +94,12 @@ func waitMutationSave(t *testing.T, s *State, d *Document) {
 		t.Fatal("original submission acknowledgement stalled")
 	}
 }
-func stageMutationDelete(s *State, d *Document) { s.deleteMySQLDataRecords(ui.Services{}, d, 0) }
+func stageMutationDelete(s *State, d *Document) {
+	s.deleteMySQLDataRecords(ui.Services{}, d, 0)
+	if d.deleteChoice != nil {
+		s.chooseDataDeleteKind(ui.Services{}, d, "delete")
+	}
+}
 
 func TestDataMutationRequiresPreviewAndExplicitConfirmationOfOriginalPlan(t *testing.T) {
 	s, d, _ := mutationWorkspace(t)

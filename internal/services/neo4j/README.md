@@ -135,7 +135,9 @@ releases them after executor cancellation/acknowledgement. Explicit verification
 issues a separate bounded entity read, retains its original native response, and
 does not provide missing write confirmation even when values match. Leaving or
 closing the workspace guards every unprocessed property draft/operation. Whole-entity
-creation/deletion, extended-type lists and graph import remain pending; Community fixtures do not validate Enterprise RBAC permissions.
+operations are available from the shared data grid through the confirmation path
+described below. Extended-type lists and graph import remain pending; Community
+fixtures do not validate Enterprise RBAC permissions.
 
 Cypher JSON parameters are temporary per-document drafts. They are not saved in
 query text, history or restored workspaces. Duplicate keys, invalid JSON,
@@ -206,9 +208,10 @@ the original profile, and late generations cannot replace cached data. Disconnec
 and close dispose scoped graph documents and preserve existing Cypher text.
 
 The public engine advertises Query, Metadata, Documents, Keyset, Count,
-FieldChunks, Export, JSONL and EditableTables. The data lease allows only
-property updates: identity, label/type, endpoints and whole-entity columns are
-read-only. Entity insert/delete, SQL transactions, import, relational filters,
+FieldChunks, Export, JSONL and EditableTables. Identity, label/type, endpoints
+and whole-entity columns are read-only. Property updates use the direct Saver;
+node creation and node/relationship deletion require explicit original-plan
+confirmation. Relationship creation, SQL transactions, import, relational filters,
 arbitrary sorting and SQL export are unavailable. `--grid` requires the public
 grid cases, original read failure/cancellation/close, explicit reopen, full range
 exports, independent property columns/original fields and Chinese/English grid
@@ -289,7 +292,7 @@ reconcile only the explicitly verified entity and retain independent snapshots. 
 checks immutable container ID and nonce labels. Evidence and sanitized logs stay
 under ignored `build/neo4j/`.
 
-Public whole-entity graph mutations/import, extended-type lists,
+Relationship creation, graph import, extended-type lists,
 structured Cypher plans, administration/RBAC, Enterprise/cluster validation and
 full database archives and other versions remain future work. Their capabilities are not inferred from a
 successful Community connection or the ability to execute arbitrary Cypher.
@@ -330,9 +333,9 @@ old operations must not replay or damage a replacement client.
 
 `--entity-native --race --mode MODE` selects four private entity cases, including
 16 original COMMIT-fault combinations and original node/edge lock comparisons.
-The complete `--grid` matrix also requires those cases. The public engine and
-data grid still expose update-only property editing: entity draft decisions,
-affected-edge previews and shared-grid/runtime publication remain the next step.
+The complete `--grid` matrix also requires those cases. Public entity operations
+now require captured draft decisions, affected-edge previews and explicit
+confirmation through the original shared-grid/runtime publication.
 Relationship creation requires separately qualified endpoint input and remains
 pending alongside graph import, archives, administration and other full scope.
 
@@ -371,7 +374,8 @@ transaction cases, four entity foundation cases and four preview cases. The
 preview cases include six original node/edge/adjacency changes, bounds, read
 cancellation/close and 16 actual COMMIT response-fault combinations per mode.
 This focused scope does not rerun the complete profile/Cypher/workbench image
-matrix. The public Runtime still exposes only property update.
+matrix. Public entity operations are bound through original preview/Submit contracts;
+ordinary Saver remains limited to property update.
 
 The sole shared data workspace now has a capability-gated original-plan
 confirmation path. Its separate publication/revocation ticket closes unconsumed
@@ -384,9 +388,27 @@ Delete and detach-delete drafts are both protected from editing and included in
 history/removal. The UI owns a deep copy of evidence after the one-attempt handle
 has been consumed. English/Chinese confirmation controls fit wide/narrow windows.
 
-This shared path is covered by injected provider/lifecycle tests and eight local
-confirmation images. It is not yet bound by this adapter's public Runtime.
-Native node insertion defaults, explicit deletion choices and end-to-end entity
-acceptance must be delivered together before label insert/delete/detach-delete
-and relationship delete become publicly available. Relationship creation still
-requires a qualified endpoint model.
+The public Runtime binds label update/insert/delete/detach-delete and relationship
+update/delete. Entity mutations use original previews and explicit confirmation;
+direct Saver remains update-only. New nodes omit untouched inventory properties,
+show derived fields as generated, and distinguish explicit empty strings and NULL.
+Labels without properties can create propertyless nodes. Node deletion captures
+the original selection before choosing ordinary deletion or deletion with the
+explicitly previewed relationships. Cancel retains all original drafts, including
+mixed uncommitted inserts. Relationships cannot be created without a qualified
+endpoint model and do not offer a node detach decision.
+
+`--entity-grid --race --mode MODE` includes public entity creation, original
+selection decisions, blocked connected-node deletion, adjacent selected-node
+bulk deletion, after-preview conflicts, actual COMMIT reply faults and original
+preview parking/cancellation/close. Its final acceptance also requires native
+property/entity/preview foundations, existing public data regressions and each
+localized creation/deletion/preview/receipt/lifecycle image. The entity matrix
+requires 21 native cases and 112 localized images per mode. Its report retains
+source hashes, exact original fixture identity and verified private-file cleanup.
+Complete repository verification and 16 package lifecycle race checks use a
+20-minute test timeout for the full Shell suite. Node/relationship identities
+remain live observations; successful entity writes refresh the original page,
+and later selection or sorting cannot redirect a captured deletion or generated
+identity. A retired original read range requires explicitly reopening its document
+before further property/entity editing.

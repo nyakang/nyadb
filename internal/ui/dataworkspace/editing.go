@@ -277,6 +277,12 @@ func (s *State) beginMySQLCellEdit(services ui.Services, t *Document, row, sourc
 			hasFullDraft = true
 		} else if d.Kind == "insert" {
 			v = contract.DataValue{Default: true}
+			if s.runtimeFor(t).InsertOmittedValues {
+				v = contract.DataValue{Kind: t.page.ColumnMetadata[source].ValueKind, Null: true}
+				if v.Kind == "" || v.Kind == contract.Null {
+					v.Kind = contract.Text
+				}
+			}
 			if s.runtimeFor(t).Selector.Dialect == "qdrant" {
 				v.Kind = t.page.ColumnMetadata[source].ValueKind
 			}
@@ -355,12 +361,21 @@ func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
 		return
 	}
 	s.finishMySQLCellEdit(t, true)
+	if t.edit.Editor != nil {
+		return
+	}
 	done := beginDraftChange(t)
 	defer done()
 	row := len(t.page.Rows)
 	values := make([]contract.DataCell, len(t.page.Columns))
 	for i := range values {
 		values[i].Text = "(Default)"
+		if s.runtimeFor(t).InsertOmittedValues {
+			values[i].Text = "未设置"
+			if i < len(t.page.ColumnMetadata) && (t.page.ColumnMetadata[i].Generated || contract.DataColumnGenerated(t.page.ColumnMetadata[i])) {
+				values[i].Text = "提交后生成"
+			}
+		}
 	}
 	t.page.Rows = append(t.page.Rows, values)
 	t.page.RowRefs = append(t.page.RowRefs, nil)
@@ -376,7 +391,7 @@ func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
 	mysqlDataClearColumnSelection(t)
 	mysqlDataScrollRecordIntoView(t, row)
 	for i, col := range t.page.ColumnMetadata {
-		if !contract.DataColumnGenerated(col) && !strings.Contains(col.Extra, "auto_increment") && !t.hiddenColumns[col.Name] {
+		if !col.Generated && !contract.DataColumnGenerated(col) && !strings.Contains(col.Extra, "auto_increment") && !t.hiddenColumns[col.Name] {
 			s.beginMySQLCellEdit(services, t, row, i, false)
 			break
 		}
@@ -387,6 +402,9 @@ func (s *State) deleteMySQLDataRecords(services ui.Services, t *Document, row in
 		return
 	}
 	s.finishMySQLCellEdit(t, true)
+	if t.edit.Editor != nil {
+		return
+	}
 	indices := []int{}
 	for i := range t.page.Rows {
 		if t.selection.Has(i) {
@@ -405,6 +423,18 @@ func (s *State) deleteMySQLDataRecords(services ui.Services, t *Document, row in
 			return
 		}
 	}
+	if t.allowsDataEdit("detach_delete") {
+		for _, index := range indices {
+			if draft := mysqlDataDraftForRow(t, index); draft == nil || draft.Kind != "insert" {
+				s.beginDataDeleteChoice(t, indices)
+				return
+			}
+		}
+	}
+	s.stageDataDeleteIndices(services, t, indices, "delete")
+}
+
+func (s *State) stageDataDeleteIndices(services ui.Services, t *Document, indices []int, kind string) {
 	done := beginDraftChange(t)
 	defer done()
 	for _, i := range indices {
@@ -415,7 +445,7 @@ func (s *State) deleteMySQLDataRecords(services ui.Services, t *Document, row in
 		if d.Kind == "insert" {
 			d.Kind = "discard_insert"
 		} else {
-			d.Kind = "delete"
+			d.Kind = kind
 		}
 		d.Values = map[string]contract.DataValue{}
 	}
@@ -490,6 +520,7 @@ func (s *State) saveMySQLData(services ui.Services, t *Document) {
 	}()
 }
 func (s *State) stopMySQLDataEdit(t *Document) {
+	s.cancelDataDeleteChoice(t)
 	if t.edit.Cancel != nil {
 		t.edit.Cancel()
 	}
@@ -594,6 +625,7 @@ func (s *State) acceptMySQLDataSaved(t *Document, keys []string, saved *contract
 func (s *State) consumeEdits(services ui.Services) {
 	for _, t := range s.documents {
 		if !t.closed && s.consumeFor(t) {
+			s.consumeDataDeleteChoice(t)
 			s.consumeDataMutation(t)
 		}
 		if !t.closed && s.consumeFor(t) {
@@ -976,6 +1008,7 @@ func (s *State) Modals(c *ui.Context) {
 		s.asyncDataEvidenceModal(c, t)
 		s.nativeWriteReceiptModal(c, t)
 		s.dataMutationModal(c, t)
+		s.dataDeleteChoiceModal(c, t)
 		s.toolsModals(c, t)
 		s.transferModals(c, t)
 		s.dataFillModal(c, t)
@@ -1040,7 +1073,7 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 	// Use the footer's existing fixed-height command row. Inserting a status
 	// row above the grid moves every cell while a read is pending or fails.
 	palette := theme.Colors(c)
-	if t.edit.Busy && !t.mutation.open || dataTransactionBusy(t) {
+	if t.edit.Busy && !t.mutation.open && t.deleteChoice == nil || dataTransactionBusy(t) {
 		ui.Spinner(c).Size(14, 14)
 	}
 	message, color := "", palette.Muted
@@ -1056,6 +1089,8 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 		message, color = t.transaction.err, palette.Error
 	} else if dataTransactionBusy(t) {
 		message = locales.Text("正在处理事务…")
+	} else if t.deleteChoice != nil {
+		message = locales.Text("等待选择节点删除方式")
 	} else if t.mutation.open {
 		message = locales.Text("等待确认实体更改")
 	} else if t.edit.Busy {

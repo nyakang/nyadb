@@ -60,11 +60,11 @@ func TestNeo4jEntityPreparationCapturesOriginalMutationsAndRejectsForeignSnapsho
 	}
 }
 
-func TestNeo4jEntityFoundationRemainsPrivateAndCannotBypassPublicMutationKinds(t *testing.T) {
+func TestNeo4jEntityPublicKindsRequireOriginalPreviewSubmission(t *testing.T) {
 	s := fakeSessionTest(t)
 	l := dataLeaseTest(t, s, "label", "owned")
-	if !slices.Equal(l.Runtime().EditKinds, []string{"update"}) {
-		t.Fatal("private native entity foundation published unchecked UI mutations")
+	if !slices.Equal(l.Runtime().EditKinds, []string{"update", "insert", "delete", "detach_delete"}) {
+		t.Fatal("public entity kinds not bound to the original confirmation flow")
 	}
 	for _, kind := range []string{"insert", "delete", "detach_delete"} {
 		if _, err := l.Runtime().Saver(context.Background(), 42, "neo4j", "owned", []contract.DataEdit{{Kind: kind}}); !errors.Is(err, contract.ErrUnsupported) {

@@ -62,7 +62,7 @@ func TestNeo4jNativePublicDataPropertyEditingTypedReceiptsParkConflictsAndContin
 			waitNeo4jData(t, s, d)
 			s.Load(ui.Services{}, sibling, false)
 			waitNeo4jData(t, s, sibling)
-			if d.err != "" || !s.runtimeFor(d).NativeReceipts || !d.editable() || !d.allowsDataEdit("update") || d.allowsDataEdit("insert") || d.allowsDataEdit("delete") {
+			if d.err != "" || !s.runtimeFor(d).NativeReceipts || !d.editable() || !d.allowsDataEdit("update") || !d.allowsDataEdit("delete") || (target.kind == "label") != d.allowsDataEdit("insert") {
 				t.Fatal("native property edit mode not bound", d.err)
 			}
 			n, long, items, date := slices.Index(d.page.Columns, "property.n"), slices.Index(d.page.Columns, "property.long"), slices.Index(d.page.Columns, "property.items"), slices.Index(d.page.Columns, "property.date")
@@ -70,11 +70,6 @@ func TestNeo4jNativePublicDataPropertyEditingTypedReceiptsParkConflictsAndContin
 				if mysqlDataCanEdit(d, 0, col) != strings.HasPrefix(c.Name, "property.") {
 					t.Fatal("derived graph column editable", c.Name)
 				}
-			}
-			s.addMySQLDataRecord(ui.Services{}, d)
-			s.deleteMySQLDataRecords(ui.Services{}, d, 0)
-			if mysqlDataHasDraft(d) {
-				t.Fatal("graph insert/delete command admitted")
 			}
 			cached, _ := json.Marshal(sibling.page)
 			d.edit.Batch = true

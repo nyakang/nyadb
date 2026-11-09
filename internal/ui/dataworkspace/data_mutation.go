@@ -2,6 +2,7 @@ package dataworkspace
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"slices"
@@ -213,6 +214,9 @@ func (s *State) consumeDataMutation(d *Document) {
 			}
 		}
 		if err != nil {
+			if s.guardDoc == d && !errors.Is(err, context.Canceled) {
+				d.edit.SaveErrorOpen = true
+			}
 			s.releaseDataMutation(d)
 			s.clearDataMutationContinuation(d)
 			d.edit.Err = err.Error()

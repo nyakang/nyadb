@@ -174,7 +174,7 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *contract.DataPag
 				if s.mysqlDataInlineEditor(c, t, row, col) {
 					return
 				}
-				cell := page.Rows[row][col]
+				cell := s.dataCellPreview(t, page, row, col)
 				modified := mysqlDataCellModified(t, row, col)
 				content := ui.Box(c).FillWidth().MinWidth(0)
 				if modified {

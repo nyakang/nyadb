@@ -49,7 +49,7 @@ func (s *State) recordForm(c *ui.Context, t *Document) {
 						continue
 					}
 					source, name := source, name
-					cell := t.page.Rows[row][source]
+					cell := s.dataCellPreview(t, t.page, row, source)
 					ui.Column(c).Key(name).Gap(4).Border(1, p.Border).Padding(7).Children(func() {
 						ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 							ui.Text(c, name).Bold().Grow(1).SingleLine()
