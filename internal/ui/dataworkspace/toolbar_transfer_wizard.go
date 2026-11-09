@@ -19,6 +19,10 @@ func mysqlDataWizardSteps(kind string) []string {
 }
 
 func (s *State) dataTransferWizard(c *ui.Context, t *Document, available bool, title string) {
+	if t.transfer.GraphExchange {
+		s.graphTransferWizard(c, t, available, title)
+		return
+	}
 	if t.transfer.DocumentImport {
 		s.documentImportWizard(c, t, available, title)
 		return
@@ -227,6 +231,9 @@ func (s *State) dataExportWizardPage(c *ui.Context, t *Document) {
 	switch tr.Step {
 	case 0:
 		oldFormat := tr.Format
+		if s.runtimeFor(t).ExportGraph != nil && ui.Button(c, locales.Text("完整数据库图交换")).Clicked() {
+			tr.GraphExchange, tr.Format, tr.Scope = true, "JSON", "database"
+		}
 		choices := mysqlDataTransferFormatChoices("export")
 		if t.capabilities.Documents || t.capabilities.KeyValues {
 			choices = choices[:len(choices)-1]

@@ -289,22 +289,27 @@ func (l *dataLease) runDataWrite(ctx context.Context, c *Client, tx nd.ExplicitT
 // Statement capture owns the original typed response, independently of both
 // enclosing COMMIT and the mutation-specific identity/counter validation.
 func (l *dataLease) runDataStatement(ctx context.Context, c *Client, tx nd.ExplicitTransaction, receipt *dataWriteReceipt, query string, params map[string]any, columns []string) (*Response, error) {
-	raw, err := json.Marshal(receipt)
+	return l.runNativeDataStatement(ctx, c, tx, &receipt.Statements, func() ([]byte, error) { return json.Marshal(receipt) }, dataWriteReceiptBytes, query, params, columns, 2, 1)
+}
+
+// Shared capture for bounded native graph batches and original grid mutations.
+func (l *dataLease) runNativeDataStatement(ctx context.Context, c *Client, tx nd.ExplicitTransaction, statements *[]dataWriteStatement, capture func() ([]byte, error), receiptBytes int, query string, params map[string]any, columns []string, maxRows, expectedRows int) (*Response, error) {
+	raw, err := capture()
 	if err != nil {
 		return nil, ErrInvalid
 	}
-	remaining := dataWriteReceiptBytes - len(raw) - 4096
+	remaining := receiptBytes - len(raw) - 4096
 	if remaining < 4096 {
 		return nil, ErrBounds
 	}
-	plan, err := c.Prepare(Request{Database: l.object.Catalog, Query: query, Mode: "write", Parameters: params, MaxRows: 2, MaxBytes: min(2<<20, remaining), FetchSize: 2})
+	plan, err := c.Prepare(Request{Database: l.object.Catalog, Query: query, Mode: "write", Parameters: params, MaxRows: maxRows, MaxBytes: min(16<<20, remaining), FetchSize: min(64, maxRows)})
 	if err != nil {
 		return nil, err
 	}
 	statement := dataWriteStatement{Query: query, Parameters: plan.Parameters()}
-	receipt.Statements = append(receipt.Statements, statement)
-	statementIndex := len(receipt.Statements) - 1
-	response := &receipt.Statements[statementIndex].Result
+	(*statements) = append((*statements), statement)
+	statementIndex := len((*statements)) - 1
+	response := &(*statements)[statementIndex].Result
 	response.Attempted = true
 	result, err := tx.Run(ctx, query, plan.request.Parameters)
 	if err != nil {
@@ -324,7 +329,7 @@ func (l *dataLease) runDataStatement(ctx context.Context, c *Client, tx nd.Expli
 	var captureErr error
 	for result.Next(ctx) {
 		record := result.Record()
-		if record == nil || len(record.Values) != len(columns) || len(response.Rows) >= 2 {
+		if record == nil || len(record.Values) != len(columns) || len(response.Rows) >= maxRows {
 			captureErr = ErrProtocol
 			break
 		}
@@ -366,11 +371,11 @@ func (l *dataLease) runDataStatement(ctx context.Context, c *Client, tx nd.Expli
 	if captureErr != nil {
 		return nil, captureErr
 	}
-	if len(response.Rows) != 1 {
+	if len(response.Rows) != expectedRows {
 		return nil, contract.ErrDataConflict
 	}
-	raw, err = json.Marshal(receipt)
-	if err != nil || len(raw) > dataWriteReceiptBytes-4096 {
+	raw, err = capture()
+	if err != nil || len(raw) > receiptBytes-4096 {
 		response.Rows = nil
 		response.Truncated = true
 		return nil, ErrBounds

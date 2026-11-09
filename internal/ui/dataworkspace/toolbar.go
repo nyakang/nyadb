@@ -118,7 +118,7 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 			}
 		}
 		ui.Divider(c).Width(1).Height(18)
-		if (t.object.ProfileID == 0 || t.capabilities.Import) && mysqlDataToolbarButton(c, "导入", locales.Text("导入"), "import", disabled || dataTransactionActive(t) || dataTransactionBusy(t) || t.transfer.Uncertain || page == nil || (t.objectKind != "表" && !s.runtimeFor(t).DocumentImport)).Clicked() {
+		if (t.object.ProfileID == 0 || t.capabilities.Import) && mysqlDataToolbarButton(c, "导入", locales.Text("导入"), "import", disabled || dataTransactionActive(t) || dataTransactionBusy(t) || t.transfer.Uncertain || page == nil || (t.objectKind != "表" && !s.runtimeFor(t).DocumentImport && !s.graphImportBound(t))).Clicked() {
 			s.openDataImport(t)
 		}
 		if mysqlDataToolbarButton(c, "导出", locales.Text("导出"), "export", disabled || dataTransactionActive(t) || dataTransactionBusy(t) || t.transfer.Uncertain || page == nil).Clicked() {

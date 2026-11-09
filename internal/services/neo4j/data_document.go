@@ -33,6 +33,8 @@ type dataLease struct {
 	properties   []graphPropertyColumn
 	entityPlan   *entityDataPlan
 	previewEpoch uint64
+	graphPlan    *graphDataPlan
+	graphEpoch   uint64
 }
 
 func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
@@ -69,7 +71,7 @@ func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 }
 
 func (*Session) DataDocumentCapabilities() contract.Capabilities {
-	return contract.Capabilities{EditableTables: true, Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
+	return contract.Capabilities{EditableTables: true, Documents: true, Import: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
 }
 func (l *dataLease) Runtime() contract.DataRuntime {
 	kinds, preview := []string{"update", "insert", "delete"}, []string{"insert", "delete"}
@@ -82,6 +84,7 @@ func (l *dataLease) Runtime() contract.DataRuntime {
 	if l.object.Kind == "relationship" {
 		out.ReadGraphEndpoints = l.readGraphEndpoints
 	}
+	out.PreviewGraphImport, out.SubmitGraphImport, out.ExportGraph = l.previewGraphImport, l.submitGraphImport, l.exportGraph
 	return out
 }
 func (l *dataLease) identity(id int64, db, name string) error {
@@ -200,6 +203,9 @@ func (l *dataLease) Close() error {
 	l.properties = nil
 	if l.entityPlan != nil {
 		l.entityPlan.releaseLocked()
+	}
+	if l.graphPlan != nil {
+		l.graphPlan.releaseLocked()
 	}
 	clear(l.key[:])
 	l.mu.Unlock()

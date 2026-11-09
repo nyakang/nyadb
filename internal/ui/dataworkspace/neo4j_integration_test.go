@@ -176,6 +176,9 @@ func captureNeo4jData(t *testing.T, s *State, d *Document, name string, render .
 			if strings.HasSuffix(name, "-preview") || name == "entity-delete-plain-blocked" || name == "entity-preview-parked" {
 				labels = []string{"确认实体更改", "复制完整预览", "取消", "确认并提交更改"}
 			}
+			if name == "graph-import-preview" {
+				labels = []string{"输入目标数据库名以确认", "取消", "确认导入完整图"}
+			}
 			for _, label := range labels {
 				rect, found := tt.Find(locales.Text(label))
 				if !found || rect.X < 0 || rect.Y < 0 || rect.X+rect.W > float32(size[0])+1 || rect.Y+rect.H > float32(size[1])+1 {
@@ -241,7 +244,7 @@ func TestNeo4jNativePublicDataSharedGridPagingInspectorExportParkGenerationAndCl
 	if a.err != "" || b.err != "" {
 		t.Fatal("native shared graph grid failed", a.err, b.err)
 	}
-	if a.Kind() != "图标签" || b.Kind() != "关系类型" || len(a.page.Rows) != 1000 || !a.page.HasMore || len(b.page.Rows) != 1 || !a.capabilities.Documents || !a.capabilities.JSONL || !a.capabilities.EditableTables || a.capabilities.Import || a.capabilities.Transactions || !a.boundRuntime.PageFailureRequiresReopen {
+	if a.Kind() != "图标签" || b.Kind() != "关系类型" || len(a.page.Rows) != 1000 || !a.page.HasMore || len(b.page.Rows) != 1 || !a.capabilities.Documents || !a.capabilities.JSONL || !a.capabilities.EditableTables || !a.capabilities.Import || a.capabilities.Transactions || !a.boundRuntime.PageFailureRequiresReopen {
 		t.Fatal("public graph projection/capabilities wrong")
 	}
 	if !slices.Equal(b.page.Columns, []string{"element_id", "type", "start_element_id", "end_element_id", "properties", "relationship", "property.exact"}) || b.page.Rows[0][1].Text != name || b.page.Rows[0][2].Text == "" || b.page.Rows[0][3].Text == "" {

@@ -11,6 +11,20 @@ SPEC.loader.exec_module(FIXTURE)
 
 
 class Neo4jFixtureOwnershipTests(unittest.TestCase):
+    def test_graph_import_requires_complete_graph_native_faults_public_wizard_and_images(self):
+        names = FIXTURE.GRAPH_IMPORT_REQUIRED
+        self.assertEqual(len(names), len(set(names)))
+        self.assertTrue({'GraphImportCompleteTypedNodesDirectedRelationshipsAndExchange',
+                         'GraphImportLaterChunkFailureRollsBackCompleteBatch',
+                         'GraphImportActualCommitReplyLostCancelAndOriginalCloseNeverReplay',
+                         'PublicGraphImportFileMappingTypedPreviewCommitAndDatabaseExchange'}.issubset(names))
+        passed = '\n'.join('--- PASS: TestNeo4jNative'+name+' (0.01s)' for name in names)
+        FIXTURE.check_acceptance(passed, graph_import=True)
+        for name in names:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), graph_import=True)
+        self.assertTrue({'graph-import-mapping', 'graph-import-preview', 'graph-import-receipt', 'graph-export-database'}.issubset(FIXTURE.GRAPH_IMPORT_IMAGE_STAGES))
+
     def test_cleanup_rejects_mutable_names_and_foreign_ownership(self):
         with patch.object(FIXTURE.subprocess, 'run') as run:
             with self.assertRaises(RuntimeError):

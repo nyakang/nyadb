@@ -37,6 +37,14 @@ type mysqlDataNewTableImporter func(context.Context, int64, string, string, []co
 type mysqlDataImporter func(context.Context, int64, string, string, contract.DataImportRequest) (*contract.DataImportResult, error)
 
 type mysqlDataTransferState struct {
+	GraphExchange                                bool
+	GraphBundle                                  *contract.GraphImportBundle
+	GraphBindings                                []contract.GraphImportBinding
+	GraphBindingSource, GraphBindingDestination  string
+	GraphTicket                                  *graphImportTicket
+	GraphPlan                                    contract.GraphImportPlan
+	GraphSnapshot                                contract.GraphImportSnapshot
+	GraphResult                                  *contract.GraphImportResult
 	DocumentImport                               bool
 	Batch                                        []mysqlDataBatchReceipt
 	Sources                                      []mysqlDataWizardSource
@@ -94,6 +102,9 @@ type mysqlDataTransferState struct {
 	Request, Generation                          uint64
 }
 type mysqlDataTransferResult struct {
+	GraphExchange, GraphPreview          bool
+	GraphBundle                          *contract.GraphImportBundle
+	GraphResult                          *contract.GraphImportResult
 	DocumentVerification                 *contract.DataVerification
 	Batch                                []mysqlDataBatchReceipt
 	SourceTables                         []datasources.Table
@@ -129,7 +140,7 @@ type mysqlDataImportInput struct {
 func (s *State) openDataImport(t *Document) { s.openDataTransfer(t, "import") }
 func (s *State) openDataExport(t *Document) { s.openDataTransfer(t, "export") }
 func (s *State) openDataTransfer(t *Document, kind string) {
-	if t != nil && (t.capabilities.Documents || t.capabilities.KeyValues) && kind == "import" && !s.runtimeFor(t).DocumentImport {
+	if t != nil && (t.capabilities.Documents || t.capabilities.KeyValues) && kind == "import" && !s.runtimeFor(t).DocumentImport && !s.graphImportBound(t) {
 		return
 	}
 	if t == nil || t.closed || t.page == nil && !t.importOnly || t.importOnly && kind != "import" || t.loading || t.edit.Busy || t.edit.Uncertain != nil || t.transfer.Busy || t.transfer.Uncertain || dataTransactionActive(t) || dataTransactionBusy(t) {
@@ -170,6 +181,10 @@ func (s *State) openDataTransfer(t *Document, kind string) {
 		}
 		tr.Sources = nil
 	}
+	if kind == "import" && s.graphImportBound(t) {
+		tr.GraphExchange, tr.Format, tr.ContinueOnError = true, "JSON", false
+		tr.Sources = nil
+	}
 	t.transfer = tr
 }
 func (s *State) closeDataTransfer(t *Document) {
@@ -179,6 +194,7 @@ func (s *State) closeDataTransfer(t *Document) {
 	if t.transfer.Cancel != nil {
 		t.transfer.Cancel()
 	}
+	releaseGraphImportPlan(&t.transfer)
 	if t.transfer.RawSpool != nil {
 		t.transfer.RawSpool.Close()
 	}
@@ -196,11 +212,14 @@ func (s *State) closeDataTransfer(t *Document) {
 }
 func (s *State) stopDataTransfer(t *Document) {
 	if t.transfer.Busy {
+		if t.transfer.GraphTicket != nil {
+			t.transfer.GraphTicket.revoke()
+		}
 		if t.transfer.Cancel != nil {
 			t.transfer.Cancel()
 		}
 		t.transfer.Canceling = true
-	} else if t.transfer.DocumentImport && t.transfer.Uncertain {
+	} else if (t.transfer.DocumentImport || t.transfer.GraphExchange) && t.transfer.Uncertain {
 		t.transfer.Open = false
 	} else {
 		s.closeDataTransfer(t)
@@ -406,6 +425,10 @@ func (s *State) finishDataTransferModal(t *Document, pressedOutside bool) {
 }
 
 func (s *State) chooseDataImportFile(services ui.Services, t *Document) {
+	if t.transfer.GraphExchange {
+		s.chooseGraphImportFile(services, t)
+		return
+	}
 	if t.transfer.Busy || t.transfer.Submitted {
 		return
 	}
@@ -538,6 +561,10 @@ func (s *State) startDataImport(services ui.Services, t *Document) {
 	}()
 }
 func (s *State) startDataExport(services ui.Services, t *Document) {
+	if t.transfer.GraphExchange {
+		s.startGraphExport(services, t)
+		return
+	}
 	tr := &t.transfer
 	if !t.supportsExportFormat(tr.Format) {
 		tr.Err = contract.ErrUnsupported.Error()
@@ -721,6 +748,9 @@ func (s *State) consumeDataTransfers(services ui.Services) {
 		select {
 		case result := <-tr.Results:
 			if result.Request != tr.Request || result.Profile != t.profileID {
+				if result.GraphPreview && tr.GraphTicket != nil {
+					tr.GraphTicket.revoke()
+				}
 				continue
 			}
 			if tr.Cancel != nil {
@@ -731,6 +761,10 @@ func (s *State) consumeDataTransfers(services ui.Services) {
 			tr.Busy = false
 			tr.Canceling = false
 			stale := result.Generation != s.session().Generation || !s.session().Connected
+			if result.GraphExchange {
+				s.consumeGraphTransfer(services, t, result, stale)
+				continue
+			}
 			if result.Capabilities != nil {
 				tr.Capabilities = result.Capabilities
 			}

@@ -231,9 +231,9 @@ func (s *session) Capabilities() contract.Capabilities {
 	caps.Count = caps.Count && (r.Count != nil || documents.Count)
 	caps.FieldChunks = caps.FieldChunks && (r.Chunk != nil || documents.FieldChunks)
 	caps.Analysis = caps.Analysis && (r.Analyzer != nil || documents.Analysis)
-	caps.Import = caps.Import && (r.Importer != nil || r.StreamImporter != nil || documents.Import)
+	caps.Import = caps.Import && (r.Importer != nil || r.StreamImporter != nil || r.PreviewGraphImport != nil && r.SubmitGraphImport != nil || documents.Import)
 	caps.JSONL = caps.JSONL && (r.JSONL != nil || documents.JSONL)
-	caps.Export = caps.Export && (r.Exporter != nil || r.JSONL != nil || documents.Export)
+	caps.Export = caps.Export && (r.Exporter != nil || r.JSONL != nil || r.ExportGraph != nil || documents.Export)
 	return s.managementCapabilities(caps)
 }
 func (s *session) alive() bool {

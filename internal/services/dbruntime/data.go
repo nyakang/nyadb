@@ -9,7 +9,7 @@ import (
 )
 
 func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
-	out := r
+	out := mSessionGraphData(s, r)
 	if r.ReserveDocument != nil {
 		out.ReserveDocument = func(o contract.ObjectRef) (contract.DataDocumentLease, error) {
 			if e := s.require(true, o.ProfileID); e != nil {

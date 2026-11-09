@@ -56,7 +56,7 @@ func TestNeo4jNativePublicRuntimeQualifiedGraphAndGeneration(t *testing.T) {
 		t.Fatal(e)
 	}
 	c := original.Capabilities()
-	if !c.Query || !c.Metadata || !c.Documents || !c.Keyset || !c.Count || !c.FieldChunks || !c.Export || !c.JSONL || c.Objects || !c.EditableTables || c.Transactions || c.Schemas || c.Import {
+	if !c.Query || !c.Metadata || !c.Documents || !c.Keyset || !c.Count || !c.FieldChunks || !c.Export || !c.JSONL || c.Objects || !c.EditableTables || c.Transactions || c.Schemas || !c.Import {
 		t.Fatal("fabricated graph capabilities")
 	}
 	metadata, e := contract.Require[contract.GraphMetadataProvider](original)

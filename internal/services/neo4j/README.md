@@ -458,7 +458,7 @@ and English endpoint inputs, observations, draft/preview/receipt and close contr
 are captured at 1280x800 and 720x520. See the public relationship report for final
 source hashes, test results and screenshots.
 
-Graph import, full archives, plans, RBAC and other
+Full archives, plans, RBAC and other
 version, Enterprise/cluster and full reference scope remain pending.
 
 
@@ -489,3 +489,34 @@ and original close isolation preserve the existing lease and publication rules.
 Actual committed writes are independently observed before responses are lost or
 canceled; original uncertain drafts/receipts remain guarded against replay.
 See the dated temporal/spatial list report for final source hashes and evidence.
+
+
+Complete graph exchange and atomic import bind to the original shared data lease.
+The nyadb.graph.v1 JSON/JSONL format retains all nodes (including unlabeled and
+propertyless nodes), relationship direction/type and complete supported typed
+properties. Source IDs are file references; reuse and every external endpoint
+require explicit mappings. Reuse never replaces existing labels or properties.
+The source/request is bounded to 8 MiB, 10000 combined entities and 1 MiB per
+complete entity. Empty exchanges are valid; no-op imports are rejected.
+
+The immutable preview captures canonical source values, native parameter chunks
+and complete original destination anchors. Submit consumes that lease's plan
+once, locks unique anchors in sorted element-ID order and compares complete
+observations. Node/relationship chunks stay in one explicit native transaction
+with no retries or partial commits. Complete typed results, counters, direction
+and generated identities are validated before the single COMMIT. Only native
+COMMIT acknowledgement and bookmarks admit returned identity mappings. Unknown
+results retain the source, preview and up-to-64-MiB original receipt and poison
+queued original writes. Cancellation and close wait for original acknowledgement.
+Late and unconsumed previews are closed independently of replacement sessions.
+
+The shared export wizard also scans the entire original database and validates
+complete types and endpoint closure before atomically publishing JSON/JSONL.
+It is a bounded live scan rather than a backup. Existing tabular exports remain.
+Run `python3 tools/verify_neo4j_fixture.py --graph-import --race --mode MODE` for
+the original public wizard, native batches/rollback/commit faults and localized
+source/mapping/preview/receipt/export/unknown/close/parking evidence. The graph
+exchange fixture serializes Go packages with -p=1 so their independent data
+fixtures do not concurrently alter full-database scans. Other capability tests
+retain their existing verification modes. See the graph exchange report for
+the final source manifests, official fixture ownership and validation scope.

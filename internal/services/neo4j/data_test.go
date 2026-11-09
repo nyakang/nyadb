@@ -87,7 +87,7 @@ func TestNeo4jDataOriginalReservationsAndPublicCapabilityBoundary(t *testing.T) 
 		t.Fatal(e)
 	}
 	c := s.Capabilities()
-	if !c.Documents || !c.JSONL || !c.Count || !c.FieldChunks || !c.EditableTables || c.Transactions || c.Import || c.DesignTables {
+	if !c.Documents || !c.JSONL || !c.Count || !c.FieldChunks || !c.EditableTables || c.Transactions || !c.Import || c.DesignTables {
 		t.Fatal("graph reads lost capabilities or enabled unimplemented mutations")
 	}
 	l := dataLeaseTestAfterRelease(t, s)

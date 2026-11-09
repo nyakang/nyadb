@@ -133,6 +133,11 @@ type DataRuntime struct {
 	NewTableImporter   func(context.Context, int64, string, string, []DataImportColumn, []DataEdit) (*DataNewTableImportResult, error)
 	Importer           func(context.Context, int64, string, string, DataImportRequest) (*DataImportResult, error)
 	StreamImporter     func(context.Context, int64, string, string, DataImportStreamRequest) (*DataImportStreamResult, error)
+	// Graph exchange preserves full typed entities and explicit source endpoint
+	// mappings. Submission consumes the original lease's immutable preview once.
+	PreviewGraphImport func(context.Context, int64, string, string, GraphImportRequest) (GraphImportPlan, error)
+	SubmitGraphImport  func(context.Context, int64, string, string, GraphImportPlan) (*GraphImportResult, error)
+	ExportGraph        func(context.Context, ObjectRef) (GraphImportBundle, error)
 	TableMetadata      func(context.Context, int64, string, string) (*TableStructure, error)
 	TableInfo          func(context.Context, int64, string, string) (*TableInfo, error)
 	Count              func(context.Context, int64, string, string) (int64, error)

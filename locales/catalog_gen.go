@@ -30927,3 +30927,253 @@ func GraphListExtendedHint() string { return In(i18n.Locale()).GraphListExtended
 func (msgs Messages) GraphListExtendedHint() string {
 	return Catalog.Format(msgs.locale, "graphListExtendedHint", nil)
 }
+
+// GraphExchange says "完整图交换"
+// in the language the app shows.
+func GraphExchange() string { return In(i18n.Locale()).GraphExchange() }
+
+// GraphExchange says "完整图交换"
+// in the language of msgs.
+func (msgs Messages) GraphExchange() string {
+	return Catalog.Format(msgs.locale, "graphExchange", nil)
+}
+
+// GraphExchangeTarget says "目标数据库：%s"
+// in the language the app shows.
+func GraphExchangeTarget() string { return In(i18n.Locale()).GraphExchangeTarget() }
+
+// GraphExchangeTarget says "目标数据库：%s"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeTarget() string {
+	return Catalog.Format(msgs.locale, "graphExchangeTarget", nil)
+}
+
+// GraphExchangeSelectFile says "选择图交换文件"
+// in the language the app shows.
+func GraphExchangeSelectFile() string { return In(i18n.Locale()).GraphExchangeSelectFile() }
+
+// GraphExchangeSelectFile says "选择图交换文件"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeSelectFile() string {
+	return Catalog.Format(msgs.locale, "graphExchangeSelectFile", nil)
+}
+
+// GraphExchangeImportFileHint says "图交换文件保留节点、标签、关系方向和完整类型属性。源 ID 只用于关联文件中的实体。"
+// in the language the app shows.
+func GraphExchangeImportFileHint() string { return In(i18n.Locale()).GraphExchangeImportFileHint() }
+
+// GraphExchangeImportFileHint says "图交换文件保留节点、标签、关系方向和完整类型属性。源 ID 只用于关联文件中的实体。"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeImportFileHint() string {
+	return Catalog.Format(msgs.locale, "graphExchangeImportFileHint", nil)
+}
+
+// GraphExchangeBounds says "最多 10000 个节点和关系、8 MiB，每个完整实体最多 1 MiB；整批导入只提交一个事务。"
+// in the language the app shows.
+func GraphExchangeBounds() string { return In(i18n.Locale()).GraphExchangeBounds() }
+
+// GraphExchangeBounds says "最多 10000 个节点和关系、8 MiB，每个完整实体最多 1 MiB；整批导入只提交一个事务。"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeBounds() string {
+	return Catalog.Format(msgs.locale, "graphExchangeBounds", nil)
+}
+
+// GraphExchangeReadCounts says "已读取 %d 个节点和 %d 条关系"
+// in the language the app shows.
+func GraphExchangeReadCounts() string { return In(i18n.Locale()).GraphExchangeReadCounts() }
+
+// GraphExchangeReadCounts says "已读取 %d 个节点和 %d 条关系"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeReadCounts() string {
+	return Catalog.Format(msgs.locale, "graphExchangeReadCounts", nil)
+}
+
+// GraphExchangeMappingHint says "…"
+// in the language the app shows.
+func GraphExchangeMappingHint() string { return In(i18n.Locale()).GraphExchangeMappingHint() }
+
+// GraphExchangeMappingHint says "…"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeMappingHint() string {
+	return Catalog.Format(msgs.locale, "graphExchangeMappingHint", nil)
+}
+
+// GraphExchangeRequiredEndpoint says "必需端点："
+// in the language the app shows.
+func GraphExchangeRequiredEndpoint() string { return In(i18n.Locale()).GraphExchangeRequiredEndpoint() }
+
+// GraphExchangeRequiredEndpoint says "必需端点："
+// in the language of msgs.
+func (msgs Messages) GraphExchangeRequiredEndpoint() string {
+	return Catalog.Format(msgs.locale, "graphExchangeRequiredEndpoint", nil)
+}
+
+// GraphExchangeSourceID says "源节点或外部端点 ID"
+// in the language the app shows.
+func GraphExchangeSourceID() string { return In(i18n.Locale()).GraphExchangeSourceID() }
+
+// GraphExchangeSourceID says "源节点或外部端点 ID"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeSourceID() string {
+	return Catalog.Format(msgs.locale, "graphExchangeSourceID", nil)
+}
+
+// GraphExchangeDestinationID says "目标节点 element ID"
+// in the language the app shows.
+func GraphExchangeDestinationID() string { return In(i18n.Locale()).GraphExchangeDestinationID() }
+
+// GraphExchangeDestinationID says "目标节点 element ID"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeDestinationID() string {
+	return Catalog.Format(msgs.locale, "graphExchangeDestinationID", nil)
+}
+
+// GraphExchangeAddMapping says "添加或替换端点映射"
+// in the language the app shows.
+func GraphExchangeAddMapping() string { return In(i18n.Locale()).GraphExchangeAddMapping() }
+
+// GraphExchangeAddMapping says "添加或替换端点映射"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeAddMapping() string {
+	return Catalog.Format(msgs.locale, "graphExchangeAddMapping", nil)
+}
+
+// GraphExchangePreview says "预览图导入"
+// in the language the app shows.
+func GraphExchangePreview() string { return In(i18n.Locale()).GraphExchangePreview() }
+
+// GraphExchangePreview says "预览图导入"
+// in the language of msgs.
+func (msgs Messages) GraphExchangePreview() string {
+	return Catalog.Format(msgs.locale, "graphExchangePreview", nil)
+}
+
+// GraphExchangeConfirm says "确认导入完整图"
+// in the language the app shows.
+func GraphExchangeConfirm() string { return In(i18n.Locale()).GraphExchangeConfirm() }
+
+// GraphExchangeConfirm says "确认导入完整图"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeConfirm() string {
+	return Catalog.Format(msgs.locale, "graphExchangeConfirm", nil)
+}
+
+// GraphExchangePreviewCounts says "将创建 %d 个节点和 %d 条关系，复用 %d 个源端点"
+// in the language the app shows.
+func GraphExchangePreviewCounts() string { return In(i18n.Locale()).GraphExchangePreviewCounts() }
+
+// GraphExchangePreviewCounts says "将创建 %d 个节点和 %d 条关系，复用 %d 个源端点"
+// in the language of msgs.
+func (msgs Messages) GraphExchangePreviewCounts() string {
+	return Catalog.Format(msgs.locale, "graphExchangePreviewCounts", nil)
+}
+
+// GraphExchangePreviewHint says "…"
+// in the language the app shows.
+func GraphExchangePreviewHint() string { return In(i18n.Locale()).GraphExchangePreviewHint() }
+
+// GraphExchangePreviewHint says "…"
+// in the language of msgs.
+func (msgs Messages) GraphExchangePreviewHint() string {
+	return Catalog.Format(msgs.locale, "graphExchangePreviewHint", nil)
+}
+
+// GraphExchangeCompletePreview says "图导入完整预览"
+// in the language the app shows.
+func GraphExchangeCompletePreview() string { return In(i18n.Locale()).GraphExchangeCompletePreview() }
+
+// GraphExchangeCompletePreview says "图导入完整预览"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeCompletePreview() string {
+	return Catalog.Format(msgs.locale, "graphExchangeCompletePreview", nil)
+}
+
+// GraphExchangeConfirmDatabase says "输入目标数据库名以确认"
+// in the language the app shows.
+func GraphExchangeConfirmDatabase() string { return In(i18n.Locale()).GraphExchangeConfirmDatabase() }
+
+// GraphExchangeConfirmDatabase says "输入目标数据库名以确认"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeConfirmDatabase() string {
+	return Catalog.Format(msgs.locale, "graphExchangeConfirmDatabase", nil)
+}
+
+// GraphExchangeImportedCounts says "已导入 %d 个节点和 %d 条关系"
+// in the language the app shows.
+func GraphExchangeImportedCounts() string { return In(i18n.Locale()).GraphExchangeImportedCounts() }
+
+// GraphExchangeImportedCounts says "已导入 %d 个节点和 %d 条关系"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeImportedCounts() string {
+	return Catalog.Format(msgs.locale, "graphExchangeImportedCounts", nil)
+}
+
+// GraphExchangeUnknownHint says "源文件、预览和回执已保留。请在原数据库核验结果；此向导禁止再次提交。"
+// in the language the app shows.
+func GraphExchangeUnknownHint() string { return In(i18n.Locale()).GraphExchangeUnknownHint() }
+
+// GraphExchangeUnknownHint says "源文件、预览和回执已保留。请在原数据库核验结果；此向导禁止再次提交。"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeUnknownHint() string {
+	return Catalog.Format(msgs.locale, "graphExchangeUnknownHint", nil)
+}
+
+// GraphExchangeExport says "导出完整数据库图"
+// in the language the app shows.
+func GraphExchangeExport() string { return In(i18n.Locale()).GraphExchangeExport() }
+
+// GraphExchangeExport says "导出完整数据库图"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeExport() string {
+	return Catalog.Format(msgs.locale, "graphExchangeExport", nil)
+}
+
+// GraphExchangeExportComplete says "图交换导出完成"
+// in the language the app shows.
+func GraphExchangeExportComplete() string { return In(i18n.Locale()).GraphExchangeExportComplete() }
+
+// GraphExchangeExportComplete says "图交换导出完成"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeExportComplete() string {
+	return Catalog.Format(msgs.locale, "graphExchangeExportComplete", nil)
+}
+
+// GraphExchangeExportScope says "导出整个原数据库中的全部节点和关系，包括无标签节点及其它标签和关系类型。"
+// in the language the app shows.
+func GraphExchangeExportScope() string { return In(i18n.Locale()).GraphExchangeExportScope() }
+
+// GraphExchangeExportScope says "导出整个原数据库中的全部节点和关系，包括无标签节点及其它标签和关系类型。"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeExportScope() string {
+	return Catalog.Format(msgs.locale, "graphExchangeExportScope", nil)
+}
+
+// GraphExchangeExportLive says "…"
+// in the language the app shows.
+func GraphExchangeExportLive() string { return In(i18n.Locale()).GraphExchangeExportLive() }
+
+// GraphExchangeExportLive says "…"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeExportLive() string {
+	return Catalog.Format(msgs.locale, "graphExchangeExportLive", nil)
+}
+
+// GraphExchangeExportTabular says "返回表格导出"
+// in the language the app shows.
+func GraphExchangeExportTabular() string { return In(i18n.Locale()).GraphExchangeExportTabular() }
+
+// GraphExchangeExportTabular says "返回表格导出"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeExportTabular() string {
+	return Catalog.Format(msgs.locale, "graphExchangeExportTabular", nil)
+}
+
+// GraphExchangeExportChoice says "完整数据库图交换"
+// in the language the app shows.
+func GraphExchangeExportChoice() string { return In(i18n.Locale()).GraphExchangeExportChoice() }
+
+// GraphExchangeExportChoice says "完整数据库图交换"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeExportChoice() string {
+	return Catalog.Format(msgs.locale, "graphExchangeExportChoice", nil)
+}
