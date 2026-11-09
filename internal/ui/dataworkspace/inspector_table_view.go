@@ -42,7 +42,7 @@ func (s *inspectorState) header(c *ui.Context, t *Panel, fieldMode bool) {
 				if p, ok := s.deps.Profile(t.profileID); ok && p.Kind == connections.Redis {
 					infoLabel = locales.Text("键信息")
 				}
-				if p, ok := s.deps.Profile(t.profileID); ok && p.Kind.IsRESTSearch() {
+				if p, ok := s.deps.Profile(t.profileID); ok && (p.Kind.IsRESTSearch() || p.Kind == connections.Neo4j) {
 					infoLabel = locales.Text("对象信息")
 				}
 				if p, ok := s.deps.Profile(t.profileID); ok && p.Kind == connections.MongoDB {
@@ -157,6 +157,10 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 				info := d.info
 				kind := "表"
 				switch info.Kind {
+				case "label":
+					kind = "图标签"
+				case "relationship":
+					kind = "关系类型"
 				case "points":
 					kind = "向量点"
 				case "documents":
@@ -185,7 +189,7 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 					if descriptor, ok := connections.Describe(engine); ok {
 						tableProperty(c, "数据库产品", descriptor.Label)
 					}
-					if engine.IsRESTSearch() {
+					if engine.IsRESTSearch() || engine == connections.Neo4j {
 						ui.Text(c, locales.Text("计数反映请求时的目标数据，不代表网格快照总数")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
 					}
 					if engine == connections.PostgreSQL {

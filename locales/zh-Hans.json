@@ -2846,5 +2846,13 @@
   "graphResultTruncated": "结果已截断",
   "neo4jMetadataOpen": "查看 Neo4j 元数据",
   "neo4jMetadataObservation": "Neo4j 原生元数据；属性类型为实时推断，查询不会自动执行",
-  "neo4jSessionPassword": "Neo4j 会话密码"
+  "neo4jSessionPassword": "Neo4j 会话密码",
+  "dataRangeRetired": "原数据读取范围已失效，请重新打开数据",
+  "dataExplicitReopen": "重新打开数据",
+  "neo4jBrowseData": "浏览图数据（只读）",
+  "neo4jBrowseSelectedData": "浏览选中图数据",
+  "neo4jLastDataCypher": "上次成功 Cypher（参数化）：",
+  "neo4jDataCypher": "参数化 Cypher：",
+  "neo4jRangeJSONL": "限定图数据导出为 JSONL（忽略当前页）",
+  "nativeCursorKnownPageOnly": "原生游标仅支持已读取页或下一页"
 }

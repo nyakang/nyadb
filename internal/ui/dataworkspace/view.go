@@ -84,7 +84,11 @@ func (s *State) mysqlDataBody(c *ui.Context, t *Document, page *contract.DataPag
 		if t.err != "" {
 			ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(2, 6).Gap(6).AlignItems(ui.Center).Children(func() {
 				ui.Text(c, locales.Text("读取数据失败：")+locales.Text(t.err)).TextColor(palette.Error).FontSize(theme.Font(c, theme.FontSize)).SingleLine().Grow(1).MinWidth(0).Tooltip(locales.Text(t.err))
-				if ui.Button(c, locales.Text("重试读取数据")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(t.loading || !s.session().Connected).Clicked() {
+				if t.readRetired {
+					if ui.Button(c, locales.Text("重新打开数据")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(!s.CanReopen(t)).Clicked() {
+						s.Reopen(c.Services(), t)
+					}
+				} else if ui.Button(c, locales.Text("重试读取数据")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(t.loading || !s.session().Connected).Clicked() {
 					s.Load(c.Services(), t, true)
 				}
 			})
@@ -287,7 +291,11 @@ func (s *State) cancelMySQLDataRead(t *Document) {
 		return
 	}
 	s.Cancel(t)
-	t.err = ""
+	if t.readRetired {
+		t.err = "原数据读取范围已失效，请重新打开数据"
+	} else {
+		t.err = ""
+	}
 	t.readInfo.Canceled = true
 }
 
@@ -306,6 +314,12 @@ func (s *State) changeMySQLDataPageSize(services ui.Services, t *Document, limit
 func mysqlDataQueryStatus(t *Document) string {
 	if t.readInfo.QuerySQL == "" {
 		return locales.Text("查询信息不可用")
+	}
+	if t.object.Kind == "label" || t.object.Kind == "relationship" {
+		if t.loading || t.err != "" || t.readInfo.Canceled || t.page == nil {
+			return locales.Text("上次成功 Cypher（参数化）：") + t.readInfo.QuerySQL
+		}
+		return locales.Text("参数化 Cypher：") + t.readInfo.QuerySQL
 	}
 	search := t.object.Kind == "index" || t.object.Kind == "alias" || t.object.Kind == "data_stream"
 	if t.loading || t.err != "" || t.readInfo.Canceled || t.page == nil {
@@ -350,7 +364,7 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *contract.DataP
 			})
 		}
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Shrink(0).Padding(2, 6).Gap(4).AlignItems(ui.Center).Children(func() {
-			ready := t.page != nil && !t.loading && !t.edit.Busy && t.edit.Uncertain == nil && !dataTransactionUnavailable(t) && !t.transfer.Busy && !t.transfer.Uncertain && t.profileID == s.session().ProfileID && s.session().Connected
+			ready := t.page != nil && !t.loading && !t.readRetired && !t.edit.Busy && t.edit.Uncertain == nil && !dataTransactionUnavailable(t) && !t.transfer.Busy && !t.transfer.Uncertain && t.profileID == s.session().ProfileID && s.session().Connected
 			dirty := mysqlDataHasDraft(t)
 			insertReady := ready && t.editable() && len(page.ColumnMetadata) > 0 && len(page.ColumnMetadata) == len(page.Columns)
 			if theme.IconButton(c, "", "plus").Label(locales.Text("添加记录")).Tooltip(locales.Text("添加记录")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!insertReady).Clicked() {
@@ -386,7 +400,9 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *contract.DataP
 			if theme.IconButton(c, "", "redo").Label(locales.Text("重做草稿更改")).Tooltip(locales.Text("重做草稿更改")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!s.canDraftUndo(t, true)).Clicked() {
 				s.undoDraft(t, true)
 			}
-			ui.Checkbox(c, &t.edit.Batch, locales.Text("批量编辑")).Disabled(s.runtimeFor(t).AsyncWrites || dirty || t.loading || t.edit.Busy || t.edit.Uncertain != nil).FontSize(theme.Font(c, theme.SmallFontSize))
+			if t.object.ProfileID == 0 || t.capabilities.EditableTables {
+				ui.Checkbox(c, &t.edit.Batch, locales.Text("批量编辑")).Disabled(s.runtimeFor(t).AsyncWrites || dirty || t.loading || t.edit.Busy || t.edit.Uncertain != nil).FontSize(theme.Font(c, theme.SmallFontSize))
+			}
 			s.mysqlDataEditStatus(c, t)
 		})
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Shrink(0).Padding(2, 6).Gap(4).AlignItems(ui.Center).Children(func() {

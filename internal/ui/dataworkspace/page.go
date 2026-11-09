@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/locales"
 	"strings"
 	"time"
 
@@ -27,6 +28,19 @@ func (s *State) Cancel(t *Document) {
 	if t == nil || t.closed {
 		return
 	}
+	if s.runtimeFor(t).PageFailureRequiresReopen && t.loading {
+		t.readRetired, t.readStopping = true, true
+		if t.cancel != nil {
+			t.cancel()
+		}
+		return
+	}
+	s.settlePage(t)
+}
+
+// Completed page disposal never retires a successful range. Auxiliary readers
+// bound to the original document are independent of page cancellation.
+func (s *State) settlePage(t *Document) {
 	if entry := t.tools.historyActiveRead; t.loading && entry != nil {
 		canceled := *entry
 		canceled.At, canceled.Duration = time.Now(), time.Since(entry.At)
@@ -35,7 +49,9 @@ func (s *State) Cancel(t *Document) {
 	}
 	t.tools.historyActiveRead = nil
 	t.request++
-	s.cancelMySQLChunk(t)
+	if !s.runtimeFor(t).PageFailureRequiresReopen {
+		s.cancelMySQLChunk(t)
+	}
 	if t.cancel != nil {
 		t.cancel()
 	}
@@ -50,6 +66,16 @@ func (s *State) Load(services ui.Services, t *Document, refresh bool) {
 	}
 	if t.object.ProfileID != 0 && t.generation != s.sessionFor(t).Generation {
 		t.err = "原数据库会话已失效，请刷新表数据"
+		return
+	}
+	if t.readRetired {
+		t.err = "原数据读取范围已失效，请重新打开数据"
+		return
+	}
+	if t.loading && s.runtimeFor(t).PageFailureRequiresReopen {
+		if refresh {
+			s.Cancel(t)
+		}
 		return
 	}
 	if t.loading && !refresh {
@@ -127,7 +153,11 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *Document, offset in
 	if s.GuardLeave(t, func(next ui.Services) { s.changeMySQLDataPage(next, t, offset) }) {
 		return
 	}
-	if t == nil || t.closed || offset < 0 || t.loading {
+	if t == nil || t.closed || offset < 0 || t.loading || t.readRetired {
+		return
+	}
+	if !documentCursorAllows(t, offset) {
+		t.pageNumberError = locales.Text("原生游标仅支持已读取页或下一页")
 		return
 	}
 	// Providers may attach original document boundaries to OFFSET pages as well
@@ -158,8 +188,10 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *Document, offset in
 	}
 	clearDraftHistory(t)
 	t.offset = offset
-	t.page = nil
-	t.columns = nil
+	if !s.runtimeFor(t).PageFailureRequiresReopen {
+		t.page = nil
+		t.columns = nil
+	}
 	t.selectedRow = -1
 	t.selection.Clear()
 	s.cancelMySQLChunk(t)
@@ -183,12 +215,24 @@ func (s *State) consumePages() {
 				continue
 			}
 			s.recordDataPageHistory(t, result, result.generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected)
-			s.Cancel(t)
+			stopping := t.readStopping
+			s.settlePage(t)
+			t.readStopping = false
+			if s.runtimeFor(t).PageFailureRequiresReopen && t.page != nil &&
+				(stopping || result.err != nil || result.page == nil || result.generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected) {
+				t.offset = t.page.Offset
+				t.after = cloneCursor(t.page.CurrentCursor)
+			}
 			if !result.History.At.IsZero() {
 				t.tools.historyRequest, t.tools.historyRecorded = t.request, true
 			}
 			if result.generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected {
 				t.err = "原数据库会话已失效，请刷新表数据"
+				continue
+			}
+			if stopping || s.runtimeFor(t).PageFailureRequiresReopen && (result.err != nil || result.page == nil) {
+				t.readRetired = true
+				t.err = "原数据读取范围已失效，请重新打开数据"
 				continue
 			}
 			if result.err != nil {
@@ -274,6 +318,8 @@ func (s *State) Close(t *Document) {
 		t.runtimeLease = nil
 		t.boundRuntime = nil
 	}
+	s.settlePage(t)
+	t.readStopping = false
 	t.tools = mysqlDataToolsState{}
 	t.hostAction, t.hostProfile = "", ""
 	t.toolbar = mysqlDataToolbarState{}

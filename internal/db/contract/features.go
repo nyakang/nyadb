@@ -85,6 +85,10 @@ type DataSelector struct {
 // DataRuntime contains operation-bound functions. Workers capture this value
 // before starting; adapters must check the original session on every call.
 type DataRuntime struct {
+	// PageFailureRequiresReopen retires the original data range after a failed
+	// or canceled page. The UI waits for acknowledgement and requires a new
+	// explicit document reservation; auxiliary readers keep their own scopes.
+	PageFailureRequiresReopen bool
 	// AsyncWrites requires explicit admission observation through Verify.
 	AsyncWrites bool
 	// DocumentImport accepts whole JSON documents through Importer; requires Verify.

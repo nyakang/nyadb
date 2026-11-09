@@ -228,10 +228,14 @@ func (s *State) BrowserView(c *ui.Context) {
 				} {
 					item := action
 					if graphEngine {
-						if action.label != "打开表" {
+						if action.label == "设计表" {
 							continue
 						}
-						item.label, item.accessible = "查看定义（只读）", "查看 Neo4j 元数据"
+						if action.label == "打开表" {
+							item.label, item.accessible = "浏览图数据（只读）", "浏览选中图数据"
+						} else {
+							item.label, item.accessible = "查看定义（只读）", "查看 Neo4j 元数据"
+						}
 					}
 					if qdrantEngine {
 						if action.label == "设计表" {
@@ -303,7 +307,7 @@ func (s *State) BrowserView(c *ui.Context) {
 						}
 					}
 					canAction := canOpen
-					if graphEngine {
+					if graphEngine && action.label == "查看结构" {
 						canAction = canProgram
 					}
 					if qdrantEngine && action.label == "打开表" {
@@ -323,7 +327,11 @@ func (s *State) BrowserView(c *ui.Context) {
 					}).Clicked() {
 						obj := items[a.frame.Row]
 						if graphEngine {
-							s.openObjectFor(c.Services(), a.scope.profile, database, obj.Name, obj.Kind)
+							if action.label == "打开表" {
+								s.openGraphData(c.Services(), a.scope.profile, database, obj.Name, obj.Kind)
+							} else {
+								s.openProgram(database, obj.Name, obj.Kind)
+							}
 							return
 						}
 						if (item.label == "打开表" || item.label == "打开集合" || item.label == "打开键" || item.label == "打开文档" || item.label == "浏览向量点") && s.deps.OpenData != nil {

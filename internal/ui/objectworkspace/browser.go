@@ -148,6 +148,10 @@ func (s *State) openObjectFor(services ui.Services, profileID int64, db, name, k
 		}
 		return
 	}
+	if s.canOpenGraphData(profileID, kind) {
+		s.openGraphData(services, profileID, db, name, kind)
+		return
+	}
 	if Supports(kind) {
 		if s.deps.OpenProgram != nil {
 			s.deps.OpenProgram(profileID, db, name, kind)
@@ -254,4 +258,25 @@ func (s *State) ShowCategory(id int64, kind string) {
 	s.syncPresentation(id).toolbarKind = kind
 	s.SetFilter(id, kind)
 	s.SelectRow(id, -1)
+}
+
+func (s *State) canOpenGraphData(profile int64, kind string) bool {
+	return (kind == "图标签" || kind == "关系类型") && s.deps.Engine != nil && s.deps.Engine(profile) == "neo4j" &&
+		s.capabilities(profile).Documents && s.deps.OpenQualifiedData != nil
+}
+func (s *State) openGraphData(services ui.Services, profile int64, database, name, kind string) {
+	if !s.canOpenGraphData(profile, kind) {
+		return
+	}
+	b, session := s.currentBrowser(), s.sessionFor(profile)
+	if b.ProfileID != profile || b.Database != database || !b.Connected || !b.Opened || !session.Connected || session.ProfileID != profile {
+		return
+	}
+	for _, object := range b.Objects {
+		if object.Name == name && object.Kind == kind && object.Ref.ProfileID == profile && object.Ref.Name == name &&
+			object.Ref.Catalog == database && object.Ref.Schema == "" && object.Ref.Kind == searchObjectKind(kind) {
+			s.deps.OpenQualifiedData(services, session.Generation, database, object.Ref)
+			return
+		}
+	}
 }

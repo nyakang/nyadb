@@ -67,10 +67,22 @@ func (s *State) CanChangeTable(profileID int64) bool {
 // remain visibly disabled; they never dispatch placeholder callbacks.
 func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, database, name, kind string) {
 	entryScope := s.contextEntryMenu
-	scope := s.contextScope(profileID, database, name)
+	scope := s.contextScope(profileID, database, name, kind)
 	s.contextEntryMenu = &scope
 	if m.Item(locales.Text("添加到收藏夹…")).Disabled(s.deps.Favorite == nil || s.deps.CanFavorite == nil || !s.deps.CanFavorite()).Chosen() && s.contextEntryValid(entryScope, profileID, database, name) {
 		s.deps.Favorite(services, profileID, database, name, kind)
+	}
+	if GraphDefinitionKind(kind) {
+		if (kind == "图标签" || kind == "关系类型") && m.Item(locales.Text("浏览图数据（只读）")).Shortcut(0, ui.KeyEnter).Disabled(!s.canOpenGraphData(profileID, kind)).Chosen() && s.contextKindEntryValid(entryScope, profileID, database, name, kind) {
+			s.openGraphData(services, profileID, database, name, kind)
+		}
+		if m.Item(locales.Text("查看定义（只读）")).Chosen() && s.contextKindEntryValid(entryScope, profileID, database, name, kind) {
+			s.openProgram(database, name, kind)
+		}
+		if m.Item(locales.Text("刷新")).Shortcut(0, ui.KeyF5).Chosen() {
+			s.loadObjects(services, database, true)
+		}
+		return
 	}
 	if kind == "任务" {
 		if m.Item(locales.Text("查看任务")).Shortcut(0, ui.KeyEnter).Chosen() {

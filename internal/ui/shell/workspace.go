@@ -205,7 +205,7 @@ func (s *State) dataInspectorDependencies() dataworkspace.InspectorDependencies 
 }
 
 func (s *State) dataWorkspaceDependencies() dataworkspace.Dependencies {
-	return dataworkspace.Dependencies{NamespaceLabel: func(n contract.NamespaceRef) string { return s.sessions.NamespaceLabel(n) }, EditFocus: &s.editFocus,
+	return dataworkspace.Dependencies{ReopenDocument: s.reopenDataDocument, NamespaceLabel: func(n contract.NamespaceRef) string { return s.sessions.NamespaceLabel(n) }, EditFocus: &s.editFocus,
 		EditTarget:     s.registerEditTarget,
 		RecordActivity: s.recordActivity,
 		ImportTargets: func(id int64, db string) []string {
@@ -713,6 +713,7 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 			return objectworkspace.BrowserSnapshot{ProfileID: w.ProfileID, Database: w.Database, Error: w.Error, Pending: w.Pending, Connected: s.sessions.StatusFor(s.selectedProfileID) == "已连接", Opened: s.sessions.DatabaseOpened(w.ProfileID, w.Database), Refreshing: w.Refreshing(), Errors: w.Errors, Objects: w.Cache[w.Database]}
 		},
 		Back: func() { s.activeTab = 0 }, Status: func(message string) { s.status = message },
+		OpenQualifiedData: s.openQualifiedData,
 		OpenData: func(services ui.Services, id int64, db, table string) {
 			if s.activateObjectProfile(id) {
 				s.openMySQLData(services, db, table)

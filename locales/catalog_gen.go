@@ -29093,3 +29093,83 @@ func Neo4jSessionPassword() string { return In(i18n.Locale()).Neo4jSessionPasswo
 func (msgs Messages) Neo4jSessionPassword() string {
 	return Catalog.Format(msgs.locale, "neo4jSessionPassword", nil)
 }
+
+// DataRangeRetired says "原数据读取范围已失效，请重新打开数据"
+// in the language the app shows.
+func DataRangeRetired() string { return In(i18n.Locale()).DataRangeRetired() }
+
+// DataRangeRetired says "原数据读取范围已失效，请重新打开数据"
+// in the language of msgs.
+func (msgs Messages) DataRangeRetired() string {
+	return Catalog.Format(msgs.locale, "dataRangeRetired", nil)
+}
+
+// DataExplicitReopen says "重新打开数据"
+// in the language the app shows.
+func DataExplicitReopen() string { return In(i18n.Locale()).DataExplicitReopen() }
+
+// DataExplicitReopen says "重新打开数据"
+// in the language of msgs.
+func (msgs Messages) DataExplicitReopen() string {
+	return Catalog.Format(msgs.locale, "dataExplicitReopen", nil)
+}
+
+// Neo4jBrowseData says "浏览图数据（只读）"
+// in the language the app shows.
+func Neo4jBrowseData() string { return In(i18n.Locale()).Neo4jBrowseData() }
+
+// Neo4jBrowseData says "浏览图数据（只读）"
+// in the language of msgs.
+func (msgs Messages) Neo4jBrowseData() string {
+	return Catalog.Format(msgs.locale, "neo4jBrowseData", nil)
+}
+
+// Neo4jBrowseSelectedData says "浏览选中图数据"
+// in the language the app shows.
+func Neo4jBrowseSelectedData() string { return In(i18n.Locale()).Neo4jBrowseSelectedData() }
+
+// Neo4jBrowseSelectedData says "浏览选中图数据"
+// in the language of msgs.
+func (msgs Messages) Neo4jBrowseSelectedData() string {
+	return Catalog.Format(msgs.locale, "neo4jBrowseSelectedData", nil)
+}
+
+// Neo4jLastDataCypher says "上次成功 Cypher（参数化）："
+// in the language the app shows.
+func Neo4jLastDataCypher() string { return In(i18n.Locale()).Neo4jLastDataCypher() }
+
+// Neo4jLastDataCypher says "上次成功 Cypher（参数化）："
+// in the language of msgs.
+func (msgs Messages) Neo4jLastDataCypher() string {
+	return Catalog.Format(msgs.locale, "neo4jLastDataCypher", nil)
+}
+
+// Neo4jDataCypher says "参数化 Cypher："
+// in the language the app shows.
+func Neo4jDataCypher() string { return In(i18n.Locale()).Neo4jDataCypher() }
+
+// Neo4jDataCypher says "参数化 Cypher："
+// in the language of msgs.
+func (msgs Messages) Neo4jDataCypher() string {
+	return Catalog.Format(msgs.locale, "neo4jDataCypher", nil)
+}
+
+// Neo4jRangeJSONL says "限定图数据导出为 JSONL（忽略当前页）"
+// in the language the app shows.
+func Neo4jRangeJSONL() string { return In(i18n.Locale()).Neo4jRangeJSONL() }
+
+// Neo4jRangeJSONL says "限定图数据导出为 JSONL（忽略当前页）"
+// in the language of msgs.
+func (msgs Messages) Neo4jRangeJSONL() string {
+	return Catalog.Format(msgs.locale, "neo4jRangeJSONL", nil)
+}
+
+// NativeCursorKnownPageOnly says "原生游标仅支持已读取页或下一页"
+// in the language the app shows.
+func NativeCursorKnownPageOnly() string { return In(i18n.Locale()).NativeCursorKnownPageOnly() }
+
+// NativeCursorKnownPageOnly says "原生游标仅支持已读取页或下一页"
+// in the language of msgs.
+func (msgs Messages) NativeCursorKnownPageOnly() string {
+	return Catalog.Format(msgs.locale, "nativeCursorKnownPageOnly", nil)
+}

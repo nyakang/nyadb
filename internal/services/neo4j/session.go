@@ -77,7 +77,9 @@ func (s *Session) ProfileID() int64 { return s.profileID }
 // Public generations are published only at the runtime boundary.
 func (s *Session) Generation() uint64 { return 1 }
 func (s *Session) Capabilities() contract.Capabilities {
-	return contract.Capabilities{Query: true, Metadata: true, Objects: true}
+	c := s.DataDocumentCapabilities()
+	c.Query, c.Objects, c.Documents = true, true, true
+	return c
 }
 func (s *Session) Identity() Identity { return s.identity }
 func (s *Session) Alive() bool        { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed && !s.revoked }

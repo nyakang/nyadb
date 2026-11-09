@@ -46,7 +46,7 @@ func dataToolbarToggle(c *ui.Context, caption, icon string, active, disabled boo
 // navigation and moves trailing commands into its overflow menu at any width.
 func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 	page := t.page
-	disabled := t.closed || t.loading || t.edit.Busy || t.transfer.Busy || t.export.Busy
+	disabled := t.closed || t.loading || t.readRetired || t.edit.Busy || t.transfer.Busy || t.export.Busy
 	var profilesButton, fillButton, copyButton ui.Element
 	ui.Toolbar(c, func() {
 		s.asyncDataWriteActions(c, t)
@@ -86,7 +86,8 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 				t.toolbar.dock = "文本"
 			}
 		}
-		if dataToolbarToggle(c, "筛选 & 排序", "catalog-filter", t.rulesExpanded, false).Clicked() {
+		r := s.runtimeFor(t)
+		if !(r.FilterColumns != nil && len(r.FilterColumns) == 0 && r.SortColumns != nil && len(r.SortColumns) == 0) && dataToolbarToggle(c, "筛选 & 排序", "catalog-filter", t.rulesExpanded, false).Clicked() {
 			t.rulesExpanded = !t.rulesExpanded
 		}
 		if labels, supported := selectorLabels(s.selectorFor(t).Dialect); supported && dataToolbarToggle(c, labels.toolbar, "catalog-filter", t.selectorOpen, false).Clicked() {
@@ -124,7 +125,11 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 		}
 		if t.capabilities.JSONL {
 			theme.IconButton(c, "", "chevron-down").Label(locales.Text("导出选项")).Disabled(disabled || page == nil || mysqlDataHasDraft(t) || dataTransactionActive(t) || dataTransactionBusy(t) || t.transfer.Uncertain).Menu(func(m *ui.Menu) {
-				if m.Item(locales.Text("整表导出为 JSONL（忽略当前筛选）")).Chosen() {
+				label := "整表导出为 JSONL（忽略当前筛选）"
+				if t.object.Kind == "label" || t.object.Kind == "relationship" {
+					label = "限定图数据导出为 JSONL（忽略当前页）"
+				}
+				if m.Item(locales.Text(label)).Chosen() {
 					s.ExportJSONL(c.Services(), t)
 				}
 			})

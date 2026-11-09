@@ -6,6 +6,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 	"github.com/nyakang/nyadb/locales"
@@ -50,6 +51,10 @@ func (s *State) openSearchObject(services ui.Services, profile int64, generation
 	s.navigation.SuspendFilter()
 	s.revealNavigationNode(navigation.Node{Kind: "object", ProfileID: profile, Database: database, Object: entry.Object.Name, Category: entry.Object.Kind})
 	object := entry.Object
+	if s.sessions.Current().Kind == connections.Neo4j && (object.Ref.Kind == "label" || object.Ref.Kind == "relationship") {
+		s.openQualifiedData(services, generation, database, object.Ref)
+		return
+	}
 	if objectworkspace.Supports(object.Kind) {
 		if existing := s.findDocument(tabProgram, profile, database, object.Kind, object.Name); existing != nil {
 			existing.object.Update(object)

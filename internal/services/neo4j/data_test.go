@@ -78,12 +78,13 @@ func TestNeo4jDataOriginalReservationsAndPublicCapabilityBoundary(t *testing.T) 
 	if _, e := s.ReserveDataDocument(s.Namespace("neo4j").Object("relationship", "same")); !errors.Is(e, ErrBounds) {
 		t.Fatal(e)
 	}
-	if s.Capabilities().Documents || s.Capabilities().EditableTables || s.Capabilities().JSONL {
-		t.Fatal("private data binding enabled public UI")
+	c := s.Capabilities()
+	if !c.Documents || !c.JSONL || !c.Count || !c.FieldChunks || c.EditableTables || c.Transactions || c.Import || c.DesignTables {
+		t.Fatal("graph reads lost capabilities or enabled unimplemented mutations")
 	}
 	l := dataLeaseTestAfterRelease(t, s)
 	r := l.Runtime()
-	if !contract.BoundDataCapabilities(r).JSONL || r.Saver != nil || r.Importer != nil || r.Transactions.Begin != nil {
+	if !r.PageFailureRequiresReopen || !contract.BoundDataCapabilities(r).JSONL || r.Saver != nil || r.Importer != nil || r.Transactions.Begin != nil {
 		t.Fatal("native reading confused with graph editing/SQL transactions")
 	}
 	_ = s.Close()

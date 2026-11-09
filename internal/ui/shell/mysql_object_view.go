@@ -77,6 +77,19 @@ func (s *State) loadMySQLObjects(services ui.Services, database string, force bo
 }
 
 func (s *State) openMySQLObject(services ui.Services, database, name, kind string) {
+	if s.sessions.Current().Kind == connections.Neo4j && (kind == "图标签" || kind == "关系类型") {
+		id := s.sessions.Current().ProfileID
+		if !s.objectCapabilitiesFor(id).Documents {
+			return
+		}
+		for _, object := range s.sessions.CacheFor(id)[database] {
+			if object.Name == name && object.Kind == kind {
+				s.openQualifiedData(services, s.sessions.Current().Generation, database, object.Ref)
+				return
+			}
+		}
+		return
+	}
 	if kind == "任务" {
 		s.openTasks(services, s.sessions.Current().ProfileID, database)
 		return
@@ -129,6 +142,11 @@ func (s *State) openMySQLProgram(database, name, kind string) {
 
 func (s *State) openMySQLData(services ui.Services, database, table string) {
 	w := s.sessions.Current()
+	// Graph callers must supply the exact label/type reference instead of
+	// guessing a kind from a name shared by two graph categories.
+	if w.Kind == connections.Neo4j {
+		return
+	}
 	if w.Kind == connections.Meilisearch && !s.objectCapabilitiesFor(w.ProfileID).Documents {
 		s.status = locales.Text("文档网格暂不可用；可在 REST 编辑器中读取文档。")
 		return

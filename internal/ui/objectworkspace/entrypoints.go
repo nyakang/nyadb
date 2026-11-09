@@ -6,6 +6,7 @@ type contextEntryScope struct {
 	profile         int64
 	generation      uint64
 	database, table string
+	kind            string
 	target          contract.SchemaDesignTarget
 }
 
@@ -18,14 +19,18 @@ func (s *State) contextTarget(profile int64, database, name string) contract.Sch
 	}
 	return contract.SchemaDesignTarget{}
 }
-func (s *State) contextScope(profile int64, database, name string) contextEntryScope {
-	return contextEntryScope{profile: profile, generation: s.sessionFor(profile).Generation, database: database, table: name, target: s.contextTarget(profile, database, name)}
+func (s *State) contextScope(profile int64, database, name, kind string) contextEntryScope {
+	return contextEntryScope{profile: profile, generation: s.sessionFor(profile).Generation, database: database, table: name, kind: kind, target: s.contextTarget(profile, database, name)}
 }
 
 func (s *State) contextEntryValid(original *contextEntryScope, profile int64, database, table string) bool {
 	w := s.sessionFor(profile)
 	b := s.currentBrowser()
-	return original != nil && *original == s.contextScope(profile, database, table) && w.Connected && s.session().ProfileID == profile && b.ProfileID == profile && b.Database == database
+	return original != nil && *original == s.contextScope(profile, database, table, original.kind) && w.Connected && s.session().ProfileID == profile && b.ProfileID == profile && b.Database == database
+}
+
+func (s *State) contextKindEntryValid(original *contextEntryScope, profile int64, database, name, kind string) bool {
+	return original != nil && original.kind == kind && s.contextEntryValid(original, profile, database, name)
 }
 
 // Capability checks are shared by the browser and its host's toolbar.

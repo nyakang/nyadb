@@ -1,7 +1,8 @@
 NyaDB registers Neo4j as an independent public connection with native Bolt or
 Neo4j routing, versioned profiles, URI import, credential-vault integration and
 an injectable connection editor. The public workbench offers qualified graph
-metadata, Cypher documents and the shared result grid plus native typed JSON.
+metadata, Cypher documents, the shared result grid and a read-only shared data
+grid for node labels and relationship types, with native typed JSON.
 
 `Open` binds one official v6 driver to the original client, validates the native
 Neo4j agent, and disables managed and auto-commit retries. `Prepare` deeply
@@ -47,12 +48,13 @@ source and are limited to 8 MiB.
 
 Graph schemas retain native labels, relationship types, inferred node/relationship
 properties, indexes, constraints, procedures and all function overload rows.
-Qualified graph objects open read-only metadata snapshots rather than relational
-structures or implicit data queries. Schema retention shares a 16 MiB budget;
+Qualified labels and relationship types open shared data documents. A separate
+read-only definition action retains graph metadata snapshots; graph indexes,
+constraints, procedures and functions open those snapshots directly. Schema retention shares a 16 MiB budget;
 these are live observations, not atomic or relational schemas. Native node/
 relationship objects are not accepted as request parameters.
 
-The private graph data binding reserves an immutable label or relationship-type
+The graph data binding reserves an immutable label or relationship-type
 range through the shared `DataDocumentLease` contract. Reservation performs no
 I/O; each read captures its own original driver. Pages use ordered native
 `elementId()` boundaries signed for that document and refresh epoch. Node rows
@@ -69,12 +71,22 @@ after a failed read or writer. A canceled or lost page request revokes that
 original range; explicit reopening never replays it. Session/document close
 waits for captured executors and late opens to acknowledge cancellation.
 
-This binding does not yet enable public graph data tools. Shared grid UI,
-property editing and graph visualization require their own subsequent acceptance;
-the public engine continues to advertise only Query/Metadata. Add `--data` to
-the verifier commands below to check the private reads together with the public
-Cypher workbench. This records existing form/Cypher images, not graph data-grid
-screenshots.
+The shared `dataworkspace.State/Document` owns both graph kinds. Qualified
+navigation, object actions and search retain the kind, original profile/database
+and published generation, including a label and relationship type with the same
+name. Canceled pages remain busy until executor acknowledgement. A retired range
+keeps its last successful page and requires the explicit Reopen data action;
+refresh and session replacement cannot replay it. Parked completions wait for
+the original profile, and late generations cannot replace cached data. Disconnect
+and close dispose scoped graph documents and preserve existing Cypher text.
+
+The public engine advertises Query, Metadata, Documents, Keyset, Count,
+FieldChunks, Export and JSONL. Editing, transactions, import, relational filters,
+arbitrary sorting and SQL export are unavailable. `--grid` requires the public
+grid cases, original read failure/cancellation/close, explicit reopen, full range
+exports, and Chinese/English grid images at 1280x800 and 720x520, together with
+all foundation/profile/session/Cypher cases. `--data` continues to select the
+adapter read foundation separately from the public grid tests.
 
 TLS uses the URI hostname, custom CA roots and optional client certificates.
 The driver derives TLS ServerName from the URI, so a conflicting SNI override is
@@ -85,10 +97,10 @@ values; the driver can allocate a large value before adapter retention checks.
 Run the opt-in verifier in all supported fixture modes:
 
 ```sh
-python3 tools/verify_neo4j_fixture.py --mode anonymous --race --public
-python3 tools/verify_neo4j_fixture.py --mode basic --race --public
-python3 tools/verify_neo4j_fixture.py --mode tls --race --public
-python3 tools/verify_neo4j_fixture.py --mode mtls --race --public
+python3 tools/verify_neo4j_fixture.py --mode anonymous --race --grid
+python3 tools/verify_neo4j_fixture.py --mode basic --race --grid
+python3 tools/verify_neo4j_fixture.py --mode tls --race --grid
+python3 tools/verify_neo4j_fixture.py --mode mtls --race --grid
 ```
 
 The verifier creates its own digest-pinned official Neo4j 5.26.21 Community Docker
@@ -100,7 +112,7 @@ recovery, original close/termination and localized workbench/form images. Cleanu
 checks immutable container ID and nonce labels. Evidence and sanitized logs stay
 under ignored `build/neo4j/`.
 
-Graph visualization/expansion, graph data editing/import, unlimited export,
+Graph visualization/expansion, graph data editing/import,
 structured Cypher plans, administration/RBAC, Enterprise/cluster validation and
-other versions remain future work. Their capabilities are not inferred from a
+full database archives and other versions remain future work. Their capabilities are not inferred from a
 successful Community connection or the ability to execute arbitrary Cypher.

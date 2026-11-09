@@ -23,6 +23,7 @@ type Verifier func(context.Context, int64, string, string, *contract.DataEditRes
 type Runtime = contract.DataRuntime
 
 type Dependencies struct {
+	ReopenDocument    func(ui.Services, *Document)
 	CloseDocument     func(ui.Services, *Document)
 	NamespaceLabel    func(contract.NamespaceRef) string
 	EditFocus         *string
@@ -49,6 +50,7 @@ type Document struct {
 	selectorHistory                  bool
 	selectorHistorySorts             []contract.DataSortRule
 	pagingRead                       bool
+	readRetired, readStopping        bool
 	runtimeLease                     contract.DataDocumentLease
 	boundRuntime                     *Runtime
 	mainFilterDisabled               bool

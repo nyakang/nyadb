@@ -2846,5 +2846,13 @@
   "graphResultTruncated": "Result truncated",
   "neo4jMetadataOpen": "View Neo4j metadata",
   "neo4jMetadataObservation": "Native Neo4j metadata; property types are live observations. Queries do not run automatically.",
-  "neo4jSessionPassword": "Neo4j session password"
+  "neo4jSessionPassword": "Neo4j session password",
+  "dataRangeRetired": "The original data range has expired. Reopen the data.",
+  "dataExplicitReopen": "Reopen data",
+  "neo4jBrowseData": "Browse graph data (read only)",
+  "neo4jBrowseSelectedData": "Browse selected graph data",
+  "neo4jLastDataCypher": "Last successful Cypher (parameterized): ",
+  "neo4jDataCypher": "Parameterized Cypher: ",
+  "neo4jRangeJSONL": "Export this graph range as JSONL (ignore current page)",
+  "nativeCursorKnownPageOnly": "Native cursors support previously read pages and the next page."
 }

@@ -30,6 +30,7 @@ SESSION_REQUIRED = ('SessionQualifiedMetadataAndOriginalDatabase', 'SessionTyped
 
 PUBLIC_REQUIRED = ("PublicRuntimeQualifiedGraphAndGeneration", "PublicCypherLostCanceledAndOriginalCloseNeverReplay", "PublicChooserReopenNavigationCypherAndLocalizedResults")
 DATA_REQUIRED = ('DataQualifiedNodesRelationshipsAndCursor', 'DataOriginalFingerprintsFieldsAndExport', 'DataCancellationOriginalCloseAndNoReplay')
+GRID_REQUIRED = ('PublicDataSharedGridPagingInspectorExportParkGenerationAndClose', 'PublicDataLostCanceledOriginalCloseAndExplicitReopen')
 
 def remove_owned(identifier, nonce):
     if not re.fullmatch('[0-9a-f]{64}', identifier):
@@ -47,10 +48,12 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def check_acceptance(log, profile=False, session=False, public=False, data=False):
+def check_acceptance(log, profile=False, session=False, public=False, data=False, grid=False):
+    public = public or grid
+    data = data or grid
     session = session or public or data
     profile = profile or session
-    for name in REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()):
+    for name in REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ()):
         if not re.search(r'^--- PASS: TestNeo4jNative' + name + r' \(', log, re.M):
             raise RuntimeError('Missing native acceptance: ' + name)
     if re.search(r'^\s*--- (SKIP|FAIL):', log, re.M) or 'WARNING: DATA RACE' in log:
@@ -72,7 +75,9 @@ def certificates(folder):
     openssl('req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', 'wrong.key', '-out', 'wrong.crt', '-days', '2', '-subj', '/CN=Untrusted CA', cwd=folder)
 
 
-def verify(mode, race, profile=False, session=False, public=False, data=False):
+def verify(mode, race, profile=False, session=False, public=False, data=False, grid=False):
+    public = public or grid
+    data = data or grid
     session = session or public or data
     profile = profile or session
     nonce = uuid.uuid4().hex
@@ -89,8 +94,11 @@ def verify(mode, race, profile=False, session=False, public=False, data=False):
     if public:
         for package in ('internal/db/graphresult', 'internal/services/dbruntime', 'internal/ui/shell', 'internal/ui/navigation', 'internal/ui/connectioncatalog', 'internal/ui/sqlworkspace', 'internal/ui/objectworkspace', 'internal/ui/sessionbrowser'):
             sources += list((ROOT/package).glob('*.go'))
+    if grid:
+        for package in ('internal/ui/dataworkspace', 'internal/ui/gridview', 'internal/ui/theme'):
+            sources += list((ROOT/package).glob('*.go'))
     report = {'nonce': nonce, 'mode': mode, 'version': VERSION, 'image': IMAGE,
-              'scope': 'public-workbench-and-private-graph-data' if public and data else 'private-original-graph-data' if data else 'public-native-workbench' if public else 'private-native-session-and-graph-contract' if session else ('private-native-profile-and-editor' if profile else 'private-native-foundation'), 'race': race, 'passed': False,
+              'scope': 'public-shared-graph-data-and-workbench' if grid else 'public-workbench-and-private-graph-data' if public and data else 'private-original-graph-data' if data else 'public-native-workbench' if public else 'private-native-session-and-graph-contract' if session else ('private-native-profile-and-editor' if profile else 'private-native-foundation'), 'race': race, 'passed': False,
               'source_hashes': {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(sources))}}
     identifier = None
     try:
@@ -177,11 +185,17 @@ def verify(mode, race, profile=False, session=False, public=False, data=False):
                 env['NYADB_NEO4J_PUBLIC_IMAGES'] = str(build/('owned-fixture-'+nonce+'-public-images'))
             if data:
                 env['NYADB_NEO4J_DATA_IT'] = '1'
+            if grid:
+                env['NYADB_NEO4J_GRID_IT'] = '1'
+                env['NYADB_NEO4J_GRID_IMAGES'] = str(build/('owned-fixture-'+nonce+'-grid-images'))
+                env['NYADB_NEO4J_SHELL_GRID_IMAGES'] = str(build/('owned-fixture-'+nonce+'-shell-grid-images'))
             env['CGO_ENABLED'] = '1' if race else '0'
             packages = ['./internal/services/neo4j'] + (['./internal/ui/connectioneditor'] if profile else [])
             if public:
                 packages += ['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell']
-            accepted = REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ())
+            if grid:
+                packages += ['./internal/ui/dataworkspace']
+            accepted = REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ())
             pattern = '^TestNeo4jNative(' + '|'.join(accepted) + ')$'
             command = ['go', 'test'] + (['-race'] if race else []) + packages + ['-run', pattern, '-count=1', '-timeout=8m', '-v']
             result = subprocess.run(command, cwd=ROOT, env=env, capture_output=True, text=True)
@@ -191,7 +205,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False):
             log_path.write_text(log)
             if result.returncode:
                 raise RuntimeError('Native Neo4j verification failed; see '+str(log_path.relative_to(ROOT)))
-            check_acceptance(log, profile, session, public, data)
+            check_acceptance(log, profile, session, public, data, grid)
             if profile:
                 pictures = sorted(Path(env['NYADB_NEO4J_PROFILE_IMAGES']).glob('*.png'))
                 if len(pictures) != 48:
@@ -202,6 +216,12 @@ def verify(mode, race, profile=False, session=False, public=False, data=False):
                 if len(pictures) != 16:
                     raise RuntimeError('Missing localized Neo4j workbench screenshots')
                 report['public_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
+            if grid:
+                for field, variable, count in [('grid_images', 'NYADB_NEO4J_GRID_IMAGES', 12), ('shell_grid_images', 'NYADB_NEO4J_SHELL_GRID_IMAGES', 8)]:
+                    pictures = sorted(Path(env[variable]).rglob('*.png'))
+                    if len(pictures) != count:
+                        raise RuntimeError('Missing localized public graph data screenshots: '+field)
+                    report[field] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             report['passed'] = True
             report['accepted'] = list(accepted)
     finally:
@@ -224,8 +244,9 @@ def main():
     parser.add_argument('--session', action='store_true', help='Include original sessions, qualified graph metadata and Cypher leases')
     parser.add_argument('--public', action='store_true', help='Include public provider, workbench, native results and original recovery')
     parser.add_argument('--data', action='store_true', help='Include private original-session graph data reads, cursors, fields, export and cancellation')
+    parser.add_argument('--grid', action='store_true', help='Include the public shared node/relationship grid, original read retirement and explicit reopen')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.profile, args.session, args.public, args.data)
+    verify(args.mode, args.race, args.profile, args.session, args.public, args.data, args.grid)
 
 
 if __name__ == '__main__':

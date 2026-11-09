@@ -104,18 +104,20 @@ type Dependencies struct {
 	SessionFor       func(int64) Session
 	Runner           func() TableRunner
 	OpenData         func(ui.Services, int64, string, string)
-	OpenStructure    func(ui.Services, int64, string, string)
-	OpenProgram      func(int64, string, string, string)
-	Selected         func(int64, string, string, string)
-	FilterChanged    func(int64, string, string)
-	LoadObjects      func(ui.Services, string, bool)
-	CancelObjects    func()
-	RefreshDatabases func(ui.Services)
-	Changed          func(ui.Services, TableEvent)
-	Status           func(string)
-	Session          func() Session
-	Loader           func() Loader
-	Back             func()
+	// Qualified graph data retains original kind and public session generation.
+	OpenQualifiedData func(ui.Services, uint64, string, contract.ObjectRef)
+	OpenStructure     func(ui.Services, int64, string, string)
+	OpenProgram       func(int64, string, string, string)
+	Selected          func(int64, string, string, string)
+	FilterChanged     func(int64, string, string)
+	LoadObjects       func(ui.Services, string, bool)
+	CancelObjects     func()
+	RefreshDatabases  func(ui.Services)
+	Changed           func(ui.Services, TableEvent)
+	Status            func(string)
+	Session           func() Session
+	Loader            func() Loader
+	Back              func()
 }
 
 // Document owns its immutable object identity and mutable presentation state.

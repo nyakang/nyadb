@@ -29,6 +29,10 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 		kind = "视图"
 	}
 	switch o.Kind {
+	case "label":
+		kind = "图标签"
+	case "relationship":
+		kind = "关系类型"
 	case "points":
 		kind = "向量点"
 	case "documents":
@@ -112,7 +116,7 @@ func (d *Document) Busy() bool {
 }
 func (d *Document) HasTransaction() bool { return dataTransactionActive(d) }
 func (s *State) ExportJSONL(services ui.Services, d *Document) {
-	if d == nil || d.closed || d.Busy() || d.HasDraft() || d.HasTransaction() || s.savePath == nil || s.writeStream == nil {
+	if d == nil || d.closed || d.readRetired || d.Busy() || d.HasDraft() || d.HasTransaction() || s.savePath == nil || s.writeStream == nil {
 		return
 	}
 	export := s.runtimeFor(d).JSONL
@@ -267,3 +271,16 @@ func (s *State) sortable(d *Document, name string) bool {
 	allowed := s.runtimeFor(d).SortColumns
 	return allowed == nil || slices.Contains(allowed, name)
 }
+
+// Reopen requests a fresh document only after the original page executor has
+// acknowledged retirement and while the original public session is still active.
+func (s *State) CanReopen(d *Document) bool {
+	return d != nil && d.readRetired && !d.Busy() && !d.HasDraft() && !d.HasTransaction() &&
+		s.canUseSession(d) && d.profileID == s.session().ProfileID && s.deps.ReopenDocument != nil
+}
+func (s *State) Reopen(services ui.Services, d *Document) {
+	if s.CanReopen(d) {
+		s.deps.ReopenDocument(services, d)
+	}
+}
+func (d *Document) Generation() uint64 { return d.generation }

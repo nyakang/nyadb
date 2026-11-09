@@ -13,7 +13,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 )
 
-// This original-session binding is private until shared graph data UI acceptance.
+// This binding owns the original graph range for the shared data document.
 // Label/type and element IDs are live observations, not incarnation or CAS tokens.
 type dataLease struct {
 	mu, pageMu   sync.Mutex
@@ -64,10 +64,10 @@ func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 }
 
 func (*Session) DataDocumentCapabilities() contract.Capabilities {
-	return contract.Capabilities{Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
+	return contract.Capabilities{Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
 }
 func (l *dataLease) Runtime() contract.DataRuntime {
-	return contract.DataRuntime{Capabilities: l.session.DataDocumentCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
+	return contract.DataRuntime{PageFailureRequiresReopen: true, Capabilities: l.session.DataDocumentCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
 		ReadDescription: func(contract.DataOptions) string { return "MATCH · elementId ordered native graph read" },
 		FilterColumns:   []string{}, SortColumns: []string{}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
 }

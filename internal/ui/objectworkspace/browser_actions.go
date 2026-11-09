@@ -34,7 +34,7 @@ func (s *State) browserActions() browserActions {
 		browser: b.browserState, objects: append([]mysqlsvc.ObjectIdentity(nil), s.SelectedObjectIdentities()...)}
 	selected := a.ready && b.Row >= 0 && b.Row < len(a.items)
 	a.canProgram = selected && Supports(a.items[b.Row].Kind)
-	a.canOpen = selected && !a.canProgram && s.canOpenObject(b.ProfileID, a.items[b.Row].Kind)
+	a.canOpen = selected && (!a.canProgram || s.canOpenGraphData(b.ProfileID, a.items[b.Row].Kind)) && s.canOpenObject(b.ProfileID, a.items[b.Row].Kind)
 	a.canCreate = a.ready && s.CanCreateTable(b.ProfileID, b.Database) && (b.Kind == "全部" || b.Kind == "表")
 	a.canRefresh = b.Connected && (b.Database == "" || a.ready) && !b.Refreshing && b.Pending == ""
 	a.canBatch = a.ready && s.canAdministration(b.ProfileID) && s.deps.BatchExecutor != nil && !s.tablePending && (s.batch == nil || !s.batch.busy)

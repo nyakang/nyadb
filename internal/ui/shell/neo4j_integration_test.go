@@ -18,6 +18,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/neo4j"
 	"github.com/nyakang/nyadb/internal/storage/localdb"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
+	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 	"github.com/nyakang/nyadb/locales"
 )
 
@@ -53,7 +54,7 @@ func TestNeo4jNativePublicChooserReopenNavigationCypherAndLocalizedResults(t *te
 		}
 		return r
 	}
-	label, relationship := "NyaPublic_"+f.Nonce, "NyaRelPublic_"+f.Nonce
+	label, relationship := "NyaPublic_"+f.Nonce, "NyaPublic_"+f.Nonce
 	defer run("MATCH (n:`" + label + "`) DETACH DELETE n")
 	run("CREATE (a:`" + label + "` {name:'原始;节点🐱',exact:9223372036854775807})-[r:`" + relationship + "` {weight:1.5}]->(b:`" + label + "` {name:'end'})")
 	u, _ := url.Parse(f.Config.URI)
@@ -159,7 +160,7 @@ func TestNeo4jNativePublicChooserReopenNavigationCypherAndLocalizedResults(t *te
 			t.Fatal("native category lost")
 		}
 	}
-	s.submitNavigation(services, navigation.Node{Kind: "object", ProfileID: p.ID, Database: "neo4j", Category: "图标签", Object: label})
+	s.openMySQLProgram("neo4j", label, "图标签")
 	definition := s.currentTab()
 	if definition.object == nil || definition.data != nil || definition.object.Object().Kind != "label" {
 		t.Fatal("graph metadata became a table")
@@ -225,6 +226,54 @@ func TestNeo4jNativePublicChooserReopenNavigationCypherAndLocalizedResults(t *te
 		}
 		i18n.SetLocaleFunc(nil)
 	}
+	var graphDataTabs []*tab
+	if os.Getenv("NYADB_NEO4J_GRID_IT") == "1" {
+		for _, item := range []struct{ kind, refKind string }{{"图标签", "label"}, {"关系类型", "relationship"}} {
+			s.submitNavigation(services, navigation.Node{Kind: "object", ProfileID: p.ID, Database: "neo4j", Category: item.kind, Object: label})
+			dataTab := s.currentTab()
+			if dataTab.data == nil || dataTab.data.Object() != w.Namespaces["neo4j"].Object(item.refKind, label) {
+				t.Fatal("native graph navigation lost same-name kind")
+			}
+			wait(func() bool { return !dataTab.data.Loading() })
+			if dataTab.data.Error() != "" || dataTab.data.Page() == nil {
+				t.Fatal("graph navigation grid failed", dataTab.data.Error())
+			}
+			graphDataTabs = append(graphDataTabs, dataTab)
+			count := len(s.tabs)
+			s.openMySQLObject(services, "neo4j", label, item.kind)
+			if s.currentTab() != dataTab || len(s.tabs) != count {
+				t.Fatal("qualified graph opener duplicated document")
+			}
+			for _, object := range w.Cache["neo4j"] {
+				if object.Ref == dataTab.data.Object() {
+					s.openSearchObject(services, p.ID, w.Generation, objectworkspace.ObjectSearchEntry{Namespace: contract.Namespace{Ref: object.Ref.Namespace(), Label: "neo4j"}, Object: object})
+					if s.currentTab() != dataTab || len(s.tabs) != count {
+						t.Fatal("graph search conflated definition or same-name kind")
+					}
+				}
+			}
+			if output := os.Getenv("NYADB_NEO4J_SHELL_GRID_IMAGES"); output != "" {
+				for _, language := range []string{"zh-Hans", "en"} {
+					i18n.SetLocaleFunc(func() string { return language })
+					folder := filepath.Join(output, language)
+					if e = os.MkdirAll(folder, 0700); e != nil {
+						t.Fatal(e)
+					}
+					for _, size := range [][2]int{{1280, 800}, {720, 520}} {
+						capture := ui.NewTester(s.View, size[0], size[1])
+						if !capture.HasText(locales.Text("原生游标读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。")) {
+							t.Fatal("live shared graph grid not shown")
+						}
+						writeDomainCapture(t, folder, fmt.Sprintf("%s-%dx%d", item.refKind, size[0], size[1]), capture)
+					}
+				}
+				i18n.SetLocaleFunc(nil)
+			}
+		}
+		if graphDataTabs[0].id == graphDataTabs[1].id || graphDataTabs[0].identity() == graphDataTabs[1].identity() {
+			t.Fatal("same-name graph types shared a tab")
+		}
+	}
 	for i, candidate := range s.tabs {
 		if candidate.id == query.id {
 			s.activeTab = i
@@ -235,6 +284,16 @@ func TestNeo4jNativePublicChooserReopenNavigationCypherAndLocalizedResults(t *te
 	query.query.Editor.Buffer.Set(retained)
 	s.disconnectMySQLProfile(p.ID)
 	tt.Frame()
+	for _, dataTab := range graphDataTabs {
+		if dataTab.data.Page() != nil || dataTab.data.Inspector() != nil {
+			t.Fatal("disconnect retained original graph caches")
+		}
+		for _, live := range s.tabs {
+			if live == dataTab {
+				t.Fatal("disconnect retained scoped graph tab")
+			}
+		}
+	}
 	if !query.query.NeedsRecovery() || query.query.Editor.Buffer.String() != retained {
 		t.Fatal("disconnect discarded source")
 	}

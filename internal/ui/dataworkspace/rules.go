@@ -59,6 +59,10 @@ func (s *State) Refresh(services ui.Services, t *Document) {
 	if t == nil || t.closed {
 		return
 	}
+	if t.readRetired || t.loading && s.runtimeFor(t).PageFailureRequiresReopen {
+		s.Load(services, t, true)
+		return
+	}
 	t.offset = 0
 	t.after = nil
 	t.useKeyset = t.keysetEnabled()
