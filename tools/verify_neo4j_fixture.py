@@ -31,8 +31,9 @@ PROFILE_REQUIRED = ('ProfileURIReopenAndOriginalEditorCheck', 'ProfileOriginalCa
 SESSION_REQUIRED = ('SessionQualifiedMetadataAndOriginalDatabase', 'SessionTypedQueriesCompletionAndExplicitRecovery', 'SessionLostCanceledAndCloseNeverReplay', 'SessionBlockedCancellationAcknowledgesOriginalExecutor', 'PropertyWritesTypedLocksConflictsAndNativeReceipts', 'PropertyPresenceWritesAbsentLocksTypedAdditionAndRemoval', 'PropertyListsTypedLocksReceiptsAndEmptyPresence', 'PropertyExtendedTypedLocksReceiptsAndComponents')
 
 PUBLIC_REQUIRED = ("PublicRuntimeQualifiedGraphAndGeneration", "PublicCypherLostCanceledAndOriginalCloseNeverReplay", "PublicChooserReopenNavigationCypherAndLocalizedResults", "PublicCypherNodePropertiesOriginalRowsSnapshotsAndExport", "PublicCypherGraphViewOriginalRecordsSnapshotsImagesAndCleanup", "PublicGraphNeighborsOriginalRecordsSnapshotsBoundsAndGeneration", "PublicGraphNeighborsLostCanceledOriginalCloseNeverReplay", "PublicGraphPropertyWritesOriginalRecordsSnapshotsConflictsAndVerification", "PublicGraphPropertyLostCanceledOriginalCloseAndRecoveryNeverReplay", "PublicGraphPropertyNeighborObservationOrderAndContinuedEditing", "PublicGraphPropertyPresenceOriginalUIConflictsSnapshotsAndGeneration", "PublicGraphPropertyListsOriginalUIReceiptsSnapshotsAndGeneration", "PublicGraphPropertyExtendedOriginalUIComponentsSnapshotsAndGeneration", "PublicGraphPropertyExtendedLostCanceledOriginalCloseAndRecoveryNeverReplay")
-DATA_REQUIRED = ('DataQualifiedNodesRelationshipsAndCursor', 'DataOriginalFingerprintsFieldsAndExport', 'DataCancellationOriginalCloseAndNoReplay')
-GRID_REQUIRED = ('PublicDataSharedGridPagingInspectorExportParkGenerationAndClose', 'PublicDataLostCanceledOriginalCloseAndExplicitReopen', 'PublicDataPropertyColumnsAndOriginalFields')
+DATA_REQUIRED = ('DataQualifiedNodesRelationshipsAndCursor', 'DataOriginalFingerprintsFieldsAndExport', 'DataCancellationOriginalCloseAndNoReplay', 'DataWriteExplicitTransactionsLockComparisonRollbackAndCommit', 'DataWritePropertiesTypedAtomicReceiptsAndOldRows', 'DataWriteBlockedOriginalComparisonCancellationAndErrors')
+WRITE_REQUIRED = ('DataWriteExplicitTransactionsLockComparisonRollbackAndCommit', 'DataWritePropertiesTypedAtomicReceiptsAndOldRows', 'DataWriteBlockedOriginalComparisonCancellationAndErrors')
+GRID_REQUIRED = ('PublicDataSharedGridPagingInspectorExportParkGenerationAndClose', 'PublicDataLostCanceledOriginalCloseAndExplicitReopen', 'PublicDataPropertyColumnsAndOriginalFields', 'PublicDataPropertyEditingTypedReceiptsParkConflictsAndContinuedEdits', 'PublicDataCommitReplyLostCanceledOriginalCloseNeverReplay')
 
 def remove_owned(identifier, nonce):
     if not re.fullmatch('[0-9a-f]{64}', identifier):
@@ -50,12 +51,13 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def check_acceptance(log, profile=False, session=False, public=False, data=False, grid=False):
+def check_acceptance(log, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False):
     public = public or grid
     data = data or grid
     session = session or public or data
     profile = profile or session
-    for name in REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ()):
+    names = WRITE_REQUIRED + GRID_REQUIRED if grid_writes else REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ())
+    for name in names:
         if not re.search(r'^--- PASS: TestNeo4jNative' + name + r' \(', log, re.M):
             raise RuntimeError('Missing native acceptance: ' + name)
     if re.search(r'^\s*--- (SKIP|FAIL):', log, re.M) or 'WARNING: DATA RACE' in log:
@@ -77,30 +79,33 @@ def certificates(folder):
     openssl('req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', 'wrong.key', '-out', 'wrong.crt', '-days', '2', '-subj', '/CN=Untrusted CA', cwd=folder)
 
 
-def verify(mode, race, profile=False, session=False, public=False, data=False, grid=False):
-    public = public or grid
-    data = data or grid
-    session = session or public or data
-    profile = profile or session
+def verify(mode, race, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False):
+    if grid_writes:
+        profile, session, public, data, grid = False, True, False, True, True
+    else:
+        public = public or grid
+        data = data or grid
+        session = session or public or data
+        profile = profile or session
     nonce = uuid.uuid4().hex
     build = ROOT/'build/neo4j'
     build.mkdir(parents=True, exist_ok=True)
     report_path = build/('owned-fixture-'+nonce+'.json')
     log_path = build/('owned-fixture-'+nonce+'.log')
     sources = list((ROOT/'internal/services/neo4j').glob('*.go')) + list((ROOT/'internal/services/connections').glob('neo4j*.go')) + [ROOT/'go.mod', ROOT/'go.sum', ROOT/'tests/test_neo4j_fixture.py', Path(__file__).resolve()]
-    if profile:
+    if profile or grid_writes:
         sources += list((ROOT/'internal/services/connections').glob('*.go')) + list((ROOT/'internal/storage/localdb').glob('*.go')) + list((ROOT/'internal/ui/connectioneditor').glob('*.go'))
         sources += list((ROOT/'locales').glob('*.go')) + list((ROOT/'locales').glob('*.json')) + [ROOT/'internal/ui/shell/connection_engine_files.go']
     if session:
         sources += list((ROOT/'internal/db/contract').glob('*.go'))
-    if public:
+    if public or grid_writes:
         for package in ('internal/db/graphresult', 'internal/services/dbruntime', 'internal/ui/shell', 'internal/ui/navigation', 'internal/ui/connectioncatalog', 'internal/ui/sqlworkspace', 'internal/ui/objectworkspace', 'internal/ui/sessionbrowser'):
             sources += list((ROOT/package).glob('*.go'))
     if grid:
         for package in ('internal/ui/dataworkspace', 'internal/ui/gridview', 'internal/ui/theme'):
             sources += list((ROOT/package).glob('*.go'))
     report = {'nonce': nonce, 'mode': mode, 'version': VERSION, 'image': IMAGE,
-              'scope': 'public-shared-graph-data-and-workbench' if grid else 'public-workbench-and-private-graph-data' if public and data else 'private-original-graph-data' if data else 'public-native-workbench' if public else 'private-native-session-and-graph-contract' if session else ('private-native-profile-and-editor' if profile else 'private-native-foundation'), 'race': race, 'passed': False,
+              'scope': 'public-shared-graph-property-write-and-close-followup' if grid_writes else 'public-shared-graph-data-and-workbench' if grid else 'public-workbench-and-private-graph-data' if public and data else 'private-original-graph-data' if data else 'public-native-workbench' if public else 'private-native-session-and-graph-contract' if session else ('private-native-profile-and-editor' if profile else 'private-native-foundation'), 'race': race, 'passed': False,
               'source_hashes': {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(sources))}}
     identifier = None
     try:
@@ -197,7 +202,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
                 packages += ['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell']
             if grid:
                 packages += ['./internal/ui/dataworkspace']
-            accepted = REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ())
+            accepted = WRITE_REQUIRED + GRID_REQUIRED if grid_writes else REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ())
             pattern = '^TestNeo4jNative(' + '|'.join(accepted) + ')$'
             command = ['go', 'test'] + (['-race'] if race else []) + packages + ['-run', pattern, '-count=1', '-timeout=8m', '-v']
             result = subprocess.run(command, cwd=ROOT, env=env, capture_output=True, text=True)
@@ -207,7 +212,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
             log_path.write_text(log)
             if result.returncode:
                 raise RuntimeError('Native Neo4j verification failed; see '+str(log_path.relative_to(ROOT)))
-            check_acceptance(log, profile, session, public, data, grid)
+            check_acceptance(log, profile, session, public, data, grid, grid_writes)
             if profile:
                 pictures = sorted(Path(env['NYADB_NEO4J_PROFILE_IMAGES']).glob('*.png'))
                 if len(pictures) != 48:
@@ -219,7 +224,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
                     raise RuntimeError('Missing localized Neo4j workbench screenshots')
                 report['public_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             if grid:
-                for field, variable, count in [('grid_images', 'NYADB_NEO4J_GRID_IMAGES', 24), ('shell_grid_images', 'NYADB_NEO4J_SHELL_GRID_IMAGES', 8)]:
+                for field, variable, count in [('grid_images', 'NYADB_NEO4J_GRID_IMAGES', 64)] + ([] if grid_writes else [('shell_grid_images', 'NYADB_NEO4J_SHELL_GRID_IMAGES', 8)]):
                     pictures = sorted(Path(env[variable]).rglob('*.png'))
                     if len(pictures) != count:
                         raise RuntimeError('Missing localized public graph data screenshots: '+field)
@@ -247,8 +252,9 @@ def main():
     parser.add_argument('--public', action='store_true', help='Include public provider, workbench, native results and original recovery')
     parser.add_argument('--data', action='store_true', help='Include private original-session graph data reads, cursors, fields, export and cancellation')
     parser.add_argument('--grid', action='store_true', help='Include the public shared node/relationship grid, original read retirement and explicit reopen')
+    parser.add_argument('--grid-writes', action='store_true', help='Run native property transactions and public grid read/write/close regression cases')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.profile, args.session, args.public, args.data, args.grid)
+    verify(args.mode, args.race, args.profile, args.session, args.public, args.data, args.grid, args.grid_writes)
 
 
 if __name__ == '__main__':

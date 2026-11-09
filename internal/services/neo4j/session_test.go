@@ -77,7 +77,7 @@ func TestNeo4jSessionLeaseReservationIsPureBoundedAndQualified(t *testing.T) {
 			t.Fatal("foreign namespace accepted", e)
 		}
 	}
-	if s.Namespace("") != s.Namespace("neo4j") || s.Generation() != 1 || s.Capabilities().EditableTables || s.Capabilities().Transactions {
+	if s.Namespace("") != s.Namespace("neo4j") || s.Generation() != 1 || !s.Capabilities().EditableTables || s.Capabilities().Transactions {
 		t.Fatal("invented SQL capability or database")
 	}
 	if _, e := s.TableMetadata(context.Background(), s.Namespace("neo4j").Object("label", "Person")); !errors.Is(e, contract.ErrUnsupported) {

@@ -110,9 +110,9 @@ func mysqlDataCanEdit(t *Document, row, source int) bool {
 		return false
 	}
 	if d := mysqlDataDraftForRow(t, row); d != nil {
-		return d.Kind != "delete"
+		return d.Kind != "delete" && t.allowsDataEdit(d.Kind)
 	}
-	return row < len(t.page.RowSnapshots) && t.page.RowSnapshots[row] != nil && mysqlDataRowKey(t, row) != ""
+	return t.allowsDataEdit("update") && row < len(t.page.RowSnapshots) && t.page.RowSnapshots[row] != nil && mysqlDataRowKey(t, row) != ""
 }
 func mysqlDataHasDraft(t *Document) bool {
 	if t == nil {
@@ -201,15 +201,20 @@ func (s *State) finishMySQLCellEdit(t *Document, accept bool) {
 	if v.Kind == contract.Null {
 		v.Kind = t.page.ColumnMetadata[source].ValueKind
 	}
-	if t.portable() {
+	if t.portable() || s.runtimeFor(t).EditValueKinds != nil {
 		v.Kind = typedKind(e.Kind)
+		if kinds := s.runtimeFor(t).EditValueKinds; kinds != nil && !slices.Contains(kinds, v.Kind) {
+			t.edit.Editor = e
+			t.edit.Err = locales.Text("此字段类型暂不支持编辑")
+			return
+		}
 		v.Null = v.Kind == contract.Null
 		v.Binary = v.Kind == contract.Binary
 		if v.Null {
 			v.Text = ""
 		}
 	}
-	if v.Binary || (!t.portable() && e.Original.Binary) {
+	if v.Binary || (!t.portable() && s.runtimeFor(t).EditValueKinds == nil && e.Original.Binary) {
 		raw, err := hex.DecodeString(strings.TrimPrefix(strings.TrimSpace(e.Text), "0x"))
 		if err != nil {
 			t.edit.Editor = e
@@ -336,7 +341,7 @@ func (s *State) startMySQLDataEditRead(services ui.Services, t *Document, row, s
 	}()
 }
 func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
-	if t == nil || t.page == nil || !t.editable() || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil {
+	if t == nil || t.page == nil || !t.editable() || !t.allowsDataEdit("insert") || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil {
 		return
 	}
 	if !t.edit.Batch && mysqlDataHasDraft(t) {
@@ -377,7 +382,7 @@ func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
 	}
 }
 func (s *State) deleteMySQLDataRecords(services ui.Services, t *Document, row int) {
-	if t == nil || t.page == nil || !t.editable() || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil {
+	if t == nil || t.page == nil || !t.editable() || !t.allowsDataEdit("delete") || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil {
 		return
 	}
 	s.finishMySQLCellEdit(t, true)
@@ -462,7 +467,7 @@ func (s *State) saveMySQLData(services ui.Services, t *Document) {
 	db, table := t.database, t.table
 	pending := t.transaction.token != nil
 	history := mysqlDataWriteHistoryRequest(db, table, edits, pending)
-	if runtime := s.runtimeFor(t); runtime.AsyncWrites {
+	if runtime := s.runtimeFor(t); runtime.WriteDescription != "" {
 		for i := range history {
 			history[i].SQL, history[i].Summary = runtime.WriteDescription, true
 		}
@@ -582,6 +587,9 @@ func (s *State) acceptMySQLDataSaved(t *Document, keys []string, saved *contract
 }
 func (s *State) consumeEdits(services ui.Services) {
 	for _, t := range s.documents {
+		if !t.closed && s.consumeFor(t) {
+			s.consumeNativeWriteReceipt(t)
+		}
 		if t.closed || t.edit.Results == nil || !s.consumeFor(t) {
 			continue
 		}
@@ -589,6 +597,9 @@ func (s *State) consumeEdits(services ui.Services) {
 		case r := <-t.edit.Results:
 			if r.Profile != s.sessionFor(t).ProfileID || r.Profile != t.profileID || r.Request != t.edit.Request {
 				continue
+			}
+			if r.Saved != nil && r.Saved.NativeJSON != "" {
+				t.nativeReceipt.JSON = r.Saved.NativeJSON
 			}
 			s.recordDataWriteHistory(t, r.History, r.Saved, r.Err, r.Generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected)
 			if t.edit.Cancel != nil {
@@ -777,7 +788,7 @@ func (s *State) verifyMySQLDataSave(services ui.Services, t *Document) {
 // LeavePending is presentation state for a host that suspended its own modal.
 // It does not discard a draft or run a saved continuation.
 func (t *Document) LeavePending() bool {
-	return t != nil && !t.closed && (t.edit.LeaveOpen || t.edit.AsyncCloseOpen || t.edit.Busy || t.edit.SaveErrorOpen || t.transaction.leaveOpen || dataTransactionBusy(t) || t.transfer.LeaveOpen || t.transfer.Busy)
+	return t != nil && !t.closed && (t.edit.LeaveOpen || t.edit.AsyncCloseOpen || t.nativeReceipt.CloseOpen || t.edit.Busy || t.edit.SaveErrorOpen || t.transaction.leaveOpen || dataTransactionBusy(t) || t.transfer.LeaveOpen || t.transfer.Busy)
 }
 
 func (s *State) GuardLeave(t *Document, next func(ui.Services)) bool {
@@ -786,6 +797,10 @@ func (s *State) GuardLeave(t *Document, next func(ui.Services)) bool {
 	}
 	if t.edit.AsyncCloseApproved && !t.Busy() {
 		t.edit.AsyncCloseApproved = false
+		return false
+	}
+	if t.nativeReceipt.CloseApproved && !t.Busy() {
+		t.nativeReceipt.CloseApproved = false
 		return false
 	}
 	if t.edit.Busy || t.edit.Uncertain != nil || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain {
@@ -898,7 +913,7 @@ func (s *State) navigateMySQLCellEdit(services ui.Services, t *Document, row int
 	}
 	for _, name := range order {
 		source := slices.Index(t.page.Columns, name)
-		if source >= 0 && !t.hiddenColumns[name] && !t.page.ColumnMetadata[source].Generated || contract.DataColumnGenerated(t.page.ColumnMetadata[source]) {
+		if source >= 0 && !t.hiddenColumns[name] && !t.page.ColumnMetadata[source].Generated && !contract.DataColumnGenerated(t.page.ColumnMetadata[source]) {
 			visible = append(visible, name)
 		}
 	}
@@ -946,6 +961,7 @@ func (s *State) Modals(c *ui.Context) {
 			continue
 		}
 		s.asyncDataEvidenceModal(c, t)
+		s.nativeWriteReceiptModal(c, t)
 		s.toolsModals(c, t)
 		s.transferModals(c, t)
 		s.dataFillModal(c, t)
@@ -1041,7 +1057,7 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 	if message != "" {
 		ui.Text(c, message).FontSize(theme.Font(c, theme.SmallFontSize)).TextColor(color).SingleLine().Grow(1).MinWidth(0).Tooltip(message)
 	}
-	if !s.runtimeFor(t).AsyncWrites && t.edit.Err != "" && t.edit.Uncertain != nil && ui.Button(c, locales.Text("核验提交结果")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(t.edit.Busy).Clicked() {
+	if !s.runtimeFor(t).AsyncWrites && s.verifierFor(t) != nil && t.edit.Err != "" && t.edit.Uncertain != nil && ui.Button(c, locales.Text("核验提交结果")).Height(theme.RowHeight(c, theme.ControlHeight)).Disabled(t.edit.Busy).Clicked() {
 		s.verifyMySQLDataSave(c.Services(), t)
 	}
 }

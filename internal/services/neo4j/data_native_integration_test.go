@@ -45,7 +45,7 @@ func TestNeo4jNativeDataQualifiedNodesRelationshipsAndCursor(t *testing.T) {
 		t.Fatal("original graph count", e)
 	}
 	first, e := r.AdvancedLoader(ctx, 42, "neo4j", label, contract.DataOptions{Limit: 1000, Object: l.object})
-	if e != nil || len(first.Rows) != 1000 || !first.HasMore || !first.LiveRead || first.PagingMode != "cursor" || first.Editable == nil || *first.Editable {
+	if e != nil || len(first.Rows) != 1000 || !first.HasMore || !first.LiveRead || first.PagingMode != "cursor" || first.Editable == nil || !*first.Editable {
 		t.Fatal("first native graph page", e)
 	}
 	second, e := r.AdvancedLoader(ctx, 42, "neo4j", label, contract.DataOptions{Limit: 1000, Offset: 1000, After: first.NextCursor})

@@ -70,6 +70,8 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 			bound := lease.Runtime()
 			bound.ReserveDocument = nil
 			bound.DocumentImportModes = slices.Clone(bound.DocumentImportModes)
+			bound.EditKinds = slices.Clone(bound.EditKinds)
+			bound.EditValueKinds = slices.Clone(bound.EditValueKinds)
 			bound.Capabilities = contract.BoundDataCapabilities(bound)
 			d.capabilities = contract.IntersectCapabilities(c, bound.Capabilities)
 			bound.Capabilities = d.capabilities
@@ -186,6 +188,10 @@ func (d *Document) keysetEnabled() bool { return d.object.ProfileID == 0 || d.ca
 func (d *Document) editable() bool {
 	return d.objectKind != "视图" && d.page != nil && (d.page.Editable == nil || *d.page.Editable) && (d.object.ProfileID == 0 || d.capabilities.EditableTables)
 }
+
+func (d *Document) allowsDataEdit(kind string) bool {
+	return d.boundRuntime == nil || d.boundRuntime.EditKinds == nil || slices.Contains(d.boundRuntime.EditKinds, kind)
+}
 func (d *Document) filterChoices() []string {
 	if len(d.filterModes) == 0 {
 		return mysqlFilterModeChoices
@@ -248,10 +254,18 @@ func typedKind(label string) contract.CellKind {
 	return contract.Text
 }
 func (s *State) typedEditorChoice(c *ui.Context, d *Document, e *mysqlCellEditor) {
-	if !d.portable() {
+	kinds := s.runtimeFor(d).EditValueKinds
+	if !d.portable() && kinds == nil {
 		return
 	}
-	mysqlDataRuleSelect(c, &e.Kind, []string{"NULL", "文本", "整数", "精确小数", "浮点", "布尔", "二进制", "JSON", "日期时间"}, locales.Text).Label(locales.Text("值类型")).Width(150)
+	choices := []string{"NULL", "文本", "整数", "精确小数", "浮点", "布尔", "二进制", "JSON", "日期时间"}
+	if kinds != nil {
+		choices = make([]string, 0, len(kinds))
+		for _, kind := range kinds {
+			choices = append(choices, typedKindLabel(kind))
+		}
+	}
+	mysqlDataRuleSelect(c, &e.Kind, choices, locales.Text).Label(locales.Text("值类型")).Width(150)
 }
 
 func (s *State) filterColumns(d *Document, columns []string) []string {

@@ -303,6 +303,10 @@ func (s *State) Close(t *Document) {
 	}
 	s.flushMySQLDataLayout(t)
 	s.cancelMySQLDataEdit(t)
+	if t.nativeReceipt.Cancel != nil {
+		t.nativeReceipt.Cancel()
+	}
+	t.nativeReceipt = nativeWriteReceiptState{}
 	s.Cancel(t)
 	s.closeDataTransaction(t)
 	s.inspector.Close(t.panel)

@@ -30385,3 +30385,85 @@ func GraphPropertyExtendedInvalid() string { return In(i18n.Locale()).GraphPrope
 func (msgs Messages) GraphPropertyExtendedInvalid() string {
 	return Catalog.Format(msgs.locale, "graphPropertyExtendedInvalid", nil)
 }
+
+// NativeDataWriteReceipt says "原生事务回执"
+// in the language the app shows.
+func NativeDataWriteReceipt() string { return In(i18n.Locale()).NativeDataWriteReceipt() }
+
+// NativeDataWriteReceipt says "原生事务回执"
+// in the language of msgs.
+func (msgs Messages) NativeDataWriteReceipt() string {
+	return Catalog.Format(msgs.locale, "nativeDataWriteReceipt", nil)
+}
+
+// NativeDataWriteReceiptJSON says "原生事务回执 JSON"
+// in the language the app shows.
+func NativeDataWriteReceiptJSON() string { return In(i18n.Locale()).NativeDataWriteReceiptJSON() }
+
+// NativeDataWriteReceiptJSON says "原生事务回执 JSON"
+// in the language of msgs.
+func (msgs Messages) NativeDataWriteReceiptJSON() string {
+	return Catalog.Format(msgs.locale, "nativeDataWriteReceiptJSON", nil)
+}
+
+// NativeDataWriteReceiptHint says "…"
+// in the language the app shows.
+func NativeDataWriteReceiptHint() string { return In(i18n.Locale()).NativeDataWriteReceiptHint() }
+
+// NativeDataWriteReceiptHint says "…"
+// in the language of msgs.
+func (msgs Messages) NativeDataWriteReceiptHint() string {
+	return Catalog.Format(msgs.locale, "nativeDataWriteReceiptHint", nil)
+}
+
+// NativeDataWriteReceiptTruncated says "回执预览已截断；可复制或导出完整内容"
+// in the language the app shows.
+func NativeDataWriteReceiptTruncated() string {
+	return In(i18n.Locale()).NativeDataWriteReceiptTruncated()
+}
+
+// NativeDataWriteReceiptTruncated says "回执预览已截断；可复制或导出完整内容"
+// in the language of msgs.
+func (msgs Messages) NativeDataWriteReceiptTruncated() string {
+	return Catalog.Format(msgs.locale, "nativeDataWriteReceiptTruncated", nil)
+}
+
+// NativeDataWriteReceiptCopy says "复制完整回执"
+// in the language the app shows.
+func NativeDataWriteReceiptCopy() string { return In(i18n.Locale()).NativeDataWriteReceiptCopy() }
+
+// NativeDataWriteReceiptCopy says "复制完整回执"
+// in the language of msgs.
+func (msgs Messages) NativeDataWriteReceiptCopy() string {
+	return Catalog.Format(msgs.locale, "nativeDataWriteReceiptCopy", nil)
+}
+
+// NativeDataWriteReceiptExport says "导出完整回执"
+// in the language the app shows.
+func NativeDataWriteReceiptExport() string { return In(i18n.Locale()).NativeDataWriteReceiptExport() }
+
+// NativeDataWriteReceiptExport says "导出完整回执"
+// in the language of msgs.
+func (msgs Messages) NativeDataWriteReceiptExport() string {
+	return Catalog.Format(msgs.locale, "nativeDataWriteReceiptExport", nil)
+}
+
+// NativeDataWriteClose says "关闭原写入文档"
+// in the language the app shows.
+func NativeDataWriteClose() string { return In(i18n.Locale()).NativeDataWriteClose() }
+
+// NativeDataWriteClose says "关闭原写入文档"
+// in the language of msgs.
+func (msgs Messages) NativeDataWriteClose() string {
+	return Catalog.Format(msgs.locale, "nativeDataWriteClose", nil)
+}
+
+// NativeDataWriteCloseHint says "…"
+// in the language the app shows.
+func NativeDataWriteCloseHint() string { return In(i18n.Locale()).NativeDataWriteCloseHint() }
+
+// NativeDataWriteCloseHint says "…"
+// in the language of msgs.
+func (msgs Messages) NativeDataWriteCloseHint() string {
+	return Catalog.Format(msgs.locale, "nativeDataWriteCloseHint", nil)
+}

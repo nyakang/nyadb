@@ -46,7 +46,7 @@ func (l *dataLease) metadata(ctx context.Context, id int64, db, name string) (*c
 		return nil, e
 	}
 	defer done()
-	return &contract.TableStructure{Object: l.object, Database: db, Name: name, Kind: l.object.Kind, Engine: "Neo4j", Columns: l.columns(), Editable: false, Definition: "Native graph projection; label/type and properties are live observations, not relational schema"}, ctx.Err()
+	return &contract.TableStructure{Object: l.object, Database: db, Name: name, Kind: l.object.Kind, Engine: "Neo4j", Columns: l.columns(), Editable: true, Definition: "Native graph projection; label/type and properties are live observations, not relational schema"}, ctx.Err()
 }
 func (l *dataLease) info(ctx context.Context, id int64, db, name string) (*contract.TableInfo, error) {
 	if _, e := l.metadata(ctx, id, db, name); e != nil {

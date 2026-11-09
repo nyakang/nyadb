@@ -131,10 +131,10 @@ func captureNeo4jData(t *testing.T, s *State, d *Document, name string, render .
 			if strings.HasPrefix(name, "property-fields") && !tt.HasText(locales.Text("属性不存在")) {
 				t.Fatal("graph field inspector misrepresented absent property", language)
 			}
-			if tt.HasText(locales.Text("批量编辑")) {
-				t.Fatal("read-only graph grid exposed batch editing")
+			if !d.readRetired && !d.recordFormMode && len(render) == 0 && !tt.HasText(locales.Text("批量编辑")) {
+				t.Fatal("graph grid missing batch property editing")
 			}
-			if !d.readRetired && !d.recordFormMode && !tt.HasText(locales.Text("原生游标读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。")) {
+			if len(render) == 0 && !d.readRetired && !d.recordFormMode && !tt.HasText(locales.Text("原生游标读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。")) {
 				t.Fatal("live graph cursor notice missing", language)
 			}
 			if name == "property-record-form" && (!tt.HasText("property.a_exact") || !tt.HasText("9223372036854775807")) {
@@ -145,6 +145,26 @@ func captureNeo4jData(t *testing.T, s *State, d *Document, name string, render .
 				if !ok || rect.X < 0 || rect.Y < 0 || rect.X+rect.W > float32(size[0])+1 || rect.Y+rect.H > float32(size[1])+1 {
 					t.Fatal("explicit reopen control clipped", language, size, rect)
 				}
+			}
+
+			if name == "write-uncertain-close" {
+				for _, label := range []string{"关闭原写入文档？", "取消", "关闭并放弃本地草稿与证据"} {
+					rect, ok := tt.Find(locales.Text(label))
+					if !ok || rect.X < 0 || rect.Y < 0 || rect.X+rect.W > float32(size[0])+1 || rect.Y+rect.H > float32(size[1])+1 {
+						t.Fatal("native uncertain close controls clipped", label, language, size, rect)
+					}
+				}
+			}
+			if strings.HasSuffix(name, "-receipt") {
+				for _, label := range []string{"原生事务回执", "复制完整回执", "导出完整回执"} {
+					rect, ok := tt.Find(locales.Text(label))
+					if !ok || rect.X < 0 || rect.Y < 0 || rect.X+rect.W > float32(size[0])+1 || rect.Y+rect.H > float32(size[1])+1 {
+						t.Fatal("native receipt controls missing or clipped", label, language, size, rect)
+					}
+				}
+			}
+			if strings.HasSuffix(name, "-long-editor") && len(render) == 1 && !tt.HasText(locales.Text("单元格编辑器")+" · property.long") {
+				t.Fatal("complete native editor missing", language, size)
 			}
 			f, err := os.Create(filepath.Join(output, language+"-"+strconv.Itoa(size[0])+"x"+strconv.Itoa(size[1])+"-"+name+".png"))
 			if err != nil {
@@ -193,14 +213,14 @@ func TestNeo4jNativePublicDataSharedGridPagingInspectorExportParkGenerationAndCl
 	if a.err != "" || b.err != "" {
 		t.Fatal("native shared graph grid failed", a.err, b.err)
 	}
-	if a.Kind() != "图标签" || b.Kind() != "关系类型" || len(a.page.Rows) != 1000 || !a.page.HasMore || len(b.page.Rows) != 1 || !a.capabilities.Documents || !a.capabilities.JSONL || a.capabilities.EditableTables || a.capabilities.Import || a.capabilities.Transactions || !a.boundRuntime.PageFailureRequiresReopen {
+	if a.Kind() != "图标签" || b.Kind() != "关系类型" || len(a.page.Rows) != 1000 || !a.page.HasMore || len(b.page.Rows) != 1 || !a.capabilities.Documents || !a.capabilities.JSONL || !a.capabilities.EditableTables || a.capabilities.Import || a.capabilities.Transactions || !a.boundRuntime.PageFailureRequiresReopen {
 		t.Fatal("public graph projection/capabilities wrong")
 	}
 	if !slices.Equal(b.page.Columns, []string{"element_id", "type", "start_element_id", "end_element_id", "properties", "relationship", "property.exact"}) || b.page.Rows[0][1].Text != name || b.page.Rows[0][2].Text == "" || b.page.Rows[0][3].Text == "" {
 		t.Fatal("relationship lost type or endpoints")
 	}
 	for _, d := range []*Document{a, b} {
-		if d.page.Editable == nil || *d.page.Editable || len(s.filterColumns(d, d.page.Columns)) != 0 || slices.Contains(d.exportFormats, "sql") {
+		if d.page.Editable == nil || !*d.page.Editable || len(s.filterColumns(d, d.page.Columns)) != 0 || slices.Contains(d.exportFormats, "sql") {
 			t.Fatal("unsupported relational graph tools exposed")
 		}
 		for _, column := range d.columns {

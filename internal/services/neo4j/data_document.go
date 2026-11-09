@@ -17,11 +17,13 @@ import (
 // Label/type and element IDs are live observations, not incarnation or CAS tokens.
 type dataLease struct {
 	mu, pageMu   sync.Mutex
+	writeMu      sync.Mutex
 	session      *Session
 	object       contract.ObjectRef
 	ctx          context.Context
 	cancel       context.CancelFunc
 	closed, lost bool
+	writeLost    bool
 	done         chan struct{}
 	work         sync.WaitGroup
 	active       int
@@ -65,10 +67,10 @@ func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 }
 
 func (*Session) DataDocumentCapabilities() contract.Capabilities {
-	return contract.Capabilities{Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
+	return contract.Capabilities{EditableTables: true, Documents: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
 }
 func (l *dataLease) Runtime() contract.DataRuntime {
-	return contract.DataRuntime{PageFailureRequiresReopen: true, Capabilities: l.session.DataDocumentCapabilities(), AdvancedLoader: l.page, RowReader: l.row, Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
+	return contract.DataRuntime{PageFailureRequiresReopen: true, NativeReceipts: true, Capabilities: l.session.DataDocumentCapabilities(), AdvancedLoader: l.page, RowReader: l.editRow, Saver: l.save, EditKinds: []string{"update"}, EditValueKinds: []contract.CellKind{contract.Null, contract.Text, contract.Integer, contract.Floating, contract.Boolean, contract.Binary, contract.JSON}, WriteDescription: "SET · locked native graph property transaction", Count: l.count, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info, Exporter: l.exportRows, JSONL: l.jsonl,
 		ReadDescription: func(contract.DataOptions) string { return "MATCH · elementId ordered native graph read" },
 		FilterColumns:   []string{}, SortColumns: []string{}, ExportFormats: []string{"csv", "tsv", "json", "jsonl", "xml", "html", "xlsx"}}
 }

@@ -86,3 +86,23 @@ class Neo4jFixtureOwnershipTests(unittest.TestCase):
         for name in FIXTURE.GRID_REQUIRED:
             with self.subTest(name=name), self.assertRaises(RuntimeError):
                 FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), grid=True)
+
+    def test_graph_grid_editing_acceptance_keeps_native_transaction_and_fault_cases(self):
+        self.assertTrue({
+            'DataWriteExplicitTransactionsLockComparisonRollbackAndCommit',
+            'DataWritePropertiesTypedAtomicReceiptsAndOldRows',
+            'DataWriteBlockedOriginalComparisonCancellationAndErrors',
+        }.issubset(FIXTURE.DATA_REQUIRED))
+        self.assertTrue({
+            'PublicDataPropertyEditingTypedReceiptsParkConflictsAndContinuedEdits',
+            'PublicDataCommitReplyLostCanceledOriginalCloseNeverReplay',
+        }.issubset(FIXTURE.GRID_REQUIRED))
+
+    def test_property_write_followup_requires_all_native_grid_cases(self):
+        names = FIXTURE.WRITE_REQUIRED + FIXTURE.GRID_REQUIRED
+        self.assertEqual(len(names), 8)
+        passed = '\n'.join('--- PASS: TestNeo4jNative'+name+' (0.01s)' for name in names)
+        FIXTURE.check_acceptance(passed, grid_writes=True)
+        for name in names:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), grid_writes=True)

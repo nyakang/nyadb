@@ -5,6 +5,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"io"
+	"slices"
 )
 
 func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
@@ -28,6 +29,8 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 		}
 	}
 	out.DocumentImportModes = cloneColumns(r.DocumentImportModes)
+	out.EditKinds = cloneColumns(r.EditKinds)
+	out.EditValueKinds = slices.Clone(r.EditValueKinds)
 	out.ExportFormats = append([]string(nil), r.ExportFormats...)
 	out.FilterColumns = cloneColumns(r.FilterColumns)
 	out.SortColumns = cloneColumns(r.SortColumns)

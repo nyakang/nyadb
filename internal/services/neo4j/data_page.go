@@ -160,7 +160,7 @@ func (l *dataLease) page(ctx context.Context, id int64, db, name string, o contr
 	if e != nil {
 		return nil, l.pageFailure(e)
 	}
-	editable := false
+	editable := true
 	p := &contract.DataPage{Object: l.object, Editable: &editable, Database: db, Table: name, Offset: o.Offset, Limit: o.Limit, HasMore: len(values) > o.Limit, PagingMode: "cursor", LiveRead: true, KeysetAvailable: true, QuerySQL: q, ColumnMetadata: graphColumns(l.object.Kind, properties), CurrentCursor: l.cursor(o.Offset, after)}
 	for _, col := range p.ColumnMetadata {
 		p.Columns = append(p.Columns, col.Name)

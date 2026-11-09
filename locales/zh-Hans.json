@@ -2974,5 +2974,13 @@
   "graphPropertyZonedHint": "JSON 包含 value 和 offset_seconds；日期时间还须包含 zone，Offset 表示固定偏移",
   "graphPropertyDurationHint": "JSON 包含 months、days、seconds、nanoseconds；预览显示规范化后的纳秒分量",
   "graphPropertyPointHint": "JSON 包含 srid、x、y；三维点还须包含 z，预览显示规范化后的经度",
-  "graphPropertyExtendedInvalid": "时间或空间属性的格式、分量或范围无效"
+  "graphPropertyExtendedInvalid": "时间或空间属性的格式、分量或范围无效",
+  "nativeDataWriteReceipt": "原生事务回执",
+  "nativeDataWriteReceiptJSON": "原生事务回执 JSON",
+  "nativeDataWriteReceiptHint": "保留最近一次写入的原始回执；下一次回执会替换它。语句结果在事务提交前属于临时结果。",
+  "nativeDataWriteReceiptTruncated": "回执预览已截断；可复制或导出完整内容",
+  "nativeDataWriteReceiptCopy": "复制完整回执",
+  "nativeDataWriteReceiptExport": "导出完整回执",
+  "nativeDataWriteClose": "关闭原写入文档",
+  "nativeDataWriteCloseHint": "关闭会丢弃本地草稿与原生回执；不会重新发送写入，也不会确认或回滚原事务。请先复制或导出所需回执。"
 }

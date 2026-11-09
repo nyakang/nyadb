@@ -91,6 +91,7 @@ type Document struct {
 	results                     <-chan mysqlDataResult
 	request                     uint64
 	edit                        mysqlDataEditState
+	nativeReceipt               nativeWriteReceiptState
 	transaction                 dataTransactionState
 	export                      mysqlDataExportState
 	transfer                    mysqlDataTransferState

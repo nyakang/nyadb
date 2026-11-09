@@ -2974,5 +2974,13 @@
   "graphPropertyZonedHint": "JSON needs value and offset_seconds; date and time also needs zone, with Offset for a fixed offset",
   "graphPropertyDurationHint": "JSON needs months, days, seconds and nanoseconds; the preview shows normalized nanosecond components",
   "graphPropertyPointHint": "JSON needs srid, x and y, plus z for 3D points; the preview shows normalized longitude",
-  "graphPropertyExtendedInvalid": "Invalid temporal or spatial format, components or range"
+  "graphPropertyExtendedInvalid": "Invalid temporal or spatial format, components or range",
+  "nativeDataWriteReceipt": "Native transaction receipt",
+  "nativeDataWriteReceiptJSON": "Native transaction receipt JSON",
+  "nativeDataWriteReceiptHint": "The latest original write receipt is retained and replaced by the next receipt. Statement results are provisional until the transaction commits.",
+  "nativeDataWriteReceiptTruncated": "Receipt preview truncated; copy or export the complete content",
+  "nativeDataWriteReceiptCopy": "Copy complete receipt",
+  "nativeDataWriteReceiptExport": "Export complete receipt",
+  "nativeDataWriteClose": "Close original write document",
+  "nativeDataWriteCloseHint": "Closing discards local drafts and native receipts. It does not resend the write or confirm or roll back the original transaction. Copy or export the receipts you need first."
 }

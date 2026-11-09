@@ -103,6 +103,9 @@ type DataRuntime struct {
 	DocumentImportModes  []string            // Nil preserves document_replace/document_merge.
 	ImportDescription    func(string) string // Pure native request information for the captured mode.
 	WriteDescription     string
+	NativeReceipts       bool       // Synchronous native transaction evidence, including unknown outcomes.
+	EditKinds            []string   // Nil permits insert/update/delete; an explicit list limits native mutations.
+	EditValueKinds       []CellKind // Optional native editor kinds; nil retains the existing editor choices.
 	ReserveDocument      func(ObjectRef) (DataDocumentLease, error)
 	ExportFormats        []string // nil preserves existing providers' format availability.
 	ImportDialect        string

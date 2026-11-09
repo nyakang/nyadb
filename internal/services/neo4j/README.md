@@ -1,8 +1,8 @@
 NyaDB registers Neo4j as an independent public connection with native Bolt or
 Neo4j routing, versioned profiles, URI import, credential-vault integration and
 an injectable connection editor. The public workbench offers qualified graph
-metadata, Cypher documents, the shared result grid and a read-only shared data
-grid for node labels and relationship types, with native typed JSON.
+metadata, Cypher documents, the shared result grid and a shared data grid for
+node labels and relationship types, with native typed JSON and property editing.
 
 `Open` binds one official v6 driver to the original client, validates the native
 Neo4j agent, and disables managed and auto-commit retries. `Prepare` deeply
@@ -96,7 +96,8 @@ while all old positions, pins, hidden state and camera remain unchanged. Result
 snapshots include owned neighbor values and receipts in their 16 MiB budget, and
 provide read-only neighbor JSON and image export without live expansion. Original
 query/result JSON continues to contain only original records; separate expansion
-JSON retains the complete bounded observations. Existing string, boolean, int64 and finite float properties can be edited from the
+JSON retains the complete bounded observations. Supported scalar and homogeneous scalar-list properties, including temporal
+and spatial scalars, can be edited from the
 node/relationship inspector. A draft captures the original lease, namespace,
 qualified target and typed old value, then requires a complete immutable request
 preview before one native save. The fixed parameterized query performs a dependent
@@ -133,9 +134,8 @@ Disconnect preserves original qualified property drafts and receipts; terminal c
 releases them after executor cancellation/acknowledgement. Explicit verification
 issues a separate bounded entity read, retains its original native response, and
 does not provide missing write confirmation even when values match. Leaving or
-closing the workspace guards every unprocessed property draft/operation. Graph-grid
-editing, property creation/removal, non-scalar property editing and graph import
-remain pending; Community fixtures do not validate Enterprise RBAC permissions.
+closing the workspace guards every unprocessed property draft/operation. Whole-entity
+creation/deletion, extended-type lists and graph import remain pending; Community fixtures do not validate Enterprise RBAC permissions.
 
 Cypher JSON parameters are temporary per-document drafts. They are not saved in
 query text, history or restored workspaces. Duplicate keys, invalid JSON,
@@ -206,13 +206,55 @@ the original profile, and late generations cannot replace cached data. Disconnec
 and close dispose scoped graph documents and preserve existing Cypher text.
 
 The public engine advertises Query, Metadata, Documents, Keyset, Count,
-FieldChunks, Export and JSONL. Editing, transactions, import, relational filters,
+FieldChunks, Export, JSONL and EditableTables. The data lease allows only
+property updates: identity, label/type, endpoints and whole-entity columns are
+read-only. Entity insert/delete, SQL transactions, import, relational filters,
 arbitrary sorting and SQL export are unavailable. `--grid` requires the public
 grid cases, original read failure/cancellation/close, explicit reopen, full range
 exports, independent property columns/original fields and Chinese/English grid
 images at 1280x800 and 720x520, together with all foundation/profile/session/
 Cypher cases. `--data` continues to select the
-adapter read foundation separately from the public grid tests.
+adapter read and native transaction foundation separately from the public grid tests.
+
+Shared data-grid saves capture the signed original complete entity snapshot and
+all edit maps/bytes before waiting. Each batch (at most 200 rows and 1 MiB of
+captured edits) uses one explicit native transaction with no managed retries.
+Entity locks are acquired in element-ID order through a dependent property SET,
+including absent properties. The locked complete entity and both supported
+values/fingerprints validation payloads are checked before SET += bound native
+properties. A later-row conflict rolls back all earlier provisional changes.
+Only actual COMMIT confirmation and a final bookmark admit saved rows; each row
+receives a new signed snapshot for continued editing. Unsupported kind, list
+subtype and spatial-dimension changes are rejected explicitly.
+
+The graph editor exposes NULL, text, integer, finite float, boolean, binary and
+complete native GraphValue JSON. It supports four scalar kinds, bytes, four
+homogeneous scalar-list kinds and eight temporal/spatial scalar kinds. NULL
+removes a property; missing values can be added only for keys in the original
+qualified column inventory. JSON rejects duplicate/unknown fields, invalid
+Unicode and case aliases which could overwrite native kinds/components.
+
+One latest original transaction receipt is retained per data document, at most
+8 MiB. It contains captured edits, native parameters, provisional typed results
+and summaries, and separate BEGIN/COMMIT/ROLLBACK confirmation flags. The modal
+previews at most 64 KiB; copy and atomic file export keep the complete original
+bytes and capture them before a picker or disk wait. A later receipt replaces
+this receipt; Close cancels late exports and releases owned data.
+
+The driver's Rollback can return nil without sending a server ROLLBACK after a
+native transaction failure. Such nil cannot confirm rollback. Canceled/lost or
+otherwise uncertain/incomplete saves retain drafts and prohibit replay, including
+queued writes on the original lease. Independent read scopes remain available.
+Readback cannot supply a missing COMMIT acknowledgement. Unknown writes offer
+an explicit original-document close decision which discards only local drafts
+and receipts; it does not resend, confirm or roll back the original transaction.
+Cancellation of that decision retains the guard. The close action waits for
+executor acknowledgement and remains available even if receipt bytes are missing.
+Unsupported verification commands are omitted. Parked results wait for
+the original profile, and late generations retain evidence without replacing the
+grid. Tests withhold an actual native COMMIT response, independently observe the
+committed property, write a distinctive later value and prove that loss, cancel,
+close and queued writes cannot replay over that value.
 
 TLS uses the URI hostname, custom CA roots and optional client certificates.
 The driver derives TLS ServerName from the URI, so a conflicting SNI override is
@@ -236,7 +278,7 @@ acceptance includes saved-profile reopening, native typed values/metadata,
 published generations, committed writes with lost/canceled responses, explicit
 recovery, original close/termination, retained-node property expansion, original
 node visibility, native snapshots/exports, bounded fallback and localized
-workbench/form images. Four grid modes require 120 native groups and 800 images, including retained
+workbench/form images. Four grid modes require 176 native groups and 1376 images, including retained
 graph paths, parallel/reverse/self-loop relationships, missing endpoints, original
 record links, full property JSON, snapshots, image export and 1001-node display
 bounds, explicit one/second-hop reads, 200-row neighbor limits, scalar property saves and lock-blocked typed conflicts, committed-write response loss, independent verification, separate record
@@ -247,7 +289,13 @@ reconcile only the explicitly verified entity and retain independent snapshots. 
 checks immutable container ID and nonce labels. Evidence and sanitized logs stay
 under ignored `build/neo4j/`.
 
-Graph data editing/import,
+Whole-entity graph mutations/import, extended-type lists,
 structured Cypher plans, administration/RBAC, Enterprise/cluster validation and
 full database archives and other versions remain future work. Their capabilities are not inferred from a
 successful Community connection or the ability to execute arbitrary Cypher.
+
+For a focused property-write and close regression after the complete workbench
+matrix, run `python3 tools/verify_neo4j_fixture.py --grid-writes --race --mode MODE`.
+This scope requires three native transaction cases and all five shared-grid
+read/write/close cases, with 64 localized grid images per mode. It does not claim
+the complete foundation/profile/Cypher matrix was rerun by this focused command.

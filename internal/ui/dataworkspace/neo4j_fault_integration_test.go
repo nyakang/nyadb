@@ -32,6 +32,7 @@ type neo4jDataRelay struct {
 	armed      atomic.Bool
 	dispatches atomic.Int32
 	observed   chan struct{}
+	responded  chan struct{}
 }
 
 func newNeo4jDataRelay(t *testing.T, f neo4jDataFixture, needle string) *neo4jDataRelay {
@@ -40,7 +41,7 @@ func newNeo4jDataRelay(t *testing.T, f neo4jDataFixture, needle string) *neo4jDa
 	if e != nil {
 		t.Fatal(e)
 	}
-	r := &neo4jDataRelay{listener: ln, fixture: f, needle: []byte(needle), observed: make(chan struct{}, 1)}
+	r := &neo4jDataRelay{listener: ln, fixture: f, needle: []byte(needle), observed: make(chan struct{}, 1), responded: make(chan struct{}, 1)}
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
@@ -101,8 +102,13 @@ func (r *neo4jDataRelay) pipe(client net.Conn) {
 		buf := make([]byte, 4096)
 		for {
 			n, e := server.Read(buf)
-			if n > 0 && !r.hold.Load() {
-				if _, w := client.Write(buf[:n]); w != nil {
+			if n > 0 {
+				if r.hold.Load() {
+					select {
+					case r.responded <- struct{}{}:
+					default:
+					}
+				} else if _, w := client.Write(buf[:n]); w != nil {
 					return
 				}
 			}

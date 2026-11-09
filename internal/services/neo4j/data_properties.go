@@ -94,7 +94,7 @@ func graphColumns(kind string, properties []graphPropertyColumn) []contract.Stru
 		if name == "properties" || name == "labels" || name == "node" || name == "relationship" {
 			valueKind, typ = contract.JSON, "Neo4j native "+name
 		}
-		out = append(out, contract.StructureColumn{Name: name, Position: int64(i + 1), Type: typ, DataType: typ, ValueKind: valueKind})
+		out = append(out, contract.StructureColumn{Name: name, Position: int64(i + 1), Type: typ, DataType: typ, ValueKind: valueKind, Generated: true})
 	}
 	for _, property := range properties {
 		typ := strings.Join(property.Types, " | ")

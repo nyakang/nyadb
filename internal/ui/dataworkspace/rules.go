@@ -764,7 +764,7 @@ func mysqlDataUUID(upper, compact bool) (string, error) {
 }
 
 func mysqlDataCanDeleteSelection(t *Document, clicked int) bool {
-	if t == nil || t.page == nil {
+	if t == nil || t.page == nil || !t.allowsDataEdit("delete") {
 		return false
 	}
 	for row := range t.page.Rows {

@@ -87,12 +87,12 @@ func TestNeo4jDataOriginalReservationsAndPublicCapabilityBoundary(t *testing.T) 
 		t.Fatal(e)
 	}
 	c := s.Capabilities()
-	if !c.Documents || !c.JSONL || !c.Count || !c.FieldChunks || c.EditableTables || c.Transactions || c.Import || c.DesignTables {
+	if !c.Documents || !c.JSONL || !c.Count || !c.FieldChunks || !c.EditableTables || c.Transactions || c.Import || c.DesignTables {
 		t.Fatal("graph reads lost capabilities or enabled unimplemented mutations")
 	}
 	l := dataLeaseTestAfterRelease(t, s)
 	r := l.Runtime()
-	if !r.PageFailureRequiresReopen || !contract.BoundDataCapabilities(r).JSONL || r.Saver != nil || r.Importer != nil || r.Transactions.Begin != nil {
+	if !r.PageFailureRequiresReopen || !contract.BoundDataCapabilities(r).JSONL || r.Saver == nil || len(r.EditKinds) != 1 || r.EditKinds[0] != "update" || r.Importer != nil || r.Transactions.Begin != nil {
 		t.Fatal("native reading confused with graph editing/SQL transactions")
 	}
 	_ = s.Close()
@@ -131,7 +131,7 @@ func TestNeo4jDataSignedCursorBackRefreshAndExactProjection(t *testing.T) {
 	l := dataLeaseTest(t, s, "label", label)
 	ctx := context.Background()
 	p, e := l.page(ctx, 42, "neo4j", label, contract.DataOptions{Limit: 1})
-	if e != nil || !p.HasMore || p.Rows[0][0].Text != "a" || !strings.Contains(p.Rows[0][2].Text, "9223372036854775807") || !p.LiveRead || p.Editable == nil || *p.Editable {
+	if e != nil || !p.HasMore || p.Rows[0][0].Text != "a" || !strings.Contains(p.Rows[0][2].Text, "9223372036854775807") || !p.LiveRead || p.Editable == nil || !*p.Editable {
 		t.Fatal("native page lost identity/precision or invented writing", e)
 	}
 	for _, o := range []contract.DataOptions{{Offset: 1}, {FilterColumn: "element_id"}, {SortColumn: "element_id"}, {Limit: 1001}, {Object: s.Namespace("neo4j").Object("relationship", label)}} {
