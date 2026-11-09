@@ -36,6 +36,7 @@ func TestNeo4jDataEditTypedValuesRejectAmbiguousJSONAndPreserveNativeComponents(
 		{Null: true},
 		{Kind: contract.JSON, Text: `{"Kind":"duration","Text":"PT-0.000000001S","Properties":[{"Name":"months","Value":{"Kind":"integer","Text":"0"}},{"Name":"days","Value":{"Kind":"integer","Text":"0"}},{"Name":"seconds","Value":{"Kind":"integer","Text":"-1"}},{"Name":"nanoseconds","Value":{"Kind":"integer","Text":"999999999"}}]}`},
 		{Kind: contract.JSON, Text: `{"Kind":"list","Values":[{"Kind":"integer","Text":"-9223372036854775808"},{"Kind":"integer","Text":"9223372036854775807"}]}`},
+		{Kind: contract.JSON, Text: `{"Kind":"list","Values":[{"Kind":"date","Text":"2026-01-01"}]}`},
 	} {
 		value, parameter, err := dataPropertyValue(v)
 		budget := valueBudget{limit: 1 << 20}
@@ -52,7 +53,7 @@ func TestNeo4jDataEditTypedValuesRejectAmbiguousJSONAndPreserveNativeComponents(
 		{Kind: contract.JSON, Text: `{"Kind":"list","Values":[{"Kind":"integer","text":"1"}]}`}, {Kind: contract.JSON, Text: `{"Kind":"integer","Text":"1","Kind":"string"}`},
 		{Kind: contract.JSON, Text: `{"Kind":"integer","Text":"1","unknown":true}`},
 		{Kind: contract.JSON, Text: `{"Kind":"integer","Text":"1"} {}`},
-		{Kind: contract.JSON, Text: `{"Kind":"list","Values":[{"Kind":"date","Text":"2026-01-01"}]}`},
+		{Kind: contract.JSON, Text: `{"Kind":"list","Values":[{"Kind":"date","Text":"2026-02-29"}]}`},
 		{Kind: contract.Floating, Text: "NaN"}, {Kind: contract.Integer, Text: "9223372036854775808"},
 		{Kind: contract.Text, Text: "bad", Null: true}, {Kind: contract.Text, Default: true},
 		{Kind: contract.Text, Binary: true}, {Kind: contract.Text, Bytes: []byte{1}},

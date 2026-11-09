@@ -45,16 +45,31 @@ func GraphPropertyListElementKind(v GraphValue) (string, error) {
 	if v.Kind != "list" || v.Text != "" || len(v.Values) > GraphPropertyListMaxItems || len(v.Properties) != 0 || v.Node != nil || v.Relationship != nil || v.Path != nil {
 		return "", ErrUnsupported
 	}
-	kind, size := "", 16
+	empty, _ := json.Marshal(GraphValue{Kind: "list", Values: []GraphValue{}})
+	kind, size := "", len(empty)
+	var spatialRef uint32
 	for _, item := range v.Values {
 		if item.Kind == "null" || kind != "" && item.Kind != kind {
 			return "", ErrUnsupported
 		}
 		if _, err := GraphPropertyScalarValue(item); err != nil {
-			return "", err
+			value, err := GraphPropertyExtendedValue(item)
+			if err != nil {
+				return "", err
+			}
+			if point, ok := value.(GraphPropertyPointValue); ok {
+				if spatialRef != 0 && spatialRef != point.SRID {
+					return "", ErrUnsupported
+				}
+				spatialRef = point.SRID
+			}
 		}
 		kind = item.Kind
-		size += len(item.Text) + 16
+		raw, err := json.Marshal(item)
+		if err != nil {
+			return "", ErrUnsupported
+		}
+		size += len(raw) + 1
 		if size > 1<<20 {
 			return "", ErrUnsupported
 		}
@@ -65,7 +80,7 @@ func GraphPropertyListElementKind(v GraphValue) (string, error) {
 // ParseGraphPropertyList uses the explicitly selected kind, keeping integer
 // tokens out of float64 and retaining a list of typed values rather than text.
 func ParseGraphPropertyList(kind, text string) (GraphValue, error) {
-	if kind != "string" && kind != "boolean" && kind != "integer" && kind != "float" || !utf8.ValidString(text) || len(text) > 1<<20 {
+	if !graphPropertyListKind(kind) || !utf8.ValidString(text) || len(text) > 1<<20 {
 		return GraphValue{}, ErrUnsupported
 	}
 	var items []json.RawMessage
@@ -75,13 +90,20 @@ func ParseGraphPropertyList(kind, text string) (GraphValue, error) {
 	v := GraphValue{Kind: "list", Values: make([]GraphValue, len(items))}
 	for index, raw := range items {
 		item := GraphValue{Kind: kind, Text: strings.TrimSpace(string(raw))}
-		if kind == "string" {
+		if kind == "string" || kind == "date" || kind == "local_time" || kind == "local_datetime" {
 			if len(item.Text) == 0 || item.Text[0] != '"' || json.Unmarshal(raw, &item.Text) != nil {
 				return GraphValue{}, ErrUnsupported
 			}
 		}
 		if _, err := GraphPropertyScalarValue(item); err != nil {
-			return GraphValue{}, err
+			input := string(raw)
+			if kind == "date" || kind == "local_time" || kind == "local_datetime" {
+				input = item.Text
+			}
+			item, err = ParseGraphPropertyExtended(kind, input)
+			if err != nil {
+				return GraphValue{}, err
+			}
 		}
 		v.Values[index] = item
 	}
@@ -89,6 +111,14 @@ func ParseGraphPropertyList(kind, text string) (GraphValue, error) {
 		return GraphValue{}, err
 	}
 	return v, nil
+}
+
+func graphPropertyListKind(kind string) bool {
+	switch kind {
+	case "string", "boolean", "integer", "float", "date", "local_time", "local_datetime", "time", "datetime", "duration", "point2d", "point3d":
+		return true
+	}
+	return false
 }
 
 // GraphPropertyListJSON formats the editing text without converting exact
@@ -104,14 +134,20 @@ func GraphPropertyListJSON(v GraphValue) (string, error) {
 			text.WriteByte(',')
 		}
 		switch item.Kind {
-		case "string":
+		case "string", "date", "local_time", "local_datetime":
 			raw, _ := json.Marshal(item.Text)
 			text.Write(raw)
 		case "float":
 			n, _ := strconv.ParseFloat(item.Text, 64)
 			text.WriteString(strconv.FormatFloat(n, 'g', -1, 64))
-		default:
+		case "boolean", "integer":
 			text.WriteString(item.Text)
+		default:
+			raw, err := GraphPropertyExtendedText(item)
+			if err != nil {
+				return "", err
+			}
+			text.WriteString(raw)
 		}
 		if text.Len() > (1<<20)-1 {
 			return "", ErrUnsupported

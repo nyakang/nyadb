@@ -96,8 +96,8 @@ while all old positions, pins, hidden state and camera remain unchanged. Result
 snapshots include owned neighbor values and receipts in their 16 MiB budget, and
 provide read-only neighbor JSON and image export without live expansion. Original
 query/result JSON continues to contain only original records; separate expansion
-JSON retains the complete bounded observations. Supported scalar and homogeneous scalar-list properties, including temporal
-and spatial scalars, can be edited from the
+JSON retains the complete bounded observations. Supported scalar and homogeneous list properties, including temporal
+and spatial scalars and lists, can be edited from the
 node/relationship inspector. A draft captures the original lease, namespace,
 qualified target and typed old value, then requires a complete immutable request
 preview before one native save. The fixed parameterized query performs a dependent
@@ -232,7 +232,7 @@ subtype and spatial-dimension changes are rejected explicitly.
 
 The graph editor exposes NULL, text, integer, finite float, boolean, binary and
 complete native GraphValue JSON. It supports four scalar kinds, bytes, four
-homogeneous scalar-list kinds and eight temporal/spatial scalar kinds. NULL
+homogeneous scalar-list kinds and eight temporal/spatial scalar and list kinds. NULL
 removes a property; missing values can be added only for keys in the original
 qualified column inventory. JSON rejects duplicate/unknown fields, invalid
 Unicode and case aliases which could overwrite native kinds/components.
@@ -308,7 +308,7 @@ values, cancellation and explicit native transaction executor. It creates
 label-qualified nodes (including propertyless nodes), deletes nodes without
 implicitly detaching, deletes directed relationships, and separately performs
 bounded detached node deletion. Creation retains exact supported scalar, bytes,
-homogeneous scalar-list and eight temporal/spatial scalar kinds; labels and
+homogeneous scalar-list and eight temporal/spatial scalar and list kinds; labels and
 property keys are bound native data. New complete signed identities are admitted
 only after actual COMMIT confirmation and its final bookmark. A later conflict
 rolls back both provisional creation and deletion without recreating identities.
@@ -458,5 +458,34 @@ and English endpoint inputs, observations, draft/preview/receipt and close contr
 are captured at 1280x800 and 720x520. See the public relationship report for final
 source hashes, test results and screenshots.
 
-Graph import, full archives, extended temporal/spatial lists, plans, RBAC and other
+Graph import, full archives, plans, RBAC and other
 version, Enterprise/cluster and full reference scope remain pending.
+
+
+Temporal/spatial property lists use the same bounded GraphValue list contract in
+native property writes, retained Cypher node/relationship editing and the sole
+shared data grid. Supported homogeneous members are date, local_time,
+local_datetime, time, datetime, duration, point2d and point3d. A spatial list
+requires one SRID and dimension. Null members, nested lists, mixed kinds and
+malformed or over-budget complete members are rejected before dispatch.
+
+The Cypher list selector accepts JSON string arrays for date/local temporal values
+and complete component-object arrays for offset/zone temporal values, durations
+and points. Parsing visibly canonicalizes duration nanoseconds and geographic
+longitude using the scalar rules. Full typed members retain extended years,
+nanosecond precision, second-resolution offsets, named/fixed zones, independent
+month/day/second duration components, SRID and coordinates. Empty lists have no
+inferred member type; their next non-empty edit requires an explicit subtype.
+The shared grid uses complete GraphValue JSON and its existing editor/draft chain.
+
+`--extended-lists --race --mode MODE` requires 22 native cases, including scalar
+list/extended-scalar regressions, new list storage and lock comparisons, native
+property/entity/relationship transactions, scalar and list Cypher UI/fault tests,
+and shared-grid regressions plus list editing/creation/commit faults. Each mode
+records 80 Cypher and 168 shared-grid Chinese/English 1280x800/720x520 images.
+Fingerprints and values snapshots, independent sibling observations, confirmed
+creation identities, empty lists, later-row rollback, parked stale completions
+and original close isolation preserve the existing lease and publication rules.
+Actual committed writes are independently observed before responses are lost or
+canceled; original uncertain drafts/receipts remain guarded against replay.
+See the dated temporal/spatial list report for final source hashes and evidence.

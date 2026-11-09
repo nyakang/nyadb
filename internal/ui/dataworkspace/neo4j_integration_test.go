@@ -150,7 +150,7 @@ func captureNeo4jData(t *testing.T, s *State, d *Document, name string, render .
 				}
 			}
 
-			if name == "write-uncertain-close" || name == "entity-commit-unknown-close" || name == "relationship-commit-unknown-close" {
+			if name == "write-uncertain-close" || name == "entity-commit-unknown-close" || name == "relationship-commit-unknown-close" || name == "extended-list-uncertain-close" {
 				for _, label := range []string{"关闭原写入文档？", "取消", "关闭并放弃本地草稿与证据"} {
 					rect, ok := tt.Find(locales.Text(label))
 					if !ok || rect.X < 0 || rect.Y < 0 || rect.X+rect.W > float32(size[0])+1 || rect.Y+rect.H > float32(size[1])+1 {
@@ -160,6 +160,12 @@ func captureNeo4jData(t *testing.T, s *State, d *Document, name string, render .
 			}
 
 			labels := []string{}
+			if strings.HasPrefix(name, "extended-list-") && strings.HasSuffix(name, "-editor") {
+				labels = []string{"取消单元格编辑", "应用单元格编辑"}
+				if d.edit.Editor == nil || !d.edit.Editor.Dedicated || !tt.HasText(locales.Text("专用单元格编辑")+" "+d.edit.Editor.Field) {
+					t.Fatal("complete typed list editor not visible", name, language, size)
+				}
+			}
 			if strings.HasPrefix(name, "relationship-endpoint-") && name != "relationship-endpoint-conflict" {
 				labels = []string{"创建关系：选择端点", "源节点 element ID", "目标节点 element ID", "读取端点", "复制完整端点观察", "添加关系草稿", "取消"}
 			}

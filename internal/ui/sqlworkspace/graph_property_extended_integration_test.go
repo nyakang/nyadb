@@ -7,6 +7,7 @@ import (
 	"io"
 	"math"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -36,6 +37,13 @@ func extendedNativeSamples() []extendedNativeSample {
 
 func extendedNativeValue(t *testing.T, kind, text string) contract.GraphValue {
 	t.Helper()
+	if element, ok := strings.CutPrefix(kind, "list:"); ok {
+		v, err := contract.ParseGraphPropertyList(element, text)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return v
+	}
 	v, err := contract.ParseGraphPropertyExtended(kind, text)
 	if err != nil {
 		t.Fatal(err)
@@ -44,6 +52,13 @@ func extendedNativeValue(t *testing.T, kind, text string) contract.GraphValue {
 }
 func extendedNativeParameter(t *testing.T, v contract.GraphValue) any {
 	t.Helper()
+	if v.Kind == "list" {
+		params := make([]any, len(v.Values))
+		for i, item := range v.Values {
+			params[i] = extendedNativeParameter(t, item)
+		}
+		return params
+	}
 	x, err := contract.GraphPropertyExtendedValue(v)
 	if err != nil {
 		t.Fatal(err)
@@ -74,6 +89,18 @@ func extendedNativeParameter(t *testing.T, v contract.GraphValue) any {
 }
 
 func TestNeo4jNativePublicGraphPropertyExtendedOriginalUIComponentsSnapshotsAndGeneration(t *testing.T) {
+	testPublicExtendedProperties(t, false)
+}
+
+func TestNeo4jNativePublicGraphPropertyExtendedListsOriginalUIComponentsSnapshotsAndGeneration(t *testing.T) {
+	testPublicExtendedProperties(t, true)
+}
+
+func testPublicExtendedProperties(t *testing.T, lists bool) {
+	samples, stage := extendedNativeSamples(), "extended"
+	if lists {
+		samples, stage = extendedListNativeSamples(), "extended-list"
+	}
 	f := neo4jWorkbenchFixtureTest(t)
 	admin, err := neo4j.Open(context.Background(), f.Config, f.Secret)
 	if err != nil {
@@ -81,6 +108,9 @@ func TestNeo4jNativePublicGraphPropertyExtendedOriginalUIComponentsSnapshotsAndG
 	}
 	defer admin.Close()
 	label := "NyaExtended_" + f.Nonce
+	if lists {
+		label += "_lists"
+	}
 	defer neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE $label IN labels(n) DETACH DELETE n", Parameters: map[string]any{"label": label}})
 	created := neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "CREATE (a:$($label) {name:'Original 猫',exact:$exact})-[r:NYA_EXTENDED {guard:'unchanged'}]->(b:$($label)) RETURN a,r,b", Parameters: map[string]any{"label": label, "exact": int64(math.MaxInt64)}})
 	root, relationship := created.Rows[0][0].Node.ElementID, created.Rows[0][1].Relationship.ElementID
@@ -125,7 +155,22 @@ func TestNeo4jNativePublicGraphPropertyExtendedOriginalUIComponentsSnapshotsAndG
 		click(locales.Text("图属性名称"))
 		tt.Type(name)
 		click(locales.Text("图属性类型"))
-		click(locales.Text(label))
+		if lists {
+			index := 16
+			for i, sample := range samples {
+				if sample.kind == kind {
+					index += i
+					break
+				}
+			}
+			tt.Key(0, ui.KeyHome)
+			for range index {
+				tt.Key(0, ui.KeyDown)
+			}
+			tt.Key(0, ui.KeyEnter)
+		} else {
+			click(locales.Text(label))
+		}
 		if d.graphPropertyDraft == nil || d.graphPropertyDraft.kind != kind {
 			t.Fatal("native extended selector lost type", kind)
 		}
@@ -148,7 +193,7 @@ func TestNeo4jNativePublicGraphPropertyExtendedOriginalUIComponentsSnapshotsAndG
 	}
 	var snapshot *Document
 	var snapshotBytes []byte
-	for index, sample := range extendedNativeSamples() {
+	for index, sample := range samples {
 		key := "n:" + root
 		if index%2 == 1 {
 			key = "r:" + relationship
@@ -161,7 +206,7 @@ func TestNeo4jNativePublicGraphPropertyExtendedOriginalUIComponentsSnapshotsAndG
 		if !reflect.DeepEqual(d.graphPropertyDraft.preview.After, first) {
 			t.Fatal("UI input lost temporal/spatial components", sample.kind)
 		}
-		captureGraphProperty(t, s, d, "extended-"+sample.kind)
+		captureGraphProperty(t, s, d, stage+"-"+strings.TrimPrefix(sample.kind, "list:"))
 		apply("确认新增图属性", first)
 		d.graphPropertyOpen = false
 		click(name + " " + locales.Text("编辑图属性"))
@@ -174,7 +219,7 @@ func TestNeo4jNativePublicGraphPropertyExtendedOriginalUIComponentsSnapshotsAndG
 			t.Fatal("native extended edit preview lost old/new parts", sample.kind)
 		}
 		apply("确认保存图属性", after)
-		if sample.kind == "datetime" {
+		if sample.kind == "datetime" || sample.kind == "list:datetime" {
 			if !s.pinResult(d) {
 				t.Fatal(d.Error())
 			}
@@ -192,12 +237,16 @@ func TestNeo4jNativePublicGraphPropertyExtendedOriginalUIComponentsSnapshotsAndG
 	g.focus("n:" + root)
 	s.openGraphPropertyCreation(d, g)
 	d.graphPropertyDraft.name, d.graphPropertyDraft.kind, d.graphPropertyDraft.text = "rejected duration", "duration", `{"months":9223372036854775807,"days":0,"seconds":0,"nanoseconds":0}`
+	if lists {
+		d.graphPropertyDraft.kind = "list:duration"
+		d.graphPropertyDraft.text = "[" + d.graphPropertyDraft.text + "]"
+	}
 	s.previewGraphProperty(d)
 	if d.graphPropertyDraft.preview != nil || d.graphPropertyDraft.error == "" || d.graphPropertyDraft.attempted || d.graphPropertyPending != nil || len(d.graphPropertyRecords) != 24 {
 		t.Fatal("provider duration overflow was dispatched instead of rejected in preview")
 	}
 	d.graphPropertyDraft = nil
-	dateTime := extendedNativeSamples()[4]
+	dateTime := samples[4]
 	name := "concurrent zoned value"
 	creation(dateTime.kind, dateTime.label, name, dateTime.first)
 	apply("确认新增图属性", extendedNativeValue(t, dateTime.kind, dateTime.first))
@@ -206,14 +255,19 @@ func TestNeo4jNativePublicGraphPropertyExtendedOriginalUIComponentsSnapshotsAndG
 	d.graphPropertyDraft.text = dateTime.after
 	click(locales.Text("预览属性保存"))
 	fixed := time.Date(2026, 7, 3, 1, 2, 3, 123456789, time.FixedZone("Offset", 7200))
-	neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE elementId(n)=$id SET n[$key]=$value", Parameters: map[string]any{"id": root, "key": name, "value": fixed}})
+	neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE elementId(n)=$id SET n[$key]=$value", Parameters: map[string]any{"id": root, "key": name, "value": func() any {
+		if lists {
+			return []any{fixed, fixed}
+		}
+		return fixed
+	}()}})
 	click(locales.Text("确认保存图属性"))
 	waitNativeNeighbors(t, s, d)
 	if d.graphPropertyDraft == nil || len(d.graphPropertyRecords) != 26 || !d.graphPropertyRecords[25].Receipt.Conflict || d.graphPropertyRecords[25].Receipt.Applied {
 		t.Fatal("same-clock fixed offset bypassed original named timezone comparison")
 	}
 	d.graphPropertyRecord = -1
-	captureGraphProperty(t, s, d, "extended-conflict")
+	captureGraphProperty(t, s, d, stage+"-conflict")
 	s.verifyGraphProperty(d, 25)
 	waitNativeNeighbors(t, s, d)
 	if len(d.graphPropertyRecords) != 27 || !d.graphPropertyRecords[26].Verification || d.graphPropertyRecords[26].Receipt.Applied {
@@ -232,7 +286,7 @@ func TestNeo4jNativePublicGraphPropertyExtendedOriginalUIComponentsSnapshotsAndG
 		t.Fatal("continued extended edits/neighbor reads revived superseded observations")
 	}
 	g.focus("r:" + relationship)
-	point := extendedNativeSamples()[7]
+	point := samples[7]
 	creation(point.kind, point.label, "parked geographic point", point.after)
 	click(locales.Text("确认新增图属性"))
 	active = false
@@ -257,7 +311,7 @@ func TestNeo4jNativePublicGraphPropertyExtendedOriginalUIComponentsSnapshotsAndG
 		t.Fatal("retired spatial completion lost evidence or replaced current graph")
 	}
 	d.graphPropertyRecord = -1
-	captureGraphProperty(t, s, d, "extended-retired")
+	captureGraphProperty(t, s, d, stage+"-retired")
 	s.saveGraphProperty(d)
 	if d.Loading() {
 		t.Fatal("retired spatial write replayed")
@@ -277,7 +331,7 @@ func TestNeo4jNativePublicGraphPropertyExtendedOriginalUIComponentsSnapshotsAndG
 	if json.Unmarshal(exported, &records) != nil || len(records) != 29 {
 		t.Fatal("extended export lost independent native receipts")
 	}
-	for index, sample := range extendedNativeSamples() {
+	for index, sample := range samples {
 		if !reflect.DeepEqual(records[index*3+1].Request.After, extendedNativeValue(t, sample.kind, sample.after)) || records[index*3+2].Request.After.Kind != "null" || !records[index*3+2].Receipt.Applied {
 			t.Fatal("extended export flattened components or lost absence", sample.kind)
 		}

@@ -2,6 +2,7 @@ package dataworkspace
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"slices"
 	"strings"
@@ -16,6 +17,18 @@ import (
 )
 
 func TestNeo4jNativePublicDataCommitReplyLostCanceledOriginalCloseNeverReplay(t *testing.T) {
+	testPublicDataCommitReplyFaults(t, false)
+}
+
+func TestNeo4jNativePublicDataExtendedListsCommitReplyLostCanceledOriginalCloseNeverReplay(t *testing.T) {
+	testPublicDataCommitReplyFaults(t, true)
+}
+
+func testPublicDataCommitReplyFaults(t *testing.T, lists bool) {
+	stage := "write-uncertain"
+	if lists {
+		stage = "extended-list-uncertain"
+	}
 	f := neo4jDataFixtureTest(t)
 	admin, err := neo4j.Open(context.Background(), f.Config, f.Secret)
 	if err != nil {
@@ -33,6 +46,9 @@ func TestNeo4jNativePublicDataCommitReplyLostCanceledOriginalCloseNeverReplay(t 
 					name, pattern = rel, "()-[e]->()"
 				}
 				neo4jDataRun(t, admin, "MATCH "+pattern+" WHERE "+map[string]string{"label": "$name IN labels(e)", "relationship": "type(e)=$name"}[kind]+" SET e.n=1", map[string]any{"name": name})
+				if lists {
+					neo4jDataRun(t, admin, "MATCH "+pattern+" WHERE "+map[string]string{"label": "$name IN labels(e)", "relationship": "type(e)=$name"}[kind]+gridExtendedListAssignments("e"), map[string]any{"name": name})
+				}
 				// Exact native Bolt COMMIT: two-byte chunk, zero-field structure 0x12,
 				// end-of-message. The test has no binary inputs containing this frame.
 				relay := newNeo4jDataRelay(t, f, string([]byte{0, 2, 0xb0, 0x12, 0, 0}))
@@ -66,6 +82,12 @@ func TestNeo4jNativePublicDataCommitReplyLostCanceledOriginalCloseNeverReplay(t 
 				s.beginMySQLCellEdit(ui.Services{}, d, 0, col, false)
 				d.edit.Editor.Text = "9223372036854775807"
 				s.finishMySQLCellEdit(d, true)
+				if lists {
+					for _, sample := range gridExtendedListSamples() {
+						raw, _ := json.Marshal(gridExtendedListValue(t, sample))
+						s.EditCell(ui.Services{}, d, 0, "property.list_"+sample.kind, contract.Cell{Kind: contract.JSON, Text: string(raw)})
+					}
+				}
 				key := mysqlDataRowKey(d, 0)
 				edits := []contract.DataEdit{{Kind: "update", Original: cloneSnapshot(d.edit.Drafts[key].Original), Values: cloneValues(d.edit.Drafts[key].Values)}}
 				runtime := s.runtimeFor(d)
@@ -87,6 +109,10 @@ func TestNeo4jNativePublicDataCommitReplyLostCanceledOriginalCloseNeverReplay(t 
 				if read.Rows[0][0].Text != "9223372036854775807" {
 					t.Fatal("withheld COMMIT response lacked independently confirmed native commit")
 				}
+				if lists {
+					complete := neo4jDataRun(t, admin, "MATCH "+pattern+" WHERE elementId(e)=$id RETURN e", map[string]any{"id": id})
+					assertGridExtendedLists(t, complete.Rows[0][0])
+				}
 				neo4jDataRun(t, admin, "MATCH "+pattern+" WHERE elementId(e)=$id SET e.n=-789", map[string]any{"id": id})
 				queued := make(chan error, 1)
 				go func() { _, e := runtime.Saver(context.Background(), profile.ID, "neo4j", name, edits); queued <- e }()
@@ -107,7 +133,7 @@ func TestNeo4jNativePublicDataCommitReplyLostCanceledOriginalCloseNeverReplay(t 
 						t.Fatal("uncertain native commit replaced drafts or lost original receipt", d.edit.Err)
 					}
 					if kind == "label" && fault == "cancel" {
-						captureNeo4jData(t, s, d, "write-uncertain-commit")
+						captureNeo4jData(t, s, d, stage+"-commit")
 					}
 					s.saveMySQLData(ui.Services{}, d)
 					s.verifyMySQLDataSave(ui.Services{}, d)
@@ -141,7 +167,7 @@ func TestNeo4jNativePublicDataCommitReplyLostCanceledOriginalCloseNeverReplay(t 
 					if err := tester.Click(locales.Text("关闭原写入文档")); err != nil {
 						t.Fatal(err)
 					}
-					captureNeo4jData(t, s, d, "write-uncertain-close", func(c *ui.Context) { s.nativeWriteReceiptModal(c, d) })
+					captureNeo4jData(t, s, d, stage+"-close", func(c *ui.Context) { s.nativeWriteReceiptModal(c, d) })
 					if err := tester.Click(locales.Text("取消")); err != nil {
 						t.Fatal(err)
 					}

@@ -117,6 +117,8 @@ func (s *State) graphPropertyDraftView(c *ui.Context, d *Document) {
 			kinds = append(kinds, "date", "local_time", "local_datetime", "time", "datetime", "duration", "point2d", "point3d")
 			labels = append(labels, locales.Text("日期"), locales.Text("本地时间"), locales.Text("本地日期时间"), locales.Text("带偏移时间"), locales.Text("带时区日期时间"), locales.Text("时长"), locales.Text("二维空间点"), locales.Text("三维空间点"))
 		}
+		kinds = append(kinds, "list:date", "list:local_time", "list:local_datetime", "list:time", "list:datetime", "list:duration", "list:point2d", "list:point3d")
+		labels = append(labels, locales.Text("日期列表"), locales.Text("本地时间列表"), locales.Text("本地日期时间列表"), locales.Text("带偏移时间列表"), locales.Text("带时区日期时间列表"), locales.Text("时长列表"), locales.Text("二维空间点列表"), locales.Text("三维空间点列表"))
 		choice := labels[0]
 		for i, kind := range kinds {
 			if p.kind == kind {
@@ -144,6 +146,9 @@ func (s *State) graphPropertyDraftView(c *ui.Context, d *Document) {
 	}
 	if !p.remove && strings.HasPrefix(p.kind, "list:") {
 		ui.Text(c, locales.Text("列表以 JSON 数组输入；元素须符合所选类型，空列表使用 []")).SingleLine().Tooltip(locales.Text("列表以 JSON 数组输入；元素须符合所选类型，空列表使用 []"))
+		if _, ok := graphPropertyExtendedDefault(strings.TrimPrefix(p.kind, "list:")); ok {
+			ui.Text(c, locales.Text("日期和本地时间列表使用字符串；其他时间或空间列表使用完整分量对象。空间点须使用相同坐标系与维数。")).SingleLine().Tooltip(locales.Text("日期和本地时间列表使用字符串；其他时间或空间列表使用完整分量对象。空间点须使用相同坐标系与维数。"))
+		}
 	}
 	if !p.remove {
 		hint := ""

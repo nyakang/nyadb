@@ -3019,5 +3019,14 @@
   "dataGraphEndpointIDsRequired": "Enter the complete source and target element IDs",
   "dataGraphEndpointChanged": "The original rows or database session changed. Read the endpoints again.",
   "dataGraphEndpointSourceInput": "Source node element ID input",
-  "dataGraphEndpointTargetInput": "Target node element ID input"
+  "dataGraphEndpointTargetInput": "Target node element ID input",
+  "graphListDate": "Date list",
+  "graphListLocalTime": "Local time list",
+  "graphListLocalDateTime": "Local date and time list",
+  "graphListTime": "Time with offset list",
+  "graphListDateTime": "Date and time with zone list",
+  "graphListDuration": "Duration list",
+  "graphListPoint2D": "2D point list",
+  "graphListPoint3D": "3D point list",
+  "graphListExtendedHint": "Date and local time lists use strings; other temporal and spatial lists use complete component objects. Points must share a coordinate system and dimensions."
 }

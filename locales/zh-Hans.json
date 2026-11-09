@@ -3019,5 +3019,14 @@
   "dataGraphEndpointIDsRequired": "请输入完整的源和目标 element ID",
   "dataGraphEndpointChanged": "原记录或数据库会话已变化，请重新读取端点",
   "dataGraphEndpointSourceInput": "输入源节点 element ID",
-  "dataGraphEndpointTargetInput": "输入目标节点 element ID"
+  "dataGraphEndpointTargetInput": "输入目标节点 element ID",
+  "graphListDate": "日期列表",
+  "graphListLocalTime": "本地时间列表",
+  "graphListLocalDateTime": "本地日期时间列表",
+  "graphListTime": "带偏移时间列表",
+  "graphListDateTime": "带时区日期时间列表",
+  "graphListDuration": "时长列表",
+  "graphListPoint2D": "二维空间点列表",
+  "graphListPoint3D": "三维空间点列表",
+  "graphListExtendedHint": "日期和本地时间列表使用字符串；其他时间或空间列表使用完整分量对象。空间点须使用相同坐标系与维数。"
 }

@@ -143,6 +143,14 @@ func TestNeo4jNativePropertyExtendedStorageTypesAndNativeComparison(t *testing.T
 }
 
 func TestNeo4jNativePropertyExtendedTypedLocksReceiptsAndComponents(t *testing.T) {
+	testNativeExtendedPropertyLocks(t, false)
+}
+
+func TestNeo4jNativePropertyExtendedListsTypedLocksReceiptsAndComponents(t *testing.T) {
+	testNativeExtendedPropertyLocks(t, true)
+}
+
+func testNativeExtendedPropertyLocks(t *testing.T, lists bool) {
 	f := sessionFixtureTest(t)
 	admin := nativeOpenTest(t, f)
 	s := nativeSessionTest(t, f)
@@ -168,6 +176,11 @@ func TestNeo4jNativePropertyExtendedTypedLocksReceiptsAndComponents(t *testing.T
 		} {
 			t.Run(target.Kind+"/"+sample.kind, func(t *testing.T) {
 				first, changed, after := extendedPropertyTest(t, sample.kind, sample.first), extendedPropertyTest(t, sample.kind, sample.changed), extendedPropertyTest(t, sample.kind, sample.after)
+				if lists {
+					first = contract.GraphValue{Kind: "list", Values: []contract.GraphValue{first}}
+					changed = contract.GraphValue{Kind: "list", Values: []contract.GraphValue{changed}}
+					after = contract.GraphValue{Kind: "list", Values: []contract.GraphValue{after}}
+				}
 				r := contract.GraphPropertyWriteRequest{Namespace: s.Namespace("neo4j"), Target: target, Property: "native ` 猫 " + sample.kind, Before: contract.GraphValue{Kind: "null"}, After: first}
 				receipt, err := lease.WriteGraphProperty(context.Background(), r)
 				if err != nil || !receipt.Applied || !reflect.DeepEqual(receipt.Result.Rows[0][2], first) {

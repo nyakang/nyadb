@@ -166,3 +166,28 @@ class Neo4jFixtureOwnershipTests(unittest.TestCase):
                     FIXTURE.check_acceptance(log, relationship_grid=True)
         self.assertEqual(len(FIXTURE.RELATIONSHIP_GRID_IMAGE_STAGES), 10)
         self.assertTrue({'relationship-endpoint-input', 'relationship-endpoint-observed', 'relationship-typed-preview', 'relationship-commit-unknown-close', 'relationship-endpoint-parked'}.issubset(FIXTURE.RELATIONSHIP_GRID_IMAGE_STAGES))
+
+
+    def test_extended_lists_require_native_storage_locks_public_editing_creation_and_commit_faults(self):
+        names = FIXTURE.EXTENDED_LIST_REQUIRED
+        self.assertEqual(len(names), 22)
+        self.assertEqual(len(set(names)), len(names))
+        passed = ''.join('--- PASS: TestNeo4jNative'+name+' (0.01s)\n' for name in names)
+        FIXTURE.check_acceptance(passed, extended_lists=True)
+        for name in names:
+            line = '--- PASS: TestNeo4jNative'+name+' (0.01s)'
+            for log in (passed.replace(line, ''), passed.replace(line, line.replace('PASS', 'SKIP'))):
+                with self.subTest(name=name), self.assertRaises(RuntimeError):
+                    FIXTURE.check_acceptance(log, extended_lists=True)
+        for suffix in ('\n    --- SKIP: child (0.0s)', '\n--- FAIL: child (0.0s)', '\nWARNING: DATA RACE'):
+            with self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(passed+suffix, extended_lists=True)
+
+    def test_extended_list_images_require_both_languages_sizes_and_each_stage(self):
+        for public, stages in ((True, FIXTURE.EXTENDED_LIST_PUBLIC_STAGES), (False, FIXTURE.EXTENDED_LIST_GRID_STAGES)):
+            pictures = [Path(language)/(stage+'-'+size+'.png') if public else Path(language+'-'+size+'-'+stage+'.png')
+                        for language in ('zh-Hans', 'en') for size in ('1280x800', '720x520') for stage in stages]
+            FIXTURE.check_stage_images(pictures, stages, public=public)
+            for index in range(len(pictures)):
+                with self.subTest(public=public, missing=pictures[index]), self.assertRaises(RuntimeError):
+                    FIXTURE.check_stage_images(pictures[:index]+pictures[index+1:], stages, public=public)

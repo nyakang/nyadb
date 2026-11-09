@@ -14,6 +14,18 @@ import (
 )
 
 func TestNeo4jNativePublicGraphPropertyExtendedLostCanceledOriginalCloseAndRecoveryNeverReplay(t *testing.T) {
+	testPublicExtendedPropertyFaults(t, false)
+}
+
+func TestNeo4jNativePublicGraphPropertyExtendedListsLostCanceledOriginalCloseAndRecoveryNeverReplay(t *testing.T) {
+	testPublicExtendedPropertyFaults(t, true)
+}
+
+func testPublicExtendedPropertyFaults(t *testing.T, lists bool) {
+	samples := extendedNativeSamples()
+	if lists {
+		samples = extendedListNativeSamples()
+	}
 	f := neo4jWorkbenchFixtureTest(t)
 	admin, err := neo4j.Open(context.Background(), f.Config, f.Secret)
 	if err != nil {
@@ -21,8 +33,11 @@ func TestNeo4jNativePublicGraphPropertyExtendedLostCanceledOriginalCloseAndRecov
 	}
 	defer admin.Close()
 	label := "NyaExtendedFault_" + f.Nonce
+	if lists {
+		label += "_lists"
+	}
 	defer neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE $label IN labels(n) DETACH DELETE n", Parameters: map[string]any{"label": label}})
-	for _, sample := range extendedNativeSamples() {
+	for _, sample := range samples {
 		for _, operation := range []string{"edit", "add", "remove"} {
 			for _, fault := range []string{"lost", "cancel", "close"} {
 				t.Run(sample.kind+"/"+operation+"/"+fault, func(t *testing.T) {

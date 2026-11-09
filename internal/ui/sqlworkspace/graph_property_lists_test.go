@@ -143,7 +143,7 @@ func TestGraphPropertyListLocalizedSelectionEmptyEditingAndUnsupportedKinds(t *t
 		t.Fatal("editing an empty list did not use the explicitly selected kind")
 	}
 	d.graphPropertyDraft = nil
-	for _, value := range []contract.GraphValue{{Kind: "list", Values: []contract.GraphValue{{Kind: "null"}}}, {Kind: "list", Values: []contract.GraphValue{{Kind: "integer", Text: "1"}, {Kind: "float", Text: "1"}}}, {Kind: "list", Values: []contract.GraphValue{{Kind: "date", Text: "2026-11-09"}}}, {Kind: "list", Values: []contract.GraphValue{{Kind: "list"}}}} {
+	for _, value := range []contract.GraphValue{{Kind: "list", Values: []contract.GraphValue{{Kind: "null"}}}, {Kind: "list", Values: []contract.GraphValue{{Kind: "integer", Text: "1"}, {Kind: "float", Text: "1"}}}, {Kind: "list", Values: []contract.GraphValue{{Kind: "date", Text: "2026-02-29"}}}, {Kind: "list", Values: []contract.GraphValue{{Kind: "list"}}}} {
 		if s.canEditGraphProperty(d, g, contract.GraphProperty{Name: "unsupported", Value: value}) {
 			t.Fatal("unsupported or untyped list property was advertised as editable")
 		}

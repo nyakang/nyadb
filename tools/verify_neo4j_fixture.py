@@ -47,6 +47,45 @@ RELATIONSHIP_GRID_REQUIRED = ('PublicDataRelationshipCreationTypedDirectedParall
 RELATIONSHIP_GRID_IMAGE_STAGES = ('relationship-endpoint-input', 'relationship-endpoint-observed', 'relationship-typed-draft', 'relationship-typed-preview', 'relationship-continued-receipt', 'relationship-propertyless-draft', 'relationship-endpoint-conflict', 'relationship-commit-unknown', 'relationship-commit-unknown-close', 'relationship-endpoint-parked')
 
 
+EXTENDED_LIST_KINDS = ('date', 'local_time', 'local_datetime', 'time', 'datetime', 'duration', 'point2d', 'point3d')
+EXTENDED_LIST_REQUIRED = (
+    'PropertyListsStorageTypesAndNativeComparison', 'PropertyListsTypedLocksReceiptsAndEmptyPresence',
+    'PropertyExtendedStorageTypesAndNativeComparison', 'PropertyExtendedTypedLocksReceiptsAndComponents',
+    'PropertyExtendedListsStorageTypesAndNativeComparison', 'PropertyExtendedListsTypedLocksReceiptsAndComponents',
+) + WRITE_REQUIRED + (
+    'DataEntityCreationDeletionAndDetachEvidence', 'DataRelationshipCreationTypedDirectedParallelAndSelfLoop',
+    'PublicGraphPropertyExtendedOriginalUIComponentsSnapshotsAndGeneration',
+    'PublicGraphPropertyExtendedLostCanceledOriginalCloseAndRecoveryNeverReplay',
+    'PublicGraphPropertyExtendedListsOriginalUIComponentsSnapshotsAndGeneration',
+    'PublicGraphPropertyExtendedListsLostCanceledOriginalCloseAndRecoveryNeverReplay',
+) + GRID_REQUIRED + (
+    'PublicDataExtendedListsTypedTransactionsCreationConflictsAndOriginalLease',
+    'PublicDataExtendedListsCommitReplyLostCanceledOriginalCloseNeverReplay',
+)
+EXTENDED_LIST_PUBLIC_STAGES = tuple(prefix+'-'+kind for prefix in ('extended', 'extended-list') for kind in EXTENDED_LIST_KINDS) + ('extended-conflict', 'extended-retired', 'extended-list-conflict', 'extended-list-retired')
+EXTENDED_LIST_GRID_STAGES = tuple('extended-list-'+object_kind+'-'+kind+'-editor' for object_kind in ('label', 'relationship') for kind in EXTENDED_LIST_KINDS) + tuple('extended-list-'+object_kind+'-'+stage for object_kind in ('label', 'relationship') for stage in ('draft', 'receipt', 'creation-preview', 'conflict')) + ('extended-list-uncertain-commit', 'extended-list-uncertain-close')
+
+
+def required_cases(profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False, relationship_native=False, relationship_grid=False, extended_lists=False):
+    if extended_lists:
+        return EXTENDED_LIST_REQUIRED
+    public = public or grid
+    data = data or grid
+    session = session or public or data
+    profile = profile or session
+    return RELATIONSHIP_REQUIRED + WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED + GRID_REQUIRED + ENTITY_GRID_REQUIRED + RELATIONSHIP_GRID_REQUIRED if relationship_grid else RELATIONSHIP_REQUIRED + WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if relationship_native else WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED + GRID_REQUIRED + ENTITY_GRID_REQUIRED if entity_grid else WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if entity_preview else ENTITY_REQUIRED if entity_native else WRITE_REQUIRED + GRID_REQUIRED if grid_writes else REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ())
+
+
+def check_stage_images(pictures, stages, public=False):
+    required = {language+'-'+size+'-'+stage+'.png' for language in ('zh-Hans', 'en') for size in ('1280x800', '720x520') for stage in stages}
+    actual = {p.name for p in pictures}
+    if public:
+        required = {language+'/'+stage+'-'+size+'.png' for language in ('zh-Hans', 'en') for size in ('1280x800', '720x520') for stage in stages}
+        actual = {p.parent.name+'/'+p.name for p in pictures}
+    if not required.issubset(actual):
+        raise RuntimeError('Missing required typed property list editor/preview/receipt/lifecycle images')
+
+
 def remove_owned(identifier, nonce):
     if not re.fullmatch('[0-9a-f]{64}', identifier):
         raise RuntimeError('Invalid immutable fixture ID')
@@ -63,12 +102,12 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def check_acceptance(log, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False, relationship_native=False, relationship_grid=False):
+def check_acceptance(log, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False, relationship_native=False, relationship_grid=False, extended_lists=False):
     public = public or grid
     data = data or grid
     session = session or public or data
     profile = profile or session
-    names = RELATIONSHIP_REQUIRED + WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED + GRID_REQUIRED + ENTITY_GRID_REQUIRED + RELATIONSHIP_GRID_REQUIRED if relationship_grid else RELATIONSHIP_REQUIRED + WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if relationship_native else WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED + GRID_REQUIRED + ENTITY_GRID_REQUIRED if entity_grid else WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if entity_preview else ENTITY_REQUIRED if entity_native else WRITE_REQUIRED + GRID_REQUIRED if grid_writes else REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ())
+    names = required_cases(profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid, relationship_native, relationship_grid, extended_lists)
     for name in names:
         if not re.search(r'^--- PASS: TestNeo4jNative' + name + r' \(', log, re.M):
             raise RuntimeError('Missing native acceptance: ' + name)
@@ -91,7 +130,10 @@ def certificates(folder):
     openssl('req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', 'wrong.key', '-out', 'wrong.crt', '-days', '2', '-subj', '/CN=Untrusted CA', cwd=folder)
 
 
-def verify(mode, race, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False, relationship_native=False, relationship_grid=False):
+def verify(mode, race, profile=False, session=False, public=False, data=False, grid=False, grid_writes=False, entity_native=False, entity_preview=False, entity_grid=False, relationship_native=False, relationship_grid=False, extended_lists=False):
+    if extended_lists:
+        profile, session, public, data, grid, grid_writes = False, True, True, True, True, True
+        entity_native, entity_preview, entity_grid, relationship_native, relationship_grid = (False,)*5
     if relationship_grid:
         entity_grid = True
         relationship_native, entity_native, entity_preview = False, False, False
@@ -101,9 +143,9 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
         profile, session, public, data, grid, grid_writes = False, True, False, True, False, False
     elif entity_native or entity_preview:
         profile, session, public, data, grid = False, True, False, True, False
-    elif grid_writes:
+    elif grid_writes and not extended_lists:
         profile, session, public, data, grid = False, True, False, True, True
-    else:
+    elif not extended_lists:
         public = public or grid
         data = data or grid
         session = session or public or data
@@ -128,7 +170,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
         for package in ('internal/ui/dataworkspace', 'internal/ui/gridview', 'internal/ui/theme'):
             sources += list((ROOT/package).glob('*.go'))
     report = {'nonce': nonce, 'mode': mode, 'version': VERSION, 'image': IMAGE,
-              'scope': 'public-shared-qualified-relationship-creation' if relationship_grid else 'private-native-qualified-relationship-creation' if relationship_native else 'public-shared-graph-entity-confirmations' if entity_grid else 'private-native-entity-previews-and-property-transactions' if entity_preview else 'private-native-entity-mutations' if entity_native else 'public-shared-graph-property-write-and-close-followup' if grid_writes else 'public-shared-graph-data-and-workbench' if grid else 'public-workbench-and-private-graph-data' if public and data else 'private-original-graph-data' if data else 'public-native-workbench' if public else 'private-native-session-and-graph-contract' if session else ('private-native-profile-and-editor' if profile else 'private-native-foundation'), 'race': race, 'passed': False,
+              'scope': 'public-temporal-spatial-property-lists' if extended_lists else 'public-shared-qualified-relationship-creation' if relationship_grid else 'private-native-qualified-relationship-creation' if relationship_native else 'public-shared-graph-entity-confirmations' if entity_grid else 'private-native-entity-previews-and-property-transactions' if entity_preview else 'private-native-entity-mutations' if entity_native else 'public-shared-graph-property-write-and-close-followup' if grid_writes else 'public-shared-graph-data-and-workbench' if grid else 'public-workbench-and-private-graph-data' if public and data else 'private-original-graph-data' if data else 'public-native-workbench' if public else 'private-native-session-and-graph-contract' if session else ('private-native-profile-and-editor' if profile else 'private-native-foundation'), 'race': race, 'passed': False,
               'source_hashes': {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(sources))}}
     identifier = None
     try:
@@ -225,7 +267,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
                 packages += ['./internal/services/dbruntime', './internal/ui/sqlworkspace', './internal/ui/shell']
             if grid:
                 packages += ['./internal/ui/dataworkspace']
-            accepted = RELATIONSHIP_REQUIRED + WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED + GRID_REQUIRED + ENTITY_GRID_REQUIRED + RELATIONSHIP_GRID_REQUIRED if relationship_grid else RELATIONSHIP_REQUIRED + WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if relationship_native else WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED + GRID_REQUIRED + ENTITY_GRID_REQUIRED if entity_grid else WRITE_REQUIRED + ENTITY_REQUIRED + ENTITY_PREVIEW_REQUIRED if entity_preview else ENTITY_REQUIRED if entity_native else WRITE_REQUIRED + GRID_REQUIRED if grid_writes else REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()) + (GRID_REQUIRED if grid else ())
+            accepted = required_cases(profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid, relationship_native, relationship_grid, extended_lists)
             pattern = '^TestNeo4jNative(' + '|'.join(accepted) + ')$'
             command = ['go', 'test'] + (['-race'] if race else []) + packages + ['-run', pattern, '-count=1', '-timeout=8m', '-v']
             result = subprocess.run(command, cwd=ROOT, env=env, capture_output=True, text=True)
@@ -235,7 +277,7 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
             log_path.write_text(log)
             if result.returncode:
                 raise RuntimeError('Native Neo4j verification failed; see '+str(log_path.relative_to(ROOT)))
-            check_acceptance(log, profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid, relationship_native, relationship_grid)
+            check_acceptance(log, profile, session, public, data, grid, grid_writes, entity_native, entity_preview, entity_grid, relationship_native, relationship_grid, extended_lists)
             if profile:
                 pictures = sorted(Path(env['NYADB_NEO4J_PROFILE_IMAGES']).glob('*.png'))
                 if len(pictures) != 48:
@@ -243,14 +285,18 @@ def verify(mode, race, profile=False, session=False, public=False, data=False, g
                 report['images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             if public:
                 pictures = sorted(Path(env['NYADB_NEO4J_PUBLIC_IMAGES']).rglob('*.png'))
-                if len(pictures) != 224:
+                if len(pictures) != (4*len(EXTENDED_LIST_PUBLIC_STAGES) if extended_lists else 224):
                     raise RuntimeError('Missing localized Neo4j workbench screenshots')
+                if extended_lists:
+                    check_stage_images(pictures, EXTENDED_LIST_PUBLIC_STAGES, public=True)
                 report['public_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             if grid:
-                for field, variable, count in [('grid_images', 'NYADB_NEO4J_GRID_IMAGES', 64 + 4*len(ENTITY_GRID_IMAGE_STAGES) + (4*len(RELATIONSHIP_GRID_IMAGE_STAGES) if relationship_grid else 0) if entity_grid else 64)] + ([] if grid_writes else [('shell_grid_images', 'NYADB_NEO4J_SHELL_GRID_IMAGES', 8)]):
+                for field, variable, count in [('grid_images', 'NYADB_NEO4J_GRID_IMAGES', 64 + 4*len(EXTENDED_LIST_GRID_STAGES) if extended_lists else 64 + 4*len(ENTITY_GRID_IMAGE_STAGES) + (4*len(RELATIONSHIP_GRID_IMAGE_STAGES) if relationship_grid else 0) if entity_grid else 64)] + ([] if grid_writes else [('shell_grid_images', 'NYADB_NEO4J_SHELL_GRID_IMAGES', 8)]):
                     pictures = sorted(Path(env[variable]).rglob('*.png'))
                     if len(pictures) != count:
                         raise RuntimeError('Missing localized public graph data screenshots: '+field)
+                    if extended_lists and field == 'grid_images':
+                        check_stage_images(pictures, EXTENDED_LIST_GRID_STAGES)
                     if entity_grid and field == 'grid_images':
                         required_names = {language+'-'+size+'-'+stage+'.png' for language in ('zh-Hans', 'en') for size in ('1280x800', '720x520') for stage in ENTITY_GRID_IMAGE_STAGES + (RELATIONSHIP_GRID_IMAGE_STAGES if relationship_grid else ())}
                         if not required_names.issubset({p.name for p in pictures}):
@@ -285,8 +331,9 @@ def main():
     parser.add_argument('--entity-grid', action='store_true', help='Probe public node creation, explicit deletion decisions, original previews and entity commit safety')
     parser.add_argument('--relationship-native', action='store_true', help='Probe private qualified endpoint reads, directed relationship creation, original locks and commit faults')
     parser.add_argument('--relationship-grid', action='store_true', help='Probe explicit public endpoint input, shared relationship drafts, original previews, commit faults and localized lifecycle evidence')
+    parser.add_argument('--extended-lists', action='store_true', help='Verify temporal/spatial lists through native transactions, Cypher editing and the sole shared grid')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.profile, args.session, args.public, args.data, args.grid, args.grid_writes, args.entity_native, args.entity_preview, args.entity_grid, args.relationship_native, args.relationship_grid)
+    verify(args.mode, args.race, args.profile, args.session, args.public, args.data, args.grid, args.grid_writes, args.entity_native, args.entity_preview, args.entity_grid, args.relationship_native, args.relationship_grid, args.extended_lists)
 
 
 if __name__ == '__main__':

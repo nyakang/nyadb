@@ -30837,3 +30837,93 @@ func DataGraphEndpointTargetInput() string { return In(i18n.Locale()).DataGraphE
 func (msgs Messages) DataGraphEndpointTargetInput() string {
 	return Catalog.Format(msgs.locale, "dataGraphEndpointTargetInput", nil)
 }
+
+// GraphListDate says "日期列表"
+// in the language the app shows.
+func GraphListDate() string { return In(i18n.Locale()).GraphListDate() }
+
+// GraphListDate says "日期列表"
+// in the language of msgs.
+func (msgs Messages) GraphListDate() string {
+	return Catalog.Format(msgs.locale, "graphListDate", nil)
+}
+
+// GraphListLocalTime says "本地时间列表"
+// in the language the app shows.
+func GraphListLocalTime() string { return In(i18n.Locale()).GraphListLocalTime() }
+
+// GraphListLocalTime says "本地时间列表"
+// in the language of msgs.
+func (msgs Messages) GraphListLocalTime() string {
+	return Catalog.Format(msgs.locale, "graphListLocalTime", nil)
+}
+
+// GraphListLocalDateTime says "本地日期时间列表"
+// in the language the app shows.
+func GraphListLocalDateTime() string { return In(i18n.Locale()).GraphListLocalDateTime() }
+
+// GraphListLocalDateTime says "本地日期时间列表"
+// in the language of msgs.
+func (msgs Messages) GraphListLocalDateTime() string {
+	return Catalog.Format(msgs.locale, "graphListLocalDateTime", nil)
+}
+
+// GraphListTime says "带偏移时间列表"
+// in the language the app shows.
+func GraphListTime() string { return In(i18n.Locale()).GraphListTime() }
+
+// GraphListTime says "带偏移时间列表"
+// in the language of msgs.
+func (msgs Messages) GraphListTime() string {
+	return Catalog.Format(msgs.locale, "graphListTime", nil)
+}
+
+// GraphListDateTime says "带时区日期时间列表"
+// in the language the app shows.
+func GraphListDateTime() string { return In(i18n.Locale()).GraphListDateTime() }
+
+// GraphListDateTime says "带时区日期时间列表"
+// in the language of msgs.
+func (msgs Messages) GraphListDateTime() string {
+	return Catalog.Format(msgs.locale, "graphListDateTime", nil)
+}
+
+// GraphListDuration says "时长列表"
+// in the language the app shows.
+func GraphListDuration() string { return In(i18n.Locale()).GraphListDuration() }
+
+// GraphListDuration says "时长列表"
+// in the language of msgs.
+func (msgs Messages) GraphListDuration() string {
+	return Catalog.Format(msgs.locale, "graphListDuration", nil)
+}
+
+// GraphListPoint2D says "二维空间点列表"
+// in the language the app shows.
+func GraphListPoint2D() string { return In(i18n.Locale()).GraphListPoint2D() }
+
+// GraphListPoint2D says "二维空间点列表"
+// in the language of msgs.
+func (msgs Messages) GraphListPoint2D() string {
+	return Catalog.Format(msgs.locale, "graphListPoint2D", nil)
+}
+
+// GraphListPoint3D says "三维空间点列表"
+// in the language the app shows.
+func GraphListPoint3D() string { return In(i18n.Locale()).GraphListPoint3D() }
+
+// GraphListPoint3D says "三维空间点列表"
+// in the language of msgs.
+func (msgs Messages) GraphListPoint3D() string {
+	return Catalog.Format(msgs.locale, "graphListPoint3D", nil)
+}
+
+// GraphListExtendedHint says "…"
+// in the language the app shows.
+func GraphListExtendedHint() string { return In(i18n.Locale()).GraphListExtendedHint() }
+
+// GraphListExtendedHint says "…"
+// in the language of msgs.
+func (msgs Messages) GraphListExtendedHint() string {
+	return Catalog.Format(msgs.locale, "graphListExtendedHint", nil)
+}

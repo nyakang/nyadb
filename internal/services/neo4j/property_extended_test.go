@@ -60,8 +60,12 @@ func TestGraphPropertyExtendedParametersRoundtripCanonicalDurationAndRejectedDim
 		t.Fatal("same POINT native type silently admitted dimension changes")
 	}
 	for _, v := range []contract.GraphValue{r.Before, extendedPropertyTest(t, "date", "2026-01-01")} {
-		if _, _, err := propertyValue(contract.GraphValue{Kind: "list", Values: []contract.GraphValue{v}}); err == nil {
-			t.Fatal("extended scalar support silently admitted unproven extended lists")
+		list := contract.GraphValue{Kind: "list", Values: []contract.GraphValue{v}}
+		value, _, err := propertyValue(list)
+		budget := valueBudget{limit: 1 << 20}
+		captured, _, captureErr := budget.capture(value, true, 0)
+		if err != nil || captureErr != nil || !reflect.DeepEqual(list, captured) {
+			t.Fatal("verified extended list lost native components", err, captureErr)
 		}
 	}
 }
