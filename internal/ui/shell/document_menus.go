@@ -94,6 +94,8 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 			}
 		}
 	case "工具":
+		snapshots := contract.ObjectRef{ProfileID: session.ProfileID, Kind: "snapshot_management", Name: "snapshot_management"}
+		item("管理快照…", "snapshots", s.objectWorkspace.SnapshotManagementSupported(snapshots), 0, 0)
 		collections := contract.ObjectRef{ProfileID: session.ProfileID, Kind: "collection_management", Name: "collection_management"}
 		item("管理集合与别名…", "collections", s.objectWorkspace.CollectionManagementSupported(collections), 0, 0)
 		target := contract.ObjectRef{ProfileID: session.ProfileID, Kind: "keys", Name: "keys"}
@@ -124,6 +126,8 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 		return
 	}
 	switch selected {
+	case "snapshots":
+		s.openSnapshotManagement(s.editServices, original.profile)
 	case "collections":
 		s.openCollectionManagement(s.editServices, original.profile)
 	case "namespace_management":

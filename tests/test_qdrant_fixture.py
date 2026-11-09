@@ -11,6 +11,37 @@ spec.loader.exec_module(fixture)
 
 
 class QdrantFixtureTests(unittest.TestCase):
+    def test_focused_snapshot_ui_cannot_pass_without_scope_and_fault_workflows(self):
+        log = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in fixture.SNAPSHOT_UI_REQUIRED)
+        fixture.check_acceptance(log, snapshot_ui=True)
+        for name in fixture.SNAPSHOT_UI_REQUIRED:
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(log.replace('--- PASS: TestQdrantNative'+name,
+                                                     '--- SKIP: TestQdrantNative'+name), snapshot_ui=True)
+        command = fixture.native_test_command(True, snapshot_ui=True)
+        self.assertIn('-race', command)
+        self.assertIn('^TestQdrantNativePublicSnapshotGraphical', command)
+        self.assertEqual(command[-1], './internal/ui/shell')
+
+    def test_snapshot_ui_requires_original_files_guards_recovery_and_no_replay(self):
+        names = ['PublicSnapshotGraphicalScopesFilesRecoveryAndGuards',
+                 'PublicSnapshotGraphicalLostReadbackAndReplacementNoReplay']
+        required = fixture.REQUIRED + fixture.PROFILE_REQUIRED + fixture.SESSION_REQUIRED + fixture.PUBLIC_REQUIRED
+        log = '\n'.join('--- PASS: TestQdrantNative'+name+' (0.1s)' for name in required)
+        fixture.check_acceptance(log, public=True)
+        for name in names:
+            self.assertIn(name, fixture.PUBLIC_REQUIRED)
+            with self.assertRaises(RuntimeError):
+                fixture.check_acceptance(log.replace('--- PASS: TestQdrantNative'+name,
+                                                     '--- SKIP: TestQdrantNative'+name), public=True)
+        paths = fixture.source_hashes(profile=True)
+        for path in ['internal/ui/objectworkspace/snapshot_management.go',
+                     'internal/ui/objectworkspace/snapshot_management_view.go',
+                     'internal/ui/shell/snapshot_management.go',
+                     'internal/ui/shell/qdrant_snapshot_management_integration_test.go',
+                     'internal/services/snapshotfiles/files.go']:
+            self.assertIn(path, paths)
+
     def test_public_snapshots_require_generation_stream_ownership_and_original_evidence(self):
         names = ['PublicSnapshotsOriginalGenerationScopesTransfersAndRecovery',
                  'PublicSnapshotsRevocationRetainsReceiptAndClosesOriginalStreams']

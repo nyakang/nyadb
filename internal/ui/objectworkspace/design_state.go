@@ -55,6 +55,9 @@ type designDocument struct {
 
 func designSignature(draft mysqlddl.Draft) string { b, _ := json.Marshal(draft); return string(b) }
 func (d *Document) DesignDirty() bool {
+	if d.SnapshotManagementMode() {
+		return d.snapshots.dirty()
+	}
 	if d.CollectionManagementMode() {
 		return d.collections.dirty()
 	}
@@ -73,7 +76,7 @@ func (d *Document) DesignDirty() bool {
 	return d != nil && d.design != nil && d.design.loaded && (designSignature(d.design.draft) != d.design.baseline || !reflect.DeepEqual(d.design.form, d.design.formBase) || d.design.constraint.dirty() || d.design.optionValue != d.design.optionBase)
 }
 func (d *Document) DesignBusy() bool {
-	return d != nil && (d.CollectionManagementMode() && (d.loading || d.collections.guarding) || d.KeysMode() && d.loading || d.SettingsMode() && d.loading || d.tasks != nil && d.tasks.management.busy || d.design != nil && d.design.busy || d.schemaDesign != nil && d.schemaDesign.busy)
+	return d != nil && (d.SnapshotManagementMode() && (d.loading || d.snapshots.guarding) || d.CollectionManagementMode() && (d.loading || d.collections.guarding) || d.KeysMode() && d.loading || d.SettingsMode() && d.loading || d.tasks != nil && d.tasks.management.busy || d.design != nil && d.design.busy || d.schemaDesign != nil && d.schemaDesign.busy)
 }
 func (s *State) BeginDesign(d *Document, services ui.Services) {
 	if d != nil && s.canSchemaDesign(d.profileID, d.database, d.table) {
@@ -323,6 +326,9 @@ func (d *Document) DesignLeavePending() bool {
 	if d == nil || d.closed {
 		return false
 	}
+	if x := d.snapshots; x != nil {
+		return x.guard || x.preview || x.guarding || d.loading || x.pending || x.dirty()
+	}
 	if x := d.collections; x != nil {
 		return x.guard || x.preview || x.guarding || d.loading || x.pending || x.dirty()
 	}
@@ -345,6 +351,9 @@ func (d *Document) DesignLeavePending() bool {
 }
 
 func (s *State) GuardDesignLeave(d *Document, next func(ui.Services)) bool {
+	if d.SnapshotManagementMode() {
+		return s.guardSnapshotsLeave(d, next)
+	}
 	if d.CollectionManagementMode() {
 		return s.guardCollectionsLeave(d, next)
 	}

@@ -62,6 +62,8 @@ SESSION_REQUIRED = (
     'SessionTypedPostReadLossIsInterruptedWithoutReplay',
 )
 PUBLIC_REQUIRED = (
+	'PublicSnapshotGraphicalScopesFilesRecoveryAndGuards',
+	'PublicSnapshotGraphicalLostReadbackAndReplacementNoReplay',
     'PublicSnapshotsOriginalGenerationScopesTransfersAndRecovery',
     'PublicSnapshotsRevocationRetainsReceiptAndClosesOriginalStreams',
     'PublicCollectionManagementOriginalGenerationClaimsReceiptAndNoReplay',
@@ -71,6 +73,11 @@ PUBLIC_REQUIRED = (
     'PublicChooserURINavigationDefinitionsRESTAndRecovery',
     'PublicCollectionManagementGraphicalActionsGuardsAndParkedEvidence',
     'PublicCollectionManagementGraphicalFaultsOriginalGenerationAndNoReplay',
+)
+
+SNAPSHOT_UI_REQUIRED = (
+    'PublicSnapshotGraphicalScopesFilesRecoveryAndGuards',
+    'PublicSnapshotGraphicalLostReadbackAndReplacementNoReplay',
 )
 
 DATA_REQUIRED = (
@@ -120,16 +127,20 @@ def source_hashes(profile=False):
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 
 
-def check_acceptance(log, profile=False, session=False, public=False, data=False):
+def check_acceptance(log, profile=False, session=False, public=False, data=False, snapshot_ui=False):
     session = session or public or data
-    for name in REQUIRED + (PROFILE_REQUIRED if profile or session else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ()):
+    names = SNAPSHOT_UI_REQUIRED if snapshot_ui else REQUIRED + (PROFILE_REQUIRED if profile or session else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ())
+    for name in names:
         if not re.search(r'^--- PASS: TestQdrantNative'+name+r' \(', log, re.M):
             raise RuntimeError('Missing required native PASS: '+name)
     if re.search(r'^\s*--- (SKIP|FAIL):', log, re.M) or 'WARNING: DATA RACE' in log:
         raise RuntimeError('Unexpected skipped, failed or racing native test')
 
 
-def native_test_command(race, profile=False, session=False, public=False, data=False):
+def native_test_command(race, profile=False, session=False, public=False, data=False, snapshot_ui=False):
+    if snapshot_ui:
+        return ['go', 'test', '-p=1', '-count=1', '-timeout=5m', '-v', *(['-race'] if race else []),
+                '-run', '^TestQdrantNativePublicSnapshotGraphical', './internal/ui/shell']
     session = session or public or data
     profile = profile or session
     exclusions = [name for name, enabled in [('Session',session),('Public',public),('Data',data)] if not enabled]
@@ -144,7 +155,8 @@ def native_test_command(race, profile=False, session=False, public=False, data=F
             *(['./internal/ui/dataworkspace'] if data else [])]
 
 
-def verify(mode='tls', race=False, profile=False, session=False, public=False, data=False):
+def verify(mode='tls', race=False, profile=False, session=False, public=False, data=False, snapshot_ui=False):
+    public = public or snapshot_ui
     session = session or public or data
     profile = profile or session
     if mode not in MODES:
@@ -156,7 +168,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
     evidence_path = output/('owned-fixture-'+nonce+'.json')
     evidence = dict(nonce=nonce, image=IMAGE, requested_version=VERSION, mode=mode,
                     snapshot_scope='private_original_session_leases_immutable_plans_collection_shard_storage_archives_streaming_sha256_recovery_claims_live_collection_count_original_receipts_and_no_replay',
-                    scope='original_shared_point_grid_crud_json_jsonl_import_explicit_native_modes_signed_snapshots_receipts_bounded_all_source_readback_no_replay_cursor_filter_count_fields_and_export' if data else 'public_chooser_uri_original_sessions_collections_definitions_rest_typed_points_and_recovery' if public else 'private_original_session_metadata_rest_typed_points_and_management_leases_namespace_claims_native_boolean_receipts_complete_readback_no_replay' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_point_and_collection_alias_management_original_session_claims_receipts_and_no_replay',
+                    scope='public_original_snapshot_workspace_scopes_file_publication_upload_server_recovery_guards_readback_generation_and_no_replay' if snapshot_ui else 'original_shared_point_grid_crud_json_jsonl_import_explicit_native_modes_signed_snapshots_receipts_bounded_all_source_readback_no_replay_cursor_filter_count_fields_and_export' if data else 'public_chooser_uri_original_sessions_collections_definitions_rest_typed_points_and_recovery' if public else 'private_original_session_metadata_rest_typed_points_and_management_leases_namespace_claims_native_boolean_receipts_complete_readback_no_replay' if session else 'private_native_profile_uri_storage_vault_editor_and_original_connection_checks' if profile else 'private_native_rest_point_and_collection_alias_management_original_session_claims_receipts_and_no_replay',
                     status='failed', fixture_cleaned=False, private_files_cleaned=False)
     try:
         with tempfile.TemporaryDirectory(prefix='owned-'+nonce+'-', dir=output) as private:
@@ -264,20 +276,20 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                 if session:
                     env['NYADB_QDRANT_SESSION_IT'] = '1'
                 if public:
-                    env.update(NYADB_QDRANT_PUBLIC_IT='1', NYADB_QDRANT_PUBLIC_IMAGES=str(output/('public-images-'+nonce)), NYADB_QDRANT_MANAGEMENT_IMAGES=str(output/('management-images-'+nonce)))
+                    env.update(NYADB_QDRANT_PUBLIC_IT='1', NYADB_QDRANT_PUBLIC_IMAGES=str(output/('public-images-'+nonce)), NYADB_QDRANT_MANAGEMENT_IMAGES=str(output/('management-images-'+nonce)), NYADB_QDRANT_SNAPSHOT_IMAGES=str(output/('snapshot-images-'+nonce)))
                 if data:
                     env.update(NYADB_QDRANT_DATA_IT='1', NYADB_QDRANT_DATA_IMAGES=str(output/('data-images-'+nonce)), NYADB_QDRANT_IMPORT_IMAGES=str(output/('import-images-'+nonce)))
                 hashes = source_hashes(profile)
                 logfile = output/('native-'+nonce+'.log')
-                command = native_test_command(race, profile, session, public, data)
+                command = native_test_command(race, profile, session, public, data, snapshot_ui)
                 with logfile.open('w') as log:
                     result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=660 if public or data else 330)
                 if hashes != source_hashes(profile):
                     raise RuntimeError('Acceptance sources changed during verification')
                 if result.returncode:
                     raise RuntimeError('Native Qdrant acceptance failed; inspect '+str(logfile.relative_to(ROOT)))
-                check_acceptance(logfile.read_text(), profile, session, public, data)
-                if profile:
+                check_acceptance(logfile.read_text(), profile, session, public, data, snapshot_ui)
+                if profile and not snapshot_ui:
                     image_root = Path(env['NYADB_QDRANT_PROFILE_IMAGES'])
                     images = sorted(image_root.glob('*.png'))
                     expected = {language+'-'+str(width)+'-'+auth+'-'+page+'.png' for language in ['zh-Hans', 'en']
@@ -285,7 +297,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                     if {p.name for p in images} != expected:
                         raise RuntimeError('Missing localized native Qdrant profile form evidence')
                     evidence['headless_profile_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
-                if public:
+                if public and not snapshot_ui:
                     image_root = Path(env['NYADB_QDRANT_PUBLIC_IMAGES'])
                     images = sorted(image_root.rglob('*.png'))
                     expected = {language+'/'+panel+'-'+str(width)+'x'+str(height)+'.png'
@@ -294,7 +306,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                     if {str(p.relative_to(image_root)) for p in images} != expected:
                         raise RuntimeError('Missing localized native Qdrant workbench evidence')
                     evidence['headless_workbench_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
-                if public:
+                if public and not snapshot_ui:
                     image_root = Path(env['NYADB_QDRANT_MANAGEMENT_IMAGES'])
                     images = sorted(image_root.rglob('*.png'))
                     expected = {language+'/'+panel+'-'+str(width)+'x'+str(height)+'.png'
@@ -303,6 +315,15 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                     if {str(p.relative_to(image_root)) for p in images} != expected:
                         raise RuntimeError('Missing localized original collection/alias management evidence')
                     evidence['headless_management_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
+                if public:
+                    image_root = Path(env['NYADB_QDRANT_SNAPSHOT_IMAGES'])
+                    images = sorted(image_root.rglob('*.png'))
+                    expected = {language+'/'+panel+'-'+str(width)+'x'+str(height)+'.png'
+                                for language in ['zh-Hans', 'en'] for width,height in [(1280,800),(720,520)]
+                                for panel in ['form','preview','receipt','download','restore-preview','restored','list','unresolved']}
+                    if {str(p.relative_to(image_root)) for p in images} != expected:
+                        raise RuntimeError('Missing localized native snapshot workflow evidence')
+                    evidence['headless_snapshot_images'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in images}
                 if data:
                     image_root = Path(env['NYADB_QDRANT_DATA_IMAGES'])
                     images = sorted(image_root.glob('*.png'))
@@ -319,7 +340,7 @@ def verify(mode='tls', race=False, profile=False, session=False, public=False, d
                     evidence['headless_import_images']={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in imports}
 
                 evidence.update(status='passed_with_race' if race else 'passed', source_hashes=hashes,
-                                required_passes=list(REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ())), command=command, log=str(logfile.relative_to(ROOT)),
+                                required_passes=list(SNAPSHOT_UI_REQUIRED if snapshot_ui else REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()) + (PUBLIC_REQUIRED if public else ()) + (DATA_REQUIRED if data else ())), snapshot_ui_only=snapshot_ui, command=command, log=str(logfile.relative_to(ROOT)),
                                 log_sha256=hashlib.sha256(logfile.read_bytes()).hexdigest())
             finally:
                 logs = subprocess.run(['docker', 'logs', identifier], capture_output=True, text=True)
@@ -344,5 +365,6 @@ if __name__ == '__main__':
     parser.add_argument('--session', action='store_true', help='Verify original session, collection metadata, REST/management leases, claims, receipts, readback and cancellation/recovery; includes profile acceptance')
     parser.add_argument('--public', action='store_true', help='Verify public chooser/URI, original runtime generations, qualified navigation/definitions and REST workbench/recovery; includes sessions/profiles')
     parser.add_argument('--data', action='store_true', help='Verify original shared point data lease, cursor/filter/count/bounded fields/complete export and localized grid; includes sessions/profiles')
+    parser.add_argument('--snapshot-ui', action='store_true', help='Verify only snapshot UI scopes, file publication, recovery, leave guards and original-session faults on a fresh owned fixture')
     options = parser.parse_args()
-    verify(options.mode, options.race, options.profile, options.session, options.public, options.data)
+    verify(options.mode, options.race, options.profile, options.session, options.public, options.data, options.snapshot_ui)

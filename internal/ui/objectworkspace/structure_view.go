@@ -42,6 +42,10 @@ func (s *State) View(c *ui.Context, t *Document) {
 	if t == nil || t.closed {
 		return
 	}
+	if t.snapshots != nil {
+		s.snapshotsView(c, t)
+		return
+	}
 	if t.collections != nil {
 		s.collectionsView(c, t)
 		return

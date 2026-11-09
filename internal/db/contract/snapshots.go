@@ -137,6 +137,25 @@ type SnapshotProvider interface {
 	ReserveSnapshotManagementDocument(ObjectRef, uint64) (SnapshotLease, error)
 }
 
+// Local file plans preserve the selected destination observation independently
+// of database plans. Publishing rechecks it; this is not an OS-level CAS lock.
+type SnapshotOutputPlan interface{ Path() string }
+type SnapshotFileReceipt struct {
+	Destination, Partial string
+	Bytes                uint64
+	Published            bool
+}
+type SnapshotOutput interface {
+	io.WriteCloser
+	Finish(context.Context, bool) (SnapshotFileReceipt, error)
+}
+type SnapshotFileOperations struct {
+	InspectInput  func(context.Context, string, uint64) (SnapshotSource, error)
+	OpenInput     func(context.Context, string, SnapshotSource, uint64) (io.ReadCloser, error)
+	PrepareOutput func(context.Context, string, uint64) (SnapshotOutputPlan, error)
+	OpenOutput    func(context.Context, SnapshotOutputPlan) (SnapshotOutput, error)
+}
+
 func CloneSnapshotDescription(d SnapshotDescription) SnapshotDescription {
 	d.Raw = bytes.Clone(d.Raw)
 	return d

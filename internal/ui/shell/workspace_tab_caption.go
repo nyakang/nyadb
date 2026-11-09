@@ -18,8 +18,8 @@ func (s *State) workspaceTabCaption(t *tab) string {
 		return name
 	}
 	key := t.identity()
-	if key.name == "collection_management" && key.objectKind == "集合与别名管理" {
-		caption := locales.Text("集合与别名管理")
+	if key.name == "collection_management" && key.objectKind == "集合与别名管理" || key.name == "snapshot_management" && key.objectKind == "快照管理" {
+		caption := locales.Text(key.objectKind)
 		for _, other := range s.tabs {
 			if other != t && other.identity().name == key.name && other.profileID() != key.profileID {
 				caption = s.profileName(key.profileID) + " / " + caption

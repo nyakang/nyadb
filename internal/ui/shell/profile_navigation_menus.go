@@ -95,6 +95,10 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 		}
 	}
 	if profile.Kind == connections.Qdrant {
+		snapshots := contract.ObjectRef{ProfileID: profile.ID, Kind: "snapshot_management", Name: "snapshot_management"}
+		if m.Item(locales.Text("管理快照…")).Disabled(!connected || !s.objectWorkspace.SnapshotManagementSupported(snapshots)).Chosen() {
+			s.openSnapshotManagement(services, profile.ID)
+		}
 		target := contract.ObjectRef{ProfileID: profile.ID, Kind: "collection_management", Name: "collection_management"}
 		if m.Item(locales.Text("管理集合与别名…")).Disabled(!connected || !s.objectWorkspace.CollectionManagementSupported(target)).Chosen() {
 			s.openCollectionManagement(services, profile.ID)

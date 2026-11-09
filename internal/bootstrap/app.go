@@ -16,6 +16,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/datasources"
 	"github.com/nyakang/nyadb/internal/services/favorites"
 	"github.com/nyakang/nyadb/internal/services/queries"
+	"github.com/nyakang/nyadb/internal/services/snapshotfiles"
 	"github.com/nyakang/nyadb/internal/storage/localdb"
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 	"github.com/nyakang/nyadb/internal/ui/shell"
@@ -134,6 +135,19 @@ func Run() error {
 			Save: func(name string) (string, error) {
 				return mygo.Dialog.Save(mygo.SaveDialogOptions{Parent: window, Title: locales.Text("保存备份"), DefaultPath: name})
 			}, Write: queries.WriteStream,
+		})
+		state.SetSnapshotFiles(objectworkspace.SnapshotFiles{
+			Open: func() (string, error) {
+				paths, e := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: window, Title: locales.Text("选择源归档"), Filters: []mygo.FileFilter{{Name: "Qdrant Snapshot", Extensions: []string{"snapshot"}}}})
+				if e != nil || len(paths) == 0 {
+					return "", e
+				}
+				return paths[0], nil
+			},
+			Save: func(name string) (string, error) {
+				return mygo.Dialog.Save(mygo.SaveDialogOptions{Parent: window, Title: locales.Text("选择下载目标"), DefaultPath: name})
+			},
+			Operations: snapshotfiles.Operations(),
 		})
 		state.SetEngineFiles(func(name string) (string, error) {
 			return mygo.Dialog.Save(mygo.SaveDialogOptions{Parent: window, DefaultPath: name})

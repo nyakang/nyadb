@@ -23,6 +23,10 @@ type Session struct {
 }
 
 type Dependencies struct {
+	SnapshotManagementFor   func(int64) (contract.SnapshotProvider, error)
+	BeforeSnapshots         func(ui.Services, uint64, int64, uint64, contract.SnapshotPlan, func(ui.Services)) bool
+	SnapshotsChanged        func(ui.Services, SnapshotManagementEvent)
+	SnapshotFiles           SnapshotFiles
 	CollectionManagementFor func(int64) (contract.CollectionManagementProvider, error)
 	BeforeCollections       func(ui.Services, uint64, int64, uint64, contract.CollectionManagementPlan, func(ui.Services)) bool
 	CollectionsChanged      func(ui.Services, CollectionManagementEvent)
@@ -117,6 +121,7 @@ type Dependencies struct {
 // Document owns its immutable object identity and mutable presentation state.
 // Only the UI thread changes it; workers publish to private buffered channels.
 type Document struct {
+	snapshots                     *snapshotManagementDocument
 	collections                   *collectionManagementDocument
 	keys                          *keysDocument
 	settings                      *settingsDocument
@@ -288,6 +293,12 @@ func (s *State) OpenStructure(id uint64, profileID int64, database, table string
 // prior worker before starting another. It never executes user-authored SQL or
 // modifies a table.
 func (s *State) Load(d *Document, invalidate func(), refresh bool) {
+	if d.SnapshotManagementMode() {
+		if refresh {
+			s.ReadSnapshotManagement(d, invalidate)
+		}
+		return
+	}
 	if d.CollectionManagementMode() {
 		if refresh {
 			s.ReadCollectionManagement(d, invalidate)
@@ -361,6 +372,10 @@ func (s *State) cancel(d *Document) {
 
 // Cancel preserves the existing read-only cache while revoking pending work.
 func (s *State) Cancel(d *Document) {
+	if d.SnapshotManagementMode() {
+		s.CancelSnapshotManagement(d)
+		return
+	}
 	if d.CollectionManagementMode() {
 		s.CancelCollectionManagement(d)
 		return
@@ -384,6 +399,7 @@ func (s *State) Close(d *Document) {
 		return
 	}
 	s.closeCollections(d)
+	s.closeSnapshots(d)
 	s.closeSettings(d)
 	s.closeKeys(d)
 	s.closeTasks(d)
@@ -453,6 +469,7 @@ func (s *State) CloseAll() {
 // Consume runs on the UI thread. Generation changes invalidate completed work
 // without leaving a document stuck loading or automatically retrying it.
 func (s *State) Consume(services ui.Services) {
+	s.consumeSnapshots(services)
 	s.consumeCollections(services)
 	s.consumeKeys()
 	s.consumeSettings(services)
@@ -543,6 +560,9 @@ func (d *Document) ObjectKind() string {
 
 func (d *Document) Object() contract.ObjectRef { return d.object }
 func (s *State) OpenQualifiedStructure(id uint64, o contract.ObjectRef, kind string) *Document {
+	if o.Kind == "snapshot_management" {
+		return s.OpenSnapshotManagement(id, o)
+	}
 	if o.Kind == "collection_management" {
 		return s.OpenCollectionManagement(id, o)
 	}

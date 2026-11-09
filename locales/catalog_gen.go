@@ -27669,3 +27669,807 @@ func QdrantManagementSessionLost() string { return In(i18n.Locale()).QdrantManag
 func (msgs Messages) QdrantManagementSessionLost() string {
 	return Catalog.Format(msgs.locale, "qdrantManagementSessionLost", nil)
 }
+
+// SnapshotEvidenceTruncated says "信息预览已截断，可复制完整核验证据。"
+// in the language the app shows.
+func SnapshotEvidenceTruncated() string { return In(i18n.Locale()).SnapshotEvidenceTruncated() }
+
+// SnapshotEvidenceTruncated says "信息预览已截断，可复制完整核验证据。"
+// in the language of msgs.
+func (msgs Messages) SnapshotEvidenceTruncated() string {
+	return Catalog.Format(msgs.locale, "snapshotEvidenceTruncated", nil)
+}
+
+// SnapshotCreationTime says "创建时间"
+// in the language the app shows.
+func SnapshotCreationTime() string { return In(i18n.Locale()).SnapshotCreationTime() }
+
+// SnapshotCreationTime says "创建时间"
+// in the language of msgs.
+func (msgs Messages) SnapshotCreationTime() string {
+	return Catalog.Format(msgs.locale, "snapshotCreationTime", nil)
+}
+
+// SnapshotSizeBytes says "大小（字节）"
+// in the language the app shows.
+func SnapshotSizeBytes() string { return In(i18n.Locale()).SnapshotSizeBytes() }
+
+// SnapshotSizeBytes says "大小（字节）"
+// in the language of msgs.
+func (msgs Messages) SnapshotSizeBytes() string {
+	return Catalog.Format(msgs.locale, "snapshotSizeBytes", nil)
+}
+
+// SnapshotWorkspaceSnapshotManagement says "快照管理"
+// in the language the app shows.
+func SnapshotWorkspaceSnapshotManagement() string {
+	return In(i18n.Locale()).SnapshotWorkspaceSnapshotManagement()
+}
+
+// SnapshotWorkspaceSnapshotManagement says "快照管理"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceSnapshotManagement() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceSnapshotManagement", nil)
+}
+
+// SnapshotWorkspaceManageSnapshots says "管理快照…"
+// in the language the app shows.
+func SnapshotWorkspaceManageSnapshots() string {
+	return In(i18n.Locale()).SnapshotWorkspaceManageSnapshots()
+}
+
+// SnapshotWorkspaceManageSnapshots says "管理快照…"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceManageSnapshots() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceManageSnapshots", nil)
+}
+
+// SnapshotWorkspaceCreateSnapshot says "创建快照"
+// in the language the app shows.
+func SnapshotWorkspaceCreateSnapshot() string {
+	return In(i18n.Locale()).SnapshotWorkspaceCreateSnapshot()
+}
+
+// SnapshotWorkspaceCreateSnapshot says "创建快照"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceCreateSnapshot() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceCreateSnapshot", nil)
+}
+
+// SnapshotWorkspaceDeleteSnapshot says "删除快照"
+// in the language the app shows.
+func SnapshotWorkspaceDeleteSnapshot() string {
+	return In(i18n.Locale()).SnapshotWorkspaceDeleteSnapshot()
+}
+
+// SnapshotWorkspaceDeleteSnapshot says "删除快照"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceDeleteSnapshot() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceDeleteSnapshot", nil)
+}
+
+// SnapshotWorkspaceDownloadSnapshot says "下载快照"
+// in the language the app shows.
+func SnapshotWorkspaceDownloadSnapshot() string {
+	return In(i18n.Locale()).SnapshotWorkspaceDownloadSnapshot()
+}
+
+// SnapshotWorkspaceDownloadSnapshot says "下载快照"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceDownloadSnapshot() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceDownloadSnapshot", nil)
+}
+
+// SnapshotWorkspaceRestoreFromLocalArchive says "从本地归档恢复"
+// in the language the app shows.
+func SnapshotWorkspaceRestoreFromLocalArchive() string {
+	return In(i18n.Locale()).SnapshotWorkspaceRestoreFromLocalArchive()
+}
+
+// SnapshotWorkspaceRestoreFromLocalArchive says "从本地归档恢复"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceRestoreFromLocalArchive() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceRestoreFromLocalArchive", nil)
+}
+
+// SnapshotWorkspaceRestoreFromServerLocation says "从服务器位置恢复"
+// in the language the app shows.
+func SnapshotWorkspaceRestoreFromServerLocation() string {
+	return In(i18n.Locale()).SnapshotWorkspaceRestoreFromServerLocation()
+}
+
+// SnapshotWorkspaceRestoreFromServerLocation says "从服务器位置恢复"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceRestoreFromServerLocation() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceRestoreFromServerLocation", nil)
+}
+
+// SnapshotWorkspaceStreamShardSnapshot says "直接下载分片"
+// in the language the app shows.
+func SnapshotWorkspaceStreamShardSnapshot() string {
+	return In(i18n.Locale()).SnapshotWorkspaceStreamShardSnapshot()
+}
+
+// SnapshotWorkspaceStreamShardSnapshot says "直接下载分片"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceStreamShardSnapshot() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceStreamShardSnapshot", nil)
+}
+
+// SnapshotWorkspaceReadSnapshotList says "读取快照列表"
+// in the language the app shows.
+func SnapshotWorkspaceReadSnapshotList() string {
+	return In(i18n.Locale()).SnapshotWorkspaceReadSnapshotList()
+}
+
+// SnapshotWorkspaceReadSnapshotList says "读取快照列表"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceReadSnapshotList() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceReadSnapshotList", nil)
+}
+
+// SnapshotWorkspacePreviewSnapshotOperation says "预览快照操作"
+// in the language the app shows.
+func SnapshotWorkspacePreviewSnapshotOperation() string {
+	return In(i18n.Locale()).SnapshotWorkspacePreviewSnapshotOperation()
+}
+
+// SnapshotWorkspacePreviewSnapshotOperation says "预览快照操作"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspacePreviewSnapshotOperation() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspacePreviewSnapshotOperation", nil)
+}
+
+// SnapshotWorkspaceVerifyOriginalSnapshotOperation says "核验原快照操作"
+// in the language the app shows.
+func SnapshotWorkspaceVerifyOriginalSnapshotOperation() string {
+	return In(i18n.Locale()).SnapshotWorkspaceVerifyOriginalSnapshotOperation()
+}
+
+// SnapshotWorkspaceVerifyOriginalSnapshotOperation says "核验原快照操作"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceVerifyOriginalSnapshotOperation() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceVerifyOriginalSnapshotOperation", nil)
+}
+
+// SnapshotWorkspaceStopSnapshotWait says "停止快照等待"
+// in the language the app shows.
+func SnapshotWorkspaceStopSnapshotWait() string {
+	return In(i18n.Locale()).SnapshotWorkspaceStopSnapshotWait()
+}
+
+// SnapshotWorkspaceStopSnapshotWait says "停止快照等待"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceStopSnapshotWait() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceStopSnapshotWait", nil)
+}
+
+// SnapshotWorkspaceSnapshotManagementActions says "快照管理操作"
+// in the language the app shows.
+func SnapshotWorkspaceSnapshotManagementActions() string {
+	return In(i18n.Locale()).SnapshotWorkspaceSnapshotManagementActions()
+}
+
+// SnapshotWorkspaceSnapshotManagementActions says "快照管理操作"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceSnapshotManagementActions() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceSnapshotManagementActions", nil)
+}
+
+// SnapshotWorkspaceWaitingForTheOriginalSnapshotRequest says "正在等待原快照请求…"
+// in the language the app shows.
+func SnapshotWorkspaceWaitingForTheOriginalSnapshotRequest() string {
+	return In(i18n.Locale()).SnapshotWorkspaceWaitingForTheOriginalSnapshotRequest()
+}
+
+// SnapshotWorkspaceWaitingForTheOriginalSnapshotRequest says "正在等待原快照请求…"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceWaitingForTheOriginalSnapshotRequest() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceWaitingForTheOriginalSnapshotRequest", nil)
+}
+
+// SnapshotWorkspaceWaitingForTheOriginalRequestAndFileClosure says "正在等待原快照请求及文件关闭…"
+// in the language the app shows.
+func SnapshotWorkspaceWaitingForTheOriginalRequestAndFileClosure() string {
+	return In(i18n.Locale()).SnapshotWorkspaceWaitingForTheOriginalRequestAndFileClosure()
+}
+
+// SnapshotWorkspaceWaitingForTheOriginalRequestAndFileClosure says "正在等待原快照请求及文件关闭…"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceWaitingForTheOriginalRequestAndFileClosure() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceWaitingForTheOriginalRequestAndFileClosure", nil)
+}
+
+// SnapshotWorkspaceSnapshotOperation says "快照操作"
+// in the language the app shows.
+func SnapshotWorkspaceSnapshotOperation() string {
+	return In(i18n.Locale()).SnapshotWorkspaceSnapshotOperation()
+}
+
+// SnapshotWorkspaceSnapshotOperation says "快照操作"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceSnapshotOperation() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceSnapshotOperation", nil)
+}
+
+// SnapshotWorkspaceArchiveList says "归档列表"
+// in the language the app shows.
+func SnapshotWorkspaceArchiveList() string { return In(i18n.Locale()).SnapshotWorkspaceArchiveList() }
+
+// SnapshotWorkspaceArchiveList says "归档列表"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceArchiveList() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceArchiveList", nil)
+}
+
+// SnapshotWorkspaceRestoredCollectionObservedCheckVectorsAndBusinessData says "已观察恢复后集合，请核对向量与业务数据"
+// in the language the app shows.
+func SnapshotWorkspaceRestoredCollectionObservedCheckVectorsAndBusinessData() string {
+	return In(i18n.Locale()).SnapshotWorkspaceRestoredCollectionObservedCheckVectorsAndBusinessData()
+}
+
+// SnapshotWorkspaceRestoredCollectionObservedCheckVectorsAndBusinessData says "已观察恢复后集合，请核对向量与业务数据"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceRestoredCollectionObservedCheckVectorsAndBusinessData() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceRestoredCollectionObservedCheckVectorsAndBusinessData", nil)
+}
+
+// SnapshotWorkspaceArchiveDownloadComplete says "归档下载完成"
+// in the language the app shows.
+func SnapshotWorkspaceArchiveDownloadComplete() string {
+	return In(i18n.Locale()).SnapshotWorkspaceArchiveDownloadComplete()
+}
+
+// SnapshotWorkspaceArchiveDownloadComplete says "归档下载完成"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceArchiveDownloadComplete() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceArchiveDownloadComplete", nil)
+}
+
+// SnapshotWorkspaceArchiveDownloadIncomplete says "归档下载未完成"
+// in the language the app shows.
+func SnapshotWorkspaceArchiveDownloadIncomplete() string {
+	return In(i18n.Locale()).SnapshotWorkspaceArchiveDownloadIncomplete()
+}
+
+// SnapshotWorkspaceArchiveDownloadIncomplete says "归档下载未完成"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceArchiveDownloadIncomplete() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceArchiveDownloadIncomplete", nil)
+}
+
+// SnapshotWorkspaceLivePhysicalCollectionPointCount says "物理集合实时点数"
+// in the language the app shows.
+func SnapshotWorkspaceLivePhysicalCollectionPointCount() string {
+	return In(i18n.Locale()).SnapshotWorkspaceLivePhysicalCollectionPointCount()
+}
+
+// SnapshotWorkspaceLivePhysicalCollectionPointCount says "物理集合实时点数"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceLivePhysicalCollectionPointCount() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceLivePhysicalCollectionPointCount", nil)
+}
+
+// SnapshotWorkspaceTheLiveCollectionCountIsNotAShard says "实时集合计数不是分片计数，也不能证明完整归档与全部数据等价。"
+// in the language the app shows.
+func SnapshotWorkspaceTheLiveCollectionCountIsNotAShard() string {
+	return In(i18n.Locale()).SnapshotWorkspaceTheLiveCollectionCountIsNotAShard()
+}
+
+// SnapshotWorkspaceTheLiveCollectionCountIsNotAShard says "实时集合计数不是分片计数，也不能证明完整归档与全部数据等价。"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceTheLiveCollectionCountIsNotAShard() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceTheLiveCollectionCountIsNotAShard", nil)
+}
+
+// SnapshotWorkspacePartialArchiveRetainedAt says "部分归档保留在"
+// in the language the app shows.
+func SnapshotWorkspacePartialArchiveRetainedAt() string {
+	return In(i18n.Locale()).SnapshotWorkspacePartialArchiveRetainedAt()
+}
+
+// SnapshotWorkspacePartialArchiveRetainedAt says "部分归档保留在"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspacePartialArchiveRetainedAt() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspacePartialArchiveRetainedAt", nil)
+}
+
+// SnapshotWorkspaceArchiveSavedTo says "归档已保存到"
+// in the language the app shows.
+func SnapshotWorkspaceArchiveSavedTo() string {
+	return In(i18n.Locale()).SnapshotWorkspaceArchiveSavedTo()
+}
+
+// SnapshotWorkspaceArchiveSavedTo says "归档已保存到"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceArchiveSavedTo() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceArchiveSavedTo", nil)
+}
+
+// SnapshotWorkspaceOriginalSnapshotRequestAndEvidence says "快照原请求与证据"
+// in the language the app shows.
+func SnapshotWorkspaceOriginalSnapshotRequestAndEvidence() string {
+	return In(i18n.Locale()).SnapshotWorkspaceOriginalSnapshotRequestAndEvidence()
+}
+
+// SnapshotWorkspaceOriginalSnapshotRequestAndEvidence says "快照原请求与证据"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceOriginalSnapshotRequestAndEvidence() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceOriginalSnapshotRequestAndEvidence", nil)
+}
+
+// SnapshotWorkspaceCopyFullSnapshotRequest says "复制完整快照请求"
+// in the language the app shows.
+func SnapshotWorkspaceCopyFullSnapshotRequest() string {
+	return In(i18n.Locale()).SnapshotWorkspaceCopyFullSnapshotRequest()
+}
+
+// SnapshotWorkspaceCopyFullSnapshotRequest says "复制完整快照请求"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceCopyFullSnapshotRequest() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceCopyFullSnapshotRequest", nil)
+}
+
+// SnapshotWorkspaceCopyOriginalSnapshotReceipt says "复制原快照回执"
+// in the language the app shows.
+func SnapshotWorkspaceCopyOriginalSnapshotReceipt() string {
+	return In(i18n.Locale()).SnapshotWorkspaceCopyOriginalSnapshotReceipt()
+}
+
+// SnapshotWorkspaceCopyOriginalSnapshotReceipt says "复制原快照回执"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceCopyOriginalSnapshotReceipt() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceCopyOriginalSnapshotReceipt", nil)
+}
+
+// SnapshotWorkspaceSnapshotEvidenceActions says "快照证据操作"
+// in the language the app shows.
+func SnapshotWorkspaceSnapshotEvidenceActions() string {
+	return In(i18n.Locale()).SnapshotWorkspaceSnapshotEvidenceActions()
+}
+
+// SnapshotWorkspaceSnapshotEvidenceActions says "快照证据操作"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceSnapshotEvidenceActions() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceSnapshotEvidenceActions", nil)
+}
+
+// SnapshotWorkspaceSnapshotScope says "快照范围"
+// in the language the app shows.
+func SnapshotWorkspaceSnapshotScope() string {
+	return In(i18n.Locale()).SnapshotWorkspaceSnapshotScope()
+}
+
+// SnapshotWorkspaceSnapshotScope says "快照范围"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceSnapshotScope() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceSnapshotScope", nil)
+}
+
+// SnapshotWorkspaceCollectionSnapshot says "集合快照"
+// in the language the app shows.
+func SnapshotWorkspaceCollectionSnapshot() string {
+	return In(i18n.Locale()).SnapshotWorkspaceCollectionSnapshot()
+}
+
+// SnapshotWorkspaceCollectionSnapshot says "集合快照"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceCollectionSnapshot() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceCollectionSnapshot", nil)
+}
+
+// SnapshotWorkspaceShardSnapshot says "分片快照"
+// in the language the app shows.
+func SnapshotWorkspaceShardSnapshot() string {
+	return In(i18n.Locale()).SnapshotWorkspaceShardSnapshot()
+}
+
+// SnapshotWorkspaceShardSnapshot says "分片快照"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceShardSnapshot() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceShardSnapshot", nil)
+}
+
+// SnapshotWorkspaceStorageSnapshot says "整库快照"
+// in the language the app shows.
+func SnapshotWorkspaceStorageSnapshot() string {
+	return In(i18n.Locale()).SnapshotWorkspaceStorageSnapshot()
+}
+
+// SnapshotWorkspaceStorageSnapshot says "整库快照"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceStorageSnapshot() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceStorageSnapshot", nil)
+}
+
+// SnapshotWorkspaceArchiveSizeLimitMiB says "归档大小上限（MiB）"
+// in the language the app shows.
+func SnapshotWorkspaceArchiveSizeLimitMiB() string {
+	return In(i18n.Locale()).SnapshotWorkspaceArchiveSizeLimitMiB()
+}
+
+// SnapshotWorkspaceArchiveSizeLimitMiB says "归档大小上限（MiB）"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceArchiveSizeLimitMiB() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceArchiveSizeLimitMiB", nil)
+}
+
+// SnapshotWorkspaceSnapshotWaitTimeoutSeconds says "快照等待超时（秒）"
+// in the language the app shows.
+func SnapshotWorkspaceSnapshotWaitTimeoutSeconds() string {
+	return In(i18n.Locale()).SnapshotWorkspaceSnapshotWaitTimeoutSeconds()
+}
+
+// SnapshotWorkspaceSnapshotWaitTimeoutSeconds says "快照等待超时（秒）"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceSnapshotWaitTimeoutSeconds() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceSnapshotWaitTimeoutSeconds", nil)
+}
+
+// SnapshotWorkspaceStorageArchivesSupportCreateDownloadAndDeleteRestore says "整库归档仅支持创建、下载和删除；恢复需在 Qdrant 停机启动时加载归档。"
+// in the language the app shows.
+func SnapshotWorkspaceStorageArchivesSupportCreateDownloadAndDeleteRestore() string {
+	return In(i18n.Locale()).SnapshotWorkspaceStorageArchivesSupportCreateDownloadAndDeleteRestore()
+}
+
+// SnapshotWorkspaceStorageArchivesSupportCreateDownloadAndDeleteRestore says "整库归档仅支持创建、下载和删除；恢复需在 Qdrant 停机启动时加载归档。"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceStorageArchivesSupportCreateDownloadAndDeleteRestore() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceStorageArchivesSupportCreateDownloadAndDeleteRestore", nil)
+}
+
+// SnapshotWorkspaceShardID says "分片编号"
+// in the language the app shows.
+func SnapshotWorkspaceShardID() string { return In(i18n.Locale()).SnapshotWorkspaceShardID() }
+
+// SnapshotWorkspaceShardID says "分片编号"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceShardID() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceShardID", nil)
+}
+
+// SnapshotWorkspaceServerLocationOrURL says "服务器位置或 URL"
+// in the language the app shows.
+func SnapshotWorkspaceServerLocationOrURL() string {
+	return In(i18n.Locale()).SnapshotWorkspaceServerLocationOrURL()
+}
+
+// SnapshotWorkspaceServerLocationOrURL says "服务器位置或 URL"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceServerLocationOrURL() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceServerLocationOrURL", nil)
+}
+
+// SnapshotWorkspaceSourceArchiveSHA256Optional says "源归档 SHA-256（可选）"
+// in the language the app shows.
+func SnapshotWorkspaceSourceArchiveSHA256Optional() string {
+	return In(i18n.Locale()).SnapshotWorkspaceSourceArchiveSHA256Optional()
+}
+
+// SnapshotWorkspaceSourceArchiveSHA256Optional says "源归档 SHA-256（可选）"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceSourceArchiveSHA256Optional() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceSourceArchiveSHA256Optional", nil)
+}
+
+// SnapshotWorkspaceRecoveryPriority says "恢复优先级"
+// in the language the app shows.
+func SnapshotWorkspaceRecoveryPriority() string {
+	return In(i18n.Locale()).SnapshotWorkspaceRecoveryPriority()
+}
+
+// SnapshotWorkspaceRecoveryPriority says "恢复优先级"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceRecoveryPriority() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceRecoveryPriority", nil)
+}
+
+// SnapshotWorkspaceChooseSourceArchive says "选择源归档"
+// in the language the app shows.
+func SnapshotWorkspaceChooseSourceArchive() string {
+	return In(i18n.Locale()).SnapshotWorkspaceChooseSourceArchive()
+}
+
+// SnapshotWorkspaceChooseSourceArchive says "选择源归档"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceChooseSourceArchive() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceChooseSourceArchive", nil)
+}
+
+// SnapshotWorkspaceChooseDownloadDestination says "选择下载目标"
+// in the language the app shows.
+func SnapshotWorkspaceChooseDownloadDestination() string {
+	return In(i18n.Locale()).SnapshotWorkspaceChooseDownloadDestination()
+}
+
+// SnapshotWorkspaceChooseDownloadDestination says "选择下载目标"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceChooseDownloadDestination() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceChooseDownloadDestination", nil)
+}
+
+// SnapshotWorkspaceSelectedArchive says "选定归档"
+// in the language the app shows.
+func SnapshotWorkspaceSelectedArchive() string {
+	return In(i18n.Locale()).SnapshotWorkspaceSelectedArchive()
+}
+
+// SnapshotWorkspaceSelectedArchive says "选定归档"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceSelectedArchive() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceSelectedArchive", nil)
+}
+
+// SnapshotWorkspaceArchiveName says "归档名称"
+// in the language the app shows.
+func SnapshotWorkspaceArchiveName() string { return In(i18n.Locale()).SnapshotWorkspaceArchiveName() }
+
+// SnapshotWorkspaceArchiveName says "归档名称"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceArchiveName() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceArchiveName", nil)
+}
+
+// SnapshotWorkspaceNoSnapshotArchivesLoaded says "没有已加载的快照归档"
+// in the language the app shows.
+func SnapshotWorkspaceNoSnapshotArchivesLoaded() string {
+	return In(i18n.Locale()).SnapshotWorkspaceNoSnapshotArchivesLoaded()
+}
+
+// SnapshotWorkspaceNoSnapshotArchivesLoaded says "没有已加载的快照归档"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceNoSnapshotArchivesLoaded() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceNoSnapshotArchivesLoaded", nil)
+}
+
+// SnapshotWorkspaceOriginalSessionSnapshotArchiveTable says "原会话快照归档表格"
+// in the language the app shows.
+func SnapshotWorkspaceOriginalSessionSnapshotArchiveTable() string {
+	return In(i18n.Locale()).SnapshotWorkspaceOriginalSessionSnapshotArchiveTable()
+}
+
+// SnapshotWorkspaceOriginalSessionSnapshotArchiveTable says "原会话快照归档表格"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceOriginalSessionSnapshotArchiveTable() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceOriginalSessionSnapshotArchiveTable", nil)
+}
+
+// SnapshotWorkspaceSnapshotOperationPreview says "快照操作预览"
+// in the language the app shows.
+func SnapshotWorkspaceSnapshotOperationPreview() string {
+	return In(i18n.Locale()).SnapshotWorkspaceSnapshotOperationPreview()
+}
+
+// SnapshotWorkspaceSnapshotOperationPreview says "快照操作预览"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceSnapshotOperationPreview() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceSnapshotOperationPreview", nil)
+}
+
+// SnapshotWorkspaceRestoreReplacesTheTargetCollectionContentsResolveOriginal says "恢复会替换目标集合内容；提交前处理原 REST 与相关数据文档，并重新核对原信息。"
+// in the language the app shows.
+func SnapshotWorkspaceRestoreReplacesTheTargetCollectionContentsResolveOriginal() string {
+	return In(i18n.Locale()).SnapshotWorkspaceRestoreReplacesTheTargetCollectionContentsResolveOriginal()
+}
+
+// SnapshotWorkspaceRestoreReplacesTheTargetCollectionContentsResolveOriginal says "恢复会替换目标集合内容；提交前处理原 REST 与相关数据文档，并重新核对原信息。"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceRestoreReplacesTheTargetCollectionContentsResolveOriginal() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceRestoreReplacesTheTargetCollectionContentsResolveOriginal", nil)
+}
+
+// SnapshotWorkspaceSnapshotRequestToSubmit says "将提交的快照请求"
+// in the language the app shows.
+func SnapshotWorkspaceSnapshotRequestToSubmit() string {
+	return In(i18n.Locale()).SnapshotWorkspaceSnapshotRequestToSubmit()
+}
+
+// SnapshotWorkspaceSnapshotRequestToSubmit says "将提交的快照请求"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceSnapshotRequestToSubmit() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceSnapshotRequestToSubmit", nil)
+}
+
+// SnapshotWorkspaceSaveToTheDestinationAfterDownloadingIfThe says "下载完成后保存到目标文件；目标变化时保留临时归档并停止发布。"
+// in the language the app shows.
+func SnapshotWorkspaceSaveToTheDestinationAfterDownloadingIfThe() string {
+	return In(i18n.Locale()).SnapshotWorkspaceSaveToTheDestinationAfterDownloadingIfThe()
+}
+
+// SnapshotWorkspaceSaveToTheDestinationAfterDownloadingIfThe says "下载完成后保存到目标文件；目标变化时保留临时归档并停止发布。"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceSaveToTheDestinationAfterDownloadingIfThe() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceSaveToTheDestinationAfterDownloadingIfThe", nil)
+}
+
+// SnapshotWorkspaceICopiedAndReviewedTheFullSnapshotRequest says "已复制并检查完整快照请求"
+// in the language the app shows.
+func SnapshotWorkspaceICopiedAndReviewedTheFullSnapshotRequest() string {
+	return In(i18n.Locale()).SnapshotWorkspaceICopiedAndReviewedTheFullSnapshotRequest()
+}
+
+// SnapshotWorkspaceICopiedAndReviewedTheFullSnapshotRequest says "已复制并检查完整快照请求"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceICopiedAndReviewedTheFullSnapshotRequest() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceICopiedAndReviewedTheFullSnapshotRequest", nil)
+}
+
+// SnapshotWorkspaceSubmitSnapshotOperation says "确认提交快照操作"
+// in the language the app shows.
+func SnapshotWorkspaceSubmitSnapshotOperation() string {
+	return In(i18n.Locale()).SnapshotWorkspaceSubmitSnapshotOperation()
+}
+
+// SnapshotWorkspaceSubmitSnapshotOperation says "确认提交快照操作"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceSubmitSnapshotOperation() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceSubmitSnapshotOperation", nil)
+}
+
+// SnapshotWorkspaceKeepOriginalSnapshotDraftAndEvidence says "保留原快照草稿与证据？"
+// in the language the app shows.
+func SnapshotWorkspaceKeepOriginalSnapshotDraftAndEvidence() string {
+	return In(i18n.Locale()).SnapshotWorkspaceKeepOriginalSnapshotDraftAndEvidence()
+}
+
+// SnapshotWorkspaceKeepOriginalSnapshotDraftAndEvidence says "保留原快照草稿与证据？"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceKeepOriginalSnapshotDraftAndEvidence() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceKeepOriginalSnapshotDraftAndEvidence", nil)
+}
+
+// SnapshotWorkspaceContinueSnapshotOperation says "继续处理快照操作"
+// in the language the app shows.
+func SnapshotWorkspaceContinueSnapshotOperation() string {
+	return In(i18n.Locale()).SnapshotWorkspaceContinueSnapshotOperation()
+}
+
+// SnapshotWorkspaceContinueSnapshotOperation says "继续处理快照操作"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceContinueSnapshotOperation() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceContinueSnapshotOperation", nil)
+}
+
+// SnapshotWorkspaceDiscardOriginalSnapshotDraftAndLeave says "放弃原快照草稿并离开"
+// in the language the app shows.
+func SnapshotWorkspaceDiscardOriginalSnapshotDraftAndLeave() string {
+	return In(i18n.Locale()).SnapshotWorkspaceDiscardOriginalSnapshotDraftAndLeave()
+}
+
+// SnapshotWorkspaceDiscardOriginalSnapshotDraftAndLeave says "放弃原快照草稿并离开"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceDiscardOriginalSnapshotDraftAndLeave() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceDiscardOriginalSnapshotDraftAndLeave", nil)
+}
+
+// SnapshotWorkspaceEnterAValidShardID says "请输入有效分片编号"
+// in the language the app shows.
+func SnapshotWorkspaceEnterAValidShardID() string {
+	return In(i18n.Locale()).SnapshotWorkspaceEnterAValidShardID()
+}
+
+// SnapshotWorkspaceEnterAValidShardID says "请输入有效分片编号"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceEnterAValidShardID() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceEnterAValidShardID", nil)
+}
+
+// SnapshotWorkspaceArchiveSizeLimitMustBeAValidMiB says "归档大小上限必须是有效的 MiB 数值"
+// in the language the app shows.
+func SnapshotWorkspaceArchiveSizeLimitMustBeAValidMiB() string {
+	return In(i18n.Locale()).SnapshotWorkspaceArchiveSizeLimitMustBeAValidMiB()
+}
+
+// SnapshotWorkspaceArchiveSizeLimitMustBeAValidMiB says "归档大小上限必须是有效的 MiB 数值"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceArchiveSizeLimitMustBeAValidMiB() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceArchiveSizeLimitMustBeAValidMiB", nil)
+}
+
+// SnapshotWorkspaceSnapshotWaitTimeoutMustBe13600Seconds says "快照等待超时必须为 1–3600 秒"
+// in the language the app shows.
+func SnapshotWorkspaceSnapshotWaitTimeoutMustBe13600Seconds() string {
+	return In(i18n.Locale()).SnapshotWorkspaceSnapshotWaitTimeoutMustBe13600Seconds()
+}
+
+// SnapshotWorkspaceSnapshotWaitTimeoutMustBe13600Seconds says "快照等待超时必须为 1–3600 秒"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceSnapshotWaitTimeoutMustBe13600Seconds() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceSnapshotWaitTimeoutMustBe13600Seconds", nil)
+}
+
+// SnapshotWorkspaceSnapshotScopeChangedReadTheOriginalMetadataAgain says "快照范围已变化，请重新读取原信息"
+// in the language the app shows.
+func SnapshotWorkspaceSnapshotScopeChangedReadTheOriginalMetadataAgain() string {
+	return In(i18n.Locale()).SnapshotWorkspaceSnapshotScopeChangedReadTheOriginalMetadataAgain()
+}
+
+// SnapshotWorkspaceSnapshotScopeChangedReadTheOriginalMetadataAgain says "快照范围已变化，请重新读取原信息"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceSnapshotScopeChangedReadTheOriginalMetadataAgain() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceSnapshotScopeChangedReadTheOriginalMetadataAgain", nil)
+}
+
+// SnapshotWorkspaceThisSnapshotScopeDoesNotSupportTheOperation says "当前快照范围不支持此操作"
+// in the language the app shows.
+func SnapshotWorkspaceThisSnapshotScopeDoesNotSupportTheOperation() string {
+	return In(i18n.Locale()).SnapshotWorkspaceThisSnapshotScopeDoesNotSupportTheOperation()
+}
+
+// SnapshotWorkspaceThisSnapshotScopeDoesNotSupportTheOperation says "当前快照范围不支持此操作"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceThisSnapshotScopeDoesNotSupportTheOperation() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceThisSnapshotScopeDoesNotSupportTheOperation", nil)
+}
+
+// SnapshotWorkspaceSelectAnOriginalArchive says "请选择原归档"
+// in the language the app shows.
+func SnapshotWorkspaceSelectAnOriginalArchive() string {
+	return In(i18n.Locale()).SnapshotWorkspaceSelectAnOriginalArchive()
+}
+
+// SnapshotWorkspaceSelectAnOriginalArchive says "请选择原归档"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceSelectAnOriginalArchive() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceSelectAnOriginalArchive", nil)
+}
+
+// SnapshotWorkspaceArchiveExceedsTheSizeLimit says "归档超出大小上限"
+// in the language the app shows.
+func SnapshotWorkspaceArchiveExceedsTheSizeLimit() string {
+	return In(i18n.Locale()).SnapshotWorkspaceArchiveExceedsTheSizeLimit()
+}
+
+// SnapshotWorkspaceArchiveExceedsTheSizeLimit says "归档超出大小上限"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceArchiveExceedsTheSizeLimit() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceArchiveExceedsTheSizeLimit", nil)
+}
+
+// SnapshotWorkspaceOriginalSnapshotSessionOrFormChangedSubmissionIs says "原快照会话或表单已变化，不能提交"
+// in the language the app shows.
+func SnapshotWorkspaceOriginalSnapshotSessionOrFormChangedSubmissionIs() string {
+	return In(i18n.Locale()).SnapshotWorkspaceOriginalSnapshotSessionOrFormChangedSubmissionIs()
+}
+
+// SnapshotWorkspaceOriginalSnapshotSessionOrFormChangedSubmissionIs says "原快照会话或表单已变化，不能提交"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceOriginalSnapshotSessionOrFormChangedSubmissionIs() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceOriginalSnapshotSessionOrFormChangedSubmissionIs", nil)
+}
+
+// SnapshotWorkspaceOriginalSnapshotSessionExpiredDraftAndEvidenceAre says "原快照会话已失效，原草稿与证据保留"
+// in the language the app shows.
+func SnapshotWorkspaceOriginalSnapshotSessionExpiredDraftAndEvidenceAre() string {
+	return In(i18n.Locale()).SnapshotWorkspaceOriginalSnapshotSessionExpiredDraftAndEvidenceAre()
+}
+
+// SnapshotWorkspaceOriginalSnapshotSessionExpiredDraftAndEvidenceAre says "原快照会话已失效，原草稿与证据保留"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceOriginalSnapshotSessionExpiredDraftAndEvidenceAre() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceOriginalSnapshotSessionExpiredDraftAndEvidenceAre", nil)
+}
+
+// SnapshotWorkspaceArchiveOrDestinationChangedSelectAndPreviewAgain says "归档文件或目标文件已变化，请重新选择并预览"
+// in the language the app shows.
+func SnapshotWorkspaceArchiveOrDestinationChangedSelectAndPreviewAgain() string {
+	return In(i18n.Locale()).SnapshotWorkspaceArchiveOrDestinationChangedSelectAndPreviewAgain()
+}
+
+// SnapshotWorkspaceArchiveOrDestinationChangedSelectAndPreviewAgain says "归档文件或目标文件已变化，请重新选择并预览"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceArchiveOrDestinationChangedSelectAndPreviewAgain() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceArchiveOrDestinationChangedSelectAndPreviewAgain", nil)
+}
+
+// SnapshotWorkspaceArchiveExceedsTheSizeLimitOrIsNot says "归档文件超出大小上限或不是普通文件"
+// in the language the app shows.
+func SnapshotWorkspaceArchiveExceedsTheSizeLimitOrIsNot() string {
+	return In(i18n.Locale()).SnapshotWorkspaceArchiveExceedsTheSizeLimitOrIsNot()
+}
+
+// SnapshotWorkspaceArchiveExceedsTheSizeLimitOrIsNot says "归档文件超出大小上限或不是普通文件"
+// in the language of msgs.
+func (msgs Messages) SnapshotWorkspaceArchiveExceedsTheSizeLimitOrIsNot() string {
+	return Catalog.Format(msgs.locale, "snapshotWorkspaceArchiveExceedsTheSizeLimitOrIsNot", nil)
+}

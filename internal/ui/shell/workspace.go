@@ -665,6 +665,14 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 		},
 		Loader:      func() objectworkspace.Loader { return s.runtime.Data(s.sessions.Current().ProfileID).TableMetadata },
 		MetadataFor: func(id int64) (contract.MetadataProvider, error) { return s.runtime.Metadata(id) },
+		SnapshotManagementFor: func(id int64) (contract.SnapshotProvider, error) {
+			if s.runtime == nil {
+				return nil, contract.ErrUnsupported
+			}
+			return s.runtime.Snapshots(id)
+		},
+		BeforeSnapshots:  s.guardSnapshotManagement,
+		SnapshotsChanged: s.snapshotsChanged,
 		CollectionManagementFor: func(id int64) (contract.CollectionManagementProvider, error) {
 			if s.runtime == nil {
 				return nil, contract.ErrUnsupported
@@ -935,6 +943,8 @@ func (s *State) SetDataSources(open func(context.Context, datasources.Config) (d
 
 func neutralObjectKind(kind string) string {
 	switch kind {
+	case "快照管理":
+		return "snapshot_management"
 	case "集合信息":
 		return "collection"
 	case "集合别名":

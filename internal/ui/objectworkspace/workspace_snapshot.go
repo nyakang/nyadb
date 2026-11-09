@@ -39,6 +39,9 @@ func (s *State) RestoreWorkspace(data json.RawMessage) error {
 	return nil
 }
 func (s *State) DocumentSnapshot(d *Document) json.RawMessage {
+	if d.SnapshotManagementMode() {
+		return json.RawMessage(`{"Snapshots":true}`)
+	}
 	if d.CollectionManagementMode() {
 		return json.RawMessage(`{"Collections":true}`)
 	}
@@ -70,6 +73,10 @@ func (s *State) DocumentSnapshot(d *Document) json.RawMessage {
 }
 func (s *State) RestoreDocumentPresentation(d *Document, b json.RawMessage) {
 	if d == nil || d.closed {
+		return
+	}
+	if d.SnapshotManagementMode() {
+		d.snapshots.tab = 0
 		return
 	}
 	if d.CollectionManagementMode() {
