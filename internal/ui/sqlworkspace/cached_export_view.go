@@ -61,7 +61,7 @@ func (s *State) cachedExportView(c *ui.Context, d *Document) {
 }
 
 func cloneCachedResultSet(set contract.ResultSet) contract.ResultSet {
-	out := contract.ResultSet{AffectedRows: set.AffectedRows, Columns: append([]contract.Column(nil), set.Columns...), Truncation: append([]string(nil), set.Truncation...)}
+	out := contract.ResultSet{AffectedRows: set.AffectedRows, Columns: append([]contract.Column(nil), set.Columns...), Truncation: append([]string(nil), set.Truncation...), DefaultHiddenColumns: append([]int(nil), set.DefaultHiddenColumns...), LayoutKey: set.LayoutKey}
 	for _, row := range set.Rows {
 		cells := make([]contract.Cell, len(row))
 		for i, c := range row {

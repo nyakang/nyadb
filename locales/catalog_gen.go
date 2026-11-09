@@ -29183,3 +29183,15 @@ func MissingGraphProperty() string { return In(i18n.Locale()).MissingGraphProper
 func (msgs Messages) MissingGraphProperty() string {
 	return Catalog.Format(msgs.locale, "missingGraphProperty", nil)
 }
+
+// Neo4jNodePropertyProjectionBound says "节点属性展开超过显示上限；已保留原始节点列"
+// in the language the app shows.
+func Neo4jNodePropertyProjectionBound() string {
+	return In(i18n.Locale()).Neo4jNodePropertyProjectionBound()
+}
+
+// Neo4jNodePropertyProjectionBound says "节点属性展开超过显示上限；已保留原始节点列"
+// in the language of msgs.
+func (msgs Messages) Neo4jNodePropertyProjectionBound() string {
+	return Catalog.Format(msgs.locale, "neo4jNodePropertyProjectionBound", nil)
+}

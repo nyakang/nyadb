@@ -37,6 +37,24 @@ the document retains the complete bounded result. Run-and-export includes typed
 JSONL, a manifest and the native graph result in `graph.json`. Result export is
 bounded by retained rows; it is not an unlimited graph/database export.
 
+Cypher node results append alias-qualified property columns using only the
+retained native rows; projection never issues another request. Original source
+ordinals, node identities, query text and completion receipts remain intact.
+Columns follow source order and sorted property keys; conflicting names receive
+numeric suffixes. Source columns containing only nonempty nodes and NULL are
+hidden by default and remain available in the column menu. Mixed values and
+empty nodes keep their source columns visible. User layouts survive changes in
+observed property types; property identity and default hiding eligibility govern
+layout compatibility. Missing properties remain NULL; scalar/binary cells and
+complete typed temporal/spatial/duration/list JSON retain their native meanings.
+
+Expansion admits at most 1024 total columns, 1,048,576 cells, a 16 MiB estimated
+display budget, 64 KiB of layout descriptors and 4096 bytes per property key.
+Exceeding a bound keeps the original node columns with an explicit display notice,
+without changing native completion or requiring recovery. Native JSON, snapshots
+and complete retained-result exports preserve the original graph alongside the
+expanded table. Keys outside retained rows cannot be discovered by projection.
+
 Cypher JSON parameters are temporary per-document drafts. They are not saved in
 query text, history or restored workspaces. Duplicate keys, invalid JSON,
 overflowing integers and unsupported nesting are rejected before dispatch.
@@ -134,11 +152,13 @@ node and private configuration/credentials. It requires all native foundation,
 profile/editor, session and public-workbench cases to pass without skips. Real
 acceptance includes saved-profile reopening, native typed values/metadata,
 published generations, committed writes with lost/canceled responses, explicit
-recovery, original close/termination and localized workbench/form images. Cleanup
+recovery, original close/termination, retained-node property expansion, original
+node visibility, native snapshots/exports, bounded fallback and localized
+workbench/form images. Four grid modes require 92 native groups and 448 images. Cleanup
 checks immutable container ID and nonce labels. Evidence and sanitized logs stay
 under ignored `build/neo4j/`.
 
-Graph visualization/expansion, graph data editing/import,
+Graph visualization, graph data editing/import,
 structured Cypher plans, administration/RBAC, Enterprise/cluster validation and
 full database archives and other versions remain future work. Their capabilities are not inferred from a
 successful Community connection or the ability to execute arbitrary Cypher.

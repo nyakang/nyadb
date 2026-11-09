@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"github.com/nyakang/nyadb/internal/db/graphresult"
 	"github.com/nyakang/nyadb/internal/db/tabular"
 	"github.com/nyakang/nyadb/internal/ui/gridview"
 	"slices"
@@ -20,6 +21,8 @@ func truncationText(reasons []string) string {
 	labels := make([]string, len(reasons))
 	for i, r := range reasons {
 		switch r {
+		case graphresult.PropertyProjectionLimit:
+			labels[i] = locales.Text("节点属性展开超过显示上限；已保留原始节点列")
 		case "sets":
 			labels[i] = locales.Text("结果集预览上限")
 		case "rows":

@@ -2855,5 +2855,6 @@
   "neo4jDataCypher": "参数化 Cypher：",
   "neo4jRangeJSONL": "限定图数据导出为 JSONL（忽略当前页）",
   "nativeCursorKnownPageOnly": "原生游标仅支持已读取页或下一页",
-  "missingGraphProperty": "属性不存在"
+  "missingGraphProperty": "属性不存在",
+  "neo4jNodePropertyProjectionBound": "节点属性展开超过显示上限；已保留原始节点列"
 }

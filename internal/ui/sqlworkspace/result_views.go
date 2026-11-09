@@ -2,6 +2,7 @@ package sqlworkspace
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
 )
@@ -33,6 +34,9 @@ func cloneHidden(hidden map[string]bool) map[string]bool {
 }
 
 func resultSignature(set contract.ResultSet) string {
+	if set.LayoutKey != "" {
+		return set.LayoutKey
+	}
 	b, _ := json.Marshal(set.Columns)
 	return string(b)
 }
@@ -89,7 +93,15 @@ func (d *Document) setResult(result *contract.SQLResult) {
 	d.resultViews = map[int]*resultView{}
 	if result != nil {
 		for index, set := range result.ResultSets() {
-			pref := d.resultPreferences[resultSignature(set)]
+			pref, saved := d.resultPreferences[resultSignature(set)]
+			if !saved {
+				pref.Hidden = map[string]bool{}
+				for _, index := range set.DefaultHiddenColumns {
+					if index >= 0 && index < len(set.Columns) {
+						pref.Hidden[fmt.Sprintf("sql_%d", index)] = true
+					}
+				}
+			}
 			d.resultViews[index] = &resultView{Grid: ui.ListState{Columns: cloneResultLayout(d.resultLayouts[resultSignature(set)])}, Row: -1, Hidden: cloneHidden(pref.Hidden), FieldMode: pref.FieldMode}
 		}
 	}

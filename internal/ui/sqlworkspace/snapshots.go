@@ -30,7 +30,7 @@ func resultSnapshotSize(r *contract.SQLResult) int64 {
 		n += int64(len(step.SQL) + len(step.State) + len(step.Error) + 64)
 	}
 	for _, set := range r.ResultSets() {
-		n += 128
+		n += int64(128 + len(set.LayoutKey) + len(set.DefaultHiddenColumns)*8)
 		for _, c := range set.Columns {
 			n += int64(len(c.Name) + len(c.DatabaseType) + 64)
 		}

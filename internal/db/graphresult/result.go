@@ -35,6 +35,7 @@ func Project(source string, r contract.GraphResult) contract.SQLResult {
 	if r.Truncated {
 		set.Truncation = []string{"native retention"}
 	}
+	set = nodeProperties(set, copy)
 	result.Sets = []contract.ResultSet{set}
 	return result
 }

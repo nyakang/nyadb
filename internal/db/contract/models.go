@@ -61,6 +61,10 @@ type ResultSet struct {
 	Columns      []Column
 	Rows         [][]Cell
 	Truncation   []string
+	// Presentation hints leave original source ordinals intact. User layouts
+	// override default hidden columns; LayoutKey excludes volatile type hints.
+	DefaultHiddenColumns []int  `json:",omitempty"`
+	LayoutKey            string `json:",omitempty"`
 }
 type SQLResult struct {
 	Steps []StatementOutcome

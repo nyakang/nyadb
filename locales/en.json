@@ -2855,5 +2855,6 @@
   "neo4jDataCypher": "Parameterized Cypher: ",
   "neo4jRangeJSONL": "Export this graph range as JSONL (ignore current page)",
   "nativeCursorKnownPageOnly": "Native cursors support previously read pages and the next page.",
-  "missingGraphProperty": "Property is absent"
+  "missingGraphProperty": "Property is absent",
+  "neo4jNodePropertyProjectionBound": "Node property expansion exceeded display limits; original node columns are retained"
 }
