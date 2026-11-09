@@ -184,8 +184,16 @@ func (s *State) graphResultView(c *ui.Context, d *Document) bool {
 		ui.Text(c, graphSummary(r)).Grow(1).MinWidth(0).SingleLine().Tooltip(fmt.Sprintf("%s\n%s\n%v\n%v", r.Summary.QueryType, r.Summary.Server.Agent, r.Summary.Counters, r.Summary.Bookmarks))
 		if ui.Button(c, locales.Text("原生图结果")).Clicked() {
 			d.graphNative = !d.graphNative
+			d.graphVisualOpen = false
+		}
+		if ui.Button(c, locales.Text("图形视图")).Clicked() {
+			d.graphVisualOpen = !d.graphVisualOpen
+			d.graphNative = false
 		}
 	})
+	if d.graphVisualOpen {
+		return s.graphVisualView(c, d)
+	}
 	if !d.graphNative {
 		return false
 	}

@@ -450,6 +450,9 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 			if m.Item(locales.Text("复制")).Chosen() {
 				s.copyResult(c, t)
 			}
+			if t.result.Graph != nil && m.Item(locales.Text("在图中定位")).Disabled(t.graphCellKey(row, sources[col]) == "").Chosen() {
+				t.graphLocate(row, sources[col])
+			}
 			if m.Item(locales.Text("查看字段信息")).Chosen() {
 				t.selectedRow = row
 				t.grid.Cells.Cursor = allColumns[sources[col]].ID

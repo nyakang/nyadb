@@ -55,6 +55,34 @@ without changing native completion or requiring recovery. Native JSON, snapshots
 and complete retained-result exports preserve the original graph alongside the
 expanded table. Keys outside retained rows cannot be discovered by projection.
 
+The retained-result graph view follows nodes, directed relationships, paths,
+nested lists and maps. Node/relationship element IDs have separate key spaces
+inside each original document; missing element IDs are rejected explicitly.
+Relationships whose endpoint nodes were not returned show identity-only dashed
+placeholders. Returned nodes can fill those placeholders. Different observations
+of one identity retain the first complete value with a conflict notice and links
+to the original cells; properties are not silently merged. These are observations
+of the retained query, not database incarnation or concurrency guarantees.
+
+The view owns at most 1000 nodes, 2000 relationships and an 8 MiB topology budget;
+traversal and cell links are each bounded to 65536 items, at depth 32. Display bounds
+leave the complete original graph and receipt untouched. Search covers full
+name/title/label values, labels, IDs and relationship types. Deterministic spatial
+force layout, node dragging, canceled-drag rollback, pinning, hiding/restoring,
+pan/zoom, fit, keyboard controls and a paged entity list share the native canvas.
+The inspector presents typed property previews with complete bounded JSON and
+original-cell links, including expanded property-column provenance. A graph-record
+mode uses the existing result grid. Snapshots copy positions, pins, hidden state
+and selection while owning separate graph values; replacement/close/disconnect
+release derived caches and pending interaction state.
+
+PNG (2560x1600) and SVG (1280x800) exports capture independent display geometry
+before the file picker/writer, fit visible entities and escape labels. They issue
+no Cypher and do not borrow later camera/hidden state. Native graph/result export
+continues to preserve all retained typed values. This view is read-only; neighbor
+expansion and property writes require separate original native operations and
+remain pending.
+
 Cypher JSON parameters are temporary per-document drafts. They are not saved in
 query text, history or restored workspaces. Duplicate keys, invalid JSON,
 overflowing integers and unsupported nesting are rejected before dispatch.
@@ -154,11 +182,14 @@ acceptance includes saved-profile reopening, native typed values/metadata,
 published generations, committed writes with lost/canceled responses, explicit
 recovery, original close/termination, retained-node property expansion, original
 node visibility, native snapshots/exports, bounded fallback and localized
-workbench/form images. Four grid modes require 92 native groups and 448 images. Cleanup
+workbench/form images. Four grid modes require 96 native groups and 544 images, including retained
+graph paths, parallel/reverse/self-loop relationships, missing endpoints, original
+record links, full property JSON, snapshots, image export and 1001-node display
+bounds. Cleanup
 checks immutable container ID and nonce labels. Evidence and sanitized logs stay
 under ignored `build/neo4j/`.
 
-Graph visualization, graph data editing/import,
+Graph neighbor expansion, graph data editing/import,
 structured Cypher plans, administration/RBAC, Enterprise/cluster validation and
 full database archives and other versions remain future work. Their capabilities are not inferred from a
 successful Community connection or the ability to execute arbitrary Cypher.

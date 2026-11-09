@@ -76,6 +76,9 @@ func nodeProperties(source contract.ResultSet, graph contract.GraphResult) contr
 	}
 
 	result := contract.ResultSet{AffectedRows: source.AffectedRows, Columns: slices.Clone(source.Columns), Truncation: slices.Clone(source.Truncation)}
+	for index := range source.Columns {
+		result.OriginColumns = append(result.OriginColumns, index)
+	}
 	used := map[string]bool{}
 	for _, column := range source.Columns {
 		used[column.Name] = true
@@ -109,6 +112,7 @@ func nodeProperties(source contract.ResultSet, graph contract.GraphResult) contr
 			}
 			indices[index][key] = len(result.Columns)
 			identities = append(identities, nodePropertyColumn{index, key})
+			result.OriginColumns = append(result.OriginColumns, index)
 			result.Columns = append(result.Columns, contract.Column{Name: name, DatabaseType: "Neo4j native " + strings.Join(kinds, " | "), Nullable: true})
 		}
 		if !keepSource[index] {
@@ -124,7 +128,7 @@ func nodeProperties(source contract.ResultSet, graph contract.GraphResult) contr
 		return bounded()
 	}
 	result.LayoutKey = "neo4j-node-properties:" + string(key)
-	budget := propertyBytesLimit - len(result.LayoutKey)
+	budget := propertyBytesLimit - len(result.LayoutKey) - len(result.OriginColumns)*8
 	for _, column := range result.Columns {
 		budget -= len(column.Name) + len(column.DatabaseType) + 64
 	}

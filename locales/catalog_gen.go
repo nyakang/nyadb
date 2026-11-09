@@ -29195,3 +29195,303 @@ func Neo4jNodePropertyProjectionBound() string {
 func (msgs Messages) Neo4jNodePropertyProjectionBound() string {
 	return Catalog.Format(msgs.locale, "neo4jNodePropertyProjectionBound", nil)
 }
+
+// Neo4jGraphView says "图形视图"
+// in the language the app shows.
+func Neo4jGraphView() string { return In(i18n.Locale()).Neo4jGraphView() }
+
+// Neo4jGraphView says "图形视图"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphView() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphView", nil)
+}
+
+// Neo4jGraphLocate says "在图中定位"
+// in the language the app shows.
+func Neo4jGraphLocate() string { return In(i18n.Locale()).Neo4jGraphLocate() }
+
+// Neo4jGraphLocate says "在图中定位"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphLocate() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphLocate", nil)
+}
+
+// Neo4jGraphSearch says "图搜索"
+// in the language the app shows.
+func Neo4jGraphSearch() string { return In(i18n.Locale()).Neo4jGraphSearch() }
+
+// Neo4jGraphSearch says "图搜索"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphSearch() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphSearch", nil)
+}
+
+// Neo4jGraphNextMatch says "定位匹配"
+// in the language the app shows.
+func Neo4jGraphNextMatch() string { return In(i18n.Locale()).Neo4jGraphNextMatch() }
+
+// Neo4jGraphNextMatch says "定位匹配"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphNextMatch() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphNextMatch", nil)
+}
+
+// Neo4jGraphCounts says "%d 节点 · %d 关系"
+// in the language the app shows.
+func Neo4jGraphCounts() string { return In(i18n.Locale()).Neo4jGraphCounts() }
+
+// Neo4jGraphCounts says "%d 节点 · %d 关系"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphCounts() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphCounts", nil)
+}
+
+// Neo4jGraphZoomIn says "放大图形"
+// in the language the app shows.
+func Neo4jGraphZoomIn() string { return In(i18n.Locale()).Neo4jGraphZoomIn() }
+
+// Neo4jGraphZoomIn says "放大图形"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphZoomIn() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphZoomIn", nil)
+}
+
+// Neo4jGraphZoomOut says "缩小图形"
+// in the language the app shows.
+func Neo4jGraphZoomOut() string { return In(i18n.Locale()).Neo4jGraphZoomOut() }
+
+// Neo4jGraphZoomOut says "缩小图形"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphZoomOut() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphZoomOut", nil)
+}
+
+// Neo4jGraphFit says "适应画布"
+// in the language the app shows.
+func Neo4jGraphFit() string { return In(i18n.Locale()).Neo4jGraphFit() }
+
+// Neo4jGraphFit says "适应画布"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphFit() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphFit", nil)
+}
+
+// Neo4jGraphLayout says "重新布局"
+// in the language the app shows.
+func Neo4jGraphLayout() string { return In(i18n.Locale()).Neo4jGraphLayout() }
+
+// Neo4jGraphLayout says "重新布局"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphLayout() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphLayout", nil)
+}
+
+// Neo4jGraphRecords says "图记录"
+// in the language the app shows.
+func Neo4jGraphRecords() string { return In(i18n.Locale()).Neo4jGraphRecords() }
+
+// Neo4jGraphRecords says "图记录"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphRecords() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphRecords", nil)
+}
+
+// Neo4jGraphRestore says "恢复隐藏图元"
+// in the language the app shows.
+func Neo4jGraphRestore() string { return In(i18n.Locale()).Neo4jGraphRestore() }
+
+// Neo4jGraphRestore says "恢复隐藏图元"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphRestore() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphRestore", nil)
+}
+
+// Neo4jGraphImage says "导出图像"
+// in the language the app shows.
+func Neo4jGraphImage() string { return In(i18n.Locale()).Neo4jGraphImage() }
+
+// Neo4jGraphImage says "导出图像"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphImage() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphImage", nil)
+}
+
+// Neo4jGraphBound says "图形展示达到上限；完整保留结果仍可查看和导出"
+// in the language the app shows.
+func Neo4jGraphBound() string { return In(i18n.Locale()).Neo4jGraphBound() }
+
+// Neo4jGraphBound says "图形展示达到上限；完整保留结果仍可查看和导出"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphBound() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphBound", nil)
+}
+
+// Neo4jGraphBoundDetail says "图形上限：1000 节点、2000 关系、8 MiB；不查询额外数据"
+// in the language the app shows.
+func Neo4jGraphBoundDetail() string { return In(i18n.Locale()).Neo4jGraphBoundDetail() }
+
+// Neo4jGraphBoundDetail says "图形上限：1000 节点、2000 关系、8 MiB；不查询额外数据"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphBoundDetail() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphBoundDetail", nil)
+}
+
+// Neo4jGraphUnidentified says "部分图元缺少完整身份；请查看原生结果"
+// in the language the app shows.
+func Neo4jGraphUnidentified() string { return In(i18n.Locale()).Neo4jGraphUnidentified() }
+
+// Neo4jGraphUnidentified says "部分图元缺少完整身份；请查看原生结果"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphUnidentified() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphUnidentified", nil)
+}
+
+// Neo4jGraphCanvas says "Neo4j 图画布"
+// in the language the app shows.
+func Neo4jGraphCanvas() string { return In(i18n.Locale()).Neo4jGraphCanvas() }
+
+// Neo4jGraphCanvas says "Neo4j 图画布"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphCanvas() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphCanvas", nil)
+}
+
+// Neo4jGraphList says "图元列表"
+// in the language the app shows.
+func Neo4jGraphList() string { return In(i18n.Locale()).Neo4jGraphList() }
+
+// Neo4jGraphList says "图元列表"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphList() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphList", nil)
+}
+
+// Neo4jGraphNoMatches says "没有匹配的保留图元"
+// in the language the app shows.
+func Neo4jGraphNoMatches() string { return In(i18n.Locale()).Neo4jGraphNoMatches() }
+
+// Neo4jGraphNoMatches says "没有匹配的保留图元"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphNoMatches() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphNoMatches", nil)
+}
+
+// Neo4jGraphClear says "清除图选择"
+// in the language the app shows.
+func Neo4jGraphClear() string { return In(i18n.Locale()).Neo4jGraphClear() }
+
+// Neo4jGraphClear says "清除图选择"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphClear() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphClear", nil)
+}
+
+// Neo4jGraphPin says "固定节点"
+// in the language the app shows.
+func Neo4jGraphPin() string { return In(i18n.Locale()).Neo4jGraphPin() }
+
+// Neo4jGraphPin says "固定节点"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphPin() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphPin", nil)
+}
+
+// Neo4jGraphHide says "隐藏所选图元"
+// in the language the app shows.
+func Neo4jGraphHide() string { return In(i18n.Locale()).Neo4jGraphHide() }
+
+// Neo4jGraphHide says "隐藏所选图元"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphHide() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphHide", nil)
+}
+
+// Neo4jGraphMissingEndpoint says "端点节点未包含在保留结果中"
+// in the language the app shows.
+func Neo4jGraphMissingEndpoint() string { return In(i18n.Locale()).Neo4jGraphMissingEndpoint() }
+
+// Neo4jGraphMissingEndpoint says "端点节点未包含在保留结果中"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphMissingEndpoint() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphMissingEndpoint", nil)
+}
+
+// Neo4jGraphConflict says "同一图元存在不同观察值；显示首次观察，请定位原始记录"
+// in the language the app shows.
+func Neo4jGraphConflict() string { return In(i18n.Locale()).Neo4jGraphConflict() }
+
+// Neo4jGraphConflict says "同一图元存在不同观察值；显示首次观察，请定位原始记录"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphConflict() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphConflict", nil)
+}
+
+// Neo4jGraphEntityJSON says "当前图元的原生 JSON"
+// in the language the app shows.
+func Neo4jGraphEntityJSON() string { return In(i18n.Locale()).Neo4jGraphEntityJSON() }
+
+// Neo4jGraphEntityJSON says "当前图元的原生 JSON"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphEntityJSON() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphEntityJSON", nil)
+}
+
+// Neo4jGraphOriginalRecord says "定位原始记录"
+// in the language the app shows.
+func Neo4jGraphOriginalRecord() string { return In(i18n.Locale()).Neo4jGraphOriginalRecord() }
+
+// Neo4jGraphOriginalRecord says "定位原始记录"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphOriginalRecord() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphOriginalRecord", nil)
+}
+
+// Neo4jGraphOriginalCell says "行 %d / %s"
+// in the language the app shows.
+func Neo4jGraphOriginalCell() string { return In(i18n.Locale()).Neo4jGraphOriginalCell() }
+
+// Neo4jGraphOriginalCell says "行 %d / %s"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphOriginalCell() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphOriginalCell", nil)
+}
+
+// Neo4jGraphFieldsBack says "返回图属性"
+// in the language the app shows.
+func Neo4jGraphFieldsBack() string { return In(i18n.Locale()).Neo4jGraphFieldsBack() }
+
+// Neo4jGraphFieldsBack says "返回图属性"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphFieldsBack() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphFieldsBack", nil)
+}
+
+// Neo4jGraphFullField says "完整属性值"
+// in the language the app shows.
+func Neo4jGraphFullField() string { return In(i18n.Locale()).Neo4jGraphFullField() }
+
+// Neo4jGraphFullField says "完整属性值"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphFullField() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphFullField", nil)
+}
+
+// Neo4jGraphEntityNative says "图元原生 JSON"
+// in the language the app shows.
+func Neo4jGraphEntityNative() string { return In(i18n.Locale()).Neo4jGraphEntityNative() }
+
+// Neo4jGraphEntityNative says "图元原生 JSON"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphEntityNative() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphEntityNative", nil)
+}
+
+// Neo4jGraphProperties says "属性"
+// in the language the app shows.
+func Neo4jGraphProperties() string { return In(i18n.Locale()).Neo4jGraphProperties() }
+
+// Neo4jGraphProperties says "属性"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphProperties() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphProperties", nil)
+}

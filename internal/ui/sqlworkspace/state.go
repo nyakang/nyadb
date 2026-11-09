@@ -69,6 +69,8 @@ type Document struct {
 	graphParameters               string
 	graphOptionsOpen, graphNative bool
 	graphJSON                     string
+	graphVisualOpen               bool
+	graphVisual                   *graphVisualState
 	nativeCommands                bool
 	commandDialect                string
 	snapshotOwner                 *Document
@@ -272,6 +274,10 @@ func (s *State) Close(d *Document) {
 		d.removeSnapshot(0)
 	}
 	d.graphParameters, d.graphJSON = "", ""
+	if d.graphVisual != nil {
+		d.graphVisual.release()
+	}
+	d.graphVisual, d.graphVisualOpen = nil, false
 	d.cachedExport = cachedExportDraft{}
 	d.Editor, d.result = nil, nil
 	d.resultViews, d.resultLayouts = nil, nil

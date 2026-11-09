@@ -187,6 +187,10 @@ func (s *State) dispose(t *Document) {
 		return
 	}
 	t.graphJSON = ""
+	if t.graphVisual != nil {
+		t.graphVisual.release()
+	}
+	t.graphVisual, t.graphVisualOpen = nil, false
 	t.plan = nil
 	t.ordinaryReading, t.explainReading = nil, nil
 	t.metadata.stop()

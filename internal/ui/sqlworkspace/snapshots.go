@@ -30,7 +30,7 @@ func resultSnapshotSize(r *contract.SQLResult) int64 {
 		n += int64(len(step.SQL) + len(step.State) + len(step.Error) + 64)
 	}
 	for _, set := range r.ResultSets() {
-		n += int64(128 + len(set.LayoutKey) + len(set.DefaultHiddenColumns)*8)
+		n += int64(128 + len(set.LayoutKey) + (len(set.DefaultHiddenColumns)+len(set.OriginColumns))*8)
 		for _, c := range set.Columns {
 			n += int64(len(c.Name) + len(c.DatabaseType) + 64)
 		}
@@ -69,6 +69,10 @@ func (s *State) pinResult(d *Document) bool {
 	}
 	x := &Document{commandDialect: d.commandDialect, snapshotOwner: d, id: d.id, name: d.Name(), profileID: d.profileID, database: d.database, catalog: d.catalog, namespaceSchema: d.namespaceSchema}
 	x.setResult(r)
+	if d.graphVisual != nil {
+		x.graphVisualState().cloneReading(d.graphVisual)
+	}
+	x.graphVisualOpen = d.graphVisualOpen
 	d.nextSnapshot++
 	x.name = fmt.Sprintf("%s-%d", d.Name(), d.nextSnapshot)
 	d.snapshots = append(d.snapshots, resultSnapshot{Document: x, SQL: d.executedSQL, Namespace: d.Namespace(), Time: time.Now(), Bytes: resultSnapshotSize(r) + int64(len(d.executedSQL))})
@@ -80,6 +84,11 @@ func (d *Document) removeSnapshot(index int) {
 	}
 	x := d.snapshots[index].Document
 	x.cachedExport = cachedExportDraft{}
+	if x.graphVisual != nil {
+		x.graphVisual.release()
+	}
+	x.graphVisual, x.graphVisualOpen = nil, false
+	x.graphJSON = ""
 	x.closed = true
 	x.snapshotOwner = nil
 	x.selection.Clear()
