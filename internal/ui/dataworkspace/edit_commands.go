@@ -46,7 +46,7 @@ func (s *State) gridEditTarget(t *Document) theme.EditTarget {
 }
 
 func (s *State) Focus(d *Document) {
-	if d != nil && !d.closed {
+	if d != nil && !d.closed && !d.graphTransferOnly {
 		d.grid.Handle.Focus()
 	}
 }

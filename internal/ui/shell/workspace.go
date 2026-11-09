@@ -944,6 +944,8 @@ func (s *State) SetDataSources(open func(context.Context, datasources.Config) (d
 
 func neutralObjectKind(kind string) string {
 	switch kind {
+	case "图交换":
+		return contract.GraphNamespaceKind
 	case "图标签":
 		return "label"
 	case "关系类型":

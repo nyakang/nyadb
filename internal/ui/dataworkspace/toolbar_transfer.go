@@ -39,6 +39,7 @@ type mysqlDataImporter func(context.Context, int64, string, string, contract.Dat
 type mysqlDataTransferState struct {
 	GraphExchange                                bool
 	GraphBundle                                  *contract.GraphImportBundle
+	GraphSourcePath                              string
 	GraphBindings                                []contract.GraphImportBinding
 	GraphBindingSource, GraphBindingDestination  string
 	GraphTicket                                  *graphImportTicket
@@ -140,10 +141,13 @@ type mysqlDataImportInput struct {
 func (s *State) openDataImport(t *Document) { s.openDataTransfer(t, "import") }
 func (s *State) openDataExport(t *Document) { s.openDataTransfer(t, "export") }
 func (s *State) openDataTransfer(t *Document, kind string) {
+	if t != nil && t.graphTransferOnly && !s.canUseSession(t) {
+		return
+	}
 	if t != nil && (t.capabilities.Documents || t.capabilities.KeyValues) && kind == "import" && !s.runtimeFor(t).DocumentImport && !s.graphImportBound(t) {
 		return
 	}
-	if t == nil || t.closed || t.page == nil && !t.importOnly || t.importOnly && kind != "import" || t.loading || t.edit.Busy || t.edit.Uncertain != nil || t.transfer.Busy || t.transfer.Uncertain || dataTransactionActive(t) || dataTransactionBusy(t) {
+	if t == nil || t.closed || t.page == nil && !t.importOnly && !t.graphTransferOnly || t.importOnly && kind != "import" || t.loading || t.edit.Busy || t.edit.Uncertain != nil || t.transfer.Busy || t.transfer.Uncertain || dataTransactionActive(t) || dataTransactionBusy(t) {
 		return
 	}
 	if mysqlDataHasDraft(t) {
@@ -184,6 +188,12 @@ func (s *State) openDataTransfer(t *Document, kind string) {
 	if kind == "import" && s.graphImportBound(t) {
 		tr.GraphExchange, tr.Format, tr.ContinueOnError = true, "JSON", false
 		tr.Sources = nil
+	}
+	if t.graphTransferOnly && kind == "export" {
+		tr.GraphExchange, tr.Format, tr.Scope = true, "JSON", "database"
+	}
+	if t.graphTransferOnly {
+		tr.Target, tr.NewName, tr.Sources, tr.ContinueOnError = "graph", "", nil, false
 	}
 	t.transfer = tr
 }

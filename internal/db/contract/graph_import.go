@@ -2,6 +2,10 @@ package contract
 
 import "slices"
 
+// GraphNamespaceKind identifies a complete graph transfer document. It has an
+// original namespace and no fabricated label, relationship type or object name.
+const GraphNamespaceKind = "graph_namespace"
+
 // Graph exchange IDs are source references. They never authorize destination
 // reads or writes, and generated IDs become authoritative only after COMMIT.
 type GraphImportBundle struct {

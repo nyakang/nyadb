@@ -520,3 +520,29 @@ exchange fixture serializes Go packages with -p=1 so their independent data
 fixtures do not concurrently alter full-database scans. Other capability tests
 retain their existing verification modes. See the graph exchange report for
 the final source manifests, official fixture ownership and validation scope.
+
+
+Database-level graph exchange reserves the neutral `graph_namespace` object kind
+with the original profile/catalog, empty schema and empty object name. It never
+creates a label, table, grid or inspector. The bound lease exposes only complete
+graph preview/submit/export, and rejects system, named or foreign namespaces.
+`Capabilities.GraphExchange` requires a complete original import/export binding
+and product intersection; relational/document import entry points remain usable.
+The database menu opens this purpose of the sole `dataworkspace.State/Document`,
+including for a completely empty database, and database Import Wizard reuses it.
+JSON and JSONL export empty databases as valid bundles. Import uses the existing
+source/mapping/preview/exact database confirmation/native receipt lifecycle.
+Source paths can be typed or chosen through the native file picker.
+
+Namespace tabs retain independent qualified identity from identically named node
+labels and relationship types. Workspace snapshots save only that identity;
+restoration creates a placeholder and explicit reopening starts a new original
+lease without recreating source data, plans, submissions or grid reads. Published
+generation replacement disables the original document and its transfer actions.
+Parked results, cancellation, unknown COMMIT and close follow the original shared
+transfer guards and never acquire a replacement session or replay writes.
+Run `python3 tools/verify_neo4j_fixture.py --graph-namespace --race --mode MODE`:
+19 required parents and 140 localized wide/narrow images per mode include the
+prior complete graph import/grid regression. Each fresh owned empty-database
+parent runs before later graph fixtures, without clearing arbitrary existing data.
+See [database namespace acceptance](../../../docs/neo4j-graph-namespace-2026-11-10.md).

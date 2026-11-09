@@ -73,23 +73,35 @@ func (s *State) graphTransferAvailable(d *Document) bool {
 }
 
 func (s *State) chooseGraphImportFile(services ui.Services, d *Document) {
+	s.readGraphImportFile(services, d, "")
+}
+
+func (s *State) readGraphImportFile(services ui.Services, d *Document, sourcePath string) {
 	tr := &d.transfer
 	if tr.Busy || tr.Submitted || tr.Uncertain || !s.graphTransferAvailable(d) {
 		return
 	}
 	releaseGraphImportPlan(tr)
 	tr.GraphSnapshot = contract.GraphImportSnapshot{}
+	tr.GraphBundle = nil
+	tr.Path = ""
 	ctx, out, request, generation := s.beginDataTransfer(d)
-	pickerDone := s.beginDataPicker(d)
+	var pickerDone chan struct{}
+	if sourcePath == "" {
+		pickerDone = s.beginDataPicker(d)
+	}
 	format, profile := tr.Format, d.profileID
 	open := tr.OpenDialog
 	if open == nil {
 		open = mygo.Dialog.Open
 	}
 	go func() {
-		paths, err := open(mygo.OpenDialogOptions{Title: locales.Text("选择图交换文件"), Filters: []mygo.FileFilter{{Name: format, Extensions: []string{strings.ToLower(format)}}}})
-		close(pickerDone)
-		services.Invalidate()
+		paths, err := []string{sourcePath}, error(nil)
+		if pickerDone != nil {
+			paths, err = open(mygo.OpenDialogOptions{Title: locales.Text("选择图交换文件"), Filters: []mygo.FileFilter{{Name: format, Extensions: []string{strings.ToLower(format)}}}})
+			close(pickerDone)
+			services.Invalidate()
+		}
 		var bundle *contract.GraphImportBundle
 		path := ""
 		if err == nil && len(paths) > 0 && ctx.Err() == nil {
@@ -313,6 +325,7 @@ func (s *State) consumeGraphTransfer(services ui.Services, d *Document, r mysqlD
 		b := contract.CloneGraphImportBundle(*r.GraphBundle)
 		tr.GraphBundle = &b
 		tr.Path = r.Path
+		tr.GraphSourcePath = r.Path
 		tr.GraphBindings = nil
 		tr.GraphSnapshot = contract.GraphImportSnapshot{}
 		tr.GraphBindingSource, tr.GraphBindingDestination = "", ""

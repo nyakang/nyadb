@@ -31177,3 +31177,53 @@ func GraphExchangeExportChoice() string { return In(i18n.Locale()).GraphExchange
 func (msgs Messages) GraphExchangeExportChoice() string {
 	return Catalog.Format(msgs.locale, "graphExchangeExportChoice", nil)
 }
+
+// GraphExchangeNamespaceHint says "导入和导出整个原数据库的图数据；无需已有标签或关系类型。"
+// in the language the app shows.
+func GraphExchangeNamespaceHint() string { return In(i18n.Locale()).GraphExchangeNamespaceHint() }
+
+// GraphExchangeNamespaceHint says "导入和导出整个原数据库的图数据；无需已有标签或关系类型。"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeNamespaceHint() string {
+	return Catalog.Format(msgs.locale, "graphExchangeNamespaceHint", nil)
+}
+
+// GraphExchangeNamespaceExpired says "原数据库会话已失效，请关闭文档后重新打开"
+// in the language the app shows.
+func GraphExchangeNamespaceExpired() string { return In(i18n.Locale()).GraphExchangeNamespaceExpired() }
+
+// GraphExchangeNamespaceExpired says "原数据库会话已失效，请关闭文档后重新打开"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeNamespaceExpired() string {
+	return Catalog.Format(msgs.locale, "graphExchangeNamespaceExpired", nil)
+}
+
+// GraphExchangeSourcePath says "源文件路径"
+// in the language the app shows.
+func GraphExchangeSourcePath() string { return In(i18n.Locale()).GraphExchangeSourcePath() }
+
+// GraphExchangeSourcePath says "源文件路径"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeSourcePath() string {
+	return Catalog.Format(msgs.locale, "graphExchangeSourcePath", nil)
+}
+
+// GraphExchangeReadSource says "读取图交换文件"
+// in the language the app shows.
+func GraphExchangeReadSource() string { return In(i18n.Locale()).GraphExchangeReadSource() }
+
+// GraphExchangeReadSource says "读取图交换文件"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeReadSource() string {
+	return Catalog.Format(msgs.locale, "graphExchangeReadSource", nil)
+}
+
+// GraphExchangeExportWizard says "导出向导…"
+// in the language the app shows.
+func GraphExchangeExportWizard() string { return In(i18n.Locale()).GraphExchangeExportWizard() }
+
+// GraphExchangeExportWizard says "导出向导…"
+// in the language of msgs.
+func (msgs Messages) GraphExchangeExportWizard() string {
+	return Catalog.Format(msgs.locale, "graphExchangeExportWizard", nil)
+}

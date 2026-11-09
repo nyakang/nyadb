@@ -15,6 +15,9 @@ func (s *State) RequestAction(services ui.Services, d *Document, action string) 
 	if !w.Connected || w.ProfileID != d.profileID {
 		return
 	}
+	if d.graphTransferOnly && !s.canUseSession(d) {
+		return
+	}
 	if action != "import" && action != "export" && action != "profile" && action != "saved_profile" {
 		return
 	}
@@ -22,7 +25,7 @@ func (s *State) RequestAction(services ui.Services, d *Document, action string) 
 		return
 	}
 	d.hostAction, d.hostActionGeneration = action, w.Generation
-	if d.page == nil && !d.importOnly && !d.loading {
+	if d.page == nil && !d.importOnly && !d.graphTransferOnly && !d.loading {
 		s.Load(services, d, false)
 	}
 	s.consumeHostActions(services)
@@ -42,7 +45,7 @@ func (s *State) consumeHostActions(available ...ui.Services) {
 			d.hostProfile = ""
 			continue
 		}
-		if d.loading || d.page == nil && !d.importOnly {
+		if d.loading || d.page == nil && !d.importOnly && !d.graphTransferOnly {
 			continue
 		}
 		action := d.hostAction

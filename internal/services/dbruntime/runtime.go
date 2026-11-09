@@ -234,6 +234,7 @@ func (s *session) Capabilities() contract.Capabilities {
 	caps.Import = caps.Import && (r.Importer != nil || r.StreamImporter != nil || r.PreviewGraphImport != nil && r.SubmitGraphImport != nil || documents.Import)
 	caps.JSONL = caps.JSONL && (r.JSONL != nil || documents.JSONL)
 	caps.Export = caps.Export && (r.Exporter != nil || r.JSONL != nil || r.ExportGraph != nil || documents.Export)
+	caps.GraphExchange = caps.GraphExchange && caps.Import && caps.Export && (r.PreviewGraphImport != nil && r.SubmitGraphImport != nil && r.ExportGraph != nil || documents.GraphExchange)
 	return s.managementCapabilities(caps)
 }
 func (s *session) alive() bool {

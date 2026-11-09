@@ -13,6 +13,14 @@ import (
 )
 
 func TestNeo4jNativePublicGraphImportPreviewParkGenerationCancelAndOriginalClose(t *testing.T) {
+	testNeo4jGraphImportLifecycle(t, false)
+}
+
+func TestNeo4jNativePublicGraphNamespacePreviewParkGenerationCancelAndOriginalClose(t *testing.T) {
+	testNeo4jGraphImportLifecycle(t, true)
+}
+
+func testNeo4jGraphImportLifecycle(t *testing.T, namespace bool) {
 	f := neo4jDataFixtureTest(t)
 	admin, err := neo4j.Open(context.Background(), f.Config, f.Secret)
 	if err != nil {
@@ -29,7 +37,11 @@ func TestNeo4jNativePublicGraphImportPreviewParkGenerationCancelAndOriginalClose
 			original.Config.URI = "bolt://" + relay.listener.Addr().String()
 			original.Config.CAFile, original.Config.ClientCertFile, original.Config.ClientKeyFile = "", "", ""
 			_, manager, s, active, caps := openNeo4jEntityWorkbench(t, original)
-			d := s.OpenObject(1, manager.Namespace(active.ProfileID, "neo4j").Object("label", label), caps)
+			object := manager.Namespace(active.ProfileID, "neo4j").Object("label", label)
+			if namespace {
+				object = object.Namespace().Object(contract.GraphNamespaceKind, "")
+			}
+			d := s.OpenObject(1, object, caps)
 			s.Load(ui.Services{}, d, false)
 			waitNeo4jData(t, s, d)
 			s.openDataImport(d)
@@ -80,7 +92,11 @@ func TestNeo4jNativePublicGraphImportPreviewParkGenerationCancelAndOriginalClose
 					if !d.transfer.Busy || d.transfer.GraphPlan != nil {
 						t.Fatal("parked graph preview changed active state")
 					}
-					captureNeo4jData(t, s, d, "graph-import-preview-parked", func(c *ui.Context) { s.transferModals(c, d) })
+					stage := "graph-import-preview-parked"
+					if namespace {
+						stage = "namespace-preview-parked"
+					}
+					captureNeo4jData(t, s, d, stage, func(c *ui.Context) { s.transferModals(c, d) })
 					active.ProfileID = profile
 					s.consumeDataTransfers(ui.Services{})
 					if d.transfer.GraphPlan == nil || d.transfer.GraphSnapshot.NativeJSON == "" {

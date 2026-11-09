@@ -3053,5 +3053,10 @@
   "graphExchangeExportScope": "导出整个原数据库中的全部节点和关系，包括无标签节点及其它标签和关系类型。",
   "graphExchangeExportLive": "这是有界的实时扫描；并发变化可能使导出失败。文件只在完整类型和端点闭合校验通过后发布。",
   "graphExchangeExportTabular": "返回表格导出",
-  "graphExchangeExportChoice": "完整数据库图交换"
+  "graphExchangeExportChoice": "完整数据库图交换",
+  "graphExchangeNamespaceHint": "导入和导出整个原数据库的图数据；无需已有标签或关系类型。",
+  "graphExchangeNamespaceExpired": "原数据库会话已失效，请关闭文档后重新打开",
+  "graphExchangeSourcePath": "源文件路径",
+  "graphExchangeReadSource": "读取图交换文件",
+  "graphExchangeExportWizard": "导出向导…"
 }

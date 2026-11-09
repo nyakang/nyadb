@@ -139,6 +139,7 @@ func (r SQLResult) ResultSets() []ResultSet {
 }
 
 type Capabilities struct {
+	GraphExchange                                                                bool
 	KeyValues                                                                    bool
 	Documents                                                                    bool
 	Objects, Maintenance, Accounts, Restore, DesignViews                         bool

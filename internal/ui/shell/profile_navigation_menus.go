@@ -257,6 +257,11 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 	s.selectNavigationNode(services, key)
 	s.navigation.Row = -1
 	if n.Kind == "database" {
+		if s.objectCapabilitiesFor(n.ProfileID).GraphExchange {
+			if m.Item(locales.Text("完整图交换")).Disabled(!s.canOpenGraphExchange(n.ProfileID, s.runtime.Generation(n.ProfileID), n.Database)).Chosen() {
+				s.openGraphExchange(services, n.ProfileID, n.Database, "")
+			}
+		}
 		canManage := s.runtime.Administration(n.ProfileID) != nil && s.sessions.StatusFor(n.ProfileID) == "已连接"
 		if m.Item(locales.Text("修改数据库…")).Disabled(!canManage).Chosen() {
 			s.objectWorkspace.BeginObject(services, n.ProfileID, mysqlsvc.ObjectIdentity{Database: n.Database, Kind: "database"}, "alter")
@@ -278,7 +283,7 @@ func (s *State) navigationContextMenu(services ui.Services, key string, m *ui.Me
 	}
 	if n.Kind == "database" || n.Kind == "category" && n.Category == "表" {
 		caps := s.objectCapabilitiesFor(n.ProfileID)
-		if m.Item(locales.Text("导入向导…")).Disabled(s.sessions.StatusFor(n.ProfileID) != "已连接" || !caps.Import || caps.Documents).Chosen() {
+		if m.Item(locales.Text("导入向导…")).Disabled(s.sessions.StatusFor(n.ProfileID) != "已连接" || !caps.Import || caps.Documents && !caps.GraphExchange || caps.GraphExchange && !s.canOpenGraphExchange(n.ProfileID, s.runtime.Generation(n.ProfileID), n.Database)).Chosen() {
 			s.openDatabaseImport(n.ProfileID, n.Database)
 		}
 		if m.Item(locales.Text("新建表")).Shortcut(ui.Ctrl, ui.KeyN).

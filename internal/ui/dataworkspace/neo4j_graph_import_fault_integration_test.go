@@ -14,6 +14,14 @@ import (
 )
 
 func TestNeo4jNativePublicGraphImportActualCommitFaultsRetainSourcePreviewAndNeverReplay(t *testing.T) {
+	testNeo4jGraphImportFaults(t, false)
+}
+
+func TestNeo4jNativePublicGraphNamespaceCommitFaultsAndOriginalCloseNeverReplay(t *testing.T) {
+	testNeo4jGraphImportFaults(t, true)
+}
+
+func testNeo4jGraphImportFaults(t *testing.T, namespace bool) {
 	f := neo4jDataFixtureTest(t)
 	admin, err := neo4j.Open(context.Background(), f.Config, f.Secret)
 	if err != nil {
@@ -30,7 +38,11 @@ func TestNeo4jNativePublicGraphImportActualCommitFaultsRetainSourcePreviewAndNev
 			original.Config.URI = "bolt://" + relay.listener.Addr().String()
 			original.Config.CAFile, original.Config.ClientCertFile, original.Config.ClientKeyFile = "", "", ""
 			_, manager, s, active, caps := openNeo4jEntityWorkbench(t, original)
-			d := s.OpenObject(1, manager.Namespace(active.ProfileID, "neo4j").Object("label", label), caps)
+			object := manager.Namespace(active.ProfileID, "neo4j").Object("label", label)
+			if namespace {
+				object = object.Namespace().Object(contract.GraphNamespaceKind, "")
+			}
+			d := s.OpenObject(1, object, caps)
 			s.Load(ui.Services{}, d, false)
 			waitNeo4jData(t, s, d)
 			s.openDataImport(d)
@@ -60,7 +72,7 @@ func TestNeo4jNativePublicGraphImportActualCommitFaultsRetainSourcePreviewAndNev
 			neo4jDataRun(t, admin, "MATCH (n) WHERE $label IN labels(n) AND n.guard=999 SET n.guard=-789", map[string]any{"label": label})
 			queued := make(chan error, 1)
 			go func() {
-				_, err := runtime.SubmitGraphImport(context.Background(), profile, "neo4j", label, p)
+				_, err := runtime.SubmitGraphImport(context.Background(), profile, "neo4j", d.table, p)
 				queued <- err
 			}()
 			switch fault {
@@ -95,7 +107,11 @@ func TestNeo4jNativePublicGraphImportActualCommitFaultsRetainSourcePreviewAndNev
 					t.Fatal("unknown graph import allowed recovery or replay")
 				}
 				if fault == "cancel" {
-					captureNeo4jData(t, s, d, "graph-import-unknown", func(c *ui.Context) { s.View(c, d); s.Modals(c) })
+					stage := "graph-import-unknown"
+					if namespace {
+						stage = "namespace-unknown"
+					}
+					captureNeo4jData(t, s, d, stage, func(c *ui.Context) { s.View(c, d); s.Modals(c) })
 				}
 			}
 			select {
@@ -122,7 +138,11 @@ func TestNeo4jNativePublicGraphImportActualCommitFaultsRetainSourcePreviewAndNev
 					s.Close(d)
 				}
 				entityTestClick(t, s, d, "关闭原写入文档")
-				captureNeo4jData(t, s, d, "graph-import-unknown-close", func(c *ui.Context) { s.nativeWriteReceiptModal(c, d) })
+				stage := "graph-import-unknown-close"
+				if namespace {
+					stage = "namespace-unknown-close"
+				}
+				captureNeo4jData(t, s, d, stage, func(c *ui.Context) { s.nativeWriteReceiptModal(c, d) })
 				entityTestClick(t, s, d, "取消")
 				if closed != 0 || d.transfer.GraphBundle == nil {
 					t.Fatal("canceling unknown graph close discarded source")

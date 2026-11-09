@@ -68,7 +68,7 @@ func (s *State) inspectorHeader(c *ui.Context, title string) {
 func (s *State) profileInspector(c *ui.Context) {
 	palette := theme.Colors(c)
 
-	if s.currentTab().kind == tabMySQLData {
+	if s.currentTab().kind == tabMySQLData && (s.currentTab().data == nil || !s.currentTab().data.GraphExchange()) {
 		s.dataWorkspace.InspectorView(c, s.currentTab().data)
 		return
 	}

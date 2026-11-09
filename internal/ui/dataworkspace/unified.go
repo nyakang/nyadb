@@ -46,14 +46,30 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 	case "data_stream":
 		kind = "数据流"
 	}
-	d := s.Open(id, o.ProfileID, namespace, o.Name, kind)
+	var d *Document
+	if o.Kind == contract.GraphNamespaceKind {
+		if id == 0 || o.ProfileID <= 0 || o.Catalog == "" || o.Schema != "" || o.Name != "" || !c.GraphExchange {
+			return nil
+		}
+		if old := s.documents[id]; old != nil {
+			s.Close(old)
+		}
+		d = &Document{id: id, profileID: o.ProfileID, database: namespace, objectKind: "图交换", graphTransferOnly: true, selectedRow: -1, hiddenColumns: map[string]bool{}}
+		s.documents[id] = d
+	} else {
+		d = s.Open(id, o.ProfileID, namespace, o.Name, kind)
+	}
 	if d == nil {
 		return nil
 	}
 	d.object = o
 	d.capabilities = c
 	parent := s.runtimeFor(d)
-	if parent.ReserveDocument != nil {
+	if parent.ReserveDocument == nil && d.graphTransferOnly {
+		d.err = contract.ErrUnsupported.Error()
+		d.capabilities = contract.Capabilities{}
+		d.boundRuntime = &Runtime{}
+	} else if parent.ReserveDocument != nil {
 		lease, err := parent.ReserveDocument(o)
 		if err == nil && lease == nil {
 			err = contract.ErrUnsupported
@@ -77,6 +93,9 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 			d.capabilities = contract.IntersectCapabilities(c, bound.Capabilities)
 			bound.Capabilities = d.capabilities
 			d.boundRuntime = &bound
+			if d.graphTransferOnly && !d.capabilities.GraphExchange {
+				d.err = contract.ErrUnsupported.Error()
+			}
 		}
 	}
 	d.exportFormats = append([]string(nil), s.runtimeFor(d).ExportFormats...)

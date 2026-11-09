@@ -3053,5 +3053,10 @@
   "graphExchangeExportScope": "Export every node and relationship in the original database, including unlabeled nodes and other labels and relationship types.",
   "graphExchangeExportLive": "This is a bounded live scan; concurrent changes can fail the export. The file is published only after complete type and endpoint closure validation.",
   "graphExchangeExportTabular": "Return to tabular export",
-  "graphExchangeExportChoice": "Complete database graph exchange"
+  "graphExchangeExportChoice": "Complete database graph exchange",
+  "graphExchangeNamespaceHint": "Import and export the entire original database graph; no existing labels or relationship types are required.",
+  "graphExchangeNamespaceExpired": "The original database session has expired; close and reopen this document",
+  "graphExchangeSourcePath": "Source file path",
+  "graphExchangeReadSource": "Read graph exchange file",
+  "graphExchangeExportWizard": "Export Wizard…"
 }

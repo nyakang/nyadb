@@ -135,3 +135,28 @@ func TestGraphImportCapabilityRequiresCompleteOriginalPreviewAndSubmit(t *testin
 		t.Fatal("complete graph import binding disabled")
 	}
 }
+
+func TestGraphNamespaceCapabilityRequiresCompleteGraphBinding(t *testing.T) {
+	r := contract.DataRuntime{Capabilities: contract.Capabilities{GraphExchange: true, Import: true, Export: true}}
+	if contract.BoundDataCapabilities(r).GraphExchange {
+		t.Fatal("unbound graph namespace enabled")
+	}
+	r.PreviewGraphImport = func(context.Context, int64, string, string, contract.GraphImportRequest) (contract.GraphImportPlan, error) {
+		return nil, nil
+	}
+	r.SubmitGraphImport = func(context.Context, int64, string, string, contract.GraphImportPlan) (*contract.GraphImportResult, error) {
+		return nil, nil
+	}
+	if contract.BoundDataCapabilities(r).GraphExchange {
+		t.Fatal("import-only namespace graph exchange enabled")
+	}
+	r.ExportGraph = func(context.Context, contract.ObjectRef) (contract.GraphImportBundle, error) {
+		return contract.GraphImportBundle{}, nil
+	}
+	if !contract.BoundDataCapabilities(r).GraphExchange {
+		t.Fatal("complete original namespace exchange disabled")
+	}
+	if contract.IntersectCapabilities(r.Capabilities, contract.Capabilities{Import: true, Export: true}).GraphExchange {
+		t.Fatal("namespace capability bypassed product intersection")
+	}
+}

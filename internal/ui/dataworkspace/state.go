@@ -67,6 +67,7 @@ type Document struct {
 	filterModes   []string
 
 	importOnly                  bool
+	graphTransferOnly           bool
 	hostAction                  string
 	hostProfile                 string
 	hostActionGeneration        uint64
@@ -243,7 +244,7 @@ func (s *State) Consume(services ui.Services) {
 	s.consumeHostActions(services)
 }
 func (s *State) inspectorPanel(t *Document) *Panel {
-	if t == nil || t.closed {
+	if t == nil || t.closed || t.graphTransferOnly {
 		return nil
 	}
 	if t.panel == nil {
@@ -299,3 +300,5 @@ func (s *State) CloseAll() {
 func (d *Document) Inspector() *Panel { return d.panel }
 
 func (d *Document) Kind() string { return d.objectKind }
+
+func (d *Document) GraphExchange() bool { return d.graphTransferOnly }

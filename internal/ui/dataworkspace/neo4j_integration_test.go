@@ -150,7 +150,7 @@ func captureNeo4jData(t *testing.T, s *State, d *Document, name string, render .
 				}
 			}
 
-			if name == "write-uncertain-close" || name == "entity-commit-unknown-close" || name == "relationship-commit-unknown-close" || name == "extended-list-uncertain-close" {
+			if name == "write-uncertain-close" || name == "entity-commit-unknown-close" || name == "relationship-commit-unknown-close" || name == "extended-list-uncertain-close" || strings.HasSuffix(name, "graph-import-unknown-close") || name == "namespace-unknown-close" {
 				for _, label := range []string{"关闭原写入文档？", "取消", "关闭并放弃本地草稿与证据"} {
 					rect, ok := tt.Find(locales.Text(label))
 					if !ok || rect.X < 0 || rect.Y < 0 || rect.X+rect.W > float32(size[0])+1 || rect.Y+rect.H > float32(size[1])+1 {
@@ -176,8 +176,8 @@ func captureNeo4jData(t *testing.T, s *State, d *Document, name string, render .
 			if strings.HasSuffix(name, "-preview") || name == "entity-delete-plain-blocked" || name == "entity-preview-parked" {
 				labels = []string{"确认实体更改", "复制完整预览", "取消", "确认并提交更改"}
 			}
-			if name == "graph-import-preview" {
-				labels = []string{"输入目标数据库名以确认", "取消", "确认导入完整图"}
+			if name == "graph-import-preview" || name == "namespace-import-preview" {
+				labels = []string{"输入目标数据库名以确认", "复制完整预览", "取消", "确认导入完整图"}
 			}
 			for _, label := range labels {
 				rect, found := tt.Find(locales.Text(label))

@@ -121,6 +121,10 @@ func (s *State) graphImportWizardPage(c *ui.Context, d *Document) {
 		mysqlDataWizardSelect(c, locales.Text("文件格式"), &tr.Format, []string{"JSON", "JSONL"}, func(x string) string { return x }).Width(160).Disabled(tr.Busy || tr.GraphBundle != nil)
 		ui.Text(c, locales.Text("图交换文件保留节点、标签、关系方向和完整类型属性。源 ID 只用于关联文件中的实体。"))
 		ui.Text(c, locales.Text("最多 10000 个节点和关系、8 MiB，每个完整实体最多 1 MiB；整批导入只提交一个事务。"))
+		mysqlDataWizardInput(c, &tr.GraphSourcePath, locales.Text("源文件路径")).Disabled(tr.Busy)
+		if ui.Button(c, locales.Text("读取图交换文件")).Disabled(tr.Busy || tr.GraphSourcePath == "").Clicked() {
+			s.readGraphImportFile(c.Services(), d, tr.GraphSourcePath)
+		}
 		ui.Text(c, tr.Path).SingleLine()
 		if ui.Button(c, locales.Text("选择文件")).Disabled(tr.Busy).Clicked() {
 			s.chooseGraphImportFile(c.Services(), d)
@@ -165,22 +169,22 @@ func (s *State) graphImportWizardPage(c *ui.Context, d *Document) {
 		ui.Text(c, fmt.Sprintf(locales.Text("将创建 %d 个节点和 %d 条关系，复用 %d 个源端点"), tr.GraphSnapshot.Nodes, len(tr.GraphSnapshot.Request.Bundle.Relationships), len(tr.GraphSnapshot.Anchors))).Bold()
 		ui.Text(c, locales.Text("请核对完整源数据、端点映射和目标节点观察。目标节点在预览后发生变化会阻止整批提交。"))
 		mysqlDataWizardInput(c, &tr.Confirmation, locales.Text("输入目标数据库名以确认")).Disabled(tr.Busy)
-		ui.Text(c, dataMutationPreview(tr.GraphSnapshot.NativeJSON)).Label(locales.Text("图导入完整预览"))
 		if ui.Button(c, locales.Text("复制完整预览")).Clicked() {
 			c.WriteClipboard(tr.GraphSnapshot.NativeJSON)
 		}
+		ui.Text(c, dataMutationPreview(tr.GraphSnapshot.NativeJSON)).Label(locales.Text("图导入完整预览"))
 	case 3:
+		if tr.Uncertain {
+			ui.Text(c, locales.Text("源文件、预览和回执已保留。请在原数据库核验结果；此向导禁止再次提交。"))
+		}
 		if tr.GraphResult != nil && tr.GraphResult.NativeJSON != "" {
-			ui.Text(c, nativeWriteReceiptPreview(tr.GraphResult.NativeJSON)).Label(locales.Text("原生事务回执 JSON"))
 			if ui.Button(c, locales.Text("复制完整回执")).Clicked() {
 				c.WriteClipboard(tr.GraphResult.NativeJSON)
 			}
 			if ui.Button(c, locales.Text("原生事务回执")).Clicked() {
 				d.nativeReceipt.Open = true
 			}
-		}
-		if tr.Uncertain {
-			ui.Text(c, locales.Text("源文件、预览和回执已保留。请在原数据库核验结果；此向导禁止再次提交。"))
+			ui.Text(c, nativeWriteReceiptPreview(tr.GraphResult.NativeJSON)).Label(locales.Text("原生事务回执 JSON"))
 		}
 	}
 }
@@ -193,7 +197,7 @@ func (s *State) graphExportWizardPage(c *ui.Context, d *Document) {
 	if !tr.Submitted {
 		mysqlDataWizardSelect(c, locales.Text("文件格式"), &tr.Format, []string{"JSON", "JSONL"}, func(x string) string { return x }).Width(160).Disabled(tr.Busy)
 		mysqlDataWizardInput(c, &tr.ExportPath, locales.Text("目标文件路径")).Disabled(tr.Busy)
-		if ui.Button(c, locales.Text("返回表格导出")).Disabled(tr.Busy).Clicked() {
+		if !d.graphTransferOnly && ui.Button(c, locales.Text("返回表格导出")).Disabled(tr.Busy).Clicked() {
 			tr.GraphExchange = false
 			tr.Format = "CSV"
 			tr.Scope = "page"

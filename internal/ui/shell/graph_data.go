@@ -8,6 +8,42 @@ import (
 	"github.com/nyakang/nyadb/locales"
 )
 
+func (s *State) canOpenGraphExchange(profileID int64, generation uint64, database string) bool {
+	w := s.sessions.Workspace(profileID)
+	namespace := s.runtime.Namespace(profileID, database)
+	return w != nil && w.Status == "已连接" && w.Generation == generation &&
+		generation != 0 && namespace.ProfileID == profileID && namespace.Catalog != "" &&
+		namespace.Catalog != "system" && namespace.Schema == "" && s.objectCapabilitiesFor(profileID).GraphExchange
+}
+
+// A database transfer tab uses qualified namespace identity, independently of
+// any label/type cache. Empty databases have exactly the same entry point.
+func (s *State) openGraphExchange(services ui.Services, profileID int64, database, action string) {
+	w := s.sessions.Workspace(profileID)
+	if w == nil || !s.canOpenGraphExchange(profileID, w.Generation, database) || !s.activateObjectProfile(profileID) {
+		return
+	}
+	if existing := s.findDocument(tabMySQLData, profileID, database, "图交换", ""); existing != nil {
+		if existing.placeholder != nil {
+			s.materializeRestored(services, existing)
+		}
+		if existing.data != nil && action != "" {
+			s.dataWorkspace.RequestAction(services, existing.data, action)
+		}
+		return
+	}
+	s.nextTabID++
+	doc := s.dataWorkspace.OpenObject(s.nextTabID, s.runtime.Namespace(profileID, database).Object(contract.GraphNamespaceKind, ""), s.objectCapabilitiesFor(profileID))
+	if doc == nil {
+		return
+	}
+	s.tabs = append(s.tabs, &tab{id: s.nextTabID, kind: tabMySQLData, title: database + " · " + locales.Text("完整图交换"), data: doc})
+	s.activeTab = len(s.tabs) - 1
+	if action != "" {
+		s.dataWorkspace.RequestAction(services, doc, action)
+	}
+}
+
 // Graph names are not unique across kinds. Every entry point carries the
 // original qualified reference and published generation to this single opener.
 func (s *State) openQualifiedData(services ui.Services, generation uint64, database string, object contract.ObjectRef) {

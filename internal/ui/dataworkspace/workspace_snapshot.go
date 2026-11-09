@@ -21,7 +21,7 @@ type workspacePresentation struct {
 }
 
 func (s *State) WorkspaceSnapshot(d *Document) json.RawMessage {
-	if d == nil || d.closed {
+	if d == nil || d.closed || d.graphTransferOnly {
 		return nil
 	}
 	filters, sorts := mysqlDataCurrentRules(d)
@@ -37,6 +37,9 @@ func (s *State) WorkspaceSnapshot(d *Document) json.RawMessage {
 	return b
 }
 func (s *State) RestoreWorkspace(d *Document, b json.RawMessage) error {
+	if d != nil && d.graphTransferOnly {
+		return nil
+	}
 	var saved workspacePresentation
 	if err := json.Unmarshal(b, &saved); err != nil {
 		return err

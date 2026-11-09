@@ -11,6 +11,19 @@ SPEC.loader.exec_module(FIXTURE)
 
 
 class Neo4jFixtureOwnershipTests(unittest.TestCase):
+    def test_graph_namespace_requires_fresh_empty_database_entry_full_graph_and_lifecycle(self):
+        names = FIXTURE.GRAPH_NAMESPACE_REQUIRED
+        self.assertEqual(len(names), 19)
+        self.assertEqual(len(names), len(set(names)))
+        self.assertTrue(set(FIXTURE.GRAPH_IMPORT_REQUIRED).issubset(names))
+        passed = '\n'.join('--- PASS: TestNeo4jNative'+name+' (0.01s)' for name in names)
+        FIXTURE.check_acceptance(passed, graph_namespace=True)
+        for name in names:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), graph_namespace=True)
+        self.assertEqual(len(FIXTURE.GRAPH_NAMESPACE_SHELL_STAGES), 8)
+        self.assertEqual(len(FIXTURE.GRAPH_NAMESPACE_GRID_STAGES), 3)
+
     def test_graph_import_requires_complete_graph_native_faults_public_wizard_and_images(self):
         names = FIXTURE.GRAPH_IMPORT_REQUIRED
         self.assertEqual(len(names), len(set(names)))

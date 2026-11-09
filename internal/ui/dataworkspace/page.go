@@ -60,6 +60,9 @@ func (s *State) settlePage(t *Document) {
 	t.loading = false
 }
 func (s *State) Load(services ui.Services, t *Document, refresh bool) {
+	if t != nil && t.graphTransferOnly {
+		return
+	}
 	if t == nil || t.closed || t.edit.Busy || t.edit.Uncertain != nil || t.transfer.Busy || t.transfer.Uncertain || dataTransactionUnavailable(t) || t.profileID != s.sessionFor(t).ProfileID ||
 		!s.sessionFor(t).Connected || s.sessionFor(t).ProfileID <= 0 {
 		return
@@ -301,7 +304,9 @@ func (s *State) Close(t *Document) {
 	if s.guardDoc == t {
 		s.guardDoc = nil
 	}
-	s.flushMySQLDataLayout(t)
+	if !t.graphTransferOnly {
+		s.flushMySQLDataLayout(t)
+	}
 	s.cancelMySQLDataEdit(t)
 	if t.nativeReceipt.Cancel != nil {
 		t.nativeReceipt.Cancel()

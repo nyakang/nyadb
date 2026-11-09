@@ -40,6 +40,10 @@ func (s *State) openTableDataAction(services ui.Services, id int64, database, ta
 	}
 }
 func (s *State) openDatabaseImport(id int64, database string) {
+	if s.objectCapabilitiesFor(id).GraphExchange {
+		s.openGraphExchange(ui.Services{}, id, database, "import")
+		return
+	}
 	// This entry point creates a new relational table. Document imports run
 	// from an existing index's bound data document instead.
 	if s.objectCapabilitiesFor(id).Documents || !s.activateObjectProfile(id) || s.sessions.StatusFor(id) != "已连接" {

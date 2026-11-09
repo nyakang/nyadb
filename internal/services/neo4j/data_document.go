@@ -41,10 +41,10 @@ func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 	if e := s.checkNamespace(o.Namespace()); e != nil {
 		return nil, e
 	}
-	if o.Catalog == "system" || (o.Kind != "label" && o.Kind != "relationship") {
+	if o.Catalog == "system" || (o.Kind != "label" && o.Kind != "relationship" && o.Kind != contract.GraphNamespaceKind) {
 		return nil, contract.ErrUnsupported
 	}
-	if !validDatabase(o.Name) {
+	if o.Kind == contract.GraphNamespaceKind && o.Name != "" || o.Kind != contract.GraphNamespaceKind && !validDatabase(o.Name) {
 		return nil, ErrInvalid
 	}
 	l := &dataLease{session: s, object: o, done: make(chan struct{})}
@@ -71,9 +71,12 @@ func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 }
 
 func (*Session) DataDocumentCapabilities() contract.Capabilities {
-	return contract.Capabilities{EditableTables: true, Documents: true, Import: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
+	return contract.Capabilities{GraphExchange: true, EditableTables: true, Documents: true, Import: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true, JSONL: true}
 }
 func (l *dataLease) Runtime() contract.DataRuntime {
+	if l.object.Kind == contract.GraphNamespaceKind {
+		return contract.DataRuntime{NativeReceipts: true, Capabilities: contract.Capabilities{GraphExchange: true, Documents: true, Import: true, Export: true}, PreviewGraphImport: l.previewGraphImport, SubmitGraphImport: l.submitGraphImport, ExportGraph: l.exportGraph}
+	}
 	kinds, preview := []string{"update", "insert", "delete"}, []string{"insert", "delete"}
 	if l.object.Kind == "label" {
 		kinds, preview = []string{"update", "insert", "delete", "detach_delete"}, []string{"insert", "delete", "detach_delete"}
