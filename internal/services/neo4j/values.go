@@ -11,38 +11,14 @@ import (
 	"unicode/utf8"
 
 	neo4jdriver "github.com/neo4j/neo4j-go-driver/v6/neo4j"
+	"github.com/nyakang/nyadb/internal/db/contract"
 )
 
-type Property struct {
-	Name  string
-	Value Value
-}
-
-// Numeric text preserves the native signed integer and IEEE-754 value. Temporal
-// and spatial kinds remain distinct; durations keep all four native components.
-type Value struct {
-	Kind, Text   string
-	Values       []Value
-	Properties   []Property
-	Node         *Node
-	Relationship *Relationship
-	Path         *Path
-}
-type Node struct {
-	ElementID  string
-	LegacyID   int64
-	Labels     []string
-	Properties []Property
-}
-type Relationship struct {
-	ElementID, StartElementID, EndElementID, Type string
-	LegacyID, StartLegacyID, EndLegacyID          int64
-	Properties                                    []Property
-}
-type Path struct {
-	Nodes         []Node
-	Relationships []Relationship
-}
+type Property = contract.GraphProperty
+type Value = contract.GraphValue
+type Node = contract.GraphNode
+type Relationship = contract.GraphRelationship
+type Path = contract.GraphPath
 
 type valueBudget struct{ bytes, items, limit int }
 
@@ -76,7 +52,7 @@ func (b *valueBudget) properties(m map[string]any, graph bool, depth int) ([]Pro
 		if e != nil {
 			return nil, nil, e
 		}
-		props = append(props, Property{k, v})
+		props = append(props, Property{Name: k, Value: v})
 		copy[k] = raw
 	}
 	return props, copy, nil
@@ -95,14 +71,14 @@ func (b *valueBudget) node(n neo4jdriver.Node, depth int) (Node, error) {
 		}
 	}
 	p, _, e := b.properties(n.Props, true, depth+1)
-	return Node{n.ElementId, n.Id, labels, p}, e
+	return Node{ElementID: n.ElementId, LegacyID: n.Id, Labels: labels, Properties: p}, e
 }
 func (b *valueBudget) relationship(r neo4jdriver.Relationship, depth int) (Relationship, error) {
 	if e := b.add(len(r.ElementId) + len(r.StartElementId) + len(r.EndElementId) + len(r.Type) + 32); e != nil {
 		return Relationship{}, e
 	}
 	p, _, e := b.properties(r.Props, true, depth+1)
-	return Relationship{r.ElementId, r.StartElementId, r.EndElementId, r.Type, r.Id, r.StartId, r.EndId, p}, e
+	return Relationship{ElementID: r.ElementId, StartElementID: r.StartElementId, EndElementID: r.EndElementId, Type: r.Type, LegacyID: r.Id, StartLegacyID: r.StartId, EndLegacyID: r.EndId, Properties: p}, e
 }
 func (b *valueBudget) capture(raw any, graph bool, depth int) (Value, any, error) {
 	if depth > 32 {
@@ -303,38 +279,6 @@ func cloneProperties(p []Property) []Property {
 	}
 	return out
 }
-func cloneNode(n Node) Node {
-	n.Labels = slices.Clone(n.Labels)
-	n.Properties = cloneProperties(n.Properties)
-	return n
-}
-func cloneRelationship(r Relationship) Relationship {
-	r.Properties = cloneProperties(r.Properties)
-	return r
-}
-func cloneValue(v Value) Value {
-	v.Values = slices.Clone(v.Values)
-	for i := range v.Values {
-		v.Values[i] = cloneValue(v.Values[i])
-	}
-	v.Properties = cloneProperties(v.Properties)
-	if v.Node != nil {
-		n := cloneNode(*v.Node)
-		v.Node = &n
-	}
-	if v.Relationship != nil {
-		r := cloneRelationship(*v.Relationship)
-		v.Relationship = &r
-	}
-	if v.Path != nil {
-		p := &Path{Nodes: slices.Clone(v.Path.Nodes), Relationships: slices.Clone(v.Path.Relationships)}
-		for i := range p.Nodes {
-			p.Nodes[i] = cloneNode(p.Nodes[i])
-		}
-		for i := range p.Relationships {
-			p.Relationships[i] = cloneRelationship(p.Relationships[i])
-		}
-		v.Path = p
-	}
-	return v
-}
+func cloneNode(n Node) Node                         { return n.Clone() }
+func cloneRelationship(r Relationship) Relationship { return r.Clone() }
+func cloneValue(v Value) Value                      { return v.Clone() }

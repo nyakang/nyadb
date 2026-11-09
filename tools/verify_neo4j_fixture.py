@@ -26,6 +26,7 @@ REQUIRED = (
     'BlockedCancellationTerminationAndCleanup',
 )
 PROFILE_REQUIRED = ('ProfileURIReopenAndOriginalEditorCheck', 'ProfileOriginalCanceledHandshake', 'EditorLocalizedFormEvidence')
+SESSION_REQUIRED = ('SessionQualifiedMetadataAndOriginalDatabase', 'SessionTypedQueriesCompletionAndExplicitRecovery', 'SessionLostCanceledAndCloseNeverReplay', 'SessionBlockedCancellationAcknowledgesOriginalExecutor')
 
 
 def remove_owned(identifier, nonce):
@@ -44,8 +45,8 @@ def remove_owned(identifier, nonce):
     subprocess.run(['docker', 'rm', '-f', '-v', identifier], check=True, stdout=subprocess.DEVNULL)
 
 
-def check_acceptance(log, profile=False):
-    for name in REQUIRED + (PROFILE_REQUIRED if profile else ()):
+def check_acceptance(log, profile=False, session=False):
+    for name in REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()):
         if not re.search(r'^--- PASS: TestNeo4jNative' + name + r' \(', log, re.M):
             raise RuntimeError('Missing native acceptance: ' + name)
     if re.search(r'^\s*--- (SKIP|FAIL):', log, re.M) or 'WARNING: DATA RACE' in log:
@@ -67,7 +68,8 @@ def certificates(folder):
     openssl('req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', 'wrong.key', '-out', 'wrong.crt', '-days', '2', '-subj', '/CN=Untrusted CA', cwd=folder)
 
 
-def verify(mode, race, profile=False):
+def verify(mode, race, profile=False, session=False):
+    profile = profile or session
     nonce = uuid.uuid4().hex
     build = ROOT/'build/neo4j'
     build.mkdir(parents=True, exist_ok=True)
@@ -77,8 +79,10 @@ def verify(mode, race, profile=False):
     if profile:
         sources += list((ROOT/'internal/services/connections').glob('*.go')) + list((ROOT/'internal/storage/localdb').glob('*.go')) + list((ROOT/'internal/ui/connectioneditor').glob('*.go'))
         sources += list((ROOT/'locales').glob('*.go')) + list((ROOT/'locales').glob('*.json')) + [ROOT/'internal/ui/shell/connection_engine_files.go']
+    if session:
+        sources += list((ROOT/'internal/db/contract').glob('*.go'))
     report = {'nonce': nonce, 'mode': mode, 'version': VERSION, 'image': IMAGE,
-              'scope': 'private-native-profile-and-editor' if profile else 'private-native-foundation', 'race': race, 'passed': False,
+              'scope': 'private-native-session-and-graph-contract' if session else ('private-native-profile-and-editor' if profile else 'private-native-foundation'), 'race': race, 'passed': False,
               'source_hashes': {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(sources))}}
     identifier = None
     try:
@@ -158,9 +162,13 @@ def verify(mode, race, profile=False):
             if profile:
                 env['NYADB_NEO4J_PROFILE_IT'] = '1'
                 env['NYADB_NEO4J_PROFILE_IMAGES'] = str(build/('owned-fixture-'+nonce+'-profile-images'))
+            if session:
+                env['NYADB_NEO4J_SESSION_IT'] = '1'
             env['CGO_ENABLED'] = '1' if race else '0'
             packages = ['./internal/services/neo4j'] + (['./internal/ui/connectioneditor'] if profile else [])
-            command = ['go', 'test'] + (['-race'] if race else []) + packages + ['-run', '^TestNeo4jNative', '-count=1', '-timeout=8m', '-v']
+            accepted = REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ())
+            pattern = '^TestNeo4jNative(' + '|'.join(accepted) + ')$'
+            command = ['go', 'test'] + (['-race'] if race else []) + packages + ['-run', pattern, '-count=1', '-timeout=8m', '-v']
             result = subprocess.run(command, cwd=ROOT, env=env, capture_output=True, text=True)
             log = result.stdout+result.stderr
             # Preserve evidence without ever retaining generated credentials.
@@ -168,14 +176,14 @@ def verify(mode, race, profile=False):
             log_path.write_text(log)
             if result.returncode:
                 raise RuntimeError('Native Neo4j verification failed; see '+str(log_path.relative_to(ROOT)))
-            check_acceptance(log, profile)
+            check_acceptance(log, profile, session)
             if profile:
                 pictures = sorted(Path(env['NYADB_NEO4J_PROFILE_IMAGES']).glob('*.png'))
                 if len(pictures) != 48:
                     raise RuntimeError('Missing localized Neo4j profile screenshots')
                 report['images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             report['passed'] = True
-            report['accepted'] = list(REQUIRED + (PROFILE_REQUIRED if profile else ()))
+            report['accepted'] = list(REQUIRED + (PROFILE_REQUIRED if profile else ()) + (SESSION_REQUIRED if session else ()))
     finally:
         if identifier:
             startup = subprocess.run(['docker', 'logs', identifier], capture_output=True, text=True)
@@ -193,8 +201,9 @@ def main():
     parser.add_argument('--mode', choices=MODES, default='basic')
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--profile', action='store_true', help='Include private profiles, native editor checks and localized forms')
+    parser.add_argument('--session', action='store_true', help='Include original sessions, qualified graph metadata and Cypher leases')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.profile)
+    verify(args.mode, args.race, args.profile, args.session)
 
 
 if __name__ == '__main__':

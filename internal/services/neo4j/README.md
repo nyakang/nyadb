@@ -64,3 +64,26 @@ closed original connection checks, canceled real handshakes, and 48 localized
 form screenshots per mode. It retains a private Kind without registering a
 descriptor or runtime provider. Password-free basic profiles may be saved for
 an explicit later prompt; the editor requires a password before testing.
+
+The private session stage implements neutral `Session`, `MetadataProvider`,
+`QueryProvider`, `GraphQueryLease` and `GraphMetadataProvider` contracts. It owns
+one original metadata client and at most 32 independent original query clients.
+Native database observations resolve the configured/home database; namespaces
+retain profile/database identity. Labels, relationships, inferred properties,
+indexes, constraints, procedures and every function overload retain their native
+rows. Graph schemas have a shared 16 MiB retention budget and are live observations,
+not atomic snapshots or relational table structures.
+
+The common result projection also retains a complete neutral `SQLResult.Graph`:
+exact graph/temporal/spatial/nested values, native counters, bookmarks, database,
+server, failure code and completion state. Missing completion makes arbitrary
+Cypher uncertain and retires the original query client. Cancellation and release
+wait for the captured executor; explicit replacement never replays its source.
+Native driver/pool ownership does not promise permanent use of one socket or
+prove cluster/database incarnation from an agent/version/address observation.
+
+Use `--session --race` in each verifier mode to include qualified metadata,
+typed leases, response-loss after independently confirmed commits, original
+cancel/release/session close, blocked transaction cleanup and explicit recovery.
+This includes the existing profile forms; it does not register a runtime provider
+or constitute a public Cypher/graph workbench, data editing, or management UI.

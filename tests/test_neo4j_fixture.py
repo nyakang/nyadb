@@ -54,3 +54,11 @@ class Neo4jFixtureOwnershipTests(unittest.TestCase):
         FIXTURE.check_acceptance(native+'\n'+profile, profile=True)
         with self.assertRaises(RuntimeError):
             FIXTURE.check_acceptance(native+'\n'+profile.replace('--- PASS:', '--- SKIP:', 1), profile=True)
+
+    def test_session_acceptance_requires_metadata_typed_leases_and_original_interruption(self):
+        names = FIXTURE.REQUIRED + FIXTURE.PROFILE_REQUIRED + FIXTURE.SESSION_REQUIRED
+        passed = '\n'.join('--- PASS: TestNeo4jNative'+name+' (0.01s)' for name in names)
+        FIXTURE.check_acceptance(passed, profile=True, session=True)
+        for name in FIXTURE.SESSION_REQUIRED:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), profile=True, session=True)

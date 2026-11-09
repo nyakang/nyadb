@@ -9,7 +9,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/url"
 	"os"
@@ -23,6 +22,7 @@ import (
 	neo4jdriver "github.com/neo4j/neo4j-go-driver/v6/neo4j"
 	neo4jauth "github.com/neo4j/neo4j-go-driver/v6/neo4j/auth"
 	"github.com/neo4j/neo4j-go-driver/v6/neo4j/config"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
@@ -35,15 +35,8 @@ var (
 	ErrUsed     = errors.New("Neo4j original query preparation already used or foreign")
 )
 
-type Identity struct {
-	Agent, Address               string
-	ProtocolMajor, ProtocolMinor int
-}
-type Request struct {
-	Query, Database, Mode                        string
-	Parameters                                   map[string]any
-	MaxRows, MaxBytes, FetchSize, TimeoutSeconds int
-}
+type Identity = contract.GraphServer
+type Request = contract.GraphQueryRequest
 type Plan struct {
 	owner      *Client
 	request    Request
@@ -54,23 +47,8 @@ type Plan struct {
 func (p Plan) Query() string          { return p.request.Query }
 func (p Plan) Parameters() []Property { return cloneProperties(p.parameters) }
 
-type Summary struct {
-	Server                        Identity
-	Database, QueryType           string
-	Counters                      map[string]int64
-	AvailableAfter, ConsumedAfter time.Duration
-	Bookmarks                     []string
-}
-type Response struct {
-	Columns                         []string
-	Rows                            [][]Value
-	Summary                         Summary
-	FailureCode                     string
-	Attempted, Completed, Truncated bool
-	// Uncertain is conservative for arbitrary Cypher, including procedures and
-	// queries with side effects. A missing summary does not prove rollback.
-	Uncertain bool
-}
+type Summary = contract.GraphSummary
+type Response = contract.GraphResult
 type Interrupted struct {
 	Cause          error
 	OutcomeUnknown bool
@@ -100,7 +78,7 @@ type Client struct {
 
 func identity(info neo4jdriver.ServerInfo) Identity {
 	p := info.ProtocolVersion()
-	return Identity{info.Agent(), info.Address(), p.Major, p.Minor}
+	return Identity{Agent: info.Agent(), Address: info.Address(), ProtocolMajor: p.Major, ProtocolMinor: p.Minor}
 }
 func readCertificate(path string) ([]byte, error) {
 	f, e := os.Open(path)
@@ -223,25 +201,8 @@ func (c *Client) Prepare(r Request) (Plan, error) {
 	r.Parameters = params
 	return Plan{c, r, props, &atomic.Bool{}}, nil
 }
-func cloneResponse(r Response) Response {
-	r.Columns = slices.Clone(r.Columns)
-	r.Rows = slices.Clone(r.Rows)
-	for i := range r.Rows {
-		r.Rows[i] = slices.Clone(r.Rows[i])
-		for j := range r.Rows[i] {
-			r.Rows[i][j] = cloneValue(r.Rows[i][j])
-		}
-	}
-	r.Summary.Counters = func() map[string]int64 {
-		out := make(map[string]int64, len(r.Summary.Counters))
-		for k, v := range r.Summary.Counters {
-			out[k] = v
-		}
-		return out
-	}()
-	r.Summary.Bookmarks = slices.Clone(r.Summary.Bookmarks)
-	return r
-}
+func cloneResponse(r Response) Response { return r.Clone() }
+
 func (c *Client) LastResponse() Response {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -447,7 +408,4 @@ func (c *Client) Close() error {
 		c.mu.Unlock()
 	})
 	return c.closeErr
-}
-func (r Response) String() string {
-	return fmt.Sprintf("Neo4j result: %d retained rows; attempted=%t completed=%t truncated=%t uncertain=%t", len(r.Rows), r.Attempted, r.Completed, r.Truncated, r.Uncertain)
 }

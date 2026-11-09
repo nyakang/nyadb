@@ -65,6 +65,9 @@ type ResultSet struct {
 type SQLResult struct {
 	Steps []StatementOutcome
 	Sets  []ResultSet
+	// Graph retains the original typed result and completion receipt. Sets is
+	// the common grid projection; it cannot reconstruct graph identities/types.
+	Graph *GraphResult
 	// Columns and Rows are a presentation adapter for existing MySQL callers.
 	// Sets is authoritative; adapters never infer NULL from display text.
 	Columns      []string
