@@ -9,6 +9,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -267,10 +269,10 @@ func TestNeo4jNativePublicGraphPropertyLostCanceledOriginalCloseAndRecoveryNever
 	defer admin.Close()
 	label := "NyaPropertyFault_" + f.Nonce
 	defer neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE $label IN labels(n) DETACH DELETE n", Parameters: map[string]any{"label": label}})
-	for _, scenario := range []struct{ operation, fault string }{{"edit", "lost"}, {"edit", "cancel"}, {"edit", "close"}, {"add", "lost"}, {"add", "cancel"}, {"add", "close"}, {"remove", "lost"}, {"remove", "cancel"}, {"remove", "close"}} {
+	for _, scenario := range []struct{ operation, fault string }{{"edit", "lost"}, {"edit", "cancel"}, {"edit", "close"}, {"add", "lost"}, {"add", "cancel"}, {"add", "close"}, {"remove", "lost"}, {"remove", "cancel"}, {"remove", "close"}, {"list_edit", "lost"}, {"list_edit", "cancel"}, {"list_edit", "close"}, {"list_add", "lost"}, {"list_add", "cancel"}, {"list_add", "close"}, {"list_remove", "lost"}, {"list_remove", "cancel"}, {"list_remove", "close"}} {
 		fault := scenario.fault
 		t.Run(scenario.operation+"/"+fault, func(t *testing.T) {
-			created := neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "CREATE (n:$($label) {name:'Before'}) RETURN n", Parameters: map[string]any{"label": label}})
+			created := neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "CREATE (n:$($label) {name:'Before',values:[0]}) RETURN n", Parameters: map[string]any{"label": label}})
 			root := created.Rows[0][0].Node.ElementID
 			relay := newNeo4jRelay(t, f, "SET e[$key]=e[$key]")
 			original := f
@@ -308,14 +310,25 @@ func TestNeo4jNativePublicGraphPropertyLostCanceledOriginalCloseAndRecoveryNever
 			switch scenario.operation {
 			case "edit":
 				nativeGraphPropertyStart(t, s, d, "n:"+root, "Committed "+fault)
-			case "add":
+			case "add", "list_add":
 				property = "new key"
 				s.openGraphPropertyCreation(d, g)
 				d.graphPropertyDraft.name, d.graphPropertyDraft.text = property, "Committed "+fault
-			case "remove":
+				if scenario.operation == "list_add" {
+					d.graphPropertyDraft.kind, d.graphPropertyDraft.text = "list:integer", "[-9223372036854775808,9223372036854775807]"
+				}
+			case "remove", "list_edit", "list_remove":
+				if strings.HasPrefix(scenario.operation, "list_") {
+					property = "values"
+				}
 				for _, p := range g.properties() {
 					if p.Name == property {
-						s.openGraphPropertyRemoval(d, g, p)
+						if scenario.operation == "list_edit" {
+							s.openGraphPropertyDraft(d, g, p)
+							d.graphPropertyDraft.text = "[-9223372036854775808,9223372036854775807]"
+						} else {
+							s.openGraphPropertyRemoval(d, g, p)
+						}
 						break
 					}
 				}
@@ -324,6 +337,7 @@ func TestNeo4jNativePublicGraphPropertyLostCanceledOriginalCloseAndRecoveryNever
 			if d.graphPropertyDraft.preview == nil {
 				t.Fatal("native presence fault request was not previewed")
 			}
+			committedValue := d.graphPropertyDraft.preview.After.Clone()
 			s.saveGraphProperty(d)
 			select {
 			case <-relay.observed:
@@ -340,7 +354,7 @@ func TestNeo4jNativePublicGraphPropertyLostCanceledOriginalCloseAndRecoveryNever
 			deadline := time.Now().Add(10 * time.Second)
 			for time.Now().Before(deadline) {
 				r := neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE elementId(n)=$id RETURN n[$key] AS value", Mode: "read", Parameters: map[string]any{"id": root, "key": property}})
-				if len(r.Rows) == 1 && (scenario.operation == "remove" && r.Rows[0][0].Kind == "null" || scenario.operation != "remove" && r.Rows[0][0].Text == "Committed "+fault) {
+				if len(r.Rows) == 1 && reflect.DeepEqual(r.Rows[0][0], committedValue) {
 					committed = true
 					break
 				}
@@ -376,7 +390,13 @@ func TestNeo4jNativePublicGraphPropertyLostCanceledOriginalCloseAndRecoveryNever
 					t.Fatal("uncertain property operation replayed")
 				}
 			}
-			neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE elementId(n)=$id SET n[$key]='Distinct after fault'", Parameters: map[string]any{"id": root, "key": property}})
+			distinct := contract.GraphValue{Kind: "string", Text: "Distinct after fault"}
+			var distinctParameter any = "Distinct after fault"
+			if strings.HasPrefix(scenario.operation, "list_") {
+				distinctParameter = []int64{9007199254740993}
+				distinct = graphListValueTest(t, "integer", "[9007199254740993]")
+			}
+			neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE elementId(n)=$id SET n[$key]=$value", Parameters: map[string]any{"id": root, "key": property, "value": distinctParameter}})
 			freshProfile := neo4jWorkbenchProfile(t, f)
 			fresh, e := m.ConnectSession(context.Background(), freshProfile, f.Secret)
 			if e != nil {
@@ -396,7 +416,7 @@ func TestNeo4jNativePublicGraphPropertyLostCanceledOriginalCloseAndRecoveryNever
 				s.Close(d)
 			}
 			read := neo4jNativeRun(t, admin, contract.GraphQueryRequest{Query: "MATCH (n) WHERE elementId(n)=$id RETURN n[$key] AS value", Mode: "read", Parameters: map[string]any{"id": root, "key": property}})
-			if read.Rows[0][0].Text != "Distinct after fault" || relay.dispatches.Load() != 1 || !m.IsConnected(p.ID) || m.Generation(p.ID) != fresh.Generation() {
+			if !reflect.DeepEqual(read.Rows[0][0], distinct) || relay.dispatches.Load() != 1 || !m.IsConnected(p.ID) || m.Generation(p.ID) != fresh.Generation() {
 				t.Fatal("native property recovery/old close replayed or reached replacement")
 			}
 		})

@@ -3,10 +3,8 @@ package neo4j
 import (
 	"context"
 	"errors"
-	"math"
 	"reflect"
 	"slices"
-	"strconv"
 	"unicode/utf8"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
@@ -16,42 +14,43 @@ const nodePropertyWriteQuery = "MATCH (e) WHERE elementId(e)=$id SET e[$key]=e[$
 const relationshipPropertyWriteQuery = "MATCH (s)-[e]->(t) WHERE elementId(e)=$id SET e[$key]=e[$key] WITH s,e,t WHERE type(e)=$relationship AND elementId(s)=$source AND elementId(t)=$target AND valueType(e[$key])=$type AND (($before IS NULL AND e[$key] IS NULL) OR e[$key]=$before) SET e[$key]=$after RETURN elementId(e) AS identity, valueType(e[$key]) AS kind, e[$key] AS value, e AS entity"
 
 func propertyScalar(v contract.GraphValue) (any, string, error) {
-	if len(v.Values) != 0 || len(v.Properties) != 0 || v.Node != nil || v.Relationship != nil || v.Path != nil || !utf8.ValidString(v.Text) || len(v.Text) > 1<<20 {
+	value, err := contract.GraphPropertyScalarValue(v)
+	if err != nil {
 		return nil, "", ErrInvalid
 	}
-	switch v.Kind {
-	case "null":
-		if v.Text == "" {
-			return nil, "NULL", nil
-		}
-	case "string":
-		return v.Text, "STRING NOT NULL", nil
-	case "boolean":
-		if v.Text == "true" {
-			return true, "BOOLEAN NOT NULL", nil
-		}
-		if v.Text == "false" {
-			return false, "BOOLEAN NOT NULL", nil
-		}
-	case "integer":
-		if n, e := strconv.ParseInt(v.Text, 10, 64); e == nil && strconv.FormatInt(n, 10) == v.Text {
-			return n, "INTEGER NOT NULL", nil
-		}
-	case "float":
-		if n, e := strconv.ParseFloat(v.Text, 64); e == nil && !math.IsInf(n, 0) && !math.IsNaN(n) {
-			return n, "FLOAT NOT NULL", nil
-		}
+	if v.Kind == "null" {
+		return nil, "NULL", nil
 	}
-	return nil, "", ErrInvalid
+	return value, map[string]string{"string": "STRING NOT NULL", "boolean": "BOOLEAN NOT NULL", "integer": "INTEGER NOT NULL", "float": "FLOAT NOT NULL"}[v.Kind], nil
+}
+
+func propertyValue(v contract.GraphValue) (any, string, error) {
+	if v.Kind != "list" {
+		return propertyScalar(v)
+	}
+	if _, err := contract.GraphPropertyListElementKind(v); err != nil {
+		return nil, "", ErrInvalid
+	}
+	values := make([]any, len(v.Values))
+	kind := "NOTHING"
+	for index, item := range v.Values {
+		value, itemKind, err := propertyScalar(item)
+		if err != nil {
+			return nil, "", err
+		}
+		values[index], kind = value, itemKind
+	}
+	return values, "LIST<" + kind + "> NOT NULL", nil
 }
 func propertyIdentity(s string) bool { return s != "" && len(s) <= 4096 && utf8.ValidString(s) }
 func propertyWriteQuery(r contract.GraphPropertyWriteRequest) (Request, error) {
-	before, kind, e := propertyScalar(r.Before)
+	before, kind, e := propertyValue(r.Before)
 	if e != nil {
 		return Request{}, e
 	}
-	after, newKind, e := propertyScalar(r.After)
-	if e != nil || (kind == "NULL" && newKind == "NULL") || (newKind != kind && kind != "NULL" && newKind != "NULL") || !propertyIdentity(r.Property) || !propertyIdentity(r.Target.ElementID) {
+	after, newKind, e := propertyValue(r.After)
+	emptyListTransition := r.Before.Kind == "list" && r.After.Kind == "list" && (len(r.Before.Values) == 0 || len(r.After.Values) == 0)
+	if e != nil || (kind == "NULL" && newKind == "NULL") || (newKind != kind && kind != "NULL" && newKind != "NULL" && !emptyListTransition) || !propertyIdentity(r.Property) || !propertyIdentity(r.Target.ElementID) {
 		return Request{}, ErrInvalid
 	}
 	params := map[string]any{"id": r.Target.ElementID, "key": r.Property, "type": kind, "before": before, "after": after}
@@ -109,13 +108,13 @@ func (l *queryLease) WriteGraphProperty(ctx context.Context, r contract.GraphPro
 		return receipt, nil
 	}
 	row := result.Rows[0]
-	_, kind, _ := propertyScalar(r.After)
+	_, kind, _ := propertyValue(r.After)
 	if len(row) != 4 || row[0].Kind != "string" || row[0].Text != r.Target.ElementID || row[1].Kind != "string" || row[1].Text != kind || row[2].Kind != r.After.Kind {
 		return receipt, l.markPropertyProtocolLost()
 	}
-	actual, _, err := propertyScalar(row[2])
-	want, _, _ := propertyScalar(r.After)
-	if err != nil || actual != want {
+	actual, _, err := propertyValue(row[2])
+	want, _, _ := propertyValue(r.After)
+	if err != nil || !reflect.DeepEqual(actual, want) {
 		return receipt, l.markPropertyProtocolLost()
 	}
 	if !propertyReceiptEntity(row[3], r.Target, r.Property, row[2]) {

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"math"
-	"strconv"
+	"reflect"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -58,25 +58,36 @@ type graphPropertyPending struct {
 }
 
 func graphPropertyValue(kind, text string) (contract.GraphValue, error) {
-	v := contract.GraphValue{Kind: kind, Text: text}
-	valid := utf8.ValidString(text) && len(text) <= 1<<20
-	switch kind {
-	case "string":
-	case "boolean":
-		valid = valid && (text == "true" || text == "false")
-	case "integer":
-		n, e := strconv.ParseInt(text, 10, 64)
-		valid = valid && e == nil && strconv.FormatInt(n, 10) == text
-	case "float":
-		n, e := strconv.ParseFloat(text, 64)
-		valid = valid && e == nil && !math.IsNaN(n) && !math.IsInf(n, 0)
-	default:
-		valid = false
+	if elementKind, ok := strings.CutPrefix(kind, "list:"); ok {
+		value, err := contract.ParseGraphPropertyList(elementKind, text)
+		if err != nil {
+			return contract.GraphValue{}, errors.New("列表须为所选元素类型的 JSON 数组；不支持 null、嵌套或混合类型")
+		}
+		return value, nil
 	}
-	if !valid {
+	v := contract.GraphValue{Kind: kind, Text: text}
+	if _, err := contract.GraphPropertyScalarValue(v); err != nil || kind == "null" {
 		return v, errors.New("图属性值类型或范围不受支持")
 	}
 	return v, nil
+}
+
+func graphPropertyEditingValue(v contract.GraphValue) (kind, text string, err error) {
+	if v.Kind == "list" {
+		element, err := contract.GraphPropertyListElementKind(v)
+		if err != nil {
+			return "", "", err
+		}
+		text, err := contract.GraphPropertyListJSON(v)
+		if element == "" {
+			element = "string"
+		}
+		return "list:" + element, text, err
+	}
+	if _, err := contract.GraphPropertyScalarValue(v); err != nil || v.Kind == "null" {
+		return "", "", contract.ErrUnsupported
+	}
+	return v.Kind, v.Text, nil
 }
 func graphPropertySize(v any) int { raw, _ := json.Marshal(v); return len(raw) + 128 }
 func (s *State) graphPropertyLeaseReady(d *Document) bool {
@@ -106,7 +117,7 @@ func (s *State) canTargetGraphProperty(d *Document, g *graphVisualState) bool {
 }
 
 func (s *State) canEditGraphProperty(d *Document, g *graphVisualState, p contract.GraphProperty) bool {
-	_, err := graphPropertyValue(p.Value.Kind, p.Value.Text)
+	_, _, err := graphPropertyEditingValue(p.Value)
 	return err == nil && s.canTargetGraphProperty(d, g)
 }
 
@@ -124,7 +135,8 @@ func (s *State) openGraphPropertyDraft(d *Document, g *graphVisualState, p contr
 		return
 	}
 	r := contract.GraphPropertyWriteRequest{Namespace: d.Namespace(), Target: graphPropertyTarget(g), Property: p.Name, Before: p.Value.Clone(), After: p.Value.Clone()}
-	d.graphPropertyDraft = &graphPropertyDraft{request: r, name: p.Name, kind: p.Value.Kind, text: p.Value.Text, owner: g, lease: d.lease}
+	kind, text, _ := graphPropertyEditingValue(p.Value)
+	d.graphPropertyDraft = &graphPropertyDraft{request: r, name: p.Name, kind: kind, text: text, owner: g, lease: d.lease}
 	d.graphPropertyOpen = true
 	d.graphPropertyRecord = -1
 }
@@ -169,11 +181,7 @@ func (s *State) previewGraphProperty(d *Document) {
 		}
 		r.Property = p.name
 	}
-	kind := p.request.Before.Kind
-	if p.create {
-		kind = p.kind
-	}
-	v, e := graphPropertyValue(kind, p.text)
+	v, e := graphPropertyValue(p.kind, p.text)
 	if p.remove {
 		v, e = contract.GraphValue{Kind: "null"}, nil
 	}
@@ -182,7 +190,7 @@ func (s *State) previewGraphProperty(d *Document) {
 		return
 	}
 	r.After = v
-	if r.Before.Kind == r.After.Kind && r.Before.Text == r.After.Text {
+	if reflect.DeepEqual(r.Before, r.After) || r.Before.Kind == "list" && r.After.Kind == "list" && len(r.Before.Values) == 0 && len(r.After.Values) == 0 {
 		p.error = "属性值未更改"
 		return
 	}

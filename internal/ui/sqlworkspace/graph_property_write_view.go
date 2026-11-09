@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
@@ -106,8 +107,14 @@ func (s *State) graphPropertyDraftView(c *ui.Context, d *Document) {
 	changed := false
 	if p.create {
 		changed = ui.TextInput(c, &p.name).Label(locales.Text("图属性名称")).MaxLength(4096).Disabled(p.attempted || d.Loading()).Changed()
-		kinds := []string{"string", "boolean", "integer", "float"}
-		labels := []string{locales.Text("字符串"), locales.Text("布尔值"), locales.Text("整数"), locales.Text("浮点数")}
+	}
+	if p.create || !p.remove && p.request.Before.Kind == "list" && len(p.request.Before.Values) == 0 {
+		kinds := []string{"list:string", "list:boolean", "list:integer", "list:float"}
+		labels := []string{locales.Text("字符串列表"), locales.Text("布尔值列表"), locales.Text("整数列表"), locales.Text("浮点数列表")}
+		if p.create {
+			kinds = append([]string{"string", "boolean", "integer", "float"}, kinds...)
+			labels = append([]string{locales.Text("字符串"), locales.Text("布尔值"), locales.Text("整数"), locales.Text("浮点数")}, labels...)
+		}
 		choice := labels[0]
 		for i, kind := range kinds {
 			if p.kind == kind {
@@ -115,6 +122,7 @@ func (s *State) graphPropertyDraftView(c *ui.Context, d *Document) {
 			}
 		}
 		if ui.Select(c, &choice, labels).Label(locales.Text("图属性类型")).Disabled(p.attempted || d.Loading()).Changed() {
+			oldKind := p.kind
 			for i, label := range labels {
 				if choice == label {
 					p.kind = kinds[i]
@@ -123,8 +131,14 @@ func (s *State) graphPropertyDraftView(c *ui.Context, d *Document) {
 			if p.kind == "boolean" && p.text != "true" && p.text != "false" {
 				p.text = "false"
 			}
+			if strings.HasPrefix(p.kind, "list:") && !strings.HasPrefix(oldKind, "list:") {
+				p.text = "[]"
+			}
 			changed = true
 		}
+	}
+	if !p.remove && strings.HasPrefix(p.kind, "list:") {
+		ui.Text(c, locales.Text("列表以 JSON 数组输入；元素须符合所选类型，空列表使用 []")).SingleLine().Tooltip(locales.Text("列表以 JSON 数组输入；元素须符合所选类型，空列表使用 []"))
 	}
 	if !p.remove && p.kind == "boolean" {
 		value := p.text == "true"

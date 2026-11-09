@@ -29980,11 +29980,11 @@ func (msgs Messages) GraphPropertyVerifyAbsent() string {
 	return Catalog.Format(msgs.locale, "graphPropertyVerifyAbsent", nil)
 }
 
-// GraphPropertySupported says "仅支持已有字符串、布尔值、整数和有限浮点属性；失效会话、冲突观察和快照不可编辑"
+// GraphPropertySupported says "…"
 // in the language the app shows.
 func GraphPropertySupported() string { return In(i18n.Locale()).GraphPropertySupported() }
 
-// GraphPropertySupported says "仅支持已有字符串、布尔值、整数和有限浮点属性；失效会话、冲突观察和快照不可编辑"
+// GraphPropertySupported says "…"
 // in the language of msgs.
 func (msgs Messages) GraphPropertySupported() string {
 	return Catalog.Format(msgs.locale, "graphPropertySupported", nil)
@@ -30194,4 +30194,64 @@ func GraphPropertyFloat() string { return In(i18n.Locale()).GraphPropertyFloat()
 // in the language of msgs.
 func (msgs Messages) GraphPropertyFloat() string {
 	return Catalog.Format(msgs.locale, "graphPropertyFloat", nil)
+}
+
+// GraphPropertyStringList says "字符串列表"
+// in the language the app shows.
+func GraphPropertyStringList() string { return In(i18n.Locale()).GraphPropertyStringList() }
+
+// GraphPropertyStringList says "字符串列表"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyStringList() string {
+	return Catalog.Format(msgs.locale, "graphPropertyStringList", nil)
+}
+
+// GraphPropertyBooleanList says "布尔值列表"
+// in the language the app shows.
+func GraphPropertyBooleanList() string { return In(i18n.Locale()).GraphPropertyBooleanList() }
+
+// GraphPropertyBooleanList says "布尔值列表"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyBooleanList() string {
+	return Catalog.Format(msgs.locale, "graphPropertyBooleanList", nil)
+}
+
+// GraphPropertyIntegerList says "整数列表"
+// in the language the app shows.
+func GraphPropertyIntegerList() string { return In(i18n.Locale()).GraphPropertyIntegerList() }
+
+// GraphPropertyIntegerList says "整数列表"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyIntegerList() string {
+	return Catalog.Format(msgs.locale, "graphPropertyIntegerList", nil)
+}
+
+// GraphPropertyFloatList says "浮点数列表"
+// in the language the app shows.
+func GraphPropertyFloatList() string { return In(i18n.Locale()).GraphPropertyFloatList() }
+
+// GraphPropertyFloatList says "浮点数列表"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyFloatList() string {
+	return Catalog.Format(msgs.locale, "graphPropertyFloatList", nil)
+}
+
+// GraphPropertyListInput says "列表以 JSON 数组输入；元素须符合所选类型，空列表使用 []"
+// in the language the app shows.
+func GraphPropertyListInput() string { return In(i18n.Locale()).GraphPropertyListInput() }
+
+// GraphPropertyListInput says "列表以 JSON 数组输入；元素须符合所选类型，空列表使用 []"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyListInput() string {
+	return Catalog.Format(msgs.locale, "graphPropertyListInput", nil)
+}
+
+// GraphPropertyListInvalid says "列表须为所选元素类型的 JSON 数组；不支持 null、嵌套或混合类型"
+// in the language the app shows.
+func GraphPropertyListInvalid() string { return In(i18n.Locale()).GraphPropertyListInvalid() }
+
+// GraphPropertyListInvalid says "列表须为所选元素类型的 JSON 数组；不支持 null、嵌套或混合类型"
+// in the language of msgs.
+func (msgs Messages) GraphPropertyListInvalid() string {
+	return Catalog.Format(msgs.locale, "graphPropertyListInvalid", nil)
 }

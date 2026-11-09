@@ -20,7 +20,7 @@ func TestGraphPropertyPresenceParametersAndAbsentReceipts(t *testing.T) {
 	if err != nil || q.Parameters["type"] != "STRING NOT NULL" || q.Parameters["before"] != "" || q.Parameters["after"] != nil {
 		t.Fatal("removal confused a present empty string with absence", err)
 	}
-	for _, pair := range [][2]contract.GraphValue{{null, null}, {{Kind: "null", Text: "NULL"}, {Kind: "string"}}, {{Kind: "integer", Text: "1"}, {Kind: "float", Text: "1"}}, {{Kind: "list"}, null}} {
+	for _, pair := range [][2]contract.GraphValue{{null, null}, {{Kind: "null", Text: "NULL"}, {Kind: "string"}}, {{Kind: "integer", Text: "1"}, {Kind: "float", Text: "1"}}, {{Kind: "list", Text: "untyped"}, null}} {
 		r.Before, r.After = pair[0], pair[1]
 		if _, err := propertyWriteQuery(r); err == nil {
 			t.Fatal("unqualified presence/type mutation admitted", pair)
