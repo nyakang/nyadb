@@ -29495,3 +29495,153 @@ func Neo4jGraphProperties() string { return In(i18n.Locale()).Neo4jGraphProperti
 func (msgs Messages) Neo4jGraphProperties() string {
 	return Catalog.Format(msgs.locale, "neo4jGraphProperties", nil)
 }
+
+// GraphNeighborStart says "扩展邻居"
+// in the language the app shows.
+func GraphNeighborStart() string { return In(i18n.Locale()).GraphNeighborStart() }
+
+// GraphNeighborStart says "扩展邻居"
+// in the language of msgs.
+func (msgs Messages) GraphNeighborStart() string {
+	return Catalog.Format(msgs.locale, "graphNeighborStart", nil)
+}
+
+// GraphNeighborRequest says "使用原会话只读查询最多 200 行邻居；扩展记录与原始查询分开保留"
+// in the language the app shows.
+func GraphNeighborRequest() string { return In(i18n.Locale()).GraphNeighborRequest() }
+
+// GraphNeighborRequest says "使用原会话只读查询最多 200 行邻居；扩展记录与原始查询分开保留"
+// in the language of msgs.
+func (msgs Messages) GraphNeighborRequest() string {
+	return Catalog.Format(msgs.locale, "graphNeighborRequest", nil)
+}
+
+// GraphNeighborCancel says "取消扩展"
+// in the language the app shows.
+func GraphNeighborCancel() string { return In(i18n.Locale()).GraphNeighborCancel() }
+
+// GraphNeighborCancel says "取消扩展"
+// in the language of msgs.
+func (msgs Messages) GraphNeighborCancel() string {
+	return Catalog.Format(msgs.locale, "graphNeighborCancel", nil)
+}
+
+// GraphNeighborCancelWait says "已请求取消邻居扩展；等待原执行器确认"
+// in the language the app shows.
+func GraphNeighborCancelWait() string { return In(i18n.Locale()).GraphNeighborCancelWait() }
+
+// GraphNeighborCancelWait says "已请求取消邻居扩展；等待原执行器确认"
+// in the language of msgs.
+func (msgs Messages) GraphNeighborCancelWait() string {
+	return Catalog.Format(msgs.locale, "graphNeighborCancelWait", nil)
+}
+
+// GraphNeighborStopped says "邻居扩展已停止；保留此前图形，不会自动重试"
+// in the language the app shows.
+func GraphNeighborStopped() string { return In(i18n.Locale()).GraphNeighborStopped() }
+
+// GraphNeighborStopped says "邻居扩展已停止；保留此前图形，不会自动重试"
+// in the language of msgs.
+func (msgs Messages) GraphNeighborStopped() string {
+	return Catalog.Format(msgs.locale, "graphNeighborStopped", nil)
+}
+
+// GraphNeighborIncomplete says "邻居扩展未获得原生完成确认；保留此前图形"
+// in the language the app shows.
+func GraphNeighborIncomplete() string { return In(i18n.Locale()).GraphNeighborIncomplete() }
+
+// GraphNeighborIncomplete says "邻居扩展未获得原生完成确认；保留此前图形"
+// in the language of msgs.
+func (msgs Messages) GraphNeighborIncomplete() string {
+	return Catalog.Format(msgs.locale, "graphNeighborIncomplete", nil)
+}
+
+// GraphNeighborPayloadBound says "扩展数据超过保留预算；已保留原生回执和此前图形"
+// in the language the app shows.
+func GraphNeighborPayloadBound() string { return In(i18n.Locale()).GraphNeighborPayloadBound() }
+
+// GraphNeighborPayloadBound says "扩展数据超过保留预算；已保留原生回执和此前图形"
+// in the language of msgs.
+func (msgs Messages) GraphNeighborPayloadBound() string {
+	return Catalog.Format(msgs.locale, "graphNeighborPayloadBound", nil)
+}
+
+// GraphNeighborRecords says "扩展记录 · %d"
+// in the language the app shows.
+func GraphNeighborRecords() string { return In(i18n.Locale()).GraphNeighborRecords() }
+
+// GraphNeighborRecords says "扩展记录 · %d"
+// in the language of msgs.
+func (msgs Messages) GraphNeighborRecords() string {
+	return Catalog.Format(msgs.locale, "graphNeighborRecords", nil)
+}
+
+// GraphNeighborExport says "导出扩展 JSON"
+// in the language the app shows.
+func GraphNeighborExport() string { return In(i18n.Locale()).GraphNeighborExport() }
+
+// GraphNeighborExport says "导出扩展 JSON"
+// in the language of msgs.
+func (msgs Messages) GraphNeighborExport() string {
+	return Catalog.Format(msgs.locale, "graphNeighborExport", nil)
+}
+
+// GraphNeighborLoading says "正在读取邻居；此前图形仍可浏览"
+// in the language the app shows.
+func GraphNeighborLoading() string { return In(i18n.Locale()).GraphNeighborLoading() }
+
+// GraphNeighborLoading says "正在读取邻居；此前图形仍可浏览"
+// in the language of msgs.
+func (msgs Messages) GraphNeighborLoading() string {
+	return Catalog.Format(msgs.locale, "graphNeighborLoading", nil)
+}
+
+// GraphNeighborLimited says "邻居查询达到保留上限；可能还有未返回的邻居"
+// in the language the app shows.
+func GraphNeighborLimited() string { return In(i18n.Locale()).GraphNeighborLimited() }
+
+// GraphNeighborLimited says "邻居查询达到保留上限；可能还有未返回的邻居"
+// in the language of msgs.
+func (msgs Messages) GraphNeighborLimited() string {
+	return Catalog.Format(msgs.locale, "graphNeighborLimited", nil)
+}
+
+// GraphNeighborBudget says "邻居观察达到保留预算；已有记录仍可查看和导出"
+// in the language the app shows.
+func GraphNeighborBudget() string { return In(i18n.Locale()).GraphNeighborBudget() }
+
+// GraphNeighborBudget says "邻居观察达到保留预算；已有记录仍可查看和导出"
+// in the language of msgs.
+func (msgs Messages) GraphNeighborBudget() string {
+	return Catalog.Format(msgs.locale, "graphNeighborBudget", nil)
+}
+
+// GraphNeighborLocate says "定位扩展记录"
+// in the language the app shows.
+func GraphNeighborLocate() string { return In(i18n.Locale()).GraphNeighborLocate() }
+
+// GraphNeighborLocate says "定位扩展记录"
+// in the language of msgs.
+func (msgs Messages) GraphNeighborLocate() string {
+	return Catalog.Format(msgs.locale, "graphNeighborLocate", nil)
+}
+
+// GraphNeighborCell says "扩展 %d / 行 %d / 列 %d"
+// in the language the app shows.
+func GraphNeighborCell() string { return In(i18n.Locale()).GraphNeighborCell() }
+
+// GraphNeighborCell says "扩展 %d / 行 %d / 列 %d"
+// in the language of msgs.
+func (msgs Messages) GraphNeighborCell() string {
+	return Catalog.Format(msgs.locale, "graphNeighborCell", nil)
+}
+
+// GraphNeighborJSON says "邻居扩展原生记录 JSON"
+// in the language the app shows.
+func GraphNeighborJSON() string { return In(i18n.Locale()).GraphNeighborJSON() }
+
+// GraphNeighborJSON says "邻居扩展原生记录 JSON"
+// in the language of msgs.
+func (msgs Messages) GraphNeighborJSON() string {
+	return Catalog.Format(msgs.locale, "graphNeighborJSON", nil)
+}

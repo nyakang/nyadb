@@ -91,6 +91,7 @@ type neo4jRelay struct {
 	hold       atomic.Bool
 	dispatches atomic.Int32
 	observed   chan struct{}
+	responded  chan struct{}
 }
 
 func newNeo4jRelay(t *testing.T, f neo4jWorkbenchFixture, needle string) *neo4jRelay {
@@ -99,7 +100,7 @@ func newNeo4jRelay(t *testing.T, f neo4jWorkbenchFixture, needle string) *neo4jR
 	if e != nil {
 		t.Fatal(e)
 	}
-	r := &neo4jRelay{listener: ln, fixture: f, needle: []byte(needle), observed: make(chan struct{}, 1)}
+	r := &neo4jRelay{listener: ln, fixture: f, needle: []byte(needle), observed: make(chan struct{}, 1), responded: make(chan struct{}, 1)}
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
@@ -160,8 +161,13 @@ func (r *neo4jRelay) pipe(client net.Conn) {
 		buf := make([]byte, 4096)
 		for {
 			n, e := server.Read(buf)
-			if n > 0 && !r.hold.Load() {
-				if _, w := client.Write(buf[:n]); w != nil {
+			if n > 0 {
+				if r.hold.Load() {
+					select {
+					case r.responded <- struct{}{}:
+					default:
+					}
+				} else if _, w := client.Write(buf[:n]); w != nil {
 					return
 				}
 			}

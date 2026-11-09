@@ -35,7 +35,7 @@ func (s *State) RunSelection(invalidate func(), d *Document) {
 	}
 }
 func (s *State) RunAll(invalidate func(), d *Document) {
-	if d == nil || d.Editor == nil || d.preview || d.closed || d.loading {
+	if d == nil || d.Editor == nil || d.preview || d.closed || d.Loading() {
 		return
 	}
 	text := strings.TrimSpace(d.Editor.Buffer.String())
@@ -67,7 +67,7 @@ func (s *State) sqlKeyboard(c *ui.Context, root ui.Element, d *Document) {
 		}
 	})
 	root.OnShortcut(mod|ui.Shift, ui.KeyI, func() {
-		if active() && !d.loading {
+		if active() && !d.Loading() {
 			s.Format(d)
 		}
 	})
@@ -77,7 +77,7 @@ func (s *State) sqlKeyboard(c *ui.Context, root ui.Element, d *Document) {
 		}
 	})
 	root.OnShortcut(0, ui.KeyEscape, func() {
-		if active() && d.loading {
+		if active() && d.Loading() {
 			s.RequestCancel(d)
 		}
 	})

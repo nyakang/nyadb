@@ -23,6 +23,23 @@ type queryLease struct {
 	released, lost bool
 }
 
+func (l *queryLease) CheckQueryLease() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.released {
+		return contract.ErrRevoked
+	}
+	if l.lost {
+		return contract.ErrSQLSessionLost
+	}
+	l.s.mu.Lock()
+	defer l.s.mu.Unlock()
+	if l.s.closed || l.s.revoked {
+		return contract.ErrRevoked
+	}
+	return nil
+}
+
 func (s *Session) ReserveQuery(document uint64) (contract.QueryLease, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

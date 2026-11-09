@@ -76,11 +76,11 @@ func (s *State) View(c *ui.Context, t *Document) {
 						caption = locales.Text("运行")
 					}
 					if ui.Button(c, caption).Tooltip(runLabel + " · Ctrl+Enter").Label(runLabel).
-						Disabled(!connected || t.loading || t.recoveryNeeded).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
+						Disabled(!connected || t.Loading() || t.recoveryNeeded).Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
 						s.Run(c.Services().Invalidate, t)
 					}
 					if !t.nativeCommands {
-						theme.IconButton(c, "", "chevron-down").Label(t.queryText("选择 SQL 执行范围")).Disabled(!connected || t.loading || t.recoveryNeeded).Menu(func(m *ui.Menu) {
+						theme.IconButton(c, "", "chevron-down").Label(t.queryText("选择 SQL 执行范围")).Disabled(!connected || t.Loading() || t.recoveryNeeded).Menu(func(m *ui.Menu) {
 							if m.Item(locales.Text("运行当前语句")).Chosen() {
 								s.RunCurrent(c.Services().Invalidate, t)
 							}
@@ -92,7 +92,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 							}
 						})
 					}
-					if ui.Button(c, locales.Text("取消")).Disabled(!t.loading || t.cancelRequested).
+					if ui.Button(c, locales.Text("取消")).Disabled(!t.Loading() || t.CancelRequested()).
 						Height(theme.RowHeight(c, theme.ControlHeight)).Clicked() {
 						s.RequestCancel(t)
 					}
@@ -104,15 +104,15 @@ func (s *State) View(c *ui.Context, t *Document) {
 						}
 					}
 					if !t.nativeCommands && !t.cql() && !t.cypher() {
-						if ui.Button(c, "EXPLAIN").Disabled(t.loading || !connected || t.nativeCommands).Clicked() {
+						if ui.Button(c, "EXPLAIN").Disabled(t.Loading() || !connected || t.nativeCommands).Clicked() {
 							s.Explain(t)
 						}
 					}
-					if ui.Button(c, locales.Text("运行并导出")).Disabled(t.loading || t.recoveryNeeded || !connected).Clicked() {
+					if ui.Button(c, locales.Text("运行并导出")).Disabled(t.Loading() || t.recoveryNeeded || !connected).Clicked() {
 						s.RunExport(t)
 					}
 					if !t.nativeCommands {
-						if ui.Button(c, t.queryText("执行 SQL 文件")).Disabled(t.loading || t.recoveryNeeded || !connected || !fileSupported).Clicked() {
+						if ui.Button(c, t.queryText("执行 SQL 文件")).Disabled(t.Loading() || t.recoveryNeeded || !connected || !fileSupported).Clicked() {
 							s.RunFile(t)
 						}
 					}
@@ -120,7 +120,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 					if t.nativeCommands {
 						openLabel = locales.Text("打开请求文本")
 					}
-					if ui.Button(c, openLabel).Disabled(t.loading).Clicked() {
+					if ui.Button(c, openLabel).Disabled(t.Loading()).Clicked() {
 						s.OpenFile(t)
 					}
 					if ui.Button(c, locales.Text("保存查询")).Clicked() {
@@ -130,7 +130,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 						s.Save(t, true, nil)
 					}
 					if !t.nativeCommands && !t.cql() && !t.cypher() {
-						if ui.Button(c, locales.Text("AI SQL")).Label(locales.Text("打开 AI SQL 助手")).Disabled(!s.AIAvailable() || t.loading).Clicked() {
+						if ui.Button(c, locales.Text("AI SQL")).Label(locales.Text("打开 AI SQL 助手")).Disabled(!s.AIAvailable() || t.Loading()).Clicked() {
 							s.OpenAI(t)
 						}
 					}
@@ -174,7 +174,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 			}
 			if t.recoveryNeeded {
 				id := t.recoveryProfile
-				canRecover := !t.loading && t.prepareResults == nil &&
+				canRecover := !t.Loading() && t.prepareResults == nil &&
 					id > 0 && s.runtime() != nil && s.connected(id) && s.runtime().IsConnected(id)
 				ui.Row(c).Padding(3, 8).Gap(9).AlignItems(ui.Center).Children(func() {
 					recoveryText := locales.Text("新会话无法恢复事务或临时状态；不会自动执行 SQL")
@@ -183,7 +183,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 					}
 					ui.Text(c, recoveryText).
 						FontSize(theme.Font(c, 11)).TextColor(p.Muted)
-					if s.deps.ConnectProfile != nil && ui.Button(c, locales.Text("恢复原连接")).Disabled(s.connected(id) || !s.profileExists(id) || t.loading).Clicked() {
+					if s.deps.ConnectProfile != nil && ui.Button(c, locales.Text("恢复原连接")).Disabled(s.connected(id) || !s.profileExists(id) || t.Loading()).Clicked() {
 						s.deps.ConnectProfile(c.Services(), id)
 					}
 					if ui.Button(c, locales.Text("以新会话继续")).Label(func() string {
@@ -236,7 +236,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 		case "result":
 			s.resultGrid(c, t)
 		default:
-			if t.result == nil && !t.loading && len(t.snapshots) == 0 {
+			if t.result == nil && !t.Loading() && len(t.snapshots) == 0 {
 				editorPane()
 			} else {
 				ui.SplitVerticalPercent(c, &s.SplitPercent, editorPane, func() { s.resultGrid(c, t) }).Grow(1)
@@ -264,7 +264,7 @@ func (s *State) resultGrid(c *ui.Context, owner *Document) {
 				owner.snapshotIndex = 0
 			}
 			ui.Button(c, locales.Text("结果快照")).Menu(func(m *ui.Menu) {
-				if m.Item(locales.Text("固定本次结果")).Disabled(owner.loading || owner.result == nil).Chosen() {
+				if m.Item(locales.Text("固定本次结果")).Disabled(owner.Loading() || owner.result == nil).Chosen() {
 					s.pinResult(owner)
 				}
 				for i, snap := range owner.snapshots {
@@ -296,7 +296,7 @@ func (s *State) resultGrid(c *ui.Context, owner *Document) {
 	})
 }
 func sqlResultSummary(t *Document) string {
-	if t.cancelRequested {
+	if t.CancelRequested() {
 		return locales.Text("正在等待取消确认…")
 	}
 	if t.loading {

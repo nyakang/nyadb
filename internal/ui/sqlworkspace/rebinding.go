@@ -14,7 +14,7 @@ func (s *State) profileExists(id int64) bool {
 
 // Rebind changes presentation scope only. A new lease requires explicit recovery.
 func (s *State) Rebind(d *Document, profile int64) {
-	if d == nil || d.closed || d.loading || !d.recoveryNeeded || !s.profileExists(profile) {
+	if d == nil || d.closed || d.Loading() || !d.recoveryNeeded || !s.profileExists(profile) {
 		return
 	}
 	s.dispose(d)

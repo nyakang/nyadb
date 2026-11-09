@@ -56,6 +56,13 @@ func (g *graphVisualState) cloneReading(other *graphVisualState) {
 	if other == nil {
 		return
 	}
+	for _, observation := range other.observations {
+		observation.Result = observation.Result.Clone()
+		g.observations = append(g.observations, observation)
+	}
+	g.observationBytes, g.observationIndex = other.observationBytes, other.observationIndex
+	g.expansionError = other.expansionError
+	g.rebuildObservations()
 	g.positions = maps.Clone(other.positions)
 	g.hidden = maps.Clone(other.hidden)
 	g.pinned = maps.Clone(other.pinned)
@@ -150,6 +157,7 @@ func (s *State) graphVisualView(c *ui.Context, d *Document) bool {
 				if ui.Button(c, locales.Text("恢复隐藏图元")).Disabled(len(g.hidden) == 0).Clicked() {
 					g.resetHidden()
 				}
+				s.graphExpansionControls(c, d, g)
 				ui.Button(c, locales.Text("导出图像")).Menu(func(m *ui.Menu) {
 					for _, format := range []string{"PNG", "SVG"} {
 						if m.Item(format).Disabled(len(g.topology.Nodes) == 0 || s.persistence.files.SavePath == nil || s.persistence.files.WriteStream == nil).Chosen() {
@@ -159,6 +167,7 @@ func (s *State) graphVisualView(c *ui.Context, d *Document) bool {
 				})
 			})
 		})
+		s.graphExpansionNotices(c, d, g)
 		if g.topology.Bounded {
 			ui.Text(c, locales.Text("图形展示达到上限；完整保留结果仍可查看和导出")).SingleLine().Tooltip(locales.Text("图形上限：1000 节点、2000 关系、8 MiB；不查询额外数据")).TextColor(palette.Warning)
 		}
@@ -196,6 +205,10 @@ func (s *State) graphVisualView(c *ui.Context, d *Document) bool {
 }
 func (s *State) graphInspector(c *ui.Context, d *Document, g *graphVisualState) {
 	palette := theme.Colors(c)
+	if g.inspectorMode == "expansion" {
+		s.graphPropertiesInspector(c, g)
+		return
+	}
 	if g.selected == "" {
 		keys := g.entries()
 		g.listPage = max(0, min(g.listPage, max(0, (len(keys)-1)/50)))
@@ -270,6 +283,15 @@ func (s *State) graphInspector(c *ui.Context, d *Document, g *graphVisualState) 
 			}
 		}
 	})
+	if observed := g.observationRefs(); len(observed) > 0 {
+		ui.Button(c, locales.Text("定位扩展记录")).Menu(func(m *ui.Menu) {
+			for _, ref := range observed[:min(50, len(observed))] {
+				if m.Item(fmt.Sprintf(locales.Text("扩展 %d / 行 %d / 列 %d"), ref.Observation+1, ref.Row+1, ref.Column+1)).Chosen() {
+					g.observationIndex, g.inspectorMode, g.fieldJSON = ref.Observation, "expansion", ""
+				}
+			}
+		})
+	}
 }
 func (d *Document) graphRecord(ref graphresult.CellRef) {
 	if d.result == nil || d.result.Graph == nil || ref.Row < 0 || ref.Row >= len(d.result.Graph.Rows) || ref.Column < 0 || ref.Column >= len(d.result.Graph.Rows[ref.Row]) {
@@ -443,6 +465,11 @@ func (s *State) graphPropertiesInspector(c *ui.Context, g *graphVisualState) {
 			c.AnimationFrame()
 		}
 		text := g.detailJSON()
+		label := locales.Text("当前图元的原生 JSON")
+		if g.inspectorMode == "expansion" {
+			text = g.observationDetail()
+			label = locales.Text("邻居扩展原生记录 JSON")
+		}
 		if g.inspectorMode == "field" {
 			props := g.properties()
 			if g.fieldIndex >= 0 && g.fieldIndex < len(props) {
@@ -452,9 +479,9 @@ func (s *State) graphPropertiesInspector(c *ui.Context, g *graphVisualState) {
 				text = g.fieldJSON
 			}
 		}
-		area := ui.TextArea(c, &text).Label(locales.Text("当前图元的原生 JSON")).ReadOnly(true).Grow(1).MinHeight(0)
+		area := ui.TextArea(c, &text).Label(label).ReadOnly(true).Grow(1).MinHeight(0)
 		reading := ui.Local(area, "graph-detail-reading", func() graphDetailReading { return graphDetailReading{} })
-		key := g.selected + "/" + g.inspectorMode + "/" + fmt.Sprint(g.fieldIndex)
+		key := g.selected + "/" + g.inspectorMode + "/" + fmt.Sprint(g.fieldIndex) + "/" + fmt.Sprint(g.observationIndex)
 		if reading.Owner != g || reading.Key != key {
 			area.SetTextSelection(0, 0)
 			*reading = graphDetailReading{Owner: g, Key: key}

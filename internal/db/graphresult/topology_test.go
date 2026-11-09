@@ -65,6 +65,28 @@ func TestTopologyDistinctRelationshipDirectionParallelSelfLoopsAndIdentityKinds(
 		t.Fatal("an absent element ID inferred a shared zero legacy identity")
 	}
 }
+
+func TestTopologyNeighborObservationsKeepOriginalCellsSeparateAndFirstValues(t *testing.T) {
+	a, b := topologyNode("a", "original"), topologyNode("b", "neighbor")
+	later := a.Clone()
+	later.Properties[0].Value.Text = "later"
+	e := contract.GraphRelationship{ElementID: "r", StartElementID: "a", EndElementID: "b", Type: "NEIGHBOR"}
+	original := contract.GraphResult{Columns: []string{"a"}, Rows: [][]contract.GraphValue{{{Kind: "node", Node: &a}}}}
+	observed := contract.GraphResult{Columns: []string{"n", "r", "m"}, Rows: [][]contract.GraphValue{{{Kind: "node", Node: &later}, {Kind: "relationship", Relationship: &e}, {Kind: "node", Node: &b}}}}
+	before, _ := json.Marshal(observed)
+	topology := ExtractTopologyObservations(original, []contract.GraphResult{observed})
+	if len(topology.Nodes) != 2 || len(topology.Edges) != 1 || topology.Bounded || topology.Nodes[0].Value.Properties[0].Value.Text != "original" || !topology.Nodes[0].Conflicting {
+		t.Fatal("neighbor observations replaced or dropped original values")
+	}
+	if !reflect.DeepEqual(topology.Nodes[0].Cells, []CellRef{{0, 0}}) || len(topology.Nodes[1].Cells) != 0 || len(topology.Edges[0].Cells) != 0 || !reflect.DeepEqual(topology.Nodes[1].Observations, []ObservationRef{{0, 0, 1}, {0, 0, 2}}) {
+		t.Fatal("neighbor links were falsely assigned to original result cells")
+	}
+	topology.Nodes[1].Value.Properties[0].Value.Text = "visual mutation"
+	after, _ := json.Marshal(observed)
+	if string(before) != string(after) {
+		t.Fatal("merged topology borrowed the neighbor receipt values")
+	}
+}
 func TestTopologyBoundsPreserveOriginalRowsAndAllPublishedEdgeEndpoints(t *testing.T) {
 	for _, kind := range []string{"nodes", "edges", "bytes", "depth", "visits", "refs"} {
 		t.Run(kind, func(t *testing.T) {

@@ -20,6 +20,41 @@ func fakeSessionTest(t *testing.T) *Session {
 	t.Cleanup(func() { _ = s.Close() })
 	return s
 }
+
+func TestNeo4jLeaseStatusDoesNotOpenOrWaitForOriginalExecutor(t *testing.T) {
+	s := fakeSessionTest(t)
+	s.openClient = func(context.Context, connections.Neo4jConfig, string) (*Client, error) {
+		t.Error("status performed I/O")
+		return nil, nil
+	}
+	reserved, err := s.ReserveQuery(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	l := reserved.(*queryLease)
+	l.ops.Lock()
+	checked := make(chan error, 1)
+	go func() { checked <- l.CheckQueryLease() }()
+	select {
+	case err = <-checked:
+		if err != nil {
+			t.Error(err)
+		}
+	case <-time.After(time.Second):
+		t.Error("status blocked the UI behind the native executor")
+	}
+	l.ops.Unlock()
+	l.mu.Lock()
+	l.lost = true
+	l.mu.Unlock()
+	if !errors.Is(l.CheckQueryLease(), contract.ErrSQLSessionLost) {
+		t.Fatal("lost original session appeared valid")
+	}
+	l.Release()
+	if !errors.Is(l.CheckQueryLease(), contract.ErrRevoked) {
+		t.Fatal("released native lease appeared valid")
+	}
+}
 func TestNeo4jSessionLeaseReservationIsPureBoundedAndQualified(t *testing.T) {
 	s := fakeSessionTest(t)
 	s.openClient = func(context.Context, connections.Neo4jConfig, string) (*Client, error) {

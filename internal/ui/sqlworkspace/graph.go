@@ -173,7 +173,7 @@ func (s *State) graphParametersView(c *ui.Context, d *Document) {
 		return
 	}
 	ui.Text(c, locales.Text("参数 JSON（仅当前标签，整数保留 int64 精度）")).FontSize(theme.Font(c, 11))
-	ui.TextArea(c, &d.graphParameters).Label(locales.Text("Cypher 参数 JSON")).Height(100).ReadOnly(d.loading)
+	ui.TextArea(c, &d.graphParameters).Label(locales.Text("Cypher 参数 JSON")).Height(100).ReadOnly(d.Loading())
 }
 func (s *State) graphResultView(c *ui.Context, d *Document) bool {
 	if d.result == nil || d.result.Graph == nil {

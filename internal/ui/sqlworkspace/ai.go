@@ -217,7 +217,7 @@ func (s *State) saveAI() {
 func (s *State) aiTargetValid() bool {
 	x := s.ai.target
 	d := x.doc
-	if d == nil || d.closed || d.Editor == nil || !s.active(d) || d.loading || d.request != x.request || d.Editor.Buffer.Version() != x.version || d.Editor.Selection() != x.selection || d.profileID != x.rawProfile || d.recoveryNeeded != x.recovery {
+	if d == nil || d.closed || d.Editor == nil || !s.active(d) || d.Loading() || d.request != x.request || d.Editor.Buffer.Version() != x.version || d.Editor.Selection() != x.selection || d.profileID != x.rawProfile || d.recoveryNeeded != x.recovery {
 		return false
 	}
 	profile, db := d.sourceScope()

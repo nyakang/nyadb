@@ -71,6 +71,7 @@ type Document struct {
 	graphJSON                     string
 	graphVisualOpen               bool
 	graphVisual                   *graphVisualState
+	graphExpansion                *graphExpansionRequest
 	nativeCommands                bool
 	commandDialect                string
 	snapshotOwner                 *Document
@@ -129,11 +130,13 @@ type Document struct {
 	resultFieldMode          string
 }
 
-func (d *Document) ProfileID() int64            { return d.profileID }
-func (d *Document) Database() string            { return d.database }
-func (d *Document) QueryID() string             { return d.queryID }
-func (d *Document) Loading() bool               { return d.loading }
-func (d *Document) CancelRequested() bool       { return d.cancelRequested }
+func (d *Document) ProfileID() int64 { return d.profileID }
+func (d *Document) Database() string { return d.database }
+func (d *Document) QueryID() string  { return d.queryID }
+func (d *Document) Loading() bool    { return d.loading || d.graphExpansion != nil }
+func (d *Document) CancelRequested() bool {
+	return d.cancelRequested || d.graphExpansion != nil && d.graphExpansion.canceled
+}
 func (d *Document) Error() string               { return d.err }
 func (d *Document) Result() *contract.SQLResult { return d.result }
 func (d *Document) NeedsRecovery() bool         { return d.recoveryNeeded }

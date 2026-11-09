@@ -2886,5 +2886,20 @@
   "neo4jGraphFieldsBack": "返回图属性",
   "neo4jGraphFullField": "完整属性值",
   "neo4jGraphEntityNative": "图元原生 JSON",
-  "neo4jGraphProperties": "属性"
+  "neo4jGraphProperties": "属性",
+  "graphNeighborStart": "扩展邻居",
+  "graphNeighborRequest": "使用原会话只读查询最多 200 行邻居；扩展记录与原始查询分开保留",
+  "graphNeighborCancel": "取消扩展",
+  "graphNeighborCancelWait": "已请求取消邻居扩展；等待原执行器确认",
+  "graphNeighborStopped": "邻居扩展已停止；保留此前图形，不会自动重试",
+  "graphNeighborIncomplete": "邻居扩展未获得原生完成确认；保留此前图形",
+  "graphNeighborPayloadBound": "扩展数据超过保留预算；已保留原生回执和此前图形",
+  "graphNeighborRecords": "扩展记录 · %d",
+  "graphNeighborExport": "导出扩展 JSON",
+  "graphNeighborLoading": "正在读取邻居；此前图形仍可浏览",
+  "graphNeighborLimited": "邻居查询达到保留上限；可能还有未返回的邻居",
+  "graphNeighborBudget": "邻居观察达到保留预算；已有记录仍可查看和导出",
+  "graphNeighborLocate": "定位扩展记录",
+  "graphNeighborCell": "扩展 %d / 行 %d / 列 %d",
+  "graphNeighborJSON": "邻居扩展原生记录 JSON"
 }

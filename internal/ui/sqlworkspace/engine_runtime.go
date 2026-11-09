@@ -35,6 +35,13 @@ func (r engineRuntime) Reserve(id int64, tab uint64) (Lease, error) {
 
 type engineLease struct{ contract.QueryLease }
 
+func (l *engineLease) CheckQueryLease() error {
+	if status, ok := l.QueryLease.(contract.QueryLeaseStatus); ok {
+		return status.CheckQueryLease()
+	}
+	return contract.ErrUnsupported
+}
+
 func (l *engineLease) Replace() (Lease, error) {
 	x, e := l.QueryLease.Replace()
 	if e != nil {

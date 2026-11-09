@@ -7,6 +7,7 @@ import (
 	"unicode"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/graphresult"
 )
 
@@ -18,6 +19,11 @@ type graphVisualState struct {
 	closed                           bool
 	listPage                         int
 	topology                         graphresult.Topology
+	base                             *contract.GraphResult
+	observations                     []graphObservation
+	observationBytes                 int
+	observationIndex                 int
+	expansionError                   string
 	positions                        map[string]ui.Point
 	hidden, pinned                   map[string]bool
 	selected, query, detail          string
@@ -36,7 +42,7 @@ func (d *Document) graphVisualState() *graphVisualState {
 		return nil
 	}
 	if d.graphVisual == nil && d.result != nil && d.result.Graph != nil {
-		g := &graphVisualState{topology: graphresult.ExtractTopology(*d.result.Graph), hidden: map[string]bool{}, pinned: map[string]bool{}, positions: map[string]ui.Point{}, zoom: 1, fit: true}
+		g := &graphVisualState{base: d.result.Graph, topology: graphresult.ExtractTopology(*d.result.Graph), hidden: map[string]bool{}, pinned: map[string]bool{}, positions: map[string]ui.Point{}, zoom: 1, fit: true}
 		g.layout()
 		d.graphVisual = g
 	}
@@ -145,6 +151,15 @@ func (g *graphVisualState) layout() {
 			g.positions[node.Key] = ui.Point{X: float32(i%columns) * 160, Y: float32(i/columns) * 140}
 		}
 	}
+	g.relax(g.pinned)
+	g.fit = true
+	g.dragging = false
+}
+
+// Fixed positions can include old unpinned nodes during neighbor admission.
+// Only explicit relayout is allowed to move those already displayed nodes.
+func (g *graphVisualState) relax(fixed map[string]bool) {
+	n := len(g.topology.Nodes)
 	for iteration := 0; iteration < 60; iteration++ {
 		buckets := map[[2]int][]int{}
 		for i, node := range g.topology.Nodes {
@@ -190,7 +205,7 @@ func (g *graphVisualState) layout() {
 		}
 		limit := float32(18) * (1 - float32(iteration)/60)
 		for i, node := range g.topology.Nodes {
-			if g.pinned[node.Key] {
+			if fixed[node.Key] {
 				continue
 			}
 			f := forces[i]
@@ -205,8 +220,6 @@ func (g *graphVisualState) layout() {
 			g.positions[node.Key] = p
 		}
 	}
-	g.fit = true
-	g.dragging = false
 }
 func (g *graphVisualState) fitView(w, h float32) {
 	if w <= 0 || h <= 0 {

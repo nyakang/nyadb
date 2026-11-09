@@ -118,7 +118,7 @@ func (s *State) Explain(d *Document) {
 		d.err = d.commandText("MongoDB 请使用原生 explain 命令", "Redis 不支持 SQL EXPLAIN", "Elasticsearch 请使用原生 REST API", "Easysearch 请使用原生 REST API", "Solr 请使用原生 REST API", "CouchDB 请使用原生 REST API", "Meilisearch 请使用原生 REST API", "Qdrant 请使用原生 REST API")
 		return
 	}
-	if d == nil || d.Editor == nil || d.closed || d.loading || d.recoveryNeeded {
+	if d == nil || d.Editor == nil || d.closed || d.Loading() || d.recoveryNeeded {
 		return
 	}
 	text := strings.TrimSpace(d.Editor.SelectedText())

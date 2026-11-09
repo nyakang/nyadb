@@ -5,6 +5,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"io"
+	"sync/atomic"
 )
 
 func (s *session) require(enabled bool, id int64) error {
@@ -77,9 +78,23 @@ func (s *session) ReserveQuery(doc uint64) (contract.QueryLease, error) {
 }
 
 type queryLease struct {
-	session *session
-	doc     uint64
-	raw     contract.QueryLease
+	session  *session
+	doc      uint64
+	raw      contract.QueryLease
+	released atomic.Bool
+}
+
+func (l *queryLease) CheckQueryLease() error {
+	if l.released.Load() {
+		return contract.ErrRevoked
+	}
+	if e := l.session.require(l.session.Capabilities().Query, l.session.id); e != nil {
+		return e
+	}
+	if status, ok := l.raw.(contract.QueryLeaseStatus); ok {
+		return status.CheckQueryLease()
+	}
+	return nil
 }
 
 func (l *queryLease) Preconnect(ctx context.Context) error {
@@ -100,7 +115,7 @@ func (l *queryLease) ExecuteStream(ctx context.Context, ns, sql string, sink fun
 	}
 	return l.raw.ExecuteStream(ctx, ns, sql, sink)
 }
-func (l *queryLease) Release() { l.raw.Release() }
+func (l *queryLease) Release() { l.released.Store(true); l.raw.Release() }
 func (l *queryLease) Replace() (contract.QueryLease, error) {
 	if e := l.session.require(l.session.Capabilities().Query, l.session.id); e != nil {
 		return nil, e
@@ -109,6 +124,7 @@ func (l *queryLease) Replace() (contract.QueryLease, error) {
 	if e != nil {
 		return nil, e
 	}
+	l.released.Store(true)
 	return &queryLease{session: l.session, doc: l.doc, raw: raw}, nil
 }
 

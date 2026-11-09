@@ -24,7 +24,7 @@ type executionResult struct {
 }
 
 func (s *State) Run(invalidate func(), t *Document) {
-	if t == nil || t.closed || t.preview || t.Editor == nil || t.loading {
+	if t == nil || t.closed || t.preview || t.Editor == nil || t.Loading() {
 		return
 	}
 	if t.recoveryNeeded {
@@ -59,7 +59,7 @@ func (s *State) Run(invalidate func(), t *Document) {
 	s.runStatement(invalidate, t, statement)
 }
 func (s *State) runStatement(invalidate func(), t *Document, statement string) {
-	if t == nil || t.closed || t.loading || t.recoveryNeeded || !s.connected(t.profileID) {
+	if t == nil || t.closed || t.Loading() || t.recoveryNeeded || !s.connected(t.profileID) {
 		return
 	}
 	execute := s.Executor
@@ -118,6 +118,7 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 		t.focusEditor = true
 	}
 	t.rememberResultLayouts()
+	t.clearGraphVisual()
 	t.result = nil
 	t.err = ""
 	profileID, database := t.profileID, t.database
@@ -167,6 +168,9 @@ func (s *State) runStatement(invalidate func(), t *Document, statement string) {
 // canceled context. In particular, a submitted DML statement might have
 // already committed; cancellation is never described as a rollback.
 func (s *State) RequestCancel(t *Document) {
+	if s.cancelGraphExpansion(t) {
+		return
+	}
 	if t == nil || !t.loading || t.cancelRequested {
 		return
 	}
@@ -186,6 +190,7 @@ func (s *State) dispose(t *Document) {
 	if t == nil {
 		return
 	}
+	t.stopGraphExpansion()
 	t.graphJSON = ""
 	if t.graphVisual != nil {
 		t.graphVisual.release()
@@ -244,6 +249,7 @@ func (s *State) DisconnectProfile(profileID int64) {
 func (s *State) Consume() {
 	s.consumeHistory()
 	for _, t := range s.documents {
+		s.consumeGraphExpansion(t)
 		s.consumeCompletionMetadata(t)
 		if t.prepareResults != nil {
 			select {
@@ -412,7 +418,7 @@ func (s *State) preconnect(t *Document) {
 
 func (s *State) Recover(t *Document) {
 	if t == nil || t.closed || !t.recoveryNeeded ||
-		t.loading || t.prepareResults != nil {
+		t.Loading() || t.prepareResults != nil {
 		return
 	}
 	id := t.recoveryProfile
@@ -456,6 +462,7 @@ func (s *State) Recover(t *Document) {
 	t.recoveryProfile = 0
 	t.recoverySchema = ""
 	t.rememberResultLayouts()
+	t.clearGraphVisual()
 	t.result = nil
 
 	t.err = ""

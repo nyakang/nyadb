@@ -48,10 +48,13 @@ func resultSnapshotSize(r *contract.SQLResult) int64 {
 }
 
 func (s *State) pinResult(d *Document) bool {
-	if d == nil || d.closed || d.loading || d.result == nil {
+	if d == nil || d.closed || d.Loading() || d.result == nil {
 		return false
 	}
 	n := resultSnapshotSize(d.result) + int64(len(d.executedSQL))
+	if d.graphVisual != nil {
+		n += int64(d.graphVisual.observationBytes)
+	}
 	for _, snap := range d.snapshots {
 		n += snap.Bytes
 	}
@@ -75,7 +78,11 @@ func (s *State) pinResult(d *Document) bool {
 	x.graphVisualOpen = d.graphVisualOpen
 	d.nextSnapshot++
 	x.name = fmt.Sprintf("%s-%d", d.Name(), d.nextSnapshot)
-	d.snapshots = append(d.snapshots, resultSnapshot{Document: x, SQL: d.executedSQL, Namespace: d.Namespace(), Time: time.Now(), Bytes: resultSnapshotSize(r) + int64(len(d.executedSQL))})
+	bytes := resultSnapshotSize(r) + int64(len(d.executedSQL))
+	if x.graphVisual != nil {
+		bytes += int64(x.graphVisual.observationBytes)
+	}
+	d.snapshots = append(d.snapshots, resultSnapshot{Document: x, SQL: d.executedSQL, Namespace: d.Namespace(), Time: time.Now(), Bytes: bytes})
 	return true
 }
 func (d *Document) removeSnapshot(index int) {

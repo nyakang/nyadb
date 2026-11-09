@@ -17,7 +17,7 @@ type streamLease interface {
 }
 
 func (s *State) RunExport(d *Document) {
-	if d == nil || d.loading || d.recoveryNeeded || !s.connected(d.profileID) {
+	if d == nil || d.Loading() || d.recoveryNeeded || !s.connected(d.profileID) {
 		return
 	}
 	lease, ok := d.lease.(streamLease)
@@ -53,6 +53,7 @@ func (s *State) RunExport(d *Document) {
 	d.cancel = cancel
 	d.loading = true
 	d.cancelRequested = false
+	d.clearGraphVisual()
 	d.result = nil
 	invalidate := s.Invalidate
 	history := s.beginHistory(d, "export", statement)

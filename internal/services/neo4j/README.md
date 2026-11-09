@@ -79,9 +79,24 @@ release derived caches and pending interaction state.
 PNG (2560x1600) and SVG (1280x800) exports capture independent display geometry
 before the file picker/writer, fit visible entities and escape labels. They issue
 no Cypher and do not borrow later camera/hidden state. Native graph/result export
-continues to preserve all retained typed values. This view is read-only; neighbor
-expansion and property writes require separate original native operations and
-remain pending.
+continues to preserve all retained typed values. This view is read-only. Explicit neighbor expansion runs one fixed parameterized
+read on the original document lease/database, up to 200 rows and 4 MiB (reduced
+when the remaining observation budget is smaller). The query limit is a live
+bounded observation, not complete adjacency or an atomic snapshot. Each native
+request, namespace and receipt is retained separately from the original result,
+within 8 MiB and at most 1000 observations. Payload overflow preserves a receipt
+with an explicit missing-payload notice. Missing completion/cancellation/loss
+retain the previous graph; cancellation waits for acknowledgement, and a parked
+result is checked against the original publication before admission. Explicit
+recovery does not rerun either query or expansion.
+
+Merged observations retain the first complete value with conflict notices and
+separate neighbor-record provenance. New nodes undergo bounded force relaxation
+while all old positions, pins, hidden state and camera remain unchanged. Result
+snapshots include owned neighbor values and receipts in their 16 MiB budget, and
+provide read-only neighbor JSON and image export without live expansion. Original
+query/result JSON continues to contain only original records; separate expansion
+JSON retains the complete bounded observations. Property writes remain pending.
 
 Cypher JSON parameters are temporary per-document drafts. They are not saved in
 query text, history or restored workspaces. Duplicate keys, invalid JSON,
@@ -182,14 +197,16 @@ acceptance includes saved-profile reopening, native typed values/metadata,
 published generations, committed writes with lost/canceled responses, explicit
 recovery, original close/termination, retained-node property expansion, original
 node visibility, native snapshots/exports, bounded fallback and localized
-workbench/form images. Four grid modes require 96 native groups and 544 images, including retained
+workbench/form images. Four grid modes require 104 native groups and 624 images, including retained
 graph paths, parallel/reverse/self-loop relationships, missing endpoints, original
 record links, full property JSON, snapshots, image export and 1001-node display
-bounds. Cleanup
+bounds, explicit one/second-hop reads, 200-row neighbor limits, separate record
+links/exports, conflict observations, parked generation rejection and native
+response-loss/cancellation/original-close recovery without replay. Cleanup
 checks immutable container ID and nonce labels. Evidence and sanitized logs stay
 under ignored `build/neo4j/`.
 
-Graph neighbor expansion, graph data editing/import,
+Graph data editing/import,
 structured Cypher plans, administration/RBAC, Enterprise/cluster validation and
 full database archives and other versions remain future work. Their capabilities are not inferred from a
 successful Community connection or the ability to execute arbitrary Cypher.

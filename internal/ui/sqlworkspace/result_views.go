@@ -88,6 +88,7 @@ func (d *Document) rememberResultLayouts() {
 }
 func (d *Document) setResult(result *contract.SQLResult) {
 	d.rememberResultLayouts()
+	d.stopGraphExpansion()
 	d.graphJSON = ""
 	if d.graphVisual != nil {
 		d.graphVisual.release()

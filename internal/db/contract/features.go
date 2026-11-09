@@ -43,6 +43,12 @@ type QueryFileLease interface {
 type QueryProvider interface {
 	ReserveQuery(uint64) (QueryLease, error)
 }
+
+// QueryLeaseStatus checks the captured lease/publication without I/O or waiting
+// for its executor. UI consumers use it before admitting parked auxiliary reads.
+type QueryLeaseStatus interface {
+	CheckQueryLease() error
+}
 type DataProvider interface{ DataRuntime() DataRuntime }
 
 // DataDocumentLease owns server resources for one immutable data document.

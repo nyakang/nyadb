@@ -2886,5 +2886,20 @@
   "neo4jGraphFieldsBack": "Back to graph properties",
   "neo4jGraphFullField": "Complete property value",
   "neo4jGraphEntityNative": "Entity native JSON",
-  "neo4jGraphProperties": "Properties"
+  "neo4jGraphProperties": "Properties",
+  "graphNeighborStart": "Expand neighbors",
+  "graphNeighborRequest": "Read up to 200 neighbor rows on the original session; retain them separately from the original query",
+  "graphNeighborCancel": "Cancel expansion",
+  "graphNeighborCancelWait": "Expansion cancellation requested; waiting for the original executor",
+  "graphNeighborStopped": "Neighbor expansion stopped; previous graph retained without automatic retry",
+  "graphNeighborIncomplete": "Native neighbor completion was not confirmed; previous graph retained",
+  "graphNeighborPayloadBound": "Expansion data exceeded its retention budget; native receipt and previous graph retained",
+  "graphNeighborRecords": "Expansion records · %d",
+  "graphNeighborExport": "Export expansion JSON",
+  "graphNeighborLoading": "Reading neighbors; the previous graph remains available",
+  "graphNeighborLimited": "Neighbor retention limit reached; further neighbors may exist",
+  "graphNeighborBudget": "Neighbor observation budget reached; retained records remain available",
+  "graphNeighborLocate": "Locate expansion record",
+  "graphNeighborCell": "Expansion %d / row %d / column %d",
+  "graphNeighborJSON": "Native neighbor expansion record JSON"
 }
