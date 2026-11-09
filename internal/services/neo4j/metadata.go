@@ -191,7 +191,7 @@ func graphObjects(snapshot contract.GraphSchemaSnapshot) ([]contract.DBObject, e
 		if budget < 0 || len(out) >= 8192 {
 			return nil, ErrBounds
 		}
-		out = append(out, contract.DBObject{Ref: ref, Name: ref.Name, Kind: ref.Kind, Engine: "Neo4j", Definition: string(raw)})
+		out = append(out, contract.DBObject{Ref: ref, Name: ref.Name, Kind: graphObjectLabel(ref.Kind), Engine: "Neo4j", Definition: string(raw)})
 	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].Kind != out[j].Kind {
@@ -209,3 +209,21 @@ func (s *Session) TableMetadata(_ context.Context, o contract.ObjectRef) (*contr
 }
 
 var _ contract.GraphMetadataProvider = (*Session)(nil)
+
+func graphObjectLabel(kind string) string {
+	switch kind {
+	case "label":
+		return "图标签"
+	case "relationship":
+		return "关系类型"
+	case "index":
+		return "图索引"
+	case "constraint":
+		return "图约束"
+	case "procedure":
+		return "图过程"
+	case "function":
+		return "图函数"
+	}
+	return kind
+}

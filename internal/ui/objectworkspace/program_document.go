@@ -13,12 +13,15 @@ type programDocument struct {
 
 // Supports recognizes read-only routines, events and sequence definitions.
 func Supports(kind string) bool {
-	return kind == "函数" || kind == "存储过程" || kind == "事件" || kind == "序列" || kind == "包" || kind == "触发器" || kind == "类型"
+	return GraphDefinitionKind(kind) || kind == "函数" || kind == "存储过程" || kind == "事件" || kind == "序列" || kind == "包" || kind == "触发器" || kind == "类型"
 }
 
 // New copies metadata without activating a profile or opening a host tab.
 func newProgram(profileID int64, database string, data contract.DBObject) *programDocument {
 	if profileID <= 0 || database == "" || data.Name == "" || !Supports(data.Kind) {
+		return nil
+	}
+	if GraphDefinitionKind(data.Kind) && (data.Engine != "Neo4j" || data.Ref == (contract.ObjectRef{})) {
 		return nil
 	}
 	if data.Ref != (contract.ObjectRef{}) {

@@ -29,6 +29,7 @@ type Runtime interface {
 }
 
 type Dependencies struct {
+	GraphCompletions  func(int64, string) []GraphCompletion
 	QueryDialect      func(int64) string
 	Namespace         func(int64, string) contract.NamespaceRef
 	Profiles          func() []ProfileChoice
@@ -65,17 +66,20 @@ type ProfileChoice struct {
 // Document is owned by the UI thread. Workers capture a lease/executor and
 // immutable request values; only Consume reads their private buffered channels.
 type Document struct {
-	nativeCommands   bool
-	commandDialect   string
-	snapshotOwner    *Document
-	cachedExport     cachedExportDraft
-	layoutMode       string
-	showMessages     bool
-	resultFieldRight bool
-	fieldSplit       float32
-	snapshots        []resultSnapshot
-	snapshotIndex    int
-	nextSnapshot     uint64
+	graphParameters               string
+	graphOptionsOpen, graphNative bool
+	graphJSON                     string
+	nativeCommands                bool
+	commandDialect                string
+	snapshotOwner                 *Document
+	cachedExport                  cachedExportDraft
+	layoutMode                    string
+	showMessages                  bool
+	resultFieldRight              bool
+	fieldSplit                    float32
+	snapshots                     []resultSnapshot
+	snapshotIndex                 int
+	nextSnapshot                  uint64
 
 	queryError                             error
 	diagnostic                             *contract.QueryDiagnostic
@@ -232,7 +236,7 @@ func (s *State) Prepare(d *Document) {
 	lease, err := runtime.Reserve(d.profileID, d.id)
 	if err != nil {
 		d.err = "SQL 会话预留失败：" + err.Error()
-		if d.nativeCommands || d.cql() {
+		if d.nativeQuery() {
 			d.err = "请求会话预留失败：" + err.Error()
 		}
 		s.report(d.err)
@@ -267,6 +271,7 @@ func (s *State) Close(d *Document) {
 	for len(d.snapshots) > 0 {
 		d.removeSnapshot(0)
 	}
+	d.graphParameters, d.graphJSON = "", ""
 	d.cachedExport = cachedExportDraft{}
 	d.Editor, d.result = nil, nil
 	d.resultViews, d.resultLayouts = nil, nil

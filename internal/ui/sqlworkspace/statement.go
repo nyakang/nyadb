@@ -85,6 +85,9 @@ func sqlAtCaret(source string, cursor int) string {
 }
 
 func (s *State) statementAtCaret(d *Document) string {
+	if d.cypher() {
+		return strings.TrimSpace(d.Editor.Buffer.String())
+	}
 	if d.cql() {
 		return sqltext.CassandraStatementAt(d.Editor.Buffer.String(), d.Editor.Cursor())
 	}

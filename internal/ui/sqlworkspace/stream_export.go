@@ -25,6 +25,15 @@ func (s *State) RunExport(d *Document) {
 		d.err = "当前会话不支持流式导出"
 		return
 	}
+	var graphExecute func(context.Context, string, string) (contract.SQLResult, error)
+	if d.cypher() {
+		var e error
+		graphExecute, e = s.graphExecutor(d)
+		if e != nil {
+			d.err = e.Error()
+			return
+		}
+	}
 	f := s.persistence.files
 	if f.SavePath == nil || f.WriteStream == nil {
 		return
@@ -82,7 +91,33 @@ func (s *State) RunExport(d *Document) {
 				}
 				var runErr error
 				executed = true
-				result, runErr = lease.ExecuteStream(ctx, db, statement, sink)
+				if graphExecute != nil {
+					result, runErr = graphExecute(ctx, db, statement)
+					if runErr == nil {
+						for i, set := range result.Sets {
+							if runErr = sink(i, set.Columns, nil); runErr != nil {
+								break
+							}
+							for _, row := range set.Rows {
+								if runErr = sink(i, set.Columns, row); runErr != nil {
+									break
+								}
+							}
+							if runErr != nil {
+								break
+							}
+						}
+					}
+					if runErr == nil && result.Graph != nil {
+						var entry io.Writer
+						entry, runErr = archive.Create("graph.json")
+						if runErr == nil {
+							runErr = json.NewEncoder(entry).Encode(result.Graph)
+						}
+					}
+				} else {
+					result, runErr = lease.ExecuteStream(ctx, db, statement, sink)
+				}
 				if runErr != nil {
 					_ = archive.Close()
 					return runErr

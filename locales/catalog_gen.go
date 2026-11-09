@@ -28743,3 +28743,353 @@ func Neo4jPasswordRequired() string { return In(i18n.Locale()).Neo4jPasswordRequ
 func (msgs Messages) Neo4jPasswordRequired() string {
 	return Catalog.Format(msgs.locale, "neo4jPasswordRequired", nil)
 }
+
+// Neo4jGraphLabels says "图标签"
+// in the language the app shows.
+func Neo4jGraphLabels() string { return In(i18n.Locale()).Neo4jGraphLabels() }
+
+// Neo4jGraphLabels says "图标签"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphLabels() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphLabels", nil)
+}
+
+// Neo4jRelationshipTypes says "关系类型"
+// in the language the app shows.
+func Neo4jRelationshipTypes() string { return In(i18n.Locale()).Neo4jRelationshipTypes() }
+
+// Neo4jRelationshipTypes says "关系类型"
+// in the language of msgs.
+func (msgs Messages) Neo4jRelationshipTypes() string {
+	return Catalog.Format(msgs.locale, "neo4jRelationshipTypes", nil)
+}
+
+// Neo4jGraphIndexes says "图索引"
+// in the language the app shows.
+func Neo4jGraphIndexes() string { return In(i18n.Locale()).Neo4jGraphIndexes() }
+
+// Neo4jGraphIndexes says "图索引"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphIndexes() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphIndexes", nil)
+}
+
+// Neo4jGraphConstraints says "图约束"
+// in the language the app shows.
+func Neo4jGraphConstraints() string { return In(i18n.Locale()).Neo4jGraphConstraints() }
+
+// Neo4jGraphConstraints says "图约束"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphConstraints() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphConstraints", nil)
+}
+
+// Neo4jGraphProcedures says "图过程"
+// in the language the app shows.
+func Neo4jGraphProcedures() string { return In(i18n.Locale()).Neo4jGraphProcedures() }
+
+// Neo4jGraphProcedures says "图过程"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphProcedures() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphProcedures", nil)
+}
+
+// Neo4jGraphFunctions says "图函数"
+// in the language the app shows.
+func Neo4jGraphFunctions() string { return In(i18n.Locale()).Neo4jGraphFunctions() }
+
+// Neo4jGraphFunctions says "图函数"
+// in the language of msgs.
+func (msgs Messages) Neo4jGraphFunctions() string {
+	return Catalog.Format(msgs.locale, "neo4jGraphFunctions", nil)
+}
+
+// CypherRunCurrentOrSelection says "运行当前或选中 Cypher"
+// in the language the app shows.
+func CypherRunCurrentOrSelection() string { return In(i18n.Locale()).CypherRunCurrentOrSelection() }
+
+// CypherRunCurrentOrSelection says "运行当前或选中 Cypher"
+// in the language of msgs.
+func (msgs Messages) CypherRunCurrentOrSelection() string {
+	return Catalog.Format(msgs.locale, "cypherRunCurrentOrSelection", nil)
+}
+
+// CypherRunSelection says "运行选中 Cypher"
+// in the language the app shows.
+func CypherRunSelection() string { return In(i18n.Locale()).CypherRunSelection() }
+
+// CypherRunSelection says "运行选中 Cypher"
+// in the language of msgs.
+func (msgs Messages) CypherRunSelection() string {
+	return Catalog.Format(msgs.locale, "cypherRunSelection", nil)
+}
+
+// CypherRunAll says "运行全部 Cypher（F5）"
+// in the language the app shows.
+func CypherRunAll() string { return In(i18n.Locale()).CypherRunAll() }
+
+// CypherRunAll says "运行全部 Cypher（F5）"
+// in the language of msgs.
+func (msgs Messages) CypherRunAll() string {
+	return Catalog.Format(msgs.locale, "cypherRunAll", nil)
+}
+
+// CypherExecutionScope says "选择 Cypher 执行范围"
+// in the language the app shows.
+func CypherExecutionScope() string { return In(i18n.Locale()).CypherExecutionScope() }
+
+// CypherExecutionScope says "选择 Cypher 执行范围"
+// in the language of msgs.
+func (msgs Messages) CypherExecutionScope() string {
+	return Catalog.Format(msgs.locale, "cypherExecutionScope", nil)
+}
+
+// CypherOpen says "打开 Cypher"
+// in the language the app shows.
+func CypherOpen() string { return In(i18n.Locale()).CypherOpen() }
+
+// CypherOpen says "打开 Cypher"
+// in the language of msgs.
+func (msgs Messages) CypherOpen() string {
+	return Catalog.Format(msgs.locale, "cypherOpen", nil)
+}
+
+// CypherRunFile says "执行 Cypher 文件"
+// in the language the app shows.
+func CypherRunFile() string { return In(i18n.Locale()).CypherRunFile() }
+
+// CypherRunFile says "执行 Cypher 文件"
+// in the language of msgs.
+func (msgs Messages) CypherRunFile() string {
+	return Catalog.Format(msgs.locale, "cypherRunFile", nil)
+}
+
+// CypherHistory says "Cypher 历史"
+// in the language the app shows.
+func CypherHistory() string { return In(i18n.Locale()).CypherHistory() }
+
+// CypherHistory says "Cypher 历史"
+// in the language of msgs.
+func (msgs Messages) CypherHistory() string {
+	return Catalog.Format(msgs.locale, "cypherHistory", nil)
+}
+
+// CypherEditor says "Cypher 编辑器"
+// in the language the app shows.
+func CypherEditor() string { return In(i18n.Locale()).CypherEditor() }
+
+// CypherEditor says "Cypher 编辑器"
+// in the language of msgs.
+func (msgs Messages) CypherEditor() string {
+	return Catalog.Format(msgs.locale, "cypherEditor", nil)
+}
+
+// CypherActions says "Cypher 执行操作"
+// in the language the app shows.
+func CypherActions() string { return In(i18n.Locale()).CypherActions() }
+
+// CypherActions says "Cypher 执行操作"
+// in the language of msgs.
+func (msgs Messages) CypherActions() string {
+	return Catalog.Format(msgs.locale, "cypherActions", nil)
+}
+
+// CypherRecoveryLabel says "建立新物理会话（不执行现有 Cypher）"
+// in the language the app shows.
+func CypherRecoveryLabel() string { return In(i18n.Locale()).CypherRecoveryLabel() }
+
+// CypherRecoveryLabel says "建立新物理会话（不执行现有 Cypher）"
+// in the language of msgs.
+func (msgs Messages) CypherRecoveryLabel() string {
+	return Catalog.Format(msgs.locale, "cypherRecoveryLabel", nil)
+}
+
+// CypherInputPrompt says "请输入 Cypher"
+// in the language the app shows.
+func CypherInputPrompt() string { return In(i18n.Locale()).CypherInputPrompt() }
+
+// CypherInputPrompt says "请输入 Cypher"
+// in the language of msgs.
+func (msgs Messages) CypherInputPrompt() string {
+	return Catalog.Format(msgs.locale, "cypherInputPrompt", nil)
+}
+
+// CypherExecuting says "正在执行 Cypher"
+// in the language the app shows.
+func CypherExecuting() string { return In(i18n.Locale()).CypherExecuting() }
+
+// CypherExecuting says "正在执行 Cypher"
+// in the language of msgs.
+func (msgs Messages) CypherExecuting() string {
+	return Catalog.Format(msgs.locale, "cypherExecuting", nil)
+}
+
+// CypherDisconnected says "连接已断开；Cypher 已保留。请连接原配置，再以新会话继续；不会自动执行 Cypher"
+// in the language the app shows.
+func CypherDisconnected() string { return In(i18n.Locale()).CypherDisconnected() }
+
+// CypherDisconnected says "连接已断开；Cypher 已保留。请连接原配置，再以新会话继续；不会自动执行 Cypher"
+// in the language of msgs.
+func (msgs Messages) CypherDisconnected() string {
+	return Catalog.Format(msgs.locale, "cypherDisconnected", nil)
+}
+
+// CypherFormatUnavailable says "Cypher 格式化暂不可用"
+// in the language the app shows.
+func CypherFormatUnavailable() string { return In(i18n.Locale()).CypherFormatUnavailable() }
+
+// CypherFormatUnavailable says "Cypher 格式化暂不可用"
+// in the language of msgs.
+func (msgs Messages) CypherFormatUnavailable() string {
+	return Catalog.Format(msgs.locale, "cypherFormatUnavailable", nil)
+}
+
+// CypherNativeExplain says "请在 Cypher 编辑器中显式运行原生 EXPLAIN 或 PROFILE"
+// in the language the app shows.
+func CypherNativeExplain() string { return In(i18n.Locale()).CypherNativeExplain() }
+
+// CypherNativeExplain says "请在 Cypher 编辑器中显式运行原生 EXPLAIN 或 PROFILE"
+// in the language of msgs.
+func (msgs Messages) CypherNativeExplain() string {
+	return Catalog.Format(msgs.locale, "cypherNativeExplain", nil)
+}
+
+// CypherParameters says "Cypher 参数"
+// in the language the app shows.
+func CypherParameters() string { return In(i18n.Locale()).CypherParameters() }
+
+// CypherParameters says "Cypher 参数"
+// in the language of msgs.
+func (msgs Messages) CypherParameters() string {
+	return Catalog.Format(msgs.locale, "cypherParameters", nil)
+}
+
+// CypherParameterJSON says "Cypher 参数 JSON"
+// in the language the app shows.
+func CypherParameterJSON() string { return In(i18n.Locale()).CypherParameterJSON() }
+
+// CypherParameterJSON says "Cypher 参数 JSON"
+// in the language of msgs.
+func (msgs Messages) CypherParameterJSON() string {
+	return Catalog.Format(msgs.locale, "cypherParameterJSON", nil)
+}
+
+// CypherParameterScope says "参数 JSON（仅当前标签，整数保留 int64 精度）"
+// in the language the app shows.
+func CypherParameterScope() string { return In(i18n.Locale()).CypherParameterScope() }
+
+// CypherParameterScope says "参数 JSON（仅当前标签，整数保留 int64 精度）"
+// in the language of msgs.
+func (msgs Messages) CypherParameterScope() string {
+	return Catalog.Format(msgs.locale, "cypherParameterScope", nil)
+}
+
+// CypherParameterBound says "Cypher 参数必须是 1 MiB 以内的 JSON 对象"
+// in the language the app shows.
+func CypherParameterBound() string { return In(i18n.Locale()).CypherParameterBound() }
+
+// CypherParameterBound says "Cypher 参数必须是 1 MiB 以内的 JSON 对象"
+// in the language of msgs.
+func (msgs Messages) CypherParameterBound() string {
+	return Catalog.Format(msgs.locale, "cypherParameterBound", nil)
+}
+
+// CypherParameterInvalid says "Cypher 参数必须是有效 JSON 对象，键不能重复，整数须在 int64 范围内"
+// in the language the app shows.
+func CypherParameterInvalid() string { return In(i18n.Locale()).CypherParameterInvalid() }
+
+// CypherParameterInvalid says "Cypher 参数必须是有效 JSON 对象，键不能重复，整数须在 int64 范围内"
+// in the language of msgs.
+func (msgs Messages) CypherParameterInvalid() string {
+	return Catalog.Format(msgs.locale, "cypherParameterInvalid", nil)
+}
+
+// GraphResultNative says "原生图结果"
+// in the language the app shows.
+func GraphResultNative() string { return In(i18n.Locale()).GraphResultNative() }
+
+// GraphResultNative says "原生图结果"
+// in the language of msgs.
+func (msgs Messages) GraphResultNative() string {
+	return Catalog.Format(msgs.locale, "graphResultNative", nil)
+}
+
+// GraphResultJSON says "Neo4j 原生图结果 JSON"
+// in the language the app shows.
+func GraphResultJSON() string { return In(i18n.Locale()).GraphResultJSON() }
+
+// GraphResultJSON says "Neo4j 原生图结果 JSON"
+// in the language of msgs.
+func (msgs Messages) GraphResultJSON() string {
+	return Catalog.Format(msgs.locale, "graphResultJSON", nil)
+}
+
+// GraphDisplayBound says "展示限制 256 KiB；完整类型化结果保留在当前文档"
+// in the language the app shows.
+func GraphDisplayBound() string { return In(i18n.Locale()).GraphDisplayBound() }
+
+// GraphDisplayBound says "展示限制 256 KiB；完整类型化结果保留在当前文档"
+// in the language of msgs.
+func (msgs Messages) GraphDisplayBound() string {
+	return Catalog.Format(msgs.locale, "graphDisplayBound", nil)
+}
+
+// GraphNotSubmitted says "尚未提交"
+// in the language the app shows.
+func GraphNotSubmitted() string { return In(i18n.Locale()).GraphNotSubmitted() }
+
+// GraphNotSubmitted says "尚未提交"
+// in the language of msgs.
+func (msgs Messages) GraphNotSubmitted() string {
+	return Catalog.Format(msgs.locale, "graphNotSubmitted", nil)
+}
+
+// GraphCompletionMissing says "未获得原生完成确认"
+// in the language the app shows.
+func GraphCompletionMissing() string { return In(i18n.Locale()).GraphCompletionMissing() }
+
+// GraphCompletionMissing says "未获得原生完成确认"
+// in the language of msgs.
+func (msgs Messages) GraphCompletionMissing() string {
+	return Catalog.Format(msgs.locale, "graphCompletionMissing", nil)
+}
+
+// GraphResultTruncated says "结果已截断"
+// in the language the app shows.
+func GraphResultTruncated() string { return In(i18n.Locale()).GraphResultTruncated() }
+
+// GraphResultTruncated says "结果已截断"
+// in the language of msgs.
+func (msgs Messages) GraphResultTruncated() string {
+	return Catalog.Format(msgs.locale, "graphResultTruncated", nil)
+}
+
+// Neo4jMetadataOpen says "查看 Neo4j 元数据"
+// in the language the app shows.
+func Neo4jMetadataOpen() string { return In(i18n.Locale()).Neo4jMetadataOpen() }
+
+// Neo4jMetadataOpen says "查看 Neo4j 元数据"
+// in the language of msgs.
+func (msgs Messages) Neo4jMetadataOpen() string {
+	return Catalog.Format(msgs.locale, "neo4jMetadataOpen", nil)
+}
+
+// Neo4jMetadataObservation says "Neo4j 原生元数据；属性类型为实时推断，查询不会自动执行"
+// in the language the app shows.
+func Neo4jMetadataObservation() string { return In(i18n.Locale()).Neo4jMetadataObservation() }
+
+// Neo4jMetadataObservation says "Neo4j 原生元数据；属性类型为实时推断，查询不会自动执行"
+// in the language of msgs.
+func (msgs Messages) Neo4jMetadataObservation() string {
+	return Catalog.Format(msgs.locale, "neo4jMetadataObservation", nil)
+}
+
+// Neo4jSessionPassword says "Neo4j 会话密码"
+// in the language the app shows.
+func Neo4jSessionPassword() string { return In(i18n.Locale()).Neo4jSessionPassword() }
+
+// Neo4jSessionPassword says "Neo4j 会话密码"
+// in the language of msgs.
+func (msgs Messages) Neo4jSessionPassword() string {
+	return Catalog.Format(msgs.locale, "neo4jSessionPassword", nil)
+}

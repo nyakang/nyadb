@@ -1,89 +1,82 @@
-This package is the private native Neo4j Bolt foundation. It does not register a
-connection type, persist a profile, publish a runtime provider, or add a workbench
-view. Those are separate integration stages.
+NyaDB registers Neo4j as an independent public connection with native Bolt or
+Neo4j routing, versioned profiles, URI import, credential-vault integration and
+an injectable connection editor. The public workbench offers qualified graph
+metadata, Cypher documents and the shared result grid plus native typed JSON.
 
 `Open` binds one official v6 driver to the original client, validates the native
-Neo4j agent, and disables both managed and auto-commit retries. `Prepare` captures
-immutable Cypher parameters; its plan belongs to that client and can be attempted
-once. `Execute` uses auto-commit `Session.Run`, records typed bounded rows and the
-native completion summary, and carries acknowledged bookmarks into subsequent
-sessions. Routing retains the configured scheme and advertised endpoints.
+Neo4j agent, and disables managed and auto-commit retries. `Prepare` deeply
+captures native parameters. A plan belongs to one client and can be attempted
+once. `Execute` performs one auto-commit `Session.Run`, retains bounded typed
+rows, and records native completion, counters and bookmarks. Neither Cypher
+text nor selected text is split by a SQL parser. Routing retains the configured
+scheme and advertised endpoints.
 
-An interrupted request retires its original driver after the session settles.
-`Close` cancels and waits for that operation; it cannot close a replacement client.
-Missing native completion remains uncertain, including native statement errors:
-arbitrary Cypher procedures and side effects cannot be inferred to have rolled
-back. Explicit recovery must never replay the original plan. A successful native
-summary remains observable when row retention is truncated; unread rows are
-discarded through `Consume`, allowing the server to complete the request.
+The adapter Session owns one original metadata client and up to 32 independent
+query clients. The runtime alone publishes monotonic session generations.
+Runtime and workbench wrappers preserve typed graph feature access and original
+ownership. A configured/home database is resolved through an original native
+operation; namespace identity is ProfileID/database, with no schema. Agent,
+protocol and address observations are not proof of database incarnation, cluster
+identity or permanent physical socket ownership.
+
+An interrupted request retires its original driver after its executor settles.
+Release, Close and cancellation wait for that original operation. Missing native
+completion remains uncertain, including native statement errors: arbitrary
+procedures and side effects cannot be assumed to have rolled back. The workbench
+retains this receipt and query text and requires explicit recovery. Preconnect,
+recovery, reconnect and workspace restoration never replay a query. Original
+cleanup cannot close a newer published session.
 
 Values retain exact signed integers, special floats, bytes, nested values,
-temporal kinds and zone/offset information, duration components, spatial SRIDs,
-node/relationship element IDs and legacy IDs, properties, and ordered paths.
-Graph objects are result values and are rejected as parameters. Retained row
-count, encoded data size, recursive depth, and item count are bounded. The driver
-can allocate a large native value while decoding it before this package captures
-it; these are retention bounds, not transport allocation bounds.
+temporal kinds and zones, duration components, spatial references, element IDs,
+legacy IDs, node and relationship properties, and ordered paths. The shared
+projection keeps exact values; native result JSON keeps graph identity and the
+summary. Snapshots deeply copy both. Native JSON display is limited to 256 KiB;
+the document retains the complete bounded result. Run-and-export includes typed
+JSONL, a manifest and the native graph result in `graph.json`. Result export is
+bounded by retained rows; it is not an unlimited graph/database export.
 
-TLS uses the URI hostname, custom CA roots, and optional client certificates.
-The pinned driver overrides `TlsConfig.ServerName` from the URI, so a conflicting
-SNI override is explicitly rejected. `+ssc` selects the driver's explicit
-certificate-verification bypass and cannot be combined with custom CA roots.
+Cypher JSON parameters are temporary per-document drafts. They are not saved in
+query text, history or restored workspaces. Duplicate keys, invalid JSON,
+overflowing integers and unsupported nesting are rejected before dispatch.
+Integers preserve int64; fractional/exponent values use finite native float64.
+The editor has Cypher comments/highlighting and native keyword, parameter,
+label, relationship, procedure and function completion. SQL formatting and
+structured SQL explain tools are unavailable. Cypher files execute one native
+source and are limited to 8 MiB.
 
-Run unit and concurrency checks with:
+Graph schemas retain native labels, relationship types, inferred node/relationship
+properties, indexes, constraints, procedures and all function overload rows.
+Qualified graph objects open read-only metadata snapshots rather than relational
+structures or implicit data queries. Schema retention shares a 16 MiB budget;
+these are live observations, not atomic or relational schemas. Native node/
+relationship objects are not accepted as request parameters.
+
+TLS uses the URI hostname, custom CA roots and optional client certificates.
+The driver derives TLS ServerName from the URI, so a conflicting SNI override is
+rejected. `+ssc` explicitly bypasses server certificate verification and cannot
+be combined with custom CA roots. Row, byte, depth and item budgets limit retained
+values; the driver can allocate a large value before adapter retention checks.
+
+Run the opt-in verifier in all supported fixture modes:
 
 ```sh
-go test -race ./internal/services/connections ./internal/services/neo4j
+python3 tools/verify_neo4j_fixture.py --mode anonymous --race --public
+python3 tools/verify_neo4j_fixture.py --mode basic --race --public
+python3 tools/verify_neo4j_fixture.py --mode tls --race --public
+python3 tools/verify_neo4j_fixture.py --mode mtls --race --public
 ```
 
-The opt-in native verifier deploys its own digest-pinned official Neo4j 5.26.21
-Community Docker node, writes secrets only to private temporary files, requires
-every acceptance case to pass, and validates immutable ID and random labels
-before cleanup. Run each mode:
+The verifier creates its own digest-pinned official Neo4j 5.26.21 Community Docker
+node and private configuration/credentials. It requires all native foundation,
+profile/editor, session and public-workbench cases to pass without skips. Real
+acceptance includes saved-profile reopening, native typed values/metadata,
+published generations, committed writes with lost/canceled responses, explicit
+recovery, original close/termination and localized workbench/form images. Cleanup
+checks immutable container ID and nonce labels. Evidence and sanitized logs stay
+under ignored `build/neo4j/`.
 
-```sh
-python3 tools/verify_neo4j_fixture.py --mode anonymous --race
-python3 tools/verify_neo4j_fixture.py --mode basic --race
-python3 tools/verify_neo4j_fixture.py --mode tls --race
-python3 tools/verify_neo4j_fixture.py --mode mtls --race
-```
-
-Reports, sanitized logs and source hashes are written under ignored
-`build/neo4j/`. Native acceptance covers real authentication, direct and routing
-schemes, TLS CA/hostname and mTLS rejection, parameterized graph writes/readback,
-typed values, native summaries/errors, bounded results, independently observed
-committed writes with lost/canceled responses, blocked transactions, original
-close/termination, cleanup and replacement survival. It does not establish
-support for other Neo4j versions, Enterprise/cluster administration, graph UI,
-data editing or public connection/profile/session integration.
-
-The private profile/editor stage lives in `connections`, `localdb` and
-`connectioneditor`. Add `--profile` to the verifier to exercise versioned native
-settings, pure URI import, SQLite restart/copy, injected credential-vault save,
-closed original connection checks, canceled real handshakes, and 48 localized
-form screenshots per mode. It retains a private Kind without registering a
-descriptor or runtime provider. Password-free basic profiles may be saved for
-an explicit later prompt; the editor requires a password before testing.
-
-The private session stage implements neutral `Session`, `MetadataProvider`,
-`QueryProvider`, `GraphQueryLease` and `GraphMetadataProvider` contracts. It owns
-one original metadata client and at most 32 independent original query clients.
-Native database observations resolve the configured/home database; namespaces
-retain profile/database identity. Labels, relationships, inferred properties,
-indexes, constraints, procedures and every function overload retain their native
-rows. Graph schemas have a shared 16 MiB retention budget and are live observations,
-not atomic snapshots or relational table structures.
-
-The common result projection also retains a complete neutral `SQLResult.Graph`:
-exact graph/temporal/spatial/nested values, native counters, bookmarks, database,
-server, failure code and completion state. Missing completion makes arbitrary
-Cypher uncertain and retires the original query client. Cancellation and release
-wait for the captured executor; explicit replacement never replays its source.
-Native driver/pool ownership does not promise permanent use of one socket or
-prove cluster/database incarnation from an agent/version/address observation.
-
-Use `--session --race` in each verifier mode to include qualified metadata,
-typed leases, response-loss after independently confirmed commits, original
-cancel/release/session close, blocked transaction cleanup and explicit recovery.
-This includes the existing profile forms; it does not register a runtime provider
-or constitute a public Cypher/graph workbench, data editing, or management UI.
+Graph visualization/expansion, graph data editing/import, unlimited export,
+structured Cypher plans, administration/RBAC, Enterprise/cluster validation and
+other versions remain future work. Their capabilities are not inferred from a
+successful Community connection or the ability to execute arbitrary Cypher.

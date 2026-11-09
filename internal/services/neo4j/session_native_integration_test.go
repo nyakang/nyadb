@@ -145,7 +145,7 @@ func TestNeo4jNativeSessionQualifiedMetadataAndOriginalDatabase(t *testing.T) {
 	matched := map[string]bool{}
 	for _, o := range objects {
 		if o.Name == label || o.Name == rel || o.Name == index || o.Name == constraint {
-			if o.Ref != s.Namespace("neo4j").Object(o.Kind, o.Name) || o.Definition == "" || o.Kind == "table" {
+			if o.Ref != s.Namespace("neo4j").Object(o.Ref.Kind, o.Name) || o.Definition == "" || o.Kind == "table" {
 				t.Fatal("graph object identity/definition lost")
 			}
 			matched[o.Name] = true

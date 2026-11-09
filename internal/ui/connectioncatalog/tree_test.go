@@ -8,7 +8,7 @@ import (
 
 func TestNavicatObservedTreeGroupHierarchy(t *testing.T) {
 	s := New()
-	if got := s.catalogTreeDirect(); len(got) != 27 {
+	if got := s.catalogTreeDirect(); len(got) != 28 {
 		t.Fatalf("database rows including Qdrant; got %d", len(got))
 	}
 	groups := s.catalogTreeGroups()
@@ -36,6 +36,8 @@ func TestNavicatObservedTreeExpansionAndSelection(t *testing.T) {
 	if s.treeOpen["华为"] {
 		t.Fatal("vendors should start collapsed")
 	}
+	tt.Scroll(450, 450, 0, 80)
+	tt.Frame()
 	if err := tt.Click("展开 华为"); err != nil {
 		t.Fatal(err)
 	}

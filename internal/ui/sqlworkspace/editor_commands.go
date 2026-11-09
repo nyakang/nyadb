@@ -12,6 +12,10 @@ import (
 )
 
 func (s *State) Format(d *Document) {
+	if d != nil && d.cypher() {
+		d.err = locales.Text("Cypher 格式化暂不可用")
+		return
+	}
 	if d != nil && d.cql() {
 		d.err = locales.Text("Cassandra 暂不支持 CQL 格式化")
 		return
@@ -40,6 +44,10 @@ func (s *State) Format(d *Document) {
 	d.Editor.Insert(formatted)
 }
 func (s *State) completions(d *Document, r editor.CompletionRequest) {
+	if d != nil && d.cypher() {
+		s.cypherCompletions(d, r)
+		return
+	}
 	if d != nil && d.nativeCommands {
 		return
 	}
@@ -98,6 +106,10 @@ func (s *State) completions(d *Document, r editor.CompletionRequest) {
 	d.Editor.ShowCompletions(r.Offset-len(r.Prefix), items)
 }
 func (s *State) Explain(d *Document) {
+	if d != nil && d.cypher() {
+		d.err = locales.Text("请在 Cypher 编辑器中显式运行原生 EXPLAIN 或 PROFILE")
+		return
+	}
 	if d != nil && d.cql() {
 		d.err = locales.Text("Cassandra 不支持 EXPLAIN")
 		return

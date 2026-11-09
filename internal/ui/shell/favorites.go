@@ -118,6 +118,9 @@ func (s *State) favoriteObject(_ ui.Services, profile int64, database, name, kin
 	s.favorites.Add(favorites.Entry{ProfileID: profile, Kind: "object", Object: ref, NamespaceLabel: database, Name: name})
 }
 func searchFavoriteKind(kind string) string {
+	if neutral := neutralObjectKind(kind); neutral != kind {
+		return neutral
+	}
 	switch kind {
 	case "表":
 		return "table"

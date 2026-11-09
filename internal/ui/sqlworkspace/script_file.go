@@ -2,6 +2,7 @@ package sqlworkspace
 
 import (
 	"context"
+	"errors"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"io"
 )
@@ -20,6 +21,15 @@ func (s *State) RunFile(d *Document) {
 	if !ok {
 		d.err = "当前会话不支持 SQL 文件执行"
 		return
+	}
+	var graphExecute func(context.Context, string, string) (contract.SQLResult, error)
+	if d.cypher() {
+		var e error
+		graphExecute, e = s.graphExecutor(d)
+		if e != nil {
+			d.err = e.Error()
+			return
+		}
 	}
 	files := s.persistence.files
 	if files.OpenPath == nil || files.OpenReader == nil {
@@ -45,7 +55,18 @@ func (s *State) RunFile(d *Document) {
 			reader, e = files.OpenReader(path)
 			if e == nil {
 				executed = true
-				out, e = lease.ExecuteFile(ctx, db, reader)
+				if graphExecute != nil {
+					var raw []byte
+					raw, e = io.ReadAll(io.LimitReader(reader, (8<<20)+1))
+					if e == nil && len(raw) > 8<<20 {
+						e = errors.New("Cypher file exceeds 8 MiB")
+					}
+					if e == nil {
+						out, e = graphExecute(ctx, db, string(raw))
+					}
+				} else {
+					out, e = lease.ExecuteFile(ctx, db, reader)
+				}
 				ce := reader.Close()
 				if e == nil {
 					e = ce

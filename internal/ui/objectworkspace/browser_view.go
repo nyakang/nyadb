@@ -215,6 +215,7 @@ func (s *State) BrowserView(c *ui.Context) {
 	searchEngine := s.deps.Engine != nil && (s.deps.Engine(a.scope.profile) == "elasticsearch" || s.deps.Engine(a.scope.profile) == "easysearch" || s.deps.Engine(a.scope.profile) == "solr")
 	documentEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "mongodb"
 	couchdbEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "couchdb"
+	graphEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "neo4j"
 	qdrantEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "qdrant"
 	meilisearchEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "meilisearch"
 	canOpen, canProgram := a.canOpen, a.canProgram
@@ -226,6 +227,12 @@ func (s *State) BrowserView(c *ui.Context) {
 					{"打开表", "open-table", "打开选中表数据"}, {"设计表", "design-table", "设计选中表"}, {"查看结构", "design-table", "打开选中表结构"},
 				} {
 					item := action
+					if graphEngine {
+						if action.label != "打开表" {
+							continue
+						}
+						item.label, item.accessible = "查看定义（只读）", "查看 Neo4j 元数据"
+					}
 					if qdrantEngine {
 						if action.label == "设计表" {
 							continue
@@ -296,6 +303,9 @@ func (s *State) BrowserView(c *ui.Context) {
 						}
 					}
 					canAction := canOpen
+					if graphEngine {
+						canAction = canProgram
+					}
 					if qdrantEngine && action.label == "打开表" {
 						canAction = canOpen && items[a.frame.Row].Kind == "向量点" && s.capabilities(a.scope.profile).Documents
 					}
@@ -312,6 +322,10 @@ func (s *State) BrowserView(c *ui.Context) {
 						})
 					}).Clicked() {
 						obj := items[a.frame.Row]
+						if graphEngine {
+							s.openObjectFor(c.Services(), a.scope.profile, database, obj.Name, obj.Kind)
+							return
+						}
 						if (item.label == "打开表" || item.label == "打开集合" || item.label == "打开键" || item.label == "打开文档" || item.label == "浏览向量点") && s.deps.OpenData != nil {
 							s.deps.OpenData(c.Services(), a.scope.profile, database, obj.Name)
 						} else if action.label == "查看结构" {
@@ -322,7 +336,7 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 				}
 				canCreate := a.canCreate
-				if !documentEngine && !redisEngine && !searchEngine && !couchdbEngine && !meilisearchEngine && !qdrantEngine {
+				if !documentEngine && !redisEngine && !searchEngine && !couchdbEngine && !meilisearchEngine && !qdrantEngine && (s.deps.Engine == nil || s.deps.Engine(a.scope.profile) != "neo4j") {
 					if ui.Button(c, "").Label(locales.Text("新建表")).Tooltip(locales.Text("新建表")).
 						Disabled(!canCreate).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
 						ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
@@ -341,6 +355,9 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 				}
 				kinds := []string{"全部", "表", "视图"}
+				if s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "neo4j" {
+					kinds = []string{"全部", "图标签", "关系类型", "图索引", "图约束", "图过程", "图函数"}
+				}
 				if qdrantEngine {
 					kinds = []string{"全部", "集合信息", "向量点", "集合别名"}
 				}

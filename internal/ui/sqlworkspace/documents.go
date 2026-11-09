@@ -99,7 +99,7 @@ func (d *Document) Name() string {
 	if d.name != "" {
 		return d.name
 	}
-	return fmt.Sprintf("SQL %d", d.id)
+	return d.queryText(fmt.Sprintf("SQL %d", d.id))
 }
 func (d *Document) Dirty() bool { return d.Editor != nil && d.Editor.Buffer.String() != d.savedText }
 func (s *State) SetPersistence(store *queries.Store, files Files, restored func(queries.Workspace)) {
@@ -298,6 +298,9 @@ func (s *State) Save(d *Document, asFile bool, next func(ui.Services)) {
 		}
 		path := d.path
 		name := d.Name() + ".sql"
+		if d.cypher() {
+			name = d.Name() + ".cypher"
+		}
 		if d.cql() {
 			name = d.Name() + ".cql"
 		}

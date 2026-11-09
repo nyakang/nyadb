@@ -84,6 +84,7 @@ func (d *Document) rememberResultLayouts() {
 }
 func (d *Document) setResult(result *contract.SQLResult) {
 	d.rememberResultLayouts()
+	d.graphJSON = ""
 	d.result = result
 	d.resultViews = map[int]*resultView{}
 	if result != nil {

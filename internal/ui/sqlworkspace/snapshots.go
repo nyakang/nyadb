@@ -1,6 +1,7 @@
 package sqlworkspace
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
@@ -21,6 +22,10 @@ type resultSnapshot struct {
 
 func resultSnapshotSize(r *contract.SQLResult) int64 {
 	var n int64
+	if r.Graph != nil {
+		raw, _ := json.Marshal(r.Graph)
+		n += int64(len(raw))
+	}
 	for _, step := range r.Steps {
 		n += int64(len(step.SQL) + len(step.State) + len(step.Error) + 64)
 	}
@@ -55,10 +60,14 @@ func (s *State) pinResult(d *Document) bool {
 		return false
 	}
 	r := &contract.SQLResult{Steps: append([]contract.StatementOutcome(nil), d.result.Steps...), Duration: d.result.Duration, AffectedRows: d.result.AffectedRows, Truncated: d.result.Truncated}
+	if d.result.Graph != nil {
+		graph := d.result.Graph.Clone()
+		r.Graph = &graph
+	}
 	for _, set := range d.result.ResultSets() {
 		r.Sets = append(r.Sets, cloneCachedResultSet(set))
 	}
-	x := &Document{snapshotOwner: d, id: d.id, name: d.Name(), profileID: d.profileID, database: d.database, catalog: d.catalog, namespaceSchema: d.namespaceSchema}
+	x := &Document{commandDialect: d.commandDialect, snapshotOwner: d, id: d.id, name: d.Name(), profileID: d.profileID, database: d.database, catalog: d.catalog, namespaceSchema: d.namespaceSchema}
 	x.setResult(r)
 	d.nextSnapshot++
 	x.name = fmt.Sprintf("%s-%d", d.Name(), d.nextSnapshot)

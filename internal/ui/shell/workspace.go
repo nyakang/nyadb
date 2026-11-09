@@ -148,7 +148,7 @@ func (s *State) sqlWorkspaceDependencies() sqlworkspace.Dependencies {
 		},
 		FavoriteAsset: s.favoriteQuery, CanFavorite: s.favorites.Available,
 		AssetsChanged:    s.sqlAssetsChanged,
-		StatementAtCaret: s.sqlStatementAtCaret, FormatSQL: s.sqlFormat, QueryDialect: s.sqlPlanEngine,
+		GraphCompletions: s.graphCompletions, StatementAtCaret: s.sqlStatementAtCaret, FormatSQL: s.sqlFormat, QueryDialect: s.sqlPlanEngine,
 		ValidateExplain:   s.sqlValidateExplain,
 		CompletionCatalog: s.sqlCompletionCatalog,
 		Completions: func(id int64, db string) []string {
@@ -943,6 +943,18 @@ func (s *State) SetDataSources(open func(context.Context, datasources.Config) (d
 
 func neutralObjectKind(kind string) string {
 	switch kind {
+	case "图标签":
+		return "label"
+	case "关系类型":
+		return "relationship"
+	case "图索引":
+		return "index"
+	case "图约束":
+		return "constraint"
+	case "图过程":
+		return "procedure"
+	case "图函数":
+		return "function"
 	case "快照管理":
 		return "snapshot_management"
 	case "集合信息":

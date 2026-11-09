@@ -111,7 +111,7 @@ func Run() error {
 		})
 		state.SetSQLPersistence(queryStore, sqlworkspace.Files{
 			OpenPath: func() (string, error) {
-				paths, e := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: window, Title: locales.Text("打开 SQL 文件"), Filters: []mygo.FileFilter{{Name: "SQL", Extensions: []string{"sql", "cql"}}}})
+				paths, e := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: window, Title: locales.Text("打开 SQL 文件"), Filters: []mygo.FileFilter{{Name: "SQL", Extensions: []string{"sql", "cql", "cypher", "cyp"}}}})
 				if e != nil || len(paths) == 0 {
 					return "", e
 				}

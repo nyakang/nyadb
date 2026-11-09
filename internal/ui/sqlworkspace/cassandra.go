@@ -10,6 +10,9 @@ func (d *Document) queryText(text string) string {
 	if d.cql() {
 		text = strings.ReplaceAll(text, "SQL", "CQL")
 	}
+	if d.cypher() {
+		text = strings.ReplaceAll(text, "SQL", "Cypher")
+	}
 	return locales.Text(text)
 }
 
@@ -26,6 +29,10 @@ func (s *State) applyQueryDialect(d *Document, profile int64) {
 	language := "SQL"
 	if d.nativeCommands {
 		language = "JSON"
+	}
+	if d.cypher() {
+		d.Editor.Buffer.SetLanguage(cypherLanguage)
+		return
 	}
 	d.Editor.Buffer.SetLanguage(editor.LanguageNamed(language))
 }

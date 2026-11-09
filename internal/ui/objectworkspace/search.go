@@ -314,6 +314,18 @@ func searchObjectKind(kind string) string {
 		return "type"
 	}
 	switch kind {
+	case "图标签":
+		return "label"
+	case "关系类型":
+		return "relationship"
+	case "图索引":
+		return "index"
+	case "图约束":
+		return "constraint"
+	case "图过程":
+		return "procedure"
+	case "图函数":
+		return "function"
 	case "Core":
 		return "core"
 	case "索引":

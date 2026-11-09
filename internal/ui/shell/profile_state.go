@@ -140,7 +140,7 @@ func (s *State) deleteProfileID(id int64) {
 	}
 	s.loadProfiles()
 	var credentialErr error
-	if (p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind.IsREST() || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Cassandra) && s.credentialVault != nil {
+	if (p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind.IsREST() || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Neo4j || p.Kind == connections.Cassandra) && s.credentialVault != nil {
 		credentialErr = s.credentialVault.Delete(p.ID, "")
 		if p.Kind == connections.Redis {
 			credentialErr = errors.Join(credentialErr, s.credentialVault.Delete(p.ID, connections.RedisSentinelCredential))

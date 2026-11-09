@@ -16,6 +16,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/meilisearch"
 	mongosvc "github.com/nyakang/nyadb/internal/services/mongodb"
 	mysqlsvc "github.com/nyakang/nyadb/internal/services/mysql"
+	"github.com/nyakang/nyadb/internal/services/neo4j"
 	oraclesvc "github.com/nyakang/nyadb/internal/services/oracle"
 	"github.com/nyakang/nyadb/internal/services/qdrant"
 	redissvc "github.com/nyakang/nyadb/internal/services/redis"
@@ -26,6 +27,7 @@ import (
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.Neo4j, ProviderFunc(neo4j.OpenSession))
 	m.Register(connections.Qdrant, ProviderFunc(qdrant.OpenSession))
 	m.Register(connections.Meilisearch, ProviderFunc(meilisearch.OpenSession))
 	m.Register(connections.CouchDB, ProviderFunc(couchdb.OpenSession))

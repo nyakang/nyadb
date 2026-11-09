@@ -65,6 +65,9 @@ func TestNeo4jSessionTypedResultAndCompletedSinkFailureRetainReceipt(t *testing.
 		t.Fatal(e)
 	}
 	r, e := lease.ExecuteStream(context.Background(), "neo4j", "RETURN 1", func(_ int, _ []contract.Column, row []contract.Cell) error {
+		if row == nil {
+			return nil
+		}
 		row[0].Text = "changed"
 		return errors.New("sink failed")
 	})
@@ -168,10 +171,10 @@ func TestNeo4jGraphMetadataRetainsOverloadsAndQualifiedObjects(t *testing.T) {
 	}
 	var function contract.DBObject
 	for _, o := range objects {
-		if o.Ref != n.Object(o.Kind, o.Name) {
+		if o.Ref != n.Object(o.Ref.Kind, o.Name) {
 			t.Fatal("lost qualified identity")
 		}
-		if o.Kind == "function" {
+		if o.Ref.Kind == "function" {
 			function = o
 		}
 	}

@@ -62,3 +62,11 @@ class Neo4jFixtureOwnershipTests(unittest.TestCase):
         for name in FIXTURE.SESSION_REQUIRED:
             with self.subTest(name=name), self.assertRaises(RuntimeError):
                 FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), profile=True, session=True)
+
+    def test_public_acceptance_requires_runtime_workbench_and_native_no_replay(self):
+        names = FIXTURE.REQUIRED + FIXTURE.PROFILE_REQUIRED + FIXTURE.SESSION_REQUIRED + FIXTURE.PUBLIC_REQUIRED
+        passed = '\n'.join('--- PASS: TestNeo4jNative'+name+' (0.01s)' for name in names)
+        FIXTURE.check_acceptance(passed, profile=True, session=True, public=True)
+        for name in FIXTURE.PUBLIC_REQUIRED:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                FIXTURE.check_acceptance(passed.replace('--- PASS: TestNeo4jNative'+name, '--- SKIP: TestNeo4jNative'+name), profile=True, session=True, public=True)

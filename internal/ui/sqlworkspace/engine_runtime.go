@@ -60,3 +60,18 @@ func (l *engineLease) ExecuteFile(ctx context.Context, db string, r io.Reader) (
 	}
 	return f.ExecuteFile(ctx, db, r)
 }
+
+func (l *engineLease) SupportsGraph() bool {
+	if v, ok := l.QueryLease.(interface{ SupportsGraph() bool }); ok {
+		return v.SupportsGraph()
+	}
+	_, ok := l.QueryLease.(contract.GraphQueryLease)
+	return ok
+}
+func (l *engineLease) ExecuteGraph(ctx context.Context, r contract.GraphQueryRequest) (contract.GraphResult, error) {
+	p, ok := l.QueryLease.(contract.GraphQueryLease)
+	if !ok {
+		return contract.GraphResult{}, contract.ErrUnsupported
+	}
+	return p.ExecuteGraph(ctx, r)
+}

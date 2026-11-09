@@ -201,6 +201,9 @@ func (s *State) engineLabel(w *Workspace) string {
 			return descriptor.Label
 		}
 	}
+	if w.Kind == connections.Neo4j {
+		return "Neo4j"
+	}
 	if w.Kind == connections.Cassandra {
 		return "Apache Cassandra"
 	}

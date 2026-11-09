@@ -97,12 +97,13 @@ func (s *State) View(c *ui.Context, t *Document) {
 						s.RequestCancel(t)
 					}
 					s.sqlLayoutMenu(c, t)
-					if !t.restRequests() && !t.cql() {
+					s.graphOptionsView(c, t)
+					if !t.restRequests() && !t.cql() && !t.cypher() {
 						if ui.Button(c, formatLabel).Clicked() {
 							s.Format(t)
 						}
 					}
-					if !t.nativeCommands && !t.cql() {
+					if !t.nativeCommands && !t.cql() && !t.cypher() {
 						if ui.Button(c, "EXPLAIN").Disabled(t.loading || !connected || t.nativeCommands).Clicked() {
 							s.Explain(t)
 						}
@@ -128,7 +129,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 					if ui.Button(c, locales.Text("另存为")).Clicked() {
 						s.Save(t, true, nil)
 					}
-					if !t.nativeCommands && !t.cql() {
+					if !t.nativeCommands && !t.cql() && !t.cypher() {
 						if ui.Button(c, locales.Text("AI SQL")).Label(locales.Text("打开 AI SQL 助手")).Disabled(!s.AIAvailable() || t.loading).Clicked() {
 							s.OpenAI(t)
 						}
@@ -177,7 +178,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 					id > 0 && s.runtime() != nil && s.connected(id) && s.runtime().IsConnected(id)
 				ui.Row(c).Padding(3, 8).Gap(9).AlignItems(ui.Center).Children(func() {
 					recoveryText := locales.Text("新会话无法恢复事务或临时状态；不会自动执行 SQL")
-					if t.nativeCommands || t.cql() {
+					if t.nativeQuery() {
 						recoveryText = locales.Text("请求原文已保留；恢复连接后不会自动执行请求")
 					}
 					ui.Text(c, recoveryText).
@@ -209,6 +210,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 					})
 				}
 			}
+			s.graphParametersView(c, t)
 			theme.ApplySQLAppearance(c, t.Editor)
 			t.Editor.Label = t.queryText("SQL 编辑器")
 			if t.nativeCommands {
@@ -303,6 +305,9 @@ func sqlResultSummary(t *Document) string {
 	if t.result == nil {
 		return locales.Text("尚未执行")
 	}
+	if t.result.Graph != nil {
+		return graphSummary(t.result.Graph)
+	}
 	set := selectedResult(t)
 	duration := fmt.Sprintf("%d ms", max(0, t.result.Duration.Milliseconds()))
 	if len(set.Columns) > 0 {
@@ -330,6 +335,9 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 			return
 		}
 		r := t.result
+		if s.graphResultView(c, t) {
+			return
+		}
 		if hasEnqueued(*r) {
 			ui.Text(c, t.admissionText("任务已接收，尚未确认完成", "请求已受理，尚未确认完成")).Padding(3, 8)
 		}
@@ -372,6 +380,8 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 						switch state {
 						case contract.StatementEnqueued:
 							state = t.admissionText("任务已接收，尚未确认完成", "请求已受理，尚未确认完成")
+						case "completed":
+							state = locales.Text("原生执行已确认")
 						case "executed":
 							state = locales.Text("已执行")
 						case "not_executed":
@@ -394,7 +404,9 @@ func (s *State) resultContent(c *ui.Context, t *Document) {
 		}
 		if len(set.Columns) == 0 {
 			ack := fmt.Sprintf(locales.Text("影响 %d 行"), set.AffectedRows)
-			if set.AffectedRows < 0 {
+			if r.Graph != nil && !r.Graph.Completed {
+				ack = graphSummary(r.Graph)
+			} else if set.AffectedRows < 0 {
 				ack = locales.Text("原生执行已确认")
 			}
 			ui.Text(c, ack).

@@ -1,6 +1,8 @@
 package objectworkspace
 
 import (
+	"bytes"
+	"encoding/json"
 	"strconv"
 	"strings"
 
@@ -17,6 +19,10 @@ func (d *programDocument) View(c *ui.Context) {
 	}
 	palette := theme.Colors(c)
 	obj := d.data
+	if obj.Engine == "Neo4j" {
+		d.graphDefinitionView(c)
+		return
+	}
 	ui.Column(c).Fill().Background(palette.App).Children(func() {
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Padding(3, 8).Gap(8).AlignItems(ui.Center).
 			Background(palette.Header).Children(func() {
@@ -88,4 +94,31 @@ func definitionLines(definition string) []string {
 		lines[500] = locales.Text("… (定义过长，仅展示前 500 行)")
 	}
 	return lines
+}
+
+// Graph objects are observations, not SQL structures or executable routines.
+func GraphDefinitionKind(kind string) bool {
+	switch kind {
+	case "图标签", "关系类型", "图索引", "图约束", "图过程", "图函数":
+		return true
+	}
+	return false
+}
+func (d *programDocument) graphDefinitionView(c *ui.Context) {
+	text := d.data.Definition
+	var out bytes.Buffer
+	if json.Indent(&out, []byte(text), "", "  ") == nil {
+		text = out.String()
+	}
+	ui.Column(c).Fill().Padding(8).Gap(6).Children(func() {
+		ui.Text(c, d.database+" / "+d.name+" · "+locales.Text(d.kind)+" · "+locales.Text("只读")).SingleLine()
+		ui.Text(c, locales.Text("Neo4j 原生元数据；属性类型为实时推断，查询不会自动执行")).SingleLine()
+		ui.ScrollBoth(c).Grow(1).Children(func() {
+			ui.Column(c).Gap(2).Children(func() {
+				for _, line := range definitionLines(text) {
+					ui.Text(c, line)
+				}
+			})
+		})
+	})
 }

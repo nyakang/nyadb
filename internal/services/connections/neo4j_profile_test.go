@@ -53,8 +53,8 @@ func TestNeo4jProfilesPreserveNativeSchemesRoutingAndExactCredentials(t *testing
 	if connections.ValidateNeo4jDraftCredential(cfg, "") != nil || connections.ValidateNeo4jCredential(cfg, "") == nil {
 		t.Fatal("missing password cannot be deferred to explicit prompt")
 	}
-	if _, registered := connections.Describe(connections.Neo4j); registered {
-		t.Fatal("private profile stage registered an unimplemented provider")
+	if d, registered := connections.Describe(connections.Neo4j); !registered || d.Dialect != "cypher" || !d.Capabilities.Query || !d.Capabilities.Metadata || d.Capabilities.EditableTables {
+		t.Fatal("Neo4j public descriptor lost native capabilities")
 	}
 }
 

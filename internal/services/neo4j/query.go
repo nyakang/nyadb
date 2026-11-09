@@ -2,8 +2,6 @@ package neo4j
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"io"
 	"slices"
@@ -11,6 +9,7 @@ import (
 	"time"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/graphresult"
 )
 
 type queryLease struct {
@@ -183,12 +182,15 @@ func (l *queryLease) ExecuteStream(ctx context.Context, database, source string,
 	start := time.Now()
 	r, e := l.ExecuteGraph(ctx, Request{Query: source, Database: database})
 	defer func() { result.Duration = time.Since(start); result.SetLegacyView() }()
-	result = projectGraphResult(source, r)
+	result = graphresult.Project(source, r)
 	if e != nil && len(result.Steps) > 0 {
 		result.Steps[0].Error = e.Error()
 	}
 	if sink != nil && e == nil && len(result.Sets) > 0 {
 		set := result.Sets[0]
+		if e = sink(0, slices.Clone(set.Columns), nil); e != nil {
+			return result, e
+		}
 		for _, row := range set.Rows {
 			if e = ctx.Err(); e != nil {
 				break
@@ -206,62 +208,6 @@ func (l *queryLease) ExecuteStream(ctx context.Context, database, source string,
 		}
 	}
 	return result, e
-}
-func projectGraphResult(source string, r Response) contract.SQLResult {
-	copy := r.Clone()
-	result := contract.SQLResult{AffectedRows: -1, Graph: &copy}
-	if !r.Attempted {
-		return result
-	}
-	state := "uncertain"
-	if r.Completed {
-		state = "completed"
-	}
-	result.Steps = []contract.StatementOutcome{{SQL: source, State: state, AffectedRows: -1}}
-	if len(r.Columns) == 0 {
-		return result
-	}
-	set := contract.ResultSet{AffectedRows: -1, Columns: make([]contract.Column, len(r.Columns))}
-	for i, k := range r.Columns {
-		set.Columns[i] = contract.Column{Name: k, DatabaseType: "Neo4j native value", Nullable: true}
-	}
-	for _, row := range r.Rows {
-		cells := make([]contract.Cell, len(row))
-		for i, v := range row {
-			cells[i] = graphCell(v)
-		}
-		set.Rows = append(set.Rows, cells)
-	}
-	if r.Truncated {
-		set.Truncation = []string{"native retention"}
-	}
-	result.Sets = []contract.ResultSet{set}
-	return result
-}
-func graphCell(v Value) contract.Cell {
-	switch v.Kind {
-	case "null":
-		return contract.Cell{Kind: contract.Null}
-	case "string":
-		return contract.Cell{Kind: contract.Text, Text: v.Text}
-	case "integer":
-		return contract.Cell{Kind: contract.Integer, Text: v.Text}
-	case "float":
-		return contract.Cell{Kind: contract.Floating, Text: v.Text}
-	case "boolean":
-		return contract.Cell{Kind: contract.Boolean, Text: v.Text}
-	case "bytes":
-		raw, _ := base64.StdEncoding.DecodeString(v.Text)
-		if raw == nil {
-			raw = []byte{}
-		}
-		return contract.Cell{Kind: contract.Binary, Bytes: raw}
-	case "date", "datetime", "local_datetime", "time", "local_time":
-		return contract.Cell{Kind: contract.DateTime, Text: v.Text}
-	default:
-		raw, _ := json.Marshal(v)
-		return contract.Cell{Kind: contract.JSON, Text: string(raw)}
-	}
 }
 
 var _ contract.GraphQueryLease = (*queryLease)(nil)

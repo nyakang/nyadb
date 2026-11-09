@@ -62,6 +62,10 @@ func (s *State) completionCatalog(d *Document) sqltext.CompletionCatalog {
 	return c
 }
 func (s *State) updateCompletionMetadata(d *Document) {
+	if d.cypher() {
+		d.metadata.stop()
+		return
+	}
 	if s.deps.CompletionSource == nil || s.deps.CompletionCatalog == nil || d.closed || d.recoveryNeeded || !s.connected(d.profileID) {
 		d.metadata.stop()
 		return

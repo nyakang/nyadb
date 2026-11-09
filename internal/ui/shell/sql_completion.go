@@ -111,3 +111,13 @@ func (s *State) sqlCompletionSource(id int64) sqlworkspace.CompletionSource {
 		return columns, nil
 	}}
 }
+
+func (s *State) graphCompletions(id int64, database string) []sqlworkspace.GraphCompletion {
+	var values []sqlworkspace.GraphCompletion
+	for _, o := range s.sessions.CacheFor(id)[database] {
+		if o.Ref.ProfileID == id && o.Ref.Catalog == database && o.Ref.Schema == "" && o.Engine == "Neo4j" {
+			values = append(values, sqlworkspace.GraphCompletion{Name: o.Name, Kind: o.Ref.Kind})
+		}
+	}
+	return values
+}

@@ -18,7 +18,7 @@ func (s *State) objectColumns(profile int64) []ui.TableColumn {
 	if engine == "meilisearch" {
 		columns = []ui.TableColumn{{ID: "name", Title: "名称", Width: 265}, {ID: "kind", Title: "类型", Width: 100}, {ID: "created", Title: "创建时间", Width: 200}, {ID: "updated", Title: "修改时间", Width: 200}}
 	}
-	if engine == "mongodb" || engine == "redis" || (engine == "elasticsearch" || engine == "easysearch" || engine == "solr") {
+	if engine == "neo4j" || engine == "mongodb" || engine == "redis" || (engine == "elasticsearch" || engine == "easysearch" || engine == "solr") {
 		columns = []ui.TableColumn{{ID: "name", Title: "名称", Width: 265}, {ID: "kind", Title: "类型", Width: 100}}
 	}
 	if engine == "postgresql" {
@@ -53,7 +53,7 @@ func (s *State) objectCell(profile int64, obj contract.DBObject, col int) string
 		}
 		return ""
 	}
-	if engine == "mongodb" || engine == "redis" || (engine == "elasticsearch" || engine == "easysearch" || engine == "solr") {
+	if engine == "neo4j" || engine == "mongodb" || engine == "redis" || (engine == "elasticsearch" || engine == "easysearch" || engine == "solr") {
 		if col == 0 {
 			return obj.Name
 		}

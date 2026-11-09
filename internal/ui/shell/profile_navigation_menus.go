@@ -78,7 +78,7 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 	}
 	s.selectNavigationNode(services, navigation.ConnectionKey(profile.ID))
 	canMySQL := profile.Kind.IsMySQLFamily()
-	canConnect := canMySQL || profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.SQLite || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.DuckDB || profile.Kind.IsREST() || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis || profile.Kind == connections.Cassandra
+	canConnect := canMySQL || profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.SQLite || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.DuckDB || profile.Kind.IsREST() || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis || profile.Kind == connections.Neo4j || profile.Kind == connections.Cassandra
 	status := s.sessions.StatusFor(profile.ID)
 	connected := status == "已连接"
 	connecting := status == "连接中"

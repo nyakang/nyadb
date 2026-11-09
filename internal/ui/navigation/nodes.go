@@ -56,7 +56,7 @@ var postgresNavigationCategories = []string{"表", "视图", "函数", "存储�
 
 func SupportedCategory(category string) bool {
 	switch category {
-	case "集合信息", "向量点", "集合别名", "任务", "索引信息", "索引设置", "索引统计", "文档", "数据库信息", "设计文档", "Core", "索引", "别名", "数据流", "键", "集合", "表", "视图", "函数", "存储过程", "事件", "序列", "查询", "包", "触发器", "类型":
+	case "图标签", "关系类型", "图索引", "图约束", "图过程", "图函数", "集合信息", "向量点", "集合别名", "任务", "索引信息", "索引设置", "索引统计", "文档", "数据库信息", "设计文档", "Core", "索引", "别名", "数据流", "键", "集合", "表", "视图", "函数", "存储过程", "事件", "序列", "查询", "包", "触发器", "类型":
 		return true
 	}
 	return false
@@ -112,6 +112,8 @@ func (s *State) databaseChildren(key string) []string {
 		categories := mysqlNavigationCategories
 		if s.deps.Engine != nil {
 			switch s.deps.Engine(n.ProfileID) {
+			case connections.Neo4j:
+				categories = []string{"图标签", "关系类型", "图索引", "图约束", "图过程", "图函数", "查询"}
 			case connections.Qdrant:
 				categories = []string{"集合信息", "向量点", "集合别名", "查询"}
 			case connections.Meilisearch:

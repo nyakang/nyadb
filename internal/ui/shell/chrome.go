@@ -278,6 +278,24 @@ func (s *State) toolBar(c *ui.Context) {
 					}
 				}
 
+				if kind == connections.Neo4j {
+					switch action.label {
+					case "表":
+						action.label = "图标签"
+					case "视图":
+						action.label = "关系类型"
+					case "函数":
+						action.label = "图函数"
+					case "用户":
+						action.label = "图过程"
+					case "其它":
+						action.label = "图索引"
+					case "备份":
+						action.label = "图约束"
+					case "模型", "自动运行":
+						continue
+					}
+				}
 				if kind == connections.Cassandra {
 					if action.label == "用户" || action.label == "其它" {
 						continue
@@ -427,7 +445,7 @@ func (s *State) toolBar(c *ui.Context) {
 // menu, but never announce a successful operation for an unsupported feature.
 func (s *State) toolbarActionAvailable(action string) bool {
 	switch action {
-	case "集合信息", "向量点", "集合别名", "文档", "索引信息", "索引设置", "索引统计", "数据库信息", "设计文档":
+	case "图标签", "关系类型", "图索引", "图约束", "图过程", "图函数", "集合信息", "向量点", "集合别名", "文档", "索引信息", "索引设置", "索引统计", "数据库信息", "设计文档":
 		w := s.sessions.Current()
 		return w.Status == "已连接" && w.Database != "" && s.sessions.DatabaseOpened(w.ProfileID, w.Database) && s.objectCapabilitiesFor(w.ProfileID).Metadata
 	case "连接", "新建查询", "Core", "索引", "别名", "数据流", "键", "集合", "表", "视图", "信息":
