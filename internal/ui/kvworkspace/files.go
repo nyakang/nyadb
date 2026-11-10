@@ -41,7 +41,7 @@ func EncodeRequest(r contract.KVRequest) ([]byte, error) {
 	if len(r.JSON) > inputLimit || !utf8.ValidString(r.JSON) {
 		return nil, jsondocument.ErrBounds
 	}
-	supported := false
+	supported := eventMethod(r.Method)
 	for _, m := range methods {
 		if m.Path == r.Method {
 			supported = true
@@ -95,7 +95,7 @@ func (s *State) fileJob(d *Document, kind string, work func(context.Context) fil
 	}()
 }
 func (s *State) OpenRequest(d *Document) {
-	if !s.active(d) || d.io != nil || d.job != nil {
+	if !s.active(d) || d.io != nil || d.Busy() {
 		return
 	}
 	f := s.deps.Files

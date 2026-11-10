@@ -256,3 +256,31 @@ parents, including actual processed Watch/progress response loss, original
 cancel/retirement, generation replacement, precise lease metadata, unknown-write
 receipt independence and shared-budget competition after Poll transfers. This
 scope does not publish or establish graphical Watch/history acceptance.
+
+The private KV workspace document core now accepts an injected events provider
+alongside its original native request lease. It captures exact Watch/History
+input, keeps the Watch context alive through the original receiver, and sends
+bounded private update/final packets to the active document's UI thread. Parked
+packets stay with their original document; stop/cancel/close wait for the original
+executor, and explicit recovery never subscribes or executes another request.
+Restart requires explicit settled receipt disposal. Native unknown-write replies
+remain independent of all event reads and recovery.
+
+Event request files retain the version-one envelope and unfinished JSON text.
+Strict decoding rejects unknown fields, duplicate snake/camel aliases, imprecise
+or overflowing integers, invalid binary ranges and fragmented Watches. Separate
+event archives retain original public scope, authored input, fixed window,
+complete protobuf frames (including unknown fields), exact typed binary values,
+native int64/uint64 strings, progress proof and terminal/incomplete reasons.
+Presentation limits (500 events, 1024-byte value previews, 64 KiB text) do not
+truncate these archives. Export captures the complete original receipt before
+the native picker; close/cancellation prevents a late picker from writing.
+
+`--events-workspace-smoke --race --mode MODE` validates three private document
+parents against the real Manager and official server: same-revision event order,
+binary/old values, precise leases, fixed history/progress and archives; parked
+publication replacement, explicit recovery/restart/stop and files; and History
+after an actual processed Put reply loss without resolving the unknown write.
+This stage does not inject events into the public Shell or add a Watch/History
+selector. Graphical controls and qualified shared-grid key actions still require
+their separate native workbench acceptance.

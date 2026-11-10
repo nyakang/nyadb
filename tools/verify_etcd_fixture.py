@@ -68,7 +68,9 @@ def certificates(folder, access=False):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False):
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False):
+    if events_workspace_smoke:
+        workspace = True
     if events_smoke:
         session = True
     if access:
@@ -108,6 +110,8 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
     identifier = None
     if events_smoke:
         report['scope'] = 'private-etcd-events-session-smoke'
+    if events_workspace_smoke:
+        report['scope'] = 'private-etcd-events-workspace-smoke'
     private_path = None
     try:
         with tempfile.TemporaryDirectory(prefix='nyadb-etcd-'+nonce+'-', dir=build) as raw:
@@ -242,6 +246,12 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                             'EventsActualOriginalWatchLossAndCanceledCreationNeverReconnect',
                             'EventsActualProgressLossKeepsOriginalHistoryOnCancelAndRetirement',
                             'EventsRuntimeOriginalPublicationAndExplicitRecovery')
+            if events_workspace_smoke:
+                environment.update(NYADB_ETCD_WORKSPACE_IT='1', NYADB_ETCD_EVENTS_WORKSPACE_IT='1')
+                packages = ['./internal/ui/kvworkspace']
+                required = ('EventsWorkspaceOriginalStreamsHistoryAndCompleteArchives',
+                            'EventsWorkspaceParkedStopPublicationRecoveryAndRequestFiles',
+                            'EventsWorkspaceHistoryKeepsActualUnknownWriteReceipt')
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
             command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
@@ -261,7 +271,7 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                 if len(pictures) != 72:
                     raise RuntimeError('Native profile acceptance is missing localized images')
                 report['profile_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
-            if workspace:
+            if workspace and not events_workspace_smoke:
                 pictures = sorted(Path(environment['NYADB_ETCD_WORKSPACE_IMAGES']).glob('*.png'))
                 if len(pictures) != (4 if smoke else 40):
                     raise RuntimeError('Native workspace acceptance is missing localized images')
@@ -299,6 +309,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', choices=('anonymous', 'basic', 'tls', 'mtls'), default='basic')
     parser.add_argument('--history-smoke', action='store_true')
     parser.add_argument('--events-smoke', action='store_true')
+    parser.add_argument('--events-workspace-smoke', action='store_true')
     parser.add_argument('--watch-smoke', action='store_true')
     parser.add_argument('--access', action='store_true')
     parser.add_argument('--access-smoke', action='store_true')
@@ -311,4 +322,4 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke)
