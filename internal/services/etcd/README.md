@@ -319,3 +319,41 @@ MODE` for the seven mandatory native public cases and 28 localized Shell images.
 Modes are anonymous/basic/tls/mtls on 3.7.3, plus basic on 3.5.35. The local report
 is `docs/etcd-public-events-2026-11-10.md`. Automatic lease renewal, Auth/RBAC and
 maintenance UI, cluster acceptance and etcd-v2 remain separate future work.
+
+Private original continuous lease-renewal foundation
+--------------------------------------------------
+
+`PrepareRenewal` creates a separate one-use authorization for one original
+LeaseKeepAlive stream and exact nonzero native int64 Lease ID. It performs no
+I/O. `StartRenewal` consumes that authorization once and waits for the first
+original acknowledgement; the run stays alive afterward. A complete valid
+response's actual TTL schedules the next send at one third of TTL, bounded to
+100 ms minimum and 8 hours maximum without integer-duration overflow. Each
+request waits for its own captured stream response before another send.
+
+`Poll` transfers bounded complete attempt receipts, including original protobuf
+unknown fields, precise ID/TTL/header, attempt sequence, completion, code and
+unknown-write outcome. The raw queue retains at most 256 receipts and 1 MiB of
+charged capture; a frame is limited to 64 KiB. A retained-receipt admission hook
+supports later session/document budgets. Overflow stops the original executor,
+keeps earlier receipts and explicitly marks incomplete capture. A valid response
+seen by the driver remains acknowledged even when its full capture exceeds the
+retention budget; an unvalidated oversized response remains unknown.
+
+Stop/Cancel/Close wait for the original executor. Stopping between acknowledged
+requests sends no further renewal and allows natural server expiration. Stopping
+with an unacknowledged attempt preserves its unknown outcome and retires that
+channel. Permission rejection, TTL<=0, protocol/identity mismatch, original
+response loss and timeout never grant a replacement stream or lease. Independent
+later TimeToLive reads cannot confirm an earlier lost receipt. No LeaseGrant,
+new ID or stream recreation is performed, and the existing one-shot KeepAlive
+whitelist and write plans retain their original behavior.
+
+`GOWORK=off python3 tools/verify_etcd_fixture.py --renewal-native --race --mode
+MODE` runs four native renewal parents (including 13 first/later processed reply
+fault combinations, explicit pending Stop, permission/lease revocation and
+capture budgets), plus legacy one-shot lease/expiration and read ownership cases.
+Use all four 3.7.3 modes and 3.5.35 basic. This native foundation does not publish
+continuous renewal in the GUI or establish neutral session/document budgets;
+those remain the next acceptance steps. Local evidence is recorded in
+`docs/etcd-renewal-native-2026-11-10.md`.
