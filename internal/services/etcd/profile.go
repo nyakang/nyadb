@@ -33,5 +33,5 @@ func OpenProfile(ctx context.Context, p connections.Profile, secret string) (*Cl
 		auth = "none"
 	}
 	o := cfg.Options
-	return Open(ctx, Config{Endpoint: cfg.Endpoint, Auth: auth, Username: cfg.Username, CAFile: o.CAFile, ServerName: o.ServerName, ClientCertFile: o.ClientCertFile, ClientKeyFile: o.ClientKeyFile, ProbeKey: prefix, ConnectTimeout: time.Duration(o.ConnectTimeoutSeconds) * time.Second, RequestTimeout: time.Duration(o.RequestTimeoutSeconds) * time.Second}, secret)
+	return Open(ctx, Config{Endpoint: cfg.Endpoint, Auth: auth, Username: cfg.Username, CAFile: o.CAFile, ServerName: o.ServerName, ClientCertFile: o.ClientCertFile, ClientKeyFile: o.ClientKeyFile, ProbeKey: prefix, DiscoverAccess: true, BrowsePrefix: prefix, ConnectTimeout: time.Duration(o.ConnectTimeoutSeconds) * time.Second, RequestTimeout: time.Duration(o.RequestTimeoutSeconds) * time.Second}, secret)
 }

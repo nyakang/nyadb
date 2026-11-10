@@ -202,6 +202,15 @@ func (f *etcdPublicFault) context(ctx context.Context) context.Context {
 	md, _ := metadata.FromIncomingContext(ctx)
 	return metadata.NewOutgoingContext(ctx, md.Copy())
 }
+func (f *etcdPublicFault) AuthStatus(ctx context.Context, r *pb.AuthStatusRequest) (*pb.AuthStatusResponse, error) {
+	return pb.NewAuthClient(f.upstream).AuthStatus(f.context(ctx), r)
+}
+func (f *etcdPublicFault) UserGet(ctx context.Context, r *pb.AuthUserGetRequest) (*pb.AuthUserGetResponse, error) {
+	return pb.NewAuthClient(f.upstream).UserGet(f.context(ctx), r)
+}
+func (f *etcdPublicFault) RoleGet(ctx context.Context, r *pb.AuthRoleGetRequest) (*pb.AuthRoleGetResponse, error) {
+	return pb.NewAuthClient(f.upstream).RoleGet(f.context(ctx), r)
+}
 func (f *etcdPublicFault) Authenticate(ctx context.Context, r *pb.AuthenticateRequest) (*pb.AuthenticateResponse, error) {
 	return pb.NewAuthClient(f.upstream).Authenticate(f.context(ctx), r)
 }

@@ -237,6 +237,9 @@ type DataSearchResult struct {
 type DataPage struct {
 	Object   ObjectRef
 	Editable *bool
+	// ReadOnlyRows contains captured provider permissions for original row
+	// ordinals. Providers own this map until publishing; consumers only read it.
+	ReadOnlyRows map[int]bool
 
 	Database, Table string
 	Columns         []string

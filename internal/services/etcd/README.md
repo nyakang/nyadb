@@ -135,7 +135,7 @@ unsupported SQL semantics and batches beyond 128 comparisons/operations are
 rejected before dispatch. Actual complete Txn outcomes generate saved snapshots;
 unknown/incomplete acknowledgements preserve drafts and block document writes.
 CSV/JSON export streams complete binary values and decimal metadata through its
-own fixed-revision executor, one key per Range to bound response batching.
+own fixed-revision executor, one value per Range to bound response batching. A 4 KiB key with more results uses a two-key keys-only observation to advance without skipping longer server keys. Unsupported keys beyond 4 KiB fail explicitly; maximum prefixes remain ranges and exact grants remain exact RPCs.
 
 Run `python3 tools/verify_etcd_fixture.py --data-adapter --workspace --profile
 --race --mode basic` for adapter, builtin Manager-bound shared grid and previous workspace/profile
@@ -158,7 +158,36 @@ never overwrite a later independent value; ten-comparison conflicts leave the
 entire original batch unapplied. `--public-smoke` checks six public/grid cases
 with 64 images and is explicitly insufficient for full acceptance.
 
-ACL-aware browsing, Watch/history, automatic renewal, maintenance/auth management,
-etcd v2, additional versions and cluster operation remain pending. A successful
-connection probe cannot prove permission for the complete prefix. See
-`docs/etcd-public-workbench-2026-11-10.md`.
+ACL-aware browsing captures self UserGet and assigned RoleGet observations and
+intersects the normalized byte read grants with the original profile prefix.
+Overlapping/adjacent grants and disjoint ranges share one fixed MVCC revision,
+authenticated cursor, complete count and export scope. Read-only rows cannot be
+edited/deleted; grid writes require both readable and writable original/source
+and destination keys. Empty intersections and users without read grants open a
+read-only empty grid without probing forbidden keys. Explicit native requests
+still use the server's authorization for each operation.
+
+Basic authentication selects the exact configured username even with mTLS;
+pure certificate authentication selects the certificate CN. TLS without client
+certificate authentication does not establish a CN identity. Captures bound role
+and permission counts and aggregate metadata size. Each independently opened
+page/count/field/write/export channel checks the original permission fingerprint.
+When available, any change in the global auth revision invalidates that original
+snapshot conservatively, even when its normalized key ranges remain equal.
+Restricted etcd 3.5 users cannot read AuthStatus: auth revision remains unavailable
+(zero), role membership and role permission observations are read again during
+capture, and no atomic auth snapshot or unchanged-permission guarantee is claimed.
+Every actual KV operation remains server-authorized. Changed captures retire the
+original range; healthy Refresh preserves cached data until successful completion,
+and failed/retired reads require explicit reopening without replaying writes.
+
+Run `python3 tools/verify_etcd_fixture.py --access --race --mode basic` for all
+47 public/native parents and 196 localized images per full mode. `--access-smoke`
+checks only the four service parents; `--access --public-smoke` adds the restricted
+Shell case to the six public/grid regression parents and requires 88 images.
+These smaller scopes do not establish full acceptance.
+
+Watch/history, automatic renewal, maintenance/auth management, etcd v2,
+additional versions and cluster operation remain pending. Historical public
+acceptance is recorded in `docs/etcd-public-workbench-2026-11-10.md`; ACL scope and
+verification are recorded separately in `docs/etcd-access-browsing-2026-11-10.md`.

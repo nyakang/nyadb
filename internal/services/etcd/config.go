@@ -1,5 +1,5 @@
-// Package etcd implements bounded, one-use native v3 requests. It is a private
-// transport foundation; registration and workbench contracts are separate work.
+// Package etcd implements bounded native v3 requests and original-profile
+// authorization-aware data documents, without replaying processed requests.
 package etcd
 
 import (
@@ -21,6 +21,9 @@ type Config struct {
 	// ProbeKey must be readable by the configured identity. No full-range
 	// permission is inferred from a successful single-key probe.
 	ProbeKey []byte
+	// Profile browsing discovers grants before choosing an authorized probe.
+	DiscoverAccess bool
+	BrowsePrefix   []byte
 }
 
 func normalizeConfig(c Config, secret string) (Config, *tls.Config, error) {
@@ -46,9 +49,10 @@ func normalizeConfig(c Config, secret string) (Config, *tls.Config, error) {
 	if c.RequestTimeout == 0 {
 		c.RequestTimeout = 30 * time.Second
 	}
-	if c.ConnectTimeout < time.Second || c.ConnectTimeout > 5*time.Minute || c.RequestTimeout < time.Second || c.RequestTimeout > 10*time.Minute || len(c.ProbeKey) > 4096 {
+	if c.ConnectTimeout < time.Second || c.ConnectTimeout > 5*time.Minute || c.RequestTimeout < time.Second || c.RequestTimeout > 10*time.Minute || len(c.ProbeKey) > 4096 || len(c.BrowsePrefix) > 4096 {
 		return c, nil, ErrInvalid
 	}
+	c.BrowsePrefix = append([]byte(nil), c.BrowsePrefix...)
 	if len(c.ProbeKey) == 0 {
 		c.ProbeKey = []byte{0}
 	} else {

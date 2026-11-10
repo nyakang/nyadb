@@ -243,6 +243,9 @@ func (l *dataLease) preview(ctx context.Context, id int64, catalog, name string,
 		l.plan.releaseLocked()
 	}
 	l.mu.Unlock()
+	if err = l.checkWriteAccess(ctx, prepared); err != nil {
+		return nil, err
+	}
 	request := &pb.TxnRequest{}
 	for i := range prepared {
 		p := &prepared[i]

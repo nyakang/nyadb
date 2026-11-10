@@ -16,7 +16,10 @@ func dataTestSession(t *testing.T) *Session {
 	p, _ := connections.Defaults(connections.Etcd)
 	p.ID = 1
 	p.EtcdOptions.PrefixEncoding, p.EtcdOptions.Prefix = "base64", "AP8="
-	s := newSession(p, "", sessionIdentityClient(2))
+	client := sessionIdentityClient(2)
+	// Pure preview fixtures supply explicit captured all-key permissions.
+	client.access = &keyAccess{Read: prefixRanges(nil), Write: prefixRanges(nil), ObservedRevision: 1}
+	s := newSession(p, "", client)
 	t.Cleanup(func() { _ = s.Close() })
 	return s
 }

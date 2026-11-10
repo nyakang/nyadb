@@ -111,6 +111,9 @@ func mysqlDataCanEdit(t *Document, row, source int) bool {
 	if t.page.ColumnMetadata[source].Generated || contract.DataColumnGenerated(t.page.ColumnMetadata[source]) {
 		return false
 	}
+	if t.page.ReadOnlyRows[row] {
+		return false
+	}
 	if d := mysqlDataDraftForRow(t, row); d != nil {
 		return !dataEditDeletesRow(d.Kind) && t.allowsDataEdit(d.Kind)
 	}
@@ -437,6 +440,10 @@ func (s *State) deleteMySQLDataRecords(services ui.Services, t *Document, row in
 		if d := mysqlDataDraftForRow(t, i); d != nil && d.Kind == "insert" {
 			continue
 		}
+		if t.page.ReadOnlyRows[i] {
+			t.edit.Err = locales.Text("所选记录没有写入权限")
+			return
+		}
 		if i < 0 || i >= len(t.page.RowSnapshots) || t.page.RowSnapshots[i] == nil {
 			t.edit.Err = locales.Text("不能唯一定位此记录，已禁止修改和删除")
 			return
@@ -580,6 +587,17 @@ func (s *State) removeMySQLDataDraftRows(t *Document, remove func(*mysqlRowDraft
 	slices.Sort(indices)
 	slices.Reverse(indices)
 	for _, i := range indices {
+		if len(t.page.ReadOnlyRows) > 0 {
+			shifted := make(map[int]bool, len(t.page.ReadOnlyRows))
+			for row, readOnly := range t.page.ReadOnlyRows {
+				if row < i {
+					shifted[row] = readOnly
+				} else if row > i {
+					shifted[row-1] = readOnly
+				}
+			}
+			t.page.ReadOnlyRows = shifted
+		}
 		t.page.Rows = slices.Delete(t.page.Rows, i, i+1)
 		if i < len(t.page.RowRefs) {
 			t.page.RowRefs = slices.Delete(t.page.RowRefs, i, i+1)

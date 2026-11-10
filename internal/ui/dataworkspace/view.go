@@ -336,6 +336,9 @@ func mysqlDataQueryStatus(t *Document) string {
 		return locales.Text("原生请求：") + t.readInfo.QuerySQL
 	}
 	if t.capabilities.KeyValues {
+		if t.boundRuntime != nil && t.boundRuntime.NativeReceipts {
+			return locales.Text("原生请求：") + t.readInfo.QuerySQL
+		}
 		return locales.Text("Redis 命令：") + t.readInfo.QuerySQL
 	}
 	return locales.Text("参数化 SQL：") + t.readInfo.QuerySQL

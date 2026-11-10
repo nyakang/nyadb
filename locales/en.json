@@ -3187,5 +3187,7 @@
   "etcdDataMutationHistory": "Confirmed native key changes",
   "etcdDataMutationCreate": "Create key",
   "etcdDataMutationUpdate": "Update key",
-  "etcdDataMutationDelete": "Delete key"
+  "etcdDataMutationDelete": "Delete key",
+  "dataSelectedReadOnly": "Selected records do not have write permission",
+  "dataAuthorizedReadScope": "Only readable keys in the current prefix are shown. Counts and exports use the same authorized ranges."
 }

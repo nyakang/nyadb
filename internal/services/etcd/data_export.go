@@ -43,45 +43,30 @@ func (l *dataLease) export(ctx context.Context, id int64, catalog, name string, 
 	if err != nil {
 		return err
 	}
-	// Range has no server-side value slicing or byte limit. One key per RPC
-	// prevents a batch of individually valid large values exceeding transport.
-	request := PrefixRange(l.session.prefix, 1, revision)
-	var previous []byte
+	access, err := l.captureAccess(ctx, dataExportScope)
+	if err != nil {
+		return err
+	}
+	it := newKeyIterator(access.Read, 0, nil, revision)
 	for {
-		result, err := l.native(ctx, dataExportScope, request)
+		entry, _, err := it.next(ctx, l, dataExportScope, false)
 		if err != nil {
 			return err
 		}
-		if !result.Completed || result.Reply == nil || result.ProjectionError != "" || result.Reply.Kind != "range" {
-			return ErrProtocol
-		}
-		for _, entry := range result.Reply.Entries {
-			if !validDataEntry(entry) || !bytes.HasPrefix(entry.Key, l.session.prefix) || bytes.Compare(entry.Key, request.Key) < 0 || previous != nil && bytes.Compare(entry.Key, previous) <= 0 || entry.ModRevision > revision {
-				return ErrProtocol
-			}
-			previous = bytes.Clone(entry.Key)
-			values := make([]contract.DataValue, len(columns))
-			cells := entryCells(entry, false)
-			for i, index := range indices {
-				cell := cells[index].Value
-				values[i] = contract.DataValue{Kind: cell.Kind, Text: cell.Text, Bytes: bytes.Clone(cell.Bytes), Binary: cell.Kind == contract.Binary}
-			}
-			if err := ctx.Err(); err != nil {
-				return err
-			}
-			if err := emit(values); err != nil {
-				return err
-			}
-		}
-		if !result.Reply.More {
+		if entry == nil {
 			return ctx.Err()
 		}
-		if len(result.Reply.Entries) == 0 {
-			return ErrProtocol
+		cells := entryCells(*entry, false)
+		values := make([]contract.DataValue, len(columns))
+		for i, index := range indices {
+			cell := cells[index].Value
+			values[i] = contract.DataValue{Kind: cell.Kind, Text: cell.Text, Bytes: bytes.Clone(cell.Bytes), Binary: cell.Kind == contract.Binary}
 		}
-		request.Key = dataAfterKey(previous)
-		if request.Key == nil || !bytes.HasPrefix(request.Key, l.session.prefix) {
-			return ErrProtocol
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if err := emit(values); err != nil {
+			return err
 		}
 	}
 }

@@ -52,12 +52,15 @@ def remove_owned(identifier, nonce):
     run(['docker', 'rm', '-f', identifier])
 
 
-def certificates(folder):
+def certificates(folder, access=False):
     def ssl(*args):
         subprocess.run(
             ['openssl', *args], cwd=folder, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     ssl('req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', 'ca.key', '-out', 'ca.crt', '-days', '2', '-subj', '/CN=NyaDB owned etcd CA')
-    for name, cn, usage in [('server', 'server', 'serverAuth'), ('client', 'root', 'clientAuth')]:
+    identities = [('server', 'server', 'serverAuth'), ('client', 'root', 'clientAuth')]
+    if access:
+        identities.append(('access-client', 'acl-cert', 'clientAuth'))
+    for name, cn, usage in identities:
         ssl('req', '-newkey', 'rsa:2048', '-nodes', '-keyout', name+'.key', '-out', name+'.csr', '-subj', '/CN='+cn)
         (folder/(name+'.ext')).write_text('extendedKeyUsage='+usage+'\nsubjectAltName=DNS:localhost,IP:127.0.0.1\n')
         ssl('x509', '-req', '-in', name+'.csr', '-CA', 'ca.crt', '-CAkey', 'ca.key', '-CAcreateserial', '-out', name+'.crt', '-days', '2', '-extfile', name+'.ext')
@@ -65,7 +68,11 @@ def certificates(folder):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False):
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False):
+    if access:
+        public = True
+    if access_smoke:
+        session = True
     if smoke:
         public = True
     if public:
@@ -93,7 +100,7 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
     if public:
         sources += [p for folder in ('internal/ui/connectioncatalog', 'internal/ui/navigation', 'internal/ui/sessionbrowser', 'internal/ui/objectworkspace', 'internal/ui/theme', 'internal/storage/localdb') for p in (ROOT/folder).glob('*.go')]
     sources = sorted(set(sources))
-    report = dict(nonce=nonce, scope='public-etcd-smoke' if smoke else ('public-etcd-workbench' if public else ('kv-data-adapter-regression' if data else ('private-kv-request-workspace' if workspace else ('private-kv-session-runtime' if session else ('private-profile-editor' if profile else 'private-native-v3-foundation'))))), mode=mode, version=version,
+    report = dict(nonce=nonce, scope='etcd-access-smoke' if access_smoke else ('public-etcd-access-smoke' if access and smoke else ('public-etcd-access' if access else ('public-etcd-smoke' if smoke else ('public-etcd-workbench' if public else ('kv-data-adapter-regression' if data else ('private-kv-request-workspace' if workspace else ('private-kv-session-runtime' if session else ('private-profile-editor' if profile else 'private-native-v3-foundation')))))))), mode=mode, version=version,
                   image=image, race=race, passed=False,
                   source_hashes={str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources})
     identifier = None
@@ -107,7 +114,7 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
             secret = 'Nya_'+secrets.token_urlsafe(24)
             username = ' root '+nonce[:6]  # Exercise exact, untrimmed native names.
             if tls:
-                certificates(private)
+                certificates(private, access or access_smoke)
             scheme = 'https' if tls else 'http'
             env = ['ETCDCTL_API=3', 'ETCDCTL_ENDPOINTS='+scheme+'://localhost:2379']
             if tls:
@@ -163,6 +170,9 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                 environment['NYADB_ETCD_CA'] = str(private/'ca.crt')
             if mode == 'mtls':
                 environment.update(NYADB_ETCD_CERT=str(private/'client.crt'), NYADB_ETCD_KEY=str(private/'client.key'))
+            if tls and (access or access_smoke):
+                environment.update(NYADB_ETCD_ACCESS_CERT=str(private/'access-client.crt'), NYADB_ETCD_ACCESS_KEY=str(private/'access-client.key'),
+                                   NYADB_ETCD_ROOT_CERT=str(private/'client.crt'), NYADB_ETCD_ROOT_KEY=str(private/'client.key'))
             packages = ['./internal/services/etcd']
             if profile:
                 packages.append('./internal/ui/connectioneditor')
@@ -189,6 +199,18 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
             if smoke:
                 packages = ['./internal/ui/shell', './internal/ui/dataworkspace']
                 required = ('ShellPublicKVDocumentsParkDisconnectRecoverAndOriginalClose', 'ShellPublicChooserReopenQualifiedGridAtomicMutationsAndGuards', 'ShellPublicGridConflictKeepsOriginalAtomicBatch', 'ShellPublicGridOneMiBLeaseOnlyPreservesCompleteBytes', 'ShellPublicGridActualTxnLossCancelAndOriginalCloseNeverReplay', 'DataSharedGridOriginalPreviewParkingRefreshAndGeneration')
+            if access or access_smoke:
+                if './internal/services/etcd' not in packages:
+                    packages.append('./internal/services/etcd')
+                environment['NYADB_ETCD_ACCESS_IT'] = '1'
+                access_cases = ('AccessOriginalBinaryRangesCountPagingExportAndWritePermissions','AccessActualGrantChangeAndOriginalMetadataCancelClose', 'AccessBasicTokenAndCertificateActualIdentity', 'AccessMaximumPrefixesRejectLongKeysAndRetainCompleteAuthorizedCounts')
+                required += access_cases
+                if access:
+                    environment['NYADB_ETCD_ACCESS_IMAGES'] = str(report_path.with_suffix(''))+'-access-images'
+                    required += ('ShellPublicAccessReadOnlyScopeCountExportSaveAndExplicitReopen',)
+                if access_smoke:
+                    packages = ['./internal/services/etcd']
+                    required = access_cases
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
             command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
@@ -223,6 +245,11 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                 if len(pictures) != 44:
                     raise RuntimeError('Public acceptance is missing localized images')
                 report['public_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
+            if access:
+                pictures = sorted(Path(environment['NYADB_ETCD_ACCESS_IMAGES']).glob('*.png'))
+                if len(pictures) != 24:
+                    raise RuntimeError('Public access acceptance is missing localized images')
+                report['access_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             report.update(passed=True, accepted=accepted, log_sha256=hashlib.sha256(log_path.read_bytes()).hexdigest())
     finally:
         try:
@@ -239,6 +266,8 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=('anonymous', 'basic', 'tls', 'mtls'), default='basic')
+    parser.add_argument('--access', action='store_true')
+    parser.add_argument('--access-smoke', action='store_true')
     parser.add_argument('--public', action='store_true')
     parser.add_argument('--public-smoke', action='store_true')
     parser.add_argument('--profile', action='store_true')
@@ -248,4 +277,4 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke)

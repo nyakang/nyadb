@@ -29,6 +29,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 func etcdProfileFixture(t *testing.T) connections.URIImport {
@@ -254,6 +255,18 @@ func (p *etcdProfileHandshakeProxy) hold(ctx context.Context) error {
 	case <-p.release:
 		return nil
 	}
+}
+func (p *etcdProfileHandshakeProxy) AuthStatus(ctx context.Context, r *pb.AuthStatusRequest) (*pb.AuthStatusResponse, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	return p.auth.AuthStatus(metadata.NewOutgoingContext(ctx, md.Copy()), r)
+}
+func (p *etcdProfileHandshakeProxy) UserGet(ctx context.Context, r *pb.AuthUserGetRequest) (*pb.AuthUserGetResponse, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	return p.auth.UserGet(metadata.NewOutgoingContext(ctx, md.Copy()), r)
+}
+func (p *etcdProfileHandshakeProxy) RoleGet(ctx context.Context, r *pb.AuthRoleGetRequest) (*pb.AuthRoleGetResponse, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	return p.auth.RoleGet(metadata.NewOutgoingContext(ctx, md.Copy()), r)
 }
 func (p *etcdProfileHandshakeProxy) Authenticate(ctx context.Context, r *pb.AuthenticateRequest) (*pb.AuthenticateResponse, error) {
 	reply, err := p.auth.Authenticate(ctx, r)

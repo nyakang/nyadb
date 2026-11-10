@@ -2,6 +2,7 @@ package etcd
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
 	"net/url"
 	"strconv"
@@ -74,6 +75,8 @@ type Client struct {
 	closed, retired bool
 	connClosed      bool // protected by operation after Open
 	last            Response
+	principal       string
+	access          *keyAccess
 	closeOnce       sync.Once
 	closeErr        error
 }
@@ -109,6 +112,15 @@ func Open(parent context.Context, cfg Config, secret string) (*Client, error) {
 	defer cancel()
 	root, cancelRoot := context.WithCancel(context.Background())
 	c := &Client{config: cfg, conn: conn, ctx: root, cancel: cancelRoot}
+	c.principal = cfg.Username
+	if cfg.Auth == "none" && tc != nil && len(tc.Certificates) > 0 {
+		leaf, e := x509.ParseCertificate(tc.Certificates[0].Certificate[0])
+		if e != nil {
+			_ = c.Close()
+			return nil, ErrInvalid
+		}
+		c.principal = leaf.Subject.CommonName
+	}
 	fail := func(e error) (*Client, error) { _ = c.Close(); return nil, e }
 	if cfg.Auth == "basic" {
 		r, err := pb.NewAuthClient(conn).Authenticate(ctx, &pb.AuthenticateRequest{Name: cfg.Username, Password: secret})
@@ -128,6 +140,19 @@ func Open(parent context.Context, cfg Config, secret string) (*Client, error) {
 		return fail(ErrProtocol)
 	}
 	c.identity = Identity{header(observed.Header), observed.Version}
+	if cfg.DiscoverAccess {
+		access, e := c.permissions(ctx)
+		if e != nil {
+			return fail(e)
+		}
+		ranges := access.scoped(cfg.BrowsePrefix).Read
+		if len(ranges) == 0 {
+			return c, nil
+		}
+		if !allowsKey(ranges, cfg.ProbeKey) {
+			cfg.ProbeKey = ranges[0].Start
+		}
+	}
 	probe, err := pb.NewKVClient(conn).Range(c.authContext(ctx), &pb.RangeRequest{Key: cfg.ProbeKey, Limit: 1, KeysOnly: true})
 	if err != nil {
 		return fail(err)
@@ -303,6 +328,8 @@ func (c *Client) Close() error {
 		c.mu.Lock()
 		c.last = Response{}
 		c.token = ""
+		c.access = nil
+		c.principal = ""
 		c.mu.Unlock()
 	})
 	return c.closeErr

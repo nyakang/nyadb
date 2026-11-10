@@ -67,7 +67,9 @@ func (s *State) Refresh(services ui.Services, t *Document) {
 	t.after = nil
 	t.useKeyset = t.keysetEnabled()
 	t.cursorHistory = nil
-	t.page = nil
+	if !s.runtimeFor(t).PageFailureRequiresReopen {
+		t.page = nil
+	}
 	t.selectedRow = -1
 	s.cancelMySQLChunk(t)
 	t.selection.Clear()
@@ -772,6 +774,9 @@ func mysqlDataCanDeleteSelection(t *Document, clicked int) bool {
 			// A record draft can be canceled without a server identity; existing records need one.
 			if d := mysqlDataDraftForRow(t, row); d != nil && d.Kind == "insert" {
 				continue
+			}
+			if t.page.ReadOnlyRows[row] {
+				return false
 			}
 			if d := mysqlDataDraftForRow(t, row); d != nil && dataEditDeletesRow(d.Kind) {
 				return false

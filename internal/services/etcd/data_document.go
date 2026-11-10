@@ -22,6 +22,9 @@ var errDataRangeLost = errors.New("original etcd read range lost; explicitly reo
 // writes and export. Cancellation never selects a replacement session.
 type dataLease struct {
 	pageStarted                               bool
+	access                                    *keyAccess
+	accessFingerprint                         string
+	accessScopes                              [5]bool
 	session                                   *Session
 	object                                    contract.ObjectRef
 	ctx                                       context.Context
@@ -88,6 +91,7 @@ func (l *dataLease) Runtime() contract.DataRuntime {
 		MutationPresentation: &contract.DataMutationPresentation{Title: "确认键更改", Hint: "请检查原始键、目标键、值和租约；确认后将原子提交此批次更改。", PreviewLabel: "键更改完整预览", HistoryLabel: "已确认的原生键更改", CreateLabel: "创建键", UpdateLabel: "更新键", DeleteLabel: "删除键"},
 		ExportFormats:        []string{"csv", "json"}, WriteDescription: "/etcdserverpb.KV/Txn (one original atomic compare-and-swap)",
 		FilterColumns: []string{}, SortColumns: []string{}, FilterModes: []string{},
+		ReadScopeHint: "仅显示当前前缀内可读取的键；行数统计和导出使用相同授权范围。",
 		ReadDescription: func(contract.DataOptions) string {
 			return "/etcdserverpb.KV/Range (fixed original revision, byte key order)"
 		},
@@ -110,6 +114,9 @@ func (l *dataLease) check(id int64, catalog, name string) error {
 }
 func (l *dataLease) native(ctx context.Context, scope int, message proto.Message) (contract.KVResult, error) {
 	if err := l.check(l.object.ProfileID, l.object.Catalog, l.object.Name); err != nil {
+		return contract.KVResult{}, err
+	}
+	if _, err := l.captureAccess(ctx, scope); err != nil {
 		return contract.KVResult{}, err
 	}
 	raw, err := protojson.Marshal(message)
@@ -211,6 +218,8 @@ func (l *dataLease) Close() error {
 	l.session.mu.Unlock()
 	l.mu.Lock()
 	l.revision = 0
+	l.access = nil
+	l.accessFingerprint = ""
 	l.epoch++
 	l.key = [32]byte{}
 	l.closeErr = err

@@ -5,12 +5,15 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"math"
 	"slices"
 	"strconv"
 	"time"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
 	pb "go.etcd.io/etcd/api/v3/etcdserverpb"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func dataColumns() []contract.StructureColumn {
@@ -48,7 +51,17 @@ func (l *dataLease) originalRevision(ctx context.Context, scope int) (int64, err
 	if revision != 0 {
 		return revision, nil
 	}
-	request := PrefixRange(l.session.prefix, 1, 0)
+	access, err := l.captureAccess(ctx, scope)
+	if err != nil {
+		return 0, err
+	}
+	if len(access.Read) == 0 {
+		l.mu.Lock()
+		l.revision = access.ObservedRevision
+		l.mu.Unlock()
+		return access.ObservedRevision, nil
+	}
+	request := access.Read[0].request(access.Read[0].Start, 1, 0)
 	request.KeysOnly = true
 	result, err := l.native(ctx, scope, request)
 	if err != nil {
@@ -68,13 +81,14 @@ type dataBoundary struct {
 	Revision, Offset int64
 	Limit            int
 	Start            []byte
+	Range            int
 }
 
-func (l *dataLease) boundary(start []byte, offset int64, limit int, revision int64) *contract.DataCursor {
+func (l *dataLease) boundary(start []byte, offset int64, limit int, revision int64, rangeIndex int) *contract.DataCursor {
 	l.mu.Lock()
 	epoch := l.epoch
 	l.mu.Unlock()
-	raw := l.encode(dataBoundary{Epoch: epoch, Revision: revision, Offset: offset, Limit: limit, Start: bytes.Clone(start)})
+	raw := l.encode(dataBoundary{Epoch: epoch, Revision: revision, Offset: offset, Limit: limit, Start: bytes.Clone(start), Range: rangeIndex})
 	return &contract.DataCursor{Offset: offset, Database: l.object.Catalog, Table: l.object.Name, Columns: []string{"etcd_mvcc"}, Values: [][]byte{raw}}
 }
 func (l *dataLease) page(ctx context.Context, id int64, catalog, name string, options contract.DataOptions) (page *contract.DataPage, err error) {
@@ -102,6 +116,12 @@ func (l *dataLease) page(ctx context.Context, id int64, catalog, name string, op
 		epoch, revision := l.epoch, l.revision
 		l.mu.Unlock()
 		if revision == 0 || boundary.Epoch != epoch || boundary.Revision != revision || boundary.Limit != options.Limit || boundary.Offset != options.Offset || cursor.Offset != options.Offset || !validKey(boundary.Start) || !bytes.HasPrefix(boundary.Start, l.session.prefix) {
+			return nil, ErrInvalid
+		}
+		l.mu.Lock()
+		access := l.access
+		l.mu.Unlock()
+		if access == nil || boundary.Range < 0 || boundary.Range >= len(access.Read) || !access.Read[boundary.Range].contains(boundary.Start) {
 			return nil, ErrInvalid
 		}
 		prior = &boundary
@@ -138,51 +158,53 @@ func (l *dataLease) page(ctx context.Context, id int64, catalog, name string, op
 	if err != nil {
 		return nil, err
 	}
-	// Range returns complete values, even when the grid shows only a preview.
-	// Aggregate one key per RPC from the outset so a page of individually
-	// valid large values cannot exceed the native response bound.
-	request := PrefixRange(l.session.prefix, 1, revision)
+	access, err := l.captureAccess(ctx, dataPageScope)
+	if err != nil {
+		return nil, err
+	}
+	rangeIndex := 0
+	var startKey []byte
+	if len(access.Read) > 0 {
+		startKey = access.Read[0].Start
+	} else {
+		startKey = PrefixRange(l.session.prefix, 1, revision).Key
+	}
 	if prior != nil {
-		request.Key = bytes.Clone(prior.Start)
+		rangeIndex, startKey = prior.Range, prior.Start
 	}
 	started := time.Now()
-	editable := true
-	page = &contract.DataPage{Object: l.object, Editable: &editable, Database: catalog, Table: name, Offset: options.Offset, Limit: options.Limit, ColumnMetadata: dataColumns(), PagingMode: "cursor", StableOrder: true, KeysetAvailable: true, CurrentCursor: l.boundary(request.Key, options.Offset, options.Limit, revision), QuerySQL: "/etcdserverpb.KV/Range (fixed revision, one key per RPC)"}
+	editable := len(access.Write) > 0
+	page = &contract.DataPage{Object: l.object, Editable: &editable, Database: catalog, Table: name, Offset: options.Offset, Limit: options.Limit, ColumnMetadata: dataColumns(), PagingMode: "cursor", StableOrder: true, KeysetAvailable: true, CurrentCursor: l.boundary(startKey, options.Offset, options.Limit, revision, rangeIndex), QuerySQL: "/etcdserverpb.KV/Range (fixed revision, one key per RPC)", ReadOnlyRows: map[int]bool{}}
 	for _, c := range page.ColumnMetadata {
 		page.Columns = append(page.Columns, c.Name)
 		page.ColumnKinds = append(page.ColumnKinds, c.DataType)
 	}
-	var previous []byte
+	it := newKeyIterator(access.Read, rangeIndex, startKey, revision)
 	for len(page.Rows) < options.Limit {
-		result, readErr := l.native(ctx, dataPageScope, request)
+		entry, _, readErr := it.next(ctx, l, dataPageScope, false)
 		if readErr != nil {
 			return nil, readErr
 		}
-		if !result.Completed || result.Reply == nil || result.ProjectionError != "" || result.Reply.Kind != "range" || len(result.Reply.Entries) > 1 {
-			return nil, ErrInvalid
-		}
-		page.HasMore = result.Reply.More
-		if len(result.Reply.Entries) == 0 {
-			if page.HasMore {
-				return nil, ErrInvalid
-			}
+		if entry == nil {
 			break
 		}
-		entry := result.Reply.Entries[0]
-		if !validKey(entry.Key) || !bytes.HasPrefix(entry.Key, l.session.prefix) || bytes.Compare(entry.Key, request.Key) < 0 || previous != nil && bytes.Compare(entry.Key, previous) <= 0 || !validDataEntry(entry) || entry.ModRevision > revision {
-			return nil, ErrInvalid
+		row := len(page.Rows)
+		if !allowsKey(access.Write, entry.Key) {
+			page.ReadOnlyRows[row] = true
 		}
-		previous = bytes.Clone(entry.Key)
-		page.Rows = append(page.Rows, entryCells(entry, true))
+		page.Rows = append(page.Rows, entryCells(*entry, true))
 		ref := l.ref(entry.Key)
 		page.RowRefs = append(page.RowRefs, &ref)
-		page.RowSnapshots = append(page.RowSnapshots, l.snapshot(entry, false))
-		if !page.HasMore {
-			break
+		page.RowSnapshots = append(page.RowSnapshots, l.snapshot(*entry, false))
+	}
+	if len(page.Rows) == options.Limit {
+		peek, peekRange, readErr := it.next(ctx, l, dataPageScope, true)
+		if readErr != nil {
+			return nil, readErr
 		}
-		request.Key = dataAfterKey(entry.Key)
-		if request.Key == nil || !bytes.HasPrefix(request.Key, l.session.prefix) {
-			return nil, ErrInvalid
+		if peek != nil {
+			page.HasMore = true
+			page.NextCursor = l.boundary(peek.Key, options.Offset+int64(len(page.Rows)), options.Limit, revision, peekRange)
 		}
 	}
 	if err = ctx.Err(); err != nil {
@@ -190,9 +212,6 @@ func (l *dataLease) page(ctx context.Context, id int64, catalog, name string, op
 	}
 	if err = l.check(id, catalog, name); err != nil {
 		return nil, err
-	}
-	if page.HasMore {
-		page.NextCursor = l.boundary(request.Key, options.Offset+int64(len(page.Rows)), options.Limit, revision)
 	}
 	page.CompletedAt, page.Duration = time.Now(), time.Since(started)
 	l.mu.Lock()
@@ -233,16 +252,24 @@ func (l *dataLease) count(ctx context.Context, id int64, catalog, name string) (
 	if err != nil {
 		return 0, err
 	}
-	request := PrefixRange(l.session.prefix, 0, revision)
-	request.CountOnly = true
-	result, err := l.native(ctx, dataCountScope, request)
+	access, err := l.captureAccess(ctx, dataCountScope)
 	if err != nil {
 		return 0, err
 	}
-	if !result.Completed || result.Reply == nil {
-		return 0, ErrInvalid
+	var count int64
+	for _, r := range access.Read {
+		request := r.request(r.Start, 0, revision)
+		request.CountOnly = true
+		result, err := l.native(ctx, dataCountScope, request)
+		if err != nil {
+			return 0, err
+		}
+		if !result.Completed || result.Reply == nil || result.ProjectionError != "" || result.Reply.Kind != "range" || result.Reply.Count < 0 || result.Reply.Count > math.MaxInt64-count {
+			return 0, ErrProtocol
+		}
+		count += result.Reply.Count
 	}
-	return result.Reply.Count, nil
+	return count, ctx.Err()
 }
 func entryCells(entry contract.KVEntry, preview bool) []contract.DataCell {
 	values := []contract.Cell{{Kind: contract.Binary, Bytes: bytes.Clone(entry.Key)}, {Kind: contract.Binary, Bytes: bytes.Clone(entry.Value)}}
@@ -307,6 +334,13 @@ func (l *dataLease) validateRef(ref contract.RowRef) error {
 func (l *dataLease) readEntry(ctx context.Context, scope int, ref contract.RowRef) (contract.KVEntry, error) {
 	if err := l.validateRef(ref); err != nil {
 		return contract.KVEntry{}, err
+	}
+	access, err := l.captureAccess(ctx, scope)
+	if err != nil {
+		return contract.KVEntry{}, err
+	}
+	if !allowsKey(access.Read, ref.Values[0]) {
+		return contract.KVEntry{}, status.Error(codes.PermissionDenied, "key is outside the captured readable ranges")
 	}
 	result, err := l.native(ctx, scope, &pb.RangeRequest{Key: bytes.Clone(ref.Values[0])})
 	if err != nil {

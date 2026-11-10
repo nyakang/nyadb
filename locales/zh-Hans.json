@@ -3187,5 +3187,7 @@
   "etcdDataMutationHistory": "已确认的原生键更改",
   "etcdDataMutationCreate": "创建键",
   "etcdDataMutationUpdate": "更新键",
-  "etcdDataMutationDelete": "删除键"
+  "etcdDataMutationDelete": "删除键",
+  "dataSelectedReadOnly": "所选记录没有写入权限",
+  "dataAuthorizedReadScope": "仅显示当前前缀内可读取的键；行数统计和导出使用相同授权范围。"
 }

@@ -346,6 +346,12 @@ func (f *nativeFault) serve(_ any, stream grpc.ServerStream) error {
 	method, _ := grpc.MethodFromServerStream(stream)
 	var req, res proto.Message
 	switch method {
+	case "/etcdserverpb.Auth/AuthStatus":
+		req, res = &pb.AuthStatusRequest{}, &pb.AuthStatusResponse{}
+	case "/etcdserverpb.Auth/UserGet":
+		req, res = &pb.AuthUserGetRequest{}, &pb.AuthUserGetResponse{}
+	case "/etcdserverpb.Auth/RoleGet":
+		req, res = &pb.AuthRoleGetRequest{}, &pb.AuthRoleGetResponse{}
 	case "/etcdserverpb.Auth/Authenticate":
 		req, res = &pb.AuthenticateRequest{}, &pb.AuthenticateResponse{}
 	case "/etcdserverpb.Maintenance/Status":
@@ -430,6 +436,10 @@ func (f *nativeFault) serve(_ any, stream grpc.ServerStream) error {
 	return stream.SendMsg(res)
 }
 func faultClient(t *testing.T, upstream *Client, method, mode string) (*Client, *nativeFault) {
+	cfg, secret := nativeConfig(t)
+	return faultClientConfig(t, upstream, cfg, secret, method, mode)
+}
+func faultClientConfig(t *testing.T, upstream *Client, cfg Config, secret, method, mode string) (*Client, *nativeFault) {
 	t.Helper()
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -439,7 +449,6 @@ func faultClient(t *testing.T, upstream *Client, method, mode string) (*Client, 
 	server := grpc.NewServer(grpc.UnknownServiceHandler(f.serve))
 	go server.Serve(listener)
 	t.Cleanup(func() { server.Stop(); listener.Close() })
-	cfg, secret := nativeConfig(t)
 	cfg.Endpoint = "http://" + listener.Addr().String()
 	cfg.CAFile, cfg.ClientCertFile, cfg.ClientKeyFile, cfg.ServerName = "", "", "", ""
 	c, err := Open(context.Background(), cfg, secret)

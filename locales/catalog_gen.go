@@ -32517,3 +32517,23 @@ func EtcdDataMutationDelete() string { return In(i18n.Locale()).EtcdDataMutation
 func (msgs Messages) EtcdDataMutationDelete() string {
 	return Catalog.Format(msgs.locale, "etcdDataMutationDelete", nil)
 }
+
+// DataSelectedReadOnly says "所选记录没有写入权限"
+// in the language the app shows.
+func DataSelectedReadOnly() string { return In(i18n.Locale()).DataSelectedReadOnly() }
+
+// DataSelectedReadOnly says "所选记录没有写入权限"
+// in the language of msgs.
+func (msgs Messages) DataSelectedReadOnly() string {
+	return Catalog.Format(msgs.locale, "dataSelectedReadOnly", nil)
+}
+
+// DataAuthorizedReadScope says "仅显示当前前缀内可读取的键；行数统计和导出使用相同授权范围。"
+// in the language the app shows.
+func DataAuthorizedReadScope() string { return In(i18n.Locale()).DataAuthorizedReadScope() }
+
+// DataAuthorizedReadScope says "仅显示当前前缀内可读取的键；行数统计和导出使用相同授权范围。"
+// in the language of msgs.
+func (msgs Messages) DataAuthorizedReadScope() string {
+	return Catalog.Format(msgs.locale, "dataAuthorizedReadScope", nil)
+}

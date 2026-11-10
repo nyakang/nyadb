@@ -113,6 +113,7 @@ type DataRuntime struct {
 	ExportFormats       []string // nil preserves existing providers' format availability.
 	ImportDialect       string
 	Selector            DataSelector
+	ReadScopeHint       string                   // Optional localized presentation of the original read/count/export scope.
 	ReadDescription     func(DataOptions) string // pure, parameter-free native request information.
 	Loader              func(context.Context, int64, string, string, int64, int) (*DataPage, error)
 	AdvancedLoader      func(context.Context, int64, string, string, DataOptions) (*DataPage, error)

@@ -118,6 +118,9 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 					}
 				}
 				tableProperty(c, "数据库", t.database)
+				if t.runtime != nil && t.runtime.ReadScopeHint != "" {
+					ui.Text(c, locales.Text(t.runtime.ReadScopeHint)).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
+				}
 				ui.Divider(c)
 				if d.loading {
 					ui.Text(c, locales.Text("正在读取表信息…")).FontSize(theme.Font(c, 11)).TextColor(palette.Muted)
