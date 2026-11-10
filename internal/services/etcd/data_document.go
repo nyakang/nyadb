@@ -69,7 +69,7 @@ func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 	if s.closed || s.revoked || !s.client.Alive() {
 		return nil, contract.ErrRevoked
 	}
-	if len(s.leases)+len(s.dataDocuments)+len(s.events) >= 32 {
+	if s.documentCount() >= 32 {
 		return nil, contract.ErrKVLeaseLimit
 	}
 	l.ctx, l.cancel = context.WithCancel(s.ctx)

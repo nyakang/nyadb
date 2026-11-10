@@ -72,7 +72,7 @@ func TestEventsReservationBoundsMixedDocumentsAndDoesNotOpenChannels(t *testing.
 func TestEventsSharedBudgetCountsTransferredReceiptsUntilExplicitDisposal(t *testing.T) {
 	s := eventsTestSession(t)
 	a, b, c := eventsTestLease(t, s, 1), eventsTestLease(t, s, 2), eventsTestLease(t, s, 3)
-	if !a.admit(3<<20) || !b.admit(3<<20) || c.admit(3<<20) || a.admit(2<<20) || s.eventBytes != 24<<20 {
+	if !a.admit(3<<20) || !b.admit(3<<20) || c.admit(3<<20) || a.admit(2<<20) || s.retainedBytes != 24<<20 {
 		t.Fatal("document/session byte budgets were not enforced")
 	}
 	// Poll transfers a frame into its original document; it does not erase its
@@ -82,8 +82,8 @@ func TestEventsSharedBudgetCountsTransferredReceiptsUntilExplicitDisposal(t *tes
 	if err := w.append(WatchFrame{Native: []byte{0, 255}}); err != nil {
 		t.Fatal(err)
 	}
-	charged := s.eventBytes
-	if len(w.Poll()) != 1 || s.eventBytes != charged {
+	charged := s.retainedBytes
+	if len(w.Poll()) != 1 || s.retainedBytes != charged {
 		t.Fatal("Poll released retained receipt reservation")
 	}
 	if err := a.ClearReceipts(); err != nil {

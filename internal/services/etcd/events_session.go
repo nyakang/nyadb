@@ -16,7 +16,7 @@ func (s *Session) ReserveKVEvents(document uint64) (contract.KVEventsLease, erro
 	if document == 0 {
 		return nil, ErrInvalid
 	}
-	if len(s.events) >= eventDocumentLimit || len(s.events)+len(s.leases)+len(s.dataDocuments) >= 32 {
+	if len(s.events) >= eventDocumentLimit || s.documentCount() >= 32 {
 		return nil, contract.ErrKVLeaseLimit
 	}
 	for l := range s.events {

@@ -294,9 +294,9 @@ func TestEtcdNativeEventsTransferredReceiptsExhaustSharedBudgetWithoutStoppingOt
 		}
 	}
 	s.mu.Lock()
-	charged := s.eventBytes
+	charged := s.retainedBytes
 	s.mu.Unlock()
-	if charged <= 24<<20 || charged >= eventSessionBytes {
+	if charged <= 24<<20 || charged >= retainedSessionBytes {
 		t.Fatal("transferred receipt charges were released or exceeded shared budget", charged)
 	}
 	nativeDo(t, admin, &pb.PutRequest{Key: keys[2], Value: after})

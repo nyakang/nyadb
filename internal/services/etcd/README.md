@@ -357,3 +357,39 @@ Use all four 3.7.3 modes and 3.5.35 basic. This native foundation does not publi
 continuous renewal in the GUI or establish neutral session/document budgets;
 those remain the next acceptance steps. Local evidence is recorded in
 `docs/etcd-renewal-native-2026-11-10.md`.
+
+Private original-session renewal leases
+---------------------------------------
+
+`KVRenewalProvider` reserves a separate physical document channel without I/O.
+Its pure immutable preparation authorizes exactly one continuous run on the
+original native int64 lease ID. Preconnect remains an explicit handshake; Start
+captures that channel and one-use authorization. KV one-shot requests, event
+streams and data documents retain independent executors. Only dbruntime translates
+contextual generation 1 into the original published generation.
+
+Four renewal documents fit within the shared 32-document session limit. Complete
+renewal receipts charge up to 8 MiB per document; event and renewal documents
+share a 32 MiB retained-session limit. Poll transfers up to 64 receipts without
+releasing their charge. Explicit settled disposal releases it. Recovery transfers
+the charge for previously delivered and pending receipts to the fresh lease,
+including across replacement sessions; insufficient capacity fails without
+releasing the original retained charge. Driver acknowledgement and incomplete
+capture remain separate.
+
+Session retirement cancels and awaits the original executor while keeping its
+parked receipts and budget. Explicit recovery checks the original qualified
+scope, prefix, member/cluster and version, transfers remaining receipts and
+terminal metadata, and only reserves a fresh channel. It neither opens that
+channel nor sends a renewal. Old preparations cannot be transferred. Unknown
+renewal outcomes survive Poll, retirement, recovery, independent TTL reads and
+further recovery, and block both new preparations and ClearReceipts in that
+document. A fresh healthy handshake cannot erase this barrier.
+
+`GOWORK=off python3 tools/verify_etcd_fixture.py --renewal-session --race --mode
+MODE` verifies 12 required native parents, including original native and one-shot
+regressions, 13 actual processed first/later session reply faults, pending Stop,
+retirement/recovery, retained overflow, original public generation and legacy
+event retirement/budget regression. Use 3.7.3 anonymous/basic/tls/mtls and 3.5.35
+basic. This is an optional neutral runtime foundation; workbench continuous
+confirmation, controls and receipt presentation remain a separate acceptance.

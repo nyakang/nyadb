@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	eventDocumentLimit = 4
-	eventDocumentBytes = 16 << 20
-	eventSessionBytes  = 32 << 20
+	eventDocumentLimit   = 4
+	eventDocumentBytes   = 16 << 20
+	retainedSessionBytes = 32 << 20
 )
 
 type eventsLease struct {
@@ -34,18 +34,18 @@ func (l *eventsLease) admit(rawCharge int) bool {
 	charge := rawCharge * 4
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if charge > eventDocumentBytes-l.charged || charge > eventSessionBytes-s.eventBytes {
+	if charge > eventDocumentBytes-l.charged || charge > retainedSessionBytes-s.retainedBytes {
 		return false
 	}
 	l.charged += charge
-	s.eventBytes += charge
+	s.retainedBytes += charge
 	return true
 }
 
 func (l *eventsLease) releaseBudget() {
 	s := l.base.s
 	s.mu.Lock()
-	s.eventBytes -= l.charged
+	s.retainedBytes -= l.charged
 	l.charged = 0
 	s.mu.Unlock()
 }
