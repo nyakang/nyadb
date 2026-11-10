@@ -21,7 +21,7 @@ func TestPreparationRejectsUnsupportedAndUnboundedRequests(t *testing.T) {
 		&pb.TxnRequest{Compare: []*pb.Compare{{Key: []byte("a"), Target: pb.Compare_MOD, TargetUnion: &pb.Compare_Version{Version: 1}}}, Success: []*pb.RequestOp{putOp([]byte("a"), nil, 0)}},
 		&pb.TxnRequest{Success: []*pb.RequestOp{{Request: &pb.RequestOp_RequestTxn{RequestTxn: &pb.TxnRequest{}}}}},
 		&pb.PutRequest{Key: []byte("a"), Lease: 1, IgnoreLease: true}, &pb.LeaseGrantRequest{TTL: -1}, &pb.LeaseRevokeRequest{},
-		&pb.AuthDisableRequest{}, &pb.CompactionRequest{Revision: 1},
+		&pb.AuthDisableRequest{}, &pb.CompactionRequest{}, &pb.CompactionRequest{Revision: -1},
 	} {
 		if _, err := c.Prepare(r); !errors.Is(err, ErrInvalid) {
 			t.Fatalf("accepted invalid native request %T: %v", r, err)

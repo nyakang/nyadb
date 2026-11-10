@@ -28,7 +28,7 @@ func TestKVPreparationRejectsAmbiguityAndPreservesNativeExactValues(t *testing.T
 			t.Fatal("ambiguous native request accepted")
 		}
 	}
-	for _, method := range []string{"Put", "/etcdserverpb.Auth/AuthDisable", "/etcdserverpb.KV/Compact", "/etcdserverpb.Maintenance/Defragment"} {
+	for _, method := range []string{"Put", "/etcdserverpb.Auth/AuthDisable", "/etcdserverpb.Maintenance/Defragment"} {
 		if _, _, _, err := decodeKVRequest(contract.KVRequest{Method: method, JSON: `{}`}); err == nil {
 			t.Fatal("unsupported method accepted")
 		}

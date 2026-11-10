@@ -302,6 +302,8 @@ func responseFor(request proto.Message) proto.Message {
 	switch request.(type) {
 	case *pb.RangeRequest:
 		return &pb.RangeResponse{}
+	case *pb.CompactionRequest:
+		return &pb.CompactionResponse{}
 	case *pb.PutRequest:
 		return &pb.PutResponse{}
 	case *pb.DeleteRangeRequest:

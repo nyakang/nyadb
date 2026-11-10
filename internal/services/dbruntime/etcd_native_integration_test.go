@@ -210,7 +210,7 @@ func (f *etcdRuntimeFault) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutRe
 	}
 	return nil, status.Error(codes.Unavailable, "actual processed receipt withheld")
 }
-func etcdRuntimeProxy(t *testing.T, p connections.Profile, key []byte, mode string) (connections.Profile, *etcdRuntimeFault) {
+func etcdRuntimeTransport(t *testing.T, p connections.Profile) *grpc.ClientConn {
 	t.Helper()
 	var creds credentials.TransportCredentials = insecure.NewCredentials()
 	if p.TLSMode == "verify-full" {
@@ -237,6 +237,12 @@ func etcdRuntimeProxy(t *testing.T, p connections.Profile, key []byte, mode stri
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = conn.Close() })
+	return conn
+}
+
+func etcdRuntimeProxy(t *testing.T, p connections.Profile, key []byte, mode string) (connections.Profile, *etcdRuntimeFault) {
+	t.Helper()
+	conn := etcdRuntimeTransport(t, p)
 	f := &etcdRuntimeFault{upstream: conn, key: bytes.Clone(key), mode: mode, entered: make(chan struct{}), done: make(chan struct{})}
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {

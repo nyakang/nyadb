@@ -124,10 +124,7 @@ func TestEtcdNativeWatchOriginalCompactionAndRestrictedCreationReceipts(t *testi
 	key := nativeKey(t)
 	first := nativeDo(t, admin, &pb.PutRequest{Key: key, Value: []byte("before")})
 	last := nativeDo(t, admin, &pb.PutRequest{Key: key, Value: []byte("after")})
-	_, err := pb.NewKVClient(admin.conn).Compact(admin.authContext(context.Background()), &pb.CompactionRequest{Revision: last.Header.Revision})
-	if err != nil {
-		t.Fatal(err)
-	}
+	nativeDo(t, admin, &pb.CompactionRequest{Revision: last.Header.Revision})
 	w, err := c.StartWatch(context.Background(), &pb.WatchCreateRequest{Key: key, WatchId: 99, StartRevision: first.Header.Revision})
 	if err != nil {
 		t.Fatal("created receipt should precede compaction terminal", err)

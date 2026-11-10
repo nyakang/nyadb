@@ -205,11 +205,8 @@ func TestEtcdNativeBinaryMVCCPagingAndCompaction(t *testing.T) {
 	if nativeDo(t, c, count).Native().(*pb.RangeResponse).Count != 4 {
 		t.Fatal("snapshot count")
 	}
-	// Compact is deliberately fixture preparation, not an exposed management API.
-	_, err := pb.NewKVClient(c.conn).Compact(c.authContext(context.Background()), &pb.CompactionRequest{Revision: rev})
-	if err != nil {
-		t.Fatal("native compaction fixture", err)
-	}
+	// Use the original one-use request before checking the old MVCC window.
+	nativeDo(t, c, &pb.CompactionRequest{Revision: rev})
 	p, _ := c.Prepare(&pb.RangeRequest{Key: keys[0], Revision: rev - 1})
 	r, err := c.Execute(context.Background(), p)
 	if status.Code(err) != codes.OutOfRange || r.Completed || !c.Alive() {

@@ -107,10 +107,7 @@ func TestEtcdNativeHistoryActualCompactionDoesNotMoveRequestedEndRevision(t *tes
 	key := nativeKey(t)
 	first := nativeDo(t, admin, &pb.PutRequest{Key: key, Value: []byte("before")})
 	last := nativeDo(t, admin, &pb.PutRequest{Key: key, Value: []byte("after")})
-	_, err := pb.NewKVClient(admin.conn).Compact(admin.authContext(context.Background()), &pb.CompactionRequest{Revision: last.Header.Revision})
-	if err != nil {
-		t.Fatal(err)
-	}
+	nativeDo(t, admin, &pb.CompactionRequest{Revision: last.Header.Revision})
 	result, err := c.History(context.Background(), HistoryRequest{Key: key, StartRevision: first.Header.Revision, Limit: 100})
 	if err == nil || result.Complete || result.Terminal.Reason != "compacted" || len(result.Frames) != 2 || result.Frames[1].CompactRevision != last.Header.Revision || result.Frames[1].Header.Revision != 0 {
 		t.Fatal("actual native compaction receipt lost/replaced", err, result.Terminal.Reason)

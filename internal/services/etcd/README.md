@@ -12,7 +12,7 @@ credentials, TLS verification and client certificate authentication are
 supported. A successful probe does not imply full-range or administrative
 permission. Cluster/member IDs are observations, not incarnation guarantees.
 
-`Prepare` accepts bounded native protobuf Range/Put/Delete/Txn/Status and
+`Prepare` accepts bounded native protobuf Range/Put/Delete/Txn/Compact/Status and
 lease requests, plus the original Auth/RBAC requests described below. It validates and deep-copies the request; all copies share
 one attempt flag. Transactions reject nesting and preserve native comparisons,
 both branches and atomic response semantics. Native results retain int64,
@@ -593,3 +593,29 @@ identities, real processed partial-write faults, original cancel/close/parking a
 publication replacement, complete permissions and redacted records. AuthEnable/
 AuthDisable, maintenance/member administration and etcd-v2 remain separate scope.
 Local evidence: `docs/etcd-auth-public-2026-11-11.md`.
+
+## Original compaction request foundation
+
+The optional `KVMaintenance` facet advertises `KV/Compact` on the original
+request lease. Runtime binding preserves all eight maintenance/Auth/browser
+combinations. Preparation captures a positive signed int64 revision and the
+logical/physical option without network activity; execution uses the original
+one-use plan and native RPC. Compact affects cluster history regardless of the
+connection's browse prefix. It does not change current values or create a new
+KV revision. Observations of the current revision are not a CAS precondition.
+
+The complete original CompactionResponse, header, protobuf extensions and JSON
+remain separate from later Range/Watch/history observations. Native rejection of
+a future/already-compacted revision or insufficient permission is definite;
+processed-reply loss, cancellation and an invalid header retain an unknown
+write outcome. Recovery never executes Compact and cannot transfer its old plan.
+The public method selector and dedicated maintenance form remain a separate
+acceptance step. Defragment, Alarm, Snapshot and member management are pending.
+
+Run `GOWORK=off /usr/bin/python3 tools/verify_etcd_fixture.py --compaction-native
+--race --mode MODE` for 16 required native parents. Use official 3.7.3
+anonymous/basic/tls/mtls and 3.5.35 basic. These cover original native compaction
+and publication, logical/physical receipt faults, exact MVCC pagination,
+compacted Watch/history, restricted identity and original Auth/browser recovery.
+This stage does not establish public maintenance UI acceptance. Local evidence:
+`docs/etcd-compaction-native-2026-11-11.md`.

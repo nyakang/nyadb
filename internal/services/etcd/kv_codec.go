@@ -22,6 +22,8 @@ func decodeKVRequest(r contract.KVRequest) (proto.Message, contract.KVRequest, b
 	switch r.Method {
 	case "/etcdserverpb.KV/Range":
 		m = &pb.RangeRequest{}
+	case "/etcdserverpb.KV/Compact":
+		m = &pb.CompactionRequest{}
 	case "/etcdserverpb.KV/Put":
 		m = &pb.PutRequest{}
 	case "/etcdserverpb.KV/DeleteRange":
@@ -187,6 +189,10 @@ func projectReply(m proto.Message, budget *int, depth int) (contract.KVReply, er
 		r.Kind = "range"
 		r.Count, r.More = v.Count, v.More
 		r.Entries, err = projectEntries(v.Kvs, budget)
+	case *pb.CompactionResponse:
+		// The native reply has only its header. Requested compaction revision
+		// and physical mode stay in the original request, not an invented reply.
+		r.Kind = "compaction"
 	case *pb.PutResponse:
 		r.Kind = "put"
 		if v.PrevKv != nil {

@@ -66,6 +66,11 @@ func validateRequest(r proto.Message) (string, bool, error) {
 			return "", false, ErrInvalid
 		}
 		return "/etcdserverpb.KV/Range", false, nil
+	case *pb.CompactionRequest:
+		if v.Revision <= 0 {
+			return "", false, ErrInvalid
+		}
+		return "/etcdserverpb.KV/Compact", true, nil
 	case *pb.PutRequest:
 		if !validKey(v.Key) || len(v.Value) > 1<<20 || v.IgnoreValue && len(v.Value) > 0 || v.IgnoreLease && v.Lease != 0 {
 			return "", false, ErrInvalid

@@ -52,14 +52,14 @@ func (s *session) bindKV(raw contract.KVRequestLease) (contract.KVRequestLease, 
 	_, auth := raw.(contract.KVAuthManagement)
 	if _, ok := raw.(contract.KVLeaseBrowsing); ok {
 		if auth {
-			return &kvAuthBrowsingLease{&kvLeaseBrowsingLease{bound}}, nil
+			return bindKVMaintenance(&kvAuthBrowsingLease{&kvLeaseBrowsingLease{bound}}), nil
 		}
-		return &kvLeaseBrowsingLease{bound}, nil
+		return bindKVMaintenance(&kvLeaseBrowsingLease{bound}), nil
 	}
 	if auth {
-		return &kvAuthLease{bound}, nil
+		return bindKVMaintenance(&kvAuthLease{bound}), nil
 	}
-	return bound, nil
+	return bindKVMaintenance(bound), nil
 }
 func (s *session) ReserveKV(document uint64) (contract.KVRequestLease, error) {
 	if !s.alive() {

@@ -405,9 +405,7 @@ func TestEtcdNativeDataCompactionRetiresOriginalRangeAndExplicitReopen(t *testin
 		t.Fatal(err)
 	}
 	later := nativeKVDo(t, admin, &pb.PutRequest{Key: append(bytes.Clone(prefix), byte(1)), Value: []byte("later")})
-	if _, err = pb.NewKVClient(s.client.conn).Compact(s.client.authContext(context.Background()), &pb.CompactionRequest{Revision: later.Header.Revision}); err != nil {
-		t.Fatal(err)
-	}
+	nativeKVDo(t, admin, &pb.CompactionRequest{Revision: later.Header.Revision})
 	options.After = page.NextCursor
 	options.Offset = page.NextCursor.Offset
 	if _, err = l.page(context.Background(), s.ProfileID(), "kv", "keys", options); err == nil || !l.rangeLost || !s.Alive() {
