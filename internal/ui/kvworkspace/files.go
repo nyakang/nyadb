@@ -59,7 +59,12 @@ func EncodeRequest(r contract.KVRequest) ([]byte, error) {
 			return nil, err
 		}
 	}
-	supported := r.Method == MembersMethod || r.Method == CompactMethod || eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method) || r.Method == AuthManagementMethod
+	if r.Method == AlarmsMethod {
+		if _, _, err := parseAlarmInputs(r); err != nil {
+			return nil, err
+		}
+	}
+	supported := r.Method == AlarmsMethod || r.Method == MembersMethod || r.Method == CompactMethod || eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method) || r.Method == AuthManagementMethod
 	for _, m := range methods {
 		if m.Path == r.Method {
 			supported = true
@@ -312,6 +317,7 @@ func (s *State) consumeFiles(d *Document) {
 				return
 			}
 			d.releaseMemberAuthority()
+			d.releaseAlarmAuthority()
 			d.method = r.request.Method
 			d.selectedMembers = d.method == MembersMethod
 			d.Editor.Buffer.Set(r.request.JSON)

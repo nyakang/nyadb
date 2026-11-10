@@ -791,3 +791,47 @@ Local evidence: `docs/etcd-alarm-native-2026-11-11.md`. This is native foundatio
 acceptance; public checked Alarm selection/forms/batches remain separate. Snapshot,
 membership changes, full cluster management, etcd-v2 and AuthEnable/AuthDisable
 remain outside this stage.
+
+### Private checked Alarm batch document foundation
+
+The sole KV State/Document holds a private actual GET authority for its original
+physical lease, document and public generation. Exported observation DTOs and
+request files cannot restore that handle. Authored selections contain only the
+known alarm type filter and exact decimal uint64 member/type pairs, with at most
+eight distinct targets. GET never accepts a member filter; unknown observed enum
+numbers remain inspectable. A removed member ID is an alarm identity, not an
+endpoint or proof of current membership.
+
+Pure preparation captures immutable one-use full-GET and exact-DEACTIVATE plans
+for every selected pair. Confirmation validates the same private observation,
+lease, original input and snapshots. Each worker step obtains a fresh complete
+GET on that original lease and checks the selected pair and its native extension
+bytes before sending a single original Disarm. Missing/changed pairs, failed or
+incomplete reads, cancellation, write failures or unknown ACKs stop the sequence.
+No later target is inspected after that stop. A fresh GET is an observation, not
+CAS or alarm-incarnation protection; a target can disappear after that check and
+still produce a genuine already-absent empty native ACK.
+
+Original succeeded/failed/unknown/not-executed outcomes retain their own full
+GET and native ACK records. Independent unknown evidence blocks ordinary KV,
+Auth, renewal, member and Alarm writes and survives later reads and recovery.
+Receipt DTOs deep-copy native bytes/extensions. Request-file open revokes local
+authority while keeping original observations/receipts; export captures complete
+original data before opening the picker. Original private buffered completions
+wait for activation. Recovery transfers original evidence without GET/Disarm I/O;
+close drains the original executor and clears all caches. Leave permissions
+include the Alarm receipt revision. Archive capacity is reserved before GET,
+Disarm and recovery; complete captured native outcomes remain separate from any
+preview or JSON projection bounds.
+
+`GOWORK=off /usr/bin/python3 tools/verify_etcd_fixture.py --alarm-workspace --race
+--version VERSION --mode MODE` adds four mandatory original-workspace parents
+to the native Alarm/session/runtime/KV/Compact/member regressions. Owned official
+3.7.3 anonymous/basic/TLS/mTLS and 3.5.35 basic verify stale pairs, type windows,
+original simultaneous pairs, restricted GET versus exact-write denial, actual
+processed read/partial-write faults, parking, cancellation, close, replacement,
+disconnect and explicit recovery. TLS/mTLS fault relays preserve the original
+fixture certificate paths and require client certificate verification in mTLS.
+This remains private document foundation: no public method-selector entry or
+Alarm form is installed. Public controls and bilingual workspace/Shell UI
+acceptance are the next stage.

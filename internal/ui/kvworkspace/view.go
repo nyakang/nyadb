@@ -415,6 +415,11 @@ func (s *State) Modals(c *ui.Context) {
 			continue
 		}
 		confirmation := d.confirmation
+		// Alarm batch authority is private foundation until public forms and
+		// their native workspace/Shell acceptance are installed.
+		if confirmation.alarms != nil {
+			continue
+		}
 		theme.Modal(c.Key(fmt.Sprintf("kv-confirm-%d", d.id)), &confirmation.open, func() {
 			if confirmation.members != nil {
 				s.memberConfirmationView(c, d, confirmation)
