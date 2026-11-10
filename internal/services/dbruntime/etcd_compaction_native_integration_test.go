@@ -48,7 +48,7 @@ func TestEtcdNativeCompactionRuntimeOriginalPublicationInventoryAndPureRecovery(
 	}
 	lease := etcdRuntimeReserve(t, m, 1)
 	inventory, ok := lease.(contract.KVMaintenance)
-	if !ok || !slices.Equal(inventory.MaintenanceMethods(), []string{"/etcdserverpb.KV/Compact"}) {
+	if !ok || !slices.Equal(inventory.MaintenanceMethods(), []string{"/etcdserverpb.KV/Compact", "/etcdserverpb.Maintenance/Alarm"}) {
 		t.Fatal("original publication lost maintenance inventory")
 	}
 	if _, ok := lease.(contract.KVAuthManagement); !ok {

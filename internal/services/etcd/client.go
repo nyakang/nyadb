@@ -405,6 +405,9 @@ func (c *Client) executeOwned(parent context.Context, p Plan) (r Response, err e
 	if err = c.validateMemberResponse(p.request, native); err != nil {
 		return r, err
 	}
+	if err = c.validateAlarmResponse(p.request, native); err != nil {
+		return r, err
+	}
 	if s, ok := native.(*pb.StatusResponse); ok && s.Version != c.identity.Version {
 		return r, ErrProtocol
 	}
@@ -448,6 +451,8 @@ func responseFor(request proto.Message) proto.Message {
 		return &pb.LeaseLeasesResponse{}
 	case *pb.StatusRequest:
 		return &pb.StatusResponse{}
+	case *pb.AlarmRequest:
+		return &pb.AlarmResponse{}
 	case *pb.MemberListRequest:
 		return &pb.MemberListResponse{}
 	case *pb.DefragmentRequest:

@@ -32,6 +32,8 @@ func decodeKVRequest(r contract.KVRequest) (proto.Message, contract.KVRequest, b
 		m = &pb.TxnRequest{}
 	case "/etcdserverpb.Maintenance/Status":
 		m = &pb.StatusRequest{}
+	case "/etcdserverpb.Maintenance/Alarm":
+		m = &pb.AlarmRequest{}
 	case "/etcdserverpb.Lease/LeaseGrant":
 		m = &pb.LeaseGrantRequest{}
 	case "/etcdserverpb.Lease/LeaseRevoke":
@@ -196,6 +198,19 @@ func projectReply(m proto.Message, budget *int, depth int) (contract.KVReply, er
 		r.Kind = "compaction"
 	case *pb.DefragmentResponse:
 		r.Kind = "defragment"
+	case *pb.AlarmResponse:
+		r.Kind = "alarm"
+		*budget -= len(v.Alarms)
+		if *budget < 0 {
+			return r, ErrBounds
+		}
+		r.Alarms = make([]contract.KVAlarm, len(v.Alarms))
+		for i, alarm := range v.Alarms {
+			if alarm == nil {
+				return r, ErrProtocol
+			}
+			r.Alarms[i] = contract.KVAlarm{MemberID: alarm.MemberID, Type: int32(alarm.Alarm), NativeExtensions: append([]byte(nil), alarm.ProtoReflect().GetUnknown()...)}
+		}
 	case *pb.MemberListResponse:
 		r.Kind = "member_list"
 		*budget -= len(v.Members)

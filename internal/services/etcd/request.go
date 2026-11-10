@@ -153,6 +153,8 @@ func validateRequest(r proto.Message) (string, bool, error) {
 		return "/etcdserverpb.Lease/LeaseKeepAlive", true, nil
 	case *pb.StatusRequest:
 		return "/etcdserverpb.Maintenance/Status", false, nil
+	case *pb.AlarmRequest:
+		return validateAlarmRequest(v)
 	case *pb.MemberListRequest:
 		return "/etcdserverpb.Cluster/MemberList", false, nil
 	case *pb.DefragmentRequest:

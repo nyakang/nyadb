@@ -743,3 +743,51 @@ partial batches, restricted-principal denial, learner inspection, original
 publication/recovery, text files and full archives are mandatory. Local evidence:
 `docs/etcd-public-members-2026-11-11.md`. Alarm/Disarm, Snapshot, membership changes,
 broader cluster management, etcd-v2 and AuthEnable/AuthDisable remain separate.
+
+### Original Alarm native requests and leases
+
+The native Client, neutral complete KV result, original document request codec
+and optional maintenance inventory now support `/etcdserverpb.Maintenance/Alarm`.
+GET is read-only and accepts all alarms or a known alarm-type filter. Official
+3.5/3.7 ignore GET's member_id field, so nonzero member filters are explicitly
+rejected. Exact DEACTIVATE captures an unsigned member ID and NOSPACE/CORRUPT
+pair in one immutable one-use request. The adapter sends one direct protobuf RPC,
+without ACTIVATE, implicit all-member disarm or synthesized helper replies.
+
+Complete AlarmResponse headers, protobuf/JSON, exact uint64 member IDs, native
+unknown enum numbers and per-alarm/header/root extensions remain inspectable.
+Removed entries in the original DEACTIVATE reply are separate from the current
+alarm list. Already-absent exact DEACTIVATE can succeed with a real header and
+empty list; later absence never acknowledges an earlier lost native write.
+Malformed/wrong original headers, entries or exact target replies retain native
+evidence and interrupt that original transport. Projection limits preserve the
+complete acknowledged protobuf and an explicit projection error.
+
+Both official 3.7.3 and 3.5.35 allow authenticated restricted users to GET alarms;
+DEACTIVATE requires native maintenance permission and returns the original
+PermissionDenied code/message. Anonymous and certificate principals use their
+captured original transport/authentication settings. The native list is cluster
+scope, independent of the connection's KV browsing prefix, and may contain stale
+member IDs; an alarm ID is not proof of a current physical member transport.
+
+Original document Prepare/Execute serializes requests and keeps native ACKs and
+independent write uncertainty. Actual processed Disarm reply loss/cancellation,
+close or invalid native reply stops without replay. Pure recovery carries the
+original receipt and write barrier, revokes old preparations and never opens or
+executes another request. Later explicit Alarm reads cannot release an original
+KV/member/Disarm unknown barrier. Public generation translation remains only at
+the runtime boundary; another profile's activation never changes original work.
+
+Run `GOWORK=off /usr/bin/python3 tools/verify_etcd_fixture.py --alarm-native --race
+--version VERSION --mode MODE` for 18 mandatory native parent cases per fixture:
+3.7.3 anonymous/basic/tls/mtls plus 3.5.35 basic. Actual NOSPACE/CORRUPT setup exists
+only on independently owned test fixtures. The suites include type-filter and
+ignored-member-filter behavior, exact unsigned stale-member IDs, empty/removed
+native ACKs, restricted/certificate principals, complete extensions, actual
+processed read/write reply faults, cancellation/ownership, original publication
+and pure recovery, plus existing KV/Compact/member regressions. TLS/mTLS fault
+relays keep the original transport configuration and owned certificates.
+Local evidence: `docs/etcd-alarm-native-2026-11-11.md`. This is native foundation
+acceptance; public checked Alarm selection/forms/batches remain separate. Snapshot,
+membership changes, full cluster management, etcd-v2 and AuthEnable/AuthDisable
+remain outside this stage.

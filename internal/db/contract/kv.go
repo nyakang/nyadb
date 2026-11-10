@@ -75,9 +75,14 @@ type KVReply struct {
 	Status          *KVStatus
 	Auth            *KVAuthReceipt
 	Members         []KVMember
+	Alarms          []KVAlarm
 }
 
 func (r KVReply) Clone() KVReply {
+	r.Alarms = slices.Clone(r.Alarms)
+	for i := range r.Alarms {
+		r.Alarms[i] = r.Alarms[i].Clone()
+	}
 	r.Members = slices.Clone(r.Members)
 	for i := range r.Members {
 		r.Members[i] = r.Members[i].Clone()

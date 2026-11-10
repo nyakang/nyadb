@@ -68,7 +68,11 @@ def certificates(folder, access=False):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False, public_lease_management=False, dependency_modfile=None, auth_native=False, public_auth=False, compaction_native=False, public_compaction=False, member_native=False, member_session=False):
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False, public_lease_management=False, dependency_modfile=None, auth_native=False, public_auth=False, compaction_native=False, public_compaction=False, member_native=False, member_session=False, alarm_native=False):
+    if alarm_native and any((profile, workspace, data, public, smoke, access, access_smoke, watch_smoke, history_smoke, events_smoke, events_workspace_smoke, public_events, renewal_native, renewal_session, public_renewal, lease_browser_native, lease_browser_session, public_lease_browser, public_lease_management, auth_native, public_auth, compaction_native, public_compaction, member_native, member_session)):
+        raise ValueError('Alarm native acceptance is a separate original session scope')
+    if alarm_native:
+        session = True
     if member_native and any((profile, session, workspace, data, public, smoke, access, access_smoke, watch_smoke, history_smoke, events_smoke, events_workspace_smoke, public_events, renewal_native, renewal_session, public_renewal, lease_browser_native, lease_browser_session, public_lease_browser, public_lease_management, auth_native, public_auth, compaction_native, public_compaction)):
         raise ValueError('Member native acceptance is a separate fixture scope')
     if member_session:
@@ -173,6 +177,8 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
         report['scope'] = 'private-etcd-original-member-native-protocol'
     if member_session:
         report['scope'] = 'private-etcd-original-member-session-runtime'
+    if alarm_native:
+        report['scope'] = 'private-etcd-original-alarm-list-exact-disarm-session'
     private_path = None
     try:
         with tempfile.TemporaryDirectory(prefix='nyadb-etcd-'+nonce+'-', dir=build) as raw:
@@ -183,7 +189,7 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
             secret = 'Nya_'+secrets.token_urlsafe(24)
             username = ' root '+nonce[:6]  # Exercise exact, untrimmed native names.
             if tls:
-                certificates(private, access or access_smoke or auth_native)
+                certificates(private, access or access_smoke or auth_native or alarm_native)
             scheme = 'https' if tls else 'http'
             env = ['ETCDCTL_API=3', 'ETCDCTL_ENDPOINTS='+scheme+'://localhost:2379']
             if tls:
@@ -229,6 +235,9 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                 ctl('role', 'add', 'restricted')
                 ctl('role', 'grant-permission', 'restricted', 'read', '/allowed/', '--prefix=true')
                 ctl('user', 'grant-role', 'restricted', 'restricted')
+                if alarm_native:
+                    ctl('user', 'add', 'acl-cert', '--interactive=false', input=secret+'\n')
+                    ctl('user', 'grant-role', 'acl-cert', 'restricted')
                 ctl('auth', 'enable')
             port = run(['docker', 'port', identifier, '2379/tcp']).split(':')[-1]
             environment = dict(os.environ, GOWORK='off', GOFLAGS='-mod=readonly', CGO_ENABLED='1' if race else '0', NYADB_ETCD_NATIVE_IT='1',
@@ -241,7 +250,7 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                 environment['NYADB_ETCD_CA'] = str(private/'ca.crt')
             if mode == 'mtls':
                 environment.update(NYADB_ETCD_CERT=str(private/'client.crt'), NYADB_ETCD_KEY=str(private/'client.key'))
-            if tls and (access or access_smoke or auth_native):
+            if tls and (access or access_smoke or auth_native or alarm_native):
                 environment.update(NYADB_ETCD_ACCESS_CERT=str(private/'access-client.crt'), NYADB_ETCD_ACCESS_KEY=str(private/'access-client.key'),
                                    NYADB_ETCD_ROOT_CERT=str(private/'client.crt'), NYADB_ETCD_ROOT_KEY=str(private/'client.key'))
             packages = ['./internal/services/etcd']
@@ -500,6 +509,21 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                              'SessionOriginalReadBusyCancellationAndClose',
                              'RuntimeActualProcessedPutFaultAndGenerationReplacement',
                              'RuntimeLateOriginalHandshakeCannotCloseReplacement')
+            if alarm_native:
+                environment.update(NYADB_ETCD_ALARM_IT='1', NYADB_ETCD_SESSION_IT='1', NYADB_ETCD_COMPACTION_IT='1', NYADB_ETCD_MEMBER_NATIVE_IT='1')
+                packages = ['./internal/services/etcd', './internal/services/dbruntime']
+                required = REQUIRED + ('AlarmOriginalListTypeFilterExactDisarmAndCompleteReceipts',
+                                       'AlarmRestrictedTokenAndCertificateOriginalPermissions',
+                                       'AlarmActualProcessedReadAndDisarmFaultsRetainOriginalsNeverReplay',
+                                       'AlarmOriginalCancellationBusyOwnershipAndUnknownWriteBarrier',
+                                       'AlarmRuntimeOriginalInventoryPublicationAndPureRecovery',
+                                       'AlarmRuntimeActualProcessedFaultsOriginalPublicationAndRecoveryNeverReplay',
+                                       'CompactionOriginalLogicalPhysicalWholeClusterAndCompleteReceipts',
+                                       'CompactionRuntimeOriginalPublicationInventoryAndPureRecovery',
+                                       'MemberDirectoryZeroRevisionAndOriginalEmptyDefragmentAck',
+                                       'MemberDefragmentBeforeDispatchCancellationAndOriginalPlanOwnership',
+                                       'RuntimeActualProcessedPutFaultAndGenerationReplacement',
+                                       'RuntimeLateOriginalHandshakeCannotCloseReplacement')
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
             command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
@@ -599,6 +623,7 @@ if __name__ == '__main__':
     parser.add_argument('--public-auth', action='store_true')
     parser.add_argument('--compaction-native', action='store_true')
     parser.add_argument('--public-compaction', action='store_true')
+    parser.add_argument('--alarm-native', action='store_true')
     parser.add_argument('--member-native', action='store_true')
     parser.add_argument('--member-session', action='store_true')
     parser.add_argument('--dependency-modfile')
@@ -614,4 +639,4 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser, args.public_lease_management, args.dependency_modfile, args.auth_native, args.public_auth, args.compaction_native, args.public_compaction, args.member_native, args.member_session)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser, args.public_lease_management, args.dependency_modfile, args.auth_native, args.public_auth, args.compaction_native, args.public_compaction, args.member_native, args.member_session, args.alarm_native)

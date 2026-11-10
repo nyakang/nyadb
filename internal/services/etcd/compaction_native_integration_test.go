@@ -44,7 +44,7 @@ func TestEtcdNativeCompactionOriginalLogicalPhysicalWholeClusterAndCompleteRecei
 			s := raw.(*Session)
 			defer s.Close()
 			l := reserveNativeKV(t, s, 1)
-			if !slices.Equal(l.(contract.KVMaintenance).MaintenanceMethods(), []string{"/etcdserverpb.KV/Compact"}) {
+			if !slices.Equal(l.(contract.KVMaintenance).MaintenanceMethods(), []string{"/etcdserverpb.KV/Compact", "/etcdserverpb.Maintenance/Alarm"}) {
 				t.Fatal("original lease lost maintenance inventory")
 			}
 			key, outside := append([]byte("/inside/"), nativeKey(t)...), append(nativeKey(t), 0, 255)
