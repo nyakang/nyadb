@@ -32907,3 +32907,293 @@ func EtcdWatchLastProgress() string { return In(i18n.Locale()).EtcdWatchLastProg
 func (msgs Messages) EtcdWatchLastProgress() string {
 	return Catalog.Format(msgs.locale, "etcdWatchLastProgress", nil)
 }
+
+// EtcdRenewalUnsupported says "此连接不支持持续续租"
+// in the language the app shows.
+func EtcdRenewalUnsupported() string { return In(i18n.Locale()).EtcdRenewalUnsupported() }
+
+// EtcdRenewalUnsupported says "此连接不支持持续续租"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalUnsupported() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalUnsupported", nil)
+}
+
+// EtcdRenewalIDInvalid says "请输入完整的非零租约 ID"
+// in the language the app shows.
+func EtcdRenewalIDInvalid() string { return In(i18n.Locale()).EtcdRenewalIDInvalid() }
+
+// EtcdRenewalIDInvalid says "请输入完整的非零租约 ID"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalIDInvalid() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalIDInvalid", nil)
+}
+
+// EtcdRenewalClearFirst says "请先清除已停止的续租回执"
+// in the language the app shows.
+func EtcdRenewalClearFirst() string { return In(i18n.Locale()).EtcdRenewalClearFirst() }
+
+// EtcdRenewalClearFirst says "请先清除已停止的续租回执"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalClearFirst() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalClearFirst", nil)
+}
+
+// EtcdRenewalEmpty says "确认持续续租后显示原始回执"
+// in the language the app shows.
+func EtcdRenewalEmpty() string { return In(i18n.Locale()).EtcdRenewalEmpty() }
+
+// EtcdRenewalEmpty says "确认持续续租后显示原始回执"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalEmpty() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalEmpty", nil)
+}
+
+// EtcdRenewalOriginalID says "原租约 ID：%d"
+// in the language the app shows.
+func EtcdRenewalOriginalID() string { return In(i18n.Locale()).EtcdRenewalOriginalID() }
+
+// EtcdRenewalOriginalID says "原租约 ID：%d"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalOriginalID() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalOriginalID", nil)
+}
+
+// EtcdRenewalFirst says "等待首次续租确认"
+// in the language the app shows.
+func EtcdRenewalFirst() string { return In(i18n.Locale()).EtcdRenewalFirst() }
+
+// EtcdRenewalFirst says "等待首次续租确认"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalFirst() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalFirst", nil)
+}
+
+// EtcdRenewalActive says "正在持续续租原租约"
+// in the language the app shows.
+func EtcdRenewalActive() string { return In(i18n.Locale()).EtcdRenewalActive() }
+
+// EtcdRenewalActive says "正在持续续租原租约"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalActive() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalActive", nil)
+}
+
+// EtcdRenewalStopped says "原持续续租已停止"
+// in the language the app shows.
+func EtcdRenewalStopped() string { return In(i18n.Locale()).EtcdRenewalStopped() }
+
+// EtcdRenewalStopped says "原持续续租已停止"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalStopped() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalStopped", nil)
+}
+
+// EtcdRenewalUnknown says "原续租未确认；此文档禁止继续写入"
+// in the language the app shows.
+func EtcdRenewalUnknown() string { return In(i18n.Locale()).EtcdRenewalUnknown() }
+
+// EtcdRenewalUnknown says "原续租未确认；此文档禁止继续写入"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalUnknown() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalUnknown", nil)
+}
+
+// EtcdRenewalCounts says "已确认续租：%d · 完整回执：%d"
+// in the language the app shows.
+func EtcdRenewalCounts() string { return In(i18n.Locale()).EtcdRenewalCounts() }
+
+// EtcdRenewalCounts says "已确认续租：%d · 完整回执：%d"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalCounts() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalCounts", nil)
+}
+
+// EtcdRenewalLatestTTL says "最近确认 TTL：%d 秒 · 修订号：%d"
+// in the language the app shows.
+func EtcdRenewalLatestTTL() string { return In(i18n.Locale()).EtcdRenewalLatestTTL() }
+
+// EtcdRenewalLatestTTL says "最近确认 TTL：%d 秒 · 修订号：%d"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalLatestTTL() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalLatestTTL", nil)
+}
+
+// EtcdRenewalOwnership says "原成员：%d · 原集群：%d"
+// in the language the app shows.
+func EtcdRenewalOwnership() string { return In(i18n.Locale()).EtcdRenewalOwnership() }
+
+// EtcdRenewalOwnership says "原成员：%d · 原集群：%d"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalOwnership() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalOwnership", nil)
+}
+
+// EtcdRenewalExpiry says "停止续租后，原租约及关联键可能自然过期"
+// in the language the app shows.
+func EtcdRenewalExpiry() string { return In(i18n.Locale()).EtcdRenewalExpiry() }
+
+// EtcdRenewalExpiry says "停止续租后，原租约及关联键可能自然过期"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalExpiry() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalExpiry", nil)
+}
+
+// EtcdRenewalPreviewBound says "预览最近 32 次回执；复制与导出保留全部原始内容"
+// in the language the app shows.
+func EtcdRenewalPreviewBound() string { return In(i18n.Locale()).EtcdRenewalPreviewBound() }
+
+// EtcdRenewalPreviewBound says "预览最近 32 次回执；复制与导出保留全部原始内容"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalPreviewBound() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalPreviewBound", nil)
+}
+
+// EtcdRenewalReceipt says "KV 持续续租回执"
+// in the language the app shows.
+func EtcdRenewalReceipt() string { return In(i18n.Locale()).EtcdRenewalReceipt() }
+
+// EtcdRenewalReceipt says "KV 持续续租回执"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalReceipt() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalReceipt", nil)
+}
+
+// EtcdRenewalConfirm says "确认持续续租"
+// in the language the app shows.
+func EtcdRenewalConfirm() string { return In(i18n.Locale()).EtcdRenewalConfirm() }
+
+// EtcdRenewalConfirm says "确认持续续租"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalConfirm() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalConfirm", nil)
+}
+
+// EtcdRenewalConfirmScope says "连接 #%d · 原会话代次 %d"
+// in the language the app shows.
+func EtcdRenewalConfirmScope() string { return In(i18n.Locale()).EtcdRenewalConfirmScope() }
+
+// EtcdRenewalConfirmScope says "连接 #%d · 原会话代次 %d"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalConfirmScope() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalConfirmScope", nil)
+}
+
+// EtcdRenewalAuthorizationHint says "确认后，将按服务端实际 TTL 持续维护此原租约，直到明确停止或运行结束。"
+// in the language the app shows.
+func EtcdRenewalAuthorizationHint() string { return In(i18n.Locale()).EtcdRenewalAuthorizationHint() }
+
+// EtcdRenewalAuthorizationHint says "确认后，将按服务端实际 TTL 持续维护此原租约，直到明确停止或运行结束。"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalAuthorizationHint() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalAuthorizationHint", nil)
+}
+
+// EtcdRenewalRecoveryHint says "恢复连接不会重新开始续租；新的续租需要再次确认。"
+// in the language the app shows.
+func EtcdRenewalRecoveryHint() string { return In(i18n.Locale()).EtcdRenewalRecoveryHint() }
+
+// EtcdRenewalRecoveryHint says "恢复连接不会重新开始续租；新的续租需要再次确认。"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalRecoveryHint() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalRecoveryHint", nil)
+}
+
+// EtcdRenewalOriginalRequest says "原持续续租请求"
+// in the language the app shows.
+func EtcdRenewalOriginalRequest() string { return In(i18n.Locale()).EtcdRenewalOriginalRequest() }
+
+// EtcdRenewalOriginalRequest says "原持续续租请求"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalOriginalRequest() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalOriginalRequest", nil)
+}
+
+// EtcdRenewalAuthorize says "我授权持续续租此原租约"
+// in the language the app shows.
+func EtcdRenewalAuthorize() string { return In(i18n.Locale()).EtcdRenewalAuthorize() }
+
+// EtcdRenewalAuthorize says "我授权持续续租此原租约"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalAuthorize() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalAuthorize", nil)
+}
+
+// EtcdRenewalConfirmStart says "确认开始持续续租"
+// in the language the app shows.
+func EtcdRenewalConfirmStart() string { return In(i18n.Locale()).EtcdRenewalConfirmStart() }
+
+// EtcdRenewalConfirmStart says "确认开始持续续租"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalConfirmStart() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalConfirmStart", nil)
+}
+
+// EtcdRenewalStart says "开始持续续租"
+// in the language the app shows.
+func EtcdRenewalStart() string { return In(i18n.Locale()).EtcdRenewalStart() }
+
+// EtcdRenewalStart says "开始持续续租"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalStart() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalStart", nil)
+}
+
+// EtcdRenewalStop says "停止持续续租"
+// in the language the app shows.
+func EtcdRenewalStop() string { return In(i18n.Locale()).EtcdRenewalStop() }
+
+// EtcdRenewalStop says "停止持续续租"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalStop() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalStop", nil)
+}
+
+// EtcdRenewalClear says "清除续租回执"
+// in the language the app shows.
+func EtcdRenewalClear() string { return In(i18n.Locale()).EtcdRenewalClear() }
+
+// EtcdRenewalClear says "清除续租回执"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalClear() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalClear", nil)
+}
+
+// EtcdRenewalReceipts says "续租回执"
+// in the language the app shows.
+func EtcdRenewalReceipts() string { return In(i18n.Locale()).EtcdRenewalReceipts() }
+
+// EtcdRenewalReceipts says "续租回执"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalReceipts() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalReceipts", nil)
+}
+
+// EtcdRenewalUnknownReceipt says "原未确认续租回执"
+// in the language the app shows.
+func EtcdRenewalUnknownReceipt() string { return In(i18n.Locale()).EtcdRenewalUnknownReceipt() }
+
+// EtcdRenewalUnknownReceipt says "原未确认续租回执"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalUnknownReceipt() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalUnknownReceipt", nil)
+}
+
+// EtcdRenewalCopy says "复制完整续租记录"
+// in the language the app shows.
+func EtcdRenewalCopy() string { return In(i18n.Locale()).EtcdRenewalCopy() }
+
+// EtcdRenewalCopy says "复制完整续租记录"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalCopy() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalCopy", nil)
+}
+
+// EtcdRenewalExport says "导出续租记录"
+// in the language the app shows.
+func EtcdRenewalExport() string { return In(i18n.Locale()).EtcdRenewalExport() }
+
+// EtcdRenewalExport says "导出续租记录"
+// in the language of msgs.
+func (msgs Messages) EtcdRenewalExport() string {
+	return Catalog.Format(msgs.locale, "etcdRenewalExport", nil)
+}

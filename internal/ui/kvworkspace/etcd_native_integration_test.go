@@ -532,6 +532,9 @@ func (f *workspaceFault) Put(ctx context.Context, r *pb.PutRequest) (*pb.PutResp
 	return nil, status.Error(codes.Unavailable, "actual processed receipt withheld")
 }
 func workspaceProxy(t *testing.T, p connections.Profile, key []byte, mode string) (connections.Profile, *workspaceFault) {
+	return workspaceProxyWithLease(t, p, key, mode, nil)
+}
+func workspaceProxyWithLease(t *testing.T, p connections.Profile, key []byte, mode string, lease func(*workspaceFault) pb.LeaseServer) (connections.Profile, *workspaceFault) {
 	t.Helper()
 	var creds credentials.TransportCredentials = insecure.NewCredentials()
 	if p.TLSMode == "verify-full" {
@@ -567,6 +570,9 @@ func workspaceProxy(t *testing.T, p connections.Profile, key []byte, mode string
 	pb.RegisterKVServer(server, f)
 	pb.RegisterAuthServer(server, f)
 	pb.RegisterMaintenanceServer(server, f)
+	if lease != nil {
+		pb.RegisterLeaseServer(server, lease(f))
+	}
 	go func() { _ = server.Serve(listener) }()
 	t.Cleanup(server.Stop)
 	p.Host = "127.0.0.1"

@@ -28,6 +28,14 @@ func (s *State) MethodsFor(d *Document) []Method {
 	if s.owned(d) && (d.eventsAvailable || d.eventLease != nil) {
 		out = append(out, Method{"Watch", WatchMethod}, Method{"History", HistoryMethod})
 	}
+	if s.owned(d) && !d.renewalAvailable && s.deps.RenewalProviderFor != nil {
+		if p, err := s.deps.RenewalProviderFor(d.profileID); err == nil && p != nil && p.KVScope().Namespace.ProfileID == d.profileID {
+			d.renewalAvailable = true
+		}
+	}
+	if s.owned(d) && (d.renewalAvailable || d.renewalLease != nil) {
+		out = append(out, Method{Name: "LeaseRenewal", Path: RenewalMethod})
+	}
 	return out
 }
 func DefaultEventRequest(method string) contract.KVRequest {
@@ -44,12 +52,17 @@ func (s *State) ChooseMethod(d *Document, method string) {
 		return
 	}
 	before := DefaultRequest()
+	if d.method == RenewalMethod {
+		before = DefaultRenewalRequest()
+	}
 	if eventMethod(d.method) {
 		before = DefaultEventRequest(d.method)
 	}
 	useTemplate := d.Request().JSON == before.JSON
 	s.SetMethod(d, method)
-	if useTemplate && eventMethod(method) {
+	if useTemplate && method == RenewalMethod {
+		d.Editor.Buffer.Set(DefaultRenewalRequest().JSON)
+	} else if useTemplate && eventMethod(method) {
 		d.Editor.Buffer.Set(DefaultEventRequest(method).JSON)
 	} else if useTemplate && method == DefaultRequest().Method {
 		d.Editor.Buffer.Set(DefaultRequest().JSON)

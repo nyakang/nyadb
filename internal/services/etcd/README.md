@@ -38,7 +38,8 @@ comparisons/operations, 8 MiB encoded requests and 16 MiB received messages.
 Range scans require an explicit limit up to 10,000 or count-only mode. These
 are encoded-message/retention limits, not total protobuf/transport heap bounds.
 Lease TTL, generated/requested IDs, attached keys and absent TTL=-1 remain
-native. Keepalive sends one request; no background keepalive is started.
+native. The original one-shot KeepAlive method sends one request. Continuous
+renewal uses its separate explicit document authorization described below.
 
 Run `GOWORK=off go test -race ./internal/services/etcd` for local regression.
 Run `python3 tools/verify_etcd_fixture.py --mode basic --race` for an owned,
@@ -187,7 +188,7 @@ checks only the four service parents; `--access --public-smoke` adds the restric
 Shell case to the six public/grid regression parents and requires 88 images.
 These smaller scopes do not establish full acceptance.
 
-Automatic renewal, maintenance/auth management, etcd v2,
+Maintenance/auth management, etcd v2,
 additional versions and cluster operation remain pending. Historical public
 acceptance is recorded in `docs/etcd-public-workbench-2026-11-10.md`; ACL scope and
 verification are recorded separately in `docs/etcd-access-browsing-2026-11-10.md`.
@@ -317,7 +318,7 @@ the write barrier. Clear explicitly disposes settled evidence before another run
 Run `GOWORK=off python3 tools/verify_etcd_fixture.py --public-events --race --mode
 MODE` for the seven mandatory native public cases and 28 localized Shell images.
 Modes are anonymous/basic/tls/mtls on 3.7.3, plus basic on 3.5.35. The local report
-is `docs/etcd-public-events-2026-11-10.md`. Automatic lease renewal, Auth/RBAC and
+is `docs/etcd-public-events-2026-11-10.md`. Auth/RBAC and
 maintenance UI, cluster acceptance and etcd-v2 remain separate future work.
 
 Private original continuous lease-renewal foundation
@@ -393,3 +394,41 @@ retirement/recovery, retained overflow, original public generation and legacy
 event retirement/budget regression. Use 3.7.3 anonymous/basic/tls/mtls and 3.5.35
 basic. This is an optional neutral runtime foundation; workbench continuous
 confirmation, controls and receipt presentation remain a separate acceptance.
+
+Public continuous renewal workbench
+----------------------------------
+
+The existing kvworkspace State/Document receives the optional original-session
+renewal provider. Its separate LeaseRenewal method accepts a complete nonzero
+signed int64 ID and version-1 request files without floating-point conversion.
+The initial template ID=0 cannot authorize a run. Starting opens a confirmation
+of the immutable original text, lease ID, profile and generation. A checked
+continuous authorization is required; editing the text, switching method or
+replacing the original lease invalidates it. The original LeaseKeepAlive method
+remains a one-shot request.
+
+Start captures the original one-use preparation and executor. Stop/Cancel,
+disconnect, tab/workspace close and exit wait for the original executor. A pending
+first Stop cancels its captured request context; a Stop after acknowledgement
+settles that original run. Stopping may allow the original lease and attached
+keys to expire naturally. Parking pauses UI consumption while the authorized
+original executor continues within its capture budgets. Recovery transfers
+original receipts and retained charges without opening or starting a renewal.
+A new known run requires explicit receipt disposal and a new confirmation.
+
+The run's original profile/generation, exact ID, actual TTL, attempts, complete
+protobuf (including unknown fields), optional JSON and separate acknowledgement,
+unknown outcome and incomplete capture are retained. Presentation shows at most
+32 recent receipts and 64 KiB. Asynchronous complete copy/export captures the
+original scope/request/receipts before clipboard, picker or disk waiting. Canceled
+or parked file completions cannot overwrite another active document. Unknown
+one-shot and renewal write receipts remain separate and prohibit all new writes
+in that document, including after independent reads and explicit recovery.
+
+`GOWORK=off /usr/bin/python3 tools/verify_etcd_fixture.py --public-renewal --race
+--mode MODE` requires 24 native parents plus 20 native workspace and 60 public
+Shell images per mode (including old Watch/history). Use 3.7.3 anonymous/basic/
+tls/mtls and 3.5.35 basic. Local evidence is
+`docs/etcd-public-renewal-2026-11-10.md`. Lease browsing/attached-key tools beyond
+the native request methods, Auth/RBAC/maintenance administration, cluster and
+etcd-v2 remain separate acceptance steps.

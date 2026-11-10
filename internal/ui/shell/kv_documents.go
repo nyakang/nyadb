@@ -20,6 +20,12 @@ func (s *State) kvWorkspaceDependencies() kvworkspace.Dependencies {
 			}
 			return s.runtime.KVEvents(id)
 		},
+		RenewalProviderFor: func(id int64) (contract.KVRenewalProvider, error) {
+			if s.runtime == nil {
+				return nil, contract.ErrRevoked
+			}
+			return s.runtime.KVRenewal(id)
+		},
 		ProfileName: s.profileName,
 		Active:      func(d *kvworkspace.Document) bool { return s.currentTab().kv == d },
 		Activate: func(d *kvworkspace.Document) {

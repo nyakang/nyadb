@@ -28,11 +28,16 @@ func (s *State) View(c *ui.Context, d *Document) {
 	p := theme.Colors(c)
 	availableMethods := s.MethodsFor(d)
 	isEvent := eventMethod(d.method)
-	ready := !d.Busy() && !d.NeedsRecovery() && (!isEvent && d.lease != nil || isEvent && d.eventsAvailable)
+	isRenewal := d.method == RenewalMethod
+	ready := !d.Busy() && !d.NeedsRecovery() && (!isEvent && !isRenewal && d.lease != nil || isEvent && d.eventsAvailable || isRenewal && d.renewalAvailable)
 	ui.Column(c).Fill().Background(p.Panel).Children(func() {
 		ui.Row(c).FillWidth().Height(theme.RowHeight(c, theme.CommandBarHeight)).Background(p.Header).Children(func() {
 			ui.Toolbar(c, func() {
 				runLabel, runID := locales.Text("运行请求"), locales.Text("运行 KV 请求")
+				if isRenewal {
+					runLabel = locales.Text("开始持续续租")
+					runID = runLabel
+				}
 				if d.method == WatchMethod {
 					runLabel = locales.Text("启动 Watch")
 					runID = runLabel
@@ -40,7 +45,7 @@ func (s *State) View(c *ui.Context, d *Document) {
 					runLabel = locales.Text("读取历史")
 					runID = runLabel
 				}
-				if ui.Button(c, runLabel).Label(runID).Disabled(!ready || isEvent && d.eventReceipt != nil).Clicked() {
+				if ui.Button(c, runLabel).Label(runID).Disabled(!ready || isEvent && d.eventReceipt != nil || isRenewal && (d.renewalReceipt != nil || d.hasUnknownWrites())).Clicked() {
 					s.Run(d)
 				}
 				if d.method == WatchMethod {
@@ -51,13 +56,21 @@ func (s *State) View(c *ui.Context, d *Document) {
 						s.StopEvents(d)
 					}
 				}
+				if isRenewal {
+					if ui.Button(c, locales.Text("停止持续续租")).Disabled(d.renewalJob == nil || d.renewalJob.kind != "renew" || d.CancelRequested()).Clicked() {
+						s.StopRenewal(d)
+					}
+					if ui.Button(c, locales.Text("清除续租回执")).Disabled(!ready || d.renewalReceipt == nil || !d.renewalReceipt.Batch.Ended || d.FileBusy() || d.hasUnknownWrites()).Clicked() {
+						s.ClearRenewalReceipt(d)
+					}
+				}
 				if isEvent && ui.Button(c, locales.Text("清除事件回执")).Disabled(!ready || d.eventReceipt == nil || d.FileBusy()).Clicked() {
 					s.ClearEventReceipt(d)
 				}
 				if ui.Button(c, locales.Text("取消")).Disabled(!d.Busy() || d.CancelRequested()).Clicked() {
 					s.RequestCancel(d)
 				}
-				if ui.Button(c, locales.Text("预连接")).Disabled(!ready || isEvent && d.eventReceipt != nil).Clicked() {
+				if ui.Button(c, locales.Text("预连接")).Disabled(!ready || isEvent && d.eventReceipt != nil || isRenewal && d.renewalReceipt != nil).Clicked() {
 					s.Preconnect(d)
 				}
 				if ui.Button(c, locales.Text("打开请求文本")).Disabled(d.Busy() || d.FileBusy() || s.deps.Files.OpenPath == nil).Clicked() {
@@ -90,8 +103,12 @@ func (s *State) View(c *ui.Context, d *Document) {
 					}
 				}
 			}
-			if isEvent && ui.Button(c, locales.Text("使用请求模板")).Disabled(d.Busy()).Clicked() {
-				d.Editor.Buffer.Set(DefaultEventRequest(d.method).JSON)
+			if (isEvent || isRenewal) && ui.Button(c, locales.Text("使用请求模板")).Disabled(d.Busy()).Clicked() {
+				request := DefaultEventRequest(d.method)
+				if isRenewal {
+					request = DefaultRenewalRequest()
+				}
+				d.Editor.Buffer.Set(request.JSON)
 				d.permit = nil
 			}
 			name := fmt.Sprintf(locales.Text("连接 #%d"), d.profileID)
@@ -104,6 +121,12 @@ func (s *State) View(c *ui.Context, d *Document) {
 		if isEvent && !d.eventsAvailable {
 			ui.Text(c, locales.Text("此连接不支持事件请求")).Padding(3, 8).TextColor(p.Warning)
 		}
+		if isRenewal {
+			ui.Text(c, locales.Text("停止续租后，原租约及关联键可能自然过期")).Padding(2, 8).FontSize(theme.Font(c, 11)).TextColor(p.Warning).SingleLine().Tooltip(locales.Text("停止续租后，原租约及关联键可能自然过期"))
+			if !d.renewalAvailable {
+				ui.Text(c, locales.Text("此连接不支持持续续租")).Padding(3, 8).TextColor(p.Warning)
+			}
+		}
 		if d.method == HistoryMethod {
 			ui.Text(c, locales.Text("历史窗口在本次读取开始时固定；后续写入不会移动终点")).Padding(2, 8).FontSize(theme.Font(c, 11)).TextColor(p.Muted).SingleLine()
 		}
@@ -115,10 +138,13 @@ func (s *State) View(c *ui.Context, d *Document) {
 			if d.eventJob != nil && d.eventJob.kind == "watch" && !d.CancelRequested() && eventWatchCreated(d.eventReceipt) {
 				status = locales.Text("正在观察原键事件")
 			}
+			if d.renewalJob != nil && d.renewalJob.kind == "renew" && !d.CancelRequested() && renewalAcknowledged(d.renewalReceipt) > 0 {
+				status = locales.Text("正在持续续租原租约")
+			}
 			ui.Text(c, status).Padding(3, 8).TextColor(p.Warning)
 			c.AnimationFrame()
 		}
-		if d.unknown != nil {
+		if d.hasUnknownWrites() {
 			ui.Text(c, locales.Text("原写入未确认；恢复后可读取，关闭页签可放弃本地草稿与回执")).Padding(3, 8).TextColor(p.Warning).SingleLine().Tooltip(locales.Text("原写入未确认；恢复后可读取，关闭页签可放弃本地草稿与回执"))
 		}
 		if d.NeedsRecovery() {
@@ -158,14 +184,36 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 			if ui.Button(c, locales.Text("最近回执")).Clicked() {
 				d.selectedUnknown = false
 				d.selectedEvents = false
+				d.selectedRenewal = false
 			}
 			if d.unknown != nil && ui.Button(c, locales.Text("原未确认回执")).Clicked() {
 				d.selectedUnknown = true
 				d.selectedEvents = false
+				d.selectedRenewal = false
 			}
 			if (d.eventsAvailable || d.eventReceipt != nil) && ui.Button(c, locales.Text("事件回执")).Clicked() {
 				d.selectedEvents = true
+				d.selectedRenewal = false
 				d.selectedUnknown = false
+			}
+			if (d.renewalAvailable || d.renewalReceipt != nil) && ui.Button(c, locales.Text("续租回执")).Clicked() {
+				d.selectedRenewal = true
+				d.selectedEvents = false
+				d.selectedUnknown = false
+			}
+			if d.renewalUnknown != nil && ui.Button(c, locales.Text("原未确认续租回执")).Clicked() {
+				d.selectedRenewal = true
+				d.selectedEvents = false
+				d.selectedUnknown = false
+			}
+			if d.selectedRenewal {
+				if ui.Button(c, locales.Text("复制完整续租记录")).Disabled(d.renewalReceipt == nil || d.FileBusy()).Clicked() {
+					s.CopyRenewalRecord(c.Services(), d)
+				}
+				if ui.Button(c, locales.Text("导出续租记录")).Disabled(d.renewalReceipt == nil || d.FileBusy() || s.deps.Files.SavePath == nil).Clicked() {
+					s.ExportRenewalRecord(d)
+				}
+				return
 			}
 			if d.selectedEvents {
 				if ui.Button(c, locales.Text("复制完整事件记录")).Disabled(d.eventReceipt == nil || d.FileBusy()).Clicked() {
@@ -192,6 +240,10 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 				}
 			})
 		}).Label(locales.Text("KV 回执操作")).FillWidth().MinWidth(0).Padding(0).Gap(5)
+		if d.selectedRenewal {
+			s.renewalReceiptView(c, d)
+			return
+		}
 		if d.selectedEvents {
 			s.eventReceiptView(c, d)
 			return
@@ -229,6 +281,7 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 	})
 }
 func (s *State) Modals(c *ui.Context) {
+	s.renewalModals(c)
 	for _, d := range s.documents {
 		if !s.active(d) || d.confirmation == nil || s.leave != nil {
 			continue
@@ -279,7 +332,7 @@ func (s *State) Modals(c *ui.Context) {
 						s.RequestCancel(d)
 						s.CancelFile(d)
 					}
-				} else if d.unknown != nil {
+				} else if d.hasUnknownWrites() {
 					ui.Text(c, locales.Text("关闭只放弃本地草稿与回执，不确认或回滚原写入")).TextColor(theme.Colors(c).Warning)
 				} else {
 					ui.Text(c, locales.Text("未保存的请求文本将被放弃"))

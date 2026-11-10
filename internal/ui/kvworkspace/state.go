@@ -19,16 +19,17 @@ const previewLimit = 64 << 10
 const inputLimit = 16 << 20
 
 type Dependencies struct {
-	ProviderFor       func(int64) (contract.KVRequestsProvider, error)
-	EventsProviderFor func(int64) (contract.KVEventsProvider, error)
-	ProfileName       func(int64) string
-	Active            func(*Document) bool
-	Activate          func(*Document)
-	ConnectProfile    func(ui.Services, int64)
-	EditFocus         *string
-	EditTarget        func(theme.EditTarget)
-	Status            func(string)
-	Files             Files
+	ProviderFor        func(int64) (contract.KVRequestsProvider, error)
+	EventsProviderFor  func(int64) (contract.KVEventsProvider, error)
+	RenewalProviderFor func(int64) (contract.KVRenewalProvider, error)
+	ProfileName        func(int64) string
+	Active             func(*Document) bool
+	Activate           func(*Document)
+	ConnectProfile     func(ui.Services, int64)
+	EditFocus          *string
+	EditTarget         func(theme.EditTarget)
+	Status             func(string)
+	Files              Files
 }
 type Receipt struct {
 	Scope    contract.KVScope
@@ -64,41 +65,52 @@ type operation struct {
 // Document is UI-thread owned. Workers capture immutable requests and their
 // original lease; private buffered channels are consumed only by State.Consume.
 type Document struct {
-	id                           uint64
-	profileID                    int64
-	method                       string
-	Editor                       *editor.State
-	saved                        contract.KVRequest
-	path                         string
-	scope                        contract.KVScope
-	lease                        contract.KVRequestLease
-	job                          *operation
-	io                           *fileOperation
-	confirmation                 *confirmation
-	last, unknown                *Receipt
-	selectedUnknown              bool
-	error                        string
-	needsRecovery, closed, focus bool
-	ctx                          context.Context
-	cancel                       context.CancelFunc
-	permit                       *leaveStamp
-	eventLease                   contract.KVEventsLease
-	eventScope                   contract.KVScope
-	eventJob                     *eventOperation
-	eventReceipt                 *EventReceipt
-	eventNeedsRecovery           bool
-	eventsAvailable              bool
-	selectedEvents               bool
+	id                                                      uint64
+	profileID                                               int64
+	method                                                  string
+	Editor                                                  *editor.State
+	saved                                                   contract.KVRequest
+	path                                                    string
+	scope                                                   contract.KVScope
+	lease                                                   contract.KVRequestLease
+	job                                                     *operation
+	io                                                      *fileOperation
+	confirmation                                            *confirmation
+	last, unknown                                           *Receipt
+	selectedUnknown                                         bool
+	error                                                   string
+	needsRecovery, closed, focus                            bool
+	ctx                                                     context.Context
+	cancel                                                  context.CancelFunc
+	permit                                                  *leaveStamp
+	eventLease                                              contract.KVEventsLease
+	eventScope                                              contract.KVScope
+	eventJob                                                *eventOperation
+	eventReceipt                                            *EventReceipt
+	eventNeedsRecovery                                      bool
+	eventsAvailable                                         bool
+	selectedEvents                                          bool
+	renewalLease                                            contract.KVRenewalLease
+	renewalScope                                            contract.KVScope
+	renewalJob                                              *renewalOperation
+	renewalReceipt, renewalUnknown                          *RenewalReceipt
+	renewalConfirmation                                     *renewalConfirmation
+	renewalNeedsRecovery, renewalAvailable, selectedRenewal bool
 }
 type leaveStamp struct {
-	request       contract.KVRequest
-	last, unknown *Receipt
-	events        *EventReceipt
+	request        contract.KVRequest
+	last, unknown  *Receipt
+	events         *EventReceipt
+	renewal        *RenewalReceipt
+	renewalUnknown *RenewalReceipt
 }
 
 func (d *Document) ID() uint64       { return d.id }
 func (d *Document) ProfileID() int64 { return d.profileID }
 func (d *Document) Scope() contract.KVScope {
+	if d.method == RenewalMethod && d.renewalScope.Generation != 0 {
+		return d.renewalScope.Clone()
+	}
 	if eventMethod(d.method) && d.eventScope.Generation != 0 {
 		return d.eventScope.Clone()
 	}
@@ -111,12 +123,15 @@ func (d *Document) Request() contract.KVRequest {
 	return contract.KVRequest{Method: d.method, JSON: d.Editor.Buffer.String()}
 }
 func (d *Document) Dirty() bool    { return !d.closed && d.Request() != d.saved }
-func (d *Document) Busy() bool     { return d.job != nil || d.eventJob != nil }
+func (d *Document) Busy() bool     { return d.job != nil || d.eventJob != nil || d.renewalJob != nil }
 func (d *Document) FileBusy() bool { return d.io != nil }
 func (d *Document) CancelRequested() bool {
-	return d.job != nil && d.job.canceled || d.eventJob != nil && d.eventJob.canceled
+	return d.job != nil && d.job.canceled || d.eventJob != nil && d.eventJob.canceled || d.renewalJob != nil && d.renewalJob.canceled
 }
 func (d *Document) NeedsRecovery() bool {
+	if d.method == RenewalMethod {
+		return d.renewalNeedsRecovery
+	}
 	if eventMethod(d.method) {
 		return d.eventNeedsRecovery
 	}
@@ -177,6 +192,11 @@ func (s *State) Open(id uint64, profile int64, request contract.KVRequest) *Docu
 	buffer.SetLanguage(editor.LanguageNamed("JSON"))
 	d := &Document{id: id, profileID: profile, method: request.Method, saved: request, Editor: &editor.State{Buffer: buffer}, ctx: ctx, cancel: cancel, focus: true}
 	s.documents[id] = d
+	if s.deps.RenewalProviderFor != nil {
+		if p, err := s.deps.RenewalProviderFor(profile); err == nil && p != nil && p.KVScope().Namespace.ProfileID == profile {
+			d.renewalAvailable = true
+		}
+	}
 	if s.deps.EventsProviderFor != nil {
 		if p, err := s.deps.EventsProviderFor(profile); err == nil && p != nil && p.KVScope().Namespace.ProfileID == profile {
 			d.eventsAvailable = true
@@ -209,6 +229,7 @@ func (s *State) SetMethod(d *Document, method string) {
 	if s.owned(d) && !d.Busy() && d.method != method {
 		d.method = method
 		d.confirmation = nil
+		d.renewalConfirmation = nil
 		d.permit = nil
 	}
 }
@@ -256,6 +277,10 @@ func (s *State) start(d *Document, kind string, authored contract.KVRequest, wor
 	}()
 }
 func (s *State) Preconnect(d *Document) {
+	if s.owned(d) && d.method == RenewalMethod {
+		s.PreconnectRenewal(d)
+		return
+	}
 	if s.owned(d) && eventMethod(d.method) {
 		s.PreconnectEvents(d)
 		return
@@ -270,6 +295,10 @@ func (s *State) Preconnect(d *Document) {
 // Run prepares on the UI thread. Writes require a separate explicit confirmation
 // of the same authored text, canonical snapshot and original lease.
 func (s *State) Run(d *Document) {
+	if s.owned(d) && d.method == RenewalMethod {
+		s.PrepareRenewal(d)
+		return
+	}
 	if s.owned(d) && eventMethod(d.method) {
 		s.RunEvents(d)
 		return
@@ -292,7 +321,7 @@ func (s *State) Run(d *Document) {
 		return
 	}
 	if plan.Writes() {
-		if d.unknown != nil {
+		if d.hasUnknownWrites() {
 			d.error = locales.Text("原写入未确认；恢复后可读取，关闭页签可放弃本地草稿与回执")
 			return
 		}
@@ -317,7 +346,7 @@ func (s *State) Confirm(d *Document, checked bool) {
 	if !checked || !s.check(d) {
 		return
 	}
-	if p.lease != d.lease || p.authored != d.Request() || d.unknown != nil {
+	if p.lease != d.lease || p.authored != d.Request() || d.hasUnknownWrites() {
 		d.confirmation = nil
 		d.error = locales.Text("KV 请求已更改，请重新预览")
 		return
@@ -326,10 +355,15 @@ func (s *State) Confirm(d *Document, checked bool) {
 }
 func (s *State) CancelConfirmation(d *Document) {
 	if s.owned(d) {
+		d.renewalConfirmation = nil
 		d.confirmation = nil
 	}
 }
 func (s *State) RequestCancel(d *Document) {
+	if s.owned(d) && d.renewalJob != nil {
+		d.renewalJob.canceled = true
+		d.renewalJob.cancel()
+	}
 	if s.owned(d) && d.eventJob != nil && !d.eventJob.canceled {
 		d.eventJob.canceled = true
 		d.eventJob.cancel()
@@ -340,6 +374,10 @@ func (s *State) RequestCancel(d *Document) {
 	}
 }
 func (s *State) Recover(d *Document) {
+	if s.owned(d) && d.method == RenewalMethod {
+		s.RecoverRenewal(d)
+		return
+	}
 	if s.owned(d) && eventMethod(d.method) {
 		s.RecoverEvents(d)
 		return
@@ -374,6 +412,7 @@ func (s *State) Consume() {
 		if !s.active(d) {
 			continue
 		}
+		s.consumeRenewal(d)
 		s.consumeEvents(d)
 		if d.confirmation != nil && d.confirmation.authored != d.Request() {
 			d.confirmation = nil
@@ -388,6 +427,7 @@ func (s *State) Consume() {
 					d.error = r.err.Error()
 				}
 				if job.kind == "execute" {
+					d.selectedRenewal = false
 					d.selectedEvents = false
 					receipt := &Receipt{Scope: job.scope.Clone(), Authored: job.authored, Result: r.result.Clone()}
 					if r.err != nil {
@@ -431,6 +471,8 @@ func (s *State) DisconnectProfile(id int64) {
 	for _, d := range s.documents {
 		if d.profileID == id {
 			d.needsRecovery = true
+			d.renewalNeedsRecovery = true
+			d.renewalConfirmation = nil
 			d.eventNeedsRecovery = true
 			d.confirmation = nil
 			s.RequestCancel(d)
@@ -441,10 +483,10 @@ func (s *State) GuardLeave(d *Document, next func(ui.Services)) bool {
 	if !s.owned(d) {
 		return false
 	}
-	if d.permit != nil && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && !d.Busy() && !d.FileBusy() {
+	if d.permit != nil && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && !d.Busy() && !d.FileBusy() {
 		return false
 	}
-	if !d.Dirty() && d.unknown == nil && !d.Busy() && !d.FileBusy() {
+	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() {
 		return false
 	}
 	s.leave = &leaveDecision{doc: d, next: next}
@@ -467,7 +509,7 @@ func (s *State) DecideLeave(services ui.Services, discard bool) {
 	}
 	next := s.leave.next
 	s.leave = nil
-	d.permit = &leaveStamp{request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt}
+	d.permit = &leaveStamp{request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown}
 	if next != nil {
 		next(services)
 	}
@@ -497,6 +539,9 @@ func (s *State) Close(d *Document) {
 	if d.eventJob != nil {
 		d.eventJob.cancel()
 	}
+	if d.renewalJob != nil {
+		d.renewalJob.cancel()
+	}
 	if d.io != nil {
 		d.io.cancel()
 	}
@@ -505,6 +550,19 @@ func (s *State) Close(d *Document) {
 	}
 	if d.eventLease != nil {
 		_ = d.eventLease.Close()
+	}
+	if d.renewalLease != nil {
+		_ = d.renewalLease.Close()
+	}
+	if d.renewalJob != nil {
+		<-d.renewalJob.finished
+		select {
+		case r := <-d.renewalJob.out:
+			if r.lease != nil {
+				_ = r.lease.Close()
+			}
+		default:
+		}
 	}
 	if d.eventJob != nil {
 		<-d.eventJob.finished
@@ -542,6 +600,8 @@ func (s *State) Close(d *Document) {
 	d.scope = contract.KVScope{}
 	d.eventLease, d.eventJob, d.eventReceipt = nil, nil, nil
 	d.eventScope = contract.KVScope{}
+	d.renewalLease, d.renewalJob, d.renewalReceipt, d.renewalUnknown, d.renewalConfirmation = nil, nil, nil, nil, nil
+	d.renewalScope = contract.KVScope{}
 	d.method, d.error, d.path = "", "", ""
 }
 func (s *State) CloseAll() {

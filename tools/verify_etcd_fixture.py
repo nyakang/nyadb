@@ -68,7 +68,9 @@ def certificates(folder, access=False):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False):
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False):
+    if public_renewal:
+        public = True
     if renewal_session:
         session = True
     if public_events:
@@ -122,6 +124,8 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
         report['scope'] = 'private-etcd-original-lease-renewal'
     if renewal_session:
         report['scope'] = 'private-etcd-original-renewal-session'
+    if public_renewal:
+        report['scope'] = 'public-etcd-continuous-renewal-workbench'
     private_path = None
     try:
         with tempfile.TemporaryDirectory(prefix='nyadb-etcd-'+nonce+'-', dir=build) as raw:
@@ -296,6 +300,34 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                             'RenewalRuntimeOriginalPublicationParkedReceiptsAndExplicitRecovery',
                             'EventsSessionOriginalRetirementRecoveryDoesNotSubscribe',
                             'EventsTransferredReceiptsExhaustSharedBudgetWithoutStoppingOtherRuns')
+            if public_renewal:
+                environment.update(NYADB_ETCD_RENEWAL_IT='1', NYADB_ETCD_RENEWAL_SESSION_IT='1', NYADB_ETCD_RENEWAL_WORKSPACE_IT='1',
+                                   NYADB_ETCD_EVENTS_IT='1', NYADB_ETCD_EVENTS_WORKSPACE_IT='1', NYADB_ETCD_ACCESS_IT='1')
+                packages = ['./internal/services/etcd', './internal/services/dbruntime', './internal/ui/kvworkspace', './internal/ui/shell']
+                required = ('RenewalOriginalExactLeaseSurvivesThenExpiresAfterExplicitStop',
+                            'RenewalActualProcessedFirstAndLaterReplyLossNeverReconnects',
+                            'RenewalActualRevocationMissingLeaseAndBoundedReceipts',
+                            'RenewalActualPermissionRevocationStopsOnlyOriginalRun',
+                            'LeaseAttachmentKeepAliveAndExpiration',
+                            'OriginalReadCancellationBusyAndPreparationOwnership',
+                            'RenewalSessionOriginalAuthorizationIndependentKVAndRecoveryBudget',
+                            'RenewalSessionActualProcessedReceiptsRetirementAndUnknownRecovery',
+                            'RenewalSessionActualRetainedDocumentOverflowStopsOriginalRun',
+                            'RenewalRuntimeOriginalPublicationParkedReceiptsAndExplicitRecovery',
+                            'EventsSessionOriginalRetirementRecoveryDoesNotSubscribe',
+                            'EventsTransferredReceiptsExhaustSharedBudgetWithoutStoppingOtherRuns',
+                            'RenewalWorkspaceOriginalConfirmationContinuousTTLStopAndArchives',
+                            'RenewalWorkspaceActualProcessedFirstAndLaterReceiptsAndRecovery',
+                            'RenewalWorkspaceActualOneShotUnknownBlocksContinuousAuthorization',
+                            'ShellPublicRenewalOriginalConfirmationControlsAndCompleteArchives',
+                            'ShellPublicRenewalParkedPublicationRecoveryNeverRestarts',
+                            'DataKeyReadKeepsOriginalPageRevisionAndCompleteKey',
+                            'DataKeyReadRejectsActualRevokedReadGrant',
+                            'EventsWorkspaceOriginalStreamsHistoryAndCompleteArchives',
+                            'EventsWorkspaceParkedStopPublicationRecoveryAndRequestFiles',
+                            'EventsWorkspaceHistoryKeepsActualUnknownWriteReceipt',
+                            'ShellPublicEventsOriginalKeyMenuFixedWindowAndArchives',
+                            'ShellPublicEventsParkedPublicationRecoveryNeverResubscribes')
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
             command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
@@ -310,22 +342,22 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
             for name, expected in report['source_hashes'].items():
                 if hashlib.sha256((ROOT/name).read_bytes()).hexdigest() != expected:
                     raise RuntimeError('Native source changed during acceptance')
-            if profile and not smoke and not public_events:
+            if profile and not smoke and not (public_events or public_renewal):
                 pictures = sorted(Path(environment['NYADB_ETCD_PROFILE_IMAGES']).glob('*.png'))
                 if len(pictures) != 72:
                     raise RuntimeError('Native profile acceptance is missing localized images')
                 report['profile_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
-            if workspace and not events_workspace_smoke and not public_events:
+            if workspace and not events_workspace_smoke and not (public_events or public_renewal):
                 pictures = sorted(Path(environment['NYADB_ETCD_WORKSPACE_IMAGES']).glob('*.png'))
                 if len(pictures) != (4 if smoke else 40):
                     raise RuntimeError('Native workspace acceptance is missing localized images')
                 report['workspace_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
-            if data and not public_events:
+            if data and not (public_events or public_renewal):
                 pictures = sorted(Path(environment['NYADB_ETCD_DATA_IMAGES']).glob('*.png'))
                 if len(pictures) != 16:
                     raise RuntimeError('Native data acceptance is missing localized images')
                 report['data_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
-            if public and not public_events:
+            if public and not (public_events or public_renewal):
                 pictures = sorted(Path(environment['NYADB_ETCD_PUBLIC_IMAGES']).glob('*.png'))
                 if len(pictures) != 44:
                     raise RuntimeError('Public acceptance is missing localized images')
@@ -335,6 +367,12 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                 if len(pictures) != 28:
                     raise RuntimeError('Public event/history acceptance is missing localized images')
                 report['public_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
+            if public_renewal:
+                for key, env_key, expected in (('renewal_workspace_images', 'NYADB_ETCD_WORKSPACE_IMAGES', 20), ('public_images', 'NYADB_ETCD_PUBLIC_IMAGES', 60)):
+                    pictures = sorted(Path(environment[env_key]).glob('*.png'))
+                    if len(pictures) != expected:
+                        raise RuntimeError('Continuous renewal acceptance is missing localized images: '+key)
+                    report[key] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             if access:
                 pictures = sorted(Path(environment['NYADB_ETCD_ACCESS_IMAGES']).glob('*.png'))
                 if len(pictures) != 24:
@@ -362,6 +400,7 @@ if __name__ == '__main__':
     parser.add_argument('--public-events', action='store_true')
     parser.add_argument('--renewal-native', action='store_true')
     parser.add_argument('--renewal-session', action='store_true')
+    parser.add_argument('--public-renewal', action='store_true')
     parser.add_argument('--watch-smoke', action='store_true')
     parser.add_argument('--access', action='store_true')
     parser.add_argument('--access-smoke', action='store_true')
@@ -374,4 +413,4 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal)

@@ -121,6 +121,14 @@ func captureEtcdPublic(t *testing.T, s *State, phase string) {
 					}
 				}
 			}
+			if phase == "renewal-public-confirmation" {
+				for _, label := range []string{"确认持续续租", "我授权持续续租此原租约", "确认开始持续续租", "取消"} {
+					r, ok := tt.Find(locales.Text(label))
+					if !ok || r.W <= 0 || r.X < 0 || r.Y < 0 || r.X+r.W > float32(size[0])+1 || r.Y+r.H > float32(size[1])+1 {
+						t.Fatal("public renewal confirmation clipped", language, label, r)
+					}
+				}
+			}
 			file, err := os.Create(filepath.Join(output, language+"-"+strconv.Itoa(size[0])+"x"+strconv.Itoa(size[1])+"-"+phase+".png"))
 			if err != nil {
 				t.Fatal(err)

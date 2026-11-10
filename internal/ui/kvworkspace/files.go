@@ -44,7 +44,7 @@ func EncodeRequest(r contract.KVRequest) ([]byte, error) {
 	if len(r.JSON) > inputLimit || !utf8.ValidString(r.JSON) {
 		return nil, jsondocument.ErrBounds
 	}
-	supported := eventMethod(r.Method)
+	supported := eventMethod(r.Method) || r.Method == RenewalMethod
 	for _, m := range methods {
 		if m.Path == r.Method {
 			supported = true
@@ -105,6 +105,7 @@ func (s *State) OpenRequest(d *Document) {
 	if f.OpenPath == nil || f.OpenReader == nil {
 		return
 	}
+	d.renewalConfirmation = nil
 	d.confirmation = nil
 	s.fileJob(d, "open", func(ctx context.Context) fileResult {
 		path, err := f.OpenPath()
@@ -186,6 +187,9 @@ func (s *State) SaveRequest(d *Document, as bool) {
 	})
 }
 func draftFilename(method string) string {
+	if method == RenewalMethod {
+		return "LeaseRenewal.nyakv"
+	}
 	if method == WatchMethod {
 		return "Watch.nyakv"
 	}
@@ -266,7 +270,7 @@ func (s *State) consumeFiles(d *Document) {
 			}
 			return
 		}
-		if job.kind == "copy-events" {
+		if job.kind == "copy-events" || job.kind == "copy-renewal" {
 			if !job.canceled && job.clipboard != nil {
 				job.clipboard(r.clipboard)
 			}
