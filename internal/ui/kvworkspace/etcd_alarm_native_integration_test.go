@@ -195,6 +195,10 @@ func (f *alarmWorkspaceFault) Alarm(ctx context.Context, r *pb.AlarmRequest) (*p
 		v.Header.MemberId++
 	case "missing-header":
 		v.Header = nil
+	case "enum":
+		if len(v.Alarms) > 0 {
+			v.Alarms[0].Alarm = pb.AlarmType(91)
+		}
 	case "extensions":
 		v.ProtoReflect().SetUnknown([]byte{0xa0, 6, 7})
 		if len(v.Alarms) > 0 {

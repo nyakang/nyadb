@@ -114,6 +114,9 @@ func captureEtcdPublic(t *testing.T, s *State, phase string) {
 		for _, size := range [][2]int{{1280, 800}, {720, 520}} {
 			tt := ui.NewTester(s.View, size[0], size[1])
 			tt.Frame()
+			if strings.HasPrefix(phase, "alarms-public-") {
+				shellAlarmBounds(t, tt, phase, size)
+			}
 			if strings.HasPrefix(phase, "members-public-") {
 				labels := []string{}
 				if strings.HasSuffix(phase, "selection") || strings.HasSuffix(phase, "bound") {

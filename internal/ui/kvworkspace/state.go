@@ -113,7 +113,7 @@ type Document struct {
 	compactionObservation                                   *CompactionObservation
 	members                                                 *memberState
 	alarms                                                  *alarmState
-	selectedMembers                                         bool
+	selectedMembers, selectedAlarms                         bool
 	last, unknown                                           *Receipt
 	selectedUnknown                                         bool
 	error                                                   string
@@ -224,11 +224,12 @@ type State struct {
 	AuthSplitPercent         float32
 	CompactionSplitPercent   float32
 	MembersSplitPercent      float32
+	AlarmsSplitPercent       float32
 	Invalidate               func()
 }
 
 func New(deps Dependencies) *State {
-	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50, LeaseBrowserSplitPercent: 20, AuthSplitPercent: 65, CompactionSplitPercent: 70, MembersSplitPercent: 60}
+	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50, LeaseBrowserSplitPercent: 20, AuthSplitPercent: 65, CompactionSplitPercent: 70, MembersSplitPercent: 60, AlarmsSplitPercent: 70}
 }
 func (s *State) owned(d *Document) bool { return d != nil && !d.closed && s.documents[d.id] == d }
 func (s *State) active(d *Document) bool {
@@ -247,7 +248,7 @@ func (s *State) Open(id uint64, profile int64, request contract.KVRequest) *Docu
 	ctx, cancel := context.WithCancel(context.Background())
 	buffer := editor.NewBuffer(request.JSON)
 	buffer.SetLanguage(editor.LanguageNamed("JSON"))
-	d := &Document{id: id, profileID: profile, method: request.Method, saved: request, Editor: &editor.State{Buffer: buffer}, ctx: ctx, cancel: cancel, focus: true}
+	d := &Document{id: id, profileID: profile, method: request.Method, selectedAlarms: request.Method == AlarmsMethod, saved: request, Editor: &editor.State{Buffer: buffer}, ctx: ctx, cancel: cancel, focus: true}
 	s.documents[id] = d
 	if s.deps.RenewalProviderFor != nil {
 		if p, err := s.deps.RenewalProviderFor(profile); err == nil && p != nil && p.KVScope().Namespace.ProfileID == profile {
@@ -286,6 +287,7 @@ func (s *State) SetMethod(d *Document, method string) {
 	if s.owned(d) && !d.Busy() && d.method != method {
 		d.method = method
 		d.selectedMembers = method == MembersMethod
+		d.selectedAlarms = method == AlarmsMethod
 		d.confirmation = nil
 		d.leaseManagement = nil
 		d.authDraft = nil
@@ -373,6 +375,10 @@ func (s *State) Preconnect(d *Document) {
 // Run prepares on the UI thread. Writes require a separate explicit confirmation
 // of the same authored text, canonical snapshot and original lease.
 func (s *State) Run(d *Document) {
+	if s.owned(d) && d.method == AlarmsMethod {
+		s.PrepareAlarmBatch(d)
+		return
+	}
 	if s.owned(d) && d.method == MembersMethod {
 		s.PrepareMemberBatch(d)
 		return
@@ -578,6 +584,7 @@ func (s *State) Consume() {
 				}
 				if job.kind == "execute" {
 					d.selectedMembers = false
+					d.selectedAlarms = false
 					d.selectedBrowser = false
 					d.selectedRenewal = false
 					d.selectedEvents = false

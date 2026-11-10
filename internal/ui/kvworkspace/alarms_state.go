@@ -6,8 +6,10 @@ import (
 	"reflect"
 	"slices"
 
+	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/jsondocument"
+	"github.com/nyakang/nyadb/locales"
 )
 
 // AlarmObservation is complete evidence, independent of the private authority
@@ -66,12 +68,26 @@ type alarmAuthority struct {
 	observation *AlarmObservation
 }
 type alarmState struct {
-	observation *AlarmObservation
-	authority   *alarmAuthority
-	batch       *AlarmBatchReceipt
-	unknown     *Receipt
-	recovered   []Receipt
-	revision    uint64
+	observation                                 *AlarmObservation
+	authority                                   *alarmAuthority
+	batch                                       *AlarmBatchReceipt
+	unknown                                     *Receipt
+	recovered                                   []Receipt
+	revision                                    uint64
+	showResults, showJSON, showUnknown          bool
+	row, resultRow, recordView                  int
+	columns, resultColumns, confirmationColumns ui.ListState
+	preview                                     string
+	previewError                                string
+	previewRevision                             uint64
+	previewCaptured                             bool
+	inputRequest                                contract.KVRequest
+	inputFilter                                 int32
+	inputTargets                                []contract.KVAlarm
+	inputError                                  error
+	inputCaptured                               bool
+	observedPairs                               map[[2]uint64]bool
+	viewWidth, viewHeight                       float32
 }
 type alarmConfirmation struct {
 	authority     *alarmAuthority
@@ -90,7 +106,7 @@ func (d *Document) AlarmsAvailable() bool {
 }
 func (d *Document) alarmState() *alarmState {
 	if d.alarms == nil {
-		d.alarms = &alarmState{}
+		d.alarms = &alarmState{row: -1, resultRow: -1}
 	}
 	return d.alarms
 }
@@ -202,7 +218,11 @@ func (s *State) ObserveAlarms(d *Document) {
 }
 
 func (s *State) PrepareAlarmBatch(d *Document) {
-	if !s.check(d) || !d.AlarmsAvailable() || d.hasUnknownWrites() || !alarmObservationReady(d) {
+	if !s.check(d) || !d.AlarmsAvailable() || d.hasUnknownWrites() {
+		return
+	}
+	if !alarmObservationReady(d) {
+		d.error = locales.Text("请先读取原连接的告警列表")
 		return
 	}
 	_, selected, err := parseAlarmInputs(d.Request())
@@ -332,6 +352,14 @@ func (s *State) consumeAlarms(d *Document, job *operation, out *alarmOutcome) {
 		d.releaseAlarmAuthority()
 		copy := r.Clone()
 		a.observation = &copy
+		a.row, a.showResults = -1, false
+		s.AlarmsSplitPercent = 70
+		a.observedPairs = map[[2]uint64]bool{}
+		if copy.Receipt.Result.Reply != nil {
+			for _, alarm := range copy.Receipt.Result.Reply.Alarms {
+				a.observedPairs[alarmPair(alarm)] = true
+			}
+		}
 		if job.lease == d.lease && !job.canceled && !d.needsRecovery && sameEventScope(copy.Scope, d.scope) && validAlarmRead(copy.Receipt, copy.Scope, copy.Receipt.Authored) {
 			a.authority = &alarmAuthority{lease: job.lease, observation: a.observation}
 		}
@@ -339,15 +367,24 @@ func (s *State) consumeAlarms(d *Document, job *operation, out *alarmOutcome) {
 	if r := out.batch; r != nil && r.DocumentID == d.id && sameEventScope(r.Scope, job.scope) && r.Authored == job.authored {
 		copy := r.Clone()
 		a.batch = &copy
+		a.showResults, a.recordView, a.showUnknown, a.resultRow = true, 1, false, 0
+		s.AlarmsSplitPercent = 30
 		for _, target := range copy.Targets {
 			if target.Result != nil && target.Result.Result.WriteOutcomeUnknown && a.unknown == nil {
 				unknown := target.Result.Clone()
 				a.unknown = &unknown
 			}
 		}
+		for i, target := range copy.Targets {
+			if target.State == "failed" || target.State == "unknown" || target.State == "not-executed" {
+				a.resultRow = i
+				break
+			}
+		}
 		d.releaseAlarmAuthority()
 	}
 	a.revision++
+	d.selectedAlarms, d.selectedMembers = true, false
 	d.permit = nil
 }
 

@@ -175,10 +175,12 @@ func TestAlarmsTextOnlyExactUnsignedSelectionAndPrivateObservationAuthority(t *t
 	if d.alarms.observation.Receipt.Result.Reply.Alarms[0].NativeExtensions[0] != 0 {
 		t.Fatal("observation clone aliases native extensions")
 	}
+	found := false
 	for _, method := range s.MethodsFor(d) {
-		if method.Path == AlarmsMethod {
-			t.Fatal("private Alarm foundation publicly advertised")
-		}
+		found = found || method.Path == AlarmsMethod
+	}
+	if !found {
+		t.Fatal("original Alarm inventory did not publish its dedicated method")
 	}
 }
 func TestAlarmsCheckedBatchUsesFreshOriginalGetsAndStopsMissingOrChangedPair(t *testing.T) {

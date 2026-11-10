@@ -68,7 +68,9 @@ def certificates(folder, access=False):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False, public_lease_management=False, dependency_modfile=None, auth_native=False, public_auth=False, compaction_native=False, public_compaction=False, member_native=False, member_session=False, alarm_native=False, alarm_workspace=False):
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False, public_lease_management=False, dependency_modfile=None, auth_native=False, public_auth=False, compaction_native=False, public_compaction=False, member_native=False, member_session=False, alarm_native=False, alarm_workspace=False, public_alarms=False):
+    if public_alarms:
+        alarm_workspace = True
     if alarm_workspace:
         alarm_native = True
     if alarm_native and any((profile, workspace, data, public, smoke, access, access_smoke, watch_smoke, history_smoke, events_smoke, events_workspace_smoke, public_events, renewal_native, renewal_session, public_renewal, lease_browser_native, lease_browser_session, public_lease_browser, public_lease_management, auth_native, public_auth, compaction_native, public_compaction, member_native, member_session)):
@@ -131,8 +133,10 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
     if workspace or alarm_workspace:
         sources += [p for folder in ('internal/ui/kvworkspace', 'internal/ui/shell', 'internal/bootstrap', 'locales') for p in (ROOT/folder).glob('*.go')]
         sources += [ROOT/'locales/en.json', ROOT/'locales/zh-Hans.json']
-    if public:
+    if public or public_alarms:
         sources += [p for folder in ('internal/ui/connectioncatalog', 'internal/ui/navigation', 'internal/ui/sessionbrowser', 'internal/ui/objectworkspace', 'internal/ui/theme', 'internal/storage/localdb') for p in (ROOT/folder).glob('*.go')]
+    if public_alarms:
+        sources += [p for folder in ('internal/ui/dataworkspace', 'internal/ui/sqlworkspace') for p in (ROOT/folder).glob('*.go')]
     dependency_sources = [ROOT/'go.mod', ROOT/'go.sum']
     if dependency_modfile:
         selected_modfile = Path(dependency_modfile).resolve()
@@ -183,6 +187,8 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
         report['scope'] = 'private-etcd-original-alarm-list-exact-disarm-session'
     if alarm_workspace:
         report['scope'] = 'private-etcd-original-alarm-checked-batch-workspace'
+    if public_alarms:
+        report['scope'] = 'public-etcd-original-alarm-checked-disarm-workbench'
     private_path = None
     try:
         with tempfile.TemporaryDirectory(prefix='nyadb-etcd-'+nonce+'-', dir=build) as raw:
@@ -535,6 +541,16 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                              'AlarmWorkspaceStalePairStopsBeforeSendAndTypeWindowsRemainEvidence',
                              'AlarmWorkspaceActualProcessedPartialFaultsParkingRecoveryAndClose',
                              'AlarmWorkspaceOriginalRestrictedReadAndExactWriteDenial')
+            if public_alarms:
+                environment.update(NYADB_ETCD_PUBLIC_ALARMS_IT='1', NYADB_ETCD_PUBLIC_IT='1',
+                                   NYADB_ETCD_WORKSPACE_IMAGES=str(report_path.with_suffix(''))+'-alarm-workspace-images',
+                                   NYADB_ETCD_PUBLIC_IMAGES=str(report_path.with_suffix(''))+'-alarm-public-images')
+                packages += ['./internal/ui/shell']
+                required += ('AlarmsWorkspacePublicBilingualFormsCheckedBatchFilesAndCompleteRecords',
+                             'AlarmsWorkspacePublicUnknownRecoveryParkingAndOriginalClose',
+                             'AlarmsWorkspacePublicRestrictedDenialAndUnknownTypeInspection',
+                             'AlarmsShellPublicCheckedOriginalFormsFilesAndCompleteArchives',
+                             'AlarmsShellPublicUnknownParkingAndPureRecoveryRetainOriginals')
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
             command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
@@ -603,6 +619,12 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                     if len(pictures) != expected:
                         raise RuntimeError('Public Compact acceptance is missing localized images: '+key+' got '+str(len(pictures)))
                     report[key] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
+            if public_alarms:
+                for key, env_key, expected in (('alarms_workspace_images', 'NYADB_ETCD_WORKSPACE_IMAGES', 68), ('alarms_public_images', 'NYADB_ETCD_PUBLIC_IMAGES', 68)):
+                    pictures = sorted(Path(environment[env_key]).glob('*.png'))
+                    if len(pictures) != expected:
+                        raise RuntimeError('Public Alarm acceptance is missing localized images: '+key+' got '+str(len(pictures)))
+                    report[key] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             report.update(passed=True, accepted=accepted, log_sha256=hashlib.sha256(log_path.read_bytes()).hexdigest())
     finally:
         try:
@@ -636,6 +658,7 @@ if __name__ == '__main__':
     parser.add_argument('--public-compaction', action='store_true')
     parser.add_argument('--alarm-native', action='store_true')
     parser.add_argument('--alarm-workspace', action='store_true')
+    parser.add_argument('--public-alarms', action='store_true')
     parser.add_argument('--member-native', action='store_true')
     parser.add_argument('--member-session', action='store_true')
     parser.add_argument('--dependency-modfile')
@@ -651,4 +674,4 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser, args.public_lease_management, args.dependency_modfile, args.auth_native, args.public_auth, args.compaction_native, args.public_compaction, args.member_native, args.member_session, args.alarm_native, args.alarm_workspace)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser, args.public_lease_management, args.dependency_modfile, args.auth_native, args.public_auth, args.compaction_native, args.public_compaction, args.member_native, args.member_session, args.alarm_native, args.alarm_workspace, args.public_alarms)

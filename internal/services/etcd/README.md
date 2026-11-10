@@ -617,7 +617,7 @@ does not guarantee that repeating Compact will succeed. Copies and exports keep
 complete original observations and replies. Request files restore text only.
 Original observation/confirmation/unknown receipts participate in leave decisions;
 close releases their leases and caches. Public member-targeted Defragment is
-described below; Alarm, Snapshot and membership changes remain pending.
+described below; public Alarm controls are described at the end of this document. Snapshot and membership changes remain pending.
 
 Run `GOWORK=off /usr/bin/python3 tools/verify_etcd_fixture.py --compaction-native
 --race --mode MODE` for 16 required native parents. Use official 3.7.3
@@ -741,7 +741,7 @@ voter/one-learner fixture requires nine native parent cases and 36 workspace plu
 36 Shell localized images. Real upstream reply-loss/cancellation/close faults,
 partial batches, restricted-principal denial, learner inspection, original
 publication/recovery, text files and full archives are mandatory. Local evidence:
-`docs/etcd-public-members-2026-11-11.md`. Alarm/Disarm, Snapshot, membership changes,
+`docs/etcd-public-members-2026-11-11.md`. Public Alarm/Disarm is described below. Snapshot, membership changes,
 broader cluster management, etcd-v2 and AuthEnable/AuthDisable remain separate.
 
 ### Original Alarm native requests and leases
@@ -788,7 +788,7 @@ processed read/write reply faults, cancellation/ownership, original publication
 and pure recovery, plus existing KV/Compact/member regressions. TLS/mTLS fault
 relays keep the original transport configuration and owned certificates.
 Local evidence: `docs/etcd-alarm-native-2026-11-11.md`. This is native foundation
-acceptance; public checked Alarm selection/forms/batches remain separate. Snapshot,
+acceptance; public checked Alarm selection/forms/batches are described below. Snapshot,
 membership changes, full cluster management, etcd-v2 and AuthEnable/AuthDisable
 remain outside this stage.
 
@@ -832,6 +832,47 @@ original simultaneous pairs, restricted GET versus exact-write denial, actual
 processed read/partial-write faults, parking, cancellation, close, replacement,
 disconnect and explicit recovery. TLS/mTLS fault relays preserve the original
 fixture certificate paths and require client certificate verification in mTLS.
-This remains private document foundation: no public method-selector entry or
-Alarm form is installed. Public controls and bilingual workspace/Shell UI
-acceptance are the next stage.
+That acceptance covers the private document foundation. The separately accepted public controls are described below.
+
+
+### Public original Alarm forms and checked Disarm batches
+
+The inventory-gated `nyadb://etcd/alarms` method uses the same KV State/Document,
+original physical lease and private GET authority. Read the native cluster list,
+choose all alarms or NOSPACE/CORRUPT, then select up to eight exact observed
+member/type pairs. Changing the filter or opening a request file revokes old
+confirmation authority. Unknown native type numbers remain visible but cannot
+be selected for Disarm; a member ID does not prove current cluster membership.
+
+Preview and confirmation retain the original complete GET, selected pairs and
+one-use GET/DEACTIVATE plans. Every step reads the full list again and checks its
+original target before sending. Missing/changed pairs, failed reads, cancellation,
+failed writes or unknown ACKs stop the sequence and preserve its unexecuted
+remainder. Reading a list does not lock an alarm or prevent it from recurring.
+No ACTIVATE, all-target helper, automatic retry or rollback is published.
+
+The evidence selector separates full archives, step results, latest GET, each
+original Disarm ACK, its before-dispatch GET and recovered original receipts.
+Complete copies/exports retain native bytes and exact unsigned IDs independently
+of the bounded preview. Later empty lists do not replace removed-alarm ACKs or
+settle an earlier unknown write. The original unknown remains accessible across
+method changes and blocks further writes. Parked completion waits for its owning
+request tab; recovery creates a new lease while retaining old evidence and sends
+no request. Request files restore only authored selection text.
+
+Run:
+
+```sh
+GOWORK=off GOFLAGS=-mod=readonly /usr/bin/python3 tools/verify_etcd_fixture.py --public-alarms --race --version VERSION --mode MODE
+```
+
+Each owned configuration requires 27 native
+parents and 136 Chinese/English wide/narrow workspace/Shell screenshots. Use
+3.7.3 anonymous/basic/TLS/mTLS and 3.5.35 basic. Tests cover actual simultaneous
+NOSPACE/CORRUPT, restricted native GET versus denied exact writes, injected future
+enums after a real GET, complete files, processed partial ACK loss, actual tab
+parking, cross-method write barriers and pure recovery. TLS/mTLS relays preserve
+the original certificate configuration and verify client certificates in mTLS.
+Local evidence: `docs/etcd-alarm-public-2026-11-11.md`. Snapshot/complete snapshot
+files, membership changes, broader cluster management, etcd-v2 and
+AuthEnable/AuthDisable remain separate scope.

@@ -207,6 +207,9 @@ func (s *State) SaveRequest(d *Document, as bool) {
 	})
 }
 func draftFilename(method string) string {
+	if method == AlarmsMethod {
+		return "Alarms.nyakv"
+	}
 	if method == MembersMethod {
 		return "Members.nyakv"
 	}
@@ -320,6 +323,7 @@ func (s *State) consumeFiles(d *Document) {
 			d.releaseAlarmAuthority()
 			d.method = r.request.Method
 			d.selectedMembers = d.method == MembersMethod
+			d.selectedAlarms = d.method == AlarmsMethod
 			d.Editor.Buffer.Set(r.request.JSON)
 			d.path = r.path
 			d.saved = r.request

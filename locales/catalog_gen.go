@@ -35121,3 +35121,363 @@ func EtcdMembers33284688a9() string { return In(i18n.Locale()).EtcdMembers332846
 func (msgs Messages) EtcdMembers33284688a9() string {
 	return Catalog.Format(msgs.locale, "etcdMembers33284688a9", nil)
 }
+
+// EtcdAlarms34ec9233c4 says "预览解除告警"
+// in the language the app shows.
+func EtcdAlarms34ec9233c4() string { return In(i18n.Locale()).EtcdAlarms34ec9233c4() }
+
+// EtcdAlarms34ec9233c4 says "预览解除告警"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms34ec9233c4() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms34ec9233c4", nil)
+}
+
+// EtcdAlarmsf891867fc5 says "编辑告警选择"
+// in the language the app shows.
+func EtcdAlarmsf891867fc5() string { return In(i18n.Locale()).EtcdAlarmsf891867fc5() }
+
+// EtcdAlarmsf891867fc5 says "编辑告警选择"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsf891867fc5() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsf891867fc5", nil)
+}
+
+// EtcdAlarms66e9acf0d5 says "读取告警列表"
+// in the language the app shows.
+func EtcdAlarms66e9acf0d5() string { return In(i18n.Locale()).EtcdAlarms66e9acf0d5() }
+
+// EtcdAlarms66e9acf0d5 says "读取告警列表"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms66e9acf0d5() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms66e9acf0d5", nil)
+}
+
+// EtcdAlarmsa3aa207831 says "全部告警"
+// in the language the app shows.
+func EtcdAlarmsa3aa207831() string { return In(i18n.Locale()).EtcdAlarmsa3aa207831() }
+
+// EtcdAlarmsa3aa207831 says "全部告警"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsa3aa207831() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsa3aa207831", nil)
+}
+
+// EtcdAlarmsf2ef9acf71 says "告警类型过滤"
+// in the language the app shows.
+func EtcdAlarmsf2ef9acf71() string { return In(i18n.Locale()).EtcdAlarmsf2ef9acf71() }
+
+// EtcdAlarmsf2ef9acf71 says "告警类型过滤"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsf2ef9acf71() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsf2ef9acf71", nil)
+}
+
+// EtcdAlarmsaaff3b09c8 says "告警列表"
+// in the language the app shows.
+func EtcdAlarmsaaff3b09c8() string { return In(i18n.Locale()).EtcdAlarmsaaff3b09c8() }
+
+// EtcdAlarmsaaff3b09c8 says "告警列表"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsaaff3b09c8() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsaaff3b09c8", nil)
+}
+
+// EtcdAlarmsb27803ed60 says "请先读取原连接的告警列表"
+// in the language the app shows.
+func EtcdAlarmsb27803ed60() string { return In(i18n.Locale()).EtcdAlarmsb27803ed60() }
+
+// EtcdAlarmsb27803ed60 says "请先读取原连接的告警列表"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsb27803ed60() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsb27803ed60", nil)
+}
+
+// EtcdAlarms070b9233ce says "告警选择 JSON 无效"
+// in the language the app shows.
+func EtcdAlarms070b9233ce() string { return In(i18n.Locale()).EtcdAlarms070b9233ce() }
+
+// EtcdAlarms070b9233ce says "告警选择 JSON 无效"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms070b9233ce() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms070b9233ce", nil)
+}
+
+// EtcdAlarms147ead72b8 says "原集群 %s · %d 个告警 · %d 个选择"
+// in the language the app shows.
+func EtcdAlarms147ead72b8() string { return In(i18n.Locale()).EtcdAlarms147ead72b8() }
+
+// EtcdAlarms147ead72b8 says "原集群 %s · %d 个告警 · %d 个选择"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms147ead72b8() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms147ead72b8", nil)
+}
+
+// EtcdAlarms86f5b1a9c6 says "告警类型"
+// in the language the app shows.
+func EtcdAlarms86f5b1a9c6() string { return In(i18n.Locale()).EtcdAlarms86f5b1a9c6() }
+
+// EtcdAlarms86f5b1a9c6 says "告警类型"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms86f5b1a9c6() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms86f5b1a9c6", nil)
+}
+
+// EtcdAlarmsbe48fec187 says "原集群告警列表"
+// in the language the app shows.
+func EtcdAlarmsbe48fec187() string { return In(i18n.Locale()).EtcdAlarmsbe48fec187() }
+
+// EtcdAlarmsbe48fec187 says "原集群告警列表"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsbe48fec187() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsbe48fec187", nil)
+}
+
+// EtcdAlarmsa0806d92b0 says "选择此原告警"
+// in the language the app shows.
+func EtcdAlarmsa0806d92b0() string { return In(i18n.Locale()).EtcdAlarmsa0806d92b0() }
+
+// EtcdAlarmsa0806d92b0 says "选择此原告警"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsa0806d92b0() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsa0806d92b0", nil)
+}
+
+// EtcdAlarms273f3b7170 says "复制完整告警记录"
+// in the language the app shows.
+func EtcdAlarms273f3b7170() string { return In(i18n.Locale()).EtcdAlarms273f3b7170() }
+
+// EtcdAlarms273f3b7170 says "复制完整告警记录"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms273f3b7170() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms273f3b7170", nil)
+}
+
+// EtcdAlarmsb433a02cfe says "导出告警记录"
+// in the language the app shows.
+func EtcdAlarmsb433a02cfe() string { return In(i18n.Locale()).EtcdAlarmsb433a02cfe() }
+
+// EtcdAlarmsb433a02cfe says "导出告警记录"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsb433a02cfe() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsb433a02cfe", nil)
+}
+
+// EtcdAlarms13152a36af says "原未确认告警回执"
+// in the language the app shows.
+func EtcdAlarms13152a36af() string { return In(i18n.Locale()).EtcdAlarms13152a36af() }
+
+// EtcdAlarms13152a36af says "原未确认告警回执"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms13152a36af() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms13152a36af", nil)
+}
+
+// EtcdAlarmsf61c146f1f says "告警观察与逐步回执显示在此处"
+// in the language the app shows.
+func EtcdAlarmsf61c146f1f() string { return In(i18n.Locale()).EtcdAlarmsf61c146f1f() }
+
+// EtcdAlarmsf61c146f1f says "告警观察与逐步回执显示在此处"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsf61c146f1f() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsf61c146f1f", nil)
+}
+
+// EtcdAlarmsd87494752a says "完整告警记录"
+// in the language the app shows.
+func EtcdAlarmsd87494752a() string { return In(i18n.Locale()).EtcdAlarmsd87494752a() }
+
+// EtcdAlarmsd87494752a says "完整告警记录"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsd87494752a() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsd87494752a", nil)
+}
+
+// EtcdAlarms707f3a23bc says "告警逐步结果"
+// in the language the app shows.
+func EtcdAlarms707f3a23bc() string { return In(i18n.Locale()).EtcdAlarms707f3a23bc() }
+
+// EtcdAlarms707f3a23bc says "告警逐步结果"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms707f3a23bc() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms707f3a23bc", nil)
+}
+
+// EtcdAlarms85325c52b3 says "最近告警 GET"
+// in the language the app shows.
+func EtcdAlarms85325c52b3() string { return In(i18n.Locale()).EtcdAlarms85325c52b3() }
+
+// EtcdAlarms85325c52b3 says "最近告警 GET"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms85325c52b3() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms85325c52b3", nil)
+}
+
+// EtcdAlarmsfd83e88676 says "原 Disarm ACK"
+// in the language the app shows.
+func EtcdAlarmsfd83e88676() string { return In(i18n.Locale()).EtcdAlarmsfd83e88676() }
+
+// EtcdAlarmsfd83e88676 says "原 Disarm ACK"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsfd83e88676() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsfd83e88676", nil)
+}
+
+// EtcdAlarms04ac15559f says "派发前 GET"
+// in the language the app shows.
+func EtcdAlarms04ac15559f() string { return In(i18n.Locale()).EtcdAlarms04ac15559f() }
+
+// EtcdAlarms04ac15559f says "派发前 GET"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms04ac15559f() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms04ac15559f", nil)
+}
+
+// EtcdAlarmsfbb0d23019 says "恢复的原告警证据"
+// in the language the app shows.
+func EtcdAlarmsfbb0d23019() string { return In(i18n.Locale()).EtcdAlarmsfbb0d23019() }
+
+// EtcdAlarmsfbb0d23019 says "恢复的原告警证据"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsfbb0d23019() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsfbb0d23019", nil)
+}
+
+// EtcdAlarmsdda56aad08 says "告警证据视图"
+// in the language the app shows.
+func EtcdAlarmsdda56aad08() string { return In(i18n.Locale()).EtcdAlarmsdda56aad08() }
+
+// EtcdAlarmsdda56aad08 says "告警证据视图"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsdda56aad08() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsdda56aad08", nil)
+}
+
+// EtcdAlarmsd90c7a83c6 says "原告警逐步结果"
+// in the language the app shows.
+func EtcdAlarmsd90c7a83c6() string { return In(i18n.Locale()).EtcdAlarmsd90c7a83c6() }
+
+// EtcdAlarmsd90c7a83c6 says "原告警逐步结果"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsd90c7a83c6() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsd90c7a83c6", nil)
+}
+
+// EtcdAlarms725072a55f says "完整告警记录预览"
+// in the language the app shows.
+func EtcdAlarms725072a55f() string { return In(i18n.Locale()).EtcdAlarms725072a55f() }
+
+// EtcdAlarms725072a55f says "完整告警记录预览"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms725072a55f() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms725072a55f", nil)
+}
+
+// EtcdAlarms20e1fa0030 says "原连接 #%d · 原代次 %d · %s"
+// in the language the app shows.
+func EtcdAlarms20e1fa0030() string { return In(i18n.Locale()).EtcdAlarms20e1fa0030() }
+
+// EtcdAlarms20e1fa0030 says "原连接 #%d · 原代次 %d · %s"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms20e1fa0030() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms20e1fa0030", nil)
+}
+
+// EtcdAlarms77500bf0ce says "告警原生观察"
+// in the language the app shows.
+func EtcdAlarms77500bf0ce() string { return In(i18n.Locale()).EtcdAlarms77500bf0ce() }
+
+// EtcdAlarms77500bf0ce says "告警原生观察"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms77500bf0ce() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms77500bf0ce", nil)
+}
+
+// EtcdAlarms5d82094f62 says "确认原告警 Disarm 批次"
+// in the language the app shows.
+func EtcdAlarms5d82094f62() string { return In(i18n.Locale()).EtcdAlarms5d82094f62() }
+
+// EtcdAlarms5d82094f62 says "确认原告警 Disarm 批次"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms5d82094f62() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms5d82094f62", nil)
+}
+
+// EtcdAlarmsb4976b5f07 says "不可变原告警批次"
+// in the language the app shows.
+func EtcdAlarmsb4976b5f07() string { return In(i18n.Locale()).EtcdAlarmsb4976b5f07() }
+
+// EtcdAlarmsb4976b5f07 says "不可变原告警批次"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsb4976b5f07() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsb4976b5f07", nil)
+}
+
+// EtcdAlarms51092618f9 says "每步重新读取完整告警列表并检查原目标"
+// in the language the app shows.
+func EtcdAlarms51092618f9() string { return In(i18n.Locale()).EtcdAlarms51092618f9() }
+
+// EtcdAlarms51092618f9 says "每步重新读取完整告警列表并检查原目标"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms51092618f9() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms51092618f9", nil)
+}
+
+// EtcdAlarms82bcddfa04 says "读取列表不会锁定告警；检查后告警仍可能变化或再次出现"
+// in the language the app shows.
+func EtcdAlarms82bcddfa04() string { return In(i18n.Locale()).EtcdAlarms82bcddfa04() }
+
+// EtcdAlarms82bcddfa04 says "读取列表不会锁定告警；检查后告警仍可能变化或再次出现"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms82bcddfa04() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms82bcddfa04", nil)
+}
+
+// EtcdAlarms5e72b7e770 says "复制完整告警批次预览"
+// in the language the app shows.
+func EtcdAlarms5e72b7e770() string { return In(i18n.Locale()).EtcdAlarms5e72b7e770() }
+
+// EtcdAlarms5e72b7e770 says "复制完整告警批次预览"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms5e72b7e770() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms5e72b7e770", nil)
+}
+
+// EtcdAlarms241537dbcb says "我确认执行此不可变原告警批次"
+// in the language the app shows.
+func EtcdAlarms241537dbcb() string { return In(i18n.Locale()).EtcdAlarms241537dbcb() }
+
+// EtcdAlarms241537dbcb says "我确认执行此不可变原告警批次"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms241537dbcb() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms241537dbcb", nil)
+}
+
+// EtcdAlarms9acd88733b says "确认执行 Disarm 批次"
+// in the language the app shows.
+func EtcdAlarms9acd88733b() string { return In(i18n.Locale()).EtcdAlarms9acd88733b() }
+
+// EtcdAlarms9acd88733b says "确认执行 Disarm 批次"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms9acd88733b() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms9acd88733b", nil)
+}
+
+// EtcdAlarms2016b418b9 says "告警回执"
+// in the language the app shows.
+func EtcdAlarms2016b418b9() string { return In(i18n.Locale()).EtcdAlarms2016b418b9() }
+
+// EtcdAlarms2016b418b9 says "告警回执"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarms2016b418b9() string {
+	return Catalog.Format(msgs.locale, "etcdAlarms2016b418b9", nil)
+}
+
+// EtcdAlarmsf42684ebe7 says "告警属于原集群；连接前缀不限定范围，旧成员 ID 不代表当前成员"
+// in the language the app shows.
+func EtcdAlarmsf42684ebe7() string { return In(i18n.Locale()).EtcdAlarmsf42684ebe7() }
+
+// EtcdAlarmsf42684ebe7 says "告警属于原集群；连接前缀不限定范围，旧成员 ID 不代表当前成员"
+// in the language of msgs.
+func (msgs Messages) EtcdAlarmsf42684ebe7() string {
+	return Catalog.Format(msgs.locale, "etcdAlarmsf42684ebe7", nil)
+}
