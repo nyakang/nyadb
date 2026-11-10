@@ -270,7 +270,18 @@ func (l *dataLease) preview(ctx context.Context, id int64, catalog, name string,
 			request.Success = append(request.Success, &pb.RequestOp{Request: &pb.RequestOp_RequestDeleteRange{RequestDeleteRange: &pb.DeleteRangeRequest{Key: bytes.Clone(p.before.Key)}}})
 		}
 		if p.edit.Kind != "delete" {
-			request.Success = append(request.Success, &pb.RequestOp{Request: &pb.RequestOp_RequestPut{RequestPut: &pb.PutRequest{Key: bytes.Clone(p.after.Key), Value: bytes.Clone(p.after.Value), Lease: p.after.Lease}}},
+			put := &pb.PutRequest{Key: bytes.Clone(p.after.Key), Value: bytes.Clone(p.after.Value), Lease: p.after.Lease}
+			if p.edit.Kind == "update" && !p.rename {
+				// Preserve omitted fields natively. Keep the complete expected
+				// after image above for verification of the genuine saved Range.
+				if _, set := p.edit.Values["value"]; !set {
+					put.IgnoreValue, put.Value = true, nil
+				}
+				if _, set := p.edit.Values["lease"]; !set {
+					put.IgnoreLease, put.Lease = true, 0
+				}
+			}
+			request.Success = append(request.Success, &pb.RequestOp{Request: &pb.RequestOp_RequestPut{RequestPut: put}},
 				&pb.RequestOp{Request: &pb.RequestOp_RequestRange{RequestRange: &pb.RangeRequest{Key: bytes.Clone(p.after.Key)}}})
 		}
 	}

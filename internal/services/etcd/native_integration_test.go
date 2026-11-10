@@ -368,11 +368,12 @@ func (f *nativeFault) serve(_ any, stream grpc.ServerStream) error {
 	if err := stream.RecvMsg(req); err != nil {
 		return err
 	}
-	target := f.ready.Load() && method == f.method && f.seen.CompareAndSwap(false, true)
+	var call int32
 	if f.ready.Load() && method == f.method {
-		f.calls.Add(1)
+		call = f.calls.Add(1)
 	}
-	if target && f.mode == "read-block" {
+	target := call > 0 && (f.mode != "read-block-second" || call == 2) && f.seen.CompareAndSwap(false, true)
+	if target && (f.mode == "read-block" || f.mode == "read-block-second") {
 		close(f.entered)
 		<-stream.Context().Done()
 		close(f.done)

@@ -138,50 +138,63 @@ func (l *dataLease) page(ctx context.Context, id int64, catalog, name string, op
 	if err != nil {
 		return nil, err
 	}
-	request := PrefixRange(l.session.prefix, int64(options.Limit), revision)
+	// Range returns complete values, even when the grid shows only a preview.
+	// Aggregate one key per RPC from the outset so a page of individually
+	// valid large values cannot exceed the native response bound.
+	request := PrefixRange(l.session.prefix, 1, revision)
 	if prior != nil {
 		request.Key = bytes.Clone(prior.Start)
 	}
 	started := time.Now()
-	result, err := l.native(ctx, dataPageScope, request)
-	if err != nil {
-		l.mu.Lock()
-		l.rangeLost = true
-		l.mu.Unlock()
-		return nil, err
-	}
-	if !result.Completed || result.Reply == nil || result.ProjectionError != "" || result.Reply.Kind != "range" || len(result.Reply.Entries) > options.Limit {
-		return nil, ErrInvalid
-	}
 	editable := true
-	page = &contract.DataPage{Object: l.object, Editable: &editable, Database: catalog, Table: name, Offset: options.Offset, Limit: options.Limit, ColumnMetadata: dataColumns(), PagingMode: "cursor", StableOrder: true, KeysetAvailable: true, HasMore: result.Reply.More, CurrentCursor: l.boundary(request.Key, options.Offset, options.Limit, revision), QuerySQL: "/etcdserverpb.KV/Range (fixed revision)", CompletedAt: time.Now(), Duration: time.Since(started)}
+	page = &contract.DataPage{Object: l.object, Editable: &editable, Database: catalog, Table: name, Offset: options.Offset, Limit: options.Limit, ColumnMetadata: dataColumns(), PagingMode: "cursor", StableOrder: true, KeysetAvailable: true, CurrentCursor: l.boundary(request.Key, options.Offset, options.Limit, revision), QuerySQL: "/etcdserverpb.KV/Range (fixed revision, one key per RPC)"}
 	for _, c := range page.ColumnMetadata {
 		page.Columns = append(page.Columns, c.Name)
 		page.ColumnKinds = append(page.ColumnKinds, c.DataType)
 	}
 	var previous []byte
-	for _, entry := range result.Reply.Entries {
+	for len(page.Rows) < options.Limit {
+		result, readErr := l.native(ctx, dataPageScope, request)
+		if readErr != nil {
+			return nil, readErr
+		}
+		if !result.Completed || result.Reply == nil || result.ProjectionError != "" || result.Reply.Kind != "range" || len(result.Reply.Entries) > 1 {
+			return nil, ErrInvalid
+		}
+		page.HasMore = result.Reply.More
+		if len(result.Reply.Entries) == 0 {
+			if page.HasMore {
+				return nil, ErrInvalid
+			}
+			break
+		}
+		entry := result.Reply.Entries[0]
 		if !validKey(entry.Key) || !bytes.HasPrefix(entry.Key, l.session.prefix) || bytes.Compare(entry.Key, request.Key) < 0 || previous != nil && bytes.Compare(entry.Key, previous) <= 0 || !validDataEntry(entry) || entry.ModRevision > revision {
 			return nil, ErrInvalid
 		}
-		previous = entry.Key
-		cells := entryCells(entry, true)
-		page.Rows = append(page.Rows, cells)
+		previous = bytes.Clone(entry.Key)
+		page.Rows = append(page.Rows, entryCells(entry, true))
 		ref := l.ref(entry.Key)
 		page.RowRefs = append(page.RowRefs, &ref)
 		page.RowSnapshots = append(page.RowSnapshots, l.snapshot(entry, false))
+		if !page.HasMore {
+			break
+		}
+		request.Key = dataAfterKey(entry.Key)
+		if request.Key == nil || !bytes.HasPrefix(request.Key, l.session.prefix) {
+			return nil, ErrInvalid
+		}
+	}
+	if err = ctx.Err(); err != nil {
+		return nil, err
+	}
+	if err = l.check(id, catalog, name); err != nil {
+		return nil, err
 	}
 	if page.HasMore {
-		if len(result.Reply.Entries) == 0 {
-			return nil, ErrInvalid
-		}
-		last := result.Reply.Entries[len(result.Reply.Entries)-1]
-		next := dataAfterKey(last.Key)
-		if next == nil || !bytes.HasPrefix(next, l.session.prefix) {
-			return nil, ErrInvalid
-		}
-		page.NextCursor = l.boundary(next, options.Offset+int64(len(page.Rows)), options.Limit, revision)
+		page.NextCursor = l.boundary(request.Key, options.Offset+int64(len(page.Rows)), options.Limit, revision)
 	}
+	page.CompletedAt, page.Duration = time.Now(), time.Since(started)
 	l.mu.Lock()
 	l.pageStarted = true
 	l.mu.Unlock()

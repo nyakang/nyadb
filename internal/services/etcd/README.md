@@ -111,7 +111,9 @@ images are UI regression evidence, not native desktop execution on other OSes.
 The private shared data adapter now reserves original key documents through
 `DataDocumentsProvider`, with independent page/count/field/write/export channels.
 Authenticated byte cursors retain a fixed original revision; healthy explicit
-Refresh starts a new revision only for that document. Actual page failure or
+Refresh starts a new revision only for that document. Pages aggregate one key per
+Range RPC at that revision from the outset; complete previews and fingerprints
+are published only after the entire page succeeds. Actual page failure or
 compaction retires the range and requires explicit reopening. Complete field
 reads retain the original fingerprint representation for the mature grid;
 returned chunks are bounded to 1024 bytes, but native Range transports the full
@@ -120,7 +122,12 @@ concurrent modifications. Full editing is bounded to 1 MiB.
 
 One original immutable preview authorizes one native Txn for insert/update/delete
 or rename. Five source comparisons retain original create/mod revision, version,
-lease and bytes; destination create=0 guards inserts and renames. Overlapping keys,
+lease and bytes; destination create=0 guards inserts and renames. Ordinary updates
+use native IgnoreValue/IgnoreLease for omitted fields, while saved Range outcomes
+verify the complete expected value and lease. Explicit empty values and lease=0
+remain distinct. Inserts and renames send their full destination values. Smaller
+server request limits still apply, including to the five original comparisons.
+Overlapping keys,
 unsupported SQL semantics and batches beyond 128 comparisons/operations are
 rejected before dispatch. Actual complete Txn outcomes generate saved snapshots;
 unknown/incomplete acknowledgements preserve drafts and block document writes.
