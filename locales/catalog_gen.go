@@ -34551,3 +34551,573 @@ func EtcdCompact98e1dc499f() string { return In(i18n.Locale()).EtcdCompact98e1dc
 func (msgs Messages) EtcdCompact98e1dc499f() string {
 	return Catalog.Format(msgs.locale, "etcdCompact98e1dc499f", nil)
 }
+
+// EtcdMembersfb927d4e5e says "完整成员记录超过限额"
+// in the language the app shows.
+func EtcdMembersfb927d4e5e() string { return In(i18n.Locale()).EtcdMembersfb927d4e5e() }
+
+// EtcdMembersfb927d4e5e says "完整成员记录超过限额"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersfb927d4e5e() string {
+	return Catalog.Format(msgs.locale, "etcdMembersfb927d4e5e", nil)
+}
+
+// EtcdMembers48e4c5035d says "请明确选择成员、endpoint 和版本"
+// in the language the app shows.
+func EtcdMembers48e4c5035d() string { return In(i18n.Locale()).EtcdMembers48e4c5035d() }
+
+// EtcdMembers48e4c5035d says "请明确选择成员、endpoint 和版本"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers48e4c5035d() string {
+	return Catalog.Format(msgs.locale, "etcdMembers48e4c5035d", nil)
+}
+
+// EtcdMembersd528503088 says "请选择原目录中的成员"
+// in the language the app shows.
+func EtcdMembersd528503088() string { return In(i18n.Locale()).EtcdMembersd528503088() }
+
+// EtcdMembersd528503088 says "请选择原目录中的成员"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersd528503088() string {
+	return Catalog.Format(msgs.locale, "etcdMembersd528503088", nil)
+}
+
+// EtcdMembers8bc7282a7c says "请先检查所选原成员"
+// in the language the app shows.
+func EtcdMembers8bc7282a7c() string { return In(i18n.Locale()).EtcdMembers8bc7282a7c() }
+
+// EtcdMembers8bc7282a7c says "请先检查所选原成员"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers8bc7282a7c() string {
+	return Catalog.Format(msgs.locale, "etcdMembers8bc7282a7c", nil)
+}
+
+// EtcdMembers4cc4f9cdcc says "此连接不支持受检成员批次"
+// in the language the app shows.
+func EtcdMembers4cc4f9cdcc() string { return In(i18n.Locale()).EtcdMembers4cc4f9cdcc() }
+
+// EtcdMembers4cc4f9cdcc says "此连接不支持受检成员批次"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers4cc4f9cdcc() string {
+	return Catalog.Format(msgs.locale, "etcdMembers4cc4f9cdcc", nil)
+}
+
+// EtcdMembers912f7a04bc says "成员选择 JSON 无效"
+// in the language the app shows.
+func EtcdMembers912f7a04bc() string { return In(i18n.Locale()).EtcdMembers912f7a04bc() }
+
+// EtcdMembers912f7a04bc says "成员选择 JSON 无效"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers912f7a04bc() string {
+	return Catalog.Format(msgs.locale, "etcdMembers912f7a04bc", nil)
+}
+
+// EtcdMembersa1b61514de says "已成功"
+// in the language the app shows.
+func EtcdMembersa1b61514de() string { return In(i18n.Locale()).EtcdMembersa1b61514de() }
+
+// EtcdMembersa1b61514de says "已成功"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersa1b61514de() string {
+	return Catalog.Format(msgs.locale, "etcdMembersa1b61514de", nil)
+}
+
+// EtcdMembers7e9ef4d396 says "已失败"
+// in the language the app shows.
+func EtcdMembers7e9ef4d396() string { return In(i18n.Locale()).EtcdMembers7e9ef4d396() }
+
+// EtcdMembers7e9ef4d396 says "已失败"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers7e9ef4d396() string {
+	return Catalog.Format(msgs.locale, "etcdMembers7e9ef4d396", nil)
+}
+
+// EtcdMembersc098e854e6 says "未确认"
+// in the language the app shows.
+func EtcdMembersc098e854e6() string { return In(i18n.Locale()).EtcdMembersc098e854e6() }
+
+// EtcdMembersc098e854e6 says "未确认"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersc098e854e6() string {
+	return Catalog.Format(msgs.locale, "etcdMembersc098e854e6", nil)
+}
+
+// EtcdMembers1e3b642ce2 says "读取成员目录"
+// in the language the app shows.
+func EtcdMembers1e3b642ce2() string { return In(i18n.Locale()).EtcdMembers1e3b642ce2() }
+
+// EtcdMembers1e3b642ce2 says "读取成员目录"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers1e3b642ce2() string {
+	return Catalog.Format(msgs.locale, "etcdMembers1e3b642ce2", nil)
+}
+
+// EtcdMembersfa03308eeb says "检查所选成员"
+// in the language the app shows.
+func EtcdMembersfa03308eeb() string { return In(i18n.Locale()).EtcdMembersfa03308eeb() }
+
+// EtcdMembersfa03308eeb says "检查所选成员"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersfa03308eeb() string {
+	return Catalog.Format(msgs.locale, "etcdMembersfa03308eeb", nil)
+}
+
+// EtcdMembers5cb698a91a says "选择 JSON"
+// in the language the app shows.
+func EtcdMembers5cb698a91a() string { return In(i18n.Locale()).EtcdMembers5cb698a91a() }
+
+// EtcdMembers5cb698a91a says "选择 JSON"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers5cb698a91a() string {
+	return Catalog.Format(msgs.locale, "etcdMembers5cb698a91a", nil)
+}
+
+// EtcdMembers31aabb11ec says "成员列表"
+// in the language the app shows.
+func EtcdMembers31aabb11ec() string { return In(i18n.Locale()).EtcdMembers31aabb11ec() }
+
+// EtcdMembers31aabb11ec says "成员列表"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers31aabb11ec() string {
+	return Catalog.Format(msgs.locale, "etcdMembers31aabb11ec", nil)
+}
+
+// EtcdMembersa2e25ca451 says "先读取原连接的完整成员目录"
+// in the language the app shows.
+func EtcdMembersa2e25ca451() string { return In(i18n.Locale()).EtcdMembersa2e25ca451() }
+
+// EtcdMembersa2e25ca451 says "先读取原连接的完整成员目录"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersa2e25ca451() string {
+	return Catalog.Format(msgs.locale, "etcdMembersa2e25ca451", nil)
+}
+
+// EtcdMembers98e06b275c says "%d 个目录成员 · %d 个明确目标"
+// in the language the app shows.
+func EtcdMembers98e06b275c() string { return In(i18n.Locale()).EtcdMembers98e06b275c() }
+
+// EtcdMembers98e06b275c says "%d 个目录成员 · %d 个明确目标"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers98e06b275c() string {
+	return Catalog.Format(msgs.locale, "etcdMembers98e06b275c", nil)
+}
+
+// EtcdMembers620226469b says "批次"
+// in the language the app shows.
+func EtcdMembers620226469b() string { return In(i18n.Locale()).EtcdMembers620226469b() }
+
+// EtcdMembers620226469b says "批次"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers620226469b() string {
+	return Catalog.Format(msgs.locale, "etcdMembers620226469b", nil)
+}
+
+// EtcdMembersa4c4a72652 says "成员 ID"
+// in the language the app shows.
+func EtcdMembersa4c4a72652() string { return In(i18n.Locale()).EtcdMembersa4c4a72652() }
+
+// EtcdMembersa4c4a72652 says "成员 ID"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersa4c4a72652() string {
+	return Catalog.Format(msgs.locale, "etcdMembersa4c4a72652", nil)
+}
+
+// EtcdMembers5ec0739717 says "成员角色"
+// in the language the app shows.
+func EtcdMembers5ec0739717() string { return In(i18n.Locale()).EtcdMembers5ec0739717() }
+
+// EtcdMembers5ec0739717 says "成员角色"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers5ec0739717() string {
+	return Catalog.Format(msgs.locale, "etcdMembers5ec0739717", nil)
+}
+
+// EtcdMembers87e821b61a says "原集群成员列表"
+// in the language the app shows.
+func EtcdMembers87e821b61a() string { return In(i18n.Locale()).EtcdMembers87e821b61a() }
+
+// EtcdMembers87e821b61a says "原集群成员列表"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers87e821b61a() string {
+	return Catalog.Format(msgs.locale, "etcdMembers87e821b61a", nil)
+}
+
+// EtcdMembers4c827a4398 says "明确成员 endpoint"
+// in the language the app shows.
+func EtcdMembers4c827a4398() string { return In(i18n.Locale()).EtcdMembers4c827a4398() }
+
+// EtcdMembers4c827a4398 says "明确成员 endpoint"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers4c827a4398() string {
+	return Catalog.Format(msgs.locale, "etcdMembers4c827a4398", nil)
+}
+
+// EtcdMembersa8df775024 says "此成员预期版本"
+// in the language the app shows.
+func EtcdMembersa8df775024() string { return In(i18n.Locale()).EtcdMembersa8df775024() }
+
+// EtcdMembersa8df775024 says "此成员预期版本"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersa8df775024() string {
+	return Catalog.Format(msgs.locale, "etcdMembersa8df775024", nil)
+}
+
+// EtcdMembersca95d849f8 says "加入 Defragment 批次"
+// in the language the app shows.
+func EtcdMembersca95d849f8() string { return In(i18n.Locale()).EtcdMembersca95d849f8() }
+
+// EtcdMembersca95d849f8 says "加入 Defragment 批次"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersca95d849f8() string {
+	return Catalog.Format(msgs.locale, "etcdMembersca95d849f8", nil)
+}
+
+// EtcdMembers11d6913c16 says "读取原成员 Status"
+// in the language the app shows.
+func EtcdMembers11d6913c16() string { return In(i18n.Locale()).EtcdMembers11d6913c16() }
+
+// EtcdMembers11d6913c16 says "读取原成员 Status"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers11d6913c16() string {
+	return Catalog.Format(msgs.locale, "etcdMembers11d6913c16", nil)
+}
+
+// EtcdMembers1043704b3b says "复制完整成员记录"
+// in the language the app shows.
+func EtcdMembers1043704b3b() string { return In(i18n.Locale()).EtcdMembers1043704b3b() }
+
+// EtcdMembers1043704b3b says "复制完整成员记录"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers1043704b3b() string {
+	return Catalog.Format(msgs.locale, "etcdMembers1043704b3b", nil)
+}
+
+// EtcdMembers1c5d0697c7 says "导出成员记录"
+// in the language the app shows.
+func EtcdMembers1c5d0697c7() string { return In(i18n.Locale()).EtcdMembers1c5d0697c7() }
+
+// EtcdMembers1c5d0697c7 says "导出成员记录"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers1c5d0697c7() string {
+	return Catalog.Format(msgs.locale, "etcdMembers1c5d0697c7", nil)
+}
+
+// EtcdMembersb9eb68abbb says "原未确认成员回执"
+// in the language the app shows.
+func EtcdMembersb9eb68abbb() string { return In(i18n.Locale()).EtcdMembersb9eb68abbb() }
+
+// EtcdMembersb9eb68abbb says "原未确认成员回执"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersb9eb68abbb() string {
+	return Catalog.Format(msgs.locale, "etcdMembersb9eb68abbb", nil)
+}
+
+// EtcdMembers452a243cf1 says "完整成员记录"
+// in the language the app shows.
+func EtcdMembers452a243cf1() string { return In(i18n.Locale()).EtcdMembers452a243cf1() }
+
+// EtcdMembers452a243cf1 says "完整成员记录"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers452a243cf1() string {
+	return Catalog.Format(msgs.locale, "etcdMembers452a243cf1", nil)
+}
+
+// EtcdMembers0a71433201 says "成员观察与逐步回执显示在此处"
+// in the language the app shows.
+func EtcdMembers0a71433201() string { return In(i18n.Locale()).EtcdMembers0a71433201() }
+
+// EtcdMembers0a71433201 says "成员观察与逐步回执显示在此处"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers0a71433201() string {
+	return Catalog.Format(msgs.locale, "etcdMembers0a71433201", nil)
+}
+
+// EtcdMembers69a8c11072 says "原连接 #%d · 原代次 %d · %d 个批次目标"
+// in the language the app shows.
+func EtcdMembers69a8c11072() string { return In(i18n.Locale()).EtcdMembers69a8c11072() }
+
+// EtcdMembers69a8c11072 says "原连接 #%d · 原代次 %d · %d 个批次目标"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers69a8c11072() string {
+	return Catalog.Format(msgs.locale, "etcdMembers69a8c11072", nil)
+}
+
+// EtcdMembers9bccb615f1 says "原成员 ID"
+// in the language the app shows.
+func EtcdMembers9bccb615f1() string { return In(i18n.Locale()).EtcdMembers9bccb615f1() }
+
+// EtcdMembers9bccb615f1 says "原成员 ID"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers9bccb615f1() string {
+	return Catalog.Format(msgs.locale, "etcdMembers9bccb615f1", nil)
+}
+
+// EtcdMembersac29159660 says "原成员逐步结果"
+// in the language the app shows.
+func EtcdMembersac29159660() string { return In(i18n.Locale()).EtcdMembersac29159660() }
+
+// EtcdMembersac29159660 says "原成员逐步结果"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersac29159660() string {
+	return Catalog.Format(msgs.locale, "etcdMembersac29159660", nil)
+}
+
+// EtcdMembers899bebc77e says "完整成员记录预览"
+// in the language the app shows.
+func EtcdMembers899bebc77e() string { return In(i18n.Locale()).EtcdMembers899bebc77e() }
+
+// EtcdMembers899bebc77e says "完整成员记录预览"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers899bebc77e() string {
+	return Catalog.Format(msgs.locale, "etcdMembers899bebc77e", nil)
+}
+
+// EtcdMembers9b583fac82 says "确认原成员 Defragment 批次"
+// in the language the app shows.
+func EtcdMembers9b583fac82() string { return In(i18n.Locale()).EtcdMembers9b583fac82() }
+
+// EtcdMembers9b583fac82 says "确认原成员 Defragment 批次"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers9b583fac82() string {
+	return Catalog.Format(msgs.locale, "etcdMembers9b583fac82", nil)
+}
+
+// EtcdMembers2b9f7cce22 says "不可变原成员批次"
+// in the language the app shows.
+func EtcdMembers2b9f7cce22() string { return In(i18n.Locale()).EtcdMembers2b9f7cce22() }
+
+// EtcdMembers2b9f7cce22 says "不可变原成员批次"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers2b9f7cce22() string {
+	return Catalog.Format(msgs.locale, "etcdMembers2b9f7cce22", nil)
+}
+
+// EtcdMemberse7006092bf says "每步重新观察 leader；先 follower，后所选 leader"
+// in the language the app shows.
+func EtcdMemberse7006092bf() string { return In(i18n.Locale()).EtcdMemberse7006092bf() }
+
+// EtcdMemberse7006092bf says "每步重新观察 leader；先 follower，后所选 leader"
+// in the language of msgs.
+func (msgs Messages) EtcdMemberse7006092bf() string {
+	return Catalog.Format(msgs.locale, "etcdMemberse7006092bf", nil)
+}
+
+// EtcdMembers1d1938241b says "首次失败或未确认即停止；其余目标保持未执行"
+// in the language the app shows.
+func EtcdMembers1d1938241b() string { return In(i18n.Locale()).EtcdMembers1d1938241b() }
+
+// EtcdMembers1d1938241b says "首次失败或未确认即停止；其余目标保持未执行"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers1d1938241b() string {
+	return Catalog.Format(msgs.locale, "etcdMembers1d1938241b", nil)
+}
+
+// EtcdMembersd89a75fec0 says "领导者观察不是锁；取消不代表回滚，不会自动重放"
+// in the language the app shows.
+func EtcdMembersd89a75fec0() string { return In(i18n.Locale()).EtcdMembersd89a75fec0() }
+
+// EtcdMembersd89a75fec0 says "领导者观察不是锁；取消不代表回滚，不会自动重放"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersd89a75fec0() string {
+	return Catalog.Format(msgs.locale, "etcdMembersd89a75fec0", nil)
+}
+
+// EtcdMembersd882478e19 says "复制完整成员批次预览"
+// in the language the app shows.
+func EtcdMembersd882478e19() string { return In(i18n.Locale()).EtcdMembersd882478e19() }
+
+// EtcdMembersd882478e19 says "复制完整成员批次预览"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersd882478e19() string {
+	return Catalog.Format(msgs.locale, "etcdMembersd882478e19", nil)
+}
+
+// EtcdMembers328e83d777 says "我确认执行此不可变原成员批次"
+// in the language the app shows.
+func EtcdMembers328e83d777() string { return In(i18n.Locale()).EtcdMembers328e83d777() }
+
+// EtcdMembers328e83d777 says "我确认执行此不可变原成员批次"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers328e83d777() string {
+	return Catalog.Format(msgs.locale, "etcdMembers328e83d777", nil)
+}
+
+// EtcdMembers4d73fcab7c says "确认执行 Defragment 批次"
+// in the language the app shows.
+func EtcdMembers4d73fcab7c() string { return In(i18n.Locale()).EtcdMembers4d73fcab7c() }
+
+// EtcdMembers4d73fcab7c says "确认执行 Defragment 批次"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers4d73fcab7c() string {
+	return Catalog.Format(msgs.locale, "etcdMembers4d73fcab7c", nil)
+}
+
+// EtcdMembers7da11dfaab says "预览 Defragment"
+// in the language the app shows.
+func EtcdMembers7da11dfaab() string { return In(i18n.Locale()).EtcdMembers7da11dfaab() }
+
+// EtcdMembers7da11dfaab says "预览 Defragment"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers7da11dfaab() string {
+	return Catalog.Format(msgs.locale, "etcdMembers7da11dfaab", nil)
+}
+
+// EtcdMembers14d43ec030 says "完整原目录与明确 endpoint；成员 ID 不是 incarnation 保证"
+// in the language the app shows.
+func EtcdMembers14d43ec030() string { return In(i18n.Locale()).EtcdMembers14d43ec030() }
+
+// EtcdMembers14d43ec030 says "完整原目录与明确 endpoint；成员 ID 不是 incarnation 保证"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers14d43ec030() string {
+	return Catalog.Format(msgs.locale, "etcdMembers14d43ec030", nil)
+}
+
+// EtcdMembers43b62e6257 says "成员回执"
+// in the language the app shows.
+func EtcdMembers43b62e6257() string { return In(i18n.Locale()).EtcdMembers43b62e6257() }
+
+// EtcdMembers43b62e6257 says "成员回执"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers43b62e6257() string {
+	return Catalog.Format(msgs.locale, "etcdMembers43b62e6257", nil)
+}
+
+// EtcdMembers5f76b2bf82 says "版本"
+// in the language the app shows.
+func EtcdMembers5f76b2bf82() string { return In(i18n.Locale()).EtcdMembers5f76b2bf82() }
+
+// EtcdMembers5f76b2bf82 says "版本"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers5f76b2bf82() string {
+	return Catalog.Format(msgs.locale, "etcdMembers5f76b2bf82", nil)
+}
+
+// EtcdMembers64d3cc7ba8 says "选择此原成员"
+// in the language the app shows.
+func EtcdMembers64d3cc7ba8() string { return In(i18n.Locale()).EtcdMembers64d3cc7ba8() }
+
+// EtcdMembers64d3cc7ba8 says "选择此原成员"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers64d3cc7ba8() string {
+	return Catalog.Format(msgs.locale, "etcdMembers64d3cc7ba8", nil)
+}
+
+// EtcdMembersff2a20b541 says "learner 可检查 Status；Defragment 批次拒绝 learner"
+// in the language the app shows.
+func EtcdMembersff2a20b541() string { return In(i18n.Locale()).EtcdMembersff2a20b541() }
+
+// EtcdMembersff2a20b541 says "learner 可检查 Status；Defragment 批次拒绝 learner"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersff2a20b541() string {
+	return Catalog.Format(msgs.locale, "etcdMembersff2a20b541", nil)
+}
+
+// EtcdMemberse0392d1354 says "原成员选择与请求文本保留"
+// in the language the app shows.
+func EtcdMemberse0392d1354() string { return In(i18n.Locale()).EtcdMemberse0392d1354() }
+
+// EtcdMemberse0392d1354 says "原成员选择与请求文本保留"
+// in the language of msgs.
+func (msgs Messages) EtcdMemberse0392d1354() string {
+	return Catalog.Format(msgs.locale, "etcdMemberse0392d1354", nil)
+}
+
+// EtcdMembersf058e22eae says "编辑成员选择"
+// in the language the app shows.
+func EtcdMembersf058e22eae() string { return In(i18n.Locale()).EtcdMembersf058e22eae() }
+
+// EtcdMembersf058e22eae says "编辑成员选择"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersf058e22eae() string {
+	return Catalog.Format(msgs.locale, "etcdMembersf058e22eae", nil)
+}
+
+// EtcdMembers3d574b6e98 says "成员逐步结果"
+// in the language the app shows.
+func EtcdMembers3d574b6e98() string { return In(i18n.Locale()).EtcdMembers3d574b6e98() }
+
+// EtcdMembers3d574b6e98 says "成员逐步结果"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers3d574b6e98() string {
+	return Catalog.Format(msgs.locale, "etcdMembers3d574b6e98", nil)
+}
+
+// EtcdMembersee6055943d says "原生 ACK"
+// in the language the app shows.
+func EtcdMembersee6055943d() string { return In(i18n.Locale()).EtcdMembersee6055943d() }
+
+// EtcdMembersee6055943d says "原生 ACK"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersee6055943d() string {
+	return Catalog.Format(msgs.locale, "etcdMembersee6055943d", nil)
+}
+
+// EtcdMembers8bf8661da0 says "派发前 Status"
+// in the language the app shows.
+func EtcdMembers8bf8661da0() string { return In(i18n.Locale()).EtcdMembers8bf8661da0() }
+
+// EtcdMembers8bf8661da0 says "派发前 Status"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers8bf8661da0() string {
+	return Catalog.Format(msgs.locale, "etcdMembers8bf8661da0", nil)
+}
+
+// EtcdMembers21029405d8 says "最近成员 Status"
+// in the language the app shows.
+func EtcdMembers21029405d8() string { return In(i18n.Locale()).EtcdMembers21029405d8() }
+
+// EtcdMembers21029405d8 says "最近成员 Status"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers21029405d8() string {
+	return Catalog.Format(msgs.locale, "etcdMembers21029405d8", nil)
+}
+
+// EtcdMembers95fe30f2e9 says "成员握手"
+// in the language the app shows.
+func EtcdMembers95fe30f2e9() string { return In(i18n.Locale()).EtcdMembers95fe30f2e9() }
+
+// EtcdMembers95fe30f2e9 says "成员握手"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers95fe30f2e9() string {
+	return Catalog.Format(msgs.locale, "etcdMembers95fe30f2e9", nil)
+}
+
+// EtcdMembers9d5a03c56a says "成员证据视图"
+// in the language the app shows.
+func EtcdMembers9d5a03c56a() string { return In(i18n.Locale()).EtcdMembers9d5a03c56a() }
+
+// EtcdMembers9d5a03c56a says "成员证据视图"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers9d5a03c56a() string {
+	return Catalog.Format(msgs.locale, "etcdMembers9d5a03c56a", nil)
+}
+
+// EtcdMembers1329c32dbf says "目标尚未执行"
+// in the language the app shows.
+func EtcdMembers1329c32dbf() string { return In(i18n.Locale()).EtcdMembers1329c32dbf() }
+
+// EtcdMembers1329c32dbf says "目标尚未执行"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers1329c32dbf() string {
+	return Catalog.Format(msgs.locale, "etcdMembers1329c32dbf", nil)
+}
+
+// EtcdMembersba6c0f1892 says "原成员 %s · 原代次 %d · %s"
+// in the language the app shows.
+func EtcdMembersba6c0f1892() string { return In(i18n.Locale()).EtcdMembersba6c0f1892() }
+
+// EtcdMembersba6c0f1892 says "原成员 %s · 原代次 %d · %s"
+// in the language of msgs.
+func (msgs Messages) EtcdMembersba6c0f1892() string {
+	return Catalog.Format(msgs.locale, "etcdMembersba6c0f1892", nil)
+}
+
+// EtcdMembers33284688a9 says "成员原生观察"
+// in the language the app shows.
+func EtcdMembers33284688a9() string { return In(i18n.Locale()).EtcdMembers33284688a9() }
+
+// EtcdMembers33284688a9 says "成员原生观察"
+// in the language of msgs.
+func (msgs Messages) EtcdMembers33284688a9() string {
+	return Catalog.Format(msgs.locale, "etcdMembers33284688a9", nil)
+}

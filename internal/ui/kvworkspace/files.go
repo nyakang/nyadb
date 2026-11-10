@@ -54,7 +54,12 @@ func EncodeRequest(r contract.KVRequest) ([]byte, error) {
 			return nil, err
 		}
 	}
-	supported := r.Method == CompactMethod || eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method) || r.Method == AuthManagementMethod
+	if r.Method == MembersMethod {
+		if _, err := memberTargets(r); err != nil {
+			return nil, err
+		}
+	}
+	supported := r.Method == MembersMethod || r.Method == CompactMethod || eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method) || r.Method == AuthManagementMethod
 	for _, m := range methods {
 		if m.Path == r.Method {
 			supported = true
@@ -197,6 +202,9 @@ func (s *State) SaveRequest(d *Document, as bool) {
 	})
 }
 func draftFilename(method string) string {
+	if method == MembersMethod {
+		return "Members.nyakv"
+	}
 	if method == CompactMethod {
 		return "Compact.nyakv"
 	}
@@ -303,7 +311,9 @@ func (s *State) consumeFiles(d *Document) {
 				d.error = locales.Text("KV 请求已更改，未载入所选文件")
 				return
 			}
+			d.releaseMemberAuthority()
 			d.method = r.request.Method
+			d.selectedMembers = d.method == MembersMethod
 			d.Editor.Buffer.Set(r.request.JSON)
 			d.path = r.path
 			d.saved = r.request

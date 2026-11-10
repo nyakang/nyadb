@@ -210,6 +210,13 @@ func (f *kvMemberFacet) BindMember(ctx context.Context, observation contract.KVM
 			if _, ok := member.raw.(contract.KVMemberFollowerPreparation); ok {
 				binding.Lease = &kvMemberFollowerLease{member}
 			}
+			if _, ok := member.raw.(contract.KVMemberFinalPreparation); ok {
+				if follower, ok := binding.Lease.(*kvMemberFollowerLease); ok {
+					binding.Lease = &kvMemberOrderedLease{follower}
+				} else {
+					binding.Lease = &kvMemberFinalLease{member}
+				}
+			}
 		}
 	}
 	if err != nil {
@@ -229,9 +236,18 @@ type kvMemberLease struct {
 }
 
 type kvMemberFollowerLease struct{ *kvMemberLease }
+type kvMemberFinalLease struct{ *kvMemberLease }
+type kvMemberOrderedLease struct{ *kvMemberFollowerLease }
+
+func (l *kvMemberFinalLease) PrepareFinalDefragment() (contract.KVMemberPreparation, error) {
+	return l.prepareDefragment(2)
+}
+func (l *kvMemberOrderedLease) PrepareFinalDefragment() (contract.KVMemberPreparation, error) {
+	return l.prepareDefragment(2)
+}
 
 func (l *kvMemberFollowerLease) PrepareFollowerDefragment() (contract.KVMemberPreparation, error) {
-	return l.prepareDefragment(true)
+	return l.prepareDefragment(1)
 }
 
 type kvMemberPreparation struct {
@@ -273,21 +289,27 @@ func (l *kvMemberLease) ObserveStatus(ctx context.Context) (contract.KVMemberRes
 }
 
 func (l *kvMemberLease) PrepareDefragment() (contract.KVMemberPreparation, error) {
-	return l.prepareDefragment(false)
+	return l.prepareDefragment(0)
 }
 
-func (l *kvMemberLease) prepareDefragment(followerOnly bool) (contract.KVMemberPreparation, error) {
+func (l *kvMemberLease) prepareDefragment(order int) (contract.KVMemberPreparation, error) {
 	if err := l.CheckMemberLease(); err != nil {
 		return nil, err
 	}
 	var p contract.KVMemberPreparation
 	var err error
-	if followerOnly {
+	if order == 1 {
 		f, ok := l.raw.(contract.KVMemberFollowerPreparation)
 		if !ok {
 			return nil, contract.ErrUnsupported
 		}
 		p, err = f.PrepareFollowerDefragment()
+	} else if order == 2 {
+		f, ok := l.raw.(contract.KVMemberFinalPreparation)
+		if !ok {
+			return nil, contract.ErrUnsupported
+		}
+		p, err = f.PrepareFinalDefragment()
 	} else {
 		p, err = l.raw.PrepareDefragment()
 	}

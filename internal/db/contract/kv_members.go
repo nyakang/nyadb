@@ -120,6 +120,12 @@ type KVMemberFollowerPreparation interface {
 	PrepareFollowerDefragment() (KVMemberPreparation, error)
 }
 
+// The last remaining target still requires a known leader in its final native
+// Status, but may itself be that leader.
+type KVMemberFinalPreparation interface {
+	PrepareFinalDefragment() (KVMemberPreparation, error)
+}
+
 type KVMemberBinding struct {
 	Lease KVMemberLease
 	Scope KVMemberScope

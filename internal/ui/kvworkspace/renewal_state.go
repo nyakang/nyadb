@@ -38,7 +38,9 @@ type renewalOperation struct {
 	finished <-chan struct{}
 }
 
-func (d *Document) hasUnknownWrites() bool { return d.unknown != nil || d.renewalUnknown != nil }
+func (d *Document) hasUnknownWrites() bool {
+	return d.unknown != nil || d.renewalUnknown != nil || d.members != nil && d.members.unknown != nil
+}
 func (s *State) renewalLeaseFor(d *Document) bool {
 	if !s.active(d) || d.Busy() || d.renewalNeedsRecovery {
 		return false

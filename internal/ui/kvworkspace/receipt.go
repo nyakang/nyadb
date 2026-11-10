@@ -33,6 +33,7 @@ func encodeOperationReceipt(r Receipt) ([]byte, error) {
 		CanonicalJSON        string                 `json:"canonical_json"`
 		Attempted            bool                   `json:"attempted"`
 		Completed            bool                   `json:"completed"`
+		NativeCaptured       bool                   `json:"native_captured"`
 		WriteOutcomeUnknown  bool                   `json:"write_outcome_unknown"`
 		Code                 string                 `json:"code"`
 		Header               identity               `json:"native_header"`
@@ -49,6 +50,7 @@ func encodeOperationReceipt(r Receipt) ([]byte, error) {
 	if r.Result.JSON != "" {
 		record.JSON = json.RawMessage(r.Result.JSON)
 	}
+	record.NativeCaptured = r.Result.NativeCaptured
 	record.LeaseManagement = managementRecord(r.LeaseManagement)
 	record.AuthManagement = authRecord(r.AuthManagement)
 	compaction, err := compactionData(r.Compaction)

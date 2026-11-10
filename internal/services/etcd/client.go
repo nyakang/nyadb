@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -361,12 +362,12 @@ func (c *Client) executeOwned(parent context.Context, p Plan) (r Response, err e
 		if e != nil {
 			return r, e
 		}
-		if p.followerOnly {
+		if p.leaders != nil || p.followerOnly {
 			leader := before.native.(*pb.StatusResponse).Leader
-			if leader == 0 {
+			if leader == 0 || p.leaders != nil && !slices.Contains(p.leaders, leader) {
 				return r, contract.ErrKVMemberOrderUnknown
 			}
-			if leader == c.identity.MemberID {
+			if p.followerOnly && leader == c.identity.MemberID {
 				return r, contract.ErrKVMemberBecameLeader
 			}
 		}

@@ -114,6 +114,24 @@ func captureEtcdPublic(t *testing.T, s *State, phase string) {
 		for _, size := range [][2]int{{1280, 800}, {720, 520}} {
 			tt := ui.NewTester(s.View, size[0], size[1])
 			tt.Frame()
+			if strings.HasPrefix(phase, "members-public-") {
+				labels := []string{}
+				if strings.HasSuffix(phase, "selection") || strings.HasSuffix(phase, "bound") {
+					labels = []string{"读取成员目录", "检查所选成员", "明确成员 endpoint", "此成员预期版本", "选择此原成员"}
+				}
+				if strings.HasSuffix(phase, "confirmation") {
+					labels = []string{"不可变原成员批次", "复制完整成员批次预览", "我确认执行此不可变原成员批次", "确认执行 Defragment 批次"}
+				}
+				if strings.HasSuffix(phase, "receipt") || strings.HasSuffix(phase, "unknown") {
+					labels = []string{"原成员逐步结果", "成员证据视图"}
+				}
+				for _, label := range labels {
+					r, ok := tt.Find(locales.Text(label))
+					if !ok || r.W <= 0 || r.H <= 0 || r.X < 0 || r.Y < 0 || r.X+r.W > float32(size[0])+1 || r.Y+r.H > float32(size[1])+1 {
+						t.Fatal("public member control clipped", phase, language, label, r)
+					}
+				}
+			}
 			if strings.HasPrefix(phase, "compact-public-") && strings.HasSuffix(phase, "confirmation") {
 				for _, label := range []string{"确认压缩原集群历史", "复制完整 Compact 预览", "我确认压缩此原集群的历史", "确认执行 Compact", "取消"} {
 					r, ok := tt.Find(locales.Text(label))

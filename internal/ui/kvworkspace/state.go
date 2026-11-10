@@ -58,6 +58,7 @@ type confirmation struct {
 	management *LeaseManagementReceipt
 	auth       *authConfirmation
 	compaction *CompactionReceipt
+	members    *memberConfirmation
 	keyRow     int
 	keyColumns ui.ListState
 	checked    bool
@@ -71,6 +72,8 @@ type outcome struct {
 	err                   error
 	authSteps             []AuthStepReceipt
 	compactionObservation *CompactionObservation
+	members               *memberOutcome
+	recoveryMembers       []contract.KVMemberResult
 }
 type operation struct {
 	lease           contract.KVRequestLease
@@ -105,6 +108,8 @@ type Document struct {
 	authBrowser                                             *authBrowser
 	authDraft                                               *authDraft
 	compactionObservation                                   *CompactionObservation
+	members                                                 *memberState
+	selectedMembers                                         bool
 	last, unknown                                           *Receipt
 	selectedUnknown                                         bool
 	error                                                   string
@@ -139,6 +144,7 @@ type leaveStamp struct {
 	renewalUnknown                          *RenewalReceipt
 	browserLast, browserPage, browserDetail *LeaseBrowserReceipt
 	compaction                              *CompactionObservation
+	memberRevision                          uint64
 }
 
 func (d *Document) ID() uint64       { return d.id }
@@ -190,6 +196,9 @@ func (d *Document) Confirmation() (contract.KVRequest, bool) {
 	if d.confirmation == nil {
 		return contract.KVRequest{}, false
 	}
+	if d.confirmation.members != nil {
+		return d.confirmation.members.receipt.Authored, true
+	}
 	return d.confirmation.plan.Snapshot(), true
 }
 func (d *Document) Name() string { return fmt.Sprintf("KV %d", d.id) }
@@ -206,11 +215,12 @@ type State struct {
 	LeaseBrowserSplitPercent float32
 	AuthSplitPercent         float32
 	CompactionSplitPercent   float32
+	MembersSplitPercent      float32
 	Invalidate               func()
 }
 
 func New(deps Dependencies) *State {
-	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50, LeaseBrowserSplitPercent: 20, AuthSplitPercent: 65, CompactionSplitPercent: 70}
+	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50, LeaseBrowserSplitPercent: 20, AuthSplitPercent: 65, CompactionSplitPercent: 70, MembersSplitPercent: 60}
 }
 func (s *State) owned(d *Document) bool { return d != nil && !d.closed && s.documents[d.id] == d }
 func (s *State) active(d *Document) bool {
@@ -267,6 +277,7 @@ func (s *State) Open(id uint64, profile int64, request contract.KVRequest) *Docu
 func (s *State) SetMethod(d *Document, method string) {
 	if s.owned(d) && !d.Busy() && d.method != method {
 		d.method = method
+		d.selectedMembers = method == MembersMethod
 		d.confirmation = nil
 		d.leaseManagement = nil
 		d.authDraft = nil
@@ -319,6 +330,16 @@ func (s *State) start(d *Document, kind string, authored contract.KVRequest, wor
 				r.err = ctx.Err()
 			}
 		}
+		r.recoveryMembers = cloneMemberResults(r.recoveryMembers)
+		if ctx.Err() != nil && r.members != nil {
+			r.members.close()
+			r.members.observation = nil
+			if r.members.bindings != nil {
+				for i := range r.members.bindings.entries {
+					r.members.bindings.entries[i].lease = nil
+				}
+			}
+		}
 		out <- r
 		if invalidate != nil {
 			invalidate()
@@ -344,6 +365,10 @@ func (s *State) Preconnect(d *Document) {
 // Run prepares on the UI thread. Writes require a separate explicit confirmation
 // of the same authored text, canonical snapshot and original lease.
 func (s *State) Run(d *Document) {
+	if s.owned(d) && d.method == MembersMethod {
+		s.PrepareMemberBatch(d)
+		return
+	}
 	if s.owned(d) && d.method == CompactMethod {
 		s.PrepareCompaction(d)
 		return
@@ -418,9 +443,13 @@ func (s *State) Confirm(d *Document, checked bool) {
 	if !checked || !s.check(d) {
 		return
 	}
-	if p.lease != d.lease || p.editor != d.Request() || d.hasUnknownWrites() || p.compaction != nil && !validCompactionConfirmation(d, p) || p.auth != nil && !sameEventScope(p.auth.receipt.Scope, d.scope) || p.management != nil && (!sameEventScope(p.management.Scope, d.scope) || !p.plan.Writes() || !managementRequestEqual(p.authored, p.plan.Snapshot())) {
+	if p.lease != d.lease || p.editor != d.Request() || d.hasUnknownWrites() || p.members != nil && !validMemberConfirmation(d, p) || p.compaction != nil && !validCompactionConfirmation(d, p) || p.auth != nil && !sameEventScope(p.auth.receipt.Scope, d.scope) || p.management != nil && (!sameEventScope(p.management.Scope, d.scope) || !p.plan.Writes() || !managementRequestEqual(p.authored, p.plan.Snapshot())) {
 		d.confirmation = nil
 		d.error = locales.Text("KV 请求已更改，请重新预览")
+		return
+	}
+	if p.members != nil {
+		s.executeMemberBatch(d, p)
 		return
 	}
 	if p.auth != nil {
@@ -486,7 +515,7 @@ func (s *State) Recover(d *Document) {
 			return outcome{lease: l, err: err}
 		}
 		r, err := p.RecoverKV(previous)
-		return outcome{lease: r.Lease, err: err}
+		return outcome{lease: r.Lease, recoveryMembers: cloneMemberResults(r.MemberResults), err: err}
 	})
 }
 
@@ -519,7 +548,15 @@ func (s *State) Consume() {
 				if r.err != nil {
 					d.error = r.err.Error()
 				}
+				if r.members != nil {
+					s.consumeMembers(d, job, r)
+					d.selectedMembers = true
+				}
+				if job.kind == "recover" {
+					s.consumeMemberRecovery(d, job, r.recoveryMembers)
+				}
 				if job.kind == "execute" {
+					d.selectedMembers = false
 					d.selectedBrowser = false
 					d.selectedRenewal = false
 					d.selectedEvents = false
@@ -550,6 +587,7 @@ func (s *State) Consume() {
 						_ = r.lease.Close()
 						d.error = locales.Text("KV 原连接不可用")
 					} else {
+						d.releaseMemberAuthority()
 						d.lease = r.lease
 						d.scope = scope
 						d.needsRecovery = false
@@ -597,10 +635,10 @@ func (s *State) GuardLeave(d *Document, next func(ui.Services)) bool {
 	if !s.owned(d) {
 		return false
 	}
-	if d.permit != nil && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && d.permit.compaction == d.compactionObservation && !d.Busy() && !d.FileBusy() {
+	if d.permit != nil && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && d.permit.compaction == d.compactionObservation && d.permit.memberRevision == d.memberRevision() && !d.Busy() && !d.FileBusy() {
 		return false
 	}
-	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && d.leaseManagement == nil && d.authDraft == nil && d.compactionObservation == nil && (d.confirmation == nil || d.confirmation.management == nil && d.confirmation.auth == nil && d.confirmation.compaction == nil) {
+	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && !d.memberContent() && d.leaseManagement == nil && d.authDraft == nil && d.compactionObservation == nil && (d.confirmation == nil || d.confirmation.members == nil && d.confirmation.management == nil && d.confirmation.auth == nil && d.confirmation.compaction == nil) {
 		return false
 	}
 	s.leave = &leaveDecision{doc: d, next: next}
@@ -624,7 +662,7 @@ func (s *State) DecideLeave(services ui.Services, discard bool) {
 	next := s.leave.next
 	s.leave = nil
 	s.CancelConfirmation(d)
-	d.permit = &leaveStamp{request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail, compaction: d.compactionObservation}
+	d.permit = &leaveStamp{request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail, compaction: d.compactionObservation, memberRevision: d.memberRevision()}
 	if next != nil {
 		next(services)
 	}
@@ -693,12 +731,16 @@ func (s *State) Close(d *Document) {
 		<-d.job.finished
 		select {
 		case r := <-d.job.out:
+			if r.members != nil {
+				r.members.close()
+			}
 			if r.lease != nil {
 				_ = r.lease.Close()
 			}
 		default:
 		}
 	}
+	d.releaseMemberAuthority()
 	delete(s.documents, d.id)
 	if s.leave != nil && s.leave.doc == d {
 		s.leave = nil
@@ -712,6 +754,7 @@ func (s *State) Close(d *Document) {
 	d.authDraft = nil
 	d.authBrowser = nil
 	d.compactionObservation = nil
+	d.members = nil
 	d.last = nil
 	d.unknown = nil
 	d.job = nil

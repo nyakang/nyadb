@@ -213,6 +213,9 @@ func TestKVMembersRuntimeOpaqueAuthorityOriginalDocumentAndLateRecoveryGeneratio
 	if _, ok := b.Lease.(contract.KVMemberFollowerPreparation); ok {
 		t.Fatal("runtime advertised unsupported follower preparation")
 	}
+	if _, ok := b.Lease.(contract.KVMemberFinalPreparation); ok {
+		t.Fatal("runtime advertised unsupported final preparation")
+	}
 	facets[0].follower = true
 	originalRawMember := facets[0].last
 	guarded, err := f.BindMember(context.Background(), o, target)

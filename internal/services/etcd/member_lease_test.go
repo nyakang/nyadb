@@ -310,6 +310,7 @@ func TestMemberFollowerGuardUsesFinalStatusAndConsumesOnlyOriginalPreparation(t 
 		t.Run(fmt.Sprint(leader), func(t *testing.T) {
 			l, root := memberTestLease(t)
 			c, target := memberRelayClient(t, nil, Config{}, "", "ok")
+			root.directory.Store(&pb.MemberListResponse{Header: &pb.ResponseHeader{ClusterId: 7, MemberId: 9, RaftTerm: 2}, Members: []*pb.Member{{ID: 9, Name: "source", ClientURLs: []string{"http://declared:2379"}}, {ID: 10}}})
 			m := memberTestBind(t, l, c.config.Endpoint)
 			follower := &pb.StatusResponse{Header: &pb.ResponseHeader{ClusterId: 7, MemberId: 9, Revision: 11, RaftTerm: 2}, Version: "3.7.3", Leader: 10}
 			target.statusObservation.Store(follower)
@@ -346,6 +347,38 @@ func TestMemberFollowerGuardUsesFinalStatusAndConsumesOnlyOriginalPreparation(t 
 			}
 			if _, err := m.ExecuteMember(context.Background(), p); !errors.Is(err, contract.ErrKVPlanUsed) {
 				t.Fatal("guarded preparation replayed", err)
+			}
+		})
+	}
+}
+
+func TestMemberFinalGuardRequiresKnownVoterLeaderWithoutRejectingSelectedLeader(t *testing.T) {
+	for _, leader := range []uint64{0, 9, 10, 11} {
+		t.Run(fmt.Sprint(leader), func(t *testing.T) {
+			l, root := memberTestLease(t)
+			root.directory.Store(&pb.MemberListResponse{Header: &pb.ResponseHeader{ClusterId: 7, MemberId: 9, RaftTerm: 2}, Members: []*pb.Member{{ID: 9, Name: "source", ClientURLs: []string{"http://declared:2379"}}, {ID: 10}, {ID: 11, IsLearner: true}}})
+			c, target := memberRelayClient(t, nil, Config{}, "", "ok")
+			m := memberTestBind(t, l, c.config.Endpoint)
+			p, err := m.PrepareFinalDefragment()
+			if err != nil || target.calls.Load() != 0 {
+				t.Fatal("pure final preparation dispatched", err)
+			}
+			target.statusObservation.Store(&pb.StatusResponse{Header: &pb.ResponseHeader{ClusterId: 7, MemberId: 9, Revision: 11, RaftTerm: 2}, Version: "3.7.3", Leader: leader})
+			r, err := m.ExecuteMember(context.Background(), p)
+			if !r.Before.NativeCaptured || !r.Before.Completed || !r.DirectoryCheck.Result.Completed || r.Before.Reply.Status.Leader != leader {
+				t.Fatal("complete final ordering evidence lost", err)
+			}
+			if leader == 9 || leader == 10 {
+				if err != nil || !r.Result.Completed || !r.Result.NativeCaptured || len(r.Result.Native) != 0 || target.calls.Load() != 1 {
+					t.Fatal("known final leader rejected", err)
+				}
+			} else {
+				if !errors.Is(err, contract.ErrKVMemberOrderUnknown) || r.Result.Attempted || r.Result.WriteOutcomeUnknown || target.calls.Load() != 0 || m.CheckMemberLease() != nil {
+					t.Fatal("missing/learner leader dispatched or retired", err)
+				}
+			}
+			if _, err := m.ExecuteMember(context.Background(), p); !errors.Is(err, contract.ErrKVPlanUsed) {
+				t.Fatal("original final preparation reused", err)
 			}
 		})
 	}

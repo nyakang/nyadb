@@ -35,7 +35,9 @@ def remove_network(identifier, nonce):
     run(['docker', 'network', 'rm', identifier])
 
 
-def verify(version, race, mode="anonymous", member_session=False):
+def verify(version, race, mode="anonymous", member_session=False, public_members=False):
+    if public_members:
+        member_session = True
     nonce = uuid.uuid4().hex
     build = ROOT/'build/etcd'
     build.mkdir(parents=True, exist_ok=True)
@@ -44,11 +46,20 @@ def verify(version, race, mode="anonymous", member_session=False):
     sources = sorted((ROOT/'internal/services/etcd').glob('*.go')) + [ROOT/'go.mod', ROOT/'go.sum', Path(__file__).resolve(), ROOT/'tools/verify_etcd_fixture.py', ROOT/'tests/test_etcd_fixture.py', ROOT/'tests/test_etcd_member_fixture.py']
     if member_session:
         sources += [p for folder in ('internal/db/contract', 'internal/services/dbruntime', 'internal/services/connections') for p in (ROOT/folder).glob('*.go')]
+    if public_members:
+        sources += [p for folder in ('internal/ui/kvworkspace', 'internal/ui/shell', 'internal/ui/theme',
+                                    'internal/ui/connectioncatalog', 'internal/ui/connectioneditor', 'internal/ui/navigation',
+                                    'internal/ui/sessionbrowser', 'internal/ui/dataworkspace', 'internal/ui/objectworkspace',
+                                    'internal/storage/localdb', 'internal/bootstrap', 'locales') for p in (ROOT/folder).glob('*.go')]
+        sources += [ROOT/'locales/en.json', ROOT/'locales/zh-Hans.json']
+    sources = sorted(set(sources))
     report = dict(nonce=nonce, version=version, mode=mode, image=IMAGES[version], race=race, passed=False,
                   scope='native-etcd-explicit-member-transports-three-voters-one-learner',
                   source_hashes={str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources})
     if member_session:
         report['scope'] = 'original-etcd-member-session-runtime-three-voters-one-learner'
+    if public_members:
+        report['scope'] = 'public-original-etcd-member-checked-batches-three-voters-one-learner'
     tls = mode in ('tls', 'mtls')
     scheme = 'https' if tls else 'http'
     secret = secrets.token_hex(24) if mode != 'anonymous' else ''
@@ -159,7 +170,19 @@ def verify(version, race, mode="anonymous", member_session=False):
                          'TestEtcdNativeMemberRuntimeOriginalPublicationAndEvidenceRecovery',
                          'TestEtcdNativeMemberRuntimeActualProcessedPublicationFaults']
             packages += ['./internal/services/dbruntime']
-        command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join(required)+')$', '-count=1', '-v', '-timeout=180s']
+        if public_members:
+            images = build/('owned-member-fixture-'+nonce+'-images')
+            environment.update(NYADB_ETCD_PUBLIC_MEMBERS_IT='1', NYADB_ETCD_WORKSPACE_IT='1', NYADB_ETCD_PUBLIC_IT='1',
+                               NYADB_ETCD_WORKSPACE_IMAGES=str(images/'workspace'), NYADB_ETCD_PUBLIC_IMAGES=str(images/'shell'))
+            required += ['TestEtcdNativeMembersWorkspaceOriginalSelectedVotersCheckedBatchAndCompleteFiles',
+                         'TestEtcdNativeMembersWorkspaceActualProcessedFaultsParkingAndOriginalRecovery',
+                         'TestEtcdNativeMembersWorkspacePartialBatchRealAckLossAndRestrictedLearner',
+                         'TestEtcdNativeShellPublicMembersCheckedOriginalBatchFilesAndCompleteArchives',
+                         'TestEtcdNativeShellPublicMembersUnknownParkingPublicationAndRecoveryRetainOriginals']
+            # The final native session case removes an owned follower. Run
+            # public four-member workbenches before that independent control.
+            packages = ['./internal/ui/kvworkspace', './internal/ui/shell'] + packages
+        command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join(required)+')$', '-count=1', '-v', '-timeout=600s']
         with log_path.open('w') as out:
             result = subprocess.run(command, cwd=ROOT, env=environment, stdout=out, stderr=subprocess.STDOUT)
         log = log_path.read_text()
@@ -169,6 +192,12 @@ def verify(version, race, mode="anonymous", member_session=False):
         for name, expected in report['source_hashes'].items():
             if hashlib.sha256((ROOT/name).read_bytes()).hexdigest() != expected:
                 raise RuntimeError('Native member source changed during acceptance')
+        if public_members:
+            for key, directory, expected in [('workspace_images', images/'workspace', 36), ('shell_images', images/'shell', 36)]:
+                pictures = sorted(directory.glob('*.png'))
+                if len(pictures) != expected:
+                    raise RuntimeError('Missing public member images: '+key+' got '+str(len(pictures)))
+                report[key] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
         report.update(passed=True, accepted=accepted, log_sha256=hashlib.sha256(log_path.read_bytes()).hexdigest())
     finally:
         report['container_ids'] = list(identifiers)
@@ -200,5 +229,6 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--mode', choices=('anonymous', 'basic', 'tls', 'mtls'), default='anonymous')
     parser.add_argument('--member-session', action='store_true')
+    parser.add_argument('--public-members', action='store_true')
     args = parser.parse_args()
-    verify(args.version, args.race, args.mode, args.member_session)
+    verify(args.version, args.race, args.mode, args.member_session, args.public_members)

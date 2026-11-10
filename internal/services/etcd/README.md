@@ -616,8 +616,8 @@ uses one original Compact plan; a successful Range at the compaction boundary
 does not guarantee that repeating Compact will succeed. Copies and exports keep
 complete original observations and replies. Request files restore text only.
 Original observation/confirmation/unknown receipts participate in leave decisions;
-close releases their leases and caches. Defragment, Alarm, Snapshot and member
-management are pending.
+close releases their leases and caches. Public member-targeted Defragment is
+described below; Alarm, Snapshot and membership changes remain pending.
 
 Run `GOWORK=off /usr/bin/python3 tools/verify_etcd_fixture.py --compaction-native
 --race --mode MODE` for 16 required native parents. Use official 3.7.3
@@ -655,8 +655,8 @@ settle it. Learners reject Defragment. Official 3.7 uses FailedPrecondition;
 the exact maintenance permission denial. These two observed 3.5 rejections are
 definite; the original native codes/messages remain unchanged.
 
-This is a native foundation. Ordinary KV request codecs/inventories, public
-batch ordering and member/Defragment forms remain separate acceptance steps.
+This native foundation uses separate original-member authority rather than
+ordinary KV request codecs. Public member batches are described below.
 Run `tools/verify_etcd_fixture.py --member-native
 --race --mode MODE` under the five existing version/transport configurations.
 `tools/verify_etcd_member_fixture.py --race --version VERSION` verifies three
@@ -693,4 +693,53 @@ Run `tools/verify_etcd_fixture.py --member-session --race --mode MODE` and
 --version VERSION` for the original session/runtime matrices. The latter also
 verifies an actual raft leadership transfer after follower preparation and a
 successful original follower ACK. Public member selection and checked batches
-remain a separate acceptance step.
+are described below.
+
+### Public original Members and checked Defragment batches
+
+The sole `kvworkspace.State/Document` offers the `nyadb://etcd/members` method.
+Its strict JSON contains at most eight explicit targets, each with an exact
+unsigned decimal member ID, endpoint and independently expected version. The
+original opaque MemberList observation authorizes each binding; JSON, archived
+DTOs and request files restore text only. Endpoint aliases are explicitly
+entered and verified using the captured original authentication/TLS settings.
+Full failed handshakes remain in the bounded binding history. Learners can bind
+for Status inspection but cannot enter a Defragment batch.
+
+The checked immutable confirmation captures original profile/public generation,
+document, directory, scopes, child leases and pure one-use follower/final plans.
+Before each step it records fresh complete Status replies for every remaining
+target and requires one consistent known voter leader and raft term. Followers
+precede the selected leader. The final native pre-dispatch Status independently
+checks a known voter leader; a non-final target that became leader stops before
+send. These observations provide no CAS, lock or member-incarnation guarantee.
+No failed preparation is reordered, retired as unknown or replayed.
+
+The batch stops at the first failure, cancellation or unknown outcome. Complete
+records keep succeeded/failed/unknown/not-executed targets, all ordering rounds,
+DirectoryCheck, Before, independent original headers and native protobuf/JSON.
+A successful empty ACK has `NativeCaptured=true`, empty bytes and no fabricated
+header. A completed native ACK may remain succeeded when publication retires,
+while the remaining targets stay unexecuted. Member unknown receipts separately
+block KV, Auth, renewal and member writes; later Status, child Close or recovery
+cannot settle them. Parked outcomes wait for their original document activation.
+Recovery carries full original member evidence with old public generations and
+revokes directory/binding authority without any new discovery, bind or write.
+
+The UI keeps editable selection apart from retained results and displays step
+results, native ACK, Before Status, current member Status and handshakes. It
+copies/exports full original archives; only the full-record preview is bounded
+to 64 KiB. The archive cap is 512 MiB with conservative pre-dispatch reservations;
+binding history holds at most 32 targets. Close drains original pending outcomes
+and releases transports, authority, plans, callbacks and caches. Request files
+restore the selection text and revoke live authority while retaining receipts.
+
+Run `GOWORK=off /usr/bin/python3 tools/verify_etcd_member_fixture.py
+--public-members --race --version VERSION --mode MODE`. The supported matrix is
+3.7.3 anonymous/basic/tls/mtls plus 3.5.35 basic. Each independently owned three-
+voter/one-learner fixture requires nine native parent cases and 36 workspace plus
+36 Shell localized images. Real upstream reply-loss/cancellation/close faults,
+partial batches, restricted-principal denial, learner inspection, original
+publication/recovery, text files and full archives are mandatory. Local evidence:
+`docs/etcd-public-members-2026-11-11.md`. Alarm/Disarm, Snapshot, membership changes,
+broader cluster management, etcd-v2 and AuthEnable/AuthDisable remain separate.

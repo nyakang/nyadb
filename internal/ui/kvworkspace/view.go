@@ -33,6 +33,7 @@ func (s *State) View(c *ui.Context, d *Document) {
 	isBrowser := leaseBrowserMethod(d.method)
 	isAuth := d.method == AuthManagementMethod
 	isCompaction := d.method == CompactMethod
+	isMembers := d.method == MembersMethod
 	ready := !d.Busy() && !d.NeedsRecovery() && (!isEvent && !isRenewal && d.lease != nil || isEvent && d.eventsAvailable || isRenewal && d.renewalAvailable)
 	ui.Column(c).Fill().Background(p.Panel).Children(func() {
 		ui.Row(c).FillWidth().Height(theme.RowHeight(c, theme.CommandBarHeight)).Background(p.Header).Children(func() {
@@ -40,6 +41,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 				runLabel, runID := locales.Text("运行请求"), locales.Text("运行 KV 请求")
 				if isCompaction {
 					runLabel, runID = locales.Text("预览 Compact"), locales.Text("预览 Compact")
+				}
+				if isMembers {
+					runLabel, runID = locales.Text("预览 Defragment"), locales.Text("预览 Defragment")
 				}
 				if isAuth {
 					runLabel, runID = locales.Text("刷新权限目录"), locales.Text("刷新权限目录")
@@ -59,7 +63,7 @@ func (s *State) View(c *ui.Context, d *Document) {
 					runLabel = locales.Text("读取历史")
 					runID = runLabel
 				}
-				if ui.Button(c, runLabel).Label(runID).Disabled(!ready || isCompaction && (!d.CompactionAvailable() || d.hasUnknownWrites() || !compactionObservationReady(d, d.compactionObservation)) || isAuth && !d.AuthManagementAvailable() || isBrowser && !d.LeaseBrowsingAvailable() || isEvent && d.eventReceipt != nil || isRenewal && (d.renewalReceipt != nil || d.hasUnknownWrites())).Clicked() {
+				if ui.Button(c, runLabel).Label(runID).Disabled(!ready || isMembers && (!d.MembersAvailable() || d.hasUnknownWrites() || !memberSelectionVisibleReady(d)) || isCompaction && (!d.CompactionAvailable() || d.hasUnknownWrites() || !compactionObservationReady(d, d.compactionObservation)) || isAuth && !d.AuthManagementAvailable() || isBrowser && !d.LeaseBrowsingAvailable() || isEvent && d.eventReceipt != nil || isRenewal && (d.renewalReceipt != nil || d.hasUnknownWrites())).Clicked() {
 					s.Run(d)
 				}
 				if d.method == WatchMethod {
@@ -117,8 +121,11 @@ func (s *State) View(c *ui.Context, d *Document) {
 					}
 				}
 			}
-			if (isCompaction || isEvent || isRenewal || isBrowser || isAuth) && ui.Button(c, locales.Text("使用请求模板")).Disabled(d.Busy()).Clicked() {
+			if (isMembers || isCompaction || isEvent || isRenewal || isBrowser || isAuth) && ui.Button(c, locales.Text("使用请求模板")).Disabled(d.Busy()).Clicked() {
 				request := DefaultEventRequest(d.method)
+				if isMembers {
+					request = DefaultMembersRequest()
+				}
 				if isCompaction {
 					request = DefaultCompactionRequest()
 				}
@@ -141,6 +148,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 			ui.Text(c, name).SingleLine().MinWidth(0).Shrink(1).TextColor(p.Muted).Tooltip(name)
 		})
 		hint := locales.Text("JSON 中 bytes 使用 Base64，整数保留原生精度；请求使用绝对键")
+		if isMembers {
+			hint = locales.Text("完整原目录与明确 endpoint；成员 ID 不是 incarnation 保证")
+		}
 		if isCompaction {
 			hint = locales.Text("整个集群历史；连接前缀不限定压缩范围")
 		}
@@ -194,6 +204,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 			}).Label(locales.Text("KV 显式恢复")).FillWidth().Padding(3, 8)
 		}
 		split := &s.SplitPercent
+		if isMembers || d.selectedMembers {
+			split = &s.MembersSplitPercent
+		}
 		if isAuth {
 			split = &s.AuthSplitPercent
 		}
@@ -204,6 +217,10 @@ func (s *State) View(c *ui.Context, d *Document) {
 			split = &s.LeaseBrowserSplitPercent
 		}
 		ui.SplitVerticalPercent(c, split, func() {
+			if isMembers {
+				s.membersView(c, d)
+				return
+			}
 			if isCompaction {
 				s.compactionView(c, d)
 				return
@@ -236,42 +253,55 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 	ui.Column(c).Fill().Padding(5, 8).Gap(4).Children(func() {
 		ui.Toolbar(c, func() {
 			if ui.Button(c, locales.Text("最近回执")).Clicked() {
+				d.selectedMembers = false
 				d.selectedBrowser = false
 				d.selectedUnknown = false
 				d.selectedEvents = false
 				d.selectedRenewal = false
 			}
+			if d.memberContent() && ui.Button(c, locales.Text("成员回执")).Clicked() {
+				d.selectedMembers = true
+			}
 			if d.unknown != nil && ui.Button(c, locales.Text("原未确认回执")).Clicked() {
+				d.selectedMembers = false
 				d.selectedBrowser = false
 				d.selectedUnknown = true
 				d.selectedEvents = false
 				d.selectedRenewal = false
 			}
 			if (d.eventsAvailable || d.eventReceipt != nil) && ui.Button(c, locales.Text("事件回执")).Clicked() {
+				d.selectedMembers = false
 				d.selectedBrowser = false
 				d.selectedEvents = true
 				d.selectedRenewal = false
 				d.selectedUnknown = false
 			}
 			if (d.renewalAvailable || d.renewalReceipt != nil) && ui.Button(c, locales.Text("续租回执")).Clicked() {
+				d.selectedMembers = false
 				d.selectedBrowser = false
 				d.selectedRenewal = true
 				d.selectedEvents = false
 				d.selectedUnknown = false
 			}
 			if d.renewalUnknown != nil && ui.Button(c, locales.Text("原未确认续租回执")).Clicked() {
+				d.selectedMembers = false
 				d.selectedBrowser = false
 				d.selectedRenewal = true
 				d.selectedEvents = false
 				d.selectedUnknown = false
 			}
 			if (d.LeaseBrowsingAvailable() || d.browserLast != nil) && ui.Button(c, locales.Text("租约浏览")).Clicked() {
+				d.selectedMembers = false
 				d.selectedBrowser = true
 				d.selectedRenewal = false
 				d.selectedEvents = false
 				d.selectedUnknown = false
 			}
 		}).Label(locales.Text("KV 回执操作")).FillWidth().MinWidth(0).Padding(0).Gap(5)
+		if d.selectedMembers {
+			s.membersReceiptView(c, d)
+			return
+		}
 		if d.selectedBrowser {
 			s.leaseBrowserReceiptView(c, d)
 			return
@@ -386,6 +416,10 @@ func (s *State) Modals(c *ui.Context) {
 		}
 		confirmation := d.confirmation
 		theme.Modal(c.Key(fmt.Sprintf("kv-confirm-%d", d.id)), &confirmation.open, func() {
+			if confirmation.members != nil {
+				s.memberConfirmationView(c, d, confirmation)
+				return
+			}
 			if confirmation.compaction != nil {
 				s.compactionConfirmationView(c, d, confirmation)
 				return

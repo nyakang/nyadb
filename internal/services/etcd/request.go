@@ -22,6 +22,7 @@ type Plan struct {
 	write        bool
 	used         *atomic.Bool
 	followerOnly bool
+	leaders      []uint64
 }
 
 func (p Plan) Native() proto.Message {
