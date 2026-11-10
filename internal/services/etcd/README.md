@@ -876,3 +876,54 @@ the original certificate configuration and verify client certificates in mTLS.
 Local evidence: `docs/etcd-alarm-public-2026-11-11.md`. Snapshot/complete snapshot
 files, membership changes, broader cluster management, etcd-v2 and
 AuthEnable/AuthDisable remain separate scope.
+
+### Original native Snapshot stream foundation
+
+`Client.PrepareSnapshot` captures the original empty protobuf request, finite
+body/journal/frame limits and a private one-use owner. `ExecuteSnapshot` uses
+that client's raw disabled-retry transport, captures a separate fresh native
+Status observation, then receives and validates each original Snapshot frame.
+No public method, document facet or restore capability is installed by this
+foundation.
+
+The final data frame and independent 32-byte SHA-256 frame can both have zero
+remaining bytes and nil headers. Completeness requires consistent body counts,
+the complete matching checksum and actual original EOF. Frame headers remain
+nullable; they never borrow the Status header. The server's storage version
+remains distinct from the running product version. Original unknown extensions
+are preserved.
+
+Two distinct caller-owned writers receive the native body plus checksum and a
+bounded-memory, length-prefixed journal of all complete protobuf frames. The
+journal also retains the separate original Status, native terminal status and
+local/output outcomes. `ReadSnapshotJournal` reads one bounded record at a time
+and rejects truncated records, missing terminal, duplicate origin and trailing
+bytes. A failed frame's original bytes remain separately available if journal
+or output writing fails. Short writes preserve their acknowledged byte counts;
+a partial journal cannot be repaired by appending a footer.
+
+Source completeness, output acknowledgement, journal completeness and overall
+execution success are separate outcomes. Neither `Completed` nor a complete
+journal proves fsync, publication or destination ownership. The original file
+owner must independently handle its temporary files, durability and publication.
+The executor never closes a caller's writer, switches endpoints, resumes or
+replays. Cancellation and Close wait for original receive/write acknowledgement;
+Close releases the duplicate client receipt cache. Snapshot evidence does not
+settle any earlier unknown write and represents whole-cluster backend state,
+independent of a connection's browsing prefix.
+
+```sh
+GOWORK=off GOFLAGS=-mod=readonly python3 tools/verify_etcd_fixture.py --snapshot-native --race --version VERSION --mode MODE
+```
+
+Run official 3.7.3 anonymous/basic/TLS/mTLS and 3.5.35 basic. Each configuration
+requires nine native parents, including the existing binary MVCC, cancellation
+and original write-receipt regressions. Snapshot cases validate multi-frame
+native disk output against every journal blob, actual restricted-token and
+certificate permissions, real complete upstream streams followed by partial
+loss, missing/wrong checksum, changed count/header, trailing frames, withheld
+EOF, extensions, cancellation and original close without resumption. Unit tests
+cover local short writes, byte budgets, truncated journals and blocked-writer
+close acknowledgement. Original session/document facets, complete owned
+artifacts, durable user-file publication and public controls remain subsequent
+acceptance stages.

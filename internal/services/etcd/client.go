@@ -103,6 +103,7 @@ type Client struct {
 	closed, retired bool
 	connClosed      bool // protected by operation after Open
 	last            Response
+	lastSnapshot    SnapshotResult
 	principal       string
 	access          *keyAccess
 	closeOnce       sync.Once
@@ -480,6 +481,7 @@ func (c *Client) Close() error {
 		c.closeConnection()
 		c.mu.Lock()
 		c.last = Response{}
+		c.lastSnapshot = SnapshotResult{}
 		c.token = ""
 		c.access = nil
 		c.principal = ""
