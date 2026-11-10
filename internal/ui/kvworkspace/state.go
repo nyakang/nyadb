@@ -48,11 +48,14 @@ type confirmation struct {
 	open     bool
 }
 type outcome struct {
-	result contract.KVResult
-	lease  contract.KVRequestLease
-	err    error
+	result      contract.KVResult
+	leasePage   *contract.KVLeasePage
+	leaseDetail *contract.KVLeaseDetail
+	lease       contract.KVRequestLease
+	err         error
 }
 type operation struct {
+	lease    contract.KVRequestLease
 	kind     string
 	scope    contract.KVScope
 	authored contract.KVRequest
@@ -96,13 +99,19 @@ type Document struct {
 	renewalReceipt, renewalUnknown                          *RenewalReceipt
 	renewalConfirmation                                     *renewalConfirmation
 	renewalNeedsRecovery, renewalAvailable, selectedRenewal bool
+	browserLast, browserPage, browserDetail                 *LeaseBrowserReceipt
+	selectedBrowser                                         bool
+	browserReceiptChoice, browserRow, browserKeyRow         int
+	browserSelectedID                                       int64
+	browserColumns, browserKeysColumns                      ui.ListState
 }
 type leaveStamp struct {
-	request        contract.KVRequest
-	last, unknown  *Receipt
-	events         *EventReceipt
-	renewal        *RenewalReceipt
-	renewalUnknown *RenewalReceipt
+	request                                 contract.KVRequest
+	last, unknown                           *Receipt
+	events                                  *EventReceipt
+	renewal                                 *RenewalReceipt
+	renewalUnknown                          *RenewalReceipt
+	browserLast, browserPage, browserDetail *LeaseBrowserReceipt
 }
 
 func (d *Document) ID() uint64       { return d.id }
@@ -163,15 +172,16 @@ type leaveDecision struct {
 	next func(ui.Services)
 }
 type State struct {
-	deps         Dependencies
-	documents    map[uint64]*Document
-	leave        *leaveDecision
-	SplitPercent float32
-	Invalidate   func()
+	deps                     Dependencies
+	documents                map[uint64]*Document
+	leave                    *leaveDecision
+	SplitPercent             float32
+	LeaseBrowserSplitPercent float32
+	Invalidate               func()
 }
 
 func New(deps Dependencies) *State {
-	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50}
+	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50, LeaseBrowserSplitPercent: 20}
 }
 func (s *State) owned(d *Document) bool { return d != nil && !d.closed && s.documents[d.id] == d }
 func (s *State) active(d *Document) bool {
@@ -254,7 +264,7 @@ func (s *State) start(d *Document, kind string, authored contract.KVRequest, wor
 	ctx, cancel := context.WithCancel(d.ctx)
 	out := make(chan outcome, 1)
 	finished := make(chan struct{})
-	d.job = &operation{kind: kind, scope: d.scope.Clone(), authored: authored, cancel: cancel, out: out, finished: finished}
+	d.job = &operation{lease: d.lease, kind: kind, scope: d.scope.Clone(), authored: authored, cancel: cancel, out: out, finished: finished}
 	d.error = ""
 	d.permit = nil
 	invalidate := s.Invalidate
@@ -263,6 +273,14 @@ func (s *State) start(d *Document, kind string, authored contract.KVRequest, wor
 		defer cancel()
 		r := work(ctx)
 		r.result = r.result.Clone()
+		if r.leasePage != nil {
+			page := r.leasePage.Clone()
+			r.leasePage = &page
+		}
+		if r.leaseDetail != nil {
+			detail := r.leaseDetail.Clone()
+			r.leaseDetail = &detail
+		}
 		if ctx.Err() != nil && r.lease != nil {
 			_ = r.lease.Close()
 			r.lease = nil
@@ -295,6 +313,10 @@ func (s *State) Preconnect(d *Document) {
 // Run prepares on the UI thread. Writes require a separate explicit confirmation
 // of the same authored text, canonical snapshot and original lease.
 func (s *State) Run(d *Document) {
+	if s.owned(d) && leaseBrowserMethod(d.method) {
+		s.RunLeaseBrowser(d)
+		return
+	}
 	if s.owned(d) && d.method == RenewalMethod {
 		s.PrepareRenewal(d)
 		return
@@ -427,6 +449,7 @@ func (s *State) Consume() {
 					d.error = r.err.Error()
 				}
 				if job.kind == "execute" {
+					d.selectedBrowser = false
 					d.selectedRenewal = false
 					d.selectedEvents = false
 					receipt := &Receipt{Scope: job.scope.Clone(), Authored: job.authored, Result: r.result.Clone()}
@@ -437,6 +460,9 @@ func (s *State) Consume() {
 					if r.result.WriteOutcomeUnknown {
 						d.unknown = receipt
 					}
+				}
+				if job.kind == "lease-browse" || job.kind == "lease-detail" {
+					s.consumeLeaseBrowser(d, job, r)
 				}
 				if job.kind == "recover" && r.err == nil && r.lease != nil {
 					scope := r.lease.Scope().Clone()
@@ -483,7 +509,7 @@ func (s *State) GuardLeave(d *Document, next func(ui.Services)) bool {
 	if !s.owned(d) {
 		return false
 	}
-	if d.permit != nil && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && !d.Busy() && !d.FileBusy() {
+	if d.permit != nil && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && !d.Busy() && !d.FileBusy() {
 		return false
 	}
 	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() {
@@ -509,7 +535,7 @@ func (s *State) DecideLeave(services ui.Services, discard bool) {
 	}
 	next := s.leave.next
 	s.leave = nil
-	d.permit = &leaveStamp{request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown}
+	d.permit = &leaveStamp{request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail}
 	if next != nil {
 		next(services)
 	}
@@ -602,6 +628,9 @@ func (s *State) Close(d *Document) {
 	d.eventScope = contract.KVScope{}
 	d.renewalLease, d.renewalJob, d.renewalReceipt, d.renewalUnknown, d.renewalConfirmation = nil, nil, nil, nil, nil
 	d.renewalScope = contract.KVScope{}
+	d.browserLast, d.browserPage, d.browserDetail = nil, nil, nil
+	d.browserColumns, d.browserKeysColumns = ui.ListState{}, ui.ListState{}
+	d.browserSelectedID, d.browserRow = 0, -1
 	d.method, d.error, d.path = "", "", ""
 }
 func (s *State) CloseAll() {

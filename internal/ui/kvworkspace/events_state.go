@@ -138,6 +138,7 @@ func (s *State) RunEvents(d *Document) {
 	r := &EventReceipt{Scope: d.eventScope.Clone(), Authored: authored}
 	d.eventReceipt = r
 	d.selectedEvents = true
+	d.selectedBrowser = false
 	d.selectedUnknown = false
 	if authored.Method == WatchMethod {
 		captured := watch.Clone()

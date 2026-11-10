@@ -136,6 +136,7 @@ func (s *State) ConfirmRenewal(d *Document, checked bool) {
 	}
 	d.renewalConfirmation = nil
 	d.selectedRenewal = true
+	d.selectedBrowser = false
 	d.selectedEvents = false
 	d.selectedUnknown = false
 	d.renewalReceipt = &RenewalReceipt{Scope: p.scope.Clone(), Authored: p.authored, Batch: contract.KVRenewalBatch{Request: request}}

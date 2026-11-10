@@ -20,6 +20,9 @@ var methods = []Method{
 func Methods() []Method { return append([]Method(nil), methods...) }
 func (s *State) MethodsFor(d *Document) []Method {
 	out := Methods()
+	if s.owned(d) && d.LeaseBrowsingAvailable() {
+		out = append(out, Method{"LeaseBrowse", LeaseBrowseMethod}, Method{"LeaseDetail", LeaseDetailMethod})
+	}
 	if s.owned(d) && !d.eventsAvailable && s.deps.EventsProviderFor != nil {
 		if p, err := s.deps.EventsProviderFor(d.profileID); err == nil && p != nil && p.KVScope().Namespace.ProfileID == d.profileID {
 			d.eventsAvailable = true
@@ -58,9 +61,14 @@ func (s *State) ChooseMethod(d *Document, method string) {
 	if eventMethod(d.method) {
 		before = DefaultEventRequest(d.method)
 	}
+	if leaseBrowserMethod(d.method) {
+		before = DefaultLeaseBrowserRequest(d.method)
+	}
 	useTemplate := d.Request().JSON == before.JSON
 	s.SetMethod(d, method)
-	if useTemplate && method == RenewalMethod {
+	if useTemplate && leaseBrowserMethod(method) {
+		d.Editor.Buffer.Set(DefaultLeaseBrowserRequest(method).JSON)
+	} else if useTemplate && method == RenewalMethod {
 		d.Editor.Buffer.Set(DefaultRenewalRequest().JSON)
 	} else if useTemplate && eventMethod(method) {
 		d.Editor.Buffer.Set(DefaultEventRequest(method).JSON)

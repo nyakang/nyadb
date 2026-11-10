@@ -121,6 +121,21 @@ func captureEtcdPublic(t *testing.T, s *State, phase string) {
 					}
 				}
 			}
+			if phase == "lease-browser-public-detail" {
+				detail, ok := s.currentTab().kv.LeaseDetailReceipt()
+				if !ok || len(detail.Detail.Result.Reply.Lease.Keys) == 0 {
+					t.Fatal("missing original attached key")
+				}
+				key := detail.Detail.Result.Reply.Lease.Keys[0]
+				text := base64.StdEncoding.EncodeToString(key[:min(len(key), 256)])
+				if len(key) > 256 {
+					text += "…"
+				}
+				r, found := tt.Find(text)
+				if !found || r.W <= 0 || r.Y+r.H > float32(size[1])-18 {
+					t.Fatal("public attached key row clipped", language, size, r)
+				}
+			}
 			if phase == "renewal-public-confirmation" {
 				for _, label := range []string{"确认持续续租", "我授权持续续租此原租约", "确认开始持续续租", "取消"} {
 					r, ok := tt.Find(locales.Text(label))

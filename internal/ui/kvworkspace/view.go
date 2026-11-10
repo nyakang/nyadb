@@ -29,11 +29,16 @@ func (s *State) View(c *ui.Context, d *Document) {
 	availableMethods := s.MethodsFor(d)
 	isEvent := eventMethod(d.method)
 	isRenewal := d.method == RenewalMethod
+	isBrowser := leaseBrowserMethod(d.method)
 	ready := !d.Busy() && !d.NeedsRecovery() && (!isEvent && !isRenewal && d.lease != nil || isEvent && d.eventsAvailable || isRenewal && d.renewalAvailable)
 	ui.Column(c).Fill().Background(p.Panel).Children(func() {
 		ui.Row(c).FillWidth().Height(theme.RowHeight(c, theme.CommandBarHeight)).Background(p.Header).Children(func() {
 			ui.Toolbar(c, func() {
 				runLabel, runID := locales.Text("运行请求"), locales.Text("运行 KV 请求")
+				if isBrowser {
+					runLabel = locales.Text("读取租约观察")
+					runID = runLabel
+				}
 				if isRenewal {
 					runLabel = locales.Text("开始持续续租")
 					runID = runLabel
@@ -45,7 +50,7 @@ func (s *State) View(c *ui.Context, d *Document) {
 					runLabel = locales.Text("读取历史")
 					runID = runLabel
 				}
-				if ui.Button(c, runLabel).Label(runID).Disabled(!ready || isEvent && d.eventReceipt != nil || isRenewal && (d.renewalReceipt != nil || d.hasUnknownWrites())).Clicked() {
+				if ui.Button(c, runLabel).Label(runID).Disabled(!ready || isBrowser && !d.LeaseBrowsingAvailable() || isEvent && d.eventReceipt != nil || isRenewal && (d.renewalReceipt != nil || d.hasUnknownWrites())).Clicked() {
 					s.Run(d)
 				}
 				if d.method == WatchMethod {
@@ -103,10 +108,13 @@ func (s *State) View(c *ui.Context, d *Document) {
 					}
 				}
 			}
-			if (isEvent || isRenewal) && ui.Button(c, locales.Text("使用请求模板")).Disabled(d.Busy()).Clicked() {
+			if (isEvent || isRenewal || isBrowser) && ui.Button(c, locales.Text("使用请求模板")).Disabled(d.Busy()).Clicked() {
 				request := DefaultEventRequest(d.method)
 				if isRenewal {
 					request = DefaultRenewalRequest()
+				}
+				if isBrowser {
+					request = DefaultLeaseBrowserRequest(d.method)
 				}
 				d.Editor.Buffer.Set(request.JSON)
 				d.permit = nil
@@ -117,9 +125,16 @@ func (s *State) View(c *ui.Context, d *Document) {
 			}
 			ui.Text(c, name).SingleLine().MinWidth(0).Shrink(1).TextColor(p.Muted).Tooltip(name)
 		})
-		ui.Text(c, locales.Text("JSON 中 bytes 使用 Base64，整数保留原生精度；请求使用绝对键")).Padding(2, 8).FontSize(theme.Font(c, 11)).TextColor(p.Muted).SingleLine().Tooltip(d.method)
+		hint := locales.Text("JSON 中 bytes 使用 Base64，整数保留原生精度；请求使用绝对键")
+		if isBrowser {
+			hint = locales.Text("集群租约观察；TTL 为逐项读回值，翻页会重新读取列表")
+		}
+		ui.Text(c, hint).Padding(2, 8).FontSize(theme.Font(c, 11)).TextColor(p.Muted).SingleLine().Tooltip(hint)
 		if isEvent && !d.eventsAvailable {
 			ui.Text(c, locales.Text("此连接不支持事件请求")).Padding(3, 8).TextColor(p.Warning)
+		}
+		if isBrowser && !d.LeaseBrowsingAvailable() {
+			ui.Text(c, locales.Text("此连接不支持租约浏览")).Padding(3, 8).TextColor(p.Warning)
 		}
 		if isRenewal {
 			ui.Text(c, locales.Text("停止续租后，原租约及关联键可能自然过期")).Padding(2, 8).FontSize(theme.Font(c, 11)).TextColor(p.Warning).SingleLine().Tooltip(locales.Text("停止续租后，原租约及关联键可能自然过期"))
@@ -157,7 +172,11 @@ func (s *State) View(c *ui.Context, d *Document) {
 				}
 			}).Label(locales.Text("KV 显式恢复")).FillWidth().Padding(3, 8)
 		}
-		ui.SplitVerticalPercent(c, &s.SplitPercent, func() {
+		split := &s.SplitPercent
+		if isBrowser {
+			split = &s.LeaseBrowserSplitPercent
+		}
+		ui.SplitVerticalPercent(c, split, func() {
 			ui.Column(c).Fill().MinHeight(0).Children(func() {
 				d.Editor.Label = locales.Text("KV JSON 编辑器")
 				d.Editor.ReadOnly = d.Busy()
@@ -182,30 +201,47 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 	ui.Column(c).Fill().Padding(5, 8).Gap(4).Children(func() {
 		ui.Toolbar(c, func() {
 			if ui.Button(c, locales.Text("最近回执")).Clicked() {
+				d.selectedBrowser = false
 				d.selectedUnknown = false
 				d.selectedEvents = false
 				d.selectedRenewal = false
 			}
 			if d.unknown != nil && ui.Button(c, locales.Text("原未确认回执")).Clicked() {
+				d.selectedBrowser = false
 				d.selectedUnknown = true
 				d.selectedEvents = false
 				d.selectedRenewal = false
 			}
 			if (d.eventsAvailable || d.eventReceipt != nil) && ui.Button(c, locales.Text("事件回执")).Clicked() {
+				d.selectedBrowser = false
 				d.selectedEvents = true
 				d.selectedRenewal = false
 				d.selectedUnknown = false
 			}
 			if (d.renewalAvailable || d.renewalReceipt != nil) && ui.Button(c, locales.Text("续租回执")).Clicked() {
+				d.selectedBrowser = false
 				d.selectedRenewal = true
 				d.selectedEvents = false
 				d.selectedUnknown = false
 			}
 			if d.renewalUnknown != nil && ui.Button(c, locales.Text("原未确认续租回执")).Clicked() {
+				d.selectedBrowser = false
 				d.selectedRenewal = true
 				d.selectedEvents = false
 				d.selectedUnknown = false
 			}
+			if (d.LeaseBrowsingAvailable() || d.browserLast != nil) && ui.Button(c, locales.Text("租约浏览")).Clicked() {
+				d.selectedBrowser = true
+				d.selectedRenewal = false
+				d.selectedEvents = false
+				d.selectedUnknown = false
+			}
+		}).Label(locales.Text("KV 回执操作")).FillWidth().MinWidth(0).Padding(0).Gap(5)
+		if d.selectedBrowser {
+			s.leaseBrowserReceiptView(c, d)
+			return
+		}
+		ui.Toolbar(c, func() {
 			if d.selectedRenewal {
 				if ui.Button(c, locales.Text("复制完整续租记录")).Disabled(d.renewalReceipt == nil || d.FileBusy()).Clicked() {
 					s.CopyRenewalRecord(c.Services(), d)

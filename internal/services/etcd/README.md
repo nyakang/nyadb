@@ -429,9 +429,9 @@ in that document, including after independent reads and explicit recovery.
 --mode MODE` requires 24 native parents plus 20 native workspace and 60 public
 Shell images per mode (including old Watch/history). Use 3.7.3 anonymous/basic/
 tls/mtls and 3.5.35 basic. Local evidence is
-`docs/etcd-public-renewal-2026-11-10.md`. Lease browsing/attached-key tools beyond
-the native request methods, Auth/RBAC/maintenance administration, cluster and
-etcd-v2 remain separate acceptance steps.
+`docs/etcd-public-renewal-2026-11-10.md`. The original-document lease browser is described below. Dedicated lease
+management, Auth/RBAC/maintenance administration, cluster and etcd-v2 remain
+separate acceptance steps.
 
 Private original lease-browsing foundation
 -----------------------------------------
@@ -463,8 +463,8 @@ keys, exact ID windows, actual processed list/TTL reply faults, permissions,
 malformed/bounded replies, aggregate receipt budgets and original
 one-shot/continuous renewal regressions.
 Use 3.7.3 basic/anonymous/tls/mtls and 3.5.35 basic. Neutral document/runtime
-publication and the dedicated lease/attached-key browser remain later acceptance
-steps; this foundation does not change public chooser or URI capabilities.
+publication and the dedicated lease/attached-key browser were subsequent acceptance
+steps described below; this foundation did not change public chooser or URI capabilities.
 
 Private original-document lease-browsing facet
 ----------------------------------------------
@@ -489,5 +489,44 @@ lease without reading, granting, revoking or restarting renewal.
 browsing/renewal regressions, original document/one-shot ownership, actual partial
 read cancellation/Close, actual unknown-write recovery followed by independent
 list/detail reads, and four runtime publication/recovery/processed-write/late-open
-cases. Use 3.7.3 basic/anonymous/tls/mtls and 3.5.35 basic. The dedicated public
-lease list/detail controls and original-action confirmations remain later steps.
+cases. Use 3.7.3 basic/anonymous/tls/mtls and 3.5.35 basic. Public list/detail
+controls follow below; original-action confirmations remain a later step.
+
+Public original-document lease browser
+--------------------------------------
+
+The existing KV workspace discovers browsing on its original KVRequestLease.
+LeaseBrowse accepts limit 1–200 and an optional exclusive signed-int64 after;
+LeaseDetail requires an exact nonzero signed ID and explicit keys selection.
+These methods read the actual cluster list and independent live TTLs; the client
+window is unrelated to server pagination, a prefix grant or a fixed MVCC snapshot.
+Selecting a row never starts renewal or grants/revokes a lease. Dedicated actions
+and immutable management confirmations remain separate work.
+
+The sole State/Document retains a valid cached page, a valid detail and the latest
+original attempt. Complete raw list/TTL/detail bytes, all attached keys, authored
+requests and original scope/generation survive bounded presentation. The native
+32 MiB page capture budget, 10,000 list IDs and 200 selected IDs still apply.
+Tables virtualize attached keys; per-cell Base64 preview is 256 bytes, while
+explicit selected-key copy and original records retain complete keys. Receipt
+preview is at most 64 KiB. There is no additional browser history or lease family.
+
+Cancellation, parking, retirement, recovery, files, leave decisions and Close use
+the original document lifecycle. Invalid or retired results settle loading and
+retain complete original evidence without replacing the cached page. Recovery
+never repeats a read or resumes renewal, and old selections cannot authorize a
+read in a new generation. Browsing and explicit browser receipt disposal do not
+change one-shot LastResult or either unknown write barrier. Copy/export captures
+a deep original receipt before clipboard, picker or disk waits. Close releases
+physical ownership, jobs, editors and browser caches.
+
+`GOWORK=off /usr/bin/python3 tools/verify_etcd_fixture.py --public-lease-browser
+--race --mode MODE` requires 22 native parents and 56 localized workspace/Shell
+images per mode. It includes the original native/session/runtime regression,
+261 complete attached keys with a 4096-byte key, actual processed list/second-TTL/
+detail receipt loss/cancellation/disconnect/retirement/Close/parking, actual
+one-shot and renewal unknown followed by pure recovery and independent browsing,
+public client windows, complete archives and original parked publication recovery.
+Use 3.7.3 anonymous/basic/tls/mtls and 3.5.35 basic. The previous public-renewal
+matrix also verifies the existing request/events/renewal/file flows after these
+controls. Local evidence: docs/etcd-public-lease-browser-2026-11-10.md.

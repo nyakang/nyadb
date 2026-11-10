@@ -33197,3 +33197,285 @@ func EtcdRenewalExport() string { return In(i18n.Locale()).EtcdRenewalExport() }
 func (msgs Messages) EtcdRenewalExport() string {
 	return Catalog.Format(msgs.locale, "etcdRenewalExport", nil)
 }
+
+// EtcdLeaseBrowseUnsupported says "此连接不支持租约浏览"
+// in the language the app shows.
+func EtcdLeaseBrowseUnsupported() string { return In(i18n.Locale()).EtcdLeaseBrowseUnsupported() }
+
+// EtcdLeaseBrowseUnsupported says "此连接不支持租约浏览"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseUnsupported() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseUnsupported", nil)
+}
+
+// EtcdLeaseBrowseRead says "读取租约观察"
+// in the language the app shows.
+func EtcdLeaseBrowseRead() string { return In(i18n.Locale()).EtcdLeaseBrowseRead() }
+
+// EtcdLeaseBrowseRead says "读取租约观察"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseRead() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseRead", nil)
+}
+
+// EtcdLeaseBrowseTab says "租约浏览"
+// in the language the app shows.
+func EtcdLeaseBrowseTab() string { return In(i18n.Locale()).EtcdLeaseBrowseTab() }
+
+// EtcdLeaseBrowseTab says "租约浏览"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseTab() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseTab", nil)
+}
+
+// EtcdLeaseBrowseList says "租约列表"
+// in the language the app shows.
+func EtcdLeaseBrowseList() string { return In(i18n.Locale()).EtcdLeaseBrowseList() }
+
+// EtcdLeaseBrowseList says "租约列表"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseList() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseList", nil)
+}
+
+// EtcdLeaseBrowseDetail says "租约详情"
+// in the language the app shows.
+func EtcdLeaseBrowseDetail() string { return In(i18n.Locale()).EtcdLeaseBrowseDetail() }
+
+// EtcdLeaseBrowseDetail says "租约详情"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseDetail() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseDetail", nil)
+}
+
+// EtcdLeaseBrowseLatest says "本次浏览回执"
+// in the language the app shows.
+func EtcdLeaseBrowseLatest() string { return In(i18n.Locale()).EtcdLeaseBrowseLatest() }
+
+// EtcdLeaseBrowseLatest says "本次浏览回执"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseLatest() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseLatest", nil)
+}
+
+// EtcdLeaseBrowseCopy says "复制完整租约记录"
+// in the language the app shows.
+func EtcdLeaseBrowseCopy() string { return In(i18n.Locale()).EtcdLeaseBrowseCopy() }
+
+// EtcdLeaseBrowseCopy says "复制完整租约记录"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseCopy() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseCopy", nil)
+}
+
+// EtcdLeaseBrowseExport says "导出租约记录"
+// in the language the app shows.
+func EtcdLeaseBrowseExport() string { return In(i18n.Locale()).EtcdLeaseBrowseExport() }
+
+// EtcdLeaseBrowseExport says "导出租约记录"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseExport() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseExport", nil)
+}
+
+// EtcdLeaseBrowseClear says "清除浏览回执"
+// in the language the app shows.
+func EtcdLeaseBrowseClear() string { return In(i18n.Locale()).EtcdLeaseBrowseClear() }
+
+// EtcdLeaseBrowseClear says "清除浏览回执"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseClear() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseClear", nil)
+}
+
+// EtcdLeaseBrowseTools says "租约浏览操作"
+// in the language the app shows.
+func EtcdLeaseBrowseTools() string { return In(i18n.Locale()).EtcdLeaseBrowseTools() }
+
+// EtcdLeaseBrowseTools says "租约浏览操作"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseTools() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseTools", nil)
+}
+
+// EtcdLeaseBrowseObservationHint says "集群租约观察；TTL 为逐项读回值，翻页会重新读取列表"
+// in the language the app shows.
+func EtcdLeaseBrowseObservationHint() string {
+	return In(i18n.Locale()).EtcdLeaseBrowseObservationHint()
+}
+
+// EtcdLeaseBrowseObservationHint says "集群租约观察；TTL 为逐项读回值，翻页会重新读取列表"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseObservationHint() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseObservationHint", nil)
+}
+
+// EtcdLeaseBrowseEmpty says "运行租约浏览后显示原始记录"
+// in the language the app shows.
+func EtcdLeaseBrowseEmpty() string { return In(i18n.Locale()).EtcdLeaseBrowseEmpty() }
+
+// EtcdLeaseBrowseEmpty says "运行租约浏览后显示原始记录"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseEmpty() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseEmpty", nil)
+}
+
+// EtcdLeaseBrowsePreview says "租约观察预览"
+// in the language the app shows.
+func EtcdLeaseBrowsePreview() string { return In(i18n.Locale()).EtcdLeaseBrowsePreview() }
+
+// EtcdLeaseBrowsePreview says "租约观察预览"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowsePreview() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowsePreview", nil)
+}
+
+// EtcdLeaseBrowseSelected says "读取所选租约详情"
+// in the language the app shows.
+func EtcdLeaseBrowseSelected() string { return In(i18n.Locale()).EtcdLeaseBrowseSelected() }
+
+// EtcdLeaseBrowseSelected says "读取所选租约详情"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseSelected() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseSelected", nil)
+}
+
+// EtcdLeaseBrowseNext says "下一个 ID 窗口"
+// in the language the app shows.
+func EtcdLeaseBrowseNext() string { return In(i18n.Locale()).EtcdLeaseBrowseNext() }
+
+// EtcdLeaseBrowseNext says "下一个 ID 窗口"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseNext() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseNext", nil)
+}
+
+// EtcdLeaseBrowseCount says "%d 个租约观察"
+// in the language the app shows.
+func EtcdLeaseBrowseCount() string { return In(i18n.Locale()).EtcdLeaseBrowseCount() }
+
+// EtcdLeaseBrowseCount says "%d 个租约观察"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseCount() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseCount", nil)
+}
+
+// EtcdLeaseBrowseListTools says "租约列表操作"
+// in the language the app shows.
+func EtcdLeaseBrowseListTools() string { return In(i18n.Locale()).EtcdLeaseBrowseListTools() }
+
+// EtcdLeaseBrowseListTools says "租约列表操作"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseListTools() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseListTools", nil)
+}
+
+// EtcdLeaseBrowseID says "租约 ID"
+// in the language the app shows.
+func EtcdLeaseBrowseID() string { return In(i18n.Locale()).EtcdLeaseBrowseID() }
+
+// EtcdLeaseBrowseID says "租约 ID"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseID() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseID", nil)
+}
+
+// EtcdLeaseBrowseTTL says "观察 TTL（秒）"
+// in the language the app shows.
+func EtcdLeaseBrowseTTL() string { return In(i18n.Locale()).EtcdLeaseBrowseTTL() }
+
+// EtcdLeaseBrowseTTL says "观察 TTL（秒）"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseTTL() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseTTL", nil)
+}
+
+// EtcdLeaseBrowseGrantedTTL says "授予 TTL（秒）"
+// in the language the app shows.
+func EtcdLeaseBrowseGrantedTTL() string { return In(i18n.Locale()).EtcdLeaseBrowseGrantedTTL() }
+
+// EtcdLeaseBrowseGrantedTTL says "授予 TTL（秒）"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseGrantedTTL() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseGrantedTTL", nil)
+}
+
+// EtcdLeaseBrowseClusterList says "集群租约列表"
+// in the language the app shows.
+func EtcdLeaseBrowseClusterList() string { return In(i18n.Locale()).EtcdLeaseBrowseClusterList() }
+
+// EtcdLeaseBrowseClusterList says "集群租约列表"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseClusterList() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseClusterList", nil)
+}
+
+// EtcdLeaseBrowseNoKeys says "本次详情未请求关联键"
+// in the language the app shows.
+func EtcdLeaseBrowseNoKeys() string { return In(i18n.Locale()).EtcdLeaseBrowseNoKeys() }
+
+// EtcdLeaseBrowseNoKeys says "本次详情未请求关联键"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseNoKeys() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseNoKeys", nil)
+}
+
+// EtcdLeaseBrowseKeyCount says "%d 个完整关联键"
+// in the language the app shows.
+func EtcdLeaseBrowseKeyCount() string { return In(i18n.Locale()).EtcdLeaseBrowseKeyCount() }
+
+// EtcdLeaseBrowseKeyCount says "%d 个完整关联键"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseKeyCount() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseKeyCount", nil)
+}
+
+// EtcdLeaseBrowseCopyKey says "复制完整键 Base64"
+// in the language the app shows.
+func EtcdLeaseBrowseCopyKey() string { return In(i18n.Locale()).EtcdLeaseBrowseCopyKey() }
+
+// EtcdLeaseBrowseCopyKey says "复制完整键 Base64"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseCopyKey() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseCopyKey", nil)
+}
+
+// EtcdLeaseBrowseKeyTools says "关联键操作"
+// in the language the app shows.
+func EtcdLeaseBrowseKeyTools() string { return In(i18n.Locale()).EtcdLeaseBrowseKeyTools() }
+
+// EtcdLeaseBrowseKeyTools says "关联键操作"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseKeyTools() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseKeyTools", nil)
+}
+
+// EtcdLeaseBrowseKeyPreview says "键 Base64 预览"
+// in the language the app shows.
+func EtcdLeaseBrowseKeyPreview() string { return In(i18n.Locale()).EtcdLeaseBrowseKeyPreview() }
+
+// EtcdLeaseBrowseKeyPreview says "键 Base64 预览"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseKeyPreview() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseKeyPreview", nil)
+}
+
+// EtcdLeaseBrowseKeys says "租约完整关联键"
+// in the language the app shows.
+func EtcdLeaseBrowseKeys() string { return In(i18n.Locale()).EtcdLeaseBrowseKeys() }
+
+// EtcdLeaseBrowseKeys says "租约完整关联键"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseKeys() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseKeys", nil)
+}
+
+// EtcdLeaseBrowseByteCount says "字节数"
+// in the language the app shows.
+func EtcdLeaseBrowseByteCount() string { return In(i18n.Locale()).EtcdLeaseBrowseByteCount() }
+
+// EtcdLeaseBrowseByteCount says "字节数"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseBrowseByteCount() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseBrowseByteCount", nil)
+}
