@@ -42,6 +42,7 @@ type Response struct {
 	Code                                      codes.Code
 	Header                                    Header
 	native                                    proto.Message
+	before                                    *Response
 }
 
 func (r Response) Native() proto.Message {
@@ -50,7 +51,23 @@ func (r Response) Native() proto.Message {
 	}
 	return proto.Clone(r.native)
 }
-func (r Response) clone() Response { r.native = r.Native(); return r }
+
+// Before returns the independent Status RPC observed immediately before an
+// original-member Defragment dispatch. It is an observation, not a native CAS.
+func (r Response) Before() (Response, bool) {
+	if r.before == nil {
+		return Response{}, false
+	}
+	return r.before.clone(), true
+}
+func (r Response) clone() Response {
+	r.native = r.Native()
+	if r.before != nil {
+		v := r.before.clone()
+		r.before = &v
+	}
+	return r
+}
 
 type Interrupted struct {
 	Cause               error
@@ -82,6 +99,22 @@ type Client struct {
 }
 
 func Open(parent context.Context, cfg Config, secret string) (*Client, error) {
+	return openClient(parent, cfg, secret, nil)
+}
+
+// OpenMember binds a maintenance transport to an already observed native
+// cluster/member/version. Its Status handshake does not require KV permissions
+// or a linearizable Range, which learners cannot serve. It does not discover,
+// infer, retry or switch member endpoints. IDs remain observations, not an
+// incarnation guarantee.
+func OpenMember(parent context.Context, cfg Config, secret string, expected Identity) (*Client, error) {
+	if expected.ClusterID == 0 || expected.MemberID == 0 || !validVersion(expected.Version) || cfg.DiscoverAccess {
+		return nil, ErrInvalid
+	}
+	return openClient(parent, cfg, secret, &expected)
+}
+
+func openClient(parent context.Context, cfg Config, secret string, member *Identity) (*Client, error) {
 	cfg, tc, err := normalizeConfig(cfg, secret)
 	if err != nil {
 		return nil, err
@@ -140,6 +173,15 @@ func Open(parent context.Context, cfg Config, secret string) (*Client, error) {
 		return fail(ErrProtocol)
 	}
 	c.identity = Identity{header(observed.Header), observed.Version}
+	if member != nil {
+		if c.identity.ClusterID != member.ClusterID || c.identity.MemberID != member.MemberID || c.identity.Version != member.Version {
+			return fail(ErrProtocol)
+		}
+		if err := ctx.Err(); err != nil {
+			return fail(err)
+		}
+		return c, nil
+	}
 	if cfg.DiscoverAccess {
 		access, e := c.permissions(ctx)
 		if e != nil {
@@ -228,9 +270,9 @@ func (c *Client) executeOwned(parent context.Context, p Plan) (r Response, err e
 	defer func() {
 		if err != nil {
 			r.Code = status.Code(err)
-			definite := r.Code == codes.InvalidArgument || r.Code == codes.PermissionDenied || r.Code == codes.Unauthenticated || r.Code == codes.NotFound || r.Code == codes.AlreadyExists || r.Code == codes.OutOfRange || r.Code == codes.FailedPrecondition
+			definite := r.Code == codes.InvalidArgument || r.Code == codes.PermissionDenied || r.Code == codes.Unauthenticated || r.Code == codes.NotFound || r.Code == codes.AlreadyExists || r.Code == codes.OutOfRange || r.Code == codes.FailedPrecondition || c.definiteMemberRejection(p.request, err)
 			r.WriteOutcomeUnknown = p.write && r.Attempted && !r.Completed && !definite
-			if ctx.Err() != nil || r.Code == codes.Unavailable || r.Code == codes.Canceled || r.Code == codes.DeadlineExceeded || r.Code == codes.Unauthenticated || errors.Is(err, ErrProtocol) || r.Code == codes.ResourceExhausted {
+			if ctx.Err() != nil || r.Code == codes.Unavailable && !definite || r.Code == codes.Canceled || r.Code == codes.DeadlineExceeded || r.Code == codes.Unauthenticated || errors.Is(err, ErrProtocol) || r.Code == codes.ResourceExhausted {
 				c.mu.Lock()
 				c.retired = true
 				c.mu.Unlock()
@@ -246,6 +288,18 @@ func (c *Client) executeOwned(parent context.Context, p Plan) (r Response, err e
 	}()
 	if err = ctx.Err(); err != nil {
 		return r, err
+	}
+	if _, ok := p.request.(*pb.DefragmentRequest); ok {
+		// A member-targeted maintenance write needs a fresh identity check on
+		// this same captured transport before dispatch, including after reconnect.
+		before, e := c.observeDefragmentMember(ctx)
+		r.before = &before
+		if e != nil {
+			return r, e
+		}
+		if err = ctx.Err(); err != nil {
+			return r, err
+		}
 	}
 	r.Attempted = true
 	var native proto.Message
@@ -274,8 +328,8 @@ func (c *Client) executeOwned(parent context.Context, p Plan) (r Response, err e
 	r.native = proto.Clone(native)
 	h := responseHeader(native)
 	r.Header = header(h)
-	if !c.matches(h) {
-		return r, ErrProtocol
+	if err = c.validateMemberResponse(p.request, native); err != nil {
+		return r, err
 	}
 	if s, ok := native.(*pb.StatusResponse); ok && s.Version != c.identity.Version {
 		return r, ErrProtocol
@@ -320,6 +374,10 @@ func responseFor(request proto.Message) proto.Message {
 		return &pb.LeaseLeasesResponse{}
 	case *pb.StatusRequest:
 		return &pb.StatusResponse{}
+	case *pb.MemberListRequest:
+		return &pb.MemberListResponse{}
+	case *pb.DefragmentRequest:
+		return &pb.DefragmentResponse{}
 	}
 	return authResponse(request)
 }

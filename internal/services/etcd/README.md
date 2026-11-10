@@ -635,3 +635,30 @@ close, parking, replacement, disconnect and invalid headers keep their original
 receipts, while explicit recovery/Range/Watch/history never replay Compact or
 settle its missing acknowledgement. Local evidence:
 `docs/etcd-compaction-public-2026-11-11.md`.
+
+### Original member native protocol
+
+The native `Client` accepts MemberList and a one-use Defragment request.
+`OpenMember` requires an explicitly observed cluster/member/version and verifies
+Status on the selected transport without a KV probe or endpoint fallback.
+Before dispatching Defragment it captures a separate complete Status reply and
+validates the same identity again. This observation is not a native CAS or an
+incarnation guarantee. A failed pre-dispatch check sends no Defragment request.
+
+MemberList can legitimately return revision zero. Defragment normally returns
+an empty protobuf with no header; its actual RPC success acknowledges the
+original request without borrowing a Status header. Present headers must match
+the original identity, and native extensions remain intact. Processed reply
+loss/cancellation retains an unknown outcome; later Status or DB sizes cannot
+settle it. Learners reject Defragment. Official 3.7 uses FailedPrecondition;
+3.5 returns Unavailable for the exact unsupported-learner error and Unknown for
+the exact maintenance permission denial. These two observed 3.5 rejections are
+definite; the original native codes/messages remain unchanged.
+
+This is a native foundation. Ordinary KV request codecs/inventories, original
+document member leases, batch ordering and public member/Defragment forms remain
+separate acceptance steps. Run `tools/verify_etcd_fixture.py --member-native
+--race --mode MODE` under the five existing version/transport configurations.
+`tools/verify_etcd_member_fixture.py --race --version VERSION` verifies three
+voters and one learner, explicit mapped endpoint aliases and real leader
+transfer using independently owned official 3.7.3/3.5.35 clusters.
