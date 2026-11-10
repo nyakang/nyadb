@@ -432,3 +432,36 @@ tls/mtls and 3.5.35 basic. Local evidence is
 `docs/etcd-public-renewal-2026-11-10.md`. Lease browsing/attached-key tools beyond
 the native request methods, Auth/RBAC/maintenance administration, cluster and
 etcd-v2 remain separate acceptance steps.
+
+Private original lease-browsing foundation
+-----------------------------------------
+
+`Client.BrowseLeases` captures one actual native cluster lease list and selects
+at most 200 signed-int64 IDs after an explicit exclusive boundary. It owns the
+original physical executor across the list and sequential current TTL reads.
+There is no server pagination, fixed MVCC snapshot or previously known-ID
+fallback. The complete original list receipt remains separate from its bounded
+window; more than 10,000 listed IDs rejects browsing while retaining the full
+native receipt. Each returned TTL row keeps its own full success/failure receipt.
+An interrupted window is incomplete and does not publish a continuation.
+The aggregate native receipt budget is 32 MiB; another read starts only after
+reserving a complete 16 MiB transport-bounded reply. Exhaustion retains every
+already captured full receipt and stops before the next call.
+
+`Client.ObserveLease` reads an exact nonzero signed-int64 ID, current TTL and
+GrantedTTL, and complete binary attached keys only when explicitly requested.
+It preserves native TTL=-1 for missing leases and the original protobuf including
+unknown fields. These native lease APIs have cluster scope; they do not imply
+the connection's browse prefix or a shared-grid row identity. Actual server
+permissions still apply. A foreign ID, duplicate/zero list ID, invalid or
+duplicate key, unexpected keys or invalid TTL is rejected with the original
+receipt retained. These read-only APIs never grant, renew or revoke a lease.
+
+`GOWORK=off /usr/bin/python3 tools/verify_etcd_fixture.py --lease-browser-native
+--race --mode MODE` requires nine native parents, including complete attached
+keys, exact ID windows, actual processed list/TTL reply faults, permissions,
+malformed/bounded replies, aggregate receipt budgets and original
+one-shot/continuous renewal regressions.
+Use 3.7.3 basic/anonymous/tls/mtls and 3.5.35 basic. Neutral document/runtime
+publication and the dedicated lease/attached-key browser remain later acceptance
+steps; this foundation does not change public chooser or URI capabilities.

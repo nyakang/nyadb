@@ -286,6 +286,9 @@ func (c *Client) executeOwned(parent context.Context, p Plan) (r Response, err e
 	if l, ok := native.(*pb.LeaseKeepAliveResponse); ok && l.ID != p.request.(*pb.LeaseKeepAliveRequest).ID {
 		return r, ErrProtocol
 	}
+	if err := validateLeaseReply(p.request, native); err != nil {
+		return r, err
+	}
 	r.Completed = true
 	return r, nil
 }

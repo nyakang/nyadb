@@ -68,7 +68,7 @@ def certificates(folder, access=False):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False):
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False):
     if public_renewal:
         public = True
     if renewal_session:
@@ -126,6 +126,8 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
         report['scope'] = 'private-etcd-original-renewal-session'
     if public_renewal:
         report['scope'] = 'public-etcd-continuous-renewal-workbench'
+    if lease_browser_native:
+        report['scope'] = 'private-etcd-original-lease-browser'
     private_path = None
     try:
         with tempfile.TemporaryDirectory(prefix='nyadb-etcd-'+nonce+'-', dir=build) as raw:
@@ -328,6 +330,18 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                             'EventsWorkspaceHistoryKeepsActualUnknownWriteReceipt',
                             'ShellPublicEventsOriginalKeyMenuFixedWindowAndArchives',
                             'ShellPublicEventsParkedPublicationRecoveryNeverResubscribes')
+            if lease_browser_native:
+                environment.update(NYADB_ETCD_LEASE_BROWSER_IT='1', NYADB_ETCD_ACCESS_IT='1', NYADB_ETCD_RENEWAL_IT='1')
+                packages = ['./internal/services/etcd']
+                required = ('LeaseBrowserActualListWindowsAndCompleteAttachedKeys',
+                            'LeaseBrowserActualProcessedListAndTTLFailureNeverRetries',
+                            'LeaseBrowserActualForeignReceiptsAndUnknownFields',
+                            'LeaseBrowserActualPermissionLossKeepsIndependentReads',
+                            'LeaseBrowserAggregateBudgetKeepsCompleteOriginalReceipts',
+                            'LeaseAttachmentKeepAliveAndExpiration',
+                            'OriginalReadCancellationBusyAndPreparationOwnership',
+                            'RenewalOriginalExactLeaseSurvivesThenExpiresAfterExplicitStop',
+                            'RenewalActualProcessedFirstAndLaterReplyLossNeverReconnects')
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
             command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
@@ -401,6 +415,7 @@ if __name__ == '__main__':
     parser.add_argument('--renewal-native', action='store_true')
     parser.add_argument('--renewal-session', action='store_true')
     parser.add_argument('--public-renewal', action='store_true')
+    parser.add_argument('--lease-browser-native', action='store_true')
     parser.add_argument('--watch-smoke', action='store_true')
     parser.add_argument('--access', action='store_true')
     parser.add_argument('--access-smoke', action='store_true')
@@ -413,4 +428,4 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native)
