@@ -53,6 +53,8 @@ Configuration and service tests use `connections_test`; SQLite persistence and l
 
 Follow history's `type(scope): imperative summary` convention, e.g. `fix(mysql): preserve nullable field metadata`. Use scopes such as `ui`, `theme`, or `deps`. PRs should explain behavior changes, link relevant issues, report validation, and include screenshots for visible UI changes.
 
+`docs/` contains local-only design notes, verification records and screenshots; keep these files on disk and out of Git commits. Never use `git add -f`, `git add --force`, or equivalent index operations to include `docs/` or other ignored artifacts unless the user explicitly requests those files be committed. Before committing, verify that `git ls-files -- docs/` returns no paths. Reference local verification results in commit/PR descriptions without committing the ignored evidence files.
+
 ## Configuration & Assets
 
 Keep credentials out of profiles, logs, and commits. Configuration lives under `os.UserConfigDir()/NyaDB/config.sqlite`. Preserve asset licenses and provenance manifests; keep proprietary research assets in ignored local directories.
