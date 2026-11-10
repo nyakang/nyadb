@@ -49,7 +49,12 @@ func EncodeRequest(r contract.KVRequest) ([]byte, error) {
 			return nil, err
 		}
 	}
-	supported := eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method) || r.Method == AuthManagementMethod
+	if r.Method == CompactMethod {
+		if _, _, err := compactionRequestValues(r); err != nil {
+			return nil, err
+		}
+	}
+	supported := r.Method == CompactMethod || eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method) || r.Method == AuthManagementMethod
 	for _, m := range methods {
 		if m.Path == r.Method {
 			supported = true
@@ -192,6 +197,9 @@ func (s *State) SaveRequest(d *Document, as bool) {
 	})
 }
 func draftFilename(method string) string {
+	if method == CompactMethod {
+		return "Compact.nyakv"
+	}
 	if method == LeaseBrowseMethod {
 		return "LeaseBrowse.nyakv"
 	}

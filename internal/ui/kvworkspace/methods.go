@@ -20,6 +20,9 @@ var methods = []Method{
 func Methods() []Method { return append([]Method(nil), methods...) }
 func (s *State) MethodsFor(d *Document) []Method {
 	out := Methods()
+	if s.owned(d) && d.CompactionAvailable() {
+		out = append(out, Method{"Compact", CompactMethod})
+	}
 	if s.owned(d) && d.AuthManagementAvailable() {
 		out = append(out, Method{Name: "AuthManagement", Path: AuthManagementMethod})
 	}
@@ -58,6 +61,9 @@ func (s *State) ChooseMethod(d *Document, method string) {
 		return
 	}
 	before := DefaultRequest()
+	if d.method == CompactMethod {
+		before = DefaultCompactionRequest()
+	}
 	if d.method == AuthManagementMethod {
 		before = DefaultAuthManagementRequest()
 	}
@@ -72,7 +78,9 @@ func (s *State) ChooseMethod(d *Document, method string) {
 	}
 	useTemplate := d.Request().JSON == before.JSON
 	s.SetMethod(d, method)
-	if useTemplate && method == AuthManagementMethod {
+	if useTemplate && method == CompactMethod {
+		d.Editor.Buffer.Set(DefaultCompactionRequest().JSON)
+	} else if useTemplate && method == AuthManagementMethod {
 		d.Editor.Buffer.Set(DefaultAuthManagementRequest().JSON)
 	} else if useTemplate && leaseBrowserMethod(method) {
 		d.Editor.Buffer.Set(DefaultLeaseBrowserRequest(method).JSON)

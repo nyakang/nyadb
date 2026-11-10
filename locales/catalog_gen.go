@@ -34321,3 +34321,233 @@ func EtcdAuth3fd1a12ef5() string { return In(i18n.Locale()).EtcdAuth3fd1a12ef5()
 func (msgs Messages) EtcdAuth3fd1a12ef5() string {
 	return Catalog.Format(msgs.locale, "etcdAuth3fd1a12ef5", nil)
 }
+
+// EtcdCompact9f46bd2196 says "Compact revision 必须为完整正整数"
+// in the language the app shows.
+func EtcdCompact9f46bd2196() string { return In(i18n.Locale()).EtcdCompact9f46bd2196() }
+
+// EtcdCompact9f46bd2196 says "Compact revision 必须为完整正整数"
+// in the language of msgs.
+func (msgs Messages) EtcdCompact9f46bd2196() string {
+	return Catalog.Format(msgs.locale, "etcdCompact9f46bd2196", nil)
+}
+
+// EtcdCompact0afe49e632 says "请先检查此 Compact revision"
+// in the language the app shows.
+func EtcdCompact0afe49e632() string { return In(i18n.Locale()).EtcdCompact0afe49e632() }
+
+// EtcdCompact0afe49e632 says "请先检查此 Compact revision"
+// in the language of msgs.
+func (msgs Messages) EtcdCompact0afe49e632() string {
+	return Catalog.Format(msgs.locale, "etcdCompact0afe49e632", nil)
+}
+
+// EtcdCompact516e535aba says "完整 Compact 记录超过限额"
+// in the language the app shows.
+func EtcdCompact516e535aba() string { return In(i18n.Locale()).EtcdCompact516e535aba() }
+
+// EtcdCompact516e535aba says "完整 Compact 记录超过限额"
+// in the language of msgs.
+func (msgs Messages) EtcdCompact516e535aba() string {
+	return Catalog.Format(msgs.locale, "etcdCompact516e535aba", nil)
+}
+
+// EtcdCompactdff5a54c70 says "压缩集群历史"
+// in the language the app shows.
+func EtcdCompactdff5a54c70() string { return In(i18n.Locale()).EtcdCompactdff5a54c70() }
+
+// EtcdCompactdff5a54c70 says "压缩集群历史"
+// in the language of msgs.
+func (msgs Messages) EtcdCompactdff5a54c70() string {
+	return Catalog.Format(msgs.locale, "etcdCompactdff5a54c70", nil)
+}
+
+// EtcdCompact95ede1e6bf says "Compact 请求仅接受 revision 和 physical"
+// in the language the app shows.
+func EtcdCompact95ede1e6bf() string { return In(i18n.Locale()).EtcdCompact95ede1e6bf() }
+
+// EtcdCompact95ede1e6bf says "Compact 请求仅接受 revision 和 physical"
+// in the language of msgs.
+func (msgs Messages) EtcdCompact95ede1e6bf() string {
+	return Catalog.Format(msgs.locale, "etcdCompact95ede1e6bf", nil)
+}
+
+// EtcdCompact0db66344f9 says "压缩 revision"
+// in the language the app shows.
+func EtcdCompact0db66344f9() string { return In(i18n.Locale()).EtcdCompact0db66344f9() }
+
+// EtcdCompact0db66344f9 says "压缩 revision"
+// in the language of msgs.
+func (msgs Messages) EtcdCompact0db66344f9() string {
+	return Catalog.Format(msgs.locale, "etcdCompact0db66344f9", nil)
+}
+
+// EtcdCompactaf7285c090 says "等待物理压缩完成"
+// in the language the app shows.
+func EtcdCompactaf7285c090() string { return In(i18n.Locale()).EtcdCompactaf7285c090() }
+
+// EtcdCompactaf7285c090 says "等待物理压缩完成"
+// in the language of msgs.
+func (msgs Messages) EtcdCompactaf7285c090() string {
+	return Catalog.Format(msgs.locale, "etcdCompactaf7285c090", nil)
+}
+
+// EtcdCompactef453b0c4f says "整个集群历史；连接前缀不限定压缩范围"
+// in the language the app shows.
+func EtcdCompactef453b0c4f() string { return In(i18n.Locale()).EtcdCompactef453b0c4f() }
+
+// EtcdCompactef453b0c4f says "整个集群历史；连接前缀不限定压缩范围"
+// in the language of msgs.
+func (msgs Messages) EtcdCompactef453b0c4f() string {
+	return Catalog.Format(msgs.locale, "etcdCompactef453b0c4f", nil)
+}
+
+// EtcdCompact52de65c314 says "检查 revision"
+// in the language the app shows.
+func EtcdCompact52de65c314() string { return In(i18n.Locale()).EtcdCompact52de65c314() }
+
+// EtcdCompact52de65c314 says "检查 revision"
+// in the language of msgs.
+func (msgs Messages) EtcdCompact52de65c314() string {
+	return Catalog.Format(msgs.locale, "etcdCompact52de65c314", nil)
+}
+
+// EtcdCompact5b44974042 says "预览 Compact"
+// in the language the app shows.
+func EtcdCompact5b44974042() string { return In(i18n.Locale()).EtcdCompact5b44974042() }
+
+// EtcdCompact5b44974042 says "预览 Compact"
+// in the language of msgs.
+func (msgs Messages) EtcdCompact5b44974042() string {
+	return Catalog.Format(msgs.locale, "etcdCompact5b44974042", nil)
+}
+
+// EtcdCompact92d912ea8b says "复制完整观察"
+// in the language the app shows.
+func EtcdCompact92d912ea8b() string { return In(i18n.Locale()).EtcdCompact92d912ea8b() }
+
+// EtcdCompact92d912ea8b says "复制完整观察"
+// in the language of msgs.
+func (msgs Messages) EtcdCompact92d912ea8b() string {
+	return Catalog.Format(msgs.locale, "etcdCompact92d912ea8b", nil)
+}
+
+// EtcdCompact4d318f4705 says "导出 Compact 观察"
+// in the language the app shows.
+func EtcdCompact4d318f4705() string { return In(i18n.Locale()).EtcdCompact4d318f4705() }
+
+// EtcdCompact4d318f4705 says "导出 Compact 观察"
+// in the language of msgs.
+func (msgs Messages) EtcdCompact4d318f4705() string {
+	return Catalog.Format(msgs.locale, "etcdCompact4d318f4705", nil)
+}
+
+// EtcdCompact1e7b6ae2f9 says "观察到的当前 revision：%s"
+// in the language the app shows.
+func EtcdCompact1e7b6ae2f9() string { return In(i18n.Locale()).EtcdCompact1e7b6ae2f9() }
+
+// EtcdCompact1e7b6ae2f9 says "观察到的当前 revision：%s"
+// in the language of msgs.
+func (msgs Messages) EtcdCompact1e7b6ae2f9() string {
+	return Catalog.Format(msgs.locale, "etcdCompact1e7b6ae2f9", nil)
+}
+
+// EtcdCompact82903450e2 says "原 revision %s · Range %s · 探测键 AA=="
+// in the language the app shows.
+func EtcdCompact82903450e2() string { return In(i18n.Locale()).EtcdCompact82903450e2() }
+
+// EtcdCompact82903450e2 says "原 revision %s · Range %s · 探测键 AA=="
+// in the language of msgs.
+func (msgs Messages) EtcdCompact82903450e2() string {
+	return Catalog.Format(msgs.locale, "etcdCompact82903450e2", nil)
+}
+
+// EtcdCompact24104686e8 says "此前观察不能授权当前请求，请重新检查"
+// in the language the app shows.
+func EtcdCompact24104686e8() string { return In(i18n.Locale()).EtcdCompact24104686e8() }
+
+// EtcdCompact24104686e8 says "此前观察不能授权当前请求，请重新检查"
+// in the language of msgs.
+func (msgs Messages) EtcdCompact24104686e8() string {
+	return Catalog.Format(msgs.locale, "etcdCompact24104686e8", nil)
+}
+
+// EtcdCompacta475c1bad8 says "观察不是锁；确认时仍由服务端决定"
+// in the language the app shows.
+func EtcdCompacta475c1bad8() string { return In(i18n.Locale()).EtcdCompacta475c1bad8() }
+
+// EtcdCompacta475c1bad8 says "观察不是锁；确认时仍由服务端决定"
+// in the language of msgs.
+func (msgs Messages) EtcdCompacta475c1bad8() string {
+	return Catalog.Format(msgs.locale, "etcdCompacta475c1bad8", nil)
+}
+
+// EtcdCompact6a2a28f706 says "确认压缩原集群历史"
+// in the language the app shows.
+func EtcdCompact6a2a28f706() string { return In(i18n.Locale()).EtcdCompact6a2a28f706() }
+
+// EtcdCompact6a2a28f706 says "确认压缩原集群历史"
+// in the language of msgs.
+func (msgs Messages) EtcdCompact6a2a28f706() string {
+	return Catalog.Format(msgs.locale, "etcdCompact6a2a28f706", nil)
+}
+
+// EtcdCompactf15173064c says "原集群 %s · 原文档 %s"
+// in the language the app shows.
+func EtcdCompactf15173064c() string { return In(i18n.Locale()).EtcdCompactf15173064c() }
+
+// EtcdCompactf15173064c says "原集群 %s · 原文档 %s"
+// in the language of msgs.
+func (msgs Messages) EtcdCompactf15173064c() string {
+	return Catalog.Format(msgs.locale, "etcdCompactf15173064c", nil)
+}
+
+// EtcdCompactf6ac50bdd6 says "原成员 %s · revision %s · physical %s"
+// in the language the app shows.
+func EtcdCompactf6ac50bdd6() string { return In(i18n.Locale()).EtcdCompactf6ac50bdd6() }
+
+// EtcdCompactf6ac50bdd6 says "原成员 %s · revision %s · physical %s"
+// in the language of msgs.
+func (msgs Messages) EtcdCompactf6ac50bdd6() string {
+	return Catalog.Format(msgs.locale, "etcdCompactf6ac50bdd6", nil)
+}
+
+// EtcdCompact2e479ed6ee says "当前值保留；历史不能恢复，physical 不等于 Defragment"
+// in the language the app shows.
+func EtcdCompact2e479ed6ee() string { return In(i18n.Locale()).EtcdCompact2e479ed6ee() }
+
+// EtcdCompact2e479ed6ee says "当前值保留；历史不能恢复，physical 不等于 Defragment"
+// in the language of msgs.
+func (msgs Messages) EtcdCompact2e479ed6ee() string {
+	return Catalog.Format(msgs.locale, "etcdCompact2e479ed6ee", nil)
+}
+
+// EtcdCompactd82fd8f6d0 says "复制完整 Compact 预览"
+// in the language the app shows.
+func EtcdCompactd82fd8f6d0() string { return In(i18n.Locale()).EtcdCompactd82fd8f6d0() }
+
+// EtcdCompactd82fd8f6d0 says "复制完整 Compact 预览"
+// in the language of msgs.
+func (msgs Messages) EtcdCompactd82fd8f6d0() string {
+	return Catalog.Format(msgs.locale, "etcdCompactd82fd8f6d0", nil)
+}
+
+// EtcdCompact7d619423e1 says "我确认压缩此原集群的历史"
+// in the language the app shows.
+func EtcdCompact7d619423e1() string { return In(i18n.Locale()).EtcdCompact7d619423e1() }
+
+// EtcdCompact7d619423e1 says "我确认压缩此原集群的历史"
+// in the language of msgs.
+func (msgs Messages) EtcdCompact7d619423e1() string {
+	return Catalog.Format(msgs.locale, "etcdCompact7d619423e1", nil)
+}
+
+// EtcdCompact98e1dc499f says "确认执行 Compact"
+// in the language the app shows.
+func EtcdCompact98e1dc499f() string { return In(i18n.Locale()).EtcdCompact98e1dc499f() }
+
+// EtcdCompact98e1dc499f says "确认执行 Compact"
+// in the language of msgs.
+func (msgs Messages) EtcdCompact98e1dc499f() string {
+	return Catalog.Format(msgs.locale, "etcdCompact98e1dc499f", nil)
+}

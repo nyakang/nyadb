@@ -609,8 +609,15 @@ remain separate from later Range/Watch/history observations. Native rejection of
 a future/already-compacted revision or insufficient permission is definite;
 processed-reply loss, cancellation and an invalid header retain an unknown
 write outcome. Recovery never executes Compact and cannot transfer its old plan.
-The public method selector and dedicated maintenance form remain a separate
-acceptance step. Defragment, Alarm, Snapshot and member management are pending.
+The public KV method selector includes a dedicated Compact form. Its explicit
+Status/Range probe captures the original document/cluster/member/public generation,
+revision and native read receipts. A separate immutable checked confirmation
+uses one original Compact plan; a successful Range at the compaction boundary
+does not guarantee that repeating Compact will succeed. Copies and exports keep
+complete original observations and replies. Request files restore text only.
+Original observation/confirmation/unknown receipts participate in leave decisions;
+close releases their leases and caches. Defragment, Alarm, Snapshot and member
+management are pending.
 
 Run `GOWORK=off /usr/bin/python3 tools/verify_etcd_fixture.py --compaction-native
 --race --mode MODE` for 16 required native parents. Use official 3.7.3
@@ -619,3 +626,12 @@ and publication, logical/physical receipt faults, exact MVCC pagination,
 compacted Watch/history, restricted identity and original Auth/browser recovery.
 This stage does not establish public maintenance UI acceptance. Local evidence:
 `docs/etcd-compaction-native-2026-11-11.md`.
+
+Public form acceptance: `GOWORK=off /usr/bin/python3 tools/verify_etcd_fixture.py
+--public-compaction --race --mode MODE` requires 25 native parents, 48 workspace
+and 48 Shell Chinese/English wide/narrow images. Use the same five official
+configurations. Actual processed logical/physical reply loss, cancellation,
+close, parking, replacement, disconnect and invalid headers keep their original
+receipts, while explicit recovery/Range/Watch/history never replay Compact or
+settle its missing acknowledgement. Local evidence:
+`docs/etcd-compaction-public-2026-11-11.md`.

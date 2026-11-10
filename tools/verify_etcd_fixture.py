@@ -68,7 +68,9 @@ def certificates(folder, access=False):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False, public_lease_management=False, dependency_modfile=None, auth_native=False, public_auth=False, compaction_native=False):
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False, public_lease_management=False, dependency_modfile=None, auth_native=False, public_auth=False, compaction_native=False, public_compaction=False):
+    if public_compaction:
+        public = compaction_native = True
     if compaction_native:
         session = True
     if public_auth:
@@ -161,6 +163,8 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
         report['scope'] = 'public-etcd-original-auth-management-workbench'
     if compaction_native:
         report['scope'] = 'private-etcd-original-compaction-session'
+    if public_compaction:
+        report['scope'] = 'public-etcd-original-compaction-workbench'
     private_path = None
     try:
         with tempfile.TemporaryDirectory(prefix='nyadb-etcd-'+nonce+'-', dir=build) as raw:
@@ -455,6 +459,20 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                             'RuntimeActualProcessedPutFaultAndGenerationReplacement',
                             'RuntimeLateOriginalHandshakeCannotCloseReplacement',
                             'EventsSessionOriginalRetirementRecoveryDoesNotSubscribe')
+            if public_compaction:
+                environment.update(NYADB_ETCD_PUBLIC_COMPACTION_IT='1', NYADB_ETCD_EVENTS_WORKSPACE_IT='1',
+                                   NYADB_ETCD_PUBLIC_AUTH_IT='1', NYADB_ETCD_LEASE_MANAGEMENT_IT='1',
+                                   NYADB_ETCD_RENEWAL_WORKSPACE_IT='1', NYADB_ETCD_RENEWAL_IT='1')
+                packages += ['./internal/ui/kvworkspace', './internal/ui/shell']
+                required += ('CompactionWorkspaceBilingualLogicalPhysicalOriginalControlsAndArchives',
+                             'CompactionWorkspaceActualProcessedFaultsParkingRecoveryAndIndependentReads',
+                             'CompactionWorkspaceActualFutureRepeatedAndRestrictedDenials',
+                             'ShellPublicCompactionOriginalFormsCheckedConfirmationAndCompleteArchives',
+                             'ShellPublicCompactionParkedPublicationAndRecoveryNeverExecutes',
+                             'AuthWorkspaceDefinitePartialStepsAndNativeNameReuse',
+                             'LeaseManagementWorkspaceActualGrantRevokeAndChangingObservation',
+                             'RenewalWorkspaceActualOneShotUnknownBlocksContinuousAuthorization',
+                             'EventsWorkspaceHistoryKeepsActualUnknownWriteReceipt')
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
             command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
@@ -469,22 +487,22 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
             for name, expected in report['source_hashes'].items():
                 if hashlib.sha256((ROOT/name).read_bytes()).hexdigest() != expected:
                     raise RuntimeError('Native source changed during acceptance')
-            if profile and not public_auth and not smoke and not (public_events or public_renewal or public_lease_browser):
+            if profile and not (public_auth or public_compaction) and not smoke and not (public_events or public_renewal or public_lease_browser):
                 pictures = sorted(Path(environment['NYADB_ETCD_PROFILE_IMAGES']).glob('*.png'))
                 if len(pictures) != 72:
                     raise RuntimeError('Native profile acceptance is missing localized images')
                 report['profile_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
-            if workspace and not public_auth and not events_workspace_smoke and not (public_events or public_renewal or public_lease_browser):
+            if workspace and not (public_auth or public_compaction) and not events_workspace_smoke and not (public_events or public_renewal or public_lease_browser):
                 pictures = sorted(Path(environment['NYADB_ETCD_WORKSPACE_IMAGES']).glob('*.png'))
                 if len(pictures) != (4 if smoke else 40):
                     raise RuntimeError('Native workspace acceptance is missing localized images')
                 report['workspace_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
-            if data and not public_auth and not (public_events or public_renewal or public_lease_browser):
+            if data and not (public_auth or public_compaction) and not (public_events or public_renewal or public_lease_browser):
                 pictures = sorted(Path(environment['NYADB_ETCD_DATA_IMAGES']).glob('*.png'))
                 if len(pictures) != 16:
                     raise RuntimeError('Native data acceptance is missing localized images')
                 report['data_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
-            if public and not public_auth and not (public_events or public_renewal or public_lease_browser):
+            if public and not (public_auth or public_compaction) and not (public_events or public_renewal or public_lease_browser):
                 pictures = sorted(Path(environment['NYADB_ETCD_PUBLIC_IMAGES']).glob('*.png'))
                 if len(pictures) != 44:
                     raise RuntimeError('Public acceptance is missing localized images')
@@ -517,6 +535,12 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                     if len(pictures) != expected:
                         raise RuntimeError('Public Auth acceptance is missing localized images: '+key)
                     report[key] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
+            if public_compaction:
+                for key, env_key, expected in (('compaction_workspace_images', 'NYADB_ETCD_WORKSPACE_IMAGES', 48), ('compaction_public_images', 'NYADB_ETCD_PUBLIC_IMAGES', 48)):
+                    pictures = sorted(Path(environment[env_key]).glob('*.png'))
+                    if len(pictures) != expected:
+                        raise RuntimeError('Public Compact acceptance is missing localized images: '+key+' got '+str(len(pictures)))
+                    report[key] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             report.update(passed=True, accepted=accepted, log_sha256=hashlib.sha256(log_path.read_bytes()).hexdigest())
     finally:
         try:
@@ -547,6 +571,7 @@ if __name__ == '__main__':
     parser.add_argument('--auth-native', action='store_true')
     parser.add_argument('--public-auth', action='store_true')
     parser.add_argument('--compaction-native', action='store_true')
+    parser.add_argument('--public-compaction', action='store_true')
     parser.add_argument('--dependency-modfile')
     parser.add_argument('--watch-smoke', action='store_true')
     parser.add_argument('--access', action='store_true')
@@ -560,4 +585,4 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser, args.public_lease_management, args.dependency_modfile, args.auth_native, args.public_auth, args.compaction_native)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser, args.public_lease_management, args.dependency_modfile, args.auth_native, args.public_auth, args.compaction_native, args.public_compaction)

@@ -114,6 +114,26 @@ func captureEtcdPublic(t *testing.T, s *State, phase string) {
 		for _, size := range [][2]int{{1280, 800}, {720, 520}} {
 			tt := ui.NewTester(s.View, size[0], size[1])
 			tt.Frame()
+			if strings.HasPrefix(phase, "compact-public-") && strings.HasSuffix(phase, "confirmation") {
+				for _, label := range []string{"确认压缩原集群历史", "复制完整 Compact 预览", "我确认压缩此原集群的历史", "确认执行 Compact", "取消"} {
+					r, ok := tt.Find(locales.Text(label))
+					if !ok || r.W <= 0 || r.X < 0 || r.Y < 0 || r.X+r.W > float32(size[0])+1 || r.Y+r.H > float32(size[1])+1 {
+						t.Fatal("public Compact confirmation clipped", phase, language, label, r)
+					}
+				}
+			}
+			if strings.HasPrefix(phase, "compact-public-") && (strings.HasSuffix(phase, "form") || strings.HasSuffix(phase, "observation")) {
+				labels := []string{"压缩 revision", "等待物理压缩完成", "检查 revision"}
+				if strings.HasSuffix(phase, "observation") {
+					labels = append(labels, "复制完整观察", "导出 Compact 观察")
+				}
+				for _, label := range labels {
+					r, ok := tt.Find(locales.Text(label))
+					if !ok || r.W <= 0 || r.X < 0 || r.Y < 0 || r.X+r.W > float32(size[0])+1 || r.Y+r.H > float32(size[1])+1 {
+						t.Fatal("public Compact form clipped", phase, language, label, r)
+					}
+				}
+			}
 			if phase == "lease-management-public-grant-confirmation" || phase == "lease-management-public-revoke-confirmation" {
 				labels := []string{"确认 KV 写入请求", "我确认执行此原生写入请求", "确认执行 KV 写入", "取消"}
 				if phase == "lease-management-public-revoke-confirmation" {

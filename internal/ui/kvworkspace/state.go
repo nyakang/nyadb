@@ -38,6 +38,7 @@ type Receipt struct {
 	Error           string
 	LeaseManagement *LeaseManagementReceipt
 	AuthManagement  *AuthManagementReceipt
+	Compaction      *CompactionReceipt
 }
 
 func (r Receipt) Clone() Receipt {
@@ -45,6 +46,7 @@ func (r Receipt) Clone() Receipt {
 	r.Result = r.Result.Clone()
 	r.LeaseManagement = r.LeaseManagement.clone()
 	r.AuthManagement = r.AuthManagement.clone()
+	r.Compaction = r.Compaction.clone()
 	return r
 }
 
@@ -55,18 +57,20 @@ type confirmation struct {
 	editor     contract.KVRequest
 	management *LeaseManagementReceipt
 	auth       *authConfirmation
+	compaction *CompactionReceipt
 	keyRow     int
 	keyColumns ui.ListState
 	checked    bool
 	open       bool
 }
 type outcome struct {
-	result      contract.KVResult
-	leasePage   *contract.KVLeasePage
-	leaseDetail *contract.KVLeaseDetail
-	lease       contract.KVRequestLease
-	err         error
-	authSteps   []AuthStepReceipt
+	result                contract.KVResult
+	leasePage             *contract.KVLeasePage
+	leaseDetail           *contract.KVLeaseDetail
+	lease                 contract.KVRequestLease
+	err                   error
+	authSteps             []AuthStepReceipt
+	compactionObservation *CompactionObservation
 }
 type operation struct {
 	lease           contract.KVRequestLease
@@ -80,6 +84,7 @@ type operation struct {
 	management      *LeaseManagementReceipt
 	managementDraft *leaseManagementDraft
 	auth            *AuthManagementReceipt
+	compaction      *CompactionReceipt
 }
 
 // Document is UI-thread owned. Workers capture immutable requests and their
@@ -99,6 +104,7 @@ type Document struct {
 	leaseManagement                                         *leaseManagementDraft
 	authBrowser                                             *authBrowser
 	authDraft                                               *authDraft
+	compactionObservation                                   *CompactionObservation
 	last, unknown                                           *Receipt
 	selectedUnknown                                         bool
 	error                                                   string
@@ -132,6 +138,7 @@ type leaveStamp struct {
 	renewal                                 *RenewalReceipt
 	renewalUnknown                          *RenewalReceipt
 	browserLast, browserPage, browserDetail *LeaseBrowserReceipt
+	compaction                              *CompactionObservation
 }
 
 func (d *Document) ID() uint64       { return d.id }
@@ -198,11 +205,12 @@ type State struct {
 	SplitPercent             float32
 	LeaseBrowserSplitPercent float32
 	AuthSplitPercent         float32
+	CompactionSplitPercent   float32
 	Invalidate               func()
 }
 
 func New(deps Dependencies) *State {
-	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50, LeaseBrowserSplitPercent: 20, AuthSplitPercent: 65}
+	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50, LeaseBrowserSplitPercent: 20, AuthSplitPercent: 65, CompactionSplitPercent: 70}
 }
 func (s *State) owned(d *Document) bool { return d != nil && !d.closed && s.documents[d.id] == d }
 func (s *State) active(d *Document) bool {
@@ -336,6 +344,10 @@ func (s *State) Preconnect(d *Document) {
 // Run prepares on the UI thread. Writes require a separate explicit confirmation
 // of the same authored text, canonical snapshot and original lease.
 func (s *State) Run(d *Document) {
+	if s.owned(d) && d.method == CompactMethod {
+		s.PrepareCompaction(d)
+		return
+	}
 	if s.owned(d) && d.method == AuthManagementMethod {
 		s.RunAuthManagement(d)
 		return
@@ -406,13 +418,17 @@ func (s *State) Confirm(d *Document, checked bool) {
 	if !checked || !s.check(d) {
 		return
 	}
-	if p.lease != d.lease || p.editor != d.Request() || d.hasUnknownWrites() || p.auth != nil && !sameEventScope(p.auth.receipt.Scope, d.scope) || p.management != nil && (!sameEventScope(p.management.Scope, d.scope) || !p.plan.Writes() || !managementRequestEqual(p.authored, p.plan.Snapshot())) {
+	if p.lease != d.lease || p.editor != d.Request() || d.hasUnknownWrites() || p.compaction != nil && !validCompactionConfirmation(d, p) || p.auth != nil && !sameEventScope(p.auth.receipt.Scope, d.scope) || p.management != nil && (!sameEventScope(p.management.Scope, d.scope) || !p.plan.Writes() || !managementRequestEqual(p.authored, p.plan.Snapshot())) {
 		d.confirmation = nil
 		d.error = locales.Text("KV 请求已更改，请重新预览")
 		return
 	}
 	if p.auth != nil {
 		s.executeAuthAction(d, p)
+		return
+	}
+	if p.compaction != nil {
+		s.executeCompaction(d, p)
 		return
 	}
 	s.executeManagement(d, p.plan, p.authored, p.management)
@@ -507,7 +523,7 @@ func (s *State) Consume() {
 					d.selectedBrowser = false
 					d.selectedRenewal = false
 					d.selectedEvents = false
-					receipt := &Receipt{Scope: job.scope.Clone(), Authored: job.authored, Result: r.result.Clone(), LeaseManagement: job.management.clone()}
+					receipt := &Receipt{Scope: job.scope.Clone(), Authored: job.authored, Result: r.result.Clone(), LeaseManagement: job.management.clone(), Compaction: job.compaction.clone()}
 					if r.err != nil {
 						receipt.Error = r.err.Error()
 					}
@@ -518,6 +534,9 @@ func (s *State) Consume() {
 				}
 				if job.kind == "auth-read" || job.kind == "auth-write" {
 					s.consumeAuth(d, job, r)
+				}
+				if job.kind == "compaction-observe" {
+					s.consumeCompactionObservation(d, job, r)
 				}
 				if job.kind == "lease-browse" || job.kind == "lease-detail" {
 					s.consumeLeaseBrowser(d, job, r)
@@ -578,10 +597,10 @@ func (s *State) GuardLeave(d *Document, next func(ui.Services)) bool {
 	if !s.owned(d) {
 		return false
 	}
-	if d.permit != nil && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && !d.Busy() && !d.FileBusy() {
+	if d.permit != nil && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && d.permit.compaction == d.compactionObservation && !d.Busy() && !d.FileBusy() {
 		return false
 	}
-	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && d.leaseManagement == nil && d.authDraft == nil && (d.confirmation == nil || d.confirmation.management == nil && d.confirmation.auth == nil) {
+	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && d.leaseManagement == nil && d.authDraft == nil && d.compactionObservation == nil && (d.confirmation == nil || d.confirmation.management == nil && d.confirmation.auth == nil && d.confirmation.compaction == nil) {
 		return false
 	}
 	s.leave = &leaveDecision{doc: d, next: next}
@@ -605,7 +624,7 @@ func (s *State) DecideLeave(services ui.Services, discard bool) {
 	next := s.leave.next
 	s.leave = nil
 	s.CancelConfirmation(d)
-	d.permit = &leaveStamp{request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail}
+	d.permit = &leaveStamp{request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail, compaction: d.compactionObservation}
 	if next != nil {
 		next(services)
 	}
@@ -692,6 +711,7 @@ func (s *State) Close(d *Document) {
 	}
 	d.authDraft = nil
 	d.authBrowser = nil
+	d.compactionObservation = nil
 	d.last = nil
 	d.unknown = nil
 	d.job = nil
