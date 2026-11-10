@@ -465,3 +465,29 @@ one-shot/continuous renewal regressions.
 Use 3.7.3 basic/anonymous/tls/mtls and 3.5.35 basic. Neutral document/runtime
 publication and the dedicated lease/attached-key browser remain later acceptance
 steps; this foundation does not change public chooser or URI capabilities.
+
+Private original-document lease-browsing facet
+----------------------------------------------
+
+The neutral `KVLeaseBrowsing` facet is optional on the original
+`KVRequestLease`. It reuses that document's physical channel, operation lock,
+request cancellation, pure reservation/recovery and idempotent Close. Captured
+page/detail requests and scopes, signed IDs, full native list/TTL/attached-key
+receipts and optional projections are copied independently. Browsing leaves
+the original one-shot LastResult and unknown write receipt unchanged.
+
+The runtime binds this facet only when the original raw lease implements it.
+It checks the captured namespace, prefix, handshake identity/version and raw
+generation, translating only that original generation into the public scope.
+An original completion remains intact when publication retirement adds an
+error; the original document decides admission. Recovery accepts the same
+bound KV document, preserves its one-shot receipt and reserves a new original
+lease without reading, granting, revoking or restarting renewal.
+
+`GOWORK=off /usr/bin/python3 tools/verify_etcd_fixture.py --lease-browser-session
+--race --mode MODE` requires 16 native parents. It includes the nine native
+browsing/renewal regressions, original document/one-shot ownership, actual partial
+read cancellation/Close, actual unknown-write recovery followed by independent
+list/detail reads, and four runtime publication/recovery/processed-write/late-open
+cases. Use 3.7.3 basic/anonymous/tls/mtls and 3.5.35 basic. The dedicated public
+lease list/detail controls and original-action confirmations remain later steps.

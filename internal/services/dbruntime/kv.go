@@ -48,7 +48,11 @@ func (s *session) bindKV(raw contract.KVRequestLease) (contract.KVRequestLease, 
 		return nil, errors.Join(contract.ErrRevoked, raw.Close())
 	}
 	scope.Generation = s.generation
-	return &kvRequestLease{session: s, raw: raw, scope: scope}, nil
+	bound := &kvRequestLease{session: s, raw: raw, scope: scope}
+	if _, ok := raw.(contract.KVLeaseBrowsing); ok {
+		return &kvLeaseBrowsingLease{bound}, nil
+	}
+	return bound, nil
 }
 func (s *session) ReserveKV(document uint64) (contract.KVRequestLease, error) {
 	if !s.alive() {
@@ -68,8 +72,8 @@ func (s *session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 	if !s.alive() {
 		return contract.KVRecovery{}, contract.ErrRevoked
 	}
-	old, ok := previous.(*kvRequestLease)
-	if !ok || old == nil || old.scope.Namespace.ProfileID != s.id {
+	old := originalKVRequestLease(previous)
+	if old == nil || old.scope.Namespace.ProfileID != s.id {
 		return contract.KVRecovery{}, contract.ErrKVPlanUsed
 	}
 	p, err := contract.Require[contract.KVRequestsProvider](s.raw)
