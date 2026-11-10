@@ -77,6 +77,9 @@ func (s *State) cycleTabs(reverse bool) {
 }
 func (s *State) tabFocus(t *tab) {
 	s.editTarget = themeEmptyTarget()
+	if t.kv != nil {
+		s.kvWorkspace.Focus(t.kv)
+	}
 	if t.query != nil {
 		s.sqlWorkspace.Focus(t.query)
 	}

@@ -31977,3 +31977,463 @@ func EtcdPasswordRequired() string { return In(i18n.Locale()).EtcdPasswordRequir
 func (msgs Messages) EtcdPasswordRequired() string {
 	return Catalog.Format(msgs.locale, "etcdPasswordRequired", nil)
 }
+
+// KvRequestUx9f211d4c19 says "JSON 中 bytes 使用 Base64，整数保留原生精度；请求使用绝对键"
+// in the language the app shows.
+func KvRequestUx9f211d4c19() string { return In(i18n.Locale()).KvRequestUx9f211d4c19() }
+
+// KvRequestUx9f211d4c19 says "JSON 中 bytes 使用 Base64，整数保留原生精度；请求使用绝对键"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx9f211d4c19() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx9f211d4c19", nil)
+}
+
+// KvRequestUx9d8095d343 says "KV JSON 编辑器"
+// in the language the app shows.
+func KvRequestUx9d8095d343() string { return In(i18n.Locale()).KvRequestUx9d8095d343() }
+
+// KvRequestUx9d8095d343 says "KV JSON 编辑器"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx9d8095d343() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx9d8095d343", nil)
+}
+
+// KvRequestUxc6eb289683 says "KV 写入结果未确认"
+// in the language the app shows.
+func KvRequestUxc6eb289683() string { return In(i18n.Locale()).KvRequestUxc6eb289683() }
+
+// KvRequestUxc6eb289683 says "KV 写入结果未确认"
+// in the language of msgs.
+func (msgs Messages) KvRequestUxc6eb289683() string {
+	return Catalog.Format(msgs.locale, "kvRequestUxc6eb289683", nil)
+}
+
+// KvRequestUx395077b65c says "KV 写入预览"
+// in the language the app shows.
+func KvRequestUx395077b65c() string { return In(i18n.Locale()).KvRequestUx395077b65c() }
+
+// KvRequestUx395077b65c says "KV 写入预览"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx395077b65c() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx395077b65c", nil)
+}
+
+// KvRequestUx317981187e says "KV 原生回执"
+// in the language the app shows.
+func KvRequestUx317981187e() string { return In(i18n.Locale()).KvRequestUx317981187e() }
+
+// KvRequestUx317981187e says "KV 原生回执"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx317981187e() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx317981187e", nil)
+}
+
+// KvRequestUxd84d70fe54 says "KV 原生请求已完成"
+// in the language the app shows.
+func KvRequestUxd84d70fe54() string { return In(i18n.Locale()).KvRequestUxd84d70fe54() }
+
+// KvRequestUxd84d70fe54 says "KV 原生请求已完成"
+// in the language of msgs.
+func (msgs Messages) KvRequestUxd84d70fe54() string {
+	return Catalog.Format(msgs.locale, "kvRequestUxd84d70fe54", nil)
+}
+
+// KvRequestUx0f908826f0 says "KV 原连接不可用"
+// in the language the app shows.
+func KvRequestUx0f908826f0() string { return In(i18n.Locale()).KvRequestUx0f908826f0() }
+
+// KvRequestUx0f908826f0 says "KV 原连接不可用"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx0f908826f0() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx0f908826f0", nil)
+}
+
+// KvRequestUx3317d07039 says "KV 回执操作"
+// in the language the app shows.
+func KvRequestUx3317d07039() string { return In(i18n.Locale()).KvRequestUx3317d07039() }
+
+// KvRequestUx3317d07039 says "KV 回执操作"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx3317d07039() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx3317d07039", nil)
+}
+
+// KvRequestUxdaa37e584c says "KV 文件操作失败"
+// in the language the app shows.
+func KvRequestUxdaa37e584c() string { return In(i18n.Locale()).KvRequestUxdaa37e584c() }
+
+// KvRequestUxdaa37e584c says "KV 文件操作失败"
+// in the language of msgs.
+func (msgs Messages) KvRequestUxdaa37e584c() string {
+	return Catalog.Format(msgs.locale, "kvRequestUxdaa37e584c", nil)
+}
+
+// KvRequestUxb4c58c1467 says "KV 方法"
+// in the language the app shows.
+func KvRequestUxb4c58c1467() string { return In(i18n.Locale()).KvRequestUxb4c58c1467() }
+
+// KvRequestUxb4c58c1467 says "KV 方法"
+// in the language of msgs.
+func (msgs Messages) KvRequestUxb4c58c1467() string {
+	return Catalog.Format(msgs.locale, "kvRequestUxb4c58c1467", nil)
+}
+
+// KvRequestUx8c2224ac23 says "KV 显式恢复"
+// in the language the app shows.
+func KvRequestUx8c2224ac23() string { return In(i18n.Locale()).KvRequestUx8c2224ac23() }
+
+// KvRequestUx8c2224ac23 says "KV 显式恢复"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx8c2224ac23() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx8c2224ac23", nil)
+}
+
+// KvRequestUx84660caff7 says "KV 比较未满足"
+// in the language the app shows.
+func KvRequestUx84660caff7() string { return In(i18n.Locale()).KvRequestUx84660caff7() }
+
+// KvRequestUx84660caff7 says "KV 比较未满足"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx84660caff7() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx84660caff7", nil)
+}
+
+// KvRequestUx59eefbc0d2 says "KV 请求已更改，未载入所选文件"
+// in the language the app shows.
+func KvRequestUx59eefbc0d2() string { return In(i18n.Locale()).KvRequestUx59eefbc0d2() }
+
+// KvRequestUx59eefbc0d2 says "KV 请求已更改，未载入所选文件"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx59eefbc0d2() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx59eefbc0d2", nil)
+}
+
+// KvRequestUx009ede519c says "KV 请求已更改，请重新预览"
+// in the language the app shows.
+func KvRequestUx009ede519c() string { return In(i18n.Locale()).KvRequestUx009ede519c() }
+
+// KvRequestUx009ede519c says "KV 请求已更改，请重新预览"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx009ede519c() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx009ede519c", nil)
+}
+
+// KvRequestUxa08a680b96 says "KV 请求操作"
+// in the language the app shows.
+func KvRequestUxa08a680b96() string { return In(i18n.Locale()).KvRequestUxa08a680b96() }
+
+// KvRequestUxa08a680b96 says "KV 请求操作"
+// in the language of msgs.
+func (msgs Messages) KvRequestUxa08a680b96() string {
+	return Catalog.Format(msgs.locale, "kvRequestUxa08a680b96", nil)
+}
+
+// KvRequestUxc3a0ba5085 says "KV 请求文件无效"
+// in the language the app shows.
+func KvRequestUxc3a0ba5085() string { return In(i18n.Locale()).KvRequestUxc3a0ba5085() }
+
+// KvRequestUxc3a0ba5085 says "KV 请求文件无效"
+// in the language of msgs.
+func (msgs Messages) KvRequestUxc3a0ba5085() string {
+	return Catalog.Format(msgs.locale, "kvRequestUxc3a0ba5085", nil)
+}
+
+// KvRequestUx1810faabe5 says "KV 请求文本超过 16 MiB"
+// in the language the app shows.
+func KvRequestUx1810faabe5() string { return In(i18n.Locale()).KvRequestUx1810faabe5() }
+
+// KvRequestUx1810faabe5 says "KV 请求文本超过 16 MiB"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx1810faabe5() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx1810faabe5", nil)
+}
+
+// KvRequestUx9e485c1082 says "KV 请求无效"
+// in the language the app shows.
+func KvRequestUx9e485c1082() string { return In(i18n.Locale()).KvRequestUx9e485c1082() }
+
+// KvRequestUx9e485c1082 says "KV 请求无效"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx9e485c1082() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx9e485c1082", nil)
+}
+
+// KvRequestUxdd7d63f05c says "KV 请求未完成"
+// in the language the app shows.
+func KvRequestUxdd7d63f05c() string { return In(i18n.Locale()).KvRequestUxdd7d63f05c() }
+
+// KvRequestUxdd7d63f05c says "KV 请求未完成"
+// in the language of msgs.
+func (msgs Messages) KvRequestUxdd7d63f05c() string {
+	return Catalog.Format(msgs.locale, "kvRequestUxdd7d63f05c", nil)
+}
+
+// KvRequestUx48ad61910a says "KV 请求未派发"
+// in the language the app shows.
+func KvRequestUx48ad61910a() string { return In(i18n.Locale()).KvRequestUx48ad61910a() }
+
+// KvRequestUx48ad61910a says "KV 请求未派发"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx48ad61910a() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx48ad61910a", nil)
+}
+
+// KvRequestUx34245cc05c says "仅派发一次；取消不代表回滚，丢失回执后必须显式核对"
+// in the language the app shows.
+func KvRequestUx34245cc05c() string { return In(i18n.Locale()).KvRequestUx34245cc05c() }
+
+// KvRequestUx34245cc05c says "仅派发一次；取消不代表回滚，丢失回执后必须显式核对"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx34245cc05c() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx34245cc05c", nil)
+}
+
+// KvRequestUxcb8220c2b8 says "保存 KV 文件"
+// in the language the app shows.
+func KvRequestUxcb8220c2b8() string { return In(i18n.Locale()).KvRequestUxcb8220c2b8() }
+
+// KvRequestUxcb8220c2b8 says "保存 KV 文件"
+// in the language of msgs.
+func (msgs Messages) KvRequestUxcb8220c2b8() string {
+	return Catalog.Format(msgs.locale, "kvRequestUxcb8220c2b8", nil)
+}
+
+// KvRequestUxa69e554cee says "保存请求"
+// in the language the app shows.
+func KvRequestUxa69e554cee() string { return In(i18n.Locale()).KvRequestUxa69e554cee() }
+
+// KvRequestUxa69e554cee says "保存请求"
+// in the language of msgs.
+func (msgs Messages) KvRequestUxa69e554cee() string {
+	return Catalog.Format(msgs.locale, "kvRequestUxa69e554cee", nil)
+}
+
+// KvRequestUxee3a1ee564 says "关闭只放弃本地草稿与回执，不确认或回滚原写入"
+// in the language the app shows.
+func KvRequestUxee3a1ee564() string { return In(i18n.Locale()).KvRequestUxee3a1ee564() }
+
+// KvRequestUxee3a1ee564 says "关闭只放弃本地草稿与回执，不确认或回滚原写入"
+// in the language of msgs.
+func (msgs Messages) KvRequestUxee3a1ee564() string {
+	return Catalog.Format(msgs.locale, "kvRequestUxee3a1ee564", nil)
+}
+
+// KvRequestUxa4c1763370 says "原写入未确认；恢复后可读取，关闭页签可放弃本地草稿与回执"
+// in the language the app shows.
+func KvRequestUxa4c1763370() string { return In(i18n.Locale()).KvRequestUxa4c1763370() }
+
+// KvRequestUxa4c1763370 says "原写入未确认；恢复后可读取，关闭页签可放弃本地草稿与回执"
+// in the language of msgs.
+func (msgs Messages) KvRequestUxa4c1763370() string {
+	return Catalog.Format(msgs.locale, "kvRequestUxa4c1763370", nil)
+}
+
+// KvRequestUx1b7a95bb85 says "原未确认回执"
+// in the language the app shows.
+func KvRequestUx1b7a95bb85() string { return In(i18n.Locale()).KvRequestUx1b7a95bb85() }
+
+// KvRequestUx1b7a95bb85 says "原未确认回执"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx1b7a95bb85() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx1b7a95bb85", nil)
+}
+
+// KvRequestUx9d3ce76738 says "取消操作并等待"
+// in the language the app shows.
+func KvRequestUx9d3ce76738() string { return In(i18n.Locale()).KvRequestUx9d3ce76738() }
+
+// KvRequestUx9d3ce76738 says "取消操作并等待"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx9d3ce76738() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx9d3ce76738", nil)
+}
+
+// KvRequestUx374b2c653a says "取消文件操作"
+// in the language the app shows.
+func KvRequestUx374b2c653a() string { return In(i18n.Locale()).KvRequestUx374b2c653a() }
+
+// KvRequestUx374b2c653a says "取消文件操作"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx374b2c653a() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx374b2c653a", nil)
+}
+
+// KvRequestUxb76aa9f6fc says "复制原请求"
+// in the language the app shows.
+func KvRequestUxb76aa9f6fc() string { return In(i18n.Locale()).KvRequestUxb76aa9f6fc() }
+
+// KvRequestUxb76aa9f6fc says "复制原请求"
+// in the language of msgs.
+func (msgs Messages) KvRequestUxb76aa9f6fc() string {
+	return Catalog.Format(msgs.locale, "kvRequestUxb76aa9f6fc", nil)
+}
+
+// KvRequestUx4b61bbb230 says "复制完整 JSON"
+// in the language the app shows.
+func KvRequestUx4b61bbb230() string { return In(i18n.Locale()).KvRequestUx4b61bbb230() }
+
+// KvRequestUx4b61bbb230 says "复制完整 JSON"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx4b61bbb230() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx4b61bbb230", nil)
+}
+
+// KvRequestUx7b621300dc says "复制完整请求"
+// in the language the app shows.
+func KvRequestUx7b621300dc() string { return In(i18n.Locale()).KvRequestUx7b621300dc() }
+
+// KvRequestUx7b621300dc says "复制完整请求"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx7b621300dc() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx7b621300dc", nil)
+}
+
+// KvRequestUxfe8ea8e4c9 says "导出原生回执"
+// in the language the app shows.
+func KvRequestUxfe8ea8e4c9() string { return In(i18n.Locale()).KvRequestUxfe8ea8e4c9() }
+
+// KvRequestUxfe8ea8e4c9 says "导出原生回执"
+// in the language of msgs.
+func (msgs Messages) KvRequestUxfe8ea8e4c9() string {
+	return Catalog.Format(msgs.locale, "kvRequestUxfe8ea8e4c9", nil)
+}
+
+// KvRequestUx71263d14de says "导出操作记录"
+// in the language the app shows.
+func KvRequestUx71263d14de() string { return In(i18n.Locale()).KvRequestUx71263d14de() }
+
+// KvRequestUx71263d14de says "导出操作记录"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx71263d14de() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx71263d14de", nil)
+}
+
+// KvRequestUx415e0a6355 says "我确认执行此原生写入请求"
+// in the language the app shows.
+func KvRequestUx415e0a6355() string { return In(i18n.Locale()).KvRequestUx415e0a6355() }
+
+// KvRequestUx415e0a6355 says "我确认执行此原生写入请求"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx415e0a6355() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx415e0a6355", nil)
+}
+
+// KvRequestUx28d1144062 says "打开 KV 请求文件"
+// in the language the app shows.
+func KvRequestUx28d1144062() string { return In(i18n.Locale()).KvRequestUx28d1144062() }
+
+// KvRequestUx28d1144062 says "打开 KV 请求文件"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx28d1144062() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx28d1144062", nil)
+}
+
+// KvRequestUx1692f65970 says "放弃本地内容并继续"
+// in the language the app shows.
+func KvRequestUx1692f65970() string { return In(i18n.Locale()).KvRequestUx1692f65970() }
+
+// KvRequestUx1692f65970 says "放弃本地内容并继续"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx1692f65970() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx1692f65970", nil)
+}
+
+// KvRequestUx6aa88b0cd7 says "最近回执"
+// in the language the app shows.
+func KvRequestUx6aa88b0cd7() string { return In(i18n.Locale()).KvRequestUx6aa88b0cd7() }
+
+// KvRequestUx6aa88b0cd7 says "最近回执"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx6aa88b0cd7() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx6aa88b0cd7", nil)
+}
+
+// KvRequestUx35357723f6 says "未保存的请求文本将被放弃"
+// in the language the app shows.
+func KvRequestUx35357723f6() string { return In(i18n.Locale()).KvRequestUx35357723f6() }
+
+// KvRequestUx35357723f6 says "未保存的请求文本将被放弃"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx35357723f6() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx35357723f6", nil)
+}
+
+// KvRequestUx08d4ff5338 says "此回执没有可导出的原生内容"
+// in the language the app shows.
+func KvRequestUx08d4ff5338() string { return In(i18n.Locale()).KvRequestUx08d4ff5338() }
+
+// KvRequestUx08d4ff5338 says "此回执没有可导出的原生内容"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx08d4ff5338() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx08d4ff5338", nil)
+}
+
+// KvRequestUx901285be63 says "确认 KV 写入请求"
+// in the language the app shows.
+func KvRequestUx901285be63() string { return In(i18n.Locale()).KvRequestUx901285be63() }
+
+// KvRequestUx901285be63 says "确认 KV 写入请求"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx901285be63() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx901285be63", nil)
+}
+
+// KvRequestUx35bee822ff says "确认执行 KV 写入"
+// in the language the app shows.
+func KvRequestUx35bee822ff() string { return In(i18n.Locale()).KvRequestUx35bee822ff() }
+
+// KvRequestUx35bee822ff says "确认执行 KV 写入"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx35bee822ff() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx35bee822ff", nil)
+}
+
+// KvRequestUx7fbe43d45a says "离开 KV 请求页签？"
+// in the language the app shows.
+func KvRequestUx7fbe43d45a() string { return In(i18n.Locale()).KvRequestUx7fbe43d45a() }
+
+// KvRequestUx7fbe43d45a says "离开 KV 请求页签？"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx7fbe43d45a() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx7fbe43d45a", nil)
+}
+
+// KvRequestUxe4fbc8950f says "运行 KV 请求"
+// in the language the app shows.
+func KvRequestUxe4fbc8950f() string { return In(i18n.Locale()).KvRequestUxe4fbc8950f() }
+
+// KvRequestUxe4fbc8950f says "运行 KV 请求"
+// in the language of msgs.
+func (msgs Messages) KvRequestUxe4fbc8950f() string {
+	return Catalog.Format(msgs.locale, "kvRequestUxe4fbc8950f", nil)
+}
+
+// KvRequestUx6b552cade3 says "运行请求后显示原生回执"
+// in the language the app shows.
+func KvRequestUx6b552cade3() string { return In(i18n.Locale()).KvRequestUx6b552cade3() }
+
+// KvRequestUx6b552cade3 says "运行请求后显示原生回执"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx6b552cade3() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx6b552cade3", nil)
+}
+
+// KvRequestUxbf0b8d8806 says "预览最多 64 KiB；复制与导出保留完整内容"
+// in the language the app shows.
+func KvRequestUxbf0b8d8806() string { return In(i18n.Locale()).KvRequestUxbf0b8d8806() }
+
+// KvRequestUxbf0b8d8806 says "预览最多 64 KiB；复制与导出保留完整内容"
+// in the language of msgs.
+func (msgs Messages) KvRequestUxbf0b8d8806() string {
+	return Catalog.Format(msgs.locale, "kvRequestUxbf0b8d8806", nil)
+}
+
+// KvRequestUx5afd503cba says "预连接"
+// in the language the app shows.
+func KvRequestUx5afd503cba() string { return In(i18n.Locale()).KvRequestUx5afd503cba() }
+
+// KvRequestUx5afd503cba says "预连接"
+// in the language of msgs.
+func (msgs Messages) KvRequestUx5afd503cba() string {
+	return Catalog.Format(msgs.locale, "kvRequestUx5afd503cba", nil)
+}

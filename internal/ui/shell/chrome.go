@@ -18,6 +18,7 @@ func (s *State) View(c *ui.Context) {
 	s.consumeWorkspaces()
 	s.workbenchKeyboard(c)
 	s.sqlWorkspace.Invalidate = c.Services().Invalidate
+	s.kvWorkspace.Invalidate = c.Services().Invalidate
 	if s.profileMode {
 		s.activateMySQLForCurrentTab()
 	}
@@ -31,6 +32,7 @@ func (s *State) View(c *ui.Context) {
 	s.dataWorkspace.Consume(c.Services())
 	s.sqlWorkspace.ConsumeDocuments(c.Services())
 	s.sqlWorkspace.Consume()
+	s.kvWorkspace.Consume()
 	s.favorites.Invalidate = c.Services().Invalidate
 	s.favorites.Consume()
 	s.observeSQLDocuments()
@@ -62,6 +64,7 @@ func (s *State) View(c *ui.Context) {
 	s.workspaceManagerView(c)
 	s.tunnelConfirmation(c)
 	s.sqlWorkspace.Modals(c)
+	s.kvWorkspace.Modals(c)
 	s.connectionModal(c)
 	s.objectWorkspace.Modals(c)
 	s.dataWorkspace.Modals(c)
@@ -523,5 +526,5 @@ func (s *State) statusBar(c *ui.Context) {
 }
 
 func (s *State) inspectorVisible() bool {
-	return s.inspectorOn && s.currentTab().kind != tabSQL && s.currentTab().kind != tabSettings
+	return s.inspectorOn && s.currentTab().kind != tabSQL && s.currentTab().kind != tabSettings && s.currentTab().kind != tabKV
 }

@@ -95,6 +95,9 @@ func (s *State) switchWorkspace(target queries.Workspace) {
 	s.workspaces.open = false
 	var finish func(ui.Services)
 	finish = func(ui.Services) {
+		if s.kvWorkspace.GuardWorkspaceClose(finish) {
+			return
+		}
 		if s.guardTabsLeave(func(t *tab) bool { return t.kind != tabObjects }, finish) {
 			return
 		}

@@ -91,6 +91,23 @@ packages sequentially because native token-revocation cases alter that same
 owned server's authentication state. The same four 3.7.3 modes and 3.5.35 basic
 remain the acceptance matrix.
 
-Public KV workbench/permissions/confirmation flows, Watch/history,
-maintenance/auth management, etcd v2, additional versions and cluster operation
-remain pending.
+The private `kvworkspace` UI binds original request documents through the neutral
+provider. Writes need a separate checked confirmation of the captured request;
+reads and preconnect run once. Documents retain authored and canonical text,
+complete original receipts, independent unknown-write evidence and explicit
+request files. Disconnect preserves text; recovery reserves a new lease without
+dispatch. Later reads cannot resolve the original unknown write or enable replay.
+Shell owns profile activation, tabs, leave guards and native file dialogs. The
+private request UI does not add builtin registration or chooser/menu publication.
+
+Run `python3 tools/verify_etcd_fixture.py --workspace --profile --race --mode basic`
+for native request/UI/Shell acceptance alongside the foundation, editor and
+session tests. The original receipt fault proxy first receives a real server Put
+receipt, then writes a different value and withholds the original reply; loss,
+cancel and publication replacement retain the original unknown outcome while
+recovery/readback preserve the subsequent value. Localized wide/small MyGo tester
+images are UI regression evidence, not native desktop execution on other OSes.
+
+Shared KV key browsing/editing and public provider/chooser/URI/workbench entry
+points, ACL-aware browsing, Watch/history, automatic renewal, maintenance/auth
+management, etcd v2, additional versions and cluster operation remain pending.

@@ -39,7 +39,7 @@ func (s *State) workspace(c *ui.Context) {
 						item.Children(func() {
 							ui.Row(c).AlignItems(ui.Center).Gap(5).Children(func() {
 								icon := "database"
-								if current.kind == tabSQL {
+								if current.kind == tabSQL || current.kind == tabKV {
 									icon = "query"
 								} else if current.kind == tabData {
 									icon = "table"
@@ -106,6 +106,8 @@ func (s *State) workspace(c *ui.Context) {
 		switch tab := s.currentTab(); tab.kind {
 		case tabSQL:
 			s.sqlWorkspace.View(c, tab.query)
+		case tabKV:
+			s.kvWorkspace.View(c, tab.kv)
 		case tabSettings:
 			s.settingsWorkspace(c)
 		case tabData:
@@ -284,6 +286,13 @@ func (s *State) guardMySQLProfileLeave(id int64, next func(ui.Services)) bool {
 	return s.guardTabsLeave(func(t *tab) bool { return id == 0 || t.profileID() == id }, next)
 }
 func (s *State) RequestWorkbenchClose(next func()) bool {
+	if s.kvWorkspace.GuardWorkspaceClose(func(_ ui.Services) {
+		if !s.RequestWorkbenchClose(next) {
+			next()
+		}
+	}) {
+		return true
+	}
 	s.observeSQLDocuments()
 	if s.sqlWorkspace.GuardWorkspaceClose(func(_ ui.Services) {
 		if !s.RequestWorkbenchClose(next) {
@@ -755,8 +764,12 @@ func (s *State) disposeTab(t *tab) {
 	s.dataWorkspace.Close(t.data)
 	s.objectWorkspace.Close(t.object)
 	s.sqlWorkspace.Close(t.query)
+	s.kvWorkspace.Close(t.kv)
 }
 func (t *tab) profileID() int64 {
+	if t.kv != nil {
+		return t.kv.ProfileID()
+	}
 	if t.placeholder != nil {
 		return t.placeholder.ProfileID
 	}
@@ -840,7 +853,7 @@ func (s *State) removeTabs(remove func(*tab) bool, after ...func()) {
 	var finish func(ui.Services)
 	finish = func(_ ui.Services) {
 		for _, t := range s.tabs {
-			if t.kind != tabObjects && remove(t) && s.sqlWorkspace.GuardLeave(t.query, finish) {
+			if t.kind != tabObjects && remove(t) && (s.sqlWorkspace.GuardLeave(t.query, finish) || s.kvWorkspace.GuardLeave(t.kv, finish)) {
 				return
 			}
 		}
@@ -877,6 +890,11 @@ type documentIdentity struct {
 
 func (t *tab) identity() documentIdentity {
 	key := documentIdentity{profileID: t.profileID(), database: t.database(), catalog: t.database(), view: t.kind}
+	if t.kv != nil {
+		n := t.kv.Scope().Namespace
+		key.catalog, key.schema, key.objectKind, key.name = n.Catalog, n.Schema, "kv_request", t.kv.Name()
+		return key
+	}
 	if t.placeholder != nil {
 		v := t.placeholder
 		key.catalog, key.schema, key.objectKind, key.name = v.Catalog, v.Schema, v.ObjectKind, v.ObjectName

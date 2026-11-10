@@ -10,6 +10,13 @@ func (s *State) workspaceTabCaption(t *tab) string {
 	if t == nil {
 		return ""
 	}
+	if t.kv != nil {
+		name := t.kv.Name()
+		if t.kv.Dirty() {
+			name += " *"
+		}
+		return name
+	}
 	if t.query != nil {
 		name := t.query.Name()
 		if t.query.Dirty() {

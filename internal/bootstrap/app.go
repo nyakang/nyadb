@@ -18,6 +18,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/queries"
 	"github.com/nyakang/nyadb/internal/services/snapshotfiles"
 	"github.com/nyakang/nyadb/internal/storage/localdb"
+	"github.com/nyakang/nyadb/internal/ui/kvworkspace"
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 	"github.com/nyakang/nyadb/internal/ui/shell"
 	"github.com/nyakang/nyadb/internal/ui/sqlworkspace"
@@ -123,6 +124,21 @@ func Run() error {
 			OpenReader: func(path string) (io.ReadCloser, error) { return os.Open(path) },
 			Read:       queries.ReadFile, Write: queries.WriteFile, WriteStream: queries.WriteStream,
 		}, func() { window.Update(func() {}) })
+
+		state.SetKVFiles(kvworkspace.Files{
+			OpenPath: func() (string, error) {
+				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: window, Title: locales.Text("打开 KV 请求文件"), Filters: []mygo.FileFilter{{Name: "KV", Extensions: []string{"nyakv"}}}})
+				if err != nil || len(paths) == 0 {
+					return "", err
+				}
+				return paths[0], nil
+			},
+			SavePath: func(name string) (string, error) {
+				return mygo.Dialog.Save(mygo.SaveDialogOptions{Parent: window, Title: locales.Text("保存 KV 文件"), DefaultPath: name})
+			},
+			OpenReader:  func(path string) (io.ReadCloser, error) { return os.Open(path) },
+			WriteStream: queries.WriteStream,
+		})
 
 		state.SetBackupFiles(objectworkspace.BackupFiles{
 			Open: func() (string, error) {

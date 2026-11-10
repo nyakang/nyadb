@@ -14,6 +14,7 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/connectioneditor"
 	"github.com/nyakang/nyadb/internal/ui/dataworkspace"
 	"github.com/nyakang/nyadb/internal/ui/favoritesworkspace"
+	"github.com/nyakang/nyadb/internal/ui/kvworkspace"
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 	"github.com/nyakang/nyadb/internal/ui/sessionbrowser"
@@ -33,6 +34,7 @@ const (
 	tabSettings
 	tabProgram
 	tabConnections
+	tabKV
 )
 
 type tab struct {
@@ -42,6 +44,7 @@ type tab struct {
 	title       string
 	kind        tabKind
 	query       *sqlworkspace.Document
+	kv          *kvworkspace.Document
 
 	object *objectworkspace.Document
 
@@ -100,6 +103,7 @@ type State struct {
 	dataWorkspace   *dataworkspace.State
 	objectWorkspace *objectworkspace.State
 	sqlWorkspace    *sqlworkspace.State
+	kvWorkspace     *kvworkspace.State
 	sessions        *sessionbrowser.State
 	navigation      *navigation.State
 
@@ -131,6 +135,7 @@ func newState(preview bool) *State {
 	s.dataWorkspace = dataworkspace.New(s.dataWorkspaceDependencies())
 	s.objectWorkspace = objectworkspace.New(s.objectWorkspaceDependencies())
 	s.sqlWorkspace = sqlworkspace.New(s.sqlWorkspaceDependencies())
+	s.kvWorkspace = kvworkspace.New(s.kvWorkspaceDependencies())
 	s.sessions = sessionbrowser.New(s.sessionBrowserDependencies())
 	s.navigation = navigation.New(s.navigationDependencies())
 	s.initRuntime()

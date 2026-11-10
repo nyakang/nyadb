@@ -57,6 +57,7 @@ func (s *State) closeMySQLSessions() {
 	s.dataWorkspace.CloseAll()
 	s.objectWorkspace.CloseAll()
 	s.sqlWorkspace.CloseAll()
+	s.kvWorkspace.CloseAll()
 	s.favorites.CloseAll()
 	s.sessions.Close()
 	s.closeTunnelServices()
@@ -157,6 +158,7 @@ func (s *State) sessionBrowserDependencies() sessionbrowser.Dependencies {
 		Disconnected: func(id int64) {
 			s.objectWorkspace.CancelTableFor(id)
 			s.sqlWorkspace.DisconnectProfile(id)
+			s.kvWorkspace.DisconnectProfile(id)
 			s.clearMySQLDatabaseNavigation(id)
 			s.clearMySQLTabsFor(id)
 		},
