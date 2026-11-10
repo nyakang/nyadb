@@ -34,6 +34,7 @@ func (s *State) leaseBrowserReceiptView(c *ui.Context, d *Document) {
 		if ui.Button(c, locales.Text("导出租约记录")).Disabled(r == nil || d.FileBusy() || s.deps.Files.SavePath == nil).Clicked() {
 			s.ExportLeaseBrowserRecord(d)
 		}
+		s.leaseManagementMenu(c, d)
 	}).Label(locales.Text("KV 回执操作")).FillWidth().MinWidth(0).Padding(0).Gap(5)
 	ui.Text(c, locales.Text("集群租约观察；TTL 为逐项读回值，翻页会重新读取列表")).FontSize(theme.Font(c, 11)).TextColor(p.Muted).SingleLine().Tooltip(locales.Text("集群租约观察；TTL 为逐项读回值，翻页会重新读取列表"))
 	if d.browserReceiptChoice == 0 {
@@ -90,6 +91,7 @@ func (s *State) leaseDetailView(c *ui.Context, d *Document) {
 	}
 	r := d.browserDetail.Detail
 	l := r.Result.Reply.Lease
+
 	ui.Text(c, fmt.Sprintf("ID %d · TTL %d · GrantedTTL %d", l.ID, l.TTL, l.GrantedTTL)).Bold().SingleLine()
 	ui.Text(c, fmt.Sprintf("revision %d · cluster %d · member %d", r.Result.Header.Revision, r.Result.Header.ClusterID, r.Result.Header.MemberID)).SingleLine().TextColor(p.Muted)
 	if !r.Request.IncludeKeys {

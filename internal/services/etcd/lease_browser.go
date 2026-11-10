@@ -137,6 +137,16 @@ func (c *Client) ObserveLease(ctx context.Context, id int64, includeKeys bool) (
 
 func validateLeaseReply(request, native proto.Message) error {
 	switch r := request.(type) {
+	case *pb.LeaseGrantRequest:
+		v, ok := native.(*pb.LeaseGrantResponse)
+		if !ok || v == nil || v.ID == 0 || v.TTL <= 0 || v.Error != "" || r.ID != 0 && v.ID != r.ID {
+			return ErrProtocol
+		}
+	case *pb.LeaseRevokeRequest:
+		v, ok := native.(*pb.LeaseRevokeResponse)
+		if !ok || v == nil {
+			return ErrProtocol
+		}
 	case *pb.LeaseTimeToLiveRequest:
 		v, ok := native.(*pb.LeaseTimeToLiveResponse)
 		if !ok || v == nil || v.ID != r.ID || v.TTL < -1 || v.GrantedTTL < 0 || !r.Keys && len(v.Keys) > 0 {

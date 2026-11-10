@@ -280,9 +280,6 @@ func (c *Client) executeOwned(parent context.Context, p Plan) (r Response, err e
 	if s, ok := native.(*pb.StatusResponse); ok && s.Version != c.identity.Version {
 		return r, ErrProtocol
 	}
-	if l, ok := native.(*pb.LeaseGrantResponse); ok && (l.ID == 0 || l.TTL <= 0 || l.Error != "") {
-		return r, ErrProtocol
-	}
 	if l, ok := native.(*pb.LeaseKeepAliveResponse); ok && l.ID != p.request.(*pb.LeaseKeepAliveRequest).ID {
 		return r, ErrProtocol
 	}

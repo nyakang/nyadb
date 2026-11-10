@@ -68,7 +68,9 @@ def certificates(folder, access=False):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False):
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False, public_lease_management=False, dependency_modfile=None):
+    if public_lease_management:
+        public_lease_browser = True
     if public_lease_browser:
         public = lease_browser_session = True
     if public_renewal:
@@ -113,6 +115,14 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
         sources += [ROOT/'locales/en.json', ROOT/'locales/zh-Hans.json']
     if public:
         sources += [p for folder in ('internal/ui/connectioncatalog', 'internal/ui/navigation', 'internal/ui/sessionbrowser', 'internal/ui/objectworkspace', 'internal/ui/theme', 'internal/storage/localdb') for p in (ROOT/folder).glob('*.go')]
+    dependency_sources = [ROOT/'go.mod', ROOT/'go.sum']
+    if dependency_modfile:
+        selected_modfile = Path(dependency_modfile).resolve()
+        selected_sumfile = selected_modfile.with_suffix('.sum')
+        if not selected_modfile.is_file() or not selected_sumfile.is_file() or ROOT/'build' not in selected_modfile.parents:
+            raise RuntimeError('Dependency snapshot must be an existing owned build modfile and sumfile')
+        dependency_sources = [selected_modfile, selected_sumfile]
+        sources = [p for p in sources if p not in (ROOT/'go.mod', ROOT/'go.sum')] + dependency_sources
     sources = sorted(set(sources))
     report = dict(nonce=nonce, scope='etcd-history-smoke' if history_smoke else ('etcd-watch-smoke' if watch_smoke else ('etcd-access-smoke' if access_smoke else ('public-etcd-access-smoke' if access and smoke else ('public-etcd-access' if access else ('public-etcd-smoke' if smoke else ('public-etcd-workbench' if public else ('kv-data-adapter-regression' if data else ('private-kv-request-workspace' if workspace else ('private-kv-session-runtime' if session else ('private-profile-editor' if profile else 'private-native-v3-foundation')))))))))), mode=mode, version=version,
                   image=image, race=race, passed=False,
@@ -136,6 +146,9 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
         report['scope'] = 'private-etcd-original-lease-browser-session'
     if public_lease_browser:
         report['scope'] = 'public-etcd-original-lease-browser-workbench'
+    report['dependency_sources'] = [str(p.relative_to(ROOT)) for p in dependency_sources]
+    if public_lease_management:
+        report['scope'] = 'public-etcd-original-lease-management-workbench'
     private_path = None
     try:
         with tempfile.TemporaryDirectory(prefix='nyadb-etcd-'+nonce+'-', dir=build) as raw:
@@ -198,6 +211,8 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                                NYADB_ETCD_ENDPOINT=scheme+'://localhost:'+port,
                                NYADB_ETCD_VERSION=version, NYADB_ETCD_MODE=mode,
                                NYADB_ETCD_USERNAME=username, NYADB_ETCD_SECRET=secret)
+            if dependency_modfile:
+                environment['GOFLAGS'] = '-mod=readonly -modfile='+str(selected_modfile)
             if tls:
                 environment['NYADB_ETCD_CA'] = str(private/'ca.crt')
             if mode == 'mtls':
@@ -379,6 +394,15 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                              'LeaseBrowserWorkspaceActualUnknownRenewalReadIsolation',
                              'ShellPublicLeaseBrowserOriginalListSelectionDetailAndCompleteArchives',
                              'ShellPublicLeaseBrowserParkedPublicationRecoveryRetainsOriginalPage')
+            if public_lease_management:
+                environment['NYADB_ETCD_LEASE_MANAGEMENT_IT'] = '1'
+                required += ('LeaseManagementWorkspaceActualGrantRevokeAndChangingObservation',
+                             'LeaseManagementWorkspaceBilingualCompletePreviewAndRenewalShortcut',
+                             'LeaseManagementWorkspaceActualProcessedFaultsOriginalRecoveryAndClose',
+                             'LeaseManagementWorkspaceNaturalExpirationBeforeConfirmation',
+                             'LeaseManagementWorkspaceActualPermissionChangeRejectsRevoke',
+                             'LeaseManagementWorkspaceForeignGrantReplyKeepsUnknownNativeEvidence',
+                             'ShellPublicLeaseManagementOriginalFormsConfirmationAndCompleteArchives')
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
             command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
@@ -425,7 +449,7 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                         raise RuntimeError('Continuous renewal acceptance is missing localized images: '+key)
                     report[key] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             if public_lease_browser:
-                for key, env_key, expected in (('lease_browser_workspace_images', 'NYADB_ETCD_WORKSPACE_IMAGES', 24), ('public_images', 'NYADB_ETCD_PUBLIC_IMAGES', 32)):
+                for key, env_key, expected in (('lease_browser_workspace_images', 'NYADB_ETCD_WORKSPACE_IMAGES', 48 if public_lease_management else 24), ('public_images', 'NYADB_ETCD_PUBLIC_IMAGES', 68 if public_lease_management else 32)):
                     pictures = sorted(Path(environment[env_key]).glob('*.png'))
                     if len(pictures) != expected:
                         raise RuntimeError('Lease browser acceptance is missing localized images: '+key)
@@ -461,6 +485,8 @@ if __name__ == '__main__':
     parser.add_argument('--lease-browser-native', action='store_true')
     parser.add_argument('--lease-browser-session', action='store_true')
     parser.add_argument('--public-lease-browser', action='store_true')
+    parser.add_argument('--public-lease-management', action='store_true')
+    parser.add_argument('--dependency-modfile')
     parser.add_argument('--watch-smoke', action='store_true')
     parser.add_argument('--access', action='store_true')
     parser.add_argument('--access-smoke', action='store_true')
@@ -473,4 +499,4 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser, args.public_lease_management, args.dependency_modfile)

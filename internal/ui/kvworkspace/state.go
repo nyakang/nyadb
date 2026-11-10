@@ -32,20 +32,30 @@ type Dependencies struct {
 	Files              Files
 }
 type Receipt struct {
-	Scope    contract.KVScope
-	Authored contract.KVRequest
-	Result   contract.KVResult
-	Error    string
+	Scope           contract.KVScope
+	Authored        contract.KVRequest
+	Result          contract.KVResult
+	Error           string
+	LeaseManagement *LeaseManagementReceipt
 }
 
-func (r Receipt) Clone() Receipt { r.Scope = r.Scope.Clone(); r.Result = r.Result.Clone(); return r }
+func (r Receipt) Clone() Receipt {
+	r.Scope = r.Scope.Clone()
+	r.Result = r.Result.Clone()
+	r.LeaseManagement = r.LeaseManagement.clone()
+	return r
+}
 
 type confirmation struct {
-	lease    contract.KVRequestLease
-	plan     contract.KVPreparation
-	authored contract.KVRequest
-	checked  bool
-	open     bool
+	lease      contract.KVRequestLease
+	plan       contract.KVPreparation
+	authored   contract.KVRequest
+	editor     contract.KVRequest
+	management *LeaseManagementReceipt
+	keyRow     int
+	keyColumns ui.ListState
+	checked    bool
+	open       bool
 }
 type outcome struct {
 	result      contract.KVResult
@@ -55,14 +65,16 @@ type outcome struct {
 	err         error
 }
 type operation struct {
-	lease    contract.KVRequestLease
-	kind     string
-	scope    contract.KVScope
-	authored contract.KVRequest
-	cancel   context.CancelFunc
-	canceled bool
-	out      <-chan outcome
-	finished <-chan struct{}
+	lease           contract.KVRequestLease
+	kind            string
+	scope           contract.KVScope
+	authored        contract.KVRequest
+	cancel          context.CancelFunc
+	canceled        bool
+	out             <-chan outcome
+	finished        <-chan struct{}
+	management      *LeaseManagementReceipt
+	managementDraft *leaseManagementDraft
 }
 
 // Document is UI-thread owned. Workers capture immutable requests and their
@@ -79,6 +91,7 @@ type Document struct {
 	job                                                     *operation
 	io                                                      *fileOperation
 	confirmation                                            *confirmation
+	leaseManagement                                         *leaseManagementDraft
 	last, unknown                                           *Receipt
 	selectedUnknown                                         bool
 	error                                                   string
@@ -239,6 +252,7 @@ func (s *State) SetMethod(d *Document, method string) {
 	if s.owned(d) && !d.Busy() && d.method != method {
 		d.method = method
 		d.confirmation = nil
+		d.leaseManagement = nil
 		d.renewalConfirmation = nil
 		d.permit = nil
 	}
@@ -347,18 +361,23 @@ func (s *State) Run(d *Document) {
 			d.error = locales.Text("原写入未确认；恢复后可读取，关闭页签可放弃本地草稿与回执")
 			return
 		}
-		d.confirmation = &confirmation{lease: d.lease, plan: plan, authored: authored, open: true}
+		d.confirmation = &confirmation{lease: d.lease, plan: plan, authored: authored, editor: authored, open: true}
 		return
 	}
 	s.execute(d, plan, authored)
 }
 func (s *State) execute(d *Document, plan contract.KVPreparation, authored contract.KVRequest) {
+	s.executeManagement(d, plan, authored, nil)
+}
+func (s *State) executeManagement(d *Document, plan contract.KVPreparation, authored contract.KVRequest, management *LeaseManagementReceipt) {
 	lease := d.lease
 	d.confirmation = nil
+	d.leaseManagement = nil
 	s.start(d, "execute", authored, func(ctx context.Context) outcome {
 		r, err := lease.Execute(ctx, plan)
 		return outcome{result: r, err: err}
 	})
+	d.job.management = management.clone()
 }
 func (s *State) Confirm(d *Document, checked bool) {
 	if !s.owned(d) || d.confirmation == nil {
@@ -368,17 +387,18 @@ func (s *State) Confirm(d *Document, checked bool) {
 	if !checked || !s.check(d) {
 		return
 	}
-	if p.lease != d.lease || p.authored != d.Request() || d.hasUnknownWrites() {
+	if p.lease != d.lease || p.editor != d.Request() || d.hasUnknownWrites() || p.management != nil && (!sameEventScope(p.management.Scope, d.scope) || !p.plan.Writes() || !managementRequestEqual(p.authored, p.plan.Snapshot())) {
 		d.confirmation = nil
 		d.error = locales.Text("KV 请求已更改，请重新预览")
 		return
 	}
-	s.execute(d, p.plan, p.authored)
+	s.executeManagement(d, p.plan, p.authored, p.management)
 }
 func (s *State) CancelConfirmation(d *Document) {
 	if s.owned(d) {
 		d.renewalConfirmation = nil
 		d.confirmation = nil
+		d.leaseManagement = nil
 	}
 }
 func (s *State) RequestCancel(d *Document) {
@@ -436,8 +456,11 @@ func (s *State) Consume() {
 		}
 		s.consumeRenewal(d)
 		s.consumeEvents(d)
-		if d.confirmation != nil && d.confirmation.authored != d.Request() {
+		if d.confirmation != nil && d.confirmation.editor != d.Request() {
 			d.confirmation = nil
+		}
+		if d.leaseManagement != nil && (d.leaseManagement.editor != d.Request() || d.leaseManagement.lease != d.lease || d.needsRecovery) {
+			d.leaseManagement = nil
 		}
 		if d.job != nil {
 			select {
@@ -452,7 +475,7 @@ func (s *State) Consume() {
 					d.selectedBrowser = false
 					d.selectedRenewal = false
 					d.selectedEvents = false
-					receipt := &Receipt{Scope: job.scope.Clone(), Authored: job.authored, Result: r.result.Clone()}
+					receipt := &Receipt{Scope: job.scope.Clone(), Authored: job.authored, Result: r.result.Clone(), LeaseManagement: job.management.clone()}
 					if r.err != nil {
 						receipt.Error = r.err.Error()
 					}
@@ -463,6 +486,9 @@ func (s *State) Consume() {
 				}
 				if job.kind == "lease-browse" || job.kind == "lease-detail" {
 					s.consumeLeaseBrowser(d, job, r)
+				}
+				if job.kind == "lease-revoke-observe" {
+					s.consumeRevokeObservation(d, job, r)
 				}
 				if job.kind == "recover" && r.err == nil && r.lease != nil {
 					scope := r.lease.Scope().Clone()
@@ -490,6 +516,7 @@ func (s *State) Consume() {
 		if d.job == nil && d.lease != nil && d.lease.CheckKVLease() != nil {
 			d.needsRecovery = true
 			d.confirmation = nil
+			d.leaseManagement = nil
 		}
 	}
 }
@@ -512,7 +539,7 @@ func (s *State) GuardLeave(d *Document, next func(ui.Services)) bool {
 	if d.permit != nil && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && !d.Busy() && !d.FileBusy() {
 		return false
 	}
-	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() {
+	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && d.leaseManagement == nil && (d.confirmation == nil || d.confirmation.management == nil) {
 		return false
 	}
 	s.leave = &leaveDecision{doc: d, next: next}
@@ -535,6 +562,8 @@ func (s *State) DecideLeave(services ui.Services, discard bool) {
 	}
 	next := s.leave.next
 	s.leave = nil
+	d.leaseManagement = nil
+	d.confirmation = nil
 	d.permit = &leaveStamp{request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail}
 	if next != nil {
 		next(services)
@@ -616,6 +645,7 @@ func (s *State) Close(d *Document) {
 	}
 	d.Editor = nil
 	d.confirmation = nil
+	d.leaseManagement = nil
 	d.last = nil
 	d.unknown = nil
 	d.job = nil

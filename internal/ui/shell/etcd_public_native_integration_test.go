@@ -113,6 +113,18 @@ func captureEtcdPublic(t *testing.T, s *State, phase string) {
 		for _, size := range [][2]int{{1280, 800}, {720, 520}} {
 			tt := ui.NewTester(s.View, size[0], size[1])
 			tt.Frame()
+			if phase == "lease-management-public-grant-confirmation" || phase == "lease-management-public-revoke-confirmation" {
+				labels := []string{"确认 KV 写入请求", "我确认执行此原生写入请求", "确认执行 KV 写入", "取消"}
+				if phase == "lease-management-public-revoke-confirmation" {
+					labels = append(labels, "复制完整撤销观察", "撤销按 ID 执行；关联键可能变化，ID 可能被重新使用", "没有 CAS 保护；后来 TTL 为 -1 也不能确认原未知撤销")
+				}
+				for _, label := range labels {
+					r, ok := tt.Find(locales.Text(label))
+					if !ok || r.W <= 0 || r.X < 0 || r.Y < 0 || r.X+r.W > float32(size[0])+1 || r.Y+r.H > float32(size[1])+1 {
+						t.Fatal("public management confirmation clipped", phase, language, label, r)
+					}
+				}
+			}
 			if phase == "insert-preview" || phase == "rename-preview" {
 				for _, label := range []string{"确认键更改", "复制完整预览", "取消", "确认并提交更改"} {
 					r, ok := tt.Find(locales.Text(label))

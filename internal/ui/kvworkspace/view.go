@@ -289,6 +289,15 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 			ui.Text(c, locales.Text("运行请求后显示原生回执")).TextColor(p.Muted)
 			return
 		}
+		if r.LeaseManagement != nil {
+			ui.Text(c, fmt.Sprintf("ID %d · TTL %d", r.LeaseManagement.RequestedID, r.LeaseManagement.RequestedTTL)).SingleLine()
+		}
+		if id, valid := acknowledgedGrantID(r); valid {
+			ui.Text(c, fmt.Sprintf(locales.Text("服务端授予 ID：%d"), id)).Bold().SingleLine()
+			if ui.Button(c, locales.Text("读取已授予租约")).Disabled(d.Busy() || d.needsRecovery || r != d.last || r.Error != "" || !sameEventScope(r.Scope, d.scope)).Clicked() {
+				s.ReadGrantedLease(d)
+			}
+		}
 		ui.Text(c, ReceiptStatus(r.Result)).Bold().TextColor(p.Text)
 		h := r.Result.Header
 		ui.Text(c, fmt.Sprintf("%s · revision %d · cluster %d · member %d", r.Result.Code, h.Revision, h.ClusterID, h.MemberID)).SingleLine().Tooltip(fmt.Sprintf("%s\n%s\nPrefix (Base64): %s", r.Result.Request.Method, r.Scope.Version, base64.StdEncoding.EncodeToString(r.Scope.Prefix)))
@@ -318,12 +327,17 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 }
 func (s *State) Modals(c *ui.Context) {
 	s.renewalModals(c)
+	s.leaseManagementModals(c)
 	for _, d := range s.documents {
 		if !s.active(d) || d.confirmation == nil || s.leave != nil {
 			continue
 		}
 		confirmation := d.confirmation
 		theme.Modal(c.Key(fmt.Sprintf("kv-confirm-%d", d.id)), &confirmation.open, func() {
+			if confirmation.management != nil {
+				s.leaseManagementConfirmationView(c, d, confirmation)
+				return
+			}
 			ui.Column(c).Width(560).Gap(8).Children(func() {
 				ui.Text(c, locales.Text("确认 KV 写入请求")).Bold()
 				ui.Text(c, confirmation.plan.Snapshot().Method).SingleLine().Tooltip(confirmation.plan.Snapshot().Method)

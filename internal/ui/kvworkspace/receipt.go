@@ -41,10 +41,12 @@ func encodeOperationReceipt(r Receipt) ([]byte, error) {
 		JSONCaptureError    string          `json:"json_capture_error,omitempty"`
 		ProjectionError     string          `json:"projection_error,omitempty"`
 		Error               string          `json:"error,omitempty"`
+		LeaseManagement     *leaseManagementRecord `json:"lease_management,omitempty"`
 	}{Version: 1, Scope: identity{ProfileID: strconv.FormatInt(r.Scope.Namespace.ProfileID, 10), Generation: strconv.FormatUint(r.Scope.Generation, 10), ClusterID: strconv.FormatUint(r.Scope.Header.ClusterID, 10), MemberID: strconv.FormatUint(r.Scope.Header.MemberID, 10), Revision: strconv.FormatInt(r.Scope.Header.Revision, 10), RaftTerm: strconv.FormatUint(r.Scope.Header.RaftTerm, 10), Version: r.Scope.Version, Catalog: r.Scope.Namespace.Catalog, Schema: r.Scope.Namespace.Schema, PrefixBase64: base64.StdEncoding.EncodeToString(r.Scope.Prefix)}, Method: r.Result.Request.Method, AuthoredJSON: r.Authored.JSON, CanonicalJSON: r.Result.Request.JSON, Attempted: r.Result.Attempted, Completed: r.Result.Completed, WriteOutcomeUnknown: r.Result.WriteOutcomeUnknown, Code: r.Result.Code, Header: identity{ClusterID: strconv.FormatUint(h.ClusterID, 10), MemberID: strconv.FormatUint(h.MemberID, 10), Revision: strconv.FormatInt(h.Revision, 10), RaftTerm: strconv.FormatUint(h.RaftTerm, 10)}, Native: r.Result.Native, JSONCaptureError: r.Result.JSONCaptureError, ProjectionError: r.Result.ProjectionError, Error: r.Error}
 	if r.Result.JSON != "" {
 		record.JSON = json.RawMessage(r.Result.JSON)
 	}
+	record.LeaseManagement = managementRecord(r.LeaseManagement)
 	raw, err := json.MarshalIndent(record, "", "  ")
 	if len(raw) > 128<<20 {
 		return nil, jsondocument.ErrBounds

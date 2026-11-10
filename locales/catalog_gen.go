@@ -33479,3 +33479,205 @@ func EtcdLeaseBrowseByteCount() string { return In(i18n.Locale()).EtcdLeaseBrows
 func (msgs Messages) EtcdLeaseBrowseByteCount() string {
 	return Catalog.Format(msgs.locale, "etcdLeaseBrowseByteCount", nil)
 }
+
+// EtcdLeaseManageGrant says "授予租约"
+// in the language the app shows.
+func EtcdLeaseManageGrant() string { return In(i18n.Locale()).EtcdLeaseManageGrant() }
+
+// EtcdLeaseManageGrant says "授予租约"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageGrant() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageGrant", nil)
+}
+
+// EtcdLeaseManageRevoke says "预览撤销租约"
+// in the language the app shows.
+func EtcdLeaseManageRevoke() string { return In(i18n.Locale()).EtcdLeaseManageRevoke() }
+
+// EtcdLeaseManageRevoke says "预览撤销租约"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageRevoke() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageRevoke", nil)
+}
+
+// EtcdLeaseManageTools says "租约管理操作"
+// in the language the app shows.
+func EtcdLeaseManageTools() string { return In(i18n.Locale()).EtcdLeaseManageTools() }
+
+// EtcdLeaseManageTools says "租约管理操作"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageTools() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageTools", nil)
+}
+
+// EtcdLeaseManageIDInvalid says "请输入完整的租约 ID；撤销 ID 不能为零"
+// in the language the app shows.
+func EtcdLeaseManageIDInvalid() string { return In(i18n.Locale()).EtcdLeaseManageIDInvalid() }
+
+// EtcdLeaseManageIDInvalid says "请输入完整的租约 ID；撤销 ID 不能为零"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageIDInvalid() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageIDInvalid", nil)
+}
+
+// EtcdLeaseManageTTLInvalid says "授予 TTL 必须为正整数秒"
+// in the language the app shows.
+func EtcdLeaseManageTTLInvalid() string { return In(i18n.Locale()).EtcdLeaseManageTTLInvalid() }
+
+// EtcdLeaseManageTTLInvalid says "授予 TTL 必须为正整数秒"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageTTLInvalid() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageTTLInvalid", nil)
+}
+
+// EtcdLeaseManageGeneratedHint says "ID 为 0 时由服务端生成；只从已确认回执接纳生成 ID"
+// in the language the app shows.
+func EtcdLeaseManageGeneratedHint() string { return In(i18n.Locale()).EtcdLeaseManageGeneratedHint() }
+
+// EtcdLeaseManageGeneratedHint says "ID 为 0 时由服务端生成；只从已确认回执接纳生成 ID"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageGeneratedHint() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageGeneratedHint", nil)
+}
+
+// EtcdLeaseManageTTL says "授予 TTL（秒）"
+// in the language the app shows.
+func EtcdLeaseManageTTL() string { return In(i18n.Locale()).EtcdLeaseManageTTL() }
+
+// EtcdLeaseManageTTL says "授予 TTL（秒）"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageTTL() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageTTL", nil)
+}
+
+// EtcdLeaseManageObserveHint says "先重新读取此 ID 的完整关联键，再单独确认原生撤销"
+// in the language the app shows.
+func EtcdLeaseManageObserveHint() string { return In(i18n.Locale()).EtcdLeaseManageObserveHint() }
+
+// EtcdLeaseManageObserveHint says "先重新读取此 ID 的完整关联键，再单独确认原生撤销"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageObserveHint() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageObserveHint", nil)
+}
+
+// EtcdLeaseManagePreviewGrant says "预览授予请求"
+// in the language the app shows.
+func EtcdLeaseManagePreviewGrant() string { return In(i18n.Locale()).EtcdLeaseManagePreviewGrant() }
+
+// EtcdLeaseManagePreviewGrant says "预览授予请求"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManagePreviewGrant() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManagePreviewGrant", nil)
+}
+
+// EtcdLeaseManageObserve says "读取撤销关联键"
+// in the language the app shows.
+func EtcdLeaseManageObserve() string { return In(i18n.Locale()).EtcdLeaseManageObserve() }
+
+// EtcdLeaseManageObserve says "读取撤销关联键"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageObserve() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageObserve", nil)
+}
+
+// EtcdLeaseManageRevokeRace says "撤销按 ID 执行；关联键可能变化，ID 可能被重新使用"
+// in the language the app shows.
+func EtcdLeaseManageRevokeRace() string { return In(i18n.Locale()).EtcdLeaseManageRevokeRace() }
+
+// EtcdLeaseManageRevokeRace says "撤销按 ID 执行；关联键可能变化，ID 可能被重新使用"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageRevokeRace() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageRevokeRace", nil)
+}
+
+// EtcdLeaseManageNoCAS says "没有 CAS 保护；后来 TTL 为 -1 也不能确认原未知撤销"
+// in the language the app shows.
+func EtcdLeaseManageNoCAS() string { return In(i18n.Locale()).EtcdLeaseManageNoCAS() }
+
+// EtcdLeaseManageNoCAS says "没有 CAS 保护；后来 TTL 为 -1 也不能确认原未知撤销"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageNoCAS() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageNoCAS", nil)
+}
+
+// EtcdLeaseManageObservedKeys says "撤销前关联键观察"
+// in the language the app shows.
+func EtcdLeaseManageObservedKeys() string { return In(i18n.Locale()).EtcdLeaseManageObservedKeys() }
+
+// EtcdLeaseManageObservedKeys says "撤销前关联键观察"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageObservedKeys() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageObservedKeys", nil)
+}
+
+// EtcdLeaseManageCopyObservation says "复制完整撤销观察"
+// in the language the app shows.
+func EtcdLeaseManageCopyObservation() string {
+	return In(i18n.Locale()).EtcdLeaseManageCopyObservation()
+}
+
+// EtcdLeaseManageCopyObservation says "复制完整撤销观察"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageCopyObservation() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageCopyObservation", nil)
+}
+
+// EtcdLeaseManageRenewalPreview says "预览此租约持续续租"
+// in the language the app shows.
+func EtcdLeaseManageRenewalPreview() string { return In(i18n.Locale()).EtcdLeaseManageRenewalPreview() }
+
+// EtcdLeaseManageRenewalPreview says "预览此租约持续续租"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageRenewalPreview() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageRenewalPreview", nil)
+}
+
+// EtcdLeaseManageDetailTools says "租约详情操作"
+// in the language the app shows.
+func EtcdLeaseManageDetailTools() string { return In(i18n.Locale()).EtcdLeaseManageDetailTools() }
+
+// EtcdLeaseManageDetailTools says "租约详情操作"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageDetailTools() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageDetailTools", nil)
+}
+
+// EtcdLeaseManageGrantedID says "服务端授予 ID：%d"
+// in the language the app shows.
+func EtcdLeaseManageGrantedID() string { return In(i18n.Locale()).EtcdLeaseManageGrantedID() }
+
+// EtcdLeaseManageGrantedID says "服务端授予 ID：%d"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageGrantedID() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageGrantedID", nil)
+}
+
+// EtcdLeaseManageReadGranted says "读取已授予租约"
+// in the language the app shows.
+func EtcdLeaseManageReadGranted() string { return In(i18n.Locale()).EtcdLeaseManageReadGranted() }
+
+// EtcdLeaseManageReadGranted says "读取已授予租约"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageReadGranted() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageReadGranted", nil)
+}
+
+// EtcdLeaseManageMenu says "管理租约"
+// in the language the app shows.
+func EtcdLeaseManageMenu() string { return In(i18n.Locale()).EtcdLeaseManageMenu() }
+
+// EtcdLeaseManageMenu says "管理租约"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageMenu() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageMenu", nil)
+}
+
+// EtcdLeaseManageSavePreview says "保存租约预览请求"
+// in the language the app shows.
+func EtcdLeaseManageSavePreview() string { return In(i18n.Locale()).EtcdLeaseManageSavePreview() }
+
+// EtcdLeaseManageSavePreview says "保存租约预览请求"
+// in the language of msgs.
+func (msgs Messages) EtcdLeaseManageSavePreview() string {
+	return Catalog.Format(msgs.locale, "etcdLeaseManageSavePreview", nil)
+}
