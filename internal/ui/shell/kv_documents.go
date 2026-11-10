@@ -31,8 +31,7 @@ func (s *State) kvWorkspaceDependencies() kvworkspace.Dependencies {
 	}
 }
 
-// OpenKVRequests hosts an explicitly installed optional KV provider. Builtin
-// product/chooser/menu publication remains a separate acceptance step.
+// OpenKVRequests opens a native request document bound to its original profile.
 func (s *State) OpenKVRequests(profileID int64) bool {
 	if s.runtime == nil {
 		return false

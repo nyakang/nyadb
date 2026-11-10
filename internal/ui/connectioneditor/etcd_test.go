@@ -165,7 +165,7 @@ func TestEtcdEditorCapturedCheckAuthCancelAndPrivateFiles(t *testing.T) {
 	s.setEtcdAuth("basic")
 	s.connectionDraft.Username = " exact "
 	s.connectionSecret = "captured-password"
-	for _, uri := range []string{"etcd://user:private@localhost?auth=none", "etcd://localhost"} {
+	for _, uri := range []string{"etcd://user:private@localhost?auth=none", "etcd://localhost/db"} {
 		if e := s.ImportURI(uri); e == nil || s.connectionSecret != "captured-password" || s.connectionDraft.Name != "captured" {
 			t.Fatal("invalid import changed original draft")
 		}

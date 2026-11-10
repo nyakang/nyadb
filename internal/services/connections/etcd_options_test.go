@@ -12,7 +12,7 @@ import (
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
-func TestEtcdProfileExactPrefixCredentialsAndPrivateURI(t *testing.T) {
+func TestEtcdProfileExactPrefixCredentialsAndPublicURI(t *testing.T) {
 	for _, encoding := range []string{"text", "base64"} {
 		for _, prefix := range []string{"", " /Case/键🐱 ", strings.Repeat("a", 4096)} {
 			original := []byte(prefix)
@@ -53,11 +53,11 @@ func TestEtcdProfileExactPrefixCredentialsAndPrivateURI(t *testing.T) {
 			}
 		}
 	}
-	if _, ok := connections.Describe(connections.Etcd); ok {
-		t.Fatal("private phase published descriptor")
+	if d, ok := connections.Describe(connections.Etcd); !ok || !d.Capabilities.KeyValues || d.Capabilities.Query || d.DefaultPort != 2379 {
+		t.Fatal("public native KV descriptor")
 	}
-	if _, err := connections.ParseURI("etcd://localhost"); err == nil {
-		t.Fatal("private phase published generic URI")
+	if parsed, err := connections.ParseURI("etcd://localhost"); err != nil || parsed.Profile.Kind != connections.Etcd {
+		t.Fatal("public generic URI", err)
 	}
 	p, _ := connections.Defaults(connections.Etcd)
 	p.Name = "private"

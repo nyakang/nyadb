@@ -166,6 +166,12 @@ func (s *State) currentTab() *tab {
 }
 
 func (s *State) openQuery() {
+	if p, ok := s.currentProfile(); s.profileMode && ok && p.Kind == connections.Etcd {
+		if !s.OpenKVRequests(p.ID) {
+			s.status = locales.Text("请先连接原连接")
+		}
+		return
+	}
 	if s.sqlWorkspace.PersistenceLoading() {
 		s.status = locales.Text("等待加载")
 		return
@@ -263,7 +269,7 @@ func (s *State) dispatchToolbar(action string, services ui.Services) {
 	switch action {
 	case "连接":
 		s.openConnectionDialog()
-	case "新建查询":
+	case "新建查询", "新建 KV 请求":
 		s.openQuery()
 	case "图标签", "关系类型", "图索引", "图约束", "图过程", "图函数", "集合信息", "向量点", "集合别名", "文档", "索引信息", "索引设置", "索引统计", "数据库信息", "设计文档", "Core", "索引", "别名", "数据流", "键", "集合", "表", "视图", "函数", "类型", "查询":
 		s.showObjects(action)

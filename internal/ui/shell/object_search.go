@@ -51,7 +51,7 @@ func (s *State) openSearchObject(services ui.Services, profile int64, generation
 	s.navigation.SuspendFilter()
 	s.revealNavigationNode(navigation.Node{Kind: "object", ProfileID: profile, Database: database, Object: entry.Object.Name, Category: entry.Object.Kind})
 	object := entry.Object
-	if s.sessions.Current().Kind == connections.Neo4j && (object.Ref.Kind == "label" || object.Ref.Kind == "relationship") {
+	if s.sessions.Current().Kind == connections.Neo4j && (object.Ref.Kind == "label" || object.Ref.Kind == "relationship") || s.sessions.Current().Kind == connections.Etcd && object.Ref.Kind == "keyspace" {
 		s.openQualifiedData(services, generation, database, object.Ref)
 		return
 	}

@@ -381,8 +381,8 @@ func TestEtcdNativeWorkspaceMethodsPureConfirmationAndExactReceipts(t *testing.T
 	if deleted.Result.Reply.Deleted != 1 {
 		t.Fatal("native delete receipt lost")
 	}
-	if _, ok := connections.Describe(connections.Etcd); ok {
-		t.Fatal("private workspace published a product")
+	if d, ok := connections.Describe(connections.Etcd); !ok || !d.Capabilities.KeyValues || d.Capabilities.Query {
+		t.Fatal("native KV workspace descriptor boundary changed")
 	}
 }
 func TestEtcdNativeWorkspaceMVCCAndDeniedRequestRemainExplicit(t *testing.T) {

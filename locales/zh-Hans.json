@@ -1,4 +1,5 @@
 {
+  "etcdNewKVRequest": "新建 KV 请求",
   "mysqlFamilyDisconnected": "%s 已断开",
   "mysqlFamilyConnectionCanceled": "%s 连接已取消",
   "mysqlFamilySessionPassword": "本次 %s 会话密码",

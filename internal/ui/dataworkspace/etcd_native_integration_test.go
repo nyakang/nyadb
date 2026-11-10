@@ -18,7 +18,6 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/dbruntime"
-	"github.com/nyakang/nyadb/internal/services/etcd"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 	pb "go.etcd.io/etcd/api/v3/etcdserverpb"
@@ -29,7 +28,7 @@ import (
 func etcdDataProfile(t *testing.T) (connections.Profile, string) {
 	t.Helper()
 	if os.Getenv("NYADB_ETCD_DATA_IT") != "1" {
-		t.Skip("requires owned private etcd data fixture")
+		t.Skip("requires owned public etcd data fixture")
 	}
 	u, err := url.Parse(os.Getenv("NYADB_ETCD_ENDPOINT"))
 	if err != nil || u.Hostname() == "" {
@@ -133,7 +132,7 @@ func captureEtcdData(t *testing.T, s *State, d *Document, name string) {
 func TestEtcdNativeDataSharedGridOriginalPreviewParkingRefreshAndGeneration(t *testing.T) {
 	p, secret := etcdDataProfile(t)
 	m := dbruntime.New()
-	m.Register(connections.Etcd, dbruntime.ProviderFunc(etcd.OpenSession))
+	dbruntime.RegisterBuiltins(m, nil)
 	defer m.Close()
 	handle, err := m.ConnectSession(context.Background(), p, secret)
 	if err != nil {
@@ -153,23 +152,16 @@ func TestEtcdNativeDataSharedGridOriginalPreviewParkingRefreshAndGeneration(t *t
 		etcdDataDo(t, admin, &pb.PutRequest{Key: append(bytes.Clone(prefix), byte(i)), Value: bytes.Repeat([]byte{0, byte(i), 255}, 500)})
 	}
 	active := Session{ProfileID: p.ID, Generation: handle.Generation(), Connected: true}
-	// Public descriptor capabilities intentionally remain unavailable. This
-	// private fixture injects the original raw document provider; Manager owns
-	// its publication and closes it on generation replacement.
-	original, err := contract.Require[*etcd.Session](handle)
-	if err != nil {
-		t.Fatal(err)
-	}
 	s := New(Dependencies{Session: func() Session { return active }, RuntimeFor: func(id int64) Runtime {
 		if id == p.ID {
-			return contract.ComposeData(original)
+			return m.Data(id)
 		}
 		return Runtime{}
 	}})
 	defer s.CloseAll()
 	object := m.Namespace(p.ID, "kv").Object("keyspace", "keys")
-	d := s.OpenObject(1, object, original.Capabilities())
-	sibling := s.OpenObject(2, object, original.Capabilities())
+	d := s.OpenObject(1, object, handle.Capabilities())
+	sibling := s.OpenObject(2, object, handle.Capabilities())
 	if d == nil || sibling == nil {
 		t.Fatal("runtime did not publish original qualified namespace", object)
 	}

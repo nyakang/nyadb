@@ -8,6 +8,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -43,6 +44,9 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 	mod, selected := primaryModifier(), ""
 	doc := current.query
 	ready := doc != nil && doc.Editor != nil
+	nativeKV := current.kv != nil
+	profile, hasProfile := s.currentProfile()
+	etcdProfile := s.profileMode && hasProfile && profile.Kind == connections.Etcd
 	item := func(label, command string, enabled bool, mods ui.Modifiers, key ui.Key) {
 		entry := m.Item(locales.Text(label))
 		chosen := entry.Chosen()
@@ -57,10 +61,17 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 	switch section {
 	case "文件":
 		item("新建连接…", "new_connection", true, 0, 0)
-		item("新建查询", "new_query", true, mod, ui.KeyN)
-		item("打开 SQL…", "open_sql", !s.sqlWorkspace.PersistenceLoading(), mod, ui.KeyO)
+		if etcdProfile {
+			item("新建 KV 请求", "new_query", s.toolbarActionAvailable("新建 KV 请求"), mod, ui.KeyN)
+			item("打开请求文本", "open_kv", nativeKV && !current.kv.Busy() && !current.kv.FileBusy(), mod, ui.KeyO)
+		} else {
+			item("新建查询", "new_query", true, mod, ui.KeyN)
+			item("打开 SQL…", "open_sql", !s.sqlWorkspace.PersistenceLoading(), mod, ui.KeyO)
+		}
 		m.Separator()
-		if current.data != nil {
+		if nativeKV {
+			item("保存请求", "save_kv", !current.kv.FileBusy(), mod, ui.KeyS)
+		} else if current.data != nil {
 			item("保存数据更改", "save_data", s.dataWorkspace.CanSave(current.data), mod, ui.KeyS)
 		} else if current.object != nil && current.object.GraphSchemaManagementMode() {
 			item("预览图结构操作", "save_design", s.objectWorkspace.CanEditDesign(current.object), mod, ui.KeyS)
@@ -73,7 +84,11 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 		} else {
 			item("保存查询", "save", ready, mod, ui.KeyS)
 		}
-		item("另存为", "save_as", ready, mod|ui.Shift, ui.KeyS)
+		if nativeKV {
+			item("另存为", "save_kv_as", !current.kv.FileBusy(), mod|ui.Shift, ui.KeyS)
+		} else {
+			item("另存为", "save_as", ready, mod|ui.Shift, ui.KeyS)
+		}
 		m.Separator()
 		item("关闭当前页签", "close", s.activeTab != 0, mod, ui.KeyW)
 	case "编辑":
@@ -84,13 +99,19 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 		}{{"撤销", "undo", ui.KeyZ, mod}, {"重做", "redo", ui.KeyZ, mod | ui.Shift}, {"剪切", "cut", ui.KeyX, mod}, {"复制", "copy", ui.KeyC, mod}, {"粘贴", "paste", ui.KeyV, mod}, {"全选", "select_all", ui.KeyA, mod}, {"查找…", "find", ui.KeyF, mod}, {"替换…", "replace", ui.KeyH, mod}} {
 			item(entry.label, entry.command, scope.edit.Available(entry.command), entry.mods, entry.key)
 		}
-		item("格式化 SQL", "format", ready && !doc.Loading(), mod|ui.Shift, ui.KeyI)
+		if !etcdProfile && !nativeKV {
+			item("格式化 SQL", "format", ready && !doc.Loading(), mod|ui.Shift, ui.KeyI)
+		}
 		m.Separator()
 		item("编辑连接", "edit_connection", s.profileMode && s.selectedProfileID > 0, 0, 0)
 		item("复制连接", "copy_connection", s.profileMode && s.selectedProfileID > 0, 0, 0)
 	case "窗口":
 		item("命名工作区…", "workspaces", s.workspaces.store != nil, 0, 0)
-		item("新建 SQL 页签", "new_query", true, mod, ui.KeyN)
+		if etcdProfile {
+			item("新建 KV 请求", "new_query", s.toolbarActionAvailable("新建 KV 请求"), mod, ui.KeyN)
+		} else {
+			item("新建 SQL 页签", "new_query", true, mod, ui.KeyN)
+		}
 		item("关闭当前页签", "close", s.activeTab != 0, mod, ui.KeyW)
 		item("关闭其它页签", "close_others", len(s.tabs) > 1, 0, 0)
 		item("关闭所有页签", "close_all", len(s.tabs) > 1, 0, 0)
@@ -167,6 +188,10 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 		if doc != nil {
 			s.sqlWorkspace.OpenFile(doc)
 		}
+	case "open_kv":
+		s.kvWorkspace.OpenRequest(current.kv)
+	case "save_kv", "save_kv_as":
+		s.kvWorkspace.SaveRequest(current.kv, selected == "save_kv_as")
 	case "save":
 		s.sqlWorkspace.Save(doc, false, nil)
 	case "save_design":

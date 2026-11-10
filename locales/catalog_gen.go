@@ -34,6 +34,16 @@ type Messages struct{ locale string }
 // source language.
 func In(locale string) Messages { return Messages{locale} }
 
+// EtcdNewKVRequest says "新建 KV 请求"
+// in the language the app shows.
+func EtcdNewKVRequest() string { return In(i18n.Locale()).EtcdNewKVRequest() }
+
+// EtcdNewKVRequest says "新建 KV 请求"
+// in the language of msgs.
+func (msgs Messages) EtcdNewKVRequest() string {
+	return Catalog.Format(msgs.locale, "etcdNewKVRequest", nil)
+}
+
 // MysqlFamilyDisconnected says "%s 已断开"
 // in the language the app shows.
 func MysqlFamilyDisconnected() string { return In(i18n.Locale()).MysqlFamilyDisconnected() }

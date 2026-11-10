@@ -68,7 +68,7 @@ func (s *State) workspaceSnapshot() queries.Workspace {
 	w := s.sqlWorkspace.Snapshot(s.currentTab().id, ids)
 	w.SnapshotVersion = 2
 	for _, t := range s.tabs {
-		// Private KV request files are explicitly saved; no native execution or
+		// Native KV request files are explicitly saved; no native execution or
 		// unconfirmed receipt is reconstructed by SQL workspace restoration.
 		if t.kv != nil {
 			continue

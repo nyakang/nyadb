@@ -147,8 +147,8 @@ func TestEtcdNativeRuntimeOriginalPublicationSnapshotsAndExplicitRecovery(t *tes
 	if current.Reply.Entries[0].Version != 1 || !bytes.Equal(current.Reply.Entries[0].Value, []byte{0, 255, 1}) {
 		t.Fatal("recovery replayed")
 	}
-	if _, ok := connections.Describe(connections.Etcd); ok {
-		t.Fatal("private runtime published product")
+	if descriptor, ok := connections.Describe(connections.Etcd); !ok || !descriptor.Capabilities.KeyValues || descriptor.Capabilities.Query {
+		t.Fatal("native KV descriptor capability boundary changed")
 	}
 }
 

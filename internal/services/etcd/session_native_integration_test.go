@@ -176,8 +176,8 @@ func TestEtcdNativeSessionOriginalScopePurePlansAndExactReplies(t *testing.T) {
 	if deleted.Reply.Deleted != 1 || !bytes.Equal(deleted.Reply.Entries[0].Value, []byte("delete")) {
 		t.Fatal("delete receipt lost")
 	}
-	if _, ok := connections.Describe(connections.Etcd); ok {
-		t.Fatal("private phase published a product")
+	if descriptor, ok := connections.Describe(connections.Etcd); !ok || !descriptor.Capabilities.KeyValues || descriptor.Capabilities.Query {
+		t.Fatal("native KV descriptor capability boundary changed")
 	}
 }
 func TestEtcdNativeSessionMVCCAndNativePermissionBoundary(t *testing.T) {

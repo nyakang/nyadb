@@ -65,7 +65,11 @@ def certificates(folder):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False, data=False):
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False):
+    if smoke:
+        public = True
+    if public:
+        profile = workspace = data = True
     if workspace or data:
         session = True
     image = IMAGES[version]
@@ -86,8 +90,10 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
     if workspace:
         sources += [p for folder in ('internal/ui/kvworkspace', 'internal/ui/shell', 'internal/bootstrap', 'locales') for p in (ROOT/folder).glob('*.go')]
         sources += [ROOT/'locales/en.json', ROOT/'locales/zh-Hans.json']
+    if public:
+        sources += [p for folder in ('internal/ui/connectioncatalog', 'internal/ui/navigation', 'internal/ui/sessionbrowser', 'internal/ui/objectworkspace', 'internal/ui/theme', 'internal/storage/localdb') for p in (ROOT/folder).glob('*.go')]
     sources = sorted(set(sources))
-    report = dict(nonce=nonce, scope='private-kv-data-adapter' if data else ('private-kv-request-workspace' if workspace else ('private-kv-session-runtime' if session else ('private-profile-editor' if profile else 'private-native-v3-foundation'))), mode=mode, version=version,
+    report = dict(nonce=nonce, scope='public-etcd-smoke' if smoke else ('public-etcd-workbench' if public else ('kv-data-adapter-regression' if data else ('private-kv-request-workspace' if workspace else ('private-kv-session-runtime' if session else ('private-profile-editor' if profile else 'private-native-v3-foundation'))))), mode=mode, version=version,
                   image=image, race=race, passed=False,
                   source_hashes={str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources})
     identifier = None
@@ -174,9 +180,15 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
             if session:
                 required += ('SessionOriginalScopePurePlansAndExactReplies', 'SessionMVCCAndNativePermissionBoundary', 'SessionActualProcessedReplyFaultsAndRecovery', 'SessionOriginalReadBusyCancellationAndClose', 'SessionLateHandshakeClosesOnlyOriginalHandle', 'SessionLeaseLimitsAndRevokedTokenRecovery', 'RuntimeOriginalPublicationSnapshotsAndExplicitRecovery', 'RuntimeActualProcessedPutFaultAndGenerationReplacement', 'RuntimeLateOriginalHandshakeCannotCloseReplacement')
             if workspace:
-                required += ('WorkspaceMethodsPureConfirmationAndExactReceipts', 'WorkspaceMVCCAndDeniedRequestRemainExplicit', 'WorkspaceLargeClipboardFilesAndCapturedSave', 'WorkspaceActualProcessedFaultRecoveryReadbackAndLeave', 'WorkspaceParkedOriginalCompletionAndStalePreview', 'WorkspaceLocalizedNativeControlsAndCompletePreview', 'ShellPrivateKVDocumentsParkDisconnectRecoverAndOriginalClose')
+                required += ('WorkspaceMethodsPureConfirmationAndExactReceipts', 'WorkspaceMVCCAndDeniedRequestRemainExplicit', 'WorkspaceLargeClipboardFilesAndCapturedSave', 'WorkspaceActualProcessedFaultRecoveryReadbackAndLeave', 'WorkspaceParkedOriginalCompletionAndStalePreview', 'WorkspaceLocalizedNativeControlsAndCompletePreview', 'ShellPublicKVDocumentsParkDisconnectRecoverAndOriginalClose')
             if data:
                 required += ('DataOriginalBinaryMVCCCountAndFieldScopes', 'DataCompactionRetiresOriginalRangeAndExplicitReopen', 'DataAtomicEditsExactReceiptsAndPreservedLease', 'DataPreviewConflictsRollBackWholeOriginalBatch', 'DataFixedRevisionLosslessExportAndMaximumKey', 'DataActualTxnReceiptFaultCancelAndOriginalClose', 'DataAuxiliaryCancellationKeepsOriginalPageScope', 'DataSharedGridOriginalPreviewParkingRefreshAndGeneration', 'DataLargePagesUseBoundedRPCsAndOriginalRevision', 'DataPartialPageCancelAndClosePublishNoRows', 'DataLargeOmittedFieldsPreserveNativeValueAndLease')
+            if public:
+                environment.update(NYADB_ETCD_PUBLIC_IT='1', NYADB_ETCD_PUBLIC_IMAGES=str(report_path.with_suffix(''))+'-public-images')
+                required += ('ShellPublicChooserReopenQualifiedGridAtomicMutationsAndGuards', 'ShellPublicGridConflictKeepsOriginalAtomicBatch', 'ShellPublicGridOneMiBLeaseOnlyPreservesCompleteBytes', 'ShellPublicGridActualTxnLossCancelAndOriginalCloseNeverReplay',)
+            if smoke:
+                packages = ['./internal/ui/shell', './internal/ui/dataworkspace']
+                required = ('ShellPublicKVDocumentsParkDisconnectRecoverAndOriginalClose', 'ShellPublicChooserReopenQualifiedGridAtomicMutationsAndGuards', 'ShellPublicGridConflictKeepsOriginalAtomicBatch', 'ShellPublicGridOneMiBLeaseOnlyPreservesCompleteBytes', 'ShellPublicGridActualTxnLossCancelAndOriginalCloseNeverReplay', 'DataSharedGridOriginalPreviewParkingRefreshAndGeneration')
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
             command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
@@ -191,14 +203,14 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
             for name, expected in report['source_hashes'].items():
                 if hashlib.sha256((ROOT/name).read_bytes()).hexdigest() != expected:
                     raise RuntimeError('Native source changed during acceptance')
-            if profile:
+            if profile and not smoke:
                 pictures = sorted(Path(environment['NYADB_ETCD_PROFILE_IMAGES']).glob('*.png'))
                 if len(pictures) != 72:
                     raise RuntimeError('Native profile acceptance is missing localized images')
                 report['profile_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             if workspace:
                 pictures = sorted(Path(environment['NYADB_ETCD_WORKSPACE_IMAGES']).glob('*.png'))
-                if len(pictures) != 40:
+                if len(pictures) != (4 if smoke else 40):
                     raise RuntimeError('Native workspace acceptance is missing localized images')
                 report['workspace_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             if data:
@@ -206,6 +218,11 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                 if len(pictures) != 16:
                     raise RuntimeError('Native data acceptance is missing localized images')
                 report['data_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
+            if public:
+                pictures = sorted(Path(environment['NYADB_ETCD_PUBLIC_IMAGES']).glob('*.png'))
+                if len(pictures) != 44:
+                    raise RuntimeError('Public acceptance is missing localized images')
+                report['public_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             report.update(passed=True, accepted=accepted, log_sha256=hashlib.sha256(log_path.read_bytes()).hexdigest())
     finally:
         try:
@@ -222,6 +239,8 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=('anonymous', 'basic', 'tls', 'mtls'), default='basic')
+    parser.add_argument('--public', action='store_true')
+    parser.add_argument('--public-smoke', action='store_true')
     parser.add_argument('--profile', action='store_true')
     parser.add_argument('--session', action='store_true')
     parser.add_argument('--workspace', action='store_true')
@@ -229,4 +248,4 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke)

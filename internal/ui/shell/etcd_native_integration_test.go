@@ -3,6 +3,7 @@ package shell
 import (
 	"context"
 	"image/png"
+	"io"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -13,14 +14,14 @@ import (
 	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/services/connections"
-	"github.com/nyakang/nyadb/internal/services/dbruntime"
-	"github.com/nyakang/nyadb/internal/services/etcd"
+	"github.com/nyakang/nyadb/internal/services/queries"
+	"github.com/nyakang/nyadb/internal/ui/kvworkspace"
 	"github.com/nyakang/nyadb/locales"
 	pb "go.etcd.io/etcd/api/v3/etcdserverpb"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func TestEtcdNativeShellPrivateKVDocumentsParkDisconnectRecoverAndOriginalClose(t *testing.T) {
+func TestEtcdNativeShellPublicKVDocumentsParkDisconnectRecoverAndOriginalClose(t *testing.T) {
 	if os.Getenv("NYADB_ETCD_WORKSPACE_IT") != "1" {
 		t.Skip("requires owned native etcd workspace fixture")
 	}
@@ -45,16 +46,33 @@ func TestEtcdNativeShellPrivateKVDocumentsParkDisconnectRecoverAndOriginalClose(
 	if os.Getenv("NYADB_ETCD_MODE") != "anonymous" {
 		p.EtcdOptions.Auth, p.Username, secret = "basic", os.Getenv("NYADB_ETCD_USERNAME"), os.Getenv("NYADB_ETCD_SECRET")
 	}
-	s := newState(false)
-	t.Cleanup(s.CloseMySQLSessions)
-	s.profileMode = true
-	s.navigation.SetProfiles([]connections.Profile{p}, nil, p.ID)
-	s.runtime.Register(connections.Etcd, dbruntime.ProviderFunc(etcd.OpenSession))
-	if err := s.runtime.Connect(context.Background(), p, secret); err != nil {
+	s, _, profiles, _ := profileTestState(t)
+	p.ID = 0
+	p, err = profiles.Create(context.Background(), p)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if !s.OpenKVRequests(p.ID) {
-		t.Fatal("injected original KV provider did not open")
+	s.loadProfiles()
+	s.selectProfileByName(p.Name)
+	t.Cleanup(s.CloseMySQLSessions)
+	var services ui.Services
+	tt := ui.NewTester(func(c *ui.Context) { services = c.Services(); s.View(c) }, 1280, 800)
+	s.sessions.Current().Password = secret
+	tt.Frame()
+	if err := tt.Click(locales.Text("连接所选数据库")); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(15 * time.Second)
+	for s.sessions.StatusFor(p.ID) == "连接中" && time.Now().Before(deadline) {
+		tt.Frame()
+		time.Sleep(time.Millisecond)
+	}
+	if s.sessions.StatusFor(p.ID) != "已连接" || !s.runtime.IsConnected(p.ID) {
+		t.Fatal("public sessionbrowser did not publish matching connected state", s.sessions.Current().Error)
+	}
+	tt.Frame()
+	if err := tt.Click(locales.Text("新建 KV 请求")); err != nil {
+		t.Fatal(err)
 	}
 	first := s.currentTab()
 	wait := func(tt *ui.Tester, done func() bool) {
@@ -69,7 +87,6 @@ func TestEtcdNativeShellPrivateKVDocumentsParkDisconnectRecoverAndOriginalClose(
 		}
 		tt.Frame()
 	}
-	tt := ui.NewTester(s.View, 1280, 800)
 	wait(tt, func() bool { return !first.kv.Busy() })
 	key := []byte("/shell/" + t.Name())
 	raw, _ := protojson.Marshal(&pb.PutRequest{Key: key, Value: []byte{0, 255, 1}})
@@ -95,7 +112,7 @@ func TestEtcdNativeShellPrivateKVDocumentsParkDisconnectRecoverAndOriginalClose(
 	s.kvWorkspace.Run(first.kv) // Pure write preview; do not execute.
 	s.selectTab(second.id)
 	if first.identity() == second.identity() || first.profileID() != p.ID || second.profileID() != p.ID || s.inspectorVisible() {
-		t.Fatal("private native tabs lost identity or inherited object inspector")
+		t.Fatal("native tabs lost identity or inherited object inspector")
 	}
 	rangeJSON, _ := protojson.Marshal(&pb.RangeRequest{Key: key})
 	s.kvWorkspace.SetMethod(second.kv, "/etcdserverpb.KV/Range")
@@ -113,15 +130,69 @@ func TestEtcdNativeShellPrivateKVDocumentsParkDisconnectRecoverAndOriginalClose(
 	if !ok || !receipt.Result.Completed || string(receipt.Result.Reply.Entries[0].Value) != string([]byte{0, 255, 1}) {
 		t.Fatal("parked original result lost")
 	}
+	// File/Window menu commands retain native request envelopes and never
+	// execute a request merely because its file was opened.
+	requestPath := filepath.Join(t.TempDir(), "original.nyakv")
+	copyPath := filepath.Join(t.TempDir(), "copy.nyakv")
+	pickedPath := requestPath
+	s.SetKVFiles(kvworkspace.Files{OpenPath: func() (string, error) { return requestPath, nil }, SavePath: func(string) (string, error) { return pickedPath, nil }, OpenReader: func(path string) (io.ReadCloser, error) { return os.Open(path) }, WriteStream: queries.WriteStream})
+	menu := func(section, action string) {
+		t.Helper()
+		if err := tt.Click(locales.Text(section)); err != nil {
+			t.Fatal(err)
+		}
+		if err := tt.ChooseMenuItem(locales.Text(action)); err != nil {
+			t.Fatal(err)
+		}
+		tt.Frame()
+	}
+	capturedFile := second.kv.Request()
+	menu("文件", "保存请求")
+	wait(tt, func() bool { return !second.kv.FileBusy() })
+	rawFile, err := os.ReadFile(requestPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	decoded, err := kvworkspace.DecodeRequest(rawFile)
+	if err != nil || decoded != capturedFile {
+		t.Fatal("native menu saved a SQL file or changed original request", err)
+	}
+	second.kv.Editor.Buffer.Set(second.kv.Editor.Buffer.String() + "\n")
+	menu("窗口", "新建 KV 请求")
+	third := s.currentTab()
+	if third.kv == nil || third.query != nil || third == second {
+		t.Fatal("native window menu opened SQL")
+	}
+	wait(tt, func() bool { return !third.kv.Busy() })
+	menu("文件", "打开请求文本")
+	wait(tt, func() bool { return !third.kv.FileBusy() })
+	if third.kv.Request() != capturedFile {
+		t.Fatal("native file menu changed envelope")
+	}
+	if _, ok := third.kv.LastReceipt(); ok {
+		t.Fatal("opening native request file executed it")
+	}
+	pickedPath = copyPath
+	menu("文件", "另存为")
+	wait(tt, func() bool { return !third.kv.FileBusy() })
+	copyRaw, err := os.ReadFile(copyPath)
+	if err != nil || string(copyRaw) != string(rawFile) {
+		t.Fatal("native menu save-as changed captured file", err)
+	}
+	s.selectTab(second.id)
+	tt.Frame()
 	before := second.kv.Request()
 	generation := second.kv.Scope().Generation
 	s.disconnectMySQLProfile(p.ID)
 	tt.Frame()
-	if !second.kv.NeedsRecovery() || first.kv == nil || second.kv.Request() != before || !second.kv.Dirty() || s.runtime.IsConnected(p.ID) {
+	if !second.kv.NeedsRecovery() || first.kv == nil || second.kv.Request() != before || !second.kv.Dirty() || s.runtime.IsConnected(p.ID) || s.sessions.StatusFor(p.ID) == "已连接" {
 		t.Fatal("disconnect removed native text/document or kept original session")
 	}
-	if err := s.runtime.Connect(context.Background(), p, secret); err != nil {
-		t.Fatal(err)
+	s.sessions.Current().Password = secret
+	s.startMySQLSession(services)
+	wait(tt, func() bool { return s.sessions.StatusFor(p.ID) != "连接中" })
+	if s.sessions.StatusFor(p.ID) != "已连接" || !s.runtime.IsConnected(p.ID) {
+		t.Fatal("public recovery handshake did not synchronize connected state")
 	}
 	s.kvWorkspace.Recover(second.kv)
 	wait(tt, func() bool { return !second.kv.Busy() })
@@ -171,7 +242,7 @@ func TestEtcdNativeShellPrivateKVDocumentsParkDisconnectRecoverAndOriginalClose(
 	if second.kv.Editor == nil {
 		t.Fatal("canceled exit disposed original document")
 	}
-	if _, ok := connections.Describe(connections.Etcd); ok {
-		t.Fatal("private workbench published product")
+	if descriptor, ok := connections.Describe(connections.Etcd); !ok || !descriptor.Capabilities.KeyValues || descriptor.Capabilities.Query {
+		t.Fatal("native KV descriptor capability boundary changed")
 	}
 }

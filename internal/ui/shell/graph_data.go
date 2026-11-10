@@ -44,18 +44,36 @@ func (s *State) openGraphExchange(services ui.Services, profileID int64, databas
 	}
 }
 
-// Graph names are not unique across kinds. Every entry point carries the
-// original qualified reference and published generation to this single opener.
+// Entry points carry the original qualified metadata reference and published
+// generation. A display category never substitutes for its native object kind.
 func (s *State) openQualifiedData(services ui.Services, generation uint64, database string, object contract.ObjectRef) {
 	w := s.sessions.Workspace(object.ProfileID)
-	if w == nil || w.Kind != connections.Neo4j || w.Status != "已连接" || w.Generation != generation ||
-		object.Namespace() != s.runtime.Namespace(object.ProfileID, database) || object.Name == "" ||
-		(object.Kind != "label" && object.Kind != "relationship") || !s.objectCapabilitiesFor(object.ProfileID).Documents {
+	if w == nil || w.Status != "已连接" || w.Generation != generation ||
+		object.Namespace() != s.runtime.Namespace(object.ProfileID, database) || object.Name == "" {
 		return
 	}
-	kind := "图标签"
-	if object.Kind == "relationship" {
-		kind = "关系类型"
+	caps := s.objectCapabilitiesFor(object.ProfileID)
+	kind := ""
+	switch w.Kind {
+	case connections.Etcd:
+		if object.Kind != "keyspace" || object.Name != "keys" || !caps.KeyValues {
+			return
+		}
+		kind = "键"
+	case connections.Neo4j:
+		if !caps.Documents {
+			return
+		}
+		switch object.Kind {
+		case "label":
+			kind = "图标签"
+		case "relationship":
+			kind = "关系类型"
+		default:
+			return
+		}
+	default:
+		return
 	}
 	found := false
 	for _, item := range w.Cache[database] {

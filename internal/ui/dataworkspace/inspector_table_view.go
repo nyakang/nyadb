@@ -174,7 +174,7 @@ func (s *inspectorState) TableView(c *ui.Context, t *Panel) {
 				case "data_stream", "数据流":
 					kind = "数据流"
 				}
-				if info.Kind == "KEYSPACE" {
+				if info.Kind == "KEYSPACE" || info.Kind == "keyspace" || info.Kind == "键" {
 					kind = "键"
 				}
 				if info.Kind == "COLLECTION" {

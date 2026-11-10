@@ -13,7 +13,8 @@ import (
 
 func (s *State) startMySQLSession(services ui.Services) {
 	p, ok := s.currentProfile()
-	if !ok || (!p.Kind.IsMySQLFamily() && !p.Kind.IsPostgreSQLFamily() && p.Kind != connections.SQLite && p.Kind != connections.ClickHouse && p.Kind != connections.Doris && p.Kind != connections.StarRocks && p.Kind != connections.Trino && p.Kind != connections.SQLServer && p.Kind != connections.Oracle && p.Kind != connections.Dameng && p.Kind != connections.Redis && !p.Kind.IsREST() && p.Kind != connections.MongoDB && p.Kind != connections.DuckDB && p.Kind != connections.Neo4j && p.Kind != connections.Cassandra) || s.profileService == nil {
+	_, supported := connections.Describe(p.Kind)
+	if !ok || !supported || s.profileService == nil {
 		s.status = "请选择 MySQL 连接"
 		return
 	}

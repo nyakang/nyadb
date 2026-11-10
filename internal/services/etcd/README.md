@@ -1,8 +1,9 @@
-# Native etcd v3 foundation
+# Native etcd v3 workbench
 
-This package is private transport work. It is not registered as a public
-connection. Its private profile/editor phase supports persisted configuration
-and injected native checks; the public workbench remains pending.
+This package is registered as a builtin etcd v3 provider. The public chooser,
+generic URI import, persisted profiles, sessionbrowser, native request documents
+and sole shared key grid bind the original profile and published generation.
+The earlier reports preserve their original private-stage acceptance scope.
 
 `Open` owns one gRPC channel to an explicit HTTP/HTTPS endpoint. Credentials
 are passed separately. Native Status and an explicitly readable probe key
@@ -53,7 +54,8 @@ connect/request timeouts. Username spaces are retained. Basic with mTLS may
 use a certificate CN for native KV permission checks. Empty prefixes probe
 one zero-byte key; a successful check cannot prove access to all prefix keys.
 The product-specific `ParseEtcdURI` accepts etcd/etcds schemes and a root path;
-generic URI routing, chooser publication and provider registration are absent.
+generic URI routing, chooser publication and builtin provider registration
+now forward to this same configuration.
 
 Run `python3 tools/verify_etcd_fixture.py --profile --race --mode basic` for
 native profile save/reopen/duplicate, original check closure, vault rollback,
@@ -68,9 +70,8 @@ captured by pure one-use preparations; foreign, used and busy requests never
 queue. Canceling before dispatch does not consume a plan. Prefix remains a
 browsing scope; absolute request keys are never rewritten.
 
-`Manager.KVRequests` binds an explicitly injected provider and translates
-contextual to published generations only at the runtime boundary. Builtin
-registration remains absent. Lease results retain full protobuf bytes and
+`Manager.KVRequests` binds the builtin provider and translates contextual to
+published generations only at the runtime boundary. Lease results retain full protobuf bytes and
 bounded protobuf JSON (32 MiB) and typed projections (10,000 entries/operations).
 Int64/uint64 and bytes remain exact. Projection capture limits do not change an
 acknowledged native write's completion. These are capture bounds, not total
@@ -91,14 +92,16 @@ packages sequentially because native token-revocation cases alter that same
 owned server's authentication state. The same four 3.7.3 modes and 3.5.35 basic
 remain the acceptance matrix.
 
-The private `kvworkspace` UI binds original request documents through the neutral
+The `kvworkspace` UI binds original request documents through the neutral
 provider. Writes need a separate checked confirmation of the captured request;
 reads and preconnect run once. Documents retain authored and canonical text,
 complete original receipts, independent unknown-write evidence and explicit
 request files. Disconnect preserves text; recovery reserves a new lease without
 dispatch. Later reads cannot resolve the original unknown write or enable replay.
 Shell owns profile activation, tabs, leave guards and native file dialogs. The
-private request UI does not add builtin registration or chooser/menu publication.
+public File/Window/toolbar commands create native KV documents and open/save
+versioned native request envelopes through kvworkspace. SQL workspace recovery
+does not reconstruct those requests or execute them.
 
 Run `python3 tools/verify_etcd_fixture.py --workspace --profile --race --mode basic`
 for native request/UI/Shell acceptance alongside the foundation, editor and
@@ -108,7 +111,7 @@ cancel and publication replacement retain the original unknown outcome while
 recovery/readback preserve the subsequent value. Localized wide/small MyGo tester
 images are UI regression evidence, not native desktop execution on other OSes.
 
-The private shared data adapter now reserves original key documents through
+The shared data adapter reserves original key documents through
 `DataDocumentsProvider`, with independent page/count/field/write/export channels.
 Authenticated byte cursors retain a fixed original revision; healthy explicit
 Refresh starts a new revision only for that document. Pages aggregate one key per
@@ -135,14 +138,27 @@ CSV/JSON export streams complete binary values and decimal metadata through its
 own fixed-revision executor, one key per Range to bound response batching.
 
 Run `python3 tools/verify_etcd_fixture.py --data-adapter --workspace --profile
---race --mode basic` for private adapter, injected shared grid and previous
-workspace/profile regression. Public descriptor capabilities remain unavailable;
-the grid fixture injects the raw original provider published and closed by Manager.
+--race --mode basic` for adapter, builtin Manager-bound shared grid and previous workspace/profile
+regression. Public capabilities enable KeyValues, Metadata, Keyset, Count,
+FieldChunks, EditableTables and Export; SQL/query, transactions, design and
+administration capabilities remain disabled.
 It proves complete editing, key confirmation, cancellation, original parked
 completion, healthy refresh and generation replacement. Native service tests cover
 all mutation kinds, conflicts, reply faults and auxiliary cancellation.
 
-Public provider/chooser/URI/workbench entry points and complete public grid
-create/delete/rename acceptance, ACL-aware browsing, Watch/history, automatic
-renewal, maintenance/auth management, etcd v2, additional versions and cluster
-operation remain pending. See `docs/etcd-data-adapter-2026-11-10.md`.
+Public workbench acceptance uses `python3 tools/verify_etcd_fixture.py --public
+--race --mode basic`. Each full mode requires 42 original native cases and 172
+localized wide/small images. The chooser → generic URI/editor → separate vault →
+SQLite reopen → sessionbrowser → qualified kv/keyspace → shared grid path verifies
+insert, empty binary value, lease detach, omitted-value preservation, rename,
+delete, complete native receipts and dirty/disconnect/exit guards. Native request
+File/Window commands verify original envelope open/save/save-as. Real successful
+Txn reply loss, cancellation and terminal close preserve the write barrier and
+never overwrite a later independent value; ten-comparison conflicts leave the
+entire original batch unapplied. `--public-smoke` checks six public/grid cases
+with 64 images and is explicitly insufficient for full acceptance.
+
+ACL-aware browsing, Watch/history, automatic renewal, maintenance/auth management,
+etcd v2, additional versions and cluster operation remain pending. A successful
+connection probe cannot prove permission for the complete prefix. See
+`docs/etcd-public-workbench-2026-11-10.md`.

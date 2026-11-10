@@ -1,4 +1,5 @@
 {
+  "etcdNewKVRequest": "New KV Request",
   "mysqlFamilyDisconnected": "%s disconnected",
   "mysqlFamilyConnectionCanceled": "%s connection canceled",
   "mysqlFamilySessionPassword": "%s session password",

@@ -3,6 +3,7 @@ package shell
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/queryplan"
@@ -38,8 +39,11 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 	}
 	status := s.sessions.StatusFor(p.ID)
 	ui.Column(c).Gap(5).Children(func() {
-		if (p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind.IsREST() || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Neo4j && p.Neo4jOptions.Auth == "basic" || p.Kind == connections.Cassandra && p.CassandraOptions.Auth == "password") && status != "已连接" && !(p.Kind == connections.Solr && p.SolrOptions.Auth == "none") && !(p.Kind == connections.CouchDB && p.CouchDBOptions.Auth == "none") && !(p.Kind == connections.Meilisearch && p.MeilisearchOptions.Auth == "none") && !(p.Kind == connections.Qdrant && p.QdrantOptions.Auth == "none") {
+		if (p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind.IsREST() || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Neo4j && p.Neo4jOptions.Auth == "basic" || p.Kind == connections.Cassandra && p.CassandraOptions.Auth == "password" || p.Kind == connections.Etcd && p.EtcdOptions.Auth == "basic") && status != "已连接" && !(p.Kind == connections.Solr && p.SolrOptions.Auth == "none") && !(p.Kind == connections.CouchDB && p.CouchDBOptions.Auth == "none") && !(p.Kind == connections.Meilisearch && p.MeilisearchOptions.Auth == "none") && !(p.Kind == connections.Qdrant && p.QdrantOptions.Auth == "none") {
 			label := locales.Text("PostgreSQL 会话密码")
+			if p.Kind == connections.Etcd {
+				label = fmt.Sprintf(locales.Text("本次 %s 会话密码"), "etcd")
+			}
 			if p.Kind == connections.Neo4j {
 				label = locales.Text("Neo4j 会话密码")
 			}
