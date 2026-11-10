@@ -37,12 +37,14 @@ type Receipt struct {
 	Result          contract.KVResult
 	Error           string
 	LeaseManagement *LeaseManagementReceipt
+	AuthManagement  *AuthManagementReceipt
 }
 
 func (r Receipt) Clone() Receipt {
 	r.Scope = r.Scope.Clone()
 	r.Result = r.Result.Clone()
 	r.LeaseManagement = r.LeaseManagement.clone()
+	r.AuthManagement = r.AuthManagement.clone()
 	return r
 }
 
@@ -52,6 +54,7 @@ type confirmation struct {
 	authored   contract.KVRequest
 	editor     contract.KVRequest
 	management *LeaseManagementReceipt
+	auth       *authConfirmation
 	keyRow     int
 	keyColumns ui.ListState
 	checked    bool
@@ -63,6 +66,7 @@ type outcome struct {
 	leaseDetail *contract.KVLeaseDetail
 	lease       contract.KVRequestLease
 	err         error
+	authSteps   []AuthStepReceipt
 }
 type operation struct {
 	lease           contract.KVRequestLease
@@ -75,6 +79,7 @@ type operation struct {
 	finished        <-chan struct{}
 	management      *LeaseManagementReceipt
 	managementDraft *leaseManagementDraft
+	auth            *AuthManagementReceipt
 }
 
 // Document is UI-thread owned. Workers capture immutable requests and their
@@ -92,6 +97,8 @@ type Document struct {
 	io                                                      *fileOperation
 	confirmation                                            *confirmation
 	leaseManagement                                         *leaseManagementDraft
+	authBrowser                                             *authBrowser
+	authDraft                                               *authDraft
 	last, unknown                                           *Receipt
 	selectedUnknown                                         bool
 	error                                                   string
@@ -190,11 +197,12 @@ type State struct {
 	leave                    *leaveDecision
 	SplitPercent             float32
 	LeaseBrowserSplitPercent float32
+	AuthSplitPercent         float32
 	Invalidate               func()
 }
 
 func New(deps Dependencies) *State {
-	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50, LeaseBrowserSplitPercent: 20}
+	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50, LeaseBrowserSplitPercent: 20, AuthSplitPercent: 65}
 }
 func (s *State) owned(d *Document) bool { return d != nil && !d.closed && s.documents[d.id] == d }
 func (s *State) active(d *Document) bool {
@@ -253,6 +261,7 @@ func (s *State) SetMethod(d *Document, method string) {
 		d.method = method
 		d.confirmation = nil
 		d.leaseManagement = nil
+		d.authDraft = nil
 		d.renewalConfirmation = nil
 		d.permit = nil
 	}
@@ -327,6 +336,10 @@ func (s *State) Preconnect(d *Document) {
 // Run prepares on the UI thread. Writes require a separate explicit confirmation
 // of the same authored text, canonical snapshot and original lease.
 func (s *State) Run(d *Document) {
+	if s.owned(d) && d.method == AuthManagementMethod {
+		s.RunAuthManagement(d)
+		return
+	}
 	if s.owned(d) && leaseBrowserMethod(d.method) {
 		s.RunLeaseBrowser(d)
 		return
@@ -393,18 +406,26 @@ func (s *State) Confirm(d *Document, checked bool) {
 	if !checked || !s.check(d) {
 		return
 	}
-	if p.lease != d.lease || p.editor != d.Request() || d.hasUnknownWrites() || p.management != nil && (!sameEventScope(p.management.Scope, d.scope) || !p.plan.Writes() || !managementRequestEqual(p.authored, p.plan.Snapshot())) {
+	if p.lease != d.lease || p.editor != d.Request() || d.hasUnknownWrites() || p.auth != nil && !sameEventScope(p.auth.receipt.Scope, d.scope) || p.management != nil && (!sameEventScope(p.management.Scope, d.scope) || !p.plan.Writes() || !managementRequestEqual(p.authored, p.plan.Snapshot())) {
 		d.confirmation = nil
 		d.error = locales.Text("KV 请求已更改，请重新预览")
+		return
+	}
+	if p.auth != nil {
+		s.executeAuthAction(d, p)
 		return
 	}
 	s.executeManagement(d, p.plan, p.authored, p.management)
 }
 func (s *State) CancelConfirmation(d *Document) {
 	if s.owned(d) {
+		if d.authDraft != nil {
+			d.authDraft.password = ""
+		}
 		d.renewalConfirmation = nil
 		d.confirmation = nil
 		d.leaseManagement = nil
+		d.authDraft = nil
 	}
 }
 func (s *State) RequestCancel(d *Document) {
@@ -467,6 +488,11 @@ func (s *State) Consume() {
 		}
 		if d.leaseManagement != nil && (d.leaseManagement.editor != d.Request() || d.leaseManagement.lease != d.lease || d.needsRecovery) {
 			d.leaseManagement = nil
+			d.authDraft = nil
+		}
+		if d.authDraft != nil && (d.authDraft.editor != d.Request() || d.authDraft.lease != d.lease || d.needsRecovery) {
+			d.authDraft.password = ""
+			d.authDraft = nil
 		}
 		if d.job != nil {
 			select {
@@ -490,6 +516,9 @@ func (s *State) Consume() {
 						d.unknown = receipt
 					}
 				}
+				if job.kind == "auth-read" || job.kind == "auth-write" {
+					s.consumeAuth(d, job, r)
+				}
 				if job.kind == "lease-browse" || job.kind == "lease-detail" {
 					s.consumeLeaseBrowser(d, job, r)
 				}
@@ -506,6 +535,10 @@ func (s *State) Consume() {
 						d.scope = scope
 						d.needsRecovery = false
 						d.confirmation = nil
+						if d.authBrowser != nil {
+							d.authBrowser.selectedUser, d.authBrowser.selectedRole, d.authBrowser.target = "", "", ""
+							d.authBrowser.row, d.authBrowser.detailRow = -1, -1
+						}
 					}
 				}
 				if d.lease == nil || d.lease.CheckKVLease() != nil {
@@ -521,14 +554,17 @@ func (s *State) Consume() {
 		s.consumeFiles(d)
 		if d.job == nil && d.lease != nil && d.lease.CheckKVLease() != nil {
 			d.needsRecovery = true
-			d.confirmation = nil
-			d.leaseManagement = nil
+			s.CancelConfirmation(d)
 		}
 	}
 }
 func (s *State) DisconnectProfile(id int64) {
 	for _, d := range s.documents {
 		if d.profileID == id {
+			if d.authDraft != nil {
+				d.authDraft.password = ""
+				d.authDraft = nil
+			}
 			d.needsRecovery = true
 			d.renewalNeedsRecovery = true
 			d.renewalConfirmation = nil
@@ -545,7 +581,7 @@ func (s *State) GuardLeave(d *Document, next func(ui.Services)) bool {
 	if d.permit != nil && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && !d.Busy() && !d.FileBusy() {
 		return false
 	}
-	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && d.leaseManagement == nil && (d.confirmation == nil || d.confirmation.management == nil) {
+	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && d.leaseManagement == nil && d.authDraft == nil && (d.confirmation == nil || d.confirmation.management == nil && d.confirmation.auth == nil) {
 		return false
 	}
 	s.leave = &leaveDecision{doc: d, next: next}
@@ -568,8 +604,7 @@ func (s *State) DecideLeave(services ui.Services, discard bool) {
 	}
 	next := s.leave.next
 	s.leave = nil
-	d.leaseManagement = nil
-	d.confirmation = nil
+	s.CancelConfirmation(d)
 	d.permit = &leaveStamp{request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail}
 	if next != nil {
 		next(services)
@@ -652,6 +687,11 @@ func (s *State) Close(d *Document) {
 	d.Editor = nil
 	d.confirmation = nil
 	d.leaseManagement = nil
+	if d.authDraft != nil {
+		d.authDraft.password = ""
+	}
+	d.authDraft = nil
+	d.authBrowser = nil
 	d.last = nil
 	d.unknown = nil
 	d.job = nil

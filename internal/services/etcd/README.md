@@ -208,7 +208,7 @@ checks only the four service parents; `--access --public-smoke` adds the restric
 Shell case to the six public/grid regression parents and requires 88 images.
 These smaller scopes do not establish full acceptance.
 
-Maintenance/auth management, etcd v2,
+Maintenance, etcd v2,
 additional versions and cluster operation remain pending. Historical public
 acceptance is recorded in `docs/etcd-public-workbench-2026-11-10.md`; ACL scope and
 verification are recorded separately in `docs/etcd-access-browsing-2026-11-10.md`.
@@ -338,8 +338,8 @@ the write barrier. Clear explicitly disposes settled evidence before another run
 Run `GOWORK=off python3 tools/verify_etcd_fixture.py --public-events --race --mode
 MODE` for the seven mandatory native public cases and 28 localized Shell images.
 Modes are anonymous/basic/tls/mtls on 3.7.3, plus basic on 3.5.35. The local report
-is `docs/etcd-public-events-2026-11-10.md`. Auth/RBAC and
-maintenance UI, cluster acceptance and etcd-v2 remain separate future work.
+is `docs/etcd-public-events-2026-11-10.md`. Auth/RBAC is described below; maintenance UI, cluster acceptance and etcd-v2
+remain separate future work.
 
 Private original continuous lease-renewal foundation
 --------------------------------------------------
@@ -449,8 +449,8 @@ in that document, including after independent reads and explicit recovery.
 --mode MODE` requires 24 native parents plus 20 native workspace and 60 public
 Shell images per mode (including old Watch/history). Use 3.7.3 anonymous/basic/
 tls/mtls and 3.5.35 basic. Local evidence is
-`docs/etcd-public-renewal-2026-11-10.md`. The original-document lease browser is described below. Dedicated lease
-management, Auth/RBAC/maintenance administration, cluster and etcd-v2 remain
+`docs/etcd-public-renewal-2026-11-10.md`. The original-document lease browser is described below. Dedicated lease management and Auth/RBAC are described below. Maintenance
+administration, cluster and etcd-v2 remain
 separate acceptance steps.
 
 Private original lease-browsing foundation
@@ -550,3 +550,46 @@ public client windows, complete archives and original parked publication recover
 Use 3.7.3 anonymous/basic/tls/mtls and 3.5.35 basic. The previous public-renewal
 matrix also verifies the existing request/events/renewal/file flows after these
 controls. Local evidence: docs/etcd-public-lease-browser-2026-11-10.md.
+
+## Original Auth management
+
+The optional `KVAuthManagement` facet advertises the original request lease's
+native Auth inventory. Runtime binding preserves all four Auth/browser facet
+combinations; UI support is never inferred from an engine name or a method prefix.
+The public method selector exposes `AuthManagement`, a pure users/roles view.
+Opening its `.nyakv` file or recovering its lease never reads or writes anything.
+
+Explicit users/roles directory and name-detail reads preserve original native
+receipts, complete names and independent uint64 Auth revision. Permission tools
+retain exact byte keys, exclusive-end ranges and the single-NUL unbounded end;
+text and strict Base64 inputs are supported up to the native 4096-byte key limit.
+An arbitrary range is never labeled as a prefix. Unknown native permission
+extensions remain in complete copies; the selected revocation shortcut refuses
+to silently discard them.
+
+The nine write actions cover user add/delete/password changes and role grants,
+and role add/delete and permission grants. Creating a user with initial roles,
+or a role with an initial permission, prepares separate immutable native RPCs.
+Each step requires the original document/profile/generation/physical lease and
+an explicit checked confirmation. Complete earlier step receipts remain intact;
+a failed, canceled, incomplete or unknown step stops subsequent writes. Native
+names/ranges have no CAS or incarnation precondition. A retained unknown write
+blocks further writes in that document even after later reads or pure recovery.
+
+Temporary passwords only enter the original execution plans. Preview and receipt
+records explicitly identify omitted password fields; cancel, disconnect, retirement
+and close clear temporary form secrets. A `.nyakv-auth-preview.json` export is a
+redacted record, not a runnable request file. Complete operation export/copy retains
+all planned redacted requests and each original native step reply. The pure view
+file cannot contain password or other management-form fields. Native step capture
+reserves a complete next transport-bounded reply before dispatch, and stops before
+another RPC when its retained native budget is exhausted.
+
+Run `GOWORK=off /usr/bin/python3 tools/verify_etcd_fixture.py --public-auth --race
+--mode MODE` for 13 required native parents and 80 bilingual wide/narrow captures
+per mode. Use official 3.7.3 anonymous/basic/tls/mtls and 3.5.35 basic. These include
+all 14 original native Auth RPC regressions, actual password/certificate/restricted
+identities, real processed partial-write faults, original cancel/close/parking and
+publication replacement, complete permissions and redacted records. AuthEnable/
+AuthDisable, maintenance/member administration and etcd-v2 remain separate scope.
+Local evidence: `docs/etcd-auth-public-2026-11-11.md`.

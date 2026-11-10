@@ -20,6 +20,9 @@ var methods = []Method{
 func Methods() []Method { return append([]Method(nil), methods...) }
 func (s *State) MethodsFor(d *Document) []Method {
 	out := Methods()
+	if s.owned(d) && d.AuthManagementAvailable() {
+		out = append(out, Method{Name: "AuthManagement", Path: AuthManagementMethod})
+	}
 	if s.owned(d) && d.LeaseBrowsingAvailable() {
 		out = append(out, Method{"LeaseBrowse", LeaseBrowseMethod}, Method{"LeaseDetail", LeaseDetailMethod})
 	}
@@ -55,6 +58,9 @@ func (s *State) ChooseMethod(d *Document, method string) {
 		return
 	}
 	before := DefaultRequest()
+	if d.method == AuthManagementMethod {
+		before = DefaultAuthManagementRequest()
+	}
 	if d.method == RenewalMethod {
 		before = DefaultRenewalRequest()
 	}
@@ -66,7 +72,9 @@ func (s *State) ChooseMethod(d *Document, method string) {
 	}
 	useTemplate := d.Request().JSON == before.JSON
 	s.SetMethod(d, method)
-	if useTemplate && leaseBrowserMethod(method) {
+	if useTemplate && method == AuthManagementMethod {
+		d.Editor.Buffer.Set(DefaultAuthManagementRequest().JSON)
+	} else if useTemplate && leaseBrowserMethod(method) {
 		d.Editor.Buffer.Set(DefaultLeaseBrowserRequest(method).JSON)
 	} else if useTemplate && method == RenewalMethod {
 		d.Editor.Buffer.Set(DefaultRenewalRequest().JSON)

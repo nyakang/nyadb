@@ -18,6 +18,14 @@ func originalKVRequestLease(previous contract.KVRequestLease) *kvRequestLease {
 		if l != nil {
 			return l.kvRequestLease
 		}
+	case *kvAuthLease:
+		if l != nil {
+			return l.kvRequestLease
+		}
+	case *kvAuthBrowsingLease:
+		if l != nil && l.kvLeaseBrowsingLease != nil {
+			return l.kvRequestLease
+		}
 	}
 	return nil
 }

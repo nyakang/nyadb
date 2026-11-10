@@ -54,3 +54,10 @@ func (r KVRequestRecord) Clone() KVRequestRecord {
 type KVPreparationRecord interface {
 	RecordedRequest() KVRequestRecord
 }
+
+// KVAuthManagement advertises the native Auth methods accepted by this original
+// request lease. It does not grant administration rights; the server authorizes
+// each RPC. Discovery must not perform a request or infer support from a prefix.
+type KVAuthManagement interface {
+	AuthMethods() []string
+}

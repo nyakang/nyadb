@@ -44,7 +44,12 @@ func EncodeRequest(r contract.KVRequest) ([]byte, error) {
 	if len(r.JSON) > inputLimit || !utf8.ValidString(r.JSON) {
 		return nil, jsondocument.ErrBounds
 	}
-	supported := eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method)
+	if r.Method == AuthManagementMethod {
+		if _, err := authRequestView(r); err != nil {
+			return nil, err
+		}
+	}
+	supported := eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method) || r.Method == AuthManagementMethod
 	for _, m := range methods {
 		if m.Path == r.Method {
 			supported = true

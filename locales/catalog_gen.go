@@ -33681,3 +33681,643 @@ func EtcdLeaseManageSavePreview() string { return In(i18n.Locale()).EtcdLeaseMan
 func (msgs Messages) EtcdLeaseManageSavePreview() string {
 	return Catalog.Format(msgs.locale, "etcdLeaseManageSavePreview", nil)
 }
+
+// EtcdAuth37c825ff40 says "创建用户"
+// in the language the app shows.
+func EtcdAuth37c825ff40() string { return In(i18n.Locale()).EtcdAuth37c825ff40() }
+
+// EtcdAuth37c825ff40 says "创建用户"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth37c825ff40() string {
+	return Catalog.Format(msgs.locale, "etcdAuth37c825ff40", nil)
+}
+
+// EtcdAuthb75872bba6 says "删除用户"
+// in the language the app shows.
+func EtcdAuthb75872bba6() string { return In(i18n.Locale()).EtcdAuthb75872bba6() }
+
+// EtcdAuthb75872bba6 says "删除用户"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthb75872bba6() string {
+	return Catalog.Format(msgs.locale, "etcdAuthb75872bba6", nil)
+}
+
+// EtcdAuthaaff92529f says "修改用户密码"
+// in the language the app shows.
+func EtcdAuthaaff92529f() string { return In(i18n.Locale()).EtcdAuthaaff92529f() }
+
+// EtcdAuthaaff92529f says "修改用户密码"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthaaff92529f() string {
+	return Catalog.Format(msgs.locale, "etcdAuthaaff92529f", nil)
+}
+
+// EtcdAuth6422804f99 says "授予用户角色"
+// in the language the app shows.
+func EtcdAuth6422804f99() string { return In(i18n.Locale()).EtcdAuth6422804f99() }
+
+// EtcdAuth6422804f99 says "授予用户角色"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth6422804f99() string {
+	return Catalog.Format(msgs.locale, "etcdAuth6422804f99", nil)
+}
+
+// EtcdAuth356b513e3a says "撤销用户角色"
+// in the language the app shows.
+func EtcdAuth356b513e3a() string { return In(i18n.Locale()).EtcdAuth356b513e3a() }
+
+// EtcdAuth356b513e3a says "撤销用户角色"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth356b513e3a() string {
+	return Catalog.Format(msgs.locale, "etcdAuth356b513e3a", nil)
+}
+
+// EtcdAuthef2b1663bc says "授予角色权限"
+// in the language the app shows.
+func EtcdAuthef2b1663bc() string { return In(i18n.Locale()).EtcdAuthef2b1663bc() }
+
+// EtcdAuthef2b1663bc says "授予角色权限"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthef2b1663bc() string {
+	return Catalog.Format(msgs.locale, "etcdAuthef2b1663bc", nil)
+}
+
+// EtcdAuth8dab413164 says "撤销角色权限"
+// in the language the app shows.
+func EtcdAuth8dab413164() string { return In(i18n.Locale()).EtcdAuth8dab413164() }
+
+// EtcdAuth8dab413164 says "撤销角色权限"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth8dab413164() string {
+	return Catalog.Format(msgs.locale, "etcdAuth8dab413164", nil)
+}
+
+// EtcdAuth32ce13244e says "用户目录"
+// in the language the app shows.
+func EtcdAuth32ce13244e() string { return In(i18n.Locale()).EtcdAuth32ce13244e() }
+
+// EtcdAuth32ce13244e says "用户目录"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth32ce13244e() string {
+	return Catalog.Format(msgs.locale, "etcdAuth32ce13244e", nil)
+}
+
+// EtcdAuth9230d31bbc says "角色目录"
+// in the language the app shows.
+func EtcdAuth9230d31bbc() string { return In(i18n.Locale()).EtcdAuth9230d31bbc() }
+
+// EtcdAuth9230d31bbc says "角色目录"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth9230d31bbc() string {
+	return Catalog.Format(msgs.locale, "etcdAuth9230d31bbc", nil)
+}
+
+// EtcdAutha007b43c99 says "读取认证状态"
+// in the language the app shows.
+func EtcdAutha007b43c99() string { return In(i18n.Locale()).EtcdAutha007b43c99() }
+
+// EtcdAutha007b43c99 says "读取认证状态"
+// in the language of msgs.
+func (msgs Messages) EtcdAutha007b43c99() string {
+	return Catalog.Format(msgs.locale, "etcdAutha007b43c99", nil)
+}
+
+// EtcdAuth171bf33971 says "清除权限目录观察"
+// in the language the app shows.
+func EtcdAuth171bf33971() string { return In(i18n.Locale()).EtcdAuth171bf33971() }
+
+// EtcdAuth171bf33971 says "清除权限目录观察"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth171bf33971() string {
+	return Catalog.Format(msgs.locale, "etcdAuth171bf33971", nil)
+}
+
+// EtcdAuth7bdf5d7f28 says "管理用户与角色"
+// in the language the app shows.
+func EtcdAuth7bdf5d7f28() string { return In(i18n.Locale()).EtcdAuth7bdf5d7f28() }
+
+// EtcdAuth7bdf5d7f28 says "管理用户与角色"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth7bdf5d7f28() string {
+	return Catalog.Format(msgs.locale, "etcdAuth7bdf5d7f28", nil)
+}
+
+// EtcdAuth5ec0afec5b says "Auth 管理操作"
+// in the language the app shows.
+func EtcdAuth5ec0afec5b() string { return In(i18n.Locale()).EtcdAuth5ec0afec5b() }
+
+// EtcdAuth5ec0afec5b says "Auth 管理操作"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth5ec0afec5b() string {
+	return Catalog.Format(msgs.locale, "etcdAuth5ec0afec5b", nil)
+}
+
+// EtcdAuth28e07fb1dd says "认证启用：%t · Auth 版本：%s"
+// in the language the app shows.
+func EtcdAuth28e07fb1dd() string { return In(i18n.Locale()).EtcdAuth28e07fb1dd() }
+
+// EtcdAuth28e07fb1dd says "认证启用：%t · Auth 版本：%s"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth28e07fb1dd() string {
+	return Catalog.Format(msgs.locale, "etcdAuth28e07fb1dd", nil)
+}
+
+// EtcdAuth4952fee3f2 says "筛选权限目录"
+// in the language the app shows.
+func EtcdAuth4952fee3f2() string { return In(i18n.Locale()).EtcdAuth4952fee3f2() }
+
+// EtcdAuth4952fee3f2 says "筛选权限目录"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth4952fee3f2() string {
+	return Catalog.Format(msgs.locale, "etcdAuth4952fee3f2", nil)
+}
+
+// EtcdAutheaf665c8f5 says "详情名称"
+// in the language the app shows.
+func EtcdAutheaf665c8f5() string { return In(i18n.Locale()).EtcdAutheaf665c8f5() }
+
+// EtcdAutheaf665c8f5 says "详情名称"
+// in the language of msgs.
+func (msgs Messages) EtcdAutheaf665c8f5() string {
+	return Catalog.Format(msgs.locale, "etcdAutheaf665c8f5", nil)
+}
+
+// EtcdAuth7f98e984be says "读取名称详情"
+// in the language the app shows.
+func EtcdAuth7f98e984be() string { return In(i18n.Locale()).EtcdAuth7f98e984be() }
+
+// EtcdAuth7f98e984be says "读取名称详情"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth7f98e984be() string {
+	return Catalog.Format(msgs.locale, "etcdAuth7f98e984be", nil)
+}
+
+// EtcdAuth70d83a647d says "用户与角色属于集群；每次 RPC 由服务端判断权限"
+// in the language the app shows.
+func EtcdAuth70d83a647d() string { return In(i18n.Locale()).EtcdAuth70d83a647d() }
+
+// EtcdAuth70d83a647d says "用户与角色属于集群；每次 RPC 由服务端判断权限"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth70d83a647d() string {
+	return Catalog.Format(msgs.locale, "etcdAuth70d83a647d", nil)
+}
+
+// EtcdAuth1a7b030ed6 says "显式刷新后显示完整目录观察"
+// in the language the app shows.
+func EtcdAuth1a7b030ed6() string { return In(i18n.Locale()).EtcdAuth1a7b030ed6() }
+
+// EtcdAuth1a7b030ed6 says "显式刷新后显示完整目录观察"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth1a7b030ed6() string {
+	return Catalog.Format(msgs.locale, "etcdAuth1a7b030ed6", nil)
+}
+
+// EtcdAuth79a056fae9 says "这是原会话观察，请重新读取后再选择"
+// in the language the app shows.
+func EtcdAuth79a056fae9() string { return In(i18n.Locale()).EtcdAuth79a056fae9() }
+
+// EtcdAuth79a056fae9 says "这是原会话观察，请重新读取后再选择"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth79a056fae9() string {
+	return Catalog.Format(msgs.locale, "etcdAuth79a056fae9", nil)
+}
+
+// EtcdAuthb8d713ddfc says "完整名称"
+// in the language the app shows.
+func EtcdAuthb8d713ddfc() string { return In(i18n.Locale()).EtcdAuthb8d713ddfc() }
+
+// EtcdAuthb8d713ddfc says "完整名称"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthb8d713ddfc() string {
+	return Catalog.Format(msgs.locale, "etcdAuthb8d713ddfc", nil)
+}
+
+// EtcdAuthc343890824 says "复制完整名称"
+// in the language the app shows.
+func EtcdAuthc343890824() string { return In(i18n.Locale()).EtcdAuthc343890824() }
+
+// EtcdAuthc343890824 says "复制完整名称"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthc343890824() string {
+	return Catalog.Format(msgs.locale, "etcdAuthc343890824", nil)
+}
+
+// EtcdAuth7468044edb says "精确键"
+// in the language the app shows.
+func EtcdAuth7468044edb() string { return In(i18n.Locale()).EtcdAuth7468044edb() }
+
+// EtcdAuth7468044edb says "精确键"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth7468044edb() string {
+	return Catalog.Format(msgs.locale, "etcdAuth7468044edb", nil)
+}
+
+// EtcdAuth406b9aeb32 says "无上界区间"
+// in the language the app shows.
+func EtcdAuth406b9aeb32() string { return In(i18n.Locale()).EtcdAuth406b9aeb32() }
+
+// EtcdAuth406b9aeb32 says "无上界区间"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth406b9aeb32() string {
+	return Catalog.Format(msgs.locale, "etcdAuth406b9aeb32", nil)
+}
+
+// EtcdAuth15b86b83db says "右侧不含的区间"
+// in the language the app shows.
+func EtcdAuth15b86b83db() string { return In(i18n.Locale()).EtcdAuth15b86b83db() }
+
+// EtcdAuth15b86b83db says "右侧不含的区间"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth15b86b83db() string {
+	return Catalog.Format(msgs.locale, "etcdAuth15b86b83db", nil)
+}
+
+// EtcdAuth5e47926ad5 says "选择或输入名称，再显式读取详情"
+// in the language the app shows.
+func EtcdAuth5e47926ad5() string { return In(i18n.Locale()).EtcdAuth5e47926ad5() }
+
+// EtcdAuth5e47926ad5 says "选择或输入名称，再显式读取详情"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth5e47926ad5() string {
+	return Catalog.Format(msgs.locale, "etcdAuth5e47926ad5", nil)
+}
+
+// EtcdAuth6ce6e119ac says "已授予角色"
+// in the language the app shows.
+func EtcdAuth6ce6e119ac() string { return In(i18n.Locale()).EtcdAuth6ce6e119ac() }
+
+// EtcdAuth6ce6e119ac says "已授予角色"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth6ce6e119ac() string {
+	return Catalog.Format(msgs.locale, "etcdAuth6ce6e119ac", nil)
+}
+
+// EtcdAuthd051ac6125 says "用户角色观察"
+// in the language the app shows.
+func EtcdAuthd051ac6125() string { return In(i18n.Locale()).EtcdAuthd051ac6125() }
+
+// EtcdAuthd051ac6125 says "用户角色观察"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthd051ac6125() string {
+	return Catalog.Format(msgs.locale, "etcdAuthd051ac6125", nil)
+}
+
+// EtcdAuth3815544139 says "复制完整角色名称"
+// in the language the app shows.
+func EtcdAuth3815544139() string { return In(i18n.Locale()).EtcdAuth3815544139() }
+
+// EtcdAuth3815544139 says "复制完整角色名称"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth3815544139() string {
+	return Catalog.Format(msgs.locale, "etcdAuth3815544139", nil)
+}
+
+// EtcdAuthe0b6a523cb says "区间语义"
+// in the language the app shows.
+func EtcdAuthe0b6a523cb() string { return In(i18n.Locale()).EtcdAuthe0b6a523cb() }
+
+// EtcdAuthe0b6a523cb says "区间语义"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthe0b6a523cb() string {
+	return Catalog.Format(msgs.locale, "etcdAuthe0b6a523cb", nil)
+}
+
+// EtcdAuth48b424fa58 says "终点 Base64 预览"
+// in the language the app shows.
+func EtcdAuth48b424fa58() string { return In(i18n.Locale()).EtcdAuth48b424fa58() }
+
+// EtcdAuth48b424fa58 says "终点 Base64 预览"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth48b424fa58() string {
+	return Catalog.Format(msgs.locale, "etcdAuth48b424fa58", nil)
+}
+
+// EtcdAuth66c1354687 says "角色权限观察"
+// in the language the app shows.
+func EtcdAuth66c1354687() string { return In(i18n.Locale()).EtcdAuth66c1354687() }
+
+// EtcdAuth66c1354687 says "角色权限观察"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth66c1354687() string {
+	return Catalog.Format(msgs.locale, "etcdAuth66c1354687", nil)
+}
+
+// EtcdAuth03a7c4ab76 says "复制完整权限"
+// in the language the app shows.
+func EtcdAuth03a7c4ab76() string { return In(i18n.Locale()).EtcdAuth03a7c4ab76() }
+
+// EtcdAuth03a7c4ab76 says "复制完整权限"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth03a7c4ab76() string {
+	return Catalog.Format(msgs.locale, "etcdAuth03a7c4ab76", nil)
+}
+
+// EtcdAuth6e66ae6061 says "预览撤销所选权限"
+// in the language the app shows.
+func EtcdAuth6e66ae6061() string { return In(i18n.Locale()).EtcdAuth6e66ae6061() }
+
+// EtcdAuth6e66ae6061 says "预览撤销所选权限"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth6e66ae6061() string {
+	return Catalog.Format(msgs.locale, "etcdAuth6e66ae6061", nil)
+}
+
+// EtcdAuth851b38be72 says "复制完整详情回执"
+// in the language the app shows.
+func EtcdAuth851b38be72() string { return In(i18n.Locale()).EtcdAuth851b38be72() }
+
+// EtcdAuth851b38be72 says "复制完整详情回执"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth851b38be72() string {
+	return Catalog.Format(msgs.locale, "etcdAuth851b38be72", nil)
+}
+
+// EtcdAuth2b48d2559a says "原始名称"
+// in the language the app shows.
+func EtcdAuth2b48d2559a() string { return In(i18n.Locale()).EtcdAuth2b48d2559a() }
+
+// EtcdAuth2b48d2559a says "原始名称"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth2b48d2559a() string {
+	return Catalog.Format(msgs.locale, "etcdAuth2b48d2559a", nil)
+}
+
+// EtcdAuth5abbb2d12c says "权限范围"
+// in the language the app shows.
+func EtcdAuth5abbb2d12c() string { return In(i18n.Locale()).EtcdAuth5abbb2d12c() }
+
+// EtcdAuth5abbb2d12c says "权限范围"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth5abbb2d12c() string {
+	return Catalog.Format(msgs.locale, "etcdAuth5abbb2d12c", nil)
+}
+
+// EtcdAuth9eeca6e051 says "权限键"
+// in the language the app shows.
+func EtcdAuth9eeca6e051() string { return In(i18n.Locale()).EtcdAuth9eeca6e051() }
+
+// EtcdAuth9eeca6e051 says "权限键"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth9eeca6e051() string {
+	return Catalog.Format(msgs.locale, "etcdAuth9eeca6e051", nil)
+}
+
+// EtcdAuth4896d70578 says "独占终点"
+// in the language the app shows.
+func EtcdAuth4896d70578() string { return In(i18n.Locale()).EtcdAuth4896d70578() }
+
+// EtcdAuth4896d70578 says "独占终点"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth4896d70578() string {
+	return Catalog.Format(msgs.locale, "etcdAuth4896d70578", nil)
+}
+
+// EtcdAutha04882e143 says "区间不含终点；无上界区间使用单 NUL 终点"
+// in the language the app shows.
+func EtcdAutha04882e143() string { return In(i18n.Locale()).EtcdAutha04882e143() }
+
+// EtcdAutha04882e143 says "区间不含终点；无上界区间使用单 NUL 终点"
+// in the language of msgs.
+func (msgs Messages) EtcdAutha04882e143() string {
+	return Catalog.Format(msgs.locale, "etcdAutha04882e143", nil)
+}
+
+// EtcdAuth2994ddc1f8 says "无密码用户（证书身份）"
+// in the language the app shows.
+func EtcdAuth2994ddc1f8() string { return In(i18n.Locale()).EtcdAuth2994ddc1f8() }
+
+// EtcdAuth2994ddc1f8 says "无密码用户（证书身份）"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth2994ddc1f8() string {
+	return Catalog.Format(msgs.locale, "etcdAuth2994ddc1f8", nil)
+}
+
+// EtcdAutha8567f9b6f says "临时密码"
+// in the language the app shows.
+func EtcdAutha8567f9b6f() string { return In(i18n.Locale()).EtcdAutha8567f9b6f() }
+
+// EtcdAutha8567f9b6f says "临时密码"
+// in the language of msgs.
+func (msgs Messages) EtcdAutha8567f9b6f() string {
+	return Catalog.Format(msgs.locale, "etcdAutha8567f9b6f", nil)
+}
+
+// EtcdAuth3fa3faaa41 says "密码只用于原执行计划；预览和回执明确省略密码"
+// in the language the app shows.
+func EtcdAuth3fa3faaa41() string { return In(i18n.Locale()).EtcdAuth3fa3faaa41() }
+
+// EtcdAuth3fa3faaa41 says "密码只用于原执行计划；预览和回执明确省略密码"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth3fa3faaa41() string {
+	return Catalog.Format(msgs.locale, "etcdAuth3fa3faaa41", nil)
+}
+
+// EtcdAuthcbeb17887e says "初始角色（每行一个，保留名称空格）"
+// in the language the app shows.
+func EtcdAuthcbeb17887e() string { return In(i18n.Locale()).EtcdAuthcbeb17887e() }
+
+// EtcdAuthcbeb17887e says "初始角色（每行一个，保留名称空格）"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthcbeb17887e() string {
+	return Catalog.Format(msgs.locale, "etcdAuthcbeb17887e", nil)
+}
+
+// EtcdAuth79d86d26d5 says "初始角色"
+// in the language the app shows.
+func EtcdAuth79d86d26d5() string { return In(i18n.Locale()).EtcdAuth79d86d26d5() }
+
+// EtcdAuth79d86d26d5 says "初始角色"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth79d86d26d5() string {
+	return Catalog.Format(msgs.locale, "etcdAuth79d86d26d5", nil)
+}
+
+// EtcdAuth47e2d7e028 says "原始角色名称"
+// in the language the app shows.
+func EtcdAuth47e2d7e028() string { return In(i18n.Locale()).EtcdAuth47e2d7e028() }
+
+// EtcdAuth47e2d7e028 says "原始角色名称"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth47e2d7e028() string {
+	return Catalog.Format(msgs.locale, "etcdAuth47e2d7e028", nil)
+}
+
+// EtcdAuth75ddd6b301 says "创建后单独授予初始权限"
+// in the language the app shows.
+func EtcdAuth75ddd6b301() string { return In(i18n.Locale()).EtcdAuth75ddd6b301() }
+
+// EtcdAuth75ddd6b301 says "创建后单独授予初始权限"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth75ddd6b301() string {
+	return Catalog.Format(msgs.locale, "etcdAuth75ddd6b301", nil)
+}
+
+// EtcdAuth6ed5fe66d4 says "预览 Auth 写入步骤"
+// in the language the app shows.
+func EtcdAuth6ed5fe66d4() string { return In(i18n.Locale()).EtcdAuth6ed5fe66d4() }
+
+// EtcdAuth6ed5fe66d4 says "预览 Auth 写入步骤"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth6ed5fe66d4() string {
+	return Catalog.Format(msgs.locale, "etcdAuth6ed5fe66d4", nil)
+}
+
+// EtcdAuthd4c32d3300 says "确认 Auth 原生写入步骤"
+// in the language the app shows.
+func EtcdAuthd4c32d3300() string { return In(i18n.Locale()).EtcdAuthd4c32d3300() }
+
+// EtcdAuthd4c32d3300 says "确认 Auth 原生写入步骤"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthd4c32d3300() string {
+	return Catalog.Format(msgs.locale, "etcdAuthd4c32d3300", nil)
+}
+
+// EtcdAuth6aa92a6a4d says "各步骤是独立 RPC；失败或未知步骤会停止后续写入"
+// in the language the app shows.
+func EtcdAuth6aa92a6a4d() string { return In(i18n.Locale()).EtcdAuth6aa92a6a4d() }
+
+// EtcdAuth6aa92a6a4d says "各步骤是独立 RPC；失败或未知步骤会停止后续写入"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth6aa92a6a4d() string {
+	return Catalog.Format(msgs.locale, "etcdAuth6aa92a6a4d", nil)
+}
+
+// EtcdAuth79c9b50c1f says "按名称和区间执行，没有 CAS 或身份重用保护"
+// in the language the app shows.
+func EtcdAuth79c9b50c1f() string { return In(i18n.Locale()).EtcdAuth79c9b50c1f() }
+
+// EtcdAuth79c9b50c1f says "按名称和区间执行，没有 CAS 或身份重用保护"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth79c9b50c1f() string {
+	return Catalog.Format(msgs.locale, "etcdAuth79c9b50c1f", nil)
+}
+
+// EtcdAuth7edd0a0e8e says "Auth 完整步骤预览"
+// in the language the app shows.
+func EtcdAuth7edd0a0e8e() string { return In(i18n.Locale()).EtcdAuth7edd0a0e8e() }
+
+// EtcdAuth7edd0a0e8e says "Auth 完整步骤预览"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth7edd0a0e8e() string {
+	return Catalog.Format(msgs.locale, "etcdAuth7edd0a0e8e", nil)
+}
+
+// EtcdAuthe737766ae3 says "密码已省略的预览记录不能直接作为执行请求"
+// in the language the app shows.
+func EtcdAuthe737766ae3() string { return In(i18n.Locale()).EtcdAuthe737766ae3() }
+
+// EtcdAuthe737766ae3 says "密码已省略的预览记录不能直接作为执行请求"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthe737766ae3() string {
+	return Catalog.Format(msgs.locale, "etcdAuthe737766ae3", nil)
+}
+
+// EtcdAuthc3fe0949a3 says "复制完整 Auth 预览"
+// in the language the app shows.
+func EtcdAuthc3fe0949a3() string { return In(i18n.Locale()).EtcdAuthc3fe0949a3() }
+
+// EtcdAuthc3fe0949a3 says "复制完整 Auth 预览"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthc3fe0949a3() string {
+	return Catalog.Format(msgs.locale, "etcdAuthc3fe0949a3", nil)
+}
+
+// EtcdAuth0dc3f1cd70 says "保存 Auth 预览记录"
+// in the language the app shows.
+func EtcdAuth0dc3f1cd70() string { return In(i18n.Locale()).EtcdAuth0dc3f1cd70() }
+
+// EtcdAuth0dc3f1cd70 says "保存 Auth 预览记录"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth0dc3f1cd70() string {
+	return Catalog.Format(msgs.locale, "etcdAuth0dc3f1cd70", nil)
+}
+
+// EtcdAuth26cc613583 says "我确认顺序执行这些原生写入步骤"
+// in the language the app shows.
+func EtcdAuth26cc613583() string { return In(i18n.Locale()).EtcdAuth26cc613583() }
+
+// EtcdAuth26cc613583 says "我确认顺序执行这些原生写入步骤"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth26cc613583() string {
+	return Catalog.Format(msgs.locale, "etcdAuth26cc613583", nil)
+}
+
+// EtcdAuthc5bc0ed2a9 says "确认执行 Auth 写入"
+// in the language the app shows.
+func EtcdAuthc5bc0ed2a9() string { return In(i18n.Locale()).EtcdAuthc5bc0ed2a9() }
+
+// EtcdAuthc5bc0ed2a9 says "确认执行 Auth 写入"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthc5bc0ed2a9() string {
+	return Catalog.Format(msgs.locale, "etcdAuthc5bc0ed2a9", nil)
+}
+
+// EtcdAuth6fd850b292 says "刷新权限目录"
+// in the language the app shows.
+func EtcdAuth6fd850b292() string { return In(i18n.Locale()).EtcdAuth6fd850b292() }
+
+// EtcdAuth6fd850b292 says "刷新权限目录"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth6fd850b292() string {
+	return Catalog.Format(msgs.locale, "etcdAuth6fd850b292", nil)
+}
+
+// EtcdAuth9120693076 says "已返回 %d / %d 个原步骤回执"
+// in the language the app shows.
+func EtcdAuth9120693076() string { return In(i18n.Locale()).EtcdAuth9120693076() }
+
+// EtcdAuth9120693076 says "已返回 %d / %d 个原步骤回执"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth9120693076() string {
+	return Catalog.Format(msgs.locale, "etcdAuth9120693076", nil)
+}
+
+// EtcdAuthc55e397bfb says "权限包含未知原生字段，请保留原回执并重新输入明确请求"
+// in the language the app shows.
+func EtcdAuthc55e397bfb() string { return In(i18n.Locale()).EtcdAuthc55e397bfb() }
+
+// EtcdAuthc55e397bfb says "权限包含未知原生字段，请保留原回执并重新输入明确请求"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthc55e397bfb() string {
+	return Catalog.Format(msgs.locale, "etcdAuthc55e397bfb", nil)
+}
+
+// EtcdAuth978cbca626 says "权限"
+// in the language the app shows.
+func EtcdAuth978cbca626() string { return In(i18n.Locale()).EtcdAuth978cbca626() }
+
+// EtcdAuth978cbca626 says "权限"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth978cbca626() string {
+	return Catalog.Format(msgs.locale, "etcdAuth978cbca626", nil)
+}
+
+// EtcdAuth246af322dd says "键前缀"
+// in the language the app shows.
+func EtcdAuth246af322dd() string { return In(i18n.Locale()).EtcdAuth246af322dd() }
+
+// EtcdAuth246af322dd says "键前缀"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth246af322dd() string {
+	return Catalog.Format(msgs.locale, "etcdAuth246af322dd", nil)
+}
+
+// EtcdAuthf257b3c8d9 says "所有键"
+// in the language the app shows.
+func EtcdAuthf257b3c8d9() string { return In(i18n.Locale()).EtcdAuthf257b3c8d9() }
+
+// EtcdAuthf257b3c8d9 says "所有键"
+// in the language of msgs.
+func (msgs Messages) EtcdAuthf257b3c8d9() string {
+	return Catalog.Format(msgs.locale, "etcdAuthf257b3c8d9", nil)
+}
+
+// EtcdAuth3fd1a12ef5 says "键编码"
+// in the language the app shows.
+func EtcdAuth3fd1a12ef5() string { return In(i18n.Locale()).EtcdAuth3fd1a12ef5() }
+
+// EtcdAuth3fd1a12ef5 says "键编码"
+// in the language of msgs.
+func (msgs Messages) EtcdAuth3fd1a12ef5() string {
+	return Catalog.Format(msgs.locale, "etcdAuth3fd1a12ef5", nil)
+}

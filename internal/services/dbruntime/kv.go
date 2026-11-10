@@ -49,8 +49,15 @@ func (s *session) bindKV(raw contract.KVRequestLease) (contract.KVRequestLease, 
 	}
 	scope.Generation = s.generation
 	bound := &kvRequestLease{session: s, raw: raw, scope: scope}
+	_, auth := raw.(contract.KVAuthManagement)
 	if _, ok := raw.(contract.KVLeaseBrowsing); ok {
+		if auth {
+			return &kvAuthBrowsingLease{&kvLeaseBrowsingLease{bound}}, nil
+		}
 		return &kvLeaseBrowsingLease{bound}, nil
+	}
+	if auth {
+		return &kvAuthLease{bound}, nil
 	}
 	return bound, nil
 }

@@ -2,6 +2,7 @@ package kvworkspace
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"unicode/utf8"
 
@@ -30,11 +31,15 @@ func (s *State) View(c *ui.Context, d *Document) {
 	isEvent := eventMethod(d.method)
 	isRenewal := d.method == RenewalMethod
 	isBrowser := leaseBrowserMethod(d.method)
+	isAuth := d.method == AuthManagementMethod
 	ready := !d.Busy() && !d.NeedsRecovery() && (!isEvent && !isRenewal && d.lease != nil || isEvent && d.eventsAvailable || isRenewal && d.renewalAvailable)
 	ui.Column(c).Fill().Background(p.Panel).Children(func() {
 		ui.Row(c).FillWidth().Height(theme.RowHeight(c, theme.CommandBarHeight)).Background(p.Header).Children(func() {
 			ui.Toolbar(c, func() {
 				runLabel, runID := locales.Text("运行请求"), locales.Text("运行 KV 请求")
+				if isAuth {
+					runLabel, runID = locales.Text("刷新权限目录"), locales.Text("刷新权限目录")
+				}
 				if isBrowser {
 					runLabel = locales.Text("读取租约观察")
 					runID = runLabel
@@ -50,7 +55,7 @@ func (s *State) View(c *ui.Context, d *Document) {
 					runLabel = locales.Text("读取历史")
 					runID = runLabel
 				}
-				if ui.Button(c, runLabel).Label(runID).Disabled(!ready || isBrowser && !d.LeaseBrowsingAvailable() || isEvent && d.eventReceipt != nil || isRenewal && (d.renewalReceipt != nil || d.hasUnknownWrites())).Clicked() {
+				if ui.Button(c, runLabel).Label(runID).Disabled(!ready || isAuth && !d.AuthManagementAvailable() || isBrowser && !d.LeaseBrowsingAvailable() || isEvent && d.eventReceipt != nil || isRenewal && (d.renewalReceipt != nil || d.hasUnknownWrites())).Clicked() {
 					s.Run(d)
 				}
 				if d.method == WatchMethod {
@@ -108,8 +113,11 @@ func (s *State) View(c *ui.Context, d *Document) {
 					}
 				}
 			}
-			if (isEvent || isRenewal || isBrowser) && ui.Button(c, locales.Text("使用请求模板")).Disabled(d.Busy()).Clicked() {
+			if (isEvent || isRenewal || isBrowser || isAuth) && ui.Button(c, locales.Text("使用请求模板")).Disabled(d.Busy()).Clicked() {
 				request := DefaultEventRequest(d.method)
+				if isAuth {
+					request = DefaultAuthManagementRequest()
+				}
 				if isRenewal {
 					request = DefaultRenewalRequest()
 				}
@@ -126,6 +134,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 			ui.Text(c, name).SingleLine().MinWidth(0).Shrink(1).TextColor(p.Muted).Tooltip(name)
 		})
 		hint := locales.Text("JSON 中 bytes 使用 Base64，整数保留原生精度；请求使用绝对键")
+		if isAuth {
+			hint = locales.Text("用户与角色属于集群；每次 RPC 由服务端判断权限")
+		}
 		if isBrowser {
 			hint = locales.Text("集群租约观察；TTL 为逐项读回值，翻页会重新读取列表")
 		}
@@ -173,10 +184,17 @@ func (s *State) View(c *ui.Context, d *Document) {
 			}).Label(locales.Text("KV 显式恢复")).FillWidth().Padding(3, 8)
 		}
 		split := &s.SplitPercent
+		if isAuth {
+			split = &s.AuthSplitPercent
+		}
 		if isBrowser {
 			split = &s.LeaseBrowserSplitPercent
 		}
 		ui.SplitVerticalPercent(c, split, func() {
+			if isAuth {
+				s.authManagementView(c, d)
+				return
+			}
 			ui.Column(c).Fill().MinHeight(0).Children(func() {
 				d.Editor.Label = locales.Text("KV JSON 编辑器")
 				d.Editor.ReadOnly = d.Busy()
@@ -261,8 +279,15 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 				return
 			}
 			r := s.selectedReceipt(d)
-			if ui.Button(c, locales.Text("复制完整 JSON")).Disabled(r == nil || r.Result.JSON == "").Clicked() {
-				c.WriteClipboard(r.Result.JSON)
+			if ui.Button(c, locales.Text("复制完整 JSON")).Disabled(r == nil || r.Result.JSON == "" && r.AuthManagement == nil).Clicked() {
+				if r.AuthManagement != nil {
+					raw, err := encodeOperationReceipt(*r)
+					if err == nil {
+						c.WriteClipboard(string(raw))
+					}
+				} else {
+					c.WriteClipboard(r.Result.JSON)
+				}
 			}
 			if ui.Button(c, locales.Text("导出操作记录")).Disabled(r == nil || d.FileBusy() || s.deps.Files.SavePath == nil).Clicked() {
 				s.ExportOperationRecord(d)
@@ -311,6 +336,11 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 			c.WriteClipboard(r.Result.Request.Method + "\n" + r.Result.Request.JSON)
 		}
 		text := r.Result.JSON
+		if r.AuthManagement != nil {
+			raw, _ := json.MarshalIndent(authRecord(r.AuthManagement), "", "  ")
+			text = string(raw)
+			ui.Text(c, fmt.Sprintf(locales.Text("已返回 %d / %d 个原步骤回执"), len(r.AuthManagement.Steps), len(r.AuthManagement.Requests))).SingleLine()
+		}
 		if text == "" {
 			text = r.Error
 		}
@@ -328,12 +358,17 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 func (s *State) Modals(c *ui.Context) {
 	s.renewalModals(c)
 	s.leaseManagementModals(c)
+	s.authManagementModals(c)
 	for _, d := range s.documents {
 		if !s.active(d) || d.confirmation == nil || s.leave != nil {
 			continue
 		}
 		confirmation := d.confirmation
 		theme.Modal(c.Key(fmt.Sprintf("kv-confirm-%d", d.id)), &confirmation.open, func() {
+			if confirmation.auth != nil {
+				s.authConfirmationView(c, d, confirmation)
+				return
+			}
 			if confirmation.management != nil {
 				s.leaseManagementConfirmationView(c, d, confirmation)
 				return

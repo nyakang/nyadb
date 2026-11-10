@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -146,6 +147,14 @@ func captureEtcdPublic(t *testing.T, s *State, phase string) {
 				r, found := tt.Find(text)
 				if !found || r.W <= 0 || r.Y+r.H > float32(size[1])-18 {
 					t.Fatal("public attached key row clipped", language, size, r)
+				}
+			}
+			if strings.HasPrefix(phase, "auth-public-") && strings.HasSuffix(phase, "step-confirmation") {
+				for _, label := range []string{"确认 Auth 原生写入步骤", "Auth 完整步骤预览", "我确认顺序执行这些原生写入步骤", "确认执行 Auth 写入", "取消"} {
+					r, ok := tt.Find(locales.Text(label))
+					if !ok || r.W <= 0 || r.X < 0 || r.Y < 0 || r.X+r.W > float32(size[0])+1 || r.Y+r.H > float32(size[1])+1 {
+						t.Fatal("public Auth confirmation clipped", phase, language, label, r)
+					}
 				}
 			}
 			if phase == "renewal-public-confirmation" {

@@ -36,6 +36,16 @@ type kvLease struct {
 	closeErr     error             // guarded by ops
 }
 
+func (*kvLease) AuthMethods() []string {
+	return []string{
+		"/etcdserverpb.Auth/AuthStatus", "/etcdserverpb.Auth/UserList", "/etcdserverpb.Auth/UserGet",
+		"/etcdserverpb.Auth/UserAdd", "/etcdserverpb.Auth/UserDelete", "/etcdserverpb.Auth/UserChangePassword",
+		"/etcdserverpb.Auth/UserGrantRole", "/etcdserverpb.Auth/UserRevokeRole",
+		"/etcdserverpb.Auth/RoleList", "/etcdserverpb.Auth/RoleGet", "/etcdserverpb.Auth/RoleAdd", "/etcdserverpb.Auth/RoleDelete",
+		"/etcdserverpb.Auth/RoleGrantPermission", "/etcdserverpb.Auth/RoleRevokePermission",
+	}
+}
+
 func (l *kvLease) Scope() contract.KVScope { return l.s.KVScope() }
 func (l *kvLease) CheckKVLease() error {
 	l.mu.Lock()
