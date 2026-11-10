@@ -68,6 +68,7 @@ type WatchRun struct {
 	pendingProgress                        int
 	minimumRevision, lastEvent, lastHeader int64
 	terminal                               WatchTerminal
+	reserve                                func(int) bool
 }
 
 func validateWatchRequest(r *pb.WatchCreateRequest) error {
@@ -99,6 +100,10 @@ func (c *Client) StartWatch(parent context.Context, request *pb.WatchCreateReque
 // startWatchOwned consumes operation ownership on every path. A returned run
 // releases it only after the original receive executor acknowledges termination.
 func (c *Client) startWatchOwned(parent context.Context, request *pb.WatchCreateRequest) (*WatchRun, error) {
+	return c.startWatchOwnedBudget(parent, request, nil)
+}
+
+func (c *Client) startWatchOwnedBudget(parent context.Context, request *pb.WatchCreateRequest, reserve func(int) bool) (*WatchRun, error) {
 	if !c.Alive() {
 		c.operation.Unlock()
 		return nil, ErrRetired
@@ -113,6 +118,7 @@ func (c *Client) startWatchOwned(parent context.Context, request *pb.WatchCreate
 		return nil, err
 	}
 	w := &WatchRun{minimumRevision: request.StartRevision, client: c, request: proto.Clone(request).(*pb.WatchCreateRequest), stream: stream, ctx: ctx, cancel: cancel, done: make(chan struct{}), created: make(chan error, 1)}
+	w.reserve = reserve
 	timer := time.AfterFunc(c.config.RequestTimeout, cancel)
 	go w.receive(stop, timer)
 	w.send.Lock()
@@ -291,6 +297,9 @@ func (w *WatchRun) append(frame WatchFrame) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if len(w.frames) >= watchBatchLimit || w.bufferedEvents+len(frame.Events) > watchEventLimit || charge > watchByteLimit || w.bufferedBytes+charge > watchByteLimit {
+		return ErrBounds
+	}
+	if w.reserve != nil && !w.reserve(charge) {
 		return ErrBounds
 	}
 	w.frames = append(w.frames, bufferedWatchFrame{frame: frame, bytes: charge})

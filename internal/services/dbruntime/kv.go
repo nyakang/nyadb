@@ -27,7 +27,7 @@ func (m *Manager) KVRequests(id int64) (contract.KVRequestsProvider, error) {
 	return s, nil
 }
 func (s *session) KVScope() contract.KVScope {
-	p, err := contract.Require[contract.KVRequestsProvider](s.raw)
+	p, err := contract.Require[interface{ KVScope() contract.KVScope }](s.raw)
 	if err != nil {
 		return contract.KVScope{}
 	}

@@ -68,7 +68,9 @@ def certificates(folder, access=False):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False):
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False):
+    if events_smoke:
+        session = True
     if access:
         public = True
     if access_smoke:
@@ -104,6 +106,8 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                   image=image, race=race, passed=False,
                   source_hashes={str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources})
     identifier = None
+    if events_smoke:
+        report['scope'] = 'private-etcd-events-session-smoke'
     private_path = None
     try:
         with tempfile.TemporaryDirectory(prefix='nyadb-etcd-'+nonce+'-', dir=build) as raw:
@@ -228,6 +232,16 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                             'HistoryActualProgressLossTimeoutCancelAndOriginalClose',
                             'HistoryCompleteLargeValuesAndExplicitNativeCaptureBounds',
                             'HistoryActualRangeCreationAndEventReceiptLossNeverReplay')
+            if events_smoke:
+                environment.update(NYADB_ETCD_EVENTS_IT='1')
+                packages = ['./internal/services/etcd', './internal/services/dbruntime']
+                required = ('EventsSessionOriginalStreamsFixedHistoryAndIndependentRequests',
+                            'EventsSessionOriginalRetirementRecoveryDoesNotSubscribe',
+                            'EventsHistoryDoesNotReplaceActualUnknownWriteReceipt',
+                            'EventsTransferredReceiptsExhaustSharedBudgetWithoutStoppingOtherRuns',
+                            'EventsActualOriginalWatchLossAndCanceledCreationNeverReconnect',
+                            'EventsActualProgressLossKeepsOriginalHistoryOnCancelAndRetirement',
+                            'EventsRuntimeOriginalPublicationAndExplicitRecovery')
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
             command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
@@ -284,6 +298,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=('anonymous', 'basic', 'tls', 'mtls'), default='basic')
     parser.add_argument('--history-smoke', action='store_true')
+    parser.add_argument('--events-smoke', action='store_true')
     parser.add_argument('--watch-smoke', action='store_true')
     parser.add_argument('--access', action='store_true')
     parser.add_argument('--access-smoke', action='store_true')
@@ -296,4 +311,4 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke)

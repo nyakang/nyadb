@@ -26,6 +26,8 @@ type Session struct {
 	work            sync.WaitGroup
 	leases          map[*kvLease]bool
 	dataDocuments   map[*dataLease]bool
+	events          map[*eventsLease]bool
+	eventBytes      int
 	closeDone       chan struct{}
 	closeErr        error
 }
@@ -120,7 +122,7 @@ func (s *Session) ReserveKV(document uint64) (contract.KVRequestLease, error) {
 	if document == 0 {
 		return nil, ErrInvalid
 	}
-	if len(s.leases)+len(s.dataDocuments) >= 32 {
+	if len(s.leases)+len(s.dataDocuments)+len(s.events) >= 32 {
 		return nil, contract.ErrKVLeaseLimit
 	}
 	for l := range s.leases {
@@ -170,6 +172,10 @@ func (s *Session) Close() error {
 	for l := range s.dataDocuments {
 		documents = append(documents, l)
 	}
+	events := make([]*eventsLease, 0, len(s.events))
+	for l := range s.events {
+		events = append(events, l)
+	}
 	s.mu.Unlock()
 	err := s.client.Close()
 	for _, l := range leases {
@@ -177,6 +183,9 @@ func (s *Session) Close() error {
 	}
 	for _, l := range documents {
 		err = errors.Join(err, l.Close())
+	}
+	for _, l := range events {
+		err = errors.Join(err, l.retire())
 	}
 	s.work.Wait()
 	s.closeErr = err

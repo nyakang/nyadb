@@ -203,9 +203,8 @@ executor. Fragmented Watch requests are explicitly unsupported in this stage.
 
 `--watch-smoke --race --mode MODE` runs four private raw-service parents, including
 actual upstream creation/event response loss and the 4 KiB binary key boundary.
-It does not establish public Watch/history acceptance. Neutral session leases,
-aggregate session budgets and graphical controls remain
-pending; this private API is not published by the workbench provider.
+It does not establish public Watch/history acceptance. Graphical controls remain
+pending; the raw Watch API is not published by the native request whitelist.
 
 Private `Client.History` captures an exact-key Range receipt and a fixed revision
 window, then transfers the same Client's uninterrupted execution ownership to
@@ -225,5 +224,35 @@ overall request deadline. Close and cancellation await the original executor;
 lost Range/creation/event/progress receipts never cause replay or reconnection.
 
 `--history-smoke --race --mode MODE` requires seven private native history
-parents. It establishes the raw fixed-window foundation only; neutral session
-leases, aggregate budgets and the public Watch/history workbench remain pending.
+parents. It establishes the raw fixed-window foundation only; the public
+Watch/history workbench remains pending.
+
+A separate private `contract.KVEventsProvider` supplies original physical
+document leases through Session and the runtime publication boundary. Requests,
+complete native frames, typed binary events and original fixed-window history
+receipts own independent snapshots. Public generations are translated only by
+dbruntime. Existing native write preparations and unknown write receipts remain
+on their separate KV request lease.
+
+Sessions allow four event documents, included in the existing 32-document total.
+Each original document has a 16 MiB conservative receipt reservation and shares
+a 32 MiB session budget. Reservations include raw buffers, neutral/retained
+copies and optional JSON; Poll does not release charges for receipts already
+transferred to the document. Overflow stops only its captured original stream
+and retains prior frames. Complete binary values are never silently truncated.
+Frame JSON presentation is independently bounded to 1 MiB; complete original
+protobuf remains available when that optional presentation cannot fit.
+
+Stop waits for actual cancellation acknowledgement. A stopped Watch retains its
+original run until explicit ClearReceipts or document disposal. Session
+retirement closes original physical channels and clears credentials while
+parked frames/history remain owned by their original document. Document Close
+clears caches and releases reservations. Recovery settles only the old captured
+lease, transfers remaining original evidence, and reserves a new lease without
+opening a channel, subscribing or executing history. Preconnect remains explicit.
+
+`--events-smoke --race --mode MODE` requires seven private Session/Manager
+parents, including actual processed Watch/progress response loss, original
+cancel/retirement, generation replacement, precise lease metadata, unknown-write
+receipt independence and shared-budget competition after Poll transfers. This
+scope does not publish or establish graphical Watch/history acceptance.

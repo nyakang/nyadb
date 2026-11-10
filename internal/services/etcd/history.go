@@ -62,6 +62,10 @@ func historyStart(requested, target int64) int64 {
 	return max(int64(1), target-9999)
 }
 func (c *Client) History(parent context.Context, input HistoryRequest) (result HistoryResult, err error) {
+	return c.history(parent, input, nil)
+}
+
+func (c *Client) history(parent context.Context, input HistoryRequest, reserve func(int) bool) (result HistoryResult, err error) {
 	request := input.clone()
 	result.Authored = request.clone()
 	result.Window = request.clone()
@@ -117,7 +121,7 @@ func (c *Client) History(parent context.Context, input HistoryRequest) (result H
 		return result, ErrBounds
 	}
 	owned = false // transferred to the original receive executor
-	run, startErr := c.startWatchOwned(ctx, &pb.WatchCreateRequest{Key: bytes.Clone(request.Key), WatchId: 1, StartRevision: request.StartRevision, PrevKv: true, ProgressNotify: true})
+	run, startErr := c.startWatchOwnedBudget(ctx, &pb.WatchCreateRequest{Key: bytes.Clone(request.Key), WatchId: 1, StartRevision: request.StartRevision, PrevKv: true, ProgressNotify: true}, reserve)
 	if run == nil {
 		return result, startErr
 	}
