@@ -55,7 +55,7 @@ func TestEtcdNativeMemberClusterDirectoryExplicitAliasesLearnerAndFreshLeaderObs
 		expected.MemberID = member.ID
 		candidate := cfg
 		candidate.Endpoint = target.Endpoint
-		c, err := OpenMember(context.Background(), candidate, secret, expected)
+		c, _, err := root.OpenMemberObserved(context.Background(), candidate.Endpoint, secret, expected)
 		if err != nil {
 			t.Fatal("explicit observed member alias/learner transport rejected", target.Name, err)
 		}
@@ -99,7 +99,7 @@ func TestEtcdNativeMemberClusterDirectoryExplicitAliasesLearnerAndFreshLeaderObs
 		roles[role] = true
 		wrong := expected
 		wrong.MemberID ^= 1
-		if c, err := OpenMember(context.Background(), candidate, secret, wrong); err == nil {
+		if c, _, err := root.OpenMemberObserved(context.Background(), candidate.Endpoint, secret, wrong); err == nil {
 			c.Close()
 			t.Fatal("explicit alias silently accepted another member")
 		}

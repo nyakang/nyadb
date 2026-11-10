@@ -68,9 +68,11 @@ def certificates(folder, access=False):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False, public_lease_management=False, dependency_modfile=None, auth_native=False, public_auth=False, compaction_native=False, public_compaction=False, member_native=False):
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False, public_lease_management=False, dependency_modfile=None, auth_native=False, public_auth=False, compaction_native=False, public_compaction=False, member_native=False, member_session=False):
     if member_native and any((profile, session, workspace, data, public, smoke, access, access_smoke, watch_smoke, history_smoke, events_smoke, events_workspace_smoke, public_events, renewal_native, renewal_session, public_renewal, lease_browser_native, lease_browser_session, public_lease_browser, public_lease_management, auth_native, public_auth, compaction_native, public_compaction)):
         raise ValueError('Member native acceptance is a separate fixture scope')
+    if member_session:
+        member_native = session = True
     if public_compaction:
         public = compaction_native = True
     if compaction_native:
@@ -169,6 +171,8 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
         report['scope'] = 'public-etcd-original-compaction-workbench'
     if member_native:
         report['scope'] = 'private-etcd-original-member-native-protocol'
+    if member_session:
+        report['scope'] = 'private-etcd-original-member-session-runtime'
     private_path = None
     try:
         with tempfile.TemporaryDirectory(prefix='nyadb-etcd-'+nonce+'-', dir=build) as raw:
@@ -483,6 +487,19 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                                        'MemberDefragmentActualProcessedFaultsNeverReplayOrSettleByLaterStatus',
                                        'MemberDefragmentActualRestrictedTokenAndCertificateIdentity',
                                        'MemberDefragmentBeforeDispatchCancellationAndOriginalPlanOwnership')
+            if member_session:
+                environment.update(NYADB_ETCD_MEMBER_SESSION_IT='1', NYADB_ETCD_SESSION_IT='1')
+                packages = ['./internal/services/etcd', './internal/services/dbruntime']
+                required += ('MemberSessionOriginalDirectoryTransportAndEmptyAck',
+                             'MemberSessionActualProcessedFaultsAndPureRecovery',
+                             'MemberSessionRestrictedIdentityAndCertificateTransport',
+                             'MemberRuntimeOriginalPublicationAndEvidenceRecovery',
+                             'MemberRuntimeActualProcessedPublicationFaults',
+                             'SessionOriginalScopePurePlansAndExactReplies',
+                             'SessionActualProcessedReplyFaultsAndRecovery',
+                             'SessionOriginalReadBusyCancellationAndClose',
+                             'RuntimeActualProcessedPutFaultAndGenerationReplacement',
+                             'RuntimeLateOriginalHandshakeCannotCloseReplacement')
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
             command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
@@ -583,6 +600,7 @@ if __name__ == '__main__':
     parser.add_argument('--compaction-native', action='store_true')
     parser.add_argument('--public-compaction', action='store_true')
     parser.add_argument('--member-native', action='store_true')
+    parser.add_argument('--member-session', action='store_true')
     parser.add_argument('--dependency-modfile')
     parser.add_argument('--watch-smoke', action='store_true')
     parser.add_argument('--access', action='store_true')
@@ -596,4 +614,4 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser, args.public_lease_management, args.dependency_modfile, args.auth_native, args.public_auth, args.compaction_native, args.public_compaction, args.member_native)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser, args.public_lease_management, args.dependency_modfile, args.auth_native, args.public_auth, args.compaction_native, args.public_compaction, args.member_native, args.member_session)

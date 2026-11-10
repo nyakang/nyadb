@@ -23,17 +23,18 @@ func (*kvMaintenanceAuthFakeLease) MaintenanceMethods() []string        { return
 func (*kvMaintenanceBrowserFakeLease) MaintenanceMethods() []string     { return maintenanceInventory }
 func (*kvMaintenanceAuthBrowserFakeLease) MaintenanceMethods() []string { return maintenanceInventory }
 
-func TestKVMaintenanceOriginalEightFacetCombinationsAndPureRecovery(t *testing.T) {
-	for bits := 0; bits < 8; bits++ {
+func TestKVMaintenanceOriginalSixteenFacetCombinationsAndPureRecovery(t *testing.T) {
+	for bits := 0; bits < 16; bits++ {
 		t.Run(strconv.Itoa(bits), func(t *testing.T) {
 			maintenance, auth, browse := bits&1 != 0, bits&2 != 0, bits&4 != 0
+			members := bits&8 != 0
 			m := dbruntime.New()
 			defer m.Close()
 			h := kvHandleFor(1)
 			var bases []*kvFakeLease
 			var originals []contract.KVRequestLease
 			authMethods := []string{"/etcdserverpb.Auth/AuthStatus"}
-			h.reserve = func(uint64) (contract.KVRequestLease, error) {
+			h.reserve = func(document uint64) (contract.KVRequestLease, error) {
 				base := &kvFakeLease{scope: h.scope.Clone()}
 				bases = append(bases, base)
 				var lease contract.KVRequestLease = base
@@ -60,6 +61,9 @@ func TestKVMaintenanceOriginalEightFacetCombinationsAndPureRecovery(t *testing.T
 				} else if maintenance {
 					lease = &kvMaintenanceFakeLease{base}
 				}
+				if members {
+					lease = withFakeMembers(lease, &fakeMemberFacet{base: base, document: document})
+				}
 				originals = append(originals, lease)
 				return lease, nil
 			}
@@ -84,8 +88,16 @@ func TestKVMaintenanceOriginalEightFacetCombinationsAndPureRecovery(t *testing.T
 				inventory, hasMaintenance := lease.(contract.KVMaintenance)
 				_, hasAuth := lease.(contract.KVAuthManagement)
 				_, hasBrowse := lease.(contract.KVLeaseBrowsing)
-				if hasMaintenance != maintenance || hasAuth != auth || hasBrowse != browse {
+				memberFacet, hasMembers := lease.(contract.KVMembers)
+				if hasMaintenance != maintenance || hasAuth != auth || hasBrowse != browse || hasMembers != members {
 					t.Fatal("binding changed original optional facets")
+				}
+				if hasMembers {
+					o, err := memberFacet.ObserveMembers(context.Background())
+					if err != nil || o.Snapshot().DocumentID != 1 {
+						t.Fatal("members facet lost original document", err)
+					}
+					o.Close()
 				}
 				if hasMaintenance {
 					got := inventory.MaintenanceMethods()

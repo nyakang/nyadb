@@ -144,6 +144,7 @@ func projectKVResult(request contract.KVRequest, r Response) contract.KVResult {
 		out.ProjectionError = "native protobuf capture failed"
 		return out
 	}
+	out.NativeCaptured = true
 	budget := nativeJSONLimit
 	if jsonBound(m.ProtoReflect(), &budget, 0) {
 		b, e := (protojson.MarshalOptions{UseProtoNames: true, EmitUnpopulated: true}).Marshal(m)
@@ -193,6 +194,25 @@ func projectReply(m proto.Message, budget *int, depth int) (contract.KVReply, er
 		// The native reply has only its header. Requested compaction revision
 		// and physical mode stay in the original request, not an invented reply.
 		r.Kind = "compaction"
+	case *pb.DefragmentResponse:
+		r.Kind = "defragment"
+	case *pb.MemberListResponse:
+		r.Kind = "member_list"
+		*budget -= len(v.Members)
+		if *budget < 0 {
+			return r, ErrBounds
+		}
+		r.Members = make([]contract.KVMember, len(v.Members))
+		for i, member := range v.Members {
+			if member == nil {
+				return r, ErrProtocol
+			}
+			*budget -= len(member.PeerURLs) + len(member.ClientURLs)
+			if *budget < 0 {
+				return r, ErrBounds
+			}
+			r.Members[i] = contract.KVMember{ID: member.ID, Name: member.Name, PeerURLs: append([]string(nil), member.PeerURLs...), ClientURLs: append([]string(nil), member.ClientURLs...), IsLearner: member.IsLearner, NativeExtensions: append([]byte(nil), member.ProtoReflect().GetUnknown()...)}
+		}
 	case *pb.PutResponse:
 		r.Kind = "put"
 		if v.PrevKv != nil {
@@ -268,6 +288,10 @@ func projectReply(m proto.Message, budget *int, depth int) (contract.KVReply, er
 		}
 	case *pb.StatusResponse:
 		r.Kind = "status"
+		*budget -= len(v.Errors)
+		if *budget < 0 {
+			return r, ErrBounds
+		}
 		r.Status = &contract.KVStatus{Version: v.Version, DBSize: v.DbSize, DBSizeInUse: v.DbSizeInUse, Leader: v.Leader, RaftIndex: v.RaftIndex, RaftTerm: v.RaftTerm, RaftAppliedIndex: v.RaftAppliedIndex, Errors: append([]string(nil), v.Errors...), IsLearner: v.IsLearner}
 	default:
 		a, kind, e := projectAuthReply(m, budget)

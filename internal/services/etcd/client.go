@@ -60,6 +60,15 @@ func (r Response) Before() (Response, bool) {
 	}
 	return r.before.clone(), true
 }
+
+// Private document transports have their complete neutral receipt captured
+// before releasing this duplicate native cache. Public raw clients retain the
+// ordinary LastResponse behavior.
+func (c *Client) releaseLastResponse() {
+	c.mu.Lock()
+	c.last = Response{}
+	c.mu.Unlock()
+}
 func (r Response) clone() Response {
 	r.native = r.Native()
 	if r.before != nil {
@@ -99,7 +108,7 @@ type Client struct {
 }
 
 func Open(parent context.Context, cfg Config, secret string) (*Client, error) {
-	return openClient(parent, cfg, secret, nil)
+	return openClient(parent, cfg, secret, nil, nil)
 }
 
 // OpenMember binds a maintenance transport to an already observed native
@@ -108,13 +117,50 @@ func Open(parent context.Context, cfg Config, secret string) (*Client, error) {
 // infer, retry or switch member endpoints. IDs remain observations, not an
 // incarnation guarantee.
 func OpenMember(parent context.Context, cfg Config, secret string, expected Identity) (*Client, error) {
-	if expected.ClusterID == 0 || expected.MemberID == 0 || !validVersion(expected.Version) || cfg.DiscoverAccess {
-		return nil, ErrInvalid
-	}
-	return openClient(parent, cfg, secret, &expected)
+	c, _, err := OpenMemberObserved(parent, cfg, secret, expected)
+	return c, err
 }
 
-func openClient(parent context.Context, cfg Config, secret string, member *Identity) (*Client, error) {
+// OpenMemberObserved also preserves the actual independent Status receipt on
+// failed identity checks. Rejected candidate transports are still closed.
+func OpenMemberObserved(parent context.Context, cfg Config, secret string, expected Identity) (*Client, Response, error) {
+	if expected.ClusterID == 0 || expected.MemberID == 0 || !validVersion(expected.Version) || cfg.DiscoverAccess {
+		return nil, Response{}, ErrInvalid
+	}
+	var observation Response
+	c, err := openClient(parent, cfg, secret, &expected, &observation)
+	return c, observation.clone(), err
+}
+
+// OpenMemberObserved on an original client captures its authenticated token.
+// Learners serve Status but reject Authenticate; binding must not change the
+// original principal or silently authenticate on another member. The token is
+// private to the new captured transport and never enters a neutral receipt.
+func (c *Client) OpenMemberObserved(parent context.Context, endpoint, secret string, expected Identity) (*Client, Response, error) {
+	if !c.Alive() {
+		return nil, Response{}, ErrRetired
+	}
+	if expected.ClusterID != c.identity.ClusterID || expected.MemberID == 0 || !validVersion(expected.Version) {
+		return nil, Response{}, ErrInvalid
+	}
+	cfg := c.config
+	cfg.Endpoint, cfg.DiscoverAccess = endpoint, false
+	c.mu.Lock()
+	token := c.token
+	c.mu.Unlock()
+	if cfg.Auth == "basic" && token == "" {
+		return nil, Response{}, ErrRetired
+	}
+	var observation Response
+	member, err := openClientWithToken(parent, cfg, secret, &expected, &observation, token)
+	return member, observation.clone(), err
+}
+
+func openClient(parent context.Context, cfg Config, secret string, member *Identity, capture *Response) (*Client, error) {
+	return openClientWithToken(parent, cfg, secret, member, capture, "")
+}
+
+func openClientWithToken(parent context.Context, cfg Config, secret string, member *Identity, capture *Response, token string) (*Client, error) {
 	cfg, tc, err := normalizeConfig(cfg, secret)
 	if err != nil {
 		return nil, err
@@ -156,16 +202,30 @@ func openClient(parent context.Context, cfg Config, secret string, member *Ident
 	}
 	fail := func(e error) (*Client, error) { _ = c.Close(); return nil, e }
 	if cfg.Auth == "basic" {
-		r, err := pb.NewAuthClient(conn).Authenticate(ctx, &pb.AuthenticateRequest{Name: cfg.Username, Password: secret})
-		if err != nil {
-			return fail(err)
+		if token != "" {
+			if len(token) > 1<<20 {
+				return fail(ErrBounds)
+			}
+			c.token = token
+		} else {
+			r, err := pb.NewAuthClient(conn).Authenticate(ctx, &pb.AuthenticateRequest{Name: cfg.Username, Password: secret})
+			if err != nil {
+				return fail(err)
+			}
+			if r == nil || r.Token == "" || len(r.Token) > 1<<20 {
+				return fail(ErrProtocol)
+			}
+			c.token = r.Token
 		}
-		if r == nil || r.Token == "" || len(r.Token) > 1<<20 {
-			return fail(ErrProtocol)
-		}
-		c.token = r.Token
 	}
 	observed, err := pb.NewMaintenanceClient(conn).Status(c.authContext(ctx), &pb.StatusRequest{})
+	if capture != nil {
+		*capture = Response{Attempted: true, Code: status.Code(err)}
+		if observed != nil {
+			capture.native = proto.Clone(observed)
+			capture.Header = header(observed.Header)
+		}
+	}
 	if err != nil {
 		return fail(err)
 	}
@@ -176,6 +236,9 @@ func openClient(parent context.Context, cfg Config, secret string, member *Ident
 	if member != nil {
 		if c.identity.ClusterID != member.ClusterID || c.identity.MemberID != member.MemberID || c.identity.Version != member.Version {
 			return fail(ErrProtocol)
+		}
+		if capture != nil {
+			capture.Completed = true
 		}
 		if err := ctx.Err(); err != nil {
 			return fail(err)

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nyakang/nyadb/internal/db/contract"
 	pb "go.etcd.io/etcd/api/v3/etcdserverpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -22,6 +23,7 @@ type memberProtocolRelay struct {
 	ready         atomic.Bool
 	calls         atomic.Int32
 	ranges        atomic.Int32
+	directory     atomic.Pointer[pb.MemberListResponse]
 	entered, done chan struct{}
 	request       *pb.DefragmentRequest
 	receipt       *pb.DefragmentResponse
@@ -38,6 +40,8 @@ func (f *memberProtocolRelay) serve(_ any, stream grpc.ServerStream) error {
 		req, reply = &pb.RangeRequest{}, &pb.RangeResponse{Header: &pb.ResponseHeader{ClusterId: 7, MemberId: 9, Revision: 11, RaftTerm: 2}}
 	case "/etcdserverpb.Maintenance/Defragment":
 		req, reply = &pb.DefragmentRequest{}, &pb.DefragmentResponse{}
+	case "/etcdserverpb.Cluster/MemberList":
+		req, reply = &pb.MemberListRequest{}, &pb.MemberListResponse{Header: &pb.ResponseHeader{ClusterId: 7, MemberId: 9, RaftTerm: 2}, Members: []*pb.Member{{ID: 9, Name: "source", ClientURLs: []string{"http://declared:2379"}}}}
 	default:
 		if f.upstream == nil {
 			return status.Error(codes.Unimplemented, "not a member fixture route")
@@ -52,6 +56,11 @@ func (f *memberProtocolRelay) serve(_ any, stream grpc.ServerStream) error {
 			return err
 		}
 	}
+	if method == "/etcdserverpb.Cluster/MemberList" {
+		if directory := f.directory.Load(); directory != nil {
+			reply = proto.Clone(directory)
+		}
+	}
 	if f.ready.Load() && method == "/etcdserverpb.Maintenance/Status" {
 		s := reply.(*pb.StatusResponse)
 		switch f.mode {
@@ -63,6 +72,8 @@ func (f *memberProtocolRelay) serve(_ any, stream grpc.ServerStream) error {
 			s.Version = "3.5.35"
 		case "before-denied":
 			return status.Error(codes.PermissionDenied, "original status denied")
+		case "learner":
+			s.IsLearner = true
 		}
 	}
 	if method == "/etcdserverpb.Maintenance/Defragment" {
@@ -145,6 +156,22 @@ func TestMemberProtocolAcceptsNativeZeroRevisionAndEmptyAckWithoutInventingHeade
 	}
 }
 
+func TestMemberProjectionBoundsRepeatedStringsWithoutChangingNativeOutcome(t *testing.T) {
+	for _, native := range []proto.Message{
+		&pb.StatusResponse{Header: &pb.ResponseHeader{ClusterId: 7, MemberId: 9, Revision: 1, RaftTerm: 1}, Version: "3.7.3", Errors: make([]string, 10001)},
+		&pb.MemberListResponse{Header: &pb.ResponseHeader{ClusterId: 7, MemberId: 9, RaftTerm: 1}, Members: []*pb.Member{{ID: 9, ClientURLs: make([]string, 10001)}}},
+	} {
+		r := projectKVResult(contract.KVRequest{}, Response{Attempted: true, Completed: true, native: native})
+		if !r.Completed || r.WriteOutcomeUnknown || !r.NativeCaptured || r.ProjectionError == "" || r.Reply != nil || r.JSONCaptureError != "" || len(r.Native) == 0 {
+			t.Fatal("projection cache bound changed complete native outcome", r)
+		}
+		decoded := native.ProtoReflect().New().Interface()
+		if err := proto.Unmarshal(r.Native, decoded); err != nil || !proto.Equal(decoded, native) {
+			t.Fatal("full bounded native evidence lost", err)
+		}
+	}
+}
+
 func TestMemberOpenRequiresExplicitOriginalIdentityWithoutKVProbeOrEndpointFallback(t *testing.T) {
 	original, relay := memberRelayClient(t, nil, Config{}, "", "ok")
 	cfg := original.config
@@ -195,6 +222,25 @@ func TestMemberLegacyRejectionKeepsOtherUnknownFailuresAmbiguous(t *testing.T) {
 	c.identity.Version = "3.7.3"
 	if c.definiteMemberRejection(&pb.DefragmentRequest{}, status.Error(codes.Unknown, "auth: permission denied")) {
 		t.Fatal("legacy exception applied to another observed version")
+	}
+}
+
+func TestMemberObservedHandshakeKeepsActualRejectedIdentityAndNativeEmptyCapture(t *testing.T) {
+	original, f := memberRelayClient(t, nil, Config{}, "", "ok")
+	expected := original.Identity()
+	expected.MemberID++
+	c, receipt, err := OpenMemberObserved(context.Background(), original.config, "", expected)
+	if !errors.Is(err, ErrProtocol) || c != nil || !receipt.Attempted || receipt.Completed || receipt.WriteOutcomeUnknown || receipt.Code != codes.OK || receipt.Native() == nil || receipt.Header.MemberID != original.Identity().MemberID {
+		t.Fatal("failed candidate observation was replaced by expected identity", err, receipt)
+	}
+	actual := receipt.Native().(*pb.StatusResponse)
+	actual.Header.MemberId = expected.MemberID
+	if receipt.Native().(*pb.StatusResponse).Header.MemberId != original.Identity().MemberID || !original.Alive() || f.calls.Load() != 0 {
+		t.Fatal("inspection mutated original observation/transport")
+	}
+	r := projectKVResult(contract.KVRequest{Method: "/etcdserverpb.Maintenance/Defragment", JSON: "{}"}, Response{Attempted: true, Completed: true, native: &pb.DefragmentResponse{}})
+	if !r.NativeCaptured || len(r.Native) != 0 || r.JSON == "" || r.Reply == nil || r.Reply.Kind != "defragment" || r.Header != (contract.KVHeader{}) || r.ProjectionError != "" || r.WriteOutcomeUnknown {
+		t.Fatal("empty native ACK was mistaken for missing capture", r)
 	}
 }
 

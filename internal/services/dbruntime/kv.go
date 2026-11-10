@@ -38,7 +38,7 @@ func (s *session) KVScope() contract.KVScope {
 	scope.Generation = s.generation
 	return scope
 }
-func (s *session) bindKV(raw contract.KVRequestLease) (contract.KVRequestLease, error) {
+func (s *session) bindKV(raw contract.KVRequestLease, document uint64) (contract.KVRequestLease, error) {
 	if raw == nil {
 		return nil, contract.ErrUnsupported
 	}
@@ -48,18 +48,18 @@ func (s *session) bindKV(raw contract.KVRequestLease) (contract.KVRequestLease, 
 		return nil, errors.Join(contract.ErrRevoked, raw.Close())
 	}
 	scope.Generation = s.generation
-	bound := &kvRequestLease{session: s, raw: raw, scope: scope}
+	bound := &kvRequestLease{session: s, raw: raw, scope: scope, document: document}
 	_, auth := raw.(contract.KVAuthManagement)
 	if _, ok := raw.(contract.KVLeaseBrowsing); ok {
 		if auth {
-			return bindKVMaintenance(&kvAuthBrowsingLease{&kvLeaseBrowsingLease{bound}}), nil
+			return bindKVMembers(bindKVMaintenance(&kvAuthBrowsingLease{&kvLeaseBrowsingLease{bound}})), nil
 		}
-		return bindKVMaintenance(&kvLeaseBrowsingLease{bound}), nil
+		return bindKVMembers(bindKVMaintenance(&kvLeaseBrowsingLease{bound})), nil
 	}
 	if auth {
-		return bindKVMaintenance(&kvAuthLease{bound}), nil
+		return bindKVMembers(bindKVMaintenance(&kvAuthLease{bound})), nil
 	}
-	return bindKVMaintenance(bound), nil
+	return bindKVMembers(bindKVMaintenance(bound)), nil
 }
 func (s *session) ReserveKV(document uint64) (contract.KVRequestLease, error) {
 	if !s.alive() {
@@ -73,7 +73,7 @@ func (s *session) ReserveKV(document uint64) (contract.KVRequestLease, error) {
 	if err != nil {
 		return nil, err
 	}
-	return s.bindKV(raw)
+	return s.bindKV(raw, document)
 }
 func (s *session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecovery, error) {
 	if !s.alive() {
@@ -95,21 +95,34 @@ func (s *session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 	// executor and transfers only evidence, never an old prepared request.
 	old.closed.Store(true)
 	recovery, err := p.RecoverKV(old.raw)
-	recovery.Last = recovery.Last.Clone()
+	recovery = recovery.Clone()
+	for i := range recovery.MemberResults {
+		recovery.MemberResults[i] = recovery.MemberResults[i].Clone()
+		if !old.translateMemberResult(&recovery.MemberResults[i]) {
+			err = errors.Join(err, contract.ErrRevoked)
+		}
+	}
 	if err != nil {
+		if recovery.Lease != nil {
+			err = errors.Join(err, recovery.Lease.Close())
+			recovery.Lease = nil
+		}
 		return recovery, err
 	}
-	recovery.Lease, err = s.bindKV(recovery.Lease)
+	recovery.Lease, err = s.bindKV(recovery.Lease, old.document)
 	return recovery, err
 }
 
 type kvRequestLease struct {
-	session  *session
-	raw      contract.KVRequestLease
-	scope    contract.KVScope
-	closed   atomic.Bool
-	once     sync.Once
-	closeErr error
+	session            *session
+	raw                contract.KVRequestLease
+	scope              contract.KVScope
+	closed             atomic.Bool
+	once               sync.Once
+	closeErr           error
+	document           uint64
+	membersMu          sync.Mutex
+	memberObservations map[*kvMemberObservation]bool
 }
 type kvRequestPreparation struct {
 	owner    *kvRequestLease
@@ -178,5 +191,8 @@ func (l *kvRequestLease) LastResult() contract.KVResult { return l.raw.LastResul
 func (l *kvRequestLease) Close() error {
 	l.closed.Store(true)
 	l.once.Do(func() { l.closeErr = l.raw.Close() })
+	l.membersMu.Lock()
+	l.memberObservations = nil
+	l.membersMu.Unlock()
 	return l.closeErr
 }

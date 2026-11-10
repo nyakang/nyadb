@@ -13,24 +13,26 @@ import (
 // Session retains its original handshake channel and independent document
 // channels. Cluster/member IDs are observations, not incarnation guarantees.
 type Session struct {
-	mu              sync.Mutex
-	profile         connections.Profile
-	secret          string
-	identity        Identity
-	prefix          []byte
-	client          *Client
-	opener          func(context.Context, connections.Profile, string) (*Client, error)
-	ctx             context.Context
-	cancel          context.CancelFunc
-	closed, revoked bool
-	work            sync.WaitGroup
-	leases          map[*kvLease]bool
-	dataDocuments   map[*dataLease]bool
-	events          map[*eventsLease]bool
-	renewals        map[*renewalLease]bool
-	retainedBytes   int
-	closeDone       chan struct{}
-	closeErr        error
+	mu                  sync.Mutex
+	profile             connections.Profile
+	secret              string
+	identity            Identity
+	prefix              []byte
+	client              *Client
+	opener              func(context.Context, connections.Profile, string) (*Client, error)
+	ctx                 context.Context
+	cancel              context.CancelFunc
+	closed, revoked     bool
+	work                sync.WaitGroup
+	leases              map[*kvLease]bool
+	dataDocuments       map[*dataLease]bool
+	events              map[*eventsLease]bool
+	renewals            map[*renewalLease]bool
+	retainedBytes       int
+	memberRetainedBytes int
+	memberSequence      uint64
+	closeDone           chan struct{}
+	closeErr            error
 }
 
 func OpenSession(ctx context.Context, p connections.Profile, secret string) (contract.Session, error) {
@@ -153,12 +155,30 @@ func (s *Session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 	if !s.Alive() {
 		return contract.KVRecovery{}, contract.ErrRevoked
 	}
-	last, err := old.settle()
+	result, err := old.settle(true)
 	if err != nil {
-		return contract.KVRecovery{Last: last}, err
+		return result, err
+	}
+	old.ops.Lock()
+	defer old.ops.Unlock()
+	if old.recovered {
+		return result, contract.ErrKVPlanUsed
 	}
 	fresh, err := s.ReserveKV(old.document)
-	return contract.KVRecovery{Lease: fresh, Last: last}, err
+	if err != nil {
+		return result, err
+	}
+	newLease := fresh.(*kvLease)
+	newLease.ops.Lock()
+	newLease.writeUnknown = old.writeUnknown || old.memberUnknown != nil
+	newLease.ops.Unlock()
+	old.recovered = true
+	old.releaseMemberReceiptsOwned()
+	old.mu.Lock()
+	old.last = contract.KVResult{}
+	old.mu.Unlock()
+	result.Lease = fresh
+	return result, nil
 }
 func (s *Session) Close() error {
 	s.mu.Lock()
@@ -189,7 +209,7 @@ func (s *Session) Close() error {
 	s.mu.Unlock()
 	err := s.client.Close()
 	for _, l := range leases {
-		err = errors.Join(err, l.Close())
+		err = errors.Join(err, l.retire())
 	}
 	for _, l := range documents {
 		err = errors.Join(err, l.Close())

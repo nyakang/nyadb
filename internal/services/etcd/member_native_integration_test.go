@@ -36,9 +36,12 @@ func TestEtcdNativeMemberDirectoryZeroRevisionAndOriginalEmptyDefragmentAck(t *t
 		nativeDo(t, c, &pb.MemberListRequest{Linearizable: linearizable})
 	}
 	cfg, secret := nativeConfig(t)
-	m, err := OpenMember(context.Background(), cfg, secret, c.Identity())
+	m, handshake, err := OpenMemberObserved(context.Background(), cfg, secret, c.Identity())
 	if err != nil {
 		t.Fatal("explicit original member open", err)
+	}
+	if !handshake.Attempted || !handshake.Completed || handshake.Native() == nil || handshake.Header.MemberID != c.Identity().MemberID {
+		t.Fatal("actual original member handshake receipt lost")
 	}
 	defer m.Close()
 	r := nativeDo(t, m, &pb.DefragmentRequest{})
@@ -52,9 +55,12 @@ func TestEtcdNativeMemberDirectoryZeroRevisionAndOriginalEmptyDefragmentAck(t *t
 	}
 	wrong := c.Identity()
 	wrong.MemberID++
-	if foreign, err := OpenMember(context.Background(), cfg, secret, wrong); err == nil {
-		foreign.Close()
-		t.Fatal("foreign target member opened")
+	foreign, rejected, err := OpenMemberObserved(context.Background(), cfg, secret, wrong)
+	if err == nil || foreign != nil || !rejected.Attempted || rejected.Completed || rejected.Native() == nil || rejected.Header.MemberID != c.Identity().MemberID || rejected.WriteOutcomeUnknown {
+		if foreign != nil {
+			foreign.Close()
+		}
+		t.Fatal("foreign target opened or actual rejected handshake was rewritten", err)
 	}
 	if !c.Alive() || !m.Alive() {
 		t.Fatal("rejected target closed captured original clients")

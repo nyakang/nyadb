@@ -25,15 +25,22 @@ func (p *kvPreparation) Writes() bool                              { return p.wr
 func (p *kvPreparation) RecordedRequest() contract.KVRequestRecord { return p.record.Clone() }
 
 type kvLease struct {
-	s            *Session
-	document     uint64
-	ctx          context.Context
-	cancel       context.CancelFunc
-	ops, mu      sync.Mutex
-	closed, lost bool
-	client       *Client           // guarded by ops
-	last         contract.KVResult // guarded by mu
-	closeErr     error             // guarded by ops
+	s                   *Session
+	document            uint64
+	ctx                 context.Context
+	cancel              context.CancelFunc
+	ops, mu             sync.Mutex
+	closed, lost        bool
+	client              *Client                     // guarded by ops
+	last                contract.KVResult           // guarded by mu
+	closeErr            error                       // guarded by ops
+	memberObservations  map[*memberObservation]bool // guarded by mu
+	memberRetainedBytes int                         // guarded by mu
+	members             map[*memberLease]bool       // guarded by ops
+	memberLatest        map[uint64]*memberReceipt   // guarded by ops
+	memberUnknown       *memberReceipt              // guarded by ops
+	writeUnknown        bool                        // guarded by ops
+	recovered           bool                        // guarded by ops
 }
 
 func (*kvLease) AuthMethods() []string {
@@ -152,6 +159,9 @@ func (l *kvLease) Execute(parent context.Context, prepared contract.KVPreparatio
 	if p.used.Load() {
 		return result, contract.ErrKVPlanUsed
 	}
+	if p.write && (l.writeUnknown || l.memberUnknown != nil) {
+		return result, contract.ErrKVWriteUnknown
+	}
 	defer func() {
 		l.mu.Lock()
 		if !l.closed {
@@ -181,6 +191,7 @@ func (l *kvLease) Execute(parent context.Context, prepared contract.KVPreparatio
 		p.used.Store(false)
 	}
 	result = projectKVResult(p.record.Request, r)
+	l.writeUnknown = l.writeUnknown || result.WriteOutcomeUnknown
 	result.RequestOmittedFields = p.record.Clone().OmittedFields
 	// Close/recovery waits for this executor; its actual receipt is retained even
 	// if publication/activation changed before a UI consumer admits the result.
@@ -197,24 +208,57 @@ func (l *kvLease) LastResult() contract.KVResult {
 	defer l.mu.Unlock()
 	return l.last.Clone()
 }
-func (l *kvLease) settle() (contract.KVResult, error) {
+func (l *kvLease) settle(recovering bool) (contract.KVRecovery, error) {
 	l.mu.Lock()
 	l.closed = true
 	l.cancel()
 	l.mu.Unlock()
 	l.ops.Lock()
 	defer l.ops.Unlock()
-	last := l.LastResult()
+	if recovering && l.recovered {
+		return contract.KVRecovery{}, contract.ErrKVPlanUsed
+	}
+	l.revokeMemberObservations()
+	l.closeMembersOwned()
+	result := contract.KVRecovery{Last: l.LastResult(), MemberResults: l.memberResultsOwned()}
 	if l.client != nil {
 		l.closeErr = errors.Join(l.closeErr, l.client.Close())
 		l.client = nil
 	}
-	l.mu.Lock()
-	l.last = contract.KVResult{}
-	l.mu.Unlock()
+	if !recovering {
+		l.writeUnknown = l.writeUnknown || l.memberUnknown != nil
+		l.mu.Lock()
+		l.last = contract.KVResult{}
+		l.mu.Unlock()
+		l.releaseMemberReceiptsOwned()
+	}
 	l.s.mu.Lock()
 	delete(l.s.leases, l)
 	l.s.mu.Unlock()
-	return last, l.closeErr
+	return result, l.closeErr
 }
-func (l *kvLease) Close() error { _, err := l.settle(); return err }
+func (l *kvLease) Close() error { _, err := l.settle(false); return err }
+
+// Retirement waits for the original executor while parked evidence and its
+// budget remain owned by the original document until explicit Close/recovery.
+func (l *kvLease) retire() error {
+	l.mu.Lock()
+	l.lost = true
+	l.cancel()
+	l.mu.Unlock()
+	l.ops.Lock()
+	defer l.ops.Unlock()
+	l.revokeMemberObservations()
+	l.closeMembersOwned()
+	l.mu.Lock()
+	l.last = contract.KVResult{}
+	l.mu.Unlock()
+	if l.client != nil {
+		l.closeErr = errors.Join(l.closeErr, l.client.Close())
+		l.client = nil
+	}
+	l.s.mu.Lock()
+	delete(l.s.leases, l)
+	l.s.mu.Unlock()
+	return l.closeErr
+}

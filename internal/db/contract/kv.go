@@ -7,10 +7,11 @@ import (
 )
 
 var (
-	ErrKVLeaseLimit = errors.New("native KV document lease limit reached")
-	ErrKVLeaseLost  = errors.New("original KV lease lost; recover explicitly without replay")
-	ErrKVPlanUsed   = errors.New("KV request preparation already used or belongs to another lease")
-	ErrKVBusy       = errors.New("original KV lease has an active request")
+	ErrKVLeaseLimit   = errors.New("native KV document lease limit reached")
+	ErrKVLeaseLost    = errors.New("original KV lease lost; recover explicitly without replay")
+	ErrKVPlanUsed     = errors.New("KV request preparation already used or belongs to another lease")
+	ErrKVBusy         = errors.New("original KV lease has an active request")
+	ErrKVWriteUnknown = errors.New("original KV document has an unconfirmed write; further writes are blocked")
 )
 
 // Prefix is a byte scope for browsing, not a database name or permission claim.
@@ -73,9 +74,14 @@ type KVReply struct {
 	Lease           *KVLeaseReceipt
 	Status          *KVStatus
 	Auth            *KVAuthReceipt
+	Members         []KVMember
 }
 
 func (r KVReply) Clone() KVReply {
+	r.Members = slices.Clone(r.Members)
+	for i := range r.Members {
+		r.Members[i] = r.Members[i].Clone()
+	}
 	r.Entries = slices.Clone(r.Entries)
 	for i := range r.Entries {
 		r.Entries[i] = r.Entries[i].Clone()
@@ -114,6 +120,7 @@ type KVResult struct {
 	Code                                      string
 	Header                                    KVHeader
 	Native                                    []byte
+	NativeCaptured                            bool
 	JSON, JSONCaptureError, ProjectionError   string
 	Reply                                     *KVReply
 	RequestOmittedFields                      []string
@@ -132,7 +139,20 @@ func (r KVResult) Clone() KVResult {
 type KVRecovery struct {
 	Lease KVRequestLease
 	Last  KVResult
+	// Independent original member receipts, including unconfirmed writes. A
+	// recovery transfers evidence only, never directory/plan authority.
+	MemberResults []KVMemberResult
 }
+
+func (r KVRecovery) Clone() KVRecovery {
+	r.Last = r.Last.Clone()
+	r.MemberResults = slices.Clone(r.MemberResults)
+	for i := range r.MemberResults {
+		r.MemberResults[i] = r.MemberResults[i].Clone()
+	}
+	return r
+}
+
 type KVRequestLease interface {
 	Scope() KVScope
 	CheckKVLease() error
