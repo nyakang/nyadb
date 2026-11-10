@@ -187,7 +187,7 @@ checks only the four service parents; `--access --public-smoke` adds the restric
 Shell case to the six public/grid regression parents and requires 88 images.
 These smaller scopes do not establish full acceptance.
 
-Watch/history, automatic renewal, maintenance/auth management, etcd v2,
+Automatic renewal, maintenance/auth management, etcd v2,
 additional versions and cluster operation remain pending. Historical public
 acceptance is recorded in `docs/etcd-public-workbench-2026-11-10.md`; ACL scope and
 verification are recorded separately in `docs/etcd-access-browsing-2026-11-10.md`.
@@ -203,8 +203,9 @@ executor. Fragmented Watch requests are explicitly unsupported in this stage.
 
 `--watch-smoke --race --mode MODE` runs four private raw-service parents, including
 actual upstream creation/event response loss and the 4 KiB binary key boundary.
-It does not establish public Watch/history acceptance. Graphical controls remain
-pending; the raw Watch API is not published by the native request whitelist.
+The raw foundation alone does not establish public Watch/history acceptance.
+The native unary request whitelist remains separate from the events feature;
+public controls are described in the later public workbench section below.
 
 Private `Client.History` captures an exact-key Range receipt and a fixed revision
 window, then transfers the same Client's uninterrupted execution ownership to
@@ -225,7 +226,7 @@ lost Range/creation/event/progress receipts never cause replay or reconnection.
 
 `--history-smoke --race --mode MODE` requires seven private native history
 parents. It establishes the raw fixed-window foundation only; the public
-Watch/history workbench remains pending.
+Watch/history workbench acceptance is described in the later public section.
 
 A separate private `contract.KVEventsProvider` supplies original physical
 document leases through Session and the runtime publication boundary. Requests,
@@ -255,7 +256,7 @@ opening a channel, subscribing or executing history. Preconnect remains explicit
 parents, including actual processed Watch/progress response loss, original
 cancel/retirement, generation replacement, precise lease metadata, unknown-write
 receipt independence and shared-budget competition after Poll transfers. This
-scope does not publish or establish graphical Watch/history acceptance.
+private scope alone does not establish graphical Watch/history acceptance.
 
 The private KV workspace document core now accepts an injected events provider
 alongside its original native request lease. It captures exact Watch/History
@@ -281,6 +282,40 @@ parents against the real Manager and official server: same-revision event order,
 binary/old values, precise leases, fixed history/progress and archives; parked
 publication replacement, explicit recovery/restart/stop and files; and History
 after an actual processed Put reply loss without resolving the unknown write.
-This stage does not inject events into the public Shell or add a Watch/History
+That private stage did not inject events into the public Shell or add a Watch/History
 selector. Graphical controls and qualified shared-grid key actions still require
 their separate native workbench acceptance.
+
+
+Public Watch/history workbench
+----------------------------
+
+The public Shell now injects the neutral events provider into the existing native
+KV document. The method selector exposes Watch/History only for a connection
+with this feature. Explicit Start, Stop and Progress controls preserve the original
+executor; stopping and cancellation wait for acknowledgement. History retains its
+fixed start/end and actual progress proof, with incomplete capture and limited
+event projection displayed separately. The receipt shows its original profile and
+session generation even after recovery. Large/narrow views scroll receipt details.
+
+Original-key actions in the sole shared data grid capture complete signed row and
+page observations, not the clipped key text. A separate original physical read
+scope freshly checks grants against the document's immutable grant geometry for
+each action. Expired page epochs, changed scopes and publications reject late
+results. Watch starts after the original page revision; history fixes its end at
+that revision. Opening the tab or recovering the lease never executes a request.
+
+The list shows at most 500 events, with 1024 bytes per key/value preview and a
+64 KiB text presentation. Copy/export capture an independent complete receipt
+before asynchronous encoding, picker or disk work. Records retain original scope,
+request, native frames, exact byte values and quoted native 64-bit numbers, fixed
+history projection/proof and terminal/incomplete reasons. Parked clipboard work
+waits for its original document activation; cancellation never overwrites the
+clipboard. Event receipts remain separate from unknown writes and do not remove
+the write barrier. Clear explicitly disposes settled evidence before another run.
+
+Run `GOWORK=off python3 tools/verify_etcd_fixture.py --public-events --race --mode
+MODE` for the seven mandatory native public cases and 28 localized Shell images.
+Modes are anonymous/basic/tls/mtls on 3.7.3, plus basic on 3.5.35. The local report
+is `docs/etcd-public-events-2026-11-10.md`. Automatic lease renewal, Auth/RBAC and
+maintenance UI, cluster acceptance and etcd-v2 remain separate future work.

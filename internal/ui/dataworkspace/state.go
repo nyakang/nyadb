@@ -23,6 +23,8 @@ type Verifier func(context.Context, int64, string, string, *contract.DataEditRes
 type Runtime = contract.DataRuntime
 
 type Dependencies struct {
+	OpenKVEvents      func(ui.Services, contract.KVKeyRead, bool) bool
+	KVReadActive      func(*Document) bool
 	ReopenDocument    func(ui.Services, *Document)
 	CloseDocument     func(ui.Services, *Document)
 	NamespaceLabel    func(contract.NamespaceRef) string
@@ -44,6 +46,8 @@ type Dependencies struct {
 // Document has stable qualified identity. All mutable grid, draft and request
 // state belongs to this module and is accessed only on the UI thread.
 type Document struct {
+	keyRead                          *kvKeyReadOperation
+	keyReadError                     string
 	selectorOpen                     bool
 	selectorResponseOpen             bool
 	selectorDraft, selectorError     string
@@ -242,6 +246,7 @@ func (s *State) Consume(services ui.Services) {
 	s.consumeDataAnalysis()
 	s.inspector.Consume()
 	s.consumeHostActions(services)
+	s.consumeKVKeyReads(services)
 }
 func (s *State) inspectorPanel(t *Document) *Panel {
 	if t == nil || t.closed || t.graphTransferOnly {

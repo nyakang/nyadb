@@ -26,16 +26,38 @@ func (s *State) View(c *ui.Context, d *Document) {
 		return
 	}
 	p := theme.Colors(c)
+	availableMethods := s.MethodsFor(d)
+	isEvent := eventMethod(d.method)
+	ready := !d.Busy() && !d.NeedsRecovery() && (!isEvent && d.lease != nil || isEvent && d.eventsAvailable)
 	ui.Column(c).Fill().Background(p.Panel).Children(func() {
 		ui.Row(c).FillWidth().Height(theme.RowHeight(c, theme.CommandBarHeight)).Background(p.Header).Children(func() {
 			ui.Toolbar(c, func() {
-				if ui.Button(c, locales.Text("运行请求")).Label(locales.Text("运行 KV 请求")).Disabled(d.Busy() || d.needsRecovery || d.lease == nil).Clicked() {
+				runLabel, runID := locales.Text("运行请求"), locales.Text("运行 KV 请求")
+				if d.method == WatchMethod {
+					runLabel = locales.Text("启动 Watch")
+					runID = runLabel
+				} else if d.method == HistoryMethod {
+					runLabel = locales.Text("读取历史")
+					runID = runLabel
+				}
+				if ui.Button(c, runLabel).Label(runID).Disabled(!ready || isEvent && d.eventReceipt != nil).Clicked() {
 					s.Run(d)
+				}
+				if d.method == WatchMethod {
+					if ui.Button(c, locales.Text("请求进度")).Disabled(d.eventJob == nil || d.eventJob.kind != "watch" || d.CancelRequested() || !eventWatchCreated(d.eventReceipt)).Clicked() {
+						s.ProgressEvents(d)
+					}
+					if ui.Button(c, locales.Text("停止 Watch")).Disabled(d.eventJob == nil || d.eventJob.kind != "watch" || d.CancelRequested()).Clicked() {
+						s.StopEvents(d)
+					}
+				}
+				if isEvent && ui.Button(c, locales.Text("清除事件回执")).Disabled(!ready || d.eventReceipt == nil || d.FileBusy()).Clicked() {
+					s.ClearEventReceipt(d)
 				}
 				if ui.Button(c, locales.Text("取消")).Disabled(!d.Busy() || d.CancelRequested()).Clicked() {
 					s.RequestCancel(d)
 				}
-				if ui.Button(c, locales.Text("预连接")).Disabled(d.Busy() || d.needsRecovery || d.lease == nil).Clicked() {
+				if ui.Button(c, locales.Text("预连接")).Disabled(!ready || isEvent && d.eventReceipt != nil).Clicked() {
 					s.Preconnect(d)
 				}
 				if ui.Button(c, locales.Text("打开请求文本")).Disabled(d.Busy() || d.FileBusy() || s.deps.Files.OpenPath == nil).Clicked() {
@@ -55,18 +77,22 @@ func (s *State) View(c *ui.Context, d *Document) {
 		ui.Row(c).Padding(5, 8).Gap(8).FillWidth().AlignItems(ui.Center).Children(func() {
 			options := []string{}
 			choice := d.method
-			for _, m := range methods {
+			for _, m := range availableMethods {
 				options = append(options, m.Name)
 				if m.Path == d.method {
 					choice = m.Name
 				}
 			}
 			if ui.Select(c, &choice, options).Label(locales.Text("KV 方法")).Width(165).Disabled(d.Busy()).Changed() {
-				for _, m := range methods {
+				for _, m := range availableMethods {
 					if m.Name == choice {
-						s.SetMethod(d, m.Path)
+						s.ChooseMethod(d, m.Path)
 					}
 				}
+			}
+			if isEvent && ui.Button(c, locales.Text("使用请求模板")).Disabled(d.Busy()).Clicked() {
+				d.Editor.Buffer.Set(DefaultEventRequest(d.method).JSON)
+				d.permit = nil
 			}
 			name := fmt.Sprintf(locales.Text("连接 #%d"), d.profileID)
 			if s.deps.ProfileName != nil {
@@ -75,17 +101,27 @@ func (s *State) View(c *ui.Context, d *Document) {
 			ui.Text(c, name).SingleLine().MinWidth(0).Shrink(1).TextColor(p.Muted).Tooltip(name)
 		})
 		ui.Text(c, locales.Text("JSON 中 bytes 使用 Base64，整数保留原生精度；请求使用绝对键")).Padding(2, 8).FontSize(theme.Font(c, 11)).TextColor(p.Muted).SingleLine().Tooltip(d.method)
+		if isEvent && !d.eventsAvailable {
+			ui.Text(c, locales.Text("此连接不支持事件请求")).Padding(3, 8).TextColor(p.Warning)
+		}
+		if d.method == HistoryMethod {
+			ui.Text(c, locales.Text("历史窗口在本次读取开始时固定；后续写入不会移动终点")).Padding(2, 8).FontSize(theme.Font(c, 11)).TextColor(p.Muted).SingleLine()
+		}
 		if d.error != "" {
 			ui.Text(c, clipped(d.error)).Padding(3, 8).TextColor(p.Error).SingleLine().Tooltip(clipped(d.error))
 		}
 		if d.Busy() {
-			ui.Text(c, locales.Text("等待原执行器确认；不会自动重试或重放")).Padding(3, 8).TextColor(p.Warning)
+			status := locales.Text("等待原执行器确认；不会自动重试或重放")
+			if d.eventJob != nil && d.eventJob.kind == "watch" && !d.CancelRequested() && eventWatchCreated(d.eventReceipt) {
+				status = locales.Text("正在观察原键事件")
+			}
+			ui.Text(c, status).Padding(3, 8).TextColor(p.Warning)
 			c.AnimationFrame()
 		}
 		if d.unknown != nil {
 			ui.Text(c, locales.Text("原写入未确认；恢复后可读取，关闭页签可放弃本地草稿与回执")).Padding(3, 8).TextColor(p.Warning).SingleLine().Tooltip(locales.Text("原写入未确认；恢复后可读取，关闭页签可放弃本地草稿与回执"))
 		}
-		if d.needsRecovery {
+		if d.NeedsRecovery() {
 			ui.Toolbar(c, func() {
 				if s.deps.ConnectProfile != nil && ui.Button(c, locales.Text("恢复原连接")).Disabled(d.Busy()).Clicked() {
 					s.deps.ConnectProfile(c.Services(), d.profileID)
@@ -121,9 +157,24 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 		ui.Toolbar(c, func() {
 			if ui.Button(c, locales.Text("最近回执")).Clicked() {
 				d.selectedUnknown = false
+				d.selectedEvents = false
 			}
 			if d.unknown != nil && ui.Button(c, locales.Text("原未确认回执")).Clicked() {
 				d.selectedUnknown = true
+				d.selectedEvents = false
+			}
+			if (d.eventsAvailable || d.eventReceipt != nil) && ui.Button(c, locales.Text("事件回执")).Clicked() {
+				d.selectedEvents = true
+				d.selectedUnknown = false
+			}
+			if d.selectedEvents {
+				if ui.Button(c, locales.Text("复制完整事件记录")).Disabled(d.eventReceipt == nil || d.FileBusy()).Clicked() {
+					s.CopyEventRecord(c.Services(), d)
+				}
+				if ui.Button(c, locales.Text("导出事件记录")).Disabled(d.eventReceipt == nil || d.FileBusy() || s.deps.Files.SavePath == nil).Clicked() {
+					s.ExportEventRecord(d)
+				}
+				return
 			}
 			r := s.selectedReceipt(d)
 			if ui.Button(c, locales.Text("复制完整 JSON")).Disabled(r == nil || r.Result.JSON == "").Clicked() {
@@ -141,6 +192,10 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 				}
 			})
 		}).Label(locales.Text("KV 回执操作")).FillWidth().MinWidth(0).Padding(0).Gap(5)
+		if d.selectedEvents {
+			s.eventReceiptView(c, d)
+			return
+		}
 		r := s.selectedReceipt(d)
 		if r == nil {
 			ui.Text(c, locales.Text("运行请求后显示原生回执")).TextColor(p.Muted)

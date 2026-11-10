@@ -87,6 +87,7 @@ func (s *State) Load(services ui.Services, t *Document, refresh bool) {
 	if t.page != nil && !refresh {
 		return
 	}
+	s.cancelKVKeyRead(t)
 	s.Cancel(t)
 	if refresh && t.runtimeLease != nil && !t.pagingRead {
 		t.offset = 0
@@ -301,6 +302,7 @@ func (s *State) Close(t *Document) {
 	if t == nil || t.closed {
 		return
 	}
+	s.cancelKVKeyRead(t)
 	if s.guardDoc == t {
 		s.guardDoc = nil
 	}
@@ -327,6 +329,11 @@ func (s *State) Close(t *Document) {
 		t.runtimeLease = nil
 		t.boundRuntime = nil
 	}
+	if t.keyRead != nil {
+		<-t.keyRead.finished
+		t.keyRead = nil
+	}
+	t.keyReadError = ""
 	s.settlePage(t)
 	t.readStopping = false
 	t.tools = mysqlDataToolsState{}

@@ -23,16 +23,19 @@ type Files struct {
 	WriteStream func(string, func(io.Writer) error) error
 }
 type fileResult struct {
-	path    string
-	request contract.KVRequest
-	err     error
+	clipboard string
+	path      string
+	request   contract.KVRequest
+	err       error
 }
 type fileOperation struct {
-	kind     string
-	before   contract.KVRequest
-	cancel   context.CancelFunc
-	out      <-chan fileResult
-	finished <-chan struct{}
+	clipboard func(string)
+	canceled  bool
+	kind      string
+	before    contract.KVRequest
+	cancel    context.CancelFunc
+	out       <-chan fileResult
+	finished  <-chan struct{}
 }
 
 const requestFileLimit = 100 << 20
@@ -183,6 +186,12 @@ func (s *State) SaveRequest(d *Document, as bool) {
 	})
 }
 func draftFilename(method string) string {
+	if method == WatchMethod {
+		return "Watch.nyakv"
+	}
+	if method == HistoryMethod {
+		return "History.nyakv"
+	}
 	for _, m := range methods {
 		if m.Path == method {
 			return m.Name + ".nyakv"
@@ -238,6 +247,7 @@ func (s *State) ExportReceipt(d *Document, native bool) {
 }
 func (s *State) CancelFile(d *Document) {
 	if s.owned(d) && d.io != nil {
+		d.io.canceled = true
 		d.io.cancel()
 	}
 }
@@ -253,6 +263,12 @@ func (s *State) consumeFiles(d *Document) {
 		if r.err != nil {
 			if !errors.Is(r.err, context.Canceled) {
 				d.error = locales.Text("KV 文件操作失败") + ": " + r.err.Error()
+			}
+			return
+		}
+		if job.kind == "copy-events" {
+			if !job.canceled && job.clipboard != nil {
+				job.clipboard(r.clipboard)
 			}
 			return
 		}

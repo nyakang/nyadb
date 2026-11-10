@@ -257,7 +257,11 @@ func (l *dataLease) preview(ctx context.Context, id int64, catalog, name string,
 			if len(e.Value) > contract.DataEditMaxBytes {
 				return nil, contract.ErrDataEditLimit
 			}
-			if !reflect.DeepEqual(entryObservation(e), p.observation) {
+			// The signed page epoch/revision authorize read actions; optimistic
+			// editing still compares only the original key/value/MVCC observation.
+			expected := p.observation
+			expected.ReadEpoch, expected.ReadRevision = 0, 0
+			if !reflect.DeepEqual(entryObservation(e), expected) {
 				return nil, contract.ErrDataConflict
 			}
 			p.before = e

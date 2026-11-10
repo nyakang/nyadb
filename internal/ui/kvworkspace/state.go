@@ -87,6 +87,8 @@ type Document struct {
 	eventJob                     *eventOperation
 	eventReceipt                 *EventReceipt
 	eventNeedsRecovery           bool
+	eventsAvailable              bool
+	selectedEvents               bool
 }
 type leaveStamp struct {
 	request       contract.KVRequest
@@ -175,6 +177,11 @@ func (s *State) Open(id uint64, profile int64, request contract.KVRequest) *Docu
 	buffer.SetLanguage(editor.LanguageNamed("JSON"))
 	d := &Document{id: id, profileID: profile, method: request.Method, saved: request, Editor: &editor.State{Buffer: buffer}, ctx: ctx, cancel: cancel, focus: true}
 	s.documents[id] = d
+	if s.deps.EventsProviderFor != nil {
+		if p, err := s.deps.EventsProviderFor(profile); err == nil && p != nil && p.KVScope().Namespace.ProfileID == profile {
+			d.eventsAvailable = true
+		}
+	}
 	if s.deps.ProviderFor == nil {
 		d.needsRecovery = true
 		d.error = locales.Text("KV 原连接不可用")
@@ -381,6 +388,7 @@ func (s *State) Consume() {
 					d.error = r.err.Error()
 				}
 				if job.kind == "execute" {
+					d.selectedEvents = false
 					receipt := &Receipt{Scope: job.scope.Clone(), Authored: job.authored, Result: r.result.Clone()}
 					if r.err != nil {
 						receipt.Error = r.err.Error()

@@ -207,7 +207,7 @@ func (s *State) dataInspectorDependencies() dataworkspace.InspectorDependencies 
 }
 
 func (s *State) dataWorkspaceDependencies() dataworkspace.Dependencies {
-	return dataworkspace.Dependencies{ReopenDocument: s.reopenDataDocument, NamespaceLabel: func(n contract.NamespaceRef) string { return s.sessions.NamespaceLabel(n) }, EditFocus: &s.editFocus,
+	return dataworkspace.Dependencies{OpenKVEvents: func(_ ui.Services, read contract.KVKeyRead, history bool) bool { return s.OpenKVEvents(read, history) }, KVReadActive: func(d *dataworkspace.Document) bool { return s.currentTab().data == d }, ReopenDocument: s.reopenDataDocument, NamespaceLabel: func(n contract.NamespaceRef) string { return s.sessions.NamespaceLabel(n) }, EditFocus: &s.editFocus,
 		EditTarget:     s.registerEditTarget,
 		RecordActivity: s.recordActivity,
 		ImportTargets: func(id int64, db string) []string {

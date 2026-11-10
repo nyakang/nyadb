@@ -3,6 +3,7 @@ package kvworkspace
 import (
 	"context"
 	"encoding/json"
+	"github.com/egoist/mygo/ui"
 	"strconv"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
@@ -215,4 +216,21 @@ func (s *State) ExportEventRecord(d *Document) {
 		}
 		return fileResult{path: path, err: writeCaptured(ctx, f, path, raw)}
 	})
+}
+func (s *State) CopyEventRecord(services ui.Services, d *Document) {
+	if !s.active(d) || d.io != nil || d.eventReceipt == nil {
+		return
+	}
+	captured := d.eventReceipt.Clone()
+	s.fileJob(d, "copy-events", func(ctx context.Context) fileResult {
+		if err := ctx.Err(); err != nil {
+			return fileResult{err: err}
+		}
+		raw, err := encodeEventReceipt(captured)
+		if err == nil {
+			err = ctx.Err()
+		}
+		return fileResult{clipboard: string(raw), err: err}
+	})
+	d.io.clipboard = services.WriteClipboard
 }

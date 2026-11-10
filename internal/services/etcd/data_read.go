@@ -295,6 +295,8 @@ type dataObservation struct {
 	Key                                         []byte
 	CreateRevision, ModRevision, Version, Lease int64
 	ValueHash                                   string
+	ReadEpoch                                   uint64
+	ReadRevision                                int64
 }
 
 func entryObservation(entry contract.KVEntry) dataObservation {
@@ -302,7 +304,11 @@ func entryObservation(entry contract.KVEntry) dataObservation {
 	return dataObservation{Key: bytes.Clone(entry.Key), CreateRevision: entry.CreateRevision, ModRevision: entry.ModRevision, Version: entry.Version, Lease: entry.Lease, ValueHash: hex.EncodeToString(hash[:])}
 }
 func (l *dataLease) snapshot(entry contract.KVEntry, values bool) *contract.RowSnapshot {
-	snapshot := &contract.RowSnapshot{Mode: "fingerprints", Ref: l.ref(entry.Key), Metadata: string(l.encode(entryObservation(entry)))}
+	observation := entryObservation(entry)
+	l.mu.Lock()
+	observation.ReadEpoch, observation.ReadRevision = l.epoch, l.revision
+	l.mu.Unlock()
+	snapshot := &contract.RowSnapshot{Mode: "fingerprints", Ref: l.ref(entry.Key), Metadata: string(l.encode(observation))}
 	for i, cell := range entryCells(entry, false) {
 		snapshot.Columns = append(snapshot.Columns, dataColumns()[i].Name)
 		value := []byte(cell.Value.Text)

@@ -46,6 +46,7 @@ func (s *State) View(c *ui.Context, t *Document) {
 		}
 		s.mysqlDataRuleEditor(c, t, page)
 		s.dataSelectorView(c, t)
+		s.kvKeyReadView(c, t)
 		s.analysisView(c, t)
 		ui.Row(c).Grow(1).MinHeight(0).FillWidth().AlignItems(ui.Stretch).Gap(0).Children(func() {
 			if t.toolbar.columnsOpen && t.page != nil {

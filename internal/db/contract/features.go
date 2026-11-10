@@ -115,9 +115,12 @@ type DataRuntime struct {
 	Selector            DataSelector
 	ReadScopeHint       string                   // Optional localized presentation of the original read/count/export scope.
 	ReadDescription     func(DataOptions) string // pure, parameter-free native request information.
-	Loader              func(context.Context, int64, string, string, int64, int) (*DataPage, error)
-	AdvancedLoader      func(context.Context, int64, string, string, DataOptions) (*DataPage, error)
-	Saver               func(context.Context, int64, string, string, []DataEdit) (*DataEditResult, error)
+	// CaptureKVKeyRead verifies the original complete row/page observations and
+	// captured read grants. It may perform I/O on its own original read channel.
+	CaptureKVKeyRead func(context.Context, int64, string, string, KVKeyReadRequest) (*KVKeyRead, error)
+	Loader           func(context.Context, int64, string, string, int64, int) (*DataPage, error)
+	AdvancedLoader   func(context.Context, int64, string, string, DataOptions) (*DataPage, error)
+	Saver            func(context.Context, int64, string, string, []DataEdit) (*DataEditResult, error)
 	// Preview/Submit are an optional original-document mutation path. The UI
 	// must obtain explicit approval of the immutable preview before Submit.
 	PreviewEditKinds     []string

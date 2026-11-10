@@ -14,6 +14,12 @@ func (s *State) kvWorkspaceDependencies() kvworkspace.Dependencies {
 			}
 			return s.runtime.KVRequests(id)
 		},
+		EventsProviderFor: func(id int64) (contract.KVEventsProvider, error) {
+			if s.runtime == nil {
+				return nil, contract.ErrRevoked
+			}
+			return s.runtime.KVEvents(id)
+		},
 		ProfileName: s.profileName,
 		Active:      func(d *kvworkspace.Document) bool { return s.currentTab().kv == d },
 		Activate: func(d *kvworkspace.Document) {
@@ -33,6 +39,23 @@ func (s *State) kvWorkspaceDependencies() kvworkspace.Dependencies {
 
 // OpenKVRequests opens a native request document bound to its original profile.
 func (s *State) OpenKVRequests(profileID int64) bool {
+	return s.openKVDocument(profileID, kvworkspace.DefaultRequest(), nil)
+}
+func (s *State) OpenKVEvents(read contract.KVKeyRead, history bool) bool {
+	request, err := kvworkspace.RequestForKey(read, history)
+	if err != nil || s.runtime == nil {
+		return false
+	}
+	p, err := s.runtime.KVEvents(read.Scope.Namespace.ProfileID)
+	if err != nil || p == nil || !sameKVDocumentScope(read.Scope, p.KVScope()) {
+		return false
+	}
+	return s.openKVDocument(read.Scope.Namespace.ProfileID, request, &read.Scope)
+}
+func sameKVDocumentScope(a, b contract.KVScope) bool {
+	return a.Namespace == b.Namespace && a.Generation == b.Generation && string(a.Prefix) == string(b.Prefix) && a.Header == b.Header && a.Version == b.Version
+}
+func (s *State) openKVDocument(profileID int64, request contract.KVRequest, expected *contract.KVScope) bool {
 	if s.runtime == nil {
 		return false
 	}
@@ -40,8 +63,12 @@ func (s *State) OpenKVRequests(profileID int64) bool {
 		return false
 	}
 	s.nextTabID++
-	d := s.kvWorkspace.Open(s.nextTabID, profileID, kvworkspace.DefaultRequest())
+	d := s.kvWorkspace.Open(s.nextTabID, profileID, request)
 	if d == nil {
+		return false
+	}
+	if expected != nil && !sameKVDocumentScope(d.Scope(), *expected) {
+		s.kvWorkspace.Close(d)
 		return false
 	}
 	t := &tab{id: s.nextTabID, kind: tabKV, title: d.Name(), kv: d}

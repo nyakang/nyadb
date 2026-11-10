@@ -10,6 +10,9 @@ import (
 )
 
 func (l *kvLease) permissions(parent context.Context) (*keyAccess, error) {
+	return l.readPermissions(parent, false)
+}
+func (l *kvLease) readPermissions(parent context.Context, fresh bool) (*keyAccess, error) {
 	if !l.ops.TryLock() {
 		return nil, contract.ErrKVBusy
 	}
@@ -22,7 +25,7 @@ func (l *kvLease) permissions(parent context.Context) (*keyAccess, error) {
 	if err = l.connect(ctx); err != nil {
 		return nil, err
 	}
-	a, err := l.client.permissions(ctx)
+	a, err := l.client.capturePermissions(ctx, fresh)
 	if !l.client.Alive() {
 		return nil, l.markLost(err)
 	}

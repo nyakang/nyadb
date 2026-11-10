@@ -10,6 +10,7 @@ import (
 
 func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 	out := mSessionGraphData(s, r)
+	out.CaptureKVKeyRead = s.captureDataKVKey(r)
 	if r.ReserveDocument != nil {
 		out.ReserveDocument = func(o contract.ObjectRef) (contract.DataDocumentLease, error) {
 			if e := s.require(true, o.ProfileID); e != nil {

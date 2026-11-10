@@ -5,6 +5,42 @@ import (
 	"slices"
 )
 
+// KVKeyRead binds a complete byte key to its original qualified page read.
+// Revision is the page's read revision, independently of the key's last write.
+type KVKeyRead struct {
+	Scope    KVScope
+	Key      []byte
+	Revision int64
+}
+
+func (r KVKeyRead) Clone() KVKeyRead {
+	r.Scope = r.Scope.Clone()
+	r.Key = slices.Clone(r.Key)
+	return r
+}
+
+type KVKeyReadRequest struct {
+	Snapshot *RowSnapshot
+	Cursor   *DataCursor
+}
+
+func (r KVKeyReadRequest) Clone() KVKeyReadRequest {
+	if r.Snapshot != nil {
+		r.Snapshot = CloneDataMutationSnapshot(DataMutationSnapshot{Edits: []DataEdit{{Original: r.Snapshot}}}).Edits[0].Original
+	}
+	if r.Cursor != nil {
+		c := *r.Cursor
+		c.Columns = slices.Clone(c.Columns)
+		c.Descending = slices.Clone(c.Descending)
+		c.Values = slices.Clone(c.Values)
+		for i := range c.Values {
+			c.Values[i] = slices.Clone(c.Values[i])
+		}
+		r.Cursor = &c
+	}
+	return r
+}
+
 // Watch owns an absolute byte range. A missing RangeEnd means an exact key;
 // the adapter never reconstructs keys from a display string or fills ACL gaps.
 type KVWatchRequest struct {

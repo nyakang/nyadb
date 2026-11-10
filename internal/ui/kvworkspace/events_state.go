@@ -76,6 +76,7 @@ func (s *State) eventLeaseFor(d *Document) bool {
 			return false
 		}
 		d.eventLease, d.eventScope = l, scope
+		d.eventsAvailable = true
 	}
 	if err := d.eventLease.CheckKVLease(); err != nil {
 		d.eventNeedsRecovery = true
@@ -108,8 +109,7 @@ func (s *State) eventStart(d *Document, kind string, authored contract.KVRequest
 	}()
 }
 
-// RunEvents and the supporting methods remain injectable; host/UI publication
-// is a separate acceptance step. Neither method prepares or executes KV writes.
+// Event requests use their separate original lease, never native KV write plans.
 func (s *State) RunEvents(d *Document) {
 	if !s.active(d) || d.Busy() || !eventMethod(d.method) {
 		return
@@ -137,6 +137,8 @@ func (s *State) RunEvents(d *Document) {
 	lease := d.eventLease
 	r := &EventReceipt{Scope: d.eventScope.Clone(), Authored: authored}
 	d.eventReceipt = r
+	d.selectedEvents = true
+	d.selectedUnknown = false
 	if authored.Method == WatchMethod {
 		captured := watch.Clone()
 		r.Watch = &captured

@@ -32537,3 +32537,373 @@ func DataAuthorizedReadScope() string { return In(i18n.Locale()).DataAuthorizedR
 func (msgs Messages) DataAuthorizedReadScope() string {
 	return Catalog.Format(msgs.locale, "dataAuthorizedReadScope", nil)
 }
+
+// EtcdWatchStart says "启动 Watch"
+// in the language the app shows.
+func EtcdWatchStart() string { return In(i18n.Locale()).EtcdWatchStart() }
+
+// EtcdWatchStart says "启动 Watch"
+// in the language of msgs.
+func (msgs Messages) EtcdWatchStart() string {
+	return Catalog.Format(msgs.locale, "etcdWatchStart", nil)
+}
+
+// EtcdWatchProgress says "请求进度"
+// in the language the app shows.
+func EtcdWatchProgress() string { return In(i18n.Locale()).EtcdWatchProgress() }
+
+// EtcdWatchProgress says "请求进度"
+// in the language of msgs.
+func (msgs Messages) EtcdWatchProgress() string {
+	return Catalog.Format(msgs.locale, "etcdWatchProgress", nil)
+}
+
+// EtcdWatchStop says "停止 Watch"
+// in the language the app shows.
+func EtcdWatchStop() string { return In(i18n.Locale()).EtcdWatchStop() }
+
+// EtcdWatchStop says "停止 Watch"
+// in the language of msgs.
+func (msgs Messages) EtcdWatchStop() string {
+	return Catalog.Format(msgs.locale, "etcdWatchStop", nil)
+}
+
+// EtcdHistoryRead says "读取历史"
+// in the language the app shows.
+func EtcdHistoryRead() string { return In(i18n.Locale()).EtcdHistoryRead() }
+
+// EtcdHistoryRead says "读取历史"
+// in the language of msgs.
+func (msgs Messages) EtcdHistoryRead() string {
+	return Catalog.Format(msgs.locale, "etcdHistoryRead", nil)
+}
+
+// EtcdEventsClear says "清除事件回执"
+// in the language the app shows.
+func EtcdEventsClear() string { return In(i18n.Locale()).EtcdEventsClear() }
+
+// EtcdEventsClear says "清除事件回执"
+// in the language of msgs.
+func (msgs Messages) EtcdEventsClear() string {
+	return Catalog.Format(msgs.locale, "etcdEventsClear", nil)
+}
+
+// EtcdEventsTemplate says "使用请求模板"
+// in the language the app shows.
+func EtcdEventsTemplate() string { return In(i18n.Locale()).EtcdEventsTemplate() }
+
+// EtcdEventsTemplate says "使用请求模板"
+// in the language of msgs.
+func (msgs Messages) EtcdEventsTemplate() string {
+	return Catalog.Format(msgs.locale, "etcdEventsTemplate", nil)
+}
+
+// EtcdEventsUnsupported says "此连接不支持事件请求"
+// in the language the app shows.
+func EtcdEventsUnsupported() string { return In(i18n.Locale()).EtcdEventsUnsupported() }
+
+// EtcdEventsUnsupported says "此连接不支持事件请求"
+// in the language of msgs.
+func (msgs Messages) EtcdEventsUnsupported() string {
+	return Catalog.Format(msgs.locale, "etcdEventsUnsupported", nil)
+}
+
+// EtcdHistoryFixedHint says "历史窗口在本次读取开始时固定；后续写入不会移动终点"
+// in the language the app shows.
+func EtcdHistoryFixedHint() string { return In(i18n.Locale()).EtcdHistoryFixedHint() }
+
+// EtcdHistoryFixedHint says "历史窗口在本次读取开始时固定；后续写入不会移动终点"
+// in the language of msgs.
+func (msgs Messages) EtcdHistoryFixedHint() string {
+	return Catalog.Format(msgs.locale, "etcdHistoryFixedHint", nil)
+}
+
+// EtcdEventsReceipt says "事件回执"
+// in the language the app shows.
+func EtcdEventsReceipt() string { return In(i18n.Locale()).EtcdEventsReceipt() }
+
+// EtcdEventsReceipt says "事件回执"
+// in the language of msgs.
+func (msgs Messages) EtcdEventsReceipt() string {
+	return Catalog.Format(msgs.locale, "etcdEventsReceipt", nil)
+}
+
+// EtcdEventsCopy says "复制完整事件记录"
+// in the language the app shows.
+func EtcdEventsCopy() string { return In(i18n.Locale()).EtcdEventsCopy() }
+
+// EtcdEventsCopy says "复制完整事件记录"
+// in the language of msgs.
+func (msgs Messages) EtcdEventsCopy() string {
+	return Catalog.Format(msgs.locale, "etcdEventsCopy", nil)
+}
+
+// EtcdEventsExport says "导出事件记录"
+// in the language the app shows.
+func EtcdEventsExport() string { return In(i18n.Locale()).EtcdEventsExport() }
+
+// EtcdEventsExport says "导出事件记录"
+// in the language of msgs.
+func (msgs Messages) EtcdEventsExport() string {
+	return Catalog.Format(msgs.locale, "etcdEventsExport", nil)
+}
+
+// EtcdEventsEmpty says "启动订阅或读取历史后显示事件回执"
+// in the language the app shows.
+func EtcdEventsEmpty() string { return In(i18n.Locale()).EtcdEventsEmpty() }
+
+// EtcdEventsEmpty says "启动订阅或读取历史后显示事件回执"
+// in the language of msgs.
+func (msgs Messages) EtcdEventsEmpty() string {
+	return Catalog.Format(msgs.locale, "etcdEventsEmpty", nil)
+}
+
+// EtcdWatchStarting says "正在建立原订阅"
+// in the language the app shows.
+func EtcdWatchStarting() string { return In(i18n.Locale()).EtcdWatchStarting() }
+
+// EtcdWatchStarting says "正在建立原订阅"
+// in the language of msgs.
+func (msgs Messages) EtcdWatchStarting() string {
+	return Catalog.Format(msgs.locale, "etcdWatchStarting", nil)
+}
+
+// EtcdWatchActive says "正在观察原键事件"
+// in the language the app shows.
+func EtcdWatchActive() string { return In(i18n.Locale()).EtcdWatchActive() }
+
+// EtcdWatchActive says "正在观察原键事件"
+// in the language of msgs.
+func (msgs Messages) EtcdWatchActive() string {
+	return Catalog.Format(msgs.locale, "etcdWatchActive", nil)
+}
+
+// EtcdWatchEnded says "原订阅已停止"
+// in the language the app shows.
+func EtcdWatchEnded() string { return In(i18n.Locale()).EtcdWatchEnded() }
+
+// EtcdWatchEnded says "原订阅已停止"
+// in the language of msgs.
+func (msgs Messages) EtcdWatchEnded() string {
+	return Catalog.Format(msgs.locale, "etcdWatchEnded", nil)
+}
+
+// EtcdWatchIncomplete says "原订阅已结束，回执不完整"
+// in the language the app shows.
+func EtcdWatchIncomplete() string { return In(i18n.Locale()).EtcdWatchIncomplete() }
+
+// EtcdWatchIncomplete says "原订阅已结束，回执不完整"
+// in the language of msgs.
+func (msgs Messages) EtcdWatchIncomplete() string {
+	return Catalog.Format(msgs.locale, "etcdWatchIncomplete", nil)
+}
+
+// EtcdWatchIdentity says "起始修订号：%d · Watch ID：%d"
+// in the language the app shows.
+func EtcdWatchIdentity() string { return In(i18n.Locale()).EtcdWatchIdentity() }
+
+// EtcdWatchIdentity says "起始修订号：%d · Watch ID：%d"
+// in the language of msgs.
+func (msgs Messages) EtcdWatchIdentity() string {
+	return Catalog.Format(msgs.locale, "etcdWatchIdentity", nil)
+}
+
+// EtcdEventsCounts says "已捕获事件：%d · 原始帧：%d"
+// in the language the app shows.
+func EtcdEventsCounts() string { return In(i18n.Locale()).EtcdEventsCounts() }
+
+// EtcdEventsCounts says "已捕获事件：%d · 原始帧：%d"
+// in the language of msgs.
+func (msgs Messages) EtcdEventsCounts() string {
+	return Catalog.Format(msgs.locale, "etcdEventsCounts", nil)
+}
+
+// EtcdHistoryUnproven says "历史窗口尚未确认"
+// in the language the app shows.
+func EtcdHistoryUnproven() string { return In(i18n.Locale()).EtcdHistoryUnproven() }
+
+// EtcdHistoryUnproven says "历史窗口尚未确认"
+// in the language of msgs.
+func (msgs Messages) EtcdHistoryUnproven() string {
+	return Catalog.Format(msgs.locale, "etcdHistoryUnproven", nil)
+}
+
+// EtcdHistoryComplete says "固定历史窗口已确认"
+// in the language the app shows.
+func EtcdHistoryComplete() string { return In(i18n.Locale()).EtcdHistoryComplete() }
+
+// EtcdHistoryComplete says "固定历史窗口已确认"
+// in the language of msgs.
+func (msgs Messages) EtcdHistoryComplete() string {
+	return Catalog.Format(msgs.locale, "etcdHistoryComplete", nil)
+}
+
+// EtcdHistoryWindow says "固定窗口：%d → %d"
+// in the language the app shows.
+func EtcdHistoryWindow() string { return In(i18n.Locale()).EtcdHistoryWindow() }
+
+// EtcdHistoryWindow says "固定窗口：%d → %d"
+// in the language of msgs.
+func (msgs Messages) EtcdHistoryWindow() string {
+	return Catalog.Format(msgs.locale, "etcdHistoryWindow", nil)
+}
+
+// EtcdHistoryCounts says "显示窗口事件：%d · 原始帧：%d"
+// in the language the app shows.
+func EtcdHistoryCounts() string { return In(i18n.Locale()).EtcdHistoryCounts() }
+
+// EtcdHistoryCounts says "显示窗口事件：%d · 原始帧：%d"
+// in the language of msgs.
+func (msgs Messages) EtcdHistoryCounts() string {
+	return Catalog.Format(msgs.locale, "etcdHistoryCounts", nil)
+}
+
+// EtcdHistoryProgress says "进度证明修订号：%d · 请求次数：%d"
+// in the language the app shows.
+func EtcdHistoryProgress() string { return In(i18n.Locale()).EtcdHistoryProgress() }
+
+// EtcdHistoryProgress says "进度证明修订号：%d · 请求次数：%d"
+// in the language of msgs.
+func (msgs Messages) EtcdHistoryProgress() string {
+	return Catalog.Format(msgs.locale, "etcdHistoryProgress", nil)
+}
+
+// EtcdHistoryLimited says "事件列表已限制；记录保留已捕获的原始帧"
+// in the language the app shows.
+func EtcdHistoryLimited() string { return In(i18n.Locale()).EtcdHistoryLimited() }
+
+// EtcdHistoryLimited says "事件列表已限制；记录保留已捕获的原始帧"
+// in the language of msgs.
+func (msgs Messages) EtcdHistoryLimited() string {
+	return Catalog.Format(msgs.locale, "etcdHistoryLimited", nil)
+}
+
+// EtcdEventsIncomplete says "原始回执捕获不完整"
+// in the language the app shows.
+func EtcdEventsIncomplete() string { return In(i18n.Locale()).EtcdEventsIncomplete() }
+
+// EtcdEventsIncomplete says "原始回执捕获不完整"
+// in the language of msgs.
+func (msgs Messages) EtcdEventsIncomplete() string {
+	return Catalog.Format(msgs.locale, "etcdEventsIncomplete", nil)
+}
+
+// EtcdHistoryLoading says "正在读取固定历史窗口"
+// in the language the app shows.
+func EtcdHistoryLoading() string { return In(i18n.Locale()).EtcdHistoryLoading() }
+
+// EtcdHistoryLoading says "正在读取固定历史窗口"
+// in the language of msgs.
+func (msgs Messages) EtcdHistoryLoading() string {
+	return Catalog.Format(msgs.locale, "etcdHistoryLoading", nil)
+}
+
+// EtcdEventsCopyKey says "复制完整原键"
+// in the language the app shows.
+func EtcdEventsCopyKey() string { return In(i18n.Locale()).EtcdEventsCopyKey() }
+
+// EtcdEventsCopyKey says "复制完整原键"
+// in the language of msgs.
+func (msgs Messages) EtcdEventsCopyKey() string {
+	return Catalog.Format(msgs.locale, "etcdEventsCopyKey", nil)
+}
+
+// EtcdEventsPreviewHint says "列表最多 500 条，字段预览 1024 字节；复制与导出保留原始回执"
+// in the language the app shows.
+func EtcdEventsPreviewHint() string { return In(i18n.Locale()).EtcdEventsPreviewHint() }
+
+// EtcdEventsPreviewHint says "列表最多 500 条，字段预览 1024 字节；复制与导出保留原始回执"
+// in the language of msgs.
+func (msgs Messages) EtcdEventsPreviewHint() string {
+	return Catalog.Format(msgs.locale, "etcdEventsPreviewHint", nil)
+}
+
+// EtcdEventsArea says "KV 事件回执"
+// in the language the app shows.
+func EtcdEventsArea() string { return In(i18n.Locale()).EtcdEventsArea() }
+
+// EtcdEventsArea says "KV 事件回执"
+// in the language of msgs.
+func (msgs Messages) EtcdEventsArea() string {
+	return Catalog.Format(msgs.locale, "etcdEventsArea", nil)
+}
+
+// EtcdKeyReadError says "无法打开原键事件"
+// in the language the app shows.
+func EtcdKeyReadError() string { return In(i18n.Locale()).EtcdKeyReadError() }
+
+// EtcdKeyReadError says "无法打开原键事件"
+// in the language of msgs.
+func (msgs Messages) EtcdKeyReadError() string {
+	return Catalog.Format(msgs.locale, "etcdKeyReadError", nil)
+}
+
+// EtcdKeyReadChanged says "原键读取范围已更改，请重新选择"
+// in the language the app shows.
+func EtcdKeyReadChanged() string { return In(i18n.Locale()).EtcdKeyReadChanged() }
+
+// EtcdKeyReadChanged says "原键读取范围已更改，请重新选择"
+// in the language of msgs.
+func (msgs Messages) EtcdKeyReadChanged() string {
+	return Catalog.Format(msgs.locale, "etcdKeyReadChanged", nil)
+}
+
+// EtcdKeyReadLoading says "正在核对原键读取范围"
+// in the language the app shows.
+func EtcdKeyReadLoading() string { return In(i18n.Locale()).EtcdKeyReadLoading() }
+
+// EtcdKeyReadLoading says "正在核对原键读取范围"
+// in the language of msgs.
+func (msgs Messages) EtcdKeyReadLoading() string {
+	return Catalog.Format(msgs.locale, "etcdKeyReadLoading", nil)
+}
+
+// EtcdKeyReadCancel says "取消原键读取"
+// in the language the app shows.
+func EtcdKeyReadCancel() string { return In(i18n.Locale()).EtcdKeyReadCancel() }
+
+// EtcdKeyReadCancel says "取消原键读取"
+// in the language of msgs.
+func (msgs Messages) EtcdKeyReadCancel() string {
+	return Catalog.Format(msgs.locale, "etcdKeyReadCancel", nil)
+}
+
+// EtcdKeyWatch says "观察原键事件"
+// in the language the app shows.
+func EtcdKeyWatch() string { return In(i18n.Locale()).EtcdKeyWatch() }
+
+// EtcdKeyWatch says "观察原键事件"
+// in the language of msgs.
+func (msgs Messages) EtcdKeyWatch() string {
+	return Catalog.Format(msgs.locale, "etcdKeyWatch", nil)
+}
+
+// EtcdKeyHistory says "原键固定历史"
+// in the language the app shows.
+func EtcdKeyHistory() string { return In(i18n.Locale()).EtcdKeyHistory() }
+
+// EtcdKeyHistory says "原键固定历史"
+// in the language of msgs.
+func (msgs Messages) EtcdKeyHistory() string {
+	return Catalog.Format(msgs.locale, "etcdKeyHistory", nil)
+}
+
+// EtcdEventsOriginalScope says "回执连接 #%d · 原会话代次 %d"
+// in the language the app shows.
+func EtcdEventsOriginalScope() string { return In(i18n.Locale()).EtcdEventsOriginalScope() }
+
+// EtcdEventsOriginalScope says "回执连接 #%d · 原会话代次 %d"
+// in the language of msgs.
+func (msgs Messages) EtcdEventsOriginalScope() string {
+	return Catalog.Format(msgs.locale, "etcdEventsOriginalScope", nil)
+}
+
+// EtcdWatchLastProgress says "最近进度修订号：%d"
+// in the language the app shows.
+func EtcdWatchLastProgress() string { return In(i18n.Locale()).EtcdWatchLastProgress() }
+
+// EtcdWatchLastProgress says "最近进度修订号：%d"
+// in the language of msgs.
+func (msgs Messages) EtcdWatchLastProgress() string {
+	return Catalog.Format(msgs.locale, "etcdWatchLastProgress", nil)
+}

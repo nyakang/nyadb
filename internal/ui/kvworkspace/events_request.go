@@ -11,7 +11,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/jsondocument"
 )
 
-// These document methods are private until the host publishes the event UI.
+// These document methods are enabled only by an injected events provider.
 // History describes a native exact-key Range followed by a fixed Watch window.
 const WatchMethod = "/etcdserverpb.Watch/Watch"
 const HistoryMethod = "/nyadb.KV/History"

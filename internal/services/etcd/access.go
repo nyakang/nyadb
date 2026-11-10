@@ -177,6 +177,12 @@ func (a *keyAccess) scoped(prefix []byte) *keyAccess {
 }
 
 func (c *Client) permissions(parent context.Context) (a *keyAccess, err error) {
+	return c.capturePermissions(parent, false)
+}
+
+// Fresh observations authorize an explicit key action without replacing the
+// data document's immutable original grant geometry.
+func (c *Client) capturePermissions(parent context.Context, fresh bool) (a *keyAccess, err error) {
 	if err = parent.Err(); err != nil {
 		return nil, err
 	}
@@ -190,7 +196,7 @@ func (c *Client) permissions(parent context.Context) (a *keyAccess, err error) {
 	c.mu.Lock()
 	cached := c.access.clone()
 	c.mu.Unlock()
-	if cached != nil {
+	if cached != nil && !fresh {
 		return cached, nil
 	}
 	ctx, cancel := context.WithTimeout(parent, c.config.RequestTimeout)

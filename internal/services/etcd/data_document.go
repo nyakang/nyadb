@@ -24,7 +24,7 @@ type dataLease struct {
 	pageStarted                               bool
 	access                                    *keyAccess
 	accessFingerprint                         string
-	accessScopes                              [5]bool
+	accessScopes                              [6]bool
 	session                                   *Session
 	object                                    contract.ObjectRef
 	ctx                                       context.Context
@@ -36,7 +36,7 @@ type dataLease struct {
 	revision                                  int64
 	epoch                                     uint64
 	key                                       [32]byte
-	scopes                                    [5]*kvLease
+	scopes                                    [6]*kvLease
 	done                                      chan struct{}
 	closeErr                                  error
 	plan                                      *dataPlan
@@ -49,6 +49,7 @@ const (
 	dataFieldScope
 	dataWriteScope
 	dataExportScope
+	dataKeyScope
 )
 
 func dataCapabilities() contract.Capabilities {
@@ -85,7 +86,8 @@ func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 func (l *dataLease) Runtime() contract.DataRuntime {
 	return contract.DataRuntime{Capabilities: dataCapabilities(), PageFailureRequiresReopen: true,
 		AdvancedLoader: l.page, Count: l.count, RowReader: l.row, Chunk: l.chunk, TableMetadata: l.metadata, TableInfo: l.info,
-		Saver: l.save, PreviewEdits: l.preview, SubmitEdits: l.submit, Exporter: l.export,
+		CaptureKVKeyRead: l.captureKeyRead,
+		Saver:            l.save, PreviewEdits: l.preview, SubmitEdits: l.submit, Exporter: l.export,
 		NativeReceipts: true, InsertOmittedValues: true, EditKinds: []string{"insert", "update", "delete"},
 		PreviewEditKinds: []string{"insert", "update", "delete"}, EditValueKinds: []contract.CellKind{contract.Binary, contract.Integer},
 		MutationPresentation: &contract.DataMutationPresentation{Title: "确认键更改", Hint: "请检查原始键、目标键、值和租约；确认后将原子提交此批次更改。", PreviewLabel: "键更改完整预览", HistoryLabel: "已确认的原生键更改", CreateLabel: "创建键", UpdateLabel: "更新键", DeleteLabel: "删除键"},

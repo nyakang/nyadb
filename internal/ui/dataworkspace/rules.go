@@ -501,6 +501,7 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *Document, m *ui.Menu, row, s
 	if page == nil || row < 0 || row >= len(page.Rows) {
 		return
 	}
+	s.kvKeyReadMenu(c, t, m, row)
 	ready := !t.loading && !t.edit.Busy && t.edit.Uncertain == nil && t.profileID == s.session().ProfileID && s.session().Connected
 	editable := ready && mysqlDataCanEdit(t, row, source)
 	var column contract.StructureColumn
