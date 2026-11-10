@@ -93,6 +93,12 @@ func (c *Client) StartWatch(parent context.Context, request *pb.WatchCreateReque
 	if !c.operation.TryLock() {
 		return nil, ErrBusy
 	}
+	return c.startWatchOwned(parent, request)
+}
+
+// startWatchOwned consumes operation ownership on every path. A returned run
+// releases it only after the original receive executor acknowledges termination.
+func (c *Client) startWatchOwned(parent context.Context, request *pb.WatchCreateRequest) (*WatchRun, error) {
 	if !c.Alive() {
 		c.operation.Unlock()
 		return nil, ErrRetired

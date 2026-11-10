@@ -204,5 +204,26 @@ executor. Fragmented Watch requests are explicitly unsupported in this stage.
 `--watch-smoke --race --mode MODE` runs four private raw-service parents, including
 actual upstream creation/event response loss and the 4 KiB binary key boundary.
 It does not establish public Watch/history acceptance. Neutral session leases,
-aggregate session budgets, historical replay and graphical controls remain
+aggregate session budgets and graphical controls remain
 pending; this private API is not published by the workbench provider.
+
+Private `Client.History` captures an exact-key Range receipt and a fixed revision
+window, then transfers the same Client's uninterrupted execution ownership to
+one original historical Watch. Completion requires an actual original progress
+acknowledgement reaching the captured end; an empty result or deadline alone
+cannot prove completion. The default start covers 10000 revisions ending at the
+captured key's last modification (or the captured end for an absent key).
+Explicit start/end revisions are never moved after compaction or interruption.
+
+Complete original frames, including later events outside the window, remain
+separate from the newest-at-most-500-event window projection. Projection limits
+set Truncated without evicting frames; a capture frame/event/byte budget failure
+sets CaptureIncomplete and terminates the original executor. PUT/DELETE and
+previous values retain exact bytes and MVCC/lease metadata. Progress requests
+are explicitly counted, sent at most 64 times, and bounded by the original
+overall request deadline. Close and cancellation await the original executor;
+lost Range/creation/event/progress receipts never cause replay or reconnection.
+
+`--history-smoke --race --mode MODE` requires seven private native history
+parents. It establishes the raw fixed-window foundation only; neutral session
+leases, aggregate budgets and the public Watch/history workbench remain pending.

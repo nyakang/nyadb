@@ -209,6 +209,12 @@ func (c *Client) Execute(parent context.Context, p Plan) (r Response, err error)
 		return r, ErrBusy
 	}
 	defer c.operation.Unlock()
+	return c.executeOwned(parent, p)
+}
+
+// executeOwned requires operation ownership, including across the Range/Watch
+// boundary of a history capture. Only its caller releases that ownership.
+func (c *Client) executeOwned(parent context.Context, p Plan) (r Response, err error) {
 	if !c.Alive() {
 		return r, ErrRetired
 	}

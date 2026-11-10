@@ -68,7 +68,7 @@ def certificates(folder, access=False):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False):
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False):
     if access:
         public = True
     if access_smoke:
@@ -100,7 +100,7 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
     if public:
         sources += [p for folder in ('internal/ui/connectioncatalog', 'internal/ui/navigation', 'internal/ui/sessionbrowser', 'internal/ui/objectworkspace', 'internal/ui/theme', 'internal/storage/localdb') for p in (ROOT/folder).glob('*.go')]
     sources = sorted(set(sources))
-    report = dict(nonce=nonce, scope='etcd-watch-smoke' if watch_smoke else ('etcd-access-smoke' if access_smoke else ('public-etcd-access-smoke' if access and smoke else ('public-etcd-access' if access else ('public-etcd-smoke' if smoke else ('public-etcd-workbench' if public else ('kv-data-adapter-regression' if data else ('private-kv-request-workspace' if workspace else ('private-kv-session-runtime' if session else ('private-profile-editor' if profile else 'private-native-v3-foundation'))))))))), mode=mode, version=version,
+    report = dict(nonce=nonce, scope='etcd-history-smoke' if history_smoke else ('etcd-watch-smoke' if watch_smoke else ('etcd-access-smoke' if access_smoke else ('public-etcd-access-smoke' if access and smoke else ('public-etcd-access' if access else ('public-etcd-smoke' if smoke else ('public-etcd-workbench' if public else ('kv-data-adapter-regression' if data else ('private-kv-request-workspace' if workspace else ('private-kv-session-runtime' if session else ('private-profile-editor' if profile else 'private-native-v3-foundation')))))))))), mode=mode, version=version,
                   image=image, race=race, passed=False,
                   source_hashes={str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources})
     identifier = None
@@ -218,6 +218,16 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                             'WatchOriginalCompactionAndRestrictedCreationReceipts',
                             'WatchOriginalCancellationCloseAndBufferBounds',
                             'WatchActualOriginalCreationAndEventReceiptLossNeverReconnect')
+            if history_smoke:
+                environment.update(NYADB_ETCD_HISTORY_IT='1', NYADB_ETCD_ACCESS_IT='1')
+                packages = ['./internal/services/etcd']
+                required = ('HistoryCapturedWindowDeleteRecreateFutureAndEmptyKeys',
+                            'HistoryNativeReceiptsKeepCompleteWindowBeyondProjectionLimit',
+                            'HistoryActualCompactionDoesNotMoveRequestedEndRevision',
+                            'HistoryOriginalReadOnlyIdentityAndDeniedRange',
+                            'HistoryActualProgressLossTimeoutCancelAndOriginalClose',
+                            'HistoryCompleteLargeValuesAndExplicitNativeCaptureBounds',
+                            'HistoryActualRangeCreationAndEventReceiptLossNeverReplay')
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
             command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
@@ -273,6 +283,7 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=('anonymous', 'basic', 'tls', 'mtls'), default='basic')
+    parser.add_argument('--history-smoke', action='store_true')
     parser.add_argument('--watch-smoke', action='store_true')
     parser.add_argument('--access', action='store_true')
     parser.add_argument('--access-smoke', action='store_true')
@@ -285,4 +296,4 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke)
