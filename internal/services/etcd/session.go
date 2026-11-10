@@ -25,6 +25,7 @@ type Session struct {
 	closed, revoked bool
 	work            sync.WaitGroup
 	leases          map[*kvLease]bool
+	dataDocuments   map[*dataLease]bool
 	closeDone       chan struct{}
 	closeErr        error
 }
@@ -56,7 +57,7 @@ func newSession(p connections.Profile, secret string, c *Client) *Session {
 }
 func (s *Session) ProfileID() int64                    { return s.profile.ID }
 func (s *Session) Generation() uint64                  { return 1 } // publication belongs to dbruntime
-func (s *Session) Capabilities() contract.Capabilities { return contract.Capabilities{} }
+func (s *Session) Capabilities() contract.Capabilities { return dataCapabilities() }
 func (s *Session) Alive() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -119,7 +120,7 @@ func (s *Session) ReserveKV(document uint64) (contract.KVRequestLease, error) {
 	if document == 0 {
 		return nil, ErrInvalid
 	}
-	if len(s.leases) >= 32 {
+	if len(s.leases)+len(s.dataDocuments) >= 32 {
 		return nil, contract.ErrKVLeaseLimit
 	}
 	for l := range s.leases {
@@ -165,9 +166,16 @@ func (s *Session) Close() error {
 	for l := range s.leases {
 		leases = append(leases, l)
 	}
+	documents := make([]*dataLease, 0, len(s.dataDocuments))
+	for l := range s.dataDocuments {
+		documents = append(documents, l)
+	}
 	s.mu.Unlock()
 	err := s.client.Close()
 	for _, l := range leases {
+		err = errors.Join(err, l.Close())
+	}
+	for _, l := range documents {
 		err = errors.Join(err, l.Close())
 	}
 	s.work.Wait()

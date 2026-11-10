@@ -20,6 +20,14 @@ type DataMutationItem struct {
 	Blocked               bool
 }
 
+// Optional immutable text keys for the shared confirmation. Nil on DataRuntime
+// preserves the graph presentation. Adapters supply text; the UI localizes it.
+type DataMutationPresentation struct {
+	Title, Hint, PreviewLabel, HistoryLabel string
+	CreateLabel, UpdateLabel, DeleteLabel   string
+	ShowRelationships                       bool
+}
+
 type DataMutationSnapshot struct {
 	Object     ObjectRef
 	Edits      []DataEdit

@@ -3179,5 +3179,12 @@
   "kvRequestUxe4fbc8950f": "Run KV request",
   "kvRequestUx6b552cade3": "Run a request to show its native receipt",
   "kvRequestUxbf0b8d8806": "Preview is limited to 64 KiB; copy and export keep the complete content",
-  "kvRequestUx5afd503cba": "Preconnect"
+  "kvRequestUx5afd503cba": "Preconnect",
+  "etcdDataMutationTitle": "Confirm key changes",
+  "etcdDataMutationHint": "Review the original keys, destination keys, values and leases. Confirm to submit this batch atomically.",
+  "etcdDataMutationPreview": "Complete key change preview",
+  "etcdDataMutationHistory": "Confirmed native key changes",
+  "etcdDataMutationCreate": "Create key",
+  "etcdDataMutationUpdate": "Update key",
+  "etcdDataMutationDelete": "Delete key"
 }

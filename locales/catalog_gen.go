@@ -32437,3 +32437,73 @@ func KvRequestUx5afd503cba() string { return In(i18n.Locale()).KvRequestUx5afd50
 func (msgs Messages) KvRequestUx5afd503cba() string {
 	return Catalog.Format(msgs.locale, "kvRequestUx5afd503cba", nil)
 }
+
+// EtcdDataMutationTitle says "确认键更改"
+// in the language the app shows.
+func EtcdDataMutationTitle() string { return In(i18n.Locale()).EtcdDataMutationTitle() }
+
+// EtcdDataMutationTitle says "确认键更改"
+// in the language of msgs.
+func (msgs Messages) EtcdDataMutationTitle() string {
+	return Catalog.Format(msgs.locale, "etcdDataMutationTitle", nil)
+}
+
+// EtcdDataMutationHint says "请检查原始键、目标键、值和租约；确认后将原子提交此批次更改。"
+// in the language the app shows.
+func EtcdDataMutationHint() string { return In(i18n.Locale()).EtcdDataMutationHint() }
+
+// EtcdDataMutationHint says "请检查原始键、目标键、值和租约；确认后将原子提交此批次更改。"
+// in the language of msgs.
+func (msgs Messages) EtcdDataMutationHint() string {
+	return Catalog.Format(msgs.locale, "etcdDataMutationHint", nil)
+}
+
+// EtcdDataMutationPreview says "键更改完整预览"
+// in the language the app shows.
+func EtcdDataMutationPreview() string { return In(i18n.Locale()).EtcdDataMutationPreview() }
+
+// EtcdDataMutationPreview says "键更改完整预览"
+// in the language of msgs.
+func (msgs Messages) EtcdDataMutationPreview() string {
+	return Catalog.Format(msgs.locale, "etcdDataMutationPreview", nil)
+}
+
+// EtcdDataMutationHistory says "已确认的原生键更改"
+// in the language the app shows.
+func EtcdDataMutationHistory() string { return In(i18n.Locale()).EtcdDataMutationHistory() }
+
+// EtcdDataMutationHistory says "已确认的原生键更改"
+// in the language of msgs.
+func (msgs Messages) EtcdDataMutationHistory() string {
+	return Catalog.Format(msgs.locale, "etcdDataMutationHistory", nil)
+}
+
+// EtcdDataMutationCreate says "创建键"
+// in the language the app shows.
+func EtcdDataMutationCreate() string { return In(i18n.Locale()).EtcdDataMutationCreate() }
+
+// EtcdDataMutationCreate says "创建键"
+// in the language of msgs.
+func (msgs Messages) EtcdDataMutationCreate() string {
+	return Catalog.Format(msgs.locale, "etcdDataMutationCreate", nil)
+}
+
+// EtcdDataMutationUpdate says "更新键"
+// in the language the app shows.
+func EtcdDataMutationUpdate() string { return In(i18n.Locale()).EtcdDataMutationUpdate() }
+
+// EtcdDataMutationUpdate says "更新键"
+// in the language of msgs.
+func (msgs Messages) EtcdDataMutationUpdate() string {
+	return Catalog.Format(msgs.locale, "etcdDataMutationUpdate", nil)
+}
+
+// EtcdDataMutationDelete says "删除键"
+// in the language the app shows.
+func EtcdDataMutationDelete() string { return In(i18n.Locale()).EtcdDataMutationDelete() }
+
+// EtcdDataMutationDelete says "删除键"
+// in the language of msgs.
+func (msgs Messages) EtcdDataMutationDelete() string {
+	return Catalog.Format(msgs.locale, "etcdDataMutationDelete", nil)
+}

@@ -68,6 +68,7 @@ type dataMutationState struct {
 	submit              func(context.Context, int64, string, string, contract.DataMutationPlan) (*contract.DataEditResult, error)
 	ctx                 context.Context
 	open                bool
+	presentation        *contract.DataMutationPresentation
 }
 
 func requiresDataMutationPreview(r Runtime, edits []contract.DataEdit) bool {
@@ -93,6 +94,10 @@ func (s *State) previewDataMutation(services ui.Services, d *Document, runtime R
 	d.mutation = dataMutationState{ticket: ticket, results: out, keys: slices.Clone(keys), edits: captured,
 		object: d.object, profile: d.profileID, generation: s.sessionFor(d).Generation, request: d.edit.Request,
 		submit: runtime.SubmitEdits, ctx: ctx}
+	if runtime.MutationPresentation != nil {
+		p := *runtime.MutationPresentation
+		d.mutation.presentation = &p
+	}
 	d.edit.Cancel, d.edit.Busy, d.edit.Err = cancel, true, ""
 	preview, profile, database, table := runtime.PreviewEdits, d.profileID, d.database, d.table
 	// The executor receives its own deep copy, independent of UI confirmation.
@@ -144,8 +149,8 @@ func (s *State) releaseDataMutation(d *Document) {
 	}
 	// Keep the owned evidence after submission or cancellation. The native
 	// handle's Snapshot becomes empty once it is consumed or closed.
-	snapshot := m.snapshot
-	*m = dataMutationState{snapshot: snapshot}
+	snapshot, presentation := m.snapshot, m.presentation
+	*m = dataMutationState{snapshot: snapshot, presentation: presentation}
 	if d.edit.Cancel != nil {
 		d.edit.Cancel()
 	}
@@ -267,6 +272,9 @@ func (s *State) confirmDataMutation(services ui.Services, d *Document) {
 	history := mysqlDataWriteHistoryRequest(database, table, edits, false)
 	for i := range history {
 		history[i].SQL, history[i].Summary = locales.Text("已确认的原生实体更改"), true
+		if m.presentation != nil {
+			history[i].SQL = locales.Text(m.presentation.HistoryLabel)
+		}
 	}
 	complete := s.beginActivity(d, "data_write", dataActivitySQL(history))
 	go func() {
@@ -321,21 +329,40 @@ func (s *State) dataMutationModal(c *ui.Context, d *Document) {
 	}
 	theme.Modal(c, &m.open, func() {
 		ui.Column(c).Width(720).MaxWidthPercent(95).Gap(8).Children(func() {
-			ui.Text(c, locales.Text("确认实体更改")).FontSize(theme.Font(c, theme.FontSize))
+			title, hint, previewLabel := "确认实体更改", "请检查原始实体、关联关系和属性；确认后将提交此批次更改。", "实体更改完整预览"
+			if m.presentation != nil {
+				title, hint, previewLabel = m.presentation.Title, m.presentation.Hint, m.presentation.PreviewLabel
+			}
+			ui.Text(c, locales.Text(title)).FontSize(theme.Font(c, theme.FontSize))
 			ui.Text(c, d.database+" · "+d.table)
-			ui.Text(c, locales.Text("请检查原始实体、关联关系和属性；确认后将提交此批次更改。"))
+			ui.Text(c, locales.Text(hint))
 			ui.Scroll(c).Height(260).FillWidth().Children(func() {
 				for _, item := range m.snapshot.Items {
 					identity := item.EntityID
 					if identity == "" {
 						identity = locales.Text("待生成")
 					}
-					ui.Text(c, fmt.Sprintf("%s · %s · %s: %d", dataMutationKind(item.Kind), identity, locales.Text("关联关系"), item.AffectedRelationships))
+					kind := dataMutationKind(item.Kind)
+					if p := m.presentation; p != nil {
+						switch item.Kind {
+						case "insert":
+							kind = locales.Text(p.CreateLabel)
+						case "update":
+							kind = locales.Text(p.UpdateLabel)
+						case "delete":
+							kind = locales.Text(p.DeleteLabel)
+						}
+					}
+					text := kind + " · " + identity
+					if m.presentation == nil || m.presentation.ShowRelationships {
+						text += fmt.Sprintf(" · %s: %d", locales.Text("关联关系"), item.AffectedRelationships)
+					}
+					ui.Text(c, text)
 				}
 				if dataMutationBlocked(m.snapshot) {
 					ui.Text(c, locales.Text("普通删除包含有关联关系的节点。请取消后选择删除方式。此批次尚未写入。")).TextColor(theme.Colors(c).Warning)
 				}
-				ui.Text(c, dataMutationPreview(m.snapshot.NativeJSON)).Label(locales.Text("实体更改完整预览"))
+				ui.Text(c, dataMutationPreview(m.snapshot.NativeJSON)).Label(locales.Text(previewLabel))
 			})
 			ui.Row(c).Gap(8).Children(func() {
 				if ui.Button(c, locales.Text("复制完整预览")).Clicked() {

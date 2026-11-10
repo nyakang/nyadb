@@ -65,8 +65,8 @@ def certificates(folder):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False):
-    if workspace:
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False):
+    if workspace or data:
         session = True
     image = IMAGES[version]
     nonce = uuid.uuid4().hex
@@ -80,11 +80,14 @@ def verify(mode, race, version, profile=False, session=False, workspace=False):
         sources += [ROOT/'locales/en.json', ROOT/'locales/zh-Hans.json', ROOT/'internal/ui/shell/connection_engine_files.go', ROOT/'internal/services/dbruntime/providers.go', ROOT/'internal/services/dbruntime/runtime.go', ROOT/'internal/ui/connectioncatalog/catalog.go', ROOT/'internal/services/connections/uri.go']
     if session:
         sources += [p for folder in ('internal/db/contract', 'internal/services/dbruntime', 'internal/services/connections') for p in (ROOT/folder).glob('*.go')]
+    if data:
+        sources += [p for folder in ('internal/ui/dataworkspace', 'locales') for p in (ROOT/folder).glob('*.go')]
+        sources += [ROOT/'locales/en.json', ROOT/'locales/zh-Hans.json']
     if workspace:
         sources += [p for folder in ('internal/ui/kvworkspace', 'internal/ui/shell', 'internal/bootstrap', 'locales') for p in (ROOT/folder).glob('*.go')]
         sources += [ROOT/'locales/en.json', ROOT/'locales/zh-Hans.json']
     sources = sorted(set(sources))
-    report = dict(nonce=nonce, scope='private-kv-request-workspace' if workspace else ('private-kv-session-runtime' if session else ('private-profile-editor' if profile else 'private-native-v3-foundation')), mode=mode, version=version,
+    report = dict(nonce=nonce, scope='private-kv-data-adapter' if data else ('private-kv-request-workspace' if workspace else ('private-kv-session-runtime' if session else ('private-profile-editor' if profile else 'private-native-v3-foundation'))), mode=mode, version=version,
                   image=image, race=race, passed=False,
                   source_hashes={str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources})
     identifier = None
@@ -164,20 +167,25 @@ def verify(mode, race, version, profile=False, session=False, workspace=False):
             if workspace:
                 packages += ['./internal/ui/kvworkspace', './internal/ui/shell']
                 environment.update(NYADB_ETCD_WORKSPACE_IT='1', NYADB_ETCD_WORKSPACE_IMAGES=str(report_path.with_suffix(''))+'-workspace-images')
+            if data:
+                packages.append('./internal/ui/dataworkspace')
+                environment.update(NYADB_ETCD_DATA_IT='1', NYADB_ETCD_DATA_IMAGES=str(report_path.with_suffix(''))+'-data-images')
+            required = REQUIRED + (('ProfileURIReopenAndOriginalEditorCheck', 'ProfileVaultFailurePreservesOriginalConnection', 'ProfileOriginalCanceledHandshakeAndLateCheck', 'ProfileParkedSuccessDoesNotEnterReplacementDraft', 'EditorLocalizedFormEvidence') if profile else ())
+            if session:
+                required += ('SessionOriginalScopePurePlansAndExactReplies', 'SessionMVCCAndNativePermissionBoundary', 'SessionActualProcessedReplyFaultsAndRecovery', 'SessionOriginalReadBusyCancellationAndClose', 'SessionLateHandshakeClosesOnlyOriginalHandle', 'SessionLeaseLimitsAndRevokedTokenRecovery', 'RuntimeOriginalPublicationSnapshotsAndExplicitRecovery', 'RuntimeActualProcessedPutFaultAndGenerationReplacement', 'RuntimeLateOriginalHandshakeCannotCloseReplacement')
+            if workspace:
+                required += ('WorkspaceMethodsPureConfirmationAndExactReceipts', 'WorkspaceMVCCAndDeniedRequestRemainExplicit', 'WorkspaceLargeClipboardFilesAndCapturedSave', 'WorkspaceActualProcessedFaultRecoveryReadbackAndLeave', 'WorkspaceParkedOriginalCompletionAndStalePreview', 'WorkspaceLocalizedNativeControlsAndCompletePreview', 'ShellPrivateKVDocumentsParkDisconnectRecoverAndOriginalClose')
+            if data:
+                required += ('DataOriginalBinaryMVCCCountAndFieldScopes', 'DataCompactionRetiresOriginalRangeAndExplicitReopen', 'DataAtomicEditsExactReceiptsAndPreservedLease', 'DataPreviewConflictsRollBackWholeOriginalBatch', 'DataFixedRevisionLosslessExportAndMaximumKey', 'DataActualTxnReceiptFaultCancelAndOriginalClose', 'DataAuxiliaryCancellationKeepsOriginalPageScope', 'DataSharedGridOriginalPreviewParkingRefreshAndGeneration')
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
-            command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^TestEtcdNative', '-count=1', '-v', '-timeout=600s']
+            command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
             with log_path.open('w') as out:
                 result = subprocess.run(command, cwd=ROOT, env=environment, stdout=out, stderr=subprocess.STDOUT)
             log = log_path.read_text()
             if result.returncode or re.search(r'^\s*--- (FAIL|SKIP):|WARNING: DATA RACE', log, re.M):
                 raise RuntimeError('Native acceptance failed; inspect '+str(log_path.relative_to(ROOT)))
             accepted = re.findall(r'^--- PASS: TestEtcdNative(\w+) \(', log, re.M)
-            required = REQUIRED + (('ProfileURIReopenAndOriginalEditorCheck', 'ProfileVaultFailurePreservesOriginalConnection', 'ProfileOriginalCanceledHandshakeAndLateCheck', 'ProfileParkedSuccessDoesNotEnterReplacementDraft', 'EditorLocalizedFormEvidence') if profile else ())
-            if session:
-                required += ('SessionOriginalScopePurePlansAndExactReplies', 'SessionMVCCAndNativePermissionBoundary', 'SessionActualProcessedReplyFaultsAndRecovery', 'SessionOriginalReadBusyCancellationAndClose', 'SessionLateHandshakeClosesOnlyOriginalHandle', 'SessionLeaseLimitsAndRevokedTokenRecovery', 'RuntimeOriginalPublicationSnapshotsAndExplicitRecovery', 'RuntimeActualProcessedPutFaultAndGenerationReplacement', 'RuntimeLateOriginalHandshakeCannotCloseReplacement')
-            if workspace:
-                required += ('WorkspaceMethodsPureConfirmationAndExactReceipts', 'WorkspaceMVCCAndDeniedRequestRemainExplicit', 'WorkspaceLargeClipboardFilesAndCapturedSave', 'WorkspaceActualProcessedFaultRecoveryReadbackAndLeave', 'WorkspaceParkedOriginalCompletionAndStalePreview', 'WorkspaceLocalizedNativeControlsAndCompletePreview', 'ShellPrivateKVDocumentsParkDisconnectRecoverAndOriginalClose')
             if sorted(accepted) != sorted(required):
                 raise RuntimeError('Native acceptance has missing or unexpected cases')
             for name, expected in report['source_hashes'].items():
@@ -193,6 +201,11 @@ def verify(mode, race, version, profile=False, session=False, workspace=False):
                 if len(pictures) != 40:
                     raise RuntimeError('Native workspace acceptance is missing localized images')
                 report['workspace_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
+            if data:
+                pictures = sorted(Path(environment['NYADB_ETCD_DATA_IMAGES']).glob('*.png'))
+                if len(pictures) != 16:
+                    raise RuntimeError('Native data acceptance is missing localized images')
+                report['data_images'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             report.update(passed=True, accepted=accepted, log_sha256=hashlib.sha256(log_path.read_bytes()).hexdigest())
     finally:
         try:
@@ -212,7 +225,8 @@ if __name__ == '__main__':
     parser.add_argument('--profile', action='store_true')
     parser.add_argument('--session', action='store_true')
     parser.add_argument('--workspace', action='store_true')
+    parser.add_argument('--data-adapter', action='store_true')
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter)

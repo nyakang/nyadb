@@ -404,12 +404,22 @@ func (f *nativeFault) serve(_ any, stream grpc.ServerStream) error {
 		if put, ok := req.(*pb.PutRequest); ok {
 			_, err = pb.NewKVClient(f.upstream.conn).Put(ctx, &pb.PutRequest{Key: put.Key, Value: []byte("later-independent")})
 		} else if txn, ok := req.(*pb.TxnRequest); ok {
-			_, err = pb.NewKVClient(f.upstream.conn).Put(ctx, &pb.PutRequest{Key: txn.Success[0].GetRequestPut().Key, Value: []byte("later-independent")})
+			for _, op := range txn.Success {
+				if put := op.GetRequestPut(); put != nil {
+					_, err = pb.NewKVClient(f.upstream.conn).Put(ctx, &pb.PutRequest{Key: put.Key, Value: []byte("later-independent")})
+					break
+				}
+			}
 		}
 		if err != nil {
 			return err
 		}
 		close(f.entered)
+		if f.mode == "incomplete" {
+			res.(*pb.TxnResponse).Responses = nil
+			close(f.done)
+			return stream.SendMsg(res)
+		}
 		if f.mode != "lost" {
 			<-stream.Context().Done()
 		}

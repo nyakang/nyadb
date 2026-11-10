@@ -119,7 +119,8 @@ type DataRuntime struct {
 	Saver               func(context.Context, int64, string, string, []DataEdit) (*DataEditResult, error)
 	// Preview/Submit are an optional original-document mutation path. The UI
 	// must obtain explicit approval of the immutable preview before Submit.
-	PreviewEditKinds []string
+	PreviewEditKinds     []string
+	MutationPresentation *DataMutationPresentation
 	// ReadGraphEndpoints captures complete directed nodes through the original
 	// relationship document. Nil explicitly excludes relationship creation.
 	ReadGraphEndpoints func(context.Context, int64, string, string, string, string) (*DataGraphEndpoints, error)
