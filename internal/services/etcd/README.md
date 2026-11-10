@@ -191,3 +191,18 @@ Watch/history, automatic renewal, maintenance/auth management, etcd v2,
 additional versions and cluster operation remain pending. Historical public
 acceptance is recorded in `docs/etcd-public-workbench-2026-11-10.md`; ACL scope and
 verification are recorded separately in `docs/etcd-access-browsing-2026-11-10.md`.
+
+A private raw Watch foundation owns one original protobuf stream per Client,
+retains complete bounded native frames and event bytes, validates the original
+WatchID and member identity, and handles explicit progress and zero-revision
+compaction receipts separately. Stop waits for the actual original cancellation
+receipt; cancellation/Close and actual processed response loss never recreate
+that stream. The buffer admits 256 frames, 10000 events and 8 MiB of conservative
+owned byte estimates; overflow preserves prior receipts and ends the original
+executor. Fragmented Watch requests are explicitly unsupported in this stage.
+
+`--watch-smoke --race --mode MODE` runs four private raw-service parents, including
+actual upstream creation/event response loss and the 4 KiB binary key boundary.
+It does not establish public Watch/history acceptance. Neutral session leases,
+aggregate session budgets, historical replay and graphical controls remain
+pending; this private API is not published by the workbench provider.
