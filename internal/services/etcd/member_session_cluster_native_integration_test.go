@@ -114,6 +114,7 @@ func TestEtcdNativeMemberSessionClusterFourTargetsAndActualMetadataChanges(t *te
 	// These are explicit controls of this disposable fixture, not advertised
 	// member-management operations. Change the real raft directory's peer URL.
 	admin := nativeClient(t)
+	verifyNativeFollowerGate(t, leases)
 	selected := leases["node1"]
 	original := selected.Scope().Member
 	if len(original.PeerURLs) != 1 {
@@ -197,4 +198,72 @@ func TestEtcdNativeMemberSessionClusterFourTargetsAndActualMetadataChanges(t *te
 		t.Fatal("actual removed member dispatched or relabeled", err)
 	}
 	t.Log("actual_member_removal_rejected", removedScope.Member.ID, rejected.Scope.LeaseID, len(rejected.DirectoryCheck.Members))
+}
+
+func verifyNativeFollowerGate(t *testing.T, leases map[string]contract.KVMemberLease) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	selected := leases["node1"]
+	other := leases["node0"]
+	move := func(target uint64) {
+		status, err := selected.ObserveStatus(ctx)
+		if err != nil {
+			t.Fatal("owned ordering observation", err)
+		}
+		leader := status.Result.Reply.Status.Leader
+		if leader != target {
+			var transport *Client
+			for _, lease := range leases {
+				if lease.Scope().Member.ID == leader {
+					transport = lease.(*memberLease).client
+				}
+			}
+			if transport == nil {
+				t.Fatal("missing original leader control")
+			}
+			_, err := pb.NewMaintenanceClient(transport.conn).MoveLeader(transport.authContext(ctx), &pb.MoveLeaderRequest{TargetID: target})
+			if err != nil {
+				t.Fatal("owned leadership transfer", err)
+			}
+		}
+		for {
+			r, err := selected.ObserveStatus(ctx)
+			if err != nil {
+				t.Fatal("owned leadership stabilization", err)
+			}
+			if r.Result.Reply.Status.Leader == target {
+				break
+			}
+			select {
+			case <-ctx.Done():
+				t.Fatal("owned leadership did not stabilize")
+			case <-time.After(20 * time.Millisecond):
+			}
+		}
+	}
+	move(other.Scope().Member.ID)
+	p, err := selected.(contract.KVMemberFollowerPreparation).PrepareFollowerDefragment()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Actual raft transfer occurs after the preparation/ordering observation.
+	move(selected.Scope().Member.ID)
+	r, err := selected.ExecuteMember(ctx, p)
+	if !errors.Is(err, contract.ErrKVMemberBecameLeader) || r.Result.Attempted || r.Result.WriteOutcomeUnknown || !r.Before.Completed || r.Before.Reply.Status.Leader != selected.Scope().Member.ID || !r.DirectoryCheck.Result.Completed || selected.CheckMemberLease() != nil {
+		t.Fatal("actual follower-to-leader change dispatched", err)
+	}
+	if _, err := selected.ExecuteMember(ctx, p); !errors.Is(err, contract.ErrKVPlanUsed) {
+		t.Fatal("ordering preparation replayed", err)
+	}
+	move(other.Scope().Member.ID)
+	p, err = selected.(contract.KVMemberFollowerPreparation).PrepareFollowerDefragment()
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err = selected.ExecuteMember(ctx, p)
+	if err != nil || !r.Result.Completed || !r.Result.NativeCaptured || len(r.Result.Native) != 0 || !r.Before.Completed || r.Before.Reply.Status.Leader != other.Scope().Member.ID {
+		t.Fatal("actual guarded follower ACK", err)
+	}
+	t.Log("actual_follower_leader_gate", selected.Scope().Member.ID, other.Scope().Member.ID)
 }

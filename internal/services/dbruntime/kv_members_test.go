@@ -18,6 +18,7 @@ type fakeMemberFacet struct {
 	sequence atomic.Uint64
 	execute  func(contract.KVMemberScope) (contract.KVMemberResult, error)
 	last     *fakeMemberLease
+	follower bool
 }
 type fakeMemberObservation struct{ directory contract.KVMemberDirectory }
 
@@ -30,15 +31,27 @@ func (f *fakeMemberFacet) BindMember(_ context.Context, o contract.KVMemberObser
 	d := o.Snapshot()
 	s := contract.KVMemberScope{Original: f.base.Scope(), DocumentID: f.document, LeaseID: f.sequence.Add(1), Directory: d, Member: d.Members[0].Clone(), Endpoint: t.Endpoint, Version: t.Version}
 	f.last = &fakeMemberLease{scope: s, execute: f.execute}
-	return contract.KVMemberBinding{Lease: f.last, Scope: s.Clone()}, nil
+	var lease contract.KVMemberLease = f.last
+	if f.follower {
+		lease = &fakeMemberFollowerLease{f.last}
+	}
+	return contract.KVMemberBinding{Lease: lease, Scope: s.Clone()}, nil
 }
 
 type fakeMemberLease struct {
-	scope    contract.KVMemberScope
-	executes atomic.Int32
-	closed   atomic.Bool
-	execute  func(contract.KVMemberScope) (contract.KVMemberResult, error)
-	last     contract.KVMemberResult
+	scope         contract.KVMemberScope
+	executes      atomic.Int32
+	closed        atomic.Bool
+	execute       func(contract.KVMemberScope) (contract.KVMemberResult, error)
+	last          contract.KVMemberResult
+	followerPlans atomic.Int32
+}
+
+type fakeMemberFollowerLease struct{ *fakeMemberLease }
+
+func (l *fakeMemberFollowerLease) PrepareFollowerDefragment() (contract.KVMemberPreparation, error) {
+	l.followerPlans.Add(1)
+	return &fakeMemberPreparation{}, nil
 }
 
 func (l *fakeMemberLease) Scope() contract.KVMemberScope { return l.scope.Clone() }
@@ -197,6 +210,29 @@ func TestKVMembersRuntimeOpaqueAuthorityOriginalDocumentAndLateRecoveryGeneratio
 	if err != nil {
 		t.Fatal(err)
 	}
+	if _, ok := b.Lease.(contract.KVMemberFollowerPreparation); ok {
+		t.Fatal("runtime advertised unsupported follower preparation")
+	}
+	facets[0].follower = true
+	originalRawMember := facets[0].last
+	guarded, err := f.BindMember(context.Background(), o, target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer guarded.Lease.Close()
+	guard, ok := guarded.Lease.(contract.KVMemberFollowerPreparation)
+	if !ok {
+		t.Fatal("runtime lost optional follower preparation")
+	}
+	guardPlan, err := guard.PrepareFollowerDefragment()
+	if err != nil || facets[0].last.followerPlans.Load() != 1 || guardPlan.Snapshot() != (&fakeMemberPreparation{}).Snapshot() {
+		t.Fatal("original pure follower preparation not forwarded", err)
+	}
+	if _, err := b.Lease.ExecuteMember(context.Background(), guardPlan); !errors.Is(err, contract.ErrKVPlanUsed) {
+		t.Fatal("follower preparation moved to another original member", err)
+	}
+	// Restore the original raw child for the existing late-receipt assertions.
+	facets[0].last = originalRawMember
 	defer b.Lease.Close()
 	p, err := b.Lease.PrepareDefragment()
 	if err != nil {

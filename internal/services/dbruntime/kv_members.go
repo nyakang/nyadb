@@ -207,6 +207,9 @@ func (f *kvMemberFacet) BindMember(ctx context.Context, observation contract.KVM
 			member := &kvMemberLease{owner: l, raw: binding.Lease, scope: binding.Scope.Clone()}
 			member.authority = member
 			binding.Lease = member
+			if _, ok := member.raw.(contract.KVMemberFollowerPreparation); ok {
+				binding.Lease = &kvMemberFollowerLease{member}
+			}
 		}
 	}
 	if err != nil {
@@ -223,6 +226,12 @@ type kvMemberLease struct {
 	closed    atomic.Bool
 	once      sync.Once
 	closeErr  error
+}
+
+type kvMemberFollowerLease struct{ *kvMemberLease }
+
+func (l *kvMemberFollowerLease) PrepareFollowerDefragment() (contract.KVMemberPreparation, error) {
+	return l.prepareDefragment(true)
 }
 
 type kvMemberPreparation struct {
@@ -264,10 +273,24 @@ func (l *kvMemberLease) ObserveStatus(ctx context.Context) (contract.KVMemberRes
 }
 
 func (l *kvMemberLease) PrepareDefragment() (contract.KVMemberPreparation, error) {
+	return l.prepareDefragment(false)
+}
+
+func (l *kvMemberLease) prepareDefragment(followerOnly bool) (contract.KVMemberPreparation, error) {
 	if err := l.CheckMemberLease(); err != nil {
 		return nil, err
 	}
-	p, err := l.raw.PrepareDefragment()
+	var p contract.KVMemberPreparation
+	var err error
+	if followerOnly {
+		f, ok := l.raw.(contract.KVMemberFollowerPreparation)
+		if !ok {
+			return nil, contract.ErrUnsupported
+		}
+		p, err = f.PrepareFollowerDefragment()
+	} else {
+		p, err = l.raw.PrepareDefragment()
+	}
 	if err != nil {
 		return nil, err
 	}

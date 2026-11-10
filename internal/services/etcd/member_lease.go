@@ -43,9 +43,10 @@ type memberLease struct {
 }
 
 type memberPreparation struct {
-	owner     *memberLease
-	authority *memberPreparation
-	used      atomic.Bool
+	owner        *memberLease
+	authority    *memberPreparation
+	used         atomic.Bool
+	followerOnly bool
 }
 
 func (*memberPreparation) Snapshot() contract.KVRequest { return memberDefragRequest }
@@ -215,13 +216,21 @@ func (m *memberLease) request(parent context.Context) (context.Context, func(), 
 }
 
 func (m *memberLease) PrepareDefragment() (contract.KVMemberPreparation, error) {
+	return m.prepareDefragment(false)
+}
+
+func (m *memberLease) PrepareFollowerDefragment() (contract.KVMemberPreparation, error) {
+	return m.prepareDefragment(true)
+}
+
+func (m *memberLease) prepareDefragment(followerOnly bool) (contract.KVMemberPreparation, error) {
 	if err := m.CheckMemberLease(); err != nil {
 		return nil, err
 	}
 	if m.Scope().Member.IsLearner {
 		return nil, contract.ErrUnsupported
 	}
-	p := &memberPreparation{owner: m}
+	p := &memberPreparation{owner: m, followerOnly: followerOnly}
 	p.authority = p
 	return p, nil
 }
@@ -390,6 +399,7 @@ func (m *memberLease) ExecuteMember(parent context.Context, prepared contract.KV
 	if err != nil {
 		return r, err
 	}
+	nativePlan.followerOnly = p.followerOnly
 	native, err := m.client.Execute(ctx, nativePlan)
 	r.Result = projectKVResult(memberDefragRequest, native)
 	if before, ok := native.Before(); ok {

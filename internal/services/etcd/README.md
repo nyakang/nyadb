@@ -655,10 +655,42 @@ settle it. Learners reject Defragment. Official 3.7 uses FailedPrecondition;
 the exact maintenance permission denial. These two observed 3.5 rejections are
 definite; the original native codes/messages remain unchanged.
 
-This is a native foundation. Ordinary KV request codecs/inventories, original
-document member leases, batch ordering and public member/Defragment forms remain
-separate acceptance steps. Run `tools/verify_etcd_fixture.py --member-native
+This is a native foundation. Ordinary KV request codecs/inventories, public
+batch ordering and member/Defragment forms remain separate acceptance steps.
+Run `tools/verify_etcd_fixture.py --member-native
 --race --mode MODE` under the five existing version/transport configurations.
 `tools/verify_etcd_member_fixture.py --race --version VERSION` verifies three
 voters and one learner, explicit mapped endpoint aliases and real leader
 transfer using independently owned official 3.7.3/3.5.35 clusters.
+
+### Original document member leases
+
+An optional neutral `KVMembers` facet on the original KV document owns opaque
+directory authority and explicitly selected member transports. Copies of its
+inspection snapshots cannot authorize another bind. Each candidate supplies
+its own expected version and endpoint; failed native Status handshakes remain
+available for inspection. Authenticated learners use the original token for
+Status without another Authenticate RPC or a KV probe.
+
+Each pure, one-use member preparation checks a fresh linearizable directory on
+the original parent transport, compares the complete selected member metadata,
+then records fresh Status on the captured child before its single empty RPC.
+An optional follower preparation additionally stops before dispatch if that
+final Status reports the target as leader or cannot establish a leader. This
+gate does not lock leadership, reorder or replay the consumed preparation.
+The runtime preserves optional facets and translates nested public generations
+only at its boundary. All operations serialize with the original document.
+
+Full directory, handshake, Before and native ACK/error receipts have separate
+bounded document/session reservations before dispatch. Member unknown writes
+block subsequent document writes and survive other reads, child Close and pure
+recovery. Recovery transfers original evidence and generations without opening
+or executing a member request. Parent/session retirement waits for the original
+executor; explicit document disposal releases its transports and caches.
+
+Run `tools/verify_etcd_fixture.py --member-session --race --mode MODE` and
+`tools/verify_etcd_member_fixture.py --member-session --race --mode MODE
+--version VERSION` for the original session/runtime matrices. The latter also
+verifies an actual raft leadership transfer after follower preparation and a
+successful original follower ACK. Public member selection and checked batches
+remain a separate acceptance step.

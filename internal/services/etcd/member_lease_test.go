@@ -3,6 +3,7 @@ package etcd
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -301,5 +302,51 @@ func TestMemberLeaseLearnerStatusDoesNotEnableDefragment(t *testing.T) {
 	}
 	if _, err := m.PrepareDefragment(); !errors.Is(err, contract.ErrUnsupported) || target.calls.Load() != 0 {
 		t.Fatal("learner promoted/maintenance prepared", err)
+	}
+}
+
+func TestMemberFollowerGuardUsesFinalStatusAndConsumesOnlyOriginalPreparation(t *testing.T) {
+	for _, leader := range []uint64{0, 9, 10} {
+		t.Run(fmt.Sprint(leader), func(t *testing.T) {
+			l, root := memberTestLease(t)
+			c, target := memberRelayClient(t, nil, Config{}, "", "ok")
+			m := memberTestBind(t, l, c.config.Endpoint)
+			follower := &pb.StatusResponse{Header: &pb.ResponseHeader{ClusterId: 7, MemberId: 9, Revision: 11, RaftTerm: 2}, Version: "3.7.3", Leader: 10}
+			target.statusObservation.Store(follower)
+			ordering, err := m.ObserveStatus(context.Background())
+			if err != nil || ordering.Result.Reply.Status.Leader != 10 {
+				t.Fatal("earlier follower observation missing", err)
+			}
+			p, err := m.PrepareFollowerDefragment()
+			if err != nil || target.calls.Load() != 0 {
+				t.Fatal("pure follower preparation dispatched", err)
+			}
+			final := proto.Clone(follower).(*pb.StatusResponse)
+			final.Leader = leader
+			target.statusObservation.Store(final)
+			r, err := m.ExecuteMember(context.Background(), p)
+			if !r.Before.Completed || !r.Before.NativeCaptured || r.Before.Reply.Status.Leader != leader || !r.DirectoryCheck.Result.Completed || r.Sequence != 2 || root.calls.Load() != 0 {
+				t.Fatal("final independent observation lost", err, r)
+			}
+			if leader == 10 {
+				if err != nil || !r.Result.Completed || !r.Result.NativeCaptured || len(r.Result.Native) != 0 || target.calls.Load() != 1 {
+					t.Fatal("follower write did not retain native empty ACK", err)
+				}
+			} else {
+				expected := contract.ErrKVMemberBecameLeader
+				if leader == 0 {
+					expected = contract.ErrKVMemberOrderUnknown
+				}
+				if !errors.Is(err, expected) || r.Result.Attempted || r.Result.WriteOutcomeUnknown || target.calls.Load() != 0 || m.CheckMemberLease() != nil {
+					t.Fatal("changed leadership dispatched or retired transport", err, r)
+				}
+				if m.LastMemberResult().Before.Reply.Status.Leader != leader || len(l.memberResultsOwned()) != 1 {
+					t.Fatal("rejected ordering evidence not retained")
+				}
+			}
+			if _, err := m.ExecuteMember(context.Background(), p); !errors.Is(err, contract.ErrKVPlanUsed) {
+				t.Fatal("guarded preparation replayed", err)
+			}
+		})
 	}
 }

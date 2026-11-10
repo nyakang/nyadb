@@ -18,15 +18,16 @@ import (
 )
 
 type memberProtocolRelay struct {
-	upstream      *Client
-	mode          string
-	ready         atomic.Bool
-	calls         atomic.Int32
-	ranges        atomic.Int32
-	directory     atomic.Pointer[pb.MemberListResponse]
-	entered, done chan struct{}
-	request       *pb.DefragmentRequest
-	receipt       *pb.DefragmentResponse
+	upstream          *Client
+	mode              string
+	ready             atomic.Bool
+	calls             atomic.Int32
+	ranges            atomic.Int32
+	directory         atomic.Pointer[pb.MemberListResponse]
+	statusObservation atomic.Pointer[pb.StatusResponse]
+	entered, done     chan struct{}
+	request           *pb.DefragmentRequest
+	receipt           *pb.DefragmentResponse
 }
 
 func (f *memberProtocolRelay) serve(_ any, stream grpc.ServerStream) error {
@@ -62,6 +63,9 @@ func (f *memberProtocolRelay) serve(_ any, stream grpc.ServerStream) error {
 		}
 	}
 	if f.ready.Load() && method == "/etcdserverpb.Maintenance/Status" {
+		if observed := f.statusObservation.Load(); observed != nil {
+			reply = proto.Clone(observed)
+		}
 		s := reply.(*pb.StatusResponse)
 		switch f.mode {
 		case "before-foreign":

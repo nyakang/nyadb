@@ -2,8 +2,12 @@ package contract
 
 import (
 	"context"
+	"errors"
 	"slices"
 )
+
+var ErrKVMemberBecameLeader = errors.New("original member is now leader; remaining batch targets must run first")
+var ErrKVMemberOrderUnknown = errors.New("original member leadership cannot be established")
 
 // IDs/URLs/learner are original directory observations, not incarnations.
 // Strings are complete native values; serialization uses exact decimal IDs.
@@ -107,6 +111,13 @@ type KVMemberLease interface {
 	ExecuteMember(context.Context, KVMemberPreparation) (KVMemberResult, error)
 	LastMemberResult() KVMemberResult
 	Close() error
+}
+
+// Optional ordering protection for a step with other selected targets remaining.
+// The final native Status on this same transport must identify a follower before
+// dispatch. This is an observation gate, not a CAS or leadership lock.
+type KVMemberFollowerPreparation interface {
+	PrepareFollowerDefragment() (KVMemberPreparation, error)
 }
 
 type KVMemberBinding struct {

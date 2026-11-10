@@ -16,11 +16,12 @@ const (
 // Plan captures a complete native request and a shared one-use flag. Copies of
 // a Plan cannot replay it. Native() returns a separate deep copy for inspection.
 type Plan struct {
-	owner   *Client
-	request proto.Message
-	method  string
-	write   bool
-	used    *atomic.Bool
+	owner        *Client
+	request      proto.Message
+	method       string
+	write        bool
+	used         *atomic.Bool
+	followerOnly bool
 }
 
 func (p Plan) Native() proto.Message {
@@ -48,7 +49,7 @@ func (c *Client) Prepare(request proto.Message) (Plan, error) {
 		return Plan{}, ErrBounds
 	}
 	r := proto.Clone(request)
-	return Plan{c, r, method, write, &atomic.Bool{}}, nil
+	return Plan{owner: c, request: r, method: method, write: write, used: &atomic.Bool{}}, nil
 }
 
 func validKey(b []byte) bool { return len(b) > 0 && len(b) <= 4096 }

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nyakang/nyadb/internal/db/contract"
 	pb "go.etcd.io/etcd/api/v3/etcdserverpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -359,6 +360,15 @@ func (c *Client) executeOwned(parent context.Context, p Plan) (r Response, err e
 		r.before = &before
 		if e != nil {
 			return r, e
+		}
+		if p.followerOnly {
+			leader := before.native.(*pb.StatusResponse).Leader
+			if leader == 0 {
+				return r, contract.ErrKVMemberOrderUnknown
+			}
+			if leader == c.identity.MemberID {
+				return r, contract.ErrKVMemberBecameLeader
+			}
 		}
 		if err = ctx.Err(); err != nil {
 			return r, err
