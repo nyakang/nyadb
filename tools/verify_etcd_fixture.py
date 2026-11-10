@@ -68,7 +68,9 @@ def certificates(folder, access=False):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False, public_lease_management=False, dependency_modfile=None):
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False, public_lease_management=False, dependency_modfile=None, auth_native=False):
+    if auth_native:
+        session = True
     if public_lease_management:
         public_lease_browser = True
     if public_lease_browser:
@@ -149,6 +151,8 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
     report['dependency_sources'] = [str(p.relative_to(ROOT)) for p in dependency_sources]
     if public_lease_management:
         report['scope'] = 'public-etcd-original-lease-management-workbench'
+    if auth_native:
+        report['scope'] = 'private-etcd-original-auth-rbac'
     private_path = None
     try:
         with tempfile.TemporaryDirectory(prefix='nyadb-etcd-'+nonce+'-', dir=build) as raw:
@@ -159,7 +163,7 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
             secret = 'Nya_'+secrets.token_urlsafe(24)
             username = ' root '+nonce[:6]  # Exercise exact, untrimmed native names.
             if tls:
-                certificates(private, access or access_smoke)
+                certificates(private, access or access_smoke or auth_native)
             scheme = 'https' if tls else 'http'
             env = ['ETCDCTL_API=3', 'ETCDCTL_ENDPOINTS='+scheme+'://localhost:2379']
             if tls:
@@ -217,7 +221,7 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                 environment['NYADB_ETCD_CA'] = str(private/'ca.crt')
             if mode == 'mtls':
                 environment.update(NYADB_ETCD_CERT=str(private/'client.crt'), NYADB_ETCD_KEY=str(private/'client.key'))
-            if tls and (access or access_smoke):
+            if tls and (access or access_smoke or auth_native):
                 environment.update(NYADB_ETCD_ACCESS_CERT=str(private/'access-client.crt'), NYADB_ETCD_ACCESS_KEY=str(private/'access-client.key'),
                                    NYADB_ETCD_ROOT_CERT=str(private/'client.crt'), NYADB_ETCD_ROOT_KEY=str(private/'client.key'))
             packages = ['./internal/services/etcd']
@@ -403,6 +407,15 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                              'LeaseManagementWorkspaceActualPermissionChangeRejectsRevoke',
                              'LeaseManagementWorkspaceForeignGrantReplyKeepsUnknownNativeEvidence',
                              'ShellPublicLeaseManagementOriginalFormsConfirmationAndCompleteArchives')
+            if auth_native:
+                environment.update(NYADB_ETCD_AUTH_IT='1', NYADB_ETCD_ACCESS_IT='1')
+                packages = ['./internal/services/etcd']
+                required = ('AuthOriginalFourteenRPCsExactNamesPermissionsAndRevision',
+                            'AuthActualPasswordChangeAndNoPasswordCertificateIdentity',
+                            'AuthActualRestrictedIdentityAndDefiniteDenials',
+                            'AuthActualProcessedWritesLostCancelCloseAndForeignReceiptNeverReplay',
+                            'AuthActualReadFaultsAndCompleteNativeExtensions',
+                            'AuthOriginalAccessCacheInvalidatedAfterAcknowledgedWrite')
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
             command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
@@ -486,6 +499,7 @@ if __name__ == '__main__':
     parser.add_argument('--lease-browser-session', action='store_true')
     parser.add_argument('--public-lease-browser', action='store_true')
     parser.add_argument('--public-lease-management', action='store_true')
+    parser.add_argument('--auth-native', action='store_true')
     parser.add_argument('--dependency-modfile')
     parser.add_argument('--watch-smoke', action='store_true')
     parser.add_argument('--access', action='store_true')
@@ -499,4 +513,4 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser, args.public_lease_management, args.dependency_modfile)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser, args.public_lease_management, args.dependency_modfile, args.auth_native)

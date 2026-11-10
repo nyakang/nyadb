@@ -60,21 +60,23 @@ type leaseProjectionRecord struct {
 	IDs        []string `json:"complete_list_ids"`
 }
 type leaseResultRecord struct {
-	Request          contract.KVRequest     `json:"native_request"`
-	Attempted        bool                   `json:"attempted"`
-	Completed        bool                   `json:"completed"`
-	Unknown          bool                   `json:"write_outcome_unknown"`
-	Code             string                 `json:"code"`
-	Header           eventHeaderRecord      `json:"native_header"`
-	Native           []byte                 `json:"native_protobuf"`
-	JSON             string                 `json:"protobuf_json"`
-	JSONCaptureError string                 `json:"json_capture_error,omitempty"`
-	ProjectionError  string                 `json:"projection_error,omitempty"`
-	Lease            *leaseProjectionRecord `json:"lease_projection,omitempty"`
+	Request              contract.KVRequest     `json:"native_request"`
+	Attempted            bool                   `json:"attempted"`
+	Completed            bool                   `json:"completed"`
+	Unknown              bool                   `json:"write_outcome_unknown"`
+	Code                 string                 `json:"code"`
+	Header               eventHeaderRecord      `json:"native_header"`
+	Native               []byte                 `json:"native_protobuf"`
+	JSON                 string                 `json:"protobuf_json"`
+	JSONCaptureError     string                 `json:"json_capture_error,omitempty"`
+	ProjectionError      string                 `json:"projection_error,omitempty"`
+	Lease                *leaseProjectionRecord `json:"lease_projection,omitempty"`
+	RequestOmittedFields []string               `json:"request_omitted_fields,omitempty"`
 }
 
 func leaseResult(r contract.KVResult) leaseResultRecord {
 	out := leaseResultRecord{Request: r.Request, Attempted: r.Attempted, Completed: r.Completed, Unknown: r.WriteOutcomeUnknown, Code: r.Code, Header: eventHeader(r.Header), Native: r.Native, JSON: r.JSON, JSONCaptureError: r.JSONCaptureError, ProjectionError: r.ProjectionError}
+	out.RequestOmittedFields = r.RequestOmittedFields
 	if r.Reply != nil && r.Reply.Lease != nil {
 		l := r.Reply.Lease
 		ids := make([]string, len(l.IDs))

@@ -41,7 +41,10 @@ func decodeKVRequest(r contract.KVRequest) (proto.Message, contract.KVRequest, b
 	case "/etcdserverpb.Lease/LeaseKeepAlive":
 		m = &pb.LeaseKeepAliveRequest{}
 	default:
-		return nil, r, false, ErrInvalid
+		m = authRequest(r.Method)
+		if m == nil {
+			return nil, r, false, ErrInvalid
+		}
 	}
 	if err := (protojson.UnmarshalOptions{RecursionLimit: 16}).Unmarshal([]byte(r.JSON), m); err != nil {
 		return nil, r, false, ErrInvalid
@@ -261,7 +264,11 @@ func projectReply(m proto.Message, budget *int, depth int) (contract.KVReply, er
 		r.Kind = "status"
 		r.Status = &contract.KVStatus{Version: v.Version, DBSize: v.DbSize, DBSizeInUse: v.DbSizeInUse, Leader: v.Leader, RaftIndex: v.RaftIndex, RaftTerm: v.RaftTerm, RaftAppliedIndex: v.RaftAppliedIndex, Errors: append([]string(nil), v.Errors...), IsLearner: v.IsLearner}
 	default:
-		return r, fmt.Errorf("%w: unsupported native response", ErrProtocol)
+		a, kind, e := projectAuthReply(m, budget)
+		if e != nil {
+			return r, fmt.Errorf("%w: unsupported or oversized native response", e)
+		}
+		r.Auth, r.Kind = &a, kind
 	}
 	return r, err
 }

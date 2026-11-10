@@ -373,6 +373,12 @@ func (s *State) executeManagement(d *Document, plan contract.KVPreparation, auth
 	lease := d.lease
 	d.confirmation = nil
 	d.leaseManagement = nil
+	if recorder, ok := plan.(contract.KVPreparationRecord); ok {
+		record := recorder.RecordedRequest()
+		if len(record.OmittedFields) > 0 {
+			authored = record.Request
+		}
+	}
 	s.start(d, "execute", authored, func(ctx context.Context) outcome {
 		r, err := lease.Execute(ctx, plan)
 		return outcome{result: r, err: err}

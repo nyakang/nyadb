@@ -147,7 +147,7 @@ func validateRequest(r proto.Message) (string, bool, error) {
 	case *pb.StatusRequest:
 		return "/etcdserverpb.Maintenance/Status", false, nil
 	default:
-		return "", false, ErrInvalid
+		return validateAuthRequest(r)
 	}
 }
 

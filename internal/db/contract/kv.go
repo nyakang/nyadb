@@ -72,6 +72,7 @@ type KVReply struct {
 	Operations      []KVReply
 	Lease           *KVLeaseReceipt
 	Status          *KVStatus
+	Auth            *KVAuthReceipt
 }
 
 func (r KVReply) Clone() KVReply {
@@ -97,6 +98,10 @@ func (r KVReply) Clone() KVReply {
 		x.Errors = slices.Clone(x.Errors)
 		r.Status = &x
 	}
+	if r.Auth != nil {
+		x := r.Auth.Clone()
+		r.Auth = &x
+	}
 	return r
 }
 
@@ -111,10 +116,12 @@ type KVResult struct {
 	Native                                    []byte
 	JSON, JSONCaptureError, ProjectionError   string
 	Reply                                     *KVReply
+	RequestOmittedFields                      []string
 }
 
 func (r KVResult) Clone() KVResult {
 	r.Native = slices.Clone(r.Native)
+	r.RequestOmittedFields = slices.Clone(r.RequestOmittedFields)
 	if r.Reply != nil {
 		x := r.Reply.Clone()
 		r.Reply = &x

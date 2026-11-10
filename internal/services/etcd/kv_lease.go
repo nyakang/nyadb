@@ -17,10 +17,12 @@ type kvPreparation struct {
 	native  proto.Message
 	write   bool
 	used    atomic.Bool
+	record  contract.KVRequestRecord
 }
 
-func (p *kvPreparation) Snapshot() contract.KVRequest { return p.request }
-func (p *kvPreparation) Writes() bool                 { return p.write }
+func (p *kvPreparation) Snapshot() contract.KVRequest              { return p.request }
+func (p *kvPreparation) Writes() bool                              { return p.write }
+func (p *kvPreparation) RecordedRequest() contract.KVRequestRecord { return p.record.Clone() }
 
 type kvLease struct {
 	s            *Session
@@ -58,7 +60,7 @@ func (l *kvLease) Prepare(r contract.KVRequest) (contract.KVPreparation, error) 
 	if err != nil {
 		return nil, err
 	}
-	return &kvPreparation{owner: l, request: r, native: m, write: write}, nil
+	return &kvPreparation{owner: l, request: r, native: m, write: write, record: recordedAuthRequest(r, m)}, nil
 }
 func (l *kvLease) request(parent context.Context) (context.Context, func(), error) {
 	if err := l.CheckKVLease(); err != nil {
@@ -123,7 +125,8 @@ func (l *kvLease) Execute(parent context.Context, prepared contract.KVPreparatio
 	if !ok || p == nil || p.owner != l {
 		return result, contract.ErrKVPlanUsed
 	}
-	result.Request = p.request
+	result.Request = p.record.Request
+	result.RequestOmittedFields = p.record.Clone().OmittedFields
 	if err = parent.Err(); err != nil {
 		return result, err
 	}
@@ -167,7 +170,8 @@ func (l *kvLease) Execute(parent context.Context, prepared contract.KVPreparatio
 	if !r.Attempted {
 		p.used.Store(false)
 	}
-	result = projectKVResult(p.request, r)
+	result = projectKVResult(p.record.Request, r)
+	result.RequestOmittedFields = p.record.Clone().OmittedFields
 	// Close/recovery waits for this executor; its actual receipt is retained even
 	// if publication/activation changed before a UI consumer admits the result.
 	l.mu.Lock()

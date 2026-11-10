@@ -13,7 +13,7 @@ supported. A successful probe does not imply full-range or administrative
 permission. Cluster/member IDs are observations, not incarnation guarantees.
 
 `Prepare` accepts bounded native protobuf Range/Put/Delete/Txn/Status and
-lease requests. It validates and deep-copies the request; all copies share
+lease requests, plus the original Auth/RBAC requests described below. It validates and deep-copies the request; all copies share
 one attempt flag. Transactions reject nesting and preserve native comparisons,
 both branches and atomic response semantics. Native results retain int64,
 uint64 and binary values; inspection returns deep copies. `PrefixRange` and
@@ -26,6 +26,26 @@ can transparently retry calls not processed remotely. Processed writes are
 not replayed. Expired/revoked tokens require explicit recovery. A channel may
 reconnect internally to the same endpoint; it is not a dedicated physical
 database session or a failover/endpoint-discovery guarantee.
+
+Native Auth preparation supports AuthStatus, UserList/Get/Add/Delete/
+ChangePassword/GrantRole/RevokeRole and RoleList/Get/Add/Delete/GrantPermission/
+RevokePermission on the same original KV request lease. AuthEnable/Disable are
+not exposed. Names and binary permission ranges remain exact; AuthStatus's
+uint64 authRevision stays independent of the KV header revision and public
+generation. Acknowledged Auth writes invalidate that physical client's cached
+permission observation. Subsequent permission reads are explicit.
+
+Password or hashedPassword is transient in the immutable execution plan.
+Recorded requests, early retirement results and workspace operation receipts
+omit those fields and retain explicit omission metadata. The original server
+protobuf remains complete. Passwordless creation requires its native option.
+Lost write acknowledgements retain the original unknown outcome; recovery
+does not authenticate, read or replay. These native APIs are a foundation for
+the dedicated public user/role management UI, which remains a separate step.
+Run `GOWORK=off GOFLAGS=-mod=readonly /usr/bin/python3
+tools/verify_etcd_fixture.py --auth-native --race --mode MODE` for six mandatory
+native parents, 36 processed-write fault combinations and seven read-receipt
+fault cases per mode. Use 3.7.3 anonymous/basic/tls/mtls and 3.5.35 basic.
 
 Cancellation waits for the local original RPC executor and retires its channel.
 It is not server rollback. Missing acknowledgement of a possibly processed

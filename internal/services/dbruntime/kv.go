@@ -109,11 +109,15 @@ type kvRequestPreparation struct {
 	raw      contract.KVPreparation
 	snapshot contract.KVRequest
 	write    bool
+	record   contract.KVRequestRecord
 }
 
 func (p *kvRequestPreparation) Snapshot() contract.KVRequest { return p.snapshot }
 func (p *kvRequestPreparation) Writes() bool                 { return p.write }
-func (l *kvRequestLease) Scope() contract.KVScope            { return l.scope.Clone() }
+func (p *kvRequestPreparation) RecordedRequest() contract.KVRequestRecord {
+	return p.record.Clone()
+}
+func (l *kvRequestLease) Scope() contract.KVScope { return l.scope.Clone() }
 func (l *kvRequestLease) CheckKVLease() error {
 	if l.closed.Load() || !l.session.alive() {
 		return contract.ErrRevoked
@@ -134,7 +138,12 @@ func (l *kvRequestLease) Prepare(r contract.KVRequest) (contract.KVPreparation, 
 	if err = l.CheckKVLease(); err != nil {
 		return nil, err
 	}
-	return &kvRequestPreparation{owner: l, raw: p, snapshot: p.Snapshot(), write: p.Writes()}, nil
+	snapshot := p.Snapshot()
+	record := contract.KVRequestRecord{Request: snapshot}
+	if recorder, ok := p.(contract.KVPreparationRecord); ok {
+		record = recorder.RecordedRequest().Clone()
+	}
+	return &kvRequestPreparation{owner: l, raw: p, snapshot: snapshot, write: p.Writes(), record: record}, nil
 }
 func (l *kvRequestLease) Preconnect(ctx context.Context) error {
 	if err := l.CheckKVLease(); err != nil {
@@ -149,7 +158,8 @@ func (l *kvRequestLease) Execute(ctx context.Context, p contract.KVPreparation) 
 		return contract.KVResult{}, contract.ErrKVPlanUsed
 	}
 	if err := l.CheckKVLease(); err != nil {
-		return contract.KVResult{Request: original.snapshot}, err
+		record := original.RecordedRequest()
+		return contract.KVResult{Request: record.Request, RequestOmittedFields: record.OmittedFields}, err
 	}
 	r, err := l.raw.Execute(ctx, original.raw)
 	r = r.Clone()

@@ -286,6 +286,14 @@ func (c *Client) executeOwned(parent context.Context, p Plan) (r Response, err e
 	if err := validateLeaseReply(p.request, native); err != nil {
 		return r, err
 	}
+	if err := validateAuthReply(p.request, native); err != nil {
+		return r, err
+	}
+	if _, write, err := validateAuthRequest(p.request); err == nil && write {
+		c.mu.Lock()
+		c.access = nil
+		c.mu.Unlock()
+	}
 	r.Completed = true
 	return r, nil
 }
@@ -311,7 +319,7 @@ func responseFor(request proto.Message) proto.Message {
 	case *pb.StatusRequest:
 		return &pb.StatusResponse{}
 	}
-	return nil
+	return authResponse(request)
 }
 func responseHeader(r proto.Message) *pb.ResponseHeader {
 	if v, ok := r.(interface{ GetHeader() *pb.ResponseHeader }); ok {
