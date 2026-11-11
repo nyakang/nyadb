@@ -17,6 +17,7 @@ ROOT=Path(__file__).resolve().parents[1]
 IMAGES={'2.0.2':'hashicorp/consul@sha256:7dcf35d6b2682831094f1680aa58be214134969505acce0a9b280249581aa7d2','1.22.3':'hashicorp/consul@sha256:43b5ffb7756ac1cacc775aa6fc6f79f5c635072cd854eab7dc2cc624f5d66025'}
 REQUIRED=('IdentityScopeTransportAndNativeHeaders','BinaryValuesIndicesRawAndConditionalWrites','AtomicTransactionsComparisonsAndOriginalResults','SessionLocksRenewalAndNativeRejections','ActualCommittedReplyLossCancellationAndOriginalClose','RestrictedKVOnlyPermissionsAndOriginalDenial','SessionAndTransactionReplyLossNeverReplay')
 DOCUMENT_REQUIRED=('DocumentOriginalScopesBytesAndCompleteReceipts','DocumentTransactionsAndGeneratedSessionIDsRemainNative','DocumentOriginalProcessedWritesNeverReplayAfterLostReply','DocumentReceiptBudgetAndCrossSessionTransfer','DocumentCapturedTLSAndUnavailableRestrictedIdentity','DocumentOriginalBlockingReadRetirementAndExplicitRecovery')
+PUBLIC_REQUIRED=('PublicBuiltinProfileMetadataCapabilitiesAndRestrictedToken','PublicWorkspaceOriginalHTTPConfirmationReceiptsFilesAndRecovery','PublicWorkspaceActualProcessedReplyFaultsNeverPromoteUnknownOrReplay','PublicProfileURIStorageVaultEditorChecksAndOriginalTLS','PublicShellChooserHTTPDocumentsMenusParkingDisconnectAndClose')
 RUNTIME_REQUIRED=('RuntimeGenerationsRequestsAndOriginalRecovery','RuntimeOriginalCommittedReplyLossAndRetirement','RuntimeLateConnectionClosesOnlyCapturedOriginalSession','RuntimeForeignScopeRejectedBeforeOriginalRecovery')
 
 def source_hashes():
@@ -56,13 +57,14 @@ def certs(folder):
   ssl('x509','-req','-in',name+'.csr','-CA','ca.crt','-CAkey','ca.key','-CAcreateserial','-out',name+'.crt','-days','2','-extfile',name+'.ext')
  for p in folder.iterdir():p.chmod(0o600)
 
-def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False):
- if probe and session:raise ValueError('Diagnostic probe cannot claim session acceptance')
+def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False,public=False):
+ if probe and (session or public):raise ValueError('Diagnostic probe cannot claim session or public acceptance')
+ session=session or public
  build=ROOT/'build/consul';build.mkdir(parents=True,exist_ok=True)
  nonce=uuid.uuid4().hex;path=build/('owned-fixture-'+nonce+'.json');log=path.with_suffix('.log')
- required=REQUIRED+(DOCUMENT_REQUIRED+RUNTIME_REQUIRED if session else ())
- packages=['./internal/services/consul']+(['./internal/services/dbruntime'] if session else [])
- report={'nonce':nonce,'scope':'diagnostic-consul-probe' if probe else 'original-consul-native-document-runtime' if session else 'original-consul-native-foundation','mode':mode,'version':version,'image':IMAGES[version],'race':race,'passed':False,'required':required,'packages':packages,'source_hashes':source_hashes()}
+ required=REQUIRED+(DOCUMENT_REQUIRED+RUNTIME_REQUIRED if session else ())+(PUBLIC_REQUIRED if public else ())
+ packages=['./internal/services/consul']+(['./internal/services/dbruntime'] if session else [])+(['./internal/ui/connectioneditor','./internal/ui/kvworkspace','./internal/ui/shell'] if public else [])
+ report={'nonce':nonce,'scope':'diagnostic-consul-probe' if probe else 'public-consul-original-http-workspace' if public else 'original-consul-native-document-runtime' if session else 'original-consul-native-foundation','mode':mode,'version':version,'image':IMAGES[version],'race':race,'passed':False,'required':required,'packages':packages,'source_hashes':source_hashes()}
  identifier=None;private=None
  try:
   with tempfile.TemporaryDirectory(prefix='nyadb-consul-'+nonce+'-',dir=build) as rawfolder:
@@ -115,6 +117,8 @@ def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False
     report['passed']=True
    else:
     env={k:v for k,v in os.environ.items() if not k.startswith('NYADB_CONSUL_')};env.update(GOWORK='off',GOFLAGS='-mod=readonly',NYADB_CONSUL_IT='1',NYADB_CONSUL_ENDPOINT=endpoint,NYADB_CONSUL_AUTH='token' if acl else 'none',NYADB_CONSUL_TOKEN=token,NYADB_CONSUL_READ_TOKEN=readonly,NYADB_CONSUL_WRITE_TOKEN=writer,NYADB_CONSUL_VERSION=version,NYADB_CONSUL_NODE_ID=node_id)
+    images=path.with_name(path.stem+'-public-images')
+    if public:env.update(NYADB_CONSUL_PUBLIC_IMAGES=str(images))
     if secure:env.update(NYADB_CONSUL_CA=str(private/'ca.crt'))
     if mode=='mtls':env.update(NYADB_CONSUL_CERT=str(private/'client.crt'),NYADB_CONSUL_KEY=str(private/'client.key'))
     args=['go','test','-p=1']+(['-race'] if race else [])+packages+['-run','^('+'|'.join('TestConsulNative'+c for c in required)+')$','-count=1','-v','-timeout=600s']
@@ -124,7 +128,12 @@ def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False
     try:accepted=accepted_cases(text,required)
     except RuntimeError as error:raise RuntimeError('Native Consul acceptance failed; inspect '+str(log.relative_to(ROOT))) from error
     if source_hashes()!=report['source_hashes']:raise RuntimeError('Native Consul source changed during acceptance')
-    report.update(passed=True,accepted=accepted,log_sha256=hashlib.sha256(log.read_bytes()).hexdigest())
+    pictures={}
+    if public:
+     pictures={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(images.glob('*.png'))}
+     expected={f'{lang}-{size}-{stage}.png' for lang in ('zh-Hans','en') for size in ('1280x800','720x520') for stage in ('editor-native','shell-native','workspace-write-confirmation','workspace-complete-body','workspace-headers',*(f'workspace-{prefix}{mode}' for prefix in ('unknown-','unknown-after-read-') for mode in ('lost','partial','http500','http408','cancel','disconnect','replace')))}
+     if {Path(name).name for name in pictures}!=expected:raise RuntimeError('Mandatory original public Consul image set failed')
+    report.update(passed=True,accepted=accepted,public_images=pictures,log_sha256=hashlib.sha256(log.read_bytes()).hexdigest())
  finally:
   try:
    if identifier:
@@ -136,5 +145,5 @@ def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False
  return report
 
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('--mode',choices=('anonymous','token','tls','mtls'),default='anonymous');p.add_argument('--version',choices=tuple(IMAGES),default='2.0.2');p.add_argument('--race',action='store_true');p.add_argument('--probe',action='store_true');p.add_argument('--session',action='store_true');a=p.parse_args()
- verify(a.mode,a.race,a.version,a.probe,a.session)
+ p=argparse.ArgumentParser();p.add_argument('--mode',choices=('anonymous','token','tls','mtls'),default='anonymous');p.add_argument('--version',choices=tuple(IMAGES),default='2.0.2');p.add_argument('--race',action='store_true');p.add_argument('--probe',action='store_true');p.add_argument('--session',action='store_true');p.add_argument('--public',action='store_true');a=p.parse_args()
+ verify(a.mode,a.race,a.version,a.probe,a.session,a.public)

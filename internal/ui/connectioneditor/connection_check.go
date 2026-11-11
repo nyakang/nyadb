@@ -61,6 +61,13 @@ func (s *State) startMySQLConnectionTest(services ui.Services) {
 			return
 		}
 	}
+	if p.Kind == connections.Consul {
+		cfg, e := connections.ConsulProfileConfig(p)
+		if e != nil || connections.ValidateConsulCredential(cfg, s.connectionSecret, true) != nil {
+			s.validationError(fieldError("Consul token", "常规", "请输入 Consul token"))
+			return
+		}
+	}
 	if p.Kind == connections.Neo4j {
 		cfg, e := connections.Neo4jProfileConfig(p)
 		if e != nil || connections.ValidateNeo4jCredential(cfg, s.connectionSecret) != nil {

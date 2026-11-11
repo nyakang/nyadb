@@ -2,6 +2,8 @@ package contract
 
 import "slices"
 
+const KVConsulHTTPRequestMethod = "consul.http"
+
 // HTTP identity records the original configured endpoint and actual optional
 // agent observation. Neither endpoint equality nor agent ID proves incarnation.
 // Configuration contains a fingerprint of non-secret configuration only.

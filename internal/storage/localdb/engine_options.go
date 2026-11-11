@@ -12,6 +12,7 @@ import (
 // Keep the existing column and MySQL JSON format. Other engines use an
 // explicit versioned envelope; older empty records receive engine defaults.
 type engineOptionsEnvelope struct {
+	Consul        *connections.ConsulOptions        `json:"consul,omitempty"`
 	Etcd          *connections.EtcdOptions          `json:"etcd,omitempty"`
 	Neo4j         *connections.Neo4jOptions         `json:"neo4j,omitempty"`
 	Qdrant        *connections.QdrantOptions        `json:"qdrant,omitempty"`
@@ -40,6 +41,8 @@ type engineOptionsEnvelope struct {
 func encodeProfileOptions(p connections.Profile) (string, error) {
 	var value any
 	switch p.Kind {
+	case connections.Consul:
+		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Consul: &p.ConsulOptions}
 	case connections.Etcd:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Etcd: &p.EtcdOptions}
 	case connections.Neo4j:
@@ -94,6 +97,9 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 }
 func decodeEngineOptions(p *connections.Profile, raw string) error {
 	if raw == "" {
+		if p.Kind == connections.Consul {
+			return connections.ErrInvalid
+		}
 		if p.Kind == connections.Etcd {
 			return connections.ErrInvalid
 		}
@@ -159,6 +165,9 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 		return nil
 	}
 	var envelope engineOptionsEnvelope
+	if p.Kind == connections.Consul && (len(raw) > 128<<10 || !canonicalConsulSavedOptions(raw)) {
+		return connections.ErrInvalid
+	}
 	if p.Kind == connections.Etcd && (len(raw) > 128<<10 || !canonicalEtcdSavedOptions(raw)) {
 		return connections.ErrInvalid
 	}
@@ -172,6 +181,18 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 	decoder.DisallowUnknownFields()
 	if len(raw) > 128<<10 || decoder.Decode(&envelope) != nil || decoder.Decode(new(any)) != io.EOF || envelope.Version != 1 || envelope.Kind != p.Kind {
 		return fmt.Errorf("invalid saved engine options")
+	}
+	if p.Kind == connections.Consul {
+		if envelope.Consul == nil || envelope.Consul.Version != 1 {
+			return connections.ErrInvalid
+		}
+		p.ConsulOptions = *envelope.Consul
+		checked, e := connections.NormalizeProfile(*p)
+		*p = checked
+		return e
+	}
+	if envelope.Consul != nil {
+		return connections.ErrInvalid
 	}
 	if p.Kind == connections.Etcd {
 		if envelope.Etcd == nil || envelope.Etcd.Version != 1 {

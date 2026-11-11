@@ -10,6 +10,7 @@ import (
 type Kind string
 
 const (
+	Consul        Kind = "consul"
 	Etcd          Kind = "etcd"
 	MySQL         Kind = "mysql"
 	MariaDB       Kind = "mariadb"
@@ -44,6 +45,9 @@ const (
 // IsMySQLFamily identifies products sharing the MySQL client and connection
 // settings. Product identity and capabilities remain separate.
 func (k Kind) IsMySQLFamily() bool { return k == MySQL || k == MariaDB || k == TiDB || k == OceanBase }
+
+// IsNativeKV selects the native request document rather than a SQL editor.
+func (k Kind) IsNativeKV() bool { return k == Etcd || k == Consul }
 
 // IsPostgreSQLFamily identifies products sharing PostgreSQL wire transport and options.
 func (k Kind) IsPostgreSQLFamily() bool {
@@ -83,6 +87,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	ConsulOptions        ConsulOptions
 	EtcdOptions          EtcdOptions
 	Neo4jOptions         Neo4jOptions
 	QdrantOptions        QdrantOptions

@@ -36521,3 +36521,323 @@ func EtcdSnapshot5b34d50378() string { return In(i18n.Locale()).EtcdSnapshot5b34
 func (msgs Messages) EtcdSnapshot5b34d50378() string {
 	return Catalog.Format(msgs.locale, "etcdSnapshot5b34d50378", nil)
 }
+
+// ConsulDataCenterCaption says "数据中心："
+// in the language the app shows.
+func ConsulDataCenterCaption() string { return In(i18n.Locale()).ConsulDataCenterCaption() }
+
+// ConsulDataCenterCaption says "数据中心："
+// in the language of msgs.
+func (msgs Messages) ConsulDataCenterCaption() string {
+	return Catalog.Format(msgs.locale, "consulDataCenterCaption", nil)
+}
+
+// ConsulConsistencyCaption says "读取一致性："
+// in the language the app shows.
+func ConsulConsistencyCaption() string { return In(i18n.Locale()).ConsulConsistencyCaption() }
+
+// ConsulConsistencyCaption says "读取一致性："
+// in the language of msgs.
+func (msgs Messages) ConsulConsistencyCaption() string {
+	return Catalog.Format(msgs.locale, "consulConsistencyCaption", nil)
+}
+
+// ConsulDataCenterField says "Consul 数据中心"
+// in the language the app shows.
+func ConsulDataCenterField() string { return In(i18n.Locale()).ConsulDataCenterField() }
+
+// ConsulDataCenterField says "Consul 数据中心"
+// in the language of msgs.
+func (msgs Messages) ConsulDataCenterField() string {
+	return Catalog.Format(msgs.locale, "consulDataCenterField", nil)
+}
+
+// ConsulPrefixField says "Consul 键前缀"
+// in the language the app shows.
+func ConsulPrefixField() string { return In(i18n.Locale()).ConsulPrefixField() }
+
+// ConsulPrefixField says "Consul 键前缀"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixField() string {
+	return Catalog.Format(msgs.locale, "consulPrefixField", nil)
+}
+
+// ConsulConsistencyField says "Consul 读取一致性"
+// in the language the app shows.
+func ConsulConsistencyField() string { return In(i18n.Locale()).ConsulConsistencyField() }
+
+// ConsulConsistencyField says "Consul 读取一致性"
+// in the language of msgs.
+func (msgs Messages) ConsulConsistencyField() string {
+	return Catalog.Format(msgs.locale, "consulConsistencyField", nil)
+}
+
+// ConsulConsistentChoice says "一致读取"
+// in the language the app shows.
+func ConsulConsistentChoice() string { return In(i18n.Locale()).ConsulConsistentChoice() }
+
+// ConsulConsistentChoice says "一致读取"
+// in the language of msgs.
+func (msgs Messages) ConsulConsistentChoice() string {
+	return Catalog.Format(msgs.locale, "consulConsistentChoice", nil)
+}
+
+// ConsulStaleChoice says "允许过期读取"
+// in the language the app shows.
+func ConsulStaleChoice() string { return In(i18n.Locale()).ConsulStaleChoice() }
+
+// ConsulStaleChoice says "允许过期读取"
+// in the language of msgs.
+func (msgs Messages) ConsulStaleChoice() string {
+	return Catalog.Format(msgs.locale, "consulStaleChoice", nil)
+}
+
+// ConsulAuthField says "Consul 认证方式"
+// in the language the app shows.
+func ConsulAuthField() string { return In(i18n.Locale()).ConsulAuthField() }
+
+// ConsulAuthField says "Consul 认证方式"
+// in the language of msgs.
+func (msgs Messages) ConsulAuthField() string {
+	return Catalog.Format(msgs.locale, "consulAuthField", nil)
+}
+
+// ConsulTokenCaption says "Token："
+// in the language the app shows.
+func ConsulTokenCaption() string { return In(i18n.Locale()).ConsulTokenCaption() }
+
+// ConsulTokenCaption says "Token："
+// in the language of msgs.
+func (msgs Messages) ConsulTokenCaption() string {
+	return Catalog.Format(msgs.locale, "consulTokenCaption", nil)
+}
+
+// ConsulTokenField says "Consul token"
+// in the language the app shows.
+func ConsulTokenField() string { return In(i18n.Locale()).ConsulTokenField() }
+
+// ConsulTokenField says "Consul token"
+// in the language of msgs.
+func (msgs Messages) ConsulTokenField() string {
+	return Catalog.Format(msgs.locale, "consulTokenField", nil)
+}
+
+// ConsulScopeHint says "空数据中心使用服务默认值；键前缀保留原文本，仅限定浏览范围。"
+// in the language the app shows.
+func ConsulScopeHint() string { return In(i18n.Locale()).ConsulScopeHint() }
+
+// ConsulScopeHint says "空数据中心使用服务默认值；键前缀保留原文本，仅限定浏览范围。"
+// in the language of msgs.
+func (msgs Messages) ConsulScopeHint() string {
+	return Catalog.Format(msgs.locale, "consulScopeHint", nil)
+}
+
+// ConsulConnectTimeoutField says "Consul 连接超时"
+// in the language the app shows.
+func ConsulConnectTimeoutField() string { return In(i18n.Locale()).ConsulConnectTimeoutField() }
+
+// ConsulConnectTimeoutField says "Consul 连接超时"
+// in the language of msgs.
+func (msgs Messages) ConsulConnectTimeoutField() string {
+	return Catalog.Format(msgs.locale, "consulConnectTimeoutField", nil)
+}
+
+// ConsulRequestTimeoutField says "Consul 请求超时"
+// in the language the app shows.
+func ConsulRequestTimeoutField() string { return In(i18n.Locale()).ConsulRequestTimeoutField() }
+
+// ConsulRequestTimeoutField says "Consul 请求超时"
+// in the language of msgs.
+func (msgs Messages) ConsulRequestTimeoutField() string {
+	return Catalog.Format(msgs.locale, "consulRequestTimeoutField", nil)
+}
+
+// ConsulTLSField says "Consul TLS 模式"
+// in the language the app shows.
+func ConsulTLSField() string { return In(i18n.Locale()).ConsulTLSField() }
+
+// ConsulTLSField says "Consul TLS 模式"
+// in the language of msgs.
+func (msgs Messages) ConsulTLSField() string {
+	return Catalog.Format(msgs.locale, "consulTLSField", nil)
+}
+
+// ConsulCAField says "Consul CA 证书"
+// in the language the app shows.
+func ConsulCAField() string { return In(i18n.Locale()).ConsulCAField() }
+
+// ConsulCAField says "Consul CA 证书"
+// in the language of msgs.
+func (msgs Messages) ConsulCAField() string {
+	return Catalog.Format(msgs.locale, "consulCAField", nil)
+}
+
+// ConsulChooseCA says "选择 Consul CA 证书"
+// in the language the app shows.
+func ConsulChooseCA() string { return In(i18n.Locale()).ConsulChooseCA() }
+
+// ConsulChooseCA says "选择 Consul CA 证书"
+// in the language of msgs.
+func (msgs Messages) ConsulChooseCA() string {
+	return Catalog.Format(msgs.locale, "consulChooseCA", nil)
+}
+
+// ConsulServerNameField says "Consul 证书服务器名"
+// in the language the app shows.
+func ConsulServerNameField() string { return In(i18n.Locale()).ConsulServerNameField() }
+
+// ConsulServerNameField says "Consul 证书服务器名"
+// in the language of msgs.
+func (msgs Messages) ConsulServerNameField() string {
+	return Catalog.Format(msgs.locale, "consulServerNameField", nil)
+}
+
+// ConsulCertField says "Consul 客户端证书"
+// in the language the app shows.
+func ConsulCertField() string { return In(i18n.Locale()).ConsulCertField() }
+
+// ConsulCertField says "Consul 客户端证书"
+// in the language of msgs.
+func (msgs Messages) ConsulCertField() string {
+	return Catalog.Format(msgs.locale, "consulCertField", nil)
+}
+
+// ConsulChooseCert says "选择 Consul 客户端证书"
+// in the language the app shows.
+func ConsulChooseCert() string { return In(i18n.Locale()).ConsulChooseCert() }
+
+// ConsulChooseCert says "选择 Consul 客户端证书"
+// in the language of msgs.
+func (msgs Messages) ConsulChooseCert() string {
+	return Catalog.Format(msgs.locale, "consulChooseCert", nil)
+}
+
+// ConsulKeyField says "Consul 客户端私钥"
+// in the language the app shows.
+func ConsulKeyField() string { return In(i18n.Locale()).ConsulKeyField() }
+
+// ConsulKeyField says "Consul 客户端私钥"
+// in the language of msgs.
+func (msgs Messages) ConsulKeyField() string {
+	return Catalog.Format(msgs.locale, "consulKeyField", nil)
+}
+
+// ConsulChooseKey says "选择 Consul 客户端私钥"
+// in the language the app shows.
+func ConsulChooseKey() string { return In(i18n.Locale()).ConsulChooseKey() }
+
+// ConsulChooseKey says "选择 Consul 客户端私钥"
+// in the language of msgs.
+func (msgs Messages) ConsulChooseKey() string {
+	return Catalog.Format(msgs.locale, "consulChooseKey", nil)
+}
+
+// ConsulTLSHint says "TLS 验证证书链和服务器名称；mTLS 与 Token 授权分别配置。"
+// in the language the app shows.
+func ConsulTLSHint() string { return In(i18n.Locale()).ConsulTLSHint() }
+
+// ConsulTLSHint says "TLS 验证证书链和服务器名称；mTLS 与 Token 授权分别配置。"
+// in the language of msgs.
+func (msgs Messages) ConsulTLSHint() string {
+	return Catalog.Format(msgs.locale, "consulTLSHint", nil)
+}
+
+// ConsulTimeoutError says "请检查 Consul 超时设置"
+// in the language the app shows.
+func ConsulTimeoutError() string { return In(i18n.Locale()).ConsulTimeoutError() }
+
+// ConsulTimeoutError says "请检查 Consul 超时设置"
+// in the language of msgs.
+func (msgs Messages) ConsulTimeoutError() string {
+	return Catalog.Format(msgs.locale, "consulTimeoutError", nil)
+}
+
+// ConsulConfigError says "请检查 Consul 主机、数据中心、一致性和 TLS 设置"
+// in the language the app shows.
+func ConsulConfigError() string { return In(i18n.Locale()).ConsulConfigError() }
+
+// ConsulConfigError says "请检查 Consul 主机、数据中心、一致性和 TLS 设置"
+// in the language of msgs.
+func (msgs Messages) ConsulConfigError() string {
+	return Catalog.Format(msgs.locale, "consulConfigError", nil)
+}
+
+// ConsulTokenError says "请检查 Consul token"
+// in the language the app shows.
+func ConsulTokenError() string { return In(i18n.Locale()).ConsulTokenError() }
+
+// ConsulTokenError says "请检查 Consul token"
+// in the language of msgs.
+func (msgs Messages) ConsulTokenError() string {
+	return Catalog.Format(msgs.locale, "consulTokenError", nil)
+}
+
+// ConsulSessionToken says "本次 Consul 会话 token"
+// in the language the app shows.
+func ConsulSessionToken() string { return In(i18n.Locale()).ConsulSessionToken() }
+
+// ConsulSessionToken says "本次 Consul 会话 token"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionToken() string {
+	return Catalog.Format(msgs.locale, "consulSessionToken", nil)
+}
+
+// KvHTTPBody says "HTTP 原正文"
+// in the language the app shows.
+func KvHTTPBody() string { return In(i18n.Locale()).KvHTTPBody() }
+
+// KvHTTPBody says "HTTP 原正文"
+// in the language of msgs.
+func (msgs Messages) KvHTTPBody() string {
+	return Catalog.Format(msgs.locale, "kvHTTPBody", nil)
+}
+
+// KvHTTPHeaders says "HTTP 头与元数据"
+// in the language the app shows.
+func KvHTTPHeaders() string { return In(i18n.Locale()).KvHTTPHeaders() }
+
+// KvHTTPHeaders says "HTTP 头与元数据"
+// in the language of msgs.
+func (msgs Messages) KvHTTPHeaders() string {
+	return Catalog.Format(msgs.locale, "kvHTTPHeaders", nil)
+}
+
+// KvHTTPAgentUnavailable says "原连接的 Agent 身份不可用"
+// in the language the app shows.
+func KvHTTPAgentUnavailable() string { return In(i18n.Locale()).KvHTTPAgentUnavailable() }
+
+// KvHTTPAgentUnavailable says "原连接的 Agent 身份不可用"
+// in the language of msgs.
+func (msgs Messages) KvHTTPAgentUnavailable() string {
+	return Catalog.Format(msgs.locale, "kvHTTPAgentUnavailable", nil)
+}
+
+// KvHTTPInputHint says "填写原 HTTP 方法和路径；body_base64 保留原始字节，DC 和一致性使用原连接设置"
+// in the language the app shows.
+func KvHTTPInputHint() string { return In(i18n.Locale()).KvHTTPInputHint() }
+
+// KvHTTPInputHint says "填写原 HTTP 方法和路径；body_base64 保留原始字节，DC 和一致性使用原连接设置"
+// in the language of msgs.
+func (msgs Messages) KvHTTPInputHint() string {
+	return Catalog.Format(msgs.locale, "kvHTTPInputHint", nil)
+}
+
+// KvHTTPNativeRefused says "HTTP 原请求已明确拒绝"
+// in the language the app shows.
+func KvHTTPNativeRefused() string { return In(i18n.Locale()).KvHTTPNativeRefused() }
+
+// KvHTTPNativeRefused says "HTTP 原请求已明确拒绝"
+// in the language of msgs.
+func (msgs Messages) KvHTTPNativeRefused() string {
+	return Catalog.Format(msgs.locale, "kvHTTPNativeRefused", nil)
+}
+
+// KvCopyCompleteRecord says "复制完整操作记录"
+// in the language the app shows.
+func KvCopyCompleteRecord() string { return In(i18n.Locale()).KvCopyCompleteRecord() }
+
+// KvCopyCompleteRecord says "复制完整操作记录"
+// in the language of msgs.
+func (msgs Messages) KvCopyCompleteRecord() string {
+	return Catalog.Format(msgs.locale, "kvCopyCompleteRecord", nil)
+}

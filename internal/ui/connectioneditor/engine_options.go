@@ -34,6 +34,9 @@ const (
 	EtcdCAFile
 	EtcdCertificateFile
 	EtcdKeyFile
+	ConsulCAFile
+	ConsulCertificateFile
+	ConsulKeyFile
 )
 
 func (s *State) SetEngineFilePicker(pick func(EngineFile, int, uint64)) { s.engineFilePicker = pick }
@@ -42,6 +45,23 @@ func (s *State) EngineFileVersion() uint64 { return s.engineFileVersion }
 
 func (s *State) SelectEngineFile(kind EngineFile, row int, version uint64, path string) {
 	if !s.active || version != s.engineFileVersion || path == "" {
+		return
+	}
+	if kind >= ConsulCAFile && kind <= ConsulKeyFile {
+		if s.connectionDraft.Kind != connections.Consul || s.connectionDraft.TLSMode != "verify-full" {
+			return
+		}
+		o := &s.connectionDraft.ConsulOptions
+		switch kind {
+		case ConsulCAFile:
+			o.CAFile = path
+		case ConsulCertificateFile:
+			o.ClientCertFile = path
+		case ConsulKeyFile:
+			o.ClientKeyFile = path
+		}
+		s.cancelMySQLConnectionTest()
+		s.connectionError = ""
 		return
 	}
 	if kind >= EtcdCAFile && kind <= EtcdKeyFile {
@@ -150,6 +170,10 @@ func (s *State) EngineFilePickerError(version uint64) {
 }
 
 func (s *State) initEngineOptionsInputs() {
+	if s.connectionDraft.Kind == connections.Consul {
+		a := s.connectionDraft.ConsulOptions
+		s.engineNumbers[0], s.engineNumbers[1] = strconv.Itoa(a.ConnectTimeoutSeconds), strconv.Itoa(a.RequestTimeoutSeconds)
+	}
 	if s.connectionDraft.Kind == connections.Etcd {
 		a := s.connectionDraft.EtcdOptions
 		s.engineNumbers[0], s.engineNumbers[1] = strconv.Itoa(a.ConnectTimeoutSeconds), strconv.Itoa(a.RequestTimeoutSeconds)
@@ -231,6 +255,9 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.Consul {
+		return s.advanceConsulOptions(p)
+	}
 	if p.Kind == connections.Etcd {
 		return s.advanceEtcdOptions(p)
 	}
@@ -361,6 +388,8 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.Consul:
+		return s.consulOptions(c, width, tab)
 	case connections.Etcd:
 		return s.etcdOptions(c, width, tab)
 	case connections.Qdrant:

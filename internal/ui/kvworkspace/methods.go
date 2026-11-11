@@ -19,6 +19,13 @@ var methods = []Method{
 
 func Methods() []Method { return append([]Method(nil), methods...) }
 func (s *State) MethodsFor(d *Document) []Method {
+	if s.owned(d) && len(d.presentation.Methods) > 0 {
+		out := make([]Method, 0, len(d.presentation.Methods))
+		for _, method := range d.presentation.Methods {
+			out = append(out, Method{Name: method.Name, Path: method.Request.Method})
+		}
+		return out
+	}
 	out := Methods()
 	if s.owned(d) && (d.SnapshotAvailable() || d.snapshotContent()) {
 		out = append(out, Method{"Snapshot", SnapshotMethod})
@@ -67,6 +74,19 @@ func DefaultEventRequest(method string) contract.KVRequest {
 }
 func (s *State) ChooseMethod(d *Document, method string) {
 	if !s.owned(d) || d.Busy() {
+		return
+	}
+	if len(d.presentation.Methods) > 0 {
+		for _, candidate := range d.presentation.Methods {
+			if candidate.Request.Method == method {
+				useTemplate := d.Request().JSON == s.defaultRequestFor(d).JSON
+				s.SetMethod(d, method)
+				if useTemplate {
+					d.Editor.Buffer.Set(candidate.Request.JSON)
+				}
+				return
+			}
+		}
 		return
 	}
 	before := DefaultRequest()
@@ -139,4 +159,24 @@ func RequestForKey(read contract.KVKeyRead, history bool) (contract.KVRequest, e
 }
 func DefaultRequest() contract.KVRequest {
 	return contract.KVRequest{Method: "/etcdserverpb.KV/Range", JSON: "{\n  \"key\": \"AA==\",\n  \"limit\": \"100\"\n}"}
+}
+
+func (s *State) defaultRequestFor(d *Document) contract.KVRequest {
+	if s.owned(d) && d.presentation.Default.Method != "" {
+		return d.presentation.Default
+	}
+	return DefaultRequest()
+}
+
+// Imported request drafts retain their text, but cannot change product protocol.
+func (s *State) documentMethodAllowed(d *Document, method string) bool {
+	if len(d.presentation.Methods) > 0 {
+		for _, candidate := range d.presentation.Methods {
+			if candidate.Request.Method == method {
+				return true
+			}
+		}
+		return false
+	}
+	return method != contract.KVConsulHTTPRequestMethod
 }

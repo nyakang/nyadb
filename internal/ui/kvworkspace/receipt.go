@@ -23,6 +23,9 @@ func (s *State) OperationRecord(d *Document) ([]byte, error) {
 	return encodeOperationReceipt(*r)
 }
 func encodeOperationReceipt(r Receipt) ([]byte, error) {
+	if r.Result.HTTP != nil {
+		return encodeHTTPOperationReceipt(r)
+	}
 	type identity struct{ ProfileID, Generation, ClusterID, MemberID, Revision, RaftTerm, Version, Catalog, Schema, PrefixBase64 string }
 	h := r.Result.Header
 	record := struct {

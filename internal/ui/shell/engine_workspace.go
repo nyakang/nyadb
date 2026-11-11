@@ -39,8 +39,11 @@ func (s *State) engineSessionToolbar(c *ui.Context) bool {
 	}
 	status := s.sessions.StatusFor(p.ID)
 	ui.Column(c).Gap(5).Children(func() {
-		if (p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind.IsREST() || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Neo4j && p.Neo4jOptions.Auth == "basic" || p.Kind == connections.Cassandra && p.CassandraOptions.Auth == "password" || p.Kind == connections.Etcd && p.EtcdOptions.Auth == "basic") && status != "已连接" && !(p.Kind == connections.Solr && p.SolrOptions.Auth == "none") && !(p.Kind == connections.CouchDB && p.CouchDBOptions.Auth == "none") && !(p.Kind == connections.Meilisearch && p.MeilisearchOptions.Auth == "none") && !(p.Kind == connections.Qdrant && p.QdrantOptions.Auth == "none") {
+		if (p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind.IsREST() || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Neo4j && p.Neo4jOptions.Auth == "basic" || p.Kind == connections.Cassandra && p.CassandraOptions.Auth == "password" || p.Kind == connections.Etcd && p.EtcdOptions.Auth == "basic" || p.Kind == connections.Consul && p.ConsulOptions.Auth == "token") && status != "已连接" && !(p.Kind == connections.Solr && p.SolrOptions.Auth == "none") && !(p.Kind == connections.CouchDB && p.CouchDBOptions.Auth == "none") && !(p.Kind == connections.Meilisearch && p.MeilisearchOptions.Auth == "none") && !(p.Kind == connections.Qdrant && p.QdrantOptions.Auth == "none") {
 			label := locales.Text("PostgreSQL 会话密码")
+			if p.Kind == connections.Consul {
+				label = locales.Text("本次 Consul 会话 token")
+			}
 			if p.Kind == connections.Etcd {
 				label = fmt.Sprintf(locales.Text("本次 %s 会话密码"), "etcd")
 			}

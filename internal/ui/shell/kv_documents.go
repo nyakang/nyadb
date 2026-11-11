@@ -45,7 +45,7 @@ func (s *State) kvWorkspaceDependencies() kvworkspace.Dependencies {
 
 // OpenKVRequests opens a native request document bound to its original profile.
 func (s *State) OpenKVRequests(profileID int64) bool {
-	return s.openKVDocument(profileID, kvworkspace.DefaultRequest(), nil)
+	return s.openKVDocument(profileID, contract.KVRequest{}, nil)
 }
 func (s *State) OpenKVEvents(read contract.KVKeyRead, history bool) bool {
 	request, err := kvworkspace.RequestForKey(read, history)
@@ -59,7 +59,7 @@ func (s *State) OpenKVEvents(read contract.KVKeyRead, history bool) bool {
 	return s.openKVDocument(read.Scope.Namespace.ProfileID, request, &read.Scope)
 }
 func sameKVDocumentScope(a, b contract.KVScope) bool {
-	return a.Namespace == b.Namespace && a.Generation == b.Generation && string(a.Prefix) == string(b.Prefix) && a.Header == b.Header && a.Version == b.Version
+	return a.HTTP == b.HTTP && a.Namespace == b.Namespace && a.Generation == b.Generation && string(a.Prefix) == string(b.Prefix) && a.Header == b.Header && a.Version == b.Version
 }
 func (s *State) openKVDocument(profileID int64, request contract.KVRequest, expected *contract.KVScope) bool {
 	if s.runtime == nil {

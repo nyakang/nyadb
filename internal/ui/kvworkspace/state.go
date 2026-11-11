@@ -53,19 +53,20 @@ func (r Receipt) Clone() Receipt {
 }
 
 type confirmation struct {
-	lease      contract.KVRequestLease
-	plan       contract.KVPreparation
-	authored   contract.KVRequest
-	editor     contract.KVRequest
-	management *LeaseManagementReceipt
-	auth       *authConfirmation
-	compaction *CompactionReceipt
-	members    *memberConfirmation
-	alarms     *alarmConfirmation
-	keyRow     int
-	keyColumns ui.ListState
-	checked    bool
-	open       bool
+	requestSummary string
+	lease          contract.KVRequestLease
+	plan           contract.KVPreparation
+	authored       contract.KVRequest
+	editor         contract.KVRequest
+	management     *LeaseManagementReceipt
+	auth           *authConfirmation
+	compaction     *CompactionReceipt
+	members        *memberConfirmation
+	alarms         *alarmConfirmation
+	keyRow         int
+	keyColumns     ui.ListState
+	checked        bool
+	open           bool
 }
 type outcome struct {
 	result                contract.KVResult
@@ -78,6 +79,7 @@ type outcome struct {
 	members               *memberOutcome
 	alarms                *alarmOutcome
 	recoveryResult        *contract.KVResult
+	recoveryUnknown       *contract.KVResult
 	recoveryMembers       []contract.KVMemberResult
 	snapshots             *snapshotOutcome
 	recoverySnapshot      *contract.KVSnapshotResult
@@ -101,6 +103,8 @@ type operation struct {
 // Document is UI-thread owned. Workers capture immutable requests and their
 // original lease; private buffered channels are consumed only by State.Consume.
 type Document struct {
+	httpHeaders                                             bool
+	presentation                                            contract.KVRequestPresentation
 	id                                                      uint64
 	profileID                                               int64
 	method                                                  string
@@ -227,6 +231,7 @@ type State struct {
 	deps                     Dependencies
 	documents                map[uint64]*Document
 	leave                    *leaveDecision
+	HTTPReceiptSplitPercent  float32
 	SplitPercent             float32
 	LeaseBrowserSplitPercent float32
 	AuthSplitPercent         float32
@@ -238,7 +243,7 @@ type State struct {
 }
 
 func New(deps Dependencies) *State {
-	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50, LeaseBrowserSplitPercent: 20, AuthSplitPercent: 65, CompactionSplitPercent: 70, MembersSplitPercent: 60, AlarmsSplitPercent: 70, SnapshotSplitPercent: 70}
+	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50, HTTPReceiptSplitPercent: 30, LeaseBrowserSplitPercent: 20, AuthSplitPercent: 65, CompactionSplitPercent: 70, MembersSplitPercent: 60, AlarmsSplitPercent: 70, SnapshotSplitPercent: 70}
 }
 func (s *State) owned(d *Document) bool { return d != nil && !d.closed && s.documents[d.id] == d }
 func (s *State) active(d *Document) bool {
@@ -251,13 +256,28 @@ func (s *State) Open(id uint64, profile int64, request contract.KVRequest) *Docu
 	if old := s.documents[id]; old != nil {
 		s.Close(old)
 	}
+	var provider contract.KVRequestsProvider
+	var providerErr error
+	var presentation contract.KVRequestPresentation
+	if s.deps.ProviderFor != nil {
+		provider, providerErr = s.deps.ProviderFor(profile)
+		if providerErr == nil && provider != nil {
+			if p, ok := provider.(contract.KVRequestPresentationProvider); ok {
+				presentation = p.KVRequestPresentation().Clone()
+			}
+		}
+	}
 	if request.Method == "" {
 		request = DefaultRequest()
+		if presentation.Default.Method != "" {
+			request = presentation.Default
+		}
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	buffer := editor.NewBuffer(request.JSON)
 	buffer.SetLanguage(editor.LanguageNamed("JSON"))
 	d := &Document{id: id, profileID: profile, method: request.Method, selectedAlarms: request.Method == AlarmsMethod, saved: request, Editor: &editor.State{Buffer: buffer}, ctx: ctx, cancel: cancel, focus: true}
+	d.presentation = presentation
 	s.documents[id] = d
 	if s.deps.RenewalProviderFor != nil {
 		if p, err := s.deps.RenewalProviderFor(profile); err == nil && p != nil && p.KVScope().Namespace.ProfileID == profile {
@@ -274,9 +294,9 @@ func (s *State) Open(id uint64, profile int64, request contract.KVRequest) *Docu
 		d.error = locales.Text("KV 原连接不可用")
 		return d
 	}
-	p, err := s.deps.ProviderFor(profile)
-	if err == nil && p != nil {
-		d.lease, err = p.ReserveKV(id)
+	err := providerErr
+	if err == nil && provider != nil {
+		d.lease, err = provider.ReserveKV(id)
 	}
 	if err != nil || d.lease == nil {
 		d.needsRecovery = true
@@ -440,7 +460,7 @@ func (s *State) Run(d *Document) {
 			d.error = locales.Text("原写入未确认；恢复后可读取，关闭页签可放弃本地草稿与回执")
 			return
 		}
-		d.confirmation = &confirmation{lease: d.lease, plan: plan, authored: authored, editor: authored, open: true}
+		d.confirmation = &confirmation{lease: d.lease, plan: plan, authored: authored, editor: authored, open: true, requestSummary: requestConfirmationSummary(plan.Snapshot())}
 		return
 	}
 	s.execute(d, plan, authored)
@@ -547,6 +567,10 @@ func (s *State) Recover(d *Document) {
 		d.error = locales.Text("KV 原连接不可用")
 		return
 	}
+	if d.scope.Generation != 0 && !sameKVRecoveryIdentity(d.scope, p.KVScope()) {
+		d.error = locales.Text("KV 原连接不可用")
+		return
+	}
 	previous := d.lease
 	id := d.id
 	s.start(d, "recover", contract.KVRequest{}, func(ctx context.Context) outcome {
@@ -558,6 +582,12 @@ func (s *State) Recover(d *Document) {
 			return outcome{lease: l, err: err}
 		}
 		r, err := p.RecoverKV(previous)
+		if err != nil {
+			if r.Lease != nil {
+				_ = r.Lease.Close()
+			}
+			return outcome{err: err}
+		}
 		if !sameSnapshotRecovery(expectedSnapshot, r.SnapshotResult) {
 			if r.Lease != nil {
 				_ = r.Lease.Close()
@@ -565,12 +595,17 @@ func (s *State) Recover(d *Document) {
 			return outcome{err: contract.ErrRevoked}
 		}
 		last := r.Last.Clone()
+		var unknown *contract.KVResult
+		if r.Unknown != nil {
+			v := r.Unknown.Clone()
+			unknown = &v
+		}
 		var snapshot *contract.KVSnapshotResult
 		if r.SnapshotResult != nil {
 			copy := r.SnapshotResult.Clone()
 			snapshot = &copy
 		}
-		return outcome{lease: r.Lease, recoveryResult: &last, recoveryMembers: cloneMemberResults(r.MemberResults), recoverySnapshot: snapshot, err: err}
+		return outcome{lease: r.Lease, recoveryResult: &last, recoveryUnknown: unknown, recoveryMembers: cloneMemberResults(r.MemberResults), recoverySnapshot: snapshot, err: err}
 	})
 	d.job.snapshotRecovery = expectedSnapshot
 }
@@ -615,7 +650,14 @@ func (s *State) Consume() {
 					s.consumeMembers(d, job, r)
 					d.selectedMembers = true
 				}
+				if job.kind == "recover" && r.err == nil && r.lease != nil && d.scope.Generation != 0 && !sameKVRecoveryIdentity(d.scope, r.lease.Scope()) {
+					_ = r.lease.Close()
+					r.lease = nil
+					r.err = contract.ErrRevoked
+					d.error = contract.ErrRevoked.Error()
+				}
 				if job.kind == "recover" {
+					s.consumeRequestRecovery(d, job, &r)
 					s.consumeSnapshotRecovery(d, job, r.recoverySnapshot)
 					s.consumeMemberRecovery(d, job, r.recoveryMembers)
 					s.consumeAlarmRecovery(d, job, r.recoveryResult)
@@ -823,6 +865,8 @@ func (s *State) Close(d *Document) {
 		s.leave = nil
 	}
 	d.Editor = nil
+	d.presentation = contract.KVRequestPresentation{}
+	d.httpHeaders = false
 	d.confirmation = nil
 	d.leaseManagement = nil
 	if d.authDraft != nil {
@@ -863,6 +907,9 @@ func ReceiptStatus(r contract.KVResult) string {
 		return locales.Text("KV 写入结果未确认")
 	}
 	if r.Completed {
+		if r.HTTP != nil && !r.HTTP.Succeeded {
+			return locales.Text("HTTP 原请求已明确拒绝")
+		}
 		if r.Reply != nil && r.Reply.Kind == "txn" && !r.Reply.Succeeded {
 			return locales.Text("KV 比较未满足")
 		}

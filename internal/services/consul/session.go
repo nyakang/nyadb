@@ -101,10 +101,12 @@ func openEvidenceCost(e OpenEvidence) int64 {
 	return n
 }
 
-func (s *Session) ProfileID() int64                    { return s.id }
-func (s *Session) Generation() uint64                  { return 1 } // public generations belong to dbruntime
-func (s *Session) Capabilities() contract.Capabilities { return contract.Capabilities{KeyValues: true} }
-func (s *Session) KVScope() contract.KVScope           { return s.scope.Clone() }
+func (s *Session) ProfileID() int64   { return s.id }
+func (s *Session) Generation() uint64 { return 1 } // public generations belong to dbruntime
+func (s *Session) Capabilities() contract.Capabilities {
+	return contract.Capabilities{KeyValues: true, Metadata: true}
+}
+func (s *Session) KVScope() contract.KVScope { return s.scope.Clone() }
 func (s *Session) Alive() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()

@@ -8,7 +8,6 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/db/contract"
-	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -46,7 +45,7 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 	ready := doc != nil && doc.Editor != nil
 	nativeKV := current.kv != nil
 	profile, hasProfile := s.currentProfile()
-	etcdProfile := s.profileMode && hasProfile && profile.Kind == connections.Etcd
+	kvProfile := s.profileMode && hasProfile && profile.Kind.IsNativeKV()
 	item := func(label, command string, enabled bool, mods ui.Modifiers, key ui.Key) {
 		entry := m.Item(locales.Text(label))
 		chosen := entry.Chosen()
@@ -61,7 +60,7 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 	switch section {
 	case "文件":
 		item("新建连接…", "new_connection", true, 0, 0)
-		if etcdProfile {
+		if kvProfile {
 			item("新建 KV 请求", "new_query", s.toolbarActionAvailable("新建 KV 请求"), mod, ui.KeyN)
 			item("打开请求文本", "open_kv", nativeKV && !current.kv.Busy() && !current.kv.FileBusy(), mod, ui.KeyO)
 		} else {
@@ -99,7 +98,7 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 		}{{"撤销", "undo", ui.KeyZ, mod}, {"重做", "redo", ui.KeyZ, mod | ui.Shift}, {"剪切", "cut", ui.KeyX, mod}, {"复制", "copy", ui.KeyC, mod}, {"粘贴", "paste", ui.KeyV, mod}, {"全选", "select_all", ui.KeyA, mod}, {"查找…", "find", ui.KeyF, mod}, {"替换…", "replace", ui.KeyH, mod}} {
 			item(entry.label, entry.command, scope.edit.Available(entry.command), entry.mods, entry.key)
 		}
-		if !etcdProfile && !nativeKV {
+		if !kvProfile && !nativeKV {
 			item("格式化 SQL", "format", ready && !doc.Loading(), mod|ui.Shift, ui.KeyI)
 		}
 		m.Separator()
@@ -107,7 +106,7 @@ func (s *State) documentMenuCommands(section string, m *ui.Menu) {
 		item("复制连接", "copy_connection", s.profileMode && s.selectedProfileID > 0, 0, 0)
 	case "窗口":
 		item("命名工作区…", "workspaces", s.workspaces.store != nil, 0, 0)
-		if etcdProfile {
+		if kvProfile {
 			item("新建 KV 请求", "new_query", s.toolbarActionAvailable("新建 KV 请求"), mod, ui.KeyN)
 		} else {
 			item("新建 SQL 页签", "new_query", true, mod, ui.KeyN)

@@ -12,6 +12,8 @@ type Descriptor struct {
 
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
+	case Consul:
+		return Descriptor{kind, "Consul", "consul", "server", "", 8500, contract.Capabilities{KeyValues: true, Metadata: true}}, true
 	case Etcd:
 		return Descriptor{kind, "etcd", "etcd", "server", "", 2379, contract.Capabilities{KeyValues: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, EditableTables: true, Export: true}}, true
 	case Neo4j:

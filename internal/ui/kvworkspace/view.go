@@ -133,8 +133,11 @@ func (s *State) View(c *ui.Context, d *Document) {
 					}
 				}
 			}
-			if (isSnapshot || isAlarms || isMembers || isCompaction || isEvent || isRenewal || isBrowser || isAuth) && ui.Button(c, locales.Text("使用请求模板")).Disabled(d.Busy()).Clicked() {
-				request := DefaultEventRequest(d.method)
+			if (len(d.presentation.Methods) > 0 || isSnapshot || isAlarms || isMembers || isCompaction || isEvent || isRenewal || isBrowser || isAuth) && ui.Button(c, locales.Text("使用请求模板")).Disabled(d.Busy()).Clicked() {
+				request := s.defaultRequestFor(d)
+				if isEvent {
+					request = DefaultEventRequest(d.method)
+				}
 				if isSnapshot {
 					s.cancelSnapshotCaptureConfirmation(d)
 					request = DefaultSnapshotRequest()
@@ -168,6 +171,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 			ui.Text(c, name).SingleLine().MinWidth(0).Shrink(1).TextColor(p.Muted).Tooltip(name)
 		})
 		hint := locales.Text("JSON 中 bytes 使用 Base64，整数保留原生精度；请求使用绝对键")
+		if d.scope.HTTP.Protocol != "" {
+			hint = locales.Text("填写原 HTTP 方法和路径；body_base64 保留原始字节，DC 和一致性使用原连接设置")
+		}
 		if isSnapshot {
 			hint = locales.Text("捕获整个原集群后端及认证数据；连接前缀不限定范围")
 		}
@@ -234,6 +240,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 			}).Label(locales.Text("KV 显式恢复")).FillWidth().Padding(3, 8)
 		}
 		split := &s.SplitPercent
+		if d.scope.HTTP.Protocol != "" {
+			split = &s.HTTPReceiptSplitPercent
+		}
 		if isSnapshot || d.selectedSnapshot {
 			split = &s.SnapshotSplitPercent
 		}
@@ -303,7 +312,7 @@ func (s *State) View(c *ui.Context, d *Document) {
 func (s *State) receiptView(c *ui.Context, d *Document) {
 	p := theme.Colors(c)
 	padding, gap := float32(5), float32(4)
-	if d.selectedAlarms {
+	if d.selectedAlarms || d.scope.HTTP.Protocol != "" {
 		padding, gap = 3, 2
 	}
 	ui.Column(c).Fill().Padding(padding, 8).Gap(gap).Children(func() {
@@ -426,8 +435,12 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 				return
 			}
 			r := s.selectedReceipt(d)
-			if ui.Button(c, locales.Text("复制完整 JSON")).Disabled(r == nil || r.Result.JSON == "" && r.AuthManagement == nil && r.Compaction == nil).Clicked() {
-				if r.AuthManagement != nil || r.Compaction != nil {
+			copyLabel := locales.Text("复制完整 JSON")
+			if r != nil && r.Result.HTTP != nil {
+				copyLabel = locales.Text("复制完整操作记录")
+			}
+			if ui.Button(c, copyLabel).Disabled(r == nil || r.Result.HTTP == nil && r.Result.JSON == "" && r.AuthManagement == nil && r.Compaction == nil).Clicked() {
+				if r.Result.HTTP != nil || r.AuthManagement != nil || r.Compaction != nil {
 					raw, err := encodeOperationReceipt(*r)
 					if err == nil {
 						c.WriteClipboard(string(raw))
@@ -440,6 +453,12 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 				s.ExportOperationRecord(d)
 			}
 			ui.Button(c, locales.Text("导出原生回执")).Disabled(r == nil || d.FileBusy() || s.deps.Files.SavePath == nil).Menu(func(m *ui.Menu) {
+				if r != nil && r.Result.HTTP != nil {
+					if m.Item("HTTP body (.bin)").Disabled(len(r.Result.HTTP.Body) == 0 && !r.Result.HTTP.Captured).Chosen() {
+						s.ExportReceipt(d, true)
+					}
+					return
+				}
 				if m.Item("protobuf (.pb)").Disabled(r == nil || len(r.Result.Native) == 0).Chosen() {
 					s.ExportReceipt(d, true)
 				}
@@ -459,6 +478,10 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 		r := s.selectedReceipt(d)
 		if r == nil {
 			ui.Text(c, locales.Text("运行请求后显示原生回执")).TextColor(p.Muted)
+			return
+		}
+		if r.Result.HTTP != nil {
+			s.httpReceiptView(c, d, r)
 			return
 		}
 		if r.LeaseManagement != nil {
@@ -539,7 +562,11 @@ func (s *State) Modals(c *ui.Context) {
 			}
 			ui.Column(c).Width(560).Gap(8).Children(func() {
 				ui.Text(c, locales.Text("确认 KV 写入请求")).Bold()
-				ui.Text(c, confirmation.plan.Snapshot().Method).SingleLine().Tooltip(confirmation.plan.Snapshot().Method)
+				summary := confirmation.requestSummary
+				if summary == "" {
+					summary = requestConfirmationSummary(confirmation.plan.Snapshot())
+				}
+				ui.Text(c, summary).SingleLine().Tooltip(summary)
 				ui.Text(c, locales.Text("仅派发一次；取消不代表回滚，丢失回执后必须显式核对")).TextColor(theme.Colors(c).Warning)
 				preview := clipped(confirmation.plan.Snapshot().JSON)
 				ui.TextArea(c, &preview).Label(locales.Text("KV 写入预览")).ReadOnly(true).Height(160).FillWidth()

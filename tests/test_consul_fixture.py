@@ -38,3 +38,23 @@ class ConsulFixtureTests(unittest.TestCase):
     def test_probe_cannot_claim_original_session_acceptance(self):
         with self.assertRaises(ValueError):
             fixture.verify(probe=True, session=True)
+
+    def test_public_scope_keeps_all_private_parents_and_requires_real_ui_parents(self):
+        required = fixture.REQUIRED + fixture.DOCUMENT_REQUIRED + fixture.RUNTIME_REQUIRED + fixture.PUBLIC_REQUIRED
+        self.assertEqual(len(required), 22)
+        self.assertEqual(len(set(required)), len(required))
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in fixture.PUBLIC_REQUIRED:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+        with self.assertRaises(RuntimeError):
+            fixture.accepted_cases(log, fixture.REQUIRED + fixture.DOCUMENT_REQUIRED + fixture.RUNTIME_REQUIRED)
+        with self.assertRaises(ValueError):
+            fixture.verify(probe=True, public=True)
+        hashes = fixture.source_hashes()
+        for name in ('internal/services/connections/consul_options.go', 'internal/storage/localdb/consul_options_json.go',
+                     'internal/ui/connectioneditor/consul_native_integration_test.go',
+                     'internal/ui/kvworkspace/http_receipt.go', 'internal/ui/kvworkspace/consul_native_integration_test.go',
+                     'internal/ui/shell/consul_native_integration_test.go', 'locales/en.json'):
+            self.assertIn(name, hashes)

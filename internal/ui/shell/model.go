@@ -166,7 +166,7 @@ func (s *State) currentTab() *tab {
 }
 
 func (s *State) openQuery() {
-	if p, ok := s.currentProfile(); s.profileMode && ok && p.Kind == connections.Etcd {
+	if p, ok := s.currentProfile(); s.profileMode && ok && p.Kind.IsNativeKV() {
 		if !s.OpenKVRequests(p.ID) {
 			s.status = locales.Text("请先连接原连接")
 		}

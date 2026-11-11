@@ -11,7 +11,7 @@ import (
 	"github.com/nyakang/nyadb/internal/db/jsondocument"
 )
 
-const HTTPRequestMethod = "consul.http"
+const HTTPRequestMethod = contract.KVConsulHTTPRequestMethod
 const projectionBudget = 32 << 20
 
 type requestEnvelope struct {

@@ -38,6 +38,16 @@ func (s *session) KVScope() contract.KVScope {
 	scope.Generation = s.generation
 	return scope
 }
+
+func (s *session) KVRequestPresentation() contract.KVRequestPresentation {
+	if !s.alive() {
+		return contract.KVRequestPresentation{}
+	}
+	if provider, ok := s.raw.(contract.KVRequestPresentationProvider); ok {
+		return provider.KVRequestPresentation().Clone()
+	}
+	return contract.KVRequestPresentation{}
+}
 func (s *session) bindKV(raw contract.KVRequestLease, document uint64) (contract.KVRequestLease, error) {
 	if raw == nil {
 		return nil, contract.ErrUnsupported

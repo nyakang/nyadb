@@ -196,6 +196,9 @@ func sessionNamespaces(ctx context.Context, s contract.Session) ([]string, error
 	return out, nil
 }
 func (s *State) engineLabel(w *Workspace) string {
+	if w.Kind == connections.Consul {
+		return "Consul"
+	}
 	if w.Kind == connections.Etcd {
 		return "etcd"
 	}

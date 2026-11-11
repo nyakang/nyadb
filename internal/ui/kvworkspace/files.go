@@ -70,7 +70,7 @@ func EncodeRequest(r contract.KVRequest) ([]byte, error) {
 			return nil, err
 		}
 	}
-	supported := r.Method == SnapshotMethod || r.Method == AlarmsMethod || r.Method == MembersMethod || r.Method == CompactMethod || eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method) || r.Method == AuthManagementMethod
+	supported := r.Method == contract.KVConsulHTTPRequestMethod || r.Method == SnapshotMethod || r.Method == AlarmsMethod || r.Method == MembersMethod || r.Method == CompactMethod || eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method) || r.Method == AuthManagementMethod
 	for _, m := range methods {
 		if m.Path == r.Method {
 			supported = true
@@ -255,6 +255,10 @@ func (s *State) ReceiptJSON(d *Document) (string, bool) {
 		return "", false
 	}
 	r := s.selectedReceipt(d)
+	if r != nil && r.Result.HTTP != nil {
+		raw, err := encodeHTTPOperationReceipt(*r)
+		return string(raw), err == nil
+	}
 	if r == nil || r.Result.JSON == "" {
 		return "", false
 	}
@@ -274,11 +278,27 @@ func (s *State) ExportReceipt(d *Document, native bool) {
 	}
 	name := "response.json"
 	raw := []byte(r.Result.JSON)
+	if !native && r.Result.HTTP != nil {
+		var err error
+		raw, err = encodeHTTPOperationReceipt(*r)
+		if err != nil {
+			d.error = locales.Text("此回执没有可导出的原生内容")
+			return
+		}
+		name = "operation.nyakv-receipt.json"
+	}
 	if native {
 		name = "response.pb"
 		raw = bytes.Clone(r.Result.Native)
+		if r.Result.HTTP != nil {
+			name = "response.http-body.bin"
+			if !r.Result.HTTP.Captured || !r.Result.HTTP.EOF {
+				name = "response.http-body.partial.bin"
+			}
+			raw = bytes.Clone(r.Result.HTTP.Body)
+		}
 	}
-	if len(raw) == 0 {
+	if len(raw) == 0 && !(native && r.Result.HTTP != nil && r.Result.HTTP.Captured) {
 		d.error = locales.Text("此回执没有可导出的原生内容")
 		return
 	}
@@ -326,6 +346,10 @@ func (s *State) consumeFiles(d *Document) {
 		if job.kind == "open" {
 			if d.Request() != job.before {
 				d.error = locales.Text("KV 请求已更改，未载入所选文件")
+				return
+			}
+			if !s.documentMethodAllowed(d, r.request.Method) {
+				d.error = locales.Text("KV 请求文件无效") + ": " + contract.ErrUnsupported.Error()
 				return
 			}
 			d.releaseMemberAuthority()

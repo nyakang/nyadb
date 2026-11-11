@@ -40,10 +40,11 @@ type Dependencies struct {
 // State is owned by the UI thread. Background tests return immutable results;
 // native picker completions are guarded by the editing session's version.
 type State struct {
-	etcdAuthChoice, etcdPrefixChoice, etcdTLSChoice string
-	neo4jAuthChoice                                 string
-	neo4jProtocolChoice                             string
-	neo4jTLSChoice                                  string
+	consulAuthChoice, consulTLSChoice, consulConsistencyChoice string
+	etcdAuthChoice, etcdPrefixChoice, etcdTLSChoice            string
+	neo4jAuthChoice                                            string
+	neo4jProtocolChoice                                        string
+	neo4jTLSChoice                                             string
 
 	qdrantAuthChoice            string
 	meilisearchAuthChoice       string
@@ -187,12 +188,17 @@ func (s *State) OpenProfile(profile connections.Profile) {
 	if profile.Kind.IsMySQLFamily() {
 		s.loadSavedConnectionPasswords()
 		s.loadTunnelSecrets()
-	} else if profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.Etcd || profile.Kind == connections.Neo4j || profile.Kind == connections.Qdrant || profile.Kind == connections.Meilisearch || profile.Kind == connections.CouchDB || profile.Kind == connections.Cassandra || profile.Kind == connections.Solr || profile.Kind == connections.Elasticsearch || profile.Kind == connections.Easysearch || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis {
+	} else if profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.Consul || profile.Kind == connections.Etcd || profile.Kind == connections.Neo4j || profile.Kind == connections.Qdrant || profile.Kind == connections.Meilisearch || profile.Kind == connections.CouchDB || profile.Kind == connections.Cassandra || profile.Kind == connections.Solr || profile.Kind == connections.Elasticsearch || profile.Kind == connections.Easysearch || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis {
 		s.loadSavedConnectionPasswords()
 	}
 }
 
 func (s *State) initializeInputs() {
+	if s.connectionDraft.Kind == connections.Consul {
+		s.consulAuthChoice = consulAuthCaption(s.connectionDraft.ConsulOptions.Auth)
+		s.consulTLSChoice = neo4jTLSCaption(s.connectionDraft.TLSMode)
+		s.consulConsistencyChoice = consulConsistencyCaption(s.connectionDraft.ConsulOptions.Consistency)
+	}
 	if s.connectionDraft.Kind == connections.Etcd {
 		s.etcdAuthChoice = etcdAuthCaption(s.connectionDraft.EtcdOptions.Auth)
 		s.etcdPrefixChoice = etcdPrefixCaption(s.connectionDraft.EtcdOptions.PrefixEncoding)
@@ -320,6 +326,8 @@ func (s *State) Title() string {
 
 func connectionKindName(kind connections.Kind) string {
 	switch kind {
+	case connections.Consul:
+		return "Consul"
 	case connections.Etcd:
 		return "etcd"
 	case connections.Qdrant:

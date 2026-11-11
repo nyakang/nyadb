@@ -128,6 +128,8 @@ func (s *State) connectionModal(c *ui.Context) {
 
 func connectionKindName(kind connections.Kind) string {
 	switch kind {
+	case connections.Consul:
+		return "Consul"
 	case connections.Etcd:
 		return "etcd"
 	case connections.Qdrant:

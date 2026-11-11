@@ -143,8 +143,16 @@ func (s *State) menuCommands(section string, m *ui.Menu) {
 		m.Separator()
 		m.Submenu(locales.Text("数据库对象"), func(sub *ui.Menu) {
 			kinds := []string{"表", "视图", "函数"}
-			if profile, ok := s.currentProfile(); ok && profile.Kind == connections.Etcd {
-				kinds = []string{"键"}
+			if profile, ok := s.currentProfile(); ok {
+				switch profile.Kind {
+				case connections.Etcd:
+					kinds = []string{"键"}
+				case connections.Consul:
+					if sub.Item(locales.Text("新建 KV 请求")).Disabled(!s.toolbarActionAvailable("新建 KV 请求")).Chosen() {
+						s.openQuery()
+					}
+					return
+				}
 			}
 			for _, kind := range kinds {
 				if sub.Item(locales.Text(kind)).Checked(s.currentObjectKind() == kind).Disabled(!s.toolbarActionAvailable(kind)).Chosen() {
@@ -273,6 +281,15 @@ func (s *State) toolBar(c *ui.Context) {
 				kind = profile.Kind
 			}
 			for _, action := range actions {
+				if kind == connections.Consul {
+					switch action.label {
+					case "连接":
+					case "新建查询":
+						action.label = "新建 KV 请求"
+					default:
+						continue
+					}
+				}
 				if kind == connections.Etcd {
 					switch action.label {
 					case "连接":
@@ -462,10 +479,17 @@ func (s *State) toolBar(c *ui.Context) {
 // Disabled commands keep their place in the native toolbar and its overflow
 // menu, but never announce a successful operation for an unsupported feature.
 func (s *State) toolbarActionAvailable(action string) bool {
+	if p, ok := s.currentProfile(); s.profileMode && ok && p.Kind == connections.Consul {
+		switch action {
+		case "连接", "信息", "新建 KV 请求":
+		default:
+			return false
+		}
+	}
 	switch action {
 	case "新建 KV 请求":
 		p, ok := s.currentProfile()
-		return s.profileMode && ok && p.Kind == connections.Etcd && s.sessions.StatusFor(p.ID) == "已连接"
+		return s.profileMode && ok && p.Kind.IsNativeKV() && s.sessions.StatusFor(p.ID) == "已连接"
 	case "图标签", "关系类型", "图索引", "图约束", "图过程", "图函数", "集合信息", "向量点", "集合别名", "文档", "索引信息", "索引设置", "索引统计", "数据库信息", "设计文档":
 		w := s.sessions.Current()
 		return w.Status == "已连接" && w.Database != "" && s.sessions.DatabaseOpened(w.ProfileID, w.Database) && s.objectCapabilitiesFor(w.ProfileID).Metadata

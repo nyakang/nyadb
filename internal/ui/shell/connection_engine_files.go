@@ -5,6 +5,9 @@ import "github.com/nyakang/nyadb/internal/ui/connectioneditor"
 type EngineFile = connectioneditor.EngineFile
 
 const (
+	ConsulCAFile              = connectioneditor.ConsulCAFile
+	ConsulCertificateFile     = connectioneditor.ConsulCertificateFile
+	ConsulKeyFile             = connectioneditor.ConsulKeyFile
 	SQLiteAttachedFile        = connectioneditor.SQLiteAttachedFile
 	SQLiteMainFile            = connectioneditor.SQLiteMainFile
 	DuckDBMainFile            = connectioneditor.DuckDBMainFile

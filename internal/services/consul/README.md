@@ -1,8 +1,29 @@
-# Consul native request foundation
+# Consul original HTTP requests
 
-This package is a private transport foundation. Consul is not yet registered as a
-public connection type or connected to the workbench. Runtime/document leases,
-profile persistence, URI publication and native UI acceptance are separate work.
+Consul is a public connection type with independent profiles, versioned local
+settings, temporary token/vault handling, `consul://` / `consuls://` URI import
+and the existing shared KV request workspace. The runtime publishes only native
+KV requests and the `kv` namespace; SQL and relational data tools are unavailable.
+HTTP defaults to port 8500; verified HTTPS defaults to 8501 for `consuls://`.
+Authentication is anonymous or a separate ACL token. Client certificates work
+independently of token authorization. Datacenter, exact text prefix, consistency,
+CA/server name, mTLS files and finite timeouts stay in the original profile.
+
+Each document owns its original physical lease and immutable one-use plans.
+Writes show their actual HTTP method/path before explicit confirmation. Complete
+operation records keep body bytes in Base64, parsed headers/trailers, unsigned
+indices/flags as strings, session UUIDs, native transaction errors and independent
+capture/EOF/ended/acknowledged/succeeded states. Original body exports preserve
+complete empty bodies and mark incomplete prefixes separately. The body preview
+is bounded to 64 KiB. Request files save text without executing it.
+
+Disconnect retains text and receipts. Recovery checks the original profile,
+namespace, prefix, HTTP identity/configuration and published generation, then
+transfers complete original evidence without making requests. An original unknown
+write remains independent of successful later reads and blocks further writes.
+Only the UI thread consumes private buffered completions; parked results wait for
+their original document to activate. Closing cancels and joins the original
+executor, releases leases and clears document caches.
 
 `New` captures one original endpoint, datacenter, initial browsing prefix,
 consistency policy and temporary ACL token. It performs no HTTP requests.
@@ -55,19 +76,20 @@ Bounds are 8 MiB request JSON, 48 MiB response capture, 512 KiB individual KV va
 4096 UTF-8 bytes per key, 10,000 projected entries and 64 transaction operations.
 Incomplete or over-budget captures never become complete acknowledgements.
 Continuous watch/renewal, ACL management, registration/config entries, archives,
-multi-agent/Enterprise support and public user workflows remain future scope.
+multi-agent/Enterprise support remain future scope.
 
 Run isolated official acceptance with:
 
 ```sh
-python3 tools/verify_consul_fixture.py --mode anonymous --race
-python3 tools/verify_consul_fixture.py --mode token --race
-python3 tools/verify_consul_fixture.py --mode tls --race
-python3 tools/verify_consul_fixture.py --mode mtls --race
-python3 tools/verify_consul_fixture.py --version 1.22.3 --mode token --race
+python3 tools/verify_consul_fixture.py --public --mode anonymous --race
+python3 tools/verify_consul_fixture.py --public --mode token --race
+python3 tools/verify_consul_fixture.py --public --mode tls --race
+python3 tools/verify_consul_fixture.py --public --mode mtls --race
+python3 tools/verify_consul_fixture.py --public --version 1.22.3 --mode token --race
 ```
 
 The wrapper pins official image digests, checks version/node identity, requires
-the exact native test set and matching source hashes, and removes only its own
+the exact 22-parent native/document/runtime/public set, 76 bilingual images
+and matching source hashes, and removes only its own
 original container and temporary certificates/tokens. Receipts and sanitized
 diagnostics are written to ignored `build/consul`. `--probe` is diagnostic only.

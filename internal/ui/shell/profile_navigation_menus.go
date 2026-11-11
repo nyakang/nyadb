@@ -78,7 +78,7 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 	}
 	s.selectNavigationNode(services, navigation.ConnectionKey(profile.ID))
 	canMySQL := profile.Kind.IsMySQLFamily()
-	canConnect := canMySQL || profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.SQLite || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.DuckDB || profile.Kind.IsREST() || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis || profile.Kind == connections.Neo4j || profile.Kind == connections.Cassandra || profile.Kind == connections.Etcd
+	canConnect := canMySQL || profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.SQLite || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.DuckDB || profile.Kind.IsREST() || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis || profile.Kind == connections.Neo4j || profile.Kind == connections.Cassandra || profile.Kind.IsNativeKV()
 	status := s.sessions.StatusFor(profile.ID)
 	connected := status == "已连接"
 	connecting := status == "连接中"
@@ -160,7 +160,7 @@ func (s *State) profileConnectionMenu(m *ui.Menu, name string, services ui.Servi
 		s.objectWorkspace.BeginObject(services, profile.ID, mysqlsvc.ObjectIdentity{Database: "new_database", Kind: "database"}, "create")
 	}
 	newRequest := "新建查询"
-	if profile.Kind == connections.Etcd {
+	if profile.Kind.IsNativeKV() {
 		newRequest = "新建 KV 请求"
 	}
 	if m.Item(locales.Text(newRequest)).Disabled(!connected).Chosen() {
