@@ -11,6 +11,12 @@ import (
 // and the original draft/page evidence untouched when the locale changes.
 func (s *State) dataCellPreview(t *Document, page *contract.DataPage, row, source int) contract.DataCell {
 	cell := page.Rows[row][source]
+	if t.page == page && source < len(page.ColumnMetadata) {
+		if draft := mysqlDataDraftForRow(t, row); draft != nil && draft.Kind == "copy" && (page.ColumnMetadata[source].Generated || contract.DataColumnGenerated(page.ColumnMetadata[source])) {
+			cell.Text = locales.Text("提交后生成")
+			return cell
+		}
+	}
 	if t.page != page || !s.runtimeFor(t).InsertOmittedValues {
 		return cell
 	}
@@ -55,7 +61,7 @@ func mysqlDataDraftMarker(c *ui.Context, t *Document, row int) (string, ui.Color
 	p := theme.Colors(c)
 	if draft := mysqlDataDraftForRow(t, row); draft != nil {
 		switch draft.Kind {
-		case "insert":
+		case "insert", "copy":
 			return "+ ", p.GridInsertedMark
 		case "delete", "detach_delete":
 			return "− ", p.GridDeletedMark

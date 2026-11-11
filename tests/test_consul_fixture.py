@@ -202,3 +202,37 @@ class ConsulFixtureTests(unittest.TestCase):
                 fixture.verify(key_copy=True, **{other: True})
         with self.assertRaises(ValueError):
             fixture.verify(copy_limit_probe=True, txn_max_request=8388608)
+
+    def test_public_copy_acceptance_requires_original_source_runtime_shell_and_every_regression(self):
+        private = self.copy_scope_before_startup(key_copy=True, txn_max_request=8388608)
+        public = self.copy_scope_before_startup(public_key_copy=True, txn_max_request=8388608)
+        required = tuple(private['required']) + fixture.PUBLIC_COPY_REQUIRED
+        self.assertEqual(public['scope'], 'public-consul-original-conditional-copy')
+        self.assertEqual(public['required'], list(required))
+        self.assertEqual(len(required), 62)
+        self.assertEqual(len(set(required)), 62)
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+        with self.assertRaises(RuntimeError):
+            fixture.accepted_cases(log, tuple(private['required']))
+
+    def test_public_copy_diagnostic_retains_exact_public_parent_set_and_original_packages(self):
+        report = self.copy_scope_before_startup(public_copy_probe=True, txn_max_request=8388608)
+        self.assertEqual(report['required'], list(fixture.PUBLIC_COPY_REQUIRED))
+        self.assertEqual(report['scope'], 'diagnostic-consul-public-key-copy-probe')
+        self.assertEqual(report['packages'], ['./internal/services/dbruntime', './internal/ui/shell', './internal/ui/dataworkspace'])
+        self.assertFalse(report['public_key_copy'])
+        self.assertFalse(report['key_copy'])
+
+    def test_public_copy_cannot_replace_complete_acceptance_with_partial_diagnostics(self):
+        for flag in ('probe', 'session', 'public', 'tools', 'data_session', 'public_grid', 'data_mutations',
+                     'mutation_limit_probe', 'public_grid_writes', 'grid_write_probe', 'key_copy',
+                     'copy_probe', 'copy_limit_probe', 'public_key_copy'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(public_copy_probe=True, **{flag: True})
+        for flag in ('probe', 'mutation_limit_probe', 'grid_write_probe', 'copy_probe', 'copy_limit_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(public_key_copy=True, **{flag: True})

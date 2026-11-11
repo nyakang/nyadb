@@ -3642,5 +3642,14 @@
   "kvToolStale": "Request text changed; reopen the tool before generating",
   "kvToolLeave": "Unapplied tool inputs will also be discarded; request files save editor text only",
   "consulDataLiveScope": "Bounded live observations of visible keys in the original prefix; pages, count and export do not share a fixed snapshot.",
-  "consulDataMutationHint": "Review the original keys, destination keys, complete values and Flags. Confirm to commit this batch atomically."
+  "consulDataMutationHint": "Review the original keys, destination keys, complete values and Flags. Confirm to commit this batch atomically.",
+  "dataKeyCopyTitle": "Copy key to a new key",
+  "dataKeyCopyHint": "Copy the complete source value and Flags while preserving the source key. The destination must not exist; changes to the source cancel the commit.",
+  "dataKeyCopyChanged": "The original key or session changed. Select the source key again.",
+  "dataKeyCopyTarget": "Complete destination key",
+  "dataKeyCopyTargetInput": "Enter the complete destination key",
+  "dataKeyCopyPreview": "Preview copy",
+  "dataKeyCopyPending": "Waiting for the destination key",
+  "dataKeyCopyLabel": "Copy key",
+  "dataKeyCopySource": "Source key"
 }

@@ -32,7 +32,7 @@ func dataCopySnapshot(t *testing.T, l *dataLease, entry map[string]any, mode str
 	return s
 }
 
-func TestDataKeyCopyOriginalSourceBothPayloadsDistinctDestinationAndPrivateBoundary(t *testing.T) {
+func TestDataKeyCopyOriginalSourceBothPayloadsDistinctDestinationAndPublishedFeatureBoundary(t *testing.T) {
 	f := &dataFixture{}
 	l := dataTestLease(t, dataTestSession(t, "scope/", f))
 	before := f.reads.Load()
@@ -48,8 +48,8 @@ func TestDataKeyCopyOriginalSourceBothPayloadsDistinctDestinationAndPrivateBound
 			t.Fatal("copy plan shares caller source bytes")
 		}
 	}
-	if f.reads.Load() != before || l.Runtime().PreviewKeyCopy != nil {
-		t.Fatal("private copy validation made I/O or published prematurely")
+	if f.reads.Load() != before || l.Runtime().PreviewKeyCopy == nil {
+		t.Fatal("copy validation made I/O or lacked the explicit published feature")
 	}
 	if _, err := l.prepareDataEdits([]contract.DataEdit{{Kind: "copy", Original: dataCopySnapshot(t, l, dataTestEntry("scope/key", nil), "fingerprints"), Values: map[string]contract.DataValue{"key": dataText("scope/copied")}}}); !errors.Is(err, contract.ErrUnsupported) {
 		t.Fatal("ordinary editor inferred copy semantics", err)

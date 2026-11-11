@@ -23,9 +23,9 @@ type DataMutationItem struct {
 // Optional immutable text keys for the shared confirmation. Nil on DataRuntime
 // preserves the graph presentation. Adapters supply text; the UI localizes it.
 type DataMutationPresentation struct {
-	Title, Hint, PreviewLabel, HistoryLabel string
-	CreateLabel, UpdateLabel, DeleteLabel   string
-	ShowRelationships                       bool
+	Title, Hint, PreviewLabel, HistoryLabel          string
+	CreateLabel, UpdateLabel, DeleteLabel, CopyLabel string
+	ShowRelationships                                bool
 }
 
 type DataMutationSnapshot struct {

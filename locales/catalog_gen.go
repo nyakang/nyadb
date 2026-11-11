@@ -37071,3 +37071,93 @@ func ConsulDataMutationHint() string { return In(i18n.Locale()).ConsulDataMutati
 func (msgs Messages) ConsulDataMutationHint() string {
 	return Catalog.Format(msgs.locale, "consulDataMutationHint", nil)
 }
+
+// DataKeyCopyTitle says "复制键到新键"
+// in the language the app shows.
+func DataKeyCopyTitle() string { return In(i18n.Locale()).DataKeyCopyTitle() }
+
+// DataKeyCopyTitle says "复制键到新键"
+// in the language of msgs.
+func (msgs Messages) DataKeyCopyTitle() string {
+	return Catalog.Format(msgs.locale, "dataKeyCopyTitle", nil)
+}
+
+// DataKeyCopyHint says "复制源键的完整值和 Flags，保留源键。目标键必须不存在；源键变化将取消提交。"
+// in the language the app shows.
+func DataKeyCopyHint() string { return In(i18n.Locale()).DataKeyCopyHint() }
+
+// DataKeyCopyHint says "复制源键的完整值和 Flags，保留源键。目标键必须不存在；源键变化将取消提交。"
+// in the language of msgs.
+func (msgs Messages) DataKeyCopyHint() string {
+	return Catalog.Format(msgs.locale, "dataKeyCopyHint", nil)
+}
+
+// DataKeyCopyChanged says "原键或数据库会话已变化，请重新选择复制键"
+// in the language the app shows.
+func DataKeyCopyChanged() string { return In(i18n.Locale()).DataKeyCopyChanged() }
+
+// DataKeyCopyChanged says "原键或数据库会话已变化，请重新选择复制键"
+// in the language of msgs.
+func (msgs Messages) DataKeyCopyChanged() string {
+	return Catalog.Format(msgs.locale, "dataKeyCopyChanged", nil)
+}
+
+// DataKeyCopyTarget says "目标完整键"
+// in the language the app shows.
+func DataKeyCopyTarget() string { return In(i18n.Locale()).DataKeyCopyTarget() }
+
+// DataKeyCopyTarget says "目标完整键"
+// in the language of msgs.
+func (msgs Messages) DataKeyCopyTarget() string {
+	return Catalog.Format(msgs.locale, "dataKeyCopyTarget", nil)
+}
+
+// DataKeyCopyTargetInput says "输入目标完整键"
+// in the language the app shows.
+func DataKeyCopyTargetInput() string { return In(i18n.Locale()).DataKeyCopyTargetInput() }
+
+// DataKeyCopyTargetInput says "输入目标完整键"
+// in the language of msgs.
+func (msgs Messages) DataKeyCopyTargetInput() string {
+	return Catalog.Format(msgs.locale, "dataKeyCopyTargetInput", nil)
+}
+
+// DataKeyCopyPreview says "预览复制"
+// in the language the app shows.
+func DataKeyCopyPreview() string { return In(i18n.Locale()).DataKeyCopyPreview() }
+
+// DataKeyCopyPreview says "预览复制"
+// in the language of msgs.
+func (msgs Messages) DataKeyCopyPreview() string {
+	return Catalog.Format(msgs.locale, "dataKeyCopyPreview", nil)
+}
+
+// DataKeyCopyPending says "等待输入复制目标键"
+// in the language the app shows.
+func DataKeyCopyPending() string { return In(i18n.Locale()).DataKeyCopyPending() }
+
+// DataKeyCopyPending says "等待输入复制目标键"
+// in the language of msgs.
+func (msgs Messages) DataKeyCopyPending() string {
+	return Catalog.Format(msgs.locale, "dataKeyCopyPending", nil)
+}
+
+// DataKeyCopyLabel says "复制键"
+// in the language the app shows.
+func DataKeyCopyLabel() string { return In(i18n.Locale()).DataKeyCopyLabel() }
+
+// DataKeyCopyLabel says "复制键"
+// in the language of msgs.
+func (msgs Messages) DataKeyCopyLabel() string {
+	return Catalog.Format(msgs.locale, "dataKeyCopyLabel", nil)
+}
+
+// DataKeyCopySource says "源键"
+// in the language the app shows.
+func DataKeyCopySource() string { return In(i18n.Locale()).DataKeyCopySource() }
+
+// DataKeyCopySource says "源键"
+// in the language of msgs.
+func (msgs Messages) DataKeyCopySource() string {
+	return Catalog.Format(msgs.locale, "dataKeyCopySource", nil)
+}

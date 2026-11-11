@@ -90,7 +90,7 @@ func mysqlDataRowKey(t *Document, row int) string {
 		return ""
 	}
 	for key, d := range t.edit.Drafts {
-		if d.Row == row && d.Kind == "insert" {
+		if d.Row == row && (d.Kind == "insert" || d.Kind == "copy") {
 			return key
 		}
 	}
@@ -105,7 +105,7 @@ func mysqlDataDraftForRow(t *Document, row int) *mysqlRowDraft {
 	return t.edit.Drafts[mysqlDataRowKey(t, row)]
 }
 func mysqlDataCanEdit(t *Document, row, source int) bool {
-	if t == nil || t.page == nil || !t.editable() || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil || row < 0 || row >= len(t.page.Rows) || source < 0 || source >= len(t.page.ColumnMetadata) {
+	if t == nil || t.page == nil || !t.editable() || hasDataKeyCopyDraft(t) || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil || row < 0 || row >= len(t.page.Rows) || source < 0 || source >= len(t.page.ColumnMetadata) {
 		return false
 	}
 	if t.page.ColumnMetadata[source].Generated || contract.DataColumnGenerated(t.page.ColumnMetadata[source]) {
@@ -352,7 +352,7 @@ func (s *State) startMySQLDataEditRead(services ui.Services, t *Document, row, s
 	}()
 }
 func (s *State) addMySQLDataRecord(services ui.Services, t *Document) {
-	if t == nil || t.page == nil || !t.editable() || !t.allowsDataEdit("insert") || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil {
+	if t == nil || t.page == nil || !t.editable() || !t.allowsDataEdit("insert") || hasDataKeyCopyDraft(t) || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil {
 		return
 	}
 	if !t.edit.Batch && mysqlDataHasDraft(t) {
@@ -420,7 +420,7 @@ func (s *State) stageMySQLDataRecord(services ui.Services, t *Document, endpoint
 	}
 }
 func (s *State) deleteMySQLDataRecords(services ui.Services, t *Document, row int) {
-	if t == nil || t.page == nil || !t.editable() || !t.allowsDataEdit("delete") || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil {
+	if t == nil || t.page == nil || !t.editable() || !t.allowsDataEdit("delete") || hasDataKeyCopyDraft(t) || t.loading || t.edit.Busy || dataTransactionUnavailable(t) || t.transfer.Busy || t.transfer.Uncertain || t.edit.Uncertain != nil {
 		return
 	}
 	s.finishMySQLCellEdit(t, true)
@@ -547,6 +547,7 @@ func (s *State) saveMySQLData(services ui.Services, t *Document) {
 }
 func (s *State) stopMySQLDataEdit(t *Document) {
 	s.cancelDataGraphEndpoints(t)
+	s.cancelDataKeyCopy(t)
 	s.cancelDataDeleteChoice(t)
 	if t.edit.Cancel != nil {
 		t.edit.Cancel()
@@ -567,11 +568,11 @@ func (s *State) discardMySQLData(t *Document) {
 	}
 	t.edit.Editor = nil
 	for _, d := range t.edit.Drafts {
-		if d.Kind != "insert" && d.Before != nil && d.Row < len(t.page.Rows) {
+		if d.Kind != "insert" && d.Kind != "copy" && d.Before != nil && d.Row < len(t.page.Rows) {
 			t.page.Rows[d.Row] = d.Before
 		}
 	}
-	s.removeMySQLDataDraftRows(t, func(d *mysqlRowDraft) bool { return d.Kind == "insert" })
+	s.removeMySQLDataDraftRows(t, func(d *mysqlRowDraft) bool { return d.Kind == "insert" || d.Kind == "copy" })
 	t.edit.Drafts = nil
 	clearDraftHistory(t)
 	t.edit.Err = ""
@@ -663,6 +664,7 @@ func (s *State) acceptMySQLDataSaved(t *Document, keys []string, saved *contract
 func (s *State) consumeEdits(services ui.Services) {
 	for _, t := range s.documents {
 		if !t.closed && s.consumeFor(t) {
+			s.consumeDataKeyCopy(t)
 			s.consumeDataGraphEndpoints(t)
 			s.consumeDataDeleteChoice(t)
 			s.consumeDataMutation(t)
@@ -1047,6 +1049,7 @@ func (s *State) Modals(c *ui.Context) {
 		s.asyncDataEvidenceModal(c, t)
 		s.nativeWriteReceiptModal(c, t)
 		s.dataMutationModal(c, t)
+		s.dataKeyCopyModal(c, t)
 		s.dataDeleteChoiceModal(c, t)
 		s.dataGraphEndpointsModal(c, t)
 		s.toolsModals(c, t)
@@ -1113,7 +1116,7 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 	// Use the footer's existing fixed-height command row. Inserting a status
 	// row above the grid moves every cell while a read is pending or fails.
 	palette := theme.Colors(c)
-	if t.edit.Busy && !t.mutation.open && t.deleteChoice == nil || dataTransactionBusy(t) {
+	if t.edit.Busy && !t.mutation.open && t.deleteChoice == nil && t.keyCopy == nil || dataTransactionBusy(t) {
 		ui.Spinner(c).Size(14, 14)
 	}
 	message, color := "", palette.Muted
@@ -1129,6 +1132,8 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 		message, color = t.transaction.err, palette.Error
 	} else if dataTransactionBusy(t) {
 		message = locales.Text("正在处理事务…")
+	} else if t.keyCopy != nil {
+		message = locales.Text("等待输入复制目标键")
 	} else if t.deleteChoice != nil {
 		message = locales.Text("等待选择节点删除方式")
 	} else if t.mutation.open {

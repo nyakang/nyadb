@@ -7,9 +7,8 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 )
 
-// The private foundation shares the original one-attempt plan/executor while
-// remaining separate from ordinary edits. Public Runtime publication requires
-// original runtime/shared UI and complete native acceptance.
+// Conditional copy shares the original one-attempt plan/executor while
+// remaining separate from ordinary insert/update edits.
 func (l *dataLease) previewKeyCopy(ctx context.Context, id int64, catalog, name string, request contract.DataKeyCopy) (contract.DataMutationPlan, error) {
 	return l.previewPrepared(ctx, id, catalog, name, func() ([]preparedDataEdit, error) {
 		return l.prepareKeyCopy(request)

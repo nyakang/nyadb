@@ -97,6 +97,7 @@ type Document struct {
 	request                     uint64
 	edit                        mysqlDataEditState
 	mutation                    dataMutationState
+	keyCopy                     *dataKeyCopyChoice
 	deleteChoice                *dataDeleteChoice
 	graphEndpoints              *dataGraphEndpointChoice
 	nativeReceipt               nativeWriteReceiptState

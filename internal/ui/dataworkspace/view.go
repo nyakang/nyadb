@@ -374,9 +374,14 @@ func (s *State) mysqlDataFooter(c *ui.Context, t *Document, page *contract.DataP
 		ui.Row(c).Height(theme.RowHeight(c, theme.CommandBarHeight)).Shrink(0).Padding(2, 6).Gap(4).AlignItems(ui.Center).Children(func() {
 			ready := t.page != nil && !t.loading && !t.readRetired && !t.edit.Busy && t.edit.Uncertain == nil && !dataTransactionUnavailable(t) && !t.transfer.Busy && !t.transfer.Uncertain && t.profileID == s.session().ProfileID && s.session().Connected
 			dirty := mysqlDataHasDraft(t)
-			insertReady := ready && t.editable() && t.allowsDataEdit("insert") && len(page.ColumnMetadata) > 0 && len(page.ColumnMetadata) == len(page.Columns)
+			insertReady := ready && t.editable() && t.allowsDataEdit("insert") && !hasDataKeyCopyDraft(t) && len(page.ColumnMetadata) > 0 && len(page.ColumnMetadata) == len(page.Columns)
 			if theme.IconButton(c, "", "plus").Label(locales.Text("添加记录")).Tooltip(locales.Text("添加记录")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!insertReady).Clicked() {
 				s.addMySQLDataRecord(c.Services(), t)
+			}
+			if s.runtimeFor(t).PreviewKeyCopy != nil {
+				if theme.IconButton(c, "", "copy").Label(locales.Text("复制键到新键")).Tooltip(locales.Text("复制键到新键")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!s.canCopyDataKey(t, t.selectedRow)).Clicked() {
+					s.beginDataKeyCopy(t, t.selectedRow)
+				}
 			}
 			if theme.IconButton(c, "", "minus").Label(locales.Text("删除记录")).Tooltip(locales.Text("删除记录")).Size(theme.RowHeight(c, 26), theme.RowHeight(c, theme.ControlHeight)).Padding(0).Disabled(!ready || !mysqlDataCanDeleteSelection(t, t.selectedRow)).Clicked() {
 				s.deleteMySQLDataRecords(c.Services(), t, t.selectedRow)

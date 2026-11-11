@@ -73,7 +73,7 @@ type dataMutationState struct {
 
 func requiresDataMutationPreview(r Runtime, edits []contract.DataEdit) bool {
 	for _, e := range edits {
-		if slices.Contains(r.PreviewEditKinds, e.Kind) {
+		if e.Kind == "copy" || slices.Contains(r.PreviewEditKinds, e.Kind) {
 			return true
 		}
 	}
@@ -81,7 +81,16 @@ func requiresDataMutationPreview(r Runtime, edits []contract.DataEdit) bool {
 }
 
 func (s *State) previewDataMutation(services ui.Services, d *Document, runtime Runtime, keys []string, edits []contract.DataEdit) {
-	if runtime.PreviewEdits == nil || runtime.SubmitEdits == nil || dataTransactionActive(d) {
+	copyRequest := false
+	for _, edit := range edits {
+		copyRequest = copyRequest || edit.Kind == "copy"
+	}
+	if copyRequest && (len(edits) != 1 || edits[0].Original == nil || edits[0].GraphEndpoints != nil || len(edits[0].Values) != 1 || edits[0].Values["key"].Kind != contract.Text || edits[0].Values["key"].Null || edits[0].Values["key"].Default || edits[0].Values["key"].Binary || len(edits[0].Values["key"].Bytes) != 0) {
+		d.edit.Err = contract.ErrUnsupported.Error()
+		s.clearDataMutationContinuation(d)
+		return
+	}
+	if copyRequest && runtime.PreviewKeyCopy == nil || !copyRequest && runtime.PreviewEdits == nil || runtime.SubmitEdits == nil || dataTransactionActive(d) {
 		d.edit.Err = locales.Text("数据编辑服务不可用")
 		s.clearDataMutationContinuation(d)
 		return
@@ -99,11 +108,18 @@ func (s *State) previewDataMutation(services ui.Services, d *Document, runtime R
 		d.mutation.presentation = &p
 	}
 	d.edit.Cancel, d.edit.Busy, d.edit.Err = cancel, true, ""
+	copyPreview := runtime.PreviewKeyCopy
 	preview, profile, database, table := runtime.PreviewEdits, d.profileID, d.database, d.table
 	// The executor receives its own deep copy, independent of UI confirmation.
 	request := contract.CloneDataMutationSnapshot(contract.DataMutationSnapshot{Edits: captured}).Edits
 	go func() {
-		plan, err := preview(ctx, profile, database, table, request)
+		var plan contract.DataMutationPlan
+		var err error
+		if copyRequest {
+			plan, err = copyPreview(ctx, profile, database, table, contract.DataKeyCopy{Source: request[0].Original, Destination: request[0].Values["key"].Text})
+		} else {
+			plan, err = preview(ctx, profile, database, table, request)
+		}
 		ticket.publish(plan)
 		if err == nil {
 			err = ctx.Err()
@@ -306,7 +322,7 @@ func dataMutationReceiptComplete(object contract.ObjectRef, edits []contract.Dat
 		if outcome.Kind != edit.Kind || !reflect.DeepEqual(outcome.Original, edit.Original) {
 			return false
 		}
-		if edit.Kind == "insert" || edit.Kind == "update" {
+		if edit.Kind == "insert" || edit.Kind == "update" || edit.Kind == "copy" {
 			if outcome.Saved == nil || outcome.Saved.Ref.Object != object || len(outcome.Saved.Ref.Columns) == 0 || len(outcome.Saved.Ref.Columns) != len(outcome.Saved.Ref.TypedValues) || len(outcome.Saved.Ref.Columns) != len(outcome.Saved.Ref.Values) {
 				return false
 			}
@@ -349,6 +365,10 @@ func (s *State) dataMutationModal(c *ui.Context, d *Document) {
 							kind = locales.Text(p.CreateLabel)
 						case "update":
 							kind = locales.Text(p.UpdateLabel)
+						case "copy":
+							if p.CopyLabel != "" {
+								kind = locales.Text(p.CopyLabel)
+							}
 						case "delete":
 							kind = locales.Text(p.DeleteLabel)
 						}
@@ -388,6 +408,8 @@ func dataEditDeletesRow(kind string) bool { return kind == "delete" || kind == "
 
 func dataMutationKind(kind string) string {
 	switch kind {
+	case "copy":
+		return locales.Text("复制键")
 	case "insert":
 		return locales.Text("创建实体")
 	case "delete":

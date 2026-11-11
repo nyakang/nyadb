@@ -502,6 +502,11 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *Document, m *ui.Menu, row, s
 		return
 	}
 	s.kvKeyReadMenu(c, t, m, row)
+	if s.runtimeFor(t).PreviewKeyCopy != nil {
+		if m.Item(locales.Text("复制键到新键")).Disabled(!s.canCopyDataKey(t, row)).Chosen() {
+			s.beginDataKeyCopy(t, row)
+		}
+	}
 	ready := !t.loading && !t.edit.Busy && t.edit.Uncertain == nil && t.profileID == s.session().ProfileID && s.session().Connected
 	editable := ready && mysqlDataCanEdit(t, row, source)
 	var column contract.StructureColumn
@@ -537,7 +542,7 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *Document, m *ui.Menu, row, s
 		s.beginMySQLCellEdit(c.Services(), t, row, source, true)
 	}
 	m.Separator()
-	if m.Item(locales.Text("添加记录")).Disabled(!ready || len(page.ColumnMetadata) == 0 || len(page.ColumnMetadata) != len(page.Columns)).Chosen() {
+	if m.Item(locales.Text("添加记录")).Disabled(!ready || hasDataKeyCopyDraft(t) || len(page.ColumnMetadata) == 0 || len(page.ColumnMetadata) != len(page.Columns)).Chosen() {
 		s.addMySQLDataRecord(c.Services(), t)
 	}
 	if m.Item(locales.Text("删除记录")).Disabled(!ready || !mysqlDataCanDeleteSelection(t, row)).Chosen() {
@@ -767,6 +772,9 @@ func mysqlDataUUID(upper, compact bool) (string, error) {
 }
 
 func mysqlDataCanDeleteSelection(t *Document, clicked int) bool {
+	if hasDataKeyCopyDraft(t) {
+		return false
+	}
 	if t == nil || t.page == nil || !t.allowsDataEdit("delete") {
 		return false
 	}

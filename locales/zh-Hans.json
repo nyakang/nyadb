@@ -3642,5 +3642,14 @@
   "kvToolStale": "请求文本已更改，请重新打开工具后生成",
   "kvToolLeave": "未生成的工具输入也将被放弃；请求文件只保存编辑器文本",
   "consulDataLiveScope": "原前缀内可见键的有界实时观察；翻页、统计和导出不共享固定快照。",
-  "consulDataMutationHint": "请检查原始键、目标键、完整值和 Flags；确认后将原子提交此批次更改。"
+  "consulDataMutationHint": "请检查原始键、目标键、完整值和 Flags；确认后将原子提交此批次更改。",
+  "dataKeyCopyTitle": "复制键到新键",
+  "dataKeyCopyHint": "复制源键的完整值和 Flags，保留源键。目标键必须不存在；源键变化将取消提交。",
+  "dataKeyCopyChanged": "原键或数据库会话已变化，请重新选择复制键",
+  "dataKeyCopyTarget": "目标完整键",
+  "dataKeyCopyTargetInput": "输入目标完整键",
+  "dataKeyCopyPreview": "预览复制",
+  "dataKeyCopyPending": "等待输入复制目标键",
+  "dataKeyCopyLabel": "复制键",
+  "dataKeyCopySource": "源键"
 }
