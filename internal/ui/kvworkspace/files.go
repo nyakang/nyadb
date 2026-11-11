@@ -353,6 +353,7 @@ func (s *State) consumeFiles(d *Document) {
 				return
 			}
 			d.releaseMemberAuthority()
+			s.CancelConfirmation(d)
 			d.releaseAlarmAuthority()
 			d.method = r.request.Method
 			d.selectedMembers = d.method == MembersMethod

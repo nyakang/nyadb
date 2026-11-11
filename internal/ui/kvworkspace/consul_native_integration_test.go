@@ -90,7 +90,11 @@ func consulWorkspaceScreenshot(t *testing.T, s *State, d *Document, stage string
 			tt := ui.NewTester(func(c *ui.Context) { theme.Apply(c); s.View(c, d); s.Modals(c) }, size[0], size[1])
 			tt.Frame()
 			labels := []string{"运行 KV 请求", "复制完整操作记录"}
-			if d.confirmation == nil {
+			toolOpen := d.requestTools != nil && d.requestTools.open
+			if s.selectedReceipt(d) == nil {
+				labels = []string{"运行 KV 请求", "KV JSON 编辑器"}
+			}
+			if d.confirmation == nil && !toolOpen && s.selectedReceipt(d) != nil {
 				r, ok := tt.Find(locales.Text("KV 原生回执"))
 				if !ok || r.H < 24 || r.Y+r.H > float32(size[1])+1 {
 					t.Fatal("HTTP body preview clipped", stage, lang, size, r)
@@ -98,6 +102,20 @@ func consulWorkspaceScreenshot(t *testing.T, s *State, d *Document, stage string
 			}
 			if d.confirmation != nil {
 				labels = []string{"我确认执行此原生写入请求", "复制完整请求", "确认执行 KV 写入"}
+			}
+			if toolOpen {
+				labels = []string{"生成请求文本", "返回请求文本", "请求工具操作"}
+				if d.requestTools.kind == contract.KVToolTransaction {
+					labels = append(labels, "事务 JSON（保留原始字节）")
+				} else {
+					labels = append(labels, "绝对键或前缀")
+				}
+				if d.requestTools.kind == contract.KVToolPut {
+					labels = append(labels, "原值 Base64（空文本表示空字节值）", "Flags (uint64)", "CAS (uint64)")
+				}
+				if d.requestTools.kind == contract.KVToolDelete {
+					labels = append(labels, "CAS (uint64)", "递归删除此前缀（不能与 CAS 同用）")
+				}
 			}
 			for _, label := range labels {
 				r, ok := tt.Find(locales.Text(label))
@@ -345,6 +363,14 @@ func consulWorkspaceFault(t *testing.T, p connections.Profile, mode string) (con
 	return proxy, calls, committed
 }
 func TestConsulNativePublicWorkspaceActualProcessedReplyFaultsNeverPromoteUnknownOrReplay(t *testing.T) {
+	testConsulWorkspaceProcessedFaults(t, false)
+}
+
+func TestConsulNativePublicWorkspaceStructuredToolsProcessedReplyFaultsNeverReplay(t *testing.T) {
+	testConsulWorkspaceProcessedFaults(t, true)
+}
+
+func testConsulWorkspaceProcessedFaults(t *testing.T, tools bool) {
 	p, secret := consulWorkspaceProfile(t)
 	for _, mode := range []string{"lost", "partial", "http500", "http408", "cancel", "disconnect", "replace", "close"} {
 		t.Run(mode, func(t *testing.T) {
@@ -352,7 +378,11 @@ func TestConsulNativePublicWorkspaceActualProcessedReplyFaultsNeverPromoteUnknow
 			s, d, m := consulWorkspaceState(t, proxy, secret)
 			key := "native/workspace/fault/" + strings.ReplaceAll(t.Name(), "/", "-")
 			put, _ := consul.KeyPutRequest(key, []byte{0, 255}, nil, nil)
-			consulWorkspaceInput(t, s, d, put)
+			if tools {
+				consulWorkspaceToolInput(t, s, d, contract.KVToolPut, contract.KVRequestToolInput{Key: key, ValueBase64: "AP8="})
+			} else {
+				consulWorkspaceInput(t, s, d, put)
+			}
 			s.Run(d)
 			s.Confirm(d, true)
 			job := d.job
@@ -383,7 +413,11 @@ func TestConsulNativePublicWorkspaceActualProcessedReplyFaultsNeverPromoteUnknow
 				t.Fatal("actual processed write was promoted/replayed")
 			}
 			original := d.unknown.Clone()
-			consulWorkspaceScreenshot(t, s, d, "unknown-"+mode)
+			stagePrefix := ""
+			if tools {
+				stagePrefix = "tool-"
+			}
+			consulWorkspaceScreenshot(t, s, d, stagePrefix+"unknown-"+mode)
 			if mode == "disconnect" {
 				if err := m.Connect(context.Background(), proxy, secret); err != nil {
 					t.Fatal(err)
@@ -399,7 +433,11 @@ func TestConsulNativePublicWorkspaceActualProcessedReplyFaultsNeverPromoteUnknow
 				t.Fatal("unknown write became repeatable")
 			}
 			read, _ := consul.KeyReadRequest(key)
-			consulWorkspaceInput(t, s, d, read)
+			if tools {
+				consulWorkspaceToolInput(t, s, d, contract.KVToolRead, contract.KVRequestToolInput{Key: key})
+			} else {
+				consulWorkspaceInput(t, s, d, read)
+			}
 			s.Run(d)
 			consume(t, s, d)
 			h := d.last.Result.HTTP
@@ -412,7 +450,7 @@ func TestConsulNativePublicWorkspaceActualProcessedReplyFaultsNeverPromoteUnknow
 			if err != nil || json.Unmarshal(record, &decoded) != nil || string(decoded["write_outcome_unknown"]) != "true" {
 				t.Fatal("original unknown record changed", err)
 			}
-			consulWorkspaceScreenshot(t, s, d, "unknown-after-read-"+mode)
+			consulWorkspaceScreenshot(t, s, d, stagePrefix+"unknown-after-read-"+mode)
 		})
 	}
 }

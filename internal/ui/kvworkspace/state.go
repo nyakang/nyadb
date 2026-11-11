@@ -53,6 +53,7 @@ func (r Receipt) Clone() Receipt {
 }
 
 type confirmation struct {
+	editorRevision *uint64
 	requestSummary string
 	lease          contract.KVRequestLease
 	plan           contract.KVPreparation
@@ -105,6 +106,8 @@ type operation struct {
 type Document struct {
 	httpHeaders                                             bool
 	presentation                                            contract.KVRequestPresentation
+	requestBuilder                                          contract.KVRequestBuilder
+	requestTools                                            *requestToolState
 	id                                                      uint64
 	profileID                                               int64
 	method                                                  string
@@ -152,6 +155,7 @@ type Document struct {
 	browserColumns, browserKeysColumns                      ui.ListState
 }
 type leaveStamp struct {
+	toolRevision                            uint64
 	request                                 contract.KVRequest
 	last, unknown                           *Receipt
 	events                                  *EventReceipt
@@ -181,7 +185,9 @@ func (d *Document) Request() contract.KVRequest {
 	}
 	return contract.KVRequest{Method: d.method, JSON: d.Editor.Buffer.String()}
 }
-func (d *Document) Dirty() bool    { return !d.closed && d.Request() != d.saved }
+func (d *Document) Dirty() bool {
+	return !d.closed && (d.Request() != d.saved || d.hasRequestToolDraft())
+}
 func (d *Document) Busy() bool     { return d.job != nil || d.eventJob != nil || d.renewalJob != nil }
 func (d *Document) FileBusy() bool { return d.io != nil }
 func (d *Document) CancelRequested() bool {
@@ -278,6 +284,9 @@ func (s *State) Open(id uint64, profile int64, request contract.KVRequest) *Docu
 	buffer.SetLanguage(editor.LanguageNamed("JSON"))
 	d := &Document{id: id, profileID: profile, method: request.Method, selectedAlarms: request.Method == AlarmsMethod, saved: request, Editor: &editor.State{Buffer: buffer}, ctx: ctx, cancel: cancel, focus: true}
 	d.presentation = presentation
+	if p, ok := provider.(contract.KVRequestBuilderProvider); ok && providerErr == nil {
+		d.requestBuilder = p.KVRequestBuilder()
+	}
 	s.documents[id] = d
 	if s.deps.RenewalProviderFor != nil {
 		if p, err := s.deps.RenewalProviderFor(profile); err == nil && p != nil && p.KVScope().Namespace.ProfileID == profile {
@@ -460,7 +469,8 @@ func (s *State) Run(d *Document) {
 			d.error = locales.Text("原写入未确认；恢复后可读取，关闭页签可放弃本地草稿与回执")
 			return
 		}
-		d.confirmation = &confirmation{lease: d.lease, plan: plan, authored: authored, editor: authored, open: true, requestSummary: requestConfirmationSummary(plan.Snapshot())}
+		revision := d.Editor.Buffer.Version()
+		d.confirmation = &confirmation{editorRevision: &revision, lease: d.lease, plan: plan, authored: authored, editor: authored, open: true, requestSummary: requestConfirmationSummary(plan.Snapshot())}
 		return
 	}
 	s.execute(d, plan, authored)
@@ -492,7 +502,7 @@ func (s *State) Confirm(d *Document, checked bool) {
 	if !checked || !s.check(d) {
 		return
 	}
-	if p.lease != d.lease || p.editor != d.Request() || d.hasUnknownWrites() || p.alarms != nil && !validAlarmConfirmation(d, p) || p.members != nil && !validMemberConfirmation(d, p) || p.compaction != nil && !validCompactionConfirmation(d, p) || p.auth != nil && !sameEventScope(p.auth.receipt.Scope, d.scope) || p.management != nil && (!sameEventScope(p.management.Scope, d.scope) || !p.plan.Writes() || !managementRequestEqual(p.authored, p.plan.Snapshot())) {
+	if p.lease != d.lease || p.editor != d.Request() || p.editorRevision != nil && *p.editorRevision != d.Editor.Buffer.Version() || d.hasUnknownWrites() || p.alarms != nil && !validAlarmConfirmation(d, p) || p.members != nil && !validMemberConfirmation(d, p) || p.compaction != nil && !validCompactionConfirmation(d, p) || p.auth != nil && !sameEventScope(p.auth.receipt.Scope, d.scope) || p.management != nil && (!sameEventScope(p.management.Scope, d.scope) || !p.plan.Writes() || !managementRequestEqual(p.authored, p.plan.Snapshot())) {
 		d.confirmation = nil
 		d.error = locales.Text("KV 请求已更改，请重新预览")
 		return
@@ -749,7 +759,7 @@ func (s *State) GuardLeave(d *Document, next func(ui.Services)) bool {
 	if !s.owned(d) {
 		return false
 	}
-	if d.permit != nil && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && d.permit.compaction == d.compactionObservation && d.permit.memberRevision == d.memberRevision() && d.permit.alarmRevision == d.alarmRevision() && d.permit.snapshotRevision == d.snapshotRevision() && !d.Busy() && !d.FileBusy() {
+	if d.permit != nil && d.permit.toolRevision == d.requestToolRevision() && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && d.permit.compaction == d.compactionObservation && d.permit.memberRevision == d.memberRevision() && d.permit.alarmRevision == d.alarmRevision() && d.permit.snapshotRevision == d.snapshotRevision() && !d.Busy() && !d.FileBusy() {
 		return false
 	}
 	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && !d.memberContent() && !d.alarmContent() && !d.snapshotContent() && d.leaseManagement == nil && d.authDraft == nil && d.compactionObservation == nil && (d.confirmation == nil || d.confirmation.alarms == nil && d.confirmation.members == nil && d.confirmation.management == nil && d.confirmation.auth == nil && d.confirmation.compaction == nil) {
@@ -776,7 +786,7 @@ func (s *State) DecideLeave(services ui.Services, discard bool) {
 	next := s.leave.next
 	s.leave = nil
 	s.CancelConfirmation(d)
-	d.permit = &leaveStamp{request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail, compaction: d.compactionObservation, memberRevision: d.memberRevision(), alarmRevision: d.alarmRevision(), snapshotRevision: d.snapshotRevision()}
+	d.permit = &leaveStamp{toolRevision: d.requestToolRevision(), request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail, compaction: d.compactionObservation, memberRevision: d.memberRevision(), alarmRevision: d.alarmRevision(), snapshotRevision: d.snapshotRevision()}
 	if next != nil {
 		next(services)
 	}
@@ -866,6 +876,7 @@ func (s *State) Close(d *Document) {
 	}
 	d.Editor = nil
 	d.presentation = contract.KVRequestPresentation{}
+	d.requestBuilder, d.requestTools = nil, nil
 	d.httpHeaders = false
 	d.confirmation = nil
 	d.leaseManagement = nil

@@ -13,10 +13,15 @@ func TestDocumentPresentationAndNamespaceRemainOriginalWithoutIO(t *testing.T) {
 	s, calls := documentSession(t, func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("[]")) })
 	before := calls.Load()
 	p := s.KVRequestPresentation()
+	builder := s.KVRequestBuilder()
 	if p.Product != "Consul" || len(p.Methods) != 1 || p.Methods[0].Name != "HTTP" || p.Default.Method != contract.KVConsulHTTPRequestMethod {
 		t.Fatal("missing native presentation")
 	}
 	p.Methods[0].Name = "foreign"
+	p.Tools[0].Default.Key = "foreign"
+	if len(s.KVRequestPresentation().Tools) != 6 || s.KVRequestPresentation().Tools[0].Default.Key == "foreign" {
+		t.Fatal("structured presentation aliased original inputs")
+	}
 	if s.KVRequestPresentation().Methods[0].Name != "HTTP" || calls.Load() != before {
 		t.Fatal("presentation mutated session or performed IO")
 	}
@@ -32,6 +37,9 @@ func TestDocumentPresentationAndNamespaceRemainOriginalWithoutIO(t *testing.T) {
 		t.Fatal("foreign namespace accepted")
 	}
 	s.Close()
+	if _, err := builder.BuildKVRequest(contract.KVToolRead, contract.KVRequestToolInput{Key: "absolute/key"}); err != nil || calls.Load() != before {
+		t.Fatal("pure builder made IO or depended on live session", err)
+	}
 	if _, err := s.Namespaces(context.Background()); !errors.Is(err, contract.ErrRevoked) {
 		t.Fatal("closed namespace still available")
 	}

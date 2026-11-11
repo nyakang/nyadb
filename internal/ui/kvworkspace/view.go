@@ -135,6 +135,7 @@ func (s *State) View(c *ui.Context, d *Document) {
 			}
 			if (len(d.presentation.Methods) > 0 || isSnapshot || isAlarms || isMembers || isCompaction || isEvent || isRenewal || isBrowser || isAuth) && ui.Button(c, locales.Text("使用请求模板")).Disabled(d.Busy()).Clicked() {
 				request := s.defaultRequestFor(d)
+				s.CancelConfirmation(d)
 				if isEvent {
 					request = DefaultEventRequest(d.method)
 				}
@@ -164,6 +165,7 @@ func (s *State) View(c *ui.Context, d *Document) {
 				d.Editor.Buffer.Set(request.JSON)
 				d.permit = nil
 			}
+			s.requestToolsMenu(c, d)
 			name := fmt.Sprintf(locales.Text("连接 #%d"), d.profileID)
 			if s.deps.ProfileName != nil {
 				name = s.deps.ProfileName(d.profileID)
@@ -530,6 +532,7 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 	})
 }
 func (s *State) Modals(c *ui.Context) {
+	s.requestToolsModals(c)
 	s.snapshotModals(c)
 	s.renewalModals(c)
 	s.leaseManagementModals(c)
@@ -612,6 +615,9 @@ func (s *State) Modals(c *ui.Context) {
 					ui.Text(c, locales.Text("关闭只放弃本地草稿与回执，不确认或回滚原写入")).TextColor(theme.Colors(c).Warning)
 				} else {
 					ui.Text(c, locales.Text("未保存的请求文本将被放弃"))
+				}
+				if d.hasRequestToolDraft() {
+					ui.Text(c, locales.Text("未生成的工具输入也将被放弃；请求文件只保存编辑器文本")).TextColor(theme.Colors(c).Warning)
 				}
 				ui.Row(c).Gap(6).Children(func() {
 					if ui.Button(c, locales.Text("取消")).Clicked() {

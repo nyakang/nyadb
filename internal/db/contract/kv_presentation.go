@@ -12,10 +12,12 @@ type KVRequestPresentation struct {
 	Product string
 	Default KVRequest
 	Methods []KVRequestMethod
+	Tools   []KVRequestTool
 }
 
 func (p KVRequestPresentation) Clone() KVRequestPresentation {
 	p.Methods = slices.Clone(p.Methods)
+	p.Tools = slices.Clone(p.Tools)
 	return p
 }
 

@@ -17,6 +17,18 @@ capture/EOF/ended/acknowledged/succeeded states. Original body exports preserve
 complete empty bodies and mark incomplete prefixes separately. The body preview
 is bounded to 64 KiB. Request files save text without executing it.
 
+Structured request tools author absolute keys/prefixes, original Base64 bytes,
+optional exact uint64 Flags/CAS (including explicit zero), read/list/raw requests,
+put/delete and original transaction JSON. A captured neutral builder is immutable
+and performs no I/O, connection recovery or dispatch. It generates the same HTTP
+JSON consumed by the sole shared document and its existing one-use confirmation.
+Incompatible or hidden inputs are rejected; CAS cannot combine with recursive
+delete. Form changes and editor changes (including edit/undo) revoke old authority.
+Each tool retains its own inputs on modal close, parking and disconnect. Unapplied
+inputs participate in leave decisions; request files save only editor text.
+Raw GET rejects noncanonical paths because a transaction response is not a raw
+HTTP value; ordinary read/list/put/delete use the native transaction fallback.
+
 Disconnect retains text and receipts. Recovery checks the original profile,
 namespace, prefix, HTTP identity/configuration and published generation, then
 transfers complete original evidence without making requests. An original unknown
@@ -93,3 +105,9 @@ the exact 22-parent native/document/runtime/public set, 76 bilingual images
 and matching source hashes, and removes only its own
 original container and temporary certificates/tokens. Receipts and sanitized
 diagnostics are written to ignored `build/consul`. `--probe` is diagnostic only.
+
+Structured tool acceptance uses `--tools --race` with the same five modes above.
+It retains all 22 original parents and adds three mandatory runtime/workspace tool
+parents, 204 bilingual images per fixture, actual processed reply-fault scenarios
+and checks for offline generation, exact bytes/zero/CAS, transaction conflicts,
+original recovery/parking, file text and unapplied-input leave guards.

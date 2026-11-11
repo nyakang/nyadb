@@ -39,6 +39,26 @@ class ConsulFixtureTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             fixture.verify(probe=True, session=True)
 
+    def test_structured_scope_requires_original_parents_and_all_tool_parents(self):
+        required = fixture.REQUIRED + fixture.DOCUMENT_REQUIRED + fixture.RUNTIME_REQUIRED + fixture.PUBLIC_REQUIRED + fixture.TOOLS_REQUIRED
+        self.assertEqual(len(required), 25)
+        self.assertEqual(len(set(required)), len(required))
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+        with self.assertRaises(RuntimeError):
+            fixture.accepted_cases(log, required[:-3])
+        with self.assertRaises(ValueError):
+            fixture.verify(probe=True, tools=True)
+        hashes = fixture.source_hashes()
+        for name in ('internal/db/contract/kv_request_tools.go', 'internal/services/consul/kv_request_tools.go',
+                     'internal/ui/kvworkspace/request_tools_state.go', 'internal/ui/kvworkspace/request_tools_view.go',
+                     'internal/ui/kvworkspace/consul_tools_native_integration_test.go',
+                     'internal/services/dbruntime/consul_tools_native_integration_test.go'):
+            self.assertIn(name, hashes)
+
     def test_public_scope_keeps_all_private_parents_and_requires_real_ui_parents(self):
         required = fixture.REQUIRED + fixture.DOCUMENT_REQUIRED + fixture.RUNTIME_REQUIRED + fixture.PUBLIC_REQUIRED
         self.assertEqual(len(required), 22)

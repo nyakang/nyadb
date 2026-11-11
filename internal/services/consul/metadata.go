@@ -45,7 +45,7 @@ func (s *Session) KVRequestPresentation() contract.KVRequestPresentation {
 	if err != nil {
 		return contract.KVRequestPresentation{}
 	}
-	return contract.KVRequestPresentation{Product: "Consul", Default: request, Methods: []contract.KVRequestMethod{{Name: "HTTP", Request: request}}}
+	return contract.KVRequestPresentation{Product: "Consul", Default: request, Methods: []contract.KVRequestMethod{{Name: "HTTP", Request: request}}, Tools: requestTools(s.cfg.Prefix)}
 }
 
 var _ contract.MetadataProvider = (*Session)(nil)

@@ -36841,3 +36841,213 @@ func KvCopyCompleteRecord() string { return In(i18n.Locale()).KvCopyCompleteReco
 func (msgs Messages) KvCopyCompleteRecord() string {
 	return Catalog.Format(msgs.locale, "kvCopyCompleteRecord", nil)
 }
+
+// KvToolRead says "读取键"
+// in the language the app shows.
+func KvToolRead() string { return In(i18n.Locale()).KvToolRead() }
+
+// KvToolRead says "读取键"
+// in the language of msgs.
+func (msgs Messages) KvToolRead() string {
+	return Catalog.Format(msgs.locale, "kvToolRead", nil)
+}
+
+// KvToolList says "列出前缀"
+// in the language the app shows.
+func KvToolList() string { return In(i18n.Locale()).KvToolList() }
+
+// KvToolList says "列出前缀"
+// in the language of msgs.
+func (msgs Messages) KvToolList() string {
+	return Catalog.Format(msgs.locale, "kvToolList", nil)
+}
+
+// KvToolRaw says "读取原始值"
+// in the language the app shows.
+func KvToolRaw() string { return In(i18n.Locale()).KvToolRaw() }
+
+// KvToolRaw says "读取原始值"
+// in the language of msgs.
+func (msgs Messages) KvToolRaw() string {
+	return Catalog.Format(msgs.locale, "kvToolRaw", nil)
+}
+
+// KvToolPut says "写入键"
+// in the language the app shows.
+func KvToolPut() string { return In(i18n.Locale()).KvToolPut() }
+
+// KvToolPut says "写入键"
+// in the language of msgs.
+func (msgs Messages) KvToolPut() string {
+	return Catalog.Format(msgs.locale, "kvToolPut", nil)
+}
+
+// KvToolDelete says "删除键或前缀"
+// in the language the app shows.
+func KvToolDelete() string { return In(i18n.Locale()).KvToolDelete() }
+
+// KvToolDelete says "删除键或前缀"
+// in the language of msgs.
+func (msgs Messages) KvToolDelete() string {
+	return Catalog.Format(msgs.locale, "kvToolDelete", nil)
+}
+
+// KvToolTxn says "原生 KV 事务"
+// in the language the app shows.
+func KvToolTxn() string { return In(i18n.Locale()).KvToolTxn() }
+
+// KvToolTxn says "原生 KV 事务"
+// in the language of msgs.
+func (msgs Messages) KvToolTxn() string {
+	return Catalog.Format(msgs.locale, "kvToolTxn", nil)
+}
+
+// KvRequestTools says "KV 请求工具"
+// in the language the app shows.
+func KvRequestTools() string { return In(i18n.Locale()).KvRequestTools() }
+
+// KvRequestTools says "KV 请求工具"
+// in the language of msgs.
+func (msgs Messages) KvRequestTools() string {
+	return Catalog.Format(msgs.locale, "kvRequestTools", nil)
+}
+
+// KvToolOperation says "请求工具操作"
+// in the language the app shows.
+func KvToolOperation() string { return In(i18n.Locale()).KvToolOperation() }
+
+// KvToolOperation says "请求工具操作"
+// in the language of msgs.
+func (msgs Messages) KvToolOperation() string {
+	return Catalog.Format(msgs.locale, "kvToolOperation", nil)
+}
+
+// KvToolGenerateHint says "只生成请求文本；运行后另行确认写入"
+// in the language the app shows.
+func KvToolGenerateHint() string { return In(i18n.Locale()).KvToolGenerateHint() }
+
+// KvToolGenerateHint says "只生成请求文本；运行后另行确认写入"
+// in the language of msgs.
+func (msgs Messages) KvToolGenerateHint() string {
+	return Catalog.Format(msgs.locale, "kvToolGenerateHint", nil)
+}
+
+// KvToolTxnJSON says "事务 JSON（保留原始字节）"
+// in the language the app shows.
+func KvToolTxnJSON() string { return In(i18n.Locale()).KvToolTxnJSON() }
+
+// KvToolTxnJSON says "事务 JSON（保留原始字节）"
+// in the language of msgs.
+func (msgs Messages) KvToolTxnJSON() string {
+	return Catalog.Format(msgs.locale, "kvToolTxnJSON", nil)
+}
+
+// KvToolKey says "绝对键或前缀"
+// in the language the app shows.
+func KvToolKey() string { return In(i18n.Locale()).KvToolKey() }
+
+// KvToolKey says "绝对键或前缀"
+// in the language of msgs.
+func (msgs Messages) KvToolKey() string {
+	return Catalog.Format(msgs.locale, "kvToolKey", nil)
+}
+
+// KvToolPrefixHint says "前缀仅为初始建议，不会自动拼接；特殊路径使用原生事务"
+// in the language the app shows.
+func KvToolPrefixHint() string { return In(i18n.Locale()).KvToolPrefixHint() }
+
+// KvToolPrefixHint says "前缀仅为初始建议，不会自动拼接；特殊路径使用原生事务"
+// in the language of msgs.
+func (msgs Messages) KvToolPrefixHint() string {
+	return Catalog.Format(msgs.locale, "kvToolPrefixHint", nil)
+}
+
+// KvToolRawHint says "原始值 GET 拒绝空路径段及 . 或 ..，避免服务端改写键"
+// in the language the app shows.
+func KvToolRawHint() string { return In(i18n.Locale()).KvToolRawHint() }
+
+// KvToolRawHint says "原始值 GET 拒绝空路径段及 . 或 ..，避免服务端改写键"
+// in the language of msgs.
+func (msgs Messages) KvToolRawHint() string {
+	return Catalog.Format(msgs.locale, "kvToolRawHint", nil)
+}
+
+// KvToolKeysOnly says "仅请求键名（特殊路径保留完整事务条目）"
+// in the language the app shows.
+func KvToolKeysOnly() string { return In(i18n.Locale()).KvToolKeysOnly() }
+
+// KvToolKeysOnly says "仅请求键名（特殊路径保留完整事务条目）"
+// in the language of msgs.
+func (msgs Messages) KvToolKeysOnly() string {
+	return Catalog.Format(msgs.locale, "kvToolKeysOnly", nil)
+}
+
+// KvToolValue says "原值 Base64（空文本表示空字节值）"
+// in the language the app shows.
+func KvToolValue() string { return In(i18n.Locale()).KvToolValue() }
+
+// KvToolValue says "原值 Base64（空文本表示空字节值）"
+// in the language of msgs.
+func (msgs Messages) KvToolValue() string {
+	return Catalog.Format(msgs.locale, "kvToolValue", nil)
+}
+
+// KvToolUintHint says "Flags / CAS 留空表示省略；0 为显式值，使用完整十进制"
+// in the language the app shows.
+func KvToolUintHint() string { return In(i18n.Locale()).KvToolUintHint() }
+
+// KvToolUintHint says "Flags / CAS 留空表示省略；0 为显式值，使用完整十进制"
+// in the language of msgs.
+func (msgs Messages) KvToolUintHint() string {
+	return Catalog.Format(msgs.locale, "kvToolUintHint", nil)
+}
+
+// KvToolRecursive says "递归删除此前缀（不能与 CAS 同用）"
+// in the language the app shows.
+func KvToolRecursive() string { return In(i18n.Locale()).KvToolRecursive() }
+
+// KvToolRecursive says "递归删除此前缀（不能与 CAS 同用）"
+// in the language of msgs.
+func (msgs Messages) KvToolRecursive() string {
+	return Catalog.Format(msgs.locale, "kvToolRecursive", nil)
+}
+
+// KvToolReturn says "返回请求文本"
+// in the language the app shows.
+func KvToolReturn() string { return In(i18n.Locale()).KvToolReturn() }
+
+// KvToolReturn says "返回请求文本"
+// in the language of msgs.
+func (msgs Messages) KvToolReturn() string {
+	return Catalog.Format(msgs.locale, "kvToolReturn", nil)
+}
+
+// KvToolGenerate says "生成请求文本"
+// in the language the app shows.
+func KvToolGenerate() string { return In(i18n.Locale()).KvToolGenerate() }
+
+// KvToolGenerate says "生成请求文本"
+// in the language of msgs.
+func (msgs Messages) KvToolGenerate() string {
+	return Catalog.Format(msgs.locale, "kvToolGenerate", nil)
+}
+
+// KvToolStale says "请求文本已更改，请重新打开工具后生成"
+// in the language the app shows.
+func KvToolStale() string { return In(i18n.Locale()).KvToolStale() }
+
+// KvToolStale says "请求文本已更改，请重新打开工具后生成"
+// in the language of msgs.
+func (msgs Messages) KvToolStale() string {
+	return Catalog.Format(msgs.locale, "kvToolStale", nil)
+}
+
+// KvToolLeave says "未生成的工具输入也将被放弃；请求文件只保存编辑器文本"
+// in the language the app shows.
+func KvToolLeave() string { return In(i18n.Locale()).KvToolLeave() }
+
+// KvToolLeave says "未生成的工具输入也将被放弃；请求文件只保存编辑器文本"
+// in the language of msgs.
+func (msgs Messages) KvToolLeave() string {
+	return Catalog.Format(msgs.locale, "kvToolLeave", nil)
+}

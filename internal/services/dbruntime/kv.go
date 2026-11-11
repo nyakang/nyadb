@@ -48,6 +48,15 @@ func (s *session) KVRequestPresentation() contract.KVRequestPresentation {
 	}
 	return contract.KVRequestPresentation{}
 }
+
+func (s *session) KVRequestBuilder() contract.KVRequestBuilder {
+	if s.alive() {
+		if provider, ok := s.raw.(contract.KVRequestBuilderProvider); ok {
+			return provider.KVRequestBuilder()
+		}
+	}
+	return nil
+}
 func (s *session) bindKV(raw contract.KVRequestLease, document uint64) (contract.KVRequestLease, error) {
 	if raw == nil {
 		return nil, contract.ErrUnsupported

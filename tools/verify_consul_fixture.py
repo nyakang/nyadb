@@ -19,6 +19,7 @@ REQUIRED=('IdentityScopeTransportAndNativeHeaders','BinaryValuesIndicesRawAndCon
 DOCUMENT_REQUIRED=('DocumentOriginalScopesBytesAndCompleteReceipts','DocumentTransactionsAndGeneratedSessionIDsRemainNative','DocumentOriginalProcessedWritesNeverReplayAfterLostReply','DocumentReceiptBudgetAndCrossSessionTransfer','DocumentCapturedTLSAndUnavailableRestrictedIdentity','DocumentOriginalBlockingReadRetirementAndExplicitRecovery')
 PUBLIC_REQUIRED=('PublicBuiltinProfileMetadataCapabilitiesAndRestrictedToken','PublicWorkspaceOriginalHTTPConfirmationReceiptsFilesAndRecovery','PublicWorkspaceActualProcessedReplyFaultsNeverPromoteUnknownOrReplay','PublicProfileURIStorageVaultEditorChecksAndOriginalTLS','PublicShellChooserHTTPDocumentsMenusParkingDisconnectAndClose')
 RUNTIME_REQUIRED=('RuntimeGenerationsRequestsAndOriginalRecovery','RuntimeOriginalCommittedReplyLossAndRetirement','RuntimeLateConnectionClosesOnlyCapturedOriginalSession','RuntimeForeignScopeRejectedBeforeOriginalRecovery')
+TOOLS_REQUIRED=('PublicRuntimeStructuredToolsCapturedOriginalProvider','PublicWorkspaceStructuredToolsOriginalRequestsBytesScopesAndLeave','PublicWorkspaceStructuredToolsProcessedReplyFaultsNeverReplay')
 
 def source_hashes():
  # Track neutral contracts, runtime and UI dependencies as well as the adapter.
@@ -57,14 +58,15 @@ def certs(folder):
   ssl('x509','-req','-in',name+'.csr','-CA','ca.crt','-CAkey','ca.key','-CAcreateserial','-out',name+'.crt','-days','2','-extfile',name+'.ext')
  for p in folder.iterdir():p.chmod(0o600)
 
-def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False,public=False):
+def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False,public=False,tools=False):
+ public=public or tools
  if probe and (session or public):raise ValueError('Diagnostic probe cannot claim session or public acceptance')
  session=session or public
  build=ROOT/'build/consul';build.mkdir(parents=True,exist_ok=True)
  nonce=uuid.uuid4().hex;path=build/('owned-fixture-'+nonce+'.json');log=path.with_suffix('.log')
- required=REQUIRED+(DOCUMENT_REQUIRED+RUNTIME_REQUIRED if session else ())+(PUBLIC_REQUIRED if public else ())
+ required=REQUIRED+(DOCUMENT_REQUIRED+RUNTIME_REQUIRED if session else ())+(PUBLIC_REQUIRED if public else ())+(TOOLS_REQUIRED if tools else ())
  packages=['./internal/services/consul']+(['./internal/services/dbruntime'] if session else [])+(['./internal/ui/connectioneditor','./internal/ui/kvworkspace','./internal/ui/shell'] if public else [])
- report={'nonce':nonce,'scope':'diagnostic-consul-probe' if probe else 'public-consul-original-http-workspace' if public else 'original-consul-native-document-runtime' if session else 'original-consul-native-foundation','mode':mode,'version':version,'image':IMAGES[version],'race':race,'passed':False,'required':required,'packages':packages,'source_hashes':source_hashes()}
+ report={'nonce':nonce,'scope':'diagnostic-consul-probe' if probe else 'public-consul-structured-kv-tools' if tools else 'public-consul-original-http-workspace' if public else 'original-consul-native-document-runtime' if session else 'original-consul-native-foundation','mode':mode,'version':version,'image':IMAGES[version],'race':race,'passed':False,'required':required,'packages':packages,'source_hashes':source_hashes()}
  identifier=None;private=None
  try:
   with tempfile.TemporaryDirectory(prefix='nyadb-consul-'+nonce+'-',dir=build) as rawfolder:
@@ -132,6 +134,8 @@ def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False
     if public:
      pictures={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(images.glob('*.png'))}
      expected={f'{lang}-{size}-{stage}.png' for lang in ('zh-Hans','en') for size in ('1280x800','720x520') for stage in ('editor-native','shell-native','workspace-write-confirmation','workspace-complete-body','workspace-headers',*(f'workspace-{prefix}{mode}' for prefix in ('unknown-','unknown-after-read-') for mode in ('lost','partial','http500','http408','cancel','disconnect','replace')))}
+     if tools:
+      expected.update(f'{lang}-{size}-workspace-tool-{stage}.png' for lang in ('zh-Hans','en') for size in ('1280x800','720x520') for stage in (*(f'{view}-{kind}' for view in ('form','generated','receipt') for kind in ('put','read','list','raw','delete','transaction')),*(f'{prefix}{mode}' for prefix in ('unknown-','unknown-after-read-') for mode in ('lost','partial','http500','http408','cancel','disconnect','replace'))))
      if {Path(name).name for name in pictures}!=expected:raise RuntimeError('Mandatory original public Consul image set failed')
     report.update(passed=True,accepted=accepted,public_images=pictures,log_sha256=hashlib.sha256(log.read_bytes()).hexdigest())
  finally:
@@ -145,5 +149,5 @@ def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False
  return report
 
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('--mode',choices=('anonymous','token','tls','mtls'),default='anonymous');p.add_argument('--version',choices=tuple(IMAGES),default='2.0.2');p.add_argument('--race',action='store_true');p.add_argument('--probe',action='store_true');p.add_argument('--session',action='store_true');p.add_argument('--public',action='store_true');a=p.parse_args()
- verify(a.mode,a.race,a.version,a.probe,a.session,a.public)
+ p=argparse.ArgumentParser();p.add_argument('--mode',choices=('anonymous','token','tls','mtls'),default='anonymous');p.add_argument('--version',choices=tuple(IMAGES),default='2.0.2');p.add_argument('--race',action='store_true');p.add_argument('--probe',action='store_true');p.add_argument('--session',action='store_true');p.add_argument('--public',action='store_true');p.add_argument('--tools',action='store_true');a=p.parse_args()
+ verify(a.mode,a.race,a.version,a.probe,a.session,a.public,a.tools)
