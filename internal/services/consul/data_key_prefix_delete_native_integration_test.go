@@ -85,8 +85,8 @@ func TestConsulNativeDataKeyPrefixDeleteCompleteOriginalSetAndLaterKeysPreserved
 	if _, err := l.submit(context.Background(), 91, "kv", "keys", p); !errors.Is(err, contract.ErrKVPlanUsed) {
 		t.Fatal("prefix plan replayed", err)
 	}
-	if l.Runtime().PreviewKeyPrefixDelete != nil {
-		t.Fatal("private prefix foundation was published")
+	if l.Runtime().PreviewKeyPrefixDelete == nil {
+		t.Fatal("public prefix feature was not published")
 	}
 }
 

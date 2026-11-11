@@ -32,8 +32,11 @@ func mSessionDataKeyPrefixDelete(s *session, r, out contract.DataRuntime) contra
 		if err == nil && plan == nil {
 			err = contract.ErrUnsupported
 		}
-		if err == nil && plan.Snapshot().Object != object {
-			err = connections.ErrInvalid
+		if err == nil {
+			snapshot := plan.Snapshot()
+			if snapshot.Object != object || snapshot.KeyPrefixDelete == nil || *snapshot.KeyPrefixDelete != request {
+				err = connections.ErrInvalid
+			}
 		}
 		if err == nil {
 			err = ctx.Err()

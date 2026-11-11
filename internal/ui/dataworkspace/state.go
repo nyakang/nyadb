@@ -98,6 +98,9 @@ type Document struct {
 	edit                        mysqlDataEditState
 	mutation                    dataMutationState
 	keyCopy                     *dataKeyCopyChoice
+	prefixDelete                *dataKeyPrefixDeleteState
+	prefixEvidence              nativeWriteReceiptState
+	prefixEvidenceRequest       contract.DataKeyPrefixDelete
 	deleteChoice                *dataDeleteChoice
 	graphEndpoints              *dataGraphEndpointChoice
 	nativeReceipt               nativeWriteReceiptState

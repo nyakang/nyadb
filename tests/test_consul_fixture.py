@@ -283,3 +283,43 @@ class ConsulFixtureTests(unittest.TestCase):
         for args in (['--prefix-delete-probe', '--probe'], ['--prefix-delete', '--copy-probe']):
             with self.subTest(args=args), patch('sys.argv', [str(ROOT/'tools/verify_consul_fixture.py'), *args]), patch('subprocess.run', side_effect=AssertionError('CLI started a fixture before validating prefix scope')), self.assertRaises(ValueError):
                 runpy.run_path(str(ROOT/'tools/verify_consul_fixture.py'), run_name='__main__')
+
+    def test_public_prefix_acceptance_retains_every_original_parent(self):
+        private = self.copy_scope_before_startup(prefix_delete=True, txn_max_request=8388608)
+        public = self.copy_scope_before_startup(public_prefix_delete=True, txn_max_request=8388608)
+        required = tuple(private['required']) + fixture.PUBLIC_PREFIX_DELETE_REQUIRED
+        self.assertEqual(public['scope'], 'public-consul-original-captured-prefix-candidate-delete')
+        self.assertEqual(public['required'], list(required))
+        self.assertEqual(len(required), 73)
+        self.assertEqual(len(set(required)), 73)
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+        with self.assertRaises(RuntimeError):
+            fixture.accepted_cases(log, tuple(private['required']))
+
+    def test_public_prefix_diagnostic_and_acceptance_scopes_are_distinct(self):
+        report = self.copy_scope_before_startup(public_prefix_probe=True, txn_max_request=8388608)
+        self.assertEqual(report['required'], list(fixture.PUBLIC_PREFIX_DELETE_REQUIRED))
+        self.assertEqual(report['scope'], 'diagnostic-consul-public-prefix-candidate-delete')
+        self.assertEqual(report['packages'], ['./internal/services/dbruntime', './internal/ui/shell', './internal/ui/dataworkspace'])
+        self.assertFalse(report['public_prefix_delete'])
+        for flag in ('probe', 'session', 'public', 'tools', 'data_session', 'public_grid', 'data_mutations',
+                     'mutation_limit_probe', 'public_grid_writes', 'grid_write_probe', 'key_copy', 'copy_probe',
+                     'copy_limit_probe', 'public_key_copy', 'public_copy_probe', 'prefix_delete',
+                     'prefix_delete_probe', 'public_prefix_delete'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(public_prefix_probe=True, **{flag: True})
+        for flag in ('probe', 'mutation_limit_probe', 'grid_write_probe', 'copy_probe',
+                     'copy_limit_probe', 'public_copy_probe', 'prefix_delete_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(public_prefix_delete=True, **{flag: True})
+
+    def test_public_prefix_cli_flags_reach_scope_validation_before_startup(self):
+        import runpy
+        from unittest.mock import patch
+        for args in (['--public-prefix-probe', '--probe'], ['--public-prefix-delete', '--copy-probe']):
+            with self.subTest(args=args), patch('sys.argv', [str(ROOT/'tools/verify_consul_fixture.py'), *args]), patch('subprocess.run', side_effect=AssertionError('CLI started fixture before validating public prefix scope')), self.assertRaises(ValueError):
+                runpy.run_path(str(ROOT/'tools/verify_consul_fixture.py'), run_name='__main__')

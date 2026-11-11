@@ -123,7 +123,7 @@ func mysqlDataHasDraft(t *Document) bool {
 	if t == nil {
 		return false
 	}
-	if len(t.edit.Drafts) > 0 {
+	if len(t.edit.Drafts) > 0 || t.prefixDelete != nil {
 		return true
 	}
 	e := t.edit.Editor
@@ -546,6 +546,7 @@ func (s *State) saveMySQLData(services ui.Services, t *Document) {
 	}()
 }
 func (s *State) stopMySQLDataEdit(t *Document) {
+	s.cancelKeyPrefixDelete(t)
 	s.cancelDataGraphEndpoints(t)
 	s.cancelDataKeyCopy(t)
 	s.cancelDataDeleteChoice(t)
@@ -664,12 +665,14 @@ func (s *State) acceptMySQLDataSaved(t *Document, keys []string, saved *contract
 func (s *State) consumeEdits(services ui.Services) {
 	for _, t := range s.documents {
 		if !t.closed && s.consumeFor(t) {
+			s.consumeKeyPrefixDelete(services, t)
 			s.consumeDataKeyCopy(t)
 			s.consumeDataGraphEndpoints(t)
 			s.consumeDataDeleteChoice(t)
 			s.consumeDataMutation(t)
 		}
 		if !t.closed && s.consumeFor(t) {
+			consumeDataNativeEvidence(&t.prefixEvidence)
 			s.consumeNativeWriteReceipt(t)
 		}
 		if t.closed || t.edit.Results == nil || !s.consumeFor(t) {
@@ -1049,6 +1052,8 @@ func (s *State) Modals(c *ui.Context) {
 		s.asyncDataEvidenceModal(c, t)
 		s.nativeWriteReceiptModal(c, t)
 		s.dataMutationModal(c, t)
+		s.keyPrefixEvidenceModal(c, t)
+		s.keyPrefixDeleteModal(c, t)
 		s.dataKeyCopyModal(c, t)
 		s.dataDeleteChoiceModal(c, t)
 		s.dataGraphEndpointsModal(c, t)
@@ -1116,7 +1121,7 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 	// Use the footer's existing fixed-height command row. Inserting a status
 	// row above the grid moves every cell while a read is pending or fails.
 	palette := theme.Colors(c)
-	if t.edit.Busy && !t.mutation.open && t.deleteChoice == nil && t.keyCopy == nil || dataTransactionBusy(t) {
+	if t.edit.Busy && !t.mutation.open && t.deleteChoice == nil && t.keyCopy == nil && t.prefixDelete == nil || t.prefixDelete != nil && (t.prefixDelete.previewResults != nil || t.prefixDelete.results != nil) || dataTransactionBusy(t) {
 		ui.Spinner(c).Size(14, 14)
 	}
 	message, color := "", palette.Muted
@@ -1132,6 +1137,17 @@ func (s *State) mysqlDataEditStatus(c *ui.Context, t *Document) {
 		message, color = t.transaction.err, palette.Error
 	} else if dataTransactionBusy(t) {
 		message = locales.Text("正在处理事务…")
+	} else if t.prefixDelete != nil {
+		switch {
+		case t.prefixDelete.previewResults != nil:
+			message = locales.Text("正在读取前缀候选键…")
+		case t.prefixDelete.results != nil:
+			message = locales.Text("正在提交候选键删除…")
+		case t.prefixDelete.previewOpen:
+			message = locales.Text("等待确认候选键删除")
+		default:
+			message = locales.Text("等待输入完整删除前缀")
+		}
 	} else if t.keyCopy != nil {
 		message = locales.Text("等待输入复制目标键")
 	} else if t.deleteChoice != nil {

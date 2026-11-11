@@ -99,16 +99,22 @@ func (s *State) closeNativeWriteDocument(services ui.Services, d *Document) {
 }
 
 func (s *State) exportNativeWriteReceipt(services ui.Services, d *Document, picker func(mygo.SaveDialogOptions) (string, error)) {
-	if d == nil || d.closed || d.nativeReceipt.JSON == "" || d.nativeReceipt.Results != nil {
+	if d == nil {
 		return
 	}
-	receipt := d.nativeReceipt.JSON
+	s.exportDataNativeEvidence(services, d, &d.nativeReceipt, picker, "导出完整回执", "transaction-receipt.json")
+}
+func (s *State) exportDataNativeEvidence(services ui.Services, d *Document, evidence *nativeWriteReceiptState, picker func(mygo.SaveDialogOptions) (string, error), title, filename string) {
+	if d == nil || d.closed || evidence == nil || picker == nil || evidence.JSON == "" || evidence.Results != nil {
+		return
+	}
+	receipt := evidence.JSON
 	ctx, cancel := context.WithCancel(context.Background())
-	d.nativeReceipt.Cancel, d.nativeReceipt.Err = cancel, ""
+	evidence.Cancel, evidence.Err = cancel, ""
 	out := make(chan error, 1)
-	d.nativeReceipt.Results = out
+	evidence.Results = out
 	go func() {
-		path, err := picker(mygo.SaveDialogOptions{Title: locales.Text("导出完整回执"), DefaultPath: "transaction-receipt.json", Filters: []mygo.FileFilter{{Name: "JSON", Extensions: []string{"json"}}}})
+		path, err := picker(mygo.SaveDialogOptions{Title: locales.Text(title), DefaultPath: filename, Filters: []mygo.FileFilter{{Name: "JSON", Extensions: []string{"json"}}}})
 		if err == nil && path != "" {
 			err = mysqlDataAtomicFile(ctx, path, func(w io.Writer) error { _, e := io.WriteString(w, receipt); return e })
 		}
@@ -117,16 +123,17 @@ func (s *State) exportNativeWriteReceipt(services ui.Services, d *Document, pick
 	}()
 }
 
-func (s *State) consumeNativeWriteReceipt(d *Document) {
-	if d.nativeReceipt.Results == nil {
+func (s *State) consumeNativeWriteReceipt(d *Document) { consumeDataNativeEvidence(&d.nativeReceipt) }
+func consumeDataNativeEvidence(evidence *nativeWriteReceiptState) {
+	if evidence == nil || evidence.Results == nil {
 		return
 	}
 	select {
-	case err := <-d.nativeReceipt.Results:
-		d.nativeReceipt.Cancel()
-		d.nativeReceipt.Cancel, d.nativeReceipt.Results = nil, nil
+	case err := <-evidence.Results:
+		evidence.Cancel()
+		evidence.Cancel, evidence.Results = nil, nil
 		if err != nil {
-			d.nativeReceipt.Err = err.Error()
+			evidence.Err = err.Error()
 		}
 	default:
 	}

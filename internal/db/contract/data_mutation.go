@@ -33,9 +33,15 @@ type DataMutationSnapshot struct {
 	Edits      []DataEdit
 	Items      []DataMutationItem
 	NativeJSON string // Complete bounded original observations and native parameters.
+	// KeyPrefixDelete binds the original complete candidate-set operation.
+	KeyPrefixDelete *DataKeyPrefixDelete
 }
 
 func CloneDataMutationSnapshot(s DataMutationSnapshot) DataMutationSnapshot {
+	if s.KeyPrefixDelete != nil {
+		copy := *s.KeyPrefixDelete
+		s.KeyPrefixDelete = &copy
+	}
 	s.Items = slices.Clone(s.Items)
 	s.Edits = slices.Clone(s.Edits)
 	for i, e := range s.Edits {

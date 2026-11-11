@@ -27,6 +27,7 @@ func (h *keyPrefixDeleteHandle) DataRuntime() contract.DataRuntime {
 		if h.produce != nil {
 			return h.produce(request)
 		}
+		h.plan.snapshot.KeyPrefixDelete = &request
 		return h.plan, nil
 	}
 	return r
@@ -91,16 +92,21 @@ func TestDataKeyPrefixDeleteRuntimeQualifiedObjectOriginalPrefixAndPlanOwnership
 	if _, err := r.SubmitEdits(context.Background(), 1, "main", "owned", p); err != nil || h.saved.Load() != 1 {
 		t.Fatal("original prefix plan not submitted", err)
 	}
-	for _, fault := range []string{"foreign-plan", "nil-plan", "cancel"} {
+	for _, fault := range []string{"foreign-plan", "foreign-prefix", "missing-descriptor", "nil-plan", "cancel"} {
 		t.Run(fault, func(t *testing.T) {
 			request := contract.DataKeyPrefixDelete{Object: h.plan.snapshot.Object, Prefix: "scope/"}
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			raw := &mutationPreview{snapshot: h.plan.snapshot}
-			h.produce = func(contract.DataKeyPrefixDelete) (contract.DataMutationPlan, error) {
+			h.produce = func(request contract.DataKeyPrefixDelete) (contract.DataMutationPlan, error) {
+				raw.snapshot.KeyPrefixDelete = &request
 				switch fault {
 				case "foreign-plan":
 					raw.snapshot.Object.ProfileID = 2
+				case "foreign-prefix":
+					raw.snapshot.KeyPrefixDelete.Prefix = "foreign/"
+				case "missing-descriptor":
+					raw.snapshot.KeyPrefixDelete = nil
 				case "nil-plan":
 					return nil, nil
 				case "cancel":

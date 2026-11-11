@@ -90,7 +90,7 @@ func (l *dataLease) Runtime() contract.DataRuntime {
 	return contract.DataRuntime{Capabilities: dataCapabilities(),
 		PageFailureRequiresReopen: true, AdvancedLoader: l.page, Count: l.count, RowReader: l.row, Chunk: l.chunk,
 		Exporter: l.export, TableMetadata: l.metadata, TableInfo: l.info,
-		Saver: l.save, PreviewEdits: l.preview, PreviewKeyCopy: l.previewKeyCopy, SubmitEdits: l.submit,
+		Saver: l.save, PreviewEdits: l.preview, PreviewKeyCopy: l.previewKeyCopy, PreviewKeyPrefixDelete: l.previewKeyPrefixDelete, SubmitEdits: l.submit,
 		NativeReceipts: true, InsertOmittedValues: true,
 		EditKinds: []string{"insert", "update", "delete", "copy"}, PreviewEditKinds: []string{"insert", "update", "delete", "copy"},
 		EditValueKinds:       []contract.CellKind{contract.Text, contract.Binary, contract.Integer},

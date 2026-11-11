@@ -502,6 +502,11 @@ func (s *State) mysqlDataCellMenu(c *ui.Context, t *Document, m *ui.Menu, row, s
 		return
 	}
 	s.kvKeyReadMenu(c, t, m, row)
+	if s.runtimeFor(t).PreviewKeyPrefixDelete != nil {
+		if m.Item(locales.Text("按前缀删除候选键")).Disabled(!s.canDeleteKeyPrefix(t)).Chosen() {
+			s.DeleteKeyPrefix(t)
+		}
+	}
 	if s.runtimeFor(t).PreviewKeyCopy != nil {
 		if m.Item(locales.Text("复制键到新键")).Disabled(!s.canCopyDataKey(t, row)).Chosen() {
 			s.beginDataKeyCopy(t, row)

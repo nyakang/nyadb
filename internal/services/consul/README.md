@@ -241,31 +241,36 @@ python3 tools/verify_consul_fixture.py --copy-limit-probe --mode token --race
 ```
 
 
-The private captured-prefix deletion foundation uses a qualified
-`DataKeyPrefixDelete` request and retains the complete original recurse/get-tree
-response in an immutable plan. It rejects the empty root, foreign prefixes,
-ACL-filtered observations, original Session locks, incomplete responses and
-oversized candidate sets before a deletion is prepared. The captured set uses
-original index checks, delete-CAS and corresponding absence receipts in one native
-transaction; later-created keys are preserved. It does not promise prefix range
-absence or a frozen MVCC snapshot. Original read executors remain independent.
+The shared grid offers explicit captured-prefix candidate deletion through a
+qualified `DataKeyPrefixDelete` request. The form performs no I/O; preview reads
+the complete original prefix and retains full observations, values and Flags.
+Confirmation submits that original plan once. Candidates may lie outside the
+current grid page; no visible row is substituted for a complete candidate.
+
+The original complete observation and the later native transaction receipt stay
+separate and can be copied or exported in full. Cancellation waits for the
+original executor; parked completions wait for original activation. Replacement
+generations cannot select a new executor. Incomplete, missing or uncertain
+receipts retain the original candidate scope and block subsequent writes or
+replay; a later successful read does not confirm the original write.
 
 One atomic plan permits at most 21 candidates (three real operations per key).
 The extra complete captured body plus decoded values has an 8 MiB budget within
-the original plan reservation. Both count and retained-byte limits reject before
-submission; there is no automatic split or replay. Explicit multiple batches,
-complete live-prefix delete-tree semantics and public UI remain separate gaps.
-The public runtime deliberately keeps `PreviewKeyPrefixDelete` nil pending public
-forms and independent acceptance. Runtime bindings preserve original object,
-profile and generation; invalid or late original plans are closed independently.
+the original plan reservation. Empty roots, foreign prefixes, ACL-filtered or
+incomplete observations, Session-locked candidates and excess counts/bytes are
+rejected before submission. Original index checks, delete-CAS and corresponding
+absence receipts apply to the captured finite set; later-created keys survive.
+There is no range-absence or prefix MVCC guarantee, automatic split or replay.
+Explicit multiple batches and complete live-prefix delete-tree remain gaps.
 
 ```sh
-python3 tools/verify_consul_fixture.py --prefix-delete --txn-max-request 8388608 --mode token --race
-python3 tools/verify_consul_fixture.py --prefix-delete-probe --txn-max-request 8388608 --mode token --race
+python3 tools/verify_consul_fixture.py --public-prefix-delete --txn-max-request 8388608 --mode token --race
+python3 tools/verify_consul_fixture.py --public-prefix-probe --txn-max-request 8388608 --mode token --race
 ```
 
-Full foundation acceptance retains every 62-parent public-copy regression and
-adds five adapter prefix parents (67/configuration, 560 regression images).
+Full acceptance retains every 67-parent prefix foundation/public-copy regression
+and adds six original public Manager/grid/Shell parents (73/configuration).
 The probe is diagnostic only. Both official default-limit copy probes remain
-part of the final verification matrix. ACL filtering and native write denial are
-exercised in configurations with fixture-restricted tokens.
+part of the final matrix. ACL filtering and native write denial are exercised
+in configurations with fixture-restricted tokens. Private foundation records
+retain their historical unpublished scope.

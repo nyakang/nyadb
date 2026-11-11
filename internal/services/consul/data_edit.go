@@ -469,6 +469,9 @@ func (l *dataLease) previewPreparedScope(parent context.Context, id int64, catal
 		return nil, ErrBounds
 	}
 	p := &dataPlan{owner: l, preparation: prep, prepared: prepared, snapshot: contract.DataMutationSnapshot{Object: l.object, NativeJSON: string(raw)}}
+	if scope != nil {
+		p.snapshot.KeyPrefixDelete = &contract.DataKeyPrefixDelete{Object: l.object, Prefix: scope.Prefix}
+	}
 	for _, e := range prepared {
 		p.snapshot.Edits = append(p.snapshot.Edits, e.edit)
 		key := e.after.Key

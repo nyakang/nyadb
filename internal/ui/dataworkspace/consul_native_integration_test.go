@@ -126,7 +126,15 @@ func captureConsulGrid(t *testing.T, s *State, d *Document, stage string) {
 			}, size[0], size[1])
 			tt.Frame()
 			var controls []string
-			if strings.HasPrefix(stage, "key-copy-") && strings.HasSuffix(stage, "-form") {
+			if strings.HasPrefix(stage, "prefix-delete-") && strings.HasSuffix(stage, "-form") {
+				controls = []string{"输入完整删除前缀", "预览候选键删除", "取消"}
+			} else if strings.HasPrefix(stage, "prefix-delete-") && strings.HasSuffix(stage, "-confirmation") {
+				controls = []string{"复制完整预览", "取消", "确认并删除候选键"}
+			} else if strings.HasPrefix(stage, "prefix-delete-") && strings.HasSuffix(stage, "-observation") || strings.HasPrefix(stage, "prefix-delete-after-read-") {
+				controls = []string{"复制完整观察", "导出完整观察", "关闭"}
+			} else if strings.HasPrefix(stage, "prefix-delete-unknown-") || strings.HasPrefix(stage, "prefix-delete-") && strings.HasSuffix(stage, "-saved") {
+				controls = []string{"复制完整回执", "导出完整回执", "关闭"}
+			} else if strings.HasPrefix(stage, "key-copy-") && strings.HasSuffix(stage, "-form") {
 				controls = []string{"输入目标完整键", "预览复制", "取消"}
 			} else if stage == "mutation-confirmation" || stage == "mutation-delete-confirmation" || strings.HasPrefix(stage, "key-copy-") && strings.HasSuffix(stage, "-confirmation") {
 				controls = []string{"复制完整预览", "取消", "确认并提交更改"}

@@ -309,10 +309,16 @@ func (s *State) Close(t *Document) {
 	if !t.graphTransferOnly {
 		s.flushMySQLDataLayout(t)
 	}
+	s.disposeKeyPrefixDelete(t)
 	s.cancelMySQLDataEdit(t)
 	if t.nativeReceipt.Cancel != nil {
 		t.nativeReceipt.Cancel()
 	}
+	if t.prefixEvidence.Cancel != nil {
+		t.prefixEvidence.Cancel()
+	}
+	t.prefixEvidence = nativeWriteReceiptState{}
+	t.prefixEvidenceRequest = contract.DataKeyPrefixDelete{}
 	t.nativeReceipt = nativeWriteReceiptState{}
 	s.Cancel(t)
 	s.closeDataTransaction(t)

@@ -37161,3 +37161,185 @@ func DataKeyCopySource() string { return In(i18n.Locale()).DataKeyCopySource() }
 func (msgs Messages) DataKeyCopySource() string {
 	return Catalog.Format(msgs.locale, "dataKeyCopySource", nil)
 }
+
+// DataKeyPrefixDelete says "按前缀删除候选键"
+// in the language the app shows.
+func DataKeyPrefixDelete() string { return In(i18n.Locale()).DataKeyPrefixDelete() }
+
+// DataKeyPrefixDelete says "按前缀删除候选键"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixDelete() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixDelete", nil)
+}
+
+// DataKeyPrefixDeleteHint says "读取此完整前缀下的候选键并确认后删除。仅删除此次捕获的键，预览后新增的键保留。"
+// in the language the app shows.
+func DataKeyPrefixDeleteHint() string { return In(i18n.Locale()).DataKeyPrefixDeleteHint() }
+
+// DataKeyPrefixDeleteHint says "读取此完整前缀下的候选键并确认后删除。仅删除此次捕获的键，预览后新增的键保留。"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixDeleteHint() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixDeleteHint", nil)
+}
+
+// DataKeyPrefixFull says "完整前缀"
+// in the language the app shows.
+func DataKeyPrefixFull() string { return In(i18n.Locale()).DataKeyPrefixFull() }
+
+// DataKeyPrefixFull says "完整前缀"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixFull() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixFull", nil)
+}
+
+// DataKeyPrefixInput says "输入完整删除前缀"
+// in the language the app shows.
+func DataKeyPrefixInput() string { return In(i18n.Locale()).DataKeyPrefixInput() }
+
+// DataKeyPrefixInput says "输入完整删除前缀"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixInput() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixInput", nil)
+}
+
+// DataKeyPrefixPreview says "预览候选键删除"
+// in the language the app shows.
+func DataKeyPrefixPreview() string { return In(i18n.Locale()).DataKeyPrefixPreview() }
+
+// DataKeyPrefixPreview says "预览候选键删除"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixPreview() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixPreview", nil)
+}
+
+// DataKeyPrefixConfirmTitle says "确认候选键删除"
+// in the language the app shows.
+func DataKeyPrefixConfirmTitle() string { return In(i18n.Locale()).DataKeyPrefixConfirmTitle() }
+
+// DataKeyPrefixConfirmTitle says "确认候选键删除"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixConfirmTitle() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixConfirmTitle", nil)
+}
+
+// DataKeyPrefixConfirmHint says "将原子删除此次捕获的 %d 个键；之后新增的键保留，候选键变化会取消提交。"
+// in the language the app shows.
+func DataKeyPrefixConfirmHint() string { return In(i18n.Locale()).DataKeyPrefixConfirmHint() }
+
+// DataKeyPrefixConfirmHint says "将原子删除此次捕获的 %d 个键；之后新增的键保留，候选键变化会取消提交。"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixConfirmHint() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixConfirmHint", nil)
+}
+
+// DataKeyPrefixPreviewJSON says "候选键删除完整预览"
+// in the language the app shows.
+func DataKeyPrefixPreviewJSON() string { return In(i18n.Locale()).DataKeyPrefixPreviewJSON() }
+
+// DataKeyPrefixPreviewJSON says "候选键删除完整预览"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixPreviewJSON() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixPreviewJSON", nil)
+}
+
+// DataKeyPrefixSubmit says "确认并删除候选键"
+// in the language the app shows.
+func DataKeyPrefixSubmit() string { return In(i18n.Locale()).DataKeyPrefixSubmit() }
+
+// DataKeyPrefixSubmit says "确认并删除候选键"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixSubmit() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixSubmit", nil)
+}
+
+// DataKeyPrefixObservation says "前缀候选原始观察"
+// in the language the app shows.
+func DataKeyPrefixObservation() string { return In(i18n.Locale()).DataKeyPrefixObservation() }
+
+// DataKeyPrefixObservation says "前缀候选原始观察"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixObservation() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixObservation", nil)
+}
+
+// DataKeyPrefixObservationHint says "保留原输入、完整候选观察及计划；此观察不确认写入，写入结果以原事务回执为准。"
+// in the language the app shows.
+func DataKeyPrefixObservationHint() string { return In(i18n.Locale()).DataKeyPrefixObservationHint() }
+
+// DataKeyPrefixObservationHint says "保留原输入、完整候选观察及计划；此观察不确认写入，写入结果以原事务回执为准。"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixObservationHint() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixObservationHint", nil)
+}
+
+// DataKeyPrefixCopyObservation says "复制完整观察"
+// in the language the app shows.
+func DataKeyPrefixCopyObservation() string { return In(i18n.Locale()).DataKeyPrefixCopyObservation() }
+
+// DataKeyPrefixCopyObservation says "复制完整观察"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixCopyObservation() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixCopyObservation", nil)
+}
+
+// DataKeyPrefixExportObservation says "导出完整观察"
+// in the language the app shows.
+func DataKeyPrefixExportObservation() string {
+	return In(i18n.Locale()).DataKeyPrefixExportObservation()
+}
+
+// DataKeyPrefixExportObservation says "导出完整观察"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixExportObservation() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixExportObservation", nil)
+}
+
+// DataKeyPrefixHistory says "已确认的前缀候选键删除"
+// in the language the app shows.
+func DataKeyPrefixHistory() string { return In(i18n.Locale()).DataKeyPrefixHistory() }
+
+// DataKeyPrefixHistory says "已确认的前缀候选键删除"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixHistory() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixHistory", nil)
+}
+
+// DataKeyPrefixLoading says "正在读取前缀候选键…"
+// in the language the app shows.
+func DataKeyPrefixLoading() string { return In(i18n.Locale()).DataKeyPrefixLoading() }
+
+// DataKeyPrefixLoading says "正在读取前缀候选键…"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixLoading() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixLoading", nil)
+}
+
+// DataKeyPrefixSubmitting says "正在提交候选键删除…"
+// in the language the app shows.
+func DataKeyPrefixSubmitting() string { return In(i18n.Locale()).DataKeyPrefixSubmitting() }
+
+// DataKeyPrefixSubmitting says "正在提交候选键删除…"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixSubmitting() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixSubmitting", nil)
+}
+
+// DataKeyPrefixWaitingConfirm says "等待确认候选键删除"
+// in the language the app shows.
+func DataKeyPrefixWaitingConfirm() string { return In(i18n.Locale()).DataKeyPrefixWaitingConfirm() }
+
+// DataKeyPrefixWaitingConfirm says "等待确认候选键删除"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixWaitingConfirm() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixWaitingConfirm", nil)
+}
+
+// DataKeyPrefixWaitingInput says "等待输入完整删除前缀"
+// in the language the app shows.
+func DataKeyPrefixWaitingInput() string { return In(i18n.Locale()).DataKeyPrefixWaitingInput() }
+
+// DataKeyPrefixWaitingInput says "等待输入完整删除前缀"
+// in the language of msgs.
+func (msgs Messages) DataKeyPrefixWaitingInput() string {
+	return Catalog.Format(msgs.locale, "dataKeyPrefixWaitingInput", nil)
+}
