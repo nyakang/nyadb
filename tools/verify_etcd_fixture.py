@@ -68,7 +68,10 @@ def certificates(folder, access=False):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False, public_lease_management=False, dependency_modfile=None, auth_native=False, public_auth=False, compaction_native=False, public_compaction=False, member_native=False, member_session=False, alarm_native=False, alarm_workspace=False, public_alarms=False, snapshot_native=False, snapshot_session=False, snapshot_artifact=False):
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False, public_lease_management=False, dependency_modfile=None, auth_native=False, public_auth=False, compaction_native=False, public_compaction=False, member_native=False, member_session=False, alarm_native=False, alarm_workspace=False, public_alarms=False, snapshot_native=False, snapshot_session=False, snapshot_artifact=False, snapshot_file=False):
+    if snapshot_file and any((profile, session, workspace, data, public, smoke, access, access_smoke, watch_smoke, history_smoke, events_smoke, events_workspace_smoke, public_events, renewal_native, renewal_session, public_renewal, lease_browser_native, lease_browser_session, public_lease_browser, public_lease_management, auth_native, public_auth, compaction_native, public_compaction, member_native, member_session, alarm_native, alarm_workspace, public_alarms, snapshot_native, snapshot_session, snapshot_artifact)):
+        raise ValueError('Snapshot file acceptance is a separate original publication scope')
+    snapshot_artifact = snapshot_artifact or snapshot_file
     if snapshot_artifact and any((profile, session, workspace, data, public, smoke, access, access_smoke, watch_smoke, history_smoke, events_smoke, events_workspace_smoke, public_events, renewal_native, renewal_session, public_renewal, lease_browser_native, lease_browser_session, public_lease_browser, public_lease_management, auth_native, public_auth, compaction_native, public_compaction, member_native, member_session, alarm_native, alarm_workspace, public_alarms, snapshot_native, snapshot_session)):
         raise ValueError('Snapshot artifact acceptance is a separate original file scope')
     snapshot_session = snapshot_session or snapshot_artifact
@@ -168,6 +171,8 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
     identifier = None
     if snapshot_artifact:
         report['scope'] = 'private-etcd-original-snapshot-disk-artifacts'
+    if snapshot_file:
+        report['scope'] = 'private-etcd-original-snapshot-file-publication'
     if events_smoke:
         report['scope'] = 'private-etcd-events-session-smoke'
     if events_workspace_smoke:
@@ -595,6 +600,11 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                              'SnapshotArtifactActualSourceFaultsCancellationParkingAndRetainedEvidence',
                              'SnapshotArtifactCompleteFilesNeverSettleEarlierActualUnknownWrite',
                              'SnapshotArtifactRestrictedIdentityRetainsExactNativeDenialJournal')
+            if snapshot_file:
+                environment['NYADB_ETCD_SNAPSHOT_FILE_IT'] = '1'
+                required += ('SnapshotFileOriginalBackendJournalNewAndReplacementAfterDisconnect',
+                             'SnapshotFileActualUnknownPutBarrierSurvivesOriginalFilePublication',
+                             'SnapshotFileIncompleteBackendRejectedCompleteFailureJournalExported')
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
             command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
@@ -703,6 +713,7 @@ if __name__ == '__main__':
     parser.add_argument('--snapshot-native', action='store_true')
     parser.add_argument('--snapshot-session', action='store_true')
     parser.add_argument('--snapshot-artifact', action='store_true')
+    parser.add_argument('--snapshot-file', action='store_true')
     parser.add_argument('--alarm-native', action='store_true')
     parser.add_argument('--alarm-workspace', action='store_true')
     parser.add_argument('--public-alarms', action='store_true')
@@ -721,4 +732,4 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser, args.public_lease_management, args.dependency_modfile, args.auth_native, args.public_auth, args.compaction_native, args.public_compaction, args.member_native, args.member_session, args.alarm_native, args.alarm_workspace, args.public_alarms, args.snapshot_native, args.snapshot_session, args.snapshot_artifact)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser, args.public_lease_management, args.dependency_modfile, args.auth_native, args.public_auth, args.compaction_native, args.public_compaction, args.member_native, args.member_session, args.alarm_native, args.alarm_workspace, args.public_alarms, args.snapshot_native, args.snapshot_session, args.snapshot_artifact, args.snapshot_file)

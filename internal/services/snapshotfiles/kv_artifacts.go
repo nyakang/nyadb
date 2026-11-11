@@ -24,7 +24,7 @@ var ErrArtifactEvidence = errors.New("原快照文件与完整执行回执不一
 
 // KVSnapshotStore owns bounded private artifacts. The configured directory is
 // opened once; each capture uses an exclusive original subdirectory and files.
-// This store does not select or publish a destination in the user's filesystem.
+// File publication uses a separate one-use plan for an explicitly chosen path.
 type KVSnapshotStore struct {
 	mu          sync.Mutex
 	root        *os.Root
@@ -36,6 +36,8 @@ type KVSnapshotStore struct {
 	closeDone   chan struct{}
 	closeErr    error
 	artifacts   map[*kvArtifact]bool
+	filePlans   map[*kvSnapshotFilePlan]bool
+	fileIO      kvSnapshotFileIO
 	write       func(*os.File, []byte) (int, error)
 	syncFile    func(*os.File) error
 	readAt      func(*os.File, []byte, int64) (int, error)
@@ -50,7 +52,7 @@ func NewKVSnapshotStore(directory string, limit uint64) (*KVSnapshotStore, error
 		return nil, err
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	return &KVSnapshotStore{root: root, limit: limit, ctx: ctx, cancel: cancel, closeDone: make(chan struct{}), artifacts: make(map[*kvArtifact]bool), write: func(f *os.File, b []byte) (int, error) { return f.Write(b) }, syncFile: func(f *os.File) error { return f.Sync() }, readAt: func(f *os.File, b []byte, o int64) (int, error) { return f.ReadAt(b, o) }}, nil
+	return &KVSnapshotStore{root: root, limit: limit, ctx: ctx, cancel: cancel, closeDone: make(chan struct{}), artifacts: make(map[*kvArtifact]bool), filePlans: make(map[*kvSnapshotFilePlan]bool), fileIO: defaultKVSnapshotFileIO(), write: func(f *os.File, b []byte) (int, error) { return f.Write(b) }, syncFile: func(f *os.File) error { return f.Sync() }, readAt: func(f *os.File, b []byte, o int64) (int, error) { return f.ReadAt(b, o) }}, nil
 }
 
 type kvCapturePreparation struct {
@@ -495,6 +497,15 @@ func (s *KVSnapshotStore) Close() error {
 	}
 	s.mu.Unlock()
 	var err error
+	s.mu.Lock()
+	plans := make([]*kvSnapshotFilePlan, 0, len(s.filePlans))
+	for p := range s.filePlans {
+		plans = append(plans, p)
+	}
+	s.mu.Unlock()
+	for _, p := range plans {
+		err = errors.Join(err, p.Close())
+	}
 	for _, a := range artifacts {
 		err = errors.Join(err, a.Close())
 	}
