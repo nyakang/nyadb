@@ -3,6 +3,7 @@ package consul
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -31,6 +32,7 @@ func (e *HTTPError) Error() string { return fmt.Sprintf("Consul HTTP %d", e.Stat
 // HTTP capture, native semantic ACK and optional projections remain independent.
 // Body includes every observed byte even when its bounded capture is incomplete.
 type Response struct {
+	URL                                                                                     string // actual scoped URL; authentication is never a URL parameter
 	Request                                                                                 Request
 	Kind                                                                                    string
 	Attempted, Ended, Captured, EOF, Acknowledged, Succeeded, WriteOutcomeUnknown, Canceled bool
@@ -73,6 +75,7 @@ type Client struct {
 	closed, retired bool
 	last            Response
 	unknown         *Response
+	cache           bool
 }
 
 // New is pure with respect to Consul: TLS files are captured locally, no HTTP is sent.
@@ -81,13 +84,19 @@ func New(cfg Config, token string) (*Client, error) {
 	if e != nil {
 		return nil, e
 	}
+	return newCapturedClient(cfg, tc, token), nil
+}
+
+// Managed document clients use captured TLS material and let their original
+// lease own receipt storage; no file is reopened and no duplicate cache retained.
+func newCapturedClient(cfg Config, tc *tls.Config, token string) *Client {
 	if tc != nil {
 		tc.NextProtos = []string{"http/1.1"}
 	}
 	tr := &http.Transport{Proxy: nil, DialContext: (&net.Dialer{Timeout: cfg.ConnectTimeout}).DialContext, TLSClientConfig: tc, TLSHandshakeTimeout: cfg.ConnectTimeout, ResponseHeaderTimeout: cfg.RequestTimeout, MaxResponseHeaderBytes: 64 << 10, DisableKeepAlives: true, DisableCompression: true, ForceAttemptHTTP2: false}
 	root, cancel := context.WithCancel(context.Background())
-	c := &Client{config: cfg, token: token, ctx: root, cancel: cancel, http: &http.Client{Transport: tr, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}}
-	return c, nil
+	c := &Client{config: cfg, token: token, ctx: root, cancel: cancel, cache: true, http: &http.Client{Transport: tr, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}}
+	return c
 }
 func (c *Client) Alive() bool            { c.mu.Lock(); defer c.mu.Unlock(); return !c.closed && !c.retired }
 func (c *Client) Config() Config         { return c.config }
@@ -161,9 +170,14 @@ func (c *Client) Execute(ctx context.Context, p Plan) (result Response, err erro
 	defer func() {
 		result.Ended = true
 		c.mu.Lock()
-		c.last = result.Clone()
+		if c.cache {
+			c.last = result.Clone()
+		}
 		if result.WriteOutcomeUnknown {
-			v := result.Clone()
+			v := Response{WriteOutcomeUnknown: true}
+			if c.cache {
+				v = result.Clone()
+			}
 			c.unknown = &v
 		}
 		c.mu.Unlock()
@@ -175,6 +189,7 @@ func (c *Client) Execute(ctx context.Context, p Plan) (result Response, err erro
 	if e != nil {
 		return result, e
 	}
+	result.URL = target
 	child, cancel := context.WithTimeout(ctx, c.config.RequestTimeout)
 	defer cancel()
 	stop := context.AfterFunc(c.ctx, cancel)

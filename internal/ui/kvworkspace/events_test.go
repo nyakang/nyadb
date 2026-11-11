@@ -135,6 +135,31 @@ func eventEventually(t *testing.T, check func() bool) {
 	}
 }
 
+func TestKVEventsChangedHTTPIdentityCannotReserveFromOriginalDocument(t *testing.T) {
+	for _, change := range []string{"endpoint", "agent", "configuration", "availability"} {
+		t.Run(change, func(t *testing.T) {
+			s, d, l, p := eventState(t)
+			d.scope = testScope()
+			d.scope.HTTP = contract.KVHTTPIdentity{Protocol: "consul-http", Endpoint: "http://original", AgentID: "original-agent", AgentAvailable: true, Configuration: "captured-config"}
+			l.scope = d.scope.Clone()
+			switch change {
+			case "endpoint":
+				l.scope.HTTP.Endpoint = "http://foreign"
+			case "agent":
+				l.scope.HTTP.AgentID = "foreign-agent"
+			case "configuration":
+				l.scope.HTTP.Configuration = "foreign-config"
+			case "availability":
+				l.scope.HTTP.AgentAvailable = false
+			}
+			s.Run(d)
+			if p.reserves.Load() != 0 || l.starts.Load() != 0 || d.eventLease != nil || !d.eventNeedsRecovery || d.Busy() {
+				t.Fatal("changed HTTP provider reserved work for original document")
+			}
+		})
+	}
+}
+
 func TestKVEventsStrictRequestPrecisionAliasesBoundsAndVersionOneDrafts(t *testing.T) {
 	w, err := ParseWatchRequest(`{"key":"AP8=","rangeEnd":"AA==","startRevision":9007199254740993,"watchId":"9223372036854775807","prevKv":true,"progressNotify":true,"filters":["NOPUT",1],"fragment":false}`)
 	if err != nil || !bytes.Equal(w.Key, []byte{0, 255}) || w.StartRevision != 9007199254740993 || w.WatchID != math.MaxInt64 || !w.NoPut || !w.NoDelete || !w.PrevKV || !w.ProgressNotify {

@@ -37,7 +37,7 @@ type eventOperation struct {
 }
 
 func sameEventScope(a, b contract.KVScope) bool {
-	return a.Namespace == b.Namespace && a.Generation == b.Generation && bytes.Equal(a.Prefix, b.Prefix) && a.Header == b.Header && a.Version == b.Version
+	return a.HTTP == b.HTTP && a.Namespace == b.Namespace && a.Generation == b.Generation && bytes.Equal(a.Prefix, b.Prefix) && a.Header == b.Header && a.Version == b.Version
 }
 func (s *State) eventLeaseFor(d *Document) bool {
 	if !s.active(d) || d.Busy() || d.eventNeedsRecovery {

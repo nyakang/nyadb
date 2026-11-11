@@ -23,6 +23,7 @@ type KVScope struct {
 	Prefix     []byte
 	Header     KVHeader
 	Version    string
+	HTTP       KVHTTPIdentity // zero for protobuf providers; no invented etcd identity
 }
 
 func (s KVScope) Clone() KVScope { s.Prefix = slices.Clone(s.Prefix); return s }
@@ -129,9 +130,14 @@ type KVResult struct {
 	JSON, JSONCaptureError, ProjectionError   string
 	Reply                                     *KVReply
 	RequestOmittedFields                      []string
+	HTTP                                      *KVHTTPResult
 }
 
 func (r KVResult) Clone() KVResult {
+	if r.HTTP != nil {
+		v := r.HTTP.Clone()
+		r.HTTP = &v
+	}
 	r.Native = slices.Clone(r.Native)
 	r.RequestOmittedFields = slices.Clone(r.RequestOmittedFields)
 	if r.Reply != nil {
@@ -142,8 +148,9 @@ func (r KVResult) Clone() KVResult {
 }
 
 type KVRecovery struct {
-	Lease KVRequestLease
-	Last  KVResult
+	Lease   KVRequestLease
+	Last    KVResult
+	Unknown *KVResult // independent original unknown write, never replaced by a later read
 	// Independent original member receipts, including unconfirmed writes. A
 	// recovery transfers evidence only, never directory/plan authority.
 	MemberResults  []KVMemberResult
@@ -151,6 +158,10 @@ type KVRecovery struct {
 }
 
 func (r KVRecovery) Clone() KVRecovery {
+	if r.Unknown != nil {
+		v := r.Unknown.Clone()
+		r.Unknown = &v
+	}
 	if r.SnapshotResult != nil {
 		v := r.SnapshotResult.Clone()
 		r.SnapshotResult = &v
