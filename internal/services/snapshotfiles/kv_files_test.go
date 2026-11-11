@@ -603,20 +603,22 @@ func TestKVSnapshotFilesForeignPrivateTemporaryAndDirectoryPreserved(t *testing.
 			a, _ := artifactTestCapture(t, s, l)
 			path := filepath.Join(t.TempDir(), "chosen")
 			p := fileTestPlan(t, s, a, path, false)
-			native := s.fileIO.syncFile
 			var foreignPath string
-			s.fileIO.syncFile = func(f *os.File) error {
-				info, e := f.Stat()
-				if e != nil {
-					return e
+			if phase == "temporary" {
+				s.fileIO.syncFile = func(*os.File) error {
+					foreignPath = filepath.Join(filepath.Dir(path), p.directory, "new")
+					if e := p.private.Remove("new"); e != nil {
+						return e
+					}
+					return os.WriteFile(foreignPath, []byte("foreign"), 0600)
 				}
-				if !info.IsDir() {
-					if phase == "temporary" {
-						foreignPath = filepath.Join(filepath.Dir(path), p.directory, "new")
-						if e := p.private.Remove("new"); e != nil {
-							return e
-						}
-						return os.WriteFile(foreignPath, []byte("foreign"), 0600)
+			} else {
+				// Windows rejects moving a directory with an open child file.
+				// Replace it after close, before verification and publication.
+				native := s.fileIO.closeFile
+				s.fileIO.closeFile = func(f *os.File) error {
+					if e := native(f); e != nil {
+						return e
 					}
 					directory := filepath.Join(filepath.Dir(path), p.directory)
 					if e := os.Rename(directory, directory+"-moved"); e != nil {
@@ -626,11 +628,8 @@ func TestKVSnapshotFilesForeignPrivateTemporaryAndDirectoryPreserved(t *testing.
 						return e
 					}
 					foreignPath = filepath.Join(directory, "foreign")
-					if e := os.WriteFile(foreignPath, []byte("foreign"), 0600); e != nil {
-						return e
-					}
+					return os.WriteFile(foreignPath, []byte("foreign"), 0600)
 				}
-				return native(f)
 			}
 			r, e := s.PublishFile(context.Background(), p)
 			if e == nil || r.CleanupError == "" {
