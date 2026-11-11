@@ -157,6 +157,47 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			return contract.CloneDataGraphEndpoints(endpoints), nil
 		}
 	}
+	if r.PreviewKeyCopy != nil {
+		out.PreviewKeyCopy = func(ctx context.Context, id int64, db, table string, request contract.DataKeyCopy) (contract.DataMutationPlan, error) {
+			if err := s.require(r.Capabilities.EditableTables && r.Capabilities.KeyValues, id); err != nil {
+				return nil, err
+			}
+			captured := contract.CloneDataKeyCopy(request)
+			if captured.Source == nil || captured.Source.Ref.Object.ProfileID != id {
+				return nil, connections.ErrInvalid
+			}
+			object := captured.Source.Ref.Object
+			if err := s.dataObject(id, db, table, object); err != nil {
+				return nil, err
+			}
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+			plan, err := r.PreviewKeyCopy(ctx, id, s.dataDatabase(db), table, captured)
+			if err == nil {
+				err = s.require(r.Capabilities.EditableTables && r.Capabilities.KeyValues, id)
+			}
+			if err == nil && plan == nil {
+				err = contract.ErrUnsupported
+			}
+			if err == nil && plan.Snapshot().Object != object {
+				err = connections.ErrInvalid
+			}
+			if err == nil {
+				err = ctx.Err()
+			}
+			if err == nil {
+				err = s.require(r.Capabilities.EditableTables && r.Capabilities.KeyValues, id)
+			}
+			if err != nil {
+				if plan != nil {
+					_ = plan.Close()
+				}
+				return nil, err
+			}
+			return &dataMutationPlan{session: s, object: object, raw: plan}, nil
+		}
+	}
 	if r.SubmitEdits != nil {
 		out.SubmitEdits = func(ctx context.Context, id int64, db, table string, plan contract.DataMutationPlan) (*contract.DataEditResult, error) {
 			if e := s.require(r.Capabilities.EditableTables, id); e != nil {

@@ -291,13 +291,21 @@ func nativeMutationRelay(t *testing.T, cfg Config, token, mode string) (Config, 
 				return
 			case "missing":
 				body = []byte(`{"Results":null,"Errors":null}`)
-			case "wrong-value", "wrong-key", "wrong-flags", "wrong-index", "extra-result", "missing-field", "wrong-check", "missing-check":
+			case "wrong-value", "wrong-key", "wrong-flags", "wrong-index", "extra-result", "missing-field", "wrong-check", "missing-check", "wrong-source-value", "wrong-source-index", "wrong-source-session", "missing-source":
 				var reply map[string]json.RawMessage
 				json.Unmarshal(body, &reply)
 				var results []map[string]map[string]json.RawMessage
 				json.Unmarshal(reply["Results"], &results)
 				last := results[len(results)-1]["KV"]
 				switch mode {
+				case "wrong-source-value":
+					results[len(results)-2]["KV"]["Value"] = json.RawMessage(`"Zm9yZWlnbg=="`)
+				case "wrong-source-index":
+					results[len(results)-2]["KV"]["ModifyIndex"] = json.RawMessage(`0`)
+				case "wrong-source-session":
+					results[len(results)-2]["KV"]["Session"] = json.RawMessage(`"00000000-0000-0000-0000-000000000001"`)
+				case "missing-source":
+					results = append(results[:len(results)-2], results[len(results)-1])
 				case "wrong-value":
 					last["Value"] = json.RawMessage(`"Zm9yZWlnbg=="`)
 				case "wrong-key":
@@ -317,9 +325,13 @@ func nativeMutationRelay(t *testing.T, cfg Config, token, mode string) (Config, 
 				}
 				reply["Results"], _ = json.Marshal(results)
 				body, _ = json.Marshal(reply)
-			case "http500":
+			case "http500", "http408":
 				w.Header().Del("Content-Length")
-				w.WriteHeader(500)
+				status := 500
+				if mode == "http408" {
+					status = 408
+				}
+				w.WriteHeader(status)
 				w.Write([]byte("processed original transaction"))
 				return
 			}

@@ -135,3 +135,70 @@ class ConsulFixtureTests(unittest.TestCase):
                      'internal/ui/shell/consul_mutation_native_integration_test.go',
                      'internal/ui/dataworkspace/consul_mutation_native_integration_test.go'):
             self.assertIn(name, hashes)
+
+    def copy_scope_before_startup(self, **options):
+        # Stop before the first owned container can be created. The retained
+        # report must still name the exact scope, parents and packages selected.
+        import json
+        import tempfile
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            with patch.object(fixture, 'ROOT', root), patch.object(fixture, 'source_hashes', return_value={}), patch.object(fixture, 'command', side_effect=RuntimeError('owned startup intentionally unavailable')):
+                with self.assertRaisesRegex(RuntimeError, 'owned startup intentionally unavailable'):
+                    fixture.verify(**options)
+            paths = list((root/'build/consul').glob('owned-fixture-*.json'))
+            self.assertEqual(len(paths), 1)
+            report = json.loads(paths[0].read_text())
+            self.assertFalse(report['passed'])
+            self.assertTrue(report['private_files_removed'])
+            self.assertNotIn('container_id', report)
+            return report
+
+    def test_copy_foundation_retains_all_public_write_regression_and_native_copy_parents(self):
+        report = self.copy_scope_before_startup(key_copy=True, txn_max_request=8388608)
+        required = (fixture.REQUIRED + fixture.DOCUMENT_REQUIRED + fixture.RUNTIME_REQUIRED +
+                    fixture.PUBLIC_REQUIRED + fixture.TOOLS_REQUIRED + fixture.DATA_REQUIRED +
+                    fixture.MUTATION_REQUIRED + fixture.GRID_REQUIRED + fixture.WRITE_GRID_REQUIRED +
+                    fixture.COPY_REQUIRED)
+        self.assertEqual(report['required'], list(required))
+        self.assertEqual(len(required), 56)
+        self.assertEqual(len(set(required)), 56)
+        self.assertEqual(report['scope'], 'private-consul-original-conditional-copy-with-public-write-regression')
+        self.assertTrue(report['public_grid_writes'])
+        self.assertIn('./internal/ui/dataworkspace', report['packages'])
+        self.assertIn('./internal/ui/shell', report['packages'])
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+        for name in ('internal/db/contract/data_key_copy.go', 'internal/services/consul/data_key_copy.go',
+                     'internal/services/consul/data_key_copy_native_integration_test.go',
+                     'internal/services/dbruntime/data_key_copy_test.go'):
+            self.assertIn(name, fixture.source_hashes())
+
+    def test_copy_diagnostic_and_real_default_limit_use_only_the_original_adapter(self):
+        diagnostic = self.copy_scope_before_startup(copy_probe=True, txn_max_request=8388608)
+        limit = self.copy_scope_before_startup(copy_limit_probe=True)
+        self.assertEqual(diagnostic['required'], list(fixture.COPY_REQUIRED))
+        self.assertEqual(diagnostic['scope'], 'diagnostic-consul-conditional-copy-probe')
+        self.assertEqual(limit['required'], [fixture.COPY_REQUIRED[-1]])
+        self.assertEqual(limit['scope'], 'private-consul-original-copy-request-limit')
+        self.assertEqual(limit['txn_max_request'], 524288)
+        for report in (diagnostic, limit):
+            self.assertEqual(report['packages'], ['./internal/services/consul'])
+            self.assertFalse(report['public_grid_writes'])
+            self.assertFalse(report['key_copy'])
+
+    def test_copy_scopes_reject_downgrading_complete_regression_or_default_server_limit(self):
+        for flag in ('copy_probe', 'copy_limit_probe'):
+            for public_flag in ('probe', 'session', 'public', 'tools', 'data_session', 'public_grid',
+                                'data_mutations', 'mutation_limit_probe', 'public_grid_writes', 'grid_write_probe'):
+                with self.subTest(flag=flag, public_flag=public_flag), self.assertRaises(ValueError):
+                    fixture.verify(**{flag: True, public_flag: True})
+        for other in ('copy_probe', 'copy_limit_probe', 'probe', 'mutation_limit_probe', 'grid_write_probe'):
+            with self.subTest(other=other), self.assertRaises(ValueError):
+                fixture.verify(key_copy=True, **{other: True})
+        with self.assertRaises(ValueError):
+            fixture.verify(copy_limit_probe=True, txn_max_request=8388608)

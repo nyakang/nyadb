@@ -25,7 +25,7 @@ type preparedDataEdit struct {
 	edit          contract.DataEdit
 	before, after contract.KVHTTPEntry
 	observation   dataObservation
-	rename        bool
+	rename, copy  bool
 }
 
 type dataPlan struct {
@@ -307,7 +307,7 @@ func mutationRequest(prepared []preparedDataEdit) (Request, contract.KVRequest, 
 		if p.edit.Kind != "insert" {
 			add(TxnKV{Verb: "check-index", Key: p.before.Key, Index: &index})
 		}
-		if p.edit.Kind == "insert" || p.rename {
+		if p.edit.Kind == "insert" || p.rename || p.copy {
 			add(TxnKV{Verb: "check-not-exists", Key: p.after.Key})
 		}
 		if p.edit.Kind != "delete" {
@@ -316,7 +316,7 @@ func mutationRequest(prepared []preparedDataEdit) (Request, contract.KVRequest, 
 				value = []byte{}
 			}
 			cas := index
-			if p.edit.Kind == "insert" || p.rename {
+			if p.edit.Kind == "insert" || p.rename || p.copy {
 				cas = 0
 			}
 			flags := p.after.Flags
@@ -326,6 +326,9 @@ func mutationRequest(prepared []preparedDataEdit) (Request, contract.KVRequest, 
 			add(TxnKV{Verb: "delete-cas", Key: p.before.Key, Index: &index})
 		}
 		if p.edit.Kind != "delete" {
+			if p.copy {
+				add(TxnKV{Verb: "get", Key: p.before.Key})
+			}
 			add(TxnKV{Verb: "get", Key: p.after.Key})
 		}
 		if p.edit.Kind == "delete" || p.rename {
@@ -341,6 +344,10 @@ func mutationRequest(prepared []preparedDataEdit) (Request, contract.KVRequest, 
 }
 
 func (l *dataLease) preview(parent context.Context, id int64, catalog, name string, edits []contract.DataEdit) (contract.DataMutationPlan, error) {
+	return l.previewPrepared(parent, id, catalog, name, func() ([]preparedDataEdit, error) { return l.prepareDataEdits(edits) })
+}
+
+func (l *dataLease) previewPrepared(parent context.Context, id int64, catalog, name string, prepare func() ([]preparedDataEdit, error)) (contract.DataMutationPlan, error) {
 	if err := l.check(id, catalog, name); err != nil {
 		return nil, err
 	}
@@ -379,7 +386,7 @@ func (l *dataLease) preview(parent context.Context, id int64, catalog, name stri
 			l.releasePlanBudget()
 		}
 	}()
-	prepared, err := l.prepareDataEdits(edits)
+	prepared, err := prepare()
 	if err != nil {
 		return nil, err
 	}
@@ -388,7 +395,7 @@ func (l *dataLease) preview(parent context.Context, id int64, catalog, name stri
 		if p.edit.Kind != "insert" {
 			readOps = append(readOps, TxnOperation{KV: &TxnKV{Verb: "get", Key: p.before.Key}})
 		}
-		if p.edit.Kind == "insert" || p.rename {
+		if p.edit.Kind == "insert" || p.rename || p.copy {
 			readOps = append(readOps, TxnOperation{KV: &TxnKV{Verb: "check-not-exists", Key: p.after.Key}})
 		}
 	}
@@ -616,6 +623,12 @@ func (l *dataLease) dataOutcomes(prepared []preparedDataEdit, results []contract
 			if !ok {
 				return nil, ErrProtocol
 			}
+			if p.copy {
+				source, ok := take()
+				if !ok || !reflect.DeepEqual(source, p.before) {
+					return nil, ErrProtocol
+				}
+			}
 			saved, ok := take()
 			if !ok {
 				return nil, ErrProtocol
@@ -655,7 +668,7 @@ func validSavedEntry(e contract.KVHTTPEntry, p preparedDataEdit) bool {
 	if !slices.Equal(e.PresentFields, []string{"CreateIndex", "Flags", "Key", "LockIndex", "ModifyIndex", "Value"}) {
 		return false
 	}
-	if p.edit.Kind == "insert" || p.rename {
+	if p.edit.Kind == "insert" || p.rename || p.copy {
 		return e.CreateIndex == e.ModifyIndex && (p.edit.Kind == "insert" || e.ModifyIndex > p.before.ModifyIndex)
 	}
 	return e.CreateIndex == p.before.CreateIndex && e.ModifyIndex > p.before.ModifyIndex

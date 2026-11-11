@@ -129,15 +129,18 @@ type DataRuntime struct {
 	// relationship document. Nil explicitly excludes relationship creation.
 	ReadGraphEndpoints func(context.Context, int64, string, string, string, string) (*DataGraphEndpoints, error)
 	PreviewEdits       func(context.Context, int64, string, string, []DataEdit) (DataMutationPlan, error)
-	SubmitEdits        func(context.Context, int64, string, string, DataMutationPlan) (*DataEditResult, error)
-	RowReader          func(context.Context, int64, string, string, RowRef) (*DataRow, error)
-	Verify             func(context.Context, int64, string, string, *DataEditResult) (*DataVerification, error)
-	Exporter           func(context.Context, int64, string, string, DataOptions, []string, func([]DataValue) error) error
-	Analyzer           func(context.Context, int64, string, string, DataOptions, []string) (*DataAnalysis, error)
-	Transactions       DataTransactions
-	NewTableImporter   func(context.Context, int64, string, string, []DataImportColumn, []DataEdit) (*DataNewTableImportResult, error)
-	Importer           func(context.Context, int64, string, string, DataImportRequest) (*DataImportResult, error)
-	StreamImporter     func(context.Context, int64, string, string, DataImportStreamRequest) (*DataImportStreamResult, error)
+	// PreviewKeyCopy requires the original source observation and destination
+	// absence in one native transaction; it never deletes the source key.
+	PreviewKeyCopy   func(context.Context, int64, string, string, DataKeyCopy) (DataMutationPlan, error)
+	SubmitEdits      func(context.Context, int64, string, string, DataMutationPlan) (*DataEditResult, error)
+	RowReader        func(context.Context, int64, string, string, RowRef) (*DataRow, error)
+	Verify           func(context.Context, int64, string, string, *DataEditResult) (*DataVerification, error)
+	Exporter         func(context.Context, int64, string, string, DataOptions, []string, func([]DataValue) error) error
+	Analyzer         func(context.Context, int64, string, string, DataOptions, []string) (*DataAnalysis, error)
+	Transactions     DataTransactions
+	NewTableImporter func(context.Context, int64, string, string, []DataImportColumn, []DataEdit) (*DataNewTableImportResult, error)
+	Importer         func(context.Context, int64, string, string, DataImportRequest) (*DataImportResult, error)
+	StreamImporter   func(context.Context, int64, string, string, DataImportStreamRequest) (*DataImportStreamResult, error)
 	// Graph exchange preserves full typed entities and explicit source endpoint
 	// mappings. Submission consumes the original lease's immutable preview once.
 	PreviewGraphImport func(context.Context, int64, string, string, GraphImportRequest) (GraphImportPlan, error)

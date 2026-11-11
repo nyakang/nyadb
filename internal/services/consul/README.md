@@ -206,3 +206,28 @@ total), requires 196 grid and 204 HTTP-workspace images per mode, and checks com
 preview/receipt copies and files, actual processed write reply loss and no replay,
 and requires corresponding bilingual wide/narrow images. `--grid-write-probe`
 is diagnostic only and does not replace complete regression acceptance.
+
+
+The private conditional-copy foundation uses a separate `DataKeyCopy` request
+and original `PreviewKeyCopy` binding. Ordinary insert/update savers reject copy.
+It verifies the signed original source in either payload mode, loads its complete
+value and Flags through the original write executor, and creates one immutable
+plan containing source index check, destination absence, zero-CAS destination,
+complete unchanged source and complete saved destination receipts. Source locks,
+source changes and destination races reject atomically. Original indices and
+Session/LockIndex are not transferred to the new key. Incomplete source or target
+correspondence retains the original unknown receipt and blocks replay.
+
+The Consul runtime deliberately keeps `PreviewKeyCopy` unavailable until the
+shared-grid target form and complete public acceptance are delivered. Conditional
+copy remains an outstanding public capability. Private acceptance retains every
+one of the 50 public-write regression parents and adds six native-copy parents
+(56/configuration, with the same 400 regression images); copy diagnostics alone
+cannot claim that acceptance. The independent default-limit probe requires the
+actual unchanged server limit and one unsplit original 413 rejection.
+
+```sh
+python3 tools/verify_consul_fixture.py --key-copy --txn-max-request 8388608 --mode token --race
+python3 tools/verify_consul_fixture.py --copy-probe --txn-max-request 8388608 --mode token
+python3 tools/verify_consul_fixture.py --copy-limit-probe --mode token --race
+```
