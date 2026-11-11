@@ -67,6 +67,7 @@ type KVHTTPEntry struct {
 	ValuePresent, ValueNull                    bool
 	Flags, CreateIndex, ModifyIndex, LockIndex uint64
 	Session                                    string
+	SessionNull                                bool
 }
 
 func (e KVHTTPEntry) Clone() KVHTTPEntry {

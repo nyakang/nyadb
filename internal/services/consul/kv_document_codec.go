@@ -95,7 +95,7 @@ func nativeEntryCost(e Entry) int64 {
 func neutralEntry(e Entry) contract.KVHTTPEntry {
 	return contract.KVHTTPEntry{PresentFields: e.PresentFields, Key: e.Key, Value: e.Value,
 		ValuePresent: e.ValuePresent, ValueNull: e.ValueNull, Flags: e.Flags,
-		CreateIndex: e.CreateIndex, ModifyIndex: e.ModifyIndex, LockIndex: e.LockIndex, Session: e.Session}
+		CreateIndex: e.CreateIndex, ModifyIndex: e.ModifyIndex, LockIndex: e.LockIndex, Session: e.Session, SessionNull: e.SessionNull}
 }
 
 // Optional typed/JSON projections cannot replace or invalidate the original

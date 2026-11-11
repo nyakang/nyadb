@@ -81,6 +81,7 @@ type Entry struct {
 	ValuePresent, ValueNull                    bool
 	Flags, CreateIndex, ModifyIndex, LockIndex uint64
 	Session                                    string
+	SessionNull                                bool
 }
 
 func (e Entry) Clone() Entry {
@@ -130,9 +131,12 @@ func decodeEntry(raw json.RawMessage) (Entry, error) {
 			e.Value = b
 		}
 	}
-	if v, ok := fields["Session"]; ok && string(v) != "null" {
-		if json.Unmarshal(v, &e.Session) != nil || e.Session != "" && !validID(e.Session) {
-			return e, ErrProtocol
+	if v, ok := fields["Session"]; ok {
+		e.SessionNull = string(v) == "null"
+		if !e.SessionNull {
+			if json.Unmarshal(v, &e.Session) != nil || e.Session != "" && !validID(e.Session) {
+				return e, ErrProtocol
+			}
 		}
 	}
 	return e, nil

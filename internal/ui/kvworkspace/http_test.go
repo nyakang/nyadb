@@ -130,6 +130,35 @@ func TestHTTPBodyPreviewBoundsUTF8AndBinaryWithoutFullBodyAllocation(t *testing.
 		t.Fatal("preview depended on entire body")
 	}
 }
+
+func TestHTTPOperationRecordRetainsOriginalNullSessionSeparatelyFromEmpty(t *testing.T) {
+	s, d, _ := httpTestState(t)
+	d.last = httpTestReceipt(d)
+	d.last.Result.HTTP.Entries[0].PresentFields = []string{"Flags", "Key", "Session", "Value"}
+	d.last.Result.HTTP.Entries[0].Session = ""
+	d.last.Result.HTTP.Entries[0].SessionNull = true
+	raw, err := s.OperationRecord(d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var record struct {
+		HTTP struct {
+			Entries []struct {
+				Session       string
+				SessionNull   bool
+				PresentFields []string
+			}
+		}
+	}
+	if json.Unmarshal(raw, &record) != nil || len(record.HTTP.Entries) != 1 || !record.HTTP.Entries[0].SessionNull || record.HTTP.Entries[0].Session != "" {
+		t.Fatal("original Session null was lost in complete operation record")
+	}
+	d.last.Result.HTTP.Entries[0].SessionNull = false
+	empty, err := s.OperationRecord(d)
+	if err != nil || bytes.Equal(raw, empty) {
+		t.Fatal("explicit empty Session became the original null observation")
+	}
+}
 func TestHTTPExportCapturesOriginalBodyIncludingCompleteEmptyAndPartial(t *testing.T) {
 	for _, kind := range []string{"complete", "empty", "partial", "record"} {
 		t.Run(kind, func(t *testing.T) {

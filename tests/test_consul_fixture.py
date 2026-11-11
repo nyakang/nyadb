@@ -59,6 +59,23 @@ class ConsulFixtureTests(unittest.TestCase):
                      'internal/services/dbruntime/consul_tools_native_integration_test.go'):
             self.assertIn(name, hashes)
 
+    def test_private_data_scope_retains_public_tools_and_requires_all_data_parents(self):
+        required = fixture.REQUIRED + fixture.DOCUMENT_REQUIRED + fixture.RUNTIME_REQUIRED + fixture.PUBLIC_REQUIRED + fixture.TOOLS_REQUIRED + fixture.DATA_REQUIRED
+        self.assertEqual(len(required), 29)
+        self.assertEqual(len(set(required)), len(required))
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+        with self.assertRaises(ValueError):
+            fixture.verify(probe=True, data_session=True)
+        hashes = fixture.source_hashes()
+        for name in ('internal/services/consul/data_document.go', 'internal/services/consul/data_read.go',
+                     'internal/services/consul/data_field.go', 'internal/services/consul/data_export.go',
+                     'internal/services/consul/data_native_integration_test.go'):
+            self.assertIn(name, hashes)
+
     def test_public_scope_keeps_all_private_parents_and_requires_real_ui_parents(self):
         required = fixture.REQUIRED + fixture.DOCUMENT_REQUIRED + fixture.RUNTIME_REQUIRED + fixture.PUBLIC_REQUIRED
         self.assertEqual(len(required), 22)

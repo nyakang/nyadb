@@ -17,11 +17,12 @@ type httpEntryRecord struct {
 	ValuePresent, ValueNull                    bool
 	Flags, CreateIndex, ModifyIndex, LockIndex string
 	Session                                    string
+	SessionNull                                bool
 }
 
 func httpEntryData(e contract.KVHTTPEntry) httpEntryRecord {
 	return httpEntryRecord{PresentFields: e.PresentFields, Key: e.Key, Value: e.Value, ValuePresent: e.ValuePresent, ValueNull: e.ValueNull,
-		Flags: strconv.FormatUint(e.Flags, 10), CreateIndex: strconv.FormatUint(e.CreateIndex, 10), ModifyIndex: strconv.FormatUint(e.ModifyIndex, 10), LockIndex: strconv.FormatUint(e.LockIndex, 10), Session: e.Session}
+		Flags: strconv.FormatUint(e.Flags, 10), CreateIndex: strconv.FormatUint(e.CreateIndex, 10), ModifyIndex: strconv.FormatUint(e.ModifyIndex, 10), LockIndex: strconv.FormatUint(e.LockIndex, 10), Session: e.Session, SessionNull: e.SessionNull}
 }
 func uintRecord(value *uint64) *string {
 	if value == nil {

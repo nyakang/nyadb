@@ -111,3 +111,25 @@ It retains all 22 original parents and adds three mandatory runtime/workspace to
 parents, 204 bilingual images per fixture, actual processed reply-fault scenarios
 and checks for offline generation, exact bytes/zero/CAS, transaction conflicts,
 original recovery/parking, file text and unapplied-input leave guards.
+
+The private read-only data-document foundation reserves four independent original
+HTTP executors for pages, count, fields and export. Reservation performs no I/O.
+Each page reads one complete bounded recurse/get-tree observation, orders exact
+UTF-8 key bytes and applies a document-signed last-key cursor. Pages are live;
+HTTP indices do not provide a fixed MVCC snapshot. Refresh invalidates old cursors.
+Count and export each read an independent complete visible-prefix observation.
+The complete observation must stay within 10,000 entries, 32 MiB of original
+values and the 48 MiB HTTP capture limit; oversized export fails before emitting
+rows. Field previews preserve at most 1024 bytes, while explicit full-value reads
+retain the original bytes up to Consul's 512 KiB limit. Unsigned indices/flags and
+missing, null and empty session/value states remain distinct in captured evidence.
+Close joins original work and clears cursors and receipts. Failed page reads
+require explicit original-document reopening; requests never select a replacement
+executor or replay automatically. This foundation is not published through
+metadata, product capabilities or the shared data-grid entry point yet.
+
+Private data acceptance uses `--data-session --race` with the same five modes.
+It keeps all 25 native/document/runtime/public/tool parents and adds four data
+parents, including actual processed-read cancellation/reply loss and a native
+prefix exceeding the complete-value budget. The existing 204 bilingual request
+workspace images are regression evidence; they do not claim a public data grid.

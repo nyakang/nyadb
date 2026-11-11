@@ -3640,5 +3640,6 @@
   "kvToolReturn": "返回请求文本",
   "kvToolGenerate": "生成请求文本",
   "kvToolStale": "请求文本已更改，请重新打开工具后生成",
-  "kvToolLeave": "未生成的工具输入也将被放弃；请求文件只保存编辑器文本"
+  "kvToolLeave": "未生成的工具输入也将被放弃；请求文件只保存编辑器文本",
+  "consulDataLiveScope": "原前缀内可见键的有界实时观察；翻页、统计和导出不共享固定快照。"
 }

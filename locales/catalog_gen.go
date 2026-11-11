@@ -37051,3 +37051,13 @@ func KvToolLeave() string { return In(i18n.Locale()).KvToolLeave() }
 func (msgs Messages) KvToolLeave() string {
 	return Catalog.Format(msgs.locale, "kvToolLeave", nil)
 }
+
+// ConsulDataLiveScope says "原前缀内可见键的有界实时观察；翻页、统计和导出不共享固定快照。"
+// in the language the app shows.
+func ConsulDataLiveScope() string { return In(i18n.Locale()).ConsulDataLiveScope() }
+
+// ConsulDataLiveScope says "原前缀内可见键的有界实时观察；翻页、统计和导出不共享固定快照。"
+// in the language of msgs.
+func (msgs Messages) ConsulDataLiveScope() string {
+	return Catalog.Format(msgs.locale, "consulDataLiveScope", nil)
+}
