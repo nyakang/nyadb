@@ -77,7 +77,7 @@ func (s *State) loadMySQLObjects(services ui.Services, database string, force bo
 }
 
 func (s *State) openMySQLObject(services ui.Services, database, name, kind string) {
-	if s.sessions.Current().Kind == connections.Neo4j && (kind == "图标签" || kind == "关系类型") || s.sessions.Current().Kind == connections.Etcd && kind == "键" {
+	if s.sessions.Current().Kind == connections.Neo4j && (kind == "图标签" || kind == "关系类型") || s.sessions.Current().Kind.IsNativeKV() && kind == "键" {
 		id := s.sessions.Current().ProfileID
 		if caps := s.objectCapabilitiesFor(id); !caps.Documents && !caps.KeyValues {
 			return
@@ -144,7 +144,7 @@ func (s *State) openMySQLData(services ui.Services, database, table string) {
 	w := s.sessions.Current()
 	// Graph callers must supply the exact label/type reference instead of
 	// guessing a kind from a name shared by two graph categories.
-	if w.Kind == connections.Neo4j || w.Kind == connections.Etcd {
+	if w.Kind == connections.Neo4j || w.Kind.IsNativeKV() {
 		return
 	}
 	if w.Kind == connections.Meilisearch && !s.objectCapabilitiesFor(w.ProfileID).Documents {

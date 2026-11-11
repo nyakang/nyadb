@@ -95,3 +95,22 @@ class ConsulFixtureTests(unittest.TestCase):
                      'internal/ui/kvworkspace/http_receipt.go', 'internal/ui/kvworkspace/consul_native_integration_test.go',
                      'internal/ui/shell/consul_native_integration_test.go', 'locales/en.json'):
             self.assertIn(name, hashes)
+
+    def test_public_grid_retains_all_parents_and_requires_original_runtime_and_shared_ui(self):
+        required = (fixture.REQUIRED + fixture.DOCUMENT_REQUIRED + fixture.RUNTIME_REQUIRED +
+                    fixture.PUBLIC_REQUIRED + fixture.TOOLS_REQUIRED + fixture.DATA_REQUIRED + fixture.GRID_REQUIRED)
+        self.assertEqual(len(required), 35)
+        self.assertEqual(len(set(required)), len(required))
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+        with self.assertRaises(ValueError):
+            fixture.verify(probe=True, public_grid=True)
+        hashes = fixture.source_hashes()
+        for name in ('internal/services/dbruntime/consul_data_native_integration_test.go',
+                     'internal/ui/dataworkspace/consul_native_integration_test.go',
+                     'internal/ui/shell/consul_grid_native_integration_test.go',
+                     'internal/ui/objectworkspace/search_view.go'):
+            self.assertIn(name, hashes)

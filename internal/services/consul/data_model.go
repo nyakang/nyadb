@@ -18,7 +18,7 @@ func dataColumns() []contract.StructureColumn {
 		{Name: "value", Type: "bytes", DataType: "bytes", ValueKind: contract.Binary, Nullable: true},
 	}
 	for _, name := range []string{"flags", "create_index", "modify_index", "lock_index"} {
-		columns = append(columns, contract.StructureColumn{Name: name, Type: "uint64", DataType: "uint64", ValueKind: contract.Integer, Nullable: true, Generated: true})
+		columns = append(columns, contract.StructureColumn{Name: name, Type: "uint64", DataType: "uint64", ValueKind: contract.Integer, Nullable: true, Generated: name != "flags"})
 	}
 	columns = append(columns, contract.StructureColumn{Name: "session", Type: "uuid", DataType: "uuid", ValueKind: contract.Text, Nullable: true, Generated: true})
 	for i := range columns {
@@ -65,10 +65,6 @@ func dataCells(entry contract.KVHTTPEntry, preview bool) []contract.DataCell {
 	return cells
 }
 
-func (l *dataLease) ref(key string) contract.RowRef {
-	return contract.RowRef{Object: l.object, Database: l.object.Catalog, Table: l.object.Name, Columns: []string{"key"}, Values: [][]byte{[]byte(key)}, TypedValues: []contract.Cell{{Kind: contract.Text, Text: key}}}
-}
-
 type dataObservation struct {
 	Object                                     contract.ObjectRef
 	Epoch                                      uint64
@@ -83,10 +79,14 @@ type dataObservation struct {
 }
 
 func (l *dataLease) snapshot(entry contract.KVHTTPEntry, metadata contract.KVHTTPMetadata) *contract.RowSnapshot {
-	hash := sha256.Sum256(entry.Value)
 	l.mu.Lock()
 	epoch := l.epoch
 	l.mu.Unlock()
+	return l.snapshotAt(entry, metadata, epoch)
+}
+
+func (l *dataLease) snapshotAt(entry contract.KVHTTPEntry, metadata contract.KVHTTPMetadata, epoch uint64) *contract.RowSnapshot {
+	hash := sha256.Sum256(entry.Value)
 	observation := dataObservation{Object: l.object, Epoch: epoch, Key: entry.Key, ValueHash: hex.EncodeToString(hash[:]),
 		Flags: strconv.FormatUint(entry.Flags, 10), CreateIndex: strconv.FormatUint(entry.CreateIndex, 10), ModifyIndex: strconv.FormatUint(entry.ModifyIndex, 10), LockIndex: strconv.FormatUint(entry.LockIndex, 10),
 		Session: entry.Session, SessionNull: entry.SessionNull, PresentFields: slices.Clone(entry.PresentFields), ValuePresent: entry.ValuePresent, ValueNull: entry.ValueNull, ACLFiltered: metadata.ACLFiltered}
@@ -94,7 +94,9 @@ func (l *dataLease) snapshot(entry contract.KVHTTPEntry, metadata contract.KVHTT
 		v := strconv.FormatUint(*metadata.Index, 10)
 		observation.HTTPIndex = &v
 	}
-	snapshot := &contract.RowSnapshot{Mode: "fingerprints", Ref: l.ref(entry.Key), Metadata: string(l.encode(observation))}
+	raw := l.encode(observation)
+	ref := contract.RowRef{Object: l.object, Database: l.object.Catalog, Table: l.object.Name, Columns: []string{"_consul_key_identity"}, Values: [][]byte{raw}, TypedValues: []contract.Cell{{Kind: contract.Text, Text: entry.Key}}}
+	snapshot := &contract.RowSnapshot{Mode: "fingerprints", Ref: ref, Metadata: string(raw)}
 	for i, cell := range dataCells(entry, false) {
 		snapshot.Columns = append(snapshot.Columns, dataColumns()[i].Name)
 		if cell.Null {
@@ -113,17 +115,29 @@ func (l *dataLease) snapshot(entry contract.KVHTTPEntry, metadata contract.KVHTT
 }
 
 func (l *dataLease) validateRef(ref contract.RowRef) (string, error) {
-	if ref.Object != l.object || ref.Database != l.object.Catalog || ref.Table != l.object.Name || !slices.Equal(ref.Columns, []string{"key"}) || len(ref.Values) != 1 {
-		return "", ErrInvalid
+	observation, err := l.refObservation(ref)
+	return observation.Key, err
+}
+
+func (l *dataLease) refObservation(ref contract.RowRef) (dataObservation, error) {
+	var observation dataObservation
+	if ref.Object != l.object || ref.Database != l.object.Catalog || ref.Table != l.object.Name || !slices.Equal(ref.Columns, []string{"_consul_key_identity"}) || len(ref.Values) != 1 {
+		return observation, ErrInvalid
 	}
-	key := string(ref.Values[0])
-	if !validKey(key, false) || !bytes.HasPrefix(ref.Values[0], l.session.scope.Prefix) {
-		return "", ErrInvalid
+	if err := l.decode(ref.Values[0], &observation); err != nil || observation.Object != l.object {
+		return observation, ErrInvalid
 	}
-	if len(ref.TypedValues) > 0 && (len(ref.TypedValues) != 1 || ref.TypedValues[0].Kind != contract.Text || ref.TypedValues[0].Truncated || len(ref.TypedValues[0].Bytes) != 0 || ref.TypedValues[0].Text != key) {
-		return "", ErrInvalid
+	l.mu.Lock()
+	epoch := l.epoch
+	l.mu.Unlock()
+	key := observation.Key
+	if observation.Epoch == 0 || observation.Epoch > epoch || !validKey(key, false) || !bytes.HasPrefix([]byte(key), l.session.scope.Prefix) {
+		return observation, ErrInvalid
 	}
-	return key, nil
+	if len(ref.TypedValues) != 1 || ref.TypedValues[0].Kind != contract.Text || ref.TypedValues[0].Truncated || len(ref.TypedValues[0].Bytes) != 0 || ref.TypedValues[0].Text != key {
+		return observation, ErrInvalid
+	}
+	return observation, nil
 }
 
 func cloneDataRef(ref contract.RowRef) contract.RowRef {

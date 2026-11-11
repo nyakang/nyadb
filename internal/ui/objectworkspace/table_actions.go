@@ -73,8 +73,8 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 		s.deps.Favorite(services, profileID, database, name, kind)
 	}
 	if GraphDefinitionKind(kind) {
-		if (kind == "图标签" || kind == "关系类型") && m.Item(locales.Text("浏览图数据（只读）")).Shortcut(0, ui.KeyEnter).Disabled(!s.canOpenGraphData(profileID, kind)).Chosen() && s.contextKindEntryValid(entryScope, profileID, database, name, kind) {
-			s.openGraphData(services, profileID, database, name, kind)
+		if (kind == "图标签" || kind == "关系类型") && m.Item(locales.Text("浏览图数据（只读）")).Shortcut(0, ui.KeyEnter).Disabled(!s.canOpenQualifiedData(profileID, kind)).Chosen() && s.contextKindEntryValid(entryScope, profileID, database, name, kind) {
+			s.openQualifiedData(services, profileID, database, name, kind)
 		}
 		if m.Item(locales.Text("查看定义（只读）")).Chosen() && s.contextKindEntryValid(entryScope, profileID, database, name, kind) {
 			s.openProgram(database, name, kind)
@@ -107,10 +107,11 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 		return
 	}
 	open, design := mysqlObjectActionLabels(kind)
+	nativeKey := kind == "键" && s.deps.Engine != nil && (s.deps.Engine(profileID) == "etcd" || s.deps.Engine(profileID) == "consul")
 	if s.deps.Engine != nil && s.deps.Engine(profileID) == "solr" && (kind == "Core" || kind == "集合" || kind == "别名") {
 		open, design = "打开文档", "查看 Schema（只读）"
 	}
-	if m.Item(locales.Text(open)).Shortcut(0, ui.KeyEnter).Chosen() {
+	if m.Item(locales.Text(open)).Shortcut(0, ui.KeyEnter).Chosen() && (!nativeKey || s.contextKindEntryValid(entryScope, profileID, database, name, kind)) {
 		s.openObjectFor(services, profileID, database, name, kind)
 	}
 	if kind == "表" {
@@ -121,7 +122,7 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 	if kind == "表" && s.deps.OpenDesign != nil && s.capabilities(profileID).DesignTables {
 		design = "设计表"
 	}
-	if m.Item(locales.Text(design)).Shortcut(ui.Ctrl, ui.KeyD).Disabled(Supports(kind)).Chosen() {
+	if m.Item(locales.Text(design)).Shortcut(ui.Ctrl, ui.KeyD).Disabled(Supports(kind)).Chosen() && (!nativeKey || s.contextKindEntryValid(entryScope, profileID, database, name, kind)) {
 		if kind == "表" {
 			s.openDesign(services, profileID, database, name)
 		} else if s.deps.OpenStructure != nil {

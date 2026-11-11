@@ -148,8 +148,8 @@ func (s *State) openObjectFor(services ui.Services, profileID int64, db, name, k
 		}
 		return
 	}
-	if s.canOpenGraphData(profileID, kind) {
-		s.openGraphData(services, profileID, db, name, kind)
+	if s.canOpenQualifiedData(profileID, kind) {
+		s.openQualifiedData(services, profileID, db, name, kind)
 		return
 	}
 	if Supports(kind) {
@@ -260,12 +260,16 @@ func (s *State) ShowCategory(id int64, kind string) {
 	s.SelectRow(id, -1)
 }
 
-func (s *State) canOpenGraphData(profile int64, kind string) bool {
-	return (kind == "图标签" || kind == "关系类型") && s.deps.Engine != nil && s.deps.Engine(profile) == "neo4j" &&
-		s.capabilities(profile).Documents && s.deps.OpenQualifiedData != nil
+func (s *State) canOpenQualifiedData(profile int64, kind string) bool {
+	if s.deps.Engine == nil || s.deps.OpenQualifiedData == nil {
+		return false
+	}
+	engine, caps := s.deps.Engine(profile), s.capabilities(profile)
+	return (kind == "图标签" || kind == "关系类型") && engine == "neo4j" && caps.Documents ||
+		kind == "键" && (engine == "etcd" || engine == "consul") && caps.KeyValues
 }
-func (s *State) openGraphData(services ui.Services, profile int64, database, name, kind string) {
-	if !s.canOpenGraphData(profile, kind) {
+func (s *State) openQualifiedData(services ui.Services, profile int64, database, name, kind string) {
+	if !s.canOpenQualifiedData(profile, kind) {
 		return
 	}
 	b, session := s.currentBrowser(), s.sessionFor(profile)

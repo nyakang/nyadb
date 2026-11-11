@@ -112,7 +112,7 @@ parents, 204 bilingual images per fixture, actual processed reply-fault scenario
 and checks for offline generation, exact bytes/zero/CAS, transaction conflicts,
 original recovery/parking, file text and unapplied-input leave guards.
 
-The private read-only data-document foundation reserves four independent original
+The public read-only shared grid reserves four independent original
 HTTP executors for pages, count, fields and export. Reservation performs no I/O.
 Each page reads one complete bounded recurse/get-tree observation, orders exact
 UTF-8 key bytes and applies a document-signed last-key cursor. Pages are live;
@@ -125,11 +125,25 @@ retain the original bytes up to Consul's 512 KiB limit. Unsigned indices/flags a
 missing, null and empty session/value states remain distinct in captured evidence.
 Close joins original work and clears cursors and receipts. Failed page reads
 require explicit original-document reopening; requests never select a replacement
-executor or replay automatically. This foundation is not published through
-metadata, product capabilities or the shared data-grid entry point yet.
+executor or replay automatically. Original metadata publishes the single qualified
+`kv/keyspace/keys` object. Navigation, object-toolbar/context/search and View
+entries use the existing shared grid, alongside retained native HTTP documents.
+The seven-column structure is read-only and presents native nullability and
+generated fields, without relational default/autoincrement/index/foreign-key
+controls. SQL, editing, transactions, import,
+filtering and user-defined sorting remain unavailable.
 
 Private data acceptance uses `--data-session --race` with the same five modes.
 It keeps all 25 native/document/runtime/public/tool parents and adds four data
 parents, including actual processed-read cancellation/reply loss and a native
 prefix exceeding the complete-value budget. The existing 204 bilingual request
 workspace images are regression evidence; they do not claim a public data grid.
+
+Public grid acceptance uses `--public-grid --race` with the same five official
+modes. It retains all 29 native/document/runtime/public/tool/data parents and adds
+six mandatory runtime, shared-grid and Shell parents. Each configuration requires
+56 Chinese/English wide/narrow grid images and the existing 204 HTTP-workspace
+regression images. Original cursor proofs and cached row observations are signed
+per document; independent HTTP index changes do not invalidate unchanged-row
+export verification. Failed page reads leave count, field and export executors
+independent. Failed public handshakes return no session for runtime cleanup.

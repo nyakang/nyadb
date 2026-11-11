@@ -189,6 +189,14 @@ func (s *State) InspectorView(c *ui.Context, d *Document) {
 			}
 			return
 		}
+		if s.keyspaceStructure(d) {
+			theme.Property(c, "允许 NULL", keyspaceYesNo(field.Nullable))
+			theme.Property(c, "生成字段", keyspaceYesNo(field.Generated))
+			if field.Comment != "" {
+				theme.Property(c, "说明", field.Comment)
+			}
+			return
+		}
 		fieldAttributes(c, field)
 	}
 }

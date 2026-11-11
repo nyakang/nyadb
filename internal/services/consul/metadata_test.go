@@ -44,3 +44,38 @@ func TestDocumentPresentationAndNamespaceRemainOriginalWithoutIO(t *testing.T) {
 		t.Fatal("closed namespace still available")
 	}
 }
+
+func TestPublicDataMetadataAndReservationKeepOriginalReadOnlyScopeWithoutIO(t *testing.T) {
+	f := &dataFixture{}
+	s := dataTestSession(t, "original//prefix/", f)
+	before := f.reads.Load()
+	objects, err := s.Browse(context.Background(), s.KVScope().Namespace)
+	object := s.KVScope().Namespace.Object("keyspace", "keys")
+	if err != nil || len(objects) != 1 || objects[0].Ref != object || objects[0].Kind != "键" {
+		t.Fatal("original keyspace metadata missing", err)
+	}
+	structure, err := s.TableMetadata(context.Background(), object)
+	if err != nil || structure.Object != object || len(structure.Columns) != 7 || structure.Columns[2].DataType != "uint64" {
+		t.Fatal("original typed key structure missing", err)
+	}
+	if structure.Columns[2].Generated || !structure.Columns[3].Generated || !structure.Columns[4].Generated || !structure.Columns[5].Generated {
+		t.Fatal("user-supplied flags were conflated with generated native indices")
+	}
+	lease, err := s.ReserveDataDocument(object)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer lease.Close()
+	runtime := lease.Runtime()
+	if f.reads.Load() != before || runtime.AdvancedLoader == nil || runtime.Count == nil || runtime.Chunk == nil || runtime.Exporter == nil || runtime.Saver != nil || runtime.PreviewEdits != nil || runtime.Transactions.Begin != nil || runtime.Capabilities.EditableTables || runtime.Capabilities.Query {
+		t.Fatal("read-only publication made I/O or exposed writes")
+	}
+	if _, err := s.TableMetadata(context.Background(), object.Namespace().Object("table", "keys")); !errors.Is(err, contract.ErrUnsupported) {
+		t.Fatal("unqualified structure kind accepted", err)
+	}
+	structure.Columns[0].Name = "foreign"
+	fresh, err := s.TableMetadata(context.Background(), object)
+	if err != nil || fresh.Columns[0].Name != "key" {
+		t.Fatal("structure metadata was shared")
+	}
+}

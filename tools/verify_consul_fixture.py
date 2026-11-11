@@ -20,6 +20,7 @@ DOCUMENT_REQUIRED=('DocumentOriginalScopesBytesAndCompleteReceipts','DocumentTra
 PUBLIC_REQUIRED=('PublicBuiltinProfileMetadataCapabilitiesAndRestrictedToken','PublicWorkspaceOriginalHTTPConfirmationReceiptsFilesAndRecovery','PublicWorkspaceActualProcessedReplyFaultsNeverPromoteUnknownOrReplay','PublicProfileURIStorageVaultEditorChecksAndOriginalTLS','PublicShellChooserHTTPDocumentsMenusParkingDisconnectAndClose')
 RUNTIME_REQUIRED=('RuntimeGenerationsRequestsAndOriginalRecovery','RuntimeOriginalCommittedReplyLossAndRetirement','RuntimeLateConnectionClosesOnlyCapturedOriginalSession','RuntimeForeignScopeRejectedBeforeOriginalRecovery')
 TOOLS_REQUIRED=('PublicRuntimeStructuredToolsCapturedOriginalProvider','PublicWorkspaceStructuredToolsOriginalRequestsBytesScopesAndLeave','PublicWorkspaceStructuredToolsProcessedReplyFaultsNeverReplay')
+GRID_REQUIRED=('PublicDataOriginalLiveReadOnlyRuntimeAndRestrictedScope','PublicDataProcessedReadFaultsKeepOriginalRuntimeAndRequireReopen','PublicDataSharedGridLivePagingInspectorExportsParkingAndOriginalClose','PublicDataSharedGridProcessedReplyRetirementParkingAndExplicitReopen','PublicShellQualifiedGridNavigationMenusSearchStructureAndDisconnect','PublicShellProcessedGridCancelParkingOriginalReopenAndInactiveClose')
 DATA_REQUIRED=('DataOriginalLiveBoundariesBytesUnsignedScopeAndReceipts','DataIndependentCountFieldExportAndOriginalRestrictedScope','DataActualProcessedReadReplyLossCancellationOriginalCloseAndReopen','DataCompleteValueBudgetRejectsCountAndExportBeforeEmission')
 
 def source_hashes():
@@ -59,16 +60,17 @@ def certs(folder):
   ssl('x509','-req','-in',name+'.csr','-CA','ca.crt','-CAkey','ca.key','-CAcreateserial','-out',name+'.crt','-days','2','-extfile',name+'.ext')
  for p in folder.iterdir():p.chmod(0o600)
 
-def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False,public=False,tools=False,data_session=False):
+def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False,public=False,tools=False,data_session=False,public_grid=False):
+ data_session=data_session or public_grid
  tools=tools or data_session
  public=public or tools
  if probe and (session or public):raise ValueError('Diagnostic probe cannot claim session or public acceptance')
  session=session or public
  build=ROOT/'build/consul';build.mkdir(parents=True,exist_ok=True)
  nonce=uuid.uuid4().hex;path=build/('owned-fixture-'+nonce+'.json');log=path.with_suffix('.log')
- required=REQUIRED+(DOCUMENT_REQUIRED+RUNTIME_REQUIRED if session else ())+(PUBLIC_REQUIRED if public else ())+(TOOLS_REQUIRED if tools else ())+(DATA_REQUIRED if data_session else ())
- packages=['./internal/services/consul']+(['./internal/services/dbruntime'] if session else [])+(['./internal/ui/connectioneditor','./internal/ui/kvworkspace','./internal/ui/shell'] if public else [])
- report={'nonce':nonce,'scope':'diagnostic-consul-probe' if probe else 'private-consul-original-live-data-documents' if data_session else 'public-consul-structured-kv-tools' if tools else 'public-consul-original-http-workspace' if public else 'original-consul-native-document-runtime' if session else 'original-consul-native-foundation','mode':mode,'version':version,'image':IMAGES[version],'race':race,'passed':False,'required':required,'packages':packages,'source_hashes':source_hashes()}
+ required=REQUIRED+(DOCUMENT_REQUIRED+RUNTIME_REQUIRED if session else ())+(PUBLIC_REQUIRED if public else ())+(TOOLS_REQUIRED if tools else ())+(DATA_REQUIRED if data_session else ())+(GRID_REQUIRED if public_grid else ())
+ packages=['./internal/services/consul']+(['./internal/services/dbruntime'] if session else [])+(['./internal/ui/connectioneditor','./internal/ui/kvworkspace','./internal/ui/shell'] if public else [])+(['./internal/ui/dataworkspace'] if public_grid else [])
+ report={'nonce':nonce,'scope':'diagnostic-consul-probe' if probe else 'public-consul-read-only-shared-grid' if public_grid else 'private-consul-original-live-data-documents' if data_session else 'public-consul-structured-kv-tools' if tools else 'public-consul-original-http-workspace' if public else 'original-consul-native-document-runtime' if session else 'original-consul-native-foundation','mode':mode,'version':version,'image':IMAGES[version],'race':race,'passed':False,'required':required,'packages':packages,'source_hashes':source_hashes()}
  identifier=None;private=None
  try:
   with tempfile.TemporaryDirectory(prefix='nyadb-consul-'+nonce+'-',dir=build) as rawfolder:
@@ -123,6 +125,8 @@ def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False
     env={k:v for k,v in os.environ.items() if not k.startswith('NYADB_CONSUL_')};env.update(GOWORK='off',GOFLAGS='-mod=readonly',NYADB_CONSUL_IT='1',NYADB_CONSUL_ENDPOINT=endpoint,NYADB_CONSUL_AUTH='token' if acl else 'none',NYADB_CONSUL_TOKEN=token,NYADB_CONSUL_READ_TOKEN=readonly,NYADB_CONSUL_WRITE_TOKEN=writer,NYADB_CONSUL_VERSION=version,NYADB_CONSUL_NODE_ID=node_id)
     images=path.with_name(path.stem+'-public-images')
     if public:env.update(NYADB_CONSUL_PUBLIC_IMAGES=str(images))
+    grid_images=path.with_name(path.stem+'-grid-images')
+    if public_grid:env.update(NYADB_CONSUL_GRID_IMAGES=str(grid_images))
     if secure:env.update(NYADB_CONSUL_CA=str(private/'ca.crt'))
     if mode=='mtls':env.update(NYADB_CONSUL_CERT=str(private/'client.crt'),NYADB_CONSUL_KEY=str(private/'client.key'))
     args=['go','test','-p=1']+(['-race'] if race else [])+packages+['-run','^('+'|'.join('TestConsulNative'+c for c in required)+')$','-count=1','-v','-timeout=600s']
@@ -139,7 +143,12 @@ def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False
      if tools:
       expected.update(f'{lang}-{size}-workspace-tool-{stage}.png' for lang in ('zh-Hans','en') for size in ('1280x800','720x520') for stage in (*(f'{view}-{kind}' for view in ('form','generated','receipt') for kind in ('put','read','list','raw','delete','transaction')),*(f'{prefix}{mode}' for prefix in ('unknown-','unknown-after-read-') for mode in ('lost','partial','http500','http408','cancel','disconnect','replace'))))
      if {Path(name).name for name in pictures}!=expected:raise RuntimeError('Mandatory original public Consul image set failed')
-    report.update(passed=True,accepted=accepted,public_images=pictures,log_sha256=hashlib.sha256(log.read_bytes()).hexdigest())
+    grid_pictures={}
+    if public_grid:
+     grid_pictures={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(grid_images.glob('*.png'))}
+     expected_grid={f'{lang}-{size}-{stage}.png' for lang in ('zh-Hans','en') for size in ('1280x800','720x520') for stage in (*(f'data-{s}' for s in ('live-grid','live-next','refresh','count','field','export','parked','empty','read-retired','reopened')),*(f'shell-grid-{s}' for s in ('keys','grid','structure','reopened')))}
+     if {Path(name).name for name in grid_pictures}!=expected_grid:raise RuntimeError('Mandatory original shared Consul grid image set failed')
+    report.update(grid_images=grid_pictures,passed=True,accepted=accepted,public_images=pictures,log_sha256=hashlib.sha256(log.read_bytes()).hexdigest())
  finally:
   try:
    if identifier:
@@ -151,5 +160,5 @@ def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False
  return report
 
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('--mode',choices=('anonymous','token','tls','mtls'),default='anonymous');p.add_argument('--version',choices=tuple(IMAGES),default='2.0.2');p.add_argument('--race',action='store_true');p.add_argument('--probe',action='store_true');p.add_argument('--session',action='store_true');p.add_argument('--public',action='store_true');p.add_argument('--tools',action='store_true');p.add_argument('--data-session',action='store_true');a=p.parse_args()
- verify(a.mode,a.race,a.version,a.probe,a.session,a.public,a.tools,a.data_session)
+ p=argparse.ArgumentParser();p.add_argument('--mode',choices=('anonymous','token','tls','mtls'),default='anonymous');p.add_argument('--version',choices=tuple(IMAGES),default='2.0.2');p.add_argument('--race',action='store_true');p.add_argument('--probe',action='store_true');p.add_argument('--session',action='store_true');p.add_argument('--public',action='store_true');p.add_argument('--tools',action='store_true');p.add_argument('--data-session',action='store_true');p.add_argument('--public-grid',action='store_true');a=p.parse_args()
+ verify(a.mode,a.race,a.version,a.probe,a.session,a.public,a.tools,a.data_session,a.public_grid)

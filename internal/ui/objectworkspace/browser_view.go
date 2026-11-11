@@ -211,7 +211,7 @@ func (s *State) BrowserView(c *ui.Context) {
 	a := s.browserActions()
 	database := a.scope.database
 	items := a.items
-	redisEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "redis"
+	keyEngine := s.deps.Engine != nil && (s.deps.Engine(a.scope.profile) == "redis" || s.deps.Engine(a.scope.profile) == "etcd" || s.deps.Engine(a.scope.profile) == "consul")
 	searchEngine := s.deps.Engine != nil && (s.deps.Engine(a.scope.profile) == "elasticsearch" || s.deps.Engine(a.scope.profile) == "easysearch" || s.deps.Engine(a.scope.profile) == "solr")
 	documentEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "mongodb"
 	couchdbEngine := s.deps.Engine != nil && s.deps.Engine(a.scope.profile) == "couchdb"
@@ -282,7 +282,7 @@ func (s *State) BrowserView(c *ui.Context) {
 							}
 						}
 					}
-					if redisEngine {
+					if keyEngine {
 						if item.label == "设计表" {
 							continue
 						}
@@ -328,10 +328,14 @@ func (s *State) BrowserView(c *ui.Context) {
 						obj := items[a.frame.Row]
 						if graphEngine {
 							if action.label == "打开表" {
-								s.openGraphData(c.Services(), a.scope.profile, database, obj.Name, obj.Kind)
+								s.openQualifiedData(c.Services(), a.scope.profile, database, obj.Name, obj.Kind)
 							} else {
 								s.openProgram(database, obj.Name, obj.Kind)
 							}
+							return
+						}
+						if item.label == "打开键" && s.canOpenQualifiedData(a.scope.profile, obj.Kind) {
+							s.openQualifiedData(c.Services(), a.scope.profile, database, obj.Name, obj.Kind)
 							return
 						}
 						if (item.label == "打开表" || item.label == "打开集合" || item.label == "打开键" || item.label == "打开文档" || item.label == "浏览向量点") && s.deps.OpenData != nil {
@@ -344,7 +348,7 @@ func (s *State) BrowserView(c *ui.Context) {
 					}
 				}
 				canCreate := a.canCreate
-				if !documentEngine && !redisEngine && !searchEngine && !couchdbEngine && !meilisearchEngine && !qdrantEngine && (s.deps.Engine == nil || s.deps.Engine(a.scope.profile) != "neo4j") {
+				if !documentEngine && !keyEngine && !searchEngine && !couchdbEngine && !meilisearchEngine && !qdrantEngine && (s.deps.Engine == nil || s.deps.Engine(a.scope.profile) != "neo4j") {
 					if ui.Button(c, "").Label(locales.Text("新建表")).Tooltip(locales.Text("新建表")).
 						Disabled(!canCreate).Padding(2, 4).Height(theme.RowHeight(c, 25)).Children(func() {
 						ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
@@ -381,7 +385,7 @@ func (s *State) BrowserView(c *ui.Context) {
 						kinds = []string{"全部", "Core", "集合", "别名"}
 					}
 				}
-				if redisEngine {
+				if keyEngine {
 					kinds = []string{"全部", "键"}
 				}
 				if documentEngine {

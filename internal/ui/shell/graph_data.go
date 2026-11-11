@@ -55,7 +55,7 @@ func (s *State) openQualifiedData(services ui.Services, generation uint64, datab
 	caps := s.objectCapabilitiesFor(object.ProfileID)
 	kind := ""
 	switch w.Kind {
-	case connections.Etcd:
+	case connections.Etcd, connections.Consul:
 		if object.Kind != "keyspace" || object.Name != "keys" || !caps.KeyValues {
 			return
 		}

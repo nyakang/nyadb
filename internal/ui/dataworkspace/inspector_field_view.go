@@ -93,7 +93,7 @@ func (s *inspectorState) FieldView(c *ui.Context, t *Panel) {
 							}
 						}
 					}
-				} else if t.runtime != nil && t.runtime.Capabilities.Documents {
+				} else if t.runtime != nil && (t.runtime.Capabilities.Documents || t.runtime.Capabilities.KeyValues) {
 					if field.Comment != "" {
 						theme.Property(c, "说明", field.Comment)
 					}
@@ -108,7 +108,7 @@ func (s *inspectorState) FieldView(c *ui.Context, t *Panel) {
 				theme.Property(c, "行号", fmt.Sprintf("%d", selection.Offset+int64(selection.Row)+1))
 				if cell.Null {
 					nullLabel := "SQL NULL"
-					if nativeCQL {
+					if nativeCQL || t.runtime != nil && t.runtime.Capabilities.KeyValues {
 						nullLabel = locales.Text("原生 NULL")
 					}
 					if selection.Page.Object.Kind == "label" || selection.Page.Object.Kind == "relationship" {

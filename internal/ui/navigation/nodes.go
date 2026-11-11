@@ -73,7 +73,7 @@ func (s *State) databaseChildren(key string) []string {
 			return nil
 		}
 		var local []string
-		if s.deps.Queries != nil && (s.deps.Engine == nil || s.deps.Engine(n.ProfileID) != connections.Etcd) {
+		if s.deps.Queries != nil && (s.deps.Engine == nil || !s.deps.Engine(n.ProfileID).IsNativeKV()) {
 			local = append(local, (Node{Kind: "category", ProfileID: n.ProfileID, Category: "查询"}).Key())
 		}
 		if s.deps.Catalog != nil {
@@ -126,7 +126,7 @@ func (s *State) databaseChildren(key string) []string {
 				categories = []string{"Core", "集合", "别名", "查询"}
 			case connections.Elasticsearch, connections.Easysearch:
 				categories = []string{"索引", "别名", "数据流", "查询"}
-			case connections.Etcd:
+			case connections.Etcd, connections.Consul:
 				categories = []string{"键"}
 			case connections.Redis:
 				categories = []string{"键", "查询"}

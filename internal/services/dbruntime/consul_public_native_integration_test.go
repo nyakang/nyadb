@@ -45,7 +45,7 @@ func TestConsulNativePublicBuiltinProfileMetadataCapabilitiesAndRestrictedToken(
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s.Capabilities() != (contract.Capabilities{KeyValues: true, Metadata: true}) {
+	if s.Capabilities() != (contract.Capabilities{KeyValues: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true}) {
 		t.Fatal("public provider advertised unsupported tools", s.Capabilities())
 	}
 	metadata, err := contract.Require[contract.MetadataProvider](s)
@@ -57,8 +57,8 @@ func TestConsulNativePublicBuiltinProfileMetadataCapabilitiesAndRestrictedToken(
 		t.Fatal("DC was fabricated as a SQL catalog", err)
 	}
 	objects, err := metadata.Browse(context.Background(), ns[0].Ref)
-	if err != nil || len(objects) != 0 {
-		t.Fatal("native requests fabricated relational objects", err)
+	if err != nil || len(objects) != 1 || objects[0].Ref != ns[0].Ref.Object("keyspace", "keys") || objects[0].Kind != "键" {
+		t.Fatal("original key metadata missing", err)
 	}
 	if _, err = metadata.Browse(context.Background(), contract.NamespaceRef{ProfileID: p.ID, Catalog: "foreign"}); !errors.Is(err, contract.ErrUnsupported) {
 		t.Fatal("foreign namespace accepted", err)
@@ -70,8 +70,8 @@ func TestConsulNativePublicBuiltinProfileMetadataCapabilitiesAndRestrictedToken(
 	if _, err = query.ReserveQuery(1); !errors.Is(err, contract.ErrUnsupported) {
 		t.Fatal("SQL execution published", err)
 	}
-	if data := m.Data(p.ID); data.Loader != nil || data.Saver != nil {
-		t.Fatal("relational grid published")
+	if data := m.Data(p.ID); data.ReserveDocument == nil || data.Loader != nil || data.Saver != nil {
+		t.Fatal("original document reservation or unsupported aggregate reads changed")
 	}
 	if _, err = m.KVEvents(p.ID); !errors.Is(err, contract.ErrUnsupported) {
 		t.Fatal("etcd Watch feature published", err)

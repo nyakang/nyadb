@@ -42,8 +42,16 @@ type dataLease struct {
 	done             chan struct{}
 }
 
-// Private foundation only: publication through DataDocumentsProvider and
-// metadata is a separate real-runtime/shared-grid acceptance step.
+func dataCapabilities() contract.Capabilities {
+	return contract.Capabilities{KeyValues: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true}
+}
+
+func (s *Session) DataDocumentCapabilities() contract.Capabilities { return dataCapabilities() }
+
+func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
+	return s.reserveDataDocument(o)
+}
+
 func (s *Session) reserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
 	if o != s.KVScope().Namespace.Object("keyspace", "keys") {
 		return nil, contract.ErrUnsupported
@@ -73,7 +81,7 @@ func (s *Session) reserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 }
 
 func (l *dataLease) Runtime() contract.DataRuntime {
-	return contract.DataRuntime{Capabilities: contract.Capabilities{KeyValues: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true},
+	return contract.DataRuntime{Capabilities: dataCapabilities(),
 		PageFailureRequiresReopen: true, AdvancedLoader: l.page, Count: l.count, RowReader: l.row, Chunk: l.chunk,
 		Exporter: l.export, TableMetadata: l.metadata, TableInfo: l.info,
 		EditKinds: []string{}, PreviewEditKinds: []string{}, ExportFormats: []string{"csv", "json"},
@@ -90,11 +98,21 @@ func (l *dataLease) check(id int64, catalog, name string) error {
 		return ErrInvalid
 	}
 	l.mu.Lock()
-	closed, lost := l.closed, l.pageLost
+	closed := l.closed
 	l.mu.Unlock()
 	if closed || !l.session.Alive() {
 		return contract.ErrRevoked
 	}
+	return nil
+}
+
+func (l *dataLease) checkPage(id int64, catalog, name string) error {
+	if err := l.check(id, catalog, name); err != nil {
+		return err
+	}
+	l.mu.Lock()
+	lost := l.pageLost
+	l.mu.Unlock()
 	if lost {
 		return errDataReadLost
 	}
@@ -106,9 +124,6 @@ func (l *dataLease) begin(parent context.Context) (context.Context, func(), erro
 	defer l.mu.Unlock()
 	if l.closed || !l.session.Alive() {
 		return nil, nil, contract.ErrRevoked
-	}
-	if l.pageLost {
-		return nil, nil, errDataReadLost
 	}
 	if err := parent.Err(); err != nil {
 		return nil, nil, err
@@ -198,3 +213,5 @@ func (l *dataLease) Close() error {
 }
 
 var _ contract.DataDocumentLease = (*dataLease)(nil)
+var _ contract.DataDocumentsProvider = (*Session)(nil)
+var _ contract.DataDocumentFeaturesProvider = (*Session)(nil)

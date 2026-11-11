@@ -97,9 +97,91 @@ func TestGraphDataContextRejectsChangedKindGenerationAndForeignReferences(t *tes
 	}
 	for _, ref := range []contract.ObjectRef{{}, n.Object("table", "same"), (contract.NamespaceRef{ProfileID: 8, Catalog: "neo4j"}).Object("relationship", "same"), n.Object("relationship", "different"), (contract.NamespaceRef{ProfileID: 7, Catalog: "other"}).Object("relationship", "same")} {
 		b.Objects[1].Ref = ref
-		s.openGraphData(ui.Services{}, 7, "neo4j", "same", "关系类型")
+		s.openQualifiedData(ui.Services{}, 7, "neo4j", "same", "关系类型")
 	}
 	if calls != 1 {
 		t.Fatal("unqualified or foreign cached graph object dispatched")
+	}
+}
+
+func TestNativeKeyActionsUseOriginalQualifiedReferenceInToolbarAndContext(t *testing.T) {
+	for _, engine := range []string{"consul", "etcd"} {
+		t.Run(engine, func(t *testing.T) {
+			s, b, session := browserFixture()
+			defer s.CloseAll()
+			b.Database = "kv"
+			object := (contract.NamespaceRef{ProfileID: 7, Catalog: "kv"}).Object("keyspace", "keys")
+			b.Objects = []contract.DBObject{{Name: "keys", Kind: "键", Ref: object}}
+			s.deps.Engine = func(int64) string { return engine }
+			s.deps.Capabilities = func(int64) contract.Capabilities { return contract.Capabilities{KeyValues: true} }
+			calls := 0
+			s.deps.OpenData = func(ui.Services, int64, string, string) { t.Error("key action discarded qualified identity") }
+			s.deps.OpenQualifiedData = func(_ ui.Services, generation uint64, database string, got contract.ObjectRef) {
+				if generation != session.Generation || database != "kv" || got != object {
+					t.Error("key action lost original object or generation")
+				}
+				calls++
+			}
+			s.SelectRow(7, 0)
+			tt, _ := browserTester(s, 1280)
+			if err := tt.Click("打开选中键数据"); err != nil {
+				t.Fatal(err)
+			}
+			s.openObjectFor(ui.Services{}, 7, "kv", "keys", "键")
+			if calls != 2 {
+				t.Fatal("key actions bypassed qualified callback", calls)
+			}
+			for _, ref := range []contract.ObjectRef{{}, object.Namespace().Object("table", "keys"), {ProfileID: 8, Catalog: "kv", Kind: "keyspace", Name: "keys"}} {
+				b.Objects[0].Ref = ref
+				s.openObjectFor(ui.Services{}, 7, "kv", "keys", "键")
+			}
+			if calls != 2 {
+				t.Fatal("foreign key identity dispatched")
+			}
+		})
+	}
+}
+
+func TestNativeKeyContextPreservesOpeningGenerationForDataAndStructure(t *testing.T) {
+	for _, engine := range []string{"consul", "etcd"} {
+		for _, action := range []string{"打开键", "查看键结构（只读）"} {
+			for _, change := range []string{"none", "generation", "database", "profile", "kind"} {
+				t.Run(engine+"/"+action+"/"+change, func(t *testing.T) {
+					s, b, session := browserFixture()
+					defer s.CloseAll()
+					b.Database = "kv"
+					object := (contract.NamespaceRef{ProfileID: 7, Catalog: "kv"}).Object("keyspace", "keys")
+					b.Objects = []contract.DBObject{{Name: "keys", Kind: "键", Ref: object}}
+					s.deps.Engine = func(int64) string { return engine }
+					s.deps.Capabilities = func(int64) contract.Capabilities { return contract.Capabilities{KeyValues: true} }
+					calls := 0
+					s.deps.OpenQualifiedData = func(ui.Services, uint64, string, contract.ObjectRef) { calls++ }
+					s.deps.OpenStructure = func(ui.Services, int64, string, string) { calls++ }
+					kind := "键"
+					tt := ui.NewTester(func(c *ui.Context) {
+						ui.Button(c, "Key menu").Menu(func(m *ui.Menu) { s.ContextMenu(c.Services(), m, 7, "kv", "keys", kind) })
+					}, 900, 600)
+					if err := tt.Click("Key menu"); err != nil {
+						t.Fatal(err)
+					}
+					switch change {
+					case "generation":
+						session.Generation++
+					case "database":
+						b.Database = "other"
+					case "profile":
+						session.ProfileID = 8
+					case "kind":
+						kind = "视图"
+					}
+					if err := tt.ChooseMenuItem(action); err != nil {
+						t.Fatal(err)
+					}
+					if (calls != 0) != (change == "none") {
+						t.Fatalf("original %s menu followed %s: calls=%d", action, change, calls)
+					}
+				})
+			}
+		}
 	}
 }

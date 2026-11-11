@@ -105,7 +105,7 @@ func openEvidenceCost(e OpenEvidence) int64 {
 func (s *Session) ProfileID() int64   { return s.id }
 func (s *Session) Generation() uint64 { return 1 } // public generations belong to dbruntime
 func (s *Session) Capabilities() contract.Capabilities {
-	return contract.Capabilities{KeyValues: true, Metadata: true}
+	return dataCapabilities()
 }
 func (s *Session) KVScope() contract.KVScope { return s.scope.Clone() }
 func (s *Session) Alive() bool {

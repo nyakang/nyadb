@@ -31,10 +31,19 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 	if !s.Alive() {
 		return nil, contract.ErrRevoked
 	}
-	return nil, nil // native request documents are opened through the workbench
+	return []contract.DBObject{{Ref: n.Object("keyspace", "keys"), Name: "keys", Kind: "键", Engine: "Consul", Comment: "Bounded live observations in the original visible prefix; no fixed MVCC snapshot."}}, nil
 }
-func (*Session) TableMetadata(context.Context, contract.ObjectRef) (*contract.TableStructure, error) {
-	return nil, contract.ErrUnsupported
+func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*contract.TableStructure, error) {
+	if o != s.KVScope().Namespace.Object("keyspace", "keys") {
+		return nil, contract.ErrUnsupported
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if !s.Alive() {
+		return nil, contract.ErrRevoked
+	}
+	return &contract.TableStructure{Object: o, Database: o.Catalog, Name: o.Name, Kind: "键", Engine: "Consul", Columns: dataColumns(), Comment: "Bounded live observations in the original visible prefix; no fixed MVCC snapshot."}, nil
 }
 func (s *Session) KVRequestPresentation() contract.KVRequestPresentation {
 	native, err := KeyListRequest(s.cfg.Prefix, true)

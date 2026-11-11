@@ -87,7 +87,7 @@ func (l *dataLease) entries(result contract.KVResult) ([]contract.KVHTTPEntry, e
 }
 
 func (l *dataLease) page(parent context.Context, id int64, catalog, name string, options contract.DataOptions) (page *contract.DataPage, err error) {
-	if err = l.check(id, catalog, name); err != nil {
+	if err = l.checkPage(id, catalog, name); err != nil {
 		return nil, err
 	}
 	if !validDataOptions(l.object, options) || options.Limit < 1 || options.Limit > 1000 {
@@ -155,9 +155,10 @@ func (l *dataLease) page(parent context.Context, id int64, catalog, name string,
 	}
 	for _, entry := range entries[start:end] {
 		page.Rows = append(page.Rows, dataCells(entry, true))
-		ref := l.ref(entry.Key)
+		snapshot := l.snapshot(entry, result.HTTP.Metadata)
+		ref := cloneDataRef(snapshot.Ref)
 		page.RowRefs = append(page.RowRefs, &ref)
-		page.RowSnapshots = append(page.RowSnapshots, l.snapshot(entry, result.HTTP.Metadata))
+		page.RowSnapshots = append(page.RowSnapshots, snapshot)
 	}
 	if page.HasMore && end > start {
 		page.NextCursor = l.boundary(entries[end-1].Key, options.Offset+int64(end-start), options.Limit, epoch)
@@ -165,7 +166,7 @@ func (l *dataLease) page(parent context.Context, id int64, catalog, name string,
 	if err = ctx.Err(); err != nil {
 		return nil, err
 	}
-	if err = l.check(id, catalog, name); err != nil {
+	if err = l.checkPage(id, catalog, name); err != nil {
 		return nil, err
 	}
 	page.CompletedAt, page.Duration = time.Now(), time.Since(started)

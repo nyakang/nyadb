@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"strconv"
 	"unicode/utf8"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
@@ -40,7 +41,8 @@ func (l *dataLease) row(parent context.Context, id int64, catalog, name string, 
 	if err := l.check(id, catalog, name); err != nil {
 		return nil, err
 	}
-	if _, err := l.validateRef(ref); err != nil {
+	observation, err := l.refObservation(ref)
+	if err != nil {
 		return nil, err
 	}
 	ctx, done, err := l.begin(parent)
@@ -48,11 +50,22 @@ func (l *dataLease) row(parent context.Context, id int64, catalog, name string, 
 		return nil, err
 	}
 	defer done()
-	result, entry, err := l.readEntry(ctx, ref)
+	_, entry, err := l.readEntry(ctx, ref)
 	if err != nil {
 		return nil, err
 	}
-	row := &contract.DataRow{Columns: dataColumns(), Snapshot: l.snapshot(entry, result.HTTP.Metadata), Values: map[string]contract.DataValue{}}
+	// Equality verifies the original row observation, rather than incidental
+	// changes to a live HTTP index. The field executor retains its own actual
+	// complete HTTP receipt independently of this original-reference evidence.
+	metadata := contract.KVHTTPMetadata{ACLFiltered: observation.ACLFiltered}
+	if observation.HTTPIndex != nil {
+		index, err := strconv.ParseUint(*observation.HTTPIndex, 10, 64)
+		if err != nil {
+			return nil, ErrInvalid
+		}
+		metadata.Index = &index
+	}
+	row := &contract.DataRow{Columns: dataColumns(), Snapshot: l.snapshotAt(entry, metadata, observation.Epoch), Values: map[string]contract.DataValue{}}
 	for i, cell := range dataCells(entry, false) {
 		row.Values[row.Columns[i].Name] = contract.DataValue{Kind: cell.Value.Kind, Text: cell.Value.Text, Bytes: bytes.Clone(cell.Value.Bytes), Null: cell.Null, Binary: cell.Value.Kind == contract.Binary}
 	}

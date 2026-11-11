@@ -8,6 +8,8 @@ import (
 	"math"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -21,11 +23,15 @@ type dataFixture struct {
 	mu        sync.Mutex
 	entries   []map[string]any
 	reads     atomic.Int32
+	httpIndex atomic.Uint64
 	intercept func(http.ResponseWriter, *http.Request) bool
 }
 
 func (f *dataFixture) handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Consul-Index", "18446744073709551615")
+	if index := f.httpIndex.Load(); index != 0 {
+		w.Header().Set("X-Consul-Index", strconv.FormatUint(index, 10))
+	}
 	w.Header().Set("X-Consul-Results-Filtered-By-Acls", "true")
 	switch r.URL.Path {
 	case "/v1/agent/self":
@@ -294,11 +300,11 @@ func TestDataRejectsUnknownRulesForeignRowsAndIncompleteObservationsWithoutParti
 	if _, err := l.entries(oversize); !errors.Is(err, ErrBounds) {
 		t.Fatal("32 MiB complete value budget ignored", err)
 	}
-	if s.Capabilities() != (contract.Capabilities{KeyValues: true, Metadata: true}) {
-		t.Fatal("private foundation changed public product capabilities")
+	if s.Capabilities() != dataCapabilities() {
+		t.Fatal("read-only product capabilities changed")
 	}
-	if _, ok := any(s).(contract.DataDocumentsProvider); ok {
-		t.Fatal("private foundation accidentally published grid routing")
+	if _, ok := any(s).(contract.DataDocumentsProvider); !ok {
+		t.Fatal("original data document routing unavailable")
 	}
 }
 
@@ -408,5 +414,94 @@ func TestDataKeyAndValuePreviewsBoundCopiesWithoutChangingCompleteIdentity(t *te
 	preview[1].Value.Bytes[0] = 9
 	if entry.Value[0] != 0 || complete[1].Value.Bytes[0] != 0 {
 		t.Fatal("preview aliased complete bytes")
+	}
+}
+
+func TestDataPageRetirementPreservesIndependentOriginalCountFieldAndExport(t *testing.T) {
+	started := make(chan struct{})
+	var armed atomic.Bool
+	f := &dataFixture{entries: []map[string]any{dataTestEntry("scope/key", []byte{0, 255})}}
+	f.intercept = func(w http.ResponseWriter, r *http.Request) bool {
+		if r.URL.Query().Has("recurse") && armed.CompareAndSwap(true, false) {
+			close(started)
+			<-r.Context().Done()
+			return true
+		}
+		return false
+	}
+	s := dataTestSession(t, "scope", f)
+	l := dataTestLease(t, s)
+	p := dataTestPage(t, l, contract.DataOptions{Limit: 1})
+	if _, err := l.count(context.Background(), 11, "kv", "keys"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := l.row(context.Background(), 11, "kv", "keys", *p.RowRefs[0]); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	armed.Store(true)
+	finished := make(chan error, 1)
+	go func() { _, err := l.page(ctx, 11, "kv", "keys", contract.DataOptions{Limit: 1}); finished <- err }()
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("original page request did not start")
+	}
+	cancel()
+	select {
+	case err := <-finished:
+		if err == nil {
+			t.Fatal("canceled page completed")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("original page cancellation did not acknowledge")
+	}
+	if n, err := l.count(context.Background(), 11, "kv", "keys"); err != nil || n != 1 {
+		t.Fatal("page retirement affected original count", err)
+	}
+	if row, err := l.row(context.Background(), 11, "kv", "keys", *p.RowRefs[0]); err != nil || !bytes.Equal(row.Values["value"].Bytes, []byte{0, 255}) {
+		t.Fatal("page retirement affected original fields", err)
+	}
+	emitted := 0
+	if err := l.export(context.Background(), 11, "kv", "keys", contract.DataOptions{}, []string{"key", "value"}, func([]contract.DataValue) error { emitted++; return nil }); err != nil || emitted != 1 {
+		t.Fatal("page retirement affected independent export", err)
+	}
+	before := f.reads.Load()
+	if _, err := l.page(context.Background(), 11, "kv", "keys", contract.DataOptions{Limit: 1}); !errors.Is(err, errDataReadLost) || f.reads.Load() != before {
+		t.Fatal("retired page replayed", err)
+	}
+}
+
+func TestDataOriginalRowVerificationIgnoresLiveHTTPIndexButRejectsChangedRowsAndForeignProofs(t *testing.T) {
+	f := &dataFixture{entries: []map[string]any{dataTestEntry("scope/key", []byte{0, 255})}}
+	s := dataTestSession(t, "scope", f)
+	l := dataTestLease(t, s)
+	p := dataTestPage(t, l, contract.DataOptions{Limit: 1})
+	f.httpIndex.Store(7)
+	row, err := l.row(context.Background(), 11, "kv", "keys", *p.RowRefs[0])
+	if err != nil || !reflect.DeepEqual(row.Snapshot, p.RowSnapshots[0]) {
+		t.Fatal("unrelated HTTP index invalidated original row verification", err)
+	}
+	actual := l.scopes[dataFieldScope].LastResult()
+	if actual.HTTP.Metadata.Index == nil || *actual.HTTP.Metadata.Index != 7 {
+		t.Fatal("field receipt lost its actual independent HTTP index")
+	}
+	f.mu.Lock()
+	f.entries[0]["Value"] = []byte{1, 255}
+	f.mu.Unlock()
+	row, err = l.row(context.Background(), 11, "kv", "keys", *p.RowRefs[0])
+	if err != nil || reflect.DeepEqual(row.Snapshot, p.RowSnapshots[0]) {
+		t.Fatal("actual changed row was accepted as the original observation", err)
+	}
+	peer := dataTestLease(t, s)
+	before := f.reads.Load()
+	if _, err := peer.row(context.Background(), 11, "kv", "keys", *p.RowRefs[0]); err == nil || f.reads.Load() != before {
+		t.Fatal("original row proof crossed document lease")
+	}
+	ref := cloneDataRef(*p.RowRefs[0])
+	ref.Values[0][len(ref.Values[0])-5] ^= 1
+	if _, err := l.row(context.Background(), 11, "kv", "keys", ref); err == nil || f.reads.Load() != before {
+		t.Fatal("tampered original row proof dispatched")
 	}
 }

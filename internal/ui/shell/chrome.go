@@ -148,10 +148,10 @@ func (s *State) menuCommands(section string, m *ui.Menu) {
 				case connections.Etcd:
 					kinds = []string{"键"}
 				case connections.Consul:
+					kinds = []string{"键"}
 					if sub.Item(locales.Text("新建 KV 请求")).Disabled(!s.toolbarActionAvailable("新建 KV 请求")).Chosen() {
 						s.openQuery()
 					}
-					return
 				}
 			}
 			for _, kind := range kinds {
@@ -281,16 +281,7 @@ func (s *State) toolBar(c *ui.Context) {
 				kind = profile.Kind
 			}
 			for _, action := range actions {
-				if kind == connections.Consul {
-					switch action.label {
-					case "连接":
-					case "新建查询":
-						action.label = "新建 KV 请求"
-					default:
-						continue
-					}
-				}
-				if kind == connections.Etcd {
+				if kind.IsNativeKV() {
 					switch action.label {
 					case "连接":
 					case "新建查询":
@@ -482,6 +473,9 @@ func (s *State) toolbarActionAvailable(action string) bool {
 	if p, ok := s.currentProfile(); s.profileMode && ok && p.Kind == connections.Consul {
 		switch action {
 		case "连接", "信息", "新建 KV 请求":
+		case "键":
+			w := s.sessions.Current()
+			return w.ProfileID == p.ID && w.Status == "已连接" && w.Database != "" && s.sessions.DatabaseOpened(p.ID, w.Database) && s.objectCapabilitiesFor(p.ID).KeyValues
 		default:
 			return false
 		}

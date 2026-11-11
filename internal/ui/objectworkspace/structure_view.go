@@ -94,6 +94,10 @@ func (s *State) View(c *ui.Context, t *Document) {
 		s.documentMappingView(c, t)
 		return
 	}
+	if s.keyspaceStructure(t) {
+		s.keyspaceStructureView(c, t)
+		return
+	}
 	session := s.session()
 	palette := theme.Colors(c)
 
@@ -167,6 +171,70 @@ func (s *State) View(c *ui.Context, t *Document) {
 			mysqlStructureFieldsView(c, t)
 		}
 	})
+}
+
+func (s *State) keyspaceStructure(d *Document) bool {
+	if d == nil || d.objectKind != "键" && d.object.Kind != "keyspace" {
+		return false
+	}
+	if s.deps.Engine != nil {
+		engine := s.deps.Engine(d.profileID)
+		return engine == "consul" || engine == "etcd"
+	}
+	return d.data != nil && (d.data.Engine == "Consul" || d.data.Engine == "etcd")
+}
+
+func (s *State) keyspaceStructureView(c *ui.Context, d *Document) {
+	palette := theme.Colors(c)
+	session := s.sessionFor(d.profileID)
+	ready := session.Connected && session.ProfileID == d.profileID && !d.loading
+	ui.Column(c).Fill().Background(palette.App).Children(func() {
+		ui.Row(c).Padding(3, 8).Gap(8).AlignItems(ui.Center).Children(func() {
+			ui.Text(c, d.database+" / "+d.table).SingleLine().Grow(1).MinWidth(0)
+			ui.Text(c, locales.Text("只读")).TextColor(palette.Muted)
+			if ui.Button(c, locales.Text("刷新")).Label("刷新表结构：" + d.table).Disabled(!ready).Clicked() {
+				s.Load(d, c.Services().Invalidate, true)
+			}
+			if d.loading && ui.Button(c, locales.Text("取消加载")).Clicked() {
+				s.Cancel(d)
+			}
+			if ui.Button(c, locales.Text("返回")).Label(locales.Text("返回对象列表")).Clicked() && s.deps.Back != nil {
+				s.deps.Back()
+			}
+		})
+		if d.loading {
+			ui.Text(c, locales.Text("正在读取表结构…")).TextColor(palette.Muted)
+		}
+		if d.err != "" {
+			ui.Text(c, d.err).TextColor(palette.Error)
+		}
+		columns := []ui.TableColumn{{ID: "name", Title: locales.Text("名称"), Width: 152}, {ID: "type", Title: locales.Text("类型"), Width: 120}, {ID: "nullable", Title: locales.Text("允许 NULL"), Width: 100}, {ID: "generated", Title: locales.Text("生成字段"), Width: 100}}
+		if d.data == nil || len(d.data.Columns) == 0 {
+			theme.EmptyTable(c, &d.columns, columns, locales.Text("没有已加载的表结构"))
+			return
+		}
+		d.columns.Selected = &d.fieldRow
+		theme.Table(c, &d.columns, columns, len(d.data.Columns), func(row, column int) {
+			field := d.data.Columns[row]
+			value := field.Name
+			switch column {
+			case 1:
+				value = field.Type
+			case 2:
+				value = keyspaceYesNo(field.Nullable)
+			case 3:
+				value = keyspaceYesNo(field.Generated)
+			}
+			ui.Text(c, value).SingleLine().Tooltip(value)
+		}).Grow(1)
+	})
+}
+
+func keyspaceYesNo(value bool) string {
+	if value {
+		return locales.Text("是")
+	}
+	return locales.Text("否")
 }
 
 func mysqlStructureFieldsView(c *ui.Context, t *Document) {

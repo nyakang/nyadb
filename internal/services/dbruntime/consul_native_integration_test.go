@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -154,7 +155,7 @@ func TestConsulNativeRuntimeGenerationsRequestsAndOriginalRecovery(t *testing.T)
 
 // Forward to the actual original service, then fault only an observed successful
 // write reply. TLS/mTLS on the upstream is verified using owned fixture material.
-func consulRuntimeFault(t *testing.T, cfg consul.Config, mode string) (consul.Config, *atomic.Int32, <-chan struct{}) {
+func consulRuntimeFault(t *testing.T, cfg consul.Config, mode string, dataArmed ...*atomic.Bool) (consul.Config, *atomic.Int32, <-chan struct{}) {
 	t.Helper()
 	tc := &tls.Config{MinVersion: tls.VersionTLS12}
 	if cfg.CAFile != "" {
@@ -181,13 +182,16 @@ func consulRuntimeFault(t *testing.T, cfg consul.Config, mode string) (consul.Co
 	committed := make(chan struct{})
 	var once atomic.Bool
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "PUT" || r.Method == "DELETE" {
-			calls.Add(1)
-		}
 		raw, err := io.ReadAll(r.Body)
 		if err != nil {
 			t.Error("original relay request body unavailable")
 			return
+		}
+		var operations []consul.TxnOperation
+		treeRead := r.URL.Path == "/v1/txn" && json.Unmarshal(raw, &operations) == nil && len(operations) == 1 && operations[0].KV != nil && operations[0].KV.Verb == "get-tree"
+		dataRead := strings.HasPrefix(mode, "data-") && (r.URL.Query().Has("recurse") || treeRead) && (len(dataArmed) == 0 || dataArmed[0].Load())
+		if dataRead || !strings.HasPrefix(mode, "data-") && (r.Method == "PUT" || r.Method == "DELETE") {
+			calls.Add(1)
 		}
 		request, err := http.NewRequestWithContext(r.Context(), r.Method, cfg.Endpoint+r.URL.RequestURI(), bytes.NewReader(raw))
 		if err != nil {
@@ -205,9 +209,9 @@ func consulRuntimeFault(t *testing.T, cfg consul.Config, mode string) (consul.Co
 		if err != nil {
 			return
 		}
-		if r.Method == "PUT" && response.StatusCode == 200 && bytes.Equal(bytes.TrimSpace(body), []byte("true")) && once.CompareAndSwap(false, true) {
+		if (dataRead || r.Method == "PUT" && response.StatusCode == 200 && bytes.Equal(bytes.TrimSpace(body), []byte("true"))) && once.CompareAndSwap(false, true) {
 			close(committed)
-			switch mode {
+			switch strings.TrimPrefix(mode, "data-") {
 			case "lost":
 				conn, _, err := w.(http.Hijacker).Hijack()
 				if err == nil {

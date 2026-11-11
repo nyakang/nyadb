@@ -108,3 +108,28 @@ func TestPostgreSQLCategoriesKeepOverloadsAndOtherEnginesUnchanged(t *testing.T)
 		})
 	}
 }
+
+func TestNativeKVNavigatorPublishesOnlyOriginalKeyObjects(t *testing.T) {
+	for _, kind := range []connections.Kind{connections.Consul, connections.Etcd} {
+		t.Run(string(kind), func(t *testing.T) {
+			s := New(Dependencies{Engine: func(int64) connections.Kind { return kind },
+				SessionStatus: func(int64) string { return "已连接" }, Databases: func(int64) []string { return []string{"kv"} },
+				DatabaseOpened: func(int64, string) bool { return true }, Queries: func(int64, string) []Object { return []Object{{Name: "foreign SQL"}} },
+				Objects: func(int64, string) (iter.Seq[Object], bool) {
+					return slices.Values([]Object{{Name: "keys", Kind: "键"}}), true
+				}})
+			connection := s.Children(ConnectionKey(7))
+			if len(connection) != 1 || Parse(connection[0]).Database != "kv" {
+				t.Fatal("native KV connection fabricated query category", connection)
+			}
+			categories := s.Children(DatabaseNode(7, "kv").Key())
+			if len(categories) != 1 || Parse(categories[0]).Category != "键" {
+				t.Fatal("native KV categories changed", categories)
+			}
+			objects := s.Children(categories[0])
+			if len(objects) != 1 || Parse(objects[0]).Object != "keys" || Parse(objects[0]).ProfileID != 7 {
+				t.Fatal("native original key object missing", objects)
+			}
+		})
+	}
+}
