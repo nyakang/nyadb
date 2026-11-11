@@ -75,8 +75,11 @@ checks exact read/write counts and source hash, fsyncs/closes the output and
 independently rehashes it. Linux uses `renameat2(RENAME_NOREPLACE)`, macOS uses
 `renameatx_np(RENAME_EXCL)` and Windows uses relative native handle renaming with
 replacement disabled. Unsupported systems/filesystems return an error without
-a destructive fallback. The Windows/macOS implementation is cross-compiled;
-actual platform runtime semantics remain a separate verification scope.
+a destructive fallback. The shared file lifecycle tests run on Linux, macOS and
+Windows in CI. Windows store/parent roots clone the originally opened directory
+through `Root.OpenRoot(".")` before closing the initial Win32 handle, so the
+retained handles share deletion and continue to reference the original directory
+across renames. Empty private-directory handles close before directory removal.
 
 New targets are published without replacing an appeared file. Replacement first
 moves the target into the exclusive `displaced` name without overwriting any name,
@@ -92,6 +95,10 @@ exchange of the two files.
 Actual move acknowledgements, later destination hash/path observations, file
 fsync, parent/private-directory fsync, cancellation and cleanup are independent.
 Failed move acknowledgement remains unknown even after a matching observation.
+Windows cannot fsync these directory handles: saving still records successful
+file flushing and publication independently, while `DirectorySynced` remains
+false. Unavailable directory syncing does not manufacture durability evidence;
+actual synchronization errors remain errors and retain the published file.
 `PathMatched` verifies the original parent pathname still selects the captured
 directory; `AuxiliaryPathMatched` additionally checks the private directory. The
 recorded auxiliary paths refer to the original directory choice and cannot be
@@ -142,4 +149,4 @@ It requires all 27 prior stream/session/
 artifact/file parents plus seven public workspace/Shell parents, and records 108
 workspace and 48 Shell images in Chinese/English at 1280x800 and 720x520. The
 version/mode matrix is 3.7.3 anonymous/basic/TLS/mTLS and 3.5.35 basic. Restore and
-actual Windows/macOS filesystem runtime remain separate acceptance scopes.
+filesystem behavior outside the three CI platforms remain separate acceptance scopes.

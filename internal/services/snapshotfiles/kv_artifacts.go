@@ -47,7 +47,7 @@ func NewKVSnapshotStore(directory string, limit uint64) (*KVSnapshotStore, error
 	if limit == 0 || limit > math.MaxInt64 {
 		return nil, ErrArtifactQuota
 	}
-	root, err := os.OpenRoot(directory)
+	root, err := snapshotOpenRoot(directory)
 	if err != nil {
 		return nil, err
 	}

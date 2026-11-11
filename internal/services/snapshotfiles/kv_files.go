@@ -22,11 +22,12 @@ type kvSnapshotFileIO struct {
 	write               func(*os.File, []byte) (int, error)
 	readAt              func(*os.File, []byte, int64) (int, error)
 	syncFile, closeFile func(*os.File) error
+	syncDirectory       func(*os.File) (bool, error)
 	remove              func(*os.Root, string) error
 }
 
 func defaultKVSnapshotFileIO() kvSnapshotFileIO {
-	return kvSnapshotFileIO{openRegular: snapshotOpenRegular, move: snapshotMoveNoReplace, write: func(f *os.File, b []byte) (int, error) { return f.Write(b) }, readAt: func(f *os.File, b []byte, o int64) (int, error) { return f.ReadAt(b, o) }, syncFile: func(f *os.File) error { return f.Sync() }, closeFile: func(f *os.File) error { return f.Close() }, remove: func(r *os.Root, n string) error { return r.Remove(n) }}
+	return kvSnapshotFileIO{openRegular: snapshotOpenRegular, move: snapshotMoveNoReplace, write: func(f *os.File, b []byte) (int, error) { return f.Write(b) }, readAt: func(f *os.File, b []byte, o int64) (int, error) { return f.ReadAt(b, o) }, syncFile: func(f *os.File) error { return f.Sync() }, closeFile: func(f *os.File) error { return f.Close() }, syncDirectory: snapshotSyncDirectory, remove: func(r *os.Root, n string) error { return r.Remove(n) }}
 }
 
 type kvSnapshotFilePlan struct {
@@ -176,7 +177,7 @@ func (s *KVSnapshotStore) PrepareFile(parent context.Context, artifact contract.
 			_ = p.Close()
 		}
 	}()
-	p.parent, err = os.OpenRoot(filepath.Dir(choice.Path))
+	p.parent, err = snapshotOpenRoot(filepath.Dir(choice.Path))
 	if err != nil {
 		return nil, err
 	}
@@ -441,6 +442,7 @@ func (p *kvSnapshotFilePlan) cleanup() error {
 	}
 	info, e := p.parent.Lstat(p.directory)
 	if os.IsNotExist(e) {
+		p.directory = ""
 		p.release()
 		return nil
 	}
@@ -450,12 +452,33 @@ func (p *kvSnapshotFilePlan) cleanup() error {
 	if p.privateInfo == nil || !os.SameFile(info, p.privateInfo) {
 		return ErrChanged
 	}
+	// Close the empty directory before removing its name. Windows leaves a
+	// directory delete-pending while its handles remain open; later Lstat calls
+	// on those handles fail with access denied instead of reporting absence.
+	if e = p.closePrivate(); e != nil {
+		return e
+	}
 	if e = p.store.fileIO.remove(p.parent, p.directory); e != nil {
 		return e
 	}
+	p.directory = ""
 	p.release()
 	return nil
 }
+
+func (p *kvSnapshotFilePlan) closePrivate() error {
+	var err error
+	if p.privateFile != nil {
+		err = p.privateFile.Close()
+		p.privateFile = nil
+	}
+	if p.private != nil {
+		err = errors.Join(err, p.private.Close())
+		p.private = nil
+	}
+	return err
+}
+
 func (p *kvSnapshotFilePlan) Close() error {
 	if p == nil || p.authority != p {
 		return contract.ErrKVPlanUsed
@@ -468,12 +491,7 @@ func (p *kvSnapshotFilePlan) Close() error {
 	}
 	p.closed = true
 	err := p.cleanup()
-	if p.privateFile != nil {
-		err = errors.Join(err, p.privateFile.Close())
-	}
-	if p.private != nil {
-		err = errors.Join(err, p.private.Close())
-	}
+	err = errors.Join(err, p.closePrivate())
 	if p.parentFile != nil {
 		err = errors.Join(err, p.parentFile.Close())
 	}
@@ -588,9 +606,9 @@ func (s *KVSnapshotStore) PublishFile(parent context.Context, preparation contra
 	}
 	if result.Published {
 		// The retained backup's directory also participates in replacement durability.
-		dirErr := s.fileIO.syncFile(p.privateFile)
-		parentErr := s.fileIO.syncFile(p.parentFile)
-		result.DirectorySynced = dirErr == nil && parentErr == nil
+		dirSynced, dirErr := s.fileIO.syncDirectory(p.privateFile)
+		parentSynced, parentErr := s.fileIO.syncDirectory(p.parentFile)
+		result.DirectorySynced = dirSynced && parentSynced && dirErr == nil && parentErr == nil
 		err = errors.Join(err, dirErr, parentErr)
 	}
 	return result, err

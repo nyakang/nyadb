@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strconv"
 	"sync/atomic"
 	"testing"
@@ -194,7 +195,7 @@ func TestEtcdNativeSnapshotWorkspaceBilingualCheckedOriginalFilesAndCompleteReco
 					snapshotNativeConsume(t, s, d)
 					snapshotNativeMatch(t, path, backend)
 					file := d.SnapshotFileReceipts()[len(d.snapshot.files)-1]
-					if !file.Published || !file.DirectorySynced || !reflect.DeepEqual(file.Original.Source, r) {
+					if !file.Published || file.DirectorySynced != (runtime.GOOS != "windows") || !reflect.DeepEqual(file.Original.Source, r) {
 						t.Fatal("native publication proof missing", d.Error())
 					}
 					if replace {

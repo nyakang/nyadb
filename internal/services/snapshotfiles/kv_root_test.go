@@ -14,7 +14,7 @@ func TestKVSnapshotStoreClonesOriginalRootAcrossPathReplacementAndCallerClose(t 
 	if err := os.Mkdir(path, 0700); err != nil {
 		t.Fatal(err)
 	}
-	root, err := os.OpenRoot(path)
+	root, err := snapshotOpenRoot(path)
 	if err != nil {
 		t.Fatal(err)
 	}

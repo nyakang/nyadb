@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -56,7 +58,7 @@ func TestKVSnapshotFilesExactBackendAndJournalOriginalReceiptsNoDispatch(t *test
 				t.Fatal("mutable inspection")
 			}
 			r, e := s.PublishFile(context.Background(), p)
-			if e != nil || !r.Ended || !r.Attempted || !r.Published || !r.SourceVerified || !r.FileSynced || !r.DirectorySynced || !r.DestinationMatched || !r.PathMatched || r.PublicationUnknown {
+			if e != nil || !r.Ended || !r.Attempted || !r.Published || !r.SourceVerified || !r.FileSynced || r.DirectorySynced != (runtime.GOOS != "windows") || !r.DestinationMatched || !r.PathMatched || r.PublicationUnknown {
 				t.Fatal(r, e)
 			}
 			want := fileTestBackend()
@@ -67,7 +69,7 @@ func TestKVSnapshotFilesExactBackendAndJournalOriginalReceiptsNoDispatch(t *test
 			if r.BytesWritten != uint64(len(want)) || s.used != originalCharge || l.dispatch.Load() != 1 {
 				t.Fatal("counters/dispatch", r, s.used, l.dispatch.Load())
 			}
-			if runtimeInfo, e := os.Stat(path); e != nil || runtimeInfo.Mode().Perm()&0077 != 0 {
+			if runtimeInfo, e := os.Stat(path); e != nil || runtime.GOOS != "windows" && runtimeInfo.Mode().Perm()&0077 != 0 {
 				t.Fatal("private output mode", runtimeInfo, e)
 			}
 			clone := r.Clone()
@@ -79,9 +81,44 @@ func TestKVSnapshotFilesExactBackendAndJournalOriginalReceiptsNoDispatch(t *test
 			if _, e := s.PublishFile(context.Background(), p); !errors.Is(e, contract.ErrKVPlanUsed) {
 				t.Fatal("reuse", e)
 			}
+			if e := p.Close(); e != nil {
+				t.Fatal("close after private directory cleanup", e)
+			}
+			if e := p.Close(); e != nil {
+				t.Fatal("repeated close", e)
+			}
 		})
 	}
 }
+
+func TestKVSnapshotFilesUnavailableDirectorySyncPreservesPublicationFacts(t *testing.T) {
+	for _, unavailable := range []int{1, 2} {
+		t.Run(strconv.Itoa(unavailable), func(t *testing.T) {
+			s, l, _ := artifactTestStore(t, 10000)
+			a, _ := artifactTestCapture(t, s, l)
+			path := filepath.Join(t.TempDir(), "chosen")
+			p := fileTestPlan(t, s, a, path, false)
+			originalCharge := s.used
+			calls := 0
+			s.fileIO.syncDirectory = func(*os.File) (bool, error) {
+				calls++
+				return calls != unavailable, nil
+			}
+			r, err := s.PublishFile(context.Background(), p)
+			if err != nil || !r.Ended || !r.Published || !r.FileSynced || r.DirectorySynced || !r.DestinationMatched || r.PublicationUnknown || r.TemporaryRetained || r.CleanupError != "" || calls != 2 {
+				t.Fatal(r, err, calls)
+			}
+			if s.used != originalCharge || p.private != nil || p.privateFile != nil {
+				t.Fatal("empty private directory retained resources", s.used)
+			}
+			if err := p.Close(); err != nil {
+				t.Fatal(err)
+			}
+			fileTestBytes(t, path, fileTestBackend())
+		})
+	}
+}
+
 func TestKVSnapshotFilesReplacementPreservesLargerOriginalFile(t *testing.T) {
 	s, l, _ := artifactTestStore(t, 10000)
 	a, _ := artifactTestCapture(t, s, l)
@@ -248,14 +285,7 @@ func TestKVSnapshotFilesPrepublicationFaultsCleanupAndSeparatePublishedDurabilit
 			case "publication":
 				s.fileIO.move = func(*os.File, string, *os.File, string) error { return os.ErrExist }
 			case "directory-sync":
-				native := s.fileIO.syncFile
-				s.fileIO.syncFile = func(f *os.File) error {
-					info, e := f.Stat()
-					if e == nil && info.IsDir() {
-						return fault
-					}
-					return native(f)
-				}
+				s.fileIO.syncDirectory = func(*os.File) (bool, error) { return false, fault }
 			case "cleanup":
 				native := s.fileIO.remove
 				s.fileIO.remove = func(root *os.Root, name string) error {
