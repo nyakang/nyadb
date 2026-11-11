@@ -10,6 +10,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 	"github.com/nyakang/nyadb/internal/assets/appicon"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/aisql"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"github.com/nyakang/nyadb/internal/services/credentials"
@@ -45,6 +46,16 @@ func Run() error {
 		return err
 	}
 	state := shell.NewWithProfiles(connections.NewService(localdb.NewProfileStore(db)))
+	snapshotStore, snapshotErr := newKVSnapshotStore("")
+	if snapshotErr != nil {
+		fmt.Fprintf(os.Stderr, "NyaDB Snapshot storage unavailable: %v\n", snapshotErr)
+	}
+	defer func() {
+		state.CloseMySQLSessions()
+		if err := snapshotStore.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "NyaDB Snapshot storage cleanup: %v\n", err)
+		}
+	}()
 	state.SetAISQL(aisql.NewStore(localdb.NewAISQLRepository(db), credentials.AISQLKeys{}), aisql.Client{})
 	state.SetFavoritesStore(favorites.NewStore(localdb.NewFavoritesRepository(db)))
 	state.SetCredentialVault(credentials.NewOSVault())
@@ -140,6 +151,14 @@ func Run() error {
 			WriteStream: queries.WriteStream,
 		})
 
+		if snapshotStore != nil {
+			state.SetKVSnapshotOperations(snapshotStore.store, kvworkspace.SnapshotFiles{
+				Operations: snapshotStore.store,
+				SavePath: func(kind contract.KVSnapshotFileKind, name string) (string, error) {
+					return mygo.Dialog.Save(mygo.SaveDialogOptions{Parent: window, Title: locales.Text("选择原 Snapshot 保存目标"), DefaultPath: name})
+				},
+			})
+		}
 		state.SetBackupFiles(objectworkspace.BackupFiles{
 			Open: func() (string, error) {
 				paths, e := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: window, Title: locales.Text("恢复 NyaDB 备份"), Filters: []mygo.FileFilter{{Name: "Database Backup", Extensions: []string{"nyabackup", "dump", "sqlite", "db"}}}})

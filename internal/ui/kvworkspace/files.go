@@ -27,6 +27,7 @@ type fileResult struct {
 	path      string
 	request   contract.KVRequest
 	err       error
+	snapshots *snapshotFileOutcome
 }
 type fileOperation struct {
 	clipboard func(string)
@@ -43,6 +44,11 @@ const requestFileLimit = 100 << 20
 func EncodeRequest(r contract.KVRequest) ([]byte, error) {
 	if len(r.JSON) > inputLimit || !utf8.ValidString(r.JSON) {
 		return nil, jsondocument.ErrBounds
+	}
+	if r.Method == SnapshotMethod {
+		if _, err := snapshotRequestValues(r); err != nil {
+			return nil, err
+		}
 	}
 	if r.Method == AuthManagementMethod {
 		if _, err := authRequestView(r); err != nil {
@@ -64,7 +70,7 @@ func EncodeRequest(r contract.KVRequest) ([]byte, error) {
 			return nil, err
 		}
 	}
-	supported := r.Method == AlarmsMethod || r.Method == MembersMethod || r.Method == CompactMethod || eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method) || r.Method == AuthManagementMethod
+	supported := r.Method == SnapshotMethod || r.Method == AlarmsMethod || r.Method == MembersMethod || r.Method == CompactMethod || eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method) || r.Method == AuthManagementMethod
 	for _, m := range methods {
 		if m.Path == r.Method {
 			supported = true
@@ -299,6 +305,9 @@ func (s *State) consumeFiles(d *Document) {
 		job := d.io
 		d.io = nil
 		job.cancel()
+		if r.snapshots != nil {
+			s.consumeSnapshotFile(d, r.snapshots, job.canceled)
+		}
 		if r.err != nil {
 			if !errors.Is(r.err, context.Canceled) {
 				d.error = locales.Text("KV 文件操作失败") + ": " + r.err.Error()

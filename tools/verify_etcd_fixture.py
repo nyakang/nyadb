@@ -23,6 +23,26 @@ REQUIRED = ('AuthenticationIdentityAndTransport', 'BinaryMVCCPagingAndCompaction
             'OriginalReadCancellationBusyAndPreparationOwnership')
 
 
+SNAPSHOT_WORKSPACE_STAGES = (
+    'snapshot-inputs', 'snapshot-input-json', 'snapshot-capture-confirmation',
+    'snapshot-source', 'snapshot-artifact', 'snapshot-new-confirmation',
+    'snapshot-replace-confirmation', 'snapshot-file-publication', 'snapshot-preserved-backup',
+    'snapshot-disconnected-journal', 'snapshot-pure-recovery', 'snapshot-complete-record',
+    'snapshot-failure-source', 'snapshot-failure-artifact', 'snapshot-failure-journal',
+    'snapshot-failure-record', 'snapshot-canceled-storage', 'snapshot-canceled-record',
+    'snapshot-parked-source', 'snapshot-parked-file', 'snapshot-earlier-unknown',
+    'snapshot-file-lost', 'snapshot-file-lost-details', 'snapshot-file-appeared',
+    'snapshot-file-appeared-details', 'snapshot-file-moved', 'snapshot-file-moved-details',
+)
+SNAPSHOT_PUBLIC_STAGES = (
+    'snapshot-public-inputs', 'snapshot-public-capture-confirmation', 'snapshot-public-source',
+    'snapshot-public-artifact', 'snapshot-public-new-confirmation', 'snapshot-public-replace-confirmation',
+    'snapshot-public-file-publication', 'snapshot-public-preserved-backup',
+    'snapshot-public-disconnected-journal', 'snapshot-public-pure-recovery',
+    'snapshot-public-complete-record', 'snapshot-public-original-parked',
+)
+
+
 def run(args, **kwargs):
     result = subprocess.run(args, cwd=ROOT, capture_output=True, text=True, **kwargs)
     if result.returncode:
@@ -68,7 +88,10 @@ def certificates(folder, access=False):
         path.chmod(0o644)
 
 
-def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False, public_lease_management=False, dependency_modfile=None, auth_native=False, public_auth=False, compaction_native=False, public_compaction=False, member_native=False, member_session=False, alarm_native=False, alarm_workspace=False, public_alarms=False, snapshot_native=False, snapshot_session=False, snapshot_artifact=False, snapshot_file=False):
+def verify(mode, race, version, profile=False, session=False, workspace=False, data=False, public=False, smoke=False, access=False, access_smoke=False, watch_smoke=False, history_smoke=False, events_smoke=False, events_workspace_smoke=False, public_events=False, renewal_native=False, renewal_session=False, public_renewal=False, lease_browser_native=False, lease_browser_session=False, public_lease_browser=False, public_lease_management=False, dependency_modfile=None, auth_native=False, public_auth=False, compaction_native=False, public_compaction=False, member_native=False, member_session=False, alarm_native=False, alarm_workspace=False, public_alarms=False, snapshot_native=False, snapshot_session=False, snapshot_artifact=False, snapshot_file=False, public_snapshot=False):
+    if public_snapshot and any((profile, session, workspace, data, public, smoke, access, access_smoke, watch_smoke, history_smoke, events_smoke, events_workspace_smoke, public_events, renewal_native, renewal_session, public_renewal, lease_browser_native, lease_browser_session, public_lease_browser, public_lease_management, auth_native, public_auth, compaction_native, public_compaction, member_native, member_session, alarm_native, alarm_workspace, public_alarms, snapshot_native, snapshot_session, snapshot_artifact, snapshot_file)):
+        raise ValueError('Public Snapshot acceptance is a separate original workspace scope')
+    snapshot_file = snapshot_file or public_snapshot
     if snapshot_file and any((profile, session, workspace, data, public, smoke, access, access_smoke, watch_smoke, history_smoke, events_smoke, events_workspace_smoke, public_events, renewal_native, renewal_session, public_renewal, lease_browser_native, lease_browser_session, public_lease_browser, public_lease_management, auth_native, public_auth, compaction_native, public_compaction, member_native, member_session, alarm_native, alarm_workspace, public_alarms, snapshot_native, snapshot_session, snapshot_artifact)):
         raise ValueError('Snapshot file acceptance is a separate original publication scope')
     snapshot_artifact = snapshot_artifact or snapshot_file
@@ -143,12 +166,12 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
     if data:
         sources += [p for folder in ('internal/ui/dataworkspace', 'locales') for p in (ROOT/folder).glob('*.go')]
         sources += [ROOT/'locales/en.json', ROOT/'locales/zh-Hans.json']
-    if workspace or alarm_workspace:
+    if workspace or alarm_workspace or public_snapshot:
         sources += [p for folder in ('internal/ui/kvworkspace', 'internal/ui/shell', 'internal/bootstrap', 'locales') for p in (ROOT/folder).glob('*.go')]
         sources += [ROOT/'locales/en.json', ROOT/'locales/zh-Hans.json']
-    if public or public_alarms:
+    if public or public_alarms or public_snapshot:
         sources += [p for folder in ('internal/ui/connectioncatalog', 'internal/ui/navigation', 'internal/ui/sessionbrowser', 'internal/ui/objectworkspace', 'internal/ui/theme', 'internal/storage/localdb') for p in (ROOT/folder).glob('*.go')]
-    if public_alarms:
+    if public_alarms or public_snapshot:
         sources += [p for folder in ('internal/ui/dataworkspace', 'internal/ui/sqlworkspace') for p in (ROOT/folder).glob('*.go')]
     if snapshot_artifact:
         sources += sorted((ROOT/'internal/services/snapshotfiles').glob('*.go'))
@@ -173,6 +196,8 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
         report['scope'] = 'private-etcd-original-snapshot-disk-artifacts'
     if snapshot_file:
         report['scope'] = 'private-etcd-original-snapshot-file-publication'
+    if public_snapshot:
+        report['scope'] = 'public-etcd-original-snapshot-workspace-files'
     if events_smoke:
         report['scope'] = 'private-etcd-events-session-smoke'
     if events_workspace_smoke:
@@ -605,6 +630,18 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                 required += ('SnapshotFileOriginalBackendJournalNewAndReplacementAfterDisconnect',
                              'SnapshotFileActualUnknownPutBarrierSurvivesOriginalFilePublication',
                              'SnapshotFileIncompleteBackendRejectedCompleteFailureJournalExported')
+            if public_snapshot:
+                environment.update(NYADB_ETCD_PUBLIC_SNAPSHOT_IT='1', NYADB_ETCD_WORKSPACE_IT='1', NYADB_ETCD_PUBLIC_IT='1',
+                                   NYADB_ETCD_WORKSPACE_IMAGES=str(report_path.with_suffix(''))+'-snapshot-workspace-images',
+                                   NYADB_ETCD_PUBLIC_IMAGES=str(report_path.with_suffix(''))+'-snapshot-public-images')
+                packages += ['./internal/ui/kvworkspace', './internal/ui/shell']
+                required += ('SnapshotWorkspaceBilingualCheckedOriginalFilesAndCompleteRecords',
+                             'SnapshotWorkspaceActualFaultJournalParkingCancellationAndClose',
+                             'SnapshotWorkspaceActualUnknownPutRemainsIndependentAcrossCaptureFilesAndRecovery',
+                             'SnapshotWorkspaceActualPublicationLossAppearedTargetAndOriginalParent',
+                             'SnapshotWorkspacePreservesOriginalNonUTF8FilePathBytes',
+                             'SnapshotShellCheckedOriginalFilesArchivesDisconnectAndRecovery',
+                             'SnapshotShellOriginalParkingInactiveCloseAndTerminalStoreOwnership')
             # Foundation cases revoke authentication on this same owned node.
             # Package acceptance therefore runs sequentially.
             command = ['go', 'test', '-p=1']+(['-race'] if race else [])+packages+['-run', '^('+'|'.join('TestEtcdNative'+case for case in required)+')$', '-count=1', '-v', '-timeout=600s']
@@ -679,6 +716,18 @@ def verify(mode, race, version, profile=False, session=False, workspace=False, d
                     if len(pictures) != expected:
                         raise RuntimeError('Public Alarm acceptance is missing localized images: '+key+' got '+str(len(pictures)))
                     report[key] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
+            if public_snapshot:
+                for key, env_key, stages in (('snapshot_workspace_images', 'NYADB_ETCD_WORKSPACE_IMAGES', SNAPSHOT_WORKSPACE_STAGES), ('snapshot_public_images', 'NYADB_ETCD_PUBLIC_IMAGES', SNAPSHOT_PUBLIC_STAGES)):
+                    pictures = sorted(Path(environment[env_key]).glob('*.png'))
+                    expected = {language+'-'+size+'-'+stage+'.png' for language in ('zh-Hans', 'en') for size in ('1280x800', '720x520') for stage in stages}
+                    if {p.name for p in pictures} != expected:
+                        raise RuntimeError('Public Snapshot acceptance is missing localized stages: '+key)
+                    for picture in pictures:
+                        header = picture.read_bytes()[:24]
+                        dimensions = (1280, 800) if '-1280x800-' in picture.name else (720, 520)
+                        if header[:8] != b'\x89PNG\r\n\x1a\n' or header[12:16] != b'IHDR' or tuple(int.from_bytes(header[i:i+4], 'big') for i in (16, 20)) != dimensions:
+                            raise RuntimeError('Public Snapshot image dimensions changed: '+picture.name)
+                    report[key] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in pictures}
             report.update(passed=True, accepted=accepted, log_sha256=hashlib.sha256(log_path.read_bytes()).hexdigest())
     finally:
         try:
@@ -714,6 +763,7 @@ if __name__ == '__main__':
     parser.add_argument('--snapshot-session', action='store_true')
     parser.add_argument('--snapshot-artifact', action='store_true')
     parser.add_argument('--snapshot-file', action='store_true')
+    parser.add_argument('--public-snapshot', action='store_true')
     parser.add_argument('--alarm-native', action='store_true')
     parser.add_argument('--alarm-workspace', action='store_true')
     parser.add_argument('--public-alarms', action='store_true')
@@ -732,4 +782,4 @@ if __name__ == '__main__':
     parser.add_argument('--race', action='store_true')
     parser.add_argument('--version', choices=tuple(IMAGES), default='3.7.3')
     args = parser.parse_args()
-    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser, args.public_lease_management, args.dependency_modfile, args.auth_native, args.public_auth, args.compaction_native, args.public_compaction, args.member_native, args.member_session, args.alarm_native, args.alarm_workspace, args.public_alarms, args.snapshot_native, args.snapshot_session, args.snapshot_artifact, args.snapshot_file)
+    verify(args.mode, args.race, args.version, args.profile, args.session, args.workspace, args.data_adapter, args.public, args.public_smoke, args.access, args.access_smoke, args.watch_smoke, args.history_smoke, args.events_smoke, args.events_workspace_smoke, args.public_events, args.renewal_native, args.renewal_session, args.public_renewal, args.lease_browser_native, args.lease_browser_session, args.public_lease_browser, args.public_lease_management, args.dependency_modfile, args.auth_native, args.public_auth, args.compaction_native, args.public_compaction, args.member_native, args.member_session, args.alarm_native, args.alarm_workspace, args.public_alarms, args.snapshot_native, args.snapshot_session, args.snapshot_artifact, args.snapshot_file, args.public_snapshot)

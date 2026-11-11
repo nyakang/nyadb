@@ -51,8 +51,28 @@ func NewKVSnapshotStore(directory string, limit uint64) (*KVSnapshotStore, error
 	if err != nil {
 		return nil, err
 	}
+	return newKVSnapshotStore(root, limit), nil
+}
+
+// NewKVSnapshotStoreAt clones the original opened directory. A renamed or
+// replaced path cannot redirect bootstrap's already captured storage owner.
+// The caller retains ownership of directory; the store owns its independent root.
+func NewKVSnapshotStoreAt(directory *os.Root, limit uint64) (*KVSnapshotStore, error) {
+	if directory == nil {
+		return nil, os.ErrInvalid
+	}
+	if limit == 0 || limit > math.MaxInt64 {
+		return nil, ErrArtifactQuota
+	}
+	root, err := directory.OpenRoot(".")
+	if err != nil {
+		return nil, err
+	}
+	return newKVSnapshotStore(root, limit), nil
+}
+func newKVSnapshotStore(root *os.Root, limit uint64) *KVSnapshotStore {
 	ctx, cancel := context.WithCancel(context.Background())
-	return &KVSnapshotStore{root: root, limit: limit, ctx: ctx, cancel: cancel, closeDone: make(chan struct{}), artifacts: make(map[*kvArtifact]bool), filePlans: make(map[*kvSnapshotFilePlan]bool), fileIO: defaultKVSnapshotFileIO(), write: func(f *os.File, b []byte) (int, error) { return f.Write(b) }, syncFile: func(f *os.File) error { return f.Sync() }, readAt: func(f *os.File, b []byte, o int64) (int, error) { return f.ReadAt(b, o) }}, nil
+	return &KVSnapshotStore{root: root, limit: limit, ctx: ctx, cancel: cancel, closeDone: make(chan struct{}), artifacts: make(map[*kvArtifact]bool), filePlans: make(map[*kvSnapshotFilePlan]bool), fileIO: defaultKVSnapshotFileIO(), write: func(f *os.File, b []byte) (int, error) { return f.Write(b) }, syncFile: func(f *os.File) error { return f.Sync() }, readAt: func(f *os.File, b []byte, o int64) (int, error) { return f.ReadAt(b, o) }}
 }
 
 type kvCapturePreparation struct {
@@ -233,7 +253,7 @@ func (r kvArtifactHashReader) ReadAt(b []byte, offset int64) (int, error) {
 }
 
 func (a *kvArtifact) reopen(ctx context.Context, name string, expected os.FileInfo, size uint64) (*os.File, []byte, error) {
-	f, err := a.root.Open(name)
+	f, err := snapshotOpenRegular(a.root, name)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -30,6 +30,8 @@ type Dependencies struct {
 	EditTarget         func(theme.EditTarget)
 	Status             func(string)
 	Files              Files
+	SnapshotArtifacts  contract.KVSnapshotArtifacts
+	SnapshotFiles      SnapshotFiles
 }
 type Receipt struct {
 	Scope           contract.KVScope
@@ -77,20 +79,23 @@ type outcome struct {
 	alarms                *alarmOutcome
 	recoveryResult        *contract.KVResult
 	recoveryMembers       []contract.KVMemberResult
+	snapshots             *snapshotOutcome
+	recoverySnapshot      *contract.KVSnapshotResult
 }
 type operation struct {
-	lease           contract.KVRequestLease
-	kind            string
-	scope           contract.KVScope
-	authored        contract.KVRequest
-	cancel          context.CancelFunc
-	canceled        bool
-	out             <-chan outcome
-	finished        <-chan struct{}
-	management      *LeaseManagementReceipt
-	managementDraft *leaseManagementDraft
-	auth            *AuthManagementReceipt
-	compaction      *CompactionReceipt
+	lease            contract.KVRequestLease
+	kind             string
+	scope            contract.KVScope
+	authored         contract.KVRequest
+	cancel           context.CancelFunc
+	canceled         bool
+	snapshotRecovery *contract.KVSnapshotResult
+	out              <-chan outcome
+	finished         <-chan struct{}
+	management       *LeaseManagementReceipt
+	managementDraft  *leaseManagementDraft
+	auth             *AuthManagementReceipt
+	compaction       *CompactionReceipt
 }
 
 // Document is UI-thread owned. Workers capture immutable requests and their
@@ -114,6 +119,8 @@ type Document struct {
 	members                                                 *memberState
 	alarms                                                  *alarmState
 	selectedMembers, selectedAlarms                         bool
+	snapshot                                                *snapshotState
+	selectedSnapshot                                        bool
 	last, unknown                                           *Receipt
 	selectedUnknown                                         bool
 	error                                                   string
@@ -150,6 +157,7 @@ type leaveStamp struct {
 	compaction                              *CompactionObservation
 	memberRevision                          uint64
 	alarmRevision                           uint64
+	snapshotRevision                        uint64
 }
 
 func (d *Document) ID() uint64       { return d.id }
@@ -225,11 +233,12 @@ type State struct {
 	CompactionSplitPercent   float32
 	MembersSplitPercent      float32
 	AlarmsSplitPercent       float32
+	SnapshotSplitPercent     float32
 	Invalidate               func()
 }
 
 func New(deps Dependencies) *State {
-	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50, LeaseBrowserSplitPercent: 20, AuthSplitPercent: 65, CompactionSplitPercent: 70, MembersSplitPercent: 60, AlarmsSplitPercent: 70}
+	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50, LeaseBrowserSplitPercent: 20, AuthSplitPercent: 65, CompactionSplitPercent: 70, MembersSplitPercent: 60, AlarmsSplitPercent: 70, SnapshotSplitPercent: 70}
 }
 func (s *State) owned(d *Document) bool { return d != nil && !d.closed && s.documents[d.id] == d }
 func (s *State) active(d *Document) bool {
@@ -286,8 +295,10 @@ func (s *State) Open(id uint64, profile int64, request contract.KVRequest) *Docu
 func (s *State) SetMethod(d *Document, method string) {
 	if s.owned(d) && !d.Busy() && d.method != method {
 		d.method = method
+		s.cancelSnapshotCaptureConfirmation(d)
 		d.selectedMembers = method == MembersMethod
 		d.selectedAlarms = method == AlarmsMethod
+		d.selectedSnapshot = method == SnapshotMethod && d.snapshotContent()
 		d.confirmation = nil
 		d.leaseManagement = nil
 		d.authDraft = nil
@@ -375,6 +386,10 @@ func (s *State) Preconnect(d *Document) {
 // Run prepares on the UI thread. Writes require a separate explicit confirmation
 // of the same authored text, canonical snapshot and original lease.
 func (s *State) Run(d *Document) {
+	if s.owned(d) && d.method == SnapshotMethod {
+		s.PrepareSnapshot(d)
+		return
+	}
 	if s.owned(d) && d.method == AlarmsMethod {
 		s.PrepareAlarmBatch(d)
 		return
@@ -482,6 +497,7 @@ func (s *State) Confirm(d *Document, checked bool) {
 }
 func (s *State) CancelConfirmation(d *Document) {
 	if s.owned(d) {
+		s.cancelSnapshotCaptureConfirmation(d)
 		if d.authDraft != nil {
 			d.authDraft.password = ""
 		}
@@ -521,6 +537,11 @@ func (s *State) Recover(d *Document) {
 		d.error = "complete original Alarm recovery record exceeds bounds"
 		return
 	}
+	expectedSnapshot := snapshotRecoveryExpected(d)
+	if !snapshotRecoveryRoom(d.snapshot, expectedSnapshot) {
+		d.error = locales.Text("完整 Snapshot 记录超过限额")
+		return
+	}
 	p, err := s.deps.ProviderFor(d.profileID)
 	if err != nil || p == nil {
 		d.error = locales.Text("KV 原连接不可用")
@@ -537,9 +558,21 @@ func (s *State) Recover(d *Document) {
 			return outcome{lease: l, err: err}
 		}
 		r, err := p.RecoverKV(previous)
+		if !sameSnapshotRecovery(expectedSnapshot, r.SnapshotResult) {
+			if r.Lease != nil {
+				_ = r.Lease.Close()
+			}
+			return outcome{err: contract.ErrRevoked}
+		}
 		last := r.Last.Clone()
-		return outcome{lease: r.Lease, recoveryResult: &last, recoveryMembers: cloneMemberResults(r.MemberResults), err: err}
+		var snapshot *contract.KVSnapshotResult
+		if r.SnapshotResult != nil {
+			copy := r.SnapshotResult.Clone()
+			snapshot = &copy
+		}
+		return outcome{lease: r.Lease, recoveryResult: &last, recoveryMembers: cloneMemberResults(r.MemberResults), recoverySnapshot: snapshot, err: err}
 	})
+	d.job.snapshotRecovery = expectedSnapshot
 }
 
 // Consume admits only the active original document. Parked completions keep
@@ -551,6 +584,7 @@ func (s *State) Consume() {
 		}
 		s.consumeRenewal(d)
 		s.consumeEvents(d)
+		s.validateSnapshotConfirmation(d)
 		if d.confirmation != nil && d.confirmation.editor != d.Request() {
 			d.confirmation = nil
 		}
@@ -574,15 +608,20 @@ func (s *State) Consume() {
 				if r.alarms != nil {
 					s.consumeAlarms(d, job, r.alarms)
 				}
+				if r.snapshots != nil {
+					s.consumeSnapshot(d, job, r.snapshots)
+				}
 				if r.members != nil {
 					s.consumeMembers(d, job, r)
 					d.selectedMembers = true
 				}
 				if job.kind == "recover" {
+					s.consumeSnapshotRecovery(d, job, r.recoverySnapshot)
 					s.consumeMemberRecovery(d, job, r.recoveryMembers)
 					s.consumeAlarmRecovery(d, job, r.recoveryResult)
 				}
 				if job.kind == "execute" {
+					d.selectedSnapshot = false
 					d.selectedMembers = false
 					d.selectedAlarms = false
 					d.selectedBrowser = false
@@ -657,6 +696,9 @@ func (s *State) DisconnectProfile(id int64) {
 			d.renewalConfirmation = nil
 			d.eventNeedsRecovery = true
 			d.confirmation = nil
+			if d.snapshot != nil {
+				d.snapshot.confirmation = nil
+			}
 			s.RequestCancel(d)
 		}
 	}
@@ -665,10 +707,10 @@ func (s *State) GuardLeave(d *Document, next func(ui.Services)) bool {
 	if !s.owned(d) {
 		return false
 	}
-	if d.permit != nil && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && d.permit.compaction == d.compactionObservation && d.permit.memberRevision == d.memberRevision() && d.permit.alarmRevision == d.alarmRevision() && !d.Busy() && !d.FileBusy() {
+	if d.permit != nil && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && d.permit.compaction == d.compactionObservation && d.permit.memberRevision == d.memberRevision() && d.permit.alarmRevision == d.alarmRevision() && d.permit.snapshotRevision == d.snapshotRevision() && !d.Busy() && !d.FileBusy() {
 		return false
 	}
-	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && !d.memberContent() && !d.alarmContent() && d.leaseManagement == nil && d.authDraft == nil && d.compactionObservation == nil && (d.confirmation == nil || d.confirmation.alarms == nil && d.confirmation.members == nil && d.confirmation.management == nil && d.confirmation.auth == nil && d.confirmation.compaction == nil) {
+	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && !d.memberContent() && !d.alarmContent() && !d.snapshotContent() && d.leaseManagement == nil && d.authDraft == nil && d.compactionObservation == nil && (d.confirmation == nil || d.confirmation.alarms == nil && d.confirmation.members == nil && d.confirmation.management == nil && d.confirmation.auth == nil && d.confirmation.compaction == nil) {
 		return false
 	}
 	s.leave = &leaveDecision{doc: d, next: next}
@@ -692,7 +734,7 @@ func (s *State) DecideLeave(services ui.Services, discard bool) {
 	next := s.leave.next
 	s.leave = nil
 	s.CancelConfirmation(d)
-	d.permit = &leaveStamp{request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail, compaction: d.compactionObservation, memberRevision: d.memberRevision(), alarmRevision: d.alarmRevision()}
+	d.permit = &leaveStamp{request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail, compaction: d.compactionObservation, memberRevision: d.memberRevision(), alarmRevision: d.alarmRevision(), snapshotRevision: d.snapshotRevision()}
 	if next != nil {
 		next(services)
 	}
@@ -761,6 +803,9 @@ func (s *State) Close(d *Document) {
 		<-d.job.finished
 		select {
 		case r := <-d.job.out:
+			if r.snapshots != nil && r.snapshots.artifact != nil {
+				_ = r.snapshots.artifact.Close()
+			}
 			if r.members != nil {
 				r.members.close()
 			}
@@ -770,6 +815,7 @@ func (s *State) Close(d *Document) {
 		default:
 		}
 	}
+	s.closeSnapshot(d)
 	d.releaseMemberAuthority()
 	d.releaseAlarmAuthority()
 	delete(s.documents, d.id)

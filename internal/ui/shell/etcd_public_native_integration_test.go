@@ -114,6 +114,13 @@ func captureEtcdPublic(t *testing.T, s *State, phase string) {
 		for _, size := range [][2]int{{1280, 800}, {720, 520}} {
 			tt := ui.NewTester(s.View, size[0], size[1])
 			tt.Frame()
+			if strings.HasPrefix(phase, "snapshot-public-") {
+				if phase == "snapshot-public-preserved-backup" {
+					tt.Scroll(float32(size[0]-30), float32(size[1]-60), 0, 1000)
+					tt.Frame()
+				}
+				shellSnapshotBounds(t, tt, phase, size)
+			}
 			if strings.HasPrefix(phase, "alarms-public-") {
 				shellAlarmBounds(t, tt, phase, size)
 			}

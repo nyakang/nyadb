@@ -17,6 +17,7 @@ import (
 )
 
 type kvSnapshotFileIO struct {
+	openRegular         func(*os.Root, string) (*os.File, error)
 	move                func(*os.File, string, *os.File, string) error
 	write               func(*os.File, []byte) (int, error)
 	readAt              func(*os.File, []byte, int64) (int, error)
@@ -25,7 +26,7 @@ type kvSnapshotFileIO struct {
 }
 
 func defaultKVSnapshotFileIO() kvSnapshotFileIO {
-	return kvSnapshotFileIO{move: snapshotMoveNoReplace, write: func(f *os.File, b []byte) (int, error) { return f.Write(b) }, readAt: func(f *os.File, b []byte, o int64) (int, error) { return f.ReadAt(b, o) }, syncFile: func(f *os.File) error { return f.Sync() }, closeFile: func(f *os.File) error { return f.Close() }, remove: func(r *os.Root, n string) error { return r.Remove(n) }}
+	return kvSnapshotFileIO{openRegular: snapshotOpenRegular, move: snapshotMoveNoReplace, write: func(f *os.File, b []byte) (int, error) { return f.Write(b) }, readAt: func(f *os.File, b []byte, o int64) (int, error) { return f.ReadAt(b, o) }, syncFile: func(f *os.File) error { return f.Sync() }, closeFile: func(f *os.File) error { return f.Close() }, remove: func(r *os.Root, n string) error { return r.Remove(n) }}
 }
 
 type kvSnapshotFilePlan struct {
@@ -74,7 +75,7 @@ func (p *kvSnapshotFilePlan) inspect(ctx context.Context, root *os.Root, name st
 	if expected != nil && (!os.SameFile(before, expected) || before.Size() != expected.Size() || !before.ModTime().Equal(expected.ModTime())) {
 		return contract.SnapshotSource{}, nil, ErrChanged
 	}
-	f, err := root.Open(name)
+	f, err := p.store.fileIO.openRegular(root, name)
 	if err != nil {
 		return contract.SnapshotSource{}, nil, err
 	}

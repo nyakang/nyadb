@@ -85,3 +85,7 @@ func (s *State) openKVDocument(profileID int64, request contract.KVRequest, expe
 	return true
 }
 func (s *State) SetKVFiles(files kvworkspace.Files) { s.kvWorkspace.SetFiles(files) }
+
+func (s *State) SetKVSnapshotOperations(artifacts contract.KVSnapshotArtifacts, files kvworkspace.SnapshotFiles) {
+	s.kvWorkspace.SetSnapshotOperations(artifacts, files)
+}

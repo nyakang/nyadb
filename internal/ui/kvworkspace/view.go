@@ -35,11 +35,15 @@ func (s *State) View(c *ui.Context, d *Document) {
 	isCompaction := d.method == CompactMethod
 	isMembers := d.method == MembersMethod
 	isAlarms := d.method == AlarmsMethod
+	isSnapshot := d.method == SnapshotMethod
 	ready := !d.Busy() && !d.NeedsRecovery() && (!isEvent && !isRenewal && d.lease != nil || isEvent && d.eventsAvailable || isRenewal && d.renewalAvailable)
 	ui.Column(c).Fill().Background(p.Panel).Children(func() {
 		ui.Row(c).FillWidth().Height(theme.RowHeight(c, theme.CommandBarHeight)).Background(p.Header).Children(func() {
 			ui.Toolbar(c, func() {
 				runLabel, runID := locales.Text("运行请求"), locales.Text("运行 KV 请求")
+				if isSnapshot {
+					runLabel, runID = locales.Text("预览 Snapshot 捕获"), locales.Text("预览 Snapshot 捕获")
+				}
 				if isAlarms {
 					runLabel, runID = locales.Text("预览解除告警"), locales.Text("预览解除告警")
 				}
@@ -67,7 +71,7 @@ func (s *State) View(c *ui.Context, d *Document) {
 					runLabel = locales.Text("读取历史")
 					runID = runLabel
 				}
-				if ui.Button(c, runLabel).Label(runID).Disabled(!ready || isAlarms && (!d.AlarmsAvailable() || d.hasUnknownWrites() || !alarmSelectionVisibleReady(d)) || isMembers && (!d.MembersAvailable() || d.hasUnknownWrites() || !memberSelectionVisibleReady(d)) || isCompaction && (!d.CompactionAvailable() || d.hasUnknownWrites() || !compactionObservationReady(d, d.compactionObservation)) || isAuth && !d.AuthManagementAvailable() || isBrowser && !d.LeaseBrowsingAvailable() || isEvent && d.eventReceipt != nil || isRenewal && (d.renewalReceipt != nil || d.hasUnknownWrites())).Clicked() {
+				if ui.Button(c, runLabel).Label(runID).Disabled(!ready || isSnapshot && (!d.SnapshotAvailable() || s.deps.SnapshotArtifacts == nil || d.snapshotState().original != nil) || isAlarms && (!d.AlarmsAvailable() || d.hasUnknownWrites() || !alarmSelectionVisibleReady(d)) || isMembers && (!d.MembersAvailable() || d.hasUnknownWrites() || !memberSelectionVisibleReady(d)) || isCompaction && (!d.CompactionAvailable() || d.hasUnknownWrites() || !compactionObservationReady(d, d.compactionObservation)) || isAuth && !d.AuthManagementAvailable() || isBrowser && !d.LeaseBrowsingAvailable() || isEvent && d.eventReceipt != nil || isRenewal && (d.renewalReceipt != nil || d.hasUnknownWrites())).Clicked() {
 					s.Run(d)
 				}
 				if isAlarms && d.alarmState().showResults && ui.Button(c, locales.Text("编辑告警选择")).Disabled(d.Busy()).Clicked() {
@@ -129,8 +133,12 @@ func (s *State) View(c *ui.Context, d *Document) {
 					}
 				}
 			}
-			if (isAlarms || isMembers || isCompaction || isEvent || isRenewal || isBrowser || isAuth) && ui.Button(c, locales.Text("使用请求模板")).Disabled(d.Busy()).Clicked() {
+			if (isSnapshot || isAlarms || isMembers || isCompaction || isEvent || isRenewal || isBrowser || isAuth) && ui.Button(c, locales.Text("使用请求模板")).Disabled(d.Busy()).Clicked() {
 				request := DefaultEventRequest(d.method)
+				if isSnapshot {
+					s.cancelSnapshotCaptureConfirmation(d)
+					request = DefaultSnapshotRequest()
+				}
 				if isAlarms {
 					d.releaseAlarmAuthority()
 					request = DefaultAlarmsRequest()
@@ -160,6 +168,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 			ui.Text(c, name).SingleLine().MinWidth(0).Shrink(1).TextColor(p.Muted).Tooltip(name)
 		})
 		hint := locales.Text("JSON 中 bytes 使用 Base64，整数保留原生精度；请求使用绝对键")
+		if isSnapshot {
+			hint = locales.Text("捕获整个原集群后端及认证数据；连接前缀不限定范围")
+		}
 		if isAlarms {
 			hint = locales.Text("告警属于原集群；连接前缀不限定范围，旧成员 ID 不代表当前成员")
 		}
@@ -192,7 +203,11 @@ func (s *State) View(c *ui.Context, d *Document) {
 			ui.Text(c, locales.Text("历史窗口在本次读取开始时固定；后续写入不会移动终点")).Padding(2, 8).FontSize(theme.Font(c, 11)).TextColor(p.Muted).SingleLine()
 		}
 		if d.error != "" {
-			ui.Text(c, clipped(d.error)).Padding(3, 8).TextColor(p.Error).SingleLine().Tooltip(clipped(d.error))
+			message := d.error
+			if isSnapshot || d.selectedSnapshot {
+				message = snapshotDisplayDocumentError(message)
+			}
+			ui.Text(c, clipped(message)).Padding(3, 8).TextColor(p.Error).SingleLine().Tooltip(clipped(message))
 		}
 		if d.Busy() {
 			status := locales.Text("等待原执行器确认；不会自动重试或重放")
@@ -219,6 +234,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 			}).Label(locales.Text("KV 显式恢复")).FillWidth().Padding(3, 8)
 		}
 		split := &s.SplitPercent
+		if isSnapshot || d.selectedSnapshot {
+			split = &s.SnapshotSplitPercent
+		}
 		if isAlarms || d.selectedAlarms {
 			split = &s.AlarmsSplitPercent
 		}
@@ -234,11 +252,19 @@ func (s *State) View(c *ui.Context, d *Document) {
 		if isBrowser {
 			split = &s.LeaseBrowserSplitPercent
 		}
+		if isSnapshot && d.snapshotState().showResults {
+			ui.Column(c).Grow(1).MinHeight(0).FillWidth().Children(func() { s.receiptView(c, d) })
+			return
+		}
 		if isAlarms && d.alarmState().showResults {
 			ui.Column(c).Grow(1).MinHeight(0).FillWidth().Children(func() { s.receiptView(c, d) })
 			return
 		}
 		ui.SplitVerticalPercent(c, split, func() {
+			if isSnapshot {
+				s.snapshotView(c, d)
+				return
+			}
 			if isAlarms {
 				s.alarmsView(c, d)
 				return
@@ -283,6 +309,16 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 	ui.Column(c).Fill().Padding(padding, 8).Gap(gap).Children(func() {
 		ui.Toolbar(c, func() {
 			if ui.Button(c, locales.Text("最近回执")).Clicked() {
+				d.selectedSnapshot = false
+				d.selectedMembers = false
+				d.selectedAlarms = false
+				d.selectedBrowser = false
+				d.selectedUnknown = false
+				d.selectedEvents = false
+				d.selectedRenewal = false
+			}
+			if d.snapshotContent() && ui.Button(c, locales.Text("Snapshot 回执")).Clicked() {
+				d.selectedSnapshot = true
 				d.selectedMembers = false
 				d.selectedAlarms = false
 				d.selectedBrowser = false
@@ -291,6 +327,7 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 				d.selectedRenewal = false
 			}
 			if d.alarmContent() && ui.Button(c, locales.Text("告警回执")).Clicked() {
+				d.selectedSnapshot = false
 				if d.method == AlarmsMethod {
 					d.alarmState().showResults = true
 				}
@@ -303,10 +340,12 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 				d.selectedRenewal = false
 			}
 			if d.memberContent() && ui.Button(c, locales.Text("成员回执")).Clicked() {
+				d.selectedSnapshot = false
 				d.selectedMembers = true
 				d.selectedAlarms = false
 			}
 			if d.unknown != nil && ui.Button(c, locales.Text("原未确认回执")).Clicked() {
+				d.selectedSnapshot = false
 				d.selectedMembers = false
 				d.selectedAlarms = false
 				d.selectedBrowser = false
@@ -315,6 +354,7 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 				d.selectedRenewal = false
 			}
 			if (d.eventsAvailable || d.eventReceipt != nil) && ui.Button(c, locales.Text("事件回执")).Clicked() {
+				d.selectedSnapshot = false
 				d.selectedMembers = false
 				d.selectedAlarms = false
 				d.selectedBrowser = false
@@ -323,6 +363,7 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 				d.selectedUnknown = false
 			}
 			if (d.renewalAvailable || d.renewalReceipt != nil) && ui.Button(c, locales.Text("续租回执")).Clicked() {
+				d.selectedSnapshot = false
 				d.selectedMembers = false
 				d.selectedAlarms = false
 				d.selectedBrowser = false
@@ -331,6 +372,7 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 				d.selectedUnknown = false
 			}
 			if d.renewalUnknown != nil && ui.Button(c, locales.Text("原未确认续租回执")).Clicked() {
+				d.selectedSnapshot = false
 				d.selectedMembers = false
 				d.selectedAlarms = false
 				d.selectedBrowser = false
@@ -339,6 +381,7 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 				d.selectedUnknown = false
 			}
 			if (d.LeaseBrowsingAvailable() || d.browserLast != nil) && ui.Button(c, locales.Text("租约浏览")).Clicked() {
+				d.selectedSnapshot = false
 				d.selectedMembers = false
 				d.selectedAlarms = false
 				d.selectedBrowser = true
@@ -347,6 +390,10 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 				d.selectedUnknown = false
 			}
 		}).Label(locales.Text("KV 回执操作")).FillWidth().MinWidth(0).Padding(0).Gap(5)
+		if d.selectedSnapshot {
+			s.snapshotReceiptView(c, d)
+			return
+		}
 		if d.selectedAlarms {
 			s.alarmsReceiptView(c, d)
 			return
@@ -460,6 +507,7 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 	})
 }
 func (s *State) Modals(c *ui.Context) {
+	s.snapshotModals(c)
 	s.renewalModals(c)
 	s.leaseManagementModals(c)
 	s.authManagementModals(c)

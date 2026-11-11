@@ -35481,3 +35481,1043 @@ func EtcdAlarmsf42684ebe7() string { return In(i18n.Locale()).EtcdAlarmsf42684eb
 func (msgs Messages) EtcdAlarmsf42684ebe7() string {
 	return Catalog.Format(msgs.locale, "etcdAlarmsf42684ebe7", nil)
 }
+
+// EtcdSnapshot6edd3c57ee says "Snapshot 回执"
+// in the language the app shows.
+func EtcdSnapshot6edd3c57ee() string { return In(i18n.Locale()).EtcdSnapshot6edd3c57ee() }
+
+// EtcdSnapshot6edd3c57ee says "Snapshot 回执"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot6edd3c57ee() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot6edd3c57ee", nil)
+}
+
+// EtcdSnapshot2e054913ae says "Snapshot 证据视图"
+// in the language the app shows.
+func EtcdSnapshot2e054913ae() string { return In(i18n.Locale()).EtcdSnapshot2e054913ae() }
+
+// EtcdSnapshot2e054913ae says "Snapshot 证据视图"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot2e054913ae() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot2e054913ae", nil)
+}
+
+// EtcdSnapshot7edece5f9f says "Snapshot 限额必须为完整正整数字符串"
+// in the language the app shows.
+func EtcdSnapshot7edece5f9f() string { return In(i18n.Locale()).EtcdSnapshot7edece5f9f() }
+
+// EtcdSnapshot7edece5f9f says "Snapshot 限额必须为完整正整数字符串"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot7edece5f9f() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot7edece5f9f", nil)
+}
+
+// EtcdSnapshot91f6686c96 says "Snapshot 限额表单"
+// in the language the app shows.
+func EtcdSnapshot91f6686c96() string { return In(i18n.Locale()).EtcdSnapshot91f6686c96() }
+
+// EtcdSnapshot91f6686c96 says "Snapshot 限额表单"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot91f6686c96() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot91f6686c96", nil)
+}
+
+// EtcdSnapshot1aeac7fddc says "两次排他移动之间，目标文件可短暂不存在"
+// in the language the app shows.
+func EtcdSnapshot1aeac7fddc() string { return In(i18n.Locale()).EtcdSnapshot1aeac7fddc() }
+
+// EtcdSnapshot1aeac7fddc says "两次排他移动之间，目标文件可短暂不存在"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot1aeac7fddc() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot1aeac7fddc", nil)
+}
+
+// EtcdSnapshot2005f4142a says "临时文件仍保留"
+// in the language the app shows.
+func EtcdSnapshot2005f4142a() string { return In(i18n.Locale()).EtcdSnapshot2005f4142a() }
+
+// EtcdSnapshot2005f4142a says "临时文件仍保留"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot2005f4142a() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot2005f4142a", nil)
+}
+
+// EtcdSnapshot2445d58c6b says "仅捕获一次；恢复不会重新执行 Snapshot"
+// in the language the app shows.
+func EtcdSnapshot2445d58c6b() string { return In(i18n.Locale()).EtcdSnapshot2445d58c6b() }
+
+// EtcdSnapshot2445d58c6b says "仅捕获一次；恢复不会重新执行 Snapshot"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot2445d58c6b() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot2445d58c6b", nil)
+}
+
+// EtcdSnapshot9461c7da0d says "保存原 backend 文件"
+// in the language the app shows.
+func EtcdSnapshot9461c7da0d() string { return In(i18n.Locale()).EtcdSnapshot9461c7da0d() }
+
+// EtcdSnapshot9461c7da0d says "保存原 backend 文件"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot9461c7da0d() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot9461c7da0d", nil)
+}
+
+// EtcdSnapshot210bfbd40a says "保存完整原帧日志"
+// in the language the app shows.
+func EtcdSnapshot210bfbd40a() string { return In(i18n.Locale()).EtcdSnapshot210bfbd40a() }
+
+// EtcdSnapshot210bfbd40a says "保存完整原帧日志"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot210bfbd40a() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot210bfbd40a", nil)
+}
+
+// EtcdSnapshotb13ba421f7 says "保存已捕获的原文件，不重新请求 Snapshot"
+// in the language the app shows.
+func EtcdSnapshotb13ba421f7() string { return In(i18n.Locale()).EtcdSnapshotb13ba421f7() }
+
+// EtcdSnapshotb13ba421f7 says "保存已捕获的原文件，不重新请求 Snapshot"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotb13ba421f7() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotb13ba421f7", nil)
+}
+
+// EtcdSnapshotf56a553524 says "保留临时文件位置"
+// in the language the app shows.
+func EtcdSnapshotf56a553524() string { return In(i18n.Locale()).EtcdSnapshotf56a553524() }
+
+// EtcdSnapshotf56a553524 says "保留临时文件位置"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotf56a553524() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotf56a553524", nil)
+}
+
+// EtcdSnapshotb669550314 says "保留旧备份位置"
+// in the language the app shows.
+func EtcdSnapshotb669550314() string { return In(i18n.Locale()).EtcdSnapshotb669550314() }
+
+// EtcdSnapshotb669550314 says "保留旧备份位置"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotb669550314() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotb669550314", nil)
+}
+
+// EtcdSnapshot0b50d398bb says "写入完整字节数"
+// in the language the app shows.
+func EtcdSnapshot0b50d398bb() string { return In(i18n.Locale()).EtcdSnapshot0b50d398bb() }
+
+// EtcdSnapshot0b50d398bb says "写入完整字节数"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot0b50d398bb() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot0b50d398bb", nil)
+}
+
+// EtcdSnapshot351be3b7c0 says "原 Snapshot 文档范围已变化"
+// in the language the app shows.
+func EtcdSnapshot351be3b7c0() string { return In(i18n.Locale()).EtcdSnapshot351be3b7c0() }
+
+// EtcdSnapshot351be3b7c0 says "原 Snapshot 文档范围已变化"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot351be3b7c0() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot351be3b7c0", nil)
+}
+
+// EtcdSnapshot8ba35597f1 says "原 Snapshot 源"
+// in the language the app shows.
+func EtcdSnapshot8ba35597f1() string { return In(i18n.Locale()).EtcdSnapshot8ba35597f1() }
+
+// EtcdSnapshot8ba35597f1 says "原 Snapshot 源"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot8ba35597f1() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot8ba35597f1", nil)
+}
+
+// EtcdSnapshotdd675c7dbe says "原回执捕获错误"
+// in the language the app shows.
+func EtcdSnapshotdd675c7dbe() string { return In(i18n.Locale()).EtcdSnapshotdd675c7dbe() }
+
+// EtcdSnapshotdd675c7dbe says "原回执捕获错误"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotdd675c7dbe() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotdd675c7dbe", nil)
+}
+
+// EtcdSnapshote0f647e89a says "原存储版本"
+// in the language the app shows.
+func EtcdSnapshote0f647e89a() string { return In(i18n.Locale()).EtcdSnapshote0f647e89a() }
+
+// EtcdSnapshote0f647e89a says "原存储版本"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshote0f647e89a() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshote0f647e89a", nil)
+}
+
+// EtcdSnapshot0be419e46f says "原帧数量限额"
+// in the language the app shows.
+func EtcdSnapshot0be419e46f() string { return In(i18n.Locale()).EtcdSnapshot0be419e46f() }
+
+// EtcdSnapshot0be419e46f says "原帧数量限额"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot0be419e46f() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot0be419e46f", nil)
+}
+
+// EtcdSnapshotb42a9ac6d6 says "原帧日志字节限额"
+// in the language the app shows.
+func EtcdSnapshotb42a9ac6d6() string { return In(i18n.Locale()).EtcdSnapshotb42a9ac6d6() }
+
+// EtcdSnapshotb42a9ac6d6 says "原帧日志字节限额"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotb42a9ac6d6() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotb42a9ac6d6", nil)
+}
+
+// EtcdSnapshot982bd7e700 says "原帧日志完整"
+// in the language the app shows.
+func EtcdSnapshot982bd7e700() string { return In(i18n.Locale()).EtcdSnapshot982bd7e700() }
+
+// EtcdSnapshot982bd7e700 says "原帧日志完整"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot982bd7e700() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot982bd7e700", nil)
+}
+
+// EtcdSnapshotfc1e14601e says "原归档存储错误"
+// in the language the app shows.
+func EtcdSnapshotfc1e14601e() string { return In(i18n.Locale()).EtcdSnapshotfc1e14601e() }
+
+// EtcdSnapshotfc1e14601e says "原归档存储错误"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotfc1e14601e() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotfc1e14601e", nil)
+}
+
+// EtcdSnapshotfc4beb017c says "原归档已存储"
+// in the language the app shows.
+func EtcdSnapshotfc4beb017c() string { return In(i18n.Locale()).EtcdSnapshotfc4beb017c() }
+
+// EtcdSnapshotfc4beb017c says "原归档已存储"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotfc4beb017c() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotfc4beb017c", nil)
+}
+
+// EtcdSnapshot5e3022ac29 says "原归档文件已同步"
+// in the language the app shows.
+func EtcdSnapshot5e3022ac29() string { return In(i18n.Locale()).EtcdSnapshot5e3022ac29() }
+
+// EtcdSnapshot5e3022ac29 says "原归档文件已同步"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot5e3022ac29() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot5e3022ac29", nil)
+}
+
+// EtcdSnapshot5a93dfc5e4 says "原归档清理错误"
+// in the language the app shows.
+func EtcdSnapshot5a93dfc5e4() string { return In(i18n.Locale()).EtcdSnapshot5a93dfc5e4() }
+
+// EtcdSnapshot5a93dfc5e4 says "原归档清理错误"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot5a93dfc5e4() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot5a93dfc5e4", nil)
+}
+
+// EtcdSnapshot13c9f5cae6 says "原执行器确认取消"
+// in the language the app shows.
+func EtcdSnapshot13c9f5cae6() string { return In(i18n.Locale()).EtcdSnapshot13c9f5cae6() }
+
+// EtcdSnapshot13c9f5cae6 says "原执行器确认取消"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot13c9f5cae6() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot13c9f5cae6", nil)
+}
+
+// EtcdSnapshotd2ba519454 says "原文件发布记录"
+// in the language the app shows.
+func EtcdSnapshotd2ba519454() string { return In(i18n.Locale()).EtcdSnapshotd2ba519454() }
+
+// EtcdSnapshotd2ba519454 says "原文件发布记录"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotd2ba519454() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotd2ba519454", nil)
+}
+
+// EtcdSnapshotd4c70ed138 says "原文件操作取消"
+// in the language the app shows.
+func EtcdSnapshotd4c70ed138() string { return In(i18n.Locale()).EtcdSnapshotd4c70ed138() }
+
+// EtcdSnapshotd4c70ed138 says "原文件操作取消"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotd4c70ed138() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotd4c70ed138", nil)
+}
+
+// EtcdSnapshot012df46c8c says "原文件操作结束"
+// in the language the app shows.
+func EtcdSnapshot012df46c8c() string { return In(i18n.Locale()).EtcdSnapshot012df46c8c() }
+
+// EtcdSnapshot012df46c8c says "原文件操作结束"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot012df46c8c() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot012df46c8c", nil)
+}
+
+// EtcdSnapshot8bc8a14900 says "原文件操作错误"
+// in the language the app shows.
+func EtcdSnapshot8bc8a14900() string { return In(i18n.Locale()).EtcdSnapshot8bc8a14900() }
+
+// EtcdSnapshot8bc8a14900 says "原文件操作错误"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot8bc8a14900() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot8bc8a14900", nil)
+}
+
+// EtcdSnapshotbb460e0282 says "原文件清理错误"
+// in the language the app shows.
+func EtcdSnapshotbb460e0282() string { return In(i18n.Locale()).EtcdSnapshotbb460e0282() }
+
+// EtcdSnapshotbb460e0282 says "原文件清理错误"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotbb460e0282() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotbb460e0282", nil)
+}
+
+// EtcdSnapshotfa34494d90 says "原文档 ID"
+// in the language the app shows.
+func EtcdSnapshotfa34494d90() string { return In(i18n.Locale()).EtcdSnapshotfa34494d90() }
+
+// EtcdSnapshotfa34494d90 says "原文档 ID"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotfa34494d90() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotfa34494d90", nil)
+}
+
+// EtcdSnapshotb47debf56e says "原日志完整字节数"
+// in the language the app shows.
+func EtcdSnapshotb47debf56e() string { return In(i18n.Locale()).EtcdSnapshotb47debf56e() }
+
+// EtcdSnapshotb47debf56e says "原日志完整字节数"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotb47debf56e() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotb47debf56e", nil)
+}
+
+// EtcdSnapshotd269b54916 says "原格式"
+// in the language the app shows.
+func EtcdSnapshotd269b54916() string { return In(i18n.Locale()).EtcdSnapshotd269b54916() }
+
+// EtcdSnapshotd269b54916 says "原格式"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotd269b54916() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotd269b54916", nil)
+}
+
+// EtcdSnapshotda0162dba1 says "原格式 %s · 完整字节 %s"
+// in the language the app shows.
+func EtcdSnapshotda0162dba1() string { return In(i18n.Locale()).EtcdSnapshotda0162dba1() }
+
+// EtcdSnapshotda0162dba1 says "原格式 %s · 完整字节 %s"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotda0162dba1() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotda0162dba1", nil)
+}
+
+// EtcdSnapshot1de29c675a says "原流完成"
+// in the language the app shows.
+func EtcdSnapshot1de29c675a() string { return In(i18n.Locale()).EtcdSnapshot1de29c675a() }
+
+// EtcdSnapshot1de29c675a says "原流完成"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot1de29c675a() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot1de29c675a", nil)
+}
+
+// EtcdSnapshot29906a9bbc says "原流校验、私有归档同步与用户文件发布分别记录"
+// in the language the app shows.
+func EtcdSnapshot29906a9bbc() string { return In(i18n.Locale()).EtcdSnapshot29906a9bbc() }
+
+// EtcdSnapshot29906a9bbc says "原流校验、私有归档同步与用户文件发布分别记录"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot29906a9bbc() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot29906a9bbc", nil)
+}
+
+// EtcdSnapshot0dc935dcba says "原源错误"
+// in the language the app shows.
+func EtcdSnapshot0dc935dcba() string { return In(i18n.Locale()).EtcdSnapshot0dc935dcba() }
+
+// EtcdSnapshot0dc935dcba says "原源错误"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot0dc935dcba() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot0dc935dcba", nil)
+}
+
+// EtcdSnapshotb00b89bd5f says "原生终止已观察"
+// in the language the app shows.
+func EtcdSnapshotb00b89bd5f() string { return In(i18n.Locale()).EtcdSnapshotb00b89bd5f() }
+
+// EtcdSnapshotb00b89bd5f says "原生终止已观察"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotb00b89bd5f() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotb00b89bd5f", nil)
+}
+
+// EtcdSnapshotd24e65fe99 says "原目标文件"
+// in the language the app shows.
+func EtcdSnapshotd24e65fe99() string { return In(i18n.Locale()).EtcdSnapshotd24e65fe99() }
+
+// EtcdSnapshotd24e65fe99 says "原目标文件"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotd24e65fe99() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotd24e65fe99", nil)
+}
+
+// EtcdSnapshotaad5a17880 says "原目标路径匹配"
+// in the language the app shows.
+func EtcdSnapshotaad5a17880() string { return In(i18n.Locale()).EtcdSnapshotaad5a17880() }
+
+// EtcdSnapshotaad5a17880 says "原目标路径匹配"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotaad5a17880() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotaad5a17880", nil)
+}
+
+// EtcdSnapshote260ce4aa4 says "原请求取消"
+// in the language the app shows.
+func EtcdSnapshote260ce4aa4() string { return In(i18n.Locale()).EtcdSnapshote260ce4aa4() }
+
+// EtcdSnapshote260ce4aa4 says "原请求取消"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshote260ce4aa4() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshote260ce4aa4", nil)
+}
+
+// EtcdSnapshotf90c3ff2d3 says "原路径身份未匹配；记录位置不代表当前路径"
+// in the language the app shows.
+func EtcdSnapshotf90c3ff2d3() string { return In(i18n.Locale()).EtcdSnapshotf90c3ff2d3() }
+
+// EtcdSnapshotf90c3ff2d3 says "原路径身份未匹配；记录位置不代表当前路径"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotf90c3ff2d3() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotf90c3ff2d3", nil)
+}
+
+// EtcdSnapshot33200a1c13 says "原辅助路径匹配"
+// in the language the app shows.
+func EtcdSnapshot33200a1c13() string { return In(i18n.Locale()).EtcdSnapshot33200a1c13() }
+
+// EtcdSnapshot33200a1c13 says "原辅助路径匹配"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot33200a1c13() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot33200a1c13", nil)
+}
+
+// EtcdSnapshot4a149ce811 says "原连接与会话代次"
+// in the language the app shows.
+func EtcdSnapshot4a149ce811() string { return In(i18n.Locale()).EtcdSnapshot4a149ce811() }
+
+// EtcdSnapshot4a149ce811 says "原连接与会话代次"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot4a149ce811() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot4a149ce811", nil)
+}
+
+// EtcdSnapshot3ac3a7ca75 says "原集群 %s · 原成员 %s · 原文档 %s"
+// in the language the app shows.
+func EtcdSnapshot3ac3a7ca75() string { return In(i18n.Locale()).EtcdSnapshot3ac3a7ca75() }
+
+// EtcdSnapshot3ac3a7ca75 says "原集群 %s · 原成员 %s · 原文档 %s"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot3ac3a7ca75() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot3ac3a7ca75", nil)
+}
+
+// EtcdSnapshot0a596e20a4 says "原集群 %s · 文档 %s · 后端 %s 字节 · 原帧 %s"
+// in the language the app shows.
+func EtcdSnapshot0a596e20a4() string { return In(i18n.Locale()).EtcdSnapshot0a596e20a4() }
+
+// EtcdSnapshot0a596e20a4 says "原集群 %s · 文档 %s · 后端 %s 字节 · 原帧 %s"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot0a596e20a4() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot0a596e20a4", nil)
+}
+
+// EtcdSnapshotc754678e9c says "原集群 Snapshot"
+// in the language the app shows.
+func EtcdSnapshotc754678e9c() string { return In(i18n.Locale()).EtcdSnapshotc754678e9c() }
+
+// EtcdSnapshotc754678e9c says "原集群 Snapshot"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotc754678e9c() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotc754678e9c", nil)
+}
+
+// EtcdSnapshot048a9e49af says "原集群与成员"
+// in the language the app shows.
+func EtcdSnapshot048a9e49af() string { return In(i18n.Locale()).EtcdSnapshot048a9e49af() }
+
+// EtcdSnapshot048a9e49af says "原集群与成员"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot048a9e49af() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot048a9e49af", nil)
+}
+
+// EtcdSnapshotbb4cfb339f says "发布移动确认"
+// in the language the app shows.
+func EtcdSnapshotbb4cfb339f() string { return In(i18n.Locale()).EtcdSnapshotbb4cfb339f() }
+
+// EtcdSnapshotbb4cfb339f says "发布移动确认"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotbb4cfb339f() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotbb4cfb339f", nil)
+}
+
+// EtcdSnapshote8c3174ba4 says "后来内容匹配不会确认丢失的移动回执"
+// in the language the app shows.
+func EtcdSnapshote8c3174ba4() string { return In(i18n.Locale()).EtcdSnapshote8c3174ba4() }
+
+// EtcdSnapshote8c3174ba4 says "后来内容匹配不会确认丢失的移动回执"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshote8c3174ba4() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshote8c3174ba4", nil)
+}
+
+// EtcdSnapshot19f6e3c753 says "后来目标内容匹配"
+// in the language the app shows.
+func EtcdSnapshot19f6e3c753() string { return In(i18n.Locale()).EtcdSnapshot19f6e3c753() }
+
+// EtcdSnapshot19f6e3c753 says "后来目标内容匹配"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot19f6e3c753() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot19f6e3c753", nil)
+}
+
+// EtcdSnapshot8f088b5108 says "后端字节与帧数"
+// in the language the app shows.
+func EtcdSnapshot8f088b5108() string { return In(i18n.Locale()).EtcdSnapshot8f088b5108() }
+
+// EtcdSnapshot8f088b5108 says "后端字节与帧数"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot8f088b5108() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot8f088b5108", nil)
+}
+
+// EtcdSnapshote18e9dec4d says "后端字节限额"
+// in the language the app shows.
+func EtcdSnapshote18e9dec4d() string { return In(i18n.Locale()).EtcdSnapshote18e9dec4d() }
+
+// EtcdSnapshote18e9dec4d says "后端字节限额"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshote18e9dec4d() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshote18e9dec4d", nil)
+}
+
+// EtcdSnapshot290f377fbb says "后端完整字节数"
+// in the language the app shows.
+func EtcdSnapshot290f377fbb() string { return In(i18n.Locale()).EtcdSnapshot290f377fbb() }
+
+// EtcdSnapshot290f377fbb says "后端完整字节数"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot290f377fbb() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot290f377fbb", nil)
+}
+
+// EtcdSnapshot23a7dc05be says "后端限额 %s 字节 · 原日志限额 %s 字节 · 帧限额 %s"
+// in the language the app shows.
+func EtcdSnapshot23a7dc05be() string { return In(i18n.Locale()).EtcdSnapshot23a7dc05be() }
+
+// EtcdSnapshot23a7dc05be says "后端限额 %s 字节 · 原日志限额 %s 字节 · 帧限额 %s"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot23a7dc05be() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot23a7dc05be", nil)
+}
+
+// EtcdSnapshot091436e4dd says "复制完整 Snapshot 记录"
+// in the language the app shows.
+func EtcdSnapshot091436e4dd() string { return In(i18n.Locale()).EtcdSnapshot091436e4dd() }
+
+// EtcdSnapshot091436e4dd says "复制完整 Snapshot 记录"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot091436e4dd() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot091436e4dd", nil)
+}
+
+// EtcdSnapshot84ba7087a4 says "完整 Snapshot 记录"
+// in the language the app shows.
+func EtcdSnapshot84ba7087a4() string { return In(i18n.Locale()).EtcdSnapshot84ba7087a4() }
+
+// EtcdSnapshot84ba7087a4 says "完整 Snapshot 记录"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot84ba7087a4() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot84ba7087a4", nil)
+}
+
+// EtcdSnapshot5eb9cc4604 says "完整 Snapshot 记录超过限额"
+// in the language the app shows.
+func EtcdSnapshot5eb9cc4604() string { return In(i18n.Locale()).EtcdSnapshot5eb9cc4604() }
+
+// EtcdSnapshot5eb9cc4604 says "完整 Snapshot 记录超过限额"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot5eb9cc4604() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot5eb9cc4604", nil)
+}
+
+// EtcdSnapshotb95d7887bf says "完整 Snapshot 记录预览"
+// in the language the app shows.
+func EtcdSnapshotb95d7887bf() string { return In(i18n.Locale()).EtcdSnapshotb95d7887bf() }
+
+// EtcdSnapshotb95d7887bf says "完整 Snapshot 记录预览"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotb95d7887bf() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotb95d7887bf", nil)
+}
+
+// EtcdSnapshot7daa46670e says "完整后端归档"
+// in the language the app shows.
+func EtcdSnapshot7daa46670e() string { return In(i18n.Locale()).EtcdSnapshot7daa46670e() }
+
+// EtcdSnapshot7daa46670e says "完整后端归档"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot7daa46670e() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot7daa46670e", nil)
+}
+
+// EtcdSnapshot91f7472fa9 says "导出 Snapshot 记录"
+// in the language the app shows.
+func EtcdSnapshot91f7472fa9() string { return In(i18n.Locale()).EtcdSnapshot91f7472fa9() }
+
+// EtcdSnapshot91f7472fa9 says "导出 Snapshot 记录"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot91f7472fa9() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot91f7472fa9", nil)
+}
+
+// EtcdSnapshot115608ee35 says "尚无用户文件发布记录"
+// in the language the app shows.
+func EtcdSnapshot115608ee35() string { return In(i18n.Locale()).EtcdSnapshot115608ee35() }
+
+// EtcdSnapshot115608ee35 says "尚无用户文件发布记录"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot115608ee35() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot115608ee35", nil)
+}
+
+// EtcdSnapshote39ee9651a says "已检查旧文件 %s 字节 · SHA256 %s"
+// in the language the app shows.
+func EtcdSnapshote39ee9651a() string { return In(i18n.Locale()).EtcdSnapshote39ee9651a() }
+
+// EtcdSnapshote39ee9651a says "已检查旧文件 %s 字节 · SHA256 %s"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshote39ee9651a() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshote39ee9651a", nil)
+}
+
+// EtcdSnapshotd56a511f49 says "已确认"
+// in the language the app shows.
+func EtcdSnapshotd56a511f49() string { return In(i18n.Locale()).EtcdSnapshotd56a511f49() }
+
+// EtcdSnapshotd56a511f49 says "已确认"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotd56a511f49() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotd56a511f49", nil)
+}
+
+// EtcdSnapshot7375e2ff73 says "归档关闭清理错误"
+// in the language the app shows.
+func EtcdSnapshot7375e2ff73() string { return In(i18n.Locale()).EtcdSnapshot7375e2ff73() }
+
+// EtcdSnapshot7375e2ff73 says "归档关闭清理错误"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot7375e2ff73() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot7375e2ff73", nil)
+}
+
+// EtcdSnapshot0fa1399be6 says "恢复保留原源证据；未重新捕获或发布文件"
+// in the language the app shows.
+func EtcdSnapshot0fa1399be6() string { return In(i18n.Locale()).EtcdSnapshot0fa1399be6() }
+
+// EtcdSnapshot0fa1399be6 says "恢复保留原源证据；未重新捕获或发布文件"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot0fa1399be6() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot0fa1399be6", nil)
+}
+
+// EtcdSnapshot2101b18eb9 says "我确认保存此原文件"
+// in the language the app shows.
+func EtcdSnapshot2101b18eb9() string { return In(i18n.Locale()).EtcdSnapshot2101b18eb9() }
+
+// EtcdSnapshot2101b18eb9 says "我确认保存此原文件"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot2101b18eb9() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot2101b18eb9", nil)
+}
+
+// EtcdSnapshot4d8bd9d973 says "我确认捕获此原集群的完整后端"
+// in the language the app shows.
+func EtcdSnapshot4d8bd9d973() string { return In(i18n.Locale()).EtcdSnapshot4d8bd9d973() }
+
+// EtcdSnapshot4d8bd9d973 says "我确认捕获此原集群的完整后端"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot4d8bd9d973() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot4d8bd9d973", nil)
+}
+
+// EtcdSnapshot9f7e5b6dc8 says "我确认替换此已检查文件并保留旧备份"
+// in the language the app shows.
+func EtcdSnapshot9f7e5b6dc8() string { return In(i18n.Locale()).EtcdSnapshot9f7e5b6dc8() }
+
+// EtcdSnapshot9f7e5b6dc8 says "我确认替换此已检查文件并保留旧备份"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot9f7e5b6dc8() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot9f7e5b6dc8", nil)
+}
+
+// EtcdSnapshot6a00acd5a3 says "捕获整个原集群后端及认证数据；连接前缀不限定范围"
+// in the language the app shows.
+func EtcdSnapshot6a00acd5a3() string { return In(i18n.Locale()).EtcdSnapshot6a00acd5a3() }
+
+// EtcdSnapshot6a00acd5a3 says "捕获整个原集群后端及认证数据；连接前缀不限定范围"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot6a00acd5a3() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot6a00acd5a3", nil)
+}
+
+// EtcdSnapshotf06a96a7fa says "无法准备原 Snapshot 捕获"
+// in the language the app shows.
+func EtcdSnapshotf06a96a7fa() string { return In(i18n.Locale()).EtcdSnapshotf06a96a7fa() }
+
+// EtcdSnapshotf06a96a7fa says "无法准备原 Snapshot 捕获"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotf06a96a7fa() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotf06a96a7fa", nil)
+}
+
+// EtcdSnapshot3b03370974 says "旧备份仍保留"
+// in the language the app shows.
+func EtcdSnapshot3b03370974() string { return In(i18n.Locale()).EtcdSnapshot3b03370974() }
+
+// EtcdSnapshot3b03370974 says "旧备份仍保留"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot3b03370974() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot3b03370974", nil)
+}
+
+// EtcdSnapshotf2f364c3cb says "旧文件保留在独占目录，完成后显示保留位置"
+// in the language the app shows.
+func EtcdSnapshotf2f364c3cb() string { return In(i18n.Locale()).EtcdSnapshotf2f364c3cb() }
+
+// EtcdSnapshotf2f364c3cb says "旧文件保留在独占目录，完成后显示保留位置"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotf2f364c3cb() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotf2f364c3cb", nil)
+}
+
+// EtcdSnapshotfdaa0b8c0e says "旧文件恢复确认"
+// in the language the app shows.
+func EtcdSnapshotfdaa0b8c0e() string { return In(i18n.Locale()).EtcdSnapshotfdaa0b8c0e() }
+
+// EtcdSnapshotfdaa0b8c0e says "旧文件恢复确认"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotfdaa0b8c0e() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotfdaa0b8c0e", nil)
+}
+
+// EtcdSnapshotcd06043bcb says "旧文件移出确认"
+// in the language the app shows.
+func EtcdSnapshotcd06043bcb() string { return In(i18n.Locale()).EtcdSnapshotcd06043bcb() }
+
+// EtcdSnapshotcd06043bcb says "旧文件移出确认"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotcd06043bcb() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotcd06043bcb", nil)
+}
+
+// EtcdSnapshotaf0c4b935b says "未成功"
+// in the language the app shows.
+func EtcdSnapshotaf0c4b935b() string { return In(i18n.Locale()).EtcdSnapshotaf0c4b935b() }
+
+// EtcdSnapshotaf0c4b935b says "未成功"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotaf0c4b935b() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotaf0c4b935b", nil)
+}
+
+// EtcdSnapshotaf93b701f8 says "本地归档仍可保存"
+// in the language the app shows.
+func EtcdSnapshotaf93b701f8() string { return In(i18n.Locale()).EtcdSnapshotaf93b701f8() }
+
+// EtcdSnapshotaf93b701f8 says "本地归档仍可保存"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotaf93b701f8() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotaf93b701f8", nil)
+}
+
+// EtcdSnapshot1a2fe51a77 says "清除原 Snapshot 归档"
+// in the language the app shows.
+func EtcdSnapshot1a2fe51a77() string { return In(i18n.Locale()).EtcdSnapshot1a2fe51a77() }
+
+// EtcdSnapshot1a2fe51a77 says "清除原 Snapshot 归档"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot1a2fe51a77() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot1a2fe51a77", nil)
+}
+
+// EtcdSnapshot6d9350502e says "源字节完整"
+// in the language the app shows.
+func EtcdSnapshot6d9350502e() string { return In(i18n.Locale()).EtcdSnapshot6d9350502e() }
+
+// EtcdSnapshot6d9350502e says "源字节完整"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot6d9350502e() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot6d9350502e", nil)
+}
+
+// EtcdSnapshot690b1117a9 says "源归档独立校验"
+// in the language the app shows.
+func EtcdSnapshot690b1117a9() string { return In(i18n.Locale()).EtcdSnapshot690b1117a9() }
+
+// EtcdSnapshot690b1117a9 says "源归档独立校验"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot690b1117a9() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot690b1117a9", nil)
+}
+
+// EtcdSnapshot280fabdfca says "源校验和匹配"
+// in the language the app shows.
+func EtcdSnapshot280fabdfca() string { return In(i18n.Locale()).EtcdSnapshot280fabdfca() }
+
+// EtcdSnapshot280fabdfca says "源校验和匹配"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot280fabdfca() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot280fabdfca", nil)
+}
+
+// EtcdSnapshot1be0741d92 says "用户文件发布"
+// in the language the app shows.
+func EtcdSnapshot1be0741d92() string { return In(i18n.Locale()).EtcdSnapshot1be0741d92() }
+
+// EtcdSnapshot1be0741d92 says "用户文件发布"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot1be0741d92() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot1be0741d92", nil)
+}
+
+// EtcdSnapshot0addc6c25d says "用户文件已同步"
+// in the language the app shows.
+func EtcdSnapshot0addc6c25d() string { return In(i18n.Locale()).EtcdSnapshot0addc6c25d() }
+
+// EtcdSnapshot0addc6c25d says "用户文件已同步"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot0addc6c25d() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot0addc6c25d", nil)
+}
+
+// EtcdSnapshot3c116a1b59 says "目录已同步"
+// in the language the app shows.
+func EtcdSnapshot3c116a1b59() string { return In(i18n.Locale()).EtcdSnapshot3c116a1b59() }
+
+// EtcdSnapshot3c116a1b59 says "目录已同步"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot3c116a1b59() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot3c116a1b59", nil)
+}
+
+// EtcdSnapshota7f2c26161 says "目标变化或新文件出现时停止，恢复也不会覆盖目标"
+// in the language the app shows.
+func EtcdSnapshota7f2c26161() string { return In(i18n.Locale()).EtcdSnapshota7f2c26161() }
+
+// EtcdSnapshota7f2c26161 says "目标变化或新文件出现时停止，恢复也不会覆盖目标"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshota7f2c26161() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshota7f2c26161", nil)
+}
+
+// EtcdSnapshot5fda448f29 says "确认保存 Snapshot 文件"
+// in the language the app shows.
+func EtcdSnapshot5fda448f29() string { return In(i18n.Locale()).EtcdSnapshot5fda448f29() }
+
+// EtcdSnapshot5fda448f29 says "确认保存 Snapshot 文件"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot5fda448f29() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot5fda448f29", nil)
+}
+
+// EtcdSnapshot7d3a6f6832 says "确认保存原 Snapshot 文件"
+// in the language the app shows.
+func EtcdSnapshot7d3a6f6832() string { return In(i18n.Locale()).EtcdSnapshot7d3a6f6832() }
+
+// EtcdSnapshot7d3a6f6832 says "确认保存原 Snapshot 文件"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot7d3a6f6832() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot7d3a6f6832", nil)
+}
+
+// EtcdSnapshot047fff9741 says "确认捕获 Snapshot"
+// in the language the app shows.
+func EtcdSnapshot047fff9741() string { return In(i18n.Locale()).EtcdSnapshot047fff9741() }
+
+// EtcdSnapshot047fff9741 says "确认捕获 Snapshot"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot047fff9741() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot047fff9741", nil)
+}
+
+// EtcdSnapshot4dc3b68c09 says "确认捕获原集群 Snapshot"
+// in the language the app shows.
+func EtcdSnapshot4dc3b68c09() string { return In(i18n.Locale()).EtcdSnapshot4dc3b68c09() }
+
+// EtcdSnapshot4dc3b68c09 says "确认捕获原集群 Snapshot"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot4dc3b68c09() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot4dc3b68c09", nil)
+}
+
+// EtcdSnapshota2c05b7af2 says "确认捕获后显示原 Snapshot 证据"
+// in the language the app shows.
+func EtcdSnapshota2c05b7af2() string { return In(i18n.Locale()).EtcdSnapshota2c05b7af2() }
+
+// EtcdSnapshota2c05b7af2 says "确认捕获后显示原 Snapshot 证据"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshota2c05b7af2() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshota2c05b7af2", nil)
+}
+
+// EtcdSnapshot901328da2e says "确认替换 Snapshot 文件"
+// in the language the app shows.
+func EtcdSnapshot901328da2e() string { return In(i18n.Locale()).EtcdSnapshot901328da2e() }
+
+// EtcdSnapshot901328da2e says "确认替换 Snapshot 文件"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot901328da2e() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot901328da2e", nil)
+}
+
+// EtcdSnapshote283521d35 says "确认替换所检查的文件"
+// in the language the app shows.
+func EtcdSnapshote283521d35() string { return In(i18n.Locale()).EtcdSnapshote283521d35() }
+
+// EtcdSnapshote283521d35 says "确认替换所检查的文件"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshote283521d35() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshote283521d35", nil)
+}
+
+// EtcdSnapshotdb28447f12 says "私有归档校验"
+// in the language the app shows.
+func EtcdSnapshotdb28447f12() string { return In(i18n.Locale()).EtcdSnapshotdb28447f12() }
+
+// EtcdSnapshotdb28447f12 says "私有归档校验"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotdb28447f12() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotdb28447f12", nil)
+}
+
+// EtcdSnapshot019ef355ad says "编辑 Snapshot 限额"
+// in the language the app shows.
+func EtcdSnapshot019ef355ad() string { return In(i18n.Locale()).EtcdSnapshot019ef355ad() }
+
+// EtcdSnapshot019ef355ad says "编辑 Snapshot 限额"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot019ef355ad() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot019ef355ad", nil)
+}
+
+// EtcdSnapshot9553c9d1c8 says "请先清除原 Snapshot 归档再开始新的捕获"
+// in the language the app shows.
+func EtcdSnapshot9553c9d1c8() string { return In(i18n.Locale()).EtcdSnapshot9553c9d1c8() }
+
+// EtcdSnapshot9553c9d1c8 says "请先清除原 Snapshot 归档再开始新的捕获"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot9553c9d1c8() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot9553c9d1c8", nil)
+}
+
+// EtcdSnapshot39e5bf15be says "输出写入已确认"
+// in the language the app shows.
+func EtcdSnapshot39e5bf15be() string { return In(i18n.Locale()).EtcdSnapshot39e5bf15be() }
+
+// EtcdSnapshot39e5bf15be says "输出写入已确认"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot39e5bf15be() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot39e5bf15be", nil)
+}
+
+// EtcdSnapshot8d24a1ea5f says "这是完整原失败日志；后端源仍未完成"
+// in the language the app shows.
+func EtcdSnapshot8d24a1ea5f() string { return In(i18n.Locale()).EtcdSnapshot8d24a1ea5f() }
+
+// EtcdSnapshot8d24a1ea5f says "这是完整原失败日志；后端源仍未完成"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot8d24a1ea5f() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot8d24a1ea5f", nil)
+}
+
+// EtcdSnapshot5a3b95604f says "选择原 Snapshot 保存目标"
+// in the language the app shows.
+func EtcdSnapshot5a3b95604f() string { return In(i18n.Locale()).EtcdSnapshot5a3b95604f() }
+
+// EtcdSnapshot5a3b95604f says "选择原 Snapshot 保存目标"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot5a3b95604f() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot5a3b95604f", nil)
+}
+
+// EtcdSnapshotd8a8055611 says "限额 JSON"
+// in the language the app shows.
+func EtcdSnapshotd8a8055611() string { return In(i18n.Locale()).EtcdSnapshotd8a8055611() }
+
+// EtcdSnapshotd8a8055611 says "限额 JSON"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotd8a8055611() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotd8a8055611", nil)
+}
+
+// EtcdSnapshot1811be6ed8 says "预览 Snapshot 捕获"
+// in the language the app shows.
+func EtcdSnapshot1811be6ed8() string { return In(i18n.Locale()).EtcdSnapshot1811be6ed8() }
+
+// EtcdSnapshot1811be6ed8 says "预览 Snapshot 捕获"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot1811be6ed8() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot1811be6ed8", nil)
+}
+
+// EtcdSnapshota89fd91fba says "原文件取消请求"
+// in the language the app shows.
+func EtcdSnapshota89fd91fba() string { return In(i18n.Locale()).EtcdSnapshota89fd91fba() }
+
+// EtcdSnapshota89fd91fba says "原文件取消请求"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshota89fd91fba() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshota89fd91fba", nil)
+}
+
+// EtcdSnapshotf3859eae13 says "原快照归档已关闭"
+// in the language the app shows.
+func EtcdSnapshotf3859eae13() string { return In(i18n.Locale()).EtcdSnapshotf3859eae13() }
+
+// EtcdSnapshotf3859eae13 says "原快照归档已关闭"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshotf3859eae13() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshotf3859eae13", nil)
+}
+
+// EtcdSnapshot6058ef9a81 says "原快照归档磁盘预算不足"
+// in the language the app shows.
+func EtcdSnapshot6058ef9a81() string { return In(i18n.Locale()).EtcdSnapshot6058ef9a81() }
+
+// EtcdSnapshot6058ef9a81 says "原快照归档磁盘预算不足"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot6058ef9a81() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot6058ef9a81", nil)
+}
+
+// EtcdSnapshot5b34d50378 says "原快照文件与完整执行回执不一致"
+// in the language the app shows.
+func EtcdSnapshot5b34d50378() string { return In(i18n.Locale()).EtcdSnapshot5b34d50378() }
+
+// EtcdSnapshot5b34d50378 says "原快照文件与完整执行回执不一致"
+// in the language of msgs.
+func (msgs Messages) EtcdSnapshot5b34d50378() string {
+	return Catalog.Format(msgs.locale, "etcdSnapshot5b34d50378", nil)
+}

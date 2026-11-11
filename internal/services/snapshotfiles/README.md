@@ -39,8 +39,9 @@ file fsync and user-file publication are separate facts. `FilesSynced` records
 successful fsync of the two private files; it does not prove directory or user
 file durability. This API does not publish Snapshot controls, choose a user file,
 restore data, replay a stream or settle an earlier unknown KV/member/Alarm write.
-User-file publication is described below. Public KV/Shell Snapshot dialogs
-remain a separate acceptance stage.
+User-file publication is described below. Public KV/Shell Snapshot controls
+use these neutral operations through the original document; see the public
+workspace section at the end of this document.
 
 Verification uses focused race/fault/lifetime tests and the owned fixture's
 `--snapshot-artifact` mode, including raw/session/runtime regressions and exact
@@ -106,3 +107,39 @@ Displaced user backup bytes are never charged as snapshot-owned temporary data.
 Owned native fixture mode `--snapshot-file` covers both formats, replacement,
 original post-disconnect saving, earlier actual unknown Put barriers and complete
 failure-journal export, in addition to all prior stream/session/artifact cases.
+
+
+### Public original Snapshot workspace
+
+The existing KV State/Document exposes Snapshot inputs and a whole-backend capture
+confirmation. Bootstrap injects a unique private directory and a shared 512 MiB
+disk store; Shell owns native file selection. Capture limits use exact positive
+integer strings. Each capture keeps its original request, document, session,
+full source receipt and disk artifact until explicit clear or close.
+
+Saving a retained backend or complete native-frame journal works after
+disconnection and never sends Snapshot again. Native file selection is followed
+by a separate unchecked confirmation of the inspected original file, size and
+hash. Replacement preserves the old file in an exclusive sibling directory and
+explains the temporary target-absence window. Appeared targets require a new
+inspection and confirmation. Source completion, artifact verification, move
+acknowledgements, later path/content observations, fsync, cancellation and cleanup
+have independent displays and full receipt exports.
+
+A complete failure journal can save while the backend remains incomplete. An
+unknown file publication stays unknown after matching content is observed. Prior
+unknown KV/member/Alarm writes remain independent across capture, saving and
+explicit session recovery. Close waits for the original capture/file executor,
+releases private resources and preserves published user files and old backups.
+
+Run the public fixture scope:
+
+```sh
+GOWORK=off GOFLAGS=-mod=readonly /usr/bin/python3 tools/verify_etcd_fixture.py --public-snapshot --race --version VERSION --mode MODE
+```
+
+It requires all 27 prior stream/session/
+artifact/file parents plus seven public workspace/Shell parents, and records 108
+workspace and 48 Shell images in Chinese/English at 1280x800 and 720x520. The
+version/mode matrix is 3.7.3 anonymous/basic/TLS/mTLS and 3.5.35 basic. Restore and
+actual Windows/macOS filesystem runtime remain separate acceptance scopes.

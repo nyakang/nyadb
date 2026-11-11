@@ -617,7 +617,7 @@ does not guarantee that repeating Compact will succeed. Copies and exports keep
 complete original observations and replies. Request files restore text only.
 Original observation/confirmation/unknown receipts participate in leave decisions;
 close releases their leases and caches. Public member-targeted Defragment is
-described below; public Alarm controls are described at the end of this document. Snapshot and membership changes remain pending.
+described below; public Alarm controls are described at the end of this document. Public Snapshot is described below; Restore and membership changes remain pending.
 
 Run `GOWORK=off /usr/bin/python3 tools/verify_etcd_fixture.py --compaction-native
 --race --mode MODE` for 16 required native parents. Use official 3.7.3
@@ -741,7 +741,7 @@ voter/one-learner fixture requires nine native parent cases and 36 workspace plu
 36 Shell localized images. Real upstream reply-loss/cancellation/close faults,
 partial batches, restricted-principal denial, learner inspection, original
 publication/recovery, text files and full archives are mandatory. Local evidence:
-`docs/etcd-public-members-2026-11-11.md`. Public Alarm/Disarm is described below. Snapshot, membership changes,
+`docs/etcd-public-members-2026-11-11.md`. Public Alarm/Disarm is described below. Public Snapshot is described below. Restore, membership changes,
 broader cluster management, etcd-v2 and AuthEnable/AuthDisable remain separate.
 
 ### Original Alarm native requests and leases
@@ -788,7 +788,7 @@ processed read/write reply faults, cancellation/ownership, original publication
 and pure recovery, plus existing KV/Compact/member regressions. TLS/mTLS fault
 relays keep the original transport configuration and owned certificates.
 Local evidence: `docs/etcd-alarm-native-2026-11-11.md`. This is native foundation
-acceptance; public checked Alarm selection/forms/batches are described below. Snapshot,
+acceptance; public checked Alarm selection/forms/batches and Snapshot are described below. Restore,
 membership changes, full cluster management, etcd-v2 and AuthEnable/AuthDisable
 remain outside this stage.
 
@@ -873,8 +873,8 @@ NOSPACE/CORRUPT, restricted native GET versus denied exact writes, injected futu
 enums after a real GET, complete files, processed partial ACK loss, actual tab
 parking, cross-method write barriers and pure recovery. TLS/mTLS relays preserve
 the original certificate configuration and verify client certificates in mTLS.
-Local evidence: `docs/etcd-alarm-public-2026-11-11.md`. Snapshot/complete snapshot
-files, membership changes, broader cluster management, etcd-v2 and
+Local evidence: `docs/etcd-alarm-public-2026-11-11.md`. Snapshot and complete files
+are described below. Restore, membership changes, broader cluster management, etcd-v2 and
 AuthEnable/AuthDisable remain separate scope.
 
 ### Original native Snapshot stream foundation
@@ -952,8 +952,8 @@ The raw client's duplicate snapshot cache is released after neutral capture.
 Original close waits for receives and caller writer acknowledgement and releases
 its own metadata; publication retirement preserves original evidence for explicit
 recovery. Snapshot still uses distinct caller-owned body/journal writers. Owned
-immutable disk artifacts, user-file durability/publication and public controls
-are later acceptance boundaries.
+immutable disk artifacts and user-file publication are provided by the neutral
+`internal/services/snapshotfiles` service. Public controls are described below.
 
 ```sh
 GOWORK=off GOFLAGS=-mod=readonly /usr/bin/python3 tools/verify_etcd_fixture.py --snapshot-session --race --version VERSION --mode MODE
@@ -969,3 +969,33 @@ and pure recovery. TLS/mTLS relays retain the original transport configuration;
 mTLS verifies client certificates. Injected tests also verify all 32 facet
 combinations, copied/foreign plans, quota admission before I/O, original deep
 copies, late results and independent unknown-write barriers.
+
+
+### Public Snapshot capture and original file publication
+
+Select Snapshot in the existing KV request document. Exact positive integer
+strings bound backend bytes, complete native-journal bytes and frame count. The
+whole-backend confirmation captures the original connection, cluster/member,
+session generation, document and limits; the browsing prefix does not limit
+Snapshot scope. Request files restore inputs without executing capture.
+
+The source, private artifact, user-file publication and complete record views
+keep independent evidence. Saving a retained backend or complete failure journal
+needs no active connection. A separately inspected and confirmed existing file
+replacement preserves its old bytes; a newly appeared target is rejected until
+explicitly inspected and confirmed again. Publication acknowledgement loss,
+later content/path matches, durability and cleanup remain separate. Full exports
+preserve original authored input, exact identities, limits and native/path bytes.
+
+Cancellation and close wait for original executors. Parked outcomes stay with
+the original document, and recovery sends neither Snapshot nor file publication.
+Earlier unknown KV/member/Alarm writes retain their own receipts and barriers.
+Bootstrap supplies the bounded private store and Shell supplies native pickers;
+kvworkspace uses only injected neutral contracts.
+
+`GOWORK=off GOFLAGS=-mod=readonly /usr/bin/python3 tools/verify_etcd_fixture.py --public-snapshot --race --version VERSION --mode MODE`
+requires 34 native parents and 156 bilingual wide/narrow workspace/Shell images
+per configuration. Use official 3.7.3 anonymous/basic/TLS/mTLS and 3.5.35 basic.
+Restore, membership changes, broader cluster management, etcd-v2,
+AuthEnable/AuthDisable and actual Windows/macOS filesystem runtime retain their
+separate scopes. Local verification: `docs/etcd-snapshot-public-2026-11-11.md`.

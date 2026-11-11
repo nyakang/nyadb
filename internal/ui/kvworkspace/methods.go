@@ -20,6 +20,9 @@ var methods = []Method{
 func Methods() []Method { return append([]Method(nil), methods...) }
 func (s *State) MethodsFor(d *Document) []Method {
 	out := Methods()
+	if s.owned(d) && (d.SnapshotAvailable() || d.snapshotContent()) {
+		out = append(out, Method{"Snapshot", SnapshotMethod})
+	}
 	if s.owned(d) && d.AlarmsAvailable() {
 		out = append(out, Method{"Alarms", AlarmsMethod})
 	}
@@ -67,6 +70,9 @@ func (s *State) ChooseMethod(d *Document, method string) {
 		return
 	}
 	before := DefaultRequest()
+	if d.method == SnapshotMethod {
+		before = DefaultSnapshotRequest()
+	}
 	if d.method == AlarmsMethod {
 		before = DefaultAlarmsRequest()
 	}
@@ -90,7 +96,9 @@ func (s *State) ChooseMethod(d *Document, method string) {
 	}
 	useTemplate := d.Request().JSON == before.JSON
 	s.SetMethod(d, method)
-	if useTemplate && method == AlarmsMethod {
+	if useTemplate && method == SnapshotMethod {
+		d.Editor.Buffer.Set(DefaultSnapshotRequest().JSON)
+	} else if useTemplate && method == AlarmsMethod {
 		d.Editor.Buffer.Set(DefaultAlarmsRequest().JSON)
 	} else if useTemplate && method == MembersMethod {
 		d.Editor.Buffer.Set(DefaultMembersRequest().JSON)

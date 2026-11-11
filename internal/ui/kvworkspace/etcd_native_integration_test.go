@@ -535,6 +535,9 @@ func workspaceProxy(t *testing.T, p connections.Profile, key []byte, mode string
 	return workspaceProxyWithLease(t, p, key, mode, nil)
 }
 func workspaceProxyWithLease(t *testing.T, p connections.Profile, key []byte, mode string, lease func(*workspaceFault) pb.LeaseServer) (connections.Profile, *workspaceFault) {
+	return workspaceProxyServices(t, p, key, mode, lease, nil)
+}
+func workspaceProxyServices(t *testing.T, p connections.Profile, key []byte, mode string, lease func(*workspaceFault) pb.LeaseServer, maintenance func(*workspaceFault) pb.MaintenanceServer) (connections.Profile, *workspaceFault) {
 	t.Helper()
 	var creds credentials.TransportCredentials = insecure.NewCredentials()
 	if p.TLSMode == "verify-full" {
@@ -569,7 +572,11 @@ func workspaceProxyWithLease(t *testing.T, p connections.Profile, key []byte, mo
 	server := grpc.NewServer()
 	pb.RegisterKVServer(server, f)
 	pb.RegisterAuthServer(server, f)
-	pb.RegisterMaintenanceServer(server, f)
+	if maintenance != nil {
+		pb.RegisterMaintenanceServer(server, maintenance(f))
+	} else {
+		pb.RegisterMaintenanceServer(server, f)
+	}
 	if lease != nil {
 		pb.RegisterLeaseServer(server, lease(f))
 	}

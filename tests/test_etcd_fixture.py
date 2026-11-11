@@ -83,6 +83,15 @@ class EtcdFixtureTests(unittest.TestCase):
                     FIXTURE.verify('basic', True, '3.7.3', snapshot_file=True, **{flag: True})
                 run.assert_not_called()
 
+    def test_public_snapshot_rejects_other_acceptance_scopes_before_fixture_creation(self):
+        for flag in ('profile', 'session', 'workspace', 'data', 'public', 'auth_native',
+                     'compaction_native', 'member_native', 'alarm_native', 'snapshot_native',
+                     'snapshot_session', 'snapshot_artifact', 'snapshot_file'):
+            with self.subTest(flag=flag), patch.object(FIXTURE, 'run') as run:
+                with self.assertRaises(ValueError):
+                    FIXTURE.verify('basic', True, '3.7.3', public_snapshot=True, **{flag: True})
+                run.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()
