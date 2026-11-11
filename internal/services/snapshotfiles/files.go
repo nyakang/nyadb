@@ -30,12 +30,15 @@ type source struct {
 
 func (s *source) Close() error { s.once.Do(func() { s.closeErr = s.File.Close() }); return s.closeErr }
 func verified(ctx context.Context, path string, limit uint64) (*source, contract.SnapshotSource, os.FileInfo, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, contract.SnapshotSource{}, nil, err
+	}
 	if limit == 0 || limit > math.MaxInt64 {
 		return nil, contract.SnapshotSource{}, nil, ErrBounds
 	}
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, contract.SnapshotSource{}, nil, err
+		return nil, contract.SnapshotSource{}, nil, errors.Join(err, ctx.Err())
 	}
 	s := &source{File: f}
 	ok := false
@@ -52,7 +55,7 @@ func verified(ctx context.Context, path string, limit uint64) (*source, contract
 	}()
 	before, err := f.Stat()
 	if err != nil {
-		return nil, contract.SnapshotSource{}, nil, err
+		return nil, contract.SnapshotSource{}, nil, errors.Join(err, ctx.Err())
 	}
 	if !before.Mode().IsRegular() || before.Size() < 0 || uint64(before.Size()) > limit {
 		return nil, contract.SnapshotSource{}, nil, ErrBounds
@@ -74,18 +77,18 @@ func verified(ctx context.Context, path string, limit uint64) (*source, contract
 			break
 		}
 		if e != nil {
-			return nil, contract.SnapshotSource{}, nil, e
+			return nil, contract.SnapshotSource{}, nil, errors.Join(e, ctx.Err())
 		}
 	}
 	after, err := f.Stat()
 	if err != nil {
-		return nil, contract.SnapshotSource{}, nil, err
+		return nil, contract.SnapshotSource{}, nil, errors.Join(err, ctx.Err())
 	}
 	if size != uint64(before.Size()) || before.Size() != after.Size() || !before.ModTime().Equal(after.ModTime()) {
 		return nil, contract.SnapshotSource{}, nil, ErrChanged
 	}
 	if _, err = f.Seek(0, io.SeekStart); err != nil {
-		return nil, contract.SnapshotSource{}, nil, err
+		return nil, contract.SnapshotSource{}, nil, errors.Join(err, ctx.Err())
 	}
 	if err = ctx.Err(); err != nil {
 		return nil, contract.SnapshotSource{}, nil, err
