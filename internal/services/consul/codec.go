@@ -183,13 +183,21 @@ func decodeTxn(raw []byte, status, operations int) (TxnResult, error) {
 	if jsondocument.Decode(raw, &fields, responseLimit) != nil || fields["Results"] == nil || fields["Errors"] == nil {
 		return t, ErrProtocol
 	}
-	if json.Unmarshal(fields["Errors"], &t.Errors) != nil || len(t.Errors) > 64 {
+	var errorsRaw []map[string]json.RawMessage
+	if json.Unmarshal(fields["Errors"], &errorsRaw) != nil || len(errorsRaw) > 64 {
 		return t, ErrProtocol
 	}
-	for _, e := range t.Errors {
-		if e.OpIndex < 0 || e.OpIndex >= operations || e.What == "" {
+	seenErrors := map[int]bool{}
+	for _, node := range errorsRaw {
+		var e TxnError
+		if len(node) != 2 || node["OpIndex"] == nil || node["What"] == nil ||
+			bytes.Equal(bytes.TrimSpace(node["OpIndex"]), []byte("null")) ||
+			json.Unmarshal(node["OpIndex"], &e.OpIndex) != nil || json.Unmarshal(node["What"], &e.What) != nil ||
+			e.OpIndex < 0 || e.OpIndex >= operations || e.What == "" || seenErrors[e.OpIndex] {
 			return t, ErrProtocol
 		}
+		seenErrors[e.OpIndex] = true
+		t.Errors = append(t.Errors, e)
 	}
 	var nodes []map[string]json.RawMessage
 	if json.Unmarshal(fields["Results"], &nodes) != nil || len(nodes) > entryLimit {

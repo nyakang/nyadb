@@ -34,11 +34,15 @@ type dataLease struct {
 	cancel           context.CancelFunc
 	mu               sync.Mutex
 	pageMu           sync.Mutex
+	writeMu          sync.Mutex
 	work             sync.WaitGroup
 	closed, pageLost bool
 	epoch            uint64
 	key              [32]byte
 	scopes           [4]*documentLease
+	write            *documentLease
+	plan             *dataPlan
+	uncertain        bool
 	done             chan struct{}
 }
 
@@ -73,6 +77,8 @@ func (s *Session) reserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 		ctx, cancel := context.WithCancel(l.ctx)
 		l.scopes[i] = &documentLease{s: s, ctx: ctx, cancel: cancel}
 	}
+	ctx, cancel := context.WithCancel(l.ctx)
+	l.write = &documentLease{s: s, ctx: ctx, cancel: cancel}
 	if s.dataLeases == nil {
 		s.dataLeases = map[*dataLease]bool{}
 	}
@@ -197,11 +203,17 @@ func (l *dataLease) Close() error {
 	}
 	l.closed = true
 	l.cancel()
+	if l.plan != nil {
+		l.plan.releaseLocked()
+	}
 	l.mu.Unlock()
 	for _, scope := range l.scopes {
 		scope.Close()
 	}
 	l.work.Wait()
+	// Mutation workers classify and retain their original receipt after the
+	// executor returns. Join that classification before clearing its caches.
+	l.write.Close()
 	l.mu.Lock()
 	clear(l.key[:])
 	l.mu.Unlock()

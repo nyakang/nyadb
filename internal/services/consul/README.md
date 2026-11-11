@@ -147,3 +147,47 @@ regression images. Original cursor proofs and cached row observations are signed
 per document; independent HTTP index changes do not invalidate unchanged-row
 export verification. Failed page reads leave count, field and export executors
 independent. Failed public handshakes return no session for runtime cleanup.
+
+
+The private grid mutation foundation validates both signed original snapshot
+payload modes and captures complete before-images and readable native transaction
+parameters in a bounded, immutable, one-attempt plan. A dormant write executor
+belongs to the same original logical document; four read executors remain
+independent. Insert/update/delete and rename batches use original ModifyIndex
+checks, CAS/delete-CAS, destination absence and complete in-transaction receipts.
+Originally Session-locked rows are rejected: Consul CAS can modify a locked key.
+Lock acquisition/release/destruction/expiration changes ModifyIndex, so an
+intervening lock change rejects the original batch atomically. These observations
+are not a claim of agent/database incarnation or a frozen prefix range.
+
+Only key, complete binary value and exact uint64 Flags are authored. Explicit
+NULL/default writes are rejected; authored empty bytes are saved as Consul's
+native `Value: null`. Generated indices/Session/LockIndex stay read-only. Limits
+are 64 actual native operations, 512 KiB/value and 8 MiB for each encoded HTTP
+request and document envelope. The server has a separate limit: official default
+`limits.txn_max_req_len` is 512 KiB. Large values or batches can receive a known
+413 rejection; the adapter never changes that configuration or splits/replays a
+batch. Complete 512 KiB value acceptance explicitly configures this fixture limit
+to 8 MiB. Original plans reserve a conservative 256 MiB in the existing session
+budget for all captured values, snapshots, JSON and processing copies.
+
+Malformed or incomplete successful receipts retain their original transport ACK
+and a separate application uncertainty barrier. Auxiliary reads cannot replace
+that receipt or authorize another write. Cancel/close waits for the original
+executor and receipt classification before releasing caches and plan budget.
+The public grid Runtime remains read-only; shared confirmation publication and
+public lifecycle/transport acceptance are the next milestone. Conditional copy,
+continuous Watch/TTL, administration, archives, Enterprise/HA and full reference
+alignment remain outstanding.
+
+```sh
+python3 tools/verify_consul_fixture.py --data-mutations --txn-max-request 8388608 --mode token --race
+python3 tools/verify_consul_fixture.py --mutation-limit-probe --mode token --race
+```
+
+The mutation fixture adds six mandatory adapter parents to original native,
+document/runtime and read-document regression (35 parents total). Use the same
+five official version/transport configurations as public acceptance. The default
+request-limit probe keeps the official server configuration and independently
+requires a genuine 413, zero partial writes and no splitting/replay. Neither
+command publishes shared-grid write capability.

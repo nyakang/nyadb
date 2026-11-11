@@ -21,6 +21,7 @@ PUBLIC_REQUIRED=('PublicBuiltinProfileMetadataCapabilitiesAndRestrictedToken','P
 RUNTIME_REQUIRED=('RuntimeGenerationsRequestsAndOriginalRecovery','RuntimeOriginalCommittedReplyLossAndRetirement','RuntimeLateConnectionClosesOnlyCapturedOriginalSession','RuntimeForeignScopeRejectedBeforeOriginalRecovery')
 TOOLS_REQUIRED=('PublicRuntimeStructuredToolsCapturedOriginalProvider','PublicWorkspaceStructuredToolsOriginalRequestsBytesScopesAndLeave','PublicWorkspaceStructuredToolsProcessedReplyFaultsNeverReplay')
 GRID_REQUIRED=('PublicDataOriginalLiveReadOnlyRuntimeAndRestrictedScope','PublicDataProcessedReadFaultsKeepOriginalRuntimeAndRequireReopen','PublicDataSharedGridLivePagingInspectorExportsParkingAndOriginalClose','PublicDataSharedGridProcessedReplyRetirementParkingAndExplicitReopen','PublicShellQualifiedGridNavigationMenusSearchStructureAndDisconnect','PublicShellProcessedGridCancelParkingOriginalReopenAndInactiveClose')
+MUTATION_REQUIRED=('DataMutationOriginalAtomicInsertUpdateRenameDeleteCompleteEvidence','DataMutationOriginalObservationDestinationAndSessionConflictsRollbackBatch','DataMutationProcessedReplyFaultsCancellationAndOriginalCloseNeverReplay','DataMutationOriginalLeaseForeignPlanRevocationAndBounds','DataMutationRestrictedTokenOriginalWriteDenialAndExplicitNewPlan','DataMutationNativeRequestLimitRejectionNeverSplitsOrReplays')
 DATA_REQUIRED=('DataOriginalLiveBoundariesBytesUnsignedScopeAndReceipts','DataIndependentCountFieldExportAndOriginalRestrictedScope','DataActualProcessedReadReplyLossCancellationOriginalCloseAndReopen','DataCompleteValueBudgetRejectsCountAndExportBeforeEmission')
 
 def source_hashes():
@@ -60,23 +61,25 @@ def certs(folder):
   ssl('x509','-req','-in',name+'.csr','-CA','ca.crt','-CAkey','ca.key','-CAcreateserial','-out',name+'.crt','-days','2','-extfile',name+'.ext')
  for p in folder.iterdir():p.chmod(0o600)
 
-def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False,public=False,tools=False,data_session=False,public_grid=False):
- data_session=data_session or public_grid
+def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False,public=False,tools=False,data_session=False,public_grid=False,data_mutations=False,txn_max_request=524288,mutation_limit_probe=False):
+ data_session=data_session or public_grid or data_mutations
  tools=tools or data_session
  public=public or tools
  if probe and (session or public):raise ValueError('Diagnostic probe cannot claim session or public acceptance')
  session=session or public
  build=ROOT/'build/consul';build.mkdir(parents=True,exist_ok=True)
  nonce=uuid.uuid4().hex;path=build/('owned-fixture-'+nonce+'.json');log=path.with_suffix('.log')
- required=REQUIRED+(DOCUMENT_REQUIRED+RUNTIME_REQUIRED if session else ())+(PUBLIC_REQUIRED if public else ())+(TOOLS_REQUIRED if tools else ())+(DATA_REQUIRED if data_session else ())+(GRID_REQUIRED if public_grid else ())
+ required=REQUIRED+(DOCUMENT_REQUIRED+RUNTIME_REQUIRED if session else ())+(PUBLIC_REQUIRED if public else ())+(TOOLS_REQUIRED if tools else ())+(DATA_REQUIRED if data_session else ())+(MUTATION_REQUIRED if data_mutations else ())+(GRID_REQUIRED if public_grid else ())
+ if mutation_limit_probe:required=('DataMutationNativeRequestLimitRejectionNeverSplitsOrReplays',)
  packages=['./internal/services/consul']+(['./internal/services/dbruntime'] if session else [])+(['./internal/ui/connectioneditor','./internal/ui/kvworkspace','./internal/ui/shell'] if public else [])+(['./internal/ui/dataworkspace'] if public_grid else [])
- report={'nonce':nonce,'scope':'diagnostic-consul-probe' if probe else 'public-consul-read-only-shared-grid' if public_grid else 'private-consul-original-live-data-documents' if data_session else 'public-consul-structured-kv-tools' if tools else 'public-consul-original-http-workspace' if public else 'original-consul-native-document-runtime' if session else 'original-consul-native-foundation','mode':mode,'version':version,'image':IMAGES[version],'race':race,'passed':False,'required':required,'packages':packages,'source_hashes':source_hashes()}
+ report={'nonce':nonce,'scope':'private-consul-original-data-mutations-with-public-read-regression' if data_mutations and public_grid else 'private-consul-original-data-request-limit' if mutation_limit_probe else 'diagnostic-consul-probe' if probe else 'public-consul-read-only-shared-grid' if public_grid else 'private-consul-original-data-mutations' if data_mutations else 'private-consul-original-live-data-documents' if data_session else 'public-consul-structured-kv-tools' if tools else 'public-consul-original-http-workspace' if public else 'original-consul-native-document-runtime' if session else 'original-consul-native-foundation','txn_max_request':txn_max_request,'mutation_limit_probe':mutation_limit_probe,'mode':mode,'version':version,'image':IMAGES[version],'race':race,'passed':False,'required':required,'packages':packages,'source_hashes':source_hashes()}
  identifier=None;private=None
  try:
   with tempfile.TemporaryDirectory(prefix='nyadb-consul-'+nonce+'-',dir=build) as rawfolder:
    private=Path(rawfolder);secure=mode in ('tls','mtls');acl=mode!='anonymous';token=str(uuid.uuid4()) if acl else ''
    node_id=str(uuid.uuid4());node='nyadb-'+nonce
    config={'node_id':node_id,'datacenter':'dc1','primary_datacenter':'dc1','ui_config':{'enabled':False},'ports':{'http':-1 if secure else 8500,'https':8501 if secure else -1}}
+   if txn_max_request!=524288:config['limits']={'txn_max_req_len':txn_max_request}
    if acl:config['acl']={'enabled':True,'default_policy':'deny','enable_token_persistence':False,'tokens':{'initial_management':token}}
    if secure:
     config['ports'].update(grpc=-1,grpc_tls=8503)
@@ -122,7 +125,7 @@ def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False
    if probe:
     report['passed']=True
    else:
-    env={k:v for k,v in os.environ.items() if not k.startswith('NYADB_CONSUL_')};env.update(GOWORK='off',GOFLAGS='-mod=readonly',NYADB_CONSUL_IT='1',NYADB_CONSUL_ENDPOINT=endpoint,NYADB_CONSUL_AUTH='token' if acl else 'none',NYADB_CONSUL_TOKEN=token,NYADB_CONSUL_READ_TOKEN=readonly,NYADB_CONSUL_WRITE_TOKEN=writer,NYADB_CONSUL_VERSION=version,NYADB_CONSUL_NODE_ID=node_id)
+    env={k:v for k,v in os.environ.items() if not k.startswith('NYADB_CONSUL_')};env.update(GOWORK='off',GOFLAGS='-mod=readonly',NYADB_CONSUL_IT='1',NYADB_CONSUL_TXN_MAX_REQUEST=str(txn_max_request),NYADB_CONSUL_ENDPOINT=endpoint,NYADB_CONSUL_AUTH='token' if acl else 'none',NYADB_CONSUL_TOKEN=token,NYADB_CONSUL_READ_TOKEN=readonly,NYADB_CONSUL_WRITE_TOKEN=writer,NYADB_CONSUL_VERSION=version,NYADB_CONSUL_NODE_ID=node_id)
     images=path.with_name(path.stem+'-public-images')
     if public:env.update(NYADB_CONSUL_PUBLIC_IMAGES=str(images))
     grid_images=path.with_name(path.stem+'-grid-images')
@@ -160,5 +163,5 @@ def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False
  return report
 
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('--mode',choices=('anonymous','token','tls','mtls'),default='anonymous');p.add_argument('--version',choices=tuple(IMAGES),default='2.0.2');p.add_argument('--race',action='store_true');p.add_argument('--probe',action='store_true');p.add_argument('--session',action='store_true');p.add_argument('--public',action='store_true');p.add_argument('--tools',action='store_true');p.add_argument('--data-session',action='store_true');p.add_argument('--public-grid',action='store_true');a=p.parse_args()
- verify(a.mode,a.race,a.version,a.probe,a.session,a.public,a.tools,a.data_session,a.public_grid)
+ p=argparse.ArgumentParser();p.add_argument('--mode',choices=('anonymous','token','tls','mtls'),default='anonymous');p.add_argument('--version',choices=tuple(IMAGES),default='2.0.2');p.add_argument('--race',action='store_true');p.add_argument('--probe',action='store_true');p.add_argument('--session',action='store_true');p.add_argument('--public',action='store_true');p.add_argument('--tools',action='store_true');p.add_argument('--data-session',action='store_true');p.add_argument('--public-grid',action='store_true');p.add_argument('--data-mutations',action='store_true');p.add_argument('--txn-max-request',type=int,choices=(524288,8388608),default=524288);p.add_argument('--mutation-limit-probe',action='store_true');a=p.parse_args()
+ verify(a.mode,a.race,a.version,a.probe,a.session,a.public,a.tools,a.data_session,a.public_grid,a.data_mutations,a.txn_max_request,a.mutation_limit_probe)
