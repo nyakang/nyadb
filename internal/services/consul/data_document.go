@@ -42,6 +42,7 @@ type dataLease struct {
 	scopes           [4]*documentLease
 	write            *documentLease
 	plan             *dataPlan
+	prefixSet        *dataKeyPrefixDeletionSet
 	uncertain        bool
 	done             chan struct{}
 }
@@ -209,6 +210,9 @@ func (l *dataLease) Close() error {
 	}
 	l.closed = true
 	l.cancel()
+	if l.prefixSet != nil {
+		l.prefixSet.closeLocked()
+	}
 	if l.plan != nil {
 		l.plan.releaseLocked()
 	}

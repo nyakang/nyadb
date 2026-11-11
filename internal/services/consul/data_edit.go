@@ -34,6 +34,8 @@ type dataPlan struct {
 	preparation    contract.KVPreparation
 	prepared       []preparedDataEdit
 	snapshot       contract.DataMutationSnapshot
+	prefixSet      *dataKeyPrefixDeletionSet
+	batch          int
 }
 
 func (p *dataPlan) Snapshot() contract.DataMutationSnapshot {
@@ -52,6 +54,9 @@ func (l *dataLease) releasePlanBudget() {
 }
 
 func (p *dataPlan) releaseLocked() {
+	if p.prefixSet != nil && p.prefixSet.plan == p {
+		p.prefixSet.plan = nil
+	}
 	p.closed = true
 	p.preparation, p.prepared = nil, nil
 	p.snapshot = contract.DataMutationSnapshot{}
@@ -365,6 +370,14 @@ func (l *dataLease) previewPreparedScope(parent context.Context, id int64, catal
 	}
 	defer done()
 	l.mu.Lock()
+	if l.prefixSet != nil && (scope == nil || scope.set != l.prefixSet) {
+		uncertain := l.uncertain
+		l.mu.Unlock()
+		if uncertain {
+			return nil, contract.ErrDataCommitUncertain
+		}
+		return nil, contract.ErrKVBusy
+	}
 	if l.plan != nil {
 		l.plan.releaseLocked()
 	}
@@ -471,6 +484,11 @@ func (l *dataLease) previewPreparedScope(parent context.Context, id int64, catal
 	p := &dataPlan{owner: l, preparation: prep, prepared: prepared, snapshot: contract.DataMutationSnapshot{Object: l.object, NativeJSON: string(raw)}}
 	if scope != nil {
 		p.snapshot.KeyPrefixDelete = &contract.DataKeyPrefixDelete{Object: l.object, Prefix: scope.Prefix}
+		if scope.Batch != nil {
+			copy := *scope.Batch
+			p.snapshot.KeyPrefixDeleteBatch = &copy
+			p.prefixSet, p.batch = scope.set, copy.Index
+		}
 	}
 	for _, e := range prepared {
 		p.snapshot.Edits = append(p.snapshot.Edits, e.edit)
@@ -513,6 +531,12 @@ func (l *dataLease) submit(parent context.Context, id int64, catalog, name strin
 	if !ok || p == nil || p.owner != l {
 		return nil, contract.ErrKVPlanUsed
 	}
+	if p.prefixSet != nil {
+		ctx, cancel := context.WithCancel(parent)
+		stop := context.AfterFunc(p.prefixSet.ctx, cancel)
+		defer func() { stop(); cancel() }()
+		parent = ctx
+	}
 	if !l.writeMu.TryLock() {
 		return nil, contract.ErrKVBusy
 	}
@@ -536,6 +560,17 @@ func (l *dataLease) submit(parent context.Context, id int64, catalog, name strin
 		return nil, contract.ErrKVPlanUsed
 	}
 	preparation, prepared := p.preparation, p.prepared
+	if p.prefixSet != nil {
+		receiptBudgetMu.Lock()
+		if l.session.retained+l.session.reserved+dataPrefixReceiptBudget+pendingReceiptBudget > l.session.budget {
+			receiptBudgetMu.Unlock()
+			l.mu.Unlock()
+			return nil, ErrBounds
+		}
+		l.session.reserved += dataPrefixReceiptBudget
+		receiptBudgetMu.Unlock()
+		p.prefixSet.snapshot.InFlight = true
+	}
 	p.budget = false // worker owns the same reservation until acknowledgement
 	p.releaseLocked()
 	l.mu.Unlock()
@@ -575,6 +610,11 @@ func (l *dataLease) submit(parent context.Context, id int64, catalog, name strin
 	}
 	raw, receiptErr := json.Marshal(r)
 	out.NativeJSON = string(raw)
+	if p.prefixSet != nil {
+		l.mu.Lock()
+		p.prefixSet.acceptBatchLocked(p.batch, len(prepared), out, errors.Join(executeErr, receiptErr, err))
+		l.mu.Unlock()
+	}
 	if out.CommitConfirmed {
 		l.mu.Lock()
 		l.epoch++

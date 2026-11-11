@@ -135,6 +135,9 @@ type DataRuntime struct {
 	// PreviewKeyPrefixDelete observes a complete original prefix and binds only
 	// the captured candidates to one conditional native transaction. Nil excludes it.
 	PreviewKeyPrefixDelete func(context.Context, int64, string, string, DataKeyPrefixDelete) (DataMutationPlan, error)
+	// CaptureKeyPrefixDelete is optional and distinct from one-transaction
+	// deletion. Its returned set permits explicit, ordered original batches.
+	CaptureKeyPrefixDelete func(context.Context, int64, string, string, DataKeyPrefixDelete) (DataKeyPrefixDeleteSet, error)
 	SubmitEdits            func(context.Context, int64, string, string, DataMutationPlan) (*DataEditResult, error)
 	RowReader              func(context.Context, int64, string, string, RowRef) (*DataRow, error)
 	Verify                 func(context.Context, int64, string, string, *DataEditResult) (*DataVerification, error)

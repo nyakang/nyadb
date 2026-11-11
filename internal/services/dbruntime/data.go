@@ -158,6 +158,7 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 		}
 	}
 	out = mSessionDataKeyPrefixDelete(s, r, out)
+	out = mSessionDataKeyPrefixDeleteSet(s, r, out)
 	if r.PreviewKeyCopy != nil {
 		out.PreviewKeyCopy = func(ctx context.Context, id int64, db, table string, request contract.DataKeyCopy) (contract.DataMutationPlan, error) {
 			if err := s.require(r.Capabilities.EditableTables && r.Capabilities.KeyValues, id); err != nil {

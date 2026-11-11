@@ -323,3 +323,44 @@ class ConsulFixtureTests(unittest.TestCase):
         for args in (['--public-prefix-probe', '--probe'], ['--public-prefix-delete', '--copy-probe']):
             with self.subTest(args=args), patch('sys.argv', [str(ROOT/'tools/verify_consul_fixture.py'), *args]), patch('subprocess.run', side_effect=AssertionError('CLI started fixture before validating public prefix scope')), self.assertRaises(ValueError):
                 runpy.run_path(str(ROOT/'tools/verify_consul_fixture.py'), run_name='__main__')
+
+    def test_prefix_set_acceptance_keeps_every_public_parent_and_original_batch_case(self):
+        public = self.copy_scope_before_startup(public_prefix_delete=True, txn_max_request=8388608)
+        batches = self.copy_scope_before_startup(prefix_delete_set=True, txn_max_request=8388608, test_timeout=1800, memory_mib=2048)
+        required = tuple(public['required']) + fixture.PREFIX_SET_REQUIRED
+        self.assertEqual(batches['required'], list(required))
+        self.assertEqual(len(required), 78)
+        self.assertEqual(len(set(required)), 78)
+        self.assertEqual(batches['scope'], 'private-consul-original-prefix-explicit-batches-with-public-prefix-regression')
+        self.assertEqual(batches['test_timeout'], 1800)
+        self.assertEqual(batches['memory_mib'], 2048)
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+
+    def test_prefix_set_diagnostic_cannot_replace_complete_regression(self):
+        report = self.copy_scope_before_startup(prefix_set_probe=True, txn_max_request=8388608)
+        self.assertEqual(report['required'], list(fixture.PREFIX_SET_REQUIRED))
+        self.assertEqual(report['packages'], ['./internal/services/consul'])
+        self.assertEqual(report['scope'], 'diagnostic-consul-original-prefix-explicit-batch-foundation')
+        for flag in ('probe', 'session', 'public', 'tools', 'data_session', 'public_grid', 'data_mutations',
+                     'mutation_limit_probe', 'public_grid_writes', 'grid_write_probe', 'key_copy', 'copy_probe',
+                     'copy_limit_probe', 'public_key_copy', 'public_copy_probe', 'prefix_delete',
+                     'prefix_delete_probe', 'public_prefix_delete', 'public_prefix_probe', 'prefix_delete_set'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(prefix_set_probe=True, **{flag: True})
+        for flag in ('probe', 'mutation_limit_probe', 'grid_write_probe', 'copy_probe', 'copy_limit_probe',
+                     'public_copy_probe', 'prefix_delete_probe', 'public_prefix_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(prefix_delete_set=True, **{flag: True})
+        for timeout in (-1, 0, 59, 3601):
+            with self.subTest(timeout=timeout), self.assertRaises(ValueError):
+                fixture.verify(prefix_set_probe=True, test_timeout=timeout)
+
+    def test_prefix_set_cli_validates_scope_before_startup(self):
+        import runpy
+        from unittest.mock import patch
+        for args in (['--prefix-set-probe', '--probe'], ['--prefix-delete-set', '--copy-probe'], ['--prefix-delete-set', '--test-timeout', '0']):
+            with self.subTest(args=args), patch('sys.argv', [str(ROOT/'tools/verify_consul_fixture.py'), *args]), patch('subprocess.run', side_effect=AssertionError('CLI started fixture before validating batch scope')), self.assertRaises(ValueError):
+                runpy.run_path(str(ROOT/'tools/verify_consul_fixture.py'), run_name='__main__')

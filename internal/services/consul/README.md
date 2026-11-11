@@ -274,3 +274,32 @@ The probe is diagnostic only. Both official default-limit copy probes remain
 part of the final matrix. ACL filtering and native write denial are exercised
 in configurations with fixture-restricted tokens. Private foundation records
 retain their historical unpublished scope.
+
+### Private complete captured sets and explicit batch foundation
+
+`captureKeyPrefixDelete` owns one complete original observation and a fixed list
+of at most 4096 candidates. It rejects empty/foreign prefixes, ACL-filtered or
+locked candidates, and original body plus decoded values over 8 MiB. The public
+`DataRuntime.CaptureKeyPrefixDelete` remains nil pending separate shared-grid and
+Shell acceptance. Each ordered batch contains at most 21 original keys, needs its
+own immutable preview and explicit submission, and never recaptures later keys.
+Earlier confirmed batches remain committed when a later batch fails; there is no
+cross-batch atomicity. Known failed batches stop the capture; unknown or incomplete
+receipts forbid both later batches and replay. Closing cancels the original work;
+processed writes still settle with their original acknowledgement and uncertainty.
+
+The capture reserves 64 MiB, each prepared plan reserves 256 MiB, and submission
+reserves another 256 MiB for its complete serialized receipt before I/O, alongside
+the original executor's 128 MiB pending receipt. The actual serialized batch
+receipts remain charged to the original session until capture closure; unspent
+reservation is released after acknowledgement. Snapshot inspection cannot mutate
+original signatures, candidate values, batch scope or receipt strings. The runtime
+boundary validates the original profile/generation, complete candidate identity,
+ordered batch and corresponding originals before forwarding to the captured raw
+provider. It rejects stopped/in-flight/uncertain batches before provider execution.
+
+`--prefix-delete-set --race --txn-max-request 8388608 --test-timeout 1800
+--memory-mib 2048` verifies the five private batch parents plus all 73 retained
+public regression parents. `--prefix-set-probe` is a separately labelled diagnostic
+and cannot claim complete acceptance or combine with another scope. The default
+copy-limit probes continue to use the original 512 KiB transaction limit.

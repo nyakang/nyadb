@@ -62,6 +62,8 @@ type dataKeyPrefixDeletionScope struct {
 	Prefix     string
 	Candidates int
 	Original   contract.KVHTTPResult
+	Batch      *contract.DataKeyPrefixDeleteBatch `json:",omitempty"`
+	set        *dataKeyPrefixDeletionSet
 }
 
 func (l *dataLease) previewKeyPrefixDelete(ctx context.Context, id int64, catalog, name string, request contract.DataKeyPrefixDelete) (contract.DataMutationPlan, error) {
