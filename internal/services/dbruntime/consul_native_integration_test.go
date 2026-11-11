@@ -190,7 +190,13 @@ func consulRuntimeFault(t *testing.T, cfg consul.Config, mode string, dataArmed 
 		var operations []consul.TxnOperation
 		treeRead := r.URL.Path == "/v1/txn" && json.Unmarshal(raw, &operations) == nil && len(operations) == 1 && operations[0].KV != nil && operations[0].KV.Verb == "get-tree"
 		dataRead := strings.HasPrefix(mode, "data-") && (r.URL.Query().Has("recurse") || treeRead) && (len(dataArmed) == 0 || dataArmed[0].Load())
-		if dataRead || !strings.HasPrefix(mode, "data-") && (r.Method == "PUT" || r.Method == "DELETE") {
+		gridWrite := false
+		if strings.HasPrefix(mode, "grid-") && len(dataArmed) != 0 && dataArmed[0].Load() && r.URL.Path == "/v1/txn" && json.Unmarshal(raw, &operations) == nil {
+			for _, op := range operations {
+				gridWrite = gridWrite || op.KV != nil && (op.KV.Verb == "cas" || op.KV.Verb == "delete-cas")
+			}
+		}
+		if dataRead || gridWrite || !strings.HasPrefix(mode, "data-") && !strings.HasPrefix(mode, "grid-") && (r.Method == "PUT" || r.Method == "DELETE") {
 			calls.Add(1)
 		}
 		request, err := http.NewRequestWithContext(r.Context(), r.Method, cfg.Endpoint+r.URL.RequestURI(), bytes.NewReader(raw))
@@ -209,9 +215,9 @@ func consulRuntimeFault(t *testing.T, cfg consul.Config, mode string, dataArmed 
 		if err != nil {
 			return
 		}
-		if (dataRead || r.Method == "PUT" && response.StatusCode == 200 && bytes.Equal(bytes.TrimSpace(body), []byte("true"))) && once.CompareAndSwap(false, true) {
+		if (dataRead || gridWrite && response.StatusCode == 200 || !strings.HasPrefix(mode, "grid-") && r.Method == "PUT" && response.StatusCode == 200 && bytes.Equal(bytes.TrimSpace(body), []byte("true"))) && once.CompareAndSwap(false, true) {
 			close(committed)
-			switch strings.TrimPrefix(mode, "data-") {
+			switch strings.TrimPrefix(strings.TrimPrefix(mode, "data-"), "grid-") {
 			case "lost":
 				conn, _, err := w.(http.Hijacker).Hijack()
 				if err == nil {

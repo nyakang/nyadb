@@ -3,7 +3,8 @@
 Consul is a public connection type with independent profiles, versioned local
 settings, temporary token/vault handling, `consul://` / `consuls://` URI import
 and the existing shared KV request workspace. The runtime publishes only native
-KV requests and the `kv` namespace; SQL and relational data tools are unavailable.
+KV requests, the `kv` namespace and its sole shared key grid with original
+confirmed atomic writes; SQL and relational data tools are unavailable.
 HTTP defaults to port 8500; verified HTTPS defaults to 8501 for `consuls://`.
 Authentication is anonymous or a separate ACL token. Client certificates work
 independently of token authorization. Datacenter, exact text prefix, consistency,
@@ -112,7 +113,7 @@ parents, 204 bilingual images per fixture, actual processed reply-fault scenario
 and checks for offline generation, exact bytes/zero/CAS, transaction conflicts,
 original recovery/parking, file text and unapplied-input leave guards.
 
-The public read-only shared grid reserves four independent original
+The public shared grid reserves four independent original
 HTTP executors for pages, count, fields and export. Reservation performs no I/O.
 Each page reads one complete bounded recurse/get-tree observation, orders exact
 UTF-8 key bytes and applies a document-signed last-key cursor. Pages are live;
@@ -130,7 +131,7 @@ executor or replay automatically. Original metadata publishes the single qualifi
 entries use the existing shared grid, alongside retained native HTTP documents.
 The seven-column structure is read-only and presents native nullability and
 generated fields, without relational default/autoincrement/index/foreign-key
-controls. SQL, editing, transactions, import,
+controls. SQL, explicit multi-step transactions, relational import,
 filtering and user-defined sorting remain unavailable.
 
 Private data acceptance uses `--data-session --race` with the same five modes.
@@ -149,7 +150,7 @@ export verification. Failed page reads leave count, field and export executors
 independent. Failed public handshakes return no session for runtime cleanup.
 
 
-The private grid mutation foundation validates both signed original snapshot
+Public grid mutations validate both signed original snapshot
 payload modes and captures complete before-images and readable native transaction
 parameters in a bounded, immutable, one-attempt plan. A dormant write executor
 belongs to the same original logical document; four read executors remain
@@ -175,8 +176,15 @@ Malformed or incomplete successful receipts retain their original transport ACK
 and a separate application uncertainty barrier. Auxiliary reads cannot replace
 that receipt or authorize another write. Cancel/close waits for the original
 executor and receipt classification before releasing caches and plan budget.
-The public grid Runtime remains read-only; shared confirmation publication and
-public lifecycle/transport acceptance are the next milestone. Conditional copy,
+The public grid uses the existing sole shared editor, immutable complete key
+confirmation and native receipt viewer. Original Session-locked rows are visibly
+read-only. Complete corresponding transaction ACK/body confirms a commit even
+when optional HTTP index/leader metadata is malformed; those original warnings
+remain in the receipt. Incomplete or noncorresponding bodies remain unknown.
+Parked writes wait for the original profile, generation replacement never selects
+a new executor, and explicit unknown-document close requires a local discard
+decision after copying/exporting evidence. Conditional copy and prefix-wide
+conditional set semantics,
 continuous Watch/TTL, administration, archives, Enterprise/HA and full reference
 alignment remain outstanding.
 
@@ -189,5 +197,12 @@ The mutation fixture adds six mandatory adapter parents to original native,
 document/runtime and read-document regression (35 parents total). Use the same
 five official version/transport configurations as public acceptance. The default
 request-limit probe keeps the official server configuration and independently
-requires a genuine 413, zero partial writes and no splitting/replay. Neither
-command publishes shared-grid write capability.
+requires a genuine 413, zero partial writes and no splitting/replay. These commands independently verify the adapter foundation and server limits.
+
+Full public write acceptance uses `--public-grid-writes --txn-max-request 8388608
+--race` in the same five official modes. It retains the complete original
+regression, adds nine public Manager/grid/Shell mutation parents (50 mandatory parents
+total), requires 196 grid and 204 HTTP-workspace images per mode, and checks complete
+preview/receipt copies and files, actual processed write reply loss and no replay,
+and requires corresponding bilingual wide/narrow images. `--grid-write-probe`
+is diagnostic only and does not replace complete regression acceptance.

@@ -20,7 +20,8 @@ DOCUMENT_REQUIRED=('DocumentOriginalScopesBytesAndCompleteReceipts','DocumentTra
 PUBLIC_REQUIRED=('PublicBuiltinProfileMetadataCapabilitiesAndRestrictedToken','PublicWorkspaceOriginalHTTPConfirmationReceiptsFilesAndRecovery','PublicWorkspaceActualProcessedReplyFaultsNeverPromoteUnknownOrReplay','PublicProfileURIStorageVaultEditorChecksAndOriginalTLS','PublicShellChooserHTTPDocumentsMenusParkingDisconnectAndClose')
 RUNTIME_REQUIRED=('RuntimeGenerationsRequestsAndOriginalRecovery','RuntimeOriginalCommittedReplyLossAndRetirement','RuntimeLateConnectionClosesOnlyCapturedOriginalSession','RuntimeForeignScopeRejectedBeforeOriginalRecovery')
 TOOLS_REQUIRED=('PublicRuntimeStructuredToolsCapturedOriginalProvider','PublicWorkspaceStructuredToolsOriginalRequestsBytesScopesAndLeave','PublicWorkspaceStructuredToolsProcessedReplyFaultsNeverReplay')
-GRID_REQUIRED=('PublicDataOriginalLiveReadOnlyRuntimeAndRestrictedScope','PublicDataProcessedReadFaultsKeepOriginalRuntimeAndRequireReopen','PublicDataSharedGridLivePagingInspectorExportsParkingAndOriginalClose','PublicDataSharedGridProcessedReplyRetirementParkingAndExplicitReopen','PublicShellQualifiedGridNavigationMenusSearchStructureAndDisconnect','PublicShellProcessedGridCancelParkingOriginalReopenAndInactiveClose')
+GRID_REQUIRED=('PublicDataOriginalLiveRuntimeAndRestrictedScope','PublicDataProcessedReadFaultsKeepOriginalRuntimeAndRequireReopen','PublicDataSharedGridLivePagingInspectorExportsParkingAndOriginalClose','PublicDataSharedGridProcessedReplyRetirementParkingAndExplicitReopen','PublicShellQualifiedGridNavigationMenusSearchStructureAndDisconnect','PublicShellProcessedGridCancelParkingOriginalReopenAndInactiveClose')
+WRITE_GRID_REQUIRED=('PublicGridMutationBoundsOverlapAndDestinationConflictsNeverPartiallyWrite','PublicDataMutationQualifiedOriginalPlansAndGenerationReplacement','PublicDataMutationProcessedRepliesPreserveOriginalUnknownAndNeverReplay','PublicShellGridMutationConfirmationParkingReceiptAndDisconnect','PublicShellGridMutationProcessedReplyUnknownLeaveAndExplicitClose','PublicGridMutationOriginalConfirmationBytesFlagsRenameInsertDeleteAndParking','PublicGridMutationConflictKeepsOriginalDraftsAndLockedRowsReadOnly','PublicGridMutationProcessedReplyFaultsParkingGenerationLeaveAndNoReplay','PublicGridMutationOptionalMetadataWarningsKeepVerifiedOriginalCommit')
 MUTATION_REQUIRED=('DataMutationOriginalAtomicInsertUpdateRenameDeleteCompleteEvidence','DataMutationOriginalObservationDestinationAndSessionConflictsRollbackBatch','DataMutationProcessedReplyFaultsCancellationAndOriginalCloseNeverReplay','DataMutationOriginalLeaseForeignPlanRevocationAndBounds','DataMutationRestrictedTokenOriginalWriteDenialAndExplicitNewPlan','DataMutationNativeRequestLimitRejectionNeverSplitsOrReplays')
 DATA_REQUIRED=('DataOriginalLiveBoundariesBytesUnsignedScopeAndReceipts','DataIndependentCountFieldExportAndOriginalRestrictedScope','DataActualProcessedReadReplyLossCancellationOriginalCloseAndReopen','DataCompleteValueBudgetRejectsCountAndExportBeforeEmission')
 
@@ -61,7 +62,9 @@ def certs(folder):
   ssl('x509','-req','-in',name+'.csr','-CA','ca.crt','-CAkey','ca.key','-CAcreateserial','-out',name+'.crt','-days','2','-extfile',name+'.ext')
  for p in folder.iterdir():p.chmod(0o600)
 
-def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False,public=False,tools=False,data_session=False,public_grid=False,data_mutations=False,txn_max_request=524288,mutation_limit_probe=False):
+def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False,public=False,tools=False,data_session=False,public_grid=False,data_mutations=False,txn_max_request=524288,mutation_limit_probe=False,public_grid_writes=False,grid_write_probe=False):
+ public_grid=public_grid or public_grid_writes or grid_write_probe
+ data_mutations=data_mutations or public_grid_writes or grid_write_probe
  data_session=data_session or public_grid or data_mutations
  tools=tools or data_session
  public=public or tools
@@ -69,10 +72,12 @@ def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False
  session=session or public
  build=ROOT/'build/consul';build.mkdir(parents=True,exist_ok=True)
  nonce=uuid.uuid4().hex;path=build/('owned-fixture-'+nonce+'.json');log=path.with_suffix('.log')
- required=REQUIRED+(DOCUMENT_REQUIRED+RUNTIME_REQUIRED if session else ())+(PUBLIC_REQUIRED if public else ())+(TOOLS_REQUIRED if tools else ())+(DATA_REQUIRED if data_session else ())+(MUTATION_REQUIRED if data_mutations else ())+(GRID_REQUIRED if public_grid else ())
+ required=REQUIRED+(DOCUMENT_REQUIRED+RUNTIME_REQUIRED if session else ())+(PUBLIC_REQUIRED if public else ())+(TOOLS_REQUIRED if tools else ())+(DATA_REQUIRED if data_session else ())+(MUTATION_REQUIRED if data_mutations else ())+(GRID_REQUIRED if public_grid else ())+(WRITE_GRID_REQUIRED if public_grid_writes or grid_write_probe else ())
  if mutation_limit_probe:required=('DataMutationNativeRequestLimitRejectionNeverSplitsOrReplays',)
+ if grid_write_probe:required=WRITE_GRID_REQUIRED
  packages=['./internal/services/consul']+(['./internal/services/dbruntime'] if session else [])+(['./internal/ui/connectioneditor','./internal/ui/kvworkspace','./internal/ui/shell'] if public else [])+(['./internal/ui/dataworkspace'] if public_grid else [])
- report={'nonce':nonce,'scope':'private-consul-original-data-mutations-with-public-read-regression' if data_mutations and public_grid else 'private-consul-original-data-request-limit' if mutation_limit_probe else 'diagnostic-consul-probe' if probe else 'public-consul-read-only-shared-grid' if public_grid else 'private-consul-original-data-mutations' if data_mutations else 'private-consul-original-live-data-documents' if data_session else 'public-consul-structured-kv-tools' if tools else 'public-consul-original-http-workspace' if public else 'original-consul-native-document-runtime' if session else 'original-consul-native-foundation','txn_max_request':txn_max_request,'mutation_limit_probe':mutation_limit_probe,'mode':mode,'version':version,'image':IMAGES[version],'race':race,'passed':False,'required':required,'packages':packages,'source_hashes':source_hashes()}
+ if grid_write_probe:packages=['./internal/services/dbruntime','./internal/ui/shell','./internal/ui/dataworkspace']
+ report={'nonce':nonce,'scope':'diagnostic-consul-public-grid-write-probe' if grid_write_probe else 'public-consul-original-grid-mutations' if public_grid_writes else 'private-consul-original-data-mutations-with-public-read-regression' if data_mutations and public_grid else 'private-consul-original-data-request-limit' if mutation_limit_probe else 'diagnostic-consul-probe' if probe else 'public-consul-read-only-shared-grid' if public_grid else 'private-consul-original-data-mutations' if data_mutations else 'private-consul-original-live-data-documents' if data_session else 'public-consul-structured-kv-tools' if tools else 'public-consul-original-http-workspace' if public else 'original-consul-native-document-runtime' if session else 'original-consul-native-foundation','txn_max_request':txn_max_request,'mutation_limit_probe':mutation_limit_probe,'public_grid_writes':public_grid_writes,'grid_write_probe':grid_write_probe,'mode':mode,'version':version,'image':IMAGES[version],'race':race,'passed':False,'required':required,'packages':packages,'source_hashes':source_hashes()}
  identifier=None;private=None
  try:
   with tempfile.TemporaryDirectory(prefix='nyadb-consul-'+nonce+'-',dir=build) as rawfolder:
@@ -140,7 +145,7 @@ def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False
     except RuntimeError as error:raise RuntimeError('Native Consul acceptance failed; inspect '+str(log.relative_to(ROOT))) from error
     if source_hashes()!=report['source_hashes']:raise RuntimeError('Native Consul source changed during acceptance')
     pictures={}
-    if public:
+    if public and not grid_write_probe:
      pictures={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(images.glob('*.png'))}
      expected={f'{lang}-{size}-{stage}.png' for lang in ('zh-Hans','en') for size in ('1280x800','720x520') for stage in ('editor-native','shell-native','workspace-write-confirmation','workspace-complete-body','workspace-headers',*(f'workspace-{prefix}{mode}' for prefix in ('unknown-','unknown-after-read-') for mode in ('lost','partial','http500','http408','cancel','disconnect','replace')))}
      if tools:
@@ -150,6 +155,11 @@ def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False
     if public_grid:
      grid_pictures={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(grid_images.glob('*.png'))}
      expected_grid={f'{lang}-{size}-{stage}.png' for lang in ('zh-Hans','en') for size in ('1280x800','720x520') for stage in (*(f'data-{s}' for s in ('live-grid','live-next','refresh','count','field','export','parked','empty','read-retired','reopened')),*(f'shell-grid-{s}' for s in ('keys','grid','structure','reopened')))}
+     if public_grid_writes or grid_write_probe:
+      write_stages=('bounds','destination-conflict','draft','confirmation','saved','renamed','inserted','delete-confirmation','deleted','conflict','session-locked',*(f'{prefix}{mode}' for prefix in ('unknown-','after-read-') for mode in ('lost','partial','missing','http500','http408','cancel','replace','parked')),*(f'warning-{mode}' for mode in ('bad-index','bad-leader')))
+      write_images={f'{lang}-{size}-data-mutation-{stage}.png' for lang in ('zh-Hans','en') for size in ('1280x800','720x520') for stage in write_stages}
+      write_images.update(f'{lang}-{size}-shell-grid-mutation-{stage}.png' for lang in ('zh-Hans','en') for size in ('1280x800','720x520') for stage in ('confirmation','receipt','unknown-lost','unknown-cancel','unknown-close-lost','unknown-close-cancel'))
+      expected_grid=write_images if grid_write_probe else expected_grid|write_images
      if {Path(name).name for name in grid_pictures}!=expected_grid:raise RuntimeError('Mandatory original shared Consul grid image set failed')
     report.update(grid_images=grid_pictures,passed=True,accepted=accepted,public_images=pictures,log_sha256=hashlib.sha256(log.read_bytes()).hexdigest())
  finally:
@@ -163,5 +173,5 @@ def verify(mode='anonymous',race=False,version='2.0.2',probe=False,session=False
  return report
 
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('--mode',choices=('anonymous','token','tls','mtls'),default='anonymous');p.add_argument('--version',choices=tuple(IMAGES),default='2.0.2');p.add_argument('--race',action='store_true');p.add_argument('--probe',action='store_true');p.add_argument('--session',action='store_true');p.add_argument('--public',action='store_true');p.add_argument('--tools',action='store_true');p.add_argument('--data-session',action='store_true');p.add_argument('--public-grid',action='store_true');p.add_argument('--data-mutations',action='store_true');p.add_argument('--txn-max-request',type=int,choices=(524288,8388608),default=524288);p.add_argument('--mutation-limit-probe',action='store_true');a=p.parse_args()
- verify(a.mode,a.race,a.version,a.probe,a.session,a.public,a.tools,a.data_session,a.public_grid,a.data_mutations,a.txn_max_request,a.mutation_limit_probe)
+ p=argparse.ArgumentParser();p.add_argument('--mode',choices=('anonymous','token','tls','mtls'),default='anonymous');p.add_argument('--version',choices=tuple(IMAGES),default='2.0.2');p.add_argument('--race',action='store_true');p.add_argument('--probe',action='store_true');p.add_argument('--session',action='store_true');p.add_argument('--public',action='store_true');p.add_argument('--tools',action='store_true');p.add_argument('--data-session',action='store_true');p.add_argument('--public-grid',action='store_true');p.add_argument('--data-mutations',action='store_true');p.add_argument('--txn-max-request',type=int,choices=(524288,8388608),default=524288);p.add_argument('--mutation-limit-probe',action='store_true');p.add_argument('--public-grid-writes',action='store_true');p.add_argument('--grid-write-probe',action='store_true');a=p.parse_args()
+ verify(a.mode,a.race,a.version,a.probe,a.session,a.public,a.tools,a.data_session,a.public_grid,a.data_mutations,a.txn_max_request,a.mutation_limit_probe,a.public_grid_writes,a.grid_write_probe)

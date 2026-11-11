@@ -151,7 +151,7 @@ func TestDataMutationRejectsMalformedSnapshotsLockedRowsFieldsOverlapAndBoundsBe
 	}
 }
 
-func TestDataMutationPlanBudgetReplacementCloseAndPurePublicReadOnlyBoundary(t *testing.T) {
+func TestDataMutationPlanBudgetReplacementCloseAndPublicPreviewBoundary(t *testing.T) {
 	f := &dataFixture{}
 	f.intercept = func(w http.ResponseWriter, r *http.Request) bool {
 		if r.URL.Path != "/v1/txn" {
@@ -181,8 +181,8 @@ func TestDataMutationPlanBudgetReplacementCloseAndPurePublicReadOnlyBoundary(t *
 		t.Fatal(err)
 	}
 	r := l.Runtime()
-	if r.PreviewEdits != nil || r.SubmitEdits != nil || r.Saver != nil || r.Capabilities.EditableTables {
-		t.Fatal("private foundation published prematurely")
+	if r.PreviewEdits == nil || r.SubmitEdits == nil || r.Saver == nil || !r.Capabilities.EditableTables {
+		t.Fatal("public original preview/submit boundary unavailable")
 	}
 	l.Close()
 	if p.Snapshot().Object != (contract.ObjectRef{}) || l.write.last != nil || l.write.client != nil {
@@ -239,6 +239,65 @@ func TestTxnConflictErrorsRequireOriginalUniqueExplicitOperationIndices(t *testi
 		if _, err := decodeTxn([]byte(raw), 409, 3); err == nil {
 			t.Fatal("invalid conflict acknowledged", raw)
 		}
+	}
+}
+
+func TestDataMutationOptionalMetadataWarningsPreserveKnownOriginalRejection(t *testing.T) {
+	for _, status := range []int{409, 413} {
+		t.Run(strconv.Itoa(status), func(t *testing.T) {
+			var dispatched bool
+			f := &dataFixture{}
+			f.intercept = func(w http.ResponseWriter, r *http.Request) bool {
+				if r.URL.Path != "/v1/txn" {
+					return false
+				}
+				var ops []TxnOperation
+				if json.NewDecoder(r.Body).Decode(&ops) != nil {
+					t.Error("original operations missing")
+					return true
+				}
+				write := false
+				for _, op := range ops {
+					write = write || op.KV != nil && op.KV.Verb == "cas"
+				}
+				if !write {
+					w.Write([]byte(`{"Results":null,"Errors":null}`))
+					return true
+				}
+				dispatched = true
+				w.Header().Set("X-Consul-Index", "invalid-original-index")
+				w.WriteHeader(status)
+				if status == 409 {
+					w.Write([]byte(`{"Results":null,"Errors":[{"OpIndex":0,"What":"original native conflict"}]}`))
+				} else {
+					w.Write([]byte("original request too large"))
+				}
+				return true
+			}
+			l := dataTestLease(t, dataTestSession(t, "scope", f))
+			edits := []contract.DataEdit{{Kind: "insert", Values: map[string]contract.DataValue{"key": dataText("scope/new"), "value": dataBinary(nil)}}}
+			p, err := l.preview(context.Background(), 11, "kv", "keys", edits)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer p.Close()
+			out, err := l.submit(context.Background(), 11, "kv", "keys", p)
+			if !dispatched || err == nil || out == nil || out.CommitConfirmed || out.CommitUncertain || l.uncertain {
+				t.Fatal("optional warning changed known native failure", err)
+			}
+			var receipt contract.KVResult
+			if json.Unmarshal([]byte(out.NativeJSON), &receipt) != nil || receipt.HTTP == nil || !receipt.HTTP.Acknowledged || receipt.WriteOutcomeUnknown || receipt.ProjectionError == "" || receipt.HTTP.Status != status {
+				t.Fatal("original rejection/warning receipt missing")
+			}
+			if status == 409 && !errors.Is(err, contract.ErrDataConflict) {
+				t.Fatal("original conflict classification lost", err)
+			}
+			fresh, err := l.preview(context.Background(), 11, "kv", "keys", edits)
+			if err != nil {
+				t.Fatal("known rejection invented a write barrier", err)
+			}
+			fresh.Close()
+		})
 	}
 }
 

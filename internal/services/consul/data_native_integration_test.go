@@ -49,7 +49,7 @@ func TestConsulNativeDataOriginalLiveBoundariesBytesUnsignedScopeAndReceipts(t *
 			}
 			s, l := nativeDataSession(t, cfg, token)
 			p := dataTestPage(t, l, contract.DataOptions{Limit: 2})
-			if !p.LiveRead || !p.HasMore || p.Rows[0][0].Value.Text != prefix+"/a" || p.Rows[1][2].Value.Text != "18446744073709551615" || len(p.Rows[1][1].Value.Bytes) != 1024 || !p.Rows[1][1].Truncated || *p.Editable {
+			if !p.LiveRead || !p.HasMore || p.Rows[0][0].Value.Text != prefix+"/a" || p.Rows[1][2].Value.Text != "18446744073709551615" || len(p.Rows[1][1].Value.Bytes) != 1024 || !p.Rows[1][1].Truncated || !*p.Editable {
 				t.Fatal("actual native live data changed original bytes/flags or invented edit authority")
 			}
 			observed := l.scopes[dataPageScope].LastResult()

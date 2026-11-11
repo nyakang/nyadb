@@ -103,6 +103,11 @@ func captureConsulGrid(t *testing.T, s *State, d *Document, stage string) {
 		t.Fatal(err)
 	}
 	defer i18n.SetLocaleFunc(nil)
+	open := d.nativeReceipt.Open
+	if strings.HasPrefix(stage, "mutation-unknown-") || strings.HasPrefix(stage, "mutation-warning-") {
+		d.nativeReceipt.Open = true
+		defer func() { d.nativeReceipt.Open = open }()
+	}
 	for _, language := range []string{"zh-Hans", "en"} {
 		i18n.SetLocaleFunc(func() string { return language })
 		for _, size := range [][2]int{{1280, 800}, {720, 520}} {
@@ -120,6 +125,18 @@ func captureConsulGrid(t *testing.T, s *State, d *Document, stage string) {
 				s.Modals(c)
 			}, size[0], size[1])
 			tt.Frame()
+			var controls []string
+			if stage == "mutation-confirmation" || stage == "mutation-delete-confirmation" {
+				controls = []string{"复制完整预览", "取消", "确认并提交更改"}
+			} else if strings.HasPrefix(stage, "mutation-unknown-") || strings.HasPrefix(stage, "mutation-warning-") {
+				controls = []string{"复制完整回执", "导出完整回执", "关闭"}
+			}
+			for _, control := range controls {
+				box, ok := tt.Find(locales.Text(control))
+				if !ok || box.W <= 0 || box.H <= 0 || box.X < 0 || box.Y < 0 || box.X+box.W > float32(size[0]) || box.Y+box.H > float32(size[1]) {
+					t.Fatal("original Consul mutation control clipped", language, size, stage, control, box)
+				}
+			}
 			if len(d.page.Rows) != 0 && !tt.HasText(locales.Text("原生游标读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。")) {
 				t.Fatal("live cursor semantics missing from actual shared grid", language, stage)
 			}
@@ -187,7 +204,7 @@ func TestConsulNativePublicDataSharedGridLivePagingInspectorExportsParkingAndOri
 	}
 	load(d, false)
 	load(sibling, false)
-	if d.Kind() != "键" || !d.page.LiveRead || d.page.PagingMode != "cursor" || len(d.page.Rows) != 2 || d.editable() || d.runtimeLease == nil || len(d.page.Columns) != 7 || d.page.Rows[0][2].Value.Text != "18446744073709551615" || len(d.page.Rows[0][1].Value.Bytes) != 1024 || !d.page.Rows[0][1].Truncated {
+	if d.Kind() != "键" || !d.page.LiveRead || d.page.PagingMode != "cursor" || len(d.page.Rows) != 2 || !d.editable() || d.runtimeLease == nil || len(d.page.Columns) != 7 || d.page.Rows[0][2].Value.Text != "18446744073709551615" || len(d.page.Rows[0][1].Value.Bytes) != 1024 || !d.page.Rows[0][1].Truncated {
 		t.Fatal("shared grid lost exact native values or read-only capabilities")
 	}
 	for _, column := range d.columns {
@@ -300,7 +317,7 @@ func TestConsulNativePublicDataSharedGridLivePagingInspectorExportsParkingAndOri
 }
 
 // Forward a completed original native page read and fault only its actual reply.
-func consulGridRelay(t *testing.T, p connections.Profile, mode string) (connections.Profile, *atomic.Bool, *atomic.Int32, <-chan struct{}) {
+func consulGridOriginalHTTP(t *testing.T, p connections.Profile) (*http.Client, string) {
 	t.Helper()
 	secure := &tls.Config{MinVersion: tls.VersionTLS12}
 	if p.ConsulOptions.CAFile != "" {
@@ -327,6 +344,12 @@ func consulGridRelay(t *testing.T, p connections.Profile, mode string) (connecti
 	if err != nil {
 		t.Fatal(err)
 	}
+	return client, cfg.Endpoint
+}
+
+func consulGridRelay(t *testing.T, p connections.Profile, mode string) (connections.Profile, *atomic.Bool, *atomic.Int32, <-chan struct{}) {
+	t.Helper()
+	client, endpoint := consulGridOriginalHTTP(t, p)
 	armed, calls := &atomic.Bool{}, &atomic.Int32{}
 	processed := make(chan struct{})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -337,7 +360,7 @@ func consulGridRelay(t *testing.T, p connections.Profile, mode string) (connecti
 		var operations []consul.TxnOperation
 		treeRead := r.URL.Path == "/v1/txn" && json.Unmarshal(raw, &operations) == nil && len(operations) == 1 && operations[0].KV != nil && operations[0].KV.Verb == "get-tree"
 		dataRead := r.URL.Query().Has("recurse") || treeRead
-		request, err := http.NewRequestWithContext(r.Context(), r.Method, cfg.Endpoint+r.URL.RequestURI(), bytes.NewReader(raw))
+		request, err := http.NewRequestWithContext(r.Context(), r.Method, endpoint+r.URL.RequestURI(), bytes.NewReader(raw))
 		if err != nil {
 			return
 		}

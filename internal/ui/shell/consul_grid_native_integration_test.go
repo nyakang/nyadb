@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -85,6 +86,21 @@ func captureConsulShellGrid(t *testing.T, tt *ui.Tester, stage string) {
 		for _, size := range [][2]int{{1280, 800}, {720, 520}} {
 			tt.SetSize(size[0], size[1])
 			tt.Frame()
+			var controls []string
+			switch {
+			case stage == "mutation-confirmation":
+				controls = []string{"复制完整预览", "取消", "确认并提交更改"}
+			case strings.HasPrefix(stage, "mutation-unknown-close-"):
+				controls = []string{"取消", "关闭并放弃本地草稿与证据"}
+			case stage == "mutation-receipt" || strings.HasPrefix(stage, "mutation-unknown-"):
+				controls = []string{"复制完整回执", "导出完整回执", "关闭"}
+			}
+			for _, control := range controls {
+				box, ok := tt.Find(locales.Text(control))
+				if !ok || box.W <= 0 || box.H <= 0 || box.X < 0 || box.Y < 0 || box.X+box.W > float32(size[0]) || box.Y+box.H > float32(size[1]) {
+					t.Fatal("original Shell mutation control clipped", language, size, stage, control, box)
+				}
+			}
 			if stage == "grid" || stage == "reopened" {
 				if !tt.HasText(locales.Text("原生游标读取实时数据；翻页和重读期间数据变化可能导致行重复或遗漏。")) {
 					t.Fatal("public grid live semantics missing", language, size)
@@ -298,7 +314,12 @@ func TestConsulNativePublicShellQualifiedGridNavigationMenusSearchStructureAndDi
 }
 
 // Hold only a reply that the original upstream has completely processed.
-func consulShellGridRelay(t *testing.T, p connections.Profile) (connections.Profile, *atomic.Bool, *atomic.Int32, <-chan struct{}) {
+type consulShellMutationRelayOptions struct {
+	mode    string
+	release <-chan struct{}
+}
+
+func consulShellGridRelay(t *testing.T, p connections.Profile, mutationMode ...consulShellMutationRelayOptions) (connections.Profile, *atomic.Bool, *atomic.Int32, <-chan struct{}) {
 	t.Helper()
 	secure := &tls.Config{MinVersion: tls.VersionTLS12}
 	if p.ConsulOptions.CAFile != "" {
@@ -349,12 +370,36 @@ func consulShellGridRelay(t *testing.T, p connections.Profile) (connections.Prof
 		if err != nil {
 			return
 		}
-		if dataRead {
+		target := dataRead
+		if len(mutationMode) != 0 {
+			target = false
+			if r.URL.Path == "/v1/txn" && json.Unmarshal(raw, &operations) == nil {
+				for _, op := range operations {
+					target = target || op.KV != nil && (op.KV.Verb == "cas" || op.KV.Verb == "delete-cas")
+				}
+			}
+		}
+		if target {
 			calls.Add(1)
 			if armed.CompareAndSwap(true, false) {
 				close(processed)
-				<-r.Context().Done()
-				return
+				if len(mutationMode) != 0 && mutationMode[0].mode == "lost" {
+					conn, _, e := w.(http.Hijacker).Hijack()
+					if e == nil {
+						conn.Close()
+					}
+					return
+				}
+				if len(mutationMode) != 0 && mutationMode[0].mode == "park" {
+					select {
+					case <-mutationMode[0].release:
+					case <-r.Context().Done():
+						return
+					}
+				} else {
+					<-r.Context().Done()
+					return
+				}
 			}
 		}
 		for key, values := range response.Header {

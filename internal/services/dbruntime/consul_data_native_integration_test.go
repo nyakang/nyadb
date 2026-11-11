@@ -27,7 +27,7 @@ func consulDataReserve(t *testing.T, m *dbruntime.Manager, id int64) contract.Da
 	return l
 }
 
-func TestConsulNativePublicDataOriginalLiveReadOnlyRuntimeAndRestrictedScope(t *testing.T) {
+func TestConsulNativePublicDataOriginalLiveRuntimeAndRestrictedScope(t *testing.T) {
 	p, secret := consulPublicProfile(t)
 	p.ConsulOptions.Prefix = "native/public-data/" + t.Name() + "/"
 	m := dbruntime.New()
@@ -50,11 +50,11 @@ func TestConsulNativePublicDataOriginalLiveReadOnlyRuntimeAndRestrictedScope(t *
 	lease := consulDataReserve(t, m, p.ID)
 	r := lease.Runtime()
 	object := m.Namespace(p.ID, "kv").Object("keyspace", "keys")
-	if r.Capabilities != h.Capabilities() || r.Saver != nil || r.Transactions.Begin != nil || r.Importer != nil || r.JSONL != nil || r.AdvancedLoader == nil || r.Count == nil || r.Chunk == nil || r.Exporter == nil {
+	if r.Capabilities != h.Capabilities() || r.Saver == nil || r.Transactions.Begin != nil || r.Importer != nil || r.JSONL != nil || r.AdvancedLoader == nil || r.Count == nil || r.Chunk == nil || r.Exporter == nil {
 		t.Fatal("runtime exposed unsupported data tools", r.Capabilities)
 	}
 	page, err := r.AdvancedLoader(context.Background(), p.ID, "kv", "keys", contract.DataOptions{Object: object, Limit: 2})
-	if err != nil || !page.LiveRead || page.PagingMode != "cursor" || !page.HasMore || *page.Editable || page.Rows[0][2].Value.Text != "18446744073709551615" {
+	if err != nil || !page.LiveRead || page.PagingMode != "cursor" || !page.HasMore || !*page.Editable || page.Rows[0][2].Value.Text != "18446744073709551615" {
 		t.Fatal("bound live typed page changed", err)
 	}
 	peer := consulDataReserve(t, m, p.ID)

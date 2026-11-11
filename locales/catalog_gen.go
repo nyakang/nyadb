@@ -37061,3 +37061,13 @@ func ConsulDataLiveScope() string { return In(i18n.Locale()).ConsulDataLiveScope
 func (msgs Messages) ConsulDataLiveScope() string {
 	return Catalog.Format(msgs.locale, "consulDataLiveScope", nil)
 }
+
+// ConsulDataMutationHint says "请检查原始键、目标键、完整值和 Flags；确认后将原子提交此批次更改。"
+// in the language the app shows.
+func ConsulDataMutationHint() string { return In(i18n.Locale()).ConsulDataMutationHint() }
+
+// ConsulDataMutationHint says "请检查原始键、目标键、完整值和 Flags；确认后将原子提交此批次更改。"
+// in the language of msgs.
+func (msgs Messages) ConsulDataMutationHint() string {
+	return Catalog.Format(msgs.locale, "consulDataMutationHint", nil)
+}

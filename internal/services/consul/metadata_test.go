@@ -45,7 +45,7 @@ func TestDocumentPresentationAndNamespaceRemainOriginalWithoutIO(t *testing.T) {
 	}
 }
 
-func TestPublicDataMetadataAndReservationKeepOriginalReadOnlyScopeWithoutIO(t *testing.T) {
+func TestPublicDataMetadataAndReservationKeepOriginalPreviewScopeWithoutIO(t *testing.T) {
 	f := &dataFixture{}
 	s := dataTestSession(t, "original//prefix/", f)
 	before := f.reads.Load()
@@ -67,8 +67,8 @@ func TestPublicDataMetadataAndReservationKeepOriginalReadOnlyScopeWithoutIO(t *t
 	}
 	defer lease.Close()
 	runtime := lease.Runtime()
-	if f.reads.Load() != before || runtime.AdvancedLoader == nil || runtime.Count == nil || runtime.Chunk == nil || runtime.Exporter == nil || runtime.Saver != nil || runtime.PreviewEdits != nil || runtime.Transactions.Begin != nil || runtime.Capabilities.EditableTables || runtime.Capabilities.Query {
-		t.Fatal("read-only publication made I/O or exposed writes")
+	if f.reads.Load() != before || runtime.AdvancedLoader == nil || runtime.Count == nil || runtime.Chunk == nil || runtime.Exporter == nil || runtime.Saver == nil || runtime.PreviewEdits == nil || runtime.SubmitEdits == nil || runtime.Transactions.Begin != nil || !runtime.Capabilities.EditableTables || runtime.Capabilities.Query {
+		t.Fatal("original preview publication made I/O or lost bound capabilities")
 	}
 	if _, err := s.TableMetadata(context.Background(), object.Namespace().Object("table", "keys")); !errors.Is(err, contract.ErrUnsupported) {
 		t.Fatal("unqualified structure kind accepted", err)

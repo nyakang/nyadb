@@ -114,3 +114,24 @@ class ConsulFixtureTests(unittest.TestCase):
                      'internal/ui/shell/consul_grid_native_integration_test.go',
                      'internal/ui/objectworkspace/search_view.go'):
             self.assertIn(name, hashes)
+
+    def test_public_grid_writes_cannot_pass_with_missing_runtime_shell_or_regression(self):
+        regression = (fixture.REQUIRED + fixture.DOCUMENT_REQUIRED + fixture.RUNTIME_REQUIRED +
+                      fixture.PUBLIC_REQUIRED + fixture.TOOLS_REQUIRED + fixture.DATA_REQUIRED +
+                      fixture.MUTATION_REQUIRED + fixture.GRID_REQUIRED)
+        required = regression + fixture.WRITE_GRID_REQUIRED
+        self.assertEqual(len(required), 50)
+        self.assertEqual(len(set(required)), 50)
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+        partial = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in fixture.WRITE_GRID_REQUIRED)
+        with self.assertRaises(RuntimeError):
+            fixture.accepted_cases(partial, required)
+        hashes = fixture.source_hashes()
+        for name in ('internal/services/dbruntime/consul_mutation_native_integration_test.go',
+                     'internal/ui/shell/consul_mutation_native_integration_test.go',
+                     'internal/ui/dataworkspace/consul_mutation_native_integration_test.go'):
+            self.assertIn(name, hashes)

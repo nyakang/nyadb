@@ -169,7 +169,7 @@ func TestDataLivePagesOwnBoundariesAndPreserveOriginalBytesUnsignedNullAndReceip
 	s := dataTestSession(t, "scope", f)
 	l := dataTestLease(t, s)
 	p := dataTestPage(t, l, contract.DataOptions{Limit: 2})
-	if !p.LiveRead || p.PagingMode != "cursor" || !p.StableOrder || !p.HasMore || p.Editable == nil || *p.Editable || p.Rows[0][0].Value.Text != "scope/a" || p.Rows[1][0].Value.Text != "scope/b" || p.Rows[1][2].Value.Text != "18446744073709551615" || p.Rows[1][3].Value.Text != "9007199254740993" || p.Rows[1][6].Value.Kind != contract.Null {
+	if !p.LiveRead || p.PagingMode != "cursor" || !p.StableOrder || !p.HasMore || p.Editable == nil || !*p.Editable || p.Rows[0][0].Value.Text != "scope/a" || p.Rows[1][0].Value.Text != "scope/b" || p.Rows[1][2].Value.Text != "18446744073709551615" || p.Rows[1][3].Value.Text != "9007199254740993" || p.Rows[1][6].Value.Kind != contract.Null {
 		t.Fatal("live original rows or uint64/session null changed")
 	}
 	if !p.Rows[1][1].Truncated || len(p.Rows[1][1].Value.Bytes) != 1024 || len(p.RowSnapshots[1].Original) != 0 {
@@ -301,7 +301,7 @@ func TestDataRejectsUnknownRulesForeignRowsAndIncompleteObservationsWithoutParti
 		t.Fatal("32 MiB complete value budget ignored", err)
 	}
 	if s.Capabilities() != dataCapabilities() {
-		t.Fatal("read-only product capabilities changed")
+		t.Fatal("original data product capabilities changed")
 	}
 	if _, ok := any(s).(contract.DataDocumentsProvider); !ok {
 		t.Fatal("original data document routing unavailable")

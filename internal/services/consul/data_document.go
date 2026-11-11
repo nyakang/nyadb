@@ -47,7 +47,7 @@ type dataLease struct {
 }
 
 func dataCapabilities() contract.Capabilities {
-	return contract.Capabilities{KeyValues: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true}
+	return contract.Capabilities{KeyValues: true, Metadata: true, EditableTables: true, Keyset: true, Count: true, FieldChunks: true, Export: true}
 }
 
 func (s *Session) DataDocumentCapabilities() contract.Capabilities { return dataCapabilities() }
@@ -90,8 +90,14 @@ func (l *dataLease) Runtime() contract.DataRuntime {
 	return contract.DataRuntime{Capabilities: dataCapabilities(),
 		PageFailureRequiresReopen: true, AdvancedLoader: l.page, Count: l.count, RowReader: l.row, Chunk: l.chunk,
 		Exporter: l.export, TableMetadata: l.metadata, TableInfo: l.info,
-		EditKinds: []string{}, PreviewEditKinds: []string{}, ExportFormats: []string{"csv", "json"},
-		FilterColumns: []string{}, SortColumns: []string{}, FilterModes: []string{},
+		Saver: l.save, PreviewEdits: l.preview, SubmitEdits: l.submit,
+		NativeReceipts: true, InsertOmittedValues: true,
+		EditKinds: []string{"insert", "update", "delete"}, PreviewEditKinds: []string{"insert", "update", "delete"},
+		EditValueKinds:       []contract.CellKind{contract.Text, contract.Binary, contract.Integer},
+		MutationPresentation: &contract.DataMutationPresentation{Title: "确认键更改", Hint: "请检查原始键、目标键、完整值和 Flags；确认后将原子提交此批次更改。", PreviewLabel: "键更改完整预览", HistoryLabel: "已确认的原生键更改", CreateLabel: "创建键", UpdateLabel: "更新键", DeleteLabel: "删除键"},
+		WriteDescription:     "PUT /v1/txn (one original atomic CAS; server transaction limit applies)",
+		ExportFormats:        []string{"csv", "json"},
+		FilterColumns:        []string{}, SortColumns: []string{}, FilterModes: []string{},
 		ReadScopeHint: "原前缀内可见键的有界实时观察；翻页、统计和导出不共享固定快照。",
 		ReadDescription: func(contract.DataOptions) string {
 			return "Consul KV recurse/get-tree (one bounded original live HTTP observation)"

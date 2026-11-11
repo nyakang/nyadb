@@ -145,7 +145,7 @@ func (l *dataLease) page(parent context.Context, id int64, catalog, name string,
 		}
 	}
 	end := min(start+options.Limit, len(entries))
-	editable := false
+	editable := true
 	page = &contract.DataPage{Object: l.object, Editable: &editable, Database: catalog, Table: name, Offset: options.Offset, Limit: options.Limit,
 		ColumnMetadata: dataColumns(), PagingMode: "cursor", LiveRead: true, StableOrder: true, KeysetAvailable: true,
 		CurrentCursor: l.boundary(after, options.Offset, options.Limit, epoch), HasMore: end < len(entries), QuerySQL: "Consul KV recurse/get-tree (bounded live observation)"}
@@ -154,6 +154,12 @@ func (l *dataLease) page(parent context.Context, id int64, catalog, name string,
 		page.ColumnKinds = append(page.ColumnKinds, column.DataType)
 	}
 	for _, entry := range entries[start:end] {
+		if entry.Session != "" {
+			if page.ReadOnlyRows == nil {
+				page.ReadOnlyRows = map[int]bool{}
+			}
+			page.ReadOnlyRows[len(page.Rows)] = true
+		}
 		page.Rows = append(page.Rows, dataCells(entry, true))
 		snapshot := l.snapshot(entry, result.HTTP.Metadata)
 		ref := cloneDataRef(snapshot.Ref)

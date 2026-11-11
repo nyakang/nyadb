@@ -45,7 +45,7 @@ func TestConsulNativePublicBuiltinProfileMetadataCapabilitiesAndRestrictedToken(
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s.Capabilities() != (contract.Capabilities{KeyValues: true, Metadata: true, Keyset: true, Count: true, FieldChunks: true, Export: true}) {
+	if s.Capabilities() != (contract.Capabilities{KeyValues: true, Metadata: true, EditableTables: true, Keyset: true, Count: true, FieldChunks: true, Export: true}) {
 		t.Fatal("public provider advertised unsupported tools", s.Capabilities())
 	}
 	metadata, err := contract.Require[contract.MetadataProvider](s)

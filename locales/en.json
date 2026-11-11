@@ -3641,5 +3641,6 @@
   "kvToolGenerate": "Generate request text",
   "kvToolStale": "Request text changed; reopen the tool before generating",
   "kvToolLeave": "Unapplied tool inputs will also be discarded; request files save editor text only",
-  "consulDataLiveScope": "Bounded live observations of visible keys in the original prefix; pages, count and export do not share a fixed snapshot."
+  "consulDataLiveScope": "Bounded live observations of visible keys in the original prefix; pages, count and export do not share a fixed snapshot.",
+  "consulDataMutationHint": "Review the original keys, destination keys, complete values and Flags. Confirm to commit this batch atomically."
 }

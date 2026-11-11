@@ -16,8 +16,8 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 )
 
-// Private foundation: public Runtime remains read-only until shared UI and the
-// complete native transport matrix accept this original one-attempt contract.
+// All shared grid writes require the original immutable preview and one-attempt
+// submit. The compatibility saver uses the same original validation/executor.
 const dataPlanBudget int64 = 256 << 20
 const dataPreviewLimit = 64 << 20
 
@@ -528,7 +528,10 @@ func (l *dataLease) submit(parent context.Context, id int64, catalog, name strin
 	r, executeErr := l.write.Execute(ctx, preparation)
 	out := &contract.DataEditResult{CommitUncertain: r.WriteOutcomeUnknown}
 	h := r.HTTP
-	complete := h != nil && r.Completed && h.Ended && h.Captured && h.EOF && h.Acknowledged && r.ProjectionError == "" && h.ProjectionError == ""
+	// Optional header/cleanup projections remain original receipt warnings.
+	// The native ACK and complete transaction body authorize correspondence;
+	// missing typed transaction results still cannot establish a commit.
+	complete := h != nil && r.Completed && h.Ended && h.Captured && h.EOF && h.Acknowledged
 	if complete && h.Status == 409 && h.Txn != nil && !h.Txn.Committed && len(h.Txn.Errors) > 0 && len(h.Txn.Results) == 0 {
 		err = dataTransactionConflict(r)
 	} else if complete && h.Status == 200 && h.Succeeded && h.Txn != nil && h.Txn.Committed && len(h.Txn.Errors) == 0 {
@@ -561,8 +564,18 @@ func (l *dataLease) submit(parent context.Context, id int64, catalog, name strin
 		l.mu.Lock()
 		l.epoch++
 		l.mu.Unlock()
+		return out, receiptErr
 	}
 	return out, errors.Join(executeErr, receiptErr, err)
+}
+
+func (l *dataLease) save(ctx context.Context, id int64, catalog, name string, edits []contract.DataEdit) (*contract.DataEditResult, error) {
+	plan, err := l.preview(ctx, id, catalog, name, edits)
+	if err != nil {
+		return nil, err
+	}
+	defer plan.Close()
+	return l.submit(ctx, id, catalog, name, plan)
 }
 
 func dataTransactionConflict(r contract.KVResult) error {
