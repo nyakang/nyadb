@@ -239,3 +239,33 @@ python3 tools/verify_consul_fixture.py --public-key-copy --txn-max-request 83886
 python3 tools/verify_consul_fixture.py --public-copy-probe --txn-max-request 8388608 --mode token
 python3 tools/verify_consul_fixture.py --copy-limit-probe --mode token --race
 ```
+
+
+The private captured-prefix deletion foundation uses a qualified
+`DataKeyPrefixDelete` request and retains the complete original recurse/get-tree
+response in an immutable plan. It rejects the empty root, foreign prefixes,
+ACL-filtered observations, original Session locks, incomplete responses and
+oversized candidate sets before a deletion is prepared. The captured set uses
+original index checks, delete-CAS and corresponding absence receipts in one native
+transaction; later-created keys are preserved. It does not promise prefix range
+absence or a frozen MVCC snapshot. Original read executors remain independent.
+
+One atomic plan permits at most 21 candidates (three real operations per key).
+The extra complete captured body plus decoded values has an 8 MiB budget within
+the original plan reservation. Both count and retained-byte limits reject before
+submission; there is no automatic split or replay. Explicit multiple batches,
+complete live-prefix delete-tree semantics and public UI remain separate gaps.
+The public runtime deliberately keeps `PreviewKeyPrefixDelete` nil pending public
+forms and independent acceptance. Runtime bindings preserve original object,
+profile and generation; invalid or late original plans are closed independently.
+
+```sh
+python3 tools/verify_consul_fixture.py --prefix-delete --txn-max-request 8388608 --mode token --race
+python3 tools/verify_consul_fixture.py --prefix-delete-probe --txn-max-request 8388608 --mode token --race
+```
+
+Full foundation acceptance retains every 62-parent public-copy regression and
+adds five adapter prefix parents (67/configuration, 560 regression images).
+The probe is diagnostic only. Both official default-limit copy probes remain
+part of the final verification matrix. ACL filtering and native write denial are
+exercised in configurations with fixture-restricted tokens.

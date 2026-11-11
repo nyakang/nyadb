@@ -348,6 +348,10 @@ func (l *dataLease) preview(parent context.Context, id int64, catalog, name stri
 }
 
 func (l *dataLease) previewPrepared(parent context.Context, id int64, catalog, name string, prepare func() ([]preparedDataEdit, error)) (contract.DataMutationPlan, error) {
+	return l.previewPreparedScope(parent, id, catalog, name, nil, func(context.Context) ([]preparedDataEdit, error) { return prepare() })
+}
+
+func (l *dataLease) previewPreparedScope(parent context.Context, id int64, catalog, name string, scope *dataKeyPrefixDeletionScope, prepare func(context.Context) ([]preparedDataEdit, error)) (contract.DataMutationPlan, error) {
 	if err := l.check(id, catalog, name); err != nil {
 		return nil, err
 	}
@@ -386,7 +390,7 @@ func (l *dataLease) previewPrepared(parent context.Context, id int64, catalog, n
 			l.releasePlanBudget()
 		}
 	}()
-	prepared, err := prepare()
+	prepared, err := prepare(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -459,7 +463,8 @@ func (l *dataLease) previewPrepared(parent context.Context, id int64, catalog, n
 		Method, Path string
 		Operations   json.RawMessage
 		BeforeImages []contract.KVHTTPEntry
-	}{l.object, r.Method, r.Path, r.Body, before})
+		Scope        *dataKeyPrefixDeletionScope `json:",omitempty"`
+	}{l.object, r.Method, r.Path, r.Body, before, scope})
 	if err != nil || len(raw) > dataPreviewLimit {
 		return nil, ErrBounds
 	}
