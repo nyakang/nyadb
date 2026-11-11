@@ -146,10 +146,15 @@ type KVRecovery struct {
 	Last  KVResult
 	// Independent original member receipts, including unconfirmed writes. A
 	// recovery transfers evidence only, never directory/plan authority.
-	MemberResults []KVMemberResult
+	MemberResults  []KVMemberResult
+	SnapshotResult *KVSnapshotResult
 }
 
 func (r KVRecovery) Clone() KVRecovery {
+	if r.SnapshotResult != nil {
+		v := r.SnapshotResult.Clone()
+		r.SnapshotResult = &v
+	}
 	r.Last = r.Last.Clone()
 	r.MemberResults = slices.Clone(r.MemberResults)
 	for i := range r.MemberResults {

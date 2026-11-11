@@ -175,6 +175,7 @@ func TestEtcdNativeSnapshotOriginalRestrictedTokenAndCertificatePermissions(t *t
 }
 
 type snapshotNativeFault struct {
+	putFault      *nativeFault
 	upstream      *Client
 	mode          string
 	calls         atomic.Int32
@@ -186,6 +187,9 @@ type snapshotNativeFault struct {
 func (f *snapshotNativeFault) serve(_ any, stream grpc.ServerStream) error {
 	method, _ := grpc.MethodFromServerStream(stream)
 	if method != "/etcdserverpb.Maintenance/Snapshot" {
+		if f.putFault != nil {
+			return f.putFault.serve(nil, stream)
+		}
 		return (&nativeFault{upstream: f.upstream}).serve(nil, stream)
 	}
 	request := &pb.SnapshotRequest{}
@@ -263,6 +267,10 @@ func snapshotNativeProxy(t *testing.T, admin *Client, mode string) (*Client, *sn
 		t.Fatal(err)
 	}
 	f := &snapshotNativeFault{upstream: admin, mode: mode, entered: make(chan struct{}), done: make(chan struct{})}
+	if mode == "put-lost" {
+		f.putFault = &nativeFault{upstream: admin, method: "/etcdserverpb.KV/Put", mode: "lost", entered: make(chan struct{}), done: make(chan struct{})}
+		f.putFault.ready.Store(true)
+	}
 	cfg, secret := nativeConfig(t)
 	var options []grpc.ServerOption
 	if cfg.CAFile != "" {

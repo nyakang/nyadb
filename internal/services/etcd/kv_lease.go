@@ -31,7 +31,9 @@ type kvLease struct {
 	cancel              context.CancelFunc
 	ops, mu             sync.Mutex
 	closed, lost        bool
-	client              *Client                     // guarded by ops
+	client              *Client // guarded by ops
+	lastSnapshot        contract.KVSnapshotResult
+	snapshotCharged     int
 	last                contract.KVResult           // guarded by mu
 	closeErr            error                       // guarded by ops
 	memberObservations  map[*memberObservation]bool // guarded by mu
@@ -221,11 +223,15 @@ func (l *kvLease) settle(recovering bool) (contract.KVRecovery, error) {
 	l.revokeMemberObservations()
 	l.closeMembersOwned()
 	result := contract.KVRecovery{Last: l.LastResult(), MemberResults: l.memberResultsOwned()}
+	if snapshot := l.LastSnapshotResult(); snapshot.Ended {
+		result.SnapshotResult = &snapshot
+	}
 	if l.client != nil {
 		l.closeErr = errors.Join(l.closeErr, l.client.Close())
 		l.client = nil
 	}
 	if !recovering {
+		l.releaseSnapshotMetadataOwned()
 		l.writeUnknown = l.writeUnknown || l.memberUnknown != nil
 		l.mu.Lock()
 		l.last = contract.KVResult{}

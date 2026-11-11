@@ -52,14 +52,14 @@ func (s *session) bindKV(raw contract.KVRequestLease, document uint64) (contract
 	_, auth := raw.(contract.KVAuthManagement)
 	if _, ok := raw.(contract.KVLeaseBrowsing); ok {
 		if auth {
-			return bindKVMembers(bindKVMaintenance(&kvAuthBrowsingLease{&kvLeaseBrowsingLease{bound}})), nil
+			return bindKVSnapshots(bindKVMembers(bindKVMaintenance(&kvAuthBrowsingLease{&kvLeaseBrowsingLease{bound}}))), nil
 		}
-		return bindKVMembers(bindKVMaintenance(&kvLeaseBrowsingLease{bound})), nil
+		return bindKVSnapshots(bindKVMembers(bindKVMaintenance(&kvLeaseBrowsingLease{bound}))), nil
 	}
 	if auth {
-		return bindKVMembers(bindKVMaintenance(&kvAuthLease{bound})), nil
+		return bindKVSnapshots(bindKVMembers(bindKVMaintenance(&kvAuthLease{bound}))), nil
 	}
-	return bindKVMembers(bindKVMaintenance(bound)), nil
+	return bindKVSnapshots(bindKVMembers(bindKVMaintenance(bound))), nil
 }
 func (s *session) ReserveKV(document uint64) (contract.KVRequestLease, error) {
 	if !s.alive() {
@@ -96,6 +96,9 @@ func (s *session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 	old.closed.Store(true)
 	recovery, err := p.RecoverKV(old.raw)
 	recovery = recovery.Clone()
+	if recovery.SnapshotResult != nil && !old.translateSnapshotScope(&recovery.SnapshotResult.Scope) {
+		err = errors.Join(err, contract.ErrRevoked)
+	}
 	for i := range recovery.MemberResults {
 		recovery.MemberResults[i] = recovery.MemberResults[i].Clone()
 		if !old.translateMemberResult(&recovery.MemberResults[i]) {

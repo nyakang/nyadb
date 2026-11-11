@@ -13,26 +13,27 @@ import (
 // Session retains its original handshake channel and independent document
 // channels. Cluster/member IDs are observations, not incarnation guarantees.
 type Session struct {
-	mu                  sync.Mutex
-	profile             connections.Profile
-	secret              string
-	identity            Identity
-	prefix              []byte
-	client              *Client
-	opener              func(context.Context, connections.Profile, string) (*Client, error)
-	ctx                 context.Context
-	cancel              context.CancelFunc
-	closed, revoked     bool
-	work                sync.WaitGroup
-	leases              map[*kvLease]bool
-	dataDocuments       map[*dataLease]bool
-	events              map[*eventsLease]bool
-	renewals            map[*renewalLease]bool
-	retainedBytes       int
-	memberRetainedBytes int
-	memberSequence      uint64
-	closeDone           chan struct{}
-	closeErr            error
+	mu                    sync.Mutex
+	profile               connections.Profile
+	secret                string
+	identity              Identity
+	prefix                []byte
+	client                *Client
+	opener                func(context.Context, connections.Profile, string) (*Client, error)
+	ctx                   context.Context
+	cancel                context.CancelFunc
+	closed, revoked       bool
+	work                  sync.WaitGroup
+	leases                map[*kvLease]bool
+	dataDocuments         map[*dataLease]bool
+	events                map[*eventsLease]bool
+	renewals              map[*renewalLease]bool
+	snapshotRetainedBytes int
+	retainedBytes         int
+	memberRetainedBytes   int
+	memberSequence        uint64
+	closeDone             chan struct{}
+	closeErr              error
 }
 
 func OpenSession(ctx context.Context, p connections.Profile, secret string) (contract.Session, error) {
@@ -174,6 +175,7 @@ func (s *Session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 	newLease.ops.Unlock()
 	old.recovered = true
 	old.releaseMemberReceiptsOwned()
+	old.releaseSnapshotMetadataOwned()
 	old.mu.Lock()
 	old.last = contract.KVResult{}
 	old.mu.Unlock()

@@ -12,6 +12,70 @@ type kvLeaseBrowsingLease struct{ *kvRequestLease }
 
 func originalKVRequestLease(previous contract.KVRequestLease) *kvRequestLease {
 	switch l := previous.(type) {
+	case *kvSnapshotsRequestLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvRequestLease)
+		}
+	case *kvSnapshotsAuthLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvAuthLease)
+		}
+	case *kvSnapshotsLeaseBrowsingLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvLeaseBrowsingLease)
+		}
+	case *kvSnapshotsAuthBrowsingLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvAuthBrowsingLease)
+		}
+	case *kvSnapshotsMaintenanceLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvMaintenanceLease)
+		}
+	case *kvSnapshotsMaintenanceAuthLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvMaintenanceAuthLease)
+		}
+	case *kvSnapshotsMaintenanceBrowsingLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvMaintenanceBrowsingLease)
+		}
+	case *kvSnapshotsMaintenanceAuthBrowsingLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvMaintenanceAuthBrowsingLease)
+		}
+	case *kvSnapshotsMembersLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvMembersLease)
+		}
+	case *kvSnapshotsMembersAuthLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvMembersAuthLease)
+		}
+	case *kvSnapshotsMembersBrowsingLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvMembersBrowsingLease)
+		}
+	case *kvSnapshotsMembersAuthBrowsingLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvMembersAuthBrowsingLease)
+		}
+	case *kvSnapshotsMembersMaintenanceLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvMembersMaintenanceLease)
+		}
+	case *kvSnapshotsMembersMaintenanceAuthLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvMembersMaintenanceAuthLease)
+		}
+	case *kvSnapshotsMembersMaintenanceBrowsingLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvMembersMaintenanceBrowsingLease)
+		}
+	case *kvSnapshotsMembersMaintenanceAuthBrowsingLease:
+		if l != nil {
+			return originalKVRequestLease(l.kvMembersMaintenanceAuthBrowsingLease)
+		}
 	case *kvMembersLease:
 		if l != nil {
 			return originalKVRequestLease(l.kvRequestLease)

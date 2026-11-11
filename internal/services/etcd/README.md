@@ -927,3 +927,45 @@ cover local short writes, byte budgets, truncated journals and blocked-writer
 close acknowledgement. Original session/document facets, complete owned
 artifacts, durable user-file publication and public controls remain subsequent
 acceptance stages.
+
+### Original document Snapshot leases and runtime binding
+
+The optional `contract.KVSnapshots` facet runs through the existing original
+KV document transport and operation lock. Its pure preparation captures finite
+limits, original profile/contextual generation/document and one-use authority.
+Copied or foreign preparations cannot create another request. Snapshot keeps
+`LastSnapshotResult` separate from ordinary KV/member/Alarm receipts and never
+settles an earlier unknown write, including after explicit recovery or later
+reads.
+
+Runtime preserves all 32 exact Auth/Browse/Maintenance/Member/Snapshot facet
+combinations. It translates only the original receipt's contextual generation
+to its owning publication; late results remain associated with that original
+publication. Recovery creates a new original document lease and transfers the
+old complete receipt without sending Snapshot or restoring plan authority.
+
+The lease reserves bounded metadata capacity before opening or dispatching:
+a conservative 200 MiB reservation against a dedicated 512 MiB session cap
+shrinks to the retained receipt's actual charge. Full native error/failed-frame
+bytes and original Status remain independent of bounded local diagnostics.
+The raw client's duplicate snapshot cache is released after neutral capture.
+Original close waits for receives and caller writer acknowledgement and releases
+its own metadata; publication retirement preserves original evidence for explicit
+recovery. Snapshot still uses distinct caller-owned body/journal writers. Owned
+immutable disk artifacts, user-file durability/publication and public controls
+are later acceptance boundaries.
+
+```sh
+GOWORK=off GOFLAGS=-mod=readonly /usr/bin/python3 tools/verify_etcd_fixture.py --snapshot-session --race --version VERSION --mode MODE
+```
+
+This scope requires 20 native parents in official 3.7.3 anonymous/basic/TLS/mTLS
+and 3.5.35 basic. It includes all raw Snapshot, original KV scope/cancellation and
+runtime write-fault/generation regressions, then real session/runtime same-lease
+streams, full frame bytes, exact publication/document scope, restricted native
+permissions, actual source/EOF faults, short writes, blocked writer close,
+unknown original Put receipts, replacement/disconnect, another parked profile
+and pure recovery. TLS/mTLS relays retain the original transport configuration;
+mTLS verifies client certificates. Injected tests also verify all 32 facet
+combinations, copied/foreign plans, quota admission before I/O, original deep
+copies, late results and independent unknown-write barriers.
