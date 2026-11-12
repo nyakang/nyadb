@@ -24,6 +24,9 @@ func (s *State) MethodsFor(d *Document) []Method {
 		for _, method := range d.presentation.Methods {
 			out = append(out, Method{Name: method.Name, Path: method.Request.Method})
 		}
+		if d.httpWatchAvailable || d.httpWatch != nil && d.httpWatch.lease != nil {
+			out = append(out, Method{"HTTP Watch", HTTPWatchMethod})
+		}
 		return out
 	}
 	out := Methods()
@@ -76,10 +79,19 @@ func (s *State) ChooseMethod(d *Document, method string) {
 	if !s.owned(d) || d.Busy() {
 		return
 	}
+	if method == HTTPWatchMethod && d.httpWatchAvailable {
+		before := s.defaultRequestFor(d)
+		useTemplate := d.Request().JSON == before.JSON
+		s.SetMethod(d, method)
+		if useTemplate {
+			d.Editor.Buffer.Set(DefaultHTTPWatchRequest().JSON)
+		}
+		return
+	}
 	if len(d.presentation.Methods) > 0 {
 		for _, candidate := range d.presentation.Methods {
 			if candidate.Request.Method == method {
-				useTemplate := d.Request().JSON == s.defaultRequestFor(d).JSON
+				useTemplate := d.Request().JSON == s.defaultRequestFor(d).JSON || d.method == HTTPWatchMethod && d.Request().JSON == DefaultHTTPWatchRequest().JSON
 				s.SetMethod(d, method)
 				if useTemplate {
 					d.Editor.Buffer.Set(candidate.Request.JSON)
@@ -170,6 +182,9 @@ func (s *State) defaultRequestFor(d *Document) contract.KVRequest {
 
 // Imported request drafts retain their text, but cannot change product protocol.
 func (s *State) documentMethodAllowed(d *Document, method string) bool {
+	if method == HTTPWatchMethod {
+		return d.httpWatchAvailable || d.httpWatch != nil && d.httpWatch.lease != nil
+	}
 	if len(d.presentation.Methods) > 0 {
 		for _, candidate := range d.presentation.Methods {
 			if candidate.Request.Method == method {

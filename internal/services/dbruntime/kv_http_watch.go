@@ -161,6 +161,18 @@ func (l *kvHTTPWatchLease) LastWatch() *contract.KVHTTPWatchSnapshot {
 	v := r.Clone()
 	return &v
 }
+
+func (l *kvHTTPWatchLease) RetainedWatch() contract.KVHTTPWatchRun {
+	p, ok := l.raw.(contract.KVHTTPWatchArchiveLease)
+	if !ok {
+		return nil
+	}
+	raw := p.RetainedWatch()
+	if raw == nil {
+		return nil
+	}
+	return &kvHTTPWatchRun{raw: raw, request: raw.Request()}
+}
 func (l *kvHTTPWatchLease) ClearObservations() error {
 	if err := l.CheckKVLease(); err != nil {
 		return err
@@ -183,3 +195,24 @@ func (w *kvHTTPWatchRun) Poll() contract.KVHTTPWatchBatch        { return w.raw.
 func (w *kvHTTPWatchRun) Snapshot() contract.KVHTTPWatchSnapshot { return w.raw.Snapshot().Clone() }
 func (w *kvHTTPWatchRun) Stop(ctx context.Context) error         { return w.raw.Stop(ctx) }
 func (w *kvHTTPWatchRun) Close() error                           { return w.raw.Close() }
+
+func (w *kvHTTPWatchRun) PollStatus() contract.KVHTTPWatchStatus {
+	if indexed, ok := w.raw.(contract.KVHTTPWatchIndexedRun); ok {
+		return indexed.PollStatus()
+	}
+	b := w.raw.Poll()
+	// Fallback providers have no indexed archive; Snapshot supplies the total.
+	return contract.KVHTTPWatchStatus{Observations: len(w.raw.Snapshot().Observations), Ended: b.Ended,
+		TerminalOverflow: b.TerminalOverflow, RetainedBytes: b.RetainedBytes, Terminal: b.Terminal}
+}
+
+func (w *kvHTTPWatchRun) Observation(ordinal int) (contract.KVHTTPWatchObservation, bool) {
+	if indexed, ok := w.raw.(contract.KVHTTPWatchIndexedRun); ok {
+		return indexed.Observation(ordinal)
+	}
+	s := w.raw.Snapshot()
+	if ordinal < 0 || ordinal >= len(s.Observations) {
+		return contract.KVHTTPWatchObservation{}, false
+	}
+	return s.Observations[ordinal], true
+}

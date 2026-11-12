@@ -88,7 +88,7 @@ must create an explicitly selected new client and must not replay a request.
 Bounds are 8 MiB request JSON, 48 MiB response capture, 512 KiB individual KV value,
 4096 UTF-8 bytes per key, 10,000 projected entries and 64 transaction operations.
 Incomplete or over-budget captures never become complete acknowledgements.
-Continuous watch/renewal, ACL management, registration/config entries, archives,
+Continuous renewal, ACL management, registration/config entries, archives,
 multi-agent/Enterprise support remain future scope.
 
 Run isolated official acceptance with:
@@ -184,7 +184,7 @@ remain in the receipt. Incomplete or noncorresponding bodies remain unknown.
 Parked writes wait for the original profile, generation replacement never selects
 a new executor, and explicit unknown-document close requires a local discard
 decision after copying/exporting evidence. Prefix-wide conditional set semantics,
-continuous Watch/TTL, administration, archives, Enterprise/HA and full reference
+TTL renewal, administration, archives, Enterprise/HA and full reference
 alignment remain outstanding.
 
 ```sh
@@ -320,8 +320,9 @@ Manager/grid/Shell parents (84/configuration). `--public-prefix-set-probe` selec
 only those six parents and is explicitly diagnostic. Final acceptance retains
 the five official configurations and two original default-limit copy probes.
 
-The private optional `KVHTTPWatchProvider` reserves a separate document lease
-without I/O; it is not yet a published Watch command or workspace UI. `Prepare`
+The optional `KVHTTPWatchProvider` reserves a separate document lease without
+I/O. The existing KV workspace exposes **HTTP Watch** alongside original HTTP
+requests; it retains the original request text and independent write receipts. `Prepare`
 captures one exact/prefix target, its explicitly authored canonical observation
 prefix (including deliberately empty root), unsigned start index, wait, count
 and byte limits. The actual read is native indexed HTTP recurse; original target
@@ -352,9 +353,45 @@ Watch does not read or clear any independent unknown write receipt.
 2048` appends eight private adapter/runtime parents to all 84 public batch
 regression parents (92/configuration), retaining their exact image sets.
 `--http-watch-probe` runs only those eight private parents and cannot combine with
-another acceptance or diagnostic scope. Public KVworkspace/Shell Watch controls,
-parking and exports still require a separate implementation and acceptance.
+another acceptance or diagnostic scope. The public workspace acceptance below
+adds original tab parking, indexed preview, complete exports and explicit recovery.
 
 A settled old run's late Close validates its original archive owner without
 waiting on a newer run's executor. Evidence transfer and release are atomic under
 that same owner, preserving one charged archive during concurrent recovery/Close.
+
+
+## Public original HTTP Watch workspace
+
+Choose **HTTP Watch** in the existing native KV document and author the target,
+exact/prefix matching, actual canonical observation prefix (including an explicitly
+empty root), unsigned starting index, native wait, observation count and byte
+budget. The actual read range is displayed separately from the target. Preparation
+and reservation do no I/O; **Start HTTP Watch** authorizes one captured request.
+The original connection timeout and jitter constraints are validated without
+changing the wait or connection settings.
+
+The original run owns complete evidence. Indexed status polling consumes its
+private pending buffer only on the active original document's UI thread; selecting
+an observation clones that ordinal rather than the entire archive. Preview stays
+bounded. Adjacent observed key/value/Flags/session differences preserve empty,
+missing and NULL distinctions and do not claim all intervening events. ACL-filtered
+or incomplete ranges do not produce inferred deletion comparisons.
+
+Stop, cancellation, disconnect and close wait for the original executor's
+acknowledgement. Parked results await their original tab. Explicit recovery
+transfers only settled original evidence into a fresh unconnected lease; even a
+cancelled late transfer retains the archive. Copy/export capture immutable complete
+original status, headers, body, typed entries, match ordinals and original scope
+before clipboard/picker/disk waits. Indices and Flags retain uint64 text precision.
+New reads never confirm unknown writes. Clearing the original archive and starting
+again are separate explicit actions; stopping or recovering does not resume reads.
+
+`--public-http-watch --race --txn-max-request 8388608 --test-timeout 1800
+--memory-mib 2048` retains all 92 original private Watch/public regression parents
+and 808 original images per configuration, adds four required public Watch parents
+and 80 original-scope UI images. `--public-http-watch-probe` is a separate diagnostic
+scope. Final acceptance uses official 2.0.2 anonymous/token/TLS/mTLS and 1.22.3 token
+fixtures, plus the two original default transaction-limit probes. TTL renewal,
+live-prefix deletion, management/registration, archives, Enterprise/HA and the
+complete database/middleware alignment remain separate work.

@@ -129,6 +129,15 @@ func (l *httpWatchLease) LastWatch() *contract.KVHTTPWatchSnapshot {
 	return &s
 }
 
+func (l *httpWatchLease) RetainedWatch() contract.KVHTTPWatchRun {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.run == nil {
+		return nil
+	}
+	return l.run
+}
+
 // Caller holds base.ops, or is closing a run whose own done has acknowledged.
 // mu keeps archive ownership atomic with Start, recovery and late run Close.
 func (l *httpWatchLease) clearRun(expected *httpWatchRun) {
@@ -216,6 +225,32 @@ func (w *httpWatchRun) Poll() contract.KVHTTPWatchBatch {
 			return b
 		}
 	}
+}
+
+func (w *httpWatchRun) PollStatus() contract.KVHTTPWatchStatus {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	for len(w.pending) > 0 {
+		<-w.pending
+	}
+	b := w.batch
+	acknowledged := false
+	select {
+	case <-w.done:
+		acknowledged = true
+	default:
+	}
+	return contract.KVHTTPWatchStatus{Observations: len(b.Observations), Ended: b.Ended && acknowledged,
+		TerminalOverflow: b.TerminalOverflow, RetainedBytes: b.RetainedBytes, Terminal: b.Terminal}
+}
+
+func (w *httpWatchRun) Observation(ordinal int) (contract.KVHTTPWatchObservation, bool) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if ordinal < 0 || ordinal >= len(w.batch.Observations) {
+		return contract.KVHTTPWatchObservation{}, false
+	}
+	return w.batch.Observations[ordinal].Clone(), true
 }
 func (w *httpWatchRun) Stop(ctx context.Context) error {
 	w.cancel()

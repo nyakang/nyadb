@@ -171,6 +171,27 @@ class ConsulFixtureTests(unittest.TestCase):
             with self.subTest(flag=flag), self.assertRaises(ValueError):
                 fixture.verify(http_watch=True, **{flag: True})
 
+    def test_public_http_watch_requires_new_ui_parents_and_all_existing_regressions(self):
+        foundation = self.copy_scope_before_startup(http_watch=True, txn_max_request=8388608)
+        report = self.copy_scope_before_startup(public_http_watch=True, txn_max_request=8388608)
+        required = tuple(foundation['required']) + fixture.PUBLIC_HTTP_WATCH_REQUIRED
+        self.assertEqual(report['required'], list(required))
+        self.assertEqual(report['scope'], 'public-consul-original-http-watch')
+        self.assertEqual(len(set(required)), 96)
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in fixture.PUBLIC_HTTP_WATCH_REQUIRED:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+
+    def test_public_http_watch_probe_never_claims_complete_acceptance(self):
+        report = self.copy_scope_before_startup(public_http_watch_probe=True)
+        self.assertEqual(report['scope'], 'diagnostic-consul-public-http-watch')
+        self.assertEqual(report['required'], list(fixture.PUBLIC_HTTP_WATCH_REQUIRED))
+        for flag in ('public_http_watch', 'http_watch', 'http_watch_probe', 'public_prefix_set', 'public_grid', 'public', 'probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(public_http_watch_probe=True, **{flag: True})
+
     def copy_scope_before_startup(self, **options):
         # Stop before the first owned container can be created. The retained
         # report must still name the exact scope, parents and packages selected.

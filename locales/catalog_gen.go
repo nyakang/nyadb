@@ -37665,3 +37665,283 @@ func ConsulPrefixSetCopyContent() string { return In(i18n.Locale()).ConsulPrefix
 func (msgs Messages) ConsulPrefixSetCopyContent() string {
 	return Catalog.Format(msgs.locale, "consulPrefixSetCopyContent", nil)
 }
+
+// HttpWatchStart says "启动 HTTP Watch"
+// in the language the app shows.
+func HttpWatchStart() string { return In(i18n.Locale()).HttpWatchStart() }
+
+// HttpWatchStart says "启动 HTTP Watch"
+// in the language of msgs.
+func (msgs Messages) HttpWatchStart() string {
+	return Catalog.Format(msgs.locale, "httpWatchStart", nil)
+}
+
+// HttpWatchStop says "停止 HTTP Watch"
+// in the language the app shows.
+func HttpWatchStop() string { return In(i18n.Locale()).HttpWatchStop() }
+
+// HttpWatchStop says "停止 HTTP Watch"
+// in the language of msgs.
+func (msgs Messages) HttpWatchStop() string {
+	return Catalog.Format(msgs.locale, "httpWatchStop", nil)
+}
+
+// HttpWatchClear says "清除原 Watch 观察"
+// in the language the app shows.
+func HttpWatchClear() string { return In(i18n.Locale()).HttpWatchClear() }
+
+// HttpWatchClear says "清除原 Watch 观察"
+// in the language of msgs.
+func (msgs Messages) HttpWatchClear() string {
+	return Catalog.Format(msgs.locale, "httpWatchClear", nil)
+}
+
+// HttpWatchClearFirst says "请先复制或导出，再明确清除原 Watch 观察"
+// in the language the app shows.
+func HttpWatchClearFirst() string { return In(i18n.Locale()).HttpWatchClearFirst() }
+
+// HttpWatchClearFirst says "请先复制或导出，再明确清除原 Watch 观察"
+// in the language of msgs.
+func (msgs Messages) HttpWatchClearFirst() string {
+	return Catalog.Format(msgs.locale, "httpWatchClearFirst", nil)
+}
+
+// HttpWatchHint says "原目标与实际读取前缀分别填写；这是当前观察，不是完整事件历史或写入确认"
+// in the language the app shows.
+func HttpWatchHint() string { return In(i18n.Locale()).HttpWatchHint() }
+
+// HttpWatchHint says "原目标与实际读取前缀分别填写；这是当前观察，不是完整事件历史或写入确认"
+// in the language of msgs.
+func (msgs Messages) HttpWatchHint() string {
+	return Catalog.Format(msgs.locale, "httpWatchHint", nil)
+}
+
+// HttpWatchTarget says "Watch 原目标"
+// in the language the app shows.
+func HttpWatchTarget() string { return In(i18n.Locale()).HttpWatchTarget() }
+
+// HttpWatchTarget says "Watch 原目标"
+// in the language of msgs.
+func (msgs Messages) HttpWatchTarget() string {
+	return Catalog.Format(msgs.locale, "httpWatchTarget", nil)
+}
+
+// HttpWatchRange says "Watch 实际范围"
+// in the language the app shows.
+func HttpWatchRange() string { return In(i18n.Locale()).HttpWatchRange() }
+
+// HttpWatchRange says "Watch 实际范围"
+// in the language of msgs.
+func (msgs Messages) HttpWatchRange() string {
+	return Catalog.Format(msgs.locale, "httpWatchRange", nil)
+}
+
+// HttpWatchTargetDetail says "原目标（%s）：%s"
+// in the language the app shows.
+func HttpWatchTargetDetail() string { return In(i18n.Locale()).HttpWatchTargetDetail() }
+
+// HttpWatchTargetDetail says "原目标（%s）：%s"
+// in the language of msgs.
+func (msgs Messages) HttpWatchTargetDetail() string {
+	return Catalog.Format(msgs.locale, "httpWatchTargetDetail", nil)
+}
+
+// HttpWatchRangeDetail says "实际读取前缀：%s"
+// in the language the app shows.
+func HttpWatchRangeDetail() string { return In(i18n.Locale()).HttpWatchRangeDetail() }
+
+// HttpWatchRangeDetail says "实际读取前缀：%s"
+// in the language of msgs.
+func (msgs Messages) HttpWatchRangeDetail() string {
+	return Catalog.Format(msgs.locale, "httpWatchRangeDetail", nil)
+}
+
+// HttpWatchRequestLimits says "起始 index %s · wait %s · 最多 %d 笔 · %d 字节"
+// in the language the app shows.
+func HttpWatchRequestLimits() string { return In(i18n.Locale()).HttpWatchRequestLimits() }
+
+// HttpWatchRequestLimits says "起始 index %s · wait %s · 最多 %d 笔 · %d 字节"
+// in the language of msgs.
+func (msgs Messages) HttpWatchRequestLimits() string {
+	return Catalog.Format(msgs.locale, "httpWatchRequestLimits", nil)
+}
+
+// HttpWatchOriginalTimeout says "原 timeout %s · connect %s · 终末槽 %d 字节"
+// in the language the app shows.
+func HttpWatchOriginalTimeout() string { return In(i18n.Locale()).HttpWatchOriginalTimeout() }
+
+// HttpWatchOriginalTimeout says "原 timeout %s · connect %s · 终末槽 %d 字节"
+// in the language of msgs.
+func (msgs Messages) HttpWatchOriginalTimeout() string {
+	return Catalog.Format(msgs.locale, "httpWatchOriginalTimeout", nil)
+}
+
+// HttpWatchReceipt says "HTTP Watch 观察"
+// in the language the app shows.
+func HttpWatchReceipt() string { return In(i18n.Locale()).HttpWatchReceipt() }
+
+// HttpWatchReceipt says "HTTP Watch 观察"
+// in the language of msgs.
+func (msgs Messages) HttpWatchReceipt() string {
+	return Catalog.Format(msgs.locale, "httpWatchReceipt", nil)
+}
+
+// HttpWatchRecordActions says "Watch 记录操作"
+// in the language the app shows.
+func HttpWatchRecordActions() string { return In(i18n.Locale()).HttpWatchRecordActions() }
+
+// HttpWatchRecordActions says "Watch 记录操作"
+// in the language of msgs.
+func (msgs Messages) HttpWatchRecordActions() string {
+	return Catalog.Format(msgs.locale, "httpWatchRecordActions", nil)
+}
+
+// HttpWatchCopy says "复制完整 Watch 记录"
+// in the language the app shows.
+func HttpWatchCopy() string { return In(i18n.Locale()).HttpWatchCopy() }
+
+// HttpWatchCopy says "复制完整 Watch 记录"
+// in the language of msgs.
+func (msgs Messages) HttpWatchCopy() string {
+	return Catalog.Format(msgs.locale, "httpWatchCopy", nil)
+}
+
+// HttpWatchExport says "导出 Watch 记录"
+// in the language the app shows.
+func HttpWatchExport() string { return In(i18n.Locale()).HttpWatchExport() }
+
+// HttpWatchExport says "导出 Watch 记录"
+// in the language of msgs.
+func (msgs Messages) HttpWatchExport() string {
+	return Catalog.Format(msgs.locale, "httpWatchExport", nil)
+}
+
+// HttpWatchEmpty says "明确启动后显示原 HTTP 观察"
+// in the language the app shows.
+func HttpWatchEmpty() string { return In(i18n.Locale()).HttpWatchEmpty() }
+
+// HttpWatchEmpty says "明确启动后显示原 HTTP 观察"
+// in the language of msgs.
+func (msgs Messages) HttpWatchEmpty() string {
+	return Catalog.Format(msgs.locale, "httpWatchEmpty", nil)
+}
+
+// HttpWatchObserving says "正在观察原 HTTP 范围"
+// in the language the app shows.
+func HttpWatchObserving() string { return In(i18n.Locale()).HttpWatchObserving() }
+
+// HttpWatchObserving says "正在观察原 HTTP 范围"
+// in the language of msgs.
+func (msgs Messages) HttpWatchObserving() string {
+	return Catalog.Format(msgs.locale, "httpWatchObserving", nil)
+}
+
+// HttpWatchStopped says "原 HTTP Watch 已停止"
+// in the language the app shows.
+func HttpWatchStopped() string { return In(i18n.Locale()).HttpWatchStopped() }
+
+// HttpWatchStopped says "原 HTTP Watch 已停止"
+// in the language of msgs.
+func (msgs Messages) HttpWatchStopped() string {
+	return Catalog.Format(msgs.locale, "httpWatchStopped", nil)
+}
+
+// HttpWatchReceiptRange says "原目标 %s · 实际读取前缀 %s"
+// in the language the app shows.
+func HttpWatchReceiptRange() string { return In(i18n.Locale()).HttpWatchReceiptRange() }
+
+// HttpWatchReceiptRange says "原目标 %s · 实际读取前缀 %s"
+// in the language of msgs.
+func (msgs Messages) HttpWatchReceiptRange() string {
+	return Catalog.Format(msgs.locale, "httpWatchReceiptRange", nil)
+}
+
+// HttpWatchRetained says "已保留 %d / %d 笔 · %d / %d 字节"
+// in the language the app shows.
+func HttpWatchRetained() string { return In(i18n.Locale()).HttpWatchRetained() }
+
+// HttpWatchRetained says "已保留 %d / %d 笔 · %d / %d 字节"
+// in the language of msgs.
+func (msgs Messages) HttpWatchRetained() string {
+	return Catalog.Format(msgs.locale, "httpWatchRetained", nil)
+}
+
+// HttpWatchOverflow says "已超作者预算；完整终末响应单独保留，读取已停止"
+// in the language the app shows.
+func HttpWatchOverflow() string { return In(i18n.Locale()).HttpWatchOverflow() }
+
+// HttpWatchOverflow says "已超作者预算；完整终末响应单独保留，读取已停止"
+// in the language of msgs.
+func (msgs Messages) HttpWatchOverflow() string {
+	return Catalog.Format(msgs.locale, "httpWatchOverflow", nil)
+}
+
+// HttpWatchACLFiltered says "原读取被 ACL 过滤；没有匹配项不能证明键已删除"
+// in the language the app shows.
+func HttpWatchACLFiltered() string { return In(i18n.Locale()).HttpWatchACLFiltered() }
+
+// HttpWatchACLFiltered says "原读取被 ACL 过滤；没有匹配项不能证明键已删除"
+// in the language of msgs.
+func (msgs Messages) HttpWatchACLFiltered() string {
+	return Catalog.Format(msgs.locale, "httpWatchACLFiltered", nil)
+}
+
+// HttpWatchIncomplete says "原 HTTP 捕获或投影不完整；保留实际响应证据"
+// in the language the app shows.
+func HttpWatchIncomplete() string { return In(i18n.Locale()).HttpWatchIncomplete() }
+
+// HttpWatchIncomplete says "原 HTTP 捕获或投影不完整；保留实际响应证据"
+// in the language of msgs.
+func (msgs Messages) HttpWatchIncomplete() string {
+	return Catalog.Format(msgs.locale, "httpWatchIncomplete", nil)
+}
+
+// HttpWatchIndexRejected says "原 index 为零、回退、缺失或非法；没有自动重置或重订阅"
+// in the language the app shows.
+func HttpWatchIndexRejected() string { return In(i18n.Locale()).HttpWatchIndexRejected() }
+
+// HttpWatchIndexRejected says "原 index 为零、回退、缺失或非法；没有自动重置或重订阅"
+// in the language of msgs.
+func (msgs Messages) HttpWatchIndexRejected() string {
+	return Catalog.Format(msgs.locale, "httpWatchIndexRejected", nil)
+}
+
+// HttpWatchOrdinal says "原观察序号"
+// in the language the app shows.
+func HttpWatchOrdinal() string { return In(i18n.Locale()).HttpWatchOrdinal() }
+
+// HttpWatchOrdinal says "原观察序号"
+// in the language of msgs.
+func (msgs Messages) HttpWatchOrdinal() string {
+	return Catalog.Format(msgs.locale, "httpWatchOrdinal", nil)
+}
+
+// HttpWatchPreviewHint says "预览有界；完整复制和导出保留原状态、headers、body 与 typed entries"
+// in the language the app shows.
+func HttpWatchPreviewHint() string { return In(i18n.Locale()).HttpWatchPreviewHint() }
+
+// HttpWatchPreviewHint says "预览有界；完整复制和导出保留原状态、headers、body 与 typed entries"
+// in the language of msgs.
+func (msgs Messages) HttpWatchPreviewHint() string {
+	return Catalog.Format(msgs.locale, "httpWatchPreviewHint", nil)
+}
+
+// HttpWatchPreview says "HTTP Watch 原观察"
+// in the language the app shows.
+func HttpWatchPreview() string { return In(i18n.Locale()).HttpWatchPreview() }
+
+// HttpWatchPreview says "HTTP Watch 原观察"
+// in the language of msgs.
+func (msgs Messages) HttpWatchPreview() string {
+	return Catalog.Format(msgs.locale, "httpWatchPreview", nil)
+}
+
+// HttpWatchObservedDifferences says "相邻观察差异：新增 %d · 变化 %d · 本次未见 %d；不代表期间全部事件"
+// in the language the app shows.
+func HttpWatchObservedDifferences() string { return In(i18n.Locale()).HttpWatchObservedDifferences() }
+
+// HttpWatchObservedDifferences says "相邻观察差异：新增 %d · 变化 %d · 本次未见 %d；不代表期间全部事件"
+// in the language of msgs.
+func (msgs Messages) HttpWatchObservedDifferences() string {
+	return Catalog.Format(msgs.locale, "httpWatchObservedDifferences", nil)
+}

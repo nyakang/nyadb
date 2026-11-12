@@ -85,6 +85,28 @@ type KVHTTPWatchRun interface {
 	Close() error                  // waits for acknowledgement, then releases this run's evidence
 }
 
+// Optional indexed access keeps the archive on its original run. PollStatus
+// consumes the same private pending buffer as Poll without copying response
+// bodies. Ended requires original executor acknowledgement. Observation uses
+// a zero-based ordinal, never a native event/version.
+type KVHTTPWatchStatus struct {
+	Observations            int
+	Ended, TerminalOverflow bool
+	RetainedBytes           int64
+	Terminal                KVHTTPWatchTerminal
+}
+
+type KVHTTPWatchIndexedRun interface {
+	PollStatus() KVHTTPWatchStatus
+	Observation(int) (KVHTTPWatchObservation, bool)
+}
+
+// RetainedWatch exposes the original settled archive after evidence-only
+// recovery. It neither connects nor restarts the original request.
+type KVHTTPWatchArchiveLease interface {
+	RetainedWatch() KVHTTPWatchRun
+}
+
 type KVHTTPWatchLease interface {
 	Scope() KVScope
 	CheckKVLease() error

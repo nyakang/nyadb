@@ -28,6 +28,7 @@ func (s *State) View(c *ui.Context, d *Document) {
 	}
 	p := theme.Colors(c)
 	availableMethods := s.MethodsFor(d)
+	isHTTPWatch := d.method == HTTPWatchMethod
 	isEvent := eventMethod(d.method)
 	isRenewal := d.method == RenewalMethod
 	isBrowser := leaseBrowserMethod(d.method)
@@ -64,6 +65,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 					runLabel = locales.Text("开始持续续租")
 					runID = runLabel
 				}
+				if isHTTPWatch {
+					runLabel, runID = locales.Text("启动 HTTP Watch"), locales.Text("启动 HTTP Watch")
+				}
 				if d.method == WatchMethod {
 					runLabel = locales.Text("启动 Watch")
 					runID = runLabel
@@ -71,8 +75,16 @@ func (s *State) View(c *ui.Context, d *Document) {
 					runLabel = locales.Text("读取历史")
 					runID = runLabel
 				}
-				if ui.Button(c, runLabel).Label(runID).Disabled(!ready || isSnapshot && (!d.SnapshotAvailable() || s.deps.SnapshotArtifacts == nil || d.snapshotState().original != nil) || isAlarms && (!d.AlarmsAvailable() || d.hasUnknownWrites() || !alarmSelectionVisibleReady(d)) || isMembers && (!d.MembersAvailable() || d.hasUnknownWrites() || !memberSelectionVisibleReady(d)) || isCompaction && (!d.CompactionAvailable() || d.hasUnknownWrites() || !compactionObservationReady(d, d.compactionObservation)) || isAuth && !d.AuthManagementAvailable() || isBrowser && !d.LeaseBrowsingAvailable() || isEvent && d.eventReceipt != nil || isRenewal && (d.renewalReceipt != nil || d.hasUnknownWrites())).Clicked() {
+				if ui.Button(c, runLabel).Label(runID).Disabled(!ready || isHTTPWatch && (!d.httpWatchAvailable || d.httpWatch != nil && d.httpWatch.run != nil) || isSnapshot && (!d.SnapshotAvailable() || s.deps.SnapshotArtifacts == nil || d.snapshotState().original != nil) || isAlarms && (!d.AlarmsAvailable() || d.hasUnknownWrites() || !alarmSelectionVisibleReady(d)) || isMembers && (!d.MembersAvailable() || d.hasUnknownWrites() || !memberSelectionVisibleReady(d)) || isCompaction && (!d.CompactionAvailable() || d.hasUnknownWrites() || !compactionObservationReady(d, d.compactionObservation)) || isAuth && !d.AuthManagementAvailable() || isBrowser && !d.LeaseBrowsingAvailable() || isEvent && d.eventReceipt != nil || isRenewal && (d.renewalReceipt != nil || d.hasUnknownWrites())).Clicked() {
 					s.Run(d)
+				}
+				if isHTTPWatch {
+					if ui.Button(c, locales.Text("停止 HTTP Watch")).Disabled(!d.httpWatchBusy() || d.CancelRequested()).Clicked() {
+						s.StopHTTPWatch(d)
+					}
+					if ui.Button(c, locales.Text("清除原 Watch 观察")).Disabled(!ready || d.FileBusy() || d.httpWatch == nil || d.httpWatch.run == nil).Clicked() {
+						s.ClearHTTPWatch(d)
+					}
 				}
 				if isAlarms && d.alarmState().showResults && ui.Button(c, locales.Text("编辑告警选择")).Disabled(d.Busy()).Clicked() {
 					d.alarmState().showResults = false
@@ -100,7 +112,7 @@ func (s *State) View(c *ui.Context, d *Document) {
 				if ui.Button(c, locales.Text("取消")).Disabled(!d.Busy() || d.CancelRequested()).Clicked() {
 					s.RequestCancel(d)
 				}
-				if ui.Button(c, locales.Text("预连接")).Disabled(!ready || isEvent && d.eventReceipt != nil || isRenewal && d.renewalReceipt != nil).Clicked() {
+				if ui.Button(c, locales.Text("预连接")).Disabled(!ready || isHTTPWatch || isEvent && d.eventReceipt != nil || isRenewal && d.renewalReceipt != nil).Clicked() {
 					s.Preconnect(d)
 				}
 				if ui.Button(c, locales.Text("打开请求文本")).Disabled(d.Busy() || d.FileBusy() || s.deps.Files.OpenPath == nil).Clicked() {
@@ -136,6 +148,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 			if (len(d.presentation.Methods) > 0 || isSnapshot || isAlarms || isMembers || isCompaction || isEvent || isRenewal || isBrowser || isAuth) && ui.Button(c, locales.Text("使用请求模板")).Disabled(d.Busy()).Clicked() {
 				request := s.defaultRequestFor(d)
 				s.CancelConfirmation(d)
+				if isHTTPWatch {
+					request = DefaultHTTPWatchRequest()
+				}
 				if isEvent {
 					request = DefaultEventRequest(d.method)
 				}
@@ -194,6 +209,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 		if isBrowser {
 			hint = locales.Text("集群租约观察；TTL 为逐项读回值，翻页会重新读取列表")
 		}
+		if isHTTPWatch {
+			hint = locales.Text("原目标与实际读取前缀分别填写；这是当前观察，不是完整事件历史或写入确认")
+		}
 		ui.Text(c, hint).Padding(2, 8).FontSize(theme.Font(c, 11)).TextColor(p.Muted).SingleLine().Tooltip(hint)
 		if isEvent && !d.eventsAvailable {
 			ui.Text(c, locales.Text("此连接不支持事件请求")).Padding(3, 8).TextColor(p.Warning)
@@ -219,6 +237,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 		}
 		if d.Busy() {
 			status := locales.Text("等待原执行器确认；不会自动重试或重放")
+			if d.httpWatch != nil && d.httpWatch.run != nil && !d.CancelRequested() {
+				status = locales.Text("正在观察原 HTTP 范围")
+			}
 			if d.eventJob != nil && d.eventJob.kind == "watch" && !d.CancelRequested() && eventWatchCreated(d.eventReceipt) {
 				status = locales.Text("正在观察原键事件")
 			}
@@ -244,6 +265,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 		split := &s.SplitPercent
 		if d.scope.HTTP.Protocol != "" {
 			split = &s.HTTPReceiptSplitPercent
+		}
+		if isHTTPWatch {
+			split = &s.HTTPWatchSplitPercent
 		}
 		if isSnapshot || d.selectedSnapshot {
 			split = &s.SnapshotSplitPercent
@@ -272,6 +296,10 @@ func (s *State) View(c *ui.Context, d *Document) {
 			return
 		}
 		ui.SplitVerticalPercent(c, split, func() {
+			if isHTTPWatch {
+				s.httpWatchRequestView(c, d)
+				return
+			}
 			if isSnapshot {
 				s.snapshotView(c, d)
 				return
@@ -319,7 +347,11 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 	}
 	ui.Column(c).Fill().Padding(padding, 8).Gap(gap).Children(func() {
 		ui.Toolbar(c, func() {
+			if d.httpWatch != nil && d.httpWatch.run != nil && ui.Button(c, locales.Text("HTTP Watch 观察")).Clicked() {
+				d.selectedHTTPWatch = true
+			}
 			if ui.Button(c, locales.Text("最近回执")).Clicked() {
+				d.selectedHTTPWatch = false
 				d.selectedSnapshot = false
 				d.selectedMembers = false
 				d.selectedAlarms = false
@@ -356,6 +388,7 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 				d.selectedAlarms = false
 			}
 			if d.unknown != nil && ui.Button(c, locales.Text("原未确认回执")).Clicked() {
+				d.selectedHTTPWatch = false
 				d.selectedSnapshot = false
 				d.selectedMembers = false
 				d.selectedAlarms = false
@@ -401,6 +434,10 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 				d.selectedUnknown = false
 			}
 		}).Label(locales.Text("KV 回执操作")).FillWidth().MinWidth(0).Padding(0).Gap(5)
+		if d.selectedHTTPWatch {
+			s.httpWatchReceiptView(c, d)
+			return
+		}
 		if d.selectedSnapshot {
 			s.snapshotReceiptView(c, d)
 			return
