@@ -9,6 +9,54 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_session_held_keys_retains_every_original_public_browser_parent(self):
+        previous = self.copy_scope_before_startup(session_browser=True)
+        report = self.copy_scope_before_startup(session_held_keys=True)
+        self.assertEqual(report['scope'], 'private-consul-session-held-keys-with-public-browser-regression')
+        self.assertEqual(report['required'], previous['required'] + list(fixture.SESSION_HELD_KEYS_REQUIRED))
+        self.assertEqual(len(report['required']), 126)
+        self.assertEqual(len(set(report['required'])), 126)
+        phases = fixture.acceptance_test_phases(report['packages'], tuple(report['required']), True, 1800, True)
+        self.assertEqual(len(phases), 2)
+        self.assertIn('./internal/services/consul', phases[0])
+        self.assertNotIn('./internal/ui/kvworkspace', phases[0])
+        parents = []
+        for phase in phases:
+            self.assertIn('-race', phase)
+            self.assertIn('-count=1', phase)
+            parents.extend(phase[phase.index('-run')+1][2:-2].split('|'))
+        self.assertEqual(parents[:3], ['TestConsulNative'+name for name in fixture.SESSION_HELD_KEYS_REQUIRED])
+        self.assertEqual(sorted(parents), sorted('TestConsulNative'+name for name in report['required']))
+        self.assertEqual(len(set(parents)), 126)
+        self.assertEqual(report['packages'], previous['packages'])
+        self.assertTrue(report['session_browser'])
+        self.assertTrue(report['session_projection'])
+        self.assertTrue(report['public_session_tools'])
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in report['required'])
+        self.assertEqual(fixture.accepted_cases(log, tuple(report['required'])), report['required'])
+        for name in report['required']:
+            for marker in ('SKIP', 'MISSING'):
+                with self.subTest(name=name, marker=marker), self.assertRaises(RuntimeError):
+                    fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- '+marker+': TestConsulNative'+name+' '), tuple(report['required']))
+        for flag in ('session_held_keys_probe', 'session_browser_probe', 'session_projection_probe', 'public_session_tools_probe', 'session_tools_probe', 'session_renewal_probe', 'copy_limit_probe', 'http_watch_probe', 'probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(session_held_keys=True, **{flag: True})
+
+    def test_session_held_keys_probe_and_cli_cannot_claim_browser_acceptance(self):
+        report = self.copy_scope_before_startup(session_held_keys_probe=True)
+        self.assertEqual(report['scope'], 'diagnostic-consul-session-held-keys')
+        self.assertEqual(report['required'], list(fixture.SESSION_HELD_KEYS_REQUIRED))
+        self.assertEqual(report['packages'], ['./internal/services/consul'])
+        self.assertFalse(report['session_browser'])
+        for flag in ('session_held_keys', 'session_browser', 'session_browser_probe', 'session_projection', 'session_projection_probe', 'public_session_tools', 'public_session_tools_probe', 'public', 'probe', 'session_renewal_probe', 'copy_limit_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(session_held_keys_probe=True, **{flag: True})
+        import runpy
+        from unittest.mock import patch
+        for args in (['--session-held-keys', '--copy-limit-probe'], ['--session-held-keys-probe', '--session-browser']):
+            with self.subTest(args=args), patch('sys.argv', [str(ROOT/'tools/verify_consul_fixture.py'), *args]), patch('subprocess.run', side_effect=AssertionError('CLI started fixture before validating held-key scope')), self.assertRaises(ValueError):
+                runpy.run_path(str(ROOT/'tools/verify_consul_fixture.py'), run_name='__main__')
+
     def test_session_browser_requires_original_projection_shell_and_all_regressions(self):
         previous = self.copy_scope_before_startup(session_projection=True)
         report = self.copy_scope_before_startup(session_browser=True)
