@@ -30,7 +30,7 @@ func requestToolDisplayError(value string) string {
 
 func httpSessionRequestTool(kind contract.KVRequestToolKind) bool {
 	switch kind {
-	case contract.KVToolHTTPSessionInfo, contract.KVToolHTTPSessionCreate, contract.KVToolHTTPSessionDestroy, contract.KVToolHTTPAcquire, contract.KVToolHTTPRelease:
+	case contract.KVToolHTTPSessionList, contract.KVToolHTTPNodeSessions, contract.KVToolHTTPSessionInfo, contract.KVToolHTTPSessionCreate, contract.KVToolHTTPSessionDestroy, contract.KVToolHTTPAcquire, contract.KVToolHTTPRelease:
 		return true
 	}
 	return false
@@ -39,6 +39,14 @@ func httpSessionRequestTool(kind contract.KVRequestToolKind) bool {
 func (s *State) httpSessionToolInputs(c *ui.Context, d *Document, kind contract.KVRequestToolKind, input *contract.KVRequestToolInput, field func(string, *string)) {
 	disabled := d.Busy() || d.FileBusy()
 	hint := func(value string) { ui.Text(c, value).SingleLine().Tooltip(value).TextColor(theme.Colors(c).Muted) }
+	if kind == contract.KVToolHTTPSessionList || kind == contract.KVToolHTTPNodeSessions {
+		if kind == contract.KVToolHTTPNodeSessions {
+			field(locales.Text("原节点名称"), &input.HTTPSession.Node)
+		}
+		hint(locales.Text("Session 列表不受键前缀限制；DC 与一致性使用原连接设置"))
+		hint(locales.Text("只生成读取请求；运行后可浏览本次返回的 Session"))
+		return
+	}
 	if kind == contract.KVToolHTTPSessionCreate {
 		ui.Scroll(c).Height(260).FillWidth().Children(func() {
 			ui.Column(c).FillWidth().Gap(4).Children(func() {

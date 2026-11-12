@@ -58,7 +58,7 @@ func TestConsulNativePublicSessionToolsFormsOriginalConfirmationUUIDLocksAndFile
 	writer := consulRenewalWriter(t, p, secret)
 	other := consulSessionToolCreate(t, writer, t.Name()+"-other")
 	s, d, m := consulWorkspaceState(t, p, secret)
-	if len(d.RequestTools()) != 11 {
+	if len(d.RequestTools()) != 13 {
 		t.Fatal("public Session tools missing")
 	}
 	key := "native/workspace/session-tools/中文 %?#"

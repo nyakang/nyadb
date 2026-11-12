@@ -25,6 +25,10 @@ func requestToolName(kind contract.KVRequestToolKind) string {
 		return locales.Text("原生 KV 事务")
 	case contract.KVToolHTTPSessionInfo:
 		return locales.Text("读取 HTTP Session")
+	case contract.KVToolHTTPSessionList:
+		return locales.Text("列出 HTTP Sessions")
+	case contract.KVToolHTTPNodeSessions:
+		return locales.Text("列出节点 Sessions")
 	case contract.KVToolHTTPSessionCreate:
 		return locales.Text("创建 HTTP Session")
 	case contract.KVToolHTTPSessionDestroy:

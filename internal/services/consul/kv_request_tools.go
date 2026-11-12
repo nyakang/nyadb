@@ -26,6 +26,8 @@ func optionalToolUint(text string) (*uint64, error) {
 
 func (requestBuilder) BuildKVRequest(kind contract.KVRequestToolKind, input contract.KVRequestToolInput) (contract.KVRequest, error) {
 	switch kind {
+	case contract.KVToolHTTPSessionList, contract.KVToolHTTPNodeSessions:
+		return buildHTTPSessionListTool(kind, input)
 	case contract.KVToolHTTPSessionInfo, contract.KVToolHTTPSessionCreate, contract.KVToolHTTPSessionDestroy, contract.KVToolHTTPAcquire, contract.KVToolHTTPRelease:
 		return buildHTTPSessionTool(kind, input)
 	}
@@ -104,6 +106,8 @@ func requestTools(prefix string) []contract.KVRequestTool {
 		{Kind: contract.KVToolHTTPSessionDestroy},
 		{Kind: contract.KVToolHTTPAcquire, Default: contract.KVRequestToolInput{Key: prefix}},
 		{Kind: contract.KVToolHTTPRelease, Default: contract.KVRequestToolInput{Key: prefix}},
+		{Kind: contract.KVToolHTTPSessionList},
+		{Kind: contract.KVToolHTTPNodeSessions},
 	}
 }
 

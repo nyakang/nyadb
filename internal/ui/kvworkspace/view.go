@@ -628,6 +628,7 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 	})
 }
 func (s *State) Modals(c *ui.Context) {
+	s.httpSessionBrowserModals(c)
 	s.requestToolsModals(c)
 	s.snapshotModals(c)
 	s.renewalModals(c)

@@ -16,6 +16,8 @@ const (
 	KVToolHTTPSessionDestroy KVRequestToolKind = "http-session-destroy"
 	KVToolHTTPAcquire        KVRequestToolKind = "http-acquire"
 	KVToolHTTPRelease        KVRequestToolKind = "http-release"
+	KVToolHTTPSessionList    KVRequestToolKind = "http-session-list"
+	KVToolHTTPNodeSessions   KVRequestToolKind = "http-node-sessions"
 )
 
 // HTTP Session UUIDs are distinct from numeric leases. Empty duration, behavior

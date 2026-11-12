@@ -106,6 +106,8 @@ type operation struct {
 // Document is UI-thread owned. Workers capture immutable requests and their
 // original lease; private buffered channels are consumed only by State.Consume.
 type Document struct {
+	httpSessionBrowser                                      *httpSessionBrowserState
+	httpSessions                                            bool
 	httpSessionRenewal                                      *httpSessionRenewalState
 	httpSessionRenewalAvailable, selectedHTTPSessionRenewal bool
 	httpWatch                                               *httpWatchState
@@ -765,6 +767,8 @@ func (s *State) Consume() {
 					if r.err != nil {
 						receipt.Error = r.err.Error()
 					}
+					d.httpSessionBrowser = nil
+					d.httpSessions = false
 					d.last = receipt
 					if r.result.WriteOutcomeUnknown {
 						d.unknown = receipt
@@ -967,6 +971,8 @@ func (s *State) Close(d *Document) {
 	d.presentation = contract.KVRequestPresentation{}
 	d.requestBuilder, d.requestTools = nil, nil
 	d.httpHeaders = false
+	d.httpSessions = false
+	d.httpSessionBrowser = nil
 	d.confirmation = nil
 	d.leaseManagement = nil
 	if d.authDraft != nil {

@@ -38453,3 +38453,247 @@ func KvToolAbsoluteKey() string { return In(i18n.Locale()).KvToolAbsoluteKey() }
 func (msgs Messages) KvToolAbsoluteKey() string {
 	return Catalog.Format(msgs.locale, "kvToolAbsoluteKey", nil)
 }
+
+// ConsulSessionBrowserList says "Session 列表"
+// in the language the app shows.
+func ConsulSessionBrowserList() string { return In(i18n.Locale()).ConsulSessionBrowserList() }
+
+// ConsulSessionBrowserList says "Session 列表"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserList() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_list", nil)
+}
+
+// ConsulSessionBrowserAcl says "此 Session 响应受 ACL 过滤，仅显示返回的观察"
+// in the language the app shows.
+func ConsulSessionBrowserAcl() string { return In(i18n.Locale()).ConsulSessionBrowserAcl() }
+
+// ConsulSessionBrowserAcl says "此 Session 响应受 ACL 过滤，仅显示返回的观察"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserAcl() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_acl", nil)
+}
+
+// ConsulSessionBrowserBack says "返回 Session 列表"
+// in the language the app shows.
+func ConsulSessionBrowserBack() string { return In(i18n.Locale()).ConsulSessionBrowserBack() }
+
+// ConsulSessionBrowserBack says "返回 Session 列表"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserBack() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_back", nil)
+}
+
+// ConsulSessionBrowserDetailHint says "此详情来自所选原始响应；预览最多 64 KiB，完整内容保留在 HTTP 回执"
+// in the language the app shows.
+func ConsulSessionBrowserDetailHint() string {
+	return In(i18n.Locale()).ConsulSessionBrowserDetailHint()
+}
+
+// ConsulSessionBrowserDetailHint says "此详情来自所选原始响应；预览最多 64 KiB，完整内容保留在 HTTP 回执"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserDetailHint() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_detail_hint", nil)
+}
+
+// ConsulSessionBrowserDetail says "Session 原始详情"
+// in the language the app shows.
+func ConsulSessionBrowserDetail() string { return In(i18n.Locale()).ConsulSessionBrowserDetail() }
+
+// ConsulSessionBrowserDetail says "Session 原始详情"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserDetail() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_detail", nil)
+}
+
+// ConsulSessionBrowserSearch says "筛选已返回的 Session"
+// in the language the app shows.
+func ConsulSessionBrowserSearch() string { return In(i18n.Locale()).ConsulSessionBrowserSearch() }
+
+// ConsulSessionBrowserSearch says "筛选已返回的 Session"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserSearch() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_search", nil)
+}
+
+// ConsulSessionBrowserAllTtl says "全部 TTL 状态"
+// in the language the app shows.
+func ConsulSessionBrowserAllTtl() string { return In(i18n.Locale()).ConsulSessionBrowserAllTtl() }
+
+// ConsulSessionBrowserAllTtl says "全部 TTL 状态"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserAllTtl() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_all_ttl", nil)
+}
+
+// ConsulSessionBrowserConfiguredTtl says "有 TTL 配置"
+// in the language the app shows.
+func ConsulSessionBrowserConfiguredTtl() string {
+	return In(i18n.Locale()).ConsulSessionBrowserConfiguredTtl()
+}
+
+// ConsulSessionBrowserConfiguredTtl says "有 TTL 配置"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserConfiguredTtl() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_configured_ttl", nil)
+}
+
+// ConsulSessionBrowserNoTtl says "无 TTL 配置"
+// in the language the app shows.
+func ConsulSessionBrowserNoTtl() string { return In(i18n.Locale()).ConsulSessionBrowserNoTtl() }
+
+// ConsulSessionBrowserNoTtl says "无 TTL 配置"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserNoTtl() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_no_ttl", nil)
+}
+
+// ConsulSessionBrowserUnknownTtl says "TTL 未返回或不可识别"
+// in the language the app shows.
+func ConsulSessionBrowserUnknownTtl() string {
+	return In(i18n.Locale()).ConsulSessionBrowserUnknownTtl()
+}
+
+// ConsulSessionBrowserUnknownTtl says "TTL 未返回或不可识别"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserUnknownTtl() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_unknown_ttl", nil)
+}
+
+// ConsulSessionBrowserFilterTtl says "Session TTL 筛选"
+// in the language the app shows.
+func ConsulSessionBrowserFilterTtl() string { return In(i18n.Locale()).ConsulSessionBrowserFilterTtl() }
+
+// ConsulSessionBrowserFilterTtl says "Session TTL 筛选"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserFilterTtl() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_filter_ttl", nil)
+}
+
+// ConsulSessionBrowserPage says "第 %d/%d 页 · 匹配 %d/%d 个 Session"
+// in the language the app shows.
+func ConsulSessionBrowserPage() string { return In(i18n.Locale()).ConsulSessionBrowserPage() }
+
+// ConsulSessionBrowserPage says "第 %d/%d 页 · 匹配 %d/%d 个 Session"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserPage() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_page", nil)
+}
+
+// ConsulSessionBrowserSelectedDetail says "查看所选原始详情"
+// in the language the app shows.
+func ConsulSessionBrowserSelectedDetail() string {
+	return In(i18n.Locale()).ConsulSessionBrowserSelectedDetail()
+}
+
+// ConsulSessionBrowserSelectedDetail says "查看所选原始详情"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserSelectedDetail() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_selected_detail", nil)
+}
+
+// ConsulSessionBrowserCopyUuid says "复制所选 Session UUID"
+// in the language the app shows.
+func ConsulSessionBrowserCopyUuid() string { return In(i18n.Locale()).ConsulSessionBrowserCopyUuid() }
+
+// ConsulSessionBrowserCopyUuid says "复制所选 Session UUID"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserCopyUuid() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_copy_uuid", nil)
+}
+
+// ConsulSessionBrowserLocalHint says "本地筛选与翻页不会重新读取"
+// in the language the app shows.
+func ConsulSessionBrowserLocalHint() string { return In(i18n.Locale()).ConsulSessionBrowserLocalHint() }
+
+// ConsulSessionBrowserLocalHint says "本地筛选与翻页不会重新读取"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserLocalHint() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_local_hint", nil)
+}
+
+// ConsulSessionBrowserReturned says "已返回的 Session 列表"
+// in the language the app shows.
+func ConsulSessionBrowserReturned() string { return In(i18n.Locale()).ConsulSessionBrowserReturned() }
+
+// ConsulSessionBrowserReturned says "已返回的 Session 列表"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserReturned() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_returned", nil)
+}
+
+// ConsulSessionBrowserMissing says "（未返回）"
+// in the language the app shows.
+func ConsulSessionBrowserMissing() string { return In(i18n.Locale()).ConsulSessionBrowserMissing() }
+
+// ConsulSessionBrowserMissing says "（未返回）"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserMissing() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_missing", nil)
+}
+
+// ConsulSessionBrowserBackReceipt says "返回原 HTTP 回执"
+// in the language the app shows.
+func ConsulSessionBrowserBackReceipt() string {
+	return In(i18n.Locale()).ConsulSessionBrowserBackReceipt()
+}
+
+// ConsulSessionBrowserBackReceipt says "返回原 HTTP 回执"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserBackReceipt() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_back_receipt", nil)
+}
+
+// ConsulSessionBrowserListTool says "列出 HTTP Sessions"
+// in the language the app shows.
+func ConsulSessionBrowserListTool() string { return In(i18n.Locale()).ConsulSessionBrowserListTool() }
+
+// ConsulSessionBrowserListTool says "列出 HTTP Sessions"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserListTool() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_list_tool", nil)
+}
+
+// ConsulSessionBrowserNodeTool says "列出节点 Sessions"
+// in the language the app shows.
+func ConsulSessionBrowserNodeTool() string { return In(i18n.Locale()).ConsulSessionBrowserNodeTool() }
+
+// ConsulSessionBrowserNodeTool says "列出节点 Sessions"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserNodeTool() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_node_tool", nil)
+}
+
+// ConsulSessionBrowserOriginalNode says "原节点名称"
+// in the language the app shows.
+func ConsulSessionBrowserOriginalNode() string {
+	return In(i18n.Locale()).ConsulSessionBrowserOriginalNode()
+}
+
+// ConsulSessionBrowserOriginalNode says "原节点名称"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserOriginalNode() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_original_node", nil)
+}
+
+// ConsulSessionBrowserListScope says "Session 列表不受键前缀限制；DC 与一致性使用原连接设置"
+// in the language the app shows.
+func ConsulSessionBrowserListScope() string { return In(i18n.Locale()).ConsulSessionBrowserListScope() }
+
+// ConsulSessionBrowserListScope says "Session 列表不受键前缀限制；DC 与一致性使用原连接设置"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserListScope() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_list_scope", nil)
+}
+
+// ConsulSessionBrowserListGeneration says "只生成读取请求；运行后可浏览本次返回的 Session"
+// in the language the app shows.
+func ConsulSessionBrowserListGeneration() string {
+	return In(i18n.Locale()).ConsulSessionBrowserListGeneration()
+}
+
+// ConsulSessionBrowserListGeneration says "只生成读取请求；运行后可浏览本次返回的 Session"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionBrowserListGeneration() string {
+	return Catalog.Format(msgs.locale, "consulSessionBrowser_list_generation", nil)
+}

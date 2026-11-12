@@ -9,6 +9,35 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_session_browser_requires_original_projection_shell_and_all_regressions(self):
+        previous = self.copy_scope_before_startup(session_projection=True)
+        report = self.copy_scope_before_startup(session_browser=True)
+        self.assertEqual(report['scope'], 'public-consul-session-browser')
+        self.assertEqual(report['required'], previous['required'] + list(fixture.SESSION_BROWSER_REQUIRED))
+        self.assertEqual(len(report['required']), 123)
+        self.assertEqual(report['packages'], previous['packages'])
+        self.assertTrue(report['session_projection'])
+        self.assertTrue(report['public_session_tools'])
+        self.assertEqual(len(fixture.session_browser_image_names()), 60)
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in report['required'])
+        self.assertEqual(fixture.accepted_cases(log, tuple(report['required'])), report['required'])
+        for name in report['required']:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), tuple(report['required']))
+        for flag in ('session_browser_probe', 'session_projection_probe', 'public_session_tools_probe', 'copy_limit_probe', 'probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(session_browser=True, **{flag: True})
+
+    def test_session_browser_candidate_probe_cannot_claim_public_acceptance(self):
+        report = self.copy_scope_before_startup(session_browser_probe=True)
+        self.assertEqual(report['scope'], 'diagnostic-consul-session-browser')
+        self.assertEqual(report['required'], list(fixture.SESSION_BROWSER_REQUIRED))
+        self.assertEqual(report['packages'], ['./internal/ui/kvworkspace','./internal/ui/shell'])
+        self.assertFalse(report['public_session_tools'])
+        for flag in ('session_browser', 'session_projection', 'session_projection_probe', 'public_session_tools', 'public_session_tools_probe', 'public', 'probe', 'session_renewal_probe', 'copy_limit_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(session_browser_probe=True, **{flag: True})
+
     def test_session_projection_retains_every_public_tool_parent(self):
         previous = self.copy_scope_before_startup(public_session_tools=True)
         report = self.copy_scope_before_startup(session_projection=True)
