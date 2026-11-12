@@ -149,6 +149,7 @@ func documentResult(request contract.KVRequest, r Response) contract.KVResult {
 			out.JSON = string(r.Body)
 		}
 	}
+	projectDocumentSessions(&out)
 	return out
 }
 
@@ -165,6 +166,11 @@ func resultCost(r *contract.KVResult) int64 {
 				for _, v := range values {
 					n += int64(24 + len(v))
 				}
+			}
+		}
+		if h.Sessions != nil {
+			for _, row := range h.Sessions.Rows {
+				n += sessionProjectionCost(row)
 			}
 		}
 		for _, e := range h.Entries {

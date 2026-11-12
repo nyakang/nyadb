@@ -9,6 +9,30 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_session_projection_retains_every_public_tool_parent(self):
+        previous = self.copy_scope_before_startup(public_session_tools=True)
+        report = self.copy_scope_before_startup(session_projection=True)
+        self.assertEqual(report['required'], previous['required'] + list(fixture.SESSION_PROJECTION_REQUIRED))
+        self.assertEqual(report['packages'], previous['packages'])
+        self.assertTrue(report['public_session_tools'])
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in report['required'])
+        self.assertEqual(fixture.accepted_cases(log, tuple(report['required'])), report['required'])
+        for name in report['required']:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), tuple(report['required']))
+
+    def test_session_projection_diagnostic_is_distinct_and_cannot_skip_regression(self):
+        report = self.copy_scope_before_startup(session_projection_probe=True)
+        self.assertEqual(report['required'], list(fixture.SESSION_PROJECTION_REQUIRED))
+        self.assertEqual(report['packages'], ['./internal/services/consul'])
+        self.assertEqual(report['scope'], 'diagnostic-consul-session-projection')
+        for flag in ('session_projection', 'public_session_tools', 'public_session_tools_probe', 'session_tools', 'session_renewal', 'public', 'probe', 'copy_limit_probe', 'http_watch_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(session_projection_probe=True, **{flag: True})
+        for flag in ('public_session_tools_probe', 'session_tools_probe', 'session_renewal_probe', 'probe', 'copy_limit_probe', 'http_watch_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(session_projection=True, **{flag: True})
+
     def test_session_acceptance_requires_every_original_document_and_runtime_parent(self):
         required = fixture.REQUIRED + fixture.DOCUMENT_REQUIRED + fixture.RUNTIME_REQUIRED
         log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)

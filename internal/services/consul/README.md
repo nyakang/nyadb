@@ -521,3 +521,27 @@ files, parking, executor acknowledgement, retirement, recovery and close. The
 32 processed-write faults use actual Consul upstream effects, independently
 observed without upgrading the document's unknown receipt. All remaining
 integration gaps persist.
+
+
+### Session response projection foundation
+
+Complete successful original `GET /v1/session/list`, `/v1/session/node/<node>`
+and `/v1/session/info/<UUID>` receipts may carry a typed Session observation.
+The optional projection retains original order, exact unsigned indices and
+nanosecond LockDelay, distinct legacy/Node/Service checks, and field presence
+(including explicit null and unknown field names). Unknown field values remain
+in the original HTTP body. Missing, null, empty and zero values are distinct.
+An info response must contain zero or one row matching the authored UUID.
+
+Malformed or excessive projections are unavailable as a whole; original HTTP
+status, body, headers and acknowledgement remain authoritative. Bounds are
+10,000 rows/checks, 256 fields per object and 32 MiB total projection cost; the
+complete original response remains subject to the existing 48 MiB limit.
+Nested projections are cloned and included in the owning lease receipt budget.
+Later reads and evidence-only recovery never acknowledge an unknown write.
+
+This is internal groundwork, not a published Session browser. Session list
+search/paging, selected detail, held-key observation, destroy impact, service
+health/catalog/ACL management and the remaining reference gaps are pending.
+`--session-projection` retains every public Session tool parent and screenshot;
+`--session-projection-probe` is a distinct diagnostic scope only.

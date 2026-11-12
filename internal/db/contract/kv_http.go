@@ -110,6 +110,7 @@ type KVHTTPResult struct {
 	Metadata                                                                                KVHTTPMetadata
 	Entries                                                                                 []KVHTTPEntry
 	Txn                                                                                     *KVHTTPTransaction
+	Sessions                                                                                *KVHTTPSessionList
 	SessionID                                                                               string
 	CaptureError, ProjectionError                                                           string
 }
@@ -123,6 +124,10 @@ func (r KVHTTPResult) Clone() KVHTTPResult {
 	r.Entries = slices.Clone(r.Entries)
 	for i := range r.Entries {
 		r.Entries[i] = r.Entries[i].Clone()
+	}
+	if r.Sessions != nil {
+		v := r.Sessions.Clone()
+		r.Sessions = &v
 	}
 	if r.Txn != nil {
 		v := r.Txn.Clone()
