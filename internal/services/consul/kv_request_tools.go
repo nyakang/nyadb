@@ -25,6 +25,13 @@ func optionalToolUint(text string) (*uint64, error) {
 }
 
 func (requestBuilder) BuildKVRequest(kind contract.KVRequestToolKind, input contract.KVRequestToolInput) (contract.KVRequest, error) {
+	switch kind {
+	case contract.KVToolHTTPSessionInfo, contract.KVToolHTTPSessionCreate, contract.KVToolHTTPSessionDestroy, contract.KVToolHTTPAcquire, contract.KVToolHTTPRelease:
+		return buildHTTPSessionTool(kind, input)
+	}
+	if input.HTTPSession != (contract.KVHTTPSessionToolInput{}) {
+		return contract.KVRequest{}, ErrInvalid
+	}
 	// Reject hidden/incompatible inputs instead of silently dropping semantics.
 	if len(input.Key) > 4096 || len(input.ValueBase64) > base64.StdEncoding.EncodedLen(valueLimit) || len(input.TransactionJSON) > requestLimit {
 		return contract.KVRequest{}, ErrBounds

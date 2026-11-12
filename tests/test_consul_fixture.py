@@ -192,6 +192,47 @@ class ConsulFixtureTests(unittest.TestCase):
             with self.subTest(flag=flag), self.assertRaises(ValueError):
                 fixture.verify(public_http_watch_probe=True, **{flag: True})
 
+    def test_session_tools_foundation_retains_complete_public_renewal_acceptance(self):
+        previous = self.copy_scope_before_startup(public_session_renewal=True, txn_max_request=8388608)
+        report = self.copy_scope_before_startup(session_tools=True, txn_max_request=8388608)
+        required = tuple(previous['required']) + fixture.SESSION_TOOLS_REQUIRED
+        self.assertEqual(report['required'], list(required))
+        self.assertEqual(len(set(required)), 112)
+        self.assertTrue(report['public_session_renewal'])
+        self.assertEqual(report['scope'], 'private-consul-session-tools-with-public-renewal-regression')
+        self.assertEqual(report['packages'], previous['packages'])
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+        with self.assertRaises(RuntimeError):
+            fixture.accepted_cases(log, tuple(previous['required']))
+
+    def test_session_tools_diagnostic_cannot_claim_regression_or_public_tools(self):
+        report = self.copy_scope_before_startup(session_tools_probe=True)
+        self.assertEqual(report['scope'], 'diagnostic-consul-session-tools')
+        self.assertEqual(report['required'], list(fixture.SESSION_TOOLS_REQUIRED))
+        self.assertEqual(report['packages'], ['./internal/services/consul'])
+        for flag in ('session_tools', 'public_session_renewal', 'public_session_renewal_probe',
+                     'session_renewal', 'session_renewal_probe', 'public', 'tools', 'public_grid',
+                     'public_http_watch', 'http_watch', 'probe', 'copy_limit_probe', 'mutation_limit_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(session_tools_probe=True, **{flag: True})
+        for flag in ('session_tools_probe', 'public_session_renewal_probe', 'session_renewal_probe',
+                     'probe', 'copy_limit_probe', 'http_watch_probe', 'public_http_watch_probe',
+                     'mutation_limit_probe', 'grid_write_probe', 'public_copy_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(session_tools=True, **{flag: True})
+
+    def test_session_tools_source_manifest_includes_neutral_input_builder_and_native_tests(self):
+        hashes = fixture.source_hashes()
+        for name in ('internal/db/contract/kv_request_tools.go',
+                     'internal/services/consul/kv_session_tools.go',
+                     'internal/services/consul/kv_session_tools_test.go',
+                     'internal/services/consul/kv_session_tools_native_integration_test.go'):
+            self.assertIn(name, hashes)
+
     def test_public_session_renewal_keeps_foundation_regression_and_requires_real_workspaces(self):
         foundation = self.copy_scope_before_startup(session_renewal=True, txn_max_request=8388608)
         report = self.copy_scope_before_startup(public_session_renewal=True, txn_max_request=8388608)

@@ -5,13 +5,27 @@ package contract
 type KVRequestToolKind string
 
 const (
-	KVToolRead        KVRequestToolKind = "read"
-	KVToolList        KVRequestToolKind = "list"
-	KVToolRaw         KVRequestToolKind = "raw"
-	KVToolPut         KVRequestToolKind = "put"
-	KVToolDelete      KVRequestToolKind = "delete"
-	KVToolTransaction KVRequestToolKind = "transaction"
+	KVToolRead               KVRequestToolKind = "read"
+	KVToolList               KVRequestToolKind = "list"
+	KVToolRaw                KVRequestToolKind = "raw"
+	KVToolPut                KVRequestToolKind = "put"
+	KVToolDelete             KVRequestToolKind = "delete"
+	KVToolTransaction        KVRequestToolKind = "transaction"
+	KVToolHTTPSessionInfo    KVRequestToolKind = "http-session-info"
+	KVToolHTTPSessionCreate  KVRequestToolKind = "http-session-create"
+	KVToolHTTPSessionDestroy KVRequestToolKind = "http-session-destroy"
+	KVToolHTTPAcquire        KVRequestToolKind = "http-acquire"
+	KVToolHTTPRelease        KVRequestToolKind = "http-release"
 )
+
+// HTTP Session UUIDs are distinct from numeric leases. Empty duration, behavior
+// and NodeChecksJSON fields mean omitted; "0s" and "[]" are explicit values.
+// Name and Node can be explicitly empty. All fields are values so drafts and
+// presentation snapshots remain independently copyable and comparable.
+type KVHTTPSessionToolInput struct {
+	ID, Name, Node, TTL, LockDelay, Behavior, NodeChecksJSON string
+	IncludeName, IncludeNode                                 bool
+}
 
 // Optional unsigned numbers use exact decimal text: empty means omitted,
 // while "0" means explicitly supplied. Bytes use canonical padded Base64.
@@ -19,6 +33,7 @@ const (
 type KVRequestToolInput struct {
 	Key, ValueBase64, Flags, CompareIndex, TransactionJSON string
 	KeysOnly, Recursive                                    bool
+	HTTPSession                                            KVHTTPSessionToolInput
 }
 
 type KVRequestTool struct {

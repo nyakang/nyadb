@@ -468,3 +468,34 @@ required for full acceptance. HTTP Watch authorization never authorizes renewal.
 Service, health, registration and ACL management, live-prefix deletion, full
 archives, Enterprise/HA and every remaining Navicat/DBX integration gap remain
 independent.
+
+## Private HTTP Session and lock request tools
+
+The immutable request builder can author Session info/create/destroy and HTTP
+KV acquire/release requests. These five kinds are not yet advertised in the
+public request-tools menu. They carry text only; generation does not reserve a
+lease, read credentials, connect, prepare a write or dispatch a request.
+
+Creation preserves omitted fields separately from an explicitly empty Name or
+Node, zero LockDelay, and an empty NodeChecks list. UUIDs remain lowercase native
+strings. Durations, behavior, checks, bounds and incompatible/hidden fields pass
+the existing native request validator. Lock requests retain absolute encoded
+keys, exact value bytes and optional uint64 Flags, including explicit zero.
+Noncanonical HTTP paths are rejected because substituting transaction lock/unlock
+would change the original HTTP true/false response and conflict semantics.
+
+Generated text uses the existing one-use request preparation and complete HTTP
+receipt path. Native false is an acknowledged conflict. A processed write with a
+lost, partial, 408/5xx or cancelled reply keeps its unknown outcome, including a
+creation whose UUID was not captured. Recovery transfers original evidence
+without guessing that UUID or executing again; subsequent reads cannot promote
+the original unknown write. Explicit Session destruction and natural expiry
+remain distinct from stopping renewal or releasing one key.
+
+`--session-tools --race --txn-max-request 8388608 --test-timeout 1800
+--memory-mib 2048` retains all 108 public renewal/regression parents and 1016
+images per configuration, adding four private Session/lock parents. The
+`--session-tools-probe` scope is diagnostic only. Final acceptance uses official
+2.0.2 anonymous/token/TLS/mTLS and 1.22.3 token fixtures plus both default
+transaction-limit probes. Public structured forms and their original workspace
+lifecycle require separate acceptance; all remaining integration gaps persist.
