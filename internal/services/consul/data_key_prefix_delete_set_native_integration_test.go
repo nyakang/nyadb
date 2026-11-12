@@ -91,8 +91,8 @@ func TestConsulNativeDataKeyPrefixDeleteSetCompleteOriginalCaptureExplicitBatche
 	if string(nativeRead(t, writer, later).Value) != "later" || set.Snapshot().NativeJSON != original.NativeJSON || len(set.Snapshot().Candidates) != 43 {
 		t.Fatal("batches recaptured later keys or lost original full observation")
 	}
-	if l.Runtime().CaptureKeyPrefixDelete != nil {
-		t.Fatal("private batch capability publicly published")
+	if l.Runtime().CaptureKeyPrefixDelete == nil {
+		t.Fatal("complete capture callback unavailable")
 	}
 	set.Close()
 	receiptBudgetMu.Lock()

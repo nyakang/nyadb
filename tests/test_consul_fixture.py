@@ -364,3 +364,63 @@ class ConsulFixtureTests(unittest.TestCase):
         for args in (['--prefix-set-probe', '--probe'], ['--prefix-delete-set', '--copy-probe'], ['--prefix-delete-set', '--test-timeout', '0']):
             with self.subTest(args=args), patch('sys.argv', [str(ROOT/'tools/verify_consul_fixture.py'), *args]), patch('subprocess.run', side_effect=AssertionError('CLI started fixture before validating batch scope')), self.assertRaises(ValueError):
                 runpy.run_path(str(ROOT/'tools/verify_consul_fixture.py'), run_name='__main__')
+
+    def test_public_prefix_set_acceptance_retains_all_78_parents_and_adds_public_ui(self):
+        private = self.copy_scope_before_startup(prefix_delete_set=True)
+        public = self.copy_scope_before_startup(public_prefix_set=True)
+        required = tuple(private['required']) + fixture.PUBLIC_PREFIX_SET_REQUIRED
+        self.assertEqual(public['scope'], 'public-consul-original-prefix-explicit-batches')
+        self.assertEqual(public['required'], list(required))
+        self.assertEqual(len(required), 84)
+        self.assertEqual(len(set(required)), 84)
+        self.assertIn('./internal/ui/dataworkspace', public['packages'])
+        self.assertIn('./internal/ui/shell', public['packages'])
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+
+    def test_public_prefix_set_diagnostic_keeps_scope_and_cannot_claim_acceptance(self):
+        report = self.copy_scope_before_startup(public_prefix_set_probe=True)
+        self.assertEqual(report['scope'], 'diagnostic-consul-public-prefix-explicit-batches')
+        self.assertEqual(report['required'], list(fixture.PUBLIC_PREFIX_SET_REQUIRED))
+        self.assertEqual(report['packages'], ['./internal/services/dbruntime', './internal/ui/shell', './internal/ui/dataworkspace'])
+        for flag in ('probe', 'session', 'public', 'tools', 'data_session', 'public_grid', 'data_mutations',
+                     'mutation_limit_probe', 'public_grid_writes', 'grid_write_probe', 'key_copy', 'copy_probe',
+                     'copy_limit_probe', 'public_key_copy', 'public_copy_probe', 'prefix_delete',
+                     'prefix_delete_probe', 'public_prefix_delete', 'public_prefix_probe', 'prefix_delete_set',
+                     'prefix_set_probe', 'public_prefix_set'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(public_prefix_set_probe=True, **{flag: True})
+
+    def test_public_prefix_set_cannot_downgrade_retained_parents_or_timeout(self):
+        for flag in ('probe', 'mutation_limit_probe', 'grid_write_probe', 'copy_probe', 'copy_limit_probe',
+                     'public_copy_probe', 'prefix_delete_probe', 'public_prefix_probe', 'prefix_set_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(public_prefix_set=True, **{flag: True})
+        report = self.copy_scope_before_startup(public_prefix_set=True, test_timeout=1800, memory_mib=2048)
+        self.assertEqual(report['test_timeout'], 1800)
+        self.assertEqual(report['memory_mib'], 2048)
+        for timeout in (-1, 0, 59, 3601):
+            with self.subTest(timeout=timeout), self.assertRaises(ValueError):
+                fixture.verify(public_prefix_set=True, test_timeout=timeout)
+
+    def test_public_prefix_set_source_manifest_includes_new_native_and_ui_ownership(self):
+        hashes = fixture.source_hashes()
+        for name in ('internal/ui/dataworkspace/data_key_prefix_delete_set.go',
+                     'internal/ui/dataworkspace/data_key_prefix_delete_set_view.go',
+                     'internal/ui/dataworkspace/data_key_prefix_delete_set_test.go',
+                     'internal/ui/dataworkspace/data_key_prefix_delete_set_view_test.go',
+                     'internal/ui/dataworkspace/consul_key_prefix_delete_set_native_integration_test.go',
+                     'internal/services/dbruntime/consul_key_prefix_delete_set_native_integration_test.go',
+                     'internal/ui/shell/consul_key_prefix_delete_set_native_integration_test.go'):
+            self.assertIn(name, hashes)
+
+    def test_public_prefix_set_cli_rejects_invalid_scope_before_fixture_startup(self):
+        import runpy
+        from unittest.mock import patch
+        for args in (['--public-prefix-set-probe', '--probe'], ['--public-prefix-set', '--prefix-set-probe'],
+                     ['--public-prefix-set', '--copy-limit-probe'], ['--public-prefix-set', '--test-timeout', '0']):
+            with self.subTest(args=args), patch('sys.argv', [str(ROOT/'tools/verify_consul_fixture.py'), *args]), patch('subprocess.run', side_effect=AssertionError('CLI started fixture before validating public batch scope')), self.assertRaises(ValueError):
+                runpy.run_path(str(ROOT/'tools/verify_consul_fixture.py'), run_name='__main__')

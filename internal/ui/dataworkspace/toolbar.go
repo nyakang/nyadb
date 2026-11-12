@@ -49,9 +49,16 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 	disabled := t.closed || t.loading || t.readRetired || t.edit.Busy || t.transfer.Busy || t.export.Busy
 	var profilesButton, fillButton, copyButton ui.Element
 	ui.Toolbar(c, func() {
+		if t.loading && mysqlDataToolbarButton(c, "取消", locales.Text("取消读取数据"), "close", false).Clicked() {
+			s.cancelMySQLDataRead(t)
+		}
 		s.asyncDataWriteActions(c, t)
 		s.nativeWriteReceiptActions(c, t)
 		s.keyPrefixEvidenceActions(c, t)
+		s.keyPrefixSetActions(c, t)
+		if s.runtimeFor(t).CaptureKeyPrefixDelete != nil && mysqlDataToolbarButton(c, "按前缀分批删除候选键", locales.Text("按前缀分批删除候选键"), "minus", !s.canDeleteKeyPrefixSet(t)).Clicked() {
+			s.DeleteKeyPrefixSet(t)
+		}
 		if s.runtimeFor(t).PreviewKeyPrefixDelete != nil && mysqlDataToolbarButton(c, "按前缀删除候选键", locales.Text("按前缀删除候选键"), "minus", !s.canDeleteKeyPrefix(t)).Clicked() {
 			s.DeleteKeyPrefix(t)
 		}
@@ -145,9 +152,6 @@ func (s *State) mysqlDataToolbar(c *ui.Context, t *Document) {
 		}
 		if mysqlDataToolbarButton(c, "刷新", locales.Text("刷新表数据：")+t.table, "refresh", !s.session().Connected || disabled).Clicked() {
 			s.Refresh(c.Services(), t)
-		}
-		if t.loading && mysqlDataToolbarButton(c, "取消", locales.Text("取消读取数据"), "close", false).Clicked() {
-			s.cancelMySQLDataRead(t)
 		}
 		selected := mysqlDataHasSelectedPreview(t)
 		if mysqlDataToolbarButton(c, "复制", locales.Text("复制所选数据预览"), "copy", !selected).Clicked() {

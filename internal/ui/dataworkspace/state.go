@@ -99,6 +99,11 @@ type Document struct {
 	mutation                    dataMutationState
 	keyCopy                     *dataKeyCopyChoice
 	prefixDelete                *dataKeyPrefixDeleteState
+	prefixSet                   *dataKeyPrefixDeleteSetState
+	prefixSetObservation        nativeWriteReceiptState
+	prefixSetLedger             nativeWriteReceiptState
+	prefixSetSelectedReceipt    nativeWriteReceiptState
+	prefixSetProgress           dataPrefixSetLedger
 	prefixEvidence              nativeWriteReceiptState
 	prefixEvidenceRequest       contract.DataKeyPrefixDelete
 	deleteChoice                *dataDeleteChoice

@@ -88,6 +88,16 @@ func captureConsulShellGrid(t *testing.T, tt *ui.Tester, stage string) {
 			tt.Frame()
 			var controls []string
 			switch {
+			case stage == "prefix-set-form":
+				controls = []string{"输入完整分批删除前缀", "捕获完整候选键", "取消"}
+			case stage == "prefix-set-review":
+				controls = []string{"复制完整候选键列表", "原始观察", "进度与回执", "停止并保留原观察与回执"}
+			case stage == "prefix-set-confirmation":
+				controls = []string{"复制完整预览", "取消本批确认", "确认并删除本批候选键"}
+			case stage == "prefix-set-ledger":
+				controls = []string{"复制完整内容", "导出完整内容", "关闭"}
+			case stage == "prefix-set-receipt":
+				controls = []string{"复制完整回执", "导出完整回执", "关闭"}
 			case stage == "mutation-confirmation":
 				controls = []string{"复制完整预览", "取消", "确认并提交更改"}
 			case strings.HasPrefix(stage, "mutation-unknown-close-"):

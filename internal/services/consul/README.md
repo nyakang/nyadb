@@ -275,13 +275,13 @@ part of the final matrix. ACL filtering and native write denial are exercised
 in configurations with fixture-restricted tokens. Private foundation records
 retain their historical unpublished scope.
 
-### Private complete captured sets and explicit batch foundation
+### Complete captured sets and explicit batches
 
 `captureKeyPrefixDelete` owns one complete original observation and a fixed list
 of at most 4096 candidates. It rejects empty/foreign prefixes, ACL-filtered or
 locked candidates, and original body plus decoded values over 8 MiB. The public
-`DataRuntime.CaptureKeyPrefixDelete` remains nil pending separate shared-grid and
-Shell acceptance. Each ordered batch contains at most 21 original keys, needs its
+`DataRuntime.CaptureKeyPrefixDelete` binds the original data-document lease.
+Each ordered batch contains at most 21 original keys, needs its
 own immutable preview and explicit submission, and never recaptures later keys.
 Earlier confirmed batches remain committed when a later batch fails; there is no
 cross-batch atomicity. Known failed batches stop the capture; unknown or incomplete
@@ -303,3 +303,19 @@ provider. It rejects stopped/in-flight/uncertain batches before provider executi
 public regression parents. `--prefix-set-probe` is a separately labelled diagnostic
 and cannot claim complete acceptance or combine with another scope. The default
 copy-limit probes continue to use the original 512 KiB transaction limit.
+
+The shared grid opens the complete-capture form without I/O, then keeps the
+fixed original candidate set independently of its bounded page. Every batch has
+its own immutable confirmation. Only corresponding complete original receipts
+advance the ledger or refresh the page; later batches never start automatically.
+Observation JSON, the complete ledger and individual receipts remain independently
+available for complete clipboard copies and immutable file exports. Parking
+consumes only on the original profile; cancellation and document close await the
+original executor. Unknown results retain the original close guard and prohibit
+later batches, new captures and replay, even after a successful read.
+
+`--public-prefix-set --race --txn-max-request 8388608 --test-timeout 1800
+--memory-mib 2048` retains all 78 earlier parents and adds six public
+Manager/grid/Shell parents (84/configuration). `--public-prefix-set-probe` selects
+only those six parents and is explicitly diagnostic. Final acceptance retains
+the five official configurations and two original default-limit copy probes.

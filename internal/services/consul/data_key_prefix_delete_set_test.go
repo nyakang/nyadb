@@ -327,8 +327,8 @@ func TestDataKeyPrefixDeleteSetOneOriginalCaptureExplicitOrderedBatchesAndLaterK
 	if remaining != 1 || !later || f.captures.Load() != 1 || f.writes.Load() != 3 {
 		t.Fatal("batches recaptured later keys or hid partial progress")
 	}
-	if l.Runtime().CaptureKeyPrefixDelete != nil {
-		t.Fatal("private batch capability leaked to public runtime")
+	if l.Runtime().CaptureKeyPrefixDelete == nil {
+		t.Fatal("complete capture callback unavailable")
 	}
 	set.Close()
 	receiptBudgetMu.Lock()

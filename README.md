@@ -134,6 +134,17 @@ can be copied/exported in full. Later keys are preserved; unknown results block
 replay. Full acceptance uses `--public-prefix-delete --txn-max-request 8388608
 --race --mode MODE` across the same five configurations, with 73 mandatory
 parents and 688 bilingual grid/HTTP images per configuration. Both original
-default copy-limit probes remain required. Larger sets, explicit multiple batches
-and complete live-prefix deletion remain pending. See
+default copy-limit probes remain required. Complete live-prefix deletion remains
+pending. See
 [local prefix acceptance](docs/consul-public-prefix-2026-11-11.md).
+
+Consul also captures complete candidate sets of at most 4096 keys for explicitly
+confirmed batches of at most 21 original keys. Every batch needs its own preview
+and submit click; earlier commits survive a later conflict. The shared grid keeps
+complete original observations, an independent batch receipt ledger and individual
+receipts for full copy/export. Stop retains partial progress; unknown results block
+further batches and replay. Full acceptance uses `--public-prefix-set --race
+--txn-max-request 8388608 --test-timeout 1800 --memory-mib 2048` across the same
+five configurations and both original default copy-limit probes. The separate
+`--public-prefix-set-probe` is diagnostic only. See
+[local explicit-batch acceptance](docs/consul-prefix-explicit-batches-public-2026-11-12.md).

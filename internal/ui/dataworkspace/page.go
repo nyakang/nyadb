@@ -310,6 +310,14 @@ func (s *State) Close(t *Document) {
 		s.flushMySQLDataLayout(t)
 	}
 	s.disposeKeyPrefixDelete(t)
+	s.disposeKeyPrefixSet(t, true)
+	for _, evidence := range []*nativeWriteReceiptState{&t.prefixSetObservation, &t.prefixSetLedger, &t.prefixSetSelectedReceipt} {
+		if evidence.Cancel != nil {
+			evidence.Cancel()
+		}
+		*evidence = nativeWriteReceiptState{}
+	}
+	t.prefixSetProgress = dataPrefixSetLedger{}
 	s.cancelMySQLDataEdit(t)
 	if t.nativeReceipt.Cancel != nil {
 		t.nativeReceipt.Cancel()

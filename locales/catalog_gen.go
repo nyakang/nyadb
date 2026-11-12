@@ -37343,3 +37343,325 @@ func DataKeyPrefixWaitingInput() string { return In(i18n.Locale()).DataKeyPrefix
 func (msgs Messages) DataKeyPrefixWaitingInput() string {
 	return Catalog.Format(msgs.locale, "dataKeyPrefixWaitingInput", nil)
 }
+
+// ConsulPrefixSetDelete says "按前缀分批删除候选键"
+// in the language the app shows.
+func ConsulPrefixSetDelete() string { return In(i18n.Locale()).ConsulPrefixSetDelete() }
+
+// ConsulPrefixSetDelete says "按前缀分批删除候选键"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetDelete() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetDelete", nil)
+}
+
+// ConsulPrefixSetCaptureHelp says "…"
+// in the language the app shows.
+func ConsulPrefixSetCaptureHelp() string { return In(i18n.Locale()).ConsulPrefixSetCaptureHelp() }
+
+// ConsulPrefixSetCaptureHelp says "…"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetCaptureHelp() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetCaptureHelp", nil)
+}
+
+// ConsulPrefixSetPrefixInput says "输入完整分批删除前缀"
+// in the language the app shows.
+func ConsulPrefixSetPrefixInput() string { return In(i18n.Locale()).ConsulPrefixSetPrefixInput() }
+
+// ConsulPrefixSetPrefixInput says "输入完整分批删除前缀"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetPrefixInput() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetPrefixInput", nil)
+}
+
+// ConsulPrefixSetCapture says "捕获完整候选键"
+// in the language the app shows.
+func ConsulPrefixSetCapture() string { return In(i18n.Locale()).ConsulPrefixSetCapture() }
+
+// ConsulPrefixSetCapture says "捕获完整候选键"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetCapture() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetCapture", nil)
+}
+
+// ConsulPrefixSetReview says "完整候选与分批进度"
+// in the language the app shows.
+func ConsulPrefixSetReview() string { return In(i18n.Locale()).ConsulPrefixSetReview() }
+
+// ConsulPrefixSetReview says "完整候选与分批进度"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetReview() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetReview", nil)
+}
+
+// ConsulPrefixSetReviewHelp says "…"
+// in the language the app shows.
+func ConsulPrefixSetReviewHelp() string { return In(i18n.Locale()).ConsulPrefixSetReviewHelp() }
+
+// ConsulPrefixSetReviewHelp says "…"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetReviewHelp() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetReviewHelp", nil)
+}
+
+// ConsulPrefixSetCandidateList says "此次完整候选键列表"
+// in the language the app shows.
+func ConsulPrefixSetCandidateList() string { return In(i18n.Locale()).ConsulPrefixSetCandidateList() }
+
+// ConsulPrefixSetCandidateList says "此次完整候选键列表"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetCandidateList() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetCandidateList", nil)
+}
+
+// ConsulPrefixSetCopyCandidates says "复制完整候选键列表"
+// in the language the app shows.
+func ConsulPrefixSetCopyCandidates() string { return In(i18n.Locale()).ConsulPrefixSetCopyCandidates() }
+
+// ConsulPrefixSetCopyCandidates says "复制完整候选键列表"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetCopyCandidates() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetCopyCandidates", nil)
+}
+
+// ConsulPrefixSetStop says "停止并保留原观察与回执"
+// in the language the app shows.
+func ConsulPrefixSetStop() string { return In(i18n.Locale()).ConsulPrefixSetStop() }
+
+// ConsulPrefixSetStop says "停止并保留原观察与回执"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetStop() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetStop", nil)
+}
+
+// ConsulPrefixSetPreviewBatch says "预览第 %d 批删除"
+// in the language the app shows.
+func ConsulPrefixSetPreviewBatch() string { return In(i18n.Locale()).ConsulPrefixSetPreviewBatch() }
+
+// ConsulPrefixSetPreviewBatch says "预览第 %d 批删除"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetPreviewBatch() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetPreviewBatch", nil)
+}
+
+// ConsulPrefixSetConfirmBatch says "确认第 %d 批候选键删除"
+// in the language the app shows.
+func ConsulPrefixSetConfirmBatch() string { return In(i18n.Locale()).ConsulPrefixSetConfirmBatch() }
+
+// ConsulPrefixSetConfirmBatch says "确认第 %d 批候选键删除"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetConfirmBatch() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetConfirmBatch", nil)
+}
+
+// ConsulPrefixSetConfirmHelp says "仅提交本批 %d 个原候选键；已完成的早批不会回滚，其余批次仍需单独确认。"
+// in the language the app shows.
+func ConsulPrefixSetConfirmHelp() string { return In(i18n.Locale()).ConsulPrefixSetConfirmHelp() }
+
+// ConsulPrefixSetConfirmHelp says "仅提交本批 %d 个原候选键；已完成的早批不会回滚，其余批次仍需单独确认。"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetConfirmHelp() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetConfirmHelp", nil)
+}
+
+// ConsulPrefixSetBatchPreview says "本批候选键删除完整预览"
+// in the language the app shows.
+func ConsulPrefixSetBatchPreview() string { return In(i18n.Locale()).ConsulPrefixSetBatchPreview() }
+
+// ConsulPrefixSetBatchPreview says "本批候选键删除完整预览"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetBatchPreview() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetBatchPreview", nil)
+}
+
+// ConsulPrefixSetCancelConfirmation says "取消本批确认"
+// in the language the app shows.
+func ConsulPrefixSetCancelConfirmation() string {
+	return In(i18n.Locale()).ConsulPrefixSetCancelConfirmation()
+}
+
+// ConsulPrefixSetCancelConfirmation says "取消本批确认"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetCancelConfirmation() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetCancelConfirmation", nil)
+}
+
+// ConsulPrefixSetSubmitBatch says "确认并删除本批候选键"
+// in the language the app shows.
+func ConsulPrefixSetSubmitBatch() string { return In(i18n.Locale()).ConsulPrefixSetSubmitBatch() }
+
+// ConsulPrefixSetSubmitBatch says "确认并删除本批候选键"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetSubmitBatch() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetSubmitBatch", nil)
+}
+
+// ConsulPrefixSetObservation says "完整候选原始观察"
+// in the language the app shows.
+func ConsulPrefixSetObservation() string { return In(i18n.Locale()).ConsulPrefixSetObservation() }
+
+// ConsulPrefixSetObservation says "完整候选原始观察"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetObservation() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetObservation", nil)
+}
+
+// ConsulPrefixSetLedger says "分批删除进度与回执"
+// in the language the app shows.
+func ConsulPrefixSetLedger() string { return In(i18n.Locale()).ConsulPrefixSetLedger() }
+
+// ConsulPrefixSetLedger says "分批删除进度与回执"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetLedger() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetLedger", nil)
+}
+
+// ConsulPrefixSetObservationShort says "原始观察"
+// in the language the app shows.
+func ConsulPrefixSetObservationShort() string {
+	return In(i18n.Locale()).ConsulPrefixSetObservationShort()
+}
+
+// ConsulPrefixSetObservationShort says "原始观察"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetObservationShort() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetObservationShort", nil)
+}
+
+// ConsulPrefixSetLedgerShort says "进度与回执"
+// in the language the app shows.
+func ConsulPrefixSetLedgerShort() string { return In(i18n.Locale()).ConsulPrefixSetLedgerShort() }
+
+// ConsulPrefixSetLedgerShort says "进度与回执"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetLedgerShort() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetLedgerShort", nil)
+}
+
+// ConsulPrefixSetObservationHelp says "此完整原观察不确认写入；各批的实际结果以其原事务回执为准。"
+// in the language the app shows.
+func ConsulPrefixSetObservationHelp() string {
+	return In(i18n.Locale()).ConsulPrefixSetObservationHelp()
+}
+
+// ConsulPrefixSetObservationHelp says "此完整原观察不确认写入；各批的实际结果以其原事务回执为准。"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetObservationHelp() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetObservationHelp", nil)
+}
+
+// ConsulPrefixSetLedgerHelp says "…"
+// in the language the app shows.
+func ConsulPrefixSetLedgerHelp() string { return In(i18n.Locale()).ConsulPrefixSetLedgerHelp() }
+
+// ConsulPrefixSetLedgerHelp says "…"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetLedgerHelp() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetLedgerHelp", nil)
+}
+
+// ConsulPrefixSetOriginalReceipt says "第 %d 批原事务回执"
+// in the language the app shows.
+func ConsulPrefixSetOriginalReceipt() string {
+	return In(i18n.Locale()).ConsulPrefixSetOriginalReceipt()
+}
+
+// ConsulPrefixSetOriginalReceipt says "第 %d 批原事务回执"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetOriginalReceipt() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetOriginalReceipt", nil)
+}
+
+// ConsulPrefixSetBatchOutcome says "第 %d 批：%s（%d 个键）"
+// in the language the app shows.
+func ConsulPrefixSetBatchOutcome() string { return In(i18n.Locale()).ConsulPrefixSetBatchOutcome() }
+
+// ConsulPrefixSetBatchOutcome says "第 %d 批：%s（%d 个键）"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetBatchOutcome() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetBatchOutcome", nil)
+}
+
+// ConsulPrefixSetBatchReceipt says "本批原事务回执"
+// in the language the app shows.
+func ConsulPrefixSetBatchReceipt() string { return In(i18n.Locale()).ConsulPrefixSetBatchReceipt() }
+
+// ConsulPrefixSetBatchReceipt says "本批原事务回执"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetBatchReceipt() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetBatchReceipt", nil)
+}
+
+// ConsulPrefixSetBatchReceiptJSON says "本批原事务回执 JSON"
+// in the language the app shows.
+func ConsulPrefixSetBatchReceiptJSON() string {
+	return In(i18n.Locale()).ConsulPrefixSetBatchReceiptJSON()
+}
+
+// ConsulPrefixSetBatchReceiptJSON says "本批原事务回执 JSON"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetBatchReceiptJSON() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetBatchReceiptJSON", nil)
+}
+
+// ConsulPrefixSetActivity says "已确认的前缀候选键分批删除"
+// in the language the app shows.
+func ConsulPrefixSetActivity() string { return In(i18n.Locale()).ConsulPrefixSetActivity() }
+
+// ConsulPrefixSetActivity says "已确认的前缀候选键分批删除"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetActivity() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetActivity", nil)
+}
+
+// ConsulPrefixSetOriginalInvalid says "原候选集合已失效，禁止继续提交"
+// in the language the app shows.
+func ConsulPrefixSetOriginalInvalid() string {
+	return In(i18n.Locale()).ConsulPrefixSetOriginalInvalid()
+}
+
+// ConsulPrefixSetOriginalInvalid says "原候选集合已失效，禁止继续提交"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetOriginalInvalid() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetOriginalInvalid", nil)
+}
+
+// ConsulPrefixSetProgress says "已确认 %d/%d 批（%d 键）；失败 %d 键，未知 %d 键，尚未开始 %d 键"
+// in the language the app shows.
+func ConsulPrefixSetProgress() string { return In(i18n.Locale()).ConsulPrefixSetProgress() }
+
+// ConsulPrefixSetProgress says "已确认 %d/%d 批（%d 键）；失败 %d 键，未知 %d 键，尚未开始 %d 键"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetProgress() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetProgress", nil)
+}
+
+// ConsulPrefixSetLoading says "正在捕获完整前缀候选键…"
+// in the language the app shows.
+func ConsulPrefixSetLoading() string { return In(i18n.Locale()).ConsulPrefixSetLoading() }
+
+// ConsulPrefixSetLoading says "正在捕获完整前缀候选键…"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetLoading() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetLoading", nil)
+}
+
+// ConsulPrefixSetExportContent says "导出完整内容"
+// in the language the app shows.
+func ConsulPrefixSetExportContent() string { return In(i18n.Locale()).ConsulPrefixSetExportContent() }
+
+// ConsulPrefixSetExportContent says "导出完整内容"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetExportContent() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetExportContent", nil)
+}
+
+// ConsulPrefixSetCopyContent says "复制完整内容"
+// in the language the app shows.
+func ConsulPrefixSetCopyContent() string { return In(i18n.Locale()).ConsulPrefixSetCopyContent() }
+
+// ConsulPrefixSetCopyContent says "复制完整内容"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefixSetCopyContent() string {
+	return Catalog.Format(msgs.locale, "consulPrefixSetCopyContent", nil)
+}
