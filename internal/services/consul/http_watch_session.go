@@ -15,7 +15,7 @@ func (s *Session) ReserveKVHTTPWatch(document uint64) (contract.KVHTTPWatchLease
 	if document == 0 {
 		return nil, ErrInvalid
 	}
-	if len(s.leases)+len(s.dataLeases)+len(s.watchLeases) >= 32 {
+	if len(s.leases)+len(s.dataLeases)+len(s.watchLeases)+len(s.renewalLeases) >= 32 {
 		return nil, contract.ErrKVLeaseLimit
 	}
 	for l := range s.watchLeases {

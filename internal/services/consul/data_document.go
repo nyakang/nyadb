@@ -70,7 +70,7 @@ func (s *Session) reserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 	if s.closed || s.revoked || !s.root.Alive() {
 		return nil, contract.ErrRevoked
 	}
-	if len(s.leases)+len(s.dataLeases)+len(s.watchLeases) >= 32 {
+	if len(s.leases)+len(s.dataLeases)+len(s.watchLeases)+len(s.renewalLeases) >= 32 {
 		return nil, contract.ErrKVLeaseLimit
 	}
 	l.ctx, l.cancel = context.WithCancel(s.ctx)

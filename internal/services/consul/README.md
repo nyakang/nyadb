@@ -395,3 +395,50 @@ scope. Final acceptance uses official 2.0.2 anonymous/token/TLS/mTLS and 1.22.3 
 fixtures, plus the two original default transaction-limit probes. TTL renewal,
 live-prefix deletion, management/registration, archives, Enterprise/HA and the
 complete database/middleware alignment remain separate work.
+
+
+## Private bounded HTTP Session renewal foundation
+
+`KVHTTPSessionRenewalProvider` reserves a distinct lease for one original profile,
+configuration and document. Its immutable one-use preparation authorizes a UUID,
+an interval (100 ms–1 hour), at most 256 PUTs, and at most 256 MiB of evidence.
+Start first reads that UUID's native session info and preserves the complete HTTP
+response. Missing/invalid UUID, TTL, node, lock delay or behavior prevents renewal;
+the native TTL must exceed the authored interval. The first PUT follows that
+observation; each subsequent interval begins after the preceding response, with
+at most one request in flight. No timer claims an exact server expiry time.
+
+Each actual PUT has its own full status/headers/trailers/body and acknowledgement.
+A changed or incomplete session projection stops further requests without
+rewriting a known native ACK. Actual lost/partial/408/5xx/timeout/cancellation or
+mismatched-UUID replies retain an unknown-write terminal and prohibit reuse,
+clearing receipts, or further writes on that lease. A later read cannot confirm
+that original write. The archive includes initial GET and every PUT, with local
+receipt ordinals/time kept separate from native fields. Indexed polling never
+evicts the original archive; copying a snapshot cannot mutate it.
+
+Start reserves the entire authored budget plus a 128 MiB terminal slot before
+connecting. A complete or partial final receipt above the authored budget is
+retained and terminates the run, including when the initial GET exhausts the
+budget. Request, data, Watch and renewal leases share the 32-lease limit and the
+original session receipt budget. Stop/close/retirement wait for the original
+executor; stop never destroys the native Session. Recovery transfers only settled
+original evidence, accounting and the unknown barrier into an unconnected lease,
+with no new GET/PUT and no transferred preparation. Late original run Close
+cannot delete a transferred archive or cancel a newer run.
+
+`--session-renewal --race --txn-max-request 8388608 --test-timeout 1800
+--memory-mib 2048` requires the seven new original adapter/runtime parents plus all
+96 retained public Watch/regression parents. `--session-renewal-probe` is only a
+diagnostic. Verification uses official 2.0.2 anonymous/token/TLS/mTLS and 1.22.3
+token, including actual TTL-spanning renewal, native read/write ACL denial, gone
+sessions, processed reply faults, original generation replacement, and evidence
+transfer. The two original default transaction-limit probes remain separate.
+
+This foundation publishes no renewal command or UI. The existing KV workspace
+must separately provide explicit immutable write confirmation, original-document
+parking and ACK handling, indexed bounded preview, complete immutable exports,
+and a barrier shared with *all* other write tools in the same document before
+public acceptance. HTTP Watch authorization never authorizes renewal. Service,
+health, registration and ACL management, live-prefix deletion, full archives,
+Enterprise/HA and every remaining Navicat/DBX integration gap stay independent.

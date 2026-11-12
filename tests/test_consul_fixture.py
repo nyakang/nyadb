@@ -480,3 +480,26 @@ class ConsulFixtureTests(unittest.TestCase):
                      ['--public-prefix-set', '--copy-limit-probe'], ['--public-prefix-set', '--test-timeout', '0']):
             with self.subTest(args=args), patch('sys.argv', [str(ROOT/'tools/verify_consul_fixture.py'), *args]), patch('subprocess.run', side_effect=AssertionError('CLI started fixture before validating public batch scope')), self.assertRaises(ValueError):
                 runpy.run_path(str(ROOT/'tools/verify_consul_fixture.py'), run_name='__main__')
+
+
+class ConsulSessionRenewalFixtureTests(unittest.TestCase):
+    def test_native_renewal_parents_cannot_skip_recovery_acl_or_reply_faults(self):
+        required = fixture.SESSION_RENEWAL_REQUIRED
+        self.assertEqual(len(set(required)), 7)
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ',
+                                                   '--- SKIP: TestConsulNative'+name+' '), required)
+        for flags in ({'session_renewal':True}, {'public_http_watch':True}, {'http_watch_probe':True}):
+            with self.assertRaises(ValueError):
+                fixture.verify(session_renewal_probe=True, **flags)
+        with self.assertRaises(ValueError):
+            fixture.verify(session_renewal=True, probe=True)
+        hashes = fixture.source_hashes()
+        for name in ('internal/db/contract/kv_http_session_renewal.go',
+                     'internal/services/consul/http_session_renewal_execute.go',
+                     'internal/services/consul/http_session_renewal_native_integration_test.go',
+                     'internal/services/dbruntime/consul_http_session_renewal_native_integration_test.go'):
+            self.assertIn(name, hashes)

@@ -40,6 +40,7 @@ type Session struct {
 	leases                     map[*documentLease]bool
 	dataLeases                 map[*dataLease]bool
 	watchLeases                map[*httpWatchLease]bool
+	renewalLeases              map[*httpSessionRenewalLease]bool
 	opener                     func(context.Context) (*Client, OpenEvidence, error)
 	retained, reserved, budget int64 // guarded by receiptBudgetMu
 	rootBytes                  int64
@@ -199,7 +200,7 @@ func (s *Session) ReserveKV(document uint64) (contract.KVRequestLease, error) {
 	if document == 0 {
 		return nil, ErrInvalid
 	}
-	if len(s.leases)+len(s.dataLeases)+len(s.watchLeases) >= 32 {
+	if len(s.leases)+len(s.dataLeases)+len(s.watchLeases)+len(s.renewalLeases) >= 32 {
 		return nil, contract.ErrKVLeaseLimit
 	}
 	for l := range s.leases {
@@ -316,6 +317,10 @@ func (s *Session) Close() error {
 	for l := range s.watchLeases {
 		watchLeases = append(watchLeases, l)
 	}
+	renewalLeases := make([]*httpSessionRenewalLease, 0, len(s.renewalLeases))
+	for l := range s.renewalLeases {
+		renewalLeases = append(renewalLeases, l)
+	}
 	s.mu.Unlock()
 	err := s.root.Close()
 	for _, l := range dataLeases {
@@ -325,6 +330,9 @@ func (s *Session) Close() error {
 		err = errors.Join(err, l.retire())
 	}
 	for _, l := range watchLeases {
+		err = errors.Join(err, l.retire())
+	}
+	for _, l := range renewalLeases {
 		err = errors.Join(err, l.retire())
 	}
 	s.work.Wait()
