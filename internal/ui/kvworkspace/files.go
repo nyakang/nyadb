@@ -70,7 +70,7 @@ func EncodeRequest(r contract.KVRequest) ([]byte, error) {
 			return nil, err
 		}
 	}
-	supported := r.Method == HTTPWatchMethod || r.Method == contract.KVConsulHTTPRequestMethod || r.Method == SnapshotMethod || r.Method == AlarmsMethod || r.Method == MembersMethod || r.Method == CompactMethod || eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method) || r.Method == AuthManagementMethod
+	supported := r.Method == HTTPSessionRenewalMethod || r.Method == HTTPWatchMethod || r.Method == contract.KVConsulHTTPRequestMethod || r.Method == SnapshotMethod || r.Method == AlarmsMethod || r.Method == MembersMethod || r.Method == CompactMethod || eventMethod(r.Method) || r.Method == RenewalMethod || leaseBrowserMethod(r.Method) || r.Method == AuthManagementMethod
 	for _, m := range methods {
 		if m.Path == r.Method {
 			supported = true
@@ -231,6 +231,9 @@ func draftFilename(method string) string {
 	if method == RenewalMethod {
 		return "LeaseRenewal.nyakv"
 	}
+	if method == HTTPSessionRenewalMethod {
+		return "HTTPSessionRenewal.nyakv"
+	}
 	if method == HTTPWatchMethod {
 		return "HTTPWatch.nyakv"
 	}
@@ -337,7 +340,7 @@ func (s *State) consumeFiles(d *Document) {
 			}
 			return
 		}
-		if job.kind == "copy-http-watch" || job.kind == "copy-events" || job.kind == "copy-renewal" || job.kind == "copy-leases" {
+		if job.kind == "copy-http-session-renewal" || job.kind == "copy-http-watch" || job.kind == "copy-events" || job.kind == "copy-renewal" || job.kind == "copy-leases" {
 			if !job.canceled && job.clipboard != nil {
 				job.clipboard(r.clipboard)
 			}
@@ -360,6 +363,7 @@ func (s *State) consumeFiles(d *Document) {
 			d.releaseAlarmAuthority()
 			d.method = r.request.Method
 			d.selectedHTTPWatch = d.method == HTTPWatchMethod
+			d.selectedHTTPSessionRenewal = d.method == HTTPSessionRenewalMethod
 			d.selectedMembers = d.method == MembersMethod
 			d.selectedAlarms = d.method == AlarmsMethod
 			d.Editor.Buffer.Set(r.request.JSON)

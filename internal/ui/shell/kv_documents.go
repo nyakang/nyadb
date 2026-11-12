@@ -14,6 +14,12 @@ func (s *State) kvWorkspaceDependencies() kvworkspace.Dependencies {
 			}
 			return s.runtime.KVRequests(id)
 		},
+		HTTPSessionRenewalProviderFor: func(id int64) (contract.KVHTTPSessionRenewalProvider, error) {
+			if s.runtime == nil {
+				return nil, contract.ErrRevoked
+			}
+			return s.runtime.KVHTTPSessionRenewal(id)
+		},
 		HTTPWatchProviderFor: func(id int64) (contract.KVHTTPWatchProvider, error) {
 			if s.runtime == nil {
 				return nil, contract.ErrRevoked

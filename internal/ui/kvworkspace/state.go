@@ -19,20 +19,21 @@ const previewLimit = 64 << 10
 const inputLimit = 16 << 20
 
 type Dependencies struct {
-	ProviderFor          func(int64) (contract.KVRequestsProvider, error)
-	EventsProviderFor    func(int64) (contract.KVEventsProvider, error)
-	HTTPWatchProviderFor func(int64) (contract.KVHTTPWatchProvider, error)
-	RenewalProviderFor   func(int64) (contract.KVRenewalProvider, error)
-	ProfileName          func(int64) string
-	Active               func(*Document) bool
-	Activate             func(*Document)
-	ConnectProfile       func(ui.Services, int64)
-	EditFocus            *string
-	EditTarget           func(theme.EditTarget)
-	Status               func(string)
-	Files                Files
-	SnapshotArtifacts    contract.KVSnapshotArtifacts
-	SnapshotFiles        SnapshotFiles
+	ProviderFor                   func(int64) (contract.KVRequestsProvider, error)
+	EventsProviderFor             func(int64) (contract.KVEventsProvider, error)
+	HTTPWatchProviderFor          func(int64) (contract.KVHTTPWatchProvider, error)
+	HTTPSessionRenewalProviderFor func(int64) (contract.KVHTTPSessionRenewalProvider, error)
+	RenewalProviderFor            func(int64) (contract.KVRenewalProvider, error)
+	ProfileName                   func(int64) string
+	Active                        func(*Document) bool
+	Activate                      func(*Document)
+	ConnectProfile                func(ui.Services, int64)
+	EditFocus                     *string
+	EditTarget                    func(theme.EditTarget)
+	Status                        func(string)
+	Files                         Files
+	SnapshotArtifacts             contract.KVSnapshotArtifacts
+	SnapshotFiles                 SnapshotFiles
 }
 type Receipt struct {
 	Scope           contract.KVScope
@@ -105,6 +106,8 @@ type operation struct {
 // Document is UI-thread owned. Workers capture immutable requests and their
 // original lease; private buffered channels are consumed only by State.Consume.
 type Document struct {
+	httpSessionRenewal                                      *httpSessionRenewalState
+	httpSessionRenewalAvailable, selectedHTTPSessionRenewal bool
 	httpWatch                                               *httpWatchState
 	httpWatchAvailable, selectedHTTPWatch                   bool
 	httpHeaders                                             bool
@@ -158,6 +161,7 @@ type Document struct {
 	browserColumns, browserKeysColumns                      ui.ListState
 }
 type leaveStamp struct {
+	httpSessionRenewalRevision              uint64
 	httpWatchRevision                       uint64
 	toolRevision                            uint64
 	request                                 contract.KVRequest
@@ -175,6 +179,9 @@ type leaveStamp struct {
 func (d *Document) ID() uint64       { return d.id }
 func (d *Document) ProfileID() int64 { return d.profileID }
 func (d *Document) Scope() contract.KVScope {
+	if d.method == HTTPSessionRenewalMethod {
+		return httpSessionRenewalScope(d)
+	}
 	if d.method == HTTPWatchMethod {
 		return watchScope(d)
 	}
@@ -196,16 +203,22 @@ func (d *Document) Dirty() bool {
 	return !d.closed && (d.Request() != d.saved || d.hasRequestToolDraft())
 }
 func (d *Document) Busy() bool {
-	return d.job != nil || d.eventJob != nil || d.renewalJob != nil || d.httpWatchBusy()
+	return d.job != nil || d.eventJob != nil || d.renewalJob != nil || d.httpWatchBusy() || d.httpSessionRenewalBusy()
 }
 func (d *Document) FileBusy() bool { return d.io != nil }
 func (d *Document) CancelRequested() bool {
+	if d.httpSessionRenewal != nil && (d.httpSessionRenewal.stopping || d.httpSessionRenewal.job != nil && d.httpSessionRenewal.job.canceled) {
+		return true
+	}
 	if d.httpWatch != nil && d.httpWatch.job != nil && d.httpWatch.job.canceled {
 		return true
 	}
 	return d.job != nil && d.job.canceled || d.eventJob != nil && d.eventJob.canceled || d.renewalJob != nil && d.renewalJob.canceled
 }
 func (d *Document) NeedsRecovery() bool {
+	if d.method == HTTPSessionRenewalMethod {
+		return d.httpSessionRenewal != nil && d.httpSessionRenewal.needsRecovery || d.httpSessionRenewal == nil && d.needsRecovery
+	}
 	if d.method == HTTPWatchMethod {
 		return d.httpWatch != nil && d.httpWatch.needsRecovery || d.httpWatch == nil && d.needsRecovery
 	}
@@ -249,23 +262,24 @@ type leaveDecision struct {
 	next func(ui.Services)
 }
 type State struct {
-	deps                     Dependencies
-	documents                map[uint64]*Document
-	leave                    *leaveDecision
-	HTTPReceiptSplitPercent  float32
-	SplitPercent             float32
-	LeaseBrowserSplitPercent float32
-	AuthSplitPercent         float32
-	CompactionSplitPercent   float32
-	MembersSplitPercent      float32
-	AlarmsSplitPercent       float32
-	SnapshotSplitPercent     float32
-	HTTPWatchSplitPercent    float32
-	Invalidate               func()
+	deps                           Dependencies
+	documents                      map[uint64]*Document
+	leave                          *leaveDecision
+	HTTPReceiptSplitPercent        float32
+	SplitPercent                   float32
+	LeaseBrowserSplitPercent       float32
+	AuthSplitPercent               float32
+	CompactionSplitPercent         float32
+	MembersSplitPercent            float32
+	AlarmsSplitPercent             float32
+	SnapshotSplitPercent           float32
+	HTTPSessionRenewalSplitPercent float32
+	HTTPWatchSplitPercent          float32
+	Invalidate                     func()
 }
 
 func New(deps Dependencies) *State {
-	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50, HTTPWatchSplitPercent: 50, HTTPReceiptSplitPercent: 30, LeaseBrowserSplitPercent: 20, AuthSplitPercent: 65, CompactionSplitPercent: 70, MembersSplitPercent: 60, AlarmsSplitPercent: 70, SnapshotSplitPercent: 70}
+	return &State{deps: deps, documents: map[uint64]*Document{}, SplitPercent: 50, HTTPWatchSplitPercent: 50, HTTPSessionRenewalSplitPercent: 55, HTTPReceiptSplitPercent: 30, LeaseBrowserSplitPercent: 20, AuthSplitPercent: 65, CompactionSplitPercent: 70, MembersSplitPercent: 60, AlarmsSplitPercent: 70, SnapshotSplitPercent: 70}
 }
 func (s *State) owned(d *Document) bool { return d != nil && !d.closed && s.documents[d.id] == d }
 func (s *State) active(d *Document) bool {
@@ -298,12 +312,17 @@ func (s *State) Open(id uint64, profile int64, request contract.KVRequest) *Docu
 	ctx, cancel := context.WithCancel(context.Background())
 	buffer := editor.NewBuffer(request.JSON)
 	buffer.SetLanguage(editor.LanguageNamed("JSON"))
-	d := &Document{id: id, profileID: profile, method: request.Method, selectedAlarms: request.Method == AlarmsMethod, selectedHTTPWatch: request.Method == HTTPWatchMethod, saved: request, Editor: &editor.State{Buffer: buffer}, ctx: ctx, cancel: cancel, focus: true}
+	d := &Document{id: id, profileID: profile, method: request.Method, selectedAlarms: request.Method == AlarmsMethod, selectedHTTPWatch: request.Method == HTTPWatchMethod, selectedHTTPSessionRenewal: request.Method == HTTPSessionRenewalMethod, saved: request, Editor: &editor.State{Buffer: buffer}, ctx: ctx, cancel: cancel, focus: true}
 	d.presentation = presentation
 	if p, ok := provider.(contract.KVRequestBuilderProvider); ok && providerErr == nil {
 		d.requestBuilder = p.KVRequestBuilder()
 	}
 	s.documents[id] = d
+	if s.deps.HTTPSessionRenewalProviderFor != nil {
+		if p, err := s.deps.HTTPSessionRenewalProviderFor(profile); err == nil && p != nil && p.KVScope().Namespace.ProfileID == profile {
+			d.httpSessionRenewalAvailable = true
+		}
+	}
 	if s.deps.HTTPWatchProviderFor != nil {
 		if p, err := s.deps.HTTPWatchProviderFor(profile); err == nil && p != nil && p.KVScope().Namespace.ProfileID == profile {
 			d.httpWatchAvailable = true
@@ -346,6 +365,10 @@ func (s *State) SetMethod(d *Document, method string) {
 	if s.owned(d) && !d.Busy() && d.method != method {
 		d.method = method
 		d.selectedHTTPWatch = method == HTTPWatchMethod
+		d.selectedHTTPSessionRenewal = method == HTTPSessionRenewalMethod
+		if method == HTTPSessionRenewalMethod {
+			d.httpSessionRenewalState()
+		}
 		if method == HTTPWatchMethod {
 			d.httpWatchState()
 		}
@@ -357,6 +380,9 @@ func (s *State) SetMethod(d *Document, method string) {
 		d.leaseManagement = nil
 		d.authDraft = nil
 		d.renewalConfirmation = nil
+		if d.httpSessionRenewal != nil {
+			d.httpSessionRenewal.confirmation = nil
+		}
 		d.permit = nil
 	}
 }
@@ -422,6 +448,10 @@ func (s *State) start(d *Document, kind string, authored contract.KVRequest, wor
 	}()
 }
 func (s *State) Preconnect(d *Document) {
+	if s.owned(d) && d.method == HTTPSessionRenewalMethod {
+		s.httpSessionRenewalLeaseFor(d)
+		return
+	}
 	if s.owned(d) && d.method == HTTPWatchMethod {
 		s.httpWatchLeaseFor(d)
 		return
@@ -444,6 +474,10 @@ func (s *State) Preconnect(d *Document) {
 // Run prepares on the UI thread. Writes require a separate explicit confirmation
 // of the same authored text, canonical snapshot and original lease.
 func (s *State) Run(d *Document) {
+	if s.owned(d) && d.method == HTTPSessionRenewalMethod {
+		s.PrepareHTTPSessionRenewal(d)
+		return
+	}
 	if s.owned(d) && d.method == HTTPWatchMethod {
 		s.StartHTTPWatch(d)
 		return
@@ -565,6 +599,9 @@ func (s *State) CancelConfirmation(d *Document) {
 			d.authDraft.password = ""
 		}
 		d.renewalConfirmation = nil
+		if d.httpSessionRenewal != nil {
+			d.httpSessionRenewal.confirmation = nil
+		}
 		d.confirmation = nil
 		d.leaseManagement = nil
 		d.authDraft = nil
@@ -572,6 +609,7 @@ func (s *State) CancelConfirmation(d *Document) {
 }
 func (s *State) RequestCancel(d *Document) {
 	s.StopHTTPWatch(d)
+	s.StopHTTPSessionRenewal(d)
 	if s.owned(d) && d.renewalJob != nil {
 		d.renewalJob.canceled = true
 		d.renewalJob.cancel()
@@ -586,6 +624,10 @@ func (s *State) RequestCancel(d *Document) {
 	}
 }
 func (s *State) Recover(d *Document) {
+	if s.owned(d) && d.method == HTTPSessionRenewalMethod {
+		s.RecoverHTTPSessionRenewal(d)
+		return
+	}
 	if s.owned(d) && d.method == HTTPWatchMethod {
 		s.RecoverHTTPWatch(d)
 		return
@@ -668,6 +710,7 @@ func (s *State) Consume() {
 		s.consumeRenewal(d)
 		s.consumeEvents(d)
 		s.consumeHTTPWatch(d)
+		s.consumeHTTPSessionRenewal(d)
 		s.validateSnapshotConfirmation(d)
 		if d.confirmation != nil && d.confirmation.editor != d.Request() {
 			d.confirmation = nil
@@ -784,8 +827,12 @@ func (s *State) DisconnectProfile(id int64) {
 			}
 			d.needsRecovery = true
 			d.httpWatchState().needsRecovery = true
+			d.httpSessionRenewalState().needsRecovery = true
 			d.renewalNeedsRecovery = true
 			d.renewalConfirmation = nil
+			if d.httpSessionRenewal != nil {
+				d.httpSessionRenewal.confirmation = nil
+			}
 			d.eventNeedsRecovery = true
 			d.confirmation = nil
 			if d.snapshot != nil {
@@ -799,10 +846,10 @@ func (s *State) GuardLeave(d *Document, next func(ui.Services)) bool {
 	if !s.owned(d) {
 		return false
 	}
-	if d.permit != nil && d.permit.httpWatchRevision == d.httpWatchRevision() && d.permit.toolRevision == d.requestToolRevision() && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && d.permit.compaction == d.compactionObservation && d.permit.memberRevision == d.memberRevision() && d.permit.alarmRevision == d.alarmRevision() && d.permit.snapshotRevision == d.snapshotRevision() && !d.Busy() && !d.FileBusy() {
+	if d.permit != nil && d.permit.httpSessionRenewalRevision == d.httpSessionRenewalRevision() && d.permit.httpWatchRevision == d.httpWatchRevision() && d.permit.toolRevision == d.requestToolRevision() && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && d.permit.compaction == d.compactionObservation && d.permit.memberRevision == d.memberRevision() && d.permit.alarmRevision == d.alarmRevision() && d.permit.snapshotRevision == d.snapshotRevision() && !d.Busy() && !d.FileBusy() {
 		return false
 	}
-	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && !d.memberContent() && !d.alarmContent() && !d.snapshotContent() && (d.httpWatch == nil || d.httpWatch.run == nil) && d.leaseManagement == nil && d.authDraft == nil && d.compactionObservation == nil && (d.confirmation == nil || d.confirmation.alarms == nil && d.confirmation.members == nil && d.confirmation.management == nil && d.confirmation.auth == nil && d.confirmation.compaction == nil) {
+	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && !d.memberContent() && !d.alarmContent() && !d.snapshotContent() && (d.httpWatch == nil || d.httpWatch.run == nil) && !d.httpSessionRenewalContent() && (d.httpSessionRenewal == nil || d.httpSessionRenewal.confirmation == nil) && d.leaseManagement == nil && d.authDraft == nil && d.compactionObservation == nil && (d.confirmation == nil || d.confirmation.alarms == nil && d.confirmation.members == nil && d.confirmation.management == nil && d.confirmation.auth == nil && d.confirmation.compaction == nil) {
 		return false
 	}
 	s.leave = &leaveDecision{doc: d, next: next}
@@ -826,7 +873,7 @@ func (s *State) DecideLeave(services ui.Services, discard bool) {
 	next := s.leave.next
 	s.leave = nil
 	s.CancelConfirmation(d)
-	d.permit = &leaveStamp{httpWatchRevision: d.httpWatchRevision(), toolRevision: d.requestToolRevision(), request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail, compaction: d.compactionObservation, memberRevision: d.memberRevision(), alarmRevision: d.alarmRevision(), snapshotRevision: d.snapshotRevision()}
+	d.permit = &leaveStamp{httpSessionRenewalRevision: d.httpSessionRenewalRevision(), httpWatchRevision: d.httpWatchRevision(), toolRevision: d.requestToolRevision(), request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail, compaction: d.compactionObservation, memberRevision: d.memberRevision(), alarmRevision: d.alarmRevision(), snapshotRevision: d.snapshotRevision()}
 	if next != nil {
 		next(services)
 	}
@@ -851,6 +898,7 @@ func (s *State) Close(d *Document) {
 	d.closed = true
 	d.cancel()
 	s.closeHTTPWatch(d)
+	s.closeHTTPSessionRenewal(d)
 	if d.job != nil {
 		d.job.cancel()
 	}

@@ -392,12 +392,12 @@ again are separate explicit actions; stopping or recovering does not resume read
 and 808 original images per configuration, adds four required public Watch parents
 and 80 original-scope UI images. `--public-http-watch-probe` is a separate diagnostic
 scope. Final acceptance uses official 2.0.2 anonymous/token/TLS/mTLS and 1.22.3 token
-fixtures, plus the two original default transaction-limit probes. TTL renewal,
-live-prefix deletion, management/registration, archives, Enterprise/HA and the
-complete database/middleware alignment remain separate work.
+fixtures, plus the two original default transaction-limit probes. HTTP Session
+renewal is described below. Live-prefix deletion, management/registration, archives,
+Enterprise/HA and the complete database/middleware alignment remain separate work.
 
 
-## Private bounded HTTP Session renewal foundation
+## Bounded HTTP Session renewal foundation
 
 `KVHTTPSessionRenewalProvider` reserves a distinct lease for one original profile,
 configuration and document. Its immutable one-use preparation authorizes a UUID,
@@ -435,10 +435,36 @@ token, including actual TTL-spanning renewal, native read/write ACL denial, gone
 sessions, processed reply faults, original generation replacement, and evidence
 transfer. The two original default transaction-limit probes remain separate.
 
-This foundation publishes no renewal command or UI. The existing KV workspace
-must separately provide explicit immutable write confirmation, original-document
-parking and ACK handling, indexed bounded preview, complete immutable exports,
-and a barrier shared with *all* other write tools in the same document before
-public acceptance. HTTP Watch authorization never authorizes renewal. Service,
-health, registration and ACL management, live-prefix deletion, full archives,
-Enterprise/HA and every remaining Navicat/DBX integration gap stay independent.
+## Public HTTP Session renewal documents
+
+The existing KV workspace exposes HTTP Session Renewal through a separately
+injected optional provider. Form and JSON share one authored request; partial
+inputs can be saved without executing. Preview captures the original UUID,
+endpoint/DC, generation, interval, count, byte budget and provider preparation.
+Only an explicit checked confirmation starts the original GET and bounded PUTs.
+Editing, loading another request, changing method, replacing the lease or an
+unknown write invalidates that authority.
+
+Original indexed records remain on the original run. The UI consumes parked
+results only when their owning document returns. Stop, disconnect, replacement
+and close wait for executor acknowledgement, including cancellation while the
+start result is pending. Unknown renewal outcomes block all other writes in the
+same document, and existing unknown writes block renewal. Later reads and Watch
+observations never settle those writes. Clearing known receipts and starting
+another run are separate explicit actions.
+
+Copy/export capture complete immutable evidence before clipboard/picker waits.
+The native body is retained separately from the optional Session projection;
+LockDelay uses precise unsigned decimal text. Recovery retains the original
+scope and records, reserving a new unconnected lease without executing. Cancelled
+late transfers and providers returning only a complete snapshot preserve evidence.
+
+`--public-session-renewal --race --txn-max-request 8388608 --test-timeout 1800
+--memory-mib 2048` retains all 103 foundation/regression parents and 888 existing
+images per configuration, adding five required public workspace/Shell parents
+and 128 renewal images. `--public-session-renewal-probe` is only a diagnostic.
+The official five configurations and two default transaction-limit probes remain
+required for full acceptance. HTTP Watch authorization never authorizes renewal.
+Service, health, registration and ACL management, live-prefix deletion, full
+archives, Enterprise/HA and every remaining Navicat/DBX integration gap remain
+independent.

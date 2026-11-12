@@ -37945,3 +37945,321 @@ func HttpWatchObservedDifferences() string { return In(i18n.Locale()).HttpWatchO
 func (msgs Messages) HttpWatchObservedDifferences() string {
 	return Catalog.Format(msgs.locale, "httpWatchObservedDifferences", nil)
 }
+
+// HttpSessionRenewalForm says "续租表单"
+// in the language the app shows.
+func HttpSessionRenewalForm() string { return In(i18n.Locale()).HttpSessionRenewalForm() }
+
+// HttpSessionRenewalForm says "续租表单"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalForm() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalForm", nil)
+}
+
+// HttpSessionRenewalJSON says "续租 JSON"
+// in the language the app shows.
+func HttpSessionRenewalJSON() string { return In(i18n.Locale()).HttpSessionRenewalJSON() }
+
+// HttpSessionRenewalJSON says "续租 JSON"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalJSON() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalJSON", nil)
+}
+
+// HttpSessionRenewalInvalidJSON says "请求 JSON 无效；请切换 JSON 编辑或使用请求模板"
+// in the language the app shows.
+func HttpSessionRenewalInvalidJSON() string { return In(i18n.Locale()).HttpSessionRenewalInvalidJSON() }
+
+// HttpSessionRenewalInvalidJSON says "请求 JSON 无效；请切换 JSON 编辑或使用请求模板"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalInvalidJSON() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalInvalidJSON", nil)
+}
+
+// HttpSessionRenewalUUID says "Session UUID"
+// in the language the app shows.
+func HttpSessionRenewalUUID() string { return In(i18n.Locale()).HttpSessionRenewalUUID() }
+
+// HttpSessionRenewalUUID says "Session UUID"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalUUID() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalUUID", nil)
+}
+
+// HttpSessionRenewalInterval says "续租间隔"
+// in the language the app shows.
+func HttpSessionRenewalInterval() string { return In(i18n.Locale()).HttpSessionRenewalInterval() }
+
+// HttpSessionRenewalInterval says "续租间隔"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalInterval() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalInterval", nil)
+}
+
+// HttpSessionRenewalCount says "最多续租次数"
+// in the language the app shows.
+func HttpSessionRenewalCount() string { return In(i18n.Locale()).HttpSessionRenewalCount() }
+
+// HttpSessionRenewalCount says "最多续租次数"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalCount() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalCount", nil)
+}
+
+// HttpSessionRenewalBytes says "记录预算（字节）"
+// in the language the app shows.
+func HttpSessionRenewalBytes() string { return In(i18n.Locale()).HttpSessionRenewalBytes() }
+
+// HttpSessionRenewalBytes says "记录预算（字节）"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalBytes() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalBytes", nil)
+}
+
+// HttpSessionRenewalLimits says "间隔 100ms 至 1h；次数 1 至 256；预算最多 256 MiB；原 TTL 必须大于间隔"
+// in the language the app shows.
+func HttpSessionRenewalLimits() string { return In(i18n.Locale()).HttpSessionRenewalLimits() }
+
+// HttpSessionRenewalLimits says "间隔 100ms 至 1h；次数 1 至 256；预算最多 256 MiB；原 TTL 必须大于间隔"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalLimits() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalLimits", nil)
+}
+
+// HttpSessionRenewalRecordActions says "HTTP Session 记录操作"
+// in the language the app shows.
+func HttpSessionRenewalRecordActions() string {
+	return In(i18n.Locale()).HttpSessionRenewalRecordActions()
+}
+
+// HttpSessionRenewalRecordActions says "HTTP Session 记录操作"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalRecordActions() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalRecordActions", nil)
+}
+
+// HttpSessionRenewalEmpty says "明确确认后显示原 Session 读取与逐次续租回执"
+// in the language the app shows.
+func HttpSessionRenewalEmpty() string { return In(i18n.Locale()).HttpSessionRenewalEmpty() }
+
+// HttpSessionRenewalEmpty says "明确确认后显示原 Session 读取与逐次续租回执"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalEmpty() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalEmpty", nil)
+}
+
+// HttpSessionRenewalRunning says "正在续租原 HTTP Session"
+// in the language the app shows.
+func HttpSessionRenewalRunning() string { return In(i18n.Locale()).HttpSessionRenewalRunning() }
+
+// HttpSessionRenewalRunning says "正在续租原 HTTP Session"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalRunning() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalRunning", nil)
+}
+
+// HttpSessionRenewalStopped says "原 HTTP Session 续租已停止"
+// in the language the app shows.
+func HttpSessionRenewalStopped() string { return In(i18n.Locale()).HttpSessionRenewalStopped() }
+
+// HttpSessionRenewalStopped says "原 HTTP Session 续租已停止"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalStopped() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalStopped", nil)
+}
+
+// HttpSessionRenewalAttempts says "原间隔 %s · 已尝试 %d / %d · 已确认成功 %d"
+// in the language the app shows.
+func HttpSessionRenewalAttempts() string { return In(i18n.Locale()).HttpSessionRenewalAttempts() }
+
+// HttpSessionRenewalAttempts says "原间隔 %s · 已尝试 %d / %d · 已确认成功 %d"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalAttempts() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalAttempts", nil)
+}
+
+// HttpSessionRenewalRetained says "完整记录 %d · 已保留 %d / %d 字节"
+// in the language the app shows.
+func HttpSessionRenewalRetained() string { return In(i18n.Locale()).HttpSessionRenewalRetained() }
+
+// HttpSessionRenewalRetained says "完整记录 %d · 已保留 %d / %d 字节"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalRetained() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalRetained", nil)
+}
+
+// HttpSessionRenewalOverflow says "已超作者预算；完整终末响应单独保留，续租已停止"
+// in the language the app shows.
+func HttpSessionRenewalOverflow() string { return In(i18n.Locale()).HttpSessionRenewalOverflow() }
+
+// HttpSessionRenewalOverflow says "已超作者预算；完整终末响应单独保留，续租已停止"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalOverflow() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalOverflow", nil)
+}
+
+// HttpSessionRenewalStopMeaning says "停止不销毁 Session，也不表示已经过期；恢复不会重新续租"
+// in the language the app shows.
+func HttpSessionRenewalStopMeaning() string { return In(i18n.Locale()).HttpSessionRenewalStopMeaning() }
+
+// HttpSessionRenewalStopMeaning says "停止不销毁 Session，也不表示已经过期；恢复不会重新续租"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalStopMeaning() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalStopMeaning", nil)
+}
+
+// HttpSessionRenewalOrdinal says "原续租记录序号（0 为初始读取）"
+// in the language the app shows.
+func HttpSessionRenewalOrdinal() string { return In(i18n.Locale()).HttpSessionRenewalOrdinal() }
+
+// HttpSessionRenewalOrdinal says "原续租记录序号（0 为初始读取）"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalOrdinal() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalOrdinal", nil)
+}
+
+// HttpSessionRenewalOriginalRecord says "HTTP Session 原记录"
+// in the language the app shows.
+func HttpSessionRenewalOriginalRecord() string {
+	return In(i18n.Locale()).HttpSessionRenewalOriginalRecord()
+}
+
+// HttpSessionRenewalOriginalRecord says "HTTP Session 原记录"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalOriginalRecord() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalOriginalRecord", nil)
+}
+
+// HttpSessionRenewalConfirmTitle says "确认 HTTP Session 续租"
+// in the language the app shows.
+func HttpSessionRenewalConfirmTitle() string {
+	return In(i18n.Locale()).HttpSessionRenewalConfirmTitle()
+}
+
+// HttpSessionRenewalConfirmTitle says "确认 HTTP Session 续租"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalConfirmTitle() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalConfirmTitle", nil)
+}
+
+// HttpSessionRenewalEndpoint says "原端点 %s · DC %s"
+// in the language the app shows.
+func HttpSessionRenewalEndpoint() string { return In(i18n.Locale()).HttpSessionRenewalEndpoint() }
+
+// HttpSessionRenewalEndpoint says "原端点 %s · DC %s"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalEndpoint() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalEndpoint", nil)
+}
+
+// HttpSessionRenewalBudget says "间隔 %s · 最多 %d 次 PUT · 记录预算 %d 字节"
+// in the language the app shows.
+func HttpSessionRenewalBudget() string { return In(i18n.Locale()).HttpSessionRenewalBudget() }
+
+// HttpSessionRenewalBudget says "间隔 %s · 最多 %d 次 PUT · 记录预算 %d 字节"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalBudget() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalBudget", nil)
+}
+
+// HttpSessionRenewalWrites says "先读取此 Session 的原 TTL，再开始有限续租；每次 PUT 都是独立写入。"
+// in the language the app shows.
+func HttpSessionRenewalWrites() string { return In(i18n.Locale()).HttpSessionRenewalWrites() }
+
+// HttpSessionRenewalWrites says "先读取此 Session 的原 TTL，再开始有限续租；每次 PUT 都是独立写入。"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalWrites() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalWrites", nil)
+}
+
+// HttpSessionRenewalOriginalRequest says "原 HTTP Session 续租请求"
+// in the language the app shows.
+func HttpSessionRenewalOriginalRequest() string {
+	return In(i18n.Locale()).HttpSessionRenewalOriginalRequest()
+}
+
+// HttpSessionRenewalOriginalRequest says "原 HTTP Session 续租请求"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalOriginalRequest() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalOriginalRequest", nil)
+}
+
+// HttpSessionRenewalAuthorize says "我授权按以上 UUID、间隔、次数和预算续租"
+// in the language the app shows.
+func HttpSessionRenewalAuthorize() string { return In(i18n.Locale()).HttpSessionRenewalAuthorize() }
+
+// HttpSessionRenewalAuthorize says "我授权按以上 UUID、间隔、次数和预算续租"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalAuthorize() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalAuthorize", nil)
+}
+
+// HttpSessionRenewalConfirm says "确认并开始续租"
+// in the language the app shows.
+func HttpSessionRenewalConfirm() string { return In(i18n.Locale()).HttpSessionRenewalConfirm() }
+
+// HttpSessionRenewalConfirm says "确认并开始续租"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalConfirm() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalConfirm", nil)
+}
+
+// HttpSessionRenewalClearFirst says "请先复制或导出，再明确清除原续租记录"
+// in the language the app shows.
+func HttpSessionRenewalClearFirst() string { return In(i18n.Locale()).HttpSessionRenewalClearFirst() }
+
+// HttpSessionRenewalClearFirst says "请先复制或导出，再明确清除原续租记录"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalClearFirst() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalClearFirst", nil)
+}
+
+// HttpSessionRenewalPreview says "预览 HTTP Session 续租"
+// in the language the app shows.
+func HttpSessionRenewalPreview() string { return In(i18n.Locale()).HttpSessionRenewalPreview() }
+
+// HttpSessionRenewalPreview says "预览 HTTP Session 续租"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalPreview() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalPreview", nil)
+}
+
+// HttpSessionRenewalStop says "停止 HTTP Session 续租"
+// in the language the app shows.
+func HttpSessionRenewalStop() string { return In(i18n.Locale()).HttpSessionRenewalStop() }
+
+// HttpSessionRenewalStop says "停止 HTTP Session 续租"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalStop() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalStop", nil)
+}
+
+// HttpSessionRenewalClear says "清除原续租记录"
+// in the language the app shows.
+func HttpSessionRenewalClear() string { return In(i18n.Locale()).HttpSessionRenewalClear() }
+
+// HttpSessionRenewalClear says "清除原续租记录"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalClear() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalClear", nil)
+}
+
+// HttpSessionRenewalHint says "指定原 Session UUID；先读取 TTL，再按明确间隔和次数逐次 PUT 续租"
+// in the language the app shows.
+func HttpSessionRenewalHint() string { return In(i18n.Locale()).HttpSessionRenewalHint() }
+
+// HttpSessionRenewalHint says "指定原 Session UUID；先读取 TTL，再按明确间隔和次数逐次 PUT 续租"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalHint() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalHint", nil)
+}
+
+// HttpSessionRenewalTab says "HTTP Session 续租记录"
+// in the language the app shows.
+func HttpSessionRenewalTab() string { return In(i18n.Locale()).HttpSessionRenewalTab() }
+
+// HttpSessionRenewalTab says "HTTP Session 续租记录"
+// in the language of msgs.
+func (msgs Messages) HttpSessionRenewalTab() string {
+	return Catalog.Format(msgs.locale, "httpSessionRenewalTab", nil)
+}

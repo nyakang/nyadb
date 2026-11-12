@@ -192,6 +192,59 @@ class ConsulFixtureTests(unittest.TestCase):
             with self.subTest(flag=flag), self.assertRaises(ValueError):
                 fixture.verify(public_http_watch_probe=True, **{flag: True})
 
+    def test_public_session_renewal_keeps_foundation_regression_and_requires_real_workspaces(self):
+        foundation = self.copy_scope_before_startup(session_renewal=True, txn_max_request=8388608)
+        report = self.copy_scope_before_startup(public_session_renewal=True, txn_max_request=8388608)
+        required = tuple(foundation['required']) + fixture.PUBLIC_SESSION_RENEWAL_REQUIRED
+        self.assertEqual(report['required'], list(required))
+        self.assertEqual(len(set(required)), 108)
+        self.assertEqual(report['scope'], 'public-consul-original-session-renewal')
+        self.assertTrue(report['session_renewal'])
+        self.assertTrue(report['public_http_watch'])
+        self.assertIn('./internal/ui/kvworkspace', report['packages'])
+        self.assertIn('./internal/ui/shell', report['packages'])
+        self.assertIn('./internal/ui/dataworkspace', report['packages'])
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+        with self.assertRaises(RuntimeError):
+            fixture.accepted_cases(log, tuple(foundation['required']))
+        for name in ('internal/ui/kvworkspace/http_session_renewal_state.go',
+                     'internal/ui/kvworkspace/http_session_renewal_view.go',
+                     'internal/ui/kvworkspace/consul_http_session_renewal_native_integration_test.go',
+                     'internal/ui/shell/consul_http_session_renewal_native_integration_test.go'):
+            self.assertIn(name, fixture.source_hashes())
+
+    def test_public_session_renewal_diagnostic_cannot_claim_full_acceptance(self):
+        report = self.copy_scope_before_startup(public_session_renewal_probe=True)
+        self.assertEqual(report['scope'], 'diagnostic-consul-public-session-renewal')
+        self.assertEqual(report['required'], list(fixture.PUBLIC_SESSION_RENEWAL_REQUIRED))
+        self.assertEqual(report['packages'], ['./internal/ui/kvworkspace', './internal/ui/shell'])
+        for flag in ('public_session_renewal', 'session_renewal', 'session_renewal_probe', 'public_http_watch',
+                     'http_watch', 'http_watch_probe', 'public_prefix_set', 'public_grid', 'public', 'probe',
+                     'public_http_watch_probe', 'copy_limit_probe', 'mutation_limit_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(public_session_renewal_probe=True, **{flag: True})
+        for flag in ('session_renewal_probe', 'probe', 'http_watch_probe', 'public_http_watch_probe', 'copy_limit_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(public_session_renewal=True, **{flag: True})
+
+    def test_public_session_renewal_image_manifest_requires_bilingual_controls_and_original_faults(self):
+        names = fixture.session_renewal_image_names()
+        self.assertEqual(len(names), 128)
+        for lang in ('zh-Hans', 'en'):
+            for size in ('1280x800', '720x520'):
+                for stage in ('form', 'confirmation', 'running', 'initial-read', 'stopped', 'cleared',
+                              'overflow', 'missing', 'read-denied', 'write-denied', 'parked', 'recovered'):
+                    self.assertIn(f'{lang}-{size}-workspace-session-renewal-{stage}.png', names)
+                for mode in ('lost', 'partial', 'http500', 'http408', 'uuid', 'cancel', 'replace', 'parked'):
+                    for prefix in ('unknown-', 'after-read-'):
+                        self.assertIn(f'{lang}-{size}-workspace-session-renewal-{prefix}{mode}.png', names)
+                for stage in ('confirmation', 'running', 'stopped', 'recovered'):
+                    self.assertIn(f'{lang}-{size}-shell-session-renewal-{stage}.png', names)
+
     def copy_scope_before_startup(self, **options):
         # Stop before the first owned container can be created. The retained
         # report must still name the exact scope, parents and packages selected.

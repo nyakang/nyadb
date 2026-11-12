@@ -39,7 +39,7 @@ type renewalOperation struct {
 }
 
 func (d *Document) hasUnknownWrites() bool {
-	return d.unknown != nil || d.renewalUnknown != nil || d.members != nil && d.members.unknown != nil || d.alarms != nil && d.alarms.unknown != nil
+	return d.httpSessionRenewal != nil && d.httpSessionRenewal.unknown || d.unknown != nil || d.renewalUnknown != nil || d.members != nil && d.members.unknown != nil || d.alarms != nil && d.alarms.unknown != nil
 }
 func (s *State) renewalLeaseFor(d *Document) bool {
 	if !s.active(d) || d.Busy() || d.renewalNeedsRecovery {
