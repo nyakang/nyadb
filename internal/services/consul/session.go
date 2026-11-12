@@ -39,6 +39,7 @@ type Session struct {
 	work                       sync.WaitGroup
 	leases                     map[*documentLease]bool
 	dataLeases                 map[*dataLease]bool
+	watchLeases                map[*httpWatchLease]bool
 	opener                     func(context.Context) (*Client, OpenEvidence, error)
 	retained, reserved, budget int64 // guarded by receiptBudgetMu
 	rootBytes                  int64
@@ -198,7 +199,7 @@ func (s *Session) ReserveKV(document uint64) (contract.KVRequestLease, error) {
 	if document == 0 {
 		return nil, ErrInvalid
 	}
-	if len(s.leases)+len(s.dataLeases) >= 32 {
+	if len(s.leases)+len(s.dataLeases)+len(s.watchLeases) >= 32 {
 		return nil, contract.ErrKVLeaseLimit
 	}
 	for l := range s.leases {
@@ -311,12 +312,19 @@ func (s *Session) Close() error {
 	for l := range s.dataLeases {
 		dataLeases = append(dataLeases, l)
 	}
+	watchLeases := make([]*httpWatchLease, 0, len(s.watchLeases))
+	for l := range s.watchLeases {
+		watchLeases = append(watchLeases, l)
+	}
 	s.mu.Unlock()
 	err := s.root.Close()
 	for _, l := range dataLeases {
 		err = errors.Join(err, l.Close())
 	}
 	for _, l := range leases {
+		err = errors.Join(err, l.retire())
+	}
+	for _, l := range watchLeases {
 		err = errors.Join(err, l.retire())
 	}
 	s.work.Wait()

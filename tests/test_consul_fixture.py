@@ -136,6 +136,41 @@ class ConsulFixtureTests(unittest.TestCase):
                      'internal/ui/dataworkspace/consul_mutation_native_integration_test.go'):
             self.assertIn(name, hashes)
 
+    def test_http_watch_foundation_appends_every_original_parent_and_retains_images(self):
+        previous = self.copy_scope_before_startup(public_prefix_set=True, txn_max_request=8388608)
+        report = self.copy_scope_before_startup(http_watch=True, txn_max_request=8388608)
+        required = tuple(previous['required']) + fixture.HTTP_WATCH_REQUIRED
+        self.assertEqual(len(previous['required']), 84)
+        self.assertEqual(report['required'], list(required))
+        self.assertEqual(len(set(required)), 92)
+        self.assertEqual(report['scope'], 'private-consul-original-http-watch-with-public-batch-regression')
+        self.assertTrue(report['public_prefix_set'])
+        for package in ('./internal/services/consul', './internal/services/dbruntime', './internal/ui/shell', './internal/ui/kvworkspace', './internal/ui/dataworkspace'):
+            self.assertIn(package, report['packages'])
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+        for name in ('internal/db/contract/kv_http_watch.go', 'internal/services/consul/http_watch.go',
+                     'internal/services/consul/http_watch_native_integration_test.go', 'internal/services/dbruntime/kv_http_watch.go'):
+            self.assertIn(name, fixture.source_hashes())
+
+    def test_http_watch_diagnostic_cannot_claim_regression_or_public_acceptance(self):
+        report = self.copy_scope_before_startup(http_watch_probe=True)
+        self.assertEqual(report['required'], list(fixture.HTTP_WATCH_REQUIRED))
+        self.assertEqual(report['scope'], 'diagnostic-consul-original-http-watch-foundation')
+        self.assertEqual(report['packages'], ['./internal/services/consul', './internal/services/dbruntime'])
+        for flag in ('http_watch', 'public_prefix_set', 'prefix_delete_set', 'probe', 'session', 'public', 'tools', 'data_session',
+                     'public_grid', 'data_mutations', 'public_grid_writes', 'key_copy', 'public_key_copy', 'prefix_delete',
+                     'public_prefix_delete', 'public_prefix_set_probe', 'copy_limit_probe', 'grid_write_probe', 'copy_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(http_watch_probe=True, **{flag: True})
+        for flag in ('probe', 'mutation_limit_probe', 'grid_write_probe', 'copy_probe', 'copy_limit_probe', 'public_copy_probe',
+                     'prefix_delete_probe', 'public_prefix_probe', 'prefix_set_probe', 'public_prefix_set_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(http_watch=True, **{flag: True})
+
     def copy_scope_before_startup(self, **options):
         # Stop before the first owned container can be created. The retained
         # report must still name the exact scope, parents and packages selected.

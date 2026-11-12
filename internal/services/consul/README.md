@@ -319,3 +319,42 @@ later batches, new captures and replay, even after a successful read.
 Manager/grid/Shell parents (84/configuration). `--public-prefix-set-probe` selects
 only those six parents and is explicitly diagnostic. Final acceptance retains
 the five official configurations and two original default-limit copy probes.
+
+The private optional `KVHTTPWatchProvider` reserves a separate document lease
+without I/O; it is not yet a published Watch command or workspace UI. `Prepare`
+captures one exact/prefix target, its explicitly authored canonical observation
+prefix (including deliberately empty root), unsigned start index, wait, count
+and byte limits. The actual read is native indexed HTTP recurse; original target
+keys are matched separately without path normalization. Read-only txn does not
+supply a blocking index or honour wait and is never substituted for this path.
+
+A run uses one original captured client and at most one in-flight read. Original
+wait is 100 ms..10 min and must fit the configured request timeout with native
+wait/16 jitter and connect timeout allowance; neither timeout nor wait is changed.
+Missing, invalid, zero or backward server indices stop with original evidence.
+These are current observations, not etcd events, revisions, historical coverage,
+or write acknowledgements. A restricted recurse can return 404 with
+ACLFiltered=true; absence is never a deletion event or proof of a complete range.
+
+Each start reserves its authored archive limit (up to 256 MiB) plus a 128 MiB
+terminal slot before connecting. Up to 256 observations are retained; a complete
+result exceeding the authored byte limit occupies that explicit terminal slot
+and stops the run. Count exhaustion sends no extra read. Private buffered Poll
+transfers immutable copies while Snapshot retains complete originals. Stop and
+close await original executor ACK; a Stop caller timeout does not prove ACK.
+Session retirement retains receipts; run/document close or explicit settled
+ClearObservations releases them. A new start requires a fresh one-use preparation
+and explicit release of the earlier archive. Evidence recovery transfers only
+original receipts and accounting to a new unconnected lease, never resuming I/O.
+Watch does not read or clear any independent unknown write receipt.
+
+`--http-watch --race --txn-max-request 8388608 --test-timeout 1800 --memory-mib
+2048` appends eight private adapter/runtime parents to all 84 public batch
+regression parents (92/configuration), retaining their exact image sets.
+`--http-watch-probe` runs only those eight private parents and cannot combine with
+another acceptance or diagnostic scope. Public KVworkspace/Shell Watch controls,
+parking and exports still require a separate implementation and acceptance.
+
+A settled old run's late Close validates its original archive owner without
+waiting on a newer run's executor. Evidence transfer and release are atomic under
+that same owner, preserving one charged archive during concurrent recovery/Close.
