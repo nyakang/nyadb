@@ -248,6 +248,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 		}
 		if d.error != "" {
 			message := d.error
+			if d.requestTools != nil {
+				message = requestToolDisplayError(message)
+			}
 			if isHTTPSessionRenewal || d.selectedHTTPSessionRenewal {
 				message = httpSessionRenewalDisplayError(message)
 			}

@@ -86,7 +86,7 @@ func (s *State) SetRequestToolInput(d *Document, kind contract.KVRequestToolKind
 	if draft == nil || draft.input == input {
 		return
 	}
-	if len(input.Key)+len(input.ValueBase64)+len(input.Flags)+len(input.CompareIndex)+len(input.TransactionJSON) > inputLimit {
+	if requestToolInputSize(input) > inputLimit {
 		d.error = locales.Text("KV 请求文本超过 16 MiB")
 		return
 	}
@@ -125,7 +125,11 @@ func (s *State) GenerateRequestTool(d *Document) {
 		return
 	}
 	s.CancelConfirmation(d)
-	d.method = request.Method
+	s.SetMethod(d, request.Method)
+	// A receipt tab may have been selected while the editor already used this
+	// method. Generating a request returns to its result view in that case too.
+	d.selectedHTTPWatch = request.Method == HTTPWatchMethod
+	d.selectedHTTPSessionRenewal = request.Method == HTTPSessionRenewalMethod
 	d.Editor.Buffer.Set(request.JSON)
 	draft.materialized = draft.input
 	p.source, p.open = request, false

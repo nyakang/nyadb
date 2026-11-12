@@ -99,6 +99,11 @@ func requestTools(prefix string) []contract.KVRequestTool {
 		{Kind: contract.KVToolPut, Default: contract.KVRequestToolInput{Key: prefix}},
 		{Kind: contract.KVToolDelete, Default: contract.KVRequestToolInput{Key: prefix}},
 		{Kind: contract.KVToolTransaction, Default: contract.KVRequestToolInput{TransactionJSON: string(txn)}},
+		{Kind: contract.KVToolHTTPSessionInfo},
+		{Kind: contract.KVToolHTTPSessionCreate, Default: contract.KVRequestToolInput{HTTPSession: contract.KVHTTPSessionToolInput{TTL: "10m"}}},
+		{Kind: contract.KVToolHTTPSessionDestroy},
+		{Kind: contract.KVToolHTTPAcquire, Default: contract.KVRequestToolInput{Key: prefix}},
+		{Kind: contract.KVToolHTTPRelease, Default: contract.KVRequestToolInput{Key: prefix}},
 	}
 }
 

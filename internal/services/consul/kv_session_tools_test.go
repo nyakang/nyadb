@@ -137,7 +137,7 @@ func TestHTTPSessionToolsRejectInvalidAndHiddenInputs(t *testing.T) {
 	}
 }
 
-func TestHTTPSessionToolsBoundsAndPrivatePublication(t *testing.T) {
+func TestHTTPSessionToolsBoundsAndPublishedDefaults(t *testing.T) {
 	for _, input := range []contract.KVRequestToolInput{{Key: strings.Repeat("x", 4097)}, {Key: "k", ValueBase64: base64.StdEncoding.EncodeToString(make([]byte, valueLimit+1))}} {
 		input.HTTPSession.ID = sessionToolID
 		if _, err := (requestBuilder{}).BuildKVRequest(contract.KVToolHTTPAcquire, input); !errors.Is(err, ErrBounds) {
@@ -150,9 +150,17 @@ func TestHTTPSessionToolsBoundsAndPrivatePublication(t *testing.T) {
 		}
 	}
 	sessionToolRequest(t, contract.KVToolHTTPAcquire, contract.KVRequestToolInput{Key: strings.Repeat("x", 4096), ValueBase64: base64.StdEncoding.EncodeToString(make([]byte, valueLimit)), HTTPSession: contract.KVHTTPSessionToolInput{ID: sessionToolID}})
-	for _, tool := range requestTools("original/") {
-		if strings.HasPrefix(string(tool.Kind), "http-") {
-			t.Fatal("private session tool advertised before UI acceptance")
+	tools := requestTools("original/")
+	if len(tools) != 11 || tools[0].Kind != contract.KVToolRead || tools[5].Kind != contract.KVToolTransaction {
+		t.Fatal("original request tools changed")
+	}
+	want := []contract.KVRequestToolKind{contract.KVToolHTTPSessionInfo, contract.KVToolHTTPSessionCreate, contract.KVToolHTTPSessionDestroy, contract.KVToolHTTPAcquire, contract.KVToolHTTPRelease}
+	for i, kind := range want {
+		if tools[6+i].Kind != kind || tools[6+i].Default.HTTPSession.ID != "" {
+			t.Fatal("Session tools missing or template invented a UUID")
 		}
+	}
+	if tools[7].Default.HTTPSession.TTL != "10m" || tools[9].Default.Key != "original/" || tools[10].Default.Key != "original/" {
+		t.Fatal("explicit creation default or original prefix suggestion changed")
 	}
 }

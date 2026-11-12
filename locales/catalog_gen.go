@@ -38263,3 +38263,193 @@ func HttpSessionRenewalTab() string { return In(i18n.Locale()).HttpSessionRenewa
 func (msgs Messages) HttpSessionRenewalTab() string {
 	return Catalog.Format(msgs.locale, "httpSessionRenewalTab", nil)
 }
+
+// HttpSessionToolRead says "读取 HTTP Session"
+// in the language the app shows.
+func HttpSessionToolRead() string { return In(i18n.Locale()).HttpSessionToolRead() }
+
+// HttpSessionToolRead says "读取 HTTP Session"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolRead() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolRead", nil)
+}
+
+// HttpSessionToolCreate says "创建 HTTP Session"
+// in the language the app shows.
+func HttpSessionToolCreate() string { return In(i18n.Locale()).HttpSessionToolCreate() }
+
+// HttpSessionToolCreate says "创建 HTTP Session"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolCreate() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolCreate", nil)
+}
+
+// HttpSessionToolDestroy says "销毁 HTTP Session"
+// in the language the app shows.
+func HttpSessionToolDestroy() string { return In(i18n.Locale()).HttpSessionToolDestroy() }
+
+// HttpSessionToolDestroy says "销毁 HTTP Session"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolDestroy() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolDestroy", nil)
+}
+
+// HttpSessionToolAcquire says "获取 HTTP Session 锁"
+// in the language the app shows.
+func HttpSessionToolAcquire() string { return In(i18n.Locale()).HttpSessionToolAcquire() }
+
+// HttpSessionToolAcquire says "获取 HTTP Session 锁"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolAcquire() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolAcquire", nil)
+}
+
+// HttpSessionToolRelease says "释放 HTTP Session 锁"
+// in the language the app shows.
+func HttpSessionToolRelease() string { return In(i18n.Locale()).HttpSessionToolRelease() }
+
+// HttpSessionToolRelease says "释放 HTTP Session 锁"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolRelease() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolRelease", nil)
+}
+
+// HttpSessionToolCopyInput says "复制工具输入"
+// in the language the app shows.
+func HttpSessionToolCopyInput() string { return In(i18n.Locale()).HttpSessionToolCopyInput() }
+
+// HttpSessionToolCopyInput says "复制工具输入"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolCopyInput() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolCopyInput", nil)
+}
+
+// HttpSessionToolExportInput says "导出工具输入"
+// in the language the app shows.
+func HttpSessionToolExportInput() string { return In(i18n.Locale()).HttpSessionToolExportInput() }
+
+// HttpSessionToolExportInput says "导出工具输入"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolExportInput() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolExportInput", nil)
+}
+
+// HttpSessionToolFieldValue says "字段值"
+// in the language the app shows.
+func HttpSessionToolFieldValue() string { return In(i18n.Locale()).HttpSessionToolFieldValue() }
+
+// HttpSessionToolFieldValue says "字段值"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolFieldValue() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolFieldValue", nil)
+}
+
+// HttpSessionToolIncludeName says "包含 Session 名称"
+// in the language the app shows.
+func HttpSessionToolIncludeName() string { return In(i18n.Locale()).HttpSessionToolIncludeName() }
+
+// HttpSessionToolIncludeName says "包含 Session 名称"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolIncludeName() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolIncludeName", nil)
+}
+
+// HttpSessionToolIncludeNode says "包含 Session 节点"
+// in the language the app shows.
+func HttpSessionToolIncludeNode() string { return In(i18n.Locale()).HttpSessionToolIncludeNode() }
+
+// HttpSessionToolIncludeNode says "包含 Session 节点"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolIncludeNode() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolIncludeNode", nil)
+}
+
+// HttpSessionToolCreatePresence says "名称/节点勾选后可显式留空；TTL、LockDelay、Behavior 留空表示省略"
+// in the language the app shows.
+func HttpSessionToolCreatePresence() string { return In(i18n.Locale()).HttpSessionToolCreatePresence() }
+
+// HttpSessionToolCreatePresence says "名称/节点勾选后可显式留空；TTL、LockDelay、Behavior 留空表示省略"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolCreatePresence() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolCreatePresence", nil)
+}
+
+// HttpSessionToolCreateLimits says "TTL 10s 至 24h；LockDelay 0s 至 60s；Behavior 为 release 或 delete"
+// in the language the app shows.
+func HttpSessionToolCreateLimits() string { return In(i18n.Locale()).HttpSessionToolCreateLimits() }
+
+// HttpSessionToolCreateLimits says "TTL 10s 至 24h；LockDelay 0s 至 60s；Behavior 为 release 或 delete"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolCreateLimits() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolCreateLimits", nil)
+}
+
+// HttpSessionToolNodeChecks says "NodeChecks JSON（留空省略，[] 为无检查）"
+// in the language the app shows.
+func HttpSessionToolNodeChecks() string { return In(i18n.Locale()).HttpSessionToolNodeChecks() }
+
+// HttpSessionToolNodeChecks says "NodeChecks JSON（留空省略，[] 为无检查）"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolNodeChecks() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolNodeChecks", nil)
+}
+
+// HttpSessionToolReadMeaning says "读取指定原 UUID；后续观察不会确认此前未知写入"
+// in the language the app shows.
+func HttpSessionToolReadMeaning() string { return In(i18n.Locale()).HttpSessionToolReadMeaning() }
+
+// HttpSessionToolReadMeaning says "读取指定原 UUID；后续观察不会确认此前未知写入"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolReadMeaning() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolReadMeaning", nil)
+}
+
+// HttpSessionToolDestroyMeaning says "销毁此原 Session；与停止续租或释放单个键不同"
+// in the language the app shows.
+func HttpSessionToolDestroyMeaning() string { return In(i18n.Locale()).HttpSessionToolDestroyMeaning() }
+
+// HttpSessionToolDestroyMeaning says "销毁此原 Session；与停止续租或释放单个键不同"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolDestroyMeaning() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolDestroyMeaning", nil)
+}
+
+// HttpSessionToolKeySemantics says "HTTP 锁请求拒绝空路径段及 . 或 ..；不会改写键或转换为事务"
+// in the language the app shows.
+func HttpSessionToolKeySemantics() string { return In(i18n.Locale()).HttpSessionToolKeySemantics() }
+
+// HttpSessionToolKeySemantics says "HTTP 锁请求拒绝空路径段及 . 或 ..；不会改写键或转换为事务"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolKeySemantics() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolKeySemantics", nil)
+}
+
+// HttpSessionToolFlagsPresence says "Flags 留空表示省略；0 为显式值，使用完整十进制"
+// in the language the app shows.
+func HttpSessionToolFlagsPresence() string { return In(i18n.Locale()).HttpSessionToolFlagsPresence() }
+
+// HttpSessionToolFlagsPresence says "Flags 留空表示省略；0 为显式值，使用完整十进制"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolFlagsPresence() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolFlagsPresence", nil)
+}
+
+// HttpSessionToolBooleanMeaning says "原生 true/false 仅确认本次请求，不保证持续持锁"
+// in the language the app shows.
+func HttpSessionToolBooleanMeaning() string { return In(i18n.Locale()).HttpSessionToolBooleanMeaning() }
+
+// HttpSessionToolBooleanMeaning says "原生 true/false 仅确认本次请求，不保证持续持锁"
+// in the language of msgs.
+func (msgs Messages) HttpSessionToolBooleanMeaning() string {
+	return Catalog.Format(msgs.locale, "httpSessionToolBooleanMeaning", nil)
+}
+
+// KvToolAbsoluteKey says "绝对键"
+// in the language the app shows.
+func KvToolAbsoluteKey() string { return In(i18n.Locale()).KvToolAbsoluteKey() }
+
+// KvToolAbsoluteKey says "绝对键"
+// in the language of msgs.
+func (msgs Messages) KvToolAbsoluteKey() string {
+	return Catalog.Format(msgs.locale, "kvToolAbsoluteKey", nil)
+}

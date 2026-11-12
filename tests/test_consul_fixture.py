@@ -225,6 +225,62 @@ class ConsulFixtureTests(unittest.TestCase):
             with self.subTest(flag=flag), self.assertRaises(ValueError):
                 fixture.verify(session_tools=True, **{flag: True})
 
+    def test_public_session_tools_retains_foundation_and_requires_original_ui(self):
+        previous = self.copy_scope_before_startup(session_tools=True)
+        report = self.copy_scope_before_startup(public_session_tools=True)
+        required = tuple(previous['required']) + fixture.PUBLIC_SESSION_TOOLS_REQUIRED
+        self.assertEqual(report['required'], list(required))
+        self.assertEqual(len(set(required)), 117)
+        self.assertEqual(report['scope'], 'public-consul-session-tools')
+        self.assertEqual(report['packages'], previous['packages'])
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+        with self.assertRaises(RuntimeError):
+            fixture.accepted_cases(log, tuple(previous['required']))
+        self.assertEqual(len(fixture.session_tools_image_names()), 220)
+        for name in ('en-720x520-workspace-session-tool-http-session-create-form.png',
+                     'zh-Hans-1280x800-workspace-session-tool-http-release-false.png',
+                     'en-720x520-workspace-session-tool-http-acquire-unknown-replace.png',
+                     'en-720x520-shell-session-tool-recovered.png'):
+            self.assertIn(name, fixture.session_tools_image_names())
+
+    def test_public_session_tools_diagnostic_cannot_claim_complete_acceptance(self):
+        report = self.copy_scope_before_startup(public_session_tools_probe=True)
+        self.assertEqual(report['scope'], 'diagnostic-consul-public-session-tools')
+        self.assertEqual(report['required'], list(fixture.PUBLIC_SESSION_TOOLS_REQUIRED))
+        self.assertEqual(report['packages'], ['./internal/ui/kvworkspace', './internal/ui/shell'])
+        for flag in ('public_session_tools','session_tools','session_tools_probe',
+                     'public_session_renewal','public_session_renewal_probe','session_renewal',
+                     'session_renewal_probe','public','tools','public_grid','public_http_watch',
+                     'http_watch','probe','copy_limit_probe','mutation_limit_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(public_session_tools_probe=True, **{flag: True})
+        for flag in ('public_session_tools_probe','session_tools_probe','public_session_renewal_probe',
+                     'session_renewal_probe','probe','copy_limit_probe','http_watch_probe',
+                     'public_http_watch_probe','mutation_limit_probe','grid_write_probe','public_copy_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(public_session_tools=True, **{flag: True})
+
+    def test_public_session_tools_source_and_cli_do_not_bypass_scope_checks(self):
+        hashes = fixture.source_hashes()
+        for name in ('internal/ui/kvworkspace/request_session_tools_view.go',
+                     'internal/ui/kvworkspace/request_tools_files.go',
+                     'internal/ui/kvworkspace/consul_session_tools_native_integration_test.go',
+                     'internal/ui/kvworkspace/consul_session_tools_fault_native_integration_test.go',
+                     'internal/ui/kvworkspace/consul_session_tools_selection_native_integration_test.go',
+                     'internal/ui/shell/consul_session_tools_native_integration_test.go'):
+            self.assertIn(name, hashes)
+        import runpy
+        from unittest.mock import patch
+        for args in (['--public-session-tools-probe','--session-tools'],
+                     ['--public-session-tools','--copy-limit-probe'],
+                     ['--public-session-tools','--session-tools-probe']):
+            with self.subTest(args=args), patch('sys.argv', [str(ROOT/'tools/verify_consul_fixture.py'), *args]), patch('subprocess.run', side_effect=AssertionError('CLI started fixture before validating Session tools scope')), self.assertRaises(ValueError):
+                runpy.run_path(str(ROOT/'tools/verify_consul_fixture.py'), run_name='__main__')
+
     def test_session_tools_source_manifest_includes_neutral_input_builder_and_native_tests(self):
         hashes = fixture.source_hashes()
         for name in ('internal/db/contract/kv_request_tools.go',

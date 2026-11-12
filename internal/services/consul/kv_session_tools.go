@@ -9,8 +9,8 @@ import (
 	"github.com/nyakang/nyadb/internal/db/contract"
 )
 
-// These pure builders are not advertised by requestTools until the native
-// workspace inputs and original lifecycle have their own acceptance evidence.
+// Session tools author text only; the original request workspace owns
+// confirmation, execution, cancellation and complete HTTP receipts.
 func buildHTTPSessionTool(kind contract.KVRequestToolKind, input contract.KVRequestToolInput) (contract.KVRequest, error) {
 	session := input.HTTPSession
 	for _, value := range []string{input.Key, session.ID, session.Name, session.Node, session.TTL, session.LockDelay, session.Behavior} {

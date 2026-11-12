@@ -469,11 +469,11 @@ Service, health, registration and ACL management, live-prefix deletion, full
 archives, Enterprise/HA and every remaining Navicat/DBX integration gap remain
 independent.
 
-## Private HTTP Session and lock request tools
+## HTTP Session and lock request tools
 
 The immutable request builder can author Session info/create/destroy and HTTP
-KV acquire/release requests. These five kinds are not yet advertised in the
-public request-tools menu. They carry text only; generation does not reserve a
+KV acquire/release requests. The existing request-tools menu exposes all five
+forms alongside its six KV tools. They carry text only; generation does not reserve a
 lease, read credentials, connect, prepare a write or dispatch a request.
 
 Creation preserves omitted fields separately from an explicitly empty Name or
@@ -497,5 +497,27 @@ remain distinct from stopping renewal or releasing one key.
 images per configuration, adding four private Session/lock parents. The
 `--session-tools-probe` scope is diagnostic only. Final acceptance uses official
 2.0.2 anonymous/token/TLS/mTLS and 1.22.3 token fixtures plus both default
-transaction-limit probes. Public structured forms and their original workspace
-lifecycle require separate acceptance; all remaining integration gaps persist.
+transaction-limit probes.
+
+Public forms preserve partial input, explicit name/node inclusion, native UUIDs,
+original Base64 bytes and optional decimal Flags. Unchecking a name/node field
+clears its value. Tool input copy/export uses a separate version-1 JSON envelope
+and captures the original complete draft before a clipboard or file-picker job.
+These files do not authorize requests; generated HTTP text continues to use the
+existing request-file format. Tool-input import is not supported.
+
+Generating HTTP text selects its ordinary receipt view even when an older Watch
+or renewal record was selected under the same editor method. Those original
+records remain available. Unknown generic writes and unknown renewal attempts
+both prohibit further writes in the document; reads, generation, file export and
+explicit recovery cannot clear that barrier. Lock replies describe this one HTTP
+request and do not promise continued lock ownership.
+
+`--public-session-tools` adds five native workspace/Shell parents and 220
+bilingual images to the complete private 112-parent/1016-image regression.
+`--public-session-tools-probe` is diagnostic only. Native acceptance covers
+original forms, UUIDs, true/false, ACL filtering/denials, immutable confirmations,
+files, parking, executor acknowledgement, retirement, recovery and close. The
+32 processed-write faults use actual Consul upstream effects, independently
+observed without upgrading the document's unknown receipt. All remaining
+integration gaps persist.
