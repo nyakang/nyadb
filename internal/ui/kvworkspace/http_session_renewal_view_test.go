@@ -1,6 +1,7 @@
 package kvworkspace
 
 import (
+	"bytes"
 	"fmt"
 	"image/png"
 	"os"
@@ -10,8 +11,71 @@ import (
 
 	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/locales"
 )
+
+func TestHTTPSessionRenewalErrorFollowsLocaleWithoutChangingOriginalEvidence(t *testing.T) {
+	defer i18n.SetLocaleFunc(nil)
+	const message = "原续租未确认；此文档禁止继续写入"
+	for _, origin := range []string{"zh-Hans", "en"} {
+		for _, size := range [][2]int{{1280, 800}, {720, 520}} {
+			t.Run(fmt.Sprintf("%s-%dx%d", origin, size[0], size[1]), func(t *testing.T) {
+				i18n.SetLocaleFunc(func() string { return origin })
+				s, d, p := httpSessionRenewalTest(t)
+				p.lease.run.batch = contract.KVHTTPSessionRenewalBatch{
+					Ended:        true,
+					Terminal:     contract.KVHTTPSessionRenewalTerminal{WriteOutcomeUnknown: true},
+					Observations: []contract.KVHTTPSessionRenewalObservation{renewalObservation("PUT", message, 1)},
+				}
+				startHTTPSessionRenewal(t, s, d)
+				s.PrepareHTTPSessionRenewal(d)
+				originalError, originalRequest := d.Error(), d.Request()
+				before, err := s.HTTPSessionRenewalRecord(d)
+				if err != nil || originalError != locales.TextIn(origin, message) {
+					t.Fatal("missing original unknown-write evidence", err, originalError)
+				}
+				tt := workspaceTester(s, d, size[0], size[1])
+				for _, language := range []string{"en", "zh-Hans"} {
+					i18n.SetLocaleFunc(func() string { return language })
+					tt.Frame()
+					if _, ok := tt.Find(locales.Text(message)); !ok {
+						t.Fatal("current-language error missing", language)
+					}
+					other := "zh-Hans"
+					if language == other {
+						other = "en"
+					}
+					if _, ok := tt.Find(locales.TextIn(other, message)); ok {
+						t.Fatal("stale-language error remains", language)
+					}
+					after, err := s.HTTPSessionRenewalRecord(d)
+					if err != nil || !bytes.Equal(before, after) || d.Error() != originalError || d.Request() != originalRequest || !d.hasUnknownWrites() || p.lease.starts.Load() != 1 {
+						t.Fatal("language switch changed original evidence or write barrier", err)
+					}
+					captureHTTPSessionRenewal(t, tt, language, size, "locale-switch-from-"+origin)
+				}
+			})
+		}
+	}
+}
+
+func TestHTTPSessionRenewalDisplayErrorPreservesNativeDetails(t *testing.T) {
+	defer i18n.SetLocaleFunc(nil)
+	const native = "server: KV 请求无效\nopaque/原续租未确认；此文档禁止继续写入"
+	for _, language := range []string{"zh-Hans", "en"} {
+		i18n.SetLocaleFunc(func() string { return language })
+		if got := httpSessionRenewalDisplayError(native); got != native {
+			t.Fatal("native diagnostic rewritten", got)
+		}
+		for _, origin := range []string{"zh-Hans", "en"} {
+			value := locales.TextIn(origin, "KV 请求无效") + ": " + native
+			if got := httpSessionRenewalDisplayError(value); got != locales.Text("KV 请求无效")+": "+native {
+				t.Fatal("native validation detail changed", got)
+			}
+		}
+	}
+}
 
 func assertHTTPSessionRenewalControls(t *testing.T, tt *ui.Tester, size [2]int, labels ...string) {
 	t.Helper()

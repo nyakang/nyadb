@@ -3,12 +3,37 @@ package kvworkspace
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
+
+// Reformat known application messages at render time. The stored error and
+// original HTTP evidence keep the language and bytes captured by the operation.
+func httpSessionRenewalDisplayError(value string) string {
+	for _, source := range []string{
+		"KV 原连接不可用",
+		"原续租未确认；此文档禁止继续写入",
+		"请先复制或导出，再明确清除原续租记录",
+		"KV 请求已更改，请重新预览",
+	} {
+		for _, language := range []string{"zh-Hans", "en"} {
+			if value == locales.TextIn(language, source) {
+				return locales.Text(source)
+			}
+		}
+	}
+	for _, language := range []string{"zh-Hans", "en"} {
+		prefix := locales.TextIn(language, "KV 请求无效") + ": "
+		if strings.HasPrefix(value, prefix) {
+			return locales.Text("KV 请求无效") + ": " + strings.TrimPrefix(value, prefix)
+		}
+	}
+	return value
+}
 
 func (s *State) httpSessionRenewalRequestView(c *ui.Context, d *Document) {
 	w := d.httpSessionRenewalState()
