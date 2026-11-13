@@ -155,12 +155,20 @@ Consul HTTP Watch acceptance uses `GOWORK=off /usr/bin/python3 tools/verify_cons
 
 Consul native Agent check register/deregister requests retain complete original
 definitions, native IDs and empty HTTP acknowledgements through the existing
-document lease and runtime generations. Check-specific structured forms,
+document lease and runtime generations. Check-specific structured forms retain
+complete authored JSON and original IDs with a separate immutable confirmation.
 TTL updates and maintenance remain separate. Verify the native foundation with
 `GOWORK=off /usr/bin/python3 tools/verify_consul_fixture.py --agent-check-probe --race --mode MODE`:
 each configuration requires five new and all 46 accepted service/browser parents,
 with the 576 original service/Agent/health/Watch images retained. Use official
 2.0.2 token/anonymous/TLS/mTLS and 1.22.3 token.
+
+`--public-agent-check-probe --race --mode MODE --test-timeout 1200` additionally
+requires four real workspace/Shell check parents and 292 bilingual wide/narrow
+images. All 51 native/service/browser parents and their 576 regression images
+remain mandatory in the same original fixture. Public browser regressions finish
+before critical node-check writes. Unknown receipts block further writes and
+remain unchanged by later map reads or explicit recovery.
 
 Consul local Agent service tools use the existing original HTTP document and
 one-use lease. Registration retains complete authored JSON; deregistration uses

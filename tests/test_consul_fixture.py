@@ -9,6 +9,50 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_public_agent_check_retains_full_native_service_browser_regression(self):
+        previous = self.copy_scope_before_startup(agent_check_probe=True)
+        report = self.copy_scope_before_startup(public_agent_check_probe=True)
+        required = fixture.PUBLIC_AGENT_CHECK_REQUIRED + tuple(previous['required'])
+        self.assertEqual(tuple(report['required']), required)
+        self.assertEqual(len(required), 55)
+        self.assertEqual(len(set(required)), 55)
+        self.assertEqual(report['scope'], 'public-consul-original-agent-check-tools-with-service-browser-regression')
+        self.assertTrue(report['production_agent_check_tools_published'])
+        self.assertTrue(report['production_agent_service_tools_published'])
+        self.assertEqual(len(fixture.agent_check_image_names()), 292)
+        self.assertEqual(len(fixture.agent_service_image_names()), 264)
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+
+    def test_public_agent_check_schedules_every_original_parent_without_health_contamination(self):
+        import re
+        report = self.copy_scope_before_startup(public_agent_check_probe=True)
+        required = tuple(report['required'])
+        phases = fixture.agent_check_acceptance_test_phases(report['packages'], required, True, 1200, True)
+        self.assertEqual(len(phases), 3)
+        scheduled = [re.findall(r'TestConsulNative(\w+)', phase[phase.index('-run')+1]) for phase in phases]
+        self.assertEqual(len(scheduled[0]), 46)
+        self.assertCountEqual(scheduled[1], fixture.AGENT_CHECK_REQUIRED)
+        self.assertCountEqual(scheduled[2], fixture.PUBLIC_AGENT_CHECK_REQUIRED)
+        self.assertCountEqual(sum(scheduled, []), required)
+        for phase in phases:
+            for argument in ('-race', '-count=1', '-timeout=1200s'):
+                self.assertIn(argument, phase)
+        with self.assertRaises(ValueError):
+            fixture.agent_check_acceptance_test_phases(report['packages'], required[:-1], public=True)
+
+    def test_public_agent_check_rejects_every_mixed_scope_before_startup(self):
+        import inspect
+        from unittest.mock import patch
+        flags = [name for name, parameter in inspect.signature(fixture.verify).parameters.items()
+                 if parameter.default is False and name not in ('race', 'public_agent_check_probe')]
+        for flag in flags:
+            with self.subTest(flag=flag), patch('subprocess.run', side_effect=AssertionError('started mixed check fixture')), self.assertRaises(ValueError):
+                fixture.verify(public_agent_check_probe=True, **{flag: True})
+
     def test_agent_check_foundation_retains_every_accepted_public_service_parent(self):
         previous = self.copy_scope_before_startup(public_agent_service_probe=True)
         report = self.copy_scope_before_startup(agent_check_probe=True)

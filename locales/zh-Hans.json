@@ -3896,5 +3896,13 @@
   "consulAgentService_id": "原生服务 ID",
   "consulAgentService_deregisterHint": "注销原 ID 的本机服务及关联检查和 sidecar；运行后另行确认",
   "consulAgentService_scope": "操作当前连接的本机 Agent；不使用键前缀、DC 或一致性选项",
-  "consulAgentService_editDefinition": "编辑完整服务定义 JSON"
+  "consulAgentService_editDefinition": "编辑完整服务定义 JSON",
+  "consulAgentCheckToolRegister": "注册或更新本机 Agent 检查",
+  "consulAgentCheckToolDeregister": "注销本机 Agent 检查",
+  "consulAgentCheckDefinitionTitle": "完整检查定义 JSON（保留原始字节）",
+  "consulAgentCheckDefinitionEditor": "编辑完整检查定义 JSON",
+  "consulAgentCheckDefinitionHint": "保留名称、ID 的省略或空值和完整定义；已有 TTL 检查可能保留原状态",
+  "consulAgentCheckNativeID": "原生检查 ID",
+  "consulAgentCheckDeregisterHint": "注销原 ID 的本机检查；关联服务保持原样，运行后另行确认",
+  "consulAgentCheckScopeHint": "操作当前连接的本机 Agent；不使用键前缀、DC 或检查替换参数"
 }

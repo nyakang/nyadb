@@ -39,6 +39,11 @@ type consulShellAgentServiceReplyGate struct {
 // The UI can then switch tabs before any executor completion can be consumed.
 func consulShellAgentServiceRelay(t *testing.T, p connections.Profile) (connections.Profile, *consulShellAgentServiceReplyGate) {
 	t.Helper()
+	return consulShellAgentMutationRelay(t, p, "/v1/agent/service/")
+}
+
+func consulShellAgentMutationRelay(t *testing.T, p connections.Profile, prefix string) (connections.Profile, *consulShellAgentServiceReplyGate) {
+	t.Helper()
 	cfg, err := connections.ConsulProfileConfig(p)
 	if err != nil {
 		t.Fatal(err)
@@ -84,7 +89,7 @@ func consulShellAgentServiceRelay(t *testing.T, p connections.Profile) (connecti
 		if err != nil {
 			return
 		}
-		mutation := r.Method == http.MethodPut && strings.HasPrefix(r.URL.Path, "/v1/agent/service/")
+		mutation := r.Method == http.MethodPut && strings.HasPrefix(r.URL.Path, prefix)
 		if mutation {
 			gate.writes.Add(1)
 			select {

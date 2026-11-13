@@ -39673,3 +39673,93 @@ func ConsulAgentServiceEditDefinition() string {
 func (msgs Messages) ConsulAgentServiceEditDefinition() string {
 	return Catalog.Format(msgs.locale, "consulAgentService_editDefinition", nil)
 }
+
+// ConsulAgentCheckToolRegister says "注册或更新本机 Agent 检查"
+// in the language the app shows.
+func ConsulAgentCheckToolRegister() string { return In(i18n.Locale()).ConsulAgentCheckToolRegister() }
+
+// ConsulAgentCheckToolRegister says "注册或更新本机 Agent 检查"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentCheckToolRegister() string {
+	return Catalog.Format(msgs.locale, "consulAgentCheckToolRegister", nil)
+}
+
+// ConsulAgentCheckToolDeregister says "注销本机 Agent 检查"
+// in the language the app shows.
+func ConsulAgentCheckToolDeregister() string {
+	return In(i18n.Locale()).ConsulAgentCheckToolDeregister()
+}
+
+// ConsulAgentCheckToolDeregister says "注销本机 Agent 检查"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentCheckToolDeregister() string {
+	return Catalog.Format(msgs.locale, "consulAgentCheckToolDeregister", nil)
+}
+
+// ConsulAgentCheckDefinitionTitle says "完整检查定义 JSON（保留原始字节）"
+// in the language the app shows.
+func ConsulAgentCheckDefinitionTitle() string {
+	return In(i18n.Locale()).ConsulAgentCheckDefinitionTitle()
+}
+
+// ConsulAgentCheckDefinitionTitle says "完整检查定义 JSON（保留原始字节）"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentCheckDefinitionTitle() string {
+	return Catalog.Format(msgs.locale, "consulAgentCheckDefinitionTitle", nil)
+}
+
+// ConsulAgentCheckDefinitionEditor says "编辑完整检查定义 JSON"
+// in the language the app shows.
+func ConsulAgentCheckDefinitionEditor() string {
+	return In(i18n.Locale()).ConsulAgentCheckDefinitionEditor()
+}
+
+// ConsulAgentCheckDefinitionEditor says "编辑完整检查定义 JSON"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentCheckDefinitionEditor() string {
+	return Catalog.Format(msgs.locale, "consulAgentCheckDefinitionEditor", nil)
+}
+
+// ConsulAgentCheckDefinitionHint says "保留名称、ID 的省略或空值和完整定义；已有 TTL 检查可能保留原状态"
+// in the language the app shows.
+func ConsulAgentCheckDefinitionHint() string {
+	return In(i18n.Locale()).ConsulAgentCheckDefinitionHint()
+}
+
+// ConsulAgentCheckDefinitionHint says "保留名称、ID 的省略或空值和完整定义；已有 TTL 检查可能保留原状态"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentCheckDefinitionHint() string {
+	return Catalog.Format(msgs.locale, "consulAgentCheckDefinitionHint", nil)
+}
+
+// ConsulAgentCheckNativeID says "原生检查 ID"
+// in the language the app shows.
+func ConsulAgentCheckNativeID() string { return In(i18n.Locale()).ConsulAgentCheckNativeID() }
+
+// ConsulAgentCheckNativeID says "原生检查 ID"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentCheckNativeID() string {
+	return Catalog.Format(msgs.locale, "consulAgentCheckNativeID", nil)
+}
+
+// ConsulAgentCheckDeregisterHint says "注销原 ID 的本机检查；关联服务保持原样，运行后另行确认"
+// in the language the app shows.
+func ConsulAgentCheckDeregisterHint() string {
+	return In(i18n.Locale()).ConsulAgentCheckDeregisterHint()
+}
+
+// ConsulAgentCheckDeregisterHint says "注销原 ID 的本机检查；关联服务保持原样，运行后另行确认"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentCheckDeregisterHint() string {
+	return Catalog.Format(msgs.locale, "consulAgentCheckDeregisterHint", nil)
+}
+
+// ConsulAgentCheckScopeHint says "操作当前连接的本机 Agent；不使用键前缀、DC 或检查替换参数"
+// in the language the app shows.
+func ConsulAgentCheckScopeHint() string { return In(i18n.Locale()).ConsulAgentCheckScopeHint() }
+
+// ConsulAgentCheckScopeHint says "操作当前连接的本机 Agent；不使用键前缀、DC 或检查替换参数"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentCheckScopeHint() string {
+	return Catalog.Format(msgs.locale, "consulAgentCheckScopeHint", nil)
+}

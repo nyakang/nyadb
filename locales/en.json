@@ -3896,5 +3896,13 @@
   "consulAgentService_id": "Original service ID",
   "consulAgentService_deregisterHint": "Remove this local service ID, associated checks and sidecar; confirm separately after Run",
   "consulAgentService_scope": "Operate on the connected local Agent; key prefix, DC and consistency options do not apply",
-  "consulAgentService_editDefinition": "Edit complete service definition JSON"
+  "consulAgentService_editDefinition": "Edit complete service definition JSON",
+  "consulAgentCheckToolRegister": "Register or update local Agent check",
+  "consulAgentCheckToolDeregister": "Deregister local Agent check",
+  "consulAgentCheckDefinitionTitle": "Complete check definition JSON (original bytes)",
+  "consulAgentCheckDefinitionEditor": "Edit complete check definition JSON",
+  "consulAgentCheckDefinitionHint": "Preserve the name, omitted or empty ID and complete definition; existing TTL checks may retain their prior state",
+  "consulAgentCheckNativeID": "Native check ID",
+  "consulAgentCheckDeregisterHint": "Deregister the original local check ID; its service stays intact, with confirmation after Run",
+  "consulAgentCheckScopeHint": "Operate on the connected local Agent; key prefix, DC and check replacement options do not apply"
 }

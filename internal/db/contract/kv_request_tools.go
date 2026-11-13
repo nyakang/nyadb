@@ -27,6 +27,8 @@ const (
 	KVToolHTTPAgentChecks            KVRequestToolKind = "http-agent-checks"
 	KVToolHTTPAgentServiceRegister   KVRequestToolKind = "http-agent-service-register"
 	KVToolHTTPAgentServiceDeregister KVRequestToolKind = "http-agent-service-deregister"
+	KVToolHTTPAgentCheckRegister     KVRequestToolKind = "http-agent-check-register"
+	KVToolHTTPAgentCheckDeregister   KVRequestToolKind = "http-agent-check-deregister"
 )
 
 // HTTP Session UUIDs are distinct from numeric leases. Empty duration, behavior
@@ -61,6 +63,12 @@ type KVHTTPAgentServiceToolInput struct {
 	IncludeReplacement                        bool
 }
 
+// Check tools retain the complete native definition and original check ID.
+// Comparable strings keep authored drafts independent of execution authority.
+type KVHTTPAgentCheckToolInput struct {
+	ID, DefinitionJSON string
+}
+
 // Optional unsigned numbers use exact decimal text: empty means omitted,
 // while "0" means explicitly supplied. Bytes use canonical padded Base64.
 // Key is absolute; a connection prefix is only an initial input suggestion.
@@ -71,6 +79,7 @@ type KVRequestToolInput struct {
 	HTTPHealth                                             KVHTTPHealthToolInput
 	HTTPAgent                                              KVHTTPAgentToolInput
 	HTTPAgentService                                       KVHTTPAgentServiceToolInput
+	HTTPAgentCheck                                         KVHTTPAgentCheckToolInput
 }
 
 type KVRequestTool struct {

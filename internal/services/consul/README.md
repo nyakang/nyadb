@@ -117,7 +117,14 @@ I/O. `--agent-check-probe` requires five native check/runtime parents plus all
 46 accepted public service/Agent/health/Watch parents and their 576 images.
 The public regression phase finishes before new critical node checks, whose
 native status affects every service's passing-only health read in that fixture.
-Structured check tools, TTL updates and maintenance require separate acceptance.
+The two structured check tools author complete native definitions or original
+removal IDs without dispatching. They use the existing immutable confirmation,
+complete receipts, request/input files and unknown-write barrier. Publication
+requires `--public-agent-check-probe`: four workspace/Shell parents and 292
+bilingual wide/narrow images, with all 51 existing check/service/browser parents
+and 576 original images retained. The phases preserve every original assertion
+before node-level writes can affect passing-only health filters. TTL updates,
+maintenance, ACL/catalog and other Agent management remain separate.
 
 HTTP paths can clean keys. Noncanonical keys therefore use JSON transactions.
 Repeated/trailing slashes keep their exact key identity. Consul 1.22 and 2.0 differ

@@ -31,7 +31,7 @@ func TestConsulNativePublicAgentBrowserOriginalFormsMapsDetailsAndFiles(t *testi
 	writer := consulRenewalWriter(t, p, secret)
 	service := consulHealthBrowserFixture(t, p, secret, writer)
 	s, d, _ := consulWorkspaceState(t, p, secret)
-	if len(d.RequestTools()) != 22 {
+	if len(d.RequestTools()) != 24 {
 		t.Fatal("original Agent tools unavailable")
 	}
 	for _, kind := range []contract.KVRequestToolKind{contract.KVToolHTTPAgentSelf, contract.KVToolHTTPAgentServices, contract.KVToolHTTPAgentChecks} {
