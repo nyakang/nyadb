@@ -195,6 +195,8 @@ func validateRequest(r Request) (string, bool, int, error) {
 		kind = "read"
 		switch r.Path {
 		case "/v1/agent/self", "/v1/status/leader", "/v1/status/peers", "/v1/catalog/datacenters":
+		case "/v1/agent/services", "/v1/agent/checks":
+			allowed["filter"] = true
 		case "/v1/catalog/nodes", "/v1/catalog/services", "/v1/session/list":
 			readQuery()
 		default:

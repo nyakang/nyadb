@@ -9,6 +9,29 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_agent_read_scope_retains_all_health_parents_and_rejects_skips(self):
+        previous = self.copy_scope_before_startup(health_watch_ui_probe=True)
+        report = self.copy_scope_before_startup(agent_read_probe=True)
+        required = fixture.AGENT_READ_REQUIRED + tuple(previous['required'])
+        self.assertEqual(report['scope'], 'focused-consul-original-agent-reads-with-health-regression')
+        self.assertEqual(tuple(report['required']), required)
+        self.assertEqual(len(set(required)), 29)
+        self.assertTrue(report['agent_read_probe'])
+        self.assertTrue(report['health_watch_ui_probe'])
+        log = '\n'.join('--- PASS: TestConsulNative' + name + ' (0.1s)' for name in required)
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative' + name + ' ', '--- SKIP: TestConsulNative' + name + ' '), required)
+
+    def test_agent_read_scope_rejects_mixed_modes_before_fixture_creation(self):
+        import inspect
+        from unittest.mock import patch
+        flags = [name for name, parameter in inspect.signature(fixture.verify).parameters.items()
+                 if parameter.default is False and name not in ('race', 'agent_read_probe')]
+        for flag in flags:
+            with self.subTest(flag=flag), patch('subprocess.run', side_effect=AssertionError('started mixed Agent fixture')), self.assertRaises(ValueError):
+                fixture.verify(agent_read_probe=True, **{flag: True})
+
     def test_health_watch_ui_requires_every_original_parent_and_distinct_images(self):
         report = self.copy_scope_before_startup(health_watch_ui_probe=True)
         required = fixture.HEALTH_WATCH_UI_REQUIRED + fixture.HEALTH_WATCH_REQUIRED + fixture.HEALTH_PROJECTION_REQUIRED + fixture.HEALTH_BROWSER_REQUIRED + fixture.HTTP_WATCH_REQUIRED + fixture.PUBLIC_HTTP_WATCH_REQUIRED

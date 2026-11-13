@@ -60,6 +60,20 @@ Supported requests include:
 - Session create, information/list/node reads, one-shot renew and destroy.
 - Read-only agent, leader/peer, catalog and health requests.
 
+The private Agent read foundation adds pure `AgentSelfRequest`,
+`AgentServicesRequest` and `AgentChecksRequest` builders. Services/checks retain
+omitted or explicitly empty native filters. These endpoints contact the original
+agent and do not inherit configured datacenter, browsing prefix or consistency;
+explicit namespace, partition, blocking-index and wait parameters are rejected.
+An ACL-filtered empty 200 list remains a scoped response, not proof of global
+absence or permission; native 403 rejection retains its complete original body.
+The complete original map response and HTTP evidence remain independent of any
+later projection or unknown write. Agent service registration, local check
+updates, management tools and a dedicated Agent browser remain unpublished.
+`--agent-read-probe` verifies three Agent parents together with all 26 existing
+health Watch/browser and HTTP Watch regression parents; it does not claim the
+unrelated complete public Session/grid matrix.
+
 HTTP paths can clean keys. Noncanonical keys therefore use JSON transactions.
 Repeated/trailing slashes keep their exact key identity. Consul 1.22 and 2.0 differ
 on traversal and leading-slash keys; a native rejection is retained instead of

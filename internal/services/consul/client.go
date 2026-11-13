@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 )
 
@@ -122,14 +123,15 @@ func (c *Client) requestURL(p Plan) (string, error) {
 		q = url.Values{}
 	}
 	// Agent endpoints select the original contacted agent, not a scoped namespace.
-	if p.request.Path != "/v1/agent/self" {
+	localAgent := strings.HasPrefix(p.request.Path, "/v1/agent/")
+	if !localAgent {
 		for key, value := range map[string]string{"dc": c.config.Datacenter, "ns": c.config.Namespace, "partition": c.config.Partition} {
 			if value != "" {
 				q.Set(key, value)
 			}
 		}
 	}
-	scopedRead := !p.write && (p.kind == "kv-read" || p.kind == "txn" || p.request.Path != "/v1/agent/self" && p.request.Path != "/v1/status/leader" && p.request.Path != "/v1/status/peers" && p.request.Path != "/v1/catalog/datacenters")
+	scopedRead := !p.write && !localAgent && p.request.Path != "/v1/status/leader" && p.request.Path != "/v1/status/peers" && p.request.Path != "/v1/catalog/datacenters"
 	if scopedRead && c.config.Consistency != "default" {
 		other := "stale"
 		if c.config.Consistency == "stale" {
