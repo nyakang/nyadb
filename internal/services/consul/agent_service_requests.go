@@ -42,6 +42,10 @@ func AgentServiceDeregisterRequest(id string) (Request, error) {
 }
 
 func validateAgentServiceDefinition(raw []byte) error {
+	return validateAgentDefinition(raw, validateAgentServiceRouting)
+}
+
+func validateAgentDefinition(raw []byte, routing func(any) error) error {
 	var fields map[string]json.RawMessage
 	if jsondocument.Decode(raw, &fields, requestLimit) != nil || fields == nil {
 		return ErrInvalid
@@ -60,12 +64,12 @@ func validateAgentServiceDefinition(raw []byte) error {
 		return ErrInvalid
 	}
 	// Detect unsupported routing and embedded authentication without rebuilding
-	// the definition. Meta is native user metadata, not a routing/auth container.
+	// the definition. Each Agent request family supplies its own routing policy.
 	var definition any
 	if jsondocument.Decode(raw, &definition, requestLimit) != nil {
 		return ErrInvalid
 	}
-	return validateAgentServiceRouting(definition)
+	return routing(definition)
 }
 
 func validateAgentServiceRouting(value any) error {

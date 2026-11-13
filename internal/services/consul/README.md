@@ -104,6 +104,21 @@ processed reply faults, parking, evidence-only recovery, original session-tool
 fault regressions and all accepted Agent/health/Watch browser parents. Local
 check/TTL/maintenance, ACL/catalog and other Agent management tools remain separate.
 
+`AgentCheckRegisterRequest` and `AgentCheckDeregisterRequest` retain complete
+native check definitions and exact IDs through the same Client/document lease
+and runtime publication. Omitted, empty and null IDs remain authored; the Agent
+chooses defaults. Re-registering an existing TTL check can update its definition
+while retaining its prior status. A later local-map read cannot confirm a lost
+write receipt. Complete empty HTTP 200 responses acknowledge success; proved
+403 ACL refusal and deregistration 404 acknowledge denial. Other complete or
+partial errors retain the original unknown-write barrier and complete receipts.
+Check writes reject unsupported routing/authentication and cleaned paths before
+I/O. `--agent-check-probe` requires five native check/runtime parents plus all
+46 accepted public service/Agent/health/Watch parents and their 576 images.
+The public regression phase finishes before new critical node checks, whose
+native status affects every service's passing-only health read in that fixture.
+Structured check tools, TTL updates and maintenance require separate acceptance.
+
 HTTP paths can clean keys. Noncanonical keys therefore use JSON transactions.
 Repeated/trailing slashes keep their exact key identity. Consul 1.22 and 2.0 differ
 on traversal and leading-slash keys; a native rejection is retained instead of

@@ -9,6 +9,53 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_agent_check_foundation_retains_every_accepted_public_service_parent(self):
+        previous = self.copy_scope_before_startup(public_agent_service_probe=True)
+        report = self.copy_scope_before_startup(agent_check_probe=True)
+        required = fixture.AGENT_CHECK_REQUIRED + tuple(previous['required'])
+        self.assertEqual(tuple(report['required']), required)
+        self.assertEqual(len(required), 51)
+        self.assertEqual(len(required), len(set(required)))
+        self.assertFalse(report['production_agent_check_tools_published'])
+        self.assertTrue(report['production_agent_service_tools_published'])
+        self.assertEqual(report['scope'], 'private-consul-native-agent-check-foundation-with-public-service-browser-regression')
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+
+    def test_agent_check_foundation_phases_keep_health_before_critical_node_checks(self):
+        report = self.copy_scope_before_startup(agent_check_probe=True)
+        required = tuple(report['required'])
+        phases = fixture.agent_check_acceptance_test_phases(report['packages'], required, True, 1200)
+        self.assertEqual(len(phases), 2)
+        first, second = phases
+        self.assertIn('./internal/ui/kvworkspace', first)
+        self.assertIn('./internal/ui/shell', first)
+        self.assertNotIn('./internal/ui/shell', second)
+        for name in fixture.AGENT_CHECK_REQUIRED:
+            self.assertNotIn('TestConsulNative'+name+'|', first[first.index('-run')+1])
+            self.assertIn('TestConsulNative'+name, second[second.index('-run')+1])
+        import re
+        scheduled = [name for phase in phases for name in re.findall(r'TestConsulNative(\w+)', phase[phase.index('-run')+1])]
+        self.assertCountEqual(scheduled, required)
+        self.assertEqual(len(scheduled), len(set(scheduled)))
+        for phase in phases:
+            self.assertIn('-race', phase)
+            self.assertIn('-count=1', phase)
+            self.assertIn('-timeout=1200s', phase)
+        with self.assertRaises(ValueError):
+            fixture.agent_check_acceptance_test_phases(report['packages'], required[:-1])
+
+    def test_agent_check_foundation_rejects_every_mixed_scope_before_startup(self):
+        import inspect
+        from unittest.mock import patch
+        flags = [name for name, parameter in inspect.signature(fixture.verify).parameters.items()
+                 if parameter.default is False and name not in ('race', 'agent_check_probe')]
+        for flag in flags:
+            with self.subTest(flag=flag), patch('subprocess.run', side_effect=AssertionError('started mixed check foundation fixture')), self.assertRaises(ValueError):
+                fixture.verify(agent_check_probe=True, **{flag: True})
+
     def test_public_agent_service_requires_real_ui_faults_shell_and_original_regression(self):
         previous = self.copy_scope_before_startup(agent_service_probe=True)
         report = self.copy_scope_before_startup(public_agent_service_probe=True)

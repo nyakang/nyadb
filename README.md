@@ -153,6 +153,15 @@ five configurations and both original default copy-limit probes. The separate
 
 Consul HTTP Watch acceptance uses `GOWORK=off /usr/bin/python3 tools/verify_consul_fixture.py --public-http-watch --race --txn-max-request 8388608 --test-timeout 1800 --memory-mib 2048 --mode MODE` on official 2.0.2 anonymous/token/TLS/mTLS and 1.22.3 token. Each configuration retains the 92 existing original Watch/regression parents and 808 images, and adds four public workspace/Shell parents and 80 bilingual wide/narrow images. The two default transaction-limit probes remain separate. See [adapter scope](internal/services/consul/README.md) and [local Watch verification](docs/consul-http-watch-public-2026-11-12.md).
 
+Consul native Agent check register/deregister requests retain complete original
+definitions, native IDs and empty HTTP acknowledgements through the existing
+document lease and runtime generations. Check-specific structured forms,
+TTL updates and maintenance remain separate. Verify the native foundation with
+`GOWORK=off /usr/bin/python3 tools/verify_consul_fixture.py --agent-check-probe --race --mode MODE`:
+each configuration requires five new and all 46 accepted service/browser parents,
+with the 576 original service/Agent/health/Watch images retained. Use official
+2.0.2 token/anonymous/TLS/mTLS and 1.22.3 token.
+
 Consul local Agent service tools use the existing original HTTP document and
 one-use lease. Registration retains complete authored JSON; deregistration uses
 the original native ID. Both require a separate immutable confirmation. Empty

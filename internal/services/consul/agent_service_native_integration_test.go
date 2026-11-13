@@ -138,6 +138,10 @@ func TestConsulNativeAgentServiceOriginalPlansDefinitionsReplacementAndKnownDeni
 // Only a completed original Agent PUT is damaged. Readiness/identity requests
 // pass through, and the original transport cannot redirect or retry the PUT.
 func nativeAgentServiceFault(t *testing.T, cfg Config, token, mode string) (Config, *atomic.Int32, *atomic.Int32, <-chan struct{}) {
+	return nativeAgentMutationFault(t, cfg, token, mode, "/v1/agent/service/")
+}
+
+func nativeAgentMutationFault(t *testing.T, cfg Config, token, mode, prefix string) (Config, *atomic.Int32, *atomic.Int32, <-chan struct{}) {
 	t.Helper()
 	upstream, err := New(cfg, token)
 	if err != nil {
@@ -168,7 +172,7 @@ func nativeAgentServiceFault(t *testing.T, cfg Config, token, mode string) (Conf
 		if err != nil {
 			return
 		}
-		if incoming.Method == http.MethodPut && strings.HasPrefix(incoming.URL.Path, "/v1/agent/service/") {
+		if incoming.Method == http.MethodPut && strings.HasPrefix(incoming.URL.Path, prefix) {
 			writes.Add(1)
 			if response.StatusCode != 200 || len(body) != 0 || !once.CompareAndSwap(false, true) {
 				t.Error("relay did not capture exactly one original successful Agent mutation")

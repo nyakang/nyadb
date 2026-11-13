@@ -142,6 +142,20 @@ func validateRequest(r Request) (string, bool, int, error) {
 			return "", false, 0, ErrUnsupported
 		}
 		kind = "agent-service-deregister"
+	case r.Path == "/v1/agent/check/register" && r.Method == http.MethodPut:
+		if err := validateAgentDefinition(r.Body, validateAgentCheckRouting); err != nil {
+			return "", false, 0, err
+		}
+		kind = "agent-check-register"
+	case strings.HasPrefix(r.Path, "/v1/agent/check/deregister/"):
+		id, err := keyAt(r.Path, "/v1/agent/check/deregister/", false)
+		if err != nil || !validText(id, 4096) || r.Method != http.MethodPut || len(r.Body) != 0 {
+			return "", false, 0, ErrInvalid
+		}
+		if !canonicalHTTPKey(id) {
+			return "", false, 0, ErrUnsupported
+		}
+		kind = "agent-check-deregister"
 	case strings.HasPrefix(r.Path, "/v1/kv/"):
 		key, e := keyAt(r.Path, "/v1/kv/", true)
 		if e == nil && !canonicalHTTPKey(key) {
