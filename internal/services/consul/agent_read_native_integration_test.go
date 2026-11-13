@@ -66,6 +66,15 @@ func TestConsulNativeAgentLocalReadsOriginalMapsFiltersAndConfiguredScope(t *tes
 					t.Fatal("original agent map key and identity disagree", endpoint)
 				}
 			}
+			projected := nativeAgentProjection(t, response)
+			if projected.HTTP.Agent == nil || !projected.HTTP.Agent.ProjectionComplete || !projected.HTTP.Agent.Complete || projected.HTTP.Agent.Kind != endpoint || len(projected.HTTP.Agent.Rows) != len(rows) || projected.HTTP.Health != nil || projected.HTTP.Sessions != nil {
+				t.Fatal("original local map unavailable or confused with catalog health", projected.ProjectionError)
+			}
+			for _, entry := range projected.HTTP.Agent.Rows {
+				if entry.Key != entry.ID || !bytes.Equal(entry.Raw, rows[entry.Key]) || entry.Service == "" && endpoint == "services" {
+					t.Fatal("original map key/full JSON changed in Agent projection")
+				}
+			}
 			before := bytes.Clone(response.Body)
 			response.Body[0] ^= 1
 			if !bytes.Equal(reader.LastResponse().Body, before) {
@@ -92,6 +101,10 @@ func TestConsulNativeAgentLocalReadsOriginalMapsFiltersAndConfiguredScope(t *tes
 			denied := r.Status == 403 && err != nil && !r.Succeeded
 			var entries map[string]json.RawMessage
 			filtered := request.Path != "/v1/agent/self" && r.Status == 200 && err == nil && r.Succeeded && r.Metadata.ACLFiltered != nil && *r.Metadata.ACLFiltered && json.Unmarshal(r.Body, &entries) == nil && entries != nil && len(entries) == 0
+			projected := nativeAgentProjection(t, r)
+			if denied && projected.HTTP.Agent != nil || filtered && (projected.HTTP.Agent == nil || !projected.HTTP.Agent.ProjectionComplete || projected.HTTP.Agent.Complete || len(projected.HTTP.Agent.Rows) != 0) {
+				t.Fatal("restricted original map invented Agent inventory")
+			}
 			if !r.Captured || !r.EOF || !r.Acknowledged || r.WriteOutcomeUnknown || !denied && !filtered {
 				t.Fatal("restricted agent read invented permission or discarded its receipt", r.Status, err)
 			}
@@ -189,6 +202,10 @@ func TestConsulNativeAgentLocalReadReceiptFaultsAndCancellationNeverRetry(t *tes
 			}
 			select {
 			case result := <-done:
+				projected := nativeAgentProjection(t, result.response)
+				if projected.HTTP.Agent != nil || projected.Completed || !bytes.Equal(projected.HTTP.Body, result.response.Body) {
+					t.Fatal("damaged original read promoted or partial body discarded")
+				}
 				if result.err == nil || !result.response.Ended || result.response.Acknowledged || result.response.WriteOutcomeUnknown || calls.Load() != 1 {
 					t.Fatal("damaged original agent response was guessed or retried", result.err)
 				}
@@ -248,6 +265,9 @@ func TestConsulNativeAgentLocalReadsKeepOriginalUnknownWriteAndEvidenceOnlyRecov
 		if err != nil || !result.Completed || result.HTTP == nil || !result.HTTP.Acknowledged || result.WriteOutcomeUnknown || !reflect.DeepEqual(unknown, lease.(*documentLease).recoveryOwned().Unknown) {
 			t.Fatal("independent original agent read changed unknown write evidence", err)
 		}
+		if native.Path != "/v1/agent/self" && (result.HTTP.Agent == nil || !result.HTTP.Agent.ProjectionComplete) {
+			t.Fatal("unknown write erased the independent original Agent projection", result.ProjectionError)
+		}
 	}
 	before := calls.Load()
 	recovered, err := session.RecoverKV(lease)
@@ -258,4 +278,13 @@ func TestConsulNativeAgentLocalReadsKeepOriginalUnknownWriteAndEvidenceOnlyRecov
 	if _, err := recovered.Lease.Prepare(request); !errors.Is(err, contract.ErrKVWriteUnknown) || calls.Load() != before {
 		t.Fatal("agent reads or recovery removed the original write barrier", err)
 	}
+}
+
+func nativeAgentProjection(t *testing.T, r Response) contract.KVResult {
+	t.Helper()
+	request, err := DocumentRequest(r.Request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return documentResult(request, r)
 }

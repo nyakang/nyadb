@@ -554,8 +554,21 @@ complete original response remains subject to the existing 48 MiB limit.
 Nested projections are cloned and included in the owning lease receipt budget.
 Later reads and evidence-only recovery never acknowledge an unknown write.
 
-This is internal groundwork, not a published Session browser. Session list
-search/paging, selected detail, held-key observation, destroy impact, service
-health/catalog/ACL management and the remaining reference gaps are pending.
+Session list search/paging, selected detail, held-key observation and guarded
+destruction are available in the workbench. The original health browser and
+finite blocking health Watch have separate native acceptance. Agent browser,
+registration/check writes, catalog/ACL management and remaining reference gaps
+require separate publication and verification.
 `--session-projection` retains every public Session tool parent and screenshot;
 `--session-projection-probe` is a distinct diagnostic scope only.
+
+Agent services/checks reads can carry an optional local-map projection. Native
+map keys, original order, missing/null/empty fields and complete original entry
+JSON remain distinct. Local checks may omit Node. Invalid identities, duplicate
+keys/fields or exceeded row/32 MiB projection bounds publish no partial map and
+retain the original HTTP acknowledgement. ACL-filtered maps remain explicitly
+incomplete; they do not establish catalog absence or registration permission.
+Clones and original lease receipt budgets include all projected entry bytes.
+`--agent-projection-probe` verifies the projection through the original Agent
+read parents and all existing health/browser/HTTP Watch parents. It rejects
+mixed scopes, retains unknown write evidence and never retries a damaged read.

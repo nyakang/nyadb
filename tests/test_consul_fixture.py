@@ -9,6 +9,25 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_agent_projection_scope_retains_original_health_and_read_parents(self):
+        report = self.copy_scope_before_startup(agent_projection_probe=True)
+        expected = fixture.AGENT_READ_REQUIRED + fixture.HEALTH_WATCH_UI_REQUIRED + fixture.HEALTH_WATCH_REQUIRED + fixture.HEALTH_PROJECTION_REQUIRED + fixture.HEALTH_BROWSER_REQUIRED + fixture.HTTP_WATCH_REQUIRED + fixture.PUBLIC_HTTP_WATCH_REQUIRED
+        self.assertEqual(report['scope'], 'focused-consul-original-agent-projection-with-health-regression')
+        self.assertTrue(report['agent_projection_probe'])
+        self.assertTrue(report['agent_read_probe'])
+        self.assertEqual(report['required'], list(expected))
+        self.assertEqual(len(expected), 29)
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in expected)
+        self.assertEqual(fixture.accepted_cases(log, expected), list(expected))
+        for name in expected:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), expected)
+
+    def test_agent_projection_scope_rejects_mixed_modes_before_fixture_creation(self):
+        for flag in ('agent_read_probe', 'health_watch_ui_probe', 'health_watch_probe', 'health_browser_probe', 'health_projection', 'health_projection_probe', 'public_session_destroy', 'public', 'session', 'probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(agent_projection_probe=True, **{flag: True})
+
     def test_agent_read_scope_retains_all_health_parents_and_rejects_skips(self):
         previous = self.copy_scope_before_startup(health_watch_ui_probe=True)
         report = self.copy_scope_before_startup(agent_read_probe=True)
