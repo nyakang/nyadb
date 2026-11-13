@@ -20,17 +20,17 @@ func (s *State) designTextArea(c *ui.Context, d *Document, text *string) ui.Elem
 	return s.bindDesignText(c, d, text, e)
 }
 func (s *State) bindDesignText(c *ui.Context, d *Document, text *string, e ui.Element) ui.Element {
-	if e.Focused() {
+	if e.Focused() && !d.formFocusPending {
 		d.formFocusTarget = text
 	}
-	if d.formFocusTarget == text {
+	// Bind only while restoring the original form's focus. A preview can
+	// receive focus later in this build and must not reuse that handle.
+	if d.formFocusPending && d.formFocusTarget == text {
 		e.Bind(&d.formFocusHandle)
-		if d.formFocusPending {
-			e.ScrollIntoView()
-			d.formFocusHandle.Focus(c)
-			if e.Focused() {
-				d.formFocusPending = false
-			}
+		e.ScrollIntoView()
+		d.formFocusHandle.Focus(c)
+		if e.Focused() {
+			d.formFocusPending = false
 		}
 	}
 	design, schema := d.design, d.schemaDesign
