@@ -226,6 +226,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 		}
 		if isHTTPWatch {
 			hint = locales.Text("原目标与实际读取前缀分别填写；这是当前观察，不是完整事件历史或写入确认")
+			if r, err := ParseHTTPWatchRequest(d.Request().JSON); err == nil && r.Health.Kind != "" {
+				hint = locales.Text("健康 Watch 保留连续的当前观察；只有明确启动才开始读取")
+			}
 		}
 		if isHTTPSessionRenewal {
 			hint = locales.Text("指定原 Session UUID；先读取 TTL，再按明确间隔和次数逐次 PUT 续租")
@@ -633,6 +636,7 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 }
 func (s *State) Modals(c *ui.Context) {
 	s.httpSessionBrowserModals(c)
+	s.httpHealthBrowserModals(c)
 	s.httpSessionKeysModals(c)
 	s.requestToolsModals(c)
 	s.snapshotModals(c)

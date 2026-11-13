@@ -9,6 +9,109 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_health_watch_ui_requires_every_original_parent_and_distinct_images(self):
+        report = self.copy_scope_before_startup(health_watch_ui_probe=True)
+        required = fixture.HEALTH_WATCH_UI_REQUIRED + fixture.HEALTH_WATCH_REQUIRED + fixture.HEALTH_PROJECTION_REQUIRED + fixture.HEALTH_BROWSER_REQUIRED + fixture.HTTP_WATCH_REQUIRED + fixture.PUBLIC_HTTP_WATCH_REQUIRED
+        self.assertEqual(report['scope'], 'focused-consul-public-health-watch')
+        self.assertEqual(tuple(report['required']), required)
+        self.assertEqual(len(set(required)), 26)
+        self.assertTrue(report['health_watch_ui_probe'])
+        self.assertFalse(report['health_watch_probe'])
+        self.assertEqual(len(fixture.health_watch_ui_image_names()), 84)
+        self.assertFalse(fixture.health_watch_ui_image_names() & fixture.health_browser_image_names())
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+
+    def test_health_watch_ui_rejects_mixed_scopes_before_fixture_creation(self):
+        import inspect
+        from unittest.mock import patch
+        flags = [name for name, parameter in inspect.signature(fixture.verify).parameters.items()
+                 if parameter.default is False and name not in ('race', 'health_watch_ui_probe')]
+        for flag in flags:
+            with self.subTest(flag=flag), patch('subprocess.run', side_effect=AssertionError('started mixed health Watch UI fixture')), self.assertRaises(ValueError):
+                fixture.verify(health_watch_ui_probe=True, **{flag: True})
+
+    def test_health_watch_scope_includes_original_health_and_http_watch_recovery(self):
+        report = self.copy_scope_before_startup(health_watch_probe=True)
+        required = fixture.HEALTH_WATCH_REQUIRED + fixture.HEALTH_PROJECTION_REQUIRED + fixture.HTTP_WATCH_REQUIRED + fixture.PUBLIC_HTTP_WATCH_REQUIRED
+        self.assertEqual(report['scope'], 'focused-consul-native-health-watch')
+        self.assertTrue(report['health_watch_probe'])
+        self.assertEqual(tuple(report['required']), required)
+        self.assertEqual(len(set(required)), 20)
+        self.assertFalse(report['public_session_destroy'])
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+
+    def test_health_watch_rejects_mixed_feature_scopes_before_startup(self):
+        import inspect
+        from unittest.mock import patch
+        flags = [name for name, parameter in inspect.signature(fixture.verify).parameters.items()
+                 if parameter.default is False and name not in ('race', 'health_watch_probe')]
+        for flag in flags:
+            with self.subTest(flag=flag), patch('subprocess.run', side_effect=AssertionError('started fixture before scope validation')), self.assertRaises(ValueError):
+                fixture.verify(health_watch_probe=True, **{flag: True})
+
+    def test_health_watch_cli_validates_scope_and_timeout_before_startup(self):
+        import runpy
+        from unittest.mock import patch
+        for args in (['--health-watch-probe', '--health-browser-probe'], ['--health-watch-probe', '--health-projection'], ['--health-watch-probe', '--test-timeout', '0']):
+            with self.subTest(args=args), patch('sys.argv', [str(ROOT/'tools/verify_consul_fixture.py'), *args]), patch('subprocess.run', side_effect=AssertionError('started invalid watch fixture')), self.assertRaises(ValueError):
+                runpy.run_path(str(ROOT/'tools/verify_consul_fixture.py'), run_name='__main__')
+
+    def test_health_projection_retains_all_138_public_parents_once_before_pressure(self):
+        previous = self.copy_scope_before_startup(public_session_destroy=True)
+        report = self.copy_scope_before_startup(health_projection=True)
+        self.assertEqual(report['scope'], 'private-consul-health-projection-with-public-destroy-regression')
+        self.assertEqual(report['required'], previous['required'] + list(fixture.HEALTH_PROJECTION_REQUIRED))
+        self.assertTrue(report['public_session_destroy'])
+        self.assertFalse(report['health_projection_probe'])
+        phases = fixture.acceptance_test_phases(report['packages'], tuple(report['required']), True, 1800, True, True, True, True, True, True)
+        names = [name for phase in phases for name in phase[phase.index('-run')+1][2:-2].split('|')]
+        self.assertEqual(len(phases), 7)
+        self.assertEqual(len(names), 141)
+        self.assertEqual(len(set(names)), 141)
+        self.assertEqual(sorted(names), sorted('TestConsulNative'+name for name in report['required']))
+        self.assertEqual(names[:3], ['TestConsulNative'+name for name in fixture.HEALTH_PROJECTION_REQUIRED])
+        self.assertEqual(names[3:6], ['TestConsulNative'+name for name in fixture.PUBLIC_SESSION_DESTROY_REQUIRED])
+        log = '\n'.join('--- PASS: '+name+' (0.1s)' for name in names)
+        fixture.accepted_cases(log, tuple(report['required']))
+        for name in names:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: '+name+' ', '--- SKIP: '+name+' '), tuple(report['required']))
+        with self.assertRaises(RuntimeError):
+            fixture.accepted_cases(log + '\n--- PASS: '+names[0]+' (0.1s)', tuple(report['required']))
+        for required in (tuple(previous['required']), tuple(report['required']) + fixture.HEALTH_PROJECTION_REQUIRED[:1]):
+            with self.assertRaises(ValueError):
+                fixture.acceptance_test_phases(report['packages'], required, health_projection=True)
+
+    def test_health_diagnostic_rejects_mixed_scopes_and_full_acceptance_rejects_all_probes(self):
+        import inspect
+        report = self.copy_scope_before_startup(health_projection_probe=True)
+        self.assertEqual(report['scope'], 'diagnostic-consul-health-projection')
+        self.assertEqual(tuple(report['required']), fixture.HEALTH_PROJECTION_REQUIRED)
+        self.assertEqual(report['packages'], ['./internal/services/consul'])
+        self.assertFalse(report['public_session_destroy'])
+        flags = [name for name, parameter in inspect.signature(fixture.verify).parameters.items()
+                 if parameter.default is False and name not in ('race', 'health_projection_probe')]
+        for flag in flags:
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(health_projection_probe=True, **{flag: True})
+        for flag in flags + ['health_projection_probe']:
+            if flag == 'probe' or flag.endswith('_probe'):
+                with self.subTest(flag=flag), self.assertRaises(ValueError):
+                    fixture.verify(health_projection=True, **{flag: True})
+        for name in ('internal/db/contract/kv_http_health.go',
+                     'internal/services/consul/kv_health_projection.go',
+                     'internal/services/consul/kv_health_requests.go',
+                     'internal/services/consul/kv_health_projection_test.go',
+                     'internal/services/consul/kv_health_requests_test.go',
+                     'internal/services/consul/kv_health_projection_native_integration_test.go'):
+            self.assertIn(name, fixture.source_hashes())
+
     def test_public_destroy_requires_all_private_parents_and_bilingual_original_records(self):
         previous = self.copy_scope_before_startup(session_destroy_plan=True)
         report = self.copy_scope_before_startup(public_session_destroy=True)

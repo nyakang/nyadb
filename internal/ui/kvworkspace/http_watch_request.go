@@ -19,17 +19,29 @@ func DefaultHTTPWatchRequest() contract.KVRequest {
 // must never become an implicit root read, and uint64 never passes float64.
 func ParseHTTPWatchRequest(text string) (contract.KVHTTPWatchRequest, error) {
 	var r contract.KVHTTPWatchRequest
-	f, err := eventFields(text, "target", "prefix", "observation_prefix", "start_index", "wait", "max_observations", "max_bytes")
-	if err != nil || len(f) != 7 {
+	f, err := eventFields(text, "target", "prefix", "observation_prefix", "health", "start_index", "wait", "max_observations", "max_bytes")
+	if err != nil {
 		return r, jsondocument.ErrInvalid
 	}
-	for key, dst := range map[string]*string{"target": &r.Target, "observation_prefix": &r.ObservationPrefix} {
-		if json.Unmarshal(f[key], dst) != nil {
+	if raw, health := f["health"]; health {
+		if len(f) != 5 {
 			return r, jsondocument.ErrInvalid
 		}
-	}
-	if json.Unmarshal(f["prefix"], &r.Prefix) != nil {
-		return r, jsondocument.ErrInvalid
+		if r.Health, err = parseHTTPHealthWatchTarget(string(raw)); err != nil {
+			return r, err
+		}
+	} else {
+		if len(f) != 7 {
+			return r, jsondocument.ErrInvalid
+		}
+		for key, dst := range map[string]*string{"target": &r.Target, "observation_prefix": &r.ObservationPrefix} {
+			if json.Unmarshal(f[key], dst) != nil {
+				return r, jsondocument.ErrInvalid
+			}
+		}
+		if json.Unmarshal(f["prefix"], &r.Prefix) != nil {
+			return r, jsondocument.ErrInvalid
+		}
 	}
 	var wait string
 	if json.Unmarshal(f["wait"], &wait) != nil {

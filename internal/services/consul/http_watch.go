@@ -3,7 +3,6 @@ package consul
 import (
 	"context"
 	"errors"
-	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -46,16 +45,14 @@ func (l *httpWatchLease) Prepare(r contract.KVHTTPWatchRequest) (contract.KVHTTP
 		return nil, err
 	}
 	lim := l.Limits()
-	if !validKey(r.Target, r.Prefix) || !validKey(r.ObservationPrefix, true) || !strings.HasPrefix(r.Target, r.ObservationPrefix) ||
-		r.Wait < lim.MinWait || r.Wait > lim.MaxWait || r.Wait+r.Wait/16+lim.ConnectTimeout >= lim.RequestTimeout ||
+	if r.Wait < lim.MinWait || r.Wait > lim.MaxWait || r.Wait+r.Wait/16+lim.ConnectTimeout >= lim.RequestTimeout ||
 		r.MaxObservations < 1 || r.MaxObservations > lim.MaxObservations || r.MaxBytes < 1 || r.MaxBytes > lim.MaxBytes {
 		return nil, ErrInvalid
 	}
-	path, err := KeyPath(r.ObservationPrefix)
+	native, err := httpWatchNativeRequest(r)
 	if err != nil {
 		return nil, err
 	}
-	native := Request{Method: "GET", Path: path, Query: url.Values{"recurse": {""}, "index": {strconv.FormatUint(r.StartIndex, 10)}, "wait": {r.Wait.String()}}}
 	if _, write, _, err := validateRequest(native); err != nil || write {
 		return nil, errors.Join(err, ErrInvalid)
 	}
@@ -275,9 +272,13 @@ func watchObservation(r Response, request contract.KVHTTPWatchRequest, index uin
 	o := contract.KVHTTPWatchObservation{HTTP: *h, ReceivedAt: time.Now().UTC(),
 		ProjectionComplete: h.Ended && h.Captured && h.EOF && h.Acknowledged && h.Succeeded && h.ProjectionError == "" && h.CaptureError == ""}
 	if o.ProjectionComplete {
-		for i, e := range h.Entries {
-			if e.Key == request.Target || request.Prefix && strings.HasPrefix(e.Key, request.Target) {
-				o.Matches = append(o.Matches, i)
+		if request.Health.Kind != "" {
+			o.ProjectionComplete = h.Health != nil && h.Health.ProjectionComplete
+		} else {
+			for i, e := range h.Entries {
+				if e.Key == request.Target || request.Prefix && strings.HasPrefix(e.Key, request.Target) {
+					o.Matches = append(o.Matches, i)
+				}
 			}
 		}
 	}
@@ -298,6 +299,7 @@ func watchObservation(r Response, request contract.KVHTTPWatchRequest, index uin
 			o.IndexRelation = "advanced"
 		}
 	}
+	o.IndexReset = request.Health.Kind != "" && (o.IndexRelation == "zero" || o.IndexRelation == "backward")
 	return o
 }
 
@@ -370,11 +372,25 @@ func (w *httpWatchRun) execute(ctx context.Context, done func(), native Request,
 		case overflow:
 			terminal = contract.KVHTTPWatchTerminal{Reason: "byte-limit"}
 			return
-		case o.IndexRelation == "zero" || o.IndexRelation == "backward" || o.IndexRelation == "unavailable" || o.IndexRelation == "invalid":
+		case !o.IndexReset && (o.IndexRelation == "zero" || o.IndexRelation == "backward") || o.IndexRelation == "unavailable" || o.IndexRelation == "invalid":
 			terminal = contract.KVHTTPWatchTerminal{Reason: "index-" + o.IndexRelation}
 			return
 		}
 		index = *o.HTTP.Metadata.Index
+		if o.IndexReset {
+			index = 1
+			// A server returning zero repeatedly must not create a busy loop.
+			// This is an authorized next snapshot, never a failed-read retry.
+			if n+1 < w.request.MaxObservations {
+				timer := time.NewTimer(w.lease.Limits().MinWait)
+				select {
+				case <-ctx.Done():
+					timer.Stop()
+					return
+				case <-timer.C:
+				}
+			}
+		}
 	}
 	terminal = contract.KVHTTPWatchTerminal{Reason: "observation-limit"}
 }

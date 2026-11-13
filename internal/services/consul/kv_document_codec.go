@@ -150,6 +150,7 @@ func documentResult(request contract.KVRequest, r Response) contract.KVResult {
 		}
 	}
 	projectDocumentSessions(&out)
+	projectDocumentHealth(&out)
 	return out
 }
 
@@ -170,6 +171,9 @@ func resultCost(r *contract.KVResult) int64 {
 					n += int64(24 + len(v))
 				}
 			}
+		}
+		if h.Health != nil {
+			n += healthProjectionCost(*h.Health)
 		}
 		if h.Sessions != nil {
 			for _, row := range h.Sessions.Rows {

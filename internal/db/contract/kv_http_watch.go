@@ -8,8 +8,10 @@ import (
 
 // HTTP Watch observes current ranges through native blocking reads. It does not
 // provide an event stream, historical revisions, or confirmation of any write.
-// ObservationPrefix is the explicitly authored actual read range; Target and
-// Prefix only select original keys within that range, without path cleaning.
+// ObservationPrefix is the explicitly authored actual KV read range; Target
+// and Prefix select original keys within that range, without path cleaning.
+// Health selects a native health endpoint instead and requires all KV range
+// fields to be empty. The original scope, wait and evidence budgets still apply.
 type KVHTTPWatchRequest struct {
 	Target, ObservationPrefix string
 	Prefix                    bool
@@ -17,6 +19,17 @@ type KVHTTPWatchRequest struct {
 	Wait                      time.Duration
 	MaxObservations           int
 	MaxBytes                  int64
+	Health                    KVHTTPHealthWatchTarget
+}
+
+// Health is an immutable value capture. Kind is state, node, checks or service;
+// Name is the original native state/name. Passing is omitted, false or true and
+// applies only to service instances. Include flags preserve explicit empty
+// filter/near values. Datacenter and consistency belong to the original lease.
+type KVHTTPHealthWatchTarget struct {
+	Kind, Name, Passing        string
+	IncludeFilter, IncludeNear bool
+	Filter, Near               string
 }
 
 type KVHTTPWatchLimits struct {
@@ -39,6 +52,7 @@ type KVHTTPWatchObservation struct {
 	ReceivedAt         time.Time
 	IndexRelation      string
 	ProjectionComplete bool
+	IndexReset         bool // health only: retain the returned index; next blocking read uses 1
 }
 
 func (o KVHTTPWatchObservation) Clone() KVHTTPWatchObservation {

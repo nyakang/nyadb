@@ -26,6 +26,8 @@ type httpWatchState struct {
 	preview                 string
 	indexRelation, index    string
 	aclFiltered, incomplete bool
+	indexReset              bool
+	healthReceipt           *Receipt
 	revision                uint64
 }
 
@@ -142,6 +144,7 @@ func (s *State) StartHTTPWatch(d *Document) {
 	}
 	w.authored, w.request, w.evidenceScope = d.Request(), r, w.scope.Clone()
 	w.status, w.preview, w.selected = contract.KVHTTPWatchStatus{}, "", -1
+	w.healthReceipt = nil
 	w.revision++
 	d.clearConfirmation()
 	d.selectedHTTPWatch = true
@@ -192,6 +195,12 @@ func (s *State) ClearHTTPWatch(d *Document) {
 		return
 	}
 	w.run, w.preview, w.selected = nil, "", -1
+	w.healthReceipt = nil
+	d.httpHealth = false
+	if d.httpHealthBrowser != nil {
+		d.httpHealthBrowser.close()
+		d.httpHealthBrowser = nil
+	}
 	w.status = contract.KVHTTPWatchStatus{}
 	w.revision++
 	d.permit = nil
@@ -343,8 +352,29 @@ func (s *State) SelectHTTPWatchObservation(d *Document, ordinal int) {
 	}
 	w.aclFiltered = o.HTTP.Metadata.ACLFiltered != nil && *o.HTTP.Metadata.ACLFiltered
 	w.incomplete = !o.ProjectionComplete
+	w.indexReset = o.IndexReset
+	if d.httpHealthBrowser != nil && d.httpHealthBrowser.receipt == w.healthReceipt {
+		d.httpHealthBrowser.close()
+		d.httpHealthBrowser = nil
+	}
+	w.healthReceipt = nil
+	if w.request.Health.Kind != "" && o.ProjectionComplete && o.HTTP.Health != nil {
+		w.healthReceipt = &Receipt{Scope: w.evidenceScope.Clone(), Authored: w.authored, Result: contract.KVResult{HTTP: &o.HTTP}}
+	}
 	var b strings.Builder
 	fmt.Fprintf(&b, "HTTP %d · index %s (%s)\n%s\n", o.HTTP.Status, w.index, o.IndexRelation, o.ReceivedAt.Format("2006-01-02T15:04:05.999Z07:00"))
+	if h := o.HTTP.Health; h != nil && w.request.Health.Kind != "" {
+		fmt.Fprintf(&b, locales.Text("已返回 %d 项健康观察；完整原始响应保留在记录中")+"\n", healthRowCount(h))
+		for _, c := range h.Checks[:min(20, len(h.Checks))] {
+			fmt.Fprintf(&b, "%q · %q · %q · %s\n", healthCellText(c.PresentFields, c.NullFields, "Node", c.Node), clipped(c.CheckID), clipped(c.ServiceID), healthCellText(c.PresentFields, c.NullFields, "Status", c.Status))
+		}
+		for _, v := range h.Instances[:min(20, len(h.Instances))] {
+			fmt.Fprintf(&b, "%q · %q · %q · %d\n", clipped(v.Node.Node), clipped(v.Service.Service), clipped(v.Service.ID), len(v.Checks))
+		}
+		b.WriteString(httpReceiptPreview(&o.HTTP))
+		w.preview = clipped(b.String())
+		return
+	}
 	fmt.Fprintf(&b, "matched %d / observed %d\n", len(o.Matches), len(o.HTTP.Entries))
 	if ordinal > 0 && o.ProjectionComplete && !w.aclFiltered {
 		if indexed, yes := w.run.(contract.KVHTTPWatchIndexedRun); yes {

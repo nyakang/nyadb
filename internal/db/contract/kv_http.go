@@ -100,6 +100,7 @@ func (t KVHTTPTransaction) Clone() KVHTTPTransaction {
 // Trailer retain parsed HTTP values, not an assertion of raw wire header bytes.
 // This payload never occupies KVResult.Native's protobuf field.
 type KVHTTPResult struct {
+	Health                                                                                  *KVHTTPHealthList
 	URL                                                                                     string
 	Request                                                                                 KVHTTPRequest
 	Kind, Protocol                                                                          string
@@ -124,6 +125,10 @@ func (r KVHTTPResult) Clone() KVHTTPResult {
 	r.Entries = slices.Clone(r.Entries)
 	for i := range r.Entries {
 		r.Entries[i] = r.Entries[i].Clone()
+	}
+	if r.Health != nil {
+		v := r.Health.Clone()
+		r.Health = &v
 	}
 	if r.Sessions != nil {
 		v := r.Sessions.Clone()

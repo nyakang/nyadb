@@ -37,6 +37,14 @@ func requestToolName(kind contract.KVRequestToolKind) string {
 		return locales.Text("获取 HTTP Session 锁")
 	case contract.KVToolHTTPRelease:
 		return locales.Text("释放 HTTP Session 锁")
+	case contract.KVToolHTTPHealthState:
+		return locales.Text("按状态读取健康检查")
+	case contract.KVToolHTTPHealthNode:
+		return locales.Text("读取节点健康检查")
+	case contract.KVToolHTTPHealthChecks:
+		return locales.Text("读取服务健康检查")
+	case contract.KVToolHTTPHealthService:
+		return locales.Text("读取服务实例与检查")
 	}
 	return string(kind)
 }
@@ -85,7 +93,9 @@ func (s *State) requestToolsModals(c *ui.Context) {
 						ui.TextInput(c, value).Label(label).Grow(1).MinWidth(0).Disabled(d.Busy() || d.FileBusy())
 					})
 				}
-				if httpSessionRequestTool(p.kind) {
+				if httpHealthRequestTool(p.kind) {
+					s.httpHealthToolInputs(c, d, p.kind, &input, field)
+				} else if httpSessionRequestTool(p.kind) {
 					s.httpSessionToolInputs(c, d, p.kind, &input, field)
 				} else {
 					if p.kind == contract.KVToolTransaction {
@@ -133,6 +143,11 @@ func (s *State) requestToolsModals(c *ui.Context) {
 					}
 					if ui.Button(c, locales.Text("生成请求文本")).Disabled(d.Busy() || d.FileBusy()).Clicked() {
 						s.GenerateRequestTool(d)
+					}
+					if httpHealthRequestTool(p.kind) && d.httpWatchAvailable {
+						if ui.Button(c, locales.Text("生成健康 Watch 请求")).Disabled(d.Busy() || d.FileBusy()).Clicked() {
+							s.GenerateHTTPHealthWatch(d)
+						}
 					}
 				})
 			})

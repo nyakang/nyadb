@@ -18,6 +18,10 @@ const (
 	KVToolHTTPRelease        KVRequestToolKind = "http-release"
 	KVToolHTTPSessionList    KVRequestToolKind = "http-session-list"
 	KVToolHTTPNodeSessions   KVRequestToolKind = "http-node-sessions"
+	KVToolHTTPHealthState    KVRequestToolKind = "http-health-state"
+	KVToolHTTPHealthNode     KVRequestToolKind = "http-health-node"
+	KVToolHTTPHealthChecks   KVRequestToolKind = "http-health-checks"
+	KVToolHTTPHealthService  KVRequestToolKind = "http-health-service"
 )
 
 // HTTP Session UUIDs are distinct from numeric leases. Empty duration, behavior
@@ -29,6 +33,14 @@ type KVHTTPSessionToolInput struct {
 	IncludeName, IncludeNode                                 bool
 }
 
+// Health tools only author original reads. Empty Passing/Index/Wait omit those
+// native options; "false", "0" and explicit Filter/Near inclusion stay distinct.
+// Values remain comparable drafts without pointers, credentials or authority.
+type KVHTTPHealthToolInput struct {
+	State, Node, Service, Passing, Filter, Near, Index, Wait string
+	IncludeFilter, IncludeNear                               bool
+}
+
 // Optional unsigned numbers use exact decimal text: empty means omitted,
 // while "0" means explicitly supplied. Bytes use canonical padded Base64.
 // Key is absolute; a connection prefix is only an initial input suggestion.
@@ -36,6 +48,7 @@ type KVRequestToolInput struct {
 	Key, ValueBase64, Flags, CompareIndex, TransactionJSON string
 	KeysOnly, Recursive                                    bool
 	HTTPSession                                            KVHTTPSessionToolInput
+	HTTPHealth                                             KVHTTPHealthToolInput
 }
 
 type KVRequestTool struct {

@@ -26,6 +26,7 @@ func encodeHTTPWatch(scope contract.KVScope, authored contract.KVRequest, snapsh
 		ReceivedAt         string          `json:"local_received_at"`
 		IndexRelation      string          `json:"index_relation"`
 		ProjectionComplete bool            `json:"projection_complete"`
+		IndexReset         bool            `json:"index_reset,omitempty"`
 	}
 	r := snapshot.Request
 	record := struct {
@@ -33,13 +34,14 @@ func encodeHTTPWatch(scope contract.KVScope, authored contract.KVRequest, snapsh
 		Scope    scopeRecord        `json:"original_scope"`
 		Authored contract.KVRequest `json:"authored_request"`
 		Request  struct {
-			Target            string `json:"target"`
-			Prefix            bool   `json:"prefix"`
-			ObservationPrefix string `json:"observation_prefix"`
-			StartIndex        string `json:"start_index"`
-			Wait              string `json:"wait"`
-			MaxObservations   int    `json:"max_observations"`
-			MaxBytes          string `json:"max_bytes"`
+			Target            string                            `json:"target"`
+			Prefix            bool                              `json:"prefix"`
+			ObservationPrefix string                            `json:"observation_prefix"`
+			StartIndex        string                            `json:"start_index"`
+			Wait              string                            `json:"wait"`
+			MaxObservations   int                               `json:"max_observations"`
+			MaxBytes          string                            `json:"max_bytes"`
+			Health            *contract.KVHTTPHealthWatchTarget `json:"health,omitempty"`
 		} `json:"captured_request"`
 		Observations  []observationRecord          `json:"observations"`
 		Ended         bool                         `json:"ended"`
@@ -51,6 +53,10 @@ func encodeHTTPWatch(scope contract.KVScope, authored contract.KVRequest, snapsh
 	record.Request.Target, record.Request.Prefix, record.Request.ObservationPrefix = r.Target, r.Prefix, r.ObservationPrefix
 	record.Request.StartIndex, record.Request.Wait = strconv.FormatUint(r.StartIndex, 10), r.Wait.String()
 	record.Request.MaxObservations, record.Request.MaxBytes = r.MaxObservations, strconv.FormatInt(r.MaxBytes, 10)
+	if r.Health.Kind != "" {
+		target := r.Health
+		record.Request.Health = &target
+	}
 	for _, o := range snapshot.Observations {
 		h := o.HTTP
 		raw, err := encodeHTTPOperationReceipt(Receipt{Scope: scope, Authored: authored, Result: contract.KVResult{HTTP: &h}})
@@ -58,7 +64,7 @@ func encodeHTTPWatch(scope contract.KVScope, authored contract.KVRequest, snapsh
 			return nil, err
 		}
 		record.Observations = append(record.Observations, observationRecord{Original: raw, Matches: o.Matches,
-			ReceivedAt: o.ReceivedAt.Format("2006-01-02T15:04:05.999999999Z07:00"), IndexRelation: o.IndexRelation, ProjectionComplete: o.ProjectionComplete})
+			ReceivedAt: o.ReceivedAt.Format("2006-01-02T15:04:05.999999999Z07:00"), IndexRelation: o.IndexRelation, ProjectionComplete: o.ProjectionComplete, IndexReset: o.IndexReset})
 	}
 	return json.Marshal(record)
 }

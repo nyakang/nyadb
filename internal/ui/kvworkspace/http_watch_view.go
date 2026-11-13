@@ -14,12 +14,17 @@ func (s *State) httpWatchRequestView(c *ui.Context, d *Document) {
 	p := theme.Colors(c)
 	ui.Column(c).Fill().MinHeight(0).Gap(3).Padding(3, 8).Children(func() {
 		if r, err := ParseHTTPWatchRequest(d.Request().JSON); err == nil {
-			mode := locales.Text("精确键")
-			if r.Prefix {
-				mode = locales.Text("前缀")
+			if r.Health.Kind != "" {
+				ui.Text(c, fmt.Sprintf(locales.Text("原健康端点 %s：%s"), r.Health.Kind, strconv.Quote(r.Health.Name))).Label(locales.Text("Watch 原健康目标")).SingleLine().Tooltip(clipped(strconv.Quote(r.Health.Name)))
+				ui.Text(c, locales.Text("健康 Watch 使用原连接的 DC 与一致性，保留每次完整响应")).SingleLine().Tooltip(locales.Text("健康 Watch 使用原连接的 DC 与一致性，保留每次完整响应")).TextColor(p.Muted)
+			} else {
+				mode := locales.Text("精确键")
+				if r.Prefix {
+					mode = locales.Text("前缀")
+				}
+				ui.Text(c, fmt.Sprintf(locales.Text("原目标（%s）：%s"), mode, strconv.Quote(r.Target))).Label(locales.Text("Watch 原目标")).SingleLine().Tooltip(clipped(strconv.Quote(r.Target)))
+				ui.Text(c, fmt.Sprintf(locales.Text("实际读取前缀：%s"), strconv.Quote(r.ObservationPrefix))).Label(locales.Text("Watch 实际范围")).SingleLine().Tooltip(clipped(strconv.Quote(r.ObservationPrefix)))
 			}
-			ui.Text(c, fmt.Sprintf(locales.Text("原目标（%s）：%s"), mode, strconv.Quote(r.Target))).Label(locales.Text("Watch 原目标")).SingleLine().Tooltip(clipped(strconv.Quote(r.Target)))
-			ui.Text(c, fmt.Sprintf(locales.Text("实际读取前缀：%s"), strconv.Quote(r.ObservationPrefix))).Label(locales.Text("Watch 实际范围")).SingleLine().Tooltip(clipped(strconv.Quote(r.ObservationPrefix)))
 			ui.Text(c, fmt.Sprintf(locales.Text("起始 index %s · wait %s · 最多 %d 笔 · %d 字节"), strconv.FormatUint(r.StartIndex, 10), r.Wait.String(), r.MaxObservations, r.MaxBytes)).SingleLine().TextColor(p.Muted)
 		}
 		if d.httpWatch != nil && d.httpWatch.lease != nil {
@@ -42,6 +47,13 @@ func (s *State) httpWatchRequestView(c *ui.Context, d *Document) {
 func (s *State) httpWatchReceiptView(c *ui.Context, d *Document) {
 	p := theme.Colors(c)
 	w := d.httpWatch
+	if w != nil && w.request.Health.Kind != "" {
+		ui.Toolbar(c, func() {
+			if ui.Button(c, locales.Text("浏览所选健康观察")).Disabled(healthReceiptProjection(w.healthReceipt) == nil || d.FileBusy()).Clicked() {
+				d.httpHealth = true
+			}
+		}).FillWidth().MinWidth(0).Padding(0)
+	}
 	ui.Toolbar(c, func() {
 		if ui.Button(c, locales.Text("复制完整 Watch 记录")).Disabled(w == nil || w.run == nil || d.FileBusy()).Clicked() {
 			s.CopyHTTPWatchRecord(c.Services(), d)
@@ -62,7 +74,11 @@ func (s *State) httpWatchReceiptView(c *ui.Context, d *Document) {
 				state = locales.Text("原 HTTP Watch 已停止")
 			}
 			ui.Text(c, state).Bold().TextColor(p.Text)
-			ui.Text(c, fmt.Sprintf(locales.Text("原目标 %s · 实际读取前缀 %s"), strconv.Quote(w.request.Target), strconv.Quote(w.request.ObservationPrefix))).SingleLine().Tooltip(clipped(fmt.Sprintf("%q · %q", w.request.Target, w.request.ObservationPrefix)))
+			if w.request.Health.Kind != "" {
+				ui.Text(c, fmt.Sprintf(locales.Text("原健康端点 %s：%s"), w.request.Health.Kind, strconv.Quote(w.request.Health.Name))).SingleLine().Tooltip(clipped(strconv.Quote(w.request.Health.Name)))
+			} else {
+				ui.Text(c, fmt.Sprintf(locales.Text("原目标 %s · 实际读取前缀 %s"), strconv.Quote(w.request.Target), strconv.Quote(w.request.ObservationPrefix))).SingleLine().Tooltip(clipped(fmt.Sprintf("%q · %q", w.request.Target, w.request.ObservationPrefix)))
+			}
 			ui.Text(c, fmt.Sprintf(locales.Text("已保留 %d / %d 笔 · %d / %d 字节"), w.status.Observations, w.request.MaxObservations, w.status.RetainedBytes, w.request.MaxBytes)).SingleLine()
 			if w.status.Terminal.Reason != "" {
 				ui.Text(c, w.status.Terminal.Reason).SingleLine().Tooltip(clipped(w.status.Terminal.Message)).TextColor(p.Warning)
@@ -71,12 +87,18 @@ func (s *State) httpWatchReceiptView(c *ui.Context, d *Document) {
 				ui.Text(c, locales.Text("已超作者预算；完整终末响应单独保留，读取已停止")).SingleLine().Tooltip(locales.Text("已超作者预算；完整终末响应单独保留，读取已停止")).TextColor(p.Warning)
 			}
 			if w.aclFiltered {
-				ui.Text(c, locales.Text("原读取被 ACL 过滤；没有匹配项不能证明键已删除")).SingleLine().Tooltip(locales.Text("原读取被 ACL 过滤；没有匹配项不能证明键已删除")).TextColor(p.Warning)
+				message := locales.Text("原读取被 ACL 过滤；没有匹配项不能证明键已删除")
+				if w.request.Health.Kind != "" {
+					message = locales.Text("健康响应不完整或受 ACL 过滤；仅展示原响应返回的观察")
+				}
+				ui.Text(c, message).SingleLine().Tooltip(message).TextColor(p.Warning)
 			}
 			if w.incomplete {
 				ui.Text(c, locales.Text("原 HTTP 捕获或投影不完整；保留实际响应证据")).SingleLine().Tooltip(locales.Text("原 HTTP 捕获或投影不完整；保留实际响应证据")).TextColor(p.Warning)
 			}
-			if w.indexRelation == "zero" || w.indexRelation == "backward" || w.indexRelation == "unavailable" || w.indexRelation == "invalid" {
+			if w.indexReset {
+				ui.Text(c, locales.Text("原健康 index 为零或回退；保留原响应，下一次阻塞读取从 1 继续")).SingleLine().Tooltip(locales.Text("原健康 index 为零或回退；保留原响应，下一次阻塞读取从 1 继续")).TextColor(p.Warning)
+			} else if w.indexRelation == "zero" || w.indexRelation == "backward" || w.indexRelation == "unavailable" || w.indexRelation == "invalid" {
 				ui.Text(c, locales.Text("原 index 为零、回退、缺失或非法；没有自动重置或重订阅")).SingleLine().Tooltip(locales.Text("原 index 为零、回退、缺失或非法；没有自动重置或重订阅")).TextColor(p.Warning)
 			}
 			if w.status.Observations > 0 {

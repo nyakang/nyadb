@@ -24,7 +24,7 @@ func TestConsulNativePublicRuntimeStructuredToolsCapturedOriginalProvider(t *tes
 	}
 	tools := provider.(contract.KVRequestPresentationProvider).KVRequestPresentation()
 	builder := provider.(contract.KVRequestBuilderProvider).KVRequestBuilder()
-	if builder == nil || len(tools.Tools) != 13 || tools.Tools[0].Default.Key != p.ConsulOptions.Prefix {
+	if builder == nil || len(tools.Tools) != 17 || tools.Tools[0].Default.Key != p.ConsulOptions.Prefix {
 		t.Fatal("public runtime lost original tool builder or prefix")
 	}
 	tools.Tools[0].Default.Key = "foreign"

@@ -39017,3 +39017,365 @@ func ConsulDestroyNoReceipt() string { return In(i18n.Locale()).ConsulDestroyNoR
 func (msgs Messages) ConsulDestroyNoReceipt() string {
 	return Catalog.Format(msgs.locale, "consulDestroyNoReceipt", nil)
 }
+
+// ConsulHealthStateTool says "按状态读取健康检查"
+// in the language the app shows.
+func ConsulHealthStateTool() string { return In(i18n.Locale()).ConsulHealthStateTool() }
+
+// ConsulHealthStateTool says "按状态读取健康检查"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthStateTool() string {
+	return Catalog.Format(msgs.locale, "consulHealth_stateTool", nil)
+}
+
+// ConsulHealthNodeTool says "读取节点健康检查"
+// in the language the app shows.
+func ConsulHealthNodeTool() string { return In(i18n.Locale()).ConsulHealthNodeTool() }
+
+// ConsulHealthNodeTool says "读取节点健康检查"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthNodeTool() string {
+	return Catalog.Format(msgs.locale, "consulHealth_nodeTool", nil)
+}
+
+// ConsulHealthChecksTool says "读取服务健康检查"
+// in the language the app shows.
+func ConsulHealthChecksTool() string { return In(i18n.Locale()).ConsulHealthChecksTool() }
+
+// ConsulHealthChecksTool says "读取服务健康检查"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthChecksTool() string {
+	return Catalog.Format(msgs.locale, "consulHealth_checksTool", nil)
+}
+
+// ConsulHealthServiceTool says "读取服务实例与检查"
+// in the language the app shows.
+func ConsulHealthServiceTool() string { return In(i18n.Locale()).ConsulHealthServiceTool() }
+
+// ConsulHealthServiceTool says "读取服务实例与检查"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthServiceTool() string {
+	return Catalog.Format(msgs.locale, "consulHealth_serviceTool", nil)
+}
+
+// ConsulHealthState says "原生健康状态"
+// in the language the app shows.
+func ConsulHealthState() string { return In(i18n.Locale()).ConsulHealthState() }
+
+// ConsulHealthState says "原生健康状态"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthState() string {
+	return Catalog.Format(msgs.locale, "consulHealth_state", nil)
+}
+
+// ConsulHealthService says "原服务名称"
+// in the language the app shows.
+func ConsulHealthService() string { return In(i18n.Locale()).ConsulHealthService() }
+
+// ConsulHealthService says "原服务名称"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthService() string {
+	return Catalog.Format(msgs.locale, "consulHealth_service", nil)
+}
+
+// ConsulHealthPassingOmitted says "passing 未指定"
+// in the language the app shows.
+func ConsulHealthPassingOmitted() string { return In(i18n.Locale()).ConsulHealthPassingOmitted() }
+
+// ConsulHealthPassingOmitted says "passing 未指定"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthPassingOmitted() string {
+	return Catalog.Format(msgs.locale, "consulHealth_passingOmitted", nil)
+}
+
+// ConsulHealthPassing says "服务实例 passing 参数"
+// in the language the app shows.
+func ConsulHealthPassing() string { return In(i18n.Locale()).ConsulHealthPassing() }
+
+// ConsulHealthPassing says "服务实例 passing 参数"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthPassing() string {
+	return Catalog.Format(msgs.locale, "consulHealth_passing", nil)
+}
+
+// ConsulHealthIncludeFilter says "包含原生 filter"
+// in the language the app shows.
+func ConsulHealthIncludeFilter() string { return In(i18n.Locale()).ConsulHealthIncludeFilter() }
+
+// ConsulHealthIncludeFilter says "包含原生 filter"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthIncludeFilter() string {
+	return Catalog.Format(msgs.locale, "consulHealth_includeFilter", nil)
+}
+
+// ConsulHealthIncludeNear says "包含原生 near"
+// in the language the app shows.
+func ConsulHealthIncludeNear() string { return In(i18n.Locale()).ConsulHealthIncludeNear() }
+
+// ConsulHealthIncludeNear says "包含原生 near"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthIncludeNear() string {
+	return Catalog.Format(msgs.locale, "consulHealth_includeNear", nil)
+}
+
+// ConsulHealthBlockingHint says "index 留空表示省略，0 为显式值；wait 需要 index，最长 10 分钟"
+// in the language the app shows.
+func ConsulHealthBlockingHint() string { return In(i18n.Locale()).ConsulHealthBlockingHint() }
+
+// ConsulHealthBlockingHint says "index 留空表示省略，0 为显式值；wait 需要 index，最长 10 分钟"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthBlockingHint() string {
+	return Catalog.Format(msgs.locale, "consulHealth_blockingHint", nil)
+}
+
+// ConsulHealthScopeHint says "健康查询使用原连接的 DC 与一致性，不受键前缀限制"
+// in the language the app shows.
+func ConsulHealthScopeHint() string { return In(i18n.Locale()).ConsulHealthScopeHint() }
+
+// ConsulHealthScopeHint says "健康查询使用原连接的 DC 与一致性，不受键前缀限制"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthScopeHint() string {
+	return Catalog.Format(msgs.locale, "consulHealth_scopeHint", nil)
+}
+
+// ConsulHealthGenerateHint says "只生成健康读取请求；运行后浏览原响应"
+// in the language the app shows.
+func ConsulHealthGenerateHint() string { return In(i18n.Locale()).ConsulHealthGenerateHint() }
+
+// ConsulHealthGenerateHint says "只生成健康读取请求；运行后浏览原响应"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthGenerateHint() string {
+	return Catalog.Format(msgs.locale, "consulHealth_generateHint", nil)
+}
+
+// ConsulHealthMaintenance says "维护检查"
+// in the language the app shows.
+func ConsulHealthMaintenance() string { return In(i18n.Locale()).ConsulHealthMaintenance() }
+
+// ConsulHealthMaintenance says "维护检查"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthMaintenance() string {
+	return Catalog.Format(msgs.locale, "consulHealth_maintenance", nil)
+}
+
+// ConsulHealthIncomplete says "健康响应不完整或受 ACL 过滤；仅展示原响应返回的观察"
+// in the language the app shows.
+func ConsulHealthIncomplete() string { return In(i18n.Locale()).ConsulHealthIncomplete() }
+
+// ConsulHealthIncomplete says "健康响应不完整或受 ACL 过滤；仅展示原响应返回的观察"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthIncomplete() string {
+	return Catalog.Format(msgs.locale, "consulHealth_incomplete", nil)
+}
+
+// ConsulHealthBack says "返回健康列表"
+// in the language the app shows.
+func ConsulHealthBack() string { return In(i18n.Locale()).ConsulHealthBack() }
+
+// ConsulHealthBack says "返回健康列表"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthBack() string {
+	return Catalog.Format(msgs.locale, "consulHealth_back", nil)
+}
+
+// ConsulHealthDetail says "健康检查或实例原始详情"
+// in the language the app shows.
+func ConsulHealthDetail() string { return In(i18n.Locale()).ConsulHealthDetail() }
+
+// ConsulHealthDetail says "健康检查或实例原始详情"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthDetail() string {
+	return Catalog.Format(msgs.locale, "consulHealth_detail", nil)
+}
+
+// ConsulHealthSearch says "筛选已返回的健康观察"
+// in the language the app shows.
+func ConsulHealthSearch() string { return In(i18n.Locale()).ConsulHealthSearch() }
+
+// ConsulHealthSearch says "筛选已返回的健康观察"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthSearch() string {
+	return Catalog.Format(msgs.locale, "consulHealth_search", nil)
+}
+
+// ConsulHealthAllStatus says "全部检查状态"
+// in the language the app shows.
+func ConsulHealthAllStatus() string { return In(i18n.Locale()).ConsulHealthAllStatus() }
+
+// ConsulHealthAllStatus says "全部检查状态"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthAllStatus() string {
+	return Catalog.Format(msgs.locale, "consulHealth_allStatus", nil)
+}
+
+// ConsulHealthOtherStatus says "其它或未返回状态"
+// in the language the app shows.
+func ConsulHealthOtherStatus() string { return In(i18n.Locale()).ConsulHealthOtherStatus() }
+
+// ConsulHealthOtherStatus says "其它或未返回状态"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthOtherStatus() string {
+	return Catalog.Format(msgs.locale, "consulHealth_otherStatus", nil)
+}
+
+// ConsulHealthStatusFilter says "检查状态筛选"
+// in the language the app shows.
+func ConsulHealthStatusFilter() string { return In(i18n.Locale()).ConsulHealthStatusFilter() }
+
+// ConsulHealthStatusFilter says "检查状态筛选"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthStatusFilter() string {
+	return Catalog.Format(msgs.locale, "consulHealth_statusFilter", nil)
+}
+
+// ConsulHealthPage says "第 %d/%d 页 · 匹配 %d/%d 个健康观察"
+// in the language the app shows.
+func ConsulHealthPage() string { return In(i18n.Locale()).ConsulHealthPage() }
+
+// ConsulHealthPage says "第 %d/%d 页 · 匹配 %d/%d 个健康观察"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthPage() string {
+	return Catalog.Format(msgs.locale, "consulHealth_page", nil)
+}
+
+// ConsulHealthCopyJSON says "复制所选原始 JSON"
+// in the language the app shows.
+func ConsulHealthCopyJSON() string { return In(i18n.Locale()).ConsulHealthCopyJSON() }
+
+// ConsulHealthCopyJSON says "复制所选原始 JSON"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthCopyJSON() string {
+	return Catalog.Format(msgs.locale, "consulHealth_copyJSON", nil)
+}
+
+// ConsulHealthExportJSON says "导出所选原始 JSON"
+// in the language the app shows.
+func ConsulHealthExportJSON() string { return In(i18n.Locale()).ConsulHealthExportJSON() }
+
+// ConsulHealthExportJSON says "导出所选原始 JSON"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthExportJSON() string {
+	return Catalog.Format(msgs.locale, "consulHealth_exportJSON", nil)
+}
+
+// ConsulHealthInstanceStatusHint says "实例筛选按返回的检查状态匹配"
+// in the language the app shows.
+func ConsulHealthInstanceStatusHint() string {
+	return In(i18n.Locale()).ConsulHealthInstanceStatusHint()
+}
+
+// ConsulHealthInstanceStatusHint says "实例筛选按返回的检查状态匹配"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthInstanceStatusHint() string {
+	return Catalog.Format(msgs.locale, "consulHealth_instanceStatusHint", nil)
+}
+
+// ConsulHealthCheckCount says "返回的检查数"
+// in the language the app shows.
+func ConsulHealthCheckCount() string { return In(i18n.Locale()).ConsulHealthCheckCount() }
+
+// ConsulHealthCheckCount says "返回的检查数"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthCheckCount() string {
+	return Catalog.Format(msgs.locale, "consulHealth_checkCount", nil)
+}
+
+// ConsulHealthReturned says "已返回的健康检查或服务实例"
+// in the language the app shows.
+func ConsulHealthReturned() string { return In(i18n.Locale()).ConsulHealthReturned() }
+
+// ConsulHealthReturned says "已返回的健康检查或服务实例"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthReturned() string {
+	return Catalog.Format(msgs.locale, "consulHealth_returned", nil)
+}
+
+// ConsulHealthTitle says "健康检查与服务实例"
+// in the language the app shows.
+func ConsulHealthTitle() string { return In(i18n.Locale()).ConsulHealthTitle() }
+
+// ConsulHealthTitle says "健康检查与服务实例"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthTitle() string {
+	return Catalog.Format(msgs.locale, "consulHealth_title", nil)
+}
+
+// ConsulHealthWatchGenerate says "生成健康 Watch 请求"
+// in the language the app shows.
+func ConsulHealthWatchGenerate() string { return In(i18n.Locale()).ConsulHealthWatchGenerate() }
+
+// ConsulHealthWatchGenerate says "生成健康 Watch 请求"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthWatchGenerate() string {
+	return Catalog.Format(msgs.locale, "consulHealthWatch_generate", nil)
+}
+
+// ConsulHealthWatchEndpoint says "原健康端点 %s：%s"
+// in the language the app shows.
+func ConsulHealthWatchEndpoint() string { return In(i18n.Locale()).ConsulHealthWatchEndpoint() }
+
+// ConsulHealthWatchEndpoint says "原健康端点 %s：%s"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthWatchEndpoint() string {
+	return Catalog.Format(msgs.locale, "consulHealthWatch_endpoint", nil)
+}
+
+// ConsulHealthWatchTarget says "Watch 原健康目标"
+// in the language the app shows.
+func ConsulHealthWatchTarget() string { return In(i18n.Locale()).ConsulHealthWatchTarget() }
+
+// ConsulHealthWatchTarget says "Watch 原健康目标"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthWatchTarget() string {
+	return Catalog.Format(msgs.locale, "consulHealthWatch_target", nil)
+}
+
+// ConsulHealthWatchScope says "健康 Watch 使用原连接的 DC 与一致性，保留每次完整响应"
+// in the language the app shows.
+func ConsulHealthWatchScope() string { return In(i18n.Locale()).ConsulHealthWatchScope() }
+
+// ConsulHealthWatchScope says "健康 Watch 使用原连接的 DC 与一致性，保留每次完整响应"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthWatchScope() string {
+	return Catalog.Format(msgs.locale, "consulHealthWatch_scope", nil)
+}
+
+// ConsulHealthWatchBrowse says "浏览所选健康观察"
+// in the language the app shows.
+func ConsulHealthWatchBrowse() string { return In(i18n.Locale()).ConsulHealthWatchBrowse() }
+
+// ConsulHealthWatchBrowse says "浏览所选健康观察"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthWatchBrowse() string {
+	return Catalog.Format(msgs.locale, "consulHealthWatch_browse", nil)
+}
+
+// ConsulHealthWatchCount says "已返回 %d 项健康观察；完整原始响应保留在记录中"
+// in the language the app shows.
+func ConsulHealthWatchCount() string { return In(i18n.Locale()).ConsulHealthWatchCount() }
+
+// ConsulHealthWatchCount says "已返回 %d 项健康观察；完整原始响应保留在记录中"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthWatchCount() string {
+	return Catalog.Format(msgs.locale, "consulHealthWatch_count", nil)
+}
+
+// ConsulHealthWatchReset says "原健康 index 为零或回退；保留原响应，下一次阻塞读取从 1 继续"
+// in the language the app shows.
+func ConsulHealthWatchReset() string { return In(i18n.Locale()).ConsulHealthWatchReset() }
+
+// ConsulHealthWatchReset says "原健康 index 为零或回退；保留原响应，下一次阻塞读取从 1 继续"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthWatchReset() string {
+	return Catalog.Format(msgs.locale, "consulHealthWatch_reset", nil)
+}
+
+// ConsulHealthWatchHint says "健康 Watch 保留连续的当前观察；只有明确启动才开始读取"
+// in the language the app shows.
+func ConsulHealthWatchHint() string { return In(i18n.Locale()).ConsulHealthWatchHint() }
+
+// ConsulHealthWatchHint says "健康 Watch 保留连续的当前观察；只有明确启动才开始读取"
+// in the language of msgs.
+func (msgs Messages) ConsulHealthWatchHint() string {
+	return Catalog.Format(msgs.locale, "consulHealthWatch_hint", nil)
+}

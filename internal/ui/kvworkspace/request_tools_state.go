@@ -100,6 +100,14 @@ func (s *State) SetRequestToolInput(d *Document, kind contract.KVRequestToolKind
 // GenerateRequestTool does not acquire a lease, prepare, connect or dispatch.
 // Generation replaces only the captured editor; failed validation keeps input.
 func (s *State) GenerateRequestTool(d *Document) {
+	s.generateRequestTool(d, false)
+}
+
+func (s *State) GenerateHTTPHealthWatch(d *Document) {
+	s.generateRequestTool(d, true)
+}
+
+func (s *State) generateRequestTool(d *Document, healthWatch bool) {
 	if !s.active(d) || d.Busy() || d.FileBusy() || d.requestTools == nil || !d.requestTools.open || d.requestBuilder == nil {
 		return
 	}
@@ -113,6 +121,13 @@ func (s *State) GenerateRequestTool(d *Document) {
 		return
 	}
 	request, err := d.requestBuilder.BuildKVRequest(p.kind, draft.input)
+	if healthWatch && err == nil {
+		if !d.httpWatchAvailable || !httpHealthRequestTool(p.kind) {
+			err = contract.ErrUnsupported
+		} else {
+			request, err = httpHealthWatchToolRequest(p.kind, draft.input)
+		}
+	}
 	if err != nil || len(request.JSON) > inputLimit || !s.documentMethodAllowed(d, request.Method) {
 		d.error = locales.Text("KV 请求无效")
 		if err != nil {

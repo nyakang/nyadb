@@ -210,6 +210,9 @@ func validateRequest(r Request) (string, bool, int, error) {
 					}
 					match = true
 					readQuery()
+					if strings.HasPrefix(prefix, "/v1/health/") {
+						allowed["filter"], allowed["near"] = true, true
+					}
 					if prefix == "/v1/health/service/" {
 						allowed["passing"] = true
 					}
@@ -231,6 +234,12 @@ func validateRequest(r Request) (string, bool, int, error) {
 		switch k {
 		case "index", "cas", "flags":
 			if !exactUint(v) {
+				return "", false, 0, ErrInvalid
+			}
+		case "filter", "near":
+			// Native read options retain their authored string, including empty.
+		case "passing":
+			if v != "" && v != "true" && v != "false" {
 				return "", false, 0, ErrInvalid
 			}
 		case "wait":

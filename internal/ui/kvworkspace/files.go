@@ -340,7 +340,7 @@ func (s *State) consumeFiles(d *Document) {
 			}
 			return
 		}
-		if job.kind == "copy-request-tool" || job.kind == "copy-http-session-renewal" || job.kind == "copy-http-watch" || job.kind == "copy-events" || job.kind == "copy-renewal" || job.kind == "copy-leases" {
+		if job.kind == "copy-health-row" || job.kind == "copy-request-tool" || job.kind == "copy-http-session-renewal" || job.kind == "copy-http-watch" || job.kind == "copy-events" || job.kind == "copy-renewal" || job.kind == "copy-leases" {
 			if !job.canceled && job.clipboard != nil {
 				job.clipboard(r.clipboard)
 			}

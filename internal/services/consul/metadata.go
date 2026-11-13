@@ -54,7 +54,13 @@ func (s *Session) KVRequestPresentation() contract.KVRequestPresentation {
 	if err != nil {
 		return contract.KVRequestPresentation{}
 	}
-	return contract.KVRequestPresentation{Product: "Consul", Default: request, Methods: []contract.KVRequestMethod{{Name: "HTTP", Request: request}}, Tools: requestTools(s.cfg.Prefix)}
+	tools := requestTools(s.cfg.Prefix)
+	for i := range tools {
+		if tools[i].Kind == contract.KVToolHTTPHealthNode {
+			tools[i].Default.HTTPHealth.Node = s.scope.HTTP.AgentName
+		}
+	}
+	return contract.KVRequestPresentation{Product: "Consul", Default: request, Methods: []contract.KVRequestMethod{{Name: "HTTP", Request: request}}, Tools: tools}
 }
 
 var _ contract.MetadataProvider = (*Session)(nil)

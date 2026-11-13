@@ -55,7 +55,7 @@ func TestSessionListReadToolsKeepOriginalNodeAndRejectHiddenWriteInputs(t *testi
 		}
 	}
 	tools := requestTools("original-prefix")
-	if len(tools) != 13 || tools[11].Kind != contract.KVToolHTTPSessionList || tools[12].Kind != contract.KVToolHTTPNodeSessions || tools[11].Default != (contract.KVRequestToolInput{}) || tools[12].Default != (contract.KVRequestToolInput{}) {
+	if len(tools) != 17 || tools[11].Kind != contract.KVToolHTTPSessionList || tools[12].Kind != contract.KVToolHTTPNodeSessions || tools[11].Default != (contract.KVRequestToolInput{}) || tools[12].Default != (contract.KVRequestToolInput{}) {
 		t.Fatal("public Session read tools missing or invented an authored node or prefix")
 	}
 }
