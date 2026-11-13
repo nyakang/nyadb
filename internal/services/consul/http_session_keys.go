@@ -1,8 +1,8 @@
 package consul
 
 import (
-	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
@@ -42,8 +42,14 @@ func projectSessionKeys(o *contract.KVHTTPSessionKeysObservation) error {
 	if !r.Attempted || !h.Attempted || !r.Completed || r.WriteOutcomeUnknown || h.WriteOutcomeUnknown || !h.Ended || !h.Captured || !h.EOF || !h.Acknowledged || !h.Succeeded || h.Status != 200 && h.Status != 404 || h.CaptureError != "" || h.ProjectionError != "" || r.ProjectionError != "" || h.Txn != nil || h.Sessions != nil {
 		return ErrProtocol
 	}
-	if h.Status == 404 && len(h.Entries) != 0 || h.Status == 200 && len(h.Entries) == 0 && !bytes.Equal(bytes.TrimSpace(h.Body), []byte("[]")) {
+	if h.Status == 404 && len(h.Entries) != 0 {
 		return ErrProtocol
+	}
+	if h.Status == 200 && len(h.Entries) == 0 {
+		var entries []json.RawMessage
+		if json.Unmarshal(h.Body, &entries) != nil || entries == nil || len(entries) != 0 {
+			return ErrProtocol
+		}
 	}
 	// Charge the complete receipt, including unmatched values, query/header
 	// fields and duplicated native JSON. The existing fixed lease overhead is
@@ -71,6 +77,10 @@ func projectSessionKeys(o *contract.KVHTTPSessionKeysObservation) error {
 }
 
 func (l *documentLease) ObserveHTTPSessionKeys(ctx context.Context, request contract.KVHTTPSessionKeysRequest) (out contract.KVHTTPSessionKeysObservation, err error) {
+	return l.observeHTTPSessionKeys(ctx, request, l.Execute)
+}
+
+func (l *documentLease) observeHTTPSessionKeys(ctx context.Context, request contract.KVHTTPSessionKeysRequest, execute func(context.Context, contract.KVPreparation) (contract.KVResult, error)) (out contract.KVHTTPSessionKeysObservation, err error) {
 	out.Scope, out.Request = l.Scope().Clone(), request
 	if !validSessionKeysRequest(request) {
 		return out, ErrInvalid
@@ -83,7 +93,7 @@ func (l *documentLease) ObserveHTTPSessionKeys(ctx context.Context, request cont
 	if err != nil {
 		return out, err
 	}
-	out.Root, err = l.Execute(ctx, prepared)
+	out.Root, err = execute(ctx, prepared)
 	if out.Root.HTTP == nil {
 		return out, err
 	}

@@ -158,6 +158,9 @@ func resultCost(r *contract.KVResult) int64 {
 		return 0
 	}
 	n := int64(1<<20) + int64(len(r.Request.JSON)+len(r.JSON)+len(r.Native)+len(r.Code)+len(r.ProjectionError))
+	if e := r.HTTPSessionDestroy; e != nil {
+		n += int64(len(e.LocalRecordID)) + destroyImpactCost(e.Preview) + destroyImpactCost(e.Recheck)
+	}
 	if h := r.HTTP; h != nil {
 		n += int64(len(h.Body) + len(h.Request.Body) + len(h.Request.Method) + len(h.Request.Path) + len(h.URL) + len(h.CaptureError) + len(h.ProjectionError))
 		for _, fields := range []map[string][]string{h.Header, h.Trailer, h.Request.Query} {

@@ -131,9 +131,14 @@ type KVResult struct {
 	Reply                                     *KVReply
 	RequestOmittedFields                      []string
 	HTTP                                      *KVHTTPResult
+	HTTPSessionDestroy                        *KVHTTPSessionDestroyEvidence
 }
 
 func (r KVResult) Clone() KVResult {
+	if r.HTTPSessionDestroy != nil {
+		v := r.HTTPSessionDestroy.Clone()
+		r.HTTPSessionDestroy = &v
+	}
 	if r.HTTP != nil {
 		v := r.HTTP.Clone()
 		r.HTTP = &v

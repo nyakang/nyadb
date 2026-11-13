@@ -578,6 +578,10 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 			ui.Text(c, locales.Text("运行请求后显示原生回执")).TextColor(p.Muted)
 			return
 		}
+		if r.Result.HTTPSessionDestroy != nil {
+			s.httpSessionDestroyReceiptView(c, d, r)
+			return
+		}
 		if r.Result.HTTP != nil {
 			s.httpReceiptView(c, d, r)
 			return
@@ -629,6 +633,7 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 }
 func (s *State) Modals(c *ui.Context) {
 	s.httpSessionBrowserModals(c)
+	s.httpSessionKeysModals(c)
 	s.requestToolsModals(c)
 	s.snapshotModals(c)
 	s.renewalModals(c)
@@ -641,6 +646,10 @@ func (s *State) Modals(c *ui.Context) {
 		}
 		confirmation := d.confirmation
 		theme.Modal(c.Key(fmt.Sprintf("kv-confirm-%d", d.id)), &confirmation.open, func() {
+			if confirmation.destroy != nil {
+				s.httpSessionDestroyConfirmationView(c, d, confirmation)
+				return
+			}
 			if confirmation.alarms != nil {
 				s.alarmConfirmationView(c, d, confirmation)
 				return

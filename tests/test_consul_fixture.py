@@ -9,6 +9,98 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_public_destroy_requires_all_private_parents_and_bilingual_original_records(self):
+        previous = self.copy_scope_before_startup(session_destroy_plan=True)
+        report = self.copy_scope_before_startup(public_session_destroy=True)
+        self.assertEqual(report['scope'], 'public-consul-session-destroy')
+        self.assertEqual(report['required'], previous['required'] + list(fixture.PUBLIC_SESSION_DESTROY_REQUIRED))
+        phases = fixture.acceptance_test_phases(report['packages'], tuple(report['required']), True, 1800, True, True, True, True, True)
+        names = [name for phase in phases for name in phase[phase.index('-run')+1][2:-2].split('|')]
+        self.assertEqual(len(phases), 6)
+        self.assertEqual(len(names), 138)
+        self.assertEqual(len(set(names)), 138)
+        self.assertEqual(sorted(names), sorted('TestConsulNative'+name for name in report['required']))
+        self.assertEqual(names[:3], ['TestConsulNative'+name for name in fixture.PUBLIC_SESSION_DESTROY_REQUIRED])
+        self.assertEqual(len(fixture.session_destroy_image_names()), 44)
+        log = '\n'.join('--- PASS: '+name+' (0.1s)' for name in names)
+        for name in names:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: '+name+' ', '--- SKIP: '+name+' '), tuple(report['required']))
+        for flag in ('public_session_destroy_probe', 'session_destroy_plan_probe', 'session_destroy_impact_probe', 'public_session_held_keys_probe', 'copy_limit_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(public_session_destroy=True, **{flag: True})
+
+    def test_public_destroy_diagnostic_is_separate_and_rejects_all_mixed_scopes(self):
+        report = self.copy_scope_before_startup(public_session_destroy_probe=True)
+        self.assertEqual(report['scope'], 'diagnostic-consul-public-session-destroy')
+        self.assertEqual(tuple(report['required']), fixture.PUBLIC_SESSION_DESTROY_REQUIRED)
+        self.assertEqual(report['packages'], ['./internal/ui/kvworkspace', './internal/ui/shell'])
+        for flag in ('public_session_destroy', 'session_destroy_plan', 'session_destroy_plan_probe', 'session_destroy_impact', 'session_destroy_impact_probe', 'public_session_held_keys', 'session_browser', 'copy_limit_probe', 'probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(public_session_destroy_probe=True, **{flag: True})
+
+    def test_impact_foundation_keeps_all_public_held_key_parents_once_and_before_pressure(self):
+        previous = self.copy_scope_before_startup(public_session_held_keys=True)
+        report = self.copy_scope_before_startup(session_destroy_impact=True)
+        self.assertEqual(report['scope'], 'private-consul-session-destroy-impact-with-public-held-keys-regression')
+        self.assertEqual(report['required'], previous['required'] + list(fixture.SESSION_DESTROY_IMPACT_REQUIRED))
+        phases = fixture.acceptance_test_phases(report['packages'], tuple(report['required']), True, 1800, True, True, True)
+        self.assertEqual(len(phases), 4)
+        names = [name for phase in phases for name in phase[phase.index('-run')+1][2:-2].split('|')]
+        self.assertEqual(sorted(names), sorted('TestConsulNative'+name for name in report['required']))
+        self.assertEqual(len(names), len(set(names)))
+        self.assertEqual(len(names), 132)
+        self.assertEqual(names[:3], ['TestConsulNative'+name for name in fixture.SESSION_DESTROY_IMPACT_REQUIRED])
+        fixture.accepted_cases('\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in report['required']), report['required'])
+        for invalid in (names[:-1], names + names[:1]):
+            with self.assertRaises(RuntimeError):
+                fixture.accepted_cases('\n'.join('--- PASS: '+name+' (0.1s)' for name in invalid), report['required'])
+
+    def test_impact_diagnostic_and_full_scope_reject_mixed_probes_before_fixture_startup(self):
+        report = self.copy_scope_before_startup(session_destroy_impact_probe=True)
+        self.assertEqual(report['scope'], 'diagnostic-consul-session-destroy-impact')
+        self.assertEqual(tuple(report['required']), fixture.SESSION_DESTROY_IMPACT_REQUIRED)
+        for flags in ({'session_destroy_impact': True}, {'public_session_held_keys': True}, {'public_session_held_keys_probe': True}, {'copy_limit_probe': True}):
+            with self.assertRaises(ValueError):
+                fixture.verify(session_destroy_impact_probe=True, **flags)
+        for flags in ({'session_held_keys_probe': True}, {'public_session_held_keys_probe': True}, {'copy_limit_probe': True}):
+            with self.assertRaises(ValueError):
+                fixture.verify(session_destroy_impact=True, **flags)
+
+    def test_public_held_keys_requires_native_shell_and_every_retained_parent_once(self):
+        previous = self.copy_scope_before_startup(session_held_keys=True)
+        report = self.copy_scope_before_startup(public_session_held_keys=True)
+        self.assertEqual(report['scope'], 'public-consul-session-held-keys')
+        self.assertEqual(report['required'], previous['required'] + list(fixture.PUBLIC_SESSION_HELD_KEYS_REQUIRED))
+        self.assertEqual(len(report['required']), 129)
+        self.assertEqual(len(fixture.session_held_keys_image_names()), 52)
+        phases = fixture.acceptance_test_phases(report['packages'], tuple(report['required']), True, 1800, True, True)
+        self.assertEqual(len(phases), 3)
+        names = []
+        for phase in phases:
+            self.assertIn('-count=1', phase)
+            self.assertIn('-race', phase)
+            names.extend(phase[phase.index('-run')+1][2:-2].split('|'))
+        self.assertEqual(sorted(names), sorted('TestConsulNative'+name for name in report['required']))
+        self.assertEqual(len(set(names)), 129)
+        self.assertEqual(names[:6], ['TestConsulNative'+name for name in fixture.SESSION_HELD_KEYS_REQUIRED + fixture.PUBLIC_SESSION_HELD_KEYS_REQUIRED])
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in report['required'])
+        for name in report['required']:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), tuple(report['required']))
+        for flag in ('public_session_held_keys_probe', 'session_held_keys_probe', 'session_browser_probe', 'copy_limit_probe', 'probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(public_session_held_keys=True, **{flag: True})
+
+    def test_public_held_keys_diagnostic_cannot_claim_foundation_or_browser_acceptance(self):
+        report = self.copy_scope_before_startup(public_session_held_keys_probe=True)
+        self.assertEqual(report['scope'], 'diagnostic-consul-session-held-keys-public')
+        self.assertEqual(report['required'], list(fixture.PUBLIC_SESSION_HELD_KEYS_REQUIRED))
+        self.assertEqual(report['packages'], ['./internal/ui/kvworkspace','./internal/ui/shell'])
+        for flag in ('public_session_held_keys', 'session_held_keys', 'session_held_keys_probe', 'session_browser', 'session_browser_probe', 'session_projection', 'public', 'probe', 'copy_limit_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(public_session_held_keys_probe=True, **{flag: True})
+
     def test_session_held_keys_retains_every_original_public_browser_parent(self):
         previous = self.copy_scope_before_startup(session_browser=True)
         report = self.copy_scope_before_startup(session_held_keys=True)
@@ -664,6 +756,50 @@ class ConsulFixtureTests(unittest.TestCase):
         for timeout in (-1, 0, 59, 3601):
             with self.subTest(timeout=timeout), self.assertRaises(ValueError):
                 fixture.verify(prefix_set_probe=True, test_timeout=timeout)
+
+    def test_destroy_plan_keeps_all_132_impact_parents_once_before_pressure(self):
+        impact = self.copy_scope_before_startup(session_destroy_impact=True)
+        plan = self.copy_scope_before_startup(session_destroy_plan=True)
+        required = tuple(impact['required']) + fixture.SESSION_DESTROY_PLAN_REQUIRED
+        self.assertEqual(plan['required'], list(required))
+        self.assertEqual(len(required), 135)
+        self.assertEqual(len(set(required)), 135)
+        self.assertEqual(plan['scope'], 'private-consul-session-destroy-plan-with-public-held-keys-regression')
+        phases = fixture.acceptance_test_phases(plan['packages'], required, True, 1800, True, True, True, True)
+        names = []
+        for phase in phases:
+            self.assertIn('-race', phase)
+            pattern = phase[phase.index('-run')+1]
+            names.extend(name.removeprefix('TestConsulNative') for name in pattern[2:-2].split('|'))
+        self.assertEqual(names[:3], list(fixture.SESSION_DESTROY_PLAN_REQUIRED))
+        self.assertEqual(names[3:6], list(fixture.SESSION_DESTROY_IMPACT_REQUIRED))
+        self.assertEqual(set(names), set(required))
+        self.assertEqual(len(names), len(required))
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        self.assertEqual(fixture.accepted_cases(log, required), list(required))
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+
+    def test_destroy_plan_diagnostic_cannot_downgrade_scope_or_claim_acceptance(self):
+        plan = self.copy_scope_before_startup(session_destroy_plan_probe=True)
+        self.assertEqual(plan['required'], list(fixture.SESSION_DESTROY_PLAN_REQUIRED))
+        self.assertEqual(plan['scope'], 'diagnostic-consul-session-destroy-plan')
+        self.assertEqual(plan['packages'], ['./internal/services/consul'])
+        for flag in ('session_destroy_plan', 'session_destroy_impact', 'session_destroy_impact_probe',
+                     'public_session_held_keys', 'public_session_held_keys_probe', 'session_held_keys',
+                     'probe', 'public_grid', 'session_browser', 'copy_limit_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(session_destroy_plan_probe=True, **{flag: True})
+        for flag in ('session_destroy_plan_probe', 'session_destroy_impact_probe', 'public_session_held_keys_probe',
+                     'session_held_keys_probe', 'probe', 'public_prefix_set_probe', 'copy_limit_probe'):
+            with self.subTest(flag=flag), self.assertRaises(ValueError):
+                fixture.verify(session_destroy_plan=True, **{flag: True})
+        hashes = fixture.source_hashes()
+        for name in ('internal/services/consul/http_session_destroy_plan.go',
+                     'internal/services/consul/http_session_destroy_plan_test.go',
+                     'internal/services/consul/http_session_destroy_plan_native_integration_test.go'):
+            self.assertIn(name, hashes)
 
     def test_prefix_set_cli_validates_scope_before_startup(self):
         import runpy

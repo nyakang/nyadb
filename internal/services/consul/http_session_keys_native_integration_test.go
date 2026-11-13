@@ -245,7 +245,7 @@ func nativeSessionKeysRelay(t *testing.T, cfg Config, token, mode string) (Confi
 				case "capture-overflow":
 					body = bytes.Repeat([]byte(" "), responseLimit+1)
 				case "empty":
-					status, body = 200, []byte("[]")
+					status, body = 200, []byte(" \n[ \t\r\n]\n")
 				case "absent":
 					status, body = 404, nil
 				}

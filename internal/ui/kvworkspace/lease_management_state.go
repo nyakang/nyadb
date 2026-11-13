@@ -183,6 +183,7 @@ func (s *State) prepareLeaseManagementConfirmation(d *Document, draft *leaseMana
 	}
 	d.leaseManagement = nil
 	d.error = ""
+	d.clearConfirmation()
 	d.confirmation = &confirmation{lease: draft.lease, plan: plan, authored: authored, editor: draft.editor, management: r.clone(), open: true}
 }
 

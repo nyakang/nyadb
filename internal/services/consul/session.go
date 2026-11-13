@@ -241,6 +241,7 @@ func (s *Session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 	if invalid {
 		return contract.KVRecovery{}, contract.ErrKVPlanUsed
 	}
+	old.releaseDestroyPlan()
 	old.closePhysical()
 	result := old.recoveryOwned()
 	old.s.mu.Lock()

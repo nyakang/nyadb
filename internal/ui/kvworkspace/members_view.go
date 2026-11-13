@@ -121,7 +121,7 @@ func (s *State) membersView(c *ui.Context, d *Document) {
 					}
 				}
 			}
-			d.confirmation = nil
+			d.clearConfirmation()
 		}
 		if m.row < 0 || m.row >= len(m.directory.Members) {
 			return

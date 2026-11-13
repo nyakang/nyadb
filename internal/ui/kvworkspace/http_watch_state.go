@@ -143,7 +143,7 @@ func (s *State) StartHTTPWatch(d *Document) {
 	w.authored, w.request, w.evidenceScope = d.Request(), r, w.scope.Clone()
 	w.status, w.preview, w.selected = contract.KVHTTPWatchStatus{}, "", -1
 	w.revision++
-	d.confirmation = nil
+	d.clearConfirmation()
 	d.selectedHTTPWatch = true
 	lease := w.lease
 	s.httpWatchJob(d, "start", func(ctx context.Context) httpWatchOutcome {

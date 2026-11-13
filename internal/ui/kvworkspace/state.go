@@ -43,6 +43,7 @@ type Receipt struct {
 	LeaseManagement *LeaseManagementReceipt
 	AuthManagement  *AuthManagementReceipt
 	Compaction      *CompactionReceipt
+	HTTPSessionKeys *HTTPSessionKeysReceipt
 }
 
 func (r Receipt) Clone() Receipt {
@@ -51,10 +52,12 @@ func (r Receipt) Clone() Receipt {
 	r.LeaseManagement = r.LeaseManagement.clone()
 	r.AuthManagement = r.AuthManagement.clone()
 	r.Compaction = r.Compaction.clone()
+	r.HTTPSessionKeys = r.HTTPSessionKeys.clone()
 	return r
 }
 
 type confirmation struct {
+	destroy        *httpSessionDestroyConfirmation
 	editorRevision *uint64
 	requestSummary string
 	lease          contract.KVRequestLease
@@ -72,6 +75,8 @@ type confirmation struct {
 	open           bool
 }
 type outcome struct {
+	destroyPlan           contract.KVHTTPSessionDestroyPreparation
+	sessionKeys           *contract.KVHTTPSessionKeysObservation
 	result                contract.KVResult
 	leasePage             *contract.KVLeasePage
 	leaseDetail           *contract.KVLeaseDetail
@@ -88,24 +93,30 @@ type outcome struct {
 	recoverySnapshot      *contract.KVSnapshotResult
 }
 type operation struct {
-	lease            contract.KVRequestLease
-	kind             string
-	scope            contract.KVScope
-	authored         contract.KVRequest
-	cancel           context.CancelFunc
-	canceled         bool
-	snapshotRecovery *contract.KVSnapshotResult
-	out              <-chan outcome
-	finished         <-chan struct{}
-	management       *LeaseManagementReceipt
-	managementDraft  *leaseManagementDraft
-	auth             *AuthManagementReceipt
-	compaction       *CompactionReceipt
+	destroyRequest     contract.KVHTTPSessionDestroyImpactRequest
+	editorRevision     uint64
+	sessionKeysRequest contract.KVHTTPSessionKeysRequest
+	lease              contract.KVRequestLease
+	kind               string
+	scope              contract.KVScope
+	authored           contract.KVRequest
+	cancel             context.CancelFunc
+	canceled           bool
+	snapshotRecovery   *contract.KVSnapshotResult
+	out                <-chan outcome
+	finished           <-chan struct{}
+	management         *LeaseManagementReceipt
+	managementDraft    *leaseManagementDraft
+	auth               *AuthManagementReceipt
+	compaction         *CompactionReceipt
 }
 
 // Document is UI-thread owned. Workers capture immutable requests and their
 // original lease; private buffered channels are consumed only by State.Consume.
 type Document struct {
+	httpSessionDestroyStep                                  int
+	httpSessionKeysBrowser                                  *httpSessionKeysBrowserState
+	httpSessionKeys                                         bool
 	httpSessionBrowser                                      *httpSessionBrowserState
 	httpSessions                                            bool
 	httpSessionRenewal                                      *httpSessionRenewalState
@@ -378,7 +389,7 @@ func (s *State) SetMethod(d *Document, method string) {
 		d.selectedMembers = method == MembersMethod
 		d.selectedAlarms = method == AlarmsMethod
 		d.selectedSnapshot = method == SnapshotMethod && d.snapshotContent()
-		d.confirmation = nil
+		d.clearConfirmation()
 		d.leaseManagement = nil
 		d.authDraft = nil
 		d.renewalConfirmation = nil
@@ -394,18 +405,22 @@ func (s *State) Focus(d *Document) {
 	}
 }
 func (s *State) check(d *Document) bool {
+	if s.owned(d) && d.confirmation != nil && (d.confirmation.editor != d.Request() || d.confirmation.editorRevision != nil && *d.confirmation.editorRevision != d.Editor.Buffer.Version()) {
+		d.clearConfirmation()
+	}
 	if !s.active(d) || d.Busy() || d.needsRecovery || d.lease == nil {
 		return false
 	}
 	if err := d.lease.CheckKVLease(); err != nil {
 		d.needsRecovery = true
-		d.confirmation = nil
+		d.clearConfirmation()
 		d.error = locales.Text("KV 原连接不可用")
 		return false
 	}
 	return true
 }
 func (s *State) start(d *Document, kind string, authored contract.KVRequest, work func(context.Context) outcome) {
+	d.clearConfirmation()
 	ctx, cancel := context.WithCancel(d.ctx)
 	out := make(chan outcome, 1)
 	finished := make(chan struct{})
@@ -417,6 +432,10 @@ func (s *State) start(d *Document, kind string, authored contract.KVRequest, wor
 		defer close(finished)
 		defer cancel()
 		r := work(ctx)
+		if r.sessionKeys != nil {
+			o := r.sessionKeys.Clone()
+			r.sessionKeys = &o
+		}
 		r.result = r.result.Clone()
 		if r.leasePage != nil {
 			page := r.leasePage.Clone()
@@ -519,6 +538,7 @@ func (s *State) Run(d *Document) {
 	if !s.check(d) {
 		return
 	}
+	d.clearConfirmation()
 	authored := d.Request()
 	if len(authored.JSON) > inputLimit {
 		d.error = locales.Text("KV 请求文本超过 16 MiB")
@@ -539,6 +559,7 @@ func (s *State) Run(d *Document) {
 			return
 		}
 		revision := d.Editor.Buffer.Version()
+		d.clearConfirmation()
 		d.confirmation = &confirmation{editorRevision: &revision, lease: d.lease, plan: plan, authored: authored, editor: authored, open: true, requestSummary: requestConfirmationSummary(plan.Snapshot())}
 		return
 	}
@@ -549,7 +570,7 @@ func (s *State) execute(d *Document, plan contract.KVPreparation, authored contr
 }
 func (s *State) executeManagement(d *Document, plan contract.KVPreparation, authored contract.KVRequest, management *LeaseManagementReceipt) {
 	lease := d.lease
-	d.confirmation = nil
+	d.clearConfirmation()
 	d.leaseManagement = nil
 	if recorder, ok := plan.(contract.KVPreparationRecord); ok {
 		record := recorder.RecordedRequest()
@@ -571,9 +592,13 @@ func (s *State) Confirm(d *Document, checked bool) {
 	if !checked || !s.check(d) {
 		return
 	}
-	if p.lease != d.lease || p.editor != d.Request() || p.editorRevision != nil && *p.editorRevision != d.Editor.Buffer.Version() || d.hasUnknownWrites() || p.alarms != nil && !validAlarmConfirmation(d, p) || p.members != nil && !validMemberConfirmation(d, p) || p.compaction != nil && !validCompactionConfirmation(d, p) || p.auth != nil && !sameEventScope(p.auth.receipt.Scope, d.scope) || p.management != nil && (!sameEventScope(p.management.Scope, d.scope) || !p.plan.Writes() || !managementRequestEqual(p.authored, p.plan.Snapshot())) {
-		d.confirmation = nil
+	if p.destroy != nil && !validHTTPSessionDestroyConfirmation(d, p) || p.lease != d.lease || p.editor != d.Request() || p.editorRevision != nil && *p.editorRevision != d.Editor.Buffer.Version() || d.hasUnknownWrites() || p.alarms != nil && !validAlarmConfirmation(d, p) || p.members != nil && !validMemberConfirmation(d, p) || p.compaction != nil && !validCompactionConfirmation(d, p) || p.auth != nil && !sameEventScope(p.auth.receipt.Scope, d.scope) || p.management != nil && (!sameEventScope(p.management.Scope, d.scope) || !p.plan.Writes() || !managementRequestEqual(p.authored, p.plan.Snapshot())) {
+		d.clearConfirmation()
 		d.error = locales.Text("KV 请求已更改，请重新预览")
+		return
+	}
+	if p.destroy != nil {
+		s.executeHTTPSessionDestroy(d, p)
 		return
 	}
 	if p.alarms != nil {
@@ -604,7 +629,7 @@ func (s *State) CancelConfirmation(d *Document) {
 		if d.httpSessionRenewal != nil {
 			d.httpSessionRenewal.confirmation = nil
 		}
-		d.confirmation = nil
+		d.clearConfirmation()
 		d.leaseManagement = nil
 		d.authDraft = nil
 	}
@@ -714,8 +739,8 @@ func (s *State) Consume() {
 		s.consumeHTTPWatch(d)
 		s.consumeHTTPSessionRenewal(d)
 		s.validateSnapshotConfirmation(d)
-		if d.confirmation != nil && d.confirmation.editor != d.Request() {
-			d.confirmation = nil
+		if d.confirmation != nil && (d.confirmation.editor != d.Request() || d.confirmation.editorRevision != nil && *d.confirmation.editorRevision != d.Editor.Buffer.Version()) {
+			d.clearConfirmation()
 		}
 		if d.leaseManagement != nil && (d.leaseManagement.editor != d.Request() || d.leaseManagement.lease != d.lease || d.needsRecovery) {
 			d.leaseManagement = nil
@@ -768,11 +793,19 @@ func (s *State) Consume() {
 						receipt.Error = r.err.Error()
 					}
 					d.httpSessionBrowser = nil
+					d.httpSessionKeysBrowser = nil
+					d.httpSessionKeys = false
 					d.httpSessions = false
 					d.last = receipt
 					if r.result.WriteOutcomeUnknown {
 						d.unknown = receipt
 					}
+				}
+				if job.kind == "http-session-destroy-preview" {
+					s.consumeHTTPSessionDestroyPreview(d, job, r)
+				}
+				if job.kind == "http-session-keys" {
+					s.consumeHTTPSessionKeys(d, job, r)
 				}
 				if job.kind == "auth-read" || job.kind == "auth-write" {
 					s.consumeAuth(d, job, r)
@@ -797,7 +830,7 @@ func (s *State) Consume() {
 						d.lease = r.lease
 						d.scope = scope
 						d.needsRecovery = false
-						d.confirmation = nil
+						d.clearConfirmation()
 						if d.authBrowser != nil {
 							d.authBrowser.selectedUser, d.authBrowser.selectedRole, d.authBrowser.target = "", "", ""
 							d.authBrowser.row, d.authBrowser.detailRow = -1, -1
@@ -806,7 +839,7 @@ func (s *State) Consume() {
 				}
 				if d.lease == nil || d.lease.CheckKVLease() != nil {
 					d.needsRecovery = true
-					d.confirmation = nil
+					d.clearConfirmation()
 				}
 				if s.deps.Status != nil && job.kind == "execute" {
 					s.deps.Status(ReceiptStatus(r.result))
@@ -838,7 +871,7 @@ func (s *State) DisconnectProfile(id int64) {
 				d.httpSessionRenewal.confirmation = nil
 			}
 			d.eventNeedsRecovery = true
-			d.confirmation = nil
+			d.clearConfirmation()
 			if d.snapshot != nil {
 				d.snapshot.confirmation = nil
 			}
@@ -853,7 +886,7 @@ func (s *State) GuardLeave(d *Document, next func(ui.Services)) bool {
 	if d.permit != nil && d.permit.httpSessionRenewalRevision == d.httpSessionRenewalRevision() && d.permit.httpWatchRevision == d.httpWatchRevision() && d.permit.toolRevision == d.requestToolRevision() && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && d.permit.compaction == d.compactionObservation && d.permit.memberRevision == d.memberRevision() && d.permit.alarmRevision == d.alarmRevision() && d.permit.snapshotRevision == d.snapshotRevision() && !d.Busy() && !d.FileBusy() {
 		return false
 	}
-	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && !d.memberContent() && !d.alarmContent() && !d.snapshotContent() && (d.httpWatch == nil || d.httpWatch.run == nil) && !d.httpSessionRenewalContent() && (d.httpSessionRenewal == nil || d.httpSessionRenewal.confirmation == nil) && d.leaseManagement == nil && d.authDraft == nil && d.compactionObservation == nil && (d.confirmation == nil || d.confirmation.alarms == nil && d.confirmation.members == nil && d.confirmation.management == nil && d.confirmation.auth == nil && d.confirmation.compaction == nil) {
+	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && !d.memberContent() && !d.alarmContent() && !d.snapshotContent() && (d.httpWatch == nil || d.httpWatch.run == nil) && !d.httpSessionRenewalContent() && (d.httpSessionRenewal == nil || d.httpSessionRenewal.confirmation == nil) && d.leaseManagement == nil && d.authDraft == nil && d.compactionObservation == nil && (d.confirmation == nil || d.confirmation.destroy == nil && d.confirmation.alarms == nil && d.confirmation.members == nil && d.confirmation.management == nil && d.confirmation.auth == nil && d.confirmation.compaction == nil) {
 		return false
 	}
 	s.leave = &leaveDecision{doc: d, next: next}
@@ -900,6 +933,7 @@ func (s *State) Close(d *Document) {
 		return
 	}
 	d.closed = true
+	d.clearConfirmation()
 	d.cancel()
 	s.closeHTTPWatch(d)
 	s.closeHTTPSessionRenewal(d)
@@ -948,6 +982,9 @@ func (s *State) Close(d *Document) {
 		<-d.job.finished
 		select {
 		case r := <-d.job.out:
+			if r.destroyPlan != nil {
+				_ = r.destroyPlan.Close()
+			}
 			if r.snapshots != nil && r.snapshots.artifact != nil {
 				_ = r.snapshots.artifact.Close()
 			}
@@ -973,7 +1010,9 @@ func (s *State) Close(d *Document) {
 	d.httpHeaders = false
 	d.httpSessions = false
 	d.httpSessionBrowser = nil
-	d.confirmation = nil
+	d.httpSessionKeysBrowser = nil
+	d.httpSessionKeys = false
+	d.clearConfirmation()
 	d.leaseManagement = nil
 	if d.authDraft != nil {
 		d.authDraft.password = ""

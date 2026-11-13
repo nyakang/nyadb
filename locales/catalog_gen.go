@@ -38697,3 +38697,323 @@ func ConsulSessionBrowserListGeneration() string {
 func (msgs Messages) ConsulSessionBrowserListGeneration() string {
 	return Catalog.Format(msgs.locale, "consulSessionBrowser_list_generation", nil)
 }
+
+// ConsulSessionKeysInvalidSelection says "所选 Session 不属于当前原连接观察"
+// in the language the app shows.
+func ConsulSessionKeysInvalidSelection() string {
+	return In(i18n.Locale()).ConsulSessionKeysInvalidSelection()
+}
+
+// ConsulSessionKeysInvalidSelection says "所选 Session 不属于当前原连接观察"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionKeysInvalidSelection() string {
+	return Catalog.Format(msgs.locale, "consulSessionKeys_invalidSelection", nil)
+}
+
+// ConsulSessionKeysObserve says "读取所选 Session 的持有键（全根目录）"
+// in the language the app shows.
+func ConsulSessionKeysObserve() string { return In(i18n.Locale()).ConsulSessionKeysObserve() }
+
+// ConsulSessionKeysObserve says "读取所选 Session 的持有键（全根目录）"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionKeysObserve() string {
+	return Catalog.Format(msgs.locale, "consulSessionKeys_observe", nil)
+}
+
+// ConsulSessionKeysTitle says "Session 持有键"
+// in the language the app shows.
+func ConsulSessionKeysTitle() string { return In(i18n.Locale()).ConsulSessionKeysTitle() }
+
+// ConsulSessionKeysTitle says "Session 持有键"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionKeysTitle() string {
+	return Catalog.Format(msgs.locale, "consulSessionKeys_title", nil)
+}
+
+// ConsulSessionKeysAclFiltered says "ACL 已过滤；此持有键观察不完整"
+// in the language the app shows.
+func ConsulSessionKeysAclFiltered() string { return In(i18n.Locale()).ConsulSessionKeysAclFiltered() }
+
+// ConsulSessionKeysAclFiltered says "ACL 已过滤；此持有键观察不完整"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionKeysAclFiltered() string {
+	return Catalog.Format(msgs.locale, "consulSessionKeys_aclFiltered", nil)
+}
+
+// ConsulSessionKeysRootScope says "读取全根目录，包含配置前缀之外的键；最多 10000 行、32 MiB 观察预算"
+// in the language the app shows.
+func ConsulSessionKeysRootScope() string { return In(i18n.Locale()).ConsulSessionKeysRootScope() }
+
+// ConsulSessionKeysRootScope says "读取全根目录，包含配置前缀之外的键；最多 10000 行、32 MiB 观察预算"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionKeysRootScope() string {
+	return Catalog.Format(msgs.locale, "consulSessionKeys_rootScope", nil)
+}
+
+// ConsulSessionKeysBack says "返回持有键列表"
+// in the language the app shows.
+func ConsulSessionKeysBack() string { return In(i18n.Locale()).ConsulSessionKeysBack() }
+
+// ConsulSessionKeysBack says "返回持有键列表"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionKeysBack() string {
+	return Catalog.Format(msgs.locale, "consulSessionKeys_back", nil)
+}
+
+// ConsulSessionKeysDetail says "持有键原始详情"
+// in the language the app shows.
+func ConsulSessionKeysDetail() string { return In(i18n.Locale()).ConsulSessionKeysDetail() }
+
+// ConsulSessionKeysDetail says "持有键原始详情"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionKeysDetail() string {
+	return Catalog.Format(msgs.locale, "consulSessionKeys_detail", nil)
+}
+
+// ConsulSessionKeysSearch says "筛选已返回的持有键"
+// in the language the app shows.
+func ConsulSessionKeysSearch() string { return In(i18n.Locale()).ConsulSessionKeysSearch() }
+
+// ConsulSessionKeysSearch says "筛选已返回的持有键"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionKeysSearch() string {
+	return Catalog.Format(msgs.locale, "consulSessionKeys_search", nil)
+}
+
+// ConsulSessionKeysPage says "第 %d/%d 页 · 匹配 %d/%d 个持有键"
+// in the language the app shows.
+func ConsulSessionKeysPage() string { return In(i18n.Locale()).ConsulSessionKeysPage() }
+
+// ConsulSessionKeysPage says "第 %d/%d 页 · 匹配 %d/%d 个持有键"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionKeysPage() string {
+	return Catalog.Format(msgs.locale, "consulSessionKeys_page", nil)
+}
+
+// ConsulSessionKeysCopyKey says "复制所选持有键名称"
+// in the language the app shows.
+func ConsulSessionKeysCopyKey() string { return In(i18n.Locale()).ConsulSessionKeysCopyKey() }
+
+// ConsulSessionKeysCopyKey says "复制所选持有键名称"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionKeysCopyKey() string {
+	return Catalog.Format(msgs.locale, "consulSessionKeys_copyKey", nil)
+}
+
+// ConsulSessionKeysReturned says "已返回的持有键列表"
+// in the language the app shows.
+func ConsulSessionKeysReturned() string { return In(i18n.Locale()).ConsulSessionKeysReturned() }
+
+// ConsulSessionKeysReturned says "已返回的持有键列表"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionKeysReturned() string {
+	return Catalog.Format(msgs.locale, "consulSessionKeys_returned", nil)
+}
+
+// ConsulSessionKeysRaceLimit says "此观察不能保证销毁时的完整影响；Session 锁可能随时变化"
+// in the language the app shows.
+func ConsulSessionKeysRaceLimit() string { return In(i18n.Locale()).ConsulSessionKeysRaceLimit() }
+
+// ConsulSessionKeysRaceLimit says "此观察不能保证销毁时的完整影响；Session 锁可能随时变化"
+// in the language of msgs.
+func (msgs Messages) ConsulSessionKeysRaceLimit() string {
+	return Catalog.Format(msgs.locale, "consulSessionKeys_raceLimit", nil)
+}
+
+// ConsulDestroyPreviewSelected says "预览销毁所选 Session"
+// in the language the app shows.
+func ConsulDestroyPreviewSelected() string { return In(i18n.Locale()).ConsulDestroyPreviewSelected() }
+
+// ConsulDestroyPreviewSelected says "预览销毁所选 Session"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyPreviewSelected() string {
+	return Catalog.Format(msgs.locale, "consulDestroyPreviewSelected", nil)
+}
+
+// ConsulDestroyConfirmOriginal says "确认销毁原 Session"
+// in the language the app shows.
+func ConsulDestroyConfirmOriginal() string { return In(i18n.Locale()).ConsulDestroyConfirmOriginal() }
+
+// ConsulDestroyConfirmOriginal says "确认销毁原 Session"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyConfirmOriginal() string {
+	return Catalog.Format(msgs.locale, "consulDestroyConfirmOriginal", nil)
+}
+
+// ConsulDestroyBehaviorKeys says "Behavior %s · 观察到 %d 个持有键"
+// in the language the app shows.
+func ConsulDestroyBehaviorKeys() string { return In(i18n.Locale()).ConsulDestroyBehaviorKeys() }
+
+// ConsulDestroyBehaviorKeys says "Behavior %s · 观察到 %d 个持有键"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyBehaviorKeys() string {
+	return Catalog.Format(msgs.locale, "consulDestroyBehaviorKeys", nil)
+}
+
+// ConsulDestroyWholeRoot says "全根目录观察；连接前缀不限定持有键范围"
+// in the language the app shows.
+func ConsulDestroyWholeRoot() string { return In(i18n.Locale()).ConsulDestroyWholeRoot() }
+
+// ConsulDestroyWholeRoot says "全根目录观察；连接前缀不限定持有键范围"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyWholeRoot() string {
+	return Catalog.Format(msgs.locale, "consulDestroyWholeRoot", nil)
+}
+
+// ConsulDestroyBehaviorNotice says "release 释放锁；delete 删除此 Session 持有的键"
+// in the language the app shows.
+func ConsulDestroyBehaviorNotice() string { return In(i18n.Locale()).ConsulDestroyBehaviorNotice() }
+
+// ConsulDestroyBehaviorNotice says "release 释放锁；delete 删除此 Session 持有的键"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyBehaviorNotice() string {
+	return Catalog.Format(msgs.locale, "consulDestroyBehaviorNotice", nil)
+}
+
+// ConsulDestroyRaceNotice says "确认前重新检查 UUID、Behavior 和持有键版本；读取与销毁之间仍可能变化"
+// in the language the app shows.
+func ConsulDestroyRaceNotice() string { return In(i18n.Locale()).ConsulDestroyRaceNotice() }
+
+// ConsulDestroyRaceNotice says "确认前重新检查 UUID、Behavior 和持有键版本；读取与销毁之间仍可能变化"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyRaceNotice() string {
+	return Catalog.Format(msgs.locale, "consulDestroyRaceNotice", nil)
+}
+
+// ConsulDestroyCopyPreview says "复制完整 Session 销毁预览"
+// in the language the app shows.
+func ConsulDestroyCopyPreview() string { return In(i18n.Locale()).ConsulDestroyCopyPreview() }
+
+// ConsulDestroyCopyPreview says "复制完整 Session 销毁预览"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyCopyPreview() string {
+	return Catalog.Format(msgs.locale, "consulDestroyCopyPreview", nil)
+}
+
+// ConsulDestroyHeldVersions says "原 Session 持有键与版本"
+// in the language the app shows.
+func ConsulDestroyHeldVersions() string { return In(i18n.Locale()).ConsulDestroyHeldVersions() }
+
+// ConsulDestroyHeldVersions says "原 Session 持有键与版本"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyHeldVersions() string {
+	return Catalog.Format(msgs.locale, "consulDestroyHeldVersions", nil)
+}
+
+// ConsulDestroyCheckConfirm says "我确认销毁此原 Session"
+// in the language the app shows.
+func ConsulDestroyCheckConfirm() string { return In(i18n.Locale()).ConsulDestroyCheckConfirm() }
+
+// ConsulDestroyCheckConfirm says "我确认销毁此原 Session"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyCheckConfirm() string {
+	return Catalog.Format(msgs.locale, "consulDestroyCheckConfirm", nil)
+}
+
+// ConsulDestroyConfirm says "确认销毁 Session"
+// in the language the app shows.
+func ConsulDestroyConfirm() string { return In(i18n.Locale()).ConsulDestroyConfirm() }
+
+// ConsulDestroyConfirm says "确认销毁 Session"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyConfirm() string {
+	return Catalog.Format(msgs.locale, "consulDestroyConfirm", nil)
+}
+
+// ConsulDestroyOriginalRecord says "Session 销毁原始记录"
+// in the language the app shows.
+func ConsulDestroyOriginalRecord() string { return In(i18n.Locale()).ConsulDestroyOriginalRecord() }
+
+// ConsulDestroyOriginalRecord says "Session 销毁原始记录"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyOriginalRecord() string {
+	return Catalog.Format(msgs.locale, "consulDestroyOriginalRecord", nil)
+}
+
+// ConsulDestroyUnknownNotice says "取消不代表回滚；未知写入回执不会被后来读取清除"
+// in the language the app shows.
+func ConsulDestroyUnknownNotice() string { return In(i18n.Locale()).ConsulDestroyUnknownNotice() }
+
+// ConsulDestroyUnknownNotice says "取消不代表回滚；未知写入回执不会被后来读取清除"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyUnknownNotice() string {
+	return Catalog.Format(msgs.locale, "consulDestroyUnknownNotice", nil)
+}
+
+// ConsulDestroyPreviewInfoReceipt says "预览 Session 原始响应"
+// in the language the app shows.
+func ConsulDestroyPreviewInfoReceipt() string {
+	return In(i18n.Locale()).ConsulDestroyPreviewInfoReceipt()
+}
+
+// ConsulDestroyPreviewInfoReceipt says "预览 Session 原始响应"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyPreviewInfoReceipt() string {
+	return Catalog.Format(msgs.locale, "consulDestroyPreviewInfoReceipt", nil)
+}
+
+// ConsulDestroyPreviewRootReceipt says "预览全根目录原始响应"
+// in the language the app shows.
+func ConsulDestroyPreviewRootReceipt() string {
+	return In(i18n.Locale()).ConsulDestroyPreviewRootReceipt()
+}
+
+// ConsulDestroyPreviewRootReceipt says "预览全根目录原始响应"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyPreviewRootReceipt() string {
+	return Catalog.Format(msgs.locale, "consulDestroyPreviewRootReceipt", nil)
+}
+
+// ConsulDestroyRecheckInfoReceipt says "重新检查 Session 原始响应"
+// in the language the app shows.
+func ConsulDestroyRecheckInfoReceipt() string {
+	return In(i18n.Locale()).ConsulDestroyRecheckInfoReceipt()
+}
+
+// ConsulDestroyRecheckInfoReceipt says "重新检查 Session 原始响应"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyRecheckInfoReceipt() string {
+	return Catalog.Format(msgs.locale, "consulDestroyRecheckInfoReceipt", nil)
+}
+
+// ConsulDestroyRecheckRootReceipt says "重新检查全根目录原始响应"
+// in the language the app shows.
+func ConsulDestroyRecheckRootReceipt() string {
+	return In(i18n.Locale()).ConsulDestroyRecheckRootReceipt()
+}
+
+// ConsulDestroyRecheckRootReceipt says "重新检查全根目录原始响应"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyRecheckRootReceipt() string {
+	return Catalog.Format(msgs.locale, "consulDestroyRecheckRootReceipt", nil)
+}
+
+// ConsulDestroyPutReceipt says "原销毁 PUT 回执"
+// in the language the app shows.
+func ConsulDestroyPutReceipt() string { return In(i18n.Locale()).ConsulDestroyPutReceipt() }
+
+// ConsulDestroyPutReceipt says "原销毁 PUT 回执"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyPutReceipt() string {
+	return Catalog.Format(msgs.locale, "consulDestroyPutReceipt", nil)
+}
+
+// ConsulDestroyChooseReceipt says "选择原始步骤回执"
+// in the language the app shows.
+func ConsulDestroyChooseReceipt() string { return In(i18n.Locale()).ConsulDestroyChooseReceipt() }
+
+// ConsulDestroyChooseReceipt says "选择原始步骤回执"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyChooseReceipt() string {
+	return Catalog.Format(msgs.locale, "consulDestroyChooseReceipt", nil)
+}
+
+// ConsulDestroyNoReceipt says "此步骤没有原生完成回执"
+// in the language the app shows.
+func ConsulDestroyNoReceipt() string { return In(i18n.Locale()).ConsulDestroyNoReceipt() }
+
+// ConsulDestroyNoReceipt says "此步骤没有原生完成回执"
+// in the language of msgs.
+func (msgs Messages) ConsulDestroyNoReceipt() string {
+	return Catalog.Format(msgs.locale, "consulDestroyNoReceipt", nil)
+}

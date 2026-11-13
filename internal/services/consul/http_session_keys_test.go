@@ -53,15 +53,17 @@ func TestHTTPSessionKeysProjectionKeepsWholeRootOrderExactValuesAndOriginalScope
 
 func TestHTTPSessionKeysFilteredAndEmptyResponsesRetainOriginalPresence(t *testing.T) {
 	for _, filtered := range []*bool{nil, new(false), new(true)} {
-		o := sessionKeysProjectionFixture(t, `[]`)
-		o.Root.HTTP.Metadata.ACLFiltered = filtered
-		if err := projectSessionKeys(&o); err != nil || !o.ProjectionComplete || o.Matches == nil || o.Complete != (filtered == nil || !*filtered) || o.Root.HTTP.Metadata.ACLFiltered != filtered {
-			t.Fatal("ACL presence or exact empty root observation changed", err)
-		}
-		o.Root.HTTP.Status = 404
-		o.Root.HTTP.Body = nil
-		if err := projectSessionKeys(&o); err != nil || !o.ProjectionComplete || o.Complete != (filtered == nil || !*filtered) {
-			t.Fatal("acknowledged original root absence lost its ACL boundary", err)
+		for _, body := range []string{`[]`, `[ ]`, " \n[\t\r\n ] \n"} {
+			o := sessionKeysProjectionFixture(t, body)
+			o.Root.HTTP.Metadata.ACLFiltered = filtered
+			if err := projectSessionKeys(&o); err != nil || !o.ProjectionComplete || o.Matches == nil || o.Complete != (filtered == nil || !*filtered) || o.Root.HTTP.Metadata.ACLFiltered != filtered {
+				t.Fatal("ACL presence or exact empty root observation changed", err)
+			}
+			o.Root.HTTP.Status = 404
+			o.Root.HTTP.Body = nil
+			if err := projectSessionKeys(&o); err != nil || !o.ProjectionComplete || o.Complete != (filtered == nil || !*filtered) {
+				t.Fatal("acknowledged original root absence lost its ACL boundary", err)
+			}
 		}
 	}
 }

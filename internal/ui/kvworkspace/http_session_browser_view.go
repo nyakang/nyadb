@@ -122,6 +122,16 @@ func (s *State) httpSessionBrowserView(c *ui.Context, d *Document, receipt *Rece
 		}
 	}).FillWidth().MinWidth(0).Gap(5)
 	ui.Text(c, locales.Text("本地筛选与翻页不会重新读取")).SingleLine().Tooltip(locales.Text("本地筛选与翻页不会重新读取")).TextColor(p.Muted)
+	if d.HTTPSessionKeysAvailable() {
+		if ui.Button(c, locales.Text("读取所选 Session 的持有键（全根目录）")).Disabled(d.Busy() || d.needsRecovery || b.selectedID == "").Clicked() {
+			s.ObserveSelectedHTTPSessionKeys(d)
+		}
+	}
+	if d.HTTPSessionDestroyAvailable() {
+		if ui.Button(c, locales.Text("预览销毁所选 Session")).Disabled(d.Busy() || d.needsRecovery || d.hasUnknownWrites() || b.selectedID == "").Clicked() {
+			s.PrepareSelectedHTTPSessionDestroy(d)
+		}
+	}
 	rows, indices := sessionReceiptRows(receipt), b.pageIndices()
 	selected := -1
 	for i, original := range indices {

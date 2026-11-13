@@ -116,7 +116,7 @@ func (s *State) PrepareRenewal(d *Document) {
 		d.error = locales.Text("KV 请求已更改，请重新预览")
 		return
 	}
-	d.confirmation = nil
+	d.clearConfirmation()
 	d.permit = nil
 	d.error = ""
 	d.renewalConfirmation = &renewalConfirmation{lease: d.renewalLease, plan: plan, scope: d.renewalScope.Clone(), authored: d.Request(), open: true}

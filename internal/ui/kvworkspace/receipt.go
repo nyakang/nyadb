@@ -23,6 +23,9 @@ func (s *State) OperationRecord(d *Document) ([]byte, error) {
 	return encodeOperationReceipt(*r)
 }
 func encodeOperationReceipt(r Receipt) ([]byte, error) {
+	if r.Result.HTTPSessionDestroy != nil {
+		return encodeHTTPSessionDestroyReceipt(r)
+	}
 	if r.Result.HTTP != nil {
 		return encodeHTTPOperationReceipt(r)
 	}

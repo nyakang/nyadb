@@ -78,7 +78,7 @@ func (s *session) bindKV(raw contract.KVRequestLease, document uint64) (contract
 	if auth {
 		return bindKVSnapshots(bindKVMembers(bindKVMaintenance(&kvAuthLease{bound}))), nil
 	}
-	return bindKVSnapshots(bindKVMembers(bindKVMaintenance(bound))), nil
+	return bindKVHTTPSessionDestroy(bindKVHTTPSessionKeys(bindKVSnapshots(bindKVMembers(bindKVMaintenance(bound))))), nil
 }
 func (s *session) ReserveKV(document uint64) (contract.KVRequestLease, error) {
 	if !s.alive() {
@@ -115,6 +115,13 @@ func (s *session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 	old.closed.Store(true)
 	recovery, err := p.RecoverKV(old.raw)
 	recovery = recovery.Clone()
+	old.closeDestroyPlans()
+	if !old.translateDestroyResult(&recovery.Last) {
+		err = errors.Join(err, contract.ErrRevoked)
+	}
+	if recovery.Unknown != nil && !old.translateDestroyResult(recovery.Unknown) {
+		err = errors.Join(err, contract.ErrRevoked)
+	}
 	if recovery.SnapshotResult != nil && !old.translateSnapshotScope(&recovery.SnapshotResult.Scope) {
 		err = errors.Join(err, contract.ErrRevoked)
 	}
@@ -132,6 +139,9 @@ func (s *session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 		return recovery, err
 	}
 	recovery.Lease, err = s.bindKV(recovery.Lease, old.document)
+	if next := originalKVRequestLease(recovery.Lease); next != nil {
+		next.inheritDestroyRecords(old)
+	}
 	return recovery, err
 }
 
@@ -145,6 +155,10 @@ type kvRequestLease struct {
 	document           uint64
 	membersMu          sync.Mutex
 	memberObservations map[*kvMemberObservation]bool
+	destroyMu          sync.Mutex
+	destroyRecords     map[string]kvDestroyRecordScope
+	destroyPlans       map[*kvHTTPSessionDestroyPreparation]bool
+	destroyClosed      bool
 }
 type kvRequestPreparation struct {
 	owner    *kvRequestLease
@@ -205,14 +219,26 @@ func (l *kvRequestLease) Execute(ctx context.Context, p contract.KVPreparation) 
 	}
 	r, err := l.raw.Execute(ctx, original.raw)
 	r = r.Clone()
+	if !l.translateDestroyResult(&r) {
+		err = errors.Join(err, contract.ErrRevoked)
+	}
 	// Never erase an actual original receipt merely because the publication was
 	// revoked while the captured executor finished. The UI owns admission.
 	return r, errors.Join(err, l.CheckKVLease())
 }
-func (l *kvRequestLease) LastResult() contract.KVResult { return l.raw.LastResult().Clone() }
+func (l *kvRequestLease) LastResult() contract.KVResult {
+	r := l.raw.LastResult().Clone()
+	l.translateDestroyResult(&r)
+	return r
+}
 func (l *kvRequestLease) Close() error {
 	l.closed.Store(true)
 	l.once.Do(func() { l.closeErr = l.raw.Close() })
+	l.closeDestroyPlans()
+	l.destroyMu.Lock()
+	l.destroyRecords = nil
+	l.destroyClosed = true
+	l.destroyMu.Unlock()
 	l.membersMu.Lock()
 	l.memberObservations = nil
 	l.membersMu.Unlock()

@@ -543,13 +543,14 @@ func (s *State) PrepareAuthAction(d *Document) {
 	}
 	p.password = ""
 	d.authDraft = nil
+	d.clearConfirmation()
 	d.confirmation = &confirmation{lease: d.lease, plan: plans[0], authored: r.Requests[0].Request, editor: d.Request(), auth: &authConfirmation{plans: plans, receipt: r}, open: true}
 }
 
 func (s *State) executeAuthAction(d *Document, p *confirmation) {
 	lease, plans := p.lease, slices.Clone(p.auth.plans)
 	r := p.auth.receipt.clone()
-	d.confirmation = nil
+	d.clearConfirmation()
 	d.authDraft = nil
 	s.start(d, "auth-write", r.Requests[0].Request, func(ctx context.Context) outcome {
 		out := outcome{result: contract.KVResult{Request: r.Requests[0].Request, RequestOmittedFields: slices.Clone(r.Requests[0].OmittedFields)}}

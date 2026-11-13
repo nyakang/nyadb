@@ -132,7 +132,7 @@ func (s *State) OpenRequest(d *Document) {
 		return
 	}
 	d.renewalConfirmation = nil
-	d.confirmation = nil
+	d.clearConfirmation()
 	s.fileJob(d, "open", func(ctx context.Context) fileResult {
 		path, err := f.OpenPath()
 		if err != nil || path == "" {

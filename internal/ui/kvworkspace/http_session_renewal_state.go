@@ -155,7 +155,7 @@ func (s *State) PrepareHTTPSessionRenewal(d *Document) {
 		d.error = errors.Join(err, contract.ErrKVPlanUsed).Error()
 		return
 	}
-	d.confirmation = nil
+	d.clearConfirmation()
 	d.permit = nil
 	w.confirmation = &httpSessionRenewalConfirmation{lease: w.lease, plan: p, scope: w.scope.Clone(), authored: d.Request(), request: r, open: true}
 }
@@ -183,7 +183,7 @@ func (s *State) ConfirmHTTPSessionRenewal(d *Document, checked bool) {
 	w.authored, w.request, w.evidenceScope = confirm.authored, r, confirm.scope.Clone()
 	w.status, w.preview, w.selected = contract.KVHTTPSessionRenewalStatus{}, "", -1
 	w.revision++
-	d.confirmation = nil
+	d.clearConfirmation()
 	d.selectedHTTPSessionRenewal = true
 	d.selectedHTTPWatch = false
 	lease, plan := confirm.lease, confirm.plan

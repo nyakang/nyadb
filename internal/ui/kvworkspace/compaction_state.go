@@ -126,7 +126,7 @@ func (s *State) SetCompactionInputs(d *Document, revision string, physical bool)
 		Physical bool   `json:"physical"`
 	}{revision, physical}, "", "  ")
 	d.Editor.Buffer.Set(string(raw))
-	d.confirmation = nil
+	d.clearConfirmation()
 	d.permit = nil
 }
 
@@ -161,7 +161,7 @@ func (s *State) ObserveCompaction(d *Document) {
 		plans = append(plans, plan)
 	}
 	capture := CompactionObservation{lease: lease, DocumentID: d.id, Scope: d.scope.Clone(), Authored: authored, Revision: revision, Physical: physical, Requests: slices.Clone(requests)}
-	d.confirmation = nil
+	d.clearConfirmation()
 	s.start(d, "compaction-observe", authored, func(ctx context.Context) outcome {
 		var lastErr error
 		for i, plan := range plans {
@@ -238,6 +238,7 @@ func (s *State) PrepareCompaction(d *Document) {
 		return
 	}
 	d.error = ""
+	d.clearConfirmation()
 	d.confirmation = &confirmation{lease: d.lease, plan: plan, authored: authored, editor: authored, compaction: c, open: true}
 	d.permit = nil
 }

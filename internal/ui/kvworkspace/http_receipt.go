@@ -78,23 +78,24 @@ func encodeHTTPOperationReceipt(r Receipt) ([]byte, error) {
 		}
 	}
 	record := struct {
-		Version             int         `json:"version"`
-		Protocol            string      `json:"protocol"`
-		Scope               scopeRecord `json:"scope"`
-		Method              string      `json:"method"`
-		AuthoredJSON        string      `json:"authored_json"`
-		CanonicalJSON       string      `json:"canonical_json"`
-		Attempted           bool        `json:"attempted"`
-		Completed           bool        `json:"completed"`
-		WriteOutcomeUnknown bool        `json:"write_outcome_unknown"`
-		Code                string      `json:"code"`
-		HTTP                httpRecord  `json:"http"`
-		Error               string      `json:"error,omitempty"`
+		Version             int                     `json:"version"`
+		Protocol            string                  `json:"protocol"`
+		Scope               scopeRecord             `json:"scope"`
+		Method              string                  `json:"method"`
+		AuthoredJSON        string                  `json:"authored_json"`
+		CanonicalJSON       string                  `json:"canonical_json"`
+		Attempted           bool                    `json:"attempted"`
+		Completed           bool                    `json:"completed"`
+		WriteOutcomeUnknown bool                    `json:"write_outcome_unknown"`
+		Code                string                  `json:"code"`
+		HTTP                httpRecord              `json:"http"`
+		SessionHeldKeys     *HTTPSessionKeysReceipt `json:"session_held_keys,omitempty"`
+		Error               string                  `json:"error,omitempty"`
 	}{Version: 1, Protocol: r.Scope.HTTP.Protocol,
 		Scope: scopeRecord{ProfileID: strconv.FormatInt(r.Scope.Namespace.ProfileID, 10), Generation: strconv.FormatUint(r.Scope.Generation, 10),
 			Catalog: r.Scope.Namespace.Catalog, Schema: r.Scope.Namespace.Schema, PrefixBase64: base64.StdEncoding.EncodeToString(r.Scope.Prefix), Version: r.Scope.Version, HTTP: r.Scope.HTTP},
 		Method: r.Result.Request.Method, AuthoredJSON: r.Authored.JSON, CanonicalJSON: r.Result.Request.JSON,
-		Attempted: r.Result.Attempted, Completed: r.Result.Completed, WriteOutcomeUnknown: r.Result.WriteOutcomeUnknown, Code: r.Result.Code, HTTP: http, Error: r.Error}
+		Attempted: r.Result.Attempted, Completed: r.Result.Completed, WriteOutcomeUnknown: r.Result.WriteOutcomeUnknown, Code: r.Result.Code, HTTP: http, Error: r.Error, SessionHeldKeys: r.HTTPSessionKeys.clone()}
 	raw, err := json.MarshalIndent(record, "", "  ")
 	if len(raw) > 256<<20 {
 		return nil, jsondocument.ErrBounds

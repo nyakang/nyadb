@@ -144,7 +144,7 @@ func (d *Document) releaseAlarmAuthority() {
 		d.alarms.revision++
 	}
 	if d.confirmation != nil && d.confirmation.alarms != nil {
-		d.confirmation = nil
+		d.clearConfirmation()
 	}
 }
 
@@ -254,6 +254,7 @@ func (s *State) PrepareAlarmBatch(d *Document) {
 		return
 	}
 	d.error = ""
+	d.clearConfirmation()
 	d.confirmation = &confirmation{lease: d.lease, authored: d.Request(), editor: d.Request(), alarms: p, open: true}
 	d.permit = nil
 }
@@ -288,7 +289,7 @@ func (s *State) executeAlarmBatch(d *Document, c *confirmation) {
 	batch, archive := p.receipt.Clone(), alarmArchiveFor(d)
 	lease := c.lease
 	reads, writes := slices.Clone(p.reads), slices.Clone(p.writes)
-	d.confirmation = nil
+	d.clearConfirmation()
 	s.start(d, "alarm-batch", c.authored, func(ctx context.Context) outcome {
 		var lastErr error
 		for i := range batch.Targets {

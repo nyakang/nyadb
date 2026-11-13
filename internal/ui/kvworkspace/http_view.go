@@ -38,16 +38,23 @@ func (s *State) httpReceiptView(c *ui.Context, d *Document, r *Receipt) {
 	}
 	ui.Toolbar(c, func() {
 		if ui.Button(c, locales.Text("HTTP 原正文")).Clicked() {
+			d.httpSessionKeys = false
 			d.httpHeaders = false
 			d.httpSessions = false
 		}
 		if ui.Button(c, locales.Text("HTTP 头与元数据")).Clicked() {
+			d.httpSessionKeys = false
 			d.httpHeaders = true
 			d.httpSessions = false
 		}
 		if h.Sessions != nil && r.Scope.Namespace.ProfileID == d.profileID {
 			if ui.Button(c, locales.Text("Session 列表")).Disabled(d.Busy()).Clicked() {
 				d.httpSessions = true
+			}
+		}
+		if r.HTTPSessionKeys != nil && r.HTTPSessionKeys.ProjectionComplete {
+			if ui.Button(c, locales.Text("Session 持有键")).Disabled(d.Busy()).Clicked() {
+				d.httpSessionKeys = true
 			}
 		}
 		if ui.Button(c, locales.Text("复制原请求")).Clicked() {

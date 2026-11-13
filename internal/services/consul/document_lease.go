@@ -32,8 +32,10 @@ type documentLease struct {
 	client                     *Client            // guarded by ops
 	last, unknown              *contract.KVResult // immutable, guarded by receiptMu
 	writeUnknown               atomic.Bool
-	reserved                   bool  // guarded by ops and receiptBudgetMu
-	cacheBytes                 int64 // guarded by receiptBudgetMu and ops
+	reserved                   bool                       // guarded by ops and receiptBudgetMu
+	cacheBytes                 int64                      // guarded by receiptBudgetMu and ops
+	destroyPlan                *sessionDestroyPreparation // guarded by ops
+	planReserved               int64                      // guarded by ops and receiptBudgetMu
 }
 
 func (l *documentLease) Scope() contract.KVScope { return l.s.KVScope() }
@@ -108,7 +110,7 @@ func (l *documentLease) closePhysical() {
 func (l *documentLease) reserveReceipt() error {
 	receiptBudgetMu.Lock()
 	defer receiptBudgetMu.Unlock()
-	if l.cacheBytes+pendingReceiptBudget > documentReceiptBudget || l.s.retained+l.s.reserved+pendingReceiptBudget > l.s.budget {
+	if l.cacheBytes+l.planReserved+pendingReceiptBudget > documentReceiptBudget || l.s.retained+l.s.reserved+pendingReceiptBudget > l.s.budget {
 		return ErrBounds
 	}
 	l.s.reserved += pendingReceiptBudget
@@ -140,6 +142,9 @@ func (l *documentLease) Preconnect(parent context.Context) error {
 	return l.connect(ctx)
 }
 func (l *documentLease) Execute(parent context.Context, prepared contract.KVPreparation) (result contract.KVResult, err error) {
+	if p, ok := prepared.(*sessionDestroyPreparation); ok {
+		return l.executeSessionDestroy(parent, p)
+	}
 	p, ok := prepared.(*documentPreparation)
 	if !ok || p == nil || p.owner != l {
 		return result, contract.ErrKVPlanUsed
@@ -149,6 +154,23 @@ func (l *documentLease) Execute(parent context.Context, prepared contract.KVPrep
 		return result, contract.ErrKVBusy
 	}
 	defer l.ops.Unlock()
+	if p.write && l.destroyPlan != nil {
+		return result, contract.ErrKVBusy
+	}
+	return l.executeLocked(parent, p)
+}
+
+// The caller owns ops; observers may compose sequential requests through this
+// original executor without recursively acquiring the lease's operation lock.
+func (l *documentLease) executeLockedPreparation(ctx context.Context, prepared contract.KVPreparation) (contract.KVResult, error) {
+	p, ok := prepared.(*documentPreparation)
+	if !ok || p == nil || p.owner != l {
+		return contract.KVResult{}, contract.ErrKVPlanUsed
+	}
+	return l.executeLocked(ctx, p)
+}
+func (l *documentLease) executeLocked(parent context.Context, p *documentPreparation) (result contract.KVResult, err error) {
+	result.Request = p.request
 	ctx, done, err := l.request(parent)
 	if err != nil {
 		return result, err
@@ -237,6 +259,7 @@ func (l *documentLease) retire() error {
 	l.mu.Unlock()
 	l.ops.Lock()
 	defer l.ops.Unlock()
+	l.releaseDestroyPlan()
 	l.closePhysical()
 	l.s.mu.Lock()
 	delete(l.s.leases, l)
@@ -250,6 +273,7 @@ func (l *documentLease) Close() error {
 	l.mu.Unlock()
 	l.ops.Lock()
 	defer l.ops.Unlock()
+	l.releaseDestroyPlan()
 	l.closePhysical()
 	l.receiptMu.Lock()
 	l.last, l.unknown = nil, nil

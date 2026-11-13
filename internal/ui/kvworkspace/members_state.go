@@ -176,7 +176,7 @@ func (d *Document) releaseMemberAuthority() {
 	}
 	m.observation, m.bindings = nil, nil
 	m.revision++
-	d.confirmation = nil
+	d.clearConfirmation()
 }
 func (r *memberOutcome) close() {
 	if r == nil {
@@ -203,7 +203,7 @@ func (s *State) ObserveMembers(d *Document) {
 	}
 	lease := d.lease
 	id := d.id
-	d.confirmation = nil
+	d.clearConfirmation()
 	s.start(d, "member-directory", d.Request(), func(ctx context.Context) outcome {
 		o, err := lease.(contract.KVMembers).ObserveMembers(ctx)
 		directory := contract.KVMemberDirectory{DocumentID: id, Scope: lease.Scope()}
@@ -282,7 +282,7 @@ func (s *State) BindMembers(d *Document) {
 		b.entries[i].receipt = MemberBindingReceipt{Target: target, Scope: contract.KVMemberScope{Original: directory.Scope.Clone(), DocumentID: directory.DocumentID, Directory: directory.Clone(), Member: selected.Clone(), Endpoint: target.Endpoint, Version: target.Version}}
 	}
 	archive := memberArchiveFor(d)
-	d.confirmation = nil
+	d.clearConfirmation()
 	s.start(d, "member-bind", authored, func(ctx context.Context) outcome {
 		var lastErr error
 		for i := range b.entries {
@@ -388,6 +388,7 @@ func (s *State) PrepareMemberBatch(d *Document) {
 		return
 	}
 	d.error = ""
+	d.clearConfirmation()
 	d.confirmation = &confirmation{lease: d.lease, authored: d.Request(), editor: d.Request(), members: p, open: true}
 	d.permit = nil
 }
@@ -461,7 +462,7 @@ func (s *State) executeMemberBatch(d *Document, c *confirmation) {
 	batch, archive := p.receipt.Clone(), memberArchiveFor(d)
 	entries := slices.Clone(p.bindings.entries)
 	followers, finals := slices.Clone(p.followers), slices.Clone(p.finals)
-	d.confirmation = nil
+	d.clearConfirmation()
 	s.start(d, "member-batch", c.authored, func(ctx context.Context) outcome {
 		var lastErr error
 		for {
