@@ -124,7 +124,7 @@ func TestConsulNativePublicHealthBrowserOriginalFormsPagesDetailsAndExport(t *te
 	writer := consulRenewalWriter(t, p, secret)
 	service := consulHealthBrowserFixture(t, p, secret, writer)
 	s, d, _ := consulWorkspaceState(t, p, secret)
-	if len(d.RequestTools()) != 20 {
+	if len(d.RequestTools()) != 22 {
 		t.Fatal("original four health read tools missing")
 	}
 	for _, kind := range []contract.KVRequestToolKind{contract.KVToolHTTPHealthState, contract.KVToolHTTPHealthNode, contract.KVToolHTTPHealthChecks, contract.KVToolHTTPHealthService} {

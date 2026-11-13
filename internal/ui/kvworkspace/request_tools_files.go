@@ -13,7 +13,8 @@ import (
 func requestToolTextFields(input contract.KVRequestToolInput) []string {
 	s := input.HTTPSession
 	h := input.HTTPHealth
-	return []string{input.Key, input.ValueBase64, input.Flags, input.CompareIndex, input.TransactionJSON, s.ID, s.Name, s.Node, s.TTL, s.LockDelay, s.Behavior, s.NodeChecksJSON, h.State, h.Node, h.Service, h.Passing, h.Filter, h.Near, h.Index, h.Wait, input.HTTPAgent.Filter}
+	a := input.HTTPAgentService
+	return []string{input.Key, input.ValueBase64, input.Flags, input.CompareIndex, input.TransactionJSON, s.ID, s.Name, s.Node, s.TTL, s.LockDelay, s.Behavior, s.NodeChecksJSON, h.State, h.Node, h.Service, h.Passing, h.Filter, h.Near, h.Index, h.Wait, input.HTTPAgent.Filter, a.ID, a.DefinitionJSON, a.ReplaceExistingChecks}
 }
 
 func requestToolInputSize(input contract.KVRequestToolInput) int {

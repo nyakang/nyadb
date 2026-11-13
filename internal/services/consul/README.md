@@ -68,7 +68,7 @@ explicit namespace, partition, blocking-index and wait parameters are rejected.
 An ACL-filtered empty 200 list remains a scoped response, not proof of global
 absence or permission; native 403 rejection retains its complete original body.
 The complete original map response and HTTP evidence remain independent of any
-later projection or unknown write. Local check updates and Agent mutation
+later projection or unknown write. Local check updates and other Agent
 management tools remain unpublished. The Agent read
 forms and local-map browser share the existing original KV document lifecycle;
 `--agent-browser-probe` requires native workspace/Shell forms, map details,
@@ -94,8 +94,15 @@ pure recovery, with further writes blocked independently. Agent self/map reads
 provide observations, without an incarnation lock or atomic inventory guarantee.
 `--agent-service-probe` requires these native service and runtime generation
 parents together with the accepted Agent/health/Watch browser regressions;
-`--agent-service-native-probe` is a diagnostic subset. These builders do not
-publish structured Agent mutation tools.
+`--agent-service-native-probe` is a diagnostic subset. Structured service
+register/deregister forms retain the complete definition, exact service ID and
+omitted/empty/false/true replacement parameters in the original request workspace.
+They only generate text; immutable confirmation and the original executor remain
+mandatory. Input/receipt copy and export preserve complete original snapshots.
+`--public-agent-service-probe` requires actual workspace/Shell service writes,
+processed reply faults, parking, evidence-only recovery, original session-tool
+fault regressions and all accepted Agent/health/Watch browser parents. Local
+check/TTL/maintenance, ACL/catalog and other Agent management tools remain separate.
 
 HTTP paths can clean keys. Noncanonical keys therefore use JSON transactions.
 Repeated/trailing slashes keep their exact key identity. Consul 1.22 and 2.0 differ

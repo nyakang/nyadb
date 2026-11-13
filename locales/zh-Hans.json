@@ -3883,5 +3883,18 @@
   "consulAgent_page": "第 %d/%d 页 · 匹配 %d/%d 个 Agent 条目",
   "consulAgent_copyValue": "复制所选原 map 值 JSON",
   "consulAgent_exportValue": "导出所选原 map 值 JSON",
-  "consulAgent_table": "已返回的 Agent 服务或检查"
+  "consulAgent_table": "已返回的 Agent 服务或检查",
+  "consulAgentService_register": "注册或更新本机 Agent 服务",
+  "consulAgentService_deregister": "注销本机 Agent 服务",
+  "consulAgentService_definition": "完整服务定义 JSON（保留原始字节）",
+  "consulAgentService_includeReplacement": "指定原生检查替换参数",
+  "consulAgentService_emptyReplacement": "空值：替换已有检查",
+  "consulAgentService_trueReplacement": "true：替换已有检查",
+  "consulAgentService_falseReplacement": "false：保留未提供的检查",
+  "consulAgentService_replacement": "原生检查替换参数",
+  "consulAgentService_definitionHint": "未指定参数时保留未提供的检查；定义中的检查和 sidecar 会一同处理",
+  "consulAgentService_id": "原生服务 ID",
+  "consulAgentService_deregisterHint": "注销原 ID 的本机服务及关联检查和 sidecar；运行后另行确认",
+  "consulAgentService_scope": "操作当前连接的本机 Agent；不使用键前缀、DC 或一致性选项",
+  "consulAgentService_editDefinition": "编辑完整服务定义 JSON"
 }

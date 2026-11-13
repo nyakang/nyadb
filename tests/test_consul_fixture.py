@@ -9,6 +9,31 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_public_agent_service_requires_real_ui_faults_shell_and_original_regression(self):
+        previous = self.copy_scope_before_startup(agent_service_probe=True)
+        report = self.copy_scope_before_startup(public_agent_service_probe=True)
+        required = fixture.PUBLIC_AGENT_SERVICE_REQUIRED + tuple(previous['required'])
+        self.assertEqual(tuple(report['required']), required)
+        self.assertEqual(len(required), len(set(required)))
+        self.assertEqual(len(required), 46)
+        self.assertEqual(len(fixture.agent_service_image_names()), 264)
+        self.assertTrue(report['public_agent_service_probe'])
+        self.assertTrue(report['production_agent_writes_published'])
+        self.assertEqual(report['scope'], 'public-consul-original-agent-service-tools-with-browser-regression')
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+
+    def test_public_agent_service_rejects_every_mixed_scope_before_startup(self):
+        import inspect
+        from unittest.mock import patch
+        flags = [name for name, parameter in inspect.signature(fixture.verify).parameters.items()
+                 if parameter.default is False and name not in ('race', 'public_agent_service_probe')]
+        for flag in flags:
+            with self.subTest(flag=flag), patch('subprocess.run', side_effect=AssertionError('started mixed public Agent service fixture')), self.assertRaises(ValueError):
+                fixture.verify(public_agent_service_probe=True, **{flag: True})
+
     def test_agent_service_native_requires_original_runtime_generations_and_no_replay(self):
         report = self.copy_scope_before_startup(agent_service_native_probe=True)
         required = fixture.AGENT_SERVICE_REQUIRED + fixture.AGENT_SERVICE_RUNTIME_REQUIRED + fixture.AGENT_SERVICE_EVIDENCE_REQUIRED

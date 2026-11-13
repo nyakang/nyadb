@@ -39529,3 +39529,147 @@ func ConsulAgentTable() string { return In(i18n.Locale()).ConsulAgentTable() }
 func (msgs Messages) ConsulAgentTable() string {
 	return Catalog.Format(msgs.locale, "consulAgent_table", nil)
 }
+
+// ConsulAgentServiceRegister says "注册或更新本机 Agent 服务"
+// in the language the app shows.
+func ConsulAgentServiceRegister() string { return In(i18n.Locale()).ConsulAgentServiceRegister() }
+
+// ConsulAgentServiceRegister says "注册或更新本机 Agent 服务"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentServiceRegister() string {
+	return Catalog.Format(msgs.locale, "consulAgentService_register", nil)
+}
+
+// ConsulAgentServiceDeregister says "注销本机 Agent 服务"
+// in the language the app shows.
+func ConsulAgentServiceDeregister() string { return In(i18n.Locale()).ConsulAgentServiceDeregister() }
+
+// ConsulAgentServiceDeregister says "注销本机 Agent 服务"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentServiceDeregister() string {
+	return Catalog.Format(msgs.locale, "consulAgentService_deregister", nil)
+}
+
+// ConsulAgentServiceDefinition says "完整服务定义 JSON（保留原始字节）"
+// in the language the app shows.
+func ConsulAgentServiceDefinition() string { return In(i18n.Locale()).ConsulAgentServiceDefinition() }
+
+// ConsulAgentServiceDefinition says "完整服务定义 JSON（保留原始字节）"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentServiceDefinition() string {
+	return Catalog.Format(msgs.locale, "consulAgentService_definition", nil)
+}
+
+// ConsulAgentServiceIncludeReplacement says "指定原生检查替换参数"
+// in the language the app shows.
+func ConsulAgentServiceIncludeReplacement() string {
+	return In(i18n.Locale()).ConsulAgentServiceIncludeReplacement()
+}
+
+// ConsulAgentServiceIncludeReplacement says "指定原生检查替换参数"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentServiceIncludeReplacement() string {
+	return Catalog.Format(msgs.locale, "consulAgentService_includeReplacement", nil)
+}
+
+// ConsulAgentServiceEmptyReplacement says "空值：替换已有检查"
+// in the language the app shows.
+func ConsulAgentServiceEmptyReplacement() string {
+	return In(i18n.Locale()).ConsulAgentServiceEmptyReplacement()
+}
+
+// ConsulAgentServiceEmptyReplacement says "空值：替换已有检查"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentServiceEmptyReplacement() string {
+	return Catalog.Format(msgs.locale, "consulAgentService_emptyReplacement", nil)
+}
+
+// ConsulAgentServiceTrueReplacement says "true：替换已有检查"
+// in the language the app shows.
+func ConsulAgentServiceTrueReplacement() string {
+	return In(i18n.Locale()).ConsulAgentServiceTrueReplacement()
+}
+
+// ConsulAgentServiceTrueReplacement says "true：替换已有检查"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentServiceTrueReplacement() string {
+	return Catalog.Format(msgs.locale, "consulAgentService_trueReplacement", nil)
+}
+
+// ConsulAgentServiceFalseReplacement says "false：保留未提供的检查"
+// in the language the app shows.
+func ConsulAgentServiceFalseReplacement() string {
+	return In(i18n.Locale()).ConsulAgentServiceFalseReplacement()
+}
+
+// ConsulAgentServiceFalseReplacement says "false：保留未提供的检查"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentServiceFalseReplacement() string {
+	return Catalog.Format(msgs.locale, "consulAgentService_falseReplacement", nil)
+}
+
+// ConsulAgentServiceReplacement says "原生检查替换参数"
+// in the language the app shows.
+func ConsulAgentServiceReplacement() string { return In(i18n.Locale()).ConsulAgentServiceReplacement() }
+
+// ConsulAgentServiceReplacement says "原生检查替换参数"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentServiceReplacement() string {
+	return Catalog.Format(msgs.locale, "consulAgentService_replacement", nil)
+}
+
+// ConsulAgentServiceDefinitionHint says "未指定参数时保留未提供的检查；定义中的检查和 sidecar 会一同处理"
+// in the language the app shows.
+func ConsulAgentServiceDefinitionHint() string {
+	return In(i18n.Locale()).ConsulAgentServiceDefinitionHint()
+}
+
+// ConsulAgentServiceDefinitionHint says "未指定参数时保留未提供的检查；定义中的检查和 sidecar 会一同处理"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentServiceDefinitionHint() string {
+	return Catalog.Format(msgs.locale, "consulAgentService_definitionHint", nil)
+}
+
+// ConsulAgentServiceId says "原生服务 ID"
+// in the language the app shows.
+func ConsulAgentServiceId() string { return In(i18n.Locale()).ConsulAgentServiceId() }
+
+// ConsulAgentServiceId says "原生服务 ID"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentServiceId() string {
+	return Catalog.Format(msgs.locale, "consulAgentService_id", nil)
+}
+
+// ConsulAgentServiceDeregisterHint says "注销原 ID 的本机服务及关联检查和 sidecar；运行后另行确认"
+// in the language the app shows.
+func ConsulAgentServiceDeregisterHint() string {
+	return In(i18n.Locale()).ConsulAgentServiceDeregisterHint()
+}
+
+// ConsulAgentServiceDeregisterHint says "注销原 ID 的本机服务及关联检查和 sidecar；运行后另行确认"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentServiceDeregisterHint() string {
+	return Catalog.Format(msgs.locale, "consulAgentService_deregisterHint", nil)
+}
+
+// ConsulAgentServiceScope says "操作当前连接的本机 Agent；不使用键前缀、DC 或一致性选项"
+// in the language the app shows.
+func ConsulAgentServiceScope() string { return In(i18n.Locale()).ConsulAgentServiceScope() }
+
+// ConsulAgentServiceScope says "操作当前连接的本机 Agent；不使用键前缀、DC 或一致性选项"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentServiceScope() string {
+	return Catalog.Format(msgs.locale, "consulAgentService_scope", nil)
+}
+
+// ConsulAgentServiceEditDefinition says "编辑完整服务定义 JSON"
+// in the language the app shows.
+func ConsulAgentServiceEditDefinition() string {
+	return In(i18n.Locale()).ConsulAgentServiceEditDefinition()
+}
+
+// ConsulAgentServiceEditDefinition says "编辑完整服务定义 JSON"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentServiceEditDefinition() string {
+	return Catalog.Format(msgs.locale, "consulAgentService_editDefinition", nil)
+}

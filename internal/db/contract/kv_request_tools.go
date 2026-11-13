@@ -5,26 +5,28 @@ package contract
 type KVRequestToolKind string
 
 const (
-	KVToolRead               KVRequestToolKind = "read"
-	KVToolList               KVRequestToolKind = "list"
-	KVToolRaw                KVRequestToolKind = "raw"
-	KVToolPut                KVRequestToolKind = "put"
-	KVToolDelete             KVRequestToolKind = "delete"
-	KVToolTransaction        KVRequestToolKind = "transaction"
-	KVToolHTTPSessionInfo    KVRequestToolKind = "http-session-info"
-	KVToolHTTPSessionCreate  KVRequestToolKind = "http-session-create"
-	KVToolHTTPSessionDestroy KVRequestToolKind = "http-session-destroy"
-	KVToolHTTPAcquire        KVRequestToolKind = "http-acquire"
-	KVToolHTTPRelease        KVRequestToolKind = "http-release"
-	KVToolHTTPSessionList    KVRequestToolKind = "http-session-list"
-	KVToolHTTPNodeSessions   KVRequestToolKind = "http-node-sessions"
-	KVToolHTTPHealthState    KVRequestToolKind = "http-health-state"
-	KVToolHTTPHealthNode     KVRequestToolKind = "http-health-node"
-	KVToolHTTPHealthChecks   KVRequestToolKind = "http-health-checks"
-	KVToolHTTPHealthService  KVRequestToolKind = "http-health-service"
-	KVToolHTTPAgentSelf      KVRequestToolKind = "http-agent-self"
-	KVToolHTTPAgentServices  KVRequestToolKind = "http-agent-services"
-	KVToolHTTPAgentChecks    KVRequestToolKind = "http-agent-checks"
+	KVToolRead                       KVRequestToolKind = "read"
+	KVToolList                       KVRequestToolKind = "list"
+	KVToolRaw                        KVRequestToolKind = "raw"
+	KVToolPut                        KVRequestToolKind = "put"
+	KVToolDelete                     KVRequestToolKind = "delete"
+	KVToolTransaction                KVRequestToolKind = "transaction"
+	KVToolHTTPSessionInfo            KVRequestToolKind = "http-session-info"
+	KVToolHTTPSessionCreate          KVRequestToolKind = "http-session-create"
+	KVToolHTTPSessionDestroy         KVRequestToolKind = "http-session-destroy"
+	KVToolHTTPAcquire                KVRequestToolKind = "http-acquire"
+	KVToolHTTPRelease                KVRequestToolKind = "http-release"
+	KVToolHTTPSessionList            KVRequestToolKind = "http-session-list"
+	KVToolHTTPNodeSessions           KVRequestToolKind = "http-node-sessions"
+	KVToolHTTPHealthState            KVRequestToolKind = "http-health-state"
+	KVToolHTTPHealthNode             KVRequestToolKind = "http-health-node"
+	KVToolHTTPHealthChecks           KVRequestToolKind = "http-health-checks"
+	KVToolHTTPHealthService          KVRequestToolKind = "http-health-service"
+	KVToolHTTPAgentSelf              KVRequestToolKind = "http-agent-self"
+	KVToolHTTPAgentServices          KVRequestToolKind = "http-agent-services"
+	KVToolHTTPAgentChecks            KVRequestToolKind = "http-agent-checks"
+	KVToolHTTPAgentServiceRegister   KVRequestToolKind = "http-agent-service-register"
+	KVToolHTTPAgentServiceDeregister KVRequestToolKind = "http-agent-service-deregister"
 )
 
 // HTTP Session UUIDs are distinct from numeric leases. Empty duration, behavior
@@ -51,6 +53,14 @@ type KVHTTPAgentToolInput struct {
 	IncludeFilter bool
 }
 
+// Service tools retain the entire original definition and native ID. Explicit
+// replacement includes empty, false and true; omission remains distinct.
+// Comparable values keep draft and file snapshots independent of execution.
+type KVHTTPAgentServiceToolInput struct {
+	ID, DefinitionJSON, ReplaceExistingChecks string
+	IncludeReplacement                        bool
+}
+
 // Optional unsigned numbers use exact decimal text: empty means omitted,
 // while "0" means explicitly supplied. Bytes use canonical padded Base64.
 // Key is absolute; a connection prefix is only an initial input suggestion.
@@ -60,6 +70,7 @@ type KVRequestToolInput struct {
 	HTTPSession                                            KVHTTPSessionToolInput
 	HTTPHealth                                             KVHTTPHealthToolInput
 	HTTPAgent                                              KVHTTPAgentToolInput
+	HTTPAgentService                                       KVHTTPAgentServiceToolInput
 }
 
 type KVRequestTool struct {

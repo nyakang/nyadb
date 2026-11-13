@@ -20,7 +20,7 @@ func (b testRequestBuilder) BuildKVRequest(kind contract.KVRequestToolKind, inpu
 		return contract.KVRequest{}, errors.New("invalid tool input")
 	}
 	method := "GET"
-	if kind == contract.KVToolPut || kind == contract.KVToolDelete || httpSessionRequestTool(kind) && kind != contract.KVToolHTTPSessionInfo && kind != contract.KVToolHTTPSessionList && kind != contract.KVToolHTTPNodeSessions {
+	if kind == contract.KVToolPut || kind == contract.KVToolDelete || httpAgentServiceRequestTool(kind) || httpSessionRequestTool(kind) && kind != contract.KVToolHTTPSessionInfo && kind != contract.KVToolHTTPSessionList && kind != contract.KVToolHTTPNodeSessions {
 		method = "PUT"
 	}
 	raw, _ := json.Marshal(struct {

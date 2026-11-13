@@ -25,6 +25,14 @@ import (
 
 func consulSessionToolFault(t *testing.T, p connections.Profile, mode string) (connections.Profile, *atomic.Int32, <-chan struct{}) {
 	t.Helper()
+	proxy, _, writes, processed := consulOriginalToolFault(t, p, mode, func(r *http.Request) bool {
+		return r.Method == "PUT" && (r.URL.Path == "/v1/session/create" || strings.HasPrefix(r.URL.Path, "/v1/session/destroy/") || strings.HasPrefix(r.URL.Path, "/v1/kv/") && (r.URL.Query().Has("acquire") || r.URL.Query().Has("release")))
+	})
+	return proxy, writes, processed
+}
+
+func consulOriginalToolFault(t *testing.T, p connections.Profile, mode string, mutation func(*http.Request) bool) (connections.Profile, *atomic.Int32, *atomic.Int32, <-chan struct{}) {
+	t.Helper()
 	cfg, err := connections.ConsulProfileConfig(p)
 	if err != nil {
 		t.Fatal(err)
@@ -51,9 +59,11 @@ func consulSessionToolFault(t *testing.T, p connections.Profile, mode string) (c
 	t.Cleanup(transport.CloseIdleConnections)
 	up := &http.Client{Transport: transport, Timeout: 30 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	calls := &atomic.Int32{}
+	writes := &atomic.Int32{}
 	committed := make(chan struct{})
 	var once atomic.Bool
 	relay := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
 		raw, err := io.ReadAll(r.Body)
 		if err != nil {
 			return
@@ -73,13 +83,13 @@ func consulSessionToolFault(t *testing.T, p connections.Profile, mode string) (c
 		if err != nil {
 			return
 		}
-		if r.Method == "PUT" && (r.URL.Path == "/v1/session/create" || strings.HasPrefix(r.URL.Path, "/v1/session/destroy/") || strings.HasPrefix(r.URL.Path, "/v1/kv/") && (r.URL.Query().Has("acquire") || r.URL.Query().Has("release"))) {
-			calls.Add(1)
+		if mutation(r) {
+			writes.Add(1)
 		}
-		if r.Method == "PUT" && (r.URL.Path == "/v1/session/create" || strings.HasPrefix(r.URL.Path, "/v1/session/destroy/") || strings.HasPrefix(r.URL.Path, "/v1/kv/") && (r.URL.Query().Has("acquire") || r.URL.Query().Has("release"))) && response.StatusCode == 200 && once.CompareAndSwap(false, true) {
+		if mutation(r) && response.StatusCode == 200 && once.CompareAndSwap(false, true) {
 			close(committed)
 			switch mode {
-			case "lost":
+			case "lost", "parked":
 				conn, _, err := w.(http.Hijacker).Hijack()
 				if err == nil {
 					conn.Close()
@@ -94,13 +104,13 @@ func consulSessionToolFault(t *testing.T, p connections.Profile, mode string) (c
 					b.Flush()
 				}
 				return
-			case "http500", "http408":
-				status := 500
-				if mode == "http408" {
-					status = 408
-				}
+			case "http400", "http500", "http408":
+				status := map[string]int{"http400": 400, "http500": 500, "http408": 408}[mode]
 				w.WriteHeader(status)
 				w.Write([]byte("actual processed reply withheld"))
+				return
+			case "invalid":
+				w.Write([]byte("null"))
 				return
 			case "cancel", "disconnect", "replace", "close":
 				<-r.Context().Done()
@@ -121,7 +131,7 @@ func consulSessionToolFault(t *testing.T, p connections.Profile, mode string) (c
 	proxy := p
 	proxy.Host, proxy.Port, proxy.TLSMode = u.Hostname(), uint16(port), "disable"
 	proxy.ConsulOptions.CAFile, proxy.ConsulOptions.ClientCertFile, proxy.ConsulOptions.ClientKeyFile, proxy.ConsulOptions.ServerName = "", "", "", ""
-	return proxy, calls, committed
+	return proxy, calls, writes, committed
 }
 
 func TestConsulNativePublicSessionToolsProcessedWritesParkingACKRecoveryAndNoReplay(t *testing.T) {

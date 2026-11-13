@@ -3883,5 +3883,18 @@
   "consulAgent_page": "Page %d/%d · %d/%d Agent entries match",
   "consulAgent_copyValue": "Copy original map value JSON",
   "consulAgent_exportValue": "Export original map value JSON",
-  "consulAgent_table": "Returned Agent services or checks"
+  "consulAgent_table": "Returned Agent services or checks",
+  "consulAgentService_register": "Register or update local Agent service",
+  "consulAgentService_deregister": "Deregister local Agent service",
+  "consulAgentService_definition": "Complete service definition JSON (original bytes)",
+  "consulAgentService_includeReplacement": "Specify native check replacement",
+  "consulAgentService_emptyReplacement": "Empty: replace existing checks",
+  "consulAgentService_trueReplacement": "true: replace existing checks",
+  "consulAgentService_falseReplacement": "false: retain omitted checks",
+  "consulAgentService_replacement": "Native check replacement",
+  "consulAgentService_definitionHint": "Omitting this option retains omitted checks; checks and sidecar in the definition are also processed",
+  "consulAgentService_id": "Original service ID",
+  "consulAgentService_deregisterHint": "Remove this local service ID, associated checks and sidecar; confirm separately after Run",
+  "consulAgentService_scope": "Operate on the connected local Agent; key prefix, DC and consistency options do not apply",
+  "consulAgentService_editDefinition": "Edit complete service definition JSON"
 }
