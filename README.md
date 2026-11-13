@@ -170,6 +170,15 @@ remain mandatory in the same original fixture. Public browser regressions finish
 before critical node-check writes. Unknown receipts block further writes and
 remain unchanged by later map reads or explicit recovery.
 
+Native TTL check pass/warn/fail/update requests preserve original check IDs,
+note presence, complete JSON and empty native acknowledgements through the same
+one-use document lease. Native state/output truncation and lost receipts remain
+distinct; recovery does not send a status request. The private
+`--agent-ttl-probe --race --mode MODE --test-timeout 1200` scope requires five new
+and all 55 accepted check/service/browser parents, with every original 868 PNGs
+retained per official configuration. Structured TTL tools and maintenance remain
+separate acceptance steps.
+
 Consul local Agent service tools use the existing original HTTP document and
 one-use lease. Registration retains complete authored JSON; deregistration uses
 the original native ID. Both require a separate immutable confirmation. Empty

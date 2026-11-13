@@ -126,6 +126,17 @@ and 576 original images retained. The phases preserve every original assertion
 before node-level writes can affect passing-only health filters. TTL updates,
 maintenance, ACL/catalog and other Agent management remain separate.
 
+`AgentCheckPassRequest`, `AgentCheckWarnRequest`, `AgentCheckFailRequest` and
+`AgentCheckUpdateRequest` preserve original TTL check IDs, note presence and
+complete update JSON through the same Client/document lease. Native PUTs reset
+TTL and set Output while retaining definition Notes; state may truncate a long
+Output without changing the captured original request. Complete empty 200 ACKs
+and proved ACL/missing-check denials remain separate from uncertain errors.
+`--agent-ttl-probe` requires five TTL/runtime parents plus all 55 accepted check,
+service and browser parents, retaining their 868 images in each official fixture.
+Finite TTL writes follow all original public regressions; status tools, automatic
+renewal, maintenance and other Agent management require separate acceptance.
+
 HTTP paths can clean keys. Noncanonical keys therefore use JSON transactions.
 Repeated/trailing slashes keep their exact key identity. Consul 1.22 and 2.0 differ
 on traversal and leading-slash keys; a native rejection is retained instead of

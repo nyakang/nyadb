@@ -9,6 +9,50 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_agent_ttl_foundation_retains_every_accepted_check_public_parent_and_images(self):
+        previous = self.copy_scope_before_startup(public_agent_check_probe=True)
+        report = self.copy_scope_before_startup(agent_ttl_probe=True)
+        required = fixture.AGENT_TTL_REQUIRED + tuple(previous['required'])
+        self.assertEqual(tuple(report['required']), required)
+        self.assertEqual(len(required), 60)
+        self.assertEqual(len(set(required)), 60)
+        self.assertFalse(report['production_agent_ttl_tools_published'])
+        self.assertTrue(report['production_agent_check_tools_published'])
+        self.assertEqual(report['scope'], 'private-consul-native-agent-ttl-foundation-with-public-check-service-browser-regression')
+        self.assertEqual(len(fixture.agent_check_image_names()), 292)
+        self.assertEqual(len(fixture.agent_service_image_names()), 264)
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+
+    def test_agent_ttl_phases_preserve_health_before_original_finite_node_mutations(self):
+        import re
+        report = self.copy_scope_before_startup(agent_ttl_probe=True)
+        required = tuple(report['required'])
+        phases = fixture.agent_ttl_acceptance_test_phases(report['packages'], required, True, 1200)
+        self.assertEqual(len(phases), 4)
+        scheduled = [re.findall(r'TestConsulNative(\w+)', phase[phase.index('-run')+1]) for phase in phases]
+        self.assertEqual(len(scheduled[0]), 46)
+        self.assertCountEqual(scheduled[1], fixture.AGENT_CHECK_REQUIRED)
+        self.assertCountEqual(scheduled[2], fixture.PUBLIC_AGENT_CHECK_REQUIRED)
+        self.assertCountEqual(scheduled[3], fixture.AGENT_TTL_REQUIRED)
+        self.assertCountEqual(sum(scheduled, []), required)
+        for phase in phases:
+            for argument in ('-race', '-count=1', '-timeout=1200s'):
+                self.assertIn(argument, phase)
+        with self.assertRaises(ValueError):
+            fixture.agent_ttl_acceptance_test_phases(report['packages'], required[:-1])
+
+    def test_agent_ttl_rejects_every_mixed_scope_before_startup(self):
+        import inspect
+        from unittest.mock import patch
+        flags = [name for name, parameter in inspect.signature(fixture.verify).parameters.items()
+                 if parameter.default is False and name not in ('race', 'agent_ttl_probe')]
+        for flag in flags:
+            with self.subTest(flag=flag), patch('subprocess.run', side_effect=AssertionError('started mixed TTL fixture')), self.assertRaises(ValueError):
+                fixture.verify(agent_ttl_probe=True, **{flag: True})
+
     def test_public_agent_check_retains_full_native_service_browser_regression(self):
         previous = self.copy_scope_before_startup(agent_check_probe=True)
         report = self.copy_scope_before_startup(public_agent_check_probe=True)

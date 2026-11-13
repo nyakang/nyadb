@@ -115,7 +115,16 @@ func validateRequest(r Request) (string, bool, int, error) {
 		return "", false, 0, ErrInvalid
 	}
 	for key, values := range r.Query {
-		if len(values) != 1 || !validText(key, 128) || !validText(values[0], 4096) {
+		if len(values) != 1 || !validText(key, 128) {
+			return "", false, 0, ErrInvalid
+		}
+		if key == "note" && agentTTLStatusKind(r.Path) != "" {
+			// Notes become native Output; URL encoding preserves multiline/control
+			// characters without placing them in the path or HTTP headers.
+			if len(values[0]) > requestLimit || !utf8.ValidString(values[0]) {
+				return "", false, 0, ErrInvalid
+			}
+		} else if !validText(values[0], 4096) {
 			return "", false, 0, ErrInvalid
 		}
 	}
@@ -156,6 +165,28 @@ func validateRequest(r Request) (string, bool, int, error) {
 			return "", false, 0, ErrUnsupported
 		}
 		kind = "agent-check-deregister"
+	case agentTTLStatusKind(r.Path) != "":
+		kind = agentTTLStatusKind(r.Path)
+		id, err := keyAt(r.Path, "/v1/agent/check/"+strings.TrimPrefix(kind, "agent-check-")+"/", false)
+		if err != nil || !validText(id, 4096) || r.Method != http.MethodPut || len(r.Body) != 0 {
+			return "", false, 0, ErrInvalid
+		}
+		if !canonicalHTTPKey(id) {
+			return "", false, 0, ErrUnsupported
+		}
+		allowed["note"] = true
+	case strings.HasPrefix(r.Path, "/v1/agent/check/update/"):
+		id, err := keyAt(r.Path, "/v1/agent/check/update/", false)
+		if err != nil || !validText(id, 4096) || r.Method != http.MethodPut {
+			return "", false, 0, ErrInvalid
+		}
+		if !canonicalHTTPKey(id) {
+			return "", false, 0, ErrUnsupported
+		}
+		if err := validateAgentTTLUpdate(r.Body); err != nil {
+			return "", false, 0, err
+		}
+		kind = "agent-check-update"
 	case strings.HasPrefix(r.Path, "/v1/kv/"):
 		key, e := keyAt(r.Path, "/v1/kv/", true)
 		if e == nil && !canonicalHTTPKey(key) {
@@ -267,7 +298,7 @@ func validateRequest(r Request) (string, bool, int, error) {
 			if !exactUint(v) {
 				return "", false, 0, ErrInvalid
 			}
-		case "filter", "near":
+		case "filter", "near", "note":
 			// Native read options retain their authored string, including empty.
 		case "passing", "replace-existing-checks":
 			if v != "" && v != "true" && v != "false" {

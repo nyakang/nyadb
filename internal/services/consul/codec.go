@@ -226,6 +226,9 @@ func projectResponse(r *Response, p Plan) error {
 	if agentCheckWriteKind(p.kind) {
 		return projectAgentCheckResponse(r, p.kind)
 	}
+	if agentTTLWriteKind(p.kind) {
+		return projectAgentTTLResponse(r)
+	}
 	if r.Status >= 400 && r.Status < 500 && r.Status != http.StatusRequestTimeout && !(r.Status == 404 && p.kind == "kv-read") && !(r.Status == 409 && p.kind == "txn") {
 		// Exact supported native endpoints reject these requests; no success is claimed.
 		r.Acknowledged = true
