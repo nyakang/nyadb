@@ -127,6 +127,21 @@ func validateRequest(r Request) (string, bool, int, error) {
 		}
 	}
 	switch {
+	case r.Path == "/v1/agent/service/register" && r.Method == http.MethodPut:
+		if err := validateAgentServiceDefinition(r.Body); err != nil {
+			return "", false, 0, err
+		}
+		kind = "agent-service-register"
+		allowed["replace-existing-checks"] = true
+	case strings.HasPrefix(r.Path, "/v1/agent/service/deregister/"):
+		id, err := keyAt(r.Path, "/v1/agent/service/deregister/", false)
+		if err != nil || !validText(id, 4096) || r.Method != http.MethodPut || len(r.Body) != 0 {
+			return "", false, 0, ErrInvalid
+		}
+		if !canonicalHTTPKey(id) {
+			return "", false, 0, ErrUnsupported
+		}
+		kind = "agent-service-deregister"
 	case strings.HasPrefix(r.Path, "/v1/kv/"):
 		key, e := keyAt(r.Path, "/v1/kv/", true)
 		if e == nil && !canonicalHTTPKey(key) {
@@ -240,7 +255,7 @@ func validateRequest(r Request) (string, bool, int, error) {
 			}
 		case "filter", "near":
 			// Native read options retain their authored string, including empty.
-		case "passing":
+		case "passing", "replace-existing-checks":
 			if v != "" && v != "true" && v != "false" {
 				return "", false, 0, ErrInvalid
 			}

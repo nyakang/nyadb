@@ -220,6 +220,9 @@ func decodeTxn(raw []byte, status, operations int) (TxnResult, error) {
 	return t, nil
 }
 func projectResponse(r *Response, p Plan) error {
+	if agentServiceWriteKind(p.kind) {
+		return projectAgentServiceResponse(r, p.kind)
+	}
 	if r.Status >= 400 && r.Status < 500 && r.Status != http.StatusRequestTimeout && !(r.Status == 404 && p.kind == "kv-read") && !(r.Status == 409 && p.kind == "txn") {
 		// Exact supported native endpoints reject these requests; no success is claimed.
 		r.Acknowledged = true

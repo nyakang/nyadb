@@ -9,6 +9,58 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_agent_service_native_requires_original_runtime_generations_and_no_replay(self):
+        report = self.copy_scope_before_startup(agent_service_native_probe=True)
+        required = fixture.AGENT_SERVICE_REQUIRED + fixture.AGENT_SERVICE_RUNTIME_REQUIRED + fixture.AGENT_SERVICE_EVIDENCE_REQUIRED
+        self.assertEqual(tuple(report['required']), required)
+        self.assertEqual(report['packages'], ['./internal/services/consul', './internal/services/dbruntime'])
+        self.assertFalse(report['production_agent_writes_published'])
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+
+    def test_agent_service_foundation_retains_all_original_browser_regressions(self):
+        previous = self.copy_scope_before_startup(agent_browser_probe=True)
+        report = self.copy_scope_before_startup(agent_service_probe=True)
+        required = fixture.AGENT_SERVICE_REQUIRED + fixture.AGENT_SERVICE_RUNTIME_REQUIRED + fixture.AGENT_SERVICE_EVIDENCE_REQUIRED + tuple(previous['required'])
+        self.assertEqual(tuple(report['required']), required)
+        self.assertEqual(len(required), len(set(required)))
+        self.assertFalse(report['production_agent_writes_published'])
+        self.assertIn('./internal/services/dbruntime', report['packages'])
+
+    def test_agent_service_scopes_reject_mixed_fixture_modes_before_startup(self):
+        import inspect
+        from unittest.mock import patch
+        for scope in ('agent_service_probe', 'agent_service_native_probe'):
+            flags = [name for name, parameter in inspect.signature(fixture.verify).parameters.items()
+                     if parameter.default is False and name not in ('race', scope)]
+            for flag in flags:
+                with self.subTest(scope=scope, flag=flag), patch('subprocess.run', side_effect=AssertionError('started mixed Agent service fixture')), self.assertRaises(ValueError):
+                    fixture.verify(**{scope: True, flag: True})
+
+    def test_agent_service_evidence_requires_native_parents_without_public_claims(self):
+        report = self.copy_scope_before_startup(agent_service_evidence_probe=True)
+        self.assertEqual(report['scope'], 'diagnostic-consul-original-agent-service-evidence-only')
+        self.assertTrue(report['agent_service_evidence_probe'])
+        self.assertFalse(report['production_agent_writes_published'])
+        self.assertEqual(tuple(report['required']), fixture.AGENT_SERVICE_EVIDENCE_REQUIRED)
+        self.assertEqual(report['packages'], ['./internal/services/consul'])
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in fixture.AGENT_SERVICE_EVIDENCE_REQUIRED)
+        fixture.accepted_cases(log, fixture.AGENT_SERVICE_EVIDENCE_REQUIRED)
+        for name in fixture.AGENT_SERVICE_EVIDENCE_REQUIRED:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), fixture.AGENT_SERVICE_EVIDENCE_REQUIRED)
+
+    def test_agent_service_evidence_rejects_every_other_scope_before_startup(self):
+        import inspect
+        from unittest.mock import patch
+        flags = [name for name, parameter in inspect.signature(fixture.verify).parameters.items()
+                 if parameter.default is False and name not in ('race', 'agent_service_evidence_probe')]
+        for flag in flags:
+            with self.subTest(flag=flag), patch('subprocess.run', side_effect=AssertionError('started mixed Agent evidence fixture')), self.assertRaises(ValueError):
+                fixture.verify(agent_service_evidence_probe=True, **{flag: True})
+
     def test_agent_browser_scope_requires_public_ui_and_all_original_regression(self):
         report = self.copy_scope_before_startup(agent_browser_probe=True)
         expected = fixture.AGENT_BROWSER_REQUIRED + fixture.AGENT_READ_REQUIRED + fixture.HEALTH_WATCH_UI_REQUIRED + fixture.HEALTH_WATCH_REQUIRED + fixture.HEALTH_PROJECTION_REQUIRED + fixture.HEALTH_BROWSER_REQUIRED + fixture.HTTP_WATCH_REQUIRED + fixture.PUBLIC_HTTP_WATCH_REQUIRED

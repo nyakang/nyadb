@@ -60,7 +60,7 @@ Supported requests include:
 - Session create, information/list/node reads, one-shot renew and destroy.
 - Read-only agent, leader/peer, catalog and health requests.
 
-The private Agent read foundation adds pure `AgentSelfRequest`,
+The Agent read foundation adds pure `AgentSelfRequest`,
 `AgentServicesRequest` and `AgentChecksRequest` builders. Services/checks retain
 omitted or explicitly empty native filters. These endpoints contact the original
 agent and do not inherit configured datacenter, browsing prefix or consistency;
@@ -68,14 +68,34 @@ explicit namespace, partition, blocking-index and wait parameters are rejected.
 An ACL-filtered empty 200 list remains a scoped response, not proof of global
 absence or permission; native 403 rejection retains its complete original body.
 The complete original map response and HTTP evidence remain independent of any
-later projection or unknown write. Agent service registration, local check
-updates and mutation management tools remain unpublished. The Agent read
+later projection or unknown write. Local check updates and Agent mutation
+management tools remain unpublished. The Agent read
 forms and local-map browser share the existing original KV document lifecycle;
 `--agent-browser-probe` requires native workspace/Shell forms, map details,
 complete value copy/export, parking, disconnect and evidence-only recovery.
 `--agent-read-probe` verifies three Agent parents together with all 26 existing
 health Watch/browser and HTTP Watch regression parents; it does not claim the
 unrelated complete public Session/grid matrix.
+
+`AgentServiceRegisterRequest` and `AgentServiceDeregisterRequest` use the same
+original one-use HTTP/document lease. Registration preserves the entire authored
+JSON, checks, sidecar definitions and unknown fields. Replacement omitted,
+explicit false, true and empty query values retain native semantics. Embedded
+tokens, namespace and partition routing are rejected before I/O. Deregistration
+uses the exact original service ID; paths Consul may clean are rejected instead
+of using a KV transaction fallback. Neither operation inherits configured
+datacenter, prefix or consistency.
+
+Service writes acknowledge only a complete empty HTTP 200 success, the original
+403 ACL rejection, or an original deregistration 404. Other failures remain
+unknown: registration can add the main service before a later sidecar error.
+Complete error receipts survive subsequent reads, publication replacement and
+pure recovery, with further writes blocked independently. Agent self/map reads
+provide observations, without an incarnation lock or atomic inventory guarantee.
+`--agent-service-probe` requires these native service and runtime generation
+parents together with the accepted Agent/health/Watch browser regressions;
+`--agent-service-native-probe` is a diagnostic subset. These builders do not
+publish structured Agent mutation tools.
 
 HTTP paths can clean keys. Noncanonical keys therefore use JSON transactions.
 Repeated/trailing slashes keep their exact key identity. Consul 1.22 and 2.0 differ
@@ -95,7 +115,7 @@ values stay available even on protocol/projection errors. Uint64 indices and
 flags retain exact precision. Field presence, JSON null and empty values remain
 distinct; unknown fields stay in the original body.
 
-Native false conditions, transaction 409 and explicit 4xx rejection remain known
+Native false conditions, transaction 409 and supported endpoint 4xx rejection remain known
 failures. HTTP 408, 5xx, redirects, malformed acknowledgements or incomplete bodies
 after write dispatch remain unknown. Unknown writes block every later write,
 including earlier prepared plans. Later explicit reads do not clear the original
