@@ -19,7 +19,7 @@ func (s *State) httpSessionDestroyConfirmationView(c *ui.Context, d *Document, p
 		ui.Text(c, "Session UUID: "+x.preview.Request.ID).SingleLine().Tooltip(x.preview.Request.ID)
 		ui.Text(c, fmt.Sprintf(locales.Text("Behavior %s · 观察到 %d 个持有键"), x.behavior, len(x.preview.Keys.Matches))).SingleLine()
 		for _, message := range []string{"全根目录观察；连接前缀不限定持有键范围", "release 释放锁；delete 删除此 Session 持有的键", "确认前重新检查 UUID、Behavior 和持有键版本；读取与销毁之间仍可能变化"} {
-			ui.Text(c, locales.Text(message)).SingleLine().Tooltip(locales.Text(message)).TextColor(colors.Warning)
+			ui.Text(c, locales.Text(message)).Wrap().FillWidth().Tooltip(locales.Text(message)).TextColor(colors.Warning)
 		}
 		indices := x.preview.Keys.Matches
 		pages := max(1, (len(indices)+httpSessionPageSize-1)/httpSessionPageSize)
@@ -67,7 +67,7 @@ func (s *State) httpSessionDestroyReceiptView(c *ui.Context, d *Document, r *Rec
 	ui.Text(c, locales.Text("Session 销毁原始记录")).Bold()
 	ui.Text(c, "Session UUID: "+e.Preview.Request.ID).SingleLine().Tooltip(e.Preview.Request.ID)
 	ui.Text(c, ReceiptStatus(r.Result)).SingleLine()
-	ui.Text(c, locales.Text("取消不代表回滚；未知写入回执不会被后来读取清除")).SingleLine().Tooltip(locales.Text("取消不代表回滚；未知写入回执不会被后来读取清除")).TextColor(theme.Colors(c).Warning)
+	ui.Text(c, locales.Text("取消不代表回滚；未知写入回执不会被后来读取清除")).Wrap().FillWidth().Tooltip(locales.Text("取消不代表回滚；未知写入回执不会被后来读取清除")).TextColor(theme.Colors(c).Warning)
 	options := []string{locales.Text("预览 Session 原始响应"), locales.Text("预览全根目录原始响应"), locales.Text("重新检查 Session 原始响应"), locales.Text("重新检查全根目录原始响应"), locales.Text("原销毁 PUT 回执")}
 	choice := options[min(d.httpSessionDestroyStep, len(options)-1)]
 	if ui.Select(c, &choice, options).Label(locales.Text("选择原始步骤回执")).FillWidth().Changed() {
