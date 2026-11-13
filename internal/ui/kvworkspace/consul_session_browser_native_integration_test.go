@@ -106,7 +106,7 @@ func TestConsulNativeSessionBrowserCapturedListsNodesDetailsAndOriginalCopies(t 
 		consulSessionToolCreate(t, writer, fmt.Sprintf("%s-%02d", t.Name(), i))
 	}
 	s, d, _ := consulWorkspaceState(t, p, secret)
-	if len(d.RequestTools()) != 17 {
+	if len(d.RequestTools()) != 20 {
 		t.Fatal("public Session list and node forms unavailable")
 	}
 	for _, kind := range []contract.KVRequestToolKind{contract.KVToolHTTPSessionList, contract.KVToolHTTPNodeSessions} {

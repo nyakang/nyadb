@@ -3868,5 +3868,20 @@
   "consulHealthWatch_browse": "Browse selected health observation",
   "consulHealthWatch_count": "Returned %d health observations; complete original responses are retained in the record",
   "consulHealthWatch_reset": "The original health index is zero or decreased; its response is retained and the next blocking read continues from 1",
-  "consulHealthWatch_hint": "Health Watch retains successive current observations; reading begins only after an explicit start"
+  "consulHealthWatch_hint": "Health Watch retains successive current observations; reading begins only after an explicit start",
+  "consulAgent_selfTool": "Read local Agent information",
+  "consulAgent_servicesTool": "Read local Agent services",
+  "consulAgent_checksTool": "Read local Agent checks",
+  "consulAgent_nativeFilter": "Local Agent native filter",
+  "consulAgent_readScope": "Read the connected local Agent without the key prefix, DC or consistency options",
+  "consulAgent_generateHint": "Generate an Agent read request; run it to inspect the original response",
+  "consulAgent_title": "Local Agent services and checks",
+  "consulAgent_incomplete": "Agent response is ACL-filtered or incomplete; only returned map entries are shown",
+  "consulAgent_back": "Back to Agent list",
+  "consulAgent_detail": "Original local Agent map value",
+  "consulAgent_filter": "Filter returned Agent entries",
+  "consulAgent_page": "Page %d/%d · %d/%d Agent entries match",
+  "consulAgent_copyValue": "Copy original map value JSON",
+  "consulAgent_exportValue": "Export original map value JSON",
+  "consulAgent_table": "Returned Agent services or checks"
 }

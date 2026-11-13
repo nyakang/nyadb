@@ -3868,5 +3868,20 @@
   "consulHealthWatch_browse": "浏览所选健康观察",
   "consulHealthWatch_count": "已返回 %d 项健康观察；完整原始响应保留在记录中",
   "consulHealthWatch_reset": "原健康 index 为零或回退；保留原响应，下一次阻塞读取从 1 继续",
-  "consulHealthWatch_hint": "健康 Watch 保留连续的当前观察；只有明确启动才开始读取"
+  "consulHealthWatch_hint": "健康 Watch 保留连续的当前观察；只有明确启动才开始读取",
+  "consulAgent_selfTool": "读取本机 Agent 信息",
+  "consulAgent_servicesTool": "读取本机 Agent 服务",
+  "consulAgent_checksTool": "读取本机 Agent 检查",
+  "consulAgent_nativeFilter": "本机 Agent 原生 filter",
+  "consulAgent_readScope": "读取当前连接的本机 Agent；不使用键前缀、DC 或一致性选项",
+  "consulAgent_generateHint": "只生成 Agent 读取请求；运行后查看原响应",
+  "consulAgent_title": "本机 Agent 服务与检查",
+  "consulAgent_incomplete": "Agent 响应受 ACL 过滤或不完整；仅展示原 map 返回的条目",
+  "consulAgent_back": "返回 Agent 列表",
+  "consulAgent_detail": "本机 Agent 原 map 值详情",
+  "consulAgent_filter": "筛选已返回的 Agent 条目",
+  "consulAgent_page": "第 %d/%d 页 · 匹配 %d/%d 个 Agent 条目",
+  "consulAgent_copyValue": "复制所选原 map 值 JSON",
+  "consulAgent_exportValue": "导出所选原 map 值 JSON",
+  "consulAgent_table": "已返回的 Agent 服务或检查"
 }

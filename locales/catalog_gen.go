@@ -39379,3 +39379,153 @@ func ConsulHealthWatchHint() string { return In(i18n.Locale()).ConsulHealthWatch
 func (msgs Messages) ConsulHealthWatchHint() string {
 	return Catalog.Format(msgs.locale, "consulHealthWatch_hint", nil)
 }
+
+// ConsulAgentSelfTool says "读取本机 Agent 信息"
+// in the language the app shows.
+func ConsulAgentSelfTool() string { return In(i18n.Locale()).ConsulAgentSelfTool() }
+
+// ConsulAgentSelfTool says "读取本机 Agent 信息"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentSelfTool() string {
+	return Catalog.Format(msgs.locale, "consulAgent_selfTool", nil)
+}
+
+// ConsulAgentServicesTool says "读取本机 Agent 服务"
+// in the language the app shows.
+func ConsulAgentServicesTool() string { return In(i18n.Locale()).ConsulAgentServicesTool() }
+
+// ConsulAgentServicesTool says "读取本机 Agent 服务"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentServicesTool() string {
+	return Catalog.Format(msgs.locale, "consulAgent_servicesTool", nil)
+}
+
+// ConsulAgentChecksTool says "读取本机 Agent 检查"
+// in the language the app shows.
+func ConsulAgentChecksTool() string { return In(i18n.Locale()).ConsulAgentChecksTool() }
+
+// ConsulAgentChecksTool says "读取本机 Agent 检查"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentChecksTool() string {
+	return Catalog.Format(msgs.locale, "consulAgent_checksTool", nil)
+}
+
+// ConsulAgentNativeFilter says "本机 Agent 原生 filter"
+// in the language the app shows.
+func ConsulAgentNativeFilter() string { return In(i18n.Locale()).ConsulAgentNativeFilter() }
+
+// ConsulAgentNativeFilter says "本机 Agent 原生 filter"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentNativeFilter() string {
+	return Catalog.Format(msgs.locale, "consulAgent_nativeFilter", nil)
+}
+
+// ConsulAgentReadScope says "读取当前连接的本机 Agent；不使用键前缀、DC 或一致性选项"
+// in the language the app shows.
+func ConsulAgentReadScope() string { return In(i18n.Locale()).ConsulAgentReadScope() }
+
+// ConsulAgentReadScope says "读取当前连接的本机 Agent；不使用键前缀、DC 或一致性选项"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentReadScope() string {
+	return Catalog.Format(msgs.locale, "consulAgent_readScope", nil)
+}
+
+// ConsulAgentGenerateHint says "只生成 Agent 读取请求；运行后查看原响应"
+// in the language the app shows.
+func ConsulAgentGenerateHint() string { return In(i18n.Locale()).ConsulAgentGenerateHint() }
+
+// ConsulAgentGenerateHint says "只生成 Agent 读取请求；运行后查看原响应"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentGenerateHint() string {
+	return Catalog.Format(msgs.locale, "consulAgent_generateHint", nil)
+}
+
+// ConsulAgentTitle says "本机 Agent 服务与检查"
+// in the language the app shows.
+func ConsulAgentTitle() string { return In(i18n.Locale()).ConsulAgentTitle() }
+
+// ConsulAgentTitle says "本机 Agent 服务与检查"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentTitle() string {
+	return Catalog.Format(msgs.locale, "consulAgent_title", nil)
+}
+
+// ConsulAgentIncomplete says "Agent 响应受 ACL 过滤或不完整；仅展示原 map 返回的条目"
+// in the language the app shows.
+func ConsulAgentIncomplete() string { return In(i18n.Locale()).ConsulAgentIncomplete() }
+
+// ConsulAgentIncomplete says "Agent 响应受 ACL 过滤或不完整；仅展示原 map 返回的条目"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentIncomplete() string {
+	return Catalog.Format(msgs.locale, "consulAgent_incomplete", nil)
+}
+
+// ConsulAgentBack says "返回 Agent 列表"
+// in the language the app shows.
+func ConsulAgentBack() string { return In(i18n.Locale()).ConsulAgentBack() }
+
+// ConsulAgentBack says "返回 Agent 列表"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentBack() string {
+	return Catalog.Format(msgs.locale, "consulAgent_back", nil)
+}
+
+// ConsulAgentDetail says "本机 Agent 原 map 值详情"
+// in the language the app shows.
+func ConsulAgentDetail() string { return In(i18n.Locale()).ConsulAgentDetail() }
+
+// ConsulAgentDetail says "本机 Agent 原 map 值详情"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentDetail() string {
+	return Catalog.Format(msgs.locale, "consulAgent_detail", nil)
+}
+
+// ConsulAgentFilter says "筛选已返回的 Agent 条目"
+// in the language the app shows.
+func ConsulAgentFilter() string { return In(i18n.Locale()).ConsulAgentFilter() }
+
+// ConsulAgentFilter says "筛选已返回的 Agent 条目"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentFilter() string {
+	return Catalog.Format(msgs.locale, "consulAgent_filter", nil)
+}
+
+// ConsulAgentPage says "第 %d/%d 页 · 匹配 %d/%d 个 Agent 条目"
+// in the language the app shows.
+func ConsulAgentPage() string { return In(i18n.Locale()).ConsulAgentPage() }
+
+// ConsulAgentPage says "第 %d/%d 页 · 匹配 %d/%d 个 Agent 条目"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentPage() string {
+	return Catalog.Format(msgs.locale, "consulAgent_page", nil)
+}
+
+// ConsulAgentCopyValue says "复制所选原 map 值 JSON"
+// in the language the app shows.
+func ConsulAgentCopyValue() string { return In(i18n.Locale()).ConsulAgentCopyValue() }
+
+// ConsulAgentCopyValue says "复制所选原 map 值 JSON"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentCopyValue() string {
+	return Catalog.Format(msgs.locale, "consulAgent_copyValue", nil)
+}
+
+// ConsulAgentExportValue says "导出所选原 map 值 JSON"
+// in the language the app shows.
+func ConsulAgentExportValue() string { return In(i18n.Locale()).ConsulAgentExportValue() }
+
+// ConsulAgentExportValue says "导出所选原 map 值 JSON"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentExportValue() string {
+	return Catalog.Format(msgs.locale, "consulAgent_exportValue", nil)
+}
+
+// ConsulAgentTable says "已返回的 Agent 服务或检查"
+// in the language the app shows.
+func ConsulAgentTable() string { return In(i18n.Locale()).ConsulAgentTable() }
+
+// ConsulAgentTable says "已返回的 Agent 服务或检查"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentTable() string {
+	return Catalog.Format(msgs.locale, "consulAgent_table", nil)
+}

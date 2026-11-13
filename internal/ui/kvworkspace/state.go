@@ -120,6 +120,8 @@ type Document struct {
 	httpSessionBrowser                                      *httpSessionBrowserState
 	httpHealthBrowser                                       *httpHealthBrowserState
 	httpHealth                                              bool
+	httpAgentBrowser                                        *httpAgentBrowserState
+	httpAgent                                               bool
 	httpSessions                                            bool
 	httpSessionRenewal                                      *httpSessionRenewalState
 	httpSessionRenewalAvailable, selectedHTTPSessionRenewal bool
@@ -800,6 +802,10 @@ func (s *State) Consume() {
 					}
 					d.httpHealthBrowser = nil
 					d.httpHealth = false
+					if d.httpAgentBrowser != nil {
+						d.httpAgentBrowser.close()
+					}
+					d.httpAgentBrowser, d.httpAgent = nil, false
 					d.httpSessionKeysBrowser = nil
 					d.httpSessionKeys = false
 					d.httpSessions = false
@@ -1022,6 +1028,10 @@ func (s *State) Close(d *Document) {
 	}
 	d.httpHealthBrowser = nil
 	d.httpHealth = false
+	if d.httpAgentBrowser != nil {
+		d.httpAgentBrowser.close()
+	}
+	d.httpAgentBrowser, d.httpAgent = nil, false
 	d.httpSessionKeysBrowser = nil
 	d.httpSessionKeys = false
 	d.clearConfirmation()

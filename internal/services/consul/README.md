@@ -69,7 +69,10 @@ An ACL-filtered empty 200 list remains a scoped response, not proof of global
 absence or permission; native 403 rejection retains its complete original body.
 The complete original map response and HTTP evidence remain independent of any
 later projection or unknown write. Agent service registration, local check
-updates, management tools and a dedicated Agent browser remain unpublished.
+updates and mutation management tools remain unpublished. The Agent read
+forms and local-map browser share the existing original KV document lifecycle;
+`--agent-browser-probe` requires native workspace/Shell forms, map details,
+complete value copy/export, parking, disconnect and evidence-only recovery.
 `--agent-read-probe` verifies three Agent parents together with all 26 existing
 health Watch/browser and HTTP Watch regression parents; it does not claim the
 unrelated complete public Session/grid matrix.

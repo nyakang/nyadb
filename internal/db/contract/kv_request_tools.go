@@ -22,6 +22,9 @@ const (
 	KVToolHTTPHealthNode     KVRequestToolKind = "http-health-node"
 	KVToolHTTPHealthChecks   KVRequestToolKind = "http-health-checks"
 	KVToolHTTPHealthService  KVRequestToolKind = "http-health-service"
+	KVToolHTTPAgentSelf      KVRequestToolKind = "http-agent-self"
+	KVToolHTTPAgentServices  KVRequestToolKind = "http-agent-services"
+	KVToolHTTPAgentChecks    KVRequestToolKind = "http-agent-checks"
 )
 
 // HTTP Session UUIDs are distinct from numeric leases. Empty duration, behavior
@@ -41,6 +44,13 @@ type KVHTTPHealthToolInput struct {
 	IncludeFilter, IncludeNear                               bool
 }
 
+// Agent reads contact the original local agent. IncludeFilter preserves the
+// distinction between an omitted filter and an explicitly empty native filter.
+type KVHTTPAgentToolInput struct {
+	Filter        string
+	IncludeFilter bool
+}
+
 // Optional unsigned numbers use exact decimal text: empty means omitted,
 // while "0" means explicitly supplied. Bytes use canonical padded Base64.
 // Key is absolute; a connection prefix is only an initial input suggestion.
@@ -49,6 +59,7 @@ type KVRequestToolInput struct {
 	KeysOnly, Recursive                                    bool
 	HTTPSession                                            KVHTTPSessionToolInput
 	HTTPHealth                                             KVHTTPHealthToolInput
+	HTTPAgent                                              KVHTTPAgentToolInput
 }
 
 type KVRequestTool struct {
