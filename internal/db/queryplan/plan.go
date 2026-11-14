@@ -10,13 +10,16 @@ import (
 )
 
 func Build(engine, sql string) (string, error) {
+	if engine == "dolt" {
+		return buildDolt(sql)
+	}
 	if engine == "trino" {
 		return buildTrino(sql)
 	}
 	if engine == "starrocks" {
 		return buildStarRocks(sql)
 	}
-	if engine == "doris" {
+	if engine == "doris" || engine == "selectdb" {
 		return buildDoris(sql)
 	}
 	if engine == "oceanbase" {
@@ -47,18 +50,18 @@ func Build(engine, sql string) (string, error) {
 		return "SET SHOWPLAN_XML ON\nGO\n" + sql + "\nGO\nSET SHOWPLAN_XML OFF", nil
 	}
 	validate := sqltext.SinglePortableStatement
-	if engine == "mysql" || engine == "mariadb" {
+	if mysqlJSONEngine(engine) {
 		validate = sqltext.SingleMySQLStatement
 	}
 	if err := validate(sql); err != nil {
 		return "", err
 	}
 	switch engine {
-	case "mysql", "mariadb":
+	case "mysql", "mariadb", "tdsql", "polardb", "greatsql":
 		return "EXPLAIN FORMAT=JSON " + sql, nil
 	case "cockroachdb":
 		return "EXPLAIN (OPT, VERBOSE) " + sql, nil
-	case "postgresql", "postgres", "opengauss", "gaussdb", "kingbase":
+	case "postgresql", "postgres", "cloudberry", "opentenbase", "opengauss", "gaussdb", "kingbase":
 		return "EXPLAIN (FORMAT JSON) " + sql, nil
 	case "sqlite":
 		return "EXPLAIN QUERY PLAN " + sql, nil
@@ -83,6 +86,9 @@ func numeric(v any) *float64 {
 	return &n
 }
 func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, error) {
+	if engine == "dolt" {
+		return parseDolt(result)
+	}
 	if engine == "neo4j" {
 		return parseNeo4j(result)
 	}
@@ -94,6 +100,9 @@ func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, e
 	}
 	if engine == "doris" {
 		return parseDoris(result)
+	}
+	if engine == "selectdb" {
+		return parseNereids(result, engine, selectDBNode)
 	}
 	if engine == "cockroachdb" {
 		return parseCockroach(result)
@@ -231,7 +240,7 @@ func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, e
 		}
 		return n, nil
 	}
-	if engine == "postgresql" || engine == "postgres" || engine == "opengauss" || engine == "gaussdb" || engine == "kingbase" {
+	if engine == "postgresql" || engine == "postgres" || engine == "cloudberry" || engine == "opentenbase" || engine == "opengauss" || engine == "gaussdb" || engine == "kingbase" {
 		array, ok := value.([]any)
 		if !ok || len(array) == 0 {
 			return nil, errors.New("invalid PostgreSQL plan envelope")
@@ -251,7 +260,7 @@ func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, e
 		plan.Nodes = []contract.PlanNode{node}
 		return plan, nil
 	}
-	if engine != "mysql" && engine != "mariadb" {
+	if !mysqlJSONEngine(engine) {
 		return nil, contract.ErrUnsupported
 	}
 	var mysql func(string, any, int) ([]contract.PlanNode, error)
@@ -327,4 +336,12 @@ func Parse(engine string, result contract.SQLResult) (*contract.ExecutionPlan, e
 	}
 	plan.Nodes = nodes
 	return plan, nil
+}
+
+func mysqlJSONEngine(engine string) bool {
+	switch engine {
+	case "mysql", "mariadb", "tdsql", "polardb", "greatsql":
+		return true
+	}
+	return false
 }

@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
 func (s *Session) postgresStructure(ctx context.Context, q queryer, o contract.ObjectRef) (contract.Table, error) {
@@ -13,6 +15,15 @@ func (s *Session) postgresStructure(ctx context.Context, q queryer, o contract.O
 		return t, e
 	}
 
+	// OpenTenBase's PG10-derived catalog has identity columns and indnatts,
+	// but no PG12 generated column or INCLUDE-key count fields.
+	generated, keyCount, keyFlags := "a.attgenerated<>''", "i.indnkeyatts", ""
+	if s.kind == connections.OpenTenBase {
+		generated, keyCount = "a.attidentity='a'", "i.indnatts"
+		keyFlags = ` AND i.indisready AND i.indislive AND i.indimmediate
+ AND EXISTS (SELECT 1 FROM pg_class ic JOIN pg_am am ON am.oid=ic.relam WHERE ic.oid=i.indexrelid AND am.amname='btree')
+ AND NOT EXISTS (SELECT 1 FROM unnest(i.indclass) ocid JOIN pg_opclass oc ON oc.oid=ocid JOIN pg_namespace ons ON ons.oid=oc.opcnamespace WHERE NOT oc.opcdefault OR ons.nspname<>'pg_catalog')`
+	}
 	var relkind string
 	kr, ke := q.QueryContext(ctx, `SELECT c.relkind FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=$1 AND c.relname=$2`, o.Schema, o.Name)
 	if ke != nil {
@@ -30,7 +41,7 @@ func (s *Session) postgresStructure(ctx context.Context, q queryer, o contract.O
 	if relkind == "v" || relkind == "m" {
 		t.Object.Kind = "view"
 	}
-	rows, e := q.QueryContext(ctx, `SELECT a.attname,format_type(a.atttypid,a.atttypmod),NOT a.attnotnull,a.attgenerated<>'',pg_get_expr(d.adbin,d.adrelid) FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid JOIN pg_namespace n ON n.oid=c.relnamespace LEFT JOIN pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum WHERE n.nspname=$1 AND c.relname=$2 AND a.attnum>0 AND NOT a.attisdropped ORDER BY a.attnum`, o.Schema, o.Name)
+	rows, e := q.QueryContext(ctx, fmt.Sprintf(`SELECT a.attname,format_type(a.atttypid,a.atttypmod),NOT a.attnotnull,%s,pg_get_expr(d.adbin,d.adrelid) FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid JOIN pg_namespace n ON n.oid=c.relnamespace LEFT JOIN pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum WHERE n.nspname=$1 AND c.relname=$2 AND a.attnum>0 AND NOT a.attisdropped ORDER BY a.attnum`, generated), o.Schema, o.Name)
 	if e != nil {
 		return t, e
 	}
@@ -54,7 +65,7 @@ func (s *Session) postgresStructure(ctx context.Context, q queryer, o contract.O
 	if len(t.Columns) == 0 {
 		return t, errors.New("object absent or no visible fields")
 	}
-	rows, e = q.QueryContext(ctx, `SELECT i.indexrelid,a.attname,i.indisprimary FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace CROSS JOIN LATERAL unnest(i.indkey) WITH ORDINALITY k(attnum,ord) JOIN pg_attribute a ON a.attrelid=c.oid AND a.attnum=k.attnum WHERE n.nspname=$1 AND c.relname=$2 AND i.indisunique AND i.indisvalid AND i.indpred IS NULL AND i.indexprs IS NULL AND k.ord <= i.indnkeyatts AND NOT EXISTS (SELECT 1 FROM unnest(i.indkey) WITH ORDINALITY kk(num,ord) JOIN pg_attribute aa ON aa.attrelid=c.oid AND aa.attnum=kk.num WHERE kk.ord <= i.indnkeyatts AND NOT aa.attnotnull) ORDER BY i.indisprimary DESC,i.indexrelid,k.ord`, o.Schema, o.Name)
+	rows, e = q.QueryContext(ctx, fmt.Sprintf(`SELECT i.indexrelid,a.attname,i.indisprimary FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace CROSS JOIN LATERAL unnest(i.indkey) WITH ORDINALITY k(attnum,ord) JOIN pg_attribute a ON a.attrelid=c.oid AND a.attnum=k.attnum WHERE n.nspname=$1 AND c.relname=$2 AND i.indisunique AND i.indisvalid%s AND i.indpred IS NULL AND i.indexprs IS NULL AND k.ord <= %s AND NOT EXISTS (SELECT 1 FROM unnest(i.indkey) WITH ORDINALITY kk(num,ord) JOIN pg_attribute aa ON aa.attrelid=c.oid AND aa.attnum=kk.num WHERE kk.ord <= %s AND NOT aa.attnotnull) ORDER BY i.indisprimary DESC,i.indexrelid,k.ord`, keyFlags, keyCount, keyCount), o.Schema, o.Name)
 	if e != nil {
 		return t, e
 	}

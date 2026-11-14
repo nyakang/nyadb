@@ -68,7 +68,7 @@ func mysqlDataPageWithOptions(queryCtx context.Context, queryer mysqlEditQueryer
 		kinds = append(kinds, strings.ToLower(col.DataType))
 		switch {
 		case mysqlDataBinaryType(strings.ToLower(col.DataType)):
-			fields = append(fields, "SUBSTRING("+quoted+", 1, 1025) AS "+quoted)
+			fields = append(fields, mysqlBinarySubstring(queryCtx, quoted, " 1", " 1025")+" AS "+quoted)
 		case mysqlDataTextType(strings.ToLower(col.DataType)):
 			fields = append(fields, "SUBSTRING("+quoted+", 1, 2049) AS "+quoted)
 		default:
@@ -153,7 +153,7 @@ func mysqlDataPageWithOptions(queryCtx context.Context, queryer mysqlEditQueryer
 		}
 		for i, col := range columns {
 			q, _ := quotedMySQLIdentifier(col.Name)
-			fields = append(fields, fmt.Sprintf("SHA2(CAST(%s AS BINARY),256) AS `__nyadb_hash_%d`", q, i))
+			fields = append(fields, fmt.Sprintf("%s AS `__nyadb_hash_%d`", mysqlFingerprintExpression(queryCtx, q), i))
 		}
 	}
 	query := "SELECT " + strings.Join(fields, ", ") + " FROM " + dbName + "." + tableName

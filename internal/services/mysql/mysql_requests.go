@@ -11,6 +11,26 @@ import (
 
 type mysqlProductKey struct{}
 
+func mysqlFingerprintExpression(ctx context.Context, quoted string) string {
+	value := "CAST(" + quoted + " AS BINARY)"
+	if ctx.Value(mysqlProductKey{}) == connections.Dolt {
+		// Dolt's SHA2 coerces its input through UTF-8. Hash the reversible
+		// ASCII hex encoding so arbitrary BLOB bytes remain distinguishable.
+		// Both page snapshots and locking verification use this expression.
+		value = "HEX(" + value + ")"
+	}
+	return "SHA2(" + value + ",256)"
+}
+
+func mysqlBinarySubstring(ctx context.Context, value, offset, length string) string {
+	if ctx.Value(mysqlProductKey{}) == connections.Dolt {
+		// SUBSTRING on a Dolt BLOB decodes it as UTF-8. Slice the reversible
+		// ASCII hex representation and return bytes, retaining byte limits.
+		return "UNHEX(SUBSTRING(HEX(" + value + "),((" + offset + ")-1)*2+1,(" + length + ")*2))"
+	}
+	return "SUBSTRING(" + value + "," + offset + "," + length + ")"
+}
+
 func mysqlWarningsSQL(ctx context.Context) string {
 	if ctx.Value(mysqlProductKey{}) == connections.TiDB {
 		return "SHOW WARNINGS"

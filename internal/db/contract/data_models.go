@@ -308,10 +308,12 @@ type SequenceInfo struct {
 }
 
 type TableStructure struct {
-	Object      ObjectRef
-	Definitions []Definition
-	Definition  string
-	Editable    bool
+	StorageOptions, ExternalOptions []string
+	Distribution, ExternalServer    string
+	Object                          ObjectRef
+	Definitions                     []Definition
+	Definition                      string
+	Editable                        bool
 
 	Database, Name, Kind, Engine, Comment, Collation string
 	EstimatedRows                                    *int64 // TABLE_ROWS is approximate for InnoDB and NULL for some views.

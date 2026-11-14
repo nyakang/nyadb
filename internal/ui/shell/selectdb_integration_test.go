@@ -1,0 +1,200 @@
+package shell
+
+import (
+	"context"
+	"encoding/json"
+	"os"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/egoist/mygo/ui"
+	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/services/connections"
+	"github.com/nyakang/nyadb/internal/ui/navigation"
+)
+
+func TestSelectDBNativeShellFixture(t *testing.T) {
+	if os.Getenv("NYADB_SELECTDB_IT") != "1" {
+		t.Skip("requires explicit disposable native fixture")
+	}
+	raw, err := os.ReadFile(os.Getenv("NYADB_SELECTDB_CONFIG"))
+	if err != nil {
+		t.Fatal("missing private fixture configuration")
+	}
+	var cfg struct {
+		Endpoint, Username, Database string
+		PasswordFile                 string `json:"password_file"`
+		CAFile                       string `json:"ca_file"`
+		ServerName                   string `json:"server_name"`
+	}
+	if err = json.Unmarshal(raw, &cfg); err != nil || !strings.HasPrefix(cfg.Endpoint, "127.0.0.1:") || !strings.HasPrefix(cfg.Database, "nyadb_selectdb_") {
+		t.Fatal("requires owned loopback SelectDB fixture")
+	}
+	port, err := strconv.ParseUint(strings.TrimPrefix(cfg.Endpoint, "127.0.0.1:"), 10, 16)
+	if err != nil {
+		t.Fatal("invalid fixture port")
+	}
+	secret, err := os.ReadFile(cfg.PasswordFile)
+	if err != nil {
+		t.Fatal("missing private fixture credential")
+	}
+	s, _, service, _ := profileTestState(t)
+	t.Cleanup(s.CloseMySQLSessions)
+	p, _ := connections.Defaults(connections.SelectDB)
+	p.Name = "SelectDB shared grid"
+	p.Host = "127.0.0.1"
+	p.Port = uint16(port)
+	p.Username = cfg.Username
+	p.Database = cfg.Database
+	p.TLSMode = "disable"
+	if cfg.CAFile != "" {
+		p.TLSMode = "verify-full"
+		p.SelectDBOptions.CAFile = cfg.CAFile
+		p.SelectDBOptions.ServerName = cfg.ServerName
+	}
+	profile, err := service.Create(context.Background(), p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.loadProfiles()
+	s.selectProfileByName(profile.Name)
+	s.sessions.Current().Password = string(secret)
+	var services ui.Services
+	tt := ui.NewTester(func(c *ui.Context) { services = c.Services(); s.View(c) }, 1280, 800)
+	tt.Frame()
+	if err = tt.Click("连接所选数据库"); err != nil {
+		t.Fatal(err)
+	}
+	wait := func(ready func() bool) {
+		t.Helper()
+		deadline := time.Now().Add(20 * time.Second)
+		for !ready() && time.Now().Before(deadline) {
+			tt.Frame()
+			time.Sleep(2 * time.Millisecond)
+		}
+		tt.Frame()
+		if !ready() {
+			t.Fatal("native UI request did not settle")
+		}
+	}
+	wait(func() bool { return s.sessions.StatusFor(profile.ID) != "连接中" })
+	if s.sessions.StatusFor(profile.ID) != "已连接" || !s.runtime.IsConnected(profile.ID) {
+		t.Fatal("SelectDB native profile did not connect")
+	}
+	session, _ := s.runtime.Session(profile.ID)
+	provider, err := contract.Require[contract.QueryProvider](session)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lease, err := provider.ReserveQuery(99)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer lease.Release()
+	table := "nyadb_ui_" + strconv.FormatInt(time.Now().UnixNano(), 36)
+	_, err = lease.Execute(context.Background(), p.Database, "CREATE TABLE `"+table+"` (id BIGINT NOT NULL,note STRING) DUPLICATE KEY(id) DISTRIBUTED BY HASH(id) BUCKETS 1 PROPERTIES ('replication_num'='1'); INSERT INTO `"+table+"` VALUES(9007199254740993,'native shared grid')")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		cleanup, e := provider.ReserveQuery(100)
+		if e == nil {
+			defer cleanup.Release()
+			_, _ = cleanup.Execute(context.Background(), p.Database, "DROP TABLE IF EXISTS `"+table+"`")
+		}
+	}()
+	s.submitNavigation(services, navigation.DatabaseNode(profile.ID, p.Database))
+	w := s.sessions.Current()
+	wait(func() bool { return w.Pending == "" && w.Cache[p.Database] != nil })
+	s.submitNavigation(services, navigation.Node{Kind: "object", ProfileID: profile.ID, Database: p.Database, Object: table, Category: "表"})
+	dataTab := s.currentTab()
+	if dataTab.kind != tabMySQLData || dataTab.data == nil || dataTab.data.Object().Catalog != "internal" || dataTab.data.Object().Schema != p.Database {
+		t.Fatal("SelectDB did not enter the shared qualified grid")
+	}
+	wait(func() bool { return !dataTab.data.Busy() })
+	if dataTab.data.Page() == nil || !tt.HasText("native shared grid") || dataTab.data.Page().Editable == nil || *dataTab.data.Page().Editable {
+		t.Fatalf("native readonly grid failed: %s", dataTab.data.Error())
+	}
+	if output := os.Getenv("NYADB_SELECTDB_VISUAL_DIR"); output != "" {
+		if err := os.MkdirAll(output, 0755); err != nil {
+			t.Fatal(err)
+		}
+		writeDomainCapture(t, output, "selectdb-live-grid", tt)
+	}
+	before := len(dataTab.data.Page().Rows)
+	s.dataWorkspace.EditCell(services, dataTab.data, 0, "note", contract.Cell{Kind: contract.Text, Text: "must not save"})
+	tt.Frame()
+	if len(dataTab.data.Page().Rows) != before || dataTab.data.HasDraft() {
+		t.Fatal("read-only SelectDB accepted edits")
+	}
+	s.openMySQLStructure(services, p.Database, table)
+	tt.Frame()
+	if s.currentTab().kind != tabStructure {
+		t.Fatal("structure routed to relational designer")
+	}
+	s.openQuery()
+	sqlTab := s.currentTab()
+	sql := "SELECT id,note FROM `" + table + "`; EXPLAIN SELECT 1"
+	sqlTab.query.Editor.Buffer.Set(sql)
+	sqlTab.query.Editor.Select(0, len(sql))
+	tt.Frame()
+	if err = tt.Click("运行当前或选中 SQL"); err != nil {
+		t.Fatal(err)
+	}
+	waitSQLUI(t, s, tt, sqlTab)
+	r := sqlTab.query.Result()
+	if r == nil || len(r.Sets) != 2 || r.Sets[0].Rows[0][0].Text != "9007199254740993" {
+		t.Fatalf("native SQL result failed: %s (%+v)", sqlTab.query.Error(), r)
+	}
+	if output := os.Getenv("NYADB_SELECTDB_VISUAL_DIR"); output != "" {
+		writeDomainCapture(t, output, "selectdb-live-sql", tt)
+	}
+	planSource := "SELECT id,note FROM `" + table + "` WHERE id>0 ORDER BY id LIMIT 2"
+	sqlTab.query.Editor.Buffer.Set(planSource)
+	sqlTab.query.Editor.Select(0, len(planSource))
+	tt.Frame()
+	if err = tt.Click("EXPLAIN"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if err = tt.Click("执行 EXPLAIN"); err != nil {
+		t.Fatal(err)
+	}
+	waitSQLUI(t, s, tt, sqlTab)
+	tt.Frame()
+	if !tt.HasText("Nereids optimized plan") || sqlTab.query.Error() != "" || sqlTab.query.Result() == nil {
+		t.Fatalf("native EXPLAIN did not enter shared structured plan view: %s (%+v)", sqlTab.query.Error(), sqlTab.query.Result())
+	}
+	if output := os.Getenv("NYADB_SELECTDB_VISUAL_DIR"); output != "" {
+		writeDomainCapture(t, output, "selectdb-live-plan", tt)
+	}
+	if err = tt.Click("原始计划"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	planResult := sqlTab.query.Result()
+	if len(planResult.Sets) != 1 || !strings.HasPrefix(planResult.Sets[0].Rows[0][0].Text, "cost = ") {
+		t.Fatal("plan switch lost original native rows")
+	}
+	if err = tt.Click("查询结果"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if sqlTab.query.Result() != r || r.Sets[0].Rows[0][0].Text != "9007199254740993" {
+		t.Fatal("EXPLAIN discarded ordinary multi-result reading")
+	}
+	if err = tt.Click("结构计划"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if sqlTab.query.Result() != planResult || !tt.HasText("Nereids optimized plan") {
+		t.Fatal("structured plan did not survive ordinary result switch")
+	}
+	s.disconnectMySQLProfile(profile.ID)
+	tt.Frame()
+	if !sqlTab.query.NeedsRecovery() || sqlTab.query.Editor.Buffer.String() != planSource || s.runtime.IsConnected(profile.ID) {
+		t.Fatal("disconnect discarded SQL or implicitly reconnected")
+	}
+}

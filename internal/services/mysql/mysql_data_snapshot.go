@@ -53,7 +53,7 @@ func mysqlEditSnapshot(ctx context.Context, q mysqlEditQueryer, database, table 
 	fields := make([]string, len(columns))
 	for i, col := range columns {
 		quoted, _ := quotedMySQLIdentifier(col.Name)
-		fields[i] = "SHA2(CAST(" + quoted + " AS BINARY),256)"
+		fields[i] = mysqlFingerprintExpression(ctx, quoted)
 	}
 	query := "SELECT " + strings.Join(fields, ",") + " FROM " + target + " WHERE " + where + " LIMIT 2"
 	if lock {
@@ -102,7 +102,7 @@ func mysqlEditPreviews(ctx context.Context, q mysqlEditQueryer, database, table 
 		quoted, _ := quotedMySQLIdentifier(col.Name)
 		switch {
 		case mysqlDataBinaryType(strings.ToLower(col.DataType)):
-			fields[i] = "SUBSTRING(" + quoted + ",1,1025)"
+			fields[i] = mysqlBinarySubstring(ctx, quoted, "1", "1025")
 		case mysqlDataTextType(strings.ToLower(col.DataType)):
 			fields[i] = "SUBSTRING(" + quoted + ",1,2049)"
 		default:
@@ -162,7 +162,7 @@ func mysqlEditSavedRef(ctx context.Context, q mysqlEditQueryer, database, table 
 	fields := make([]string, len(ref.Columns))
 	for i, name := range ref.Columns {
 		quoted, _ := quotedMySQLIdentifier(name)
-		fields[i] = "SUBSTRING(CAST(" + quoted + " AS BINARY),1,4097)"
+		fields[i] = mysqlBinarySubstring(ctx, "CAST("+quoted+" AS BINARY)", "1", "4097")
 	}
 	rows, e := q.QueryContext(ctx, "SELECT "+strings.Join(fields, ",")+" FROM "+target+" WHERE "+where+" LIMIT 2", args...)
 	if e != nil {

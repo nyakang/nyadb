@@ -32,6 +32,10 @@ var databaseCatalog = []catalogEntry{
 	{"DuckDB", "DuckDB", "", "全部", "duckdb-type", "#d6ad00", connections.DuckDB},
 	{"MariaDB", "MariaDB", "", "全部", "maria-type", "#b58a61", connections.MariaDB},
 	{"TiDB", "TiDB", "", "全部", "database", "#e21515", connections.TiDB},
+	{"TDSQL", "TDSQL", "", "全部", "database", "#44aee0", connections.TDSQL},
+	{"PolarDB", "PolarDB", "", "全部", "database", "#33c84c", connections.PolarDB},
+	{"GreatSQL", "GreatSQL", "", "全部", "database", "#1989ca", connections.GreatSQL},
+	{"Dolt", "Dolt", "", "全部", "database", "#2d8cff", connections.Dolt},
 	{"MongoDB", "MongoDB", "", "全部", "mongo-type", "#bb691d", connections.MongoDB},
 	{"Redis", "Redis", "", "全部", "redis-type", "#e77679", connections.Redis},
 	{"Snowflake", "Snowflake", "", "全部", "snowflake-type", "#3daac7", ""},
@@ -50,6 +54,9 @@ var databaseCatalog = []catalogEntry{
 	{"Trino", "Trino", "", "全部", "database", "#dd5a9b", connections.Trino},
 	{"StarRocks", "StarRocks", "", "全部", "database", "#e65f25", connections.StarRocks},
 	{"Apache Doris", "Apache Doris", "", "全部", "database", "#259aca", connections.Doris},
+	{"SelectDB", "SelectDB", "", "全部", "database", "#0065fd", connections.SelectDB},
+	{"Apache Cloudberry", "Apache Cloudberry", "", "全部", "database", "#59a2d4", connections.Cloudberry},
+	{"OpenTenBase", "OpenTenBase", "", "全部", "database", "#00a870", connections.OpenTenBase},
 	{"Apache Cassandra", "Apache Cassandra", "", "全部", "database", "#1b9aaa", connections.Cassandra},
 	{"Apache CouchDB", "Apache CouchDB", "", "全部", "database", "#e42528", connections.CouchDB},
 	{"Meilisearch", "Meilisearch", "", "全部", "database", "#ff5c8d", connections.Meilisearch},
@@ -59,7 +66,7 @@ var databaseCatalog = []catalogEntry{
 	{"Consul", "Consul", "", "全部", "database", "#ca2171", connections.Consul},
 }
 
-var catalogEngines = []string{"MySQL", "PostgreSQL", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "Apache Doris", "StarRocks", "Trino", "MariaDB", "TiDB", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "达梦", "MongoDB", "Redis", "Elasticsearch", "Easysearch", "Apache Solr", "Apache Cassandra", "Apache CouchDB", "Meilisearch", "Qdrant", "Neo4j", "etcd", "Consul", "Snowflake"}
+var catalogEngines = []string{"MySQL", "PostgreSQL", "Apache Cloudberry", "OpenTenBase", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "Apache Doris", "SelectDB", "StarRocks", "Trino", "MariaDB", "TiDB", "TDSQL", "PolarDB", "GreatSQL", "Dolt", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "达梦", "MongoDB", "Redis", "Elasticsearch", "Easysearch", "Apache Solr", "Apache Cassandra", "Apache CouchDB", "Meilisearch", "Qdrant", "Neo4j", "etcd", "Consul", "Snowflake"}
 var catalogVendors = catalogTreeVendorOrder
 
 func catalogMatch(e catalogEntry, query string, engines, vendors map[string]bool) bool {

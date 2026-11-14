@@ -104,6 +104,10 @@ func dorisNode(text string) (contract.PlanNode, string, error) {
 // complete optimizer cost. Keep that cost on a separate plan envelope; it is
 // not an operator cost. The original SQL result remains available in the UI.
 func parseDoris(result contract.SQLResult) (*contract.ExecutionPlan, error) {
+	return parseNereids(result, "doris", dorisNode)
+}
+
+func parseNereids(result contract.SQLResult, engine string, parseNode func(string) (contract.PlanNode, string, error)) (*contract.ExecutionPlan, error) {
 	fail := func() (*contract.ExecutionPlan, error) {
 		return nil, errors.New("invalid, truncated or unsupported Doris Nereids plan; see original result")
 	}
@@ -171,7 +175,7 @@ func parseDoris(result contract.SQLResult) (*contract.ExecutionPlan, error) {
 				return fail()
 			}
 		}
-		node, id, err := dorisNode(text)
+		node, id, err := parseNode(text)
 		if err != nil || id != "" && seen[id] {
 			return fail()
 		}
@@ -203,5 +207,5 @@ func parseDoris(result contract.SQLResult) (*contract.ExecutionPlan, error) {
 		}
 		return n
 	}
-	return &contract.ExecutionPlan{Engine: "doris", Nodes: []contract.PlanNode{{Label: "Nereids optimized plan", Detail: header, Cost: cost, Children: []contract.PlanNode{build(0)}}}}, nil
+	return &contract.ExecutionPlan{Engine: engine, Nodes: []contract.PlanNode{{Label: "Nereids optimized plan", Detail: header, Cost: cost, Children: []contract.PlanNode{build(0)}}}}, nil
 }

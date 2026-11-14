@@ -24,7 +24,7 @@ type EngineRuntime struct {
 func (s *State) SetEngineRuntime(r EngineRuntime) { s.engines = r }
 func (s *State) EngineCatalog(id int64) string {
 	w := s.Workspace(id)
-	if w != nil && (w.Kind.IsPostgreSQLFamily() || w.Kind == connections.Doris || w.Kind == connections.StarRocks || w.Kind == connections.SQLServer || w.Kind == connections.Oracle || w.Kind == connections.Dameng || w.Kind == connections.DuckDB) {
+	if w != nil && (w.Kind.IsPostgreSQLFamily() || w.Kind == connections.Doris || w.Kind == connections.SelectDB || w.Kind == connections.StarRocks || w.Kind == connections.SQLServer || w.Kind == connections.Oracle || w.Kind == connections.Dameng || w.Kind == connections.DuckDB) {
 		return w.Catalog
 	}
 	return ""
@@ -91,6 +91,8 @@ func (s *State) connectEngine(p connections.Profile, invalidate func()) {
 		w.Catalog = p.Database
 	} else if p.Kind == connections.Doris {
 		w.Catalog = p.DorisOptions.Catalog
+	} else if p.Kind == connections.SelectDB {
+		w.Catalog = p.SelectDBOptions.Catalog
 	} else if p.Kind == connections.Trino {
 		w.Catalog = p.Database
 	} else if p.Kind == connections.StarRocks {
@@ -196,6 +198,14 @@ func sessionNamespaces(ctx context.Context, s contract.Session) ([]string, error
 	return out, nil
 }
 func (s *State) engineLabel(w *Workspace) string {
+	if w.Kind == connections.Cloudberry || w.Kind == connections.OpenTenBase {
+		descriptor, _ := connections.Describe(w.Kind)
+		return descriptor.Label
+	}
+	if w.Kind == connections.TDSQL || w.Kind == connections.PolarDB || w.Kind == connections.GreatSQL || w.Kind == connections.Dolt {
+		descriptor, _ := connections.Describe(w.Kind)
+		return descriptor.Label
+	}
 	if w.Kind == connections.Consul {
 		return "Consul"
 	}
@@ -254,6 +264,9 @@ func (s *State) engineLabel(w *Workspace) string {
 	}
 	if w.Kind == connections.Doris {
 		return "Apache Doris"
+	}
+	if w.Kind == connections.SelectDB {
+		return "SelectDB"
 	}
 	if w.Kind == connections.CockroachDB {
 		return "CockroachDB"

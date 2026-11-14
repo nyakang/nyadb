@@ -188,7 +188,7 @@ func (s *State) OpenProfile(profile connections.Profile) {
 	if profile.Kind.IsMySQLFamily() {
 		s.loadSavedConnectionPasswords()
 		s.loadTunnelSecrets()
-	} else if profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.Consul || profile.Kind == connections.Etcd || profile.Kind == connections.Neo4j || profile.Kind == connections.Qdrant || profile.Kind == connections.Meilisearch || profile.Kind == connections.CouchDB || profile.Kind == connections.Cassandra || profile.Kind == connections.Solr || profile.Kind == connections.Elasticsearch || profile.Kind == connections.Easysearch || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis {
+	} else if profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.Consul || profile.Kind == connections.Etcd || profile.Kind == connections.Neo4j || profile.Kind == connections.Qdrant || profile.Kind == connections.Meilisearch || profile.Kind == connections.CouchDB || profile.Kind == connections.Cassandra || profile.Kind == connections.Solr || profile.Kind == connections.Elasticsearch || profile.Kind == connections.Easysearch || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.SelectDB || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis {
 		s.loadSavedConnectionPasswords()
 	}
 }
@@ -325,68 +325,8 @@ func (s *State) Title() string {
 }
 
 func connectionKindName(kind connections.Kind) string {
-	switch kind {
-	case connections.Consul:
-		return "Consul"
-	case connections.Etcd:
-		return "etcd"
-	case connections.Qdrant:
-		return "Qdrant"
-	case connections.Neo4j:
-		return "Neo4j"
-	case connections.Meilisearch:
-		return "Meilisearch"
-	case connections.CouchDB:
-		return "Apache CouchDB"
-	case connections.Cassandra:
-		return "Apache Cassandra"
-	case connections.Solr:
-		return "Apache Solr"
-	case connections.Easysearch:
-		return "Easysearch"
-	case connections.Elasticsearch:
-		return "Elasticsearch"
-	case connections.DuckDB:
-		return "DuckDB"
-	case connections.MySQL:
-		return "MySQL"
-	case connections.MariaDB:
-		return "MariaDB"
-	case connections.OceanBase:
-		return "OceanBase"
-	case connections.TiDB:
-		return "TiDB"
-	case connections.Redis:
-		return "Redis"
-	case connections.MongoDB:
-		return "MongoDB"
-	case connections.Dameng:
-		return "达梦"
-	case connections.Oracle:
-		return "Oracle"
-	case connections.SQLServer:
-		return "SQL Server"
-	case connections.CockroachDB:
-		return "CockroachDB"
-	case connections.OpenGauss:
-		return "openGauss"
-	case connections.GaussDB:
-		return "GaussDB"
-	case connections.Kingbase:
-		return "KingbaseES"
-	case connections.PostgreSQL:
-		return "PostgreSQL"
-	case connections.SQLite:
-		return "SQLite"
-	case connections.Trino:
-		return "Trino"
-	case connections.StarRocks:
-		return "StarRocks"
-	case connections.Doris:
-		return "Apache Doris"
-	case connections.ClickHouse:
-		return "ClickHouse"
-	default:
-		return "未知类型"
+	if descriptor, ok := connections.Describe(kind); ok {
+		return descriptor.Label
 	}
+	return "未知类型"
 }

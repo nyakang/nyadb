@@ -1,5 +1,5 @@
-// Package doris implements Apache Doris features independently of MySQL OLTP
-// services. Every physical connection verifies its native product identity.
+// Package doris implements Doris-family features independently of MySQL OLTP
+// services. Each product selects its own transport, identity and catalog rules.
 package doris
 
 import (
@@ -33,8 +33,9 @@ type Session struct {
 }
 
 type physical struct {
-	db   *sql.DB
-	conn *sql.Conn
+	db           *sql.DB
+	conn         *sql.Conn
+	textProtocol bool
 }
 
 func (p *physical) Close() {
@@ -69,20 +70,27 @@ func openPhysical(ctx context.Context, p connections.Profile, password string) (
 	cfg.CheckConnLiveness = false
 	cfg.MultiStatements, cfg.InterpolateParams, cfg.ParseTime = false, false, false
 	cfg.Logger = silentLogger{}
+	caFile, serverName := p.DorisOptions.CAFile, p.DorisOptions.ServerName
+	if p.Kind == connections.SelectDB {
+		caFile, serverName = p.SelectDBOptions.CAFile, p.SelectDBOptions.ServerName
+		// SelectDB's bare MySQL transport uses COM_QUERY. Its product version
+		// does not inherit Doris 4.1.3's prepared-statement packet workaround.
+		cfg.InterpolateParams = true
+	}
 	if p.TLSMode == "verify-full" {
-		name := p.DorisOptions.ServerName
+		name := serverName
 		if name == "" {
 			name = p.Host
 		}
 		cfg.TLS = &tls.Config{MinVersion: tls.VersionTLS12, ServerName: name}
-		if p.DorisOptions.CAFile != "" {
-			raw, e := os.ReadFile(p.DorisOptions.CAFile)
+		if caFile != "" {
+			raw, e := os.ReadFile(caFile)
 			if e != nil || len(raw) > 1<<20 {
-				return nil, errors.New("Doris CA certificate cannot be read")
+				return nil, errors.New("database CA certificate cannot be read")
 			}
 			pool := x509.NewCertPool()
 			if !pool.AppendCertsFromPEM(raw) {
-				return nil, errors.New("invalid Doris CA certificate")
+				return nil, errors.New("invalid database CA certificate")
 			}
 			cfg.TLS.RootCAs = pool
 		}
@@ -99,7 +107,7 @@ func openPhysical(ctx context.Context, p connections.Profile, password string) (
 		_ = db.Close()
 		return nil, safeError(err)
 	}
-	f := &physical{db: db, conn: conn}
+	f := &physical{db: db, conn: conn, textProtocol: p.Kind == connections.SelectDB}
 	defer func() {
 		if err != nil {
 			f.Close()
@@ -110,16 +118,35 @@ func openPhysical(ctx context.Context, p connections.Profile, password string) (
 		return nil, safeError(err)
 	}
 	// VERSION() is the compatibility string 5.7.99, not the Doris kernel.
-	if !strings.HasPrefix(comment, "doris version doris-4.1.3-") || catalog != "internal" {
+	if p.Kind == connections.SelectDB {
+		if err = verifySelectDBIdentity(comment, catalog); err != nil {
+			return nil, err
+		}
+	} else if !strings.HasPrefix(comment, "doris version doris-4.1.3-") || catalog != "internal" {
 		return nil, errors.New("unsupported Doris product or kernel; requires native Doris 4.1.3")
 	}
 	for _, flag := range strings.Split(strings.ToUpper(mode), ",") {
 		if flag = strings.TrimSpace(flag); flag == "NO_BACKSLASH_ESCAPES" || flag == "ANSI_QUOTES" {
-			return nil, errors.New("Doris SQL mode changes the supported literal rules")
+			return nil, errors.New("database SQL mode changes the supported literal rules")
 		}
 	}
-	if _, err = conn.ExecContext(ctx, "SET return_object_data_as_binary=true,enable_decimal256=true"); err != nil {
-		return nil, safeError(err)
+	if p.Kind == connections.SelectDB {
+		// Verified on the native SelectDB 2.1.6 binary: isolated reads must
+		// retain complete aggregate-state bytes instead of the default NULL.
+		// This product setup does not select Doris's decimal256 or prepared
+		// protocol settings. Explicit SQL settings remain on their own lease.
+		if _, err = conn.ExecContext(ctx, "SET return_object_data_as_binary=true"); err != nil {
+			return nil, safeError(err)
+		}
+		if p.SelectDBOptions.Catalog != "internal" {
+			if _, err = conn.ExecContext(ctx, "SWITCH "+quote(p.SelectDBOptions.Catalog)); err != nil {
+				return nil, safeError(err)
+			}
+		}
+	} else {
+		if _, err = conn.ExecContext(ctx, "SET return_object_data_as_binary=true,enable_decimal256=true"); err != nil {
+			return nil, safeError(err)
+		}
 	}
 	if p.Database != "" {
 		if !validName(p.Database) {
@@ -136,11 +163,21 @@ func openPhysical(ctx context.Context, p connections.Profile, password string) (
 }
 
 func OpenSession(ctx context.Context, p connections.Profile, password string) (contract.Session, error) {
+	return openSession(ctx, p, password, connections.Doris)
+}
+
+// OpenSelectDBSession retains SelectDB's own identity and semantics while
+// sharing cancellation, original physical leases and bounded result handling.
+func OpenSelectDBSession(ctx context.Context, p connections.Profile, password string) (contract.Session, error) {
+	return openSession(ctx, p, password, connections.SelectDB)
+}
+
+func openSession(ctx context.Context, p connections.Profile, password string, kind connections.Kind) (contract.Session, error) {
 	p, err := connections.NormalizeProfile(p)
 	if err != nil {
 		return nil, err
 	}
-	if p.Kind != connections.Doris || p.ID <= 0 {
+	if p.Kind != kind || p.ID <= 0 {
 		return nil, connections.ErrInvalid
 	}
 	f, err := openPhysical(ctx, p, password)
@@ -154,7 +191,7 @@ func OpenSession(ctx context.Context, p connections.Profile, password string) (c
 func (s *Session) ProfileID() int64   { return s.profile.ID }
 func (s *Session) Generation() uint64 { return 1 }
 func (s *Session) Capabilities() contract.Capabilities {
-	d, _ := connections.Describe(connections.Doris)
+	d, _ := connections.Describe(s.profile.Kind)
 	return d.Capabilities
 }
 func (s *Session) Alive() bool { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed }
@@ -205,17 +242,17 @@ func safeError(err error) error {
 	}
 	var authority x509.UnknownAuthorityError
 	if errors.As(err, &authority) {
-		return errors.New("Doris TLS certificate authority is not trusted")
+		return errors.New("database TLS certificate authority is not trusted")
 	}
 	var hostname x509.HostnameError
 	if errors.As(err, &hostname) {
-		return errors.New("Doris TLS server name mismatch")
+		return errors.New("database TLS server name mismatch")
 	}
 	var server *mysqldriver.MySQLError
 	if errors.As(err, &server) {
-		return fmt.Errorf("Doris server error (code %d)", server.Number)
+		return fmt.Errorf("database server error (code %d)", server.Number)
 	}
-	return errors.New("Doris connection or operation failed")
+	return errors.New("database connection or operation failed")
 }
 
 var _ contract.MetadataProvider = (*Session)(nil)

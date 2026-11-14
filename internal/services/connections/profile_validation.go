@@ -9,6 +9,9 @@ import (
 // NormalizeProfile validates public settings and applies their canonical values.
 // Variants are normalized in place; callers retaining them must clone the slice.
 func NormalizeProfile(p Profile) (Profile, error) {
+	if p.Kind != SelectDB && p.SelectDBOptions != (SelectDBOptions{}) {
+		return p, fmt.Errorf("%w: SelectDB options on another engine", ErrInvalid)
+	}
 	if p.Kind != Consul && p.ConsulOptions != (ConsulOptions{}) {
 		return p, fmt.Errorf("%w: Consul options on another engine", ErrInvalid)
 	}
@@ -183,6 +186,8 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		return normalizeStarRocksProfile(p)
 	case Doris:
 		return normalizeDorisProfile(p)
+	case SelectDB:
+		return normalizeSelectDBProfile(p)
 	case Dameng:
 		if p.MySQLAdvanced != (MySQLAdvanced{}) {
 			return p, fmt.Errorf("%w: MySQL options on DM8", ErrInvalid)
@@ -224,7 +229,7 @@ func NormalizeProfile(p Profile) (Profile, error) {
 		if p.Database == ":memory:" && p.DuckDBOptions.ReadOnly {
 			return p, fmt.Errorf("%w: an in-memory DuckDB database cannot be read-only", ErrInvalid)
 		}
-	case MySQL, MariaDB, TiDB, OceanBase, PostgreSQL, CockroachDB, OpenGauss, ClickHouse, SQLServer, Oracle:
+	case MySQL, MariaDB, TiDB, OceanBase, TDSQL, PolarDB, GreatSQL, Dolt, PostgreSQL, Cloudberry, OpenTenBase, CockroachDB, OpenGauss, ClickHouse, SQLServer, Oracle:
 		if p.Kind == Oracle {
 			var err error
 			p.OracleOptions, err = NormalizeOracleOptions(p.OracleOptions)
@@ -298,6 +303,11 @@ func NormalizeProfile(p Profile) (Profile, error) {
 			}
 			if p.PostgreSQLOptions.ToolsDirectory != "" {
 				return p, fmt.Errorf("%w: openGauss requires its own backup tools", ErrInvalid)
+			}
+		}
+		if p.Kind == Cloudberry || p.Kind == OpenTenBase {
+			if p.Database == "" || p.Username == "" || strings.ContainsAny(p.Host, "@/?!#\\ \t\r\n") || p.PostgreSQLOptions.ToolsDirectory != "" {
+				return p, fmt.Errorf("%w: %s requires a hostname, database and username; PostgreSQL backup tools are unavailable", ErrInvalid, p.Kind)
 			}
 		}
 		if p.Kind.IsPostgreSQLFamily() {

@@ -39,7 +39,7 @@ func (m *MySQLSessionManager) ExportMySQLData(ctx context.Context, id int64, dat
 	if len(columns) == 0 {
 		return ErrMySQLTableNotFound
 	}
-	query, args, kinds, err := mysqlDataExportQuery(database, table, columns, fields, filters, sorts, options.Offset, options.Limit, options.Condition)
+	query, args, kinds, err := mysqlDataExportQuery(qctx, database, table, columns, fields, filters, sorts, options.Offset, options.Limit, options.Condition)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (m *MySQLSessionManager) ExportMySQLData(ctx context.Context, id int64, dat
 	return qctx.Err()
 }
 
-func mysqlDataExportQuery(database, table string, columns []MySQLStructureColumn, fields []string, filters []MySQLDataFilterRule, sorts []MySQLDataSortRule, offset int64, limit int, expression ...*contract.FilterExpression[contract.DataFilterRule]) (string, []any, []string, error) {
+func mysqlDataExportQuery(ctx context.Context, database, table string, columns []MySQLStructureColumn, fields []string, filters []MySQLDataFilterRule, sorts []MySQLDataSortRule, offset int64, limit int, expression ...*contract.FilterExpression[contract.DataFilterRule]) (string, []any, []string, error) {
 	db, e := quotedMySQLIdentifier(database)
 	if e != nil {
 		return "", nil, nil, e
@@ -116,7 +116,7 @@ func mysqlDataExportQuery(database, table string, columns []MySQLStructureColumn
 		if quoteErr != nil {
 			return "", nil, nil, quoteErr
 		}
-		projection = append(projection, fmt.Sprintf("SUBSTRING(CAST(%s AS BINARY),1,%d) AS %s", q, MySQLDataExportFieldMaxBytes+1, q))
+		projection = append(projection, mysqlBinarySubstring(ctx, "CAST("+q+" AS BINARY)", "1", fmt.Sprint(MySQLDataExportFieldMaxBytes+1))+" AS "+q)
 		kinds = append(kinds, strings.ToLower(col.DataType))
 	}
 	var expr *contract.FilterExpression[contract.DataFilterRule]

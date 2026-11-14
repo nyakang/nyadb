@@ -32,6 +32,10 @@ func strategyFor(kind connections.Kind) (dialectStrategy, error) {
 		return cockroachDialect{}, nil
 	case connections.PostgreSQL:
 		return postgresDialect{}, nil
+	case connections.Cloudberry:
+		return cloudberryDialect{}, nil
+	case connections.OpenTenBase:
+		return openTenBaseDialect{}, nil
 	case connections.SQLite:
 		return sqliteDialect{}, nil
 	}

@@ -12,6 +12,7 @@ import (
 // Keep the existing column and MySQL JSON format. Other engines use an
 // explicit versioned envelope; older empty records receive engine defaults.
 type engineOptionsEnvelope struct {
+	SelectDB      *connections.SelectDBOptions      `json:"selectdb,omitempty"`
 	Consul        *connections.ConsulOptions        `json:"consul,omitempty"`
 	Etcd          *connections.EtcdOptions          `json:"etcd,omitempty"`
 	Neo4j         *connections.Neo4jOptions         `json:"neo4j,omitempty"`
@@ -67,6 +68,8 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, StarRocks: &p.StarRocksOptions}
 	case connections.Doris:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Doris: &p.DorisOptions}
+	case connections.SelectDB:
+		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, SelectDB: &p.SelectDBOptions}
 	case connections.Dameng:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Dameng: &p.DamengOptions}
 	case connections.GaussDB:
@@ -81,9 +84,9 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, DuckDB: &p.DuckDBOptions}
 	case connections.SQLServer:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, SQLServer: &p.SQLServerOptions}
-	case connections.MySQL, connections.MariaDB, connections.TiDB, connections.OceanBase:
+	case connections.MySQL, connections.MariaDB, connections.TiDB, connections.OceanBase, connections.TDSQL, connections.PolarDB, connections.GreatSQL, connections.Dolt:
 		value = p.MySQLAdvanced
-	case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.Kingbase:
+	case connections.PostgreSQL, connections.Cloudberry, connections.OpenTenBase, connections.CockroachDB, connections.OpenGauss, connections.Kingbase:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, PostgreSQL: &p.PostgreSQLOptions}
 	case connections.SQLite:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, SQLite: &p.SQLiteOptions}
@@ -97,6 +100,9 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 }
 func decodeEngineOptions(p *connections.Profile, raw string) error {
 	if raw == "" {
+		if p.Kind == connections.SelectDB {
+			p.SelectDBOptions = connections.SelectDBOptions{Version: 1, Catalog: "internal"}
+		}
 		if p.Kind == connections.Consul {
 			return connections.ErrInvalid
 		}
@@ -181,6 +187,27 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 	decoder.DisallowUnknownFields()
 	if len(raw) > 128<<10 || decoder.Decode(&envelope) != nil || decoder.Decode(new(any)) != io.EOF || envelope.Version != 1 || envelope.Kind != p.Kind {
 		return fmt.Errorf("invalid saved engine options")
+	}
+	if p.Kind == connections.SelectDB {
+		if !uniqueNativeAuthOptionsJSON(raw) || envelope.SelectDB == nil || envelope.SelectDB.Version != 1 || envelope.SelectDB.Catalog == "" {
+			return connections.ErrInvalid
+		}
+		var fields map[string]json.RawMessage
+		if json.Unmarshal([]byte(raw), &fields) != nil {
+			return connections.ErrInvalid
+		}
+		for key := range fields {
+			if key != "version" && key != "kind" && key != "selectdb" {
+				return connections.ErrInvalid
+			}
+		}
+		p.SelectDBOptions = *envelope.SelectDB
+		checked, err := connections.NormalizeProfile(*p)
+		*p = checked
+		return err
+	}
+	if envelope.SelectDB != nil {
+		return connections.ErrInvalid
 	}
 	if p.Kind == connections.Consul {
 		if envelope.Consul == nil || (envelope.Consul.Version != 1 && envelope.Consul.Version != 2) {

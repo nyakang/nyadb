@@ -38,7 +38,19 @@ func (s *Session) tableMetadata(ctx context.Context, id int64, database, table s
 		return nil, err
 	}
 	defer f.Close()
-	rows, err := metadataRows(child, f.conn, "SELECT TABLE_TYPE FROM internal.information_schema.tables WHERE TABLE_SCHEMA=? AND TABLE_NAME=?", database, table)
+	if s.profile.Kind == connections.SelectDB {
+		objects, err := selectDBBrowse(child, f, o.Namespace())
+		if err != nil {
+			return nil, err
+		}
+		for _, object := range objects {
+			if object.Name == table {
+				return tableMetadata(child, f, object.Ref)
+			}
+		}
+		return nil, connections.ErrNotFound
+	}
+	rows, err := metadataRows(child, f, "SELECT TABLE_TYPE FROM internal.information_schema.tables WHERE TABLE_SCHEMA=? AND TABLE_NAME=?", database, table)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +60,7 @@ func (s *Session) tableMetadata(ctx context.Context, id int64, database, table s
 	if rows[0][0].String == "VIEW" {
 		o.Kind = "VIEW"
 	}
-	return tableMetadata(child, f.conn, o)
+	return tableMetadata(child, f, o)
 }
 
 func (s *Session) resolve(ctx context.Context, id int64, database, table string, o contract.ObjectRef) (*contract.TableStructure, error) {
@@ -187,16 +199,11 @@ func (s *Session) page(ctx context.Context, id int64, database, table string, op
 		return nil, err
 	}
 	defer f.Close()
-	statement, err := f.conn.PrepareContext(child, query)
+	rows, closeRows, err := queryRows(child, f, query, args...)
 	if err != nil {
 		return nil, safeError(err)
 	}
-	defer statement.Close()
-	rows, err := statement.QueryContext(child, args...)
-	if err != nil {
-		return nil, safeError(err)
-	}
-	defer rows.Close()
+	defer closeRows()
 	budget := previewBytes
 	decls := make([]string, len(t.Columns))
 	for i, c := range t.Columns {
@@ -232,7 +239,7 @@ func (s *Session) page(ctx context.Context, id int64, database, table string, op
 	return page, nil
 }
 func (s *Session) count(ctx context.Context, id int64, database, table string) (int64, error) {
-	if err := s.checkObject(contract.ObjectRef{ProfileID: id, Catalog: "internal", Schema: database, Kind: "TABLE", Name: table}); err != nil {
+	if err := s.checkObject(contract.ObjectRef{ProfileID: id, Catalog: s.catalog(), Schema: database, Kind: "TABLE", Name: table}); err != nil {
 		return 0, err
 	}
 	child, done, err := s.request(ctx)
@@ -246,7 +253,7 @@ func (s *Session) count(ctx context.Context, id int64, database, table string) (
 		return 0, err
 	}
 	defer f.Close()
-	err = f.conn.QueryRowContext(child, "SELECT count(*) FROM "+quote("internal")+"."+quote(database)+"."+quote(table)).Scan(&count)
+	err = f.conn.QueryRowContext(child, "SELECT count(*) FROM "+quote(s.catalog())+"."+quote(database)+"."+quote(table)).Scan(&count)
 	if err != nil {
 		return 0, safeError(err)
 	}
@@ -284,16 +291,11 @@ func (s *Session) export(ctx context.Context, id int64, database, table string, 
 		return err
 	}
 	defer f.Close()
-	statement, err := f.conn.PrepareContext(child, query)
+	rows, closeRows, err := queryRows(child, f, query, args...)
 	if err != nil {
 		return safeError(err)
 	}
-	defer statement.Close()
-	rows, err := statement.QueryContext(child, args...)
-	if err != nil {
-		return safeError(err)
-	}
-	defer rows.Close()
+	defer closeRows()
 	budget := 0 // exporters retain no previews
 	if len(columns) == 0 {
 		for _, c := range t.Columns {

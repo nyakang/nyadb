@@ -80,6 +80,9 @@ func (s *Session) postgresBrowse(ctx context.Context, namespace contract.Namespa
 		}
 		neutralKind := "table"
 		object.Kind = "表"
+		if kind == "f" && (s.kind == connections.Cloudberry || s.kind == connections.OpenTenBase) {
+			object.Kind = "外部表"
+		}
 		if kind == "v" || kind == "m" {
 			neutralKind, object.Kind = "view", "视图"
 		} else if kind == "S" {

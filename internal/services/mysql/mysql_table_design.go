@@ -320,6 +320,9 @@ func (m *MySQLSessionManager) ApplyTableDesign(ctx context.Context, id int64, pl
 
 // Retain the empty engine on legacy MySQL snapshots for compatibility.
 func tableDesignEngine(kind connections.Kind) string {
+	if kind == connections.TDSQL || kind == connections.PolarDB || kind == connections.GreatSQL || kind == connections.Dolt {
+		return string(kind)
+	}
 	if kind == connections.OceanBase {
 		return "oceanbase"
 	}

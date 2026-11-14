@@ -48,7 +48,7 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 	if s.kind == connections.CockroachDB {
 		return s.cockroachBrowse(ctx, n)
 	}
-	if s.kind == connections.PostgreSQL || s.kind == connections.Kingbase {
+	if s.kind == connections.PostgreSQL || s.kind == connections.Cloudberry || s.kind == connections.OpenTenBase || s.kind == connections.Kingbase {
 		return s.postgresBrowse(ctx, n)
 	}
 	if s.kind == connections.SQLite {
@@ -88,6 +88,12 @@ func structureModel(t contract.Table) *contract.TableStructure {
 func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*contract.TableStructure, error) {
 	ctx, done := s.requestContext(ctx)
 	defer done()
+	if s.kind == connections.Cloudberry {
+		return s.cloudberryTableMetadata(ctx, o)
+	}
+	if s.kind == connections.OpenTenBase {
+		return s.openTenBaseTableMetadata(ctx, o)
+	}
 	t, e := s.structure(ctx, s.db, o)
 	if e != nil {
 		return nil, e
@@ -468,6 +474,20 @@ func (s *Session) DataRuntime() contract.DataRuntime {
 			kind = "VIEW"
 		}
 		descriptor, _ := connections.Describe(s.kind)
+		if s.kind == connections.Cloudberry || s.kind == connections.OpenTenBase {
+			if meta.Kind == "外部表" {
+				kind = "EXTERNAL TABLE"
+			}
+			options := append([]string(nil), meta.StorageOptions...)
+			if meta.Distribution != "" {
+				options = append(options, meta.Distribution)
+			}
+			if meta.ExternalServer != "" {
+				options = append(options, "SERVER "+meta.ExternalServer)
+			}
+			options = append(options, meta.ExternalOptions...)
+			return &contract.TableInfo{Database: db, Name: t, Kind: kind, Engine: meta.Engine, Comment: meta.Comment, CreateOptions: strings.Join(options, "\n")}, nil
+		}
 		return &contract.TableInfo{Database: db, Name: t, Kind: kind, Engine: descriptor.Label}, nil
 	}}
 	r.Verify = func(ctx context.Context, id int64, db, t string, result *contract.DataEditResult) (*contract.DataVerification, error) {

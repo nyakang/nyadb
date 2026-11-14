@@ -30,7 +30,7 @@ type Plan struct {
 
 func Build(original Snapshot, draft Draft) (Plan, error) {
 	p := Plan{Original: original, Desired: draft.Clone(), Fingerprint: original.Fingerprint()}
-	if original.Engine != "" && original.Engine != "mysql" && original.Engine != "mariadb" && original.Engine != "tidb" {
+	if original.Engine != "" && original.Engine != "mysql" && original.Engine != "mariadb" && original.Engine != "tidb" && original.Engine != "tdsql" && original.Engine != "polardb" && original.Engine != "greatsql" && original.Engine != "dolt" {
 		return p, errors.New("unsupported table design engine")
 	}
 	if original.Engine == "tidb" {

@@ -30,7 +30,8 @@ type Clause struct {
 }
 type Trigger struct{ Name, SQL, SQLMode string }
 type Snapshot struct {
-	// Engine is empty for legacy MySQL snapshots, or mysql/mariadb/tidb.
+	// Engine is empty for legacy MySQL snapshots, or the concrete MySQL-family
+	// product ID. The fingerprint retains the original product identity.
 	// OceanBase snapshots use oceanbase and are read-only to this planner.
 	Engine               string
 	TriggersUnknown      bool

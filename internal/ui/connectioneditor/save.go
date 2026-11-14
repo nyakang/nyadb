@@ -52,6 +52,10 @@ func (s *State) draftProfile() (connections.Profile, error) {
 		return p, fieldError("初始数据库", "常规", "请输入此连接绑定的 SQL Server 数据库")
 	}
 	if p.Kind.IsPostgreSQLFamily() && strings.TrimSpace(p.Database) == "" {
+		if p.Kind == connections.Cloudberry || p.Kind == connections.OpenTenBase {
+			descriptor, _ := connections.Describe(p.Kind)
+			return p, fieldError("初始数据库", "常规", fmt.Sprintf(locales.Text("请输入此连接绑定的 %s 数据库"), descriptor.Label))
+		}
 		if p.Kind == connections.Kingbase {
 			return p, fieldError("初始数据库", "常规", "请输入此连接绑定的 KingbaseES 数据库")
 		}
@@ -264,7 +268,7 @@ func (s *State) Save() {
 			return
 		}
 	}
-	if saved.Kind.IsPostgreSQLFamily() || saved.Kind == connections.Consul || saved.Kind == connections.Etcd || saved.Kind == connections.Neo4j || saved.Kind == connections.Qdrant || saved.Kind == connections.Meilisearch || saved.Kind == connections.CouchDB || saved.Kind == connections.Cassandra || saved.Kind == connections.Solr || saved.Kind == connections.Elasticsearch || saved.Kind == connections.Easysearch || saved.Kind == connections.ClickHouse || saved.Kind == connections.Doris || saved.Kind == connections.StarRocks || saved.Kind == connections.Trino || saved.Kind == connections.SQLServer || saved.Kind == connections.Oracle || saved.Kind == connections.Dameng || saved.Kind == connections.MongoDB || saved.Kind == connections.Redis {
+	if saved.Kind.IsPostgreSQLFamily() || saved.Kind == connections.Consul || saved.Kind == connections.Etcd || saved.Kind == connections.Neo4j || saved.Kind == connections.Qdrant || saved.Kind == connections.Meilisearch || saved.Kind == connections.CouchDB || saved.Kind == connections.Cassandra || saved.Kind == connections.Solr || saved.Kind == connections.Elasticsearch || saved.Kind == connections.Easysearch || saved.Kind == connections.ClickHouse || saved.Kind == connections.Doris || saved.Kind == connections.SelectDB || saved.Kind == connections.StarRocks || saved.Kind == connections.Trino || saved.Kind == connections.SQLServer || saved.Kind == connections.Oracle || saved.Kind == connections.Dameng || saved.Kind == connections.MongoDB || saved.Kind == connections.Redis {
 		s.connectionMainConfig = s.currentConnectionSnapshot()
 		if err := s.persistConnectionPasswords(saved, before); err != nil {
 			if p.ID == 0 {

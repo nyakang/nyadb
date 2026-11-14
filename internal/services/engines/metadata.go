@@ -39,7 +39,7 @@ func (s *Session) Objects(ctx context.Context, schema string) ([]contract.Object
 		}
 		return out, nil
 	}
-	if s.kind == connections.PostgreSQL || s.kind == connections.Kingbase {
+	if s.kind == connections.PostgreSQL || s.kind == connections.Cloudberry || s.kind == connections.OpenTenBase || s.kind == connections.Kingbase {
 		objects, err := s.postgresBrowse(ctx, s.Namespace(schema))
 		if err != nil {
 			return nil, err

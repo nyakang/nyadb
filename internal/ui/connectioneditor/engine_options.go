@@ -351,7 +351,7 @@ func (s *State) advanceEngineOptions(p *connections.Profile) error {
 		}
 	}
 	switch p.Kind {
-	case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.GaussDB, connections.Kingbase:
+	case connections.PostgreSQL, connections.Cloudberry, connections.OpenTenBase, connections.CockroachDB, connections.OpenGauss, connections.GaussDB, connections.Kingbase:
 		values := [4]int{}
 		labels := []string{"连接超时（秒）", "最大连接数", "语句超时（毫秒）", "锁等待超时（毫秒）"}
 		for i, raw := range s.engineNumbers {
@@ -503,9 +503,31 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 			ui.Text(c, locales.Text("verify-full 校验证书链和主机名；disable 关闭 TLS。"))
 		})
 		return true
-	case connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.GaussDB, connections.Kingbase:
+	case connections.SelectDB:
+		a := &s.connectionDraft.SelectDBOptions
+		if tab == "高级" {
+			theme.Form(c, formWidth, func() {
+				s.editorInputRow(c, "目录", "SelectDB 目录", &a.Catalog, labelWidth, fieldWidth)
+			})
+			return true
+		}
+		if tab != "SSL" {
+			return false
+		}
+		theme.Form(c, formWidth, func() {
+			ui.Text(c, locales.Text("SelectDB 的 FE 查询端口默认为 9030。"))
+			theme.Field(c, locales.Text("TLS 模式："), func() {
+				connectionFormSelect(c, &s.connectionDraft.TLSMode, []string{"verify-full", "disable"}, "SelectDB TLS 模式", fieldWidth, false)
+			})
+			s.editorInputRow(c, "CA 证书", "SelectDB CA 证书", &a.CAFile, labelWidth, fieldWidth)
+			s.editorInputRow(c, "证书服务器名", "证书服务器名", &a.ServerName, labelWidth, fieldWidth)
+			ui.Text(c, locales.Text("verify-full 校验证书链和主机名；disable 关闭 TLS。"))
+		})
+		return true
+	case connections.PostgreSQL, connections.Cloudberry, connections.OpenTenBase, connections.CockroachDB, connections.OpenGauss, connections.GaussDB, connections.Kingbase:
 		a := &s.connectionDraft.PostgreSQLOptions
-		product := "PostgreSQL"
+		descriptor, _ := connections.Describe(s.connectionDraft.Kind)
+		product := descriptor.Label
 		if s.connectionDraft.Kind == connections.CockroachDB {
 			product = "CockroachDB"
 		} else if s.connectionDraft.Kind == connections.Kingbase {

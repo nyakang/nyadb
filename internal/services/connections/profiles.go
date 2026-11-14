@@ -15,8 +15,14 @@ const (
 	MySQL         Kind = "mysql"
 	MariaDB       Kind = "mariadb"
 	TiDB          Kind = "tidb"
+	TDSQL         Kind = "tdsql"
+	PolarDB       Kind = "polardb"
+	GreatSQL      Kind = "greatsql"
+	Dolt          Kind = "dolt"
 	OceanBase     Kind = "oceanbase"
 	PostgreSQL    Kind = "postgresql"
+	Cloudberry    Kind = "cloudberry"
+	OpenTenBase   Kind = "opentenbase"
 	CockroachDB   Kind = "cockroachdb"
 	OpenGauss     Kind = "opengauss"
 	GaussDB       Kind = "gaussdb"
@@ -25,6 +31,7 @@ const (
 	SQLite        Kind = "sqlite"
 	ClickHouse    Kind = "clickhouse"
 	Doris         Kind = "doris"
+	SelectDB      Kind = "selectdb"
 	StarRocks     Kind = "starrocks"
 	Trino         Kind = "trino"
 	Elasticsearch Kind = "elasticsearch"
@@ -44,14 +51,20 @@ const (
 
 // IsMySQLFamily identifies products sharing the MySQL client and connection
 // settings. Product identity and capabilities remain separate.
-func (k Kind) IsMySQLFamily() bool { return k == MySQL || k == MariaDB || k == TiDB || k == OceanBase }
+func (k Kind) IsMySQLFamily() bool {
+	switch k {
+	case MySQL, MariaDB, TiDB, OceanBase, TDSQL, PolarDB, GreatSQL, Dolt:
+		return true
+	}
+	return false
+}
 
 // IsNativeKV selects the native request document rather than a SQL editor.
 func (k Kind) IsNativeKV() bool { return k == Etcd || k == Consul }
 
 // IsPostgreSQLFamily identifies products sharing PostgreSQL wire transport and options.
 func (k Kind) IsPostgreSQLFamily() bool {
-	return k == PostgreSQL || k == CockroachDB || k == OpenGauss || k == GaussDB || k == Kingbase
+	return k == PostgreSQL || k == Cloudberry || k == OpenTenBase || k == CockroachDB || k == OpenGauss || k == GaussDB || k == Kingbase
 }
 
 // IsGaussFamily identifies native Gauss syntax and catalog rules. Each product
@@ -87,6 +100,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	SelectDBOptions      SelectDBOptions
 	ConsulOptions        ConsulOptions
 	EtcdOptions          EtcdOptions
 	Neo4jOptions         Neo4jOptions

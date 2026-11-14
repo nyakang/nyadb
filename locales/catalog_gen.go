@@ -34,6 +34,16 @@ type Messages struct{ locale string }
 // source language.
 func In(locale string) Messages { return Messages{locale} }
 
+// EngineBoundDatabaseRequired says "请输入此连接绑定的 %s 数据库"
+// in the language the app shows.
+func EngineBoundDatabaseRequired() string { return In(i18n.Locale()).EngineBoundDatabaseRequired() }
+
+// EngineBoundDatabaseRequired says "请输入此连接绑定的 %s 数据库"
+// in the language of msgs.
+func (msgs Messages) EngineBoundDatabaseRequired() string {
+	return Catalog.Format(msgs.locale, "engineBoundDatabaseRequired", nil)
+}
+
 // EtcdNewKVRequest says "新建 KV 请求"
 // in the language the app shows.
 func EtcdNewKVRequest() string { return In(i18n.Locale()).EtcdNewKVRequest() }
@@ -42872,4 +42882,24 @@ func ConsulPrefix() string { return In(i18n.Locale()).ConsulPrefix() }
 // in the language of msgs.
 func (msgs Messages) ConsulPrefix() string {
 	return Catalog.Format(msgs.locale, "consulPrefix", nil)
+}
+
+// SelectdbNativeEndpoint says "SelectDB 的 FE 查询端口默认为 9030。"
+// in the language the app shows.
+func SelectdbNativeEndpoint() string { return In(i18n.Locale()).SelectdbNativeEndpoint() }
+
+// SelectdbNativeEndpoint says "SelectDB 的 FE 查询端口默认为 9030。"
+// in the language of msgs.
+func (msgs Messages) SelectdbNativeEndpoint() string {
+	return Catalog.Format(msgs.locale, "selectdbNativeEndpoint", nil)
+}
+
+// SelectdbSessionPassword says "SelectDB 会话密码"
+// in the language the app shows.
+func SelectdbSessionPassword() string { return In(i18n.Locale()).SelectdbSessionPassword() }
+
+// SelectdbSessionPassword says "SelectDB 会话密码"
+// in the language of msgs.
+func (msgs Messages) SelectdbSessionPassword() string {
+	return Catalog.Format(msgs.locale, "selectdbSessionPassword", nil)
 }

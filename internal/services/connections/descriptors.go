@@ -38,6 +38,8 @@ func Describe(kind Kind) (Descriptor, bool) {
 		return Descriptor{kind, "StarRocks", "starrocks", "server", "mysql", 9030, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Count: true, Export: true, JSONL: true, Explain: true}}, true
 	case Doris:
 		return Descriptor{kind, "Apache Doris", "doris", "server", "mysql", 9030, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Count: true, Export: true, JSONL: true, Explain: true}}, true
+	case SelectDB:
+		return Descriptor{kind, "SelectDB", "selectdb", "server", "mysql", 9030, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Count: true, Export: true, JSONL: true, Explain: true}}, true
 	case Dameng:
 		return Descriptor{kind, "达梦", "dameng", "server", "dameng", 5236, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Count: true, Keyset: true, FieldChunks: true, Export: true, JSONL: true, Import: true}}, true
 	case Redis:
@@ -63,6 +65,26 @@ func Describe(kind Kind) (Descriptor, bool) {
 		d, _ := Describe(MySQL)
 		d.Kind, d.Label, d.DefaultPort = kind, "TiDB", 4000
 		return d, true
+	case TDSQL, PolarDB, GreatSQL, Dolt:
+		d, _ := Describe(MySQL)
+		d.Kind = kind
+		switch kind {
+		case TDSQL:
+			d.Label = "TDSQL"
+		case PolarDB:
+			d.Label = "PolarDB"
+		case GreatSQL:
+			d.Label = "GreatSQL"
+		case Dolt:
+			d.Label = "Dolt"
+		}
+		// Compatible SQL and data features share the MySQL executor. Product
+		// administration and backup contracts require separate verification.
+		d.Capabilities.Accounts = false
+		d.Capabilities.Backup = false
+		d.Capabilities.Restore = false
+		d.Capabilities.Maintenance = false
+		return d, true
 	case OceanBase:
 		return Descriptor{kind, "OceanBase", "mysql", "server", "mysql", 2881, contract.Capabilities{Objects: true, DesignViews: true, Maintenance: true, Explain: true, Query: true, Metadata: true, Transactions: true, EditableTables: true, Count: true, FieldChunks: true, Analysis: true, Export: true, Import: true, Keyset: true}}, true
 	case CockroachDB:
@@ -75,6 +97,12 @@ func Describe(kind Kind) (Descriptor, bool) {
 		return Descriptor{kind, "KingbaseES", "postgres", "server", "postgres", 54321, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Import: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
 	case PostgreSQL:
 		return Descriptor{kind, "PostgreSQL", "postgres", "server", "postgres", 5432, contract.Capabilities{Objects: true, DesignViews: true, Backup: true, Restore: true, Import: true, Maintenance: true, Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, DesignTables: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
+	case Cloudberry:
+		// Native distribution and storage must be preserved before offering
+		// schema mutation, import or PostgreSQL administration tools.
+		return Descriptor{kind, "Apache Cloudberry", "postgres", "server", "postgres", 5432, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
+	case OpenTenBase:
+		return Descriptor{kind, "OpenTenBase", "postgres", "server", "postgres", 11000, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
 	case SQLite:
 		return Descriptor{kind, "SQLite", "sqlite", "file", "sqlite", 0, contract.Capabilities{Backup: true, Restore: true, Import: true, Maintenance: true, DesignTables: true, DesignViews: true, Objects: true, Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Explain: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
 	case ClickHouse:
@@ -94,9 +122,9 @@ func (d Descriptor) FieldTypes() []string {
 		return []string{"BIGINT", "HUGEINT", "DECIMAL(18,2)", "VARCHAR", "BOOLEAN", "DATE", "TIMESTAMP", "TIMESTAMPTZ", "BLOB", "UUID", "JSON", "INTEGER[]"}
 	case SQLServer:
 		return []string{"bigint", "int", "smallint", "decimal(18,2)", "nvarchar(255)", "nvarchar(max)", "datetime2", "datetimeoffset", "date", "varbinary(max)", "bit", "uniqueidentifier"}
-	case MySQL, MariaDB, TiDB, OceanBase:
+	case MySQL, MariaDB, TiDB, OceanBase, TDSQL, PolarDB, GreatSQL, Dolt:
 		return []string{"bigint", "int", "smallint", "decimal(10,2)", "varchar(255)", "text", "datetime", "timestamp", "date", "json", "blob", "boolean"}
-	case PostgreSQL, CockroachDB, OpenGauss, GaussDB, Kingbase:
+	case PostgreSQL, Cloudberry, OpenTenBase, CockroachDB, OpenGauss, GaussDB, Kingbase:
 		return []string{"bigint", "integer", "smallint", "numeric(10,2)", "text", "varchar(255)", "boolean", "timestamp", "timestamptz", "date", "json", "jsonb", "bytea", "uuid"}
 	case SQLite:
 		return []string{"INTEGER", "TEXT", "REAL", "BLOB", "NUMERIC"}

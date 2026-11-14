@@ -394,6 +394,17 @@ func mysqlStructureInfoView(c *ui.Context, structure *contract.TableStructure) {
 		{"对象类型", structure.Kind}, {"存储引擎", structure.Engine},
 		{"排序规则", structure.Collation}, {"表注释", structure.Comment},
 	}
+	options := append([]string(nil), structure.StorageOptions...)
+	if structure.Distribution != "" {
+		options = append(options, structure.Distribution)
+	}
+	if structure.ExternalServer != "" {
+		options = append(options, "SERVER "+structure.ExternalServer)
+	}
+	options = append(options, structure.ExternalOptions...)
+	if len(options) != 0 {
+		rows = append(rows, [2]string{"创建选项", strings.Join(options, "\n")})
+	}
 	if structure.EstimatedRows != nil {
 		rows = append(rows, [2]string{"估算行数", strconv.FormatInt(*structure.EstimatedRows, 10) + "（可能为近似值）"})
 	}

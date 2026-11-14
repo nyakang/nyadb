@@ -52,7 +52,7 @@ func (s *Session) dataQuery(ctx context.Context, o contract.ObjectRef, owner con
 	}
 	defer tx.Rollback()
 	// Protect qualified relation identity while metadata and values are read.
-	if s.kind.IsGaussFamily() {
+	if s.kind.IsGaussFamily() || s.kind == connections.Cloudberry || s.kind == connections.OpenTenBase {
 		// Native LOCK TABLE rejects views. A bounded SELECT locks both the
 		// qualified relation and its referenced relations without modifying it
 		// or requiring ownership, and retains those locks until this read ends.
@@ -278,7 +278,11 @@ func (s *Session) dataOrder(ctx context.Context, q queryer, t contract.Table, r 
 		if s.kind == connections.Kingbase {
 			keyArg = kingbasepq.Array(t.Key)
 		}
-		err := queryOne(ctx, q, `SELECT c.oid, EXISTS(SELECT 1 FROM pg_index i JOIN pg_class ic ON ic.oid=i.indexrelid JOIN pg_am am ON am.oid=ic.relam WHERE i.indrelid=c.oid AND i.indisunique AND i.indisvalid AND i.indpred IS NULL AND i.indexprs IS NULL AND am.amname='btree' AND ARRAY(SELECT a.attname::text FROM unnest(i.indkey) WITH ORDINALITY k(num,ord) JOIN pg_attribute a ON a.attrelid=c.oid AND a.attnum=k.num WHERE k.ord<=i.indnkeyatts ORDER BY k.ord)=$3::text[] AND NOT EXISTS(SELECT 1 FROM unnest(i.indclass) ocid JOIN pg_opclass oc ON oc.oid=ocid JOIN pg_namespace ns ON ns.oid=oc.opcnamespace WHERE NOT oc.opcdefault OR ns.nspname<>'pg_catalog')) FROM pg_class c JOIN pg_namespace ns ON ns.oid=c.relnamespace WHERE ns.nspname=$1 AND c.relname=$2`, []any{t.Object.Schema, t.Object.Name, keyArg}, &oid, &approved)
+		keyCount, keyFlags := "i.indnkeyatts", ""
+		if s.kind == connections.OpenTenBase {
+			keyCount, keyFlags = "i.indnatts", " AND i.indisready AND i.indislive AND i.indimmediate"
+		}
+		err := queryOne(ctx, q, fmt.Sprintf(`SELECT c.oid, EXISTS(SELECT 1 FROM pg_index i JOIN pg_class ic ON ic.oid=i.indexrelid JOIN pg_am am ON am.oid=ic.relam WHERE i.indrelid=c.oid AND i.indisunique AND i.indisvalid%s AND i.indpred IS NULL AND i.indexprs IS NULL AND am.amname='btree' AND ARRAY(SELECT a.attname::text FROM unnest(i.indkey) WITH ORDINALITY k(num,ord) JOIN pg_attribute a ON a.attrelid=c.oid AND a.attnum=k.num WHERE k.ord<=%s ORDER BY k.ord)=$3::text[] AND NOT EXISTS(SELECT 1 FROM unnest(i.indclass) ocid JOIN pg_opclass oc ON oc.oid=ocid JOIN pg_namespace ns ON ns.oid=oc.opcnamespace WHERE NOT oc.opcdefault OR ns.nspname<>'pg_catalog')) FROM pg_class c JOIN pg_namespace ns ON ns.oid=c.relnamespace WHERE ns.nspname=$1 AND c.relname=$2`, keyFlags, keyCount), []any{t.Object.Schema, t.Object.Name, keyArg}, &oid, &approved)
 		if err != nil {
 			return nil, false, "", err
 		}

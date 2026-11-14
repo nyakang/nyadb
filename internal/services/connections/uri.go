@@ -85,6 +85,14 @@ func ParseURI(raw string) (URIImport, error) {
 		kind = OceanBase
 	case "tidb":
 		kind = TiDB
+	case "tdsql":
+		kind = TDSQL
+	case "polardb":
+		kind = PolarDB
+	case "greatsql":
+		kind = GreatSQL
+	case "dolt":
+		kind = Dolt
 	case "cockroachdb", "cockroach":
 		kind = CockroachDB
 	case "opengauss":
@@ -93,10 +101,16 @@ func ParseURI(raw string) (URIImport, error) {
 		kind = Kingbase
 	case "postgres", "postgresql":
 		kind = PostgreSQL
+	case "cloudberry":
+		kind = Cloudberry
+	case "opentenbase":
+		kind = OpenTenBase
 	case "clickhouse":
 		kind = ClickHouse
 	case "doris":
 		kind = Doris
+	case "selectdb":
+		kind = SelectDB
 	case "starrocks":
 		kind = StarRocks
 	case "sqlite", "file":
@@ -286,6 +300,20 @@ func ParseURI(raw string) (URIImport, error) {
 		}
 	}
 	for key, values := range options {
+		if kind == SelectDB && (key == "catalog" || key == "ca_file" || key == "server_name") {
+			if len(values) != 1 || values[0] == "" {
+				return fail(ErrURIOptions)
+			}
+			switch key {
+			case "catalog":
+				p.SelectDBOptions.Catalog = values[0]
+			case "ca_file":
+				p.SelectDBOptions.CAFile = values[0]
+			case "server_name":
+				p.SelectDBOptions.ServerName = values[0]
+			}
+			continue
+		}
 		if kind == StarRocks && (key == "catalog" || key == "ca_file" || key == "server_name") {
 			if len(values) != 1 || values[0] == "" {
 				return fail(ErrURIOptions)
@@ -314,6 +342,13 @@ func ParseURI(raw string) (URIImport, error) {
 			}
 			continue
 		}
+		if (kind == Cloudberry || kind == OpenTenBase) && key == "schema" {
+			if len(values) != 1 || values[0] == "" {
+				return fail(ErrURIOptions)
+			}
+			p.PostgreSQLOptions.DefaultSchema = values[0]
+			continue
+		}
 		if key != "sslmode" || len(values) != 1 {
 			return fail(ErrURIOptions)
 		}
@@ -330,7 +365,7 @@ func ParseURI(raw string) (URIImport, error) {
 		if kind.IsMySQLFamily() && mode != "disable" && mode != "require" && mode != "verify-full" {
 			return fail(ErrURIOptions)
 		}
-		if kind == PostgreSQL && mode != "disable" && mode != "prefer" && mode != "require" && mode != "verify-ca" && mode != "verify-full" {
+		if (kind == PostgreSQL || kind == Cloudberry || kind == OpenTenBase) && mode != "disable" && mode != "prefer" && mode != "require" && mode != "verify-ca" && mode != "verify-full" {
 			return fail(ErrURIOptions)
 		}
 		p.TLSMode = mode

@@ -129,70 +129,10 @@ func (s *State) connectionModal(c *ui.Context) {
 }
 
 func connectionKindName(kind connections.Kind) string {
-	switch kind {
-	case connections.Consul:
-		return "Consul"
-	case connections.Etcd:
-		return "etcd"
-	case connections.Qdrant:
-		return "Qdrant"
-	case connections.DuckDB:
-		return "DuckDB"
-	case connections.MySQL:
-		return "MySQL"
-	case connections.MariaDB:
-		return "MariaDB"
-	case connections.OceanBase:
-		return "OceanBase"
-	case connections.TiDB:
-		return "TiDB"
-	case connections.Elasticsearch:
-		return "Elasticsearch"
-	case connections.Easysearch:
-		return "Easysearch"
-	case connections.Neo4j:
-		return "Neo4j"
-	case connections.Cassandra:
-		return "Apache Cassandra"
-	case connections.Meilisearch:
-		return "Meilisearch"
-	case connections.CouchDB:
-		return "Apache CouchDB"
-	case connections.Solr:
-		return "Apache Solr"
-	case connections.Redis:
-		return "Redis"
-	case connections.MongoDB:
-		return "MongoDB"
-	case connections.Dameng:
-		return "达梦"
-	case connections.Oracle:
-		return "Oracle"
-	case connections.SQLServer:
-		return "SQL Server"
-	case connections.CockroachDB:
-		return "CockroachDB"
-	case connections.OpenGauss:
-		return "openGauss"
-	case connections.GaussDB:
-		return "GaussDB"
-	case connections.Kingbase:
-		return "KingbaseES"
-	case connections.PostgreSQL:
-		return "PostgreSQL"
-	case connections.SQLite:
-		return "SQLite"
-	case connections.Trino:
-		return "Trino"
-	case connections.StarRocks:
-		return "StarRocks"
-	case connections.Doris:
-		return "Apache Doris"
-	case connections.ClickHouse:
-		return "ClickHouse"
-	default:
-		return "未知类型"
+	if descriptor, ok := connections.Describe(kind); ok {
+		return descriptor.Label
 	}
+	return "未知类型"
 }
 
 // LoadLocalResearchIcons preserves bootstrap's opt-in research entry point.

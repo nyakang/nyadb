@@ -15,6 +15,26 @@ import (
 )
 
 func validateMySQLFamilyServer(ctx context.Context, db *sql.DB, kind connections.Kind) error {
+	if kind == connections.GreatSQL {
+		var version, comment string
+		if err := db.QueryRowContext(ctx, "SELECT VERSION(), @@version_comment").Scan(&version, &comment); err != nil {
+			return err
+		}
+		if !strings.Contains(strings.ToLower(version+" "+comment), "greatsql") {
+			return fmt.Errorf("%w: GreatSQL connection requires a GreatSQL server", contract.ErrUnsupported)
+		}
+		return nil
+	}
+	if kind == connections.Dolt {
+		var version string
+		if err := db.QueryRowContext(ctx, "SELECT DOLT_VERSION()").Scan(&version); err != nil {
+			return fmt.Errorf("%w: Dolt connection requires a Dolt server", contract.ErrUnsupported)
+		}
+		if strings.TrimSpace(version) == "" {
+			return fmt.Errorf("%w: Dolt server version is unavailable", contract.ErrUnsupported)
+		}
+		return nil
+	}
 	if kind == connections.OceanBase {
 		return validateOceanBaseServer(ctx, db)
 	}

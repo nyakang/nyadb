@@ -150,7 +150,11 @@ func readMySQLFieldChunk(qctx context.Context, queryer mysqlEditQueryer, databas
 	if binary {
 		lengthFn = "LENGTH"
 	}
-	sqlText := "SELECT SUBSTRING(" + colName + ", ?, ?), " + lengthFn + "(" + colName + ") FROM " +
+	fragmentSQL := "SUBSTRING(" + colName + ", ?, ?)"
+	if binary {
+		fragmentSQL = mysqlBinarySubstring(qctx, colName, " ?", " ?")
+	}
+	sqlText := "SELECT " + fragmentSQL + ", " + lengthFn + "(" + colName + ") FROM " +
 		dbName + "." + tableName + " WHERE " + strings.Join(where, " AND ") + " LIMIT 2"
 	data, err := queryer.QueryContext(qctx, sqlText, args...)
 	if err != nil {

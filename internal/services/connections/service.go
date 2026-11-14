@@ -77,6 +77,8 @@ func Defaults(kind Kind) (Profile, error) {
 		return Profile{Kind: StarRocks, Host: "localhost", Port: 9030, Username: "root", TLSMode: "verify-full", StarRocksOptions: StarRocksOptions{Version: 1, Catalog: "default_catalog"}}, nil
 	case Doris:
 		return Profile{Kind: Doris, Host: "localhost", Port: 9030, Username: "root", TLSMode: "verify-full", DorisOptions: DorisOptions{Version: 1, Catalog: "internal"}}, nil
+	case SelectDB:
+		return Profile{Kind: SelectDB, Host: "localhost", Port: 9030, Username: "root", TLSMode: "verify-full", SelectDBOptions: SelectDBOptions{Version: 1, Catalog: "internal"}}, nil
 	case Dameng:
 		return Profile{Kind: Dameng, Host: "localhost", Port: 5236, Database: "DAMENG", Username: "SYSDBA", TLSMode: "verify-full", DamengOptions: DefaultDamengOptions()}, nil
 	case Redis:
@@ -89,7 +91,7 @@ func Defaults(kind Kind) (Profile, error) {
 		return Profile{Kind: DuckDB, Database: ":memory:", DuckDBOptions: DefaultDuckDBOptions()}, nil
 	case SQLServer:
 		return Profile{Kind: SQLServer, Host: "localhost", Port: 1433, Database: "master", Username: "sa", TLSMode: "verify-full", SQLServerOptions: DefaultSQLServerOptions()}, nil
-	case MySQL, MariaDB:
+	case MySQL, MariaDB, TDSQL, PolarDB, GreatSQL, Dolt:
 		return Profile{Kind: kind, Host: "localhost", Port: 3306, Username: "root", MySQLAdvanced: DefaultMySQLAdvanced()}, nil
 	case OceanBase:
 		return Profile{Kind: kind, Host: "localhost", Port: 2881, Username: "root@test", MySQLAdvanced: DefaultMySQLAdvanced()}, nil
@@ -105,6 +107,10 @@ func Defaults(kind Kind) (Profile, error) {
 		return Profile{Kind: Kingbase, Host: "localhost", Port: 54321, Database: "test", Username: "system", TLSMode: "verify-full", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
 	case PostgreSQL:
 		return Profile{Kind: PostgreSQL, Host: "localhost", Port: 5432, Database: "postgres", Username: "postgres", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
+	case Cloudberry:
+		return Profile{Kind: kind, Host: "localhost", Port: 5432, Database: "postgres", Username: "postgres", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
+	case OpenTenBase:
+		return Profile{Kind: kind, Host: "localhost", Port: 11000, Database: "postgres", Username: "opentenbase", PostgreSQLOptions: DefaultPostgreSQLOptions()}, nil
 	case SQLite:
 		return Profile{Kind: SQLite, SQLiteOptions: DefaultSQLiteOptions()}, nil
 	case ClickHouse:

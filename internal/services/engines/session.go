@@ -110,6 +110,18 @@ func (m *Manager) Connect(ctx context.Context, p connections.Profile, password s
 			return redact(err, password)
 		}
 	}
+	if p.Kind == connections.Cloudberry {
+		if err := validateCloudberryServer(ctx, db); err != nil {
+			db.Close()
+			return redact(err, password)
+		}
+	}
+	if p.Kind == connections.OpenTenBase {
+		if err := validateOpenTenBaseServer(ctx, db); err != nil {
+			db.Close()
+			return redact(err, password)
+		}
+	}
 	// SQL documents pin physical sessions. Their pool must never consume the
 	// connections needed by metadata, data documents or maintenance jobs.
 	sqlDB, err := strategy.open(p, password, m.DialContext)

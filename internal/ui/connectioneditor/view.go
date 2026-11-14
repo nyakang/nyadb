@@ -73,11 +73,11 @@ func connectionEditorTabNames(kind connections.Kind) []string {
 		return []string{"常规", "高级", "备注"}
 	case connections.SQLite:
 		return []string{"常规", "高级", "附加的数据库", "HTTP", "备注"}
-	case connections.CockroachDB, connections.OpenGauss, connections.GaussDB, connections.Kingbase:
+	case connections.Cloudberry, connections.OpenTenBase, connections.CockroachDB, connections.OpenGauss, connections.GaussDB, connections.Kingbase:
 		return []string{"常规", "高级", "SSL", "备注"}
 	case connections.PostgreSQL:
 		return []string{"常规", "高级", "SSL", "SSH", "HTTP", "备注"}
-	case connections.Redis, connections.SQLServer, connections.Oracle, connections.MongoDB, connections.Dameng:
+	case connections.Redis, connections.SQLServer, connections.Oracle, connections.MongoDB, connections.Dameng, connections.SelectDB:
 		return []string{"常规", "高级", "SSL", "备注"}
 	case connections.CouchDB, connections.Cassandra, connections.Solr, connections.Easysearch, connections.Elasticsearch, connections.Trino, connections.StarRocks, connections.Doris, connections.ClickHouse:
 		return []string{"常规", "SSL", "备注"}
@@ -238,7 +238,7 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 			s.editorInputRow(c, "默认 Catalog：", "Trino 默认 Catalog", &p.Database, labelWidth, fieldWidth)
 			s.editorInputRow(c, "默认 Schema：", "Trino 默认 Schema", &p.TrinoOptions.DefaultSchema, labelWidth, fieldWidth)
 		}
-		if p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.StarRocks || p.Kind == connections.SQLServer || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Dameng {
+		if p.Kind.IsPostgreSQLFamily() || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.SelectDB || p.Kind == connections.StarRocks || p.Kind == connections.SQLServer || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Dameng {
 			s.editorInputRow(c, "初始数据库：", "初始数据库", &p.Database, labelWidth, fieldWidth)
 		}
 		if p.Kind == connections.Oracle {

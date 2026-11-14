@@ -8,7 +8,7 @@ import (
 
 func TestNavicatObservedTreeGroupHierarchy(t *testing.T) {
 	s := New()
-	if got := s.catalogTreeDirect(); len(got) != 29 {
+	if got := s.catalogTreeDirect(); len(got) != 37 {
 		t.Fatalf("database rows including Consul; got %d", len(got))
 	}
 	groups := s.catalogTreeGroups()
@@ -36,16 +36,30 @@ func TestNavicatObservedTreeExpansionAndSelection(t *testing.T) {
 	if s.treeOpen["华为"] {
 		t.Fatal("vendors should start collapsed")
 	}
-	tt.Scroll(450, 450, 0, 80)
-	tt.Frame()
+	bringIntoView := func(label string) {
+		t.Helper()
+		for attempt := 0; attempt < 20; attempt++ {
+			r, found := tt.Find(label)
+			if found && r.Y >= 0 && r.Y+r.H <= 620 {
+				return
+			}
+			distance := float32(80)
+			if found && r.Y < 0 {
+				distance = -distance
+			}
+			tt.Scroll(450, 450, 0, distance)
+			tt.Frame()
+		}
+		t.Fatalf("tree control did not scroll into view: %s", label)
+	}
+	bringIntoView("展开 华为")
 	if err := tt.Click("展开 华为"); err != nil {
 		t.Fatal(err)
 	}
 	if !s.treeOpen["华为"] || s.treeOpen["阿里云"] {
 		t.Fatal("expand toggled wrong vendor")
 	}
-	tt.Scroll(450, 450, 0, 120)
-	tt.Frame()
+	bringIntoView("选择 华为云 GaussDB 主备版")
 	if err := tt.Click("选择 华为云 GaussDB 主备版"); err != nil {
 		t.Fatal(err)
 	}

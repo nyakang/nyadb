@@ -25,13 +25,13 @@ func (s *Session) Namespace(database string) contract.NamespaceRef {
 	if !validName(database) {
 		return contract.NamespaceRef{ProfileID: s.ProfileID()}
 	}
-	return contract.NamespaceRef{ProfileID: s.ProfileID(), Catalog: "internal", Schema: database}
+	return contract.NamespaceRef{ProfileID: s.ProfileID(), Catalog: s.catalog(), Schema: database}
 }
 func (s *Session) checkNamespace(n contract.NamespaceRef) error {
 	if !s.Alive() {
 		return contract.ErrRevoked
 	}
-	if n.ProfileID != s.ProfileID() || n.Catalog != "internal" || !validName(n.Schema) {
+	if n.ProfileID != s.ProfileID() || n.Catalog != s.catalog() || !validName(n.Schema) {
 		return connections.ErrInvalid
 	}
 	return nil
@@ -50,17 +50,12 @@ func (s *Session) checkObject(o contract.ObjectRef) error {
 }
 
 // Metadata has separate limits and retains full native definitions/defaults.
-func metadataRows(ctx context.Context, c *sql.Conn, q string, args ...any) ([][]sql.NullString, error) {
-	st, err := c.PrepareContext(ctx, q)
+func metadataRows(ctx context.Context, c *physical, q string, args ...any) ([][]sql.NullString, error) {
+	rows, closeRows, err := queryRows(ctx, c, q, args...)
 	if err != nil {
 		return nil, safeError(err)
 	}
-	defer st.Close()
-	rows, err := st.QueryContext(ctx, args...)
-	if err != nil {
-		return nil, safeError(err)
-	}
-	defer rows.Close()
+	defer closeRows()
 	cols, err := rows.Columns()
 	if err != nil {
 		return nil, safeError(err)
@@ -103,7 +98,7 @@ func (s *Session) Namespaces(ctx context.Context) ([]contract.Namespace, error) 
 		return nil, err
 	}
 	defer f.Close()
-	rows, err := metadataRows(child, f.conn, "SHOW DATABASES FROM internal")
+	rows, err := metadataRows(child, f, "SHOW DATABASES FROM "+quote(s.catalog()))
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +126,10 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 		return nil, err
 	}
 	defer f.Close()
-	rows, err := metadataRows(child, f.conn, "SELECT TABLE_NAME,TABLE_TYPE,ENGINE,TABLE_COMMENT FROM internal.information_schema.tables WHERE TABLE_SCHEMA=? ORDER BY TABLE_NAME", n.Schema)
+	if s.profile.Kind == connections.SelectDB {
+		return selectDBBrowse(child, f, n)
+	}
+	rows, err := metadataRows(child, f, "SELECT TABLE_NAME,TABLE_TYPE,ENGINE,TABLE_COMMENT FROM internal.information_schema.tables WHERE TABLE_SCHEMA=? ORDER BY TABLE_NAME", n.Schema)
 	if err != nil {
 		return nil, err
 	}
@@ -164,9 +162,12 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*con
 		return nil, err
 	}
 	defer f.Close()
-	return tableMetadata(child, f.conn, o)
+	return tableMetadata(child, f, o)
 }
-func tableMetadata(ctx context.Context, c *sql.Conn, o contract.ObjectRef) (*contract.TableStructure, error) {
+func tableMetadata(ctx context.Context, c *physical, o contract.ObjectRef) (*contract.TableStructure, error) {
+	if c.textProtocol {
+		return selectDBTableMetadata(ctx, c, o)
+	}
 	rows, err := metadataRows(ctx, c, "SELECT TABLE_TYPE,ENGINE,TABLE_COMMENT FROM internal.information_schema.tables WHERE TABLE_SCHEMA=? AND TABLE_NAME=?", o.Schema, o.Name)
 	if err != nil {
 		return nil, err

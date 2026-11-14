@@ -22,6 +22,7 @@ import (
 	oraclesvc "github.com/nyakang/nyadb/internal/services/oracle"
 	"github.com/nyakang/nyadb/internal/services/qdrant"
 	redissvc "github.com/nyakang/nyadb/internal/services/redis"
+	"github.com/nyakang/nyadb/internal/services/selectdb"
 	"github.com/nyakang/nyadb/internal/services/solr"
 	"github.com/nyakang/nyadb/internal/services/sqlserver"
 	"github.com/nyakang/nyadb/internal/services/starrocks"
@@ -29,6 +30,7 @@ import (
 )
 
 func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
+	m.Register(connections.SelectDB, ProviderFunc(selectdb.OpenSession))
 	m.Register(connections.Etcd, ProviderFunc(etcd.OpenSession))
 	m.Register(connections.Consul, ProviderFunc(consul.OpenSession))
 	m.Register(connections.Neo4j, ProviderFunc(neo4j.OpenSession))
@@ -49,12 +51,12 @@ func RegisterBuiltins(m *Manager, mysqlTemplate *mysqlsvc.MySQLSessionManager) {
 	m.Register(connections.DuckDB, ProviderFunc(duckdb.OpenSession))
 	m.Register(connections.SQLServer, ProviderFunc(sqlserver.OpenSession))
 	m.Register(connections.ClickHouse, ProviderFunc(clickhousesvc.OpenSession))
-	for _, kind := range []connections.Kind{connections.MySQL, connections.MariaDB, connections.TiDB, connections.OceanBase} {
+	for _, kind := range []connections.Kind{connections.MySQL, connections.MariaDB, connections.TiDB, connections.OceanBase, connections.TDSQL, connections.PolarDB, connections.GreatSQL, connections.Dolt} {
 		m.Register(kind, ProviderFunc(func(ctx context.Context, p connections.Profile, password string) (contract.Session, error) {
 			return mysqlsvc.OpenSession(ctx, p, password, mysqlTemplate)
 		}))
 	}
-	for _, kind := range []connections.Kind{connections.PostgreSQL, connections.CockroachDB, connections.OpenGauss, connections.GaussDB, connections.Kingbase, connections.SQLite} {
+	for _, kind := range []connections.Kind{connections.PostgreSQL, connections.Cloudberry, connections.OpenTenBase, connections.CockroachDB, connections.OpenGauss, connections.GaussDB, connections.Kingbase, connections.SQLite} {
 		m.Register(kind, ProviderFunc(func(ctx context.Context, p connections.Profile, password string) (contract.Session, error) {
 			return engines.OpenSession(ctx, p, password)
 		}))

@@ -106,6 +106,10 @@ func (l *queryLease) Preconnect(ctx context.Context) error {
 }
 
 func statements(source string) ([]string, error) {
+	return productStatements(source, false)
+}
+
+func productStatements(source string, selectDB bool) ([]string, error) {
 	if len(source) > 8<<20 || !utf8.ValidString(source) || strings.ContainsRune(source, 0) {
 		return nil, connections.ErrInvalid
 	}
@@ -142,14 +146,16 @@ func statements(source string) ([]string, error) {
 			// invariant. Doris SQL transactions do not admit ordinary SELECT.
 			if first == "SET" {
 				u := strings.ToUpper(t.Text)
-				if strings.Contains(u, "SQL_MODE") || strings.Contains(u, "RETURN_OBJECT_DATA_AS_BINARY") || strings.Contains(u, "ENABLE_SERVER_SIDE_PREPARED_STATEMENT") || strings.Contains(u, "AUTOCOMMIT") {
+				if strings.Contains(u, "SQL_MODE") || !selectDB && (strings.Contains(u, "RETURN_OBJECT_DATA_AS_BINARY") || strings.Contains(u, "ENABLE_SERVER_SIDE_PREPARED_STATEMENT") || strings.Contains(u, "AUTOCOMMIT")) {
 					return nil, contract.ErrUnsupported
 				}
 			}
 		}
-		switch first {
-		case "BEGIN", "START", "COMMIT", "ROLLBACK", "SAVEPOINT", "RELEASE", "SWITCH", "PREPARE", "EXECUTE", "DEALLOCATE":
-			return nil, contract.ErrUnsupported
+		if !selectDB {
+			switch first {
+			case "BEGIN", "START", "COMMIT", "ROLLBACK", "SAVEPOINT", "RELEASE", "SWITCH", "PREPARE", "EXECUTE", "DEALLOCATE":
+				return nil, contract.ErrUnsupported
+			}
 		}
 		result = append(result, q)
 	}
@@ -196,7 +202,7 @@ func (l *queryLease) ExecuteStream(ctx context.Context, database, source string,
 		return result, err
 	}
 	defer done()
-	parts, err := statements(source)
+	parts, err := productStatements(source, l.s.profile.Kind == connections.SelectDB)
 	if err != nil {
 		return result, err
 	}
@@ -226,7 +232,7 @@ func (l *queryLease) ExecuteStream(ctx context.Context, database, source string,
 			var statement *sql.Stmt
 			// Doris 4.1.3 EXPLAIN emits text row packets even for COM_STMT_EXECUTE.
 			// Use COM_QUERY only for its textual plan; never retry a failed SELECT.
-			if firstWord(q) == "EXPLAIN" {
+			if l.conn.textProtocol || firstWord(q) == "EXPLAIN" {
 				rows, err = l.conn.conn.QueryContext(child, q)
 			} else {
 				statement, err = l.conn.conn.PrepareContext(child, q)
