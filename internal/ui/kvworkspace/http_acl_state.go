@@ -49,6 +49,7 @@ func (s *State) RevealHTTPACLReceipt(d *Document, recordID string) bool {
 }
 
 func (s *State) HideHTTPACLReceipt(d *Document) {
+	s.HideHTTPACLMutationReceipt(d)
 	if s.owned(d) && d.httpACL != nil {
 		d.httpACL.revealed = ""
 		d.httpACL.transfer = nil

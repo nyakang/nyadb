@@ -220,6 +220,9 @@ func decodeTxn(raw []byte, status, operations int) (TxnResult, error) {
 	return t, nil
 }
 func projectResponse(r *Response, p Plan) error {
+	if aclMutationWriteKind(p.kind) {
+		return projectACLMutationResponse(r, p)
+	}
 	if agentMaintenanceWriteKind(p.kind) {
 		return projectAgentMaintenanceResponse(r, p.kind)
 	}

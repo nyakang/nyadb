@@ -199,6 +199,9 @@ func (s *State) View(c *ui.Context, d *Document) {
 			if d.HTTPACLAvailable() && ui.Button(c, locales.Text("读取 ACL 资源")).Disabled(d.Busy() || d.FileBusy()).Clicked() {
 				s.OpenHTTPACLReadForm(d)
 			}
+			if d.httpACLMutationContent() && ui.Button(c, locales.Text("ACL 写入回执")).Clicked() {
+				s.openHTTPACLMutationReceipt(d)
+			}
 			if d.httpACLContent() && ui.Button(c, locales.Text("ACL 原响应浏览器")).Clicked() {
 				s.openHTTPACLBrowser(d)
 			}
@@ -641,6 +644,7 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 	})
 }
 func (s *State) Modals(c *ui.Context) {
+	s.httpACLMutationModals(c)
 	s.httpACLFormModals(c)
 	s.httpACLBrowserModals(c)
 	s.httpSessionBrowserModals(c)
@@ -739,6 +743,9 @@ func (s *State) Modals(c *ui.Context) {
 				}
 				if d.hasRequestToolDraft() {
 					ui.Text(c, locales.Text("未生成的工具输入也将被放弃；请求文件只保存编辑器文本")).TextColor(theme.Colors(c).Warning)
+				}
+				if d.httpACLMutationDirty() {
+					ui.Text(c, locales.Text("未保存的 ACL 写入输入与私密回执也将被放弃")).Wrap().FillWidth().TextColor(theme.Colors(c).Warning)
 				}
 				if d.httpACLFormDirty() {
 					ui.Text(c, locales.Text("未保存的 ACL 读取输入也将被放弃")).TextColor(theme.Colors(c).Warning)

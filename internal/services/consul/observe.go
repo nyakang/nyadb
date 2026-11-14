@@ -36,6 +36,9 @@ func Open(ctx context.Context, cfg Config, token string) (*Client, OpenEvidence,
 		_ = c.Close()
 		return nil, evidence, e
 	}
+	c.mu.Lock()
+	c.agent = evidence.Identity
+	c.mu.Unlock()
 	return c, evidence, nil
 }
 func (c *Client) Observe(ctx context.Context) (OpenEvidence, error) {

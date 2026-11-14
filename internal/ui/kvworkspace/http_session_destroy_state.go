@@ -22,6 +22,9 @@ type httpSessionDestroyConfirmation struct {
 // All confirmation replacement paths release unused original authority. An
 // executor transfers its plan out of this field before starting the worker.
 func (d *Document) clearConfirmation() {
+	if d.httpACLMutation != nil {
+		d.clearHTTPACLMutationConfirmation()
+	}
 	if p := d.confirmation; p != nil && p.destroy != nil && p.destroy.plan != nil {
 		_ = p.destroy.plan.Close()
 		p.destroy.plan = nil

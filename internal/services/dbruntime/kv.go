@@ -78,7 +78,7 @@ func (s *session) bindKV(raw contract.KVRequestLease, document uint64) (contract
 	if auth {
 		return bindKVSnapshots(bindKVMembers(bindKVMaintenance(&kvAuthLease{bound}))), nil
 	}
-	return bindKVHTTPACLRead(bindKVHTTPSessionDestroy(bindKVHTTPSessionKeys(bindKVSnapshots(bindKVMembers(bindKVMaintenance(bound)))))), nil
+	return bindKVHTTPACLMutationPlanning(bindKVHTTPACLImpact(bindKVHTTPACLMutation(bindKVHTTPACLRead(bindKVHTTPSessionDestroy(bindKVHTTPSessionKeys(bindKVSnapshots(bindKVMembers(bindKVMaintenance(bound))))))))), nil
 }
 func (s *session) ReserveKV(document uint64) (contract.KVRequestLease, error) {
 	if !s.alive() {
@@ -114,9 +114,18 @@ func (s *session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 	// executor and transfers only evidence, never an old prepared request.
 	old.closed.Store(true)
 	aclOriginal := old.aclOriginalRecord()
+	aclMutationOriginal := old.aclMutationOriginalRecord()
 	recovery, err := p.RecoverKV(old.raw)
 	recovery = recovery.Clone()
 	old.closeDestroyPlans()
+	old.closeACLMutationPlans()
+	var aclMutationRawScope contract.KVScope
+	if recovery.ACLMutationResult != nil {
+		aclMutationRawScope = recovery.ACLMutationResult.Scope.Clone()
+		if !old.translateACLMutationResult(recovery.ACLMutationResult, aclMutationOriginal) {
+			err = errors.Join(err, contract.ErrRevoked)
+		}
+	}
 	var aclRawScope contract.KVScope
 	if recovery.ACLResult != nil {
 		aclRawScope = recovery.ACLResult.Scope.Clone()
@@ -150,27 +159,31 @@ func (s *session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 	if next := originalKVRequestLease(recovery.Lease); next != nil {
 		next.inheritDestroyRecords(old)
 		next.inheritACLRecord(aclRawScope, recovery.ACLResult)
+		next.inheritACLMutationRecord(aclMutationRawScope, recovery.ACLMutationResult)
 	}
 	return recovery, err
 }
 
 type kvRequestLease struct {
-	session            *session
-	raw                contract.KVRequestLease
-	scope              contract.KVScope
-	closed             atomic.Bool
-	once               sync.Once
-	closeErr           error
-	document           uint64
-	membersMu          sync.Mutex
-	memberObservations map[*kvMemberObservation]bool
-	destroyMu          sync.Mutex
-	destroyRecords     map[string]kvDestroyRecordScope
-	destroyPlans       map[*kvHTTPSessionDestroyPreparation]bool
-	destroyClosed      bool
-	aclMu              sync.Mutex
-	aclRecordID        string
-	aclRecordScope     kvACLRecordScope
+	session                *session
+	raw                    contract.KVRequestLease
+	scope                  contract.KVScope
+	closed                 atomic.Bool
+	once                   sync.Once
+	closeErr               error
+	document               uint64
+	membersMu              sync.Mutex
+	memberObservations     map[*kvMemberObservation]bool
+	destroyMu              sync.Mutex
+	destroyRecords         map[string]kvDestroyRecordScope
+	destroyPlans           map[*kvHTTPSessionDestroyPreparation]bool
+	destroyClosed          bool
+	aclMu                  sync.Mutex
+	aclRecordID            string
+	aclRecordScope         kvACLRecordScope
+	aclMutationRecordID    string
+	aclMutationRecordScope kvACLRecordScope
+	aclMutationPlans       map[*kvHTTPACLMutationPlan]bool
 }
 type kvRequestPreparation struct {
 	owner    *kvRequestLease
@@ -247,12 +260,14 @@ func (l *kvRequestLease) Close() error {
 	l.closed.Store(true)
 	l.once.Do(func() { l.closeErr = l.raw.Close() })
 	l.closeDestroyPlans()
+	l.closeACLMutationPlans()
 	l.destroyMu.Lock()
 	l.destroyRecords = nil
 	l.destroyClosed = true
 	l.destroyMu.Unlock()
 	l.aclMu.Lock()
 	l.aclRecordID, l.aclRecordScope = "", kvACLRecordScope{}
+	l.aclMutationRecordID, l.aclMutationRecordScope = "", kvACLRecordScope{}
 	l.aclMu.Unlock()
 	l.membersMu.Lock()
 	l.memberObservations = nil

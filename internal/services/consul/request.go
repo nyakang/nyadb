@@ -60,6 +60,9 @@ func (c *Client) Prepare(r Request) (Plan, error) {
 	if c.closed || c.retired {
 		return Plan{}, ErrRetired
 	}
+	if aclMutationUsesAgent(kind) && c.config.Datacenter != "" && (!c.agent.Available || c.config.Datacenter != c.agent.Datacenter) {
+		return Plan{}, ErrUnsupported
+	}
 	if write && c.unknown != nil {
 		return Plan{}, ErrWriteUnknown
 	}
@@ -138,11 +141,15 @@ func validateRequest(r Request) (string, bool, int, error) {
 	switch {
 	case strings.HasPrefix(r.Path, "/v1/acl/"):
 		var err error
-		allowed, err = aclReadQuery(r)
+		if write {
+			kind, err = validateACLMutation(r)
+		} else {
+			allowed, err = aclReadQuery(r)
+			kind = "acl-read"
+		}
 		if err != nil {
 			return "", false, 0, err
 		}
-		kind = "acl-read"
 	case agentMaintenanceKind(r.Path) != "":
 		kind = agentMaintenanceKind(r.Path)
 		if r.Method != http.MethodPut || len(r.Body) != 0 || !r.Query.Has("enable") {

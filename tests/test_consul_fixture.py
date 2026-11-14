@@ -9,6 +9,79 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_source_manifest_includes_python_verification_tests(self):
+        import hashlib
+        hashes = fixture.source_hashes()
+        for path in ('tools/verify_consul_fixture.py', 'tests/test_consul_fixture.py'):
+            self.assertEqual(hashes[path], hashlib.sha256((ROOT/path).read_bytes()).hexdigest())
+
+    def test_public_acl_mutation_retains_every_read_and_native_plan_parent(self):
+        import re
+        prior = self.copy_scope_before_startup(public_acl_probe=True)
+        report = self.copy_scope_before_startup(public_acl_mutation_probe=True)
+        required = fixture.ACL_MUTATION_SERVICE_REQUIRED + fixture.PUBLIC_ACL_MUTATION_REQUIRED + tuple(prior['required'])
+        self.assertEqual(tuple(report['required']), required)
+        self.assertEqual(len(required), 115)
+        self.assertEqual(len(set(required)), 115)
+        self.assertTrue(report['production_acl_mutation_tools_published'])
+        self.assertTrue(report['production_acl_tools_published'])
+        self.assertFalse(report['generic_acl_documents_enabled'])
+        phases = fixture.public_acl_mutation_acceptance_test_phases(report['packages'], required, True, 1200)
+        self.assertEqual(phases[:-2], fixture.public_acl_acceptance_test_phases(prior['packages'], prior['required'], True, 1200))
+        self.assertEqual(len(phases), 16)
+        scheduled = [name for phase in phases for name in re.findall(r'TestConsulNative(\w+)', phase[phase.index('-run')+1])]
+        self.assertCountEqual(scheduled, required)
+        for phase in phases:
+            for argument in ('-race', '-count=1', '-timeout=1200s'):
+                self.assertIn(argument, phase)
+        for name in required:
+            for broken in (tuple(n for n in required if n != name), required + (name,)):
+                with self.subTest(name=name), self.assertRaises(ValueError):
+                    fixture.public_acl_mutation_acceptance_test_phases(report['packages'], broken, True, 1200)
+        lines = ['--- PASS: TestConsulNative'+name+' (0.1s)' for name in required]
+        self.assertCountEqual(fixture.accepted_cases('\n'.join(lines), required), required)
+        for index, name in enumerate(required):
+            for bad in ('', lines[index].replace('--- PASS:', '--- SKIP:'), lines[index]+'\n'+lines[index]):
+                broken = lines.copy()
+                broken[index] = bad
+                with self.subTest(name=name), self.assertRaises(RuntimeError):
+                    fixture.accepted_cases('\n'.join(broken), required)
+
+    def test_public_acl_mutation_rejects_combined_scopes(self):
+        import inspect
+        from unittest.mock import patch
+        for name, parameter in inspect.signature(fixture.verify).parameters.items():
+            if parameter.default is False and name not in ('race', 'public_acl_mutation_probe'):
+                with self.subTest(name=name), patch('subprocess.run', side_effect=AssertionError('mixed mutation scope started')), self.assertRaises(ValueError):
+                    fixture.verify(public_acl_mutation_probe=True, **{name: True})
+
+    def test_public_acl_mutation_auth_specific_images_validate_pixels(self):
+        import tempfile
+        from PIL import Image
+        from unittest.mock import patch
+        for authenticated in (False, True):
+            names = fixture.acl_mutation_image_names(authenticated)
+            self.assertEqual(len(names), 44 if authenticated else 28)
+            self.assertEqual(any('hidden-receipt' in n for n in names), authenticated)
+            self.assertEqual(any('failed-preview' in n for n in names), not authenticated)
+            with tempfile.TemporaryDirectory() as directory:
+                folder = Path(directory)
+                for name in names:
+                    Image.new('RGB', (1280, 800) if '-1280x800-' in name else (720, 520)).save(folder/name)
+                with patch.object(fixture, 'ROOT', folder):
+                    self.assertEqual(len(fixture.acl_mutation_image_evidence(folder, authenticated)), len(names))
+                    path = folder/sorted(names)[0]
+                    raw = path.read_bytes()
+                    path.unlink()
+                    with self.assertRaises(RuntimeError): fixture.acl_mutation_image_evidence(folder, authenticated)
+                    path.write_bytes(b'invalid PNG')
+                    with self.assertRaises(RuntimeError): fixture.acl_mutation_image_evidence(folder, authenticated)
+                    Image.new('RGB', (1, 1)).save(path)
+                    with self.assertRaises(RuntimeError): fixture.acl_mutation_image_evidence(folder, authenticated)
+                    path.write_bytes(raw)
+                    (folder/'unexpected.png').write_bytes(raw)
+                    with self.assertRaises(RuntimeError): fixture.acl_mutation_image_evidence(folder, authenticated)
+
     def test_public_acl_retains_every_foundation_parent_and_phase(self):
         import re
         prior = self.copy_scope_before_startup(acl_read_probe=True)

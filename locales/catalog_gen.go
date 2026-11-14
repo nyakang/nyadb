@@ -40603,3 +40603,497 @@ func ConsulACLReadLeaveDraft() string { return In(i18n.Locale()).ConsulACLReadLe
 func (msgs Messages) ConsulACLReadLeaveDraft() string {
 	return Catalog.Format(msgs.locale, "consulACLReadLeaveDraft", nil)
 }
+
+// ConsulACLWriteTitle says "ACL 原生写入"
+// in the language the app shows.
+func ConsulACLWriteTitle() string { return In(i18n.Locale()).ConsulACLWriteTitle() }
+
+// ConsulACLWriteTitle says "ACL 原生写入"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteTitle() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteTitle", nil)
+}
+
+// ConsulACLWriteInputOpen says "打开 ACL 写入输入"
+// in the language the app shows.
+func ConsulACLWriteInputOpen() string { return In(i18n.Locale()).ConsulACLWriteInputOpen() }
+
+// ConsulACLWriteInputOpen says "打开 ACL 写入输入"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteInputOpen() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteInputOpen", nil)
+}
+
+// ConsulACLWriteInputSave says "保存 ACL 写入输入…"
+// in the language the app shows.
+func ConsulACLWriteInputSave() string { return In(i18n.Locale()).ConsulACLWriteInputSave() }
+
+// ConsulACLWriteInputSave says "保存 ACL 写入输入…"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteInputSave() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteInputSave", nil)
+}
+
+// ConsulACLWriteInputSaveAs says "另存 ACL 写入输入…"
+// in the language the app shows.
+func ConsulACLWriteInputSaveAs() string { return In(i18n.Locale()).ConsulACLWriteInputSaveAs() }
+
+// ConsulACLWriteInputSaveAs says "另存 ACL 写入输入…"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteInputSaveAs() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteInputSaveAs", nil)
+}
+
+// ConsulACLWriteOperation says "ACL 写入操作"
+// in the language the app shows.
+func ConsulACLWriteOperation() string { return In(i18n.Locale()).ConsulACLWriteOperation() }
+
+// ConsulACLWriteOperation says "ACL 写入操作"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteOperation() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteOperation", nil)
+}
+
+// ConsulACLWriteIdentityHint says "Token 使用 AccessorID；AuthMethod 使用原名称。克隆仅支持 Token。"
+// in the language the app shows.
+func ConsulACLWriteIdentityHint() string { return In(i18n.Locale()).ConsulACLWriteIdentityHint() }
+
+// ConsulACLWriteIdentityHint says "Token 使用 AccessorID；AuthMethod 使用原名称。克隆仅支持 Token。"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteIdentityHint() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteIdentityHint", nil)
+}
+
+// ConsulACLWriteDefinition says "ACL 原始定义 JSON（可能含秘密）"
+// in the language the app shows.
+func ConsulACLWriteDefinition() string { return In(i18n.Locale()).ConsulACLWriteDefinition() }
+
+// ConsulACLWriteDefinition says "ACL 原始定义 JSON（可能含秘密）"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteDefinition() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteDefinition", nil)
+}
+
+// ConsulACLWriteCloneDescription says "提供克隆 Description"
+// in the language the app shows.
+func ConsulACLWriteCloneDescription() string {
+	return In(i18n.Locale()).ConsulACLWriteCloneDescription()
+}
+
+// ConsulACLWriteCloneDescription says "提供克隆 Description"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteCloneDescription() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteCloneDescription", nil)
+}
+
+// ConsulACLWriteCloneHint says "省略或留空 Description 将继承原 Token 描述。"
+// in the language the app shows.
+func ConsulACLWriteCloneHint() string { return In(i18n.Locale()).ConsulACLWriteCloneHint() }
+
+// ConsulACLWriteCloneHint says "省略或留空 Description 将继承原 Token 描述。"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteCloneHint() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteCloneHint", nil)
+}
+
+// ConsulACLWriteFailed says "ACL 写入失败；原草稿与私密回执保留"
+// in the language the app shows.
+func ConsulACLWriteFailed() string { return In(i18n.Locale()).ConsulACLWriteFailed() }
+
+// ConsulACLWriteFailed says "ACL 写入失败；原草稿与私密回执保留"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteFailed() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteFailed", nil)
+}
+
+// ConsulACLWriteReview says "检查并确认 ACL 写入"
+// in the language the app shows.
+func ConsulACLWriteReview() string { return In(i18n.Locale()).ConsulACLWriteReview() }
+
+// ConsulACLWriteReview says "检查并确认 ACL 写入"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteReview() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteReview", nil)
+}
+
+// ConsulACLWriteInputCopy says "复制 ACL 写入输入…"
+// in the language the app shows.
+func ConsulACLWriteInputCopy() string { return In(i18n.Locale()).ConsulACLWriteInputCopy() }
+
+// ConsulACLWriteInputCopy says "复制 ACL 写入输入…"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteInputCopy() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteInputCopy", nil)
+}
+
+// ConsulACLWriteConfirmTitle says "确认原连接 ACL 写入"
+// in the language the app shows.
+func ConsulACLWriteConfirmTitle() string { return In(i18n.Locale()).ConsulACLWriteConfirmTitle() }
+
+// ConsulACLWriteConfirmTitle says "确认原连接 ACL 写入"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteConfirmTitle() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteConfirmTitle", nil)
+}
+
+// ConsulACLWriteConfirmNotice says "此操作会修改原连接的访问控制。取消或断开后，将等待原执行器确认，不会自动重放。"
+// in the language the app shows.
+func ConsulACLWriteConfirmNotice() string { return In(i18n.Locale()).ConsulACLWriteConfirmNotice() }
+
+// ConsulACLWriteConfirmNotice says "此操作会修改原连接的访问控制。取消或断开后，将等待原执行器确认，不会自动重放。"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteConfirmNotice() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteConfirmNotice", nil)
+}
+
+// ConsulACLWriteDeleteAuthMethod says "删除 AuthMethod 会删除关联绑定规则，并撤销该认证方式签发的令牌。"
+// in the language the app shows.
+func ConsulACLWriteDeleteAuthMethod() string {
+	return In(i18n.Locale()).ConsulACLWriteDeleteAuthMethod()
+}
+
+// ConsulACLWriteDeleteAuthMethod says "删除 AuthMethod 会删除关联绑定规则，并撤销该认证方式签发的令牌。"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteDeleteAuthMethod() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteDeleteAuthMethod", nil)
+}
+
+// ConsulACLWriteDeletePolicy says "删除 Policy 后令牌与角色仍保留，关联策略链接会被移除。"
+// in the language the app shows.
+func ConsulACLWriteDeletePolicy() string { return In(i18n.Locale()).ConsulACLWriteDeletePolicy() }
+
+// ConsulACLWriteDeletePolicy says "删除 Policy 后令牌与角色仍保留，关联策略链接会被移除。"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteDeletePolicy() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteDeletePolicy", nil)
+}
+
+// ConsulACLWriteDeleteRole says "删除 Role 后令牌仍保留，关联角色链接会被移除。"
+// in the language the app shows.
+func ConsulACLWriteDeleteRole() string { return In(i18n.Locale()).ConsulACLWriteDeleteRole() }
+
+// ConsulACLWriteDeleteRole says "删除 Role 后令牌仍保留，关联角色链接会被移除。"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteDeleteRole() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteDeleteRole", nil)
+}
+
+// ConsulACLWriteUpdateToken says "更新 Token 时，省略策略或角色列表会清空相应链接；省略 SecretID 会保留原密钥。"
+// in the language the app shows.
+func ConsulACLWriteUpdateToken() string { return In(i18n.Locale()).ConsulACLWriteUpdateToken() }
+
+// ConsulACLWriteUpdateToken says "更新 Token 时，省略策略或角色列表会清空相应链接；省略 SecretID 会保留原密钥。"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteUpdateToken() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteUpdateToken", nil)
+}
+
+// ConsulACLWriteRevealPending says "查看待发送 ACL 内容（含秘密）"
+// in the language the app shows.
+func ConsulACLWriteRevealPending() string { return In(i18n.Locale()).ConsulACLWriteRevealPending() }
+
+// ConsulACLWriteRevealPending says "查看待发送 ACL 内容（含秘密）"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteRevealPending() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteRevealPending", nil)
+}
+
+// ConsulACLWritePendingDetail says "待发送 ACL 私密内容"
+// in the language the app shows.
+func ConsulACLWritePendingDetail() string { return In(i18n.Locale()).ConsulACLWritePendingDetail() }
+
+// ConsulACLWritePendingDetail says "待发送 ACL 私密内容"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWritePendingDetail() string {
+	return Catalog.Format(msgs.locale, "consulACLWritePendingDetail", nil)
+}
+
+// ConsulACLWriteConsent says "我确认执行此原连接 ACL 写入"
+// in the language the app shows.
+func ConsulACLWriteConsent() string { return In(i18n.Locale()).ConsulACLWriteConsent() }
+
+// ConsulACLWriteConsent says "我确认执行此原连接 ACL 写入"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteConsent() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteConsent", nil)
+}
+
+// ConsulACLWriteConfirm says "确认执行 ACL 写入"
+// in the language the app shows.
+func ConsulACLWriteConfirm() string { return In(i18n.Locale()).ConsulACLWriteConfirm() }
+
+// ConsulACLWriteConfirm says "确认执行 ACL 写入"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteConfirm() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteConfirm", nil)
+}
+
+// ConsulACLWriteHide says "隐藏 ACL 写入秘密"
+// in the language the app shows.
+func ConsulACLWriteHide() string { return In(i18n.Locale()).ConsulACLWriteHide() }
+
+// ConsulACLWriteHide says "隐藏 ACL 写入秘密"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteHide() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteHide", nil)
+}
+
+// ConsulACLWriteBody says "ACL 写入原始正文"
+// in the language the app shows.
+func ConsulACLWriteBody() string { return In(i18n.Locale()).ConsulACLWriteBody() }
+
+// ConsulACLWriteBody says "ACL 写入原始正文"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteBody() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteBody", nil)
+}
+
+// ConsulACLWriteRevealBody says "显示 ACL 写入原正文（含秘密）"
+// in the language the app shows.
+func ConsulACLWriteRevealBody() string { return In(i18n.Locale()).ConsulACLWriteRevealBody() }
+
+// ConsulACLWriteRevealBody says "显示 ACL 写入原正文（含秘密）"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteRevealBody() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteRevealBody", nil)
+}
+
+// ConsulACLWriteReceiptCopy says "复制完整 ACL 写入回执…"
+// in the language the app shows.
+func ConsulACLWriteReceiptCopy() string { return In(i18n.Locale()).ConsulACLWriteReceiptCopy() }
+
+// ConsulACLWriteReceiptCopy says "复制完整 ACL 写入回执…"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteReceiptCopy() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteReceiptCopy", nil)
+}
+
+// ConsulACLWriteReceiptExport says "导出完整 ACL 写入回执…"
+// in the language the app shows.
+func ConsulACLWriteReceiptExport() string { return In(i18n.Locale()).ConsulACLWriteReceiptExport() }
+
+// ConsulACLWriteReceiptExport says "导出完整 ACL 写入回执…"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteReceiptExport() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteReceiptExport", nil)
+}
+
+// ConsulACLWriteBackInput says "返回 ACL 写入输入"
+// in the language the app shows.
+func ConsulACLWriteBackInput() string { return In(i18n.Locale()).ConsulACLWriteBackInput() }
+
+// ConsulACLWriteBackInput says "返回 ACL 写入输入"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteBackInput() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteBackInput", nil)
+}
+
+// ConsulACLWriteTransferTitle says "传出 ACL 私密内容"
+// in the language the app shows.
+func ConsulACLWriteTransferTitle() string { return In(i18n.Locale()).ConsulACLWriteTransferTitle() }
+
+// ConsulACLWriteTransferTitle says "传出 ACL 私密内容"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteTransferTitle() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteTransferTitle", nil)
+}
+
+// ConsulACLWriteTransferNotice says "此内容可能包含 Token SecretID、AuthMethod …"
+// in the language the app shows.
+func ConsulACLWriteTransferNotice() string { return In(i18n.Locale()).ConsulACLWriteTransferNotice() }
+
+// ConsulACLWriteTransferNotice says "此内容可能包含 Token SecretID、AuthMethod …"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteTransferNotice() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteTransferNotice", nil)
+}
+
+// ConsulACLWriteTransferConsent says "我确认传出此原输入或回执中的秘密"
+// in the language the app shows.
+func ConsulACLWriteTransferConsent() string { return In(i18n.Locale()).ConsulACLWriteTransferConsent() }
+
+// ConsulACLWriteTransferConsent says "我确认传出此原输入或回执中的秘密"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteTransferConsent() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteTransferConsent", nil)
+}
+
+// ConsulACLWriteTransferConfirm says "确认传出 ACL 写入内容"
+// in the language the app shows.
+func ConsulACLWriteTransferConfirm() string { return In(i18n.Locale()).ConsulACLWriteTransferConfirm() }
+
+// ConsulACLWriteTransferConfirm says "确认传出 ACL 写入内容"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteTransferConfirm() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteTransferConfirm", nil)
+}
+
+// ConsulACLWriteReceiptTitle says "ACL 写入回执"
+// in the language the app shows.
+func ConsulACLWriteReceiptTitle() string { return In(i18n.Locale()).ConsulACLWriteReceiptTitle() }
+
+// ConsulACLWriteReceiptTitle says "ACL 写入回执"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteReceiptTitle() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteReceiptTitle", nil)
+}
+
+// ConsulACLWriteLeaveWarning says "未保存的 ACL 写入输入与私密回执也将被放弃"
+// in the language the app shows.
+func ConsulACLWriteLeaveWarning() string { return In(i18n.Locale()).ConsulACLWriteLeaveWarning() }
+
+// ConsulACLWriteLeaveWarning says "未保存的 ACL 写入输入与私密回执也将被放弃"
+// in the language of msgs.
+func (msgs Messages) ConsulACLWriteLeaveWarning() string {
+	return Catalog.Format(msgs.locale, "consulACLWriteLeaveWarning", nil)
+}
+
+// ConsulACLImpactCounts says "原始读取 %d 次 · 引用 %d 项 · 依赖 %d 项"
+// in the language the app shows.
+func ConsulACLImpactCounts() string { return In(i18n.Locale()).ConsulACLImpactCounts() }
+
+// ConsulACLImpactCounts says "原始读取 %d 次 · 引用 %d 项 · 依赖 %d 项"
+// in the language of msgs.
+func (msgs Messages) ConsulACLImpactCounts() string {
+	return Catalog.Format(msgs.locale, "consulACLImpactCounts", nil)
+}
+
+// ConsulACLImpactUpsert says "同名 AuthMethod 已存在：本次创建将更新原认证方式。"
+// in the language the app shows.
+func ConsulACLImpactUpsert() string { return In(i18n.Locale()).ConsulACLImpactUpsert() }
+
+// ConsulACLImpactUpsert says "同名 AuthMethod 已存在：本次创建将更新原认证方式。"
+// in the language of msgs.
+func (msgs Messages) ConsulACLImpactUpsert() string {
+	return Catalog.Format(msgs.locale, "consulACLImpactUpsert", nil)
+}
+
+// ConsulACLImpactRecheck says "…"
+// in the language the app shows.
+func ConsulACLImpactRecheck() string { return In(i18n.Locale()).ConsulACLImpactRecheck() }
+
+// ConsulACLImpactRecheck says "…"
+// in the language of msgs.
+func (msgs Messages) ConsulACLImpactRecheck() string {
+	return Catalog.Format(msgs.locale, "consulACLImpactRecheck", nil)
+}
+
+// ConsulACLImpactScope says "引用与依赖仅覆盖本次原连接的读取范围，不代表完整权限计算或其他数据中心的状态。"
+// in the language the app shows.
+func ConsulACLImpactScope() string { return In(i18n.Locale()).ConsulACLImpactScope() }
+
+// ConsulACLImpactScope says "引用与依赖仅覆盖本次原连接的读取范围，不代表完整权限计算或其他数据中心的状态。"
+// in the language of msgs.
+func (msgs Messages) ConsulACLImpactScope() string {
+	return Catalog.Format(msgs.locale, "consulACLImpactScope", nil)
+}
+
+// ConsulACLImpactTitle says "ACL 影响预览与复核记录"
+// in the language the app shows.
+func ConsulACLImpactTitle() string { return In(i18n.Locale()).ConsulACLImpactTitle() }
+
+// ConsulACLImpactTitle says "ACL 影响预览与复核记录"
+// in the language of msgs.
+func (msgs Messages) ConsulACLImpactTitle() string {
+	return Catalog.Format(msgs.locale, "consulACLImpactTitle", nil)
+}
+
+// ConsulACLImpactFailed says "ACL 预览或复核未完成；原始记录保留，未授权新的写入。"
+// in the language the app shows.
+func ConsulACLImpactFailed() string { return In(i18n.Locale()).ConsulACLImpactFailed() }
+
+// ConsulACLImpactFailed says "ACL 预览或复核未完成；原始记录保留，未授权新的写入。"
+// in the language of msgs.
+func (msgs Messages) ConsulACLImpactFailed() string {
+	return Catalog.Format(msgs.locale, "consulACLImpactFailed", nil)
+}
+
+// ConsulACLImpactRecheckCount says "写前复核读取 %d 次"
+// in the language the app shows.
+func ConsulACLImpactRecheckCount() string { return In(i18n.Locale()).ConsulACLImpactRecheckCount() }
+
+// ConsulACLImpactRecheckCount says "写前复核读取 %d 次"
+// in the language of msgs.
+func (msgs Messages) ConsulACLImpactRecheckCount() string {
+	return Catalog.Format(msgs.locale, "consulACLImpactRecheckCount", nil)
+}
+
+// ConsulACLImpactReveal says "显示 ACL 影响记录（含秘密）"
+// in the language the app shows.
+func ConsulACLImpactReveal() string { return In(i18n.Locale()).ConsulACLImpactReveal() }
+
+// ConsulACLImpactReveal says "显示 ACL 影响记录（含秘密）"
+// in the language of msgs.
+func (msgs Messages) ConsulACLImpactReveal() string {
+	return Catalog.Format(msgs.locale, "consulACLImpactReveal", nil)
+}
+
+// ConsulACLImpactRaw says "ACL 影响原始记录"
+// in the language the app shows.
+func ConsulACLImpactRaw() string { return In(i18n.Locale()).ConsulACLImpactRaw() }
+
+// ConsulACLImpactRaw says "ACL 影响原始记录"
+// in the language of msgs.
+func (msgs Messages) ConsulACLImpactRaw() string {
+	return Catalog.Format(msgs.locale, "consulACLImpactRaw", nil)
+}
+
+// ConsulACLImpactExport says "导出完整 ACL 影响记录…"
+// in the language the app shows.
+func ConsulACLImpactExport() string { return In(i18n.Locale()).ConsulACLImpactExport() }
+
+// ConsulACLImpactExport says "导出完整 ACL 影响记录…"
+// in the language of msgs.
+func (msgs Messages) ConsulACLImpactExport() string {
+	return Catalog.Format(msgs.locale, "consulACLImpactExport", nil)
+}
+
+// ConsulACLImpactView says "查看 ACL 影响记录"
+// in the language the app shows.
+func ConsulACLImpactView() string { return In(i18n.Locale()).ConsulACLImpactView() }
+
+// ConsulACLImpactView says "查看 ACL 影响记录"
+// in the language of msgs.
+func (msgs Messages) ConsulACLImpactView() string {
+	return Catalog.Format(msgs.locale, "consulACLImpactView", nil)
+}
+
+// ConsulACLImpactCopy says "复制完整 ACL 影响记录…"
+// in the language the app shows.
+func ConsulACLImpactCopy() string { return In(i18n.Locale()).ConsulACLImpactCopy() }
+
+// ConsulACLImpactCopy says "复制完整 ACL 影响记录…"
+// in the language of msgs.
+func (msgs Messages) ConsulACLImpactCopy() string {
+	return Catalog.Format(msgs.locale, "consulACLImpactCopy", nil)
+}
+
+// ConsulACLImpactBackConfirm says "返回 ACL 写入确认"
+// in the language the app shows.
+func ConsulACLImpactBackConfirm() string { return In(i18n.Locale()).ConsulACLImpactBackConfirm() }
+
+// ConsulACLImpactBackConfirm says "返回 ACL 写入确认"
+// in the language of msgs.
+func (msgs Messages) ConsulACLImpactBackConfirm() string {
+	return Catalog.Format(msgs.locale, "consulACLImpactBackConfirm", nil)
+}
+
+// ConsulACLImpactReference says "引用"
+// in the language the app shows.
+func ConsulACLImpactReference() string { return In(i18n.Locale()).ConsulACLImpactReference() }
+
+// ConsulACLImpactReference says "引用"
+// in the language of msgs.
+func (msgs Messages) ConsulACLImpactReference() string {
+	return Catalog.Format(msgs.locale, "consulACLImpactReference", nil)
+}
+
+// ConsulACLImpactDependency says "依赖"
+// in the language the app shows.
+func ConsulACLImpactDependency() string { return In(i18n.Locale()).ConsulACLImpactDependency() }
+
+// ConsulACLImpactDependency says "依赖"
+// in the language of msgs.
+func (msgs Messages) ConsulACLImpactDependency() string {
+	return Catalog.Format(msgs.locale, "consulACLImpactDependency", nil)
+}

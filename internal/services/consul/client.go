@@ -69,6 +69,7 @@ type Client struct {
 	operation       sync.Mutex
 	mu              sync.Mutex
 	config          Config
+	agent           Identity // immutable opening evidence, guarded by mu
 	token           string
 	http            *http.Client
 	ctx             context.Context
@@ -124,7 +125,7 @@ func (c *Client) requestURL(p Plan) (string, error) {
 	}
 	// Agent endpoints and static ACL templates use the original contacted
 	// agent; templates do not implement DC routing or blocking consistency.
-	localAgent := strings.HasPrefix(p.request.Path, "/v1/agent/") || aclTemplateReadPath(p.request.Path)
+	localAgent := strings.HasPrefix(p.request.Path, "/v1/agent/") || aclTemplateReadPath(p.request.Path) || aclMutationUsesAgent(p.kind)
 	if !localAgent {
 		for key, value := range map[string]string{"dc": c.config.Datacenter, "ns": c.config.Namespace, "partition": c.config.Partition} {
 			if value != "" {
@@ -283,6 +284,7 @@ func (c *Client) Close() error {
 	c.http.CloseIdleConnections()
 	c.mu.Lock()
 	c.token = ""
+	c.agent = Identity{}
 	c.last = Response{}
 	c.unknown = nil
 	c.mu.Unlock()

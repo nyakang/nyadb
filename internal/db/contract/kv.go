@@ -158,12 +158,17 @@ type KVRecovery struct {
 	Unknown *KVResult // independent original unknown write, never replaced by a later read
 	// Independent original member receipts, including unconfirmed writes. A
 	// recovery transfers evidence only, never directory/plan authority.
-	MemberResults  []KVMemberResult
-	SnapshotResult *KVSnapshotResult
-	ACLResult      *KVHTTPACLReadResult // private original ACL evidence, potentially containing secrets
+	MemberResults     []KVMemberResult
+	SnapshotResult    *KVSnapshotResult
+	ACLResult         *KVHTTPACLReadResult     // private original ACL evidence, potentially containing secrets
+	ACLMutationResult *KVHTTPACLMutationResult // private original write, retained independently of later reads
 }
 
 func (r KVRecovery) Clone() KVRecovery {
+	if r.ACLMutationResult != nil {
+		v := r.ACLMutationResult.Clone()
+		r.ACLMutationResult = &v
+	}
 	if r.ACLResult != nil {
 		v := r.ACLResult.Clone()
 		r.ACLResult = &v

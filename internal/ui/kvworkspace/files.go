@@ -23,23 +23,25 @@ type Files struct {
 	WriteStream func(string, func(io.Writer) error) error
 }
 type fileResult struct {
-	aclForm   *HTTPACLReadInput
-	clipboard string
-	path      string
-	request   contract.KVRequest
-	err       error
-	snapshots *snapshotFileOutcome
+	aclMutationForm *HTTPACLMutationInput
+	aclForm         *HTTPACLReadInput
+	clipboard       string
+	path            string
+	request         contract.KVRequest
+	err             error
+	snapshots       *snapshotFileOutcome
 }
 type fileOperation struct {
-	aclForm   *httpACLReadForm
-	aclSerial uint64
-	clipboard func(string)
-	canceled  bool
-	kind      string
-	before    contract.KVRequest
-	cancel    context.CancelFunc
-	out       <-chan fileResult
-	finished  <-chan struct{}
+	aclMutationForm *httpACLMutationForm
+	aclForm         *httpACLReadForm
+	aclSerial       uint64
+	clipboard       func(string)
+	canceled        bool
+	kind            string
+	before          contract.KVRequest
+	cancel          context.CancelFunc
+	out             <-chan fileResult
+	finished        <-chan struct{}
 }
 
 const requestFileLimit = 100 << 20
@@ -334,6 +336,9 @@ func (s *State) consumeFiles(d *Document) {
 		job := d.io
 		d.io = nil
 		job.cancel()
+		if s.consumeHTTPACLMutationFile(d, job, r) {
+			return
+		}
 		if s.consumeHTTPACLFile(d, job, r) {
 			return
 		}

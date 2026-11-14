@@ -126,7 +126,7 @@ func TestACLReadOptionsPreserveMembershipPresenceAndRejectIgnoredSemantics(t *te
 		{Method: "GET", Path: tokens.Path, Query: url.Values{"role": {id, id}}},
 		{Method: "GET", Path: tokens.Path, Query: url.Values{"policy": {"not-a-uuid"}}},
 	} {
-		if _, _, _, err := validateRequest(bad); err == nil {
+		if _, err := WithACLReadOptions(bad, ACLReadOptions{}); err == nil {
 			t.Fatal("ACL read admitted mutation, hidden body or ambiguous membership")
 		}
 	}

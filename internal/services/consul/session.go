@@ -189,6 +189,9 @@ func (s *Session) open(ctx context.Context) (*Client, error) {
 		}
 		return nil, contract.ErrRevoked
 	}
+	c.mu.Lock()
+	c.agent = i // bind only after comparing original opening identity
+	c.mu.Unlock()
 	return c, nil
 }
 func (s *Session) ReserveKV(document uint64) (contract.KVRequestLease, error) {
@@ -242,6 +245,7 @@ func (s *Session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 		return contract.KVRecovery{}, contract.ErrKVPlanUsed
 	}
 	old.releaseDestroyPlan()
+	old.releaseACLMutationPlan()
 	old.closePhysical()
 	result := old.recoveryOwned()
 	old.s.mu.Lock()
@@ -290,9 +294,11 @@ func transferOwnedReceipts(old, next *documentLease) error {
 	next.receiptMu.Lock()
 	next.last, next.unknown = old.last, old.unknown
 	next.aclLast = old.aclLast
+	next.aclMutationLast = old.aclMutationLast
 	next.writeUnknown.Store(old.writeUnknown.Load())
 	old.last, old.unknown = nil, nil
 	old.aclLast = nil
+	old.aclMutationLast = nil
 	next.receiptMu.Unlock()
 	old.receiptMu.Unlock()
 	return nil

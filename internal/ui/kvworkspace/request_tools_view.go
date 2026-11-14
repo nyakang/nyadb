@@ -87,10 +87,13 @@ func requestToolName(kind contract.KVRequestToolKind) string {
 
 func (s *State) requestToolsMenu(c *ui.Context, d *Document) {
 	tools := d.RequestTools()
-	if len(tools) == 0 {
+	if len(tools) == 0 && !d.HTTPACLMutationAvailable() {
 		return
 	}
 	ui.Button(c, locales.Text("KV 请求工具")).Disabled(d.Busy() || d.FileBusy()).Menu(func(m *ui.Menu) {
+		if d.HTTPACLMutationAvailable() && m.Item(locales.Text("ACL 原生写入")).Chosen() {
+			s.OpenHTTPACLMutationForm(d)
+		}
 		for _, tool := range tools {
 			if m.Item(requestToolName(tool.Kind)).Chosen() {
 				s.OpenRequestTool(d, tool.Kind)

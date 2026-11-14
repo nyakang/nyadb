@@ -121,6 +121,9 @@ func (s *State) OpenHTTPACLReadForm(d *Document) {
 	if !s.active(d) || d.Busy() || d.FileBusy() || !d.HTTPACLAvailable() {
 		return
 	}
+	if d.httpACLMutation != nil && d.httpACLMutation.form != nil {
+		d.httpACLMutation.form.open = false
+	}
 	if d.httpACL == nil {
 		d.httpACL = &httpACLState{}
 	}

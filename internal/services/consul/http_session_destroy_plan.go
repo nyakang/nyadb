@@ -79,7 +79,7 @@ func (l *documentLease) PrepareHTTPSessionDestroy(parent context.Context, input 
 	if l.writeUnknown.Load() {
 		return nil, contract.ErrKVWriteUnknown
 	}
-	if l.destroyPlan != nil {
+	if l.destroyPlan != nil || l.aclMutationPlan != nil {
 		return nil, contract.ErrKVBusy
 	}
 	request, err := DocumentRequest(Request{Method: "PUT", Path: "/v1/session/destroy/" + input.ID})
