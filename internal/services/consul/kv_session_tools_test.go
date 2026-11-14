@@ -151,7 +151,7 @@ func TestHTTPSessionToolsBoundsAndPublishedDefaults(t *testing.T) {
 	}
 	sessionToolRequest(t, contract.KVToolHTTPAcquire, contract.KVRequestToolInput{Key: strings.Repeat("x", 4096), ValueBase64: base64.StdEncoding.EncodeToString(make([]byte, valueLimit)), HTTPSession: contract.KVHTTPSessionToolInput{ID: sessionToolID}})
 	tools := requestTools("original/")
-	if len(tools) != 28 || tools[0].Kind != contract.KVToolRead || tools[5].Kind != contract.KVToolTransaction {
+	if len(tools) != 30 || tools[0].Kind != contract.KVToolRead || tools[5].Kind != contract.KVToolTransaction {
 		t.Fatal("original request tools changed")
 	}
 	want := []contract.KVRequestToolKind{contract.KVToolHTTPSessionInfo, contract.KVToolHTTPSessionCreate, contract.KVToolHTTPSessionDestroy, contract.KVToolHTTPAcquire, contract.KVToolHTTPRelease}

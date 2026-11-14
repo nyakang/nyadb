@@ -9,6 +9,48 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_public_maintenance_retains_foundation_and_requires_all_original_images(self):
+        previous = self.copy_scope_before_startup(agent_maintenance_probe=True)
+        report = self.copy_scope_before_startup(public_agent_maintenance_probe=True)
+        required = fixture.PUBLIC_AGENT_MAINTENANCE_REQUIRED + tuple(previous['required'])
+        self.assertEqual(tuple(report['required']), required)
+        self.assertEqual(len(required), 74)
+        self.assertEqual(len(set(required)), 74)
+        self.assertTrue(report['production_agent_maintenance_tools_published'])
+        self.assertTrue(report['production_agent_ttl_tools_published'])
+        self.assertEqual(report['scope'], 'public-consul-original-agent-maintenance-tools-with-ttl-check-service-browser-regression')
+        self.assertEqual(len(fixture.agent_maintenance_image_names()), 544)
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+
+    def test_public_maintenance_preserves_catalog_first_and_all_retained_phases(self):
+        import re
+        report = self.copy_scope_before_startup(public_agent_maintenance_probe=True)
+        required = tuple(report['required'])
+        phases = fixture.public_agent_maintenance_acceptance_test_phases(report['packages'], required, True, 1200)
+        self.assertEqual(len(phases), 8)
+        scheduled = [re.findall(r'TestConsulNative(\w+)', phase[phase.index('-run')+1]) for phase in phases]
+        self.assertEqual(scheduled[0], ['AgentMaintenanceCatalogConvergenceUsesOriginalAgentToken'])
+        self.assertCountEqual(scheduled[-1], fixture.PUBLIC_AGENT_MAINTENANCE_REQUIRED)
+        self.assertCountEqual(sum(scheduled, []), required)
+        for missing in required:
+            with self.subTest(missing=missing), self.assertRaises(ValueError):
+                fixture.public_agent_maintenance_acceptance_test_phases(report['packages'], tuple(name for name in required if name != missing), True, 1200)
+
+    def test_public_maintenance_rejects_every_mixed_scope_and_cli_before_startup(self):
+        import inspect
+        import runpy
+        from unittest.mock import patch
+        flags = [name for name, parameter in inspect.signature(fixture.verify).parameters.items()
+                 if parameter.default is False and name not in ('race', 'public_agent_maintenance_probe')]
+        for flag in flags:
+            with self.subTest(flag=flag), patch('subprocess.run', side_effect=AssertionError('started mixed public maintenance')), self.assertRaises(ValueError):
+                fixture.verify(public_agent_maintenance_probe=True, **{flag: True})
+        with patch('sys.argv', [str(ROOT/'tools/verify_consul_fixture.py'), '--public-agent-maintenance-probe', '--agent-maintenance-probe']), patch('subprocess.run', side_effect=AssertionError('started invalid public maintenance CLI')), self.assertRaises(ValueError):
+            runpy.run_path(str(ROOT/'tools/verify_consul_fixture.py'), run_name='__main__')
+
     def test_maintenance_requires_every_new_and_retained_public_ttl_parent(self):
         previous = self.copy_scope_before_startup(public_agent_ttl_probe=True)
         report = self.copy_scope_before_startup(agent_maintenance_probe=True)

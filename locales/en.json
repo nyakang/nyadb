@@ -3915,5 +3915,15 @@
   "consulAgentTTLIncludeNote": "Include note explicitly (empty text clears Output)",
   "consulAgentTTLNoteEditor": "Original note JSON string",
   "consulAgentTTLNoteHint": "Use a JSON string to preserve newlines and controls; omission or empty text clears Output and retains Notes",
-  "consulAgentTTLScopeHint": "Update the original local TTL check ID and reset its timer; confirmation after Run"
+  "consulAgentTTLScopeHint": "Update the original local TTL check ID and reset its timer; confirmation after Run",
+  "consulAgentNodeMaintenanceTool": "Set local Agent node maintenance mode",
+  "consulAgentServiceMaintenanceTool": "Set local Agent service maintenance mode",
+  "consulAgentMaintenanceEnableHint": "enable: true enables maintenance, false disables it",
+  "consulAgentMaintenanceEnable": "Original native enable boolean",
+  "consulAgentMaintenanceIncludeReason": "Include reason explicitly (omitted or empty uses the native default)",
+  "consulAgentMaintenanceReasonEditor": "Original reason JSON string",
+  "consulAgentMaintenanceNoopHint": "Repeated enable keeps the original reason; disable removes only the maintenance check",
+  "consulAgentMaintenanceReasonHint": "Use a JSON string to preserve reason newlines and control characters",
+  "consulAgentMaintenanceACKHint": "A successful receipt confirms the local operation; read catalog health separately",
+  "consulAgentMaintenanceServiceIDInput": "Enter the original native service ID"
 }

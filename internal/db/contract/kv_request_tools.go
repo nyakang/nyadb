@@ -5,34 +5,36 @@ package contract
 type KVRequestToolKind string
 
 const (
-	KVToolRead                       KVRequestToolKind = "read"
-	KVToolList                       KVRequestToolKind = "list"
-	KVToolRaw                        KVRequestToolKind = "raw"
-	KVToolPut                        KVRequestToolKind = "put"
-	KVToolDelete                     KVRequestToolKind = "delete"
-	KVToolTransaction                KVRequestToolKind = "transaction"
-	KVToolHTTPSessionInfo            KVRequestToolKind = "http-session-info"
-	KVToolHTTPSessionCreate          KVRequestToolKind = "http-session-create"
-	KVToolHTTPSessionDestroy         KVRequestToolKind = "http-session-destroy"
-	KVToolHTTPAcquire                KVRequestToolKind = "http-acquire"
-	KVToolHTTPRelease                KVRequestToolKind = "http-release"
-	KVToolHTTPSessionList            KVRequestToolKind = "http-session-list"
-	KVToolHTTPNodeSessions           KVRequestToolKind = "http-node-sessions"
-	KVToolHTTPHealthState            KVRequestToolKind = "http-health-state"
-	KVToolHTTPHealthNode             KVRequestToolKind = "http-health-node"
-	KVToolHTTPHealthChecks           KVRequestToolKind = "http-health-checks"
-	KVToolHTTPHealthService          KVRequestToolKind = "http-health-service"
-	KVToolHTTPAgentSelf              KVRequestToolKind = "http-agent-self"
-	KVToolHTTPAgentServices          KVRequestToolKind = "http-agent-services"
-	KVToolHTTPAgentChecks            KVRequestToolKind = "http-agent-checks"
-	KVToolHTTPAgentServiceRegister   KVRequestToolKind = "http-agent-service-register"
-	KVToolHTTPAgentServiceDeregister KVRequestToolKind = "http-agent-service-deregister"
-	KVToolHTTPAgentCheckRegister     KVRequestToolKind = "http-agent-check-register"
-	KVToolHTTPAgentCheckDeregister   KVRequestToolKind = "http-agent-check-deregister"
-	KVToolHTTPAgentCheckPass         KVRequestToolKind = "http-agent-check-pass"
-	KVToolHTTPAgentCheckWarn         KVRequestToolKind = "http-agent-check-warn"
-	KVToolHTTPAgentCheckFail         KVRequestToolKind = "http-agent-check-fail"
-	KVToolHTTPAgentCheckUpdate       KVRequestToolKind = "http-agent-check-update"
+	KVToolRead                        KVRequestToolKind = "read"
+	KVToolList                        KVRequestToolKind = "list"
+	KVToolRaw                         KVRequestToolKind = "raw"
+	KVToolPut                         KVRequestToolKind = "put"
+	KVToolDelete                      KVRequestToolKind = "delete"
+	KVToolTransaction                 KVRequestToolKind = "transaction"
+	KVToolHTTPSessionInfo             KVRequestToolKind = "http-session-info"
+	KVToolHTTPSessionCreate           KVRequestToolKind = "http-session-create"
+	KVToolHTTPSessionDestroy          KVRequestToolKind = "http-session-destroy"
+	KVToolHTTPAcquire                 KVRequestToolKind = "http-acquire"
+	KVToolHTTPRelease                 KVRequestToolKind = "http-release"
+	KVToolHTTPSessionList             KVRequestToolKind = "http-session-list"
+	KVToolHTTPNodeSessions            KVRequestToolKind = "http-node-sessions"
+	KVToolHTTPHealthState             KVRequestToolKind = "http-health-state"
+	KVToolHTTPHealthNode              KVRequestToolKind = "http-health-node"
+	KVToolHTTPHealthChecks            KVRequestToolKind = "http-health-checks"
+	KVToolHTTPHealthService           KVRequestToolKind = "http-health-service"
+	KVToolHTTPAgentSelf               KVRequestToolKind = "http-agent-self"
+	KVToolHTTPAgentServices           KVRequestToolKind = "http-agent-services"
+	KVToolHTTPAgentChecks             KVRequestToolKind = "http-agent-checks"
+	KVToolHTTPAgentServiceRegister    KVRequestToolKind = "http-agent-service-register"
+	KVToolHTTPAgentServiceDeregister  KVRequestToolKind = "http-agent-service-deregister"
+	KVToolHTTPAgentCheckRegister      KVRequestToolKind = "http-agent-check-register"
+	KVToolHTTPAgentCheckDeregister    KVRequestToolKind = "http-agent-check-deregister"
+	KVToolHTTPAgentCheckPass          KVRequestToolKind = "http-agent-check-pass"
+	KVToolHTTPAgentCheckWarn          KVRequestToolKind = "http-agent-check-warn"
+	KVToolHTTPAgentCheckFail          KVRequestToolKind = "http-agent-check-fail"
+	KVToolHTTPAgentCheckUpdate        KVRequestToolKind = "http-agent-check-update"
+	KVToolHTTPAgentNodeMaintenance    KVRequestToolKind = "http-agent-node-maintenance"
+	KVToolHTTPAgentServiceMaintenance KVRequestToolKind = "http-agent-service-maintenance"
 )
 
 // HTTP Session UUIDs are distinct from numeric leases. Empty duration, behavior
@@ -82,6 +84,14 @@ type KVHTTPAgentTTLToolInput struct {
 	IncludeNote                  bool
 }
 
+// Maintenance input retains the original native boolean spelling and reason
+// presence. ReasonJSON is an authored JSON string that preserves control text.
+// Node requests reject a service ID; these comparable values carry no authority.
+type KVHTTPAgentMaintenanceToolInput struct {
+	ID, Enable, ReasonJSON string
+	IncludeReason          bool
+}
+
 // Optional unsigned numbers use exact decimal text: empty means omitted,
 // while "0" means explicitly supplied. Bytes use canonical padded Base64.
 // Key is absolute; a connection prefix is only an initial input suggestion.
@@ -94,6 +104,7 @@ type KVRequestToolInput struct {
 	HTTPAgentService                                       KVHTTPAgentServiceToolInput
 	HTTPAgentCheck                                         KVHTTPAgentCheckToolInput
 	HTTPAgentTTL                                           KVHTTPAgentTTLToolInput
+	HTTPAgentMaintenance                                   KVHTTPAgentMaintenanceToolInput
 }
 
 type KVRequestTool struct {

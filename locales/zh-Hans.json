@@ -3915,5 +3915,15 @@
   "consulAgentTTLIncludeNote": "显式包含 note（空文本表示清空 Output）",
   "consulAgentTTLNoteEditor": "原始 note JSON 字符串",
   "consulAgentTTLNoteHint": "使用 JSON 字符串保留换行和控制字符；省略或空文本均清空 Output，保留 Notes",
-  "consulAgentTTLScopeHint": "更新原 ID 的本机 TTL 检查并重置计时；运行后另行确认"
+  "consulAgentTTLScopeHint": "更新原 ID 的本机 TTL 检查并重置计时；运行后另行确认",
+  "consulAgentNodeMaintenanceTool": "设置本机 Agent 节点维护模式",
+  "consulAgentServiceMaintenanceTool": "设置本机 Agent 服务维护模式",
+  "consulAgentMaintenanceEnableHint": "enable：true 启用维护，false 禁用维护",
+  "consulAgentMaintenanceEnable": "原生 enable 布尔值",
+  "consulAgentMaintenanceIncludeReason": "显式包含 reason（省略或空值使用原生默认原因）",
+  "consulAgentMaintenanceReasonEditor": "原始 reason JSON 字符串",
+  "consulAgentMaintenanceNoopHint": "重复启用保留原原因；禁用只移除维护检查",
+  "consulAgentMaintenanceReasonHint": "使用 JSON 字符串保留原因的换行和控制字符",
+  "consulAgentMaintenanceACKHint": "成功回执确认本机操作；目录健康状态需要另行读取",
+  "consulAgentMaintenanceServiceIDInput": "输入原生服务 ID"
 }

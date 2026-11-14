@@ -39875,3 +39875,119 @@ func ConsulAgentTTLScopeHint() string { return In(i18n.Locale()).ConsulAgentTTLS
 func (msgs Messages) ConsulAgentTTLScopeHint() string {
 	return Catalog.Format(msgs.locale, "consulAgentTTLScopeHint", nil)
 }
+
+// ConsulAgentNodeMaintenanceTool says "设置本机 Agent 节点维护模式"
+// in the language the app shows.
+func ConsulAgentNodeMaintenanceTool() string {
+	return In(i18n.Locale()).ConsulAgentNodeMaintenanceTool()
+}
+
+// ConsulAgentNodeMaintenanceTool says "设置本机 Agent 节点维护模式"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentNodeMaintenanceTool() string {
+	return Catalog.Format(msgs.locale, "consulAgentNodeMaintenanceTool", nil)
+}
+
+// ConsulAgentServiceMaintenanceTool says "设置本机 Agent 服务维护模式"
+// in the language the app shows.
+func ConsulAgentServiceMaintenanceTool() string {
+	return In(i18n.Locale()).ConsulAgentServiceMaintenanceTool()
+}
+
+// ConsulAgentServiceMaintenanceTool says "设置本机 Agent 服务维护模式"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentServiceMaintenanceTool() string {
+	return Catalog.Format(msgs.locale, "consulAgentServiceMaintenanceTool", nil)
+}
+
+// ConsulAgentMaintenanceEnableHint says "enable：true 启用维护，false 禁用维护"
+// in the language the app shows.
+func ConsulAgentMaintenanceEnableHint() string {
+	return In(i18n.Locale()).ConsulAgentMaintenanceEnableHint()
+}
+
+// ConsulAgentMaintenanceEnableHint says "enable：true 启用维护，false 禁用维护"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentMaintenanceEnableHint() string {
+	return Catalog.Format(msgs.locale, "consulAgentMaintenanceEnableHint", nil)
+}
+
+// ConsulAgentMaintenanceEnable says "原生 enable 布尔值"
+// in the language the app shows.
+func ConsulAgentMaintenanceEnable() string { return In(i18n.Locale()).ConsulAgentMaintenanceEnable() }
+
+// ConsulAgentMaintenanceEnable says "原生 enable 布尔值"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentMaintenanceEnable() string {
+	return Catalog.Format(msgs.locale, "consulAgentMaintenanceEnable", nil)
+}
+
+// ConsulAgentMaintenanceIncludeReason says "显式包含 reason（省略或空值使用原生默认原因）"
+// in the language the app shows.
+func ConsulAgentMaintenanceIncludeReason() string {
+	return In(i18n.Locale()).ConsulAgentMaintenanceIncludeReason()
+}
+
+// ConsulAgentMaintenanceIncludeReason says "显式包含 reason（省略或空值使用原生默认原因）"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentMaintenanceIncludeReason() string {
+	return Catalog.Format(msgs.locale, "consulAgentMaintenanceIncludeReason", nil)
+}
+
+// ConsulAgentMaintenanceReasonEditor says "原始 reason JSON 字符串"
+// in the language the app shows.
+func ConsulAgentMaintenanceReasonEditor() string {
+	return In(i18n.Locale()).ConsulAgentMaintenanceReasonEditor()
+}
+
+// ConsulAgentMaintenanceReasonEditor says "原始 reason JSON 字符串"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentMaintenanceReasonEditor() string {
+	return Catalog.Format(msgs.locale, "consulAgentMaintenanceReasonEditor", nil)
+}
+
+// ConsulAgentMaintenanceNoopHint says "重复启用保留原原因；禁用只移除维护检查"
+// in the language the app shows.
+func ConsulAgentMaintenanceNoopHint() string {
+	return In(i18n.Locale()).ConsulAgentMaintenanceNoopHint()
+}
+
+// ConsulAgentMaintenanceNoopHint says "重复启用保留原原因；禁用只移除维护检查"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentMaintenanceNoopHint() string {
+	return Catalog.Format(msgs.locale, "consulAgentMaintenanceNoopHint", nil)
+}
+
+// ConsulAgentMaintenanceReasonHint says "使用 JSON 字符串保留原因的换行和控制字符"
+// in the language the app shows.
+func ConsulAgentMaintenanceReasonHint() string {
+	return In(i18n.Locale()).ConsulAgentMaintenanceReasonHint()
+}
+
+// ConsulAgentMaintenanceReasonHint says "使用 JSON 字符串保留原因的换行和控制字符"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentMaintenanceReasonHint() string {
+	return Catalog.Format(msgs.locale, "consulAgentMaintenanceReasonHint", nil)
+}
+
+// ConsulAgentMaintenanceACKHint says "成功回执确认本机操作；目录健康状态需要另行读取"
+// in the language the app shows.
+func ConsulAgentMaintenanceACKHint() string { return In(i18n.Locale()).ConsulAgentMaintenanceACKHint() }
+
+// ConsulAgentMaintenanceACKHint says "成功回执确认本机操作；目录健康状态需要另行读取"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentMaintenanceACKHint() string {
+	return Catalog.Format(msgs.locale, "consulAgentMaintenanceACKHint", nil)
+}
+
+// ConsulAgentMaintenanceServiceIDInput says "输入原生服务 ID"
+// in the language the app shows.
+func ConsulAgentMaintenanceServiceIDInput() string {
+	return In(i18n.Locale()).ConsulAgentMaintenanceServiceIDInput()
+}
+
+// ConsulAgentMaintenanceServiceIDInput says "输入原生服务 ID"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentMaintenanceServiceIDInput() string {
+	return Catalog.Format(msgs.locale, "consulAgentMaintenanceServiceIDInput", nil)
+}

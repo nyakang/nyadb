@@ -42,7 +42,7 @@ func TestAgentTTLToolsPreserveOriginalIDsNotePresenceAndCompleteJSON(t *testing.
 	}
 	tools := requestTools("foreign-prefix")
 	for i, kind := range []contract.KVRequestToolKind{contract.KVToolHTTPAgentCheckPass, contract.KVToolHTTPAgentCheckWarn, contract.KVToolHTTPAgentCheckFail, contract.KVToolHTTPAgentCheckUpdate} {
-		if len(tools) != 28 || tools[24+i].Kind != kind || tools[24+i].Default != (contract.KVRequestToolInput{}) {
+		if len(tools) != 30 || tools[24+i].Kind != kind || tools[24+i].Default != (contract.KVRequestToolInput{}) {
 			t.Fatal("TTL tools inherited routing or synthesized native state")
 		}
 	}

@@ -67,6 +67,10 @@ func requestToolName(kind contract.KVRequestToolKind) string {
 		return locales.Text("将本机 TTL 检查设为 critical")
 	case contract.KVToolHTTPAgentCheckUpdate:
 		return locales.Text("更新本机 TTL 检查状态与输出")
+	case contract.KVToolHTTPAgentNodeMaintenance:
+		return locales.Text("设置本机 Agent 节点维护模式")
+	case contract.KVToolHTTPAgentServiceMaintenance:
+		return locales.Text("设置本机 Agent 服务维护模式")
 	}
 	return string(kind)
 }
@@ -115,7 +119,9 @@ func (s *State) requestToolsModals(c *ui.Context) {
 						ui.TextInput(c, value).Label(label).Grow(1).MinWidth(0).Disabled(d.Busy() || d.FileBusy())
 					})
 				}
-				if httpAgentTTLRequestTool(p.kind) {
+				if httpAgentMaintenanceRequestTool(p.kind) {
+					s.httpAgentMaintenanceToolInputs(c, d, p.kind, &input)
+				} else if httpAgentTTLRequestTool(p.kind) {
 					s.httpAgentTTLToolInputs(c, d, p.kind, &input)
 				} else if httpAgentCheckRequestTool(p.kind) {
 					s.httpAgentCheckToolInputs(c, d, p.kind, &input)

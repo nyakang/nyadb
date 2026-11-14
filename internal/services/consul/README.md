@@ -647,7 +647,8 @@ write receipts across later reads and explicit recovery. Public TTL acceptance
 uses `--public-agent-ttl-probe --race --mode MODE --test-timeout 1200`: all 60
 foundation/regression parents and 868 images plus four public workspace/Shell
 parents and 576 bilingual wide/narrow images per official configuration.
-Maintenance and ACL/catalog/Enterprise/HA require their own acceptance.
+Maintenance uses the separate public acceptance scope below;
+ACL/catalog/Enterprise/HA require further acceptance.
 
 Node and service maintenance requests use the original local Agent, the same
 Client, document lease and Manager. Required native enable booleans and original
@@ -664,5 +665,21 @@ retained TTL tests can make the node critical. ACL fixtures explicitly configure
 their owned Agent token. Separate token-only
 `--agent-maintenance-no-agent-token-probe --race --mode token` evidence verifies
 the original document's local ACK and stale catalog; it does not substitute for
-the full five-configuration acceptance. Structured maintenance tools and
-ACL/catalog/Enterprise/HA retain their separate acceptance requirements.
+the full five-configuration acceptance.
+
+The two public maintenance tools share the existing neutral HTTP request builder,
+KV document and immutable confirmation. Comparable inputs preserve original
+service ID, enable spelling and reason JSON string/presence; hidden foreign
+inputs are rejected. Forms only author text. Complete input/request files and
+copy/export preserve the original values, and original receipts remain separate
+from later reads. Parked completions await the original document's activation;
+cancel waits for its executor, close releases its resources and explicit recovery
+performs no request. Unknown maintenance writes block further writes even after
+a successful Agent read.
+
+`--public-agent-maintenance-probe --race --mode MODE --test-timeout 1200` requires
+four public workspace/Shell parents in addition to all 70 maintenance/TTL/check/
+service/browser parents. Each official configuration retains all 1444 regression
+images and adds 544 bilingual wide/narrow maintenance images. Missing/SKIP cases
+fail acceptance. Separate no-Agent-token evidence supplements these five full
+configurations. ACL/catalog/archives/Enterprise/HA remain future acceptance work.
