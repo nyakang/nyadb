@@ -305,7 +305,11 @@ func TestDataTransactionCommitWaitsForInsertedRowIdentityRefresh(t *testing.T) {
 	}
 	consumeTransactionPage(t, s, d)
 	s.consumeDataTransactions(ui.Services{})
-	consumeTransactionResult(t, s, d)
+	// The UI pass can start and consume a fast commit in the same call.
+	// Wait only if its original completion is still pending.
+	if dataTransactionBusy(d) {
+		consumeTransactionResult(t, s, d)
+	}
 	if commits.Load() != 1 || dataTransactionActive(d) {
 		t.Fatal("commit continuation was dropped after inserted-row refresh")
 	}
