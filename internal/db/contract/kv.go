@@ -160,9 +160,14 @@ type KVRecovery struct {
 	// recovery transfers evidence only, never directory/plan authority.
 	MemberResults  []KVMemberResult
 	SnapshotResult *KVSnapshotResult
+	ACLResult      *KVHTTPACLReadResult // private original ACL evidence, potentially containing secrets
 }
 
 func (r KVRecovery) Clone() KVRecovery {
+	if r.ACLResult != nil {
+		v := r.ACLResult.Clone()
+		r.ACLResult = &v
+	}
 	if r.Unknown != nil {
 		v := r.Unknown.Clone()
 		r.Unknown = &v

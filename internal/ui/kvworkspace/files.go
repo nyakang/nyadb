@@ -23,6 +23,7 @@ type Files struct {
 	WriteStream func(string, func(io.Writer) error) error
 }
 type fileResult struct {
+	aclForm   *HTTPACLReadInput
 	clipboard string
 	path      string
 	request   contract.KVRequest
@@ -30,6 +31,8 @@ type fileResult struct {
 	snapshots *snapshotFileOutcome
 }
 type fileOperation struct {
+	aclForm   *httpACLReadForm
+	aclSerial uint64
 	clipboard func(string)
 	canceled  bool
 	kind      string
@@ -331,6 +334,9 @@ func (s *State) consumeFiles(d *Document) {
 		job := d.io
 		d.io = nil
 		job.cancel()
+		if s.consumeHTTPACLFile(d, job, r) {
+			return
+		}
 		if r.snapshots != nil {
 			s.consumeSnapshotFile(d, r.snapshots, job.canceled)
 		}

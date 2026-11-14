@@ -78,7 +78,7 @@ func (s *session) bindKV(raw contract.KVRequestLease, document uint64) (contract
 	if auth {
 		return bindKVSnapshots(bindKVMembers(bindKVMaintenance(&kvAuthLease{bound}))), nil
 	}
-	return bindKVHTTPSessionDestroy(bindKVHTTPSessionKeys(bindKVSnapshots(bindKVMembers(bindKVMaintenance(bound))))), nil
+	return bindKVHTTPACLRead(bindKVHTTPSessionDestroy(bindKVHTTPSessionKeys(bindKVSnapshots(bindKVMembers(bindKVMaintenance(bound)))))), nil
 }
 func (s *session) ReserveKV(document uint64) (contract.KVRequestLease, error) {
 	if !s.alive() {
@@ -113,9 +113,17 @@ func (s *session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 	// Revoke the original wrapper immediately; the raw provider waits for its
 	// executor and transfers only evidence, never an old prepared request.
 	old.closed.Store(true)
+	aclOriginal := old.aclOriginalRecord()
 	recovery, err := p.RecoverKV(old.raw)
 	recovery = recovery.Clone()
 	old.closeDestroyPlans()
+	var aclRawScope contract.KVScope
+	if recovery.ACLResult != nil {
+		aclRawScope = recovery.ACLResult.Scope.Clone()
+		if !old.translateACLResult(recovery.ACLResult, aclOriginal) {
+			err = errors.Join(err, contract.ErrRevoked)
+		}
+	}
 	if !old.translateDestroyResult(&recovery.Last) {
 		err = errors.Join(err, contract.ErrRevoked)
 	}
@@ -141,6 +149,7 @@ func (s *session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 	recovery.Lease, err = s.bindKV(recovery.Lease, old.document)
 	if next := originalKVRequestLease(recovery.Lease); next != nil {
 		next.inheritDestroyRecords(old)
+		next.inheritACLRecord(aclRawScope, recovery.ACLResult)
 	}
 	return recovery, err
 }
@@ -159,6 +168,9 @@ type kvRequestLease struct {
 	destroyRecords     map[string]kvDestroyRecordScope
 	destroyPlans       map[*kvHTTPSessionDestroyPreparation]bool
 	destroyClosed      bool
+	aclMu              sync.Mutex
+	aclRecordID        string
+	aclRecordScope     kvACLRecordScope
 }
 type kvRequestPreparation struct {
 	owner    *kvRequestLease
@@ -239,6 +251,9 @@ func (l *kvRequestLease) Close() error {
 	l.destroyRecords = nil
 	l.destroyClosed = true
 	l.destroyMu.Unlock()
+	l.aclMu.Lock()
+	l.aclRecordID, l.aclRecordScope = "", kvACLRecordScope{}
+	l.aclMu.Unlock()
 	l.membersMu.Lock()
 	l.memberObservations = nil
 	l.membersMu.Unlock()

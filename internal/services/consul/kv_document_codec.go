@@ -30,6 +30,12 @@ func DocumentRequest(r Request) (contract.KVRequest, error) {
 	if strings.HasPrefix(r.Path, "/v1/acl/") {
 		return contract.KVRequest{}, ErrUnsupported
 	}
+	return documentRequestEnvelope(r)
+}
+
+// Private facets may retain a complete authored request without publishing it
+// to the generic request editor or file decoder.
+func documentRequestEnvelope(r Request) (contract.KVRequest, error) {
 	if _, _, _, err := validateRequest(r); err != nil {
 		return contract.KVRequest{}, err
 	}

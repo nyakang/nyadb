@@ -12,6 +12,18 @@ type kvLeaseBrowsingLease struct{ *kvRequestLease }
 
 func originalKVRequestLease(previous contract.KVRequestLease) *kvRequestLease {
 	switch l := previous.(type) {
+	case *kvHTTPACLReadDestroyLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPACLReadKeysLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPACLReadLease:
+		if l != nil {
+			return l.base
+		}
 	case *kvHTTPSessionDestroyLease:
 		if l != nil {
 			return l.kvRequestLease

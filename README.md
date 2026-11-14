@@ -272,3 +272,23 @@ parents in 12 phases: all 84 public Catalog/maintenance regressions and their
 proves ACL-disabled rejection; token/TLS/mTLS and the second official version
 prove reads, native redaction, permissions, processed reply faults and original
 cancellation. This foundation does not publish ACL management capabilities.
+
+
+### Consul ACL read forms and private receipts
+
+The request workspace provides dedicated ACL reads for tokens, policies, roles,
+auth methods, binding rules and templated policies. Native list/id/name/self
+lookups retain original identities, optional empty values and blocking options.
+Saved ACL inputs are versioned independently of generic request files.
+
+ACL secrets stay hidden until explicitly revealed. Copy/export requires consent
+bound to the exact original receipt; generic receipts and operation files never
+contain ACL response bodies. Parking hides revealed content. Disconnect retains
+inputs and complete private receipts; explicit original-profile recovery does
+not replay requests or clear unrelated unknown writes.
+
+`tools/verify_consul_fixture.py --public-acl-probe --race` requires all 87 prior
+ACL/Catalog/maintenance parents plus nine document/workspace/Shell parents,
+retaining 2120 prior images and 72 ACL images per official configuration. ACL
+writes, token cloning, reference impact, archives, Enterprise/HA and the other
+88-driver/110-product gaps remain separate acceptance work.

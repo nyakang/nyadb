@@ -40221,3 +40221,385 @@ func ConsulCatalogBrowserTitle() string { return In(i18n.Locale()).ConsulCatalog
 func (msgs Messages) ConsulCatalogBrowserTitle() string {
 	return Catalog.Format(msgs.locale, "consulCatalogBrowserTitle", nil)
 }
+
+// ConsulACLFileFailure says "ACL 文件操作失败；原回执保留"
+// in the language the app shows.
+func ConsulACLFileFailure() string { return In(i18n.Locale()).ConsulACLFileFailure() }
+
+// ConsulACLFileFailure says "ACL 文件操作失败；原回执保留"
+// in the language of msgs.
+func (msgs Messages) ConsulACLFileFailure() string {
+	return Catalog.Format(msgs.locale, "consulACLFileFailure", nil)
+}
+
+// ConsulACLAbsent says "未返回"
+// in the language the app shows.
+func ConsulACLAbsent() string { return In(i18n.Locale()).ConsulACLAbsent() }
+
+// ConsulACLAbsent says "未返回"
+// in the language of msgs.
+func (msgs Messages) ConsulACLAbsent() string {
+	return Catalog.Format(msgs.locale, "consulACLAbsent", nil)
+}
+
+// ConsulACLEmpty says "空值"
+// in the language the app shows.
+func ConsulACLEmpty() string { return In(i18n.Locale()).ConsulACLEmpty() }
+
+// ConsulACLEmpty says "空值"
+// in the language of msgs.
+func (msgs Messages) ConsulACLEmpty() string {
+	return Catalog.Format(msgs.locale, "consulACLEmpty", nil)
+}
+
+// ConsulACLRedacted says "服务端已遮蔽"
+// in the language the app shows.
+func ConsulACLRedacted() string { return In(i18n.Locale()).ConsulACLRedacted() }
+
+// ConsulACLRedacted says "服务端已遮蔽"
+// in the language of msgs.
+func (msgs Messages) ConsulACLRedacted() string {
+	return Catalog.Format(msgs.locale, "consulACLRedacted", nil)
+}
+
+// ConsulACLHidden says "已隐藏"
+// in the language the app shows.
+func ConsulACLHidden() string { return In(i18n.Locale()).ConsulACLHidden() }
+
+// ConsulACLHidden says "已隐藏"
+// in the language of msgs.
+func (msgs Messages) ConsulACLHidden() string {
+	return Catalog.Format(msgs.locale, "consulACLHidden", nil)
+}
+
+// ConsulACLUnavailable says "ACL 条目不可用；原始回执仍可显式查看或导出"
+// in the language the app shows.
+func ConsulACLUnavailable() string { return In(i18n.Locale()).ConsulACLUnavailable() }
+
+// ConsulACLUnavailable says "ACL 条目不可用；原始回执仍可显式查看或导出"
+// in the language of msgs.
+func (msgs Messages) ConsulACLUnavailable() string {
+	return Catalog.Format(msgs.locale, "consulACLUnavailable", nil)
+}
+
+// ConsulACLIncomplete says "仅展示原响应返回的 ACL 条目；过滤、null 或遮蔽不表示资源不存在"
+// in the language the app shows.
+func ConsulACLIncomplete() string { return In(i18n.Locale()).ConsulACLIncomplete() }
+
+// ConsulACLIncomplete says "仅展示原响应返回的 ACL 条目；过滤、null 或遮蔽不表示资源不存在"
+// in the language of msgs.
+func (msgs Messages) ConsulACLIncomplete() string {
+	return Catalog.Format(msgs.locale, "consulACLIncomplete", nil)
+}
+
+// ConsulACLRevealBody says "显示原 ACL 正文（含秘密）"
+// in the language the app shows.
+func ConsulACLRevealBody() string { return In(i18n.Locale()).ConsulACLRevealBody() }
+
+// ConsulACLRevealBody says "显示原 ACL 正文（含秘密）"
+// in the language of msgs.
+func (msgs Messages) ConsulACLRevealBody() string {
+	return Catalog.Format(msgs.locale, "consulACLRevealBody", nil)
+}
+
+// ConsulACLExport says "导出完整 ACL 回执…"
+// in the language the app shows.
+func ConsulACLExport() string { return In(i18n.Locale()).ConsulACLExport() }
+
+// ConsulACLExport says "导出完整 ACL 回执…"
+// in the language of msgs.
+func (msgs Messages) ConsulACLExport() string {
+	return Catalog.Format(msgs.locale, "consulACLExport", nil)
+}
+
+// ConsulACLHide says "隐藏秘密并返回 ACL 列表"
+// in the language the app shows.
+func ConsulACLHide() string { return In(i18n.Locale()).ConsulACLHide() }
+
+// ConsulACLHide says "隐藏秘密并返回 ACL 列表"
+// in the language of msgs.
+func (msgs Messages) ConsulACLHide() string {
+	return Catalog.Format(msgs.locale, "consulACLHide", nil)
+}
+
+// ConsulACLPreview says "预览最多 64 KiB；导出保留原始回执和完整字节"
+// in the language the app shows.
+func ConsulACLPreview() string { return In(i18n.Locale()).ConsulACLPreview() }
+
+// ConsulACLPreview says "预览最多 64 KiB；导出保留原始回执和完整字节"
+// in the language of msgs.
+func (msgs Messages) ConsulACLPreview() string {
+	return Catalog.Format(msgs.locale, "consulACLPreview", nil)
+}
+
+// ConsulACLPrivateDetail says "ACL 原始秘密详情"
+// in the language the app shows.
+func ConsulACLPrivateDetail() string { return In(i18n.Locale()).ConsulACLPrivateDetail() }
+
+// ConsulACLPrivateDetail says "ACL 原始秘密详情"
+// in the language of msgs.
+func (msgs Messages) ConsulACLPrivateDetail() string {
+	return Catalog.Format(msgs.locale, "consulACLPrivateDetail", nil)
+}
+
+// ConsulACLDefaultHidden says "秘密默认隐藏；显示、复制和导出仅使用此原回执"
+// in the language the app shows.
+func ConsulACLDefaultHidden() string { return In(i18n.Locale()).ConsulACLDefaultHidden() }
+
+// ConsulACLDefaultHidden says "秘密默认隐藏；显示、复制和导出仅使用此原回执"
+// in the language of msgs.
+func (msgs Messages) ConsulACLDefaultHidden() string {
+	return Catalog.Format(msgs.locale, "consulACLDefaultHidden", nil)
+}
+
+// ConsulACLFilter says "筛选已返回的 ACL 名称或标识"
+// in the language the app shows.
+func ConsulACLFilter() string { return In(i18n.Locale()).ConsulACLFilter() }
+
+// ConsulACLFilter says "筛选已返回的 ACL 名称或标识"
+// in the language of msgs.
+func (msgs Messages) ConsulACLFilter() string {
+	return Catalog.Format(msgs.locale, "consulACLFilter", nil)
+}
+
+// ConsulACLPage says "第 %d/%d 页 · %d 个 ACL 条目"
+// in the language the app shows.
+func ConsulACLPage() string { return In(i18n.Locale()).ConsulACLPage() }
+
+// ConsulACLPage says "第 %d/%d 页 · %d 个 ACL 条目"
+// in the language of msgs.
+func (msgs Messages) ConsulACLPage() string {
+	return Catalog.Format(msgs.locale, "consulACLPage", nil)
+}
+
+// ConsulACLRevealRow says "显示所选 ACL 原值（含秘密）"
+// in the language the app shows.
+func ConsulACLRevealRow() string { return In(i18n.Locale()).ConsulACLRevealRow() }
+
+// ConsulACLRevealRow says "显示所选 ACL 原值（含秘密）"
+// in the language of msgs.
+func (msgs Messages) ConsulACLRevealRow() string {
+	return Catalog.Format(msgs.locale, "consulACLRevealRow", nil)
+}
+
+// ConsulACLCopyRow says "复制所选 ACL 原值…"
+// in the language the app shows.
+func ConsulACLCopyRow() string { return In(i18n.Locale()).ConsulACLCopyRow() }
+
+// ConsulACLCopyRow says "复制所选 ACL 原值…"
+// in the language of msgs.
+func (msgs Messages) ConsulACLCopyRow() string {
+	return Catalog.Format(msgs.locale, "consulACLCopyRow", nil)
+}
+
+// ConsulACLReturned says "已返回的 ACL 条目"
+// in the language the app shows.
+func ConsulACLReturned() string { return In(i18n.Locale()).ConsulACLReturned() }
+
+// ConsulACLReturned says "已返回的 ACL 条目"
+// in the language of msgs.
+func (msgs Messages) ConsulACLReturned() string {
+	return Catalog.Format(msgs.locale, "consulACLReturned", nil)
+}
+
+// ConsulACLTransferNotice says "包含原响应中的令牌秘密和认证配置。确认后将完整内容发送到所选文件或系统剪贴板。"
+// in the language the app shows.
+func ConsulACLTransferNotice() string { return In(i18n.Locale()).ConsulACLTransferNotice() }
+
+// ConsulACLTransferNotice says "包含原响应中的令牌秘密和认证配置。确认后将完整内容发送到所选文件或系统剪贴板。"
+// in the language of msgs.
+func (msgs Messages) ConsulACLTransferNotice() string {
+	return Catalog.Format(msgs.locale, "consulACLTransferNotice", nil)
+}
+
+// ConsulACLTransferSize says "原回执快照：%d 字节"
+// in the language the app shows.
+func ConsulACLTransferSize() string { return In(i18n.Locale()).ConsulACLTransferSize() }
+
+// ConsulACLTransferSize says "原回执快照：%d 字节"
+// in the language of msgs.
+func (msgs Messages) ConsulACLTransferSize() string {
+	return Catalog.Format(msgs.locale, "consulACLTransferSize", nil)
+}
+
+// ConsulACLTransferConsent says "我确认复制或导出此原回执中的秘密"
+// in the language the app shows.
+func ConsulACLTransferConsent() string { return In(i18n.Locale()).ConsulACLTransferConsent() }
+
+// ConsulACLTransferConsent says "我确认复制或导出此原回执中的秘密"
+// in the language of msgs.
+func (msgs Messages) ConsulACLTransferConsent() string {
+	return Catalog.Format(msgs.locale, "consulACLTransferConsent", nil)
+}
+
+// ConsulACLTransferConfirm says "确认传出 ACL 内容"
+// in the language the app shows.
+func ConsulACLTransferConfirm() string { return In(i18n.Locale()).ConsulACLTransferConfirm() }
+
+// ConsulACLTransferConfirm says "确认传出 ACL 内容"
+// in the language of msgs.
+func (msgs Messages) ConsulACLTransferConfirm() string {
+	return Catalog.Format(msgs.locale, "consulACLTransferConfirm", nil)
+}
+
+// ConsulACLBrowser says "ACL 原响应浏览器"
+// in the language the app shows.
+func ConsulACLBrowser() string { return In(i18n.Locale()).ConsulACLBrowser() }
+
+// ConsulACLBrowser says "ACL 原响应浏览器"
+// in the language of msgs.
+func (msgs Messages) ConsulACLBrowser() string {
+	return Catalog.Format(msgs.locale, "consulACLBrowser", nil)
+}
+
+// ConsulACLReadInputInvalid says "ACL 读取输入无效；原草稿保留"
+// in the language the app shows.
+func ConsulACLReadInputInvalid() string { return In(i18n.Locale()).ConsulACLReadInputInvalid() }
+
+// ConsulACLReadInputInvalid says "ACL 读取输入无效；原草稿保留"
+// in the language of msgs.
+func (msgs Messages) ConsulACLReadInputInvalid() string {
+	return Catalog.Format(msgs.locale, "consulACLReadInputInvalid", nil)
+}
+
+// ConsulACLReadCombinationInvalid says "ACL 读取参数组合无效；请检查资源、查询方式与可选参数"
+// in the language the app shows.
+func ConsulACLReadCombinationInvalid() string {
+	return In(i18n.Locale()).ConsulACLReadCombinationInvalid()
+}
+
+// ConsulACLReadCombinationInvalid says "ACL 读取参数组合无效；请检查资源、查询方式与可选参数"
+// in the language of msgs.
+func (msgs Messages) ConsulACLReadCombinationInvalid() string {
+	return Catalog.Format(msgs.locale, "consulACLReadCombinationInvalid", nil)
+}
+
+// ConsulACLReadInputChanged says "ACL 草稿已更改，未载入所选文件"
+// in the language the app shows.
+func ConsulACLReadInputChanged() string { return In(i18n.Locale()).ConsulACLReadInputChanged() }
+
+// ConsulACLReadInputChanged says "ACL 草稿已更改，未载入所选文件"
+// in the language of msgs.
+func (msgs Messages) ConsulACLReadInputChanged() string {
+	return Catalog.Format(msgs.locale, "consulACLReadInputChanged", nil)
+}
+
+// ConsulACLReadForm says "读取 ACL 资源"
+// in the language the app shows.
+func ConsulACLReadForm() string { return In(i18n.Locale()).ConsulACLReadForm() }
+
+// ConsulACLReadForm says "读取 ACL 资源"
+// in the language of msgs.
+func (msgs Messages) ConsulACLReadForm() string {
+	return Catalog.Format(msgs.locale, "consulACLReadForm", nil)
+}
+
+// ConsulACLInputOpen says "打开 ACL 读取输入"
+// in the language the app shows.
+func ConsulACLInputOpen() string { return In(i18n.Locale()).ConsulACLInputOpen() }
+
+// ConsulACLInputOpen says "打开 ACL 读取输入"
+// in the language of msgs.
+func (msgs Messages) ConsulACLInputOpen() string {
+	return Catalog.Format(msgs.locale, "consulACLInputOpen", nil)
+}
+
+// ConsulACLInputSave says "保存 ACL 读取输入"
+// in the language the app shows.
+func ConsulACLInputSave() string { return In(i18n.Locale()).ConsulACLInputSave() }
+
+// ConsulACLInputSave says "保存 ACL 读取输入"
+// in the language of msgs.
+func (msgs Messages) ConsulACLInputSave() string {
+	return Catalog.Format(msgs.locale, "consulACLInputSave", nil)
+}
+
+// ConsulACLInputSaveAs says "另存 ACL 读取输入"
+// in the language the app shows.
+func ConsulACLInputSaveAs() string { return In(i18n.Locale()).ConsulACLInputSaveAs() }
+
+// ConsulACLInputSaveAs says "另存 ACL 读取输入"
+// in the language of msgs.
+func (msgs Messages) ConsulACLInputSaveAs() string {
+	return Catalog.Format(msgs.locale, "consulACLInputSaveAs", nil)
+}
+
+// ConsulACLInputCopy says "复制 ACL 读取输入"
+// in the language the app shows.
+func ConsulACLInputCopy() string { return In(i18n.Locale()).ConsulACLInputCopy() }
+
+// ConsulACLInputCopy says "复制 ACL 读取输入"
+// in the language of msgs.
+func (msgs Messages) ConsulACLInputCopy() string {
+	return Catalog.Format(msgs.locale, "consulACLInputCopy", nil)
+}
+
+// ConsulACLReadResource says "ACL 资源类型"
+// in the language the app shows.
+func ConsulACLReadResource() string { return In(i18n.Locale()).ConsulACLReadResource() }
+
+// ConsulACLReadResource says "ACL 资源类型"
+// in the language of msgs.
+func (msgs Messages) ConsulACLReadResource() string {
+	return Catalog.Format(msgs.locale, "consulACLReadResource", nil)
+}
+
+// ConsulACLReadLookup says "ACL 查询方式"
+// in the language the app shows.
+func ConsulACLReadLookup() string { return In(i18n.Locale()).ConsulACLReadLookup() }
+
+// ConsulACLReadLookup says "ACL 查询方式"
+// in the language of msgs.
+func (msgs Messages) ConsulACLReadLookup() string {
+	return Catalog.Format(msgs.locale, "consulACLReadLookup", nil)
+}
+
+// ConsulACLReadIdentity says "ACL 原标识或名称"
+// in the language the app shows.
+func ConsulACLReadIdentity() string { return In(i18n.Locale()).ConsulACLReadIdentity() }
+
+// ConsulACLReadIdentity says "ACL 原标识或名称"
+// in the language of msgs.
+func (msgs Messages) ConsulACLReadIdentity() string {
+	return Catalog.Format(msgs.locale, "consulACLReadIdentity", nil)
+}
+
+// ConsulACLReadIdentityHint says "self 使用原连接令牌；token 的 id 是 AccessorID。list 和 self 不填写标识。"
+// in the language the app shows.
+func ConsulACLReadIdentityHint() string { return In(i18n.Locale()).ConsulACLReadIdentityHint() }
+
+// ConsulACLReadIdentityHint says "self 使用原连接令牌；token 的 id 是 AccessorID。list 和 self 不填写标识。"
+// in the language of msgs.
+func (msgs Messages) ConsulACLReadIdentityHint() string {
+	return Catalog.Format(msgs.locale, "consulACLReadIdentityHint", nil)
+}
+
+// ConsulACLReadOptionsHint says "保留勾选参数的空值；不支持的资源、查询方式或参数组合将被拒绝。"
+// in the language the app shows.
+func ConsulACLReadOptionsHint() string { return In(i18n.Locale()).ConsulACLReadOptionsHint() }
+
+// ConsulACLReadOptionsHint says "保留勾选参数的空值；不支持的资源、查询方式或参数组合将被拒绝。"
+// in the language of msgs.
+func (msgs Messages) ConsulACLReadOptionsHint() string {
+	return Catalog.Format(msgs.locale, "consulACLReadOptionsHint", nil)
+}
+
+// ConsulACLReadOriginal says "读取原连接 ACL"
+// in the language the app shows.
+func ConsulACLReadOriginal() string { return In(i18n.Locale()).ConsulACLReadOriginal() }
+
+// ConsulACLReadOriginal says "读取原连接 ACL"
+// in the language of msgs.
+func (msgs Messages) ConsulACLReadOriginal() string {
+	return Catalog.Format(msgs.locale, "consulACLReadOriginal", nil)
+}
+
+// ConsulACLReadLeaveDraft says "未保存的 ACL 读取输入也将被放弃"
+// in the language the app shows.
+func ConsulACLReadLeaveDraft() string { return In(i18n.Locale()).ConsulACLReadLeaveDraft() }
+
+// ConsulACLReadLeaveDraft says "未保存的 ACL 读取输入也将被放弃"
+// in the language of msgs.
+func (msgs Messages) ConsulACLReadLeaveDraft() string {
+	return Catalog.Format(msgs.locale, "consulACLReadLeaveDraft", nil)
+}

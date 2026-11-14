@@ -75,6 +75,8 @@ type confirmation struct {
 	open           bool
 }
 type outcome struct {
+	aclRead               *contract.KVHTTPACLReadResult
+	recoveryACL           *contract.KVHTTPACLReadResult
 	destroyPlan           contract.KVHTTPSessionDestroyPreparation
 	sessionKeys           *contract.KVHTTPSessionKeysObservation
 	result                contract.KVResult
@@ -93,6 +95,9 @@ type outcome struct {
 	recoverySnapshot      *contract.KVSnapshotResult
 }
 type operation struct {
+	aclRequest         contract.KVHTTPACLReadRequest
+	aclRecordID        string
+	aclRecovery        *contract.KVHTTPACLReadResult
 	destroyRequest     contract.KVHTTPSessionDestroyImpactRequest
 	editorRevision     uint64
 	sessionKeysRequest contract.KVHTTPSessionKeysRequest
@@ -114,6 +119,7 @@ type operation struct {
 // Document is UI-thread owned. Workers capture immutable requests and their
 // original lease; private buffered channels are consumed only by State.Consume.
 type Document struct {
+	httpACL                                                 *httpACLState
 	httpSessionDestroyStep                                  int
 	httpSessionKeysBrowser                                  *httpSessionKeysBrowserState
 	httpSessionKeys                                         bool
@@ -180,6 +186,7 @@ type Document struct {
 	browserColumns, browserKeysColumns                      ui.ListState
 }
 type leaveStamp struct {
+	httpACLRevision                         uint64
 	httpSessionRenewalRevision              uint64
 	httpWatchRevision                       uint64
 	toolRevision                            uint64
@@ -219,7 +226,7 @@ func (d *Document) Request() contract.KVRequest {
 	return contract.KVRequest{Method: d.method, JSON: d.Editor.Buffer.String()}
 }
 func (d *Document) Dirty() bool {
-	return !d.closed && (d.Request() != d.saved || d.hasRequestToolDraft())
+	return !d.closed && (d.Request() != d.saved || d.hasRequestToolDraft() || d.httpACLFormDirty())
 }
 func (d *Document) Busy() bool {
 	return d.job != nil || d.eventJob != nil || d.renewalJob != nil || d.httpWatchBusy() || d.httpSessionRenewalBusy()
@@ -418,6 +425,7 @@ func (s *State) check(d *Document) bool {
 		return false
 	}
 	if err := d.lease.CheckKVLease(); err != nil {
+		s.HideHTTPACLReceipt(d)
 		d.needsRecovery = true
 		d.clearConfirmation()
 		d.error = locales.Text("KV 原连接不可用")
@@ -696,6 +704,8 @@ func (s *State) Recover(d *Document) {
 	}
 	previous := d.lease
 	id := d.id
+	expectedACL := d.expectedHTTPACLRecovery()
+	s.HideHTTPACLReceipt(d)
 	s.start(d, "recover", contract.KVRequest{}, func(ctx context.Context) outcome {
 		if err := ctx.Err(); err != nil {
 			return outcome{err: err}
@@ -728,9 +738,15 @@ func (s *State) Recover(d *Document) {
 			copy := r.SnapshotResult.Clone()
 			snapshot = &copy
 		}
-		return outcome{lease: r.Lease, recoveryResult: &last, recoveryUnknown: unknown, recoveryMembers: cloneMemberResults(r.MemberResults), recoverySnapshot: snapshot, err: err}
+		var acl *contract.KVHTTPACLReadResult
+		if r.ACLResult != nil {
+			copy := r.ACLResult.Clone()
+			acl = &copy
+		}
+		return outcome{lease: r.Lease, recoveryResult: &last, recoveryUnknown: unknown, recoveryMembers: cloneMemberResults(r.MemberResults), recoverySnapshot: snapshot, recoveryACL: acl, err: err}
 	})
 	d.job.snapshotRecovery = expectedSnapshot
+	d.job.aclRecovery = expectedACL
 }
 
 // Consume admits only the active original document. Parked completions keep
@@ -738,6 +754,7 @@ func (s *State) Recover(d *Document) {
 func (s *State) Consume() {
 	for _, d := range s.documents {
 		if !s.active(d) {
+			s.HideHTTPACLReceipt(d)
 			continue
 		}
 		s.consumeRenewal(d)
@@ -762,8 +779,11 @@ func (s *State) Consume() {
 				job := d.job
 				d.job = nil
 				job.cancel()
-				if r.err != nil {
+				if r.err != nil && job.kind != "http-acl-read" {
 					d.error = r.err.Error()
+					if job.kind == "recover" && (job.aclRecovery != nil || d.HTTPACLAvailable()) {
+						d.error = httpACLRecoveryError
+					}
 				}
 				if r.alarms != nil {
 					s.consumeAlarms(d, job, r.alarms)
@@ -782,6 +802,7 @@ func (s *State) Consume() {
 					d.error = contract.ErrRevoked.Error()
 				}
 				if job.kind == "recover" {
+					s.consumeHTTPACLRecovery(d, job, &r)
 					s.consumeRequestRecovery(d, job, &r)
 					s.consumeSnapshotRecovery(d, job, r.recoverySnapshot)
 					s.consumeMemberRecovery(d, job, r.recoveryMembers)
@@ -826,6 +847,9 @@ func (s *State) Consume() {
 				if job.kind == "http-session-keys" {
 					s.consumeHTTPSessionKeys(d, job, r)
 				}
+				if job.kind == "http-acl-read" {
+					s.consumeHTTPACLRead(d, job, r)
+				}
 				if job.kind == "auth-read" || job.kind == "auth-write" {
 					s.consumeAuth(d, job, r)
 				}
@@ -857,6 +881,9 @@ func (s *State) Consume() {
 					}
 				}
 				if d.lease == nil || d.lease.CheckKVLease() != nil {
+					if !d.needsRecovery {
+						s.HideHTTPACLReceipt(d)
+					}
 					d.needsRecovery = true
 					d.clearConfirmation()
 				}
@@ -868,6 +895,9 @@ func (s *State) Consume() {
 		}
 		s.consumeFiles(d)
 		if d.job == nil && d.lease != nil && d.lease.CheckKVLease() != nil {
+			if !d.needsRecovery {
+				s.HideHTTPACLReceipt(d)
+			}
 			d.needsRecovery = true
 			s.CancelConfirmation(d)
 		}
@@ -876,6 +906,7 @@ func (s *State) Consume() {
 func (s *State) DisconnectProfile(id int64) {
 	for _, d := range s.documents {
 		if d.profileID == id {
+			s.HideHTTPACLReceipt(d)
 			d.releaseAlarmAuthority()
 			if d.authDraft != nil {
 				d.authDraft.password = ""
@@ -902,10 +933,10 @@ func (s *State) GuardLeave(d *Document, next func(ui.Services)) bool {
 	if !s.owned(d) {
 		return false
 	}
-	if d.permit != nil && d.permit.httpSessionRenewalRevision == d.httpSessionRenewalRevision() && d.permit.httpWatchRevision == d.httpWatchRevision() && d.permit.toolRevision == d.requestToolRevision() && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && d.permit.compaction == d.compactionObservation && d.permit.memberRevision == d.memberRevision() && d.permit.alarmRevision == d.alarmRevision() && d.permit.snapshotRevision == d.snapshotRevision() && !d.Busy() && !d.FileBusy() {
+	if d.permit != nil && d.permit.httpACLRevision == d.httpACLRevision() && d.permit.httpSessionRenewalRevision == d.httpSessionRenewalRevision() && d.permit.httpWatchRevision == d.httpWatchRevision() && d.permit.toolRevision == d.requestToolRevision() && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && d.permit.compaction == d.compactionObservation && d.permit.memberRevision == d.memberRevision() && d.permit.alarmRevision == d.alarmRevision() && d.permit.snapshotRevision == d.snapshotRevision() && !d.Busy() && !d.FileBusy() {
 		return false
 	}
-	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && !d.memberContent() && !d.alarmContent() && !d.snapshotContent() && (d.httpWatch == nil || d.httpWatch.run == nil) && !d.httpSessionRenewalContent() && (d.httpSessionRenewal == nil || d.httpSessionRenewal.confirmation == nil) && d.leaseManagement == nil && d.authDraft == nil && d.compactionObservation == nil && (d.confirmation == nil || d.confirmation.destroy == nil && d.confirmation.alarms == nil && d.confirmation.members == nil && d.confirmation.management == nil && d.confirmation.auth == nil && d.confirmation.compaction == nil) {
+	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && !d.httpACLContent() && !d.memberContent() && !d.alarmContent() && !d.snapshotContent() && (d.httpWatch == nil || d.httpWatch.run == nil) && !d.httpSessionRenewalContent() && (d.httpSessionRenewal == nil || d.httpSessionRenewal.confirmation == nil) && d.leaseManagement == nil && d.authDraft == nil && d.compactionObservation == nil && (d.confirmation == nil || d.confirmation.destroy == nil && d.confirmation.alarms == nil && d.confirmation.members == nil && d.confirmation.management == nil && d.confirmation.auth == nil && d.confirmation.compaction == nil) {
 		return false
 	}
 	s.leave = &leaveDecision{doc: d, next: next}
@@ -929,7 +960,7 @@ func (s *State) DecideLeave(services ui.Services, discard bool) {
 	next := s.leave.next
 	s.leave = nil
 	s.CancelConfirmation(d)
-	d.permit = &leaveStamp{httpSessionRenewalRevision: d.httpSessionRenewalRevision(), httpWatchRevision: d.httpWatchRevision(), toolRevision: d.requestToolRevision(), request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail, compaction: d.compactionObservation, memberRevision: d.memberRevision(), alarmRevision: d.alarmRevision(), snapshotRevision: d.snapshotRevision()}
+	d.permit = &leaveStamp{httpACLRevision: d.httpACLRevision(), httpSessionRenewalRevision: d.httpSessionRenewalRevision(), httpWatchRevision: d.httpWatchRevision(), toolRevision: d.requestToolRevision(), request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail, compaction: d.compactionObservation, memberRevision: d.memberRevision(), alarmRevision: d.alarmRevision(), snapshotRevision: d.snapshotRevision()}
 	if next != nil {
 		next(services)
 	}
@@ -1044,6 +1075,7 @@ func (s *State) Close(d *Document) {
 	d.httpCatalogBrowser, d.httpCatalog = nil, false
 	d.httpSessionKeysBrowser = nil
 	d.httpSessionKeys = false
+	d.httpACL = nil
 	d.clearConfirmation()
 	d.leaseManagement = nil
 	if d.authDraft != nil {

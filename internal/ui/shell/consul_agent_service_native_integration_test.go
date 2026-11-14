@@ -42,8 +42,12 @@ func consulShellAgentServiceRelay(t *testing.T, p connections.Profile) (connecti
 	return consulShellAgentMutationRelay(t, p, "/v1/agent/service/")
 }
 
-func consulShellAgentMutationRelay(t *testing.T, p connections.Profile, prefix string) (connections.Profile, *consulShellAgentServiceReplyGate) {
+func consulShellAgentMutationRelay(t *testing.T, p connections.Profile, prefix string, requestMethod ...string) (connections.Profile, *consulShellAgentServiceReplyGate) {
 	t.Helper()
+	method := http.MethodPut
+	if len(requestMethod) != 0 {
+		method = requestMethod[0]
+	}
 	cfg, err := connections.ConsulProfileConfig(p)
 	if err != nil {
 		t.Fatal(err)
@@ -89,7 +93,7 @@ func consulShellAgentMutationRelay(t *testing.T, p connections.Profile, prefix s
 		if err != nil {
 			return
 		}
-		mutation := r.Method == http.MethodPut && strings.HasPrefix(r.URL.Path, prefix)
+		mutation := r.Method == method && strings.HasPrefix(r.URL.Path, prefix)
 		if mutation {
 			gate.writes.Add(1)
 			select {

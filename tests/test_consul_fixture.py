@@ -9,6 +9,96 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_public_acl_retains_every_foundation_parent_and_phase(self):
+        import re
+        prior = self.copy_scope_before_startup(acl_read_probe=True)
+        report = self.copy_scope_before_startup(public_acl_probe=True)
+        required = fixture.ACL_DOCUMENT_REQUIRED + fixture.PUBLIC_ACL_REQUIRED + tuple(prior['required'])
+        self.assertEqual(tuple(report['required']), required)
+        self.assertEqual(len(required), 96)
+        self.assertEqual(len(set(required)), 96)
+        self.assertTrue(report['production_acl_tools_published'])
+        self.assertTrue(report['production_catalog_tools_published'])
+        self.assertFalse(report['generic_acl_documents_enabled'])
+        self.assertEqual(report['scope'], 'public-consul-original-acl-forms-private-receipts-with-all-catalog-regressions')
+        phases = fixture.public_acl_acceptance_test_phases(report['packages'], required, True, 1200)
+        self.assertEqual(phases[:-2], fixture.acl_read_acceptance_test_phases(prior['packages'], prior['required'], True, 1200))
+        self.assertEqual(len(phases), 14)
+        scheduled = [name for phase in phases for name in re.findall(r'TestConsulNative(\w+)', phase[phase.index('-run')+1])]
+        self.assertCountEqual(scheduled, required)
+        self.assertIn('./internal/services/consul', phases[-2])
+        self.assertIn('./internal/ui/kvworkspace', phases[-1])
+        self.assertIn('./internal/ui/shell', phases[-1])
+        for phase in phases:
+            for argument in ('-race', '-count=1', '-timeout=1200s'):
+                self.assertIn(argument, phase)
+        for name in required:
+            for broken in (tuple(n for n in required if n != name), required + (name,)):
+                with self.subTest(name=name), self.assertRaises(ValueError):
+                    fixture.public_acl_acceptance_test_phases(report['packages'], broken, True, 1200)
+
+    def test_public_acl_requires_complete_unique_native_evidence(self):
+        required = tuple(self.copy_scope_before_startup(public_acl_probe=True)['required'])
+        lines = ['--- PASS: TestConsulNative'+name+' (0.1s)' for name in required]
+        self.assertCountEqual(fixture.accepted_cases('\n'.join(lines), required), required)
+        for index, name in enumerate(required):
+            for bad in ('', lines[index].replace('--- PASS:', '--- SKIP:'), lines[index]+'\n'+lines[index]):
+                broken = lines.copy()
+                broken[index] = bad
+                with self.subTest(name=name), self.assertRaises(RuntimeError):
+                    fixture.accepted_cases('\n'.join(broken), required)
+
+    def test_public_acl_rejects_all_combined_scopes_before_startup(self):
+        import inspect
+        import runpy
+        from unittest.mock import patch
+        for name, parameter in inspect.signature(fixture.verify).parameters.items():
+            if parameter.default is False and name not in ('race', 'public_acl_probe'):
+                with self.subTest(name=name), patch('subprocess.run', side_effect=AssertionError('mixed ACL scope started')), self.assertRaises(ValueError):
+                    fixture.verify(public_acl_probe=True, **{name: True})
+        with patch('sys.argv', [str(ROOT/'tools/verify_consul_fixture.py'), '--public-acl-probe', '--acl-read-probe']), patch('subprocess.run', side_effect=AssertionError('mixed ACL CLI started')), self.assertRaises(ValueError):
+            runpy.run_path(str(ROOT/'tools/verify_consul_fixture.py'), run_name='__main__')
+
+    def test_public_acl_images_require_all_safe_stages_and_valid_pixels(self):
+        import hashlib
+        import tempfile
+        from PIL import Image
+        from unittest.mock import patch
+        expected = set()
+        for language in ('zh-Hans', 'en'):
+            for size in ('1280x800', '720x520'):
+                prefix = language + '-' + size
+                expected.update(prefix+'-workspace-acl-'+stage+'.png' for stage in ('hidden', 'export-consent'))
+                for resource in ('token', 'policy', 'role', 'auth-method', 'binding-rule', 'templated-policy'):
+                    expected.update(prefix+'-workspace-acl-'+resource+'-'+stage+'.png' for stage in ('form', 'result'))
+                expected.update(prefix+'-shell-acl-'+stage+'.png' for stage in ('form', 'hidden', 'export-consent', 'recovered'))
+        self.assertEqual(fixture.acl_browser_image_names(), expected)
+        self.assertEqual(len(expected), 72)
+        with tempfile.TemporaryDirectory() as directory, patch.object(fixture, 'ROOT', Path(directory)):
+            folder = Path(directory)
+            for name in expected:
+                size = (1280, 800) if '-1280x800-' in name else (720, 520)
+                Image.new('RGB', size, '#234567').save(folder/name)
+            evidence = fixture.acl_browser_image_evidence(folder)
+            self.assertEqual(set(evidence), expected)
+            self.assertTrue(all(digest == hashlib.sha256((folder/name).read_bytes()).hexdigest() for name, digest in evidence.items()))
+            path = folder/sorted(expected)[0]
+            original = path.read_bytes()
+            path.unlink()
+            with self.assertRaises(RuntimeError):
+                fixture.acl_browser_image_evidence(folder)
+            for bad in (b'not a PNG', original[:50]):
+                path.write_bytes(bad)
+                with self.assertRaises(RuntimeError):
+                    fixture.acl_browser_image_evidence(folder)
+            Image.new('RGB', (32, 32)).save(path)
+            with self.assertRaises(RuntimeError):
+                fixture.acl_browser_image_evidence(folder)
+            path.write_bytes(original)
+            (folder/'unexpected-revealed-content.png').write_bytes(original)
+            with self.assertRaises(RuntimeError):
+                fixture.acl_browser_image_evidence(folder)
+
     def test_acl_reads_retain_every_public_catalog_parent_and_phase(self):
         import re
         prior = self.copy_scope_before_startup(public_catalog_probe=True)

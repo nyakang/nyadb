@@ -289,8 +289,10 @@ func transferOwnedReceipts(old, next *documentLease) error {
 	old.receiptMu.Lock()
 	next.receiptMu.Lock()
 	next.last, next.unknown = old.last, old.unknown
+	next.aclLast = old.aclLast
 	next.writeUnknown.Store(old.writeUnknown.Load())
 	old.last, old.unknown = nil, nil
+	old.aclLast = nil
 	next.receiptMu.Unlock()
 	old.receiptMu.Unlock()
 	return nil
