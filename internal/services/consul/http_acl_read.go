@@ -97,7 +97,7 @@ func (l *documentLease) storeACLRead(result contract.KVHTTPACLReadResult) {
 	l.receiptMu.Lock()
 	defer l.receiptMu.Unlock()
 	v := result.Clone()
-	cost := aclReadResultCost(&v) + resultCost(l.last) + aclMutationResultCost(l.aclMutationLast)
+	cost := aclReadResultCost(&v) + resultCost(l.last) + aclMutationResultCost(l.aclMutationLast) + l.managementCacheCost()
 	if l.unknown != nil && l.unknown != l.last {
 		cost += resultCost(l.unknown)
 	}

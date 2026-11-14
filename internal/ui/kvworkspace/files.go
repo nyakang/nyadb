@@ -8,6 +8,7 @@ import (
 	"io"
 	"unicode/utf8"
 
+	"github.com/nyakang/nyadb/internal/db/consulspec"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/jsondocument"
 	"github.com/nyakang/nyadb/locales"
@@ -23,6 +24,10 @@ type Files struct {
 	WriteStream func(string, func(io.Writer) error) error
 }
 type fileResult struct {
+	httpBundle      *consulspec.Bundle
+	restoreArchive  []byte
+	httpArchive     *httpArchiveFileOutcome
+	managementDraft *httpManagementDraft
 	aclMutationForm *HTTPACLMutationInput
 	aclForm         *HTTPACLReadInput
 	clipboard       string
@@ -31,6 +36,17 @@ type fileResult struct {
 	err             error
 	snapshots       *snapshotFileOutcome
 }
+
+func (r *fileResult) dispose() {
+	clear(r.restoreArchive)
+	if r.httpArchive != nil && r.httpArchive.plan != nil {
+		_ = r.httpArchive.plan.Close()
+	}
+	if r.snapshots != nil && r.snapshots.preparation != nil {
+		_ = r.snapshots.preparation.Close()
+	}
+}
+
 type fileOperation struct {
 	aclMutationForm *httpACLMutationForm
 	aclForm         *httpACLReadForm
@@ -336,6 +352,18 @@ func (s *State) consumeFiles(d *Document) {
 		job := d.io
 		d.io = nil
 		job.cancel()
+		if s.consumeHTTPKVFile(d, job, r) {
+			return
+		}
+		if s.consumeHTTPRestoreOpenFile(d, job, r) {
+			return
+		}
+		if s.consumeHTTPArchiveFile(d, job, r) {
+			return
+		}
+		if s.consumeManagementFile(d, job, r) {
+			return
+		}
 		if s.consumeHTTPACLMutationFile(d, job, r) {
 			return
 		}
@@ -351,7 +379,7 @@ func (s *State) consumeFiles(d *Document) {
 			}
 			return
 		}
-		if job.kind == "copy-catalog-value" || job.kind == "copy-agent-value" || job.kind == "copy-health-row" || job.kind == "copy-request-tool" || job.kind == "copy-http-session-renewal" || job.kind == "copy-http-watch" || job.kind == "copy-events" || job.kind == "copy-renewal" || job.kind == "copy-leases" {
+		if job.kind == "copy-private-detail" || job.kind == "copy-catalog-value" || job.kind == "copy-agent-value" || job.kind == "copy-health-row" || job.kind == "copy-request-tool" || job.kind == "copy-http-session-renewal" || job.kind == "copy-http-watch" || job.kind == "copy-events" || job.kind == "copy-renewal" || job.kind == "copy-leases" {
 			if !job.canceled && job.clipboard != nil {
 				job.clipboard(r.clipboard)
 			}

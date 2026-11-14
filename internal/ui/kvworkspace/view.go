@@ -645,6 +645,9 @@ func (s *State) receiptView(c *ui.Context, d *Document) {
 }
 func (s *State) Modals(c *ui.Context) {
 	s.httpACLMutationModals(c)
+	s.httpKVToolsModals(c)
+	s.httpArchiveModals(c)
+	s.httpManagementModals(c)
 	s.httpACLFormModals(c)
 	s.httpACLBrowserModals(c)
 	s.httpSessionBrowserModals(c)

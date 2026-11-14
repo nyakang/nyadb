@@ -51,7 +51,11 @@ func dataCapabilities() contract.Capabilities {
 	return contract.Capabilities{KeyValues: true, Metadata: true, EditableTables: true, Keyset: true, Count: true, FieldChunks: true, Export: true}
 }
 
-func (s *Session) DataDocumentCapabilities() contract.Capabilities { return dataCapabilities() }
+func (s *Session) DataDocumentCapabilities() contract.Capabilities {
+	c := dataCapabilities()
+	c.EditableTables = !s.cfg.ReadOnly
+	return c
+}
 
 func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
 	return s.reserveDataDocument(o)
@@ -67,7 +71,7 @@ func (s *Session) reserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.closed || s.revoked || !s.root.Alive() {
+	if s.closed || s.revoked || !s.root.Alive() || s.restoreOwner != nil {
 		return nil, contract.ErrRevoked
 	}
 	if len(s.leases)+len(s.dataLeases)+len(s.watchLeases)+len(s.renewalLeases) >= 32 {
@@ -88,7 +92,7 @@ func (s *Session) reserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 }
 
 func (l *dataLease) Runtime() contract.DataRuntime {
-	return contract.DataRuntime{Capabilities: dataCapabilities(),
+	r := contract.DataRuntime{Capabilities: l.session.DataDocumentCapabilities(),
 		PageFailureRequiresReopen: true, AdvancedLoader: l.page, Count: l.count, RowReader: l.row, Chunk: l.chunk,
 		Exporter: l.export, TableMetadata: l.metadata, TableInfo: l.info,
 		Saver: l.save, PreviewEdits: l.preview, PreviewKeyCopy: l.previewKeyCopy, PreviewKeyPrefixDelete: l.previewKeyPrefixDelete, CaptureKeyPrefixDelete: l.captureKeyPrefixDelete, SubmitEdits: l.submit,
@@ -104,6 +108,20 @@ func (l *dataLease) Runtime() contract.DataRuntime {
 			return "Consul KV recurse/get-tree (one bounded original live HTTP observation)"
 		},
 	}
+	if l.session.cfg.ReadOnly {
+		r.Saver = nil
+		r.PreviewEdits = nil
+		r.PreviewKeyCopy = nil
+		r.PreviewKeyPrefixDelete = nil
+		r.CaptureKeyPrefixDelete = nil
+		r.SubmitEdits = nil
+		r.EditKinds = nil
+		r.PreviewEditKinds = nil
+		r.EditValueKinds = nil
+		r.MutationPresentation = nil
+	}
+	return r
+
 }
 
 func (l *dataLease) check(id int64, catalog, name string) error {

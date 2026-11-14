@@ -103,6 +103,7 @@ func (s *State) GenerateRequestTool(d *Document) {
 	s.generateRequestTool(d, false)
 }
 
+func (s *State) GenerateHTTPCatalogWatch(d *Document) { s.generateRequestTool(d, true) }
 func (s *State) GenerateHTTPHealthWatch(d *Document) {
 	s.generateRequestTool(d, true)
 }
@@ -122,10 +123,14 @@ func (s *State) generateRequestTool(d *Document, healthWatch bool) {
 	}
 	request, err := d.requestBuilder.BuildKVRequest(p.kind, draft.input)
 	if healthWatch && err == nil {
-		if !d.httpWatchAvailable || !httpHealthRequestTool(p.kind) {
+		if !d.httpWatchAvailable || !httpHealthRequestTool(p.kind) && !httpCatalogWatchTool(p.kind) {
 			err = contract.ErrUnsupported
 		} else {
-			request, err = httpHealthWatchToolRequest(p.kind, draft.input)
+			if httpCatalogWatchTool(p.kind) {
+				request, err = httpCatalogWatchToolRequest(p.kind, draft.input)
+			} else {
+				request, err = httpHealthWatchToolRequest(p.kind, draft.input)
+			}
 		}
 	}
 	if err != nil || len(request.JSON) > inputLimit || !s.documentMethodAllowed(d, request.Method) {

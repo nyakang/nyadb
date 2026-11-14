@@ -272,7 +272,9 @@ func watchObservation(r Response, request contract.KVHTTPWatchRequest, index uin
 	o := contract.KVHTTPWatchObservation{HTTP: *h, ReceivedAt: time.Now().UTC(),
 		ProjectionComplete: h.Ended && h.Captured && h.EOF && h.Acknowledged && h.Succeeded && h.ProjectionError == "" && h.CaptureError == ""}
 	if o.ProjectionComplete {
-		if request.Health.Kind != "" {
+		if request.Catalog.Kind != "" {
+			o.ProjectionComplete = h.Catalog != nil && h.Catalog.ProjectionComplete
+		} else if request.Health.Kind != "" {
 			o.ProjectionComplete = h.Health != nil && h.Health.ProjectionComplete
 		} else {
 			for i, e := range h.Entries {
@@ -299,7 +301,7 @@ func watchObservation(r Response, request contract.KVHTTPWatchRequest, index uin
 			o.IndexRelation = "advanced"
 		}
 	}
-	o.IndexReset = request.Health.Kind != "" && (o.IndexRelation == "zero" || o.IndexRelation == "backward")
+	o.IndexReset = (request.Health.Kind != "" || request.Catalog.Kind != "") && (o.IndexRelation == "zero" || o.IndexRelation == "backward")
 	return o
 }
 

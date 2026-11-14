@@ -40,7 +40,7 @@ func (p *sessionDestroyPreparation) Impact() contract.KVHTTPSessionDestroyImpact
 func (l *documentLease) reserveDestroyPlan(bytes int64) error {
 	receiptBudgetMu.Lock()
 	defer receiptBudgetMu.Unlock()
-	if l.cacheBytes+bytes+pendingReceiptBudget > documentReceiptBudget || l.s.retained+l.s.reserved+bytes+pendingReceiptBudget > l.s.budget {
+	if l.cacheBytes+l.archiveBytes()+bytes+pendingReceiptBudget > documentReceiptBudget || l.s.retained+l.s.reserved+bytes+pendingReceiptBudget > l.s.budget {
 		return ErrBounds
 	}
 	l.planReserved = bytes
@@ -64,6 +64,9 @@ func (l *documentLease) releaseDestroyPlan() {
 }
 
 func (l *documentLease) PrepareHTTPSessionDestroy(parent context.Context, input contract.KVHTTPSessionDestroyImpactRequest) (contract.KVHTTPSessionDestroyPreparation, error) {
+	if l.s.cfg.ReadOnly {
+		return nil, ErrUnsupported
+	}
 	if !validSessionKeysRequest(contract.KVHTTPSessionKeysRequest{ID: input.ID, MaxRows: input.MaxRows, MaxBytes: input.MaxBytes}) {
 		return nil, ErrInvalid
 	}
@@ -79,7 +82,7 @@ func (l *documentLease) PrepareHTTPSessionDestroy(parent context.Context, input 
 	if l.writeUnknown.Load() {
 		return nil, contract.ErrKVWriteUnknown
 	}
-	if l.destroyPlan != nil || l.aclMutationPlan != nil {
+	if l.destroyPlan != nil || l.aclMutationPlan != nil || l.enterprisePlan != nil {
 		return nil, contract.ErrKVBusy
 	}
 	request, err := DocumentRequest(Request{Method: "PUT", Path: "/v1/session/destroy/" + input.ID})

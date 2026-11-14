@@ -2,6 +2,7 @@ package localdb
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -15,6 +16,8 @@ func TestConsulProfilesRestartDuplicateAndExactOriginalScope(t *testing.T) {
 	p.Name, p.Host, p.Port, p.TLSMode = "original Consul", "::1", 18501, "verify-full"
 	o := &p.ConsulOptions
 	o.Auth, o.Datacenter, o.Consistency, o.Prefix = "token", "dc1", "consistent", " /key//../\n/ "
+	o.Namespace, o.Partition = "original-ns", "original-partition"
+	o.ReadOnly, o.AutopilotWrite, o.RaftWrite, o.KeyringWrite, o.LicenseWrite, o.RestoreWrite = true, true, true, true, true, true
 	o.CAFile, o.ServerName, o.ClientCertFile, o.ClientKeyFile = "/owned/ca.crt", "localhost", "/owned/client.crt", "/owned/client.key"
 	p, err := store.Create(ctx, p)
 	if err != nil {
@@ -100,5 +103,49 @@ func TestConsulSavedOptionsRejectAmbiguitySecretsAndForeignEngine(t *testing.T) 
 	}
 	if _, err := store.Get(ctx, other.ID); err == nil {
 		t.Fatal("foreign Consul options accepted")
+	}
+}
+
+func TestConsulLegacyScopeMigrationKeepsAllNewWritesDisabled(t *testing.T) {
+	store, _, db := openStore(t)
+	ctx := context.Background()
+	p, _ := connections.Defaults(connections.Consul)
+	p.Name = "legacy"
+	p, err := store.Create(ctx, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	encoded, err := encodeProfileOptions(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var envelope map[string]json.RawMessage
+	_ = json.Unmarshal([]byte(encoded), &envelope)
+	var options map[string]json.RawMessage
+	_ = json.Unmarshal(envelope["consul"], &options)
+	options["version"] = json.RawMessage("1")
+	raw, _ := json.Marshal(options)
+	envelope["consul"] = raw
+	legacy, _ := json.Marshal(envelope)
+	if _, err = db.Exec("UPDATE connection_profiles SET mysql_advanced_json=? WHERE id=?", string(legacy), p.ID); err != nil {
+		t.Fatal(err)
+	}
+	got, err := store.Get(ctx, p.ID)
+	if err != nil || got.ConsulOptions != connections.DefaultConsulOptions() {
+		t.Fatal("legacy defaults changed", got.ConsulOptions, err)
+	}
+	for _, field := range []string{"namespace", "partition", "read_only", "autopilot_write", "raft_write", "keyring_write", "license_write", "restore_write"} {
+		value := "false"
+		if field == "namespace" || field == "partition" {
+			value = string([]byte{'"', '"'})
+		}
+		options[field] = json.RawMessage(value)
+		raw, _ = json.Marshal(options)
+		envelope["consul"] = raw
+		damaged, _ := json.Marshal(envelope)
+		if canonicalConsulSavedOptions(string(damaged)) {
+			t.Fatal("legacy options accepted ambiguous new field", field)
+		}
+		delete(options, field)
 	}
 }

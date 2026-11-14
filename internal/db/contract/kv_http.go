@@ -8,6 +8,7 @@ const KVConsulHTTPRequestMethod = "consul.http"
 // agent observation. Neither endpoint equality nor agent ID proves incarnation.
 // Configuration contains a fingerprint of non-secret configuration only.
 type KVHTTPIdentity struct {
+	Namespace, Partition                                             string
 	Protocol, Endpoint, Datacenter, Consistency, Auth, Configuration string
 	AgentID, AgentName, AgentDatacenter                              string
 	AgentAvailable                                                   bool

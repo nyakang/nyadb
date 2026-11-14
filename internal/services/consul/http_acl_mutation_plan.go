@@ -76,7 +76,7 @@ func (l *documentLease) PrepareHTTPACLMutationPlan(parent context.Context, input
 	if l.writeUnknown.Load() {
 		return nil, out, contract.ErrKVWriteUnknown
 	}
-	if l.destroyPlan != nil || l.aclMutationPlan != nil || l.planReserved != 0 {
+	if l.destroyPlan != nil || l.aclMutationPlan != nil || l.enterprisePlan != nil || l.planReserved != 0 {
 		return nil, out, contract.ErrKVBusy
 	}
 	if err := l.reserveDestroyPlan(2*limits.MaxBytes + pendingReceiptBudget + (8 << 20)); err != nil {

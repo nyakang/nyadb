@@ -183,7 +183,7 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 		return fmt.Errorf("invalid saved engine options")
 	}
 	if p.Kind == connections.Consul {
-		if envelope.Consul == nil || envelope.Consul.Version != 1 {
+		if envelope.Consul == nil || (envelope.Consul.Version != 1 && envelope.Consul.Version != 2) {
 			return connections.ErrInvalid
 		}
 		p.ConsulOptions = *envelope.Consul

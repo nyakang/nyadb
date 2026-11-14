@@ -16,10 +16,11 @@ import (
 )
 
 type Config struct {
-	Endpoint, Auth                                        string
-	Datacenter, Namespace, Partition, Prefix, Consistency string
-	CAFile, ServerName, ClientCertFile, ClientKeyFile     string
-	ConnectTimeout, RequestTimeout                        time.Duration
+	ReadOnly, AutopilotWrite, RaftWrite, KeyringWrite, LicenseWrite, RestoreWrite bool
+	Endpoint, Auth                                                                string
+	Datacenter, Namespace, Partition, Prefix, Consistency                         string
+	CAFile, ServerName, ClientCertFile, ClientKeyFile                             string
+	ConnectTimeout, RequestTimeout                                                time.Duration
 }
 
 func validText(s string, limit int) bool {
@@ -52,9 +53,6 @@ func normalizeConfig(c Config, token string) (Config, *tls.Config, error) {
 		if !validText(s, 255) || strings.ContainsAny(s, "*/?\\ ") {
 			return c, nil, ErrInvalid
 		}
-	}
-	if c.Namespace != "" || c.Partition != "" {
-		return c, nil, ErrUnsupported
 	}
 	if !validKey(c.Prefix, true) {
 		return c, nil, ErrInvalid

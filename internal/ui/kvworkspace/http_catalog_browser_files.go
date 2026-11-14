@@ -12,6 +12,9 @@ func (s *State) capturedCatalogValue(d *Document) ([]byte, bool) {
 		return nil, false
 	}
 	r := s.selectedReceipt(d)
+	if d.method == HTTPWatchMethod && d.httpWatch != nil {
+		r = d.httpWatch.catalogReceipt
+	}
 	if r == nil || r.Scope.Namespace.ProfileID != d.profileID {
 		return nil, false
 	}

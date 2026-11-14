@@ -31,6 +31,10 @@ func canonicalConsulSavedOptions(raw string) bool {
 	}
 	for key, value := range options {
 		switch key {
+		case "namespace", "partition", "read_only", "autopilot_write", "raft_write", "keyring_write", "license_write", "restore_write":
+			if bytes.Equal(bytes.TrimSpace(options["version"]), []byte("1")) {
+				return false
+			}
 		case "version", "auth", "datacenter", "prefix", "consistency", "ca_file", "server_name", "client_cert_file", "client_key_file", "connect_timeout_seconds", "request_timeout_seconds":
 		default:
 			return false

@@ -9,7 +9,7 @@ import (
 func (s *Session) ReserveKVHTTPWatch(document uint64) (contract.KVHTTPWatchLease, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.closed || s.revoked || !s.root.Alive() {
+	if s.closed || s.revoked || !s.root.Alive() || s.restoreOwner != nil {
 		return nil, contract.ErrRevoked
 	}
 	if document == 0 {

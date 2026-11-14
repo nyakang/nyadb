@@ -153,9 +153,11 @@ func (r KVResult) Clone() KVResult {
 }
 
 type KVRecovery struct {
-	Lease   KVRequestLease
-	Last    KVResult
-	Unknown *KVResult // independent original unknown write, never replaced by a later read
+	RestoreResult, RestoreUnknown       *KVHTTPArchiveRestoreResult
+	ManagementResult, ManagementUnknown *KVHTTPManagementResult
+	Lease                               KVRequestLease
+	Last                                KVResult
+	Unknown                             *KVResult // independent original unknown write, never replaced by a later read
 	// Independent original member receipts, including unconfirmed writes. A
 	// recovery transfers evidence only, never directory/plan authority.
 	MemberResults     []KVMemberResult
@@ -165,6 +167,22 @@ type KVRecovery struct {
 }
 
 func (r KVRecovery) Clone() KVRecovery {
+	if r.RestoreResult != nil {
+		v := r.RestoreResult.Clone()
+		r.RestoreResult = &v
+	}
+	if r.RestoreUnknown != nil {
+		v := r.RestoreUnknown.Clone()
+		r.RestoreUnknown = &v
+	}
+	if r.ManagementResult != nil {
+		v := r.ManagementResult.Clone()
+		r.ManagementResult = &v
+	}
+	if r.ManagementUnknown != nil {
+		v := r.ManagementUnknown.Clone()
+		r.ManagementUnknown = &v
+	}
 	if r.ACLMutationResult != nil {
 		v := r.ACLMutationResult.Clone()
 		r.ACLMutationResult = &v

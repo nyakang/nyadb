@@ -63,6 +63,15 @@ func (c *Client) Prepare(r Request) (Plan, error) {
 	if aclMutationUsesAgent(kind) && c.config.Datacenter != "" && (!c.agent.Available || c.config.Datacenter != c.agent.Datacenter) {
 		return Plan{}, ErrUnsupported
 	}
+	if (kind == "management:intention-create" || kind == "management:intention-update") && c.config.Partition != "" && c.config.Partition != "default" {
+		return Plan{}, ErrUnsupported
+	}
+	if write && c.config.ReadOnly {
+		return Plan{}, ErrUnsupported
+	}
+	if op, ok := managementSpec(strings.TrimPrefix(kind, "management:")); ok && write && !managementGuard(c.config, op.Guard) {
+		return Plan{}, ErrUnsupported
+	}
 	if write && c.unknown != nil {
 		return Plan{}, ErrWriteUnknown
 	}
@@ -111,7 +120,7 @@ func validID(s string) bool {
 	return true
 }
 func validateRequest(r Request) (string, bool, int, error) {
-	if len(r.Body) > requestLimit || len(r.Path) > 16384 || r.Method != http.MethodGet && r.Method != http.MethodPut && r.Method != http.MethodDelete {
+	if len(r.Body) > requestLimit || len(r.Path) > 16384 || r.Method != http.MethodGet && r.Method != http.MethodPut && r.Method != http.MethodDelete && r.Method != http.MethodPost {
 		return "", false, 0, ErrInvalid
 	}
 	if !strings.HasPrefix(r.Path, "/v1/") || strings.ContainsAny(r.Path, "?#\r\n\\ ") {
@@ -130,6 +139,12 @@ func validateRequest(r Request) (string, bool, int, error) {
 		} else if !validText(values[0], 4096) {
 			return "", false, 0, ErrInvalid
 		}
+	}
+	if op, ok := managementNativeSpec(r); ok && op.Name != "leader" && op.Name != "peers" {
+		if err := validateManagement(r, op); err != nil {
+			return "", false, 0, err
+		}
+		return "management:" + op.Name, op.Write, 0, nil
 	}
 	kind, write, ops := "", r.Method != http.MethodGet, 0
 	allowed := map[string]bool{}

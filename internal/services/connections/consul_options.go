@@ -12,6 +12,14 @@ import (
 // ConsulOptions contains original public settings only. Token and TLS key
 // contents never enter profiles; mTLS is independent of token authorization.
 type ConsulOptions struct {
+	Namespace             string `json:"namespace,omitempty"`
+	Partition             string `json:"partition,omitempty"`
+	ReadOnly              bool   `json:"read_only,omitempty"`
+	AutopilotWrite        bool   `json:"autopilot_write,omitempty"`
+	RaftWrite             bool   `json:"raft_write,omitempty"`
+	KeyringWrite          bool   `json:"keyring_write,omitempty"`
+	LicenseWrite          bool   `json:"license_write,omitempty"`
+	RestoreWrite          bool   `json:"restore_write,omitempty"`
 	Version               int    `json:"version"`
 	Auth                  string `json:"auth"`
 	Datacenter            string `json:"datacenter"`
@@ -26,18 +34,29 @@ type ConsulOptions struct {
 }
 
 func DefaultConsulOptions() ConsulOptions {
-	return ConsulOptions{Version: 1, Auth: "none", Consistency: "default", ConnectTimeoutSeconds: 10, RequestTimeoutSeconds: 30}
+	return ConsulOptions{Version: 2, Auth: "none", Consistency: "default", ConnectTimeoutSeconds: 10, RequestTimeoutSeconds: 30}
 }
 
 func NormalizeConsulOptions(o ConsulOptions) (ConsulOptions, error) {
 	if o == (ConsulOptions{}) {
 		o = DefaultConsulOptions()
 	}
-	if o.Version != 1 || o.Auth != "none" && o.Auth != "token" || o.Consistency != "default" && o.Consistency != "consistent" && o.Consistency != "stale" || o.ConnectTimeoutSeconds < 1 || o.ConnectTimeoutSeconds > 300 || o.RequestTimeoutSeconds < 1 || o.RequestTimeoutSeconds > 600 {
+	if o.Version == 1 {
+		if o.Namespace != "" || o.Partition != "" || o.ReadOnly || o.AutopilotWrite || o.RaftWrite || o.KeyringWrite || o.LicenseWrite || o.RestoreWrite {
+			return o, ErrInvalid
+		}
+		o.Version = 2
+	}
+	if o.Version != 2 || o.Auth != "none" && o.Auth != "token" || o.Consistency != "default" && o.Consistency != "consistent" && o.Consistency != "stale" || o.ConnectTimeoutSeconds < 1 || o.ConnectTimeoutSeconds > 300 || o.RequestTimeoutSeconds < 1 || o.RequestTimeoutSeconds > 600 {
 		return o, ErrInvalid
 	}
 	if !validEngineText(o.Datacenter, 255) || strings.ContainsAny(o.Datacenter, "*/?\\ ") || !utf8.ValidString(o.Prefix) || len(o.Prefix) > 4096 || strings.ContainsRune(o.Prefix, 0) {
 		return o, ErrInvalid
+	}
+	for _, scope := range []string{o.Namespace, o.Partition} {
+		if !validEngineText(scope, 255) || strings.ContainsAny(scope, "*/?\\ ") {
+			return o, ErrInvalid
+		}
 	}
 	for _, text := range []string{o.CAFile, o.ServerName, o.ClientCertFile, o.ClientKeyFile} {
 		if !validEngineText(text, 4096) {
@@ -91,7 +110,7 @@ func normalizeConsulProfile(p Profile) (Profile, error) {
 }
 
 // ParseConsulURI moves optional :token userinfo into the temporary credential.
-// DC and prefix stay byte-exact; namespace/partition, credential query values,
+// DC, prefix and Enterprise scope stay byte-exact. Credential query values,
 // duplicate options and unsupported TLS modes are rejected explicitly.
 func ParseConsulURI(raw string) (URIImport, error) {
 	fail := func() (URIImport, error) { return URIImport{}, ErrURIOptions }
@@ -142,6 +161,15 @@ func ParseConsulURI(raw string) (URIImport, error) {
 		switch key {
 		case "auth":
 			o.Auth = value
+		case "namespace":
+			o.Namespace = value
+		case "partition":
+			o.Partition = value
+		case "read_only":
+			if value != "true" && value != "false" {
+				return fail()
+			}
+			o.ReadOnly = value == "true"
 		case "dc":
 			o.Datacenter = value
 		case "prefix":

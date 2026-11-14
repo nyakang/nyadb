@@ -20,12 +20,17 @@ type KVSnapshotFileChoice struct {
 }
 
 type KVSnapshotFileObservation struct {
-	Source   KVSnapshotCapture
-	Choice   KVSnapshotFileChoice
-	Existing *SnapshotSource
+	HTTPSource *KVHTTPArchiveCapture
+	Source     KVSnapshotCapture
+	Choice     KVSnapshotFileChoice
+	Existing   *SnapshotSource
 }
 
 func (r KVSnapshotFileObservation) Clone() KVSnapshotFileObservation {
+	if r.HTTPSource != nil {
+		v := r.HTTPSource.Clone()
+		r.HTTPSource = &v
+	}
 	r.Source = r.Source.Clone()
 	if r.Existing != nil {
 		e := *r.Existing

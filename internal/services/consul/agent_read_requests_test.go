@@ -50,7 +50,6 @@ func TestAgentLocalReadsCaptureFilterPresenceAndRejectForeignScope(t *testing.T)
 		{Method: "DELETE", Path: "/v1/agent/checks"},
 		{Method: "GET", Path: "/v1/agent/checks", Body: []byte("{}")},
 		{Method: "GET", Path: "/v1/agent/services", Query: url.Values{"filter": {"one", "two"}}},
-		{Method: "GET", Path: "/v1/agent/service/foreign"},
 		{Method: "GET", Path: "/v1/agent/service/register", Body: []byte(`{"Name":"foreign"}`)},
 	} {
 		if _, _, _, err := validateRequest(r); err == nil {

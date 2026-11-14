@@ -49,6 +49,26 @@ func (s *State) RevealHTTPACLReceipt(d *Document, recordID string) bool {
 }
 
 func (s *State) HideHTTPACLReceipt(d *Document) {
+	if s.owned(d) && d.httpKVTools != nil {
+		d.httpKVTools.plan = nil
+		d.httpKVTools.checked = false
+		d.httpKVTools.consent = false
+	}
+	if s.owned(d) && d.httpArchive != nil {
+		x := d.httpArchive
+		x.revealed = false
+		x.checked = false
+		x.capturePlan = nil
+		if x.restorePlan != nil {
+			_ = x.restorePlan.Close()
+			x.restorePlan = nil
+		}
+	}
+	if s.owned(d) && d.httpManagement != nil {
+		d.httpManagement.revealed = false
+		d.httpManagement.exportConsent = false
+		d.clearHTTPManagementPlan()
+	}
 	s.HideHTTPACLMutationReceipt(d)
 	if s.owned(d) && d.httpACL != nil {
 		d.httpACL.revealed = ""

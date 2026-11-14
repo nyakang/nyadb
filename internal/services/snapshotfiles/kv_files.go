@@ -113,6 +113,9 @@ func (p *kvSnapshotFilePlan) inspect(ctx context.Context, root *os.Root, name st
 	return contract.SnapshotSource{Name: name, Size: uint64(n), SHA256: hex.EncodeToString(h.Sum(nil))}, before, nil
 }
 func (s *KVSnapshotStore) PrepareFile(parent context.Context, artifact contract.KVSnapshotArtifact, choice contract.KVSnapshotFileChoice) (contract.KVSnapshotFilePreparation, error) {
+	return s.prepareFile(parent, artifact, choice, false)
+}
+func (s *KVSnapshotStore) prepareFile(parent context.Context, artifact contract.KVSnapshotArtifact, choice contract.KVSnapshotFileChoice, allowHTTP bool) (contract.KVSnapshotFilePreparation, error) {
 	a, ok := artifact.(*kvArtifact)
 	if !ok || a == nil || a.authority != a || a.store != s {
 		return nil, ErrArtifactEvidence
@@ -153,19 +156,33 @@ func (s *KVSnapshotStore) PrepareFile(parent context.Context, artifact contract.
 		return nil, ErrArtifactClosed
 	}
 	r := a.receipt.Clone()
+	var httpSource *contract.KVHTTPArchiveCapture
+	if a.httpReceipt != nil {
+		v := a.httpReceipt.Clone()
+		httpSource = &v
+	}
 	a.mu.RUnlock()
-	if choice.Kind == contract.KVSnapshotBackendFile && !r.Complete {
+	if httpSource != nil && (!allowHTTP || !httpSource.Stored || !httpSource.FilesSynced || choice.Kind == contract.KVSnapshotBackendFile && !httpSource.Original.SourceComplete) {
 		return nil, ErrArtifactEvidence
 	}
-	if choice.Kind == contract.KVSnapshotJournalFile && (!r.Stored || !r.FilesSynced || !r.Original.Ended || !r.Original.JournalComplete) {
+	if httpSource == nil && choice.Kind == contract.KVSnapshotBackendFile && !r.Complete {
+		return nil, ErrArtifactEvidence
+	}
+	if httpSource == nil && choice.Kind == contract.KVSnapshotJournalFile && (!r.Stored || !r.FilesSynced || !r.Original.Ended || !r.Original.JournalComplete) {
 		return nil, ErrArtifactEvidence
 	}
 	pctx, pcancel := context.WithCancel(s.ctx)
-	p := &kvSnapshotFilePlan{store: s, artifact: a, observation: contract.KVSnapshotFileObservation{Source: r, Choice: choice}, name: name, ctx: pctx, cancel: pcancel}
+	p := &kvSnapshotFilePlan{store: s, artifact: a, observation: contract.KVSnapshotFileObservation{Source: r, HTTPSource: httpSource, Choice: choice}, name: name, ctx: pctx, cancel: pcancel}
 	p.authority = p
 	p.size, p.sum = r.SnapshotBytes, bytes.Clone(r.SnapshotSHA256)
 	if choice.Kind == contract.KVSnapshotJournalFile {
 		p.size, p.sum = r.JournalBytes, bytes.Clone(r.JournalSHA256)
+	}
+	if httpSource != nil {
+		p.size, p.sum = httpSource.ArchiveBytes, bytes.Clone(httpSource.ArchiveSHA256)
+		if choice.Kind == contract.KVSnapshotJournalFile {
+			p.size, p.sum = httpSource.ReceiptBytes, bytes.Clone(httpSource.ReceiptSHA256)
+		}
 	}
 	if p.size == 0 || p.size > math.MaxInt64 || len(p.sum) != sha256.Size {
 		pcancel()

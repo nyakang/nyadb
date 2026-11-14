@@ -42,6 +42,8 @@ func (s *State) setConsulAuth(auth string) {
 func (s *State) editorConsulFields(c *ui.Context, labelWidth, fieldWidth float32) {
 	o := &s.connectionDraft.ConsulOptions
 	s.editorInputRow(c, "数据中心：", "Consul 数据中心", &o.Datacenter, labelWidth, fieldWidth)
+	s.editorInputRow(c, "Namespace", "Consul Namespace", &o.Namespace, labelWidth, fieldWidth)
+	s.editorInputRow(c, "Partition", "Consul Partition", &o.Partition, labelWidth, fieldWidth)
 	s.editorInputRow(c, "键前缀：", "Consul 键前缀", &o.Prefix, labelWidth, fieldWidth)
 	theme.Field(c, locales.Text("读取一致性："), func() {
 		connectionFormSelect(c, &s.consulConsistencyChoice, []string{"默认", "一致读取", "允许过期读取"}, "Consul 读取一致性", fieldWidth, false)
@@ -79,6 +81,12 @@ func (s *State) consulOptions(c *ui.Context, width float32, tab string) bool {
 	o := &s.connectionDraft.ConsulOptions
 	theme.Form(c, formWidth, func() {
 		if tab == "高级" {
+			for _, f := range []struct {
+				label string
+				value *bool
+			}{{"Consul 只读保护", &o.ReadOnly}, {"启用 Autopilot 写入", &o.AutopilotWrite}, {"启用 Raft 写入", &o.RaftWrite}, {"启用 Keyring 写入", &o.KeyringWrite}, {"启用 License 写入", &o.LicenseWrite}, {"启用快照恢复", &o.RestoreWrite}} {
+				ui.Checkbox(c, f.value, locales.Text(f.label))
+			}
 			s.editorInputRow(c, "连接超时（秒）", "Consul 连接超时", &s.engineNumbers[0], labelWidth, 120)
 			s.editorInputRow(c, "请求超时（秒）", "Consul 请求超时", &s.engineNumbers[1], labelWidth, 120)
 			return

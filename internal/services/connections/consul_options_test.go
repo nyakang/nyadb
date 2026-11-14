@@ -46,7 +46,7 @@ func TestConsulProfilePreservesOriginalDCKeysAndIndependentTokenMTLS(t *testing.
 		func(p *connections.Profile) { p.ConsulOptions.Prefix = "key\x00" },
 		func(p *connections.Profile) { p.ConsulOptions.RequestTimeoutSeconds = 601 },
 		func(p *connections.Profile) { p.ConsulOptions.ConnectTimeoutSeconds = 0 },
-		func(p *connections.Profile) { p.ConsulOptions.Version = 2 },
+		func(p *connections.Profile) { p.ConsulOptions.Version = 3 },
 		func(p *connections.Profile) { p.MySQLAdvanced.Charset = "utf8mb4" },
 		func(p *connections.Profile) { p.EtcdOptions = connections.DefaultEtcdOptions() },
 		func(p *connections.Profile) { p.Kind = connections.MySQL },
@@ -74,7 +74,7 @@ func TestConsulURIExactOriginalScopeAndTemporarySecret(t *testing.T) {
 		t.Fatal("HTTPS URI defaults changed", err)
 	}
 	for _, uri := range []string{
-		"consul://user:private@localhost", "consul://:private@localhost?auth=none", "consul://localhost/db", "consul://localhost#fragment", "consul://localhost?", "consul://localhost?token=private", "consul://localhost?dc=dc1&dc=dc2", "consul://localhost?namespace=foreign", "consul://localhost?partition=foreign", "consul://localhost?sslmode=require", "consul://localhost?auth=certificate", "consul://localhost?prefix=%00", "consul://localhost?request_timeout_seconds=3e1", "consul://localhost?connect_timeout_seconds=010", "consul://localhost?ca_file=/owned/ca.crt", "consuls://localhost?client_cert_file=/owned/client.crt", "consul://localhost:", "consul://localhost:0", "consul://localhost:65536",
+		"consul://user:private@localhost", "consul://:private@localhost?auth=none", "consul://localhost/db", "consul://localhost#fragment", "consul://localhost?", "consul://localhost?token=private", "consul://localhost?dc=dc1&dc=dc2", "consul://localhost?namespace=bad%20scope", "consul://localhost?partition=bad%20scope", "consul://localhost?sslmode=require", "consul://localhost?auth=certificate", "consul://localhost?prefix=%00", "consul://localhost?request_timeout_seconds=3e1", "consul://localhost?connect_timeout_seconds=010", "consul://localhost?ca_file=/owned/ca.crt", "consuls://localhost?client_cert_file=/owned/client.crt", "consul://localhost:", "consul://localhost:0", "consul://localhost:65536",
 	} {
 		if parsed, err := connections.ParseURI(uri); err == nil || parsed.Password != "" || strings.Contains(err.Error(), "private") {
 			t.Fatal("ambiguous native URI accepted or secret echoed", uri)

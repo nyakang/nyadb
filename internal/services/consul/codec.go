@@ -220,6 +220,38 @@ func decodeTxn(raw []byte, status, operations int) (TxnResult, error) {
 	return t, nil
 }
 func projectResponse(r *Response, p Plan) error {
+	if p.kind == "enterprise-impact" {
+		r.Acknowledged = true
+		if r.Status == 404 && p.request.Query.Has("keys") {
+			r.Succeeded = true
+			return nil
+		}
+		if r.Status != 200 {
+			return &HTTPError{Status: r.Status}
+		}
+		var v any
+		if jsondocument.Decode(r.Body, &v, responseLimit) != nil {
+			return ErrProtocol
+		}
+		r.Succeeded = true
+		return nil
+	}
+	if p.kind == "snapshot-restore" {
+		if r.Status != 200 {
+			if r.Status == 401 || r.Status == 403 {
+				r.Acknowledged = true
+			}
+			return &HTTPError{Status: r.Status}
+		}
+		if len(r.Body) != 0 {
+			return ErrProtocol
+		}
+		r.Acknowledged, r.Succeeded = true, true
+		return nil
+	}
+	if op, ok := managementSpec(strings.TrimPrefix(p.kind, "management:")); ok && strings.HasPrefix(p.kind, "management:") {
+		return projectManagementResponse(r, p, op)
+	}
 	if aclMutationWriteKind(p.kind) {
 		return projectACLMutationResponse(r, p)
 	}

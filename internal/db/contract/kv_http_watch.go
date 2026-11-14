@@ -20,6 +20,7 @@ type KVHTTPWatchRequest struct {
 	MaxObservations           int
 	MaxBytes                  int64
 	Health                    KVHTTPHealthWatchTarget
+	Catalog                   KVHTTPCatalogWatchTarget
 }
 
 // Health is an immutable value capture. Kind is state, node, checks or service;
@@ -143,4 +144,12 @@ type KVHTTPWatchProvider interface {
 	KVScope() KVScope
 	ReserveKVHTTPWatch(uint64) (KVHTTPWatchLease, error)
 	RecoverKVHTTPWatch(KVHTTPWatchLease) (KVHTTPWatchRecovery, error)
+}
+
+// Catalog selects one native blocking catalog endpoint. It cannot share KV or
+// Health targets, and never turns an absent entry into a deletion event.
+type KVHTTPCatalogWatchTarget struct {
+	Kind, Name                 string
+	IncludeFilter, IncludeNear bool
+	Filter, Near               string
 }

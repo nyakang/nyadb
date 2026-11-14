@@ -49,6 +49,15 @@ func (s *State) kvWorkspaceDependencies() kvworkspace.Dependencies {
 				}
 			}
 		},
+		EditProfile: func(_ ui.Services, id int64) {
+			for _, p := range s.navigation.Profiles() {
+				if p.ID == id {
+					s.selectedProfileID = id
+					s.startEditProfile()
+					return
+				}
+			}
+		},
 		ConnectProfile: func(services ui.Services, id int64) { s.connectWorkspaceProfile(services, id) },
 		EditFocus:      &s.editFocus, EditTarget: s.registerEditTarget,
 		Status: func(text string) { s.status = text },

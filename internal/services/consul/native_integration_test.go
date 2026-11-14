@@ -117,8 +117,16 @@ func TestConsulNativeIdentityScopeTransportAndNativeHeaders(t *testing.T) {
 			})
 		}
 	}
-	if _, e := New(Config{Endpoint: cfg.Endpoint, Namespace: "foreign"}, ""); e == nil {
-		t.Fatal("unverified Enterprise namespace accepted")
+	scopedClient, e := New(Config{Endpoint: cfg.Endpoint, Namespace: "team", Partition: "tenant"}, "")
+	if e != nil {
+		t.Fatal("explicit Enterprise scope rejected", e)
+	}
+	if scopedClient.Config().Namespace != "team" || scopedClient.Config().Partition != "tenant" {
+		t.Fatal("explicit Enterprise scope changed")
+	}
+	scopedClient.Close()
+	if _, e := New(Config{Endpoint: cfg.Endpoint, Namespace: "foreign/namespace"}, ""); e == nil {
+		t.Fatal("malformed Enterprise namespace accepted")
 	}
 	for _, path := range []string{"/v1/status/peers", "/v1/catalog/datacenters", "/v1/catalog/nodes", "/v1/catalog/services", "/v1/health/state/any", "/v1/health/state/passing", "/v1/health/state/warning", "/v1/health/state/critical", "/v1/session/list"} {
 		response := nativeDo(t, c, Request{Method: "GET", Path: path})

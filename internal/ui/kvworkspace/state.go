@@ -27,11 +27,13 @@ type Dependencies struct {
 	ProfileName                   func(int64) string
 	Active                        func(*Document) bool
 	Activate                      func(*Document)
+	EditProfile                   func(ui.Services, int64)
 	ConnectProfile                func(ui.Services, int64)
 	EditFocus                     *string
 	EditTarget                    func(theme.EditTarget)
 	Status                        func(string)
 	Files                         Files
+	HTTPArchiveArtifacts          contract.KVHTTPArchiveArtifacts
 	SnapshotArtifacts             contract.KVSnapshotArtifacts
 	SnapshotFiles                 SnapshotFiles
 }
@@ -75,58 +77,75 @@ type confirmation struct {
 	open           bool
 }
 type outcome struct {
-	aclMutationPlan                  contract.KVHTTPACLMutationPlan
-	aclMutationImpact                *contract.KVHTTPACLImpact
-	aclMutation, recoveryACLMutation *contract.KVHTTPACLMutationResult
-	aclRead                          *contract.KVHTTPACLReadResult
-	recoveryACL                      *contract.KVHTTPACLReadResult
-	destroyPlan                      contract.KVHTTPSessionDestroyPreparation
-	sessionKeys                      *contract.KVHTTPSessionKeysObservation
-	result                           contract.KVResult
-	leasePage                        *contract.KVLeasePage
-	leaseDetail                      *contract.KVLeaseDetail
-	lease                            contract.KVRequestLease
-	err                              error
-	authSteps                        []AuthStepReceipt
-	compactionObservation            *CompactionObservation
-	members                          *memberOutcome
-	alarms                           *alarmOutcome
-	recoveryResult                   *contract.KVResult
-	recoveryUnknown                  *contract.KVResult
-	recoveryMembers                  []contract.KVMemberResult
-	snapshots                        *snapshotOutcome
-	recoverySnapshot                 *contract.KVSnapshotResult
+	capabilities                                                  []contract.KVHTTPManagementResult
+	managementPlan                                                contract.KVHTTPEnterpriseDeletionPreparation
+	managementImpact                                              *contract.KVHTTPEnterpriseImpact
+	httpKV                                                        *httpKVToolsOutcome
+	httpRestore, recoveryRestore, recoveryRestoreUnknown          *contract.KVHTTPArchiveRestoreResult
+	httpArchive                                                   *httpArchiveOutcome
+	httpManagement, recoveryManagement, recoveryManagementUnknown *contract.KVHTTPManagementResult
+	aclMutationPlan                                               contract.KVHTTPACLMutationPlan
+	aclMutationImpact                                             *contract.KVHTTPACLImpact
+	aclMutation, recoveryACLMutation                              *contract.KVHTTPACLMutationResult
+	aclRead                                                       *contract.KVHTTPACLReadResult
+	recoveryACL                                                   *contract.KVHTTPACLReadResult
+	destroyPlan                                                   contract.KVHTTPSessionDestroyPreparation
+	sessionKeys                                                   *contract.KVHTTPSessionKeysObservation
+	result                                                        contract.KVResult
+	leasePage                                                     *contract.KVLeasePage
+	leaseDetail                                                   *contract.KVLeaseDetail
+	lease                                                         contract.KVRequestLease
+	err                                                           error
+	authSteps                                                     []AuthStepReceipt
+	compactionObservation                                         *CompactionObservation
+	members                                                       *memberOutcome
+	alarms                                                        *alarmOutcome
+	recoveryResult                                                *contract.KVResult
+	recoveryUnknown                                               *contract.KVResult
+	recoveryMembers                                               []contract.KVMemberResult
+	snapshots                                                     *snapshotOutcome
+	recoverySnapshot                                              *contract.KVSnapshotResult
 }
 type operation struct {
-	aclMutationRevision uint64
-	aclMutationPreview  *contract.KVHTTPACLImpact
-	aclMutationRequest  contract.KVHTTPACLMutationRequest
-	aclMutationRecordID string
-	aclMutationRecovery *contract.KVHTTPACLMutationResult
-	aclRequest          contract.KVHTTPACLReadRequest
-	aclRecordID         string
-	aclRecovery         *contract.KVHTTPACLReadResult
-	destroyRequest      contract.KVHTTPSessionDestroyImpactRequest
-	editorRevision      uint64
-	sessionKeysRequest  contract.KVHTTPSessionKeysRequest
-	lease               contract.KVRequestLease
-	kind                string
-	scope               contract.KVScope
-	authored            contract.KVRequest
-	cancel              context.CancelFunc
-	canceled            bool
-	snapshotRecovery    *contract.KVSnapshotResult
-	out                 <-chan outcome
-	finished            <-chan struct{}
-	management          *LeaseManagementReceipt
-	managementDraft     *leaseManagementDraft
-	auth                *AuthManagementReceipt
-	compaction          *CompactionReceipt
+	managementRevision                            uint64
+	restoreRequest                                contract.KVHTTPArchiveRestoreRequest
+	restoreRecord                                 string
+	restoreRecovery, restoreRecoveryUnknown       *contract.KVHTTPArchiveRestoreResult
+	managementRecovery, managementRecoveryUnknown *contract.KVHTTPManagementResult
+	httpManagementRequest                         contract.KVHTTPManagementRequest
+	httpManagementRecord                          string
+	aclMutationRevision                           uint64
+	aclMutationPreview                            *contract.KVHTTPACLImpact
+	aclMutationRequest                            contract.KVHTTPACLMutationRequest
+	aclMutationRecordID                           string
+	aclMutationRecovery                           *contract.KVHTTPACLMutationResult
+	aclRequest                                    contract.KVHTTPACLReadRequest
+	aclRecordID                                   string
+	aclRecovery                                   *contract.KVHTTPACLReadResult
+	destroyRequest                                contract.KVHTTPSessionDestroyImpactRequest
+	editorRevision                                uint64
+	sessionKeysRequest                            contract.KVHTTPSessionKeysRequest
+	lease                                         contract.KVRequestLease
+	kind                                          string
+	scope                                         contract.KVScope
+	authored                                      contract.KVRequest
+	cancel                                        context.CancelFunc
+	canceled                                      bool
+	snapshotRecovery                              *contract.KVSnapshotResult
+	out                                           <-chan outcome
+	finished                                      <-chan struct{}
+	management                                    *LeaseManagementReceipt
+	managementDraft                               *leaseManagementDraft
+	auth                                          *AuthManagementReceipt
+	compaction                                    *CompactionReceipt
 }
 
 // Document is UI-thread owned. Workers capture immutable requests and their
 // original lease; private buffered channels are consumed only by State.Consume.
 type Document struct {
+	httpKVTools                                             *httpKVToolsState
+	httpArchive                                             *httpArchiveState
+	httpManagement                                          *httpManagementState
 	httpACLMutation                                         *httpACLMutationState
 	httpACL                                                 *httpACLState
 	httpSessionDestroyStep                                  int
@@ -195,21 +214,23 @@ type Document struct {
 	browserColumns, browserKeysColumns                      ui.ListState
 }
 type leaveStamp struct {
-	httpACLMutationRevision                 uint64
-	httpACLRevision                         uint64
-	httpSessionRenewalRevision              uint64
-	httpWatchRevision                       uint64
-	toolRevision                            uint64
-	request                                 contract.KVRequest
-	last, unknown                           *Receipt
-	events                                  *EventReceipt
-	renewal                                 *RenewalReceipt
-	renewalUnknown                          *RenewalReceipt
-	browserLast, browserPage, browserDetail *LeaseBrowserReceipt
-	compaction                              *CompactionObservation
-	memberRevision                          uint64
-	alarmRevision                           uint64
-	snapshotRevision                        uint64
+	httpArchiveRevision, httpKVToolsRevision uint64
+	managementRevision                       uint64
+	httpACLMutationRevision                  uint64
+	httpACLRevision                          uint64
+	httpSessionRenewalRevision               uint64
+	httpWatchRevision                        uint64
+	toolRevision                             uint64
+	request                                  contract.KVRequest
+	last, unknown                            *Receipt
+	events                                   *EventReceipt
+	renewal                                  *RenewalReceipt
+	renewalUnknown                           *RenewalReceipt
+	browserLast, browserPage, browserDetail  *LeaseBrowserReceipt
+	compaction                               *CompactionObservation
+	memberRevision                           uint64
+	alarmRevision                            uint64
+	snapshotRevision                         uint64
 }
 
 func (d *Document) ID() uint64       { return d.id }
@@ -714,6 +735,8 @@ func (s *State) Recover(d *Document) {
 	}
 	previous := d.lease
 	id := d.id
+	expectedRestore, expectedRestoreUnknown := httpRestoreRecoveryExpected(d)
+	expectedManagement, expectedManagementUnknown := managementRecoveryExpected(d)
 	expectedACL := d.expectedHTTPACLRecovery()
 	expectedACLMutation := d.expectedHTTPACLMutationRecovery()
 	s.HideHTTPACLReceipt(d)
@@ -759,8 +782,10 @@ func (s *State) Recover(d *Document) {
 			copy := r.ACLMutationResult.Clone()
 			aclMutation = &copy
 		}
-		return outcome{recoveryACLMutation: aclMutation, lease: r.Lease, recoveryResult: &last, recoveryUnknown: unknown, recoveryMembers: cloneMemberResults(r.MemberResults), recoverySnapshot: snapshot, recoveryACL: acl, err: err}
+		return outcome{recoveryRestore: r.RestoreResult, recoveryRestoreUnknown: r.RestoreUnknown, recoveryManagement: r.ManagementResult, recoveryManagementUnknown: r.ManagementUnknown, recoveryACLMutation: aclMutation, lease: r.Lease, recoveryResult: &last, recoveryUnknown: unknown, recoveryMembers: cloneMemberResults(r.MemberResults), recoverySnapshot: snapshot, recoveryACL: acl, err: err}
 	})
+	d.job.restoreRecovery, d.job.restoreRecoveryUnknown = expectedRestore, expectedRestoreUnknown
+	d.job.managementRecovery, d.job.managementRecoveryUnknown = expectedManagement, expectedManagementUnknown
 	d.job.snapshotRecovery = expectedSnapshot
 	d.job.aclRecovery = expectedACL
 	d.job.aclMutationRecovery = expectedACLMutation
@@ -802,7 +827,7 @@ func (s *State) Consume() {
 				job := d.job
 				d.job = nil
 				job.cancel()
-				if r.err != nil && job.kind != "http-acl-read" && job.kind != "http-acl-mutation" && job.kind != "http-acl-mutation-preview" {
+				if r.err != nil && job.kind != "http-management" && job.kind != "http-acl-read" && job.kind != "http-acl-mutation" && job.kind != "http-acl-mutation-preview" {
 					d.error = r.err.Error()
 					if job.kind == "recover" && (job.aclRecovery != nil || job.aclMutationRecovery != nil || d.HTTPACLAvailable() || d.HTTPACLMutationAvailable()) {
 						d.error = httpACLRecoveryError
@@ -810,6 +835,18 @@ func (s *State) Consume() {
 				}
 				if r.alarms != nil {
 					s.consumeAlarms(d, job, r.alarms)
+				}
+				if job.kind == "http-management-impact" {
+					s.consumeHTTPEnterpriseDeletion(d, job, r)
+				}
+				if r.httpKV != nil {
+					s.consumeHTTPKVTools(d, job, r)
+				}
+				if job.kind == "http-archive-restore" {
+					s.consumeHTTPArchiveRestore(d, job, r)
+				}
+				if r.httpArchive != nil {
+					s.consumeHTTPArchive(d, job, r.httpArchive)
 				}
 				if r.snapshots != nil {
 					s.consumeSnapshot(d, job, r.snapshots)
@@ -825,6 +862,8 @@ func (s *State) Consume() {
 					d.error = contract.ErrRevoked.Error()
 				}
 				if job.kind == "recover" {
+					s.consumeHTTPRestoreRecovery(d, job, &r)
+					s.consumeHTTPManagementRecovery(d, job, &r)
 					s.consumeHTTPACLMutationRecovery(d, job, &r)
 					s.consumeHTTPACLRecovery(d, job, &r)
 					s.consumeRequestRecovery(d, job, &r)
@@ -877,6 +916,13 @@ func (s *State) Consume() {
 				if job.kind == "http-acl-mutation" {
 					s.consumeHTTPACLMutation(d, job, r)
 				}
+				if job.kind == "http-capabilities" {
+					s.consumeHTTPCapabilities(d, job, r)
+					continue
+				}
+				if job.kind == "http-management" {
+					s.consumeHTTPManagement(d, job, r)
+				}
 				if job.kind == "http-acl-read" {
 					s.consumeHTTPACLRead(d, job, r)
 				}
@@ -927,6 +973,7 @@ func (s *State) Consume() {
 		if d.job == nil && d.lease != nil && d.lease.CheckKVLease() != nil {
 			if !d.needsRecovery {
 				s.HideHTTPACLReceipt(d)
+				d.revokePrivateToolPreparations()
 			}
 			d.needsRecovery = true
 			s.CancelConfirmation(d)
@@ -937,6 +984,7 @@ func (s *State) DisconnectProfile(id int64) {
 	for _, d := range s.documents {
 		if d.profileID == id {
 			s.HideHTTPACLReceipt(d)
+			d.revokePrivateToolPreparations()
 			d.releaseAlarmAuthority()
 			if d.authDraft != nil {
 				d.authDraft.password = ""
@@ -963,10 +1011,10 @@ func (s *State) GuardLeave(d *Document, next func(ui.Services)) bool {
 	if !s.owned(d) {
 		return false
 	}
-	if d.permit != nil && d.permit.httpACLMutationRevision == d.httpACLMutationRevision() && d.permit.httpACLRevision == d.httpACLRevision() && d.permit.httpSessionRenewalRevision == d.httpSessionRenewalRevision() && d.permit.httpWatchRevision == d.httpWatchRevision() && d.permit.toolRevision == d.requestToolRevision() && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && d.permit.compaction == d.compactionObservation && d.permit.memberRevision == d.memberRevision() && d.permit.alarmRevision == d.alarmRevision() && d.permit.snapshotRevision == d.snapshotRevision() && !d.Busy() && !d.FileBusy() {
+	if d.permit != nil && d.permit.httpArchiveRevision == d.httpArchiveRevision() && d.permit.httpKVToolsRevision == d.httpKVToolsRevision() && d.permit.managementRevision == d.managementRevision() && d.permit.httpACLMutationRevision == d.httpACLMutationRevision() && d.permit.httpACLRevision == d.httpACLRevision() && d.permit.httpSessionRenewalRevision == d.httpSessionRenewalRevision() && d.permit.httpWatchRevision == d.httpWatchRevision() && d.permit.toolRevision == d.requestToolRevision() && d.permit.request == d.Request() && d.permit.last == d.last && d.permit.unknown == d.unknown && d.permit.events == d.eventReceipt && d.permit.renewal == d.renewalReceipt && d.permit.renewalUnknown == d.renewalUnknown && d.permit.browserLast == d.browserLast && d.permit.browserPage == d.browserPage && d.permit.browserDetail == d.browserDetail && d.permit.compaction == d.compactionObservation && d.permit.memberRevision == d.memberRevision() && d.permit.alarmRevision == d.alarmRevision() && d.permit.snapshotRevision == d.snapshotRevision() && !d.Busy() && !d.FileBusy() {
 		return false
 	}
-	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && !d.httpACLMutationEvidence() && !d.httpACLContent() && !d.memberContent() && !d.alarmContent() && !d.snapshotContent() && (d.httpWatch == nil || d.httpWatch.run == nil) && !d.httpSessionRenewalContent() && (d.httpSessionRenewal == nil || d.httpSessionRenewal.confirmation == nil) && d.leaseManagement == nil && d.authDraft == nil && d.compactionObservation == nil && (d.confirmation == nil || d.confirmation.destroy == nil && d.confirmation.alarms == nil && d.confirmation.members == nil && d.confirmation.management == nil && d.confirmation.auth == nil && d.confirmation.compaction == nil) {
+	if !d.Dirty() && !d.hasUnknownWrites() && !d.Busy() && !d.FileBusy() && !d.httpKVToolsContent() && !d.httpArchiveContent() && !d.managementContent() && !d.httpACLMutationEvidence() && !d.httpACLContent() && !d.memberContent() && !d.alarmContent() && !d.snapshotContent() && (d.httpWatch == nil || d.httpWatch.run == nil) && !d.httpSessionRenewalContent() && (d.httpSessionRenewal == nil || d.httpSessionRenewal.confirmation == nil) && d.leaseManagement == nil && d.authDraft == nil && d.compactionObservation == nil && (d.confirmation == nil || d.confirmation.destroy == nil && d.confirmation.alarms == nil && d.confirmation.members == nil && d.confirmation.management == nil && d.confirmation.auth == nil && d.confirmation.compaction == nil) {
 		return false
 	}
 	s.leave = &leaveDecision{doc: d, next: next}
@@ -990,7 +1038,7 @@ func (s *State) DecideLeave(services ui.Services, discard bool) {
 	next := s.leave.next
 	s.leave = nil
 	s.CancelConfirmation(d)
-	d.permit = &leaveStamp{httpACLMutationRevision: d.httpACLMutationRevision(), httpACLRevision: d.httpACLRevision(), httpSessionRenewalRevision: d.httpSessionRenewalRevision(), httpWatchRevision: d.httpWatchRevision(), toolRevision: d.requestToolRevision(), request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail, compaction: d.compactionObservation, memberRevision: d.memberRevision(), alarmRevision: d.alarmRevision(), snapshotRevision: d.snapshotRevision()}
+	d.permit = &leaveStamp{httpArchiveRevision: d.httpArchiveRevision(), httpKVToolsRevision: d.httpKVToolsRevision(), managementRevision: d.managementRevision(), httpACLMutationRevision: d.httpACLMutationRevision(), httpACLRevision: d.httpACLRevision(), httpSessionRenewalRevision: d.httpSessionRenewalRevision(), httpWatchRevision: d.httpWatchRevision(), toolRevision: d.requestToolRevision(), request: d.Request(), last: d.last, unknown: d.unknown, events: d.eventReceipt, renewal: d.renewalReceipt, renewalUnknown: d.renewalUnknown, browserLast: d.browserLast, browserPage: d.browserPage, browserDetail: d.browserDetail, compaction: d.compactionObservation, memberRevision: d.memberRevision(), alarmRevision: d.alarmRevision(), snapshotRevision: d.snapshotRevision()}
 	if next != nil {
 		next(services)
 	}
@@ -1028,7 +1076,19 @@ func (s *State) Close(d *Document) {
 	}
 	if d.io != nil {
 		d.io.cancel()
+		// Native file dialogs can return after a tab closes. Drain their captured
+		// result without blocking the UI or publishing a late file selection.
+		pending := d.io
+		go func() {
+			<-pending.finished
+			select {
+			case r := <-pending.out:
+				r.dispose()
+			default:
+			}
+		}()
 	}
+
 	if d.lease != nil {
 		_ = d.lease.Close()
 	}
@@ -1068,6 +1128,12 @@ func (s *State) Close(d *Document) {
 			if r.destroyPlan != nil {
 				_ = r.destroyPlan.Close()
 			}
+			if r.managementPlan != nil {
+				_ = r.managementPlan.Close()
+			}
+			if r.httpArchive != nil {
+				r.httpArchive.close()
+			}
 			if r.snapshots != nil && r.snapshots.artifact != nil {
 				_ = r.snapshots.artifact.Close()
 			}
@@ -1080,6 +1146,9 @@ func (s *State) Close(d *Document) {
 		default:
 		}
 	}
+	d.httpKVTools = nil
+	s.closeHTTPArchive(d)
+	s.closeHTTPManagement(d)
 	s.closeSnapshot(d)
 	d.releaseMemberAuthority()
 	d.releaseAlarmAuthority()

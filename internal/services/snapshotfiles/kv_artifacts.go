@@ -192,6 +192,7 @@ func (f *kvCaptureFile) abort() error {
 }
 
 type kvArtifact struct {
+	httpReceipt               *contract.KVHTTPArchiveCapture
 	authority                 *kvArtifact
 	mu                        sync.RWMutex
 	store                     *KVSnapshotStore
@@ -555,8 +556,14 @@ func (a *kvArtifact) open(journal bool) (io.ReadCloser, error) {
 		return nil, ErrArtifactClosed
 	}
 	f, size := a.snapshot, a.receipt.SnapshotBytes
+	if a.httpReceipt != nil {
+		size = a.httpReceipt.ArchiveBytes
+	}
 	if journal {
 		f, size = a.journal, a.receipt.JournalBytes
+		if a.httpReceipt != nil {
+			size = a.httpReceipt.ReceiptBytes
+		}
 	}
 	return &kvArtifactReader{owner: a, file: f, size: size}, nil
 }

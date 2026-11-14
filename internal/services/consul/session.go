@@ -37,6 +37,7 @@ type Session struct {
 	closeDone                  chan struct{}
 	closeErr                   error
 	work                       sync.WaitGroup
+	restoreOwner               *documentLease
 	leases                     map[*documentLease]bool
 	dataLeases                 map[*dataLease]bool
 	watchLeases                map[*httpWatchLease]bool
@@ -70,7 +71,7 @@ func OpenNativeSession(ctx context.Context, profileID int64, cfg Config, token s
 	hash := sha256.Sum256(raw)
 	i := evidence.Identity
 	s.scope = contract.KVScope{Namespace: contract.NamespaceRef{ProfileID: profileID, Catalog: "kv"}, Generation: 1, Prefix: []byte(s.cfg.Prefix), Version: i.Version,
-		HTTP: contract.KVHTTPIdentity{Protocol: "consul-http", Endpoint: s.cfg.Endpoint, Datacenter: s.cfg.Datacenter,
+		HTTP: contract.KVHTTPIdentity{Namespace: s.cfg.Namespace, Partition: s.cfg.Partition, Protocol: "consul-http", Endpoint: s.cfg.Endpoint, Datacenter: s.cfg.Datacenter,
 			Consistency: s.cfg.Consistency, Auth: s.cfg.Auth, Configuration: hex.EncodeToString(hash[:]),
 			AgentID: i.NodeID, AgentName: i.NodeName, AgentDatacenter: i.Datacenter, AgentAvailable: i.Available}}
 	s.rootBytes = openEvidenceCost(evidence)
@@ -107,7 +108,7 @@ func openEvidenceCost(e OpenEvidence) int64 {
 func (s *Session) ProfileID() int64   { return s.id }
 func (s *Session) Generation() uint64 { return 1 } // public generations belong to dbruntime
 func (s *Session) Capabilities() contract.Capabilities {
-	return dataCapabilities()
+	return s.DataDocumentCapabilities()
 }
 func (s *Session) KVScope() contract.KVScope { return s.scope.Clone() }
 func (s *Session) Alive() bool {
@@ -122,9 +123,12 @@ func (s *Session) OpeningEvidence() OpenEvidence {
 }
 
 func (s *Session) request(parent context.Context) (context.Context, func(), error) {
+	return s.requestFor(parent, nil)
+}
+func (s *Session) requestFor(parent context.Context, owner *documentLease) (context.Context, func(), error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.closed || s.revoked || !s.root.Alive() {
+	if s.closed || s.revoked || !s.root.Alive() || s.restoreOwner != nil && s.restoreOwner != owner {
 		return nil, nil, contract.ErrRevoked
 	}
 	if err := parent.Err(); err != nil {
@@ -197,7 +201,7 @@ func (s *Session) open(ctx context.Context) (*Client, error) {
 func (s *Session) ReserveKV(document uint64) (contract.KVRequestLease, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.closed || s.revoked || !s.root.Alive() {
+	if s.closed || s.revoked || !s.root.Alive() || s.restoreOwner != nil {
 		return nil, contract.ErrRevoked
 	}
 	if document == 0 {
@@ -277,22 +281,34 @@ func transferOwnedReceipts(old, next *documentLease) error {
 	}
 	s := next.s
 	receiptBudgetMu.Lock()
+	// Original archive bytes remain exclusively caller-owned; move only their
+	// shared accounting. This preserves both budgets across repeated recovery.
+	bytes := old.cacheBytes + old.archiveBytes()
 	credit := int64(0)
 	if old.s == s {
-		credit = old.cacheBytes
+		credit = bytes
 	}
-	if s.retained+s.reserved+old.cacheBytes-credit > s.budget {
+	if s.retained+s.reserved+bytes-credit > s.budget {
 		receiptBudgetMu.Unlock()
 		return ErrBounds
 	}
-	old.s.retained -= old.cacheBytes
-	s.retained += old.cacheBytes
+	old.s.retained -= bytes
+	s.retained += bytes
+	next.archiveBudget = old.archiveBudget
+	if next.archiveBudget != nil {
+		next.archiveBudget.s = s
+	}
+	old.archiveBudget = nil
 	next.cacheBytes = old.cacheBytes
 	old.cacheBytes = 0
 	receiptBudgetMu.Unlock()
 	old.receiptMu.Lock()
 	next.receiptMu.Lock()
 	next.last, next.unknown = old.last, old.unknown
+	next.restoreLast, next.restoreUnknown = old.restoreLast, old.restoreUnknown
+	old.restoreLast, old.restoreUnknown = nil, nil
+	next.managementLast, next.managementUnknown = old.managementLast, old.managementUnknown
+	old.managementLast, old.managementUnknown = nil, nil
 	next.aclLast = old.aclLast
 	next.aclMutationLast = old.aclMutationLast
 	next.writeUnknown.Store(old.writeUnknown.Load())

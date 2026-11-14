@@ -28,6 +28,7 @@ type httpWatchState struct {
 	aclFiltered, incomplete bool
 	indexReset              bool
 	healthReceipt           *Receipt
+	catalogReceipt          *Receipt
 	revision                uint64
 }
 
@@ -145,6 +146,7 @@ func (s *State) StartHTTPWatch(d *Document) {
 	w.authored, w.request, w.evidenceScope = d.Request(), r, w.scope.Clone()
 	w.status, w.preview, w.selected = contract.KVHTTPWatchStatus{}, "", -1
 	w.healthReceipt = nil
+	w.catalogReceipt = nil
 	w.revision++
 	d.clearConfirmation()
 	d.selectedHTTPWatch = true
@@ -196,6 +198,12 @@ func (s *State) ClearHTTPWatch(d *Document) {
 	}
 	w.run, w.preview, w.selected = nil, "", -1
 	w.healthReceipt = nil
+	w.catalogReceipt = nil
+	d.httpCatalog = false
+	if d.httpCatalogBrowser != nil {
+		d.httpCatalogBrowser.close()
+		d.httpCatalogBrowser = nil
+	}
 	d.httpHealth = false
 	if d.httpHealthBrowser != nil {
 		d.httpHealthBrowser.close()
@@ -357,9 +365,17 @@ func (s *State) SelectHTTPWatchObservation(d *Document, ordinal int) {
 		d.httpHealthBrowser.close()
 		d.httpHealthBrowser = nil
 	}
+	if d.httpCatalogBrowser != nil && d.httpCatalogBrowser.receipt == w.catalogReceipt {
+		d.httpCatalogBrowser.close()
+		d.httpCatalogBrowser = nil
+	}
 	w.healthReceipt = nil
+	w.catalogReceipt = nil
 	if w.request.Health.Kind != "" && o.ProjectionComplete && o.HTTP.Health != nil {
 		w.healthReceipt = &Receipt{Scope: w.evidenceScope.Clone(), Authored: w.authored, Result: contract.KVResult{HTTP: &o.HTTP}}
+	}
+	if w.request.Catalog.Kind != "" && o.ProjectionComplete && o.HTTP.Catalog != nil {
+		w.catalogReceipt = &Receipt{Scope: w.evidenceScope.Clone(), Authored: w.authored, Result: contract.KVResult{HTTP: &o.HTTP}}
 	}
 	var b strings.Builder
 	fmt.Fprintf(&b, "HTTP %d · index %s (%s)\n%s\n", o.HTTP.Status, w.index, o.IndexRelation, o.ReceivedAt.Format("2006-01-02T15:04:05.999Z07:00"))
@@ -371,6 +387,11 @@ func (s *State) SelectHTTPWatchObservation(d *Document, ordinal int) {
 		for _, v := range h.Instances[:min(20, len(h.Instances))] {
 			fmt.Fprintf(&b, "%q · %q · %q · %d\n", clipped(v.Node.Node), clipped(v.Service.Service), clipped(v.Service.ID), len(v.Checks))
 		}
+		b.WriteString(httpReceiptPreview(&o.HTTP))
+		w.preview = clipped(b.String())
+		return
+	}
+	if w.request.Catalog.Kind != "" {
 		b.WriteString(httpReceiptPreview(&o.HTTP))
 		w.preview = clipped(b.String())
 		return

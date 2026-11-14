@@ -12,6 +12,99 @@ type kvLeaseBrowsingLease struct{ *kvRequestLease }
 
 func originalKVRequestLease(previous contract.KVRequestLease) *kvRequestLease {
 	switch l := previous.(type) {
+	case *kvHTTPManagementExtendedLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPManagementRestoreLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPManagementEnterpriseLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPManagementFullExtendedLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPManagementFullRestoreLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPManagementFullEnterpriseLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPManagementFullLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPManagementLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPArchivesACLDestroyLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPArchivesACLKeysLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPArchivesACLLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPArchivesDestroyLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPArchivesKeysLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPArchivesLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPArchivesMutatingLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPArchivesMutatingKeysLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPArchivesMutatingDestroyLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPArchivesImpactLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPArchivesImpactKeysLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPArchivesImpactDestroyLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPArchivesPlannedLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPArchivesPlannedKeysLease:
+		if l != nil {
+			return l.base
+		}
+	case *kvHTTPArchivesPlannedDestroyLease:
+		if l != nil {
+			return l.base
+		}
+
 	case *kvHTTPACLPlannedDestroyLease:
 		if l != nil {
 			return l.kvHTTPACLPlanner.base

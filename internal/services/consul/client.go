@@ -119,6 +119,20 @@ func (c *Client) Do(ctx context.Context, r Request) (Response, error) {
 	return c.Execute(ctx, p)
 }
 func (c *Client) requestURL(p Plan) (string, error) {
+	if p.kind == "enterprise-impact" {
+		target := c.config.Endpoint + p.request.Path
+		if len(p.request.Query) > 0 {
+			target += "?" + p.request.Query.Encode()
+		}
+		return target, nil
+	}
+	if p.kind == "snapshot-restore" {
+		target := c.config.Endpoint + "/v1/snapshot"
+		if c.config.Datacenter != "" {
+			target += "?" + url.Values{"dc": {c.config.Datacenter}}.Encode()
+		}
+		return target, nil
+	}
 	q := p.request.Query.Clone()
 	if q == nil {
 		q = url.Values{}
@@ -126,11 +140,56 @@ func (c *Client) requestURL(p Plan) (string, error) {
 	// Agent endpoints and static ACL templates use the original contacted
 	// agent; templates do not implement DC routing or blocking consistency.
 	localAgent := strings.HasPrefix(p.request.Path, "/v1/agent/") || aclTemplateReadPath(p.request.Path) || aclMutationUsesAgent(p.kind)
-	if !localAgent {
-		for key, value := range map[string]string{"dc": c.config.Datacenter, "ns": c.config.Namespace, "partition": c.config.Partition} {
-			if value != "" {
-				q.Set(key, value)
+	if op, ok := managementSpec(strings.TrimPrefix(p.kind, "management:")); ok && strings.HasPrefix(p.kind, "management:") {
+		if (op.Name == "intention-create" || op.Name == "intention-update") && c.config.Partition != "" && c.config.Partition != "default" {
+			return "", ErrUnsupported
+		}
+		if strings.HasPrefix(op.routing, "dc") || strings.HasPrefix(op.routing, "scope") || strings.HasPrefix(op.routing, "partition") {
+			if c.config.Datacenter != "" {
+				q.Set("dc", c.config.Datacenter)
 			}
+		}
+		if strings.HasPrefix(op.routing, "scope") && c.config.Namespace != "" {
+			q.Set("ns", c.config.Namespace)
+		}
+		if (strings.HasPrefix(op.routing, "scope") || strings.HasPrefix(op.routing, "partition") || op.routing == "agent") && c.config.Partition != "" {
+			q.Set("partition", c.config.Partition)
+		}
+		if op.routing == "agent" && c.config.Namespace != "" {
+			q.Set("ns", c.config.Namespace)
+		}
+		if strings.HasSuffix(op.routing, "-read") && c.config.Consistency != "default" {
+			q.Set(c.config.Consistency, "")
+		}
+		target := c.config.Endpoint + p.request.Path
+		if len(q) > 0 {
+			target += "?" + q.Encode()
+		}
+		return target, nil
+	}
+	// Enterprise metadata support is endpoint-specific, including local agent
+	// service/check operations. Never silently route a scoped request globally.
+	path := p.request.Path
+	dc := !localAgent && path != "/v1/catalog/datacenters"
+	ns, partition := false, false
+	switch {
+	case strings.HasPrefix(path, "/v1/kv/"), path == "/v1/txn", strings.HasPrefix(path, "/v1/health/"), strings.HasPrefix(path, "/v1/session/"):
+		ns, partition = true, true
+	case path == "/v1/catalog/nodes":
+		partition = true
+	case strings.HasPrefix(path, "/v1/catalog/") && path != "/v1/catalog/datacenters":
+		ns, partition = true, true
+	case strings.HasPrefix(path, "/v1/acl/") && !aclTemplateReadPath(path):
+		ns, partition = true, true
+	case strings.HasPrefix(path, "/v1/agent/service/"), path == "/v1/agent/services", strings.HasPrefix(path, "/v1/agent/check/"), path == "/v1/agent/checks":
+		ns, partition = true, true
+	}
+	for key, setting := range map[string]struct {
+		enabled bool
+		value   string
+	}{"dc": {dc, c.config.Datacenter}, "ns": {ns, c.config.Namespace}, "partition": {partition, c.config.Partition}} {
+		if setting.enabled && setting.value != "" {
+			q.Set(key, setting.value)
 		}
 	}
 	scopedRead := !p.write && !localAgent && p.request.Path != "/v1/status/leader" && p.request.Path != "/v1/status/peers" && p.request.Path != "/v1/catalog/datacenters"
@@ -206,7 +265,7 @@ func (c *Client) Execute(ctx context.Context, p Plan) (result Response, err erro
 	req.Close = true
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
-	if p.kind == "kv-put" {
+	if p.kind == "snapshot-restore" || p.kind == "kv-put" || p.kind == "management:event-fire" || p.kind == "management:license-put" {
 		req.Header.Set("Content-Type", "application/octet-stream")
 	}
 	if c.config.Auth == "token" {

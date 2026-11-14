@@ -41097,3 +41097,1779 @@ func ConsulACLImpactDependency() string { return In(i18n.Locale()).ConsulACLImpa
 func (msgs Messages) ConsulACLImpactDependency() string {
 	return Catalog.Format(msgs.locale, "consulACLImpactDependency", nil)
 }
+
+// ConsulBundleSummary says "Bundle %d 个原键 · 来源 DC %s · Namespace %s · Partition %s"
+// in the language the app shows.
+func ConsulBundleSummary() string { return In(i18n.Locale()).ConsulBundleSummary() }
+
+// ConsulBundleSummary says "Bundle %d 个原键 · 来源 DC %s · Namespace %s · Partition %s"
+// in the language of msgs.
+func (msgs Messages) ConsulBundleSummary() string {
+	return Catalog.Format(msgs.locale, "consulBundleSummary", nil)
+}
+
+// ConsulCatalogFiltered says "Catalog 响应受 ACL 过滤；没有匹配项不能证明对象不存在"
+// in the language the app shows.
+func ConsulCatalogFiltered() string { return In(i18n.Locale()).ConsulCatalogFiltered() }
+
+// ConsulCatalogFiltered says "Catalog 响应受 ACL 过滤；没有匹配项不能证明对象不存在"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogFiltered() string {
+	return Catalog.Format(msgs.locale, "consulCatalogFiltered", nil)
+}
+
+// ConsulBundleFileFailure says "Consul Bundle 文件操作失败"
+// in the language the app shows.
+func ConsulBundleFileFailure() string { return In(i18n.Locale()).ConsulBundleFileFailure() }
+
+// ConsulBundleFileFailure says "Consul Bundle 文件操作失败"
+// in the language of msgs.
+func (msgs Messages) ConsulBundleFileFailure() string {
+	return Catalog.Format(msgs.locale, "consulBundleFileFailure", nil)
+}
+
+// ConsulKVToolsFailure says "Consul KV 工具未完成；原响应保留"
+// in the language the app shows.
+func ConsulKVToolsFailure() string { return In(i18n.Locale()).ConsulKVToolsFailure() }
+
+// ConsulKVToolsFailure says "Consul KV 工具未完成；原响应保留"
+// in the language of msgs.
+func (msgs Messages) ConsulKVToolsFailure() string {
+	return Catalog.Format(msgs.locale, "consulKVToolsFailure", nil)
+}
+
+// ConsulKVTools says "Consul KV 搜索与 Bundle"
+// in the language the app shows.
+func ConsulKVTools() string { return In(i18n.Locale()).ConsulKVTools() }
+
+// ConsulKVTools says "Consul KV 搜索与 Bundle"
+// in the language of msgs.
+func (msgs Messages) ConsulKVTools() string {
+	return Catalog.Format(msgs.locale, "consulKVTools", nil)
+}
+
+// ConsulNativeSnapshot says "Consul 原生 Snapshot"
+// in the language the app shows.
+func ConsulNativeSnapshot() string { return In(i18n.Locale()).ConsulNativeSnapshot() }
+
+// ConsulNativeSnapshot says "Consul 原生 Snapshot"
+// in the language of msgs.
+func (msgs Messages) ConsulNativeSnapshot() string {
+	return Catalog.Format(msgs.locale, "consulNativeSnapshot", nil)
+}
+
+// ConsulReadOnly says "Consul 只读保护"
+// in the language the app shows.
+func ConsulReadOnly() string { return In(i18n.Locale()).ConsulReadOnly() }
+
+// ConsulReadOnly says "Consul 只读保护"
+// in the language of msgs.
+func (msgs Messages) ConsulReadOnly() string {
+	return Catalog.Format(msgs.locale, "consulReadOnly", nil)
+}
+
+// ConsulPrivateFileFailure says "Consul 私有文件操作失败"
+// in the language the app shows.
+func ConsulPrivateFileFailure() string { return In(i18n.Locale()).ConsulPrivateFileFailure() }
+
+// ConsulPrivateFileFailure says "Consul 私有文件操作失败"
+// in the language of msgs.
+func (msgs Messages) ConsulPrivateFileFailure() string {
+	return Catalog.Format(msgs.locale, "consulPrivateFileFailure", nil)
+}
+
+// ConsulManagementTools says "Consul 管理工具"
+// in the language the app shows.
+func ConsulManagementTools() string { return In(i18n.Locale()).ConsulManagementTools() }
+
+// ConsulManagementTools says "Consul 管理工具"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementTools() string {
+	return Catalog.Format(msgs.locale, "consulManagementTools", nil)
+}
+
+// ConsulManagementFailure says "Consul 管理请求失败；原私有回执保留"
+// in the language the app shows.
+func ConsulManagementFailure() string { return In(i18n.Locale()).ConsulManagementFailure() }
+
+// ConsulManagementFailure says "Consul 管理请求失败；原私有回执保留"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementFailure() string {
+	return Catalog.Format(msgs.locale, "consulManagementFailure", nil)
+}
+
+// ConsulEnterpriseImpactFailure says "Enterprise 删除影响不完整或目标已变化；写入未派发"
+// in the language the app shows.
+func ConsulEnterpriseImpactFailure() string { return In(i18n.Locale()).ConsulEnterpriseImpactFailure() }
+
+// ConsulEnterpriseImpactFailure says "Enterprise 删除影响不完整或目标已变化；写入未派发"
+// in the language of msgs.
+func (msgs Messages) ConsulEnterpriseImpactFailure() string {
+	return Catalog.Format(msgs.locale, "consulEnterpriseImpactFailure", nil)
+}
+
+// ConsulRestoreFailure says "Snapshot 恢复未完成；原私有回执保留"
+// in the language the app shows.
+func ConsulRestoreFailure() string { return In(i18n.Locale()).ConsulRestoreFailure() }
+
+// ConsulRestoreFailure says "Snapshot 恢复未完成；原私有回执保留"
+// in the language of msgs.
+func (msgs Messages) ConsulRestoreFailure() string {
+	return Catalog.Format(msgs.locale, "consulRestoreFailure", nil)
+}
+
+// ConsulSnapshotPublicationFailure says "Snapshot 文件发布未完成；原回执保留"
+// in the language the app shows.
+func ConsulSnapshotPublicationFailure() string {
+	return In(i18n.Locale()).ConsulSnapshotPublicationFailure()
+}
+
+// ConsulSnapshotPublicationFailure says "Snapshot 文件发布未完成；原回执保留"
+// in the language of msgs.
+func (msgs Messages) ConsulSnapshotPublicationFailure() string {
+	return Catalog.Format(msgs.locale, "consulSnapshotPublicationFailure", nil)
+}
+
+// ConsulSnapshotPrivateFileFailure says "Snapshot 私有文件操作失败"
+// in the language the app shows.
+func ConsulSnapshotPrivateFileFailure() string {
+	return In(i18n.Locale()).ConsulSnapshotPrivateFileFailure()
+}
+
+// ConsulSnapshotPrivateFileFailure says "Snapshot 私有文件操作失败"
+// in the language of msgs.
+func (msgs Messages) ConsulSnapshotPrivateFileFailure() string {
+	return Catalog.Format(msgs.locale, "consulSnapshotPrivateFileFailure", nil)
+}
+
+// ConsulCaptureOnce says "仅捕获一次；原生校验、私有存储同步与用户文件发布分别记录"
+// in the language the app shows.
+func ConsulCaptureOnce() string { return In(i18n.Locale()).ConsulCaptureOnce() }
+
+// ConsulCaptureOnce says "仅捕获一次；原生校验、私有存储同步与用户文件发布分别记录"
+// in the language of msgs.
+func (msgs Messages) ConsulCaptureOnce() string {
+	return Catalog.Format(msgs.locale, "consulCaptureOnce", nil)
+}
+
+// ConsulScopeChangeNote says "作用域保存后断开此连接；原文档与回执保留，新作用域需新建请求文档"
+// in the language the app shows.
+func ConsulScopeChangeNote() string { return In(i18n.Locale()).ConsulScopeChangeNote() }
+
+// ConsulScopeChangeNote says "作用域保存后断开此连接；原文档与回执保留，新作用域需新建请求文档"
+// in the language of msgs.
+func (msgs Messages) ConsulScopeChangeNote() string {
+	return Catalog.Format(msgs.locale, "consulScopeChangeNote", nil)
+}
+
+// ConsulSaveBundle says "保存 Bundle"
+// in the language the app shows.
+func ConsulSaveBundle() string { return In(i18n.Locale()).ConsulSaveBundle() }
+
+// ConsulSaveBundle says "保存 Bundle"
+// in the language of msgs.
+func (msgs Messages) ConsulSaveBundle() string {
+	return Catalog.Format(msgs.locale, "consulSaveBundle", nil)
+}
+
+// ConsulSaveOriginalSnapshot says "保存原 Snapshot 文件"
+// in the language the app shows.
+func ConsulSaveOriginalSnapshot() string { return In(i18n.Locale()).ConsulSaveOriginalSnapshot() }
+
+// ConsulSaveOriginalSnapshot says "保存原 Snapshot 文件"
+// in the language of msgs.
+func (msgs Messages) ConsulSaveOriginalSnapshot() string {
+	return Catalog.Format(msgs.locale, "consulSaveOriginalSnapshot", nil)
+}
+
+// ConsulSavePrivateInput says "保存私有输入"
+// in the language the app shows.
+func ConsulSavePrivateInput() string { return In(i18n.Locale()).ConsulSavePrivateInput() }
+
+// ConsulSavePrivateInput says "保存私有输入"
+// in the language of msgs.
+func (msgs Messages) ConsulSavePrivateInput() string {
+	return Catalog.Format(msgs.locale, "consulSavePrivateInput", nil)
+}
+
+// ConsulSnapshotExportConsent says "允许将完整 Snapshot 或私有回执保存到文件"
+// in the language the app shows.
+func ConsulSnapshotExportConsent() string { return In(i18n.Locale()).ConsulSnapshotExportConsent() }
+
+// ConsulSnapshotExportConsent says "允许将完整 Snapshot 或私有回执保存到文件"
+// in the language of msgs.
+func (msgs Messages) ConsulSnapshotExportConsent() string {
+	return Catalog.Format(msgs.locale, "consulSnapshotExportConsent", nil)
+}
+
+// ConsulBundleExportConsent says "允许将完整原键值 Bundle 保存到文件"
+// in the language the app shows.
+func ConsulBundleExportConsent() string { return In(i18n.Locale()).ConsulBundleExportConsent() }
+
+// ConsulBundleExportConsent says "允许将完整原键值 Bundle 保存到文件"
+// in the language of msgs.
+func (msgs Messages) ConsulBundleExportConsent() string {
+	return Catalog.Format(msgs.locale, "consulBundleExportConsent", nil)
+}
+
+// ConsulManagementExportConsent says "允许将此完整私有输入或回执导出到文件"
+// in the language the app shows.
+func ConsulManagementExportConsent() string { return In(i18n.Locale()).ConsulManagementExportConsent() }
+
+// ConsulManagementExportConsent says "允许将此完整私有输入或回执导出到文件"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementExportConsent() string {
+	return Catalog.Format(msgs.locale, "consulManagementExportConsent", nil)
+}
+
+// ConsulEnterpriseImpactSummary says "删除影响完整 %t · ACL 过滤 %t · 未读取 %d 项"
+// in the language the app shows.
+func ConsulEnterpriseImpactSummary() string { return In(i18n.Locale()).ConsulEnterpriseImpactSummary() }
+
+// ConsulEnterpriseImpactSummary says "删除影响完整 %t · ACL 过滤 %t · 未读取 %d 项"
+// in the language of msgs.
+func (msgs Messages) ConsulEnterpriseImpactSummary() string {
+	return Catalog.Format(msgs.locale, "consulEnterpriseImpactSummary", nil)
+}
+
+// ConsulSearchMatchLimit says "匹配限额"
+// in the language the app shows.
+func ConsulSearchMatchLimit() string { return In(i18n.Locale()).ConsulSearchMatchLimit() }
+
+// ConsulSearchMatchLimit says "匹配限额"
+// in the language of msgs.
+func (msgs Messages) ConsulSearchMatchLimit() string {
+	return Catalog.Format(msgs.locale, "consulSearchMatchLimit", nil)
+}
+
+// ConsulCompressedLimit says "压缩字节限额"
+// in the language the app shows.
+func ConsulCompressedLimit() string { return In(i18n.Locale()).ConsulCompressedLimit() }
+
+// ConsulCompressedLimit says "压缩字节限额"
+// in the language of msgs.
+func (msgs Messages) ConsulCompressedLimit() string {
+	return Catalog.Format(msgs.locale, "consulCompressedLimit", nil)
+}
+
+// ConsulImportPrepareFailure says "原 Bundle 事务准备失败"
+// in the language the app shows.
+func ConsulImportPrepareFailure() string { return In(i18n.Locale()).ConsulImportPrepareFailure() }
+
+// ConsulImportPrepareFailure says "原 Bundle 事务准备失败"
+// in the language of msgs.
+func (msgs Messages) ConsulImportPrepareFailure() string {
+	return Catalog.Format(msgs.locale, "consulImportPrepareFailure", nil)
+}
+
+// ConsulImportFailure says "原 Bundle 事务未完成"
+// in the language the app shows.
+func ConsulImportFailure() string { return In(i18n.Locale()).ConsulImportFailure() }
+
+// ConsulImportFailure says "原 Bundle 事务未完成"
+// in the language of msgs.
+func (msgs Messages) ConsulImportFailure() string {
+	return Catalog.Format(msgs.locale, "consulImportFailure", nil)
+}
+
+// ConsulCatalogTarget says "原 Catalog 端点 %s：%s"
+// in the language the app shows.
+func ConsulCatalogTarget() string { return In(i18n.Locale()).ConsulCatalogTarget() }
+
+// ConsulCatalogTarget says "原 Catalog 端点 %s：%s"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogTarget() string {
+	return Catalog.Format(msgs.locale, "consulCatalogTarget", nil)
+}
+
+// ConsulKVReadPrepareFailure says "原 KV 读取准备失败"
+// in the language the app shows.
+func ConsulKVReadPrepareFailure() string { return In(i18n.Locale()).ConsulKVReadPrepareFailure() }
+
+// ConsulKVReadPrepareFailure says "原 KV 读取准备失败"
+// in the language of msgs.
+func (msgs Messages) ConsulKVReadPrepareFailure() string {
+	return Catalog.Format(msgs.locale, "consulKVReadPrepareFailure", nil)
+}
+
+// ConsulRestorePrepareFailure says "原 Snapshot 恢复准备失败"
+// in the language the app shows.
+func ConsulRestorePrepareFailure() string { return In(i18n.Locale()).ConsulRestorePrepareFailure() }
+
+// ConsulRestorePrepareFailure says "原 Snapshot 恢复准备失败"
+// in the language of msgs.
+func (msgs Messages) ConsulRestorePrepareFailure() string {
+	return Catalog.Format(msgs.locale, "consulRestorePrepareFailure", nil)
+}
+
+// ConsulCapturePrepareFailure says "原 Snapshot 捕获准备失败"
+// in the language the app shows.
+func ConsulCapturePrepareFailure() string { return In(i18n.Locale()).ConsulCapturePrepareFailure() }
+
+// ConsulCapturePrepareFailure says "原 Snapshot 捕获准备失败"
+// in the language of msgs.
+func (msgs Messages) ConsulCapturePrepareFailure() string {
+	return Catalog.Format(msgs.locale, "consulCapturePrepareFailure", nil)
+}
+
+// ConsulWatchIndexReset says "原 index 为零或回退；保留原响应，下一次阻塞读取从 1 继续"
+// in the language the app shows.
+func ConsulWatchIndexReset() string { return In(i18n.Locale()).ConsulWatchIndexReset() }
+
+// ConsulWatchIndexReset says "原 index 为零或回退；保留原响应，下一次阻塞读取从 1 继续"
+// in the language of msgs.
+func (msgs Messages) ConsulWatchIndexReset() string {
+	return Catalog.Format(msgs.locale, "consulWatchIndexReset", nil)
+}
+
+// ConsulManagementUnknown says "原写入结果未知；后续读取不会确认该写入"
+// in the language the app shows.
+func ConsulManagementUnknown() string { return In(i18n.Locale()).ConsulManagementUnknown() }
+
+// ConsulManagementUnknown says "原写入结果未知；后续读取不会确认该写入"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementUnknown() string {
+	return Catalog.Format(msgs.locale, "consulManagementUnknown", nil)
+}
+
+// ConsulResponsePage says "原响应 %d 项 · 第 %d 页"
+// in the language the app shows.
+func ConsulResponsePage() string { return In(i18n.Locale()).ConsulResponsePage() }
+
+// ConsulResponsePage says "原响应 %d 项 · 第 %d 页"
+// in the language of msgs.
+func (msgs Messages) ConsulResponsePage() string {
+	return Catalog.Format(msgs.locale, "consulResponsePage", nil)
+}
+
+// ConsulManagementIdentity says "原标识或名称"
+// in the language the app shows.
+func ConsulManagementIdentity() string { return In(i18n.Locale()).ConsulManagementIdentity() }
+
+// ConsulManagementIdentity says "原标识或名称"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementIdentity() string {
+	return Catalog.Format(msgs.locale, "consulManagementIdentity", nil)
+}
+
+// ConsulNativeOptions says "原生参数 JSON"
+// in the language the app shows.
+func ConsulNativeOptions() string { return In(i18n.Locale()).ConsulNativeOptions() }
+
+// ConsulNativeOptions says "原生参数 JSON"
+// in the language of msgs.
+func (msgs Messages) ConsulNativeOptions() string {
+	return Catalog.Format(msgs.locale, "consulNativeOptions", nil)
+}
+
+// ConsulPrivateReceipt says "原私有回执"
+// in the language the app shows.
+func ConsulPrivateReceipt() string { return In(i18n.Locale()).ConsulPrivateReceipt() }
+
+// ConsulPrivateReceipt says "原私有回执"
+// in the language of msgs.
+func (msgs Messages) ConsulPrivateReceipt() string {
+	return Catalog.Format(msgs.locale, "consulPrivateReceipt", nil)
+}
+
+// ConsulKeyOrPrefix says "原键或前缀"
+// in the language the app shows.
+func ConsulKeyOrPrefix() string { return In(i18n.Locale()).ConsulKeyOrPrefix() }
+
+// ConsulKeyOrPrefix says "原键或前缀"
+// in the language of msgs.
+func (msgs Messages) ConsulKeyOrPrefix() string {
+	return Catalog.Format(msgs.locale, "consulKeyOrPrefix", nil)
+}
+
+// ConsulImportSummary says "可导入 %t · 独立事务批次 %d · 已完成 %d"
+// in the language the app shows.
+func ConsulImportSummary() string { return In(i18n.Locale()).ConsulImportSummary() }
+
+// ConsulImportSummary says "可导入 %t · 独立事务批次 %d · 已完成 %d"
+// in the language of msgs.
+func (msgs Messages) ConsulImportSummary() string {
+	return Catalog.Format(msgs.locale, "consulImportSummary", nil)
+}
+
+// ConsulCapabilityAvailable says "可用"
+// in the language the app shows.
+func ConsulCapabilityAvailable() string { return In(i18n.Locale()).ConsulCapabilityAvailable() }
+
+// ConsulCapabilityAvailable says "可用"
+// in the language of msgs.
+func (msgs Messages) ConsulCapabilityAvailable() string {
+	return Catalog.Format(msgs.locale, "consulCapabilityAvailable", nil)
+}
+
+// ConsulCapabilityUnsupported says "不支持"
+// in the language the app shows.
+func ConsulCapabilityUnsupported() string { return In(i18n.Locale()).ConsulCapabilityUnsupported() }
+
+// ConsulCapabilityUnsupported says "不支持"
+// in the language of msgs.
+func (msgs Messages) ConsulCapabilityUnsupported() string {
+	return Catalog.Format(msgs.locale, "consulCapabilityUnsupported", nil)
+}
+
+// ConsulCapabilityForbidden says "权限不足"
+// in the language the app shows.
+func ConsulCapabilityForbidden() string { return In(i18n.Locale()).ConsulCapabilityForbidden() }
+
+// ConsulCapabilityForbidden says "权限不足"
+// in the language of msgs.
+func (msgs Messages) ConsulCapabilityForbidden() string {
+	return Catalog.Format(msgs.locale, "consulCapabilityForbidden", nil)
+}
+
+// ConsulCapabilityDisabled says "已禁用"
+// in the language the app shows.
+func ConsulCapabilityDisabled() string { return In(i18n.Locale()).ConsulCapabilityDisabled() }
+
+// ConsulCapabilityDisabled says "已禁用"
+// in the language of msgs.
+func (msgs Messages) ConsulCapabilityDisabled() string {
+	return Catalog.Format(msgs.locale, "consulCapabilityDisabled", nil)
+}
+
+// ConsulEnableAutopilot says "启用 Autopilot 写入"
+// in the language the app shows.
+func ConsulEnableAutopilot() string { return In(i18n.Locale()).ConsulEnableAutopilot() }
+
+// ConsulEnableAutopilot says "启用 Autopilot 写入"
+// in the language of msgs.
+func (msgs Messages) ConsulEnableAutopilot() string {
+	return Catalog.Format(msgs.locale, "consulEnableAutopilot", nil)
+}
+
+// ConsulEnableKeyring says "启用 Keyring 写入"
+// in the language the app shows.
+func ConsulEnableKeyring() string { return In(i18n.Locale()).ConsulEnableKeyring() }
+
+// ConsulEnableKeyring says "启用 Keyring 写入"
+// in the language of msgs.
+func (msgs Messages) ConsulEnableKeyring() string {
+	return Catalog.Format(msgs.locale, "consulEnableKeyring", nil)
+}
+
+// ConsulEnableLicense says "启用 License 写入"
+// in the language the app shows.
+func ConsulEnableLicense() string { return In(i18n.Locale()).ConsulEnableLicense() }
+
+// ConsulEnableLicense says "启用 License 写入"
+// in the language of msgs.
+func (msgs Messages) ConsulEnableLicense() string {
+	return Catalog.Format(msgs.locale, "consulEnableLicense", nil)
+}
+
+// ConsulEnableRaft says "启用 Raft 写入"
+// in the language the app shows.
+func ConsulEnableRaft() string { return In(i18n.Locale()).ConsulEnableRaft() }
+
+// ConsulEnableRaft says "启用 Raft 写入"
+// in the language of msgs.
+func (msgs Messages) ConsulEnableRaft() string {
+	return Catalog.Format(msgs.locale, "consulEnableRaft", nil)
+}
+
+// ConsulEnableRestore says "启用快照恢复"
+// in the language the app shows.
+func ConsulEnableRestore() string { return In(i18n.Locale()).ConsulEnableRestore() }
+
+// ConsulEnableRestore says "启用快照恢复"
+// in the language of msgs.
+func (msgs Messages) ConsulEnableRestore() string {
+	return Catalog.Format(msgs.locale, "consulEnableRestore", nil)
+}
+
+// ConsulCopyResponseDetail says "复制完整原响应详情"
+// in the language the app shows.
+func ConsulCopyResponseDetail() string { return In(i18n.Locale()).ConsulCopyResponseDetail() }
+
+// ConsulCopyResponseDetail says "复制完整原响应详情"
+// in the language of msgs.
+func (msgs Messages) ConsulCopyResponseDetail() string {
+	return Catalog.Format(msgs.locale, "consulCopyResponseDetail", nil)
+}
+
+// ConsulOriginalTransaction says "完整原事务"
+// in the language the app shows.
+func ConsulOriginalTransaction() string { return In(i18n.Locale()).ConsulOriginalTransaction() }
+
+// ConsulOriginalTransaction says "完整原事务"
+// in the language of msgs.
+func (msgs Messages) ConsulOriginalTransaction() string {
+	return Catalog.Format(msgs.locale, "consulOriginalTransaction", nil)
+}
+
+// ConsulOriginalBase64 says "完整原值 Base64"
+// in the language the app shows.
+func ConsulOriginalBase64() string { return In(i18n.Locale()).ConsulOriginalBase64() }
+
+// ConsulOriginalBase64 says "完整原值 Base64"
+// in the language of msgs.
+func (msgs Messages) ConsulOriginalBase64() string {
+	return Catalog.Format(msgs.locale, "consulOriginalBase64", nil)
+}
+
+// ConsulResponseDetail says "完整原响应详情"
+// in the language the app shows.
+func ConsulResponseDetail() string { return In(i18n.Locale()).ConsulResponseDetail() }
+
+// ConsulResponseDetail says "完整原响应详情"
+// in the language of msgs.
+func (msgs Messages) ConsulResponseDetail() string {
+	return Catalog.Format(msgs.locale, "consulResponseDetail", nil)
+}
+
+// ConsulNativeDefinition says "完整原生定义 JSON"
+// in the language the app shows.
+func ConsulNativeDefinition() string { return In(i18n.Locale()).ConsulNativeDefinition() }
+
+// ConsulNativeDefinition says "完整原生定义 JSON"
+// in the language of msgs.
+func (msgs Messages) ConsulNativeDefinition() string {
+	return Catalog.Format(msgs.locale, "consulNativeDefinition", nil)
+}
+
+// ConsulImportPolicy says "导入冲突策略"
+// in the language the app shows.
+func ConsulImportPolicy() string { return In(i18n.Locale()).ConsulImportPolicy() }
+
+// ConsulImportPolicy says "导入冲突策略"
+// in the language of msgs.
+func (msgs Messages) ConsulImportPolicy() string {
+	return Catalog.Format(msgs.locale, "consulImportPolicy", nil)
+}
+
+// ConsulExportPrivateReceipt says "导出原私有回执"
+// in the language the app shows.
+func ConsulExportPrivateReceipt() string { return In(i18n.Locale()).ConsulExportPrivateReceipt() }
+
+// ConsulExportPrivateReceipt says "导出原私有回执"
+// in the language of msgs.
+func (msgs Messages) ConsulExportPrivateReceipt() string {
+	return Catalog.Format(msgs.locale, "consulExportPrivateReceipt", nil)
+}
+
+// ConsulExportSnapshotReceipts says "导出完整 Snapshot 工具回执"
+// in the language the app shows.
+func ConsulExportSnapshotReceipts() string { return In(i18n.Locale()).ConsulExportSnapshotReceipts() }
+
+// ConsulExportSnapshotReceipts says "导出完整 Snapshot 工具回执"
+// in the language of msgs.
+func (msgs Messages) ConsulExportSnapshotReceipts() string {
+	return Catalog.Format(msgs.locale, "consulExportSnapshotReceipts", nil)
+}
+
+// ConsulExportResponseDetail says "导出完整原响应详情"
+// in the language the app shows.
+func ConsulExportResponseDetail() string { return In(i18n.Locale()).ConsulExportResponseDetail() }
+
+// ConsulExportResponseDetail says "导出完整原响应详情"
+// in the language of msgs.
+func (msgs Messages) ConsulExportResponseDetail() string {
+	return Catalog.Format(msgs.locale, "consulExportResponseDetail", nil)
+}
+
+// ConsulExportToolRecord says "导出完整工具记录"
+// in the language the app shows.
+func ConsulExportToolRecord() string { return In(i18n.Locale()).ConsulExportToolRecord() }
+
+// ConsulExportToolRecord says "导出完整工具记录"
+// in the language of msgs.
+func (msgs Messages) ConsulExportToolRecord() string {
+	return Catalog.Format(msgs.locale, "consulExportToolRecord", nil)
+}
+
+// ConsulExportCapabilities says "导出能力探测回执"
+// in the language the app shows.
+func ConsulExportCapabilities() string { return In(i18n.Locale()).ConsulExportCapabilities() }
+
+// ConsulExportCapabilities says "导出能力探测回执"
+// in the language of msgs.
+func (msgs Messages) ConsulExportCapabilities() string {
+	return Catalog.Format(msgs.locale, "consulExportCapabilities", nil)
+}
+
+// ConsulExpandedLimit says "展开字节限额"
+// in the language the app shows.
+func ConsulExpandedLimit() string { return In(i18n.Locale()).ConsulExpandedLimit() }
+
+// ConsulExpandedLimit says "展开字节限额"
+// in the language of msgs.
+func (msgs Messages) ConsulExpandedLimit() string {
+	return Catalog.Format(msgs.locale, "consulExpandedLimit", nil)
+}
+
+// ConsulSearchProgress says "已扫描 %d 项；取消等待原执行器结束"
+// in the language the app shows.
+func ConsulSearchProgress() string { return In(i18n.Locale()).ConsulSearchProgress() }
+
+// ConsulSearchProgress says "已扫描 %d 项；取消等待原执行器结束"
+// in the language of msgs.
+func (msgs Messages) ConsulSearchProgress() string {
+	return Catalog.Format(msgs.locale, "consulSearchProgress", nil)
+}
+
+// ConsulRestoreWarning says "恢复将替换完整后端并断开全部 Consul 会话；恢复连接不会重放请求"
+// in the language the app shows.
+func ConsulRestoreWarning() string { return In(i18n.Locale()).ConsulRestoreWarning() }
+
+// ConsulRestoreWarning says "恢复将替换完整后端并断开全部 Consul 会话；恢复连接不会重放请求"
+// in the language of msgs.
+func (msgs Messages) ConsulRestoreWarning() string {
+	return Catalog.Format(msgs.locale, "consulRestoreWarning", nil)
+}
+
+// ConsulConfirmImport says "我确认执行此独立原生事务批次"
+// in the language the app shows.
+func ConsulConfirmImport() string { return In(i18n.Locale()).ConsulConfirmImport() }
+
+// ConsulConfirmImport says "我确认执行此独立原生事务批次"
+// in the language of msgs.
+func (msgs Messages) ConsulConfirmImport() string {
+	return Catalog.Format(msgs.locale, "consulConfirmImport", nil)
+}
+
+// ConsulConfirmRestore says "我确认用此完整原归档恢复此原连接的数据中心"
+// in the language the app shows.
+func ConsulConfirmRestore() string { return In(i18n.Locale()).ConsulConfirmRestore() }
+
+// ConsulConfirmRestore says "我确认用此完整原归档恢复此原连接的数据中心"
+// in the language of msgs.
+func (msgs Messages) ConsulConfirmRestore() string {
+	return Catalog.Format(msgs.locale, "consulConfirmRestore", nil)
+}
+
+// ConsulOpenBundle says "打开 Bundle"
+// in the language the app shows.
+func ConsulOpenBundle() string { return In(i18n.Locale()).ConsulOpenBundle() }
+
+// ConsulOpenBundle says "打开 Bundle"
+// in the language of msgs.
+func (msgs Messages) ConsulOpenBundle() string {
+	return Catalog.Format(msgs.locale, "consulOpenBundle", nil)
+}
+
+// ConsulOpenRestore says "打开原 Snapshot 恢复文件"
+// in the language the app shows.
+func ConsulOpenRestore() string { return In(i18n.Locale()).ConsulOpenRestore() }
+
+// ConsulOpenRestore says "打开原 Snapshot 恢复文件"
+// in the language of msgs.
+func (msgs Messages) ConsulOpenRestore() string {
+	return Catalog.Format(msgs.locale, "consulOpenRestore", nil)
+}
+
+// ConsulOpenPrivateInput says "打开私有输入"
+// in the language the app shows.
+func ConsulOpenPrivateInput() string { return In(i18n.Locale()).ConsulOpenPrivateInput() }
+
+// ConsulOpenPrivateInput says "打开私有输入"
+// in the language of msgs.
+func (msgs Messages) ConsulOpenPrivateInput() string {
+	return Catalog.Format(msgs.locale, "consulOpenPrivateInput", nil)
+}
+
+// ConsulEnterpriseRecheckWarning says "执行前重新读取并核对影响；原生 DELETE 与盘点之间没有原子条件"
+// in the language the app shows.
+func ConsulEnterpriseRecheckWarning() string {
+	return In(i18n.Locale()).ConsulEnterpriseRecheckWarning()
+}
+
+// ConsulEnterpriseRecheckWarning says "执行前重新读取并核对影响；原生 DELETE 与盘点之间没有原子条件"
+// in the language of msgs.
+func (msgs Messages) ConsulEnterpriseRecheckWarning() string {
+	return Catalog.Format(msgs.locale, "consulEnterpriseRecheckWarning", nil)
+}
+
+// ConsulSearchSummary says "扫描 %d · 匹配 %d · 达到限额 %t · 已取消 %t"
+// in the language the app shows.
+func ConsulSearchSummary() string { return In(i18n.Locale()).ConsulSearchSummary() }
+
+// ConsulSearchSummary says "扫描 %d · 匹配 %d · 达到限额 %t · 已取消 %t"
+// in the language of msgs.
+func (msgs Messages) ConsulSearchSummary() string {
+	return Catalog.Format(msgs.locale, "consulSearchSummary", nil)
+}
+
+// ConsulSearchScanLimit says "扫描限额"
+// in the language the app shows.
+func ConsulSearchScanLimit() string { return In(i18n.Locale()).ConsulSearchScanLimit() }
+
+// ConsulSearchScanLimit says "扫描限额"
+// in the language of msgs.
+func (msgs Messages) ConsulSearchScanLimit() string {
+	return Catalog.Format(msgs.locale, "consulSearchScanLimit", nil)
+}
+
+// ConsulCaptureBundle says "捕获导出 Bundle"
+// in the language the app shows.
+func ConsulCaptureBundle() string { return In(i18n.Locale()).ConsulCaptureBundle() }
+
+// ConsulCaptureBundle says "捕获导出 Bundle"
+// in the language of msgs.
+func (msgs Messages) ConsulCaptureBundle() string {
+	return Catalog.Format(msgs.locale, "consulCaptureBundle", nil)
+}
+
+// ConsulSnapshotWholeBackend says "捕获或恢复整个数据中心后端及 ACL 密钥；键前缀、Namespace 和 Partition 不限定范围"
+// in the language the app shows.
+func ConsulSnapshotWholeBackend() string { return In(i18n.Locale()).ConsulSnapshotWholeBackend() }
+
+// ConsulSnapshotWholeBackend says "捕获或恢复整个数据中心后端及 ACL 密钥；键前缀、Namespace 和 Partition 不限定范围"
+// in the language of msgs.
+func (msgs Messages) ConsulSnapshotWholeBackend() string {
+	return Catalog.Format(msgs.locale, "consulSnapshotWholeBackend", nil)
+}
+
+// ConsulProbeCapabilities says "探测 Consul 能力"
+// in the language the app shows.
+func ConsulProbeCapabilities() string { return In(i18n.Locale()).ConsulProbeCapabilities() }
+
+// ConsulProbeCapabilities says "探测 Consul 能力"
+// in the language of msgs.
+func (msgs Messages) ConsulProbeCapabilities() string {
+	return Catalog.Format(msgs.locale, "consulProbeCapabilities", nil)
+}
+
+// ConsulSearchQuery says "搜索文本"
+// in the language the app shows.
+func ConsulSearchQuery() string { return In(i18n.Locale()).ConsulSearchQuery() }
+
+// ConsulSearchQuery says "搜索文本"
+// in the language of msgs.
+func (msgs Messages) ConsulSearchQuery() string {
+	return Catalog.Format(msgs.locale, "consulSearchQuery", nil)
+}
+
+// ConsulSearchReadScope says "搜索读取完整原前缀响应；二进制值保留原字节，值搜索仅匹配 UTF-8 文本"
+// in the language the app shows.
+func ConsulSearchReadScope() string { return In(i18n.Locale()).ConsulSearchReadScope() }
+
+// ConsulSearchReadScope says "搜索读取完整原前缀响应；二进制值保留原字节，值搜索仅匹配 UTF-8 文本"
+// in the language of msgs.
+func (msgs Messages) ConsulSearchReadScope() string {
+	return Catalog.Format(msgs.locale, "consulSearchReadScope", nil)
+}
+
+// ConsulRevealPrivateReceipt says "显示原私有回执"
+// in the language the app shows.
+func ConsulRevealPrivateReceipt() string { return In(i18n.Locale()).ConsulRevealPrivateReceipt() }
+
+// ConsulRevealPrivateReceipt says "显示原私有回执"
+// in the language of msgs.
+func (msgs Messages) ConsulRevealPrivateReceipt() string {
+	return Catalog.Format(msgs.locale, "consulRevealPrivateReceipt", nil)
+}
+
+// ConsulEditScope says "更改 Consul 作用域…"
+// in the language the app shows.
+func ConsulEditScope() string { return In(i18n.Locale()).ConsulEditScope() }
+
+// ConsulEditScope says "更改 Consul 作用域…"
+// in the language of msgs.
+func (msgs Messages) ConsulEditScope() string {
+	return Catalog.Format(msgs.locale, "consulEditScope", nil)
+}
+
+// ConsulReplaceFileWarning says "替换已检查文件；保留旧文件，目标变化时停止"
+// in the language the app shows.
+func ConsulReplaceFileWarning() string { return In(i18n.Locale()).ConsulReplaceFileWarning() }
+
+// ConsulReplaceFileWarning says "替换已检查文件；保留旧文件，目标变化时停止"
+// in the language of msgs.
+func (msgs Messages) ConsulReplaceFileWarning() string {
+	return Catalog.Format(msgs.locale, "consulReplaceFileWarning", nil)
+}
+
+// ConsulEnterprisePlanningUnsupported says "此连接不支持 Enterprise 删除影响预览"
+// in the language the app shows.
+func ConsulEnterprisePlanningUnsupported() string {
+	return In(i18n.Locale()).ConsulEnterprisePlanningUnsupported()
+}
+
+// ConsulEnterprisePlanningUnsupported says "此连接不支持 Enterprise 删除影响预览"
+// in the language of msgs.
+func (msgs Messages) ConsulEnterprisePlanningUnsupported() string {
+	return Catalog.Format(msgs.locale, "consulEnterprisePlanningUnsupported", nil)
+}
+
+// ConsulImportIndependentBatches says "每批最多 64 个原生操作；各批独立确认与提交，后续读取不会确认未知写入"
+// in the language the app shows.
+func ConsulImportIndependentBatches() string {
+	return In(i18n.Locale()).ConsulImportIndependentBatches()
+}
+
+// ConsulImportIndependentBatches says "每批最多 64 个原生操作；各批独立确认与提交，后续读取不会确认未知写入"
+// in the language of msgs.
+func (msgs Messages) ConsulImportIndependentBatches() string {
+	return Catalog.Format(msgs.locale, "consulImportIndependentBatches", nil)
+}
+
+// ConsulBrowseCatalogWatch says "浏览所选 Catalog 观察"
+// in the language the app shows.
+func ConsulBrowseCatalogWatch() string { return In(i18n.Locale()).ConsulBrowseCatalogWatch() }
+
+// ConsulBrowseCatalogWatch says "浏览所选 Catalog 观察"
+// in the language of msgs.
+func (msgs Messages) ConsulBrowseCatalogWatch() string {
+	return Catalog.Format(msgs.locale, "consulBrowseCatalogWatch", nil)
+}
+
+// ConsulGenerateCatalogWatch says "生成 Catalog Watch 请求"
+// in the language the app shows.
+func ConsulGenerateCatalogWatch() string { return In(i18n.Locale()).ConsulGenerateCatalogWatch() }
+
+// ConsulGenerateCatalogWatch says "生成 Catalog Watch 请求"
+// in the language of msgs.
+func (msgs Messages) ConsulGenerateCatalogWatch() string {
+	return Catalog.Format(msgs.locale, "consulGenerateCatalogWatch", nil)
+}
+
+// ConsulImportBatchTarget says "确认原连接 #%d 的第 %d 批完整事务"
+// in the language the app shows.
+func ConsulImportBatchTarget() string { return In(i18n.Locale()).ConsulImportBatchTarget() }
+
+// ConsulImportBatchTarget says "确认原连接 #%d 的第 %d 批完整事务"
+// in the language of msgs.
+func (msgs Messages) ConsulImportBatchTarget() string {
+	return Catalog.Format(msgs.locale, "consulImportBatchTarget", nil)
+}
+
+// ConsulApplyImportBatch says "确认导入此批"
+// in the language the app shows.
+func ConsulApplyImportBatch() string { return In(i18n.Locale()).ConsulApplyImportBatch() }
+
+// ConsulApplyImportBatch says "确认导入此批"
+// in the language of msgs.
+func (msgs Messages) ConsulApplyImportBatch() string {
+	return Catalog.Format(msgs.locale, "consulApplyImportBatch", nil)
+}
+
+// ConsulApplyRestore says "确认恢复 Snapshot"
+// in the language the app shows.
+func ConsulApplyRestore() string { return In(i18n.Locale()).ConsulApplyRestore() }
+
+// ConsulApplyRestore says "确认恢复 Snapshot"
+// in the language of msgs.
+func (msgs Messages) ConsulApplyRestore() string {
+	return Catalog.Format(msgs.locale, "consulApplyRestore", nil)
+}
+
+// ConsulApplyManagementWrite says "确认执行管理写入"
+// in the language the app shows.
+func ConsulApplyManagementWrite() string { return In(i18n.Locale()).ConsulApplyManagementWrite() }
+
+// ConsulApplyManagementWrite says "确认执行管理写入"
+// in the language of msgs.
+func (msgs Messages) ConsulApplyManagementWrite() string {
+	return Catalog.Format(msgs.locale, "consulApplyManagementWrite", nil)
+}
+
+// ConsulConfirmManagementRequest says "确认此原连接的完整写入请求"
+// in the language the app shows.
+func ConsulConfirmManagementRequest() string {
+	return In(i18n.Locale()).ConsulConfirmManagementRequest()
+}
+
+// ConsulConfirmManagementRequest says "确认此原连接的完整写入请求"
+// in the language of msgs.
+func (msgs Messages) ConsulConfirmManagementRequest() string {
+	return Catalog.Format(msgs.locale, "consulConfirmManagementRequest", nil)
+}
+
+// ConsulFilterResponse says "筛选原响应"
+// in the language the app shows.
+func ConsulFilterResponse() string { return In(i18n.Locale()).ConsulFilterResponse() }
+
+// ConsulFilterResponse says "筛选原响应"
+// in the language of msgs.
+func (msgs Messages) ConsulFilterResponse() string {
+	return Catalog.Format(msgs.locale, "consulFilterResponse", nil)
+}
+
+// ConsulCapabilityNote says "能力探测仅表示当前连接和权限下的响应；未知或禁止不能证明功能不存在"
+// in the language the app shows.
+func ConsulCapabilityNote() string { return In(i18n.Locale()).ConsulCapabilityNote() }
+
+// ConsulCapabilityNote says "能力探测仅表示当前连接和权限下的响应；未知或禁止不能证明功能不存在"
+// in the language of msgs.
+func (msgs Messages) ConsulCapabilityNote() string {
+	return Catalog.Format(msgs.locale, "consulCapabilityNote", nil)
+}
+
+// ConsulSearchInvalid says "请检查 Consul 搜索输入"
+// in the language the app shows.
+func ConsulSearchInvalid() string { return In(i18n.Locale()).ConsulSearchInvalid() }
+
+// ConsulSearchInvalid says "请检查 Consul 搜索输入"
+// in the language of msgs.
+func (msgs Messages) ConsulSearchInvalid() string {
+	return Catalog.Format(msgs.locale, "consulSearchInvalid", nil)
+}
+
+// ConsulManagementInvalid says "请检查 Consul 管理输入"
+// in the language the app shows.
+func ConsulManagementInvalid() string { return In(i18n.Locale()).ConsulManagementInvalid() }
+
+// ConsulManagementInvalid says "请检查 Consul 管理输入"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementInvalid() string {
+	return Catalog.Format(msgs.locale, "consulManagementInvalid", nil)
+}
+
+// ConsulManagementGuardInvalid says "请检查 Consul 管理输入和写入开关"
+// in the language the app shows.
+func ConsulManagementGuardInvalid() string { return In(i18n.Locale()).ConsulManagementGuardInvalid() }
+
+// ConsulManagementGuardInvalid says "请检查 Consul 管理输入和写入开关"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementGuardInvalid() string {
+	return Catalog.Format(msgs.locale, "consulManagementGuardInvalid", nil)
+}
+
+// ConsulSnapshotLimitInvalid says "请检查 Snapshot 限额"
+// in the language the app shows.
+func ConsulSnapshotLimitInvalid() string { return In(i18n.Locale()).ConsulSnapshotLimitInvalid() }
+
+// ConsulSnapshotLimitInvalid says "请检查 Snapshot 限额"
+// in the language of msgs.
+func (msgs Messages) ConsulSnapshotLimitInvalid() string {
+	return Catalog.Format(msgs.locale, "consulSnapshotLimitInvalid", nil)
+}
+
+// ConsulRunManagement says "运行或预览管理请求"
+// in the language the app shows.
+func ConsulRunManagement() string { return In(i18n.Locale()).ConsulRunManagement() }
+
+// ConsulRunManagement says "运行或预览管理请求"
+// in the language of msgs.
+func (msgs Messages) ConsulRunManagement() string {
+	return Catalog.Format(msgs.locale, "consulRunManagement", nil)
+}
+
+// ConsulPreviewImport says "预览 Bundle 导入"
+// in the language the app shows.
+func ConsulPreviewImport() string { return In(i18n.Locale()).ConsulPreviewImport() }
+
+// ConsulPreviewImport says "预览 Bundle 导入"
+// in the language of msgs.
+func (msgs Messages) ConsulPreviewImport() string {
+	return Catalog.Format(msgs.locale, "consulPreviewImport", nil)
+}
+
+// ConsulPreviewRestore says "预览 Snapshot 恢复"
+// in the language the app shows.
+func ConsulPreviewRestore() string { return In(i18n.Locale()).ConsulPreviewRestore() }
+
+// ConsulPreviewRestore says "预览 Snapshot 恢复"
+// in the language of msgs.
+func (msgs Messages) ConsulPreviewRestore() string {
+	return Catalog.Format(msgs.locale, "consulPreviewRestore", nil)
+}
+
+// ConsulPreviewNextBatch says "预览下一独立事务"
+// in the language the app shows.
+func ConsulPreviewNextBatch() string { return In(i18n.Locale()).ConsulPreviewNextBatch() }
+
+// ConsulPreviewNextBatch says "预览下一独立事务"
+// in the language of msgs.
+func (msgs Messages) ConsulPreviewNextBatch() string {
+	return Catalog.Format(msgs.locale, "consulPreviewNextBatch", nil)
+}
+
+// ConsulNativeNamespace says "Consul Namespace"
+// in the language the app shows.
+func ConsulNativeNamespace() string { return In(i18n.Locale()).ConsulNativeNamespace() }
+
+// ConsulNativeNamespace says "Consul Namespace"
+// in the language of msgs.
+func (msgs Messages) ConsulNativeNamespace() string {
+	return Catalog.Format(msgs.locale, "consulNativeNamespace", nil)
+}
+
+// ConsulNativePartition says "Consul Partition"
+// in the language the app shows.
+func ConsulNativePartition() string { return In(i18n.Locale()).ConsulNativePartition() }
+
+// ConsulNativePartition says "Consul Partition"
+// in the language of msgs.
+func (msgs Messages) ConsulNativePartition() string {
+	return Catalog.Format(msgs.locale, "consulNativePartition", nil)
+}
+
+// ConsulManagementAgentSelf says "Agent 身份"
+// in the language the app shows.
+func ConsulManagementAgentSelf() string { return In(i18n.Locale()).ConsulManagementAgentSelf() }
+
+// ConsulManagementAgentSelf says "Agent 身份"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementAgentSelf() string {
+	return Catalog.Format(msgs.locale, "consulManagementAgentSelf", nil)
+}
+
+// ConsulManagementProbeCatalog says "Catalog 能力"
+// in the language the app shows.
+func ConsulManagementProbeCatalog() string { return In(i18n.Locale()).ConsulManagementProbeCatalog() }
+
+// ConsulManagementProbeCatalog says "Catalog 能力"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementProbeCatalog() string {
+	return Catalog.Format(msgs.locale, "consulManagementProbeCatalog", nil)
+}
+
+// ConsulManagementProbeHealth says "健康检查能力"
+// in the language the app shows.
+func ConsulManagementProbeHealth() string { return In(i18n.Locale()).ConsulManagementProbeHealth() }
+
+// ConsulManagementProbeHealth says "健康检查能力"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementProbeHealth() string {
+	return Catalog.Format(msgs.locale, "consulManagementProbeHealth", nil)
+}
+
+// ConsulManagementProbeSessions says "Session 能力"
+// in the language the app shows.
+func ConsulManagementProbeSessions() string { return In(i18n.Locale()).ConsulManagementProbeSessions() }
+
+// ConsulManagementProbeSessions says "Session 能力"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementProbeSessions() string {
+	return Catalog.Format(msgs.locale, "consulManagementProbeSessions", nil)
+}
+
+// ConsulManagementProbeAcl says "ACL 能力"
+// in the language the app shows.
+func ConsulManagementProbeAcl() string { return In(i18n.Locale()).ConsulManagementProbeAcl() }
+
+// ConsulManagementProbeAcl says "ACL 能力"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementProbeAcl() string {
+	return Catalog.Format(msgs.locale, "consulManagementProbeAcl", nil)
+}
+
+// ConsulManagementProbeAuthMethods says "认证方法能力"
+// in the language the app shows.
+func ConsulManagementProbeAuthMethods() string {
+	return In(i18n.Locale()).ConsulManagementProbeAuthMethods()
+}
+
+// ConsulManagementProbeAuthMethods says "认证方法能力"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementProbeAuthMethods() string {
+	return Catalog.Format(msgs.locale, "consulManagementProbeAuthMethods", nil)
+}
+
+// ConsulManagementProbeBindingRules says "绑定规则能力"
+// in the language the app shows.
+func ConsulManagementProbeBindingRules() string {
+	return In(i18n.Locale()).ConsulManagementProbeBindingRules()
+}
+
+// ConsulManagementProbeBindingRules says "绑定规则能力"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementProbeBindingRules() string {
+	return Catalog.Format(msgs.locale, "consulManagementProbeBindingRules", nil)
+}
+
+// ConsulManagementProbeAclTemplates says "ACL 模板能力"
+// in the language the app shows.
+func ConsulManagementProbeAclTemplates() string {
+	return In(i18n.Locale()).ConsulManagementProbeAclTemplates()
+}
+
+// ConsulManagementProbeAclTemplates says "ACL 模板能力"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementProbeAclTemplates() string {
+	return Catalog.Format(msgs.locale, "consulManagementProbeAclTemplates", nil)
+}
+
+// ConsulManagementAgentMembers says "Agent 成员"
+// in the language the app shows.
+func ConsulManagementAgentMembers() string { return In(i18n.Locale()).ConsulManagementAgentMembers() }
+
+// ConsulManagementAgentMembers says "Agent 成员"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementAgentMembers() string {
+	return Catalog.Format(msgs.locale, "consulManagementAgentMembers", nil)
+}
+
+// ConsulManagementAgentMetrics says "Agent 指标"
+// in the language the app shows.
+func ConsulManagementAgentMetrics() string { return In(i18n.Locale()).ConsulManagementAgentMetrics() }
+
+// ConsulManagementAgentMetrics says "Agent 指标"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementAgentMetrics() string {
+	return Catalog.Format(msgs.locale, "consulManagementAgentMetrics", nil)
+}
+
+// ConsulManagementAgentService says "Agent 服务详情"
+// in the language the app shows.
+func ConsulManagementAgentService() string { return In(i18n.Locale()).ConsulManagementAgentService() }
+
+// ConsulManagementAgentService says "Agent 服务详情"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementAgentService() string {
+	return Catalog.Format(msgs.locale, "consulManagementAgentService", nil)
+}
+
+// ConsulManagementLeader says "集群 Leader"
+// in the language the app shows.
+func ConsulManagementLeader() string { return In(i18n.Locale()).ConsulManagementLeader() }
+
+// ConsulManagementLeader says "集群 Leader"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementLeader() string {
+	return Catalog.Format(msgs.locale, "consulManagementLeader", nil)
+}
+
+// ConsulManagementPeers says "Raft 成员"
+// in the language the app shows.
+func ConsulManagementPeers() string { return In(i18n.Locale()).ConsulManagementPeers() }
+
+// ConsulManagementPeers says "Raft 成员"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementPeers() string {
+	return Catalog.Format(msgs.locale, "consulManagementPeers", nil)
+}
+
+// ConsulManagementAutopilotConfig says "Autopilot 配置"
+// in the language the app shows.
+func ConsulManagementAutopilotConfig() string {
+	return In(i18n.Locale()).ConsulManagementAutopilotConfig()
+}
+
+// ConsulManagementAutopilotConfig says "Autopilot 配置"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementAutopilotConfig() string {
+	return Catalog.Format(msgs.locale, "consulManagementAutopilotConfig", nil)
+}
+
+// ConsulManagementAutopilotHealth says "Autopilot 健康状态"
+// in the language the app shows.
+func ConsulManagementAutopilotHealth() string {
+	return In(i18n.Locale()).ConsulManagementAutopilotHealth()
+}
+
+// ConsulManagementAutopilotHealth says "Autopilot 健康状态"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementAutopilotHealth() string {
+	return Catalog.Format(msgs.locale, "consulManagementAutopilotHealth", nil)
+}
+
+// ConsulManagementAutopilotState says "Autopilot 状态"
+// in the language the app shows.
+func ConsulManagementAutopilotState() string {
+	return In(i18n.Locale()).ConsulManagementAutopilotState()
+}
+
+// ConsulManagementAutopilotState says "Autopilot 状态"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementAutopilotState() string {
+	return Catalog.Format(msgs.locale, "consulManagementAutopilotState", nil)
+}
+
+// ConsulManagementAutopilotUpdate says "更新 Autopilot"
+// in the language the app shows.
+func ConsulManagementAutopilotUpdate() string {
+	return In(i18n.Locale()).ConsulManagementAutopilotUpdate()
+}
+
+// ConsulManagementAutopilotUpdate says "更新 Autopilot"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementAutopilotUpdate() string {
+	return Catalog.Format(msgs.locale, "consulManagementAutopilotUpdate", nil)
+}
+
+// ConsulManagementRaftConfig says "Raft 配置"
+// in the language the app shows.
+func ConsulManagementRaftConfig() string { return In(i18n.Locale()).ConsulManagementRaftConfig() }
+
+// ConsulManagementRaftConfig says "Raft 配置"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementRaftConfig() string {
+	return Catalog.Format(msgs.locale, "consulManagementRaftConfig", nil)
+}
+
+// ConsulManagementRaftTransfer says "转移 Raft 领导权"
+// in the language the app shows.
+func ConsulManagementRaftTransfer() string { return In(i18n.Locale()).ConsulManagementRaftTransfer() }
+
+// ConsulManagementRaftTransfer says "转移 Raft 领导权"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementRaftTransfer() string {
+	return Catalog.Format(msgs.locale, "consulManagementRaftTransfer", nil)
+}
+
+// ConsulManagementRaftRemove says "移除 Raft 成员"
+// in the language the app shows.
+func ConsulManagementRaftRemove() string { return In(i18n.Locale()).ConsulManagementRaftRemove() }
+
+// ConsulManagementRaftRemove says "移除 Raft 成员"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementRaftRemove() string {
+	return Catalog.Format(msgs.locale, "consulManagementRaftRemove", nil)
+}
+
+// ConsulManagementKeyringList says "Gossip 密钥环"
+// in the language the app shows.
+func ConsulManagementKeyringList() string { return In(i18n.Locale()).ConsulManagementKeyringList() }
+
+// ConsulManagementKeyringList says "Gossip 密钥环"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementKeyringList() string {
+	return Catalog.Format(msgs.locale, "consulManagementKeyringList", nil)
+}
+
+// ConsulManagementKeyringInstall says "安装 Gossip 密钥"
+// in the language the app shows.
+func ConsulManagementKeyringInstall() string {
+	return In(i18n.Locale()).ConsulManagementKeyringInstall()
+}
+
+// ConsulManagementKeyringInstall says "安装 Gossip 密钥"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementKeyringInstall() string {
+	return Catalog.Format(msgs.locale, "consulManagementKeyringInstall", nil)
+}
+
+// ConsulManagementKeyringUse says "使用 Gossip 密钥"
+// in the language the app shows.
+func ConsulManagementKeyringUse() string { return In(i18n.Locale()).ConsulManagementKeyringUse() }
+
+// ConsulManagementKeyringUse says "使用 Gossip 密钥"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementKeyringUse() string {
+	return Catalog.Format(msgs.locale, "consulManagementKeyringUse", nil)
+}
+
+// ConsulManagementKeyringRemove says "移除 Gossip 密钥"
+// in the language the app shows.
+func ConsulManagementKeyringRemove() string { return In(i18n.Locale()).ConsulManagementKeyringRemove() }
+
+// ConsulManagementKeyringRemove says "移除 Gossip 密钥"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementKeyringRemove() string {
+	return Catalog.Format(msgs.locale, "consulManagementKeyringRemove", nil)
+}
+
+// ConsulManagementUsage says "资源使用情况"
+// in the language the app shows.
+func ConsulManagementUsage() string { return In(i18n.Locale()).ConsulManagementUsage() }
+
+// ConsulManagementUsage says "资源使用情况"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementUsage() string {
+	return Catalog.Format(msgs.locale, "consulManagementUsage", nil)
+}
+
+// ConsulManagementLicenseGet says "Enterprise 许可证"
+// in the language the app shows.
+func ConsulManagementLicenseGet() string { return In(i18n.Locale()).ConsulManagementLicenseGet() }
+
+// ConsulManagementLicenseGet says "Enterprise 许可证"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementLicenseGet() string {
+	return Catalog.Format(msgs.locale, "consulManagementLicenseGet", nil)
+}
+
+// ConsulManagementLicensePut says "更新 Enterprise 许可证"
+// in the language the app shows.
+func ConsulManagementLicensePut() string { return In(i18n.Locale()).ConsulManagementLicensePut() }
+
+// ConsulManagementLicensePut says "更新 Enterprise 许可证"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementLicensePut() string {
+	return Catalog.Format(msgs.locale, "consulManagementLicensePut", nil)
+}
+
+// ConsulManagementAuditHash says "Enterprise 审计哈希"
+// in the language the app shows.
+func ConsulManagementAuditHash() string { return In(i18n.Locale()).ConsulManagementAuditHash() }
+
+// ConsulManagementAuditHash says "Enterprise 审计哈希"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementAuditHash() string {
+	return Catalog.Format(msgs.locale, "consulManagementAuditHash", nil)
+}
+
+// ConsulManagementQueryList says "预备查询列表"
+// in the language the app shows.
+func ConsulManagementQueryList() string { return In(i18n.Locale()).ConsulManagementQueryList() }
+
+// ConsulManagementQueryList says "预备查询列表"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementQueryList() string {
+	return Catalog.Format(msgs.locale, "consulManagementQueryList", nil)
+}
+
+// ConsulManagementQueryGet says "预备查询详情"
+// in the language the app shows.
+func ConsulManagementQueryGet() string { return In(i18n.Locale()).ConsulManagementQueryGet() }
+
+// ConsulManagementQueryGet says "预备查询详情"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementQueryGet() string {
+	return Catalog.Format(msgs.locale, "consulManagementQueryGet", nil)
+}
+
+// ConsulManagementQueryCreate says "创建预备查询"
+// in the language the app shows.
+func ConsulManagementQueryCreate() string { return In(i18n.Locale()).ConsulManagementQueryCreate() }
+
+// ConsulManagementQueryCreate says "创建预备查询"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementQueryCreate() string {
+	return Catalog.Format(msgs.locale, "consulManagementQueryCreate", nil)
+}
+
+// ConsulManagementQueryUpdate says "更新预备查询"
+// in the language the app shows.
+func ConsulManagementQueryUpdate() string { return In(i18n.Locale()).ConsulManagementQueryUpdate() }
+
+// ConsulManagementQueryUpdate says "更新预备查询"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementQueryUpdate() string {
+	return Catalog.Format(msgs.locale, "consulManagementQueryUpdate", nil)
+}
+
+// ConsulManagementQueryDelete says "删除预备查询"
+// in the language the app shows.
+func ConsulManagementQueryDelete() string { return In(i18n.Locale()).ConsulManagementQueryDelete() }
+
+// ConsulManagementQueryDelete says "删除预备查询"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementQueryDelete() string {
+	return Catalog.Format(msgs.locale, "consulManagementQueryDelete", nil)
+}
+
+// ConsulManagementQueryExecute says "执行预备查询"
+// in the language the app shows.
+func ConsulManagementQueryExecute() string { return In(i18n.Locale()).ConsulManagementQueryExecute() }
+
+// ConsulManagementQueryExecute says "执行预备查询"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementQueryExecute() string {
+	return Catalog.Format(msgs.locale, "consulManagementQueryExecute", nil)
+}
+
+// ConsulManagementQueryExplain says "解释预备查询"
+// in the language the app shows.
+func ConsulManagementQueryExplain() string { return In(i18n.Locale()).ConsulManagementQueryExplain() }
+
+// ConsulManagementQueryExplain says "解释预备查询"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementQueryExplain() string {
+	return Catalog.Format(msgs.locale, "consulManagementQueryExplain", nil)
+}
+
+// ConsulManagementEventList says "事件列表"
+// in the language the app shows.
+func ConsulManagementEventList() string { return In(i18n.Locale()).ConsulManagementEventList() }
+
+// ConsulManagementEventList says "事件列表"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementEventList() string {
+	return Catalog.Format(msgs.locale, "consulManagementEventList", nil)
+}
+
+// ConsulManagementEventFire says "发送事件"
+// in the language the app shows.
+func ConsulManagementEventFire() string { return In(i18n.Locale()).ConsulManagementEventFire() }
+
+// ConsulManagementEventFire says "发送事件"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementEventFire() string {
+	return Catalog.Format(msgs.locale, "consulManagementEventFire", nil)
+}
+
+// ConsulManagementCoordinateNodes says "网络坐标"
+// in the language the app shows.
+func ConsulManagementCoordinateNodes() string {
+	return In(i18n.Locale()).ConsulManagementCoordinateNodes()
+}
+
+// ConsulManagementCoordinateNodes says "网络坐标"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementCoordinateNodes() string {
+	return Catalog.Format(msgs.locale, "consulManagementCoordinateNodes", nil)
+}
+
+// ConsulManagementConfigList says "配置条目列表"
+// in the language the app shows.
+func ConsulManagementConfigList() string { return In(i18n.Locale()).ConsulManagementConfigList() }
+
+// ConsulManagementConfigList says "配置条目列表"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementConfigList() string {
+	return Catalog.Format(msgs.locale, "consulManagementConfigList", nil)
+}
+
+// ConsulManagementConfigGet says "配置条目详情"
+// in the language the app shows.
+func ConsulManagementConfigGet() string { return In(i18n.Locale()).ConsulManagementConfigGet() }
+
+// ConsulManagementConfigGet says "配置条目详情"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementConfigGet() string {
+	return Catalog.Format(msgs.locale, "consulManagementConfigGet", nil)
+}
+
+// ConsulManagementConfigApply says "应用配置条目"
+// in the language the app shows.
+func ConsulManagementConfigApply() string { return In(i18n.Locale()).ConsulManagementConfigApply() }
+
+// ConsulManagementConfigApply says "应用配置条目"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementConfigApply() string {
+	return Catalog.Format(msgs.locale, "consulManagementConfigApply", nil)
+}
+
+// ConsulManagementConfigDelete says "删除配置条目"
+// in the language the app shows.
+func ConsulManagementConfigDelete() string { return In(i18n.Locale()).ConsulManagementConfigDelete() }
+
+// ConsulManagementConfigDelete says "删除配置条目"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementConfigDelete() string {
+	return Catalog.Format(msgs.locale, "consulManagementConfigDelete", nil)
+}
+
+// ConsulManagementIntentionsList says "意图列表"
+// in the language the app shows.
+func ConsulManagementIntentionsList() string {
+	return In(i18n.Locale()).ConsulManagementIntentionsList()
+}
+
+// ConsulManagementIntentionsList says "意图列表"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementIntentionsList() string {
+	return Catalog.Format(msgs.locale, "consulManagementIntentionsList", nil)
+}
+
+// ConsulManagementIntentionGet says "意图详情"
+// in the language the app shows.
+func ConsulManagementIntentionGet() string { return In(i18n.Locale()).ConsulManagementIntentionGet() }
+
+// ConsulManagementIntentionGet says "意图详情"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementIntentionGet() string {
+	return Catalog.Format(msgs.locale, "consulManagementIntentionGet", nil)
+}
+
+// ConsulManagementIntentionCreate says "创建意图"
+// in the language the app shows.
+func ConsulManagementIntentionCreate() string {
+	return In(i18n.Locale()).ConsulManagementIntentionCreate()
+}
+
+// ConsulManagementIntentionCreate says "创建意图"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementIntentionCreate() string {
+	return Catalog.Format(msgs.locale, "consulManagementIntentionCreate", nil)
+}
+
+// ConsulManagementIntentionUpdate says "更新意图"
+// in the language the app shows.
+func ConsulManagementIntentionUpdate() string {
+	return In(i18n.Locale()).ConsulManagementIntentionUpdate()
+}
+
+// ConsulManagementIntentionUpdate says "更新意图"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementIntentionUpdate() string {
+	return Catalog.Format(msgs.locale, "consulManagementIntentionUpdate", nil)
+}
+
+// ConsulManagementIntentionDelete says "删除意图"
+// in the language the app shows.
+func ConsulManagementIntentionDelete() string {
+	return In(i18n.Locale()).ConsulManagementIntentionDelete()
+}
+
+// ConsulManagementIntentionDelete says "删除意图"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementIntentionDelete() string {
+	return Catalog.Format(msgs.locale, "consulManagementIntentionDelete", nil)
+}
+
+// ConsulManagementIntentionExactGet says "读取精确意图"
+// in the language the app shows.
+func ConsulManagementIntentionExactGet() string {
+	return In(i18n.Locale()).ConsulManagementIntentionExactGet()
+}
+
+// ConsulManagementIntentionExactGet says "读取精确意图"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementIntentionExactGet() string {
+	return Catalog.Format(msgs.locale, "consulManagementIntentionExactGet", nil)
+}
+
+// ConsulManagementIntentionExactPut says "应用精确意图"
+// in the language the app shows.
+func ConsulManagementIntentionExactPut() string {
+	return In(i18n.Locale()).ConsulManagementIntentionExactPut()
+}
+
+// ConsulManagementIntentionExactPut says "应用精确意图"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementIntentionExactPut() string {
+	return Catalog.Format(msgs.locale, "consulManagementIntentionExactPut", nil)
+}
+
+// ConsulManagementIntentionExactDelete says "删除精确意图"
+// in the language the app shows.
+func ConsulManagementIntentionExactDelete() string {
+	return In(i18n.Locale()).ConsulManagementIntentionExactDelete()
+}
+
+// ConsulManagementIntentionExactDelete says "删除精确意图"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementIntentionExactDelete() string {
+	return Catalog.Format(msgs.locale, "consulManagementIntentionExactDelete", nil)
+}
+
+// ConsulManagementIntentionMatch says "匹配意图"
+// in the language the app shows.
+func ConsulManagementIntentionMatch() string {
+	return In(i18n.Locale()).ConsulManagementIntentionMatch()
+}
+
+// ConsulManagementIntentionMatch says "匹配意图"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementIntentionMatch() string {
+	return Catalog.Format(msgs.locale, "consulManagementIntentionMatch", nil)
+}
+
+// ConsulManagementIntentionCheck says "检查意图"
+// in the language the app shows.
+func ConsulManagementIntentionCheck() string {
+	return In(i18n.Locale()).ConsulManagementIntentionCheck()
+}
+
+// ConsulManagementIntentionCheck says "检查意图"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementIntentionCheck() string {
+	return Catalog.Format(msgs.locale, "consulManagementIntentionCheck", nil)
+}
+
+// ConsulManagementDiscoveryChain says "服务发现链"
+// in the language the app shows.
+func ConsulManagementDiscoveryChain() string {
+	return In(i18n.Locale()).ConsulManagementDiscoveryChain()
+}
+
+// ConsulManagementDiscoveryChain says "服务发现链"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementDiscoveryChain() string {
+	return Catalog.Format(msgs.locale, "consulManagementDiscoveryChain", nil)
+}
+
+// ConsulManagementPeeringList says "Peering 列表"
+// in the language the app shows.
+func ConsulManagementPeeringList() string { return In(i18n.Locale()).ConsulManagementPeeringList() }
+
+// ConsulManagementPeeringList says "Peering 列表"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementPeeringList() string {
+	return Catalog.Format(msgs.locale, "consulManagementPeeringList", nil)
+}
+
+// ConsulManagementPeeringGet says "Peering 详情"
+// in the language the app shows.
+func ConsulManagementPeeringGet() string { return In(i18n.Locale()).ConsulManagementPeeringGet() }
+
+// ConsulManagementPeeringGet says "Peering 详情"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementPeeringGet() string {
+	return Catalog.Format(msgs.locale, "consulManagementPeeringGet", nil)
+}
+
+// ConsulManagementPeeringToken says "生成 Peering Token"
+// in the language the app shows.
+func ConsulManagementPeeringToken() string { return In(i18n.Locale()).ConsulManagementPeeringToken() }
+
+// ConsulManagementPeeringToken says "生成 Peering Token"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementPeeringToken() string {
+	return Catalog.Format(msgs.locale, "consulManagementPeeringToken", nil)
+}
+
+// ConsulManagementPeeringEstablish says "建立 Peering"
+// in the language the app shows.
+func ConsulManagementPeeringEstablish() string {
+	return In(i18n.Locale()).ConsulManagementPeeringEstablish()
+}
+
+// ConsulManagementPeeringEstablish says "建立 Peering"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementPeeringEstablish() string {
+	return Catalog.Format(msgs.locale, "consulManagementPeeringEstablish", nil)
+}
+
+// ConsulManagementPeeringDelete says "删除 Peering"
+// in the language the app shows.
+func ConsulManagementPeeringDelete() string { return In(i18n.Locale()).ConsulManagementPeeringDelete() }
+
+// ConsulManagementPeeringDelete says "删除 Peering"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementPeeringDelete() string {
+	return Catalog.Format(msgs.locale, "consulManagementPeeringDelete", nil)
+}
+
+// ConsulManagementExportedServices says "导出服务"
+// in the language the app shows.
+func ConsulManagementExportedServices() string {
+	return In(i18n.Locale()).ConsulManagementExportedServices()
+}
+
+// ConsulManagementExportedServices says "导出服务"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementExportedServices() string {
+	return Catalog.Format(msgs.locale, "consulManagementExportedServices", nil)
+}
+
+// ConsulManagementNamespaceList says "Enterprise Namespace 列表"
+// in the language the app shows.
+func ConsulManagementNamespaceList() string { return In(i18n.Locale()).ConsulManagementNamespaceList() }
+
+// ConsulManagementNamespaceList says "Enterprise Namespace 列表"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementNamespaceList() string {
+	return Catalog.Format(msgs.locale, "consulManagementNamespaceList", nil)
+}
+
+// ConsulManagementNamespaceGet says "Enterprise Namespace 详情"
+// in the language the app shows.
+func ConsulManagementNamespaceGet() string { return In(i18n.Locale()).ConsulManagementNamespaceGet() }
+
+// ConsulManagementNamespaceGet says "Enterprise Namespace 详情"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementNamespaceGet() string {
+	return Catalog.Format(msgs.locale, "consulManagementNamespaceGet", nil)
+}
+
+// ConsulManagementNamespaceCreate says "创建 Enterprise Namespace"
+// in the language the app shows.
+func ConsulManagementNamespaceCreate() string {
+	return In(i18n.Locale()).ConsulManagementNamespaceCreate()
+}
+
+// ConsulManagementNamespaceCreate says "创建 Enterprise Namespace"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementNamespaceCreate() string {
+	return Catalog.Format(msgs.locale, "consulManagementNamespaceCreate", nil)
+}
+
+// ConsulManagementNamespaceUpdate says "更新 Enterprise Namespace"
+// in the language the app shows.
+func ConsulManagementNamespaceUpdate() string {
+	return In(i18n.Locale()).ConsulManagementNamespaceUpdate()
+}
+
+// ConsulManagementNamespaceUpdate says "更新 Enterprise Namespace"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementNamespaceUpdate() string {
+	return Catalog.Format(msgs.locale, "consulManagementNamespaceUpdate", nil)
+}
+
+// ConsulManagementNamespaceDelete says "删除 Enterprise Namespace"
+// in the language the app shows.
+func ConsulManagementNamespaceDelete() string {
+	return In(i18n.Locale()).ConsulManagementNamespaceDelete()
+}
+
+// ConsulManagementNamespaceDelete says "删除 Enterprise Namespace"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementNamespaceDelete() string {
+	return Catalog.Format(msgs.locale, "consulManagementNamespaceDelete", nil)
+}
+
+// ConsulManagementPartitionList says "Enterprise Partition 列表"
+// in the language the app shows.
+func ConsulManagementPartitionList() string { return In(i18n.Locale()).ConsulManagementPartitionList() }
+
+// ConsulManagementPartitionList says "Enterprise Partition 列表"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementPartitionList() string {
+	return Catalog.Format(msgs.locale, "consulManagementPartitionList", nil)
+}
+
+// ConsulManagementPartitionGet says "Enterprise Partition 详情"
+// in the language the app shows.
+func ConsulManagementPartitionGet() string { return In(i18n.Locale()).ConsulManagementPartitionGet() }
+
+// ConsulManagementPartitionGet says "Enterprise Partition 详情"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementPartitionGet() string {
+	return Catalog.Format(msgs.locale, "consulManagementPartitionGet", nil)
+}
+
+// ConsulManagementPartitionCreate says "创建 Enterprise Partition"
+// in the language the app shows.
+func ConsulManagementPartitionCreate() string {
+	return In(i18n.Locale()).ConsulManagementPartitionCreate()
+}
+
+// ConsulManagementPartitionCreate says "创建 Enterprise Partition"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementPartitionCreate() string {
+	return Catalog.Format(msgs.locale, "consulManagementPartitionCreate", nil)
+}
+
+// ConsulManagementPartitionUpdate says "更新 Enterprise Partition"
+// in the language the app shows.
+func ConsulManagementPartitionUpdate() string {
+	return In(i18n.Locale()).ConsulManagementPartitionUpdate()
+}
+
+// ConsulManagementPartitionUpdate says "更新 Enterprise Partition"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementPartitionUpdate() string {
+	return Catalog.Format(msgs.locale, "consulManagementPartitionUpdate", nil)
+}
+
+// ConsulManagementPartitionDelete says "删除 Enterprise Partition"
+// in the language the app shows.
+func ConsulManagementPartitionDelete() string {
+	return In(i18n.Locale()).ConsulManagementPartitionDelete()
+}
+
+// ConsulManagementPartitionDelete says "删除 Enterprise Partition"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementPartitionDelete() string {
+	return Catalog.Format(msgs.locale, "consulManagementPartitionDelete", nil)
+}
+
+// ConsulResponseBack says "返回原响应列表"
+// in the language the app shows.
+func ConsulResponseBack() string { return In(i18n.Locale()).ConsulResponseBack() }
+
+// ConsulResponseBack says "返回原响应列表"
+// in the language of msgs.
+func (msgs Messages) ConsulResponseBack() string {
+	return Catalog.Format(msgs.locale, "consulResponseBack", nil)
+}
+
+// ConsulManagementGlobalScope says "此操作使用集群或原 Agent 范围；KV 前缀、Namespace 和 Partition 不限定其影响"
+// in the language the app shows.
+func ConsulManagementGlobalScope() string { return In(i18n.Locale()).ConsulManagementGlobalScope() }
+
+// ConsulManagementGlobalScope says "此操作使用集群或原 Agent 范围；KV 前缀、Namespace 和 Partition 不限定其影响"
+// in the language of msgs.
+func (msgs Messages) ConsulManagementGlobalScope() string {
+	return Catalog.Format(msgs.locale, "consulManagementGlobalScope", nil)
+}
+
+// ConsulPrefix says "前缀"
+// in the language the app shows.
+func ConsulPrefix() string { return In(i18n.Locale()).ConsulPrefix() }
+
+// ConsulPrefix says "前缀"
+// in the language of msgs.
+func (msgs Messages) ConsulPrefix() string {
+	return Catalog.Format(msgs.locale, "consulPrefix", nil)
+}

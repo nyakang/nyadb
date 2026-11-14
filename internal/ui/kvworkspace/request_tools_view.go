@@ -87,10 +87,13 @@ func requestToolName(kind contract.KVRequestToolKind) string {
 
 func (s *State) requestToolsMenu(c *ui.Context, d *Document) {
 	tools := d.RequestTools()
-	if len(tools) == 0 && !d.HTTPACLMutationAvailable() {
+	if len(tools) == 0 && !d.HTTPACLMutationAvailable() && !d.HTTPManagementAvailable() {
 		return
 	}
 	ui.Button(c, locales.Text("KV 请求工具")).Disabled(d.Busy() || d.FileBusy()).Menu(func(m *ui.Menu) {
+		if d.HTTPManagementAvailable() && m.Item(locales.Text("Consul 管理工具")).Chosen() {
+			s.OpenHTTPManagement(d)
+		}
 		if d.HTTPACLMutationAvailable() && m.Item(locales.Text("ACL 原生写入")).Chosen() {
 			s.OpenHTTPACLMutationForm(d)
 		}
@@ -194,6 +197,11 @@ func (s *State) requestToolsModals(c *ui.Context) {
 					}
 					if ui.Button(c, locales.Text("生成请求文本")).Disabled(d.Busy() || d.FileBusy()).Clicked() {
 						s.GenerateRequestTool(d)
+					}
+					if httpCatalogWatchTool(p.kind) && d.httpWatchAvailable {
+						if ui.Button(c, locales.Text("生成 Catalog Watch 请求")).Disabled(d.Busy() || d.FileBusy()).Clicked() {
+							s.GenerateHTTPCatalogWatch(d)
+						}
 					}
 					if httpHealthRequestTool(p.kind) && d.httpWatchAvailable {
 						if ui.Button(c, locales.Text("生成健康 Watch 请求")).Disabled(d.Busy() || d.FileBusy()).Clicked() {

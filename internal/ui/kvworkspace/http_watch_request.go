@@ -19,11 +19,19 @@ func DefaultHTTPWatchRequest() contract.KVRequest {
 // must never become an implicit root read, and uint64 never passes float64.
 func ParseHTTPWatchRequest(text string) (contract.KVHTTPWatchRequest, error) {
 	var r contract.KVHTTPWatchRequest
-	f, err := eventFields(text, "target", "prefix", "observation_prefix", "health", "start_index", "wait", "max_observations", "max_bytes")
+	f, err := eventFields(text, "target", "prefix", "observation_prefix", "health", "catalog", "start_index", "wait", "max_observations", "max_bytes")
 	if err != nil {
 		return r, jsondocument.ErrInvalid
 	}
-	if raw, health := f["health"]; health {
+	if raw, catalog := f["catalog"]; catalog {
+		if len(f) != 5 {
+			return r, jsondocument.ErrInvalid
+		}
+		r.Catalog, err = parseHTTPCatalogWatchTarget(string(raw))
+		if err != nil {
+			return r, err
+		}
+	} else if raw, health := f["health"]; health {
 		if len(f) != 5 {
 			return r, jsondocument.ErrInvalid
 		}

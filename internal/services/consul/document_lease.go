@@ -14,6 +14,8 @@ type documentPreparation struct {
 	native             Request
 	request            contract.KVRequest
 	write              bool
+	privateManagement  bool
+	managementRequest  contract.KVHTTPManagementRequest
 	privateACL         bool
 	privateACLWrite    bool
 	aclMutationRequest contract.KVHTTPACLMutationRequest
@@ -26,24 +28,28 @@ func (p *documentPreparation) Snapshot() contract.KVRequest { return p.request }
 func (p *documentPreparation) Writes() bool                 { return p.write }
 
 type documentLease struct {
-	s                          *Session
-	document                   uint64
-	mu                         sync.Mutex
-	receiptMu                  sync.Mutex
-	ops                        sync.Mutex
-	ctx                        context.Context
-	cancel                     context.CancelFunc
-	closed, retired, recovered bool
-	client                     *Client                           // guarded by ops
-	last, unknown              *contract.KVResult                // immutable, guarded by receiptMu
-	aclLast                    *contract.KVHTTPACLReadResult     // separate secret-bearing facet cache
-	aclMutationLast            *contract.KVHTTPACLMutationResult // last attempted write; unknown writes prohibit replacement
-	writeUnknown               atomic.Bool
-	reserved                   bool                       // guarded by ops and receiptBudgetMu
-	cacheBytes                 int64                      // guarded by receiptBudgetMu and ops
-	destroyPlan                *sessionDestroyPreparation // guarded by ops
-	aclMutationPlan            *httpACLMutationPlan       // guarded by ops; excludes other write plans
-	planReserved               int64                      // guarded by ops and receiptBudgetMu
+	enterprisePlan                    *httpEnterpriseDeletionPreparation
+	s                                 *Session
+	document                          uint64
+	mu                                sync.Mutex
+	receiptMu                         sync.Mutex
+	ops                               sync.Mutex
+	ctx                               context.Context
+	cancel                            context.CancelFunc
+	closed, retired, recovered        bool
+	client                            *Client            // guarded by ops
+	last, unknown                     *contract.KVResult // immutable, guarded by receiptMu
+	restoreLast, restoreUnknown       *contract.KVHTTPArchiveRestoreResult
+	managementLast, managementUnknown *contract.KVHTTPManagementResult
+	aclLast                           *contract.KVHTTPACLReadResult     // separate secret-bearing facet cache
+	aclMutationLast                   *contract.KVHTTPACLMutationResult // last attempted write; unknown writes prohibit replacement
+	writeUnknown                      atomic.Bool
+	reserved                          bool                       // guarded by ops and receiptBudgetMu
+	archiveBudget                     *httpArchiveBudget         // follows recovery, guarded by receiptBudgetMu
+	cacheBytes                        int64                      // guarded by receiptBudgetMu and ops
+	destroyPlan                       *sessionDestroyPreparation // guarded by ops
+	aclMutationPlan                   *httpACLMutationPlan       // guarded by ops; excludes other write plans
+	planReserved                      int64                      // guarded by ops and receiptBudgetMu
 }
 
 func (l *documentLease) Scope() contract.KVScope { return l.s.KVScope() }
@@ -70,6 +76,9 @@ func (l *documentLease) Prepare(r contract.KVRequest) (contract.KVPreparation, e
 	if err != nil {
 		return nil, err
 	}
+	if write && l.s.cfg.ReadOnly {
+		return nil, ErrUnsupported
+	}
 	if write && l.writeUnknown.Load() {
 		return nil, contract.ErrKVWriteUnknown
 	}
@@ -80,7 +89,7 @@ func (l *documentLease) request(ctx context.Context) (context.Context, func(), e
 	if err := l.CheckKVLease(); err != nil {
 		return nil, nil, err
 	}
-	parent, done, err := l.s.request(ctx)
+	parent, done, err := l.s.requestFor(ctx, l)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -118,7 +127,7 @@ func (l *documentLease) closePhysical() {
 func (l *documentLease) reserveReceipt() error {
 	receiptBudgetMu.Lock()
 	defer receiptBudgetMu.Unlock()
-	if l.cacheBytes+l.planReserved+pendingReceiptBudget > documentReceiptBudget || l.s.retained+l.s.reserved+pendingReceiptBudget > l.s.budget {
+	if l.cacheBytes+l.planReserved+l.archiveBytes()+pendingReceiptBudget > documentReceiptBudget || l.s.retained+l.s.reserved+pendingReceiptBudget > l.s.budget {
 		return ErrBounds
 	}
 	l.s.reserved += pendingReceiptBudget
@@ -154,7 +163,7 @@ func (l *documentLease) Execute(parent context.Context, prepared contract.KVPrep
 		return l.executeSessionDestroy(parent, p)
 	}
 	p, ok := prepared.(*documentPreparation)
-	if !ok || p == nil || p.owner != l || p.privateACL || p.privateACLWrite {
+	if !ok || p == nil || p.owner != l || p.privateACL || p.privateACLWrite || p.privateManagement {
 		return result, contract.ErrKVPlanUsed
 	}
 	result.Request = p.request
@@ -162,7 +171,7 @@ func (l *documentLease) Execute(parent context.Context, prepared contract.KVPrep
 		return result, contract.ErrKVBusy
 	}
 	defer l.ops.Unlock()
-	if p.write && (l.destroyPlan != nil || l.aclMutationPlan != nil) {
+	if p.write && (l.destroyPlan != nil || l.aclMutationPlan != nil || l.enterprisePlan != nil) {
 		return result, contract.ErrKVBusy
 	}
 	return l.executeLocked(parent, p)
@@ -172,7 +181,7 @@ func (l *documentLease) Execute(parent context.Context, prepared contract.KVPrep
 // original executor without recursively acquiring the lease's operation lock.
 func (l *documentLease) executeLockedPreparation(ctx context.Context, prepared contract.KVPreparation) (contract.KVResult, error) {
 	p, ok := prepared.(*documentPreparation)
-	if !ok || p == nil || p.owner != l || p.privateACL || p.privateACLWrite {
+	if !ok || p == nil || p.owner != l || p.privateACL || p.privateACLWrite || p.privateManagement {
 		return contract.KVResult{}, contract.ErrKVPlanUsed
 	}
 	return l.executeLocked(ctx, p)
@@ -209,7 +218,11 @@ func (l *documentLease) executeLocked(parent context.Context, p *documentPrepara
 	if result.WriteOutcomeUnknown {
 		l.writeUnknown.Store(true)
 	}
-	if p.privateACLWrite {
+	if p.privateManagement {
+		if result.Attempted {
+			l.storeManagement(contract.KVHTTPManagementResult{Scope: l.Scope(), Request: p.managementRequest.Clone(), LocalRecordID: p.aclRecordID, Receipt: result})
+		}
+	} else if p.privateACLWrite {
 		if result.Attempted {
 			acl := projectACLMutationResult(l.Scope(), p.aclMutationRequest, result)
 			acl.LocalRecordID = p.aclRecordID
@@ -242,7 +255,7 @@ func (l *documentLease) storeOwned(result contract.KVResult) {
 	if unknown != nil && unknown != next {
 		bytes += resultCost(unknown)
 	}
-	bytes += aclReadResultCost(l.aclLast) + aclMutationResultCost(l.aclMutationLast)
+	bytes += aclReadResultCost(l.aclLast) + aclMutationResultCost(l.aclMutationLast) + l.managementCacheCost()
 	receiptBudgetMu.Lock()
 	if l.reserved {
 		l.s.reserved -= pendingReceiptBudget
@@ -266,6 +279,22 @@ func (l *documentLease) recoveryOwned() contract.KVRecovery {
 	l.receiptMu.Lock()
 	defer l.receiptMu.Unlock()
 	r := contract.KVRecovery{}
+	if l.restoreLast != nil {
+		v := l.restoreLast.Clone()
+		r.RestoreResult = &v
+	}
+	if l.restoreUnknown != nil {
+		v := l.restoreUnknown.Clone()
+		r.RestoreUnknown = &v
+	}
+	if l.managementLast != nil {
+		v := l.managementLast.Clone()
+		r.ManagementResult = &v
+	}
+	if l.managementUnknown != nil {
+		v := l.managementUnknown.Clone()
+		r.ManagementUnknown = &v
+	}
 	if l.aclMutationLast != nil {
 		v := l.aclMutationLast.Clone()
 		r.ACLMutationResult = &v
@@ -290,6 +319,9 @@ func (l *documentLease) retire() error {
 	l.mu.Unlock()
 	l.ops.Lock()
 	defer l.ops.Unlock()
+	if l.enterprisePlan != nil {
+		l.enterprisePlan.closeLocked()
+	}
 	l.releaseDestroyPlan()
 	l.releaseACLMutationPlan()
 	l.closePhysical()
@@ -305,11 +337,16 @@ func (l *documentLease) Close() error {
 	l.mu.Unlock()
 	l.ops.Lock()
 	defer l.ops.Unlock()
+	if l.enterprisePlan != nil {
+		l.enterprisePlan.closeLocked()
+	}
 	l.releaseDestroyPlan()
 	l.releaseACLMutationPlan()
 	l.closePhysical()
 	l.receiptMu.Lock()
 	l.last, l.unknown = nil, nil
+	l.managementLast, l.managementUnknown = nil, nil
+	l.restoreLast, l.restoreUnknown = nil, nil
 	l.aclLast = nil
 	l.aclMutationLast = nil
 	l.receiptMu.Unlock()

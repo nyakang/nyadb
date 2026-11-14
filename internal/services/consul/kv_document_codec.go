@@ -27,6 +27,9 @@ func DocumentRequest(r Request) (contract.KVRequest, error) {
 	// ACL responses may contain native token secrets or AuthMethod Config.
 	// Publishing them requires the dedicated original-profile secret flow;
 	// the generic request editor and request files must not bypass that gate.
+	if op, ok := managementNativeSpec(r); ok && op.Name != "leader" && op.Name != "peers" {
+		return contract.KVRequest{}, ErrUnsupported
+	}
 	if strings.HasPrefix(r.Path, "/v1/acl/") {
 		return contract.KVRequest{}, ErrUnsupported
 	}

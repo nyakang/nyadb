@@ -34,14 +34,15 @@ func encodeHTTPWatch(scope contract.KVScope, authored contract.KVRequest, snapsh
 		Scope    scopeRecord        `json:"original_scope"`
 		Authored contract.KVRequest `json:"authored_request"`
 		Request  struct {
-			Target            string                            `json:"target"`
-			Prefix            bool                              `json:"prefix"`
-			ObservationPrefix string                            `json:"observation_prefix"`
-			StartIndex        string                            `json:"start_index"`
-			Wait              string                            `json:"wait"`
-			MaxObservations   int                               `json:"max_observations"`
-			MaxBytes          string                            `json:"max_bytes"`
-			Health            *contract.KVHTTPHealthWatchTarget `json:"health,omitempty"`
+			Target            string                             `json:"target"`
+			Prefix            bool                               `json:"prefix"`
+			ObservationPrefix string                             `json:"observation_prefix"`
+			StartIndex        string                             `json:"start_index"`
+			Wait              string                             `json:"wait"`
+			MaxObservations   int                                `json:"max_observations"`
+			MaxBytes          string                             `json:"max_bytes"`
+			Catalog           *contract.KVHTTPCatalogWatchTarget `json:"catalog,omitempty"`
+			Health            *contract.KVHTTPHealthWatchTarget  `json:"health,omitempty"`
 		} `json:"captured_request"`
 		Observations  []observationRecord          `json:"observations"`
 		Ended         bool                         `json:"ended"`
@@ -53,6 +54,10 @@ func encodeHTTPWatch(scope contract.KVScope, authored contract.KVRequest, snapsh
 	record.Request.Target, record.Request.Prefix, record.Request.ObservationPrefix = r.Target, r.Prefix, r.ObservationPrefix
 	record.Request.StartIndex, record.Request.Wait = strconv.FormatUint(r.StartIndex, 10), r.Wait.String()
 	record.Request.MaxObservations, record.Request.MaxBytes = r.MaxObservations, strconv.FormatInt(r.MaxBytes, 10)
+	if r.Catalog.Kind != "" {
+		target := r.Catalog
+		record.Request.Catalog = &target
+	}
 	if r.Health.Kind != "" {
 		target := r.Health
 		record.Request.Health = &target

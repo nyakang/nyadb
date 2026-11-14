@@ -26,6 +26,11 @@ func (s *State) View(c *ui.Context) {
 		s.sqlWorkspace.ActivateAssets(s.selectedProfileID)
 	}
 	s.startAutoConnect(c.Services())
+	if s.runtime != nil {
+		for _, id := range s.runtime.ConsumeHTTPArchiveRevocations() {
+			s.sessions.Disconnect(id)
+		}
+	}
 	s.sessions.Consume()
 	_ = s.consumeInitialSQLCleanup()
 	s.objectWorkspace.Consume(c.Services())

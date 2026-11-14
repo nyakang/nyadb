@@ -39,6 +39,12 @@ type renewalOperation struct {
 }
 
 func (d *Document) hasUnknownWrites() bool {
+	if d.httpArchive != nil && d.httpArchive.restoreUnknown != nil {
+		return true
+	}
+	if d.httpManagement != nil && d.httpManagement.unknown != nil {
+		return true
+	}
 	return d.httpACLMutation != nil && d.httpACLMutation.unknown || d.httpSessionRenewal != nil && d.httpSessionRenewal.unknown || d.unknown != nil || d.renewalUnknown != nil || d.members != nil && d.members.unknown != nil || d.alarms != nil && d.alarms.unknown != nil
 }
 func (s *State) renewalLeaseFor(d *Document) bool {

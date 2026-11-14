@@ -51,6 +51,9 @@ func (l *documentLease) PrepareHTTPACLMutation(request contract.KVHTTPACLMutatio
 	if err := l.CheckKVLease(); err != nil {
 		return nil, err
 	}
+	if l.s.cfg.ReadOnly {
+		return nil, ErrUnsupported
+	}
 	if l.writeUnknown.Load() {
 		return nil, contract.ErrKVWriteUnknown
 	}
@@ -89,7 +92,7 @@ func (l *documentLease) ExecuteHTTPACLMutation(ctx context.Context, prepared con
 		return out, contract.ErrKVBusy
 	}
 	defer l.ops.Unlock()
-	if l.destroyPlan != nil || l.aclMutationPlan != nil {
+	if l.destroyPlan != nil || l.aclMutationPlan != nil || l.enterprisePlan != nil {
 		return out, contract.ErrKVBusy
 	}
 	result, err := l.executeLocked(ctx, p.plan)
@@ -148,7 +151,7 @@ func (l *documentLease) storeACLMutation(result contract.KVHTTPACLMutationResult
 	l.receiptMu.Lock()
 	defer l.receiptMu.Unlock()
 	v := result.Clone()
-	cost := aclMutationResultCost(&v) + aclReadResultCost(l.aclLast) + resultCost(l.last)
+	cost := aclMutationResultCost(&v) + aclReadResultCost(l.aclLast) + resultCost(l.last) + l.managementCacheCost()
 	if l.unknown != nil && l.unknown != l.last {
 		cost += resultCost(l.unknown)
 	}

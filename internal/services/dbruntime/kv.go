@@ -78,7 +78,7 @@ func (s *session) bindKV(raw contract.KVRequestLease, document uint64) (contract
 	if auth {
 		return bindKVSnapshots(bindKVMembers(bindKVMaintenance(&kvAuthLease{bound}))), nil
 	}
-	return bindKVHTTPACLMutationPlanning(bindKVHTTPACLImpact(bindKVHTTPACLMutation(bindKVHTTPACLRead(bindKVHTTPSessionDestroy(bindKVHTTPSessionKeys(bindKVSnapshots(bindKVMembers(bindKVMaintenance(bound))))))))), nil
+	return bindKVHTTPManagement(bindKVHTTPArchives(bindKVHTTPACLMutationPlanning(bindKVHTTPACLImpact(bindKVHTTPACLMutation(bindKVHTTPACLRead(bindKVHTTPSessionDestroy(bindKVHTTPSessionKeys(bindKVSnapshots(bindKVMembers(bindKVMaintenance(bound))))))))))), nil
 }
 func (s *session) ReserveKV(document uint64) (contract.KVRequestLease, error) {
 	if !s.alive() {
@@ -119,6 +119,25 @@ func (s *session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 	recovery = recovery.Clone()
 	old.closeDestroyPlans()
 	old.closeACLMutationPlans()
+	var managementRecords = map[string]kvACLRecordScope{}
+	for _, r := range []*contract.KVHTTPArchiveRestoreResult{recovery.RestoreResult, recovery.RestoreUnknown} {
+		if r != nil {
+			raw := r.Scope.Original.Clone()
+			if !old.translateRestore(r) {
+				err = errors.Join(err, contract.ErrRevoked)
+			}
+			managementRecords[r.LocalRecordID] = kvACLRecordScope{raw, r.Scope.Original.Clone()}
+		}
+	}
+	for _, r := range []*contract.KVHTTPManagementResult{recovery.ManagementResult, recovery.ManagementUnknown} {
+		if r != nil {
+			raw := r.Scope.Clone()
+			if !old.translateManagementResult(r) {
+				err = errors.Join(err, contract.ErrRevoked)
+			}
+			managementRecords[r.LocalRecordID] = kvACLRecordScope{raw, r.Scope.Clone()}
+		}
+	}
 	var aclMutationRawScope contract.KVScope
 	if recovery.ACLMutationResult != nil {
 		aclMutationRawScope = recovery.ACLMutationResult.Scope.Clone()
@@ -157,6 +176,10 @@ func (s *session) RecoverKV(previous contract.KVRequestLease) (contract.KVRecove
 	}
 	recovery.Lease, err = s.bindKV(recovery.Lease, old.document)
 	if next := originalKVRequestLease(recovery.Lease); next != nil {
+		next.managementRecords = managementRecords
+		old.aclMu.Lock()
+		next.restoreRevocations = old.restoreRevocations
+		old.aclMu.Unlock()
 		next.inheritDestroyRecords(old)
 		next.inheritACLRecord(aclRawScope, recovery.ACLResult)
 		next.inheritACLMutationRecord(aclMutationRawScope, recovery.ACLMutationResult)
@@ -178,6 +201,8 @@ type kvRequestLease struct {
 	destroyRecords         map[string]kvDestroyRecordScope
 	destroyPlans           map[*kvHTTPSessionDestroyPreparation]bool
 	destroyClosed          bool
+	restoreRevocations     map[string][]int64
+	managementRecords      map[string]kvACLRecordScope
 	aclMu                  sync.Mutex
 	aclRecordID            string
 	aclRecordScope         kvACLRecordScope

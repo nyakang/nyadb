@@ -26,13 +26,15 @@ type attempt struct {
 	cancel     context.CancelFunc
 }
 type Manager struct {
-	backupOperations map[*backupOperation]bool
-	mu               sync.Mutex
-	next             uint64
-	closed           bool
-	providers        map[connections.Kind]Provider
-	pending          map[int64]attempt
-	sessions         map[int64]*session
+	consulRestoreActive bool
+	consulRevocations   []int64
+	backupOperations    map[*backupOperation]bool
+	mu                  sync.Mutex
+	next                uint64
+	closed              bool
+	providers           map[connections.Kind]Provider
+	pending             map[int64]attempt
+	sessions            map[int64]*session
 }
 
 func New() *Manager {
@@ -58,7 +60,7 @@ func (m *Manager) ConnectSession(ctx context.Context, p connections.Profile, pas
 	}
 	m.mu.Lock()
 	provider := m.providers[p.Kind]
-	if m.closed || m.backupLocked(p) {
+	if m.closed || m.backupLocked(p) || p.Kind == connections.Consul && m.consulRestoreActive {
 		m.mu.Unlock()
 		return nil, contract.ErrRevoked
 	}
@@ -100,7 +102,7 @@ func (m *Manager) ConnectSession(ctx context.Context, p connections.Profile, pas
 	}
 	var published *session
 	if !stale && err == nil {
-		published = &session{profile: p, raw: raw, id: p.ID, generation: generation, kind: p.Kind, cancel: cancel}
+		published = &session{manager: m, profile: p, raw: raw, id: p.ID, generation: generation, kind: p.Kind, cancel: cancel}
 		m.sessions[p.ID] = published
 	}
 	m.mu.Unlock()
@@ -191,6 +193,7 @@ func (m *Manager) Close() error {
 }
 
 type session struct {
+	manager         *Manager
 	profile         connections.Profile
 	cancel          context.CancelFunc
 	mu              sync.Mutex

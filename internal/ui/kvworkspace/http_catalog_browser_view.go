@@ -180,6 +180,9 @@ func (s *State) httpCatalogBrowserModals(c *ui.Context) {
 			continue
 		}
 		r := s.selectedReceipt(d)
+		if d.method == HTTPWatchMethod && d.httpWatch != nil {
+			r = d.httpWatch.catalogReceipt
+		}
 		if catalogReceiptProjection(r) == nil || r.Scope.Namespace.ProfileID != d.profileID {
 			d.httpCatalog = false
 			continue

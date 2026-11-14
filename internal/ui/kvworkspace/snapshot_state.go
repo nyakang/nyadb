@@ -111,6 +111,7 @@ func (d *Document) snapshotContent() bool {
 }
 func (s *State) SetSnapshotOperations(captures contract.KVSnapshotArtifacts, files SnapshotFiles) {
 	s.deps.SnapshotArtifacts = captures
+	s.deps.HTTPArchiveArtifacts, _ = captures.(contract.KVHTTPArchiveArtifacts)
 	s.deps.SnapshotFiles = files
 }
 func (s *State) PrepareSnapshot(d *Document) {

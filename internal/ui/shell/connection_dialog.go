@@ -76,8 +76,10 @@ func (s *State) connectionSaved(saved connections.Profile) {
 			break
 		}
 	}
-	if !presentationOnly && s.sessions.Current().ProfileID == saved.ID {
-		s.disconnectMySQLSession()
+	if !presentationOnly {
+		// Revoke the saved profile even when its session/documents are parked.
+		// KV and SQL documents keep their original text and receipts for recovery.
+		s.sessions.Disconnect(saved.ID)
 	}
 	s.selectedProfileID = saved.ID
 	s.loadProfiles()

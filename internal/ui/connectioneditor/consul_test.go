@@ -37,6 +37,8 @@ func TestConsulEditorOriginalTokenSaveAuthSwitchAndScope(t *testing.T) {
 	tt := consulEditorTester(s.State)
 	setEngineOptionInput(t, tt, "连接名称", "original Consul")
 	setEngineOptionInput(t, tt, "Consul 数据中心", "dc1")
+	setEngineOptionInput(t, tt, "Consul Namespace", "original-ns")
+	setEngineOptionInput(t, tt, "Consul Partition", "original-partition")
 	setEngineOptionInput(t, tt, "Consul 键前缀", " /original//../ ")
 	chooseConsul(t, tt, "Consul 读取一致性", "一致读取")
 	chooseConsul(t, tt, "Consul 认证方式", "Token")
@@ -57,7 +59,7 @@ func TestConsulEditorOriginalTokenSaveAuthSwitchAndScope(t *testing.T) {
 		t.Fatal("original Consul save failed", err, s.Error())
 	}
 	p := profiles[0]
-	if p.Username != "" || p.Database != "" || p.ConsulOptions.Datacenter != "dc1" || p.ConsulOptions.Prefix != " /original//../ " || p.ConsulOptions.Consistency != "consistent" || p.ConsulOptions.ConnectTimeoutSeconds != 12 || strings.Contains(fmt.Sprint(p), "original-token") {
+	if p.Username != "" || p.Database != "" || p.ConsulOptions.Namespace != "original-ns" || p.ConsulOptions.Partition != "original-partition" || p.ConsulOptions.Datacenter != "dc1" || p.ConsulOptions.Prefix != " /original//../ " || p.ConsulOptions.Consistency != "consistent" || p.ConsulOptions.ConnectTimeoutSeconds != 12 || strings.Contains(fmt.Sprint(p), "original-token") {
 		t.Fatal("original scope changed or token entered profile")
 	}
 	s.OpenProfile(p)

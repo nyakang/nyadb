@@ -17,7 +17,7 @@ func OpenSession(ctx context.Context, p connections.Profile, token string) (cont
 		return nil, err
 	}
 	o := cfg.Options
-	session, err := OpenNativeSession(ctx, p.ID, Config{Endpoint: cfg.Endpoint, Auth: o.Auth, Datacenter: o.Datacenter, Prefix: o.Prefix, Consistency: o.Consistency,
+	session, err := OpenNativeSession(ctx, p.ID, Config{Namespace: o.Namespace, Partition: o.Partition, ReadOnly: o.ReadOnly, AutopilotWrite: o.AutopilotWrite, RaftWrite: o.RaftWrite, KeyringWrite: o.KeyringWrite, LicenseWrite: o.LicenseWrite, RestoreWrite: o.RestoreWrite, Endpoint: cfg.Endpoint, Auth: o.Auth, Datacenter: o.Datacenter, Prefix: o.Prefix, Consistency: o.Consistency,
 		CAFile: o.CAFile, ServerName: o.ServerName, ClientCertFile: o.ClientCertFile, ClientKeyFile: o.ClientKeyFile,
 		ConnectTimeout: time.Duration(o.ConnectTimeoutSeconds) * time.Second, RequestTimeout: time.Duration(o.RequestTimeoutSeconds) * time.Second}, token)
 	if err != nil {
