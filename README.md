@@ -253,3 +253,22 @@ parents in 11 phases and 2120 images per official configuration: all 80 accepted
 Catalog/projection/maintenance parents and 1988 images plus four public parents
 and 132 images. ACL management/secret handling, archives, Enterprise/HA and every
 other full 88/110 alignment gap remain separate incomplete work.
+
+
+Private ACL read builders support native token, policy, role, AuthMethod,
+binding-rule and templated-policy lists/details, original token self and
+endpoint-specific membership/blocking options. Complete original receipts
+retain field presence, server redaction and unsigned indices. Denied, missing
+and ACL-disabled responses remain distinct; canceled/retired reads never retry.
+
+ACL reads remain unavailable to generic request documents and files because
+token lists/self and AuthMethod Config can contain secrets. Dedicated original-
+profile secret presentation/export, ACL document projections, mutations and
+reference/delete-impact flows require their own acceptance.
+
+`--acl-read-probe --race --mode MODE --test-timeout 1200` requires 87 native
+parents in 12 phases: all 84 public Catalog/maintenance regressions and their
+2120 images, followed by three private ACL parents. The owned anonymous fixture
+proves ACL-disabled rejection; token/TLS/mTLS and the second official version
+prove reads, native redaction, permissions, processed reply faults and original
+cancellation. This foundation does not publish ACL management capabilities.

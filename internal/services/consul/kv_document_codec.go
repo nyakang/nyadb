@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/jsondocument"
@@ -23,6 +24,12 @@ type requestEnvelope struct {
 
 // DocumentRequest captures the exact native request without headers or secrets.
 func DocumentRequest(r Request) (contract.KVRequest, error) {
+	// ACL responses may contain native token secrets or AuthMethod Config.
+	// Publishing them requires the dedicated original-profile secret flow;
+	// the generic request editor and request files must not bypass that gate.
+	if strings.HasPrefix(r.Path, "/v1/acl/") {
+		return contract.KVRequest{}, ErrUnsupported
+	}
 	if _, _, _, err := validateRequest(r); err != nil {
 		return contract.KVRequest{}, err
 	}

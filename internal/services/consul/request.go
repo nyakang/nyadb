@@ -136,6 +136,13 @@ func validateRequest(r Request) (string, bool, int, error) {
 		}
 	}
 	switch {
+	case strings.HasPrefix(r.Path, "/v1/acl/"):
+		var err error
+		allowed, err = aclReadQuery(r)
+		if err != nil {
+			return "", false, 0, err
+		}
+		kind = "acl-read"
 	case agentMaintenanceKind(r.Path) != "":
 		kind = agentMaintenanceKind(r.Path)
 		if r.Method != http.MethodPut || len(r.Body) != 0 || !r.Query.Has("enable") {
@@ -330,6 +337,12 @@ func validateRequest(r Request) (string, bool, int, error) {
 			}
 		case "filter", "near", "note", "reason":
 			// Native text options retain their authored string, including empty.
+		case "policy", "role":
+			if v != "" && !validID(v) {
+				return "", false, 0, ErrInvalid
+			}
+		case "authmethod", "servicename":
+			// Original native membership names are query text, not paths.
 		case "enable":
 			if _, err := strconv.ParseBool(v); err != nil {
 				return "", false, 0, ErrInvalid

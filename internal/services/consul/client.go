@@ -122,8 +122,9 @@ func (c *Client) requestURL(p Plan) (string, error) {
 	if q == nil {
 		q = url.Values{}
 	}
-	// Agent endpoints select the original contacted agent, not a scoped namespace.
-	localAgent := strings.HasPrefix(p.request.Path, "/v1/agent/")
+	// Agent endpoints and static ACL templates use the original contacted
+	// agent; templates do not implement DC routing or blocking consistency.
+	localAgent := strings.HasPrefix(p.request.Path, "/v1/agent/") || aclTemplateReadPath(p.request.Path)
 	if !localAgent {
 		for key, value := range map[string]string{"dc": c.config.Datacenter, "ns": c.config.Namespace, "partition": c.config.Partition} {
 			if value != "" {

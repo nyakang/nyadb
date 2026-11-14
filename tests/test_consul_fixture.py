@@ -9,6 +9,52 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_acl_reads_retain_every_public_catalog_parent_and_phase(self):
+        import re
+        prior = self.copy_scope_before_startup(public_catalog_probe=True)
+        report = self.copy_scope_before_startup(acl_read_probe=True)
+        required = fixture.ACL_READ_REQUIRED + tuple(prior['required'])
+        self.assertEqual(tuple(report['required']), required)
+        self.assertEqual(len(set(required)), 87)
+        self.assertEqual(len(required), 87)
+        self.assertTrue(report['production_catalog_tools_published'])
+        self.assertFalse(report['production_acl_tools_published'])
+        self.assertFalse(report['generic_acl_documents_enabled'])
+        self.assertEqual(report['scope'], 'private-consul-native-acl-reads-with-all-public-catalog-regressions')
+        phases = fixture.acl_read_acceptance_test_phases(report['packages'], required, True, 1200)
+        self.assertEqual(phases[:-1], fixture.public_catalog_acceptance_test_phases(prior['packages'], prior['required'], True, 1200))
+        self.assertEqual(len(phases), 12)
+        scheduled = [name for phase in phases for name in re.findall(r'TestConsulNative(\w+)', phase[phase.index('-run')+1])]
+        self.assertCountEqual(scheduled, required)
+        for phase in phases:
+            for argument in ('-race', '-count=1', '-timeout=1200s'):
+                self.assertIn(argument, phase)
+        for name in fixture.ACL_READ_REQUIRED:
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                fixture.acl_read_acceptance_test_phases(report['packages'], tuple(n for n in required if n != name), True, 1200)
+
+    def test_acl_reads_reject_missing_skipped_or_duplicate_native_evidence(self):
+        report = self.copy_scope_before_startup(acl_read_probe=True)
+        required = tuple(report['required'])
+        lines = ['--- PASS: TestConsulNative'+name+' (0.1s)' for name in required]
+        for index, name in enumerate(required):
+            for bad in ('', lines[index].replace('--- PASS:', '--- SKIP:'), lines[index]+'\n'+lines[index]):
+                broken = lines.copy()
+                broken[index] = bad
+                with self.subTest(name=name, bad=bad), self.assertRaises(RuntimeError):
+                    fixture.accepted_cases('\n'.join(broken), required)
+
+    def test_acl_reads_reject_mixed_scopes_and_cli_before_fixture_startup(self):
+        import inspect
+        import runpy
+        from unittest.mock import patch
+        for name, parameter in inspect.signature(fixture.verify).parameters.items():
+            if parameter.default is False and name not in ('race', 'acl_read_probe'):
+                with self.subTest(name=name), patch('subprocess.run', side_effect=AssertionError('mixed ACL scope started')), self.assertRaises(ValueError):
+                    fixture.verify(acl_read_probe=True, **{name: True})
+        with patch('sys.argv', [str(ROOT/'tools/verify_consul_fixture.py'), '--acl-read-probe', '--public-catalog-probe']), patch('subprocess.run', side_effect=AssertionError('mixed ACL CLI started')), self.assertRaises(ValueError):
+            runpy.run_path(str(ROOT/'tools/verify_consul_fixture.py'), run_name='__main__')
+
     def test_public_catalog_scope_retains_all_eighty_projection_parents(self):
         prior = self.copy_scope_before_startup(catalog_projection_probe=True)
         report = self.copy_scope_before_startup(public_catalog_probe=True)
