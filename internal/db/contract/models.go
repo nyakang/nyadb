@@ -72,6 +72,9 @@ type ResultSet struct {
 type SQLResult struct {
 	Steps []StatementOutcome
 	Sets  []ResultSet
+	// NativeJSON retains complete original result receipts when the grid is a
+	// projection. It is an immutable snapshot, not reconstructed from cells.
+	NativeJSON string `json:",omitempty"`
 	// Graph retains the original typed result and completion receipt. Sets is
 	// the common grid projection; it cannot reconstruct graph identities/types.
 	Graph *GraphResult
