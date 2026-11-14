@@ -231,3 +231,11 @@ browser parents and their 1988 images on each official configuration. Original
 ACL-filtered receipts, absent-node null, cancellation and unknown-write barriers
 stay independent. Structured Catalog tools/browser and other management
 capabilities retain their separate acceptance requirements.
+
+
+Consul Catalog response projections retain original datacenter/node arrays,
+service-tag and node-service maps, flat service-instance identities, complete
+JSON, unsigned indices and ACL/null boundaries through original document leases.
+`--catalog-projection-probe --race --mode MODE --test-timeout 1200` requires 80
+native parents and all 1988 retained images per official configuration. Public
+Catalog forms/browser, ACL/archives and Enterprise/HA remain separate work.

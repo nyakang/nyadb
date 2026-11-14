@@ -700,3 +700,17 @@ parents, retaining all 1988 original images per official configuration. Original
 read faults never retry; Catalog reads and evidence-only recovery cannot confirm
 unknown writes. Catalog projections and public structured tools/browser,
 ACL/archives/Enterprise/HA remain separate acceptance work.
+
+
+Original Catalog projections retain five native response shapes, exact map
+identities, captured order, field omission/null/empty distinctions and uint64
+indices. Complete row JSON and original receipt bytes retain unknown fields.
+Native absent-node null stays separate from empty or ACL-filtered responses.
+Optional malformed/oversized projections retain native HTTP ACK and body;
+clones and original document lease budgets include all Catalog evidence.
+
+`--catalog-projection-probe --race --mode MODE --test-timeout 1200` requires all
+77 accepted Catalog read/public maintenance parents in their nine original
+phases and three projection parents in a tenth phase, retaining all 1988 images
+per official configuration. Public Catalog tools/browser, ACL/archives and
+Enterprise/HA retain separate acceptance requirements.

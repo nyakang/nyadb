@@ -152,6 +152,7 @@ func documentResult(request contract.KVRequest, r Response) contract.KVResult {
 	projectDocumentSessions(&out)
 	projectDocumentHealth(&out)
 	projectDocumentAgent(&out)
+	projectDocumentCatalog(&out)
 	return out
 }
 
@@ -178,6 +179,9 @@ func resultCost(r *contract.KVResult) int64 {
 		}
 		if h.Agent != nil {
 			n += agentProjectionCost(*h.Agent)
+		}
+		if h.Catalog != nil {
+			n += catalogProjectionCost(*h.Catalog)
 		}
 		if h.Sessions != nil {
 			for _, row := range h.Sessions.Rows {
