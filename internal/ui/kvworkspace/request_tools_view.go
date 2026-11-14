@@ -59,6 +59,14 @@ func requestToolName(kind contract.KVRequestToolKind) string {
 		return locales.Text("注册或更新本机 Agent 检查")
 	case contract.KVToolHTTPAgentCheckDeregister:
 		return locales.Text("注销本机 Agent 检查")
+	case contract.KVToolHTTPAgentCheckPass:
+		return locales.Text("将本机 TTL 检查设为 passing")
+	case contract.KVToolHTTPAgentCheckWarn:
+		return locales.Text("将本机 TTL 检查设为 warning")
+	case contract.KVToolHTTPAgentCheckFail:
+		return locales.Text("将本机 TTL 检查设为 critical")
+	case contract.KVToolHTTPAgentCheckUpdate:
+		return locales.Text("更新本机 TTL 检查状态与输出")
 	}
 	return string(kind)
 }
@@ -107,7 +115,9 @@ func (s *State) requestToolsModals(c *ui.Context) {
 						ui.TextInput(c, value).Label(label).Grow(1).MinWidth(0).Disabled(d.Busy() || d.FileBusy())
 					})
 				}
-				if httpAgentCheckRequestTool(p.kind) {
+				if httpAgentTTLRequestTool(p.kind) {
+					s.httpAgentTTLToolInputs(c, d, p.kind, &input)
+				} else if httpAgentCheckRequestTool(p.kind) {
 					s.httpAgentCheckToolInputs(c, d, p.kind, &input)
 				} else if httpAgentServiceRequestTool(p.kind) {
 					s.httpAgentServiceToolInputs(c, d, p.kind, &input)

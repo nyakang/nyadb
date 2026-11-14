@@ -635,3 +635,16 @@ Clones and original lease receipt budgets include all projected entry bytes.
 `--agent-projection-probe` verifies the projection through the original Agent
 read parents and all existing health/browser/HTTP Watch parents. It rejects
 mixed scopes, retains unknown write evidence and never retries a damaged read.
+
+The public pass/warn/fail/update builders author ordinary original HTTP request
+text. Status tools retain original ID and omitted/empty note presence. A note JSON
+string preserves newline/control values without text-widget normalization;
+update retains complete Status/Output JSON. They reject hidden inputs rather
+than dropping routing or foreign semantics. The same document/one-use lease
+requires immutable write confirmation, retains complete empty ACKs, preserves
+native output truncation separately from original text, and keeps unknown
+write receipts across later reads and explicit recovery. Public TTL acceptance
+uses `--public-agent-ttl-probe --race --mode MODE --test-timeout 1200`: all 60
+foundation/regression parents and 868 images plus four public workspace/Shell
+parents and 576 bilingual wide/narrow images per official configuration.
+Maintenance and ACL/catalog/Enterprise/HA require their own acceptance.

@@ -19,7 +19,7 @@ func TestDocumentPresentationAndNamespaceRemainOriginalWithoutIO(t *testing.T) {
 	}
 	p.Methods[0].Name = "foreign"
 	p.Tools[0].Default.Key = "foreign"
-	if len(s.KVRequestPresentation().Tools) != 24 || s.KVRequestPresentation().Tools[0].Default.Key == "foreign" {
+	if len(s.KVRequestPresentation().Tools) != 28 || s.KVRequestPresentation().Tools[0].Default.Key == "foreign" {
 		t.Fatal("structured presentation aliased original inputs")
 	}
 	if s.KVRequestPresentation().Methods[0].Name != "HTTP" || calls.Load() != before {

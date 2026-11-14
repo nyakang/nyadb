@@ -54,7 +54,7 @@ func TestAgentToolsPreserveOriginalLocalFilterPresenceAndRejectForeignInputs(t *
 	}
 	tools := requestTools("original/")
 	for i, kind := range []contract.KVRequestToolKind{contract.KVToolHTTPAgentSelf, contract.KVToolHTTPAgentServices, contract.KVToolHTTPAgentChecks} {
-		if len(tools) != 24 || tools[17+i].Kind != kind || tools[17+i].Default != (contract.KVRequestToolInput{}) {
+		if len(tools) != 28 || tools[17+i].Kind != kind || tools[17+i].Default != (contract.KVRequestToolInput{}) {
 			t.Fatal("Agent tools changed existing ordering or inherited prefix")
 		}
 	}

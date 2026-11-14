@@ -39763,3 +39763,115 @@ func ConsulAgentCheckScopeHint() string { return In(i18n.Locale()).ConsulAgentCh
 func (msgs Messages) ConsulAgentCheckScopeHint() string {
 	return Catalog.Format(msgs.locale, "consulAgentCheckScopeHint", nil)
 }
+
+// ConsulAgentTTLPass says "将本机 TTL 检查设为 passing"
+// in the language the app shows.
+func ConsulAgentTTLPass() string { return In(i18n.Locale()).ConsulAgentTTLPass() }
+
+// ConsulAgentTTLPass says "将本机 TTL 检查设为 passing"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentTTLPass() string {
+	return Catalog.Format(msgs.locale, "consulAgentTTLPass", nil)
+}
+
+// ConsulAgentTTLWarn says "将本机 TTL 检查设为 warning"
+// in the language the app shows.
+func ConsulAgentTTLWarn() string { return In(i18n.Locale()).ConsulAgentTTLWarn() }
+
+// ConsulAgentTTLWarn says "将本机 TTL 检查设为 warning"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentTTLWarn() string {
+	return Catalog.Format(msgs.locale, "consulAgentTTLWarn", nil)
+}
+
+// ConsulAgentTTLFail says "将本机 TTL 检查设为 critical"
+// in the language the app shows.
+func ConsulAgentTTLFail() string { return In(i18n.Locale()).ConsulAgentTTLFail() }
+
+// ConsulAgentTTLFail says "将本机 TTL 检查设为 critical"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentTTLFail() string {
+	return Catalog.Format(msgs.locale, "consulAgentTTLFail", nil)
+}
+
+// ConsulAgentTTLUpdate says "更新本机 TTL 检查状态与输出"
+// in the language the app shows.
+func ConsulAgentTTLUpdate() string { return In(i18n.Locale()).ConsulAgentTTLUpdate() }
+
+// ConsulAgentTTLUpdate says "更新本机 TTL 检查状态与输出"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentTTLUpdate() string {
+	return Catalog.Format(msgs.locale, "consulAgentTTLUpdate", nil)
+}
+
+// ConsulAgentTTLDefinitionTitle says "完整 TTL 状态 JSON（保留原始字节）"
+// in the language the app shows.
+func ConsulAgentTTLDefinitionTitle() string { return In(i18n.Locale()).ConsulAgentTTLDefinitionTitle() }
+
+// ConsulAgentTTLDefinitionTitle says "完整 TTL 状态 JSON（保留原始字节）"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentTTLDefinitionTitle() string {
+	return Catalog.Format(msgs.locale, "consulAgentTTLDefinitionTitle", nil)
+}
+
+// ConsulAgentTTLDefinitionEditor says "编辑完整 TTL 状态 JSON"
+// in the language the app shows.
+func ConsulAgentTTLDefinitionEditor() string {
+	return In(i18n.Locale()).ConsulAgentTTLDefinitionEditor()
+}
+
+// ConsulAgentTTLDefinitionEditor says "编辑完整 TTL 状态 JSON"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentTTLDefinitionEditor() string {
+	return Catalog.Format(msgs.locale, "consulAgentTTLDefinitionEditor", nil)
+}
+
+// ConsulAgentTTLDefinitionHint says "Status 为 passing、warning 或 critical；Output 的省略、空值和 null 保留原样"
+// in the language the app shows.
+func ConsulAgentTTLDefinitionHint() string { return In(i18n.Locale()).ConsulAgentTTLDefinitionHint() }
+
+// ConsulAgentTTLDefinitionHint says "Status 为 passing、warning 或 critical；Output 的省略、空值和 null 保留原样"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentTTLDefinitionHint() string {
+	return Catalog.Format(msgs.locale, "consulAgentTTLDefinitionHint", nil)
+}
+
+// ConsulAgentTTLIncludeNote says "显式包含 note（空文本表示清空 Output）"
+// in the language the app shows.
+func ConsulAgentTTLIncludeNote() string { return In(i18n.Locale()).ConsulAgentTTLIncludeNote() }
+
+// ConsulAgentTTLIncludeNote says "显式包含 note（空文本表示清空 Output）"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentTTLIncludeNote() string {
+	return Catalog.Format(msgs.locale, "consulAgentTTLIncludeNote", nil)
+}
+
+// ConsulAgentTTLNoteEditor says "原始 note JSON 字符串"
+// in the language the app shows.
+func ConsulAgentTTLNoteEditor() string { return In(i18n.Locale()).ConsulAgentTTLNoteEditor() }
+
+// ConsulAgentTTLNoteEditor says "原始 note JSON 字符串"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentTTLNoteEditor() string {
+	return Catalog.Format(msgs.locale, "consulAgentTTLNoteEditor", nil)
+}
+
+// ConsulAgentTTLNoteHint says "使用 JSON 字符串保留换行和控制字符；省略或空文本均清空 Output，保留 Notes"
+// in the language the app shows.
+func ConsulAgentTTLNoteHint() string { return In(i18n.Locale()).ConsulAgentTTLNoteHint() }
+
+// ConsulAgentTTLNoteHint says "使用 JSON 字符串保留换行和控制字符；省略或空文本均清空 Output，保留 Notes"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentTTLNoteHint() string {
+	return Catalog.Format(msgs.locale, "consulAgentTTLNoteHint", nil)
+}
+
+// ConsulAgentTTLScopeHint says "更新原 ID 的本机 TTL 检查并重置计时；运行后另行确认"
+// in the language the app shows.
+func ConsulAgentTTLScopeHint() string { return In(i18n.Locale()).ConsulAgentTTLScopeHint() }
+
+// ConsulAgentTTLScopeHint says "更新原 ID 的本机 TTL 检查并重置计时；运行后另行确认"
+// in the language of msgs.
+func (msgs Messages) ConsulAgentTTLScopeHint() string {
+	return Catalog.Format(msgs.locale, "consulAgentTTLScopeHint", nil)
+}

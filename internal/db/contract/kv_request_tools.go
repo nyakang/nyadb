@@ -29,6 +29,10 @@ const (
 	KVToolHTTPAgentServiceDeregister KVRequestToolKind = "http-agent-service-deregister"
 	KVToolHTTPAgentCheckRegister     KVRequestToolKind = "http-agent-check-register"
 	KVToolHTTPAgentCheckDeregister   KVRequestToolKind = "http-agent-check-deregister"
+	KVToolHTTPAgentCheckPass         KVRequestToolKind = "http-agent-check-pass"
+	KVToolHTTPAgentCheckWarn         KVRequestToolKind = "http-agent-check-warn"
+	KVToolHTTPAgentCheckFail         KVRequestToolKind = "http-agent-check-fail"
+	KVToolHTTPAgentCheckUpdate       KVRequestToolKind = "http-agent-check-update"
 )
 
 // HTTP Session UUIDs are distinct from numeric leases. Empty duration, behavior
@@ -69,6 +73,15 @@ type KVHTTPAgentCheckToolInput struct {
 	ID, DefinitionJSON string
 }
 
+// TTL status tools preserve note presence. NoteJSON is an authored JSON string
+// decoded by the pure builder, so newline/control values remain exact. An empty
+// field with IncludeNote means an explicitly empty note. Update retains complete
+// Status/Output JSON. Values stay comparable without execution authority.
+type KVHTTPAgentTTLToolInput struct {
+	ID, NoteJSON, DefinitionJSON string
+	IncludeNote                  bool
+}
+
 // Optional unsigned numbers use exact decimal text: empty means omitted,
 // while "0" means explicitly supplied. Bytes use canonical padded Base64.
 // Key is absolute; a connection prefix is only an initial input suggestion.
@@ -80,6 +93,7 @@ type KVRequestToolInput struct {
 	HTTPAgent                                              KVHTTPAgentToolInput
 	HTTPAgentService                                       KVHTTPAgentServiceToolInput
 	HTTPAgentCheck                                         KVHTTPAgentCheckToolInput
+	HTTPAgentTTL                                           KVHTTPAgentTTLToolInput
 }
 
 type KVRequestTool struct {

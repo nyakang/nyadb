@@ -26,6 +26,13 @@ func optionalToolUint(text string) (*uint64, error) {
 
 func (requestBuilder) BuildKVRequest(kind contract.KVRequestToolKind, input contract.KVRequestToolInput) (contract.KVRequest, error) {
 	switch kind {
+	case contract.KVToolHTTPAgentCheckPass, contract.KVToolHTTPAgentCheckWarn, contract.KVToolHTTPAgentCheckFail, contract.KVToolHTTPAgentCheckUpdate:
+		return buildHTTPAgentTTLTool(kind, input)
+	}
+	if input.HTTPAgentTTL != (contract.KVHTTPAgentTTLToolInput{}) {
+		return contract.KVRequest{}, ErrInvalid
+	}
+	switch kind {
 	case contract.KVToolHTTPAgentCheckRegister, contract.KVToolHTTPAgentCheckDeregister:
 		return buildHTTPAgentCheckTool(kind, input)
 	}
@@ -147,6 +154,10 @@ func requestTools(prefix string) []contract.KVRequestTool {
 		{Kind: contract.KVToolHTTPAgentServiceDeregister},
 		{Kind: contract.KVToolHTTPAgentCheckRegister},
 		{Kind: contract.KVToolHTTPAgentCheckDeregister},
+		{Kind: contract.KVToolHTTPAgentCheckPass},
+		{Kind: contract.KVToolHTTPAgentCheckWarn},
+		{Kind: contract.KVToolHTTPAgentCheckFail},
+		{Kind: contract.KVToolHTTPAgentCheckUpdate},
 	}
 }
 

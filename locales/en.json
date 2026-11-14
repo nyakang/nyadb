@@ -3904,5 +3904,16 @@
   "consulAgentCheckDefinitionHint": "Preserve the name, omitted or empty ID and complete definition; existing TTL checks may retain their prior state",
   "consulAgentCheckNativeID": "Native check ID",
   "consulAgentCheckDeregisterHint": "Deregister the original local check ID; its service stays intact, with confirmation after Run",
-  "consulAgentCheckScopeHint": "Operate on the connected local Agent; key prefix, DC and check replacement options do not apply"
+  "consulAgentCheckScopeHint": "Operate on the connected local Agent; key prefix, DC and check replacement options do not apply",
+  "consulAgentTTLPass": "Set local TTL check to passing",
+  "consulAgentTTLWarn": "Set local TTL check to warning",
+  "consulAgentTTLFail": "Set local TTL check to critical",
+  "consulAgentTTLUpdate": "Update local TTL check status and output",
+  "consulAgentTTLDefinitionTitle": "Complete TTL status JSON (original bytes)",
+  "consulAgentTTLDefinitionEditor": "Edit complete TTL status JSON",
+  "consulAgentTTLDefinitionHint": "Status: passing, warning or critical; preserve omitted, empty or null Output",
+  "consulAgentTTLIncludeNote": "Include note explicitly (empty text clears Output)",
+  "consulAgentTTLNoteEditor": "Original note JSON string",
+  "consulAgentTTLNoteHint": "Use a JSON string to preserve newlines and controls; omission or empty text clears Output and retains Notes",
+  "consulAgentTTLScopeHint": "Update the original local TTL check ID and reset its timer; confirmation after Run"
 }

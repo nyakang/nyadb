@@ -3904,5 +3904,16 @@
   "consulAgentCheckDefinitionHint": "保留名称、ID 的省略或空值和完整定义；已有 TTL 检查可能保留原状态",
   "consulAgentCheckNativeID": "原生检查 ID",
   "consulAgentCheckDeregisterHint": "注销原 ID 的本机检查；关联服务保持原样，运行后另行确认",
-  "consulAgentCheckScopeHint": "操作当前连接的本机 Agent；不使用键前缀、DC 或检查替换参数"
+  "consulAgentCheckScopeHint": "操作当前连接的本机 Agent；不使用键前缀、DC 或检查替换参数",
+  "consulAgentTTLPass": "将本机 TTL 检查设为 passing",
+  "consulAgentTTLWarn": "将本机 TTL 检查设为 warning",
+  "consulAgentTTLFail": "将本机 TTL 检查设为 critical",
+  "consulAgentTTLUpdate": "更新本机 TTL 检查状态与输出",
+  "consulAgentTTLDefinitionTitle": "完整 TTL 状态 JSON（保留原始字节）",
+  "consulAgentTTLDefinitionEditor": "编辑完整 TTL 状态 JSON",
+  "consulAgentTTLDefinitionHint": "Status 为 passing、warning 或 critical；Output 的省略、空值和 null 保留原样",
+  "consulAgentTTLIncludeNote": "显式包含 note（空文本表示清空 Output）",
+  "consulAgentTTLNoteEditor": "原始 note JSON 字符串",
+  "consulAgentTTLNoteHint": "使用 JSON 字符串保留换行和控制字符；省略或空文本均清空 Output，保留 Notes",
+  "consulAgentTTLScopeHint": "更新原 ID 的本机 TTL 检查并重置计时；运行后另行确认"
 }
