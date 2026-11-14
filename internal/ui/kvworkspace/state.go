@@ -120,6 +120,8 @@ type Document struct {
 	httpSessionBrowser                                      *httpSessionBrowserState
 	httpHealthBrowser                                       *httpHealthBrowserState
 	httpHealth                                              bool
+	httpCatalogBrowser                                      *httpCatalogBrowserState
+	httpCatalog                                             bool
 	httpAgentBrowser                                        *httpAgentBrowserState
 	httpAgent                                               bool
 	httpSessions                                            bool
@@ -806,6 +808,10 @@ func (s *State) Consume() {
 						d.httpAgentBrowser.close()
 					}
 					d.httpAgentBrowser, d.httpAgent = nil, false
+					if d.httpCatalogBrowser != nil {
+						d.httpCatalogBrowser.close()
+					}
+					d.httpCatalogBrowser, d.httpCatalog = nil, false
 					d.httpSessionKeysBrowser = nil
 					d.httpSessionKeys = false
 					d.httpSessions = false
@@ -1032,6 +1038,10 @@ func (s *State) Close(d *Document) {
 		d.httpAgentBrowser.close()
 	}
 	d.httpAgentBrowser, d.httpAgent = nil, false
+	if d.httpCatalogBrowser != nil {
+		d.httpCatalogBrowser.close()
+	}
+	d.httpCatalogBrowser, d.httpCatalog = nil, false
 	d.httpSessionKeysBrowser = nil
 	d.httpSessionKeys = false
 	d.clearConfirmation()

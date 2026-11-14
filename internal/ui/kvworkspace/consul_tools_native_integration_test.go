@@ -56,7 +56,7 @@ func consulWorkspaceRunTool(t *testing.T, s *State, d *Document, write bool) {
 func TestConsulNativePublicWorkspaceStructuredToolsOriginalRequestsBytesScopesAndLeave(t *testing.T) {
 	p, secret := consulWorkspaceProfile(t)
 	s, d, m := consulWorkspaceState(t, p, secret)
-	if len(d.RequestTools()) != 30 {
+	if len(d.RequestTools()) != 35 {
 		t.Fatal("structured public tool set missing")
 	}
 	root := "native/workspace/tools/" + strings.ReplaceAll(t.Name(), "/", "-")

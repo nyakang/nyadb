@@ -35,6 +35,11 @@ const (
 	KVToolHTTPAgentCheckUpdate        KVRequestToolKind = "http-agent-check-update"
 	KVToolHTTPAgentNodeMaintenance    KVRequestToolKind = "http-agent-node-maintenance"
 	KVToolHTTPAgentServiceMaintenance KVRequestToolKind = "http-agent-service-maintenance"
+	KVToolHTTPCatalogDatacenters      KVRequestToolKind = "http-catalog-datacenters"
+	KVToolHTTPCatalogNodes            KVRequestToolKind = "http-catalog-nodes"
+	KVToolHTTPCatalogServices         KVRequestToolKind = "http-catalog-services"
+	KVToolHTTPCatalogService          KVRequestToolKind = "http-catalog-service"
+	KVToolHTTPCatalogNode             KVRequestToolKind = "http-catalog-node"
 )
 
 // HTTP Session UUIDs are distinct from numeric leases. Empty duration, behavior
@@ -59,6 +64,14 @@ type KVHTTPHealthToolInput struct {
 type KVHTTPAgentToolInput struct {
 	Filter        string
 	IncludeFilter bool
+}
+
+// Catalog tools author original reads. Presence and exact decimal text retain
+// empty filters/near values and uint64 blocking indices without credentials,
+// configured routing fields or execution authority.
+type KVHTTPCatalogToolInput struct {
+	Node, Service, Filter, Near, Index, Wait string
+	IncludeFilter, IncludeNear               bool
 }
 
 // Service tools retain the entire original definition and native ID. Explicit
@@ -105,6 +118,7 @@ type KVRequestToolInput struct {
 	HTTPAgentCheck                                         KVHTTPAgentCheckToolInput
 	HTTPAgentTTL                                           KVHTTPAgentTTLToolInput
 	HTTPAgentMaintenance                                   KVHTTPAgentMaintenanceToolInput
+	HTTPCatalog                                            KVHTTPCatalogToolInput
 }
 
 type KVRequestTool struct {

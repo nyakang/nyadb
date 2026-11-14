@@ -25,6 +25,13 @@ func optionalToolUint(text string) (*uint64, error) {
 }
 
 func (requestBuilder) BuildKVRequest(kind contract.KVRequestToolKind, input contract.KVRequestToolInput) (contract.KVRequest, error) {
+	switch kind {
+	case contract.KVToolHTTPCatalogDatacenters, contract.KVToolHTTPCatalogNodes, contract.KVToolHTTPCatalogServices, contract.KVToolHTTPCatalogService, contract.KVToolHTTPCatalogNode:
+		return buildHTTPCatalogTool(kind, input)
+	}
+	if input.HTTPCatalog != (contract.KVHTTPCatalogToolInput{}) {
+		return contract.KVRequest{}, ErrInvalid
+	}
 	if kind == contract.KVToolHTTPAgentNodeMaintenance || kind == contract.KVToolHTTPAgentServiceMaintenance {
 		return buildHTTPAgentMaintenanceTool(kind, input)
 	}
@@ -166,6 +173,11 @@ func requestTools(prefix string) []contract.KVRequestTool {
 		{Kind: contract.KVToolHTTPAgentCheckUpdate},
 		{Kind: contract.KVToolHTTPAgentNodeMaintenance, Default: contract.KVRequestToolInput{HTTPAgentMaintenance: contract.KVHTTPAgentMaintenanceToolInput{Enable: "true"}}},
 		{Kind: contract.KVToolHTTPAgentServiceMaintenance, Default: contract.KVRequestToolInput{HTTPAgentMaintenance: contract.KVHTTPAgentMaintenanceToolInput{Enable: "true"}}},
+		{Kind: contract.KVToolHTTPCatalogDatacenters},
+		{Kind: contract.KVToolHTTPCatalogNodes},
+		{Kind: contract.KVToolHTTPCatalogServices},
+		{Kind: contract.KVToolHTTPCatalogService},
+		{Kind: contract.KVToolHTTPCatalogNode},
 	}
 }
 

@@ -89,7 +89,7 @@ func TestHealthToolsRejectHiddenWritesForeignParametersAndRewrittenPaths(t *test
 func TestHealthToolsPresentationRetainsThirteenOriginalToolsAndOriginalNodeSuggestion(t *testing.T) {
 	s := &Session{cfg: Config{Prefix: "original/"}, scope: contract.KVScope{HTTP: contract.KVHTTPIdentity{AgentName: "original-node"}}}
 	tools := s.KVRequestPresentation().Tools
-	if len(tools) != 30 {
+	if len(tools) != 35 {
 		t.Fatal("health tools not published")
 	}
 	want := []contract.KVRequestToolKind{contract.KVToolRead, contract.KVToolList, contract.KVToolRaw, contract.KVToolPut, contract.KVToolDelete, contract.KVToolTransaction, contract.KVToolHTTPSessionInfo, contract.KVToolHTTPSessionCreate, contract.KVToolHTTPSessionDestroy, contract.KVToolHTTPAcquire, contract.KVToolHTTPRelease, contract.KVToolHTTPSessionList, contract.KVToolHTTPNodeSessions, contract.KVToolHTTPHealthState, contract.KVToolHTTPHealthNode, contract.KVToolHTTPHealthChecks, contract.KVToolHTTPHealthService}

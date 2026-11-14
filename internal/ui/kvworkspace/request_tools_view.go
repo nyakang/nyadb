@@ -45,6 +45,16 @@ func requestToolName(kind contract.KVRequestToolKind) string {
 		return locales.Text("读取服务健康检查")
 	case contract.KVToolHTTPHealthService:
 		return locales.Text("读取服务实例与检查")
+	case contract.KVToolHTTPCatalogDatacenters:
+		return locales.Text("Catalog 数据中心列表")
+	case contract.KVToolHTTPCatalogNodes:
+		return locales.Text("Catalog 节点列表")
+	case contract.KVToolHTTPCatalogServices:
+		return locales.Text("Catalog 服务列表")
+	case contract.KVToolHTTPCatalogService:
+		return locales.Text("Catalog 服务实例")
+	case contract.KVToolHTTPCatalogNode:
+		return locales.Text("Catalog 节点服务")
 	case contract.KVToolHTTPAgentSelf:
 		return locales.Text("读取本机 Agent 信息")
 	case contract.KVToolHTTPAgentServices:
@@ -119,7 +129,9 @@ func (s *State) requestToolsModals(c *ui.Context) {
 						ui.TextInput(c, value).Label(label).Grow(1).MinWidth(0).Disabled(d.Busy() || d.FileBusy())
 					})
 				}
-				if httpAgentMaintenanceRequestTool(p.kind) {
+				if httpCatalogRequestTool(p.kind) {
+					s.httpCatalogToolInputs(c, d, p.kind, &input)
+				} else if httpAgentMaintenanceRequestTool(p.kind) {
 					s.httpAgentMaintenanceToolInputs(c, d, p.kind, &input)
 				} else if httpAgentTTLRequestTool(p.kind) {
 					s.httpAgentTTLToolInputs(c, d, p.kind, &input)

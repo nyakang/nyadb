@@ -34,7 +34,7 @@ func TestAgentCheckToolsPreserveOriginalDefinitionsDefaultsIDsAndScope(t *testin
 		}
 	}
 	tools := requestTools("foreign/prefix/")
-	if len(tools) != 30 || tools[22].Kind != contract.KVToolHTTPAgentCheckRegister || tools[23].Kind != contract.KVToolHTTPAgentCheckDeregister || tools[22].Default != (contract.KVRequestToolInput{}) || tools[23].Default != (contract.KVRequestToolInput{}) {
+	if len(tools) != 35 || tools[22].Kind != contract.KVToolHTTPAgentCheckRegister || tools[23].Kind != contract.KVToolHTTPAgentCheckDeregister || tools[22].Default != (contract.KVRequestToolInput{}) || tools[23].Default != (contract.KVRequestToolInput{}) {
 		t.Fatal("check publication inherited prefix or changed existing tools")
 	}
 }

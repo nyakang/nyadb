@@ -28,7 +28,7 @@ func TestConsulNativePublicShellSessionToolsOriginalFormsTabsReceiptsAndRecovery
 	first := s.currentTab()
 	d := first.kv
 	consulShellGridWait(t, tt, func() bool { return !d.Busy() })
-	if len(d.RequestTools()) != 20 {
+	if len(d.RequestTools()) != 35 {
 		t.Fatal("Shell missing public Session tools")
 	}
 	if !s.OpenKVRequests(p.ID) {

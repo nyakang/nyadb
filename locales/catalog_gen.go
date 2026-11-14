@@ -39991,3 +39991,233 @@ func ConsulAgentMaintenanceServiceIDInput() string {
 func (msgs Messages) ConsulAgentMaintenanceServiceIDInput() string {
 	return Catalog.Format(msgs.locale, "consulAgentMaintenanceServiceIDInput", nil)
 }
+
+// ConsulCatalogServiceNameInput says "Catalog 原服务名"
+// in the language the app shows.
+func ConsulCatalogServiceNameInput() string { return In(i18n.Locale()).ConsulCatalogServiceNameInput() }
+
+// ConsulCatalogServiceNameInput says "Catalog 原服务名"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogServiceNameInput() string {
+	return Catalog.Format(msgs.locale, "consulCatalogServiceNameInput", nil)
+}
+
+// ConsulCatalogNodeNameInput says "Catalog 原节点名"
+// in the language the app shows.
+func ConsulCatalogNodeNameInput() string { return In(i18n.Locale()).ConsulCatalogNodeNameInput() }
+
+// ConsulCatalogNodeNameInput says "Catalog 原节点名"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogNodeNameInput() string {
+	return Catalog.Format(msgs.locale, "consulCatalogNodeNameInput", nil)
+}
+
+// ConsulCatalogFilterInput says "Catalog 原生 filter"
+// in the language the app shows.
+func ConsulCatalogFilterInput() string { return In(i18n.Locale()).ConsulCatalogFilterInput() }
+
+// ConsulCatalogFilterInput says "Catalog 原生 filter"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogFilterInput() string {
+	return Catalog.Format(msgs.locale, "consulCatalogFilterInput", nil)
+}
+
+// ConsulCatalogNearInput says "Catalog 原生 near"
+// in the language the app shows.
+func ConsulCatalogNearInput() string { return In(i18n.Locale()).ConsulCatalogNearInput() }
+
+// ConsulCatalogNearInput says "Catalog 原生 near"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogNearInput() string {
+	return Catalog.Format(msgs.locale, "consulCatalogNearInput", nil)
+}
+
+// ConsulCatalogIndexInput says "原生 index（留空省略）"
+// in the language the app shows.
+func ConsulCatalogIndexInput() string { return In(i18n.Locale()).ConsulCatalogIndexInput() }
+
+// ConsulCatalogIndexInput says "原生 index（留空省略）"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogIndexInput() string {
+	return Catalog.Format(msgs.locale, "consulCatalogIndexInput", nil)
+}
+
+// ConsulCatalogWaitInput says "原生 wait（需要 index）"
+// in the language the app shows.
+func ConsulCatalogWaitInput() string { return In(i18n.Locale()).ConsulCatalogWaitInput() }
+
+// ConsulCatalogWaitInput says "原生 wait（需要 index）"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogWaitInput() string {
+	return Catalog.Format(msgs.locale, "consulCatalogWaitInput", nil)
+}
+
+// ConsulCatalogScopeHint says "使用原连接的 DC 与一致性配置；Catalog 读取不使用键前缀"
+// in the language the app shows.
+func ConsulCatalogScopeHint() string { return In(i18n.Locale()).ConsulCatalogScopeHint() }
+
+// ConsulCatalogScopeHint says "使用原连接的 DC 与一致性配置；Catalog 读取不使用键前缀"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogScopeHint() string {
+	return Catalog.Format(msgs.locale, "consulCatalogScopeHint", nil)
+}
+
+// ConsulCatalogReadHint says "只生成 Catalog 读取请求；运行后查看原响应"
+// in the language the app shows.
+func ConsulCatalogReadHint() string { return In(i18n.Locale()).ConsulCatalogReadHint() }
+
+// ConsulCatalogReadHint says "只生成 Catalog 读取请求；运行后查看原响应"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogReadHint() string {
+	return Catalog.Format(msgs.locale, "consulCatalogReadHint", nil)
+}
+
+// ConsulCatalogDatacentersTool says "Catalog 数据中心列表"
+// in the language the app shows.
+func ConsulCatalogDatacentersTool() string { return In(i18n.Locale()).ConsulCatalogDatacentersTool() }
+
+// ConsulCatalogDatacentersTool says "Catalog 数据中心列表"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogDatacentersTool() string {
+	return Catalog.Format(msgs.locale, "consulCatalogDatacentersTool", nil)
+}
+
+// ConsulCatalogNodesTool says "Catalog 节点列表"
+// in the language the app shows.
+func ConsulCatalogNodesTool() string { return In(i18n.Locale()).ConsulCatalogNodesTool() }
+
+// ConsulCatalogNodesTool says "Catalog 节点列表"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogNodesTool() string {
+	return Catalog.Format(msgs.locale, "consulCatalogNodesTool", nil)
+}
+
+// ConsulCatalogServicesTool says "Catalog 服务列表"
+// in the language the app shows.
+func ConsulCatalogServicesTool() string { return In(i18n.Locale()).ConsulCatalogServicesTool() }
+
+// ConsulCatalogServicesTool says "Catalog 服务列表"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogServicesTool() string {
+	return Catalog.Format(msgs.locale, "consulCatalogServicesTool", nil)
+}
+
+// ConsulCatalogServiceTool says "Catalog 服务实例"
+// in the language the app shows.
+func ConsulCatalogServiceTool() string { return In(i18n.Locale()).ConsulCatalogServiceTool() }
+
+// ConsulCatalogServiceTool says "Catalog 服务实例"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogServiceTool() string {
+	return Catalog.Format(msgs.locale, "consulCatalogServiceTool", nil)
+}
+
+// ConsulCatalogNodeTool says "Catalog 节点服务"
+// in the language the app shows.
+func ConsulCatalogNodeTool() string { return In(i18n.Locale()).ConsulCatalogNodeTool() }
+
+// ConsulCatalogNodeTool says "Catalog 节点服务"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogNodeTool() string {
+	return Catalog.Format(msgs.locale, "consulCatalogNodeTool", nil)
+}
+
+// ConsulCatalogACLBoundary says "Catalog 响应受 ACL 过滤或不完整；仅展示原响应返回的条目"
+// in the language the app shows.
+func ConsulCatalogACLBoundary() string { return In(i18n.Locale()).ConsulCatalogACLBoundary() }
+
+// ConsulCatalogACLBoundary says "Catalog 响应受 ACL 过滤或不完整；仅展示原响应返回的条目"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogACLBoundary() string {
+	return Catalog.Format(msgs.locale, "consulCatalogACLBoundary", nil)
+}
+
+// ConsulCatalogNullNodeHint says "原节点查询返回 null；此观察不提供写入权限"
+// in the language the app shows.
+func ConsulCatalogNullNodeHint() string { return In(i18n.Locale()).ConsulCatalogNullNodeHint() }
+
+// ConsulCatalogNullNodeHint says "原节点查询返回 null；此观察不提供写入权限"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogNullNodeHint() string {
+	return Catalog.Format(msgs.locale, "consulCatalogNullNodeHint", nil)
+}
+
+// ConsulCatalogBackToList says "返回 Catalog 列表"
+// in the language the app shows.
+func ConsulCatalogBackToList() string { return In(i18n.Locale()).ConsulCatalogBackToList() }
+
+// ConsulCatalogBackToList says "返回 Catalog 列表"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogBackToList() string {
+	return Catalog.Format(msgs.locale, "consulCatalogBackToList", nil)
+}
+
+// ConsulCatalogValueDetail says "Catalog 原值详情"
+// in the language the app shows.
+func ConsulCatalogValueDetail() string { return In(i18n.Locale()).ConsulCatalogValueDetail() }
+
+// ConsulCatalogValueDetail says "Catalog 原值详情"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogValueDetail() string {
+	return Catalog.Format(msgs.locale, "consulCatalogValueDetail", nil)
+}
+
+// ConsulCatalogFilterReturned says "筛选已返回的 Catalog 条目"
+// in the language the app shows.
+func ConsulCatalogFilterReturned() string { return In(i18n.Locale()).ConsulCatalogFilterReturned() }
+
+// ConsulCatalogFilterReturned says "筛选已返回的 Catalog 条目"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogFilterReturned() string {
+	return Catalog.Format(msgs.locale, "consulCatalogFilterReturned", nil)
+}
+
+// ConsulCatalogPageSummary says "第 %d/%d 页 · 匹配 %d/%d 个 Catalog 条目"
+// in the language the app shows.
+func ConsulCatalogPageSummary() string { return In(i18n.Locale()).ConsulCatalogPageSummary() }
+
+// ConsulCatalogPageSummary says "第 %d/%d 页 · 匹配 %d/%d 个 Catalog 条目"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogPageSummary() string {
+	return Catalog.Format(msgs.locale, "consulCatalogPageSummary", nil)
+}
+
+// ConsulCatalogCopyValue says "复制所选 Catalog 原值 JSON"
+// in the language the app shows.
+func ConsulCatalogCopyValue() string { return In(i18n.Locale()).ConsulCatalogCopyValue() }
+
+// ConsulCatalogCopyValue says "复制所选 Catalog 原值 JSON"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogCopyValue() string {
+	return Catalog.Format(msgs.locale, "consulCatalogCopyValue", nil)
+}
+
+// ConsulCatalogExportValue says "导出所选 Catalog 原值 JSON"
+// in the language the app shows.
+func ConsulCatalogExportValue() string { return In(i18n.Locale()).ConsulCatalogExportValue() }
+
+// ConsulCatalogExportValue says "导出所选 Catalog 原值 JSON"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogExportValue() string {
+	return Catalog.Format(msgs.locale, "consulCatalogExportValue", nil)
+}
+
+// ConsulCatalogReturnedEntries says "已返回的 Catalog 条目"
+// in the language the app shows.
+func ConsulCatalogReturnedEntries() string { return In(i18n.Locale()).ConsulCatalogReturnedEntries() }
+
+// ConsulCatalogReturnedEntries says "已返回的 Catalog 条目"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogReturnedEntries() string {
+	return Catalog.Format(msgs.locale, "consulCatalogReturnedEntries", nil)
+}
+
+// ConsulCatalogBrowserTitle says "Catalog 原响应浏览器"
+// in the language the app shows.
+func ConsulCatalogBrowserTitle() string { return In(i18n.Locale()).ConsulCatalogBrowserTitle() }
+
+// ConsulCatalogBrowserTitle says "Catalog 原响应浏览器"
+// in the language of msgs.
+func (msgs Messages) ConsulCatalogBrowserTitle() string {
+	return Catalog.Format(msgs.locale, "consulCatalogBrowserTitle", nil)
+}

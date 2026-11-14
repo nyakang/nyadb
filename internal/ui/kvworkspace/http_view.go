@@ -39,6 +39,7 @@ func (s *State) httpReceiptView(c *ui.Context, d *Document, r *Receipt) {
 	ui.Toolbar(c, func() {
 		if ui.Button(c, locales.Text("HTTP 原正文")).Clicked() {
 			d.httpAgent = false
+			d.httpCatalog = false
 			d.httpHealth = false
 			d.httpSessionKeys = false
 			d.httpHeaders = false
@@ -46,6 +47,7 @@ func (s *State) httpReceiptView(c *ui.Context, d *Document, r *Receipt) {
 		}
 		if ui.Button(c, locales.Text("HTTP 头与元数据")).Clicked() {
 			d.httpAgent = false
+			d.httpCatalog = false
 			d.httpHealth = false
 			d.httpSessionKeys = false
 			d.httpHeaders = true
@@ -59,6 +61,11 @@ func (s *State) httpReceiptView(c *ui.Context, d *Document, r *Receipt) {
 		if healthReceiptProjection(r) != nil && r.Scope.Namespace.ProfileID == d.profileID {
 			if ui.Button(c, locales.Text("健康检查与服务实例")).Disabled(d.Busy()).Clicked() {
 				d.httpHealth = true
+			}
+		}
+		if catalogReceiptProjection(r) != nil && r.Scope.Namespace.ProfileID == d.profileID {
+			if ui.Button(c, locales.Text("Catalog 原响应浏览器")).Disabled(d.Busy()).Clicked() {
+				d.httpCatalog = true
 			}
 		}
 		if agentReceiptProjection(r) != nil && r.Scope.Namespace.ProfileID == d.profileID {

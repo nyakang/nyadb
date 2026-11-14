@@ -714,3 +714,17 @@ clones and original document lease budgets include all Catalog evidence.
 phases and three projection parents in a tenth phase, retaining all 1988 images
 per official configuration. Public Catalog tools/browser, ACL/archives and
 Enterprise/HA retain separate acceptance requirements.
+
+
+Five structured Catalog read tools preserve exact names and native filter/near/
+uint64 index/wait presence through the original HTTP document. The original
+response browser retains native map/array identity and order, local search,
+50-row pages, complete original selected-value JSON and bounded previews. Native
+node null, ACL completeness, unknown writes, parking and explicit recovery stay
+independent; browsing and generating text never dispatch requests.
+
+`--public-catalog-probe --race --mode MODE --test-timeout 1200` requires 84 native
+parents in 11 phases and 2120 images per official configuration: all 80 accepted
+Catalog/projection/maintenance parents and 1988 images plus four public parents
+and 132 images. ACL management/secret handling, archives, Enterprise/HA and every
+other full 88/110 alignment gap remain separate incomplete work.

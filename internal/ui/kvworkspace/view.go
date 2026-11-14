@@ -638,6 +638,7 @@ func (s *State) Modals(c *ui.Context) {
 	s.httpSessionBrowserModals(c)
 	s.httpHealthBrowserModals(c)
 	s.httpAgentBrowserModals(c)
+	s.httpCatalogBrowserModals(c)
 	s.httpSessionKeysModals(c)
 	s.requestToolsModals(c)
 	s.snapshotModals(c)

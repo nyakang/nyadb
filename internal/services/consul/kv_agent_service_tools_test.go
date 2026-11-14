@@ -38,7 +38,7 @@ func TestAgentServiceToolsRetainCompleteDefinitionAndEveryReplacementPresence(t 
 		}
 	}
 	tools := requestTools("foreign-prefix/")
-	if len(tools) != 30 || tools[20].Kind != contract.KVToolHTTPAgentServiceRegister || tools[21].Kind != contract.KVToolHTTPAgentServiceDeregister || tools[20].Default != (contract.KVRequestToolInput{}) || tools[21].Default != (contract.KVRequestToolInput{}) {
+	if len(tools) != 35 || tools[20].Kind != contract.KVToolHTTPAgentServiceRegister || tools[21].Kind != contract.KVToolHTTPAgentServiceDeregister || tools[20].Default != (contract.KVRequestToolInput{}) || tools[21].Default != (contract.KVRequestToolInput{}) {
 		t.Fatal("service tools inherited prefix or changed original ordering")
 	}
 }

@@ -17,7 +17,8 @@ func requestToolTextFields(input contract.KVRequestToolInput) []string {
 	check := input.HTTPAgentCheck
 	ttl := input.HTTPAgentTTL
 	maintenance := input.HTTPAgentMaintenance
-	return []string{input.Key, input.ValueBase64, input.Flags, input.CompareIndex, input.TransactionJSON, s.ID, s.Name, s.Node, s.TTL, s.LockDelay, s.Behavior, s.NodeChecksJSON, h.State, h.Node, h.Service, h.Passing, h.Filter, h.Near, h.Index, h.Wait, input.HTTPAgent.Filter, a.ID, a.DefinitionJSON, a.ReplaceExistingChecks, check.ID, check.DefinitionJSON, ttl.ID, ttl.NoteJSON, ttl.DefinitionJSON, maintenance.ID, maintenance.Enable, maintenance.ReasonJSON}
+	catalog := input.HTTPCatalog
+	return []string{input.Key, input.ValueBase64, input.Flags, input.CompareIndex, input.TransactionJSON, s.ID, s.Name, s.Node, s.TTL, s.LockDelay, s.Behavior, s.NodeChecksJSON, h.State, h.Node, h.Service, h.Passing, h.Filter, h.Near, h.Index, h.Wait, input.HTTPAgent.Filter, a.ID, a.DefinitionJSON, a.ReplaceExistingChecks, check.ID, check.DefinitionJSON, ttl.ID, ttl.NoteJSON, ttl.DefinitionJSON, maintenance.ID, maintenance.Enable, maintenance.ReasonJSON, catalog.Node, catalog.Service, catalog.Filter, catalog.Near, catalog.Index, catalog.Wait}
 }
 
 func requestToolInputSize(input contract.KVRequestToolInput) int {

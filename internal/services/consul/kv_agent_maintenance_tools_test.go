@@ -33,7 +33,7 @@ func TestAgentMaintenanceToolsPreserveNativeBooleanReasonPresenceAndControlText(
 		}
 	}
 	tools := requestTools("foreign-prefix/")
-	if len(tools) != 30 || tools[28].Kind != contract.KVToolHTTPAgentNodeMaintenance || tools[29].Kind != contract.KVToolHTTPAgentServiceMaintenance || tools[28].Default.HTTPAgentMaintenance.Enable != "true" || tools[29].Default.HTTPAgentMaintenance.ID != "" {
+	if len(tools) != 35 || tools[28].Kind != contract.KVToolHTTPAgentNodeMaintenance || tools[29].Kind != contract.KVToolHTTPAgentServiceMaintenance || tools[28].Default.HTTPAgentMaintenance.Enable != "true" || tools[29].Default.HTTPAgentMaintenance.ID != "" {
 		t.Fatal("maintenance tools inherited foreign targets or defaults")
 	}
 }
