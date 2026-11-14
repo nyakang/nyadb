@@ -272,7 +272,13 @@ func validateRequest(r Request) (string, bool, int, error) {
 		case "/v1/agent/self", "/v1/status/leader", "/v1/status/peers", "/v1/catalog/datacenters":
 		case "/v1/agent/services", "/v1/agent/checks":
 			allowed["filter"] = true
-		case "/v1/catalog/nodes", "/v1/catalog/services", "/v1/session/list":
+		case "/v1/catalog/nodes":
+			readQuery()
+			allowed["filter"], allowed["near"] = true, true
+		case "/v1/catalog/services":
+			readQuery()
+			allowed["filter"] = true
+		case "/v1/session/list":
 			readQuery()
 		default:
 			match := false
@@ -287,6 +293,15 @@ func validateRequest(r Request) (string, bool, int, error) {
 					}
 					match = true
 					readQuery()
+					if strings.HasPrefix(prefix, "/v1/catalog/") {
+						if !canonicalHTTPKey(key) {
+							return "", false, 0, ErrUnsupported
+						}
+						allowed["filter"] = true
+						if prefix == "/v1/catalog/service/" {
+							allowed["near"] = true
+						}
+					}
 					if strings.HasPrefix(prefix, "/v1/health/") {
 						allowed["filter"], allowed["near"] = true, true
 					}

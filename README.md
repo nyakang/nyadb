@@ -220,3 +220,14 @@ on 2.0.2 anonymous/token/TLS/mTLS and 1.22.3 token, requiring 46 original native
 workspace/Shell parents, 264 service images and 312 Agent/health/Watch regression
 images per configuration. Maintenance uses the dedicated acceptance scope above;
 other management capabilities retain their separate acceptance requirements.
+
+
+Consul Catalog read builders preserve exact names, filters and blocking options
+through the original HTTP document. Native near ordering is available for nodes
+and service instances; ignored near options on service lists/node details fail
+before I/O. `--catalog-read-probe --race --mode MODE --test-timeout 1200` requires
+three Catalog parents plus all 74 accepted public maintenance/TTL/check/service/
+browser parents and their 1988 images on each official configuration. Original
+ACL-filtered receipts, absent-node null, cancellation and unknown-write barriers
+stay independent. Structured Catalog tools/browser and other management
+capabilities retain their separate acceptance requirements.

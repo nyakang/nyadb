@@ -683,3 +683,20 @@ service/browser parents. Each official configuration retains all 1444 regression
 images and adds 544 bilingual wide/narrow maintenance images. Missing/SKIP cases
 fail acceptance. Separate no-Agent-token evidence supplements these five full
 configurations. ACL/catalog/archives/Enterprise/HA remain future acceptance work.
+
+
+Catalog datacenters/nodes/services/service-instances/node-services have pure
+request builders using the original Client and document lease. Original names,
+filter presence/text, uint64 blocking indices and wait text remain complete.
+Near applies only to nodes and service-instance lists; services/node details
+reject the ignored option. Datacenter lists reject indexed/filter options, and
+configured DC/consistency remain with the original client. Noncanonical names,
+hidden scope/credentials and unsupported options fail before I/O. Original null
+node receipts and ACL-filtered completeness remain distinct from absence.
+
+`--catalog-read-probe --race --mode MODE --test-timeout 1200` requires three
+Catalog parents and all 74 accepted public maintenance/TTL/check/service/browser
+parents, retaining all 1988 original images per official configuration. Original
+read faults never retry; Catalog reads and evidence-only recovery cannot confirm
+unknown writes. Catalog projections and public structured tools/browser,
+ACL/archives/Enterprise/HA remain separate acceptance work.

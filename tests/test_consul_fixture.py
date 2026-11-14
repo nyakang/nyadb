@@ -9,6 +9,45 @@ spec.loader.exec_module(fixture)
 
 
 class ConsulFixtureTests(unittest.TestCase):
+    def test_catalog_read_scope_keeps_all_public_maintenance_parents(self):
+        previous = self.copy_scope_before_startup(public_agent_maintenance_probe=True)
+        report = self.copy_scope_before_startup(catalog_read_probe=True)
+        required = fixture.CATALOG_READ_REQUIRED + tuple(previous['required'])
+        self.assertEqual(tuple(report['required']), required)
+        self.assertEqual(len(required), 77)
+        self.assertEqual(len(set(required)), 77)
+        self.assertFalse(report['production_catalog_tools_published'])
+        self.assertTrue(report['production_agent_maintenance_tools_published'])
+        self.assertEqual(report['scope'], 'private-consul-native-catalog-reads-with-public-maintenance-ttl-check-service-browser-regression')
+        log = '\n'.join('--- PASS: TestConsulNative'+name+' (0.1s)' for name in required)
+        for name in required:
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                fixture.accepted_cases(log.replace('--- PASS: TestConsulNative'+name+' ', '--- SKIP: TestConsulNative'+name+' '), required)
+
+    def test_catalog_read_scope_keeps_all_eight_prior_phases(self):
+        import re
+        report = self.copy_scope_before_startup(catalog_read_probe=True)
+        required = tuple(report['required'])
+        phases = fixture.catalog_read_acceptance_test_phases(report['packages'], required, True, 1200)
+        retained = tuple(name for name in required if name not in fixture.CATALOG_READ_REQUIRED)
+        self.assertEqual(phases[:-1], fixture.public_agent_maintenance_acceptance_test_phases(report['packages'], retained, True, 1200))
+        self.assertEqual(len(phases), 9)
+        scheduled = [name for phase in phases for name in re.findall(r'TestConsulNative(\w+)', phase[phase.index('-run')+1])]
+        self.assertCountEqual(scheduled, required)
+        for phase in phases:
+            for argument in ('-race', '-count=1', '-timeout=1200s'):
+                self.assertIn(argument, phase)
+        for name in fixture.CATALOG_READ_REQUIRED:
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                fixture.catalog_read_acceptance_test_phases(report['packages'], tuple(n for n in required if n != name), True, 1200)
+
+    def test_catalog_read_rejects_combined_scopes_before_fixture_startup(self):
+        import inspect
+        for name, parameter in inspect.signature(fixture.verify).parameters.items():
+            if parameter.default is False and name not in ('race', 'catalog_read_probe'):
+                with self.subTest(name=name), self.assertRaises(ValueError):
+                    fixture.verify(catalog_read_probe=True, **{name: True})
+
     def test_public_maintenance_retains_foundation_and_requires_all_original_images(self):
         previous = self.copy_scope_before_startup(agent_maintenance_probe=True)
         report = self.copy_scope_before_startup(public_agent_maintenance_probe=True)
