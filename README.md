@@ -186,7 +186,13 @@ Native long-output truncation never truncates the authored request. Public
 all 60 foundation/regression parents and 868 images, adds four workspace/Shell
 parents and 576 bilingual wide/narrow images, and rejects every missing/SKIP case.
 Unknown writes retain their original barrier across later reads and explicit
-recovery. Node/service maintenance remains a separate acceptance step.
+recovery. Native node/service maintenance requests retain exact local targets,
+enable/reason values and complete original endpoint receipts through the same
+document lease. A local disable ACK remains separate from catalog health;
+explicit recovery never issues a maintenance request. Dedicated foundation
+acceptance requires six new and all 64 accepted TTL/check/service/browser parents
+on every official configuration, plus separate no-Agent-token stale-catalog
+evidence. Structured maintenance tools remain a separate acceptance step.
 
 Consul local Agent service tools use the existing original HTTP document and
 one-use lease. Registration retains complete authored JSON; deregistration uses

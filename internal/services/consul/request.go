@@ -118,9 +118,9 @@ func validateRequest(r Request) (string, bool, int, error) {
 		if len(values) != 1 || !validText(key, 128) {
 			return "", false, 0, ErrInvalid
 		}
-		if key == "note" && agentTTLStatusKind(r.Path) != "" {
-			// Notes become native Output; URL encoding preserves multiline/control
-			// characters without placing them in the path or HTTP headers.
+		if key == "note" && agentTTLStatusKind(r.Path) != "" || key == "reason" && agentMaintenanceKind(r.Path) != "" {
+			// TTL notes become Output; maintenance reasons become Notes. URL
+			// encoding preserves control text outside paths and HTTP headers.
 			if len(values[0]) > requestLimit || !utf8.ValidString(values[0]) {
 				return "", false, 0, ErrInvalid
 			}
@@ -136,6 +136,21 @@ func validateRequest(r Request) (string, bool, int, error) {
 		}
 	}
 	switch {
+	case agentMaintenanceKind(r.Path) != "":
+		kind = agentMaintenanceKind(r.Path)
+		if r.Method != http.MethodPut || len(r.Body) != 0 || !r.Query.Has("enable") {
+			return "", false, 0, ErrInvalid
+		}
+		if kind == "agent-service-maintenance" {
+			id, err := keyAt(r.Path, "/v1/agent/service/maintenance/", false)
+			if err != nil || !validText(id, 4096) {
+				return "", false, 0, ErrInvalid
+			}
+			if !canonicalHTTPKey(id) {
+				return "", false, 0, ErrUnsupported
+			}
+		}
+		allowed["enable"], allowed["reason"] = true, true
 	case r.Path == "/v1/agent/service/register" && r.Method == http.MethodPut:
 		if err := validateAgentServiceDefinition(r.Body); err != nil {
 			return "", false, 0, err
@@ -298,8 +313,12 @@ func validateRequest(r Request) (string, bool, int, error) {
 			if !exactUint(v) {
 				return "", false, 0, ErrInvalid
 			}
-		case "filter", "near", "note":
-			// Native read options retain their authored string, including empty.
+		case "filter", "near", "note", "reason":
+			// Native text options retain their authored string, including empty.
+		case "enable":
+			if _, err := strconv.ParseBool(v); err != nil {
+				return "", false, 0, ErrInvalid
+			}
 		case "passing", "replace-existing-checks":
 			if v != "" && v != "true" && v != "false" {
 				return "", false, 0, ErrInvalid

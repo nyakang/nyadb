@@ -648,3 +648,21 @@ uses `--public-agent-ttl-probe --race --mode MODE --test-timeout 1200`: all 60
 foundation/regression parents and 868 images plus four public workspace/Shell
 parents and 576 bilingual wide/narrow images per official configuration.
 Maintenance and ACL/catalog/Enterprise/HA require their own acceptance.
+
+Node and service maintenance requests use the original local Agent, the same
+Client, document lease and Manager. Required native enable booleans and original
+service IDs remain exact; omitted/empty reasons, complete UTF-8/control text and
+repeated-enable Notes follow native behavior. A complete empty HTTP 200 receipt
+acknowledges the local endpoint separately from observed catalog health. In
+particular, disabling maintenance without an Agent token can remove the local
+check while leaving the catalog critical. Recovery never issues maintenance.
+
+`--agent-maintenance-probe --race --mode MODE --test-timeout 1200` requires six
+maintenance parents and all 64 accepted public TTL/check/service/browser parents,
+retaining 1444 images per official configuration. Catalog restoration runs before
+retained TTL tests can make the node critical. ACL fixtures explicitly configure
+their owned Agent token. Separate token-only
+`--agent-maintenance-no-agent-token-probe --race --mode token` evidence verifies
+the original document's local ACK and stale catalog; it does not substitute for
+the full five-configuration acceptance. Structured maintenance tools and
+ACL/catalog/Enterprise/HA retain their separate acceptance requirements.
