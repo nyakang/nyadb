@@ -12,7 +12,7 @@ import (
 )
 
 var h2Modes = []struct{ value, caption string }{{"file", "本地文件"}, {"memory", "内存数据库"}, {"tcp", "TCP 服务器"}, {"ssl", "TLS 服务器"}}
-var h2Profiles = []struct{ value, caption string }{{"h2-v1", "H2 1.4"}, {"h2-v2", "H2 2.0 / 2.1"}, {"h2-v3", "H2 2.2 / 2.3 / 2.4"}, {"h2-legacy", "H2 Legacy"}}
+var h2Profiles = []struct{ value, caption string }{{"h2-auto", "自动匹配文件格式"}, {"h2-v1", "H2 1.4"}, {"h2-v2", "H2 2.0 / 2.1"}, {"h2-v3", "H2 2.2 / 2.3 / 2.4"}, {"h2-legacy", "H2 Legacy"}, {"h2-custom", "自定义 JDBC JAR"}}
 var h2NumberLabels = []string{"连接超时（秒）", "查询超时（秒）", "连接池等待（毫秒）", "最大连接数", "元数据预留连接数", "SQL 会话上限"}
 
 // h2FileBasePath keeps the selected or typed file name separate from the
@@ -37,6 +37,9 @@ func (s *State) initializeH2Inputs() {
 		s.h2Numbers[i] = strconv.Itoa(n)
 	}
 	s.h2DriverChoice = a.DriverVersion
+	if s.h2CustomClass == "" {
+		s.h2CustomClass = "org.h2.Driver"
+	}
 }
 
 func (s *State) setH2Mode(mode string) {
@@ -103,6 +106,9 @@ func (s *State) editorH2Fields(c *ui.Context, labelWidth, fieldWidth float32) {
 		}
 	}
 	s.h2DriverField(c, fieldWidth)
+	if a.DriverProfile == "h2-custom" {
+		ui.Text(c, locales.Text("在高级页选择 JDBC JAR 并导入。")).Width(fieldWidth).FontSize(theme.Font(c, 11)).TextColor(theme.Colors(c).Muted)
+	}
 	if a.Mode == "tcp" || a.Mode == "ssl" {
 		s.editorInputRow(c, "主机：", "主机", &p.Host, labelWidth, fieldWidth)
 		s.editorInputRow(c, "端口：", "端口", &s.connectionPort, labelWidth, 100)
@@ -190,6 +196,9 @@ func (s *State) h2Advanced(c *ui.Context, width float32) {
 	a := &s.connectionDraft.H2Options
 	formWidth := connectionScaledFormWidth(c, width)
 	theme.Form(c, formWidth, func() {
+		if a.DriverProfile == "h2-custom" {
+			s.h2CustomFields(c, formWidth-160)
+		}
 		before := a.ReadOnly
 		connectionFormCheckbox(c, &a.ReadOnly, "只读连接", a.Mode != "file")
 		if before != a.ReadOnly {
@@ -213,6 +222,54 @@ func (s *State) h2Advanced(c *ui.Context, width float32) {
 		}
 		ui.Text(c, locales.Text("SQL 与数据操作共享连接池；元数据预留连接用于浏览数据库结构。")).Width(formWidth).FontSize(theme.Font(c, 11)).TextColor(theme.Colors(c).Muted)
 	})
+}
+
+func (s *State) h2CustomFields(c *ui.Context, fieldWidth float32) {
+	choices := []string{locales.Text("未选择基础驱动包")}
+	for _, d := range s.driverWork.packages {
+		choices = append(choices, d.Version)
+	}
+	if s.h2CustomBase == "" && s.connectionDraft.H2Options.DriverVersion != "" {
+		s.h2CustomBase = s.connectionDraft.H2Options.DriverVersion
+	}
+	if s.h2CustomBase == "" {
+		s.h2CustomBase = choices[0]
+	}
+	theme.Field(c, locales.Text("基础驱动包："), func() {
+		connectionFormSelect(c, &s.h2CustomBase, choices, "H2 基础驱动包", fieldWidth, s.driverWork.results != nil)
+	})
+	theme.Field(c, locales.Text("JDBC 驱动类："), func() { s.formTextInput(c, &s.h2CustomClass, "H2 JDBC 驱动类", fieldWidth, false, false) })
+	remove := -1
+	for i := range s.h2CustomPaths {
+		theme.Field(c, fmt.Sprintf(locales.Text("JDBC JAR %d："), i+1), func() {
+			ui.Row(c).Gap(6).Children(func() {
+				s.formTextInput(c, &s.h2CustomPaths[i], fmt.Sprintf("H2 JDBC JAR %d", i+1), fieldWidth-100, false, false)
+				if ui.Button(c, fmt.Sprintf("%s %d", locales.Text("移除 JAR"), i+1)).Clicked() {
+					remove = i
+				}
+			})
+		})
+	}
+	if remove >= 0 {
+		s.h2CustomPaths = append(s.h2CustomPaths[:remove], s.h2CustomPaths[remove+1:]...)
+		s.engineFileVersion++
+	}
+	ui.Row(c).Gap(8).Children(func() {
+		if ui.Button(c, locales.Text("添加 JDBC JAR")).Disabled(s.engineFilePicker == nil).Clicked() {
+			s.engineFilePicker(H2CustomJARFile, -1, s.engineFileVersion)
+		}
+		if ui.Button(c, locales.Text("添加 JAR 路径")).Clicked() {
+			s.h2CustomPaths = append(s.h2CustomPaths, "")
+			s.engineFileVersion++
+		}
+		if ui.Button(c, locales.Text("导入自定义 JDBC 驱动")).Disabled(s.driverPackages.ImportJDBC == nil || s.driverWork.results != nil).Clicked() {
+			s.ImportJDBCDriver()
+		}
+	})
+	ui.Text(c, locales.Text("导入后使用已保存的 JAR 和本地依赖。")).Width(fieldWidth).FontSize(theme.Font(c, 11)).TextColor(theme.Colors(c).Muted)
+	if s.driverWork.message != "" {
+		ui.Text(c, locales.Text(s.driverWork.message)).Width(fieldWidth).FontSize(theme.Font(c, 11)).TextColor(theme.Colors(c).Error)
+	}
 }
 
 func (s *State) advanceH2Options(p *connections.Profile) error {

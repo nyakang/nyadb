@@ -238,7 +238,7 @@ def main():
             architecture = {'x86_64': 'amd64', 'aarch64': 'arm64'}.get(platform.machine())
             if not architecture:
                 raise RuntimeError('Unsupported managed fixture architecture')
-            manifest = {'format': 1, 'key': 'h2', 'version': nonce, 'platform': 'linux-' + architecture, 'runtime': 'java', 'executable': 'jre/bin/java', 'main_class': 'com.dbx.agent.h2.H2Agent', 'classpath': [artifact.name for artifact in classpath], 'profiles': ['h2-v1', 'h2-v2', 'h2-v3'], 'files': files, 'licenses': ['DBX-LICENSE', 'DBX-NOTICE'] + [file['path'] for file in files if file['path'].startswith('jre/legal/')], 'provenance': 'sources.json'}
+            manifest = {'format': 1, 'key': 'h2', 'version': nonce, 'platform': 'linux-' + architecture, 'runtime': 'java', 'executable': 'jre/bin/java', 'main_class': 'com.dbx.agent.h2.H2Agent', 'classpath': [artifact.name for artifact in classpath], 'profiles': ['h2-v1', 'h2-v2', 'h2-v3', 'h2-auto'], 'files': files, 'licenses': ['DBX-LICENSE', 'DBX-NOTICE'] + [file['path'] for file in files if file['path'].startswith('jre/legal/')], 'provenance': 'sources.json'}
             (package / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
             archive = base / 'managed-h2.zip'
             with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as output_zip:

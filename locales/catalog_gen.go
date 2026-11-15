@@ -43255,3 +43255,143 @@ func H2TLSVerificationHint() string { return In(i18n.Locale()).H2TLSVerification
 func (msgs Messages) H2TLSVerificationHint() string {
 	return Catalog.Format(msgs.locale, "h2TLSVerificationHint", nil)
 }
+
+// H2AutoFileFormat says "自动匹配文件格式"
+// in the language the app shows.
+func H2AutoFileFormat() string { return In(i18n.Locale()).H2AutoFileFormat() }
+
+// H2AutoFileFormat says "自动匹配文件格式"
+// in the language of msgs.
+func (msgs Messages) H2AutoFileFormat() string {
+	return Catalog.Format(msgs.locale, "h2AutoFileFormat", nil)
+}
+
+// H2CustomJDBC says "自定义 JDBC JAR"
+// in the language the app shows.
+func H2CustomJDBC() string { return In(i18n.Locale()).H2CustomJDBC() }
+
+// H2CustomJDBC says "自定义 JDBC JAR"
+// in the language of msgs.
+func (msgs Messages) H2CustomJDBC() string {
+	return Catalog.Format(msgs.locale, "h2CustomJDBC", nil)
+}
+
+// H2CustomAdvancedHint says "在高级页选择 JDBC JAR 并导入。"
+// in the language the app shows.
+func H2CustomAdvancedHint() string { return In(i18n.Locale()).H2CustomAdvancedHint() }
+
+// H2CustomAdvancedHint says "在高级页选择 JDBC JAR 并导入。"
+// in the language of msgs.
+func (msgs Messages) H2CustomAdvancedHint() string {
+	return Catalog.Format(msgs.locale, "h2CustomAdvancedHint", nil)
+}
+
+// H2NoCustomBase says "未选择基础驱动包"
+// in the language the app shows.
+func H2NoCustomBase() string { return In(i18n.Locale()).H2NoCustomBase() }
+
+// H2NoCustomBase says "未选择基础驱动包"
+// in the language of msgs.
+func (msgs Messages) H2NoCustomBase() string {
+	return Catalog.Format(msgs.locale, "h2NoCustomBase", nil)
+}
+
+// H2CustomBaseLabel says "基础驱动包："
+// in the language the app shows.
+func H2CustomBaseLabel() string { return In(i18n.Locale()).H2CustomBaseLabel() }
+
+// H2CustomBaseLabel says "基础驱动包："
+// in the language of msgs.
+func (msgs Messages) H2CustomBaseLabel() string {
+	return Catalog.Format(msgs.locale, "h2CustomBaseLabel", nil)
+}
+
+// H2JDBCClassLabel says "JDBC 驱动类："
+// in the language the app shows.
+func H2JDBCClassLabel() string { return In(i18n.Locale()).H2JDBCClassLabel() }
+
+// H2JDBCClassLabel says "JDBC 驱动类："
+// in the language of msgs.
+func (msgs Messages) H2JDBCClassLabel() string {
+	return Catalog.Format(msgs.locale, "h2JDBCClassLabel", nil)
+}
+
+// H2RemoveJAR says "移除 JAR"
+// in the language the app shows.
+func H2RemoveJAR() string { return In(i18n.Locale()).H2RemoveJAR() }
+
+// H2RemoveJAR says "移除 JAR"
+// in the language of msgs.
+func (msgs Messages) H2RemoveJAR() string {
+	return Catalog.Format(msgs.locale, "h2RemoveJAR", nil)
+}
+
+// H2AddJAR says "添加 JDBC JAR"
+// in the language the app shows.
+func H2AddJAR() string { return In(i18n.Locale()).H2AddJAR() }
+
+// H2AddJAR says "添加 JDBC JAR"
+// in the language of msgs.
+func (msgs Messages) H2AddJAR() string {
+	return Catalog.Format(msgs.locale, "h2AddJAR", nil)
+}
+
+// H2AddJARPath says "添加 JAR 路径"
+// in the language the app shows.
+func H2AddJARPath() string { return In(i18n.Locale()).H2AddJARPath() }
+
+// H2AddJARPath says "添加 JAR 路径"
+// in the language of msgs.
+func (msgs Messages) H2AddJARPath() string {
+	return Catalog.Format(msgs.locale, "h2AddJARPath", nil)
+}
+
+// H2ImportCustomJDBC says "导入自定义 JDBC 驱动"
+// in the language the app shows.
+func H2ImportCustomJDBC() string { return In(i18n.Locale()).H2ImportCustomJDBC() }
+
+// H2ImportCustomJDBC says "导入自定义 JDBC 驱动"
+// in the language of msgs.
+func (msgs Messages) H2ImportCustomJDBC() string {
+	return Catalog.Format(msgs.locale, "h2ImportCustomJDBC", nil)
+}
+
+// H2SavedJARHint says "导入后使用已保存的 JAR 和本地依赖。"
+// in the language the app shows.
+func H2SavedJARHint() string { return In(i18n.Locale()).H2SavedJARHint() }
+
+// H2SavedJARHint says "导入后使用已保存的 JAR 和本地依赖。"
+// in the language of msgs.
+func (msgs Messages) H2SavedJARHint() string {
+	return Catalog.Format(msgs.locale, "h2SavedJARHint", nil)
+}
+
+// H2CustomMissingInputs says "请选择基础驱动包和 JDBC JAR。"
+// in the language the app shows.
+func H2CustomMissingInputs() string { return In(i18n.Locale()).H2CustomMissingInputs() }
+
+// H2CustomMissingInputs says "请选择基础驱动包和 JDBC JAR。"
+// in the language of msgs.
+func (msgs Messages) H2CustomMissingInputs() string {
+	return Catalog.Format(msgs.locale, "h2CustomMissingInputs", nil)
+}
+
+// H2ChooseJAR says "选择 JDBC JAR"
+// in the language the app shows.
+func H2ChooseJAR() string { return In(i18n.Locale()).H2ChooseJAR() }
+
+// H2ChooseJAR says "选择 JDBC JAR"
+// in the language of msgs.
+func (msgs Messages) H2ChooseJAR() string {
+	return Catalog.Format(msgs.locale, "h2ChooseJAR", nil)
+}
+
+// H2JARNumberLabel says "JDBC JAR %d："
+// in the language the app shows.
+func H2JARNumberLabel() string { return In(i18n.Locale()).H2JARNumberLabel() }
+
+// H2JARNumberLabel says "JDBC JAR %d："
+// in the language of msgs.
+func (msgs Messages) H2JARNumberLabel() string {
+	return Catalog.Format(msgs.locale, "h2JARNumberLabel", nil)
+}

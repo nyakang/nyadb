@@ -33,7 +33,7 @@ type H2Options struct {
 }
 
 func DefaultH2Options() H2Options {
-	return H2Options{Version: 1, Mode: "file", DriverProfile: "h2-v3", DefaultSchema: "PUBLIC", ConnectTimeoutSeconds: 15, QueryTimeoutSeconds: 0, PoolWaitTimeoutMilliseconds: 30000, MaxConnections: 8, MetadataReserve: 2, SQLMaxConnections: 6, RequireExisting: true, AutoServer: true}
+	return H2Options{Version: 1, Mode: "file", DriverProfile: "h2-auto", DefaultSchema: "PUBLIC", ConnectTimeoutSeconds: 15, QueryTimeoutSeconds: 0, PoolWaitTimeoutMilliseconds: 30000, MaxConnections: 8, MetadataReserve: 2, SQLMaxConnections: 6, RequireExisting: true, AutoServer: true}
 }
 
 var h2VersionName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$`)
@@ -64,7 +64,7 @@ func NormalizeH2Options(a H2Options) (H2Options, error) {
 	if a.Mode != "file" && a.Mode != "memory" && a.Mode != "tcp" && a.Mode != "ssl" {
 		return invalid()
 	}
-	if a.DriverProfile != "h2-v1" && a.DriverProfile != "h2-v2" && a.DriverProfile != "h2-v3" && a.DriverProfile != "h2-legacy" {
+	if a.DriverProfile != "h2-auto" && a.DriverProfile != "h2-custom" && a.DriverProfile != "h2-v1" && a.DriverProfile != "h2-v2" && a.DriverProfile != "h2-v3" && a.DriverProfile != "h2-legacy" {
 		return invalid()
 	}
 	if a.DefaultSchema == "" || !utf8.ValidString(a.DefaultSchema) || len(a.DefaultSchema) > 4096 || strings.ContainsRune(a.DefaultSchema, 0) {

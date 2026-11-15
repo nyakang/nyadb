@@ -45,6 +45,8 @@ type State struct {
 	driverWork                                                 driverWork
 	h2Numbers                                                  [6]string
 	h2ModeChoice, h2ProfileChoice, h2DriverChoice              string
+	h2CustomBase, h2CustomClass                                string
+	h2CustomPaths                                              []string
 	consulAuthChoice, consulTLSChoice, consulConsistencyChoice string
 	etcdAuthChoice, etcdPrefixChoice, etcdTLSChoice            string
 	neo4jAuthChoice                                            string
@@ -161,6 +163,8 @@ func (s *State) SetProfileService(service *connections.Service) { s.profileServi
 func (s *State) Draft() *connections.Profile { return &s.connectionDraft }
 func (s *State) Error() string               { return s.connectionError }
 func (s *State) Active() bool                { return s.active }
+func (s *State) Testing() bool               { return s.connectionTesting }
+func (s *State) DriverBusy() bool            { return s.driverWork.results != nil }
 func (s *State) InitialQueryOpen() bool      { return s.mysqlInitialQueryOpen }
 
 // OpenNew starts a fresh draft with the selected database's defaults.
@@ -261,6 +265,7 @@ func (s *State) Close() {
 	s.driverWork.message = ""
 	s.h2Numbers = [6]string{}
 	s.h2ModeChoice, s.h2ProfileChoice, s.h2DriverChoice = "", "", ""
+	s.h2CustomBase, s.h2CustomClass, s.h2CustomPaths = "", "", nil
 	s.etcdAuthChoice, s.etcdPrefixChoice, s.etcdTLSChoice = "", "", ""
 	s.neo4jAuthChoice, s.neo4jProtocolChoice, s.neo4jTLSChoice = "", "", ""
 	s.qdrantAuthChoice = ""

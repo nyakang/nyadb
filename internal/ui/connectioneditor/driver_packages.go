@@ -2,6 +2,8 @@ package connectioneditor
 
 import (
 	"context"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/nyakang/nyadb/internal/services/connections"
@@ -10,17 +12,20 @@ import (
 // DriverPackages contains injected installed-package operations. Import uses
 // an explicitly chosen local package; returned snapshots contain no secrets.
 type DriverPackages struct {
-	List   func(context.Context, connections.Kind, string) ([]connections.ManagedDriver, error)
-	Import func(context.Context, connections.Kind, string, string) (connections.ManagedDriver, error)
+	List       func(context.Context, connections.Kind, string) ([]connections.ManagedDriver, error)
+	Import     func(context.Context, connections.Kind, string, string) (connections.ManagedDriver, error)
+	ImportJDBC func(context.Context, connections.Kind, string, connections.JDBCImport) (connections.ManagedDriver, error)
 }
 
 type driverWorkResult struct {
-	generation         uint64
-	kind               connections.Kind
-	directory, profile string
-	packages           []connections.ManagedDriver
-	imported           *connections.ManagedDriver
-	err                error
+	generation                                  uint64
+	kind                                        connections.Kind
+	directory, profile                          string
+	packages                                    []connections.ManagedDriver
+	imported                                    *connections.ManagedDriver
+	err                                         error
+	jdbc                                        *connections.JDBCImport
+	baseChoice, rawClass, pinVersion, pinSHA256 string
 }
 
 type driverWork struct {
@@ -94,6 +99,47 @@ func (s *State) ImportDriverPackage(file string) {
 	}
 }
 
+func (s *State) ImportJDBCDriver() {
+	if !s.active || s.uriOpen || s.connectionDraft.Kind != connections.H2 || s.connectionDraft.H2Options.DriverProfile != "h2-custom" || s.driverPackages.ImportJDBC == nil {
+		return
+	}
+	a := s.connectionDraft.H2Options
+	base := s.h2CustomBase
+	if base == "" {
+		base = a.DriverVersion
+	}
+	var original connections.ManagedDriver
+	for _, d := range s.driverWork.packages {
+		if d.Version == base {
+			original = cloneDrivers([]connections.ManagedDriver{d})[0]
+			break
+		}
+	}
+	if original.Key != "h2" || len(s.h2CustomPaths) == 0 {
+		s.driverWork.message = "请选择基础驱动包和 JDBC JAR。"
+		return
+	}
+	s.cancelDriverWork()
+	request := connections.JDBCImport{BaseVersion: original.Version, BaseSHA256: original.SHA256, Profile: "h2-custom", Class: strings.TrimSpace(s.h2CustomClass), Paths: append([]string(nil), s.h2CustomPaths...)}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	results := make(chan driverWorkResult, 1)
+	s.driverWork.cancel, s.driverWork.results, s.driverWork.message = cancel, results, ""
+	out := driverWorkResult{generation: s.driverWork.generation, kind: s.connectionDraft.Kind, directory: a.DriverDirectory, profile: a.DriverProfile, jdbc: &request, baseChoice: s.h2CustomBase, rawClass: s.h2CustomClass, pinVersion: a.DriverVersion, pinSHA256: a.DriverSHA256}
+	service := s.driverPackages.ImportJDBC
+	go func() {
+		defer cancel()
+		owned := request
+		owned.Paths = append([]string(nil), request.Paths...)
+		d, err := service(ctx, out.kind, original.Directory, owned)
+		copy := cloneDrivers([]connections.ManagedDriver{d})[0]
+		out.imported, out.err = &copy, err
+		if out.err == nil {
+			out.err = ctx.Err()
+		}
+		results <- out
+	}()
+}
+
 // consumeDriverWork has one UI-thread consumer. Revoked original requests can
 // finish into their private buffered channel without selecting a new form.
 func (s *State) consumeDriverWork() {
@@ -104,6 +150,9 @@ func (s *State) consumeDriverWork() {
 	case out := <-s.driverWork.results:
 		s.driverWork.results, s.driverWork.cancel = nil, nil
 		if !s.active || out.generation != s.driverWork.generation || out.kind != s.connectionDraft.Kind || out.directory != s.connectionDraft.H2Options.DriverDirectory {
+			return
+		}
+		if out.jdbc != nil && (out.profile != s.connectionDraft.H2Options.DriverProfile || out.baseChoice != s.h2CustomBase || out.rawClass != s.h2CustomClass || out.pinVersion != s.connectionDraft.H2Options.DriverVersion || out.pinSHA256 != s.connectionDraft.H2Options.DriverSHA256 || !slices.Equal(out.jdbc.Paths, s.h2CustomPaths)) {
 			return
 		}
 		if out.err != nil {
@@ -122,7 +171,11 @@ func (s *State) consumeDriverWork() {
 				s.driverWork.packages = append(s.driverWork.packages, d)
 			}
 			if out.profile == s.connectionDraft.H2Options.DriverProfile {
-				s.selectH2Driver(d)
+				if out.profile == "h2-custom" && !d.Supports("h2-custom") && out.jdbc == nil {
+					s.h2CustomBase = d.Version
+				} else {
+					s.selectH2Driver(d)
+				}
 			}
 		} else {
 			s.driverWork.packages = out.packages
@@ -135,6 +188,9 @@ func (s *State) consumeDriverWork() {
 					found = true
 					if !d.Supports(selected.DriverProfile) {
 						s.driverWork.message = "驱动包不包含当前 H2 版本，请选择匹配的版本。"
+					}
+					if selected.DriverProfile == "h2-custom" && d.JDBCClass != "" && len(s.h2CustomPaths) == 0 && s.h2CustomClass == "org.h2.Driver" {
+						s.h2CustomClass = d.JDBCClass
 					}
 				}
 			}

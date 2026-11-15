@@ -41,6 +41,7 @@ const (
 	H2NewFile
 	H2DriverPackageFile
 	H2TLSCAFile
+	H2CustomJARFile
 )
 
 func (s *State) SetEngineFilePicker(pick func(EngineFile, int, uint64)) { s.engineFilePicker = pick }
@@ -51,11 +52,20 @@ func (s *State) SelectEngineFile(kind EngineFile, row int, version uint64, path 
 	if !s.active || version != s.engineFileVersion || path == "" {
 		return
 	}
-	if kind == H2MainFile || kind == H2NewFile || kind == H2DriverPackageFile || kind == H2TLSCAFile {
+	if kind == H2MainFile || kind == H2NewFile || kind == H2DriverPackageFile || kind == H2TLSCAFile || kind == H2CustomJARFile {
 		if s.connectionDraft.Kind != connections.H2 {
 			return
 		}
-		if kind == H2DriverPackageFile {
+		if kind == H2CustomJARFile {
+			if s.connectionDraft.H2Options.DriverProfile == "h2-custom" {
+				if row == -1 {
+					s.h2CustomPaths = append(s.h2CustomPaths, path)
+				} else if row >= 0 && row < len(s.h2CustomPaths) {
+					s.h2CustomPaths[row] = path
+				}
+				s.engineFileVersion++
+			}
+		} else if kind == H2DriverPackageFile {
 			s.ImportDriverPackage(path)
 		} else if kind == H2TLSCAFile && s.connectionDraft.H2Options.Mode == "ssl" {
 			s.cancelMySQLConnectionTest()

@@ -15,6 +15,7 @@ const (
 	H2NewFile                 = connectioneditor.H2NewFile
 	H2DriverPackageFile       = connectioneditor.H2DriverPackageFile
 	H2TLSCAFile               = connectioneditor.H2TLSCAFile
+	H2CustomJARFile           = connectioneditor.H2CustomJARFile
 	DuckDBLibraryFile         = connectioneditor.DuckDBLibraryFile
 	PostgreSQLCAFile          = connectioneditor.PostgreSQLCAFile
 	PostgreSQLCertificateFile = connectioneditor.PostgreSQLCertificateFile

@@ -15,7 +15,7 @@ import (
 
 func h2UnitDriver(t *testing.T) connections.ManagedDriver {
 	t.Helper()
-	return connections.ManagedDriver{Key: "h2", Version: "owned", SHA256: strings.Repeat("a", 64), Directory: t.TempDir(), Profiles: []string{"h2-v1", "h2-v2", "h2-v3"}}
+	return connections.ManagedDriver{Key: "h2", Version: "owned", SHA256: strings.Repeat("a", 64), Directory: t.TempDir(), Profiles: []string{"h2-v1", "h2-v2", "h2-v3", "h2-auto"}}
 }
 
 func TestH2TLSTrustPickerAndURIRemainWithOriginalForm(t *testing.T) {

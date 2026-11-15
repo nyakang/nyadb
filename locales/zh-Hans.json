@@ -4244,5 +4244,19 @@
   "h2SharedFileModeHint": "共享模式允许多个连接打开同一文件；只读连接使用独占模式。",
   "h2TLSCA": "H2 TLS CA 证书：",
   "h2ChooseTLSCA": "选择 H2 TLS CA 证书",
-  "h2TLSVerificationHint": "TLS 校验证书链和原主机名；CA 留空时使用系统信任证书。"
+  "h2TLSVerificationHint": "TLS 校验证书链和原主机名；CA 留空时使用系统信任证书。",
+  "h2AutoFileFormat": "自动匹配文件格式",
+  "h2CustomJDBC": "自定义 JDBC JAR",
+  "h2CustomAdvancedHint": "在高级页选择 JDBC JAR 并导入。",
+  "h2NoCustomBase": "未选择基础驱动包",
+  "h2CustomBaseLabel": "基础驱动包：",
+  "h2JDBCClassLabel": "JDBC 驱动类：",
+  "h2RemoveJAR": "移除 JAR",
+  "h2AddJAR": "添加 JDBC JAR",
+  "h2AddJARPath": "添加 JAR 路径",
+  "h2ImportCustomJDBC": "导入自定义 JDBC 驱动",
+  "h2SavedJARHint": "导入后使用已保存的 JAR 和本地依赖。",
+  "h2CustomMissingInputs": "请选择基础驱动包和 JDBC JAR。",
+  "h2ChooseJAR": "选择 JDBC JAR",
+  "h2JARNumberLabel": "JDBC JAR %d："
 }

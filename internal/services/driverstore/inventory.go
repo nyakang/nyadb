@@ -22,7 +22,11 @@ func (p Product) accepts(m Manifest) bool {
 }
 
 func (s *Store) snapshot(m Manifest, digest string) connections.ManagedDriver {
-	return connections.ManagedDriver{Key: m.Key, Version: m.Version, SHA256: digest, Directory: s.directory, Platform: m.Platform, Profiles: append([]string(nil), m.Profiles...)}
+	d := connections.ManagedDriver{Key: m.Key, Version: m.Version, SHA256: digest, Directory: s.directory, Platform: m.Platform, Profiles: append([]string(nil), m.Profiles...)}
+	if m.JDBC != nil {
+		d.JDBCClass = m.JDBC.Class
+	}
+	return d
 }
 
 // List returns installed manifest/digest snapshots without launching or leasing

@@ -82,6 +82,27 @@ func (p Provider) Open(ctx context.Context, profile connections.Profile, passwor
 		_ = lease.Close()
 		return nil, ErrDriver
 	}
+	if a.DriverProfile == "h2-auto" {
+		for _, required := range []string{"h2-v1", "h2-v2", "h2-v3"} {
+			found := false
+			for _, declared := range m.Profiles {
+				found = found || declared == required
+			}
+			if !found {
+				_ = lease.Close()
+				return nil, ErrDriver
+			}
+		}
+	}
+	var customClass string
+	var customPaths []string
+	if a.DriverProfile == "h2-custom" {
+		customClass, customPaths, err = lease.JDBC()
+		if err != nil {
+			_ = lease.Close()
+			return nil, ErrDriver
+		}
+	}
 	var transport *tlsProxy
 	connector := profile
 	if a.Mode == "ssl" {
@@ -108,6 +129,9 @@ func (p Provider) Open(ctx context.Context, profile connections.Profile, passwor
 		return nil, safeError(err)
 	}
 	params := map[string]any{"database": profile.Database, "connection_string": connectionURL(connector), "username": profile.Username, "password": password, "driver_profile": a.DriverProfile, "sessionRole": "workload"}
+	if a.DriverProfile == "h2-custom" {
+		params["jdbc_driver_class"], params["jdbc_driver_paths"] = customClass, customPaths
+	}
 	workloadParams, err := json.Marshal(params)
 	if err != nil {
 		r.Close()
@@ -121,22 +145,51 @@ func (p Provider) Open(ctx context.Context, profile connections.Profile, passwor
 	}
 	root, stop := context.WithCancel(context.Background())
 	s := &Session{profile: profile, runtime: r, transport: transport, params: workloadParams, metadataParams: metadataParams, ctx: root, cancel: stop, slots: make(chan struct{}, a.MaxConnections-a.MetadataReserve), metadataSlots: make(chan struct{}, max(1, a.MetadataReserve)), scope: rand.Text()}
-	s.queries, err = agentbridge.NewQueryPool(r.Client, s.params, agentbridge.QueryConfig{InitializeSQL: "SET SCHEMA " + quote(a.DefaultSchema), DefaultSchema: a.DefaultSchema, MaxLeases: a.SQLMaxConnections, MaxRows: 10000, TimeoutSeconds: a.QueryTimeoutSeconds, Split: sqltext.SplitPortable, Decoder: decodeValue, AcquireConnection: s.acquireWorkload})
-	if err == nil {
-		err = s.withMetadata(openCtx, func(child context.Context, session *agentbridge.Session) error {
-			q, err := s.query(child, session, "SELECT H2VERSION(), DATABASE()", 1)
+	err = s.withMetadata(openCtx, func(child context.Context, session *agentbridge.Session) error {
+		q, err := s.query(child, session, "SELECT H2VERSION(), DATABASE()", 1)
+		if err != nil {
+			return err
+		}
+		if len(q.Sets) != 1 || len(q.Sets[0].Rows) != 1 || len(q.Sets[0].Rows[0]) != 2 {
+			return contract.ErrUnsupported
+		}
+		s.version, s.catalog = q.Sets[0].Rows[0][0].Text, q.Sets[0].Rows[0][1].Text
+		if s.catalog == "" || !sqltext.ValidName(s.catalog) || !admittedVersion(a.DriverProfile, s.version) {
+			return contract.ErrUnsupported
+		}
+		if a.DriverProfile == "h2-auto" {
+			// The server version and selected JDBC driver can differ on TCP.
+			// Bind later physical requests to the original JDBC metadata, not
+			// to a new file-header detection or a guessed server version.
+			info, err := session.Call(child, "connection_info", map[string]any{})
 			if err != nil {
 				return err
 			}
-			if len(q.Sets) != 1 || len(q.Sets[0].Rows) != 1 || len(q.Sets[0].Rows[0]) != 2 {
+			var native struct {
+				DatabaseInfo map[string]string `json:"databaseInfo"`
+			}
+			if json.Unmarshal(info.Result, &native) != nil {
 				return contract.ErrUnsupported
 			}
-			s.version, s.catalog = q.Sets[0].Rows[0][0].Text, q.Sets[0].Rows[0][1].Text
-			if s.catalog == "" || !sqltext.ValidName(s.catalog) || !admittedVersion(a.DriverProfile, s.version) {
+			selected := fixedH2Profile(native.DatabaseInfo["driverVersion"])
+			if selected == "" {
 				return contract.ErrUnsupported
 			}
-			return nil
-		})
+			params["driver_profile"], params["sessionRole"] = selected, "workload"
+			s.params, err = json.Marshal(params)
+			if err != nil {
+				return err
+			}
+			params["sessionRole"] = "metadata"
+			s.metadataParams, err = json.Marshal(params)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err == nil {
+		s.queries, err = agentbridge.NewQueryPool(r.Client, s.params, agentbridge.QueryConfig{InitializeSQL: "SET SCHEMA " + quote(a.DefaultSchema), DefaultSchema: a.DefaultSchema, MaxLeases: a.SQLMaxConnections, MaxRows: 10000, TimeoutSeconds: a.QueryTimeoutSeconds, Split: sqltext.SplitPortable, Decoder: decodeValue, AcquireConnection: s.acquireWorkload})
 	}
 	if err != nil || openCtx.Err() != nil {
 		_ = s.Close()
@@ -150,6 +203,9 @@ func (p Provider) Open(ctx context.Context, profile connections.Profile, passwor
 }
 
 func admittedVersion(profile, version string) bool {
+	if profile == "h2-auto" || profile == "h2-custom" {
+		return fixedH2Profile(version) != ""
+	}
 	if profile == "h2-v1" {
 		return strings.HasPrefix(version, "1.4.")
 	}
@@ -157,6 +213,19 @@ func admittedVersion(profile, version string) bool {
 		return strings.HasPrefix(version, "2.0.") || strings.HasPrefix(version, "2.1.")
 	}
 	return strings.HasPrefix(version, "2.2.") || strings.HasPrefix(version, "2.3.") || strings.HasPrefix(version, "2.4.")
+}
+
+func fixedH2Profile(version string) string {
+	if strings.HasPrefix(version, "1.4.") {
+		return "h2-v1"
+	}
+	if strings.HasPrefix(version, "2.0.") || strings.HasPrefix(version, "2.1.") {
+		return "h2-v2"
+	}
+	if strings.HasPrefix(version, "2.2.") || strings.HasPrefix(version, "2.3.") || strings.HasPrefix(version, "2.4.") {
+		return "h2-v3"
+	}
+	return ""
 }
 
 func connectionURL(p connections.Profile) string {

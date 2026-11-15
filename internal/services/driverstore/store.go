@@ -166,6 +166,15 @@ func (s *Store) install(ctx context.Context, source io.Reader, digest string, pr
 	if len(files) != 0 {
 		return m, ErrPackage
 	}
+	bundle, err := root.OpenRoot(stage + "/bundle")
+	if err != nil {
+		return m, err
+	}
+	err = validateJDBCBundle(ctx, bundle, m)
+	bundle.Close()
+	if err != nil {
+		return m, err
+	}
 	if err = root.WriteFile(stage+"/bundle/manifest.json", raw, 0600); err != nil {
 		return m, err
 	}
@@ -373,6 +382,9 @@ func (s *Store) Acquire(ctx context.Context, key, version, digest string) (*Leas
 		if hex.EncodeToString(h.Sum(nil)) != file.SHA256 {
 			return nil, ErrPackage
 		}
+	}
+	if err = validateJDBCBundle(ctx, bundle, m); err != nil {
+		return nil, err
 	}
 	if err = ctx.Err(); err != nil {
 		return nil, err

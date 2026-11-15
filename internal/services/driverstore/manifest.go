@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"unicode/utf8"
 )
 
 var (
@@ -27,33 +28,42 @@ type File struct {
 	Executable bool   `json:"executable,omitempty"`
 }
 
+// JDBCDriver names a complete, immutable custom JDBC graph within this bundle.
+// It is separate from the agent/JRE launch classpath and supplies no JVM args.
+type JDBCDriver struct {
+	Class     string   `json:"class"`
+	Classpath []string `json:"classpath"`
+}
+
 // Manifest names every payload file, including licenses and provenance. Java
 // bundles can include their own JRE; native bundles name their own executable.
 // Files outside the package and arbitrary launch arguments are not accepted.
 type Manifest struct {
-	Format     int      `json:"format"`
-	Key        string   `json:"key"`
-	Version    string   `json:"version"`
-	Platform   string   `json:"platform"`
-	Runtime    string   `json:"runtime"`
-	Executable string   `json:"executable"`
-	MainClass  string   `json:"main_class,omitempty"`
-	Classpath  []string `json:"classpath,omitempty"`
-	Profiles   []string `json:"profiles"`
-	Files      []File   `json:"files"`
-	Licenses   []string `json:"licenses"`
-	Provenance string   `json:"provenance"`
+	Format     int         `json:"format"`
+	Key        string      `json:"key"`
+	Version    string      `json:"version"`
+	Platform   string      `json:"platform"`
+	Runtime    string      `json:"runtime"`
+	Executable string      `json:"executable"`
+	MainClass  string      `json:"main_class,omitempty"`
+	Classpath  []string    `json:"classpath,omitempty"`
+	Profiles   []string    `json:"profiles"`
+	Files      []File      `json:"files"`
+	Licenses   []string    `json:"licenses"`
+	Provenance string      `json:"provenance"`
+	JDBC       *JDBCDriver `json:"jdbc,omitempty"`
 }
 
 var component = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$`)
 var javaClass = regexp.MustCompile(`^[a-zA-Z_$][a-zA-Z0-9_$]*(?:\.[a-zA-Z_$][a-zA-Z0-9_$]*)+$`)
 
 func validPath(p string) bool {
-	if len(p) == 0 || len(p) > 1024 || path.Clean(p) != p || strings.HasPrefix(p, "/") || strings.ContainsAny(p, "\\:\x00") {
+	if len(p) == 0 || len(p) > 1024 || !utf8.ValidString(p) || strings.IndexFunc(p, func(r rune) bool { return r < 32 || r == 127 }) >= 0 || path.Clean(p) != p || strings.HasPrefix(p, "/") || strings.ContainsAny(p, "\\:\x00") {
 		return false
 	}
 	for _, part := range strings.Split(p, "/") {
-		if !component.MatchString(part) || part == "." || part == ".." {
+		customPath := strings.HasPrefix(p, "jdbc/") && utf8.ValidString(part) && strings.TrimSpace(part) != "" && !strings.ContainsAny(part, "<>\"|?*\x00\r\n\t") && !strings.HasSuffix(part, ".") && !strings.HasSuffix(part, " ")
+		if (!component.MatchString(part) && !customPath) || part == "." || part == ".." {
 			return false
 		}
 	}
@@ -113,6 +123,18 @@ func decodeManifest(raw []byte) (Manifest, error) {
 	} else if m.Runtime != "native" || m.MainClass != "" || len(m.Classpath) != 0 {
 		return m, ErrPackage
 	}
+	if m.JDBC != nil {
+		if m.Runtime != "java" || !javaClass.MatchString(m.JDBC.Class) || len(m.JDBC.Classpath) == 0 || len(m.JDBC.Classpath) > 128 {
+			return m, ErrPackage
+		}
+		seen := map[string]bool{}
+		for _, p := range m.JDBC.Classpath {
+			if _, ok := files[p]; !ok || !strings.HasPrefix(p, "jdbc/") || !strings.HasSuffix(strings.ToLower(p), ".jar") || seen[p] {
+				return m, ErrPackage
+			}
+			seen[p] = true
+		}
+	}
 	for _, p := range append(append([]string(nil), m.Licenses...), m.Provenance) {
 		if _, ok := files[p]; !ok {
 			return m, ErrPackage
@@ -133,5 +155,8 @@ func cloneManifest(m Manifest) Manifest {
 	m.Classpath = append([]string(nil), m.Classpath...)
 	m.Profiles = append([]string(nil), m.Profiles...)
 	m.Licenses = append([]string(nil), m.Licenses...)
+	if m.JDBC != nil {
+		m.JDBC = &JDBCDriver{Class: m.JDBC.Class, Classpath: append([]string(nil), m.JDBC.Classpath...)}
+	}
 	return m
 }

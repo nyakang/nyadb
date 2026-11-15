@@ -38,5 +38,15 @@ func managedDriverPackages() connectioneditor.DriverPackages {
 			}
 			return store.Import(ctx, product, file)
 		},
+		ImportJDBC: func(ctx context.Context, kind connections.Kind, directory string, request connections.JDBCImport) (connections.ManagedDriver, error) {
+			store, product, err := resolve(kind, directory)
+			if err != nil {
+				return connections.ManagedDriver{}, err
+			}
+			if request.Profile != "h2-custom" {
+				return connections.ManagedDriver{}, connections.ErrInvalid
+			}
+			return store.ImportJDBC(ctx, product, request)
+		},
 	}
 }

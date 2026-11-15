@@ -94,3 +94,42 @@ func TestH2TLSRootsSurviveProfileStorageRestart(t *testing.T) {
 		t.Fatal("TLS profile lost original roots or host", err)
 	}
 }
+
+func TestH2AutomaticCustomAndOldFixedDriverPinsSurviveRestart(t *testing.T) {
+	store, path, db := openStore(t)
+	ctx := context.Background()
+	var saved []connections.Profile
+	for _, profile := range []string{"h2-auto", "h2-custom", "h2-v1", "h2-v2", "h2-v3", "h2-legacy"} {
+		p, err := connections.Defaults(connections.H2)
+		if err != nil || p.H2Options.DriverProfile != "h2-auto" {
+			t.Fatal("new H2 defaults do not request automatic selection", err)
+		}
+		p.Name, p.Database = profile, filepath.Join(t.TempDir(), "original")
+		p.H2Options.DriverProfile, p.H2Options.DriverVersion, p.H2Options.DriverSHA256 = profile, "original-"+profile, strings.Repeat("a", 64)
+		p.H2Options.DriverDirectory = t.TempDir()
+		original, err := store.Create(ctx, p)
+		if err != nil {
+			t.Fatal("original driver profile was not stored", profile, err)
+		}
+		saved = append(saved, original)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	store = NewProfileStore(reopened)
+	for _, original := range saved {
+		got, err := store.Get(ctx, original.ID)
+		if err != nil || got.H2Options != original.H2Options || got.Database != original.Database {
+			t.Fatal("saved automatic/custom/old fixed pin changed after restart", original.Name, err)
+		}
+		copy, err := connections.NewService(store).Duplicate(ctx, got.ID, got.Name+" copy")
+		if err != nil || copy.H2Options != original.H2Options || copy.ID == original.ID {
+			t.Fatal("duplicate lost original complete driver identity", original.Name, err)
+		}
+	}
+}

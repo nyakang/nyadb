@@ -321,6 +321,10 @@ func Run() error {
 			if kind == shell.H2TLSCAFile {
 				title = locales.Text("选择 H2 TLS CA 证书")
 			}
+			if kind == shell.H2CustomJARFile {
+				title = locales.Text("选择 JDBC JAR")
+				filters = []mygo.FileFilter{{Name: "JDBC JAR", Extensions: []string{"jar"}}}
+			}
 			go func() {
 				var paths []string
 				var err error

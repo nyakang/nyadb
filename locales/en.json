@@ -4244,5 +4244,19 @@
   "h2SharedFileModeHint": "Shared mode lets multiple connections open the same file. Read-only connections use exclusive mode.",
   "h2TLSCA": "H2 TLS CA certificate:",
   "h2ChooseTLSCA": "Select H2 TLS CA certificate",
-  "h2TLSVerificationHint": "TLS verifies the certificate chain and original host name. Leave CA empty to use system trust certificates."
+  "h2TLSVerificationHint": "TLS verifies the certificate chain and original host name. Leave CA empty to use system trust certificates.",
+  "h2AutoFileFormat": "Match file format automatically",
+  "h2CustomJDBC": "Custom JDBC JAR",
+  "h2CustomAdvancedHint": "Select and import JDBC JARs on the Advanced page.",
+  "h2NoCustomBase": "No base driver package selected",
+  "h2CustomBaseLabel": "Base driver package:",
+  "h2JDBCClassLabel": "JDBC driver class:",
+  "h2RemoveJAR": "Remove JAR",
+  "h2AddJAR": "Add JDBC JAR",
+  "h2AddJARPath": "Add JAR path",
+  "h2ImportCustomJDBC": "Import custom JDBC driver",
+  "h2SavedJARHint": "After import, connections use the saved JARs and local dependencies.",
+  "h2CustomMissingInputs": "Select a base driver package and JDBC JARs.",
+  "h2ChooseJAR": "Select JDBC JAR",
+  "h2JARNumberLabel": "JDBC JAR %d:"
 }

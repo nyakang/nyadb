@@ -53,6 +53,8 @@ func (s *State) ImportURI(raw string) error {
 	}
 	group := s.uriGroup
 	original, returning := s.connectionDraft, s.uriReturn
+	customBase, customClass := s.h2CustomBase, s.h2CustomClass
+	customPaths := append([]string(nil), s.h2CustomPaths...)
 	s.Close()
 	s.connectionDraft = parsed.Profile
 	if returning {
@@ -61,6 +63,7 @@ func (s *State) ImportURI(raw string) error {
 		s.connectionDraft.Notes, s.connectionDraft.Color = original.Notes, original.Color
 		s.connectionDraft.CreatedAt, s.connectionDraft.UpdatedAt = original.CreatedAt, original.UpdatedAt
 		if original.Kind == connections.H2 && parsed.Profile.Kind == connections.H2 {
+			s.h2CustomBase, s.h2CustomClass, s.h2CustomPaths = customBase, customClass, customPaths
 			// A URI changes connection parameters, not the explicit installed
 			// package choice. A different/new kind still requires selection.
 			s.connectionDraft.H2Options.DriverProfile = original.H2Options.DriverProfile
