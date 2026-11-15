@@ -56,6 +56,10 @@ func nativeFixture(t *testing.T, tlsMode string) connections.Profile {
 }
 
 func nativeFixtureWithJoin(t *testing.T, tlsMode, join string) (connections.Profile, string) {
+	return nativeFixtureConfigured(t, tlsMode, join, false)
+}
+
+func nativeFixtureConfigured(t *testing.T, tlsMode, join string, foreignKeys bool) (connections.Profile, string) {
 	t.Helper()
 	if os.Getenv("NYADB_RQLITE_IT") != "1" {
 		t.Skip("set NYADB_RQLITE_IT=1, NYADB_RQLITE_BINARY and optional NYADB_RQLITE_VERSION for the pinned official server")
@@ -87,6 +91,9 @@ func nativeFixtureWithJoin(t *testing.T, tlsMode, join string) (connections.Prof
 	}
 	httpAddr, raftAddr := port(), port()
 	args := []string{"-node-id", filepath.Base(dir), "-http-addr", httpAddr, "-raft-addr", raftAddr, "-auth", authPath}
+	if foreignKeys {
+		args = append(args, "-fk")
+	}
 	if join != "" {
 		args = append(args, "-join", join, "-join-as", "fixture")
 	}

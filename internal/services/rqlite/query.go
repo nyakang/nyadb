@@ -107,6 +107,12 @@ func (l *queryLease) ExecuteStream(ctx context.Context, database, source string,
 		return out, err
 	}
 	defer done()
+	return l.execute(child, database, source, sink)
+}
+
+// execute runs under the owning lease's operation lock, including for files
+// whose complete input was read before any native request was admitted.
+func (l *queryLease) execute(child context.Context, database, source string, sink func(int, []contract.Column, []contract.Cell) error) (out contract.SQLResult, err error) {
 	if database != "" && database != "main" {
 		return out, connections.ErrInvalid
 	}

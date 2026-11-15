@@ -22,6 +22,7 @@ func (s *State) RunFile(d *Document) {
 		d.err = "当前会话不支持 SQL 文件执行"
 		return
 	}
+	owner := d.lease
 	var graphExecute func(context.Context, string, string) (contract.SQLResult, error)
 	if d.cypher() {
 		var e error
@@ -76,7 +77,7 @@ func (s *State) RunFile(d *Document) {
 			e = context.Canceled
 		}
 		completeHistory(history, out, e, executed)
-		ch <- executionResult{request: request, profileID: id, data: out, err: e}
+		ch <- executionResult{request: request, profileID: id, lease: owner, data: out, err: e}
 		if invalidate != nil {
 			invalidate()
 		}
