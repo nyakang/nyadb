@@ -4,8 +4,10 @@ package rqlite
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
 	"errors"
 	"net"
 	"net/http"
@@ -23,6 +25,7 @@ type Session struct {
 	profile                          connections.Profile
 	config                           connections.RQLiteConfig
 	password, version, sqliteVersion string
+	dataScope                        string
 	client                           *http.Client
 	transport                        *http.Transport
 	closed                           bool
@@ -30,6 +33,7 @@ type Session struct {
 	requests                         chan struct{}
 	active                           sync.WaitGroup
 	leases                           map[*queryLease]bool
+	documents                        map[*dataDocument]bool
 }
 
 var serverVersion = regexp.MustCompile(`^v?[0-9]+\.[0-9]+\.[0-9]+(?:[-+][a-zA-Z0-9.-]+)?$`)
@@ -75,7 +79,12 @@ func OpenSession(ctx context.Context, p connections.Profile, password string) (c
 	d := &net.Dialer{Timeout: time.Duration(c.Options.ConnectTimeoutSeconds) * time.Second}
 	transport := &http.Transport{Proxy: http.ProxyFromEnvironment, DialContext: d.DialContext, TLSClientConfig: tlsConfig, TLSHandshakeTimeout: d.Timeout, MaxConnsPerHost: c.Options.MaxRequests, MaxIdleConnsPerHost: c.Options.MaxRequests, IdleConnTimeout: 90 * time.Second, DisableCompression: true}
 	client := &http.Client{Transport: transport, Timeout: time.Duration(c.Options.RequestTimeoutSeconds) * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	s := &Session{profile: p, config: c, password: password, client: client, transport: transport, closing: make(chan struct{}), closedDone: make(chan struct{}), requests: make(chan struct{}, c.Options.MaxRequests), leases: make(map[*queryLease]bool)}
+	var scope [32]byte
+	if _, err := rand.Read(scope[:]); err != nil {
+		transport.CloseIdleConnections()
+		return nil, err
+	}
+	s := &Session{profile: p, config: c, password: password, dataScope: hex.EncodeToString(scope[:]), client: client, transport: transport, closing: make(chan struct{}), closedDone: make(chan struct{}), requests: make(chan struct{}, c.Options.MaxRequests), leases: make(map[*queryLease]bool), documents: make(map[*dataDocument]bool)}
 	// Query-only credentials need no /status permission. The native version
 	// header and SQLite handshake identify the original serving product.
 	r, err := s.request(ctx, "/db/query", []any{"SELECT 1,sqlite_version()"}, false, false)
@@ -105,7 +114,7 @@ func OpenSession(ctx context.Context, p connections.Profile, password string) (c
 func (s *Session) ProfileID() int64   { return s.profile.ID }
 func (s *Session) Generation() uint64 { return 1 } // Public generation belongs to dbruntime.
 func (s *Session) Capabilities() contract.Capabilities {
-	return contract.Capabilities{Query: true, Metadata: true}
+	return contract.Capabilities{Query: true, Metadata: true, Count: true, FieldChunks: true}
 }
 func (s *Session) Alive() bool { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed }
 func (s *Session) ServerVersions() (string, string) {
@@ -128,7 +137,14 @@ func (s *Session) Close() error {
 	for l := range s.leases {
 		all = append(all, l)
 	}
+	documents := make([]*dataDocument, 0, len(s.documents))
+	for d := range s.documents {
+		documents = append(documents, d)
+	}
 	s.mu.Unlock()
+	for _, d := range documents {
+		_ = d.Close()
+	}
 	for _, l := range all {
 		l.Release()
 	}

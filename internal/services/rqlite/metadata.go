@@ -20,7 +20,7 @@ func quote(name string) string { return `"` + strings.ReplaceAll(name, `"`, `""`
 // string-to-BLOB heuristic. []byte itself would be JSON base64, not an array.
 func textParameter(value string) []int {
 	out := make([]int, len(value))
-	for i := range value {
+	for i := range out {
 		out[i] = int(value[i])
 	}
 	return out
@@ -123,6 +123,7 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 type tableSnapshot struct {
 	structure *contract.TableStructure
 	key       []string
+	version   int64
 }
 type indexSnapshot struct {
 	name, origin              string
@@ -148,6 +149,7 @@ func (s *Session) table(ctx context.Context, o contract.ObjectRef) (tableSnapsho
 		namedStatement(`SELECT il.name,il."unique",il.origin,il.partial,ix.seqno,ix.cid,ix.name,ix.desc,ix.coll,ix.key FROM pragma_index_list(CAST(? AS TEXT),'main') il LEFT JOIN pragma_index_xinfo(il.name,'main') ix ORDER BY il.seq,ix.seqno`, o.Name),
 		namedStatement(`SELECT id,seq,"table","from","to",on_update,on_delete FROM pragma_foreign_key_list(CAST(? AS TEXT),'main') ORDER BY id,seq`, o.Name),
 		namedStatement("SELECT name,type,sql FROM main.sqlite_schema WHERE tbl_name=CAST(? AS TEXT) AND type IN ('index','trigger') AND sql IS NOT NULL ORDER BY type,name", o.Name),
+		"SELECT schema_version FROM pragma_schema_version",
 	}
 	r, err := s.request(ctx, "/db/query", stmts, true, false)
 	if err != nil {
@@ -381,7 +383,15 @@ func (s *Session) table(ctx context.Context, o contract.ObjectRef) (tableSnapsho
 		}
 		t.Definitions = append(t.Definitions, contract.Definition{Name: name, Kind: typ, SQL: sql})
 	}
-	return tableSnapshot{structure: t, key: chosen}, nil
+	versions, err := decodedRows(r, 5, 1)
+	if err != nil || len(versions) != 1 {
+		return tableSnapshot{}, errIncomplete
+	}
+	version, err := cellInt(versions[0][0])
+	if err != nil || version < 0 {
+		return tableSnapshot{}, errIncomplete
+	}
+	return tableSnapshot{structure: t, key: chosen, version: version}, nil
 }
 
 func typeKind(typ string) contract.CellKind {
