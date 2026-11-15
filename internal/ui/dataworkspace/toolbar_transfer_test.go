@@ -242,13 +242,18 @@ func TestDataTransferSQLAndJSONKeepValuesOutOfSQLSyntax(t *testing.T) {
 
 func waitDataTransfer(t *testing.T, s *State, d *Document) {
 	t.Helper()
-	deadline := time.Now().Add(time.Second)
-	for d.transfer.Busy && time.Now().Before(deadline) {
+	// Workers sync source and journal files; shared CI runners can take
+	// more than a second to acknowledge the complete operation.
+	deadline := time.Now().Add(10 * time.Second)
+	for d.transfer.Busy {
 		s.consumeDataTransfers(ui.Services{})
+		if !d.transfer.Busy {
+			return
+		}
+		if !time.Now().Before(deadline) {
+			t.Fatalf("transfer did not acknowledge completion: step=%d request=%d canceling=%t error=%q", d.transfer.Step, d.transfer.Request, d.transfer.Canceling, d.transfer.Err)
+		}
 		time.Sleep(time.Millisecond)
-	}
-	if d.transfer.Busy {
-		t.Fatal("transfer did not acknowledge completion")
 	}
 }
 func TestDataTransferFullExportWorkerOwnsRulesAndStreamsEveryRow(t *testing.T) {

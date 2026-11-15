@@ -244,7 +244,7 @@ func TestRequestToolsUIGenerationUsesExistingWriteConfirmation(t *testing.T) {
 	if err := tt.Click(locales.Text("绝对键或前缀")); err != nil {
 		t.Fatal(err)
 	}
-	tt.Key(ui.Ctrl, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyA)
 	tt.Type("explicit/key")
 	tt.Frame()
 	if err := tt.Click(locales.Text("生成请求文本")); err != nil {

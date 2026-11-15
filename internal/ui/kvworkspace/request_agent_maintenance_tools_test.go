@@ -30,7 +30,7 @@ func TestAgentMaintenanceFormsKeepExactInputsAndRequireOriginalWriteConfirmation
 						tt.Frame()
 					}
 					workspaceClick(t, tt, "原生 enable 布尔值")
-					tt.Key(ui.Ctrl, ui.KeyA)
+					tt.Key(ui.Cmd, ui.KeyA)
 					tt.Type("FALSE")
 					tt.Frame()
 					workspaceClick(t, tt, "显式包含 reason（省略或空值使用原生默认原因）")
@@ -40,7 +40,7 @@ func TestAgentMaintenanceFormsKeepExactInputsAndRequireOriginalWriteConfirmation
 					tt.Frame()
 					input, ok := d.RequestToolInput(kind)
 					if !ok || input.HTTPAgentMaintenance.Enable != "FALSE" || !input.HTTPAgentMaintenance.IncludeReason || input.HTTPAgentMaintenance.ReasonJSON != authored || kind == contract.KVToolHTTPAgentNodeMaintenance && input.HTTPAgentMaintenance.ID != "" || kind == contract.KVToolHTTPAgentServiceMaintenance && input.HTTPAgentMaintenance.ID != "original 雪%?#++" {
-						t.Fatal("maintenance form changed original target, lexical enable or reason JSON")
+						t.Fatalf("maintenance form changed original target, lexical enable or reason JSON: %+v", input.HTTPAgentMaintenance)
 					}
 					assertHTTPSessionRenewalControls(t, tt, size, "原始 reason JSON 字符串", "生成请求文本", "复制工具输入", "返回请求文本")
 					captureAgentUnit(t, tt, language, size, string(kind)+"-form")

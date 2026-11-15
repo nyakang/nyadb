@@ -33,7 +33,7 @@ func TestAgentTTLFormsBilingualOriginalInputCopyGenerationAndConfirmation(t *tes
 						authored = " {\n\"Status\":\"warning\",\"Output\":null,\"UnknownNative\":18446744073709551615\n} "
 					}
 					workspaceClick(t, tt, label)
-					tt.Key(ui.Ctrl, ui.KeyA)
+					tt.Key(ui.Cmd, ui.KeyA)
 					tt.Type(authored)
 					tt.Frame()
 					input, ok := d.RequestToolInput(kind)

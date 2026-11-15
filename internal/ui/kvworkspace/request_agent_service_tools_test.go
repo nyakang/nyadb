@@ -30,7 +30,7 @@ func TestAgentServiceFormsBilingualOriginalInputCopyGenerationAndConfirmation(t 
 						authored = " {\n\"Name\":\"original\",\"Checks\":[],\"Unknown\":18446744073709551615\n} "
 					}
 					workspaceClick(t, tt, label)
-					tt.Key(ui.Ctrl, ui.KeyA)
+					tt.Key(ui.Cmd, ui.KeyA)
 					tt.Type(authored)
 					tt.Frame()
 					if kind == contract.KVToolHTTPAgentServiceRegister {

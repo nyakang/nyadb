@@ -30,7 +30,7 @@ func TestAgentCheckFormsBilingualOriginalInputCopyGenerationAndConfirmation(t *t
 						authored = " {\n\"Name\":\"original\",\"TTL\":\"10m\",\"ID\":null,\"Notes\":\"原值 18446744073709551615\"\n} "
 					}
 					workspaceClick(t, tt, label)
-					tt.Key(ui.Ctrl, ui.KeyA)
+					tt.Key(ui.Cmd, ui.KeyA)
 					tt.Type(authored)
 					tt.Frame()
 					input, ok := d.RequestToolInput(kind)
