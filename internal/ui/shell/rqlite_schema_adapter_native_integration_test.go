@@ -73,6 +73,11 @@ func (l *rqliteSchemaAdapterLease) Operations() contract.SchemaDesignOperations 
 			return l.acknowledge(copy(ctx, r))
 		}
 	}
+	if clear := ops.Clear; clear != nil {
+		ops.Clear = func(ctx context.Context, r contract.SchemaClearRequest) contract.SchemaDesignOutcome {
+			return l.acknowledge(clear(ctx, r))
+		}
+	}
 	return ops
 }
 

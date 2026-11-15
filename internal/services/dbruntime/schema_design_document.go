@@ -151,6 +151,9 @@ func (l *schemaDesignDocumentLease) Operations() contract.SchemaDesignOperations
 	if f := ops.CanRename; f != nil {
 		ops.CanRename = func(t contract.SchemaDesignTarget) bool { return l.writable(t) && f(t) }
 	}
+	if f := ops.CanClear; f != nil {
+		ops.CanClear = func(t contract.SchemaDesignTarget) bool { return l.writable(t) && f(t) }
+	}
 	if f := ops.Apply; f != nil {
 		ops.Apply = func(ctx context.Context, r contract.SchemaDesignRequest) contract.SchemaDesignOutcome {
 			r = r.Clone() // Capture every original value before admission can wait.
@@ -173,6 +176,12 @@ func (l *schemaDesignDocumentLease) Operations() contract.SchemaDesignOperations
 		ops.Rename = func(ctx context.Context, r contract.SchemaRenameRequest) contract.SchemaDesignOutcome {
 			r = r.Clone() // Capture every original value before admission can wait.
 			return l.write(ctx, r.Original.Target, true, func(child context.Context) contract.SchemaDesignOutcome { return f(child, r) })
+		}
+	}
+	if f := ops.Clear; f != nil {
+		ops.Clear = func(ctx context.Context, r contract.SchemaClearRequest) contract.SchemaDesignOutcome {
+			r = r.Clone()
+			return l.write(ctx, r.Original.Target, false, func(child context.Context) contract.SchemaDesignOutcome { return f(child, r) })
 		}
 	}
 	return ops
@@ -355,7 +364,7 @@ func (s *session) SchemaDesignDocumentFeatures() contract.SchemaDesignDocumentFe
 			return f(target)
 		}
 	}
-	return contract.SchemaDesignDocumentFeatures{CanApply: bind(raw.CanApply, true), CanDrop: bind(raw.CanDrop, false), CanCopy: bind(raw.CanCopy, false), CanRename: bind(raw.CanRename, false)}
+	return contract.SchemaDesignDocumentFeatures{CanApply: bind(raw.CanApply, true), CanDrop: bind(raw.CanDrop, false), CanCopy: bind(raw.CanCopy, false), CanRename: bind(raw.CanRename, false), CanClear: bind(raw.CanClear, false)}
 }
 
 func (m *Manager) SchemaDesignDocumentFeatures(id int64) contract.SchemaDesignDocumentFeatures {

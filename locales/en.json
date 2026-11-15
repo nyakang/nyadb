@@ -4305,5 +4305,14 @@
   "schemaReceiptLeaveHint": "The original write is unverified. Leaving retains the draft and receipt and blocks further writes. Closing the document releases them; copy or export the receipt first.",
   "schemaReceiptBlocked": "The original schema write is unverified. Reading does not remove the write protection.",
   "schemaReceiptSummary": "Original receipt: %s · Current verification passed: %s",
-  "schemaReceiptOriginalTarget": "Original target: #%d · %s / %s · %s"
+  "schemaReceiptOriginalTarget": "Original target: #%d · %s / %s · %s",
+  "rqliteClearConfirm": "Confirm Clear Table",
+  "rqliteClearPreview": "Clear SQL Preview",
+  "rqliteClearSuccess": "Table cleared",
+  "rqliteClearUnknown": "The clear result is unconfirmed. Reconnect and check the original table.",
+  "rqliteClearChanged": "The clear result or schema has changed. Read again before confirming.",
+  "rqliteClearSemantics": "Clear all rows in a transaction while preserving the table schema, indexes, and triggers.",
+  "rqliteClearEffects": "Delete triggers and foreign-key cascades run and may modify other tables in this database. Any failed step rolls back the transaction.",
+  "rqliteClearKeepIdentity": "When unchecked, identity values are not explicitly reset. Existing triggers can still change identity values.",
+  "rqliteClearResetIdentity": "Reset identity"
 }

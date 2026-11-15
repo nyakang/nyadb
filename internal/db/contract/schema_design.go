@@ -44,6 +44,15 @@ type SchemaRenameRequest struct {
 
 func (r SchemaRenameRequest) Clone() SchemaRenameRequest { r.Original = r.Original.Clone(); return r }
 
+// Clear preserves the original table and executes its declared DELETE effects.
+// ResetIdentity requests the provider's explicit sequence reset after deletion.
+type SchemaClearRequest struct {
+	Original      SchemaDesignSnapshot
+	ResetIdentity bool
+}
+
+func (r SchemaClearRequest) Clone() SchemaClearRequest { r.Original = r.Original.Clone(); return r }
+
 type SchemaDesignOutcome struct {
 	// State is not_executed, rolled_back, committed or uncertain. Only an
 	// acknowledged, verified commit permits the host to replace its draft.
@@ -85,5 +94,7 @@ type SchemaDesignOperations struct {
 	Copy      func(context.Context, SchemaCopyRequest) SchemaDesignOutcome
 	CanRename func(SchemaDesignTarget) bool
 	Rename    func(context.Context, SchemaRenameRequest) SchemaDesignOutcome
+	CanClear  func(SchemaDesignTarget) bool
+	Clear     func(context.Context, SchemaClearRequest) SchemaDesignOutcome
 }
 type SchemaDesignProvider interface{ SchemaDesign() SchemaDesignOperations }

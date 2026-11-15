@@ -483,7 +483,18 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 		SchemaDropped:  s.schemaTableDropped,
 		SchemaCopied:   s.schemaTableCopied,
 		SchemaRenamed:  s.schemaTableRenamed,
-		BeforeRename:   s.guardSchemaTableRename,
+		SchemaCleared:  s.schemaTableCleared,
+		BeforeClear:    s.guardSchemaDatabaseClear,
+		ClearGuardPending: func(id int64, db string) bool {
+			for _, t := range s.tabs {
+				if t.data != nil && t.data.ProfileID() == id && t.data.Database() == db && t.data.LeavePending() ||
+					t.object != nil && t.object.ProfileID() == id && t.object.Database() == db && t.object.DesignLeavePending() {
+					return true
+				}
+			}
+			return false
+		},
+		BeforeRename: s.guardSchemaTableRename,
 		ViewDesignFor: func(id int64) contract.ViewDesignOperations {
 			if s.runtime == nil {
 				return contract.ViewDesignOperations{}

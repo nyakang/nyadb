@@ -6,6 +6,53 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 )
 
+// DELETE programs and foreign-key cascades may mutate any table in the original
+// database. Settle all of its data and structure drafts before admission.
+func (s *State) guardSchemaDatabaseClear(services ui.Services, profile int64, database, table string, next func(ui.Services)) bool {
+	matches := func(t *tab) bool {
+		return t.data != nil && t.data.ProfileID() == profile && t.data.Database() == database ||
+			t.object != nil && t.object.ProfileID() == profile && t.object.Database() == database
+	}
+	var finish func(ui.Services)
+	finish = func(services ui.Services) {
+		if !s.guardTabsLeave(matches, finish) {
+			next(services)
+		}
+	}
+	return s.guardTabsLeave(matches, finish)
+}
+
+func (s *State) schemaTableCleared(services ui.Services, event objectworkspace.SchemaClearEvent) {
+	out := event.Outcome
+	if out.State != "committed" && out.State != "uncertain" {
+		return
+	}
+	profile := event.Original.Object.ProfileID
+	original, err := s.runtime.Session(profile)
+	if err != nil || original.Generation() != event.Original.Generation {
+		return
+	}
+	if !s.sessions.InvalidateDatabaseObjects(profile, event.Generation, event.Database) {
+		return
+	}
+	if out.State == "uncertain" || !out.Verified || out.Actual == nil || out.Actual.Target != event.Original || !out.Actual.Schema.Exists || out.Actual.Schema.Table.Name != event.Original.Object.Name || out.Error != nil {
+		_ = original.Close()
+		return
+	}
+	w := s.sessions.Workspace(profile)
+	if w == s.sessions.Current() && w.Database == event.Database {
+		s.loadMySQLObjects(services, event.Database, true)
+	}
+	// Preserve schema tabs and the active document. Refresh every original data
+	// document, including parked trigger/cascade targets, through its own lease.
+	for _, t := range s.tabs {
+		if t.data != nil && t.data.ProfileID() == profile && t.data.Database() == event.Database {
+			s.dataWorkspace.Refresh(services, t.data)
+		}
+	}
+	services.Invalidate()
+}
+
 func (s *State) guardSchemaTableRename(services ui.Services, profile int64, database, table string, next func(ui.Services)) bool {
 	matches := func(t *tab) bool {
 		return t.data != nil && t.data.ProfileID() == profile && t.data.Database() == database && t.data.Table() == table ||

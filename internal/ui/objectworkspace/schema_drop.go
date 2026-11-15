@@ -66,6 +66,7 @@ func (s *State) beginSchemaDrop(profile int64, database, table string) {
 	s.closeSchemaDrop()
 	s.closeSchemaCopy()
 	s.closeSchemaRename()
+	s.closeSchemaClear()
 	ops, target := s.schemaBinding(profile, database, table)
 	owner, err := s.reserveSchemaDocument(s.nextSchemaDocumentID("drop"), target)
 	if err != nil {

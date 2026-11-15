@@ -65,6 +65,7 @@ func (s *State) beginSchemaRenameOperation(profile int64, database, table string
 	}
 	s.closeSchemaRename()
 	s.closeSchemaCopy()
+	s.closeSchemaClear()
 	s.closeSchemaDrop()
 	s.tableDialog = false
 	ops, target := s.schemaBinding(profile, database, table)

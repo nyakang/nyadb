@@ -78,7 +78,7 @@ func (x *schemaDocumentOwner) settle(expected contract.SchemaDesignWriteReceipt,
 			reflect.DeepEqual(r.Original, expected.Original) && reflect.DeepEqual(r.Desired, expected.Desired) &&
 			r.Destination == expected.Destination && r.AllowColumnDrop == expected.AllowColumnDrop &&
 			r.WithData == expected.WithData && r.RebindSelfReferences == expected.RebindSelfReferences &&
-			r.PreserveRowID == expected.PreserveRowID && r.State == out.State && r.Verified == out.Verified &&
+			r.PreserveRowID == expected.PreserveRowID && r.ResetIdentity == expected.ResetIdentity && r.State == out.State && r.Verified == out.Verified &&
 			r.Rows == out.Rows && reflect.DeepEqual(r.Actual, out.Actual)
 		valid = valid && len(r.Statements) > 0 && out.Rows >= 0
 		if r.State == "committed" || r.State == "rolled_back" {
@@ -157,6 +157,10 @@ func schemaSQLQualifier(snapshot contract.SchemaDesignSnapshot) string {
 
 func (s *State) SchemaTableOriginalOutcome(operation string) *contract.SchemaDesignOutcome {
 	switch operation {
+	case "clear":
+		if s.schemaClear != nil {
+			return s.schemaClear.owner.original()
+		}
 	case "drop":
 		if s.schemaDrop != nil {
 			return s.schemaDrop.owner.original()

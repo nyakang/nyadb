@@ -17,6 +17,7 @@ type schemaBatch struct {
 	guards     map[int]bool
 	catalog    int
 	rows       int
+	identities int
 }
 
 func schemaWriteBounds(original contract.SchemaDesignSnapshot, desired *schemaddl.Table) error {
@@ -124,6 +125,14 @@ func (d *schemaDocument) copy(ctx context.Context, request contract.SchemaCopyRe
 	return d.write(ctx, contract.SchemaDesignWriteReceipt{Operation: "copy", Original: r.Original, Destination: r.Destination, WithData: r.WithData, RebindSelfReferences: r.RebindSelfReferences, PreserveRowID: r.PreserveRowID})
 }
 
+func (d *schemaDocument) clear(ctx context.Context, request contract.SchemaClearRequest) contract.SchemaDesignOutcome {
+	if err := schemaWriteBounds(request.Original, nil); err != nil {
+		return contract.SchemaDesignOutcome{State: "not_executed", Error: err}
+	}
+	r := request.Clone()
+	return d.write(ctx, contract.SchemaDesignWriteReceipt{Operation: "clear", Original: r.Original, Destination: r.Original.Target.Object.Name, ResetIdentity: r.ResetIdentity})
+}
+
 func (d *schemaDocument) write(ctx context.Context, r contract.SchemaDesignWriteReceipt) contract.SchemaDesignOutcome {
 	child, scope, done, err := d.admission(ctx, r.Original.Target)
 	if err != nil {
@@ -165,7 +174,7 @@ func (d *schemaDocument) write(ctx context.Context, r contract.SchemaDesignWrite
 	if out.State == "uncertain" || out.State == "committed" && (!out.Verified || out.Error != nil) {
 		d.blocked = true
 	}
-	if r.Operation != "copy" && !d.closed && out.State == "committed" && out.Verified && out.Error == nil && out.Actual != nil {
+	if r.Operation != "copy" && r.Operation != "clear" && !d.closed && out.State == "committed" && out.Verified && out.Error == nil && out.Actual != nil {
 		d.target = out.Actual.Target
 	}
 	// A dispatched write returns its complete original settlement even after
@@ -198,6 +207,7 @@ func (d *schemaDocument) executeSchema(ctx context.Context, scope string, r cont
 	var desired schemaddl.Table
 	var plan schemaddl.Plan
 	var copyProgram *schemaCopyProgram
+	var clearProgram *schemaClearProgram
 	switch r.Operation {
 	case "apply":
 		desired = r.Desired.Clone()
@@ -232,6 +242,13 @@ func (d *schemaDocument) executeSchema(ctx context.Context, scope string, r cont
 		if err == nil {
 			copyProgram, err = buildSchemaCopyProgram(original, desired, r, scope)
 		}
+	case "clear":
+		if !original.Schema.Exists {
+			out.Error = connections.ErrInvalid
+			return out
+		}
+		desired = original.Schema.Table.Clone()
+		clearProgram, plan, err = buildSchemaClearProgram(original, r.ResetIdentity)
 	default:
 		err = contract.ErrUnsupported
 	}
@@ -242,7 +259,7 @@ func (d *schemaDocument) executeSchema(ctx context.Context, scope string, r cont
 	if plan.Mode == "noop" {
 		return out
 	} // No transaction or synthetic commit.
-	batch, err := schemaWriteBatch(original, desired, plan, guard, scope, r.Sequence, copyProgram)
+	batch, err := schemaWriteBatch(original, desired, plan, guard, scope, r.Sequence, copyProgram, clearProgram)
 	if err != nil {
 		out.Error = err
 		return out
@@ -313,6 +330,14 @@ func (d *schemaDocument) executeSchema(ctx context.Context, scope string, r cont
 	}
 	actual.Schema.Revision = schemaSnapshotSealScoped(actual, scope)
 	out.Actual = &actual // Keep the complete captured catalog even if verification fails.
+	if clearProgram != nil {
+		if actual.Schema.SQLite.Version != original.Schema.SQLite.Version {
+			return unverified(schemaddl.ErrConflict)
+		}
+		if err := verifySchemaClearIdentities(native, batch.identities); err != nil {
+			return unverified(err)
+		}
+	}
 	if plan.Mode == "drop" {
 		err = schemaddl.VerifySQLiteNativeDrop(original.Schema, actual.Schema)
 	} else if plan.Mode == "copy" {
@@ -334,11 +359,15 @@ func (d *schemaDocument) executeSchema(ctx context.Context, scope string, r cont
 	return finish()
 }
 
-func schemaWriteBatch(original contract.SchemaDesignSnapshot, desired schemaddl.Table, plan schemaddl.Plan, guard, scope string, sequence uint64, copyProgram *schemaCopyProgram) (schemaBatch, error) {
+func schemaWriteBatch(original contract.SchemaDesignSnapshot, desired schemaddl.Table, plan schemaddl.Plan, guard, scope string, sequence uint64, copyProgram *schemaCopyProgram, clearProgram *schemaClearProgram) (schemaBatch, error) {
 	b := schemaBatch{guards: map[int]bool{}}
 	name := schemaddl.Quote("__nyadb_schema_" + scope[:16] + fmt.Sprintf("_%d", sequence))
 	table := "temp." + name
-	b.statements = append(b.statements, "CREATE TEMP TABLE "+table+"(ok INTEGER NOT NULL CHECK(ok=1),original_rows INTEGER,schema_version INTEGER,type_hex TEXT,name_hex TEXT,table_hex TEXT,rootpage INTEGER,sql_hex TEXT,sql_null INTEGER)")
+	identityColumns := ""
+	if clearProgram != nil {
+		identityColumns = ",identity_phase TEXT,identity_count INTEGER,identity_rowid INTEGER,identity_name_type TEXT,identity_name_hex TEXT,identity_value_type TEXT,identity_value_hex TEXT"
+	}
+	b.statements = append(b.statements, "CREATE TEMP TABLE "+table+"(ok INTEGER NOT NULL CHECK(ok=1),original_rows INTEGER,schema_version INTEGER,type_hex TEXT,name_hex TEXT,table_hex TEXT,rootpage INTEGER,sql_hex TEXT,sql_null INTEGER"+identityColumns+")")
 	addGuard := func(condition string) {
 		b.guards[len(b.statements)] = true
 		b.statements = append(b.statements, "INSERT INTO "+table+"(ok) SELECT ("+condition+")")
@@ -365,6 +394,12 @@ func schemaWriteBatch(original contract.SchemaDesignSnapshot, desired schemaddl.
 	for _, sql := range before {
 		b.statements = append(b.statements, sql)
 	}
+	if clearProgram != nil {
+		for _, condition := range clearProgram.beforeGuards {
+			addGuard(condition)
+		}
+		b.statements = append(b.statements, clearProgram.capture(table, "before")...)
+	}
 	if copyProgram == nil {
 		b.statements = append(b.statements, plan.SQL...)
 	} else {
@@ -385,6 +420,14 @@ func schemaWriteBatch(original contract.SchemaDesignSnapshot, desired schemaddl.
 		b.statements = append(b.statements, sql)
 	}
 	addGuard("NOT EXISTS(SELECT 1 FROM pragma_foreign_key_check)")
+	if clearProgram != nil {
+		for _, condition := range clearProgram.afterGuards {
+			addGuard(condition)
+		}
+		b.statements = append(b.statements, clearProgram.capture(table, "after")...)
+		b.identities = len(b.statements)
+		b.statements = append(b.statements, "DELETE FROM "+name+" WHERE identity_phase IS NOT NULL RETURNING identity_phase,identity_count,identity_rowid,identity_name_type,identity_name_hex,identity_value_type,identity_value_hex")
+	}
 	if copyProgram != nil {
 		for _, condition := range copyProgram.afterGuards {
 			addGuard(condition)
@@ -393,6 +436,8 @@ func schemaWriteBatch(original contract.SchemaDesignSnapshot, desired schemaddl.
 	}
 	if plan.Mode == "drop" {
 		addGuard("NOT EXISTS(SELECT 1 FROM main.sqlite_schema WHERE type IN ('table','view') AND name COLLATE NOCASE=" + schemaTextLiteral(original.Target.Object.Name) + ")")
+	} else if clearProgram != nil {
+		addGuard("(SELECT count(*) FROM main." + schemaddl.Quote(desired.Name) + ")=0")
 	} else {
 		addGuard("(SELECT count(*) FROM main." + schemaddl.Quote(desired.Name) + ")=(SELECT original_rows FROM " + table + " WHERE original_rows IS NOT NULL LIMIT 1)")
 	}

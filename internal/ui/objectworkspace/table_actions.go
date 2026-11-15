@@ -176,7 +176,7 @@ func (s *State) ContextMenu(services ui.Services, m *ui.Menu, profileID int64, d
 	if m.Item(locales.Text("删除表")).Shortcut(0, ui.KeyDelete).Disabled(!s.CanDropTable(profileID, database, name)).Chosen() {
 		begin(mysqlsvc.MySQLTableDrop)
 	}
-	if m.Item(locales.Text("清空表")).Disabled(!ready).Chosen() {
+	if m.Item(locales.Text("清空表")).Disabled(!s.CanClearTable(profileID, database, name)).Chosen() {
 		begin(mysqlsvc.MySQLTableDeleteRows)
 	}
 	if m.Item(locales.Text("截断表")).Disabled(!ready).Chosen() {
@@ -279,6 +279,11 @@ func (s *State) BeginTableChange(profileID int64, database, name string, action 
 	if s.nativeTablePending() {
 		return
 	}
+	if action == mysqlsvc.MySQLTableDeleteRows && !s.CanChangeTable(profileID) {
+		s.beginSchemaClear(profileID, database, name)
+		return
+	}
+	s.closeSchemaClear()
 	if action == mysqlsvc.MySQLTableRename && s.canNativeRename(profileID, database, name) {
 		s.beginSchemaRenameOperation(profileID, database, name)
 		return
@@ -331,6 +336,7 @@ func (s *State) Modals(c *ui.Context) {
 	s.schemaCopyModal(c)
 	s.schemaDropModal(c)
 	s.schemaRenameModal(c)
+	s.schemaClearModal(c)
 	s.dictionaryModal(c)
 	s.searchModal(c)
 	s.objectGroupModal(c)
@@ -513,12 +519,15 @@ func (s *State) consumeMySQLTableChange(services ui.Services) {
 }
 
 func (s *State) TableDialogOpen() bool {
-	return s.tableDialog || s.schemaDrop != nil && s.schemaDrop.open && !s.schemaDrop.guarding || s.schemaCopy != nil && s.schemaCopy.open && !s.schemaCopy.guarding || s.schemaRename != nil && s.schemaRename.open && !s.schemaRename.guarding
+	return s.tableDialog || s.schemaDrop != nil && s.schemaDrop.open && !s.schemaDrop.guarding || s.schemaCopy != nil && s.schemaCopy.open && !s.schemaCopy.guarding || s.schemaRename != nil && s.schemaRename.open && !s.schemaRename.guarding || s.schemaClear != nil && s.schemaClear.open && !s.schemaClear.guarding
 }
 func (s *State) TablePending() bool {
 	return s.tablePending || s.nativeTablePending()
 }
 func (s *State) TableAction() mysqlsvc.MySQLTableAction {
+	if s.schemaClear != nil {
+		return mysqlsvc.MySQLTableDeleteRows
+	}
 	if s.schemaRename != nil {
 		return mysqlsvc.MySQLTableRename
 	}
@@ -534,6 +543,9 @@ func (s *State) TableAction() mysqlsvc.MySQLTableAction {
 	return s.tableAction
 }
 func (s *State) TableError() string {
+	if s.schemaClear != nil {
+		return s.schemaClear.err
+	}
 	if s.schemaRename != nil {
 		return s.schemaRename.err
 	}
@@ -550,6 +562,14 @@ func (s *State) TableError() string {
 // pending set until its executor returns so an uncertain command cannot replay.
 // Settled owned receipts survive disconnect until the user explicitly closes them.
 func (s *State) CancelTableFor(profileID int64) {
+	if x := s.schemaClear; x != nil && x.target.Object.ProfileID == profileID {
+		if x.cancel != nil {
+			x.cancel()
+		}
+		if !x.applying && (x.owner == nil || x.owner.last == nil) {
+			s.closeSchemaClear()
+		}
+	}
 	if x := s.schemaRename; x != nil && x.target.Object.ProfileID == profileID {
 		if x.cancel != nil {
 			x.cancel()

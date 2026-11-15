@@ -132,6 +132,9 @@ func (s *State) consumeSchemaReceiptTransfers() {
 	if x := s.schemaRename; x != nil && x.target.Object.ProfileID == w.ProfileID {
 		x.owner.consumeReceiptTransfer()
 	}
+	if x := s.schemaClear; x != nil && x.target.Object.ProfileID == w.ProfileID {
+		x.owner.consumeReceiptTransfer()
+	}
 }
 
 func (s *State) schemaReceiptView(c *ui.Context, x *schemaDocumentOwner) {

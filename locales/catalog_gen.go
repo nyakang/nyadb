@@ -43865,3 +43865,93 @@ func SchemaReceiptOriginalTarget() string { return In(i18n.Locale()).SchemaRecei
 func (msgs Messages) SchemaReceiptOriginalTarget() string {
 	return Catalog.Format(msgs.locale, "schemaReceiptOriginalTarget", nil)
 }
+
+// RqliteClearConfirm says "确认清空表"
+// in the language the app shows.
+func RqliteClearConfirm() string { return In(i18n.Locale()).RqliteClearConfirm() }
+
+// RqliteClearConfirm says "确认清空表"
+// in the language of msgs.
+func (msgs Messages) RqliteClearConfirm() string {
+	return Catalog.Format(msgs.locale, "rqliteClearConfirm", nil)
+}
+
+// RqliteClearPreview says "清空 SQL 预览"
+// in the language the app shows.
+func RqliteClearPreview() string { return In(i18n.Locale()).RqliteClearPreview() }
+
+// RqliteClearPreview says "清空 SQL 预览"
+// in the language of msgs.
+func (msgs Messages) RqliteClearPreview() string {
+	return Catalog.Format(msgs.locale, "rqliteClearPreview", nil)
+}
+
+// RqliteClearSuccess says "清空表成功"
+// in the language the app shows.
+func RqliteClearSuccess() string { return In(i18n.Locale()).RqliteClearSuccess() }
+
+// RqliteClearSuccess says "清空表成功"
+// in the language of msgs.
+func (msgs Messages) RqliteClearSuccess() string {
+	return Catalog.Format(msgs.locale, "rqliteClearSuccess", nil)
+}
+
+// RqliteClearUnknown says "清空结果未确认，请重新连接并核对原表。"
+// in the language the app shows.
+func RqliteClearUnknown() string { return In(i18n.Locale()).RqliteClearUnknown() }
+
+// RqliteClearUnknown says "清空结果未确认，请重新连接并核对原表。"
+// in the language of msgs.
+func (msgs Messages) RqliteClearUnknown() string {
+	return Catalog.Format(msgs.locale, "rqliteClearUnknown", nil)
+}
+
+// RqliteClearChanged says "清空结果或结构已变化；重新读取后才能再次确认。"
+// in the language the app shows.
+func RqliteClearChanged() string { return In(i18n.Locale()).RqliteClearChanged() }
+
+// RqliteClearChanged says "清空结果或结构已变化；重新读取后才能再次确认。"
+// in the language of msgs.
+func (msgs Messages) RqliteClearChanged() string {
+	return Catalog.Format(msgs.locale, "rqliteClearChanged", nil)
+}
+
+// RqliteClearSemantics says "事务清空所有行；保留表结构、索引和触发器。"
+// in the language the app shows.
+func RqliteClearSemantics() string { return In(i18n.Locale()).RqliteClearSemantics() }
+
+// RqliteClearSemantics says "事务清空所有行；保留表结构、索引和触发器。"
+// in the language of msgs.
+func (msgs Messages) RqliteClearSemantics() string {
+	return Catalog.Format(msgs.locale, "rqliteClearSemantics", nil)
+}
+
+// RqliteClearEffects says "删除触发器和外键级联会执行，可能修改同库其他表；任一步失败则回滚。"
+// in the language the app shows.
+func RqliteClearEffects() string { return In(i18n.Locale()).RqliteClearEffects() }
+
+// RqliteClearEffects says "删除触发器和外键级联会执行，可能修改同库其他表；任一步失败则回滚。"
+// in the language of msgs.
+func (msgs Messages) RqliteClearEffects() string {
+	return Catalog.Format(msgs.locale, "rqliteClearEffects", nil)
+}
+
+// RqliteClearKeepIdentity says "不勾选时不主动重置自增值；原触发器的自增行为仍会执行。"
+// in the language the app shows.
+func RqliteClearKeepIdentity() string { return In(i18n.Locale()).RqliteClearKeepIdentity() }
+
+// RqliteClearKeepIdentity says "不勾选时不主动重置自增值；原触发器的自增行为仍会执行。"
+// in the language of msgs.
+func (msgs Messages) RqliteClearKeepIdentity() string {
+	return Catalog.Format(msgs.locale, "rqliteClearKeepIdentity", nil)
+}
+
+// RqliteClearResetIdentity says "重置自增值"
+// in the language the app shows.
+func RqliteClearResetIdentity() string { return In(i18n.Locale()).RqliteClearResetIdentity() }
+
+// RqliteClearResetIdentity says "重置自增值"
+// in the language of msgs.
+func (msgs Messages) RqliteClearResetIdentity() string {
+	return Catalog.Format(msgs.locale, "rqliteClearResetIdentity", nil)
+}

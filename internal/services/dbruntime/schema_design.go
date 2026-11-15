@@ -139,6 +139,29 @@ func (s *session) bindSchemaDesign(raw contract.SchemaDesignOperations, document
 			return raw.CanRename(t)
 		}
 	}
+	if raw.CanClear != nil {
+		ops.CanClear = func(t contract.SchemaDesignTarget) bool {
+			if s.schemaDesignTarget(t) != nil || !s.Capabilities().Objects {
+				return false
+			}
+			t.Generation = s.raw.Generation()
+			return raw.CanClear(t)
+		}
+	}
+	if raw.Clear != nil {
+		ops.Clear = func(ctx context.Context, request contract.SchemaClearRequest) contract.SchemaDesignOutcome {
+			if err := s.schemaDesignTarget(request.Original.Target); err != nil {
+				return contract.SchemaDesignOutcome{State: "not_executed", Error: err}
+			}
+			if !s.Capabilities().Objects {
+				return contract.SchemaDesignOutcome{State: "not_executed", Error: contract.ErrUnsupported}
+			}
+			r := request.Clone()
+			r.Original.Target.Generation = s.raw.Generation()
+			expected := contract.SchemaDesignWriteReceipt{DocumentID: documentID, Operation: "clear", Original: r.Original.Clone(), Destination: r.Original.Target.Object.Name, ResetIdentity: r.ResetIdentity}
+			return s.schemaDesignOutcome(raw.Clear(ctx, r.Clone()), expected)
+		}
+	}
 	if raw.Rename != nil {
 		ops.Rename = func(ctx context.Context, request contract.SchemaRenameRequest) contract.SchemaDesignOutcome {
 			if err := s.schemaDesignTarget(request.Original.Target); err != nil {
@@ -181,6 +204,8 @@ func (s *session) schemaDesignOutcome(out contract.SchemaDesignOutcome, expected
 			return actual.Schema.Exists
 		case "rename":
 			return actual.Schema.Exists && actual.Schema.Table.Name == expected.Destination
+		case "clear":
+			return actual.Schema.Exists && actual.Schema.Table.Name == expected.Destination && actual.Schema.Engine == expected.Original.Schema.Engine
 		}
 		if expected.DocumentID != "" {
 			return actual.Schema.Exists && actual.Schema.Table.Name == expected.Destination && actual.Schema.Engine == expected.Original.Schema.Engine
@@ -202,7 +227,7 @@ func (s *session) schemaDesignOutcome(out contract.SchemaDesignOutcome, expected
 			r.Operation != expected.Operation || !reflect.DeepEqual(r.Original, expected.Original) ||
 			!reflect.DeepEqual(r.Desired, expected.Desired) || r.Destination != expected.Destination ||
 			r.AllowColumnDrop != expected.AllowColumnDrop || r.WithData != expected.WithData ||
-			r.RebindSelfReferences != expected.RebindSelfReferences || r.PreserveRowID != expected.PreserveRowID ||
+			r.RebindSelfReferences != expected.RebindSelfReferences || r.PreserveRowID != expected.PreserveRowID || r.ResetIdentity != expected.ResetIdentity ||
 			r.State != out.State || r.Verified != out.Verified || r.Rows != out.Rows || !reflect.DeepEqual(r.Actual, out.Actual) {
 			validation = errors.Join(validation, errors.New("schema acknowledgement differs from captured original document or request"))
 		}

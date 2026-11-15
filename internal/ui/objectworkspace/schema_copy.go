@@ -42,7 +42,7 @@ type schemaCopyOperation struct {
 }
 
 func (s *State) nativeTablePending() bool {
-	return s.schemaDrop != nil && s.schemaDrop.busy || s.schemaCopy != nil && s.schemaCopy.busy || s.schemaRename != nil && s.schemaRename.busy || s.viewOp != nil && s.viewOp.busy
+	return s.schemaDrop != nil && s.schemaDrop.busy || s.schemaCopy != nil && s.schemaCopy.busy || s.schemaRename != nil && s.schemaRename.busy || s.schemaClear != nil && s.schemaClear.busy || s.viewOp != nil && s.viewOp.busy
 }
 func (s *State) CanCopyTable(profile int64, database, table string) bool {
 	if s.CanChangeTable(profile) {
@@ -70,6 +70,7 @@ func (s *State) beginSchemaCopy(profile int64, database, table string, data bool
 	s.closeSchemaCopy()
 	s.closeSchemaDrop()
 	s.closeSchemaRename()
+	s.closeSchemaClear()
 	ops, target := s.schemaBinding(profile, database, table)
 	owner, err := s.reserveSchemaDocument(s.nextSchemaDocumentID("copy"), target)
 	if err != nil {

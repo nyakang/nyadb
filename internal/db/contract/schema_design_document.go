@@ -46,6 +46,7 @@ type SchemaDesignDocumentFeatures struct {
 	CanDrop   func(SchemaDesignTarget) bool
 	CanCopy   func(SchemaDesignTarget) bool
 	CanRename func(SchemaDesignTarget) bool
+	CanClear  func(SchemaDesignTarget) bool
 }
 
 type SchemaDesignDocumentFeaturesProvider interface {
@@ -70,6 +71,7 @@ type SchemaDesignWriteReceipt struct {
 	WithData             bool
 	RebindSelfReferences bool
 	PreserveRowID        bool
+	ResetIdentity        bool
 	Statements           []string
 	NativeJSON           string
 	State                string

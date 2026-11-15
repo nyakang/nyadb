@@ -17,7 +17,12 @@ import (
 
 type schemaDocumentHandle struct {
 	schemaHandle
-	reserve func(contract.SchemaDesignDocumentRequest) (contract.SchemaDesignDocumentLease, error)
+	reserve  func(contract.SchemaDesignDocumentRequest) (contract.SchemaDesignDocumentLease, error)
+	features contract.SchemaDesignDocumentFeatures
+}
+
+func (h *schemaDocumentHandle) SchemaDesignDocumentFeatures() contract.SchemaDesignDocumentFeatures {
+	return h.features
 }
 
 func (h *schemaDocumentHandle) ReserveSchemaDesignDocument(r contract.SchemaDesignDocumentRequest) (contract.SchemaDesignDocumentLease, error) {
@@ -40,11 +45,14 @@ func (l *schemaDocumentFake) Close() error {
 	return nil
 }
 
-func schemaLeaseRuntime(t *testing.T, reserve func(contract.SchemaDesignDocumentRequest) (contract.SchemaDesignDocumentLease, error)) (*dbruntime.Manager, contract.SchemaDesignTarget) {
+func schemaLeaseRuntime(t *testing.T, reserve func(contract.SchemaDesignDocumentRequest) (contract.SchemaDesignDocumentLease, error), features ...contract.SchemaDesignDocumentFeatures) (*dbruntime.Manager, contract.SchemaDesignTarget) {
 	t.Helper()
 	m := dbruntime.New()
 	t.Cleanup(func() { _ = m.Close() })
 	h := &schemaDocumentHandle{schemaHandle: schemaHandle{handle: handle{id: 1, caps: contract.Capabilities{DesignTables: true, Objects: true}}}, reserve: reserve}
+	if len(features) > 0 {
+		h.features = features[0]
+	}
 	// Preserve legacy capability gates; leased methods alone publish no tools.
 	h.apply = func(context.Context, contract.SchemaDesignRequest) contract.SchemaDesignOutcome {
 		return contract.SchemaDesignOutcome{State: "not_executed"}
@@ -247,6 +255,11 @@ func TestSchemaDocumentUnknownOutcomeSurvivesReadsAndBlocksEveryWrite(t *testing
 		raw.ops.CanDrop = raw.ops.CanApply
 		raw.ops.CanCopy = raw.ops.CanApply
 		raw.ops.CanRename = raw.ops.CanApply
+		raw.ops.CanClear = raw.ops.CanApply
+		raw.ops.Clear = func(context.Context, contract.SchemaClearRequest) contract.SchemaDesignOutcome {
+			t.Error("unknown write replayed as clear")
+			return contract.SchemaDesignOutcome{}
+		}
 		raw.ops.Drop = func(context.Context, contract.SchemaDesignSnapshot) contract.SchemaDesignOutcome {
 			t.Error("unknown write replayed as drop")
 			return contract.SchemaDesignOutcome{}
@@ -281,14 +294,14 @@ func TestSchemaDocumentUnknownOutcomeSurvivesReadsAndBlocksEveryWrite(t *testing
 		t.Fatal("fresh read relabelled original unknown acknowledgement")
 	}
 	request.Desired.Name = "different-request"
-	results := []contract.SchemaDesignOutcome{ops.Apply(context.Background(), request), ops.Drop(context.Background(), snapshot), ops.Copy(context.Background(), contract.SchemaCopyRequest{Original: snapshot, Destination: "copy"}), ops.Rename(context.Background(), contract.SchemaRenameRequest{Original: snapshot, Destination: "rename"})}
+	results := []contract.SchemaDesignOutcome{ops.Apply(context.Background(), request), ops.Drop(context.Background(), snapshot), ops.Copy(context.Background(), contract.SchemaCopyRequest{Original: snapshot, Destination: "copy"}), ops.Rename(context.Background(), contract.SchemaRenameRequest{Original: snapshot, Destination: "rename"}), ops.Clear(context.Background(), contract.SchemaClearRequest{Original: snapshot, ResetIdentity: true})}
 	for _, out := range results {
 		if out.State != "not_executed" || !errors.Is(out.Error, contract.ErrSchemaCommitUncertain) || out.Receipt != nil {
 			t.Fatal("blocked request relabelled original receipt", out)
 		}
 	}
 	// The original evidence is fetched separately and still belongs to its request.
-	if l.OriginalOutcome().Receipt.Destination != "original-destination" || calls.Load() != 1 || ops.CanApply(target) || ops.CanDrop(target) || ops.CanCopy(target) || ops.CanRename(target) {
+	if l.OriginalOutcome().Receipt.Destination != "original-destination" || calls.Load() != 1 || ops.CanApply(target) || ops.CanDrop(target) || ops.CanCopy(target) || ops.CanRename(target) || ops.CanClear(target) {
 		t.Fatal("unknown document allowed another write")
 	}
 	peer := reserveRuntimeSchema(t, m, "peer", target)

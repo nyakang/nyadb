@@ -4305,5 +4305,14 @@
   "schemaReceiptLeaveHint": "原写入结果尚未核验；离开会保留草稿与回执，禁止再次执行。关闭文档会释放这些内容，请先复制或导出回执。",
   "schemaReceiptBlocked": "原始结构写入未核验；读取不会解除写入保护。",
   "schemaReceiptSummary": "原始回执：%s · 当前核验通过：%s",
-  "schemaReceiptOriginalTarget": "原始目标：#%d · %s / %s · %s"
+  "schemaReceiptOriginalTarget": "原始目标：#%d · %s / %s · %s",
+  "rqliteClearConfirm": "确认清空表",
+  "rqliteClearPreview": "清空 SQL 预览",
+  "rqliteClearSuccess": "清空表成功",
+  "rqliteClearUnknown": "清空结果未确认，请重新连接并核对原表。",
+  "rqliteClearChanged": "清空结果或结构已变化；重新读取后才能再次确认。",
+  "rqliteClearSemantics": "事务清空所有行；保留表结构、索引和触发器。",
+  "rqliteClearEffects": "删除触发器和外键级联会执行，可能修改同库其他表；任一步失败则回滚。",
+  "rqliteClearKeepIdentity": "不勾选时不主动重置自增值；原触发器的自增行为仍会执行。",
+  "rqliteClearResetIdentity": "重置自增值"
 }

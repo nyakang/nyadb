@@ -63,6 +63,9 @@ type Dependencies struct {
 	SchemaDropped            func(ui.Services, SchemaDropEvent)
 	SchemaCopied             func(ui.Services, SchemaCopyEvent)
 	SchemaRenamed            func(ui.Services, SchemaRenameEvent)
+	SchemaCleared            func(ui.Services, SchemaClearEvent)
+	BeforeClear              func(ui.Services, int64, string, string, func(ui.Services)) bool
+	ClearGuardPending        func(int64, string) bool
 	BeforeDrop               func(ui.Services, int64, string, string, func(ui.Services)) bool
 	BeforeCopy               func(ui.Services, int64, string, string, func(ui.Services)) bool
 	BeforeRename             func(ui.Services, int64, string, string, func(ui.Services)) bool
@@ -233,6 +236,7 @@ type State struct {
 	schemaCopy                              *schemaCopyOperation
 	schemaRename                            *schemaRenameOperation
 	schemaDrop                              *schemaDropOperation
+	schemaClear                             *schemaClearOperation
 	dictionary                              *dictionaryState
 	dictionaryMenu                          *dictionaryScope
 	dictionarySave                          func(string) (string, error)
@@ -449,6 +453,7 @@ func (s *State) CloseAll() {
 	s.closeSchemaCopy()
 	s.closeSchemaDrop()
 	s.closeSchemaRename()
+	s.closeSchemaClear()
 	s.closeDictionary()
 	s.dictionaryMenu = nil
 	s.closeObjectReference()
@@ -502,6 +507,7 @@ func (s *State) Consume(services ui.Services) {
 	s.consumeSchemaCopy(services)
 	s.consumeSchemaDrop(services)
 	s.consumeSchemaRename(services)
+	s.consumeSchemaClear(services)
 	s.consumeDictionary(services)
 	s.consumeObjectReference(services)
 	s.consumeObjectSearch()
