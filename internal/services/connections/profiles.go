@@ -10,6 +10,7 @@ import (
 type Kind string
 
 const (
+	RQLite        Kind = "rqlite"
 	Consul        Kind = "consul"
 	Etcd          Kind = "etcd"
 	MySQL         Kind = "mysql"
@@ -101,6 +102,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	RQLiteOptions        RQLiteOptions
 	H2Options            H2Options
 	SelectDBOptions      SelectDBOptions
 	ConsulOptions        ConsulOptions

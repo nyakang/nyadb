@@ -12,6 +12,8 @@ type Descriptor struct {
 
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
+	case RQLite:
+		return Descriptor{kind, "RQLite", "rqlite", "server", "sqlite", 4001, contract.Capabilities{Query: true, Metadata: true}}, true
 	case H2:
 		return Descriptor{kind, "H2", "h2", "h2", "h2", 9092, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
 	case Consul:

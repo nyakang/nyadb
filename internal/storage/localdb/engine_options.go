@@ -12,6 +12,7 @@ import (
 // Keep the existing column and MySQL JSON format. Other engines use an
 // explicit versioned envelope; older empty records receive engine defaults.
 type engineOptionsEnvelope struct {
+	RQLite        *connections.RQLiteOptions        `json:"rqlite,omitempty"`
 	H2            *connections.H2Options            `json:"h2,omitempty"`
 	SelectDB      *connections.SelectDBOptions      `json:"selectdb,omitempty"`
 	Consul        *connections.ConsulOptions        `json:"consul,omitempty"`
@@ -43,6 +44,8 @@ type engineOptionsEnvelope struct {
 func encodeProfileOptions(p connections.Profile) (string, error) {
 	var value any
 	switch p.Kind {
+	case connections.RQLite:
+		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, RQLite: &p.RQLiteOptions}
 	case connections.H2:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, H2: &p.H2Options}
 	case connections.Consul:
@@ -103,6 +106,9 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 }
 func decodeEngineOptions(p *connections.Profile, raw string) error {
 	if raw == "" {
+		if p.Kind == connections.RQLite {
+			return connections.ErrInvalid
+		}
 		if p.Kind == connections.H2 {
 			return connections.ErrInvalid
 		}
@@ -193,6 +199,25 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 	decoder.DisallowUnknownFields()
 	if len(raw) > 128<<10 || decoder.Decode(&envelope) != nil || decoder.Decode(new(any)) != io.EOF || envelope.Version != 1 || envelope.Kind != p.Kind {
 		return fmt.Errorf("invalid saved engine options")
+	}
+	if p.Kind == connections.RQLite {
+		if !canonicalRQLiteSavedOptions(raw) || envelope.RQLite == nil || envelope.RQLite.Version != 1 {
+			return connections.ErrInvalid
+		}
+		p.RQLiteOptions = *envelope.RQLite
+		checked, err := connections.NormalizeProfile(*p)
+		*p = checked
+		return err
+	}
+	// Reject even a null RQLite member on another engine.
+	var rqliteFields map[string]json.RawMessage
+	if json.Unmarshal([]byte(raw), &rqliteFields) != nil {
+		return connections.ErrInvalid
+	}
+	for key := range rqliteFields {
+		if strings.EqualFold(key, "rqlite") {
+			return connections.ErrInvalid
+		}
 	}
 	if p.Kind == connections.H2 {
 		if !uniqueNativeAuthOptionsJSON(raw) || envelope.H2 == nil {
