@@ -363,6 +363,12 @@ func dataMutationReceiptComplete(object contract.ObjectRef, edits []contract.Dat
 			return false
 		}
 		if edit.Kind == "insert" || edit.Kind == "update" || edit.Kind == "copy" {
+			// Complete original sequential acknowledgements can require a fresh
+			// read rather than fabricated saved values/keys. Identity and original
+			// destinations were validated above and at the owning acceptance site.
+			if (edit.Kind == "insert" || edit.Kind == "update") && result.Sequential != nil && result.RefreshRequired && outcome.Saved == nil {
+				continue
+			}
 			if outcome.Saved == nil || outcome.Saved.Ref.Object != object || len(outcome.Saved.Ref.Columns) == 0 || len(outcome.Saved.Ref.Columns) != len(outcome.Saved.Ref.TypedValues) || len(outcome.Saved.Ref.Columns) != len(outcome.Saved.Ref.Values) {
 				return false
 			}

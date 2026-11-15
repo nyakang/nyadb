@@ -13,18 +13,20 @@ import (
 // One original document owns its key grants and independently canceled native
 // read operations. Reservation never opens a socket or performs metadata I/O.
 type dataLease struct {
-	mu      sync.Mutex
-	session *Session
-	object  contract.ObjectRef
-	ctx     context.Context
-	cancel  context.CancelFunc
-	closed  bool
-	done    chan struct{}
-	work    sync.WaitGroup
-	active  int
-	key     [32]byte
-	meta    *dataMetadata
-	epoch   uint64
+	mu                     sync.Mutex
+	session                *Session
+	object                 contract.ObjectRef
+	ctx                    context.Context
+	cancel                 context.CancelFunc
+	closed                 bool
+	done                   chan struct{}
+	work                   sync.WaitGroup
+	active                 int
+	key                    [32]byte
+	meta                   *dataMetadata
+	epoch                  uint64
+	planning, writeBlocked bool
+	writePlan              *dataWritePlan
 }
 
 func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
@@ -155,6 +157,10 @@ func (l *dataLease) Close() error {
 	l.work.Wait()
 	l.mu.Lock()
 	l.meta = nil
+	if l.writePlan != nil {
+		l.writePlan.releaseLocked()
+		l.writePlan = nil
+	}
 	clear(l.key[:])
 	l.mu.Unlock()
 	l.session.mu.Lock()

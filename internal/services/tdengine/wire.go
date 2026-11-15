@@ -150,6 +150,10 @@ func (w *wire) text(ctx context.Context, action string, args map[string]any) ([]
 }
 
 func (w *wire) query(ctx context.Context, sql string, sink func([]contract.Column, []contract.Cell) error, budget *int) (set contract.ResultSet, receipt json.RawMessage, err error) {
+	return w.queryAttempt(ctx, sql, sink, budget, nil)
+}
+
+func (w *wire) queryAttempt(ctx context.Context, sql string, sink func([]contract.Column, []contract.Cell) error, budget *int, dispatched func()) (set contract.ResultSet, receipt json.RawMessage, err error) {
 	done, err := w.scope(ctx)
 	if err != nil {
 		return set, nil, err
@@ -167,6 +171,9 @@ func (w *wire) query(ctx context.Context, sql string, sink func([]contract.Colum
 	binary.LittleEndian.PutUint16(req[24:], 1)
 	binary.LittleEndian.PutUint32(req[26:], uint32(len(sql)))
 	copy(req[30:], sql)
+	if dispatched != nil {
+		dispatched() // A failed physical write may have sent an original prefix.
+	}
 	if err = w.conn.WriteMessage(websocket.BinaryMessage, req); err != nil {
 		return set, nil, err
 	}
@@ -175,8 +182,16 @@ func (w *wire) query(ctx context.Context, sql string, sink func([]contract.Colum
 		return set, nil, err
 	}
 	var response nativeResponse
+	if kind == websocket.TextMessage && json.Valid(raw) {
+		receipt = append(json.RawMessage(nil), raw...)
+	} else {
+		receipt, _ = json.Marshal(struct {
+			OriginalFrameType           int    `json:"original_frame_type"`
+			OriginalUnparseableResponse []byte `json:"original_unparseable_response"`
+		}{kind, raw})
+	}
 	if kind != websocket.TextMessage || json.Unmarshal(raw, &response) != nil || response.Request != w.seq || response.Action != "binary_query" {
-		return set, nil, contract.ErrUnsupported
+		return set, receipt, contract.ErrUnsupported
 	}
 	receipt = append(json.RawMessage(nil), raw...)
 	if response.Code != 0 {

@@ -28,6 +28,7 @@ func (s *State) Cancel(t *Document) {
 	if t == nil || t.closed {
 		return
 	}
+	t.edit.AfterRefresh = nil
 	runtime := s.runtimeFor(t)
 	if (runtime.PageFailureRequiresReopen || runtime.PageCancellationAcknowledged) && t.loading {
 		t.readRetired, t.readStopping = runtime.PageFailureRequiresReopen, true
@@ -206,7 +207,7 @@ func (s *State) changeMySQLDataPage(services ui.Services, t *Document, offset in
 	s.Load(services, t, true)
 	t.pagingRead = false
 }
-func (s *State) consumePages() {
+func (s *State) consumePages(services ui.Services) {
 	for _, t := range s.documents {
 		if t.closed || t.results == nil || !s.consumeFor(t) {
 			continue
@@ -219,6 +220,11 @@ func (s *State) consumePages() {
 				result.offset != t.offset {
 				continue
 			}
+			var after func(ui.Services)
+			if t.edit.AfterRefreshRequest == result.request {
+				after = t.edit.AfterRefresh
+			}
+			t.edit.AfterRefresh = nil
 			s.recordDataPageHistory(t, result, result.generation != s.sessionFor(t).Generation || !s.sessionFor(t).Connected)
 			stopping := t.readStopping
 			s.settlePage(t)
@@ -297,6 +303,9 @@ func (s *State) consumePages() {
 						t.columns[i].Width = 200
 					}
 				}
+			}
+			if after != nil {
+				after(services)
 			}
 		default:
 		}

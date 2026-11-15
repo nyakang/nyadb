@@ -249,7 +249,7 @@ func (s *State) Consume(services ui.Services) {
 			s.consumeMySQLDataExport(d)
 		}
 	}
-	s.consumePages()
+	s.consumePages(services)
 	s.consumeEdits(services)
 	s.consumeDataTransfers(services)
 	s.consumeDataAnalysis()

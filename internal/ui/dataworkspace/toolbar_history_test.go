@@ -167,7 +167,7 @@ func TestDataHistoryReadWorkersRecordFailureAndOwnOriginalRules(t *testing.T) {
 	if len(d.tools.history) != 1 || d.tools.history[0].Failed || d.tools.history[0].Filters[0].Value != "original_filter" {
 		t.Fatal("accepted query history used mutable current rules")
 	}
-	s.consumePages()
+	s.consumePages(ui.Services{})
 	s.recordDataHistory(d)
 	if d.tools.historyStats.Total != 1 {
 		t.Fatal("redraw recorded the same query twice")
@@ -308,7 +308,7 @@ func TestDataHistoryCanceledReadRecordsOriginalRequestOnce(t *testing.T) {
 	if len(d.tools.history) != 1 || !d.tools.history[0].Failed || d.tools.history[0].Filters[0].Value != "before_cancel" || d.tools.historyStats.Total != 1 {
 		t.Fatal("canceled page read omitted or mutated its original history request")
 	}
-	s.consumePages()
+	s.consumePages(ui.Services{})
 	s.Cancel(d)
 	if d.tools.historyStats.Total != 1 || d.tools.historyActiveRead != nil {
 		t.Fatal("canceled or consumed read was counted twice")

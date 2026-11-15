@@ -81,6 +81,8 @@ type mysqlDataEditState struct {
 	LeaveOpen                 bool
 	LeaveNext                 func(ui.Services)
 	AfterSave                 func(ui.Services)
+	AfterRefresh              func(ui.Services)
+	AfterRefreshRequest       uint64
 	Hits                      []mysqlCellHit
 	PointerRow, PointerSource int
 	PointerActive             bool
@@ -566,6 +568,7 @@ func (s *State) stopMySQLDataEdit(t *Document) {
 	}
 	s.cancelDataMutation(t)
 	t.edit.AfterSave = nil
+	t.edit.AfterRefresh = nil
 }
 func (s *State) cancelMySQLDataEdit(t *Document) {
 	s.stopMySQLDataEdit(t)
@@ -857,18 +860,26 @@ func (s *State) consumeEdits(services ui.Services) {
 			}
 			s.rememberDataTransactionSave(t, r.Keys, r.Saved)
 			s.acceptMySQLDataSaved(t, r.Keys, r.Saved)
+			refresh := r.Saved.RefreshRequired
 			for _, outcome := range r.Saved.Outcomes {
 				if outcome.Kind == "insert" && outcome.Saved == nil {
-					s.Load(services, t, true)
+					refresh = true
 					break
 				}
 			}
 			after := t.edit.AfterSave
 			t.edit.AfterSave = nil
-			if after != nil {
-				after(services)
-			} else if r.Saved.RefreshRequired {
+			if refresh {
 				s.refreshDataAfterWrite(services, t)
+				if r.Saved.Sequential != nil && t.loading && !t.readStopping {
+					t.edit.AfterRefresh, t.edit.AfterRefreshRequest = after, t.request
+				} else if r.Saved.Sequential == nil && after != nil {
+					// Transaction continuations retain their existing read/token
+					// coordination (for example commitAfterRead).
+					after(services)
+				}
+			} else if after != nil {
+				after(services)
 			}
 		default:
 		}

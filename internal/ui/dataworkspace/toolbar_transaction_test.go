@@ -68,7 +68,7 @@ func consumeTransactionPage(t *testing.T, s *State, d *Document) {
 		out := make(chan mysqlDataResult, 1)
 		out <- r
 		d.results = out
-		s.consumePages()
+		s.consumePages(ui.Services{})
 	case <-time.After(time.Second):
 		t.Fatal("transaction page did not complete")
 	}

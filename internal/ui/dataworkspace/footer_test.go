@@ -25,7 +25,7 @@ func TestMySQLDataReadStatusSurvivesFailureAndCancellation(t *testing.T) {
 	result := make(chan mysqlDataResult, 1)
 	doc.results = result
 	result <- mysqlDataResult{generation: 2, profileID: 12, request: 3, page: page}
-	s.consumePages()
+	s.consumePages(ui.Services{})
 	if doc.readInfo.CompletedAt != completed || doc.readInfo.QuerySQL != page.QuerySQL {
 		t.Fatal("completed execution details were not accepted")
 	}
@@ -33,7 +33,7 @@ func TestMySQLDataReadStatusSurvivesFailureAndCancellation(t *testing.T) {
 	result = make(chan mysqlDataResult, 1)
 	doc.results = result
 	result <- mysqlDataResult{generation: 2, profileID: 12, request: doc.request, err: errors.New("read failed")}
-	s.consumePages()
+	s.consumePages(ui.Services{})
 	if doc.readInfo.CompletedAt != completed || !strings.HasPrefix(mysqlDataQueryStatus(doc), "上次成功查询") {
 		t.Fatal("failed read replaced the last successful execution")
 	}
