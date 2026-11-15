@@ -33,8 +33,8 @@ func TestSchemaDocumentOwnsOriginalProofAndReleasesReservation(t *testing.T) {
 	first := reserveSchemaUnit(t, s, "first", "original")
 	second := reserveSchemaUnit(t, s, "second", "original")
 	ops := first.Operations()
-	if ops.Apply != nil || ops.Drop != nil || ops.Copy != nil || ops.Rename != nil || first.OriginalOutcome() != nil {
-		t.Fatal("leased read published writes or synthesized a receipt")
+	if s.SchemaDesign().Apply != nil || s.Capabilities().DesignTables || s.Capabilities().Objects || first.OriginalOutcome() != nil {
+		t.Fatal("leased adapter published workbench tools or synthesized a receipt")
 	}
 	original, err := ops.Snapshot(context.Background(), first.target)
 	if err != nil {

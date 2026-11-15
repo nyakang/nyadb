@@ -174,6 +174,15 @@ func (s *Session) requestBounded(ctx context.Context, path string, statements []
 	}
 	for _, result := range out.Results {
 		if result.failed() {
+			// v8 /db/request can skip any statement preparation failure and
+			// commit, including INSERT or DDL. Only a truncated native batch
+			// ending in failure, or an acknowledged executor timeout, proves
+			// transaction abort. An earlier skipped failure followed by a
+			// terminal execution failure still belongs to that rollback.
+			last := out.Results[len(out.Results)-1]
+			if possibleWrite && transaction && (!last.failed() || len(out.Results) == len(statements) && !errors.Is(last.safeError(), context.DeadlineExceeded)) {
+				out.Uncertain = true
+			}
 			return out, result.safeError()
 		}
 	}

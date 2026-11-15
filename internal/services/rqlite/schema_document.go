@@ -13,16 +13,20 @@ import (
 // A structure document owns its original target and its own random proof key.
 // Session snapshots and sibling documents cannot authorize its future writes.
 type schemaDocument struct {
-	s      *Session
-	id     string
-	target contract.SchemaDesignTarget
-	mu     sync.Mutex
-	closed bool
-	ctx    context.Context
-	cancel context.CancelFunc
-	active sync.WaitGroup
-	done   chan struct{}
-	scope  string
+	s        *Session
+	id       string
+	target   contract.SchemaDesignTarget
+	mu       sync.Mutex
+	closed   bool
+	ctx      context.Context
+	cancel   context.CancelFunc
+	active   sync.WaitGroup
+	done     chan struct{}
+	scope    string
+	writes   chan struct{}
+	sequence uint64
+	original *contract.SchemaDesignOutcome
+	blocked  bool
 }
 
 func (s *Session) ReserveSchemaDesignDocument(r contract.SchemaDesignDocumentRequest) (contract.SchemaDesignDocumentLease, error) {
@@ -45,7 +49,7 @@ func (s *Session) ReserveSchemaDesignDocument(r contract.SchemaDesignDocumentReq
 		return nil, err
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	d := &schemaDocument{s: s, id: r.DocumentID, target: r.Target, ctx: ctx, cancel: cancel, done: make(chan struct{}), scope: hex.EncodeToString(scope[:])}
+	d := &schemaDocument{s: s, id: r.DocumentID, target: r.Target, ctx: ctx, cancel: cancel, done: make(chan struct{}), writes: make(chan struct{}, 1), scope: hex.EncodeToString(scope[:])}
 	if s.schemaDocuments == nil {
 		s.schemaDocuments = make(map[string]*schemaDocument)
 	}
@@ -92,12 +96,32 @@ func (d *schemaDocument) snapshot(ctx context.Context, target contract.SchemaDes
 }
 
 func (d *schemaDocument) Operations() contract.SchemaDesignOperations {
-	// Native writes need complete original receipts and semantic acceptance.
-	// Reserving read ownership alone never publishes schema mutation methods.
-	return contract.SchemaDesignOperations{Snapshot: d.snapshot}
+	d.mu.Lock()
+	closed := d.closed
+	d.mu.Unlock()
+	if closed {
+		return contract.SchemaDesignOperations{}
+	}
+	ops := contract.SchemaDesignOperations{Snapshot: d.snapshot}
+	// These lease-bound adapter operations are distinct from public workbench
+	// capability publication, which still requires its full UI acceptance.
+	if !d.s.config.Options.ReadOnly {
+		ops.CanApply, ops.Apply = d.writable, d.apply
+		ops.CanDrop, ops.Drop = d.writable, d.drop
+		ops.CanRename, ops.Rename = d.writable, d.rename
+	}
+	return ops
 }
 
-func (d *schemaDocument) OriginalOutcome() *contract.SchemaDesignOutcome { return nil }
+func (d *schemaDocument) OriginalOutcome() *contract.SchemaDesignOutcome {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.original == nil {
+		return nil
+	}
+	out := d.original.Clone()
+	return &out
+}
 
 func (d *schemaDocument) Close() error {
 	d.mu.Lock()
@@ -112,6 +136,7 @@ func (d *schemaDocument) Close() error {
 	d.active.Wait()
 	d.mu.Lock()
 	d.scope = ""
+	d.original = nil
 	d.mu.Unlock()
 	d.s.mu.Lock()
 	delete(d.s.schemaDocuments, d.id)

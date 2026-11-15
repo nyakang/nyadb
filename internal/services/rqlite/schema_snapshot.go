@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
@@ -132,6 +133,13 @@ func (s *Session) decodeSchemaSnapshot(target contract.SchemaDesignTarget, r rec
 		e.SQLNull = null == 1
 		catalog.Entries = append(catalog.Entries, e)
 	}
+	// Native RETURNING has no ordering guarantee. Canonicalize the complete
+	// captured rows without changing any value; validation still rejects
+	// duplicate identities and incomplete records.
+	sort.Slice(catalog.Entries, func(i, j int) bool {
+		a, b := catalog.Entries[i], catalog.Entries[j]
+		return a.Type < b.Type || a.Type == b.Type && a.Name < b.Name
+	})
 	if err := catalog.Validate(); err != nil {
 		return contract.SchemaDesignSnapshot{}, errIncomplete
 	}

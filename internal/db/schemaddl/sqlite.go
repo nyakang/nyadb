@@ -81,8 +81,12 @@ func validateSQLiteTable(t Table) error {
 	if strings.HasPrefix(strings.ToLower(t.Name), "sqlite_") {
 		return errors.New("SQLite reserved object name")
 	}
-	if len(t.Clauses) == 0 || len(t.Clauses) > 2000 || len(t.Definitions) > 1000 {
+	if len(t.Clauses) == 0 || len(t.Clauses) > 3000 || len(t.Definitions) > 1000 {
 		return errors.New("table definition count exceeded")
+	}
+	columns := len(t.Columns())
+	if columns > 2000 || len(t.Clauses)-columns > 1000 {
+		return errors.New("table column or constraint count exceeded")
 	}
 	ids, names := map[string]bool{}, map[string]bool{}
 	definitionBytes := len(t.Name) + len(t.Options)

@@ -111,6 +111,59 @@ func TestNativeBatchReceiptTypedProjectionAndRollback(t *testing.T) {
 	}
 }
 
+func TestNativeBatchReceiptPreparationFailuresCannotProveRollbackOrPermitReplay(t *testing.T) {
+	for _, terminal := range []string{"SELECT * FROM missing", "EXPLAIN SELECT * FROM missing", "INSERT INTO missing VALUES(1)", "CREATE INDEX missing_index ON missing(id)"} {
+		for _, middle := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s/middle=%t", terminal, middle), func(t *testing.T) {
+				var writes atomic.Int32
+				raw := `{"results":[{"rows_affected":1},{"error":"no such table: main.missing"}]}`
+				source := "INSERT INTO original VALUES(1);" + terminal
+				if middle {
+					source += ";INSERT INTO original VALUES(2)"
+					raw = `{"results":[{"rows_affected":1},{"error":"no such table: main.missing"},{"rows_affected":1}]}`
+				}
+				s := mockSession(t, func(w http.ResponseWriter, r *http.Request) {
+					if r.URL.Path == "/db/query" {
+						fmt.Fprint(w, `{"results":[{"columns":["1"],"types":["integer"],"values":[[1]]}]}`)
+						return
+					}
+					writes.Add(1)
+					fmt.Fprint(w, raw)
+				}, func(p *connections.Profile) { p.RQLiteOptions.BatchTransaction = true })
+				l := lease(t, s, 1)
+				out, err := l.Execute(context.Background(), "main", source)
+				if !errors.Is(err, contract.ErrSQLSessionLost) || out.NativeJSON != raw || out.AffectedRows != 0 || len(out.Steps) != strings.Count(source, ";")+1 {
+					t.Fatal("preparation error invented a rollback or lost original native receipt", err, out)
+				}
+				for _, step := range out.Steps {
+					if step.State != "uncertain" {
+						t.Fatal("ambiguous original transaction was declared settled", step.State)
+					}
+				}
+				if _, err := s.request(context.Background(), "/db/query", []any{"SELECT 1"}, false, false); err != nil {
+					t.Fatal(err)
+				}
+				if _, err := l.Execute(context.Background(), "main", source); !errors.Is(err, contract.ErrSQLSessionLost) || writes.Load() != 1 {
+					t.Fatal("later observation permitted ambiguous write replay", err)
+				}
+				if _, err := l.Replace(); err != nil || writes.Load() != 1 {
+					t.Fatal("explicit replacement replayed the original SQL", err)
+				}
+			})
+		}
+	}
+}
+
+func TestNativeBatchReceiptSkippedPreparationThenExecutionAbortProvesRollback(t *testing.T) {
+	raw := `{"results":[{"rows_affected":1},{"error":"no such table: main.missing"},{"error":"CHECK constraint failed"}]}`
+	s := mockSession(t, func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, raw) }, func(p *connections.Profile) { p.RQLiteOptions.BatchTransaction = true })
+	l := lease(t, s, 1)
+	out, err := l.Execute(context.Background(), "main", "INSERT INTO original VALUES(1);SELECT * FROM missing;INSERT INTO guard VALUES(0);SELECT * FROM original")
+	if err == nil || out.NativeJSON != raw || out.AffectedRows != 0 || len(out.Steps) != 4 || out.Steps[0].State != "rolled_back" || out.Steps[1].State != "failed" || out.Steps[2].State != "failed" || out.Steps[3].State != "not_executed" || l.CheckQueryLease() != nil {
+		t.Fatal("terminal original execution abort was obscured by an earlier skipped preparation", err, out)
+	}
+}
+
 func TestCancellationAndConcurrentCloseWaitForOriginalReceipt(t *testing.T) {
 	started, acknowledge := make(chan struct{}), make(chan struct{})
 	defer func() {
