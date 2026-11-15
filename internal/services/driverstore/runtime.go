@@ -20,6 +20,12 @@ type Runtime struct {
 // Start transfers the lease's lifetime to the original runtime. A failed start
 // waits for its captured process and releases the package; it never retries.
 func (l *Lease) Start(ctx context.Context, profile string, options agentbridge.Options) (*Runtime, error) {
+	return l.StartObserved(ctx, profile, options, nil)
+}
+
+// StartObserved records the captured process before handshake/connect can wait.
+// The observer never publishes a database session or supplies launch arguments.
+func (l *Lease) StartObserved(ctx context.Context, profile string, options agentbridge.Options, started func(int) error) (*Runtime, error) {
 	l.mu.Lock()
 	if l.active || l.consumed {
 		l.mu.Unlock()
@@ -33,6 +39,7 @@ func (l *Lease) Start(ctx context.Context, profile string, options agentbridge.O
 	l.active = true
 	l.consumed = true
 	l.mu.Unlock()
+	spec.Started = started
 	client, err := agentbridge.Start(ctx, spec, options)
 	if err != nil {
 		l.mu.Lock()

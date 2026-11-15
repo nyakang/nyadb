@@ -2,7 +2,9 @@
 """Build the original local DBX H2 agent and verify NyaDB's owned v2 bridge.
 
 Requires Linux, an existing JDK 21+, Go and network access to Maven Central.
-This does not install a JRE, publish an H2 provider or change DBX source.
+Managed bundles and databases belong to this private fixture. The optional
+workbench check verifies the H2 adapter without registering a public entry.
+Original DBX sources are not modified.
 """
 import argparse
 import hashlib
@@ -92,6 +94,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dbx-source', type=Path, default=ROOT / 'temp/dbx')
     parser.add_argument('--race', action='store_true')
+    parser.add_argument('--workbench', action='store_true', help='also verify the managed H2 workbench provider')
     parser.add_argument('--managed', action='store_true', help='also verify an offline bundle containing a linked JRE and the original agent')
     parser.add_argument('--java', default=shutil.which('java'))
     args = parser.parse_args()
@@ -187,7 +190,7 @@ def main():
         for version in ['1.4.200', '2.1.214', '2.4.240']:
             if f'--- PASS: TestH2AgentNativeVersionsValuesMetadataAndIndependentSessions/{version} ' not in output:
                 raise RuntimeError('Real H2 kernel acceptance is missing: ' + version)
-        if args.managed:
+        if args.managed or args.workbench:
             jlink = java.parent / 'jlink'
             if not jlink.is_file():
                 raise RuntimeError('Managed fixture requires the selected JDK jlink')
@@ -207,7 +210,7 @@ def main():
             architecture = {'x86_64': 'amd64', 'aarch64': 'arm64'}.get(platform.machine())
             if not architecture:
                 raise RuntimeError('Unsupported managed fixture architecture')
-            manifest = {'format': 1, 'key': 'h2-fixture', 'version': nonce, 'platform': 'linux-' + architecture, 'runtime': 'java', 'executable': 'jre/bin/java', 'main_class': 'com.dbx.agent.h2.H2Agent', 'classpath': [artifact.name for artifact in classpath], 'profiles': ['h2-v1', 'h2-v2', 'h2-v3'], 'files': files, 'licenses': ['DBX-LICENSE', 'DBX-NOTICE'] + [file['path'] for file in files if file['path'].startswith('jre/legal/')], 'provenance': 'sources.json'}
+            manifest = {'format': 1, 'key': 'h2', 'version': nonce, 'platform': 'linux-' + architecture, 'runtime': 'java', 'executable': 'jre/bin/java', 'main_class': 'com.dbx.agent.h2.H2Agent', 'classpath': [artifact.name for artifact in classpath], 'profiles': ['h2-v1', 'h2-v2', 'h2-v3'], 'files': files, 'licenses': ['DBX-LICENSE', 'DBX-NOTICE'] + [file['path'] for file in files if file['path'].startswith('jre/legal/')], 'provenance': 'sources.json'}
             (package / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
             archive = base / 'managed-h2.zip'
             with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as output_zip:
@@ -227,6 +230,20 @@ def main():
             for suffix in ['', '/1.4.200', '/2.1.214', '/2.4.240']:
                 if '--- PASS: TestManagedH2OfflineRuntimeVersionsReceiptsAndOriginalLease' + suffix + ' ' not in managed_output:
                     raise RuntimeError('Managed runtime acceptance is missing: ' + suffix)
+            if args.workbench:
+                provider_env = dict(managed_env, NYADB_H2_PROVIDER_IT='1')
+                provider_command = command[:-1] + ['./internal/services/h2']
+                with (base / 'provider-acceptance.log').open('w') as log:
+                    subprocess.run(provider_command, cwd=ROOT, env=provider_env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=240)
+                provider_output = (base / 'provider-acceptance.log').read_text()
+                for suffix in ['', '/1.4.200', '/2.1.214', '/2.4.240', '/2.1.214#01']:
+                    if '--- PASS: TestH2ManagedProviderQualifiedMetadataAndQueryLeases' + suffix + ' ' not in provider_output:
+                        raise RuntimeError('H2 workbench provider acceptance is missing: ' + suffix)
+                state['h2_workbench_provider'] = 'passed'
+                state['h2_data_adapter'] = 'passed'
+                state['h2_adapter_versions'] = ['1.4.200', '2.1.214', '2.4.240']
+                state['h2_adapter_profiles'] = ['h2-v1', 'h2-v2', 'h2-v3', 'h2-legacy']
+                state['h2_adapter_scope'] = 'qualified metadata; typed paging/full rows/UTF-8 and binary chunks; native cursor export; conditional insert/update/delete; batch rollback; canceled lock waiter acknowledgement; independent SQL leases; disconnect without replay; no public UI/storage/URI publication'
             state['managed_offline_h2'] = 'passed'
             state['managed_package_sha256'] = sha(archive)
             print('Managed offline JRE, original H2 versions, typed query receipts and original package leases passed', flush=True)

@@ -44,6 +44,7 @@ const (
 	Neo4j         Kind = "neo4j"
 	SQLServer     Kind = "sqlserver"
 	DuckDB        Kind = "duckdb"
+	H2            Kind = "h2"
 	Oracle        Kind = "oracle"
 	MongoDB       Kind = "mongodb"
 	Redis         Kind = "redis"
@@ -100,6 +101,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	H2Options            H2Options
 	SelectDBOptions      SelectDBOptions
 	ConsulOptions        ConsulOptions
 	EtcdOptions          EtcdOptions

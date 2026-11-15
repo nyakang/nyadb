@@ -51,6 +51,8 @@ func (s *Service) Duplicate(ctx context.Context, id int64, name string) (Profile
 // Defaults are UI-independent initial values, not connection attempts.
 func Defaults(kind Kind) (Profile, error) {
 	switch kind {
+	case H2:
+		return Profile{Kind: H2, Username: "sa", H2Options: DefaultH2Options()}, nil
 	case Consul:
 		return Profile{Kind: Consul, Host: "localhost", Port: 8500, TLSMode: "disable", ConsulOptions: DefaultConsulOptions()}, nil
 	case Etcd:
