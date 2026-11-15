@@ -8,7 +8,7 @@ import (
 
 func TestNavicatObservedTreeGroupHierarchy(t *testing.T) {
 	s := New()
-	if got := s.catalogTreeDirect(); len(got) != 39 {
+	if got := s.catalogTreeDirect(); len(got) != 40 {
 		t.Fatalf("database rows including QuestDB and Consul; got %d", len(got))
 	}
 	groups := s.catalogTreeGroups()

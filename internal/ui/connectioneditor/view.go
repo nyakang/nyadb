@@ -71,7 +71,7 @@ func (s *State) View(c *ui.Context, width, height float32) {
 
 func connectionEditorTabNames(kind connections.Kind) []string {
 	switch kind {
-	case connections.QuestDB, connections.RQLite, connections.Consul, connections.Etcd, connections.Neo4j, connections.Qdrant, connections.Meilisearch:
+	case connections.TDengine, connections.QuestDB, connections.RQLite, connections.Consul, connections.Etcd, connections.Neo4j, connections.Qdrant, connections.Meilisearch:
 		return []string{"常规", "高级", "SSL", "备注"}
 	case connections.DuckDB, connections.H2:
 		return []string{"常规", "高级", "备注"}

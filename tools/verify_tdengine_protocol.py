@@ -31,6 +31,14 @@ REQUIRED_TESTS = {
     "TestNativeTDengineSequentialBatchIsNotAtomic",
     "TestNativeTDengineLostOriginalWriteAcknowledgementDoesNotReconnect",
 }
+APPLICATION_TESTS = {
+    "TestNativeTDengineOriginalTypesMetadataPagingAndFullExport",
+    "TestNativeTDengineStableChildHierarchyAndCompositeIdentity",
+    "TestNativeTDengineSequentialFailureReceiptsAndPhysicalIsolation",
+    "TestNativeTDengineReadOnlyCredentialsAndClosedGeneration",
+    "TestNativeTDengineCancelledOriginalWriteReceiptAndExplicitRecovery",
+    "TestTDengineNativePublicChooserVaultSQLGridStructureAndRecovery",
+}
 
 
 def passed_tests(log):
@@ -55,6 +63,7 @@ def owned_container(state, original_id, nonce):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--race", action="store_true")
+    parser.add_argument("--application", action="store_true", help="also verify the production provider and public workbench")
     args = parser.parse_args()
     references = [
         ROOT / "temp/dbx/plugins/connection-types/tdengine.yaml",
@@ -91,6 +100,10 @@ def main():
         "numOfCommitThreads 2\nsupportVnodes 16\ntelemetryReporting 0\nmonitor 0\n"
     )
     sources = [Path(__file__), *MODULE.glob("*.go"), MODULE / "go.mod", MODULE / "go.sum"]
+    if args.application:
+        sources.extend(ROOT.glob("go.*"))
+        sources.extend(ROOT.glob("locales/*"))
+        sources.extend(p for p in (ROOT / "internal").rglob("*") if p.is_file())
     result = dict(
         status="running", runner_pid=os.getpid(), image=IMAGE,
         native_version=VERSION, checks=[], goal_complete=False,
@@ -98,6 +111,8 @@ def main():
         source_sha256={str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources},
         reference_sha256={str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in references},
     )
+    if args.application:
+        result.update(public_provider_published=True, protocol_foundation_only=False, full_product_alignment=False)
     original = None
     environment = {k: v for k, v in os.environ.items() if not (k.startswith("NYADB_") and k.endswith("_IT"))}
     environment.update(GOWORK="off", CGO_ENABLED="1" if args.race else "0")
@@ -111,12 +126,12 @@ def main():
                 if hashlib.sha256((ROOT / path).read_bytes()).hexdigest() != digest:
                     raise RuntimeError("accepted source changed: " + path)
 
-    def run(name, command, env=None, required=None):
+    def run(name, command, env=None, required=None, cwd=MODULE):
         frozen()
         start = time.monotonic()
         logpath = folder / (name + ".log")
         with logpath.open("w") as log:
-            process = subprocess.Popen(command, cwd=MODULE, env=env or environment, stdout=log, stderr=subprocess.STDOUT)
+            process = subprocess.Popen(command, cwd=cwd, env=env or environment, stdout=log, stderr=subprocess.STDOUT)
             check = dict(name=name, command=command, original_pid=process.pid, status="running")
             result["checks"].append(check)
             save()
@@ -157,7 +172,7 @@ def main():
             raise RuntimeError("fixture identity changed")
         port = state["NetworkSettings"]["Ports"]["6041/tcp"][0]["HostPort"]
         config = private / "config.json"
-        config.write_text(json.dumps(dict(Endpoint="ws://127.0.0.1:" + port + "/ws", Username="root", PasswordFile=str(secret), DatabasePrefix="nyadb_td_" + nonce, Version=VERSION)))
+        config.write_text(json.dumps(dict(Endpoint="ws://127.0.0.1:" + port + "/ws", Host="127.0.0.1", Port=int(port), Image=IMAGE, Container=original, Username="root", PasswordFile=str(secret), DatabasePrefix="nyadb_td_" + nonce, Version=VERSION)))
         config.chmod(0o600)
         deadline = time.monotonic() + 90
         while True:
@@ -176,6 +191,12 @@ def main():
         if args.race:
             command.append("-race")
         run("native-protocol", command + ["./..."], native_env, REQUIRED_TESTS)
+        if args.application:
+            app_env = dict(environment, NYADB_TDENGINE_IT="1", NYADB_TDENGINE_CONFIG=str(config), NYADB_TDENGINE_EVIDENCE=str(folder / "application-evidence"), NYADB_TDENGINE_SHELL_EVIDENCE=str(folder / "workbench-evidence"))
+            app_command = ["go", "test", "-mod=readonly", "-count=1", "-timeout=12m", "-json", "-run", "TDengine"]
+            if args.race:
+                app_command.append("-race")
+            run("native-application", app_command + ["./internal/services/tdengine", "./internal/ui/shell"], app_env, APPLICATION_TESTS, ROOT)
         run("go-vet", ["go", "vet", "-mod=readonly", "./..."])
         for name, target_os, arch in [("linux", "linux", "amd64"), ("windows", "windows", "amd64"), ("macos", "darwin", "arm64")]:
             run("build-" + name, ["go", "build", "-mod=readonly", "-o", str(folder / ("probe-" + name)), "."], dict(environment, CGO_ENABLED="0", GOOS=target_os, GOARCH=arch))

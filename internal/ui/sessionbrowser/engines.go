@@ -295,6 +295,9 @@ func (s *State) engineLabel(w *Workspace) string {
 	if w.Kind == connections.SQLite {
 		return "SQLite"
 	}
+	if descriptor, ok := connections.Describe(w.Kind); ok {
+		return descriptor.Label
+	}
 	return "MySQL"
 }
 func (s *State) engineStatus(w *Workspace, n int) string {

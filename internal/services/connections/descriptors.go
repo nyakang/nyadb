@@ -12,6 +12,8 @@ type Descriptor struct {
 
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
+	case TDengine:
+		return Descriptor{kind, "TDengine", "tdengine", "server", "tdengine", 6041, contract.Capabilities{Query: true, Metadata: true, Count: true, Export: true, JSONL: true}}, true
 	case QuestDB:
 		return Descriptor{kind, "QuestDB", "questdb", "server", "questdb", 8812, contract.Capabilities{Query: true, Metadata: true, Count: true, Export: true, JSONL: true, Explain: true}}, true
 	case RQLite:
@@ -120,6 +122,8 @@ func Describe(kind Kind) (Descriptor, bool) {
 // FieldTypes offers common candidates without restricting custom declarations.
 func (d Descriptor) FieldTypes() []string {
 	switch d.Kind {
+	case TDengine:
+		return []string{"TIMESTAMP", "BOOL", "TINYINT", "SMALLINT", "INT", "BIGINT", "TINYINT UNSIGNED", "SMALLINT UNSIGNED", "INT UNSIGNED", "BIGINT UNSIGNED", "FLOAT", "DOUBLE", "VARCHAR(255)", "NCHAR(255)", "VARBINARY(255)", "JSON", "GEOMETRY", "DECIMAL(38,10)"}
 	case QuestDB:
 		return []string{"BYTE", "SHORT", "INT", "LONG", "FLOAT", "DOUBLE", "STRING", "SYMBOL", "CHAR", "BOOLEAN", "DATE", "TIMESTAMP", "BINARY", "UUID", "LONG256", "IPv4", "GEOHASH(8c)"}
 	case Dameng:

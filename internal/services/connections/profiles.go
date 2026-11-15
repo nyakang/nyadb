@@ -10,6 +10,7 @@ import (
 type Kind string
 
 const (
+	TDengine      Kind = "tdengine"
 	QuestDB       Kind = "questdb"
 	RQLite        Kind = "rqlite"
 	Consul        Kind = "consul"
@@ -103,6 +104,7 @@ type ConnectionVariant struct {
 }
 
 type Profile struct {
+	TDengineOptions      TDengineOptions
 	QuestDBOptions       QuestDBOptions
 	RQLiteOptions        RQLiteOptions
 	H2Options            H2Options

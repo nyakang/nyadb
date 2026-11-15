@@ -149,7 +149,7 @@ func CompleteSQL(source string, offset int, catalog CompletionCatalog) Completio
 		seen[key] = true
 		insert := name
 		if kind != "keyword" && (quoted || !completionBareName(name) || completionReserved(name) || catalog.Dialect == "postgres" && name != strings.ToLower(name)) {
-			insert, _ = Identifier(name, catalog.Dialect == "mysql" || catalog.Dialect == "clickhouse" || catalog.Dialect == "")
+			insert, _ = Identifier(name, catalog.Dialect == "mysql" || catalog.Dialect == "clickhouse" || catalog.Dialect == "tdengine" || catalog.Dialect == "")
 			if catalog.Dialect == "tsql" {
 				insert = "[" + strings.ReplaceAll(name, "]", "]]") + "]"
 			}
@@ -501,6 +501,8 @@ func completionRank(kind string) int {
 func completionKeywords(dialect string) []string {
 	base := "SELECT FROM WHERE ORDER BY GROUP HAVING LIMIT OFFSET INSERT INTO VALUES UPDATE SET DELETE JOIN LEFT RIGHT INNER OUTER CROSS ON USING NULL IS AND OR NOT AS DISTINCT EXPLAIN CREATE ALTER DROP TABLE VIEW INDEX PRIMARY KEY FOREIGN REFERENCES UNIQUE DEFAULT CHECK CONSTRAINT BEGIN END WHEN THEN ELSE CASE UNION ALL ASC DESC EXISTS WITH RECURSIVE OVER PARTITION ROWS RANGE BETWEEN EXCEPT INTERSECT"
 	switch dialect {
+	case "tdengine":
+		base = "SELECT FROM WHERE ORDER BY GROUP HAVING LIMIT OFFSET INSERT INTO VALUES DELETE JOIN LEFT RIGHT INNER ON USING NULL IS AND OR NOT AS DISTINCT CREATE ALTER DROP TABLE STABLE STABLES DATABASE DATABASES TAG TAGS COMPOSITE KEY BOOL TINYINT SMALLINT INT BIGINT UNSIGNED FLOAT DOUBLE VARCHAR NCHAR VARBINARY JSON GEOMETRY DECIMAL TIMESTAMP SHOW DESCRIBE USE INTERVAL SLIDING SESSION STATE_WINDOW EVENT_WINDOW COUNT_WINDOW FILL PARTITION SLIMIT SOFFSET TBNAME UNION ALL ASC DESC EXISTS WITH BETWEEN"
 	case "questdb":
 		base = "SELECT FROM WHERE ORDER BY GROUP HAVING LIMIT INSERT INTO VALUES UPDATE SET JOIN LEFT RIGHT INNER OUTER CROSS ON NULL IS AND OR NOT AS DISTINCT EXPLAIN CREATE ALTER DROP TRUNCATE TABLE VIEW INDEX WHEN THEN ELSE CASE UNION ALL ASC DESC EXISTS WITH OVER PARTITION ROWS RANGE BETWEEN SHOW COLUMNS WAL DEDUP UPSERT KEYS SYMBOL TIMESTAMP SAMPLE LATEST ALIGN FILL ASOF LT SPLICE TOLERANCE BYTE SHORT INT LONG FLOAT DOUBLE STRING CHAR BOOLEAN DATE BINARY UUID LONG256 IPv4 GEOHASH"
 	case "cassandra":
@@ -530,7 +532,7 @@ func completionReserved(name string) bool {
 
 var completionReservedWords = func() map[string]bool {
 	words := map[string]bool{}
-	for _, dialect := range []string{"mysql", "postgres", "sqlite", "tsql", "oracle", "duckdb", "dameng", "cassandra", "questdb"} {
+	for _, dialect := range []string{"mysql", "postgres", "sqlite", "tsql", "oracle", "duckdb", "dameng", "cassandra", "questdb", "tdengine"} {
 		for _, word := range completionKeywords(dialect) {
 			words[word] = true
 		}

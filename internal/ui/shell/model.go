@@ -182,7 +182,7 @@ func (s *State) openQuery() {
 	database := ""
 	if s.profileMode {
 		initial = "-- 输入 SQL；点击运行后发送至当前连接\n"
-		if p, ok := s.currentProfile(); ok && (p.Kind == connections.QuestDB || p.Kind == connections.RQLite || p.Kind == connections.H2 || p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.SelectDB || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind == connections.DuckDB || p.Kind.IsREST() || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Cassandra || p.Kind == connections.Neo4j) {
+		if p, ok := s.currentProfile(); ok && (p.Kind == connections.TDengine || p.Kind == connections.QuestDB || p.Kind == connections.RQLite || p.Kind == connections.H2 || p.Kind.IsMySQLFamily() || p.Kind.IsPostgreSQLFamily() || p.Kind == connections.SQLite || p.Kind == connections.ClickHouse || p.Kind == connections.Doris || p.Kind == connections.SelectDB || p.Kind == connections.StarRocks || p.Kind == connections.Trino || p.Kind == connections.SQLServer || p.Kind == connections.Oracle || p.Kind == connections.Dameng || p.Kind == connections.DuckDB || p.Kind.IsREST() || p.Kind == connections.MongoDB || p.Kind == connections.Redis || p.Kind == connections.Cassandra || p.Kind == connections.Neo4j) {
 			profileID = p.ID
 			if p.Kind == connections.Neo4j {
 				initial = "// 输入 Cypher；点击运行后发送至当前连接\n"

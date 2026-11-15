@@ -37,6 +37,12 @@ func ParseURI(raw string) (URIImport, error) {
 	if strings.HasPrefix(strings.ToLower(raw), "jdbc:h2:") {
 		return parseH2URI(raw)
 	}
+	for _, prefix := range []string{"jdbc:taos-ws://", "jdbc:taos-rs://"} {
+		if strings.HasPrefix(strings.ToLower(raw), prefix) {
+			raw = "tdengine://" + raw[len(prefix):]
+			break
+		}
+	}
 	if scheme, _, ok := strings.Cut(raw, ":"); ok && strings.EqualFold(scheme, "gaussdb") {
 		return parseRawGaussDBURI(raw)
 	}
@@ -46,6 +52,8 @@ func ParseURI(raw string) (URIImport, error) {
 	}
 	var kind Kind
 	switch strings.ToLower(u.Scheme) {
+	case "tdengine", "taosws", "taoswss", "ws", "wss":
+		return parseTDengineURI(u)
 	case "questdb":
 		return parseQuestDBURI(u)
 	case "rqlite", "rqlites":

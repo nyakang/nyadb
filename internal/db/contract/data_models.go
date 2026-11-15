@@ -315,6 +315,7 @@ type DBObject struct {
 	HasIndexes, HasTriggers *bool
 	RootPage                *int64
 	Ref                     ObjectRef
+	ParentObject            ObjectRef // Optional qualified native owner, e.g. a TDengine child's stable.
 
 	Name          string
 	Kind          string

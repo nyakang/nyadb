@@ -15,6 +15,11 @@ func (s *State) sqlNamespace(id int64, database string) contract.NamespaceRef {
 			continue
 		}
 		switch p.Kind {
+		case connections.TDengine:
+			if database == "" {
+				database = p.Database
+			}
+			return contract.NamespaceRef{ProfileID: id, Catalog: database}
 		case connections.QuestDB:
 			return contract.NamespaceRef{ProfileID: id, Catalog: "qdb"}
 		case connections.SelectDB:

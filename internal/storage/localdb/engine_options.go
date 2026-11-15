@@ -12,6 +12,7 @@ import (
 // Keep the existing column and MySQL JSON format. Other engines use an
 // explicit versioned envelope; older empty records receive engine defaults.
 type engineOptionsEnvelope struct {
+	TDengine      *connections.TDengineOptions      `json:"tdengine,omitempty"`
 	QuestDB       *connections.QuestDBOptions       `json:"questdb,omitempty"`
 	RQLite        *connections.RQLiteOptions        `json:"rqlite,omitempty"`
 	H2            *connections.H2Options            `json:"h2,omitempty"`
@@ -45,6 +46,8 @@ type engineOptionsEnvelope struct {
 func encodeProfileOptions(p connections.Profile) (string, error) {
 	var value any
 	switch p.Kind {
+	case connections.TDengine:
+		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, TDengine: &p.TDengineOptions}
 	case connections.QuestDB:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, QuestDB: &p.QuestDBOptions}
 	case connections.RQLite:
@@ -108,6 +111,19 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 	return string(raw), err
 }
 func decodeEngineOptions(p *connections.Profile, raw string) error {
+	if p.Kind == connections.TDengine {
+		var envelope engineOptionsEnvelope
+		var fields map[string]json.RawMessage
+		decoder := json.NewDecoder(strings.NewReader(raw))
+		decoder.DisallowUnknownFields()
+		if raw == "" || !uniqueNativeAuthOptionsJSON(raw) || decoder.Decode(&envelope) != nil || json.Unmarshal([]byte(raw), &fields) != nil || len(fields) != 3 || envelope.Version != 1 || envelope.Kind != p.Kind || envelope.TDengine == nil || fields["kind"] == nil || fields["version"] == nil || fields["tdengine"] == nil {
+			return connections.ErrInvalid
+		}
+		p.TDengineOptions = *envelope.TDengine
+		checked, err := connections.NormalizeProfile(*p)
+		*p = checked
+		return err
+	}
 	if p.Kind == connections.QuestDB {
 		var envelope engineOptionsEnvelope
 		var fields map[string]json.RawMessage
@@ -127,7 +143,7 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 			return connections.ErrInvalid
 		}
 		for key := range fields {
-			if strings.EqualFold(key, "questdb") {
+			if strings.EqualFold(key, "questdb") || strings.EqualFold(key, "tdengine") {
 				return connections.ErrInvalid
 			}
 		}

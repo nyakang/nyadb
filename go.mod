@@ -11,6 +11,7 @@ require (
 	github.com/egoist/mygo v0.9.0
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/golang-sql/sqlexp v0.1.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/jackc/pgx/v5 v5.12.0
 	github.com/microsoft/go-mssqldb v1.11.2
 	github.com/neo4j/neo4j-go-driver/v6 v6.4.0
