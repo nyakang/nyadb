@@ -18,6 +18,7 @@ func TestH2NativePoolCapacityMetadataReserveAndCanceledAdmission(t *testing.T) {
 			defer cancel()
 			a := options
 			a.Mode, a.RequireExisting, a.DriverProfile = "memory", false, profile
+			a.AutoServer = false
 			a.MaxConnections, a.MetadataReserve, a.SQLMaxConnections = 4, 1, 3
 			a.PoolWaitTimeoutMilliseconds = 1000
 			p := connections.Profile{ID: 17, Kind: connections.H2, Name: "owned capacity", Database: "owned_capacity", Username: "sa", H2Options: a}

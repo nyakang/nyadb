@@ -18,13 +18,7 @@ var h2NumberLabels = []string{"连接超时（秒）", "查询超时（秒）", 
 // h2FileBasePath keeps the selected or typed file name separate from the
 // JDBC database base path; both current and legacy file suffixes are accepted.
 func h2FileBasePath(path string) string {
-	path = strings.TrimSpace(path)
-	for _, suffix := range []string{".mv.db", ".h2.db"} {
-		if strings.HasSuffix(strings.ToLower(path), suffix) {
-			return path[:len(path)-len(suffix)]
-		}
-	}
-	return path
+	return connections.H2FileBasePath(path)
 }
 
 func (s *State) initializeH2Inputs() {
@@ -62,6 +56,7 @@ func (s *State) setH2Mode(mode string) {
 	oldNetwork := p.H2Options.Mode == "tcp" || p.H2Options.Mode == "ssl"
 	p.H2Options.Mode = mode
 	p.H2Options.ReadOnly = false
+	p.H2Options.AutoServer = mode == "file"
 	if mode == "memory" {
 		p.Host, p.Port, s.connectionPort, p.Database = "", 0, "", "nyadb"
 		p.H2Options.RequireExisting = false
@@ -189,7 +184,16 @@ func (s *State) h2Advanced(c *ui.Context, width float32) {
 			s.cancelMySQLConnectionTest()
 			if a.ReadOnly {
 				a.RequireExisting = true
+				a.AutoServer = false
 			}
+		}
+		beforeShared := a.AutoServer
+		connectionFormCheckbox(c, &a.AutoServer, "共享本地文件连接", a.Mode != "file" || a.ReadOnly)
+		if beforeShared != a.AutoServer {
+			s.cancelMySQLConnectionTest()
+		}
+		if a.Mode == "file" {
+			ui.Text(c, locales.Text("共享模式允许多个连接打开同一文件；只读连接使用独占模式。")).Width(formWidth).FontSize(theme.Font(c, 11)).TextColor(theme.Colors(c).Muted)
 		}
 		s.editorInputRow(c, "默认模式：", "默认模式", &a.DefaultSchema, connectionFormLabelWidth, formWidth-connectionFormLabelWidth)
 		for i, label := range h2NumberLabels {

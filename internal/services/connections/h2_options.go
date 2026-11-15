@@ -28,13 +28,26 @@ type H2Options struct {
 	SQLMaxConnections           int    `json:"sql_max_connections"` // Logical SQL document limit within workload capacity.
 	ReadOnly                    bool   `json:"read_only,omitempty"`
 	RequireExisting             bool   `json:"require_existing,omitempty"`
+	AutoServer                  bool   `json:"auto_server,omitempty"` // Mixed mode for writable local files only.
 }
 
 func DefaultH2Options() H2Options {
-	return H2Options{Version: 1, Mode: "file", DriverProfile: "h2-v3", DefaultSchema: "PUBLIC", ConnectTimeoutSeconds: 15, QueryTimeoutSeconds: 0, PoolWaitTimeoutMilliseconds: 30000, MaxConnections: 8, MetadataReserve: 2, SQLMaxConnections: 6, RequireExisting: true}
+	return H2Options{Version: 1, Mode: "file", DriverProfile: "h2-v3", DefaultSchema: "PUBLIC", ConnectTimeoutSeconds: 15, QueryTimeoutSeconds: 0, PoolWaitTimeoutMilliseconds: 30000, MaxConnections: 8, MetadataReserve: 2, SQLMaxConnections: 6, RequireExisting: true, AutoServer: true}
 }
 
 var h2VersionName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$`)
+
+// H2FileBasePath accepts current/legacy physical file names while retaining
+// the JDBC database base path used by the native driver.
+func H2FileBasePath(path string) string {
+	path = strings.TrimSpace(path)
+	for _, suffix := range []string{".mv.db", ".h2.db"} {
+		if strings.HasSuffix(strings.ToLower(path), suffix) {
+			return path[:len(path)-len(suffix)]
+		}
+	}
+	return path
+}
 
 func NormalizeH2Options(a H2Options) (H2Options, error) {
 	if a == (H2Options{}) {
@@ -68,6 +81,9 @@ func NormalizeH2Options(a H2Options) (H2Options, error) {
 		}
 	}
 	if a.ReadOnly && a.Mode != "file" {
+		return invalid()
+	}
+	if a.AutoServer && (a.Mode != "file" || a.ReadOnly) {
 		return invalid()
 	}
 	if a.RequireExisting && a.Mode == "memory" {

@@ -240,3 +240,24 @@ func TestH2URIBackRefreshesInventoryWithoutSelectingRevokedImport(t *testing.T) 
 		t.Fatal("URI return lost original inputs or selected the revoked import")
 	}
 }
+
+func TestH2URIReplacementPreservesExplicitOriginalDriverPin(t *testing.T) {
+	s := New(Dependencies{})
+	t.Cleanup(s.Close)
+	if err := s.OpenNew(connections.H2, ""); err != nil {
+		t.Fatal(err)
+	}
+	d := h2UnitDriver(t)
+	s.selectH2Driver(d)
+	s.connectionDraft.Name = "original name"
+	s.connectionDraft.H2Options.DriverProfile = "h2-legacy"
+	original := s.connectionDraft.H2Options
+	s.BeginURIFromEditor()
+	if err := s.ImportURI("jdbc:h2:mem:uri_replacement;USER=sa;PASSWORD=temporary%3Bsecret"); err != nil {
+		t.Fatal(err)
+	}
+	a := s.connectionDraft.H2Options
+	if a.DriverProfile != original.DriverProfile || a.DriverVersion != original.DriverVersion || a.DriverDirectory != original.DriverDirectory || a.DriverSHA256 != original.DriverSHA256 || a.Mode != "memory" || a.AutoServer || s.connectionDraft.Name != "original name" || s.connectionSecret != "temporary;secret" || s.connectionSavePassword {
+		t.Fatal("URI replaced an unrequested installed package or lost original presentation")
+	}
+}

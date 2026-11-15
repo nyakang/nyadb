@@ -60,6 +60,14 @@ func (s *State) ImportURI(raw string) error {
 		s.connectionDraft.GroupName, s.connectionDraft.Starred = original.GroupName, original.Starred
 		s.connectionDraft.Notes, s.connectionDraft.Color = original.Notes, original.Color
 		s.connectionDraft.CreatedAt, s.connectionDraft.UpdatedAt = original.CreatedAt, original.UpdatedAt
+		if original.Kind == connections.H2 && parsed.Profile.Kind == connections.H2 {
+			// A URI changes connection parameters, not the explicit installed
+			// package choice. A different/new kind still requires selection.
+			s.connectionDraft.H2Options.DriverProfile = original.H2Options.DriverProfile
+			s.connectionDraft.H2Options.DriverVersion = original.H2Options.DriverVersion
+			s.connectionDraft.H2Options.DriverSHA256 = original.H2Options.DriverSHA256
+			s.connectionDraft.H2Options.DriverDirectory = original.H2Options.DriverDirectory
+		}
 	}
 	s.connectionDraft.GroupName = group
 	s.initializeInputs()

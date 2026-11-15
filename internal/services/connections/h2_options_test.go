@@ -13,6 +13,8 @@ func TestH2ModesKeepExplicitDatabaseAndDriverIdentity(t *testing.T) {
 		t.Run(mode, func(t *testing.T) {
 			a := connections.DefaultH2Options()
 			a.Mode, a.RequireExisting = mode, mode != "memory"
+			a.AutoServer = false
+			a.AutoServer = mode == "file"
 			a.DriverVersion, a.DriverSHA256 = "owned-1", strings.Repeat("a", 64)
 			p := connections.Profile{Kind: connections.H2, Name: "owned", Database: "owned", Username: " sa ", H2Options: a}
 			if mode == "file" {
@@ -31,6 +33,7 @@ func TestH2ModesKeepExplicitDatabaseAndDriverIdentity(t *testing.T) {
 func TestH2RejectsURLInjectionForeignSettingsAndIncompleteDriverPins(t *testing.T) {
 	a := connections.DefaultH2Options()
 	a.Mode, a.RequireExisting = "memory", false
+	a.AutoServer = false
 	base := connections.Profile{Kind: connections.H2, Name: "owned", Database: "owned", Username: "sa", H2Options: a}
 	cases := []struct {
 		name   string
@@ -39,6 +42,7 @@ func TestH2RejectsURLInjectionForeignSettingsAndIncompleteDriverPins(t *testing.
 		{"url parameters", func(p *connections.Profile) { p.Database = "owned;INIT=RUNSCRIPT FROM 'remote'" }},
 		{"network for memory", func(p *connections.Profile) { p.Host, p.Port = "localhost", 9092 }},
 		{"readonly memory", func(p *connections.Profile) { p.H2Options.ReadOnly = true }},
+		{"shared memory", func(p *connections.Profile) { p.H2Options.AutoServer = true }},
 		{"existing memory", func(p *connections.Profile) { p.H2Options.RequireExisting = true }},
 		{"unfixed driver", func(p *connections.Profile) { p.H2Options.DriverVersion = "owned" }},
 		{"relative driver store", func(p *connections.Profile) { p.H2Options.DriverDirectory = "relative" }},
@@ -61,6 +65,18 @@ func TestH2RejectsURLInjectionForeignSettingsAndIncompleteDriverPins(t *testing.
 				t.Fatal("invalid original H2 settings admitted")
 			}
 		})
+	}
+}
+
+func TestH2RejectsSharedReadOnlyFiles(t *testing.T) {
+	a := connections.DefaultH2Options()
+	a.ReadOnly = true
+	if _, err := connections.NormalizeH2Options(a); err == nil {
+		t.Fatal("shared read-only file settings were admitted")
+	}
+	a.AutoServer = false
+	if _, err := connections.NormalizeH2Options(a); err != nil {
+		t.Fatal("exclusive read-only file rejected", err)
 	}
 }
 

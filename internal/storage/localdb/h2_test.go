@@ -44,6 +44,12 @@ func TestH2ProfileRestartDuplicateAndStrictEnvelope(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	legacy := strings.Replace(valid, `,"auto_server":true`, "", 1)
+	var legacyProfile connections.Profile
+	legacyProfile.Kind = connections.H2
+	if err := decodeEngineOptions(&legacyProfile, legacy); err != nil || legacyProfile.H2Options.AutoServer {
+		t.Fatal("legacy saved file silently switched to shared mode", err)
+	}
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal([]byte(valid), &fields); err != nil {
 		t.Fatal(err)

@@ -3,8 +3,8 @@
 
 Requires Linux, an existing JDK 21+, Go and network access to Maven Central.
 Managed bundles and databases belong to this private fixture. The optional
-workbench check verifies the H2 adapter and connection editor without
-registering a public entry.
+workbench check verifies the H2 adapter, connection editor and public shell
+using actual native H2 files and the builtin provider.
 Original DBX sources are not modified.
 """
 import argparse
@@ -52,6 +52,7 @@ def verify_provider_output(output):
         'TestH2ManagedProviderQualifiedMetadataAndQueryLeases': ['', '/1.4.200', '/2.1.214', '/2.4.240', '/2.1.214#01'],
         'TestH2NativePoolCapacityMetadataReserveAndCanceledAdmission': ['', '/h2-v1', '/h2-v2', '/h2-v3', '/h2-legacy'],
         'TestH2ProviderFileCreateReopenRequireExistingAndReadOnly': ['', '/h2-v1', '/h2-v2', '/h2-v3', '/h2-legacy'],
+        'TestH2NativeSharedFileConnectionsPreserveOriginalSession': ['', '/h2-v1', '/h2-v2', '/h2-v3', '/h2-legacy'],
     }
     for name, suffixes in required.items():
         for suffix in suffixes:
@@ -64,6 +65,13 @@ def verify_editor_output(output):
     for suffix in ['', '/h2-v1', '/h2-v2', '/h2-v3', '/h2-legacy']:
         if '--- PASS: ' + name + suffix + ' ' not in output:
             raise RuntimeError('H2 editor acceptance is missing: ' + name + suffix)
+
+
+def verify_shell_output(output):
+    name = 'TestH2NativePublicChooserURISharedGridSQLStructureAndRecovery'
+    for suffix in ['', '/h2-v1', '/h2-v2', '/h2-v3', '/h2-legacy']:
+        if '--- PASS: ' + name + suffix + ' ' not in output:
+            raise RuntimeError('H2 public shell acceptance is missing: ' + name + suffix)
 
 
 def sha(path):
@@ -252,9 +260,9 @@ def main():
                     raise RuntimeError('Managed runtime acceptance is missing: ' + suffix)
             if args.workbench:
                 provider_env = dict(managed_env, NYADB_H2_PROVIDER_IT='1')
-                provider_command = ['-timeout=15m' if arg == '-timeout=3m' else arg for arg in command[:-1]] + ['./internal/services/h2']
+                provider_command = ['-timeout=30m' if arg == '-timeout=3m' else arg for arg in command[:-1]] + ['./internal/services/h2']
                 with (base / 'provider-acceptance.log').open('w') as log:
-                    subprocess.run(provider_command, cwd=ROOT, env=provider_env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=930)
+                    subprocess.run(provider_command, cwd=ROOT, env=provider_env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=1830)
                 provider_output = (base / 'provider-acceptance.log').read_text()
                 verify_provider_output(provider_output)
                 screenshots = base / 'editor-screenshots'
@@ -270,14 +278,27 @@ def main():
                             raise RuntimeError('H2 editor screenshot is missing: ' + language + '/' + tab)
                 state['h2_connection_editor'] = 'passed'
                 state['h2_editor_screenshots'] = str(screenshots)
-                state['h2_editor_scope'] = 'explicit original driver import and pin; saved configuration and vault password restoration; isolated native tests of all four profiles; owned file creation and existing-file authentication; masked password; no public chooser/URI or full workbench UI publication'
+                state['h2_editor_scope'] = 'explicit original driver import and pin; saved configuration and vault password restoration; isolated native tests of all four profiles; owned file creation and existing-file authentication; masked password; adapter/editor scope, with public shell checked separately'
+                shell_screenshots = base / 'shell-screenshots'
+                shell_env = dict(managed_env, NYADB_H2_SHELL_IT='1', NYADB_H2_SHELL_SCREENSHOTS=str(shell_screenshots))
+                shell_command = ['-timeout=20m' if arg == '-timeout=3m' else arg for arg in command[:-1]]
+                shell_command += ['-run=TestH2NativePublicChooserURISharedGridSQLStructureAndRecovery', './internal/ui/shell']
+                with (base / 'shell-acceptance.log').open('w') as log:
+                    subprocess.run(shell_command, cwd=ROOT, env=shell_env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=1230)
+                verify_shell_output((base / 'shell-acceptance.log').read_text())
+                for profile in ['h2-v1', 'h2-v2', 'h2-v3', 'h2-legacy']:
+                    for view in ['grid', 'sql']:
+                        if not (shell_screenshots / (profile + '-' + view + '.png')).is_file():
+                            raise RuntimeError('H2 shell screenshot is missing: ' + profile + '/' + view)
+                state['h2_public_shell'] = 'passed'
+                state['h2_public_shell_scope'] = 'builtin provider and chooser; native JDBC URI retaining explicit pin; vault callback; native file session; isolated test of already-open shared file; original generation/SQL lease; qualified grid save; native structure; SQL; disconnect cleanup and explicit recovery without replay, all four profiles; TCP/TLS and further H2 semantics not verified'
                 state['h2_workbench_provider'] = 'passed'
                 state['h2_data_adapter'] = 'passed'
                 state['h2_adapter_versions'] = ['1.4.200', '2.1.214', '2.4.240']
                 state['h2_adapter_profiles'] = ['h2-v1', 'h2-v2', 'h2-v3', 'h2-legacy']
                 state['h2_native_pool'] = 'passed; configured physical/workload/metadata capacity and canceled local admission'
                 state['h2_adapter_modes'] = ['memory', 'file/create', 'file/existing', 'file/read-only']
-                state['h2_adapter_scope'] = 'qualified metadata; typed paging/full rows/UTF-8 and binary chunks; native cursor export; conditional insert/update/delete; batch rollback; original native receipts in feature binding; canceled lock waiter acknowledgement; independent SQL leases; native pool limits and metadata reserve; file create/reopen/read-only; disconnect without replay; no public chooser/URI or full workbench UI publication'
+                state['h2_adapter_scope'] = 'qualified metadata; typed paging/full rows/UTF-8 and binary chunks; native cursor export; conditional insert/update/delete; batch rollback; original native receipts in feature binding; canceled lock waiter acknowledgement; independent SQL leases; native pool limits and metadata reserve; file create/reopen/read-only; disconnect without replay; adapter scope, with public shell checked separately'
             state['managed_offline_h2'] = 'passed'
             state['managed_package_sha256'] = sha(archive)
             print('Managed offline JRE, original H2 versions, typed query receipts and original package leases passed', flush=True)

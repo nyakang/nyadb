@@ -4239,5 +4239,7 @@
   "h2DatabaseConfigurationInvalid": "Check the H2 mode, database, host and driver settings",
   "h2ChooseDatabaseFile": "Select H2 database file",
   "h2ImportPackageDialog": "Import H2 driver package",
-  "h2CreateDatabaseFile": "Create H2 database file"
+  "h2CreateDatabaseFile": "Create H2 database file",
+  "h2SharedFileConnections": "Share local file connections",
+  "h2SharedFileModeHint": "Shared mode lets multiple connections open the same file. Read-only connections use exclusive mode."
 }

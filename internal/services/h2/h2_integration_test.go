@@ -96,6 +96,7 @@ func TestH2ManagedProviderQualifiedMetadataAndQueryLeases(t *testing.T) {
 		t.Run(v.version, func(t *testing.T) {
 			a := options
 			a.Mode = "memory"
+			a.AutoServer = false
 			a.RequireExisting = false
 			a.DriverProfile = v.profile
 			p := connections.Profile{ID: 17, Kind: connections.H2, Name: "owned H2", Database: "owned_provider", Username: "sa", H2Options: a}

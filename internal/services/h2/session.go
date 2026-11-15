@@ -147,6 +147,9 @@ func connectionURL(p connections.Profile) string {
 	switch a.Mode {
 	case "file":
 		url = "jdbc:h2:file:" + strings.ReplaceAll(p.Database, "\\", "/")
+		if a.AutoServer {
+			url += ";AUTO_SERVER=TRUE"
+		}
 	case "memory":
 		url = "jdbc:h2:mem:" + p.Database + ";DB_CLOSE_DELAY=-1"
 	default:
@@ -168,6 +171,16 @@ func connectionURL(p connections.Profile) string {
 func (s *Session) ProfileID() int64   { return s.profile.ID }
 func (s *Session) Generation() uint64 { return 1 }
 func (s *Session) Catalog() string    { return s.catalog }
+
+func (s *Session) Namespace(name string) contract.NamespaceRef {
+	if !s.Alive() {
+		return contract.NamespaceRef{ProfileID: s.ProfileID()}
+	}
+	if name == "" {
+		name = s.profile.H2Options.DefaultSchema
+	}
+	return contract.NamespaceRef{ProfileID: s.ProfileID(), Catalog: s.catalog, Schema: name}
+}
 func (s *Session) Alive() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()

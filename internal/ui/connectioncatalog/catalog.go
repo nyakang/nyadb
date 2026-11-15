@@ -64,9 +64,10 @@ var databaseCatalog = []catalogEntry{
 	{"Neo4j", "Neo4j", "", "全部", "database", "#008cc1", connections.Neo4j},
 	{"etcd", "etcd", "", "全部", "database", "#419eda", connections.Etcd},
 	{"Consul", "Consul", "", "全部", "database", "#ca2171", connections.Consul},
+	{"H2", "H2", "", "全部", "database", "#156aa3", connections.H2},
 }
 
-var catalogEngines = []string{"MySQL", "PostgreSQL", "Apache Cloudberry", "OpenTenBase", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "Apache Doris", "SelectDB", "StarRocks", "Trino", "MariaDB", "TiDB", "TDSQL", "PolarDB", "GreatSQL", "Dolt", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "达梦", "MongoDB", "Redis", "Elasticsearch", "Easysearch", "Apache Solr", "Apache Cassandra", "Apache CouchDB", "Meilisearch", "Qdrant", "Neo4j", "etcd", "Consul", "Snowflake"}
+var catalogEngines = []string{"MySQL", "PostgreSQL", "Apache Cloudberry", "OpenTenBase", "SQL Server", "Oracle", "SQLite", "DuckDB", "ClickHouse", "Apache Doris", "SelectDB", "StarRocks", "Trino", "MariaDB", "TiDB", "TDSQL", "PolarDB", "GreatSQL", "Dolt", "OceanBase", "CockroachDB", "openGauss", "GaussDB", "KingbaseES", "达梦", "MongoDB", "Redis", "Elasticsearch", "Easysearch", "Apache Solr", "Apache Cassandra", "Apache CouchDB", "Meilisearch", "Qdrant", "Neo4j", "etcd", "Consul", "Snowflake", "H2"}
 var catalogVendors = catalogTreeVendorOrder
 
 func catalogMatch(e catalogEntry, query string, engines, vendors map[string]bool) bool {

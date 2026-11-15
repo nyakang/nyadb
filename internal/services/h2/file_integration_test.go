@@ -86,6 +86,7 @@ func TestH2ProviderFileCreateReopenRequireExistingAndReadOnly(t *testing.T) {
 				t.Fatal(err)
 			}
 			p.H2Options.ReadOnly = true
+			p.H2Options.AutoServer = false
 			raw, err = provider.Open(ctx, p, password)
 			if err != nil {
 				t.Fatal("read-only original file did not open", err)

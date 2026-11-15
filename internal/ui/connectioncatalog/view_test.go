@@ -124,8 +124,14 @@ func TestProviderSidebarShowsDescriptiveCategoryLabels(t *testing.T) {
 	if !tt.HasText("连接筛选") || !tt.HasText("供应商筛选") {
 		t.Fatal("sidebar category headings are not present")
 	}
-	tt.Scroll(100, 400, 0, 450)
-	tt.Frame()
+	for attempt := 0; attempt < 12; attempt++ {
+		r, visible := tt.Find("筛选供应商 华为")
+		if visible && r.H > 0 && r.Y >= 0 && r.Y+r.H < 566 {
+			break
+		}
+		tt.Scroll(100, 400, 0, 100)
+		tt.Frame()
+	}
 	if err := tt.Click("筛选供应商 华为"); err != nil {
 		t.Fatal(err)
 	}

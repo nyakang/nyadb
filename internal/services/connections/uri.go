@@ -34,6 +34,9 @@ func ParseURI(raw string) (URIImport, error) {
 	if raw == "" || len(raw) > 16<<10 || !utf8.ValidString(raw) || strings.IndexFunc(raw, unicode.IsControl) >= 0 {
 		return fail(ErrURI)
 	}
+	if strings.HasPrefix(strings.ToLower(raw), "jdbc:h2:") {
+		return parseH2URI(raw)
+	}
 	if scheme, _, ok := strings.Cut(raw, ":"); ok && strings.EqualFold(scheme, "gaussdb") {
 		return parseRawGaussDBURI(raw)
 	}

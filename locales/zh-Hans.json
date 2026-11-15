@@ -4239,5 +4239,7 @@
   "h2DatabaseConfigurationInvalid": "请检查 H2 模式、数据库、主机和驱动设置",
   "h2ChooseDatabaseFile": "选择 H2 数据库文件",
   "h2ImportPackageDialog": "导入 H2 驱动包",
-  "h2CreateDatabaseFile": "创建 H2 数据库文件"
+  "h2CreateDatabaseFile": "创建 H2 数据库文件",
+  "h2SharedFileConnections": "共享本地文件连接",
+  "h2SharedFileModeHint": "共享模式允许多个连接打开同一文件；只读连接使用独占模式。"
 }

@@ -30,6 +30,14 @@ class H2EditorAcceptanceEvidenceTests(unittest.TestCase):
                 "--- SKIP: TestH2NativeEditorDriverImportPersistenceCredentialsAndIsolatedTesting (0.00s)\nPASS"
             )
 
+    def test_public_shell_requires_each_original_profile(self):
+        name = "TestH2NativePublicChooserURISharedGridSQLStructureAndRecovery"
+        lines = ["--- PASS: " + name + suffix + " (1.00s)" for suffix in ["", "/h2-v1", "/h2-v2", "/h2-v3", "/h2-legacy"]]
+        FIXTURE.verify_shell_output("\n".join(lines))
+        for missing in range(len(lines)):
+            with self.subTest(missing=missing), self.assertRaises(RuntimeError):
+                FIXTURE.verify_shell_output("\n".join(line for i, line in enumerate(lines) if i != missing))
+
 
 if __name__ == "__main__":
     unittest.main()

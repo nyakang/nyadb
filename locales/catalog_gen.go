@@ -43205,3 +43205,23 @@ func H2CreateDatabaseFile() string { return In(i18n.Locale()).H2CreateDatabaseFi
 func (msgs Messages) H2CreateDatabaseFile() string {
 	return Catalog.Format(msgs.locale, "h2CreateDatabaseFile", nil)
 }
+
+// H2SharedFileConnections says "共享本地文件连接"
+// in the language the app shows.
+func H2SharedFileConnections() string { return In(i18n.Locale()).H2SharedFileConnections() }
+
+// H2SharedFileConnections says "共享本地文件连接"
+// in the language of msgs.
+func (msgs Messages) H2SharedFileConnections() string {
+	return Catalog.Format(msgs.locale, "h2SharedFileConnections", nil)
+}
+
+// H2SharedFileModeHint says "共享模式允许多个连接打开同一文件；只读连接使用独占模式。"
+// in the language the app shows.
+func H2SharedFileModeHint() string { return In(i18n.Locale()).H2SharedFileModeHint() }
+
+// H2SharedFileModeHint says "共享模式允许多个连接打开同一文件；只读连接使用独占模式。"
+// in the language of msgs.
+func (msgs Messages) H2SharedFileModeHint() string {
+	return Catalog.Format(msgs.locale, "h2SharedFileModeHint", nil)
+}

@@ -81,6 +81,9 @@ func (l *Lease) start(ctx context.Context, profile string, settings *JDBCSetting
 	l.active = true
 	l.consumed = true
 	l.mu.Unlock()
+	if started == nil {
+		started, _ = ctx.Value(runtimeObserverKey{}).(func(int) error)
+	}
 	spec.Started = started
 	client, err := agentbridge.Start(ctx, spec, options)
 	if err != nil {

@@ -24,7 +24,7 @@ type EngineRuntime struct {
 func (s *State) SetEngineRuntime(r EngineRuntime) { s.engines = r }
 func (s *State) EngineCatalog(id int64) string {
 	w := s.Workspace(id)
-	if w != nil && (w.Kind.IsPostgreSQLFamily() || w.Kind == connections.Doris || w.Kind == connections.SelectDB || w.Kind == connections.StarRocks || w.Kind == connections.SQLServer || w.Kind == connections.Oracle || w.Kind == connections.Dameng || w.Kind == connections.DuckDB) {
+	if w != nil && (w.Kind == connections.H2 || w.Kind.IsPostgreSQLFamily() || w.Kind == connections.Doris || w.Kind == connections.SelectDB || w.Kind == connections.StarRocks || w.Kind == connections.SQLServer || w.Kind == connections.Oracle || w.Kind == connections.Dameng || w.Kind == connections.DuckDB) {
 		return w.Catalog
 	}
 	return ""
@@ -198,6 +198,9 @@ func sessionNamespaces(ctx context.Context, s contract.Session) ([]string, error
 	return out, nil
 }
 func (s *State) engineLabel(w *Workspace) string {
+	if w.Kind == connections.H2 {
+		return "H2"
+	}
 	if w.Kind == connections.Cloudberry || w.Kind == connections.OpenTenBase {
 		descriptor, _ := connections.Describe(w.Kind)
 		return descriptor.Label
