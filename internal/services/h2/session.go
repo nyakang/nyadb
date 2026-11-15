@@ -35,6 +35,7 @@ type Session struct {
 	runtime                 *driverstore.Runtime
 	queries                 *agentbridge.QueryPool
 	params                  json.RawMessage
+	metadataParams          json.RawMessage
 	catalog, version, scope string
 	ctx                     context.Context
 	cancel                  context.CancelFunc
@@ -43,6 +44,7 @@ type Session struct {
 	closeOnce               sync.Once
 	closeErr                error
 	slots                   chan struct{}
+	metadataSlots           chan struct{}
 }
 
 func (p Provider) Open(ctx context.Context, profile connections.Profile, password string) (contract.Session, error) {
@@ -83,21 +85,28 @@ func (p Provider) Open(ctx context.Context, profile connections.Profile, passwor
 	if driverProfile == "h2-legacy" {
 		driverProfile = "h2-v2"
 	}
-	r, err := lease.StartObserved(openCtx, driverProfile, agentbridge.Options{CancelWait: 15 * time.Second}, p.Started)
+	r, err := lease.StartJDBCObserved(openCtx, driverProfile, driverstore.JDBCSettings{MaxConnections: a.MaxConnections, MetadataReserve: a.MetadataReserve, WaitTimeout: time.Duration(a.PoolWaitTimeoutMilliseconds) * time.Millisecond}, agentbridge.Options{CancelWait: 15 * time.Second, MaxInFlight: 32}, p.Started)
 	if err != nil {
 		_ = lease.Close()
 		return nil, safeError(err)
 	}
-	params, err := json.Marshal(map[string]any{"database": profile.Database, "connection_string": connectionURL(profile), "username": profile.Username, "password": password, "driver_profile": a.DriverProfile})
+	params := map[string]any{"database": profile.Database, "connection_string": connectionURL(profile), "username": profile.Username, "password": password, "driver_profile": a.DriverProfile, "sessionRole": "workload"}
+	workloadParams, err := json.Marshal(params)
+	if err != nil {
+		r.Close()
+		return nil, connections.ErrInvalid
+	}
+	params["sessionRole"] = "metadata"
+	metadataParams, err := json.Marshal(params)
 	if err != nil {
 		r.Close()
 		return nil, connections.ErrInvalid
 	}
 	root, stop := context.WithCancel(context.Background())
-	s := &Session{profile: profile, runtime: r, params: params, ctx: root, cancel: stop, slots: make(chan struct{}, a.MaxConnections), scope: rand.Text()}
-	s.queries, err = agentbridge.NewQueryPool(r.Client, s.params, agentbridge.QueryConfig{InitializeSQL: "SET SCHEMA " + quote(a.DefaultSchema), DefaultSchema: a.DefaultSchema, MaxLeases: a.SQLMaxConnections, MaxRows: 10000, TimeoutSeconds: a.QueryTimeoutSeconds, Split: sqltext.SplitPortable, Decoder: decodeValue})
+	s := &Session{profile: profile, runtime: r, params: workloadParams, metadataParams: metadataParams, ctx: root, cancel: stop, slots: make(chan struct{}, a.MaxConnections-a.MetadataReserve), metadataSlots: make(chan struct{}, max(1, a.MetadataReserve)), scope: rand.Text()}
+	s.queries, err = agentbridge.NewQueryPool(r.Client, s.params, agentbridge.QueryConfig{InitializeSQL: "SET SCHEMA " + quote(a.DefaultSchema), DefaultSchema: a.DefaultSchema, MaxLeases: a.SQLMaxConnections, MaxRows: 10000, TimeoutSeconds: a.QueryTimeoutSeconds, Split: sqltext.SplitPortable, Decoder: decodeValue, AcquireConnection: s.acquireWorkload})
 	if err == nil {
-		err = s.withFeature(openCtx, func(child context.Context, session *agentbridge.Session) error {
+		err = s.withMetadata(openCtx, func(child context.Context, session *agentbridge.Session) error {
 			q, err := s.query(child, session, "SELECT H2VERSION(), DATABASE()", 1)
 			if err != nil {
 				return err
@@ -186,12 +195,46 @@ func (s *Session) Close() error {
 		s.active.Wait()
 		s.mu.Lock()
 		s.params = nil
+		s.metadataParams = nil
 		s.mu.Unlock()
 	})
 	return s.closeErr
 }
 
 func (s *Session) withFeature(ctx context.Context, fn func(context.Context, *agentbridge.Session) error) error {
+	return s.withRole(ctx, false, fn)
+}
+
+func (s *Session) withMetadata(ctx context.Context, fn func(context.Context, *agentbridge.Session) error) error {
+	return s.withRole(ctx, true, fn)
+}
+
+// SQL affinity leases and temporary workload features share physical capacity.
+// Admission waits locally, so cancellation cannot retire a busy native runtime
+// merely because all workload connections belong to other original documents.
+func (s *Session) acquireWorkload(ctx context.Context) (func(), error) {
+	wait, cancel := context.WithTimeout(ctx, time.Duration(s.profile.H2Options.PoolWaitTimeoutMilliseconds)*time.Millisecond)
+	defer cancel()
+	select {
+	case s.slots <- struct{}{}:
+	case <-wait.Done():
+		return nil, wait.Err()
+	case <-s.ctx.Done():
+		return nil, contract.ErrRevoked
+	}
+	release := func() { <-s.slots }
+	if err := wait.Err(); err != nil {
+		release()
+		return nil, err
+	}
+	if !s.Alive() {
+		release()
+		return nil, contract.ErrRevoked
+	}
+	return release, nil
+}
+
+func (s *Session) withRole(ctx context.Context, metadata bool, fn func(context.Context, *agentbridge.Session) error) error {
 	if ctx == nil {
 		return connections.ErrInvalid
 	}
@@ -202,17 +245,30 @@ func (s *Session) withFeature(ctx context.Context, fn func(context.Context, *age
 	}
 	s.active.Add(1)
 	params := append(json.RawMessage(nil), s.params...)
+	if metadata {
+		params = append(json.RawMessage(nil), s.metadataParams...)
+	}
 	s.mu.Unlock()
 	defer s.active.Done()
 	child, cancel := context.WithCancel(ctx)
 	stop := context.AfterFunc(s.ctx, cancel)
 	defer func() { stop(); cancel() }()
-	select {
-	case s.slots <- struct{}{}:
-	case <-child.Done():
-		return child.Err()
+	var release func()
+	if metadata {
+		select {
+		case s.metadataSlots <- struct{}{}:
+		case <-child.Done():
+			return child.Err()
+		}
+		release = func() { <-s.metadataSlots }
+	} else {
+		var err error
+		release, err = s.acquireWorkload(child)
+		if err != nil {
+			return err
+		}
 	}
-	defer func() { <-s.slots }()
+	defer release()
 	if err := child.Err(); err != nil {
 		return err
 	}

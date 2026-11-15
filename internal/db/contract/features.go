@@ -191,8 +191,9 @@ type DataReads struct {
 }
 type DataReadsProvider interface{ DataReads() DataReads }
 type DataEdits struct {
-	Saver  func(context.Context, int64, string, string, []DataEdit) (*DataEditResult, error)
-	Verify func(context.Context, int64, string, string, *DataEditResult) (*DataVerification, error)
+	NativeReceipts bool // Synchronous native transaction evidence, including unknown outcomes.
+	Saver          func(context.Context, int64, string, string, []DataEdit) (*DataEditResult, error)
+	Verify         func(context.Context, int64, string, string, *DataEditResult) (*DataVerification, error)
 }
 type DataEditsProvider interface{ DataEdits() DataEdits }
 type DataExports struct {
@@ -232,6 +233,7 @@ func ComposeData(s Session) DataRuntime {
 	}
 	if p, e := Require[DataEditsProvider](s); e == nil {
 		v := p.DataEdits()
+		r.NativeReceipts = v.NativeReceipts
 		r.Saver = v.Saver
 		r.Verify = v.Verify
 	}

@@ -13,23 +13,25 @@ import (
 // H2Options selects one immutable installed driver bundle and one database
 // mode. Credentials and executable/JVM arguments are never profile fields.
 type H2Options struct {
-	Version               int    `json:"version"`
-	Mode                  string `json:"mode"`
-	DriverProfile         string `json:"driver_profile"`
-	DriverVersion         string `json:"driver_version,omitempty"`
-	DriverSHA256          string `json:"driver_sha256,omitempty"`
-	DriverDirectory       string `json:"driver_directory,omitempty"`
-	DefaultSchema         string `json:"default_schema"`
-	ConnectTimeoutSeconds int    `json:"connect_timeout_seconds"`
-	QueryTimeoutSeconds   int    `json:"query_timeout_seconds"`
-	MaxConnections        int    `json:"max_connections"`
-	SQLMaxConnections     int    `json:"sql_max_connections"`
-	ReadOnly              bool   `json:"read_only,omitempty"`
-	RequireExisting       bool   `json:"require_existing,omitempty"`
+	Version                     int    `json:"version"`
+	Mode                        string `json:"mode"`
+	DriverProfile               string `json:"driver_profile"`
+	DriverVersion               string `json:"driver_version,omitempty"`
+	DriverSHA256                string `json:"driver_sha256,omitempty"`
+	DriverDirectory             string `json:"driver_directory,omitempty"`
+	DefaultSchema               string `json:"default_schema"`
+	ConnectTimeoutSeconds       int    `json:"connect_timeout_seconds"`
+	QueryTimeoutSeconds         int    `json:"query_timeout_seconds"`
+	PoolWaitTimeoutMilliseconds int    `json:"pool_wait_timeout_milliseconds"`
+	MaxConnections              int    `json:"max_connections"` // Physical JDBC pool, shared by SQL and features.
+	MetadataReserve             int    `json:"metadata_reserve"`
+	SQLMaxConnections           int    `json:"sql_max_connections"` // Logical SQL document limit within workload capacity.
+	ReadOnly                    bool   `json:"read_only,omitempty"`
+	RequireExisting             bool   `json:"require_existing,omitempty"`
 }
 
 func DefaultH2Options() H2Options {
-	return H2Options{Version: 1, Mode: "file", DriverProfile: "h2-v3", DefaultSchema: "PUBLIC", ConnectTimeoutSeconds: 15, QueryTimeoutSeconds: 0, MaxConnections: 8, SQLMaxConnections: 8, RequireExisting: true}
+	return H2Options{Version: 1, Mode: "file", DriverProfile: "h2-v3", DefaultSchema: "PUBLIC", ConnectTimeoutSeconds: 15, QueryTimeoutSeconds: 0, PoolWaitTimeoutMilliseconds: 30000, MaxConnections: 8, MetadataReserve: 2, SQLMaxConnections: 6, RequireExisting: true}
 }
 
 var h2VersionName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$`)
@@ -39,7 +41,10 @@ func NormalizeH2Options(a H2Options) (H2Options, error) {
 		a = DefaultH2Options()
 	}
 	invalid := func() (H2Options, error) { return a, fmt.Errorf("%w: invalid H2 connection settings", ErrInvalid) }
-	if a.Version != 1 || a.ConnectTimeoutSeconds < 1 || a.ConnectTimeoutSeconds > 300 || a.QueryTimeoutSeconds < 0 || a.QueryTimeoutSeconds > 86400 || a.MaxConnections < 1 || a.MaxConnections > 64 || a.SQLMaxConnections < 1 || a.SQLMaxConnections > 64 {
+	if a.Version != 1 || a.ConnectTimeoutSeconds < 1 || a.ConnectTimeoutSeconds > 300 || a.QueryTimeoutSeconds < 0 || a.QueryTimeoutSeconds > 86400 || a.MaxConnections < 1 || a.MaxConnections > 32 || a.MetadataReserve < 0 || a.MetadataReserve >= a.MaxConnections || a.SQLMaxConnections < 1 || a.SQLMaxConnections > a.MaxConnections-a.MetadataReserve {
+		return invalid()
+	}
+	if a.PoolWaitTimeoutMilliseconds < 250 || a.PoolWaitTimeoutMilliseconds > 300000 {
 		return invalid()
 	}
 	if a.Mode != "file" && a.Mode != "memory" && a.Mode != "tcp" && a.Mode != "ssl" {

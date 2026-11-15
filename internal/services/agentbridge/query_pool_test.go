@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/sqltext"
@@ -12,6 +14,103 @@ import (
 
 func testQueryConfig() QueryConfig {
 	return QueryConfig{InitializeSQL: `SET SCHEMA "PUBLIC"`, DefaultSchema: "PUBLIC", MaxLeases: 2, MaxRows: 100, TimeoutSeconds: 5, Split: sqltext.SplitPortable}
+}
+
+func TestQueryPoolWaitsLocallyAndReleasesSharedCapacityAfterOriginalClose(t *testing.T) {
+	c := helperClient(t, "query_pool", Options{})
+	capacity := make(chan struct{}, 1)
+	attempts := make(chan struct{}, 8)
+	var releases atomic.Int32
+	config := testQueryConfig()
+	config.AcquireConnection = func(ctx context.Context) (func(), error) {
+		attempts <- struct{}{}
+		select {
+		case capacity <- struct{}{}:
+			return func() {
+				raw, err := helperSession(t, c).Call(context.Background(), "pool_probe", nil)
+				var state struct{ Opens, Closes int }
+				if err != nil || json.Unmarshal(raw.Result, &state) != nil || state.Closes != int(releases.Load())+1 {
+					t.Error("capacity released before original native close", err)
+				}
+				<-capacity
+				releases.Add(1)
+			}, nil
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+	p, err := NewQueryPool(c, map[string]string{"password": "original"}, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer p.Close()
+	first, err := p.ReserveQuery(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := p.ReserveQuery(2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(attempts) != 0 {
+		t.Fatal("logical reservations acquired physical capacity")
+	}
+	if err := first.Preconnect(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	<-attempts
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- second.Preconnect(ctx) }()
+	<-attempts
+	cancel()
+	if err := <-done; !errors.Is(err, context.Canceled) || errors.Is(err, contract.ErrSQLSessionLost) || !c.Alive() {
+		t.Fatal("local admission cancellation retired an unrelated runtime", err)
+	}
+	if releases.Load() != 0 {
+		t.Fatal("waiting document released another document's slot")
+	}
+	first.Release()
+	if releases.Load() != 1 {
+		t.Fatal("original release did not return shared capacity")
+	}
+	wait, stop := context.WithTimeout(context.Background(), 5*time.Second)
+	defer stop()
+	if err := second.Preconnect(wait); err != nil {
+		t.Fatal("canceled local wait required reconnecting the original runtime", err)
+	}
+	second.Release()
+	second.Release()
+	if releases.Load() != 2 || len(capacity) != 0 {
+		t.Fatal("shared capacity leaked or released twice")
+	}
+}
+
+func TestQueryPoolFailedInitializationReturnsAdmissionOnce(t *testing.T) {
+	c := helperClient(t, "query_pool", Options{})
+	var releases atomic.Int32
+	config := testQueryConfig()
+	config.AcquireConnection = func(context.Context) (func(), error) {
+		return func() { releases.Add(1) }, nil
+	}
+	config.Decoder = func(string, json.RawMessage) (contract.Cell, error) { return contract.Cell{}, ErrNativeResult }
+	p, err := NewQueryPool(c, map[string]string{"password": "original"}, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer p.Close()
+	l, err := p.ReserveQuery(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := l.Preconnect(context.Background()); !errors.Is(err, contract.ErrSQLSessionLost) || releases.Load() != 1 {
+		t.Fatal("failed native initialization retained shared admission", err)
+	}
+	l.Release()
+	l.Release()
+	if releases.Load() != 1 || !c.Alive() {
+		t.Fatal("failed initialization released capacity twice or retired the runtime")
+	}
 }
 
 func TestQueryPoolReservationsDoNotDispatchAndRetireWithOriginalRuntime(t *testing.T) {

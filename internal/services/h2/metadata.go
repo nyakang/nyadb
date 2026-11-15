@@ -23,7 +23,7 @@ func (s *Session) check(o contract.ObjectRef) error {
 }
 
 func (s *Session) Namespaces(ctx context.Context) (out []contract.Namespace, err error) {
-	err = s.withFeature(ctx, func(child context.Context, session *agentbridge.Session) error {
+	err = s.withMetadata(ctx, func(child context.Context, session *agentbridge.Session) error {
 		var names []string
 		if err := nativeJSON(child, session, "list_schemas", map[string]any{}, &names); err != nil {
 			return err
@@ -65,7 +65,7 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) (out []co
 	if err = s.check(n.Object("table", "_")); err != nil {
 		return
 	}
-	err = s.withFeature(ctx, func(child context.Context, session *agentbridge.Session) error {
+	err = s.withMetadata(ctx, func(child context.Context, session *agentbridge.Session) error {
 		var objects []nativeObject
 		if err := nativeJSON(child, session, "list_objects", map[string]string{"schema": n.Schema}, &objects); err != nil {
 			return err
@@ -170,7 +170,7 @@ func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (out 
 	if err = s.check(o); err != nil {
 		return
 	}
-	err = s.withFeature(ctx, func(child context.Context, session *agentbridge.Session) error {
+	err = s.withMetadata(ctx, func(child context.Context, session *agentbridge.Session) error {
 		var e error
 		out, e = s.structure(child, session, o)
 		return e

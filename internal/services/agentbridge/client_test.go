@@ -27,7 +27,7 @@ func TestAgentBridgeProcess(t *testing.T) {
 	var mu sync.Mutex
 	started, canceled := map[string]int{}, map[string]int{}
 	finished := map[string]chan struct{}{}
-	opens := 0
+	opens, closes := 0, 0
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Buffer(make([]byte, 1024), 2<<20)
 	for scanner.Scan() {
@@ -70,7 +70,11 @@ func TestAgentBridgeProcess(t *testing.T) {
 				}
 			case "pool_probe":
 				mu.Lock()
-				result = map[string]int{"opens": opens}
+				result = map[string]int{"opens": opens, "closes": closes}
+				mu.Unlock()
+			case "close_session":
+				mu.Lock()
+				closes++
 				mu.Unlock()
 			case "execute_query":
 				if scenario == "query_pool" {

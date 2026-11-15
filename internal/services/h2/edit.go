@@ -22,7 +22,7 @@ func (s *Session) DataEdits() contract.DataEdits {
 	if s.profile.H2Options.ReadOnly {
 		return contract.DataEdits{}
 	}
-	return contract.DataEdits{Saver: s.save, Verify: s.verify}
+	return contract.DataEdits{NativeReceipts: true, Saver: s.save, Verify: s.verify}
 }
 
 var numberLiteral = regexp.MustCompile(`^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$`)

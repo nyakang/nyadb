@@ -56,7 +56,7 @@ func (s *Session) resolve(ctx context.Context, session *agentbridge.Session, id 
 }
 
 func (s *Session) tableMetadata(ctx context.Context, id int64, schema, name string) (out *contract.TableStructure, err error) {
-	err = s.withFeature(ctx, func(ctx context.Context, session *agentbridge.Session) error {
+	err = s.withMetadata(ctx, func(ctx context.Context, session *agentbridge.Session) error {
 		out, err = s.resolve(ctx, session, id, schema, name, contract.ObjectRef{})
 		return err
 	})

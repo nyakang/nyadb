@@ -46,6 +46,12 @@ func TestH2RejectsURLInjectionForeignSettingsAndIncompleteDriverPins(t *testing.
 		{"foreign tls", func(p *connections.Profile) { p.TLSMode = "disable" }},
 		{"foreign engine", func(p *connections.Profile) { p.Kind = connections.MySQL }},
 		{"excessive pool", func(p *connections.Profile) { p.H2Options.MaxConnections = 10000 }},
+		{"native pool upper bound", func(p *connections.Profile) { p.H2Options.MaxConnections = 33 }},
+		{"SQL exceeds workload", func(p *connections.Profile) { p.H2Options.SQLMaxConnections = 7 }},
+		{"negative reserve", func(p *connections.Profile) { p.H2Options.MetadataReserve = -1 }},
+		{"no workload capacity", func(p *connections.Profile) { p.H2Options.MetadataReserve = 8 }},
+		{"native wait minimum", func(p *connections.Profile) { p.H2Options.PoolWaitTimeoutMilliseconds = 249 }},
+		{"native wait maximum", func(p *connections.Profile) { p.H2Options.PoolWaitTimeoutMilliseconds = 300001 }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -55,5 +61,16 @@ func TestH2RejectsURLInjectionForeignSettingsAndIncompleteDriverPins(t *testing.
 				t.Fatal("invalid original H2 settings admitted")
 			}
 		})
+	}
+}
+
+func TestH2PoolAcceptsNativeBoundariesAndExplicitNoReserve(t *testing.T) {
+	for _, limits := range [][3]int{{1, 0, 1}, {8, 2, 6}, {32, 2, 30}, {32, 0, 32}} {
+		a := connections.DefaultH2Options()
+		a.MaxConnections, a.MetadataReserve, a.SQLMaxConnections = limits[0], limits[1], limits[2]
+		got, err := connections.NormalizeH2Options(a)
+		if err != nil || got != a {
+			t.Fatal("explicit native limits changed", err)
+		}
 	}
 }

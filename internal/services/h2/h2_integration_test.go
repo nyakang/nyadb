@@ -16,7 +16,8 @@ import (
 	"github.com/nyakang/nyadb/internal/services/driverstore"
 )
 
-func TestH2ManagedProviderQualifiedMetadataAndQueryLeases(t *testing.T) {
+func managedH2Fixture(t *testing.T) (Provider, connections.H2Options, string, string) {
+	t.Helper()
 	if os.Getenv("NYADB_H2_PROVIDER_IT") != "1" {
 		t.Skip("requires owned managed H2 fixture")
 	}
@@ -44,6 +45,11 @@ func TestH2ManagedProviderQualifiedMetadataAndQueryLeases(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		if err := store.Remove(context.Background(), m.Key, m.Version); err != nil {
+			t.Error(err)
+		}
+	})
 	provider := Provider{Store: store, Started: func(pid int) error {
 		stat, err := os.ReadFile(fmt.Sprintf("/proc/%d/stat", pid))
 		if err != nil {
@@ -67,7 +73,7 @@ func TestH2ManagedProviderQualifiedMetadataAndQueryLeases(t *testing.T) {
 		if agent == "" {
 			return fmt.Errorf("original classpath unavailable")
 		}
-		record, _ := json.Marshal(map[string]any{"pid": pid, "start_ticks": fields[19], "java": args[0], "agent": agent})
+		record, _ := json.Marshal(map[string]any{"pid": pid, "start_ticks": fields[19], "java": args[0], "agent": agent, "jdbc_arguments": args[1 : len(args)-1]})
 		journal, err := os.OpenFile(filepath.Join(f.Directory, "processes.jsonl"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			return err
@@ -76,17 +82,24 @@ func TestH2ManagedProviderQualifiedMetadataAndQueryLeases(t *testing.T) {
 		_, err = journal.Write(append(record, '\n'))
 		return err
 	}}
+	a := connections.DefaultH2Options()
+	a.DriverVersion, a.DriverSHA256 = m.Version, f.SHA256
+	a.ConnectTimeoutSeconds = 120
+	return provider, a, strings.TrimSpace(string(secret)), f.Directory
+}
+
+func TestH2ManagedProviderQualifiedMetadataAndQueryLeases(t *testing.T) {
+	provider, options, password, _ := managedH2Fixture(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
 	for _, v := range []struct{ profile, version string }{{"h2-v1", "1.4.200"}, {"h2-v2", "2.1.214"}, {"h2-v3", "2.4.240"}, {"h2-legacy", "2.1.214"}} {
 		t.Run(v.version, func(t *testing.T) {
-			a := connections.DefaultH2Options()
+			a := options
 			a.Mode = "memory"
 			a.RequireExisting = false
 			a.DriverProfile = v.profile
-			a.DriverVersion = m.Version
-			a.DriverSHA256 = f.SHA256
-			a.ConnectTimeoutSeconds = 120
 			p := connections.Profile{ID: 17, Kind: connections.H2, Name: "owned H2", Database: "owned_provider", Username: "sa", H2Options: a}
-			raw, err := provider.Open(ctx, p, strings.TrimSpace(string(secret)))
+			raw, err := provider.Open(ctx, p, password)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -163,9 +176,6 @@ func TestH2ManagedProviderQualifiedMetadataAndQueryLeases(t *testing.T) {
 				t.Fatal("disconnected SQL lease reopened implicitly", err)
 			}
 		})
-	}
-	if err = store.Remove(ctx, m.Key, m.Version); err != nil {
-		t.Fatal(err)
 	}
 }
 

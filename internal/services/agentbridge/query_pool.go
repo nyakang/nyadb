@@ -24,6 +24,10 @@ type QueryConfig struct {
 	// ReturnAllResults is opt-in: common JDBC agents, including H2, reject
 	// that optional dispatch method. Split still preserves every statement.
 	ReturnAllResults bool
+	// AcquireConnection admits a physical workload lease in the adapter's
+	// shared pool. The returned release waits until the original session closes.
+	// A waiting acquisition must honor ctx without dispatching native work.
+	AcquireConnection func(context.Context) (func(), error)
 }
 
 // QueryPool binds SQL documents to one captured runtime. It owns its logical
@@ -91,15 +95,16 @@ func (p *QueryPool) Close() {
 }
 
 type queryLease struct {
-	pool           *QueryPool
-	document       uint64
-	ops, mu        sync.Mutex
-	ctx            context.Context
-	cancel         context.CancelFunc
-	session        *Session
-	released, lost bool
-	releasedDone   chan struct{}
-	receipts       []Receipt
+	pool              *QueryPool
+	document          uint64
+	ops, mu           sync.Mutex
+	ctx               context.Context
+	cancel            context.CancelFunc
+	session           *Session
+	released, lost    bool
+	releasedDone      chan struct{}
+	receipts          []Receipt
+	releaseConnection func()
 }
 
 func (l *queryLease) CheckQueryLease() error {
@@ -136,6 +141,19 @@ func (l *queryLease) connect(ctx context.Context) error {
 	if session != nil {
 		return nil
 	}
+	var release func()
+	if acquire := l.pool.config.AcquireConnection; acquire != nil {
+		var err error
+		release, err = acquire(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	defer func() {
+		if release != nil {
+			release()
+		}
+	}()
 	l.pool.mu.Lock()
 	params := append(json.RawMessage(nil), l.pool.params...)
 	l.pool.mu.Unlock()
@@ -165,6 +183,10 @@ func (l *queryLease) connect(ctx context.Context) error {
 		_, _ = session.Close()
 		return errors.Join(contract.ErrSQLSessionLost, err)
 	}
+	l.mu.Lock()
+	l.releaseConnection = release
+	l.mu.Unlock()
+	release = nil
 	return nil
 }
 
@@ -375,10 +397,15 @@ func (l *queryLease) Release() {
 	l.mu.Lock()
 	session := l.session
 	l.session = nil
+	release := l.releaseConnection
+	l.releaseConnection = nil
 	l.receipts = nil
 	l.mu.Unlock()
 	if session != nil {
 		_, _ = session.Close()
+	}
+	if release != nil {
+		release()
 	}
 	l.ops.Unlock()
 	l.pool.mu.Lock()

@@ -46,6 +46,18 @@ REQUIRED = [
 ]
 
 
+def verify_provider_output(output):
+    required = {
+        'TestH2ManagedProviderQualifiedMetadataAndQueryLeases': ['', '/1.4.200', '/2.1.214', '/2.4.240', '/2.1.214#01'],
+        'TestH2NativePoolCapacityMetadataReserveAndCanceledAdmission': ['', '/h2-v1', '/h2-v2', '/h2-v3', '/h2-legacy'],
+        'TestH2ProviderFileCreateReopenRequireExistingAndReadOnly': ['', '/h2-v1', '/h2-v2', '/h2-v3', '/h2-legacy'],
+    }
+    for name, suffixes in required.items():
+        for suffix in suffixes:
+            if '--- PASS: ' + name + suffix + ' ' not in output:
+                raise RuntimeError('H2 provider acceptance is missing: ' + name + suffix)
+
+
 def sha(path):
     with path.open('rb') as source:
         return hashlib.file_digest(source, 'sha256').hexdigest()
@@ -232,18 +244,18 @@ def main():
                     raise RuntimeError('Managed runtime acceptance is missing: ' + suffix)
             if args.workbench:
                 provider_env = dict(managed_env, NYADB_H2_PROVIDER_IT='1')
-                provider_command = command[:-1] + ['./internal/services/h2']
+                provider_command = ['-timeout=15m' if arg == '-timeout=3m' else arg for arg in command[:-1]] + ['./internal/services/h2']
                 with (base / 'provider-acceptance.log').open('w') as log:
-                    subprocess.run(provider_command, cwd=ROOT, env=provider_env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=240)
+                    subprocess.run(provider_command, cwd=ROOT, env=provider_env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=930)
                 provider_output = (base / 'provider-acceptance.log').read_text()
-                for suffix in ['', '/1.4.200', '/2.1.214', '/2.4.240', '/2.1.214#01']:
-                    if '--- PASS: TestH2ManagedProviderQualifiedMetadataAndQueryLeases' + suffix + ' ' not in provider_output:
-                        raise RuntimeError('H2 workbench provider acceptance is missing: ' + suffix)
+                verify_provider_output(provider_output)
                 state['h2_workbench_provider'] = 'passed'
                 state['h2_data_adapter'] = 'passed'
                 state['h2_adapter_versions'] = ['1.4.200', '2.1.214', '2.4.240']
                 state['h2_adapter_profiles'] = ['h2-v1', 'h2-v2', 'h2-v3', 'h2-legacy']
-                state['h2_adapter_scope'] = 'qualified metadata; typed paging/full rows/UTF-8 and binary chunks; native cursor export; conditional insert/update/delete; batch rollback; canceled lock waiter acknowledgement; independent SQL leases; disconnect without replay; no public UI/storage/URI publication'
+                state['h2_native_pool'] = 'passed; configured physical/workload/metadata capacity and canceled local admission'
+                state['h2_adapter_modes'] = ['memory', 'file/create', 'file/existing', 'file/read-only']
+                state['h2_adapter_scope'] = 'qualified metadata; typed paging/full rows/UTF-8 and binary chunks; native cursor export; conditional insert/update/delete; batch rollback; original native receipts in feature binding; canceled lock waiter acknowledgement; independent SQL leases; native pool limits and metadata reserve; file create/reopen/read-only; disconnect without replay; no public UI/storage/URI publication'
             state['managed_offline_h2'] = 'passed'
             state['managed_package_sha256'] = sha(archive)
             print('Managed offline JRE, original H2 versions, typed query receipts and original package leases passed', flush=True)

@@ -18,6 +18,40 @@ type handle struct {
 	caps   contract.Capabilities
 }
 
+type nativeReceiptHandle struct{ handle }
+
+func (h *nativeReceiptHandle) DataReads() contract.DataReads { return contract.DataReads{} }
+func (h *nativeReceiptHandle) DataEdits() contract.DataEdits {
+	return contract.DataEdits{NativeReceipts: true, Saver: func(context.Context, int64, string, string, []contract.DataEdit) (*contract.DataEditResult, error) {
+		return &contract.DataEditResult{CommitUncertain: true, NativeJSON: `{"original_commit":{"acknowledged":false}}`}, contract.ErrDataCommitUncertain
+	}}
+}
+
+func TestFeatureDataBindingPreservesNativeReceiptsAndOriginalGeneration(t *testing.T) {
+	m := dbruntime.New()
+	defer m.Close()
+	m.Register(connections.SQLite, dbruntime.ProviderFunc(func(context.Context, connections.Profile, string) (contract.Session, error) {
+		return &nativeReceiptHandle{handle{id: 1, caps: contract.Capabilities{EditableTables: true}}}, nil
+	}))
+	if err := m.Connect(context.Background(), profile(1), ""); err != nil {
+		t.Fatal(err)
+	}
+	r := m.Data(1)
+	if !r.NativeReceipts || r.Saver == nil {
+		t.Fatal("modern feature binding discarded native receipt support")
+	}
+	receipt, err := r.Saver(context.Background(), 1, "main", "original", nil)
+	if !errors.Is(err, contract.ErrDataCommitUncertain) || receipt == nil || !receipt.CommitUncertain || receipt.NativeJSON == "" {
+		t.Fatal("original uncertain native receipt was replaced", err)
+	}
+	if err := m.Disconnect(1); err != nil {
+		t.Fatal(err)
+	}
+	if receipt, err := r.Saver(context.Background(), 1, "main", "original", nil); !errors.Is(err, contract.ErrRevoked) || receipt != nil {
+		t.Fatal("old native binding executed after disconnect", err)
+	}
+}
+
 func (h *handle) ProfileID() int64                    { return h.id }
 func (h *handle) Generation() uint64                  { return 1 }
 func (h *handle) Capabilities() contract.Capabilities { return h.caps }
