@@ -3,6 +3,9 @@ package shell
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -29,6 +32,8 @@ func TestRQLiteNativePublicSchemaRebuildGuardsOriginalDatabaseAndParksReceipt(t 
 		{"discard", "discard", true, false}, {"save", "save", true, false},
 		{"fk-off-discard", "discard", false, false}, {"fk-off-save", "save", false, false},
 		{"cycle-discard", "discard", true, true}, {"cycle-save", "save", true, true},
+		{"baseline-fk-on-discard", "discard", true, false}, {"baseline-fk-on-save", "save", true, false},
+		{"baseline-fk-off-discard", "discard", false, false}, {"baseline-fk-off-save", "save", false, false},
 	} {
 		t.Run(fixture.name, func(t *testing.T) {
 			choice := fixture.choice
@@ -48,6 +53,48 @@ func TestRQLiteNativePublicSchemaRebuildGuardsOriginalDatabaseAndParksReceipt(t 
 				query("CREATE TABLE rebuild_source(id INTEGER PRIMARY KEY AUTOINCREMENT,parent INTEGER NOT NULL DEFAULT 7 REFERENCES rebuild_child(id) ON DELETE SET NULL,v BLOB);CREATE TABLE rebuild_child(id INTEGER PRIMARY KEY,parent INTEGER NOT NULL REFERENCES rebuild_source(id) ON DELETE SET NULL,v TEXT);PRAGMA defer_foreign_keys=ON;INSERT INTO rebuild_source(id,parent,v) VALUES(42,7,X'00FF');INSERT INTO rebuild_child VALUES(7,42,'original child');UPDATE sqlite_sequence SET seq=500 WHERE name='rebuild_source';CREATE VIEW rebuild_view AS SELECT id,v FROM rebuild_source")
 			} else {
 				query("CREATE TABLE rebuild_source(id INTEGER PRIMARY KEY AUTOINCREMENT,v BLOB);INSERT INTO rebuild_source VALUES(42,X'00FF');UPDATE sqlite_sequence SET seq=500 WHERE name='rebuild_source';CREATE TABLE rebuild_child(id INTEGER PRIMARY KEY,parent INTEGER REFERENCES rebuild_source(id) ON DELETE CASCADE,v TEXT);INSERT INTO rebuild_child VALUES(7,42,'original child');CREATE VIEW rebuild_view AS SELECT id,v FROM rebuild_source")
+			}
+			if strings.HasPrefix(fixture.name, "baseline-") {
+				config, err := connections.RQLiteProfileConfig(parsed.Profile)
+				if err != nil {
+					t.Fatal(err)
+				}
+				body, err := json.Marshal([]string{"PRAGMA foreign_keys=OFF", "UPDATE rebuild_child SET parent=99", fmt.Sprintf("PRAGMA foreign_keys=%d", map[bool]int{false: 0, true: 1}[fixture.fk])})
+				if err != nil {
+					t.Fatal(err)
+				}
+				client := &http.Client{Timeout: 10 * time.Second}
+				response, err := client.Post(config.Endpoint+"/db/execute", "application/json", strings.NewReader(string(body)))
+				if err != nil {
+					t.Fatal(err)
+				}
+				raw, readErr := io.ReadAll(response.Body)
+				_ = response.Body.Close()
+				var decoded struct {
+					Results []struct {
+						Error   string          `json:"error"`
+						ErrorV2 json.RawMessage `json:"error_v2"`
+					} `json:"results"`
+				}
+				if readErr != nil || response.StatusCode != http.StatusOK || json.Unmarshal(raw, &decoded) != nil || len(decoded.Results) != 3 {
+					t.Fatal("original native public baseline setup incomplete", readErr)
+				}
+				for _, result := range decoded.Results {
+					if result.Error != "" || len(result.ErrorV2) != 0 && string(result.ErrorV2) != "null" {
+						t.Fatal("original native public baseline setup rejected")
+					}
+				}
+				if query("SELECT count(*) FROM pragma_foreign_key_check").Sets[0].Rows[0][0].Text != "1" {
+					t.Fatal("original public violation baseline missing")
+				}
+				if folder := os.Getenv("NYADB_RQLITE_SHELL_EVIDENCE"); folder != "" {
+					if err := os.MkdirAll(folder, 0700); err != nil {
+						t.Fatal(err)
+					}
+					if err := os.WriteFile(filepath.Join(folder, "schema-public-rebuild-"+fixture.name+"-baseline-setup.json"), raw, 0600); err != nil {
+						t.Fatal(err)
+					}
+				}
 			}
 			before := query("SELECT rowid,name,typeof(seq),seq FROM sqlite_sequence ORDER BY rowid").Sets[0].Rows
 			s, tt, services, p, observed, release := rqliteSchemaPublicShell(t, parsed.Profile, "")
@@ -202,6 +249,11 @@ func TestRQLiteNativePublicSchemaRebuildGuardsOriginalDatabaseAndParksReceipt(t 
 				}
 				if err := os.WriteFile(filepath.Join(folder, "schema-public-rebuild-"+fixture.name+"-constraint-proof.json"), proof, 0600); err != nil {
 					t.Fatal(err)
+				}
+			}
+			if strings.HasPrefix(fixture.name, "baseline-") {
+				if query("SELECT count(*) FROM pragma_foreign_key_check").Sets[0].Rows[0][0].Text != "1" || query("SELECT parent FROM rebuild_child WHERE id=7").Sets[0].Rows[0][0].Text != "99" {
+					t.Fatal("public rebuilding or later native CHECK rejection changed the original violation")
 				}
 			}
 			if err := tt.Click("原始结构回执"); err != nil {

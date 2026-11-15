@@ -99,7 +99,7 @@ func TestNativeRQLiteSchemaRebuildWriterModesAndImmediateActionsRetainOriginalFr
 	}
 }
 
-func TestNativeRQLiteSchemaRebuildDisabledForeignKeysRejectInvalidOriginalAndFinalGraphs(t *testing.T) {
+func TestNativeRQLiteSchemaRebuildDisabledForeignKeysRetainOriginalAndRejectAddedViolations(t *testing.T) {
 	for _, mode := range []string{"original-invalid", "final-invalid"} {
 		t.Run(mode, func(t *testing.T) {
 			p, _ := nativeFixtureConfigured(t, "", "", false)
@@ -123,8 +123,13 @@ func TestNativeRQLiteSchemaRebuildDisabledForeignKeysRejectInvalidOriginalAndFin
 			after := rebuildProtocolFingerprints(t, l, tables)
 			writerAfter := rebuildModeWriterState(t, s, "schema-rebuild-fk-off-graph-"+mode+"-after")
 			actual := nativeSchemaWriteSnapshot(t, d)
-			if out.State != "rolled_back" || out.Verified || out.Error == nil || out.Receipt == nil || !reflect.DeepEqual(before, after) || !reflect.DeepEqual(writerBefore, writerAfter) || !reflect.DeepEqual(original, actual) {
-				t.Fatal("disabled FK enforcement accepted an invalid graph or changed original state", out.State, out.Error)
+			if !reflect.DeepEqual(before, after) || !reflect.DeepEqual(writerBefore, writerAfter) {
+				t.Fatal("baseline-aware FK checking changed original values or writer settings")
+			}
+			if mode == "original-invalid" {
+				requireSchemaCommit(t, "schema-rebuild-fk-off-graph-"+mode, out)
+			} else if out.State != "rolled_back" || out.Verified || out.Error == nil || out.Receipt == nil || !reflect.DeepEqual(original, actual) {
+				t.Fatal("disabled FK enforcement accepted an added violation or changed original state", out.State, out.Error)
 			}
 			proof, err := json.Marshal(struct {
 				Before, After             map[string][][]contract.Cell

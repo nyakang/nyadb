@@ -22,6 +22,7 @@ type rebuildReceiptMutation struct {
 	mode              string
 	original, emitted string
 	writes            int
+	fkCaptureIndex    int
 }
 
 func (m *rebuildReceiptMutation) RoundTrip(r *http.Request) (*http.Response, error) {
@@ -44,9 +45,46 @@ func (m *rebuildReceiptMutation) RoundTrip(r *http.Request) (*http.Response, err
 	if err = json.Unmarshal(payload["results"], &results); err != nil {
 		return nil, err
 	}
-	for _, result := range results {
+	for resultIndex, result := range results {
 		var columns []string
 		_ = json.Unmarshal(result["columns"], &columns)
+		if m.mode == "fk-affected" && resultIndex == m.fkCaptureIndex {
+			result["rows_affected"] = json.RawMessage("3")
+		}
+		if len(columns) == 6 && columns[0] == "fk_phase" && strings.HasPrefix(m.mode, "fk-") {
+			var rows [][]json.RawMessage
+			_ = json.Unmarshal(result["values"], &rows)
+			if m.mode == "fk-label" {
+				columns[2] = "other_table_hex"
+				result["columns"], _ = json.Marshal(columns)
+			}
+			for i, row := range rows {
+				if string(row[0]) != `"before"` {
+					continue
+				}
+				if string(row[1]) != "null" {
+					if m.mode == "fk-count" {
+						rows[i][1] = json.RawMessage("3")
+					}
+					continue
+				}
+				if m.mode == "fk-count" {
+					continue
+				}
+				switch m.mode {
+				case "fk-missing":
+					rows = append(rows[:i], rows[i+1:]...)
+				case "fk-null-rowid":
+					rows[i][3] = json.RawMessage("0")
+				case "fk-valid-frame":
+					rows[i][4] = json.RawMessage(`"6F746865725F706172656E74"`)
+				case "fk-duplicate":
+					rows = append(rows, append([]json.RawMessage(nil), row...))
+				}
+				break
+			}
+			result["values"], _ = json.Marshal(rows)
+		}
 		if len(columns) == 7 && columns[0] == "identity_phase" && m.mode == "identity-label" {
 			columns[3] = "foreign_name_type"
 			result["columns"], _ = json.Marshal(columns)
@@ -332,7 +370,7 @@ func TestNativeRQLiteSchemaRebuildCancellationCloseAndLostOriginalAcknowledgemen
 	for _, fixture := range []struct {
 		prefix    string
 		fk, cycle bool
-	}{{"", true, false}, {"fk-off-", false, false}, {"cycle-", true, true}} {
+	}{{"", true, false}, {"fk-off-", false, false}, {"cycle-", true, true}, {"baseline-fk-on-", true, false}, {"baseline-fk-off-", false, false}} {
 		for _, mode := range []string{"caller", "document", "session", "lost"} {
 			label := fixture.prefix + mode
 			t.Run(label, func(t *testing.T) {
@@ -355,6 +393,9 @@ func TestNativeRQLiteSchemaRebuildCancellationCloseAndLostOriginalAcknowledgemen
 					}
 				} else {
 					nativeExecute(t, l, "CREATE TABLE target(id INTEGER PRIMARY KEY AUTOINCREMENT,v BLOB);INSERT INTO target VALUES(42,X'00FF');UPDATE sqlite_sequence SET seq=500 WHERE name='target';CREATE TABLE child(id INTEGER PRIMARY KEY,parent INTEGER REFERENCES target(id) ON DELETE CASCADE);INSERT INTO child VALUES(7,42);CREATE VIEW vv AS SELECT * FROM target")
+				}
+				if strings.HasPrefix(fixture.prefix, "baseline-") {
+					rebuildBaselineSetup(t, s, fixture.fk, "UPDATE child SET parent=99", "schema-rebuild-held-"+label)
 				}
 				d := reserveSchemaUnit(t, s, "original-rebuild-held", "target")
 				original := nativeSchemaWriteSnapshot(t, d)

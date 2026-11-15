@@ -54,7 +54,7 @@ func schemaRebuildBatch(original contract.SchemaDesignSnapshot, desired schemadd
 	}
 	name := schemaddl.Quote(stem + "_guard")
 	table := "temp." + name
-	b.statements = append(b.statements, "CREATE TEMP TABLE "+table+"(ok INTEGER NOT NULL CHECK(ok=1),original_rows INTEGER,final_rows INTEGER,schema_version INTEGER,type_hex TEXT,name_hex TEXT,table_hex TEXT,rootpage INTEGER,sql_hex TEXT,sql_null INTEGER,identity_phase TEXT,identity_count INTEGER,identity_rowid INTEGER,identity_name_type TEXT,identity_name_hex TEXT,identity_value_type TEXT,identity_value_hex TEXT,wfk INTEGER,wdefer INTEGER,wlegacy INTEGER,final_wfk INTEGER,final_wdefer INTEGER,final_wlegacy INTEGER,ctables INTEGER,cindexes INTEGER,ctriggers INTEGER,cviews INTEGER,cimplicit INTEGER)")
+	b.statements = append(b.statements, "CREATE TEMP TABLE "+table+"(ok INTEGER NOT NULL CHECK(ok=1),original_rows INTEGER,final_rows INTEGER,fk_phase TEXT,fk_count INTEGER,fk_table_hex TEXT,fk_rowid INTEGER,fk_parent_hex TEXT,fk_id INTEGER,schema_version INTEGER,type_hex TEXT,name_hex TEXT,table_hex TEXT,rootpage INTEGER,sql_hex TEXT,sql_null INTEGER,identity_phase TEXT,identity_count INTEGER,identity_rowid INTEGER,identity_name_type TEXT,identity_name_hex TEXT,identity_value_type TEXT,identity_value_hex TEXT,wfk INTEGER,wdefer INTEGER,wlegacy INTEGER,final_wfk INTEGER,final_wdefer INTEGER,final_wlegacy INTEGER,ctables INTEGER,cindexes INTEGER,ctriggers INTEGER,cviews INTEGER,cimplicit INTEGER)")
 	addGuard := func(condition string, data bool) {
 		at := len(b.statements)
 		b.guards[at] = true
@@ -67,7 +67,10 @@ func schemaRebuildBatch(original contract.SchemaDesignSnapshot, desired schemadd
 	b.statements = append(b.statements, "INSERT INTO "+table+"(ok,original_rows,wfk,wdefer,wlegacy) SELECT ("+guard+"),(SELECT count(*) FROM main."+schemaddl.Quote(desired.Name)+"),(SELECT foreign_keys FROM pragma_foreign_keys),(SELECT defer_foreign_keys FROM pragma_defer_foreign_keys),(SELECT legacy_alter_table FROM pragma_legacy_alter_table)")
 	addGuard("NOT EXISTS(SELECT 1 FROM temp.sqlite_schema WHERE type IN ('view','trigger'))", false)
 	addGuard("(SELECT foreign_keys FROM pragma_foreign_keys) IN (0,1) AND (SELECT defer_foreign_keys FROM pragma_defer_foreign_keys)=0", false)
-	addGuard("NOT EXISTS(SELECT 1 FROM pragma_foreign_key_check)", false)
+	b.statements = append(b.statements, "CREATE INDEX temp."+schemaddl.Quote(stem+"_foreign_keys")+" ON "+name+"(fk_phase,fk_table_hex,fk_rowid,fk_parent_hex,fk_id) WHERE fk_phase IS NOT NULL AND fk_count IS NULL")
+	b.rebuildFKBefore = len(b.statements)
+	b.statements = append(b.statements, schemaRebuildForeignKeyCapture(table, "before")...)
+	b.guards[len(b.statements)-1] = true
 	if p.sequenceBefore && schemaddl.SQLiteAutoIncrement(desired) && !schemaddl.SQLiteAutoIncrement(original.Schema.Table) {
 		addGuard("NOT EXISTS(SELECT 1 FROM main.sqlite_sequence WHERE name="+schemaTextLiteral(desired.Name)+")", false)
 	}
@@ -87,7 +90,10 @@ func schemaRebuildBatch(original contract.SchemaDesignSnapshot, desired schemadd
 		return b, err
 	}
 	b.statements = append(b.statements, after...)
-	addGuard("NOT EXISTS(SELECT 1 FROM pragma_foreign_key_check)", false)
+	b.rebuildFKAfter = len(b.statements)
+	b.statements = append(b.statements, schemaRebuildForeignKeyCapture(table, "after")...)
+	b.guards[len(b.statements)-1] = true
+	addGuard(schemaRebuildForeignKeyGuard(table), false)
 	for _, check := range p.checks {
 		if check.sql != "" {
 			b.statements = append(b.statements, check.sql)
@@ -101,6 +107,8 @@ func schemaRebuildBatch(original contract.SchemaDesignSnapshot, desired schemadd
 	addGuard("(SELECT foreign_keys FROM pragma_foreign_keys)=(SELECT wfk FROM "+table+" WHERE wfk IS NOT NULL) AND (SELECT defer_foreign_keys FROM pragma_defer_foreign_keys)=0 AND (SELECT legacy_alter_table FROM pragma_legacy_alter_table)=(SELECT wlegacy FROM "+table+" WHERE wlegacy IS NOT NULL)", false)
 	b.statements = append(b.statements, "UPDATE "+table+" SET final_rows=(SELECT count(*) FROM main."+schemaddl.Quote(desired.Name)+"),final_wfk=(SELECT foreign_keys FROM pragma_foreign_keys),final_wdefer=(SELECT defer_foreign_keys FROM pragma_defer_foreign_keys),final_wlegacy=(SELECT legacy_alter_table FROM pragma_legacy_alter_table) WHERE original_rows IS NOT NULL")
 	b.statements = append(b.statements, (&schemaClearProgram{sequence: p.sequenceAfter}).capture(table, "after")...)
+	b.rebuildFKFrames = len(b.statements)
+	b.statements = append(b.statements, "DELETE FROM "+name+" WHERE fk_phase IS NOT NULL RETURNING fk_phase,fk_count,fk_table_hex,fk_rowid,fk_parent_hex,fk_id")
 	b.identities = len(b.statements)
 	b.statements = append(b.statements, "DELETE FROM "+name+" WHERE identity_phase IS NOT NULL RETURNING identity_phase,identity_count,identity_rowid,identity_name_type,identity_name_hex,identity_value_type,identity_value_hex")
 	b.rebuildState = len(b.statements)
@@ -249,6 +257,9 @@ func verifySchemaRebuildState(native receipt, batch schemaBatch, actual *schemad
 		if err != nil || got != want {
 			return 0, errIncomplete
 		}
+	}
+	if err := verifySchemaRebuildForeignKeys(native, batch); err != nil {
+		return 0, err
 	}
 	return n, verifySchemaRebuildIdentities(native, batch.identities, original, desired, n)
 }

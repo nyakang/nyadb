@@ -13,13 +13,14 @@ import (
 )
 
 type schemaBatch struct {
-	statements                  []string
-	guards                      map[int]bool
-	catalog                     int
-	rows                        int
-	identities                  int
-	dataGuards                  map[int]bool
-	rebuildState, rebuildCounts int
+	statements                                       []string
+	guards                                           map[int]bool
+	catalog                                          int
+	rows                                             int
+	identities                                       int
+	dataGuards                                       map[int]bool
+	rebuildState, rebuildCounts                      int
+	rebuildFKBefore, rebuildFKAfter, rebuildFKFrames int
 }
 
 func schemaWriteBounds(original contract.SchemaDesignSnapshot, desired *schemaddl.Table) error {
