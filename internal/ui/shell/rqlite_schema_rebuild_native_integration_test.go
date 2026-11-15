@@ -34,6 +34,8 @@ func TestRQLiteNativePublicSchemaRebuildGuardsOriginalDatabaseAndParksReceipt(t 
 		{"cycle-discard", "discard", true, true}, {"cycle-save", "save", true, true},
 		{"baseline-fk-on-discard", "discard", true, false}, {"baseline-fk-on-save", "save", true, false},
 		{"baseline-fk-off-discard", "discard", false, false}, {"baseline-fk-off-save", "save", false, false},
+		{"scope-fk-on-discard", "discard", true, false}, {"scope-fk-on-save", "save", true, false},
+		{"scope-fk-off-discard", "discard", false, false}, {"scope-fk-off-save", "save", false, false},
 	} {
 		t.Run(fixture.name, func(t *testing.T) {
 			choice := fixture.choice
@@ -54,12 +56,19 @@ func TestRQLiteNativePublicSchemaRebuildGuardsOriginalDatabaseAndParksReceipt(t 
 			} else {
 				query("CREATE TABLE rebuild_source(id INTEGER PRIMARY KEY AUTOINCREMENT,v BLOB);INSERT INTO rebuild_source VALUES(42,X'00FF');UPDATE sqlite_sequence SET seq=500 WHERE name='rebuild_source';CREATE TABLE rebuild_child(id INTEGER PRIMARY KEY,parent INTEGER REFERENCES rebuild_source(id) ON DELETE CASCADE,v TEXT);INSERT INTO rebuild_child VALUES(7,42,'original child');CREATE VIEW rebuild_view AS SELECT id,v FROM rebuild_source")
 			}
-			if strings.HasPrefix(fixture.name, "baseline-") {
+			if strings.HasPrefix(fixture.name, "baseline-") || strings.HasPrefix(fixture.name, "scope-") {
 				config, err := connections.RQLiteProfileConfig(parsed.Profile)
 				if err != nil {
 					t.Fatal(err)
 				}
-				body, err := json.Marshal([]string{"PRAGMA foreign_keys=OFF", "UPDATE rebuild_child SET parent=99", fmt.Sprintf("PRAGMA foreign_keys=%d", map[bool]int{false: 0, true: 1}[fixture.fk])})
+				setup := []string{"PRAGMA foreign_keys=OFF"}
+				if strings.HasPrefix(fixture.name, "scope-") {
+					setup = append(setup, "CREATE TABLE rebuild_unrelated(rowid TEXT,oid TEXT,_rowid_ TEXT,v BLOB,parent INTEGER REFERENCES absent_parent(id))", "INSERT INTO rebuild_unrelated VALUES('r','o','_r',X'610080FF',99)")
+				} else {
+					setup = append(setup, "UPDATE rebuild_child SET parent=99")
+				}
+				setup = append(setup, fmt.Sprintf("PRAGMA foreign_keys=%d", map[bool]int{false: 0, true: 1}[fixture.fk]))
+				body, err := json.Marshal(setup)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -76,7 +85,7 @@ func TestRQLiteNativePublicSchemaRebuildGuardsOriginalDatabaseAndParksReceipt(t 
 						ErrorV2 json.RawMessage `json:"error_v2"`
 					} `json:"results"`
 				}
-				if readErr != nil || response.StatusCode != http.StatusOK || json.Unmarshal(raw, &decoded) != nil || len(decoded.Results) != 3 {
+				if readErr != nil || response.StatusCode != http.StatusOK || json.Unmarshal(raw, &decoded) != nil || len(decoded.Results) != len(setup) {
 					t.Fatal("original native public baseline setup incomplete", readErr)
 				}
 				for _, result := range decoded.Results {
@@ -254,6 +263,26 @@ func TestRQLiteNativePublicSchemaRebuildGuardsOriginalDatabaseAndParksReceipt(t 
 			if strings.HasPrefix(fixture.name, "baseline-") {
 				if query("SELECT count(*) FROM pragma_foreign_key_check").Sets[0].Rows[0][0].Text != "1" || query("SELECT parent FROM rebuild_child WHERE id=7").Sets[0].Rows[0][0].Text != "99" {
 					t.Fatal("public rebuilding or later native CHECK rejection changed the original violation")
+				}
+			}
+			if strings.HasPrefix(fixture.name, "scope-") {
+				unchanged := query("SELECT rowid,oid,_rowid_,hex(v),parent FROM rebuild_unrelated").Sets[0].Rows
+				if len(unchanged) != 1 || len(unchanged[0]) != 5 || unchanged[0][0].Text != "r" || unchanged[0][1].Text != "o" || unchanged[0][2].Text != "_r" || unchanged[0][3].Text != "610080FF" || unchanged[0][4].Text != "99" || query("SELECT count(*) FROM pragma_foreign_key_check").Sets[0].Rows[0][0].Text != "1" {
+					t.Fatal("public scoped reconstruction changed original unrelated rows or missing-parent baseline")
+				}
+				for _, statement := range out.Receipt.Statements {
+					if strings.Contains(statement, "main.\"rebuild_unrelated\"") {
+						t.Fatal("public scoped reconstruction touched the original unrelated physical table", statement)
+					}
+				}
+				if folder := os.Getenv("NYADB_RQLITE_SHELL_EVIDENCE"); folder != "" {
+					proof, err := json.Marshal(unchanged)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if err := os.WriteFile(filepath.Join(folder, "schema-public-rebuild-"+fixture.name+"-unrelated-proof.json"), proof, 0600); err != nil {
+						t.Fatal(err)
+					}
 				}
 			}
 			if err := tt.Click("原始结构回执"); err != nil {

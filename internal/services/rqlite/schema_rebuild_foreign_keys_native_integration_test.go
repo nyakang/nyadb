@@ -73,19 +73,12 @@ func TestNativeRQLiteSchemaRebuildRetainsOriginalForeignKeyViolationMultisets(t 
 					t.Fatal("original baseline preview or complete violations missing", err)
 				}
 				out := d.Operations().Apply(context.Background(), contract.SchemaDesignRequest{Original: original, Desired: desired})
-				actual := nativeSchemaWriteSnapshot(t, d)
-				if fk && c.name == "missing-parent" {
-					if out.State != "rolled_back" || out.Verified || out.Error == nil || !reflect.DeepEqual(original, actual) {
-						t.Fatal("missing original FK target did not retain acknowledged rollback")
-					}
-				} else {
-					actual = requireSchemaCommit(t, "schema-rebuild-baseline-"+label, out)
-				}
+				actual := requireSchemaCommit(t, "schema-rebuild-baseline-"+label, out)
 				retainSchemaWriteOutcome(t, "schema-rebuild-baseline-"+label, out)
 				after := rebuildProtocolFingerprints(t, l, tables)
 				violationsAfter := nativeExecute(t, l, "SELECT hex(\"table\"),rowid,hex(parent),fkid FROM pragma_foreign_key_check ORDER BY 1,2,3,4").Sets[0].Rows
 				writerAfter := rebuildModeWriterState(t, s, "schema-rebuild-baseline-"+label+"-after")
-				if !reflect.DeepEqual(before, after) || !reflect.DeepEqual(writerBefore, writerAfter) || c.remove && len(violationsAfter) != 0 || !c.remove && !reflect.DeepEqual(violationsBefore, violationsAfter) || !(fk && c.name == "missing-parent") && schemaddl.VerifySQLiteRebuildCatalog(original.Schema, desired, actual.Schema) != nil {
+				if !reflect.DeepEqual(before, after) || !reflect.DeepEqual(writerBefore, writerAfter) || c.remove && len(violationsAfter) != 0 || !c.remove && !reflect.DeepEqual(violationsBefore, violationsAfter) || schemaddl.VerifySQLiteRebuildCatalog(original.Schema, desired, actual.Schema) != nil {
 					t.Fatal("baseline reconstruction changed original values, programs, writer or violations")
 				}
 				proof, err := json.Marshal(struct {

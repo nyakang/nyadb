@@ -370,7 +370,7 @@ func TestNativeRQLiteSchemaRebuildCancellationCloseAndLostOriginalAcknowledgemen
 	for _, fixture := range []struct {
 		prefix    string
 		fk, cycle bool
-	}{{"", true, false}, {"fk-off-", false, false}, {"cycle-", true, true}, {"baseline-fk-on-", true, false}, {"baseline-fk-off-", false, false}} {
+	}{{"", true, false}, {"fk-off-", false, false}, {"cycle-", true, true}, {"baseline-fk-on-", true, false}, {"baseline-fk-off-", false, false}, {"scope-fk-on-", true, false}, {"scope-fk-off-", false, false}} {
 		for _, mode := range []string{"caller", "document", "session", "lost"} {
 			label := fixture.prefix + mode
 			t.Run(label, func(t *testing.T) {
@@ -396,6 +396,9 @@ func TestNativeRQLiteSchemaRebuildCancellationCloseAndLostOriginalAcknowledgemen
 				}
 				if strings.HasPrefix(fixture.prefix, "baseline-") {
 					rebuildBaselineSetup(t, s, fixture.fk, "UPDATE child SET parent=99", "schema-rebuild-held-"+label)
+				}
+				if strings.HasPrefix(fixture.prefix, "scope-") {
+					rebuildBaselineSetup(t, s, fixture.fk, "CREATE TABLE unrelated(rowid TEXT,oid TEXT,_rowid_ TEXT,parent INTEGER REFERENCES absent_parent(id));INSERT INTO unrelated VALUES('r','o','_r',99)", "schema-rebuild-held-"+label)
 				}
 				d := reserveSchemaUnit(t, s, "original-rebuild-held", "target")
 				original := nativeSchemaWriteSnapshot(t, d)

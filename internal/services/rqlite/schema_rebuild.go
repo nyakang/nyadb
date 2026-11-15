@@ -134,21 +134,52 @@ func buildSchemaRebuildProgram(original contract.SchemaDesignSnapshot, desired s
 		if e.Name == original.Target.Object.Name {
 			table = original.Schema.Table.Clone()
 		}
-		identity, err := schemaRebuildIdentity(table)
-		if err != nil {
-			return nil, err
-		}
 		parents, err := schemaddl.SQLiteReferencedTables(table)
 		if err != nil {
 			return nil, err
 		}
-		r := schemaRebuildTable{table: table, source: "main." + schemaddl.Quote(e.Name), saved: "temp." + schemaddl.Quote(fmt.Sprintf("%s_rows_%d", stem, len(p.tables))), identity: identity, parents: parents}
-		for i, c := range table.Columns() {
+		p.tables = append(p.tables, schemaRebuildTable{table: table, source: "main." + schemaddl.Quote(e.Name), parents: parents})
+	}
+	// Emptying the selected table can mutate inbound FK descendants, including
+	// cycles and SET NULL/DEFAULT actions. Outbound parents and unrelated tables
+	// keep their original physical rows. In particular, do not compile or restore
+	// an unrelated table whose original FK parent is missing.
+	children := map[string][]string{}
+	for _, r := range p.tables {
+		for _, parent := range r.parents {
+			key := sqliteSchemaIdentity(parent)
+			children[key] = append(children[key], sqliteSchemaIdentity(r.table.Name))
+		}
+	}
+	selected := sqliteSchemaIdentity(original.Schema.Table.Name)
+	affected := map[string]bool{selected: true}
+	pending := []string{selected}
+	for i := 0; i < len(pending); i++ {
+		for _, child := range children[pending[i]] {
+			if !affected[child] {
+				affected[child] = true
+				pending = append(pending, child)
+			}
+		}
+	}
+	var tables []schemaRebuildTable
+	for _, r := range p.tables {
+		if r.table.Name != "sqlite_sequence" && !affected[sqliteSchemaIdentity(r.table.Name)] {
+			continue
+		}
+		identity, err := schemaRebuildIdentity(r.table)
+		if err != nil {
+			return nil, err
+		}
+		r.identity = identity
+		r.saved = "temp." + schemaddl.Quote(fmt.Sprintf("%s_rows_%d", stem, len(tables)))
+		for i, c := range r.table.Columns() {
 			r.columns = append(r.columns, schemaddl.Quote(c.Name))
 			r.savedColumns = append(r.savedColumns, schemaddl.Quote(fmt.Sprintf("c%d", i)))
 		}
-		p.tables = append(p.tables, r)
+		tables = append(tables, r)
 	}
+	p.tables = tables
 	p.sequenceAfter = p.sequenceBefore || schemaddl.SQLiteAutoIncrement(desired)
 	for i, r := range p.tables {
 		p.beforeSQL = append(p.beforeSQL, "CREATE TEMP TABLE "+r.saved+" ("+strings.Join(r.savedColumns, ",")+")")
@@ -173,7 +204,7 @@ func buildSchemaRebuildProgram(original contract.SchemaDesignSnapshot, desired s
 			p.changeSQL = append(p.changeSQL, "DROP VIEW main."+schemaddl.Quote(e.Name))
 		}
 	}
-	// Every original row is already saved. Ignore automatic FK UPDATE actions
+	// Every affected original row is saved. Ignore automatic FK UPDATE actions
 	// only while emptying the tables, so SET NULL/DEFAULT cycles cannot violate
 	// immediate value constraints. Full restored values and the FK graph are
 	// checked before deferred counters are cleared. Original programs are off.

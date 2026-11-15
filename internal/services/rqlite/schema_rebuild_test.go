@@ -1,11 +1,52 @@
 package rqlite
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/db/schemaddl"
 )
+
+func TestSchemaRebuildCapturesCompleteInboundClosureAndKeepsUnrelatedPhysicalRows(t *testing.T) {
+	ddls := []string{
+		`CREATE TABLE "Grand Child"(id INTEGER PRIMARY KEY,parent INTEGER REFERENCES "Child Ω"(id))`,
+		`CREATE TABLE parent(id INTEGER PRIMARY KEY)`,
+		`CREATE TABLE unrelated(rowid TEXT,oid TEXT,_rowid_ TEXT,v BLOB DEFAULT 'REFERENCES Target(id)',parent INTEGER REFERENCES absent(id))`,
+		`CREATE TABLE "Child Ω"(id INTEGER PRIMARY KEY,parent INTEGER REFERENCES tArGeT(id),cycle INTEGER REFERENCES "Grand Child"(id))`,
+		`CREATE TABLE Target(id INTEGER PRIMARY KEY,parent INTEGER REFERENCES parent(id))`,
+	}
+	catalog := schemaddl.SQLiteCatalog{}
+	var selected schemaddl.Table
+	for _, ddl := range ddls {
+		table, err := schemaddl.ParseSQLite(ddl)
+		if err != nil {
+			t.Fatal(err)
+		}
+		catalog.Entries = append(catalog.Entries, schemaddl.SQLiteCatalogEntry{Type: "table", Name: table.Name, Table: table.Name, SQL: ddl})
+		if table.Name == "Target" {
+			selected = table
+		}
+	}
+	catalog.Entries = append(catalog.Entries, schemaddl.SQLiteCatalogEntry{Type: "table", Name: "sqlite_sequence", Table: "sqlite_sequence", SQL: "CREATE TABLE sqlite_sequence(name,seq)"})
+	original := contract.SchemaDesignSnapshot{Schema: schemaddl.Snapshot{Engine: "sqlite", Exists: true, Table: selected, SQLite: &catalog}}
+	original.Target.Object.Name = selected.Name
+	p, err := buildSchemaRebuildProgram(original, selected, "original_scope")
+	if err != nil {
+		t.Fatal("unrelated inaccessible rowid blocked selected reconstruction", err)
+	}
+	var names []string
+	for _, table := range p.tables {
+		names = append(names, table.table.Name)
+	}
+	if !reflect.DeepEqual(names, []string{"Grand Child", "Child Ω", "Target", "sqlite_sequence"}) {
+		t.Fatal("transitive/cyclic inbound closure lost a child or captured an outbound/unrelated parent", names)
+	}
+	catalog.Entries[2].SQL = `CREATE TABLE unrelated(rowid TEXT,oid TEXT,_rowid_ TEXT,parent INTEGER REFERENCES Target(id))`
+	if _, err := buildSchemaRebuildProgram(original, selected, "original_scope"); err == nil {
+		t.Fatal("affected inaccessible physical rowid was silently discarded")
+	}
+}
 
 func TestSchemaRebuildFallbackRetainsEngineAndDeclarationBounds(t *testing.T) {
 	catalog := schemaUnitOriginal()
