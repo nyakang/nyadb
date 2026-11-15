@@ -33,8 +33,8 @@ func TestSchemaDocumentOwnsOriginalProofAndReleasesReservation(t *testing.T) {
 	first := reserveSchemaUnit(t, s, "first", "original")
 	second := reserveSchemaUnit(t, s, "second", "original")
 	ops := first.Operations()
-	if s.SchemaDesign().Apply != nil || s.Capabilities().DesignTables || s.Capabilities().Objects || first.OriginalOutcome() != nil {
-		t.Fatal("leased adapter published workbench tools or synthesized a receipt")
+	if s.SchemaDesign().Apply != nil || !s.Capabilities().DesignTables || !s.Capabilities().Objects || first.OriginalOutcome() != nil {
+		t.Fatal("document tools exposed a session executor or synthesized a receipt")
 	}
 	original, err := ops.Snapshot(context.Background(), first.target)
 	if err != nil {
@@ -85,6 +85,35 @@ func TestSchemaDocumentOwnsOriginalProofAndReleasesReservation(t *testing.T) {
 	}
 	if second.scope != "" || replacement.scope != "" || len(s.schemaDocuments) != 0 {
 		t.Fatal("session close did not revoke all original document leases")
+	}
+}
+
+func TestSchemaDocumentFeaturesPreserveQualifiedScopeAndNeverReserveProofOrRequest(t *testing.T) {
+	var requests atomic.Int32
+	s := mockSession(t, func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		fmt.Fprint(w, schemaUnitJSON(t, schemaUnitOriginal()))
+	}, nil)
+	features := s.SchemaDesignDocumentFeatures()
+	target := schemaUnitTarget(s, "original")
+	if features.CanApply == nil || features.CanDrop == nil || features.CanRename == nil || features.CanCopy != nil || !features.CanApply(target) || !features.CanDrop(target) || !features.CanRename(target) {
+		t.Fatal("original document feature discovery changed supported operations")
+	}
+	for _, change := range []func(*contract.SchemaDesignTarget){func(t *contract.SchemaDesignTarget) { t.Object.ProfileID++ }, func(t *contract.SchemaDesignTarget) { t.Generation++ }, func(t *contract.SchemaDesignTarget) { t.Object.Catalog = "other" }, func(t *contract.SchemaDesignTarget) { t.Object.Schema = "main" }, func(t *contract.SchemaDesignTarget) { t.Object.Kind = "view" }, func(t *contract.SchemaDesignTarget) { t.Object.Name = "sqlite_schema" }} {
+		wrong := target
+		change(&wrong)
+		if features.CanApply(wrong) || features.CanDrop(wrong) || features.CanRename(wrong) {
+			t.Fatal("feature discovery accepted another scope", wrong)
+		}
+	}
+	if requests.Load() != 0 || len(s.schemaDocuments) != 0 {
+		t.Fatal("feature discovery performed I/O or created a proof")
+	}
+	if err := s.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if features.CanApply(target) || features.CanDrop(target) || features.CanRename(target) {
+		t.Fatal("captured feature survived original session close")
 	}
 }
 

@@ -20,9 +20,10 @@ func (s *session) managementCapabilities(c contract.Capabilities) contract.Capab
 	if p, err := contract.Require[contract.ViewDesignProvider](s.raw); err == nil {
 		view = p.ViewDesign()
 	}
-	c.DesignTables = c.DesignTables && (admin || design.Snapshot != nil && design.Apply != nil && design.CanApply != nil)
+	documents := s.rawSchemaDocumentFeatures()
+	c.DesignTables = c.DesignTables && (admin || design.Snapshot != nil && (design.Apply != nil && design.CanApply != nil || documents.CanApply != nil))
 	c.DesignViews = c.DesignViews && (admin || view.Snapshot != nil && view.Apply != nil && view.CanApply != nil)
-	c.Objects = c.Objects && (admin || design.Drop != nil || design.Copy != nil || design.Rename != nil || view.Apply != nil)
+	c.Objects = c.Objects && (admin || design.Drop != nil || design.Copy != nil || design.Rename != nil || view.Apply != nil || design.Snapshot != nil && (documents.CanDrop != nil || documents.CanCopy != nil || documents.CanRename != nil))
 	c.Accounts = c.Accounts && admin
 	backup := false
 	if p, e := contract.Require[contract.BackupProvider](s.raw); e == nil {
@@ -51,20 +52,21 @@ func (m *Manager) Availability(id int64, operation string, target contract.Schem
 		return contract.Availability{Reason: "invalid_target"}
 	}
 	caps := s.Capabilities()
+	documents := m.SchemaDesignDocumentFeatures(id)
 	enabled := false
 	switch operation {
 	case "design_table":
 		ops := m.SchemaDesign(id)
-		enabled = caps.DesignTables && ops.CanApply != nil && ops.CanApply(target)
+		enabled = caps.DesignTables && (ops.CanApply != nil && ops.CanApply(target) || documents.CanApply != nil && documents.CanApply(target))
 	case "drop_table":
 		ops := m.SchemaDesign(id)
-		enabled = caps.Objects && ops.CanDrop != nil && ops.CanDrop(target)
+		enabled = caps.Objects && (ops.CanDrop != nil && ops.CanDrop(target) || documents.CanDrop != nil && documents.CanDrop(target))
 	case "copy_table":
 		ops := m.SchemaDesign(id)
-		enabled = caps.Objects && ops.CanCopy != nil && ops.CanCopy(target)
+		enabled = caps.Objects && (ops.CanCopy != nil && ops.CanCopy(target) || documents.CanCopy != nil && documents.CanCopy(target))
 	case "rename_table":
 		ops := m.SchemaDesign(id)
-		enabled = caps.Objects && ops.CanRename != nil && ops.CanRename(target)
+		enabled = caps.Objects && (ops.CanRename != nil && ops.CanRename(target) || documents.CanRename != nil && documents.CanRename(target))
 	case "design_view":
 		ops := m.ViewDesign(id)
 		enabled = caps.DesignViews && ops.CanApply != nil && ops.CanApply(target)

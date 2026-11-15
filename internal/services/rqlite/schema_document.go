@@ -103,8 +103,7 @@ func (d *schemaDocument) Operations() contract.SchemaDesignOperations {
 		return contract.SchemaDesignOperations{}
 	}
 	ops := contract.SchemaDesignOperations{Snapshot: d.snapshot}
-	// These lease-bound adapter operations are distinct from public workbench
-	// capability publication, which still requires its full UI acceptance.
+	// All executors retain this original document and validate its private proof.
 	if !d.s.config.Options.ReadOnly {
 		ops.Plan = d.plan
 		ops.CanApply, ops.Apply = d.writable, d.apply
@@ -148,3 +147,13 @@ func (d *schemaDocument) Close() error {
 
 var _ contract.SchemaDesignDocumentsProvider = (*Session)(nil)
 var _ contract.SchemaDesignDocumentLease = (*schemaDocument)(nil)
+
+func (s *Session) SchemaDesignDocumentFeatures() contract.SchemaDesignDocumentFeatures {
+	if s.config.Options.ReadOnly || !s.Alive() {
+		return contract.SchemaDesignDocumentFeatures{}
+	}
+	can := func(target contract.SchemaDesignTarget) bool {
+		return !s.config.Options.ReadOnly && s.checkSchemaTarget(target) == nil
+	}
+	return contract.SchemaDesignDocumentFeatures{CanApply: can, CanDrop: can, CanRename: can}
+}

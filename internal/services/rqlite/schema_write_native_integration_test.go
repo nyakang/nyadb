@@ -132,8 +132,8 @@ func TestNativeRQLiteSchemaWritesCreateColumnsDefinitionsRenameAndDropOriginalRe
 	if dropped.Schema.Exists || dropped.Target != original.Target || dropped.Schema.Table.Name != original.Target.Object.Name {
 		t.Fatal("drop receipt lost original table absence")
 	}
-	if s.SchemaDesign().Apply != nil || s.Capabilities().DesignTables || s.Capabilities().Objects {
-		t.Fatal("adapter acceptance published workbench mutation capabilities")
+	if s.SchemaDesign().Apply != nil || !s.Capabilities().DesignTables || !s.Capabilities().Objects {
+		t.Fatal("original document capabilities exposed a session executor or disappeared")
 	}
 }
 

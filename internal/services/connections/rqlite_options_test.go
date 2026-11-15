@@ -38,7 +38,7 @@ func TestRQLitePublicURIPreservesOriginalNativeSettings(t *testing.T) {
 		}
 	}
 	d, _ := connections.Describe(connections.RQLite)
-	if !d.Capabilities.Import || !d.Capabilities.EditableTables || !d.Capabilities.Count || !d.Capabilities.Keyset || !d.Capabilities.FieldChunks || !d.Capabilities.Analysis || !d.Capabilities.Export || d.Capabilities.Transactions || d.Capabilities.DesignTables || d.Capabilities.Accounts || d.Capabilities.Backup {
+	if !d.Capabilities.Import || !d.Capabilities.EditableTables || !d.Capabilities.Count || !d.Capabilities.Keyset || !d.Capabilities.FieldChunks || !d.Capabilities.Analysis || !d.Capabilities.Export || !d.Capabilities.DesignTables || !d.Capabilities.Objects || d.Capabilities.Transactions || d.Capabilities.DesignViews || d.Capabilities.Accounts || d.Capabilities.Backup {
 		t.Fatal("public capabilities omit implemented document features or advertise unimplemented operations")
 	}
 }

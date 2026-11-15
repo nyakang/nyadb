@@ -21,31 +21,20 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 )
 
-// This controlled fixture exercises unpublished RQLite document contracts.
-// SQLite's descriptor admits those contracts solely inside this test. The
-// production RQLite descriptor and session remain read-only for schema design.
+// The real RQLite product uses original document leases. This wrapper can hold
+// their acknowledgement or reject verification without changing native bytes.
 type rqliteSchemaAdapterFixture struct {
 	*rqlite.Session
-	t        *testing.T
 	fault    bool
 	observed chan contract.SchemaDesignOutcome
 	release  <-chan struct{}
 }
 
 func (s *rqliteSchemaAdapterFixture) Capabilities() contract.Capabilities {
-	caps := s.Session.Capabilities()
-	caps.DesignTables = true
-	return caps
+	return s.Session.Capabilities()
 }
 func (s *rqliteSchemaAdapterFixture) SchemaDesign() contract.SchemaDesignOperations {
 	ops := s.Session.SchemaDesign()
-	ops.CanApply = func(target contract.SchemaDesignTarget) bool {
-		return target.Generation == s.Generation() && target.Object.ProfileID == s.ProfileID() && target.Object.Catalog == "main" && target.Object.Schema == ""
-	}
-	ops.Apply = func(context.Context, contract.SchemaDesignRequest) contract.SchemaDesignOutcome {
-		s.t.Error("UI used a session-level write instead of its original schema lease")
-		return contract.SchemaDesignOutcome{State: "not_executed", Error: contract.ErrUnsupported}
-	}
 	return ops
 }
 func (s *rqliteSchemaAdapterFixture) ReserveSchemaDesignDocument(r contract.SchemaDesignDocumentRequest) (contract.SchemaDesignDocumentLease, error) {
@@ -66,17 +55,30 @@ func (l *rqliteSchemaAdapterLease) Operations() contract.SchemaDesignOperations 
 	apply := ops.Apply
 	if apply != nil {
 		ops.Apply = func(ctx context.Context, r contract.SchemaDesignRequest) contract.SchemaDesignOutcome {
-			out := apply(ctx, r)
-			l.host.observed <- out.Clone()
-			<-l.host.release
-			if l.host.fault {
-				out.Verified = false
-				out.Error = errors.New("controlled loss of verification after original native commit")
-			}
-			return out
+			return l.acknowledge(apply(ctx, r))
+		}
+	}
+	if drop := ops.Drop; drop != nil {
+		ops.Drop = func(ctx context.Context, r contract.SchemaDesignSnapshot) contract.SchemaDesignOutcome {
+			return l.acknowledge(drop(ctx, r))
+		}
+	}
+	if rename := ops.Rename; rename != nil {
+		ops.Rename = func(ctx context.Context, r contract.SchemaRenameRequest) contract.SchemaDesignOutcome {
+			return l.acknowledge(rename(ctx, r))
 		}
 	}
 	return ops
+}
+
+func (l *rqliteSchemaAdapterLease) acknowledge(out contract.SchemaDesignOutcome) contract.SchemaDesignOutcome {
+	l.host.observed <- out.Clone()
+	<-l.host.release
+	if l.host.fault {
+		out.Verified = false
+		out.Error = errors.New("controlled loss of verification after original native commit")
+	}
+	return out
 }
 
 func TestRQLiteNativeSchemaDocumentAdapterRuntimeUIOriginalReceiptAndPreview(t *testing.T) {
@@ -96,22 +98,22 @@ func TestRQLiteNativeSchemaDocumentAdapterRuntimeUIOriginalReceiptAndPreview(t *
 			release := make(chan struct{})
 			m := dbruntime.New()
 			t.Cleanup(func() { _ = m.Close() })
-			m.Register(connections.SQLite, dbruntime.ProviderFunc(func(ctx context.Context, _ connections.Profile, _ string) (contract.Session, error) {
-				handle, err := rqlite.OpenSession(ctx, parsed.Profile, parsed.Password)
+			m.Register(connections.RQLite, dbruntime.ProviderFunc(func(ctx context.Context, p connections.Profile, password string) (contract.Session, error) {
+				handle, err := rqlite.OpenSession(ctx, p, password)
 				if err != nil {
 					return nil, err
 				}
 				raw := handle.(*rqlite.Session)
-				if raw.Capabilities().DesignTables || raw.Capabilities().Objects || raw.SchemaDesign().Apply != nil {
-					t.Error("raw RQLite schema writes were publicly published")
+				if !raw.Capabilities().DesignTables || !raw.Capabilities().Objects || raw.SchemaDesign().Apply != nil {
+					t.Error("RQLite document capabilities exposed session writes or disappeared")
 				}
-				return &rqliteSchemaAdapterFixture{Session: raw, t: t, fault: fault, observed: observed, release: release}, nil
+				return &rqliteSchemaAdapterFixture{Session: raw, fault: fault, observed: observed, release: release}, nil
 			}))
-			published, err := m.ConnectSession(context.Background(), connections.Profile{ID: 991, Name: "Unpublished RQLite adapter fixture", Kind: connections.SQLite, Database: filepath.Join(t.TempDir(), "unused.sqlite")}, "")
+			published, err := m.ConnectSession(context.Background(), parsed.Profile, parsed.Password)
 			if err != nil {
 				t.Fatal(err)
 			}
-			t.Log("controlled SQLite capability harness exercises original native RQLite leases; this is adapter/UI evidence, not public product acceptance")
+			t.Log("actual RQLite descriptor/provider/runtime uses original document leases; verification rejection is an explicit controlled fault")
 			qprovider, err := contract.Require[contract.QueryProvider](published)
 			if err != nil {
 				t.Fatal(err)

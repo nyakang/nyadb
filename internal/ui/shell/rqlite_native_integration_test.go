@@ -44,11 +44,15 @@ func rqlitePublicFixture(t *testing.T, auth string) string {
 		return l.Addr().String()
 	}
 	httpAddr, raftAddr := port(), port()
-	args := []string{"-node-id", filepath.Base(dir), "-http-addr", httpAddr, "-raft-addr", raftAddr}
+	args := []string{"-node-id", filepath.Base(dir), "-http-addr", httpAddr, "-raft-addr", raftAddr, "-fk"}
 	u := &url.URL{Scheme: "rqlite", Host: httpAddr}
 	if auth != "none" {
 		password := "original:password"
-		data, err := json.Marshal([]map[string]any{{"username": " reader ", "password": password, "perms": []string{"all"}}})
+		users := []map[string]any{{"username": " reader ", "password": password, "perms": []string{"all"}}}
+		if auth == "roles" {
+			users = append(users, map[string]any{"username": "query-only", "password": "query-only-password", "perms": []string{"query"}})
+		}
+		data, err := json.Marshal(users)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -441,8 +445,23 @@ func TestRQLiteNativePublicReadOnlyKeepsMetadataGridAndRejectsWrites(t *testing.
 		t.Fatal(err)
 	}
 	caps := public.Capabilities()
-	if caps.Import || caps.EditableTables || !caps.Query || !caps.Metadata || !caps.Export || !caps.Count {
+	if caps.Import || caps.EditableTables || caps.DesignTables || caps.Objects || !caps.Query || !caps.Metadata || !caps.Export || !caps.Count {
 		t.Fatal("public read-only capability gates changed")
+	}
+	if s.objectWorkspace.CanCreateTable(p.ID, "main") || s.objectWorkspace.CanDropTable(p.ID, "main", "public_readonly") || s.objectWorkspace.CanRenameTable(p.ID, "main", "public_readonly") || s.objectWorkspace.CanCopyTable(p.ID, "main", "public_readonly") {
+		t.Fatal("public read-only session advertised schema writes")
+	}
+	schemaProvider, err := s.runtime.SchemaDesignDocuments(p.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schemaLease, err := schemaProvider.ReserveSchemaDesignDocument(contract.SchemaDesignDocumentRequest{DocumentID: "readonly-schema", Target: contract.SchemaDesignTarget{Object: s.runtime.Namespace(p.ID, "main").Object("table", "public_readonly"), Generation: public.Generation()}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = schemaLease.Close() })
+	if ops := schemaLease.Operations(); ops.Snapshot == nil || ops.Plan != nil || ops.Apply != nil || ops.Drop != nil || ops.Rename != nil || ops.Copy != nil || schemaLease.OriginalOutcome() != nil {
+		t.Fatal("public read-only schema lease exposed write methods or synthetic receipts")
 	}
 	s.openMySQLDatabase(services, "main", true)
 	wait(func() bool { return s.sessions.Current().Cache["main"] != nil })

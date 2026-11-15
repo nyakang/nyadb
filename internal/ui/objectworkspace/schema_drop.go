@@ -49,7 +49,7 @@ func (s *State) CanDropTable(profile int64, database, table string) bool {
 	}
 	w := s.session()
 	ops, target := s.schemaBinding(profile, database, table)
-	return w.Connected && w.ProfileID == profile && target.Generation != 0 && s.operationAvailable("drop_table", target) && ops.Snapshot != nil && ops.CanDrop != nil && ops.Drop != nil && ops.CanDrop(target)
+	return w.Connected && w.ProfileID == profile && target.Generation != 0 && s.operationAvailable("drop_table", target) && ops.Snapshot != nil && (ops.CanDrop != nil && ops.Drop != nil && ops.CanDrop(target) || s.deps.Availability != nil && s.capabilities(profile).Objects && s.schemaDocumentsAvailable(profile))
 }
 func (s *State) schemaDropValid(x *schemaDropOperation) bool {
 	if x == nil {

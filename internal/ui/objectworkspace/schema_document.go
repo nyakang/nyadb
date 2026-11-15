@@ -59,6 +59,14 @@ func (s *State) nextSchemaDocumentID(operation string) string {
 	return fmt.Sprintf("schema-%s:%d", operation, s.schemaSequence)
 }
 
+func (s *State) schemaDocumentsAvailable(profile int64) bool {
+	if s.deps.SchemaDocumentsFor == nil {
+		return false
+	}
+	p, err := s.deps.SchemaDocumentsFor(profile)
+	return err == nil && p != nil
+}
+
 func (x *schemaDocumentOwner) settle(expected contract.SchemaDesignWriteReceipt, out contract.SchemaDesignOutcome) contract.SchemaDesignOutcome {
 	if x == nil {
 		return out.Clone()

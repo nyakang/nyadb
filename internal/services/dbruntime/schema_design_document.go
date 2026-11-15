@@ -322,3 +322,46 @@ func (m *Manager) SchemaDesignDocuments(id int64) (contract.SchemaDesignDocument
 
 var _ contract.SchemaDesignDocumentsProvider = (*session)(nil)
 var _ contract.SchemaDesignDocumentLease = (*schemaDesignDocumentLease)(nil)
+
+func (s *session) rawSchemaDocumentFeatures() contract.SchemaDesignDocumentFeatures {
+	if _, err := contract.Require[contract.SchemaDesignDocumentsProvider](s.raw); err != nil {
+		return contract.SchemaDesignDocumentFeatures{}
+	}
+	p, err := contract.Require[contract.SchemaDesignDocumentFeaturesProvider](s.raw)
+	if err != nil {
+		return contract.SchemaDesignDocumentFeatures{}
+	}
+	return p.SchemaDesignDocumentFeatures()
+}
+
+func (s *session) SchemaDesignDocumentFeatures() contract.SchemaDesignDocumentFeatures {
+	if !s.alive() {
+		return contract.SchemaDesignDocumentFeatures{}
+	}
+	raw := s.rawSchemaDocumentFeatures()
+	bind := func(f func(contract.SchemaDesignTarget) bool, design bool) func(contract.SchemaDesignTarget) bool {
+		if f == nil {
+			return nil
+		}
+		return func(target contract.SchemaDesignTarget) bool {
+			if s.schemaDesignTarget(target) != nil {
+				return false
+			}
+			caps := s.Capabilities()
+			if design && !caps.DesignTables || !design && !caps.Objects {
+				return false
+			}
+			target.Generation = s.raw.Generation()
+			return f(target)
+		}
+	}
+	return contract.SchemaDesignDocumentFeatures{CanApply: bind(raw.CanApply, true), CanDrop: bind(raw.CanDrop, false), CanCopy: bind(raw.CanCopy, false), CanRename: bind(raw.CanRename, false)}
+}
+
+func (m *Manager) SchemaDesignDocumentFeatures(id int64) contract.SchemaDesignDocumentFeatures {
+	s, err := m.Session(id)
+	if err != nil {
+		return contract.SchemaDesignDocumentFeatures{}
+	}
+	return s.(*session).SchemaDesignDocumentFeatures()
+}

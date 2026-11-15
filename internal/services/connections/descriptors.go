@@ -13,7 +13,7 @@ type Descriptor struct {
 func Describe(kind Kind) (Descriptor, bool) {
 	switch kind {
 	case RQLite:
-		return Descriptor{kind, "RQLite", "rqlite", "rqlite", "sqlite", 4001, contract.Capabilities{Query: true, Metadata: true, EditableTables: true, Import: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true}}, true
+		return Descriptor{kind, "RQLite", "rqlite", "rqlite", "sqlite", 4001, contract.Capabilities{Query: true, Metadata: true, EditableTables: true, Import: true, Keyset: true, Count: true, FieldChunks: true, Analysis: true, Export: true, JSONL: true, DesignTables: true, Objects: true}}, true
 	case H2:
 		return Descriptor{kind, "H2", "h2", "h2", "h2", 9092, contract.Capabilities{Query: true, Metadata: true, Schemas: true, Transactions: true, EditableTables: true, Count: true, FieldChunks: true, Export: true, JSONL: true}}, true
 	case Consul:

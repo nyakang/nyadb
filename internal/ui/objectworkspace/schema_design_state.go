@@ -79,7 +79,7 @@ func (s *State) canSchemaDesign(profile int64, database, table string) bool {
 	if ops.Apply != nil && ops.CanApply != nil && ops.CanApply(target) {
 		return true
 	}
-	if s.deps.SchemaDocumentsFor != nil && s.capabilities(profile).DesignTables {
+	if s.deps.Availability != nil && s.deps.SchemaDocumentsFor != nil && s.capabilities(profile).DesignTables {
 		p, err := s.deps.SchemaDocumentsFor(profile)
 		return err == nil && p != nil
 	}

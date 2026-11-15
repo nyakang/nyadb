@@ -49,7 +49,7 @@ func (s *State) canNativeRename(profile int64, database, table string) bool {
 	}
 	w := s.session()
 	ops, target := s.schemaBinding(profile, database, table)
-	return w.Connected && w.ProfileID == profile && target.Generation != 0 && s.operationAvailable("rename_table", target) && ops.Snapshot != nil && ops.Rename != nil && ops.CanRename != nil && ops.CanRename(target)
+	return w.Connected && w.ProfileID == profile && target.Generation != 0 && s.operationAvailable("rename_table", target) && ops.Snapshot != nil && (ops.Rename != nil && ops.CanRename != nil && ops.CanRename(target) || s.deps.Availability != nil && s.capabilities(profile).Objects && s.schemaDocumentsAvailable(profile))
 }
 func (s *State) schemaRenameValid(x *schemaRenameOperation) bool {
 	if x == nil {

@@ -19,9 +19,8 @@ import (
 
 const schemaCatalogSQL = "SELECT hex(type),hex(name),hex(tbl_name),rootpage,hex(coalesce(sql,'')),sql IS NULL FROM main.sqlite_schema ORDER BY type COLLATE BINARY,name COLLATE BINARY"
 
-// Snapshot is read-only foundation for native schema operations. Write methods
-// remain absent until original document receipts and full native DDL semantics
-// pass acceptance; a readable snapshot does not publish schema write tools.
+// Session snapshots cannot transfer a document's proof. Public schema tools
+// discover original-document features and execute only through their leases.
 func (s *Session) SchemaDesign() contract.SchemaDesignOperations {
 	return contract.SchemaDesignOperations{Snapshot: s.schemaSnapshot}
 }

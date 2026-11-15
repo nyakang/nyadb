@@ -38,6 +38,20 @@ type SchemaDesignDocumentsProvider interface {
 	ReserveSchemaDesignDocument(SchemaDesignDocumentRequest) (SchemaDesignDocumentLease, error)
 }
 
+// Document features describe original-lease operations without reservation or
+// I/O. They do not expose session-level executors or transfer a document proof.
+// Each executor still validates the original complete request after admission.
+type SchemaDesignDocumentFeatures struct {
+	CanApply  func(SchemaDesignTarget) bool
+	CanDrop   func(SchemaDesignTarget) bool
+	CanCopy   func(SchemaDesignTarget) bool
+	CanRename func(SchemaDesignTarget) bool
+}
+
+type SchemaDesignDocumentFeaturesProvider interface {
+	SchemaDesignDocumentFeatures() SchemaDesignDocumentFeatures
+}
+
 var ErrSchemaCommitUncertain = errors.New("original schema write remains unverified; replay is prohibited")
 
 // SchemaDesignWriteReceipt is complete original evidence, not a fresh snapshot
