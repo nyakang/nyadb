@@ -203,6 +203,8 @@ type session struct {
 	kind            connections.Kind
 	closed          bool
 	snapshotStreams sync.WaitGroup
+	schemaDocuments map[string]*schemaDesignDocumentLease
+	closeDone       chan struct{}
 }
 
 func (s *session) ProfileID() int64             { return s.id }
@@ -255,17 +257,31 @@ func (s *session) alive() bool {
 func (s *session) Close() error {
 	s.mu.Lock()
 	if s.closed {
+		done := s.closeDone
 		s.mu.Unlock()
-		s.snapshotStreams.Wait()
+		if done != nil {
+			<-done
+		}
 		return nil
 	}
 	s.closed = true
+	s.closeDone = make(chan struct{})
+	documents := make([]*schemaDesignDocumentLease, 0, len(s.schemaDocuments))
+	for _, l := range s.schemaDocuments {
+		if l != nil {
+			documents = append(documents, l)
+		}
+	}
 	s.mu.Unlock()
 	if s.cancel != nil {
 		s.cancel()
 	}
+	for _, l := range documents {
+		_ = l.Close()
+	}
 	err := s.raw.Close()
 	s.snapshotStreams.Wait()
+	close(s.closeDone)
 	return err
 }
 func (m *Manager) Data(id int64) contract.DataRuntime {

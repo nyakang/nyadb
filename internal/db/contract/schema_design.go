@@ -51,8 +51,25 @@ type SchemaDesignOutcome struct {
 	Verified bool
 	Rows     int64
 	Actual   *SchemaDesignSnapshot
-	Error    error
+	// Receipt retains the original request and acknowledgement independently of
+	// later reads or runtime validation. Its state must never be relabelled as a
+	// later operation's result, even when the host rejects a verified outcome.
+	Receipt *SchemaDesignWriteReceipt
+	Error   error
 }
+
+func (o SchemaDesignOutcome) Clone() SchemaDesignOutcome {
+	if o.Actual != nil {
+		actual := o.Actual.Clone()
+		o.Actual = &actual
+	}
+	if o.Receipt != nil {
+		receipt := o.Receipt.Clone()
+		o.Receipt = &receipt
+	}
+	return o
+}
+
 type SchemaDesignOperations struct {
 	CanApply func(SchemaDesignTarget) bool
 	Snapshot func(context.Context, SchemaDesignTarget) (SchemaDesignSnapshot, error)

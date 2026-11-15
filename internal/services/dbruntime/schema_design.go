@@ -2,9 +2,12 @@ package dbruntime
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"reflect"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/schemaddl"
 )
 
 // SchemaDesign binds the optional feature to this published generation. The
@@ -18,7 +21,10 @@ func (s *session) SchemaDesign() contract.SchemaDesignOperations {
 	if err != nil {
 		return contract.SchemaDesignOperations{}
 	}
-	raw := p.SchemaDesign()
+	return s.bindSchemaDesign(p.SchemaDesign(), "")
+}
+
+func (s *session) bindSchemaDesign(raw contract.SchemaDesignOperations, documentID string) contract.SchemaDesignOperations {
 	ops := contract.SchemaDesignOperations{}
 	if raw.CanApply != nil {
 		ops.CanApply = func(t contract.SchemaDesignTarget) bool {
@@ -60,23 +66,8 @@ func (s *session) SchemaDesign() contract.SchemaDesignOperations {
 			}
 			r := request.Clone()
 			r.Original.Target.Generation = s.raw.Generation()
-			out := raw.Apply(ctx, r)
-			// A late commit belongs to the original scope. Preserve its receipt
-			// even after revocation so the host can invalidate that original table.
-			if out.Actual != nil {
-				actual := out.Actual.Clone()
-				expected := r.Original.Target
-				expected.Object.Name = r.Desired.Name
-				if actual.Target != expected {
-					out.Verified = false
-					out.Actual = nil
-					out.Error = errors.Join(out.Error, errors.New("schema receipt differs from captured scope"))
-					return out
-				}
-				actual.Target.Generation = s.generation
-				out.Actual = &actual
-			}
-			return out
+			expected := contract.SchemaDesignWriteReceipt{DocumentID: documentID, Operation: "apply", Original: r.Original.Clone(), Desired: tablePointer(r.Desired), Destination: r.Desired.Name, AllowColumnDrop: r.AllowColumnDrop}
+			return s.schemaDesignOutcome(raw.Apply(ctx, r.Clone()), expected)
 		}
 	}
 	if raw.CanDrop != nil {
@@ -98,18 +89,8 @@ func (s *session) SchemaDesign() contract.SchemaDesignOperations {
 			}
 			r := original.Clone()
 			r.Target.Generation = s.raw.Generation()
-			out := raw.Drop(ctx, r)
-			if out.Actual != nil {
-				actual := out.Actual.Clone()
-				if actual.Target != r.Target || actual.Schema.Exists {
-					out.Verified, out.Actual = false, nil
-					out.Error = errors.Join(out.Error, errors.New("drop receipt differs from captured scope or table remains"))
-					return out
-				}
-				actual.Target.Generation = s.generation
-				out.Actual = &actual
-			}
-			return out
+			expected := contract.SchemaDesignWriteReceipt{DocumentID: documentID, Operation: "drop", Original: r.Clone(), Destination: r.Target.Object.Name}
+			return s.schemaDesignOutcome(raw.Drop(ctx, r.Clone()), expected)
 		}
 	}
 	if raw.CanCopy != nil {
@@ -131,20 +112,8 @@ func (s *session) SchemaDesign() contract.SchemaDesignOperations {
 			}
 			r := request.Clone()
 			r.Original.Target.Generation = s.raw.Generation()
-			out := raw.Copy(ctx, r)
-			if out.Actual != nil {
-				actual := out.Actual.Clone()
-				expected := r.Original.Target
-				expected.Object.Name = r.Destination
-				if actual.Target != expected || !actual.Schema.Exists {
-					out.Verified, out.Actual = false, nil
-					out.Error = errors.Join(out.Error, errors.New("copy receipt differs from captured destination scope"))
-					return out
-				}
-				actual.Target.Generation = s.generation
-				out.Actual = &actual
-			}
-			return out
+			expected := contract.SchemaDesignWriteReceipt{DocumentID: documentID, Operation: "copy", Original: r.Original.Clone(), Destination: r.Destination, WithData: r.WithData, RebindSelfReferences: r.RebindSelfReferences, PreserveRowID: r.PreserveRowID}
+			return s.schemaDesignOutcome(raw.Copy(ctx, r.Clone()), expected)
 		}
 	}
 	if raw.CanRename != nil {
@@ -166,20 +135,8 @@ func (s *session) SchemaDesign() contract.SchemaDesignOperations {
 			}
 			r := request.Clone()
 			r.Original.Target.Generation = s.raw.Generation()
-			out := raw.Rename(ctx, r)
-			if out.Actual != nil {
-				actual := out.Actual.Clone()
-				expected := r.Original.Target
-				expected.Object.Name = r.Destination
-				if actual.Target != expected || !actual.Schema.Exists || actual.Schema.Table.Name != r.Destination {
-					out.Verified, out.Actual = false, nil
-					out.Error = errors.Join(out.Error, errors.New("rename receipt differs from captured destination scope"))
-					return out
-				}
-				actual.Target.Generation = s.generation
-				out.Actual = &actual
-			}
-			return out
+			expected := contract.SchemaDesignWriteReceipt{DocumentID: documentID, Operation: "rename", Original: r.Original.Clone(), Destination: r.Destination}
+			return s.schemaDesignOutcome(raw.Rename(ctx, r.Clone()), expected)
 		}
 	}
 	return ops
@@ -189,6 +146,74 @@ func (s *session) schemaDesignTarget(t contract.SchemaDesignTarget) error {
 		return contract.ErrRevoked
 	}
 	return s.require(true, t.Object.ProfileID)
+}
+
+func tablePointer(t schemaddl.Table) *schemaddl.Table { t = t.Clone(); return &t }
+
+// Translate only captured native targets. A late acknowledgement still belongs
+// to this published generation after disconnect or a newer session opens.
+func (s *session) schemaDesignOutcome(out contract.SchemaDesignOutcome, expected contract.SchemaDesignWriteReceipt) contract.SchemaDesignOutcome {
+	out = out.Clone()
+	target := expected.Original.Target
+	target.Object.Name = expected.Destination
+	validActual := func(actual *contract.SchemaDesignSnapshot) bool {
+		if actual == nil || actual.Target != target {
+			return false
+		}
+		switch expected.Operation {
+		case "drop":
+			return !actual.Schema.Exists
+		case "copy":
+			return actual.Schema.Exists
+		case "rename":
+			return actual.Schema.Exists && actual.Schema.Table.Name == expected.Destination
+		}
+		if expected.DocumentID != "" {
+			return actual.Schema.Exists && actual.Schema.Table.Name == expected.Destination && actual.Schema.Engine == expected.Original.Schema.Engine
+		}
+		return true // Preserve the legacy Apply provider's validation contract.
+	}
+	var validation error
+	if expected.DocumentID != "" && out.Verified && (out.State != "committed" || out.Actual == nil || out.Error != nil) {
+		validation = errors.New("verified schema commit has no complete successful original snapshot")
+	}
+	if out.Actual != nil && !validActual(out.Actual) {
+		validation = errors.New("schema receipt differs from captured destination scope")
+	}
+	if r := out.Receipt; r != nil {
+		if (r.State == "committed" || r.State == "rolled_back") && (r.NativeJSON == "" || !json.Valid([]byte(r.NativeJSON)) || len(r.Statements) == 0) {
+			validation = errors.Join(validation, errors.New("original schema acknowledgement or executed statement array is incomplete"))
+		}
+		if r.DocumentID == "" || expected.DocumentID != "" && r.DocumentID != expected.DocumentID || r.Sequence == 0 ||
+			r.Operation != expected.Operation || !reflect.DeepEqual(r.Original, expected.Original) ||
+			!reflect.DeepEqual(r.Desired, expected.Desired) || r.Destination != expected.Destination ||
+			r.AllowColumnDrop != expected.AllowColumnDrop || r.WithData != expected.WithData ||
+			r.RebindSelfReferences != expected.RebindSelfReferences || r.PreserveRowID != expected.PreserveRowID ||
+			r.State != out.State || r.Verified != out.Verified || r.Rows != out.Rows || !reflect.DeepEqual(r.Actual, out.Actual) {
+			validation = errors.Join(validation, errors.New("schema acknowledgement differs from captured original document or request"))
+		}
+		// Original evidence is retained even when validation fails. Never rewrite
+		// a foreign profile/target to make it look like the captured request.
+		if r.Original.Target == expected.Original.Target {
+			r.Original.Target.Generation = s.generation
+		}
+		if r.Actual != nil && r.Actual.Target == target {
+			r.Actual.Target.Generation = s.generation
+		}
+	} else if expected.DocumentID != "" && out.State != "not_executed" {
+		validation = errors.Join(validation, contract.ErrSchemaCommitUncertain)
+		out.State = "uncertain"
+	}
+	if validation != nil {
+		out.Verified, out.Actual = false, nil
+		out.Error = errors.Join(out.Error, validation)
+		if expected.DocumentID != "" && out.State != "committed" {
+			out.State = "uncertain"
+		}
+	} else if out.Actual != nil {
+		out.Actual.Target.Generation = s.generation
+	}
+	return out
 }
 func (m *Manager) SchemaDesign(id int64) contract.SchemaDesignOperations {
 	s, err := m.Session(id)

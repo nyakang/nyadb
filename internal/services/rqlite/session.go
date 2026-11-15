@@ -34,6 +34,7 @@ type Session struct {
 	active                           sync.WaitGroup
 	leases                           map[*queryLease]bool
 	documents                        map[*dataDocument]bool
+	schemaDocuments                  map[string]*schemaDocument
 }
 
 var serverVersion = regexp.MustCompile(`^v?[0-9]+\.[0-9]+\.[0-9]+(?:[-+][a-zA-Z0-9.-]+)?$`)
@@ -141,7 +142,14 @@ func (s *Session) Close() error {
 	for d := range s.documents {
 		documents = append(documents, d)
 	}
+	schemaDocuments := make([]*schemaDocument, 0, len(s.schemaDocuments))
+	for _, d := range s.schemaDocuments {
+		schemaDocuments = append(schemaDocuments, d)
+	}
 	s.mu.Unlock()
+	for _, d := range schemaDocuments {
+		_ = d.Close()
+	}
 	for _, d := range documents {
 		_ = d.Close()
 	}

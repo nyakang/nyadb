@@ -48,6 +48,10 @@ func (s *Session) checkSchemaTarget(t contract.SchemaDesignTarget) error {
 }
 
 func (s *Session) schemaSnapshot(ctx context.Context, target contract.SchemaDesignTarget) (contract.SchemaDesignSnapshot, error) {
+	return s.schemaSnapshotScoped(ctx, target, s.dataScope)
+}
+
+func (s *Session) schemaSnapshotScoped(ctx context.Context, target contract.SchemaDesignTarget, scope string) (contract.SchemaDesignSnapshot, error) {
 	if err := s.checkSchemaTarget(target); err != nil {
 		return contract.SchemaDesignSnapshot{}, err
 	}
@@ -67,7 +71,7 @@ func (s *Session) schemaSnapshot(ctx context.Context, target contract.SchemaDesi
 	if err != nil {
 		return contract.SchemaDesignSnapshot{}, err
 	}
-	out.Schema.Revision = s.schemaSnapshotSeal(out)
+	out.Schema.Revision = schemaSnapshotSealScoped(out, scope)
 	if ctx.Err() != nil {
 		return contract.SchemaDesignSnapshot{}, ctx.Err()
 	}
@@ -156,13 +160,20 @@ func (s *Session) decodeSchemaSnapshot(target contract.SchemaDesignTarget, r rec
 }
 
 func (s *Session) schemaSnapshotSeal(original contract.SchemaDesignSnapshot) string {
+	return schemaSnapshotSealScoped(original, s.dataScope)
+}
+
+func schemaSnapshotSealScoped(original contract.SchemaDesignSnapshot, scope string) string {
+	if scope == "" {
+		return ""
+	}
 	original = original.Clone()
 	original.Schema.Revision = ""
 	raw, err := json.Marshal(original)
 	if err != nil {
 		return ""
 	}
-	mac := hmac.New(sha256.New, []byte(s.dataScope))
+	mac := hmac.New(sha256.New, []byte(scope))
 	_, _ = mac.Write(raw)
 	return hex.EncodeToString(mac.Sum(nil))
 }
@@ -172,6 +183,10 @@ func (s *Session) schemaSnapshotSeal(original contract.SchemaDesignSnapshot) str
 // bytes, NULLness, root pages and schema version without connection PRAGMA
 // mutation. Temporary triggers must be observed on that original writer.
 func (s *Session) schemaSnapshotGuard(original contract.SchemaDesignSnapshot) (string, error) {
+	return s.schemaSnapshotGuardScoped(original, s.dataScope)
+}
+
+func (s *Session) schemaSnapshotGuardScoped(original contract.SchemaDesignSnapshot, scope string) (string, error) {
 	original = original.Clone()
 	if err := s.checkSchemaTarget(original.Target); err != nil {
 		return "", err
@@ -179,7 +194,7 @@ func (s *Session) schemaSnapshotGuard(original contract.SchemaDesignSnapshot) (s
 	if original.Schema.Engine != "sqlite" || original.Schema.SQLite == nil || original.Schema.Postgres != nil || original.Schema.OpenGauss != nil || original.Schema.SQLite.Validate() != nil {
 		return "", connections.ErrInvalid
 	}
-	if !hmac.Equal([]byte(original.Schema.Revision), []byte(s.schemaSnapshotSeal(original))) {
+	if scope == "" || !hmac.Equal([]byte(original.Schema.Revision), []byte(schemaSnapshotSealScoped(original, scope))) {
 		return "", schemaddl.ErrConflict
 	}
 	catalog := original.Schema.SQLite
