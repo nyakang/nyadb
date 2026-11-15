@@ -13,11 +13,13 @@ import (
 )
 
 type schemaBatch struct {
-	statements []string
-	guards     map[int]bool
-	catalog    int
-	rows       int
-	identities int
+	statements                  []string
+	guards                      map[int]bool
+	catalog                     int
+	rows                        int
+	identities                  int
+	dataGuards                  map[int]bool
+	rebuildState, rebuildCounts int
 }
 
 func schemaWriteBounds(original contract.SchemaDesignSnapshot, desired *schemaddl.Table) error {
@@ -84,7 +86,8 @@ func (d *schemaDocument) plan(request contract.SchemaDesignRequest) (schemaddl.P
 	if ctx.Err() != nil {
 		return schemaddl.Plan{}, ctx.Err()
 	}
-	if _, err := d.s.schemaSnapshotGuardScoped(r.Original, scope); err != nil {
+	guard, err := d.s.schemaSnapshotGuardScoped(r.Original, scope)
+	if err != nil {
 		return schemaddl.Plan{}, err
 	}
 	target := r.Original.Target
@@ -92,7 +95,7 @@ func (d *schemaDocument) plan(request contract.SchemaDesignRequest) (schemaddl.P
 	if err := d.s.checkSchemaTarget(target); err != nil {
 		return schemaddl.Plan{}, err
 	}
-	return schemaddl.PlanSQLiteNative(r.Original.Schema, r.Desired, "main", r.AllowColumnDrop)
+	return planSchemaDocument(r.Original, r.Desired, r.AllowColumnDrop, guard, scope)
 }
 func (d *schemaDocument) apply(ctx context.Context, request contract.SchemaDesignRequest) contract.SchemaDesignOutcome {
 	if err := schemaWriteBounds(request.Original, &request.Desired); err != nil {
@@ -211,7 +214,7 @@ func (d *schemaDocument) executeSchema(ctx context.Context, scope string, r cont
 	switch r.Operation {
 	case "apply":
 		desired = r.Desired.Clone()
-		plan, err = schemaddl.PlanSQLiteNative(original.Schema, desired, "main", r.AllowColumnDrop)
+		plan, err = planSchemaDocument(original, desired, r.AllowColumnDrop, guard, scope)
 	case "rename":
 		if !original.Schema.Exists {
 			out.Error = connections.ErrInvalid
@@ -259,7 +262,16 @@ func (d *schemaDocument) executeSchema(ctx context.Context, scope string, r cont
 	if plan.Mode == "noop" {
 		return out
 	} // No transaction or synthetic commit.
-	batch, err := schemaWriteBatch(original, desired, plan, guard, scope, r.Sequence, copyProgram, clearProgram)
+	var batch schemaBatch
+	if plan.Mode == "rebuild" {
+		var viewChecks []string
+		viewChecks, err = d.s.schemaRebuildViewChecks(ctx, original.Schema.SQLite)
+		if err == nil {
+			batch, err = schemaRebuildBatch(original, desired, guard, scope, r.Sequence, viewChecks)
+		}
+	} else {
+		batch, err = schemaWriteBatch(original, desired, plan, guard, scope, r.Sequence, copyProgram, clearProgram)
+	}
 	if err != nil {
 		out.Error = err
 		return out
@@ -295,6 +307,9 @@ func (d *schemaDocument) executeSchema(ctx context.Context, scope string, r cont
 				out.State = "rolled_back"
 				if batch.guards[i] && guardRejected(result) {
 					out.Error = errors.Join(schemaddl.ErrConflict, requestErr)
+					if batch.dataGuards[i] {
+						out.Error = errors.Join(schemaddl.ErrDataChanged, requestErr)
+					}
 				}
 				break
 			}
@@ -316,13 +331,15 @@ func (d *schemaDocument) executeSchema(ctx context.Context, scope string, r cont
 			return unverified(errIncomplete)
 		}
 	}
-	rows, err := decodedRows(native, batch.rows, 1)
-	if err != nil || len(rows) != 1 {
-		return unverified(errIncomplete)
-	}
-	out.Rows, err = cellInt(rows[0][0])
-	if err != nil || out.Rows < 0 {
-		return unverified(errIncomplete)
+	if plan.Mode != "rebuild" {
+		rows, err := decodedRows(native, batch.rows, 1)
+		if err != nil || len(rows) != 1 {
+			return unverified(errIncomplete)
+		}
+		out.Rows, err = cellInt(rows[0][0])
+		if err != nil || out.Rows < 0 {
+			return unverified(errIncomplete)
+		}
 	}
 	actual, err := d.s.decodeSchemaSnapshot(target, native, batch.catalog)
 	if err != nil {
@@ -330,6 +347,12 @@ func (d *schemaDocument) executeSchema(ctx context.Context, scope string, r cont
 	}
 	actual.Schema.Revision = schemaSnapshotSealScoped(actual, scope)
 	out.Actual = &actual // Keep the complete captured catalog even if verification fails.
+	if plan.Mode == "rebuild" {
+		out.Rows, err = verifySchemaRebuildState(native, batch, actual.Schema.SQLite, original, desired)
+		if err != nil {
+			return unverified(err)
+		}
+	}
 	if clearProgram != nil {
 		if actual.Schema.SQLite.Version != original.Schema.SQLite.Version {
 			return unverified(schemaddl.ErrConflict)
@@ -338,7 +361,9 @@ func (d *schemaDocument) executeSchema(ctx context.Context, scope string, r cont
 			return unverified(err)
 		}
 	}
-	if plan.Mode == "drop" {
+	if plan.Mode == "rebuild" {
+		err = schemaddl.VerifySQLiteRebuildCatalog(original.Schema, desired, actual.Schema)
+	} else if plan.Mode == "drop" {
 		err = schemaddl.VerifySQLiteNativeDrop(original.Schema, actual.Schema)
 	} else if plan.Mode == "copy" {
 		// Creation verification keeps every original catalog row, including the

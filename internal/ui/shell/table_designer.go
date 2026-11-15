@@ -6,6 +6,26 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/objectworkspace"
 )
 
+// Reconstruction captures and restores original database rows. Settle all
+// sibling data/structure drafts while retaining the initiating design draft.
+func (s *State) guardSchemaDatabaseRebuild(services ui.Services, original *objectworkspace.Document, next func(ui.Services)) bool {
+	if original == nil {
+		return true
+	}
+	profile, database := original.ProfileID(), original.Database()
+	matches := func(t *tab) bool {
+		return t.data != nil && t.data.ProfileID() == profile && t.data.Database() == database ||
+			t.object != nil && t.object != original && t.object.ProfileID() == profile && t.object.Database() == database
+	}
+	var finish func(ui.Services)
+	finish = func(services ui.Services) {
+		if !s.guardTabsLeave(matches, finish) {
+			next(services)
+		}
+	}
+	return s.guardTabsLeave(matches, finish)
+}
+
 // DELETE programs and foreign-key cascades may mutate any table in the original
 // database. Settle all of its data and structure drafts before admission.
 func (s *State) guardSchemaDatabaseClear(services ui.Services, profile int64, database, table string, next func(ui.Services)) bool {

@@ -190,8 +190,12 @@ func TestNativeRQLiteSchemaWritesRejectScopeDriftAndRollbackProgramFailures(t *t
 	draft = original.Schema.Table.Clone()
 	draft.Clauses[1].SQL = "BLOB"
 	out = d.Operations().Apply(context.Background(), contract.SchemaDesignRequest{Original: original, Desired: draft})
-	if out.State != "not_executed" || out.Receipt != nil || !errors.Is(out.Error, schemaddl.ErrUnsupported) {
-		t.Fatal("full rebuilding was substituted by lossy direct DDL", out.Error)
+	retainSchemaWriteOutcome(t, "schema-write-rebuild-writer-fk-rejected", out)
+	if out.State != "rolled_back" || out.Verified || out.Receipt == nil || !errors.Is(out.Error, schemaddl.ErrConflict) || !strings.Contains(strings.Join(out.Receipt.Statements, "\n"), "__nyadb_rebuild_") {
+		t.Fatal("reconstruction ignored the original disabled writer FK guard", out.State, out.Error)
+	}
+	if !reflect.DeepEqual(original, nativeSchemaWriteSnapshot(t, d)) {
+		t.Fatal("rejected reconstruction changed the original complete catalog")
 	}
 	actual := nativeExecute(t, l, `SELECT id,v FROM native_guarded;SELECT count(*) FROM main.sqlite_schema WHERE name='native_bad_trigger';SELECT count(*) FROM pragma_table_xinfo('native_guarded') WHERE name IN ('forbidden','required')`)
 	if actual.Sets[0].Rows[0][1].Text != "original" || actual.Sets[1].Rows[0][0].Text != "0" || actual.Sets[2].Rows[0][0].Text != "0" {

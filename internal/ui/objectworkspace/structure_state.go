@@ -105,6 +105,7 @@ type Dependencies struct {
 	DesignExecutor   func() DesignExecutor
 	DesignGeneration func(int64) uint64
 	BeforeDDL        func(ui.Services, int64, string, string, func(ui.Services)) bool
+	BeforeRebuild    func(ui.Services, *Document, func(ui.Services)) bool
 	Designed         func(ui.Services, DesignEvent)
 	NewTable         func(ui.Services, int64, string, string)
 	Browser          func() BrowserSnapshot

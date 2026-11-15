@@ -12,10 +12,9 @@ import (
 	"github.com/nyakang/nyadb/internal/db/schemaddl"
 )
 
-// This is native protocol evidence, not a published schema executor. In
-// particular, PlanSQLiteNative must keep rejecting rebuild-only changes until
-// original-document settlement, complete catalog verification and the public
-// workflow have also been implemented and verified.
+// This prototype is independent native protocol evidence. Production rebuilds
+// use the original-document executor; PlanSQLiteNative remains the native ALTER
+// planner and rejects reconstruction-only changes.
 type rebuildProtocolTable struct {
 	table              schemaddl.Table
 	source, saved      string
@@ -358,11 +357,13 @@ func rebuildProtocolFingerprints(t *testing.T, l *queryLease, tables []rebuildPr
 	return all
 }
 
-func TestNativeRQLiteRebuildProtocolPreservesOriginalDatabaseWithoutLegacySetting(t *testing.T) {
-	for _, c := range []struct {
-		name, setup, replacement string
-		rollback                 bool
-	}{
+type rebuildProtocolCase struct {
+	name, setup, replacement string
+	rollback                 bool
+}
+
+func rebuildProtocolCases() []rebuildProtocolCase {
+	return []rebuildProtocolCase{
 		{"typed_generated", `CREATE TABLE target(id INTEGER PRIMARY KEY AUTOINCREMENT,v ANY,r REAL,g TEXT GENERATED ALWAYS AS (hex(v)) STORED) STRICT;INSERT INTO target(id,v,r) VALUES(9007199254740993,X'00FF',1.0000000000000002),(42,CAST(X'610062' AS TEXT),5e-324),(91,CAST(X'80FF' AS TEXT),-1.7976931348623157e308);UPDATE sqlite_sequence SET seq=9223372036854775807 WHERE name='target';INSERT INTO sqlite_sequence(rowid,name,seq) VALUES(33,NULL,X'00FF'),(34,'opaque',CAST(X'80FF' AS TEXT)),(35,'opaque',1.0);CREATE INDEX target_v ON target(v);CREATE TABLE audit(v);CREATE TRIGGER target_insert AFTER INSERT ON target BEGIN INSERT INTO audit VALUES(new.v);END;CREATE VIEW vv AS SELECT id,v FROM target;CREATE VIEW vvv AS SELECT * FROM vv;CREATE TRIGGER vv_delete INSTEAD OF DELETE ON vv BEGIN DELETE FROM target WHERE id=old.id;END;CREATE TRIGGER vv_insert INSTEAD OF INSERT ON vv BEGIN INSERT INTO target(id,v) VALUES(new.id,new.v);END;CREATE TRIGGER vv_update INSTEAD OF UPDATE OF v ON vv BEGIN UPDATE target SET v=new.v WHERE id=old.id;END`, "", false},
 		{"recursive_cascade", `CREATE TABLE target(id INTEGER PRIMARY KEY AUTOINCREMENT,v BLOB);INSERT INTO target VALUES(42,X'00FF');UPDATE sqlite_sequence SET seq=500 WHERE name='target';CREATE TABLE child(id INTEGER PRIMARY KEY AUTOINCREMENT,parent INTEGER REFERENCES target(id) ON DELETE CASCADE,v BLOB);INSERT INTO child VALUES(7,42,X'00FE');UPDATE sqlite_sequence SET seq=1000 WHERE name='child';CREATE TABLE grandchild(id INTEGER PRIMARY KEY,parent INTEGER NOT NULL REFERENCES child(id) ON DELETE SET NULL,v BLOB);INSERT INTO grandchild VALUES(9,7,X'00AB');CREATE TABLE audit(v BLOB);CREATE TRIGGER child_delete AFTER DELETE ON child BEGIN INSERT INTO audit VALUES(old.v);END;CREATE TRIGGER child_insert AFTER INSERT ON child BEGIN INSERT INTO audit VALUES(new.v);END;CREATE VIEW vv AS SELECT target.id,grandchild.v FROM target JOIN child ON child.parent=target.id JOIN grandchild ON grandchild.parent=child.id`, "", false},
 		{"cyclic_restrict", `CREATE TABLE target(id INTEGER PRIMARY KEY,parent INTEGER REFERENCES child(id) ON DELETE RESTRICT,v BLOB);CREATE TABLE child(id INTEGER PRIMARY KEY,parent INTEGER REFERENCES target(id) ON DELETE RESTRICT,v BLOB);PRAGMA defer_foreign_keys=ON;INSERT INTO target VALUES(1,2,X'00FF');INSERT INTO child VALUES(2,1,X'00FE')`, "", false},
@@ -374,7 +375,11 @@ func TestNativeRQLiteRebuildProtocolPreservesOriginalDatabaseWithoutLegacySettin
 		{"foreign_key_rollback", `CREATE TABLE target(id INTEGER PRIMARY KEY,v BLOB);INSERT INTO target VALUES(42,X'00FF');CREATE TABLE child(id INTEGER PRIMARY KEY,parent INTEGER REFERENCES target(id) ON DELETE CASCADE);INSERT INTO child VALUES(7,42);CREATE VIEW vv AS SELECT * FROM target`, "", true},
 		{"immediate_cycle_rollback", `CREATE TABLE target(id INTEGER PRIMARY KEY,parent INTEGER NOT NULL REFERENCES child(id) ON DELETE SET NULL,v BLOB);CREATE TABLE child(id INTEGER PRIMARY KEY,parent INTEGER NOT NULL REFERENCES target(id) ON DELETE SET NULL,v BLOB);PRAGMA defer_foreign_keys=ON;INSERT INTO target VALUES(1,2,X'00FF');INSERT INTO child VALUES(2,1,X'00FE')`, "", true},
 		{"wide_hidden_rowid", "", "", false},
-	} {
+	}
+}
+
+func TestNativeRQLiteRebuildProtocolPreservesOriginalDatabaseWithoutLegacySetting(t *testing.T) {
+	for _, c := range rebuildProtocolCases() {
 		t.Run(c.name, func(t *testing.T) {
 			profile, _ := nativeFixtureConfigured(t, "", "", true)
 			s := openNative(t, profile, "original-fixture-password")

@@ -660,7 +660,8 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 			}
 			return s.guardTabsLeave(matches, finish)
 		},
-		Designed: s.mysqlTableDesigned,
+		BeforeRebuild: s.guardSchemaDatabaseRebuild,
+		Designed:      s.mysqlTableDesigned,
 		NewTable: func(services ui.Services, id int64, db, name string) {
 			if !s.activateObjectProfile(id) {
 				return

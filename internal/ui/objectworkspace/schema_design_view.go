@@ -295,7 +295,11 @@ func (s *State) schemaDesignModals(c *ui.Context, d *Document) {
 					}
 					if ui.PrimaryButton(c, locales.Text("确认执行结构 SQL")).Disabled(len(x.plan.Dropped) > 0 && x.confirmation != d.table).Clicked() {
 						run := func(services ui.Services) { s.executeSchemaDesign(d, services) }
-						if s.deps.BeforeDDL == nil || !s.deps.BeforeDDL(c.Services(), d.profileID, d.database, d.table, run) {
+						if x.plan.Mode == "rebuild" && s.deps.BeforeRebuild != nil {
+							if !s.deps.BeforeRebuild(c.Services(), d, run) {
+								run(c.Services())
+							}
+						} else if s.deps.BeforeDDL == nil || !s.deps.BeforeDDL(c.Services(), d.profileID, d.database, d.table, run) {
 							run(c.Services())
 						}
 					}
