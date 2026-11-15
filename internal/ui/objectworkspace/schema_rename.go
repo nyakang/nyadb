@@ -26,6 +26,8 @@ type schemaRenameReply struct {
 	err      error
 }
 type schemaRenameOperation struct {
+	completed                                                bool
+	owner                                                    *schemaDocumentOwner
 	target                                                   contract.SchemaDesignTarget
 	generation                                               uint64
 	guardAttempt                                             uint64
@@ -66,23 +68,47 @@ func (s *State) beginSchemaRenameOperation(profile int64, database, table string
 	s.closeSchemaDrop()
 	s.tableDialog = false
 	ops, target := s.schemaBinding(profile, database, table)
-	s.schemaRename = &schemaRenameOperation{target: target, generation: s.session().Generation, database: database, destination: table, ops: ops, open: true}
+	owner, err := s.reserveSchemaDocument(s.nextSchemaDocumentID("rename"), target)
+	if err != nil {
+		s.report(schemaDesignError(err))
+		return
+	}
+	if owner != nil {
+		ops = owner.lease.Operations()
+		if ops.Snapshot == nil || ops.Rename == nil {
+			owner.close()
+			s.report(schemaDesignError(contract.ErrUnsupported))
+			return
+		}
+	}
+	s.schemaRename = &schemaRenameOperation{owner: owner, target: target, generation: s.session().Generation, database: database, destination: table, ops: ops, open: true}
 }
 func (s *State) closeSchemaRename() {
-	if x := s.schemaRename; x != nil && x.cancel != nil {
-		x.cancel()
+	x := s.schemaRename
+	if x != nil {
+		if x.cancel != nil {
+			x.cancel()
+		}
+		x.results, x.original, x.applied = nil, nil, nil
+		x.cancel, x.ops = nil, contract.SchemaDesignOperations{}
 	}
 	s.schemaRename = nil
+	if x != nil {
+		x.owner.close()
+	}
 }
 func (s *State) readSchemaRename(services ui.Services) {
 	x := s.schemaRename
-	if x == nil || !x.open || x.busy || !s.schemaRenameValid(x) {
+	if x == nil || !x.open || x.busy || x.completed || !s.schemaRenameValid(x) {
 		return
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	out := make(chan schemaRenameReply, 1)
-	x.cancel, x.results, x.busy, x.err, x.original = cancel, out, true, "", nil
-	x.blocked, x.cancelRequested = false, false
+	x.cancel, x.results, x.busy, x.err = cancel, out, true, ""
+	if x.owner == nil || !x.owner.blocked {
+		x.original, x.blocked = nil, false
+	}
+	x.cancelRequested = false
 	load, target := x.ops.Snapshot, x.target
 	go func() {
 		defer cancel()
@@ -96,6 +122,15 @@ func (s *State) schemaRenameRequest(x *schemaRenameOperation) (contract.SchemaRe
 		return contract.SchemaRenameRequest{}, "", errors.New("read the original table before renaming")
 	}
 	r := contract.SchemaRenameRequest{Original: x.original.Clone(), Destination: strings.TrimSpace(x.destination)}
+	if r.Original.Schema.Engine == "sqlite" {
+		desired := r.Original.Schema.Table.Clone()
+		desired.Name = r.Destination
+		plan, err := schemaddl.PlanSQLiteNative(r.Original.Schema, desired, schemaSQLQualifier(r.Original), false)
+		if err != nil || len(plan.SQL) != 1 || plan.Mode != "rename_table" {
+			return r, "", errors.Join(contract.ErrUnsupported, err)
+		}
+		return r, plan.SQL[0], nil
+	}
 	if r.Original.Schema.Engine != "opengauss" {
 		return r, "", contract.ErrUnsupported
 	}
@@ -158,6 +193,9 @@ func (s *State) consumeSchemaRename(services ui.Services) {
 	if x == nil {
 		return
 	}
+	if x.owner != nil && s.session().ProfileID != x.target.Object.ProfileID {
+		return
+	}
 	if x.guarding && s.deps.TableGuardPending != nil && !s.deps.TableGuardPending(x.target.Object.ProfileID, x.database, x.target.Object.Name) {
 		x.guarding = false
 		x.guardAttempt++
@@ -183,18 +221,21 @@ func (s *State) consumeSchemaRename(services ui.Services) {
 			x.cancel = nil
 		}
 		if reply.outcome != nil {
-			out := *reply.outcome
+			out := reply.outcome.Clone()
 			x.applying = false
 			if x.applied == nil {
 				x.blocked, x.err = true, "rename receipt has no captured request"
 				return
 			}
 			destination := x.applied.Destination
+			if x.owner != nil {
+				out = x.owner.settle(contract.SchemaDesignWriteReceipt{Operation: "rename", Original: x.applied.Original.Clone(), Destination: destination}, out)
+			}
 			if out.Error != nil {
 				s.report(locales.Text("重命名表") + ": " + x.database + "." + x.target.Object.Name + " · " + out.Error.Error())
 			}
 			if s.deps.SchemaRenamed != nil {
-				s.deps.SchemaRenamed(services, SchemaRenameEvent{Original: x.target, Generation: x.generation, Database: x.database, Destination: destination, Outcome: out})
+				s.deps.SchemaRenamed(services, SchemaRenameEvent{Original: x.target, Generation: x.generation, Database: x.database, Destination: destination, Outcome: out.Clone()})
 			}
 			if s.schemaRename != x {
 				return
@@ -207,7 +248,11 @@ func (s *State) consumeSchemaRename(services ui.Services) {
 			expected := x.target
 			expected.Object.Name = destination
 			if out.State == "committed" && out.Verified && out.Actual != nil && out.Actual.Target == expected && out.Actual.Schema.Exists && out.Actual.Schema.Table.Name == destination && out.Error == nil {
-				s.closeSchemaRename()
+				if x.owner == nil {
+					s.closeSchemaRename()
+				} else {
+					x.completed, x.owner.showReceipt, x.err = true, true, ""
+				}
 				s.report(locales.Text("重命名表成功") + ": " + x.database + "." + expected.Object.Name)
 				return
 			}
@@ -218,11 +263,15 @@ func (s *State) consumeSchemaRename(services ui.Services) {
 			}
 		} else if reply.err != nil {
 			x.err = reply.err.Error()
-		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || reply.snapshot.Schema.Engine != "opengauss" || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
+		} else if reply.snapshot.Target != x.target || !reply.snapshot.Schema.Exists || (reply.snapshot.Schema.Engine != "opengauss" && reply.snapshot.Schema.Engine != "sqlite") || reply.snapshot.Schema.Revision == "" || reply.snapshot.Schema.Table.Name != x.target.Object.Name {
 			x.err = "original table snapshot is incomplete or unavailable"
 		} else {
 			snapshot := reply.snapshot.Clone()
-			x.original = &snapshot
+			if x.owner == nil || !x.owner.blocked {
+				x.original = &snapshot
+			} else {
+				x.blocked, x.err = true, schemaDesignError(contract.ErrSchemaCommitUncertain)
+			}
 		}
 	default:
 	}
@@ -245,14 +294,20 @@ func (s *State) schemaRenameModal(c *ui.Context) {
 			if x.busy {
 				ui.Text(c, locales.Text("正在等待结构操作回执…"))
 			}
-			if x.blocked {
+			if x.completed {
+				ui.Text(c, locales.Text("重命名表成功"))
+			} else if x.owner != nil && x.owner.blocked {
+				ui.Text(c, locales.Text("原始结构写入未核验；读取不会解除写入保护。"))
+			} else if x.blocked {
 				ui.Text(c, locales.Text("重命名结果或结构已变化；重新读取后才能再次确认。"))
 			}
 			_, raw, err := s.schemaRenameRequest(x)
 			if raw != "" {
 				raw += ";"
 			}
-			ui.TextArea(c, &raw).Label(locales.Text("重命名 SQL 预览")).ReadOnly(true).Grow(1).MinHeight(40)
+			if !s.schemaModalReceiptToggle(c, x.owner) {
+				ui.TextArea(c, &raw).Label(locales.Text("重命名 SQL 预览")).ReadOnly(true).Grow(1).MinHeight(40)
+			}
 			if err != nil && x.original != nil {
 				ui.Text(c, err.Error()).SingleLine().Tooltip(err.Error()).TextColor(theme.Colors(c).Error)
 			}
@@ -267,7 +322,7 @@ func (s *State) schemaRenameModal(c *ui.Context) {
 						x.open = false
 					}
 				}
-				if ui.Button(c, locales.Text("重新读取结构")).Disabled(x.busy).Clicked() {
+				if ui.Button(c, locales.Text("重新读取结构")).Disabled(x.busy || x.completed).Clicked() {
 					s.readSchemaRename(c.Services())
 				}
 				if ui.PrimaryButton(c, locales.Text("确认重命名表")).Disabled(x.busy || x.blocked || err != nil || !s.schemaRenameValid(x)).Clicked() {

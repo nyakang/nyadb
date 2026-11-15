@@ -4296,5 +4296,14 @@
   "rqliteFreshnessInvalid": "新鲜度要求 none 读取；严格新鲜度要求正数毫秒值",
   "rqliteUsernameInvalid": "请输入有效的 RQLite 用户名",
   "rqliteProfileInvalid": "请检查 RQLite 主机、服务路径和 TLS 设置",
-  "rqliteCredentialInvalid": "请检查 RQLite 凭据"
+  "rqliteCredentialInvalid": "请检查 RQLite 凭据",
+  "schemaReceiptEmpty": "结构操作完成后显示原始回执",
+  "schemaReceiptHint": "原始写入回执独立保留；后续读取不会改写它，也不会重放操作。",
+  "schemaReceiptTitle": "原始结构回执",
+  "schemaReceiptShow": "查看原始结构回执",
+  "schemaReceiptLeave": "保留草稿并离开",
+  "schemaReceiptLeaveHint": "原写入结果尚未核验；离开会保留草稿与回执，禁止再次执行。关闭文档会释放这些内容，请先复制或导出回执。",
+  "schemaReceiptBlocked": "原始结构写入未核验；读取不会解除写入保护。",
+  "schemaReceiptSummary": "原始回执：%s · 当前核验通过：%s",
+  "schemaReceiptOriginalTarget": "原始目标：#%d · %s / %s · %s"
 }

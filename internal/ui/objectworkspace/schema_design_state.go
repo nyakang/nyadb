@@ -28,6 +28,7 @@ type schemaDesignReply struct {
 	err                 error
 }
 type schemaDesignDocument struct {
+	owner                                  *schemaDocumentOwner
 	pageChoice                             int
 	fieldDetails                           bool
 	structured                             *structuredDefinition
@@ -72,7 +73,17 @@ func (s *State) canSchemaDesign(profile int64, database, table string) bool {
 		return false
 	}
 	ops, target := s.schemaBinding(profile, database, table)
-	return target.Generation != 0 && s.operationAvailable("design_table", target) && ops.Snapshot != nil && ops.Apply != nil && ops.CanApply != nil && ops.CanApply(target)
+	if target.Generation == 0 || !s.operationAvailable("design_table", target) || ops.Snapshot == nil {
+		return false
+	}
+	if ops.Apply != nil && ops.CanApply != nil && ops.CanApply(target) {
+		return true
+	}
+	if s.deps.SchemaDocumentsFor != nil && s.capabilities(profile).DesignTables {
+		p, err := s.deps.SchemaDocumentsFor(profile)
+		return err == nil && p != nil
+	}
+	return false
 }
 func (s *State) CanEditDesign(d *Document) bool {
 	if d.GraphSchemaManagementMode() {
@@ -130,7 +141,14 @@ func (s *State) beginSchemaDesign(d *Document, services ui.Services) {
 	s.loadSchemaDesign(d, services)
 }
 func (s *State) OpenNewSchemaDesign(id uint64, o contract.ObjectRef, services ui.Services) *Document {
-	if !s.canSchemaDesign(o.ProfileID, o.Schema, o.Name) {
+	database := o.Schema
+	if database == "" {
+		database = o.Catalog
+	}
+	if s.deps.NamespaceLabel != nil {
+		database = s.deps.NamespaceLabel(o.Namespace())
+	}
+	if !s.canSchemaDesign(o.ProfileID, database, o.Name) {
 		return nil
 	}
 	d := s.OpenQualifiedStructure(id, o, "表")
@@ -146,13 +164,37 @@ func (s *State) loadSchemaDesign(d *Document, services ui.Services) {
 	if x == nil || x.busy || d.closed {
 		return
 	}
-	ops, target := s.schemaBinding(d.profileID, d.database, d.table)
+	var ops contract.SchemaDesignOperations
+	var target contract.SchemaDesignTarget
+	if x.owner != nil {
+		ops, target = x.owner.lease.Operations(), x.owner.target
+	} else {
+		ops, target = s.schemaBinding(d.profileID, d.database, d.table)
+	}
 	if ops.Snapshot == nil || target.Object != d.object {
 		d.err = locales.Text("原表设计范围不可用")
 		return
 	}
 	w := s.session()
 	if !w.Connected || w.ProfileID != d.profileID {
+		return
+	}
+	if x.owner == nil {
+		owner, err := s.reserveSchemaDocument(fmt.Sprintf("schema-design:%d", d.id), target)
+		if err != nil {
+			d.err = schemaDesignError(err)
+			return
+		}
+		x.owner = owner
+		if owner != nil {
+			ops = owner.lease.Operations()
+		}
+	} else if w.Generation != x.generation {
+		d.err = locales.Text("原表设计会话已失效")
+		return
+	}
+	if ops.Snapshot == nil {
+		d.err = locales.Text("原表设计范围不可用")
 		return
 	}
 	x.request++
@@ -179,6 +221,9 @@ func (s *State) consumeSchemaDesign(services ui.Services) {
 		if x == nil || x.results == nil || d.profileID != w.ProfileID {
 			continue
 		}
+		if x.owner != nil && s.deps.DocumentActive != nil && !s.deps.DocumentActive(d.id) {
+			continue
+		}
 		select {
 		case reply := <-x.results:
 			if reply.request != x.request {
@@ -193,7 +238,7 @@ func (s *State) consumeSchemaDesign(services ui.Services) {
 			}
 			valid := w.Connected && w.Generation == reply.generation
 			if reply.outcome != nil {
-				out := *reply.outcome
+				out := reply.outcome.Clone()
 				expected := x.original.Target
 				destination := x.draft.Name
 				if x.prepared != nil {
@@ -201,14 +246,29 @@ func (s *State) consumeSchemaDesign(services ui.Services) {
 				}
 				expected.Object.Name = destination
 				if out.Verified && (out.State != "committed" || out.Actual == nil || out.Actual.Target != expected || !out.Actual.Schema.Exists || out.Actual.Schema.Table.Name != destination || out.Actual.Schema.Engine != x.original.Schema.Engine || out.Error != nil) {
-					out.Verified, out.Actual = false, nil
+					out.Verified = false
+					if x.owner == nil {
+						out.Actual = nil
+					}
 					out.Error = errors.Join(out.Error, errors.New(locales.Text("结构回执与原连接或已预览目标不一致；保留草稿，禁止重试。")))
+				}
+				if x.owner != nil {
+					expected := contract.SchemaDesignWriteReceipt{Operation: "apply"}
+					if x.prepared != nil {
+						r := x.prepared.Clone()
+						expected.Original, expected.Desired = r.Original, &r.Desired
+						expected.Destination, expected.AllowColumnDrop = r.Desired.Name, r.AllowColumnDrop
+					}
+					out = x.owner.settle(expected, out)
 				}
 				if out.State == "uncertain" || out.State == "committed" {
 					x.blocked = true
 				}
 				if s.deps.SchemaDesigned != nil {
-					s.deps.SchemaDesigned(services, SchemaDesignEvent{DocumentID: d.id, Generation: reply.generation, Database: d.database, Destination: destination, Original: x.original.Target, Outcome: out})
+					s.deps.SchemaDesigned(services, SchemaDesignEvent{DocumentID: d.id, Generation: reply.generation, Database: d.database, Destination: destination, Original: x.original.Target, Outcome: out.Clone()})
+				}
+				if d.closed || d.schemaDesign != x {
+					continue // A terminal host callback must not repopulate UI caches.
 				}
 				if !valid {
 					d.err = locales.Text("原表设计会话已失效；保留草稿，请核对执行结果")
@@ -231,6 +291,9 @@ func (s *State) consumeSchemaDesign(services ui.Services) {
 				// The original identity changes only after a verified receipt. The
 				// host already received the captured original target above.
 				d.object = reply.snapshot.Target.Object
+				if x.owner != nil {
+					x.owner.target = reply.snapshot.Target
+				}
 				d.table = d.object.Name
 				// Revoke any inspector read of the old definition before loading
 				// metadata for the verified identity below.
@@ -246,6 +309,12 @@ func (s *State) consumeSchemaDesign(services ui.Services) {
 				d.err = schemaDesignError(reply.err)
 				x.next = nil
 				continue
+			}
+			if reply.outcome == nil && x.owner != nil && x.owner.blocked {
+				d.err = schemaDesignError(contract.ErrSchemaCommitUncertain)
+				x.blocked = true
+				x.next = nil
+				continue // Observation never replaces the original draft or receipt.
 			}
 			if x.isNew && reply.outcome == nil && reply.snapshot.Schema.Exists {
 				d.err = locales.Text("表名称已存在，请使用其他名称新建表")
@@ -413,7 +482,7 @@ func (s *State) PrepareSchemaDesign(d *Document) error {
 		return err
 	}
 	request := contract.SchemaDesignRequest{Original: x.original.Clone(), Desired: x.draft.Clone(), AllowColumnDrop: true}
-	plan, err := planSchemaDesign(request.Original.Schema, request.Desired, d.object.Schema)
+	plan, err := s.schemaDesignPlan(d, request)
 	if err != nil {
 		d.err = schemaDesignError(err)
 		return err
@@ -450,7 +519,13 @@ func (s *State) executeSchemaDesign(d *Document, services ui.Services) {
 		d.err = locales.Text("请输入原表名称以确认删除字段")
 		return
 	}
-	ops, target := s.schemaBinding(d.profileID, d.database, d.table)
+	var ops contract.SchemaDesignOperations
+	var target contract.SchemaDesignTarget
+	if x.owner != nil {
+		ops, target = x.owner.lease.Operations(), x.owner.target
+	} else {
+		ops, target = s.schemaBinding(d.profileID, d.database, d.table)
+	}
 	if ops.Apply == nil || ops.CanApply == nil || target != x.original.Target || !ops.CanApply(target) {
 		d.err = locales.Text("原表设计范围不可用")
 		return
@@ -487,9 +562,20 @@ func (s *State) closeSchemaDesign(d *Document) {
 		return
 	}
 	s.cancelSchemaDesign(d)
-	d.schemaDesign.results = nil
-	d.schemaDesign.next = nil
+	x := d.schemaDesign
+	x.results = nil
+	x.next = nil
+	x.prepared, x.plan = nil, nil
+	x.cancel = nil
+	x.original = contract.SchemaDesignSnapshot{}
+	x.draft, x.saved = schemaddl.Table{}, schemaddl.Table{}
+	x.structured = nil
+	x.raw, x.rawBase, x.name, x.nameBase = "", "", "", ""
+	x.field, x.fieldBase = schemaddl.SQLiteField{}, schemaddl.SQLiteField{}
+	x.pgField, x.pgFieldBase = schemaddl.PostgreSQLField{}, schemaddl.PostgreSQLField{}
+	x.list = ui.ListState{}
 	d.schemaDesign = nil
+	x.owner.close()
 }
 func (s *State) guardSchemaDesign(d *Document, next func(ui.Services)) bool {
 	x := d.schemaDesign
@@ -500,7 +586,10 @@ func (s *State) guardSchemaDesign(d *Document, next func(ui.Services)) bool {
 		d.err = locales.Text("请先等待结构操作完成或取消确认")
 		return true
 	}
-	if !x.dirty() && !d.inlineDirty() {
+	if x.owner != nil && x.owner.blocked && x.owner.leaveAcknowledged {
+		return false
+	}
+	if !x.dirty() && !d.inlineDirty() && !(x.owner != nil && x.owner.blocked) {
 		return false
 	}
 	x.guard = true
@@ -509,6 +598,49 @@ func (s *State) guardSchemaDesign(d *Document, next func(ui.Services)) bool {
 		s.deps.ActivateDesign(d)
 	}
 	return true
+}
+
+func (s *State) resolveSchemaDesignLeave(d *Document, services ui.Services) {
+	if d == nil || d.closed || d.schemaDesign == nil || !d.schemaDesign.guard || d.schemaDesign.busy {
+		return
+	}
+	x := d.schemaDesign
+	next := x.next
+	x.guard, x.next = false, nil
+	if x.owner != nil && x.owner.blocked {
+		x.owner.leaveAcknowledged = true
+	} else {
+		d.inline = nil
+		x.draft = x.saved.Clone()
+		x.field, x.pgField = x.fieldBase, x.pgFieldBase
+		x.raw, x.name = x.rawBase, x.nameBase
+		_ = s.schemaSelectRow(d, x.page, -1)
+		x.baseline = schemaddl.Signature(x.draft)
+	}
+	if next != nil {
+		next(services)
+	}
+}
+
+func (s *State) schemaDesignPlan(d *Document, r contract.SchemaDesignRequest) (schemaddl.Plan, error) {
+	var ops contract.SchemaDesignOperations
+	if d.schemaDesign != nil && d.schemaDesign.owner != nil {
+		ops = d.schemaDesign.owner.lease.Operations()
+	} else {
+		ops, _ = s.schemaBinding(d.profileID, d.database, d.table)
+	}
+	if ops.Plan != nil {
+		plan, err := ops.Plan(r.Clone())
+		return plan.Clone(), err
+	}
+	return planSchemaDesign(r.Original.Schema, r.Desired, schemaSQLQualifier(r.Original))
+}
+
+func (d *Document) SchemaDesignOriginalOutcome() *contract.SchemaDesignOutcome {
+	if d == nil || d.closed || d.schemaDesign == nil {
+		return nil
+	}
+	return d.schemaDesign.owner.original()
 }
 func (s *State) schemaSelectRow(d *Document, page, row int) error {
 	x := d.schemaDesign

@@ -31,6 +31,7 @@ func (s *State) sqlRuntime() sqlworkspace.Runtime {
 }
 func (s *State) SetEngineFiles(pick func(string) (string, error), write func(string, func(io.Writer) error) error) {
 	s.dataWorkspace.SetFiles(pick, write)
+	s.objectWorkspace.SetSchemaReceiptFiles(pick, write)
 }
 func (s *State) engineSessionToolbar(c *ui.Context) bool {
 	p, ok := s.currentProfile()

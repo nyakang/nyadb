@@ -231,11 +231,12 @@ func TestSchemaCopyFailuresAndHostReplacementDoNotLosePresentation(t *testing.T)
 func TestSchemaCopyClosedReadReceiptCannotPopulateNewScope(t *testing.T) {
 	s, _, _ := copyTestState(t, copyCommit)
 	old := s.schemaCopy
+	original := old.original.Clone() // The original worker captures before close.
 	ch := make(chan schemaCopyReply, 1)
 	old.results, old.busy = ch, true
 	s.closeSchemaCopy()
 	s.beginSchemaCopy(83, "main", "replacement", false)
-	ch <- schemaCopyReply{snapshot: old.original.Clone()}
+	ch <- schemaCopyReply{snapshot: original}
 	s.Consume(ui.Services{})
 	if s.schemaCopy.original != nil || s.schemaCopy.err != "" || s.schemaCopy.target.Object.Name != "replacement" {
 		t.Fatal("closed read populated replacement")

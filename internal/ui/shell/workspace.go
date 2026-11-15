@@ -467,6 +467,12 @@ func (s *State) objectWorkspaceDependencies() objectworkspace.Dependencies {
 			}
 			return s.runtime.SchemaDesign(id)
 		},
+		SchemaDocumentsFor: func(id int64) (contract.SchemaDesignDocumentsProvider, error) {
+			if s.runtime == nil {
+				return nil, contract.ErrUnsupported
+			}
+			return s.runtime.SchemaDesignDocuments(id)
+		},
 		SchemaTarget: func(id int64, database, table string) contract.SchemaDesignTarget {
 			if s.runtime == nil {
 				return contract.SchemaDesignTarget{}

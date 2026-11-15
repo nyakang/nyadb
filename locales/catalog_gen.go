@@ -43775,3 +43775,93 @@ func RqliteCredentialInvalid() string { return In(i18n.Locale()).RqliteCredentia
 func (msgs Messages) RqliteCredentialInvalid() string {
 	return Catalog.Format(msgs.locale, "rqliteCredentialInvalid", nil)
 }
+
+// SchemaReceiptEmpty says "结构操作完成后显示原始回执"
+// in the language the app shows.
+func SchemaReceiptEmpty() string { return In(i18n.Locale()).SchemaReceiptEmpty() }
+
+// SchemaReceiptEmpty says "结构操作完成后显示原始回执"
+// in the language of msgs.
+func (msgs Messages) SchemaReceiptEmpty() string {
+	return Catalog.Format(msgs.locale, "schemaReceiptEmpty", nil)
+}
+
+// SchemaReceiptHint says "原始写入回执独立保留；后续读取不会改写它，也不会重放操作。"
+// in the language the app shows.
+func SchemaReceiptHint() string { return In(i18n.Locale()).SchemaReceiptHint() }
+
+// SchemaReceiptHint says "原始写入回执独立保留；后续读取不会改写它，也不会重放操作。"
+// in the language of msgs.
+func (msgs Messages) SchemaReceiptHint() string {
+	return Catalog.Format(msgs.locale, "schemaReceiptHint", nil)
+}
+
+// SchemaReceiptTitle says "原始结构回执"
+// in the language the app shows.
+func SchemaReceiptTitle() string { return In(i18n.Locale()).SchemaReceiptTitle() }
+
+// SchemaReceiptTitle says "原始结构回执"
+// in the language of msgs.
+func (msgs Messages) SchemaReceiptTitle() string {
+	return Catalog.Format(msgs.locale, "schemaReceiptTitle", nil)
+}
+
+// SchemaReceiptShow says "查看原始结构回执"
+// in the language the app shows.
+func SchemaReceiptShow() string { return In(i18n.Locale()).SchemaReceiptShow() }
+
+// SchemaReceiptShow says "查看原始结构回执"
+// in the language of msgs.
+func (msgs Messages) SchemaReceiptShow() string {
+	return Catalog.Format(msgs.locale, "schemaReceiptShow", nil)
+}
+
+// SchemaReceiptLeave says "保留草稿并离开"
+// in the language the app shows.
+func SchemaReceiptLeave() string { return In(i18n.Locale()).SchemaReceiptLeave() }
+
+// SchemaReceiptLeave says "保留草稿并离开"
+// in the language of msgs.
+func (msgs Messages) SchemaReceiptLeave() string {
+	return Catalog.Format(msgs.locale, "schemaReceiptLeave", nil)
+}
+
+// SchemaReceiptLeaveHint says "…"
+// in the language the app shows.
+func SchemaReceiptLeaveHint() string { return In(i18n.Locale()).SchemaReceiptLeaveHint() }
+
+// SchemaReceiptLeaveHint says "…"
+// in the language of msgs.
+func (msgs Messages) SchemaReceiptLeaveHint() string {
+	return Catalog.Format(msgs.locale, "schemaReceiptLeaveHint", nil)
+}
+
+// SchemaReceiptBlocked says "原始结构写入未核验；读取不会解除写入保护。"
+// in the language the app shows.
+func SchemaReceiptBlocked() string { return In(i18n.Locale()).SchemaReceiptBlocked() }
+
+// SchemaReceiptBlocked says "原始结构写入未核验；读取不会解除写入保护。"
+// in the language of msgs.
+func (msgs Messages) SchemaReceiptBlocked() string {
+	return Catalog.Format(msgs.locale, "schemaReceiptBlocked", nil)
+}
+
+// SchemaReceiptSummary says "原始回执：%s · 当前核验通过：%s"
+// in the language the app shows.
+func SchemaReceiptSummary() string { return In(i18n.Locale()).SchemaReceiptSummary() }
+
+// SchemaReceiptSummary says "原始回执：%s · 当前核验通过：%s"
+// in the language of msgs.
+func (msgs Messages) SchemaReceiptSummary() string {
+	return Catalog.Format(msgs.locale, "schemaReceiptSummary", nil)
+}
+
+// SchemaReceiptOriginalTarget says "原始目标：#%d · %s / %s · %s"
+// in the language the app shows.
+func SchemaReceiptOriginalTarget() string { return In(i18n.Locale()).SchemaReceiptOriginalTarget() }
+
+// SchemaReceiptOriginalTarget says "原始目标：#%d · %s / %s · %s"
+// in the language of msgs.
+func (msgs Messages) SchemaReceiptOriginalTarget() string {
+	return Catalog.Format(msgs.locale, "schemaReceiptOriginalTarget", nil)
+}

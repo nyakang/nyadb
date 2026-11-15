@@ -140,11 +140,67 @@ func TestSchemaWriteReadOnlyAndInvalidOriginalCannotDispatch(t *testing.T) {
 	d := reserveSchemaUnit(t, s, "reader", "original")
 	original := nativeSchemaWriteSnapshot(t, d)
 	ops := d.Operations()
-	if ops.Apply != nil || ops.Drop != nil || ops.Rename != nil {
+	if ops.Apply != nil || ops.Drop != nil || ops.Rename != nil || ops.Plan != nil {
 		t.Fatal("read-only structure document exposed native write methods")
 	}
 	out := d.apply(context.Background(), contract.SchemaDesignRequest{Original: original, Desired: original.Schema.Table.Clone()})
 	if out.State != "not_executed" || out.Receipt != nil || !errors.Is(out.Error, contract.ErrUnsupported) {
 		t.Fatal("private read-only write bypassed permission", out.Error)
+	}
+	if _, err := d.plan(contract.SchemaDesignRequest{Original: original, Desired: original.Schema.Table.Clone()}); !errors.Is(err, contract.ErrUnsupported) {
+		t.Fatal("private preview bypassed original read-only permission", err)
+	}
+}
+
+func TestSchemaDocumentPlanIsPureBoundToOriginalProofAndConsumesNoReceiptSequence(t *testing.T) {
+	var requests atomic.Int32
+	s := mockSession(t, func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		if r.URL.Path != "/db/query" {
+			t.Error("preview dispatched a write")
+		}
+		fmt.Fprint(w, schemaUnitJSON(t, schemaUnitOriginal()))
+	}, nil)
+	d := reserveSchemaUnit(t, s, "pure-preview", "original")
+	original := nativeSchemaWriteSnapshot(t, d)
+	desired := original.Schema.Table.Clone()
+	desired.Clauses = append(desired.Clauses, schemaddl.Clause{ID: "new:added", Kind: "column", Name: "added", SQL: "TEXT"})
+	r := contract.SchemaDesignRequest{Original: original.Clone(), Desired: desired, AllowColumnDrop: true}
+	ops := d.Operations()
+	if ops.Plan == nil {
+		t.Fatal("writable original document has no provider preview")
+	}
+	plan, err := ops.Plan(r)
+	if err != nil || plan.Mode != "native_columns" || !strings.Contains(strings.Join(plan.SQL, "\n"), `"main".`) {
+		t.Fatal("native preview used rebuild semantics or another qualifier", plan, err)
+	}
+	plan.SQL[0] = "caller mutation"
+	next, err := ops.Plan(r)
+	if err != nil || next.SQL[0] == "caller mutation" || requests.Load() != 1 || d.sequence != 0 || d.OriginalOutcome() != nil {
+		t.Fatal("pure preview shared data, performed I/O or created a write receipt", err)
+	}
+	sibling := reserveSchemaUnit(t, s, "sibling", "original")
+	if _, err := sibling.Operations().Plan(r); !errors.Is(err, schemaddl.ErrConflict) {
+		t.Fatal("another document accepted the original proof", err)
+	}
+	invalid := r.Clone()
+	invalid.Original.Schema.Table.Clauses[0].SQL = "BLOB"
+	if _, err := ops.Plan(invalid); !errors.Is(err, schemaddl.ErrConflict) {
+		t.Fatal("preview accepted a modified original baseline", err)
+	}
+	d.mu.Lock()
+	d.blocked = true
+	d.mu.Unlock()
+	if _, err := ops.Plan(r); !errors.Is(err, contract.ErrSchemaCommitUncertain) {
+		t.Fatal("preview bypassed an unknown write barrier", err)
+	}
+	if requests.Load() != 1 || d.sequence != 0 {
+		t.Fatal("rejected preview performed I/O or reserved a write")
+	}
+	if err := d.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ops.Plan(r); !errors.Is(err, contract.ErrRevoked) {
+		t.Fatal("captured preview survived original document close", err)
 	}
 }

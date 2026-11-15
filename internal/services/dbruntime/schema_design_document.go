@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
+	"github.com/nyakang/nyadb/internal/db/schemaddl"
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
@@ -108,6 +109,19 @@ func (l *schemaDesignDocumentLease) Operations() contract.SchemaDesignOperations
 		return contract.SchemaDesignOperations{}
 	}
 	ops := l.s.bindSchemaDesign(l.raw.Operations(), l.request.DocumentID)
+	if f := ops.Plan; f != nil {
+		ops.Plan = func(r contract.SchemaDesignRequest) (schemaddl.Plan, error) {
+			_, done, err := l.admission(context.Background(), r.Original.Target)
+			if err != nil {
+				return schemaddl.Plan{}, err
+			}
+			defer done()
+			if !l.writable(r.Original.Target) {
+				return schemaddl.Plan{}, contract.ErrSchemaCommitUncertain
+			}
+			return f(r.Clone())
+		}
+	}
 	if f := ops.Snapshot; f != nil {
 		ops.Snapshot = func(ctx context.Context, t contract.SchemaDesignTarget) (contract.SchemaDesignSnapshot, error) {
 			child, done, err := l.admission(ctx, t)
@@ -235,7 +249,7 @@ func (l *schemaDesignDocumentLease) write(ctx context.Context, target contract.S
 			l.sequence = out.Receipt.Sequence
 		}
 	}
-	if out.State != "not_executed" {
+	if out.Receipt != nil || out.State != "not_executed" {
 		original := out.Clone()
 		l.original = &original
 	}
@@ -292,6 +306,18 @@ func (m *Manager) ReserveSchemaDesignDocument(r contract.SchemaDesignDocumentReq
 		return nil, err
 	}
 	return p.ReserveSchemaDesignDocument(r)
+}
+
+func (m *Manager) SchemaDesignDocuments(id int64) (contract.SchemaDesignDocumentsProvider, error) {
+	published, err := m.Session(id)
+	if err != nil {
+		return nil, err
+	}
+	s := published.(*session)
+	if _, err := contract.Require[contract.SchemaDesignDocumentsProvider](s.raw); err != nil {
+		return nil, err
+	}
+	return s, nil
 }
 
 var _ contract.SchemaDesignDocumentsProvider = (*session)(nil)

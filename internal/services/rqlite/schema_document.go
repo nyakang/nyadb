@@ -106,6 +106,7 @@ func (d *schemaDocument) Operations() contract.SchemaDesignOperations {
 	// These lease-bound adapter operations are distinct from public workbench
 	// capability publication, which still requires its full UI acceptance.
 	if !d.s.config.Options.ReadOnly {
+		ops.Plan = d.plan
 		ops.CanApply, ops.Apply = d.writable, d.apply
 		ops.CanDrop, ops.Drop = d.writable, d.drop
 		ops.CanRename, ops.Rename = d.writable, d.rename

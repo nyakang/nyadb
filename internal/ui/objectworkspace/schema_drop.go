@@ -25,6 +25,9 @@ type schemaDropReply struct {
 	err      error
 }
 type schemaDropOperation struct {
+	completed                                                bool
+	owner                                                    *schemaDocumentOwner
+	applied                                                  *contract.SchemaDesignSnapshot
 	target                                                   contract.SchemaDesignTarget
 	generation                                               uint64
 	guardAttempt                                             uint64
@@ -64,23 +67,47 @@ func (s *State) beginSchemaDrop(profile int64, database, table string) {
 	s.closeSchemaCopy()
 	s.closeSchemaRename()
 	ops, target := s.schemaBinding(profile, database, table)
-	s.schemaDrop = &schemaDropOperation{target: target, generation: s.session().Generation, database: database, ops: ops, open: true}
+	owner, err := s.reserveSchemaDocument(s.nextSchemaDocumentID("drop"), target)
+	if err != nil {
+		s.report(schemaDesignError(err))
+		return
+	}
+	if owner != nil {
+		ops = owner.lease.Operations()
+		if ops.Snapshot == nil || ops.Drop == nil {
+			owner.close()
+			s.report(schemaDesignError(contract.ErrUnsupported))
+			return
+		}
+	}
+	s.schemaDrop = &schemaDropOperation{owner: owner, target: target, generation: s.session().Generation, database: database, ops: ops, open: true}
 }
 func (s *State) closeSchemaDrop() {
-	if x := s.schemaDrop; x != nil && x.cancel != nil {
-		x.cancel()
+	x := s.schemaDrop
+	if x != nil {
+		if x.cancel != nil {
+			x.cancel()
+		}
+		x.results, x.original, x.applied = nil, nil, nil
+		x.cancel, x.ops = nil, contract.SchemaDesignOperations{}
 	}
 	s.schemaDrop = nil // terminal close revokes callbacks; workers own their buffered receipt
+	if x != nil {
+		x.owner.close()
+	}
 }
 func (s *State) readSchemaDrop(services ui.Services) {
 	x := s.schemaDrop
-	if x == nil || !x.open || x.busy || !s.schemaDropValid(x) {
+	if x == nil || !x.open || x.busy || x.completed || !s.schemaDropValid(x) {
 		return
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	out := make(chan schemaDropReply, 1)
-	x.cancel, x.results, x.busy, x.err, x.original = cancel, out, true, "", nil
-	x.blocked, x.confirmation = false, ""
+	x.cancel, x.results, x.busy, x.err = cancel, out, true, ""
+	if x.owner == nil || !x.owner.blocked {
+		x.original, x.blocked = nil, false
+	}
+	x.confirmation = ""
 	load, target := x.ops.Snapshot, x.target
 	go func() {
 		defer cancel()
@@ -106,6 +133,8 @@ func (s *State) applySchemaDrop(services ui.Services) {
 		x.guarding = false
 		x.cancel, x.results, x.busy, x.applying, x.cancelRequested, x.err = cancel, out, true, true, false, ""
 		request, apply := x.original.Clone(), x.ops.Drop
+		captured := request.Clone()
+		x.applied = &captured
 		complete := s.beginActivity(x.target.Object.ProfileID, x.generation, x.database, x.target.Object.Name, "table", "drop")
 		go func() {
 			defer cancel()
@@ -134,6 +163,9 @@ func (s *State) consumeSchemaDrop(services ui.Services) {
 	if x == nil {
 		return
 	}
+	if x.owner != nil && s.session().ProfileID != x.target.Object.ProfileID {
+		return // Park the original result until its own profile is active.
+	}
 	if x.guarding && s.deps.TableGuardPending != nil && !s.deps.TableGuardPending(x.target.Object.ProfileID, x.database, x.target.Object.Name) {
 		x.guarding = false
 		x.guardAttempt++
@@ -160,7 +192,15 @@ func (s *State) consumeSchemaDrop(services ui.Services) {
 			x.cancel = nil
 		}
 		if reply.outcome != nil {
-			out := *reply.outcome
+			out := reply.outcome.Clone()
+			if x.owner != nil {
+				expected := contract.SchemaDesignWriteReceipt{Operation: "drop"}
+				if x.applied != nil {
+					expected.Original = x.applied.Clone()
+					expected.Destination = x.applied.Target.Object.Name
+				}
+				out = x.owner.settle(expected, out)
+			}
 			x.applying = false
 			if out.Error != nil {
 				s.report(locales.Text("删除表") + ": " + x.database + "." + x.target.Object.Name + " · " + out.Error.Error())
@@ -168,7 +208,7 @@ func (s *State) consumeSchemaDrop(services ui.Services) {
 			// Preserve a late mutation receipt for its captured original scope.
 			// The host separately checks original published/context generations.
 			if s.deps.SchemaDropped != nil {
-				s.deps.SchemaDropped(services, SchemaDropEvent{Original: x.target, Generation: x.generation, Database: x.database, Outcome: out})
+				s.deps.SchemaDropped(services, SchemaDropEvent{Original: x.target, Generation: x.generation, Database: x.database, Outcome: out.Clone()})
 			}
 			if s.schemaDrop != x {
 				return
@@ -179,7 +219,11 @@ func (s *State) consumeSchemaDrop(services ui.Services) {
 			}
 			x.blocked = true // require an explicit fresh read before any retry
 			if out.State == "committed" && out.Verified && out.Actual != nil && !out.Actual.Schema.Exists && out.Actual.Target == x.target && out.Error == nil {
-				s.closeSchemaDrop()
+				if x.owner == nil {
+					s.closeSchemaDrop()
+				} else {
+					x.completed, x.owner.showReceipt, x.err = true, true, ""
+				}
 				s.report(locales.Text("删除表成功") + ": " + x.database + "." + x.target.Object.Name)
 				return
 			}
@@ -194,7 +238,11 @@ func (s *State) consumeSchemaDrop(services ui.Services) {
 			x.err = errors.New("original table snapshot is incomplete or unavailable").Error()
 		} else {
 			snapshot := reply.snapshot.Clone()
-			x.original = &snapshot
+			if x.owner == nil || !x.owner.blocked {
+				x.original = &snapshot
+			} else {
+				x.blocked, x.err = true, schemaDesignError(contract.ErrSchemaCommitUncertain)
+			}
 		}
 	default:
 	}
@@ -215,18 +263,24 @@ func (s *State) schemaDropModal(c *ui.Context) {
 			if x.busy {
 				ui.Text(c, locales.Text("正在等待结构操作回执…"))
 			}
-			if x.blocked {
+			if x.completed {
+				ui.Text(c, locales.Text("删除表成功"))
+			} else if x.owner != nil && x.owner.blocked {
+				ui.Text(c, locales.Text("原始结构写入未核验；读取不会解除写入保护。"))
+			} else if x.blocked {
 				ui.Text(c, locales.Text("删除结果或结构已变化；重新读取后才能再次确认。"))
 			}
 			raw := ""
 			if x.original != nil {
-				raw = "DROP TABLE " + schemaddl.Quote(x.target.Object.Schema) + "." + schemaddl.Quote(x.target.Object.Name)
+				raw = "DROP TABLE " + schemaddl.Quote(schemaSQLQualifier(*x.original)) + "." + schemaddl.Quote(x.target.Object.Name)
 				if x.original.Schema.Engine == "postgresql" || x.original.Schema.Engine == "opengauss" {
 					raw += " RESTRICT"
 				}
 				raw += ";"
 			}
-			ui.TextArea(c, &raw).Label(locales.Text("删除 SQL 预览")).ReadOnly(true).Grow(1).MinHeight(40)
+			if !s.schemaModalReceiptToggle(c, x.owner) {
+				ui.TextArea(c, &raw).Label(locales.Text("删除 SQL 预览")).ReadOnly(true).Grow(1).MinHeight(40)
+			}
 			ui.Text(c, locales.Text("请输入原表名称以确认此操作："))
 			ui.TextInput(c, &x.confirmation).Label(locales.Text("确认原表名称")).Disabled(x.busy || x.original == nil)
 			ui.Row(c).Wrap().Gap(8).Justify(ui.End).Children(func() {
@@ -240,7 +294,7 @@ func (s *State) schemaDropModal(c *ui.Context) {
 						x.open = false
 					}
 				}
-				if ui.Button(c, locales.Text("重新读取结构")).Disabled(x.busy).Clicked() {
+				if ui.Button(c, locales.Text("重新读取结构")).Disabled(x.busy || x.completed).Clicked() {
 					s.readSchemaDrop(c.Services())
 				}
 				if ui.PrimaryButton(c, locales.Text("确认删除表")).Disabled(x.busy || x.blocked || x.original == nil || x.confirmation != x.target.Object.Name || !s.schemaDropValid(x)).Clicked() {

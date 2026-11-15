@@ -26,6 +26,8 @@ type schemaCopyReply struct {
 	err      error
 }
 type schemaCopyOperation struct {
+	completed                                                bool
+	owner                                                    *schemaDocumentOwner
 	target                                                   contract.SchemaDesignTarget
 	generation                                               uint64
 	guardAttempt                                             uint64
@@ -69,23 +71,47 @@ func (s *State) beginSchemaCopy(profile int64, database, table string, data bool
 	s.closeSchemaDrop()
 	s.closeSchemaRename()
 	ops, target := s.schemaBinding(profile, database, table)
-	s.schemaCopy = &schemaCopyOperation{target: target, generation: s.session().Generation, database: database, destination: s.NextObjectName(profile, table+"_copy"), ops: ops, withData: data, rebindSelf: true, preserveRowID: true, open: true}
+	owner, err := s.reserveSchemaDocument(s.nextSchemaDocumentID("copy"), target)
+	if err != nil {
+		s.report(schemaDesignError(err))
+		return
+	}
+	if owner != nil {
+		ops = owner.lease.Operations()
+		if ops.Snapshot == nil || ops.Copy == nil {
+			owner.close()
+			s.report(schemaDesignError(contract.ErrUnsupported))
+			return
+		}
+	}
+	s.schemaCopy = &schemaCopyOperation{owner: owner, target: target, generation: s.session().Generation, database: database, destination: s.NextObjectName(profile, table+"_copy"), ops: ops, withData: data, rebindSelf: true, preserveRowID: true, open: true}
 }
 func (s *State) closeSchemaCopy() {
-	if x := s.schemaCopy; x != nil && x.cancel != nil {
-		x.cancel()
+	x := s.schemaCopy
+	if x != nil {
+		if x.cancel != nil {
+			x.cancel()
+		}
+		x.results, x.original, x.applied = nil, nil, nil
+		x.cancel, x.ops = nil, contract.SchemaDesignOperations{}
 	}
 	s.schemaCopy = nil
+	if x != nil {
+		x.owner.close()
+	}
 }
 func (s *State) readSchemaCopy(services ui.Services) {
 	x := s.schemaCopy
-	if x == nil || !x.open || x.busy || !s.schemaCopyValid(x) {
+	if x == nil || !x.open || x.busy || x.completed || !s.schemaCopyValid(x) {
 		return
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	out := make(chan schemaCopyReply, 1)
-	x.cancel, x.results, x.busy, x.err, x.original = cancel, out, true, "", nil
-	x.blocked, x.cancelRequested = false, false
+	x.cancel, x.results, x.busy, x.err = cancel, out, true, ""
+	if x.owner == nil || !x.owner.blocked {
+		x.original, x.blocked = nil, false
+	}
+	x.cancelRequested = false
 	load, target := x.ops.Snapshot, x.target
 	go func() {
 		defer cancel()
@@ -109,11 +135,11 @@ func (s *State) schemaCopyRequest(x *schemaCopyOperation) (contract.SchemaCopyRe
 		p, e := schemaddl.PlanPostgreSQLCopy(r.Original.Schema, r.Destination, r.WithData, r.RebindSelfReferences)
 		return r, p.SQL, e
 	}
-	table, err := schemaddl.CopySQLite(r.Original.Schema.Table, r.Original.Target.Object.Schema, r.Destination, r.RebindSelfReferences)
+	table, err := schemaddl.CopySQLite(r.Original.Schema.Table, schemaSQLQualifier(r.Original), r.Destination, r.RebindSelfReferences)
 	if err != nil {
 		return r, nil, err
 	}
-	sql, err := schemaddl.CopySQLiteSQL(table, r.Original.Target.Object.Schema)
+	sql, err := schemaddl.CopySQLiteSQL(table, schemaSQLQualifier(r.Original))
 	return r, sql, err
 }
 func (s *State) applySchemaCopy(services ui.Services) {
@@ -176,6 +202,9 @@ func (s *State) consumeSchemaCopy(services ui.Services) {
 	if x == nil {
 		return
 	}
+	if x.owner != nil && s.session().ProfileID != x.target.Object.ProfileID {
+		return
+	}
 	if x.guarding && s.deps.TableGuardPending != nil && !s.deps.TableGuardPending(x.target.Object.ProfileID, x.database, x.target.Object.Name) {
 		x.guarding = false
 		x.guardAttempt++
@@ -201,18 +230,22 @@ func (s *State) consumeSchemaCopy(services ui.Services) {
 			x.cancel = nil
 		}
 		if reply.outcome != nil {
-			out := *reply.outcome
+			out := reply.outcome.Clone()
 			x.applying = false
 			if x.applied == nil {
 				x.blocked, x.err = true, "copy receipt has no captured request"
 				return
 			}
 			destination := x.applied.Destination
+			if x.owner != nil {
+				r := x.applied.Clone()
+				out = x.owner.settle(contract.SchemaDesignWriteReceipt{Operation: "copy", Original: r.Original, Destination: r.Destination, WithData: r.WithData, RebindSelfReferences: r.RebindSelfReferences, PreserveRowID: r.PreserveRowID}, out)
+			}
 			if out.Error != nil {
 				s.report(locales.Text("复制表") + ": " + x.database + "." + x.target.Object.Name + " · " + out.Error.Error())
 			}
 			if s.deps.SchemaCopied != nil {
-				s.deps.SchemaCopied(services, SchemaCopyEvent{Original: x.target, Generation: x.generation, Database: x.database, Destination: destination, Outcome: out})
+				s.deps.SchemaCopied(services, SchemaCopyEvent{Original: x.target, Generation: x.generation, Database: x.database, Destination: destination, Outcome: out.Clone()})
 			}
 			if s.schemaCopy != x {
 				return
@@ -225,7 +258,11 @@ func (s *State) consumeSchemaCopy(services ui.Services) {
 			expected := x.target
 			expected.Object.Name = destination
 			if out.State == "committed" && out.Verified && out.Actual != nil && out.Actual.Target == expected && out.Actual.Schema.Exists && out.Error == nil {
-				s.closeSchemaCopy()
+				if x.owner == nil {
+					s.closeSchemaCopy()
+				} else {
+					x.completed, x.owner.showReceipt, x.err = true, true, ""
+				}
 				s.report(locales.Text("复制表成功") + ": " + x.database + "." + expected.Object.Name)
 				return
 			}
@@ -240,7 +277,11 @@ func (s *State) consumeSchemaCopy(services ui.Services) {
 			x.err = "original table snapshot is incomplete or unavailable"
 		} else {
 			snapshot := reply.snapshot.Clone()
-			x.original = &snapshot
+			if x.owner == nil || !x.owner.blocked {
+				x.original = &snapshot
+			} else {
+				x.blocked, x.err = true, schemaDesignError(contract.ErrSchemaCommitUncertain)
+			}
 		}
 	default:
 	}
@@ -273,7 +314,11 @@ func (s *State) schemaCopyModal(c *ui.Context) {
 			if x.busy {
 				ui.Text(c, locales.Text("正在等待结构操作回执…"))
 			}
-			if x.blocked {
+			if x.completed {
+				ui.Text(c, locales.Text("复制表成功"))
+			} else if x.owner != nil && x.owner.blocked {
+				ui.Text(c, locales.Text("原始结构写入未核验；读取不会解除写入保护。"))
+			} else if x.blocked {
 				ui.Text(c, locales.Text("复制结果或结构已变化；重新读取后才能再次确认。"))
 			}
 			_, sql, err := s.schemaCopyRequest(x)
@@ -281,7 +326,9 @@ func (s *State) schemaCopyModal(c *ui.Context) {
 			if raw != "" {
 				raw += ";"
 			}
-			ui.TextArea(c, &raw).Label(locales.Text("复制结构 SQL 预览")).ReadOnly(true).Grow(1).MinHeight(40)
+			if !s.schemaModalReceiptToggle(c, x.owner) {
+				ui.TextArea(c, &raw).Label(locales.Text("复制结构 SQL 预览")).ReadOnly(true).Grow(1).MinHeight(40)
+			}
 			if err != nil && x.original != nil {
 				ui.Text(c, err.Error()).SingleLine().Tooltip(err.Error()).TextColor(theme.Colors(c).Error)
 			}
@@ -296,7 +343,7 @@ func (s *State) schemaCopyModal(c *ui.Context) {
 						x.open = false
 					}
 				}
-				if ui.Button(c, locales.Text("重新读取结构")).Disabled(x.busy).Clicked() {
+				if ui.Button(c, locales.Text("重新读取结构")).Disabled(x.busy || x.completed).Clicked() {
 					s.readSchemaCopy(c.Services())
 				}
 				if ui.PrimaryButton(c, locales.Text("确认复制表")).Disabled(x.busy || x.blocked || err != nil || !s.schemaCopyValid(x)).Clicked() {

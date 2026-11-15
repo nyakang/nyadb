@@ -96,3 +96,10 @@ type Plan struct {
 	Dropped              []string
 	RenameFrom, RenameTo string
 }
+
+func (p Plan) Clone() Plan {
+	p.SQL = append([]string(nil), p.SQL...)
+	p.Mappings = append([]Mapping(nil), p.Mappings...)
+	p.Dropped = append([]string(nil), p.Dropped...)
+	return p
+}

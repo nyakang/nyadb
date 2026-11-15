@@ -4296,5 +4296,14 @@
   "rqliteFreshnessInvalid": "Freshness requires none reads; strict freshness requires a positive millisecond value",
   "rqliteUsernameInvalid": "Enter a valid RQLite username",
   "rqliteProfileInvalid": "Check RQLite host, service path and TLS settings",
-  "rqliteCredentialInvalid": "Check RQLite credentials"
+  "rqliteCredentialInvalid": "Check RQLite credentials",
+  "schemaReceiptEmpty": "The original receipt appears after a schema operation",
+  "schemaReceiptHint": "The original write receipt is retained separately. Later reads do not change it or replay the operation.",
+  "schemaReceiptTitle": "Original Schema Receipt",
+  "schemaReceiptShow": "View Original Schema Receipt",
+  "schemaReceiptLeave": "Keep Draft and Leave",
+  "schemaReceiptLeaveHint": "The original write is unverified. Leaving retains the draft and receipt and blocks further writes. Closing the document releases them; copy or export the receipt first.",
+  "schemaReceiptBlocked": "The original schema write is unverified. Reading does not remove the write protection.",
+  "schemaReceiptSummary": "Original receipt: %s · Current verification passed: %s",
+  "schemaReceiptOriginalTarget": "Original target: #%d · %s / %s · %s"
 }

@@ -60,6 +60,39 @@ func (d *schemaDocument) writable(target contract.SchemaDesignTarget) bool {
 	d.mu.Unlock()
 	return ready && !d.s.config.Options.ReadOnly && d.s.checkSchemaTarget(target) == nil
 }
+
+func (d *schemaDocument) plan(request contract.SchemaDesignRequest) (schemaddl.Plan, error) {
+	if err := schemaWriteBounds(request.Original, &request.Desired); err != nil {
+		return schemaddl.Plan{}, err
+	}
+	r := request.Clone()
+	ctx, scope, done, err := d.admission(context.Background(), r.Original.Target)
+	if err != nil {
+		return schemaddl.Plan{}, err
+	}
+	defer done()
+	if d.s.config.Options.ReadOnly {
+		return schemaddl.Plan{}, contract.ErrUnsupported
+	}
+	d.mu.Lock()
+	blocked := d.blocked
+	d.mu.Unlock()
+	if blocked {
+		return schemaddl.Plan{}, contract.ErrSchemaCommitUncertain
+	}
+	if ctx.Err() != nil {
+		return schemaddl.Plan{}, ctx.Err()
+	}
+	if _, err := d.s.schemaSnapshotGuardScoped(r.Original, scope); err != nil {
+		return schemaddl.Plan{}, err
+	}
+	target := r.Original.Target
+	target.Object.Name = r.Desired.Name
+	if err := d.s.checkSchemaTarget(target); err != nil {
+		return schemaddl.Plan{}, err
+	}
+	return schemaddl.PlanSQLiteNative(r.Original.Schema, r.Desired, "main", r.AllowColumnDrop)
+}
 func (d *schemaDocument) apply(ctx context.Context, request contract.SchemaDesignRequest) contract.SchemaDesignOutcome {
 	if err := schemaWriteBounds(request.Original, &request.Desired); err != nil {
 		return contract.SchemaDesignOutcome{State: "not_executed", Error: err}

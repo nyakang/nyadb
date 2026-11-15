@@ -3,6 +3,7 @@ package objectworkspace
 import (
 	"context"
 	"errors"
+	"io"
 
 	"github.com/egoist/mygo/ui"
 
@@ -56,6 +57,7 @@ type Dependencies struct {
 	Availability             func(int64, string, contract.SchemaDesignTarget) contract.Availability
 	Namespace                func(int64, string) contract.NamespaceRef
 	SchemaDesignFor          func(int64) contract.SchemaDesignOperations
+	SchemaDocumentsFor       func(int64) (contract.SchemaDesignDocumentsProvider, error)
 	SchemaTarget             func(int64, string, string) contract.SchemaDesignTarget
 	SchemaDesigned           func(ui.Services, SchemaDesignEvent)
 	SchemaDropped            func(ui.Services, SchemaDropEvent)
@@ -225,6 +227,9 @@ type loadResult struct {
 }
 
 type State struct {
+	schemaReceiptPick                       func(string) (string, error)
+	schemaReceiptWrite                      func(string, func(io.Writer) error) error
+	schemaSequence                          uint64
 	schemaCopy                              *schemaCopyOperation
 	schemaRename                            *schemaRenameOperation
 	schemaDrop                              *schemaDropOperation
@@ -505,6 +510,7 @@ func (s *State) Consume(services ui.Services) {
 	s.consumeMySQLTableChange(services)
 	s.consumeDesign(services)
 	s.consumeSchemaDesign(services)
+	s.consumeSchemaReceiptTransfers()
 	s.consumeObjectOperations(services)
 	s.consumeAdmin(services)
 	s.consumeBatch(services)

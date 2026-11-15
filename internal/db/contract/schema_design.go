@@ -72,6 +72,9 @@ func (o SchemaDesignOutcome) Clone() SchemaDesignOutcome {
 
 type SchemaDesignOperations struct {
 	CanApply func(SchemaDesignTarget) bool
+	// Plan is an optional pure preview of this provider's write semantics.
+	// It performs no I/O and neither reserves nor executes a write.
+	Plan     func(SchemaDesignRequest) (schemaddl.Plan, error)
 	Snapshot func(context.Context, SchemaDesignTarget) (SchemaDesignSnapshot, error)
 	Apply    func(context.Context, SchemaDesignRequest) SchemaDesignOutcome
 	// Drop consumes a complete original snapshot. A verified committed receipt

@@ -5,7 +5,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"github.com/nyakang/nyadb/internal/db/schemaddl"
+	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/ui/theme"
 	"github.com/nyakang/nyadb/locales"
 )
@@ -40,18 +40,27 @@ func (s *State) schemaDesignView(c *ui.Context, d *Document) {
 			ui.Text(c, d.err).TextColor(p.Error).Tooltip(d.err)
 		}
 		if x.blocked {
-			ui.Text(c, locales.Text("结构操作已有执行步骤；请核对并重新读取，禁止自动重试。")).TextColor(p.Error)
+			if x.owner != nil && x.owner.blocked {
+				ui.Text(c, locales.Text("原始结构写入未核验；读取不会解除写入保护。")).TextColor(p.Error)
+			} else {
+				ui.Text(c, locales.Text("结构操作已有执行步骤；请核对并重新读取，禁止自动重试。")).TextColor(p.Error)
+			}
 		}
 		if !x.loaded {
 			ui.Box(c).Grow(1)
 			return
 		}
 		names := []string{locales.Text("字段"), locales.Text("约束"), locales.Text("索引"), locales.Text("触发器"), locales.Text("表选项"), locales.Text("原始 DDL")}
+		if x.owner != nil {
+			names = append(names, locales.Text("原始结构回执"))
+		}
 		candidate := &x.pageChoice
 		*candidate = x.page
 		ui.ScrollHorizontal(c).Height(theme.RowHeight(c, theme.TabHeight)).Children(func() {
-			if theme.Tabs(c, candidate, names, locked, locales.Text("表设计子页")).Label(locales.Text("表设计子页")).Changed() {
-				if err := d.flushInline(); err != nil {
+			if theme.Tabs(c, candidate, names, locked && x.owner == nil, locales.Text("表设计子页")).Label(locales.Text("表设计子页")).Changed() {
+				if locked {
+					x.page = *candidate
+				} else if err := d.flushInline(); err != nil {
 					d.err = err.Error()
 					*candidate = x.page
 					d.formFocusPending = true
@@ -84,10 +93,12 @@ func (s *State) schemaDesignView(c *ui.Context, d *Document) {
 					ui.Text(c, locales.Text("表或字段改名请单独预览并执行，数据库会改写依赖定义。"))
 				})
 			})
+		} else if x.page == 6 && x.owner != nil {
+			s.schemaReceiptView(c, x.owner)
 		} else {
 			raw := x.original.Schema.DDL
 			if raw == "" {
-				plan, err := planSchemaDesign(x.original.Schema, x.draft, d.object.Schema)
+				plan, err := s.schemaDesignPlan(d, contract.SchemaDesignRequest{Original: x.original.Clone(), Desired: x.draft.Clone()})
 				if err == nil {
 					raw = strings.Join(plan.SQL, ";\n\n")
 				}
@@ -237,26 +248,21 @@ func (s *State) schemaDesignModals(c *ui.Context, d *Document) {
 			width, _ := c.Size()
 			ui.Column(c).Width(min(float32(480), width-68)).Gap(10).Children(func() {
 				ui.Text(c, locales.Text("表设计有未保存的修改")).Bold()
+				preserve := x.owner != nil && x.owner.blocked
+				if preserve {
+					ui.Text(c, locales.Text("原写入结果尚未核验；离开会保留草稿与回执，禁止再次执行。关闭文档会释放这些内容，请先复制或导出回执。"))
+				}
 				ui.Row(c).Wrap().Gap(8).Children(func() {
 					if ui.Button(c, locales.Text("继续编辑")).Clicked() {
 						x.guard = false
 						x.next = nil
 					}
-					if ui.Button(c, locales.Text("放弃修改")).Clicked() {
-						next := x.next
-						x.guard = false
-						x.next = nil
-						d.inline = nil
-						x.draft = x.saved.Clone()
-						x.field = x.fieldBase
-						x.pgField = x.pgFieldBase
-						x.raw = x.rawBase
-						x.name = x.nameBase
-						_ = s.schemaSelectRow(d, x.page, -1)
-						x.baseline = schemaddl.Signature(x.draft)
-						if next != nil {
-							next(c.Services())
-						}
+					label := locales.Text("放弃修改")
+					if preserve {
+						label = locales.Text("保留草稿并离开")
+					}
+					if ui.Button(c, label).Clicked() {
+						s.resolveSchemaDesignLeave(d, c.Services())
 					}
 					if ui.PrimaryButton(c, locales.Text("SQL 预览")).Disabled(x.blocked).Clicked() {
 						if s.PrepareSchemaDesign(d) == nil {

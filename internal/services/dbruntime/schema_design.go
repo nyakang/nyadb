@@ -26,6 +26,20 @@ func (s *session) SchemaDesign() contract.SchemaDesignOperations {
 
 func (s *session) bindSchemaDesign(raw contract.SchemaDesignOperations, documentID string) contract.SchemaDesignOperations {
 	ops := contract.SchemaDesignOperations{}
+	if raw.Plan != nil {
+		ops.Plan = func(request contract.SchemaDesignRequest) (schemaddl.Plan, error) {
+			if err := s.schemaDesignTarget(request.Original.Target); err != nil {
+				return schemaddl.Plan{}, err
+			}
+			if !s.Capabilities().DesignTables {
+				return schemaddl.Plan{}, contract.ErrUnsupported
+			}
+			r := request.Clone()
+			r.Original.Target.Generation = s.raw.Generation()
+			plan, err := raw.Plan(r)
+			return plan.Clone(), err
+		}
+	}
 	if raw.CanApply != nil {
 		ops.CanApply = func(t contract.SchemaDesignTarget) bool {
 			if s.schemaDesignTarget(t) != nil || !s.Capabilities().DesignTables {

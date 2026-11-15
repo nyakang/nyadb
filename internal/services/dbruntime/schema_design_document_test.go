@@ -81,6 +81,88 @@ func reserveRuntimeSchema(t *testing.T, m *dbruntime.Manager, id string, target 
 	return l
 }
 
+func TestSchemaDocumentRejectedNativeReceiptRemainsCompleteThroughReadsAndCallerMutation(t *testing.T) {
+	var writes atomic.Int32
+	m, target := schemaLeaseRuntime(t, func(r contract.SchemaDesignDocumentRequest) (contract.SchemaDesignDocumentLease, error) {
+		l := &schemaDocumentFake{}
+		l.ops.Snapshot = func(_ context.Context, target contract.SchemaDesignTarget) (contract.SchemaDesignSnapshot, error) {
+			return schemaLeaseSnapshot(target), nil
+		}
+		l.ops.CanApply = func(contract.SchemaDesignTarget) bool { return true }
+		l.ops.Apply = func(_ context.Context, request contract.SchemaDesignRequest) contract.SchemaDesignOutcome {
+			writes.Add(1)
+			out := schemaLeaseOutcome(r.DocumentID, 1, request, "not_executed", false)
+			out.Receipt.NativeJSON = `{"status":401,"body":"original authentication rejection"}`
+			out.Error = errors.New("original authentication rejected")
+			return out
+		}
+		return l, nil
+	})
+	p, err := m.SchemaDesignDocuments(target.Object.ProfileID)
+	if err != nil || p == nil {
+		t.Fatal("original optional provider discovery failed", err)
+	}
+	l, err := p.ReserveSchemaDesignDocument(contract.SchemaDesignDocumentRequest{DocumentID: "rejected", Target: target})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = l.Close() })
+	request := contract.SchemaDesignRequest{Original: schemaLeaseSnapshot(target), Desired: schemaLeaseSnapshot(target).Schema.Table.Clone()}
+	out := l.Operations().Apply(context.Background(), request)
+	if out.State != "not_executed" || out.Receipt == nil || out.Receipt.Original.Target.Generation != target.Generation {
+		t.Fatal("native rejection was relabelled or its public scope was lost", out)
+	}
+	original := l.OriginalOutcome()
+	if original == nil || original.Receipt.NativeJSON != out.Receipt.NativeJSON {
+		t.Fatal("complete not-executed native receipt was discarded")
+	}
+	out.Receipt.NativeJSON = "caller mutation"
+	out.Receipt.Desired.Clauses[0].SQL = "caller mutation"
+	if _, err := l.Operations().Snapshot(context.Background(), target); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(original, l.OriginalOutcome()) || writes.Load() != 1 || !l.Operations().CanApply(target) {
+		t.Fatal("rejection receipt was overwritten, replayed, or incorrectly blocked")
+	}
+}
+
+func TestSchemaDocumentPreviewTranslatesGenerationClonesAndRespectsUnknownBarrier(t *testing.T) {
+	var plans atomic.Int32
+	var nativePlan schemaddl.Plan
+	m, target := schemaLeaseRuntime(t, func(r contract.SchemaDesignDocumentRequest) (contract.SchemaDesignDocumentLease, error) {
+		l := &schemaDocumentFake{}
+		l.ops.CanApply = func(contract.SchemaDesignTarget) bool { return true }
+		l.ops.Plan = func(request contract.SchemaDesignRequest) (schemaddl.Plan, error) {
+			plans.Add(1)
+			if request.Original.Target.Generation != 973 || request.Original.Target.Object.Schema != "" {
+				t.Error("preview changed native scope", request.Original.Target)
+			}
+			request.Desired.Clauses[0].SQL = "provider mutation"
+			nativePlan = schemaddl.Plan{Mode: "add_column", SQL: []string{"ALTER TABLE main.t ADD COLUMN added TEXT"}, Dropped: []string{"original"}}
+			return nativePlan, nil
+		}
+		l.ops.Apply = func(_ context.Context, request contract.SchemaDesignRequest) contract.SchemaDesignOutcome {
+			return schemaLeaseOutcome(r.DocumentID, 1, request, "uncertain", false)
+		}
+		return l, nil
+	})
+	l := reserveRuntimeSchema(t, m, "preview", target)
+	r := contract.SchemaDesignRequest{Original: schemaLeaseSnapshot(target), Desired: schemaLeaseSnapshot(target).Schema.Table.Clone()}
+	plan, err := l.Operations().Plan(r)
+	if err != nil || plans.Load() != 1 || r.Desired.Clauses[0].SQL == "provider mutation" || l.OriginalOutcome() != nil {
+		t.Fatal("pure preview mutated request or reserved a receipt", err)
+	}
+	plan.SQL[0] = "caller mutation"
+	plan.Dropped[0] = "caller mutation"
+	if nativePlan.SQL[0] == "caller mutation" || nativePlan.Dropped[0] == "caller mutation" {
+		t.Fatal("preview output shared provider storage")
+	}
+	l.Operations().Apply(context.Background(), r)
+	if _, err := l.Operations().Plan(r); !errors.Is(err, contract.ErrSchemaCommitUncertain) || plans.Load() != 1 {
+		t.Fatal("unknown write barrier admitted a preview", err)
+	}
+}
+
 func TestSchemaDocumentBindingCapturesGenerationAndRetargetsOnlyVerifiedCommit(t *testing.T) {
 	var captured contract.SchemaDesignDocumentRequest
 	var nativeOutcome contract.SchemaDesignOutcome
