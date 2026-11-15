@@ -4258,5 +4258,9 @@
   "h2SavedJARHint": "导入后使用已保存的 JAR 和本地依赖。",
   "h2CustomMissingInputs": "请选择基础驱动包和 JDBC JAR。",
   "h2ChooseJAR": "选择 JDBC JAR",
-  "h2JARNumberLabel": "JDBC JAR %d："
+  "h2JARNumberLabel": "JDBC JAR %d：",
+  "importBatchCommitHint": "导入按批次提交；取消或后续失败不会回滚已提交的批次。",
+  "importSingleRowCommitHint": "失败行会跳过，成功行分别提交；取消不会撤销已提交的记录。",
+  "importBatchReplaceHint": "首批会清空目标表；后续失败或取消不会恢复原记录，也不会撤销已提交的批次。",
+  "importAllReceiptsExport": "导出全部导入回执"
 }

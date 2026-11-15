@@ -43395,3 +43395,43 @@ func H2JARNumberLabel() string { return In(i18n.Locale()).H2JARNumberLabel() }
 func (msgs Messages) H2JARNumberLabel() string {
 	return Catalog.Format(msgs.locale, "h2JARNumberLabel", nil)
 }
+
+// ImportBatchCommitHint says "导入按批次提交；取消或后续失败不会回滚已提交的批次。"
+// in the language the app shows.
+func ImportBatchCommitHint() string { return In(i18n.Locale()).ImportBatchCommitHint() }
+
+// ImportBatchCommitHint says "导入按批次提交；取消或后续失败不会回滚已提交的批次。"
+// in the language of msgs.
+func (msgs Messages) ImportBatchCommitHint() string {
+	return Catalog.Format(msgs.locale, "importBatchCommitHint", nil)
+}
+
+// ImportSingleRowCommitHint says "失败行会跳过，成功行分别提交；取消不会撤销已提交的记录。"
+// in the language the app shows.
+func ImportSingleRowCommitHint() string { return In(i18n.Locale()).ImportSingleRowCommitHint() }
+
+// ImportSingleRowCommitHint says "失败行会跳过，成功行分别提交；取消不会撤销已提交的记录。"
+// in the language of msgs.
+func (msgs Messages) ImportSingleRowCommitHint() string {
+	return Catalog.Format(msgs.locale, "importSingleRowCommitHint", nil)
+}
+
+// ImportBatchReplaceHint says "首批会清空目标表；后续失败或取消不会恢复原记录，也不会撤销已提交的批次。"
+// in the language the app shows.
+func ImportBatchReplaceHint() string { return In(i18n.Locale()).ImportBatchReplaceHint() }
+
+// ImportBatchReplaceHint says "首批会清空目标表；后续失败或取消不会恢复原记录，也不会撤销已提交的批次。"
+// in the language of msgs.
+func (msgs Messages) ImportBatchReplaceHint() string {
+	return Catalog.Format(msgs.locale, "importBatchReplaceHint", nil)
+}
+
+// ImportAllReceiptsExport says "导出全部导入回执"
+// in the language the app shows.
+func ImportAllReceiptsExport() string { return In(i18n.Locale()).ImportAllReceiptsExport() }
+
+// ImportAllReceiptsExport says "导出全部导入回执"
+// in the language of msgs.
+func (msgs Messages) ImportAllReceiptsExport() string {
+	return Catalog.Format(msgs.locale, "importAllReceiptsExport", nil)
+}

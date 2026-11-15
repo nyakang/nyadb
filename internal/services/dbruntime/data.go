@@ -2,6 +2,7 @@ package dbruntime
 
 import (
 	"context"
+	"errors"
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
 	"io"
@@ -269,7 +270,18 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 			if e := s.require(r.Capabilities.Import, id); e != nil {
 				return nil, e
 			}
-			return r.Importer(ctx, id, s.dataDatabase(db), table, req)
+			result, err := r.Importer(ctx, id, s.dataDatabase(db), table, req)
+			if result != nil && len(result.Receipts) > 0 {
+				copy := *result
+				copy.Receipts = slices.Clone(result.Receipts)
+				for i, receipt := range copy.Receipts {
+					translated, e := s.importReceipt(id, db, table, receipt)
+					copy.Receipts[i] = translated
+					err = errors.Join(err, e)
+				}
+				result = &copy
+			}
+			return result, err
 		}
 	}
 	if r.StreamImporter != nil {
@@ -281,7 +293,23 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 				return nil, contract.ErrRevoked
 			}
 			req.Generation = s.raw.Generation()
-			return r.StreamImporter(ctx, id, s.dataDatabase(db), table, req)
+			if record := req.RecordReceipt; record != nil {
+				req.RecordReceipt = func(receipt contract.DataImportBatchReceipt) error {
+					translated, err := s.importReceipt(id, db, table, receipt)
+					if err != nil {
+						return err
+					}
+					return record(translated)
+				}
+			}
+			result, err := r.StreamImporter(ctx, id, s.dataDatabase(db), table, req)
+			if result != nil && result.LastReceipt != nil {
+				copy := *result
+				translated, e := s.importReceipt(id, db, table, *result.LastReceipt)
+				copy.LastReceipt = &translated
+				result, err = &copy, errors.Join(err, e)
+			}
+			return result, err
 		}
 	}
 	if r.TableMetadata != nil {
@@ -342,6 +370,22 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 		}
 	}
 	return out
+}
+
+// Only the runtime boundary translates provider generations. Original native
+// response bytes and inclusive source row ranges remain untouched.
+func (s *session) importReceipt(id int64, db, table string, receipt contract.DataImportBatchReceipt) (contract.DataImportBatchReceipt, error) {
+	if receipt.Object.ProfileID != id || receipt.Object.Kind != "table" {
+		return receipt, connections.ErrInvalid
+	}
+	if receipt.Generation != s.raw.Generation() {
+		return receipt, contract.ErrRevoked
+	}
+	if err := s.dataObject(id, db, table, receipt.Object); err != nil {
+		return receipt, err
+	}
+	receipt.Generation = s.generation
+	return receipt, nil
 }
 
 type dataDocumentLease struct {

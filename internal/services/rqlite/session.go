@@ -114,7 +114,7 @@ func OpenSession(ctx context.Context, p connections.Profile, password string) (c
 func (s *Session) ProfileID() int64   { return s.profile.ID }
 func (s *Session) Generation() uint64 { return 1 } // Public generation belongs to dbruntime.
 func (s *Session) Capabilities() contract.Capabilities {
-	return contract.Capabilities{Query: true, Metadata: true, Count: true, FieldChunks: true, Keyset: true, Export: true, JSONL: true, Analysis: true, EditableTables: !s.config.Options.ReadOnly}
+	return contract.Capabilities{Query: true, Metadata: true, Count: true, FieldChunks: true, Keyset: true, Export: true, JSONL: true, Analysis: true, EditableTables: !s.config.Options.ReadOnly, Import: !s.config.Options.ReadOnly}
 }
 func (s *Session) Alive() bool { s.mu.Lock(); defer s.mu.Unlock(); return !s.closed }
 func (s *Session) ServerVersions() (string, string) {

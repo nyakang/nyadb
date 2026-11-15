@@ -116,6 +116,7 @@ type DataRuntime struct {
 	ReserveDocument     func(ObjectRef) (DataDocumentLease, error)
 	ExportFormats       []string // nil preserves existing providers' format availability.
 	ImportDialect       string
+	ImportAtomicBatches bool
 	Selector            DataSelector
 	ReadScopeHint       string                   // Optional localized presentation of the original read/count/export scope.
 	ReadDescription     func(DataOptions) string // pure, parameter-free native request information.

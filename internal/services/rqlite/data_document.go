@@ -136,6 +136,11 @@ func (d *dataDocument) Runtime() contract.DataRuntime {
 		return err
 	}
 	if !s.config.Options.ReadOnly {
+		r.ImportDialect = "sqlite"
+		r.ImportAtomicBatches = true
+		r.StreamImporter = d.importStream
+		r.Importer = d.importData
+		r.NewTableImporter = d.importNewTable
 		r.NativeReceipts = true
 		r.EditValueKinds = []contract.CellKind{contract.Text, contract.Integer, contract.Floating, contract.Binary}
 		r.Saver = d.save

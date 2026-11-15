@@ -18,6 +18,7 @@ type DataImportStreamRequest struct {
 	Rows              int64
 	Open              func(context.Context) (DataImportRowSource, error)
 	Record            func(DataImportRowResult) error
+	RecordReceipt     func(DataImportBatchReceipt) error
 	Progress          func(DataImportProgress)
 	IgnoreForeignKeys bool
 	ExtendedInsert    bool
@@ -32,6 +33,37 @@ type DataImportStreamResult struct {
 	Created, CreationUncertain, Committed, CommitUncertain bool
 	Progress                                               DataImportProgress
 	Rows                                                   []DataImportRowResult // bounded diagnostic sample; full records are journaled
+	// Incremental providers commit distinct native requests. CommittedRows and
+	// Changed retain acknowledged earlier batches even if a later batch fails.
+	Incremental, Changed            bool
+	CommittedRows, ReceiptsRecorded int64
+	LastReceipt                     *DataImportBatchReceipt
+}
+
+// DataImportBatchReceipt retains one original request's complete response.
+// FirstRow/LastRow are inclusive source row numbers; zero denotes control-only
+// work. Recording failure cannot revoke an acknowledged database commit.
+type DataImportBatchReceipt struct {
+	Object                      ObjectRef
+	Generation                  uint64
+	Sequence, FirstRow, LastRow int64
+	State                       string // committed | rolled_back | not_executed | uncertain
+	NativeJSON                  string
+	CommittedRows               int64
+	Changed, Created            bool
+}
+
+func DataImportCommittedRows(r *DataImportStreamResult) int64 {
+	if r == nil {
+		return 0
+	}
+	if r.Incremental {
+		return r.CommittedRows
+	}
+	if r.Committed {
+		return r.Progress.Prepared
+	}
+	return 0
 }
 
 type DataImportRequest struct {
@@ -53,10 +85,13 @@ type DataImportRowResult struct {
 }
 
 type DataImportResult struct {
+	Incremental, Changed       bool
+	CommittedRows              int64
 	Created, CreationUncertain bool
 	Committed, CommitUncertain bool
 	Rows                       []DataImportRowResult
 	Saved                      *DataEditResult
+	Receipts                   []DataImportBatchReceipt
 }
 
 type DataImportColumn struct {

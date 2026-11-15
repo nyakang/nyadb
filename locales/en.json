@@ -4258,5 +4258,9 @@
   "h2SavedJARHint": "After import, connections use the saved JARs and local dependencies.",
   "h2CustomMissingInputs": "Select a base driver package and JDBC JARs.",
   "h2ChooseJAR": "Select JDBC JAR",
-  "h2JARNumberLabel": "JDBC JAR %d:"
+  "h2JARNumberLabel": "JDBC JAR %d:",
+  "importBatchCommitHint": "Imports commit in batches; cancellation or later failure keeps batches already committed.",
+  "importSingleRowCommitHint": "Failed rows are skipped and successful rows commit individually; cancellation keeps rows already committed.",
+  "importBatchReplaceHint": "The first batch clears the target table; later failure or cancellation does not restore original rows or undo committed batches.",
+  "importAllReceiptsExport": "Export All Import Receipts"
 }

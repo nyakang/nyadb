@@ -27,18 +27,18 @@ type TableImportEvent struct {
 	Created, Uncertain, Completed bool
 }
 
-func (s *State) newTableImporter() mysqlDataNewTableImporter {
+func (s *State) newTableImporter(t *Document) mysqlDataNewTableImporter {
 	if s.NewTableImporter != nil {
 		return s.NewTableImporter
 	}
-	return s.runtime().NewTableImporter
+	return s.runtimeFor(t).NewTableImporter
 }
 
-func (s *State) importer() mysqlDataImporter {
+func (s *State) importer(t *Document) mysqlDataImporter {
 	if s.Importer != nil {
 		return s.Importer
 	}
-	return s.runtime().Importer
+	return s.runtimeFor(t).Importer
 }
 
 func mysqlDataImportMode(t *Document) string {
@@ -99,12 +99,18 @@ func (s *State) dataImportModeControls(c *ui.Context, t *Document) {
 			ui.Text(c, locales.Text("SQL Server 导入追加到已有表；全部记录在同一事务中提交。"))
 		}
 	}
-	if tr.ContinueOnError {
+	if tr.ContinueOnError && s.runtimeFor(t).ImportAtomicBatches {
+		ui.Text(c, locales.Text("失败行会跳过，成功行分别提交；取消不会撤销已提交的记录。"))
+	} else if tr.ContinueOnError {
 		ui.Text(c, locales.Text("失败行会跳过，成功行一起提交；完成后逐行显示结果。")).TextColor(theme.Colors(c).Muted).FontSize(theme.Font(c, 11))
 	}
 	mode := mysqlDataImportMode(t)
 	if mode == "replace" {
-		ui.Text(c, locales.Text("此模式会删除目标表全部记录，再导入文件；提交前可取消回滚。")).TextColor(theme.Colors(c).Error)
+		if s.runtimeFor(t).ImportAtomicBatches {
+			ui.Text(c, locales.Text("首批会清空目标表；后续失败或取消不会恢复原记录，也不会撤销已提交的批次。")).TextColor(theme.Colors(c).Error)
+		} else {
+			ui.Text(c, locales.Text("此模式会删除目标表全部记录，再导入文件；提交前可取消回滚。")).TextColor(theme.Colors(c).Error)
+		}
 		mysqlDataWizardInput(c, &tr.DestructiveConfirmation, locales.Text("再次输入表名称以确认清空")).Placeholder(mysqlDataImportDestination(t)).Disabled(tr.Busy || tr.Submitted).Grow(1)
 	}
 	if mysqlDataImportNeedsMatch(mode) && tr.Input != nil {
@@ -197,6 +203,9 @@ func (s *State) consumeDataImportResult(services ui.Services, t *Document, resul
 	tr, imported := &t.transfer, result.Imported
 	tr.Created, tr.ResultTable = imported.Created, result.Destination
 	tr.RowResults = append([]contract.DataImportRowResult(nil), imported.Rows...)
+	if imported.Saved != nil && imported.Saved.NativeJSON != "" {
+		t.nativeReceipt.JSON = imported.Saved.NativeJSON
+	}
 	if result.NewTable {
 		entry := result.CreationHistory
 		entry.Failed = !imported.Created || imported.CreationUncertain || stale
@@ -229,7 +238,7 @@ func (s *State) consumeDataImportResult(services ui.Services, t *Document, resul
 		tr.Uncertain = true
 		tr.Err = locales.Text("导入结果不确定，禁止重放；请核验数据库")
 		for i := range tr.RowResults {
-			if tr.RowResults[i].Status == "committed" {
+			if tr.RowResults[i].Status == "committed" && !imported.Incremental {
 				tr.RowResults[i].Status = "uncertain"
 			}
 		}
@@ -241,6 +250,9 @@ func (s *State) consumeDataImportResult(services ui.Services, t *Document, resul
 			t.edit.Uncertain.CommitUncertain = true
 		}
 	} else if result.Err != nil {
+		if imported.Changed && !result.NewTable {
+			s.Load(services, t, true)
+		}
 		tr.Err = locales.Text("导入失败；本次向导不会重放：") + result.Err.Error()
 		if result.NewTable && imported.Created {
 			tr.Err = fmt.Sprintf(locales.Text("目标表 %s 已创建，数据导入失败；表保留。本次向导不会重放："), result.Destination) + result.Err.Error()
@@ -302,7 +314,7 @@ func (s *State) dataImportTargetControls(c *ui.Context, t *Document) {
 	if tr.Target == "new" {
 		mysqlDataWizardInput(c, &tr.NewName, locales.Text("新目标表名称")).Disabled(tr.Busy || tr.Submitted).Grow(1)
 		ui.Text(c, locales.Text("新表将在当前数据库创建；可修改字段名、类型、可空和主键。建表成功后若数据失败，目标表保留。")).FontSize(theme.Font(c, 11)).TextColor(theme.Colors(c).Muted)
-		if s.newTableImporter() == nil && s.importer() == nil {
+		if s.newTableImporter(t) == nil && s.importer(t) == nil {
 			ui.Text(c, locales.Text("新表导入服务不可用")).TextColor(theme.Colors(c).Error)
 		}
 	}

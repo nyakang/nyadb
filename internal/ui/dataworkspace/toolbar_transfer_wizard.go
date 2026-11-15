@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strconv"
 
+	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
 	"github.com/nyakang/nyadb/internal/ui/theme"
@@ -193,6 +194,9 @@ func (s *State) dataImportWizardPage(c *ui.Context, t *Document) {
 			tr.StatementKB = n
 		}
 	case 4:
+		if s.runtimeFor(t).ImportAtomicBatches {
+			ui.Text(c, locales.Text("导入按批次提交；取消或后续失败不会回滚已提交的批次。"))
+		}
 		if len(tr.Sources) > 1 {
 			ui.Text(c, locales.Text("每个目标分别提交；后续失败不会回滚已完成的目标。"))
 		}
@@ -213,6 +217,18 @@ func (s *State) dataImportWizardPage(c *ui.Context, t *Document) {
 		}
 		s.dataTransferPresetControls(c, t)
 	case 5:
+		if tr.Journal != nil && s.runtimeFor(t).ImportAtomicBatches {
+			if ui.Button(c, locales.Text("导出全部导入回执")).Disabled(tr.Busy || tr.ReceiptExport.Results != nil).Clicked() {
+				picker := tr.SaveDialog
+				if picker == nil {
+					picker = mygo.Dialog.Save
+				}
+				s.exportImportReceipts(c.Services(), t, picker)
+			}
+			if tr.ReceiptExport.Err != "" {
+				ui.Text(c, tr.ReceiptExport.Err).TextColor(theme.Colors(c).Error)
+			}
+		}
 		for _, receipt := range tr.Batch {
 			ui.Text(c, receipt.Database+"."+receipt.Table)
 			if receipt.Result.Created && !receipt.Result.CommitUncertain && s.deps.OpenImportedTable != nil && ui.Button(c, locales.Text("打开目标表")+" "+receipt.Table).Clicked() {

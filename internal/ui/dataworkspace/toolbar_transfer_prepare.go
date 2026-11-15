@@ -187,7 +187,7 @@ func (s *State) startPreparedDataImport(services ui.Services, t *Document) {
 	tr := &t.transfer
 	importer := s.StreamImporter
 	if importer == nil {
-		importer = s.runtime().StreamImporter
+		importer = s.runtimeFor(t).StreamImporter
 	}
 	if importer == nil {
 		tr.Err = locales.Text("数据编辑服务不可用")
@@ -212,10 +212,7 @@ func (s *State) consumeStreamedDataImport(services ui.Services, t *Document, r m
 		if result == nil {
 			continue
 		}
-		committed := int64(0)
-		if result.Committed {
-			committed = result.Progress.Prepared
-		}
+		committed := contract.DataImportCommittedRows(result)
 		s.appendDataHistory(t, mysqlDataHistoryEntry{Kind: "IMPORT", Summary: true, Failed: !result.Committed || stale || result.CommitUncertain, Rows: int(committed), Message: fmt.Sprintf(locales.Text("目标 %s · 已提交 %d 行 · 跳过 %d 行 · 失败 %d 行"), receipt.Database+"."+receipt.Table, committed, result.Progress.Skipped, result.Progress.Failed)})
 	}
 	tr.Progress = nil
@@ -229,17 +226,20 @@ func (s *State) consumeStreamedDataImport(services ui.Services, t *Document, r m
 	tr.Created = result.Created
 	tr.ResultTable = r.Destination
 	tr.RowResults = slices.Clone(result.Rows)
+	if result.LastReceipt != nil {
+		t.nativeReceipt.JSON = result.LastReceipt.NativeJSON
+	}
 	tr.Uncertain = stale || result.CreationUncertain || result.CommitUncertain || r.Err == nil && (!result.Committed || result.Progress.Processed != r.TotalRows) || result.Committed && r.Err != nil
 	if tr.Uncertain {
 		tr.Err = locales.Text("导入结果不确定，禁止重放；请核验数据库")
 		if !r.NewTable {
-			t.edit.Uncertain = &contract.DataEditResult{CommitUncertain: true}
+			t.edit.Uncertain = &contract.DataEditResult{CommitUncertain: true, NativeJSON: t.nativeReceipt.JSON}
 		}
 	} else if r.Err != nil {
-		tr.Err = fmt.Sprintf(locales.Text("已提交 %d 行；后续导入失败，本次向导不会重放："), result.Progress.Prepared) + r.Err.Error()
+		tr.Err = fmt.Sprintf(locales.Text("已提交 %d 行；后续导入失败，本次向导不会重放："), contract.DataImportCommittedRows(result)) + r.Err.Error()
 	} else {
 		tr.Completed = true
-		tr.Err = fmt.Sprintf(locales.Text("已提交 %d 行 · 跳过 %d 行 · 失败 %d 行"), result.Progress.Prepared, result.Progress.Skipped, result.Progress.Failed)
+		tr.Err = fmt.Sprintf(locales.Text("已提交 %d 行 · 跳过 %d 行 · 失败 %d 行"), contract.DataImportCommittedRows(result), result.Progress.Skipped, result.Progress.Failed)
 		if len(r.Batch) == 0 && !r.NewTable && r.Destination == t.table {
 			s.Load(services, t, true)
 		}

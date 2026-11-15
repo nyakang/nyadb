@@ -121,15 +121,18 @@ func (s *Session) Browse(ctx context.Context, n contract.NamespaceRef) ([]contra
 }
 
 type tableSnapshot struct {
-	structure *contract.TableStructure
-	key       []string
-	version   int64
-	rowIDKey  string
+	structure  *contract.TableStructure
+	key        []string
+	version    int64
+	rowIDKey   string
+	importKeys []importKey
 }
 type indexSnapshot struct {
 	name, origin              string
 	unique, partial, eligible bool
 	key                       []string
+	importEligible            bool
+	collations                []string
 }
 
 func (s *Session) TableMetadata(ctx context.Context, o contract.ObjectRef) (*contract.TableStructure, error) {
@@ -251,7 +254,7 @@ func (s *Session) table(ctx context.Context, o contract.ObjectRef) (tableSnapsho
 			indexedPrimary = true
 		}
 		if len(privateIndexes) == 0 || privateIndexes[len(privateIndexes)-1].name != name {
-			privateIndexes = append(privateIndexes, indexSnapshot{name: name, origin: origin, unique: unique == 1, partial: partial != 0, eligible: true})
+			privateIndexes = append(privateIndexes, indexSnapshot{name: name, origin: origin, unique: unique == 1, partial: partial != 0, eligible: true, importEligible: true})
 			typ := "BTREE"
 			if partial != 0 {
 				typ += " (partial)"
@@ -295,6 +298,14 @@ func (s *Session) table(ctx context.Context, o contract.ObjectRef) (tableSnapsho
 		if !found || cid < 0 || t.Columns[ci].Nullable || t.Columns[ci].Generated {
 			ix.eligible = false
 		}
+		if !found || cid < 0 || t.Columns[ci].Generated {
+			ix.importEligible = false
+		}
+		collation, e := cellText(row[8])
+		if e != nil {
+			return tableSnapshot{}, e
+		}
+		ix.collations = append(ix.collations, collation)
 		ix.key = append(ix.key, colName)
 	}
 	rowIDKey := ""
@@ -395,7 +406,16 @@ func (s *Session) table(ctx context.Context, o contract.ObjectRef) (tableSnapsho
 		return tableSnapshot{}, errIncomplete
 	}
 	t.Editable = kind == "table" && len(chosen) > 0 && !s.config.Options.ReadOnly
-	return tableSnapshot{structure: t, key: chosen, version: version, rowIDKey: rowIDKey}, nil
+	keys := []importKey{}
+	if rowIDKey != "" {
+		keys = append(keys, importKey{columns: []string{rowIDKey}, collations: []string{"BINARY"}})
+	}
+	for _, ix := range privateIndexes {
+		if ix.unique && !ix.partial && ix.importEligible && len(ix.key) > 0 {
+			keys = append(keys, importKey{columns: ix.key, collations: ix.collations})
+		}
+	}
+	return tableSnapshot{structure: t, key: chosen, version: version, rowIDKey: rowIDKey, importKeys: keys}, nil
 }
 
 func typeKind(typ string) contract.CellKind {

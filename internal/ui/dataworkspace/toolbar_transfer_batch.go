@@ -59,7 +59,7 @@ func (s *State) executePreparedSources(services ui.Services, t *Document, import
 	ctx, out, request, gen := s.beginDataTransfer(t)
 	tr.Submitted = true
 	tr.Step = 5
-	profile, owner := t.profileID, tr.Assets
+	profile, owner, namespace := t.profileID, tr.Assets, t.object.Namespace()
 	progress := make(chan contract.DataImportProgress, 1)
 	tr.Progress = progress
 	total := int64(0)
@@ -69,18 +69,27 @@ func (s *State) executePreparedSources(services ui.Services, t *Document, import
 	complete := s.beginActivity(t, "import", fmt.Sprintf("IMPORT %d SOURCES · %d ROWS", len(plans), total))
 	go func() {
 		journal, err := newMySQLDataImportJournal(owner, total)
-		aggregate := &contract.DataImportStreamResult{}
+		// Each source has its own acknowledgement, even for providers that use
+		// one transaction per source. Preserve prior sources after later failure.
+		aggregate := &contract.DataImportStreamResult{Incremental: true}
 		receipts := []mysqlDataBatchReceipt{}
 		offset := int64(0)
 		if err == nil {
-			for _, plan := range plans {
+			for sourceIndex, plan := range plans {
 				if err = ctx.Err(); err != nil {
 					break
 				}
 				base := aggregate.Progress
 				sourceOffset := offset
 				observed := contract.DataImportProgress{}
-				stream := contract.DataImportStreamRequest{Request: plan.request, Rows: plan.spool.rows, IgnoreForeignKeys: plan.ignore, ExtendedInsert: plan.extended, StatementMaxBytes: plan.maxBytes, Open: func(ctx context.Context) (contract.DataImportRowSource, error) {
+				sequence, lastRow := int64(0), int64(0)
+				stream := contract.DataImportStreamRequest{Generation: gen, Request: plan.request, Rows: plan.spool.rows, IgnoreForeignKeys: plan.ignore, ExtendedInsert: plan.extended, StatementMaxBytes: plan.maxBytes, RecordReceipt: func(receipt contract.DataImportBatchReceipt) error {
+					if receipt.Object.Namespace() != namespace || receipt.Object.Name != plan.table || receipt.Object.Kind != "table" || receipt.Generation != gen || receipt.Sequence != sequence+1 || receipt.FirstRow < 0 || receipt.LastRow < receipt.FirstRow || receipt.LastRow > plan.spool.rows || receipt.FirstRow != 0 && receipt.FirstRow <= lastRow || receipt.FirstRow == 0 && (receipt.LastRow != 0 || sequence != 0) {
+						return errors.New("import receipt does not match its original source, generation or sequence")
+					}
+					sequence, lastRow = receipt.Sequence, receipt.LastRow
+					return journal.RecordReceipt(sourceIndex, sourceOffset, receipt)
+				}, Open: func(ctx context.Context) (contract.DataImportRowSource, error) {
 					rows, err := plan.spool.open(ctx)
 					if err != nil {
 						return nil, err
@@ -97,12 +106,13 @@ func (s *State) executePreparedSources(services ui.Services, t *Document, import
 					}
 					observed.Processed++
 					switch row.Status {
-					case "prepared", "committed":
+					case "prepared", "committed", "rolled_back", "uncertain":
 						observed.Prepared++
 					case "skipped":
 						observed.Skipped++
 					case "failed":
 						observed.Failed++
+					case "not_processed":
 					default:
 						return errors.New("import result journal has an invalid row status")
 					}
@@ -129,8 +139,12 @@ func (s *State) executePreparedSources(services ui.Services, t *Document, import
 				aggregate.Progress.Processed += result.Progress.Processed
 				aggregate.Progress.Skipped += result.Progress.Skipped
 				aggregate.Progress.Failed += result.Progress.Failed
-				if result.Committed {
-					aggregate.Progress.Prepared += result.Progress.Prepared
+				aggregate.Progress.Prepared += contract.DataImportCommittedRows(result)
+				aggregate.CommittedRows += contract.DataImportCommittedRows(result)
+				aggregate.Changed = aggregate.Changed || result.Changed
+				aggregate.ReceiptsRecorded += result.ReceiptsRecorded
+				if result.LastReceipt != nil {
+					aggregate.LastReceipt = result.LastReceipt
 				}
 				aggregate.CommitUncertain = aggregate.CommitUncertain || result.CommitUncertain
 				aggregate.CreationUncertain = aggregate.CreationUncertain || result.CreationUncertain
@@ -152,9 +166,12 @@ func (s *State) executePreparedSources(services ui.Services, t *Document, import
 		}
 		aggregate.Committed = err == nil && len(receipts) == len(plans)
 		if journal != nil {
-			if e := journal.Flush(); e != nil && err == nil {
-				err = e
-				aggregate.CommitUncertain = true
+			if e := journal.Flush(); e != nil {
+				err = errors.Join(err, e)
+				aggregate.Committed = false
+				if !aggregate.Incremental && aggregate.Progress.Prepared > 0 {
+					aggregate.CommitUncertain = true
+				}
 			}
 		}
 		destination := ""
@@ -195,10 +212,13 @@ func (s *State) publishImportBatch(services ui.Services, t *Document, result mys
 	t.transfer.Batch = slices.Clone(result.Batch)
 	for _, receipt := range result.Batch {
 		r := receipt.Result
-		if (r.Created || r.CreationUncertain || r.Committed || r.CommitUncertain) && s.deps.TableImported != nil {
+		if r == nil {
+			continue
+		}
+		if (r.Changed || r.Created || r.CreationUncertain || r.Committed || r.CommitUncertain) && s.deps.TableImported != nil {
 			s.deps.TableImported(services, TableImportEvent{ProfileID: result.Profile, Generation: result.Generation, Database: receipt.Database, Table: receipt.Table, Created: r.Created, Completed: r.Committed, Uncertain: stale || r.CreationUncertain || r.CommitUncertain})
 		}
-		if r.Committed && receipt.Database == t.database && receipt.Table == t.table && !stale {
+		if (r.Committed || r.Changed) && receipt.Database == t.database && receipt.Table == t.table && !stale && !r.CommitUncertain {
 			s.Load(services, t, true)
 		}
 	}

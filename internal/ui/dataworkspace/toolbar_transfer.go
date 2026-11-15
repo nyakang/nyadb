@@ -57,6 +57,7 @@ type mysqlDataTransferState struct {
 	TargetTable                                  string
 	TargetColumns                                []contract.StructureColumn
 	Journal                                      *mysqlDataImportJournal
+	ReceiptExport                                nativeWriteReceiptState
 	JournalCommitted, JournalUncertain           bool
 	Wizard                                       bool
 	Step                                         int
@@ -203,6 +204,9 @@ func (s *State) closeDataTransfer(t *Document) {
 	}
 	if t.transfer.Cancel != nil {
 		t.transfer.Cancel()
+	}
+	if t.transfer.ReceiptExport.Cancel != nil {
+		t.transfer.ReceiptExport.Cancel()
 	}
 	releaseGraphImportPlan(&t.transfer)
 	if t.transfer.RawSpool != nil {
@@ -375,7 +379,7 @@ func (s *State) transferModals(c *ui.Context, t *Document) {
 					valid := available && tr.Input != nil && mysqlDataImportConfirmed(t) && !tr.Busy && !tr.Submitted
 					if valid {
 						_, err := mysqlDataImportReviewValidation(t)
-						valid = err == nil && (s.importer() != nil || (!tr.ContinueOnError && mysqlDataImportMode(t) == "append" && (tr.Target != "new" || s.newTableImporter() != nil)))
+						valid = err == nil && (s.importer(t) != nil || (!tr.ContinueOnError && mysqlDataImportMode(t) == "append" && (tr.Target != "new" || s.newTableImporter(t) != nil)))
 					}
 					if tr.Created && !tr.Uncertain && !tr.Busy && s.deps.OpenImportedTable != nil && ui.Button(c, locales.Text("打开目标表")).Clicked() {
 						tr.Open = false
@@ -513,8 +517,8 @@ func (s *State) startDataImport(services ui.Services, t *Document) {
 		return
 	}
 	saver := s.saverFor(t)
-	newImporter := s.newTableImporter()
-	importer := s.importer()
+	newImporter := s.newTableImporter(t)
+	importer := s.importer(t)
 	newTable := tr.Target == "new"
 	if importer == nil && (tr.ContinueOnError || mysqlDataImportMode(t) != "append" || !newTable && saver == nil || newTable && newImporter == nil || len(edits) > contract.DataMaxPageSize) {
 		tr.Err = locales.Text("数据编辑服务不可用")
@@ -745,6 +749,9 @@ func (s *State) startDataExport(services ui.Services, t *Document) {
 func (s *State) consumeDataTransfers(services ui.Services) {
 	for _, t := range s.documents {
 		tr := &t.transfer
+		if t.profileID == s.session().ProfileID {
+			consumeDataNativeEvidence(&tr.ReceiptExport)
+		}
 		if t.profileID == s.session().ProfileID && tr.Progress != nil {
 			select {
 			case p := <-tr.Progress:
