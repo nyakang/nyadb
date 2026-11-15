@@ -36,6 +36,7 @@ type nativeResult struct {
 	Types    []string            `json:"types"`
 	Values   [][]json.RawMessage `json:"values"`
 	Affected json.Number         `json:"rows_affected"`
+	InsertID json.Number         `json:"last_insert_id"`
 	Error    string              `json:"error"`
 	ErrorV2  json.RawMessage     `json:"error_v2"`
 }

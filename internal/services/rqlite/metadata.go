@@ -124,6 +124,7 @@ type tableSnapshot struct {
 	structure *contract.TableStructure
 	key       []string
 	version   int64
+	rowIDKey  string
 }
 type indexSnapshot struct {
 	name, origin              string
@@ -296,10 +297,12 @@ func (s *Session) table(ctx context.Context, o contract.ObjectRef) (tableSnapsho
 		}
 		ix.key = append(ix.key, colName)
 	}
+	rowIDKey := ""
 	if len(primary) == 1 && !indexedPrimary {
 		name := primary[1]
 		if i, ok := byName[name]; ok && strings.EqualFold(t.Columns[i].Type, "INTEGER") {
 			t.Columns[i].Nullable = false
+			rowIDKey = name
 		}
 	}
 	var chosen []string
@@ -391,7 +394,8 @@ func (s *Session) table(ctx context.Context, o contract.ObjectRef) (tableSnapsho
 	if err != nil || version < 0 {
 		return tableSnapshot{}, errIncomplete
 	}
-	return tableSnapshot{structure: t, key: chosen, version: version}, nil
+	t.Editable = kind == "table" && len(chosen) > 0 && !s.config.Options.ReadOnly
+	return tableSnapshot{structure: t, key: chosen, version: version, rowIDKey: rowIDKey}, nil
 }
 
 func typeKind(typ string) contract.CellKind {

@@ -195,13 +195,7 @@ func (s *Session) dataSnapshot(t tableSnapshot, row dataRow) *contract.RowSnapsh
 	if len(t.key) == 0 {
 		return nil
 	}
-	raw, _ := json.Marshal(struct {
-		Scope     string
-		Version   int64
-		Structure *contract.TableStructure
-	}{s.dataScope, t.version, t.structure})
-	seal := sha256.Sum256(raw)
-	out := &contract.RowSnapshot{Mode: "fingerprints", Metadata: hex.EncodeToString(seal[:]), Ref: contract.RowRef{Object: t.structure.Object, Database: "main", Table: t.structure.Name, Columns: append([]string(nil), t.key...)}}
+	out := &contract.RowSnapshot{Mode: "fingerprints", Metadata: s.dataMetadataSeal(t), Ref: contract.RowRef{Object: t.structure.Object, Database: "main", Table: t.structure.Name, Columns: append([]string(nil), t.key...)}}
 	for i, c := range t.structure.Columns {
 		out.Columns = append(out.Columns, c.Name)
 		if row.fp[i] != nil {
@@ -231,6 +225,16 @@ func (s *Session) dataSnapshot(t tableSnapshot, row dataRow) *contract.RowSnapsh
 	return out
 }
 
+func (s *Session) dataMetadataSeal(t tableSnapshot) string {
+	raw, _ := json.Marshal(struct {
+		Scope     string
+		Version   int64
+		Structure *contract.TableStructure
+	}{s.dataScope, t.version, t.structure})
+	seal := sha256.Sum256(raw)
+	return hex.EncodeToString(seal[:])
+}
+
 func (s *Session) loadData(ctx context.Context, id int64, database, name string, offset int64, limit int) (*contract.DataPage, error) {
 	return s.pageData(ctx, id, database, name, contract.DataOptions{Offset: offset, Limit: limit})
 }
@@ -249,7 +253,7 @@ func (s *Session) pageData(ctx context.Context, id int64, database, name string,
 	if err != nil {
 		return nil, err
 	}
-	editable := false // Atomic guarded data writes are a later acceptance step.
+	editable := t.structure.Editable
 	out := &contract.DataPage{Object: t.structure.Object, Editable: &editable, Database: database, Table: name, ColumnMetadata: t.structure.Columns, Offset: o.Offset, Limit: o.Limit, LiveRead: true, StableOrder: len(t.key) > 0, HasMore: len(rows) > o.Limit}
 	// Values in generated literals stay out of presentation SQL.
 	out.QuerySQL, err = dataSource(t, o, true)

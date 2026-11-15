@@ -3,24 +3,27 @@ package rqlite
 import (
 	"context"
 	"encoding/json"
+	"reflect"
 	"sync"
 
 	"github.com/nyakang/nyadb/internal/db/contract"
 	"github.com/nyakang/nyadb/internal/services/connections"
 )
 
-// A document owns only its original identity and admission lifetime. It creates
-// no server TEMP objects or hidden cross-request transaction. Page/count/field
-// workers have independent request contexts and share only this close scope.
+// A document owns its original identity, admission lifetime and unknown write
+// receipt. Reads have independent scopes. Writes serialize and create TEMP
+// guards only inside one original request/transaction, never between requests.
 type dataDocument struct {
-	s      *Session
-	object contract.ObjectRef
-	mu     sync.Mutex
-	closed bool
-	ctx    context.Context
-	cancel context.CancelFunc
-	active sync.WaitGroup
-	done   chan struct{}
+	s       *Session
+	object  contract.ObjectRef
+	mu      sync.Mutex
+	closed  bool
+	ctx     context.Context
+	cancel  context.CancelFunc
+	active  sync.WaitGroup
+	done    chan struct{}
+	writes  chan struct{}
+	unknown *contract.DataEditResult
 }
 
 func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocumentLease, error) {
@@ -33,32 +36,41 @@ func (s *Session) ReserveDataDocument(o contract.ObjectRef) (contract.DataDocume
 		return nil, contract.ErrRevoked
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	d := &dataDocument{s: s, object: o, ctx: ctx, cancel: cancel, done: make(chan struct{})}
+	d := &dataDocument{s: s, object: o, ctx: ctx, cancel: cancel, done: make(chan struct{}), writes: make(chan struct{}, 1)}
 	s.documents[d] = true
 	return d, nil
 }
 
 func (s *Session) DataDocumentCapabilities() contract.Capabilities { return s.Capabilities() }
 
-func dataCall[T any](d *dataDocument, ctx context.Context, id int64, db, table string, work func(context.Context) (T, error)) (out T, err error) {
+func (d *dataDocument) admission(ctx context.Context, id int64, db, table string) (context.Context, func(), error) {
 	d.mu.Lock()
 	if d.closed {
 		d.mu.Unlock()
-		return out, contract.ErrRevoked
+		return nil, nil, contract.ErrRevoked
 	}
 	if id != d.object.ProfileID || db != "main" || table != d.object.Name {
 		d.mu.Unlock()
-		return out, connections.ErrInvalid
+		return nil, nil, connections.ErrInvalid
 	}
 	d.active.Add(1)
 	d.mu.Unlock()
-	defer d.active.Done()
 	child, cancel := context.WithCancel(ctx)
 	stop := context.AfterFunc(d.ctx, cancel)
-	defer func() { stop(); cancel() }()
+	done := func() { stop(); cancel(); d.active.Done() }
 	if err := child.Err(); err != nil {
+		done()
+		return nil, nil, err
+	}
+	return child, done, nil
+}
+
+func dataCall[T any](d *dataDocument, ctx context.Context, id int64, db, table string, work func(context.Context) (T, error)) (out T, err error) {
+	child, done, err := d.admission(ctx, id, db, table)
+	if err != nil {
 		return out, err
 	}
+	defer done()
 	out, err = work(child)
 	d.mu.Lock()
 	closed := d.closed
@@ -73,6 +85,24 @@ func dataCall[T any](d *dataDocument, ctx context.Context, id int64, db, table s
 func (d *dataDocument) Runtime() contract.DataRuntime {
 	s := d.s
 	r := contract.DataRuntime{Capabilities: s.Capabilities(), FilterModes: s.DataFilterModes()}
+	if !s.config.Options.ReadOnly {
+		r.NativeReceipts = true
+		r.EditValueKinds = []contract.CellKind{contract.Text, contract.Integer, contract.Floating, contract.Binary}
+		r.Saver = d.save
+		r.Verify = func(ctx context.Context, id int64, db, table string, result *contract.DataEditResult) (*contract.DataVerification, error) {
+			captured := copyDataResult(result)
+			return dataCall(d, ctx, id, db, table, func(context.Context) (*contract.DataVerification, error) {
+				d.mu.Lock()
+				defer d.mu.Unlock()
+				if captured == nil || d.unknown == nil || !reflect.DeepEqual(captured, d.unknown) {
+					return nil, connections.ErrInvalid
+				}
+				// A fresh read cannot establish the original transaction/trigger
+				// commit. Return its captured evidence without I/O or replay.
+				return &contract.DataVerification{Status: "indeterminate", Recovered: copyDataResult(d.unknown)}, nil
+			})
+		}
+	}
 	r.AdvancedLoader = func(ctx context.Context, id int64, db, table string, o contract.DataOptions) (*contract.DataPage, error) {
 		if o.Object != (contract.ObjectRef{}) && o.Object != d.object {
 			return nil, connections.ErrInvalid
@@ -152,6 +182,9 @@ func (d *dataDocument) Close() error {
 	d.cancel()
 	d.mu.Unlock()
 	d.active.Wait() // Dispatched native requests acknowledge independently.
+	d.mu.Lock()
+	d.unknown = nil
+	d.mu.Unlock()
 	d.s.mu.Lock()
 	delete(d.s.documents, d)
 	d.s.mu.Unlock()

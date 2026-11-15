@@ -30,8 +30,8 @@ INSERT INTO original_grid VALUES(9007199254740993,replace(hex(zeroblob(256)),'0'
 	}
 	t.Cleanup(func() { _ = d.Close() })
 	r := d.Runtime()
-	if r.Saver != nil || r.Capabilities.EditableTables || r.Transactions.Begin != nil || r.Capabilities.Keyset {
-		t.Fatal("unaccepted data writes or cross-request transactions were advertised")
+	if r.Saver == nil || !r.Capabilities.EditableTables || !r.NativeReceipts || r.Verify == nil || r.Transactions.Begin != nil || r.Capabilities.Keyset {
+		t.Fatal("original document data write capabilities or transaction scope changed")
 	}
 	page, err := r.AdvancedLoader(context.Background(), p.ID, "main", o.Name, contract.DataOptions{Limit: 1})
 	if err != nil || len(page.Rows) != 1 || !page.HasMore || !page.StableOrder || page.RowRefs[0] == nil || page.RowSnapshots[0] == nil {
