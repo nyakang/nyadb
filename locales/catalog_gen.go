@@ -43955,3 +43955,97 @@ func RqliteClearResetIdentity() string { return In(i18n.Locale()).RqliteClearRes
 func (msgs Messages) RqliteClearResetIdentity() string {
 	return Catalog.Format(msgs.locale, "rqliteClearResetIdentity", nil)
 }
+
+// NativeSequentialWriteReceipt says "原生顺序写入回执"
+// in the language the app shows.
+func NativeSequentialWriteReceipt() string { return In(i18n.Locale()).NativeSequentialWriteReceipt() }
+
+// NativeSequentialWriteReceipt says "原生顺序写入回执"
+// in the language of msgs.
+func (msgs Messages) NativeSequentialWriteReceipt() string {
+	return Catalog.Format(msgs.locale, "nativeSequentialWriteReceipt", nil)
+}
+
+// NativeSequentialWriteReceiptJSON says "原生顺序写入回执 JSON"
+// in the language the app shows.
+func NativeSequentialWriteReceiptJSON() string {
+	return In(i18n.Locale()).NativeSequentialWriteReceiptJSON()
+}
+
+// NativeSequentialWriteReceiptJSON says "原生顺序写入回执 JSON"
+// in the language of msgs.
+func (msgs Messages) NativeSequentialWriteReceiptJSON() string {
+	return Catalog.Format(msgs.locale, "nativeSequentialWriteReceiptJSON", nil)
+}
+
+// NativeSequentialWriteReceiptHint says "…"
+// in the language the app shows.
+func NativeSequentialWriteReceiptHint() string {
+	return In(i18n.Locale()).NativeSequentialWriteReceiptHint()
+}
+
+// NativeSequentialWriteReceiptHint says "…"
+// in the language of msgs.
+func (msgs Messages) NativeSequentialWriteReceiptHint() string {
+	return Catalog.Format(msgs.locale, "nativeSequentialWriteReceiptHint", nil)
+}
+
+// NativeSequentialWriteCloseHint says "…"
+// in the language the app shows.
+func NativeSequentialWriteCloseHint() string {
+	return In(i18n.Locale()).NativeSequentialWriteCloseHint()
+}
+
+// NativeSequentialWriteCloseHint says "…"
+// in the language of msgs.
+func (msgs Messages) NativeSequentialWriteCloseHint() string {
+	return Catalog.Format(msgs.locale, "nativeSequentialWriteCloseHint", nil)
+}
+
+// NativeSequentialStatementAcknowledged says "原生语句已确认（无批次事务）"
+// in the language the app shows.
+func NativeSequentialStatementAcknowledged() string {
+	return In(i18n.Locale()).NativeSequentialStatementAcknowledged()
+}
+
+// NativeSequentialStatementAcknowledged says "原生语句已确认（无批次事务）"
+// in the language of msgs.
+func (msgs Messages) NativeSequentialStatementAcknowledged() string {
+	return Catalog.Format(msgs.locale, "nativeSequentialStatementAcknowledged", nil)
+}
+
+// NativeSequentialStatementFailed says "原生语句失败；先前已确认的写入已保留"
+// in the language the app shows.
+func NativeSequentialStatementFailed() string {
+	return In(i18n.Locale()).NativeSequentialStatementFailed()
+}
+
+// NativeSequentialStatementFailed says "原生语句失败；先前已确认的写入已保留"
+// in the language of msgs.
+func (msgs Messages) NativeSequentialStatementFailed() string {
+	return Catalog.Format(msgs.locale, "nativeSequentialStatementFailed", nil)
+}
+
+// NativeSequentialStatementUnknown says "原生写入回执未知，禁止重放"
+// in the language the app shows.
+func NativeSequentialStatementUnknown() string {
+	return In(i18n.Locale()).NativeSequentialStatementUnknown()
+}
+
+// NativeSequentialStatementUnknown says "原生写入回执未知，禁止重放"
+// in the language of msgs.
+func (msgs Messages) NativeSequentialStatementUnknown() string {
+	return Catalog.Format(msgs.locale, "nativeSequentialStatementUnknown", nil)
+}
+
+// NativeSequentialStatementNotSent says "原生语句未发送"
+// in the language the app shows.
+func NativeSequentialStatementNotSent() string {
+	return In(i18n.Locale()).NativeSequentialStatementNotSent()
+}
+
+// NativeSequentialStatementNotSent says "原生语句未发送"
+// in the language of msgs.
+func (msgs Messages) NativeSequentialStatementNotSent() string {
+	return Catalog.Format(msgs.locale, "nativeSequentialStatementNotSent", nil)
+}

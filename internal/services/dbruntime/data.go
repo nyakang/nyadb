@@ -37,6 +37,10 @@ func mSessionData(s *session, r contract.DataRuntime) contract.DataRuntime {
 		p := *r.MutationPresentation
 		out.MutationPresentation = &p
 	}
+	if r.ReceiptPresentation != nil {
+		p := *r.ReceiptPresentation
+		out.ReceiptPresentation = &p
+	}
 	out.EditValueKinds = slices.Clone(r.EditValueKinds)
 	out.ExportFormats = append([]string(nil), r.ExportFormats...)
 	out.FilterColumns = cloneColumns(r.FilterColumns)

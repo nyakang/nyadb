@@ -259,7 +259,7 @@ func (s *State) consumeKeyPrefixDelete(services ui.Services, d *Document) {
 			complete := r.Err == nil && r.Saved != nil && r.Saved.CommitConfirmed && !r.Saved.CommitUncertain && !r.Saved.Incomplete && r.Saved.Applied == len(m.snapshot.Edits) && dataMutationReceiptComplete(m.object, m.snapshot.Edits, r.Saved)
 			original := s.validKeyPrefixDelete(d, m) && r.Generation == s.sessionFor(d).Generation && r.Profile == d.profileID && r.Request == d.edit.Request
 			if r.Saved != nil && r.Saved.NativeJSON != "" {
-				d.nativeReceipt.JSON = r.Saved.NativeJSON
+				s.rememberNativeWriteReceipt(d, r.Saved.NativeJSON, r.Saved.Sequential != nil)
 			}
 			historyErr := r.Err
 			if historyErr == nil && !complete {

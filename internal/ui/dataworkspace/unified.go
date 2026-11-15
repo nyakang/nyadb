@@ -88,6 +88,14 @@ func (s *State) OpenObject(id uint64, o contract.ObjectRef, c contract.Capabilit
 			bound.DocumentImportModes = slices.Clone(bound.DocumentImportModes)
 			bound.EditKinds = slices.Clone(bound.EditKinds)
 			bound.PreviewEditKinds = slices.Clone(bound.PreviewEditKinds)
+			if bound.MutationPresentation != nil {
+				p := *bound.MutationPresentation
+				bound.MutationPresentation = &p
+			}
+			if bound.ReceiptPresentation != nil {
+				p := *bound.ReceiptPresentation
+				bound.ReceiptPresentation = &p
+			}
 			bound.EditValueKinds = slices.Clone(bound.EditValueKinds)
 			bound.Capabilities = contract.BoundDataCapabilities(bound)
 			d.capabilities = contract.IntersectCapabilities(c, bound.Capabilities)

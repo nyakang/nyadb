@@ -231,7 +231,7 @@ func (s *State) consumeDataImportResult(services ui.Services, t *Document, resul
 	tr.Created, tr.ResultTable = imported.Created, result.Destination
 	tr.RowResults = append([]contract.DataImportRowResult(nil), imported.Rows...)
 	if imported.Saved != nil && imported.Saved.NativeJSON != "" {
-		t.nativeReceipt.JSON = imported.Saved.NativeJSON
+		s.rememberNativeWriteReceipt(t, imported.Saved.NativeJSON, imported.Saved.Sequential != nil)
 	}
 	if result.NewTable {
 		entry := result.CreationHistory

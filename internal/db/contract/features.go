@@ -107,9 +107,13 @@ type DataRuntime struct {
 	DocumentImportModes  []string            // Nil preserves document_replace/document_merge.
 	ImportDescription    func(string) string // Pure native request information for the captured mode.
 	WriteDescription     string
-	NativeReceipts       bool       // Synchronous native transaction evidence, including unknown outcomes.
-	EditKinds            []string   // Nil permits insert/update/delete; an explicit list limits native mutations.
-	EditValueKinds       []CellKind // Optional native editor kinds; nil retains the existing editor choices.
+	NativeReceipts       bool // Original synchronous write evidence, including unknown outcomes.
+	// SequentialWrites forbids resolving lost statement acknowledgements by
+	// reading subsequent state. A failed batch retains drafts and blocks replay.
+	SequentialWrites    bool
+	ReceiptPresentation *NativeWriteReceiptPresentation
+	EditKinds           []string   // Nil permits insert/update/delete; an explicit list limits native mutations.
+	EditValueKinds      []CellKind // Optional native editor kinds; nil retains the existing editor choices.
 	// InsertOmittedValues starts new rows with omitted fields rather than SQL
 	// DEFAULT. Generated fields remain read-only; only explicit values are sent.
 	InsertOmittedValues bool
@@ -196,9 +200,11 @@ type DataReads struct {
 }
 type DataReadsProvider interface{ DataReads() DataReads }
 type DataEdits struct {
-	NativeReceipts bool // Synchronous native transaction evidence, including unknown outcomes.
-	Saver          func(context.Context, int64, string, string, []DataEdit) (*DataEditResult, error)
-	Verify         func(context.Context, int64, string, string, *DataEditResult) (*DataVerification, error)
+	NativeReceipts      bool // Original synchronous write evidence, including unknown outcomes.
+	SequentialWrites    bool
+	ReceiptPresentation *NativeWriteReceiptPresentation
+	Saver               func(context.Context, int64, string, string, []DataEdit) (*DataEditResult, error)
+	Verify              func(context.Context, int64, string, string, *DataEditResult) (*DataVerification, error)
 }
 type DataEditsProvider interface{ DataEdits() DataEdits }
 type DataExports struct {
@@ -239,6 +245,11 @@ func ComposeData(s Session) DataRuntime {
 	if p, e := Require[DataEditsProvider](s); e == nil {
 		v := p.DataEdits()
 		r.NativeReceipts = v.NativeReceipts
+		r.SequentialWrites = v.SequentialWrites
+		if v.ReceiptPresentation != nil {
+			p := *v.ReceiptPresentation
+			r.ReceiptPresentation = &p
+		}
 		r.Saver = v.Saver
 		r.Verify = v.Verify
 	}

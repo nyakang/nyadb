@@ -248,7 +248,7 @@ func (s *State) consumeGraphTransfer(services ui.Services, d *Document, r mysqlD
 	if r.Write {
 		tr.GraphResult = contract.CloneGraphImportResult(r.GraphResult)
 		if r.GraphResult != nil && r.GraphResult.NativeJSON != "" {
-			d.nativeReceipt.JSON = r.GraphResult.NativeJSON
+			s.rememberNativeWriteReceipt(d, r.GraphResult.NativeJSON, false)
 		}
 		complete := !stale && r.Err == nil && graphImportReceiptComplete(tr.GraphSnapshot, r.GraphResult)
 		uncertain := stale || r.GraphResult != nil && r.GraphResult.OutcomeUnknown || r.Err == nil && !complete

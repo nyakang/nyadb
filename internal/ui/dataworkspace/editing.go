@@ -688,8 +688,19 @@ func (s *State) consumeEdits(services ui.Services) {
 			if r.Profile != s.sessionFor(t).ProfileID || r.Profile != t.profileID || r.Request != t.edit.Request {
 				continue
 			}
+			if r.Verification != nil && (s.runtimeFor(t).SequentialWrites || t.edit.Uncertain != nil && t.edit.Uncertain.Sequential != nil) {
+				// No later observation, including its error, receipt or session
+				// generation, may replace the original independent write evidence.
+				if t.edit.Cancel != nil {
+					t.edit.Cancel()
+				}
+				t.edit.Cancel, t.edit.Results, t.edit.Busy = nil, nil, false
+				t.edit.AsyncStatusActive, t.edit.AfterSave = false, nil
+				t.edit.Err = locales.Text("原生写入回执未知，禁止重放")
+				continue
+			}
 			if r.Saved != nil && r.Saved.NativeJSON != "" {
-				t.nativeReceipt.JSON = r.Saved.NativeJSON
+				s.rememberNativeWriteReceipt(t, r.Saved.NativeJSON, r.Saved.Sequential != nil)
 			}
 			historyErr := r.Err
 			if historyErr == nil && len(r.MutationEdits) > 0 && !dataMutationReceiptComplete(t.object, r.MutationEdits, r.Saved) {
@@ -703,7 +714,7 @@ func (s *State) consumeEdits(services ui.Services) {
 			t.edit.Results = nil
 			t.edit.Busy = false
 			t.edit.AsyncStatusActive = false
-			if r.Saved != nil && r.Saved.Async != nil {
+			if r.Saved != nil && r.Saved.Async != nil && r.Saved.Sequential == nil && !s.runtimeFor(t).SequentialWrites {
 				observation := *r.Saved.Async
 				t.edit.LastAsync = &observation
 			}
@@ -723,7 +734,7 @@ func (s *State) consumeEdits(services ui.Services) {
 				}
 				continue
 			}
-			if r.Err == nil && r.Saved != nil && r.Saved.Async != nil && !r.Saved.CommitConfirmed {
+			if r.Err == nil && r.Saved != nil && r.Saved.Async != nil && r.Saved.Sequential == nil && !s.runtimeFor(t).SequentialWrites && !r.Saved.CommitConfirmed {
 				t.edit.AsyncStatusActive = true
 				t.edit.Uncertain = cloneEditResult(r.Saved)
 				observation := *r.Saved.Async
@@ -753,9 +764,12 @@ func (s *State) consumeEdits(services ui.Services) {
 					s.guardDoc = nil
 				}
 				t.edit.AfterSave = nil
-				if r.Saved != nil && (r.Saved.CommitUncertain || r.Saved.Incomplete) {
-					t.edit.Uncertain = r.Saved
-					t.edit.UncertainKeys = r.Keys
+				if r.Saved != nil && (r.Saved.CommitUncertain || r.Saved.Incomplete || r.Saved.Sequential != nil) || s.runtimeFor(t).SequentialWrites && len(r.Keys) > 0 {
+					t.edit.Uncertain = cloneEditResult(r.Saved)
+					if t.edit.Uncertain == nil {
+						t.edit.Uncertain = &contract.DataEditResult{CommitUncertain: true, Incomplete: true}
+					}
+					t.edit.UncertainKeys = append([]string(nil), r.Keys...)
 					if !t.portable() && !(t.capabilities.Documents || t.capabilities.KeyValues) {
 						s.verifyMySQLDataSave(services, t)
 					}
@@ -820,7 +834,7 @@ func (s *State) consumeEdits(services ui.Services) {
 				s.openMySQLCellEditor(services, t, row, source, v, r.Dedicated)
 				continue
 			}
-			if r.Saved == nil || r.Saved.CommitUncertain || r.Saved.Incomplete || len(r.Saved.Outcomes) != len(r.Keys) || len(r.MutationEdits) > 0 && !dataMutationCommitted(t, r.Keys, r.MutationEdits, r.Saved) {
+			if r.Saved == nil || r.Saved.CommitUncertain || r.Saved.Incomplete || len(r.Saved.Outcomes) != len(r.Keys) || r.Saved.Sequential != nil && len(r.MutationEdits) == 0 || len(r.MutationEdits) > 0 && !dataMutationCommitted(t, r.Keys, r.MutationEdits, r.Saved) {
 				t.edit.Uncertain = cloneEditResult(r.Saved)
 				if t.edit.Uncertain == nil {
 					t.edit.Uncertain = &contract.DataEditResult{}
@@ -1247,6 +1261,9 @@ func samePreview(a, b contract.DataCell) bool {
 	return reflect.DeepEqual(a.Value, b.Value)
 }
 func (s *State) verifierFor(d *Document) Verifier {
+	if s.runtimeFor(d).SequentialWrites || d != nil && d.edit.Uncertain != nil && d.edit.Uncertain.Sequential != nil {
+		return nil
+	}
 	if s.Verify != nil {
 		return s.Verify
 	}

@@ -4314,5 +4314,13 @@
   "rqliteClearSemantics": "Clear all rows in a transaction while preserving the table schema, indexes, and triggers.",
   "rqliteClearEffects": "Delete triggers and foreign-key cascades run and may modify other tables in this database. Any failed step rolls back the transaction.",
   "rqliteClearKeepIdentity": "When unchecked, identity values are not explicitly reset. Existing triggers can still change identity values.",
-  "rqliteClearResetIdentity": "Reset identity"
+  "rqliteClearResetIdentity": "Reset identity",
+  "nativeSequentialWriteReceipt": "Native sequential write receipt",
+  "nativeSequentialWriteReceiptJSON": "Native sequential write receipt JSON",
+  "nativeSequentialWriteReceiptHint": "Each statement writes independently. Acknowledged earlier writes remain after a later failure. Unknown receipts prohibit replay; later reads cannot replace original acknowledgements.",
+  "nativeSequentialWriteCloseHint": "Closing discards local drafts and native receipts. Acknowledged writes remain; unknown writes are never resent. Copy or export the receipts you need first.",
+  "nativeSequentialStatementAcknowledged": "Native statement acknowledged (no batch transaction)",
+  "nativeSequentialStatementFailed": "Native statement failed; earlier acknowledged writes remain",
+  "nativeSequentialStatementUnknown": "Native write receipt unknown; replay prohibited",
+  "nativeSequentialStatementNotSent": "Native statement not sent"
 }

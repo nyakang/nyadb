@@ -68,6 +68,7 @@ func cloneEditResult(result *contract.DataEditResult) *contract.DataEditResult {
 		return nil
 	}
 	out := *result
+	out.Sequential = contract.CloneDataSequentialWriteReceipt(result.Sequential)
 	if result.Async != nil {
 		observation := *result.Async
 		out.Async = &observation

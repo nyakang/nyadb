@@ -4314,5 +4314,13 @@
   "rqliteClearSemantics": "事务清空所有行；保留表结构、索引和触发器。",
   "rqliteClearEffects": "删除触发器和外键级联会执行，可能修改同库其他表；任一步失败则回滚。",
   "rqliteClearKeepIdentity": "不勾选时不主动重置自增值；原触发器的自增行为仍会执行。",
-  "rqliteClearResetIdentity": "重置自增值"
+  "rqliteClearResetIdentity": "重置自增值",
+  "nativeSequentialWriteReceipt": "原生顺序写入回执",
+  "nativeSequentialWriteReceiptJSON": "原生顺序写入回执 JSON",
+  "nativeSequentialWriteReceiptHint": "各语句独立写入；已确认的前缀会保留，后续失败不会回滚。未知回执禁止重放，后续读取不能替代原始确认。",
+  "nativeSequentialWriteCloseHint": "关闭会丢弃本地草稿与原生回执；已确认的写入会保留，未知写入不会重发。请先复制或导出所需回执。",
+  "nativeSequentialStatementAcknowledged": "原生语句已确认（无批次事务）",
+  "nativeSequentialStatementFailed": "原生语句失败；先前已确认的写入已保留",
+  "nativeSequentialStatementUnknown": "原生写入回执未知，禁止重放",
+  "nativeSequentialStatementNotSent": "原生语句未发送"
 }

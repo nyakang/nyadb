@@ -69,6 +69,7 @@ type dataMutationState struct {
 	ctx                 context.Context
 	open                bool
 	presentation        *contract.DataMutationPresentation
+	sequential          bool
 }
 
 func requiresDataMutationPreview(r Runtime, edits []contract.DataEdit) bool {
@@ -102,7 +103,7 @@ func (s *State) previewDataMutation(services ui.Services, d *Document, runtime R
 	captured := contract.CloneDataMutationSnapshot(contract.DataMutationSnapshot{Edits: edits}).Edits
 	d.mutation = dataMutationState{ticket: ticket, results: out, keys: slices.Clone(keys), edits: captured,
 		object: d.object, profile: d.profileID, generation: s.sessionFor(d).Generation, request: d.edit.Request,
-		submit: runtime.SubmitEdits, ctx: ctx}
+		submit: runtime.SubmitEdits, ctx: ctx, sequential: runtime.SequentialWrites}
 	if runtime.MutationPresentation != nil {
 		p := *runtime.MutationPresentation
 		d.mutation.presentation = &p
@@ -278,6 +279,7 @@ func (s *State) confirmDataMutation(services ui.Services, d *Document) {
 	edits := contract.CloneDataMutationSnapshot(contract.DataMutationSnapshot{Edits: m.edits}).Edits
 	keys, generation, request := slices.Clone(m.keys), m.generation, m.request
 	snapshot, object := m.snapshot, m.object
+	sequential := m.sequential
 	m.plan = nil
 	s.releaseDataMutation(d)
 	d.mutation.snapshot = snapshot
@@ -297,7 +299,12 @@ func (s *State) confirmDataMutation(services ui.Services, d *Document) {
 		started := time.Now()
 		result, err := submit(ctx, profile, database, table, plan)
 		_ = plan.Close()
-		contract.CompleteActivity(complete, dataMutationActivityOutcome(err, object, edits, result))
+		activity := dataMutationActivityOutcome(err, object, edits, result)
+		if sequential && (result == nil || result.Sequential == nil) {
+			activity.State, activity.AffectedRows = "uncertain", 0
+			activity.Error = locales.Text("返回结果不完整")
+		}
+		contract.CompleteActivity(complete, activity)
 		for i := range history {
 			history[i].At, history[i].Duration = time.Now(), time.Since(started)
 		}
@@ -307,15 +314,23 @@ func (s *State) confirmDataMutation(services ui.Services, d *Document) {
 	}()
 }
 
-// Only actual commit confirmation and completely corresponding outcomes may
+// Only original write acknowledgement and completely corresponding outcomes
 // authorize generated identities or row removal. Observation cannot fill gaps.
 func dataMutationCommitted(d *Document, keys []string, edits []contract.DataEdit, result *contract.DataEditResult) bool {
+	if d.boundRuntime != nil && d.boundRuntime.SequentialWrites && (result == nil || result.Sequential == nil) {
+		return false
+	}
 	return dataMutationDraftsMatch(d, keys, edits) && dataMutationReceiptComplete(d.object, edits, result)
 }
 
 func dataMutationReceiptComplete(object contract.ObjectRef, edits []contract.DataEdit, result *contract.DataEditResult) bool {
-	if result == nil || !result.CommitConfirmed || result.CommitUncertain || result.Incomplete || len(result.Outcomes) != len(edits) || result.Applied != len(edits) {
+	if !contract.DataWriteComplete(result, len(edits)) || len(result.Outcomes) != len(edits) || result.Applied != len(edits) {
 		return false
+	}
+	if result.Sequential != nil {
+		if !dataMutationSequentialOriginalMatches(object, edits, result) {
+			return false
+		}
 	}
 	for i, outcome := range result.Outcomes {
 		edit := edits[i]
@@ -326,6 +341,23 @@ func dataMutationReceiptComplete(object contract.ObjectRef, edits []contract.Dat
 			if outcome.Saved == nil || outcome.Saved.Ref.Object != object || len(outcome.Saved.Ref.Columns) == 0 || len(outcome.Saved.Ref.Columns) != len(outcome.Saved.Ref.TypedValues) || len(outcome.Saved.Ref.Columns) != len(outcome.Saved.Ref.Values) {
 				return false
 			}
+		}
+	}
+	return true
+}
+
+func dataMutationSequentialOriginalMatches(object contract.ObjectRef, edits []contract.DataEdit, result *contract.DataEditResult) bool {
+	if _, valid := contract.SequentialDataWriteProgress(result, len(edits)); !valid || result.Sequential.Object != object {
+		return false
+	}
+	for i, statement := range result.Sequential.Statements {
+		if statement.Kind != edits[i].Kind {
+			return false
+		}
+	}
+	for i, outcome := range result.Outcomes {
+		if outcome.Kind != edits[i].Kind || !reflect.DeepEqual(outcome.Original, edits[i].Original) {
+			return false
 		}
 	}
 	return true
@@ -434,7 +466,21 @@ func dataMutationPreview(raw string) string {
 
 func dataMutationActivityOutcome(err error, object contract.ObjectRef, edits []contract.DataEdit, result *contract.DataEditResult) contract.ActivityResult {
 	outcome := dataActivityOutcome(err, result, len(edits), false)
+	if result != nil && result.Sequential != nil && !dataMutationSequentialOriginalMatches(object, edits, result) {
+		outcome.State, outcome.AffectedRows = "uncertain", 0
+		outcome.Error = locales.Text("提交结果不完整，请核验数据库")
+		return outcome
+	}
 	if err == nil && !dataMutationReceiptComplete(object, edits, result) {
+		if result != nil && result.Sequential != nil {
+			if contract.DataWriteComplete(result, len(edits)) {
+				// An acknowledged batch with unrelated row outcomes cannot be
+				// attributed to these edits or authorize the original grid.
+				outcome.State, outcome.AffectedRows = "partial", 0
+			}
+			outcome.Error = locales.Text("提交结果不完整，请核验数据库")
+			return outcome
+		}
 		outcome.State, outcome.AffectedRows = "partial", 0
 		if result == nil || !result.CommitConfirmed || result.CommitUncertain {
 			outcome.State = "uncertain"

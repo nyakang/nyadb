@@ -227,7 +227,7 @@ func (s *State) consumeStreamedDataImport(services ui.Services, t *Document, r m
 	tr.ResultTable = r.Destination
 	tr.RowResults = slices.Clone(result.Rows)
 	if result.LastReceipt != nil {
-		t.nativeReceipt.JSON = result.LastReceipt.NativeJSON
+		s.rememberNativeWriteReceipt(t, result.LastReceipt.NativeJSON, false)
 	}
 	tr.Uncertain = stale || result.CreationUncertain || result.CommitUncertain || r.Err == nil && (!result.Committed || result.Progress.Processed != r.TotalRows) || result.Committed && r.Err != nil
 	if tr.Uncertain {

@@ -15,12 +15,21 @@ func TestBoundDataEditKindsOwnsProviderModeSnapshot(t *testing.T) {
 	lease.runtime.Saver = func(context.Context, int64, string, string, []contract.DataEdit) (*contract.DataEditResult, error) {
 		return nil, nil
 	}
+	lease.runtime.SequentialWrites = true
+	lease.runtime.ReceiptPresentation = &contract.NativeWriteReceiptPresentation{Title: "original receipt"}
+	lease.runtime.MutationPresentation = &contract.DataMutationPresentation{Title: "original confirmation"}
 	s := New(Dependencies{Session: func() Session { return Session{ProfileID: 12, Generation: 1, Connected: true} }, Runtime: func() Runtime {
 		return Runtime{ReserveDocument: func(contract.ObjectRef) (contract.DataDocumentLease, error) { return lease, nil }}
 	}})
 	defer s.CloseAll()
 	object := contract.NamespaceRef{ProfileID: 12, Catalog: "original"}.Object("label", "owned")
 	d := s.OpenObject(1, object, lease.runtime.Capabilities)
+	lease.runtime.SequentialWrites = false
+	lease.runtime.ReceiptPresentation.Title = "later receipt"
+	lease.runtime.MutationPresentation.Title = "later confirmation"
+	if !d.boundRuntime.SequentialWrites || d.boundRuntime.ReceiptPresentation.Title != "original receipt" || d.boundRuntime.MutationPresentation.Title != "original confirmation" {
+		t.Fatal("original document followed later write semantics or presentation")
+	}
 	lease.runtime.EditKinds[0] = "delete"
 	lease.runtime.PreviewEditKinds[0] = "changed"
 	if d.boundRuntime.PreviewEditKinds[0] != "delete" {

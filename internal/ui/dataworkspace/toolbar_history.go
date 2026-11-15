@@ -288,6 +288,39 @@ func (s *State) recordDataWriteHistory(t *Document, entries []mysqlDataHistoryEn
 	if len(entries) == 0 {
 		return
 	}
+	if result != nil && result.Sequential != nil {
+		progress, valid := contract.SequentialDataWriteProgress(result, len(entries))
+		valid = valid && result.Sequential.Object == t.object
+		for i, entry := range entries {
+			entry.Rows, entry.Failed = 0, true
+			if !valid {
+				entry.Message = locales.Text("返回结果不完整")
+			} else {
+				statement := result.Sequential.Statements[i]
+				switch statement.State {
+				case contract.DataWriteAcknowledged:
+					entry.Message, entry.Failed = locales.Text("原生语句已确认（无批次事务）"), false
+					entry.Rows = int(min(statement.AffectedRows, int64(int(^uint(0)>>1))))
+				case contract.DataWriteFailed:
+					entry.Message = locales.Text("原生语句失败；先前已确认的写入已保留")
+				case contract.DataWriteUnknown:
+					entry.Message = locales.Text("原生写入回执未知，禁止重放")
+				case contract.DataWriteNotSent:
+					entry.Message = locales.Text("原生语句未发送")
+				}
+			}
+			if stale {
+				entry.Message += " · " + locales.Text("会话已失效")
+			}
+			// This history retains original statement acknowledgements even
+			// when the grid must keep drafts after a partial or stale batch.
+			if valid && progress.Complete && err != nil {
+				entry.Message += " · " + mysqlDataHistoryError(err, false, false, result.CommitUncertain)
+			}
+			s.appendDataHistory(t, entry)
+		}
+		return
+	}
 	if !stale && err == nil && result != nil && result.Async != nil && !result.CommitConfirmed {
 		for _, entry := range entries {
 			entry.Message, entry.Rows, entry.Failed = asyncDataWriteStatus(result), 0, false

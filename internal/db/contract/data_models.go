@@ -229,9 +229,12 @@ type DataEditOutcome struct {
 }
 
 type DataEditResult struct {
-	// NativeJSON is an owned, bounded native transaction receipt. Statement
-	// completion inside it does not imply that the surrounding commit succeeded.
+	// NativeJSON is an owned, bounded original write receipt. Statement
+	// completion does not imply that a surrounding transaction committed.
 	NativeJSON string
+	// Sequential retains independent, original statement acknowledgements.
+	// Such a batch has no transaction commit; CommitConfirmed stays false.
+	Sequential *DataSequentialWriteReceipt
 	// Async preserves native admission separately from completion. Drafts must
 	// remain blocked until Verify explicitly observes this original admission.
 	Async                *DataWriteObservation
