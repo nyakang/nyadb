@@ -318,6 +318,9 @@ func Run() error {
 				title = locales.Text("导入 H2 驱动包")
 				filters = []mygo.FileFilter{{Name: "NyaDB driver packages", Extensions: []string{"zip"}}}
 			}
+			if kind == shell.H2TLSCAFile {
+				title = locales.Text("选择 H2 TLS CA 证书")
+			}
 			go func() {
 				var paths []string
 				var err error

@@ -43225,3 +43225,33 @@ func H2SharedFileModeHint() string { return In(i18n.Locale()).H2SharedFileModeHi
 func (msgs Messages) H2SharedFileModeHint() string {
 	return Catalog.Format(msgs.locale, "h2SharedFileModeHint", nil)
 }
+
+// H2TLSCA says "H2 TLS CA 证书："
+// in the language the app shows.
+func H2TLSCA() string { return In(i18n.Locale()).H2TLSCA() }
+
+// H2TLSCA says "H2 TLS CA 证书："
+// in the language of msgs.
+func (msgs Messages) H2TLSCA() string {
+	return Catalog.Format(msgs.locale, "h2TLSCA", nil)
+}
+
+// H2ChooseTLSCA says "选择 H2 TLS CA 证书"
+// in the language the app shows.
+func H2ChooseTLSCA() string { return In(i18n.Locale()).H2ChooseTLSCA() }
+
+// H2ChooseTLSCA says "选择 H2 TLS CA 证书"
+// in the language of msgs.
+func (msgs Messages) H2ChooseTLSCA() string {
+	return Catalog.Format(msgs.locale, "h2ChooseTLSCA", nil)
+}
+
+// H2TLSVerificationHint says "TLS 校验证书链和原主机名；CA 留空时使用系统信任证书。"
+// in the language the app shows.
+func H2TLSVerificationHint() string { return In(i18n.Locale()).H2TLSVerificationHint() }
+
+// H2TLSVerificationHint says "TLS 校验证书链和原主机名；CA 留空时使用系统信任证书。"
+// in the language of msgs.
+func (msgs Messages) H2TLSVerificationHint() string {
+	return Catalog.Format(msgs.locale, "h2TLSVerificationHint", nil)
+}

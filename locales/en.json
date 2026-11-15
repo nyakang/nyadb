@@ -4241,5 +4241,8 @@
   "h2ImportPackageDialog": "Import H2 driver package",
   "h2CreateDatabaseFile": "Create H2 database file",
   "h2SharedFileConnections": "Share local file connections",
-  "h2SharedFileModeHint": "Shared mode lets multiple connections open the same file. Read-only connections use exclusive mode."
+  "h2SharedFileModeHint": "Shared mode lets multiple connections open the same file. Read-only connections use exclusive mode.",
+  "h2TLSCA": "H2 TLS CA certificate:",
+  "h2ChooseTLSCA": "Select H2 TLS CA certificate",
+  "h2TLSVerificationHint": "TLS verifies the certificate chain and original host name. Leave CA empty to use system trust certificates."
 }

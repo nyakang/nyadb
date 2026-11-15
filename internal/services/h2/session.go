@@ -43,6 +43,7 @@ type Session struct {
 	active                  sync.WaitGroup
 	closeOnce               sync.Once
 	closeErr                error
+	transport               *tlsProxy
 	slots                   chan struct{}
 	metadataSlots           chan struct{}
 }
@@ -81,6 +82,22 @@ func (p Provider) Open(ctx context.Context, profile connections.Profile, passwor
 		_ = lease.Close()
 		return nil, ErrDriver
 	}
+	var transport *tlsProxy
+	connector := profile
+	if a.Mode == "ssl" {
+		transport, err = startTLSProxy(openCtx, profile)
+		if err != nil {
+			_ = lease.Close()
+			return nil, err
+		}
+		defer func() {
+			if transport != nil {
+				transport.Close()
+			}
+		}()
+		connector.Host, connector.Port = transport.endpoint()
+		connector.H2Options.Mode, connector.H2Options.TLSCAFile = "tcp", ""
+	}
 	driverProfile := a.DriverProfile
 	if driverProfile == "h2-legacy" {
 		driverProfile = "h2-v2"
@@ -90,7 +107,7 @@ func (p Provider) Open(ctx context.Context, profile connections.Profile, passwor
 		_ = lease.Close()
 		return nil, safeError(err)
 	}
-	params := map[string]any{"database": profile.Database, "connection_string": connectionURL(profile), "username": profile.Username, "password": password, "driver_profile": a.DriverProfile, "sessionRole": "workload"}
+	params := map[string]any{"database": profile.Database, "connection_string": connectionURL(connector), "username": profile.Username, "password": password, "driver_profile": a.DriverProfile, "sessionRole": "workload"}
 	workloadParams, err := json.Marshal(params)
 	if err != nil {
 		r.Close()
@@ -103,7 +120,7 @@ func (p Provider) Open(ctx context.Context, profile connections.Profile, passwor
 		return nil, connections.ErrInvalid
 	}
 	root, stop := context.WithCancel(context.Background())
-	s := &Session{profile: profile, runtime: r, params: workloadParams, metadataParams: metadataParams, ctx: root, cancel: stop, slots: make(chan struct{}, a.MaxConnections-a.MetadataReserve), metadataSlots: make(chan struct{}, max(1, a.MetadataReserve)), scope: rand.Text()}
+	s := &Session{profile: profile, runtime: r, transport: transport, params: workloadParams, metadataParams: metadataParams, ctx: root, cancel: stop, slots: make(chan struct{}, a.MaxConnections-a.MetadataReserve), metadataSlots: make(chan struct{}, max(1, a.MetadataReserve)), scope: rand.Text()}
 	s.queries, err = agentbridge.NewQueryPool(r.Client, s.params, agentbridge.QueryConfig{InitializeSQL: "SET SCHEMA " + quote(a.DefaultSchema), DefaultSchema: a.DefaultSchema, MaxLeases: a.SQLMaxConnections, MaxRows: 10000, TimeoutSeconds: a.QueryTimeoutSeconds, Split: sqltext.SplitPortable, Decoder: decodeValue, AcquireConnection: s.acquireWorkload})
 	if err == nil {
 		err = s.withMetadata(openCtx, func(child context.Context, session *agentbridge.Session) error {
@@ -128,6 +145,7 @@ func (p Provider) Open(ctx context.Context, profile connections.Profile, passwor
 		}
 		return nil, safeError(err)
 	}
+	transport = nil // Ownership moves to the original session only after initialization.
 	return s, nil
 }
 
@@ -205,6 +223,7 @@ func (s *Session) Close() error {
 			s.queries.Close()
 		}
 		s.closeErr = s.runtime.Close()
+		s.transport.Close()
 		s.active.Wait()
 		s.mu.Lock()
 		s.params = nil

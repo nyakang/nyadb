@@ -18,6 +18,33 @@ func h2UnitDriver(t *testing.T) connections.ManagedDriver {
 	return connections.ManagedDriver{Key: "h2", Version: "owned", SHA256: strings.Repeat("a", 64), Directory: t.TempDir(), Profiles: []string{"h2-v1", "h2-v2", "h2-v3"}}
 }
 
+func TestH2TLSTrustPickerAndURIRemainWithOriginalForm(t *testing.T) {
+	s := New(Dependencies{})
+	t.Cleanup(s.Close)
+	if err := s.OpenNew(connections.H2, ""); err != nil {
+		t.Fatal(err)
+	}
+	s.setH2Mode("ssl")
+	ca := filepath.Join(t.TempDir(), "original.pem")
+	s.SelectEngineFile(H2TLSCAFile, -1, s.EngineFileVersion(), ca)
+	if s.connectionDraft.H2Options.TLSCAFile != ca {
+		t.Fatal("TLS roots picker lost original path")
+	}
+	s.BeginURIFromEditor()
+	if err := s.ImportURI("jdbc:h2:ssl://127.0.0.1/owned"); err != nil {
+		t.Fatal(err)
+	}
+	if s.connectionDraft.H2Options.TLSCAFile != ca {
+		t.Fatal("same TLS form URI discarded explicit trust")
+	}
+	old := s.EngineFileVersion()
+	s.setH2Mode("tcp")
+	s.SelectEngineFile(H2TLSCAFile, -1, old, ca)
+	if s.connectionDraft.H2Options.TLSCAFile != "" {
+		t.Fatal("stale TLS picker contaminated a plain connection")
+	}
+}
+
 func TestH2EditorSavesOriginalFilePinAndVaultAndPreservesOnRollback(t *testing.T) {
 	s, _, service, _ := profileTestState(t)
 	d := h2UnitDriver(t)

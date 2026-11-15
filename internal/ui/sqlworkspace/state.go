@@ -139,6 +139,7 @@ type Document struct {
 }
 
 func (d *Document) ProfileID() int64 { return d.profileID }
+func (d *Document) Preparing() bool  { return d.prepareResults != nil }
 func (d *Document) Database() string { return d.database }
 func (d *Document) QueryID() string  { return d.queryID }
 func (d *Document) Loading() bool {

@@ -71,3 +71,26 @@ func TestH2ProfileRestartDuplicateAndStrictEnvelope(t *testing.T) {
 		t.Fatal("foreign null H2 envelope accepted by SQLite")
 	}
 }
+
+func TestH2TLSRootsSurviveProfileStorageRestart(t *testing.T) {
+	store, path, db := openStore(t)
+	p, _ := connections.Defaults(connections.H2)
+	p.Name, p.Host, p.Port, p.Database = "H2 TLS original", "127.0.0.1", 9092, "owned"
+	p.H2Options.Mode, p.H2Options.AutoServer, p.H2Options.TLSCAFile = "ssl", false, filepath.Join(t.TempDir(), "original.pem")
+	saved, err := store.Create(context.Background(), p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	got, err := NewProfileStore(reopened).Get(context.Background(), saved.ID)
+	if err != nil || got.H2Options != p.H2Options || got.Host != p.Host {
+		t.Fatal("TLS profile lost original roots or host", err)
+	}
+}

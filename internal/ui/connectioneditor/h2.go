@@ -57,6 +57,9 @@ func (s *State) setH2Mode(mode string) {
 	p.H2Options.Mode = mode
 	p.H2Options.ReadOnly = false
 	p.H2Options.AutoServer = mode == "file"
+	if mode != "ssl" {
+		p.H2Options.TLSCAFile = ""
+	}
 	if mode == "memory" {
 		p.Host, p.Port, s.connectionPort, p.Database = "", 0, "", "nyadb"
 		p.H2Options.RequireExisting = false
@@ -103,6 +106,15 @@ func (s *State) editorH2Fields(c *ui.Context, labelWidth, fieldWidth float32) {
 	if a.Mode == "tcp" || a.Mode == "ssl" {
 		s.editorInputRow(c, "主机：", "主机", &p.Host, labelWidth, fieldWidth)
 		s.editorInputRow(c, "端口：", "端口", &s.connectionPort, labelWidth, 100)
+	}
+	if a.Mode == "ssl" {
+		theme.Field(c, locales.Text("H2 TLS CA 证书："), func() {
+			ui.Row(c).Gap(connectionFormBrowseGap).AlignItems(ui.Center).Children(func() {
+				s.formTextInput(c, &a.TLSCAFile, "H2 TLS CA 证书", fieldWidth-connectionFormBrowseGap-connectionFormBrowseSize, false, false)
+				connectionFormBrowse(c, "选择 H2 TLS CA 证书", s.engineFilePicker == nil, func() { s.engineFilePicker(H2TLSCAFile, -1, s.engineFileVersion) })
+			})
+		})
+		ui.Text(c, locales.Text("TLS 校验证书链和原主机名；CA 留空时使用系统信任证书。")).Width(fieldWidth).FontSize(theme.Font(c, 11)).TextColor(theme.Colors(c).Muted)
 	}
 	theme.Field(c, locales.Text("数据库："), func() {
 		if a.Mode == "file" {

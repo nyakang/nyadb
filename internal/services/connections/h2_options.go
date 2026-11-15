@@ -29,6 +29,7 @@ type H2Options struct {
 	ReadOnly                    bool   `json:"read_only,omitempty"`
 	RequireExisting             bool   `json:"require_existing,omitempty"`
 	AutoServer                  bool   `json:"auto_server,omitempty"` // Mixed mode for writable local files only.
+	TLSCAFile                   string `json:"tls_ca_file,omitempty"` // Optional PEM roots; TLS always verifies the original host.
 }
 
 func DefaultH2Options() H2Options {
@@ -84,6 +85,9 @@ func NormalizeH2Options(a H2Options) (H2Options, error) {
 		return invalid()
 	}
 	if a.AutoServer && (a.Mode != "file" || a.ReadOnly) {
+		return invalid()
+	}
+	if a.TLSCAFile != "" && (a.Mode != "ssl" || !filepath.IsAbs(a.TLSCAFile) || !utf8.ValidString(a.TLSCAFile) || len(a.TLSCAFile) > 4096 || strings.ContainsAny(a.TLSCAFile, "\x00\r\n")) {
 		return invalid()
 	}
 	if a.RequireExisting && a.Mode == "memory" {

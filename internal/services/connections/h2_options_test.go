@@ -48,6 +48,7 @@ func TestH2RejectsURLInjectionForeignSettingsAndIncompleteDriverPins(t *testing.
 		{"relative driver store", func(p *connections.Profile) { p.H2Options.DriverDirectory = "relative" }},
 		{"custom launch profile", func(p *connections.Profile) { p.H2Options.DriverProfile = "custom-executable" }},
 		{"foreign tls", func(p *connections.Profile) { p.TLSMode = "disable" }},
+		{"TLS trust outside TLS mode", func(p *connections.Profile) { p.H2Options.TLSCAFile = filepath.Join(t.TempDir(), "ca.pem") }},
 		{"foreign engine", func(p *connections.Profile) { p.Kind = connections.MySQL }},
 		{"excessive pool", func(p *connections.Profile) { p.H2Options.MaxConnections = 10000 }},
 		{"native pool upper bound", func(p *connections.Profile) { p.H2Options.MaxConnections = 33 }},
@@ -65,6 +66,24 @@ func TestH2RejectsURLInjectionForeignSettingsAndIncompleteDriverPins(t *testing.
 				t.Fatal("invalid original H2 settings admitted")
 			}
 		})
+	}
+}
+
+func TestH2TLSCAPathPreservesExplicitRootsAndRejectsMalformedPaths(t *testing.T) {
+	a := connections.DefaultH2Options()
+	a.Mode, a.AutoServer = "ssl", false
+	for _, path := range []string{"", filepath.Join(t.TempDir(), "original CA.pem")} {
+		a.TLSCAFile = path
+		got, err := connections.NormalizeH2Options(a)
+		if err != nil || got != a {
+			t.Fatal("original TLS roots changed", err)
+		}
+	}
+	for _, path := range []string{"relative.pem", filepath.Join(t.TempDir(), "bad\nname.pem")} {
+		a.TLSCAFile = path
+		if _, err := connections.NormalizeH2Options(a); err == nil {
+			t.Fatal("invalid TLS roots path admitted")
+		}
 	}
 }
 

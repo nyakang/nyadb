@@ -67,6 +67,9 @@ func (s *State) ImportURI(raw string) error {
 			s.connectionDraft.H2Options.DriverVersion = original.H2Options.DriverVersion
 			s.connectionDraft.H2Options.DriverSHA256 = original.H2Options.DriverSHA256
 			s.connectionDraft.H2Options.DriverDirectory = original.H2Options.DriverDirectory
+			if original.H2Options.Mode == "ssl" && parsed.Profile.H2Options.Mode == "ssl" {
+				s.connectionDraft.H2Options.TLSCAFile = original.H2Options.TLSCAFile
+			}
 		}
 	}
 	s.connectionDraft.GroupName = group

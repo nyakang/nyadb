@@ -4241,5 +4241,8 @@
   "h2ImportPackageDialog": "导入 H2 驱动包",
   "h2CreateDatabaseFile": "创建 H2 数据库文件",
   "h2SharedFileConnections": "共享本地文件连接",
-  "h2SharedFileModeHint": "共享模式允许多个连接打开同一文件；只读连接使用独占模式。"
+  "h2SharedFileModeHint": "共享模式允许多个连接打开同一文件；只读连接使用独占模式。",
+  "h2TLSCA": "H2 TLS CA 证书：",
+  "h2ChooseTLSCA": "选择 H2 TLS CA 证书",
+  "h2TLSVerificationHint": "TLS 校验证书链和原主机名；CA 留空时使用系统信任证书。"
 }
