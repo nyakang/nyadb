@@ -173,11 +173,25 @@ func buildSchemaRebuildProgram(original contract.SchemaDesignSnapshot, desired s
 			p.changeSQL = append(p.changeSQL, "DROP VIEW main."+schemaddl.Quote(e.Name))
 		}
 	}
+	// Every original row is already saved. Ignore automatic FK UPDATE actions
+	// only while emptying the tables, so SET NULL/DEFAULT cycles cannot violate
+	// immediate value constraints. Full restored values and the FK graph are
+	// checked before deferred counters are cleared. Original programs are off.
+	var suspend []string
+	for i, r := range p.tables {
+		if r.table.Name == "sqlite_sequence" {
+			continue
+		}
+		name := schemaddl.Quote(fmt.Sprintf("%s_suspend_fk_%d", stem, i))
+		p.changeSQL = append(p.changeSQL, "CREATE TEMP TRIGGER "+name+" BEFORE UPDATE ON "+r.source+" BEGIN SELECT RAISE(IGNORE); END")
+		suspend = append(suspend, "DROP TRIGGER temp."+name)
+	}
 	for _, r := range schemaRebuildDeleteOrder(p.tables) {
 		if r.table.Name != "sqlite_sequence" {
 			p.changeSQL = append(p.changeSQL, "DELETE FROM "+r.source)
 		}
 	}
+	p.changeSQL = append(p.changeSQL, suspend...)
 	create, err := schemaddl.CreateSQLite(desired, "main", desired.Name)
 	if err != nil {
 		return nil, err

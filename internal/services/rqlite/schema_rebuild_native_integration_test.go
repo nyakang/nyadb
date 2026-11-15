@@ -62,9 +62,29 @@ func (m *rebuildReceiptMutation) RoundTrip(r *http.Request) (*http.Response, err
 			}
 			result["values"], _ = json.Marshal(rows)
 		}
-		if len(columns) == 4 && columns[0] == "original_rows" && m.mode == "writer-label" {
+		if len(columns) == 8 && columns[0] == "original_rows" && m.mode == "writer-label" {
 			columns[1] = "foreign_writer"
 			result["columns"], _ = json.Marshal(columns)
+		}
+		if len(columns) == 8 && columns[0] == "original_rows" && m.mode == "writer-frame" {
+			var rows [][]json.RawMessage
+			_ = json.Unmarshal(result["values"], &rows)
+			if len(rows) == 1 {
+				if string(rows[0][1]) == "1" {
+					rows[0][1] = json.RawMessage("0")
+				} else {
+					rows[0][1] = json.RawMessage("1")
+				}
+			}
+			result["values"], _ = json.Marshal(rows)
+		}
+		if len(columns) == 8 && columns[0] == "original_rows" && m.mode == "row-count-frame" {
+			var rows [][]json.RawMessage
+			_ = json.Unmarshal(result["values"], &rows)
+			if len(rows) == 1 {
+				rows[0][0] = json.RawMessage("2")
+			}
+			result["values"], _ = json.Marshal(rows)
 		}
 		if len(columns) == 6 && columns[0] == "type_hex" && m.mode == "missing-implicit-index" {
 			var rows [][]json.RawMessage
@@ -94,7 +114,7 @@ func TestNativeRQLiteSchemaRebuildIncompleteCatalogWriterOrIdentityBlocksReplay(
 	profile, _ := nativeFixtureConfigured(t, "", "", true)
 	s := openNative(t, profile, "original-fixture-password")
 	l := lease(t, s, 728)
-	for _, mode := range []string{"identity-label", "writer-label", "missing-implicit-index", "valid-frame-change"} {
+	for _, mode := range []string{"identity-label", "writer-label", "writer-frame", "row-count-frame", "missing-implicit-index", "valid-frame-change"} {
 		t.Run(mode, func(t *testing.T) {
 			table := "rebuild_fault_" + strings.ReplaceAll(mode, "-", "_")
 			nativeExecute(t, l, "CREATE TABLE "+schemaddl.Quote(table)+"(id INTEGER PRIMARY KEY AUTOINCREMENT,v BLOB UNIQUE);INSERT INTO "+schemaddl.Quote(table)+" VALUES(42,X'00FF')")
@@ -236,6 +256,9 @@ func nativeSchemaRebuildDraft(original contract.SchemaDesignSnapshot, c rebuildP
 func TestNativeRQLiteSchemaRebuildOriginalDocumentsRetainTypedDatabaseAndReceipts(t *testing.T) {
 	for _, c := range rebuildProtocolCases() {
 		t.Run(c.name, func(t *testing.T) {
+			if c.name == "immediate_cycle_rollback" {
+				c.rollback = false // Native action suspension now settles this cycle.
+			}
 			profile, _ := nativeFixtureConfigured(t, "", "", true)
 			s := openNative(t, profile, "original-fixture-password")
 			l := lease(t, s, 726)
@@ -306,74 +329,96 @@ func TestNativeRQLiteSchemaRebuildOriginalDocumentsRetainTypedDatabaseAndReceipt
 }
 
 func TestNativeRQLiteSchemaRebuildCancellationCloseAndLostOriginalAcknowledgements(t *testing.T) {
-	for _, mode := range []string{"caller", "document", "session", "lost"} {
-		t.Run(mode, func(t *testing.T) {
-			profile, _ := nativeFixtureConfigured(t, "", "", true)
-			s := openNative(t, profile, "original-fixture-password")
-			l := lease(t, s, 727)
-			nativeExecute(t, l, "CREATE TABLE target(id INTEGER PRIMARY KEY AUTOINCREMENT,v BLOB);INSERT INTO target VALUES(42,X'00FF');UPDATE sqlite_sequence SET seq=500 WHERE name='target';CREATE TABLE child(id INTEGER PRIMARY KEY,parent INTEGER REFERENCES target(id) ON DELETE CASCADE);INSERT INTO child VALUES(7,42);CREATE VIEW vv AS SELECT * FROM target")
-			d := reserveSchemaUnit(t, s, "original-rebuild-held", "target")
-			original := nativeSchemaWriteSnapshot(t, d)
-			desired := nativeSchemaRebuildDraft(original, rebuildProtocolCase{name: "held"})
-			r := contract.SchemaDesignRequest{Original: original, Desired: desired}
-			h := &heldSchemaWrite{base: s.transport, marker: "__nyadb_rebuild_", started: make(chan struct{}), ack: make(chan struct{}), raw: make(chan string, 1), lose: mode == "lost"}
-			defer h.release.Do(func() { close(h.ack) })
-			s.client.Transport = h
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			done := make(chan contract.SchemaDesignOutcome, 1)
-			go func() { done <- d.Operations().Apply(ctx, r) }()
-			select {
-			case <-h.started:
-			case <-time.After(15 * time.Second):
-				t.Fatal("original reconstruction was not acknowledged")
-			}
-			raw := <-h.raw
-			retainNativeFileReceipt(t, "schema-rebuild-held-"+mode+"-transport-original", raw)
-			cancel()
-			closed := make(chan struct{})
-			if mode == "document" || mode == "session" {
-				go func() {
-					if mode == "document" {
-						_ = d.Close()
-					} else {
-						_ = s.Close()
+	for _, fixture := range []struct {
+		prefix    string
+		fk, cycle bool
+	}{{"", true, false}, {"fk-off-", false, false}, {"cycle-", true, true}} {
+		for _, mode := range []string{"caller", "document", "session", "lost"} {
+			label := fixture.prefix + mode
+			t.Run(label, func(t *testing.T) {
+				profile, _ := nativeFixtureConfigured(t, "", "", fixture.fk)
+				s := openNative(t, profile, "original-fixture-password")
+				l := lease(t, s, 727)
+				if fixture.cycle {
+					created, err := s.request(context.Background(), "/db/execute", []any{
+						"CREATE TABLE target(id INTEGER PRIMARY KEY AUTOINCREMENT,parent INTEGER NOT NULL REFERENCES child(id) ON DELETE SET NULL,v BLOB)",
+						"CREATE TABLE child(id INTEGER PRIMARY KEY,parent INTEGER NOT NULL REFERENCES target(id) ON DELETE SET NULL)",
+						"PRAGMA defer_foreign_keys=ON",
+						"INSERT INTO target VALUES(42,7,X'00FF')",
+						"INSERT INTO child VALUES(7,42)",
+						"UPDATE sqlite_sequence SET seq=500 WHERE name='target'",
+						"CREATE VIEW vv AS SELECT * FROM target",
+					}, true, true)
+					retainNativeFileReceipt(t, "schema-rebuild-held-"+label+"-setup", created.Raw)
+					if err != nil {
+						t.Fatal(err)
 					}
-					close(closed)
-				}()
-			}
-			select {
-			case <-done:
-				t.Fatal("cancellation abandoned the original executor acknowledgement")
-			case <-closed:
-				t.Fatal("close released the original reconstruction executor early")
-			case <-time.After(30 * time.Millisecond):
-			}
-			h.release.Do(func() { close(h.ack) })
-			out := <-done
-			retainSchemaWriteOutcome(t, "schema-rebuild-held-"+mode, out)
-			if mode == "lost" {
-				if out.State != "uncertain" || out.Verified || out.Receipt == nil || out.Receipt.NativeJSON != "" || !errors.Is(out.Error, contract.ErrSchemaCommitUncertain) {
-					t.Fatal("lost original acknowledgement was reclassified", out.State, out.Error)
+				} else {
+					nativeExecute(t, l, "CREATE TABLE target(id INTEGER PRIMARY KEY AUTOINCREMENT,v BLOB);INSERT INTO target VALUES(42,X'00FF');UPDATE sqlite_sequence SET seq=500 WHERE name='target';CREATE TABLE child(id INTEGER PRIMARY KEY,parent INTEGER REFERENCES target(id) ON DELETE CASCADE);INSERT INTO child VALUES(7,42);CREATE VIEW vv AS SELECT * FROM target")
 				}
-				saved := d.OriginalOutcome()
-				_ = nativeSchemaWriteSnapshot(t, d)
-				if next := d.Operations().Apply(context.Background(), r); next.State != "not_executed" || h.requests.Load() != 1 || !reflect.DeepEqual(saved, d.OriginalOutcome()) {
-					t.Fatal("read cleared the original write barrier or replayed reconstruction")
-				}
-			} else {
-				requireSchemaCommit(t, "schema-rebuild-held-"+mode, out)
-				if out.Receipt.NativeJSON != raw || h.requests.Load() != 1 {
-					t.Fatal("original acknowledgement bytes changed or reconstruction replayed")
-				}
-			}
-			if mode == "document" || mode == "session" {
+				d := reserveSchemaUnit(t, s, "original-rebuild-held", "target")
+				original := nativeSchemaWriteSnapshot(t, d)
+				desired := nativeSchemaRebuildDraft(original, rebuildProtocolCase{name: "held"})
+				r := contract.SchemaDesignRequest{Original: original, Desired: desired}
+				h := &heldSchemaWrite{base: s.transport, marker: "__nyadb_rebuild_", started: make(chan struct{}), ack: make(chan struct{}), raw: make(chan string, 1), lose: mode == "lost"}
+				defer h.release.Do(func() { close(h.ack) })
+				s.client.Transport = h
+				ctx, cancel := context.WithCancel(context.Background())
+				defer cancel()
+				done := make(chan contract.SchemaDesignOutcome, 1)
+				go func() { done <- d.Operations().Apply(ctx, r) }()
 				select {
-				case <-closed:
-				case <-time.After(5 * time.Second):
-					t.Fatal("original close did not finish after acknowledgement")
+				case <-h.started:
+				case <-time.After(15 * time.Second):
+					t.Fatal("original reconstruction was not acknowledged")
 				}
-			}
-		})
+				raw := <-h.raw
+				retainNativeFileReceipt(t, "schema-rebuild-held-"+label+"-transport-original", raw)
+				cancel()
+				closed := make(chan struct{})
+				if mode == "document" || mode == "session" {
+					go func() {
+						if mode == "document" {
+							_ = d.Close()
+						} else {
+							_ = s.Close()
+						}
+						close(closed)
+					}()
+				}
+				select {
+				case <-done:
+					t.Fatal("cancellation abandoned the original executor acknowledgement")
+				case <-closed:
+					t.Fatal("close released the original reconstruction executor early")
+				case <-time.After(30 * time.Millisecond):
+				}
+				h.release.Do(func() { close(h.ack) })
+				out := <-done
+				retainSchemaWriteOutcome(t, "schema-rebuild-held-"+label, out)
+				if mode == "lost" {
+					if out.State != "uncertain" || out.Verified || out.Receipt == nil || out.Receipt.NativeJSON != "" || !errors.Is(out.Error, contract.ErrSchemaCommitUncertain) {
+						t.Fatal("lost original acknowledgement was reclassified", out.State, out.Error)
+					}
+					saved := d.OriginalOutcome()
+					_ = nativeSchemaWriteSnapshot(t, d)
+					if next := d.Operations().Apply(context.Background(), r); next.State != "not_executed" || h.requests.Load() != 1 || !reflect.DeepEqual(saved, d.OriginalOutcome()) {
+						t.Fatal("read cleared the original write barrier or replayed reconstruction")
+					}
+				} else {
+					requireSchemaCommit(t, "schema-rebuild-held-"+label, out)
+					if out.Receipt.NativeJSON != raw || h.requests.Load() != 1 {
+						t.Fatal("original acknowledgement bytes changed or reconstruction replayed")
+					}
+				}
+				if mode == "document" || mode == "session" {
+					select {
+					case <-closed:
+					case <-time.After(5 * time.Second):
+						t.Fatal("original close did not finish after acknowledgement")
+					}
+				}
+			})
+		}
 	}
 }

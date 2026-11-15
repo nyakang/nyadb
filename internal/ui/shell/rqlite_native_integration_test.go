@@ -22,7 +22,7 @@ import (
 	"github.com/nyakang/nyadb/internal/ui/navigation"
 )
 
-func rqlitePublicFixture(t *testing.T, auth string) string {
+func rqlitePublicFixture(t *testing.T, auth string, foreignKeys ...bool) string {
 	t.Helper()
 	binary, version := os.Getenv("NYADB_RQLITE_BINARY"), os.Getenv("NYADB_RQLITE_VERSION")
 	artifacts := map[string]string{"10.7.1": "37b0be99b2e1d3ca2950c5d2d7432c444be8f3d7526331b2b85b205b8ee6933c", "8.43.4": "3b6bd8ad0497777bdece2919b0dc0b7702b6121c0b7db8ebb49f664e59087dff"}
@@ -44,7 +44,10 @@ func rqlitePublicFixture(t *testing.T, auth string) string {
 		return l.Addr().String()
 	}
 	httpAddr, raftAddr := port(), port()
-	args := []string{"-node-id", filepath.Base(dir), "-http-addr", httpAddr, "-raft-addr", raftAddr, "-fk"}
+	args := []string{"-node-id", filepath.Base(dir), "-http-addr", httpAddr, "-raft-addr", raftAddr}
+	if len(foreignKeys) == 0 || foreignKeys[0] {
+		args = append(args, "-fk")
+	}
 	u := &url.URL{Scheme: "rqlite", Host: httpAddr}
 	if auth != "none" {
 		password := "original:password"

@@ -22,20 +22,33 @@ func TestRQLiteNativePublicSchemaRebuildGuardsOriginalDatabaseAndParksReceipt(t 
 	if os.Getenv("NYADB_RQLITE_SHELL_IT") != "1" {
 		t.Skip("requires official RQLite public reconstruction fixtures")
 	}
-	for _, choice := range []string{"discard", "save"} {
-		t.Run(choice, func(t *testing.T) {
-			parsed, err := connections.ParseURI(rqlitePublicFixture(t, "none"))
+	for _, fixture := range []struct {
+		name, choice string
+		fk, cycle    bool
+	}{
+		{"discard", "discard", true, false}, {"save", "save", true, false},
+		{"fk-off-discard", "discard", false, false}, {"fk-off-save", "save", false, false},
+		{"cycle-discard", "discard", true, true}, {"cycle-save", "save", true, true},
+	} {
+		t.Run(fixture.name, func(t *testing.T) {
+			choice := fixture.choice
+			parsed, err := connections.ParseURI(rqlitePublicFixture(t, "none", fixture.fk))
 			if err != nil {
 				t.Fatal(err)
 			}
 			parsed.Profile.ID = 889
+			parsed.Profile.RQLiteOptions.BatchTransaction = fixture.cycle
 			verifier, err := rqlite.OpenSession(context.Background(), parsed.Profile, "")
 			if err != nil {
 				t.Fatal(err)
 			}
 			t.Cleanup(func() { _ = verifier.Close() })
 			query := rqliteSchemaPublicQuery(t, verifier)
-			query("CREATE TABLE rebuild_source(id INTEGER PRIMARY KEY AUTOINCREMENT,v BLOB);INSERT INTO rebuild_source VALUES(42,X'00FF');UPDATE sqlite_sequence SET seq=500 WHERE name='rebuild_source';CREATE TABLE rebuild_child(id INTEGER PRIMARY KEY,parent INTEGER REFERENCES rebuild_source(id) ON DELETE CASCADE,v TEXT);INSERT INTO rebuild_child VALUES(7,42,'original child');CREATE VIEW rebuild_view AS SELECT id,v FROM rebuild_source")
+			if fixture.cycle {
+				query("CREATE TABLE rebuild_source(id INTEGER PRIMARY KEY AUTOINCREMENT,parent INTEGER NOT NULL DEFAULT 7 REFERENCES rebuild_child(id) ON DELETE SET NULL,v BLOB);CREATE TABLE rebuild_child(id INTEGER PRIMARY KEY,parent INTEGER NOT NULL REFERENCES rebuild_source(id) ON DELETE SET NULL,v TEXT);PRAGMA defer_foreign_keys=ON;INSERT INTO rebuild_source(id,parent,v) VALUES(42,7,X'00FF');INSERT INTO rebuild_child VALUES(7,42,'original child');UPDATE sqlite_sequence SET seq=500 WHERE name='rebuild_source';CREATE VIEW rebuild_view AS SELECT id,v FROM rebuild_source")
+			} else {
+				query("CREATE TABLE rebuild_source(id INTEGER PRIMARY KEY AUTOINCREMENT,v BLOB);INSERT INTO rebuild_source VALUES(42,X'00FF');UPDATE sqlite_sequence SET seq=500 WHERE name='rebuild_source';CREATE TABLE rebuild_child(id INTEGER PRIMARY KEY,parent INTEGER REFERENCES rebuild_source(id) ON DELETE CASCADE,v TEXT);INSERT INTO rebuild_child VALUES(7,42,'original child');CREATE VIEW rebuild_view AS SELECT id,v FROM rebuild_source")
+			}
 			before := query("SELECT rowid,name,typeof(seq),seq FROM sqlite_sequence ORDER BY rowid").Sets[0].Rows
 			s, tt, services, p, observed, release := rqliteSchemaPublicShell(t, parsed.Profile, "")
 			s.submitNavigation(*services, navigation.DatabaseNode(p.ID, "main"))
@@ -187,14 +200,14 @@ func TestRQLiteNativePublicSchemaRebuildGuardsOriginalDatabaseAndParksReceipt(t 
 				if err != nil {
 					t.Fatal(err)
 				}
-				if err := os.WriteFile(filepath.Join(folder, "schema-public-rebuild-"+choice+"-constraint-proof.json"), proof, 0600); err != nil {
+				if err := os.WriteFile(filepath.Join(folder, "schema-public-rebuild-"+fixture.name+"-constraint-proof.json"), proof, 0600); err != nil {
 					t.Fatal(err)
 				}
 			}
 			if err := tt.Click("原始结构回执"); err != nil {
 				t.Fatal(err)
 			}
-			rqliteSchemaPublicReceipt(t, tt, s.objectWorkspace, out, "rebuild-"+choice)
+			rqliteSchemaPublicReceipt(t, tt, s.objectWorkspace, out, "rebuild-"+fixture.name)
 		})
 	}
 }

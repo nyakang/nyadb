@@ -54,7 +54,7 @@ func schemaRebuildBatch(original contract.SchemaDesignSnapshot, desired schemadd
 	}
 	name := schemaddl.Quote(stem + "_guard")
 	table := "temp." + name
-	b.statements = append(b.statements, "CREATE TEMP TABLE "+table+"(ok INTEGER NOT NULL CHECK(ok=1),original_rows INTEGER,schema_version INTEGER,type_hex TEXT,name_hex TEXT,table_hex TEXT,rootpage INTEGER,sql_hex TEXT,sql_null INTEGER,identity_phase TEXT,identity_count INTEGER,identity_rowid INTEGER,identity_name_type TEXT,identity_name_hex TEXT,identity_value_type TEXT,identity_value_hex TEXT,wfk INTEGER,wdefer INTEGER,wlegacy INTEGER,ctables INTEGER,cindexes INTEGER,ctriggers INTEGER,cviews INTEGER,cimplicit INTEGER)")
+	b.statements = append(b.statements, "CREATE TEMP TABLE "+table+"(ok INTEGER NOT NULL CHECK(ok=1),original_rows INTEGER,final_rows INTEGER,schema_version INTEGER,type_hex TEXT,name_hex TEXT,table_hex TEXT,rootpage INTEGER,sql_hex TEXT,sql_null INTEGER,identity_phase TEXT,identity_count INTEGER,identity_rowid INTEGER,identity_name_type TEXT,identity_name_hex TEXT,identity_value_type TEXT,identity_value_hex TEXT,wfk INTEGER,wdefer INTEGER,wlegacy INTEGER,final_wfk INTEGER,final_wdefer INTEGER,final_wlegacy INTEGER,ctables INTEGER,cindexes INTEGER,ctriggers INTEGER,cviews INTEGER,cimplicit INTEGER)")
 	addGuard := func(condition string, data bool) {
 		at := len(b.statements)
 		b.guards[at] = true
@@ -66,7 +66,7 @@ func schemaRebuildBatch(original contract.SchemaDesignSnapshot, desired schemadd
 	b.guards[len(b.statements)] = true
 	b.statements = append(b.statements, "INSERT INTO "+table+"(ok,original_rows,wfk,wdefer,wlegacy) SELECT ("+guard+"),(SELECT count(*) FROM main."+schemaddl.Quote(desired.Name)+"),(SELECT foreign_keys FROM pragma_foreign_keys),(SELECT defer_foreign_keys FROM pragma_defer_foreign_keys),(SELECT legacy_alter_table FROM pragma_legacy_alter_table)")
 	addGuard("NOT EXISTS(SELECT 1 FROM temp.sqlite_schema WHERE type IN ('view','trigger'))", false)
-	addGuard("(SELECT foreign_keys FROM pragma_foreign_keys)=1 AND (SELECT defer_foreign_keys FROM pragma_defer_foreign_keys)=0", false)
+	addGuard("(SELECT foreign_keys FROM pragma_foreign_keys) IN (0,1) AND (SELECT defer_foreign_keys FROM pragma_defer_foreign_keys)=0", false)
 	addGuard("NOT EXISTS(SELECT 1 FROM pragma_foreign_key_check)", false)
 	if p.sequenceBefore && schemaddl.SQLiteAutoIncrement(desired) && !schemaddl.SQLiteAutoIncrement(original.Schema.Table) {
 		addGuard("NOT EXISTS(SELECT 1 FROM main.sqlite_sequence WHERE name="+schemaTextLiteral(desired.Name)+")", false)
@@ -99,11 +99,12 @@ func schemaRebuildBatch(original contract.SchemaDesignSnapshot, desired schemadd
 	addGuard("(SELECT count(*) FROM main."+schemaddl.Quote(desired.Name)+")=(SELECT original_rows FROM "+table+" WHERE original_rows IS NOT NULL)", true)
 	b.statements = append(b.statements, "PRAGMA defer_foreign_keys=OFF")
 	addGuard("(SELECT foreign_keys FROM pragma_foreign_keys)=(SELECT wfk FROM "+table+" WHERE wfk IS NOT NULL) AND (SELECT defer_foreign_keys FROM pragma_defer_foreign_keys)=0 AND (SELECT legacy_alter_table FROM pragma_legacy_alter_table)=(SELECT wlegacy FROM "+table+" WHERE wlegacy IS NOT NULL)", false)
+	b.statements = append(b.statements, "UPDATE "+table+" SET final_rows=(SELECT count(*) FROM main."+schemaddl.Quote(desired.Name)+"),final_wfk=(SELECT foreign_keys FROM pragma_foreign_keys),final_wdefer=(SELECT defer_foreign_keys FROM pragma_defer_foreign_keys),final_wlegacy=(SELECT legacy_alter_table FROM pragma_legacy_alter_table) WHERE original_rows IS NOT NULL")
 	b.statements = append(b.statements, (&schemaClearProgram{sequence: p.sequenceAfter}).capture(table, "after")...)
 	b.identities = len(b.statements)
 	b.statements = append(b.statements, "DELETE FROM "+name+" WHERE identity_phase IS NOT NULL RETURNING identity_phase,identity_count,identity_rowid,identity_name_type,identity_name_hex,identity_value_type,identity_value_hex")
 	b.rebuildState = len(b.statements)
-	b.statements = append(b.statements, "DELETE FROM "+name+" WHERE original_rows IS NOT NULL RETURNING original_rows,wfk,wdefer,wlegacy")
+	b.statements = append(b.statements, "DELETE FROM "+name+" WHERE original_rows IS NOT NULL RETURNING original_rows,wfk,wdefer,wlegacy,final_wfk,final_wdefer,final_wlegacy,final_rows")
 	b.statements = append(b.statements, "INSERT INTO "+table+"(ok,ctables,cindexes,ctriggers,cviews,cimplicit) SELECT 1,sum(type='table'),sum(type='index'),sum(type='trigger'),sum(type='view'),sum(type='index' AND sql IS NULL) FROM main.sqlite_schema")
 	b.rebuildCounts = len(b.statements)
 	b.statements = append(b.statements, "DELETE FROM "+name+" WHERE ctables IS NOT NULL RETURNING ctables,cindexes,ctriggers,cviews,cimplicit")
@@ -198,20 +199,25 @@ func (s *Session) schemaRebuildViewChecks(ctx context.Context, catalog *schemadd
 }
 
 func verifySchemaRebuildState(native receipt, batch schemaBatch, actual *schemaddl.SQLiteCatalog, original contract.SchemaDesignSnapshot, desired schemaddl.Table) (int64, error) {
-	if batch.rebuildState < 0 || batch.rebuildState >= len(native.Results) || !slices.Equal(native.Results[batch.rebuildState].Columns, []string{"original_rows", "wfk", "wdefer", "wlegacy"}) {
+	if batch.rebuildState < 0 || batch.rebuildState >= len(native.Results) || !slices.Equal(native.Results[batch.rebuildState].Columns, []string{"original_rows", "wfk", "wdefer", "wlegacy", "final_wfk", "final_wdefer", "final_wlegacy", "final_rows"}) {
 		return 0, errIncomplete
 	}
-	rows, err := decodedRows(native, batch.rebuildState, 4)
+	rows, err := decodedRows(native, batch.rebuildState, 8)
 	if err != nil || len(rows) != 1 {
 		return 0, errIncomplete
 	}
 	n, err := cellInt(rows[0][0])
-	if err != nil || n < 0 {
+	finalRows, finalErr := cellInt(rows[0][7])
+	if err != nil || n < 0 || finalErr != nil || finalRows != n {
 		return 0, errIncomplete
 	}
 	for i := 1; i < 4; i++ {
 		value, err := cellInt(rows[0][i])
-		if err != nil || i == 1 && value != 1 || i == 2 && value != 0 || i == 3 && value != 0 && value != 1 {
+		if err != nil || i == 2 && value != 0 || i != 2 && value != 0 && value != 1 {
+			return 0, errIncomplete
+		}
+		final, err := cellInt(rows[0][i+3])
+		if err != nil || final != value {
 			return 0, errIncomplete
 		}
 	}
