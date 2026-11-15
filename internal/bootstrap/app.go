@@ -46,6 +46,7 @@ func Run() error {
 		return err
 	}
 	state := shell.NewWithProfiles(connections.NewService(localdb.NewProfileStore(db)))
+	state.SetDriverPackages(managedDriverPackages())
 	snapshotStore, snapshotErr := newKVSnapshotStore("")
 	if snapshotErr != nil {
 		fmt.Fprintf(os.Stderr, "NyaDB Snapshot storage unavailable: %v\n", snapshotErr)
@@ -309,8 +310,26 @@ func Run() error {
 				title = locales.Text("选择现有 DuckDB 数据库文件")
 				filters = []mygo.FileFilter{{Name: "DuckDB databases", Extensions: []string{"duckdb", "db"}}}
 			}
+			if kind == shell.H2MainFile || kind == shell.H2NewFile {
+				title = locales.Text("选择 H2 数据库文件")
+				filters = []mygo.FileFilter{{Name: "H2 databases", Extensions: []string{"mv.db", "h2.db"}}}
+			}
+			if kind == shell.H2DriverPackageFile {
+				title = locales.Text("导入 H2 驱动包")
+				filters = []mygo.FileFilter{{Name: "NyaDB driver packages", Extensions: []string{"zip"}}}
+			}
 			go func() {
-				paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: parent, Title: title, Filters: filters})
+				var paths []string
+				var err error
+				if kind == shell.H2NewFile {
+					var path string
+					path, err = mygo.Dialog.Save(mygo.SaveDialogOptions{Parent: parent, Title: locales.Text("创建 H2 数据库文件"), DefaultPath: "database.mv.db", Filters: filters})
+					if path != "" {
+						paths = []string{path}
+					}
+				} else {
+					paths, err = mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: parent, Title: title, Filters: filters})
+				}
 				window.Update(func() {
 					if err != nil {
 						state.EngineFilePickerError(version)

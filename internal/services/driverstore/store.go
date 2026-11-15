@@ -48,6 +48,12 @@ func bundleName(key, version string) (string, error) {
 // Install verifies the caller's complete archive digest before extracting. A
 // version is published once by rename; existing versions are never overwritten.
 func (s *Store) Install(ctx context.Context, source io.Reader, digest string) (Manifest, error) {
+	return s.install(ctx, source, digest, nil)
+}
+
+// install checks product identity on the same private archive snapshot whose
+// digest and payload are verified, before any installed version is published.
+func (s *Store) install(ctx context.Context, source io.Reader, digest string, product *Product) (Manifest, error) {
 	var m Manifest
 	if ctx == nil || source == nil || !validDigest(digest) {
 		return m, ErrPackage
@@ -103,6 +109,9 @@ func (s *Store) Install(ctx context.Context, source io.Reader, digest string) (M
 	m, err = decodeManifest(raw)
 	if err != nil {
 		return m, err
+	}
+	if product != nil && !product.accepts(m) {
+		return m, ErrPackage
 	}
 	if len(z.File) != len(m.Files)+1 {
 		return m, ErrPackage

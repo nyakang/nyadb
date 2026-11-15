@@ -21,6 +21,7 @@ func (s *State) BeginURIFromEditor() {
 	if !s.active {
 		return
 	}
+	s.cancelDriverWork()
 	s.cancelMySQLConnectionTest()
 	s.engineFileVersion++
 	s.uriOpen, s.uriReturn = true, true
@@ -36,6 +37,7 @@ func (s *State) ReturnFromURI() {
 	}
 	s.uriOpen, s.uriReturn, s.uriConfirm = false, false, false
 	s.uriText, s.uriError, s.uriGroup = "", "", ""
+	s.RefreshDriverPackages()
 }
 func (s *State) URIActive() bool { return s.uriOpen }
 
@@ -66,6 +68,7 @@ func (s *State) ImportURI(raw string) error {
 	s.connectionEditorTab = 0
 	s.connectionNameFocusPending = true
 	s.active = true
+	s.RefreshDriverPackages()
 	return nil
 }
 

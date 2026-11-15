@@ -37,6 +37,9 @@ const (
 	ConsulCAFile
 	ConsulCertificateFile
 	ConsulKeyFile
+	H2MainFile
+	H2NewFile
+	H2DriverPackageFile
 )
 
 func (s *State) SetEngineFilePicker(pick func(EngineFile, int, uint64)) { s.engineFilePicker = pick }
@@ -45,6 +48,21 @@ func (s *State) EngineFileVersion() uint64 { return s.engineFileVersion }
 
 func (s *State) SelectEngineFile(kind EngineFile, row int, version uint64, path string) {
 	if !s.active || version != s.engineFileVersion || path == "" {
+		return
+	}
+	if kind == H2MainFile || kind == H2NewFile || kind == H2DriverPackageFile {
+		if s.connectionDraft.Kind != connections.H2 {
+			return
+		}
+		if kind == H2DriverPackageFile {
+			s.ImportDriverPackage(path)
+		} else if s.connectionDraft.H2Options.Mode == "file" && (kind == H2MainFile) == s.connectionDraft.H2Options.RequireExisting {
+			path = h2FileBasePath(path)
+			if s.connectionDraft.Database != path {
+				s.cancelMySQLConnectionTest()
+				s.connectionDraft.Database = path
+			}
+		}
 		return
 	}
 	if kind >= ConsulCAFile && kind <= ConsulKeyFile {
@@ -255,6 +273,9 @@ func (s *State) initEngineOptionsInputs() {
 }
 
 func (s *State) advanceEngineOptions(p *connections.Profile) error {
+	if p.Kind == connections.H2 {
+		return s.advanceH2Options(p)
+	}
 	if p.Kind == connections.Consul {
 		return s.advanceConsulOptions(p)
 	}
@@ -388,6 +409,12 @@ func (s *State) connectionEngineOptions(c *ui.Context, width float32, tab string
 	formWidth := connectionScaledFormWidth(c, width)
 	labelWidth, fieldWidth := connectionFormLabelWidth, formWidth-connectionFormLabelWidth
 	switch s.connectionDraft.Kind {
+	case connections.H2:
+		if tab == "高级" {
+			s.h2Advanced(c, width)
+			return true
+		}
+		return false
 	case connections.Consul:
 		return s.consulOptions(c, width, tab)
 	case connections.Etcd:

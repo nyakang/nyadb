@@ -19,6 +19,7 @@ func (s *State) View(c *ui.Context, width, height float32) {
 	}
 	s.consumeMySQLConnectionTest()
 	s.consumeInitialSQL()
+	s.consumeDriverWork()
 	if s.initialSQLResults != nil {
 		c.After(25 * time.Millisecond)
 	}
@@ -63,13 +64,16 @@ func (s *State) View(c *ui.Context, width, height float32) {
 		s.connectionEditorFooter(c, w)
 	})
 	s.mysqlInitialQueryModal(c)
+	if s.driverWork.results != nil {
+		c.After(25 * time.Millisecond)
+	}
 }
 
 func connectionEditorTabNames(kind connections.Kind) []string {
 	switch kind {
 	case connections.Consul, connections.Etcd, connections.Neo4j, connections.Qdrant, connections.Meilisearch:
 		return []string{"常规", "高级", "SSL", "备注"}
-	case connections.DuckDB:
+	case connections.DuckDB, connections.H2:
 		return []string{"常规", "高级", "备注"}
 	case connections.SQLite:
 		return []string{"常规", "高级", "附加的数据库", "HTTP", "备注"}
@@ -190,6 +194,10 @@ func (s *State) connectionEditorGeneral(c *ui.Context, width float32) {
 		}
 		if p.Kind == connections.DuckDB {
 			s.editorDuckDBFields(c, labelWidth, fieldWidth)
+			return
+		}
+		if p.Kind == connections.H2 {
+			s.editorH2Fields(c, labelWidth, fieldWidth)
 			return
 		}
 		s.editorInputRow(c, "主机：", "主机", &p.Host, labelWidth, fieldWidth)

@@ -3,7 +3,8 @@
 
 Requires Linux, an existing JDK 21+, Go and network access to Maven Central.
 Managed bundles and databases belong to this private fixture. The optional
-workbench check verifies the H2 adapter without registering a public entry.
+workbench check verifies the H2 adapter and connection editor without
+registering a public entry.
 Original DBX sources are not modified.
 """
 import argparse
@@ -58,6 +59,13 @@ def verify_provider_output(output):
                 raise RuntimeError('H2 provider acceptance is missing: ' + name + suffix)
 
 
+def verify_editor_output(output):
+    name = 'TestH2NativeEditorDriverImportPersistenceCredentialsAndIsolatedTesting'
+    for suffix in ['', '/h2-v1', '/h2-v2', '/h2-v3', '/h2-legacy']:
+        if '--- PASS: ' + name + suffix + ' ' not in output:
+            raise RuntimeError('H2 editor acceptance is missing: ' + name + suffix)
+
+
 def sha(path):
     with path.open('rb') as source:
         return hashlib.file_digest(source, 'sha256').hexdigest()
@@ -106,7 +114,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dbx-source', type=Path, default=ROOT / 'temp/dbx')
     parser.add_argument('--race', action='store_true')
-    parser.add_argument('--workbench', action='store_true', help='also verify the managed H2 workbench provider')
+    parser.add_argument('--workbench', action='store_true', help='also verify the managed H2 provider and connection editor')
     parser.add_argument('--managed', action='store_true', help='also verify an offline bundle containing a linked JRE and the original agent')
     parser.add_argument('--java', default=shutil.which('java'))
     args = parser.parse_args()
@@ -249,13 +257,27 @@ def main():
                     subprocess.run(provider_command, cwd=ROOT, env=provider_env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=930)
                 provider_output = (base / 'provider-acceptance.log').read_text()
                 verify_provider_output(provider_output)
+                screenshots = base / 'editor-screenshots'
+                editor_env = dict(managed_env, NYADB_H2_EDITOR_IT='1', NYADB_H2_EDITOR_SCREENSHOTS=str(screenshots))
+                editor_command = ['-timeout=10m' if arg == '-timeout=3m' else arg for arg in command[:-1]]
+                editor_command += ['-run=TestH2NativeEditorDriverImportPersistenceCredentialsAndIsolatedTesting', './internal/ui/connectioneditor']
+                with (base / 'editor-acceptance.log').open('w') as log:
+                    subprocess.run(editor_command, cwd=ROOT, env=editor_env, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=630)
+                verify_editor_output((base / 'editor-acceptance.log').read_text())
+                for language in ['zh-Hans', 'en']:
+                    for tab in ['general', 'advanced', 'notes']:
+                        if not (screenshots / (language + '-' + tab + '.png')).is_file():
+                            raise RuntimeError('H2 editor screenshot is missing: ' + language + '/' + tab)
+                state['h2_connection_editor'] = 'passed'
+                state['h2_editor_screenshots'] = str(screenshots)
+                state['h2_editor_scope'] = 'explicit original driver import and pin; saved configuration and vault password restoration; isolated native tests of all four profiles; owned file creation and existing-file authentication; masked password; no public chooser/URI or full workbench UI publication'
                 state['h2_workbench_provider'] = 'passed'
                 state['h2_data_adapter'] = 'passed'
                 state['h2_adapter_versions'] = ['1.4.200', '2.1.214', '2.4.240']
                 state['h2_adapter_profiles'] = ['h2-v1', 'h2-v2', 'h2-v3', 'h2-legacy']
                 state['h2_native_pool'] = 'passed; configured physical/workload/metadata capacity and canceled local admission'
                 state['h2_adapter_modes'] = ['memory', 'file/create', 'file/existing', 'file/read-only']
-                state['h2_adapter_scope'] = 'qualified metadata; typed paging/full rows/UTF-8 and binary chunks; native cursor export; conditional insert/update/delete; batch rollback; original native receipts in feature binding; canceled lock waiter acknowledgement; independent SQL leases; native pool limits and metadata reserve; file create/reopen/read-only; disconnect without replay; no public UI/storage/URI publication'
+                state['h2_adapter_scope'] = 'qualified metadata; typed paging/full rows/UTF-8 and binary chunks; native cursor export; conditional insert/update/delete; batch rollback; original native receipts in feature binding; canceled lock waiter acknowledgement; independent SQL leases; native pool limits and metadata reserve; file create/reopen/read-only; disconnect without replay; no public chooser/URI or full workbench UI publication'
             state['managed_offline_h2'] = 'passed'
             state['managed_package_sha256'] = sha(archive)
             print('Managed offline JRE, original H2 versions, typed query receipts and original package leases passed', flush=True)

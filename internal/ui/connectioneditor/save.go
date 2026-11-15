@@ -45,6 +45,23 @@ func (s *State) draftProfile() (connections.Profile, error) {
 		}
 		return p, nil
 	}
+	if p.Kind == connections.H2 {
+		if p.H2Options.Mode == "file" {
+			p.Database = h2FileBasePath(p.Database)
+		}
+		if p.H2Options.Mode == "tcp" || p.H2Options.Mode == "ssl" {
+			port, err := strconv.ParseUint(strings.TrimSpace(s.connectionPort), 10, 16)
+			if err != nil || port == 0 {
+				return p, fieldError("端口", "常规", "端口必须是 1–65535 之间的数字")
+			}
+			p.Port = uint16(port)
+		}
+		checked, err := connections.NormalizeProfile(p)
+		if err != nil {
+			return p, fieldError("H2 数据库", "常规", "请检查 H2 模式、数据库、主机和驱动设置")
+		}
+		return checked, nil
+	}
 	if p.Kind == connections.Oracle && strings.TrimSpace(p.Database) == "" {
 		return p, fieldError("服务名 / SID", "常规", "请输入 Oracle 服务名或 SID")
 	}
@@ -268,7 +285,7 @@ func (s *State) Save() {
 			return
 		}
 	}
-	if saved.Kind.IsPostgreSQLFamily() || saved.Kind == connections.Consul || saved.Kind == connections.Etcd || saved.Kind == connections.Neo4j || saved.Kind == connections.Qdrant || saved.Kind == connections.Meilisearch || saved.Kind == connections.CouchDB || saved.Kind == connections.Cassandra || saved.Kind == connections.Solr || saved.Kind == connections.Elasticsearch || saved.Kind == connections.Easysearch || saved.Kind == connections.ClickHouse || saved.Kind == connections.Doris || saved.Kind == connections.SelectDB || saved.Kind == connections.StarRocks || saved.Kind == connections.Trino || saved.Kind == connections.SQLServer || saved.Kind == connections.Oracle || saved.Kind == connections.Dameng || saved.Kind == connections.MongoDB || saved.Kind == connections.Redis {
+	if saved.Kind == connections.H2 || saved.Kind.IsPostgreSQLFamily() || saved.Kind == connections.Consul || saved.Kind == connections.Etcd || saved.Kind == connections.Neo4j || saved.Kind == connections.Qdrant || saved.Kind == connections.Meilisearch || saved.Kind == connections.CouchDB || saved.Kind == connections.Cassandra || saved.Kind == connections.Solr || saved.Kind == connections.Elasticsearch || saved.Kind == connections.Easysearch || saved.Kind == connections.ClickHouse || saved.Kind == connections.Doris || saved.Kind == connections.SelectDB || saved.Kind == connections.StarRocks || saved.Kind == connections.Trino || saved.Kind == connections.SQLServer || saved.Kind == connections.Oracle || saved.Kind == connections.Dameng || saved.Kind == connections.MongoDB || saved.Kind == connections.Redis {
 		s.connectionMainConfig = s.currentConnectionSnapshot()
 		if err := s.persistConnectionPasswords(saved, before); err != nil {
 			if p.ID == 0 {

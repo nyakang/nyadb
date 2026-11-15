@@ -42903,3 +42903,305 @@ func SelectdbSessionPassword() string { return In(i18n.Locale()).SelectdbSession
 func (msgs Messages) SelectdbSessionPassword() string {
 	return Catalog.Format(msgs.locale, "selectdbSessionPassword", nil)
 }
+
+// H2LocalFile says "本地文件"
+// in the language the app shows.
+func H2LocalFile() string { return In(i18n.Locale()).H2LocalFile() }
+
+// H2LocalFile says "本地文件"
+// in the language of msgs.
+func (msgs Messages) H2LocalFile() string {
+	return Catalog.Format(msgs.locale, "h2LocalFile", nil)
+}
+
+// H2MemoryDatabase says "内存数据库"
+// in the language the app shows.
+func H2MemoryDatabase() string { return In(i18n.Locale()).H2MemoryDatabase() }
+
+// H2MemoryDatabase says "内存数据库"
+// in the language of msgs.
+func (msgs Messages) H2MemoryDatabase() string {
+	return Catalog.Format(msgs.locale, "h2MemoryDatabase", nil)
+}
+
+// H2TCPServer says "TCP 服务器"
+// in the language the app shows.
+func H2TCPServer() string { return In(i18n.Locale()).H2TCPServer() }
+
+// H2TCPServer says "TCP 服务器"
+// in the language of msgs.
+func (msgs Messages) H2TCPServer() string {
+	return Catalog.Format(msgs.locale, "h2TCPServer", nil)
+}
+
+// H2TLSServer says "TLS 服务器"
+// in the language the app shows.
+func H2TLSServer() string { return In(i18n.Locale()).H2TLSServer() }
+
+// H2TLSServer says "TLS 服务器"
+// in the language of msgs.
+func (msgs Messages) H2TLSServer() string {
+	return Catalog.Format(msgs.locale, "h2TLSServer", nil)
+}
+
+// H2VersionCaption says "H2 版本："
+// in the language the app shows.
+func H2VersionCaption() string { return In(i18n.Locale()).H2VersionCaption() }
+
+// H2VersionCaption says "H2 版本："
+// in the language of msgs.
+func (msgs Messages) H2VersionCaption() string {
+	return Catalog.Format(msgs.locale, "h2VersionCaption", nil)
+}
+
+// H2ConnectionMode says "H2 连接方式"
+// in the language the app shows.
+func H2ConnectionMode() string { return In(i18n.Locale()).H2ConnectionMode() }
+
+// H2ConnectionMode says "H2 连接方式"
+// in the language of msgs.
+func (msgs Messages) H2ConnectionMode() string {
+	return Catalog.Format(msgs.locale, "h2ConnectionMode", nil)
+}
+
+// H2Version says "H2 版本"
+// in the language the app shows.
+func H2Version() string { return In(i18n.Locale()).H2Version() }
+
+// H2Version says "H2 版本"
+// in the language of msgs.
+func (msgs Messages) H2Version() string {
+	return Catalog.Format(msgs.locale, "h2Version", nil)
+}
+
+// H2Database says "H2 数据库"
+// in the language the app shows.
+func H2Database() string { return In(i18n.Locale()).H2Database() }
+
+// H2Database says "H2 数据库"
+// in the language of msgs.
+func (msgs Messages) H2Database() string {
+	return Catalog.Format(msgs.locale, "h2Database", nil)
+}
+
+// H2DriverPackage says "H2 驱动包"
+// in the language the app shows.
+func H2DriverPackage() string { return In(i18n.Locale()).H2DriverPackage() }
+
+// H2DriverPackage says "H2 驱动包"
+// in the language of msgs.
+func (msgs Messages) H2DriverPackage() string {
+	return Catalog.Format(msgs.locale, "h2DriverPackage", nil)
+}
+
+// H2DriverPackageCaption says "驱动包："
+// in the language the app shows.
+func H2DriverPackageCaption() string { return In(i18n.Locale()).H2DriverPackageCaption() }
+
+// H2DriverPackageCaption says "驱动包："
+// in the language of msgs.
+func (msgs Messages) H2DriverPackageCaption() string {
+	return Catalog.Format(msgs.locale, "h2DriverPackageCaption", nil)
+}
+
+// H2NoDriverPackage says "未选择驱动包"
+// in the language the app shows.
+func H2NoDriverPackage() string { return In(i18n.Locale()).H2NoDriverPackage() }
+
+// H2NoDriverPackage says "未选择驱动包"
+// in the language of msgs.
+func (msgs Messages) H2NoDriverPackage() string {
+	return Catalog.Format(msgs.locale, "h2NoDriverPackage", nil)
+}
+
+// H2RefreshDriverPackages says "刷新驱动包"
+// in the language the app shows.
+func H2RefreshDriverPackages() string { return In(i18n.Locale()).H2RefreshDriverPackages() }
+
+// H2RefreshDriverPackages says "刷新驱动包"
+// in the language of msgs.
+func (msgs Messages) H2RefreshDriverPackages() string {
+	return Catalog.Format(msgs.locale, "h2RefreshDriverPackages", nil)
+}
+
+// H2ImportDriverPackage says "导入驱动包"
+// in the language the app shows.
+func H2ImportDriverPackage() string { return In(i18n.Locale()).H2ImportDriverPackage() }
+
+// H2ImportDriverPackage says "导入驱动包"
+// in the language of msgs.
+func (msgs Messages) H2ImportDriverPackage() string {
+	return Catalog.Format(msgs.locale, "h2ImportDriverPackage", nil)
+}
+
+// H2ExistingDatabaseOnly says "仅打开现有数据库"
+// in the language the app shows.
+func H2ExistingDatabaseOnly() string { return In(i18n.Locale()).H2ExistingDatabaseOnly() }
+
+// H2ExistingDatabaseOnly says "仅打开现有数据库"
+// in the language of msgs.
+func (msgs Messages) H2ExistingDatabaseOnly() string {
+	return Catalog.Format(msgs.locale, "h2ExistingDatabaseOnly", nil)
+}
+
+// H2MemoryLifecycle says "内存数据库在断开连接后释放；恢复连接不会重放 SQL。"
+// in the language the app shows.
+func H2MemoryLifecycle() string { return In(i18n.Locale()).H2MemoryLifecycle() }
+
+// H2MemoryLifecycle says "内存数据库在断开连接后释放；恢复连接不会重放 SQL。"
+// in the language of msgs.
+func (msgs Messages) H2MemoryLifecycle() string {
+	return Catalog.Format(msgs.locale, "h2MemoryLifecycle", nil)
+}
+
+// H2QueryTimeoutSeconds says "查询超时（秒）"
+// in the language the app shows.
+func H2QueryTimeoutSeconds() string { return In(i18n.Locale()).H2QueryTimeoutSeconds() }
+
+// H2QueryTimeoutSeconds says "查询超时（秒）"
+// in the language of msgs.
+func (msgs Messages) H2QueryTimeoutSeconds() string {
+	return Catalog.Format(msgs.locale, "h2QueryTimeoutSeconds", nil)
+}
+
+// H2PoolWaitMilliseconds says "连接池等待（毫秒）"
+// in the language the app shows.
+func H2PoolWaitMilliseconds() string { return In(i18n.Locale()).H2PoolWaitMilliseconds() }
+
+// H2PoolWaitMilliseconds says "连接池等待（毫秒）"
+// in the language of msgs.
+func (msgs Messages) H2PoolWaitMilliseconds() string {
+	return Catalog.Format(msgs.locale, "h2PoolWaitMilliseconds", nil)
+}
+
+// H2MetadataReserve says "元数据预留连接数"
+// in the language the app shows.
+func H2MetadataReserve() string { return In(i18n.Locale()).H2MetadataReserve() }
+
+// H2MetadataReserve says "元数据预留连接数"
+// in the language of msgs.
+func (msgs Messages) H2MetadataReserve() string {
+	return Catalog.Format(msgs.locale, "h2MetadataReserve", nil)
+}
+
+// H2PoolHint says "SQL 与数据操作共享连接池；元数据预留连接用于浏览数据库结构。"
+// in the language the app shows.
+func H2PoolHint() string { return In(i18n.Locale()).H2PoolHint() }
+
+// H2PoolHint says "SQL 与数据操作共享连接池；元数据预留连接用于浏览数据库结构。"
+// in the language of msgs.
+func (msgs Messages) H2PoolHint() string {
+	return Catalog.Format(msgs.locale, "h2PoolHint", nil)
+}
+
+// H2MetadataCapacityRequired says "元数据预留必须小于最大连接数"
+// in the language the app shows.
+func H2MetadataCapacityRequired() string { return In(i18n.Locale()).H2MetadataCapacityRequired() }
+
+// H2MetadataCapacityRequired says "元数据预留必须小于最大连接数"
+// in the language of msgs.
+func (msgs Messages) H2MetadataCapacityRequired() string {
+	return Catalog.Format(msgs.locale, "h2MetadataCapacityRequired", nil)
+}
+
+// H2SQLCapacityRequired says "SQL 会话上限不能超过扣除元数据预留后的容量"
+// in the language the app shows.
+func H2SQLCapacityRequired() string { return In(i18n.Locale()).H2SQLCapacityRequired() }
+
+// H2SQLCapacityRequired says "SQL 会话上限不能超过扣除元数据预留后的容量"
+// in the language of msgs.
+func (msgs Messages) H2SQLCapacityRequired() string {
+	return Catalog.Format(msgs.locale, "h2SQLCapacityRequired", nil)
+}
+
+// H2DriverPackageRequired says "请选择或导入已安装的 H2 驱动包"
+// in the language the app shows.
+func H2DriverPackageRequired() string { return In(i18n.Locale()).H2DriverPackageRequired() }
+
+// H2DriverPackageRequired says "请选择或导入已安装的 H2 驱动包"
+// in the language of msgs.
+func (msgs Messages) H2DriverPackageRequired() string {
+	return Catalog.Format(msgs.locale, "h2DriverPackageRequired", nil)
+}
+
+// H2DriverProfileMismatch says "驱动包不包含当前 H2 版本，请选择匹配的版本。"
+// in the language the app shows.
+func H2DriverProfileMismatch() string { return In(i18n.Locale()).H2DriverProfileMismatch() }
+
+// H2DriverProfileMismatch says "驱动包不包含当前 H2 版本，请选择匹配的版本。"
+// in the language of msgs.
+func (msgs Messages) H2DriverProfileMismatch() string {
+	return Catalog.Format(msgs.locale, "h2DriverProfileMismatch", nil)
+}
+
+// H2DriverPackageUnavailable says "所选驱动包未安装，请导入原包或选择其他版本。"
+// in the language the app shows.
+func H2DriverPackageUnavailable() string { return In(i18n.Locale()).H2DriverPackageUnavailable() }
+
+// H2DriverPackageUnavailable says "所选驱动包未安装，请导入原包或选择其他版本。"
+// in the language of msgs.
+func (msgs Messages) H2DriverPackageUnavailable() string {
+	return Catalog.Format(msgs.locale, "h2DriverPackageUnavailable", nil)
+}
+
+// H2DriverImportFailed says "无法读取或导入驱动包，请检查文件、包类型和安装目录。"
+// in the language the app shows.
+func H2DriverImportFailed() string { return In(i18n.Locale()).H2DriverImportFailed() }
+
+// H2DriverImportFailed says "无法读取或导入驱动包，请检查文件、包类型和安装目录。"
+// in the language of msgs.
+func (msgs Messages) H2DriverImportFailed() string {
+	return Catalog.Format(msgs.locale, "h2DriverImportFailed", nil)
+}
+
+// H2PoolConfigurationInvalid says "请检查 H2 超时、连接池、预留容量和 SQL 会话上限"
+// in the language the app shows.
+func H2PoolConfigurationInvalid() string { return In(i18n.Locale()).H2PoolConfigurationInvalid() }
+
+// H2PoolConfigurationInvalid says "请检查 H2 超时、连接池、预留容量和 SQL 会话上限"
+// in the language of msgs.
+func (msgs Messages) H2PoolConfigurationInvalid() string {
+	return Catalog.Format(msgs.locale, "h2PoolConfigurationInvalid", nil)
+}
+
+// H2DatabaseConfigurationInvalid says "请检查 H2 模式、数据库、主机和驱动设置"
+// in the language the app shows.
+func H2DatabaseConfigurationInvalid() string {
+	return In(i18n.Locale()).H2DatabaseConfigurationInvalid()
+}
+
+// H2DatabaseConfigurationInvalid says "请检查 H2 模式、数据库、主机和驱动设置"
+// in the language of msgs.
+func (msgs Messages) H2DatabaseConfigurationInvalid() string {
+	return Catalog.Format(msgs.locale, "h2DatabaseConfigurationInvalid", nil)
+}
+
+// H2ChooseDatabaseFile says "选择 H2 数据库文件"
+// in the language the app shows.
+func H2ChooseDatabaseFile() string { return In(i18n.Locale()).H2ChooseDatabaseFile() }
+
+// H2ChooseDatabaseFile says "选择 H2 数据库文件"
+// in the language of msgs.
+func (msgs Messages) H2ChooseDatabaseFile() string {
+	return Catalog.Format(msgs.locale, "h2ChooseDatabaseFile", nil)
+}
+
+// H2ImportPackageDialog says "导入 H2 驱动包"
+// in the language the app shows.
+func H2ImportPackageDialog() string { return In(i18n.Locale()).H2ImportPackageDialog() }
+
+// H2ImportPackageDialog says "导入 H2 驱动包"
+// in the language of msgs.
+func (msgs Messages) H2ImportPackageDialog() string {
+	return Catalog.Format(msgs.locale, "h2ImportPackageDialog", nil)
+}
+
+// H2CreateDatabaseFile says "创建 H2 数据库文件"
+// in the language the app shows.
+func H2CreateDatabaseFile() string { return In(i18n.Locale()).H2CreateDatabaseFile() }
+
+// H2CreateDatabaseFile says "创建 H2 数据库文件"
+// in the language of msgs.
+func (msgs Messages) H2CreateDatabaseFile() string {
+	return Catalog.Format(msgs.locale, "h2CreateDatabaseFile", nil)
+}

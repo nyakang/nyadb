@@ -11,6 +11,9 @@ const (
 	SQLiteAttachedFile        = connectioneditor.SQLiteAttachedFile
 	SQLiteMainFile            = connectioneditor.SQLiteMainFile
 	DuckDBMainFile            = connectioneditor.DuckDBMainFile
+	H2MainFile                = connectioneditor.H2MainFile
+	H2NewFile                 = connectioneditor.H2NewFile
+	H2DriverPackageFile       = connectioneditor.H2DriverPackageFile
 	DuckDBLibraryFile         = connectioneditor.DuckDBLibraryFile
 	PostgreSQLCAFile          = connectioneditor.PostgreSQLCAFile
 	PostgreSQLCertificateFile = connectioneditor.PostgreSQLCertificateFile
@@ -36,4 +39,8 @@ func (s *State) SelectEngineFile(kind EngineFile, row int, version uint64, path 
 }
 func (s *State) EngineFilePickerError(version uint64) {
 	s.connectionEditor.EngineFilePickerError(version)
+}
+
+func (s *State) SetDriverPackages(service connectioneditor.DriverPackages) {
+	s.connectionEditor.SetDriverPackages(service)
 }

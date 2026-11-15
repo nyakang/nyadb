@@ -25,6 +25,7 @@ type Dependencies struct {
 	TestConnection    func(context.Context, connections.Profile, string) error
 	InitialSQLStore   InitialSQLStore
 	CleanupInitialSQL func([]string) error
+	DriverPackages    DriverPackages
 
 	Profiles        *connections.Service
 	Vault           credentials.Vault
@@ -40,6 +41,10 @@ type Dependencies struct {
 // State is owned by the UI thread. Background tests return immutable results;
 // native picker completions are guarded by the editing session's version.
 type State struct {
+	driverPackages                                             DriverPackages
+	driverWork                                                 driverWork
+	h2Numbers                                                  [6]string
+	h2ModeChoice, h2ProfileChoice, h2DriverChoice              string
 	consulAuthChoice, consulTLSChoice, consulConsistencyChoice string
 	etcdAuthChoice, etcdPrefixChoice, etcdTLSChoice            string
 	neo4jAuthChoice                                            string
@@ -144,7 +149,8 @@ type State struct {
 func New(deps Dependencies) *State {
 	return &State{editFocus: deps.EditFocus, editTarget: deps.EditTarget, tunnelSecrets: deps.TunnelSecrets, mysqlTunnelTester: deps.TestMySQLTunnel, profileService: deps.Profiles, credentialVault: deps.Vault,
 		initialSQLStore: deps.InitialSQLStore, cleanupInitialSQL: deps.CleanupInitialSQL,
-		validateMySQL: deps.ValidateMySQL, connectionTester: deps.TestConnection, mysqlConnectionTester: deps.TestMySQL,
+		driverPackages: deps.DriverPackages,
+		validateMySQL:  deps.ValidateMySQL, connectionTester: deps.TestConnection, mysqlConnectionTester: deps.TestMySQL,
 		saved: deps.Saved, back: deps.Back, canceled: deps.Cancel}
 }
 
@@ -171,6 +177,7 @@ func (s *State) OpenNew(kind connections.Kind, group string) error {
 	s.connectionEditorTab = 0
 	s.connectionNameFocusPending = true
 	s.active = true
+	s.RefreshDriverPackages()
 	return nil
 }
 
@@ -188,12 +195,16 @@ func (s *State) OpenProfile(profile connections.Profile) {
 	if profile.Kind.IsMySQLFamily() {
 		s.loadSavedConnectionPasswords()
 		s.loadTunnelSecrets()
-	} else if profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.Consul || profile.Kind == connections.Etcd || profile.Kind == connections.Neo4j || profile.Kind == connections.Qdrant || profile.Kind == connections.Meilisearch || profile.Kind == connections.CouchDB || profile.Kind == connections.Cassandra || profile.Kind == connections.Solr || profile.Kind == connections.Elasticsearch || profile.Kind == connections.Easysearch || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.SelectDB || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis {
+	} else if profile.Kind == connections.H2 || profile.Kind.IsPostgreSQLFamily() || profile.Kind == connections.Consul || profile.Kind == connections.Etcd || profile.Kind == connections.Neo4j || profile.Kind == connections.Qdrant || profile.Kind == connections.Meilisearch || profile.Kind == connections.CouchDB || profile.Kind == connections.Cassandra || profile.Kind == connections.Solr || profile.Kind == connections.Elasticsearch || profile.Kind == connections.Easysearch || profile.Kind == connections.ClickHouse || profile.Kind == connections.Doris || profile.Kind == connections.SelectDB || profile.Kind == connections.StarRocks || profile.Kind == connections.Trino || profile.Kind == connections.SQLServer || profile.Kind == connections.Oracle || profile.Kind == connections.Dameng || profile.Kind == connections.MongoDB || profile.Kind == connections.Redis {
 		s.loadSavedConnectionPasswords()
 	}
+	s.RefreshDriverPackages()
 }
 
 func (s *State) initializeInputs() {
+	if s.connectionDraft.Kind == connections.H2 {
+		s.initializeH2Inputs()
+	}
 	if s.connectionDraft.Kind == connections.Consul {
 		s.consulAuthChoice = consulAuthCaption(s.connectionDraft.ConsulOptions.Auth)
 		s.consulTLSChoice = neo4jTLSCaption(s.connectionDraft.TLSMode)
@@ -245,6 +256,11 @@ func (s *State) initializeInputs() {
 // Close discards configuration drafts and secrets and invalidates async work.
 // The non-secret profile remains readable until the next Open call.
 func (s *State) Close() {
+	s.cancelDriverWork()
+	s.driverWork.packages = nil
+	s.driverWork.message = ""
+	s.h2Numbers = [6]string{}
+	s.h2ModeChoice, s.h2ProfileChoice, s.h2DriverChoice = "", "", ""
 	s.etcdAuthChoice, s.etcdPrefixChoice, s.etcdTLSChoice = "", "", ""
 	s.neo4jAuthChoice, s.neo4jProtocolChoice, s.neo4jTLSChoice = "", "", ""
 	s.qdrantAuthChoice = ""
@@ -289,6 +305,8 @@ func (s *State) Cancel() {
 }
 
 func (s *State) Back() {
+	s.cancelDriverWork()
+	s.driverWork.packages = nil
 	s.engineFileVersion++
 	s.cancelMySQLConnectionTest()
 	s.active = false

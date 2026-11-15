@@ -12,6 +12,7 @@ import (
 // Keep the existing column and MySQL JSON format. Other engines use an
 // explicit versioned envelope; older empty records receive engine defaults.
 type engineOptionsEnvelope struct {
+	H2            *connections.H2Options            `json:"h2,omitempty"`
 	SelectDB      *connections.SelectDBOptions      `json:"selectdb,omitempty"`
 	Consul        *connections.ConsulOptions        `json:"consul,omitempty"`
 	Etcd          *connections.EtcdOptions          `json:"etcd,omitempty"`
@@ -42,6 +43,8 @@ type engineOptionsEnvelope struct {
 func encodeProfileOptions(p connections.Profile) (string, error) {
 	var value any
 	switch p.Kind {
+	case connections.H2:
+		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, H2: &p.H2Options}
 	case connections.Consul:
 		value = engineOptionsEnvelope{Version: 1, Kind: p.Kind, Consul: &p.ConsulOptions}
 	case connections.Etcd:
@@ -100,6 +103,9 @@ func encodeProfileOptions(p connections.Profile) (string, error) {
 }
 func decodeEngineOptions(p *connections.Profile, raw string) error {
 	if raw == "" {
+		if p.Kind == connections.H2 {
+			return connections.ErrInvalid
+		}
 		if p.Kind == connections.SelectDB {
 			p.SelectDBOptions = connections.SelectDBOptions{Version: 1, Catalog: "internal"}
 		}
@@ -187,6 +193,29 @@ func decodeEngineOptions(p *connections.Profile, raw string) error {
 	decoder.DisallowUnknownFields()
 	if len(raw) > 128<<10 || decoder.Decode(&envelope) != nil || decoder.Decode(new(any)) != io.EOF || envelope.Version != 1 || envelope.Kind != p.Kind {
 		return fmt.Errorf("invalid saved engine options")
+	}
+	if p.Kind == connections.H2 {
+		if !uniqueNativeAuthOptionsJSON(raw) || envelope.H2 == nil {
+			return connections.ErrInvalid
+		}
+		// H2 has exactly one engine envelope; null foreign fields are rejected
+		// as well as non-null options, without changing other engines' formats.
+		var fields map[string]json.RawMessage
+		if json.Unmarshal([]byte(raw), &fields) != nil || len(fields) != 3 || fields["kind"] == nil || fields["version"] == nil || fields["h2"] == nil {
+			return connections.ErrInvalid
+		}
+		checked, err := connections.NormalizeH2Options(*envelope.H2)
+		p.H2Options = checked
+		return err
+	}
+	var fields map[string]json.RawMessage
+	if json.Unmarshal([]byte(raw), &fields) != nil {
+		return connections.ErrInvalid
+	}
+	for key := range fields {
+		if strings.EqualFold(key, "h2") {
+			return connections.ErrInvalid
+		}
 	}
 	if p.Kind == connections.SelectDB {
 		if !uniqueNativeAuthOptionsJSON(raw) || envelope.SelectDB == nil || envelope.SelectDB.Version != 1 || envelope.SelectDB.Catalog == "" {
